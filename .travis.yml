@@ -4,10 +4,19 @@ os:
   - linux
   - osx
 julia:
-  - release
+  - 0.5
   - nightly
 notifications:
   email: false
+addons:
+  apt:
+    packages:
+      - gfortran
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      brew update;
+      brew install gcc;
+    fi ;
 # uncomment the following lines to override the default test script
 #script:
 #  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi

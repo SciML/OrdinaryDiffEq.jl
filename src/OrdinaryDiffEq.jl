@@ -1,13 +1,12 @@
 module OrdinaryDiffEq
 
 using DiffEqBase
-
+import DiffEqBase: solve
 using IterativeSolvers, Parameters, GenericSVD, ForwardDiff, InplaceOps,
       Sundials, ParameterizedFunctions, Ranges, NLsolve
 
 import Base: linspace
 import Plots: plot
-import DiffEqBase: solve
 import ForwardDiff.Dual
 
 macro def(name, definition)
