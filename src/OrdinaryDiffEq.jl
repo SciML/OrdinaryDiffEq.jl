@@ -3,10 +3,9 @@ module OrdinaryDiffEq
 using DiffEqBase
 import DiffEqBase: solve
 using IterativeSolvers, Parameters, GenericSVD, ForwardDiff, InplaceOps,
-      Sundials, ParameterizedFunctions, Ranges, NLsolve
+      Sundials, ParameterizedFunctions, Ranges, NLsolve, RecipesBase
 
 import Base: linspace
-import Plots: plot
 import ForwardDiff.Dual
 
 macro def(name, definition)
