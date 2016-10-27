@@ -3,7 +3,7 @@ module OrdinaryDiffEq
 using DiffEqBase
 import DiffEqBase: solve
 using Parameters, GenericSVD, ForwardDiff, InplaceOps,
-      Sundials, Ranges, NLsolve, RecipesBase
+      Sundials, Ranges, NLsolve, RecipesBase, ParameterizedFunctions
 
 import Base: linspace
 import ForwardDiff.Dual
