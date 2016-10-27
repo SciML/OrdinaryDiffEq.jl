@@ -4,7 +4,7 @@ using Base.Test
 const CPU_FLOPS = peakflops()
 const TEST_PLOT = false
 const LONGER_TESTS = true #Requires JLD
-const TEST_CONDITIONAL_DEPS = true
+const TEST_CONDITIONAL_DEPS = false
 const FILEIO_ENABLE = false
 #Start Test Script
 using OrdinaryDiffEq, Compat
@@ -31,6 +31,8 @@ println("ODE AppxTrue Tests")
 @time @test include("ode/ode_appxtrue_tests.jl")
 println("ODE Rosenbrock Tests")
 @time @test include("ode/ode_rosenbrock_tests.jl")
+println("Sundials.jl Tests")
+@time @test include("ode/Sundials_tests.jl")
 println("ODE Initial Dt Tests")
 @compat !is_windows() && @time @test include("ode/ode_dense_tests.jl") # Windows 32-bit Overflow
 println("ODE In-Place Tests")
@@ -53,7 +55,5 @@ println("ODEInterface Tests")
 (TEST_CONDITIONAL_DEPS) && @compat !is_windows() && (@time @test include("ode/ODEInterface_tests.jl"))
 println("ODE.jl Tests")
 (TEST_CONDITIONAL_DEPS) && @time @test include("ode/ODEJL_tests.jl")
-println("Sundials.jl Tests")
-(TEST_CONDITIONAL_DEPS) && @time @test include("ode/Sundials_tests.jl") # Not until tags
 
 toc()
