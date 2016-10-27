@@ -2,8 +2,8 @@ module OrdinaryDiffEq
 
 using DiffEqBase
 import DiffEqBase: solve
-using IterativeSolvers, Parameters, GenericSVD, ForwardDiff, InplaceOps,
-      Sundials, ParameterizedFunctions, Ranges, NLsolve, RecipesBase
+using Parameters, GenericSVD, ForwardDiff, InplaceOps,
+      Sundials, Ranges, NLsolve, RecipesBase
 
 import Base: linspace
 import ForwardDiff.Dual
