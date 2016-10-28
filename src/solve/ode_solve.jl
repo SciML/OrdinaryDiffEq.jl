@@ -226,15 +226,14 @@ function solve(prob::AbstractODEProblem,tspan::AbstractArray=[0,1],timeseries=[]
 
     if ksEltype == rateType
       if uType <: Number
-        rate_prototype = f(t,u)
+        rate_prototype = f!(t,u)
       else
-        f(t,u,rate_prototype)
+        f!(t,u,rate_prototype)
       end
       push!(ks,rate_prototype)
     else # Just push a dummy in for special dense since first is not used.
       push!(ks,[rate_prototype])
     end
-
     @unpack maxiters,timeseries_steps,save_timeseries,adaptive,progress_steps,abstol,reltol,γ,Δtmax,Δtmin,internalnorm,tableau,autodiff,timechoicealg,qoldinit,dense,sensitivity_params = o
     if !isempty(sensitivity_params)
       sensitivity_series = Vector{Vector{uType}}(length(sensitivity_params))

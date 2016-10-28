@@ -4,8 +4,8 @@ srand(100)
 ### ODE Examples
 
 # Linear ODE
-f = (t,u) -> (1.01*u)
-analytic = (t,u₀) -> u₀*exp(1.01*t)
+linear = (t,u) -> (1.01*u)
+analytic_linear = (t,u₀) -> u₀*exp(1.01*t)
 """
 Linear ODE
 
@@ -21,11 +21,11 @@ u(t) = u₀e^{αt}
 
 with Float64s
 """
-prob_ode_linear = ODEProblem(f,1/2,analytic=analytic)
+prob_ode_linear = ODEProblem(linear,1/2,analytic=analytic_linear)
 
 const linear_bigα = parse(BigFloat,"1.01")
-f = (t,u) -> (linear_bigα*u)
-analytic = (t,u₀) -> u₀*exp(linear_bigα*t)
+f_linearbig = (t,u) -> (linear_bigα*u)
+analytic_linearbig = (t,u₀) -> u₀*exp(linear_bigα*t)
 """
 Linear ODE
 
@@ -41,14 +41,14 @@ u(t) = u₀e^{αt}
 
 with BigFloats
 """
-prob_ode_bigfloatlinear = ODEProblem(f,parse(BigFloat,"0.5"),analytic=analytic)
+prob_ode_bigfloatlinear = ODEProblem(f_linearbig,parse(BigFloat,"0.5"),analytic=analytic_linearbig)
 
-f = (t,u,du) -> begin
+f_2dlinear = (t,u,du) -> begin
   for i in 1:length(u)
     du[i] = 1.01*u[i]
   end
 end
-analytic = (t,u₀) -> u₀*exp.(1.01*t)
+analytic_2dlinear = (t,u₀) -> u₀*exp.(1.01*t)
 """
 4x2 version of the Linear ODE
 
@@ -64,7 +64,7 @@ u(t) = u₀e^{αt}
 
 with Float64s
 """
-prob_ode_2Dlinear = ODEProblem(f,rand(4,2),analytic=analytic)
+prob_ode_2Dlinear = ODEProblem(f_2dlinear,rand(4,2),analytic=analytic_2dlinear)
 
 """
 100x100 version of the Linear ODE
@@ -81,9 +81,9 @@ u(t) = u₀e^{αt}
 
 with Float64s
 """
-prob_ode_large2Dlinear = ODEProblem(f,rand(100,100),analytic=analytic)
+prob_ode_large2Dlinear = ODEProblem(f_2dlinear,rand(100,100),analytic=analytic_2dlinear)
 
-f = (t,u,du) -> begin
+f_2dlinearbig = (t,u,du) -> begin
   for i in 1:length(u)
     du[i] = linear_bigα*u[i]
   end
@@ -103,8 +103,8 @@ u(t) = u₀e^{αt}
 
 with BigFloats
 """
-prob_ode_bigfloat2Dlinear = ODEProblem(f,map(BigFloat,rand(4,2)).*ones(4,2)/2,analytic=analytic)
-f = (t,u) -> 1.01*u
+prob_ode_bigfloat2Dlinear = ODEProblem(f_2dlinearbig,map(BigFloat,rand(4,2)).*ones(4,2)/2,analytic=analytic_2dlinear)
+f_2dlinear_notinplace = (t,u) -> 1.01*u
 """
 4x2 version of the Linear ODE
 
@@ -120,12 +120,12 @@ u(t) = u₀e^{αt}
 
 on Float64. Purposefully not in-place as a test.
 """
-prob_ode_2Dlinear_notinplace = ODEProblem(f,rand(4,2),analytic=analytic)
+prob_ode_2Dlinear_notinplace = ODEProblem(f_2dlinear_notinplace,rand(4,2),analytic=analytic_2dlinear)
 
 ## Lotka-Volterra
 
 
-f = @ode_def LotkaVolterra begin
+lotka = @ode_def LotkaVolterra begin
   dx = a*x - b*x*y
   dy = -c*y + d*x*y
 end a=1.5 b=1 c=3 d=1
@@ -140,11 +140,11 @@ Lotka-Voltera Equations
 
 with initial condition ``x=y=1``
 """
-prb_ode_lotkavoltera = ODEProblem(f,[1;1])
+prb_ode_lotkavoltera = ODEProblem(lotka,[1;1])
 
 ## Fitzhugh-Nagumo
 
-f = @ode_def FitzhughNagumo begin
+fitz = @ode_def FitzhughNagumo begin
   dv = v - v^3/3 -w + l
   dw = τinv*(v +  a - b*w)
 end a=0.7 b=0.8 τinv=(1/12.5) l=0.5
@@ -158,10 +158,10 @@ Fitzhugh-Nagumo
 
 with initial condition ``v=w=1``
 """
-prob_ode_fitzhughnagumo = ODEProblem(f,[1;1])
+prob_ode_fitzhughnagumo = ODEProblem(fitz,[1;1])
 
 #Van der Pol Equations
-f = @ode_def VanDerPol begin
+van = @ode_def VanDerPol begin
   dy = μ*(1-x^2)*y - x
   dx = 1*y
 end μ=>1.
@@ -180,9 +180,9 @@ with ``μ=1.0`` and ``u₀=[0,\\sqrt{3}]``
 
 Non-stiff parameters.
 """
-prob_ode_vanderpol = ODEProblem(f,[0;sqrt(3)])
+prob_ode_vanderpol = ODEProblem(van,[0;sqrt(3)])
 
-f = VanDerPol(μ=1e6)
+van_stiff = VanDerPol(μ=1e6)
 """Van der Pol Equations
 
 ```math
@@ -196,11 +196,11 @@ with ``μ=10^6`` and ``u₀=[0,\\sqrt{3}]``
 
 Stiff parameters.
 """
-prob_ode_vanderpol_stiff = ODEProblem(f,[0;sqrt(3)])
+prob_ode_vanderpol_stiff = ODEProblem(van_stiff,[0;sqrt(3)])
 
 # ROBER
 
-f = @ode_def Rober begin
+rober = @ode_def Rober begin
   dy₁ = -k₁*y₁+k₃*y₂*y₃
   dy₂ =  k₁*y₁-k₂*y₂^2-k₃*y₂*y₃
   dy₃ =  k₂*y₂^2
@@ -223,12 +223,12 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
 
 Usually solved on `[0,1e11]`
 """
-prob_ode_rober = ODEProblem(f,[1.0;0.0;0.0])
+prob_ode_rober = ODEProblem(rober,[1.0;0.0;0.0])
 
 # Three Body
 const threebody_μ = parse(BigFloat,"0.012277471"); const threebody_μ′ = 1 - threebody_μ
 
-f = (t,u,du) -> begin
+threebody = (t,u,du) -> begin
   # 1 = y₁
   # 2 = y₂
   # 3 = y₁'
@@ -259,11 +259,11 @@ From Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff P
 Usually solved on `t₀ = 0.0`; `T = parse(BigFloat,"17.0652165601579625588917206249")`
 Periodic with that setup.
 """
-prob_ode_threebody = ODEProblem(f,[0.994, 0.0, 0.0, parse(BigFloat,"-2.00158510637908252240537862224")])
+prob_ode_threebody = ODEProblem(threebody,[0.994, 0.0, 0.0, parse(BigFloat,"-2.00158510637908252240537862224")])
 
 # Rigid Body Equations
 
-f = @ode_def RigidBody begin
+rigid = @ode_def RigidBody begin
   dy₁  = I₁*y₂*y₃
   dy₂  = I₂*y₁*y₃
   dy₃  = I₃*y₁*y₂
@@ -290,11 +290,11 @@ or Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Pro
 
 Usually solved from 0 to 20.
 """
-prob_ode_rigidbody = ODEProblem(f,[1.0,0.0,0.9])
+prob_ode_rigidbody = ODEProblem(rigid,[1.0,0.0,0.9])
 
 # Pleiades Problem
 
-f = (t,u,du) -> begin
+pleides = (t,u,du) -> begin
   x = view(u,1:7)   # x
   y = view(u,8:14)  # y
   v = view(u,15:21) # x′
@@ -364,4 +364,4 @@ From Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff P
 
 Usually solved from 0 to 3.
 """
-prob_ode_pleides = ODEProblem(f,[3.0,3.0,-1.0,-3.0,2.0,-2.0,2.0,3.0,-3.0,2.0,0,0,-4.0,4.0,0,0,0,0,0,1.75,-1.5,0,0,0,-1.25,1,0,0])
+prob_ode_pleides = ODEProblem(pleides,[3.0,3.0,-1.0,-3.0,2.0,-2.0,2.0,3.0,-3.0,2.0,0,0,-4.0,4.0,0,0,0,0,0,1.75,-1.5,0,0,0,-1.25,1,0,0])

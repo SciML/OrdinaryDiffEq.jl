@@ -133,7 +133,7 @@ end
     const kshortsize = 1
     if calck
       if ksEltype <: AbstractArray
-        k = rateType(sizeu)
+        k = similar(rate_prototype)
       end
       kprev = copy(k)
     end
@@ -181,7 +181,6 @@ end
         for i in eachindex(sensitivity_params)
           f(t,u,sensitivity_J,:Jac)
           f(t,u,getfield(f,sensitivity_params[i]),sensitivity_df,sensitivity_params[i],:Deriv)
-          println(det(sensitivity_J))
           push!(sensitivity_series[i],sensitivity_series[i][end] + Δt*(sensitivity_J*sensitivity_series[i][end] + sensitivity_df))
         end
       end
@@ -342,7 +341,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
   @ode_preamble
   uidx = eachindex(u)
   if !dense
-    k = rateType(sizeu) # Not initialized if not dense
+    k = similar(rate_prototype) # Not initialized if not dense
   end
   if custom_callback
     cache = (u,uprev,k)
@@ -383,11 +382,11 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
   uidx = eachindex(u)
   if calck # Not initialized if not dense
     if calcprevs
-      kprev = rateType(sizeu)
+      kprev = similar(rate_prototype)
     end
   end
-  k = rateType(sizeu)
-  du = rateType(sizeu)
+  k = similar(rate_prototype)
+  du = similar(rate_prototype)
   if custom_callback
     if calck
       cache = (u,k,du,utilde,kprev,uprev)
@@ -441,12 +440,12 @@ end
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{:RK4,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
   @ode_preamble
   halfΔt::tType = Δt/2
-  k₁ = rateType(sizeu)
-  k₂ = rateType(sizeu)
-  k₃ = rateType(sizeu)
-  k₄ = rateType(sizeu)
+  k₁ = similar(rate_prototype)
+  k₂ = similar(rate_prototype)
+  k₃ = similar(rate_prototype)
+  k₄ = similar(rate_prototype)
   if calcprevs
-    kprev = rateType(sizeu)
+    kprev = similar(rate_prototype)
   end
   tmp = similar(u)
   uidx = eachindex(u)
@@ -552,13 +551,13 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
   A = A' # Transpose A to column major looping
   kk = Vector{rateType}(0)
   for i = 1:stages
-    push!(kk,rateType(sizeu))
+    push!(kk,similar(rate_prototype))
   end
-  utilde = rateType(sizeu)
+  utilde = similar(rate_prototype)
   tmp = similar(u)
   atmp = similar(u,uEltypeNoUnits)
   utmp = zeros(u)
-  uEEst = rateType(sizeu)
+  uEEst = similar(rate_prototype)
   fsallast = kk[end]
   fsalfirst = kk[1]
   if calck
@@ -674,10 +673,10 @@ end
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{:BS3,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
   @ode_preamble
   a21,a32,a41,a42,a43,c1,c2,b1,b2,b3,b4  = constructBS3(uEltypeNoUnits)
-  k1 = rateType(sizeu)
-  k2 = rateType(sizeu)
-  k3 = rateType(sizeu)
-  k4 = rateType(sizeu)
+  k1 = similar(rate_prototype)
+  k2 = similar(rate_prototype)
+  k3 = similar(rate_prototype)
+  k4 = similar(rate_prototype)
   utilde = similar(u)
   atmp = similar(u,uEltypeNoUnits)
   uidx = eachindex(u)
@@ -738,7 +737,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
     for i in 1:kshortsize
       push!(k,zero(rateType))
     end
-    push!(ks,deepcopy(k)) #Initialize ks
+
     if calcprevs
       kprev = deepcopy(k)
       for i in 1:3 # Make it full-sized
@@ -780,14 +779,14 @@ end
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{:BS5,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
   @ode_preamble
   c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8 = constructBS5(uEltypeNoUnits)
-  k1::rateType = rateType(sizeu)
-  k2::rateType = rateType(sizeu)
-  k3::rateType = rateType(sizeu)
-  k4::rateType = rateType(sizeu)
-  k5::rateType = rateType(sizeu)
-  k6::rateType = rateType(sizeu)
-  k7::rateType = rateType(sizeu)
-  k8::rateType = rateType(sizeu)
+  k1::rateType = similar(rate_prototype)
+  k2::rateType = similar(rate_prototype)
+  k3::rateType = similar(rate_prototype)
+  k4::rateType = similar(rate_prototype)
+  k5::rateType = similar(rate_prototype)
+  k6::rateType = similar(rate_prototype)
+  k7::rateType = similar(rate_prototype)
+  k8::rateType = similar(rate_prototype)
   const kshortsize = 8
   utilde = similar(u)
   uhat   = similar(u)
@@ -797,13 +796,13 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
   if calck
     k = ksEltype()
     for i in 1:kshortsize
-      push!(k,rateType(sizeu))
+      push!(k,similar(rate_prototype))
     end
-    push!(ks,deepcopy(k)) #Initialize ks
+
     if calcprevs
       kprev = deepcopy(k)
       for i in 1:3 # Make it full-sized
-        push!(kprev,rateType(sizeu))
+        push!(kprev,similar(rate_prototype))
       end
     end
   end
@@ -886,7 +885,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
     for i in 1:kshortsize
       push!(k,zero(rateType))
     end
-    push!(ks,deepcopy(k)) #Initialize ks
+
   end
   fsalfirst = f(t,u) # Pre-start fsal
   @inbounds for T in Ts
@@ -924,11 +923,11 @@ end
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{:Tsit5,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
   @ode_preamble
   c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,b1,b2,b3,b4,b5,b6,b7 = constructTsit5(uEltypeNoUnits)
-  k2::rateType = rateType(sizeu)
-  k3::rateType = rateType(sizeu)
-  k4::rateType = rateType(sizeu)
-  k5::rateType = rateType(sizeu)
-  k6::rateType = rateType(sizeu)
+  k2::rateType = similar(rate_prototype)
+  k3::rateType = similar(rate_prototype)
+  k4::rateType = similar(rate_prototype)
+  k5::rateType = similar(rate_prototype)
+  k6::rateType = similar(rate_prototype)
   const kshortsize = 7
   utilde::uType = similar(u)
   uidx = eachindex(u)
@@ -937,9 +936,9 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
   if calck
     k = ksEltype()
     for i in 1:kshortsize
-      push!(k,rateType(sizeu))
+      push!(k,similar(rate_prototype))
     end
-    push!(ks,deepcopy(k)) #Initialize ks
+
     # Setup k pointers
     k[1] = k1
     k[2] = k2
@@ -1021,7 +1020,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
     for i in 1:kshortsize
       push!(k,zero(rateType))
     end
-    push!(ks,deepcopy(k)) #Initialize ks
+
     if calcprevs
       kprev = deepcopy(k)
     end
@@ -1081,7 +1080,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
     for i in 1:kshortsize
       push!(k,similar(rate_prototype))
     end
-    push!(ks,deepcopy(k)) #Initialize ks
+
     if calcprevs
       kprev = deepcopy(k)
     end
@@ -1151,13 +1150,13 @@ end
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{:DP5Threaded,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
   @ode_preamble
   a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = constructDP5(uEltypeNoUnits)
-  k2::rateType = rateType(sizeu)
-  k3::rateType = rateType(sizeu)
-  k4::rateType = rateType(sizeu)
-  k5::rateType = rateType(sizeu)
-  k6::rateType = rateType(sizeu)
-  update::rateType = rateType(sizeu)
-  bspl::rateType = rateType(sizeu)
+  k2::rateType = similar(rate_prototype)
+  k3::rateType = similar(rate_prototype)
+  k4::rateType = similar(rate_prototype)
+  k5::rateType = similar(rate_prototype)
+  k6::rateType = similar(rate_prototype)
+  update::rateType = similar(rate_prototype)
+  bspl::rateType = similar(rate_prototype)
   utilde = similar(u)
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
   uidx::Base.OneTo{Int64} = eachindex(u)
@@ -1166,9 +1165,9 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
     d1,d3,d4,d5,d6,d7 = DP5_dense_ds(uEltypeNoUnits)
     k = ksEltype()
     for i in 1:kshortsize
-      push!(k,rateType(sizeu))
+      push!(k,similar(rate_prototype))
     end
-    push!(ks,deepcopy(k)) #Initialize ks
+
     # Setup k pointers
     k[1] = update
     if calcprevs
@@ -1280,7 +1279,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
     for i in 1:kshortsize
       push!(k,zero(rateType))
     end
-    push!(ks,deepcopy(k)) #Initialize ks
+
     if calcprevs
       kprev = deepcopy(k)
       for i in 1:3 # Make it full-sized
@@ -1322,19 +1321,19 @@ end
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{:Vern6,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
   @ode_preamble
   c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,a91,a94,a95,a96,a97,a98,b1,b4,b5,b6,b7,b8,b9= constructVern6(uEltypeNoUnits)
-  k2 = rateType(sizeu); k3 = rateType(sizeu); k4 = rateType(sizeu);
-  k5 = rateType(sizeu); k6 = rateType(sizeu); k7 = rateType(sizeu); k8 = rateType(sizeu);
+  k2 = similar(rate_prototype); k3 = similar(rate_prototype); k4 = similar(rate_prototype);
+  k5 = similar(rate_prototype); k6 = similar(rate_prototype); k7 = similar(rate_prototype); k8 = similar(rate_prototype);
   const kshortsize = 9
   utilde = similar(u); tmp = similar(u); atmp = similar(u,uEltypeNoUnits); uidx = eachindex(u)
   k1 = fsalfirst ; k9 = fsallast
   if calck
     k = ksEltype(kshortsize)
     k[1]=k1; k[2]=k2; k[3]=k3;k[4]=k4;k[5]=k5;k[6]=k6;k[7]=k7;k[8]=k8;k[9]=k9 # Set the pointers
-    push!(ks,deepcopy(k)) #Initialize ks
+
     if calcprevs
       kprev = deepcopy(k)
       for i in 1:3
-        push!(kprev,rateType(sizeu))
+        push!(kprev,similar(rate_prototype))
       end
     end
   end
@@ -1408,7 +1407,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
     for i in 1:kshortsize
       push!(k,zero(rateType))
     end
-    push!(ks,deepcopy(k)) #Initialize ks
+
     if calcprevs
       kprev = deepcopy(k)
       for i in 1:6 # Make it full-sized
@@ -1448,19 +1447,19 @@ end
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{:Vern7,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
   @ode_preamble
   c2,c3,c4,c5,c6,c7,c8,a021,a031,a032,a041,a043,a051,a053,a054,a061,a063,a064,a065,a071,a073,a074,a075,a076,a081,a083,a084,a085,a086,a087,a091,a093,a094,a095,a096,a097,a098,a101,a103,a104,a105,a106,a107,b1,b4,b5,b6,b7,b8,b9,bhat1,bhat4,bhat5,bhat6,bhat7,bhat10= constructVern7(uEltypeNoUnits)
-  k1 = rateType(sizeu); k2 = rateType(sizeu); k3 = rateType(sizeu); k4 = rateType(sizeu);
-  k5 = rateType(sizeu); k6 = rateType(sizeu); k7 = rateType(sizeu); k8 = rateType(sizeu);
-  k9 = rateType(sizeu); k10 = rateType(sizeu); utilde = similar(u); update = similar(u)
+  k1 = similar(rate_prototype); k2 = similar(rate_prototype); k3 = similar(rate_prototype); k4 = similar(rate_prototype);
+  k5 = similar(rate_prototype); k6 = similar(rate_prototype); k7 = similar(rate_prototype); k8 = similar(rate_prototype);
+  k9 = similar(rate_prototype); k10 = similar(rate_prototype); utilde = similar(u); update = similar(u)
   uidx = eachindex(u); tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
   const kshortsize = 10
   if calck
     k = ksEltype(kshortsize)
-    push!(ks,deepcopy(k)) #Initialize ks
+
     k[1]=k1;k[2]=k2;k[3]=k3;k[4]=k4;k[5]=k5;k[6]=k6;k[7]=k7;k[8]=k8;k[9]=k9;k[10]=k10 # Setup pointers
     if calcprevs
       kprev = deepcopy(k)
       for i in 1:6 # Make it full-sized
-        push!(kprev,rateType(sizeu))
+        push!(kprev,similar(rate_prototype))
       end
     end
   end
@@ -1541,7 +1540,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
     for i in 1:kshortsize
       push!(k,zero(rateType))
     end
-    push!(ks,deepcopy(k)) #Initialize ks
+
     if calcprevs
       kprev = deepcopy(k)
       for i in 1:8 # Make it full-sized
@@ -1584,20 +1583,20 @@ end
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{:Vern8,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
   @ode_preamble
   c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211,a1301,a1304,a1305,a1306,a1307,a1308,a1309,a1310,b1,b6,b7,b8,b9,b10,b11,b12,bhat1,bhat6,bhat7,bhat8,bhat9,bhat10,bhat13= constructVern8(uEltypeNoUnits)
-  k1 = rateType(sizeu); k2 = rateType(sizeu); k3 = rateType(sizeu); k4 = rateType(sizeu);
-  k5 = rateType(sizeu); k6 = rateType(sizeu); k7 = rateType(sizeu); k8 = rateType(sizeu); tmp = similar(u)
-  k9 = rateType(sizeu); k10 = rateType(sizeu); k11 = rateType(sizeu); k12 = rateType(sizeu); k13 = rateType(sizeu)
+  k1 = similar(rate_prototype); k2 = similar(rate_prototype); k3 = similar(rate_prototype); k4 = similar(rate_prototype);
+  k5 = similar(rate_prototype); k6 = similar(rate_prototype); k7 = similar(rate_prototype); k8 = similar(rate_prototype); tmp = similar(u)
+  k9 = similar(rate_prototype); k10 = similar(rate_prototype); k11 = similar(rate_prototype); k12 = similar(rate_prototype); k13 = similar(rate_prototype)
   utilde = similar(u); update = similar(u);
   uidx = eachindex(u); atmp = similar(u,uEltypeNoUnits)
   const kshortsize = 13
   if calck
     k = ksEltype(kshortsize)
-    push!(ks,deepcopy(k)) #Initialize ks
+
     k[1]=k1;k[2]=k2;k[3]=k3;k[4]=k4;k[5]=k5;k[6]=k6;k[7]=k7;k[8]=k8;k[9]=k9;k[10]=k10;k[11]=k11;k[12]=k12;k[13]=k13 # Setup pointers
     if calcprevs
       kprev = deepcopy(k)
       for i in 1:8 # Make it full-sized
-        push!(kprev,rateType(sizeu))
+        push!(kprev,similar(rate_prototype))
       end
     end
   end
@@ -1723,12 +1722,12 @@ end
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{:TanYam7,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
   @ode_preamble
   c1,c2,c3,c4,c5,c6,c7,a21,a31,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,a91,a93,a94,a95,a96,a97,a98,a101,a103,a104,a105,a106,a107,a108,b1,b4,b5,b6,b7,b8,b9,bhat1,bhat4,bhat5,bhat6,bhat7,bhat8,bhat10 = constructTanYam7(uEltypeNoUnits)
-  k1 = rateType(sizeu); k2 = rateType(sizeu) ; k3 = rateType(sizeu); k4 = rateType(sizeu)
-  k5 = rateType(sizeu); k6 = rateType(sizeu) ; k7 = rateType(sizeu); k8 = rateType(sizeu)
-  k9 = rateType(sizeu); k10= rateType(sizeu) ;
-  k = rateType(sizeu)
+  k1 = similar(rate_prototype); k2 = similar(rate_prototype) ; k3 = similar(rate_prototype); k4 = similar(rate_prototype)
+  k5 = similar(rate_prototype); k6 = similar(rate_prototype) ; k7 = similar(rate_prototype); k8 = similar(rate_prototype)
+  k9 = similar(rate_prototype); k10= similar(rate_prototype) ;
+  k = similar(rate_prototype)
   if calcprevs && calck
-    kprev = rateType(sizeu)
+    kprev = similar(rate_prototype)
   end
   utilde = similar(u); uidx = eachindex(u); tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
 
@@ -1821,7 +1820,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
     for i in 1:kshortsize
       push!(k,zero(rateType))
     end
-    push!(ks,deepcopy(k)) #Initialize ks
+
     if calcprevs
       kprev = deepcopy(k)
     end
@@ -1886,10 +1885,10 @@ end
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{:DP8,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
   @ode_preamble
   c7,c8,c9,c10,c11,c6,c5,c4,c3,c2,b1,b6,b7,b8,b9,b10,b11,b12,bhh1,bhh2,bhh3,er1,er6,er7,er8,er9,er10,er11,er12,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211 = constructDP8(uEltypeNoUnits)
-  k1 = rateType(sizeu); k2  = rateType(sizeu); k3  = rateType(sizeu);  k4 = rateType(sizeu)
-  k5 = rateType(sizeu); k6  = rateType(sizeu); k7  = rateType(sizeu);  k8 = rateType(sizeu)
-  k9 = rateType(sizeu); k10 = rateType(sizeu); k11 = rateType(sizeu); k12 = rateType(sizeu)
-  kupdate = rateType(sizeu); utilde = similar(u);
+  k1 = similar(rate_prototype); k2  = similar(rate_prototype); k3  = similar(rate_prototype);  k4 = similar(rate_prototype)
+  k5 = similar(rate_prototype); k6  = similar(rate_prototype); k7  = similar(rate_prototype);  k8 = similar(rate_prototype)
+  k9 = similar(rate_prototype); k10 = similar(rate_prototype); k11 = similar(rate_prototype); k12 = similar(rate_prototype)
+  kupdate = similar(rate_prototype); utilde = similar(u);
   #err5 = similar(u); err3 = similar(u)
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits); uidx = eachindex(u); atmp2 = similar(u,uEltypeNoUnits); update = similar(u)
   local k13::rateType; local k14::rateType; local k15::rateType; local k16::rateType;
@@ -1902,19 +1901,19 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
     if calck
       k = ksEltype()
       for i in 1:kshortsize
-        push!(k,rateType(sizeu))
+        push!(k,similar(rate_prototype))
       end
-      push!(ks,deepcopy(k)) #Initialize ks
+
       if calcprevs
         kprev = deepcopy(k)
       end
     end
-    k13 = rateType(sizeu)
-    k14 = rateType(sizeu)
-    k15 = rateType(sizeu)
-    k16 = rateType(sizeu)
-    udiff = rateType(sizeu)
-    bspl = rateType(sizeu)
+    k13 = similar(rate_prototype)
+    k14 = similar(rate_prototype)
+    k15 = similar(rate_prototype)
+    k16 = similar(rate_prototype)
+    udiff = similar(rate_prototype)
+    bspl = similar(rate_prototype)
     fsalfirst = k1
     fsallast = k13
   else
@@ -2079,15 +2078,15 @@ end
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{:TsitPap8,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
   @ode_preamble
   c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211,a1301,a1304,a1305,a1306,a1307,a1308,a1309,a1310,b1,b6,b7,b8,b9,b10,b11,b12,bhat1,bhat6,bhat7,bhat8,bhat9,bhat10,bhat13 = constructTsitPap8(uEltypeNoUnits)
-  k1 = rateType(sizeu); k2 = rateType(sizeu); k3 = rateType(sizeu); k4 = rateType(sizeu)
-  k5 = rateType(sizeu); k6 = rateType(sizeu); k7 = rateType(sizeu); k8 = rateType(sizeu)
-  k9 = rateType(sizeu); k10 = rateType(sizeu); k11 = rateType(sizeu); k12 = rateType(sizeu)
-  k13 = rateType(sizeu); update = similar(u)
+  k1 = similar(rate_prototype); k2 = similar(rate_prototype); k3 = similar(rate_prototype); k4 = similar(rate_prototype)
+  k5 = similar(rate_prototype); k6 = similar(rate_prototype); k7 = similar(rate_prototype); k8 = similar(rate_prototype)
+  k9 = similar(rate_prototype); k10 = similar(rate_prototype); k11 = similar(rate_prototype); k12 = similar(rate_prototype)
+  k13 = similar(rate_prototype); update = similar(u)
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits); uidx = eachindex(u)
   utilde = similar(u);
-  k = rateType(sizeu)
+  k = similar(rate_prototype)
   if calcprevs
-    kprev = rateType(sizeu)
+    kprev = similar(rate_prototype)
   end
   if calck
     pop!(ks)
@@ -2184,7 +2183,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
     for i in 1:kshortsize
       push!(k,zero(rateType))
     end
-    push!(ks,deepcopy(k)) #Initialize ks
+
     if calcprevs
       kprev = deepcopy(k)
       for i in 1:10 # Make it full-sized
@@ -2230,20 +2229,20 @@ end
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{:Vern9,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
   @ode_preamble
   c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0806,a0807,a0901,a0906,a0907,a0908,a1001,a1006,a1007,a1008,a1009,a1101,a1106,a1107,a1108,a1109,a1110,a1201,a1206,a1207,a1208,a1209,a1210,a1211,a1301,a1306,a1307,a1308,a1309,a1310,a1311,a1312,a1401,a1406,a1407,a1408,a1409,a1410,a1411,a1412,a1413,a1501,a1506,a1507,a1508,a1509,a1510,a1511,a1512,a1513,a1514,a1601,a1606,a1607,a1608,a1609,a1610,a1611,a1612,a1613,b1,b8,b9,b10,b11,b12,b13,b14,b15,bhat1,bhat8,bhat9,bhat10,bhat11,bhat12,bhat13,bhat16 = constructVern9(uEltypeNoUnits)
-  k1 = rateType(sizeu); k2 = rateType(sizeu);k3 = rateType(sizeu); k4 = rateType(sizeu);
-  k5 = rateType(sizeu); k6 = rateType(sizeu);k7 = rateType(sizeu); k8 = rateType(sizeu);
-  k9 = rateType(sizeu); k10 = rateType(sizeu); k11 = rateType(sizeu); k12 = rateType(sizeu); update = similar(u)
-  k13 = rateType(sizeu); k14 = rateType(sizeu); k15 = rateType(sizeu); k16 =rateType(sizeu);
+  k1 = similar(rate_prototype); k2 = similar(rate_prototype);k3 = similar(rate_prototype); k4 = similar(rate_prototype);
+  k5 = similar(rate_prototype); k6 = similar(rate_prototype);k7 = similar(rate_prototype); k8 = similar(rate_prototype);
+  k9 = similar(rate_prototype); k10 = similar(rate_prototype); k11 = similar(rate_prototype); k12 = similar(rate_prototype); update = similar(u)
+  k13 = similar(rate_prototype); k14 = similar(rate_prototype); k15 = similar(rate_prototype); k16 =similar(rate_prototype);
   utilde = similar(u); tmp = similar(u); atmp = similar(u,uEltypeNoUnits); uidx = eachindex(u)
   const kshortsize = 16
   if calck
     k = ksEltype(kshortsize)
     k[1]=k1;k[2]=k2;k[3]=k3;k[4]=k4;k[5]=k5;k[6]=k6;k[7]=k7;k[8]=k8;k[9]=k9;k[10]=k10;k[11]=k11;k[12]=k12;k[13]=k13;k[14]=k14;k[15]=k15;k[16]=k16 # Setup pointers
-    push!(ks,deepcopy(k)) #Initialize ks
+
     if calcprevs
       kprev = deepcopy(k)
       for i in 1:3 # Make it full-sized
-        push!(kprev,rateType(sizeu))
+        push!(kprev,similar(rate_prototype))
       end
     end
   end
@@ -2387,15 +2386,15 @@ end
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{:Feagin10,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
   @ode_preamble
   adaptiveConst,a0100,a0200,a0201,a0300,a0302,a0400,a0402,a0403,a0500,a0503,a0504,a0600,a0603,a0604,a0605,a0700,a0704,a0705,a0706,a0800,a0805,a0806,a0807,a0900,a0905,a0906,a0907,a0908,a1000,a1005,a1006,a1007,a1008,a1009,a1100,a1105,a1106,a1107,a1108,a1109,a1110,a1200,a1203,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211,a1300,a1302,a1303,a1305,a1306,a1307,a1308,a1309,a1310,a1311,a1312,a1400,a1401,a1404,a1406,a1412,a1413,a1500,a1502,a1514,a1600,a1601,a1602,a1604,a1605,a1606,a1607,a1608,a1609,a1610,a1611,a1612,a1613,a1614,a1615,b1,b2,b3,b4,b5,b6,b7,b8,b9,b10,b11,b12,b13,b14,b15,b16,b17,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16 = constructFeagin10(uEltypeNoUnits)
-  k1 = rateType(sizeu); k2 = rateType(sizeu); k3 = rateType(sizeu); k4 = rateType(sizeu); k5 = rateType(sizeu)
-  k6 = rateType(sizeu); k7 = rateType(sizeu); k8 = rateType(sizeu); k9 = rateType(sizeu); k10 = rateType(sizeu)
-  k11 = rateType(sizeu); k12 = rateType(sizeu); k13 = rateType(sizeu); k14 = rateType(sizeu)
-  k15 = rateType(sizeu); k16 = rateType(sizeu); k17 = rateType(sizeu)
+  k1 = similar(rate_prototype); k2 = similar(rate_prototype); k3 = similar(rate_prototype); k4 = similar(rate_prototype); k5 = similar(rate_prototype)
+  k6 = similar(rate_prototype); k7 = similar(rate_prototype); k8 = similar(rate_prototype); k9 = similar(rate_prototype); k10 = similar(rate_prototype)
+  k11 = similar(rate_prototype); k12 = similar(rate_prototype); k13 = similar(rate_prototype); k14 = similar(rate_prototype)
+  k15 = similar(rate_prototype); k16 = similar(rate_prototype); k17 = similar(rate_prototype)
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
   utmp = similar(u);
   uidx = eachindex(u)
   if calcprevs
-    kprev = rateType(sizeu)
+    kprev = similar(rate_prototype)
   end
   if calck
     pop!(ks)
@@ -2559,19 +2558,19 @@ end
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{:Feagin12,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
   @ode_preamble
   adaptiveConst,a0100,a0200,a0201,a0300,a0302,a0400,a0402,a0403,a0500,a0503,a0504,a0600,a0603,a0604,a0605,a0700,a0704,a0705,a0706,a0800,a0805,a0806,a0807,a0900,a0905,a0906,a0907,a0908,a1000,a1005,a1006,a1007,a1008,a1009,a1100,a1105,a1106,a1107,a1108,a1109,a1110,a1200,a1208,a1209,a1210,a1211,a1300,a1308,a1309,a1310,a1311,a1312,a1400,a1408,a1409,a1410,a1411,a1412,a1413,a1500,a1508,a1509,a1510,a1511,a1512,a1513,a1514,a1600,a1608,a1609,a1610,a1611,a1612,a1613,a1614,a1615,a1700,a1705,a1706,a1707,a1708,a1709,a1710,a1711,a1712,a1713,a1714,a1715,a1716,a1800,a1805,a1806,a1807,a1808,a1809,a1810,a1811,a1812,a1813,a1814,a1815,a1816,a1817,a1900,a1904,a1905,a1906,a1908,a1909,a1910,a1911,a1912,a1913,a1914,a1915,a1916,a1917,a1918,a2000,a2003,a2004,a2005,a2007,a2009,a2010,a2017,a2018,a2019,a2100,a2102,a2103,a2106,a2107,a2109,a2110,a2117,a2118,a2119,a2120,a2200,a2201,a2204,a2206,a2220,a2221,a2300,a2302,a2322,a2400,a2401,a2402,a2404,a2406,a2407,a2408,a2409,a2410,a2411,a2412,a2413,a2414,a2415,a2416,a2417,a2418,a2419,a2420,a2421,a2422,a2423,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16,c17,c18,c19,c20,c21,c22,c23,c24,b1,b2,b3,b4,b5,b6,b7,b8,b9,b10,b11,b12,b13,b14,b15,b16,b17,b18,b19,b20,b21,b22,b23,b24,b25 = constructFeagin12(uEltypeNoUnits)
-  k1 = rateType(sizeu); k2 = rateType(sizeu); k3 = rateType(sizeu); k4 = rateType(sizeu); k5 = rateType(sizeu)
-  k6 = rateType(sizeu); k7 = rateType(sizeu); k8 = rateType(sizeu); k9 = rateType(sizeu); k10 = rateType(sizeu)
-  k11 = rateType(sizeu); k12 = rateType(sizeu); k13 = rateType(sizeu); k14 = rateType(sizeu)
-  k15 = rateType(sizeu); k16 = rateType(sizeu); k17 = rateType(sizeu); k18 = rateType(sizeu)
-  k19 = rateType(sizeu); k20 = rateType(sizeu); k21 = rateType(sizeu); k22 = rateType(sizeu)
-  k23 = rateType(sizeu); k24 = rateType(sizeu); k25 = rateType(sizeu)
+  k1 = similar(rate_prototype); k2 = similar(rate_prototype); k3 = similar(rate_prototype); k4 = similar(rate_prototype); k5 = similar(rate_prototype)
+  k6 = similar(rate_prototype); k7 = similar(rate_prototype); k8 = similar(rate_prototype); k9 = similar(rate_prototype); k10 = similar(rate_prototype)
+  k11 = similar(rate_prototype); k12 = similar(rate_prototype); k13 = similar(rate_prototype); k14 = similar(rate_prototype)
+  k15 = similar(rate_prototype); k16 = similar(rate_prototype); k17 = similar(rate_prototype); k18 = similar(rate_prototype)
+  k19 = similar(rate_prototype); k20 = similar(rate_prototype); k21 = similar(rate_prototype); k22 = similar(rate_prototype)
+  k23 = similar(rate_prototype); k24 = similar(rate_prototype); k25 = similar(rate_prototype)
   update = similar(u)
   utmp = similar(u);
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
   uidx = eachindex(u)
-  k = rateType(sizeu)
+  k = similar(rate_prototype)
   if calcprevs
-    kprev = rateType(sizeu)
+    kprev = similar(rate_prototype)
   end
   if calck
     pop!(ks)
@@ -2778,23 +2777,23 @@ end
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{:Feagin14,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
   @ode_preamble
   adaptiveConst,a0100,a0200,a0201,a0300,a0302,a0400,a0402,a0403,a0500,a0503,a0504,a0600,a0603,a0604,a0605,a0700,a0704,a0705,a0706,a0800,a0805,a0806,a0807,a0900,a0905,a0906,a0907,a0908,a1000,a1005,a1006,a1007,a1008,a1009,a1100,a1105,a1106,a1107,a1108,a1109,a1110,a1200,a1208,a1209,a1210,a1211,a1300,a1308,a1309,a1310,a1311,a1312,a1400,a1408,a1409,a1410,a1411,a1412,a1413,a1500,a1508,a1509,a1510,a1511,a1512,a1513,a1514,a1600,a1608,a1609,a1610,a1611,a1612,a1613,a1614,a1615,a1700,a1712,a1713,a1714,a1715,a1716,a1800,a1812,a1813,a1814,a1815,a1816,a1817,a1900,a1912,a1913,a1914,a1915,a1916,a1917,a1918,a2000,a2012,a2013,a2014,a2015,a2016,a2017,a2018,a2019,a2100,a2112,a2113,a2114,a2115,a2116,a2117,a2118,a2119,a2120,a2200,a2212,a2213,a2214,a2215,a2216,a2217,a2218,a2219,a2220,a2221,a2300,a2308,a2309,a2310,a2311,a2312,a2313,a2314,a2315,a2316,a2317,a2318,a2319,a2320,a2321,a2322,a2400,a2408,a2409,a2410,a2411,a2412,a2413,a2414,a2415,a2416,a2417,a2418,a2419,a2420,a2421,a2422,a2423,a2500,a2508,a2509,a2510,a2511,a2512,a2513,a2514,a2515,a2516,a2517,a2518,a2519,a2520,a2521,a2522,a2523,a2524,a2600,a2605,a2606,a2607,a2608,a2609,a2610,a2612,a2613,a2614,a2615,a2616,a2617,a2618,a2619,a2620,a2621,a2622,a2623,a2624,a2625,a2700,a2705,a2706,a2707,a2708,a2709,a2711,a2712,a2713,a2714,a2715,a2716,a2717,a2718,a2719,a2720,a2721,a2722,a2723,a2724,a2725,a2726,a2800,a2805,a2806,a2807,a2808,a2810,a2811,a2813,a2814,a2815,a2823,a2824,a2825,a2826,a2827,a2900,a2904,a2905,a2906,a2909,a2910,a2911,a2913,a2914,a2915,a2923,a2924,a2925,a2926,a2927,a2928,a3000,a3003,a3004,a3005,a3007,a3009,a3010,a3013,a3014,a3015,a3023,a3024,a3025,a3027,a3028,a3029,a3100,a3102,a3103,a3106,a3107,a3109,a3110,a3113,a3114,a3115,a3123,a3124,a3125,a3127,a3128,a3129,a3130,a3200,a3201,a3204,a3206,a3230,a3231,a3300,a3302,a3332,a3400,a3401,a3402,a3404,a3406,a3407,a3409,a3410,a3411,a3412,a3413,a3414,a3415,a3416,a3417,a3418,a3419,a3420,a3421,a3422,a3423,a3424,a3425,a3426,a3427,a3428,a3429,a3430,a3431,a3432,a3433,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16,c17,c18,c19,c20,c21,c22,c23,c24,c25,c26,c27,c28,c29,c30,c31,c32,c33,c34,b1,b2,b3,b4,b5,b6,b7,b8,b9,b10,b11,b12,b13,b14,b15,b16,b17,b18,b19,b20,b21,b22,b23,b24,b25,b26,b27,b28,b29,b30,b31,b32,b33,b34,b35 = constructFeagin14(uEltypeNoUnits)
-  k1 = rateType(sizeu); k2 = rateType(sizeu); k3 = rateType(sizeu); k4 = rateType(sizeu); k5 = rateType(sizeu)
-  k6 = rateType(sizeu); k7 = rateType(sizeu); k8 = rateType(sizeu); k9 = rateType(sizeu); k10 = rateType(sizeu)
-  k11 = rateType(sizeu); k12 = rateType(sizeu); k13 = rateType(sizeu); k14 = rateType(sizeu)
-  k15 = rateType(sizeu); k16 = rateType(sizeu); k17 = rateType(sizeu); k18 = rateType(sizeu)
-  k19 = rateType(sizeu); k20 = rateType(sizeu); k21 = rateType(sizeu); k22 = rateType(sizeu)
-  k23 = rateType(sizeu); k24 = rateType(sizeu); k25 = rateType(sizeu)
-  k26 = rateType(sizeu); k27 = rateType(sizeu); k28 = rateType(sizeu)
-  k29 = rateType(sizeu); k30 = rateType(sizeu); k31 = rateType(sizeu); k32 = rateType(sizeu)
-  k33 = rateType(sizeu); k34 = rateType(sizeu); k35 = rateType(sizeu)
+  k1 = similar(rate_prototype); k2 = similar(rate_prototype); k3 = similar(rate_prototype); k4 = similar(rate_prototype); k5 = similar(rate_prototype)
+  k6 = similar(rate_prototype); k7 = similar(rate_prototype); k8 = similar(rate_prototype); k9 = similar(rate_prototype); k10 = similar(rate_prototype)
+  k11 = similar(rate_prototype); k12 = similar(rate_prototype); k13 = similar(rate_prototype); k14 = similar(rate_prototype)
+  k15 = similar(rate_prototype); k16 = similar(rate_prototype); k17 = similar(rate_prototype); k18 = similar(rate_prototype)
+  k19 = similar(rate_prototype); k20 = similar(rate_prototype); k21 = similar(rate_prototype); k22 = similar(rate_prototype)
+  k23 = similar(rate_prototype); k24 = similar(rate_prototype); k25 = similar(rate_prototype)
+  k26 = similar(rate_prototype); k27 = similar(rate_prototype); k28 = similar(rate_prototype)
+  k29 = similar(rate_prototype); k30 = similar(rate_prototype); k31 = similar(rate_prototype); k32 = similar(rate_prototype)
+  k33 = similar(rate_prototype); k34 = similar(rate_prototype); k35 = similar(rate_prototype)
   update = similar(u)
   utmp = similar(u);
 
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
   uidx = eachindex(u)
-  k = rateType(sizeu)
+  k = similar(rate_prototype)
   if calcprevs
-    kprev = rateType(sizeu)
+    kprev = similar(rate_prototype)
   end
   if calck
     pop!(ks)

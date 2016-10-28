@@ -24,8 +24,3 @@ init_package(b::backend{:ODEJL}) = @eval begin
       import ODE
       export ODE
     end
-    
-init_package(b::backend{:Sundials}) = @eval begin
-      import Sundials
-      export Sundials
-    end

@@ -3,7 +3,6 @@ using OrdinaryDiffEq, DiffEqDevTools
 const linear_bigα = parse(BigFloat,"1.01")
 f = (t,u) -> (linear_bigα*u)
 analytic = (t,u₀) -> u₀*exp(linear_bigα*t)
-"""Linear ODE on Float64"""
 prob_ode_bigfloatlinear = ODEProblem(f,parse(BigFloat,"0.5"),analytic=analytic)
 
 f = (t,u,du) -> begin
@@ -11,7 +10,6 @@ f = (t,u,du) -> begin
     du[i] = linear_bigα*u[i]
   end
 end
-"""2D Linear ODE, bigfloats"""
 prob_ode_bigfloat2Dlinear = ODEProblem(f,map(BigFloat,rand(4,2)).*ones(4,2)/2,analytic=analytic)
 
 probnum = prob_ode_linear
