@@ -5,7 +5,6 @@ immutable ODEIntegrator{Alg,uType<:Union{AbstractArray,Number},uEltype,N,tType,u
   f::Function
   u::uType
   t::tType
-  rate_prototype::rateType
   Δt::tType
   Ts::Vector{tType}
   maxiters::Int
@@ -49,7 +48,7 @@ end
   local Δt::tType
   local Ts::Vector{tType}
   local adaptiveorder::Int
-  @unpack f,u,t,rate_prototype,Δt,Ts,maxiters,timeseries_steps,γ,qmax,qmin,save_timeseries,adaptive,progressbar,autodiff,adaptiveorder,order,atomloaded,progress_steps,β,expo1,timechoicealg,qoldinit,normfactor,fsal, dense, saveat, alg, callback, custom_callback,calck,sensitivity_params,sensitivity_series = integrator
+  @unpack f,u,t,Δt,Ts,maxiters,timeseries_steps,γ,qmax,qmin,save_timeseries,adaptive,progressbar,autodiff,adaptiveorder,order,atomloaded,progress_steps,β,expo1,timechoicealg,qoldinit,normfactor,fsal, dense, saveat, alg, callback, custom_callback,calck,sensitivity_params,sensitivity_series = integrator
   timeseries = integrator.timeseries
   ts = integrator.ts
   ks = integrator.ks
@@ -78,15 +77,18 @@ end
   local kprev::ksEltype
   local kshortsize::Int
   local reeval_fsal::Bool
-  if ksEltype <: AbstractArray  && alg ∈ DIFFERENTIALEQUATIONSJL_SPECIALDENSEALGS
+  if ksEltype <: AbstractArray  && !issimple_dense
     k = ksEltype[]
     kprev = ksEltype[]
+    rate_prototype = ks[1][1]
   elseif ksEltype <: Number
     k = ksEltype(0)
     kprev = ksEltype(0)
+    rate_prototype = ks[1][1]
   else
     k = ksEltype()
     kprev = ksEltype()
+    rate_prototype = ks[1]
   end
 
   # Setup FSAL
@@ -106,6 +108,7 @@ end
       f(t,u,fsalfirst)
     end
   end
+
   local cursaveat::Int = 1
   local Θ = one(t)/one(t) # No units
   local tprev::tType = t
@@ -132,17 +135,7 @@ end
       if ksEltype <: AbstractArray
         k = rateType(sizeu)
       end
-      if fsal
-        k = copy(fsalfirst)
-        dense && push!(ks,copy(k)) # already computed
-      elseif ksEltype <: Number
-        k = f(t,u)
-        dense && push!(ks,k)
-      elseif ksEltype <: AbstractArray
-        f(t,u,k)
-        dense && push!(ks,deepcopy(k))
-      end
-      kprev = k
+      kprev = copy(k)
     end
   end ## if not simple_dense, you have to initialize k and push the ks[1]!
 

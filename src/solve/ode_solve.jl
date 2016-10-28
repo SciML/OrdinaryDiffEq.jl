@@ -223,6 +223,18 @@ function solve(prob::AbstractODEProblem,tspan::AbstractArray=[0,1],timeseries=[]
     else
       timeseries[1] = copy(u)
     end
+
+    if ksEltype == rateType
+      if uType <: Number
+        rate_prototype = f(t,u)
+      else
+        f(t,u,rate_prototype)
+      end
+      push!(ks,rate_prototype)
+    else # Just push a dummy in for special dense since first is not used.
+      push!(ks,[rate_prototype])
+    end
+
     @unpack maxiters,timeseries_steps,save_timeseries,adaptive,progress_steps,abstol,reltol,γ,Δtmax,Δtmin,internalnorm,tableau,autodiff,timechoicealg,qoldinit,dense,sensitivity_params = o
     if !isempty(sensitivity_params)
       sensitivity_series = Vector{Vector{uType}}(length(sensitivity_params))
@@ -234,7 +246,7 @@ function solve(prob::AbstractODEProblem,tspan::AbstractArray=[0,1],timeseries=[]
     end
 
     # @code_warntype ode_solve(ODEIntegrator{alg,uType,uEltype,ndims(u)+1,tType,uEltypeNoUnits,rateType,ksEltype}(timeseries,ts,ks,f!,u,t,k,Δt,Ts,maxiters,timeseries_steps,save_timeseries,adaptive,abstol,reltol,γ,qmax,qmin,Δtmax,Δtmin,internalnorm,progressbar,tableau,autodiff,adaptiveorder,order,atomloaded,progress_steps,β,expo1,timechoicealg,qoldinit,normfactor,fsal,dense,saveat,alg,callback,custom_callback,calck,sensitivity_params,sensitivity_series))
-    u,t = ode_solve(ODEIntegrator{alg,uType,uEltype,ndims(u)+1,tType,uEltypeNoUnits,rateType,ksEltype}(timeseries,ts,ks,f!,u,t,rate_prototype,Δt,Ts,maxiters,timeseries_steps,save_timeseries,adaptive,abstol,reltol,γ,qmax,qmin,Δtmax,Δtmin,internalnorm,progressbar,tableau,autodiff,adaptiveorder,order,atomloaded,progress_steps,β,expo1,timechoicealg,qoldinit,normfactor,fsal,dense,saveat,alg,callback,custom_callback,calck,sensitivity_params,sensitivity_series))
+    u,t = ode_solve(ODEIntegrator{alg,uType,uEltype,ndims(u)+1,tType,uEltypeNoUnits,rateType,ksEltype}(timeseries,ts,ks,f!,u,t,Δt,Ts,maxiters,timeseries_steps,save_timeseries,adaptive,abstol,reltol,γ,qmax,qmin,Δtmax,Δtmin,internalnorm,progressbar,tableau,autodiff,adaptiveorder,order,atomloaded,progress_steps,β,expo1,timechoicealg,qoldinit,normfactor,fsal,dense,saveat,alg,callback,custom_callback,calck,sensitivity_params,sensitivity_series))
     if ts[end] != t
       push!(ts,t)
       push!(timeseries,u)
