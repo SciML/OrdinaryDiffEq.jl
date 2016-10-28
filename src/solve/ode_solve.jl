@@ -382,7 +382,6 @@ function solve(prob::AbstractODEProblem,tspan::AbstractArray=[0,1],timeseries=[]
     o[:t] = map(Float64,o[:t])
     t = o[:t]; Ts = o[:Ts];
     saveat = [float(x) for x in command_opts[:saveat]]
-    initialize_backend(:Sundials)
     opts = buildOptions(o,SUNDIALS_OPTION_LIST,SUNDIALS_ALIASES,SUNDIALS_ALIASES_REVERSED)
     if !isinplace && typeof(u)<:AbstractArray
       f! = (t,u,du) -> (du[:] = vec(prob.f(t,reshape(u,sizeu))); 0)
