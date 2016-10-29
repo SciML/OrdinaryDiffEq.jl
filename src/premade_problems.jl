@@ -125,10 +125,10 @@ prob_ode_2Dlinear_notinplace = ODEProblem(f_2dlinear_notinplace,rand(4,2),analyt
 ## Lotka-Volterra
 
 
-lotka = @ode_def LotkaVolterra begin
+lotka = @ode_def_nohes LotkaVolterra begin
   dx = a*x - b*x*y
   dy = -c*y + d*x*y
-end a=1.5 b=1 c=3 d=1
+end a=>1.5 b=>1.0 c=>3.0 d=1.0
 
 """
 Lotka-Voltera Equations
@@ -144,7 +144,7 @@ prb_ode_lotkavoltera = ODEProblem(lotka,[1;1])
 
 ## Fitzhugh-Nagumo
 
-fitz = @ode_def FitzhughNagumo begin
+fitz = @ode_def_nohes FitzhughNagumo begin
   dv = v - v^3/3 -w + l
   dw = τinv*(v +  a - b*w)
 end a=0.7 b=0.8 τinv=(1/12.5) l=0.5
@@ -161,7 +161,7 @@ with initial condition ``v=w=1``
 prob_ode_fitzhughnagumo = ODEProblem(fitz,[1;1])
 
 #Van der Pol Equations
-van = @ode_def VanDerPol begin
+van = @ode_def_noinvhes VanDerPol begin
   dy = μ*(1-x^2)*y - x
   dx = 1*y
 end μ=>1.
@@ -200,7 +200,7 @@ prob_ode_vanderpol_stiff = ODEProblem(van_stiff,[0;sqrt(3)])
 
 # ROBER
 
-rober = @ode_def Rober begin
+rober = @ode_def_noinvjac Rober begin
   dy₁ = -k₁*y₁+k₃*y₂*y₃
   dy₂ =  k₁*y₁-k₂*y₂^2-k₃*y₂*y₃
   dy₃ =  k₂*y₂^2
@@ -263,7 +263,7 @@ prob_ode_threebody = ODEProblem(threebody,[0.994, 0.0, 0.0, parse(BigFloat,"-2.0
 
 # Rigid Body Equations
 
-rigid = @ode_def RigidBody begin
+rigid = @ode_def_noinvjac RigidBody begin
   dy₁  = I₁*y₂*y₃
   dy₂  = I₂*y₁*y₃
   dy₃  = I₃*y₁*y₂
