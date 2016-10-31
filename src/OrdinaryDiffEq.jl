@@ -2,7 +2,7 @@ module OrdinaryDiffEq
 
 using DiffEqBase
 import DiffEqBase: solve
-using Parameters, GenericSVD, ForwardDiff, InplaceOps,
+using Parameters, GenericSVD, ForwardDiff, InplaceOps, RecursiveArrayTools,
       Sundials, Ranges, NLsolve, RecipesBase, ParameterizedFunctions
 
 import Base: linspace
@@ -41,17 +41,8 @@ include("solve/ode_solve.jl")
 include("solve/ode_dense.jl")
 include("solve/unrolled_tableaus.jl")
 
-include("premade_problems.jl")
-
 #Types
 export ODESolution, ODEProblem
-
-
-#ODE Example Problems
-export prob_ode_linear, prob_ode_bigfloatlinear, prob_ode_2Dlinear,
-       prob_ode_large2Dlinear, prob_ode_bigfloat2Dlinear, prob_ode_rigidbody,
-       prob_ode_2Dlinear_notinplace, prob_ode_vanderpol, prob_ode_vanderpol_stiff,
-       prob_ode_lorenz, prob_ode_rober, prob_ode_threebody
 
  #General Functions
  export solve

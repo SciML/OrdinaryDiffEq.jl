@@ -1,4 +1,4 @@
-using OrdinaryDiffEq
+using OrdinaryDiffEq, DiffEqProblemLibrary, DiffEqDevTools
 using Base.Test
 
 const CPU_FLOPS = peakflops()
@@ -7,8 +7,6 @@ const LONGER_TESTS = true #Requires JLD
 const TEST_CONDITIONAL_DEPS = false
 const FILEIO_ENABLE = false
 #Start Test Script
-using OrdinaryDiffEq, Compat
-using Base.Test
 
 tic()
 
