@@ -32,8 +32,7 @@ All it does is call the saving functionality.
 """
 @inline function ODE_DEFAULT_CALLBACK(alg,f,t,u,k,tprev,uprev,kprev,ts,timeseries,ks,Δtprev,Δt,
   saveat,cursaveat,saveiter,iter,save_timeseries,timeseries_steps,uEltype,ksEltype,
-  dense,kshortsize,issimple_dense,fsal,fsalfirst,cache,calck,T,Ts,
-  calc_senstivity,sensitivity_params,sensitivity_series,sensitivity_J,sensitivity_df)
+  dense,kshortsize,issimple_dense,fsal,fsalfirst,cache,calck,T,Ts)
   @ode_savevalues
   reeval_fsal = false
   cursaveat,saveiter,Δt,t,T,reeval_fsal
@@ -57,7 +56,6 @@ const DIFFERENTIALEQUATIONSJL_DEFAULT_OPTIONS = Dict(:Δt => 0.0,
                                  :tableau => ODE_DEFAULT_TABLEAU,
                                  :dense => true,
                                  :calck => nothing,
-                                 :sensitivity_params => Vector{Symbol}(),
                                  :alg_hint => :nonstiff,
                                  :timeseries_errors => true,
                                  :dense_errors => false,
