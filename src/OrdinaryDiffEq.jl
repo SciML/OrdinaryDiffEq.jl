@@ -3,7 +3,7 @@ module OrdinaryDiffEq
 using DiffEqBase
 import DiffEqBase: solve
 using Parameters, GenericSVD, ForwardDiff, InplaceOps, RecursiveArrayTools,
-      Sundials, Ranges, NLsolve, RecipesBase, ParameterizedFunctions
+      Sundials, Ranges, NLsolve, RecipesBase
 
 import Base: linspace
 import ForwardDiff.Dual
@@ -15,7 +15,6 @@ macro def(name, definition)
         end
     end
 end
-
 
 typealias KW Dict{Symbol,Any}
 AbstractArrayOrVoid = Union{AbstractArray,Void}
