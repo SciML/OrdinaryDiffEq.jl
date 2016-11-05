@@ -27,7 +27,6 @@ const TEST_FLOPS_CUTOFF = 1e10
 const initialized_backends = Set{Symbol}()
 
 include("backends.jl")
-include("sensitivity.jl")
 include("misc_utils.jl")
 
 include("problems.jl")

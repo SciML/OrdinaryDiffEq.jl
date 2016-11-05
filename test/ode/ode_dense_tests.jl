@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Plots
+using OrdinaryDiffEq, Plots, DiffEqProblemLibrary
 
 bools = Vector{Bool}(0)
 prob = prob_ode_linear
