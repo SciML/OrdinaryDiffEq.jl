@@ -434,9 +434,9 @@ end
 
 function ode_determine_initΔt(u₀,t,abstol,reltol,internalnorm,f,order)
   f₀ = similar(u₀); f₁ = similar(u₀); u₁ = similar(u₀)
-  d₀ = norm(u₀./(abstol+u₀*reltol),internalnorm)
+  d₀ = internalnorm(u₀./(abstol+u₀*reltol))
   f(t,u₀,f₀)
-  d₁ = norm(f₀./(abstol+u₀*reltol),internalnorm)
+  d₁ = internalnorm(f₀./(abstol+u₀*reltol))
   if d₀ < 1//10^(5) || d₁ < 1//10^(5)
     Δt₀ = 1//10^(6)
   else
@@ -446,7 +446,7 @@ function ode_determine_initΔt(u₀,t,abstol,reltol,internalnorm,f,order)
      u₁[i] = u₀[i] + Δt₀*f₀[i]
   end
   f(t+Δt₀,u₁,f₁)
-  d₂ = norm((f₁.-f₀)./(abstol+u₀*reltol),internalnorm)/Δt₀
+  d₂ = internalnorm((f₁.-f₀)./(abstol+u₀*reltol))/Δt₀
   if max(d₁,d₂)<=1//10^(15)
     Δt₁ = max(1//10^(6),Δt₀*1//10^(3))
   else
@@ -456,9 +456,9 @@ function ode_determine_initΔt(u₀,t,abstol,reltol,internalnorm,f,order)
 end
 
 function ode_determine_initΔt(u₀::Number,t,abstol,reltol,internalnorm,f,order)
-  d₀ = norm(u₀./(abstol+u₀*reltol),internalnorm)
+  d₀ = abs(u₀./(abstol+u₀*reltol))
   f₀ =f(t,u₀)
-  d₁ = norm(f₀./(abstol+u₀*reltol),internalnorm)
+  d₁ = abs(f₀./(abstol+u₀*reltol))
   if d₀ < 1//10^(5) || d₁ < 1//10^(5)
     Δt₀ = 1//10^(6)
   else
@@ -466,7 +466,7 @@ function ode_determine_initΔt(u₀::Number,t,abstol,reltol,internalnorm,f,order
   end
   u₁ = u₀ + Δt₀*f₀
   f₁ = f(t+Δt₀,u₁)
-  d₂ = norm((f₁-f₀)./(abstol+u₀*reltol),internalnorm)/Δt₀
+  d₂ = abs((f₁-f₀)./(abstol+u₀*reltol))/Δt₀
   if max(d₁,d₂)<=1//10^(15)
     Δt₁ = max(1//10^(6),Δt₀*1//10^(3))
   else

@@ -38,6 +38,12 @@ All it does is call the saving functionality.
   cursaveat,saveiter,Δt,t,T,reeval_fsal
 end
 
+@inline function ODE_DEFAULT_NORM(u)
+  for i in eachindex(u)
+    u[i] = u[i]*u[i]
+  end
+  sqrt( sum(u) / length(u))
+end
 
 const SUNDIALS_ALGORITHMS = Set([:cvode_BDF,:cvode_Adams])
 
@@ -75,7 +81,7 @@ const DIFFERENTIALEQUATIONSJL_DEFAULT_OPTIONS = Dict(:Δt => 0.0,
                                  :Δtmax=>nothing,
                                  :Δtmin=>nothing,
                                  :autodiff=>true,
-                                 :internalnorm => 2,
+                                 :internalnorm => ODE_DEFAULT_NORM,
                                  :progressbar=>false,
                                  :progress_steps=>1000,
                                  :callback=>nothing)
