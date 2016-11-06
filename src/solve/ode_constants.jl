@@ -45,6 +45,8 @@ end
   sqrt( sum(u) / length(u))
 end
 
+#const COMMON_ALIASES = Set([])
+
 const SUNDIALS_ALGORITHMS = Set([:cvode_BDF,:cvode_Adams])
 
 const DIFFERENTIALEQUATIONSJL_ALGORITHMS = Set([:Euler,:Midpoint,:RK4,:ExplicitRK,:BS3,:BS5,:DP5,:DP5Threaded,:DP8,:Vern6,:Tsit5,:TanYam7,:TsitPap8,:Vern9,:ImplicitEuler,:Trapezoid,:Rosenbrock23,:Rosenbrock32,:Feagin10,:Feagin12,:Feagin14,:Vern7,:Vern8])
@@ -120,32 +122,23 @@ const ODEINTERFACE_ALIASES = Dict{Symbol,Symbol}(:RTOL=>:reltol,
                                                  #:SSMINSEL=>:qmin,
                                                  :SSBETA=>:β,
                                                  :SSMAXSEL=>:qmax)
+
 const ODEINTERFACE_ALIASES_REVERSED = Dict{Symbol,Symbol}([(v,k) for (k,v) in ODEINTERFACE_ALIASES])
 
 const DIFFERENTIALEQUATIONSJL_ORDERS = Dict{Symbol,Int}(:Euler=>1,
                                                         :Midpoint=>2,
                                                         :RK4=>4,
                                                         :ExplicitRK=>4, #Gets overwritten
-                                                        :ExplicitRKVectorized=>4,#Gets overwritten
                                                         :BS3=>3,
-                                                        :BS3Vectorized=>3,
                                                         :BS5=>5,
-                                                        :BS5Vectorized=>5,
                                                         :DP5=>5,
-                                                        :DP5Vectorized=>5,
                                                         :DP5Threaded=>5,
                                                         :DP8=>8,
-                                                        :DP8Vectorized=>8,
                                                         :Vern6=>6,
-                                                        :Vern6Vectorized=>6,
                                                         :Tsit5=>5,
-                                                        :Tsit5Vectorized=>5,
                                                         :TanYam7=>7,
-                                                        :TanYam7Vectorized=>7,
                                                         :TsitPap8=>8,
-                                                        :TsitPap8Vectorized=>8,
                                                         :Vern9=>9,
-                                                        :Vern9Vectorized=>9,
                                                         :ImplicitEuler=>1,
                                                         :Trapezoid=>2,
                                                         :Rosenbrock23=>2,
@@ -153,50 +146,36 @@ const DIFFERENTIALEQUATIONSJL_ORDERS = Dict{Symbol,Int}(:Euler=>1,
                                                         :Feagin10=>10,
                                                         :Feagin12=>12,
                                                         :Feagin14=>14,
-                                                        :Feagin10Vectorized=>10,
-                                                        :Feagin12Vectorized=>12,
-                                                        :Feagin14Vectorized=>14,
                                                         :Vern7=>7,
-                                                        :Vern7Vectorized=>7,
-                                                        :Vern8=>8,
-                                                        :Vern8Vectorized=>8)
+                                                        :Vern8=>8)
 
 
 const DIFFERENTIALEQUATIONSJL_ADAPTIVEORDERS = Dict{Symbol,Int}(:ExplicitRK=>4, #Gets overwritten
-                                                                :ExplicitRKVectorized=>4,#Gets overwritten
                                                                 :BS3=>2,
-                                                                :BS3Vectorized=>3,
                                                                 :DP5=>4,
-                                                                :DP5Vectorized=>4,
                                                                 :DP5Threaded=>4,
                                                                 :DP8=>8,
-                                                                :DP8Vectorized=>8,
                                                                 :BS5=>4,
-                                                                :BS5Vectorized=>4,
                                                                 :Vern6=>5,
-                                                                :Vern6Vectorized=>5,
                                                                 :Tsit5=>4,
-                                                                :Tsit5Vectorized=>4,
                                                                 :TanYam7=>6,
-                                                                :TanYam7Vectorized=>6,
                                                                 :TsitPap8=>7,
-                                                                :TsitPap8Vectorized=>7,
                                                                 :Vern9=>8,
-                                                                :Vern9Vectorized=>8,
                                                                 :Rosenbrock23=>2,
                                                                 :Rosenbrock32=>2,
                                                                 :Feagin10=>8,
                                                                 :Feagin12=>10,
                                                                 :Feagin14=>12,
-                                                                :Feagin10Vectorized=>8,
-                                                                :Feagin12Vectorized=>10,
-                                                                :Feagin14Vectorized=>12,
                                                                 :Vern7=>6,
-                                                                :Vern7Vectorized=>6,
-                                                                :Vern8=>7,
-                                                                :Vern8Vectorized=>7)
-const DIFFERENTIALEQUATIONSJL_ADAPTIVEALGS = Set([:ExplicitRK,:ExplicitRKVectorized,:BS3,:BS3Vectorized,:BS5,:BS5Vectorized,:DP5,:DP5Vectorized,:DP5Threaded,:DP8,:DP8Vectorized,:Vern6,:Vern6Vectorized,:Tsit5,:Tsit5Vectorized,:TanYam7,:TanYam7Vectorized,:TsitPap8,:TsitPap8Vectorized,:Vern9,:Vern9Vectorized,:Rosenbrock23,:Rosenbrock32,:Feagin10,:Feagin12,:Feagin14,:Feagin10Vectorized,:Feagin12Vectorized,:Feagin14Vectorized,:Vern7,:Vern7Vectorized,:Vern8,:Vern8Vectorized])
+                                                                :Vern8=>7)
+
+const DIFFERENTIALEQUATIONSJL_ADAPTIVEALGS = Set([:ExplicitRK,:BS3,:BS5,:DP5,
+                  :DP5Threaded,:DP8,:Vern6,:Tsit5,:TanYam7,:TsitPap8,:Vern9,
+                  :Rosenbrock23,:Rosenbrock32,:Feagin10,:Feagin12,
+                  :Feagin14,:Vern7,:Vern8])
+
 const DIFFERENTIALEQUATIONSJL_IMPLICITALGS = Set([:ImplicitEuler,:Trapezoid,:Rosenbrock32,:Rosenbrock23])
+
 const ODEINTERFACE_STRINGS = Dict{Symbol,String}(
   :LOGIO            => "logio",
   :LOGLEVEL         => "loglevel",

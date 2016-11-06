@@ -3,37 +3,7 @@
 
 Solves the ODE defined by prob on the interval tspan. If not given, tspan defaults to [0,1].
 
-### Keyword Arguments
-
-* `Δt`: Sets the initial stepsize. Defaults to an automatic choice.
-* `save_timeseries`: Saves the result at every timeseries_steps steps. Default is true.
-* `timeseries_steps`: Denotes how many steps between saving a value for the timeseries. Defaults to 1.
-* `tableau`: The tableau for an `:ExplicitRK` algorithm. Defaults to a Dormand-Prince 4/5 method.
-* `adaptive` - Turns on adaptive timestepping for appropriate methods. Default is true.
-* `γ` - The risk-factor γ in the q equation for adaptive timestepping. Default is .9.
-* `timechoicealg` - Chooses the method which is used for making the adaptive timestep choices.
-  Default is `:Lund` for Lund stabilization (PI stepsize control). The other
-  option is `:Simple` for the standard simple error-based rejection
-* `β` - The Lund stabilization β parameter. Defaults are algorithm-dependent.
-* `qmax` - Defines the maximum value possible for the adaptive q. Default is 10.
-* `abstol` - Absolute tolerance in adaptive timestepping. Defaults to 1e-3.
-* `reltol` - Relative tolerance in adaptive timestepping. Defaults to 1e-6.
-* `maxiters` - Maximum number of iterations before stopping. Defaults to 1e9.
-* `Δtmax` - Maximum Δt for adaptive timestepping. Defaults to half the timespan.
-* `Δtmin` - Minimum Δt for adaptive timestepping. Defaults to 1e-10.
-* `autodiff` - Turns on/off the use of autodifferentiation (via ForwardDiff) in the
-  implicit solvers which use `NLsolve`. Default is true.
-* `internalnorm` - The norm for which error estimates are calculated. Default is 2.
-* `progressbar` - Turns on/off the Juno progressbar. Defualt is false.
-* `progress_steps` - Numbers of steps between updates of the progress bar. Default is 1000.
-
-* `alg`: The solver algorithm. Defult is `:DP5`. Note that any keyword
-  argument available in the external solvers are accessible via keyword arguemnts. For example,
-  for the ODEInterface.jl algorithms, one can specify `SSBETA=0.03` as a keyword argument and it will
-  do as it states in the ODEInterface.jl documentation. Common options such as `MAXSS` (max stepsize)
-  are aliased to one can use the DifferentialEquations.jl syntax `Δtmax` or `MAXSS`. The possibilities for the solvers are:
-
-For a full list of algorithms, please see the solver documentation.
+Please see the solver documentation.
 """
 function solve(prob::AbstractODEProblem,tspan::AbstractArray=[0,1],timeseries=[],ts=[],ks=[];kwargs...)
   if tspan[end]-tspan[1]<0
@@ -135,11 +105,6 @@ function solve(prob::AbstractODEProblem,tspan::AbstractArray=[0,1],timeseries=[]
     rate_prototype = u/zero(t)
     rateType = typeof(rate_prototype) ## Can be different if united
 
-    if o[:fullnormalize] == true
-      normfactor = uEltypeNoUnits(1/length(u))
-    else
-      normfactor = 1
-    end
     saveat = tType[convert(tType,x) for x in setdiff(o[:saveat],tspan)]
 
     if o[:calck]==nothing
@@ -236,8 +201,8 @@ function solve(prob::AbstractODEProblem,tspan::AbstractArray=[0,1],timeseries=[]
     end
     @unpack maxiters,timeseries_steps,save_timeseries,adaptive,progress_steps,abstol,reltol,γ,Δtmax,Δtmin,internalnorm,tableau,autodiff,timechoicealg,qoldinit,dense = o
 
-    # @code_warntype ode_solve(ODEIntegrator{alg,uType,uEltype,ndims(u)+1,tType,uEltypeNoUnits,rateType,ksEltype}(timeseries,ts,ks,f!,u,t,k,Δt,Ts,maxiters,timeseries_steps,save_timeseries,adaptive,abstol,reltol,γ,qmax,qmin,Δtmax,Δtmin,internalnorm,progressbar,tableau,autodiff,adaptiveorder,order,atomloaded,progress_steps,β,expo1,timechoicealg,qoldinit,normfactor,fsal,dense,saveat,alg,callback,custom_callback,calck))
-    u,t = ode_solve(ODEIntegrator{alg,uType,uEltype,ndims(u)+1,tType,uEltypeNoUnits,rateType,ksEltype}(timeseries,ts,ks,f!,u,t,Δt,Ts,maxiters,timeseries_steps,save_timeseries,adaptive,abstol,reltol,γ,qmax,qmin,Δtmax,Δtmin,internalnorm,progressbar,tableau,autodiff,adaptiveorder,order,atomloaded,progress_steps,β,expo1,timechoicealg,qoldinit,normfactor,fsal,dense,saveat,alg,callback,custom_callback,calck))
+    # @code_warntype ode_solve(ODEIntegrator{alg,uType,uEltype,ndims(u)+1,tType,uEltypeNoUnits,rateType,ksEltype}(timeseries,ts,ks,f!,u,t,k,Δt,Ts,maxiters,timeseries_steps,save_timeseries,adaptive,abstol,reltol,γ,qmax,qmin,Δtmax,Δtmin,internalnorm,progressbar,tableau,autodiff,adaptiveorder,order,atomloaded,progress_steps,β,expo1,timechoicealg,qoldinit,fsal,dense,saveat,alg,callback,custom_callback,calck))
+    u,t = ode_solve(ODEIntegrator{alg,uType,uEltype,ndims(u)+1,tType,uEltypeNoUnits,rateType,ksEltype}(timeseries,ts,ks,f!,u,t,Δt,Ts,maxiters,timeseries_steps,save_timeseries,adaptive,abstol,reltol,γ,qmax,qmin,Δtmax,Δtmin,internalnorm,progressbar,tableau,autodiff,adaptiveorder,order,atomloaded,progress_steps,β,expo1,timechoicealg,qoldinit,fsal,dense,saveat,alg,callback,custom_callback,calck))
     if ts[end] != t
       push!(ts,t)
       push!(timeseries,u)

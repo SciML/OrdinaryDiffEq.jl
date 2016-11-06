@@ -30,7 +30,6 @@ immutable ODEIntegrator{Alg,uType<:Union{AbstractArray,Number},uEltype,N,tType,u
   expo1::uEltypeNoUnits
   timechoicealg::Symbol
   qoldinit::uEltypeNoUnits
-  normfactor::uEltypeNoUnits
   fsal::Bool
   dense::Bool
   saveat::Vector{tType}
@@ -46,7 +45,7 @@ end
   local Δt::tType
   local Ts::Vector{tType}
   local adaptiveorder::Int
-  @unpack f,u,t,Δt,Ts,maxiters,timeseries_steps,γ,qmax,qmin,save_timeseries,adaptive,progressbar,autodiff,adaptiveorder,order,atomloaded,progress_steps,β,expo1,timechoicealg,qoldinit,normfactor,fsal, dense, saveat, alg, callback, custom_callback,calck = integrator
+  @unpack f,u,t,Δt,Ts,maxiters,timeseries_steps,γ,qmax,qmin,save_timeseries,adaptive,progressbar,autodiff,adaptiveorder,order,atomloaded,progress_steps,β,expo1,timechoicealg,qoldinit,fsal, dense, saveat, alg, callback, custom_callback,calck = integrator
   timeseries = integrator.timeseries
   ts = integrator.ts
   ks = integrator.ks
@@ -233,7 +232,7 @@ end
       else # Reject
         Δt = Δt/min(qminc,q11/γ)
       end
-    elseif timechoicealg == :Simple
+    elseif false ##timechoicealg == :Simple
       standard = γ*abs(1/(EEst))^(1/(adaptiveorder))
       if isinf(standard)
           q = qmax
@@ -637,7 +636,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       k4 = f(t+Δt,utmp); fsallast = k4
       if adaptive
         utilde = u + Δt*(b1*k1 + b2*k2 + b3*k3 + b4*k4)
-        EEst = abs( ((utilde-utmp)/(abstol+max(abs(u),abs(utmp))*reltol)) * normfactor)
+        EEst = abs( ((utilde-utmp)/(abstol+max(abs(u),abs(utmp))*reltol)))
       else
         u = utmp
       end
@@ -741,8 +740,8 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       if adaptive
         uhat   = Δt*(bhat1*k1 + bhat3*k3 + bhat4*k4 + bhat5*k5 + bhat6*k6)
         utilde = u + Δt*(btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7 + btilde8*k8)
-        EEst1 = abs( sum(((uhat)./(abstol+max(abs(u),abs(utmp))*reltol))) * normfactor)
-        EEst2 = abs( sum(((utilde-utmp)./(abstol+max(abs(u),abs(utmp))*reltol))) * normfactor)
+        EEst1 = abs( sum(((uhat)./(abstol+max(abs(u),abs(utmp))*reltol))))
+        EEst2 = abs( sum(((utilde-utmp)./(abstol+max(abs(u),abs(utmp))*reltol))))
         EEst = max(EEst1,EEst2)
       else
         u = utmp
@@ -881,7 +880,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       fsallast = f(t+Δt,utmp); k7 = fsallast
       if adaptive
         utilde = u + Δt*(b1*k1 + b2*k2 + b3*k3 + b4*k4 + b5*k5 + b6*k6 + b7*k7)
-        EEst = abs(((utilde-utmp)/(abstol+max(abs(u),abs(utmp))*reltol)) * normfactor)
+        EEst = abs(((utilde-utmp)/(abstol+max(abs(u),abs(utmp))*reltol)))
       else
         u = utmp
       end
@@ -1022,7 +1021,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
 
       if adaptive
         utilde = u + Δt*(b1*k1 + b3*k3 + b4*k4 + b5*k5 + b6*k6 + b7*k7)
-        EEst = abs( ((utilde-utmp)/(abstol+max(abs(u),abs(utmp))*reltol)) * normfactor)
+        EEst = abs( ((utilde-utmp)/(abstol+max(abs(u),abs(utmp))*reltol)))
       else
         u = utmp
       end
@@ -1283,7 +1282,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       fsallast = f(t+Δt,utmp); k9 = fsallast
       if adaptive
         utilde = u + Δt*(b1*k1 + b4*k4 + b5*k5 + b6*k6 + b7*k7 + b8*k8 + b9*k9)
-        EEst = abs( ((utilde-utmp)/(abstol+max(abs(u),abs(utmp))*reltol)) * normfactor)
+        EEst = abs( ((utilde-utmp)/(abstol+max(abs(u),abs(utmp))*reltol)))
       else
         u = utmp
       end
@@ -1411,7 +1410,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       update = Δt*(k1*b1 + k4*b4 + k5*b5 + k6*b6 + k7*b7 + k8*b8 + k9*b9)
       utmp = u + update
       if adaptive
-        EEst = abs( ((update - Δt*(bhat1*k1 + bhat4*k4 + bhat5*k5 + bhat6*k6 + bhat7*k7 + bhat10*k10))/(abstol+max(abs(u),abs(utmp))*reltol)) * normfactor)
+        EEst = abs( ((update - Δt*(bhat1*k1 + bhat4*k4 + bhat5*k5 + bhat6*k6 + bhat7*k7 + bhat10*k10))/(abstol+max(abs(u),abs(utmp))*reltol)))
       else
         u = utmp
       end
@@ -1547,7 +1546,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       update = Δt*(k1*b1 + k6*b6 + k7*b7 + k8*b8 + k9*b9 + k10*b10 + k11*b11 + k12*b12)
       utmp = u + update
       if adaptive
-        EEst = abs( ((update - Δt*(bhat1*k1 + bhat6*k6 + bhat7*k7 + bhat8*k8 + bhat9*k9 + bhat10*k10 + bhat13*k13))/(abstol+max(abs(u),abs(utmp))*reltol)) * normfactor)
+        EEst = abs( ((update - Δt*(bhat1*k1 + bhat6*k6 + bhat7*k7 + bhat8*k8 + bhat9*k9 + bhat10*k10 + bhat13*k13))/(abstol+max(abs(u),abs(utmp))*reltol)))
       else
         u = utmp
       end
@@ -1684,7 +1683,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       utmp = u + Δt*(k1*b1+k4*b4+k5*b5+k6*b6+k7*b7+k8*b8+k9*b9)
       if adaptive
         utilde = u + Δt*(k1*bhat1+k4*bhat4+k5*bhat5+k6*bhat6+k7*bhat7+k8*bhat8+k10*bhat10)
-        EEst = abs( ((utilde-utmp)/(abstol+max(abs(u),abs(utmp))*reltol)) * normfactor)
+        EEst = abs( ((utilde-utmp)/(abstol+max(abs(u),abs(utmp))*reltol)))
       else
         u = utmp
       end
@@ -1833,8 +1832,8 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       update = Δt*kupdate
       utmp = u + update
       if adaptive
-        err5 = abs(Δt*(k1*er1 + k6*er6 + k7*er7 + k8*er8 + k9*er9 + k10*er10 + k11*er11 + k12*er12)/(abstol+max(abs(u),abs(utmp))*reltol) * normfactor) # Order 5
-        err3 = abs((update - Δt*(bhh1*k1 + bhh2*k9 + bhh3*k12))/(abstol+max(abs(u),abs(utmp))*reltol) * normfactor) # Order 3
+        err5 = abs(Δt*(k1*er1 + k6*er6 + k7*er7 + k8*er8 + k9*er9 + k10*er10 + k11*er11 + k12*er12)/(abstol+max(abs(u),abs(utmp))*reltol)) # Order 5
+        err3 = abs((update - Δt*(bhh1*k1 + bhh2*k9 + bhh3*k12))/(abstol+max(abs(u),abs(utmp))*reltol)) # Order 3
         err52 = err5*err5
         EEst = err52/sqrt(err52 + 0.01*err3*err3)
       else
@@ -2041,7 +2040,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       update = Δt*(b1*k1+b6*k6+b7*k7+b8*k8+b9*k9+b10*k10+b11*k11+b12*k12)
       utmp = u + update
       if adaptive
-        EEst = abs((update - Δt*(k1*bhat1 + k6*bhat6 + k7*bhat7 + k8*bhat8 + k9*bhat9 + k10*bhat10 + k13*bhat13))/(abstol+max(abs(u),abs(utmp))*reltol) * normfactor)
+        EEst = abs((update - Δt*(k1*bhat1 + k6*bhat6 + k7*bhat7 + k8*bhat8 + k9*bhat9 + k10*bhat10 + k13*bhat13))/(abstol+max(abs(u),abs(utmp))*reltol))
       else
         u = utmp
       end
@@ -2193,7 +2192,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       update = Δt*(k1*b1+k8*b8+k9*b9+k10*b10+k11*b11+k12*b12+k13*b13+k14*b14+k15*b15)
       utmp = u + update
       if adaptive
-        EEst = abs((update - Δt*(k1*bhat1 + k8*bhat8 + k9*bhat9 + k10*bhat10 + k11*bhat11 + k12*bhat12 + k13*bhat13 + k16*bhat16))/(abstol+max(abs(u),abs(utmp))*reltol) * normfactor)
+        EEst = abs((update - Δt*(k1*bhat1 + k8*bhat8 + k9*bhat9 + k10*bhat10 + k11*bhat11 + k12*bhat12 + k13*bhat13 + k16*bhat16))/(abstol+max(abs(u),abs(utmp))*reltol))
       else
         u = utmp
       end
