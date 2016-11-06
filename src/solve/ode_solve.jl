@@ -5,7 +5,8 @@ Solves the ODE defined by prob on the interval tspan. If not given, tspan defaul
 
 Please see the solver documentation.
 """
-function solve(prob::AbstractODEProblem,tspan::AbstractArray=[0,1],timeseries=[],ts=[],ks=[];kwargs...)
+function solve(prob::AbstractODEProblem,timeseries=[],ts=[],ks=[];kwargs...)
+  tspan = prob.tspan
   if tspan[end]-tspan[1]<0
     tspan = vec(tspan)
     error("final time must be greater than starting time. Aborting.")

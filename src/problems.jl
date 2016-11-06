@@ -23,16 +23,17 @@ defines the solution if analytic is given.
 * `numvars`: The number of variables in the system
 
 """
-type ODEProblem{uType,uEltype} <: AbstractODEProblem
+type ODEProblem{uType,uEltype,tType} <: AbstractODEProblem
   f::Function
   u₀::uType
   analytic::Function
   knownanalytic::Bool
   numvars::Int
   isinplace::Bool
+  tspan::Vector{tType}
 end
 
-function ODEProblem(f::Function,u₀;analytic=nothing)
+function ODEProblem(f::Function,u₀,tspan=[0,1.];analytic=nothing)
   isinplace = numparameters(f)>=3
   if analytic==nothing
     knownanalytic = false
@@ -46,5 +47,5 @@ function ODEProblem(f::Function,u₀;analytic=nothing)
   else
     numvars = length(u₀)[end]
   end
-  ODEProblem{typeof(u₀),eltype(u₀)}(f,u₀,analytic,knownanalytic,numvars,isinplace)
+  ODEProblem{typeof(u₀),eltype(u₀)}(f,u₀,analytic,knownanalytic,numvars,isinplace,tspan)
 end
