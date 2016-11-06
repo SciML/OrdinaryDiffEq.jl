@@ -23,9 +23,9 @@ callback = @ode_callback begin
   @ode_event event_f apply_event! true 10
 end
 u0 = [0.2]
-prob = ODEProblem(f,u0)
 tspan = [0;10]
-sol = solve(prob,tspan,callback=callback)
+prob = ODEProblem(f,u0,tspan)
+sol = solve(prob,callback=callback)
 
 #=
 Plots.plotlyjs()
@@ -41,7 +41,7 @@ plot(ts,map((x)->x[1],sol.(ts)),lw=3,
 for alg in OrdinaryDiffEq.DIFFERENTIALEQUATIONSJL_ALGORITHMS
   if !contains(string(alg),"Vectorized") && !contains(string(alg),"Threaded") && alg ∉ OrdinaryDiffEq.DIFFERENTIALEQUATIONSJL_IMPLICITALGS
     println(alg)
-    sol = solve(prob,tspan,callback=callback,alg=alg)
+    sol = solve(prob,callback=callback,alg=alg)
   end
 end
 
@@ -49,12 +49,12 @@ callback_no_interp = @ode_callback begin
   @ode_event event_f apply_event! false 0
 end
 
-sol = solve(prob,tspan,callback=callback_no_interp,dense=false)
+sol = solve(prob,callback=callback_no_interp,dense=false)
 
 for alg in OrdinaryDiffEq.DIFFERENTIALEQUATIONSJL_ALGORITHMS
   if !contains(string(alg),"Vectorized") && !contains(string(alg),"Threaded") && alg ∉ OrdinaryDiffEq.DIFFERENTIALEQUATIONSJL_IMPLICITALGS
     println(alg)
-    sol = solve(prob,tspan,callback=callback_no_interp,alg=alg,dense=false)
+    sol = solve(prob,callback=callback_no_interp,alg=alg,dense=false)
   end
 end
 

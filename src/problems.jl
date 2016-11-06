@@ -33,7 +33,7 @@ type ODEProblem{uType,uEltype,tType} <: AbstractODEProblem
   tspan::Vector{tType}
 end
 
-function ODEProblem(f::Function,u₀,tspan=[0,1.];analytic=nothing)
+function ODEProblem(f::Function,u₀,tspan=[0,1];analytic=nothing)
   isinplace = numparameters(f)>=3
   if analytic==nothing
     knownanalytic = false
@@ -47,5 +47,5 @@ function ODEProblem(f::Function,u₀,tspan=[0,1.];analytic=nothing)
   else
     numvars = length(u₀)[end]
   end
-  ODEProblem{typeof(u₀),eltype(u₀)}(f,u₀,analytic,knownanalytic,numvars,isinplace,tspan)
+  ODEProblem{typeof(u₀),eltype(u₀),eltype(tspan)}(f,u₀,analytic,knownanalytic,numvars,isinplace,tspan)
 end
