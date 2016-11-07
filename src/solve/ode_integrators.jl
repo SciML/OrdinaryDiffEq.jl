@@ -64,6 +64,7 @@ end
   local kprev::ksEltype
   local kshortsize::Int
   local reeval_fsal::Bool
+  local rate_prototype::rateType
   if ksEltype <: AbstractArray  && !issimple_dense
     k = ksEltype[]
     kprev = ksEltype[]
