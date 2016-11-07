@@ -30,12 +30,12 @@ ODE_DEFAULT_CALLBACK
 
 All it does is call the saving functionality.
 """
-@inline function ODE_DEFAULT_CALLBACK(alg,f,t,u,k,tprev,uprev,kprev,ts,timeseries,ks,Δtprev,Δt,
+@inline function ODE_DEFAULT_CALLBACK(alg,f,t,u,k,tprev,uprev,kprev,ts,timeseries,ks,dtprev,dt,
   saveat,cursaveat,saveiter,iter,save_timeseries,timeseries_steps,uEltype,ksEltype,
   dense,kshortsize,issimple_dense,fsal,fsalfirst,cache,calck,T,Ts)
   @ode_savevalues
   reeval_fsal = false
-  cursaveat,saveiter,Δt,t,T,reeval_fsal
+  cursaveat,saveiter,dt,t,T,reeval_fsal
 end
 
 @inline function ODE_DEFAULT_NORM(u)
@@ -57,7 +57,7 @@ const DIFFERENTIALEQUATIONSJL_SPECIALDENSEALGS = Set([:DP5,:DP5Threaded,:Tsit5,:
 const ODEINTERFACE_ALGORITHMS = Set([:dopri5,:dop853,:odex,:radau5,:radau,:seulex])
 const ODEJL_ALGORITHMS = Set([:ode23,:ode45,:ode78,:ode23s,:ode1,:ode2_midpoint,:ode2_heun,:ode4,:ode45_fe])
 
-const DIFFERENTIALEQUATIONSJL_DEFAULT_OPTIONS = Dict(:Δt => 0.0,
+const DIFFERENTIALEQUATIONSJL_DEFAULT_OPTIONS = Dict(:dt => 0.0,
                                  :tType => nothing,
                                  :save_timeseries => true,
                                  :timeseries_steps => 1,
@@ -69,19 +69,18 @@ const DIFFERENTIALEQUATIONSJL_DEFAULT_OPTIONS = Dict(:Δt => 0.0,
                                  :dense_errors => false,
                                  :saveat => Float64[],
                                  :adaptive => true,
-                                 :γ=>.9,
+                                 :gamma=>.9,
                                  :abstol=>1//10^6,
                                  :reltol=>1//10^3,
                                  :qmax=>nothing,
                                  :qmin=>nothing,
                                  :qoldinit=>1//10^4, #facold
                                  :fullnormalize=>true,
-                                 :β=>nothing,
-                                 :expo1=>nothing, #alpha
-                                 :timechoicealg=>:Lund,
+                                 :beta2=>nothing,
+                                 :beta1=>nothing, #alpha
                                  :maxiters => 10000,
-                                 :Δtmax=>nothing,
-                                 :Δtmin=>nothing,
+                                 :dtmax=>nothing,
+                                 :dtmin=>nothing,
                                  :autodiff=>true,
                                  :internalnorm => ODE_DEFAULT_NORM,
                                  :progressbar=>false,
@@ -89,7 +88,7 @@ const DIFFERENTIALEQUATIONSJL_DEFAULT_OPTIONS = Dict(:Δt => 0.0,
                                  :callback=>nothing)
 
 const ODEJL_OPTION_LIST = Set([:tout,:tstop,:reltol,:abstol,:minstep,:maxstep,:initstep,:norm,:maxiters,:isoutofdomain])
-const ODEJL_ALIASES = Dict{Symbol,Symbol}(:minstep=>:Δtmin,:maxstep=>:Δtmax,:initstep=>:Δt,:tstop=>:T,:maxiters=>:maxiters)
+const ODEJL_ALIASES = Dict{Symbol,Symbol}(:minstep=>:dtmin,:maxstep=>:dtmax,:initstep=>:dt,:tstop=>:T,:maxiters=>:maxiters)
 const ODEJL_ALIASES_REVERSED = Dict{Symbol,Symbol}([(v,k) for (k,v) in ODEJL_ALIASES])
 
 const SUNDIALS_OPTION_LIST = Set([:reltol,:abstol])
@@ -117,10 +116,10 @@ const ODEINTERFACE_OPTION_LIST = Set([:RTOL,:ATOL,:OUTPUTFCN,:OUTPUTMODE,
 const ODEINTERFACE_ALIASES = Dict{Symbol,Symbol}(:RTOL=>:reltol,
                                                  :ATOL=>:abstol,
                                                  :MAXSTEPS=> :maxiters,
-                                                 :MAXSS=>:Δtmax,
-                                                 :INITIALSS=>:Δt,
+                                                 :MAXSS=>:dtmax,
+                                                 :INITIALSS=>:dt,
                                                  #:SSMINSEL=>:qmin,
-                                                 :SSBETA=>:β,
+                                                 :SSBETA=>:beta2,
                                                  :SSMAXSEL=>:qmax)
 
 const ODEINTERFACE_ALIASES_REVERSED = Dict{Symbol,Symbol}([(v,k) for (k,v) in ODEINTERFACE_ALIASES])

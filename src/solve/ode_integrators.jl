@@ -5,7 +5,7 @@ immutable ODEIntegrator{Alg,uType<:Union{AbstractArray,Number},uEltype,N,tType,u
   f::Function
   u::uType
   t::tType
-  Δt::tType
+  dt::tType
   Ts::Vector{tType}
   maxiters::Int
   timeseries_steps::Int
@@ -16,8 +16,8 @@ immutable ODEIntegrator{Alg,uType<:Union{AbstractArray,Number},uEltype,N,tType,u
   γ::uEltypeNoUnits
   qmax::uEltypeNoUnits
   qmin::uEltypeNoUnits
-  Δtmax::tType
-  Δtmin::tType
+  dtmax::tType
+  dtmin::tType
   internalnorm::Function
   progressbar::Bool
   tableau::ExplicitRKTableau
@@ -26,9 +26,8 @@ immutable ODEIntegrator{Alg,uType<:Union{AbstractArray,Number},uEltype,N,tType,u
   order::Int
   atomloaded::Bool
   progress_steps::Int
-  β::uEltypeNoUnits
-  expo1::uEltypeNoUnits
-  timechoicealg::Symbol
+  β₁::uEltypeNoUnits
+  β₂::uEltypeNoUnits
   qoldinit::uEltypeNoUnits
   fsal::Bool
   dense::Bool
@@ -42,10 +41,10 @@ end
 @def ode_preamble begin
   local u::uType
   local t::tType
-  local Δt::tType
+  local dt::tType
   local Ts::Vector{tType}
   local adaptiveorder::Int
-  @unpack f,u,t,Δt,Ts,maxiters,timeseries_steps,γ,qmax,qmin,save_timeseries,adaptive,progressbar,autodiff,adaptiveorder,order,atomloaded,progress_steps,β,expo1,timechoicealg,qoldinit,fsal, dense, saveat, alg, callback, custom_callback,calck = integrator
+  @unpack f,u,t,dt,Ts,maxiters,timeseries_steps,γ,qmax,qmin,save_timeseries,adaptive,progressbar,autodiff,adaptiveorder,order,atomloaded,progress_steps,β₂,β₁,qoldinit,fsal, dense, saveat, alg, callback, custom_callback,calck = integrator
   timeseries = integrator.timeseries
   ts = integrator.ts
   ks = integrator.ks
@@ -103,10 +102,10 @@ end
   local uprev::uType = deepcopy(u)
   local standard::uEltype = uEltype(0)
   local q::uEltypeNoUnits = 0
-  local Δtpropose::tType = tType(0)
+  local dtpropose::tType = tType(0)
   local q11::uEltypeNoUnits = 0
   local qold::uEltypeNoUnits = qoldinit
-  local expo1::uEltypeNoUnits
+  local β₁::uEltypeNoUnits
   if uType <: Number || !custom_callback
     cache = ()
   end
@@ -114,7 +113,7 @@ end
   qmaxc = inv(qmax) #facc2
   local EEst::uEltypeNoUnits = zero(uEltypeNoUnits)
   if adaptive
-    @unpack abstol,reltol,qmax,Δtmax,Δtmin,internalnorm = integrator
+    @unpack abstol,reltol,qmax,dtmax,dtmin,internalnorm = integrator
   end
 
   if issimple_dense #If issimple_dense, then ks[1]=f(ts[1],timeseries[1])
@@ -136,7 +135,7 @@ end
     warn("Interrupted. Larger maxiters is needed.")
     return u,t
   end
-  Δt = min(Δt,abs(T-t))
+  dt = min(dt,abs(T-t))
   if uType<:AbstractArray && custom_callback
     uidx = eachindex(u)
   end
@@ -148,9 +147,9 @@ end
       if saveat[cursaveat]<t # If we already saved at the point, ignore it
         saveiter += 1
         curt = saveat[cursaveat]
-        ode_addsteps!(k,tprev,uprev,Δt,alg,f)
-        Θ = (curt - tprev)/Δt
-        val = ode_interpolant(Θ,Δt,uprev,u,kprev,k,alg)
+        ode_addsteps!(k,tprev,uprev,dt,alg,f)
+        Θ = (curt - tprev)/dt
+        val = ode_interpolant(Θ,dt,uprev,u,kprev,k,alg)
         copyat_or_push!(ts,saveiter,curt)
         copyat_or_push!(timeseries,saveiter,val)
       end
@@ -178,101 +177,61 @@ end
 
 @def ode_loopfooter begin
   if adaptive
-    if timechoicealg == :Lund #Lund stabilization of q
-      q11 = EEst^expo1
-      q = q11/(qold^β)
-      q = max(qmaxc,min(qminc,q/γ))
-      Δtnew = Δt/q
-      if EEst <= 1.0 # Accept
-        t = t + Δt
-        if uType <: AbstractArray # Treat mutables differently
-          recursivecopy!(u, utmp)
-        else
-          u = utmp
-        end
-
-        qold = max(EEst,qoldinit)
-        Δtpropose = min(Δtmax,Δtnew)
-        Δtprev = Δt
-        Δt = max(Δtpropose,Δtmin) #abs to fix complex sqrt issue at end
-        cursaveat,saveiter,Δt,t,T,reeval_fsal = callback(alg,f,t,u,k,tprev,uprev,kprev,ts,timeseries,ks,Δtprev,Δt,saveat,cursaveat,saveiter,iter,save_timeseries,timeseries_steps,uEltype,ksEltype,dense,kshortsize,issimple_dense,fsal,fsalfirst,cache,calck,T,Ts)
-
-        if fsal
-          if reeval_fsal
-            if uType <: AbstractArray
-              f(t,u,fsalfirst)
-            else
-              fsalfirst = f(t,u)
-            end
-          else
-            if uType <: AbstractArray
-              recursivecopy!(fsalfirst,fsallast)
-            else
-              fsalfirst = fsallast
-            end
-          end
-        end
-
-        if calcprevs
-          # Store previous for interpolation
-          tprev = t
-          if uType <: AbstractArray
-            recursivecopy!(uprev,u)
-          else
-            uprev = u
-          end
-          if calck
-            if ksEltype <: AbstractArray
-              recursivecopy!(kprev,k)
-            else
-              kprev = k
-            end
-          end
-        end
-      else # Reject
-        Δt = Δt/min(qminc,q11/γ)
-      end
-    elseif false ##timechoicealg == :Simple
-      standard = γ*abs(1/(EEst))^(1/(adaptiveorder))
-      if isinf(standard)
-          q = qmax
+    q11 = EEst^β₁
+    q = q11/(qold^β₂)
+    q = max(qmaxc,min(qminc,q/γ))
+    dtnew = dt/q
+    if EEst <= 1.0 # Accept
+      t = t + dt
+      if uType <: AbstractArray # Treat mutables differently
+        recursivecopy!(u, utmp)
       else
-         q = min(qmax,max(standard,eps()))
+        u = utmp
       end
-      if q > 1 # Accept
-        t = t + Δt
-        if fsal
+
+      qold = max(EEst,qoldinit)
+      dtpropose = min(dtmax,dtnew)
+      dtprev = dt
+      dt = max(dtpropose,dtmin) #abs to fix complex sqrt issue at end
+      cursaveat,saveiter,dt,t,T,reeval_fsal = callback(alg,f,t,u,k,tprev,uprev,kprev,ts,timeseries,ks,dtprev,dt,saveat,cursaveat,saveiter,iter,save_timeseries,timeseries_steps,uEltype,ksEltype,dense,kshortsize,issimple_dense,fsal,fsalfirst,cache,calck,T,Ts)
+
+      if fsal
+        if reeval_fsal
+          if uType <: AbstractArray
+            f(t,u,fsalfirst)
+          else
+            fsalfirst = f(t,u)
+          end
+        else
           if uType <: AbstractArray
             recursivecopy!(fsalfirst,fsallast)
           else
             fsalfirst = fsallast
           end
         end
-        recursivecopy!(u, utmp)
-        Δtpropose = min(Δtmax,q*Δt)
-        Δtprev = Δt
-        Δt = max(min(Δtpropose,abs(T-t)),Δtmin) #abs to fix complex sqrt issue at end
-        cursaveat,saveiter,Δt,t,T,reeval_fsal = callback(alg,f,t,u,k,tprev,uprev,kprev,ts,timeseries,ks,Δtprev,Δt,saveat,cursaveat,saveiter,iter,save_timeseries,timeseries_steps,uEltype,ksEltype,dense,kshortsize,issimple_dense,fsal,fsalfirst,cache,calck,T,Ts)
-        if calcprevs
-          # Store previous for interpolation
-          tprev = t
-          if uType <: AbstractArray
-            recursivecopy!(uprev,u)
-          else
-            uprev = u
-          end
+      end
+
+      if calcprevs
+        # Store previous for interpolation
+        tprev = t
+        if uType <: AbstractArray
+          recursivecopy!(uprev,u)
+        else
+          uprev = u
+        end
+        if calck
           if ksEltype <: AbstractArray
             recursivecopy!(kprev,k)
           else
             kprev = k
           end
         end
-      else # Reject
-        Δt = Δt/min(qminc,q11/γ)
       end
+    else # Reject
+      dt = dt/min(qminc,q11/γ)
     end
   else #Not adaptive
-    t += Δt
+    t += dt
     if fsal
       if uType <: AbstractArray
         recursivecopy!(fsalfirst,fsallast)
@@ -280,8 +239,8 @@ end
         fsalfirst = fsallast
       end
     end
-    Δtprev = Δt
-    cursaveat,saveiter,Δt,t,T,reeval_fsal = callback(alg,f,t,u,k,tprev,uprev,kprev,ts,timeseries,ks,Δtprev,Δt,saveat,cursaveat,saveiter,iter,save_timeseries,timeseries_steps,uEltype,ksEltype,dense,kshortsize,issimple_dense,fsal,fsalfirst,cache,calck,T,Ts)
+    dtprev = dt
+    cursaveat,saveiter,dt,t,T,reeval_fsal = callback(alg,f,t,u,k,tprev,uprev,kprev,ts,timeseries,ks,dtprev,dt,saveat,cursaveat,saveiter,iter,save_timeseries,timeseries_steps,uEltype,ksEltype,dense,kshortsize,issimple_dense,fsal,fsalfirst,cache,calck,T,Ts)
     if calcprevs
       # Store previous for interpolation
       tprev = t
@@ -308,7 +267,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
   @inbounds for T in Ts
     while t < T
       @ode_loopheader
-      u = u + Δt*k
+      u = u + dt*k
       k = f(t,u) # For the interpolation, needs k at the updated point
       @ode_loopfooter
     end
@@ -330,7 +289,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
       while t < T
       @ode_loopheader
       for i in uidx
-        u[i] = u[i] + Δt*k[i]
+        u[i] = u[i] + dt*k[i]
       end
       f(t,u,k) # For the interpolation, needs k at the updated point
       @ode_loopfooter
@@ -341,13 +300,13 @@ end
 
 function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{:Midpoint,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
   @ode_preamble
-  halfΔt::tType = Δt/2
+  halfdt::tType = dt/2
   local du::rateType
   @inbounds for T in Ts
     while t < T
       @ode_loopheader
-      k = f(t+halfΔt,u+halfΔt*f(t,u))
-      u = u + Δt*k
+      k = f(t+halfdt,u+halfdt*f(t,u))
+      u = u + dt*k
       @ode_loopfooter
     end
   end
@@ -356,7 +315,7 @@ end
 
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{:Midpoint,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
   @ode_preamble
-  halfΔt::tType = Δt/2
+  halfdt::tType = dt/2
   utilde::uType = similar(u)
   uidx = eachindex(u)
   if calck # Not initialized if not dense
@@ -378,11 +337,11 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
       @ode_loopheader
       f(t,u,du)
       for i in uidx
-        utilde[i] = u[i]+halfΔt*du[i]
+        utilde[i] = u[i]+halfdt*du[i]
       end
-      f(t+halfΔt,utilde,k)
+      f(t+halfdt,utilde,k)
       for i in uidx
-        u[i] = u[i] + Δt*k[i]
+        u[i] = u[i] + dt*k[i]
       end
       @ode_loopfooter
     end
@@ -392,7 +351,7 @@ end
 
 function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{:RK4,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
   @ode_preamble
-  halfΔt::tType = Δt/2
+  halfdt::tType = dt/2
   local k₁::rateType
   local k₂::rateType
   local k₃::rateType
@@ -402,11 +361,11 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       while t < T
       @ode_loopheader
       k₁ = f(t,u)
-      ttmp = t+halfΔt
-      k₂ = f(ttmp,u+halfΔt*k₁)
-      k₃ = f(ttmp,u+halfΔt*k₂)
-      k₄ = f(t+Δt,u+Δt*k₃)
-      u = u + Δt*(k₁ + 2(k₂ + k₃) + k₄)/6
+      ttmp = t+halfdt
+      k₂ = f(ttmp,u+halfdt*k₁)
+      k₃ = f(ttmp,u+halfdt*k₂)
+      k₄ = f(t+dt,u+dt*k₃)
+      u = u + dt*(k₁ + 2(k₂ + k₃) + k₄)/6
       if calck
         k=k₁
       end
@@ -418,7 +377,7 @@ end
 
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{:RK4,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
   @ode_preamble
-  halfΔt::tType = Δt/2
+  halfdt::tType = dt/2
   k₁ = similar(rate_prototype)
   k₂ = similar(rate_prototype)
   k₃ = similar(rate_prototype)
@@ -435,21 +394,21 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
     while t < T
       @ode_loopheader
       f(t,u,k₁)
-      ttmp = t+halfΔt
+      ttmp = t+halfdt
       for i in uidx
-        tmp[i] = u[i]+halfΔt*k₁[i]
+        tmp[i] = u[i]+halfdt*k₁[i]
       end
       f(ttmp,tmp,k₂)
       for i in uidx
-        tmp[i] = u[i]+halfΔt*k₂[i]
+        tmp[i] = u[i]+halfdt*k₂[i]
       end
       f(ttmp,tmp,k₃)
       for i in uidx
-        tmp[i] = u[i]+Δt*k₃[i]
+        tmp[i] = u[i]+dt*k₃[i]
       end
-      f(t+Δt,tmp,k₄)
+      f(t+dt,tmp,k₄)
       for i in uidx
-        u[i] = u[i] + Δt*(k₁[i] + 2(k₂[i] + k₃[i]) + k₄[i])/6
+        u[i] = u[i] + dt*(k₁[i] + 2(k₂[i] + k₃[i]) + k₄[i])/6
       end
       if calck
         k=k₁
@@ -486,28 +445,28 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
         for j = 1:i-1
           utilde += A[j,i]*kk[j]
         end
-        kk[i] = f(t+c[i]*Δt,u+Δt*utilde);
+        kk[i] = f(t+c[i]*dt,u+dt*utilde);
       end
       #Calc Last
       utilde = zero(kk[1])
       for j = 1:stages-1
         utilde += A[j,end]*kk[j]
       end
-      kk[end] = f(t+c[end]*Δt,u+Δt*utilde); fsallast = kk[end] # Uses fsallast as temp even if not fsal
+      kk[end] = f(t+c[end]*dt,u+dt*utilde); fsallast = kk[end] # Uses fsallast as temp even if not fsal
       # Accumulate Result
       utilde = α[1]*kk[1]
       for i = 2:stages
         utilde += α[i]*kk[i]
       end
       if adaptive
-        utmp = u + Δt*utilde
+        utmp = u + dt*utilde
         uEEst = αEEst[1]*kk[1]
         for i = 2:stages
           uEEst += αEEst[i]*kk[i]
         end
-        EEst = abs( Δt*(utilde-uEEst)/(abstol+max(abs(u),abs(utmp))*reltol))
+        EEst = abs( dt*(utilde-uEEst)/(abstol+max(abs(u),abs(utmp))*reltol))
       else
-        u = u + Δt*utilde
+        u = u + dt*utilde
       end
       if calck
         k = kk[end]
@@ -564,9 +523,9 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
           end
         end
         for l in uidx
-          tmp[l] = u[l]+Δt*utilde[l]
+          tmp[l] = u[l]+dt*utilde[l]
         end
-        f(t+c[i]*Δt,tmp,kk[i])
+        f(t+c[i]*dt,tmp,kk[i])
       end
       #Last
       for l in uidx
@@ -578,9 +537,9 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
         end
       end
       for l in uidx
-        utmp[l] = u[l]+Δt*utilde[l]
+        utmp[l] = u[l]+dt*utilde[l]
       end
-      f(t+c[end]*Δt,utmp,kk[end]) #fsallast is tmp even if not fsal
+      f(t+c[end]*dt,utmp,kk[end]) #fsallast is tmp even if not fsal
       #Accumulate
       if !fsal
         for i in uidx
@@ -592,7 +551,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
           end
         end
         for i in uidx
-          utmp[i] = u[i] + Δt*utilde[i]
+          utmp[i] = u[i] + dt*utilde[i]
         end
       end
       if adaptive
@@ -605,7 +564,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
           end
         end
         for i in uidx
-          atmp[i] = (Δt*(utilde[i]-uEEst[i])/(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
+          atmp[i] = (dt*(utilde[i]-uEEst[i])/(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
         end
         EEst = internalnorm(atmp)
       else
@@ -630,12 +589,12 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
     while t < T
       @ode_loopheader
       k1 = fsalfirst
-      k2 = f(t+c1*Δt,u+Δt*a21*k1)
-      k3 = f(t+c2*Δt,u+Δt*a32*k2)
-      utmp = u+Δt*(a41*k1+a42*k2+a43*k3)
-      k4 = f(t+Δt,utmp); fsallast = k4
+      k2 = f(t+c1*dt,u+dt*a21*k1)
+      k3 = f(t+c2*dt,u+dt*a32*k2)
+      utmp = u+dt*(a41*k1+a42*k2+a43*k3)
+      k4 = f(t+dt,utmp); fsallast = k4
       if adaptive
-        utilde = u + Δt*(b1*k1 + b2*k2 + b3*k3 + b4*k4)
+        utilde = u + dt*(b1*k1 + b2*k2 + b3*k3 + b4*k4)
         EEst = abs( ((utilde-utmp)/(abstol+max(abs(u),abs(utmp))*reltol)))
       else
         u = utmp
@@ -671,20 +630,20 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
     while t < T
       @ode_loopheader
       for i in uidx
-        tmp[i] = u[i]+Δt*a21*k1[i]
+        tmp[i] = u[i]+dt*a21*k1[i]
       end
-      f(t+c1*Δt,tmp,k2)
+      f(t+c1*dt,tmp,k2)
       for i in uidx
-        tmp[i] = u[i]+Δt*a32*k2[i]
+        tmp[i] = u[i]+dt*a32*k2[i]
       end
-      f(t+c2*Δt,tmp,k3)
+      f(t+c2*dt,tmp,k3)
       for i in uidx
-        utmp[i] = u[i]+Δt*(a41*k1[i]+a42*k2[i]+a43*k3[i])
+        utmp[i] = u[i]+dt*(a41*k1[i]+a42*k2[i]+a43*k3[i])
       end
-      f(t+Δt,utmp,k4)
+      f(t+dt,utmp,k4)
       if adaptive
         for i in uidx
-          utilde[i] = u[i] + Δt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b4*k4[i])
+          utilde[i] = u[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b4*k4[i])
           atmp[i] = ((utilde[i]-utmp[i])/(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
         end
         EEst = internalnorm(atmp)
@@ -729,17 +688,17 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
     while t < T
       @ode_loopheader
       k1 = fsalfirst
-      k2 = f(t+c1*Δt,u+Δt*a21*k1)
-      k3 = f(t+c2*Δt,u+Δt*(a31*k1+a32*k2))
-      k4 = f(t+c3*Δt,u+Δt*(a41*k1+a42*k2+a43*k3))
-      k5 = f(t+c4*Δt,u+Δt*(a51*k1+a52*k2+a53*k3+a54*k4))
-      k6 = f(t+c5*Δt,u+Δt*(a61*k1+a62*k2+a63*k3+a64*k4+a65*k5))
-      k7 = f(t+Δt,u+Δt*(a71*k1+a72*k2+a73*k3+a74*k4+a75*k5+a76*k6))
-      utmp = u+Δt*(a81*k1+a83*k3+a84*k4+a85*k5+a86*k6+a87*k7)
-      fsallast = f(t+Δt,utmp); k8 = fsallast
+      k2 = f(t+c1*dt,u+dt*a21*k1)
+      k3 = f(t+c2*dt,u+dt*(a31*k1+a32*k2))
+      k4 = f(t+c3*dt,u+dt*(a41*k1+a42*k2+a43*k3))
+      k5 = f(t+c4*dt,u+dt*(a51*k1+a52*k2+a53*k3+a54*k4))
+      k6 = f(t+c5*dt,u+dt*(a61*k1+a62*k2+a63*k3+a64*k4+a65*k5))
+      k7 = f(t+dt,u+dt*(a71*k1+a72*k2+a73*k3+a74*k4+a75*k5+a76*k6))
+      utmp = u+dt*(a81*k1+a83*k3+a84*k4+a85*k5+a86*k6+a87*k7)
+      fsallast = f(t+dt,utmp); k8 = fsallast
       if adaptive
-        uhat   = Δt*(bhat1*k1 + bhat3*k3 + bhat4*k4 + bhat5*k5 + bhat6*k6)
-        utilde = u + Δt*(btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7 + btilde8*k8)
+        uhat   = dt*(bhat1*k1 + bhat3*k3 + bhat4*k4 + bhat5*k5 + bhat6*k6)
+        utilde = u + dt*(btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7 + btilde8*k8)
         EEst1 = abs( sum(((uhat)./(abstol+max(abs(u),abs(utmp))*reltol))))
         EEst2 = abs( sum(((utilde-utmp)./(abstol+max(abs(u),abs(utmp))*reltol))))
         EEst = max(EEst1,EEst2)
@@ -801,37 +760,37 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
     while t < T
       @ode_loopheader
       for i in uidx
-        tmp[i] = u[i]+Δt*a21*k1[i]
+        tmp[i] = u[i]+dt*a21*k1[i]
       end
-      f(t+c1*Δt,tmp,k2)
+      f(t+c1*dt,tmp,k2)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a31*k1[i]+a32*k2[i])
+        tmp[i] = u[i]+dt*(a31*k1[i]+a32*k2[i])
       end
-      f(t+c2*Δt,tmp,k3)
+      f(t+c2*dt,tmp,k3)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a41*k1[i]+a42*k2[i]+a43*k3[i])
+        tmp[i] = u[i]+dt*(a41*k1[i]+a42*k2[i]+a43*k3[i])
       end
-      f(t+c3*Δt,tmp,k4)
+      f(t+c3*dt,tmp,k4)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a51*k1[i]+a52*k2[i]+a53*k3[i]+a54*k4[i])
+        tmp[i] = u[i]+dt*(a51*k1[i]+a52*k2[i]+a53*k3[i]+a54*k4[i])
       end
-      f(t+c4*Δt,tmp,k5)
+      f(t+c4*dt,tmp,k5)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a61*k1[i]+a62*k2[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
+        tmp[i] = u[i]+dt*(a61*k1[i]+a62*k2[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
       end
-      f(t+c5*Δt,tmp,k6)
+      f(t+c5*dt,tmp,k6)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a71*k1[i]+a72*k2[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i])
+        tmp[i] = u[i]+dt*(a71*k1[i]+a72*k2[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i])
       end
-      f(t+Δt,tmp,k7)
+      f(t+dt,tmp,k7)
       for i in uidx
-        utmp[i] = u[i]+Δt*(a81*k1[i]+a83*k3[i]+a84*k4[i]+a85*k5[i]+a86*k6[i]+a87*k7[i])
+        utmp[i] = u[i]+dt*(a81*k1[i]+a83*k3[i]+a84*k4[i]+a85*k5[i]+a86*k6[i]+a87*k7[i])
       end
-      f(t+Δt,utmp,k8)
+      f(t+dt,utmp,k8)
       if adaptive
         for i in uidx
-          uhat[i]   = Δt*(bhat1*k1[i] + bhat3*k3[i] + bhat4*k4[i] + bhat5*k5[i] + bhat6*k6[i])
-          utilde[i] = u[i] + Δt*(btilde1*k1[i] + btilde2*k2[i] + btilde3*k3[i] + btilde4*k4[i] + btilde5*k5[i] + btilde6*k6[i] + btilde7*k7[i] + btilde8*k8[i])
+          uhat[i]   = dt*(bhat1*k1[i] + bhat3*k3[i] + bhat4*k4[i] + bhat5*k5[i] + bhat6*k6[i])
+          utilde[i] = u[i] + dt*(btilde1*k1[i] + btilde2*k2[i] + btilde3*k3[i] + btilde4*k4[i] + btilde5*k5[i] + btilde6*k6[i] + btilde7*k7[i] + btilde8*k8[i])
           atmp[i] = ((uhat[i])./(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
           atmptilde[i] = ((utilde[i]-utmp[i])./(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
         end
@@ -871,15 +830,15 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
     while t < T
       @ode_loopheader
       k1 = fsalfirst
-      k2 = f(t+c1*Δt,u+Δt*(a21*k1))
-      k3 = f(t+c2*Δt,u+Δt*(a31*k1+a32*k2))
-      k4 = f(t+c3*Δt,u+Δt*(a41*k1+a42*k2+a43*k3))
-      k5 = f(t+c4*Δt,u+Δt*(a51*k1+a52*k2+a53*k3+a54*k4))
-      k6 = f(t+Δt,u+Δt*(a61*k1+a62*k2+a63*k3+a64*k4+a65*k5))
-      utmp = u+Δt*(a71*k1+a72*k2+a73*k3+a74*k4+a75*k5+a76*k6)
-      fsallast = f(t+Δt,utmp); k7 = fsallast
+      k2 = f(t+c1*dt,u+dt*(a21*k1))
+      k3 = f(t+c2*dt,u+dt*(a31*k1+a32*k2))
+      k4 = f(t+c3*dt,u+dt*(a41*k1+a42*k2+a43*k3))
+      k5 = f(t+c4*dt,u+dt*(a51*k1+a52*k2+a53*k3+a54*k4))
+      k6 = f(t+dt,u+dt*(a61*k1+a62*k2+a63*k3+a64*k4+a65*k5))
+      utmp = u+dt*(a71*k1+a72*k2+a73*k3+a74*k4+a75*k5+a76*k6)
+      fsallast = f(t+dt,utmp); k7 = fsallast
       if adaptive
-        utilde = u + Δt*(b1*k1 + b2*k2 + b3*k3 + b4*k4 + b5*k5 + b6*k6 + b7*k7)
+        utilde = u + dt*(b1*k1 + b2*k2 + b3*k3 + b4*k4 + b5*k5 + b6*k6 + b7*k7)
         EEst = abs(((utilde-utmp)/(abstol+max(abs(u),abs(utmp))*reltol)))
       else
         u = utmp
@@ -942,32 +901,32 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
     while t < T
       @ode_loopheader
       for i in uidx
-        tmp[i] = u[i]+Δt*(a21*k1[i])
+        tmp[i] = u[i]+dt*(a21*k1[i])
       end
-      f(t+c1*Δt,tmp,k2)
+      f(t+c1*dt,tmp,k2)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a31*k1[i]+a32*k2[i])
+        tmp[i] = u[i]+dt*(a31*k1[i]+a32*k2[i])
       end
-      f(t+c2*Δt,tmp,k3)
+      f(t+c2*dt,tmp,k3)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a41*k1[i]+a42*k2[i]+a43*k3[i])
+        tmp[i] = u[i]+dt*(a41*k1[i]+a42*k2[i]+a43*k3[i])
       end
-      f(t+c3*Δt,tmp,k4)
+      f(t+c3*dt,tmp,k4)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a51*k1[i]+a52*k2[i]+a53*k3[i]+a54*k4[i])
+        tmp[i] = u[i]+dt*(a51*k1[i]+a52*k2[i]+a53*k3[i]+a54*k4[i])
       end
-      f(t+c4*Δt,tmp,k5)
+      f(t+c4*dt,tmp,k5)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a61*k1[i]+a62*k2[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
+        tmp[i] = u[i]+dt*(a61*k1[i]+a62*k2[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
       end
-      f(t+Δt,tmp,k6)
+      f(t+dt,tmp,k6)
       for i in uidx
-        utmp[i] = u[i]+Δt*(a71*k1[i]+a72*k2[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i])
+        utmp[i] = u[i]+dt*(a71*k1[i]+a72*k2[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i])
       end
-      f(t+Δt,utmp,k7)
+      f(t+dt,utmp,k7)
       if adaptive
         for i in uidx
-          utilde[i] = u[i] + Δt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b4*k4[i] + b5*k5[i] + b6*k6[i] + b7*k7[i])
+          utilde[i] = u[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b4*k4[i] + b5*k5[i] + b6*k6[i] + b7*k7[i])
           atmp[i] = ((utilde[i]-utmp[i])./(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
         end
         EEst = internalnorm(atmp)
@@ -1010,17 +969,17 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
     while t<T
       @ode_loopheader
       k1 = fsalfirst
-      k2 = f(t+c1*Δt,u+Δt*(a21*k1))
-      k3 = f(t+c2*Δt,u+Δt*(a31*k1+a32*k2))
-      k4 = f(t+c3*Δt,u+Δt*(a41*k1+a42*k2+a43*k3))
-      k5 = f(t+c4*Δt,u+Δt*(a51*k1+a52*k2+a53*k3+a54*k4))
-      k6 = f(t+Δt,u+Δt*(a61*k1+a62*k2+a63*k3+a64*k4+a65*k5))
+      k2 = f(t+c1*dt,u+dt*(a21*k1))
+      k3 = f(t+c2*dt,u+dt*(a31*k1+a32*k2))
+      k4 = f(t+c3*dt,u+dt*(a41*k1+a42*k2+a43*k3))
+      k5 = f(t+c4*dt,u+dt*(a51*k1+a52*k2+a53*k3+a54*k4))
+      k6 = f(t+dt,u+dt*(a61*k1+a62*k2+a63*k3+a64*k4+a65*k5))
       update = a71*k1+a73*k3+a74*k4+a75*k5+a76*k6
-      utmp = u+Δt*update
-      fsallast = f(t+Δt,utmp); k7 = fsallast
+      utmp = u+dt*update
+      fsallast = f(t+dt,utmp); k7 = fsallast
 
       if adaptive
-        utilde = u + Δt*(b1*k1 + b3*k3 + b4*k4 + b5*k5 + b6*k6 + b7*k7)
+        utilde = u + dt*(b1*k1 + b3*k3 + b4*k4 + b5*k5 + b6*k6 + b7*k7)
         EEst = abs( ((utilde-utmp)/(abstol+max(abs(u),abs(utmp))*reltol)))
       else
         u = utmp
@@ -1079,33 +1038,33 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
     while t < T
       @ode_loopheader
       for i in uidx
-        tmp[i] = u[i]+Δt*(a21*k1[i])
+        tmp[i] = u[i]+dt*(a21*k1[i])
       end
-      f(t+c1*Δt,tmp,k2)
+      f(t+c1*dt,tmp,k2)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a31*k1[i]+a32*k2[i])
+        tmp[i] = u[i]+dt*(a31*k1[i]+a32*k2[i])
       end
-      f(t+c2*Δt,tmp,k3)
+      f(t+c2*dt,tmp,k3)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a41*k1[i]+a42*k2[i]+a43*k3[i])
+        tmp[i] = u[i]+dt*(a41*k1[i]+a42*k2[i]+a43*k3[i])
       end
-      f(t+c3*Δt,tmp,k4)
+      f(t+c3*dt,tmp,k4)
       for i in uidx
-        tmp[i] =u[i]+Δt*(a51*k1[i]+a52*k2[i]+a53*k3[i]+a54*k4[i])
+        tmp[i] =u[i]+dt*(a51*k1[i]+a52*k2[i]+a53*k3[i]+a54*k4[i])
       end
-      f(t+c4*Δt,tmp,k5)
+      f(t+c4*dt,tmp,k5)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a61*k1[i]+a62*k2[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
+        tmp[i] = u[i]+dt*(a61*k1[i]+a62*k2[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
       end
-      f(t+Δt,tmp,k6)
+      f(t+dt,tmp,k6)
       for i in uidx
         update[i] = a71*k1[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i]
-        utmp[i] = u[i]+Δt*update[i]
+        utmp[i] = u[i]+dt*update[i]
       end
-      f(t+Δt,utmp,k7);
+      f(t+dt,utmp,k7);
       if adaptive
         for i in uidx
-          utilde[i] = u[i] + Δt*(b1*k1[i] + b3*k3[i] + b4*k4[i] + b5*k5[i] + b6*k6[i] + b7*k7[i])
+          utilde[i] = u[i] + dt*(b1*k1[i] + b3*k3[i] + b4*k4[i] + b5*k5[i] + b6*k6[i] + b7*k7[i])
           atmp[i] = ((utilde[i]-utmp[i])/(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
         end
         EEst = internalnorm(atmp)
@@ -1165,20 +1124,20 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
   @inbounds for T in Ts
     while t < T
       @ode_loopheader
-      dp5threaded_loop1(Δt,tmp,u,a21,k1,uidx)
-      f(t+c1*Δt,tmp,k2)
-      dp5threaded_loop2(Δt,tmp,u,a31,k1,a32,k2,uidx)
-      f(t+c2*Δt,tmp,k3)
-      dp5threaded_loop3(Δt,tmp,u,a41,k1,a42,k2,a43,k3,uidx)
-      f(t+c3*Δt,tmp,k4)
-      dp5threaded_loop4(Δt,tmp,u,a51,k1,a52,k2,a53,k3,a54,k4,uidx)
-      f(t+c4*Δt,tmp,k5)
-      dp5threaded_loop5(Δt,tmp,u,a61,k1,a62,k2,a63,k3,a64,k4,a65,k5,uidx)
-      f(t+Δt,tmp,k6)
-      dp5threaded_loop6(Δt,utmp,u,a71,k1,a73,k3,a74,k4,a75,k5,a76,k6,update,uidx)
-      f(t+Δt,utmp,fsallast)
+      dp5threaded_loop1(dt,tmp,u,a21,k1,uidx)
+      f(t+c1*dt,tmp,k2)
+      dp5threaded_loop2(dt,tmp,u,a31,k1,a32,k2,uidx)
+      f(t+c2*dt,tmp,k3)
+      dp5threaded_loop3(dt,tmp,u,a41,k1,a42,k2,a43,k3,uidx)
+      f(t+c3*dt,tmp,k4)
+      dp5threaded_loop4(dt,tmp,u,a51,k1,a52,k2,a53,k3,a54,k4,uidx)
+      f(t+c4*dt,tmp,k5)
+      dp5threaded_loop5(dt,tmp,u,a61,k1,a62,k2,a63,k3,a64,k4,a65,k5,uidx)
+      f(t+dt,tmp,k6)
+      dp5threaded_loop6(dt,utmp,u,a71,k1,a73,k3,a74,k4,a75,k5,a76,k6,update,uidx)
+      f(t+dt,utmp,fsallast)
       if adaptive
-        dp5threaded_adaptiveloop(Δt,utilde,u,b1,k1,b3,k3,b4,k4,b5,k5,b6,k6,b7,k7,atmp,utmp,abstol,reltol,uidx)
+        dp5threaded_adaptiveloop(dt,utilde,u,b1,k1,b3,k3,b4,k4,b5,k5,b6,k6,b7,k7,atmp,utmp,abstol,reltol,uidx)
         EEst = internalnorm(atmp)
       else
         recursivecopy!(u, utmp)
@@ -1201,46 +1160,46 @@ end
   end
 end
 
-@noinline function dp5threaded_loop1(Δt,tmp,u,a21,k1,uidx)
+@noinline function dp5threaded_loop1(dt,tmp,u,a21,k1,uidx)
   Threads.@threads for i in uidx
-    tmp[i] = u[i]+Δt*(a21*k1[i])
+    tmp[i] = u[i]+dt*(a21*k1[i])
   end
 end
 
-@noinline function dp5threaded_loop2(Δt,tmp,u,a31,k1,a32,k2,uidx)
+@noinline function dp5threaded_loop2(dt,tmp,u,a31,k1,a32,k2,uidx)
   Threads.@threads for i in uidx
-    tmp[i] = u[i]+Δt*(a31*k1[i]+a32*k2[i])
+    tmp[i] = u[i]+dt*(a31*k1[i]+a32*k2[i])
   end
 end
 
-@noinline function dp5threaded_loop3(Δt,tmp,u,a41,k1,a42,k2,a43,k3,uidx)
+@noinline function dp5threaded_loop3(dt,tmp,u,a41,k1,a42,k2,a43,k3,uidx)
   Threads.@threads for i in uidx
-    tmp[i] = u[i]+Δt*(a41*k1[i]+a42*k2[i]+a43*k3[i])
+    tmp[i] = u[i]+dt*(a41*k1[i]+a42*k2[i]+a43*k3[i])
   end
 end
 
-@noinline function dp5threaded_loop4(Δt,tmp,u,a51,k1,a52,k2,a53,k3,a54,k4,uidx)
+@noinline function dp5threaded_loop4(dt,tmp,u,a51,k1,a52,k2,a53,k3,a54,k4,uidx)
   Threads.@threads for i in uidx
-    tmp[i] =u[i]+Δt*(a51*k1[i]+a52*k2[i]+a53*k3[i]+a54*k4[i])
+    tmp[i] =u[i]+dt*(a51*k1[i]+a52*k2[i]+a53*k3[i]+a54*k4[i])
   end
 end
 
-@noinline function dp5threaded_loop5(Δt,tmp,u,a61,k1,a62,k2,a63,k3,a64,k4,a65,k5,uidx)
+@noinline function dp5threaded_loop5(dt,tmp,u,a61,k1,a62,k2,a63,k3,a64,k4,a65,k5,uidx)
   Threads.@threads for i in uidx
-    tmp[i] = u[i]+Δt*(a61*k1[i]+a62*k2[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
+    tmp[i] = u[i]+dt*(a61*k1[i]+a62*k2[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
   end
 end
 
-@noinline function dp5threaded_loop6(Δt,utmp,u,a71,k1,a73,k3,a74,k4,a75,k5,a76,k6,update,uidx)
+@noinline function dp5threaded_loop6(dt,utmp,u,a71,k1,a73,k3,a74,k4,a75,k5,a76,k6,update,uidx)
   Threads.@threads for i in uidx
     update[i] = a71*k1[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i]
-    utmp[i] = u[i]+Δt*update[i]
+    utmp[i] = u[i]+dt*update[i]
   end
 end
 
-@noinline function dp5threaded_adaptiveloop(Δt,utilde,u,b1,k1,b3,k3,b4,k4,b5,k5,b6,k6,b7,k7,atmp,utmp,abstol,reltol,uidx)
+@noinline function dp5threaded_adaptiveloop(dt,utilde,u,b1,k1,b3,k3,b4,k4,b5,k5,b6,k6,b7,k7,atmp,utmp,abstol,reltol,uidx)
   Threads.@threads for i in uidx
-    utilde[i] = u[i] + Δt*(b1*k1[i] + b3*k3[i] + b4*k4[i] + b5*k5[i] + b6*k6[i] + b7*k7[i])
+    utilde[i] = u[i] + dt*(b1*k1[i] + b3*k3[i] + b4*k4[i] + b5*k5[i] + b6*k6[i] + b7*k7[i])
     atmp[i] = ((utilde[i]-utmp[i])/(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
   end
 end
@@ -1271,17 +1230,17 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
     while t < T
       @ode_loopheader
       k1 = fsalfirst
-      k2 = f(t+c1*Δt,u+Δt*(a21*k1))
-      k3 = f(t+c2*Δt,u+Δt*(a31*k1+a32*k2))
-      k4 = f(t+c3*Δt,u+Δt*(a41*k1       +a43*k3))
-      k5 = f(t+c4*Δt,u+Δt*(a51*k1       +a53*k3+a54*k4))
-      k6 = f(t+c5*Δt,u+Δt*(a61*k1       +a63*k3+a64*k4+a65*k5))
-      k7 = f(t+c6*Δt,u+Δt*(a71*k1       +a73*k3+a74*k4+a75*k5+a76*k6))
-      k8 = f(t+Δt,u+Δt*(a81*k1       +a83*k3+a84*k4+a85*k5+a86*k6+a87*k7))
-      utmp =    u+Δt*(a91*k1              +a94*k4+a95*k5+a96*k6+a97*k7+a98*k8)
-      fsallast = f(t+Δt,utmp); k9 = fsallast
+      k2 = f(t+c1*dt,u+dt*(a21*k1))
+      k3 = f(t+c2*dt,u+dt*(a31*k1+a32*k2))
+      k4 = f(t+c3*dt,u+dt*(a41*k1       +a43*k3))
+      k5 = f(t+c4*dt,u+dt*(a51*k1       +a53*k3+a54*k4))
+      k6 = f(t+c5*dt,u+dt*(a61*k1       +a63*k3+a64*k4+a65*k5))
+      k7 = f(t+c6*dt,u+dt*(a71*k1       +a73*k3+a74*k4+a75*k5+a76*k6))
+      k8 = f(t+dt,u+dt*(a81*k1       +a83*k3+a84*k4+a85*k5+a86*k6+a87*k7))
+      utmp =    u+dt*(a91*k1              +a94*k4+a95*k5+a96*k6+a97*k7+a98*k8)
+      fsallast = f(t+dt,utmp); k9 = fsallast
       if adaptive
-        utilde = u + Δt*(b1*k1 + b4*k4 + b5*k5 + b6*k6 + b7*k7 + b8*k8 + b9*k9)
+        utilde = u + dt*(b1*k1 + b4*k4 + b5*k5 + b6*k6 + b7*k7 + b8*k8 + b9*k9)
         EEst = abs( ((utilde-utmp)/(abstol+max(abs(u),abs(utmp))*reltol)))
       else
         u = utmp
@@ -1328,40 +1287,40 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
     while t < T
       @ode_loopheader
       for i in uidx
-        tmp[i] = u[i]+Δt*(a21*k1[i])
+        tmp[i] = u[i]+dt*(a21*k1[i])
       end
-      f(t+c1*Δt,tmp,k2)
+      f(t+c1*dt,tmp,k2)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a31*k1[i]+a32*k2[i])
+        tmp[i] = u[i]+dt*(a31*k1[i]+a32*k2[i])
       end
-      f(t+c2*Δt,tmp,k3)
+      f(t+c2*dt,tmp,k3)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a41*k1[i]+a43*k3[i])
+        tmp[i] = u[i]+dt*(a41*k1[i]+a43*k3[i])
       end
-      f(t+c3*Δt,tmp,k4)
+      f(t+c3*dt,tmp,k4)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a51*k1[i]+a53*k3[i]+a54*k4[i])
+        tmp[i] = u[i]+dt*(a51*k1[i]+a53*k3[i]+a54*k4[i])
       end
-      f(t+c4*Δt,tmp,k5)
+      f(t+c4*dt,tmp,k5)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a61*k1[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
+        tmp[i] = u[i]+dt*(a61*k1[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
       end
-      f(t+c5*Δt,tmp,k6)
+      f(t+c5*dt,tmp,k6)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a71*k1[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i])
+        tmp[i] = u[i]+dt*(a71*k1[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i])
       end
-      f(t+c6*Δt,tmp,k7)
+      f(t+c6*dt,tmp,k7)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a81*k1[i]+a83*k3[i]+a84*k4[i]+a85*k5[i]+a86*k6[i]+a87*k7[i])
+        tmp[i] = u[i]+dt*(a81*k1[i]+a83*k3[i]+a84*k4[i]+a85*k5[i]+a86*k6[i]+a87*k7[i])
       end
-      f(t+Δt,tmp,k8)
+      f(t+dt,tmp,k8)
       for i in uidx
-        utmp[i]=u[i]+Δt*(a91*k1[i]+a94*k4[i]+a95*k5[i]+a96*k6[i]+a97*k7[i]+a98*k8[i])
+        utmp[i]=u[i]+dt*(a91*k1[i]+a94*k4[i]+a95*k5[i]+a96*k6[i]+a97*k7[i]+a98*k8[i])
       end
-      f(t+Δt,utmp,k9)
+      f(t+dt,utmp,k9)
       if adaptive
         for i in uidx
-          utilde[i] = u[i] + Δt*(b1*k1[i] + b4*k4[i] + b5*k5[i] + b6*k6[i] + b7*k7[i] + b8*k8[i] + b9*k9[i])
+          utilde[i] = u[i] + dt*(b1*k1[i] + b4*k4[i] + b5*k5[i] + b6*k6[i] + b7*k7[i] + b8*k8[i] + b9*k9[i])
           atmp[i] = ((utilde[i]-utmp[i])/(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
         end
         EEst = internalnorm(atmp)
@@ -1398,19 +1357,19 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
     while t < T
       @ode_loopheader
       k1 = f(t,u)
-      k2 = f(t+c2*Δt,u+Δt*(a021*k1))
-      k3 = f(t+c3*Δt,u+Δt*(a031*k1+a032*k2))
-      k4 = f(t+c4*Δt,u+Δt*(a041*k1       +a043*k3))
-      k5 = f(t+c5*Δt,u+Δt*(a051*k1       +a053*k3+a054*k4))
-      k6 = f(t+c6*Δt,u+Δt*(a061*k1       +a063*k3+a064*k4+a065*k5))
-      k7 = f(t+c7*Δt,u+Δt*(a071*k1       +a073*k3+a074*k4+a075*k5+a076*k6))
-      k8 = f(t+c8*Δt,u+Δt*(a081*k1       +a083*k3+a084*k4+a085*k5+a086*k6+a087*k7))
-      k9 = f(t+Δt,u+Δt*(a091*k1          +a093*k3+a094*k4+a095*k5+a096*k6+a097*k7+a098*k8))
-      k10= f(t+Δt,u+Δt*(a101*k1          +a103*k3+a104*k4+a105*k5+a106*k6+a107*k7))
-      update = Δt*(k1*b1 + k4*b4 + k5*b5 + k6*b6 + k7*b7 + k8*b8 + k9*b9)
+      k2 = f(t+c2*dt,u+dt*(a021*k1))
+      k3 = f(t+c3*dt,u+dt*(a031*k1+a032*k2))
+      k4 = f(t+c4*dt,u+dt*(a041*k1       +a043*k3))
+      k5 = f(t+c5*dt,u+dt*(a051*k1       +a053*k3+a054*k4))
+      k6 = f(t+c6*dt,u+dt*(a061*k1       +a063*k3+a064*k4+a065*k5))
+      k7 = f(t+c7*dt,u+dt*(a071*k1       +a073*k3+a074*k4+a075*k5+a076*k6))
+      k8 = f(t+c8*dt,u+dt*(a081*k1       +a083*k3+a084*k4+a085*k5+a086*k6+a087*k7))
+      k9 = f(t+dt,u+dt*(a091*k1          +a093*k3+a094*k4+a095*k5+a096*k6+a097*k7+a098*k8))
+      k10= f(t+dt,u+dt*(a101*k1          +a103*k3+a104*k4+a105*k5+a106*k6+a107*k7))
+      update = dt*(k1*b1 + k4*b4 + k5*b5 + k6*b6 + k7*b7 + k8*b8 + k9*b9)
       utmp = u + update
       if adaptive
-        EEst = abs( ((update - Δt*(bhat1*k1 + bhat4*k4 + bhat5*k5 + bhat6*k6 + bhat7*k7 + bhat10*k10))/(abstol+max(abs(u),abs(utmp))*reltol)))
+        EEst = abs( ((update - dt*(bhat1*k1 + bhat4*k4 + bhat5*k5 + bhat6*k6 + bhat7*k7 + bhat10*k10))/(abstol+max(abs(u),abs(utmp))*reltol)))
       else
         u = utmp
       end
@@ -1454,48 +1413,48 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
       @ode_loopheader
       f(t,u,k1)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a021*k1[i])
+        tmp[i] = u[i]+dt*(a021*k1[i])
       end
-      f(t+c2*Δt,tmp,k2)
+      f(t+c2*dt,tmp,k2)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a031*k1[i]+a032*k2[i])
+        tmp[i] = u[i]+dt*(a031*k1[i]+a032*k2[i])
       end
-      f(t+c3*Δt,tmp,k3)
+      f(t+c3*dt,tmp,k3)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a041*k1[i]+a043*k3[i])
+        tmp[i] = u[i]+dt*(a041*k1[i]+a043*k3[i])
       end
-      f(t+c4*Δt,tmp,k4)
+      f(t+c4*dt,tmp,k4)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a051*k1[i]+a053*k3[i]+a054*k4[i])
+        tmp[i] = u[i]+dt*(a051*k1[i]+a053*k3[i]+a054*k4[i])
       end
-      f(t+c5*Δt,tmp,k5)
+      f(t+c5*dt,tmp,k5)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a061*k1[i]+a063*k3[i]+a064*k4[i]+a065*k5[i])
+        tmp[i] = u[i]+dt*(a061*k1[i]+a063*k3[i]+a064*k4[i]+a065*k5[i])
       end
-      f(t+c6*Δt,tmp,k6)
+      f(t+c6*dt,tmp,k6)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a071*k1[i]+a073*k3[i]+a074*k4[i]+a075*k5[i]+a076*k6[i])
+        tmp[i] = u[i]+dt*(a071*k1[i]+a073*k3[i]+a074*k4[i]+a075*k5[i]+a076*k6[i])
       end
-      f(t+c7*Δt,tmp,k7)
+      f(t+c7*dt,tmp,k7)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a081*k1[i]+a083*k3[i]+a084*k4[i]+a085*k5[i]+a086*k6[i]+a087*k7[i])
+        tmp[i] = u[i]+dt*(a081*k1[i]+a083*k3[i]+a084*k4[i]+a085*k5[i]+a086*k6[i]+a087*k7[i])
       end
-      f(t+c8*Δt,tmp,k8)
+      f(t+c8*dt,tmp,k8)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a091*k1[i]+a093*k3[i]+a094*k4[i]+a095*k5[i]+a096*k6[i]+a097*k7[i]+a098*k8[i])
+        tmp[i] = u[i]+dt*(a091*k1[i]+a093*k3[i]+a094*k4[i]+a095*k5[i]+a096*k6[i]+a097*k7[i]+a098*k8[i])
       end
-      f(t+Δt,tmp,k9)
+      f(t+dt,tmp,k9)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a101*k1[i]+a103*k3[i]+a104*k4[i]+a105*k5[i]+a106*k6[i]+a107*k7[i])
+        tmp[i] = u[i]+dt*(a101*k1[i]+a103*k3[i]+a104*k4[i]+a105*k5[i]+a106*k6[i]+a107*k7[i])
       end
-      f(t+Δt,tmp,k10)
+      f(t+dt,tmp,k10)
       for i in uidx
-        update[i] = Δt*(k1[i]*b1 + k4[i]*b4 + k5[i]*b5 + k6[i]*b6 + k7[i]*b7 + k8[i]*b8 + k9[i]*b9)
+        update[i] = dt*(k1[i]*b1 + k4[i]*b4 + k5[i]*b5 + k6[i]*b6 + k7[i]*b7 + k8[i]*b8 + k9[i]*b9)
         utmp[i] = u[i] + update[i]
       end
       if adaptive
         for i in uidx
-          atmp[i] = ((update[i] - Δt*(bhat1*k1[i] + bhat4*k4[i] + bhat5*k5[i] + bhat6*k6[i] + bhat7*k7[i] + bhat10*k10[i]))/(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
+          atmp[i] = ((update[i] - dt*(bhat1*k1[i] + bhat4*k4[i] + bhat5*k5[i] + bhat6*k6[i] + bhat7*k7[i] + bhat10*k10[i]))/(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
         end
         EEst = internalnorm(atmp)
       else
@@ -1531,22 +1490,22 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
     while t < T
       @ode_loopheader
       k1 = f(t,u)
-      k2 = f(t+c2*Δt ,u+Δt*(a0201*k1))
-      k3 = f(t+c3*Δt ,u+Δt*(a0301*k1+a0302*k2))
-      k4 = f(t+c4*Δt ,u+Δt*(a0401*k1       +a0403*k3))
-      k5 = f(t+c5*Δt ,u+Δt*(a0501*k1       +a0503*k3+a0504*k4))
-      k6 = f(t+c6*Δt ,u+Δt*(a0601*k1                +a0604*k4+a0605*k5))
-      k7 = f(t+c7*Δt ,u+Δt*(a0701*k1                +a0704*k4+a0705*k5+a0706*k6))
-      k8 = f(t+c8*Δt ,u+Δt*(a0801*k1                +a0804*k4+a0805*k5+a0806*k6+a0807*k7))
-      k9 = f(t+c9*Δt ,u+Δt*(a0901*k1                +a0904*k4+a0905*k5+a0906*k6+a0907*k7+a0908*k8))
-      k10= f(t+c10*Δt,u+Δt*(a1001*k1                +a1004*k4+a1005*k5+a1006*k6+a1007*k7+a1008*k8+a1009*k9))
-      k11= f(t+c11*Δt,u+Δt*(a1101*k1                +a1104*k4+a1105*k5+a1106*k6+a1107*k7+a1108*k8+a1109*k9+a1110*k10))
-      k12= f(t+    Δt,u+Δt*(a1201*k1                +a1204*k4+a1205*k5+a1206*k6+a1207*k7+a1208*k8+a1209*k9+a1210*k10+a1211*k11))
-      k13= f(t+    Δt,u+Δt*(a1301*k1                +a1304*k4+a1305*k5+a1306*k6+a1307*k7+a1308*k8+a1309*k9+a1310*k10))
-      update = Δt*(k1*b1 + k6*b6 + k7*b7 + k8*b8 + k9*b9 + k10*b10 + k11*b11 + k12*b12)
+      k2 = f(t+c2*dt ,u+dt*(a0201*k1))
+      k3 = f(t+c3*dt ,u+dt*(a0301*k1+a0302*k2))
+      k4 = f(t+c4*dt ,u+dt*(a0401*k1       +a0403*k3))
+      k5 = f(t+c5*dt ,u+dt*(a0501*k1       +a0503*k3+a0504*k4))
+      k6 = f(t+c6*dt ,u+dt*(a0601*k1                +a0604*k4+a0605*k5))
+      k7 = f(t+c7*dt ,u+dt*(a0701*k1                +a0704*k4+a0705*k5+a0706*k6))
+      k8 = f(t+c8*dt ,u+dt*(a0801*k1                +a0804*k4+a0805*k5+a0806*k6+a0807*k7))
+      k9 = f(t+c9*dt ,u+dt*(a0901*k1                +a0904*k4+a0905*k5+a0906*k6+a0907*k7+a0908*k8))
+      k10= f(t+c10*dt,u+dt*(a1001*k1                +a1004*k4+a1005*k5+a1006*k6+a1007*k7+a1008*k8+a1009*k9))
+      k11= f(t+c11*dt,u+dt*(a1101*k1                +a1104*k4+a1105*k5+a1106*k6+a1107*k7+a1108*k8+a1109*k9+a1110*k10))
+      k12= f(t+    dt,u+dt*(a1201*k1                +a1204*k4+a1205*k5+a1206*k6+a1207*k7+a1208*k8+a1209*k9+a1210*k10+a1211*k11))
+      k13= f(t+    dt,u+dt*(a1301*k1                +a1304*k4+a1305*k5+a1306*k6+a1307*k7+a1308*k8+a1309*k9+a1310*k10))
+      update = dt*(k1*b1 + k6*b6 + k7*b7 + k8*b8 + k9*b9 + k10*b10 + k11*b11 + k12*b12)
       utmp = u + update
       if adaptive
-        EEst = abs( ((update - Δt*(bhat1*k1 + bhat6*k6 + bhat7*k7 + bhat8*k8 + bhat9*k9 + bhat10*k10 + bhat13*k13))/(abstol+max(abs(u),abs(utmp))*reltol)))
+        EEst = abs( ((update - dt*(bhat1*k1 + bhat6*k6 + bhat7*k7 + bhat8*k8 + bhat9*k9 + bhat10*k10 + bhat13*k13))/(abstol+max(abs(u),abs(utmp))*reltol)))
       else
         u = utmp
       end
@@ -1591,60 +1550,60 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
       @ode_loopheader
       f(t,u,k1)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0201*k1[i])
+        tmp[i] = u[i]+dt*(a0201*k1[i])
       end
-      f(t+c2*Δt,tmp,k2)
+      f(t+c2*dt,tmp,k2)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0301*k1[i]+a0302*k2[i])
+        tmp[i] = u[i]+dt*(a0301*k1[i]+a0302*k2[i])
       end
-      f(t+c3*Δt,tmp,k3)
+      f(t+c3*dt,tmp,k3)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0401*k1[i]+a0403*k3[i])
+        tmp[i] = u[i]+dt*(a0401*k1[i]+a0403*k3[i])
       end
-      f(t+c4*Δt,tmp,k4)
+      f(t+c4*dt,tmp,k4)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0501*k1[i]+a0503*k3[i]+a0504*k4[i])
+        tmp[i] = u[i]+dt*(a0501*k1[i]+a0503*k3[i]+a0504*k4[i])
       end
-      f(t+c5*Δt,tmp,k5)
+      f(t+c5*dt,tmp,k5)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0601*k1[i]+a0604*k4[i]+a0605*k5[i])
+        tmp[i] = u[i]+dt*(a0601*k1[i]+a0604*k4[i]+a0605*k5[i])
       end
-      f(t+c6*Δt,tmp,k6)
+      f(t+c6*dt,tmp,k6)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0701*k1[i]+a0704*k4[i]+a0705*k5[i]+a0706*k6[i])
+        tmp[i] = u[i]+dt*(a0701*k1[i]+a0704*k4[i]+a0705*k5[i]+a0706*k6[i])
       end
-      f(t+c7*Δt,tmp,k7)
+      f(t+c7*dt,tmp,k7)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0801*k1[i]+a0804*k4[i]+a0805*k5[i]+a0806*k6[i]+a0807*k7[i])
+        tmp[i] = u[i]+dt*(a0801*k1[i]+a0804*k4[i]+a0805*k5[i]+a0806*k6[i]+a0807*k7[i])
       end
-      f(t+c8*Δt,tmp,k8)
+      f(t+c8*dt,tmp,k8)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0901*k1[i]+a0904*k4[i]+a0905*k5[i]+a0906*k6[i]+a0907*k7[i]+a0908*k8[i])
+        tmp[i] = u[i]+dt*(a0901*k1[i]+a0904*k4[i]+a0905*k5[i]+a0906*k6[i]+a0907*k7[i]+a0908*k8[i])
       end
-      f(t+c9*Δt,tmp,k9)
+      f(t+c9*dt,tmp,k9)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a1001*k1[i]+a1004*k4[i]+a1005*k5[i]+a1006*k6[i]+a1007*k7[i]+a1008*k8[i]+a1009*k9[i])
+        tmp[i] = u[i]+dt*(a1001*k1[i]+a1004*k4[i]+a1005*k5[i]+a1006*k6[i]+a1007*k7[i]+a1008*k8[i]+a1009*k9[i])
       end
-      f(t+c10*Δt,tmp,k10)
+      f(t+c10*dt,tmp,k10)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a1101*k1[i]+a1104*k4[i]+a1105*k5[i]+a1106*k6[i]+a1107*k7[i]+a1108*k8[i]+a1109*k9[i]+a1110*k10[i])
+        tmp[i] = u[i]+dt*(a1101*k1[i]+a1104*k4[i]+a1105*k5[i]+a1106*k6[i]+a1107*k7[i]+a1108*k8[i]+a1109*k9[i]+a1110*k10[i])
       end
-      f(t+c11*Δt,tmp,k11)
+      f(t+c11*dt,tmp,k11)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a1201*k1[i]+a1204*k4[i]+a1205*k5[i]+a1206*k6[i]+a1207*k7[i]+a1208*k8[i]+a1209*k9[i]+a1210*k10[i]+a1211*k11[i])
+        tmp[i] = u[i]+dt*(a1201*k1[i]+a1204*k4[i]+a1205*k5[i]+a1206*k6[i]+a1207*k7[i]+a1208*k8[i]+a1209*k9[i]+a1210*k10[i]+a1211*k11[i])
       end
-      f(t+Δt,tmp,k12)
+      f(t+dt,tmp,k12)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a1301*k1[i]+a1304*k4[i]+a1305*k5[i]+a1306*k6[i]+a1307*k7[i]+a1308*k8[i]+a1309*k9[i]+a1310*k10[i])
+        tmp[i] = u[i]+dt*(a1301*k1[i]+a1304*k4[i]+a1305*k5[i]+a1306*k6[i]+a1307*k7[i]+a1308*k8[i]+a1309*k9[i]+a1310*k10[i])
       end
-      f(t+Δt,tmp,k13)
+      f(t+dt,tmp,k13)
       for i in uidx
-        update[i] = Δt*(k1[i]*b1 + k6[i]*b6 + k7[i]*b7 + k8[i]*b8 + k9[i]*b9 + k10[i]*b10 + k11[i]*b11 + k12[i]*b12)
+        update[i] = dt*(k1[i]*b1 + k6[i]*b6 + k7[i]*b7 + k8[i]*b8 + k9[i]*b9 + k10[i]*b10 + k11[i]*b11 + k12[i]*b12)
         utmp[i] = u[i] + update[i]
       end
       if adaptive
         for i in uidx
-          atmp[i] = ((update[i] - Δt*(bhat1*k1[i] + bhat6*k6[i] + bhat7*k7[i] + bhat8*k8[i] + bhat9*k9[i] + bhat10*k10[i] + bhat13*k13[i]))/(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
+          atmp[i] = ((update[i] - dt*(bhat1*k1[i] + bhat6*k6[i] + bhat7*k7[i] + bhat8*k8[i] + bhat9*k9[i] + bhat10*k10[i] + bhat13*k13[i]))/(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
         end
         EEst = internalnorm(atmp)
       else
@@ -1671,18 +1630,18 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       @ode_loopheader
       k = f(t,u)
       k1 = k
-      k2 = f(t+c1*Δt,u+Δt*(a21*k1))
-      k3 = f(t+c2*Δt,u+Δt*(a31*k1+a32*k2))
-      k4 = f(t+c3*Δt,u+Δt*(a41*k1       +a43*k3))
-      k5 = f(t+c4*Δt,u+Δt*(a51*k1       +a53*k3+a54*k4))
-      k6 = f(t+c5*Δt,u+Δt*(a61*k1       +a63*k3+a64*k4+a65*k5))
-      k7 = f(t+c6*Δt,u+Δt*(a71*k1       +a73*k3+a74*k4+a75*k5+a76*k6))
-      k8 = f(t+c7*Δt,u+Δt*(a81*k1       +a83*k3+a84*k4+a85*k5+a86*k6+a87*k7))
-      k9 = f(t+Δt,u+Δt*(a91*k1       +a93*k3+a94*k4+a95*k5+a96*k6+a97*k7+a98*k8))
-      k10= f(t+Δt,u+Δt*(a101*k1      +a103*k3+a104*k4+a105*k5+a106*k6+a107*k7+a108*k8))
-      utmp = u + Δt*(k1*b1+k4*b4+k5*b5+k6*b6+k7*b7+k8*b8+k9*b9)
+      k2 = f(t+c1*dt,u+dt*(a21*k1))
+      k3 = f(t+c2*dt,u+dt*(a31*k1+a32*k2))
+      k4 = f(t+c3*dt,u+dt*(a41*k1       +a43*k3))
+      k5 = f(t+c4*dt,u+dt*(a51*k1       +a53*k3+a54*k4))
+      k6 = f(t+c5*dt,u+dt*(a61*k1       +a63*k3+a64*k4+a65*k5))
+      k7 = f(t+c6*dt,u+dt*(a71*k1       +a73*k3+a74*k4+a75*k5+a76*k6))
+      k8 = f(t+c7*dt,u+dt*(a81*k1       +a83*k3+a84*k4+a85*k5+a86*k6+a87*k7))
+      k9 = f(t+dt,u+dt*(a91*k1       +a93*k3+a94*k4+a95*k5+a96*k6+a97*k7+a98*k8))
+      k10= f(t+dt,u+dt*(a101*k1      +a103*k3+a104*k4+a105*k5+a106*k6+a107*k7+a108*k8))
+      utmp = u + dt*(k1*b1+k4*b4+k5*b5+k6*b6+k7*b7+k8*b8+k9*b9)
       if adaptive
-        utilde = u + Δt*(k1*bhat1+k4*bhat4+k5*bhat5+k6*bhat6+k7*bhat7+k8*bhat8+k10*bhat10)
+        utilde = u + dt*(k1*bhat1+k4*bhat4+k5*bhat5+k6*bhat6+k7*bhat7+k8*bhat8+k10*bhat10)
         EEst = abs( ((utilde-utmp)/(abstol+max(abs(u),abs(utmp))*reltol)))
       else
         u = utmp
@@ -1726,47 +1685,47 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
       @ode_loopheader
       f(t,u,k1)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a21*k1[i])
+        tmp[i] = u[i]+dt*(a21*k1[i])
       end
-      f(t+c1*Δt,tmp,k2)
+      f(t+c1*dt,tmp,k2)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a31*k1[i]+a32*k2[i])
+        tmp[i] = u[i]+dt*(a31*k1[i]+a32*k2[i])
       end
-      f(t+c2*Δt,tmp,k3)
+      f(t+c2*dt,tmp,k3)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a41*k1[i]+a43*k3[i])
+        tmp[i] = u[i]+dt*(a41*k1[i]+a43*k3[i])
       end
-      f(t+c3*Δt,tmp,k4)
+      f(t+c3*dt,tmp,k4)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a51*k1[i]+a53*k3[i]+a54*k4[i])
+        tmp[i] = u[i]+dt*(a51*k1[i]+a53*k3[i]+a54*k4[i])
       end
-      f(t+c4*Δt,tmp,k5)
+      f(t+c4*dt,tmp,k5)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a61*k1[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
+        tmp[i] = u[i]+dt*(a61*k1[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
       end
-      f(t+c5*Δt,tmp,k6)
+      f(t+c5*dt,tmp,k6)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a71*k1[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i])
+        tmp[i] = u[i]+dt*(a71*k1[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i])
       end
-      f(t+c6*Δt,tmp,k7)
+      f(t+c6*dt,tmp,k7)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a81*k1[i]+a83*k3[i]+a84*k4[i]+a85*k5[i]+a86*k6[i]+a87*k7[i])
+        tmp[i] = u[i]+dt*(a81*k1[i]+a83*k3[i]+a84*k4[i]+a85*k5[i]+a86*k6[i]+a87*k7[i])
       end
-      f(t+c7*Δt,tmp,k8)
+      f(t+c7*dt,tmp,k8)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a91*k1[i]+a93*k3[i]+a94*k4[i]+a95*k5[i]+a96*k6[i]+a97*k7[i]+a98*k8[i])
+        tmp[i] = u[i]+dt*(a91*k1[i]+a93*k3[i]+a94*k4[i]+a95*k5[i]+a96*k6[i]+a97*k7[i]+a98*k8[i])
       end
-      f(t+Δt,tmp,k9)
+      f(t+dt,tmp,k9)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a101*k1[i]+a103*k3[i]+a104*k4[i]+a105*k5[i]+a106*k6[i]+a107*k7[i]+a108*k8[i])
+        tmp[i] = u[i]+dt*(a101*k1[i]+a103*k3[i]+a104*k4[i]+a105*k5[i]+a106*k6[i]+a107*k7[i]+a108*k8[i])
       end
-      f(t+Δt,tmp,k10)
+      f(t+dt,tmp,k10)
       for i in uidx
-        utmp[i] = u[i] + Δt*(k1[i]*b1+k4[i]*b4+k5[i]*b5+k6[i]*b6+k7[i]*b7+k8[i]*b8+k9[i]*b9)
+        utmp[i] = u[i] + dt*(k1[i]*b1+k4[i]*b4+k5[i]*b5+k6[i]*b6+k7[i]*b7+k8[i]*b8+k9[i]*b9)
       end
       if adaptive
         for i in uidx
-          utilde[i] = u[i] + Δt*(k1[i]*bhat1+k4[i]*bhat4+k5[i]*bhat5+k6[i]*bhat6+k7[i]*bhat7+k8[i]*bhat8+k10[i]*bhat10)
+          utilde[i] = u[i] + dt*(k1[i]*bhat1+k4[i]*bhat4+k5[i]*bhat5+k6[i]*bhat6+k7[i]*bhat7+k8[i]*bhat8+k10[i]*bhat10)
           atmp[i] = ((utilde[i]-utmp[i])/(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
         end
         EEst = internalnorm(atmp)
@@ -1817,34 +1776,34 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       else
         k1 = f(t,u)
       end
-      k2 = f(t+c2*Δt,u+Δt*(a0201*k1))
-      k3 = f(t+c3*Δt,u+Δt*(a0301*k1+a0302*k2))
-      k4 = f(t+c4*Δt,u+Δt*(a0401*k1       +a0403*k3))
-      k5 = f(t+c5*Δt,u+Δt*(a0501*k1       +a0503*k3+a0504*k4))
-      k6 = f(t+c6*Δt,u+Δt*(a0601*k1                +a0604*k4+a0605*k5))
-      k7 = f(t+c7*Δt,u+Δt*(a0701*k1                +a0704*k4+a0705*k5+a0706*k6))
-      k8 = f(t+c8*Δt,u+Δt*(a0801*k1                +a0804*k4+a0805*k5+a0806*k6+a0807*k7))
-      k9 = f(t+c9*Δt,u+Δt*(a0901*k1                +a0904*k4+a0905*k5+a0906*k6+a0907*k7+a0908*k8))
-      k10 =f(t+c10*Δt,u+Δt*(a1001*k1                +a1004*k4+a1005*k5+a1006*k6+a1007*k7+a1008*k8+a1009*k9))
-      k11= f(t+c11*Δt,u+Δt*(a1101*k1                +a1104*k4+a1105*k5+a1106*k6+a1107*k7+a1108*k8+a1109*k9+a1110*k10))
-      k12= f(t+Δt,u+Δt*(a1201*k1                +a1204*k4+a1205*k5+a1206*k6+a1207*k7+a1208*k8+a1209*k9+a1210*k10+a1211*k11))
+      k2 = f(t+c2*dt,u+dt*(a0201*k1))
+      k3 = f(t+c3*dt,u+dt*(a0301*k1+a0302*k2))
+      k4 = f(t+c4*dt,u+dt*(a0401*k1       +a0403*k3))
+      k5 = f(t+c5*dt,u+dt*(a0501*k1       +a0503*k3+a0504*k4))
+      k6 = f(t+c6*dt,u+dt*(a0601*k1                +a0604*k4+a0605*k5))
+      k7 = f(t+c7*dt,u+dt*(a0701*k1                +a0704*k4+a0705*k5+a0706*k6))
+      k8 = f(t+c8*dt,u+dt*(a0801*k1                +a0804*k4+a0805*k5+a0806*k6+a0807*k7))
+      k9 = f(t+c9*dt,u+dt*(a0901*k1                +a0904*k4+a0905*k5+a0906*k6+a0907*k7+a0908*k8))
+      k10 =f(t+c10*dt,u+dt*(a1001*k1                +a1004*k4+a1005*k5+a1006*k6+a1007*k7+a1008*k8+a1009*k9))
+      k11= f(t+c11*dt,u+dt*(a1101*k1                +a1104*k4+a1105*k5+a1106*k6+a1107*k7+a1108*k8+a1109*k9+a1110*k10))
+      k12= f(t+dt,u+dt*(a1201*k1                +a1204*k4+a1205*k5+a1206*k6+a1207*k7+a1208*k8+a1209*k9+a1210*k10+a1211*k11))
       kupdate= b1*k1+b6*k6+b7*k7+b8*k8+b9*k9+b10*k10+b11*k11+b12*k12
-      update = Δt*kupdate
+      update = dt*kupdate
       utmp = u + update
       if adaptive
-        err5 = abs(Δt*(k1*er1 + k6*er6 + k7*er7 + k8*er8 + k9*er9 + k10*er10 + k11*er11 + k12*er12)/(abstol+max(abs(u),abs(utmp))*reltol)) # Order 5
-        err3 = abs((update - Δt*(bhh1*k1 + bhh2*k9 + bhh3*k12))/(abstol+max(abs(u),abs(utmp))*reltol)) # Order 3
+        err5 = abs(dt*(k1*er1 + k6*er6 + k7*er7 + k8*er8 + k9*er9 + k10*er10 + k11*er11 + k12*er12)/(abstol+max(abs(u),abs(utmp))*reltol)) # Order 5
+        err3 = abs((update - dt*(bhh1*k1 + bhh2*k9 + bhh3*k12))/(abstol+max(abs(u),abs(utmp))*reltol)) # Order 3
         err52 = err5*err5
         EEst = err52/sqrt(err52 + 0.01*err3*err3)
       else
         u = utmp
       end
       if calck
-        k13 = f(t+Δt,utmp)
+        k13 = f(t+dt,utmp)
         fsallast = k13
-        k14 = f(t+c14*Δt,u+Δt*(a1401*k1         +a1407*k7+a1408*k8+a1409*k9+a1410*k10+a1411*k11+a1412*k12+a1413*k13))
-        k15 = f(t+c15*Δt,u+Δt*(a1501*k1+a1506*k6+a1507*k7+a1508*k8                   +a1511*k11+a1512*k12+a1513*k13+a1514*k14))
-        k16 = f(t+c16*Δt,u+Δt*(a1601*k1+a1606*k6+a1607*k7+a1608*k8+a1609*k9                              +a1613*k13+a1614*k14+a1615*k15))
+        k14 = f(t+c14*dt,u+dt*(a1401*k1         +a1407*k7+a1408*k8+a1409*k9+a1410*k10+a1411*k11+a1412*k12+a1413*k13))
+        k15 = f(t+c15*dt,u+dt*(a1501*k1+a1506*k6+a1507*k7+a1508*k8                   +a1511*k11+a1512*k12+a1513*k13+a1514*k14))
+        k16 = f(t+c16*dt,u+dt*(a1601*k1+a1606*k6+a1607*k7+a1608*k8+a1609*k9                              +a1613*k13+a1614*k14+a1615*k15))
         udiff = kupdate
         k[1] = udiff
         bspl = k1 - udiff
@@ -1918,58 +1877,58 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
         f(t,u,k1)
       end
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0201*k1[i])
+        tmp[i] = u[i]+dt*(a0201*k1[i])
       end
-      f(t+c2*Δt,tmp,k2)
+      f(t+c2*dt,tmp,k2)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0301*k1[i]+a0302*k2[i])
+        tmp[i] = u[i]+dt*(a0301*k1[i]+a0302*k2[i])
       end
-      f(t+c3*Δt,tmp,k3)
+      f(t+c3*dt,tmp,k3)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0401*k1[i]+a0403*k3[i])
+        tmp[i] = u[i]+dt*(a0401*k1[i]+a0403*k3[i])
       end
-      f(t+c4*Δt,tmp,k4)
+      f(t+c4*dt,tmp,k4)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0501*k1[i]+a0503*k3[i]+a0504*k4[i])
+        tmp[i] = u[i]+dt*(a0501*k1[i]+a0503*k3[i]+a0504*k4[i])
       end
-      f(t+c5*Δt,tmp,k5)
+      f(t+c5*dt,tmp,k5)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0601*k1[i]+a0604*k4[i]+a0605*k5[i])
+        tmp[i] = u[i]+dt*(a0601*k1[i]+a0604*k4[i]+a0605*k5[i])
       end
-      f(t+c6*Δt,tmp,k6)
+      f(t+c6*dt,tmp,k6)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0701*k1[i]+a0704*k4[i]+a0705*k5[i]+a0706*k6[i])
+        tmp[i] = u[i]+dt*(a0701*k1[i]+a0704*k4[i]+a0705*k5[i]+a0706*k6[i])
       end
-      f(t+c7*Δt,tmp,k7)
+      f(t+c7*dt,tmp,k7)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0801*k1[i]+a0804*k4[i]+a0805*k5[i]+a0806*k6[i]+a0807*k7[i])
+        tmp[i] = u[i]+dt*(a0801*k1[i]+a0804*k4[i]+a0805*k5[i]+a0806*k6[i]+a0807*k7[i])
       end
-      f(t+c8*Δt,tmp,k8)
+      f(t+c8*dt,tmp,k8)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0901*k1[i]+a0904*k4[i]+a0905*k5[i]+a0906*k6[i]+a0907*k7[i]+a0908*k8[i])
+        tmp[i] = u[i]+dt*(a0901*k1[i]+a0904*k4[i]+a0905*k5[i]+a0906*k6[i]+a0907*k7[i]+a0908*k8[i])
       end
-      f(t+c9*Δt,tmp,k9)
+      f(t+c9*dt,tmp,k9)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a1001*k1[i]+a1004*k4[i]+a1005*k5[i]+a1006*k6[i]+a1007*k7[i]+a1008*k8[i]+a1009*k9[i])
+        tmp[i] = u[i]+dt*(a1001*k1[i]+a1004*k4[i]+a1005*k5[i]+a1006*k6[i]+a1007*k7[i]+a1008*k8[i]+a1009*k9[i])
       end
-      f(t+c10*Δt,tmp,k10)
+      f(t+c10*dt,tmp,k10)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a1101*k1[i]+a1104*k4[i]+a1105*k5[i]+a1106*k6[i]+a1107*k7[i]+a1108*k8[i]+a1109*k9[i]+a1110*k10[i])
+        tmp[i] = u[i]+dt*(a1101*k1[i]+a1104*k4[i]+a1105*k5[i]+a1106*k6[i]+a1107*k7[i]+a1108*k8[i]+a1109*k9[i]+a1110*k10[i])
       end
-      f(t+c11*Δt,tmp,k11)
+      f(t+c11*dt,tmp,k11)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a1201*k1[i]+a1204*k4[i]+a1205*k5[i]+a1206*k6[i]+a1207*k7[i]+a1208*k8[i]+a1209*k9[i]+a1210*k10[i]+a1211*k11[i])
+        tmp[i] = u[i]+dt*(a1201*k1[i]+a1204*k4[i]+a1205*k5[i]+a1206*k6[i]+a1207*k7[i]+a1208*k8[i]+a1209*k9[i]+a1210*k10[i]+a1211*k11[i])
       end
-      f(t+Δt,tmp,k12)
+      f(t+dt,tmp,k12)
       for i in uidx
         kupdate[i] = b1*k1[i]+b6*k6[i]+b7*k7[i]+b8*k8[i]+b9*k9[i]+b10*k10[i]+b11*k11[i]+b12*k12[i]
-        update[i] = Δt*kupdate[i]
+        update[i] = dt*kupdate[i]
         utmp[i] = u[i] + update[i]
       end
       if adaptive
         for i in uidx
-          atmp[i] = (Δt*(k1[i]*er1 + k6[i]*er6 + k7[i]*er7 + k8[i]*er8 + k9[i]*er9 + k10[i]*er10 + k11[i]*er11 + k12[i]*er12)/(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
-          atmp2[i]= ((update[i] - Δt*(bhh1*k1[i] + bhh2*k9[i] + bhh3*k12[i]))/(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
+          atmp[i] = (dt*(k1[i]*er1 + k6[i]*er6 + k7[i]*er7 + k8[i]*er8 + k9[i]*er9 + k10[i]*er10 + k11[i]*er11 + k12[i]*er12)/(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
+          atmp2[i]= ((update[i] - dt*(bhh1*k1[i] + bhh2*k9[i] + bhh3*k12[i]))/(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
         end
         err5 = internalnorm(atmp) # Order 5
         err3 = internalnorm(atmp2) # Order 3
@@ -1979,19 +1938,19 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
         recursivecopy!(u, utmp)
       end
       if calck
-        f(t+Δt,utmp,k13)
+        f(t+dt,utmp,k13)
         for i in uidx
-          tmp[i] = u[i]+Δt*(a1401*k1[i]+a1407*k7[i]+a1408*k8[i]+a1409*k9[i]+a1410*k10[i]+a1411*k11[i]+a1412*k12[i]+a1413*k13[i])
+          tmp[i] = u[i]+dt*(a1401*k1[i]+a1407*k7[i]+a1408*k8[i]+a1409*k9[i]+a1410*k10[i]+a1411*k11[i]+a1412*k12[i]+a1413*k13[i])
         end
-        f(t+c14*Δt,tmp,k14)
+        f(t+c14*dt,tmp,k14)
         for i in uidx
-          tmp[i] = u[i]+Δt*(a1501*k1[i]+a1506*k6[i]+a1507*k7[i]+a1508*k8[i]+a1511*k11[i]+a1512*k12[i]+a1513*k13[i]+a1514*k14[i])
+          tmp[i] = u[i]+dt*(a1501*k1[i]+a1506*k6[i]+a1507*k7[i]+a1508*k8[i]+a1511*k11[i]+a1512*k12[i]+a1513*k13[i]+a1514*k14[i])
         end
-        f(t+c15*Δt,tmp,k15)
+        f(t+c15*dt,tmp,k15)
         for i in uidx
-          tmp[i] = u[i]+Δt*(a1601*k1[i]+a1606*k6[i]+a1607*k7[i]+a1608*k8[i]+a1609*k9[i]+a1613*k13[i]+a1614*k14[i]+a1615*k15[i])
+          tmp[i] = u[i]+dt*(a1601*k1[i]+a1606*k6[i]+a1607*k7[i]+a1608*k8[i]+a1609*k9[i]+a1613*k13[i]+a1614*k14[i]+a1615*k15[i])
         end
-        f(t+c16*Δt,tmp,k16)
+        f(t+c16*dt,tmp,k16)
         for i in uidx
           udiff[i]= kupdate[i]
           k[1][i] = udiff[i]
@@ -2025,22 +1984,22 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       @ode_loopheader
       k = f(t,u)
       k1 = k
-      k2 = f(t+c1*Δt,u+Δt*(a0201*k1))
-      k3 = f(t+c2*Δt,u+Δt*(a0301*k1+a0302*k2))
-      k4 = f(t+c3*Δt,u+Δt*(a0401*k1       +a0403*k3))
-      k5 = f(t+c4*Δt,u+Δt*(a0501*k1       +a0503*k3+a0504*k4))
-      k6 = f(t+c5*Δt,u+Δt*(a0601*k1                +a0604*k4+a0605*k5))
-      k7 = f(t+c6*Δt,u+Δt*(a0701*k1                +a0704*k4+a0705*k5+a0706*k6))
-      k8 = f(t+c7*Δt,u+Δt*(a0801*k1                +a0804*k4+a0805*k5+a0806*k6+a0807*k7))
-      k9 = f(t+c8*Δt,u+Δt*(a0901*k1                +a0904*k4+a0905*k5+a0906*k6+a0907*k7+a0908*k8))
-      k10 =f(t+c9*Δt,u+Δt*(a1001*k1                +a1004*k4+a1005*k5+a1006*k6+a1007*k7+a1008*k8+a1009*k9))
-      k11= f(t+c10*Δt,u+Δt*(a1101*k1                +a1104*k4+a1105*k5+a1106*k6+a1107*k7+a1108*k8+a1109*k9+a1110*k10))
-      k12= f(t+Δt,u+Δt*(a1201*k1                +a1204*k4+a1205*k5+a1206*k6+a1207*k7+a1208*k8+a1209*k9+a1210*k10+a1211*k11))
-      k13= f(t+Δt,u+Δt*(a1301*k1                +a1304*k4+a1305*k5+a1306*k6+a1307*k7+a1308*k8+a1309*k9+a1310*k10))
-      update = Δt*(b1*k1+b6*k6+b7*k7+b8*k8+b9*k9+b10*k10+b11*k11+b12*k12)
+      k2 = f(t+c1*dt,u+dt*(a0201*k1))
+      k3 = f(t+c2*dt,u+dt*(a0301*k1+a0302*k2))
+      k4 = f(t+c3*dt,u+dt*(a0401*k1       +a0403*k3))
+      k5 = f(t+c4*dt,u+dt*(a0501*k1       +a0503*k3+a0504*k4))
+      k6 = f(t+c5*dt,u+dt*(a0601*k1                +a0604*k4+a0605*k5))
+      k7 = f(t+c6*dt,u+dt*(a0701*k1                +a0704*k4+a0705*k5+a0706*k6))
+      k8 = f(t+c7*dt,u+dt*(a0801*k1                +a0804*k4+a0805*k5+a0806*k6+a0807*k7))
+      k9 = f(t+c8*dt,u+dt*(a0901*k1                +a0904*k4+a0905*k5+a0906*k6+a0907*k7+a0908*k8))
+      k10 =f(t+c9*dt,u+dt*(a1001*k1                +a1004*k4+a1005*k5+a1006*k6+a1007*k7+a1008*k8+a1009*k9))
+      k11= f(t+c10*dt,u+dt*(a1101*k1                +a1104*k4+a1105*k5+a1106*k6+a1107*k7+a1108*k8+a1109*k9+a1110*k10))
+      k12= f(t+dt,u+dt*(a1201*k1                +a1204*k4+a1205*k5+a1206*k6+a1207*k7+a1208*k8+a1209*k9+a1210*k10+a1211*k11))
+      k13= f(t+dt,u+dt*(a1301*k1                +a1304*k4+a1305*k5+a1306*k6+a1307*k7+a1308*k8+a1309*k9+a1310*k10))
+      update = dt*(b1*k1+b6*k6+b7*k7+b8*k8+b9*k9+b10*k10+b11*k11+b12*k12)
       utmp = u + update
       if adaptive
-        EEst = abs((update - Δt*(k1*bhat1 + k6*bhat6 + k7*bhat7 + k8*bhat8 + k9*bhat9 + k10*bhat10 + k13*bhat13))/(abstol+max(abs(u),abs(utmp))*reltol))
+        EEst = abs((update - dt*(k1*bhat1 + k6*bhat6 + k7*bhat7 + k8*bhat8 + k9*bhat9 + k10*bhat10 + k13*bhat13))/(abstol+max(abs(u),abs(utmp))*reltol))
       else
         u = utmp
       end
@@ -2079,60 +2038,60 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
       @ode_loopheader
       f(t,u,k1)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0201*k1[i])
+        tmp[i] = u[i]+dt*(a0201*k1[i])
       end
-      f(t+c1*Δt,tmp,k2)
+      f(t+c1*dt,tmp,k2)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0301*k1[i]+a0302*k2[i])
+        tmp[i] = u[i]+dt*(a0301*k1[i]+a0302*k2[i])
       end
-      f(t+c2*Δt,tmp,k3)
+      f(t+c2*dt,tmp,k3)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0401*k1[i]+a0403*k3[i])
+        tmp[i] = u[i]+dt*(a0401*k1[i]+a0403*k3[i])
       end
-      f(t+c3*Δt,tmp,k4)
+      f(t+c3*dt,tmp,k4)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0501*k1[i]+a0503*k3[i]+a0504*k4[i])
+        tmp[i] = u[i]+dt*(a0501*k1[i]+a0503*k3[i]+a0504*k4[i])
       end
-      f(t+c4*Δt,tmp,k5)
+      f(t+c4*dt,tmp,k5)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0601*k1[i]+a0604*k4[i]+a0605*k5[i])
+        tmp[i] = u[i]+dt*(a0601*k1[i]+a0604*k4[i]+a0605*k5[i])
       end
-      f(t+c5*Δt,tmp,k6)
+      f(t+c5*dt,tmp,k6)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0701*k1[i]+a0704*k4[i]+a0705*k5[i]+a0706*k6[i])
+        tmp[i] = u[i]+dt*(a0701*k1[i]+a0704*k4[i]+a0705*k5[i]+a0706*k6[i])
       end
-      f(t+c6*Δt,tmp,k7)
+      f(t+c6*dt,tmp,k7)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0801*k1[i]+a0804*k4[i]+a0805*k5[i]+a0806*k6[i]+a0807*k7[i])
+        tmp[i] = u[i]+dt*(a0801*k1[i]+a0804*k4[i]+a0805*k5[i]+a0806*k6[i]+a0807*k7[i])
       end
-      f(t+c7*Δt,tmp,k8)
+      f(t+c7*dt,tmp,k8)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0901*k1[i]+a0904*k4[i]+a0905*k5[i]+a0906*k6[i]+a0907*k7[i]+a0908*k8[i])
+        tmp[i] = u[i]+dt*(a0901*k1[i]+a0904*k4[i]+a0905*k5[i]+a0906*k6[i]+a0907*k7[i]+a0908*k8[i])
       end
-      f(t+c8*Δt,tmp,k9)
+      f(t+c8*dt,tmp,k9)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a1001*k1[i]+a1004*k4[i]+a1005*k5[i]+a1006*k6[i]+a1007*k7[i]+a1008*k8[i]+a1009*k9[i])
+        tmp[i] = u[i]+dt*(a1001*k1[i]+a1004*k4[i]+a1005*k5[i]+a1006*k6[i]+a1007*k7[i]+a1008*k8[i]+a1009*k9[i])
       end
-      f(t+c9*Δt,tmp,k10)
+      f(t+c9*dt,tmp,k10)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a1101*k1[i]+a1104*k4[i]+a1105*k5[i]+a1106*k6[i]+a1107*k7[i]+a1108*k8[i]+a1109*k9[i]+a1110*k10[i])
+        tmp[i] = u[i]+dt*(a1101*k1[i]+a1104*k4[i]+a1105*k5[i]+a1106*k6[i]+a1107*k7[i]+a1108*k8[i]+a1109*k9[i]+a1110*k10[i])
       end
-      f(t+c10*Δt,tmp,k11)
+      f(t+c10*dt,tmp,k11)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a1201*k1[i]+a1204*k4[i]+a1205*k5[i]+a1206*k6[i]+a1207*k7[i]+a1208*k8[i]+a1209*k9[i]+a1210*k10[i]+a1211*k11[i])
+        tmp[i] = u[i]+dt*(a1201*k1[i]+a1204*k4[i]+a1205*k5[i]+a1206*k6[i]+a1207*k7[i]+a1208*k8[i]+a1209*k9[i]+a1210*k10[i]+a1211*k11[i])
       end
-      f(t+Δt,tmp,k12)
+      f(t+dt,tmp,k12)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a1301*k1[i]+a1304*k4[i]+a1305*k5[i]+a1306*k6[i]+a1307*k7[i]+a1308*k8[i]+a1309*k9[i]+a1310*k10[i])
+        tmp[i] = u[i]+dt*(a1301*k1[i]+a1304*k4[i]+a1305*k5[i]+a1306*k6[i]+a1307*k7[i]+a1308*k8[i]+a1309*k9[i]+a1310*k10[i])
       end
-      f(t+Δt,tmp,k13)
+      f(t+dt,tmp,k13)
       for i in uidx
-        update[i] = Δt*(b1*k1[i]+b6*k6[i]+b7*k7[i]+b8*k8[i]+b9*k9[i]+b10*k10[i]+b11*k11[i]+b12*k12[i])
+        update[i] = dt*(b1*k1[i]+b6*k6[i]+b7*k7[i]+b8*k8[i]+b9*k9[i]+b10*k10[i]+b11*k11[i]+b12*k12[i])
         utmp[i] = u[i] + update[i]
       end
       if adaptive
         for i in uidx
-          atmp[i] = ((update[i] - Δt*(k1[i]*bhat1 + k6[i]*bhat6 + k7[i]*bhat7 + k8[i]*bhat8 + k9[i]*bhat9 + k10[i]*bhat10 + k13[i]*bhat13))/(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
+          atmp[i] = ((update[i] - dt*(k1[i]*bhat1 + k6[i]*bhat6 + k7[i]*bhat7 + k8[i]*bhat8 + k9[i]*bhat9 + k10[i]*bhat10 + k13[i]*bhat13))/(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
         end
         EEst = internalnorm(atmp)
       else
@@ -2174,25 +2133,25 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
     while t < T
       @ode_loopheader
       k1 = f(t,u)
-      k2 = f(t+c1*Δt,u+Δt*(a0201*k1))
-      k3 = f(t+c2*Δt,u+Δt*(a0301*k1+a0302*k2))
-      k4 = f(t+c3*Δt,u+Δt*(a0401*k1       +a0403*k3))
-      k5 = f(t+c4*Δt,u+Δt*(a0501*k1       +a0503*k3+a0504*k4))
-      k6 = f(t+c5*Δt,u+Δt*(a0601*k1                +a0604*k4+a0605*k5))
-      k7 = f(t+c6*Δt,u+Δt*(a0701*k1                +a0704*k4+a0705*k5+a0706*k6))
-      k8 = f(t+c7*Δt,u+Δt*(a0801*k1                                  +a0806*k6+a0807*k7))
-      k9 = f(t+c8*Δt,u+Δt*(a0901*k1                                  +a0906*k6+a0907*k7+a0908*k8))
-      k10 =f(t+c9*Δt,u+Δt*(a1001*k1                                  +a1006*k6+a1007*k7+a1008*k8+a1009*k9))
-      k11= f(t+c10*Δt,u+Δt*(a1101*k1                                  +a1106*k6+a1107*k7+a1108*k8+a1109*k9+a1110*k10))
-      k12= f(t+c11*Δt,u+Δt*(a1201*k1                                  +a1206*k6+a1207*k7+a1208*k8+a1209*k9+a1210*k10+a1211*k11))
-      k13= f(t+c12*Δt,u+Δt*(a1301*k1                                  +a1306*k6+a1307*k7+a1308*k8+a1309*k9+a1310*k10+a1311*k11+a1312*k12))
-      k14= f(t+c13*Δt,u+Δt*(a1401*k1                                  +a1406*k6+a1407*k7+a1408*k8+a1409*k9+a1410*k10+a1411*k11+a1412*k12+a1413*k13))
-      k15= f(t+Δt,u+Δt*(a1501*k1                                  +a1506*k6+a1507*k7+a1508*k8+a1509*k9+a1510*k10+a1511*k11+a1512*k12+a1513*k13+a1514*k14))
-      k16= f(t+Δt,u+Δt*(a1601*k1                                  +a1606*k6+a1607*k7+a1608*k8+a1609*k9+a1610*k10+a1611*k11+a1612*k12+a1613*k13))
-      update = Δt*(k1*b1+k8*b8+k9*b9+k10*b10+k11*b11+k12*b12+k13*b13+k14*b14+k15*b15)
+      k2 = f(t+c1*dt,u+dt*(a0201*k1))
+      k3 = f(t+c2*dt,u+dt*(a0301*k1+a0302*k2))
+      k4 = f(t+c3*dt,u+dt*(a0401*k1       +a0403*k3))
+      k5 = f(t+c4*dt,u+dt*(a0501*k1       +a0503*k3+a0504*k4))
+      k6 = f(t+c5*dt,u+dt*(a0601*k1                +a0604*k4+a0605*k5))
+      k7 = f(t+c6*dt,u+dt*(a0701*k1                +a0704*k4+a0705*k5+a0706*k6))
+      k8 = f(t+c7*dt,u+dt*(a0801*k1                                  +a0806*k6+a0807*k7))
+      k9 = f(t+c8*dt,u+dt*(a0901*k1                                  +a0906*k6+a0907*k7+a0908*k8))
+      k10 =f(t+c9*dt,u+dt*(a1001*k1                                  +a1006*k6+a1007*k7+a1008*k8+a1009*k9))
+      k11= f(t+c10*dt,u+dt*(a1101*k1                                  +a1106*k6+a1107*k7+a1108*k8+a1109*k9+a1110*k10))
+      k12= f(t+c11*dt,u+dt*(a1201*k1                                  +a1206*k6+a1207*k7+a1208*k8+a1209*k9+a1210*k10+a1211*k11))
+      k13= f(t+c12*dt,u+dt*(a1301*k1                                  +a1306*k6+a1307*k7+a1308*k8+a1309*k9+a1310*k10+a1311*k11+a1312*k12))
+      k14= f(t+c13*dt,u+dt*(a1401*k1                                  +a1406*k6+a1407*k7+a1408*k8+a1409*k9+a1410*k10+a1411*k11+a1412*k12+a1413*k13))
+      k15= f(t+dt,u+dt*(a1501*k1                                  +a1506*k6+a1507*k7+a1508*k8+a1509*k9+a1510*k10+a1511*k11+a1512*k12+a1513*k13+a1514*k14))
+      k16= f(t+dt,u+dt*(a1601*k1                                  +a1606*k6+a1607*k7+a1608*k8+a1609*k9+a1610*k10+a1611*k11+a1612*k12+a1613*k13))
+      update = dt*(k1*b1+k8*b8+k9*b9+k10*b10+k11*b11+k12*b12+k13*b13+k14*b14+k15*b15)
       utmp = u + update
       if adaptive
-        EEst = abs((update - Δt*(k1*bhat1 + k8*bhat8 + k9*bhat9 + k10*bhat10 + k11*bhat11 + k12*bhat12 + k13*bhat13 + k16*bhat16))/(abstol+max(abs(u),abs(utmp))*reltol))
+        EEst = abs((update - dt*(k1*bhat1 + k8*bhat8 + k9*bhat9 + k10*bhat10 + k11*bhat11 + k12*bhat12 + k13*bhat13 + k16*bhat16))/(abstol+max(abs(u),abs(utmp))*reltol))
       else
         u = utmp
       end
@@ -2237,72 +2196,72 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
       @ode_loopheader
       f(t,u,k1)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0201*k1[i])
+        tmp[i] = u[i]+dt*(a0201*k1[i])
       end
-      f(t+c1*Δt,tmp,k2)
+      f(t+c1*dt,tmp,k2)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0301*k1[i]+a0302*k2[i])
+        tmp[i] = u[i]+dt*(a0301*k1[i]+a0302*k2[i])
       end
-      f(t+c2*Δt,tmp,k3)
+      f(t+c2*dt,tmp,k3)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0401*k1[i]+a0403*k3[i])
+        tmp[i] = u[i]+dt*(a0401*k1[i]+a0403*k3[i])
       end
-      f(t+c3*Δt,tmp,k4)
+      f(t+c3*dt,tmp,k4)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0501*k1[i]+a0503*k3[i]+a0504*k4[i])
+        tmp[i] = u[i]+dt*(a0501*k1[i]+a0503*k3[i]+a0504*k4[i])
       end
-      f(t+c4*Δt,tmp,k5)
+      f(t+c4*dt,tmp,k5)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0601*k1[i]+a0604*k4[i]+a0605*k5[i])
+        tmp[i] = u[i]+dt*(a0601*k1[i]+a0604*k4[i]+a0605*k5[i])
       end
-      f(t+c5*Δt,tmp,k6)
+      f(t+c5*dt,tmp,k6)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0701*k1[i]+a0704*k4[i]+a0705*k5[i]+a0706*k6[i])
+        tmp[i] = u[i]+dt*(a0701*k1[i]+a0704*k4[i]+a0705*k5[i]+a0706*k6[i])
       end
-      f(t+c6*Δt,tmp,k7)
+      f(t+c6*dt,tmp,k7)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0801*k1[i]+a0806*k6[i]+a0807*k7[i])
+        tmp[i] = u[i]+dt*(a0801*k1[i]+a0806*k6[i]+a0807*k7[i])
       end
-      f(t+c7*Δt,tmp,k8)
+      f(t+c7*dt,tmp,k8)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a0901*k1[i]+a0906*k6[i]+a0907*k7[i]+a0908*k8[i])
+        tmp[i] = u[i]+dt*(a0901*k1[i]+a0906*k6[i]+a0907*k7[i]+a0908*k8[i])
       end
-      f(t+c8*Δt,tmp,k9)
+      f(t+c8*dt,tmp,k9)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a1001*k1[i]+a1006*k6[i]+a1007*k7[i]+a1008*k8[i]+a1009*k9[i])
+        tmp[i] = u[i]+dt*(a1001*k1[i]+a1006*k6[i]+a1007*k7[i]+a1008*k8[i]+a1009*k9[i])
       end
-      f(t+c9*Δt,tmp,k10)
+      f(t+c9*dt,tmp,k10)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a1101*k1[i]+a1106*k6[i]+a1107*k7[i]+a1108*k8[i]+a1109*k9[i]+a1110*k10[i])
+        tmp[i] = u[i]+dt*(a1101*k1[i]+a1106*k6[i]+a1107*k7[i]+a1108*k8[i]+a1109*k9[i]+a1110*k10[i])
       end
-      f(t+c10*Δt,tmp,k11)
+      f(t+c10*dt,tmp,k11)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a1201*k1[i]+a1206*k6[i]+a1207*k7[i]+a1208*k8[i]+a1209*k9[i]+a1210*k10[i]+a1211*k11[i])
+        tmp[i] = u[i]+dt*(a1201*k1[i]+a1206*k6[i]+a1207*k7[i]+a1208*k8[i]+a1209*k9[i]+a1210*k10[i]+a1211*k11[i])
       end
-      f(t+c11*Δt,tmp,k12)
+      f(t+c11*dt,tmp,k12)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a1301*k1[i]+a1306*k6[i]+a1307*k7[i]+a1308*k8[i]+a1309*k9[i]+a1310*k10[i]+a1311*k11[i]+a1312*k12[i])
+        tmp[i] = u[i]+dt*(a1301*k1[i]+a1306*k6[i]+a1307*k7[i]+a1308*k8[i]+a1309*k9[i]+a1310*k10[i]+a1311*k11[i]+a1312*k12[i])
       end
-      f(t+c12*Δt,tmp,k13)
+      f(t+c12*dt,tmp,k13)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a1401*k1[i]+a1406*k6[i]+a1407*k7[i]+a1408*k8[i]+a1409*k9[i]+a1410*k10[i]+a1411*k11[i]+a1412*k12[i]+a1413*k13[i])
+        tmp[i] = u[i]+dt*(a1401*k1[i]+a1406*k6[i]+a1407*k7[i]+a1408*k8[i]+a1409*k9[i]+a1410*k10[i]+a1411*k11[i]+a1412*k12[i]+a1413*k13[i])
       end
-      f(t+c13*Δt,tmp,k14)
+      f(t+c13*dt,tmp,k14)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a1501*k1[i]+a1506*k6[i]+a1507*k7[i]+a1508*k8[i]+a1509*k9[i]+a1510*k10[i]+a1511*k11[i]+a1512*k12[i]+a1513*k13[i]+a1514*k14[i])
+        tmp[i] = u[i]+dt*(a1501*k1[i]+a1506*k6[i]+a1507*k7[i]+a1508*k8[i]+a1509*k9[i]+a1510*k10[i]+a1511*k11[i]+a1512*k12[i]+a1513*k13[i]+a1514*k14[i])
       end
-      f(t+Δt,tmp,k15)
+      f(t+dt,tmp,k15)
       for i in uidx
-        tmp[i] = u[i]+Δt*(a1601*k1[i]+a1606*k6[i]+a1607*k7[i]+a1608*k8[i]+a1609*k9[i]+a1610*k10[i]+a1611*k11[i]+a1612*k12[i]+a1613*k13[i])
+        tmp[i] = u[i]+dt*(a1601*k1[i]+a1606*k6[i]+a1607*k7[i]+a1608*k8[i]+a1609*k9[i]+a1610*k10[i]+a1611*k11[i]+a1612*k12[i]+a1613*k13[i])
       end
-      f(t+Δt,tmp,k16)
+      f(t+dt,tmp,k16)
       for i in uidx
-        update[i] = Δt*(k1[i]*b1+k8[i]*b8+k9[i]*b9+k10[i]*b10+k11[i]*b11+k12[i]*b12+k13[i]*b13+k14[i]*b14+k15[i]*b15)
+        update[i] = dt*(k1[i]*b1+k8[i]*b8+k9[i]*b9+k10[i]*b10+k11[i]*b11+k12[i]*b12+k13[i]*b13+k14[i]*b14+k15[i]*b15)
         utmp[i] = u[i] + update[i]
       end
       if adaptive
         for i in uidx
-          atmp[i] = ((update[i] - Δt*(k1[i]*bhat1 + k8[i]*bhat8 + k9[i]*bhat9 + k10[i]*bhat10 + k11[i]*bhat11 + k12[i]*bhat12 + k13[i]*bhat13 + k16[i]*bhat16))/(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
+          atmp[i] = ((update[i] - dt*(k1[i]*bhat1 + k8[i]*bhat8 + k9[i]*bhat9 + k10[i]*bhat10 + k11[i]*bhat11 + k12[i]*bhat12 + k13[i]*bhat13 + k16[i]*bhat16))/(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
         end
         EEst = internalnorm(atmp)
       else
@@ -2329,26 +2288,26 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       @ode_loopheader
       k   = f(t,u)
       k1  = k
-      k2  = f(t + c1*Δt,u  + Δt*(a0100*k1))
-      k3  = f(t + c2*Δt ,u + Δt*(a0200*k1 + a0201*k2))
-      k4  = f(t + c3*Δt,u  + Δt*(a0300*k1              + a0302*k3))
-      k5  = f(t + c4*Δt,u  + Δt*(a0400*k1              + a0402*k3 + a0403*k4))
-      k6  = f(t + c5*Δt,u  + Δt*(a0500*k1                           + a0503*k4 + a0504*k5))
-      k7  = f(t + c6*Δt,u  + Δt*(a0600*k1                           + a0603*k4 + a0604*k5 + a0605*k6))
-      k8  = f(t + c7*Δt,u  + Δt*(a0700*k1                                        + a0704*k5 + a0705*k6 + a0706*k7))
-      k9  = f(t + c8*Δt,u  + Δt*(a0800*k1                                                     + a0805*k6 + a0806*k7 + a0807*k8))
-      k10 = f(t + c9*Δt,u  + Δt*(a0900*k1                                                     + a0905*k6 + a0906*k7 + a0907*k8 + a0908*k9))
-      k11 = f(t + c10*Δt,u + Δt*(a1000*k1                                                     + a1005*k6 + a1006*k7 + a1007*k8 + a1008*k9 + a1009*k10))
-      k12 = f(t + c11*Δt,u + Δt*(a1100*k1                                                     + a1105*k6 + a1106*k7 + a1107*k8 + a1108*k9 + a1109*k10 + a1110*k11))
-      k13 = f(t + c12*Δt,u + Δt*(a1200*k1                           + a1203*k4 + a1204*k5 + a1205*k6 + a1206*k7 + a1207*k8 + a1208*k9 + a1209*k10 + a1210*k11 + a1211*k12))
-      k14 = f(t + c13*Δt,u + Δt*(a1300*k1              + a1302*k3 + a1303*k4              + a1305*k6 + a1306*k7 + a1307*k8 + a1308*k9 + a1309*k10 + a1310*k11 + a1311*k12 + a1312*k13))
-      k15 = f(t + c14*Δt,u + Δt*(a1400*k1 + a1401*k2                           + a1404*k5              + a1406*k7 +                                                                     a1412*k13 + a1413*k14))
-      k16 = f(t + c15*Δt,u + Δt*(a1500*k1              + a1502*k3                                                                                                                                                     + a1514*k15))
-      k17 = f(t + c16*Δt,u + Δt*(a1600*k1 + a1601*k2 + a1602*k3              + a1604*k5 + a1605*k6 + a1606*k7 + a1607*k8 + a1608*k9 + a1609*k10 + a1610*k11 + a1611*k12 + a1612*k13 + a1613*k14 + a1614*k15 + a1615*k16))
-      update = Δt*((b1*k1 + b2*k2 + b3*k3 + b5*k5) + (b7*k7 + b9*k9 + b10*k10 + b11*k11) + (b12*k12 + b13*k13 + b14*k14 + b15*k15) + (b16*k16 + b17*k17))
+      k2  = f(t + c1*dt,u  + dt*(a0100*k1))
+      k3  = f(t + c2*dt ,u + dt*(a0200*k1 + a0201*k2))
+      k4  = f(t + c3*dt,u  + dt*(a0300*k1              + a0302*k3))
+      k5  = f(t + c4*dt,u  + dt*(a0400*k1              + a0402*k3 + a0403*k4))
+      k6  = f(t + c5*dt,u  + dt*(a0500*k1                           + a0503*k4 + a0504*k5))
+      k7  = f(t + c6*dt,u  + dt*(a0600*k1                           + a0603*k4 + a0604*k5 + a0605*k6))
+      k8  = f(t + c7*dt,u  + dt*(a0700*k1                                        + a0704*k5 + a0705*k6 + a0706*k7))
+      k9  = f(t + c8*dt,u  + dt*(a0800*k1                                                     + a0805*k6 + a0806*k7 + a0807*k8))
+      k10 = f(t + c9*dt,u  + dt*(a0900*k1                                                     + a0905*k6 + a0906*k7 + a0907*k8 + a0908*k9))
+      k11 = f(t + c10*dt,u + dt*(a1000*k1                                                     + a1005*k6 + a1006*k7 + a1007*k8 + a1008*k9 + a1009*k10))
+      k12 = f(t + c11*dt,u + dt*(a1100*k1                                                     + a1105*k6 + a1106*k7 + a1107*k8 + a1108*k9 + a1109*k10 + a1110*k11))
+      k13 = f(t + c12*dt,u + dt*(a1200*k1                           + a1203*k4 + a1204*k5 + a1205*k6 + a1206*k7 + a1207*k8 + a1208*k9 + a1209*k10 + a1210*k11 + a1211*k12))
+      k14 = f(t + c13*dt,u + dt*(a1300*k1              + a1302*k3 + a1303*k4              + a1305*k6 + a1306*k7 + a1307*k8 + a1308*k9 + a1309*k10 + a1310*k11 + a1311*k12 + a1312*k13))
+      k15 = f(t + c14*dt,u + dt*(a1400*k1 + a1401*k2                           + a1404*k5              + a1406*k7 +                                                                     a1412*k13 + a1413*k14))
+      k16 = f(t + c15*dt,u + dt*(a1500*k1              + a1502*k3                                                                                                                                                     + a1514*k15))
+      k17 = f(t + c16*dt,u + dt*(a1600*k1 + a1601*k2 + a1602*k3              + a1604*k5 + a1605*k6 + a1606*k7 + a1607*k8 + a1608*k9 + a1609*k10 + a1610*k11 + a1611*k12 + a1612*k13 + a1613*k14 + a1614*k15 + a1615*k16))
+      update = dt*((b1*k1 + b2*k2 + b3*k3 + b5*k5) + (b7*k7 + b9*k9 + b10*k10 + b11*k11) + (b12*k12 + b13*k13 + b14*k14 + b15*k15) + (b16*k16 + b17*k17))
       if adaptive
         utmp = u + update
-        EEst = abs((Δt*(k2 - k16) * adaptiveConst)./(abstol+u*reltol))
+        EEst = abs((dt*(k2 - k16) * adaptiveConst)./(abstol+u*reltol))
       else
         u = u + update
       end
@@ -2388,76 +2347,76 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
       @ode_loopheader
       f(t,u,k1)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a0100*k1[i])
+        tmp[i] = u[i] + dt*(a0100*k1[i])
       end
-      f(t + c1*Δt,tmp,k2)
+      f(t + c1*dt,tmp,k2)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a0200*k1[i] + a0201*k2[i])
+        tmp[i] = u[i] + dt*(a0200*k1[i] + a0201*k2[i])
       end
-      f(t + c2*Δt ,tmp,k3)
+      f(t + c2*dt ,tmp,k3)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a0300*k1[i] + a0302*k3[i])
+        tmp[i] = u[i] + dt*(a0300*k1[i] + a0302*k3[i])
       end
-      f(t + c3*Δt,tmp,k4)
+      f(t + c3*dt,tmp,k4)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a0400*k1[i] + a0402*k3[i] + a0403*k4[i])
+        tmp[i] = u[i] + dt*(a0400*k1[i] + a0402*k3[i] + a0403*k4[i])
       end
-      f(t + c4*Δt,tmp,k5)
+      f(t + c4*dt,tmp,k5)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a0500*k1[i] + a0503*k4[i] + a0504*k5[i])
+        tmp[i] = u[i] + dt*(a0500*k1[i] + a0503*k4[i] + a0504*k5[i])
       end
-      f(t + c5*Δt,tmp,k6)
+      f(t + c5*dt,tmp,k6)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a0600*k1[i] + a0603*k4[i] + a0604*k5[i] + a0605*k6[i])
+        tmp[i] = u[i] + dt*(a0600*k1[i] + a0603*k4[i] + a0604*k5[i] + a0605*k6[i])
       end
-      f(t + c6*Δt,tmp,k7)
+      f(t + c6*dt,tmp,k7)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a0700*k1[i] + a0704*k5[i] + a0705*k6[i] + a0706*k7[i])
+        tmp[i] = u[i] + dt*(a0700*k1[i] + a0704*k5[i] + a0705*k6[i] + a0706*k7[i])
       end
-      f(t + c7*Δt,tmp,k8)
+      f(t + c7*dt,tmp,k8)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a0800*k1[i] + a0805*k6[i] + a0806*k7[i] + a0807*k8[i])
+        tmp[i] = u[i] + dt*(a0800*k1[i] + a0805*k6[i] + a0806*k7[i] + a0807*k8[i])
       end
-      f(t + c8*Δt,tmp,k9)
+      f(t + c8*dt,tmp,k9)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a0900*k1[i] + a0905*k6[i] + a0906*k7[i] + a0907*k8[i] + a0908*k9[i])
+        tmp[i] = u[i] + dt*(a0900*k1[i] + a0905*k6[i] + a0906*k7[i] + a0907*k8[i] + a0908*k9[i])
       end
-      f(t + c9*Δt,tmp,k10)
+      f(t + c9*dt,tmp,k10)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a1000*k1[i] + a1005*k6[i] + a1006*k7[i] + a1007*k8[i] + a1008*k9[i] + a1009*k10[i])
+        tmp[i] = u[i] + dt*(a1000*k1[i] + a1005*k6[i] + a1006*k7[i] + a1007*k8[i] + a1008*k9[i] + a1009*k10[i])
       end
-      f(t + c10*Δt,tmp,k11)
+      f(t + c10*dt,tmp,k11)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a1100*k1[i] + a1105*k6[i] + a1106*k7[i] + a1107*k8[i] + a1108*k9[i] + a1109*k10[i] + a1110*k11[i])
+        tmp[i] = u[i] + dt*(a1100*k1[i] + a1105*k6[i] + a1106*k7[i] + a1107*k8[i] + a1108*k9[i] + a1109*k10[i] + a1110*k11[i])
       end
-      f(t + c11*Δt,tmp,k12)
+      f(t + c11*dt,tmp,k12)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a1200*k1[i] + a1203*k4[i] + a1204*k5[i] + a1205*k6[i] + a1206*k7[i] + a1207*k8[i] + a1208*k9[i] + a1209*k10[i] + a1210*k11[i] + a1211*k12[i])
+        tmp[i] = u[i] + dt*(a1200*k1[i] + a1203*k4[i] + a1204*k5[i] + a1205*k6[i] + a1206*k7[i] + a1207*k8[i] + a1208*k9[i] + a1209*k10[i] + a1210*k11[i] + a1211*k12[i])
       end
-      f(t + c12*Δt,tmp,k13)
+      f(t + c12*dt,tmp,k13)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a1300*k1[i] + a1302*k3[i] + a1303*k4[i] + a1305*k6[i] + a1306*k7[i] + a1307*k8[i] + a1308*k9[i] + a1309*k10[i] + a1310*k11[i] + a1311*k12[i] + a1312*k13[i])
+        tmp[i] = u[i] + dt*(a1300*k1[i] + a1302*k3[i] + a1303*k4[i] + a1305*k6[i] + a1306*k7[i] + a1307*k8[i] + a1308*k9[i] + a1309*k10[i] + a1310*k11[i] + a1311*k12[i] + a1312*k13[i])
       end
-      f(t + c13*Δt,tmp,k14)
+      f(t + c13*dt,tmp,k14)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a1400*k1[i] + a1401*k2[i] + a1404*k5[i] + a1406*k7[i] + a1412*k13[i] + a1413*k14[i])
+        tmp[i] = u[i] + dt*(a1400*k1[i] + a1401*k2[i] + a1404*k5[i] + a1406*k7[i] + a1412*k13[i] + a1413*k14[i])
       end
-      f(t + c14*Δt,tmp,k15)
+      f(t + c14*dt,tmp,k15)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a1500*k1[i] + a1502*k3[i] + a1514*k15[i])
+        tmp[i] = u[i] + dt*(a1500*k1[i] + a1502*k3[i] + a1514*k15[i])
       end
-      f(t + c15*Δt,tmp,k16)
+      f(t + c15*dt,tmp,k16)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a1600*k1[i] + a1601*k2[i] + a1602*k3[i] + a1604*k5[i] + a1605*k6[i] + a1606*k7[i] + a1607*k8[i] + a1608*k9[i] + a1609*k10[i] + a1610*k11[i] + a1611*k12[i] + a1612*k13[i] + a1613*k14[i] + a1614*k15[i] + a1615*k16[i])
+        tmp[i] = u[i] + dt*(a1600*k1[i] + a1601*k2[i] + a1602*k3[i] + a1604*k5[i] + a1605*k6[i] + a1606*k7[i] + a1607*k8[i] + a1608*k9[i] + a1609*k10[i] + a1610*k11[i] + a1611*k12[i] + a1612*k13[i] + a1613*k14[i] + a1614*k15[i] + a1615*k16[i])
       end
-      f(t + c16*Δt,tmp,k17)
+      f(t + c16*dt,tmp,k17)
       for i in uidx
-        tmp[i] = Δt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i] + b7*k7[i] + b9*k9[i] + b10*k10[i] + b11*k11[i] + b12*k12[i] + b13*k13[i] + b14*k14[i] + b15*k15[i] + b16*k16[i] + b17*k17[i])
+        tmp[i] = dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i] + b7*k7[i] + b9*k9[i] + b10*k10[i] + b11*k11[i] + b12*k12[i] + b13*k13[i] + b14*k14[i] + b15*k15[i] + b16*k16[i] + b17*k17[i])
       end
       if adaptive
         for i in uidx
           utmp[i] = u[i] + tmp[i]
-          atmp[i] = (Δt*(k2[i] - k16[i]) * adaptiveConst)./(abstol+u[i]*reltol)
+          atmp[i] = (dt*(k2[i] - k16[i]) * adaptiveConst)./(abstol+u[i]*reltol)
         end
         EEst = internalnorm(atmp)
       else #no chance of rejecting, so in-place
@@ -2492,35 +2451,35 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       @ode_loopheader
       k   = f(t,u)
       k1  = k
-      k2  = f(t + c1*Δt,u  + Δt*(a0100*k1))
-      k3  = f(t + c2*Δt ,u + Δt*(a0200*k1 + a0201*k2))
-      k4  = f(t + c3*Δt,u  + Δt*(a0300*k1              + a0302*k3))
-      k5  = f(t + c4*Δt,u  + Δt*(a0400*k1              + a0402*k3 + a0403*k4))
-      k6  = f(t + c5*Δt,u  + Δt*(a0500*k1                           + a0503*k4 + a0504*k5))
-      k7  = f(t + c6*Δt,u  + Δt*(a0600*k1                           + a0603*k4 + a0604*k5 + a0605*k6))
-      k8  = f(t + c7*Δt,u  + Δt*(a0700*k1                                        + a0704*k5 + a0705*k6 + a0706*k7))
-      k9  = f(t + c8*Δt,u  + Δt*(a0800*k1                                                     + a0805*k6 + a0806*k7 + a0807*k8))
-      k10 = f(t + c9*Δt,u  + Δt*(a0900*k1                                                     + a0905*k6 + a0906*k7 + a0907*k8 + a0908*k9))
-      k11 = f(t + c10*Δt,u + Δt*(a1000*k1                                                     + a1005*k6 + a1006*k7 + a1007*k8 + a1008*k9 + a1009*k10))
-      k12 = f(t + c11*Δt,u + Δt*(a1100*k1                                                     + a1105*k6 + a1106*k7 + a1107*k8 + a1108*k9 + a1109*k10 + a1110*k11))
-      k13 = f(t + c12*Δt,u + Δt*(a1200*k1                                                                                            + a1208*k9 + a1209*k10 + a1210*k11 + a1211*k12))
-      k14 = f(t + c13*Δt,u + Δt*(a1300*k1                                                                                            + a1308*k9 + a1309*k10 + a1310*k11 + a1311*k12 + a1312*k13))
-      k15 = f(t + c14*Δt,u + Δt*(a1400*k1                                                                                            + a1408*k9 + a1409*k10 + a1410*k11 + a1411*k12 + a1412*k13 + a1413*k14))
-      k16 = f(t + c15*Δt,u + Δt*(a1500*k1                                                                                            + a1508*k9 + a1509*k10 + a1510*k11 + a1511*k12 + a1512*k13 + a1513*k14 + a1514*k15))
-      k17 = f(t + c16*Δt,u + Δt*(a1600*k1                                                                                            + a1608*k9 + a1609*k10 + a1610*k11 + a1611*k12 + a1612*k13 + a1613*k14 + a1614*k15 + a1615*k16))
-      k18 = f(t + c17*Δt,u + Δt*(a1700*k1                                                     + a1705*k6 + a1706*k7 + a1707*k8 + a1708*k9 + a1709*k10 + a1710*k11 + a1711*k12 + a1712*k13 + a1713*k14 + a1714*k15 + a1715*k16 + a1716*k17))
-      k19 = f(t + c18*Δt,u + Δt*(a1800*k1                                                     + a1805*k6 + a1806*k7 + a1807*k8 + a1808*k9 + a1809*k10 + a1810*k11 + a1811*k12 + a1812*k13 + a1813*k14 + a1814*k15 + a1815*k16 + a1816*k17 + a1817*k18))
-      k20 = f(t + c19*Δt,u + Δt*(a1900*k1                                        + a1904*k5 + a1905*k6 + a1906*k7              + a1908*k9 + a1909*k10 + a1910*k11 + a1911*k12 + a1912*k13 + a1913*k14 + a1914*k15 + a1915*k16 + a1916*k17 + a1917*k18 + a1918*k19))
-      k21 = f(t + c20*Δt,u + Δt*(a2000*k1                           + a2003*k4 + a2004*k5 + a2005*k6              + a2007*k8              + a2009*k10 + a2010*k11                                                                                     + a2017*k18 + a2018*k19 + a2019*k20))
-      k22 = f(t + c21*Δt,u + Δt*(a2100*k1              + a2102*k3 + a2103*k4                           + a2106*k7 + a2107*k8              + a2109*k10 + a2110*k11                                                                                     + a2117*k18 + a2118*k19 + a2119*k20 + a2120*k21))
-      k23 = f(t + c22*Δt,u + Δt*(a2200*k1 + a2201*k2                           + a2204*k5              + a2206*k7                                                                                                                                                                                     + a2220*k21 + a2221*k22))
-      k24 = f(t + c23*Δt,u + Δt*(a2300*k1              + a2302*k3                                                                                                                                                                                                                                                                     + a2322*k23))
-      k25 = f(t + c24*Δt,u + Δt*(a2400*k1 + a2401*k2 + a2402*k3              + a2404*k5              + a2406*k7 + a2407*k8 + a2408*k9 + a2409*k10 + a2410*k11 + a2411*k12 + a2412*k13 + a2413*k14 + a2414*k15 + a2415*k16 + a2416*k17 + a2417*k18 + a2418*k19 + a2419*k20 + a2420*k21 + a2421*k22 + a2422*k23 + a2423*k24))
+      k2  = f(t + c1*dt,u  + dt*(a0100*k1))
+      k3  = f(t + c2*dt ,u + dt*(a0200*k1 + a0201*k2))
+      k4  = f(t + c3*dt,u  + dt*(a0300*k1              + a0302*k3))
+      k5  = f(t + c4*dt,u  + dt*(a0400*k1              + a0402*k3 + a0403*k4))
+      k6  = f(t + c5*dt,u  + dt*(a0500*k1                           + a0503*k4 + a0504*k5))
+      k7  = f(t + c6*dt,u  + dt*(a0600*k1                           + a0603*k4 + a0604*k5 + a0605*k6))
+      k8  = f(t + c7*dt,u  + dt*(a0700*k1                                        + a0704*k5 + a0705*k6 + a0706*k7))
+      k9  = f(t + c8*dt,u  + dt*(a0800*k1                                                     + a0805*k6 + a0806*k7 + a0807*k8))
+      k10 = f(t + c9*dt,u  + dt*(a0900*k1                                                     + a0905*k6 + a0906*k7 + a0907*k8 + a0908*k9))
+      k11 = f(t + c10*dt,u + dt*(a1000*k1                                                     + a1005*k6 + a1006*k7 + a1007*k8 + a1008*k9 + a1009*k10))
+      k12 = f(t + c11*dt,u + dt*(a1100*k1                                                     + a1105*k6 + a1106*k7 + a1107*k8 + a1108*k9 + a1109*k10 + a1110*k11))
+      k13 = f(t + c12*dt,u + dt*(a1200*k1                                                                                            + a1208*k9 + a1209*k10 + a1210*k11 + a1211*k12))
+      k14 = f(t + c13*dt,u + dt*(a1300*k1                                                                                            + a1308*k9 + a1309*k10 + a1310*k11 + a1311*k12 + a1312*k13))
+      k15 = f(t + c14*dt,u + dt*(a1400*k1                                                                                            + a1408*k9 + a1409*k10 + a1410*k11 + a1411*k12 + a1412*k13 + a1413*k14))
+      k16 = f(t + c15*dt,u + dt*(a1500*k1                                                                                            + a1508*k9 + a1509*k10 + a1510*k11 + a1511*k12 + a1512*k13 + a1513*k14 + a1514*k15))
+      k17 = f(t + c16*dt,u + dt*(a1600*k1                                                                                            + a1608*k9 + a1609*k10 + a1610*k11 + a1611*k12 + a1612*k13 + a1613*k14 + a1614*k15 + a1615*k16))
+      k18 = f(t + c17*dt,u + dt*(a1700*k1                                                     + a1705*k6 + a1706*k7 + a1707*k8 + a1708*k9 + a1709*k10 + a1710*k11 + a1711*k12 + a1712*k13 + a1713*k14 + a1714*k15 + a1715*k16 + a1716*k17))
+      k19 = f(t + c18*dt,u + dt*(a1800*k1                                                     + a1805*k6 + a1806*k7 + a1807*k8 + a1808*k9 + a1809*k10 + a1810*k11 + a1811*k12 + a1812*k13 + a1813*k14 + a1814*k15 + a1815*k16 + a1816*k17 + a1817*k18))
+      k20 = f(t + c19*dt,u + dt*(a1900*k1                                        + a1904*k5 + a1905*k6 + a1906*k7              + a1908*k9 + a1909*k10 + a1910*k11 + a1911*k12 + a1912*k13 + a1913*k14 + a1914*k15 + a1915*k16 + a1916*k17 + a1917*k18 + a1918*k19))
+      k21 = f(t + c20*dt,u + dt*(a2000*k1                           + a2003*k4 + a2004*k5 + a2005*k6              + a2007*k8              + a2009*k10 + a2010*k11                                                                                     + a2017*k18 + a2018*k19 + a2019*k20))
+      k22 = f(t + c21*dt,u + dt*(a2100*k1              + a2102*k3 + a2103*k4                           + a2106*k7 + a2107*k8              + a2109*k10 + a2110*k11                                                                                     + a2117*k18 + a2118*k19 + a2119*k20 + a2120*k21))
+      k23 = f(t + c22*dt,u + dt*(a2200*k1 + a2201*k2                           + a2204*k5              + a2206*k7                                                                                                                                                                                     + a2220*k21 + a2221*k22))
+      k24 = f(t + c23*dt,u + dt*(a2300*k1              + a2302*k3                                                                                                                                                                                                                                                                     + a2322*k23))
+      k25 = f(t + c24*dt,u + dt*(a2400*k1 + a2401*k2 + a2402*k3              + a2404*k5              + a2406*k7 + a2407*k8 + a2408*k9 + a2409*k10 + a2410*k11 + a2411*k12 + a2412*k13 + a2413*k14 + a2414*k15 + a2415*k16 + a2416*k17 + a2417*k18 + a2418*k19 + a2419*k20 + a2420*k21 + a2421*k22 + a2422*k23 + a2423*k24))
 
-      update = Δt*((b1*k1 + b2*k2 + b3*k3 + b5*k5) + (b7*k7 + b8*k8 + b10*k10 + b11*k11) + (b13*k13 + b14*k14 + b15*k15 + b16*k16) + (b17*k17 + b18*k18 + b19*k19 + b20*k20) + (b21*k21 + b22*k22 + b23*k23 + b24*k24) + (b25*k25))
+      update = dt*((b1*k1 + b2*k2 + b3*k3 + b5*k5) + (b7*k7 + b8*k8 + b10*k10 + b11*k11) + (b13*k13 + b14*k14 + b15*k15 + b16*k16) + (b17*k17 + b18*k18 + b19*k19 + b20*k20) + (b21*k21 + b22*k22 + b23*k23 + b24*k24) + (b25*k25))
       if adaptive
         utmp = u + update
-        EEst = abs((Δt*(k2 - k24) * adaptiveConst)./(abstol+u*reltol))
+        EEst = abs((dt*(k2 - k24) * adaptiveConst)./(abstol+u*reltol))
       else #no chance of rejecting so in-place
         u = u + update
       end
@@ -2563,108 +2522,108 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
       @ode_loopheader
       f(t,u,k1)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a0100*k1[i])
+        tmp[i] = u[i] + dt*(a0100*k1[i])
       end
-      f(t + c1*Δt,tmp,k2)
+      f(t + c1*dt,tmp,k2)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a0200*k1[i] + a0201*k2[i])
+        tmp[i] = u[i] + dt*(a0200*k1[i] + a0201*k2[i])
       end
-      f(t + c2*Δt ,tmp,k3)
+      f(t + c2*dt ,tmp,k3)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a0300*k1[i] + a0302*k3[i])
+        tmp[i] = u[i] + dt*(a0300*k1[i] + a0302*k3[i])
       end
-      f(t + c3*Δt,tmp,k4)
+      f(t + c3*dt,tmp,k4)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a0400*k1[i] + a0402*k3[i] + a0403*k4[i])
+        tmp[i] = u[i] + dt*(a0400*k1[i] + a0402*k3[i] + a0403*k4[i])
       end
-      f(t + c4*Δt,tmp,k5)
+      f(t + c4*dt,tmp,k5)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a0500*k1[i] + a0503*k4[i] + a0504*k5[i])
+        tmp[i] = u[i] + dt*(a0500*k1[i] + a0503*k4[i] + a0504*k5[i])
       end
-      f(t + c5*Δt,tmp,k6)
+      f(t + c5*dt,tmp,k6)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a0600*k1[i] + a0603*k4[i] + a0604*k5[i] + a0605*k6[i])
+        tmp[i] = u[i] + dt*(a0600*k1[i] + a0603*k4[i] + a0604*k5[i] + a0605*k6[i])
       end
-      f(t + c6*Δt,tmp,k7)
+      f(t + c6*dt,tmp,k7)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a0700*k1[i] + a0704*k5[i] + a0705*k6[i] + a0706*k7[i])
+        tmp[i] = u[i] + dt*(a0700*k1[i] + a0704*k5[i] + a0705*k6[i] + a0706*k7[i])
       end
-      f(t + c7*Δt,tmp,k8)
+      f(t + c7*dt,tmp,k8)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a0800*k1[i] + a0805*k6[i] + a0806*k7[i] + a0807*k8[i])
+        tmp[i] = u[i] + dt*(a0800*k1[i] + a0805*k6[i] + a0806*k7[i] + a0807*k8[i])
       end
-      f(t + c8*Δt,tmp,k9)
+      f(t + c8*dt,tmp,k9)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a0900*k1[i] + a0905*k6[i] + a0906*k7[i] + a0907*k8[i] + a0908*k9[i])
+        tmp[i] = u[i] + dt*(a0900*k1[i] + a0905*k6[i] + a0906*k7[i] + a0907*k8[i] + a0908*k9[i])
       end
-      f(t + c9*Δt,tmp,k10)
+      f(t + c9*dt,tmp,k10)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a1000*k1[i] + a1005*k6[i] + a1006*k7[i] + a1007*k8[i] + a1008*k9[i] + a1009*k10[i])
+        tmp[i] = u[i] + dt*(a1000*k1[i] + a1005*k6[i] + a1006*k7[i] + a1007*k8[i] + a1008*k9[i] + a1009*k10[i])
       end
-      f(t + c10*Δt,tmp,k11)
+      f(t + c10*dt,tmp,k11)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a1100*k1[i] + a1105*k6[i] + a1106*k7[i] + a1107*k8[i] + a1108*k9[i] + a1109*k10[i] + a1110*k11[i])
+        tmp[i] = u[i] + dt*(a1100*k1[i] + a1105*k6[i] + a1106*k7[i] + a1107*k8[i] + a1108*k9[i] + a1109*k10[i] + a1110*k11[i])
       end
-      f(t + c11*Δt,tmp,k12)
+      f(t + c11*dt,tmp,k12)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a1200*k1[i] + a1208*k9[i] + a1209*k10[i] + a1210*k11[i] + a1211*k12[i])
+        tmp[i] = u[i] + dt*(a1200*k1[i] + a1208*k9[i] + a1209*k10[i] + a1210*k11[i] + a1211*k12[i])
       end
-      f(t + c12*Δt,tmp,k13)
+      f(t + c12*dt,tmp,k13)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a1300*k1[i] + a1308*k9[i] + a1309*k10[i] + a1310*k11[i] + a1311*k12[i] + a1312*k13[i])
+        tmp[i] = u[i] + dt*(a1300*k1[i] + a1308*k9[i] + a1309*k10[i] + a1310*k11[i] + a1311*k12[i] + a1312*k13[i])
       end
-      f(t + c13*Δt,tmp,k14)
+      f(t + c13*dt,tmp,k14)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a1400*k1[i] + a1408*k9[i] + a1409*k10[i] + a1410*k11[i] + a1411*k12[i] + a1412*k13[i] + a1413*k14[i])
+        tmp[i] = u[i] + dt*(a1400*k1[i] + a1408*k9[i] + a1409*k10[i] + a1410*k11[i] + a1411*k12[i] + a1412*k13[i] + a1413*k14[i])
       end
-      f(t + c14*Δt,tmp,k15)
+      f(t + c14*dt,tmp,k15)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a1500*k1[i] + a1508*k9[i] + a1509*k10[i] + a1510*k11[i] + a1511*k12[i] + a1512*k13[i] + a1513*k14[i] + a1514*k15[i])
+        tmp[i] = u[i] + dt*(a1500*k1[i] + a1508*k9[i] + a1509*k10[i] + a1510*k11[i] + a1511*k12[i] + a1512*k13[i] + a1513*k14[i] + a1514*k15[i])
       end
-      f(t + c15*Δt,tmp,k16)
+      f(t + c15*dt,tmp,k16)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a1600*k1[i] + a1608*k9[i] + a1609*k10[i]) + (a1610*k11[i] + a1611*k12[i] + a1612*k13[i] + a1613*k14[i]) + (a1614*k15[i] + a1615*k16[i]))
+        tmp[i] = u[i] + dt*((a1600*k1[i] + a1608*k9[i] + a1609*k10[i]) + (a1610*k11[i] + a1611*k12[i] + a1612*k13[i] + a1613*k14[i]) + (a1614*k15[i] + a1615*k16[i]))
       end
-      f(t + c16*Δt,tmp,k17)
+      f(t + c16*dt,tmp,k17)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a1700*k1[i] + a1705*k6[i] + a1706*k7[i]) + (a1707*k8[i] + a1708*k9[i] + a1709*k10[i] + a1710*k11[i]) + (a1711*k12[i] + a1712*k13[i] + a1713*k14[i] + a1714*k15[i]) + (a1715*k16[i] + a1716*k17[i]))
+        tmp[i] = u[i] + dt*((a1700*k1[i] + a1705*k6[i] + a1706*k7[i]) + (a1707*k8[i] + a1708*k9[i] + a1709*k10[i] + a1710*k11[i]) + (a1711*k12[i] + a1712*k13[i] + a1713*k14[i] + a1714*k15[i]) + (a1715*k16[i] + a1716*k17[i]))
       end
-      f(t + c17*Δt,tmp,k18)
+      f(t + c17*dt,tmp,k18)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a1800*k1[i] + a1805*k6[i] + a1806*k7[i]) + (a1807*k8[i] + a1808*k9[i] + a1809*k10[i] + a1810*k11[i]) + (a1811*k12[i] + a1812*k13[i] + a1813*k14[i] + a1814*k15[i]) + (a1815*k16[i] + a1816*k17[i] + a1817*k18[i]))
+        tmp[i] = u[i] + dt*((a1800*k1[i] + a1805*k6[i] + a1806*k7[i]) + (a1807*k8[i] + a1808*k9[i] + a1809*k10[i] + a1810*k11[i]) + (a1811*k12[i] + a1812*k13[i] + a1813*k14[i] + a1814*k15[i]) + (a1815*k16[i] + a1816*k17[i] + a1817*k18[i]))
       end
-      f(t + c18*Δt,tmp,k19)
+      f(t + c18*dt,tmp,k19)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a1900*k1[i] + a1904*k5[i] + a1905*k6[i]) + (a1906*k7[i] + a1908*k9[i] + a1909*k10[i] + a1910*k11[i]) + (a1911*k12[i] + a1912*k13[i] + a1913*k14[i] + a1914*k15[i]) + (a1915*k16[i] + a1916*k17[i] + a1917*k18[i] + a1918*k19[i]))
+        tmp[i] = u[i] + dt*((a1900*k1[i] + a1904*k5[i] + a1905*k6[i]) + (a1906*k7[i] + a1908*k9[i] + a1909*k10[i] + a1910*k11[i]) + (a1911*k12[i] + a1912*k13[i] + a1913*k14[i] + a1914*k15[i]) + (a1915*k16[i] + a1916*k17[i] + a1917*k18[i] + a1918*k19[i]))
       end
-      f(t + c19*Δt,tmp,k20)
+      f(t + c19*dt,tmp,k20)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a2000*k1[i] + a2003*k4[i] + a2004*k5[i]) + (a2005*k6[i] + a2007*k8[i] + a2009*k10[i] + a2010*k11[i]) + (a2017*k18[i] + a2018*k19[i] + a2019*k20[i]))
+        tmp[i] = u[i] + dt*((a2000*k1[i] + a2003*k4[i] + a2004*k5[i]) + (a2005*k6[i] + a2007*k8[i] + a2009*k10[i] + a2010*k11[i]) + (a2017*k18[i] + a2018*k19[i] + a2019*k20[i]))
       end
-      f(t + c20*Δt,tmp,k21)
+      f(t + c20*dt,tmp,k21)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a2100*k1[i] + a2102*k3[i] + a2103*k4[i]) + (a2106*k7[i] + a2107*k8[i] + a2109*k10[i] + a2110*k11[i]) + (a2117*k18[i] + a2118*k19[i] + a2119*k20[i] + a2120*k21[i]))
+        tmp[i] = u[i] + dt*((a2100*k1[i] + a2102*k3[i] + a2103*k4[i]) + (a2106*k7[i] + a2107*k8[i] + a2109*k10[i] + a2110*k11[i]) + (a2117*k18[i] + a2118*k19[i] + a2119*k20[i] + a2120*k21[i]))
       end
-      f(t + c21*Δt,tmp,k22)
+      f(t + c21*dt,tmp,k22)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a2200*k1[i] + a2201*k2[i] + a2204*k5[i]) + (a2206*k7[i] + a2220*k21[i] + a2221*k22[i]))
+        tmp[i] = u[i] + dt*((a2200*k1[i] + a2201*k2[i] + a2204*k5[i]) + (a2206*k7[i] + a2220*k21[i] + a2221*k22[i]))
       end
-      f(t + c22*Δt,tmp,k23)
+      f(t + c22*dt,tmp,k23)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a2300*k1[i] + a2302*k3[i] + a2322*k23[i])
+        tmp[i] = u[i] + dt*(a2300*k1[i] + a2302*k3[i] + a2322*k23[i])
       end
-      f(t + c23*Δt,tmp,k24)
+      f(t + c23*dt,tmp,k24)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a2400*k1[i] + a2401*k2[i] + a2402*k3[i]) + (a2404*k5[i] + a2406*k7[i] + a2407*k8[i] + a2408*k9[i]) + (a2409*k10[i] + a2410*k11[i] + a2411*k12[i] + a2412*k13[i]) + (a2413*k14[i] + a2414*k15[i] + a2415*k16[i] + a2416*k17[i]) + (a2417*k18[i] + a2418*k19[i] + a2419*k20[i] + a2420*k21[i]) + (a2421*k22[i] + a2422*k23[i] + a2423*k24[i]))
+        tmp[i] = u[i] + dt*((a2400*k1[i] + a2401*k2[i] + a2402*k3[i]) + (a2404*k5[i] + a2406*k7[i] + a2407*k8[i] + a2408*k9[i]) + (a2409*k10[i] + a2410*k11[i] + a2411*k12[i] + a2412*k13[i]) + (a2413*k14[i] + a2414*k15[i] + a2415*k16[i] + a2416*k17[i]) + (a2417*k18[i] + a2418*k19[i] + a2419*k20[i] + a2420*k21[i]) + (a2421*k22[i] + a2422*k23[i] + a2423*k24[i]))
       end
-      f(t + c24*Δt,tmp,k25)
+      f(t + c24*dt,tmp,k25)
       for i in uidx
-        update[i] = Δt*((b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i]) + (b7*k7[i] + b8*k8[i] + b10*k10[i] + b11*k11[i]) + (b13*k13[i] + b14*k14[i] + b15*k15[i] + b16*k16[i]) + (b17*k17[i] + b18*k18[i] + b19*k19[i] + b20*k20[i]) + (b21*k21[i] + b22*k22[i] + b23*k23[i] + b24*k24[i]) + b25*k25[i])
+        update[i] = dt*((b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i]) + (b7*k7[i] + b8*k8[i] + b10*k10[i] + b11*k11[i]) + (b13*k13[i] + b14*k14[i] + b15*k15[i] + b16*k16[i]) + (b17*k17[i] + b18*k18[i] + b19*k19[i] + b20*k20[i]) + (b21*k21[i] + b22*k22[i] + b23*k23[i] + b24*k24[i]) + b25*k25[i])
       end
       if adaptive
         for i in uidx
           utmp[i] = u[i] + update[i]
-          atmp[i] = (Δt*(k2[i] - k24[i]) * adaptiveConst)/(abstol+u[i]*reltol)
+          atmp[i] = (dt*(k2[i] - k24[i]) * adaptiveConst)/(abstol+u[i]*reltol)
         end
         EEst = internalnorm(atmp)
       else #no chance of rejecting so in-place
@@ -2702,44 +2661,44 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       @ode_loopheader
       k   = f(t,u)
       k1  = k
-      k2  = f(t + c1*Δt,u  + Δt*(a0100*k1))
-      k3  = f(t + c2*Δt ,u + Δt*(a0200*k1 + a0201*k2))
-      k4  = f(t + c3*Δt,u  + Δt*(a0300*k1              + a0302*k3))
-      k5  = f(t + c4*Δt,u  + Δt*(a0400*k1              + a0402*k3 + a0403*k4))
-      k6  = f(t + c5*Δt,u  + Δt*(a0500*k1                           + a0503*k4 + a0504*k5))
-      k7  = f(t + c6*Δt,u  + Δt*(a0600*k1                           + a0603*k4 + a0604*k5 + a0605*k6))
-      k8  = f(t + c7*Δt,u  + Δt*(a0700*k1                                        + a0704*k5 + a0705*k6 + a0706*k7))
-      k9  = f(t + c8*Δt,u  + Δt*(a0800*k1                                                     + a0805*k6 + a0806*k7 + a0807*k8))
-      k10 = f(t + c9*Δt,u  + Δt*(a0900*k1                                                     + a0905*k6 + a0906*k7 + a0907*k8 + a0908*k9))
-      k11 = f(t + c10*Δt,u + Δt*(a1000*k1                                                     + a1005*k6 + a1006*k7 + a1007*k8 + a1008*k9 + a1009*k10))
-      k12 = f(t + c11*Δt,u + Δt*(a1100*k1                                                     + a1105*k6 + a1106*k7 + a1107*k8 + a1108*k9 + a1109*k10 + a1110*k11))
-      k13 = f(t + c12*Δt,u + Δt*(a1200*k1                                                                                            + a1208*k9 + a1209*k10 + a1210*k11 + a1211*k12))
-      k14 = f(t + c13*Δt,u + Δt*(a1300*k1                                                                                            + a1308*k9 + a1309*k10 + a1310*k11 + a1311*k12 + a1312*k13))
-      k15 = f(t + c14*Δt,u + Δt*(a1400*k1                                                                                            + a1408*k9 + a1409*k10 + a1410*k11 + a1411*k12 + a1412*k13 + a1413*k14))
-      k16 = f(t + c15*Δt,u + Δt*(a1500*k1                                                                                            + a1508*k9 + a1509*k10 + a1510*k11 + a1511*k12 + a1512*k13 + a1513*k14 + a1514*k15))
-      k17 = f(t + c16*Δt,u + Δt*(a1600*k1                                                                                            + a1608*k9 + a1609*k10 + a1610*k11 + a1611*k12 + a1612*k13 + a1613*k14 + a1614*k15 + a1615*k16))
-      k18 = f(t + c17*Δt,u + Δt*(a1700*k1                                                                                                                                                   + a1712*k13 + a1713*k14 + a1714*k15 + a1715*k16 + a1716*k17))
-      k19 = f(t + c18*Δt,u + Δt*(a1800*k1                                                                                                                                                   + a1812*k13 + a1813*k14 + a1814*k15 + a1815*k16 + a1816*k17 + a1817*k18))
-      k20 = f(t + c19*Δt,u + Δt*(a1900*k1                                                                                                                                                   + a1912*k13 + a1913*k14 + a1914*k15 + a1915*k16 + a1916*k17 + a1917*k18 + a1918*k19))
-      k21 = f(t + c20*Δt,u + Δt*(a2000*k1                                                                                                                                                   + a2012*k13 + a2013*k14 + a2014*k15 + a2015*k16 + a2016*k17 + a2017*k18 + a2018*k19 + a2019*k20))
-      k22 = f(t + c21*Δt,u + Δt*(a2100*k1                                                                                                                                                   + a2112*k13 + a2113*k14 + a2114*k15 + a2115*k16 + a2116*k17 + a2117*k18 + a2118*k19 + a2119*k20 + a2120*k21))
-      k23 = f(t + c22*Δt,u + Δt*(a2200*k1                                                                                                                                                   + a2212*k13 + a2213*k14 + a2214*k15 + a2215*k16 + a2216*k17 + a2217*k18 + a2218*k19 + a2219*k20 + a2220*k21 + a2221*k22))
-      k24 = f(t + c23*Δt,u + Δt*(a2300*k1                                                                                            + a2308*k9 + a2309*k10 + a2310*k11 + a2311*k12 + a2312*k13 + a2313*k14 + a2314*k15 + a2315*k16 + a2316*k17 + a2317*k18 + a2318*k19 + a2319*k20 + a2320*k21 + a2321*k22 + a2322*k23))
-      k25 = f(t + c24*Δt,u + Δt*(a2400*k1                                                                                            + a2408*k9 + a2409*k10 + a2410*k11 + a2411*k12 + a2412*k13 + a2413*k14 + a2414*k15 + a2415*k16 + a2416*k17 + a2417*k18 + a2418*k19 + a2419*k20 + a2420*k21 + a2421*k22 + a2422*k23 + a2423*k24))
-      k26 = f(t + c25*Δt,u + Δt*(a2500*k1                                                                                            + a2508*k9 + a2509*k10 + a2510*k11 + a2511*k12 + a2512*k13 + a2513*k14 + a2514*k15 + a2515*k16 + a2516*k17 + a2517*k18 + a2518*k19 + a2519*k20 + a2520*k21 + a2521*k22 + a2522*k23 + a2523*k24 + a2524*k25))
-      k27 = f(t + c26*Δt,u + Δt*(a2600*k1                                                     + a2605*k6 + a2606*k7 + a2607*k8 + a2608*k9 + a2609*k10 + a2610*k11               + a2612*k13 + a2613*k14 + a2614*k15 + a2615*k16 + a2616*k17 + a2617*k18 + a2618*k19 + a2619*k20 + a2620*k21 + a2621*k22 + a2622*k23 + a2623*k24 + a2624*k25 + a2625*k26))
-      k28 = f(t + c27*Δt,u + Δt*(a2700*k1                                                     + a2705*k6 + a2706*k7 + a2707*k8 + a2708*k9 + a2709*k10               + a2711*k12 + a2712*k13 + a2713*k14 + a2714*k15 + a2715*k16 + a2716*k17 + a2717*k18 + a2718*k19 + a2719*k20 + a2720*k21 + a2721*k22 + a2722*k23 + a2723*k24 + a2724*k25 + a2725*k26 + a2726*k27))
-      k29 = f(t + c28*Δt,u + Δt*(a2800*k1                                                     + a2805*k6 + a2806*k7 + a2807*k8 + a2808*k9               + a2810*k11 + a2811*k12               + a2813*k14 + a2814*k15 + a2815*k16                                                                                                   + a2823*k24 + a2824*k25 + a2825*k26 + a2826*k27 + a2827*k28))
-      k30 = f(t + c29*Δt,u + Δt*(a2900*k1                                        + a2904*k5 + a2905*k6 + a2906*k7                           + a2909*k10 + a2910*k11 + a2911*k12               + a2913*k14 + a2914*k15 + a2915*k16                                                                                                   + a2923*k24 + a2924*k25 + a2925*k26 + a2926*k27 + a2927*k28 + a2928*k29))
-      k31 = f(t + c30*Δt,u + Δt*(a3000*k1                           + a3003*k4 + a3004*k5 + a3005*k6              + a3007*k8              + a3009*k10 + a3010*k11                             + a3013*k14 + a3014*k15 + a3015*k16                                                                                                   + a3023*k24 + a3024*k25 + a3025*k26               + a3027*k28 + a3028*k29 + a3029*k30))
-      k32 = f(t + c31*Δt,u + Δt*(a3100*k1              + a3102*k3 + a3103*k4                           + a3106*k7 + a3107*k8              + a3109*k10 + a3110*k11                             + a3113*k14 + a3114*k15 + a3115*k16                                                                                                   + a3123*k24 + a3124*k25 + a3125*k26               + a3127*k28 + a3128*k29 + a3129*k30 + a3130*k31))
-      k33 = f(t + c32*Δt,u + Δt*(a3200*k1 + a3201*k2                           + a3204*k5              + a3206*k7                                                                                                                                                                                                                                                                                                                                 + a3230*k31 + a3231*k32))
-      k34 = f(t + c33*Δt,u + Δt*(a3300*k1              + a3302*k3                                                                                                                                                                                                                                                                                                                                                                                                                 + a3332*k33))
-      k35 = f(t + c34*Δt,u + Δt*(a3400*k1 + a3401*k2 + a3402*k3              + a3404*k5              + a3406*k7 + a3407*k8              + a3409*k10 + a3410*k11 + a3411*k12 + a3412*k13 + a3413*k14 + a3414*k15 + a3415*k16 + a3416*k17 + a3417*k18 + a3418*k19 + a3419*k20 + a3420*k21 + a3421*k22 + a3422*k23 + a3423*k24 + a3424*k25 + a3425*k26 + a3426*k27 + a3427*k28 + a3428*k29 + a3429*k30 + a3430*k31 + a3431*k32 + a3432*k33 + a3433*k34))
-      update = Δt*((b1*k1 + b2*k2 + b3*k3 + b5*k5) + (b7*k7 + b8*k8 + b10*k10 + b11*k11) + (b12*k12 + b14*k14 + b15*k15 + b16*k16) + (b18*k18 + b19*k19 + b20*k20 + b21*k21) + (b22*k22 + b23*k23 + b24*k24 + b25*k25) + (b26*k26 + b27*k27 + b28*k28 + b29*k29) + (b30*k30 + b31*k31 + b32*k32 + b33*k33) + (b34*k34 + b35*k35))
+      k2  = f(t + c1*dt,u  + dt*(a0100*k1))
+      k3  = f(t + c2*dt ,u + dt*(a0200*k1 + a0201*k2))
+      k4  = f(t + c3*dt,u  + dt*(a0300*k1              + a0302*k3))
+      k5  = f(t + c4*dt,u  + dt*(a0400*k1              + a0402*k3 + a0403*k4))
+      k6  = f(t + c5*dt,u  + dt*(a0500*k1                           + a0503*k4 + a0504*k5))
+      k7  = f(t + c6*dt,u  + dt*(a0600*k1                           + a0603*k4 + a0604*k5 + a0605*k6))
+      k8  = f(t + c7*dt,u  + dt*(a0700*k1                                        + a0704*k5 + a0705*k6 + a0706*k7))
+      k9  = f(t + c8*dt,u  + dt*(a0800*k1                                                     + a0805*k6 + a0806*k7 + a0807*k8))
+      k10 = f(t + c9*dt,u  + dt*(a0900*k1                                                     + a0905*k6 + a0906*k7 + a0907*k8 + a0908*k9))
+      k11 = f(t + c10*dt,u + dt*(a1000*k1                                                     + a1005*k6 + a1006*k7 + a1007*k8 + a1008*k9 + a1009*k10))
+      k12 = f(t + c11*dt,u + dt*(a1100*k1                                                     + a1105*k6 + a1106*k7 + a1107*k8 + a1108*k9 + a1109*k10 + a1110*k11))
+      k13 = f(t + c12*dt,u + dt*(a1200*k1                                                                                            + a1208*k9 + a1209*k10 + a1210*k11 + a1211*k12))
+      k14 = f(t + c13*dt,u + dt*(a1300*k1                                                                                            + a1308*k9 + a1309*k10 + a1310*k11 + a1311*k12 + a1312*k13))
+      k15 = f(t + c14*dt,u + dt*(a1400*k1                                                                                            + a1408*k9 + a1409*k10 + a1410*k11 + a1411*k12 + a1412*k13 + a1413*k14))
+      k16 = f(t + c15*dt,u + dt*(a1500*k1                                                                                            + a1508*k9 + a1509*k10 + a1510*k11 + a1511*k12 + a1512*k13 + a1513*k14 + a1514*k15))
+      k17 = f(t + c16*dt,u + dt*(a1600*k1                                                                                            + a1608*k9 + a1609*k10 + a1610*k11 + a1611*k12 + a1612*k13 + a1613*k14 + a1614*k15 + a1615*k16))
+      k18 = f(t + c17*dt,u + dt*(a1700*k1                                                                                                                                                   + a1712*k13 + a1713*k14 + a1714*k15 + a1715*k16 + a1716*k17))
+      k19 = f(t + c18*dt,u + dt*(a1800*k1                                                                                                                                                   + a1812*k13 + a1813*k14 + a1814*k15 + a1815*k16 + a1816*k17 + a1817*k18))
+      k20 = f(t + c19*dt,u + dt*(a1900*k1                                                                                                                                                   + a1912*k13 + a1913*k14 + a1914*k15 + a1915*k16 + a1916*k17 + a1917*k18 + a1918*k19))
+      k21 = f(t + c20*dt,u + dt*(a2000*k1                                                                                                                                                   + a2012*k13 + a2013*k14 + a2014*k15 + a2015*k16 + a2016*k17 + a2017*k18 + a2018*k19 + a2019*k20))
+      k22 = f(t + c21*dt,u + dt*(a2100*k1                                                                                                                                                   + a2112*k13 + a2113*k14 + a2114*k15 + a2115*k16 + a2116*k17 + a2117*k18 + a2118*k19 + a2119*k20 + a2120*k21))
+      k23 = f(t + c22*dt,u + dt*(a2200*k1                                                                                                                                                   + a2212*k13 + a2213*k14 + a2214*k15 + a2215*k16 + a2216*k17 + a2217*k18 + a2218*k19 + a2219*k20 + a2220*k21 + a2221*k22))
+      k24 = f(t + c23*dt,u + dt*(a2300*k1                                                                                            + a2308*k9 + a2309*k10 + a2310*k11 + a2311*k12 + a2312*k13 + a2313*k14 + a2314*k15 + a2315*k16 + a2316*k17 + a2317*k18 + a2318*k19 + a2319*k20 + a2320*k21 + a2321*k22 + a2322*k23))
+      k25 = f(t + c24*dt,u + dt*(a2400*k1                                                                                            + a2408*k9 + a2409*k10 + a2410*k11 + a2411*k12 + a2412*k13 + a2413*k14 + a2414*k15 + a2415*k16 + a2416*k17 + a2417*k18 + a2418*k19 + a2419*k20 + a2420*k21 + a2421*k22 + a2422*k23 + a2423*k24))
+      k26 = f(t + c25*dt,u + dt*(a2500*k1                                                                                            + a2508*k9 + a2509*k10 + a2510*k11 + a2511*k12 + a2512*k13 + a2513*k14 + a2514*k15 + a2515*k16 + a2516*k17 + a2517*k18 + a2518*k19 + a2519*k20 + a2520*k21 + a2521*k22 + a2522*k23 + a2523*k24 + a2524*k25))
+      k27 = f(t + c26*dt,u + dt*(a2600*k1                                                     + a2605*k6 + a2606*k7 + a2607*k8 + a2608*k9 + a2609*k10 + a2610*k11               + a2612*k13 + a2613*k14 + a2614*k15 + a2615*k16 + a2616*k17 + a2617*k18 + a2618*k19 + a2619*k20 + a2620*k21 + a2621*k22 + a2622*k23 + a2623*k24 + a2624*k25 + a2625*k26))
+      k28 = f(t + c27*dt,u + dt*(a2700*k1                                                     + a2705*k6 + a2706*k7 + a2707*k8 + a2708*k9 + a2709*k10               + a2711*k12 + a2712*k13 + a2713*k14 + a2714*k15 + a2715*k16 + a2716*k17 + a2717*k18 + a2718*k19 + a2719*k20 + a2720*k21 + a2721*k22 + a2722*k23 + a2723*k24 + a2724*k25 + a2725*k26 + a2726*k27))
+      k29 = f(t + c28*dt,u + dt*(a2800*k1                                                     + a2805*k6 + a2806*k7 + a2807*k8 + a2808*k9               + a2810*k11 + a2811*k12               + a2813*k14 + a2814*k15 + a2815*k16                                                                                                   + a2823*k24 + a2824*k25 + a2825*k26 + a2826*k27 + a2827*k28))
+      k30 = f(t + c29*dt,u + dt*(a2900*k1                                        + a2904*k5 + a2905*k6 + a2906*k7                           + a2909*k10 + a2910*k11 + a2911*k12               + a2913*k14 + a2914*k15 + a2915*k16                                                                                                   + a2923*k24 + a2924*k25 + a2925*k26 + a2926*k27 + a2927*k28 + a2928*k29))
+      k31 = f(t + c30*dt,u + dt*(a3000*k1                           + a3003*k4 + a3004*k5 + a3005*k6              + a3007*k8              + a3009*k10 + a3010*k11                             + a3013*k14 + a3014*k15 + a3015*k16                                                                                                   + a3023*k24 + a3024*k25 + a3025*k26               + a3027*k28 + a3028*k29 + a3029*k30))
+      k32 = f(t + c31*dt,u + dt*(a3100*k1              + a3102*k3 + a3103*k4                           + a3106*k7 + a3107*k8              + a3109*k10 + a3110*k11                             + a3113*k14 + a3114*k15 + a3115*k16                                                                                                   + a3123*k24 + a3124*k25 + a3125*k26               + a3127*k28 + a3128*k29 + a3129*k30 + a3130*k31))
+      k33 = f(t + c32*dt,u + dt*(a3200*k1 + a3201*k2                           + a3204*k5              + a3206*k7                                                                                                                                                                                                                                                                                                                                 + a3230*k31 + a3231*k32))
+      k34 = f(t + c33*dt,u + dt*(a3300*k1              + a3302*k3                                                                                                                                                                                                                                                                                                                                                                                                                 + a3332*k33))
+      k35 = f(t + c34*dt,u + dt*(a3400*k1 + a3401*k2 + a3402*k3              + a3404*k5              + a3406*k7 + a3407*k8              + a3409*k10 + a3410*k11 + a3411*k12 + a3412*k13 + a3413*k14 + a3414*k15 + a3415*k16 + a3416*k17 + a3417*k18 + a3418*k19 + a3419*k20 + a3420*k21 + a3421*k22 + a3422*k23 + a3423*k24 + a3424*k25 + a3425*k26 + a3426*k27 + a3427*k28 + a3428*k29 + a3429*k30 + a3430*k31 + a3431*k32 + a3432*k33 + a3433*k34))
+      update = dt*((b1*k1 + b2*k2 + b3*k3 + b5*k5) + (b7*k7 + b8*k8 + b10*k10 + b11*k11) + (b12*k12 + b14*k14 + b15*k15 + b16*k16) + (b18*k18 + b19*k19 + b20*k20 + b21*k21) + (b22*k22 + b23*k23 + b24*k24 + b25*k25) + (b26*k26 + b27*k27 + b28*k28 + b29*k29) + (b30*k30 + b31*k31 + b32*k32 + b33*k33) + (b34*k34 + b35*k35))
       if adaptive
         utmp = u + update
-        EEst = abs((Δt*(k2 - k34) * adaptiveConst)./(abstol+u*reltol))
+        EEst = abs((dt*(k2 - k34) * adaptiveConst)./(abstol+u*reltol))
       else #no chance of rejecting, so in-place
         u = u + update
       end
@@ -2786,148 +2745,148 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
       @ode_loopheader
       f(t,u,k1)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a0100*k1[i])
+        tmp[i] = u[i] + dt*(a0100*k1[i])
       end
-      f(t + c1*Δt,tmp,k2)
+      f(t + c1*dt,tmp,k2)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a0200*k1[i] + a0201*k2[i])
+        tmp[i] = u[i] + dt*(a0200*k1[i] + a0201*k2[i])
       end
-      f(t + c2*Δt ,tmp,k3)
+      f(t + c2*dt ,tmp,k3)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a0300*k1[i] + a0302*k3[i])
+        tmp[i] = u[i] + dt*(a0300*k1[i] + a0302*k3[i])
       end
-      f(t + c3*Δt,tmp,k4)
+      f(t + c3*dt,tmp,k4)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a0400*k1[i] + a0402*k3[i] + a0403*k4[i])
+        tmp[i] = u[i] + dt*(a0400*k1[i] + a0402*k3[i] + a0403*k4[i])
       end
-      f(t + c4*Δt,tmp,k5)
+      f(t + c4*dt,tmp,k5)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a0500*k1[i] + a0503*k4[i] + a0504*k5[i])
+        tmp[i] = u[i] + dt*(a0500*k1[i] + a0503*k4[i] + a0504*k5[i])
       end
-      f(t + c5*Δt,tmp,k6)
+      f(t + c5*dt,tmp,k6)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a0600*k1[i] + a0603*k4[i] + a0604*k5[i]) + a0605*k6[i])
+        tmp[i] = u[i] + dt*((a0600*k1[i] + a0603*k4[i] + a0604*k5[i]) + a0605*k6[i])
       end
-      f(t + c6*Δt,tmp,k7)
+      f(t + c6*dt,tmp,k7)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a0700*k1[i] + a0704*k5[i] + a0705*k6[i]) + a0706*k7[i])
+        tmp[i] = u[i] + dt*((a0700*k1[i] + a0704*k5[i] + a0705*k6[i]) + a0706*k7[i])
       end
-      f(t + c7*Δt,tmp,k8)
+      f(t + c7*dt,tmp,k8)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a0800*k1[i] + a0805*k6[i] + a0806*k7[i]) + a0807*k8[i])
+        tmp[i] = u[i] + dt*((a0800*k1[i] + a0805*k6[i] + a0806*k7[i]) + a0807*k8[i])
       end
-      f(t + c8*Δt,tmp,k9)
+      f(t + c8*dt,tmp,k9)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a0900*k1[i] + a0905*k6[i] + a0906*k7[i]) + a0907*k8[i] + a0908*k9[i])
+        tmp[i] = u[i] + dt*((a0900*k1[i] + a0905*k6[i] + a0906*k7[i]) + a0907*k8[i] + a0908*k9[i])
       end
-      f(t + c9*Δt,tmp,k10)
+      f(t + c9*dt,tmp,k10)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a1000*k1[i] + a1005*k6[i] + a1006*k7[i]) + (a1007*k8[i] + a1008*k9[i] + a1009*k10[i]))
+        tmp[i] = u[i] + dt*((a1000*k1[i] + a1005*k6[i] + a1006*k7[i]) + (a1007*k8[i] + a1008*k9[i] + a1009*k10[i]))
       end
-      f(t + c10*Δt,tmp,k11)
+      f(t + c10*dt,tmp,k11)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a1100*k1[i] + a1105*k6[i] + a1106*k7[i]) + (a1107*k8[i] + a1108*k9[i] + a1109*k10[i] + a1110*k11[i]))
+        tmp[i] = u[i] + dt*((a1100*k1[i] + a1105*k6[i] + a1106*k7[i]) + (a1107*k8[i] + a1108*k9[i] + a1109*k10[i] + a1110*k11[i]))
       end
-      f(t + c11*Δt,tmp,k12)
+      f(t + c11*dt,tmp,k12)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a1200*k1[i] + a1208*k9[i] + a1209*k10[i]) + (a1210*k11[i] + a1211*k12[i]))
+        tmp[i] = u[i] + dt*((a1200*k1[i] + a1208*k9[i] + a1209*k10[i]) + (a1210*k11[i] + a1211*k12[i]))
       end
-      f(t + c12*Δt,tmp,k13)
+      f(t + c12*dt,tmp,k13)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a1300*k1[i] + a1308*k9[i] + a1309*k10[i]) + (a1310*k11[i] + a1311*k12[i] + a1312*k13[i]))
+        tmp[i] = u[i] + dt*((a1300*k1[i] + a1308*k9[i] + a1309*k10[i]) + (a1310*k11[i] + a1311*k12[i] + a1312*k13[i]))
       end
-      f(t + c13*Δt,tmp,k14)
+      f(t + c13*dt,tmp,k14)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a1400*k1[i] + a1408*k9[i] + a1409*k10[i]) + (a1410*k11[i] + a1411*k12[i] + a1412*k13[i] + a1413*k14[i]))
+        tmp[i] = u[i] + dt*((a1400*k1[i] + a1408*k9[i] + a1409*k10[i]) + (a1410*k11[i] + a1411*k12[i] + a1412*k13[i] + a1413*k14[i]))
       end
-      f(t + c14*Δt,tmp,k15)
+      f(t + c14*dt,tmp,k15)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a1500*k1[i] + a1508*k9[i] + a1509*k10[i]) + (a1510*k11[i] + a1511*k12[i] + a1512*k13[i] + a1513*k14[i]) + a1514*k15[i])
+        tmp[i] = u[i] + dt*((a1500*k1[i] + a1508*k9[i] + a1509*k10[i]) + (a1510*k11[i] + a1511*k12[i] + a1512*k13[i] + a1513*k14[i]) + a1514*k15[i])
       end
-      f(t + c15*Δt,tmp,k16)
+      f(t + c15*dt,tmp,k16)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a1600*k1[i] + a1608*k9[i] + a1609*k10[i]) + (a1610*k11[i] + a1611*k12[i] + a1612*k13[i] + a1613*k14[i]) + a1614*k15[i] + a1615*k16[i])
+        tmp[i] = u[i] + dt*((a1600*k1[i] + a1608*k9[i] + a1609*k10[i]) + (a1610*k11[i] + a1611*k12[i] + a1612*k13[i] + a1613*k14[i]) + a1614*k15[i] + a1615*k16[i])
       end
-      f(t + c16*Δt,tmp,k17)
+      f(t + c16*dt,tmp,k17)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a1700*k1[i] + a1712*k13[i] + a1713*k14[i]) + (a1714*k15[i] + a1715*k16[i] + a1716*k17[i]))
+        tmp[i] = u[i] + dt*((a1700*k1[i] + a1712*k13[i] + a1713*k14[i]) + (a1714*k15[i] + a1715*k16[i] + a1716*k17[i]))
       end
-      f(t + c17*Δt,tmp,k18)
+      f(t + c17*dt,tmp,k18)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a1800*k1[i] + a1812*k13[i] + a1813*k14[i]) + (a1814*k15[i] + a1815*k16[i] + a1816*k17[i] + a1817*k18[i]))
+        tmp[i] = u[i] + dt*((a1800*k1[i] + a1812*k13[i] + a1813*k14[i]) + (a1814*k15[i] + a1815*k16[i] + a1816*k17[i] + a1817*k18[i]))
       end
-      f(t + c18*Δt,tmp,k19)
+      f(t + c18*dt,tmp,k19)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a1900*k1[i] + a1912*k13[i] + a1913*k14[i]) + (a1914*k15[i] + a1915*k16[i] + a1916*k17[i] + a1917*k18[i]) + a1918*k19[i])
+        tmp[i] = u[i] + dt*((a1900*k1[i] + a1912*k13[i] + a1913*k14[i]) + (a1914*k15[i] + a1915*k16[i] + a1916*k17[i] + a1917*k18[i]) + a1918*k19[i])
       end
-      f(t + c19*Δt,tmp,k20)
+      f(t + c19*dt,tmp,k20)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a2000*k1[i] + a2012*k13[i] + a2013*k14[i]) + (a2014*k15[i] + a2015*k16[i] + a2016*k17[i] + a2017*k18[i]) + (a2018*k19[i] + a2019*k20[i]))
+        tmp[i] = u[i] + dt*((a2000*k1[i] + a2012*k13[i] + a2013*k14[i]) + (a2014*k15[i] + a2015*k16[i] + a2016*k17[i] + a2017*k18[i]) + (a2018*k19[i] + a2019*k20[i]))
       end
-      f(t + c20*Δt,tmp,k21)
+      f(t + c20*dt,tmp,k21)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a2100*k1[i] + a2112*k13[i] + a2113*k14[i]) + (a2114*k15[i] + a2115*k16[i] + a2116*k17[i] + a2117*k18[i]) + (a2118*k19[i] + a2119*k20[i] + a2120*k21[i]))
+        tmp[i] = u[i] + dt*((a2100*k1[i] + a2112*k13[i] + a2113*k14[i]) + (a2114*k15[i] + a2115*k16[i] + a2116*k17[i] + a2117*k18[i]) + (a2118*k19[i] + a2119*k20[i] + a2120*k21[i]))
       end
-      f(t + c21*Δt,tmp,k22)
+      f(t + c21*dt,tmp,k22)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a2200*k1[i] + a2212*k13[i] + a2213*k14[i]) + (a2214*k15[i] + a2215*k16[i] + a2216*k17[i] + a2217*k18[i]) + (a2218*k19[i] + a2219*k20[i] + a2220*k21[i] + a2221*k22[i]))
+        tmp[i] = u[i] + dt*((a2200*k1[i] + a2212*k13[i] + a2213*k14[i]) + (a2214*k15[i] + a2215*k16[i] + a2216*k17[i] + a2217*k18[i]) + (a2218*k19[i] + a2219*k20[i] + a2220*k21[i] + a2221*k22[i]))
       end
-      f(t + c22*Δt,tmp,k23)
+      f(t + c22*dt,tmp,k23)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a2300*k1[i] + a2308*k9[i] + a2309*k10[i]) + (a2310*k11[i] + a2311*k12[i] + a2312*k13[i] + a2313*k14[i]) + (a2314*k15[i] + a2315*k16[i] + a2316*k17[i] + a2317*k18[i]) + (a2318*k19[i] + a2319*k20[i] + a2320*k21[i] + a2321*k22[i]) + (a2322*k23[i]))
+        tmp[i] = u[i] + dt*((a2300*k1[i] + a2308*k9[i] + a2309*k10[i]) + (a2310*k11[i] + a2311*k12[i] + a2312*k13[i] + a2313*k14[i]) + (a2314*k15[i] + a2315*k16[i] + a2316*k17[i] + a2317*k18[i]) + (a2318*k19[i] + a2319*k20[i] + a2320*k21[i] + a2321*k22[i]) + (a2322*k23[i]))
       end
-      f(t + c23*Δt,tmp,k24)
+      f(t + c23*dt,tmp,k24)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a2400*k1[i] + a2408*k9[i] + a2409*k10[i]) + (a2410*k11[i] + a2411*k12[i] + a2412*k13[i] + a2413*k14[i]) + (a2414*k15[i] + a2415*k16[i] + a2416*k17[i] + a2417*k18[i]) + (a2418*k19[i] + a2419*k20[i] + a2420*k21[i] + a2421*k22[i]) + (a2422*k23[i] + a2423*k24[i]))
+        tmp[i] = u[i] + dt*((a2400*k1[i] + a2408*k9[i] + a2409*k10[i]) + (a2410*k11[i] + a2411*k12[i] + a2412*k13[i] + a2413*k14[i]) + (a2414*k15[i] + a2415*k16[i] + a2416*k17[i] + a2417*k18[i]) + (a2418*k19[i] + a2419*k20[i] + a2420*k21[i] + a2421*k22[i]) + (a2422*k23[i] + a2423*k24[i]))
       end
-      f(t + c24*Δt,tmp,k25)
+      f(t + c24*dt,tmp,k25)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a2500*k1[i] + a2508*k9[i] + a2509*k10[i]) + (a2510*k11[i] + a2511*k12[i] + a2512*k13[i] + a2513*k14[i]) + (a2514*k15[i] + a2515*k16[i] + a2516*k17[i] + a2517*k18[i]) + (a2518*k19[i] + a2519*k20[i] + a2520*k21[i] + a2521*k22[i]) + (a2522*k23[i] + a2523*k24[i] + a2524*k25[i]))
+        tmp[i] = u[i] + dt*((a2500*k1[i] + a2508*k9[i] + a2509*k10[i]) + (a2510*k11[i] + a2511*k12[i] + a2512*k13[i] + a2513*k14[i]) + (a2514*k15[i] + a2515*k16[i] + a2516*k17[i] + a2517*k18[i]) + (a2518*k19[i] + a2519*k20[i] + a2520*k21[i] + a2521*k22[i]) + (a2522*k23[i] + a2523*k24[i] + a2524*k25[i]))
       end
-      f(t + c25*Δt,tmp,k26)
+      f(t + c25*dt,tmp,k26)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a2600*k1[i] + a2605*k6[i] + a2606*k7[i]) + (a2607*k8[i] + a2608*k9[i] + a2609*k10[i] + a2610*k11[i]) + (a2612*k13[i] + a2613*k14[i] + a2614*k15[i] + a2615*k16[i]) + (a2616*k17[i] + a2617*k18[i] + a2618*k19[i] + a2619*k20[i]) + (a2620*k21[i] + a2621*k22[i] + a2622*k23[i] + a2623*k24[i]) + (a2624*k25[i] + a2625*k26[i]))
+        tmp[i] = u[i] + dt*((a2600*k1[i] + a2605*k6[i] + a2606*k7[i]) + (a2607*k8[i] + a2608*k9[i] + a2609*k10[i] + a2610*k11[i]) + (a2612*k13[i] + a2613*k14[i] + a2614*k15[i] + a2615*k16[i]) + (a2616*k17[i] + a2617*k18[i] + a2618*k19[i] + a2619*k20[i]) + (a2620*k21[i] + a2621*k22[i] + a2622*k23[i] + a2623*k24[i]) + (a2624*k25[i] + a2625*k26[i]))
       end
-      f(t + c26*Δt,tmp,k27)
+      f(t + c26*dt,tmp,k27)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a2700*k1[i] + a2705*k6[i] + a2706*k7[i]) + (a2707*k8[i] + a2708*k9[i] + a2709*k10[i] + a2711*k12[i]) + (a2712*k13[i] + a2713*k14[i] + a2714*k15[i] + a2715*k16[i]) + (a2716*k17[i] + a2717*k18[i] + a2718*k19[i] + a2719*k20[i]) + (a2720*k21[i] + a2721*k22[i] + a2722*k23[i] + a2723*k24[i]) + (a2724*k25[i] + a2725*k26[i] + a2726*k27[i]))
+        tmp[i] = u[i] + dt*((a2700*k1[i] + a2705*k6[i] + a2706*k7[i]) + (a2707*k8[i] + a2708*k9[i] + a2709*k10[i] + a2711*k12[i]) + (a2712*k13[i] + a2713*k14[i] + a2714*k15[i] + a2715*k16[i]) + (a2716*k17[i] + a2717*k18[i] + a2718*k19[i] + a2719*k20[i]) + (a2720*k21[i] + a2721*k22[i] + a2722*k23[i] + a2723*k24[i]) + (a2724*k25[i] + a2725*k26[i] + a2726*k27[i]))
       end
-      f(t + c27*Δt,tmp,k28)
+      f(t + c27*dt,tmp,k28)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a2800*k1[i] + a2805*k6[i] + a2806*k7[i]) + (a2807*k8[i] + a2808*k9[i] + a2810*k11[i] + a2811*k12[i]) + (a2813*k14[i] + a2814*k15[i] + a2815*k16[i] + a2823*k24[i]) + (a2824*k25[i] + a2825*k26[i] + a2826*k27[i] + a2827*k28[i]))
+        tmp[i] = u[i] + dt*((a2800*k1[i] + a2805*k6[i] + a2806*k7[i]) + (a2807*k8[i] + a2808*k9[i] + a2810*k11[i] + a2811*k12[i]) + (a2813*k14[i] + a2814*k15[i] + a2815*k16[i] + a2823*k24[i]) + (a2824*k25[i] + a2825*k26[i] + a2826*k27[i] + a2827*k28[i]))
       end
-      f(t + c28*Δt,tmp,k29)
+      f(t + c28*dt,tmp,k29)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a2900*k1[i] + a2904*k5[i] + a2905*k6[i]) + (a2906*k7[i] + a2909*k10[i] + a2910*k11[i] + a2911*k12[i]) + (a2913*k14[i] + a2914*k15[i] + a2915*k16[i] + a2923*k24[i]) + (a2924*k25[i] + a2925*k26[i] + a2926*k27[i] + a2927*k28[i]) + (a2928*k29[i]))
+        tmp[i] = u[i] + dt*((a2900*k1[i] + a2904*k5[i] + a2905*k6[i]) + (a2906*k7[i] + a2909*k10[i] + a2910*k11[i] + a2911*k12[i]) + (a2913*k14[i] + a2914*k15[i] + a2915*k16[i] + a2923*k24[i]) + (a2924*k25[i] + a2925*k26[i] + a2926*k27[i] + a2927*k28[i]) + (a2928*k29[i]))
       end
-      f(t + c29*Δt,tmp,k30)
+      f(t + c29*dt,tmp,k30)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a3000*k1[i] + a3003*k4[i] + a3004*k5[i]) + (a3005*k6[i] + a3007*k8[i] + a3009*k10[i] + a3010*k11[i]) + (a3013*k14[i] + a3014*k15[i] + a3015*k16[i] + a3023*k24[i]) + (a3024*k25[i] + a3025*k26[i] + a3027*k28[i] + a3028*k29[i]) + (a3029*k30[i]))
+        tmp[i] = u[i] + dt*((a3000*k1[i] + a3003*k4[i] + a3004*k5[i]) + (a3005*k6[i] + a3007*k8[i] + a3009*k10[i] + a3010*k11[i]) + (a3013*k14[i] + a3014*k15[i] + a3015*k16[i] + a3023*k24[i]) + (a3024*k25[i] + a3025*k26[i] + a3027*k28[i] + a3028*k29[i]) + (a3029*k30[i]))
       end
-      f(t + c30*Δt,tmp,k31)
+      f(t + c30*dt,tmp,k31)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a3100*k1[i] + a3102*k3[i] + a3103*k4[i]) + (a3106*k7[i] + a3107*k8[i] + a3109*k10[i] + a3110*k11[i]) + (a3113*k14[i] + a3114*k15[i] + a3115*k16[i] + a3123*k24[i]) + (a3124*k25[i] + a3125*k26[i] + a3127*k28[i] + a3128*k29[i]) + (a3129*k30[i] + a3130*k31[i]))
+        tmp[i] = u[i] + dt*((a3100*k1[i] + a3102*k3[i] + a3103*k4[i]) + (a3106*k7[i] + a3107*k8[i] + a3109*k10[i] + a3110*k11[i]) + (a3113*k14[i] + a3114*k15[i] + a3115*k16[i] + a3123*k24[i]) + (a3124*k25[i] + a3125*k26[i] + a3127*k28[i] + a3128*k29[i]) + (a3129*k30[i] + a3130*k31[i]))
       end
-      f(t + c31*Δt,tmp,k32)
+      f(t + c31*dt,tmp,k32)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a3200*k1[i] + a3201*k2[i] + a3204*k5[i]) + (a3206*k7[i] + a3230*k31[i] + a3231*k32[i]))
+        tmp[i] = u[i] + dt*((a3200*k1[i] + a3201*k2[i] + a3204*k5[i]) + (a3206*k7[i] + a3230*k31[i] + a3231*k32[i]))
       end
-      f(t + c32*Δt,tmp,k33)
+      f(t + c32*dt,tmp,k33)
       for i in uidx
-        tmp[i] = u[i] + Δt*(a3300*k1[i] + a3302*k3[i] + a3332*k33[i])
+        tmp[i] = u[i] + dt*(a3300*k1[i] + a3302*k3[i] + a3332*k33[i])
       end
-      f(t + c33*Δt,tmp,k34)
+      f(t + c33*dt,tmp,k34)
       for i in uidx
-        tmp[i] = u[i] + Δt*((a3400*k1[i] + a3401*k2[i] + a3402*k3[i]) + (a3404*k5[i] + a3406*k7[i] + a3407*k8[i] + a3409*k10[i]) + (a3410*k11[i] + a3411*k12[i] + a3412*k13[i] + a3413*k14[i]) + (a3414*k15[i] + a3415*k16[i] + a3416*k17[i] + a3417*k18[i]) + (a3418*k19[i] + a3419*k20[i] + a3420*k21[i] + a3421*k22[i]) + (a3422*k23[i] + a3423*k24[i] + a3424*k25[i] + a3425*k26[i]) + (a3426*k27[i] + a3427*k28[i] + a3428*k29[i] + a3429*k30[i]) + (a3430*k31[i] + a3431*k32[i] + a3432*k33[i] + a3433*k34[i]))
+        tmp[i] = u[i] + dt*((a3400*k1[i] + a3401*k2[i] + a3402*k3[i]) + (a3404*k5[i] + a3406*k7[i] + a3407*k8[i] + a3409*k10[i]) + (a3410*k11[i] + a3411*k12[i] + a3412*k13[i] + a3413*k14[i]) + (a3414*k15[i] + a3415*k16[i] + a3416*k17[i] + a3417*k18[i]) + (a3418*k19[i] + a3419*k20[i] + a3420*k21[i] + a3421*k22[i]) + (a3422*k23[i] + a3423*k24[i] + a3424*k25[i] + a3425*k26[i]) + (a3426*k27[i] + a3427*k28[i] + a3428*k29[i] + a3429*k30[i]) + (a3430*k31[i] + a3431*k32[i] + a3432*k33[i] + a3433*k34[i]))
       end
-      f(t + c34*Δt,tmp,k35)
+      f(t + c34*dt,tmp,k35)
       for i in uidx
-        update[i] = Δt*(((b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i]) + (b7*k7[i] + b8*k8[i] + b10*k10[i] + b11*k11[i]) + (b12*k12[i] + b14*k14[i] + b15*k15[i] + b16*k16[i]) + (b18*k18[i] + b19*k19[i] + b20*k20[i] + b21*k21[i]) + (b22*k22[i] + b23*k23[i] + b24*k24[i] + b25*k25[i]) + (b26*k26[i] + b27*k27[i] + b28*k28[i] + b29*k29[i]) + (b30*k30[i] + b31*k31[i] + b32*k32[i] + b33*k33[i]) + (b34*k34[i] + b35*k35[i])))
+        update[i] = dt*(((b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i]) + (b7*k7[i] + b8*k8[i] + b10*k10[i] + b11*k11[i]) + (b12*k12[i] + b14*k14[i] + b15*k15[i] + b16*k16[i]) + (b18*k18[i] + b19*k19[i] + b20*k20[i] + b21*k21[i]) + (b22*k22[i] + b23*k23[i] + b24*k24[i] + b25*k25[i]) + (b26*k26[i] + b27*k27[i] + b28*k28[i] + b29*k29[i]) + (b30*k30[i] + b31*k31[i] + b32*k32[i] + b33*k33[i]) + (b34*k34[i] + b35*k35[i])))
       end
       if adaptive
         for i in uidx
           utmp[i] = u[i] + update[i]
-          atmp[i] = (Δt*(k2[i] - k34[i]) * adaptiveConst)./(abstol+u[i]*reltol)
+          atmp[i] = (dt*(k2[i] - k34[i]) * adaptiveConst)./(abstol+u[i]*reltol)
         end
         EEst = internalnorm(atmp)
       else #no chance of rejecting, so in-place
@@ -2949,8 +2908,8 @@ end
 function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{:ImplicitEuler,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
   @ode_preamble
   local nlres::NLsolve.SolverResults{uEltype}
-  function rhs_ie(u,resid,u_old,t,Δt)
-    resid[1] = u[1] - u_old[1] - Δt*f(t+Δt,u)[1]
+  function rhs_ie(u,resid,u_old,t,dt)
+    resid[1] = u[1] - u_old[1] - dt*f(t+dt,u)[1]
   end
   uhold::Vector{uType} = Vector{uType}(1)
   u_old::Vector{uType} = Vector{uType}(1)
@@ -2959,10 +2918,10 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
     while t < T
       @ode_loopheader
       u_old[1] = uhold[1]
-      nlres = NLsolve.nlsolve((uhold,resid)->rhs_ie(uhold,resid,u_old,t,Δt),uhold,autodiff=autodiff)
+      nlres = NLsolve.nlsolve((uhold,resid)->rhs_ie(uhold,resid,u_old,t,dt),uhold,autodiff=autodiff)
       uhold[1] = nlres.zero[1]
       if calck
-        k = f(t+Δt,uhold[1])
+        k = f(t+dt,uhold[1])
       end
       u = uhold[1]
       @ode_loopfooter
@@ -2977,19 +2936,19 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
   uidx = eachindex(u)
   if autodiff
     dual_cache = DiffCache(u)
-    rhs_ie = (u,resid,u_old,t,Δt,dual_cache) -> begin
+    rhs_ie = (u,resid,u_old,t,dt,dual_cache) -> begin
       du = get_du(dual_cache, eltype(u))
-      f(t+Δt,reshape(u,sizeu),du)
+      f(t+dt,reshape(u,sizeu),du)
       for i in uidx
-        resid[i] = u[i] - u_old[i] - Δt*du[i]
+        resid[i] = u[i] - u_old[i] - dt*du[i]
       end
     end
   else
     dual_cache = similar(u)
-    rhs_ie = (u,resid,u_old,t,Δt,du) -> begin
-      f(t+Δt,reshape(u,sizeu),du)
+    rhs_ie = (u,resid,u_old,t,dt,du) -> begin
+      f(t+dt,reshape(u,sizeu),du)
       for i in uidx
-        resid[i] = u[i] - u_old[i] - Δt*du[i]
+        resid[i] = u[i] - u_old[i] - dt*du[i]
       end
     end
   end
@@ -3000,10 +2959,10 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
     while t < T
       @ode_loopheader
       copy!(u_old,uhold)
-      nlres = NLsolve.nlsolve((uhold,resid)->rhs_ie(uhold,resid,u_old,t,Δt,dual_cache),uhold,autodiff=autodiff)
+      nlres = NLsolve.nlsolve((uhold,resid)->rhs_ie(uhold,resid,u_old,t,dt,dual_cache),uhold,autodiff=autodiff)
       uhold[:] = nlres.zero
       if calck
-        f(t+Δt,u,k)
+        f(t+dt,u,k)
       end
       @ode_loopfooter
     end
@@ -3019,24 +2978,24 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
   if autodiff
     cache1 = DiffCache(u)
     cache2 = DiffCache(u)
-    Δto2 = Δt/2
-    rhs_trap = (u,resid,u_old,t,Δt,cache1,cache2) -> begin
+    dto2 = dt/2
+    rhs_trap = (u,resid,u_old,t,dt,cache1,cache2) -> begin
       du1 = get_du(cache1, eltype(u)); du2 = get_du(cache2, eltype(u_old))
       f(t,reshape(u_old,sizeu),du2)
-      f(t+Δt,reshape(u,sizeu),du1)
+      f(t+dt,reshape(u,sizeu),du1)
       for i in uidx
-        resid[i] = u[i] - u_old[i] - Δto2*(du1[i]+du2[i])
+        resid[i] = u[i] - u_old[i] - dto2*(du1[i]+du2[i])
       end
     end
   else
     cache1 = similar(u)
     cache2 = similar(u)
-    Δto2 = Δt/2
-    rhs_trap = (u,resid,u_old,t,Δt,du1,du2) -> begin
+    dto2 = dt/2
+    rhs_trap = (u,resid,u_old,t,dt,du1,du2) -> begin
       f(t,reshape(u_old,sizeu),du2)
-      f(t+Δt,reshape(u,sizeu),du1)
+      f(t+dt,reshape(u,sizeu),du1)
       for i in uidx
-        resid[i] = u[i] - u_old[i] - Δto2*(du1[i]+du2[i])
+        resid[i] = u[i] - u_old[i] - dto2*(du1[i]+du2[i])
       end
     end
   end
@@ -3047,10 +3006,10 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
     while t < T
       @ode_loopheader
       copy!(u_old,uhold)
-      nlres = NLsolve.nlsolve((uhold,resid)->rhs_trap(uhold,resid,u_old,t,Δt,cache1,cache2),uhold,autodiff=autodiff)
+      nlres = NLsolve.nlsolve((uhold,resid)->rhs_trap(uhold,resid,u_old,t,dt,cache1,cache2),uhold,autodiff=autodiff)
       uhold[:] = nlres.zero
       if calck
-        f(t+Δt,u,k)
+        f(t+dt,u,k)
       end
       @ode_loopfooter
     end
@@ -3061,9 +3020,9 @@ end
 
 function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{:Trapezoid,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
   @ode_preamble
-  Δto2::tType = Δt/2
-  function rhs_trap(u,resid,u_old,t,Δt)
-    resid[1] = u[1] - u_old[1] - Δto2*(f(t,u_old)[1] + f(t+Δt,u)[1])
+  dto2::tType = dt/2
+  function rhs_trap(u,resid,u_old,t,dt)
+    resid[1] = u[1] - u_old[1] - dto2*(f(t,u_old)[1] + f(t+dt,u)[1])
   end
   local nlres::NLsolve.SolverResults{uEltype}
   uhold::Vector{uType} = Vector{uType}(1)
@@ -3073,10 +3032,10 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       while t < T
       @ode_loopheader
       u_old[1] = uhold[1]
-      nlres = NLsolve.nlsolve((uhold,resid)->rhs_trap(uhold,resid,u_old,t,Δt),uhold,autodiff=autodiff)
+      nlres = NLsolve.nlsolve((uhold,resid)->rhs_trap(uhold,resid,u_old,t,dt),uhold,autodiff=autodiff)
       uhold[1] = nlres.zero[1]
       if calck
-        k = f(t+Δt,uhold[1])
+        k = f(t+dt,uhold[1])
       end
       u = uhold[1]
       @ode_loopfooter
@@ -3126,13 +3085,13 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
       ForwardDiff.derivative!(dT,(t)->vecfreturn(t,u,du2),t) # Time derivative
       ForwardDiff.jacobian!(J,(du1,u)->vecf(t,u,du1),vec(du1),vec(u))
 
-      W[:] = one(J)-Δt*d*J # Can an allocation be cut here?
-      @into! vectmp = W\vec(fsalfirst + Δt*d*dT)
+      W[:] = one(J)-dt*d*J # Can an allocation be cut here?
+      @into! vectmp = W\vec(fsalfirst + dt*d*dT)
       k₁ = reshape(vectmp,sizeu...)
       for i in uidx
-        utmp[i]=u[i]+Δt*k₁[i]/2
+        utmp[i]=u[i]+dt*k₁[i]/2
       end
-      f(t+Δt/2,utmp,f₁)
+      f(t+dt/2,utmp,f₁)
       @into! vectmp2 = W\vec(f₁-k₁)
       tmp = reshape(vectmp2,sizeu...)
       for i in uidx
@@ -3140,18 +3099,18 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
       end
       if adaptive
         for i in uidx
-          utmp[i] = u[i] + Δt*k₂[i]
+          utmp[i] = u[i] + dt*k₂[i]
         end
-        f(t+Δt,utmp,fsallast)
-        @into! vectmp3 = W\vec(fsallast - c₃₂*(k₂-f₁)-2(k₁-fsalfirst)+Δt*dT)
+        f(t+dt,utmp,fsallast)
+        @into! vectmp3 = W\vec(fsallast - c₃₂*(k₂-f₁)-2(k₁-fsalfirst)+dt*dT)
         k₃ = reshape(vectmp3,sizeu...)
         for i in uidx
-          tmp2[i] = (Δt*(k₁[i] - 2k₂[i] + k₃[i])/6)./(abstol+u[i]*reltol)
+          tmp2[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)./(abstol+u[i]*reltol)
         end
         EEst = internalnorm(tmp2)
       else
         for i in uidx
-          u[i] = u[i] + Δt*k₂[i]
+          u[i] = u[i] + dt*k₂[i]
         end
         f(t,u,fsallast)
       end
@@ -3182,21 +3141,21 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       # Time derivative
       dT = ForwardDiff.derivative((t)->f(t,u),t)
       J = ForwardDiff.derivative((u)->f(t,u),u)
-      W = one(J)-Δt*d*J
+      W = one(J)-dt*d*J
       #f₀ = f(t,u)
       if calck
         k = fsalfirst
       end
-      k₁ = W\(fsalfirst + Δt*d*dT)
-      f₁ = f(t+Δt/2,u+Δt*k₁/2)
+      k₁ = W\(fsalfirst + dt*d*dT)
+      f₁ = f(t+dt/2,u+dt*k₁/2)
       k₂ = W\(f₁-k₁) + k₁
       if adaptive
-        utmp = u + Δt*k₂
-        fsallast = f(t+Δt,utmp)
-        k₃ = W\(fsallast - c₃₂*(k₂-f₁)-2(k₁-fsalfirst)+Δt*dT)
-        EEst = abs((Δt*(k₁ - 2k₂ + k₃)/6)./(abstol+u*reltol))
+        utmp = u + dt*k₂
+        fsallast = f(t+dt,utmp)
+        k₃ = W\(fsallast - c₃₂*(k₂-f₁)-2(k₁-fsalfirst)+dt*dT)
+        EEst = abs((dt*(k₁ - 2k₂ + k₃)/6)./(abstol+u*reltol))
       else
-        u = u + Δt*k₂
+        u = u + dt*k₂
         fsallast = f(t,u)
       end
       @ode_loopfooter
@@ -3247,33 +3206,33 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
       ForwardDiff.derivative!(dT,(t)->vecfreturn(t,u,du2),t) # Time derivative
       ForwardDiff.jacobian!(J,(du1,u)->vecf(t,u,du1),vec(du1),vec(u))
 
-      W[:] = one(J)-Δt*d*J # Can an allocation be cut here?
-      @into! vectmp = W\vec(fsalfirst + Δt*d*dT)
+      W[:] = one(J)-dt*d*J # Can an allocation be cut here?
+      @into! vectmp = W\vec(fsalfirst + dt*d*dT)
       k₁ = reshape(vectmp,sizeu...)
       for i in uidx
-        utmp[i]=u[i]+Δt*k₁[i]/2
+        utmp[i]=u[i]+dt*k₁[i]/2
       end
-      f(t+Δt/2,utmp,f₁)
+      f(t+dt/2,utmp,f₁)
       @into! vectmp2 = W\vec(f₁-k₁)
       tmp = reshape(vectmp2,sizeu...)
       for i in uidx
         k₂[i] = tmp[i] + k₁[i]
       end
       for i in uidx
-        tmp[i] = u[i] + Δt*k₂[i]
+        tmp[i] = u[i] + dt*k₂[i]
       end
-      f(t+Δt,tmp,fsallast)
-      @into! vectmp3 = W\vec(fsallast - c₃₂*(k₂-f₁)-2(k₁-fsalfirst)+Δt*dT)
+      f(t+dt,tmp,fsallast)
+      @into! vectmp3 = W\vec(fsallast - c₃₂*(k₂-f₁)-2(k₁-fsalfirst)+dt*dT)
       k₃ = reshape(vectmp3,sizeu...)
       if adaptive
         for i in uidx
-          utmp[i] = u[i] + Δt*(k₁[i] + 4k₂[i] + k₃[i])/6
-          tmp2[i] = (Δt*(k₁[i] - 2k₂[i] + k₃[i])/6)/(abstol+u[i]*reltol)
+          utmp[i] = u[i] + dt*(k₁[i] + 4k₂[i] + k₃[i])/6
+          tmp2[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)/(abstol+u[i]*reltol)
         end
         EEst = internalnorm(tmp2)
       else
         for i in uidx
-          u[i] = u[i] + Δt*(k₁[i] + 4k₂[i] + k₃[i])/6
+          u[i] = u[i] + dt*(k₁[i] + 4k₂[i] + k₃[i])/6
         end
         f(t,u,fsallast)
       end
@@ -3305,22 +3264,22 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       # Time derivative
       dT = ForwardDiff.derivative((t)->f(t,u),t)
       J = ForwardDiff.derivative((u)->f(t,u),u)
-      W = one(J)-Δt*d*J
+      W = one(J)-dt*d*J
       #f₀ = f(t,u)
       if calck
         k = fsalfirst
       end
-      k₁ = W\(fsalfirst + Δt*d*dT)
-      f₁ = f(t+Δt/2,u+Δt*k₁/2)
+      k₁ = W\(fsalfirst + dt*d*dT)
+      f₁ = f(t+dt/2,u+dt*k₁/2)
       k₂ = W\(f₁-k₁) + k₁
-      tmp = u + Δt*k₂
-      fsallast = f(t+Δt,tmp)
-      k₃ = W\(fsallast - c₃₂*(k₂-f₁)-2(k₁-fsalfirst)+Δt*dT)
+      tmp = u + dt*k₂
+      fsallast = f(t+dt,tmp)
+      k₃ = W\(fsallast - c₃₂*(k₂-f₁)-2(k₁-fsalfirst)+dt*dT)
       if adaptive
-        utmp = u + Δt*(k₁ + 4k₂ + k₃)/6
-        EEst = abs((Δt*(k₁ - 2k₂ + k₃)/6)./(abstol+u*reltol))
+        utmp = u + dt*(k₁ + 4k₂ + k₃)/6
+        EEst = abs((dt*(k₁ - 2k₂ + k₃)/6)./(abstol+u*reltol))
       else
-        u = u + Δt*(k₁ + 4k₂ + k₃)/6
+        u = u + dt*(k₁ + 4k₂ + k₃)/6
         fsallast = f(t,u)
       end
       @ode_loopfooter

@@ -27,7 +27,7 @@ const TEST_FLOPS_CUTOFF = 1e10
 const initialized_backends = Set{Symbol}()
 
 type ODEOptions
-  Δt
+  dt
   tType
   save_timeseries
   timeseries_steps
@@ -39,15 +39,21 @@ type ODEOptions
   dense_errors
   saveat
   adaptive
-  γ
+  gamma
   abstol
   reltol
   qmax
   qmin
   qoldinit
-  fullnormalize
-  β
-  expo1
+  β₁
+  β₂
+  dtmax
+  dtmin
+  autodiff
+  internalnorm
+  progressbar
+  progress_steps
+  callback
 end
 
 include("backends.jl")

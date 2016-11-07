@@ -20,11 +20,11 @@ function apply_event!(u,cache)
   u[2] = -u[2]
 end
 
-const Δt_safety = 1
+const dt_safety = 1
 const interp_points = 10
 const terminate_on_event = false
 callback = @ode_callback begin
-  @ode_event event_f apply_event! true interp_points terminate_on_event Δt_safety
+  @ode_event event_f apply_event! true interp_points terminate_on_event dt_safety
 end
 
 u0 = [50.0,0.0]
@@ -40,13 +40,13 @@ sol = solve(prob,callback=callback,alg=:Vern6)
 #plot(sol,denseplot=true)
 
 bounced = ODEProblem(f,sol[8])
-sol_bounced = solve(bounced,callback=callback,alg=:Vern6,Δt=sol.t[9]-sol.t[8])
+sol_bounced = solve(bounced,callback=callback,alg=:Vern6,dt=sol.t[9]-sol.t[8])
 #plot(sol_bounced,denseplot=true)
 sol_bounced(0.04) # Complete density
 bool1 = maximum(maximum.(map((i)->sol.k[9][i]-sol_bounced.k[2][i],1:length(sol.k[9])))) == 0
 
 
-sol2= solve(prob,callback=callback,alg=:Vern6,adaptive=false,Δt=1/2^4)
+sol2= solve(prob,callback=callback,alg=:Vern6,adaptive=false,dt=1/2^4)
 #plot(sol2)
 
 sol2= solve(prob,alg=:Vern6)
@@ -62,7 +62,7 @@ sol4 = solve(prob,callback=default_callback)
 bool2 = sol2(3) ≈ sol(3)
 
 terminate_callback = @ode_callback begin
-  @ode_event event_f apply_event! true interp_points true Δt_safety
+  @ode_event event_f apply_event! true interp_points true dt_safety
 end
 
 tspan2 = [0.0;Inf]

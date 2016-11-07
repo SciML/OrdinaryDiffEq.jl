@@ -8,4 +8,4 @@ u = [[1]]
 
 prob = ODEProblem(f,u)
 
-sol = solve(prob,Δt=1/2^4)
+sol = solve(prob,dt=1/2^4)
