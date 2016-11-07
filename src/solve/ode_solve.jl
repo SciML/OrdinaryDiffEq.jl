@@ -42,11 +42,13 @@ function solve(prob::AbstractODEProblem,timeseries=[],ts=[],ks=[];kwargs...)
   end
 
   ks = Vector{uType}(0)
+
   if :alg ∈ keys(o)
     alg = o[:alg]
   else
     alg = plan_ode(command_opts[:alg_hint],command_opts[:abstol],command_opts[:reltol])
   end
+
   if alg ∈ DIFFERENTIALEQUATIONSJL_ALGORITHMS
     o2 = copy(DIFFERENTIALEQUATIONSJL_DEFAULT_OPTIONS)
     for (k,v) in o

@@ -26,36 +26,6 @@ FunctionOrVoid = Union{Function,Void}
 const TEST_FLOPS_CUTOFF = 1e10
 const initialized_backends = Set{Symbol}()
 
-type ODEOptions
-  dt
-  tType
-  save_timeseries
-  timeseries_steps
-  tableau
-  dense
-  calck
-  alg_hint
-  timeseries_errors
-  dense_errors
-  saveat
-  adaptive
-  gamma
-  abstol
-  reltol
-  qmax
-  qmin
-  qoldinit
-  β₁
-  β₂
-  dtmax
-  dtmin
-  autodiff
-  internalnorm
-  progressbar
-  progress_steps
-  callback
-end
-
 include("backends.jl")
 include("misc_utils.jl")
 
