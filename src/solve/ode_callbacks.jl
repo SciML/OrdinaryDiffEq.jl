@@ -53,7 +53,7 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
 
       t = tprev + dtprev
       if calck
-        if alg ∈ DIFFERENTIALEQUATIONSJL_SPECIALDENSEALGS
+        if isspecialdense(alg)
           resize!(k,kshortsize) # Reset k for next step
           k = typeof(k)() # Make a local blank k for saving
           ode_addsteps!(k,tprev,uprev,dtprev,alg,f)
@@ -73,7 +73,7 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
       else
         $apply_event!(u,cache)
         if calck
-          if alg ∉ DIFFERENTIALEQUATIONSJL_SPECIALDENSEALGS
+          if !isspecialdense(alg)
             if typeof(u) <: Number
               k = f(t,u)
             else

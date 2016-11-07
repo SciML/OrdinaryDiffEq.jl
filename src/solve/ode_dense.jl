@@ -1,6 +1,6 @@
-ode_interpolant(Θ,dt,y₀,y₁,k₀,k₁,alg::Symbol) = ode_interpolant(Θ,dt,y₀,y₁,k₀,k₁,Val{alg}) # Dispatch interpolant by alg
-ode_interpolation(tvals,ts,timeseries,ks,alg::Symbol,f) = ode_interpolation(tvals,ts,timeseries,ks,Val{alg},f) # Dispatch by alg
-ode_addsteps!(k,t,u,dt,alg::Symbol,f) = ode_addsteps!(k,t,u,dt,f,Val{alg},typeof(u./dt),eltype(u./u))
+#ode_interpolant(Θ,dt,y₀,y₁,k₀,k₁,alg::Symbol) = ode_interpolant(Θ,dt,y₀,y₁,k₀,k₁,Val{alg}) # Dispatch interpolant by alg
+#ode_interpolation(tvals,ts,timeseries,ks,alg::Symbol,f) = ode_interpolation(tvals,ts,timeseries,ks,Val{alg},f) # Dispatch by alg
+ode_addsteps!(k,t,u,dt,alg,f) = ode_addsteps!(k,t,u,dt,f,alg,typeof(u./dt),eltype(u./u))
 
 """
 ode_interpolation(tvals,ts,timeseries,ks)
@@ -8,7 +8,7 @@ ode_interpolation(tvals,ts,timeseries,ks)
 Get the value at tvals where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-function ode_interpolation{alg}(tvals,ts,timeseries,ks,T::Type{Val{alg}},f)
+function ode_interpolation(tvals,ts,timeseries,ks,alg,f)
   if typeof(tvals) <: StepRange
   else
     sort!(tvals) # Make sure it's sorted
@@ -38,7 +38,7 @@ ode_interpolation(tval::Number,ts,timeseries,ks)
 Get the value at tvals where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-function ode_interpolation{alg}(tval::Number,ts,timeseries,ks,T::Type{Val{alg}},f)
+function ode_interpolation(tval::Number,ts,timeseries,ks,alg,f)
   i = findfirst((x)->x>=tval,ts) # It's in the interval ts[i-1] to ts[i]
   if ts[i] == tval
     val = timeseries[i]
@@ -58,14 +58,14 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
 
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
-function ode_interpolant{alg}(Θ,dt,y₀,y₁,k₀,k₁,T::Type{Val{alg}}) # Default interpolant is Hermite
+function ode_interpolant(Θ,dt,y₀,y₁,k₀,k₁,alg) # Default interpolant is Hermite
   (1-Θ)*y₀+Θ*y₁+Θ*(Θ-1)*((1-2Θ)*(y₁-y₀)+(Θ-1)*dt*k₀ + Θ*dt*k₁)
 end
 
 """
 By default, ADD NOTHING
 """
-function ode_addsteps!{rateType,uEltypeNoUnits,alg}(k,t,u,dt,f,T::Type{Val{alg}},T2::Type{rateType},T3::Type{uEltypeNoUnits})
+function ode_addsteps!{rateType,uEltypeNoUnits}(k,t,u,dt,f,alg,T2::Type{rateType},T3::Type{uEltypeNoUnits})
   #=
   if length(k)<1
     push!(k,f(t,u))
@@ -77,7 +77,7 @@ end
 """
 Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Problems Page 192
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,T::Type{Val{:DP5}})
+function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,alg::DP5)
   Θ1 = 1-Θ
   y₀ + dt*Θ*(k[1]+Θ1*(k[2]+Θ*(k[3]+Θ1*k[4])))
 end
@@ -85,7 +85,7 @@ end
 """
 Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Problems Page 192
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,T::Type{Val{:DP5Threaded}})
+function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,alg::DP5Threaded)
   Θ1 = 1-Θ
   y₀ + dt*Θ*(k[1]+Θ1*(k[2]+Θ*(k[3]+Θ1*k[4])))
 end
@@ -119,7 +119,7 @@ simplifying assumption
 
 Ch. Tsitouras
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,T::Type{Val{:Tsit5}})
+function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,alg::Tsit5)
   b1Θ = -1.0530884977290216Θ * (Θ - 1.3299890189751412)*(Θ^2 - 1.4364028541716351Θ + 0.7139816917074209)
   b2Θ = 0.1017Θ^2 * (Θ^2 - 2.1966568338249754Θ + 1.2949852507374631)
   b3Θ = 2.490627285651252793Θ^2 * (Θ^2 - 2.38535645472061657Θ + 1.57803468208092486)
@@ -132,9 +132,9 @@ end
 
 
 """
-Coefficients taken from RKSuite, Something's weird...
+Coefficients taken from RKSuite
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,T::Type{Val{:BS5}})
+function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,alg::BS5)
   r016,r015,r014,r013,r012,r036,r035,r034,r033,r032,r046,r045,r044,r043,r042,r056,r055,r054,r053,r052,r066,r065,r064,r063,r062,r076,r075,r074,r073,r072,r086,r085,r084,r083,r082,r096,r095,r094,r093,r106,r105,r104,r103,r102,r116,r115,r114,r113,r112 = BS5Interp_polyweights(eltype(y₀))
   Θ2 = Θ^2
   Θ3 = Θ2*Θ
@@ -193,7 +193,7 @@ end
 """
 
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,T::Type{Val{:Vern6}})
+function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,alg::Vern6)
   r011,r012,r013,r014,r015,r016,r042,r043,r044,r045,r046,r052,r053,r054,r055,r056,r062,r063,r064,r065,r066,r072,r073,r074,r075,r076,r082,r083,r084,r085,r086,r092,r093,r094,r095,r096,r102,r103,r104,r105,r106,r112,r113,r114,r115,r116,r122,r123,r124,r125,r126 = Vern6Interp_polyweights(eltype(y₀))
   Θ2 = Θ^2
   Θ3 = Θ2*Θ
@@ -216,7 +216,7 @@ end
 """
 
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,T::Type{Val{:Vern7}})
+function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,alg::Vern7)
   r011,r012,r013,r014,r015,r016,r017,r042,r043,r044,r045,r046,r047,r052,r053,r054,r055,r056,r057,r062,r063,r064,r065,r066,r067,r072,r073,r074,r075,r076,r077,r082,r083,r084,r085,r086,r087,r092,r093,r094,r095,r096,r097,r112,r113,r114,r115,r116,r117,r122,r123,r124,r125,r126,r127,r132,r133,r134,r135,r136,r137,r142,r143,r144,r145,r146,r147,r152,r153,r154,r155,r156,r157,r162,r163,r164,r165,r166,r167 = Vern7Interp_polyweights(eltype(y₀))
   Θ2 = Θ^2
   Θ3 = Θ2*Θ
@@ -243,7 +243,7 @@ end
 """
 
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,T::Type{Val{:Vern8}})
+function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,alg::Vern8)
   r011,r012,r013,r014,r015,r016,r017,r018,r062,r063,r064,r065,r066,r067,r068,r072,r073,r074,r075,r076,r077,r078,r082,r083,r084,r085,r086,r087,r088,r092,r093,r094,r095,r096,r097,r098,r102,r103,r104,r105,r106,r107,r108,r112,r113,r114,r115,r116,r117,r118,r122,r123,r124,r125,r126,r127,r128,r142,r143,r144,r145,r146,r147,r148,r152,r153,r154,r155,r156,r157,r158,r162,r163,r164,r165,r166,r167,r168,r172,r173,r174,r175,r176,r177,r178,r182,r183,r184,r185,r186,r187,r188,r192,r193,r194,r195,r196,r197,r198,r202,r203,r204,r205,r206,r207,r208,r212,r213,r214,r215,r216,r217,r218 = Vern8Interp_polyweights(eltype(y₀))
   Θ2 = Θ^2
   Θ3 = Θ2*Θ
@@ -274,7 +274,7 @@ end
 """
 
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,T::Type{Val{:Vern9}})
+function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,alg::Vern9)
   r011,r012,r013,r014,r015,r016,r017,r018,r019,r082,r083,r084,r085,r086,r087,r088,r089,r092,r093,r094,r095,r096,r097,r098,r099,r102,r103,r104,r105,r106,r107,r108,r109,r112,r113,r114,r115,r116,r117,r118,r119,r122,r123,r124,r125,r126,r127,r128,r129,r132,r133,r134,r135,r136,r137,r138,r139,r142,r143,r144,r145,r146,r147,r148,r149,r152,r153,r154,r155,r156,r157,r158,r159,r172,r173,r174,r175,r176,r177,r178,r179,r182,r183,r184,r185,r186,r187,r188,r189,r192,r193,r194,r195,r196,r197,r198,r199,r202,r203,r204,r205,r206,r207,r208,r209,r212,r213,r214,r215,r216,r217,r218,r219,r222,r223,r224,r225,r226,r227,r228,r229,r232,r233,r234,r235,r236,r237,r238,r239,r242,r243,r244,r245,r246,r247,r248,r249,r252,r253,r254,r255,r256,r257,r258,r259,r262,r263,r264,r265,r266,r267,r268,r269 = Vern9Interp_polyweights(eltype(y₀))
   Θ2 = Θ^2
   Θ3 = Θ2*Θ
@@ -309,13 +309,13 @@ end
 """
 
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,T::Type{Val{:DP8}})
+function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,alg::DP8)
   Θ1 = 1-Θ
   conpar = k[4] + Θ*(k[5] + Θ1*(k[6]+Θ*k[7]))
   y₀ + dt*Θ*(k[1] + Θ1*(k[2] + Θ*(k[3]+Θ1*conpar)))
 end
 
-function ode_addsteps!{rateType<:Number,uEltypeNoUnits}(k,t,u,dt,f,T::Type{Val{:DP5}},T2::Type{rateType},T3::Type{uEltypeNoUnits})
+function ode_addsteps!{rateType<:Number,uEltypeNoUnits}(k,t,u,dt,f,alg::DP5,T2::Type{rateType},T3::Type{uEltypeNoUnits})
   if length(k)<4
     a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = constructDP5(uEltypeNoUnits)
     d1,d3,d4,d5,d6,d7 = DP5_dense_ds(uEltypeNoUnits)
@@ -336,7 +336,7 @@ function ode_addsteps!{rateType<:Number,uEltypeNoUnits}(k,t,u,dt,f,T::Type{Val{:
   nothing
 end
 
-function ode_addsteps!{rateType<:AbstractArray,uEltypeNoUnits}(k,t,u,dt,f,T::Type{Val{:DP5}},T2::Type{rateType},T3::Type{uEltypeNoUnits})
+function ode_addsteps!{rateType<:AbstractArray,uEltypeNoUnits}(k,t,u,dt,f,alg::DP5,T2::Type{rateType},T3::Type{uEltypeNoUnits})
   if length(k)<4
     a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = constructDP5(uEltypeNoUnits)
     d1,d3,d4,d5,d6,d7 = DP5_dense_ds(uEltypeNoUnits)
@@ -360,7 +360,7 @@ function ode_addsteps!{rateType<:AbstractArray,uEltypeNoUnits}(k,t,u,dt,f,T::Typ
   nothing
 end
 
-function ode_addsteps!{rateType<:Number,uEltypeNoUnits}(k,t,u,dt,f,T::Type{Val{:Tsit5}},T2::Type{rateType},T3::Type{uEltypeNoUnits})
+function ode_addsteps!{rateType<:Number,uEltypeNoUnits}(k,t,u,dt,f,alg::Tsit5,T2::Type{rateType},T3::Type{uEltypeNoUnits})
   if length(k)<7
     c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,b1,b2,b3,b4,b5,b6,b7 = constructTsit5(uEltypeNoUnits)
     push!(k,f(t,u))
@@ -375,7 +375,7 @@ function ode_addsteps!{rateType<:Number,uEltypeNoUnits}(k,t,u,dt,f,T::Type{Val{:
   nothing
 end
 
-function ode_addsteps!{rateType<:AbstractArray,uEltypeNoUnits}(k,t,u,dt,f,T::Type{Val{:Tsit5}},T2::Type{rateType},T3::Type{uEltypeNoUnits})
+function ode_addsteps!{rateType<:AbstractArray,uEltypeNoUnits}(k,t,u,dt,f,alg::Tsit5,T2::Type{rateType},T3::Type{uEltypeNoUnits})
   if length(k)<7
     c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,b1,b2,b3,b4,b5,b6,b7 = constructTsit5(uEltypeNoUnits)
     rtmp = rateType(size(u))
@@ -397,7 +397,7 @@ An Efficient Runge-Kutta (4,5) Pair by P.Bogacki and L.F.Shampine
 
 Called to add the extra k9, k10, k11 steps for the Order 5 interpolation when needed
 """
-function ode_addsteps!{rateType<:Number,uEltypeNoUnits}(k,t,u,dt,f,T::Type{Val{:BS5}},T2::Type{rateType},T3::Type{uEltypeNoUnits})
+function ode_addsteps!{rateType<:Number,uEltypeNoUnits}(k,t,u,dt,f,alg::BS5,T2::Type{rateType},T3::Type{uEltypeNoUnits})
   if length(k) < 8
     c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8 = constructBS5(uEltypeNoUnits)
     push!(k,f(t,u))
@@ -424,7 +424,7 @@ An Efficient Runge-Kutta (4,5) Pair by P.Bogacki and L.F.Shampine
 
 Called to add the extra k9, k10, k11 steps for the Order 5 interpolation when needed
 """
-function ode_addsteps!{rateType<:AbstractArray,uEltypeNoUnits}(k,t,u,dt,f,T::Type{Val{:BS5}},T2::Type{rateType},T3::Type{uEltypeNoUnits})
+function ode_addsteps!{rateType<:AbstractArray,uEltypeNoUnits}(k,t,u,dt,f,alg::BS5,T2::Type{rateType},T3::Type{uEltypeNoUnits})
   if length(k) < 8
     c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8 = constructBS5(uEltypeNoUnits)
     rtmp = rateType(size(u))
@@ -451,7 +451,7 @@ end
 """
 
 """
-function ode_addsteps!{rateType<:Number,uEltypeNoUnits}(k,t,u,dt,f,T::Type{Val{:Vern6}},T2::Type{rateType},T3::Type{uEltypeNoUnits})
+function ode_addsteps!{rateType<:Number,uEltypeNoUnits}(k,t,u,dt,f,alg::Vern6,T2::Type{rateType},T3::Type{uEltypeNoUnits})
   if length(k) < 9
     c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,a91,a94,a95,a96,a97,a98,b1,b4,b5,b6,b7,b8,b9= constructVern6(uEltypeNoUnits)
     push!(k,f(t,u))
@@ -476,7 +476,7 @@ end
 """
 
 """
-function ode_addsteps!{rateType<:AbstractArray,uEltypeNoUnits}(k,t,u,dt,f,T::Type{Val{:Vern6}},T2::Type{rateType},T3::Type{uEltypeNoUnits})
+function ode_addsteps!{rateType<:AbstractArray,uEltypeNoUnits}(k,t,u,dt,f,alg::Vern6,T2::Type{rateType},T3::Type{uEltypeNoUnits})
   if length(k) < 9
     c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,a91,a94,a95,a96,a97,a98,b1,b4,b5,b6,b7,b8,b9= constructVern6(uEltypeNoUnits)
     rtmp = rateType(size(u))
@@ -503,7 +503,7 @@ end
 """
 
 """
-function ode_addsteps!{rateType<:Number,uEltypeNoUnits}(k,t,u,dt,f,T::Type{Val{:Vern7}},T2::Type{rateType},T3::Type{uEltypeNoUnits})
+function ode_addsteps!{rateType<:Number,uEltypeNoUnits}(k,t,u,dt,f,alg::Vern7,T2::Type{rateType},T3::Type{uEltypeNoUnits})
   if length(k) < 10
     c2,c3,c4,c5,c6,c7,c8,a021,a031,a032,a041,a043,a051,a053,a054,a061,a063,a064,a065,a071,a073,a074,a075,a076,a081,a083,a084,a085,a086,a087,a091,a093,a094,a095,a096,a097,a098,a101,a103,a104,a105,a106,a107,b1,b4,b5,b6,b7,b8,b9,bhat1,bhat4,bhat5,bhat6,bhat7,bhat10= constructVern7(uEltypeNoUnits)
     push!(k,f(t,u))
@@ -532,7 +532,7 @@ end
 """
 
 """
-function ode_addsteps!{rateType<:AbstractArray,uEltypeNoUnits}(k,t,u,dt,f,T::Type{Val{:Vern7}},T2::Type{rateType},T3::Type{uEltypeNoUnits})
+function ode_addsteps!{rateType<:AbstractArray,uEltypeNoUnits}(k,t,u,dt,f,alg::Vern7,T2::Type{rateType},T3::Type{uEltypeNoUnits})
   if length(k) < 10
     c2,c3,c4,c5,c6,c7,c8,a021,a031,a032,a041,a043,a051,a053,a054,a061,a063,a064,a065,a071,a073,a074,a075,a076,a081,a083,a084,a085,a086,a087,a091,a093,a094,a095,a096,a097,a098,a101,a103,a104,a105,a106,a107,b1,b4,b5,b6,b7,b8,b9,bhat1,bhat4,bhat5,bhat6,bhat7,bhat10= constructVern7(uEltypeNoUnits)
     rtmp = rateType(size(u))
@@ -563,7 +563,7 @@ end
 """
 
 """
-function ode_addsteps!{rateType<:Number,uEltypeNoUnits}(k,t,u,dt,f,T::Type{Val{:Vern8}},T2::Type{rateType},T3::Type{uEltypeNoUnits})
+function ode_addsteps!{rateType<:Number,uEltypeNoUnits}(k,t,u,dt,f,alg::Vern8,T2::Type{rateType},T3::Type{uEltypeNoUnits})
   if length(k) <13
     c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211,a1301,a1304,a1305,a1306,a1307,a1308,a1309,a1310,b1,b6,b7,b8,b9,b10,b11,b12,bhat1,bhat6,bhat7,bhat8,bhat9,bhat10,bhat13= constructVern8(uEltypeNoUnits)
     push!(k,f(t,u))
@@ -597,7 +597,7 @@ end
 """
 
 """
-function ode_addsteps!{rateType<:AbstractArray,uEltypeNoUnits}(k,t,u,dt,f,T::Type{Val{:Vern8}},T2::Type{rateType},T3::Type{uEltypeNoUnits})
+function ode_addsteps!{rateType<:AbstractArray,uEltypeNoUnits}(k,t,u,dt,f,alg::Vern8,T2::Type{rateType},T3::Type{uEltypeNoUnits})
   if length(k) <13
     c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211,a1301,a1304,a1305,a1306,a1307,a1308,a1309,a1310,b1,b6,b7,b8,b9,b10,b11,b12,bhat1,bhat6,bhat7,bhat8,bhat9,bhat10,bhat13= constructVern8(uEltypeNoUnits)
     rtmp = rateType(size(u))
@@ -633,7 +633,7 @@ end
 """
 
 """
-function ode_addsteps!{rateType<:Number,uEltypeNoUnits}(k,t,u,dt,f,T::Type{Val{:Vern9}},T2::Type{rateType},T3::Type{uEltypeNoUnits})
+function ode_addsteps!{rateType<:Number,uEltypeNoUnits}(k,t,u,dt,f,alg::Vern9,T2::Type{rateType},T3::Type{uEltypeNoUnits})
   if length(k) < 16
     c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0806,a0807,a0901,a0906,a0907,a0908,a1001,a1006,a1007,a1008,a1009,a1101,a1106,a1107,a1108,a1109,a1110,a1201,a1206,a1207,a1208,a1209,a1210,a1211,a1301,a1306,a1307,a1308,a1309,a1310,a1311,a1312,a1401,a1406,a1407,a1408,a1409,a1410,a1411,a1412,a1413,a1501,a1506,a1507,a1508,a1509,a1510,a1511,a1512,a1513,a1514,a1601,a1606,a1607,a1608,a1609,a1610,a1611,a1612,a1613,b1,b8,b9,b10,b11,b12,b13,b14,b15,bhat1,bhat8,bhat9,bhat10,bhat11,bhat12,bhat13,bhat16 = constructVern9(uEltypeNoUnits)
     push!(k,f(t,u))
@@ -672,7 +672,7 @@ end
 """
 
 """
-function ode_addsteps!{rateType<:AbstractArray,uEltypeNoUnits}(k,t,u,dt,f,T::Type{Val{:Vern9}},T2::Type{rateType},T3::Type{uEltypeNoUnits})
+function ode_addsteps!{rateType<:AbstractArray,uEltypeNoUnits}(k,t,u,dt,f,alg::Vern9,T2::Type{rateType},T3::Type{uEltypeNoUnits})
   if length(k) < 16
     c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0806,a0807,a0901,a0906,a0907,a0908,a1001,a1006,a1007,a1008,a1009,a1101,a1106,a1107,a1108,a1109,a1110,a1201,a1206,a1207,a1208,a1209,a1210,a1211,a1301,a1306,a1307,a1308,a1309,a1310,a1311,a1312,a1401,a1406,a1407,a1408,a1409,a1410,a1411,a1412,a1413,a1501,a1506,a1507,a1508,a1509,a1510,a1511,a1512,a1513,a1514,a1601,a1606,a1607,a1608,a1609,a1610,a1611,a1612,a1613,b1,b8,b9,b10,b11,b12,b13,b14,b15,bhat1,bhat8,bhat9,bhat10,bhat11,bhat12,bhat13,bhat16 = constructVern9(uEltypeNoUnits)
     rtmp = rateType(size(u))
@@ -710,7 +710,7 @@ function ode_addsteps!{rateType<:AbstractArray,uEltypeNoUnits}(k,t,u,dt,f,T::Typ
   nothing
 end
 
-function ode_addsteps!{rateType<:Number,uEltypeNoUnits}(k,t,u,dt,f,T::Type{Val{:DP8}},T2::Type{rateType},T3::Type{uEltypeNoUnits})
+function ode_addsteps!{rateType<:Number,uEltypeNoUnits}(k,t,u,dt,f,alg::DP8,T2::Type{rateType},T3::Type{uEltypeNoUnits})
   if length(k)<7
     c7,c8,c9,c10,c11,c6,c5,c4,c3,c2,b1,b6,b7,b8,b9,b10,b11,b12,bhh1,bhh2,bhh3,er1,er6,er7,er8,er9,er10,er11,er12,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211 = constructDP8(uEltypeNoUnits)
     c14,c15,c16,a1401,a1407,a1408,a1409,a1410,a1411,a1412,a1413,a1501,a1506,a1507,a1508,a1511,a1512,a1513,a1514,a1601,a1606,a1607,a1608,a1609,a1613,a1614,a1615 = DP8Interp(uEltypeNoUnits)
@@ -746,7 +746,7 @@ function ode_addsteps!{rateType<:Number,uEltypeNoUnits}(k,t,u,dt,f,T::Type{Val{:
   end
 end
 
-function ode_addsteps!{rateType<:AbstractArray,uEltypeNoUnits}(k,t,u,dt,f,T::Type{Val{:DP8}},T2::Type{rateType},T3::Type{uEltypeNoUnits})
+function ode_addsteps!{rateType<:AbstractArray,uEltypeNoUnits}(k,t,u,dt,f,alg::DP8,T2::Type{rateType},T3::Type{uEltypeNoUnits})
   if length(k)<7
     sizeu = size(u)
     k13 = rateType(sizeu)

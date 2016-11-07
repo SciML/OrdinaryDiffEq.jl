@@ -1,5 +1,7 @@
 using OrdinaryDiffEq, NLsolve
 
+NON_IMPLICIT_ALGS = filter((x)->isleaftype(x) && !OrdinaryDiffEq.isimplicit(x()),union(subtypes(OrdinaryDiffEqAlgorithm),subtypes(OrdinaryDiffEqAdaptiveAlgorithm)))
+
 const α = 0.3
 f = function (t,u,du)
   for i in 1:length(u)
@@ -38,10 +40,10 @@ plot(ts,map((x)->x[1],sol.(ts)),lw=3,
      ylabel="Amount of X in Cell 1",xlabel="Time")
 =#
 
-for alg in OrdinaryDiffEq.DIFFERENTIALEQUATIONSJL_ALGORITHMS
-  if !contains(string(alg),"Vectorized") && !contains(string(alg),"Threaded") && alg ∉ OrdinaryDiffEq.DIFFERENTIALEQUATIONSJL_IMPLICITALGS
+for alg in NON_IMPLICIT_ALGS
+  if !(alg <: Rosenbrock23) && !(alg <: Rosenbrock32)
     println(alg)
-    sol = solve(prob,callback=callback,alg=alg)
+    sol = solve(prob,alg(),callback=callback)
   end
 end
 
@@ -51,10 +53,10 @@ end
 
 sol = solve(prob,callback=callback_no_interp,dense=false)
 
-for alg in OrdinaryDiffEq.DIFFERENTIALEQUATIONSJL_ALGORITHMS
-  if !contains(string(alg),"Vectorized") && !contains(string(alg),"Threaded") && alg ∉ OrdinaryDiffEq.DIFFERENTIALEQUATIONSJL_IMPLICITALGS
+for alg in NON_IMPLICIT_ALGS
+  if !(alg <: Rosenbrock23) && !(alg <: Rosenbrock32)
     println(alg)
-    sol = solve(prob,callback=callback_no_interp,alg=alg,dense=false)
+    sol = solve(prob,alg(),callback=callback)
   end
 end
 

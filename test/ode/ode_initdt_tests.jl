@@ -2,7 +2,7 @@ using OrdinaryDiffEq,Plots
 
 prob = prob_ode_linear
 println("Solve and Plot")
-sol =solve(prob::ODEProblem,save_timeseries=true,alg=:Rosenbrock32,adaptive=true)
+sol =solve(prob::ODEProblem,Rosenbrock32(),save_timeseries=true,adaptive=true)
 TEST_PLOT && plot(sol,plot_analytic=true)
 dt₀ = sol.t[2]
 
@@ -11,20 +11,20 @@ prob = prob_ode_2Dlinear
 ## Solve and plot
 println("Solve and Plot")
 tab = constructBogakiShampine3()
-sol =solve(prob::ODEProblem,save_timeseries=true,alg=:ExplicitRK,adaptive=true,tableau=tab)
+sol =solve(prob::ODEProblem,ExplicitRK(),save_timeseries=true,adaptive=true,tableau=tab)
 TEST_PLOT && plot(sol,plot_analytic=true)
 dt₀ = sol.t[2]
 
 bool1 = 1e-7 < dt₀ < .1
 
-sol =solve(prob::ODEProblem,save_timeseries=true,alg=:Euler)
+sol =solve(prob::ODEProblem,Euler(),save_timeseries=true)
 TEST_PLOT && plot(sol,plot_analytic=true)
 dt₀ = sol.t[2]
 
 bool2 = 1e-7 < dt₀ < .01
 
 tab = constructDormandPrince8_64bit()
-sol3 =solve(prob::ODEProblem,save_timeseries=true,alg=:ExplicitRK,adaptive=true,tableau=tab)
+sol3 =solve(prob::ODEProblem,ExplicitRK(),save_timeseries=true,adaptive=true,tableau=tab)
 TEST_PLOT && plot(sol3,plot_analytic=true)
 dt₀ = sol3.t[2]
 
