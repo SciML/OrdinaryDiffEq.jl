@@ -367,16 +367,15 @@ function solve{uType,tType,isinplace}(prob::AbstractODEProblem{uType,tType,Val{i
   (atomloaded && progressbar) ? Main.Atom.progress(1) : nothing #Use Atom's progressbar if loaded
 
   if typeof(prob) <: ODETestProblem
-    u_analytic = prob.analytic(t,u0)
     timeseries_analytic = Vector{uType}(0)
     for i in 1:size(timeseries,1)
       push!(timeseries_analytic,prob.analytic(ts[i],u0))
     end
-    return(ODESolution(u,u_analytic,prob,alg,timeseries=timeseries,t=ts,timeseries_analytic=timeseries_analytic,k=ks,saveat=saveat,
+    return(ODESolution(timeseries,prob,alg,timeseries=timeseries,t=ts,timeseries_analytic=timeseries_analytic,k=ks,saveat=saveat,
     timeseries_errors = command_opts[:timeseries_errors],
     dense_errors = command_opts[:dense_errors]))
   else
-    return(ODESolution(u,prob,alg,timeseries=timeseries,t=ts,k=ks,saveat=saveat))
+    return(ODESolution(timeseries,prob,alg,timeseries=timeseries,t=ts,k=ks,saveat=saveat))
   end
 end
 
@@ -431,8 +430,4 @@ function ode_determine_initdt{uType<:Number,tType,uEltypeNoUnits}(u0::uType,t::t
     dt₁ = tType(10.0^(-(2+log10(max(d₁,d₂)/T1(1)))/(order)))
   end
   dt = min(100dt₀,dt₁)
-end
-
-function plan_ode(alg_hint,abstol,reltol)
-  :DP5
 end

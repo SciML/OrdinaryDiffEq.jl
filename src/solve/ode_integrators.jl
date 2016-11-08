@@ -174,6 +174,7 @@ end
     push!(ts,t)
     push!(timeseries,u)
   end
+  (atomloaded && progressbar) ? Main.Atom.progress(1) : nothing #Use Atom's progressbar if loaded
   return u,t
 end
 

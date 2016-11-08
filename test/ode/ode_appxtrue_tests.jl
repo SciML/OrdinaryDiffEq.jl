@@ -21,4 +21,4 @@ sol5 =solve(prob,Euler();dt=1//2^(4))
 test_sol = TestSolution(sol2[end])
 appxtrue!(sol5,test_sol)
 
-sol.appxtrue == true && sol.errors[:L2] ≈ 0.018865798306718855 && sol.errors[:L2] ≈ sol4.errors[:L2]
+sol.errors[:L2] ≈ 0.018865798306718855 && sol.errors[:L2] ≈ sol4.errors[:L2]
