@@ -7,13 +7,13 @@ f = (t,y) -> 0.5*y / 3.0u"s"
 u0 = 1.0u"N"
 prob = ODEProblem(f,u0,[0;1.0]u"s")
 
-sol =solve(prob,Midpoint())
+sol =solve(prob,Midpoint)
 
-sol =solve(prob,ExplicitRK())
+sol =solve(prob,ExplicitRK)
 
 for alg in NON_IMPLICIT_ALGS
   if !(alg <: DP5Threaded) && !(alg <: Rosenbrock23) && !(alg <: Rosenbrock32)
-    sol = solve(prob,alg())
+    sol = solve(prob,alg)
   end
 end
 
@@ -26,16 +26,16 @@ u0 = [1.0u"N" 2.0u"N"
 
 prob = ODEProblem(f,u0,[0;1.0]u"s")
 
-sol =solve(prob,RK4())
+sol =solve(prob,RK4)
 
-sol =solve(prob,ExplicitRK())
-sol =solve(prob,DP5())
+sol =solve(prob,ExplicitRK)
+sol =solve(prob,DP5)
 
-sol =solve(prob,DP5Threaded())
+sol =solve(prob,DP5Threaded)
 
 for alg in NON_IMPLICIT_ALGS
   if !(alg <: DP5Threaded) && !(alg <: Rosenbrock23) && !(alg <: Rosenbrock32)
-    sol = solve(prob,alg())
+    sol = solve(prob,alg)
   end
 end
 

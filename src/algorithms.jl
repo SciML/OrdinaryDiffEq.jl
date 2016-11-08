@@ -113,7 +113,7 @@ end
   adaptiveorder::Int=12
 end
 
-DefaultODEAlgorithm(alg_hints::Symbol...) = DP5()
+DefaultODEAlgorithm(alg_hints::Symbol...) = DP5
 
 function isfsal(alg::OrdinaryDiffEqAlgorithm)
   if typeof(alg) <: DP5 || typeof(alg) <: DP5Threaded || typeof(alg) <: DP8 || typeof(alg) <: BS3 || typeof(alg) <: BS5 || typeof(alg) <: Tsit5 || typeof(alg) <: Vern6

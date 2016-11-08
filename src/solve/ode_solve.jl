@@ -5,8 +5,8 @@ Solves the ODE defined by prob on the interval tspan. If not given, tspan defaul
 
 Please see the solver documentation.
 """
-function solve{uType,tType,isinplace}(prob::AbstractODEProblem{uType,tType,
-  Val{isinplace}},alg::OrdinaryDiffEqAlgorithm=DefaultODEAlgorithm(),
+function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm}(prob::AbstractODEProblem{uType,tType,
+  Val{isinplace}},algType::Type{T}=DefaultODEAlgorithm(),
   timeseries=[],ts=[],ks=[];dt = 0.0,save_timeseries = true,
   timeseries_steps = 1,tableau = ODE_DEFAULT_TABLEAU,
   dense = true,calck = nothing,alg_hint = :nonstiff,
@@ -17,6 +17,8 @@ function solve{uType,tType,isinplace}(prob::AbstractODEProblem{uType,tType,
   dtmax=tType((prob.tspan[end]-prob.tspan[1])),
   dtmin=nothing,autodiff=true,internalnorm = ODE_DEFAULT_NORM,
   progressbar=false,progress_steps=1000,callback=nothing,kwargs...)
+
+  alg = algType()
 
   tspan = prob.tspan
 
@@ -208,7 +210,8 @@ Solves the ODE defined by prob on the interval tspan. If not given, tspan defaul
 
 Please see the solver documentation.
 """
-function solve{uType,tType,isinplace}(prob::AbstractODEProblem{uType,tType,Val{isinplace}},alg=DefaultODEAlgorithm(),timeseries=[],ts=[],ks=[];kwargs...)
+function solve{uType,tType,isinplace}(prob::AbstractODEProblem{uType,tType,Val{isinplace}},algType=DefaultODEAlgorithm(),timeseries=[],ts=[],ks=[];kwargs...)
+  alg = algType()
   tspan = prob.tspan
 
   if tspan[end]-tspan[1]<tType(0)
