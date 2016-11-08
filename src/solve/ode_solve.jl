@@ -191,12 +191,13 @@ function solve{uType,tType,isinplace}(prob::AbstractODEProblem{uType,tType,
     for i in 1:size(timeseries,1)
       push!(timeseries_analytic,prob.analytic(ts[i],u0))
     end
-    return(ODESolution(timeseries,prob,alg,timeseries=timeseries,t=ts,
-    timeseries_analytic=timeseries_analytic,k=ks,saveat=saveat,
+    return(ODESolution(ts,timeseries,prob,alg,
+    u_analytic=timeseries_analytic,
+    k=ks,saveat=saveat,
     timeseries_errors = timeseries_errors,
     dense_errors = dense_errors))
   else
-    return(ODESolution(timeseries,prob,alg,timeseries=timeseries,t=ts,k=ks,saveat=saveat))
+    return(ODESolution(ts,timeseries,prob,alg,k=ks,saveat=saveat))
   end
 end
 
@@ -417,12 +418,13 @@ function solve{uType,tType,isinplace}(prob::AbstractODEProblem{uType,tType,Val{i
     for i in 1:size(timeseries,1)
       push!(timeseries_analytic,prob.analytic(ts[i],u0))
     end
-    return(ODESolution(timeseries,prob,alg,timeseries=timeseries,t=ts,
-    timeseries_analytic=timeseries_analytic,k=ks,saveat=saveat,
+    return(ODESolution(ts,timeseries,prob,alg,
+    u_analytic=timeseries_analytic,
+    k=ks,saveat=saveat,
     timeseries_errors = command_opts[:timeseries_errors],
     dense_errors = command_opts[:dense_errors]))
   else
-    return(ODESolution(timeseries,prob,alg,timeseries=timeseries,t=ts,k=ks,saveat=saveat))
+    return(ODESolution(ts,timeseries,prob,alg,k=ks,saveat=saveat))
   end
 end
 
