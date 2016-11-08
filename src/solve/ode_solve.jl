@@ -5,7 +5,7 @@ Solves the ODE defined by prob on the interval tspan. If not given, tspan defaul
 
 Please see the solver documentation.
 """
-function solve(prob::AbstractODEProblem,alg=DefaultODEAlgorithm(),timeseries=[],ts=[],ks=[];kwargs...)
+function solve{uType,tType2,isinplace}(prob::AbstractODEProblem{uType,tType2,Val{isinplace}},alg=DefaultODEAlgorithm(),timeseries=[],ts=[],ks=[];kwargs...)
   tspan = prob.tspan
   if tspan[end]-tspan[1]<0
     tspan = vec(tspan)
@@ -15,8 +15,7 @@ function solve(prob::AbstractODEProblem,alg=DefaultODEAlgorithm(),timeseries=[],
   o = KW(kwargs)
   o[:t] = tspan[1]
   o[:Ts] = tspan[2:end]
-  @unpack u0,isinplace = prob
-  uType = typeof(u0)
+  u0 = prob.u0
   uEltype = eltype(u0)
 
   command_opts = copy(DIFFERENTIALEQUATIONSJL_DEFAULT_OPTIONS)
@@ -203,10 +202,6 @@ function solve(prob::AbstractODEProblem,alg=DefaultODEAlgorithm(),timeseries=[],
     @unpack maxiters,timeseries_steps,save_timeseries,adaptive,progress_steps,abstol,reltol,internalnorm,tableau,autodiff,qoldinit,dense = o
     # @code_warntype ode_solve(ODEIntegrator{alg,uType,uEltype,ndims(u)+1,tType,uEltypeNoUnits,rateType,ksEltype}(timeseries,ts,ks,f!,u,t,k,dt,Ts,maxiters,timeseries_steps,save_timeseries,adaptive,abstol,reltol,γ,qmax,qmin,dtmax,dtmin,internalnorm,progressbar,tableau,autodiff,adaptiveorder,order,atomloaded,progress_steps,β₁,β₂,qoldinit,fsal,dense,saveat,alg,callback,custom_callback,calck))
     u,t = ode_solve(ODEIntegrator{typeof(alg),uType,uEltype,ndims(u)+1,tType,uEltypeNoUnits,rateType,ksEltype}(timeseries,ts,ks,f!,u,t,dt,Ts,maxiters,timeseries_steps,save_timeseries,adaptive,abstol,reltol,γ,qmax,qmin,dtmax,dtmin,internalnorm,progressbar,tableau,autodiff,adaptiveorder,order,atomloaded,progress_steps,β₁,β₂,qoldinit,fsal,dense,saveat,alg,callback,custom_callback,calck))
-    if ts[end] != t
-      push!(ts,t)
-      push!(timeseries,u)
-    end
   elseif typeof(alg) <: ODEInterfaceAlgorithm
     sizeu = size(u)
     if typeof(u) <: Number

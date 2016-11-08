@@ -1,5 +1,5 @@
 # This definitely needs cleaning
-using OrdinaryDiffEq, DiffEqDevTools
+using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase
 probArr = Vector{ODETestProblem}(2)
 probArr[1] = prob_ode_linear
 

@@ -133,7 +133,7 @@ end
   iter += 1
   if iter > maxiters
     warn("Interrupted. Larger maxiters is needed.")
-    return u,t
+    @ode_postamble
   end
   dt = min(dt,abs(T-t))
   if uType<:AbstractArray && custom_callback
@@ -170,9 +170,11 @@ end
 end
 
 @def ode_postamble begin
-  resize!(timeseries,saveiter-1)
-  resize!(ts,saveiter-1)
-  resize!(ks,saveiter-1)
+  if ts[end] != t
+    push!(ts,t)
+    push!(timeseries,u)
+  end
+  return u,t
 end
 
 @def ode_loopfooter begin
@@ -272,7 +274,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       @ode_loopfooter
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Euler,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -295,7 +297,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
       @ode_loopfooter
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Midpoint,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -310,7 +312,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       @ode_loopfooter
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Midpoint,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -346,7 +348,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
       @ode_loopfooter
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{RK4,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -372,7 +374,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       @ode_loopfooter
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{RK4,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -416,7 +418,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
       @ode_loopfooter
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{ExplicitRK,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -474,7 +476,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       @ode_loopfooter
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{ExplicitRK,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -573,7 +575,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
       @ode_loopfooter
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{BS3,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -605,7 +607,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       @ode_loopfooter
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{BS3,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -653,7 +655,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
       @ode_loopfooter
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{BS5,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -711,7 +713,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       @ode_loopfooter
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{BS5,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -803,7 +805,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
       @ode_loopfooter
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Tsit5,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -855,7 +857,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       @ode_loopfooter
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Tsit5,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -936,7 +938,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
       @ode_loopfooter
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{DP5,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -994,7 +996,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       @ode_loopfooter
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 
@@ -1082,7 +1084,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
       @ode_loopfooter
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{DP5Threaded,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -1148,7 +1150,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
       @ode_loopfooter
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 @noinline function dp5threaded_denseloop(bspl,update,k1,k3,k4,k5,k6,k7,k,d1,d3,d4,d5,d6,d7,uidx)
@@ -1251,7 +1253,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       @ode_loopfooter
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 
@@ -1330,7 +1332,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
       @ode_loopfooter
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Vern7,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -1379,7 +1381,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       @ode_loopfooter
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Vern7,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -1463,7 +1465,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
       @ode_loopfooter
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Vern8,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -1515,7 +1517,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       @ode_loopfooter
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Vern8,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -1612,7 +1614,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
       @ode_loopfooter
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{TanYam7,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -1653,7 +1655,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
     k = f(t,u)
     push!(ks,k)
   end
-  return u,t
+  @ode_postamble
 end
 
 
@@ -1739,7 +1741,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
     f(t,u,k)
     push!(ks,deepcopy(k))
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{DP8,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -1817,7 +1819,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       @ode_loopfooter
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{DP8,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -1966,7 +1968,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
       @ode_loopfooter
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{TsitPap8,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -2010,7 +2012,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
     k = f(t,u)
     push!(ks,k)
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{TsitPap8,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -2104,7 +2106,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
     f(t,u,k)
     push!(ks,deepcopy(k))
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Vern9,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -2161,7 +2163,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       @ode_loopfooter
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Vern9,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -2270,7 +2272,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
       @ode_loopfooter
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Feagin10,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -2318,7 +2320,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
     k = f(t,u)
     push!(ks,k)
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Feagin10,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -2431,7 +2433,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
     f(t,u,k)
     push!(ks,deepcopy(k))
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Feagin12,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -2490,7 +2492,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
     k = f(t,u)
     push!(ks,k)
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Feagin12,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -2638,7 +2640,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
     f(t,u,k)
     push!(ks,deepcopy(k))
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Feagin14,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -2709,7 +2711,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
     k = f(t,u)
     push!(ks,k)
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Feagin14,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -2901,7 +2903,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
     f(t,u,k)
     push!(ks,deepcopy(k))
   end
-  return u,t
+  @ode_postamble
 end
 
 
@@ -2927,7 +2929,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       @ode_loopfooter
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{ImplicitEuler,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -2968,7 +2970,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
     end
   end
   u = reshape(uhold,sizeu...)
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Trapezoid,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -3015,7 +3017,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
     end
   end
   u = reshape(uhold,sizeu...)
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Trapezoid,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -3041,7 +3043,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       @ode_loopfooter
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Rosenbrock23,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -3118,7 +3120,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
       recursivecopy!(fsalfirst,fsallast)
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Rosenbrock23,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -3162,7 +3164,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       fsalfirst = fsallast
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Rosenbrock32,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -3240,7 +3242,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
       recursivecopy!(fsalfirst,fsallast)
     end
   end
-  return u,t
+  @ode_postamble
 end
 
 function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Rosenbrock32,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
@@ -3286,5 +3288,5 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
       fsalfirst = fsallast
     end
   end
-  return u,t
+  @ode_postamble
 end

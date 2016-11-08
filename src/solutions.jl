@@ -34,7 +34,7 @@ type ODESolution <: AbstractODESolution
   alg
   interp::Function
   dense::Bool
-  function ODESolution(u,prob,alg;timeseries=[],timeseries_analytic=[],t=[],k=[],saveat=[])
+  function ODESolution{uType,tType2,isinplace}(u,prob::AbstractODEProblem{uType,tType2,Val{isinplace}},alg;timeseries=[],timeseries_analytic=[],t=[],k=[],saveat=[])
     save_timeseries = length(timeseries) > 2
     trueknown = false
     dense = k != []
@@ -44,7 +44,7 @@ type ODESolution <: AbstractODESolution
     t_nosaveat = @view t[non_saveat_idxs]
     timeseries_nosaveat = @view timeseries[non_saveat_idxs]
     if dense # dense
-      if !prob.isinplace && typeof(u)<:AbstractArray
+      if !isinplace && typeof(u)<:AbstractArray
         f! = (t,u,du) -> (du[:] = prob.f(t,u))
       else
         f! = prob.f
@@ -55,7 +55,7 @@ type ODESolution <: AbstractODESolution
     end
     return(new(u,trueknown,nothing,Dict(),timeseries,t,timeseries_analytic,false,save_timeseries,k,prob,alg,interp,dense))
   end
-  function ODESolution(u,u_analytic,prob,alg;timeseries=[],timeseries_analytic=[],
+  function ODESolution{uType,tType2,isinplace}(u,u_analytic,prob::AbstractODEProblem{uType,tType2,Val{isinplace}},alg;timeseries=[],timeseries_analytic=[],
            t=[],k=[],saveat=[],timeseries_errors=true,dense_errors=true)
     save_timeseries = length(timeseries) > 2
     trueknown = true
@@ -65,7 +65,7 @@ type ODESolution <: AbstractODESolution
     t_nosaveat = view(t,symdiff(1:length(t),saveat_idxs))
     timeseries_nosaveat = view(timeseries,symdiff(1:length(t),saveat_idxs))
     if dense # dense
-      if !prob.isinplace && typeof(u)<:AbstractArray
+      if !isinplace && typeof(u)<:AbstractArray
         f! = (t,u,du) -> (du[:] = prob.f(t,u))
       else
         f! = prob.f

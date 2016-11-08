@@ -29,7 +29,6 @@ module OrdinaryDiffEq
   include("backends.jl")
   include("misc_utils.jl")
 
-  include("problems.jl")
   include("solutions.jl")
 
   include("algorithms.jl")
@@ -42,7 +41,7 @@ module OrdinaryDiffEq
 
 
   #Types
-  export ODESolution, ODEProblem, ODETestProblem
+  export ODESolution
 
   #General Functions
   export solve
