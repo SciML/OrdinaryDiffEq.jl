@@ -46,7 +46,6 @@ end
 end
 
 const DIFFERENTIALEQUATIONSJL_DEFAULT_OPTIONS = Dict(:dt => 0.0,
-                                 :tType => nothing,
                                  :save_timeseries => true,
                                  :timeseries_steps => 1,
                                  :tableau => ODE_DEFAULT_TABLEAU,

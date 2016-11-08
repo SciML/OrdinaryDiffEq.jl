@@ -1,14 +1,14 @@
 """
 `solve(prob::ODEProblem,tspan)`
 
-Solves the ODE defined by prob on the interval tspan. If not given, tspan defaults to [0,1].
+Solves the ODE defined by prob on the interval tspan. If not given, tspan defaults to [0;1.0].
 
 Please see the solver documentation.
 """
-function solve{uType,tType2,isinplace}(prob::AbstractODEProblem{uType,tType2,Val{isinplace}},alg=DefaultODEAlgorithm(),timeseries=[],ts=[],ks=[];kwargs...)
+function solve{uType,tType,isinplace}(prob::AbstractODEProblem{uType,tType,Val{isinplace}},alg=DefaultODEAlgorithm(),timeseries=[],ts=[],ks=[];kwargs...)
   tspan = prob.tspan
-  if tspan[end]-tspan[1]<0
-    tspan = vec(tspan)
+
+  if tspan[end]-tspan[1]<tType(0)
     error("final time must be greater than starting time. Aborting.")
   end
   atomloaded = isdefined(Main,:Atom)
@@ -70,14 +70,15 @@ function solve{uType,tType2,isinplace}(prob::AbstractODEProblem{uType,tType2,Val
     else
       f! = prob.f
     end
-    if dt==0
-      dt = ode_determine_initdt(u0,float(tspan[1]),o[:abstol],o[:reltol],o[:internalnorm],f!,order)
+
+    if uType <: Number
+      uEltypeNoUnits = typeof(u./u)
+    else
+      uEltypeNoUnits = eltype(u./u)
     end
 
-    if o[:tType] == nothing # if tType is not specified, grab it from dt which defaults to 0.0 => Float64
-      tType=typeof(dt)
-    else
-      tType = o[:tType]
+    if dt==0
+      dt = ode_determine_initdt(u0,tspan[1],uEltype(o[:abstol]),uEltypeNoUnits(o[:reltol]),o[:internalnorm],f!,order)
     end
 
     if o[:dtmax] == nothing
@@ -89,12 +90,6 @@ function solve{uType,tType2,isinplace}(prob::AbstractODEProblem{uType,tType2,Val
       else
         o[:dtmin] = tType(1//10^(10))
       end
-    end
-
-    if uType <: Number
-      uEltypeNoUnits = typeof(u./u)
-    else
-      uEltypeNoUnits = eltype(u./u)
     end
 
     Ts = map(tType,o[:Ts])
@@ -391,45 +386,49 @@ function buildOptions(o,optionlist,aliases,aliases_reversed)
   merge(dict1,dict2)
 end
 
-function ode_determine_initdt(u0,t,abstol,reltol,internalnorm,f,order)
-  f₀ = similar(u0); f₁ = similar(u0); u₁ = similar(u0)
+function ode_determine_initdt{uType,tType,uEltypeNoUnits}(u0::uType,t::tType,abstol,reltol::uEltypeNoUnits,internalnorm,f,order)
+  f₀ = similar(u0./t); f₁ = similar(u0./t); u₁ = similar(u0)
   d₀ = internalnorm(u0./(abstol+u0*reltol))
   f(t,u0,f₀)
-  d₁ = internalnorm(f₀./(abstol+u0*reltol))
-  if d₀ < 1//10^(5) || d₁ < 1//10^(5)
-    dt₀ = 1//10^(6)
+  d₁ = internalnorm(f₀./(abstol+u0*reltol)*tType(1))/tType(1)
+  T0 = typeof(d₀)
+  T1 = typeof(d₁)
+  if d₀ < T0(1//10^(5)) || d₁ < T1(1//10^(5))
+    dt₀ = tType(1//10^(6))
   else
-    dt₀ = (d₀/d₁)/100
+    dt₀ = tType((d₀/d₁)/100)
   end
   @inbounds for i in eachindex(u0)
      u₁[i] = u0[i] + dt₀*f₀[i]
   end
   f(t+dt₀,u₁,f₁)
-  d₂ = internalnorm((f₁.-f₀)./(abstol+u0*reltol))/dt₀
-  if max(d₁,d₂)<=1//10^(15)
-    dt₁ = max(1//10^(6),dt₀*1//10^(3))
+  d₂ = internalnorm((f₁.-f₀)./(abstol+u0*reltol)*tType(1))/dt₀
+  if max(d₁,d₂)<=T1(1//10^(15))
+    dt₁ = max(tType(1//10^(6)),dt₀*1//10^(3))
   else
-    dt₁ = 10.0^(-(2+log10(max(d₁,d₂)))/(order))
+    dt₁ = tType(10.0^(-(2+log10(max(d₁,d₂)/T1(1)))/(order)))
   end
   dt = min(100dt₀,dt₁)
 end
 
-function ode_determine_initdt(u0::Number,t,abstol,reltol,internalnorm,f,order)
+function ode_determine_initdt{uType<:Number,tType,uEltypeNoUnits}(u0::uType,t::tType,abstol,reltol::uEltypeNoUnits,internalnorm,f,order)
   d₀ = abs(u0./(abstol+u0*reltol))
-  f₀ =f(t,u0)
+  f₀ = f(t,u0)
   d₁ = abs(f₀./(abstol+u0*reltol))
-  if d₀ < 1//10^(5) || d₁ < 1//10^(5)
-    dt₀ = 1//10^(6)
+  T0 = typeof(d₀)
+  T1 = typeof(d₁)
+  if d₀ < T0(1//10^(5)) || d₁ < T1(1//10^(5))
+    dt₀ = tType(1//10^(6))
   else
-    dt₀ = (d₀/d₁)/100
+    dt₀ = tType((d₀/d₁)/100)
   end
   u₁ = u0 + dt₀*f₀
   f₁ = f(t+dt₀,u₁)
-  d₂ = abs((f₁-f₀)./(abstol+u0*reltol))/dt₀
-  if max(d₁,d₂)<=1//10^(15)
-    dt₁ = max(1//10^(6),dt₀*1//10^(3))
+  d₂ = abs((f₁-f₀)./(abstol+u0*reltol))/dt₀*tType(1)
+  if max(d₁,d₂) <= T1(1//10^(15))
+    dt₁ = max(tType(1//10^(6)),dt₀*1//10^(3))
   else
-    dt₁ = 10.0^(-(2+log10(max(d₁,d₂)))/(order))
+    dt₁ = tType(10.0^(-(2+log10(max(d₁,d₂)/T1(1)))/(order)))
   end
   dt = min(100dt₀,dt₁)
 end

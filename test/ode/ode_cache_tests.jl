@@ -25,7 +25,7 @@ callback = @ode_callback begin
   @ode_event event_f apply_event! true 10
 end
 u0 = [0.2]
-tspan = [0;10]
+tspan = [0;10.0]
 prob = ODEProblem(f,u0,tspan)
 sol = solve(prob,callback=callback)
 
