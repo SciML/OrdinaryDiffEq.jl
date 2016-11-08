@@ -13,7 +13,8 @@ function solve{uType,tType,isinplace}(prob::AbstractODEProblem{uType,tType,
   timeseries_errors = true,dense_errors = false,saveat = Float64[],
   adaptive = true,gamma=.9,abstol=1//10^6,reltol=1//10^3,
   qmax=nothing,qmin=nothing,qoldinit=1//10^4, fullnormalize=true,
-  beta2=nothing,beta1=nothing,maxiters = 10000,dtmax=nothing,
+  beta2=nothing,beta1=nothing,maxiters = 10000,
+  dtmax=tType((prob.tspan[end]-prob.tspan[1])),
   dtmin=nothing,autodiff=true,internalnorm = ODE_DEFAULT_NORM,
   progressbar=false,progress_steps=1000,callback=nothing,kwargs...)
 
@@ -78,9 +79,6 @@ function solve{uType,tType,isinplace}(prob::AbstractODEProblem{uType,tType,
     dt = ode_determine_initdt(u0,tspan[1],uEltype(abstol),uEltypeNoUnits(reltol),internalnorm,f!,order)
   end
 
-  if dtmax == nothing
-    dtmax = tType((tspan[end]-tspan[1]))
-  end
   if dtmin == nothing
     if tType <: AbstractFloat
       dtmin = tType(10)*eps(tType)
