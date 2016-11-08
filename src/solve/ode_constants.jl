@@ -45,18 +45,6 @@ end
   sqrt( sum(u) / length(u))
 end
 
-#const COMMON_ALIASES = Set([])
-
-const SUNDIALS_ALGORITHMS = Set([:cvode_BDF,:cvode_Adams])
-
-const DIFFERENTIALEQUATIONSJL_ALGORITHMS = Set([:Euler,:Midpoint,:RK4,:ExplicitRK,:BS3,:BS5,:DP5,:DP5Threaded,:DP8,:Vern6,:Tsit5,:TanYam7,:TsitPap8,:Vern9,:ImplicitEuler,:Trapezoid,:Rosenbrock23,:Rosenbrock32,:Feagin10,:Feagin12,:Feagin14,:Vern7,:Vern8])
-
-const DIFFERENTIALEQUATIONSJL_FSALALGS = Set([:DP5,:DP5Threaded,:DP8,:BS3,:BS5,:Tsit5,:Vern6])
-
-const DIFFERENTIALEQUATIONSJL_SPECIALDENSEALGS = Set([:DP5,:DP5Threaded,:Tsit5,:BS5,:Vern6,:Vern7,:Vern8,:Vern9,:DP8]) # These algs have a special dense output, others just Hemite
-const ODEINTERFACE_ALGORITHMS = Set([:dopri5,:dop853,:odex,:radau5,:radau,:seulex])
-const ODEJL_ALGORITHMS = Set([:ode23,:ode45,:ode78,:ode23s,:ode1,:ode2_midpoint,:ode2_heun,:ode4,:ode45_fe])
-
 const DIFFERENTIALEQUATIONSJL_DEFAULT_OPTIONS = Dict(:dt => 0.0,
                                  :tType => nothing,
                                  :save_timeseries => true,
@@ -91,10 +79,6 @@ const ODEJL_OPTION_LIST = Set([:tout,:tstop,:reltol,:abstol,:minstep,:maxstep,:i
 const ODEJL_ALIASES = Dict{Symbol,Symbol}(:minstep=>:dtmin,:maxstep=>:dtmax,:initstep=>:dt,:tstop=>:T,:maxiters=>:maxiters)
 const ODEJL_ALIASES_REVERSED = Dict{Symbol,Symbol}([(v,k) for (k,v) in ODEJL_ALIASES])
 
-const SUNDIALS_OPTION_LIST = Set([:reltol,:abstol])
-const SUNDIALS_ALIASES = Dict{Symbol,Symbol}()
-const SUNDIALS_ALIASES_REVERSED = Dict{Symbol,Symbol}([(v,k) for (k,v) in SUNDIALS_ALIASES])
-
 const ODEINTERFACE_OPTION_LIST = Set([:RTOL,:ATOL,:OUTPUTFCN,:OUTPUTMODE,
                                 :MAXSTEPS,:STEST,:EPS,:RHO,:SSMINSEL,
                                 :SSMAXSEL,:SSBETA,:MAXSS,:INITIALSS,
@@ -123,57 +107,6 @@ const ODEINTERFACE_ALIASES = Dict{Symbol,Symbol}(:RTOL=>:reltol,
                                                  :SSMAXSEL=>:qmax)
 
 const ODEINTERFACE_ALIASES_REVERSED = Dict{Symbol,Symbol}([(v,k) for (k,v) in ODEINTERFACE_ALIASES])
-
-const DIFFERENTIALEQUATIONSJL_ORDERS = Dict{Symbol,Int}(:Euler=>1,
-                                                        :Midpoint=>2,
-                                                        :RK4=>4,
-                                                        :ExplicitRK=>4, #Gets overwritten
-                                                        :BS3=>3,
-                                                        :BS5=>5,
-                                                        :DP5=>5,
-                                                        :DP5Threaded=>5,
-                                                        :DP8=>8,
-                                                        :Vern6=>6,
-                                                        :Tsit5=>5,
-                                                        :TanYam7=>7,
-                                                        :TsitPap8=>8,
-                                                        :Vern9=>9,
-                                                        :ImplicitEuler=>1,
-                                                        :Trapezoid=>2,
-                                                        :Rosenbrock23=>2,
-                                                        :Rosenbrock32=>3,
-                                                        :Feagin10=>10,
-                                                        :Feagin12=>12,
-                                                        :Feagin14=>14,
-                                                        :Vern7=>7,
-                                                        :Vern8=>8)
-
-
-const DIFFERENTIALEQUATIONSJL_ADAPTIVEORDERS = Dict{Symbol,Int}(:ExplicitRK=>4, #Gets overwritten
-                                                                :BS3=>2,
-                                                                :DP5=>4,
-                                                                :DP5Threaded=>4,
-                                                                :DP8=>8,
-                                                                :BS5=>4,
-                                                                :Vern6=>5,
-                                                                :Tsit5=>4,
-                                                                :TanYam7=>6,
-                                                                :TsitPap8=>7,
-                                                                :Vern9=>8,
-                                                                :Rosenbrock23=>2,
-                                                                :Rosenbrock32=>2,
-                                                                :Feagin10=>8,
-                                                                :Feagin12=>10,
-                                                                :Feagin14=>12,
-                                                                :Vern7=>6,
-                                                                :Vern8=>7)
-
-const DIFFERENTIALEQUATIONSJL_ADAPTIVEALGS = Set([:ExplicitRK,:BS3,:BS5,:DP5,
-                  :DP5Threaded,:DP8,:Vern6,:Tsit5,:TanYam7,:TsitPap8,:Vern9,
-                  :Rosenbrock23,:Rosenbrock32,:Feagin10,:Feagin12,
-                  :Feagin14,:Vern7,:Vern8])
-
-const DIFFERENTIALEQUATIONSJL_IMPLICITALGS = Set([:ImplicitEuler,:Trapezoid,:Rosenbrock32,:Rosenbrock23])
 
 const ODEINTERFACE_STRINGS = Dict{Symbol,String}(
   :LOGIO            => "logio",

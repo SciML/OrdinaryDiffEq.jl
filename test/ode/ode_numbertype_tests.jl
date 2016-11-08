@@ -5,16 +5,16 @@ setprecision(400)
 f = (t,u) -> (2u)
 analytic = (t,u0) -> u0*exp(t)
 """Linear ODE on Float64"""
-prob_ode_linear = ODEProblem(f,1/2,analytic=analytic)
+prob_ode_linear = ODETestProblem(f,1/2,analytic)
 
 
 prob = prob_ode_linear
-sol3 =solve(prob::ODEProblem,RK4(),dt=1/2^(6),save_timeseries=true,abstol=1,reltol=0)
+sol3 =solve(prob,RK4(),dt=1/2^(6),save_timeseries=true,abstol=1,reltol=0)
 
-prob = ODEProblem(f,BigInt(1)//BigInt(2),analytic=analytic)
+prob = ODETestProblem(f,BigInt(1)//BigInt(2),analytic)
 
-sol =solve(prob::ODEProblem,RK4(),dt=BigInt(1)//BigInt(2)^(6),save_timeseries=true,abstol=1,reltol=0)
-sol2 =solve(prob::ODEProblem,RK4(),dt=BigInt(1)/BigInt(2)^(6),save_timeseries=true,abstol=1,reltol=0)
+sol =solve(prob,RK4(),dt=BigInt(1)//BigInt(2)^(6),save_timeseries=true,abstol=1,reltol=0)
+sol2 =solve(prob,RK4(),dt=BigInt(1)/BigInt(2)^(6),save_timeseries=true,abstol=1,reltol=0)
 
 sol.u
 sol2.u
@@ -26,12 +26,12 @@ bool4 = typeof(sol.u) == Rational{BigInt}
 bool5 = typeof(sol2.u) == Rational{BigInt}
 bool6 = typeof(sol3.u) == Float64
 
-sol4 =solve(prob::ODEProblem,DP5(),dt=BigInt(1)//BigInt(2)^(3),save_timeseries=true,adaptive=false)
+sol4 =solve(prob,DP5(),dt=BigInt(1)//BigInt(2)^(3),save_timeseries=true,adaptive=false)
 
 bool9 = typeof(sol4.u) == Rational{BigInt}
 
 tab = constructDormandPrince8_64bit(Rational{BigInt})
-sol5 =solve(prob::ODEProblem,ExplicitRK(),dt=BigInt(1)//BigInt(2)^(3),save_timeseries=true,abstol=1,reltol=0,tableau=tab,adaptive=false)
+sol5 =solve(prob,ExplicitRK(),dt=BigInt(1)//BigInt(2)^(3),save_timeseries=true,abstol=1,reltol=0,tableau=tab,adaptive=false)
 
 bool7 = 5.72e-8 < abs(float(sol5.u) - sol3.u) < 5.73e-8
 bool8 = typeof(sol5.u) == Rational{BigInt}

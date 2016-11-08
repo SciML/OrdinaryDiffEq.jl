@@ -21,7 +21,7 @@ dts = 1.//2.^(4:-1:2)
 testTol = 1
 
 println("Feagin RKs")
-sol =solve(prob::ODEProblem,Feagin10(),dt=dts[1])
+sol =solve(prob,Feagin10(),dt=dts[1])
 
 const linear_bigα = parse(BigFloat,"1.01")
 f = (t,u,du) -> begin
@@ -30,7 +30,7 @@ f = (t,u,du) -> begin
   end
 end
 analytic = (t,u0) -> u0*exp(linear_bigα*t)
-prob_ode_bigfloat2Dlinear = ODEProblem(f,map(BigFloat,rand(4,2)).*ones(4,2)/2,analytic=analytic)
+prob_ode_bigfloat2Dlinear = ODETestProblem(f,map(BigFloat,rand(4,2)).*ones(4,2)/2,analytic)
 
 prob = prob_ode_bigfloat2Dlinear
 
@@ -44,7 +44,7 @@ sim = test_convergence(dts,prob,Feagin14())
 bool6 = abs(sim.𝒪est[:final]-15) < testTol #Upped to 15 for test
 
 f = (t,u) -> (linear_bigα*u)
-prob_ode_bigfloatlinear = ODEProblem(f,parse(BigFloat,"0.5"),analytic=analytic)
+prob_ode_bigfloatlinear = ODETestProblem(f,parse(BigFloat,"0.5"),analytic)
 prob = prob_ode_bigfloatlinear
 
 dts = 1.//2.^(6:-1:3)
@@ -61,13 +61,13 @@ bool9 = abs(sim.𝒪est[:final]-15) < testTol #Upped to 15 for test
 prob = prob_ode_bigfloat2Dlinear
 
 #compile
-sol =solve(prob::ODEProblem,Feagin10(),dt=dts[1])
-sol =solve(prob::ODEProblem,Feagin12(),dt=dts[1])
-sol =solve(prob::ODEProblem,Feagin14(),dt=dts[1])
+sol =solve(prob,Feagin10(),dt=dts[1])
+sol =solve(prob,Feagin12(),dt=dts[1])
+sol =solve(prob,Feagin14(),dt=dts[1])
 
 #test
-@time sol =solve(prob::ODEProblem,Feagin10(),dt=dts[1],adaptive=true)
-@time sol =solve(prob::ODEProblem,Feagin12(),dt=dts[1],adaptive=true)
-@time sol =solve(prob::ODEProblem,Feagin14(),dt=dts[1],adaptive=true)
+@time sol =solve(prob,Feagin10(),dt=dts[1],adaptive=true)
+@time sol =solve(prob,Feagin12(),dt=dts[1],adaptive=true)
+@time sol =solve(prob,Feagin14(),dt=dts[1],adaptive=true)
 
 bool1 && bool2 && bool3 && bool4 && bool5 && bool6 && bool7 && bool8 && bool9

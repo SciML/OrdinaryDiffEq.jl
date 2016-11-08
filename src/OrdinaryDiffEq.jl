@@ -31,8 +31,8 @@ module OrdinaryDiffEq
 
   include("problems.jl")
   include("solutions.jl")
-  include("algorithms.jl")
 
+  include("algorithms.jl")
   include("solve/ode_integrators.jl")
   include("solve/ode_constants.jl")
   include("solve/ode_callbacks.jl")
@@ -40,8 +40,9 @@ module OrdinaryDiffEq
   include("solve/ode_dense.jl")
   include("solve/unrolled_tableaus.jl")
 
+
   #Types
-  export ODESolution, ODEProblem
+  export ODESolution, ODEProblem, ODETestProblem
 
   #General Functions
   export solve
@@ -58,6 +59,8 @@ module OrdinaryDiffEq
         Euler, Midpoint, RK4, ExplicitRK, BS3, BS5, DP5, DP5Threaded, Tsit5,
         DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8, Vern9, ImplicitEuler,
         Trapezoid, Rosenbrock23, Rosenbrock32, Feagin10, Feagin12, Feagin14
+
+  export DefaultODEAlgorithm
 
   export ODEInterfaceAlgorithm, dopri5, dop853, odex, seulex, radau, radau5
 

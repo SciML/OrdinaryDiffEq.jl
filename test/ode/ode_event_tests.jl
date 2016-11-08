@@ -39,7 +39,7 @@ sol = solve(prob,callback=callback)
 sol = solve(prob,Vern6(),callback=callback)
 #plot(sol,denseplot=true)
 
-bounced = ODEProblem(f,sol[8])
+bounced = ODEProblem(f,sol[8],[0;1])
 sol_bounced = solve(bounced,Vern6(),callback=callback,dt=sol.t[9]-sol.t[8])
 #plot(sol_bounced,denseplot=true)
 sol_bounced(0.04) # Complete density

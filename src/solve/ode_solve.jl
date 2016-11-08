@@ -15,7 +15,7 @@ function solve(prob::AbstractODEProblem,alg=DefaultODEAlgorithm(),timeseries=[],
   o = KW(kwargs)
   o[:t] = tspan[1]
   o[:Ts] = tspan[2:end]
-  @unpack u0,knownanalytic,analytic,numvars,isinplace = prob
+  @unpack u0,isinplace = prob
   uType = typeof(u0)
   uEltype = eltype(u0)
 
@@ -332,7 +332,6 @@ function solve(prob::AbstractODEProblem,alg=DefaultODEAlgorithm(),timeseries=[],
     o[:t] = map(Float64,o[:t])
     t = o[:t]; Ts = o[:Ts];
     saveat = [float(x) for x in command_opts[:saveat]]
-    opts = buildOptions(o,SUNDIALS_OPTION_LIST,SUNDIALS_ALIASES,SUNDIALS_ALIASES_REVERSED)
     if !isinplace && typeof(u)<:AbstractArray
       f! = (t,u,du) -> (du[:] = vec(prob.f(t,reshape(u,sizeu))); 0)
     else
@@ -377,11 +376,11 @@ function solve(prob::AbstractODEProblem,alg=DefaultODEAlgorithm(),timeseries=[],
 
   (atomloaded && progressbar) ? Main.Atom.progress(1) : nothing #Use Atom's progressbar if loaded
 
-  if knownanalytic
-    u_analytic = analytic(t,u0)
+  if typeof(prob) <: ODETestProblem
+    u_analytic = prob.analytic(t,u0)
     timeseries_analytic = Vector{uType}(0)
     for i in 1:size(timeseries,1)
-      push!(timeseries_analytic,analytic(ts[i],u0))
+      push!(timeseries_analytic,prob.analytic(ts[i],u0))
     end
     return(ODESolution(u,u_analytic,prob,alg,timeseries=timeseries,t=ts,timeseries_analytic=timeseries_analytic,k=ks,saveat=saveat,
     timeseries_errors = command_opts[:timeseries_errors],
