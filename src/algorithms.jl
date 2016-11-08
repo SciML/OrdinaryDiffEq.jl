@@ -159,15 +159,15 @@ immutable rk4 <: ODEIterAlgorithm end
 immutable feh45 <: ODEIterAlgorithm end
 
 abstract ODEJLAlgorithm <: AbstractODEAlgorithm
-immutable ode1 <: ODEIterAlgorithm end
-immutable ode23 <: ODEIterAlgorithm end
-immutable ode45 <: ODEIterAlgorithm end
-immutable ode78 <: ODEIterAlgorithm end
-immutable ode23s <: ODEIterAlgorithm end
-immutable ode2_midpoint <: ODEIterAlgorithm end
-immutable ode2_heun <: ODEIterAlgorithm end
-immutable ode4 <: ODEIterAlgorithm end
-immutable ode45_fe <: ODEIterAlgorithm end
+immutable ode1 <: ODEJLAlgorithm end
+immutable ode23 <: ODEJLAlgorithm end
+immutable ode45 <: ODEJLAlgorithm end
+immutable ode78 <: ODEJLAlgorithm end
+immutable ode23s <: ODEJLAlgorithm end
+immutable ode2_midpoint <: ODEJLAlgorithm end
+immutable ode2_heun <: ODEJLAlgorithm end
+immutable ode4 <: ODEJLAlgorithm end
+immutable ode45_fe <: ODEJLAlgorithm end
 
 abstract SundialsAlgorithm <: AbstractODEAlgorithm
 immutable cvode_BDF <: SundialsAlgorithm end
