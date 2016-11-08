@@ -6,20 +6,20 @@ sol =solve(prob,Rosenbrock32(),dt=1/2^4,save_timeseries=true,adaptive=true)
 
 tab = constructBogakiShampine3()
 sol =solve(prob,ExplicitRK(),dt=1/2^4,save_timeseries=true,adaptive=true,tableau=tab)
-val1 = maximum(abs.(sol.u - sol.u_analytic))
+val1 = maximum(abs.(sol.u[end] - sol.u_analytic[end]))
 TEST_PLOT && plot(sol,plot_analytic=true)
 #gui()
 
 tab = constructDormandPrince()
 sol2 =solve(prob,ExplicitRK(),dt=1/2^4,save_timeseries=true,adaptive=true,tableau=tab)
-val2 = maximum(abs.(sol2.u - sol2.u_analytic))
+val2 = maximum(abs.(sol2.u[end] - sol2.u_analytic[end]))
 TEST_PLOT && plot(sol2,plot_analytic=true)
 #gui()
 
 
 tab = constructRKF8(Float64)
 sol3 =solve(prob,ExplicitRK(),dt=1/2^4,save_timeseries=true,adaptive=true,tableau=tab)
-val3 = maximum(abs.(sol3.u - sol3.u_analytic))
+val3 = maximum(abs.(sol3.u[end] - sol3.u_analytic[end]))
 TEST_PLOT && plot(sol3,plot_analytic=true)
 #gui()
 

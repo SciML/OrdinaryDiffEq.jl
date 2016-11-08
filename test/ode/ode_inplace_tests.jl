@@ -18,11 +18,11 @@ alloc2 = @allocated sol2 =solve(prob2,Euler(),dt=1//2^(6),save_timeseries=false)
 bool1 = alloc2 <= alloc1
 
 sol = solve(prob_ode_large2Dlinear,Euler(),dt=1//2^(6),save_timeseries=true)
-sol2 = solve(prob_ode_large2Dlinear,Euler(),sol.timeseries,sol.t,sol.k;dt=1//2^(8),save_timeseries=true)
+sol2 = solve(prob_ode_large2Dlinear,Euler(),sol[:],sol.t,sol.k;dt=1//2^(8),save_timeseries=true)
 
 sol = solve(prob_ode_large2Dlinear,Euler(),dt=1//2^(6),save_timeseries=true)
 alloc1 = @allocated sol = solve(prob_ode_large2Dlinear,Euler(),dt=1//2^(8),save_timeseries=true)
-alloc2 = @allocated sol2 = solve(prob_ode_large2Dlinear,Euler(),sol.timeseries,sol.t,sol.k;dt=1//2^(8),save_timeseries=true)
+alloc2 = @allocated sol2 = solve(prob_ode_large2Dlinear,Euler(),sol[:],sol.t,sol.k;dt=1//2^(8),save_timeseries=true)
 
 bool2 = alloc2 <= alloc1
 

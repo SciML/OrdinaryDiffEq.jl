@@ -24,7 +24,6 @@ type ODESolution <: AbstractODESolution
   trueknown::Bool
   u_analytic#::AbstractArrayOrNumber
   errors#::Dict{}
-  timeseries::AbstractArrayOrVoid
   t::AbstractArrayOrVoid
   timeseries_analytic::AbstractArrayOrVoid
   appxtrue::Bool
@@ -53,7 +52,7 @@ type ODESolution <: AbstractODESolution
     else
       interp = (tvals) -> nothing
     end
-    return(new(u,trueknown,nothing,Dict(),timeseries,t,timeseries_analytic,false,save_timeseries,k,prob,alg,interp,dense))
+    return(new(timeseries,trueknown,nothing,Dict(),t,timeseries_analytic,false,save_timeseries,k,prob,alg,interp,dense))
   end
   function ODESolution{uType,tType2,isinplace}(u,u_analytic,prob::AbstractODEProblem{uType,tType2,Val{isinplace}},alg;timeseries=[],timeseries_analytic=[],
            t=[],k=[],saveat=[],timeseries_errors=true,dense_errors=true)
@@ -89,7 +88,7 @@ type ODESolution <: AbstractODESolution
         errors[:L2] = sqrt(mean(vecvecapply((x)->float(x).^2,interp_u-interp_analytic)))
       end
     end
-    return(new(u,trueknown,u_analytic,errors,timeseries,t,timeseries_analytic,false,save_timeseries,k,prob,alg,interp,dense))
+    return(new(timeseries,trueknown,timeseries_analytic,errors,t,timeseries_analytic,false,save_timeseries,k,prob,alg,interp,dense))
   end
 end
 

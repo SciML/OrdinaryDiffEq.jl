@@ -19,21 +19,21 @@ sol2 =solve(prob,RK4(),dt=BigInt(1)/BigInt(2)^(6),save_timeseries=true,abstol=1,
 sol.u
 sol2.u
 sol3.u
-bool1 = 6.37e-16 < abs(sol.u - sol3.u) < 6.38e-16
-bool2 = 6.37e-16  < abs(sol2.u - sol3.u) <6.38e-16
-bool3 = sol2.u - sol.u < big(1.73e-77)
-bool4 = typeof(sol.u) == Rational{BigInt}
-bool5 = typeof(sol2.u) == Rational{BigInt}
-bool6 = typeof(sol3.u) == Float64
+bool1 = 6.37e-16 < abs(sol.u[end] - sol3.u[end]) < 6.38e-16
+bool2 = 6.37e-16  < abs(sol2.u[end] - sol3.u[end]) <6.38e-16
+bool3 = sol2.u[end] - sol.u[end] < big(1.73e-77)
+bool4 = eltype(sol.u) == Rational{BigInt}
+bool5 = eltype(sol2.u) == Rational{BigInt}
+bool6 = eltype(sol3.u) == Float64
 
 sol4 =solve(prob,DP5(),dt=BigInt(1)//BigInt(2)^(3),save_timeseries=true,adaptive=false)
 
-bool9 = typeof(sol4.u) == Rational{BigInt}
+bool9 = eltype(sol4.u) == Rational{BigInt}
 
 tab = constructDormandPrince8_64bit(Rational{BigInt})
 sol5 =solve(prob,ExplicitRK(),dt=BigInt(1)//BigInt(2)^(3),save_timeseries=true,abstol=1,reltol=0,tableau=tab,adaptive=false)
 
-bool7 = 5.72e-8 < abs(float(sol5.u) - sol3.u) < 5.73e-8
-bool8 = typeof(sol5.u) == Rational{BigInt}
+bool7 = 5.72e-8 < abs(float(sol5.u[end]) - sol3.u[end]) < 5.73e-8
+bool8 = typeof(sol5.u[end]) == Rational{BigInt}
 
 bool1 && bool2 && bool3 && bool4 && bool5 && bool6 && bool7 && bool8 && bool9

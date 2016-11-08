@@ -43,12 +43,12 @@ push!(bools,abs(sim.𝒪est[:l2]-5) < testTol)
 sol1 =solve(probnum,DP5(),dt=1/2^6,adaptive=false,save_timeseries=false)
 sol2 =solve(probnum,ExplicitRK(),dt=1/2^6,adaptive=false,save_timeseries=false)
 
-push!(bools,sol1.u - sol2.u < 1e-10)
+push!(bools,sol1.u[end] - sol2.u[end] < 1e-10)
 
 sol1 =solve(prob,DP5(),dt=1/2^6,adaptive=false,save_timeseries=false)
 sol2 =solve(prob,ExplicitRK(),dt=1/2^6,adaptive=false,save_timeseries=false)
 
-push!(bools,minimum(sol1.u - sol2.u .< 3e-10))
+push!(bools,minimum(sol1.u[end] - sol2.u[end] .< 3e-10))
 
 sol1 =solve(probnum,DP5(),dt=1/2^6,beta2=0.04)
 sol2 =solve(probnum,ExplicitRK(),dt=1/2^6,beta2=0.04)
@@ -71,12 +71,12 @@ tab = constructBogakiShampine3()
 sol1 =solve(probnum,BS3(),dt=1/2^1,adaptive=false,save_timeseries=false)
 sol2 =solve(probnum,ExplicitRK(),dt=1/2^1,adaptive=false,save_timeseries=false, tableau=tab)
 
-push!(bools,sol1.u - sol2.u < 1e-10)
+push!(bools,sol1.u[end] - sol2.u[end] < 1e-10)
 
 sol1 =solve(prob,BS3(),dt=1/2^1,adaptive=false,save_timeseries=false)
 sol2 =solve(prob,ExplicitRK(),dt=1/2^1,adaptive=false,save_timeseries=false, tableau=tab)
 
-push!(bools,minimum(sol1.u - sol2.u .< 1e-10))
+push!(bools,minimum(sol1.u[end] - sol2.u[end] .< 1e-10))
 
 sol1 =solve(prob,ExplicitRK(),dt=1/2^6,tableau=tab)
 sol2 =solve(prob,BS3(),dt=1/2^6)
@@ -94,12 +94,12 @@ tab = constructBogakiShampine5()
 sol1 =solve(probnum,BS5(),dt=1/2^6,adaptive=false,save_timeseries=false)
 sol2 =solve(probnum,ExplicitRK(),dt=1/2^6,adaptive=false,save_timeseries=false, tableau=tab)
 
-push!(bools,sol1.u - sol2.u < 1e-10)
+push!(bools,sol1.u[end] - sol2.u[end] < 1e-10)
 
 sol1 =solve(prob,BS5(),dt=1/2^3,adaptive=false,save_timeseries=false)
 sol2 =solve(prob,ExplicitRK(),dt=1/2^3,adaptive=false,save_timeseries=false, tableau=tab)
 
-push!(bools,minimum(sol1.u - sol2.u .< 1e-10))
+push!(bools,minimum(sol1.u[end] - sol2.u[end] .< 1e-10))
 
 sol1 =solve(prob,ExplicitRK(),dt=1/2^6,tableau=tab)
 sol2 =solve(prob,BS5(),dt=1/2^6)
@@ -118,12 +118,12 @@ tab = constructTsitouras5()
 sol1 =solve(probnum,Tsit5(),dt=1/2^6,adaptive=false,save_timeseries=false)
 sol2 =solve(probnum,ExplicitRK(),dt=1/2^6,adaptive=false,save_timeseries=false, tableau=tab)
 
-push!(bools,sol1.u - sol2.u < 1e-10)
+push!(bools,sol1.u[end] - sol2.u[end] < 1e-10)
 
 sol1 =solve(prob,Tsit5(),dt=1/2^3,adaptive=false,save_timeseries=false)
 sol2 =solve(prob,ExplicitRK(),dt=1/2^3,adaptive=false,save_timeseries=false, tableau=tab)
 
-push!(bools,minimum(sol1.u - sol2.u .< 1e-10))
+push!(bools,minimum(sol1.u[end] - sol2.u[end] .< 1e-10))
 
 sol1 =solve(prob,ExplicitRK(),dt=1/2^6,tableau=tab)
 sol2 =solve(prob,Tsit5(),dt=1/2^6)
@@ -142,12 +142,12 @@ tab = constructVernerEfficient6(BigFloat)
 sol1 =solve(probnumbig,Vern6(),dt=1/2^6,adaptive=false,save_timeseries=false)
 sol2 =solve(probnumbig,ExplicitRK(),dt=1/2^6,adaptive=false,save_timeseries=false, tableau=tab)
 
-push!(bools,sol1.u - sol2.u < 1e-10)
+push!(bools,sol1.u[end] - sol2.u[end] < 1e-10)
 
 sol1 =solve(probbig,Vern6(),dt=1/2^3,adaptive=false,save_timeseries=false)
 sol2 =solve(probbig,ExplicitRK(),dt=1/2^3,adaptive=false,save_timeseries=false, tableau=tab)
 
-push!(bools,minimum(sol1.u - sol2.u .< 1e-10))
+push!(bools,minimum(sol1.u[end] - sol2.u[end] .< 1e-10))
 
 sol1 =solve(probbig,ExplicitRK(),dt=1/2^6,tableau=tab)
 sol2 =solve(probbig,Vern6(),dt=1/2^6)
@@ -166,12 +166,12 @@ tab = constructVerner7(BigFloat)
 sol1 =solve(probnumbig,Vern7(),dt=1/2^6,adaptive=false,save_timeseries=false)
 sol2 =solve(probnumbig,ExplicitRK(),dt=1/2^6,adaptive=false,save_timeseries=false, tableau=tab)
 
-push!(bools,sol1.u - sol2.u < 1e-10)
+push!(bools,sol1.u[end] - sol2.u[end] < 1e-10)
 
 sol1 =solve(probbig,Vern7(),dt=1/2^3,adaptive=false,save_timeseries=false)
 sol2 =solve(probbig,ExplicitRK(),dt=1/2^3,adaptive=false,save_timeseries=false, tableau=tab)
 
-push!(bools,minimum(sol1.u - sol2.u .< 1e-10))
+push!(bools,minimum(sol1.u[end] - sol2.u[end] .< 1e-10))
 
 sol1 =solve(probbig,ExplicitRK(),dt=1/2^6,tableau=tab)
 sol2 =solve(probbig,Vern7(),dt=1/2^6)
@@ -190,12 +190,12 @@ tab = constructTanakaYamashitaEfficient7(BigFloat)
 sol1 =solve(probnum,TanYam7(),dt=1/2^6,adaptive=false,save_timeseries=false)
 sol2 =solve(probnum,ExplicitRK(),dt=1/2^6,adaptive=false,save_timeseries=false, tableau=tab)
 
-push!(bools,sol1.u - sol2.u < 1e-10)
+push!(bools,sol1.u[end] - sol2.u[end] < 1e-10)
 
 sol1 =solve(probbig,TanYam7(),dt=1/2^3,adaptive=false,save_timeseries=false)
 sol2 =solve(probbig,ExplicitRK(),dt=1/2^3,adaptive=false,save_timeseries=false, tableau=tab)
 
-push!(bools,minimum(sol1.u - sol2.u .< 1e-10))
+push!(bools,minimum(sol1.u[end] - sol2.u[end] .< 1e-10))
 
 sol1 =solve(prob,ExplicitRK(),dt=1/2^6,tableau=tab)
 sol2 =solve(prob,TanYam7(),dt=1/2^6)
@@ -214,12 +214,12 @@ tab = constructVerner8(BigFloat)
 sol1 =solve(probnumbig,Vern8(),dt=1/2^6,adaptive=false,save_timeseries=false)
 sol2 =solve(probnumbig,ExplicitRK(),dt=1/2^6,adaptive=false,save_timeseries=false, tableau=tab)
 
-push!(bools,sol1.u - sol2.u < 1e-10)
+push!(bools,sol1.u[end] - sol2.u[end] < 1e-10)
 
 sol1 =solve(probbig,Vern8(),dt=1/2^3,adaptive=false,save_timeseries=false)
 sol2 =solve(probbig,ExplicitRK(),dt=1/2^3,adaptive=false,save_timeseries=false, tableau=tab)
 
-push!(bools,minimum(sol1.u - sol2.u .< 1e-10))
+push!(bools,minimum(sol1.u[end] - sol2.u[end] .< 1e-10))
 
 sol1 =solve(prob,ExplicitRK(),dt=1/2^6,tableau=tab)
 sol2 =solve(prob,Vern8(),dt=1/2^6)
@@ -255,12 +255,12 @@ tab = constructTsitourasPapakostas8(BigFloat)
 sol1 =solve(probnumbig,TsitPap8(),dt=1/2^6,adaptive=false,save_timeseries=false)
 sol2 =solve(probnumbig,ExplicitRK(),dt=1/2^6,adaptive=false,save_timeseries=false, tableau=tab)
 
-push!(bools,sol1.u - sol2.u < 1e-10)
+push!(bools,sol1.u[end] - sol2.u[end] < 1e-10)
 
 sol1 =solve(probbig,TsitPap8(),dt=1/2^3,adaptive=false,save_timeseries=false)
 sol2 =solve(probbig,ExplicitRK(),dt=1/2^3,adaptive=false,save_timeseries=false, tableau=tab)
 
-push!(bools,minimum(sol1.u - sol2.u .< 1e-10))
+push!(bools,minimum(sol1.u[end] - sol2.u[end] .< 1e-10))
 
 sol1 =solve(prob,ExplicitRK(),dt=1/2^6,tableau=tab)
 sol2 =solve(prob,TsitPap8(),dt=1/2^6)
@@ -280,12 +280,12 @@ tab = constructVernerEfficient9(BigFloat)
 sol1 =solve(probnumbig,Vern9(),dt=1/2^6,adaptive=false,save_timeseries=false)
 sol2 =solve(probnumbig,ExplicitRK(),dt=1/2^6,adaptive=false,save_timeseries=false, tableau=tab)
 
-push!(bools,abs(sol1.u - sol2.u) < 1e-15)
+push!(bools,abs(sol1.u[end] - sol2.u[end]) < 1e-15)
 
 sol1 =solve(probbig,Vern9(),dt=1/2^3,adaptive=false,save_timeseries=false)
 sol2 =solve(probbig,ExplicitRK(),dt=1/2^3,adaptive=false,save_timeseries=false, tableau=tab)
 
-push!(bools,minimum(abs(sol1.u - sol2.u) .< 1e-15))
+push!(bools,minimum(abs(sol1.u[end] - sol2.u[end]) .< 1e-15))
 
 sol1 =solve(probbig,ExplicitRK(),dt=1/2^6,tableau=tab)
 sol2 =solve(probbig,Vern9(),dt=1/2^6)
