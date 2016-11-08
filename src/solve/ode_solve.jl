@@ -5,6 +5,219 @@ Solves the ODE defined by prob on the interval tspan. If not given, tspan defaul
 
 Please see the solver documentation.
 """
+function solve{uType,tType,isinplace}(prob::AbstractODEProblem{uType,tType,Val{isinplace}},alg::OrdinaryDiffEqAlgorithm=DefaultODEAlgorithm(),timeseries=[],ts=[],ks=[];kwargs...)
+  tspan = prob.tspan
+
+  if tspan[end]-tspan[1]<tType(0)
+    error("final time must be greater than starting time. Aborting.")
+  end
+  atomloaded = isdefined(Main,:Atom)
+  o = KW(kwargs)
+  o[:t] = tspan[1]
+  o[:Ts] = tspan[2:end]
+  u0 = prob.u0
+  uEltype = eltype(u0)
+
+  command_opts = copy(DIFFERENTIALEQUATIONSJL_DEFAULT_OPTIONS)
+  for (k,v) in o
+    command_opts[k]=v
+  end
+  # Get the control variables
+  @unpack save_timeseries, progressbar = command_opts
+
+  if command_opts[:callback] == nothing
+    callback = ODE_DEFAULT_CALLBACK
+    custom_callback = false
+  else
+    callback = command_opts[:callback]
+    custom_callback = true
+  end
+
+  if uEltype<:Number
+    u = copy(u0)
+  else
+    u = deepcopy(u0)
+  end
+
+  ks = Vector{uType}(0)
+
+  o2 = copy(DIFFERENTIALEQUATIONSJL_DEFAULT_OPTIONS)
+  for (k,v) in o
+    o2[k]=v
+  end
+  o = o2
+
+  dt = o[:dt]
+  order = alg.order
+  adaptiveorder = 0
+
+  if typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm
+    adaptiveorder = alg.adaptiveorder
+    if o[:adaptive] == true
+      dt = 1.0*dt # Convert to float in a way that keeps units
+    end
+  else
+    o[:adaptive] = false
+  end
+
+  if typeof(alg) <: ExplicitRK
+    @unpack order,adaptiveorder = o[:tableau]
+  end
+
+  if !isinplace && typeof(u)<:AbstractArray
+    f! = (t,u,du) -> (du[:] = prob.f(t,u))
+  else
+    f! = prob.f
+  end
+
+  if uType <: Number
+    uEltypeNoUnits = typeof(u./u)
+  else
+    uEltypeNoUnits = eltype(u./u)
+  end
+
+  if dt==0
+    dt = ode_determine_initdt(u0,tspan[1],uEltype(o[:abstol]),uEltypeNoUnits(o[:reltol]),o[:internalnorm],f!,order)
+  end
+
+  if o[:dtmax] == nothing
+    o[:dtmax] = tType((tspan[end]-tspan[1]))
+  end
+  if o[:dtmin] == nothing
+    if tType <: AbstractFloat
+      o[:dtmin] = tType(10)*eps(tType)
+    else
+      o[:dtmin] = tType(1//10^(10))
+    end
+  end
+
+  Ts = map(tType,o[:Ts])
+  t = tType(o[:t])
+  rate_prototype = u/zero(t)
+  rateType = typeof(rate_prototype) ## Can be different if united
+
+  saveat = tType[convert(tType,x) for x in setdiff(o[:saveat],tspan)]
+
+  if o[:calck]==nothing
+    calck = !isempty(saveat) || o[:dense]
+  else
+    calck = o[:calck]
+  end
+
+  ### Algorithm-specific defaults ###
+
+  if o[:qmin] == nothing # Use default qmin
+    if typeof(alg) <: DP5 || typeof(alg) <: DP5Threaded
+      qmin = 0.2
+    elseif typeof(alg) <: DP8
+      qmin = 0.333
+    else
+      qmin = 0.2
+    end
+  else
+    qmin = o[:qmin]
+  end
+  if o[:qmax] == nothing # Use default qmax
+    if typeof(alg) <: DP5 || typeof(alg) <: DP5Threaded
+      qmax = 10.0
+    elseif typeof(alg) <: DP8
+      qmax = 6.0
+    else
+      qmax = 10.0
+    end
+  else
+    qmax = o[:qmax]
+  end
+  if o[:beta2] == nothing # Use default β₂
+    if typeof(alg) <: DP5 || typeof(alg) <: DP5Threaded
+      β₂ = 0.04
+    elseif typeof(alg) <: DP8
+      β₂ = 0.00
+    else
+      β₂ = 0.4 / order
+    end
+  else
+    β₂ = o[:beta2]
+  end
+  if o[:beta1] == nothing # Use default β₁
+    if typeof(alg) <: DP5 || typeof(alg) <: DP5Threaded
+      β₁ = 1/order - .75β₂
+    elseif typeof(alg) <: DP8
+      β₁ = 1/order - .2β₂
+    else
+      β₁ = .7/order
+    end
+  else
+    β₁ = o[:beta1]
+  end
+  fsal = false
+  if isfsal(alg)
+    fsal = true
+  elseif typeof(alg) <: ExplicitRK
+    @unpack fsal = o[:tableau]
+  end
+
+  o[:abstol] = uEltype(1)*o[:abstol]
+
+  if isspecialdense(alg)
+    ksEltype = Vector{rateType} # Store more ks for the special algs
+  else
+    ksEltype = rateType # Makes simple_dense
+  end
+
+  timeseries = convert(Vector{uType},timeseries)
+  ts = convert(Vector{tType},ts)
+  ks = convert(Vector{ksEltype},ks)
+  if length(timeseries) == 0
+    push!(timeseries,copy(u))
+  else
+    timeseries[1] = copy(u)
+  end
+
+  if length(ts) == 0
+    push!(ts,t)
+  else
+    timeseries[1] = copy(u)
+  end
+
+  if ksEltype == rateType
+    if uType <: Number
+      rate_prototype = f!(t,u)
+    else
+      f!(t,u,rate_prototype)
+    end
+    push!(ks,rate_prototype)
+  else # Just push a dummy in for special dense since first is not used.
+    push!(ks,[rate_prototype])
+  end
+  γ = o[:gamma]
+  dtmax = o[:dtmax]
+  dtmin = o[:dtmin]
+  @unpack maxiters,timeseries_steps,save_timeseries,adaptive,progress_steps,abstol,reltol,internalnorm,tableau,autodiff,qoldinit,dense = o
+  # @code_warntype ode_solve(ODEIntegrator{alg,uType,uEltype,ndims(u)+1,tType,uEltypeNoUnits,rateType,ksEltype}(timeseries,ts,ks,f!,u,t,k,dt,Ts,maxiters,timeseries_steps,save_timeseries,adaptive,abstol,reltol,γ,qmax,qmin,dtmax,dtmin,internalnorm,progressbar,tableau,autodiff,adaptiveorder,order,atomloaded,progress_steps,β₁,β₂,qoldinit,fsal,dense,saveat,alg,callback,custom_callback,calck))
+  u,t = ode_solve(ODEIntegrator{typeof(alg),uType,uEltype,ndims(u)+1,tType,uEltypeNoUnits,rateType,ksEltype}(timeseries,ts,ks,f!,u,t,dt,Ts,maxiters,timeseries_steps,save_timeseries,adaptive,abstol,reltol,γ,qmax,qmin,dtmax,dtmin,internalnorm,progressbar,tableau,autodiff,adaptiveorder,order,atomloaded,progress_steps,β₁,β₂,qoldinit,fsal,dense,saveat,alg,callback,custom_callback,calck))
+
+  if typeof(prob) <: ODETestProblem
+    timeseries_analytic = Vector{uType}(0)
+    for i in 1:size(timeseries,1)
+      push!(timeseries_analytic,prob.analytic(ts[i],u0))
+    end
+    return(ODESolution(timeseries,prob,alg,timeseries=timeseries,t=ts,
+    timeseries_analytic=timeseries_analytic,k=ks,saveat=saveat,
+    timeseries_errors = command_opts[:timeseries_errors],
+    dense_errors = command_opts[:dense_errors]))
+  else
+    return(ODESolution(timeseries,prob,alg,timeseries=timeseries,t=ts,k=ks,saveat=saveat))
+  end
+end
+
+"""
+`solve(prob::ODEProblem,tspan)`
+
+Solves the ODE defined by prob on the interval tspan. If not given, tspan defaults to [0;1.0].
+
+Please see the solver documentation.
+"""
 function solve{uType,tType,isinplace}(prob::AbstractODEProblem{uType,tType,Val{isinplace}},alg=DefaultODEAlgorithm(),timeseries=[],ts=[],ks=[];kwargs...)
   tspan = prob.tspan
 
@@ -41,163 +254,7 @@ function solve{uType,tType,isinplace}(prob::AbstractODEProblem{uType,tType,Val{i
 
   ks = Vector{uType}(0)
 
-  if typeof(alg) <: OrdinaryDiffEqAlgorithm
-    o2 = copy(DIFFERENTIALEQUATIONSJL_DEFAULT_OPTIONS)
-    for (k,v) in o
-      o2[k]=v
-    end
-    o = o2
-
-    dt = o[:dt]
-    order = alg.order
-    adaptiveorder = 0
-
-    if typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm
-      adaptiveorder = alg.adaptiveorder
-      if o[:adaptive] == true
-        dt = 1.0*dt # Convert to float in a way that keeps units
-      end
-    else
-      o[:adaptive] = false
-    end
-
-    if typeof(alg) <: ExplicitRK
-      @unpack order,adaptiveorder = o[:tableau]
-    end
-
-    if !isinplace && typeof(u)<:AbstractArray
-      f! = (t,u,du) -> (du[:] = prob.f(t,u))
-    else
-      f! = prob.f
-    end
-
-    if uType <: Number
-      uEltypeNoUnits = typeof(u./u)
-    else
-      uEltypeNoUnits = eltype(u./u)
-    end
-
-    if dt==0
-      dt = ode_determine_initdt(u0,tspan[1],uEltype(o[:abstol]),uEltypeNoUnits(o[:reltol]),o[:internalnorm],f!,order)
-    end
-
-    if o[:dtmax] == nothing
-      o[:dtmax] = tType((tspan[end]-tspan[1]))
-    end
-    if o[:dtmin] == nothing
-      if tType <: AbstractFloat
-        o[:dtmin] = tType(10)*eps(tType)
-      else
-        o[:dtmin] = tType(1//10^(10))
-      end
-    end
-
-    Ts = map(tType,o[:Ts])
-    t = tType(o[:t])
-    rate_prototype = u/zero(t)
-    rateType = typeof(rate_prototype) ## Can be different if united
-
-    saveat = tType[convert(tType,x) for x in setdiff(o[:saveat],tspan)]
-
-    if o[:calck]==nothing
-      calck = !isempty(saveat) || o[:dense]
-    else
-      calck = o[:calck]
-    end
-
-    ### Algorithm-specific defaults ###
-
-    if o[:qmin] == nothing # Use default qmin
-      if typeof(alg) <: DP5 || typeof(alg) <: DP5Threaded
-        qmin = 0.2
-      elseif typeof(alg) <: DP8
-        qmin = 0.333
-      else
-        qmin = 0.2
-      end
-    else
-      qmin = o[:qmin]
-    end
-    if o[:qmax] == nothing # Use default qmax
-      if typeof(alg) <: DP5 || typeof(alg) <: DP5Threaded
-        qmax = 10.0
-      elseif typeof(alg) <: DP8
-        qmax = 6.0
-      else
-        qmax = 10.0
-      end
-    else
-      qmax = o[:qmax]
-    end
-    if o[:beta2] == nothing # Use default β₂
-      if typeof(alg) <: DP5 || typeof(alg) <: DP5Threaded
-        β₂ = 0.04
-      elseif typeof(alg) <: DP8
-        β₂ = 0.00
-      else
-        β₂ = 0.4 / order
-      end
-    else
-      β₂ = o[:beta2]
-    end
-    if o[:beta1] == nothing # Use default β₁
-      if typeof(alg) <: DP5 || typeof(alg) <: DP5Threaded
-        β₁ = 1/order - .75β₂
-      elseif typeof(alg) <: DP8
-        β₁ = 1/order - .2β₂
-      else
-        β₁ = .7/order
-      end
-    else
-      β₁ = o[:beta1]
-    end
-    fsal = false
-    if isfsal(alg)
-      fsal = true
-    elseif typeof(alg) <: ExplicitRK
-      @unpack fsal = o[:tableau]
-    end
-
-    o[:abstol] = uEltype(1)*o[:abstol]
-
-    if isspecialdense(alg)
-      ksEltype = Vector{rateType} # Store more ks for the special algs
-    else
-      ksEltype = rateType # Makes simple_dense
-    end
-
-    timeseries = convert(Vector{uType},timeseries)
-    ts = convert(Vector{tType},ts)
-    ks = convert(Vector{ksEltype},ks)
-    if length(timeseries) == 0
-      push!(timeseries,copy(u))
-    else
-      timeseries[1] = copy(u)
-    end
-
-    if length(ts) == 0
-      push!(ts,t)
-    else
-      timeseries[1] = copy(u)
-    end
-
-    if ksEltype == rateType
-      if uType <: Number
-        rate_prototype = f!(t,u)
-      else
-        f!(t,u,rate_prototype)
-      end
-      push!(ks,rate_prototype)
-    else # Just push a dummy in for special dense since first is not used.
-      push!(ks,[rate_prototype])
-    end
-    γ = o[:gamma]
-    dtmax = o[:dtmax]
-    dtmin = o[:dtmin]
-    @unpack maxiters,timeseries_steps,save_timeseries,adaptive,progress_steps,abstol,reltol,internalnorm,tableau,autodiff,qoldinit,dense = o
-    # @code_warntype ode_solve(ODEIntegrator{alg,uType,uEltype,ndims(u)+1,tType,uEltypeNoUnits,rateType,ksEltype}(timeseries,ts,ks,f!,u,t,k,dt,Ts,maxiters,timeseries_steps,save_timeseries,adaptive,abstol,reltol,γ,qmax,qmin,dtmax,dtmin,internalnorm,progressbar,tableau,autodiff,adaptiveorder,order,atomloaded,progress_steps,β₁,β₂,qoldinit,fsal,dense,saveat,alg,callback,custom_callback,calck))
-    u,t = ode_solve(ODEIntegrator{typeof(alg),uType,uEltype,ndims(u)+1,tType,uEltypeNoUnits,rateType,ksEltype}(timeseries,ts,ks,f!,u,t,dt,Ts,maxiters,timeseries_steps,save_timeseries,adaptive,abstol,reltol,γ,qmax,qmin,dtmax,dtmin,internalnorm,progressbar,tableau,autodiff,adaptiveorder,order,atomloaded,progress_steps,β₁,β₂,qoldinit,fsal,dense,saveat,alg,callback,custom_callback,calck))
-  elseif typeof(alg) <: ODEInterfaceAlgorithm
+  if typeof(alg) <: ODEInterfaceAlgorithm
     sizeu = size(u)
     if typeof(u) <: Number
       u = [u]
@@ -371,7 +428,8 @@ function solve{uType,tType,isinplace}(prob::AbstractODEProblem{uType,tType,Val{i
     for i in 1:size(timeseries,1)
       push!(timeseries_analytic,prob.analytic(ts[i],u0))
     end
-    return(ODESolution(timeseries,prob,alg,timeseries=timeseries,t=ts,timeseries_analytic=timeseries_analytic,k=ks,saveat=saveat,
+    return(ODESolution(timeseries,prob,alg,timeseries=timeseries,t=ts,
+    timeseries_analytic=timeseries_analytic,k=ks,saveat=saveat,
     timeseries_errors = command_opts[:timeseries_errors],
     dense_errors = command_opts[:dense_errors]))
   else
