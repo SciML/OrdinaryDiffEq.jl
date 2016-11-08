@@ -21,7 +21,7 @@ dts = 1.//2.^(4:-1:2)
 testTol = 1
 
 println("Feagin RKs")
-sol =solve(prob::ODEProblem,dt=dts[1],alg=:Feagin10)
+sol =solve(prob,Feagin10(),dt=dts[1])
 
 const linear_bigα = parse(BigFloat,"1.01")
 f = (t,u,du) -> begin
@@ -30,50 +30,44 @@ f = (t,u,du) -> begin
   end
 end
 analytic = (t,u0) -> u0*exp(linear_bigα*t)
-prob_ode_bigfloat2Dlinear = ODEProblem(f,map(BigFloat,rand(4,2)).*ones(4,2)/2,analytic=analytic)
+prob_ode_bigfloat2Dlinear = ODETestProblem(f,map(BigFloat,rand(4,2)).*ones(4,2)/2,analytic)
 
 prob = prob_ode_bigfloat2Dlinear
 
-sim = test_convergence(dts,prob,alg=:Feagin10)
-#plot(sim); Plots.gui()
-#sim = test_convergence(dts,prob,alg=:RK4)
+sim = test_convergence(dts,prob,Feagin10())
 bool4 = abs(sim.𝒪est[:final]-8) < testTol #Lowered due to low test dt
 
-sim = test_convergence(dts,prob,alg=:Feagin12)
-#plot(sim); Plots.gui()
-#sim = test_convergence(dts,prob,alg=:RK4)
+sim = test_convergence(dts,prob,Feagin12())
 bool5 = abs(sim.𝒪est[:final]-12) < testTol
 
-sim = test_convergence(dts,prob,alg=:Feagin14)
-#TEST_PLOT && plot(sim)
-#sim = test_convergence(dts,prob,alg=:RK4)
+sim = test_convergence(dts,prob,Feagin14())
 bool6 = abs(sim.𝒪est[:final]-15) < testTol #Upped to 15 for test
 
 f = (t,u) -> (linear_bigα*u)
-prob_ode_bigfloatlinear = ODEProblem(f,parse(BigFloat,"0.5"),analytic=analytic)
+prob_ode_bigfloatlinear = ODETestProblem(f,parse(BigFloat,"0.5"),analytic)
 prob = prob_ode_bigfloatlinear
 
 dts = 1.//2.^(6:-1:3)
-sim = test_convergence(dts,prob,alg=:Feagin10)
+sim = test_convergence(dts,prob,Feagin10())
 bool7 = abs(sim.𝒪est[:final]-10) < testTol
 
 dts = 1.//2.^(4:-1:2)
-sim = test_convergence(dts,prob,alg=:Feagin12)
+sim = test_convergence(dts,prob,Feagin12())
 bool8 = abs(sim.𝒪est[:final]-12) < testTol
 
-sim = test_convergence(dts,prob,alg=:Feagin14)
+sim = test_convergence(dts,prob,Feagin14())
 bool9 = abs(sim.𝒪est[:final]-15) < testTol #Upped to 15 for test
 
 prob = prob_ode_bigfloat2Dlinear
 
 #compile
-sol =solve(prob::ODEProblem,dt=dts[1],alg=:Feagin10)
-sol =solve(prob::ODEProblem,dt=dts[1],alg=:Feagin12)
-sol =solve(prob::ODEProblem,dt=dts[1],alg=:Feagin14)
+sol =solve(prob,Feagin10(),dt=dts[1])
+sol =solve(prob,Feagin12(),dt=dts[1])
+sol =solve(prob,Feagin14(),dt=dts[1])
 
 #test
-@time sol =solve(prob::ODEProblem,dt=dts[1],alg=:Feagin10,adaptive=true)
-@time sol =solve(prob::ODEProblem,dt=dts[1],alg=:Feagin12,adaptive=true)
-@time sol =solve(prob::ODEProblem,dt=dts[1],alg=:Feagin14,adaptive=true)
+@time sol =solve(prob,Feagin10(),dt=dts[1],adaptive=true)
+@time sol =solve(prob,Feagin12(),dt=dts[1],adaptive=true)
+@time sol =solve(prob,Feagin14(),dt=dts[1],adaptive=true)
 
 bool1 && bool2 && bool3 && bool4 && bool5 && bool6 && bool7 && bool8 && bool9
