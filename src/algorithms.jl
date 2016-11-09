@@ -169,5 +169,5 @@ immutable ode4 <: ODEJLAlgorithm end
 immutable ode45_fe <: ODEJLAlgorithm end
 
 abstract SundialsAlgorithm <: AbstractODEAlgorithm
-immutable cvode_BDF <: SundialsAlgorithm end
-immutable cvode_Adams <: SundialsAlgorithm end
+immutable CVODE_BDF <: SundialsAlgorithm end
+immutable CVODE_Adams <: SundialsAlgorithm end
