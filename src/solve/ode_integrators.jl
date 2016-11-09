@@ -1,8 +1,8 @@
-immutable ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype} <: DEIntegrator
+immutable ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F} <: DEIntegrator
   timeseries::Vector{uType}
   ts::Vector{tType}
   ks::Vector{ksEltype}
-  f::Function
+  f::F
   u::uType
   t::tType
   dt::tType
@@ -263,7 +263,7 @@ end
   (progressbar && atomloaded && iter%progress_steps==0) ? Main.Atom.progress(t/Tfinal) : nothing #Use Atom's progressbar if loaded
 end
 
-function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Euler,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{Euler,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   k = f(t,u) # For the interpolation, needs k at the updated point
   @inbounds for T in Ts
@@ -277,7 +277,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Euler,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{Euler,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   uidx = eachindex(u)
   if !dense
@@ -300,7 +300,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Midpoint,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{Midpoint,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   halfdt::tType = dt/2
   local du::rateType
@@ -315,7 +315,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Midpoint,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{Midpoint,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   halfdt::tType = dt/2
   utilde::uType = similar(u)
@@ -351,7 +351,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{RK4,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{RK4,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   halfdt::tType = dt/2
   local k₁::rateType
@@ -377,7 +377,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{RK4,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{RK4,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   halfdt::tType = dt/2
   k₁ = similar(rate_prototype)
@@ -421,7 +421,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{ExplicitRK,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{ExplicitRK,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   local A::Matrix{uEltypeNoUnits}
   local c::Vector{uEltypeNoUnits}
@@ -479,7 +479,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{ExplicitRK,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{ExplicitRK,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   local A::Matrix{uEltypeNoUnits}
   local c::Vector{uEltypeNoUnits}
@@ -578,7 +578,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{BS3,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{BS3,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   a21,a32,a41,a42,a43,c1,c2,b1,b2,b3,b4  = constructBS3(uEltypeNoUnits)
   local k1::rateType
@@ -610,7 +610,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{BS3,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{BS3,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   a21,a32,a41,a42,a43,c1,c2,b1,b2,b3,b4  = constructBS3(uEltypeNoUnits)
   k1 = similar(rate_prototype)
@@ -658,7 +658,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{BS5,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{BS5,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8 = constructBS5(uEltypeNoUnits)
   local k1::rateType
@@ -716,7 +716,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{BS5,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{BS5,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8 = constructBS5(uEltypeNoUnits)
   k1::rateType = similar(rate_prototype)
@@ -808,7 +808,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Tsit5,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{Tsit5,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,b1,b2,b3,b4,b5,b6,b7 = constructTsit5(uEltypeNoUnits)
   local k1::rateType
@@ -860,7 +860,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Tsit5,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{Tsit5,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,b1,b2,b3,b4,b5,b6,b7 = constructTsit5(uEltypeNoUnits)
   k2::rateType = similar(rate_prototype)
@@ -941,7 +941,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{DP5,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{DP5,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = constructDP5(uEltypeNoUnits)
   local k1::rateType
@@ -1000,7 +1000,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
 end
 
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{DP5,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{DP5,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = constructDP5(uEltypeNoUnits)
   k2 = similar(rate_prototype)
@@ -1087,7 +1087,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{DP5Threaded,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{DP5Threaded,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = constructDP5(uEltypeNoUnits)
   k2::rateType = similar(rate_prototype)
@@ -1206,7 +1206,7 @@ end
   end
 end
 
-function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Vern6,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{Vern6,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,a91,a94,a95,a96,a97,a98,b1,b4,b5,b6,b7,b8,b9= constructVern6(uEltypeNoUnits)
   local k1::rateType; local k2::rateType; local k3::rateType; local k4::rateType;
@@ -1258,7 +1258,7 @@ end
 
 
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Vern6,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{Vern6,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,a91,a94,a95,a96,a97,a98,b1,b4,b5,b6,b7,b8,b9= constructVern6(uEltypeNoUnits)
   k2 = similar(rate_prototype); k3 = similar(rate_prototype); k4 = similar(rate_prototype);
@@ -1335,7 +1335,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Vern7,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{Vern7,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   c2,c3,c4,c5,c6,c7,c8,a021,a031,a032,a041,a043,a051,a053,a054,a061,a063,a064,a065,a071,a073,a074,a075,a076,a081,a083,a084,a085,a086,a087,a091,a093,a094,a095,a096,a097,a098,a101,a103,a104,a105,a106,a107,b1,b4,b5,b6,b7,b8,b9,bhat1,bhat4,bhat5,bhat6,bhat7,bhat10= constructVern7(uEltypeNoUnits)
   local k1::rateType; local k2::rateType; local k3::rateType; local k4::rateType;
@@ -1384,7 +1384,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Vern7,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{Vern7,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   c2,c3,c4,c5,c6,c7,c8,a021,a031,a032,a041,a043,a051,a053,a054,a061,a063,a064,a065,a071,a073,a074,a075,a076,a081,a083,a084,a085,a086,a087,a091,a093,a094,a095,a096,a097,a098,a101,a103,a104,a105,a106,a107,b1,b4,b5,b6,b7,b8,b9,bhat1,bhat4,bhat5,bhat6,bhat7,bhat10= constructVern7(uEltypeNoUnits)
   k1 = similar(rate_prototype); k2 = similar(rate_prototype); k3 = similar(rate_prototype); k4 = similar(rate_prototype);
@@ -1468,7 +1468,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Vern8,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{Vern8,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211,a1301,a1304,a1305,a1306,a1307,a1308,a1309,a1310,b1,b6,b7,b8,b9,b10,b11,b12,bhat1,bhat6,bhat7,bhat8,bhat9,bhat10,bhat13= constructVern8(uEltypeNoUnits)
   local k1::rateType; local k2::rateType; local k3::rateType; local k4::rateType;
@@ -1520,7 +1520,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Vern8,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{Vern8,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211,a1301,a1304,a1305,a1306,a1307,a1308,a1309,a1310,b1,b6,b7,b8,b9,b10,b11,b12,bhat1,bhat6,bhat7,bhat8,bhat9,bhat10,bhat13= constructVern8(uEltypeNoUnits)
   k1 = similar(rate_prototype); k2 = similar(rate_prototype); k3 = similar(rate_prototype); k4 = similar(rate_prototype);
@@ -1617,7 +1617,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{TanYam7,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{TanYam7,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   c1,c2,c3,c4,c5,c6,c7,a21,a31,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,a91,a93,a94,a95,a96,a97,a98,a101,a103,a104,a105,a106,a107,a108,b1,b4,b5,b6,b7,b8,b9,bhat1,bhat4,bhat5,bhat6,bhat7,bhat8,bhat10 = constructTanYam7(uEltypeNoUnits)
   local k1::rateType; local k2::rateType; local k3::rateType; local k4::rateType;
@@ -1659,7 +1659,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
 end
 
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{TanYam7,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{TanYam7,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   c1,c2,c3,c4,c5,c6,c7,a21,a31,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,a91,a93,a94,a95,a96,a97,a98,a101,a103,a104,a105,a106,a107,a108,b1,b4,b5,b6,b7,b8,b9,bhat1,bhat4,bhat5,bhat6,bhat7,bhat8,bhat10 = constructTanYam7(uEltypeNoUnits)
   k1 = similar(rate_prototype); k2 = similar(rate_prototype) ; k3 = similar(rate_prototype); k4 = similar(rate_prototype)
@@ -1744,7 +1744,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{DP8,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{DP8,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   c7,c8,c9,c10,c11,c6,c5,c4,c3,c2,b1,b6,b7,b8,b9,b10,b11,b12,bhh1,bhh2,bhh3,er1,er6,er7,er8,er9,er10,er11,er12,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211 = constructDP8(uEltypeNoUnits)
   local k1::rateType; local k2::rateType; local k3::rateType; local k4::rateType;
@@ -1822,7 +1822,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{DP8,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{DP8,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   c7,c8,c9,c10,c11,c6,c5,c4,c3,c2,b1,b6,b7,b8,b9,b10,b11,b12,bhh1,bhh2,bhh3,er1,er6,er7,er8,er9,er10,er11,er12,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211 = constructDP8(uEltypeNoUnits)
   k1 = similar(rate_prototype); k2  = similar(rate_prototype); k3  = similar(rate_prototype);  k4 = similar(rate_prototype)
@@ -1971,7 +1971,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{TsitPap8,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{TsitPap8,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211,a1301,a1304,a1305,a1306,a1307,a1308,a1309,a1310,b1,b6,b7,b8,b9,b10,b11,b12,bhat1,bhat6,bhat7,bhat8,bhat9,bhat10,bhat13 = constructTsitPap8(uEltypeNoUnits)
   local k1::rateType; local k2::rateType; local k3::rateType; local k4::rateType;
@@ -2015,7 +2015,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{TsitPap8,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{TsitPap8,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211,a1301,a1304,a1305,a1306,a1307,a1308,a1309,a1310,b1,b6,b7,b8,b9,b10,b11,b12,bhat1,bhat6,bhat7,bhat8,bhat9,bhat10,bhat13 = constructTsitPap8(uEltypeNoUnits)
   k1 = similar(rate_prototype); k2 = similar(rate_prototype); k3 = similar(rate_prototype); k4 = similar(rate_prototype)
@@ -2109,7 +2109,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Vern9,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{Vern9,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0806,a0807,a0901,a0906,a0907,a0908,a1001,a1006,a1007,a1008,a1009,a1101,a1106,a1107,a1108,a1109,a1110,a1201,a1206,a1207,a1208,a1209,a1210,a1211,a1301,a1306,a1307,a1308,a1309,a1310,a1311,a1312,a1401,a1406,a1407,a1408,a1409,a1410,a1411,a1412,a1413,a1501,a1506,a1507,a1508,a1509,a1510,a1511,a1512,a1513,a1514,a1601,a1606,a1607,a1608,a1609,a1610,a1611,a1612,a1613,b1,b8,b9,b10,b11,b12,b13,b14,b15,bhat1,bhat8,bhat9,bhat10,bhat11,bhat12,bhat13,bhat16 = constructVern9(uEltypeNoUnits)
   local k1::rateType; local k2::rateType; local k3::rateType; local k4::rateType;
@@ -2166,7 +2166,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Vern9,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{Vern9,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0806,a0807,a0901,a0906,a0907,a0908,a1001,a1006,a1007,a1008,a1009,a1101,a1106,a1107,a1108,a1109,a1110,a1201,a1206,a1207,a1208,a1209,a1210,a1211,a1301,a1306,a1307,a1308,a1309,a1310,a1311,a1312,a1401,a1406,a1407,a1408,a1409,a1410,a1411,a1412,a1413,a1501,a1506,a1507,a1508,a1509,a1510,a1511,a1512,a1513,a1514,a1601,a1606,a1607,a1608,a1609,a1610,a1611,a1612,a1613,b1,b8,b9,b10,b11,b12,b13,b14,b15,bhat1,bhat8,bhat9,bhat10,bhat11,bhat12,bhat13,bhat16 = constructVern9(uEltypeNoUnits)
   k1 = similar(rate_prototype); k2 = similar(rate_prototype);k3 = similar(rate_prototype); k4 = similar(rate_prototype);
@@ -2275,7 +2275,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Feagin10,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{Feagin10,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   adaptiveConst,a0100,a0200,a0201,a0300,a0302,a0400,a0402,a0403,a0500,a0503,a0504,a0600,a0603,a0604,a0605,a0700,a0704,a0705,a0706,a0800,a0805,a0806,a0807,a0900,a0905,a0906,a0907,a0908,a1000,a1005,a1006,a1007,a1008,a1009,a1100,a1105,a1106,a1107,a1108,a1109,a1110,a1200,a1203,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211,a1300,a1302,a1303,a1305,a1306,a1307,a1308,a1309,a1310,a1311,a1312,a1400,a1401,a1404,a1406,a1412,a1413,a1500,a1502,a1514,a1600,a1601,a1602,a1604,a1605,a1606,a1607,a1608,a1609,a1610,a1611,a1612,a1613,a1614,a1615,b1,b2,b3,b4,b5,b6,b7,b8,b9,b10,b11,b12,b13,b14,b15,b16,b17,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16 = constructFeagin10(uEltypeNoUnits)
   local k1::rateType; local k2::rateType; local k3::rateType; local k4::rateType; local k5::rateType
@@ -2323,7 +2323,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Feagin10,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{Feagin10,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   adaptiveConst,a0100,a0200,a0201,a0300,a0302,a0400,a0402,a0403,a0500,a0503,a0504,a0600,a0603,a0604,a0605,a0700,a0704,a0705,a0706,a0800,a0805,a0806,a0807,a0900,a0905,a0906,a0907,a0908,a1000,a1005,a1006,a1007,a1008,a1009,a1100,a1105,a1106,a1107,a1108,a1109,a1110,a1200,a1203,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211,a1300,a1302,a1303,a1305,a1306,a1307,a1308,a1309,a1310,a1311,a1312,a1400,a1401,a1404,a1406,a1412,a1413,a1500,a1502,a1514,a1600,a1601,a1602,a1604,a1605,a1606,a1607,a1608,a1609,a1610,a1611,a1612,a1613,a1614,a1615,b1,b2,b3,b4,b5,b6,b7,b8,b9,b10,b11,b12,b13,b14,b15,b16,b17,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16 = constructFeagin10(uEltypeNoUnits)
   k1 = similar(rate_prototype); k2 = similar(rate_prototype); k3 = similar(rate_prototype); k4 = similar(rate_prototype); k5 = similar(rate_prototype)
@@ -2436,7 +2436,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Feagin12,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{Feagin12,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   adaptiveConst,a0100,a0200,a0201,a0300,a0302,a0400,a0402,a0403,a0500,a0503,a0504,a0600,a0603,a0604,a0605,a0700,a0704,a0705,a0706,a0800,a0805,a0806,a0807,a0900,a0905,a0906,a0907,a0908,a1000,a1005,a1006,a1007,a1008,a1009,a1100,a1105,a1106,a1107,a1108,a1109,a1110,a1200,a1208,a1209,a1210,a1211,a1300,a1308,a1309,a1310,a1311,a1312,a1400,a1408,a1409,a1410,a1411,a1412,a1413,a1500,a1508,a1509,a1510,a1511,a1512,a1513,a1514,a1600,a1608,a1609,a1610,a1611,a1612,a1613,a1614,a1615,a1700,a1705,a1706,a1707,a1708,a1709,a1710,a1711,a1712,a1713,a1714,a1715,a1716,a1800,a1805,a1806,a1807,a1808,a1809,a1810,a1811,a1812,a1813,a1814,a1815,a1816,a1817,a1900,a1904,a1905,a1906,a1908,a1909,a1910,a1911,a1912,a1913,a1914,a1915,a1916,a1917,a1918,a2000,a2003,a2004,a2005,a2007,a2009,a2010,a2017,a2018,a2019,a2100,a2102,a2103,a2106,a2107,a2109,a2110,a2117,a2118,a2119,a2120,a2200,a2201,a2204,a2206,a2220,a2221,a2300,a2302,a2322,a2400,a2401,a2402,a2404,a2406,a2407,a2408,a2409,a2410,a2411,a2412,a2413,a2414,a2415,a2416,a2417,a2418,a2419,a2420,a2421,a2422,a2423,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16,c17,c18,c19,c20,c21,c22,c23,c24,b1,b2,b3,b4,b5,b6,b7,b8,b9,b10,b11,b12,b13,b14,b15,b16,b17,b18,b19,b20,b21,b22,b23,b24,b25 = constructFeagin12(uEltypeNoUnits)
   local k1::rateType; local k2::rateType; local k3::rateType; local k4::rateType; local k5::rateType
@@ -2495,7 +2495,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Feagin12,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{Feagin12,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   adaptiveConst,a0100,a0200,a0201,a0300,a0302,a0400,a0402,a0403,a0500,a0503,a0504,a0600,a0603,a0604,a0605,a0700,a0704,a0705,a0706,a0800,a0805,a0806,a0807,a0900,a0905,a0906,a0907,a0908,a1000,a1005,a1006,a1007,a1008,a1009,a1100,a1105,a1106,a1107,a1108,a1109,a1110,a1200,a1208,a1209,a1210,a1211,a1300,a1308,a1309,a1310,a1311,a1312,a1400,a1408,a1409,a1410,a1411,a1412,a1413,a1500,a1508,a1509,a1510,a1511,a1512,a1513,a1514,a1600,a1608,a1609,a1610,a1611,a1612,a1613,a1614,a1615,a1700,a1705,a1706,a1707,a1708,a1709,a1710,a1711,a1712,a1713,a1714,a1715,a1716,a1800,a1805,a1806,a1807,a1808,a1809,a1810,a1811,a1812,a1813,a1814,a1815,a1816,a1817,a1900,a1904,a1905,a1906,a1908,a1909,a1910,a1911,a1912,a1913,a1914,a1915,a1916,a1917,a1918,a2000,a2003,a2004,a2005,a2007,a2009,a2010,a2017,a2018,a2019,a2100,a2102,a2103,a2106,a2107,a2109,a2110,a2117,a2118,a2119,a2120,a2200,a2201,a2204,a2206,a2220,a2221,a2300,a2302,a2322,a2400,a2401,a2402,a2404,a2406,a2407,a2408,a2409,a2410,a2411,a2412,a2413,a2414,a2415,a2416,a2417,a2418,a2419,a2420,a2421,a2422,a2423,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16,c17,c18,c19,c20,c21,c22,c23,c24,b1,b2,b3,b4,b5,b6,b7,b8,b9,b10,b11,b12,b13,b14,b15,b16,b17,b18,b19,b20,b21,b22,b23,b24,b25 = constructFeagin12(uEltypeNoUnits)
   k1 = similar(rate_prototype); k2 = similar(rate_prototype); k3 = similar(rate_prototype); k4 = similar(rate_prototype); k5 = similar(rate_prototype)
@@ -2643,7 +2643,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Feagin14,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{Feagin14,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   adaptiveConst,a0100,a0200,a0201,a0300,a0302,a0400,a0402,a0403,a0500,a0503,a0504,a0600,a0603,a0604,a0605,a0700,a0704,a0705,a0706,a0800,a0805,a0806,a0807,a0900,a0905,a0906,a0907,a0908,a1000,a1005,a1006,a1007,a1008,a1009,a1100,a1105,a1106,a1107,a1108,a1109,a1110,a1200,a1208,a1209,a1210,a1211,a1300,a1308,a1309,a1310,a1311,a1312,a1400,a1408,a1409,a1410,a1411,a1412,a1413,a1500,a1508,a1509,a1510,a1511,a1512,a1513,a1514,a1600,a1608,a1609,a1610,a1611,a1612,a1613,a1614,a1615,a1700,a1712,a1713,a1714,a1715,a1716,a1800,a1812,a1813,a1814,a1815,a1816,a1817,a1900,a1912,a1913,a1914,a1915,a1916,a1917,a1918,a2000,a2012,a2013,a2014,a2015,a2016,a2017,a2018,a2019,a2100,a2112,a2113,a2114,a2115,a2116,a2117,a2118,a2119,a2120,a2200,a2212,a2213,a2214,a2215,a2216,a2217,a2218,a2219,a2220,a2221,a2300,a2308,a2309,a2310,a2311,a2312,a2313,a2314,a2315,a2316,a2317,a2318,a2319,a2320,a2321,a2322,a2400,a2408,a2409,a2410,a2411,a2412,a2413,a2414,a2415,a2416,a2417,a2418,a2419,a2420,a2421,a2422,a2423,a2500,a2508,a2509,a2510,a2511,a2512,a2513,a2514,a2515,a2516,a2517,a2518,a2519,a2520,a2521,a2522,a2523,a2524,a2600,a2605,a2606,a2607,a2608,a2609,a2610,a2612,a2613,a2614,a2615,a2616,a2617,a2618,a2619,a2620,a2621,a2622,a2623,a2624,a2625,a2700,a2705,a2706,a2707,a2708,a2709,a2711,a2712,a2713,a2714,a2715,a2716,a2717,a2718,a2719,a2720,a2721,a2722,a2723,a2724,a2725,a2726,a2800,a2805,a2806,a2807,a2808,a2810,a2811,a2813,a2814,a2815,a2823,a2824,a2825,a2826,a2827,a2900,a2904,a2905,a2906,a2909,a2910,a2911,a2913,a2914,a2915,a2923,a2924,a2925,a2926,a2927,a2928,a3000,a3003,a3004,a3005,a3007,a3009,a3010,a3013,a3014,a3015,a3023,a3024,a3025,a3027,a3028,a3029,a3100,a3102,a3103,a3106,a3107,a3109,a3110,a3113,a3114,a3115,a3123,a3124,a3125,a3127,a3128,a3129,a3130,a3200,a3201,a3204,a3206,a3230,a3231,a3300,a3302,a3332,a3400,a3401,a3402,a3404,a3406,a3407,a3409,a3410,a3411,a3412,a3413,a3414,a3415,a3416,a3417,a3418,a3419,a3420,a3421,a3422,a3423,a3424,a3425,a3426,a3427,a3428,a3429,a3430,a3431,a3432,a3433,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16,c17,c18,c19,c20,c21,c22,c23,c24,c25,c26,c27,c28,c29,c30,c31,c32,c33,c34,b1,b2,b3,b4,b5,b6,b7,b8,b9,b10,b11,b12,b13,b14,b15,b16,b17,b18,b19,b20,b21,b22,b23,b24,b25,b26,b27,b28,b29,b30,b31,b32,b33,b34,b35 = constructFeagin14(uEltypeNoUnits)
   local k1::rateType; local k2::rateType; local k3::rateType; local k4::rateType; local k5::rateType
@@ -2714,7 +2714,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Feagin14,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{Feagin14,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   adaptiveConst,a0100,a0200,a0201,a0300,a0302,a0400,a0402,a0403,a0500,a0503,a0504,a0600,a0603,a0604,a0605,a0700,a0704,a0705,a0706,a0800,a0805,a0806,a0807,a0900,a0905,a0906,a0907,a0908,a1000,a1005,a1006,a1007,a1008,a1009,a1100,a1105,a1106,a1107,a1108,a1109,a1110,a1200,a1208,a1209,a1210,a1211,a1300,a1308,a1309,a1310,a1311,a1312,a1400,a1408,a1409,a1410,a1411,a1412,a1413,a1500,a1508,a1509,a1510,a1511,a1512,a1513,a1514,a1600,a1608,a1609,a1610,a1611,a1612,a1613,a1614,a1615,a1700,a1712,a1713,a1714,a1715,a1716,a1800,a1812,a1813,a1814,a1815,a1816,a1817,a1900,a1912,a1913,a1914,a1915,a1916,a1917,a1918,a2000,a2012,a2013,a2014,a2015,a2016,a2017,a2018,a2019,a2100,a2112,a2113,a2114,a2115,a2116,a2117,a2118,a2119,a2120,a2200,a2212,a2213,a2214,a2215,a2216,a2217,a2218,a2219,a2220,a2221,a2300,a2308,a2309,a2310,a2311,a2312,a2313,a2314,a2315,a2316,a2317,a2318,a2319,a2320,a2321,a2322,a2400,a2408,a2409,a2410,a2411,a2412,a2413,a2414,a2415,a2416,a2417,a2418,a2419,a2420,a2421,a2422,a2423,a2500,a2508,a2509,a2510,a2511,a2512,a2513,a2514,a2515,a2516,a2517,a2518,a2519,a2520,a2521,a2522,a2523,a2524,a2600,a2605,a2606,a2607,a2608,a2609,a2610,a2612,a2613,a2614,a2615,a2616,a2617,a2618,a2619,a2620,a2621,a2622,a2623,a2624,a2625,a2700,a2705,a2706,a2707,a2708,a2709,a2711,a2712,a2713,a2714,a2715,a2716,a2717,a2718,a2719,a2720,a2721,a2722,a2723,a2724,a2725,a2726,a2800,a2805,a2806,a2807,a2808,a2810,a2811,a2813,a2814,a2815,a2823,a2824,a2825,a2826,a2827,a2900,a2904,a2905,a2906,a2909,a2910,a2911,a2913,a2914,a2915,a2923,a2924,a2925,a2926,a2927,a2928,a3000,a3003,a3004,a3005,a3007,a3009,a3010,a3013,a3014,a3015,a3023,a3024,a3025,a3027,a3028,a3029,a3100,a3102,a3103,a3106,a3107,a3109,a3110,a3113,a3114,a3115,a3123,a3124,a3125,a3127,a3128,a3129,a3130,a3200,a3201,a3204,a3206,a3230,a3231,a3300,a3302,a3332,a3400,a3401,a3402,a3404,a3406,a3407,a3409,a3410,a3411,a3412,a3413,a3414,a3415,a3416,a3417,a3418,a3419,a3420,a3421,a3422,a3423,a3424,a3425,a3426,a3427,a3428,a3429,a3430,a3431,a3432,a3433,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16,c17,c18,c19,c20,c21,c22,c23,c24,c25,c26,c27,c28,c29,c30,c31,c32,c33,c34,b1,b2,b3,b4,b5,b6,b7,b8,b9,b10,b11,b12,b13,b14,b15,b16,b17,b18,b19,b20,b21,b22,b23,b24,b25,b26,b27,b28,b29,b30,b31,b32,b33,b34,b35 = constructFeagin14(uEltypeNoUnits)
   k1 = similar(rate_prototype); k2 = similar(rate_prototype); k3 = similar(rate_prototype); k4 = similar(rate_prototype); k5 = similar(rate_prototype)
@@ -2907,7 +2907,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
 end
 
 
-function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{ImplicitEuler,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{ImplicitEuler,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   local nlres::NLsolve.SolverResults{uEltype}
   function rhs_ie(u,resid,u_old,t,dt)
@@ -2932,7 +2932,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{ImplicitEuler,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{ImplicitEuler,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   local nlres::NLsolve.SolverResults{uEltype}
   uidx = eachindex(u)
@@ -2973,7 +2973,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Trapezoid,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{Trapezoid,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   local nlres::NLsolve.SolverResults{uEltype}
   uidx = eachindex(u)
@@ -3020,7 +3020,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Trapezoid,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{Trapezoid,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   dto2::tType = dt/2
   function rhs_trap(u,resid,u_old,t,dt)
@@ -3046,7 +3046,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Rosenbrock23,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{Rosenbrock23,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   c₃₂ = 6 + sqrt(2)
   d = 1/(2+sqrt(2))
@@ -3123,7 +3123,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Rosenbrock23,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{Rosenbrock23,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   c₃₂ = 6 + sqrt(2)
   d = 1/(2+sqrt(2))
@@ -3167,7 +3167,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltyp
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Rosenbrock32,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{Rosenbrock32,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   c₃₂ = 6 + sqrt(2)
   d = 1/(2+sqrt(2))
@@ -3245,7 +3245,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,rateType,
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype}(integrator::ODEIntegrator{Rosenbrock32,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype})
+function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F}(integrator::ODEIntegrator{Rosenbrock32,uType,uEltype,N,tType,uEltypeNoUnits,rateType,ksEltype,F})
   @ode_preamble
   c₃₂ = 6 + sqrt(2)
   d = 1/(2+sqrt(2))
