@@ -190,7 +190,8 @@ end
 
 function solve{uType,tType,isinplace,T<:ODEInterfaceAlgorithm,F}(
     prob::AbstractODEProblem{uType,tType,Val{isinplace},F},
-    alg::Type{T},timeseries=[],ts=[],ks=[];kwargs...)
+    alg::Type{T},timeseries=[],ts=[],ks=[];
+    timeseries_errors = true,kwargs...)
 
   tspan = prob.tspan
 
@@ -210,10 +211,13 @@ function solve{uType,tType,isinplace,T<:ODEInterfaceAlgorithm,F}(
 
   sizeu = size(u)
 
+
   if !isinplace && typeof(u)<:AbstractArray
     f! = (t,u,du) -> (du[:] = vec(prob.f(t,reshape(u,sizeu))); nothing)
-  else
+  elseif !(typeof(u)<:Vector{Float64})
     f! = (t,u,du) -> (prob.f(t,reshape(u,sizeu),reshape(du,sizeu)); u = vec(u); du=vec(du); nothing)
+  else
+    f! = prob.f
   end
 
   initialize_backend(:ODEInterface)
@@ -259,7 +263,8 @@ function solve{uType,tType,isinplace,T<:ODEInterfaceAlgorithm,F}(
     for i in 1:size(timeseries,1)
       push!(timeseries_analytic,prob.analytic(ts[i],u0))
     end
-    return(ODESolution(ts,timeseries,prob,alg,u_analytic=timeseries_analytic))
+    return(ODESolution(ts,timeseries,prob,alg,u_analytic=timeseries_analytic,
+                        timeseries_errors = timeseries_errors))
   else
     return(ODESolution(ts,timeseries,prob,alg))
   end
