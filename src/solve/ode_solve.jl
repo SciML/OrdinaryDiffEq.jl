@@ -205,19 +205,18 @@ end
 
 
 
-function solve{uType,tType,isinplace,T<:ODEInterfaceAlgorithm}(prob::AbstractODEProblem{uType,tType,Val{isinplace}},
-    alg::Type{T},timeseries=[],ts=[],ks=[];
-    saveat=[],callback=()->nothing,
-    kwargs...)
+function solve{uType,tType,isinplace,T<:ODEInterfaceAlgorithm}(
+    prob::AbstractODEProblem{uType,tType,Val{isinplace}},
+    alg::Type{T};kwargs...)
+
   tspan = prob.tspan
 
   if tspan[end]-tspan[1]<tType(0)
     error("final time must be greater than starting time. Aborting.")
   end
-  atomloaded = isdefined(Main,:Atom)
+
   o = KW(kwargs)
-  t = tspan[1]
-  Ts = tspan[2:end]
+
   u0 = prob.u0
 
   if typeof(u0) <: Number
@@ -228,38 +227,29 @@ function solve{uType,tType,isinplace,T<:ODEInterfaceAlgorithm}(prob::AbstractODE
 
   sizeu = size(u)
 
-  command_opts = copy(DIFFERENTIALEQUATIONSJL_DEFAULT_OPTIONS)
-  for (k,v) in o
-    command_opts[k]=v
-  end
-  # Get the control variables
-  @unpack save_timeseries, progressbar = command_opts
-
-  ks = Vector{uType}(0)
-
-  saveat = [float(x) for x in command_opts[:saveat]]
   if !isinplace && typeof(u)<:AbstractArray
     f! = (t,u,du) -> (du[:] = vec(prob.f(t,reshape(u,sizeu))); nothing)
   else
     f! = (t,u,du) -> (prob.f(t,reshape(u,sizeu),reshape(du,sizeu)); u = vec(u); du=vec(du); nothing)
   end
+
   initialize_backend(:ODEInterface)
   o[:RHS_CALLMODE] = ODEInterface.RHS_CALL_INSITU
   dict = buildOptions(o,ODEINTERFACE_OPTION_LIST,ODEINTERFACE_ALIASES,ODEINTERFACE_ALIASES_REVERSED)
   opts = ODEInterface.OptionsODE([Pair(ODEINTERFACE_STRINGS[k],v) for (k,v) in dict]...) #Convert to the strings
   du = similar(u)
   if alg <: dopri5
-    ts,vectimeseries,retcode,stats = ODEInterface.odecall(ODEInterface.dopri5,f!,[t;Ts],vec(u),opts)
+    ts,vectimeseries,retcode,stats = ODEInterface.odecall(ODEInterface.dopri5,f!,tspan,vec(u),opts)
   elseif alg <: dop853
-    ts,vectimeseries,retcode,stats = ODEInterface.odecall(ODEInterface.dop853,f!,[t;Ts],vec(u),opts)
+    ts,vectimeseries,retcode,stats = ODEInterface.odecall(ODEInterface.dop853,f!,tspan,vec(u),opts)
   elseif alg <: odex
-    ts,vectimeseries,retcode,stats = ODEInterface.odecall(ODEInterface.odex,f!,[t;Ts],vec(u),opts)
+    ts,vectimeseries,retcode,stats = ODEInterface.odecall(ODEInterface.odex,f!,tspan,vec(u),opts)
   elseif alg <: seulex
-    ts,vectimeseries,retcode,stats = ODEInterface.odecall(ODEInterface.seulex,f!,[t;Ts],vec(u),opts)
+    ts,vectimeseries,retcode,stats = ODEInterface.odecall(ODEInterface.seulex,f!,tspan,vec(u),opts)
   elseif alg <: radau
-    ts,vectimeseries,retcode,stats = ODEInterface.odecall(ODEInterface.radau,f!,[t;Ts],vec(u),opts)
+    ts,vectimeseries,retcode,stats = ODEInterface.odecall(ODEInterface.radau,f!,tspan,vec(u),opts)
   elseif alg <: radau5
-    ts,vectimeseries,retcode,stats = ODEInterface.odecall(ODEInterface.radau5,f!,[t;Ts],vec(u),opts)
+    ts,vectimeseries,retcode,stats = ODEInterface.odecall(ODEInterface.radau5,f!,tspan,vec(u),opts)
   end
   if retcode < 0
     if retcode == -1
@@ -272,7 +262,7 @@ function solve{uType,tType,isinplace,T<:ODEInterfaceAlgorithm}(prob::AbstractODE
       warn("Interrupted. Problem is probably stiff.")
     end
   end
-  t = ts[end]
+
   if typeof(u0)<:AbstractArray
     timeseries = Vector{uType}(0)
     for i=1:size(vectimeseries,1)
@@ -282,43 +272,26 @@ function solve{uType,tType,isinplace,T<:ODEInterfaceAlgorithm}(prob::AbstractODE
     timeseries = vec(vectimeseries)
   end
 
-  u = timeseries[end]
-
   if typeof(prob) <: ODETestProblem
     timeseries_analytic = Vector{uType}(0)
     for i in 1:size(timeseries,1)
       push!(timeseries_analytic,prob.analytic(ts[i],u0))
     end
     return(ODESolution(ts,timeseries,prob,alg,
-    u_analytic=timeseries_analytic,
-    k=ks,saveat=saveat,
-    timeseries_errors = command_opts[:timeseries_errors],
-    dense_errors = command_opts[:dense_errors]))
+    u_analytic=timeseries_analytic))
   else
-    return(ODESolution(ts,timeseries,prob,alg,k=ks,saveat=saveat))
+    return(ODESolution(ts,timeseries,prob,alg))
   end
 end
 
-"""
-`solve(prob::ODEProblem,tspan)`
-
-Solves the ODE defined by prob on the interval tspan. If not given, tspan defaults to [0;1.0].
-
-Please see the solver documentation.
-"""
-function solve{uType,tType,isinplace,algType}(prob::AbstractODEProblem{uType,tType,Val{isinplace}},
+function solve{uType,tType,isinplace,algType<:SundialsAlgorithm}(prob::AbstractODEProblem{uType,tType,Val{isinplace}},
     alg::Type{algType}=DefaultODEAlgorithm(),timeseries=[],ts=[],ks=[];
-    saveat=[],callback=()->nothing,
+    callback=()->nothing,abstol=1/10^6,reltol=1/10^3,saveat=Float64[],adaptive=true,
+    timeseries_errors=true,dense_errors=false,save_timeseries=true,
     kwargs...)
   tspan = prob.tspan
 
-  if tspan[end]-tspan[1]<tType(0)
-    error("final time must be greater than starting time. Aborting.")
-  end
   atomloaded = isdefined(Main,:Atom)
-  o = KW(kwargs)
-  t = tspan[1]
-  Ts = tspan[2:end]
   u0 = prob.u0
 
   if typeof(u0) <: Number
@@ -326,114 +299,46 @@ function solve{uType,tType,isinplace,algType}(prob::AbstractODEProblem{uType,tTy
   else
     u = deepcopy(u0)
   end
+  if alg == cvode_BDF
+    integrator = :BDF
+  elseif alg ==  cvode_Adams
+    integrator = :Adams
+  end
 
   sizeu = size(u)
-
-  command_opts = copy(DIFFERENTIALEQUATIONSJL_DEFAULT_OPTIONS)
-  for (k,v) in o
-    command_opts[k]=v
+  if !isinplace && typeof(u)<:AbstractArray
+    f! = (t,u,du) -> (du[:] = vec(prob.f(t,reshape(u,sizeu))); 0)
+  else
+    f! = (t,u,du) -> (prob.f(t,reshape(u,sizeu),reshape(du,sizeu)); u = vec(u); du=vec(du); 0)
   end
-  ks = Vector{uType}(0)
 
-  if alg <: ODEIterAlgorithm
+  ts = sort([tspan;saveat])
+  sort(ts)
 
-    # Needs robustness
-    T = Ts[end]
-    saveat = [float(x) for x in command_opts[:saveat]]
-    initialize_backend(:ODEJL)
-    opts = buildOptions(o,ODEJL_OPTION_LIST,ODEJL_ALIASES,ODEJL_ALIASES_REVERSED)
-    if !isinplace && typeof(u)<:AbstractArray
-      f! = (t,u,du) -> (du[:] = prob.f(t,u))
-    else
-      f! = prob.f
-    end
-    ode  = ODE.ExplicitODE(t,u,f!)
-    # adaptive==true ? FoA=:adaptive : FoA=:fixed #Currently limied to only adaptive
-    FoA = :adaptive
-    if alg <: ode23
-      solver = ODE.RKIntegrator{FoA,:rk23}
-    elseif alg <: ode45
-      solver = ODE.RKIntegrator{FoA,:dopri5}
-    elseif alg <: ode78
-      solver = ODE.RKIntegrator{FoA,:feh78}
-    elseif alg <: ode23s
-      solver = ODE.ModifiedRosenbrockIntegrator
-    elseif alg <: ode1
-      solver = ODE.RKIntegratorFixed{:feuler}
-    elseif alg <: ode2_midpoint
-      solver = ODE.RKIntegratorFixed{:midpoint}
-    elseif alg <: ode2_heun
-      solver = ODE.RKIntegratorFixed{:heun}
-    elseif alg <: ode4
-      solver = ODE.RKIntegratorFixed{:rk4}
-    elseif alg <: ode45_fe
-      solver = ODE.RKIntegrator{FoA,:rk45}
-    end
-    out = ODE.solve(ode;solver=solver,opts...)
-    timeseries = out.y
-    ts = out.t
-    ks = out.dy
-    if length(out.y[1])==1
-      tmp = Vector{eltype(out.y[1])}(length(out.y))
-      tmp_dy = Vector{eltype(out.dy[1])}(length(out.dy))
-      for i in 1:length(out.y)
-        tmp[i] = out.y[i][1]
-        tmp_dy[i] = out.dy[i][1]
-      end
-      timeseries = tmp
-      ks = tmp_dy
-    end
-    t = ts[end]
-    u = timeseries[end]
-  elseif alg <: SundialsAlgorithm
-    if alg == cvode_BDF
-      integrator = :BDF
-    elseif alg ==  cvode_Adams
-      integrator = :Adams
-    end
-
-    # Needs robustness
-    saveat = [float(x) for x in command_opts[:saveat]]
-    if !isinplace && typeof(u)<:AbstractArray
-      f! = (t,u,du) -> (du[:] = vec(prob.f(t,reshape(u,sizeu))); 0)
-    else
-      f! = (t,u,du) -> (prob.f(t,reshape(u,sizeu),reshape(du,sizeu)); u = vec(u); du=vec(du); 0)
-    end
-    ts = [t;Ts]
-    @unpack abstol, reltol = command_opts
-    if command_opts[:adaptive]
-      ts, vectimeseries = Sundials.cvode_fulloutput(f!,vec(u),ts;integrator=integrator,abstol=float(abstol),reltol=float(reltol))
-      timeseries = Vector{uType}(0)
-      if typeof(u0)<:AbstractArray
-        for i=1:size(vectimeseries,1)
-          push!(timeseries,reshape(vectimeseries[i],sizeu))
-        end
-      else
-        for i=1:size(vectimeseries,1)
-          push!(timeseries,vectimeseries[i][1])
-        end
+  if save_timeseries
+    ts, vectimeseries = Sundials.cvode_fulloutput(f!,vec(u),ts;integrator=integrator,abstol=abstol,reltol=reltol)
+    timeseries = Vector{uType}(0)
+    if typeof(u0)<:AbstractArray
+      for i=1:size(vectimeseries,1)
+        push!(timeseries,reshape(vectimeseries[i],sizeu))
       end
     else
-      dt = command_opts[:dt]
-      ts = float(collect(t:dt:Ts[end]))
-      if length(Ts)>1
-        ts = float([ts;Ts[1:end-1]])
-        sort(ts)
-      end
-      vectimeseries = Sundials.cvode(f!,vec(u),ts,integrator=integrator,abstol=float(abstol),reltol=float(reltol))
-      timeseries = Vector{uType}(0)
-      if typeof(u0)<:AbstractArray
-        for i=1:size(vectimeseries,1)
-          push!(timeseries,reshape(view(vectimeseries,i,:),sizeu))
-        end
-      else
-        for i=1:size(vectimeseries,1)
-          push!(timeseries,vectimeseries[i])
-        end
+      for i=1:size(vectimeseries,1)
+        push!(timeseries,vectimeseries[i][1])
       end
     end
-    t = ts[end]
-    u = timeseries[end]
+  else
+    vectimeseries = Sundials.cvode(f!,vec(u),ts,integrator=integrator,abstol=abstol,reltol=reltol)
+    timeseries = Vector{uType}(0)
+    if typeof(u0)<:AbstractArray
+      for i=1:size(vectimeseries,1)
+        push!(timeseries,reshape(view(vectimeseries,i,:),sizeu))
+      end
+    else
+      for i=1:size(vectimeseries,1)
+        push!(timeseries,vectimeseries[i])
+      end
+    end
   end
 
   if typeof(prob) <: ODETestProblem
@@ -443,11 +348,10 @@ function solve{uType,tType,isinplace,algType}(prob::AbstractODEProblem{uType,tTy
     end
     return(ODESolution(ts,timeseries,prob,alg,
     u_analytic=timeseries_analytic,
-    k=ks,saveat=saveat,
-    timeseries_errors = command_opts[:timeseries_errors],
-    dense_errors = command_opts[:dense_errors]))
+    timeseries_errors = timeseries_errors,
+    dense_errors = dense_errors))
   else
-    return(ODESolution(ts,timeseries,prob,alg,k=ks,saveat=saveat))
+    return(ODESolution(ts,timeseries,prob,alg))
   end
 end
 
@@ -502,4 +406,89 @@ function ode_determine_initdt{uType<:Number,tType,uEltypeNoUnits}(u0::uType,t::t
     dt₁ = tType(10.0^(-(2+log10(max(d₁,d₂)/T1(1)))/(order)))
   end
   dt = min(100dt₀,dt₁)
+end
+
+
+
+
+function solve{uType,tType,isinplace,algType<:ODEIterAlgorithm}(prob::AbstractODEProblem{uType,tType,Val{isinplace}},
+    alg::Type{algType}=DefaultODEAlgorithm();
+    saveat=[],callback=()->nothing,timseries_errors=true,dense_errors=false,
+    kwargs...)
+  tspan = prob.tspan
+
+  if tspan[end]-tspan[1]<tType(0)
+    error("final time must be greater than starting time. Aborting.")
+  end
+  atomloaded = isdefined(Main,:Atom)
+  o = KW(kwargs)
+  t = tspan[1]
+  Ts = tspan[2:end]
+  u0 = prob.u0
+
+  if typeof(u0) <: Number
+    u = [u0]
+  else
+    u = deepcopy(u0)
+  end
+
+  sizeu = size(u)
+
+  initialize_backend(:ODEJL)
+  opts = buildOptions(o,ODEJL_OPTION_LIST,ODEJL_ALIASES,ODEJL_ALIASES_REVERSED)
+  if !isinplace && typeof(u)<:AbstractArray
+    f! = (t,u,du) -> (du[:] = prob.f(t,u))
+  else
+    f! = prob.f
+  end
+  ode  = ODE.ExplicitODE(t,u,f!)
+  # adaptive==true ? FoA=:adaptive : FoA=:fixed #Currently limied to only adaptive
+  FoA = :adaptive
+  if alg <: ode23
+    solver = ODE.RKIntegrator{FoA,:rk23}
+  elseif alg <: ode45
+    solver = ODE.RKIntegrator{FoA,:dopri5}
+  elseif alg <: ode78
+    solver = ODE.RKIntegrator{FoA,:feh78}
+  elseif alg <: ode23s
+    solver = ODE.ModifiedRosenbrockIntegrator
+  elseif alg <: ode1
+    solver = ODE.RKIntegratorFixed{:feuler}
+  elseif alg <: ode2_midpoint
+    solver = ODE.RKIntegratorFixed{:midpoint}
+  elseif alg <: ode2_heun
+    solver = ODE.RKIntegratorFixed{:heun}
+  elseif alg <: ode4
+    solver = ODE.RKIntegratorFixed{:rk4}
+  elseif alg <: ode45_fe
+    solver = ODE.RKIntegrator{FoA,:rk45}
+  end
+  out = ODE.solve(ode;solver=solver,opts...)
+  timeseries = out.y
+  ts = out.t
+  ks = out.dy
+  if length(out.y[1])==1
+    tmp = Vector{eltype(out.y[1])}(length(out.y))
+    tmp_dy = Vector{eltype(out.dy[1])}(length(out.dy))
+    for i in 1:length(out.y)
+      tmp[i] = out.y[i][1]
+      tmp_dy[i] = out.dy[i][1]
+    end
+    timeseries = tmp
+    ks = tmp_dy
+  end
+
+  if typeof(prob) <: ODETestProblem
+    timeseries_analytic = Vector{uType}(0)
+    for i in 1:size(timeseries,1)
+      push!(timeseries_analytic,prob.analytic(ts[i],u0))
+    end
+    return(ODESolution(ts,timeseries,prob,alg,
+    u_analytic=timeseries_analytic,
+    saveat=saveat,
+    timeseries_errors = timeseries_errors,
+    dense_errors = dense_errors))
+  else
+    return(ODESolution(ts,timeseries,prob,alg,saveat=saveat))
+  end
 end

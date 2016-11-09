@@ -50,35 +50,6 @@ end
   sqrt( sum(u) / length(u))
 end
 
-const DIFFERENTIALEQUATIONSJL_DEFAULT_OPTIONS = Dict(:dt => 0.0,
-                                 :save_timeseries => true,
-                                 :timeseries_steps => 1,
-                                 :tableau => ODE_DEFAULT_TABLEAU,
-                                 :dense => true,
-                                 :calck => nothing,
-                                 :alg_hint => :nonstiff,
-                                 :timeseries_errors => true,
-                                 :dense_errors => false,
-                                 :saveat => Float64[],
-                                 :adaptive => true,
-                                 :gamma=>.9,
-                                 :abstol=>1//10^6,
-                                 :reltol=>1//10^3,
-                                 :qmax=>nothing,
-                                 :qmin=>nothing,
-                                 :qoldinit=>1//10^4, #facold
-                                 :fullnormalize=>true,
-                                 :beta2=>nothing,
-                                 :beta1=>nothing, #alpha
-                                 :maxiters => 10000,
-                                 :dtmax=>nothing,
-                                 :dtmin=>nothing,
-                                 :autodiff=>true,
-                                 :internalnorm => ODE_DEFAULT_NORM,
-                                 :progressbar=>false,
-                                 :progress_steps=>1000,
-                                 :callback=>nothing)
-
 const ODEJL_OPTION_LIST = Set([:tout,:tstop,:reltol,:abstol,:minstep,:maxstep,:initstep,:norm,:maxiters,:isoutofdomain])
 const ODEJL_ALIASES = Dict{Symbol,Symbol}(:minstep=>:dtmin,:maxstep=>:dtmax,:initstep=>:dt,:tstop=>:T,:maxiters=>:maxiters)
 const ODEJL_ALIASES_REVERSED = Dict{Symbol,Symbol}([(v,k) for (k,v) in ODEJL_ALIASES])

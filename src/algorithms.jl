@@ -17,7 +17,6 @@ end
 @with_kw immutable ExplicitRK <: OrdinaryDiffEqAdaptiveAlgorithm
   order::Int=4
   adaptiveorder::Int=3
-  tableau::ExplicitRKTableau=constructDormandPrince()
 end
 
 @with_kw immutable BS3 <: OrdinaryDiffEqAdaptiveAlgorithm
