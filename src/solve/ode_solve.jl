@@ -190,7 +190,7 @@ end
 
 function solve{uType,tType,isinplace,T<:ODEInterfaceAlgorithm}(
     prob::AbstractODEProblem{uType,tType,Val{isinplace}},
-    alg::Type{T};kwargs...)
+    alg::Type{T},timeseries=[],ts=[],ks=[];kwargs...)
 
   tspan = prob.tspan
 
@@ -266,7 +266,7 @@ function solve{uType,tType,isinplace,T<:ODEInterfaceAlgorithm}(
 end
 
 function solve{uType,tType,isinplace,algType<:SundialsAlgorithm}(prob::AbstractODEProblem{uType,tType,Val{isinplace}},
-    alg::Type{algType}=DefaultODEAlgorithm(),timeseries=[],ts=[];
+    alg::Type{algType}=DefaultODEAlgorithm(),timeseries=[],ts=[],ks=[];
     callback=()->nothing,abstol=1/10^6,reltol=1/10^3,saveat=Float64[],adaptive=true,
     timeseries_errors=true,dense_errors=false,save_timeseries=true,
     kwargs...)
@@ -393,8 +393,8 @@ end
 
 
 function solve{uType,tType,isinplace,algType<:ODEIterAlgorithm}(prob::AbstractODEProblem{uType,tType,Val{isinplace}},
-    alg::Type{algType}=DefaultODEAlgorithm();
-    saveat=[],callback=()->nothing,timseries_errors=true,dense_errors=false,
+    alg::Type{algType}=DefaultODEAlgorithm(),timeseries=[],ts=[],ks=[];
+    saveat=[],callback=()->nothing,timeseries_errors=true,dense_errors=false,
     kwargs...)
   tspan = prob.tspan
 
@@ -404,8 +404,8 @@ function solve{uType,tType,isinplace,algType<:ODEIterAlgorithm}(prob::AbstractOD
   atomloaded = isdefined(Main,:Atom)
   o = KW(kwargs)
   t = tspan[1]
-  Ts = tspan[2:end]
   u0 = prob.u0
+  o[:T] = tspan[end]
 
   if typeof(u0) <: Number
     u = [u0]
@@ -417,6 +417,7 @@ function solve{uType,tType,isinplace,algType<:ODEIterAlgorithm}(prob::AbstractOD
 
   initialize_backend(:ODEJL)
   opts = buildOptions(o,ODEJL_OPTION_LIST,ODEJL_ALIASES,ODEJL_ALIASES_REVERSED)
+
   if !isinplace && typeof(u)<:AbstractArray
     f! = (t,u,du) -> (du[:] = prob.f(t,u))
   else
@@ -427,7 +428,7 @@ function solve{uType,tType,isinplace,algType<:ODEIterAlgorithm}(prob::AbstractOD
   FoA = :adaptive
   if alg <: ode23
     solver = ODE.RKIntegrator{FoA,:rk23}
-  elseif alg <: ode45
+  elseif alg <: rk45
     solver = ODE.RKIntegrator{FoA,:dopri5}
   elseif alg <: ode78
     solver = ODE.RKIntegrator{FoA,:feh78}
@@ -441,7 +442,7 @@ function solve{uType,tType,isinplace,algType<:ODEIterAlgorithm}(prob::AbstractOD
     solver = ODE.RKIntegratorFixed{:heun}
   elseif alg <: ode4
     solver = ODE.RKIntegratorFixed{:rk4}
-  elseif alg <: ode45_fe
+  elseif alg <: feh45
     solver = ODE.RKIntegrator{FoA,:rk45}
   end
   out = ODE.solve(ode;solver=solver,opts...)

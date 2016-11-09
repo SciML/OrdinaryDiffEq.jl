@@ -61,7 +61,7 @@ module OrdinaryDiffEq
 
   export ODEInterfaceAlgorithm, dopri5, dop853, odex, seulex, radau, radau5
 
-  export ODEIterAlgorithm, feuler, rk23, iter_dopri5, feh78, ModifiedRosenbrockIntegrator,
+  export ODEIterAlgorithm, feuler, rk23, feh45, feh78, ModifiedRosenbrockIntegrator,
         midpoint, heun, rk4, rk45
 
   export ODEJLAlgorithm, ode1, ode23, ode45, ode78, ode23s, ode2_midpoint, ode2_heun,
