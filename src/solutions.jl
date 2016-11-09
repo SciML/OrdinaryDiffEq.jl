@@ -13,22 +13,23 @@ Holds the data for the solution to an ODE problem.
 * `prob::DEProblem`: Holds the problem object used to define the problem.
 
 """
-type ODESolution <: AbstractODESolution
-  u#::AbstractArrayOrNumber
-  u_analytic#::AbstractArrayOrNumber
-  errors#::Dict{}
-  t::AbstractArrayOrVoid
-  k#::uType
-  prob#
-  alg
+type ODESolution{uType,uEltype,tType,rateType,P,A} <: AbstractODESolution
+  u::uType
+  u_analytic
+  errors::Dict{Symbol,uEltype}
+  t::tType
+  k::rateType
+  prob::P
+  alg::A
   interp::Function
   dense::Bool
 end
 
 function ODESolution{uType,tType,isinplace}(t,u,
         prob::AbstractODEProblem{uType,tType,Val{isinplace}},
-        alg;u_analytic=[],
-        k=[],saveat=[],timeseries_errors=true,dense_errors=true)
+        alg;u_analytic=[],k=[],saveat=[],
+        timeseries_errors=true,dense_errors=true)
+
   save_timeseries = length(u) > 2
 
   dense = length(k)>1

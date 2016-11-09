@@ -1,10 +1,3 @@
-"""
-`solve(prob::ODEProblem,tspan)`
-
-Solves the ODE defined by prob on the interval tspan. If not given, tspan defaults to [0;1.0].
-
-Please see the solver documentation.
-"""
 function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm}(prob::AbstractODEProblem{uType,tType,
   Val{isinplace}},algType::Type{T}=DefaultODEAlgorithm(),
   timeseries=[],ts=[],ks=[];dt = 0.0,save_timeseries = true,
@@ -15,7 +8,8 @@ function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm}(prob::AbstractO
   qmax=nothing,qmin=nothing,qoldinit=1//10^4, fullnormalize=true,
   beta2=nothing,beta1=nothing,maxiters = 10000,
   dtmax=tType((prob.tspan[end]-prob.tspan[1])),
-  dtmin=nothing,autodiff=true,internalnorm = ODE_DEFAULT_NORM,
+  dtmin=tType <: AbstractFloat ? tType(10)*eps(tType) : tType(1//10^(10)),
+  autodiff=true,internalnorm = ODE_DEFAULT_NORM,
   progressbar=false,progress_steps=1000,callback=nothing,kwargs...)
 
   alg = algType()
@@ -78,19 +72,9 @@ function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm}(prob::AbstractO
   end
 
   if dt==0
-    dt = ode_determine_initdt(u0,tspan[1],uEltype(abstol),uEltypeNoUnits(reltol),internalnorm,f!,order)
+    dt = ode_determine_initdt(u0,t,uEltype(abstol),uEltypeNoUnits(reltol),internalnorm,f!,order)
   end
 
-  if dtmin == nothing
-    if tType <: AbstractFloat
-      dtmin = tType(10)*eps(tType)
-    else
-      dtmin = tType(1//10^(10))
-    end
-  end
-
-  Ts = map(tType,Ts)
-  t = tType(t)
   rate_prototype = u/zero(t)
   rateType = typeof(rate_prototype) ## Can be different if united
 
@@ -98,8 +82,6 @@ function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm}(prob::AbstractO
 
   if calck==nothing
     calck = !isempty(saveat) || dense
-  else
-    calck = calck
   end
 
   ### Algorithm-specific defaults ###
@@ -144,6 +126,7 @@ function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm}(prob::AbstractO
   else
     β₁ = beta1
   end
+
   fsal = false
   if isfsal(alg)
     fsal = true
@@ -237,7 +220,6 @@ function solve{uType,tType,isinplace,T<:ODEInterfaceAlgorithm}(
   o[:RHS_CALLMODE] = ODEInterface.RHS_CALL_INSITU
   dict = buildOptions(o,ODEINTERFACE_OPTION_LIST,ODEINTERFACE_ALIASES,ODEINTERFACE_ALIASES_REVERSED)
   opts = ODEInterface.OptionsODE([Pair(ODEINTERFACE_STRINGS[k],v) for (k,v) in dict]...) #Convert to the strings
-  du = similar(u)
   if alg <: dopri5
     ts,vectimeseries,retcode,stats = ODEInterface.odecall(ODEInterface.dopri5,f!,tspan,vec(u),opts)
   elseif alg <: dop853
@@ -277,15 +259,14 @@ function solve{uType,tType,isinplace,T<:ODEInterfaceAlgorithm}(
     for i in 1:size(timeseries,1)
       push!(timeseries_analytic,prob.analytic(ts[i],u0))
     end
-    return(ODESolution(ts,timeseries,prob,alg,
-    u_analytic=timeseries_analytic))
+    return(ODESolution(ts,timeseries,prob,alg,u_analytic=timeseries_analytic))
   else
     return(ODESolution(ts,timeseries,prob,alg))
   end
 end
 
 function solve{uType,tType,isinplace,algType<:SundialsAlgorithm}(prob::AbstractODEProblem{uType,tType,Val{isinplace}},
-    alg::Type{algType}=DefaultODEAlgorithm(),timeseries=[],ts=[],ks=[];
+    alg::Type{algType}=DefaultODEAlgorithm(),timeseries=[],ts=[];
     callback=()->nothing,abstol=1/10^6,reltol=1/10^3,saveat=Float64[],adaptive=true,
     timeseries_errors=true,dense_errors=false,save_timeseries=true,
     kwargs...)
