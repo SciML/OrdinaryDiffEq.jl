@@ -295,9 +295,9 @@ function solve{uType,tType,isinplace,algType<:SundialsAlgorithm,F}(prob::Abstrac
       f! = (t,u,du) -> (prob.f(t,reshape(u,sizeu),reshape(du,sizeu)); u = vec(u); du=vec(du); 0)
     end
 
-    ts, vectimeseries = Sundials.cvode_common(f!,vec(u),ts;
-                        abstol=abstol,reltol=reltol,integrator=integrator,
-                        saveat=saveat,save_timeseries=save_timeseries,kwargs...)
+    ts, vectimeseries = Sundials.cvode_common(f!,vec(u),tspan; abstol=abstol,
+                        reltol=reltol,integrator=integrator,
+                        saveat=saveat,save_timeseries=save_timeseries)
 
     timeseries = Vector{uType}(0)
     if typeof(u0)<:AbstractArray
