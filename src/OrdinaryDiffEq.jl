@@ -29,6 +29,7 @@ module OrdinaryDiffEq
   include("backends.jl")
   include("misc_utils.jl")
   include("algorithms.jl")
+  include("alg_utils.jl")
   include("solutions.jl")
   include("solve/ode_integrators.jl")
   include("solve/ode_constants.jl")
