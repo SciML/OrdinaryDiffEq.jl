@@ -67,5 +67,5 @@ module OrdinaryDiffEq
   export ODEJLAlgorithm, ode1, ode23, ode45, ode78, ode23s, ode2_midpoint, ode2_heun,
         ode4, ode45_fe
 
-  export SundialsAlgorithm, cvode_BDF, cvode_Adams
+  export SundialsAlgorithm, CVODE_BDF, CVODE_Adams
 end # module

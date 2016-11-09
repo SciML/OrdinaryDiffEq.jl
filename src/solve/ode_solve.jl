@@ -1,5 +1,5 @@
-function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm}(prob::AbstractODEProblem{uType,tType,
-  Val{isinplace}},algType::Type{T}=DefaultODEAlgorithm(),
+function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm,F}(prob::AbstractODEProblem{uType,tType,
+  Val{isinplace},F},algType::Type{T}=DefaultODEAlgorithm(),
   timeseries=[],ts=[],ks=[];dt = 0.0,save_timeseries = true,
   timeseries_steps = 1,tableau = ODE_DEFAULT_TABLEAU,
   dense = true,calck = nothing,alg_hint = :nonstiff,
@@ -169,7 +169,7 @@ function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm}(prob::AbstractO
   end
   γ = gamma
   # @code_warntype ode_solve(ODEIntegrator{alg,uType,uEltype,ndims(u)+1,tType,uEltypeNoUnits,rateType,ksEltype}(timeseries,ts,ks,f!,u,t,k,dt,Ts,maxiters,timeseries_steps,save_timeseries,adaptive,abstol,reltol,γ,qmax,qmin,dtmax,dtmin,internalnorm,progressbar,tableau,autodiff,adaptiveorder,order,atomloaded,progress_steps,β₁,β₂,qoldinit,fsal,dense,saveat,alg,callback,custom_callback,calck))
-  u,t = ode_solve(ODEIntegrator{typeof(alg),uType,uEltype,ndims(u)+1,tType,uEltypeNoUnits,rateType,ksEltype}(timeseries,ts,ks,f!,u,t,dt,Ts,maxiters,timeseries_steps,save_timeseries,adaptive,abstol,reltol,γ,qmax,qmin,dtmax,dtmin,internalnorm,progressbar,tableau,autodiff,adaptiveorder,order,atomloaded,progress_steps,β₁,β₂,qoldinit,fsal,dense,saveat,alg,callback,custom_callback,calck))
+  u,t = ode_solve(ODEIntegrator{typeof(alg),uType,uEltype,ndims(u)+1,tType,uEltypeNoUnits,rateType,ksEltype,typeof(f!),typeof(internalnorm),typeof(callback)}(timeseries,ts,ks,f!,u,t,dt,Ts,maxiters,timeseries_steps,save_timeseries,adaptive,abstol,reltol,γ,qmax,qmin,dtmax,dtmin,internalnorm,progressbar,tableau,autodiff,adaptiveorder,order,atomloaded,progress_steps,β₁,β₂,qoldinit,fsal,dense,saveat,alg,callback,custom_callback,calck))
 
   if typeof(prob) <: ODETestProblem
     timeseries_analytic = Vector{uType}(0)
@@ -188,8 +188,8 @@ end
 
 
 
-function solve{uType,tType,isinplace,T<:ODEInterfaceAlgorithm}(
-    prob::AbstractODEProblem{uType,tType,Val{isinplace}},
+function solve{uType,tType,isinplace,T<:ODEInterfaceAlgorithm,F}(
+    prob::AbstractODEProblem{uType,tType,Val{isinplace},F},
     alg::Type{T},timeseries=[],ts=[],ks=[];kwargs...)
 
   tspan = prob.tspan
@@ -265,39 +265,40 @@ function solve{uType,tType,isinplace,T<:ODEInterfaceAlgorithm}(
   end
 end
 
-function solve{uType,tType,isinplace,algType<:SundialsAlgorithm}(prob::AbstractODEProblem{uType,tType,Val{isinplace}},
+function solve{uType,tType,isinplace,algType<:SundialsAlgorithm,F}(prob::AbstractODEProblem{uType,tType,Val{isinplace},F},
     alg::Type{algType}=DefaultODEAlgorithm(),timeseries=[],ts=[],ks=[];
     callback=()->nothing,abstol=1/10^6,reltol=1/10^3,saveat=Float64[],adaptive=true,
     timeseries_errors=true,dense_errors=false,save_timeseries=true,
     kwargs...)
-  tspan = prob.tspan
 
-  atomloaded = isdefined(Main,:Atom)
-  u0 = prob.u0
+    tspan = prob.tspan
 
-  if typeof(u0) <: Number
-    u = [u0]
-  else
-    u = deepcopy(u0)
-  end
-  if alg == cvode_BDF
-    integrator = :BDF
-  elseif alg ==  cvode_Adams
-    integrator = :Adams
-  end
+    atomloaded = isdefined(Main,:Atom)
+    u0 = prob.u0
 
-  sizeu = size(u)
-  if !isinplace && typeof(u)<:AbstractArray
-    f! = (t,u,du) -> (du[:] = vec(prob.f(t,reshape(u,sizeu))); 0)
-  else
-    f! = (t,u,du) -> (prob.f(t,reshape(u,sizeu),reshape(du,sizeu)); u = vec(u); du=vec(du); 0)
-  end
+    if typeof(u0) <: Number
+      u = [u0]
+    else
+      u = deepcopy(u0)
+    end
 
-  ts = sort([tspan;saveat])
-  sort(ts)
+    if alg == CVODE_BDF
+      integrator = :BDF
+    elseif alg ==  CVODE_Adams
+      integrator = :Adams
+    end
 
-  if save_timeseries
-    ts, vectimeseries = Sundials.cvode_fulloutput(f!,vec(u),ts;integrator=integrator,abstol=abstol,reltol=reltol)
+    sizeu = size(u)
+    if !isinplace && typeof(u)<:AbstractArray
+      f! = (t,u,du) -> (du[:] = vec(prob.f(t,reshape(u,sizeu))); 0)
+    else
+      f! = (t,u,du) -> (prob.f(t,reshape(u,sizeu),reshape(du,sizeu)); u = vec(u); du=vec(du); 0)
+    end
+
+    ts, vectimeseries = Sundials.cvode_common(f!,vec(u),tspan; abstol=abstol,
+                        reltol=reltol,integrator=integrator,
+                        saveat=saveat,save_timeseries=save_timeseries)
+
     timeseries = Vector{uType}(0)
     if typeof(u0)<:AbstractArray
       for i=1:size(vectimeseries,1)
@@ -308,32 +309,19 @@ function solve{uType,tType,isinplace,algType<:SundialsAlgorithm}(prob::AbstractO
         push!(timeseries,vectimeseries[i][1])
       end
     end
-  else
-    vectimeseries = Sundials.cvode(f!,vec(u),ts,integrator=integrator,abstol=abstol,reltol=reltol)
-    timeseries = Vector{uType}(0)
-    if typeof(u0)<:AbstractArray
-      for i=1:size(vectimeseries,1)
-        push!(timeseries,reshape(view(vectimeseries,i,:),sizeu))
-      end
-    else
-      for i=1:size(vectimeseries,1)
-        push!(timeseries,vectimeseries[i])
-      end
-    end
-  end
 
-  if typeof(prob) <: ODETestProblem
-    timeseries_analytic = Vector{uType}(0)
-    for i in 1:size(timeseries,1)
-      push!(timeseries_analytic,prob.analytic(ts[i],u0))
+    if typeof(prob) <: ODETestProblem
+      timeseries_analytic = Vector{uType}(0)
+      for i in 1:size(timeseries,1)
+        push!(timeseries_analytic,prob.analytic(ts[i],u0))
+      end
+      return(ODESolution(ts,timeseries,prob,alg,
+      u_analytic=timeseries_analytic,
+      timeseries_errors = timeseries_errors,
+      dense_errors = dense_errors))
+    else
+      return(ODESolution(ts,timeseries,prob,alg))
     end
-    return(ODESolution(ts,timeseries,prob,alg,
-    u_analytic=timeseries_analytic,
-    timeseries_errors = timeseries_errors,
-    dense_errors = dense_errors))
-  else
-    return(ODESolution(ts,timeseries,prob,alg))
-  end
 end
 
 function buildOptions(o,optionlist,aliases,aliases_reversed)
@@ -392,7 +380,7 @@ end
 
 
 
-function solve{uType,tType,isinplace,algType<:ODEIterAlgorithm}(prob::AbstractODEProblem{uType,tType,Val{isinplace}},
+function solve{uType,tType,isinplace,algType<:ODEIterAlgorithm,F}(prob::AbstractODEProblem{uType,tType,Val{isinplace},F},
     alg::Type{algType}=DefaultODEAlgorithm(),timeseries=[],ts=[],ks=[];
     saveat=[],callback=()->nothing,timeseries_errors=true,dense_errors=false,
     kwargs...)
