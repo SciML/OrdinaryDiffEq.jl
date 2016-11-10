@@ -26,6 +26,7 @@ immutable ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractAr
   order::Int
   atomloaded::Bool
   progress_steps::Int
+  progressbar_name::String
   β₁::tTypeNoUnits
   β₂::tTypeNoUnits
   qoldinit::tTypeNoUnits
@@ -44,7 +45,7 @@ end
   local dt::tType
   local Ts::Vector{tType}
   local adaptiveorder::Int
-  @unpack f,u,t,dt,Ts,maxiters,timeseries_steps,γ,qmax,qmin,save_timeseries,adaptive,progressbar,autodiff,adaptiveorder,order,atomloaded,progress_steps,β₂,β₁,qoldinit,fsal, dense, saveat, alg, callback, custom_callback,calck = integrator
+  @unpack f,u,t,dt,Ts,maxiters,timeseries_steps,γ,qmax,qmin,save_timeseries,adaptive,progressbar,autodiff,adaptiveorder,order,atomloaded,progress_steps,progressbar_name,β₂,β₁,qoldinit,fsal, dense, saveat, alg, callback, custom_callback,calck = integrator
   timeseries = integrator.timeseries
   ts = integrator.ts
   ks = integrator.ks
@@ -126,7 +127,8 @@ end
       kprev = copy(k)
     end
   end ## if not simple_dense, you have to initialize k and push the ks[1]!
-  (progressbar && atomloaded && iter%progress_steps==0) ? Main.Atom.progress(0) : nothing #Use Atom's progressbar if loaded
+
+  progressbar && (prog = ProgressBar(name=progressbar_name))
 end
 
 @def ode_loopheader begin
@@ -174,6 +176,7 @@ end
     push!(ts,t)
     push!(timeseries,u)
   end
+  progressbar && done(prog)
   return u,t
 end
 
@@ -260,5 +263,8 @@ end
       end
     end
   end
-  (progressbar && atomloaded && iter%progress_steps==0) ? Main.Atom.progress(t/Tfinal) : nothing #Use Atom's progressbar if loaded
+  if progressbar && iter%progress_steps==0
+    msg(prog,"dt="*string(dt))
+    progress(prog,t/Tfinal)
+  end
 end
