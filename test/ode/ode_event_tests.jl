@@ -70,6 +70,6 @@ prob2 = ODEProblem(f,u0,tspan2)
 
 sol5 = solve(prob2,callback=terminate_callback)
 
-bool3 = sol5[end][1] < 1e-13
+bool3 = sol5[end][1] < 2e-13
 
 bool1 && bool2 && bool3

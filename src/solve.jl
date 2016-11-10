@@ -1,6 +1,6 @@
 function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm,F}(prob::AbstractODEProblem{uType,tType,
-  Val{isinplace},F},algType::Type{T}=DefaultODEAlgorithm(),
-  timeseries=[],ts=[],ks=[];dt = 0.0,save_timeseries = true,
+  Val{isinplace},F},algType::Type{T},timeseries=[],ts=[],ks=[];
+  dt = 0.0,save_timeseries = true,
   timeseries_steps = 1,tableau = ODE_DEFAULT_TABLEAU,
   dense = true,calck = nothing,alg_hint = :nonstiff,
   timeseries_errors = true,dense_errors = false,

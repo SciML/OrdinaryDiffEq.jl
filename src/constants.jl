@@ -41,12 +41,4 @@ All it does is call the saving functionality.
   cursaveat,saveiter,dt,t,T,reeval_fsal
 end
 
-@inline function ODE_DEFAULT_NORM(u) # l2 norm on u in vector form
-  tmp_bad_units = zero(norm(u[1]))
-  tmp = tmp_bad_units*tmp_bad_units
-  for i in eachindex(u)
-    tmp2 = norm(u[i])
-    tmp += tmp2*tmp2
-  end
-  sqrt( tmp / length(u))
-end
+@inline ODE_DEFAULT_NORM(u) = sqrt(sumabs2(u) / length(u))

@@ -1,5 +1,5 @@
 function solve{uType,tType,isinplace,algType<:ODEIterAlgorithm,F}(prob::AbstractODEProblem{uType,tType,Val{isinplace},F},
-    alg::Type{algType}=DefaultODEAlgorithm(),timeseries=[],ts=[],ks=[];
+    alg::Type{algType},timeseries=[],ts=[],ks=[];
     saveat=[],callback=()->nothing,timeseries_errors=true,dense_errors=false,
     kwargs...)
   tspan = prob.tspan
