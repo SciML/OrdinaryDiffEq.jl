@@ -28,7 +28,6 @@ module OrdinaryDiffEq
 
   include("backends.jl")
   include("misc_utils.jl")
-  include("algorithms.jl")
   include("alg_utils.jl")
   include("solutions.jl")
   include("solve/ode_integrators.jl")
@@ -53,20 +52,10 @@ module OrdinaryDiffEq
   export constructDP5, constructVern6, constructDP8, constructDormandPrince, constructFeagin10,
         constructFeagin12, constructFeagin14
 
+  # Reexport the Alg Types
+
   export OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveAlgorithm,
         Euler, Midpoint, RK4, ExplicitRK, BS3, BS5, DP5, DP5Threaded, Tsit5,
         DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8, Vern9, ImplicitEuler,
         Trapezoid, Rosenbrock23, Rosenbrock32, Feagin10, Feagin12, Feagin14
-
-  export DefaultODEAlgorithm
-
-  export ODEInterfaceAlgorithm, dopri5, dop853, odex, seulex, radau, radau5
-
-  export ODEIterAlgorithm, feuler, rk23, feh45, feh78, ModifiedRosenbrockIntegrator,
-        midpoint, heun, rk4, rk45
-
-  export ODEJLAlgorithm, ode1, ode23, ode45, ode78, ode23s, ode2_midpoint, ode2_heun,
-        ode4, ode45_fe
-
-  export SundialsAlgorithm, CVODE_BDF, CVODE_Adams
 end # module

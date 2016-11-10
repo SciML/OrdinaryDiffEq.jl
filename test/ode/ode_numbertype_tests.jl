@@ -4,11 +4,9 @@ setprecision(400)
 
 f = (t,u) -> (2u)
 analytic = (t,u0) -> u0*exp(t)
-"""Linear ODE on Float64"""
-prob_ode_linear = ODETestProblem(f,1/2,analytic)
+prob = ODETestProblem(f,1/2,analytic)
 
 
-prob = prob_ode_linear
 sol3 =solve(prob,RK4,dt=1/2^(6),abstol=1,reltol=0)
 
 prob = ODETestProblem(f,BigInt(1)//BigInt(2),analytic)
@@ -35,5 +33,7 @@ sol5 =solve(prob,ExplicitRK,dt=BigInt(1)//BigInt(2)^(3),abstol=1,reltol=0,tablea
 
 bool7 = 5.72e-8 < abs(float(sol5.u[end]) - sol3.u[end]) < 5.73e-8
 bool8 = typeof(sol5.u[end]) == Rational{BigInt}
+
+prob = ODETestProblem(f,1/2+1/2im,analytic)
 
 bool1 && bool2 && bool3 && bool4 && bool5 && bool6 && bool7 && bool8 && bool9

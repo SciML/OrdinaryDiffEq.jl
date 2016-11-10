@@ -43,11 +43,14 @@ All it does is call the saving functionality.
   cursaveat,saveiter,dt,t,T,reeval_fsal
 end
 
-@inline function ODE_DEFAULT_NORM(u)
+@inline function ODE_DEFAULT_NORM(u) # l2 norm on u in vector form
+  tmp_bad_units = zero(norm(u[1]))
+  tmp = tmp_bad_units*tmp_bad_units
   for i in eachindex(u)
-    u[i] = u[i]*u[i]
+    tmp2 = norm(u[i])
+    tmp += tmp2*tmp2
   end
-  sqrt( sum(u) / length(u))
+  sqrt( tmp / length(u))
 end
 
 const ODEJL_OPTION_LIST = Set([:tout,:tstop,:reltol,:abstol,:minstep,:maxstep,:initstep,:norm,:maxiters,:isoutofdomain])

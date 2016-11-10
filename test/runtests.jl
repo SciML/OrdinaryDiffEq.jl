@@ -45,6 +45,8 @@ println("ODE Feagin Tests")
 (LONGER_TESTS) && @time @test include("ode/ode_feagin_tests.jl")
 println("ODE Number Type Tests")
 @time @test include("ode/ode_numbertype_tests.jl")
+println("ODE Ndim Complex Tests")
+@time @test include("ode/ode_ndim_complex_tests.jl")
 
 #Optional Items
 println("Units Tests")
