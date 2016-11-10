@@ -3,7 +3,7 @@ module OrdinaryDiffEq
   using DiffEqBase
   import DiffEqBase: solve
   using Parameters, GenericSVD, ForwardDiff, InplaceOps, RecursiveArrayTools,
-        Sundials, Ranges, NLsolve, RecipesBase
+        Ranges, NLsolve, RecipesBase
 
   import Base: linspace
   import ForwardDiff.Dual
@@ -29,7 +29,6 @@ module OrdinaryDiffEq
   include("backends.jl")
   include("misc_utils.jl")
   include("alg_utils.jl")
-  include("solutions.jl")
   include("solve/ode_integrators.jl")
   include("solve/ode_constants.jl")
   include("solve/ode_callbacks.jl")
@@ -37,9 +36,6 @@ module OrdinaryDiffEq
   include("solve/ode_dense.jl")
   include("solve/unrolled_tableaus.jl")
 
-
-  #Types
-  export ODESolution
 
   #General Functions
   export solve

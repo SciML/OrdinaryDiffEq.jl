@@ -29,8 +29,6 @@ println("ODE AppxTrue Tests")
 @time @test include("ode/ode_appxtrue_tests.jl")
 println("ODE Rosenbrock Tests")
 @time @test include("ode/ode_rosenbrock_tests.jl")
-println("Sundials.jl Tests")
-@time @test include("ode/Sundials_tests.jl")
 println("ODE Initial Dt Tests")
 !is_windows() && @time @test include("ode/ode_dense_tests.jl") # Windows 32-bit Overflow
 println("ODE In-Place Tests")
