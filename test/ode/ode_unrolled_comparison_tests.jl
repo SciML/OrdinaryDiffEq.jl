@@ -3,18 +3,18 @@ using OrdinaryDiffEq, DiffEqDevTools
 const linear_bigα = parse(BigFloat,"1.01")
 f = (t,u) -> (linear_bigα*u)
 analytic = (t,u0) -> u0*exp(linear_bigα*t)
-prob_ode_bigfloatlinear = ODETestProblem(f,parse(BigFloat,"0.5"),analytic,[0,10.0])
+prob_ode_bigfloatlinear = ODETestProblem(f,parse(BigFloat,"0.5"),analytic,(0.0,10.0))
 
 f = (t,u,du) -> begin
   for i in 1:length(u)
     du[i] = linear_bigα*u[i]
   end
 end
-prob_ode_bigfloat2Dlinear = ODETestProblem(f,map(BigFloat,rand(4,2)).*ones(4,2)/2,analytic,[0,10.0])
+prob_ode_bigfloat2Dlinear = ODETestProblem(f,map(BigFloat,rand(4,2)).*ones(4,2)/2,analytic,(0.0,10.0))
 
 linear = (t,u) -> (1.01*u)
 analytic_linear = (t,u0) -> u0*exp(1.01*t)
-probnum = ODETestProblem(linear,1/2,analytic_linear,[0,10.0])
+probnum = ODETestProblem(linear,1/2,analytic_linear,(0.0,10.0))
 
 probnumbig = prob_ode_bigfloatlinear
 #prob    = prob_ode_large2Dlinear
@@ -26,7 +26,7 @@ f_2dlinear = (t,u,du) -> begin
   end
 end
 analytic_2dlinear = (t,u0) -> u0*exp.(1.01*t)
-prob = ODETestProblem(f_2dlinear,rand(4,2),analytic_2dlinear,[0,10.0])
+prob = ODETestProblem(f_2dlinear,rand(4,2),analytic_2dlinear,(0.0,10.0))
 
 probbig = prob_ode_bigfloat2Dlinear
 dts = 1.//2.^(7:-1:4)

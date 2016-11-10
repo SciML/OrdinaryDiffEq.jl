@@ -1,9 +1,8 @@
 using OrdinaryDiffEq
 
 prob = prob_ode_linear
-dt = 1/2^(4) #The initial timestepping size. It will automatically assigned if not given.
 
-sol =solve(prob,feuler;dt=dt)
+sol =solve(prob,feuler;dt=1/2^(4))
 TEST_PLOT && plot(sol,plot_analytic=true)
 
 sol =solve(prob,rk23,dt=dt)

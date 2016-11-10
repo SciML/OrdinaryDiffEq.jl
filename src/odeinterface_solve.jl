@@ -1,61 +1,90 @@
-"""
-constructDormandPrince()
+function solve{uType,tType,isinplace,T<:ODEInterfaceAlgorithm,F}(
+    prob::AbstractODEProblem{uType,tType,Val{isinplace},F},
+    alg::Type{T},timeseries=[],ts=[],ks=[];
+    timeseries_errors = true,kwargs...)
 
-Constructs the tableau object for the Dormand-Prince Order 4/5 method.
-"""
-function constructDormandPrince(T::Type = Float64)
-  A = [0 0 0 0 0 0 0
-      1//5 0 0 0 0 0 0
-      3//40 9//40 0 0 0 0 0
-      44//45 -56//15 32//9 0 0 0 0
-      19372//6561 -25360//2187 64448//6561 -212//729 0 0 0
-      9017//3168 -355//33 46732//5247 49//176 -5103//18656 0 0
-      35//384 0 500//1113 125//192 -2187//6784 11//84 0]
-  c = [0;1//5;3//10;4//5;8//9;1;1]
-  α = [35//384;0;500//1113;125//192;-2187//6784;11//84;0]
-  αEEst = [5179//57600;0;7571//16695;393//640;-92097//339200;187//2100;1//40]
-  A = map(T,A)
-  α = map(T,α)
-  αEEst = map(T,αEEst)
-  c = map(T,c)
-  return(ExplicitRKTableau(A,c,α,5,αEEst=αEEst,adaptiveorder=4,fsal=true))
-end
+  tspan = [t for t in prob.tspan]
 
-
-
-"""
-ODE_DEFAULT_TABLEAU
-
-Sets the default tableau for the ODE solver. Currently Dormand-Prince 4/5.
-"""
-const ODE_DEFAULT_TABLEAU = constructDormandPrince()
-
-"""
-ODE_DEFAULT_CALLBACK
-
-All it does is call the saving functionality.
-"""
-@inline function ODE_DEFAULT_CALLBACK(alg,f,t,u,k,tprev,uprev,kprev,ts,timeseries,ks,dtprev,dt,
-  saveat,cursaveat,saveiter,iter,save_timeseries,timeseries_steps,uEltype,ksEltype,
-  dense,kshortsize,issimple_dense,fsal,fsalfirst,cache,calck,T,Ts)
-  @ode_savevalues
-  reeval_fsal = false
-  cursaveat,saveiter,dt,t,T,reeval_fsal
-end
-
-@inline function ODE_DEFAULT_NORM(u) # l2 norm on u in vector form
-  tmp_bad_units = zero(norm(u[1]))
-  tmp = tmp_bad_units*tmp_bad_units
-  for i in eachindex(u)
-    tmp2 = norm(u[i])
-    tmp += tmp2*tmp2
+  if tspan[end]-tspan[1]<tType(0)
+    error("final time must be greater than starting time. Aborting.")
   end
-  sqrt( tmp / length(u))
+
+  o = KW(kwargs)
+
+  u0 = prob.u0
+
+  if typeof(u0) <: Number
+    u = [u0]
+  else
+    u = deepcopy(u0)
+  end
+
+  sizeu = size(u)
+
+
+  if !isinplace && typeof(u)<:AbstractArray
+    f! = (t,u,du) -> (du[:] = vec(prob.f(t,reshape(u,sizeu))); nothing)
+  elseif !(typeof(u)<:Vector{Float64})
+    f! = (t,u,du) -> (prob.f(t,reshape(u,sizeu),reshape(du,sizeu)); u = vec(u); du=vec(du); nothing)
+  else
+    f! = prob.f
+  end
+
+  initialize_backend(:ODEInterface)
+  o[:RHS_CALLMODE] = ODEInterface.RHS_CALL_INSITU
+  dict = buildOptions(o,ODEINTERFACE_OPTION_LIST,ODEINTERFACE_ALIASES,ODEINTERFACE_ALIASES_REVERSED)
+  opts = ODEInterface.OptionsODE([Pair(ODEINTERFACE_STRINGS[k],v) for (k,v) in dict]...) #Convert to the strings
+  if alg <: dopri5
+    ts,vectimeseries,retcode,stats = ODEInterface.odecall(ODEInterface.dopri5,f!,tspan,vec(u),opts)
+  elseif alg <: dop853
+    ts,vectimeseries,retcode,stats = ODEInterface.odecall(ODEInterface.dop853,f!,tspan,vec(u),opts)
+  elseif alg <: odex
+    ts,vectimeseries,retcode,stats = ODEInterface.odecall(ODEInterface.odex,f!,tspan,vec(u),opts)
+  elseif alg <: seulex
+    ts,vectimeseries,retcode,stats = ODEInterface.odecall(ODEInterface.seulex,f!,tspan,vec(u),opts)
+  elseif alg <: radau
+    ts,vectimeseries,retcode,stats = ODEInterface.odecall(ODEInterface.radau,f!,tspan,vec(u),opts)
+  elseif alg <: radau5
+    ts,vectimeseries,retcode,stats = ODEInterface.odecall(ODEInterface.radau5,f!,tspan,vec(u),opts)
+  end
+  if retcode < 0
+    if retcode == -1
+      warn("Input is not consistent.")
+    elseif retcode == -2
+      warn("Interrupted. Larger maxiters is needed.")
+    elseif retcode == -3
+      warn("Step size went too small.")
+    elseif retcode == -4
+      warn("Interrupted. Problem is probably stiff.")
+    end
+  end
+
+  if typeof(u0)<:AbstractArray
+    timeseries = Vector{uType}(0)
+    for i=1:size(vectimeseries,1)
+      push!(timeseries,reshape(view(vectimeseries,i,:,)',sizeu))
+    end
+  else
+    timeseries = vec(vectimeseries)
+  end
+
+  if typeof(prob) <: ODETestProblem
+    timeseries_analytic = Vector{uType}(0)
+    for i in 1:size(timeseries,1)
+      push!(timeseries_analytic,prob.analytic(ts[i],u0))
+    end
+    return(ODESolution(ts,timeseries,prob,alg,u_analytic=timeseries_analytic,
+                        timeseries_errors = timeseries_errors))
+  else
+    return(ODESolution(ts,timeseries,prob,alg))
+  end
 end
 
-const ODEJL_OPTION_LIST = Set([:tout,:tstop,:reltol,:abstol,:minstep,:maxstep,:initstep,:norm,:maxiters,:isoutofdomain])
-const ODEJL_ALIASES = Dict{Symbol,Symbol}(:minstep=>:dtmin,:maxstep=>:dtmax,:initstep=>:dt,:tstop=>:T,:maxiters=>:maxiters)
-const ODEJL_ALIASES_REVERSED = Dict{Symbol,Symbol}([(v,k) for (k,v) in ODEJL_ALIASES])
+function buildOptions(o,optionlist,aliases,aliases_reversed)
+  dict1 = Dict{Symbol,Any}([Pair(k,o[k]) for k in (keys(o) ∩ optionlist)])
+  dict2 = Dict([Pair(aliases_reversed[k],o[k]) for k in (keys(o) ∩ values(aliases))])
+  merge(dict1,dict2)
+end
 
 const ODEINTERFACE_OPTION_LIST = Set([:RTOL,:ATOL,:OUTPUTFCN,:OUTPUTMODE,
                                 :MAXSTEPS,:STEST,:EPS,:RHO,:SSMINSEL,

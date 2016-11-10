@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, NLsolve#, ParameterizedFunctions
+using OrdinaryDiffEq, NLsolve, DiffEqBase#, ParameterizedFunctions
 
 #=
 f = @ode_def BallBounce begin
@@ -28,7 +28,7 @@ callback = @ode_callback begin
 end
 
 u0 = [50.0,0.0]
-tspan = [0;15.0]
+tspan = (0.0,15.0)
 prob = ODEProblem(f,u0,tspan)
 
 
@@ -39,7 +39,7 @@ sol = solve(prob,callback=callback)
 sol = solve(prob,Vern6,callback=callback)
 #plot(sol,denseplot=true)
 
-bounced = ODEProblem(f,sol[8],[0;1.0])
+bounced = ODEProblem(f,sol[8],(0.0,1.0))
 sol_bounced = solve(bounced,Vern6,callback=callback,dt=sol.t[9]-sol.t[8])
 #plot(sol_bounced,denseplot=true)
 sol_bounced(0.04) # Complete density
@@ -65,7 +65,7 @@ terminate_callback = @ode_callback begin
   @ode_event event_f apply_event! true interp_points true dt_safety
 end
 
-tspan2 = [0.0;Inf]
+tspan2 = (0.0,Inf)
 prob2 = ODEProblem(f,u0,tspan2)
 
 sol5 = solve(prob2,callback=terminate_callback)

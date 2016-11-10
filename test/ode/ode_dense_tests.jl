@@ -168,7 +168,7 @@ push!(bools,maximum(map((x)->maximum(abs(x)),sol2[:] - interpd)) < 1e-3)
 ### Vern6
 const linear_bigα = parse(BigFloat,"1.01")
 f = (t,u) -> (linear_bigα*u)
-prob_ode_bigfloatlinear = ODEProblem(f,parse(BigFloat,"0.5"),[0;1.0])
+prob_ode_bigfloatlinear = ODEProblem(f,parse(BigFloat,"0.5"),(0.0,1.0))
 prob = prob_ode_bigfloatlinear
 
 sol =solve(prob,Vern6,dt=1//2^(2),dense=true)
@@ -183,7 +183,7 @@ push!(bools,maximum(map((x)->maximum(abs(x)),sol2[:] - interpd)) < 1e-7)
 #plot!(sol.t,sol[:])
 #scatter!(sol.t,sol[:])
 
-prob_ode_bigfloatveclinear = ODEProblem(f,[parse(BigFloat,"0.5")],[0;1.0])
+prob_ode_bigfloatveclinear = ODEProblem(f,[parse(BigFloat,"0.5")],(0.0,1.0))
 prob = prob_ode_bigfloatveclinear
 
 sol =solve(prob,Vern6,dt=1//2^(2),dense=true)

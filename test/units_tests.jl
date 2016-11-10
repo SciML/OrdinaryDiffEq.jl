@@ -5,7 +5,7 @@ NON_IMPLICIT_ALGS = filter((x)->isleaftype(x) && !OrdinaryDiffEq.isimplicit(x())
 
 f = (t,y) -> 0.5*y / 3.0u"s"
 u0 = 1.0u"N"
-prob = ODEProblem(f,u0,[0;1.0]u"s")
+prob = ODEProblem(f,u0,(0.0u"s",1.0u"s"))
 
 sol =solve(prob,Midpoint)
 
@@ -24,7 +24,7 @@ TEST_PLOT && plot(sol)
 u0 = [1.0u"N" 2.0u"N"
       3.0u"N" 1.0u"N"]
 
-prob = ODEProblem(f,u0,[0;1.0]u"s")
+prob = ODEProblem(f,u0,(0.0u"s",1.0u"s"))
 
 sol =solve(prob,RK4)
 
