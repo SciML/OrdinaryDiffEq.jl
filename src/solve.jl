@@ -8,7 +8,7 @@ function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm,F}(
   saveat = tType[],tstops = tType[],
   adaptive = true,gamma=.9,abstol=1//10^6,reltol=1//10^3,
   qmax=nothing,qmin=nothing,qoldinit=1//10^4, fullnormalize=true,
-  beta2=nothing,beta1=nothing,maxiters = 10000,
+  beta2=nothing,beta1=nothing,maxiters = 1000000,
   dtmax=tType((prob.tspan[end]-prob.tspan[1])),
   dtmin=tType <: AbstractFloat ? tType(10)*eps(tType) : tType(1//10^(10)),
   autodiff=true,internalnorm = ODE_DEFAULT_NORM,

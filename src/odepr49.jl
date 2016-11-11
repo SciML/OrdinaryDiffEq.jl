@@ -32,21 +32,21 @@ function solve{uType,tType,isinplace,algType<:ODEIterAlgorithm,F}(prob::Abstract
   ode  = ODE.ExplicitODE(t,u,f!)
   # adaptive==true ? FoA=:adaptive : FoA=:fixed #Currently limied to only adaptive
   FoA = :adaptive
-  if alg <: ode23
+  if alg <: rk23
     solver = ODE.RKIntegrator{FoA,:rk23}
   elseif alg <: rk45
     solver = ODE.RKIntegrator{FoA,:dopri5}
-  elseif alg <: ode78
+  elseif alg <: feh78
     solver = ODE.RKIntegrator{FoA,:feh78}
-  elseif alg <: ode23s
+  elseif alg <: ModifiedRosenbrockIntegrator
     solver = ODE.ModifiedRosenbrockIntegrator
-  elseif alg <: ode1
+  elseif alg <: feuler
     solver = ODE.RKIntegratorFixed{:feuler}
-  elseif alg <: ode2_midpoint
+  elseif alg <: midpoint
     solver = ODE.RKIntegratorFixed{:midpoint}
-  elseif alg <: ode2_heun
+  elseif alg <: heun
     solver = ODE.RKIntegratorFixed{:heun}
-  elseif alg <: ode4
+  elseif alg <: rk4
     solver = ODE.RKIntegratorFixed{:rk4}
   elseif alg <: feh45
     solver = ODE.RKIntegrator{FoA,:rk45}
