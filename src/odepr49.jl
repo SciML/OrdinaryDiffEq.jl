@@ -66,19 +66,10 @@ function solve{uType,tType,isinplace,algType<:ODEIterAlgorithm,F}(prob::Abstract
     ks = tmp_dy
   end
 
-  if typeof(prob) <: ODETestProblem
-    timeseries_analytic = Vector{uType}(0)
-    for i in 1:size(timeseries,1)
-      push!(timeseries_analytic,prob.analytic(ts[i],u0))
-    end
-    return(ODESolution(ts,timeseries,prob,alg,
-    u_analytic=timeseries_analytic,
-    saveat=saveat,
-    timeseries_errors = timeseries_errors,
-    dense_errors = dense_errors))
-  else
-    return(ODESolution(ts,timeseries,prob,alg,saveat=saveat))
-  end
+  build_ode_solution(prob,alg,ts,timeseries,
+                    dense=dense,k=ks,interp=interp,
+                    timeseries_errors = timeseries_errors,
+                    dense_errors = dense_errors)
 end
 
 const ODEJL_OPTION_LIST = Set([:tout,:tstop,:reltol,:abstol,:minstep,:maxstep,:initstep,:norm,:maxiters,:isoutofdomain])

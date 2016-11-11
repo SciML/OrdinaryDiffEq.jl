@@ -68,16 +68,9 @@ function solve{uType,tType,isinplace,T<:ODEInterfaceAlgorithm,F}(
     timeseries = vec(vectimeseries)
   end
 
-  if typeof(prob) <: ODETestProblem
-    timeseries_analytic = Vector{uType}(0)
-    for i in 1:size(timeseries,1)
-      push!(timeseries_analytic,prob.analytic(ts[i],u0))
-    end
-    return(ODESolution(ts,timeseries,prob,alg,u_analytic=timeseries_analytic,
-                        timeseries_errors = timeseries_errors))
-  else
-    return(ODESolution(ts,timeseries,prob,alg))
-  end
+
+  build_ode_solution(prob,alg,ts,timeseries,
+                    timeseries_errors = timeseries_errors)
 end
 
 function buildOptions(o,optionlist,aliases,aliases_reversed)

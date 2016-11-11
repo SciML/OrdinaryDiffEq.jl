@@ -1,5 +1,6 @@
-function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm,F}(prob::AbstractODEProblem{uType,tType,
-  Val{isinplace},F},algType::Type{T},timeseries=[],ts=[],ks=[];
+function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm,F}(
+  prob::AbstractODEProblem{uType,tType,Val{isinplace},F},
+  algType::Type{T},timeseries=[],ts=[],ks=[];
   dt = 0.0,save_timeseries = true,
   timeseries_steps = 1,tableau = ODE_DEFAULT_TABLEAU,
   dense = true,calck = nothing,alg_hint = :nonstiff,
@@ -190,19 +191,10 @@ function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm,F}(prob::Abstrac
     interp = (tvals) -> nothing
   end
 
-  if typeof(prob) <: ODETestProblem
-    timeseries_analytic = Vector{uType}(0)
-    for i in 1:size(timeseries,1)
-      push!(timeseries_analytic,prob.analytic(ts[i],u0))
-    end
-    return(ODESolution(ts,timeseries,prob,alg,
-    u_analytic=timeseries_analytic,
-    k=ks,saveat=saveat,interp=interp,
-    timeseries_errors = timeseries_errors,
-    dense_errors = dense_errors))
-  else
-    return(ODESolution(ts,timeseries,prob,alg,k=ks,saveat=saveat,interp=interp))
-  end
+  build_ode_solution(prob,alg,ts,timeseries,
+                    dense=dense,k=ks,interp=interp,
+                    timeseries_errors = timeseries_errors,
+                    dense_errors = dense_errors)
 end
 
 function ode_determine_initdt{uType,tType,uEltypeNoUnits}(u0::uType,t::tType,abstol,reltol::uEltypeNoUnits,internalnorm,f,order)
