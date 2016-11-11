@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, NLsolve#, ParameterizedFunctions
+using OrdinaryDiffEq, NLsolve, DiffEqBase#, ParameterizedFunctions
 
 #=
 f = @ode_def BallBounce begin
@@ -20,52 +20,56 @@ function apply_event!(u,cache)
   u[2] = -u[2]
 end
 
-const Δt_safety = 1
+const dt_safety = 1
 const interp_points = 10
 const terminate_on_event = false
 callback = @ode_callback begin
-  @ode_event event_f apply_event! true interp_points terminate_on_event Δt_safety
+  @ode_event event_f apply_event! true interp_points terminate_on_event dt_safety
 end
 
 u0 = [50.0,0.0]
-prob = ODEProblem(f,u0)
-tspan = [0;15]
+tspan = (0.0,15.0)
+prob = ODEProblem(f,u0,tspan)
 
-sol = solve(prob,tspan,callback=callback)
+
+sol = solve(prob,callback=callback)
 #Plots.plotly()
 #plot(sol,denseplot=true)
 
-sol = solve(prob,tspan,callback=callback,alg=:Vern6)
+sol = solve(prob,Vern6,callback=callback)
 #plot(sol,denseplot=true)
 
-bounced = ODEProblem(f,sol[8])
-sol_bounced = solve(bounced,tspan,callback=callback,alg=:Vern6,Δt=sol.t[9]-sol.t[8])
+bounced = ODEProblem(f,sol[8],(0.0,1.0))
+sol_bounced = solve(bounced,Vern6,callback=callback,dt=sol.t[9]-sol.t[8])
 #plot(sol_bounced,denseplot=true)
 sol_bounced(0.04) # Complete density
 bool1 = maximum(maximum.(map((i)->sol.k[9][i]-sol_bounced.k[2][i],1:length(sol.k[9])))) == 0
 
 
-sol2= solve(prob,tspan,callback=callback,alg=:Vern6,adaptive=false,Δt=1/2^4)
+sol2= solve(prob,Vern6,callback=callback,adaptive=false,dt=1/2^4)
 #plot(sol2)
 
-sol2= solve(prob,tspan,alg=:Vern6)
+sol2= solve(prob,Vern6)
 
-sol3= solve(prob,tspan,alg=:Vern6,saveat=[.5])
+sol3= solve(prob,Vern6,saveat=[.5])
 
 default_callback = @ode_callback begin
   @ode_savevalues
 end
 
-sol4 = solve(prob,tspan,callback=default_callback)
+sol4 = solve(prob,callback=default_callback)
 
 bool2 = sol2(3) ≈ sol(3)
 
 terminate_callback = @ode_callback begin
-  @ode_event event_f apply_event! true interp_points true Δt_safety
+  @ode_event event_f apply_event! true interp_points true dt_safety
 end
 
-sol5 = solve(prob,[0.0;Inf],callback=terminate_callback)
+tspan2 = (0.0,Inf)
+prob2 = ODEProblem(f,u0,tspan2)
 
-bool3 = sol5[end][1] < 1e-13
+sol5 = solve(prob2,callback=terminate_callback)
+
+bool3 = sol5[end][1] < 2e-13
 
 bool1 && bool2 && bool3

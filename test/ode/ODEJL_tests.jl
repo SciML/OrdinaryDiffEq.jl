@@ -1,72 +1,70 @@
 using OrdinaryDiffEq
 
 prob = prob_ode_linear
-Δt = 1/2^(4) #The initial timestepping size. It will automatically assigned if not given.
-tspan = [0,1] # The timespan. This is the default if not given.
 
-sol =solve(prob::ODEProblem,tspan;Δt=Δt,save_timeseries=true,alg=:ode1)
+sol =solve(prob,feuler;dt=1/2^(4))
 TEST_PLOT && plot(sol,plot_analytic=true)
 
-sol =solve(prob::ODEProblem,tspan,Δt=Δt,save_timeseries=true,alg=:ode23)
+sol =solve(prob,rk23,dt=dt)
 
-sol =solve(prob::ODEProblem,[0,1];Δt=Δt,save_timeseries=true,alg=:ode45)
+sol =solve(prob,rk45,dt=dt)
 
-sol =solve(prob::ODEProblem,[0,1];Δt=Δt,save_timeseries=true,alg=:ode78)
+sol =solve(prob,feh78,dt=dt)
 
-sol =solve(prob::ODEProblem,[0,1];Δt=Δt,save_timeseries=true,alg=:ode23s)
+sol =solve(prob,ModifiedRosenbrockIntegrator,dt=dt)
 
-sol =solve(prob::ODEProblem,[0,1];Δt=Δt,save_timeseries=true,alg=:ode2_midpoint)
+sol =solve(prob,midpoint,dt=dt)
 
-sol =solve(prob::ODEProblem,[0,1];Δt=Δt,save_timeseries=true,alg=:ode2_heun)
+sol =solve(prob,heun,dt=dt)
 
-sol =solve(prob::ODEProblem,[0,1];Δt=Δt,save_timeseries=true,alg=:ode4)
+sol =solve(prob,rk4,dt=dt)
 
-sol =solve(prob::ODEProblem,[0,1];Δt=Δt,save_timeseries=true,alg=:ode45_fe)
+sol =solve(prob,feh45,dt=dt)
 
 prob = prob_ode_2Dlinear
 
-sol =solve(prob::ODEProblem,[0,1];Δt=Δt,save_timeseries=true,alg=:ode1)
+sol =solve(prob,feuler,dt=dt)
 TEST_PLOT && plot(sol,plot_analytic=true)
 
-sol =solve(prob::ODEProblem,tspan,Δt=Δt,save_timeseries=true,alg=:ode23)
+sol =solve(prob,rk23,dt=dt)
 
-sol =solve(prob::ODEProblem,[0,1];Δt=Δt,save_timeseries=true,alg=:ode45)
+sol =solve(prob,rk45,dt=dt)
 
-sol =solve(prob::ODEProblem,[0,1];Δt=Δt,save_timeseries=true,alg=:ode78)
+sol =solve(prob,feh78,dt=dt)
 
-#sol =solve(prob::ODEProblem,[0,1];Δt=0,save_timeseries=true,alg=:ode23s) #ODE.jl issues
+#sol =solve(prob,dt=0,alg=:ode23s) #ODE.jl issues
 TEST_PLOT && plot(sol,plot_analytic=true)
 
-sol =solve(prob::ODEProblem,[0,1];Δt=Δt,save_timeseries=true,alg=:ode2_midpoint)
+sol =solve(prob,midpoint,dt=dt)
 
-sol =solve(prob::ODEProblem,[0,1];Δt=Δt,save_timeseries=true,alg=:ode2_heun)
+sol =solve(prob,heun,dt=dt)
 
-sol =solve(prob::ODEProblem,[0,1];Δt=Δt,save_timeseries=true,alg=:ode4)
+sol =solve(prob,rk4,dt=dt)
 
-sol =solve(prob::ODEProblem,[0,1];Δt=Δt,save_timeseries=true,alg=:ode45_fe)
+sol =solve(prob,feh45,dt=dt)
 
 #=
 prob = prob_ode_bigfloat2Dlinear
 
-sol =solve(prob::ODEProblem,[0,1];Δt=Δt,save_timeseries=true,alg=:ode1)
+sol =solve(prob,feuler,dt=dt)
 TEST_PLOT && plot(sol,plot_analytic=true)
 
-sol =solve(prob::ODEProblem,tspan,Δt=Δt,save_timeseries=true,alg=:ode23)
+sol =solve(prob,rk23,dt=dt)
 
-sol =solve(prob::ODEProblem,[0,1];Δt=Δt,save_timeseries=true,alg=:ode45)
+sol =solve(prob,rk45,dt=dt)
 
-sol =solve(prob::ODEProblem,[0,1];Δt=Δt,save_timeseries=true,alg=:ode78)
+sol =solve(prob,feh78,dt=dt)
 
-sol =solve(prob::ODEProblem,[0,1];Δt=Δt,save_timeseries=true,alg=:ode23s) #ODE.jl issues
+#sol =solve(prob,dt=0,alg=:ode23s) #ODE.jl issues
 TEST_PLOT && plot(sol,plot_analytic=true)
 
-sol =solve(prob::ODEProblem,[0,1];Δt=Δt,save_timeseries=true,alg=:ode2_midpoint)
+sol =solve(prob,midpoint,dt=dt)
 
-sol =solve(prob::ODEProblem,[0,1];Δt=Δt,save_timeseries=true,alg=:ode2_heun)
+sol =solve(prob,heun,dt=dt)
 
-sol =solve(prob::ODEProblem,[0,1];Δt=Δt,save_timeseries=true,alg=:ode4)
+sol =solve(prob,rk4,dt=dt)
 
-sol =solve(prob::ODEProblem,[0,1];Δt=Δt,save_timeseries=true,alg=:ode45_fe)
+sol =solve(prob,feh45,dt=dt)
 =#
 
 true

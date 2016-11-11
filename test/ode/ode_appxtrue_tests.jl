@@ -1,24 +1,24 @@
-using OrdinaryDiffEq
+using OrdinaryDiffEq, DiffEqBase, DiffEqProblemLibrary, DiffEqDevTools
 
 f = (t,u) -> u
-prob = ODEProblem(f,1/2)
-analytic = (t,u₀) -> u₀*exp(t)
+prob = ODEProblem(f,1/2,(0.0,1.0))
+analytic = (t,u0) -> u0*exp(t)
 
-sol =solve(prob::ODEProblem,[0,1];Δt=1//2^(4),alg=:Euler)
+sol =solve(prob,Euler;dt=1//2^(4))
 
-sol2 =solve(prob::ODEProblem,[0,1];Δt=1//2^(10),alg=:Vern9)
+sol2 =solve(prob,Vern9;dt=1//2^(10))
 
-prob2 = ODEProblem(f,1/2,analytic=analytic)
-sol3 =solve(prob_ode_linear,[0,1];Δt=1//2^(4),alg=:Euler)
+prob2 = ODETestProblem(f,1/2,analytic,(0.0,1.0))
+sol3 =solve(prob_ode_linear,Euler;dt=1//2^(4))
 
 appxtrue!(sol,sol2)
 
-sol4 =solve(prob::ODEProblem,[0,1];Δt=1//2^(4),alg=:Euler)
+sol4 =solve(prob,Euler;dt=1//2^(4))
 test_sol = TestSolution(sol2)
 appxtrue!(sol4,test_sol)
 
-sol5 =solve(prob::ODEProblem,[0,1];Δt=1//2^(4),alg=:Euler)
-test_sol = TestSolution(sol2.u)
+sol5 =solve(prob,Euler;dt=1//2^(4))
+test_sol = TestSolution(sol2[end])
 appxtrue!(sol5,test_sol)
 
-sol.appxtrue == true && sol.errors[:L2] ≈ 0.018865798306718855 && sol.errors[:L2] ≈ sol4.errors[:L2]
+sol.errors[:L2] ≈ 0.018865798306718855 && sol.errors[:L2] ≈ sol4.errors[:L2]
