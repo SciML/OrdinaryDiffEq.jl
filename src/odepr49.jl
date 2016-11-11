@@ -1,5 +1,5 @@
 function solve{uType,tType,isinplace,algType<:ODEIterAlgorithm,F}(prob::AbstractODEProblem{uType,tType,Val{isinplace},F},
-    alg::Type{algType},timeseries=[],ts=[],ks=[];
+    alg::Type{algType},timeseries=[],ts=[],ks=[];dense=true,save_timeseries=true,
     saveat=[],callback=()->nothing,timeseries_errors=true,dense_errors=false,
     kwargs...)
   tspan = prob.tspan
@@ -64,6 +64,16 @@ function solve{uType,tType,isinplace,algType<:ODEIterAlgorithm,F}(prob::Abstract
     end
     timeseries = tmp
     ks = tmp_dy
+  end
+
+  saveat_idxs = find((x)->x∈saveat,ts)
+  t_nosaveat = view(ts,symdiff(1:length(ts),saveat_idxs))
+  u_nosaveat = view(timeseries,symdiff(1:length(ts),saveat_idxs))
+
+  if dense
+    interp = (tvals) -> ode_interpolation(tvals,t_nosaveat,u_nosaveat,ks,alg,f!)
+  else
+    interp = (tvals) -> nothing
   end
 
   build_ode_solution(prob,alg,ts,timeseries,
