@@ -1,4 +1,4 @@
-immutable ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3} <: DEIntegrator
+immutable ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4} <: DEIntegrator
   timeseries::Vector{uType}
   ts::Vector{tType}
   ks::Vector{ksEltype}
@@ -35,6 +35,7 @@ immutable ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractAr
   saveat::Vector{tType}
   alg::algType
   callback::F3
+  isoutofdomain::F4
   custom_callback::Bool
   calck::Bool
 end
@@ -45,7 +46,7 @@ end
   local dt::tType
   local Ts::Vector{tType}
   local adaptiveorder::Int
-  @unpack f,u,t,dt,Ts,maxiters,timeseries_steps,γ,qmax,qmin,save_timeseries,adaptive,progressbar,autodiff,adaptiveorder,order,atomloaded,progress_steps,progressbar_name,β₂,β₁,qoldinit,fsal, dense, saveat, alg, callback, custom_callback,calck = integrator
+  @unpack f,u,t,dt,Ts,maxiters,timeseries_steps,γ,qmax,qmin,save_timeseries,adaptive,progressbar,autodiff,adaptiveorder,order,atomloaded,progress_steps,progressbar_name,β₂,β₁,qoldinit,fsal, dense, saveat, alg, callback, isoutofdomain, custom_callback,calck = integrator
   timeseries = integrator.timeseries
   ts = integrator.ts
   ks = integrator.ks
@@ -186,8 +187,9 @@ end
     q = q11/(qold^β₂)
     q = max(qmaxc,min(qminc,q/γ))
     dtnew = dt/q
-    if EEst <= 1.0 # Accept
-      t = t + dt
+    ttmp = t + dt
+    if !isoutofdomain(ttmp,utmp) && EEst <= 1.0 # Accept
+      t = ttmp
       if uType <: AbstractArray # Treat mutables differently
         recursivecopy!(u, utmp)
       else

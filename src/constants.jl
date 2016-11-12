@@ -42,3 +42,4 @@ All it does is call the saving functionality.
 end
 
 @inline ODE_DEFAULT_NORM(u) = sqrt(sumabs2(u) / length(u))
+@inline ODE_DEFAULT_ISOUTOFDOMAIN(t,u) = false
