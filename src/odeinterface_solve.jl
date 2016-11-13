@@ -1,5 +1,5 @@
 function solve{uType,tType,isinplace,T<:ODEInterfaceAlgorithm,F}(
-    prob::AbstractODEProblem{uType,tType,Val{isinplace},F},
+    prob::AbstractODEProblem{uType,tType,isinplace,F},
     alg::Type{T},timeseries=[],ts=[],ks=[];
     timeseries_errors = true,kwargs...)
 
