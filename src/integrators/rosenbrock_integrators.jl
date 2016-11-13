@@ -39,7 +39,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,tTypeNoUn
       ForwardDiff.derivative!(dT,(t)->vecfreturn(t,u,du2),t) # Time derivative
       ForwardDiff.jacobian!(J,(du1,u)->vecf(t,u,du1),vec(du1),vec(u))
 
-      W[:] = one(J)-dt*d*J # Can an allocation be cut here?
+      W[:] = I-dt*d*J # Can an allocation be cut here?
       @into! vectmp = W\vec(fsalfirst + dt*d*dT)
       k₁ = reshape(vectmp,sizeu...)
       for i in uidx
@@ -81,10 +81,8 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rat
   d = 1/(2+sqrt(2))
   local dT::uType
   local J::uType
-  #f₀ = fsalfirst
   local k₁::uType
   local f₁::uType
-  #f₂ = fsallast
   local k₂::uType
   local k₃::uType
   const kshortsize = 1
@@ -95,8 +93,8 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rat
       # Time derivative
       dT = ForwardDiff.derivative((t)->f(t,u),t)
       J = ForwardDiff.derivative((u)->f(t,u),u)
-      W = one(J)-dt*d*J
-      #f₀ = f(t,u)
+      W = I-dt*d*J
+
       if calck
         k = fsalfirst
       end
@@ -160,7 +158,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,tTypeNoUn
       ForwardDiff.derivative!(dT,(t)->vecfreturn(t,u,du2),t) # Time derivative
       ForwardDiff.jacobian!(J,(du1,u)->vecf(t,u,du1),vec(du1),vec(u))
 
-      W[:] = one(J)-dt*d*J # Can an allocation be cut here?
+      W[:] = I-dt*d*J # Can an allocation be cut here?
       @into! vectmp = W\vec(fsalfirst + dt*d*dT)
       k₁ = reshape(vectmp,sizeu...)
       for i in uidx
@@ -218,7 +216,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rat
       # Time derivative
       dT = ForwardDiff.derivative((t)->f(t,u),t)
       J = ForwardDiff.derivative((u)->f(t,u),u)
-      W = one(J)-dt*d*J
+      W = I-dt*d*J
       #f₀ = f(t,u)
       if calck
         k = fsalfirst
