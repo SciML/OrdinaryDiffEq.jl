@@ -1,5 +1,5 @@
 function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm,F}(
-  prob::AbstractODEProblem{uType,tType,Val{isinplace},F},
+  prob::AbstractODEProblem{uType,tType,isinplace,F},
   algType::Type{T},timeseries=[],ts=[],ks=[];
   dt = 0.0,save_timeseries = true,
   timeseries_steps = 1,tableau = ODE_DEFAULT_TABLEAU,

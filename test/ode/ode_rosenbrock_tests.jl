@@ -1,10 +1,11 @@
 ## Breakout these since no other test of their adaptivity
 
-using OrdinaryDiffEq
+using OrdinaryDiffEq, DiffEqProblemLibrary, DiffEqDevTools
 
 dts = 1.//2.^(8:-1:4)
 testTol = 0.2
 bools = Vector{Bool}(0)
+
 ### Rosenbrock23
 
 prob = prob_ode_linear
@@ -40,5 +41,13 @@ push!(bools,abs(sim.𝒪est[:final]-3) < testTol)
 
 sol = solve(prob,Rosenbrock32)
 push!(bools,length(sol) < 20)
+
+### Test on Stiff
+
+prob = deepcopy(prob_ode_rober)
+prob.tspan = (0.0,1e5)
+
+sol = solve(prob,Rosenbrock23)
+
 
 minimum(bools)
