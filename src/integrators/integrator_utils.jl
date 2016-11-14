@@ -75,9 +75,9 @@ end
     k = ksEltype(0)
     kprev = ksEltype(0)
     rate_prototype = ks[1][1]
-  else
-    k = ksEltype()
-    kprev = ksEltype()
+  else # it is simple_dense
+    k = ksEltype(zeros(Int64,N-1)...) # Needs the zero for dimension 3+
+    kprev = ksEltype(zeros(Int64,N-1)...)
     rate_prototype = ks[1]
   end
 
