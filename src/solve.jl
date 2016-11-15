@@ -178,15 +178,15 @@ function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm,F}(
     push!(ks,[rate_prototype])
   end
   γ = gamma
-  # @code_warntype ode_solve(ODEIntegrator{alg,uType,uEltype,ndims(u)+1,tType,tTypeNoUnits,uEltypeNoUnits,rateType,ksEltype}(timeseries,ts,ks,f!,u,t,k,dt,Ts,maxiters,timeseries_steps,save_timeseries,adaptive,abstol,reltol,γ,qmax,qmin,dtmax,dtmin,internalnorm,progressbar,tableau,autodiff,adaptiveorder,order,atomloaded,progress_steps,β₁,β₂,qoldinit,fsal,dense,saveat,alg,callback,custom_callback,calck))
+
+  #@code_warntype ode_solve(ODEIntegrator{typeof(alg),uType,uEltype,ndims(u)+1,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,typeof(f!),typeof(internalnorm),typeof(callback),typeof(isoutofdomain)}(timeseries,ts,ks,f!,u,t,dt,Ts,maxiters,timeseries_steps,save_timeseries,adaptive,abstol,reltol,γ,qmax,qmin,dtmax,dtmin,internalnorm,progressbar,tableau,autodiff,adaptiveorder,order,atomloaded,progress_steps,progressbar_name,β₁,β₂,qoldinit,fsal,dense,saveat,alg,callback,isoutofdomain,custom_callback,calck))
   u,t = ode_solve(ODEIntegrator{typeof(alg),uType,uEltype,ndims(u)+1,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,typeof(f!),typeof(internalnorm),typeof(callback),typeof(isoutofdomain)}(timeseries,ts,ks,f!,u,t,dt,Ts,maxiters,timeseries_steps,save_timeseries,adaptive,abstol,reltol,γ,qmax,qmin,dtmax,dtmin,internalnorm,progressbar,tableau,autodiff,adaptiveorder,order,atomloaded,progress_steps,progressbar_name,β₁,β₂,qoldinit,fsal,dense,saveat,alg,callback,isoutofdomain,custom_callback,calck))
 
 
-  saveat_idxs = find((x)->x∈saveat,ts)
-  t_nosaveat = view(ts,symdiff(1:length(ts),saveat_idxs))
-  u_nosaveat = view(timeseries,symdiff(1:length(ts),saveat_idxs))
-
   if dense
+    saveat_idxs = find((x)->x∈saveat,ts)
+    t_nosaveat = view(ts,symdiff(1:length(ts),saveat_idxs))
+    u_nosaveat = view(timeseries,symdiff(1:length(ts),saveat_idxs))
     interp = (tvals) -> ode_interpolation(tvals,t_nosaveat,u_nosaveat,ks,alg,f!)
   else
     interp = (tvals) -> nothing

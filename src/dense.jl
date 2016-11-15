@@ -127,7 +127,15 @@ function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,alg::Tsit5)
   b5Θ = 47.37952196281928122*(Θ - 1.203071208372362603)*(Θ - 0.658047292653547382)*Θ^2
   b6Θ = -34.87065786149660974*(Θ - 1.2)*(Θ - 0.666666666666666667)*Θ^2
   b7Θ = 2.5*(Θ - 1)*(Θ - 0.6)*Θ^2
-  y₀ + dt*(k[1]*b1Θ + k[2]*b2Θ + k[3]*b3Θ + k[4]*b4Θ + k[5]*b5Θ + k[6]*b6Θ + k[7]*b7Θ)
+  if typeof(y₀) <: Number
+    return y₀ + dt*(k[1]*b1Θ + k[2]*b2Θ + k[3]*b3Θ + k[4]*b4Θ + k[5]*b5Θ + k[6]*b6Θ + k[7]*b7Θ)
+  else
+    out = similar(y₀)
+    for i in eachindex(out)
+      out[i] = y₀[i] + dt*(k[1][i]*b1Θ + k[2][i]*b2Θ + k[3][i]*b3Θ + k[4][i]*b4Θ + k[5][i]*b5Θ + k[6][i]*b6Θ + k[7][i]*b7Θ)
+    end
+    return out
+  end
 end
 
 
