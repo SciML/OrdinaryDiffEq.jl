@@ -28,6 +28,7 @@ module OrdinaryDiffEq
 
   include("backends.jl")
   include("misc_utils.jl")
+  include("algorithms.jl")
   include("alg_utils.jl")
   include("integrators/integrator_utils.jl")
   include("integrators/fixed_timestep_integrators.jl")
@@ -65,4 +66,9 @@ module OrdinaryDiffEq
         Euler, Midpoint, RK4, ExplicitRK, BS3, BS5, DP5, DP5Threaded, Tsit5,
         DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8, Vern9, ImplicitEuler,
         Trapezoid, Rosenbrock23, Rosenbrock32, Feagin10, Feagin12, Feagin14
+
+  export ODEInterfaceAlgorithm, dopri5, dop853, odex, seulex, radau, radau5
+
+  export ODEIterAlgorithm, feuler, rk23, feh45, feh78, ModifiedRosenbrockIntegrator,
+        midpoint, heun, rk4, rk45
 end # module

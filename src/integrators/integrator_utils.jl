@@ -1,4 +1,4 @@
-immutable ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4} <: DEIntegrator
+immutable ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4}
   timeseries::Vector{uType}
   ts::Vector{tType}
   ks::Vector{ksEltype}
@@ -59,7 +59,6 @@ end
   local iter::Int = 0
   local saveiter::Int = 1 # Starts at 1 so first save is at 2
   local T::tType
-  const parameterized = typeof(f)<:ParameterizedFunction
   sizeu = size(u)
   local utmp::uType
   local k::ksEltype

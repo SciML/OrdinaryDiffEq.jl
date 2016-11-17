@@ -32,7 +32,7 @@ tspan = (0.0,15.0)
 prob = ODEProblem(f,u0,tspan)
 
 
-sol = solve(prob,callback=callback)
+sol = solve(prob,Tsit5,callback=callback)
 #Plots.plotly()
 #plot(sol,denseplot=true)
 
@@ -57,7 +57,7 @@ default_callback = @ode_callback begin
   @ode_savevalues
 end
 
-sol4 = solve(prob,callback=default_callback)
+sol4 = solve(prob,Tsit5,callback=default_callback)
 
 bool2 = sol2(3) ≈ sol(3)
 
@@ -68,7 +68,7 @@ end
 tspan2 = (0.0,Inf)
 prob2 = ODEProblem(f,u0,tspan2)
 
-sol5 = solve(prob2,callback=terminate_callback)
+sol5 = solve(prob2,Tsit5,callback=terminate_callback)
 
 bool3 = sol5[end][1] < 2e-13
 
