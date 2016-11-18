@@ -9,24 +9,21 @@ Get the value at tvals where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation(tvals,ts,timeseries,ks,alg,f)
-  if typeof(tvals) <: StepRange
-  else
-    sort!(tvals) # Make sure it's sorted
-  end
+  idx = sortperm(tvals)
   i = 2 # Start the search thinking it's between ts[1] and ts[2]
-  vals = Vector{eltype(timeseries)}(0)
-  for t in tvals
+  vals = Vector{eltype(timeseries)}(length(tvals))
+  for j in idx
+    t = tvals[j]
     i = findfirst((x)->x>=t,ts[i:end])+i-1 # It's in the interval ts[i-1] to ts[i]
     if ts[i] == t
-      push!(vals,timeseries[i])
+      vals[j] = timeseries[i]
     elseif ts[i-1] == t # Can happen if it's the first value!
-      push!(vals,timeseries[i-1])
+      vals[j] = timeseries[i-1]
     else
       dt = ts[i] - ts[i-1]
       Θ = (t-ts[i-1])/dt
       ode_addsteps!(ks[i],ts[i-1],timeseries[i-1],dt,alg,f) # update the kcurrent, since kprevious not used in special algs
-      interp = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],ks[i-1],ks[i],alg)
-      push!(vals,interp)
+      vals[j] = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],ks[i-1],ks[i],alg)
     end
   end
   vals
