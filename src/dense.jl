@@ -32,7 +32,7 @@ end
 """
 ode_interpolation(tval::Number,ts,timeseries,ks)
 
-Get the value at tvals where the solution is known at the
+Get the value at tval where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation(tval::Number,ts,timeseries,ks,alg,f)
