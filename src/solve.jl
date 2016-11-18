@@ -192,7 +192,7 @@ function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm,F}(
     interp = (tvals) -> nothing
   end
 
-  build_ode_solution(prob,alg,ts,timeseries,
+  build_solution(prob,alg,ts,timeseries,
                     dense=dense,k=ks,interp=interp,
                     timeseries_errors = timeseries_errors,
                     dense_errors = dense_errors)

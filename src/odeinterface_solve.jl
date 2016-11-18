@@ -69,7 +69,7 @@ function solve{uType,tType,isinplace,T<:ODEInterfaceAlgorithm,F}(
   end
 
 
-  build_ode_solution(prob,alg,ts,timeseries,
+  build_solution(prob,alg,ts,timeseries,
                     timeseries_errors = timeseries_errors)
 end
 
