@@ -32,32 +32,32 @@ tspan = (0.0,15.0)
 prob = ODEProblem(f,u0,tspan)
 
 
-sol = solve(prob,Tsit5,callback=callback)
+sol = solve(prob,Tsit5(),callback=callback)
 #Plots.plotly()
 #plot(sol,denseplot=true)
 
-sol = solve(prob,Vern6,callback=callback)
+sol = solve(prob,Vern6(),callback=callback)
 #plot(sol,denseplot=true)
 
 bounced = ODEProblem(f,sol[8],(0.0,1.0))
-sol_bounced = solve(bounced,Vern6,callback=callback,dt=sol.t[9]-sol.t[8])
+sol_bounced = solve(bounced,Vern6(),callback=callback,dt=sol.t[9]-sol.t[8])
 #plot(sol_bounced,denseplot=true)
 sol_bounced(0.04) # Complete density
 bool1 = maximum(maximum.(map((i)->sol.k[9][i]-sol_bounced.k[2][i],1:length(sol.k[9])))) == 0
 
 
-sol2= solve(prob,Vern6,callback=callback,adaptive=false,dt=1/2^4)
+sol2= solve(prob,Vern6(),callback=callback,adaptive=false,dt=1/2^4)
 #plot(sol2)
 
-sol2= solve(prob,Vern6)
+sol2= solve(prob,Vern6())
 
-sol3= solve(prob,Vern6,saveat=[.5])
+sol3= solve(prob,Vern6(),saveat=[.5])
 
 default_callback = @ode_callback begin
   @ode_savevalues
 end
 
-sol4 = solve(prob,Tsit5,callback=default_callback)
+sol4 = solve(prob,Tsit5(),callback=default_callback)
 
 bool2 = sol2(3) ≈ sol(3)
 
@@ -68,7 +68,7 @@ end
 tspan2 = (0.0,Inf)
 prob2 = ODEProblem(f,u0,tspan2)
 
-sol5 = solve(prob2,Tsit5,callback=terminate_callback)
+sol5 = solve(prob2,Tsit5(),callback=terminate_callback)
 
 bool3 = sol5[end][1] < 2e-13
 

@@ -27,7 +27,7 @@ end
 u0 = [0.2]
 tspan = (0.0;10.0)
 prob = ODEProblem(f,u0,tspan)
-sol = solve(prob,Tsit5,callback=callback)
+sol = solve(prob,Tsit5(),callback=callback)
 
 #=
 Plots.plotlyjs()
@@ -43,7 +43,7 @@ plot(ts,map((x)->x[1],sol.(ts)),lw=3,
 for alg in NON_IMPLICIT_ALGS
   if !(alg <: Rosenbrock23) && !(alg <: Rosenbrock32)
     println(alg)
-    sol = solve(prob,alg,callback=callback)
+    sol = solve(prob,alg(),callback=callback)
   end
 end
 
@@ -51,12 +51,12 @@ callback_no_interp = @ode_callback begin
   @ode_event event_f apply_event! false 0
 end
 
-sol = solve(prob,Tsit5,callback=callback_no_interp,dense=false)
+sol = solve(prob,Tsit5(),callback=callback_no_interp,dense=false)
 
 for alg in NON_IMPLICIT_ALGS
   if !(alg <: Rosenbrock23) && !(alg <: Rosenbrock32)
     println(alg)
-    sol = solve(prob,alg,callback=callback)
+    sol = solve(prob,alg(),callback=callback)
   end
 end
 

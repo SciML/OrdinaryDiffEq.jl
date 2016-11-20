@@ -1,6 +1,6 @@
 function solve{uType,tType,isinplace,T<:ODEInterfaceAlgorithm,F}(
     prob::AbstractODEProblem{uType,tType,isinplace,F},
-    alg::Type{T},timeseries=[],ts=[],ks=[];
+    alg::T,timeseries=[],ts=[],ks=[];
     timeseries_errors = true,kwargs...)
 
   tspan = [t for t in prob.tspan]
@@ -34,17 +34,17 @@ function solve{uType,tType,isinplace,T<:ODEInterfaceAlgorithm,F}(
   o[:RHS_CALLMODE] = ODEInterface.RHS_CALL_INSITU
   dict = buildOptions(o,ODEINTERFACE_OPTION_LIST,ODEINTERFACE_ALIASES,ODEINTERFACE_ALIASES_REVERSED)
   opts = ODEInterface.OptionsODE([Pair(ODEINTERFACE_STRINGS[k],v) for (k,v) in dict]...) #Convert to the strings
-  if alg <: dopri5
+  if typeof(alg) <: dopri5
     ts,vectimeseries,retcode,stats = ODEInterface.odecall(ODEInterface.dopri5,f!,tspan,vec(u),opts)
-  elseif alg <: dop853
+  elseif typeof(alg) <: dop853
     ts,vectimeseries,retcode,stats = ODEInterface.odecall(ODEInterface.dop853,f!,tspan,vec(u),opts)
-  elseif alg <: odex
+  elseif typeof(alg) <: odex
     ts,vectimeseries,retcode,stats = ODEInterface.odecall(ODEInterface.odex,f!,tspan,vec(u),opts)
-  elseif alg <: seulex
+  elseif typeof(alg) <: seulex
     ts,vectimeseries,retcode,stats = ODEInterface.odecall(ODEInterface.seulex,f!,tspan,vec(u),opts)
-  elseif alg <: radau
+  elseif typeof(alg) <: radau
     ts,vectimeseries,retcode,stats = ODEInterface.odecall(ODEInterface.radau,f!,tspan,vec(u),opts)
-  elseif alg <: radau5
+  elseif typeof(alg) <: radau5
     ts,vectimeseries,retcode,stats = ODEInterface.odecall(ODEInterface.radau5,f!,tspan,vec(u),opts)
   end
   if retcode < 0

@@ -1,6 +1,6 @@
 function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm,F}(
   prob::AbstractODEProblem{uType,tType,isinplace,F},
-  algType::Type{T},timeseries=[],ts=[],ks=[];
+  alg::T,timeseries=[],ts=[],ks=[];
   dt = 0.0,save_timeseries = true,
   timeseries_steps = 1,tableau = ODE_DEFAULT_TABLEAU,
   dense = true,calck = nothing,alg_hint = :nonstiff,
@@ -15,8 +15,6 @@ function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm,F}(
   isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
   progressbar=false,progress_steps=1000,progressbar_name="ODE",
   callback=nothing,kwargs...)
-
-  alg = algType()
 
   tspan = prob.tspan
 
