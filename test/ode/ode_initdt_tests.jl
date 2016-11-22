@@ -15,7 +15,7 @@ sol =solve(prob,ExplicitRK(),tableau=tab)
 TEST_PLOT && plot(sol,plot_analytic=true)
 dt₀ = sol.t[2]
 
-bool1 = 1e-7 < dt₀ < .1
+@test  1e-7 < dt₀ < .1
 @test_throws ErrorException sol = solve(prob,Euler())
 #TEST_PLOT && plot(sol,plot_analytic=true)
 #dt₀ = sol.t[2]
@@ -25,6 +25,4 @@ sol3 =solve(prob,ExplicitRK(),tableau=tab)
 TEST_PLOT && plot(sol3,plot_analytic=true)
 dt₀ = sol3.t[2]
 
-bool3 = 1e-7 < dt₀ < .3
-
-bool1 && bool3
+@test 1e-7 < dt₀ < .3

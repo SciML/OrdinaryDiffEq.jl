@@ -59,5 +59,3 @@ for alg in NON_IMPLICIT_ALGS
     sol = solve(prob,alg(),callback=callback,dt=1/10)
   end
 end
-
-true

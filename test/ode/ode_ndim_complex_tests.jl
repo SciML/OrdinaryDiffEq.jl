@@ -12,4 +12,4 @@ prob = ODETestProblem(f,u0,analytic)
 
 sol = solve(prob,Tsit5(),dt=1/2^4)
 
-typeof(sol[1]) == Array{Complex64,3}
+@test typeof(sol[1]) == Array{Complex64,3}

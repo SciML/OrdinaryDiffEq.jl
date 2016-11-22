@@ -32,7 +32,7 @@ function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm,F}(
       error("First saving timepoint is before the solving timespan")
   end
 
-  if !(typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm) && dt == 0
+  if !(typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm) && dt == 0 && isempty(tstops)
       error("Fixed timestep methods require a choice of dt or choosing the tstops")
   end
 
@@ -83,7 +83,7 @@ function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm,F}(
   uEltypeNoUnits = typeof(recursive_one(u))
   tTypeNoUnits   = typeof(recursive_one(t))
 
-  if dt==0
+  if dt==0 && adaptive
     dt = ode_determine_initdt(u0,t,uEltype(abstol),uEltypeNoUnits(reltol),internalnorm,f!,order)
   end
 

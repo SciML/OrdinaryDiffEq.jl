@@ -11,43 +11,24 @@ const FILEIO_ENABLE = false
 tic()
 
 #ODE
-println("Linear ODE Tests")
-@time @test include("ode/ode_twodimlinear_tests.jl")
-println("ODE Convergence Tests")
-@time @test include("ode/ode_convergence_tests.jl")
-println("ODE Adaptive Tests")
-@time @test include("ode/ode_adaptive_tests.jl")
-println("ODE Tstops Tests")
-@time @test include("ode/ode_tstops_tests.jl")
-println("ODE Unrolled Tests")
-(LONGER_TESTS) && !is_windows() && @time @test include("ode/ode_unrolled_comparison_tests.jl")
-println("ODE Initial Dt Tests")
-@time @test include("ode/ode_initdt_tests.jl")
-println("ODE Rosenbrock Tests")
-@time @test include("ode/ode_rosenbrock_tests.jl")
-println("ODE Initial Dt Tests")
-!is_windows() && @time @test include("ode/ode_dense_tests.jl") # Windows 32-bit Overflow
-println("ODE In-Place Tests")
-@time @test include("ode/ode_inplace_tests.jl")
-println("ODE Events Tests")
-@time @test include("ode/ode_event_tests.jl")
-println("ODE Cache Tests")
-@time @test include("ode/ode_cache_tests.jl")
-println("ODE saveat Tests")
-@time @test include("ode/ode_saveat_tests.jl")
-println("ODE Feagin Tests")
-(LONGER_TESTS) && @time @test include("ode/ode_feagin_tests.jl")
-println("ODE Number Type Tests")
-@time @test include("ode/ode_numbertype_tests.jl")
-println("ODE Ndim Complex Tests")
-@time @test include("ode/ode_ndim_complex_tests.jl")
+@time @testset "Linear Tests" begin include("ode/ode_twodimlinear_tests.jl") end
+@time @testset "Convergence Tests" begin include("ode/ode_convergence_tests.jl") end
+@time @testset "Adaptive Tests" begin include("ode/ode_adaptive_tests.jl") end
+@time @testset "Tstops Tests" begin include("ode/ode_tstops_tests.jl") end
+(LONGER_TESTS) && !is_windows() && @time @testset "Unrolled Tests" begin include("ode/ode_unrolled_comparison_tests.jl") end
+@time @testset "Initial Dt Tests" begin include("ode/ode_initdt_tests.jl") end
+@time @testset "Rosenbrock Tests" begin include("ode/ode_rosenbrock_tests.jl") end
+!is_windows() && @time @testset "Dense Tests" begin include("ode/ode_dense_tests.jl") end # Windows 32-bit Overflow
+@time @testset "In-Place Tests" begin include("ode/ode_inplace_tests.jl") end
+@time @testset "Events Tests" begin include("ode/ode_event_tests.jl") end
+@time @testset "Cache Tests" begin include("ode/ode_cache_tests.jl") end
+@time @testset "saveat Tests" begin include("ode/ode_saveat_tests.jl") end
+(LONGER_TESTS) && @time @testset "Feagin Tests" begin include("ode/ode_feagin_tests.jl") end
+@time @testset "Number Type Tests" begin include("ode/ode_numbertype_tests.jl") end
+@time @testset "Ndim Complex Tests" begin include("ode/ode_ndim_complex_tests.jl") end
 
-#Optional Items
-println("Units Tests")
-(LONGER_TESTS) && !is_windows() && (@time @test include("units_tests.jl")) # Too long for AppVeyor
-println("ODEInterface Tests")
-(TEST_CONDITIONAL_DEPS) && !is_windows() && (@time @test include("ode/ODEInterface_tests.jl"))
-println("ODE.jl Tests")
-(TEST_CONDITIONAL_DEPS) && @time @test include("ode/ODEJL_tests.jl")
+(LONGER_TESTS) && !is_windows() && (@time @testset "Units Tests" begin include("units_tests.jl") end) # Too long for AppVeyor
+(TEST_CONDITIONAL_DEPS) && !is_windows() && (@time @testset "ODEInterface Tests" begin include("ode/ODEInterface_tests.jl") end)
+(TEST_CONDITIONAL_DEPS) && @time @testset "ODE.jl Tests" begin include("ode/ODEJL_tests.jl") end
 
 toc()

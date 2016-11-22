@@ -43,7 +43,7 @@ bounced = ODEProblem(f,sol[8],(0.0,1.0))
 sol_bounced = solve(bounced,Vern6(),callback=callback,dt=sol.t[9]-sol.t[8])
 #plot(sol_bounced,denseplot=true)
 sol_bounced(0.04) # Complete density
-bool1 = maximum(maximum.(map((i)->sol.k[9][i]-sol_bounced.k[2][i],1:length(sol.k[9])))) == 0
+@test maximum(maximum.(map((i)->sol.k[9][i]-sol_bounced.k[2][i],1:length(sol.k[9])))) == 0
 
 
 sol2= solve(prob,Vern6(),callback=callback,adaptive=false,dt=1/2^4)
@@ -59,7 +59,7 @@ end
 
 sol4 = solve(prob,Tsit5(),callback=default_callback)
 
-bool2 = sol2(3) ≈ sol(3)
+@test sol2(3) ≈ sol(3)
 
 terminate_callback = @ode_callback begin
   @ode_event event_f apply_event! true interp_points true dt_safety
@@ -70,6 +70,4 @@ prob2 = ODEProblem(f,u0,tspan2)
 
 sol5 = solve(prob2,Tsit5(),callback=terminate_callback)
 
-bool3 = sol5[end][1] < 2e-13
-
-bool1 && bool2 && bool3
+@test sol5[end][1] < 2e-13

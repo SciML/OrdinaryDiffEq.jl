@@ -20,4 +20,5 @@ sol3 =solve(prob,ExplicitRK(),dt=1/2^4,tableau=tab)
 val3 = maximum(abs.(sol3.u[end] - sol3.u_analytic[end]))
 TEST_PLOT && plot(sol3,plot_analytic=true)
 
-length(sol.t)>length(sol2.t)>=length(sol3.t) && max(val1,val2,val3)<2e-3
+@test length(sol.t)>length(sol2.t)>=length(sol3.t)
+@test max(val1,val2,val3)<2e-3

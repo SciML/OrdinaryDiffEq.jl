@@ -52,7 +52,7 @@ end
   ks = integrator.ks
   const calcprevs = !isempty(saveat) || custom_callback # Calculate the previous values
   const issimple_dense = (ksEltype==rateType) # Means ks[i] = f(t[i],timeseries[i]), for Hermite
-
+  const dtcache = dt
   # Need to initiate ks in the method
 
   Tfinal = Ts[end]
@@ -133,11 +133,20 @@ end
 
 @def ode_loopheader begin
   iter += 1
+  
   if iter > maxiters
     warn("Interrupted. Larger maxiters is needed.")
     @ode_postamble
   end
-  dt = min(dt,abs(T-t))
+
+  if adaptive
+    dt = min(dt,abs(T-t)) # Step to the end
+  elseif dtcache == 0 # Use tstops
+    dt = abs(T-t)
+  else # always try to step with dtcache
+    dt = min(dtcache,abs(T-t)) # Step to the end
+  end
+
   if uType<:AbstractArray && custom_callback
     uidx = eachindex(u)
   end

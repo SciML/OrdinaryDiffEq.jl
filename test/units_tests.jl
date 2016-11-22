@@ -40,5 +40,3 @@ for alg in NON_IMPLICIT_ALGS
 end
 
 println("Units for 2D pass")
-
-true
