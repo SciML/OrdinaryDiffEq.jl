@@ -32,6 +32,10 @@ function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm,F}(
       error("First saving timepoint is before the solving timespan")
   end
 
+  if !(typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm) && dt == 0
+      error("Fixed timestep methods require a choice of dt or choosing the tstops")
+  end
+
 
   atomloaded = isdefined(Main,:Atom)
   u0 = prob.u0
