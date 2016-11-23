@@ -1,4 +1,4 @@
-immutable ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4}
+immutable ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}
   timeseries::Vector{uType}
   ts::Vector{tType}
   ks::Vector{ksEltype}
@@ -19,14 +19,15 @@ immutable ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractAr
   dtmax::tType
   dtmin::tType
   internalnorm::F2
-  progressbar::Bool
+  progress::Bool
   tableau::ExplicitRKTableau
   autodiff::Bool
   adaptiveorder::Int
   order::Int
   atomloaded::Bool
   progress_steps::Int
-  progressbar_name::String
+  progress_name::String
+  progress_message::F5
   β₁::tTypeNoUnits
   β₂::tTypeNoUnits
   qoldinit::tTypeNoUnits
@@ -46,7 +47,7 @@ end
   local dt::tType
   local Ts::Vector{tType}
   local adaptiveorder::Int
-  @unpack f,u,t,dt,Ts,maxiters,timeseries_steps,γ,qmax,qmin,save_timeseries,adaptive,progressbar,autodiff,adaptiveorder,order,atomloaded,progress_steps,progressbar_name,β₂,β₁,qoldinit,fsal, dense, saveat, alg, callback, isoutofdomain, custom_callback,calck = integrator
+  @unpack f,u,t,dt,Ts,maxiters,timeseries_steps,γ,qmax,qmin,save_timeseries,adaptive,progress,autodiff,adaptiveorder,order,atomloaded,progress_steps,progress_name,progress_message,β₂,β₁,qoldinit,fsal, dense, saveat, alg, callback, isoutofdomain, custom_callback,calck = integrator
   timeseries = integrator.timeseries
   ts = integrator.ts
   ks = integrator.ks
@@ -128,16 +129,11 @@ end
     end
   end ## if not simple_dense, you have to initialize k and push the ks[1]!
 
-  progressbar && (prog = ProgressBar(name=progressbar_name))
+  progress && (prog = ProgressBar(name=progress_name))
 end
 
 @def ode_loopheader begin
   iter += 1
-  
-  if iter > maxiters
-    warn("Interrupted. Larger maxiters is needed.")
-    @ode_postamble
-  end
 
   if adaptive
     dt = min(dt,abs(T-t)) # Step to the end
@@ -145,6 +141,19 @@ end
     dt = abs(T-t)
   else # always try to step with dtcache
     dt = min(dtcache,abs(T-t)) # Step to the end
+  end
+
+  if iter > maxiters
+    warn("Interrupted. Larger maxiters is needed.")
+    @ode_postamble
+  end
+  if dt == 0
+    warn("dt == 0. Aborting")
+    @ode_postamble
+  end
+  if any(isnan,u)
+    warn("NaNs detected. Aborting")
+    @ode_postamble
   end
 
   if uType<:AbstractArray && custom_callback
@@ -185,7 +194,7 @@ end
     push!(ts,t)
     push!(timeseries,u)
   end
-  progressbar && done(prog)
+  progress && done(prog)
   return u,t
 end
 
@@ -273,8 +282,8 @@ end
       end
     end
   end
-  if progressbar && iter%progress_steps==0
-    msg(prog,"dt="*string(dt))
+  if progress && iter%progress_steps==0
+    msg(prog,progress_message(dt,t,u))
     progress(prog,t/Tfinal)
   end
 end
