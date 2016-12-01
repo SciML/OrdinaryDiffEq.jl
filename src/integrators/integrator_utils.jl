@@ -129,7 +129,7 @@ end
     end
   end ## if not simple_dense, you have to initialize k and push the ks[1]!
 
-  progress && (prog = ProgressBar(name=progress_name))
+  progress && (prog = Juno.ProgressBar(name=progress_name))
 end
 
 @def ode_loopheader begin
@@ -194,7 +194,7 @@ end
     push!(ts,t)
     push!(timeseries,u)
   end
-  progress && done(prog)
+  progress && Juno.done(prog)
   return u,t
 end
 
@@ -294,6 +294,6 @@ end
   end
   if progress && iter%progress_steps==0
     msg(prog,progress_message(dt,t,u))
-    progress(prog,t/Tfinal)
+    Juno.progress(prog,t/Tfinal)
   end
 end
