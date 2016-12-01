@@ -217,7 +217,12 @@ end
       dtpropose = min(dtmax,dtnew)
       dtprev = dt
       dt = max(dtpropose,dtmin) #abs to fix complex sqrt issue at end
-      cursaveat,saveiter,dt,t,T,reeval_fsal = callback(alg,f,t,u,k,tprev,uprev,kprev,ts,timeseries,ks,dtprev,dt,saveat,cursaveat,saveiter,iter,save_timeseries,timeseries_steps,uEltype,ksEltype,dense,kshortsize,issimple_dense,fsal,fsalfirst,cache,calck,T,Ts)
+      if custom_callback
+        cursaveat,saveiter,dt,t,T,reeval_fsal = callback(alg,f,t,u,k,tprev,uprev,kprev,ts,timeseries,ks,dtprev,dt,saveat,cursaveat,saveiter,iter,save_timeseries,timeseries_steps,uEltype,ksEltype,dense,kshortsize,issimple_dense,fsal,fsalfirst,cache,calck,T,Ts)
+      else
+        @ode_savevalues
+        reeval_fsal = false
+      end
 
       if fsal
         if reeval_fsal
@@ -264,7 +269,12 @@ end
       end
     end
     dtprev = dt
-    cursaveat,saveiter,dt,t,T,reeval_fsal = callback(alg,f,t,u,k,tprev,uprev,kprev,ts,timeseries,ks,dtprev,dt,saveat,cursaveat,saveiter,iter,save_timeseries,timeseries_steps,uEltype,ksEltype,dense,kshortsize,issimple_dense,fsal,fsalfirst,cache,calck,T,Ts)
+    if custom_callback
+      cursaveat,saveiter,dt,t,T,reeval_fsal = callback(alg,f,t,u,k,tprev,uprev,kprev,ts,timeseries,ks,dtprev,dt,saveat,cursaveat,saveiter,iter,save_timeseries,timeseries_steps,uEltype,ksEltype,dense,kshortsize,issimple_dense,fsal,fsalfirst,cache,calck,T,Ts)
+    else
+      @ode_savevalues
+      reeval_fsal = false
+    end
     if calcprevs
       # Store previous for interpolation
       tprev = t

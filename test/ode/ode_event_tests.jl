@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, NLsolve, DiffEqBase#, ParameterizedFunctions
+using OrdinaryDiffEq, NLsolve, DiffEqBase, Base.Test#, ParameterizedFunctions
 
 #=
 f = @ode_def BallBounce begin
