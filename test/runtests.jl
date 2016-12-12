@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqProblemLibrary, DiffEqDevTools
+using OrdinaryDiffEq, DiffEqProblemLibrary, DiffEqDevTools, ODEInterfaceDiffEq
 using Base.Test
 
 const CPU_FLOPS = peakflops()
@@ -28,7 +28,6 @@ tic()
 @time @testset "Ndim Complex Tests" begin include("ode/ode_ndim_complex_tests.jl") end
 
 (LONGER_TESTS) && !is_windows() && (@time @testset "Units Tests" begin include("units_tests.jl") end) # Too long for AppVeyor
-(TEST_CONDITIONAL_DEPS) && !is_windows() && (@time @testset "ODEInterface Tests" begin include("ode/ODEInterface_tests.jl") end)
 (TEST_CONDITIONAL_DEPS) && @time @testset "ODE.jl Tests" begin include("ode/ODEJL_tests.jl") end
 
 toc()

@@ -14,12 +14,6 @@ end
 type backend{T} end
 
 init_package(sym::Symbol) = init_package(backend{sym}())
-init_package(b::backend{:ODEInterface}) = @eval begin
-      import ODEInterface
-      export ODEInterface
-      ODEInterface.loadODESolvers()
-    end
-
 init_package(b::backend{:ODEJL}) = @eval begin
       import ODE
       export ODE

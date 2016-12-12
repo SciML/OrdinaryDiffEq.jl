@@ -36,13 +36,13 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,tTypeNoUn
   @inbounds for T in Ts
     while t < T
       @ode_loopheader
-      if autodiff
+      #if autodiff
         ForwardDiff.derivative!(dT,(t)->vecfreturn(t,u,du2),t) # Time derivative
         ForwardDiff.jacobian!(J,(du1,u)->vecf(t,u,du1),vec(du1),vec(u))
-      else
-        Calculus.finite_difference!((t)->vecfreturn(t,u,du2),[t],dT)
-        Calculus.finite_difference_jacobian!((du1,u)->vecf(t,u,du1),vec(u),vec(du1),J)
-      end
+      #else
+      #  Calculus.finite_difference!((t)->vecfreturn(t,u,du2),[t],dT)
+      #  Calculus.finite_difference_jacobian!((du1,u)->vecf(t,u,du1),vec(u),vec(du1),J)
+      #end
 
       W[:] = I-dt*d*J # Can an allocation be cut here?
       @into! vectmp = W\vec(fsalfirst + dt*d*dT)

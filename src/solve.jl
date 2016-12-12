@@ -11,7 +11,7 @@ function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm,F}(
   beta2=nothing,beta1=nothing,maxiters = 1000000,
   dtmax=tType((prob.tspan[end]-prob.tspan[1])),
   dtmin=tType <: AbstractFloat ? tType(10)*eps(tType) : tType(1//10^(10)),
-  autodiff=true,internalnorm = ODE_DEFAULT_NORM,
+  autodiff=false,internalnorm = ODE_DEFAULT_NORM,
   isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
   progress=false,progress_steps=1000,progress_name="ODE",
   progress_message = ODE_DEFAULT_PROG_MESSAGE,
