@@ -37,8 +37,6 @@ function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm,F}(
       error("Fixed timestep methods require a choice of dt or choosing the tstops")
   end
 
-
-  atomloaded = isdefined(Main,:Atom)
   u0 = prob.u0
   uEltype = eltype(u0)
 
@@ -182,8 +180,8 @@ function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm,F}(
   end
   γ = gamma
 
-  #@code_warntype ode_solve(ODEIntegrator{typeof(alg),uType,uEltype,ndims(u)+1,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,typeof(f!),typeof(internalnorm),typeof(callback),typeof(isoutofdomain)}(timeseries,ts,ks,f!,u,t,dt,Ts,maxiters,timeseries_steps,save_timeseries,adaptive,abstol,reltol,γ,qmax,qmin,dtmax,dtmin,internalnorm,progress,tableau,autodiff,adaptiveorder,order,atomloaded,progress_steps,progressbar_name,β₁,β₂,qoldinit,fsal,dense,saveat,alg,callback,isoutofdomain,custom_callback,calck))
-  u,t = ode_solve(ODEIntegrator{typeof(alg),uType,uEltype,ndims(u)+1,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,typeof(f!),typeof(internalnorm),typeof(callback),typeof(isoutofdomain),typeof(progress_message)}(timeseries,ts,ks,f!,u,t,dt,Ts,maxiters,timeseries_steps,save_timeseries,adaptive,abstol,reltol,γ,qmax,qmin,dtmax,dtmin,internalnorm,progress,tableau,autodiff,adaptiveorder,order,atomloaded,progress_steps,progress_name,progress_message,β₁,β₂,qoldinit,fsal,dense,saveat,alg,callback,isoutofdomain,custom_callback,calck))
+  #@code_warntype ode_solve(ODEIntegrator{typeof(alg),uType,uEltype,ndims(u)+1,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,typeof(f!),typeof(internalnorm),typeof(callback),typeof(isoutofdomain)}(timeseries,ts,ks,f!,u,t,dt,Ts,maxiters,timeseries_steps,save_timeseries,adaptive,abstol,reltol,γ,qmax,qmin,dtmax,dtmin,internalnorm,progress,tableau,autodiff,adaptiveorder,order,progress_steps,progressbar_name,β₁,β₂,qoldinit,fsal,dense,saveat,alg,callback,isoutofdomain,custom_callback,calck))
+  u,t = ode_solve(ODEIntegrator{typeof(alg),uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,typeof(f!),typeof(internalnorm),typeof(callback),typeof(isoutofdomain),typeof(progress_message)}(timeseries,ts,ks,f!,u,t,dt,Ts,maxiters,timeseries_steps,save_timeseries,adaptive,abstol,reltol,γ,qmax,qmin,dtmax,dtmin,internalnorm,progress,tableau,autodiff,adaptiveorder,order,progress_steps,progress_name,progress_message,β₁,β₂,qoldinit,fsal,dense,saveat,alg,callback,isoutofdomain,custom_callback,calck))
 
 
   if dense

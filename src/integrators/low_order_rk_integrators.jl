@@ -1,4 +1,4 @@
-function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{BS3,uType,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{BS3,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
   @ode_preamble
   a21,a32,a41,a42,a43,c1,c2,b1,b2,b3,b4  = constructBS3(uEltypeNoUnits)
   local k1::rateType
@@ -30,7 +30,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rat
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{BS3,uType,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{BS3,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
   @ode_preamble
   a21,a32,a41,a42,a43,c1,c2,b1,b2,b3,b4  = constructBS3(uEltypeNoUnits)
   k1 = similar(rate_prototype)
@@ -78,7 +78,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,tTypeNoUn
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{BS5,uType,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{BS5,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
   @ode_preamble
   c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8 = constructBS5(uEltypeNoUnits)
   local k1::rateType
@@ -136,7 +136,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rat
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{BS5,uType,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{BS5,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
   @ode_preamble
   c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8 = constructBS5(uEltypeNoUnits)
   k1::rateType = similar(rate_prototype)
@@ -228,7 +228,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,tTypeNoUn
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{Tsit5,uType,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{Tsit5,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
   @ode_preamble
   c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,b1,b2,b3,b4,b5,b6,b7 = constructTsit5(uEltypeNoUnits)
   local k1::rateType
@@ -280,7 +280,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rat
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{Tsit5,uType,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{Tsit5,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
   @ode_preamble
   c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,b1,b2,b3,b4,b5,b6,b7 = constructTsit5(uEltypeNoUnits)
   k2::rateType = similar(rate_prototype)
@@ -361,7 +361,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,tTypeNoUn
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{DP5,uType,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{DP5,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
   @ode_preamble
   a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = constructDP5(uEltypeNoUnits)
   local k1::rateType
@@ -420,7 +420,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rat
 end
 
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{DP5,uType,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{DP5,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
   @ode_preamble
   a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = constructDP5(uEltypeNoUnits)
   k2 = similar(rate_prototype)

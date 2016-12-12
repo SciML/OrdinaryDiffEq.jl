@@ -1,10 +1,10 @@
-function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{Euler,uType,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{Euler,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
   @ode_preamble
   k = f(t,u) # For the interpolation, needs k at the updated point
   @inbounds for T in Ts
     while t < T
       @ode_loopheader
-      u = u + dt*k
+      u = muladd(dt,k,u)
       k = f(t,u) # For the interpolation, needs k at the updated point
       @ode_loopfooter
     end
@@ -12,7 +12,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rat
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{Euler,uType,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{Euler,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
   @ode_preamble
   uidx = eachindex(u)
   if !dense
@@ -26,7 +26,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,tTypeNoUn
       while t < T
       @ode_loopheader
       for i in uidx
-        u[i] = u[i] + dt*k[i]
+        u[i] = muladd(dt,k[i],u[i])
       end
       f(t,u,k) # For the interpolation, needs k at the updated point
       @ode_loopfooter
@@ -35,7 +35,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,tTypeNoUn
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{Midpoint,uType,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{Midpoint,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
   @ode_preamble
   halfdt::tType = dt/2
   local du::rateType
@@ -50,7 +50,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rat
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{Midpoint,uType,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{Midpoint,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
   @ode_preamble
   halfdt::tType = dt/2
   utilde::uType = similar(u)
@@ -74,11 +74,11 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,tTypeNoUn
       @ode_loopheader
       f(t,u,du)
       for i in uidx
-        utilde[i] = u[i]+halfdt*du[i]
+        utilde[i] = muladd(halfdt,du[i],u[i])
       end
       f(t+halfdt,utilde,k)
       for i in uidx
-        u[i] = u[i] + dt*k[i]
+        u[i] = muladd(dt,k[i],u[i])
       end
       @ode_loopfooter
     end
@@ -86,7 +86,7 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,tTypeNoUn
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{RK4,uType,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{RK4,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
   @ode_preamble
   halfdt::tType = dt/2
   local k₁::rateType
@@ -99,10 +99,10 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rat
       @ode_loopheader
       k₁ = f(t,u)
       ttmp = t+halfdt
-      k₂ = f(ttmp,u+halfdt*k₁)
-      k₃ = f(ttmp,u+halfdt*k₂)
-      k₄ = f(t+dt,u+dt*k₃)
-      u = u + dt*(k₁ + 2(k₂ + k₃) + k₄)/6
+      k₂ = f(ttmp,muladd(halfdt,k₁,u))
+      k₃ = f(ttmp,muladd(halfdt,k₂,u))
+      k₄ = f(t+dt,muladd(dt,k₃,u))
+      u = muladd(dt/6,muladd(2,(k₂ + k₃),k₁+k₄),u)
       if calck
         k=k₁
       end
@@ -112,7 +112,7 @@ function ode_solve{uType<:Number,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rat
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{RK4,uType,uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{RK4,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
   @ode_preamble
   halfdt::tType = dt/2
   k₁ = similar(rate_prototype)
@@ -127,28 +127,28 @@ function ode_solve{uType<:AbstractArray,uEltype,N,tType,uEltypeNoUnits,tTypeNoUn
   if custom_callback
     cache = (u,tmp,k₁,k₂,k₃,k₄,kprev,uprev)
   end
+  if calck
+    k=k₁
+  end
   @inbounds for T in Ts
     while t < T
       @ode_loopheader
       f(t,u,k₁)
       ttmp = t+halfdt
       for i in uidx
-        tmp[i] = u[i]+halfdt*k₁[i]
+        tmp[i] = muladd(halfdt,k₁[i],u[i])
       end
       f(ttmp,tmp,k₂)
       for i in uidx
-        tmp[i] = u[i]+halfdt*k₂[i]
+        tmp[i] = muladd(halfdt,k₂[i],u[i])
       end
       f(ttmp,tmp,k₃)
       for i in uidx
-        tmp[i] = u[i]+dt*k₃[i]
+        tmp[i] = muladd(dt,k₃[i],u[i])
       end
       f(t+dt,tmp,k₄)
       for i in uidx
-        u[i] = u[i] + dt*(k₁[i] + 2(k₂[i] + k₃[i]) + k₄[i])/6
-      end
-      if calck
-        k=k₁
+        u[i] = muladd(dt/6,muladd(2,(k₂[i] + k₃[i]),k₁[i] + k₄[i]),u[i])
       end
       @ode_loopfooter
     end

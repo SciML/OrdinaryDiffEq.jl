@@ -18,3 +18,22 @@ end
 
 #Base.getindex(m::MutableReference)=m.val
 #Base.setindex!(m::MutableReference{T}, v::{T},I...) = m.val=v
+
+macro muladd(ex)
+  esc(to_muladd(ex))
+end
+
+function to_muladd(ex)
+  is_add_operation(ex) || return ex
+  operands = collect(zip(
+    to_muladd.((x->x.args[2]).(ex.args[2:end])),
+    to_muladd.((x->x.args[3]).(ex.args[2:end]))))
+
+  last_operation = :($(operands[end][1]) * $(operands[end][2]))
+
+  foldr(last_operation, operands[1:end-1]) do xs, r
+    :($(Base.muladd)($(xs[1]), $(xs[2]), $r))
+  end
+end
+is_add_operation(ex::Expr) = ex.head == :call && !isempty(ex.args) && ex.args[1] == :+
+is_add_operation(ex) = false

@@ -1,4 +1,4 @@
-immutable ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},uEltype,N,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}
+immutable ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}
   timeseries::Vector{uType}
   ts::Vector{tType}
   ks::Vector{ksEltype}
@@ -24,7 +24,6 @@ immutable ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractAr
   autodiff::Bool
   adaptiveorder::Int
   order::Int
-  atomloaded::Bool
   progress_steps::Int
   progress_name::String
   progress_message::F5
@@ -47,7 +46,7 @@ end
   local dt::tType
   local Ts::Vector{tType}
   local adaptiveorder::Int
-  @unpack f,u,t,dt,Ts,maxiters,timeseries_steps,γ,qmax,qmin,save_timeseries,adaptive,progress,autodiff,adaptiveorder,order,atomloaded,progress_steps,progress_name,progress_message,β₂,β₁,qoldinit,fsal, dense, saveat, alg, callback, isoutofdomain, custom_callback,calck = integrator
+  @unpack f,u,t,dt,Ts,maxiters,timeseries_steps,γ,qmax,qmin,save_timeseries,adaptive,progress,autodiff,adaptiveorder,order,progress_steps,progress_name,progress_message,β₂,β₁,qoldinit,fsal, dense, saveat, alg, callback, isoutofdomain, custom_callback,calck = integrator
   timeseries = integrator.timeseries
   ts = integrator.ts
   ks = integrator.ks
@@ -76,8 +75,8 @@ end
     kprev = ksEltype(0)
     rate_prototype = ks[1][1]
   else # it is simple_dense
-    k = ksEltype(zeros(Int64,N-1)...) # Needs the zero for dimension 3+
-    kprev = ksEltype(zeros(Int64,N-1)...)
+    k = ksEltype(zeros(Int64,ndims(u))...) # Needs the zero for dimension 3+
+    kprev = ksEltype(zeros(Int64,ndims(u))...)
     rate_prototype = ks[1]
   end
 

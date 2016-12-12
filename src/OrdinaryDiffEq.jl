@@ -44,7 +44,6 @@ module OrdinaryDiffEq
   include("callbacks.jl")
   include("solve.jl")
   include("dense.jl")
-  include("odepr49.jl")
   include("integrators/unrolled_tableaus.jl")
 
 
@@ -65,7 +64,4 @@ module OrdinaryDiffEq
         Euler, Midpoint, RK4, ExplicitRK, BS3, BS5, DP5, DP5Threaded, Tsit5,
         DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8, Vern9, ImplicitEuler,
         Trapezoid, Rosenbrock23, Rosenbrock32, Feagin10, Feagin12, Feagin14
-
-  export ODEIterAlgorithm, feuler, rk23, feh45, feh78, ModifiedRosenbrockIntegrator,
-        midpoint, heun, rk4, rk45
 end # module

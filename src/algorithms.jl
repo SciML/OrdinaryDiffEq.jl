@@ -110,16 +110,3 @@ end
   order::Int=14
   adaptiveorder::Int=12
 end
-
-# PR49 algorithms
-
-abstract ODEIterAlgorithm <: AbstractODEAlgorithm
-immutable feuler <: ODEIterAlgorithm end
-immutable rk23 <: ODEIterAlgorithm end
-immutable rk45 <: ODEIterAlgorithm end
-immutable feh78 <: ODEIterAlgorithm end
-immutable ModifiedRosenbrockIntegrator <: ODEIterAlgorithm end
-immutable midpoint <: ODEIterAlgorithm end
-immutable heun <: ODEIterAlgorithm end
-immutable rk4 <: ODEIterAlgorithm end
-immutable feh45 <: ODEIterAlgorithm end
