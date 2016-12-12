@@ -16,17 +16,10 @@ module OrdinaryDiffEq
       end
   end
 
-  typealias KW Dict{Symbol,Any}
-  AbstractArrayOrVoid = Union{AbstractArray,Void}
-  NumberOrVoid = Union{Number,Void}
-  FunctionOrVoid = Union{Function,Void}
-
   #Constants
 
   const TEST_FLOPS_CUTOFF = 1e10
-  const initialized_backends = Set{Symbol}()
 
-  include("backends.jl")
   include("misc_utils.jl")
   include("algorithms.jl")
   include("alg_utils.jl")

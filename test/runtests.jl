@@ -3,7 +3,7 @@ using Base.Test
 
 const CPU_FLOPS = peakflops()
 const TEST_PLOT = false
-const LONGER_TESTS = true #Requires JLD
+const LONGER_TESTS = false #Requires JLD
 const TEST_CONDITIONAL_DEPS = false
 const FILEIO_ENABLE = false
 #Start Test Script
@@ -28,6 +28,5 @@ tic()
 @time @testset "Ndim Complex Tests" begin include("ode/ode_ndim_complex_tests.jl") end
 
 (LONGER_TESTS) && !is_windows() && (@time @testset "Units Tests" begin include("units_tests.jl") end) # Too long for AppVeyor
-(TEST_CONDITIONAL_DEPS) && @time @testset "ODE.jl Tests" begin include("ode/ODEJL_tests.jl") end
 
 toc()
