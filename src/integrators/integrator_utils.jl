@@ -292,7 +292,7 @@ end
     end
   end
   if progress && iter%progress_steps==0
-    msg(prog,progress_message(dt,t,u))
+    Juno.msg(prog,progress_message(dt,t,u))
     Juno.progress(prog,t/Tfinal)
   end
 end
