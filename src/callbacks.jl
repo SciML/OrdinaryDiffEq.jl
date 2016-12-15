@@ -18,7 +18,7 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
     end
     interp_index = 0
     # Check if the event occured
-    if $event_f(t,u)<0
+    if $event_f(t,u)<=0
       event_occured = true
       interp_index = $interp_points
     elseif $interp_points!=0 # Use the interpolants for safety checking
@@ -66,7 +66,6 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
     end
 
     @ode_savevalues
-
     if event_occured
       if $terminate_on_event
         @ode_terminate
