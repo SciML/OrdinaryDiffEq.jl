@@ -185,7 +185,7 @@ function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm,F}(
 
 
   if dense
-    saveat_idxs = find((x)->x∈saveat,ts)
+    saveat_idxs = find((x)->(x∈saveat)&&(x∉Ts),ts)
     t_nosaveat = view(ts,symdiff(1:length(ts),saveat_idxs))
     u_nosaveat = view(timeseries,symdiff(1:length(ts),saveat_idxs))
     interp = (tvals) -> ode_interpolation(tvals,t_nosaveat,u_nosaveat,ks,alg,f!)
