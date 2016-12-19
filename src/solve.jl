@@ -20,7 +20,7 @@ function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm,F}(
   tspan = prob.tspan
 
   if tspan[end]-tspan[1]<tType(0)
-    error("final time must be greater than starting time. Aborting.")
+    error("Final time must be greater than starting time. Aborting.")
   end
 
   t = tspan[1]
