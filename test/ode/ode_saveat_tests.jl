@@ -9,6 +9,8 @@ sol2=solve(prob,DP5(),dt=1//2^(2),save_timeseries=false,dense=false,saveat=[1/2]
 
 sol3=solve(prob,DP5(),dt=1//2^(2),save_timeseries=false,dense=false,saveat=[1/2],tstops=[1/2])
 
+@test sol3.t == [0.0,0.5,1.00]
+
 sol =solve(prob,DP5(),dt=1//2^(2),save_timeseries=true,dense=true)
 sol2=solve(prob,DP5(),dt=1//2^(2),save_timeseries=true,dense=true,saveat=[1/2])
 
