@@ -163,14 +163,20 @@ end
 @def ode_savevalues begin
   if !isempty(saveat) # Perform saveat
     while cursaveat <= length(saveat) && saveat[cursaveat]<= t
-      if saveat[cursaveat]<t # If we already saved at the point, ignore it
-        saveiter += 1
+      saveiter += 1
+      if saveat[cursaveat]<t # If <t, interpolate
         curt = saveat[cursaveat]
         ode_addsteps!(k,tprev,uprev,dt,alg,f)
         Θ = (curt - tprev)/dt
         val = ode_interpolant(Θ,dt,uprev,u,kprev,k,alg)
         copyat_or_push!(ts,saveiter,curt)
         copyat_or_push!(timeseries,saveiter,val)
+      else # ==t, just save
+        copyat_or_push!(ts,saveiter,t)
+        copyat_or_push!(timeseries,saveiter,u)
+        if dense
+          copyat_or_push!(ks,saveiter,k)
+        end
       end
       cursaveat+=1
     end

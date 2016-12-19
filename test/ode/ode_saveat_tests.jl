@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Plots
+using OrdinaryDiffEq, Plots, DiffEqProblemLibrary
 
 prob = prob_ode_linear
 
@@ -6,6 +6,8 @@ sol =solve(prob,DP5(),dt=1//2^(2),save_timeseries=false,dense=false)
 sol2=solve(prob,DP5(),dt=1//2^(2),save_timeseries=false,dense=false,saveat=[1/2])
 
 @test symdiff(sol.t,sol2.t) == [1/2]
+
+sol3=solve(prob,DP5(),dt=1//2^(2),save_timeseries=false,dense=false,saveat=[1/2],tstops=[1/2])
 
 sol =solve(prob,DP5(),dt=1//2^(2),save_timeseries=true,dense=true)
 sol2=solve(prob,DP5(),dt=1//2^(2),save_timeseries=true,dense=true,saveat=[1/2])
