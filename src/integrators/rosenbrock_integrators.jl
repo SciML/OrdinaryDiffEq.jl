@@ -98,7 +98,7 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
       # Time derivative
       dT = ForwardDiff.derivative((t)->f(t,u),t)
       J = ForwardDiff.derivative((u)->f(t,u),u)
-      W = I-dt*d*J
+      W = 1-dt*d*J
 
       if calck
         k = fsalfirst
@@ -221,7 +221,7 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
       # Time derivative
       dT = ForwardDiff.derivative((t)->f(t,u),t)
       J = ForwardDiff.derivative((u)->f(t,u),u)
-      W = I-dt*d*J
+      W = 1-dt*d*J
       #f₀ = f(t,u)
       if calck
         k = fsalfirst
