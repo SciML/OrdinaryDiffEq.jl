@@ -4,15 +4,14 @@ module OrdinaryDiffEq
 
   using DiffEqBase
   import DiffEqBase: solve
-  using Parameters, GenericSVD, ForwardDiff, InplaceOps, RecursiveArrayTools,
-        Ranges, NLsolve, RecipesBase, Juno, Calculus
+  using Parameters, GenericSVD, ForwardDiff, InplaceOps, RecursiveArrayTools, Ranges, NLsolve, RecipesBase, Juno, Calculus
 
   import Base: linspace
   import ForwardDiff.Dual
 
   macro def(name, definition)
       return quote
-          macro $name()
+          macro $(esc(name))()
               esc($(Expr(:quote, definition)))
           end
       end

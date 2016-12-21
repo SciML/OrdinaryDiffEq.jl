@@ -1,4 +1,8 @@
-using OrdinaryDiffEq, DiffEqProblemLibrary, DiffEqDevTools, ODEInterfaceDiffEq
+using OrdinaryDiffEq, DiffEqProblemLibrary, DiffEqDevTools
+
+if VERSION <= v"0.5+"
+  using ODEInterfaceDiffEq
+end
 using Base.Test
 
 const CPU_FLOPS = peakflops()
@@ -15,7 +19,7 @@ tic()
 @time @testset "Convergence Tests" begin include("ode/ode_convergence_tests.jl") end
 @time @testset "Adaptive Tests" begin include("ode/ode_adaptive_tests.jl") end
 @time @testset "Tstops Tests" begin include("ode/ode_tstops_tests.jl") end
-(LONGER_TESTS) && !is_windows() && @time @testset "Unrolled Tests" begin include("ode/ode_unrolled_comparison_tests.jl") end
+VERSION <= v"0.5+" && (LONGER_TESTS) && !is_windows() && @time @testset "Unrolled Tests" begin include("ode/ode_unrolled_comparison_tests.jl") end
 @time @testset "Initial Dt Tests" begin include("ode/ode_initdt_tests.jl") end
 @time @testset "Rosenbrock Tests" begin include("ode/ode_rosenbrock_tests.jl") end
 !is_windows() && @time @testset "Dense Tests" begin include("ode/ode_dense_tests.jl") end # Windows 32-bit Overflow
