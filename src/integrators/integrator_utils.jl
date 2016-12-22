@@ -166,9 +166,9 @@ end
       saveiter += 1
       if saveat[cursaveat]<t # If <t, interpolate
         curt = saveat[cursaveat]
-        ode_addsteps!(k,tprev,uprev,dt,alg,f)
-        Θ = (curt - tprev)/dt
-        val = ode_interpolant(Θ,dt,uprev,u,kprev,k,alg)
+        ode_addsteps!(k,tprev,uprev,dtprev,alg,f)
+        Θ = (curt - tprev)/dtprev
+        val = ode_interpolant(Θ,dtprev,uprev,u,kprev,k,alg)
         copyat_or_push!(ts,saveiter,curt)
         copyat_or_push!(timeseries,saveiter,val)
       else # ==t, just save

@@ -3,7 +3,7 @@ function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm,F}(
   alg::T,timeseries=[],ts=[],ks=[];
   dt = 0.0,save_timeseries = true,
   timeseries_steps = 1,tableau = ODE_DEFAULT_TABLEAU,
-  dense = true,calck = nothing,alg_hint = :nonstiff,
+  dense = save_timeseries,calck = nothing,alg_hint = :nonstiff,
   timeseries_errors = true,dense_errors = false,
   saveat = tType[],tstops = tType[],
   adaptive = true,gamma=.9,abstol=1//10^6,reltol=1//10^3,
