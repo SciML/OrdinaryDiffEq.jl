@@ -22,7 +22,7 @@ tic()
 VERSION <= v"0.5+" && (LONGER_TESTS) && !is_windows() && @time @testset "Unrolled Tests" begin include("ode/ode_unrolled_comparison_tests.jl") end
 @time @testset "Initial Dt Tests" begin include("ode/ode_initdt_tests.jl") end
 @time @testset "Rosenbrock Tests" begin include("ode/ode_rosenbrock_tests.jl") end
-!is_windows() && @time @testset "Dense Tests" begin include("ode/ode_dense_tests.jl") end # Windows 32-bit Overflow
+@time @testset "Dense Tests" begin include("ode/ode_dense_tests.jl") end # Windows 32-bit Overflow
 @time @testset "In-Place Tests" begin include("ode/ode_inplace_tests.jl") end
 @time @testset "Events Tests" begin include("ode/ode_event_tests.jl") end
 @time @testset "Cache Tests" begin include("ode/ode_cache_tests.jl") end
