@@ -87,6 +87,25 @@ function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,alg::DP5Threaded)
   y₀ + dt*Θ*(k[1]+Θ1*(k[2]+Θ*(k[3]+Θ1*k[4])))
 end
 
+"""
+Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Problems Page 192
+"""
+function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,alg::Rosenbrock23)
+  d = 1/(2+sqrt(2))
+  c1 = Θ*(1-Θ)/(1-2d)
+  c2 = Θ*(Θ-2d)/(1-2d)
+  y₀ + dt*(c1*k[1] + c2*k[2])
+end
+
+"""
+Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Problems Page 192
+"""
+function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,alg::Rosenbrock32)
+  d = 1/(2+sqrt(2))
+  c1 = Θ*(1-Θ)/(1-2d)
+  c2 = Θ*(Θ-2d)/(1-2d)
+  y₀ + dt*(c1*k[1] + c2*k[2])
+end
 
 function DP5_dense_ds(T)
   d1  = T(-12715105075//11282082432)

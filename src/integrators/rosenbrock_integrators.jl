@@ -3,10 +3,10 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
   c₃₂ = 6 + sqrt(2)
   d = 1/(2+sqrt(2))
   local k₁::uType = similar(u)
-  local k₂ = similar(u)
+  local k₂::uType = similar(u)
   local k₃::uType = similar(u)
   local tmp::uType
-  const kshortsize = 1
+  const kshortsize = 2
   function vecf(t,u,du)
     f(t,reshape(u,sizeu...),reshape(du,sizeu...))
     u = vec(u)
@@ -27,10 +27,21 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
   W = similar(J); tmp2 = similar(u)
   uidx = eachindex(u)
   jidx = eachindex(J)
-  f(t,u,fsalfirst)
   if calck
-    k = fsalfirst
+    k = ksEltype()
+    for i in 1:2
+      push!(k,similar(rate_prototype))
+    end
+    if calcprevs
+      kprev = deepcopy(k)
+      for i in 1:2 # Make it full-sized
+        push!(kprev,similar(rate_prototype))
+      end
+    end
+    k[1] = k₁
+    k[2] = k₂
   end
+  f(t,u,fsalfirst)
   cache = (u,du1,du2,uprev,kprev,f₀,f₁,vectmp3,utmp,vectmp2,dT,vectmp,tmp2,k)
   jaccache = (jidx,J,W)
   @inbounds for T in Ts
@@ -46,7 +57,7 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
 
       W[:] = I-dt*d*J # Can an allocation be cut here?
       @into! vectmp = W\vec(fsalfirst + dt*d*dT)
-      k₁ = reshape(vectmp,sizeu...)
+      recursivecopy!(k₁,reshape(vectmp,sizeu...))
       for i in uidx
         utmp[i]=u[i]+dt*k₁[i]/2
       end
@@ -90,7 +101,19 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
   local f₁::uType
   local k₂::uType
   local k₃::uType
-  const kshortsize = 1
+  const kshortsize = 2
+  if calck
+    k = ksEltype()
+    for i in 1:2
+      push!(k,zero(rateType))
+    end
+    if calcprevs
+      kprev = deepcopy(k)
+      for i in 1:2 # Make it full-sized
+        push!(kprev,zero(rateType))
+      end
+    end
+  end
   fsalfirst = f(t,u)
   @inbounds for T in Ts
     while t < T
@@ -99,10 +122,6 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
       dT = ForwardDiff.derivative((t)->f(t,u),t)
       J = ForwardDiff.derivative((u)->f(t,u),u)
       W = 1-dt*d*J
-
-      if calck
-        k = fsalfirst
-      end
       k₁ = W\(fsalfirst + dt*d*dT)
       f₁ = f(t+dt/2,u+dt*k₁/2)
       k₂ = W\(f₁-k₁) + k₁
@@ -114,6 +133,10 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
       else
         u = u + dt*k₂
         fsallast = f(t,u)
+      end
+      if calck
+        k[1] = k₁
+        k[2] = k₂
       end
       @ode_loopfooter
       fsalfirst = fsallast
@@ -130,7 +153,7 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
   local k₂ = similar(u)
   local k₃::uType = similar(u)
   local tmp::uType
-  const kshortsize = 1
+  const kshortsize = 2
   function vecf(t,u,du)
     f(t,reshape(u,sizeu...),reshape(du,sizeu...))
     u = vec(u)
@@ -151,12 +174,23 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
   W = similar(J); tmp2 = similar(u)
   uidx = eachindex(u)
   jidx = eachindex(J)
-  f(t,u,fsalfirst)
   if calck
-    k = fsalfirst
+    k = ksEltype()
+    for i in 1:2
+      push!(k,similar(rate_prototype))
+    end
+    if calcprevs
+      kprev = deepcopy(k)
+      for i in 1:2 # Make it full-sized
+        push!(kprev,similar(rate_prototype))
+      end
+    end
+    k[1] = k₁
+    k[2] = k₂
   end
   cache = (u,du1,du2,uprev,kprev,f₀,f₁,vectmp3,utmp,vectmp2,dT,vectmp,tmp2,k)
   jaccache = (jidx,J,W)
+  f(t,u,fsalfirst)
   @inbounds for T in Ts
     while t < T
       @ode_loopheader
@@ -165,7 +199,7 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
 
       W[:] = I-dt*d*J # Can an allocation be cut here?
       @into! vectmp = W\vec(fsalfirst + dt*d*dT)
-      k₁ = reshape(vectmp,sizeu...)
+      recursivecopy!(k₁,reshape(vectmp,sizeu...))
       for i in uidx
         utmp[i]=u[i]+dt*k₁[i]/2
       end
@@ -213,7 +247,19 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
   local k₂::uType
   local k₃::uType
   local tmp::uType
-  const kshortsize = 1
+  const kshortsize = 2
+  if calck
+    k = ksEltype()
+    for i in 1:2
+      push!(k,zero(rateType))
+    end
+    if calcprevs
+      kprev = deepcopy(k)
+      for i in 1:2
+        push!(kprev,zero(rateType))
+      end
+    end
+  end
   fsalfirst = f(t,u)
   @inbounds for T in Ts
     while t < T
@@ -223,9 +269,6 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
       J = ForwardDiff.derivative((u)->f(t,u),u)
       W = 1-dt*d*J
       #f₀ = f(t,u)
-      if calck
-        k = fsalfirst
-      end
       k₁ = W\(fsalfirst + dt*d*dT)
       f₁ = f(t+dt/2,u+dt*k₁/2)
       k₂ = W\(f₁-k₁) + k₁
@@ -238,6 +281,10 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
       else
         u = u + dt*(k₁ + 4k₂ + k₃)/6
         fsallast = f(t,u)
+      end
+      if calck
+        k[1] = k₁
+        k[2] = k₂
       end
       @ode_loopfooter
       fsalfirst = fsallast
