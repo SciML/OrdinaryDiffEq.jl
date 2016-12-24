@@ -9,14 +9,6 @@ module OrdinaryDiffEq
   import Base: linspace
   import ForwardDiff.Dual
 
-  macro def(name, definition)
-      return quote
-          macro $(esc(name))()
-              esc($(Expr(:quote, definition)))
-          end
-      end
-  end
-
   #Constants
 
   const TEST_FLOPS_CUTOFF = 1e10
