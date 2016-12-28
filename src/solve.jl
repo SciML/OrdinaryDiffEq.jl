@@ -180,33 +180,33 @@ function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm,F}(
     progress_name,progress_message,beta1,beta2,tTypeNoUnits(qoldinit),dense,saveat,
     callback,isoutofdomain,calck)
 
-  #@code_warntype ode_solve(ODEIntegrator(timeseries,ts,ks,f!,u,t,tType(dt),Ts,tableau,autodiff,adaptiveorder,order,fsal,alg,custom_callback,rate_prototype,opts))
-  u,t = ode_solve(ODEIntegrator(timeseries,ts,ks,f!,u,t,tType(dt),Ts,tableau,autodiff,adaptiveorder,order,fsal,alg,custom_callback,rate_prototype,opts))
+  notsaveat_idxs = Int[1]
 
   if dense
-    notsaveat_idxs  = find((x)->(x∉saveat)||(x∈Ts),ts)
+    #notsaveat_idxs  = find((x)->(x∉saveat)||(x∈Ts),ts)
     id = InterpolationData(f!,timeseries,ts,ks,notsaveat_idxs)
     interp = (tvals) -> ode_interpolation(alg,tvals,id)
   else
     interp = (tvals) -> nothing
   end
 
-  #=
-  if dense
-    notsaveat_idxs = find((x)->(x∉saveat)&&(x∉Ts),ts)
-    @show notsaveat_idxs
-    t_nosaveat = view(ts,notsaveat_idxs)
-    u_nosaveat = view(timeseries,notsaveat_idxs)
-    interp = (tvals) -> ode_interpolation(tvals,t_nosaveat,u_nosaveat,ks,alg,f!)
-  else
-    interp = (tvals) -> nothing
-  end
-  =#
-
-  build_solution(prob,alg,ts,timeseries,
+  sol = build_solution(prob,alg,ts,timeseries,
                     dense=dense,k=ks,interp=interp,
                     timeseries_errors = timeseries_errors,
-                    dense_errors = dense_errors)
+                    dense_errors = dense_errors,
+                    calculate_error = false)
+
+  integrator = ODEIntegrator(timeseries,ts,ks,f!,u,t,tType(dt),Ts,
+                             tableau,autodiff,adaptiveorder,order,
+                             fsal,alg,custom_callback,rate_prototype,
+                             notsaveat_idxs,opts)
+
+  u,t = ode_solve(integrator)
+
+  if typeof(prob) <: AbstractODETestProblem
+    calculate_solution_errors!(sol;timeseries_errors=timeseries_errors,dense_errors=dense_errors)
+  end
+  sol
 end
 
 function ode_determine_initdt{uType,tType,uEltypeNoUnits}(u0::uType,t::tType,abstol,reltol::uEltypeNoUnits,internalnorm,f,order)

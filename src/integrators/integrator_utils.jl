@@ -42,6 +42,7 @@ immutable ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractAr
   alg::algType
   custom_callback::Bool
   rate_prototype::rateType
+  notsaveat_idxs::Vector{Int}
   opts::O
 end
 
@@ -51,7 +52,7 @@ end
   local dt::tType
   local Ts::Vector{tType}
   local adaptiveorder::Int
-  @unpack f,u,t,dt,Ts,autodiff,adaptiveorder,order,fsal,alg,custom_callback,rate_prototype = integrator
+  @unpack f,u,t,dt,Ts,autodiff,adaptiveorder,order,fsal,alg,custom_callback,rate_prototype,notsaveat_idxs = integrator
   timeseries = integrator.timeseries
   ts = integrator.ts
   ks = integrator.ks
@@ -65,6 +66,7 @@ end
   Tfinal = Ts[end]
   local iter::Int = 0
   local saveiter::Int = 1 # Starts at 1 so first save is at 2
+  local saveiter_dense::Int = 1
   local T::tType
   sizeu = size(u)
   local utmp::uType
@@ -176,7 +178,9 @@ end
         copyat_or_push!(ts,saveiter,t)
         copyat_or_push!(timeseries,saveiter,u)
         if integrator.opts.dense
-          copyat_or_push!(ks,saveiter,k)
+          saveiter_dense += 1
+          copyat_or_push!(ks,saveiter_dense,k)
+          copyat_or_push!(notsaveat_idxs,saveiter_dense,saveiter)
         end
       end
       cursaveat+=1
@@ -187,7 +191,9 @@ end
     copyat_or_push!(timeseries,saveiter,u)
     copyat_or_push!(ts,saveiter,t)
     if integrator.opts.dense
-      copyat_or_push!(ks,saveiter,k)
+      saveiter_dense += 1
+      copyat_or_push!(ks,saveiter_dense,k)
+      copyat_or_push!(notsaveat_idxs,saveiter_dense,saveiter)
     end
   end
   if !issimple_dense
@@ -197,8 +203,14 @@ end
 
 @def ode_postamble begin
   if ts[end] != t
-    push!(ts,t)
-    push!(timeseries,u)
+    saveiter += 1
+    copyat_or_push!(ts,saveiter,t)
+    copyat_or_push!(timeseries,saveiter,u)
+    if integrator.opts.dense
+      saveiter_dense +=1
+      copyat_or_push!(ks,saveiter_dense,k)
+      copyat_or_push!(notsaveat_idxs,saveiter_dense,saveiter)
+    end
   end
   integrator.opts.progress && Juno.done(prog)
   return u,t
@@ -224,7 +236,7 @@ end
       dtprev = dt
       dt = max(dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
       if custom_callback
-        cursaveat,saveiter,dt,t,T,reeval_fsal = integrator.opts.callback(alg,f,t,u,k,tprev,uprev,kprev,ts,timeseries,ks,dtprev,dt,cursaveat,saveiter,iter,uEltype,ksEltype,kshortsize,issimple_dense,fsal,fsalfirst,cache,T,Ts,integrator)
+        cursaveat,saveiter,saveiter_dense,dt,t,T,reeval_fsal = integrator.opts.callback(alg,f,t,u,k,tprev,uprev,kprev,ts,timeseries,ks,dtprev,dt,cursaveat,saveiter,saveiter_dense,iter,notsaveat_idxs,uEltype,ksEltype,kshortsize,issimple_dense,fsal,fsalfirst,cache,T,Ts,integrator)
       else
         @ode_savevalues
         reeval_fsal = false
@@ -276,7 +288,7 @@ end
     end
     dtprev = dt
     if custom_callback
-      cursaveat,saveiter,dt,t,T,reeval_fsal = integrator.opts.callback(alg,f,t,u,k,tprev,uprev,kprev,ts,timeseries,ks,dtprev,dt,cursaveat,saveiter,iter,uEltype,ksEltype,kshortsize,issimple_dense,fsal,fsalfirst,cache,T,Ts,integrator)
+      cursaveat,saveiter,saveiter_dense,dt,t,T,reeval_fsal = integrator.opts.callback(alg,f,t,u,k,tprev,uprev,kprev,ts,timeseries,ks,dtprev,dt,cursaveat,saveiter,saveiter_dense,iter,notsaveat_idxs,uEltype,ksEltype,kshortsize,issimple_dense,fsal,fsalfirst,cache,T,Ts,integrator)
     else
       @ode_savevalues
       reeval_fsal = false
