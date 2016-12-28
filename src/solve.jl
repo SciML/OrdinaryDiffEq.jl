@@ -183,12 +183,10 @@ function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm,F}(
   #@code_warntype ode_solve(ODEIntegrator(timeseries,ts,ks,f!,u,t,tType(dt),Ts,tableau,autodiff,adaptiveorder,order,fsal,alg,custom_callback,rate_prototype,opts))
   u,t = ode_solve(ODEIntegrator(timeseries,ts,ks,f!,u,t,tType(dt),Ts,tableau,autodiff,adaptiveorder,order,fsal,alg,custom_callback,rate_prototype,opts))
 
-
   if dense
     notsaveat_idxs  = find((x)->(x∉saveat)||(x∈Ts),ts)
-    t_nosaveat = view(ts,notsaveat_idxs)
-    u_nosaveat = view(timeseries,notsaveat_idxs)
-    interp = (tvals) -> ode_interpolation(tvals,t_nosaveat,u_nosaveat,ks,alg,f!)
+    id = InterpolationData(f!,timeseries,ts,ks,notsaveat_idxs)
+    interp = (tvals) -> ode_interpolation(alg,tvals,id)
   else
     interp = (tvals) -> nothing
   end
