@@ -1,4 +1,4 @@
-function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{Rosenbrock23,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:AbstractArray,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{Rosenbrock23,uType,tType,ksEltype,F,rateType,O})
   @ode_preamble
   c₃₂ = 6 + sqrt(2)
   d = 1/(2+sqrt(2))
@@ -27,7 +27,7 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
   W = similar(J); tmp2 = similar(u)
   uidx = eachindex(u)
   jidx = eachindex(J)
-  if calck
+  if integrator.opts.calck
     k = ksEltype()
     for i in 1:2
       push!(k,similar(rate_prototype))
@@ -67,7 +67,7 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
       for i in uidx
         k₂[i] = tmp[i] + k₁[i]
       end
-      if adaptive
+      if integrator.opts.adaptive
         for i in uidx
           utmp[i] = u[i] + dt*k₂[i]
         end
@@ -75,9 +75,9 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
         @into! vectmp3 = W\vec(fsallast - c₃₂*(k₂-f₁)-2(k₁-fsalfirst)+dt*dT)
         k₃ = reshape(vectmp3,sizeu...)
         for i in uidx
-          tmp2[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)./(abstol+u[i]*reltol)
+          tmp2[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)./(integrator.opts.abstol+u[i]*integrator.opts.reltol)
         end
-        EEst = internalnorm(tmp2)
+        EEst = integrator.opts.internalnorm(tmp2)
       else
         for i in uidx
           u[i] = u[i] + dt*k₂[i]
@@ -91,7 +91,7 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{Rosenbrock23,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:Number,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{Rosenbrock23,uType,tType,ksEltype,F,rateType,O})
   @ode_preamble
   c₃₂ = 6 + sqrt(2)
   d = 1/(2+sqrt(2))
@@ -102,7 +102,7 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
   local k₂::uType
   local k₃::uType
   const kshortsize = 2
-  if calck
+  if integrator.opts.calck
     k = ksEltype()
     for i in 1:2
       push!(k,zero(rateType))
@@ -125,16 +125,16 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
       k₁ = W\(fsalfirst + dt*d*dT)
       f₁ = f(t+dt/2,u+dt*k₁/2)
       k₂ = W\(f₁-k₁) + k₁
-      if adaptive
+      if integrator.opts.adaptive
         utmp = u + dt*k₂
         fsallast = f(t+dt,utmp)
         k₃ = W\(fsallast - c₃₂*(k₂-f₁)-2(k₁-fsalfirst)+dt*dT)
-        EEst = abs((dt*(k₁ - 2k₂ + k₃)/6)./(abstol+u*reltol))
+        EEst = abs((dt*(k₁ - 2k₂ + k₃)/6)./(integrator.opts.abstol+u*integrator.opts.reltol))
       else
         u = u + dt*k₂
         fsallast = f(t,u)
       end
-      if calck
+      if integrator.opts.calck
         k[1] = k₁
         k[2] = k₂
       end
@@ -145,7 +145,7 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{Rosenbrock32,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:AbstractArray,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{Rosenbrock32,uType,tType,ksEltype,F,rateType,O})
   @ode_preamble
   c₃₂ = 6 + sqrt(2)
   d = 1/(2+sqrt(2))
@@ -174,7 +174,7 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
   W = similar(J); tmp2 = similar(u)
   uidx = eachindex(u)
   jidx = eachindex(J)
-  if calck
+  if integrator.opts.calck
     k = ksEltype()
     for i in 1:2
       push!(k,similar(rate_prototype))
@@ -215,12 +215,12 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
       f(t+dt,tmp,fsallast)
       @into! vectmp3 = W\vec(fsallast - c₃₂*(k₂-f₁)-2(k₁-fsalfirst)+dt*dT)
       k₃ = reshape(vectmp3,sizeu...)
-      if adaptive
+      if integrator.opts.adaptive
         for i in uidx
           utmp[i] = u[i] + dt*(k₁[i] + 4k₂[i] + k₃[i])/6
-          tmp2[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)/(abstol+u[i]*reltol)
+          tmp2[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)/(integrator.opts.abstol+u[i]*integrator.opts.reltol)
         end
-        EEst = internalnorm(tmp2)
+        EEst = integrator.opts.internalnorm(tmp2)
       else
         for i in uidx
           u[i] = u[i] + dt*(k₁[i] + 4k₂[i] + k₃[i])/6
@@ -234,7 +234,7 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{Rosenbrock32,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:Number,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{Rosenbrock32,uType,tType,ksEltype,F,rateType,O})
   @ode_preamble
   c₃₂ = 6 + sqrt(2)
   d = 1/(2+sqrt(2))
@@ -248,7 +248,7 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
   local k₃::uType
   local tmp::uType
   const kshortsize = 2
-  if calck
+  if integrator.opts.calck
     k = ksEltype()
     for i in 1:2
       push!(k,zero(rateType))
@@ -275,14 +275,14 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
       tmp = u + dt*k₂
       fsallast = f(t+dt,tmp)
       k₃ = W\(fsallast - c₃₂*(k₂-f₁)-2(k₁-fsalfirst)+dt*dT)
-      if adaptive
+      if integrator.opts.adaptive
         utmp = u + dt*(k₁ + 4k₂ + k₃)/6
-        EEst = abs((dt*(k₁ - 2k₂ + k₃)/6)./(abstol+u*reltol))
+        EEst = abs((dt*(k₁ - 2k₂ + k₃)/6)./(integrator.opts.abstol+u*integrator.opts.reltol))
       else
         u = u + dt*(k₁ + 4k₂ + k₃)/6
         fsallast = f(t,u)
       end
-      if calck
+      if integrator.opts.calck
         k[1] = k₁
         k[2] = k₂
       end

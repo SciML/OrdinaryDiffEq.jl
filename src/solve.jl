@@ -115,27 +115,23 @@ function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm,F}(
       qmax = 10.0
     end
   end
-  if beta2 == nothing # Use default β₂
+  if beta2 == nothing # Use default beta2
     if typeof(alg) <: DP5 || typeof(alg) <: DP5Threaded
-      β₂ = 0.04
+      beta2 = 0.04
     elseif typeof(alg) <: DP8
-      β₂ = 0.00
+      beta2 = 0.00
     else
-      β₂ = 0.4 / order
+      beta2 = 0.4 / order
     end
-  else
-    β₂ = beta2
   end
-  if beta1 == nothing # Use default β₁
+  if beta1 == nothing # Use default beta1
     if typeof(alg) <: DP5 || typeof(alg) <: DP5Threaded
-      β₁ = 1/order - .75β₂
+      beta1 = 1/order - .75beta2
     elseif typeof(alg) <: DP8
-      β₁ = 1/order - .2β₂
+      beta1 = 1/order - .2beta2
     else
-      β₁ = .7/order
+      beta1 = .7/order
     end
-  else
-    β₁ = beta1
   end
 
   fsal = false
@@ -178,20 +174,36 @@ function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm,F}(
   else # Just push a dummy in for special dense since first is not used.
     push!(ks,[rate_prototype])
   end
-  γ = gamma
 
-  #@code_warntype ode_solve(ODEIntegrator{typeof(alg),uType,uEltype,ndims(u)+1,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,typeof(f!),typeof(internalnorm),typeof(callback),typeof(isoutofdomain)}(timeseries,ts,ks,f!,u,t,dt,Ts,maxiters,timeseries_steps,save_timeseries,adaptive,abstol,reltol,γ,qmax,qmin,dtmax,dtmin,internalnorm,progress,tableau,autodiff,adaptiveorder,order,progress_steps,progressbar_name,β₁,β₂,qoldinit,fsal,dense,saveat,alg,callback,isoutofdomain,custom_callback,calck))
-  u,t = ode_solve(ODEIntegrator{typeof(alg),uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,typeof(f!),typeof(internalnorm),typeof(callback),typeof(isoutofdomain),typeof(progress_message)}(timeseries,ts,ks,f!,u,t,dt,Ts,maxiters,timeseries_steps,save_timeseries,adaptive,abstol,reltol,γ,qmax,qmin,dtmax,dtmin,internalnorm,progress,tableau,autodiff,adaptiveorder,order,progress_steps,progress_name,progress_message,β₁,β₂,qoldinit,fsal,dense,saveat,alg,callback,isoutofdomain,custom_callback,calck))
+  opts = DEOptions(maxiters,timeseries_steps,save_timeseries,adaptive,uEltype(abstol),
+    uEltypeNoUnits(reltol),gamma,qmax,qmin,dtmax,dtmin,internalnorm,progress,progress_steps,
+    progress_name,progress_message,beta1,beta2,tTypeNoUnits(qoldinit),dense,saveat,
+    callback,isoutofdomain,calck)
+
+  #@code_warntype ode_solve(ODEIntegrator(timeseries,ts,ks,f!,u,t,tType(dt),Ts,tableau,autodiff,adaptiveorder,order,fsal,alg,custom_callback,rate_prototype,opts))
+  u,t = ode_solve(ODEIntegrator(timeseries,ts,ks,f!,u,t,tType(dt),Ts,tableau,autodiff,adaptiveorder,order,fsal,alg,custom_callback,rate_prototype,opts))
 
 
   if dense
-    saveat_idxs = find((x)->(x∈saveat)&&(x∉Ts),ts)
-    t_nosaveat = view(ts,symdiff(1:length(ts),saveat_idxs))
-    u_nosaveat = view(timeseries,symdiff(1:length(ts),saveat_idxs))
+    notsaveat_idxs  = find((x)->(x∉saveat)||(x∈Ts),ts)
+    t_nosaveat = view(ts,notsaveat_idxs)
+    u_nosaveat = view(timeseries,notsaveat_idxs)
     interp = (tvals) -> ode_interpolation(tvals,t_nosaveat,u_nosaveat,ks,alg,f!)
   else
     interp = (tvals) -> nothing
   end
+
+  #=
+  if dense
+    notsaveat_idxs = find((x)->(x∉saveat)&&(x∉Ts),ts)
+    @show notsaveat_idxs
+    t_nosaveat = view(ts,notsaveat_idxs)
+    u_nosaveat = view(timeseries,notsaveat_idxs)
+    interp = (tvals) -> ode_interpolation(tvals,t_nosaveat,u_nosaveat,ks,alg,f!)
+  else
+    interp = (tvals) -> nothing
+  end
+  =#
 
   build_solution(prob,alg,ts,timeseries,
                     dense=dense,k=ks,interp=interp,

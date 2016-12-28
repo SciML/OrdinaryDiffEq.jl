@@ -1,4 +1,31 @@
-immutable ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}
+type DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5}
+  maxiters::Int
+  timeseries_steps::Int
+  save_timeseries::Bool
+  adaptive::Bool
+  abstol::uEltype
+  reltol::uEltypeNoUnits
+  gamma::tTypeNoUnits
+  qmax::tTypeNoUnits
+  qmin::tTypeNoUnits
+  dtmax::tType
+  dtmin::tType
+  internalnorm::F2
+  progress::Bool
+  progress_steps::Int
+  progress_name::String
+  progress_message::F5
+  beta1::tTypeNoUnits
+  beta2::tTypeNoUnits
+  qoldinit::tTypeNoUnits
+  dense::Bool
+  saveat::Vector{tType}
+  callback::F3
+  isoutofdomain::F4
+  calck::Bool
+end
+
+immutable ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},tType,ksEltype,F,rateType,O}
   timeseries::Vector{uType}
   ts::Vector{tType}
   ks::Vector{ksEltype}
@@ -7,37 +34,15 @@ immutable ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractAr
   t::tType
   dt::tType
   Ts::Vector{tType}
-  maxiters::Int
-  timeseries_steps::Int
-  save_timeseries::Bool
-  adaptive::Bool
-  abstol::uEltype
-  reltol::uEltypeNoUnits
-  γ::tTypeNoUnits
-  qmax::tTypeNoUnits
-  qmin::tTypeNoUnits
-  dtmax::tType
-  dtmin::tType
-  internalnorm::F2
-  progress::Bool
   tableau::ExplicitRKTableau
   autodiff::Bool
   adaptiveorder::Int
   order::Int
-  progress_steps::Int
-  progress_name::String
-  progress_message::F5
-  β₁::tTypeNoUnits
-  β₂::tTypeNoUnits
-  qoldinit::tTypeNoUnits
   fsal::Bool
-  dense::Bool
-  saveat::Vector{tType}
   alg::algType
-  callback::F3
-  isoutofdomain::F4
   custom_callback::Bool
-  calck::Bool
+  rate_prototype::rateType
+  opts::O
 end
 
 @def ode_preamble begin
@@ -46,14 +51,16 @@ end
   local dt::tType
   local Ts::Vector{tType}
   local adaptiveorder::Int
-  @unpack f,u,t,dt,Ts,maxiters,timeseries_steps,γ,qmax,qmin,save_timeseries,adaptive,progress,autodiff,adaptiveorder,order,progress_steps,progress_name,progress_message,β₂,β₁,qoldinit,fsal, dense, saveat, alg, callback, isoutofdomain, custom_callback,calck = integrator
+  @unpack f,u,t,dt,Ts,autodiff,adaptiveorder,order,fsal,alg,custom_callback,rate_prototype = integrator
   timeseries = integrator.timeseries
   ts = integrator.ts
   ks = integrator.ks
-  const calcprevs = !isempty(saveat) || custom_callback # Calculate the previous values
-  const issimple_dense = (ksEltype==rateType) # Means ks[i] = f(t[i],timeseries[i]), for Hermite
+  const calcprevs = !isempty(integrator.opts.saveat) || custom_callback # Calculate the previous values
+  const issimple_dense = !isspecialdense(alg)
   const dtcache = dt
   # Need to initiate ks in the method
+
+
 
   Tfinal = Ts[end]
   local iter::Int = 0
@@ -65,19 +72,15 @@ end
   local kprev::ksEltype
   local kshortsize::Int
   local reeval_fsal::Bool
-  local rate_prototype::rateType
   if ksEltype <: AbstractArray  && !issimple_dense
     k = ksEltype[]
     kprev = ksEltype[]
-    rate_prototype = ks[1][1]
   elseif ksEltype <: Number
     k = ksEltype(0)
     kprev = ksEltype(0)
-    rate_prototype = ks[1][1]
   else # it is simple_dense
     k = ksEltype(zeros(Int64,ndims(u))...) # Needs the zero for dimension 3+
     kprev = ksEltype(zeros(Int64,ndims(u))...)
-    rate_prototype = ks[1]
   end
 
   # Setup FSAL
@@ -98,29 +101,27 @@ end
     end
   end
 
+  tTypeNoUnits = typeof(integrator.opts.qoldinit)
+  uEltypeNoUnits = typeof(integrator.opts.reltol)
+  uEltype = typeof(integrator.opts.abstol)
   local cursaveat::Int = 1
   local Θ = one(t)/one(t) # No units
   local tprev::tType = t
   local uprev::uType = deepcopy(u)
-  local standard::uEltype = uEltype(0)
   local q::tTypeNoUnits = 0
   local dtpropose::tType = tType(0)
   local q11::tTypeNoUnits = 0
-  local qold::tTypeNoUnits = qoldinit
-  local β₁::tTypeNoUnits
+  local qold::tTypeNoUnits = integrator.opts.qoldinit
   if uType <: Number || !custom_callback
     cache = ()
   end
-  qminc = inv(qmin) #facc1
-  qmaxc = inv(qmax) #facc2
+  qminc = inv(integrator.opts.qmin) #facc1
+  qmaxc = inv(integrator.opts.qmax) #facc2
   local EEst::tTypeNoUnits = zero(uEltypeNoUnits)
-  if adaptive
-    @unpack abstol,reltol,qmax,dtmax,dtmin,internalnorm = integrator
-  end
 
   if issimple_dense #If issimple_dense, then ks[1]=f(ts[1],timeseries[1])
     const kshortsize = 1
-    if calck
+    if integrator.opts.calck
       if ksEltype <: AbstractArray
         k = similar(rate_prototype)
       end
@@ -128,13 +129,13 @@ end
     end
   end ## if not simple_dense, you have to initialize k and push the ks[1]!
 
-  progress && (prog = Juno.ProgressBar(name=progress_name))
+  integrator.opts.progress && (prog = Juno.ProgressBar(name=integrator.opts.progress_name))
 end
 
 @def ode_loopheader begin
   iter += 1
 
-  if adaptive
+  if integrator.opts.adaptive
     dt = min(dt,abs(T-t)) # Step to the end
   elseif dtcache == 0 # Use tstops
     dt = abs(T-t)
@@ -142,7 +143,7 @@ end
     dt = min(dtcache,abs(T-t)) # Step to the end
   end
 
-  if iter > maxiters
+  if iter > integrator.opts.maxiters
     warn("Interrupted. Larger maxiters is needed.")
     @ode_postamble
   end
@@ -161,11 +162,11 @@ end
 end
 
 @def ode_savevalues begin
-  if !isempty(saveat) # Perform saveat
-    while cursaveat <= length(saveat) && saveat[cursaveat]<= t
+  if !isempty(integrator.opts.saveat) # Perform saveat
+    while cursaveat <= length(integrator.opts.saveat) && integrator.opts.saveat[cursaveat]<= t
       saveiter += 1
-      if saveat[cursaveat]<t # If <t, interpolate
-        curt = saveat[cursaveat]
+      if integrator.opts.saveat[cursaveat]<t # If <t, interpolate
+        curt = integrator.opts.saveat[cursaveat]
         ode_addsteps!(k,tprev,uprev,dtprev,alg,f)
         Θ = (curt - tprev)/dtprev
         val = ode_interpolant(Θ,dtprev,uprev,u,kprev,k,alg)
@@ -174,18 +175,18 @@ end
       else # ==t, just save
         copyat_or_push!(ts,saveiter,t)
         copyat_or_push!(timeseries,saveiter,u)
-        if dense
+        if integrator.opts.dense
           copyat_or_push!(ks,saveiter,k)
         end
       end
       cursaveat+=1
     end
   end
-  if save_timeseries && iter%timeseries_steps==0
+  if integrator.opts.save_timeseries && iter%integrator.opts.timeseries_steps==0
     saveiter += 1
     copyat_or_push!(timeseries,saveiter,u)
     copyat_or_push!(ts,saveiter,t)
-    if dense
+    if integrator.opts.dense
       copyat_or_push!(ks,saveiter,k)
     end
   end
@@ -199,18 +200,18 @@ end
     push!(ts,t)
     push!(timeseries,u)
   end
-  progress && Juno.done(prog)
+  integrator.opts.progress && Juno.done(prog)
   return u,t
 end
 
 @def ode_loopfooter begin
-  if adaptive
-    q11 = EEst^β₁
-    q = q11/(qold^β₂)
-    q = max(qmaxc,min(qminc,q/γ))
+  if integrator.opts.adaptive
+    q11 = EEst^integrator.opts.beta1
+    q = q11/(qold^integrator.opts.beta2)
+    q = max(qmaxc,min(qminc,q/integrator.opts.gamma))
     dtnew = dt/q
     ttmp = t + dt
-    if !isoutofdomain(ttmp,utmp) && EEst <= 1.0 # Accept
+    if !integrator.opts.isoutofdomain(ttmp,utmp) && EEst <= 1.0 # Accept
       t = ttmp
       if uType <: AbstractArray # Treat mutables differently
         recursivecopy!(u, utmp)
@@ -218,12 +219,12 @@ end
         u = utmp
       end
 
-      qold = max(EEst,qoldinit)
-      dtpropose = min(dtmax,dtnew)
+      qold = max(EEst,integrator.opts.qoldinit)
+      dtpropose = min(integrator.opts.dtmax,dtnew)
       dtprev = dt
-      dt = max(dtpropose,dtmin) #abs to fix complex sqrt issue at end
+      dt = max(dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
       if custom_callback
-        cursaveat,saveiter,dt,t,T,reeval_fsal = callback(alg,f,t,u,k,tprev,uprev,kprev,ts,timeseries,ks,dtprev,dt,saveat,cursaveat,saveiter,iter,save_timeseries,timeseries_steps,uEltype,ksEltype,dense,kshortsize,issimple_dense,fsal,fsalfirst,cache,calck,T,Ts)
+        cursaveat,saveiter,dt,t,T,reeval_fsal = integrator.opts.callback(alg,f,t,u,k,tprev,uprev,kprev,ts,timeseries,ks,dtprev,dt,cursaveat,saveiter,iter,uEltype,ksEltype,kshortsize,issimple_dense,fsal,fsalfirst,cache,T,Ts,integrator)
       else
         @ode_savevalues
         reeval_fsal = false
@@ -253,7 +254,7 @@ end
         else
           uprev = u
         end
-        if calck
+        if integrator.opts.calck
           if ksEltype <: AbstractArray
             recursivecopy!(kprev,k)
           else
@@ -262,7 +263,7 @@ end
         end
       end
     else # Reject
-      dt = dt/min(qminc,q11/γ)
+      dt = dt/min(qminc,q11/integrator.opts.gamma)
     end
   else #Not adaptive
     t += dt
@@ -275,7 +276,7 @@ end
     end
     dtprev = dt
     if custom_callback
-      cursaveat,saveiter,dt,t,T,reeval_fsal = callback(alg,f,t,u,k,tprev,uprev,kprev,ts,timeseries,ks,dtprev,dt,saveat,cursaveat,saveiter,iter,save_timeseries,timeseries_steps,uEltype,ksEltype,dense,kshortsize,issimple_dense,fsal,fsalfirst,cache,calck,T,Ts)
+      cursaveat,saveiter,dt,t,T,reeval_fsal = integrator.opts.callback(alg,f,t,u,k,tprev,uprev,kprev,ts,timeseries,ks,dtprev,dt,cursaveat,saveiter,iter,uEltype,ksEltype,kshortsize,issimple_dense,fsal,fsalfirst,cache,T,Ts,integrator)
     else
       @ode_savevalues
       reeval_fsal = false
@@ -288,7 +289,7 @@ end
       else
         uprev = u
       end
-      if calck
+      if integrator.opts.calck
         if ksEltype <: AbstractArray
           recursivecopy!(kprev,k)
         else
@@ -297,8 +298,8 @@ end
       end
     end
   end
-  if progress && iter%progress_steps==0
-    Juno.msg(prog,progress_message(dt,t,u))
+  if integrator.opts.progress && iter%integrator.opts.progress_steps==0
+    Juno.msg(prog,integrator.opts.progress_message(dt,t,u))
     Juno.progress(prog,t/Tfinal)
   end
 end

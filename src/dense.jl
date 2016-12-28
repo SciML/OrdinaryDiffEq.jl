@@ -1,5 +1,12 @@
-#ode_interpolant(Θ,dt,y₀,y₁,k₀,k₁,alg::Symbol) = ode_interpolant(Θ,dt,y₀,y₁,k₀,k₁,Val{alg}) # Dispatch interpolant by alg
-#ode_interpolation(tvals,ts,timeseries,ks,alg::Symbol,f) = ode_interpolation(tvals,ts,timeseries,ks,Val{alg},f) # Dispatch by alg
+immutable InterpolationData{algType,F,uType,tType,kType}
+  alg::algType
+  f::F
+  u::uType
+  t::tType
+  k::kType
+  saveat_idxs::Vector{Int}
+end
+
 ode_addsteps!(k,t,u,dt,alg,f) = ode_addsteps!(k,t,u,dt,f,alg,typeof(u./dt),eltype(u./u))
 
 """

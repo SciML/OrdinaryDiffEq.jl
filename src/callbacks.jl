@@ -1,6 +1,6 @@
 macro ode_callback(ex)
   esc(quote
-    function (alg,f,t,u,k,tprev,uprev,kprev,ts,timeseries,ks,dtprev,dt,saveat,cursaveat,saveiter,iter,save_timeseries,timeseries_steps,uEltype,ksEltype,dense,kshortsize,issimple_dense,fsal,fsalfirst,cache,calck,T,Ts)
+    function (alg,f,t,u,k,tprev,uprev,kprev,ts,timeseries,ks,dtprev,dt,cursaveat,saveiter,iter,uEltype,ksEltype,kshortsize,issimple_dense,fsal,fsalfirst,cache,T,Ts,integrator)
       reeval_fsal = false
       event_occurred = false
       $(ex)
@@ -52,7 +52,7 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
       # If no solve and no interpolants, just use endpoint
 
       t = tprev + dtprev
-      if calck
+      if integrator.opts.calck
         if isspecialdense(alg)
           resize!(k,kshortsize) # Reset k for next step
           k = typeof(k)() # Make a local blank k for saving
@@ -71,7 +71,7 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
         @ode_terminate
       else
         $apply_event!(u,cache)
-        if calck
+        if integrator.opts.calck
           if !isspecialdense(alg)
             if typeof(u) <: Number
               k = f(t,u)

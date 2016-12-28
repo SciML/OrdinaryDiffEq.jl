@@ -1,4 +1,4 @@
-function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{ExplicitRK,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:Number,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{ExplicitRK,uType,tType,ksEltype,F,rateType,O})
   @ode_preamble
   local A::Matrix{uEltypeNoUnits}
   local c::Vector{uEltypeNoUnits}
@@ -7,8 +7,8 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
   local stages::Int
   @unpack A,c,α,αEEst,stages,fsal = integrator.tableau
   A = A' # Transpose A to column major looping
-  kk = Array{rateType}(stages) # Not ks since that's for dense
-  local utilde::rateType
+  kk = Array{ksEltype}(stages) # Not ks since that's for integrator.opts.dense
+  local utilde::ksEltype
   @inbounds for T in Ts
     while t < T
       @ode_loopheader
@@ -37,17 +37,17 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
       for i = 2:stages
         utilde += α[i]*kk[i]
       end
-      if adaptive
+      if integrator.opts.adaptive
         utmp = u + dt*utilde
         uEEst = αEEst[1]*kk[1]
         for i = 2:stages
           uEEst += αEEst[i]*kk[i]
         end
-        EEst = abs( dt*(utilde-uEEst)/(abstol+max(abs(u),abs(utmp))*reltol))
+        EEst = abs( dt*(utilde-uEEst)/(integrator.opts.abstol+max(abs(u),abs(utmp))*integrator.opts.reltol))
       else
         u = u + dt*utilde
       end
-      if calck
+      if integrator.opts.calck
         k = kk[end]
       end
       @ode_loopfooter
@@ -56,7 +56,7 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{ExplicitRK,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:AbstractArray,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{ExplicitRK,uType,tType,ksEltype,F,rateType,O})
   @ode_preamble
   local A::Matrix{uEltypeNoUnits}
   local c::Vector{uEltypeNoUnits}
@@ -66,7 +66,7 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
   uidx = eachindex(u)
   @unpack A,c,α,αEEst,stages,fsal = integrator.tableau
   A = A' # Transpose A to column major looping
-  kk = Vector{rateType}(0)
+  kk = Vector{ksEltype}(0)
   for i = 1:stages
     push!(kk,similar(rate_prototype))
   end
@@ -77,7 +77,7 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
   uEEst = similar(rate_prototype)
   fsallast = kk[end]
   fsalfirst = kk[1]
-  if calck
+  if integrator.opts.calck
     k = kk[end]
   end
   f(t,u,kk[1]) # pre-start fsal
@@ -133,7 +133,7 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
           utmp[i] = u[i] + dt*utilde[i]
         end
       end
-      if adaptive
+      if integrator.opts.adaptive
         for i in uidx
           uEEst[i] = αEEst[1]*kk[1][i]
         end
@@ -143,9 +143,9 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
           end
         end
         for i in uidx
-          atmp[i] = (dt*(utilde[i]-uEEst[i])/(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
+          atmp[i] = (dt*(utilde[i]-uEEst[i])/(integrator.opts.abstol+max(abs(u[i]),abs(utmp[i]))*integrator.opts.reltol))
         end
-        EEst = internalnorm(atmp)
+        EEst = integrator.opts.internalnorm(atmp)
       else
         recursivecopy!(u,utmp)
       end

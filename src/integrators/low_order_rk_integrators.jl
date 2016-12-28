@@ -1,4 +1,4 @@
-function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{BS3,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:Number,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{BS3,uType,tType,ksEltype,F,rateType,O})
   @ode_preamble
   a21,a32,a41,a42,a43,c1,c2,b1,b2,b3,b4  = constructBS3(uEltypeNoUnits)
   local k1::rateType
@@ -15,13 +15,13 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
       k3 = f(t+c2*dt,u+dt*a32*k2)
       utmp = u+dt*(a41*k1+a42*k2+a43*k3)
       k4 = f(t+dt,utmp); fsallast = k4
-      if adaptive
+      if integrator.opts.adaptive
         utilde = u + dt*(b1*k1 + b2*k2 + b3*k3 + b4*k4)
-        EEst = abs( ((utilde-utmp)/(abstol+max(abs(u),abs(utmp))*reltol)))
+        EEst = abs( ((utilde-utmp)/(integrator.opts.abstol+max(abs(u),abs(utmp))*integrator.opts.reltol)))
       else
         u = utmp
       end
-      if calck
+      if integrator.opts.calck
         k = fsallast
       end
       @ode_loopfooter
@@ -30,7 +30,7 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{BS3,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:AbstractArray,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{BS3,uType,tType,ksEltype,F,rateType,O})
   @ode_preamble
   a21,a32,a41,a42,a43,c1,c2,b1,b2,b3,b4  = constructBS3(uEltypeNoUnits)
   k1 = similar(rate_prototype)
@@ -63,12 +63,12 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
         utmp[i] = u[i]+dt*(a41*k1[i]+a42*k2[i]+a43*k3[i])
       end
       f(t+dt,utmp,k4)
-      if adaptive
+      if integrator.opts.adaptive
         for i in uidx
           utilde[i] = u[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b4*k4[i])
-          atmp[i] = ((utilde[i]-utmp[i])/(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
+          atmp[i] = ((utilde[i]-utmp[i])/(integrator.opts.abstol+max(abs(u[i]),abs(utmp[i]))*integrator.opts.reltol))
         end
-        EEst = internalnorm(atmp)
+        EEst = integrator.opts.internalnorm(atmp)
       else
         recursivecopy!(u, utmp)
       end
@@ -78,7 +78,7 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{BS5,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:Number,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{BS5,uType,tType,ksEltype,F,rateType,O})
   @ode_preamble
   c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8 = constructBS5(uEltypeNoUnits)
   local k1::rateType
@@ -92,7 +92,7 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
   local utilde::uType
   local EEst2::uEltypeNoUnits
   const kshortsize = 8
-  if calck
+  if integrator.opts.calck
     k = ksEltype()
     for i in 1:kshortsize
       push!(k,zero(rateType))
@@ -118,16 +118,16 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
       k7 = f(t+dt,u+dt*(a71*k1+a72*k2+a73*k3+a74*k4+a75*k5+a76*k6))
       utmp = u+dt*(a81*k1+a83*k3+a84*k4+a85*k5+a86*k6+a87*k7)
       fsallast = f(t+dt,utmp); k8 = fsallast
-      if adaptive
+      if integrator.opts.adaptive
         uhat   = dt*(bhat1*k1 + bhat3*k3 + bhat4*k4 + bhat5*k5 + bhat6*k6)
         utilde = u + dt*(btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7 + btilde8*k8)
-        EEst1 = abs( sum(((uhat)./(abstol+max(abs(u),abs(utmp))*reltol))))
-        EEst2 = abs( sum(((utilde-utmp)./(abstol+max(abs(u),abs(utmp))*reltol))))
+        EEst1 = abs( sum(((uhat)./(integrator.opts.abstol+max(abs(u),abs(utmp))*integrator.opts.reltol))))
+        EEst2 = abs( sum(((utilde-utmp)./(integrator.opts.abstol+max(abs(u),abs(utmp))*integrator.opts.reltol))))
         EEst = max(EEst1,EEst2)
       else
         u = utmp
       end
-      if calck
+      if integrator.opts.calck
         k[1]=k1; k[2]=k2; k[3]=k3;k[4]=k4;k[5]=k5;k[6]=k6;k[7]=k7;k[8]=k8
       end
       @ode_loopfooter
@@ -136,7 +136,7 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{BS5,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:AbstractArray,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{BS5,uType,tType,ksEltype,F,rateType,O})
   @ode_preamble
   c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8 = constructBS5(uEltypeNoUnits)
   k1::rateType = similar(rate_prototype)
@@ -153,7 +153,7 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
   local EEst2::uEltypeNoUnits
   uidx = eachindex(u)
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits); atmptilde = similar(u,uEltypeNoUnits)
-  if calck
+  if integrator.opts.calck
     k = ksEltype()
     for i in 1:kshortsize
       push!(k,similar(rate_prototype))
@@ -166,12 +166,12 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
       end
     end
   end
-  if calck
+  if integrator.opts.calck
     k[1]=k1; k[2]=k2; k[3]=k3;k[4]=k4;k[5]=k5;k[6]=k6;k[7]=k7;k[8]=k8
   end
   fsalfirst = k1; fsallast = k8  # setup pointers
   if custom_callback
-    if calck
+    if integrator.opts.calck
       cache = (u,k1,k2,k3,k4,k5,k6,k7,k8,utilde,uhat,utmp,tmp,atmp,atmptilde,uprev,kprev...)
     else
       cache = (u,k1,k2,k3,k4,k5,k6,k7,k8,utilde,uhat,utmp,tmp,atmp,atmptilde,uprev)
@@ -209,15 +209,15 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
         utmp[i] = u[i]+dt*(a81*k1[i]+a83*k3[i]+a84*k4[i]+a85*k5[i]+a86*k6[i]+a87*k7[i])
       end
       f(t+dt,utmp,k8)
-      if adaptive
+      if integrator.opts.adaptive
         for i in uidx
           uhat[i]   = dt*(bhat1*k1[i] + bhat3*k3[i] + bhat4*k4[i] + bhat5*k5[i] + bhat6*k6[i])
           utilde[i] = u[i] + dt*(btilde1*k1[i] + btilde2*k2[i] + btilde3*k3[i] + btilde4*k4[i] + btilde5*k5[i] + btilde6*k6[i] + btilde7*k7[i] + btilde8*k8[i])
-          atmp[i] = ((uhat[i])./(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
-          atmptilde[i] = ((utilde[i]-utmp[i])./(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
+          atmp[i] = ((uhat[i])./(integrator.opts.abstol+max(abs(u[i]),abs(utmp[i]))*integrator.opts.reltol))
+          atmptilde[i] = ((utilde[i]-utmp[i])./(integrator.opts.abstol+max(abs(u[i]),abs(utmp[i]))*integrator.opts.reltol))
         end
-        EEst1 = internalnorm(atmp)
-        EEst2 = internalnorm(atmptilde)
+        EEst1 = integrator.opts.internalnorm(atmp)
+        EEst2 = integrator.opts.internalnorm(atmptilde)
         EEst = max(EEst1,EEst2)
       else
         recursivecopy!(u, utmp)
@@ -228,7 +228,7 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{Tsit5,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:Number,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{Tsit5,uType,tType,ksEltype,F,rateType,O})
   @ode_preamble
   c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,b1,b2,b3,b4,b5,b6,b7 = constructTsit5(uEltypeNoUnits)
   local k1::rateType
@@ -240,7 +240,7 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
   local k7::rateType
   local utilde::uType
   const kshortsize = 7
-  if calck
+  if integrator.opts.calck
     k = ksEltype()
     for i in 1:kshortsize
       push!(k,zero(rateType))
@@ -259,13 +259,13 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
       k6 = f(t+dt,u+dt*(a61*k1+a62*k2+a63*k3+a64*k4+a65*k5))
       utmp = u+dt*(a71*k1+a72*k2+a73*k3+a74*k4+a75*k5+a76*k6)
       fsallast = f(t+dt,utmp); k7 = fsallast
-      if adaptive
+      if integrator.opts.adaptive
         utilde = u + dt*(b1*k1 + b2*k2 + b3*k3 + b4*k4 + b5*k5 + b6*k6 + b7*k7)
-        EEst = abs(((utilde-utmp)/(abstol+max(abs(u),abs(utmp))*reltol)))
+        EEst = abs(((utilde-utmp)/(integrator.opts.abstol+max(abs(u),abs(utmp))*integrator.opts.reltol)))
       else
         u = utmp
       end
-      if calck
+      if integrator.opts.calck
         k[1] = k1
         k[2] = k2
         k[3] = k3
@@ -280,7 +280,7 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{Tsit5,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:AbstractArray,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{Tsit5,uType,tType,ksEltype,F,rateType,O})
   @ode_preamble
   c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,b1,b2,b3,b4,b5,b6,b7 = constructTsit5(uEltypeNoUnits)
   k2::rateType = similar(rate_prototype)
@@ -293,7 +293,7 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
   uidx = eachindex(u)
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
   k1 = fsalfirst; k7 = fsallast # setup pointers
-  if calck
+  if integrator.opts.calck
     k = ksEltype()
     for i in 1:kshortsize
       push!(k,similar(rate_prototype))
@@ -312,7 +312,7 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
     end
   end
   if custom_callback
-    if calck
+    if integrator.opts.calck
       cache = (u,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,utmp,atmp,uprev,kprev...)
     else
       cache = (u,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,utmp,atmp,uprev)
@@ -346,12 +346,12 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
         utmp[i] = u[i]+dt*(a71*k1[i]+a72*k2[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i])
       end
       f(t+dt,utmp,k7)
-      if adaptive
+      if integrator.opts.adaptive
         for i in uidx
           utilde[i] = u[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b4*k4[i] + b5*k5[i] + b6*k6[i] + b7*k7[i])
-          atmp[i] = ((utilde[i]-utmp[i])./(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
+          atmp[i] = ((utilde[i]-utmp[i])./(integrator.opts.abstol+max(abs(u[i]),abs(utmp[i]))*integrator.opts.reltol))
         end
-        EEst = internalnorm(atmp)
+        EEst = integrator.opts.internalnorm(atmp)
       else
         recursivecopy!(u, utmp)
       end
@@ -361,7 +361,7 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{DP5,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:Number,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{DP5,uType,tType,ksEltype,F,rateType,O})
   @ode_preamble
   a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = constructDP5(uEltypeNoUnits)
   local k1::rateType
@@ -374,7 +374,7 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
   local update::rateType
   local bspl::rateType
   const kshortsize = 4
-  if calck
+  if integrator.opts.calck
     d1,d3,d4,d5,d6,d7 = DP5_dense_ds(uEltypeNoUnits)
     k = ksEltype()
     for i in 1:kshortsize
@@ -400,13 +400,13 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
       utmp = u+dt*update
       fsallast = f(t+dt,utmp); k7 = fsallast
 
-      if adaptive
+      if integrator.opts.adaptive
         utilde = u + dt*(b1*k1 + b3*k3 + b4*k4 + b5*k5 + b6*k6 + b7*k7)
-        EEst = abs( ((utilde-utmp)/(abstol+max(abs(u),abs(utmp))*reltol)))
+        EEst = abs( ((utilde-utmp)/(integrator.opts.abstol+max(abs(u),abs(utmp))*integrator.opts.reltol)))
       else
         u = utmp
       end
-      if calck
+      if integrator.opts.calck
         k[1] = update
         bspl = k1 - update
         k[2] = bspl
@@ -420,7 +420,7 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
 end
 
 
-function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{DP5,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:AbstractArray,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{DP5,uType,tType,ksEltype,F,rateType,O})
   @ode_preamble
   a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = constructDP5(uEltypeNoUnits)
   k2 = similar(rate_prototype)
@@ -434,7 +434,7 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
   uidx = eachindex(u)
   const kshortsize = 4
-  if calck
+  if integrator.opts.calck
     d1,d3,d4,d5,d6,d7 = DP5_dense_ds(uEltypeNoUnits)
     k = ksEltype()
     for i in 1:kshortsize
@@ -449,7 +449,7 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
   end
   k1 = fsalfirst; k7 = fsallast
   if custom_callback
-    if calck
+    if integrator.opts.calck
       cache = (u,k...,k1,k2,k3,k4,k5,k6,k7,tmp,utmp,atmp,utilde,bspl,uprev,kprev...)
     else
       cache = (u,k1,k2,k3,k4,k5,k6,k7,tmp,utmp,atmp,utilde,update,bspl,uprev)
@@ -484,16 +484,16 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
         utmp[i] = u[i]+dt*update[i]
       end
       f(t+dt,utmp,k7);
-      if adaptive
+      if integrator.opts.adaptive
         for i in uidx
           utilde[i] = u[i] + dt*(b1*k1[i] + b3*k3[i] + b4*k4[i] + b5*k5[i] + b6*k6[i] + b7*k7[i])
-          atmp[i] = ((utilde[i]-utmp[i])/(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
+          atmp[i] = ((utilde[i]-utmp[i])/(integrator.opts.abstol+max(abs(u[i]),abs(utmp[i]))*integrator.opts.reltol))
         end
-        EEst = internalnorm(atmp)
+        EEst = integrator.opts.internalnorm(atmp)
       else
         recursivecopy!(u, utmp)
       end
-      if calck
+      if integrator.opts.calck
         for i in uidx
           bspl[i] = k1[i] - update[i]
           k[2][i] = bspl[i]

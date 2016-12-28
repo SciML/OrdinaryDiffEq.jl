@@ -1,4 +1,4 @@
-function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{ImplicitEuler,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:Number,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{ImplicitEuler,uType,tType,ksEltype,F,rateType,O})
   @ode_preamble
   local nlres::NLsolve.SolverResults{uEltype}
   function rhs_ie(u,resid,u_old,t,dt)
@@ -13,7 +13,7 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
       u_old[1] = uhold[1]
       nlres = NLsolve.nlsolve((uhold,resid)->rhs_ie(uhold,resid,u_old,t,dt),uhold,autodiff=autodiff)
       uhold[1] = nlres.zero[1]
-      if calck
+      if integrator.opts.calck
         k = f(t+dt,uhold[1])
       end
       u = uhold[1]
@@ -23,7 +23,7 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{ImplicitEuler,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:AbstractArray,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{ImplicitEuler,uType,tType,ksEltype,F,rateType,O})
   @ode_preamble
   local nlres::NLsolve.SolverResults{uEltype}
   uidx = eachindex(u)
@@ -54,7 +54,7 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
       copy!(u_old,uhold)
       nlres = NLsolve.nlsolve((uhold,resid)->rhs_ie(uhold,resid,u_old,t,dt,dual_cache),uhold,autodiff=autodiff)
       uhold[:] = nlres.zero
-      if calck
+      if integrator.opts.calck
         f(t+dt,u,k)
       end
       @ode_loopfooter
@@ -64,7 +64,7 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{Trapezoid,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:AbstractArray,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{Trapezoid,uType,tType,ksEltype,F,rateType,O})
   @ode_preamble
   local nlres::NLsolve.SolverResults{uEltype}
   uidx = eachindex(u)
@@ -101,7 +101,7 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
       copy!(u_old,uhold)
       nlres = NLsolve.nlsolve((uhold,resid)->rhs_trap(uhold,resid,u_old,t,dt,cache1,cache2),uhold,autodiff=autodiff)
       uhold[:] = nlres.zero
-      if calck
+      if integrator.opts.calck
         f(t+dt,u,k)
       end
       @ode_loopfooter
@@ -111,7 +111,7 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{Trapezoid,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
+function ode_solve{uType<:Number,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{Trapezoid,uType,tType,ksEltype,F,rateType,O})
   @ode_preamble
   dto2::tType = dt/2
   function rhs_trap(u,resid,u_old,t,dt)
@@ -127,7 +127,7 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
       u_old[1] = uhold[1]
       nlres = NLsolve.nlsolve((uhold,resid)->rhs_trap(uhold,resid,u_old,t,dt),uhold,autodiff=autodiff)
       uhold[1] = nlres.zero[1]
-      if calck
+      if integrator.opts.calck
         k = f(t+dt,uhold[1])
       end
       u = uhold[1]
