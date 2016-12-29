@@ -22,7 +22,7 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
       interp_index = $interp_points
     elseif $interp_points!=0 # Use the interpolants for safety checking
       for i in 2:length(Θs)-1
-        if $event_f(t+dt*Θs[i],ode_interpolant(Θs[i],integrator.dtprev,integrator.uprev,u,integrator.kprev,k,alg))<0
+        if $event_f(t+integrator.dtprev*Θs[i],ode_interpolant(Θs[i],integrator.dtprev,integrator.uprev,u,integrator.kprev,k,alg))<0
           event_occurred = true
           interp_index = i
           break
@@ -38,7 +38,7 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
       end
       if $rootfind_event_loc
         find_zero = (Θ,val) -> begin
-          val[1] = $event_f(t+Θ[1]*dt,ode_interpolant(Θ[1],integrator.dtprev,integrator.uprev,u,integrator.kprev,k,alg))
+          val[1] = $event_f(t+Θ[1]*integrator.dtprev,ode_interpolant(Θ[1],integrator.dtprev,integrator.uprev,u,integrator.kprev,k,alg))
         end
         res = nlsolve(find_zero,initial_Θ)
         val = ode_interpolant(res.zero[1],integrator.dtprev,integrator.uprev,u,integrator.kprev,k,alg)
