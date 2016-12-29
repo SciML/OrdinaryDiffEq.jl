@@ -206,7 +206,7 @@ end
       integrator.dtprev = dt
       dt = max(dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
       if integrator.custom_callback
-        dt,t,T = integrator.opts.callback(alg,f,t,u,k,dt,fsalfirst,cache,T,Ts,integrator)
+        dt,t,T = integrator.opts.callback(alg,f,t,u,k,dt,cache,T,Ts,integrator)
       else
         @ode_savevalues
       end
@@ -258,7 +258,7 @@ end
     end
     integrator.dtprev = dt
     if integrator.custom_callback
-      dt,t,T = integrator.opts.callback(alg,f,t,u,k,dt,fsalfirst,cache,T,Ts,integrator)
+      dt,t,T = integrator.opts.callback(alg,f,t,u,k,dt,cache,T,Ts,integrator)
     else
       @ode_savevalues
     end

@@ -1,6 +1,6 @@
 macro ode_callback(ex)
   esc(quote
-    function (alg,f,t,u,k,dt,fsalfirst,cache,T,Ts,integrator)
+    function (alg,f,t,u,k,dt,cache,T,Ts,integrator)
       event_occurred = false
       $(ex)
       dt,t,T
