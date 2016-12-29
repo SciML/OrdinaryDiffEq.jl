@@ -1,10 +1,20 @@
-function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm,F}(
+function solve{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   prob::AbstractODEProblem{uType,tType,isinplace,F},
-  alg::T,timeseries=[],ts=[],ks=[];
+  alg::algType,timeseries=[],ts=[],ks=[];
+  timeseries_errors = true,dense_errors = false,
+  kwargs...)
+
+  sol,integrator = init(prob,alg,timeseries,ts,ks;kwargs...)
+  solve!(integrator,timeseries_errors=timeseries_errors,dense_errors=dense_errors)
+  integrator.sol
+end
+
+function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
+  prob::AbstractODEProblem{uType,tType,isinplace,F},
+  alg::algType,timeseries=[],ts=[],ks=[];
   dt = 0.0,save_timeseries = true,
   timeseries_steps = 1,tableau = ODE_DEFAULT_TABLEAU,
   dense = save_timeseries,calck = nothing,alg_hint = :nonstiff,
-  timeseries_errors = true,dense_errors = false,
   saveat = tType[],tstops = tType[],
   adaptive = true,gamma=.9,abstol=1//10^6,reltol=1//10^3,
   qmax=nothing,qmin=nothing,qoldinit=1//10^4, fullnormalize=true,
@@ -182,6 +192,32 @@ function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm,F}(
 
   notsaveat_idxs = Int[1]
 
+  if ksEltype <: AbstractArray  &&  isspecialdense(alg)
+    k = ksEltype[]
+    kprev = ksEltype[]
+  elseif ksEltype <: Number
+    k = ksEltype(0)
+    kprev = ksEltype(0)
+  else # it is simple_dense
+    k = ksEltype(zeros(Int64,ndims(u))...) # Needs the zero for dimension 3+
+    kprev = ksEltype(zeros(Int64,ndims(u))...)
+  end
+
+  if !isspecialdense(alg) #If issimple_dense, then ks[1]=f(ts[1],timeseries[1])
+    if calck
+      if ksEltype <: AbstractArray
+        k = similar(rate_prototype)
+      end
+      kprev = copy(k)
+    end
+  end ## if not simple_dense, you have to initialize k and push the ks[1]!
+
+  if uType <: Array
+    uprev = copy(u)
+  else
+    uprev = deepcopy(u)
+  end
+
   if dense
     #notsaveat_idxs  = find((x)->(x∉saveat)||(x∈Ts),ts)
     id = InterpolationData(f!,timeseries,ts,ks,notsaveat_idxs)
@@ -192,21 +228,23 @@ function solve{uType,tType,isinplace,T<:OrdinaryDiffEqAlgorithm,F}(
 
   sol = build_solution(prob,alg,ts,timeseries,
                     dense=dense,k=ks,interp=interp,
-                    timeseries_errors = timeseries_errors,
-                    dense_errors = dense_errors,
                     calculate_error = false)
 
-  integrator = ODEIntegrator(timeseries,ts,ks,f!,u,t,tType(dt),Ts,
-                             tableau,autodiff,adaptiveorder,order,
+  integrator = ODEIntegrator{algType,uType,tType,eltype(ks),typeof(sol),
+                             typeof(rate_prototype),typeof(f!),typeof(opts)}(
+                             sol,u,k,t,tType(dt),f!,uprev,kprev,Ts,tableau,autodiff,
+                             adaptiveorder,order,
                              fsal,alg,custom_callback,rate_prototype,
                              notsaveat_idxs,opts)
+  sol,integrator
+end
 
+function solve!(integrator;timeseries_errors = true,dense_errors = false)
   u,t = ode_solve(integrator)
 
-  if typeof(prob) <: AbstractODETestProblem
-    calculate_solution_errors!(sol;timeseries_errors=timeseries_errors,dense_errors=dense_errors)
+  if typeof(integrator.sol.prob) <: AbstractODETestProblem
+    calculate_solution_errors!(integrator.sol;timeseries_errors=timeseries_errors,dense_errors=dense_errors)
   end
-  sol
 end
 
 function ode_determine_initdt{uType,tType,uEltypeNoUnits}(u0::uType,t::tType,abstol,reltol::uEltypeNoUnits,internalnorm,f,order)

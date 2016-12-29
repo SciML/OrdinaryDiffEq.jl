@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Plots, DiffEqProblemLibrary
+using OrdinaryDiffEq, DiffEqProblemLibrary
 
 bools = Vector{Bool}(0)
 prob = prob_ode_linear
@@ -10,10 +10,6 @@ interpd = sol(0:1//2^(4):1)
 sol2 =solve(prob,Euler(),dt=1//2^(4),dense=true)
 
 sol3 =solve(prob,Euler(),dt=1//2^(5),dense=true)
-
-TEST_PLOT && plot(sol2)
-TEST_PLOT && plot!(float(sol2.t),interpd)
-TEST_PLOT && plot!(float(sol3.t[1:2:end]),sol3.timeseries[1:2:end])
 
 prob = prob_ode_2Dlinear
 sol =solve(prob,Euler(),dt=1//2^(2),dense=true)
@@ -38,16 +34,11 @@ sol2 =solve(prob,RK4(),dt=1//2^(4),dense=true)
 
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 1e-2
 
-TEST_PLOT && plot(sol2)
-TEST_PLOT && plot!(float(sol2.t),interpd)
-
 sol =solve(prob,DP5(),dense=true)
 
 sol2 =solve(prob,DP5(),dt=1//2^(4),dense=true,adaptive=false)
 
 interpd = sol(0:1//2^(4):1)
-TEST_PLOT && plot(sol2.t,interpd)
-TEST_PLOT && plot(sol)
 
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 1e-5
 

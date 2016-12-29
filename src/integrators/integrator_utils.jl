@@ -25,14 +25,15 @@ type DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5}
   calck::Bool
 end
 
-immutable ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},tType,ksEltype,F,rateType,O}
-  timeseries::Vector{uType}
-  ts::Vector{tType}
-  ks::Vector{ksEltype}
-  f::F
+type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},tType,ksEltype,SolType,rateType,F,O}
+  sol::SolType
   u::uType
+  k::ksEltype
   t::tType
   dt::tType
+  f::F
+  uprev::uType
+  kprev::ksEltype
   Ts::Vector{tType}
   tableau::ExplicitRKTableau
   autodiff::Bool
@@ -47,43 +48,27 @@ immutable ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractAr
 end
 
 @def ode_preamble begin
-  local u::uType
-  local t::tType
-  local dt::tType
-  local Ts::Vector{tType}
-  local adaptiveorder::Int
-  @unpack f,u,t,dt,Ts,autodiff,adaptiveorder,order,fsal,alg,custom_callback,rate_prototype,notsaveat_idxs = integrator
-  timeseries = integrator.timeseries
-  ts = integrator.ts
-  ks = integrator.ks
+
+  @unpack u,k,t,dt,Ts,autodiff,adaptiveorder,order,fsal,alg,custom_callback,rate_prototype,notsaveat_idxs,uprev,kprev = integrator
+  timeseries = integrator.sol.u
+  ts = integrator.sol.t
+  ks = integrator.sol.k
+  f = integrator.f
   const calcprevs = !isempty(integrator.opts.saveat) || custom_callback # Calculate the previous values
   const issimple_dense = !isspecialdense(alg)
   const dtcache = dt
   # Need to initiate ks in the method
 
 
-
+  sizeu = size(u)
   Tfinal = Ts[end]
   local iter::Int = 0
   local saveiter::Int = 1 # Starts at 1 so first save is at 2
   local saveiter_dense::Int = 1
   local T::tType
-  sizeu = size(u)
   local utmp::uType
-  local k::ksEltype
-  local kprev::ksEltype
   local kshortsize::Int
   local reeval_fsal::Bool
-  if ksEltype <: AbstractArray  && !issimple_dense
-    k = ksEltype[]
-    kprev = ksEltype[]
-  elseif ksEltype <: Number
-    k = ksEltype(0)
-    kprev = ksEltype(0)
-  else # it is simple_dense
-    k = ksEltype(zeros(Int64,ndims(u))...) # Needs the zero for dimension 3+
-    kprev = ksEltype(zeros(Int64,ndims(u))...)
-  end
 
   # Setup FSAL
   if uType <: Number
@@ -109,7 +94,6 @@ end
   local cursaveat::Int = 1
   local Θ = one(t)/one(t) # No units
   local tprev::tType = t
-  local uprev::uType = deepcopy(u)
   local q::tTypeNoUnits = 0
   local dtpropose::tType = tType(0)
   local q11::tTypeNoUnits = 0
@@ -119,17 +103,11 @@ end
   end
   qminc = inv(integrator.opts.qmin) #facc1
   qmaxc = inv(integrator.opts.qmax) #facc2
-  local EEst::tTypeNoUnits = zero(uEltypeNoUnits)
+  local EEst::tTypeNoUnits = zero(t)
 
-  if issimple_dense #If issimple_dense, then ks[1]=f(ts[1],timeseries[1])
+  if !isspecialdense(alg)
     const kshortsize = 1
-    if integrator.opts.calck
-      if ksEltype <: AbstractArray
-        k = similar(rate_prototype)
-      end
-      kprev = copy(k)
-    end
-  end ## if not simple_dense, you have to initialize k and push the ks[1]!
+  end
 
   integrator.opts.progress && (prog = Juno.ProgressBar(name=integrator.opts.progress_name))
 end

@@ -1,4 +1,4 @@
-function ode_solve{uType<:Number,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{ExplicitRK,uType,tType,ksEltype,F,rateType,O})
+function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{ExplicitRK,uType,tType,ksEltype,SolType,rateType,F,O})
   @ode_preamble
   local A::Matrix{uEltypeNoUnits}
   local c::Vector{uEltypeNoUnits}
@@ -56,7 +56,7 @@ function ode_solve{uType<:Number,tType,ksEltype,F,rateType,O}(integrator::ODEInt
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{ExplicitRK,uType,tType,ksEltype,F,rateType,O})
+function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{ExplicitRK,uType,tType,ksEltype,SolType,rateType,F,O})
   @ode_preamble
   local A::Matrix{uEltypeNoUnits}
   local c::Vector{uEltypeNoUnits}

@@ -1,4 +1,4 @@
-function ode_solve{uType<:AbstractArray,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{Rosenbrock23,uType,tType,ksEltype,F,rateType,O})
+function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{Rosenbrock23,uType,tType,ksEltype,SolType,rateType,F,O})
   @ode_preamble
   c₃₂ = 6 + sqrt(2)
   d = 1/(2+sqrt(2))
@@ -91,7 +91,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,F,rateType,O}(integrator:
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{Rosenbrock23,uType,tType,ksEltype,F,rateType,O})
+function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{Rosenbrock23,uType,tType,ksEltype,SolType,rateType,F,O})
   @ode_preamble
   c₃₂ = 6 + sqrt(2)
   d = 1/(2+sqrt(2))
@@ -145,7 +145,7 @@ function ode_solve{uType<:Number,tType,ksEltype,F,rateType,O}(integrator::ODEInt
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{Rosenbrock32,uType,tType,ksEltype,F,rateType,O})
+function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{Rosenbrock32,uType,tType,ksEltype,SolType,rateType,F,O})
   @ode_preamble
   c₃₂ = 6 + sqrt(2)
   d = 1/(2+sqrt(2))
@@ -234,7 +234,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,F,rateType,O}(integrator:
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{Rosenbrock32,uType,tType,ksEltype,F,rateType,O})
+function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{Rosenbrock32,uType,tType,ksEltype,SolType,rateType,F,O})
   @ode_preamble
   c₃₂ = 6 + sqrt(2)
   d = 1/(2+sqrt(2))

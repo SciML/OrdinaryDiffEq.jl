@@ -1,4 +1,4 @@
-function ode_solve{uType<:Number,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{Euler,uType,tType,ksEltype,F,rateType,O})
+function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{Euler,uType,tType,ksEltype,SolType,rateType,F,O})
   @ode_preamble
   k = f(t,u) # For the interpolation, needs k at the updated point
   @inbounds for T in Ts
@@ -12,7 +12,7 @@ function ode_solve{uType<:Number,tType,ksEltype,F,rateType,O}(integrator::ODEInt
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{Euler,uType,tType,ksEltype,F,rateType,O})
+function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{Euler,uType,tType,ksEltype,SolType,rateType,F,O})
   @ode_preamble
   uidx = eachindex(u)
   if !integrator.opts.dense
@@ -35,7 +35,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,F,rateType,O}(integrator:
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{Midpoint,uType,tType,ksEltype,F,rateType,O})
+function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{Midpoint,uType,tType,ksEltype,SolType,rateType,F,O})
   @ode_preamble
   halfdt::tType = dt/2
   local du::rateType
@@ -50,7 +50,7 @@ function ode_solve{uType<:Number,tType,ksEltype,F,rateType,O}(integrator::ODEInt
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{Midpoint,uType,tType,ksEltype,F,rateType,O})
+function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{Midpoint,uType,tType,ksEltype,SolType,rateType,F,O})
   @ode_preamble
   halfdt::tType = dt/2
   utilde::uType = similar(u)
@@ -86,7 +86,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,F,rateType,O}(integrator:
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{RK4,uType,tType,ksEltype,F,rateType,O})
+function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{RK4,uType,tType,ksEltype,SolType,rateType,F,O})
   @ode_preamble
   halfdt::tType = dt/2
   local k₁::rateType
@@ -112,7 +112,7 @@ function ode_solve{uType<:Number,tType,ksEltype,F,rateType,O}(integrator::ODEInt
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,tType,ksEltype,F,rateType,O}(integrator::ODEIntegrator{RK4,uType,tType,ksEltype,F,rateType,O})
+function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{RK4,uType,tType,ksEltype,SolType,rateType,F,O})
   @ode_preamble
   halfdt::tType = dt/2
   k₁ = similar(rate_prototype)
