@@ -25,6 +25,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
   progress=false,progress_steps=1000,progress_name="ODE",
   progress_message = ODE_DEFAULT_PROG_MESSAGE,
+  event_cache=nothing,
   callback=nothing,kwargs...)
 
   tspan = prob.tspan
@@ -235,6 +236,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   calcprevs = !isempty(saveat) || custom_callback # Calculate the previous values
   tprev = t
   dtcache = tType(dt)
+  dt_mod = tType(1)
   iter = 0
   saveiter = 1 # Starts at 1 so first save is at 2
   saveiter_dense = 1
@@ -242,19 +244,18 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   kshortsize = 1
   reeval_fsal = false
 
-
   integrator = ODEIntegrator{algType,uType,tType,eltype(ks),typeof(sol),
-                             typeof(rate_prototype),typeof(f!),typeof(opts)}(
+                             typeof(rate_prototype),typeof(f!),typeof(event_cache),typeof(opts)}(
                              sol,u,k,t,tType(dt),f!,uprev,kprev,tprev,
-                             Ts,tableau,autodiff,
-                             adaptiveorder,order,fsal,alg,custom_callback,rate_prototype,
-                             notsaveat_idxs,calcprevs,dtcache,iter,saveiter,saveiter_dense,
-                             cursaveat,kshortsize,reeval_fsal,opts)
+                             Ts,tableau,autodiff,adaptiveorder,order,fsal,
+                             alg,custom_callback,rate_prototype,
+                             notsaveat_idxs,calcprevs,dtcache,dt_mod,
+                             iter,saveiter,saveiter_dense,cursaveat,
+                             event_cache,kshortsize,reeval_fsal,opts)
   integrator
 end
 
 function solve!(integrator::ODEIntegrator;timeseries_errors = true,dense_errors = false)
-  #@code_warntype ode_solve(integrator)
   ode_solve(integrator)
 
   if typeof(integrator.sol.prob) <: AbstractODETestProblem

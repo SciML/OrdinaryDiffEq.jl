@@ -1,4 +1,4 @@
-function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{ImplicitEuler,uType,tType,ksEltype,SolType,rateType,F,O})
+function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{ImplicitEuler,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   local nlres::NLsolve.SolverResults{uEltype}
   function rhs_ie(u,resid,u_old,t,dt)
@@ -23,7 +23,7 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{ImplicitEuler,uType,tType,ksEltype,SolType,rateType,F,O})
+function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{ImplicitEuler,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   local nlres::NLsolve.SolverResults{uEltype}
   uidx = eachindex(u)
@@ -47,7 +47,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
   end
 
   uhold = vec(u); u_old = similar(u)
-  cache = (u,u_old,dual_cache,uprev,kprev)
+  cache = (u,u_old,dual_cache,integrator.uprev,integrator.kprev)
   @inbounds for T in Ts
     while t < T
       @ode_loopheader
@@ -64,7 +64,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{Trapezoid,uType,tType,ksEltype,SolType,rateType,F,O})
+function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Trapezoid,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   local nlres::NLsolve.SolverResults{uEltype}
   uidx = eachindex(u)
@@ -94,7 +94,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
   end
   uhold = vec(u); u_old = similar(u)
 
-  cache = (u,u_old,cache1,cache2,uprev,kprev)
+  cache = (u,u_old,cache1,cache2,integrator.uprev,integrator.kprev)
   @inbounds for T in Ts
     while t < T
       @ode_loopheader
@@ -111,7 +111,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{Trapezoid,uType,tType,ksEltype,SolType,rateType,F,O})
+function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Trapezoid,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   dto2::tType = dt/2
   function rhs_trap(u,resid,u_old,t,dt)

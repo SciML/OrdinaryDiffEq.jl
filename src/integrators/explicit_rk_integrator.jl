@@ -1,4 +1,4 @@
-function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{ExplicitRK,uType,tType,ksEltype,SolType,rateType,F,O})
+function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{ExplicitRK,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   local A::Matrix{uEltypeNoUnits}
   local c::Vector{uEltypeNoUnits}
@@ -56,7 +56,7 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{ExplicitRK,uType,tType,ksEltype,SolType,rateType,F,O})
+function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{ExplicitRK,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   local A::Matrix{uEltypeNoUnits}
   local c::Vector{uEltypeNoUnits}
@@ -82,7 +82,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
   end
   f(t,u,kk[1]) # pre-start fsal
   if integrator.custom_callback
-    cache = (u,tmp,utilde,uEEst,atmp,uprev,kprev,utmp,kk...)
+    cache = (u,tmp,utilde,uEEst,atmp,integrator.uprev,integrator.kprev,utmp,kk...)
   end
   @inbounds for T in Ts
     while t < T

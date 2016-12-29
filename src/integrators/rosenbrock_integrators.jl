@@ -1,4 +1,4 @@
-function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{Rosenbrock23,uType,tType,ksEltype,SolType,rateType,F,O})
+function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Rosenbrock23,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   c₃₂ = 6 + sqrt(2)
   d = 1/(2+sqrt(2))
@@ -33,16 +33,16 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
       push!(k,similar(rate_prototype))
     end
     if integrator.calcprevs
-      kprev = deepcopy(k)
+      integrator.kprev = deepcopy(k)
       for i in 1:2 # Make it full-sized
-        push!(kprev,similar(rate_prototype))
+        push!(integrator.kprev,similar(rate_prototype))
       end
     end
     k[1] = k₁
     k[2] = k₂
   end
   f(t,u,fsalfirst)
-  cache = (u,du1,du2,uprev,kprev,f₀,f₁,vectmp3,utmp,vectmp2,dT,vectmp,tmp2,k)
+  cache = (u,du1,du2,integrator.uprev,integrator.kprev,f₀,f₁,vectmp3,utmp,vectmp2,dT,vectmp,tmp2,k)
   jaccache = (jidx,J,W)
   @inbounds for T in Ts
     while t < T
@@ -91,7 +91,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{Rosenbrock23,uType,tType,ksEltype,SolType,rateType,F,O})
+function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Rosenbrock23,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   c₃₂ = 6 + sqrt(2)
   d = 1/(2+sqrt(2))
@@ -108,9 +108,9 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator
       push!(k,zero(rateType))
     end
     if integrator.calcprevs
-      kprev = deepcopy(k)
+      integrator.kprev = deepcopy(k)
       for i in 1:2 # Make it full-sized
-        push!(kprev,zero(rateType))
+        push!(integrator.kprev,zero(rateType))
       end
     end
   end
@@ -145,7 +145,7 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{Rosenbrock32,uType,tType,ksEltype,SolType,rateType,F,O})
+function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Rosenbrock32,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   c₃₂ = 6 + sqrt(2)
   d = 1/(2+sqrt(2))
@@ -180,15 +180,15 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
       push!(k,similar(rate_prototype))
     end
     if integrator.calcprevs
-      kprev = deepcopy(k)
+      integrator.kprev = deepcopy(k)
       for i in 1:2 # Make it full-sized
-        push!(kprev,similar(rate_prototype))
+        push!(integrator.kprev,similar(rate_prototype))
       end
     end
     k[1] = k₁
     k[2] = k₂
   end
-  cache = (u,du1,du2,uprev,kprev,f₀,f₁,vectmp3,utmp,vectmp2,dT,vectmp,tmp2,k)
+  cache = (u,du1,du2,integrator.uprev,integrator.kprev,f₀,f₁,vectmp3,utmp,vectmp2,dT,vectmp,tmp2,k)
   jaccache = (jidx,J,W)
   f(t,u,fsalfirst)
   @inbounds for T in Ts
@@ -234,7 +234,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{Rosenbrock32,uType,tType,ksEltype,SolType,rateType,F,O})
+function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Rosenbrock32,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   c₃₂ = 6 + sqrt(2)
   d = 1/(2+sqrt(2))
@@ -254,9 +254,9 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator
       push!(k,zero(rateType))
     end
     if integrator.calcprevs
-      kprev = deepcopy(k)
+      integrator.kprev = deepcopy(k)
       for i in 1:2
-        push!(kprev,zero(rateType))
+        push!(integrator.kprev,zero(rateType))
       end
     end
   end

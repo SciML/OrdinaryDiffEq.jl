@@ -25,7 +25,7 @@ type DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5}
   calck::Bool
 end
 
-type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},tType,ksEltype,SolType,rateType,F,O}
+type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},tType,ksEltype,SolType,rateType,F,ECType,O}
   sol::SolType
   u::uType
   k::ksEltype
@@ -47,10 +47,12 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
   notsaveat_idxs::Vector{Int}
   calcprevs::Bool
   dtcache::tType
+  dt_mod::tType
   iter::Int
   saveiter::Int
   saveiter_dense::Int
   cursaveat::Int
+  event_cache::ECType
   kshortsize::Int
   reeval_fsal::Bool
   opts::O
@@ -60,7 +62,7 @@ end
   local t::tType
   local dt::tType
 
-  @unpack u,k,t,dt,Ts,autodiff,fsal,alg,rate_prototype,uprev,kprev = integrator
+  @unpack u,k,t,dt,Ts,autodiff,fsal,alg,rate_prototype = integrator
   f = integrator.f
 
   sizeu = size(u)
@@ -139,9 +141,9 @@ end
       integrator.saveiter += 1
       if integrator.opts.saveat[integrator.cursaveat]<t # If <t, interpolate
         curt = integrator.opts.saveat[integrator.cursaveat]
-        ode_addsteps!(k,integrator.tprev,uprev,integrator.dt,integrator.alg,integrator.f)
+        ode_addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.dt,integrator.alg,integrator.f)
         Θ = (curt - integrator.tprev)/integrator.dt
-        val = ode_interpolant(Θ,integrator.dt,integrator.uprev,u,integrator.kprev,k,integrator.alg)
+        val = ode_interpolant(Θ,integrator.dt,integrator.uprev,u,integrator.kprev,integrator.k,integrator.alg)
         copyat_or_push!(integrator.sol.t,integrator.saveiter,curt)
         copyat_or_push!(integrator.sol.u,integrator.saveiter,val)
       else # ==t, just save
@@ -149,7 +151,7 @@ end
         copyat_or_push!(integrator.sol.u,integrator.saveiter,u)
         if integrator.opts.dense
           integrator.saveiter_dense += 1
-          copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,k)
+          copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
           copyat_or_push!(integrator.notsaveat_idxs,integrator.saveiter_dense,integrator.saveiter)
         end
       end
@@ -162,12 +164,12 @@ end
     copyat_or_push!(integrator.sol.t,integrator.saveiter,t)
     if integrator.opts.dense
       integrator.saveiter_dense += 1
-      copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,k)
+      copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
       copyat_or_push!(integrator.notsaveat_idxs,integrator.saveiter_dense,integrator.saveiter)
     end
   end
   if isspecialdense(alg)
-    resize!(k,integrator.kshortsize)
+    resize!(integrator.k,integrator.kshortsize)
   end
 end
 
@@ -178,11 +180,20 @@ end
     copyat_or_push!(integrator.sol.u,integrator.saveiter,u)
     if integrator.opts.dense
       integrator.saveiter_dense +=1
-      copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,k)
+      copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
       copyat_or_push!(integrator.notsaveat_idxs,integrator.saveiter_dense,integrator.saveiter)
     end
   end
   integrator.opts.progress && Juno.done(prog)
+end
+
+@def pack_integrator begin
+  integrator.dt = dt
+  integrator.dt_mod = tType(1)
+  integrator.k = k
+end
+
+@def unpack_integrator begin
 end
 
 @def ode_loopfooter begin
@@ -202,14 +213,14 @@ end
 
       qold = max(EEst,integrator.opts.qoldinit)
       dtpropose = min(integrator.opts.dtmax,dtnew)
-      integrator.dt = dt
-      dt_mod = tType(1)
+      @pack_integrator
       if integrator.custom_callback
-        dt_mod,t,T = integrator.opts.callback(alg,f,t,u,k,dt,cache,T,Ts,integrator)
+        t,T = integrator.opts.callback(alg,f,t,u,dt,cache,T,Ts,integrator)
       else
         @ode_savevalues
       end
-      dt = dt_mod*max(dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
+      @unpack_integrator
+      dt = integrator.dt_mod*max(dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
 
       if fsal
         if integrator.reeval_fsal
@@ -232,15 +243,15 @@ end
         # Store previous for interpolation
         integrator.tprev = t
         if uType <: AbstractArray
-          recursivecopy!(uprev,u)
+          recursivecopy!(integrator.uprev,u)
         else
-          uprev = u
+          integrator.uprev = u
         end
         if integrator.opts.calck
           if ksEltype <: AbstractArray
-            recursivecopy!(kprev,k)
+            recursivecopy!(integrator.kprev,k)
           else
-            kprev = k
+            integrator.kprev = k
           end
         end
       end
@@ -256,27 +267,27 @@ end
         fsalfirst = fsallast
       end
     end
-    dt_mod = tType(1)
-    integrator.dt = dt
+    @pack_integrator
     if integrator.custom_callback
-      dt_mod,t,T = integrator.opts.callback(alg,f,t,u,k,dt,cache,T,Ts,integrator)
+      t,T = integrator.opts.callback(alg,f,t,u,dt,cache,T,Ts,integrator)
     else
       @ode_savevalues
     end
-    dt *= dt_mod
+    @unpack_integrator
+    dt *= integrator.dt_mod
     if integrator.calcprevs
       # Store previous for interpolation
       integrator.tprev = t
       if uType <: AbstractArray
-        recursivecopy!(uprev,u)
+        recursivecopy!(integrator.uprev,u)
       else
-        uprev = u
+        integrator.uprev = u
       end
       if integrator.opts.calck
         if ksEltype <: AbstractArray
-          recursivecopy!(kprev,k)
+          recursivecopy!(integrator.kprev,k)
         else
-          kprev = k
+          integrator.kprev = k
         end
       end
     end

@@ -1,4 +1,4 @@
-function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{BS3,uType,tType,ksEltype,SolType,rateType,F,O})
+function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{BS3,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   a21,a32,a41,a42,a43,c1,c2,b1,b2,b3,b4  = constructBS3(uEltypeNoUnits)
   local k1::rateType
@@ -30,7 +30,7 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{BS3,uType,tType,ksEltype,SolType,rateType,F,O})
+function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{BS3,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   a21,a32,a41,a42,a43,c1,c2,b1,b2,b3,b4  = constructBS3(uEltypeNoUnits)
   k1 = similar(rate_prototype)
@@ -45,7 +45,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
   k1 = fsalfirst # done by pointers, no copying
   k4 = fsallast
   if integrator.custom_callback
-    cache = (u,k1,k2,k3,k4,utilde,atmp,utmp,tmp,uprev,kprev)
+    cache = (u,k1,k2,k3,k4,utilde,atmp,utmp,tmp,integrator.uprev,integrator.kprev)
   end
   f(t,u,fsalfirst) # Pre-start fsal
   @inbounds for T in Ts
@@ -78,7 +78,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{BS5,uType,tType,ksEltype,SolType,rateType,F,O})
+function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{BS5,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8 = constructBS5(uEltypeNoUnits)
   local k1::rateType
@@ -99,9 +99,9 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator
     end
 
     if integrator.calcprevs
-      kprev = deepcopy(k)
+      integrator.kprev = deepcopy(k)
       for i in 1:3 # Make it full-sized
-        push!(kprev,zero(rateType))
+        push!(integrator.kprev,zero(rateType))
       end
     end
   end
@@ -136,7 +136,7 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{BS5,uType,tType,ksEltype,SolType,rateType,F,O})
+function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{BS5,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8 = constructBS5(uEltypeNoUnits)
   k1::rateType = similar(rate_prototype)
@@ -160,9 +160,9 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
     end
 
     if integrator.calcprevs
-      kprev = deepcopy(k)
+      integrator.kprev = deepcopy(k)
       for i in 1:3 # Make it full-sized
-        push!(kprev,similar(rate_prototype))
+        push!(integrator.kprev,similar(rate_prototype))
       end
     end
   end
@@ -172,9 +172,9 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
   fsalfirst = k1; fsallast = k8  # setup pointers
   if integrator.custom_callback
     if integrator.opts.calck
-      cache = (u,k1,k2,k3,k4,k5,k6,k7,k8,utilde,uhat,utmp,tmp,atmp,atmptilde,uprev,kprev...)
+      cache = (u,k1,k2,k3,k4,k5,k6,k7,k8,utilde,uhat,utmp,tmp,atmp,atmptilde,integrator.uprev,integrator.kprev...)
     else
-      cache = (u,k1,k2,k3,k4,k5,k6,k7,k8,utilde,uhat,utmp,tmp,atmp,atmptilde,uprev)
+      cache = (u,k1,k2,k3,k4,k5,k6,k7,k8,utilde,uhat,utmp,tmp,atmp,atmptilde,integrator.uprev)
     end
   end
   f(t,u,k1) # Pre-start fsal
@@ -228,7 +228,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{Tsit5,uType,tType,ksEltype,SolType,rateType,F,O})
+function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Tsit5,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,b1,b2,b3,b4,b5,b6,b7 = constructTsit5(uEltypeNoUnits)
   local k1::rateType
@@ -280,7 +280,7 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator
   @ode_postamble
 end
 
-function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{Tsit5,uType,tType,ksEltype,SolType,rateType,F,O})
+function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Tsit5,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,b1,b2,b3,b4,b5,b6,b7 = constructTsit5(uEltypeNoUnits)
   k2::rateType = similar(rate_prototype)
@@ -308,14 +308,14 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
     k[6] = k6
     k[7] = k7
     if integrator.calcprevs
-      kprev = deepcopy(k)
+      integrator.kprev = deepcopy(k)
     end
   end
   if integrator.custom_callback
     if integrator.opts.calck
-      cache = (u,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,utmp,atmp,uprev,kprev...)
+      cache = (u,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,utmp,atmp,integrator.uprev,integrator.kprev...)
     else
-      cache = (u,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,utmp,atmp,uprev)
+      cache = (u,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,utmp,atmp,integrator.uprev)
     end
   end
   f(t,u,k1) # Pre-start fsal
@@ -361,7 +361,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
   @ode_postamble
 end
 
-function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{DP5,uType,tType,ksEltype,SolType,rateType,F,O})
+function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{DP5,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = constructDP5(uEltypeNoUnits)
   local k1::rateType
@@ -382,7 +382,7 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator
     end
 
     if integrator.calcprevs
-      kprev = deepcopy(k)
+      integrator.kprev = deepcopy(k)
     end
   end
   local utilde::uType
@@ -420,7 +420,7 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator
 end
 
 
-function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(integrator::ODEIntegrator{DP5,uType,tType,ksEltype,SolType,rateType,F,O})
+function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{DP5,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = constructDP5(uEltypeNoUnits)
   k2 = similar(rate_prototype)
@@ -442,7 +442,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
     end
 
     if integrator.calcprevs
-      kprev = deepcopy(k)
+      integrator.kprev = deepcopy(k)
     end
     # Setup pointers
     k[1] = update
@@ -450,9 +450,9 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
   k1 = fsalfirst; k7 = fsallast
   if integrator.custom_callback
     if integrator.opts.calck
-      cache = (u,k...,k1,k2,k3,k4,k5,k6,k7,tmp,utmp,atmp,utilde,bspl,uprev,kprev...)
+      cache = (u,k...,k1,k2,k3,k4,k5,k6,k7,tmp,utmp,atmp,utilde,bspl,integrator.uprev,integrator.kprev...)
     else
-      cache = (u,k1,k2,k3,k4,k5,k6,k7,tmp,utmp,atmp,utilde,update,bspl,uprev)
+      cache = (u,k1,k2,k3,k4,k5,k6,k7,tmp,utmp,atmp,utilde,update,bspl,integrator.uprev)
     end
   end
   f(t,u,fsalfirst);  # Pre-start fsal
