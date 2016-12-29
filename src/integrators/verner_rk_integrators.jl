@@ -5,14 +5,14 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator
   local k5::rateType; local k6::rateType; local k7::rateType; local k8::rateType;
   local k9::rateType;
   local utilde::uType; fsalfirst = f(t,u) # Pre-start fsal
-  const kshortsize = 9
+  integrator.kshortsize = 9
   if integrator.opts.calck
     k = ksEltype()
-    for i in 1:kshortsize
+    for i in 1:integrator.kshortsize
       push!(k,zero(rateType))
     end
 
-    if calcprevs
+    if integrator.calcprevs
       kprev = deepcopy(k)
       for i in 1:3 # Make it full-sized
         push!(kprev,zero(rateType))
@@ -55,21 +55,21 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
   c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,a91,a94,a95,a96,a97,a98,b1,b4,b5,b6,b7,b8,b9= constructVern6(uEltypeNoUnits)
   k2 = similar(rate_prototype); k3 = similar(rate_prototype); k4 = similar(rate_prototype);
   k5 = similar(rate_prototype); k6 = similar(rate_prototype); k7 = similar(rate_prototype); k8 = similar(rate_prototype);
-  const kshortsize = 9
+  integrator.kshortsize = 9
   utilde = similar(u); tmp = similar(u); atmp = similar(u,uEltypeNoUnits); uidx = eachindex(u)
   k1 = fsalfirst ; k9 = fsallast
   if integrator.opts.calck
-    k = ksEltype(kshortsize)
+    k = ksEltype(integrator.kshortsize)
     k[1]=k1; k[2]=k2; k[3]=k3;k[4]=k4;k[5]=k5;k[6]=k6;k[7]=k7;k[8]=k8;k[9]=k9 # Set the pointers
 
-    if calcprevs
+    if integrator.calcprevs
       kprev = deepcopy(k)
       for i in 1:3
         push!(kprev,similar(rate_prototype))
       end
     end
   end
-  if custom_callback
+  if integrator.custom_callback
     if integrator.opts.calck
       cache = (u,k...,utilde,tmp,utmp,atmp,uprev,kprev...)
     else
@@ -133,14 +133,14 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator
   local k1::rateType; local k2::rateType; local k3::rateType; local k4::rateType;
   local k5::rateType; local k6::rateType; local k7::rateType; local k8::rateType;
   local k9::rateType; local k10::rateType; local utilde::uType; local update::uType
-  const kshortsize = 10
+  integrator.kshortsize = 10
   if integrator.opts.calck
     k = ksEltype()
-    for i in 1:kshortsize
+    for i in 1:integrator.kshortsize
       push!(k,zero(rateType))
     end
 
-    if calcprevs
+    if integrator.calcprevs
       kprev = deepcopy(k)
       for i in 1:6 # Make it full-sized
         push!(kprev,zero(rateType))
@@ -183,19 +183,19 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
   k5 = similar(rate_prototype); k6 = similar(rate_prototype); k7 = similar(rate_prototype); k8 = similar(rate_prototype);
   k9 = similar(rate_prototype); k10 = similar(rate_prototype); utilde = similar(u); update = similar(u)
   uidx = eachindex(u); tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
-  const kshortsize = 10
+  integrator.kshortsize = 10
   if integrator.opts.calck
-    k = ksEltype(kshortsize)
+    k = ksEltype(integrator.kshortsize)
 
     k[1]=k1;k[2]=k2;k[3]=k3;k[4]=k4;k[5]=k5;k[6]=k6;k[7]=k7;k[8]=k8;k[9]=k9;k[10]=k10 # Setup pointers
-    if calcprevs
+    if integrator.calcprevs
       kprev = deepcopy(k)
       for i in 1:6 # Make it full-sized
         push!(kprev,similar(rate_prototype))
       end
     end
   end
-  if custom_callback
+  if integrator.custom_callback
     if integrator.opts.calck
       cache = (u,k...,kprev...,uprev,utilde,update,utmp,tmp,atmp)
     else
@@ -266,14 +266,14 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator
   local k1::rateType; local k2::rateType; local k3::rateType; local k4::rateType;
   local k5::rateType; local k6::rateType; local k7::rateType; local k8::rateType;
   local k9::rateType; local k10::rateType; local utilde::uType; local update::uType
-  const kshortsize = 13
+  integrator.kshortsize = 13
   if integrator.opts.calck
     k = ksEltype()
-    for i in 1:kshortsize
+    for i in 1:integrator.kshortsize
       push!(k,zero(rateType))
     end
 
-    if calcprevs
+    if integrator.calcprevs
       kprev = deepcopy(k)
       for i in 1:8 # Make it full-sized
         push!(kprev,zero(rateType))
@@ -320,19 +320,19 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
   k9 = similar(rate_prototype); k10 = similar(rate_prototype); k11 = similar(rate_prototype); k12 = similar(rate_prototype); k13 = similar(rate_prototype)
   utilde = similar(u); update = similar(u);
   uidx = eachindex(u); atmp = similar(u,uEltypeNoUnits)
-  const kshortsize = 13
+  integrator.kshortsize = 13
   if integrator.opts.calck
-    k = ksEltype(kshortsize)
+    k = ksEltype(integrator.kshortsize)
 
     k[1]=k1;k[2]=k2;k[3]=k3;k[4]=k4;k[5]=k5;k[6]=k6;k[7]=k7;k[8]=k8;k[9]=k9;k[10]=k10;k[11]=k11;k[12]=k12;k[13]=k13 # Setup pointers
-    if calcprevs
+    if integrator.calcprevs
       kprev = deepcopy(k)
       for i in 1:8 # Make it full-sized
         push!(kprev,similar(rate_prototype))
       end
     end
   end
-  if custom_callback
+  if integrator.custom_callback
     if integrator.opts.calck
       cache = (u,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,kprev...,uprev,utilde,update,utmp,tmp,atmp)
     else
@@ -417,14 +417,14 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator
   local k9::rateType; local k10::rateType; local k11::rateType; local k12::rateType;
   local k13::rateType; local k14::rateType; local k15::rateType; local k16::rateType;
   local utilde::uType; local update::uType
-  const kshortsize = 16
+  integrator.kshortsize = 16
   if integrator.opts.calck
     k = ksEltype()
-    for i in 1:kshortsize
+    for i in 1:integrator.kshortsize
       push!(k,zero(rateType))
     end
 
-    if calcprevs
+    if integrator.calcprevs
       kprev = deepcopy(k)
       for i in 1:10 # Make it full-sized
         push!(kprev,zero(rateType))
@@ -474,19 +474,19 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
   k9 = similar(rate_prototype); k10 = similar(rate_prototype); k11 = similar(rate_prototype); k12 = similar(rate_prototype); update = similar(u)
   k13 = similar(rate_prototype); k14 = similar(rate_prototype); k15 = similar(rate_prototype); k16 =similar(rate_prototype);
   utilde = similar(u); tmp = similar(u); atmp = similar(u,uEltypeNoUnits); uidx = eachindex(u)
-  const kshortsize = 16
+  integrator.kshortsize = 16
   if integrator.opts.calck
-    k = ksEltype(kshortsize)
+    k = ksEltype(integrator.kshortsize)
     k[1]=k1;k[2]=k2;k[3]=k3;k[4]=k4;k[5]=k5;k[6]=k6;k[7]=k7;k[8]=k8;k[9]=k9;k[10]=k10;k[11]=k11;k[12]=k12;k[13]=k13;k[14]=k14;k[15]=k15;k[16]=k16 # Setup pointers
 
-    if calcprevs
+    if integrator.calcprevs
       kprev = deepcopy(k)
       for i in 1:3 # Make it full-sized
         push!(kprev,similar(rate_prototype))
       end
     end
   end
-  if custom_callback
+  if integrator.custom_callback
     if integrator.opts.calck
       cache = (u,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,utilde,update,utmp,tmp,atmp,uprev,kprev...)
     else

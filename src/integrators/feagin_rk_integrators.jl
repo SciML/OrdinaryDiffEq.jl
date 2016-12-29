@@ -6,7 +6,7 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator
   local k11::rateType; local k12::rateType; local k13::rateType; local k14::rateType
   local k15::rateType; local k16::rateType; local k17::rateType
   if integrator.opts.calck
-    pop!(ks)
+    pop!(integrator.sol.k)
   end
   @inbounds for T in Ts
     while t < T
@@ -41,7 +41,7 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator
   end
   if integrator.opts.calck
     k = f(t,u)
-    push!(ks,k)
+    push!(integrator.sol.k,k)
   end
   @ode_postamble
 end
@@ -56,14 +56,14 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
   utmp = similar(u);
   uidx = eachindex(u)
-  if calcprevs
+  if integrator.calcprevs
     kprev = similar(rate_prototype)
   end
   if integrator.opts.calck
-    pop!(ks)
+    pop!(integrator.sol.k)
   end
   k = k1
-  if custom_callback
+  if integrator.custom_callback
     cache =  (u,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,k17,tmp,atmp,utmp,uprev,kprev)
   end
 
@@ -154,7 +154,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
   end
   if integrator.opts.calck
     f(t,u,k)
-    push!(ks,deepcopy(k))
+    push!(integrator.sol.k,deepcopy(k))
   end
   @ode_postamble
 end
@@ -169,7 +169,7 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator
   local k19::rateType; local k20::rateType; local k21::rateType; local k22::rateType
   local k23::rateType; local k24::rateType; local k25::rateType
   if integrator.opts.calck
-    pop!(ks)
+    pop!(integrator.sol.k)
   end
   @inbounds for T in Ts
     while t < T
@@ -213,7 +213,7 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator
   end
   if integrator.opts.calck
     k = f(t,u)
-    push!(ks,k)
+    push!(integrator.sol.k,k)
   end
   @ode_postamble
 end
@@ -232,14 +232,14 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
   uidx = eachindex(u)
   k = similar(rate_prototype)
-  if calcprevs
+  if integrator.calcprevs
     kprev = similar(rate_prototype)
   end
   if integrator.opts.calck
-    pop!(ks)
+    pop!(integrator.sol.k)
   end
   k = k1
-  if custom_callback
+  if integrator.custom_callback
     cache =  (u,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,k17,k18,k19,k20,k21,k22,k23,k24,k25,tmp,atmp,utmp,uprev,kprev,update)
   end
   @inbounds for T in Ts
@@ -361,7 +361,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
   end
   if integrator.opts.calck
     f(t,u,k)
-    push!(ks,deepcopy(k))
+    push!(integrator.sol.k,deepcopy(k))
   end
   @ode_postamble
 end
@@ -379,7 +379,7 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator
   local k29::rateType; local k30::rateType; local k31::rateType; local k32::rateType
   local k33::rateType; local k34::rateType; local k35::rateType
   if integrator.opts.calck
-    pop!(ks)
+    pop!(integrator.sol.k)
   end
   @inbounds for T in Ts
     while t < T
@@ -432,7 +432,7 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator
   end
   if integrator.opts.calck
     k = f(t,u)
-    push!(ks,k)
+    push!(integrator.sol.k,k)
   end
   @ode_postamble
 end
@@ -455,14 +455,14 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
   uidx = eachindex(u)
   k = similar(rate_prototype)
-  if calcprevs
+  if integrator.calcprevs
     kprev = similar(rate_prototype)
   end
   if integrator.opts.calck
-    pop!(ks)
+    pop!(integrator.sol.k)
   end
   k = k1
-  if custom_callback
+  if integrator.custom_callback
     cache =  (u,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,k17,k18,k19,k20,k21,k22,k23,k24,k25,k26,k27,k28,k29,k30,k31,k32,k33,k34,k35,tmp,atmp,utmp,uprev,kprev,update)
   end
   @inbounds for T in Ts
@@ -624,7 +624,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
   end
   if integrator.opts.calck
     f(t,u,k)
-    push!(ks,deepcopy(k))
+    push!(integrator.sol.k,deepcopy(k))
   end
   @ode_postamble
 end

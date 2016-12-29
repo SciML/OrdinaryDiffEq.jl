@@ -4,7 +4,7 @@ function solve{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   timeseries_errors = true,dense_errors = false,
   kwargs...)
 
-  sol,integrator = init(prob,alg,timeseries,ts,ks;kwargs...)
+  integrator = init(prob,alg,timeseries,ts,ks;kwargs...)
   solve!(integrator,timeseries_errors=timeseries_errors,dense_errors=dense_errors)
   integrator.sol
 end
@@ -12,7 +12,7 @@ end
 function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   prob::AbstractODEProblem{uType,tType,isinplace,F},
   alg::algType,timeseries=[],ts=[],ks=[];
-  dt = 0.0,save_timeseries = true,
+  dt = tType(0),save_timeseries = true,
   timeseries_steps = 1,tableau = ODE_DEFAULT_TABLEAU,
   dense = save_timeseries,calck = nothing,alg_hint = :nonstiff,
   saveat = tType[],tstops = tType[],
@@ -59,7 +59,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
     custom_callback = true
   end
 
-  if uEltype<:Number
+  if uType<:Array || uType <: Number
     u = copy(u0)
   else
     u = deepcopy(u0)
@@ -72,9 +72,11 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
 
   if typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm
     adaptiveorder = alg.adaptiveorder
+    #=
     if adaptive == true
       dt = 1.0*dt # Convert to float in a way that keeps units
     end
+    =#
   else
     adaptive = false
   end
@@ -93,7 +95,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   tTypeNoUnits   = typeof(recursive_one(t))
 
   if dt==0 && adaptive
-    dt = ode_determine_initdt(u0,t,uEltype(abstol),uEltypeNoUnits(reltol),internalnorm,f!,order)
+    dt = tType(ode_determine_initdt(u0,t,uEltype(abstol),uEltypeNoUnits(reltol),internalnorm,f!,order))
   end
 
   rate_prototype = u/zero(t)
@@ -230,17 +232,31 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
                     dense=dense,k=ks,interp=interp,
                     calculate_error = false)
 
+  calcprevs = !isempty(saveat) || custom_callback # Calculate the previous values
+  tprev = t
+  dtprev = tType(dt)
+  dtcache = tType(dt)
+  iter = 0
+  saveiter = 1 # Starts at 1 so first save is at 2
+  saveiter_dense = 1
+  cursaveat = 1
+  kshortsize = 1
+  reeval_fsal = false
+
+
   integrator = ODEIntegrator{algType,uType,tType,eltype(ks),typeof(sol),
                              typeof(rate_prototype),typeof(f!),typeof(opts)}(
-                             sol,u,k,t,tType(dt),f!,uprev,kprev,Ts,tableau,autodiff,
-                             adaptiveorder,order,
-                             fsal,alg,custom_callback,rate_prototype,
-                             notsaveat_idxs,opts)
-  sol,integrator
+                             sol,u,k,t,tType(dt),f!,uprev,kprev,tprev,dtprev,
+                             Ts,tableau,autodiff,
+                             adaptiveorder,order,fsal,alg,custom_callback,rate_prototype,
+                             notsaveat_idxs,calcprevs,dtcache,iter,saveiter,saveiter_dense,
+                             cursaveat,kshortsize,reeval_fsal,opts)
+  integrator
 end
 
-function solve!(integrator;timeseries_errors = true,dense_errors = false)
-  u,t = ode_solve(integrator)
+function solve!(integrator::ODEIntegrator;timeseries_errors = true,dense_errors = false)
+  #@code_warntype ode_solve(integrator)
+  ode_solve(integrator)
 
   if typeof(integrator.sol.prob) <: AbstractODETestProblem
     calculate_solution_errors!(integrator.sol;timeseries_errors=timeseries_errors,dense_errors=dense_errors)

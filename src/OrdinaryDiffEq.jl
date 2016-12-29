@@ -34,7 +34,7 @@ module OrdinaryDiffEq
 
 
   #General Functions
-  export solve
+  export solve, solve!, init
 
   #Callback Necessary
   export ode_addsteps!, ode_interpolant, DIFFERENTIALEQUATIONSJL_SPECIALDENSEALGS,

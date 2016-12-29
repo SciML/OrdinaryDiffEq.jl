@@ -6,7 +6,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
   local k₂::uType = similar(u)
   local k₃::uType = similar(u)
   local tmp::uType
-  const kshortsize = 2
+  integrator.kshortsize = 2
   function vecf(t,u,du)
     f(t,reshape(u,sizeu...),reshape(du,sizeu...))
     u = vec(u)
@@ -32,7 +32,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
     for i in 1:2
       push!(k,similar(rate_prototype))
     end
-    if calcprevs
+    if integrator.calcprevs
       kprev = deepcopy(k)
       for i in 1:2 # Make it full-sized
         push!(kprev,similar(rate_prototype))
@@ -101,13 +101,13 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator
   local f₁::uType
   local k₂::uType
   local k₃::uType
-  const kshortsize = 2
+  integrator.kshortsize = 2
   if integrator.opts.calck
     k = ksEltype()
     for i in 1:2
       push!(k,zero(rateType))
     end
-    if calcprevs
+    if integrator.calcprevs
       kprev = deepcopy(k)
       for i in 1:2 # Make it full-sized
         push!(kprev,zero(rateType))
@@ -153,7 +153,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
   local k₂ = similar(u)
   local k₃::uType = similar(u)
   local tmp::uType
-  const kshortsize = 2
+  integrator.kshortsize = 2
   function vecf(t,u,du)
     f(t,reshape(u,sizeu...),reshape(du,sizeu...))
     u = vec(u)
@@ -179,7 +179,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
     for i in 1:2
       push!(k,similar(rate_prototype))
     end
-    if calcprevs
+    if integrator.calcprevs
       kprev = deepcopy(k)
       for i in 1:2 # Make it full-sized
         push!(kprev,similar(rate_prototype))
@@ -247,13 +247,13 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,O}(integrator
   local k₂::uType
   local k₃::uType
   local tmp::uType
-  const kshortsize = 2
+  integrator.kshortsize = 2
   if integrator.opts.calck
     k = ksEltype()
     for i in 1:2
       push!(k,zero(rateType))
     end
-    if calcprevs
+    if integrator.calcprevs
       kprev = deepcopy(k)
       for i in 1:2
         push!(kprev,zero(rateType))

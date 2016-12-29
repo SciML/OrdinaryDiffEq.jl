@@ -18,7 +18,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
   if !integrator.opts.dense
     k = similar(rate_prototype) # Not initialized if not dense
   end
-  if custom_callback
+  if integrator.custom_callback
     cache = (u,uprev,k)
   end
   f(t,u,k) # For the interpolation, needs k at the updated point
@@ -56,13 +56,13 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
   utilde::uType = similar(u)
   uidx = eachindex(u)
   if integrator.opts.calck # Not initialized if not dense
-    if calcprevs
+    if integrator.calcprevs
       kprev = similar(rate_prototype)
     end
   end
   k = similar(rate_prototype)
   du = similar(rate_prototype)
-  if custom_callback
+  if integrator.custom_callback
     if integrator.opts.calck
       cache = (u,k,du,utilde,kprev,uprev)
     else
@@ -119,12 +119,12 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
   k₂ = similar(rate_prototype)
   k₃ = similar(rate_prototype)
   k₄ = similar(rate_prototype)
-  if calcprevs
+  if integrator.calcprevs
     kprev = similar(rate_prototype)
   end
   tmp = similar(u)
   uidx = eachindex(u)
-  if custom_callback
+  if integrator.custom_callback
     cache = (u,tmp,k₁,k₂,k₃,k₄,kprev,uprev)
   end
   if integrator.opts.calck

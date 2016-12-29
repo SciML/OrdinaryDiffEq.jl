@@ -11,23 +11,23 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,O}(int
   utilde = similar(u)
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
   uidx::Base.OneTo{Int64} = eachindex(u)
-  const kshortsize = 4
+  integrator.kshortsize = 4
   if integrator.opts.calck
     d1,d3,d4,d5,d6,d7 = DP5_dense_ds(uEltypeNoUnits)
     k = ksEltype()
-    for i in 1:kshortsize
+    for i in 1:integrator.kshortsize
       push!(k,similar(rate_prototype))
     end
 
     # Setup k pointers
     k[1] = update
-    if calcprevs
+    if integrator.calcprevs
       kprev = deepcopy(k)
     end
   end
   k1 = fsalfirst; k7 = fsallast
   f(t,u,fsalfirst);  # Pre-start fsal
-  if custom_callback
+  if integrator.custom_callback
     if integrator.opts.calck
       cache = (u,k...,k1,k2,k3,k4,k5,k6,k7,tmp,utmp,atmp,utilde,bspl,uprev,kprev...)
     else
