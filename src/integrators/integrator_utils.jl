@@ -35,7 +35,6 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
   uprev::uType
   kprev::ksEltype
   tprev::tType
-  dtprev::tType
   Ts::Vector{tType}
   tableau::ExplicitRKTableau
   autodiff::Bool
@@ -140,9 +139,9 @@ end
       integrator.saveiter += 1
       if integrator.opts.saveat[integrator.cursaveat]<t # If <t, interpolate
         curt = integrator.opts.saveat[integrator.cursaveat]
-        ode_addsteps!(k,integrator.tprev,uprev,integrator.dtprev,integrator.alg,integrator.f)
-        Θ = (curt - integrator.tprev)/integrator.dtprev
-        val = ode_interpolant(Θ,integrator.dtprev,integrator.uprev,u,integrator.kprev,k,integrator.alg)
+        ode_addsteps!(k,integrator.tprev,uprev,integrator.dt,integrator.alg,integrator.f)
+        Θ = (curt - integrator.tprev)/integrator.dt
+        val = ode_interpolant(Θ,integrator.dt,integrator.uprev,u,integrator.kprev,k,integrator.alg)
         copyat_or_push!(integrator.sol.t,integrator.saveiter,curt)
         copyat_or_push!(integrator.sol.u,integrator.saveiter,val)
       else # ==t, just save
@@ -203,13 +202,14 @@ end
 
       qold = max(EEst,integrator.opts.qoldinit)
       dtpropose = min(integrator.opts.dtmax,dtnew)
-      integrator.dtprev = dt
-      dt = max(dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
+      integrator.dt = dt
+      dt_mod = tType(1)
       if integrator.custom_callback
-        dt,t,T = integrator.opts.callback(alg,f,t,u,k,dt,cache,T,Ts,integrator)
+        dt_mod,t,T = integrator.opts.callback(alg,f,t,u,k,dt,cache,T,Ts,integrator)
       else
         @ode_savevalues
       end
+      dt = dt_mod*max(dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
 
       if fsal
         if integrator.reeval_fsal
@@ -256,12 +256,14 @@ end
         fsalfirst = fsallast
       end
     end
-    integrator.dtprev = dt
+    dt_mod = tType(1)
+    integrator.dt = dt
     if integrator.custom_callback
-      dt,t,T = integrator.opts.callback(alg,f,t,u,k,dt,cache,T,Ts,integrator)
+      dt_mod,t,T = integrator.opts.callback(alg,f,t,u,k,dt,cache,T,Ts,integrator)
     else
       @ode_savevalues
     end
+    dt *= dt_mod
     if integrator.calcprevs
       # Store previous for interpolation
       integrator.tprev = t

@@ -234,7 +234,6 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
 
   calcprevs = !isempty(saveat) || custom_callback # Calculate the previous values
   tprev = t
-  dtprev = tType(dt)
   dtcache = tType(dt)
   iter = 0
   saveiter = 1 # Starts at 1 so first save is at 2
@@ -246,7 +245,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
 
   integrator = ODEIntegrator{algType,uType,tType,eltype(ks),typeof(sol),
                              typeof(rate_prototype),typeof(f!),typeof(opts)}(
-                             sol,u,k,t,tType(dt),f!,uprev,kprev,tprev,dtprev,
+                             sol,u,k,t,tType(dt),f!,uprev,kprev,tprev,
                              Ts,tableau,autodiff,
                              adaptiveorder,order,fsal,alg,custom_callback,rate_prototype,
                              notsaveat_idxs,calcprevs,dtcache,iter,saveiter,saveiter_dense,
