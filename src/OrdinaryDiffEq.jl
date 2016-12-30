@@ -29,6 +29,7 @@ module OrdinaryDiffEq
   include("integrators/threaded_rk_integrators.jl")
   include("constants.jl")
   include("callbacks.jl")
+  include("caches.jl")
   include("solve.jl")
   include("dense.jl")
   include("integrators/unrolled_tableaus.jl")

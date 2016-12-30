@@ -67,24 +67,16 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,
   uidx = eachindex(u)
   @unpack A,c,α,αEEst,stages,fsal = integrator.tableau
   A = A' # Transpose A to column major looping
-  kk = Vector{ksEltype}(0)
-  for i = 1:stages
-    push!(kk,similar(rate_prototype))
-  end
-  utilde = similar(rate_prototype)
-  tmp = similar(u)
-  atmp = similar(u,uEltypeNoUnits)
-  utmp = zeros(u)
-  uEEst = similar(rate_prototype)
-  fsallast = kk[end]
-  fsalfirst = kk[1]
+  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.tableau,integrator.uprev,integrator.kprev)
+  @unpack kk,utilde,tmp,atmp,utmp,uEEst = cache
   if integrator.opts.calck
     k = kk[end]
   end
+  fsallast = kk[end]
+  fsalfirst = kk[1]
   f(t,u,kk[1]) # pre-start fsal
-  if !(typeof(integrator.opts.callback)<:Void)
-    cache = (u,tmp,utilde,uEEst,atmp,integrator.uprev,integrator.kprev,utmp,kk...)
-  end
+
+
   @inbounds for T in Ts
     while t < T
       @ode_loopheader
