@@ -59,7 +59,6 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   # Get the control variables
 
   if callback == nothing
-    callback = ODE_DEFAULT_CALLBACK
     custom_callback = false
   else
     custom_callback = true
