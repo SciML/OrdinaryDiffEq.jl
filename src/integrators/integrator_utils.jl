@@ -147,8 +147,8 @@ end
         copyat_or_push!(integrator.sol.t,integrator.saveiter,curt)
         copyat_or_push!(integrator.sol.u,integrator.saveiter,val)
       else # ==t, just save
-        copyat_or_push!(integrator.sol.t,integrator.saveiter,t)
-        copyat_or_push!(integrator.sol.u,integrator.saveiter,u)
+        copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
+        copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
         if integrator.opts.dense
           integrator.saveiter_dense += 1
           copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
@@ -160,8 +160,8 @@ end
   end
   if integrator.opts.save_timeseries && integrator.iter%integrator.opts.timeseries_steps==0
     integrator.saveiter += 1
-    copyat_or_push!(integrator.sol.u,integrator.saveiter,u)
-    copyat_or_push!(integrator.sol.t,integrator.saveiter,t)
+    copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
+    copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
     if integrator.opts.dense
       integrator.saveiter_dense += 1
       copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
@@ -176,8 +176,8 @@ end
 @def ode_postamble begin
   if integrator.sol.t[end] != t
     integrator.saveiter += 1
-    copyat_or_push!(integrator.sol.t,integrator.saveiter,t)
-    copyat_or_push!(integrator.sol.u,integrator.saveiter,u)
+    copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
+    copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
     if integrator.opts.dense
       integrator.saveiter_dense +=1
       copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
@@ -191,9 +191,13 @@ end
   integrator.dt = dt
   integrator.dt_mod = tType(1)
   integrator.k = k
+  integrator.u = u
+  integrator.t = t
 end
 
 @def unpack_integrator begin
+  u = integrator.u
+  t = integrator.t
 end
 
 @def ode_loopfooter begin

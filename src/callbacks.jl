@@ -17,12 +17,12 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
     end
     interp_index = 0
     # Check if the event occured
-    if $event_f(t,u)<=0
+    if $event_f(integrator.t,u)<=0
       event_occurred = true
       interp_index = $interp_points
     elseif $interp_points!=0 # Use the interpolants for safety checking
       for i in 2:length(Θs)-1
-        if $event_f(t+integrator.dt*Θs[i],ode_interpolant(Θs[i],integrator.dt,integrator.uprev,u,integrator.kprev,integrator.k,alg))<0
+        if $event_f(integrator.t+integrator.dt*Θs[i],ode_interpolant(Θs[i],integrator.dt,integrator.uprev,u,integrator.kprev,integrator.k,alg))<0
           event_occurred = true
           interp_index = i
           break
@@ -38,7 +38,7 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
       end
       if $rootfind_event_loc
         find_zero = (Θ,val) -> begin
-          val[1] = $event_f(t+Θ[1]*integrator.dt,ode_interpolant(Θ[1],integrator.dt,integrator.uprev,u,integrator.kprev,integrator.k,alg))
+          val[1] = $event_f(integrator.tprev+Θ[1]*integrator.dt,ode_interpolant(Θ[1],integrator.dt,integrator.uprev,u,integrator.kprev,integrator.k,alg))
         end
         res = nlsolve(find_zero,initial_Θ)
         val = ode_interpolant(res.zero[1],integrator.dt,integrator.uprev,u,integrator.kprev,integrator.k,alg)
@@ -50,16 +50,17 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
       end
       # If no solve and no interpolants, just use endpoint
 
-      t = integrator.tprev + integrator.dt
+      integrator.t = integrator.tprev + integrator.dt
+
       if integrator.opts.calck
         if isspecialdense(alg)
           resize!(integrator.k,integrator.kshortsize) # Reset k for next step
           integrator.k = typeof(integrator.k)() # Make a local blank k for saving
           ode_addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.dt,alg,f)
         elseif typeof(u) <: Number
-          integrator.k = f(t,u)
+          integrator.k = f(integrator.t,u)
         else
-          f(t,u,integrator.k)
+          f(integrator.t,u,integrator.k)
         end
       end
     end
@@ -73,9 +74,9 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
         if integrator.opts.calck
           if !isspecialdense(alg)
             if typeof(u) <: Number
-              integrator.k = f(t,u)
+              integrator.k = f(integrator.t,u)
             else
-              f(t,u,integrator.k)
+              f(integrator.t,u,integrator.k)
             end
           end
         end
@@ -132,7 +133,7 @@ function cache_replace_length(ex::Any)
 end
 
 @def ode_terminate begin
-  T = t
+  T = integrator.t
   while length(Ts)>1
     pop!(Ts)
   end
