@@ -138,7 +138,7 @@ end
   end
 end
 
-function ode_savevalues!(integrator)
+@inline function ode_savevalues!(integrator)
   if !isempty(integrator.opts.saveat) # Perform saveat
     while integrator.cursaveat <= length(integrator.opts.saveat) && integrator.opts.saveat[integrator.cursaveat]<= integrator.t
       integrator.saveiter += 1
@@ -176,7 +176,7 @@ function ode_savevalues!(integrator)
   end
 end
 
-function ode_postamble!(integrator)
+@inline function ode_postamble!(integrator)
   if integrator.sol.t[end] !=  integrator.t
     integrator.saveiter += 1
     copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
@@ -222,7 +222,7 @@ end
       dtpropose = min(integrator.opts.dtmax,dtnew)
       @pack_integrator
       if integrator.custom_callback
-        t,T = integrator.opts.callback(t,cache,T,Ts,integrator)
+        T = integrator.opts.callback(cache,T,Ts,integrator)
       else
         ode_savevalues!(integrator)
       end
@@ -276,7 +276,7 @@ end
     end
     @pack_integrator
     if integrator.custom_callback
-      t,T = integrator.opts.callback(t,cache,T,Ts,integrator)
+      T = integrator.opts.callback(cache,T,Ts,integrator)
     else
       ode_savevalues!(integrator)
     end

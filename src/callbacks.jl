@@ -1,9 +1,9 @@
 macro ode_callback(ex)
   esc(quote
-    function (t,cache,T,Ts,integrator)
+    function (cache,T,Ts,integrator)
       event_occurred = false
       $(ex)
-      t,T
+      T
     end
   end)
 end
@@ -13,7 +13,7 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
     # Event Handling
     if $interp_points!=0
       ode_addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.dt,integrator.alg,integrator.f)
-      Θs = linspace(typeof(t)(0),typeof(t)(1),$(interp_points))
+      Θs = linspace(typeof(integrator.t)(0),typeof(integrator.t)(1),$(interp_points))
     end
     interp_index = 0
     # Check if the event occured
@@ -36,7 +36,7 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
         find_zero = (Θ) -> begin
           $event_f(integrator.tprev+Θ*integrator.dt,ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.kprev,integrator.k,integrator.alg))
         end
-        res = prevfloat(fzero(find_zero,typeof(t)(0),top_Θ))
+        res = prevfloat(fzero(find_zero,typeof(integrator.t)(0),top_Θ))
         val = ode_interpolant(res,integrator.dt,integrator.uprev,integrator.u,integrator.kprev,integrator.k,integrator.alg)
         copy!(integrator.u,val)
         integrator.dt *= res
