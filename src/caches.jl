@@ -55,6 +55,102 @@ end
 
 alg_cache{uType}(alg::RK4,u::uType,rate_prototype,uEltypeNoUnits,tableau,uprev,kprev) = ODEEmptyCache()
 
+immutable BS3Cache{uType,rateType,uEltypeNoUnits} <: OrdinaryDiffEqCache
+  u::uType
+  uprev::uType
+  kprev::rateType
+  k1::rateType
+  k2::rateType
+  k3::rateType
+  k4::rateType
+  utilde::uType
+  tmp::uType
+  atmp::uEltypeNoUnits
+end
+
+function alg_cache{uType<:AbstractArray}(alg::BS3,u::uType,rate_prototype,uEltypeNoUnits,tableau,uprev,kprev)
+  k1 = similar(rate_prototype)
+  k2 = similar(rate_prototype)
+  k3 = similar(rate_prototype)
+  k4 = similar(rate_prototype)
+  utilde = similar(u)
+  atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u)
+  BS3Cache(u,uprev,kprev,k1,k2,k3,k4,utilde,tmp,atmp)
+end
+
+alg_cache{uType}(alg::BS3,u::uType,rate_prototype,uEltypeNoUnits,tableau,uprev,kprev) = ODEEmptyCache()
+
+immutable BS5Cache{uType,rateType,uEltypeNoUnits} <: OrdinaryDiffEqCache
+  u::uType
+  uprev::uType
+  kprev::Vector{rateType}
+  k1::rateType
+  k2::rateType
+  k3::rateType
+  k4::rateType
+  k5::rateType
+  k6::rateType
+  k7::rateType
+  k8::rateType
+  utilde::uType
+  uhat::uType
+  tmp::uType
+  atmp::uEltypeNoUnits
+  atmptilde::uEltypeNoUnits
+end
+
+function alg_cache{uType<:AbstractArray}(alg::BS5,u::uType,rate_prototype,uEltypeNoUnits,tableau,uprev,kprev)
+  k1 = similar(rate_prototype)
+  k2 = similar(rate_prototype)
+  k3 = similar(rate_prototype)
+  k4 = similar(rate_prototype)
+  k5 = similar(rate_prototype)
+  k6 = similar(rate_prototype)
+  k7 = similar(rate_prototype)
+  k8 = similar(rate_prototype)
+  utilde = similar(u); uhat = similar(u)
+  atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u)
+  atmptilde = similar(u,uEltypeNoUnits)
+  BS5Cache(u,uprev,kprev,k1,k2,k3,k4,k5,k6,k7,k8,utilde,uhat,tmp,atmp,atmptilde)
+end
+
+alg_cache{uType}(alg::BS5,u::uType,rate_prototype,uEltypeNoUnits,tableau,uprev,kprev) = ODEEmptyCache()
+
+immutable Tsit5Cache{uType,rateType,uEltypeNoUnits} <: OrdinaryDiffEqCache
+  u::uType
+  uprev::uType
+  kprev::Vector{rateType}
+  k1::rateType
+  k2::rateType
+  k3::rateType
+  k4::rateType
+  k5::rateType
+  k6::rateType
+  k7::rateType
+  utilde::uType
+  tmp::uType
+  atmp::uEltypeNoUnits
+end
+
+function alg_cache{uType<:AbstractArray}(alg::Tsit5,u::uType,rate_prototype,uEltypeNoUnits,tableau,uprev,kprev)
+  k1 = similar(rate_prototype)
+  k2 = similar(rate_prototype)
+  k3 = similar(rate_prototype)
+  k4 = similar(rate_prototype)
+  k5 = similar(rate_prototype)
+  k6 = similar(rate_prototype)
+  k7 = similar(rate_prototype)
+  utilde = similar(u)
+  atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u)
+  atmptilde = similar(u,uEltypeNoUnits)
+  Tsit5Cache(u,uprev,kprev,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp)
+end
+
+alg_cache{uType}(alg::Tsit5,u::uType,rate_prototype,uEltypeNoUnits,tableau,uprev,kprev) = ODEEmptyCache()
+
 immutable ExplicitRKCache{uType,rateType,uEltypeNoUnits,ksEltype} <: OrdinaryDiffEqCache
   u::uType
   tmp::uType
