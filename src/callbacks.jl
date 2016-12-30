@@ -50,8 +50,7 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
 
       if integrator.opts.calck
         if isspecialdense(alg)
-          #resize!(integrator.k,integrator.kshortsize) # Reset k for next step
-          Main.Juno.render(integrator.k)
+          resize!(integrator.k,integrator.kshortsize) # Reset k for next step
           integrator.k = typeof(integrator.k)() # Make a local blank k for saving
           ode_addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.dt,integrator.alg,integrator.f)
         elseif typeof(u) <: Number
