@@ -25,7 +25,7 @@ type DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5}
   calck::Bool
 end
 
-type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},tType,ksEltype,SolType,rateType,F,ECType,O}
+type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},tType,ksEltype,TabType,SolType,rateType,F,ECType,O}
   sol::SolType
   u::uType
   k::ksEltype
@@ -36,7 +36,7 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
   kprev::ksEltype
   tprev::tType
   Ts::Vector{tType}
-  tableau::ExplicitRKTableau
+  tableau::TabType
   autodiff::Bool
   adaptiveorder::Int
   order::Int

@@ -1,4 +1,4 @@
-function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{ImplicitEuler,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:Number,tType,ksEltype,TabType,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{ImplicitEuler,uType,tType,ksEltype,TabType,SolType,rateType,F,ECType,O})
   @ode_preamble
   local nlres::NLsolve.SolverResults{uEltype}
   function rhs_ie(u,resid,u_old,t,dt)
@@ -24,7 +24,7 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,ECType,O}(int
   nothing
 end
 
-function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{ImplicitEuler,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{ImplicitEuler,uType,tType,ksEltype,TabType,SolType,rateType,F,ECType,O})
   @ode_preamble
   local nlres::NLsolve.SolverResults{uEltype}
   uidx = eachindex(u)
@@ -66,7 +66,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,ECType
   nothing
 end
 
-function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Trapezoid,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Trapezoid,uType,tType,ksEltype,TabType,SolType,rateType,F,ECType,O})
   @ode_preamble
   local nlres::NLsolve.SolverResults{uEltype}
   uidx = eachindex(u)
@@ -114,7 +114,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,ECType
   nothing
 end
 
-function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Trapezoid,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:Number,tType,ksEltype,TabType,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Trapezoid,uType,tType,ksEltype,TabType,SolType,rateType,F,ECType,O})
   @ode_preamble
   dto2::tType = dt/2
   function rhs_trap(u,resid,u_old,t,dt)

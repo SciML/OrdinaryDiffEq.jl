@@ -244,7 +244,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   kshortsize = 1
   reeval_fsal = false
 
-  integrator = ODEIntegrator{algType,uType,tType,eltype(ks),typeof(sol),
+  integrator = ODEIntegrator{algType,uType,tType,eltype(ks),typeof(tableau),typeof(sol),
                              typeof(rate_prototype),typeof(f!),typeof(event_cache),typeof(opts)}(
                              sol,u,k,t,tType(dt),f!,uprev,kprev,tprev,
                              Ts,tableau,autodiff,adaptiveorder,order,fsal,
