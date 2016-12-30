@@ -135,15 +135,15 @@ end
   end
 end
 
-@def ode_savevalues begin
+function ode_savevalues!(integrator)
   if !isempty(integrator.opts.saveat) # Perform saveat
-    while integrator.cursaveat <= length(integrator.opts.saveat) && integrator.opts.saveat[integrator.cursaveat]<= t
+    while integrator.cursaveat <= length(integrator.opts.saveat) && integrator.opts.saveat[integrator.cursaveat]<= integrator.t
       integrator.saveiter += 1
-      if integrator.opts.saveat[integrator.cursaveat]<t # If <t, interpolate
+      if integrator.opts.saveat[integrator.cursaveat]<integrator.t # If <t, interpolate
         curt = integrator.opts.saveat[integrator.cursaveat]
         ode_addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.dt,integrator.alg,integrator.f)
         Θ = (curt - integrator.tprev)/integrator.dt
-        val = ode_interpolant(Θ,integrator.dt,integrator.uprev,u,integrator.kprev,integrator.k,integrator.alg)
+        val = ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.kprev,integrator.k,integrator.alg)
         copyat_or_push!(integrator.sol.t,integrator.saveiter,curt)
         copyat_or_push!(integrator.sol.u,integrator.saveiter,val)
       else # ==t, just save
@@ -168,7 +168,7 @@ end
       copyat_or_push!(integrator.notsaveat_idxs,integrator.saveiter_dense,integrator.saveiter)
     end
   end
-  if isspecialdense(alg)
+  if isspecialdense(integrator.alg)
     resize!(integrator.k,integrator.kshortsize)
   end
 end
@@ -221,7 +221,7 @@ end
       if integrator.custom_callback
         t,T = integrator.opts.callback(alg,f,t,u,dt,cache,T,Ts,integrator)
       else
-        @ode_savevalues
+        ode_savevalues!(integrator)
       end
       @unpack_integrator
       dt = integrator.dt_mod*max(dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
@@ -275,7 +275,7 @@ end
     if integrator.custom_callback
       t,T = integrator.opts.callback(alg,f,t,u,dt,cache,T,Ts,integrator)
     else
-      @ode_savevalues
+      ode_savevalues!(integrator)
     end
     @unpack_integrator
     dt *= integrator.dt_mod

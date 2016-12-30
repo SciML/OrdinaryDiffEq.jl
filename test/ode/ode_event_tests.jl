@@ -54,7 +54,7 @@ sol2= solve(prob,Vern6())
 sol3= solve(prob,Vern6(),saveat=[.5])
 
 default_callback = @ode_callback begin
-  @ode_savevalues
+  ode_savevalues!(integrator)
 end
 
 sol4 = solve(prob,Tsit5(),callback=default_callback)

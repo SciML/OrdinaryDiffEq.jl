@@ -61,7 +61,7 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
       end
     end
 
-    @ode_savevalues
+    ode_savevalues!(integrator)
     if event_occurred
       if $terminate_on_event
         @ode_terminate
@@ -76,7 +76,7 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
             end
           end
         end
-        @ode_savevalues
+        ode_savevalues!(integrator)
         if integrator.fsal
           integrator.reeval_fsal = true
         end
