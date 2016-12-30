@@ -59,12 +59,6 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
 
   # Get the control variables
 
-  if callback == nothing
-    custom_callback = false
-  else
-    custom_callback = true
-  end
-
   (uType<:Array || uType <: Number) ? u = copy(u0) : u = deepcopy(u0)
 
   ks = Vector{uType}(0)
@@ -173,7 +167,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
                     dense=dense,k=ks,interp=interp,
                     calculate_error = false)
 
-  calcprevs = !isempty(saveat) || custom_callback # Calculate the previous values
+  calcprevs = calck || typeof(callback)<:Void # Calculate the previous values
   tprev = t
   dtcache = tType(dt)
   dt_mod = tType(1)
@@ -188,7 +182,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
                              typeof(rate_prototype),typeof(f!),typeof(event_cache),typeof(opts)}(
                              sol,u,k,t,tType(dt),f!,uprev,kprev,tprev,
                              Ts,tableau,autodiff,adaptiveorder,order,fsal,
-                             alg,custom_callback,rate_prototype,
+                             alg,rate_prototype,
                              notsaveat_idxs,calcprevs,dtcache,dt_mod,
                              iter,saveiter,saveiter_dense,cursaveat,
                              event_cache,kshortsize,reeval_fsal,opts)

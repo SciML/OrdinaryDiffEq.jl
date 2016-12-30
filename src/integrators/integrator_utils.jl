@@ -42,7 +42,6 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
   order::Int
   fsal::Bool
   alg::algType
-  custom_callback::Bool
   rate_prototype::rateType
   notsaveat_idxs::Vector{Int}
   calcprevs::Bool
@@ -97,7 +96,7 @@ end
   local dtpropose::tType = tType(0)
   local q11::tTypeNoUnits = 0
   local qold::tTypeNoUnits = integrator.opts.qoldinit
-  if uType <: Number || !integrator.custom_callback
+  if uType <: Number || !(typeof(integrator.opts.callback)<:Void)
     cache = ()
   end
   qminc = inv(integrator.opts.qmin) #facc1
@@ -133,7 +132,7 @@ end
     return nothing
   end
 
-  if uType<:AbstractArray && integrator.custom_callback
+  if uType<:AbstractArray && !(typeof(integrator.opts.callback)<:Void)
     uidx = eachindex(u)
   end
 end
@@ -221,7 +220,7 @@ end
       qold = max(EEst,integrator.opts.qoldinit)
       dtpropose = min(integrator.opts.dtmax,dtnew)
       @pack_integrator
-      if integrator.custom_callback
+      if !(typeof(integrator.opts.callback)<:Void)
         T = integrator.opts.callback(cache,T,Ts,integrator)
       else
         ode_savevalues!(integrator)
@@ -275,7 +274,7 @@ end
       end
     end
     @pack_integrator
-    if integrator.custom_callback
+    if !(typeof(integrator.opts.callback)<:Void)
       T = integrator.opts.callback(cache,T,Ts,integrator)
     else
       ode_savevalues!(integrator)

@@ -57,7 +57,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,
     pop!(integrator.sol.k) # Get rid of the one it starts with
   end
   k = k1
-  if integrator.custom_callback
+  if !(typeof(integrator.opts.callback)<:Void)
     if integrator.opts.calck
       cache = (u,k,k2,k3,k4,k5,k6,k7,k8,k9,k10,utilde,integrator.uprev,integrator.kprev,utmp,tmp,atmp)
     else
@@ -245,7 +245,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,
     fsal = false
   end
 
-  if integrator.custom_callback
+  if !(typeof(integrator.opts.callback)<:Void)
     if integrator.opts.calck
       cache = (u,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,k...,integrator.kprev...,integrator.uprev,udiff,bspl,utilde,update,utmp,tmp,atmp,atmp2,kupdate)
     else
@@ -418,7 +418,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,
     pop!(integrator.sol.k)
   end
   k = k1
-  if integrator.custom_callback
+  if !(typeof(integrator.opts.callback)<:Void)
     cache = (u,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,integrator.uprev,update,tmp,utmp, atmp,utilde,integrator.kprev)
   end
   @inbounds for T in Ts

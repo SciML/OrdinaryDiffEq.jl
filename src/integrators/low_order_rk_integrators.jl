@@ -45,7 +45,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,
   k = fsallast
   k1 = fsalfirst # done by pointers, no copying
   k4 = fsallast
-  if integrator.custom_callback
+  if !(typeof(integrator.opts.callback)<:Void)
     cache = (u,k1,k2,k3,k4,utilde,atmp,utmp,tmp,integrator.uprev,integrator.kprev)
   end
   f(t,u,fsalfirst) # Pre-start fsal
@@ -173,7 +173,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,
     k[1]=k1; k[2]=k2; k[3]=k3;k[4]=k4;k[5]=k5;k[6]=k6;k[7]=k7;k[8]=k8
   end
   fsalfirst = k1; fsallast = k8  # setup pointers
-  if integrator.custom_callback
+  if !(typeof(integrator.opts.callback)<:Void)
     if integrator.opts.calck
       cache = (u,k1,k2,k3,k4,k5,k6,k7,k8,utilde,uhat,utmp,tmp,atmp,atmptilde,integrator.uprev,integrator.kprev...)
     else
@@ -319,7 +319,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,
       integrator.kprev = deepcopy(k)
     end
   end
-  if integrator.custom_callback
+  if !(typeof(integrator.opts.callback)<:Void)
     if integrator.opts.calck
       cache = (u,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,utmp,atmp,integrator.uprev,integrator.kprev...)
     else
@@ -458,7 +458,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,
     k[1] = update
   end
   k1 = fsalfirst; k7 = fsallast
-  if integrator.custom_callback
+  if !(typeof(integrator.opts.callback)<:Void)
     if integrator.opts.calck
       cache = (u,k...,k1,k2,k3,k4,k5,k6,k7,tmp,utmp,atmp,utilde,bspl,integrator.uprev,integrator.kprev...)
     else

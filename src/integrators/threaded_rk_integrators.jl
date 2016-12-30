@@ -27,7 +27,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,
   end
   k1 = fsalfirst; k7 = fsallast
   f(t,u,fsalfirst);  # Pre-start fsal
-  if integrator.custom_callback
+  if !(typeof(integrator.opts.callback)<:Void)
     if integrator.opts.calck
       cache = (u,k...,k1,k2,k3,k4,k5,k6,k7,tmp,utmp,atmp,utilde,bspl,integrator.uprev,integrator.kprev...)
     else

@@ -82,7 +82,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,
     k = kk[end]
   end
   f(t,u,kk[1]) # pre-start fsal
-  if integrator.custom_callback
+  if !(typeof(integrator.opts.callback)<:Void)
     cache = (u,tmp,utilde,uEEst,atmp,integrator.uprev,integrator.kprev,utmp,kk...)
   end
   @inbounds for T in Ts

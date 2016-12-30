@@ -70,7 +70,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,
       end
     end
   end
-  if integrator.custom_callback
+  if !(typeof(integrator.opts.callback)<:Void)
     if integrator.opts.calck
       cache = (u,k...,utilde,tmp,utmp,atmp,integrator.uprev,integrator.kprev...)
     else
@@ -198,7 +198,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,
       end
     end
   end
-  if integrator.custom_callback
+  if !(typeof(integrator.opts.callback)<:Void)
     if integrator.opts.calck
       cache = (u,k...,integrator.kprev...,integrator.uprev,utilde,update,utmp,tmp,atmp)
     else
@@ -337,7 +337,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,
       end
     end
   end
-  if integrator.custom_callback
+  if !(typeof(integrator.opts.callback)<:Void)
     if integrator.opts.calck
       cache = (u,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,integrator.kprev...,integrator.uprev,utilde,update,utmp,tmp,atmp)
     else
@@ -493,7 +493,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,
       end
     end
   end
-  if integrator.custom_callback
+  if !(typeof(integrator.opts.callback)<:Void)
     if integrator.opts.calck
       cache = (u,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,utilde,update,utmp,tmp,atmp,integrator.uprev,integrator.kprev...)
     else
