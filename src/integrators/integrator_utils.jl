@@ -222,7 +222,7 @@ end
       dtpropose = min(integrator.opts.dtmax,dtnew)
       @pack_integrator
       if integrator.custom_callback
-        t,T = integrator.opts.callback(t,u,dt,cache,T,Ts,integrator)
+        t,T = integrator.opts.callback(t,dt,cache,T,Ts,integrator)
       else
         ode_savevalues!(integrator)
       end
@@ -276,7 +276,7 @@ end
     end
     @pack_integrator
     if integrator.custom_callback
-      t,T = integrator.opts.callback(t,u,dt,cache,T,Ts,integrator)
+      t,T = integrator.opts.callback(t,dt,cache,T,Ts,integrator)
     else
       ode_savevalues!(integrator)
     end

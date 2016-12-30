@@ -1,6 +1,6 @@
 macro ode_callback(ex)
   esc(quote
-    function (t,u,dt,cache,T,Ts,integrator)
+    function (t,dt,cache,T,Ts,integrator)
       event_occurred = false
       $(ex)
       t,T
@@ -17,12 +17,12 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
     end
     interp_index = 0
     # Check if the event occured
-    if $event_f(integrator.t,u)<=0
+    if $event_f(integrator.t,integrator.u)<=0
       event_occurred = true
       interp_index = $interp_points
     elseif $interp_points!=0 # Use the interpolants for safety checking
       for i in 2:length(Θs)-1
-        if $event_f(integrator.t+integrator.dt*Θs[i],ode_interpolant(Θs[i],integrator.dt,integrator.uprev,u,integrator.kprev,integrator.k,integrator.alg))<0
+        if $event_f(integrator.t+integrator.dt*Θs[i],ode_interpolant(Θs[i],integrator.dt,integrator.uprev,integrator.u,integrator.kprev,integrator.k,integrator.alg))<0
           event_occurred = true
           interp_index = i
           break
@@ -34,15 +34,15 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
       top_Θ = Θs[interp_index] # Top at the smallest
       if $rootfind_event_loc
         find_zero = (Θ) -> begin
-          $event_f(integrator.tprev+Θ*integrator.dt,ode_interpolant(Θ,integrator.dt,integrator.uprev,u,integrator.kprev,integrator.k,integrator.alg))
+          $event_f(integrator.tprev+Θ*integrator.dt,ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.kprev,integrator.k,integrator.alg))
         end
         res = prevfloat(fzero(find_zero,typeof(t)(0),top_Θ))
-        val = ode_interpolant(res,integrator.dt,integrator.uprev,u,integrator.kprev,integrator.k,integrator.alg)
-        copy!(u,val)
+        val = ode_interpolant(res,integrator.dt,integrator.uprev,integrator.u,integrator.kprev,integrator.k,integrator.alg)
+        copy!(integrator.u,val)
         integrator.dt *= res
       elseif interp_index != $interp_points
           integrator.dt *= Θs[interp_index]
-          copy!(u,ode_interpolant(Θs[interp_index],integrator.dt,integrator.uprev,u,integrator.kprev,integrator.k,integrator.alg))
+          copy!(integrator.u,ode_interpolant(Θs[interp_index],integrator.dt,integrator.uprev,integrator.u,integrator.kprev,integrator.k,integrator.alg))
       end
       # If no solve and no interpolants, just use endpoint
 
@@ -53,10 +53,10 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
           resize!(integrator.k,integrator.kshortsize) # Reset k for next step
           integrator.k = typeof(integrator.k)() # Make a local blank k for saving
           ode_addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.dt,integrator.alg,integrator.f)
-        elseif typeof(u) <: Number
-          integrator.k = integrator.f(integrator.t,u)
+        elseif typeof(integrator.u) <: Number
+          integrator.k = integrator.f(integrator.t,integrator.u)
         else
-          integrator.f(integrator.t,u,integrator.k)
+          integrator.f(integrator.t,integrator.u,integrator.k)
         end
       end
     end
@@ -66,13 +66,13 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
       if $terminate_on_event
         @ode_terminate
       else
-        $apply_event!(u,cache)
+        $apply_event!(integrator.u,cache)
         if integrator.opts.calck
           if !isspecialdense(integrator.alg)
-            if typeof(u) <: Number
-              integrator.k = integrator.f(integrator.t,u)
+            if typeof(integrator.u) <: Number
+              integrator.k = integrator.f(integrator.t,integrator.u)
             else
-              integrator.f(integrator.t,u,integrator.k)
+              integrator.f(integrator.t,integrator.u,integrator.k)
             end
           end
         end
