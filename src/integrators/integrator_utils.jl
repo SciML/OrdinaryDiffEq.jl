@@ -119,15 +119,18 @@ end
 
   if integrator.iter > integrator.opts.maxiters
     warn("Interrupted. Larger maxiters is needed.")
-    @ode_postamble
+    ode_postamble!(integrator)
+    return nothing
   end
   if dt == tType(0)
     warn("dt == 0. Aborting")
-    @ode_postamble
+    ode_postamble!(integrator)
+    return nothing
   end
   if any(isnan,u)
     warn("NaNs detected. Aborting")
-    @ode_postamble
+    ode_postamble!(integrator)
+    return nothing
   end
 
   if uType<:AbstractArray && integrator.custom_callback
@@ -173,8 +176,8 @@ function ode_savevalues!(integrator)
   end
 end
 
-@def ode_postamble begin
-  if integrator.sol.t[end] != t
+function ode_postamble!(integrator)
+  if integrator.sol.t[end] !=  integrator.t
     integrator.saveiter += 1
     copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
     copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)

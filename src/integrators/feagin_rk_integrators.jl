@@ -43,7 +43,8 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,ECType,O}(int
     k = f(t,u)
     push!(integrator.sol.k,k)
   end
-  @ode_postamble
+  ode_postamble!(integrator)
+  nothing
 end
 
 function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Feagin10,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
@@ -156,7 +157,8 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,ECType
     f(t,u,k)
     push!(integrator.sol.k,deepcopy(k))
   end
-  @ode_postamble
+  ode_postamble!(integrator)
+  nothing
 end
 
 function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Feagin12,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
@@ -215,7 +217,8 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,ECType,O}(int
     k = f(t,u)
     push!(integrator.sol.k,k)
   end
-  @ode_postamble
+  ode_postamble!(integrator)
+  nothing
 end
 
 function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Feagin12,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
@@ -363,7 +366,8 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,ECType
     f(t,u,k)
     push!(integrator.sol.k,deepcopy(k))
   end
-  @ode_postamble
+  ode_postamble!(integrator)
+  nothing
 end
 
 function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Feagin14,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
@@ -434,7 +438,8 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,ECType,O}(int
     k = f(t,u)
     push!(integrator.sol.k,k)
   end
-  @ode_postamble
+  ode_postamble!(integrator)
+  nothing
 end
 
 function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Feagin14,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
@@ -626,5 +631,6 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,ECType
     f(t,u,k)
     push!(integrator.sol.k,deepcopy(k))
   end
-  @ode_postamble
+  ode_postamble!(integrator)
+  nothing
 end

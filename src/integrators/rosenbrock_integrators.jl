@@ -88,7 +88,8 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,ECType
       recursivecopy!(fsalfirst,fsallast)
     end
   end
-  @ode_postamble
+  ode_postamble!(integrator)
+  nothing
 end
 
 function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Rosenbrock23,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
@@ -142,7 +143,8 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,ECType,O}(int
       fsalfirst = fsallast
     end
   end
-  @ode_postamble
+  ode_postamble!(integrator)
+  nothing
 end
 
 function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Rosenbrock32,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
@@ -231,7 +233,8 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,ECType
       recursivecopy!(fsalfirst,fsallast)
     end
   end
-  @ode_postamble
+  ode_postamble!(integrator)
+  nothing
 end
 
 function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Rosenbrock32,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
@@ -290,5 +293,6 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,ECType,O}(int
       fsalfirst = fsallast
     end
   end
-  @ode_postamble
+  ode_postamble!(integrator)
+  nothing
 end

@@ -61,7 +61,8 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,ECType
       @ode_loopfooter
     end
   end
-  @ode_postamble
+  ode_postamble!(integrator)
+  nothing
 end
 
 @noinline function dp5threaded_denseloop(bspl,update,k1,k3,k4,k5,k6,k7,k,d1,d3,d4,d5,d6,d7,uidx)

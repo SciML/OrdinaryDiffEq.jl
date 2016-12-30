@@ -20,7 +20,8 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,ECType,O}(int
       @ode_loopfooter
     end
   end
-  @ode_postamble
+  ode_postamble!(integrator)
+  nothing
 end
 
 function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{ImplicitEuler,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
@@ -61,7 +62,8 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,ECType
     end
   end
   u = reshape(uhold,sizeu...)
-  @ode_postamble
+  ode_postamble!(integrator)
+  nothing
 end
 
 function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Trapezoid,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
@@ -108,7 +110,8 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,SolType,rateType,F,ECType
     end
   end
   u = reshape(uhold,sizeu...)
-  @ode_postamble
+  ode_postamble!(integrator)
+  nothing
 end
 
 function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Trapezoid,uType,tType,ksEltype,SolType,rateType,F,ECType,O})
@@ -134,5 +137,6 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,ECType,O}(int
       @ode_loopfooter
     end
   end
-  @ode_postamble
+  ode_postamble!(integrator)
+  nothing
 end
