@@ -14,8 +14,9 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   alg::algType,timeseries_init=uType[],ts_init=tType[],ks_init=[];
   dt = tType(0),save_timeseries = true,
   timeseries_steps = 1,tableau = ODE_DEFAULT_TABLEAU,
-  dense = save_timeseries,calck = nothing,
+  dense = save_timeseries,
   saveat = tType[],tstops = tType[],
+  calck = (!isempty(setdiff(saveat,tstops)) || dense),
   adaptive = true,
   gamma=.9,
   abstol=1//10^6,
@@ -72,16 +73,11 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
 
   ks = Vector{uType}(0)
 
-  order = alg.order
+  order = alg_order(alg)
   adaptiveorder = 0
 
   if typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm
-    adaptiveorder = alg.adaptiveorder
-    #=
-    if adaptive == true
-      dt = 1.0*dt # Convert to float in a way that keeps units
-    end
-    =#
+    adaptiveorder = alg_adaptive_order(alg)
   else
     adaptive = false
   end
@@ -108,17 +104,13 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
 
   saveat = tType[convert(tType,x) for x in setdiff(saveat,tspan)]
 
-  if calck==nothing
-    calck = !isempty(saveat) || dense
-  end
-
   ### Algorithm-specific defaults ###
 
   fsal = false
   if isfsal(alg)
     fsal = true
   elseif typeof(alg) <: ExplicitRK
-    @unpack fsal = tableau
+    fsal = tableau.fsal
   end
 
   abstol = uEltype(1)*abstol
@@ -230,6 +222,7 @@ function solve!(integrator::ODEIntegrator;timeseries_errors = true,dense_errors 
   if typeof(integrator.sol.prob) <: AbstractODETestProblem
     calculate_solution_errors!(integrator.sol;timeseries_errors=timeseries_errors,dense_errors=dense_errors)
   end
+  nothing
 end
 
 function ode_determine_initdt{uType,tType,uEltypeNoUnits}(u0::uType,t::tType,abstol,reltol::uEltypeNoUnits,internalnorm,f,order)
