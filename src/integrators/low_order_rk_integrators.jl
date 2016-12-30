@@ -250,6 +250,9 @@ function ode_solve{uType<:Number,tType,ksEltype,SolType,rateType,F,ECType,O}(int
       push!(k,zero(rateType))
     end
 
+    if integrator.calcprevs
+      integrator.kprev = deepcopy(k)
+    end
   end
   fsalfirst = f(t,u) # Pre-start fsal
   @inbounds for T in Ts
