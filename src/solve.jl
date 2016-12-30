@@ -114,17 +114,8 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   ts = convert(Vector{tType},ts_init)
   ks = convert(Vector{ksEltype},ks_init)
 
-  if length(timeseries) == 0
-    push!(timeseries,copy(u))
-  else
-    timeseries[1] = copy(u)
-  end
-
-  if length(ts) == 0
-    push!(ts,t)
-  else
-    timeseries[1] = copy(u)
-  end
+  copyat_or_push!(ts,1,t)
+  copyat_or_push!(timeseries,1,u)
 
   if !isspecialdense(alg)
     if uType <: Number
