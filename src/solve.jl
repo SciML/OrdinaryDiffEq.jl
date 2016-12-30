@@ -16,17 +16,22 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   timeseries_steps = 1,tableau = ODE_DEFAULT_TABLEAU,
   dense = save_timeseries,calck = nothing,alg_hint = :nonstiff,
   saveat = tType[],tstops = tType[],
-  adaptive = true,gamma=.9,abstol=1//10^6,reltol=1//10^3,
-  qmax=nothing,qmin=nothing,qoldinit=1//10^4, fullnormalize=true,
-  beta2=nothing,beta1=nothing,maxiters = 1000000,
+  adaptive = true,
+  gamma=.9,
+  abstol=1//10^6,
+  reltol=1//10^3,
+  qmax=qmax_default(alg),qmin=qmin_default(alg),
+  qoldinit=1//10^4, fullnormalize=true,
+  beta2=beta2_default(alg),
+  beta1=beta1_default(alg,beta2),
+  maxiters = 1000000,
   dtmax=tType((prob.tspan[end]-prob.tspan[1])),
   dtmin=tType <: AbstractFloat ? tType(10)*eps(tType) : tType(1//10^(10)),
   autodiff=false,internalnorm = ODE_DEFAULT_NORM,
   isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
   progress=false,progress_steps=1000,progress_name="ODE",
   progress_message = ODE_DEFAULT_PROG_MESSAGE,
-  event_cache=nothing,
-  callback=nothing,kwargs...)
+  event_cache=nothing,callback=nothing,kwargs...)
 
   tspan = prob.tspan
 
@@ -109,43 +114,6 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   end
 
   ### Algorithm-specific defaults ###
-
-  if qmin == nothing # Use default qmin
-    if typeof(alg) <: DP5 || typeof(alg) <: DP5Threaded
-      qmin = 0.2
-    elseif typeof(alg) <: DP8
-      qmin = 0.333
-    else
-      qmin = 0.2
-    end
-  end
-  if qmax == nothing # Use default qmax
-    if typeof(alg) <: DP5 || typeof(alg) <: DP5Threaded
-      qmax = 10.0
-    elseif typeof(alg) <: DP8
-      qmax = 6.0
-    else
-      qmax = 10.0
-    end
-  end
-  if beta2 == nothing # Use default beta2
-    if typeof(alg) <: DP5 || typeof(alg) <: DP5Threaded
-      beta2 = 0.04
-    elseif typeof(alg) <: DP8
-      beta2 = 0.00
-    else
-      beta2 = 0.4 / order
-    end
-  end
-  if beta1 == nothing # Use default beta1
-    if typeof(alg) <: DP5 || typeof(alg) <: DP5Threaded
-      beta1 = 1/order - .75beta2
-    elseif typeof(alg) <: DP8
-      beta1 = 1/order - .2beta2
-    else
-      beta1 = .7/order
-    end
-  end
 
   fsal = false
   if isfsal(alg)
