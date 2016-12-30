@@ -16,12 +16,9 @@ end
 function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Euler,uType,tType,ksEltype,TabType,SolType,rateType,F,ECType,O})
   @ode_preamble
   uidx = eachindex(u)
-  if !integrator.opts.dense
-    k = similar(rate_prototype) # Not initialized if not dense
-  end
-  if !(typeof(integrator.opts.callback)<:Void)
-    cache = (u,integrator.uprev,k)
-  end
+
+  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.tableau,integrator.uprev,integrator.kprev)
+  @unpack k = cache
   f(t,u,k) # For the interpolation, needs k at the updated point
   @inbounds for T in Ts
       while t < T
@@ -56,22 +53,16 @@ end
 function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Midpoint,uType,tType,ksEltype,TabType,SolType,rateType,F,ECType,O})
   @ode_preamble
   halfdt::tType = dt/2
-  utilde::uType = similar(u)
   uidx = eachindex(u)
   if integrator.opts.calck # Not initialized if not dense
     if integrator.calcprevs
       integrator.kprev = similar(rate_prototype)
     end
   end
-  k = similar(rate_prototype)
-  du = similar(rate_prototype)
-  if !(typeof(integrator.opts.callback)<:Void)
-    if integrator.opts.calck
-      cache = (u,k,du,utilde,integrator.kprev,integrator.uprev)
-    else
-      cache = (u,k,du,utilde,integrator.uprev)
-    end
-  end
+
+  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.tableau,integrator.uprev,integrator.kprev)
+  @unpack k,du,utilde = cache
+
   @inbounds for T in Ts
       while t < T
       @ode_loopheader
@@ -120,18 +111,16 @@ end
 function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{RK4,uType,tType,ksEltype,TabType,SolType,rateType,F,ECType,O})
   @ode_preamble
   halfdt::tType = dt/2
-  k₁ = similar(rate_prototype)
-  k₂ = similar(rate_prototype)
-  k₃ = similar(rate_prototype)
-  k₄ = similar(rate_prototype)
+
   if integrator.calcprevs
     integrator.kprev = similar(rate_prototype)
   end
-  tmp = similar(u)
+
   uidx = eachindex(u)
-  if !(typeof(integrator.opts.callback)<:Void)
-    cache = (u,tmp,k₁,k₂,k₃,k₄,integrator.kprev,integrator.uprev)
-  end
+
+  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.tableau,integrator.uprev,integrator.kprev)
+  @unpack tmp,k₁,k₂,k₃,k₄ = cache
+
   if integrator.opts.calck
     k=k₁
   end
