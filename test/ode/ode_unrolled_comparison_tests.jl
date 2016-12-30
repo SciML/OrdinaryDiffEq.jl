@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqDevTools
+using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase, Base.Test, ODEInterfaceDiffEq
 
 const linear_bigα = parse(BigFloat,"1.01")
 f = (t,u) -> (linear_bigα*u)

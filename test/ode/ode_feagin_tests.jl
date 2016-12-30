@@ -1,4 +1,4 @@
-using OrdinaryDiffEq
+using OrdinaryDiffEq, DiffEqBase, Base.Test, DiffEqProblemLibrary, DiffEqDevTools
 srand(100)
 u = [0.5,0.2]
 
