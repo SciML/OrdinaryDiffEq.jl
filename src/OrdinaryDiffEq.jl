@@ -5,7 +5,7 @@ module OrdinaryDiffEq
   using DiffEqBase
   import DiffEqBase: solve, solve!, init
   using Parameters, GenericSVD, ForwardDiff, InplaceOps, RecursiveArrayTools,
-        Ranges, NLsolve, RecipesBase, Juno, Calculus
+        Ranges, NLsolve, RecipesBase, Juno, Calculus, Roots
 
   import Base: linspace
   import ForwardDiff.Dual

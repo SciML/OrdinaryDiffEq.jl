@@ -13,7 +13,7 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
     # Event Handling
     if $interp_points!=0
       ode_addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.dt,alg,f)
-      Θs = linspace(0,1,$(interp_points))
+      Θs = linspace(typeof(t)(0),typeof(t)(1),$(interp_points))
     end
     interp_index = 0
     # Check if the event occured
@@ -31,19 +31,15 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
     end
 
     if event_occurred
-      if interp_index == $interp_points # If no safety interpolations, start in the middle as well
-        initial_Θ = [.5]
-      else
-        initial_Θ = [Θs[interp_index]] # Start at the closest
-      end
+      top_Θ = Θs[interp_index] # Top at the smallest
       if $rootfind_event_loc
-        find_zero = (Θ,val) -> begin
-          val[1] = $event_f(integrator.tprev+Θ[1]*integrator.dt,ode_interpolant(Θ[1],integrator.dt,integrator.uprev,u,integrator.kprev,integrator.k,alg))
+        find_zero = (Θ) -> begin
+          $event_f(integrator.tprev+Θ*integrator.dt,ode_interpolant(Θ,integrator.dt,integrator.uprev,u,integrator.kprev,integrator.k,alg))
         end
-        res = nlsolve(find_zero,initial_Θ)
-        val = ode_interpolant(res.zero[1],integrator.dt,integrator.uprev,u,integrator.kprev,integrator.k,alg)
+        res = prevfloat(fzero(find_zero,typeof(t)(0),top_Θ))
+        val = ode_interpolant(res,integrator.dt,integrator.uprev,u,integrator.kprev,integrator.k,alg)
         copy!(u,val)
-        integrator.dt *= res.zero[1]
+        integrator.dt *= res
       elseif interp_index != $interp_points
           integrator.dt *= Θs[interp_index]
           copy!(u,ode_interpolant(Θs[interp_index],integrator.dt,integrator.uprev,u,integrator.kprev,integrator.k,alg))
