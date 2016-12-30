@@ -65,22 +65,14 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
     custom_callback = true
   end
 
-  if uType<:Array || uType <: Number
-    u = copy(u0)
-  else
-    u = deepcopy(u0)
-  end
+  (uType<:Array || uType <: Number) ? u = copy(u0) : u = deepcopy(u0)
 
   ks = Vector{uType}(0)
 
   order = alg_order(alg)
   adaptiveorder = 0
 
-  if typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm
-    adaptiveorder = alg_adaptive_order(alg)
-  else
-    adaptive = false
-  end
+  typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm ? adaptiveorder = alg_adaptive_order(alg) : adaptive = false
 
   if typeof(alg) <: ExplicitRK
     @unpack order,adaptiveorder = tableau
@@ -115,11 +107,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
 
   abstol = uEltype(1)*abstol
 
-  if isspecialdense(alg)
-    ksEltype = Vector{rateType} # Store more ks for the special algs
-  else
-    ksEltype = rateType # Makes simple_dense
-  end
+  isspecialdense(alg) ? ksEltype = Vector{rateType} : ksEltype = rateType
 
   # Have to convert incase passed in wrong.
   timeseries = convert(Vector{uType},timeseries_init)
@@ -138,7 +126,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
     timeseries[1] = copy(u)
   end
 
-  if ksEltype == rateType
+  if !isspecialdense(alg)
     if uType <: Number
       rate_prototype = f!(t,u)
     else
