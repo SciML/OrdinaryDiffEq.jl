@@ -23,6 +23,11 @@ function isimplicit(alg::OrdinaryDiffEqAlgorithm)
   end
 end
 
+function get_kseltype(alg::OrdinaryDiffEqAlgorithm,prob)
+  rateType = typeof(prob.u0/zero(prob.tspan[1]))
+  isspecialdense(alg) ? ksEltype = Vector{rateType} : ksEltype = rateType
+end
+
 qmin_default(alg::OrdinaryDiffEqAlgorithm) = 0.2
 qmin_default(alg::DP8) = 0.333
 

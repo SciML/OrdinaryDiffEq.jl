@@ -11,10 +11,10 @@ end
 
 function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   prob::AbstractODEProblem{uType,tType,isinplace,F},
-  alg::algType,timeseries=[],ts=[],ks=[];
+  alg::algType,timeseries_init=uType[],ts_init=tType[],ks_init=[];
   dt = tType(0),save_timeseries = true,
   timeseries_steps = 1,tableau = ODE_DEFAULT_TABLEAU,
-  dense = save_timeseries,calck = nothing,alg_hint = :nonstiff,
+  dense = save_timeseries,calck = nothing,
   saveat = tType[],tstops = tType[],
   adaptive = true,
   gamma=.9,
@@ -130,9 +130,11 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
     ksEltype = rateType # Makes simple_dense
   end
 
-  timeseries = convert(Vector{uType},timeseries)
-  ts = convert(Vector{tType},ts)
-  ks = convert(Vector{ksEltype},ks)
+  # Have to convert incase passed in wrong.
+  timeseries = convert(Vector{uType},timeseries_init)
+  ts = convert(Vector{tType},ts_init)
+  ks = convert(Vector{ksEltype},ks_init)
+
   if length(timeseries) == 0
     push!(timeseries,copy(u))
   else
