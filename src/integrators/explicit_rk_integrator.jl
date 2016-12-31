@@ -1,11 +1,11 @@
-function ode_solve{uType<:Number,tType,ksEltype,TabType,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{ExplicitRK,uType,tType,ksEltype,TabType,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O,algType<:ExplicitRK}(integrator::ODEIntegrator{algType,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   local A::Matrix{uEltypeNoUnits}
   local c::Vector{uEltypeNoUnits}
   local α::Vector{uEltypeNoUnits}
   local αEEst::Vector{uEltypeNoUnits}
   local stages::Int
-  @unpack A,c,α,αEEst,stages,fsal = integrator.tableau
+  @unpack A,c,α,αEEst,stages,fsal = alg.tableau
   A = A' # Transpose A to column major looping
   kk = Array{ksEltype}(stages) # Not ks since that's for integrator.opts.dense
   local utilde::ksEltype
@@ -57,7 +57,7 @@ function ode_solve{uType<:Number,tType,ksEltype,TabType,SolType,rateType,F,ECTyp
   nothing
 end
 
-function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{ExplicitRK,uType,tType,ksEltype,TabType,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O,algType<:ExplicitRK}(integrator::ODEIntegrator{algType,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   local A::Matrix{uEltypeNoUnits}
   local c::Vector{uEltypeNoUnits}
@@ -65,9 +65,9 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,
   local αEEst::Vector{uEltypeNoUnits}
   local stages::Int
   uidx = eachindex(u)
-  @unpack A,c,α,αEEst,stages,fsal = integrator.tableau
+  @unpack A,c,α,αEEst,stages,fsal = alg.tableau
   A = A' # Transpose A to column major looping
-  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.tableau,integrator.uprev,integrator.kprev)
+  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.uprev,integrator.kprev)
   @unpack kk,utilde,tmp,atmp,utmp,uEEst = cache
   if integrator.opts.calck
     k = kk[end]

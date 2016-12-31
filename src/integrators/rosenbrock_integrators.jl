@@ -1,4 +1,4 @@
-function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Rosenbrock23,uType,tType,ksEltype,TabType,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Rosenbrock23,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   c₃₂ = 6 + sqrt(2)
   d = 1/(2+sqrt(2))
@@ -92,7 +92,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,
   nothing
 end
 
-function ode_solve{uType<:Number,tType,ksEltype,TabType,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Rosenbrock23,uType,tType,ksEltype,TabType,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Rosenbrock23,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   c₃₂ = 6 + sqrt(2)
   d = 1/(2+sqrt(2))
@@ -147,7 +147,7 @@ function ode_solve{uType<:Number,tType,ksEltype,TabType,SolType,rateType,F,ECTyp
   nothing
 end
 
-function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Rosenbrock32,uType,tType,ksEltype,TabType,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Rosenbrock32,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   c₃₂ = 6 + sqrt(2)
   d = 1/(2+sqrt(2))
@@ -237,7 +237,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,
   nothing
 end
 
-function ode_solve{uType<:Number,tType,ksEltype,TabType,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Rosenbrock32,uType,tType,ksEltype,TabType,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Rosenbrock32,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   c₃₂ = 6 + sqrt(2)
   d = 1/(2+sqrt(2))

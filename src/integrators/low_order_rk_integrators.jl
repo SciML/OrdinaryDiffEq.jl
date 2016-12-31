@@ -1,4 +1,4 @@
-function ode_solve{uType<:Number,tType,ksEltype,TabType,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{BS3,uType,tType,ksEltype,TabType,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{BS3,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   a21,a32,a41,a42,a43,c1,c2,b1,b2,b3,b4  = constructBS3(uEltypeNoUnits)
   local k1::rateType
@@ -31,12 +31,12 @@ function ode_solve{uType<:Number,tType,ksEltype,TabType,SolType,rateType,F,ECTyp
   nothing
 end
 
-function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{BS3,uType,tType,ksEltype,TabType,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{BS3,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   a21,a32,a41,a42,a43,c1,c2,b1,b2,b3,b4  = constructBS3(uEltypeNoUnits)
   uidx = eachindex(u)
 
-  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.tableau,integrator.uprev,integrator.kprev)
+  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.uprev,integrator.kprev)
   @unpack k1,k2,k3,k4,utilde,tmp,atmp = cache
 
   k = fsallast
@@ -75,7 +75,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,
   nothing
 end
 
-function ode_solve{uType<:Number,tType,ksEltype,TabType,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{BS5,uType,tType,ksEltype,TabType,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{BS5,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8 = constructBS5(uEltypeNoUnits)
   local k1::rateType
@@ -134,7 +134,7 @@ function ode_solve{uType<:Number,tType,ksEltype,TabType,SolType,rateType,F,ECTyp
   nothing
 end
 
-function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{BS5,uType,tType,ksEltype,TabType,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{BS5,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8 = constructBS5(uEltypeNoUnits)
   integrator.kshortsize = 8
@@ -155,7 +155,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,
     end
   end
 
-  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.tableau,integrator.uprev,integrator.kprev)
+  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.uprev,integrator.kprev)
   @unpack k1,k2,k3,k4,k5,k6,k7,k8,utilde,uhat,tmp,atmp,atmptilde = cache
 
   if integrator.opts.calck
@@ -214,7 +214,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,
   nothing
 end
 
-function ode_solve{uType<:Number,tType,ksEltype,TabType,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Tsit5,uType,tType,ksEltype,TabType,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Tsit5,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,b1,b2,b3,b4,b5,b6,b7 = constructTsit5(uEltypeNoUnits)
   local k1::rateType
@@ -270,14 +270,14 @@ function ode_solve{uType<:Number,tType,ksEltype,TabType,SolType,rateType,F,ECTyp
   nothing
 end
 
-function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Tsit5,uType,tType,ksEltype,TabType,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Tsit5,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,b1,b2,b3,b4,b5,b6,b7 = constructTsit5(uEltypeNoUnits)
 
   integrator.kshortsize = 7
   uidx = eachindex(u)
 
-  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.tableau,integrator.uprev,integrator.kprev)
+  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.uprev,integrator.kprev)
   @unpack k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp = cache
 
   k1 = fsalfirst; k7 = fsallast # setup pointers
@@ -344,7 +344,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,
   nothing
 end
 
-function ode_solve{uType<:Number,tType,ksEltype,TabType,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{DP5,uType,tType,ksEltype,TabType,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{DP5,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = constructDP5(uEltypeNoUnits)
   local k1::rateType
@@ -404,7 +404,7 @@ function ode_solve{uType<:Number,tType,ksEltype,TabType,SolType,rateType,F,ECTyp
 end
 
 
-function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{DP5,uType,tType,ksEltype,TabType,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{DP5,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = constructDP5(uEltypeNoUnits)
   k2 = similar(rate_prototype)

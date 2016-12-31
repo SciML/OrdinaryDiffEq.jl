@@ -1,4 +1,4 @@
-function ode_solve{uType<:Number,tType,ksEltype,TabType,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Euler,uType,tType,ksEltype,TabType,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Euler,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   k = f(t,u) # For the interpolation, needs k at the updated point
   @inbounds for T in Ts
@@ -13,11 +13,11 @@ function ode_solve{uType<:Number,tType,ksEltype,TabType,SolType,rateType,F,ECTyp
   nothing
 end
 
-function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Euler,uType,tType,ksEltype,TabType,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Euler,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   uidx = eachindex(u)
 
-  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.tableau,integrator.uprev,integrator.kprev)
+  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.uprev,integrator.kprev)
   @unpack k = cache
   f(t,u,k) # For the interpolation, needs k at the updated point
   @inbounds for T in Ts
@@ -34,7 +34,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,
   nothing
 end
 
-function ode_solve{uType<:Number,tType,ksEltype,TabType,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Midpoint,uType,tType,ksEltype,TabType,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Midpoint,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   halfdt::tType = dt/2
   local du::rateType
@@ -50,7 +50,7 @@ function ode_solve{uType<:Number,tType,ksEltype,TabType,SolType,rateType,F,ECTyp
   nothing
 end
 
-function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Midpoint,uType,tType,ksEltype,TabType,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Midpoint,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   halfdt::tType = dt/2
   uidx = eachindex(u)
@@ -60,7 +60,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,
     end
   end
 
-  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.tableau,integrator.uprev,integrator.kprev)
+  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.uprev,integrator.kprev)
   @unpack k,du,utilde = cache
 
   @inbounds for T in Ts
@@ -81,7 +81,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,
   nothing
 end
 
-function ode_solve{uType<:Number,tType,ksEltype,TabType,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{RK4,uType,tType,ksEltype,TabType,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{RK4,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   halfdt::tType = dt/2
   local k₁::rateType
@@ -108,7 +108,7 @@ function ode_solve{uType<:Number,tType,ksEltype,TabType,SolType,rateType,F,ECTyp
   nothing
 end
 
-function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{RK4,uType,tType,ksEltype,TabType,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{RK4,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   halfdt::tType = dt/2
 
@@ -118,7 +118,7 @@ function ode_solve{uType<:AbstractArray,tType,ksEltype,TabType,SolType,rateType,
 
   uidx = eachindex(u)
 
-  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.tableau,integrator.uprev,integrator.kprev)
+  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.uprev,integrator.kprev)
   @unpack tmp,k₁,k₂,k₃,k₄ = cache
 
   if integrator.opts.calck

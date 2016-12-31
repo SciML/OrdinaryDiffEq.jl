@@ -40,7 +40,7 @@ alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is a
 alg_order(alg::Euler) = 1
 alg_order(alg::Midpoint) = 2
 alg_order(alg::RK4) = 4
-alg_order(alg::ExplicitRK) = 4
+alg_order(alg::ExplicitRK) = alg.tableau.order
 alg_order(alg::BS3) = 3
 alg_order(alg::BS5) = 5
 alg_order(alg::DP5) = 5
@@ -61,7 +61,7 @@ alg_order(alg::Feagin10) = 10
 alg_order(alg::Feagin12) = 12
 alg_order(alg::Feagin14) = 14
 
-alg_adaptive_order(alg::ExplicitRK) = 3
+alg_adaptive_order(alg::ExplicitRK) = alg.tableau.adaptiveorder
 alg_adaptive_order(alg::BS3) = 2
 alg_adaptive_order(alg::BS5) = 4
 alg_adaptive_order(alg::DP5) = 4

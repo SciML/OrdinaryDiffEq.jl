@@ -25,7 +25,7 @@ type DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5}
   calck::Bool
 end
 
-type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},tType,ksEltype,TabType,SolType,rateType,F,ECType,O}
+type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}
   sol::SolType
   u::uType
   k::ksEltype
@@ -36,7 +36,6 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
   kprev::ksEltype
   tprev::tType
   Ts::Vector{tType}
-  tableau::TabType
   autodiff::Bool
   adaptiveorder::Int
   order::Int
@@ -46,7 +45,7 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
   notsaveat_idxs::Vector{Int}
   calcprevs::Bool
   dtcache::tType
-  dt_mod::tType
+  dt_mod::tTypeNoUnits
   iter::Int
   saveiter::Int
   saveiter_dense::Int
@@ -88,7 +87,6 @@ end
     end
   end
 
-  tTypeNoUnits = typeof(integrator.opts.qoldinit)
   uEltypeNoUnits = typeof(integrator.opts.reltol)
   uEltype = typeof(integrator.opts.abstol)
   local Θ = one(t)/one(t) # No units
@@ -101,7 +99,7 @@ end
   end
   qminc = inv(integrator.opts.qmin) #facc1
   qmaxc = inv(integrator.opts.qmax) #facc2
-  local EEst::tTypeNoUnits = zero(t)
+  local EEst::tTypeNoUnits = zero(t/t)
   integrator.opts.progress && (prog = Juno.ProgressBar(name=integrator.opts.progress_name))
 end
 
@@ -191,7 +189,7 @@ end
 
 @def pack_integrator begin
   integrator.dt = dt
-  integrator.dt_mod = tType(1)
+  integrator.dt_mod = tTypeNoUnits(1)
   integrator.k = k
   integrator.u = u
   integrator.t = t

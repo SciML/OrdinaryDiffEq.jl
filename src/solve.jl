@@ -13,7 +13,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   prob::AbstractODEProblem{uType,tType,isinplace,F},
   alg::algType,timeseries_init=uType[],ts_init=tType[],ks_init=[];
   dt = tType(0),save_timeseries = true,
-  timeseries_steps = 1,tableau = ODE_DEFAULT_TABLEAU,
+  timeseries_steps = 1,
   dense = save_timeseries,
   saveat = tType[],tstops = tType[],
   calck = (!isempty(setdiff(saveat,tstops)) || dense),
@@ -69,7 +69,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm ? adaptiveorder = alg_adaptive_order(alg) : adaptive = false
 
   if typeof(alg) <: ExplicitRK
-    @unpack order,adaptiveorder = tableau
+    @unpack order,adaptiveorder = alg.tableau
   end
 
   if !isinplace && typeof(u)<:AbstractArray
@@ -96,7 +96,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   if isfsal(alg)
     fsal = true
   elseif typeof(alg) <: ExplicitRK
-    fsal = tableau.fsal
+    fsal = alg.tableau.fsal
   end
 
   abstol = uEltype(1)*abstol
@@ -170,7 +170,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   calcprevs = calck || typeof(callback)<:Void # Calculate the previous values
   tprev = t
   dtcache = tType(dt)
-  dt_mod = tType(1)
+  dt_mod = tTypeNoUnits(1)
   iter = 0
   saveiter = 1 # Starts at 1 so first save is at 2
   saveiter_dense = 1
@@ -178,10 +178,11 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   kshortsize = 1
   reeval_fsal = false
 
-  integrator = ODEIntegrator{algType,uType,tType,eltype(ks),typeof(tableau),typeof(sol),
-                             typeof(rate_prototype),typeof(f!),typeof(event_cache),typeof(opts)}(
+  integrator = ODEIntegrator{algType,uType,tType,tTypeNoUnits,eltype(ks),typeof(sol),
+                             typeof(rate_prototype),typeof(f!),
+                             typeof(event_cache),typeof(opts)}(
                              sol,u,k,t,tType(dt),f!,uprev,kprev,tprev,
-                             Ts,tableau,autodiff,adaptiveorder,order,fsal,
+                             Ts,autodiff,adaptiveorder,order,fsal,
                              alg,rate_prototype,
                              notsaveat_idxs,calcprevs,dtcache,dt_mod,
                              iter,saveiter,saveiter_dense,cursaveat,
