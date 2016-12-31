@@ -78,7 +78,6 @@ end
   utmp = integrator.u # See the note at the top
   f = integrator.f # Grab the pointer for the local scope. Updates automatically.
 
-  sizeu = size(u)
   Tfinal = Ts[end]
 
   local T::tType
@@ -240,9 +239,8 @@ end
         end
       end
 
-      integrator.tprev = t
-
       if integrator.calcprevs
+        integrator.tprev = t
         if !isspecialdense(integrator.alg) && integrator.opts.calck
           if ksEltype <: AbstractArray
             recursivecopy!(integrator.kprev,k)
@@ -284,9 +282,8 @@ end
       end
     end
 
-    integrator.tprev = t
-
     if integrator.calcprevs
+      integrator.tprev = t
       if !isspecialdense(integrator.alg) && integrator.opts.calck
         if ksEltype <: AbstractArray && !isspecialdense(integrator.alg)
           recursivecopy!(integrator.kprev,k)

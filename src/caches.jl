@@ -615,3 +615,51 @@ function alg_cache{uType<:AbstractArray}(alg::Feagin14,u::uType,rate_prototype,u
 end
 
 alg_cache{uType}(alg::Feagin14,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev) = ODEEmptyCache()
+
+
+immutable LowOrderRosenbrockCache{uType,rateType,vecuType,JType} <: OrdinaryDiffEqCache
+  u::uType
+  k₁::rateType
+  k₂::rateType
+  k₃::rateType
+  du1::rateType
+  du2::rateType
+  f₁::rateType
+  vectmp::vecuType
+  vectmp2::vecuType
+  vectmp3::vecuType
+  fsalfirst::rateType
+  fsallast::rateType
+  dT::uType
+  J::JType
+  W::JType
+  tmp2::uType
+end
+
+function alg_cache{uType<:AbstractArray}(alg::Rosenbrock23,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
+  k₁ = similar(rate_prototype)
+  k₂ = similar(rate_prototype)
+  k₃ = similar(rate_prototype)
+  du1 = similar(rate_prototype)
+  du2 = similar(rate_prototype)
+  # f₀ = similar(u) fsalfirst
+  f₁ = similar(rate_prototype)
+  vectmp = similar(vec(u))
+  vectmp2 = similar(vec(u))
+  vectmp3 = similar(vec(u))
+  fsalfirst = similar(rate_prototype)
+  fsallast = similar(rate_prototype)
+  dT = similar(u)
+  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  W = similar(J); tmp2 = similar(u)
+
+  LowOrderRosenbrockCache(u,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp2)
+end
+
+alg_cache{uType<:AbstractArray}(alg::Rosenbrock32,u::uType,
+                                rate_prototype,uEltypeNoUnits,
+                                uprev,kprev) =
+                                alg_cache(Rosenbrock23(),u,rate_prototype,uEltypeNoUnits,uprev,kprev)
+
+alg_cache{uType}(alg::Rosenbrock23,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev) = ODEEmptyCache()
+alg_cache{uType}(alg::Rosenbrock32,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev) = ODEEmptyCache()

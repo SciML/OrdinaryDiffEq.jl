@@ -28,6 +28,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
   @ode_preamble
   local nlres::NLsolve.SolverResults{uEltype}
   uidx = eachindex(u)
+  sizeu = size(u) # Change to dynamic by call overloaded type
   if autodiff
     dual_cache = DiffCache(u)
     rhs_ie = (u,resid,u_old,t,dt,dual_cache) -> begin
@@ -69,6 +70,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
   @ode_preamble
   local nlres::NLsolve.SolverResults{uEltype}
   uidx = eachindex(u)
+  sizeu = size(u) # Change to dynamic by call overloaded type
   if autodiff
     cache1 = DiffCache(u)
     cache2 = DiffCache(u)

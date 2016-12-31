@@ -2,10 +2,11 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
   @ode_preamble
   c₃₂ = 6 + sqrt(2)
   d = 1/(2+sqrt(2))
-  local k₁::uType = similar(u)
-  local k₂::uType = similar(u)
-  local k₃::uType = similar(u)
-  local tmp::uType
+
+  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.uprev,integrator.kprev)
+  @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp2 = cache
+
+  sizeu = size(u) # Change to dynamic by call overloaded type
   integrator.kshortsize = 2
   function vecf(t,u,du)
     f(t,reshape(u,sizeu...),reshape(du,sizeu...))
@@ -16,41 +17,16 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
     f(t,reshape(u,sizeu...),reshape(du,sizeu...))
     return vec(du)
   end
-  du1 = zeros(u)
-  du2 = zeros(u)
-  f₀ = similar(u)
-  f₁ = similar(u)
-  vectmp3 = similar(vec(u))
-  vectmp2 = similar(vec(u))
-  fsalfirst = similar(rate_prototype)
-  fsallast = similar(rate_prototype)
-  dT = similar(u); vectmp = similar(vec(u))
-  J = zeros(uEltype,length(u),length(u))
-  W = similar(J); tmp2 = similar(u)
+  tmp = reshape(vectmp2,sizeu...)
   uidx = eachindex(u)
   jidx = eachindex(J)
-  if integrator.opts.calck
-    k = ksEltype()
-    for i in 1:2
-      push!(k,similar(rate_prototype))
-    end
-    if integrator.calcprevs
-      integrator.kprev = deepcopy(k)
-      for i in 1:2 # Make it full-sized
-        push!(integrator.kprev,similar(rate_prototype))
-      end
-    end
-    k[1] = k₁
-    k[2] = k₂
-  end
+  k = [k₁,k₂]
   f(t,u,fsalfirst)
-  cache = (u,du1,du2,integrator.uprev,integrator.kprev,f₀,f₁,vectmp3,utmp,vectmp2,dT,vectmp,tmp2,k)
-  jaccache = (jidx,J,W)
   @inbounds for T in Ts
     while t < T
       @ode_loopheader
       #if autodiff
-        ForwardDiff.derivative!(dT,(t)->vecfreturn(t,u,du2),t) # Time derivative
+        ForwardDiff.derivative!(dT,(t)->vecfreturn(t,u,du2),t) # Time derivative of each component
         ForwardDiff.jacobian!(J,(du1,u)->vecf(t,u,du1),vec(du1),vec(u))
       #else
       #  Calculus.finite_difference!((t)->vecfreturn(t,u,du2),[t],dT)
@@ -65,7 +41,6 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
       end
       f(t+dt/2,utmp,f₁)
       @into! vectmp2 = W\vec(f₁-k₁)
-      tmp = reshape(vectmp2,sizeu...)
       for i in uidx
         k₂[i] = tmp[i] + k₁[i]
         utmp[i] = u[i] + dt*k₂[i]
@@ -97,18 +72,7 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
   local k₂::uType
   local k₃::uType
   integrator.kshortsize = 2
-  if integrator.opts.calck
-    k = ksEltype()
-    for i in 1:2
-      push!(k,zero(rateType))
-    end
-    if integrator.calcprevs
-      integrator.kprev = deepcopy(k)
-      for i in 1:2 # Make it full-sized
-        push!(integrator.kprev,zero(rateType))
-      end
-    end
-  end
+  k = ksEltype(2)
   fsalfirst = f(t,u)
   @inbounds for T in Ts
     while t < T
@@ -141,10 +105,11 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
   @ode_preamble
   c₃₂ = 6 + sqrt(2)
   d = 1/(2+sqrt(2))
-  local k₁::uType = similar(u)
-  local k₂ = similar(u)
-  local k₃::uType = similar(u)
-  local tmp::uType
+
+  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.uprev,integrator.kprev)
+  @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp2 = cache
+
+  sizeu = size(u) # Change to dynamic by call overloaded type
   integrator.kshortsize = 2
   function vecf(t,u,du)
     f(t,reshape(u,sizeu...),reshape(du,sizeu...))
@@ -155,35 +120,9 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
     f(t,reshape(u,sizeu...),reshape(du,sizeu...))
     return vec(du)
   end
-  du1 = zeros(u)
-  du2 = zeros(u)
-  f₀ = similar(u)
-  f₁ = similar(u)
-  vectmp3 = similar(vec(u))
-  vectmp2 = similar(vec(u))
-  dT = similar(u); vectmp = similar(vec(u))
-  J = zeros(uEltype,length(u),length(u))
-  W = similar(J); tmp2 = similar(u)
-  fsalfirst = similar(rate_prototype)
-  fsallast = similar(rate_prototype)
   uidx = eachindex(u)
   jidx = eachindex(J)
-  if integrator.opts.calck
-    k = ksEltype()
-    for i in 1:2
-      push!(k,similar(rate_prototype))
-    end
-    if integrator.calcprevs
-      integrator.kprev = deepcopy(k)
-      for i in 1:2 # Make it full-sized
-        push!(integrator.kprev,similar(rate_prototype))
-      end
-    end
-    k[1] = k₁
-    k[2] = k₂
-  end
-  cache = (u,du1,du2,integrator.uprev,integrator.kprev,f₀,f₁,vectmp3,utmp,vectmp2,dT,vectmp,tmp2,k)
-  jaccache = (jidx,J,W)
+  k = [k₁,k₂]
   f(t,u,fsalfirst)
   @inbounds for T in Ts
     while t < T
