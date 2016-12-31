@@ -321,7 +321,7 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
   local utilde::uType
   fsalfirst = f(t,u) # Pre-start fsal
   @inbounds for T in Ts
-    while t<T
+    while integrator.tdir*t < integrator.tdir*T
       @ode_loopheader
       k1 = fsalfirst
       k2 = f(t+c1*dt,u+dt*(a21*k1))

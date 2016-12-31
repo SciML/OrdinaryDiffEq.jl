@@ -55,11 +55,17 @@ sol2 =solve(probnum,tabalg,dt=1/2^6,beta2=0.04)
 
 
 # Should be identical
-sol1 =solve(prob,DP5())
-sol2 =solve(prob,tabalg,beta2=0.04,beta1=0.17)
-sol3 =solve(prob,dopri5())
+sol1 =solve(probnum,DP5())
+sol2 =solve(probnum,tabalg,beta2=0.04,beta1=0.17)
+sol3 =solve(probnum,dopri5())
 
-@test length(sol1) == length(sol2) == length(sol3)
+@test sol1.t ≈ sol2.t ≈ sol3.t
+
+sol1 =solve(prob,DP5(),dt=1/8)
+sol2 =solve(prob,tabalg,beta2=0.04,beta1=0.17,dt=1/8)
+sol3 =solve(prob,dopri5(),dt=1/8)
+
+@test sol1.t ≈ sol2.t ≈ sol3.t
 
 ### BS3()
 sim = test_convergence(dts,probnum,BS3())
@@ -238,16 +244,16 @@ sol1 =solve(probnum,DP8(),dt=1/2^6,adaptive=false,save_timeseries=false)
 sol2 =solve(probnum,DP8(),dt=1/2^6)
 
 # Should be identical
-sol1 =solve(probnum,DP8(),dt=1/2^6)
-sol2 =solve(probnum,dop853(),dt=1/2^6)
+sol1 =solve(probnum,DP8())
+sol2 =solve(probnum,dop853())
 
-@test length(sol1) == length(sol2)
+@test sol1.t ≈ sol2.t
 
 # Should be identical
 sol1 =solve(probbig,DP8(),dt=1/2^6)
 sol2 =solve(probbig,dop853(),dt=1/2^6)
 
-@test length(sol1) == length(sol2)
+@test sol1.t ≈ sol2.t
 
 ### TsitPap8()
 

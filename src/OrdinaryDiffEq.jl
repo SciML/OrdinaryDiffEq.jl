@@ -31,6 +31,7 @@ module OrdinaryDiffEq
   include("callbacks.jl")
   include("caches.jl")
   include("solve.jl")
+  include("initdt.jl")
   include("dense.jl")
   include("integrators/unrolled_tableaus.jl")
 

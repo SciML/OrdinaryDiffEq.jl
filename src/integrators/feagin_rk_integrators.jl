@@ -32,7 +32,7 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
       tmp = dt*((b1*k1 + b2*k2 + b3*k3 + b5*k5) + (b7*k7 + b9*k9 + b10*k10 + b11*k11) + (b12*k12 + b13*k13 + b14*k14 + b15*k15) + (b16*k16 + b17*k17))
       utmp = u + tmp
       if integrator.opts.adaptive
-        EEst = abs((dt*(k2 - k16) * adaptiveConst)./(integrator.opts.abstol+u*integrator.opts.reltol))
+        EEst = abs((dt*(k2 - k16) * adaptiveConst)./(integrator.opts.abstol+max(abs(u),abs(utmp))*integrator.opts.reltol))
       end
       @ode_loopfooter
     end
@@ -136,7 +136,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
       end
       if integrator.opts.adaptive
         for i in uidx
-          atmp[i] = (dt*(k2[i] - k16[i]) * adaptiveConst)./(integrator.opts.abstol+u[i]*integrator.opts.reltol)
+          atmp[i] = (dt*(k2[i] - k16[i]) * adaptiveConst)./(integrator.opts.abstol+max(abs(u[i]),abs(utmp[i]))*integrator.opts.reltol)
         end
         EEst = integrator.opts.internalnorm(atmp)
       end
@@ -196,7 +196,7 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
       tmp = dt*((b1*k1 + b2*k2 + b3*k3 + b5*k5) + (b7*k7 + b8*k8 + b10*k10 + b11*k11) + (b13*k13 + b14*k14 + b15*k15 + b16*k16) + (b17*k17 + b18*k18 + b19*k19 + b20*k20) + (b21*k21 + b22*k22 + b23*k23 + b24*k24) + (b25*k25))
       utmp = u + tmp
       if integrator.opts.adaptive
-        EEst = abs((dt*(k2 - k24) * adaptiveConst)./(integrator.opts.abstol+u*integrator.opts.reltol))
+        EEst = abs((dt*(k2 - k24) * adaptiveConst)./(integrator.opts.abstol+max(abs(u),abs(utmp))*integrator.opts.reltol))
       end
       @ode_loopfooter
     end
@@ -331,7 +331,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
       end
       if integrator.opts.adaptive
         for i in uidx
-          atmp[i] = (dt*(k2[i] - k24[i]) * adaptiveConst)/(integrator.opts.abstol+u[i]*integrator.opts.reltol)
+          atmp[i] = (dt*(k2[i] - k24[i]) * adaptiveConst)/(integrator.opts.abstol+max(abs(u[i]),abs(utmp[i]))*integrator.opts.reltol)
         end
         EEst = integrator.opts.internalnorm(atmp)
       end
@@ -403,7 +403,7 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
       tmp = dt*((b1*k1 + b2*k2 + b3*k3 + b5*k5) + (b7*k7 + b8*k8 + b10*k10 + b11*k11) + (b12*k12 + b14*k14 + b15*k15 + b16*k16) + (b18*k18 + b19*k19 + b20*k20 + b21*k21) + (b22*k22 + b23*k23 + b24*k24 + b25*k25) + (b26*k26 + b27*k27 + b28*k28 + b29*k29) + (b30*k30 + b31*k31 + b32*k32 + b33*k33) + (b34*k34 + b35*k35))
       utmp = u + tmp
       if integrator.opts.adaptive
-        EEst = abs((dt*(k2 - k34) * adaptiveConst)./(integrator.opts.abstol+u*integrator.opts.reltol))
+        EEst = abs((dt*(k2 - k34) * adaptiveConst)./(integrator.opts.abstol+max(abs(u),abs(utmp))*integrator.opts.reltol))
       end
       @ode_loopfooter
     end
@@ -578,7 +578,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
       end
       if integrator.opts.adaptive
         for i in uidx
-          atmp[i] = (dt*(k2[i] - k34[i]) * adaptiveConst)./(integrator.opts.abstol+u[i]*integrator.opts.reltol)
+          atmp[i] = (dt*(k2[i] - k34[i]) * adaptiveConst)./(integrator.opts.abstol+max(abs(u[i]),abs(utmp[i]))*integrator.opts.reltol)
         end
         EEst = integrator.opts.internalnorm(atmp)
       end

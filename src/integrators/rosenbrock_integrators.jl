@@ -50,7 +50,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
         @into! vectmp3 = W\vec(fsallast - c₃₂*(k₂-f₁)-2(k₁-fsalfirst)+dt*dT)
         k₃ = reshape(vectmp3,sizeu...)
         for i in uidx
-          tmp2[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)./(integrator.opts.abstol+u[i]*integrator.opts.reltol)
+          tmp2[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)./(integrator.opts.abstol+max(abs(u[i]),abs(utmp[i]))*integrator.opts.reltol)
         end
         EEst = integrator.opts.internalnorm(tmp2)
       end
@@ -88,7 +88,7 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
       if integrator.opts.adaptive
         fsallast = f(t+dt,utmp)
         k₃ = W\(fsallast - c₃₂*(k₂-f₁)-2(k₁-fsalfirst)+dt*dT)
-        EEst = abs((dt*(k₁ - 2k₂ + k₃)/6)./(integrator.opts.abstol+u*integrator.opts.reltol))
+        EEst = abs((dt*(k₁ - 2k₂ + k₃)/6)./(integrator.opts.abstol+max(abs(u),abs(utmp))*integrator.opts.reltol))
       end
       if integrator.opts.calck
         k[1] = k₁
@@ -153,7 +153,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
       end
       if integrator.opts.adaptive
         for i in uidx
-          tmp2[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)/(integrator.opts.abstol+u[i]*integrator.opts.reltol)
+          tmp2[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)/(integrator.opts.abstol+max(abs(u[i]),abs(utmp[i]))*integrator.opts.reltol)
         end
         EEst = integrator.opts.internalnorm(tmp2)
       end
@@ -207,7 +207,7 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
       k₃ = W\(fsallast - c₃₂*(k₂-f₁)-2(k₁-fsalfirst)+dt*dT)
       utmp = u + dt*(k₁ + 4k₂ + k₃)/6
       if integrator.opts.adaptive
-        EEst = abs((dt*(k₁ - 2k₂ + k₃)/6)./(integrator.opts.abstol+u*integrator.opts.reltol))
+        EEst = abs((dt*(k₁ - 2k₂ + k₃)/6)./(integrator.opts.abstol+max(abs(u),abs(utmp))*integrator.opts.reltol))
       end
       if integrator.opts.calck
         k[1] = k₁

@@ -321,7 +321,7 @@ interpd = sol(0:1//2^(4):1)
 
 sol2 =solve(prob,Rosenbrock23(),dt=1//2^(4),dense=true,adaptive=false)
 
-@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 5e-3
+@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 6e-3
 
 ### Rosenbrock32()
 

@@ -81,7 +81,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   tTypeNoUnits   = typeof(recursive_one(t))
 
   if dt == zero(dt) && adaptive
-    dt = tType(ode_determine_initdt(u0,t,tdir,uEltype(abstol),uEltypeNoUnits(reltol),internalnorm,f!,order))
+    dt = tType(ode_determine_initdt(u0,t,tdir,dtmax,uEltype(abstol),uEltypeNoUnits(reltol),internalnorm,f!,order))
   end
 
   if sign(dt)!=tdir && dt!=tType(0)
@@ -193,51 +193,4 @@ function solve!(integrator::ODEIntegrator;timeseries_errors = true,dense_errors 
     calculate_solution_errors!(integrator.sol;timeseries_errors=timeseries_errors,dense_errors=dense_errors)
   end
   nothing
-end
-
-function ode_determine_initdt{uType,tType,uEltypeNoUnits}(u0::uType,t::tType,tdir,abstol,reltol::uEltypeNoUnits,internalnorm,f,order)
-  f₀ = similar(u0./t); f₁ = similar(u0./t); u₁ = similar(u0)
-  d₀ = internalnorm(u0./(abstol+u0*reltol))
-  f(t,u0,f₀)
-  d₁ = internalnorm(f₀./(abstol+u0*reltol)*tType(1))/tType(1)
-  T0 = typeof(d₀)
-  T1 = typeof(d₁)
-  if d₀ < T0(1//10^(5)) || d₁ < T1(1//10^(5))
-    dt₀ = tType(1//10^(6))
-  else
-    dt₀ = tType((d₀/d₁)/100)
-  end
-  @inbounds for i in eachindex(u0)
-     u₁[i] = u0[i] + tdir*dt₀*f₀[i]
-  end
-  f(t+tdir*dt₀,u₁,f₁)
-  d₂ = internalnorm((f₁.-f₀)./(abstol+u0*reltol)*tType(1))/dt₀
-  if max(d₁,d₂)<=T1(1//10^(15))
-    dt₁ = max(tType(1//10^(6)),dt₀*1//10^(3))
-  else
-    dt₁ = tType(10.0^(-(2+log10(max(d₁,d₂)/T1(1)))/(order)))
-  end
-  dt = tdir*min(100dt₀,dt₁)
-end
-
-function ode_determine_initdt{uType<:Number,tType,uEltypeNoUnits}(u0::uType,t::tType,tdir,abstol,reltol::uEltypeNoUnits,internalnorm,f,order)
-  d₀ = abs(u0./(abstol+u0*reltol))
-  f₀ = f(t,u0)
-  d₁ = abs(f₀./(abstol+u0*reltol))
-  T0 = typeof(d₀)
-  T1 = typeof(d₁)
-  if d₀ < T0(1//10^(5)) || d₁ < T1(1//10^(5))
-    dt₀ = tType(1//10^(6))
-  else
-    dt₀ = tType((d₀/d₁)/100)
-  end
-  u₁ = u0 + tdir*dt₀*f₀
-  f₁ = f(t+tdir*dt₀,u₁)
-  d₂ = abs((f₁-f₀)./(abstol+u0*reltol))/dt₀*tType(1)
-  if max(d₁,d₂) <= T1(1//10^(15))
-    dt₁ = max(tType(1//10^(6)),dt₀*1//10^(3))
-  else
-    dt₁ = tType(10.0^(-(2+log10(max(d₁,d₂)/T1(1)))/(order)))
-  end
-  dt = tdir*min(100dt₀,dt₁)
 end
