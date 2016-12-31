@@ -2,7 +2,7 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
   @ode_preamble
   fsalfirst = f(t,u) # For the interpolation, needs k at the updated point
   @inbounds for T in Ts
-    while t < T
+    while integrator.tdir*t < integrator.tdir*T
       @ode_loopheader
       k = fsalfirst
       utmp = muladd(dt,k,u)
@@ -23,7 +23,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
   fsallast = k
   f(t,u,fsalfirst) # For the interpolation, needs k at the updated point
   @inbounds for T in Ts
-      while t < T
+      while integrator.tdir*t < integrator.tdir*T
       @ode_loopheader
       for i in uidx
         utmp[i] = muladd(dt,fsalfirst[i],u[i])
@@ -42,7 +42,7 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
   local du::rateType
   fsalfirst = f(t,u)
   @inbounds for T in Ts
-    while t < T
+    while integrator.tdir*t < integrator.tdir*T
       @ode_loopheader
       k = fsalfirst
       k = f(t+halfdt,u+halfdt*k)
@@ -70,7 +70,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
   fsallast = k
   f(t,u,fsalfirst) # FSAL for interpolation
   @inbounds for T in Ts
-      while t < T
+      while integrator.tdir*t < integrator.tdir*T
       @ode_loopheader
       for i in uidx
         utilde[i] = muladd(halfdt,fsalfirst[i],u[i])
@@ -97,7 +97,7 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
   local ttmp::tType
   fsalfirst = f(t,u)
   @inbounds for T in Ts
-      while t < T
+      while integrator.tdir*t < integrator.tdir*T
       @ode_loopheader
       k₁=fsalfirst
       ttmp = t+halfdt
@@ -130,7 +130,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
   fsallast = k
   f(t,u,k₁) # pre-start FSAL
   @inbounds for T in Ts
-    while t < T
+    while integrator.tdir*t < integrator.tdir*T
       @ode_loopheader
       ttmp = t+halfdt
       for i in uidx

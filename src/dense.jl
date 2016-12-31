@@ -16,12 +16,13 @@ times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation(alg,tvals,id)
   @unpack ts,timeseries,ks,f,notsaveat_idxs = id
+  tdir = sign(ts[end]-ts[1])
   idx = sortperm(tvals)
   i = 2 # Start the search thinking it's between ts[1] and ts[2]
   vals = Vector{eltype(timeseries)}(length(tvals))
   for j in idx
     t = tvals[j]
-    i = findfirst((x)->x>=t,ts[notsaveat_idxs[i:end]])+i-1 # It's in the interval ts[i-1] to ts[i]
+    i = findfirst((x)->tdir*x>=tdir*t,ts[notsaveat_idxs[i:end]])+i-1 # It's in the interval ts[i-1] to ts[i]
     if ts[notsaveat_idxs[i]] == t
       vals[j] = timeseries[notsaveat_idxs[i]]
     elseif ts[notsaveat_idxs[i-1]] == t # Can happen if it's the first value!
@@ -44,7 +45,8 @@ times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation(alg,tval::Number,id)
   @unpack ts,timeseries,ks,f,notsaveat_idxs = id
-  i = findfirst((x)->x>=tval,ts) # It's in the interval ts[i-1] to ts[i]
+  tdir = sign(ts[end]-ts[1])
+  i = findfirst((x)->tdir*x>=tdir*tval,ts) # It's in the interval ts[i-1] to ts[i]
   if ts[notsaveat_idxs[i]] == tval
     val = timeseries[notsaveat_idxs[i]]
   elseif ts[notsaveat_idxs[i-1]] == tval # Can happen if it's the first value!

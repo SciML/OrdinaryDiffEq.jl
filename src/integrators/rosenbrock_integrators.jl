@@ -23,7 +23,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
   k = [k₁,k₂]
   f(t,u,fsalfirst)
   @inbounds for T in Ts
-    while t < T
+    while integrator.tdir*t < integrator.tdir*T
       @ode_loopheader
       #if autodiff
         ForwardDiff.derivative!(dT,(t)->vecfreturn(t,u,du2),t) # Time derivative of each component
@@ -75,7 +75,7 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
   k = ksEltype(2)
   fsalfirst = f(t,u)
   @inbounds for T in Ts
-    while t < T
+    while integrator.tdir*t < integrator.tdir*T
       @ode_loopheader
       # Time derivative
       dT = ForwardDiff.derivative((t)->f(t,u),t)
@@ -125,7 +125,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
   k = [k₁,k₂]
   f(t,u,fsalfirst)
   @inbounds for T in Ts
-    while t < T
+    while integrator.tdir*t < integrator.tdir*T
       @ode_loopheader
       ForwardDiff.derivative!(dT,(t)->vecfreturn(t,u,du2),t) # Time derivative
       ForwardDiff.jacobian!(J,(du1,u)->vecf(t,u,du1),vec(du1),vec(u))
@@ -192,7 +192,7 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
   end
   fsalfirst = f(t,u)
   @inbounds for T in Ts
-    while t < T
+    while integrator.tdir*t < integrator.tdir*T
       @ode_loopheader
       # Time derivative
       dT = ForwardDiff.derivative((t)->f(t,u),t)

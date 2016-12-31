@@ -23,7 +23,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
   fsalfirst = k1; fsallast = k7
   f(t,u,fsalfirst);  # Pre-start fsal
   @inbounds for T in Ts
-    while t < T
+    while integrator.tdir*t < integrator.tdir*T
       @ode_loopheader
       dp5threaded_loop1(dt,tmp,u,a21,k1,uidx)
       f(t+c1*dt,tmp,k2)

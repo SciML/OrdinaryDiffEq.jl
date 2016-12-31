@@ -8,7 +8,7 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
   u_old::Vector{uType} = Vector{uType}(1)
   uhold[1] = u; u_old[1] = u
   @inbounds for T in Ts
-    while t < T
+    while integrator.tdir*t < integrator.tdir*T
       @ode_loopheader
       u_old[1] = uhold[1]
       nlres = NLsolve.nlsolve((uhold,resid)->rhs_ie(uhold,resid,u_old,t,dt),uhold,autodiff=autodiff)
@@ -51,7 +51,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
   uhold = vec(utmp); u_old = similar(u)
   cache = (u,u_old,dual_cache,integrator.uprev,integrator.kprev)
   @inbounds for T in Ts
-    while t < T
+    while integrator.tdir*t < integrator.tdir*T
       @ode_loopheader
       copy!(u_old,uhold)
       nlres = NLsolve.nlsolve((uhold,resid)->rhs_ie(uhold,resid,u_old,t,dt,dual_cache),uhold,autodiff=autodiff)
@@ -99,7 +99,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
 
   cache = (u,u_old,cache1,cache2,integrator.uprev,integrator.kprev)
   @inbounds for T in Ts
-    while t < T
+    while integrator.tdir*t < integrator.tdir*T
       @ode_loopheader
       copy!(u_old,uhold)
       nlres = NLsolve.nlsolve((uhold,resid)->rhs_trap(uhold,resid,u_old,t,dt,cache1,cache2),uhold,autodiff=autodiff)
@@ -125,7 +125,7 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
   u_old::Vector{uType} = Vector{uType}(1)
   uhold[1] = u; u_old[1] = u
   @inbounds for T in Ts
-      while t < T
+      while integrator.tdir*t < integrator.tdir*T
       @ode_loopheader
       u_old[1] = uhold[1]
       nlres = NLsolve.nlsolve((uhold,resid)->rhs_trap(uhold,resid,u_old,t,dt),uhold,autodiff=autodiff)

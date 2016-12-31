@@ -8,7 +8,7 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
   local utilde::uType
   fsalfirst = f(t,u) # Pre-start fsal
   @inbounds for T in Ts
-    while t < T
+    while integrator.tdir*t < integrator.tdir*T
       @ode_loopheader
       k1 = fsalfirst
       k2 = f(t+c1*dt,u+dt*a21*k1)
@@ -43,7 +43,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
 
   f(t,u,fsalfirst) # Pre-start fsal
   @inbounds for T in Ts
-    while t < T
+    while integrator.tdir*t < integrator.tdir*T
       @ode_loopheader
       for i in uidx
         tmp[i] = u[i]+dt*a21*k1[i]
@@ -93,7 +93,7 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
   end
   fsalfirst = f(t,u) # Pre-start fsal
   @inbounds for T in Ts
-    while t < T
+    while integrator.tdir*t < integrator.tdir*T
       @ode_loopheader
       k1 = fsalfirst
       k2 = f(t+c1*dt,u+dt*a21*k1)
@@ -137,7 +137,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
   fsalfirst = k1; fsallast = k8  # setup pointers
   f(t,u,k1) # Pre-start fsal
   @inbounds for T in Ts
-    while t < T
+    while integrator.tdir*t < integrator.tdir*T
       @ode_loopheader
       for i in uidx
         tmp[i] = u[i]+dt*a21*k1[i]
@@ -205,7 +205,7 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
   end
   fsalfirst = f(t,u) # Pre-start fsal
   @inbounds for T in Ts
-    while t < T
+    while integrator.tdir*t < integrator.tdir*T
       @ode_loopheader
       k1 = fsalfirst
       k2 = f(t+c1*dt,u+dt*(a21*k1))
@@ -238,7 +238,6 @@ end
 function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Tsit5,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,b1,b2,b3,b4,b5,b6,b7 = constructTsit5(uEltypeNoUnits)
-
   integrator.kshortsize = 7
   uidx = eachindex(u)
 
@@ -259,7 +258,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
 
   f(t,u,k1) # Pre-start fsal
   @inbounds for T in Ts
-    while t < T
+    while integrator.tdir*t < integrator.tdir*T
       @ode_loopheader
       for i in uidx
         tmp[i] = u[i]+dt*(a21*k1[i])
@@ -369,7 +368,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
   fsalfirst = k1; fsallast = k7
   f(t,u,fsalfirst);  # Pre-start fsal
   @inbounds for T in Ts
-    while t < T
+    while integrator.tdir*t < integrator.tdir*T
       @ode_loopheader
       for i in uidx
         tmp[i] = u[i]+dt*(a21*k1[i])

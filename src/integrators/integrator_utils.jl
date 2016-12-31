@@ -59,6 +59,7 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
   calcprevs::Bool
   dtcache::tType
   dt_mod::tTypeNoUnits
+  tdir::Int
   iter::Int
   saveiter::Int
   saveiter_dense::Int
@@ -101,11 +102,15 @@ end
   integrator.iter += 1
 
   if integrator.opts.adaptive
-    dt = min(dt,abs(T-t)) # Step to the end
+    if integrator.tdir > 0
+      dt = min(abs(dt),abs(T-t)) # Step to the end
+    else
+      dt = -min(abs(dt),abs(T-t))
+    end
   elseif integrator.dtcache == 0 # Use tstops
-    dt = abs(T-t)
+    dt = integrator.tdir*abs(T-t)
   else # always try to step with dtcache
-    dt = min(integrator.dtcache,abs(T-t)) # Step to the end
+    dt = integrator.tdir*min(abs(integrator.dtcache),abs(T-t)) # Step to the end
   end
 
   if integrator.iter > integrator.opts.maxiters
@@ -131,9 +136,9 @@ end
 
 @inline function ode_savevalues!(integrator)
   if !isempty(integrator.opts.saveat) # Perform saveat
-    while integrator.cursaveat <= length(integrator.opts.saveat) && integrator.opts.saveat[integrator.cursaveat]<= integrator.t
+    while integrator.cursaveat <= length(integrator.opts.saveat) && integrator.tdir*integrator.opts.saveat[integrator.cursaveat]<= integrator.tdir*integrator.t
       integrator.saveiter += 1
-      if integrator.opts.saveat[integrator.cursaveat]<integrator.t # If <t, interpolate
+      if integrator.opts.saveat[integrator.cursaveat]!=integrator.t # If <t, interpolate
         curt = integrator.opts.saveat[integrator.cursaveat]
         ode_addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.dt,integrator.alg,integrator.f)
         Θ = (curt - integrator.tprev)/integrator.dt
@@ -211,7 +216,16 @@ end
     if !integrator.opts.isoutofdomain(ttmp,utmp) && EEst <= 1.0 # Accept
       t = ttmp
       qold = max(EEst,integrator.opts.qoldinit)
-      dtpropose = min(integrator.opts.dtmax,dtnew)
+      if integrator.tdir > 0
+        dtpropose = min(integrator.opts.dtmax,dtnew)
+      else
+        dtpropose = max(integrator.opts.dtmax,dtnew)
+      end
+      if integrator.tdir > 0
+        dtpropose = max(dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
+      else
+        dtpropose = min(dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
+      end
       @pack_integrator
       if !(typeof(integrator.opts.callback)<:Void)
         T = integrator.opts.callback(cache,T,Ts,integrator)
@@ -219,7 +233,7 @@ end
         ode_savevalues!(integrator)
       end
       @unpack_integrator
-      dt = integrator.dt_mod*max(dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
+      dt = integrator.dt_mod*dtpropose
 
       if isfsal(integrator.alg)
         if integrator.reeval_fsal || (typeof(integrator.alg)<:DP8 && !integrator.opts.calck)

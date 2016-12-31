@@ -9,7 +9,7 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
     pop!(integrator.sol.k) # Get rid of the one it starts with
   end
   @inbounds for T in Ts
-    while t < T
+    while integrator.tdir*t < integrator.tdir*T
       @ode_loopheader
       k = f(t,u)
       k1 = k
@@ -55,7 +55,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
 
   k = k1
   @inbounds for T in Ts
-    while t < T
+    while integrator.tdir*t < integrator.tdir*T
       @ode_loopheader
       f(t,u,k1)
       for i in uidx
@@ -138,7 +138,7 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
     fsalfirst = f(t,u)
   end
   @inbounds for T in Ts
-    while t < T
+    while integrator.tdir*t < integrator.tdir*T
       @ode_loopheader
       if fsal
         k1 = fsalfirst
@@ -214,7 +214,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
   fsallast = k13
   f(t,u,k1) # Pre-start FSAL
   @inbounds for T in Ts
-    while t < T
+    while integrator.tdir*t < integrator.tdir*T
       @ode_loopheader
       if !fsal
         f(t,u,k1)
@@ -320,7 +320,7 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
     pop!(integrator.sol.k) # Take out the initial
   end
   @inbounds for T in Ts
-    while t < T
+    while integrator.tdir*t < integrator.tdir*T
       @ode_loopheader
       k = f(t,u)
       k1 = k
@@ -369,7 +369,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
   end
   k = k1
   @inbounds for T in Ts
-    while t < T
+    while integrator.tdir*t < integrator.tdir*T
       @ode_loopheader
       f(t,u,k1)
       for i in uidx

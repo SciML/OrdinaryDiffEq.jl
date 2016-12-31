@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqBase
+using OrdinaryDiffEq, DiffEqBase, Base.Test
 srand(100)
 
 linear = (t,u) -> (1.01*u)
