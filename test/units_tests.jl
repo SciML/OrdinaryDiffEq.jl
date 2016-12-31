@@ -15,6 +15,7 @@ sol =solve(prob,ExplicitRK())
 
 for alg in NON_IMPLICIT_ALGS
   if !(alg <: DP5Threaded) && !(alg <: Rosenbrock23) && !(alg <: Rosenbrock32)
+    @show alg
     sol = solve(prob,alg(),dt=1u"s"/10)
   end
 end
@@ -37,6 +38,7 @@ sol =solve(prob,DP5Threaded())
 
 for alg in NON_IMPLICIT_ALGS
   if !(alg <: Rosenbrock23) && !(alg <: Rosenbrock32)
+    @show alg
     sol = solve(prob,alg(),dt=1u"s"/10)
   end
 end

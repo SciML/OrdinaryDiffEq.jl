@@ -39,7 +39,6 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
   autodiff::Bool
   adaptiveorder::Int
   order::Int
-  fsal::Bool
   alg::algType
   rate_prototype::rateType
   notsaveat_idxs::Vector{Int}
@@ -60,7 +59,7 @@ end
   local t::tType
   local dt::tType
 
-  @unpack u,k,t,dt,Ts,autodiff,fsal,alg,rate_prototype = integrator
+  @unpack u,k,t,dt,Ts,autodiff,alg,rate_prototype = integrator
   f = integrator.f
 
   sizeu = size(u)
@@ -73,7 +72,7 @@ end
   if uType <: Number
     utmp = zero(uType)
     fsallast = zero(rateType)
-    if fsal
+    if isfsal(integrator.alg)
       fsalfirst = f(t,u)
     else
       fsalfirst = zero(rateType)
@@ -82,7 +81,7 @@ end
     utmp = zeros(u)
     fsallast = similar(rate_prototype)
     fsalfirst = similar(rate_prototype)
-    if fsal
+    if isfsal(integrator.alg)
       f(t,u,fsalfirst)
     end
   end
@@ -226,7 +225,7 @@ end
       @unpack_integrator
       dt = integrator.dt_mod*max(dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
 
-      if fsal
+      if isfsal(integrator.alg)
         if integrator.reeval_fsal
           if uType <: AbstractArray
             f(t,u,fsalfirst)
@@ -264,7 +263,7 @@ end
     end
   else #Not adaptive
     t += dt
-    if fsal
+    if isfsal(integrator.alg)
       if uType <: AbstractArray
         recursivecopy!(fsalfirst,fsallast)
       else

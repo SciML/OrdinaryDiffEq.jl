@@ -39,9 +39,9 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
   cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.uprev,integrator.kprev)
   @unpack k1,k2,k3,k4,utilde,tmp,atmp = cache
 
-  k = fsallast
-  k1 = fsalfirst # done by pointers, no copying
-  k4 = fsallast
+  k = k4
+  fsalfirst = k1  # done by pointers, no copying
+  fsallast = k4
 
   f(t,u,fsalfirst) # Pre-start fsal
   @inbounds for T in Ts
@@ -280,7 +280,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
   cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.uprev,integrator.kprev)
   @unpack k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp = cache
 
-  k1 = fsalfirst; k7 = fsallast # setup pointers
+  fsalfirst = k1; fsallast = k7 # setup pointers
 
   if integrator.opts.calck
     k = ksEltype()

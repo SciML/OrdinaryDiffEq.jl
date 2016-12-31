@@ -42,7 +42,7 @@ module OrdinaryDiffEq
   export ode_addsteps!, ode_interpolant, DIFFERENTIALEQUATIONSJL_SPECIALDENSEALGS,
         @ode_callback, @ode_event, @ode_change_cachesize, @ode_change_deleteat,
         @ode_terminate, ode_savevalues!, copyat_or_push!, isspecialdense,
-        ode_postable!
+        ode_postable!,isfsal
 
   export constructDP5, constructVern6, constructDP8, constructDormandPrince, constructFeagin10,
         constructFeagin12, constructFeagin14

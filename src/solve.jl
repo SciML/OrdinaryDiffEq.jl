@@ -81,7 +81,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   uEltypeNoUnits = typeof(recursive_one(u))
   tTypeNoUnits   = typeof(recursive_one(t))
 
-  if dt==0 && adaptive
+  if dt == zero(dt) && adaptive
     dt = tType(ode_determine_initdt(u0,t,uEltype(abstol),uEltypeNoUnits(reltol),internalnorm,f!,order))
   end
 
@@ -91,13 +91,6 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   saveat = tType[convert(tType,x) for x in setdiff(saveat,tspan)]
 
   ### Algorithm-specific defaults ###
-
-  fsal = false
-  if isfsal(alg)
-    fsal = true
-  elseif typeof(alg) <: ExplicitRK
-    fsal = alg.tableau.fsal
-  end
 
   abstol = uEltype(1)*abstol
 
@@ -182,7 +175,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
                              typeof(rate_prototype),typeof(f!),
                              typeof(event_cache),typeof(opts)}(
                              sol,u,k,t,tType(dt),f!,uprev,kprev,tprev,
-                             Ts,autodiff,adaptiveorder,order,fsal,
+                             Ts,autodiff,adaptiveorder,order,
                              alg,rate_prototype,
                              notsaveat_idxs,calcprevs,dtcache,dt_mod,
                              iter,saveiter,saveiter_dense,cursaveat,

@@ -77,7 +77,7 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
           end
         end
         ode_savevalues!(integrator)
-        if integrator.fsal
+        if isfsal(integrator.alg)
           integrator.reeval_fsal = true
         end
         integrator.dt_mod *= $dt_safety # Safety dt change

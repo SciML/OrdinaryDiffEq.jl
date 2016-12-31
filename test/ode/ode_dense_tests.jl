@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqProblemLibrary
+using OrdinaryDiffEq, DiffEqProblemLibrary,Base.Test
 
 bools = Vector{Bool}(0)
 prob = prob_ode_linear
