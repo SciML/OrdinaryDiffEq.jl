@@ -151,6 +151,49 @@ end
 
 alg_cache{uType}(alg::Tsit5,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev) = ODEEmptyCache()
 
+immutable DP5Cache{uType,rateType,uEltypeNoUnits} <: OrdinaryDiffEqCache
+  u::uType
+  uprev::uType
+  kprev::Vector{rateType}
+  k1::rateType
+  k2::rateType
+  k3::rateType
+  k4::rateType
+  k5::rateType
+  k6::rateType
+  k7::rateType
+  update::rateType
+  bspl::rateType
+  utilde::uType
+  tmp::uType
+  atmp::uEltypeNoUnits
+end
+
+function alg_cache{uType<:AbstractArray}(alg::DP5,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
+  k1 = similar(rate_prototype)
+  k2 = similar(rate_prototype)
+  k3 = similar(rate_prototype)
+  k4 = similar(rate_prototype)
+  k5 = similar(rate_prototype)
+  k6 = similar(rate_prototype)
+  k7 = similar(rate_prototype)
+  update = similar(rate_prototype)
+  bspl = similar(rate_prototype)
+  utilde = similar(u)
+  tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
+  DP5Cache(u,uprev,kprev,k1,k2,k3,k4,k5,k6,k7,update,bspl,utilde,tmp,atmp)
+end
+
+alg_cache{uType}(alg::DP5,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev) = ODEEmptyCache()
+
+
+
+
+
+
+
+
+
 immutable ExplicitRKCache{uType,rateType,uEltypeNoUnits,ksEltype} <: OrdinaryDiffEqCache
   u::uType
   tmp::uType
