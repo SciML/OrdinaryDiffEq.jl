@@ -9,6 +9,9 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
   A = A' # Transpose A to column major looping
   kk = Array{ksEltype}(stages) # Not ks since that's for integrator.opts.dense
   local utilde::ksEltype
+  if isfsal(integrator.alg) # pre-start FSAL
+    fsalfirst = f(t,u)
+  end
   @inbounds for T in Ts
     while t < T
       @ode_loopheader
@@ -37,15 +40,13 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
       for i = 2:stages
         utilde += α[i]*kk[i]
       end
+      utmp = u + dt*utilde
       if integrator.opts.adaptive
-        utmp = u + dt*utilde
         uEEst = αEEst[1]*kk[1]
         for i = 2:stages
           uEEst += αEEst[i]*kk[i]
         end
         EEst = abs( dt*(utilde-uEEst)/(integrator.opts.abstol+max(abs(u),abs(utmp))*integrator.opts.reltol))
-      else
-        u = u + dt*utilde
       end
       if integrator.opts.calck
         k = kk[end]
@@ -68,7 +69,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
   @unpack A,c,α,αEEst,stages = alg.tableau
   A = A' # Transpose A to column major looping
   cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.uprev,integrator.kprev)
-  @unpack kk,utilde,tmp,atmp,utmp,uEEst = cache
+  @unpack kk,utilde,tmp,atmp,uEEst = cache
   if integrator.opts.calck
     k = kk[end]
   end
@@ -139,8 +140,6 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
           atmp[i] = (dt*(utilde[i]-uEEst[i])/(integrator.opts.abstol+max(abs(u[i]),abs(utmp[i]))*integrator.opts.reltol))
         end
         EEst = integrator.opts.internalnorm(atmp)
-      else
-        recursivecopy!(u,utmp)
       end
       @ode_loopfooter
     end

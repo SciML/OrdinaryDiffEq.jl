@@ -16,7 +16,7 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
       if integrator.opts.calck
         k = f(t+dt,uhold[1])
       end
-      u = uhold[1]
+      utmp = uhold[1]
       @ode_loopfooter
     end
   end
@@ -47,7 +47,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
     end
   end
 
-  uhold = vec(u); u_old = similar(u)
+  uhold = vec(utmp); u_old = similar(u)
   cache = (u,u_old,dual_cache,integrator.uprev,integrator.kprev)
   @inbounds for T in Ts
     while t < T
@@ -56,12 +56,11 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
       nlres = NLsolve.nlsolve((uhold,resid)->rhs_ie(uhold,resid,u_old,t,dt,dual_cache),uhold,autodiff=autodiff)
       uhold[:] = nlres.zero
       if integrator.opts.calck
-        f(t+dt,u,k)
+        f(t+dt,utmp,k)
       end
       @ode_loopfooter
     end
   end
-  u = reshape(uhold,sizeu...)
   ode_postamble!(integrator)
   nothing
 end
@@ -94,7 +93,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
       end
     end
   end
-  uhold = vec(u); u_old = similar(u)
+  uhold = vec(utmp); u_old = similar(u)
 
   cache = (u,u_old,cache1,cache2,integrator.uprev,integrator.kprev)
   @inbounds for T in Ts
@@ -104,12 +103,11 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
       nlres = NLsolve.nlsolve((uhold,resid)->rhs_trap(uhold,resid,u_old,t,dt,cache1,cache2),uhold,autodiff=autodiff)
       uhold[:] = nlres.zero
       if integrator.opts.calck
-        f(t+dt,u,k)
+        f(t+dt,utmp,k)
       end
       @ode_loopfooter
     end
   end
-  u = reshape(uhold,sizeu...)
   ode_postamble!(integrator)
   nothing
 end
@@ -133,7 +131,7 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
       if integrator.opts.calck
         k = f(t+dt,uhold[1])
       end
-      u = uhold[1]
+      utmp = uhold[1]
       @ode_loopfooter
     end
   end

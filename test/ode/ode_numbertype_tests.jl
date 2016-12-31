@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Plots
+using OrdinaryDiffEq
 srand(100)
 setprecision(400)
 

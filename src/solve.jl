@@ -160,7 +160,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
                     dense=dense,k=ks,interp=interp,
                     calculate_error = false)
 
-  calcprevs = calck || typeof(callback)<:Void # Calculate the previous values
+  calcprevs = calck || !(typeof(callback)<:Void) # Calculate the previous values
   tprev = t
   dtcache = tType(dt)
   dt_mod = tTypeNoUnits(1)

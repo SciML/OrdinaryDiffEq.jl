@@ -30,11 +30,9 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
       k16 = f(t + c15*dt,u + dt*(a1500*k1              + a1502*k3                                                                                                                                                     + a1514*k15))
       k17 = f(t + c16*dt,u + dt*(a1600*k1 + a1601*k2 + a1602*k3              + a1604*k5 + a1605*k6 + a1606*k7 + a1607*k8 + a1608*k9 + a1609*k10 + a1610*k11 + a1611*k12 + a1612*k13 + a1613*k14 + a1614*k15 + a1615*k16))
       tmp = dt*((b1*k1 + b2*k2 + b3*k3 + b5*k5) + (b7*k7 + b9*k9 + b10*k10 + b11*k11) + (b12*k12 + b13*k13 + b14*k14 + b15*k15) + (b16*k16 + b17*k17))
+      utmp = u + tmp
       if integrator.opts.adaptive
-        utmp = u + tmp
         EEst = abs((dt*(k2 - k16) * adaptiveConst)./(integrator.opts.abstol+u*integrator.opts.reltol))
-      else
-        u = u + tmp
       end
       @ode_loopfooter
     end
@@ -57,7 +55,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
   uidx = eachindex(u)
 
   cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.uprev,integrator.kprev)
-  @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,k17,tmp,atmp,utmp,uprev,kprev = cache
+  @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,k17,tmp,atmp,uprev,kprev = cache
 
   if integrator.opts.calck
     pop!(integrator.sol.k)
@@ -134,17 +132,13 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
       f(t + c16*dt,tmp,k17)
       for i in uidx
         tmp[i] = dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i] + b7*k7[i] + b9*k9[i] + b10*k10[i] + b11*k11[i] + b12*k12[i] + b13*k13[i] + b14*k14[i] + b15*k15[i] + b16*k16[i] + b17*k17[i])
+        utmp[i] = u[i] + tmp[i]
       end
       if integrator.opts.adaptive
         for i in uidx
-          utmp[i] = u[i] + tmp[i]
           atmp[i] = (dt*(k2[i] - k16[i]) * adaptiveConst)./(integrator.opts.abstol+u[i]*integrator.opts.reltol)
         end
         EEst = integrator.opts.internalnorm(atmp)
-      else #no chance of rejecting, so in-place
-        for i in uidx
-          u[i] = u[i] + tmp[i]
-        end
       end
       @ode_loopfooter
     end
@@ -200,11 +194,9 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
       k25 = f(t + c24*dt,u + dt*(a2400*k1 + a2401*k2 + a2402*k3              + a2404*k5              + a2406*k7 + a2407*k8 + a2408*k9 + a2409*k10 + a2410*k11 + a2411*k12 + a2412*k13 + a2413*k14 + a2414*k15 + a2415*k16 + a2416*k17 + a2417*k18 + a2418*k19 + a2419*k20 + a2420*k21 + a2421*k22 + a2422*k23 + a2423*k24))
 
       tmp = dt*((b1*k1 + b2*k2 + b3*k3 + b5*k5) + (b7*k7 + b8*k8 + b10*k10 + b11*k11) + (b13*k13 + b14*k14 + b15*k15 + b16*k16) + (b17*k17 + b18*k18 + b19*k19 + b20*k20) + (b21*k21 + b22*k22 + b23*k23 + b24*k24) + (b25*k25))
+      utmp = u + tmp
       if integrator.opts.adaptive
-        utmp = u + tmp
         EEst = abs((dt*(k2 - k24) * adaptiveConst)./(integrator.opts.abstol+u*integrator.opts.reltol))
-      else #no chance of rejecting so in-place
-        u = u + tmp
       end
       @ode_loopfooter
     end
@@ -226,7 +218,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
     integrator.kprev = similar(rate_prototype)
   end
   cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.uprev,integrator.kprev)
-  @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,k17,k18,k19,k20,k21,k22,k23,k24,k25,tmp,atmp,utmp,uprev,kprev = cache
+  @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,k17,k18,k19,k20,k21,k22,k23,k24,k25,tmp,atmp,uprev,kprev = cache
 
   if integrator.opts.calck
     pop!(integrator.sol.k)
@@ -335,17 +327,13 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
       f(t + c24*dt,tmp,k25)
       for i in uidx
         tmp[i] = dt*((b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i]) + (b7*k7[i] + b8*k8[i] + b10*k10[i] + b11*k11[i]) + (b13*k13[i] + b14*k14[i] + b15*k15[i] + b16*k16[i]) + (b17*k17[i] + b18*k18[i] + b19*k19[i] + b20*k20[i]) + (b21*k21[i] + b22*k22[i] + b23*k23[i] + b24*k24[i]) + b25*k25[i])
+        utmp[i] = u[i] + tmp[i]
       end
       if integrator.opts.adaptive
         for i in uidx
-          utmp[i] = u[i] + tmp[i]
           atmp[i] = (dt*(k2[i] - k24[i]) * adaptiveConst)/(integrator.opts.abstol+u[i]*integrator.opts.reltol)
         end
         EEst = integrator.opts.internalnorm(atmp)
-      else #no chance of rejecting so in-place
-        for i in uidx
-          u[i] = u[i] + tmp[i]
-        end
       end
       @ode_loopfooter
     end
@@ -413,11 +401,9 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
       k34 = f(t + c33*dt,u + dt*(a3300*k1              + a3302*k3                                                                                                                                                                                                                                                                                                                                                                                                                 + a3332*k33))
       k35 = f(t + c34*dt,u + dt*(a3400*k1 + a3401*k2 + a3402*k3              + a3404*k5              + a3406*k7 + a3407*k8              + a3409*k10 + a3410*k11 + a3411*k12 + a3412*k13 + a3413*k14 + a3414*k15 + a3415*k16 + a3416*k17 + a3417*k18 + a3418*k19 + a3419*k20 + a3420*k21 + a3421*k22 + a3422*k23 + a3423*k24 + a3424*k25 + a3425*k26 + a3426*k27 + a3427*k28 + a3428*k29 + a3429*k30 + a3430*k31 + a3431*k32 + a3432*k33 + a3433*k34))
       tmp = dt*((b1*k1 + b2*k2 + b3*k3 + b5*k5) + (b7*k7 + b8*k8 + b10*k10 + b11*k11) + (b12*k12 + b14*k14 + b15*k15 + b16*k16) + (b18*k18 + b19*k19 + b20*k20 + b21*k21) + (b22*k22 + b23*k23 + b24*k24 + b25*k25) + (b26*k26 + b27*k27 + b28*k28 + b29*k29) + (b30*k30 + b31*k31 + b32*k32 + b33*k33) + (b34*k34 + b35*k35))
+      utmp = u + tmp
       if integrator.opts.adaptive
-        utmp = u + tmp
         EEst = abs((dt*(k2 - k34) * adaptiveConst)./(integrator.opts.abstol+u*integrator.opts.reltol))
-      else #no chance of rejecting, so in-place
-        u = u + tmp
       end
       @ode_loopfooter
     end
@@ -439,7 +425,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
   end
 
   cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.uprev,integrator.kprev)
-  @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,k17,k18,k19,k20,k21,k22,k23,k24,k25,k26,k27,k28,k29,k30,k31,k32,k33,k34,k35,tmp,atmp,utmp,uprev,kprev = cache
+  @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,k17,k18,k19,k20,k21,k22,k23,k24,k25,k26,k27,k28,k29,k30,k31,k32,k33,k34,k35,tmp,atmp,uprev,kprev = cache
 
   if integrator.opts.calck
     pop!(integrator.sol.k)
@@ -588,17 +574,13 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
       f(t + c34*dt,tmp,k35)
       for i in uidx
         tmp[i] = dt*(((b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i]) + (b7*k7[i] + b8*k8[i] + b10*k10[i] + b11*k11[i]) + (b12*k12[i] + b14*k14[i] + b15*k15[i] + b16*k16[i]) + (b18*k18[i] + b19*k19[i] + b20*k20[i] + b21*k21[i]) + (b22*k22[i] + b23*k23[i] + b24*k24[i] + b25*k25[i]) + (b26*k26[i] + b27*k27[i] + b28*k28[i] + b29*k29[i]) + (b30*k30[i] + b31*k31[i] + b32*k32[i] + b33*k33[i]) + (b34*k34[i] + b35*k35[i])))
+        utmp[i] = u[i] + tmp[i]
       end
       if integrator.opts.adaptive
         for i in uidx
-          utmp[i] = u[i] + tmp[i]
           atmp[i] = (dt*(k2[i] - k34[i]) * adaptiveConst)./(integrator.opts.abstol+u[i]*integrator.opts.reltol)
         end
         EEst = integrator.opts.internalnorm(atmp)
-      else #no chance of rejecting, so in-place
-        for i in uidx
-          u[i] = u[i] + tmp[i]
-        end
       end
       @ode_loopfooter
     end

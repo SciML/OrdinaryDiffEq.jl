@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Plots, DiffEqProblemLibrary
+using OrdinaryDiffEq, DiffEqProblemLibrary
 
 prob = prob_ode_linear
 

@@ -33,7 +33,6 @@ prob = ODEProblem(f,u0,tspan)
 
 
 sol = solve(prob,Tsit5(),callback=callback)
-#Plots.plotly()
 #plot(sol,denseplot=true)
 
 sol = solve(prob,Vern6(),callback=callback)

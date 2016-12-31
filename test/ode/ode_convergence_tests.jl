@@ -21,7 +21,7 @@ for i = 1:2
   sim3 = test_convergence(dts,prob,RK4())
   @test abs(sim3.𝒪est[:l∞]-4) < testTol
   sim4 = test_convergence(dts,prob,BS3())
-  @test abs(sim3.𝒪est[:l2]-4) < testTol
+  @test abs(sim4.𝒪est[:l2]-3) < testTol
 
   ### Stiff Solvers
 

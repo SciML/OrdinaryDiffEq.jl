@@ -1,11 +1,13 @@
 function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Euler,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
-  k = f(t,u) # For the interpolation, needs k at the updated point
+  fsalfirst = f(t,u) # For the interpolation, needs k at the updated point
   @inbounds for T in Ts
     while t < T
       @ode_loopheader
-      u = muladd(dt,k,u)
-      k = f(t,u) # For the interpolation, needs k at the updated point
+      k = fsalfirst
+      utmp = muladd(dt,k,u)
+      k = f(t+dt,utmp) # For the interpolation, needs k at the updated point
+      fsallast = k
       @ode_loopfooter
     end
   end
@@ -16,17 +18,17 @@ end
 function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Euler,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   uidx = eachindex(u)
-
   cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.uprev,integrator.kprev)
-  @unpack k = cache
-  f(t,u,k) # For the interpolation, needs k at the updated point
+  @unpack k,fsalfirst = cache
+  fsallast = k
+  f(t,u,fsalfirst) # For the interpolation, needs k at the updated point
   @inbounds for T in Ts
       while t < T
       @ode_loopheader
       for i in uidx
-        u[i] = muladd(dt,k[i],u[i])
+        utmp[i] = muladd(dt,fsalfirst[i],u[i])
       end
-      f(t,u,k) # For the interpolation, needs k at the updated point
+      f(t+dt,utmp,fsallast) # For the interpolation, needs k at the updated point
       @ode_loopfooter
     end
   end
@@ -38,11 +40,14 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
   @ode_preamble
   halfdt::tType = dt/2
   local du::rateType
+  fsalfirst = f(t,u)
   @inbounds for T in Ts
     while t < T
       @ode_loopheader
-      k = f(t+halfdt,u+halfdt*f(t,u))
-      u = u + dt*k
+      k = fsalfirst
+      k = f(t+halfdt,u+halfdt*k)
+      utmp = u + dt*k
+      fsallast = f(t+dt,utmp) # For interpolation, then FSAL'd
       @ode_loopfooter
     end
   end
@@ -61,19 +66,20 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
   end
 
   cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.uprev,integrator.kprev)
-  @unpack k,du,utilde = cache
-
+  @unpack k,du,utilde,fsalfirst = cache
+  fsallast = k
+  f(t,u,fsalfirst) # FSAL for interpolation
   @inbounds for T in Ts
       while t < T
       @ode_loopheader
-      f(t,u,du)
       for i in uidx
-        utilde[i] = muladd(halfdt,du[i],u[i])
+        utilde[i] = muladd(halfdt,fsalfirst[i],u[i])
       end
-      f(t+halfdt,utilde,k)
+      f(t+halfdt,utilde,du)
       for i in uidx
-        u[i] = muladd(dt,k[i],u[i])
+        utmp[i] = muladd(dt,du[i],u[i])
       end
+      f(t+dt,utmp,k)
       @ode_loopfooter
     end
   end
@@ -89,18 +95,18 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
   local k₃::rateType
   local k₄::rateType
   local ttmp::tType
+  fsalfirst = f(t,u)
   @inbounds for T in Ts
       while t < T
       @ode_loopheader
-      k₁ = f(t,u)
+      k₁=fsalfirst
       ttmp = t+halfdt
       k₂ = f(ttmp,muladd(halfdt,k₁,u))
       k₃ = f(ttmp,muladd(halfdt,k₂,u))
       k₄ = f(t+dt,muladd(dt,k₃,u))
-      u = muladd(dt/6,muladd(2,(k₂ + k₃),k₁+k₄),u)
-      if integrator.opts.calck
-        k=k₁
-      end
+      utmp = muladd(dt/6,muladd(2,(k₂ + k₃),k₁+k₄),u)
+      k = f(t+dt,utmp)
+      fsallast = k
       @ode_loopfooter
     end
   end
@@ -119,15 +125,13 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
   uidx = eachindex(u)
 
   cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.uprev,integrator.kprev)
-  @unpack tmp,k₁,k₂,k₃,k₄ = cache
-
-  if integrator.opts.calck
-    k=k₁
-  end
+  @unpack tmp,k₁,k₂,k₃,k₄,k = cache
+  fsalfirst = k₁
+  fsallast = k
+  f(t,u,k₁) # pre-start FSAL
   @inbounds for T in Ts
     while t < T
       @ode_loopheader
-      f(t,u,k₁)
       ttmp = t+halfdt
       for i in uidx
         tmp[i] = muladd(halfdt,k₁[i],u[i])
@@ -142,8 +146,9 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
       end
       f(t+dt,tmp,k₄)
       for i in uidx
-        u[i] = muladd(dt/6,muladd(2,(k₂[i] + k₃[i]),k₁[i] + k₄[i]),u[i])
+        utmp[i] = muladd(dt/6,muladd(2,(k₂[i] + k₃[i]),k₁[i] + k₄[i]),u[i])
       end
+      f(t+dt,utmp,k)
       @ode_loopfooter
     end
   end

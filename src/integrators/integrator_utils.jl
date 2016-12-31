@@ -1,3 +1,17 @@
+#=
+Note about notation in the header/footer
+
+u is previous value, at the end integrator.u = utmp, events occur, and then
+u = integrator.u. Therefore `integrator.uprev === u`. This allows for the
+events interface to use `u` as the value to check for events an mutate, but
+`u` be the variable in the methods, and gets rid of the extra array `uprev`
+by folding it with `u`
+
+This also opens up `integrator.u === utmp`, the proposed value for `u`.
+This reduces yet another copy operation and another temporary.
+
+=#
+
 type DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5}
   maxiters::Int
   timeseries_steps::Int
@@ -59,33 +73,15 @@ end
   local t::tType
   local dt::tType
 
-  @unpack u,k,t,dt,Ts,autodiff,alg,rate_prototype = integrator
-  f = integrator.f
+  @unpack k,t,dt,Ts,autodiff,alg,rate_prototype = integrator
+  u = integrator.uprev # See the note at the top
+  utmp = integrator.u # See the note at the top
+  f = integrator.f # Grab the pointer for the local scope. Updates automatically.
 
   sizeu = size(u)
   Tfinal = Ts[end]
 
   local T::tType
-  local utmp::uType
-
-  # Setup FSAL
-  if uType <: Number
-    utmp = zero(uType)
-    fsallast = zero(rateType)
-    if isfsal(integrator.alg)
-      fsalfirst = f(t,u)
-    else
-      fsalfirst = zero(rateType)
-    end
-  else
-    utmp = zeros(u)
-    fsallast = similar(rate_prototype)
-    fsalfirst = similar(rate_prototype)
-    if isfsal(integrator.alg)
-      f(t,u,fsalfirst)
-    end
-  end
-
   uEltypeNoUnits = typeof(integrator.opts.reltol)
   uEltype = typeof(integrator.opts.abstol)
   local Θ = one(t)/one(t) # No units
@@ -190,12 +186,19 @@ end
   integrator.dt = dt
   integrator.dt_mod = tTypeNoUnits(1)
   integrator.k = k
-  integrator.u = u
   integrator.t = t
+  # integrator.u is already utmp if mutable (due to pointers)
+  if !(uType <: AbstractArray)
+    integrator.u = utmp
+  end
 end
 
 @def unpack_integrator begin
-  u = integrator.u
+  if uType <: AbstractArray
+    recursivecopy!(u,integrator.u) # this is where the update of `u` from `utmp` occurs
+  else
+    u = integrator.u
+  end
   t = integrator.t
 end
 
@@ -208,12 +211,6 @@ end
     ttmp = t + dt
     if !integrator.opts.isoutofdomain(ttmp,utmp) && EEst <= 1.0 # Accept
       t = ttmp
-      if uType <: AbstractArray # Treat mutables differently
-        recursivecopy!(u, utmp)
-      else
-        u = utmp
-      end
-
       qold = max(EEst,integrator.opts.qoldinit)
       dtpropose = min(integrator.opts.dtmax,dtnew)
       @pack_integrator
@@ -226,7 +223,8 @@ end
       dt = integrator.dt_mod*max(dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
 
       if isfsal(integrator.alg)
-        if integrator.reeval_fsal
+        if integrator.reeval_fsal || (typeof(integrator.alg)<:DP8 && !integrator.opts.calck)
+          # Under these condtions, these algorithms are not FSAL anymore
           if uType <: AbstractArray
             f(t,u,fsalfirst)
           else
@@ -242,15 +240,10 @@ end
         end
       end
 
+      integrator.tprev = t
+
       if integrator.calcprevs
-        # Store previous for interpolation
-        integrator.tprev = t
-        if uType <: AbstractArray
-          recursivecopy!(integrator.uprev,u)
-        else
-          integrator.uprev = u
-        end
-        if integrator.opts.calck
+        if !isspecialdense(integrator.alg) && integrator.opts.calck
           if ksEltype <: AbstractArray
             recursivecopy!(integrator.kprev,k)
           else
@@ -263,13 +256,7 @@ end
     end
   else #Not adaptive
     t += dt
-    if isfsal(integrator.alg)
-      if uType <: AbstractArray
-        recursivecopy!(fsalfirst,fsallast)
-      else
-        fsalfirst = fsallast
-      end
-    end
+
     @pack_integrator
     if !(typeof(integrator.opts.callback)<:Void)
       T = integrator.opts.callback(cache,T,Ts,integrator)
@@ -278,16 +265,30 @@ end
     end
     @unpack_integrator
     dt *= integrator.dt_mod
-    if integrator.calcprevs
-      # Store previous for interpolation
-      integrator.tprev = t
-      if uType <: AbstractArray
-        recursivecopy!(integrator.uprev,u)
+
+    if isfsal(integrator.alg)
+      if integrator.reeval_fsal || (typeof(integrator.alg)<:DP8 && !integrator.opts.calck) || typeof(integrator.alg)<:Union{Rosenbrock23,Rosenbrock32}
+        # Under these condtions, these algorithms are not FSAL anymore
+        if uType <: AbstractArray
+          f(t,u,fsalfirst)
+        else
+          fsalfirst = f(t,u)
+        end
+        integrator.reeval_fsal = false
       else
-        integrator.uprev = u
+        if uType <: AbstractArray
+          recursivecopy!(fsalfirst,fsallast)
+        else
+          fsalfirst = fsallast
+        end
       end
-      if integrator.opts.calck
-        if ksEltype <: AbstractArray
+    end
+
+    integrator.tprev = t
+
+    if integrator.calcprevs
+      if !isspecialdense(integrator.alg) && integrator.opts.calck
+        if ksEltype <: AbstractArray && !isspecialdense(integrator.alg)
           recursivecopy!(integrator.kprev,k)
         else
           integrator.kprev = k

@@ -1,15 +1,10 @@
 function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{DP5Threaded,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
   @ode_preamble
   a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = constructDP5(uEltypeNoUnits)
-  k2::rateType = similar(rate_prototype)
-  k3::rateType = similar(rate_prototype)
-  k4::rateType = similar(rate_prototype)
-  k5::rateType = similar(rate_prototype)
-  k6::rateType = similar(rate_prototype)
-  update::rateType = similar(rate_prototype)
-  bspl::rateType = similar(rate_prototype)
-  utilde = similar(u)
-  tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
+
+  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.uprev,integrator.kprev)
+  @unpack k1,k2,k3,k4,k5,k6,k7,update,bspl,utilde,tmp,atmp = cache
+
   uidx::Base.OneTo{Int64} = eachindex(u)
   integrator.kshortsize = 4
   if integrator.opts.calck
@@ -25,15 +20,8 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
       integrator.kprev = deepcopy(k)
     end
   end
-  k1 = fsalfirst; k7 = fsallast
+  fsalfirst = k1; fsallast = k7
   f(t,u,fsalfirst);  # Pre-start fsal
-  if !(typeof(integrator.opts.callback)<:Void)
-    if integrator.opts.calck
-      cache = (u,k...,k1,k2,k3,k4,k5,k6,k7,tmp,utmp,atmp,utilde,bspl,integrator.uprev,integrator.kprev...)
-    else
-      cache = (u,k1,k2,k3,k4,k5,k6,k7,tmp,utmp,atmp,utilde,bspl,integrator.uprev,integrator.kprev...)
-    end
-  end
   @inbounds for T in Ts
     while t < T
       @ode_loopheader
@@ -52,8 +40,6 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
       if integrator.opts.adaptive
         dp5threaded_adaptiveloop(dt,utilde,u,b1,k1,b3,k3,b4,k4,b5,k5,b6,k6,b7,k7,atmp,utmp,integrator.opts.abstol,integrator.opts.reltol,uidx)
         EEst = integrator.opts.internalnorm(atmp)
-      else
-        recursivecopy!(u, utmp)
       end
       if integrator.opts.calck
         dp5threaded_denseloop(bspl,update,k1,k3,k4,k5,k6,k7,k,d1,d3,d4,d5,d6,d7,uidx)

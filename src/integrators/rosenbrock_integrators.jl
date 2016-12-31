@@ -21,7 +21,9 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
   f₀ = similar(u)
   f₁ = similar(u)
   vectmp3 = similar(vec(u))
-  utmp = similar(u); vectmp2 = similar(vec(u))
+  vectmp2 = similar(vec(u))
+  fsalfirst = similar(rate_prototype)
+  fsallast = similar(rate_prototype)
   dT = similar(u); vectmp = similar(vec(u))
   J = zeros(uEltype,length(u),length(u))
   W = similar(J); tmp2 = similar(u)
@@ -66,11 +68,9 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
       tmp = reshape(vectmp2,sizeu...)
       for i in uidx
         k₂[i] = tmp[i] + k₁[i]
+        utmp[i] = u[i] + dt*k₂[i]
       end
       if integrator.opts.adaptive
-        for i in uidx
-          utmp[i] = u[i] + dt*k₂[i]
-        end
         f(t+dt,utmp,fsallast)
         @into! vectmp3 = W\vec(fsallast - c₃₂*(k₂-f₁)-2(k₁-fsalfirst)+dt*dT)
         k₃ = reshape(vectmp3,sizeu...)
@@ -78,14 +78,8 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
           tmp2[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)./(integrator.opts.abstol+u[i]*integrator.opts.reltol)
         end
         EEst = integrator.opts.internalnorm(tmp2)
-      else
-        for i in uidx
-          u[i] = u[i] + dt*k₂[i]
-        end
-        f(t,u,fsallast)
       end
       @ode_loopfooter
-      recursivecopy!(fsalfirst,fsallast)
     end
   end
   ode_postamble!(integrator)
@@ -126,21 +120,17 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
       k₁ = W\(fsalfirst + dt*d*dT)
       f₁ = f(t+dt/2,u+dt*k₁/2)
       k₂ = W\(f₁-k₁) + k₁
+      utmp = u + dt*k₂
       if integrator.opts.adaptive
-        utmp = u + dt*k₂
         fsallast = f(t+dt,utmp)
         k₃ = W\(fsallast - c₃₂*(k₂-f₁)-2(k₁-fsalfirst)+dt*dT)
         EEst = abs((dt*(k₁ - 2k₂ + k₃)/6)./(integrator.opts.abstol+u*integrator.opts.reltol))
-      else
-        u = u + dt*k₂
-        fsallast = f(t,u)
       end
       if integrator.opts.calck
         k[1] = k₁
         k[2] = k₂
       end
       @ode_loopfooter
-      fsalfirst = fsallast
     end
   end
   ode_postamble!(integrator)
@@ -170,10 +160,12 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
   f₀ = similar(u)
   f₁ = similar(u)
   vectmp3 = similar(vec(u))
-  utmp = similar(u); vectmp2 = similar(vec(u))
+  vectmp2 = similar(vec(u))
   dT = similar(u); vectmp = similar(vec(u))
   J = zeros(uEltype,length(u),length(u))
   W = similar(J); tmp2 = similar(u)
+  fsalfirst = similar(rate_prototype)
+  fsallast = similar(rate_prototype)
   uidx = eachindex(u)
   jidx = eachindex(J)
   if integrator.opts.calck
@@ -217,20 +209,16 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
       f(t+dt,tmp,fsallast)
       @into! vectmp3 = W\vec(fsallast - c₃₂*(k₂-f₁)-2(k₁-fsalfirst)+dt*dT)
       k₃ = reshape(vectmp3,sizeu...)
+      for i in uidx
+        utmp[i] = u[i] + dt*(k₁[i] + 4k₂[i] + k₃[i])/6
+      end
       if integrator.opts.adaptive
         for i in uidx
-          utmp[i] = u[i] + dt*(k₁[i] + 4k₂[i] + k₃[i])/6
           tmp2[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)/(integrator.opts.abstol+u[i]*integrator.opts.reltol)
         end
         EEst = integrator.opts.internalnorm(tmp2)
-      else
-        for i in uidx
-          u[i] = u[i] + dt*(k₁[i] + 4k₂[i] + k₃[i])/6
-        end
-        f(t,u,fsallast)
       end
       @ode_loopfooter
-      recursivecopy!(fsalfirst,fsallast)
     end
   end
   ode_postamble!(integrator)
@@ -278,19 +266,15 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
       tmp = u + dt*k₂
       fsallast = f(t+dt,tmp)
       k₃ = W\(fsallast - c₃₂*(k₂-f₁)-2(k₁-fsalfirst)+dt*dT)
+      utmp = u + dt*(k₁ + 4k₂ + k₃)/6
       if integrator.opts.adaptive
-        utmp = u + dt*(k₁ + 4k₂ + k₃)/6
         EEst = abs((dt*(k₁ - 2k₂ + k₃)/6)./(integrator.opts.abstol+u*integrator.opts.reltol))
-      else
-        u = u + dt*(k₁ + 4k₂ + k₃)/6
-        fsallast = f(t,u)
       end
       if integrator.opts.calck
         k[1] = k₁
         k[2] = k₂
       end
       @ode_loopfooter
-      fsalfirst = fsallast
     end
   end
   ode_postamble!(integrator)

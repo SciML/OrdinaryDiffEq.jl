@@ -25,12 +25,11 @@ callback = @ode_callback begin
   @ode_event event_f apply_event! true 10
 end
 u0 = [0.2]
-tspan = (0.0;10.0)
+tspan = (0.0,10.0)
 prob = ODEProblem(f,u0,tspan)
 sol = solve(prob,Tsit5(),callback=callback)
 
 #=
-Plots.plotlyjs()
 plot(sol)
 
 plot(sol.t,map((x)->length(x),sol[:]),lw=3,

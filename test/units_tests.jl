@@ -22,8 +22,6 @@ end
 
 println("Units for Number pass")
 
-TEST_PLOT && plot(sol)
-
 u0 = [1.0u"N" 2.0u"N"
       3.0u"N" 1.0u"N"]
 
