@@ -398,12 +398,12 @@ function ode_addsteps!{rateType<:Number,uEltypeNoUnits}(k,t,u,dt,f,alg::Tsit5,T2
   if length(k)<7
     c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,b1,b2,b3,b4,b5,b6,b7 = constructTsit5(uEltypeNoUnits)
     push!(k,f(t,u))
-    push!(k,f(t+c1*dt,u+dt*(a21*k1)))
-    push!(k,f(t+c2*dt,u+dt*(a31*k1+a32*k2)))
-    push!(k,f(t+c3*dt,u+dt*(a41*k1+a42*k2+a43*k3)))
-    push!(k,f(t+c4*dt,u+dt*(a51*k1+a52*k2+a53*k3+a54*k4)))
-    push!(k,f(t+dt,u+dt*(a61*k1+a62*k2+a63*k3+a64*k4+a65*k5)))
-    utmp = u+dt*(a71*k1+a72*k2+a73*k3+a74*k4+a75*k5+a76*k6)
+    push!(k,f(t+c1*dt,u+dt*(a21*k[1])))
+    push!(k,f(t+c2*dt,u+dt*(a31*k[1]+a32*k[2])))
+    push!(k,f(t+c3*dt,u+dt*(a41*k[1]+a42*k[2]+a43*k[3])))
+    push!(k,f(t+c4*dt,u+dt*(a51*k[1]+a52*k[2]+a53*k[3]+a54*k[4])))
+    push!(k,f(t+dt,u+dt*(a61*k[1]+a62*k[2]+a63*k[3]+a64*k[4]+a65*k[5])))
+    utmp = u+dt*(a71*k[1]+a72*k[2]+a73*k[3]+a74*k[4]+a75*k[5]+a76*k[6])
     push!(k,f(t+dt,utmp))
   end
   nothing
