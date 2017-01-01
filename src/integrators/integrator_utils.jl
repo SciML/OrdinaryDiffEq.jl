@@ -76,14 +76,10 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
 end
 
 @def ode_preamble begin
-  local t::tType
-  local dt::tType
-
   @unpack k,t,dt,alg,rate_prototype = integrator
   u = integrator.uprev # See the note at the top
   utmp = integrator.u # See the note at the top
   f = integrator.f # Grab the pointer for the local scope. Updates automatically.
-
   uEltypeNoUnits = typeof(integrator.opts.reltol)
 end
 
