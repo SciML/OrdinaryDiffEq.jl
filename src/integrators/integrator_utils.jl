@@ -60,6 +60,10 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
   dtcache::tType
   dt_mod::tTypeNoUnits
   tdir::Int
+  qminc::tTypeNoUnits
+  qmaxc::tTypeNoUnits
+  EEst::tTypeNoUnits
+  qold::tTypeNoUnits
   iter::Int
   saveiter::Int
   saveiter_dense::Int
@@ -81,10 +85,6 @@ end
   f = integrator.f # Grab the pointer for the local scope. Updates automatically.
 
   uEltypeNoUnits = typeof(integrator.opts.reltol)
-  local qold::tTypeNoUnits = integrator.opts.qoldinit
-  qminc = inv(integrator.opts.qmin) #facc1
-  qmaxc = inv(integrator.opts.qmax) #facc2
-  local EEst::tTypeNoUnits = zero(t/t)
 end
 
 @def ode_loopheader begin
@@ -195,13 +195,13 @@ end
 @def ode_loopfooter begin
   if integrator.opts.adaptive
     q11 = EEst^integrator.opts.beta1
-    q = q11/(qold^integrator.opts.beta2)
-    q = max(qmaxc,min(qminc,q/integrator.opts.gamma))
+    q = q11/(integrator.qold^integrator.opts.beta2)
+    q = max(integrator.qmaxc,min(integrator.qminc,q/integrator.opts.gamma))
     dtnew = dt/q
     ttmp = t + dt
     if !integrator.opts.isoutofdomain(ttmp,utmp) && EEst <= 1.0 # Accept
       t = ttmp
-      qold = max(EEst,integrator.opts.qoldinit)
+      integrator.qold = max(EEst,integrator.opts.qoldinit)
       if integrator.tdir > 0
         dtpropose = min(integrator.opts.dtmax,dtnew)
       else
@@ -250,7 +250,7 @@ end
         end
       end
     else # Reject
-      dt = dt/min(qminc,q11/integrator.opts.gamma)
+      dt = dt/min(integrator.qminc,q11/integrator.opts.gamma)
     end
   else #Not adaptive
     t += dt

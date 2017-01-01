@@ -206,6 +206,9 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   saveiter_dense = 1
   kshortsize = 1
   reeval_fsal = false
+  qminc = inv(qmin) #facc1
+  qmaxc = inv(qmax) #facc2
+  EEst = zero(t/t)
 
   integrator = ODEIntegrator{algType,uType,tType,typeof(tstops_internal),
                              tTypeNoUnits,eltype(ks),typeof(sol),
@@ -213,7 +216,8 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
                              typeof(event_cache),typeof(opts)}(
                              sol,u,k,t,tType(dt),f!,uprev,kprev,tprev,
                              tstops_internal,saveat_internal,adaptiveorder,order,
-                             alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,dt_mod,tdir,
+                             alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,
+                             dt_mod,tdir,qminc,qmaxc,EEst,qoldinit,
                              iter,saveiter,saveiter_dense,prog,cache,
                              event_cache,kshortsize,reeval_fsal,opts)
   integrator
