@@ -153,7 +153,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
     progress_name,progress_message,beta1,beta2,tTypeNoUnits(qoldinit),dense,saveat_vec,
     callback,isoutofdomain,calck)
 
-  progress ? (prog = Juno.ProgressBar(name=integrator.opts.progress_name)) : prog = nothing
+  progress ? (prog = Juno.ProgressBar(name=progress_name)) : prog = nothing
 
   notsaveat_idxs = Int[1]
 
