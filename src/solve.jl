@@ -51,9 +51,9 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   end
 
   if tdir>0
-    tstops_internal = binary_minheap(tstops)
+    tstops_internal = binary_minheap(collect(tstops))
   else
-    tstops_internal = binary_maxheap(tstops)
+    tstops_internal = binary_maxheap(collect(tstops))
   end
 
   if !isempty(tstops) && tstops[end] != tspan[2]

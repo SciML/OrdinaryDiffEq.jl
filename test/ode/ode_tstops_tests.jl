@@ -20,3 +20,11 @@ sol =solve(prob,RK4(),tstops=[1/5,1/4,1/3,1/2,3/4])
 sol =solve(prob,RK4(),tstops=[0,1/5,1/4,1/3,1/2,3/4,1])
 
 @test sol.t == [0,1/5,1/4,1/3,1/2,3/4,1]
+
+sol = solve(prob,RK4(),tstops=0:1//16:1)
+
+@test sol.t == collect(0:1//16:1)
+
+sol = solve(prob,RK4(),tstops=linspace(0,1,100))
+
+@test sol.t == collect(linspace(0,1,100))
