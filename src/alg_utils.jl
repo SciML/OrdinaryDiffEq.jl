@@ -1,5 +1,5 @@
 function isfsal(alg::OrdinaryDiffEqAlgorithm)
-  if typeof(alg) <: DP5 || typeof(alg) <: DP5Threaded || typeof(alg) <: DP8 || typeof(alg) <: BS3 || typeof(alg) <: BS5 || typeof(alg) <: Tsit5 || typeof(alg) <: Vern6 || typeof(alg) <: Rosenbrock23 || typeof(alg) <: Rosenbrock32 || typeof(alg)<:Euler || typeof(alg) <: Midpoint || typeof(alg) <: RK4
+  if typeof(alg) <: DP5 || typeof(alg) <: DP5Threaded || typeof(alg) <: DP8 || typeof(alg) <: BS3 || typeof(alg) <: BS5 || typeof(alg) <: Tsit5 || typeof(alg) <: Vern6 || typeof(alg) <: Rosenbrock23 || typeof(alg) <: Rosenbrock32 || typeof(alg)<:Euler || typeof(alg) <: Midpoint || typeof(alg) <: RK4 || typeof(alg) <: Feagin10 || typeof(alg) <: Feagin12 || typeof(alg) <: Feagin14
     return true
   else
     return false
