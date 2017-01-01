@@ -1,4 +1,4 @@
-function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O,algType<:ExplicitRK}(integrator::ODEIntegrator{algType,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
+function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O,algType<:ExplicitRK}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
   local A::Matrix{uEltypeNoUnits}
   local c::Vector{uEltypeNoUnits}
@@ -12,8 +12,8 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
   if isfsal(integrator.alg) # pre-start FSAL
     fsalfirst = f(t,u)
   end
-  @inbounds for T in Ts
-    while integrator.tdir*t < integrator.tdir*T
+  @inbounds while !isempty(integrator.tstops)
+    while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
       @ode_loopheader
       # Calc First
       if isfsal(integrator.alg)
@@ -53,12 +53,13 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
       end
       @ode_loopfooter
     end
+    !isempty(integrator.tstops) && pop!(integrator.tstops)
   end
   ode_postamble!(integrator)
   nothing
 end
 
-function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O,algType<:ExplicitRK}(integrator::ODEIntegrator{algType,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
+function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O,algType<:ExplicitRK}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
   local A::Matrix{uEltypeNoUnits}
   local c::Vector{uEltypeNoUnits}
@@ -79,8 +80,8 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
   f(t,u,kk[1]) # pre-start fsal
 
 
-  @inbounds for T in Ts
-    while integrator.tdir*t < integrator.tdir*T
+  @inbounds while !isempty(integrator.tstops)
+    while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
       @ode_loopheader
       # First
       if !isfsal(integrator.alg)
@@ -144,6 +145,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
       end
       @ode_loopfooter
     end
+    !isempty(integrator.tstops) && pop!(integrator.tstops)
   end
   ode_postamble!(integrator)
   nothing

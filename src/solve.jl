@@ -43,22 +43,23 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
       error("Fixed timestep methods require a choice of dt or choosing the tstops")
   end
 
-  #=
+  if !isempty(tstops) && tdir*tspan[end] < tdir*maximum(tstops)
+      error("Final saving timepoint is past the solving timespan")
+  end
+  if !isempty(tstops) && tdir*t > tdir*minimum(tstops)
+      error("First saving timepoint is before the solving timespan")
+  end
+
   if tdir>0
     tstops_internal = binary_minheap(tstops)
   else
     tstops_internal = binary_maxheap(tstops)
   end
-  =#
 
-  Ts = push!(tstops,tspan[2])
-
-  #Heapify first
-  if tdir*tspan[end] < tdir*Ts[end]
-      error("Final saving timepoint is past the solving timespan")
-  end
-  if tdir*t > tdir*Ts[1]
-      error("First saving timepoint is before the solving timespan")
+  if !isempty(tstops) && tstops[end] != tspan[2]
+    push!(tstops_internal,tspan[2])
+  elseif isempty(tstops)
+    push!(tstops_internal,tspan[2])
   end
 
   u0 = prob.u0
@@ -186,11 +187,12 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   kshortsize = 1
   reeval_fsal = false
 
-  integrator = ODEIntegrator{algType,uType,tType,tTypeNoUnits,eltype(ks),typeof(sol),
+  integrator = ODEIntegrator{algType,uType,tType,typeof(tstops_internal),
+                             tTypeNoUnits,eltype(ks),typeof(sol),
                              typeof(rate_prototype),typeof(f!),typeof(prog),typeof(cache),
                              typeof(event_cache),typeof(opts)}(
                              sol,u,k,t,tType(dt),f!,uprev,kprev,tprev,
-                             Ts,adaptiveorder,order,
+                             tstops_internal,adaptiveorder,order,
                              alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,dt_mod,tdir,
                              iter,saveiter,saveiter_dense,cursaveat,prog,cache,
                              event_cache,kshortsize,reeval_fsal,opts)

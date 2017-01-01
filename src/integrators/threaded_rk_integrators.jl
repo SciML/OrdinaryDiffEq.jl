@@ -1,4 +1,4 @@
-function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{DP5Threaded,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
+function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{DP5Threaded,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
   a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = constructDP5(uEltypeNoUnits)
 
@@ -22,8 +22,8 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
   end
   fsalfirst = k1; fsallast = k7
   f(t,u,fsalfirst);  # Pre-start fsal
-  @inbounds for T in Ts
-    while integrator.tdir*t < integrator.tdir*T
+  @inbounds while !isempty(integrator.tstops)
+    while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
       @ode_loopheader
       dp5threaded_loop1(dt,tmp,u,a21,k1,uidx)
       f(t+c1*dt,tmp,k2)
@@ -46,6 +46,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
       end
       @ode_loopfooter
     end
+    !isempty(integrator.tstops) && pop!(integrator.tstops)
   end
   ode_postamble!(integrator)
   nothing

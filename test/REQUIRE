@@ -4,3 +4,5 @@ DiffEqDevTools
 DiffEqProblemLibrary
 ParameterizedFunctions 0.1.0
 ODEInterfaceDiffEq
+DataStructures
+Roots

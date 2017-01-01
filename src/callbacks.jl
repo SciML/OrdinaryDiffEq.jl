@@ -1,9 +1,8 @@
 macro ode_callback(ex)
   esc(quote
-    function (T,Ts,integrator)
+    function (integrator)
       event_occurred = false
       $(ex)
-      T
     end
   end)
 end
@@ -129,8 +128,5 @@ function cache_replace_length(ex::Any)
 end
 
 @def ode_terminate begin
-  T = integrator.t
-  while length(Ts)>1
-    pop!(Ts)
-  end
+  integrator.tstops.valtree = typeof(integrator.tstops.valtree)()
 end

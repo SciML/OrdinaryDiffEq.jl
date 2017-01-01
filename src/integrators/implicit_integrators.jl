@@ -9,7 +9,7 @@ function (p::RHS_IE_Scalar)(u,resid)
   resid[1] = u[1] - p.u_old[1] - p.dt*p.f(p.t+p.dt,u)[1]
 end
 
-function ode_solve{uType<:Number,algType<:ImplicitEuler,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
+function ode_solve{uType<:Number,algType<:ImplicitEuler,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
   local nlres::NLsolve.SolverResults{uEltype}
 
@@ -23,8 +23,8 @@ function ode_solve{uType<:Number,algType<:ImplicitEuler,tType,tTypeNoUnits,ksElt
   if alg_autodiff(alg)
     adf = autodiff_setup(rhs,uhold,integrator.cache)
   end
-  @inbounds for T in Ts
-    while integrator.tdir*t < integrator.tdir*T
+  @inbounds while !isempty(integrator.tstops)
+    while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
       @ode_loopheader
       u_old[1] = uhold[1]
       rhs.t = t
@@ -41,6 +41,7 @@ function ode_solve{uType<:Number,algType<:ImplicitEuler,tType,tTypeNoUnits,ksElt
       utmp = uhold[1]
       @ode_loopfooter
     end
+    !isempty(integrator.tstops) && pop!(integrator.tstops)
   end
   ode_postamble!(integrator)
   nothing
@@ -64,7 +65,7 @@ function (p::RHS_IE)(u,resid)
   end
 end
 
-function ode_solve{uType<:AbstractArray,algType<:ImplicitEuler,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
+function ode_solve{uType<:AbstractArray,algType<:ImplicitEuler,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
   local nlres::NLsolve.SolverResults{uEltype}
   uidx = eachindex(u)
@@ -81,8 +82,8 @@ function ode_solve{uType<:AbstractArray,algType<:ImplicitEuler,tType,tTypeNoUnit
     adf = autodiff_setup(rhs,uhold,integrator.cache)
   end
 
-  @inbounds for T in Ts
-    while integrator.tdir*t < integrator.tdir*T
+  @inbounds while !isempty(integrator.tstops)
+    while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
       @ode_loopheader
       copy!(u_old,uhold)
       rhs.t = t
@@ -100,6 +101,7 @@ function ode_solve{uType<:AbstractArray,algType<:ImplicitEuler,tType,tTypeNoUnit
       end
       @ode_loopfooter
     end
+    !isempty(integrator.tstops) && pop!(integrator.tstops)
   end
   ode_postamble!(integrator)
   nothing
@@ -126,7 +128,7 @@ function (p::RHS_Trap)(u,resid)
   end
 end
 
-function ode_solve{uType<:AbstractArray,algType<:Trapezoid,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
+function ode_solve{uType<:AbstractArray,algType<:Trapezoid,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
   local nlres::NLsolve.SolverResults{uEltype}
   uidx = eachindex(u)
@@ -145,8 +147,8 @@ function ode_solve{uType<:AbstractArray,algType<:Trapezoid,tType,tTypeNoUnits,ks
     adf = autodiff_setup(rhs,uhold,integrator.cache)
   end
 
-  @inbounds for T in Ts
-    while integrator.tdir*t < integrator.tdir*T
+  @inbounds while !isempty(integrator.tstops)
+    while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
       @ode_loopheader
       copy!(u_old,uhold)
       rhs.t = t
@@ -164,6 +166,7 @@ function ode_solve{uType<:AbstractArray,algType<:Trapezoid,tType,tTypeNoUnits,ks
       end
       @ode_loopfooter
     end
+    !isempty(integrator.tstops) && pop!(integrator.tstops)
   end
   ode_postamble!(integrator)
   nothing
@@ -180,7 +183,7 @@ function (p::RHS_Trap_Scalar)(u,resid)
   resid[1] = u[1] - p.u_old[1] - (p.dt/2)*(p.f(p.t,p.u_old)[1] + p.f(p.t+p.dt,u)[1])
 end
 
-function ode_solve{uType<:Number,algType<:Trapezoid,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
+function ode_solve{uType<:Number,algType<:Trapezoid,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
   dto2::tType = dt/2
   local nlres::NLsolve.SolverResults{uEltype}
@@ -194,8 +197,8 @@ function ode_solve{uType<:Number,algType<:Trapezoid,tType,tTypeNoUnits,ksEltype,
     adf = autodiff_setup(rhs,uhold,integrator.cache)
   end
 
-  @inbounds for T in Ts
-      while integrator.tdir*t < integrator.tdir*T
+  @inbounds while !isempty(integrator.tstops)
+      while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
       @ode_loopheader
       u_old[1] = uhold[1]
       rhs.t = t
@@ -212,6 +215,7 @@ function ode_solve{uType<:Number,algType<:Trapezoid,tType,tTypeNoUnits,ksEltype,
       utmp = uhold[1]
       @ode_loopfooter
     end
+    !isempty(integrator.tstops) && pop!(integrator.tstops)
   end
   ode_postamble!(integrator)
   nothing

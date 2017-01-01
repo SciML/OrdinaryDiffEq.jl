@@ -39,7 +39,7 @@ type DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5}
   calck::Bool
 end
 
-type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}
+type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}
   sol::SolType
   u::uType
   k::ksEltype
@@ -49,7 +49,7 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
   uprev::uType
   kprev::ksEltype
   tprev::tType
-  Ts::Vector{tType}
+  tstops::tstopsType
   adaptiveorder::Int
   order::Int
   alg::algType
@@ -75,14 +75,11 @@ end
   local t::tType
   local dt::tType
 
-  @unpack k,t,dt,Ts,alg,rate_prototype = integrator
+  @unpack k,t,dt,alg,rate_prototype = integrator
   u = integrator.uprev # See the note at the top
   utmp = integrator.u # See the note at the top
   f = integrator.f # Grab the pointer for the local scope. Updates automatically.
 
-  Tfinal = Ts[end]
-
-  local T::tType
   uEltypeNoUnits = typeof(integrator.opts.reltol)
   uEltype = typeof(integrator.opts.abstol)
   local Θ = one(t)/one(t) # No units
@@ -99,15 +96,15 @@ end
   integrator.iter += 1
 
   if integrator.opts.adaptive
-    if integrator.tdir > 0
-      dt = min(abs(dt),abs(T-t)) # Step to the end
+    if integrator.tdir > tType(0)
+      dt = min(abs(dt),abs(top(integrator.tstops)-t)) # Step to the end
     else
-      dt = -min(abs(dt),abs(T-t))
+      dt = -min(abs(dt),abs(top(integrator.tstops)-t))
     end
-  elseif integrator.dtcache == 0 # Use tstops
-    dt = integrator.tdir*abs(T-t)
+  elseif integrator.dtcache == tType(0) # Use integrator.tstops
+    dt = integrator.tdir*abs(top(integrator.tstops)-t)
   else # always try to step with dtcache
-    dt = integrator.tdir*min(abs(integrator.dtcache),abs(T-t)) # Step to the end
+    dt = integrator.tdir*min(abs(integrator.dtcache),abs(top(integrator.tstops)-t)) # Step to the end
   end
 
   if integrator.iter > integrator.opts.maxiters
@@ -225,7 +222,7 @@ end
       end
       @pack_integrator
       if !(typeof(integrator.opts.callback)<:Void)
-        T = integrator.opts.callback(T,Ts,integrator)
+        integrator.opts.callback(integrator)
       else
         ode_savevalues!(integrator)
       end
@@ -268,7 +265,7 @@ end
 
     @pack_integrator
     if !(typeof(integrator.opts.callback)<:Void)
-      T = integrator.opts.callback(T,Ts,integrator)
+      integrator.opts.callback(integrator)
     else
       ode_savevalues!(integrator)
     end
@@ -307,5 +304,8 @@ end
   if !(typeof(integrator.prog)<:Void) && integrator.iter%integrator.opts.progress_steps==0
     Juno.msg(integrator.prog,integrator.opts.progress_message(dt,t,u))
     Juno.progress(integrator.prog,t/Tfinal)
+  end
+  if isempty(integrator.tstops)
+    break
   end
 end
