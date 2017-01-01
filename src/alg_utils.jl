@@ -38,6 +38,19 @@ qmin_default(alg::DP8) = 0.333
 qmax_default(alg::OrdinaryDiffEqAlgorithm) = 10.0
 qmax_default(alg::DP8) = 6.0
 
+alg_chunksize(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have a chunk size defined.")
+alg_chunksize{CS,AD}(alg::ImplicitEuler{CS,AD}) = CS
+alg_chunksize{CS,AD}(alg::Trapezoid{CS,AD}) = CS
+alg_chunksize{CS,AD}(alg::Rosenbrock23{CS,AD}) = CS
+alg_chunksize{CS,AD}(alg::Rosenbrock32{CS,AD}) = CS
+
+alg_autodiff(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have an autodifferentiation option defined.")
+alg_autodiff{CS,AD}(alg::ImplicitEuler{CS,AD}) = AD
+alg_autodiff{CS,AD}(alg::Trapezoid{CS,AD}) = AD
+alg_autodiff{CS,AD}(alg::Rosenbrock23{CS,AD}) = AD
+alg_autodiff{CS,AD}(alg::Rosenbrock32{CS,AD}) = AD
+
+
 alg_order(alg::OrdinaryDiffEqAlgorithm) = error("Order is not defined for this algorithm")
 alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
 

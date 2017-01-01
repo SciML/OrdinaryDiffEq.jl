@@ -28,7 +28,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   maxiters = 1000000,
   dtmax=tType((prob.tspan[end]-prob.tspan[1])),
   dtmin=tType <: AbstractFloat ? tType(10)*eps(tType) : tType(1//10^(10)),
-  autodiff=false,internalnorm = ODE_DEFAULT_NORM,
+  internalnorm = ODE_DEFAULT_NORM,
   isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
   progress=false,progress_steps=1000,progress_name="ODE",
   progress_message = ODE_DEFAULT_PROG_MESSAGE,
@@ -178,7 +178,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
                              typeof(rate_prototype),typeof(f!),
                              typeof(event_cache),typeof(opts)}(
                              sol,u,k,t,tType(dt),f!,uprev,kprev,tprev,
-                             Ts,autodiff,adaptiveorder,order,
+                             Ts,adaptiveorder,order,
                              alg,rate_prototype,
                              notsaveat_idxs,calcprevs,dtcache,dt_mod,tdir,
                              iter,saveiter,saveiter_dense,cursaveat,
@@ -187,6 +187,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
 end
 
 function solve!(integrator::ODEIntegrator;timeseries_errors = true,dense_errors = false)
+  @code_warntype ode_solve(integrator)
   ode_solve(integrator)
 
   if typeof(integrator.sol.prob) <: AbstractODETestProblem

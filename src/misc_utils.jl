@@ -3,17 +3,34 @@ immutable DiffCache{T, S}
     dual_du::Vector{S}
 end
 
-function DiffCache{chunk_size}(T, length, ::Type{Val{chunk_size}})
+Base.@pure function DiffCache{chunk_size}(T, length, ::Type{Val{chunk_size}})
     DiffCache(zeros(T, length), zeros(Dual{chunk_size, T}, length))
 end
 
-DiffCache(u::AbstractArray) = DiffCache(eltype(u),length(u),Val{ForwardDiff.pickchunksize(u)})
+Base.@pure DiffCache(u::AbstractArray,alg) = DiffCache(eltype(u),length(u),Val{alg_chunksize(alg)})
 
 get_du{T<:Dual}(dc::DiffCache, ::Type{T}) = dc.dual_du
 get_du(dc::DiffCache, T) = dc.du
 
 type MutableReference{T}
 val::T
+end
+
+Base.@pure function autodiff_setup(f!, initial_x::Vector,alg)
+
+    permf! = (fx, x) -> f!(x, fx)
+
+    fx2 = copy(initial_x)
+    jac_cfg = ForwardDiff.JacobianConfig{alg_chunksize(alg)}(initial_x, initial_x)
+    g! = (x, gx) -> ForwardDiff.jacobian!(gx, permf!, fx2, x, jac_cfg)
+
+    fg! = (x, fx, gx) -> begin
+        jac_res = DiffBase.DiffResult(fx, gx)
+        ForwardDiff.jacobian!(jac_res, permf!, fx2, x, jac_cfg)
+        DiffBase.value(jac_res)
+    end
+
+    return DifferentiableMultivariateFunction(f!, g!, fg!)
 end
 
 #Base.getindex(m::MutableReference)=m.val

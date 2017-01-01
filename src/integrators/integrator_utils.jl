@@ -50,7 +50,6 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
   kprev::ksEltype
   tprev::tType
   Ts::Vector{tType}
-  autodiff::Bool
   adaptiveorder::Int
   order::Int
   alg::algType
@@ -74,7 +73,7 @@ end
   local t::tType
   local dt::tType
 
-  @unpack k,t,dt,Ts,autodiff,alg,rate_prototype = integrator
+  @unpack k,t,dt,Ts,alg,rate_prototype = integrator
   u = integrator.uprev # See the note at the top
   utmp = integrator.u # See the note at the top
   f = integrator.f # Grab the pointer for the local scope. Updates automatically.
@@ -89,9 +88,6 @@ end
   local dtpropose::tType = tType(0)
   local q11::tTypeNoUnits = 0
   local qold::tTypeNoUnits = integrator.opts.qoldinit
-  if uType <: Number || !(typeof(integrator.opts.callback)<:Void)
-    cache = ()
-  end
   qminc = inv(integrator.opts.qmin) #facc1
   qmaxc = inv(integrator.opts.qmax) #facc2
   local EEst::tTypeNoUnits = zero(t/t)

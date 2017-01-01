@@ -663,3 +663,33 @@ alg_cache{uType<:AbstractArray}(alg::Rosenbrock32,u::uType,
 
 alg_cache{uType}(alg::Rosenbrock23,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev) = ODEEmptyCache()
 alg_cache{uType}(alg::Rosenbrock32,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev) = ODEEmptyCache()
+
+immutable ImplicitEulerCache{uType,DiffCacheType} <: OrdinaryDiffEqCache
+  u::uType
+  dual_cache::DiffCacheType
+  u_old::uType
+end
+
+function alg_cache{uType<:AbstractArray}(alg::ImplicitEuler,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
+  dual_cache = DiffCache(u,alg)
+  u_old = similar(u)
+  ImplicitEulerCache(u,dual_cache,u_old)
+end
+
+alg_cache{uType}(alg::ImplicitEuler,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev) = ODEEmptyCache()
+
+immutable TrapezoidCache{uType,DiffCacheType} <: OrdinaryDiffEqCache
+  u::uType
+  dual_cache::DiffCacheType
+  dual_cache2::DiffCacheType
+  u_old::uType
+end
+
+function alg_cache{uType<:AbstractArray}(alg::Trapezoid,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
+  dual_cache = DiffCache(u,alg)
+  dual_cache2 = DiffCache(u,alg)
+  u_old = similar(u)
+  TrapezoidCache(u,dual_cache,dual_cache2,u_old)
+end
+
+alg_cache{uType}(alg::Trapezoid,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev) = ODEEmptyCache()
