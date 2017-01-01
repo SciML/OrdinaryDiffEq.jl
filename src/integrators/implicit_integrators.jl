@@ -11,7 +11,7 @@ end
 
 function ode_solve{uType<:Number,algType<:ImplicitEuler,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  local nlres::NLsolve.SolverResults{uEltype}
+  local nlres::NLsolve.SolverResults{eltype(u)}
 
   uhold::Vector{uType} = Vector{uType}(1)
   u_old::Vector{uType} = Vector{uType}(1)
@@ -67,7 +67,7 @@ end
 
 function ode_solve{uType<:AbstractArray,algType<:ImplicitEuler,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  local nlres::NLsolve.SolverResults{uEltype}
+  local nlres::NLsolve.SolverResults{eltype(u)}
   uidx = eachindex(u)
   sizeu = size(u) # Change to dynamic by call overloaded type
 
@@ -130,7 +130,7 @@ end
 
 function ode_solve{uType<:AbstractArray,algType<:Trapezoid,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  local nlres::NLsolve.SolverResults{uEltype}
+  local nlres::NLsolve.SolverResults{eltype(u)}
   uidx = eachindex(u)
   sizeu = size(u) # Change to dynamic by call overloaded type
 
@@ -186,7 +186,7 @@ end
 function ode_solve{uType<:Number,algType<:Trapezoid,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
   dto2::tType = dt/2
-  local nlres::NLsolve.SolverResults{uEltype}
+  local nlres::NLsolve.SolverResults{eltype(u)}
   uhold::Vector{uType} = Vector{uType}(1)
   u_old::Vector{uType} = Vector{uType}(1)
   uhold[1] = u; u_old[1] = u

@@ -1,10 +1,5 @@
 function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O,algType<:ExplicitRK}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  local A::Matrix{uEltypeNoUnits}
-  local c::Vector{uEltypeNoUnits}
-  local α::Vector{uEltypeNoUnits}
-  local αEEst::Vector{uEltypeNoUnits}
-  local stages::Int
   @unpack A,c,α,αEEst,stages = alg.tableau
   A = A' # Transpose A to column major looping
   kk = Array{ksEltype}(stages) # Not ks since that's for integrator.opts.dense
@@ -61,11 +56,6 @@ end
 
 function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O,algType<:ExplicitRK}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  local A::Matrix{uEltypeNoUnits}
-  local c::Vector{uEltypeNoUnits}
-  local α::Vector{uEltypeNoUnits}
-  local αEEst::Vector{uEltypeNoUnits}
-  local stages::Int
   uidx = eachindex(u)
   @unpack A,c,α,αEEst,stages = alg.tableau
   A = A' # Transpose A to column major looping

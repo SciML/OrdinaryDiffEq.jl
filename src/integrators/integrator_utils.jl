@@ -81,11 +81,6 @@ end
   f = integrator.f # Grab the pointer for the local scope. Updates automatically.
 
   uEltypeNoUnits = typeof(integrator.opts.reltol)
-  uEltype = typeof(integrator.opts.abstol)
-  local Θ = one(t)/one(t) # No units
-  local q::tTypeNoUnits = 0
-  local dtpropose::tType = tType(0)
-  local q11::tTypeNoUnits = 0
   local qold::tTypeNoUnits = integrator.opts.qoldinit
   qminc = inv(integrator.opts.qmin) #facc1
   qmaxc = inv(integrator.opts.qmax) #facc2
