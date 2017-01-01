@@ -169,25 +169,21 @@ end
 end
 
 @def pack_integrator begin
-  integrator.dt_mod = tTypeNoUnits(1)
+  integrator.t = t
+  integrator.dt = dt
   integrator.k = k
-  # integrator.u is already utmp if mutable (due to pointers)
   if !(uType <: AbstractArray)
     integrator.u = utmp
   end
 end
 
 @def unpack_integrator begin
-  if uType <: AbstractArray
-    recursivecopy!(u,integrator.u) # this is where the update of `u` from `utmp` occurs
-  else
-    u = integrator.u
-  end
+  t = integrator.t
+  dt = integrator.dt
 end
 
 @def ode_loopfooter begin
-  integrator.t = t
-  integrator.dt = dt
+  @pack_integrator
   if integrator.opts.adaptive
     q11 = EEst^integrator.opts.beta1
     q = q11/(integrator.qold^integrator.opts.beta2)
@@ -207,22 +203,27 @@ end
       else
         dtpropose = min(dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
       end
-      @pack_integrator
       if !(typeof(integrator.opts.callback)<:Void)
         integrator.opts.callback(integrator)
       else
         ode_savevalues!(integrator)
       end
-      @unpack_integrator
-      dt = integrator.dt_mod*dtpropose
+
+      if uType <: AbstractArray
+        recursivecopy!(integrator.uprev,integrator.u) # this is where the update of `u` from `utmp` occurs
+      else
+        u = integrator.u # uprev = utmp
+      end
+
+      integrator.dt = integrator.dt_mod*dtpropose
 
       if isfsal(integrator.alg)
         if integrator.reeval_fsal || (typeof(integrator.alg)<:DP8 && !integrator.opts.calck)
           # Under these condtions, these algorithms are not FSAL anymore
           if uType <: AbstractArray
-            f(integrator.t,u,fsalfirst)
+            f(integrator.t,integrator.u,fsalfirst)
           else
-            fsalfirst = f(integrator.t,u)
+            fsalfirst = f(integrator.t,integrator.u)
           end
           integrator.reeval_fsal = false
         else
@@ -238,9 +239,9 @@ end
         integrator.tprev = integrator.t
         if !isspecialdense(integrator.alg) && integrator.opts.calck
           if ksEltype <: AbstractArray
-            recursivecopy!(integrator.kprev,k)
+            recursivecopy!(integrator.kprev,integrator.k)
           else
-            integrator.kprev = k
+            integrator.kprev = integrator.k
           end
         end
       end
@@ -250,22 +251,27 @@ end
   else #Not adaptive
     integrator.t += integrator.dt
 
-    @pack_integrator
     if !(typeof(integrator.opts.callback)<:Void)
       integrator.opts.callback(integrator)
     else
       ode_savevalues!(integrator)
     end
-    @unpack_integrator
+
+    if uType <: AbstractArray
+      recursivecopy!(integrator.uprev,integrator.u) # this is where the update of `u` from `utmp` occurs
+    else
+      u = integrator.u # uprev = utmp
+    end
+
     integrator.dt *= integrator.dt_mod
 
     if isfsal(integrator.alg)
       if integrator.reeval_fsal || (typeof(integrator.alg)<:DP8 && !integrator.opts.calck) || typeof(integrator.alg)<:Union{Rosenbrock23,Rosenbrock32}
         # Under these condtions, these algorithms are not FSAL anymore
         if uType <: AbstractArray
-          f(integrator.t,u,fsalfirst)
+          f(integrator.t,integrator.u,fsalfirst)
         else
-          fsalfirst = f(integrator.t,u)
+          fsalfirst = f(integrator.t,integrator.u)
         end
         integrator.reeval_fsal = false
       else
@@ -281,9 +287,9 @@ end
       integrator.tprev = integrator.t
       if !isspecialdense(integrator.alg) && integrator.opts.calck
         if ksEltype <: AbstractArray && !isspecialdense(integrator.alg)
-          recursivecopy!(integrator.kprev,k)
+          recursivecopy!(integrator.kprev,integrator.k)
         else
-          integrator.kprev = k
+          integrator.kprev = integrator.k
         end
       end
     end
@@ -292,7 +298,7 @@ end
     Juno.msg(integrator.prog,integrator.opts.progress_message(integrator.dt,integrator.t,integrator.u))
     Juno.progress(integrator.prog,integrator.t/integrator.sol.prob.tspan[2])
   end
-  t = integrator.t
+  @unpack_integrator
   if isempty(integrator.tstops)
     break
   end
