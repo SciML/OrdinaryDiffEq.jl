@@ -51,15 +51,19 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   end
 
   if tdir>0
-    tstops_internal = binary_minheap(collect(tstops))
+    tstops_internal = binary_minheap(convert(Vector{tType},collect(tstops)))
   else
-    tstops_internal = binary_maxheap(collect(tstops))
+    tstops_internal = binary_maxheap(convert(Vector{tType},collect(tstops)))
   end
 
   if !isempty(tstops) && tstops[end] != tspan[2]
     push!(tstops_internal,tspan[2])
   elseif isempty(tstops)
     push!(tstops_internal,tspan[2])
+  end
+
+  if top(tstops_internal) == tspan[1]
+    pop!(tstops_internal)
   end
 
   u0 = prob.u0
@@ -100,7 +104,24 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   rate_prototype = u/zero(t)
   rateType = typeof(rate_prototype) ## Can be different if united
 
-  saveat = tType[convert(tType,x) for x in setdiff(saveat,tspan)]
+  saveat_vec =  convert(Vector{tType},collect(saveat))
+  if !isempty(saveat_vec) && saveat_vec[end] == tspan[2]
+    pop!(saveat_vec)
+  end
+
+  if tdir>0
+    saveat_internal = binary_minheap(saveat_vec)
+  else
+    saveat_internal = binary_maxheap(saveat_vec)
+  end
+
+  if !isempty(saveat_internal) && top(saveat_internal) == tspan[1]
+    pop!(saveat_internal)
+  end
+
+
+
+
 
   ### Algorithm-specific defaults ###
 
@@ -129,7 +150,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
 
   opts = DEOptions(maxiters,timeseries_steps,save_timeseries,adaptive,uEltype(abstol),
     uEltypeNoUnits(reltol),gamma,qmax,qmin,dtmax,dtmin,internalnorm,progress,progress_steps,
-    progress_name,progress_message,beta1,beta2,tTypeNoUnits(qoldinit),dense,saveat,
+    progress_name,progress_message,beta1,beta2,tTypeNoUnits(qoldinit),dense,saveat_vec,
     callback,isoutofdomain,calck)
 
   progress ? (prog = Juno.ProgressBar(name=integrator.opts.progress_name)) : prog = nothing
@@ -183,7 +204,6 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   iter = 0
   saveiter = 1 # Starts at 1 so first save is at 2
   saveiter_dense = 1
-  cursaveat = 1
   kshortsize = 1
   reeval_fsal = false
 
@@ -192,9 +212,9 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
                              typeof(rate_prototype),typeof(f!),typeof(prog),typeof(cache),
                              typeof(event_cache),typeof(opts)}(
                              sol,u,k,t,tType(dt),f!,uprev,kprev,tprev,
-                             tstops_internal,adaptiveorder,order,
+                             tstops_internal,saveat_internal,adaptiveorder,order,
                              alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,dt_mod,tdir,
-                             iter,saveiter,saveiter_dense,cursaveat,prog,cache,
+                             iter,saveiter,saveiter_dense,prog,cache,
                              event_cache,kshortsize,reeval_fsal,opts)
   integrator
 end

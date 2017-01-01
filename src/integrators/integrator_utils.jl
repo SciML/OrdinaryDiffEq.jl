@@ -50,6 +50,7 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
   kprev::ksEltype
   tprev::tType
   tstops::tstopsType
+  saveat::tstopsType
   adaptiveorder::Int
   order::Int
   alg::algType
@@ -62,7 +63,6 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
   iter::Int
   saveiter::Int
   saveiter_dense::Int
-  cursaveat::Int
   prog::ProgressType
   cache::CacheType
   event_cache::ECType
@@ -129,26 +129,23 @@ end
 end
 
 @inline function ode_savevalues!(integrator)
-  if !isempty(integrator.opts.saveat) # Perform saveat
-    while integrator.cursaveat <= length(integrator.opts.saveat) && integrator.tdir*integrator.opts.saveat[integrator.cursaveat]<= integrator.tdir*integrator.t
-      integrator.saveiter += 1
-      if integrator.opts.saveat[integrator.cursaveat]!=integrator.t # If <t, interpolate
-        curt = integrator.opts.saveat[integrator.cursaveat]
-        ode_addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.dt,integrator.alg,integrator.f)
-        Θ = (curt - integrator.tprev)/integrator.dt
-        val = ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.kprev,integrator.k,integrator.alg)
-        copyat_or_push!(integrator.sol.t,integrator.saveiter,curt)
-        copyat_or_push!(integrator.sol.u,integrator.saveiter,val)
-      else # ==t, just save
-        copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
-        copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
-        if integrator.opts.dense
-          integrator.saveiter_dense += 1
-          copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
-          copyat_or_push!(integrator.notsaveat_idxs,integrator.saveiter_dense,integrator.saveiter)
-        end
+  while !isempty(integrator.saveat) && integrator.tdir*top(integrator.saveat) <= integrator.tdir*integrator.t # Perform saveat
+    integrator.saveiter += 1
+    curt = pop!(integrator.saveat)
+    if integrator.saveat!=integrator.t # If <t, interpolate
+      ode_addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.dt,integrator.alg,integrator.f)
+      Θ = (curt - integrator.tprev)/integrator.dt
+      val = ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.kprev,integrator.k,integrator.alg)
+      copyat_or_push!(integrator.sol.t,integrator.saveiter,curt)
+      copyat_or_push!(integrator.sol.u,integrator.saveiter,val)
+    else # ==t, just save
+      copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
+      copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
+      if integrator.opts.dense
+        integrator.saveiter_dense += 1
+        copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
+        copyat_or_push!(integrator.notsaveat_idxs,integrator.saveiter_dense,integrator.saveiter)
       end
-      integrator.cursaveat+=1
     end
   end
   if integrator.opts.save_timeseries && integrator.iter%integrator.opts.timeseries_steps==0
