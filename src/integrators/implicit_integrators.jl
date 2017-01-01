@@ -9,7 +9,7 @@ function (p::RHS_IE_Scalar)(u,resid)
   resid[1] = u[1] - p.u_old[1] - p.dt*p.f(p.t+p.dt,u)[1]
 end
 
-function ode_solve{uType<:Number,algType<:ImplicitEuler,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:Number,algType<:ImplicitEuler,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
   local nlres::NLsolve.SolverResults{uEltype}
 
@@ -21,7 +21,7 @@ function ode_solve{uType<:Number,algType<:ImplicitEuler,tType,tTypeNoUnits,ksElt
   uhold[1] = u; u_old[1] = u
 
   if alg_autodiff(alg)
-    adf = autodiff_setup(rhs,uhold,alg)
+    adf = autodiff_setup(rhs,uhold,integrator.cache)
   end
   @inbounds for T in Ts
     while integrator.tdir*t < integrator.tdir*T
@@ -64,21 +64,21 @@ function (p::RHS_IE)(u,resid)
   end
 end
 
-function ode_solve{uType<:AbstractArray,algType<:ImplicitEuler,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:AbstractArray,algType<:ImplicitEuler,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
   local nlres::NLsolve.SolverResults{uEltype}
   uidx = eachindex(u)
   sizeu = size(u) # Change to dynamic by call overloaded type
 
-  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.uprev,integrator.kprev)
-  @unpack u_old,dual_cache = cache
+
+  @unpack u_old,dual_cache = integrator.cache
 
   uhold = vec(utmp)
 
   rhs = RHS_IE(f,u_old,t,dt,sizeu,dual_cache,uidx)
 
   if alg_autodiff(alg)
-    adf = autodiff_setup(rhs,uhold,alg)
+    adf = autodiff_setup(rhs,uhold,integrator.cache)
   end
 
   @inbounds for T in Ts
@@ -126,14 +126,14 @@ function (p::RHS_Trap)(u,resid)
   end
 end
 
-function ode_solve{uType<:AbstractArray,algType<:Trapezoid,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:AbstractArray,algType<:Trapezoid,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
   local nlres::NLsolve.SolverResults{uEltype}
   uidx = eachindex(u)
   sizeu = size(u) # Change to dynamic by call overloaded type
 
-  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.uprev,integrator.kprev)
-  @unpack u_old,dual_cache,dual_cache2 = cache
+
+  @unpack u_old,dual_cache,dual_cache2 = integrator.cache
 
   dto2 = dt/2
 
@@ -142,7 +142,7 @@ function ode_solve{uType<:AbstractArray,algType<:Trapezoid,tType,tTypeNoUnits,ks
   uhold = vec(utmp)
 
   if alg_autodiff(alg)
-    adf = autodiff_setup(rhs,uhold,alg)
+    adf = autodiff_setup(rhs,uhold,integrator.cache)
   end
 
   @inbounds for T in Ts
@@ -180,7 +180,7 @@ function (p::RHS_Trap_Scalar)(u,resid)
   resid[1] = u[1] - p.u_old[1] - (p.dt/2)*(p.f(p.t,p.u_old)[1] + p.f(p.t+p.dt,u)[1])
 end
 
-function ode_solve{uType<:Number,algType<:Trapezoid,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:Number,algType<:Trapezoid,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
   dto2::tType = dt/2
   local nlres::NLsolve.SolverResults{uEltype}
@@ -191,7 +191,7 @@ function ode_solve{uType<:Number,algType<:Trapezoid,tType,tTypeNoUnits,ksEltype,
   rhs = RHS_Trap_Scalar(f,u_old,t,dt)
 
   if alg_autodiff(alg)
-    adf = autodiff_setup(rhs,uhold,alg)
+    adf = autodiff_setup(rhs,uhold,integrator.cache)
   end
 
   @inbounds for T in Ts

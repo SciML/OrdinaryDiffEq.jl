@@ -26,13 +26,13 @@ immutable Feagin12 <: OrdinaryDiffEqAdaptiveAlgorithm end
 immutable Feagin14 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 immutable ImplicitEuler{CS,AD} <: OrdinaryDiffEqAlgorithm end
-Base.@pure ImplicitEuler(;chunk_size=1,autodiff=true) = ImplicitEuler{chunk_size,autodiff}()
+Base.@pure ImplicitEuler(;chunk_size=0,autodiff=true) = ImplicitEuler{chunk_size,autodiff}()
 
 immutable Trapezoid{CS,AD} <: OrdinaryDiffEqAlgorithm end
-Base.@pure Trapezoid(;chunk_size=1,autodiff=true) = Trapezoid{chunk_size,autodiff}()
+Base.@pure Trapezoid(;chunk_size=0,autodiff=true) = Trapezoid{chunk_size,autodiff}()
 
 immutable Rosenbrock23{CS,AD} <: OrdinaryDiffEqAdaptiveAlgorithm end
-Base.@pure Rosenbrock23(;chunk_size=1,autodiff=true) = Rosenbrock23{chunk_size,autodiff}()
+Base.@pure Rosenbrock23(;chunk_size=0,autodiff=true) = Rosenbrock23{chunk_size,autodiff}()
 
 immutable Rosenbrock32{CS,AD} <: OrdinaryDiffEqAdaptiveAlgorithm end
-Base.@pure Rosenbrock32(;chunk_size=1,autodiff=true) = Rosenbrock32{chunk_size,autodiff}()
+Base.@pure Rosenbrock32(;chunk_size=0,autodiff=true) = Rosenbrock32{chunk_size,autodiff}()

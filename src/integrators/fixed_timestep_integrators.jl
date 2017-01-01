@@ -1,4 +1,4 @@
-function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Euler,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{Euler,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
   fsalfirst = f(t,u) # For the interpolation, needs k at the updated point
   @inbounds for T in Ts
@@ -15,11 +15,11 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
   nothing
 end
 
-function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Euler,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{Euler,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
   uidx = eachindex(u)
-  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.uprev,integrator.kprev)
-  @unpack k,fsalfirst = cache
+
+  @unpack k,fsalfirst = integrator.cache
   fsallast = k
   f(t,u,fsalfirst) # For the interpolation, needs k at the updated point
   @inbounds for T in Ts
@@ -36,7 +36,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
   nothing
 end
 
-function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Midpoint,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{Midpoint,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
   halfdt::tType = dt/2
   local du::rateType
@@ -55,7 +55,7 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
   nothing
 end
 
-function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{Midpoint,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{Midpoint,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
   halfdt::tType = dt/2
   uidx = eachindex(u)
@@ -65,8 +65,8 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
     end
   end
 
-  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.uprev,integrator.kprev)
-  @unpack k,du,utilde,fsalfirst = cache
+
+  @unpack k,du,utilde,fsalfirst = integrator.cache
   fsallast = k
   f(t,u,fsalfirst) # FSAL for interpolation
   @inbounds for T in Ts
@@ -87,7 +87,7 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
   nothing
 end
 
-function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{RK4,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{RK4,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
   halfdt::tType = dt/2
   local k₁::rateType
@@ -114,7 +114,7 @@ function ode_solve{uType<:Number,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,
   nothing
 end
 
-function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}(integrator::ODEIntegrator{RK4,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O})
+function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{RK4,uType,tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
   halfdt::tType = dt/2
 
@@ -124,8 +124,8 @@ function ode_solve{uType<:AbstractArray,tType,tTypeNoUnits,ksEltype,SolType,rate
 
   uidx = eachindex(u)
 
-  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,integrator.uprev,integrator.kprev)
-  @unpack tmp,k₁,k₂,k₃,k₄,k = cache
+
+  @unpack tmp,k₁,k₂,k₃,k₄,k = integrator.cache
   fsalfirst = k₁
   fsallast = k
   f(t,u,k₁) # pre-start FSAL

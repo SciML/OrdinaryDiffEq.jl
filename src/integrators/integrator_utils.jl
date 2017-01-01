@@ -39,7 +39,7 @@ type DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5}
   calck::Bool
 end
 
-type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ECType,O}
+type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}
   sol::SolType
   u::uType
   k::ksEltype
@@ -63,6 +63,8 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
   saveiter::Int
   saveiter_dense::Int
   cursaveat::Int
+  prog::ProgressType
+  cache::CacheType
   event_cache::ECType
   kshortsize::Int
   reeval_fsal::Bool
@@ -91,7 +93,6 @@ end
   qminc = inv(integrator.opts.qmin) #facc1
   qmaxc = inv(integrator.opts.qmax) #facc2
   local EEst::tTypeNoUnits = zero(t/t)
-  integrator.opts.progress && (prog = Juno.ProgressBar(name=integrator.opts.progress_name))
 end
 
 @def ode_loopheader begin
@@ -179,7 +180,7 @@ end
       copyat_or_push!(integrator.notsaveat_idxs,integrator.saveiter_dense,integrator.saveiter)
     end
   end
-  integrator.opts.progress && Juno.done(prog)
+  !(typeof(integrator.prog)<:Void) && Juno.done(integrator.prog)
 end
 
 @def pack_integrator begin
@@ -224,7 +225,7 @@ end
       end
       @pack_integrator
       if !(typeof(integrator.opts.callback)<:Void)
-        T = integrator.opts.callback(cache,T,Ts,integrator)
+        T = integrator.opts.callback(T,Ts,integrator)
       else
         ode_savevalues!(integrator)
       end
@@ -267,7 +268,7 @@ end
 
     @pack_integrator
     if !(typeof(integrator.opts.callback)<:Void)
-      T = integrator.opts.callback(cache,T,Ts,integrator)
+      T = integrator.opts.callback(T,Ts,integrator)
     else
       ode_savevalues!(integrator)
     end
@@ -303,8 +304,8 @@ end
       end
     end
   end
-  if integrator.opts.progress && integrator.iter%integrator.opts.progress_steps==0
-    Juno.msg(prog,integrator.opts.progress_message(dt,t,u))
-    Juno.progress(prog,t/Tfinal)
+  if !(typeof(integrator.prog)<:Void) && integrator.iter%integrator.opts.progress_steps==0
+    Juno.msg(integrator.prog,integrator.opts.progress_message(dt,t,u))
+    Juno.progress(integrator.prog,t/Tfinal)
   end
 end

@@ -1,5 +1,6 @@
 abstract OrdinaryDiffEqCache <: DECache
 immutable ODEEmptyCache <: OrdinaryDiffEqCache end
+immutable ODEChunkCache{CS} <: OrdinaryDiffEqCache end
 
 alg_cache{F}(alg::OrdinaryDiffEqAlgorithm,prob,callback::F) = ODEEmptyCache()
 
@@ -10,7 +11,7 @@ immutable EulerCache{uType,rateType} <: OrdinaryDiffEqCache
   fsalfirst::rateType
 end
 
-function alg_cache{uType<:AbstractArray}(alg::Euler,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
+Base.@pure function alg_cache{uType<:AbstractArray}(alg::Euler,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
   EulerCache(u,uprev,similar(rate_prototype),similar(rate_prototype))
 end
 
@@ -26,7 +27,7 @@ immutable MidpointCache{uType,rateType} <: OrdinaryDiffEqCache
   fsalfirst::rateType
 end
 
-function alg_cache{uType<:AbstractArray}(alg::Midpoint,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
+Base.@pure function alg_cache{uType<:AbstractArray}(alg::Midpoint,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
   utilde = similar(u)
   k = similar(rate_prototype)
   du = similar(rate_prototype)
@@ -48,7 +49,7 @@ immutable RK4Cache{uType,rateType} <: OrdinaryDiffEqCache
   tmp::uType
 end
 
-function alg_cache{uType<:AbstractArray}(alg::RK4,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
+Base.@pure function alg_cache{uType<:AbstractArray}(alg::RK4,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
   k₁ = similar(rate_prototype)
   k₂ = similar(rate_prototype)
   k₃ = similar(rate_prototype)
@@ -73,7 +74,7 @@ immutable BS3Cache{uType,rateType,uEltypeNoUnits} <: OrdinaryDiffEqCache
   atmp::uEltypeNoUnits
 end
 
-function alg_cache{uType<:AbstractArray}(alg::BS3,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
+Base.@pure function alg_cache{uType<:AbstractArray}(alg::BS3,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
   k1 = similar(rate_prototype)
   k2 = similar(rate_prototype)
   k3 = similar(rate_prototype)
@@ -103,7 +104,7 @@ immutable BS5Cache{uType,rateType,uEltypeNoUnits} <: OrdinaryDiffEqCache
   atmptilde::uEltypeNoUnits
 end
 
-function alg_cache{uType<:AbstractArray}(alg::BS5,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
+Base.@pure function alg_cache{uType<:AbstractArray}(alg::BS5,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
   k1 = similar(rate_prototype)
   k2 = similar(rate_prototype)
   k3 = similar(rate_prototype)
@@ -135,7 +136,7 @@ immutable Tsit5Cache{uType,rateType,uEltypeNoUnits} <: OrdinaryDiffEqCache
   atmp::uEltypeNoUnits
 end
 
-function alg_cache{uType<:AbstractArray}(alg::Tsit5,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
+Base.@pure function alg_cache{uType<:AbstractArray}(alg::Tsit5,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
   k1 = similar(rate_prototype)
   k2 = similar(rate_prototype)
   k3 = similar(rate_prototype)
@@ -170,7 +171,7 @@ immutable DP5Cache{uType,rateType,uEltypeNoUnits} <: OrdinaryDiffEqCache
   atmp::uEltypeNoUnits
 end
 
-function alg_cache{uType<:AbstractArray}(alg::DP5,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
+Base.@pure function alg_cache{uType<:AbstractArray}(alg::DP5,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
   k1 = similar(rate_prototype)
   k2 = similar(rate_prototype)
   k3 = similar(rate_prototype)
@@ -207,7 +208,7 @@ immutable Vern6Cache{uType,rateType,uEltypeNoUnits} <: OrdinaryDiffEqCache
   atmp::uEltypeNoUnits
 end
 
-function alg_cache{uType<:AbstractArray}(alg::Vern6,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
+Base.@pure function alg_cache{uType<:AbstractArray}(alg::Vern6,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
   k1 = similar(rate_prototype)
   k2 = similar(rate_prototype); k3 = similar(rate_prototype); k4 = similar(rate_prototype);
   k5 = similar(rate_prototype); k6 = similar(rate_prototype); k7 = similar(rate_prototype);
@@ -236,7 +237,7 @@ immutable Vern7Cache{uType,rateType,uEltypeNoUnits} <: OrdinaryDiffEqCache
   atmp::uEltypeNoUnits
 end
 
-function alg_cache{uType<:AbstractArray}(alg::Vern7,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
+Base.@pure function alg_cache{uType<:AbstractArray}(alg::Vern7,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
   k1 = similar(rate_prototype); k2 = similar(rate_prototype); k3 = similar(rate_prototype); k4 = similar(rate_prototype);
   k5 = similar(rate_prototype); k6 = similar(rate_prototype); k7 = similar(rate_prototype); k8 = similar(rate_prototype);
   k9 = similar(rate_prototype); k10 = similar(rate_prototype); utilde = similar(u); update = similar(u)
@@ -268,7 +269,7 @@ immutable Vern8Cache{uType,rateType,uEltypeNoUnits} <: OrdinaryDiffEqCache
   atmp::uEltypeNoUnits
 end
 
-function alg_cache{uType<:AbstractArray}(alg::Vern8,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
+Base.@pure function alg_cache{uType<:AbstractArray}(alg::Vern8,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
   k1 = similar(rate_prototype); k2 = similar(rate_prototype); k3 = similar(rate_prototype);
   k4 = similar(rate_prototype);
   k5 = similar(rate_prototype); k6 = similar(rate_prototype); k7 = similar(rate_prototype);
@@ -306,7 +307,7 @@ immutable Vern9Cache{uType,rateType,uEltypeNoUnits} <: OrdinaryDiffEqCache
   atmp::uEltypeNoUnits
 end
 
-function alg_cache{uType<:AbstractArray}(alg::Vern9,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
+Base.@pure function alg_cache{uType<:AbstractArray}(alg::Vern9,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
   k1 = similar(rate_prototype); k2 = similar(rate_prototype);k3 = similar(rate_prototype);
   k4 = similar(rate_prototype);
   k5 = similar(rate_prototype); k6 = similar(rate_prototype);k7 = similar(rate_prototype);
@@ -340,7 +341,7 @@ immutable TanYam7Cache{uType,rateType,uEltypeNoUnits} <: OrdinaryDiffEqCache
   atmp::uEltypeNoUnits
 end
 
-function alg_cache{uType<:AbstractArray}(alg::TanYam7,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
+Base.@pure function alg_cache{uType<:AbstractArray}(alg::TanYam7,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
   k1 = similar(rate_prototype); k2 = similar(rate_prototype) ; k3 = similar(rate_prototype); k4 = similar(rate_prototype)
   k5 = similar(rate_prototype); k6 = similar(rate_prototype) ; k7 = similar(rate_prototype); k8 = similar(rate_prototype)
   k9 = similar(rate_prototype); k10= similar(rate_prototype) ;
@@ -384,7 +385,7 @@ immutable DP8Cache{uType,rateType,uEltypeNoUnits} <: OrdinaryDiffEqCache
   atmp2::uEltypeNoUnits
 end
 
-function alg_cache{uType<:AbstractArray}(alg::DP8,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
+Base.@pure function alg_cache{uType<:AbstractArray}(alg::DP8,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
   k1 = similar(rate_prototype); k2  = similar(rate_prototype); k3  = similar(rate_prototype);  k4 = similar(rate_prototype)
   k5 = similar(rate_prototype); k6  = similar(rate_prototype); k7  = similar(rate_prototype);  k8 = similar(rate_prototype)
   k9 = similar(rate_prototype); k10 = similar(rate_prototype); k11 = similar(rate_prototype); k12 = similar(rate_prototype)
@@ -433,7 +434,7 @@ immutable TsitPap8Cache{uType,rateType,uEltypeNoUnits} <: OrdinaryDiffEqCache
   atmp::uEltypeNoUnits
 end
 
-function alg_cache{uType<:AbstractArray}(alg::TsitPap8,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
+Base.@pure function alg_cache{uType<:AbstractArray}(alg::TsitPap8,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
   k1 = similar(rate_prototype); k2 = similar(rate_prototype); k3 = similar(rate_prototype); k4 = similar(rate_prototype)
   k5 = similar(rate_prototype); k6 = similar(rate_prototype); k7 = similar(rate_prototype); k8 = similar(rate_prototype)
   k9 = similar(rate_prototype); k10 = similar(rate_prototype); k11 = similar(rate_prototype); k12 = similar(rate_prototype)
@@ -455,7 +456,7 @@ immutable ExplicitRKCache{uType,rateType,uEltypeNoUnits,ksEltype} <: OrdinaryDif
   kk::Vector{ksEltype}
 end
 
-function alg_cache{uType<:AbstractArray}(alg::ExplicitRK,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
+Base.@pure function alg_cache{uType<:AbstractArray}(alg::ExplicitRK,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
   kk = Vector{typeof(rate_prototype)}(0)
   for i = 1:alg.tableau.stages
     push!(kk,similar(rate_prototype))
@@ -494,7 +495,7 @@ immutable Feagin10Cache{uType,uEltypeNoUnits,rateType} <: OrdinaryDiffEqCache
   kprev::rateType
 end
 
-function alg_cache{uType<:AbstractArray}(alg::Feagin10,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
+Base.@pure function alg_cache{uType<:AbstractArray}(alg::Feagin10,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
   k1 = similar(rate_prototype); k2 = similar(rate_prototype); k3 = similar(rate_prototype); k4 = similar(rate_prototype); k5 = similar(rate_prototype)
   k6 = similar(rate_prototype); k7 = similar(rate_prototype); k8 = similar(rate_prototype); k9 = similar(rate_prototype); k10 = similar(rate_prototype)
   k11 = similar(rate_prototype); k12 = similar(rate_prototype); k13 = similar(rate_prototype); k14 = similar(rate_prototype)
@@ -539,7 +540,7 @@ immutable Feagin12Cache{uType,uEltypeNoUnits,rateType} <: OrdinaryDiffEqCache
   kprev::rateType
 end
 
-function alg_cache{uType<:AbstractArray}(alg::Feagin12,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
+Base.@pure function alg_cache{uType<:AbstractArray}(alg::Feagin12,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
   k1 = similar(rate_prototype); k2 = similar(rate_prototype); k3 = similar(rate_prototype); k4 = similar(rate_prototype); k5 = similar(rate_prototype)
   k6 = similar(rate_prototype); k7 = similar(rate_prototype); k8 = similar(rate_prototype); k9 = similar(rate_prototype); k10 = similar(rate_prototype)
   k11 = similar(rate_prototype); k12 = similar(rate_prototype); k13 = similar(rate_prototype); k14 = similar(rate_prototype)
@@ -597,7 +598,7 @@ immutable Feagin14Cache{uType,uEltypeNoUnits,rateType} <: OrdinaryDiffEqCache
   kprev::rateType
 end
 
-function alg_cache{uType<:AbstractArray}(alg::Feagin14,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
+Base.@pure function alg_cache{uType<:AbstractArray}(alg::Feagin14,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
   k1 = similar(rate_prototype); k2 = similar(rate_prototype); k3 = similar(rate_prototype); k4 = similar(rate_prototype); k5 = similar(rate_prototype)
   k6 = similar(rate_prototype); k7 = similar(rate_prototype); k8 = similar(rate_prototype); k9 = similar(rate_prototype); k10 = similar(rate_prototype)
   k11 = similar(rate_prototype); k12 = similar(rate_prototype); k13 = similar(rate_prototype); k14 = similar(rate_prototype)
@@ -636,7 +637,7 @@ immutable LowOrderRosenbrockCache{uType,rateType,vecuType,JType} <: OrdinaryDiff
   tmp2::uType
 end
 
-function alg_cache{uType<:AbstractArray}(alg::Rosenbrock23,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
+Base.@pure function alg_cache{uType<:AbstractArray}(alg::Rosenbrock23,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
   k₁ = similar(rate_prototype)
   k₂ = similar(rate_prototype)
   k₃ = similar(rate_prototype)
@@ -664,32 +665,60 @@ alg_cache{uType<:AbstractArray}(alg::Rosenbrock32,u::uType,
 alg_cache{uType}(alg::Rosenbrock23,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev) = ODEEmptyCache()
 alg_cache{uType}(alg::Rosenbrock32,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev) = ODEEmptyCache()
 
-immutable ImplicitEulerCache{uType,DiffCacheType} <: OrdinaryDiffEqCache
+immutable ImplicitEulerCache{uType,DiffCacheType,CS} <: OrdinaryDiffEqCache
   u::uType
   dual_cache::DiffCacheType
   u_old::uType
 end
 
-function alg_cache{uType<:AbstractArray}(alg::ImplicitEuler,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
-  dual_cache = DiffCache(u,alg)
+Base.@pure function alg_cache{uType<:AbstractArray}(alg::ImplicitEuler,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
   u_old = similar(u)
-  ImplicitEulerCache(u,dual_cache,u_old)
+  if get_chunksize(alg) != 0
+    dual_cache = DiffCache(u,alg)
+    ImplicitEulerCache{typeof(u),typeof(dual_cache),get_chunksize(alg)}(u,dual_cache,u_old)
+  else
+    dual_cache = DiffCache(u)
+    ImplicitEulerCache{typeof(u),typeof(dual_cache),ForwardDiff.pickchunksize(length(u))}(u,dual_cache,u_old)
+  end
 end
 
-alg_cache{uType}(alg::ImplicitEuler,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev) = ODEEmptyCache()
+Base.@pure function alg_cache{uType}(alg::ImplicitEuler,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
+  if get_chunksize(alg) != 0
+    return ODEChunkCache{get_chunksize(alg)}()
+  else
+    return ODEChunkCache{ForwardDiff.pickchunksize(length(u))}()
+  end
+end
 
-immutable TrapezoidCache{uType,DiffCacheType} <: OrdinaryDiffEqCache
+immutable TrapezoidCache{uType,DiffCacheType,CS} <: OrdinaryDiffEqCache
   u::uType
   dual_cache::DiffCacheType
   dual_cache2::DiffCacheType
   u_old::uType
 end
 
-function alg_cache{uType<:AbstractArray}(alg::Trapezoid,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
-  dual_cache = DiffCache(u,alg)
-  dual_cache2 = DiffCache(u,alg)
+Base.@pure function alg_cache{uType<:AbstractArray}(alg::Trapezoid,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
   u_old = similar(u)
-  TrapezoidCache(u,dual_cache,dual_cache2,u_old)
+  if get_chunksize(alg) != 0
+    dual_cache = DiffCache(u,alg)
+    dual_cache2 = DiffCache(u,alg)
+    TrapezoidCache{typeof(u),typeof(dual_cache),get_chunksize(alg)}(u,dual_cache,dual_cache2,u_old)
+  else
+    dual_cache = DiffCache(u)
+    dual_cache2 = DiffCache(u)
+    TrapezoidCache{typeof(u),typeof(dual_cache),ForwardDiff.pickchunksize(length(u))}(u,dual_cache,dual_cache2,u_old)
+  end
 end
 
-alg_cache{uType}(alg::Trapezoid,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev) = ODEEmptyCache()
+Base.@pure function alg_cache{uType}(alg::Trapezoid,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
+  if get_chunksize(alg) != 0
+    return ODEChunkCache{get_chunksize(alg)}()
+  else
+    return ODEChunkCache{ForwardDiff.pickchunksize(length(u))}()
+  end
+end
+
+get_chunksize(cache::DECache) = error("This cache does not have a chunksize.")
+Base.@pure get_chunksize{uType,DiffCacheType,CS}(cache::ImplicitEulerCache{uType,DiffCacheType,CS}) = CS
+Base.@pure get_chunksize{uType,DiffCacheType,CS}(cache::TrapezoidCache{uType,DiffCacheType,CS}) = CS
+Base.@pure get_chunksize{CS}(cache::ODEChunkCache{CS}) = CS

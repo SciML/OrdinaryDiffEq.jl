@@ -1,6 +1,6 @@
 macro ode_callback(ex)
   esc(quote
-    function (cache,T,Ts,integrator)
+    function (T,Ts,integrator)
       event_occurred = false
       $(ex)
       T
@@ -66,7 +66,7 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
       if $terminate_on_event
         @ode_terminate
       else
-        $apply_event!(integrator.u,cache)
+        $apply_event!(integrator.u,integrator.cache)
         if integrator.opts.calck
           if !isspecialdense(integrator.alg)
             if typeof(integrator.u) <: Number

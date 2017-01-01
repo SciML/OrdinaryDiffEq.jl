@@ -43,6 +43,14 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
       error("Fixed timestep methods require a choice of dt or choosing the tstops")
   end
 
+  #=
+  if tdir>0
+    tstops_internal = binary_minheap(tstops)
+  else
+    tstops_internal = binary_maxheap(tstops)
+  end
+  =#
+
   Ts = push!(tstops,tspan[2])
 
   #Heapify first
@@ -123,6 +131,8 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
     progress_name,progress_message,beta1,beta2,tTypeNoUnits(qoldinit),dense,saveat,
     callback,isoutofdomain,calck)
 
+  progress ? (prog = Juno.ProgressBar(name=integrator.opts.progress_name)) : prog = nothing
+
   notsaveat_idxs = Int[1]
 
   if ksEltype <: AbstractArray  &&  isspecialdense(alg)
@@ -163,6 +173,8 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
                     dense=dense,k=ks,interp=interp,
                     calculate_error = false)
 
+  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uprev,kprev)
+
   calcprevs = calck || !(typeof(callback)<:Void) # Calculate the previous values
   tprev = t
   dtcache = tType(dt)
@@ -175,19 +187,18 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   reeval_fsal = false
 
   integrator = ODEIntegrator{algType,uType,tType,tTypeNoUnits,eltype(ks),typeof(sol),
-                             typeof(rate_prototype),typeof(f!),
+                             typeof(rate_prototype),typeof(f!),typeof(prog),typeof(cache),
                              typeof(event_cache),typeof(opts)}(
                              sol,u,k,t,tType(dt),f!,uprev,kprev,tprev,
                              Ts,adaptiveorder,order,
-                             alg,rate_prototype,
-                             notsaveat_idxs,calcprevs,dtcache,dt_mod,tdir,
-                             iter,saveiter,saveiter_dense,cursaveat,
+                             alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,dt_mod,tdir,
+                             iter,saveiter,saveiter_dense,cursaveat,prog,cache,
                              event_cache,kshortsize,reeval_fsal,opts)
   integrator
 end
 
 function solve!(integrator::ODEIntegrator;timeseries_errors = true,dense_errors = false)
-  @code_warntype ode_solve(integrator)
+  #@code_warntype ode_solve(integrator)
   ode_solve(integrator)
 
   if typeof(integrator.sol.prob) <: AbstractODETestProblem

@@ -7,7 +7,8 @@ Base.@pure function DiffCache{chunk_size}(T, length, ::Type{Val{chunk_size}})
     DiffCache(zeros(T, length), zeros(Dual{chunk_size, T}, length))
 end
 
-Base.@pure DiffCache(u::AbstractArray,alg) = DiffCache(eltype(u),length(u),Val{alg_chunksize(alg)})
+Base.@pure DiffCache(u::AbstractArray) = DiffCache(eltype(u),length(u),Val{ForwardDiff.pickchunksize(length(u))})
+Base.@pure DiffCache(u::AbstractArray,alg) = DiffCache(eltype(u),length(u),Val{get_chunksize(alg)})
 
 get_du{T<:Dual}(dc::DiffCache, ::Type{T}) = dc.dual_du
 get_du(dc::DiffCache, T) = dc.du
@@ -16,12 +17,12 @@ type MutableReference{T}
 val::T
 end
 
-Base.@pure function autodiff_setup(f!, initial_x::Vector,alg)
+Base.@pure function autodiff_setup(f!, initial_x::Vector,cache)
 
     permf! = (fx, x) -> f!(x, fx)
 
     fx2 = copy(initial_x)
-    jac_cfg = ForwardDiff.JacobianConfig{alg_chunksize(alg)}(initial_x, initial_x)
+    jac_cfg = ForwardDiff.JacobianConfig{get_chunksize(cache)}(initial_x, initial_x)
     g! = (x, gx) -> ForwardDiff.jacobian!(gx, permf!, fx2, x, jac_cfg)
 
     fg! = (x, fx, gx) -> begin
