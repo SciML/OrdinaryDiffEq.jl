@@ -169,10 +169,8 @@ end
 end
 
 @def pack_integrator begin
-  integrator.dt = dt
   integrator.dt_mod = tTypeNoUnits(1)
   integrator.k = k
-  integrator.t = t
   # integrator.u is already utmp if mutable (due to pointers)
   if !(uType <: AbstractArray)
     integrator.u = utmp
@@ -185,18 +183,19 @@ end
   else
     u = integrator.u
   end
-  t = integrator.t
 end
 
 @def ode_loopfooter begin
+  integrator.t = t
+  integrator.dt = dt
   if integrator.opts.adaptive
     q11 = EEst^integrator.opts.beta1
     q = q11/(integrator.qold^integrator.opts.beta2)
     q = max(integrator.qmaxc,min(integrator.qminc,q/integrator.opts.gamma))
     dtnew = dt/q
-    ttmp = t + dt
+    ttmp = integrator.t + integrator.dt
     if !integrator.opts.isoutofdomain(ttmp,utmp) && EEst <= 1.0 # Accept
-      t = ttmp
+      integrator.t = ttmp
       integrator.qold = max(EEst,integrator.opts.qoldinit)
       if integrator.tdir > 0
         dtpropose = min(integrator.opts.dtmax,dtnew)
@@ -221,9 +220,9 @@ end
         if integrator.reeval_fsal || (typeof(integrator.alg)<:DP8 && !integrator.opts.calck)
           # Under these condtions, these algorithms are not FSAL anymore
           if uType <: AbstractArray
-            f(t,u,fsalfirst)
+            f(integrator.t,u,fsalfirst)
           else
-            fsalfirst = f(t,u)
+            fsalfirst = f(integrator.t,u)
           end
           integrator.reeval_fsal = false
         else
@@ -236,7 +235,7 @@ end
       end
 
       if integrator.calcprevs
-        integrator.tprev = t
+        integrator.tprev = integrator.t
         if !isspecialdense(integrator.alg) && integrator.opts.calck
           if ksEltype <: AbstractArray
             recursivecopy!(integrator.kprev,k)
@@ -246,10 +245,10 @@ end
         end
       end
     else # Reject
-      dt = dt/min(integrator.qminc,q11/integrator.opts.gamma)
+      integrator.dt = integrator.dt/min(integrator.qminc,q11/integrator.opts.gamma)
     end
   else #Not adaptive
-    t += dt
+    integrator.t += integrator.dt
 
     @pack_integrator
     if !(typeof(integrator.opts.callback)<:Void)
@@ -258,15 +257,15 @@ end
       ode_savevalues!(integrator)
     end
     @unpack_integrator
-    dt *= integrator.dt_mod
+    integrator.dt *= integrator.dt_mod
 
     if isfsal(integrator.alg)
       if integrator.reeval_fsal || (typeof(integrator.alg)<:DP8 && !integrator.opts.calck) || typeof(integrator.alg)<:Union{Rosenbrock23,Rosenbrock32}
         # Under these condtions, these algorithms are not FSAL anymore
         if uType <: AbstractArray
-          f(t,u,fsalfirst)
+          f(integrator.t,u,fsalfirst)
         else
-          fsalfirst = f(t,u)
+          fsalfirst = f(integrator.t,u)
         end
         integrator.reeval_fsal = false
       else
@@ -279,7 +278,7 @@ end
     end
 
     if integrator.calcprevs
-      integrator.tprev = t
+      integrator.tprev = integrator.t
       if !isspecialdense(integrator.alg) && integrator.opts.calck
         if ksEltype <: AbstractArray && !isspecialdense(integrator.alg)
           recursivecopy!(integrator.kprev,k)
@@ -293,6 +292,7 @@ end
     Juno.msg(integrator.prog,integrator.opts.progress_message(integrator.dt,integrator.t,integrator.u))
     Juno.progress(integrator.prog,integrator.t/integrator.sol.prob.tspan[2])
   end
+  t = integrator.t
   if isempty(integrator.tstops)
     break
   end
