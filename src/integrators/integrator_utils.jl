@@ -15,12 +15,12 @@ end
 @inline function ode_loopheader!(integrator)
   integrator.iter += 1
   if integrator.opts.adaptive
-    if integrator.tdir > typeof(integrator.t)(0)
+    if integrator.tdir > 0
       integrator.dt = min(abs(integrator.dt),abs(top(integrator.tstops)-integrator.t)) # Step to the end
     else
       integrator.dt = -min(abs(integrator.dt),abs(top(integrator.tstops)-integrator.t))
     end
-  elseif integrator.dtcache == typeof(integrator.t)(0) # Use integrator.tstops
+  elseif integrator.dtcache == zero(integrator.t) # Use integrator.tstops
     integrator.dt = integrator.tdir*abs(top(integrator.tstops)-integrator.t)
   else # always try to step with dtcache
     integrator.dt = integrator.tdir*min(abs(integrator.dtcache),abs(top(integrator.tstops)-integrator.t)) # Step to the end
@@ -33,7 +33,7 @@ end
     ode_postamble!(integrator)
     return nothing
   end
-  if integrator.dt == typeof(integrator.t)(0)
+  if integrator.dt == zero(integrator.t)
     warn("dt == 0. Aborting")
     ode_postamble!(integrator)
     return nothing
@@ -50,9 +50,9 @@ end
     integrator.saveiter += 1
     curt = pop!(integrator.saveat)
     if integrator.saveat!=integrator.t # If <t, interpolate
-      ode_addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.dt,integrator.f,integrator.alg)
+      ode_addsteps!(integrator)
       Θ = (curt - integrator.tprev)/integrator.dt
-      val = ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.kprev,integrator.k,integrator.alg)
+      val = ode_interpolant(Θ,integrator)
       copyat_or_push!(integrator.sol.t,integrator.saveiter,curt)
       copyat_or_push!(integrator.sol.u,integrator.saveiter,val)
     else # ==t, just save

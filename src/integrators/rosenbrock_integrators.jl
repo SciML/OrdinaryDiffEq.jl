@@ -1,9 +1,5 @@
 function ode_solve{uType<:AbstractArray,algType<:Rosenbrock23,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  c₃₂ = 6 + sqrt(2)
-  d = 1/(2+sqrt(2))
-
-
   @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp2 = integrator.cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = fsallast
@@ -28,6 +24,7 @@ function ode_solve{uType<:AbstractArray,algType<:Rosenbrock23,tType,tstopsType,t
       ode_loopheader!(integrator)
       @ode_exit_conditions
       @unpack_integrator
+      @unpack c₃₂,d = integrator.cache.tab
       #if alg_autodiff(alg)
         ForwardDiff.derivative!(dT,(t)->vecfreturn(t,uprev,du2),t) # Time derivative of each component
         ForwardDiff.jacobian!(J,(du1,uprev)->vecf(t,uprev,du1),vec(du1),vec(uprev))
@@ -71,8 +68,6 @@ end
 
 function ode_solve{uType<:Number,algType<:Rosenbrock23,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  c₃₂ = 6 + sqrt(2)
-  d = 1/(2+sqrt(2))
   integrator.kshortsize = 2
   k = ksEltype(2)
   integrator.k = k
@@ -82,6 +77,7 @@ function ode_solve{uType<:Number,algType<:Rosenbrock23,tType,tstopsType,tTypeNoU
       ode_loopheader!(integrator)
       @ode_exit_conditions
       @unpack_integrator
+      @unpack c₃₂,d = integrator.cache
       # Time derivative
       dT = ForwardDiff.derivative((t)->f(t,uprev),t)
       J = ForwardDiff.derivative((uprev)->f(t,uprev),uprev)
@@ -113,10 +109,6 @@ end
 
 function ode_solve{uType<:AbstractArray,algType<:Rosenbrock32,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  c₃₂ = 6 + sqrt(2)
-  d = 1/(2+sqrt(2))
-
-
   @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp2 = integrator.cache
 
   integrator.fsalfirst = fsalfirst
@@ -142,6 +134,7 @@ function ode_solve{uType<:AbstractArray,algType<:Rosenbrock32,tType,tstopsType,t
       ode_loopheader!(integrator)
       @ode_exit_conditions
       @unpack_integrator
+      @unpack c₃₂,d = integrator.cache.tab
       ForwardDiff.derivative!(dT,(t)->vecfreturn(t,uprev,du2),t) # Time derivative
       ForwardDiff.jacobian!(J,(du1,uprev)->vecf(t,uprev,du1),vec(du1),vec(uprev))
 
@@ -186,8 +179,6 @@ end
 
 function ode_solve{uType<:Number,algType<:Rosenbrock32,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  c₃₂ = 6 + sqrt(2)
-  d = 1/(2+sqrt(2))
   integrator.kshortsize = 2
   k = ksEltype(2)
   integrator.k = k
@@ -197,6 +188,7 @@ function ode_solve{uType<:Number,algType<:Rosenbrock32,tType,tstopsType,tTypeNoU
       ode_loopheader!(integrator)
       @ode_exit_conditions
       @unpack_integrator
+      @unpack c₃₂,d = integrator.cache
       # Time derivative
       dT = ForwardDiff.derivative((t)->f(t,uprev),t)
       J = ForwardDiff.derivative((uprev)->f(t,uprev),uprev)

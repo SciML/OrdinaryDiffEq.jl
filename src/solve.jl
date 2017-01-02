@@ -183,10 +183,12 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
     uprev = deepcopy(u)
   end
 
+  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uprev,kprev)
+
   if dense
     #notsaveat_idxs  = find((x)->(x∉saveat)||(x∈Ts),ts)
     id = InterpolationData(f!,timeseries,ts,ks,notsaveat_idxs)
-    interp = (tvals) -> ode_interpolation(alg,tvals,id)
+    interp = (tvals) -> ode_interpolation(cache,tvals,id)
   else
     interp = (tvals) -> nothing
   end
@@ -194,8 +196,6 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   sol = build_solution(prob,alg,ts,timeseries,
                     dense=dense,k=ks,interp=interp,
                     calculate_error = false)
-
-  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uprev,kprev)
 
   calcprevs = calck || !(typeof(callback)<:Void) # Calculate the previous values
   tprev = t
