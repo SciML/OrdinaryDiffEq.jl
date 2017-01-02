@@ -434,7 +434,7 @@ end
 
 Base.@pure alg_cache{uType}(alg::DP8,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev) = DP8ConstantCache(uEltypeNoUnits)
 
-immutable TsitPap8Cache{uType,rateType,uEltypeNoUnits} <: OrdinaryDiffEqMutableCache
+immutable TsitPap8Cache{uType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   kprev::rateType
@@ -456,6 +456,7 @@ immutable TsitPap8Cache{uType,rateType,uEltypeNoUnits} <: OrdinaryDiffEqMutableC
   tmp::uType
   atmp::uEltypeNoUnits
   k::rateType
+  tab::TabType
 end
 
 Base.@pure function alg_cache{uType<:AbstractArray}(alg::TsitPap8,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)

@@ -355,12 +355,13 @@ end
   integrator.fsalfirst = integrator.cache.k1
   integrator.fsallast = integrator.cache.k
   integrator.k = integrator.cache.k
-  f(t,uprev,k1) # pre-start FSAL
+  integrator.f(integrator.t,integrator.uprev,integrator.cache.k1) # pre-start FSAL
   integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
 end
 
 function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{TsitPap8,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
+  initialize!(integrator,integrator.cache,typeof(integrator.u))
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)

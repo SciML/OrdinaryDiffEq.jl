@@ -5,7 +5,7 @@ function isfsal(alg::OrdinaryDiffEqAlgorithm)
      typeof(alg) <: Rosenbrock32 || typeof(alg)<:Euler ||
      typeof(alg) <: Midpoint || typeof(alg) <: RK4 ||
      typeof(alg) <: Feagin10 || typeof(alg) <: Feagin12 ||
-     typeof(alg) <: Feagin14 || typeof(alg) <: TanYam7
+     typeof(alg) <: Feagin14 || typeof(alg) <: TanYam7 || typeof(alg) <: TsitPap8
     return true
   else
     return false

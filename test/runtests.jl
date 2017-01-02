@@ -10,8 +10,6 @@ const LONGER_TESTS = false
 #Start Test Script
 
 tic()
-
-#ODE
 @time @testset "Linear Tests" begin include("ode/ode_twodimlinear_tests.jl") end
 @time @testset "Convergence Tests" begin include("ode/ode_convergence_tests.jl") end
 @time @testset "Adaptive Tests" begin include("ode/ode_adaptive_tests.jl") end
