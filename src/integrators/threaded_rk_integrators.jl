@@ -1,20 +1,14 @@
 function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{DP5Threaded,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = constructDP5(uEltypeNoUnits)
-  d1,d3,d4,d5,d6,d7 = DP5_dense_ds(uEltypeNoUnits)
-
-  @unpack k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,utilde,tmp,atmp = integrator.cache
-
-  uidx = eachindex(uprev)
-  integrator.kshortsize = 4
-  integrator.k = [update,bspl,dense_tmp3,dense_tmp4]
-  integrator.fsalfirst = k1; integrator.fsallast = k7; k = integrator.k
-  f(t,uprev,integrator.fsalfirst);  # Pre-start fsal
+  initialize!(integrator,integrator.cache,typeof(integrator.u))
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
       @unpack_integrator
+      @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = integrator.cache.tab
+      @unpack k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,utilde,tmp,atmp = integrator.cache
+      @unpack d1,d3,d4,d5,d6,d7 = integrator.cache.tab
       dp5threaded_loop1(dt,tmp,uprev,a21,k1,uidx)
       f(t+c1*dt,tmp,k2)
       dp5threaded_loop2(dt,tmp,uprev,a31,k1,a32,k2,uidx)
@@ -32,7 +26,7 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
         integrator.EEst = integrator.opts.internalnorm(atmp)
       end
       if integrator.opts.calck
-        dp5threaded_denseloop(bspl,update,k1,k3,k4,k5,k6,k7,k,d1,d3,d4,d5,d6,d7,uidx)
+        dp5threaded_denseloop(bspl,update,k1,k3,k4,k5,k6,k7,integrator.k,d1,d3,d4,d5,d6,d7,uidx)
       end
       @pack_integrator
       ode_loopfooter!(integrator)

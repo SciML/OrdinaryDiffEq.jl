@@ -6,7 +6,7 @@ end
 using Base.Test
 
 const CPU_FLOPS = peakflops()
-const LONGER_TESTS = false
+const LONGER_TESTS = true
 #Start Test Script
 
 tic()
