@@ -200,6 +200,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   calcprevs = calck || !(typeof(callback)<:Void) # Calculate the previous values
   tprev = t
   dtcache = tType(dt)
+  dtpropose = tType(dt)
   dt_mod = tTypeNoUnits(1)
   iter = 0
   saveiter = 1 # Starts at 1 so first save is at 2
@@ -217,7 +218,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
                              sol,u,k,t,tType(dt),f!,uprev,kprev,tprev,
                              tstops_internal,saveat_internal,adaptiveorder,order,
                              alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,
-                             dt_mod,tdir,qminc,qmaxc,EEst,qoldinit,
+                             dtpropose,dt_mod,tdir,qminc,qmaxc,EEst,qoldinit,
                              iter,saveiter,saveiter_dense,prog,cache,
                              event_cache,kshortsize,reeval_fsal,opts)
   integrator

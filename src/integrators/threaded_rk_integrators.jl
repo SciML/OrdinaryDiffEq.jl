@@ -28,12 +28,17 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
       f(t+dt,u,integrator.fsallast)
       if integrator.opts.adaptive
         dp5threaded_adaptiveloop(dt,utilde,uprev,b1,k1,b3,k3,b4,k4,b5,k5,b6,k6,b7,k7,atmp,u,integrator.opts.abstol,integrator.opts.reltol,uidx)
-        EEst = integrator.opts.internalnorm(atmp)
+        integrator.EEst = integrator.opts.internalnorm(atmp)
       end
       if integrator.opts.calck
         dp5threaded_denseloop(bspl,update,k1,k3,k4,k5,k6,k7,k,d1,d3,d4,d5,d6,d7,uidx)
       end
-      @ode_loopfooter
+      @pack_integrator
+      ode_loopfooter!(integrator)
+      @unpack_integrator
+      if isempty(integrator.tstops)
+        break
+      end
     end
     !isempty(integrator.tstops) && pop!(integrator.tstops)
   end

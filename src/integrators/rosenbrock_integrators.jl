@@ -53,9 +53,14 @@ function ode_solve{uType<:AbstractArray,algType<:Rosenbrock23,tType,tstopsType,t
         for i in uidx
           tmp2[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)./(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol)
         end
-        EEst = integrator.opts.internalnorm(tmp2)
+        integrator.EEst = integrator.opts.internalnorm(tmp2)
       end
-      @ode_loopfooter
+      @pack_integrator
+      ode_loopfooter!(integrator)
+      @unpack_integrator
+      if isempty(integrator.tstops)
+        break
+      end
     end
     !isempty(integrator.tstops) && pop!(integrator.tstops)
   end
@@ -91,13 +96,18 @@ function ode_solve{uType<:Number,algType<:Rosenbrock23,tType,tstopsType,tTypeNoU
       if integrator.opts.adaptive
         integrator.fsallast = f(t+dt,u)
         k₃ = W\(integrator.fsallast - c₃₂*(k₂-f₁)-2(k₁-integrator.fsalfirst)+dt*dT)
-        EEst = abs((dt*(k₁ - 2k₂ + k₃)/6)./(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+        integrator.EEst = abs((dt*(k₁ - 2k₂ + k₃)/6)./(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
       end
       if integrator.opts.calck
         k[1] = k₁
         k[2] = k₂
       end
-      @ode_loopfooter
+      @pack_integrator
+      ode_loopfooter!(integrator)
+      @unpack_integrator
+      if isempty(integrator.tstops)
+        break
+      end
     end
     !isempty(integrator.tstops) && pop!(integrator.tstops)
   end
@@ -162,9 +172,14 @@ function ode_solve{uType<:AbstractArray,algType<:Rosenbrock32,tType,tstopsType,t
         for i in uidx
           tmp2[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)/(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol)
         end
-        EEst = integrator.opts.internalnorm(tmp2)
+        integrator.EEst = integrator.opts.internalnorm(tmp2)
       end
-      @ode_loopfooter
+      @pack_integrator
+      ode_loopfooter!(integrator)
+      @unpack_integrator
+      if isempty(integrator.tstops)
+        break
+      end
     end
     !isempty(integrator.tstops) && pop!(integrator.tstops)
   end
@@ -205,13 +220,18 @@ function ode_solve{uType<:Number,algType<:Rosenbrock32,tType,tstopsType,tTypeNoU
       k₃ = W\(integrator.fsallast - c₃₂*(k₂-f₁)-2(k₁-integrator.fsalfirst)+dt*dT)
       u = uprev + dt*(k₁ + 4k₂ + k₃)/6
       if integrator.opts.adaptive
-        EEst = abs((dt*(k₁ - 2k₂ + k₃)/6)./(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+        integrator.EEst = abs((dt*(k₁ - 2k₂ + k₃)/6)./(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
       end
       if integrator.opts.calck
         k[1] = k₁
         k[2] = k₂
       end
-      @ode_loopfooter
+      @pack_integrator
+      ode_loopfooter!(integrator)
+      @unpack_integrator
+      if isempty(integrator.tstops)
+        break
+      end
     end
     !isempty(integrator.tstops) && pop!(integrator.tstops)
   end

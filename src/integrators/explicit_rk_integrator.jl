@@ -41,12 +41,17 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
         for i = 2:stages
           uEEst += αEEst[i]*kk[i]
         end
-        EEst = abs( dt*(utilde-uEEst)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+        integrator.EEst = abs( dt*(utilde-uEEst)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
       end
       if integrator.opts.calck
         k = kk[end]
       end
-      @ode_loopfooter
+      @pack_integrator
+      ode_loopfooter!(integrator)
+      @unpack_integrator
+      if isempty(integrator.tstops)
+        break
+      end
     end
     !isempty(integrator.tstops) && pop!(integrator.tstops)
   end
@@ -131,9 +136,14 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
         for i in uidx
           atmp[i] = (dt*(utilde[i]-uEEst[i])/(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol))
         end
-        EEst = integrator.opts.internalnorm(atmp)
+        integrator.EEst = integrator.opts.internalnorm(atmp)
       end
-      @ode_loopfooter
+      @pack_integrator
+      ode_loopfooter!(integrator)
+      @unpack_integrator
+      if isempty(integrator.tstops)
+        break
+      end
     end
     !isempty(integrator.tstops) && pop!(integrator.tstops)
   end

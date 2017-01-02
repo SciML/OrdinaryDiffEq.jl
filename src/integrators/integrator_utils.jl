@@ -1,77 +1,3 @@
-type DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5}
-  maxiters::Int
-  timeseries_steps::Int
-  save_timeseries::Bool
-  adaptive::Bool
-  abstol::uEltype
-  reltol::uEltypeNoUnits
-  gamma::tTypeNoUnits
-  qmax::tTypeNoUnits
-  qmin::tTypeNoUnits
-  dtmax::tType
-  dtmin::tType
-  internalnorm::F2
-  progress::Bool
-  progress_steps::Int
-  progress_name::String
-  progress_message::F5
-  beta1::tTypeNoUnits
-  beta2::tTypeNoUnits
-  qoldinit::tTypeNoUnits
-  dense::Bool
-  saveat::Vector{tType}
-  callback::F3
-  isoutofdomain::F4
-  calck::Bool
-end
-
-type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}
-  sol::SolType
-  u::uType
-  k::ksEltype
-  t::tType
-  dt::tType
-  f::F
-  uprev::uType
-  kprev::ksEltype
-  tprev::tType
-  tstops::tstopsType
-  saveat::tstopsType
-  adaptiveorder::Int
-  order::Int
-  alg::algType
-  rate_prototype::rateType
-  notsaveat_idxs::Vector{Int}
-  calcprevs::Bool
-  dtcache::tType
-  dt_mod::tTypeNoUnits
-  tdir::Int
-  qminc::tTypeNoUnits
-  qmaxc::tTypeNoUnits
-  EEst::tTypeNoUnits
-  qold::tTypeNoUnits
-  iter::Int
-  saveiter::Int
-  saveiter_dense::Int
-  prog::ProgressType
-  cache::CacheType
-  event_cache::ECType
-  kshortsize::Int
-  reeval_fsal::Bool
-  opts::O
-  fsalfirst::rateType
-  fsallast::rateType
-
-  ODEIntegrator(sol,u,k,t,dt,f,uprev,kprev,tprev,tstops,saveat,adaptiveorder,
-    order,alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,dt_mod,tdir,qminc,
-    qmaxc,EEst,qold,iter,saveiter,saveiter_dense,prog,cache,event_cache,
-    kshortsize,reeval_fsal,opts) = new(
-    sol,u,k,t,dt,f,uprev,kprev,tprev,tstops,saveat,adaptiveorder,
-      order,alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,dt_mod,tdir,qminc,
-      qmaxc,EEst,qold,iter,saveiter,saveiter_dense,prog,cache,event_cache,
-      kshortsize,reeval_fsal,opts) # Leave off fsalfirst and last
-end
-
 @def ode_preamble begin
   @unpack t,dt,alg,rate_prototype = integrator
   uprev = integrator.uprev
@@ -111,7 +37,7 @@ end
     return nothing
   end
 
-  if uType<:AbstractArray && !(typeof(integrator.opts.callback)<:Void)
+  if typeof(integrator.u)<:AbstractArray && !(typeof(integrator.opts.callback)<:Void)
     uidx = eachindex(integrator.uprev)
   end
 end
@@ -171,7 +97,7 @@ end
   if !(typeof(integrator.k)<:AbstractArray) && integrator.opts.calck
     integrator.k = k
   end
-  if !(uType <: AbstractArray)
+  if !(typeof(integrator.u) <: AbstractArray)
     integrator.u = u
   end
 end
@@ -179,31 +105,30 @@ end
 @def unpack_integrator begin
   t = integrator.t
   dt = integrator.dt
-  if !(uType <: AbstractArray)
+  if !(typeof(integrator.u) <: AbstractArray)
     uprev = integrator.uprev
   end
 end
 
-@def ode_loopfooter begin
-  @pack_integrator
+@inline function ode_loopfooter!(integrator)
   if integrator.opts.adaptive
-    q11 = EEst^integrator.opts.beta1
+    q11 = integrator.EEst^integrator.opts.beta1
     q = q11/(integrator.qold^integrator.opts.beta2)
     q = max(integrator.qmaxc,min(integrator.qminc,q/integrator.opts.gamma))
-    dtnew = dt/q
+    dtnew = integrator.dt/q
     ttmp = integrator.t + integrator.dt
-    if !integrator.opts.isoutofdomain(ttmp,u) && EEst <= 1.0 # Accept
+    if !integrator.opts.isoutofdomain(ttmp,integrator.u) && integrator.EEst <= 1.0 # Accept
       integrator.t = ttmp
-      integrator.qold = max(EEst,integrator.opts.qoldinit)
+      integrator.qold = max(integrator.EEst,integrator.opts.qoldinit)
       if integrator.tdir > 0
-        dtpropose = min(integrator.opts.dtmax,dtnew)
+        integrator.dtpropose = min(integrator.opts.dtmax,dtnew)
       else
-        dtpropose = max(integrator.opts.dtmax,dtnew)
+        integrator.dtpropose = max(integrator.opts.dtmax,dtnew)
       end
       if integrator.tdir > 0
-        dtpropose = max(dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
+        integrator.dtpropose = max(integrator.dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
       else
-        dtpropose = min(dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
+        integrator.dtpropose = min(integrator.dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
       end
       if !(typeof(integrator.opts.callback)<:Void)
         integrator.opts.callback(integrator)
@@ -211,21 +136,21 @@ end
         ode_savevalues!(integrator)
       end
 
-      if uType <: AbstractArray
+      if typeof(integrator.u) <: AbstractArray
         recursivecopy!(integrator.uprev,integrator.u)
       else
         integrator.uprev = integrator.u
       end
 
-      integrator.dt = integrator.dt_mod*dtpropose
+      integrator.dt = integrator.dt_mod*integrator.dtpropose
 
       if isfsal(integrator.alg)
         if integrator.reeval_fsal || (typeof(integrator.alg)<:DP8 && !integrator.opts.calck)
           # Under these condtions, these algorithms are not FSAL anymore
           if typeof(integrator.fsalfirst) <: AbstractArray
-            f(integrator.t,integrator.u,integrator.fsalfirst)
+            integrator.f(integrator.t,integrator.u,integrator.fsalfirst)
           else
-            integrator.fsalfirst = f(integrator.t,integrator.u)
+            integrator.fsalfirst = integrator.f(integrator.t,integrator.u)
           end
           integrator.reeval_fsal = false
         else
@@ -240,7 +165,7 @@ end
       if integrator.calcprevs
         integrator.tprev = integrator.t
         if !isspecialdense(integrator.alg) && integrator.opts.calck
-          if ksEltype <: AbstractArray
+          if typeof(integrator.k) <: AbstractArray
             recursivecopy!(integrator.kprev,integrator.k)
           else
             integrator.kprev = integrator.k
@@ -259,7 +184,7 @@ end
       ode_savevalues!(integrator)
     end
 
-    if uType <: AbstractArray
+    if typeof(integrator.u) <: AbstractArray
       recursivecopy!(integrator.uprev,integrator.u)
     else
       integrator.uprev = integrator.u
@@ -271,9 +196,9 @@ end
       if integrator.reeval_fsal || (typeof(integrator.alg)<:DP8 && !integrator.opts.calck) || typeof(integrator.alg)<:Union{Rosenbrock23,Rosenbrock32}
         # Under these condtions, these algorithms are not FSAL anymore
         if typeof(integrator.fsalfirst) <: AbstractArray
-          f(integrator.t,integrator.u,integrator.fsalfirst)
+          integrator.f(integrator.t,integrator.u,integrator.fsalfirst)
         else
-          integrator.fsalfirst = f(integrator.t,integrator.u)
+          integrator.fsalfirst = integrator.f(integrator.t,integrator.u)
         end
         integrator.reeval_fsal = false
       else
@@ -288,7 +213,7 @@ end
     if integrator.calcprevs
       integrator.tprev = integrator.t
       if !isspecialdense(integrator.alg) && integrator.opts.calck
-        if ksEltype <: AbstractArray && !isspecialdense(integrator.alg)
+        if typeof(integrator.k) <: AbstractArray && !isspecialdense(integrator.alg)
           recursivecopy!(integrator.kprev,integrator.k)
         else
           integrator.kprev = integrator.k
@@ -299,9 +224,5 @@ end
   if !(typeof(integrator.prog)<:Void) && integrator.iter%integrator.opts.progress_steps==0
     Juno.msg(integrator.prog,integrator.opts.progress_message(integrator.dt,integrator.t,integrator.u))
     Juno.progress(integrator.prog,integrator.t/integrator.sol.prob.tspan[2])
-  end
-  @unpack_integrator
-  if isempty(integrator.tstops)
-    break
   end
 end

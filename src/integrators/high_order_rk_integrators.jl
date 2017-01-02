@@ -22,11 +22,16 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
       u = uprev + dt*(k1*b1+k4*b4+k5*b5+k6*b6+k7*b7+k8*b8+k9*b9)
       if integrator.opts.adaptive
         utilde = uprev + dt*(k1*bhat1+k4*bhat4+k5*bhat5+k6*bhat6+k7*bhat7+k8*bhat8+k10*bhat10)
-        EEst = abs( ((utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)))
+        integrator.EEst = abs( ((utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)))
       end
       k = f(t+dt,u) # For the interpolation, needs k at the updated point
       integrator.fsallast = k
-      @ode_loopfooter
+      @pack_integrator
+      ode_loopfooter!(integrator)
+      @unpack_integrator
+      if isempty(integrator.tstops)
+        break
+      end
     end
     !isempty(integrator.tstops) && pop!(integrator.tstops)
   end
@@ -97,10 +102,15 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
           utilde[i] = uprev[i] + dt*(k1[i]*bhat1+k4[i]*bhat4+k5[i]*bhat5+k6[i]*bhat6+k7[i]*bhat7+k8[i]*bhat8+k10[i]*bhat10)
           atmp[i] = ((utilde[i]-u[i])/(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol))
         end
-        EEst = integrator.opts.internalnorm(atmp)
+        integrator.EEst = integrator.opts.internalnorm(atmp)
       end
       f(t+dt,u,k)
-      @ode_loopfooter
+      @pack_integrator
+      ode_loopfooter!(integrator)
+      @unpack_integrator
+      if isempty(integrator.tstops)
+        break
+      end
     end
     !isempty(integrator.tstops) && pop!(integrator.tstops)
   end
@@ -154,7 +164,7 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
         err5 = abs(dt*(k1*er1 + k6*er6 + k7*er7 + k8*er8 + k9*er9 + k10*er10 + k11*er11 + k12*er12)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)) # Order 5
         err3 = abs((update - dt*(bhh1*k1 + bhh2*k9 + bhh3*k12))/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)) # Order 3
         err52 = err5*err5
-        EEst = err52/sqrt(err52 + 0.01*err3*err3)
+        integrator.EEst = err52/sqrt(err52 + 0.01*err3*err3)
       end
       if integrator.opts.calck
         k13 = f(t+dt,u)
@@ -172,7 +182,12 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
         k[6] = (d601*k1+d606*k6+d607*k7+d608*k8+d609*k9+d610*k10+d611*k11+d612*k12+d613*k13+d614*k14+d615*k15+d616*k16)
         k[7] = (d701*k1+d706*k6+d707*k7+d708*k8+d709*k9+d710*k10+d711*k11+d712*k12+d713*k13+d714*k14+d715*k15+d716*k16)
       end
-      @ode_loopfooter
+      @pack_integrator
+      ode_loopfooter!(integrator)
+      @unpack_integrator
+      if isempty(integrator.tstops)
+        break
+      end
     end
     !isempty(integrator.tstops) && pop!(integrator.tstops)
   end
@@ -266,7 +281,7 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
         err5 = integrator.opts.internalnorm(atmp) # Order 5
         err3 = integrator.opts.internalnorm(atmp2) # Order 3
         err52 = err5*err5
-        EEst = err52/sqrt(err52 + 0.01*err3*err3)
+        integrator.EEst = err52/sqrt(err52 + 0.01*err3*err3)
       end
       if integrator.opts.calck
         f(t+dt,u,k13)
@@ -292,7 +307,12 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
           k[7][i] = (d701*k1[i]+d706*k6[i]+d707*k7[i]+d708*k8[i]+d709*k9[i]+d710*k10[i]+d711*k11[i]+d712*k12[i]+d713*k13[i]+d714*k14[i]+d715*k15[i]+d716*k16[i])
         end
       end
-      @ode_loopfooter
+      @pack_integrator
+      ode_loopfooter!(integrator)
+      @unpack_integrator
+      if isempty(integrator.tstops)
+        break
+      end
     end
     !isempty(integrator.tstops) && pop!(integrator.tstops)
   end
@@ -327,11 +347,16 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
       update = dt*(b1*k1+b6*k6+b7*k7+b8*k8+b9*k9+b10*k10+b11*k11+b12*k12)
       u = uprev + update
       if integrator.opts.adaptive
-        EEst = abs((update - dt*(k1*bhat1 + k6*bhat6 + k7*bhat7 + k8*bhat8 + k9*bhat9 + k10*bhat10 + k13*bhat13))/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+        integrator.EEst = abs((update - dt*(k1*bhat1 + k6*bhat6 + k7*bhat7 + k8*bhat8 + k9*bhat9 + k10*bhat10 + k13*bhat13))/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
       end
       k = f(t+dt,u)
       integrator.fsallast = k
-      @ode_loopfooter
+      @pack_integrator
+      ode_loopfooter!(integrator)
+      @unpack_integrator
+      if isempty(integrator.tstops)
+        break
+      end
     end
     !isempty(integrator.tstops) && pop!(integrator.tstops)
   end
@@ -414,10 +439,15 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
         for i in uidx
           atmp[i] = ((update[i] - dt*(k1[i]*bhat1 + k6[i]*bhat6 + k7[i]*bhat7 + k8[i]*bhat8 + k9[i]*bhat9 + k10[i]*bhat10 + k13[i]*bhat13))/(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol))
         end
-        EEst = integrator.opts.internalnorm(atmp)
+        integrator.EEst = integrator.opts.internalnorm(atmp)
       end
       f(t+dt,u,k)
-      @ode_loopfooter
+      @pack_integrator
+      ode_loopfooter!(integrator)
+      @unpack_integrator
+      if isempty(integrator.tstops)
+        break
+      end
     end
     !isempty(integrator.tstops) && pop!(integrator.tstops)
   end

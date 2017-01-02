@@ -17,6 +17,7 @@ module OrdinaryDiffEq
   include("misc_utils.jl")
   include("algorithms.jl")
   include("alg_utils.jl")
+  include("integrators/main_type.jl")
   include("integrators/integrator_utils.jl")
   include("integrators/fixed_timestep_integrators.jl")
   include("integrators/explicit_rk_integrator.jl")
