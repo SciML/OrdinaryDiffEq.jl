@@ -6,28 +6,28 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
 
   @unpack k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,utilde,tmp,atmp = integrator.cache
 
-  uidx = eachindex(u)
+  uidx = eachindex(uprev)
   integrator.kshortsize = 4
   integrator.k = [update,bspl,dense_tmp3,dense_tmp4]
   integrator.fsalfirst = k1; integrator.fsallast = k7; k = integrator.k
-  f(t,u,integrator.fsalfirst);  # Pre-start fsal
+  f(t,uprev,integrator.fsalfirst);  # Pre-start fsal
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
       @ode_loopheader
-      dp5threaded_loop1(dt,tmp,u,a21,k1,uidx)
+      dp5threaded_loop1(dt,tmp,uprev,a21,k1,uidx)
       f(t+c1*dt,tmp,k2)
-      dp5threaded_loop2(dt,tmp,u,a31,k1,a32,k2,uidx)
+      dp5threaded_loop2(dt,tmp,uprev,a31,k1,a32,k2,uidx)
       f(t+c2*dt,tmp,k3)
-      dp5threaded_loop3(dt,tmp,u,a41,k1,a42,k2,a43,k3,uidx)
+      dp5threaded_loop3(dt,tmp,uprev,a41,k1,a42,k2,a43,k3,uidx)
       f(t+c3*dt,tmp,k4)
-      dp5threaded_loop4(dt,tmp,u,a51,k1,a52,k2,a53,k3,a54,k4,uidx)
+      dp5threaded_loop4(dt,tmp,uprev,a51,k1,a52,k2,a53,k3,a54,k4,uidx)
       f(t+c4*dt,tmp,k5)
-      dp5threaded_loop5(dt,tmp,u,a61,k1,a62,k2,a63,k3,a64,k4,a65,k5,uidx)
+      dp5threaded_loop5(dt,tmp,uprev,a61,k1,a62,k2,a63,k3,a64,k4,a65,k5,uidx)
       f(t+dt,tmp,k6)
-      dp5threaded_loop6(dt,utmp,u,a71,k1,a73,k3,a74,k4,a75,k5,a76,k6,update,uidx)
-      f(t+dt,utmp,integrator.fsallast)
+      dp5threaded_loop6(dt,u,uprev,a71,k1,a73,k3,a74,k4,a75,k5,a76,k6,update,uidx)
+      f(t+dt,u,integrator.fsallast)
       if integrator.opts.adaptive
-        dp5threaded_adaptiveloop(dt,utilde,u,b1,k1,b3,k3,b4,k4,b5,k5,b6,k6,b7,k7,atmp,utmp,integrator.opts.abstol,integrator.opts.reltol,uidx)
+        dp5threaded_adaptiveloop(dt,utilde,uprev,b1,k1,b3,k3,b4,k4,b5,k5,b6,k6,b7,k7,atmp,u,integrator.opts.abstol,integrator.opts.reltol,uidx)
         EEst = integrator.opts.internalnorm(atmp)
       end
       if integrator.opts.calck
@@ -49,46 +49,46 @@ end
   end
 end
 
-@noinline function dp5threaded_loop1(dt,tmp,u,a21,k1,uidx)
+@noinline function dp5threaded_loop1(dt,tmp,uprev,a21,k1,uidx)
   Threads.@threads for i in uidx
-    tmp[i] = u[i]+dt*(a21*k1[i])
+    tmp[i] = uprev[i]+dt*(a21*k1[i])
   end
 end
 
-@noinline function dp5threaded_loop2(dt,tmp,u,a31,k1,a32,k2,uidx)
+@noinline function dp5threaded_loop2(dt,tmp,uprev,a31,k1,a32,k2,uidx)
   Threads.@threads for i in uidx
-    tmp[i] = u[i]+dt*(a31*k1[i]+a32*k2[i])
+    tmp[i] = uprev[i]+dt*(a31*k1[i]+a32*k2[i])
   end
 end
 
-@noinline function dp5threaded_loop3(dt,tmp,u,a41,k1,a42,k2,a43,k3,uidx)
+@noinline function dp5threaded_loop3(dt,tmp,uprev,a41,k1,a42,k2,a43,k3,uidx)
   Threads.@threads for i in uidx
-    tmp[i] = u[i]+dt*(a41*k1[i]+a42*k2[i]+a43*k3[i])
+    tmp[i] = uprev[i]+dt*(a41*k1[i]+a42*k2[i]+a43*k3[i])
   end
 end
 
-@noinline function dp5threaded_loop4(dt,tmp,u,a51,k1,a52,k2,a53,k3,a54,k4,uidx)
+@noinline function dp5threaded_loop4(dt,tmp,uprev,a51,k1,a52,k2,a53,k3,a54,k4,uidx)
   Threads.@threads for i in uidx
-    tmp[i] =u[i]+dt*(a51*k1[i]+a52*k2[i]+a53*k3[i]+a54*k4[i])
+    tmp[i] =uprev[i]+dt*(a51*k1[i]+a52*k2[i]+a53*k3[i]+a54*k4[i])
   end
 end
 
-@noinline function dp5threaded_loop5(dt,tmp,u,a61,k1,a62,k2,a63,k3,a64,k4,a65,k5,uidx)
+@noinline function dp5threaded_loop5(dt,tmp,uprev,a61,k1,a62,k2,a63,k3,a64,k4,a65,k5,uidx)
   Threads.@threads for i in uidx
-    tmp[i] = u[i]+dt*(a61*k1[i]+a62*k2[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
+    tmp[i] = uprev[i]+dt*(a61*k1[i]+a62*k2[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
   end
 end
 
-@noinline function dp5threaded_loop6(dt,utmp,u,a71,k1,a73,k3,a74,k4,a75,k5,a76,k6,update,uidx)
+@noinline function dp5threaded_loop6(dt,u,uprev,a71,k1,a73,k3,a74,k4,a75,k5,a76,k6,update,uidx)
   Threads.@threads for i in uidx
     update[i] = a71*k1[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i]
-    utmp[i] = u[i]+dt*update[i]
+    u[i] = uprev[i]+dt*update[i]
   end
 end
 
-@noinline function dp5threaded_adaptiveloop(dt,utilde,u,b1,k1,b3,k3,b4,k4,b5,k5,b6,k6,b7,k7,atmp,utmp,abstol,reltol,uidx)
+@noinline function dp5threaded_adaptiveloop(dt,utilde,uprev,b1,k1,b3,k3,b4,k4,b5,k5,b6,k6,b7,k7,atmp,u,abstol,reltol,uidx)
   Threads.@threads for i in uidx
-    utilde[i] = u[i] + dt*(b1*k1[i] + b3*k3[i] + b4*k4[i] + b5*k5[i] + b6*k6[i] + b7*k7[i])
-    atmp[i] = ((utilde[i]-utmp[i])/(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
+    utilde[i] = uprev[i] + dt*(b1*k1[i] + b3*k3[i] + b4*k4[i] + b5*k5[i] + b6*k6[i] + b7*k7[i])
+    atmp[i] = ((utilde[i]-u[i])/(abstol+max(abs(uprev[i]),abs(u[i]))*reltol))
   end
 end

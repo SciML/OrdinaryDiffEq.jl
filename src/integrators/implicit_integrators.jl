@@ -5,20 +5,20 @@ type RHS_IE_Scalar{F,uType,tType} <: Function
   dt::tType
 end
 
-function (p::RHS_IE_Scalar)(u,resid)
-  resid[1] = u[1] - p.u_old[1] - p.dt*p.f(p.t+p.dt,u)[1]
+function (p::RHS_IE_Scalar)(uprev,resid)
+  resid[1] = uprev[1] - p.u_old[1] - p.dt*p.f(p.t+p.dt,uprev)[1]
 end
 
 function ode_solve{uType<:Number,algType<:ImplicitEuler,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  local nlres::NLsolve.SolverResults{eltype(u)}
+  local nlres::NLsolve.SolverResults{eltype(uprev)}
 
   uhold::Vector{uType} = Vector{uType}(1)
   u_old::Vector{uType} = Vector{uType}(1)
 
   rhs = RHS_IE_Scalar(f,u_old,t,dt)
 
-  uhold[1] = u; u_old[1] = u
+  uhold[1] = uprev; u_old[1] = uprev
 
   if alg_autodiff(alg)
     adf = autodiff_setup(rhs,uhold,integrator.cache)
@@ -38,7 +38,7 @@ function ode_solve{uType<:Number,algType<:ImplicitEuler,tType,tstopsType,tTypeNo
       if integrator.opts.calck
         k = f(t+dt,uhold[1])
       end
-      utmp = uhold[1]
+      u = uhold[1]
       @ode_loopfooter
     end
     !isempty(integrator.tstops) && pop!(integrator.tstops)
@@ -57,25 +57,25 @@ type RHS_IE{F,uType,tType,SizeType,DiffCacheType,uidxType} <: Function
   uidx::uidxType
 end
 
-function (p::RHS_IE)(u,resid)
-  du = get_du(p.dual_cache, eltype(u))
-  p.f(p.t+p.dt,reshape(u,p.sizeu),du)
+function (p::RHS_IE)(uprev,resid)
+  du = get_du(p.dual_cache, eltype(uprev))
+  p.f(p.t+p.dt,reshape(uprev,p.sizeu),du)
   for i in p.uidx
-    resid[i] = u[i] - p.u_old[i] - p.dt*du[i]
+    resid[i] = uprev[i] - p.u_old[i] - p.dt*du[i]
   end
 end
 
 function ode_solve{uType<:AbstractArray,algType<:ImplicitEuler,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  local nlres::NLsolve.SolverResults{eltype(u)}
-  uidx = eachindex(u)
-  sizeu = size(u) # Change to dynamic by call overloaded type
+  local nlres::NLsolve.SolverResults{eltype(uprev)}
+  uidx = eachindex(uprev)
+  sizeu = size(uprev) # Change to dynamic by call overloaded type
 
 
   @unpack u_old,dual_cache,k = integrator.cache
   integrator.k = k
 
-  uhold = vec(utmp)
+  uhold = vec(u)
 
   rhs = RHS_IE(f,u_old,t,dt,sizeu,dual_cache,uidx)
 
@@ -98,7 +98,7 @@ function ode_solve{uType<:AbstractArray,algType<:ImplicitEuler,tType,tstopsType,
       end
       copy!(uhold,nlres.zero)
       if integrator.opts.calck
-        f(t+dt,utmp,k)
+        f(t+dt,u,k)
       end
       @ode_loopfooter
     end
@@ -120,20 +120,20 @@ type RHS_Trap{F,uType,tType,SizeType,DiffCacheType,uidxType} <: Function
   uidx::uidxType
 end
 
-function (p::RHS_Trap)(u,resid)
-  du1 = get_du(p.dual_cache, eltype(u)); du2 = get_du(p.dual_cache2, eltype(p.u_old))
+function (p::RHS_Trap)(uprev,resid)
+  du1 = get_du(p.dual_cache, eltype(uprev)); du2 = get_du(p.dual_cache2, eltype(p.u_old))
   p.f(p.t,reshape(p.u_old,p.sizeu),du2)
-  p.f(p.t+p.dt,reshape(u,p.sizeu),du1)
+  p.f(p.t+p.dt,reshape(uprev,p.sizeu),du1)
   for i in p.uidx
-    resid[i] = u[i] - p.u_old[i] - (p.dt/2)*(du1[i]+du2[i])
+    resid[i] = uprev[i] - p.u_old[i] - (p.dt/2)*(du1[i]+du2[i])
   end
 end
 
 function ode_solve{uType<:AbstractArray,algType<:Trapezoid,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  local nlres::NLsolve.SolverResults{eltype(u)}
-  uidx = eachindex(u)
-  sizeu = size(u) # Change to dynamic by call overloaded type
+  local nlres::NLsolve.SolverResults{eltype(uprev)}
+  uidx = eachindex(uprev)
+  sizeu = size(uprev) # Change to dynamic by call overloaded type
 
 
   @unpack u_old,dual_cache,dual_cache2,k = integrator.cache
@@ -143,7 +143,7 @@ function ode_solve{uType<:AbstractArray,algType<:Trapezoid,tType,tstopsType,tTyp
 
   rhs = RHS_Trap(f,u_old,t,dt,sizeu,dual_cache,dual_cache2,uidx)
 
-  uhold = vec(utmp)
+  uhold = vec(u)
 
   if alg_autodiff(alg)
     adf = autodiff_setup(rhs,uhold,integrator.cache)
@@ -164,7 +164,7 @@ function ode_solve{uType<:AbstractArray,algType<:Trapezoid,tType,tstopsType,tTyp
       end
       copy!(uhold,nlres.zero)
       if integrator.opts.calck
-        f(t+dt,utmp,k)
+        f(t+dt,u,k)
       end
       @ode_loopfooter
     end
@@ -181,17 +181,17 @@ type RHS_Trap_Scalar{F,uType,tType} <: Function
   dt::tType
 end
 
-function (p::RHS_Trap_Scalar)(u,resid)
-  resid[1] = u[1] - p.u_old[1] - (p.dt/2)*(p.f(p.t,p.u_old)[1] + p.f(p.t+p.dt,u)[1])
+function (p::RHS_Trap_Scalar)(uprev,resid)
+  resid[1] = uprev[1] - p.u_old[1] - (p.dt/2)*(p.f(p.t,p.u_old)[1] + p.f(p.t+p.dt,uprev)[1])
 end
 
 function ode_solve{uType<:Number,algType<:Trapezoid,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
   dto2::tType = dt/2
-  local nlres::NLsolve.SolverResults{eltype(u)}
+  local nlres::NLsolve.SolverResults{eltype(uprev)}
   uhold::Vector{uType} = Vector{uType}(1)
   u_old::Vector{uType} = Vector{uType}(1)
-  uhold[1] = u; u_old[1] = u
+  uhold[1] = uprev; u_old[1] = uprev
 
   rhs = RHS_Trap_Scalar(f,u_old,t,dt)
 
@@ -214,7 +214,7 @@ function ode_solve{uType<:Number,algType<:Trapezoid,tType,tstopsType,tTypeNoUnit
       if integrator.opts.calck
         k = f(t+dt,uhold[1])
       end
-      utmp = uhold[1]
+      u = uhold[1]
       @ode_loopfooter
     end
     !isempty(integrator.tstops) && pop!(integrator.tstops)

@@ -1,17 +1,3 @@
-#=
-Note about notation in the header/footer
-
-u is previous value, at the end integrator.u = utmp, events occur, and then
-u = integrator.u. Therefore `integrator.uprev === u`. This allows for the
-events interface to use `u` as the value to check for events an mutate, but
-`u` be the variable in the methods, and gets rid of the extra array `uprev`
-by folding it with `u`
-
-This also opens up `integrator.u === utmp`, the proposed value for `u`.
-This reduces yet another copy operation and another temporary.
-
-=#
-
 type DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5}
   maxiters::Int
   timeseries_steps::Int
@@ -88,8 +74,8 @@ end
 
 @def ode_preamble begin
   @unpack t,dt,alg,rate_prototype = integrator
-  u = integrator.uprev # See the note at the top
-  utmp = integrator.u # See the note at the top
+  uprev = integrator.uprev
+  u = integrator.u
   f = integrator.f # Grab the pointer for the local scope. Updates automatically.
   uEltypeNoUnits = typeof(integrator.opts.reltol)
 end
@@ -119,14 +105,14 @@ end
     ode_postamble!(integrator)
     return nothing
   end
-  if any(isnan,u)
+  if any(isnan,integrator.uprev)
     warn("NaNs detected. Aborting")
     ode_postamble!(integrator)
     return nothing
   end
 
   if uType<:AbstractArray && !(typeof(integrator.opts.callback)<:Void)
-    uidx = eachindex(u)
+    uidx = eachindex(integrator.uprev)
   end
 end
 
@@ -186,13 +172,16 @@ end
     integrator.k = k
   end
   if !(uType <: AbstractArray)
-    integrator.u = utmp
+    integrator.u = u
   end
 end
 
 @def unpack_integrator begin
   t = integrator.t
   dt = integrator.dt
+  if !(uType <: AbstractArray)
+    uprev = integrator.uprev
+  end
 end
 
 @def ode_loopfooter begin
@@ -203,7 +192,7 @@ end
     q = max(integrator.qmaxc,min(integrator.qminc,q/integrator.opts.gamma))
     dtnew = dt/q
     ttmp = integrator.t + integrator.dt
-    if !integrator.opts.isoutofdomain(ttmp,utmp) && EEst <= 1.0 # Accept
+    if !integrator.opts.isoutofdomain(ttmp,u) && EEst <= 1.0 # Accept
       integrator.t = ttmp
       integrator.qold = max(EEst,integrator.opts.qoldinit)
       if integrator.tdir > 0
@@ -223,9 +212,9 @@ end
       end
 
       if uType <: AbstractArray
-        recursivecopy!(integrator.uprev,integrator.u) # this is where the update of `u` from `utmp` occurs
+        recursivecopy!(integrator.uprev,integrator.u)
       else
-        u = integrator.u # uprev = utmp
+        integrator.uprev = integrator.u
       end
 
       integrator.dt = integrator.dt_mod*dtpropose
@@ -271,9 +260,9 @@ end
     end
 
     if uType <: AbstractArray
-      recursivecopy!(integrator.uprev,integrator.u) # this is where the update of `u` from `utmp` occurs
+      recursivecopy!(integrator.uprev,integrator.u)
     else
-      u = integrator.u # uprev = utmp
+      integrator.uprev = integrator.u
     end
 
     integrator.dt *= integrator.dt_mod
