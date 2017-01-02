@@ -339,14 +339,15 @@ immutable TanYam7Cache{uType,rateType,uEltypeNoUnits} <: OrdinaryDiffEqCache
   utilde::uType
   tmp::uType
   atmp::uEltypeNoUnits
+  k::rateType
 end
 
 Base.@pure function alg_cache{uType<:AbstractArray}(alg::TanYam7,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
   k1 = similar(rate_prototype); k2 = similar(rate_prototype) ; k3 = similar(rate_prototype); k4 = similar(rate_prototype)
   k5 = similar(rate_prototype); k6 = similar(rate_prototype) ; k7 = similar(rate_prototype); k8 = similar(rate_prototype)
   k9 = similar(rate_prototype); k10= similar(rate_prototype) ;
-  utilde = similar(u); tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
-  TanYam7Cache(u,uprev,kprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,utilde,tmp,atmp)
+  utilde = similar(u); tmp = similar(u); atmp = similar(u,uEltypeNoUnits); k = similar(rate_prototype)
+  TanYam7Cache(u,uprev,kprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,utilde,tmp,atmp,k)
 end
 
 alg_cache{uType}(alg::TanYam7,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev) = ODEEmptyCache()
@@ -432,15 +433,16 @@ immutable TsitPap8Cache{uType,rateType,uEltypeNoUnits} <: OrdinaryDiffEqCache
   update::uType
   tmp::uType
   atmp::uEltypeNoUnits
+  k::rateType
 end
 
 Base.@pure function alg_cache{uType<:AbstractArray}(alg::TsitPap8,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
   k1 = similar(rate_prototype); k2 = similar(rate_prototype); k3 = similar(rate_prototype); k4 = similar(rate_prototype)
   k5 = similar(rate_prototype); k6 = similar(rate_prototype); k7 = similar(rate_prototype); k8 = similar(rate_prototype)
   k9 = similar(rate_prototype); k10 = similar(rate_prototype); k11 = similar(rate_prototype); k12 = similar(rate_prototype)
-  k13 = similar(rate_prototype); update = similar(u); utilde = similar(u);
+  k13 = similar(rate_prototype); update = similar(u); utilde = similar(u); k = similar(rate_prototype)
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits);
-  TsitPap8Cache(u,uprev,kprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,utilde,update,tmp,atmp)
+  TsitPap8Cache(u,uprev,kprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,utilde,update,tmp,atmp,k)
 end
 
 alg_cache{uType}(alg::TsitPap8,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev) = ODEEmptyCache()
@@ -668,20 +670,21 @@ alg_cache{uType<:AbstractArray}(alg::Rosenbrock32,u::uType,
 alg_cache{uType}(alg::Rosenbrock23,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev) = ODEEmptyCache()
 alg_cache{uType}(alg::Rosenbrock32,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev) = ODEEmptyCache()
 
-immutable ImplicitEulerCache{uType,DiffCacheType,CS} <: OrdinaryDiffEqCache
+immutable ImplicitEulerCache{uType,DiffCacheType,rateType,CS} <: OrdinaryDiffEqCache
   u::uType
   dual_cache::DiffCacheType
   u_old::uType
+  k::rateType
 end
 
 Base.@pure function alg_cache{uType<:AbstractArray}(alg::ImplicitEuler,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
-  u_old = similar(u)
+  u_old = similar(u); k = similar(rate_prototype)
   if get_chunksize(alg) != 0
     dual_cache = DiffCache(u,alg)
-    ImplicitEulerCache{typeof(u),typeof(dual_cache),get_chunksize(alg)}(u,dual_cache,u_old)
+    ImplicitEulerCache{typeof(u),typeof(dual_cache),typeof(k),get_chunksize(alg)}(u,dual_cache,u_old,k)
   else
     dual_cache = DiffCache(u)
-    ImplicitEulerCache{typeof(u),typeof(dual_cache),ForwardDiff.pickchunksize(length(u))}(u,dual_cache,u_old)
+    ImplicitEulerCache{typeof(u),typeof(dual_cache),typeof(k),ForwardDiff.pickchunksize(length(u))}(u,dual_cache,u_old,k)
   end
 end
 
@@ -693,23 +696,24 @@ Base.@pure function alg_cache{uType}(alg::ImplicitEuler,u::uType,rate_prototype,
   end
 end
 
-immutable TrapezoidCache{uType,DiffCacheType,CS} <: OrdinaryDiffEqCache
+immutable TrapezoidCache{uType,DiffCacheType,rateType,CS} <: OrdinaryDiffEqCache
   u::uType
   dual_cache::DiffCacheType
   dual_cache2::DiffCacheType
   u_old::uType
+  k::rateType
 end
 
 Base.@pure function alg_cache{uType<:AbstractArray}(alg::Trapezoid,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
-  u_old = similar(u)
+  u_old = similar(u);k = similar(rate_prototype)
   if get_chunksize(alg) != 0
     dual_cache = DiffCache(u,alg)
     dual_cache2 = DiffCache(u,alg)
-    TrapezoidCache{typeof(u),typeof(dual_cache),get_chunksize(alg)}(u,dual_cache,dual_cache2,u_old)
+    TrapezoidCache{typeof(u),typeof(dual_cache),typeof(k),get_chunksize(alg)}(u,dual_cache,dual_cache2,u_old,k)
   else
     dual_cache = DiffCache(u)
     dual_cache2 = DiffCache(u)
-    TrapezoidCache{typeof(u),typeof(dual_cache),ForwardDiff.pickchunksize(length(u))}(u,dual_cache,dual_cache2,u_old)
+    TrapezoidCache{typeof(u),typeof(dual_cache),typeof(k),ForwardDiff.pickchunksize(length(u))}(u,dual_cache,dual_cache2,u_old,k)
   end
 end
 
@@ -722,6 +726,6 @@ Base.@pure function alg_cache{uType}(alg::Trapezoid,u::uType,rate_prototype,uElt
 end
 
 get_chunksize(cache::DECache) = error("This cache does not have a chunksize.")
-Base.@pure get_chunksize{uType,DiffCacheType,CS}(cache::ImplicitEulerCache{uType,DiffCacheType,CS}) = CS
-Base.@pure get_chunksize{uType,DiffCacheType,CS}(cache::TrapezoidCache{uType,DiffCacheType,CS}) = CS
+Base.@pure get_chunksize{uType,DiffCacheType,rateType,CS}(cache::ImplicitEulerCache{uType,DiffCacheType,rateType,CS}) = CS
+Base.@pure get_chunksize{uType,DiffCacheType,rateType,CS}(cache::TrapezoidCache{uType,DiffCacheType,rateType,CS}) = CS
 Base.@pure get_chunksize{CS}(cache::ODEChunkCache{CS}) = CS

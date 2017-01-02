@@ -72,7 +72,8 @@ function ode_solve{uType<:AbstractArray,algType<:ImplicitEuler,tType,tstopsType,
   sizeu = size(u) # Change to dynamic by call overloaded type
 
 
-  @unpack u_old,dual_cache = integrator.cache
+  @unpack u_old,dual_cache,k = integrator.cache
+  integrator.k = k
 
   uhold = vec(utmp)
 
@@ -135,7 +136,8 @@ function ode_solve{uType<:AbstractArray,algType<:Trapezoid,tType,tstopsType,tTyp
   sizeu = size(u) # Change to dynamic by call overloaded type
 
 
-  @unpack u_old,dual_cache,dual_cache2 = integrator.cache
+  @unpack u_old,dual_cache,dual_cache2,k = integrator.cache
+  integrator.k = k
 
   dto2 = dt/2
 

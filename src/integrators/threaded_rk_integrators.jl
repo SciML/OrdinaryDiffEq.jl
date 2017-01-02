@@ -1,26 +1,15 @@
 function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{DP5Threaded,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
   a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = constructDP5(uEltypeNoUnits)
+  d1,d3,d4,d5,d6,d7 = DP5_dense_ds(uEltypeNoUnits)
 
 
-  @unpack k1,k2,k3,k4,k5,k6,k7,update,bspl,utilde,tmp,atmp = integrator.cache
+  @unpack k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,utilde,tmp,atmp = integrator.cache
 
-  uidx::Base.OneTo{Int64} = eachindex(u)
+  uidx = eachindex(u)
   integrator.kshortsize = 4
-  if integrator.opts.calck
-    d1,d3,d4,d5,d6,d7 = DP5_dense_ds(uEltypeNoUnits)
-    k = ksEltype()
-    for i in 1:integrator.kshortsize
-      push!(k,similar(rate_prototype))
-    end
-
-    # Setup k pointers
-    k[1] = update
-    if integrator.calcprevs
-      integrator.kprev = deepcopy(k)
-    end
-  end
-  fsalfirst = k1; fsallast = k7
+  integrator.k = [update,bspl,dense_tmp3,dense_tmp4]
+  fsalfirst = k1; fsallast = k7; k = integrator.k
   f(t,u,fsalfirst);  # Pre-start fsal
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
@@ -55,7 +44,6 @@ end
 @noinline function dp5threaded_denseloop(bspl,update,k1,k3,k4,k5,k6,k7,k,d1,d3,d4,d5,d6,d7,uidx)
   Threads.@threads for i in uidx
     bspl[i] = k1[i] - update[i]
-    k[2][i] = bspl[i]
     k[3][i] = update[i] - k7[i] - bspl[i]
     k[4][i] = (d1*k1[i]+d3*k3[i]+d4*k4[i]+d5*k5[i]+d6*k6[i]+d7*k7[i])
   end

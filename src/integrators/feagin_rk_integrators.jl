@@ -55,6 +55,7 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
 
   fsalfirst = k1
   fsallast = k
+  integrator.k = k
   f(t,u,fsalfirst) # prestart FSAL
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
@@ -203,6 +204,7 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
 
   fsalfirst = k1
   fsallast = k
+  integrator.k = k
   f(t,u,fsalfirst) # Prestart FSAL
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
@@ -391,6 +393,7 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
 
   fsalfirst = k1
   fsallast = k
+  integrator.k = k
   f(t,u,fsalfirst) # prestart FSAL
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*t < integrator.tdir*top(integrator.tstops)

@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqProblemLibrary,Base.Test
+using OrdinaryDiffEq, DiffEqProblemLibrary,Base.Test, DiffEqBase
 
 bools = Vector{Bool}(0)
 prob = prob_ode_linear
@@ -142,7 +142,7 @@ interpd = sol(0:1//2^(4):1)
 
 sol2 =solve(prob,TsitPap8(),dt=1//2^(4),dense=true,adaptive=false)
 
-@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 1e-3
+@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 2e-2
 
 prob = prob_ode_2Dlinear
 

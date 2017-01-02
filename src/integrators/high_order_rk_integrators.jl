@@ -5,14 +5,11 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
   local k5::rateType; local k6::rateType; local k7::rateType; local k8::rateType;
   local k9::rateType; local k10::rateType;
   local utilde::uType;
-  if integrator.opts.calck
-    pop!(integrator.sol.k) # Get rid of the one it starts with
-  end
+  fsalfirst = f(t,u)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
       @ode_loopheader
-      k = f(t,u)
-      k1 = k
+      k1 = fsalfirst
       k2 = f(t+c1*dt,u+dt*(a21*k1))
       k3 = f(t+c2*dt,u+dt*(a31*k1+a32*k2))
       k4 = f(t+c3*dt,u+dt*(a41*k1       +a43*k3))
@@ -27,13 +24,11 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
         utilde = u + dt*(k1*bhat1+k4*bhat4+k5*bhat5+k6*bhat6+k7*bhat7+k8*bhat8+k10*bhat10)
         EEst = abs( ((utilde-utmp)/(integrator.opts.abstol+max(abs(u),abs(utmp))*integrator.opts.reltol)))
       end
+      k = f(t+dt,utmp) # For the interpolation, needs k at the updated point
+      fsallast = k
       @ode_loopfooter
     end
     !isempty(integrator.tstops) && pop!(integrator.tstops)
-  end
-  if integrator.opts.calck
-    k = f(t,u)
-    push!(integrator.sol.k,k)
   end
   ode_postamble!(integrator)
   nothing
@@ -46,15 +41,14 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
   if integrator.calcprevs && integrator.opts.calck
     integrator.kprev = similar(rate_prototype)
   end
-  if integrator.opts.calck
-    pop!(integrator.sol.k) # Get rid of the one it starts with
-  end
   uidx = eachindex(u);
 
 
-  @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,utilde,tmp,atmp = integrator.cache
-
-  k = k1
+  @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,utilde,tmp,atmp,k = integrator.cache
+  fsalfirst = k1
+  fsallast = k
+  integrator.k = k
+  f(t,u,fsalfirst) # pre-start FSAL
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
       @ode_loopheader
@@ -105,13 +99,10 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
         end
         EEst = integrator.opts.internalnorm(atmp)
       end
+      f(t+dt,utmp,k)
       @ode_loopfooter
     end
     !isempty(integrator.tstops) && pop!(integrator.tstops)
-  end
-  if integrator.opts.calck
-    f(t,u,k)
-    push!(integrator.sol.k,deepcopy(k))
   end
   ode_postamble!(integrator)
   nothing
@@ -129,10 +120,8 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
     c14,c15,c16,a1401,a1407,a1408,a1409,a1410,a1411,a1412,a1413,a1501,a1506,a1507,a1508,a1511,a1512,a1513,a1514,a1601,a1606,a1607,a1608,a1609,a1613,a1614,a1615 = DP8Interp(uEltypeNoUnits)
     d401,d406,d407,d408,d409,d410,d411,d412,d413,d414,d415,d416,d501,d506,d507,d508,d509,d510,d511,d512,d513,d514,d515,d516,d601,d606,d607,d608,d609,d610,d611,d612,d613,d614,d615,d616,d701,d706,d707,d708,d709,d710,d711,d712,d713,d714,d715,d716 = DP8Interp_polyweights(uEltypeNoUnits)
     fsal = true
-    k = ksEltype()
-    for i in 1:integrator.kshortsize
-      push!(k,zero(rateType))
-    end
+    k = ksEltype(integrator.kshortsize)
+    integrator.k = k
   else
     fsal = false
   end
@@ -206,9 +195,7 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
     if integrator.opts.calck
       fsal = true
       k = [udiff,bspl,dense_tmp3,dense_tmp4,dense_tmp5,dense_tmp6,dense_tmp7]
-      if integrator.calcprevs
-        integrator.kprev = deepcopy(k)
-      end
+      integrator.k = k
     end
   else
     fsal = false
@@ -320,14 +307,11 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
   local k5::rateType; local k6::rateType; local k7::rateType; local k8::rateType;
   local k9::rateType; local k10::rateType; local k11::rateType; local k12::rateType;
   local k13::rateType; local utilde::uType;
-  if integrator.opts.calck
-    pop!(integrator.sol.k) # Take out the initial
-  end
+  fsalfirst = f(t,u)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
       @ode_loopheader
-      k = f(t,u)
-      k1 = k
+      k1 = fsalfirst
       k2 = f(t+c1*dt,u+dt*(a0201*k1))
       k3 = f(t+c2*dt,u+dt*(a0301*k1+a0302*k2))
       k4 = f(t+c3*dt,u+dt*(a0401*k1       +a0403*k3))
@@ -345,13 +329,11 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
       if integrator.opts.adaptive
         EEst = abs((update - dt*(k1*bhat1 + k6*bhat6 + k7*bhat7 + k8*bhat8 + k9*bhat9 + k10*bhat10 + k13*bhat13))/(integrator.opts.abstol+max(abs(u),abs(utmp))*integrator.opts.reltol))
       end
+      k = f(t+dt,utmp)
+      fsallast = k
       @ode_loopfooter
     end
     !isempty(integrator.tstops) && pop!(integrator.tstops)
-  end
-  if integrator.opts.calck
-    k = f(t,u)
-    push!(integrator.sol.k,k)
   end
   ode_postamble!(integrator)
   nothing
@@ -367,12 +349,11 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
   end
 
 
-  @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,utilde,update,tmp,atmp = integrator.cache
-
-  if integrator.opts.calck
-    pop!(integrator.sol.k)
-  end
-  k = k1
+  @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,utilde,update,tmp,atmp,k = integrator.cache
+  fsalfirst = k1
+  fsallast = k
+  integrator.k = k
+  f(t,u,k1) # pre-start FSAL
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
       @ode_loopheader
@@ -435,13 +416,10 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
         end
         EEst = integrator.opts.internalnorm(atmp)
       end
+      f(t+dt,utmp,k)
       @ode_loopfooter
     end
     !isempty(integrator.tstops) && pop!(integrator.tstops)
-  end
-  if integrator.opts.calck
-    f(t,u,k)
-    push!(integrator.sol.k,deepcopy(k))
   end
   ode_postamble!(integrator)
   nothing

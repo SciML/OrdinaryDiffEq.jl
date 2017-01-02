@@ -11,7 +11,7 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
   esc(quote
     # Event Handling
     if $interp_points!=0
-      ode_addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.dt,integrator.alg,integrator.f)
+      ode_addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.dt,integrator.f,integrator.alg)
       Θs = linspace(typeof(integrator.t)(0),typeof(integrator.t)(1),$(interp_points))
     end
     interp_index = 0
@@ -30,6 +30,7 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
     end
 
     if event_occurred
+      @show "event occured"
       top_Θ = Θs[interp_index] # Top at the smallest
       if $rootfind_event_loc
         find_zero = (Θ) -> begin
@@ -46,12 +47,10 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
       # If no solve and no interpolants, just use endpoint
 
       integrator.t = integrator.tprev + integrator.dt
-
       if integrator.opts.calck
         if isspecialdense(integrator.alg)
           resize!(integrator.k,integrator.kshortsize) # Reset k for next step
-          integrator.k = typeof(integrator.k)() # Make a local blank k for saving
-          ode_addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.dt,integrator.alg,integrator.f)
+          ode_addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.dt,integrator.f,integrator.alg,Val{true},Val{false})
         elseif typeof(integrator.u) <: Number
           integrator.k = integrator.f(integrator.t,integrator.u)
         else
@@ -67,7 +66,10 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
       else
         $apply_event!(integrator.u,integrator.cache)
         if integrator.opts.calck
-          if !isspecialdense(integrator.alg)
+          if isspecialdense(integrator.alg)
+            resize!(integrator.k,integrator.kshortsize) # Reset k for next step
+            ode_addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.dt,integrator.f,integrator.alg,Val{true},Val{false})
+          else
             if typeof(integrator.u) <: Number
               integrator.k = integrator.f(integrator.t,integrator.u)
             else

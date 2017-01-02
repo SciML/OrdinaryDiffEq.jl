@@ -20,7 +20,7 @@ function ode_solve{uType<:AbstractArray,algType<:Rosenbrock23,tType,tstopsType,t
   tmp = reshape(vectmp2,sizeu...)
   uidx = eachindex(u)
   jidx = eachindex(J)
-  k = [k₁,k₂]
+  integrator.k = [k₁,k₂]
   f(t,u,fsalfirst)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
@@ -74,6 +74,7 @@ function ode_solve{uType<:Number,algType<:Rosenbrock23,tType,tstopsType,tTypeNoU
   local k₃::uType
   integrator.kshortsize = 2
   k = ksEltype(2)
+  integrator.k = k
   fsalfirst = f(t,u)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
@@ -124,7 +125,7 @@ function ode_solve{uType<:AbstractArray,algType<:Rosenbrock32,tType,tstopsType,t
   end
   uidx = eachindex(u)
   jidx = eachindex(J)
-  k = [k₁,k₂]
+  integrator.k = [k₁,k₂]
   f(t,u,fsalfirst)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
@@ -181,18 +182,8 @@ function ode_solve{uType<:Number,algType<:Rosenbrock32,tType,tstopsType,tTypeNoU
   local k₃::uType
   local tmp::uType
   integrator.kshortsize = 2
-  if integrator.opts.calck
-    k = ksEltype()
-    for i in 1:2
-      push!(k,zero(rateType))
-    end
-    if integrator.calcprevs
-      integrator.kprev = deepcopy(k)
-      for i in 1:2
-        push!(integrator.kprev,zero(rateType))
-      end
-    end
-  end
+  k = ksEltype(2)
+  integrator.k = k
   fsalfirst = f(t,u)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*t < integrator.tdir*top(integrator.tstops)

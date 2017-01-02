@@ -38,7 +38,7 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
 
   @unpack k1,k2,k3,k4,utilde,tmp,atmp = integrator.cache
 
-  k = k4
+  integrator.k = k4
   fsalfirst = k1  # done by pointers, no copying
   fsallast = k4
 
@@ -87,12 +87,8 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
   local utilde::uType
   local EEst2::uEltypeNoUnits
   integrator.kshortsize = 8
-  if integrator.opts.calck
-    k = ksEltype()
-    for i in 1:integrator.kshortsize
-      push!(k,zero(rateType))
-    end
-  end
+  k = ksEltype(integrator.kshortsize)
+  integrator.k = k
   fsalfirst = f(t,u) # Pre-start fsal
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
@@ -134,8 +130,9 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
 
   @unpack k1,k2,k3,k4,k5,k6,k7,k8,utilde,uhat,tmp,atmp,atmptilde = integrator.cache
 
-  k = ksEltype(integrator.kshortsize)
-  k[1]=k1; k[2]=k2; k[3]=k3;k[4]=k4;k[5]=k5;k[6]=k6;k[7]=k7;k[8]=k8
+  integrator.k = ksEltype(integrator.kshortsize)
+  integrator.k[1]=k1; integrator.k[2]=k2; integrator.k[3]=k3; integrator.k[4]=k4;
+  integrator.k[5]=k5; integrator.k[6]=k6; integrator.k[7]=k7; integrator.k[8]=k8
 
   fsalfirst = k1; fsallast = k8  # setup pointers
   f(t,u,k1) # Pre-start fsal
@@ -201,12 +198,8 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
   local k7::rateType
   local utilde::uType
   integrator.kshortsize = 7
-  if integrator.opts.calck
-    k = ksEltype()
-    for i in 1:integrator.kshortsize
-      push!(k,zero(rateType))
-    end
-  end
+  k = ksEltype(integrator.kshortsize)
+  integrator.k = k
   fsalfirst = f(t,u) # Pre-start fsal
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
@@ -252,14 +245,16 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
   fsalfirst = k1; fsallast = k7 # setup pointers
 
   k = ksEltype(integrator.kshortsize)
+  integrator.k = k
   # Setup k pointers
-  k[1] = k1
-  k[2] = k2
-  k[3] = k3
-  k[4] = k4
-  k[5] = k5
-  k[6] = k6
-  k[7] = k7
+  integrator.k[1] = k1
+  integrator.k[2] = k2
+  integrator.k[3] = k3
+  integrator.k[4] = k4
+  integrator.k[5] = k5
+  integrator.k[6] = k6
+  integrator.k[7] = k7
+
 
   f(t,u,k1) # Pre-start fsal
   @inbounds while !isempty(integrator.tstops)
@@ -317,13 +312,8 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
   local update::rateType
   local bspl::rateType
   integrator.kshortsize = 4
-  if integrator.opts.calck
-    d1,d3,d4,d5,d6,d7 = DP5_dense_ds(uEltypeNoUnits)
-    k = ksEltype()
-    for i in 1:integrator.kshortsize
-      push!(k,zero(rateType))
-    end
-  end
+  d1,d3,d4,d5,d6,d7 = DP5_dense_ds(uEltypeNoUnits)
+  integrator.k = ksEltype(integrator.kshortsize)
   local utilde::uType
   fsalfirst = f(t,u) # Pre-start fsal
   @inbounds while !isempty(integrator.tstops)
@@ -344,11 +334,11 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
         EEst = abs( ((utilde-utmp)/(integrator.opts.abstol+max(abs(u),abs(utmp))*integrator.opts.reltol)))
       end
       if integrator.opts.calck
-        k[1] = update
+        integrator.k[1] = update
         bspl = k1 - update
-        k[2] = bspl
-        k[3] = update - k7 - bspl
-        k[4] = (d1*k1+d3*k3+d4*k4+d5*k5+d6*k6+d7*k7)
+        integrator.k[2] = bspl
+        integrator.k[3] = update - k7 - bspl
+        integrator.k[4] = (d1*k1+d3*k3+d4*k4+d5*k5+d6*k6+d7*k7)
       end
       @ode_loopfooter
     end
@@ -369,9 +359,7 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
 
   uidx = eachindex(u)
   integrator.kshortsize = 4
-  if integrator.opts.calck
-    k = [update,bspl,dense_tmp3,dense_tmp4]
-  end
+  integrator.k = [update,bspl,dense_tmp3,dense_tmp4]
   fsalfirst = k1; fsallast = k7
   f(t,u,fsalfirst);  # Pre-start fsal
   @inbounds while !isempty(integrator.tstops)
@@ -412,8 +400,8 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
       if integrator.opts.calck
         for i in uidx
           bspl[i] = k1[i] - update[i]
-          k[3][i] = update[i] - k7[i] - bspl[i]
-          k[4][i] = (d1*k1[i]+d3*k3[i]+d4*k4[i]+d5*k5[i]+d6*k6[i]+d7*k7[i])
+          integrator.k[3][i] = update[i] - k7[i] - bspl[i]
+          integrator.k[4][i] = (d1*k1[i]+d3*k3[i]+d4*k4[i]+d5*k5[i]+d6*k6[i]+d7*k7[i])
         end
       end
       @ode_loopfooter

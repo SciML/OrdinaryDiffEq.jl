@@ -22,6 +22,7 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
 
   @unpack k,fsalfirst = integrator.cache
   fsallast = k
+  integrator.k = k
   f(t,u,fsalfirst) # For the interpolation, needs k at the updated point
   @inbounds while !isempty(integrator.tstops)
       while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
@@ -71,6 +72,7 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
 
   @unpack k,du,utilde,fsalfirst = integrator.cache
   fsallast = k
+  integrator.k = k
   f(t,u,fsalfirst) # FSAL for interpolation
   @inbounds while !isempty(integrator.tstops)
       while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
@@ -133,6 +135,7 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
   @unpack tmp,k₁,k₂,k₃,k₄,k = integrator.cache
   fsalfirst = k₁
   fsallast = k
+  integrator.k = k
   f(t,u,k₁) # pre-start FSAL
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*t < integrator.tdir*top(integrator.tstops)

@@ -32,7 +32,7 @@ tspan = (0.0,15.0)
 prob = ODEProblem(f,u0,tspan)
 
 
-sol = solve(prob,Tsit5(),callback=callback)
+sol = solve(prob,Tsit5(),callback=callback,adaptive=false,dt=1/4)
 #plot(sol,denseplot=true)
 
 sol = solve(prob,Vern6(),callback=callback)

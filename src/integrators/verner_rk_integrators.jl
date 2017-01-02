@@ -6,12 +6,8 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
   local k9::rateType;
   local utilde::uType; fsalfirst = f(t,u) # Pre-start fsal
   integrator.kshortsize = 9
-  if integrator.opts.calck
-    k = ksEltype()
-    for i in 1:integrator.kshortsize
-      push!(k,zero(rateType))
-    end
-  end
+  k = ksEltype(integrator.kshortsize)
+  integrator.k = k
 
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
@@ -56,6 +52,7 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
   if integrator.opts.calck
     k = ksEltype(integrator.kshortsize)
     k[1]=k1; k[2]=k2; k[3]=k3;k[4]=k4;k[5]=k5;k[6]=k6;k[7]=k7;k[8]=k8;k[9]=k9 # Set the pointers
+    integrator.k = k
   end
   f(t,u,k1) # Pre-start fsal
   @inbounds while !isempty(integrator.tstops)
@@ -115,12 +112,8 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
   local k5::rateType; local k6::rateType; local k7::rateType; local k8::rateType;
   local k9::rateType; local k10::rateType; local utilde::uType; local update::uType
   integrator.kshortsize = 10
-  if integrator.opts.calck
-    k = ksEltype()
-    for i in 1:integrator.kshortsize
-      push!(k,zero(rateType))
-    end
-  end
+  k = ksEltype(integrator.kshortsize)
+  integrator.k = k
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
       @ode_loopheader
@@ -162,6 +155,7 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
   if integrator.opts.calck
     k = ksEltype(integrator.kshortsize)
     k[1]=k1;k[2]=k2;k[3]=k3;k[4]=k4;k[5]=k5;k[6]=k6;k[7]=k7;k[8]=k8;k[9]=k9;k[10]=k10 # Setup pointers
+    integrator.k = k
   end
 
   @inbounds while !isempty(integrator.tstops)
@@ -229,12 +223,8 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
   local k5::rateType; local k6::rateType; local k7::rateType; local k8::rateType;
   local k9::rateType; local k10::rateType; local utilde::uType; local update::uType
   integrator.kshortsize = 13
-  if integrator.opts.calck
-    k = ksEltype()
-    for i in 1:integrator.kshortsize
-      push!(k,zero(rateType))
-    end
-  end
+  k = ksEltype(integrator.kshortsize)
+  integrator.k = k
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
       @ode_loopheader
@@ -279,6 +269,7 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
   if integrator.opts.calck
     k = ksEltype(integrator.kshortsize)
     k[1]=k1;k[2]=k2;k[3]=k3;k[4]=k4;k[5]=k5;k[6]=k6;k[7]=k7;k[8]=k8;k[9]=k9;k[10]=k10;k[11]=k11;k[12]=k12;k[13]=k13 # Setup pointers
+    integrator.k = k
   end
 
   @inbounds while !isempty(integrator.tstops)
@@ -361,10 +352,8 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
   local utilde::uType; local update::uType
   integrator.kshortsize = 16
   if integrator.opts.calck
-    k = ksEltype()
-    for i in 1:integrator.kshortsize
-      push!(k,zero(rateType))
-    end
+    k = ksEltype(integrator.kshortsize)
+    integrator.k = k
   end
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
@@ -412,6 +401,7 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
   if integrator.opts.calck
     k = ksEltype(integrator.kshortsize)
     k[1]=k1;k[2]=k2;k[3]=k3;k[4]=k4;k[5]=k5;k[6]=k6;k[7]=k7;k[8]=k8;k[9]=k9;k[10]=k10;k[11]=k11;k[12]=k12;k[13]=k13;k[14]=k14;k[15]=k15;k[16]=k16 # Setup pointers
+    integrator.k = k
   end
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*t < integrator.tdir*top(integrator.tstops)

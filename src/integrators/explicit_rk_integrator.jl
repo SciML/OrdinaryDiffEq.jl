@@ -63,7 +63,7 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
   @unpack kk,utilde,tmp,atmp,uEEst = integrator.cache
 
   if integrator.opts.calck
-    k = kk[end]
+    integrator.k = kk[end]
   end
   fsallast = kk[end]
   fsalfirst = kk[1]
