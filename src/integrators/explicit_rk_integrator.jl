@@ -1,16 +1,19 @@
+@inline function initialize!{uType<:Number}(integrator,cache::ExplicitRKConstantCache,::Type{uType})
+  if isfsal(integrator.alg) # pre-start FSAL
+    integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev)
+  end
+end
+
 function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O,algType<:ExplicitRK}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  @unpack A,c,α,αEEst,stages = alg.tableau
-  A = A' # Transpose A to column major looping
-  kk = Array{ksEltype}(stages) # Not ks since that's for integrator.opts.dense
-  if isfsal(integrator.alg) # pre-start FSAL
-    integrator.fsalfirst = f(t,uprev)
-  end
+  initialize!(integrator,integrator.cache,typeof(integrator.u))
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
       @unpack_integrator
+      @unpack A,c,α,αEEst,stages = integrator.cache
+      @unpack kk = integrator.cache
       # Calc First
       if isfsal(integrator.alg)
         kk[1] = integrator.fsalfirst
@@ -59,27 +62,23 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
   nothing
 end
 
+@inline function initialize!{uType<:AbstractArray}(integrator,cache::ExplicitRKCache,::Type{uType})
+  integrator.k = cache.kk[end]
+  integrator.fsallast = cache.kk[end]
+  integrator.fsalfirst = cache.kk[1]
+  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
+end
+
 function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O,algType<:ExplicitRK}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  uidx = eachindex(uprev)
-  @unpack A,c,α,αEEst,stages = alg.tableau
-  A = A' # Transpose A to column major looping
-
-  @unpack kk,utilde,tmp,atmp,uEEst = integrator.cache
-
-  if integrator.opts.calck
-    integrator.k = kk[end]
-  end
-  integrator.fsallast = kk[end]
-  integrator.fsalfirst = kk[1]
-  f(t,uprev,kk[1]) # pre-start fsal
-
-
+  initialize!(integrator,integrator.cache,typeof(integrator.u))
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
       @unpack_integrator
+      @unpack A,c,α,αEEst,stages = integrator.cache.tab
+      @unpack kk,utilde,tmp,atmp,uEEst = integrator.cache
       # First
       if !isfsal(integrator.alg)
         f(t,uprev,kk[1])
