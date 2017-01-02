@@ -5,7 +5,8 @@ function ode_solve{uType<:AbstractArray,algType<:Rosenbrock23,tType,tstopsType,t
 
 
   @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp2 = integrator.cache
-
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = fsallast
   sizeu = size(u) # Change to dynamic by call overloaded type
   integrator.kshortsize = 2
   function vecf(t,u,du)
@@ -46,8 +47,8 @@ function ode_solve{uType<:AbstractArray,algType<:Rosenbrock23,tType,tstopsType,t
         utmp[i] = u[i] + dt*k₂[i]
       end
       if integrator.opts.adaptive
-        f(t+dt,utmp,fsallast)
-        @into! vectmp3 = W\vec(fsallast - c₃₂*(k₂-f₁)-2(k₁-fsalfirst)+dt*dT)
+        f(t+dt,utmp,integrator.fsallast)
+        @into! vectmp3 = W\vec(integrator.fsallast - c₃₂*(k₂-f₁)-2(k₁-fsalfirst)+dt*dT)
         k₃ = reshape(vectmp3,sizeu...)
         for i in uidx
           tmp2[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)./(integrator.opts.abstol+max(abs(u[i]),abs(utmp[i]))*integrator.opts.reltol)
@@ -75,7 +76,7 @@ function ode_solve{uType<:Number,algType<:Rosenbrock23,tType,tstopsType,tTypeNoU
   integrator.kshortsize = 2
   k = ksEltype(2)
   integrator.k = k
-  fsalfirst = f(t,u)
+  integrator.fsalfirst = f(t,u)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
       @ode_loopheader
@@ -83,13 +84,13 @@ function ode_solve{uType<:Number,algType<:Rosenbrock23,tType,tstopsType,tTypeNoU
       dT = ForwardDiff.derivative((t)->f(t,u),t)
       J = ForwardDiff.derivative((u)->f(t,u),u)
       W = 1-dt*d*J
-      k₁ = W\(fsalfirst + dt*d*dT)
+      k₁ = W\(integrator.fsalfirst + dt*d*dT)
       f₁ = f(t+dt/2,u+dt*k₁/2)
       k₂ = W\(f₁-k₁) + k₁
       utmp = u + dt*k₂
       if integrator.opts.adaptive
-        fsallast = f(t+dt,utmp)
-        k₃ = W\(fsallast - c₃₂*(k₂-f₁)-2(k₁-fsalfirst)+dt*dT)
+        integrator.fsallast = f(t+dt,utmp)
+        k₃ = W\(integrator.fsallast - c₃₂*(k₂-f₁)-2(k₁-integrator.fsalfirst)+dt*dT)
         EEst = abs((dt*(k₁ - 2k₂ + k₃)/6)./(integrator.opts.abstol+max(abs(u),abs(utmp))*integrator.opts.reltol))
       end
       if integrator.opts.calck
@@ -112,6 +113,9 @@ function ode_solve{uType<:AbstractArray,algType<:Rosenbrock32,tType,tstopsType,t
 
   @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp2 = integrator.cache
 
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = fsallast
+
   sizeu = size(u) # Change to dynamic by call overloaded type
   integrator.kshortsize = 2
   function vecf(t,u,du)
@@ -126,7 +130,7 @@ function ode_solve{uType<:AbstractArray,algType<:Rosenbrock32,tType,tstopsType,t
   uidx = eachindex(u)
   jidx = eachindex(J)
   integrator.k = [k₁,k₂]
-  f(t,u,fsalfirst)
+  f(t,u,integrator.fsalfirst)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
       @ode_loopheader
@@ -134,7 +138,7 @@ function ode_solve{uType<:AbstractArray,algType<:Rosenbrock32,tType,tstopsType,t
       ForwardDiff.jacobian!(J,(du1,u)->vecf(t,u,du1),vec(du1),vec(u))
 
       W[:] = I-dt*d*J # Can an allocation be cut here?
-      @into! vectmp = W\vec(fsalfirst + dt*d*dT)
+      @into! vectmp = W\vec(integrator.fsalfirst + dt*d*dT)
       recursivecopy!(k₁,reshape(vectmp,sizeu...))
       for i in uidx
         utmp[i]=u[i]+dt*k₁[i]/2
@@ -148,8 +152,8 @@ function ode_solve{uType<:AbstractArray,algType<:Rosenbrock32,tType,tstopsType,t
       for i in uidx
         tmp[i] = u[i] + dt*k₂[i]
       end
-      f(t+dt,tmp,fsallast)
-      @into! vectmp3 = W\vec(fsallast - c₃₂*(k₂-f₁)-2(k₁-fsalfirst)+dt*dT)
+      f(t+dt,tmp,integrator.fsallast)
+      @into! vectmp3 = W\vec(integrator.fsallast - c₃₂*(k₂-f₁)-2(k₁-integrator.fsalfirst)+dt*dT)
       k₃ = reshape(vectmp3,sizeu...)
       for i in uidx
         utmp[i] = u[i] + dt*(k₁[i] + 4k₂[i] + k₃[i])/6
@@ -184,7 +188,7 @@ function ode_solve{uType<:Number,algType<:Rosenbrock32,tType,tstopsType,tTypeNoU
   integrator.kshortsize = 2
   k = ksEltype(2)
   integrator.k = k
-  fsalfirst = f(t,u)
+  integrator.fsalfirst = f(t,u)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
       @ode_loopheader
@@ -193,12 +197,12 @@ function ode_solve{uType<:Number,algType<:Rosenbrock32,tType,tstopsType,tTypeNoU
       J = ForwardDiff.derivative((u)->f(t,u),u)
       W = 1-dt*d*J
       #f₀ = f(t,u)
-      k₁ = W\(fsalfirst + dt*d*dT)
+      k₁ = W\(integrator.fsalfirst + dt*d*dT)
       f₁ = f(t+dt/2,u+dt*k₁/2)
       k₂ = W\(f₁-k₁) + k₁
       tmp = u + dt*k₂
-      fsallast = f(t+dt,tmp)
-      k₃ = W\(fsallast - c₃₂*(k₂-f₁)-2(k₁-fsalfirst)+dt*dT)
+      integrator.fsallast = f(t+dt,tmp)
+      k₃ = W\(integrator.fsallast - c₃₂*(k₂-f₁)-2(k₁-integrator.fsalfirst)+dt*dT)
       utmp = u + dt*(k₁ + 4k₂ + k₃)/6
       if integrator.opts.adaptive
         EEst = abs((dt*(k₁ - 2k₂ + k₃)/6)./(integrator.opts.abstol+max(abs(u),abs(utmp))*integrator.opts.reltol))

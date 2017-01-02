@@ -30,7 +30,6 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
     end
 
     if event_occurred
-      @show "event occured"
       top_Θ = Θs[interp_index] # Top at the smallest
       if $rootfind_event_loc
         find_zero = (Θ) -> begin

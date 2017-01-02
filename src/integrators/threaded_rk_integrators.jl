@@ -9,8 +9,8 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
   uidx = eachindex(u)
   integrator.kshortsize = 4
   integrator.k = [update,bspl,dense_tmp3,dense_tmp4]
-  fsalfirst = k1; fsallast = k7; k = integrator.k
-  f(t,u,fsalfirst);  # Pre-start fsal
+  integrator.fsalfirst = k1; integrator.fsallast = k7; k = integrator.k
+  f(t,u,integrator.fsalfirst);  # Pre-start fsal
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
       @ode_loopheader
@@ -25,7 +25,7 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
       dp5threaded_loop5(dt,tmp,u,a61,k1,a62,k2,a63,k3,a64,k4,a65,k5,uidx)
       f(t+dt,tmp,k6)
       dp5threaded_loop6(dt,utmp,u,a71,k1,a73,k3,a74,k4,a75,k5,a76,k6,update,uidx)
-      f(t+dt,utmp,fsallast)
+      f(t+dt,utmp,integrator.fsallast)
       if integrator.opts.adaptive
         dp5threaded_adaptiveloop(dt,utilde,u,b1,k1,b3,k3,b4,k4,b5,k5,b6,k6,b7,k7,atmp,utmp,integrator.opts.abstol,integrator.opts.reltol,uidx)
         EEst = integrator.opts.internalnorm(atmp)

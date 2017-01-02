@@ -5,14 +5,14 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
   kk = Array{ksEltype}(stages) # Not ks since that's for integrator.opts.dense
   local utilde::ksEltype
   if isfsal(integrator.alg) # pre-start FSAL
-    fsalfirst = f(t,u)
+    integrator.fsalfirst = f(t,u)
   end
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
       @ode_loopheader
       # Calc First
       if isfsal(integrator.alg)
-        kk[1] = fsalfirst
+        kk[1] = integrator.fsalfirst
       else
         kk[1] = f(t,u)
       end
@@ -29,7 +29,7 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
       for j = 1:stages-1
         utilde += A[j,end]*kk[j]
       end
-      kk[end] = f(t+c[end]*dt,u+dt*utilde); fsallast = kk[end] # Uses fsallast as temp even if not fsal
+      kk[end] = f(t+c[end]*dt,u+dt*utilde); integrator.fsallast = kk[end] # Uses fsallast as temp even if not fsal
       # Accumulate Result
       utilde = α[1]*kk[1]
       for i = 2:stages
@@ -65,8 +65,8 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
   if integrator.opts.calck
     integrator.k = kk[end]
   end
-  fsallast = kk[end]
-  fsalfirst = kk[1]
+  integrator.fsallast = kk[end]
+  integrator.fsalfirst = kk[1]
   f(t,u,kk[1]) # pre-start fsal
 
 

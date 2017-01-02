@@ -73,6 +73,17 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
   kshortsize::Int
   reeval_fsal::Bool
   opts::O
+  fsalfirst::rateType
+  fsallast::rateType
+
+  ODEIntegrator(sol,u,k,t,dt,f,uprev,kprev,tprev,tstops,saveat,adaptiveorder,
+    order,alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,dt_mod,tdir,qminc,
+    qmaxc,EEst,qold,iter,saveiter,saveiter_dense,prog,cache,event_cache,
+    kshortsize,reeval_fsal,opts) = new(
+    sol,u,k,t,dt,f,uprev,kprev,tprev,tstops,saveat,adaptiveorder,
+      order,alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,dt_mod,tdir,qminc,
+      qmaxc,EEst,qold,iter,saveiter,saveiter_dense,prog,cache,event_cache,
+      kshortsize,reeval_fsal,opts) # Leave off fsalfirst and last
 end
 
 @def ode_preamble begin
@@ -222,17 +233,17 @@ end
       if isfsal(integrator.alg)
         if integrator.reeval_fsal || (typeof(integrator.alg)<:DP8 && !integrator.opts.calck)
           # Under these condtions, these algorithms are not FSAL anymore
-          if typeof(fsalfirst) <: AbstractArray
-            f(integrator.t,integrator.u,fsalfirst)
+          if typeof(integrator.fsalfirst) <: AbstractArray
+            f(integrator.t,integrator.u,integrator.fsalfirst)
           else
-            fsalfirst = f(integrator.t,integrator.u)
+            integrator.fsalfirst = f(integrator.t,integrator.u)
           end
           integrator.reeval_fsal = false
         else
-          if typeof(fsalfirst) <: AbstractArray
-            recursivecopy!(fsalfirst,fsallast)
+          if typeof(integrator.fsalfirst) <: AbstractArray
+            recursivecopy!(integrator.fsalfirst,integrator.fsallast)
           else
-            fsalfirst = fsallast
+            integrator.fsalfirst = integrator.fsallast
           end
         end
       end
@@ -270,17 +281,17 @@ end
     if isfsal(integrator.alg)
       if integrator.reeval_fsal || (typeof(integrator.alg)<:DP8 && !integrator.opts.calck) || typeof(integrator.alg)<:Union{Rosenbrock23,Rosenbrock32}
         # Under these condtions, these algorithms are not FSAL anymore
-        if typeof(fsalfirst) <: AbstractArray
-          f(integrator.t,integrator.u,fsalfirst)
+        if typeof(integrator.fsalfirst) <: AbstractArray
+          f(integrator.t,integrator.u,integrator.fsalfirst)
         else
-          fsalfirst = f(integrator.t,integrator.u)
+          integrator.fsalfirst = f(integrator.t,integrator.u)
         end
         integrator.reeval_fsal = false
       else
-        if typeof(fsalfirst) <: AbstractArray
-          recursivecopy!(fsalfirst,fsallast)
+        if typeof(integrator.fsalfirst) <: AbstractArray
+          recursivecopy!(integrator.fsalfirst,integrator.fsallast)
         else
-          fsalfirst = fsallast
+          integrator.fsalfirst = integrator.fsallast
         end
       end
     end

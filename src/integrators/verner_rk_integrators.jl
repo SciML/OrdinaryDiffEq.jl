@@ -4,7 +4,7 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
   local k1::rateType; local k2::rateType; local k3::rateType; local k4::rateType;
   local k5::rateType; local k6::rateType; local k7::rateType; local k8::rateType;
   local k9::rateType;
-  local utilde::uType; fsalfirst = f(t,u) # Pre-start fsal
+  local utilde::uType; integrator.fsalfirst = f(t,u) # Pre-start fsal
   integrator.kshortsize = 9
   k = ksEltype(integrator.kshortsize)
   integrator.k = k
@@ -12,7 +12,7 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
       @ode_loopheader
-      k1 = fsalfirst
+      k1 = integrator.fsalfirst
       k2 = f(t+c1*dt,u+dt*(a21*k1))
       k3 = f(t+c2*dt,u+dt*(a31*k1+a32*k2))
       k4 = f(t+c3*dt,u+dt*(a41*k1       +a43*k3))
@@ -21,7 +21,7 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
       k7 = f(t+c6*dt,u+dt*(a71*k1       +a73*k3+a74*k4+a75*k5+a76*k6))
       k8 = f(t+dt,u+dt*(a81*k1       +a83*k3+a84*k4+a85*k5+a86*k6+a87*k7))
       utmp =    u+dt*(a91*k1              +a94*k4+a95*k5+a96*k6+a97*k7+a98*k8)
-      fsallast = f(t+dt,utmp); k9 = fsallast
+      integrator.fsallast = f(t+dt,utmp); k9 = integrator.fsallast
       if integrator.opts.adaptive
         utilde = u + dt*(b1*k1 + b4*k4 + b5*k5 + b6*k6 + b7*k7 + b8*k8 + b9*k9)
         EEst = abs( ((utilde-utmp)/(integrator.opts.abstol+max(abs(u),abs(utmp))*integrator.opts.reltol)))
@@ -48,7 +48,7 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
 
   integrator.kshortsize = 9
   uidx = eachindex(u)
-  fsalfirst = k1 ; fsallast = k9
+  integrator.fsalfirst = k1 ; integrator.fsallast = k9
   if integrator.opts.calck
     k = ksEltype(integrator.kshortsize)
     k[1]=k1; k[2]=k2; k[3]=k3;k[4]=k4;k[5]=k5;k[6]=k6;k[7]=k7;k[8]=k8;k[9]=k9 # Set the pointers
