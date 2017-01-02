@@ -6,27 +6,28 @@
   uEltypeNoUnits = typeof(integrator.opts.reltol)
 end
 
-@def ode_loopheader begin
+@inline function ode_loopheader!(integrator)
   integrator.iter += 1
-
   if integrator.opts.adaptive
-    if integrator.tdir > tType(0)
+    if integrator.tdir > typeof(integrator.t)(0)
       integrator.dt = min(abs(integrator.dt),abs(top(integrator.tstops)-integrator.t)) # Step to the end
     else
       integrator.dt = -min(abs(integrator.dt),abs(top(integrator.tstops)-integrator.t))
     end
-  elseif integrator.dtcache == tType(0) # Use integrator.tstops
+  elseif integrator.dtcache == typeof(integrator.t)(0) # Use integrator.tstops
     integrator.dt = integrator.tdir*abs(top(integrator.tstops)-integrator.t)
   else # always try to step with dtcache
     integrator.dt = integrator.tdir*min(abs(integrator.dtcache),abs(top(integrator.tstops)-integrator.t)) # Step to the end
   end
+end
 
+@def ode_exit_conditions begin
   if integrator.iter > integrator.opts.maxiters
     warn("Interrupted. Larger maxiters is needed.")
     ode_postamble!(integrator)
     return nothing
   end
-  if integrator.dt == tType(0)
+  if integrator.dt == typeof(integrator.t)(0)
     warn("dt == 0. Aborting")
     ode_postamble!(integrator)
     return nothing
@@ -35,12 +36,6 @@ end
     warn("NaNs detected. Aborting")
     ode_postamble!(integrator)
     return nothing
-  end
-
-  dt = integrator.dt
-
-  if typeof(integrator.u)<:AbstractArray && !(typeof(integrator.opts.callback)<:Void)
-    uidx = eachindex(integrator.uprev)
   end
 end
 
@@ -105,6 +100,9 @@ end
 end
 
 @def unpack_integrator begin
+  if typeof(integrator.u)<:AbstractArray && !(typeof(integrator.opts.callback)<:Void)
+    uidx = eachindex(integrator.uprev)
+  end
   t = integrator.t
   dt = integrator.dt
   if !(typeof(integrator.u) <: AbstractArray)

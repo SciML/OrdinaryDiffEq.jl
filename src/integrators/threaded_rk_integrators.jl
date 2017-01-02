@@ -12,8 +12,10 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
   integrator.fsalfirst = k1; integrator.fsallast = k7; k = integrator.k
   f(t,uprev,integrator.fsalfirst);  # Pre-start fsal
   @inbounds while !isempty(integrator.tstops)
-    while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
-      @ode_loopheader
+    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
+      ode_loopheader!(integrator)
+      @ode_exit_conditions
+      @unpack_integrator
       dp5threaded_loop1(dt,tmp,uprev,a21,k1,uidx)
       f(t+c1*dt,tmp,k2)
       dp5threaded_loop2(dt,tmp,uprev,a31,k1,a32,k2,uidx)
@@ -35,7 +37,6 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
       end
       @pack_integrator
       ode_loopfooter!(integrator)
-      @unpack_integrator
       if isempty(integrator.tstops)
         break
       end

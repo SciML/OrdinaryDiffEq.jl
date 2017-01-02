@@ -24,8 +24,10 @@ function ode_solve{uType<:AbstractArray,algType<:Rosenbrock23,tType,tstopsType,t
   integrator.k = [k₁,k₂]
   f(t,uprev,fsalfirst)
   @inbounds while !isempty(integrator.tstops)
-    while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
-      @ode_loopheader
+    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
+      ode_loopheader!(integrator)
+      @ode_exit_conditions
+      @unpack_integrator
       #if alg_autodiff(alg)
         ForwardDiff.derivative!(dT,(t)->vecfreturn(t,uprev,du2),t) # Time derivative of each component
         ForwardDiff.jacobian!(J,(du1,uprev)->vecf(t,uprev,du1),vec(du1),vec(uprev))
@@ -57,7 +59,6 @@ function ode_solve{uType<:AbstractArray,algType<:Rosenbrock23,tType,tstopsType,t
       end
       @pack_integrator
       ode_loopfooter!(integrator)
-      @unpack_integrator
       if isempty(integrator.tstops)
         break
       end
@@ -72,19 +73,15 @@ function ode_solve{uType<:Number,algType<:Rosenbrock23,tType,tstopsType,tTypeNoU
   @ode_preamble
   c₃₂ = 6 + sqrt(2)
   d = 1/(2+sqrt(2))
-  local dT::uType
-  local J::uType
-  local k₁::uType
-  local f₁::uType
-  local k₂::uType
-  local k₃::uType
   integrator.kshortsize = 2
   k = ksEltype(2)
   integrator.k = k
   integrator.fsalfirst = f(t,uprev)
   @inbounds while !isempty(integrator.tstops)
-    while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
-      @ode_loopheader
+    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
+      ode_loopheader!(integrator)
+      @ode_exit_conditions
+      @unpack_integrator
       # Time derivative
       dT = ForwardDiff.derivative((t)->f(t,uprev),t)
       J = ForwardDiff.derivative((uprev)->f(t,uprev),uprev)
@@ -104,7 +101,6 @@ function ode_solve{uType<:Number,algType<:Rosenbrock23,tType,tstopsType,tTypeNoU
       end
       @pack_integrator
       ode_loopfooter!(integrator)
-      @unpack_integrator
       if isempty(integrator.tstops)
         break
       end
@@ -142,8 +138,10 @@ function ode_solve{uType<:AbstractArray,algType<:Rosenbrock32,tType,tstopsType,t
   integrator.k = [k₁,k₂]
   f(t,uprev,integrator.fsalfirst)
   @inbounds while !isempty(integrator.tstops)
-    while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
-      @ode_loopheader
+    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
+      ode_loopheader!(integrator)
+      @ode_exit_conditions
+      @unpack_integrator
       ForwardDiff.derivative!(dT,(t)->vecfreturn(t,uprev,du2),t) # Time derivative
       ForwardDiff.jacobian!(J,(du1,uprev)->vecf(t,uprev,du1),vec(du1),vec(uprev))
 
@@ -176,7 +174,6 @@ function ode_solve{uType<:AbstractArray,algType<:Rosenbrock32,tType,tstopsType,t
       end
       @pack_integrator
       ode_loopfooter!(integrator)
-      @unpack_integrator
       if isempty(integrator.tstops)
         break
       end
@@ -191,22 +188,15 @@ function ode_solve{uType<:Number,algType<:Rosenbrock32,tType,tstopsType,tTypeNoU
   @ode_preamble
   c₃₂ = 6 + sqrt(2)
   d = 1/(2+sqrt(2))
-  local dT::uType
-  local J::uType
-  #f₀ = fsalfirst
-  local k₁::uType
-  local f₁::uType
-  #f₂ = fsallast
-  local k₂::uType
-  local k₃::uType
-  local tmp::uType
   integrator.kshortsize = 2
   k = ksEltype(2)
   integrator.k = k
   integrator.fsalfirst = f(t,uprev)
   @inbounds while !isempty(integrator.tstops)
-    while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
-      @ode_loopheader
+    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
+      ode_loopheader!(integrator)
+      @ode_exit_conditions
+      @unpack_integrator
       # Time derivative
       dT = ForwardDiff.derivative((t)->f(t,uprev),t)
       J = ForwardDiff.derivative((uprev)->f(t,uprev),uprev)
@@ -228,7 +218,6 @@ function ode_solve{uType<:Number,algType<:Rosenbrock32,tType,tstopsType,tTypeNoU
       end
       @pack_integrator
       ode_loopfooter!(integrator)
-      @unpack_integrator
       if isempty(integrator.tstops)
         break
       end

@@ -11,10 +11,8 @@ end
 
 function ode_solve{uType<:Number,algType<:ImplicitEuler,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  local nlres::NLsolve.SolverResults{eltype(uprev)}
-
-  uhold::Vector{uType} = Vector{uType}(1)
-  u_old::Vector{uType} = Vector{uType}(1)
+  uhold = Vector{uType}(1)
+  u_old = Vector{uType}(1)
 
   rhs = RHS_IE_Scalar(f,u_old,t,dt)
 
@@ -24,8 +22,10 @@ function ode_solve{uType<:Number,algType<:ImplicitEuler,tType,tstopsType,tTypeNo
     adf = autodiff_setup(rhs,uhold,integrator.cache)
   end
   @inbounds while !isempty(integrator.tstops)
-    while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
-      @ode_loopheader
+    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
+      ode_loopheader!(integrator)
+      @ode_exit_conditions
+      @unpack_integrator
       u_old[1] = uhold[1]
       rhs.t = t
       rhs.dt = dt
@@ -41,7 +41,6 @@ function ode_solve{uType<:Number,algType<:ImplicitEuler,tType,tstopsType,tTypeNo
       u = uhold[1]
       @pack_integrator
       ode_loopfooter!(integrator)
-      @unpack_integrator
       if isempty(integrator.tstops)
         break
       end
@@ -72,7 +71,6 @@ end
 
 function ode_solve{uType<:AbstractArray,algType<:ImplicitEuler,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  local nlres::NLsolve.SolverResults{eltype(uprev)}
   uidx = eachindex(uprev)
   sizeu = size(uprev) # Change to dynamic by call overloaded type
 
@@ -89,8 +87,10 @@ function ode_solve{uType<:AbstractArray,algType<:ImplicitEuler,tType,tstopsType,
   end
 
   @inbounds while !isempty(integrator.tstops)
-    while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
-      @ode_loopheader
+    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
+      ode_loopheader!(integrator)
+      @ode_exit_conditions
+      @unpack_integrator
       copy!(u_old,uhold)
       rhs.t = t
       rhs.dt = dt
@@ -107,7 +107,6 @@ function ode_solve{uType<:AbstractArray,algType<:ImplicitEuler,tType,tstopsType,
       end
       @pack_integrator
       ode_loopfooter!(integrator)
-      @unpack_integrator
       if isempty(integrator.tstops)
         break
       end
@@ -141,7 +140,6 @@ end
 
 function ode_solve{uType<:AbstractArray,algType<:Trapezoid,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  local nlres::NLsolve.SolverResults{eltype(uprev)}
   uidx = eachindex(uprev)
   sizeu = size(uprev) # Change to dynamic by call overloaded type
 
@@ -160,8 +158,10 @@ function ode_solve{uType<:AbstractArray,algType<:Trapezoid,tType,tstopsType,tTyp
   end
 
   @inbounds while !isempty(integrator.tstops)
-    while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
-      @ode_loopheader
+    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
+      ode_loopheader!(integrator)
+      @ode_exit_conditions
+      @unpack_integrator
       copy!(u_old,uhold)
       rhs.t = t
       rhs.dt = dt
@@ -178,7 +178,6 @@ function ode_solve{uType<:AbstractArray,algType<:Trapezoid,tType,tstopsType,tTyp
       end
       @pack_integrator
       ode_loopfooter!(integrator)
-      @unpack_integrator
       if isempty(integrator.tstops)
         break
       end
@@ -203,7 +202,6 @@ end
 function ode_solve{uType<:Number,algType<:Trapezoid,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
   dto2::tType = dt/2
-  local nlres::NLsolve.SolverResults{eltype(uprev)}
   uhold::Vector{uType} = Vector{uType}(1)
   u_old::Vector{uType} = Vector{uType}(1)
   uhold[1] = uprev; u_old[1] = uprev
@@ -215,8 +213,10 @@ function ode_solve{uType<:Number,algType<:Trapezoid,tType,tstopsType,tTypeNoUnit
   end
 
   @inbounds while !isempty(integrator.tstops)
-      while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
-      @ode_loopheader
+      while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
+      ode_loopheader!(integrator)
+      @ode_exit_conditions
+      @unpack_integrator
       u_old[1] = uhold[1]
       rhs.t = t
       rhs.dt = dt
@@ -232,7 +232,6 @@ function ode_solve{uType<:Number,algType<:Trapezoid,tType,tstopsType,tTypeNoUnit
       u = uhold[1]
       @pack_integrator
       ode_loopfooter!(integrator)
-      @unpack_integrator
       if isempty(integrator.tstops)
         break
       end

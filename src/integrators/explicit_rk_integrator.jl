@@ -3,13 +3,14 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
   @unpack A,c,α,αEEst,stages = alg.tableau
   A = A' # Transpose A to column major looping
   kk = Array{ksEltype}(stages) # Not ks since that's for integrator.opts.dense
-  local utilde::ksEltype
   if isfsal(integrator.alg) # pre-start FSAL
     integrator.fsalfirst = f(t,uprev)
   end
   @inbounds while !isempty(integrator.tstops)
-    while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
-      @ode_loopheader
+    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
+      ode_loopheader!(integrator)
+      @ode_exit_conditions
+      @unpack_integrator
       # Calc First
       if isfsal(integrator.alg)
         kk[1] = integrator.fsalfirst
@@ -48,7 +49,6 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
       end
       @pack_integrator
       ode_loopfooter!(integrator)
-      @unpack_integrator
       if isempty(integrator.tstops)
         break
       end
@@ -76,8 +76,10 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
 
 
   @inbounds while !isempty(integrator.tstops)
-    while integrator.tdir*t < integrator.tdir*top(integrator.tstops)
-      @ode_loopheader
+    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
+      ode_loopheader!(integrator)
+      @ode_exit_conditions
+      @unpack_integrator
       # First
       if !isfsal(integrator.alg)
         f(t,uprev,kk[1])
@@ -140,7 +142,6 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
       end
       @pack_integrator
       ode_loopfooter!(integrator)
-      @unpack_integrator
       if isempty(integrator.tstops)
         break
       end
