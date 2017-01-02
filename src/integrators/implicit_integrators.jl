@@ -9,23 +9,20 @@ function (p::RHS_IE_Scalar)(uprev,resid)
   resid[1] = uprev[1] - p.u_old[1] - p.dt*p.f(p.t+p.dt,uprev)[1]
 end
 
+@inline function initialize!(integrator,cache::ImplicitEulerConstantCache)
+  cache.uhold[1] = integrator.uprev; cache.u_old[1] = integrator.uprev
+end
+
+
 function ode_solve{uType<:Number,algType<:ImplicitEuler,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  uhold = Vector{uType}(1)
-  u_old = Vector{uType}(1)
-
-  rhs = RHS_IE_Scalar(f,u_old,t,dt)
-
-  uhold[1] = uprev; u_old[1] = uprev
-
-  if alg_autodiff(alg)
-    adf = autodiff_setup(rhs,uhold,integrator.cache)
-  end
+  initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
       @unpack_integrator
+      @unpack uhold,u_old,rhs,adf = integrator.cache
       u_old[1] = uhold[1]
       rhs.t = t
       rhs.dt = dt
@@ -51,51 +48,38 @@ function ode_solve{uType<:Number,algType<:ImplicitEuler,tType,tstopsType,tTypeNo
   nothing
 end
 
-type RHS_IE{F,uType,tType,SizeType,DiffCacheType,uidxType} <: Function
+type RHS_IE{F,uType,tType,DiffCacheType} <: Function
   f::F
   u_old::uType
   t::tType
   dt::tType
-  sizeu::SizeType
   dual_cache::DiffCacheType
-  uidx::uidxType
 end
 
 function (p::RHS_IE)(uprev,resid)
   du = get_du(p.dual_cache, eltype(uprev))
-  p.f(p.t+p.dt,reshape(uprev,p.sizeu),du)
-  for i in p.uidx
+  p.f(p.t+p.dt,reshape(uprev,size(uprev)),du)
+  for i in eachindex(uprev)
     resid[i] = uprev[i] - p.u_old[i] - p.dt*du[i]
   end
 end
 
+@inline function initialize!(integrator,cache::ImplicitEulerCache)
+  integrator.k = cache.k
+end
+
 function ode_solve{uType<:AbstractArray,algType<:ImplicitEuler,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  uidx = eachindex(uprev)
-  sizeu = size(uprev) # Change to dynamic by call overloaded type
-
-
-  @unpack u_old,dual_cache,k = integrator.cache
-  integrator.k = k
-
-  uhold = vec(u)
-
-  rhs = RHS_IE(f,u_old,t,dt,sizeu,dual_cache,uidx)
-
-  if alg_autodiff(alg)
-    adf = autodiff_setup(rhs,uhold,integrator.cache)
-  end
-
+  initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
       @unpack_integrator
+      @unpack u_old,dual_cache,k,adf,rhs,uhold = integrator.cache
       copy!(u_old,uhold)
       rhs.t = t
       rhs.dt = dt
-      # rhs.uidx = uidx
-      # rhs.sizeu = sizeu
       if alg_autodiff(alg)
         nlres = NLsolve.nlsolve(adf,uhold)
       else

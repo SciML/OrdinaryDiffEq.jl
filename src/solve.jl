@@ -183,7 +183,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
     uprev = deepcopy(u)
   end
 
-  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uprev,kprev)
+  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uprev,kprev,f!,t)
 
   if dense
     #notsaveat_idxs  = find((x)->(x∉saveat)||(x∈Ts),ts)
