@@ -1,28 +1,75 @@
+immutable BS3ConstantCache{T} <: OrdinaryDiffEqConstantCache
+  a21::T
+  a32::T
+  a41::T
+  a42::T
+  a43::T
+  c1::T
+  c2::T
+  b1::T
+  b2::T
+  b3::T
+  b4::T
+end
+
 """
 constructBogakiShampine3()
 
 Constructs the tableau object for the Bogakai-Shampine Order 2/3 method.
 """
-function constructBS3(T::Type = Float64)
-
+function BS3ConstantCache(T::Type = Float64)
   a21 = T(1//2)
   a32 = T(3//4)
   a41 = T(2//9)
   a42 = T(1//3)
   a43 = T(4//9)
-
   c1 = T(1//2)
   c2 = T(3//4)
-
   b1 = T(7//24)
   b2 = T(1//4)
   b3 = T(1//3)
   b4 = T(1//8)
-  return a21,a32,a41,a42,a43,c1,c2,b1,b2,b3,b4
+  BS3ConstantCache(a21,a32,a41,a42,a43,c1,c2,b1,b2,b3,b4)
 end
 
+immutable Tsit5ConstantCache{T} <: OrdinaryDiffEqConstantCache
+  c1::T
+  c2::T
+  c3::T
+  c4::T
+  c5::T
+  c6::T
+  a21::T
+  a31::T
+  a32::T
+  a41::T
+  a42::T
+  a43::T
+  a51::T
+  a52::T
+  a53::T
+  a54::T
+  a61::T
+  a62::T
+  a63::T
+  a64::T
+  a65::T
+  a71::T
+  a72::T
+  a73::T
+  a74::T
+  a75::T
+  a76::T
+  b1::T
+  b2::T
+  b3::T
+  b4::T
+  b5::T
+  b6::T
+  b7::T
+end
 
-function constructTsit5(T::Type = Float64)
+function Tsit5ConstantCache(T::Type = Float64)
   c1 =       T(161//1000)
   c2 =       T(327//1000)
   c3 =       T(9//10)
@@ -57,7 +104,55 @@ function constructTsit5(T::Type = Float64)
   b5 =       T(parse(BigFloat,"-2.707712349983525454881109975059321670689605166938197378763992255714444407154902012702"))
   b6 =       T(parse(BigFloat,"1.866628418170587035753719399566211498666255505244122593996591602841258328965767580089"))
   b7 =       T(1//66)
-  return c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,b1,b2,b3,b4,b5,b6,b7
+  Tsit5ConstantCache(c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,b1,b2,b3,b4,b5,b6,b7)
+end
+
+immutable BS5ConstantCache{T} <: OrdinaryDiffEqConstantCache
+  c1::T
+  c2::T
+  c3::T
+  c4::T
+  c5::T
+  a21::T
+  a31::T
+  a32::T
+  a41::T
+  a42::T
+  a43::T
+  a51::T
+  a52::T
+  a53::T
+  a54::T
+  a61::T
+  a62::T
+  a63::T
+  a64::T
+  a65::T
+  a71::T
+  a72::T
+  a73::T
+  a74::T
+  a75::T
+  a76::T
+  a81::T
+  a83::T
+  a84::T
+  a85::T
+  a86::T
+  a87::T
+  bhat1::T
+  bhat3::T
+  bhat4::T
+  bhat5::T
+  bhat6::T
+  btilde1::T
+  btilde2::T
+  btilde3::T
+  btilde4::T
+  btilde5::T
+  btilde6::T
+  btilde7::T
+  btilde8
 end
 
 """
@@ -65,7 +160,7 @@ end
 An Efficient Runge-Kutta (4,5) Pair by P.Bogacki and L.F.Shampine
  Computers and Mathematics with Applications, Vol. 32, No. 6, 1996, pages 15 to 28
 """
-function constructBS5(T::Type = Float64)
+function BS5ConstantCache(T::Type = Float64)
   c1     =T(1//6)
   c2     =T(2//9)
   c3     =T(3//7)
@@ -114,7 +209,7 @@ function constructBS5(T::Type = Float64)
   btilde7=T(79937//1113912)
   btilde8=T(3293//556956)
 
-  return c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8
+  BS5ConstantCache(c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8)
 end
 
 """

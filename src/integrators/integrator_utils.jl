@@ -1,9 +1,15 @@
+initialize{uType}(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) =
+                error("This algorithm does not have an initialization function")
+
 @def ode_preamble begin
   @unpack t,dt,alg,rate_prototype = integrator
   uprev = integrator.uprev
   u = integrator.u
   f = integrator.f # Grab the pointer for the local scope. Updates automatically.
   uEltypeNoUnits = typeof(integrator.opts.reltol)
+  if typeof(integrator.u)<: AbstractArray
+    uidx = eachindex(uprev)
+  end
 end
 
 @inline function ode_loopheader!(integrator)
@@ -105,9 +111,8 @@ end
   end
   t = integrator.t
   dt = integrator.dt
-  if !(typeof(integrator.u) <: AbstractArray)
-    uprev = integrator.uprev
-  end
+  uprev = integrator.uprev
+  f = integrator.f # Grab the pointer for the local scope. Updates automatically.
 end
 
 @inline function ode_loopfooter!(integrator)

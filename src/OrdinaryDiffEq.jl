@@ -17,6 +17,8 @@ module OrdinaryDiffEq
   include("misc_utils.jl")
   include("algorithms.jl")
   include("alg_utils.jl")
+  include("caches.jl")
+  include("integrators/unrolled_tableaus.jl")
   include("integrators/main_type.jl")
   include("integrators/integrator_utils.jl")
   include("integrators/fixed_timestep_integrators.jl")
@@ -30,11 +32,9 @@ module OrdinaryDiffEq
   include("integrators/threaded_rk_integrators.jl")
   include("constants.jl")
   include("callbacks.jl")
-  include("caches.jl")
   include("solve.jl")
   include("initdt.jl")
   include("dense.jl")
-  include("integrators/unrolled_tableaus.jl")
 
 
   #General Functions
