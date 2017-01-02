@@ -198,7 +198,7 @@ Base.@pure function alg_cache{uType<:AbstractArray}(alg::DP5,u::uType,rate_proto
   DP5Cache(u,k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,utilde,tmp,atmp,tab)
 end
 
-Base.@pure alg_cache{uType}(alg::DP5,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev) = DP5ConstantCache()
+Base.@pure alg_cache{uType}(alg::DP5,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev) = DP5ConstantCache(uEltypeNoUnits)
 
 Base.@pure alg_cache(alg::DP5Threaded,u,rate_prototype,uEltypeNoUnits,uprev,kprev) = alg_cache(DP5(),u,rate_prototype,uEltypeNoUnits,uprev,kprev)
 
@@ -653,7 +653,7 @@ end
 Base.@pure alg_cache{uType}(alg::Feagin14,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev) = Feagin14ConstantCache(uEltypeNoUnits)
 
 
-immutable LowOrderRosenbrockCache{uType,rateType,vecuType,JType} <: OrdinaryDiffEqMutableCache
+immutable LowOrderRosenbrockCache{uType,rateType,vecuType,JType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   k₁::rateType
   k₂::rateType
@@ -670,6 +670,7 @@ immutable LowOrderRosenbrockCache{uType,rateType,vecuType,JType} <: OrdinaryDiff
   J::JType
   W::JType
   tmp2::uType
+  tab::TabType
 end
 
 Base.@pure function alg_cache{uType<:AbstractArray}(alg::Rosenbrock23,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev)
@@ -688,8 +689,8 @@ Base.@pure function alg_cache{uType<:AbstractArray}(alg::Rosenbrock23,u::uType,r
   dT = similar(u)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J); tmp2 = similar(u)
-
-  LowOrderRosenbrockCache(u,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp2)
+  tab = LowOrderRosenbrockConstantCache(uEltypeNoUnits)
+  LowOrderRosenbrockCache(u,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp2,tab)
 end
 
 alg_cache{uType<:AbstractArray}(alg::Rosenbrock32,u::uType,
@@ -697,8 +698,8 @@ alg_cache{uType<:AbstractArray}(alg::Rosenbrock32,u::uType,
                                 uprev,kprev) =
                                 alg_cache(Rosenbrock23(),u,rate_prototype,uEltypeNoUnits,uprev,kprev)
 
-Base.@pure alg_cache{uType}(alg::Rosenbrock23,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev) = ODEEmptyCache()
-Base.@pure alg_cache{uType}(alg::Rosenbrock32,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev) = ODEEmptyCache()
+Base.@pure alg_cache{uType}(alg::Rosenbrock23,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev) = LowOrderRosenbrockConstantCache(uEltypeNoUnits)
+Base.@pure alg_cache{uType}(alg::Rosenbrock32,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev) = LowOrderRosenbrockConstantCache(uEltypeNoUnits)
 
 immutable ImplicitEulerCache{uType,DiffCacheType,rateType,CS} <: OrdinaryDiffEqMutableCache
   u::uType

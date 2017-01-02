@@ -17,7 +17,7 @@ constructBogakiShampine3()
 
 Constructs the tableau object for the Bogakai-Shampine Order 2/3 method.
 """
-function BS3ConstantCache(T::Type = Float64)
+function BS3ConstantCache(T::Type)
   a21 = T(1//2)
   a32 = T(3//4)
   a41 = T(2//9)
@@ -69,7 +69,7 @@ immutable Tsit5ConstantCache{T} <: OrdinaryDiffEqConstantCache
   b7::T
 end
 
-function Tsit5ConstantCache(T::Type = Float64)
+function Tsit5ConstantCache(T::Type)
   c1 =       T(161//1000)
   c2 =       T(327//1000)
   c3 =       T(9//10)
@@ -153,6 +153,85 @@ immutable BS5ConstantCache{T} <: OrdinaryDiffEqConstantCache
   btilde6::T
   btilde7::T
   btilde8::T
+  c6::T
+  c7::T
+  c8::T
+  a91::T
+  a92::T
+  a93::T
+  a94::T
+  a95::T
+  a96::T
+  a97::T
+  a98::T
+  a101::T
+  a102::T
+  a103::T
+  a104::T
+  a105::T
+  a106::T
+  a107::T
+  a108::T
+  a109::T
+  a111::T
+  a112::T
+  a113::T
+  a114::T
+  a115::T
+  a116::T
+  a117::T
+  a118::T
+  a119::T
+  a1110::T
+  r016::T
+  r015::T
+  r014::T
+  r013::T
+  r012::T
+  r036::T
+  r035::T
+  r034::T
+  r033::T
+  r032::T
+  r046::T
+  r045::T
+  r044::T
+  r043::T
+  r042::T
+  r056::T
+  r055::T
+  r054::T
+  r053::T
+  r052::T
+  r066::T
+  r065::T
+  r064::T
+  r063::T
+  r062::T
+  r076::T
+  r075::T
+  r074::T
+  r073::T
+  r072::T
+  r086::T
+  r085::T
+  r084::T
+  r083::T
+  r082::T
+  r096::T
+  r095::T
+  r094::T
+  r093::T
+  r106::T
+  r105::T
+  r104::T
+  r103::T
+  r102::T
+  r116::T
+  r115::T
+  r114::T
+  r113::T
+  r112::T
 end
 
 """
@@ -160,7 +239,7 @@ end
 An Efficient Runge-Kutta (4,5) Pair by P.Bogacki and L.F.Shampine
  Computers and Mathematics with Applications, Vol. 32, No. 6, 1996, pages 15 to 28
 """
-function BS5ConstantCache(T::Type = Float64)
+function BS5ConstantCache(T::Type)
   c1     =T(1//6)
   c2     =T(2//9)
   c3     =T(3//7)
@@ -208,8 +287,9 @@ function BS5ConstantCache(T::Type = Float64)
   btilde6=T(2272//6561)
   btilde7=T(79937//1113912)
   btilde8=T(3293//556956)
-
-  BS5ConstantCache(c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8)
+  c6,c7,c8,a91,a92,a93,a94,a95,a96,a97,a98,a101,a102,a103,a104,a105,a106,a107,a108,a109,a111,a112,a113,a114,a115,a116,a117,a118,a119,a1110 = BS5Interp(T)
+  r016,r015,r014,r013,r012,r036,r035,r034,r033,r032,r046,r045,r044,r043,r042,r056,r055,r054,r053,r052,r066,r065,r064,r063,r062,r076,r075,r074,r073,r072,r086,r085,r084,r083,r082,r096,r095,r094,r093,r106,r105,r104,r103,r102,r116,r115,r114,r113,r112 = BS5Interp_polyweights(T)
+  BS5ConstantCache(c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8,c6,c7,c8,a91,a92,a93,a94,a95,a96,a97,a98,a101,a102,a103,a104,a105,a106,a107,a108,a109,a111,a112,a113,a114,a115,a116,a117,a118,a119,a1110,r016,r015,r014,r013,r012,r036,r035,r034,r033,r032,r046,r045,r044,r043,r042,r056,r055,r054,r053,r052,r066,r065,r064,r063,r062,r076,r075,r074,r073,r072,r086,r085,r084,r083,r082,r096,r095,r094,r093,r106,r105,r104,r103,r102,r116,r115,r114,r113,r112)
 end
 
 """
@@ -222,7 +302,7 @@ Used in the lazy construction of the dense output
 
 k9, k10, k11 are not computed until called in the dense routine
 """
-function BS5Interp(T::Type = Float64)
+function BS5Interp(T::Type)
 
   c6    = T(1//2)
   c7    = T(5//6)
@@ -268,7 +348,7 @@ Note that RKSuite has an error: r081 should be 0
 and r011 should be 1. This is pretty easy to spot
 since the first order interpolation is linear from y₀.
 """
-function BS5Interp_polyweights(T::Type = Float64)
+function BS5Interp_polyweights(T::Type)
   r016   = T(-12134338393//1050809760)
   r015   = T(12923488183//350269920)
   r014   = T(-2722545893//59875200)
@@ -364,9 +444,15 @@ immutable DP5ConstantCache{T} <: OrdinaryDiffEqConstantCache
   c4::T
   c5::T
   c6::T
+  d1::T
+  d3::T
+  d4::T
+  d5::T
+  d6::T
+  d7::T
 end
 
-function DP5ConstantCache(T::Type = Float64)
+function DP5ConstantCache(T::Type)
   a21 = T(1//5)
   a31 = T(3//40)
   a32 = T(9//40)
@@ -399,8 +485,32 @@ function DP5ConstantCache(T::Type = Float64)
   c4  = T(8//9)
   c5  = T(1)
   c6  = T(1)
-  DP5ConstantCache(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6)
+  d1,d3,d4,d5,d6,d7 = DP5_dense_ds(T)
+  DP5ConstantCache(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6,d1,d3,d4,d5,d6,d7)
 end
+
+
+function DP5_dense_ds(T)
+  d1  = T(-12715105075//11282082432)
+  d3  = T(87487479700//32700410799)
+  d4  = T(-10690763975//1880347072)
+  d5  = T(701980252875//199316789632)
+  d6  = T(-1453857185//822651844)
+  d7  = T(69997945//29380423)
+  return d1,d3,d4,d5,d6,d7
+end
+
+#=
+function DP5_dense_bs(T)
+  b1  = T(5179//57600)
+  b3  = T(7571//16695)
+  b4  = T(393//640)
+  b5  = T(-92097//339200)
+  b6  = T(187//2100)
+  b7  = T(1//40)
+  return b1,b3,b4,b5,b6,b7
+end
+=#
 
 immutable DP8ConstantCache{T} <: OrdinaryDiffEqConstantCache
   c7::T
@@ -482,9 +592,84 @@ immutable DP8ConstantCache{T} <: OrdinaryDiffEqConstantCache
   a1209::T
   a1210::T
   a1211::T
+  c14::T
+  c15::T
+  c16::T
+  a1401::T
+  a1407::T
+  a1408::T
+  a1409::T
+  a1410::T
+  a1411::T
+  a1412::T
+  a1413::T
+  a1501::T
+  a1506::T
+  a1507::T
+  a1508::T
+  a1511::T
+  a1512::T
+  a1513::T
+  a1514::T
+  a1601::T
+  a1606::T
+  a1607::T
+  a1608::T
+  a1609::T
+  a1613::T
+  a1614::T
+  a1615::T
+  d401::T
+  d406::T
+  d407::T
+  d408::T
+  d409::T
+  d410::T
+  d411::T
+  d412::T
+  d413::T
+  d414::T
+  d415::T
+  d416::T
+  d501::T
+  d506::T
+  d507::T
+  d508::T
+  d509::T
+  d510::T
+  d511::T
+  d512::T
+  d513::T
+  d514::T
+  d515::T
+  d516::T
+  d601::T
+  d606::T
+  d607::T
+  d608::T
+  d609::T
+  d610::T
+  d611::T
+  d612::T
+  d613::T
+  d614::T
+  d615::T
+  d616::T
+  d701::T
+  d706::T
+  d707::T
+  d708::T
+  d709::T
+  d710::T
+  d711::T
+  d712::T
+  d713::T
+  d714::T
+  d715::T
+  d716::T
 end
 
-function DP8ConstantCache(T::Type = Float64)
+function DP8ConstantCache(T::Type)
   c7     = T(1//4)
   c8     = T(4//13)
   c9     = T(127//195)
@@ -564,11 +749,12 @@ function DP8ConstantCache(T::Type = Float64)
   a1209  = T(parse(BigFloat," -8.87285693353062954433549289258e0"))
   a1210  = T(parse(BigFloat," 1.23605671757943030647266201528e1"))
   a1211  = T(parse(BigFloat," 6.43392746015763530355970484046e-1"))
-
-  DP8ConstantCache(c7,c8,c9,c10,c11,c6,c5,c4,c3,c2,b1,b6,b7,b8,b9,b10,b11,b12,bhh1,bhh2,bhh3,er1,er6,er7,er8,er9,er10,er11,er12,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211)
+  c14,c15,c16,a1401,a1407,a1408,a1409,a1410,a1411,a1412,a1413,a1501,a1506,a1507,a1508,a1511,a1512,a1513,a1514,a1601,a1606,a1607,a1608,a1609,a1613,a1614,a1615 = DP8Interp(T)
+  d401,d406,d407,d408,d409,d410,d411,d412,d413,d414,d415,d416,d501,d506,d507,d508,d509,d510,d511,d512,d513,d514,d515,d516,d601,d606,d607,d608,d609,d610,d611,d612,d613,d614,d615,d616,d701,d706,d707,d708,d709,d710,d711,d712,d713,d714,d715,d716 = DP8Interp_polyweights(T)
+  DP8ConstantCache(c7,c8,c9,c10,c11,c6,c5,c4,c3,c2,b1,b6,b7,b8,b9,b10,b11,b12,bhh1,bhh2,bhh3,er1,er6,er7,er8,er9,er10,er11,er12,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211,c14,c15,c16,a1401,a1407,a1408,a1409,a1410,a1411,a1412,a1413,a1501,a1506,a1507,a1508,a1511,a1512,a1513,a1514,a1601,a1606,a1607,a1608,a1609,a1613,a1614,a1615,d401,d406,d407,d408,d409,d410,d411,d412,d413,d414,d415,d416,d501,d506,d507,d508,d509,d510,d511,d512,d513,d514,d515,d516,d601,d606,d607,d608,d609,d610,d611,d612,d613,d614,d615,d616,d701,d706,d707,d708,d709,d710,d711,d712,d713,d714,d715,d716)
 end
 
-function DP8Interp(T::Type = BigFloat)
+function DP8Interp(T::Type)
   c14    = T(1//10)
   c15    = T(2//10)
   c16    = T(7//9)
@@ -600,7 +786,7 @@ function DP8Interp(T::Type = BigFloat)
   return c14,c15,c16,a1401,a1407,a1408,a1409,a1410,a1411,a1412,a1413,a1501,a1506,a1507,a1508,a1511,a1512,a1513,a1514,a1601,a1606,a1607,a1608,a1609,a1613,a1614,a1615
 end
 
-function DP8Interp_polyweights(T::Type = BigFloat)
+function DP8Interp_polyweights(T::Type)
   d401 = T(parse(BigFloat,"-0.84289382761090128651353491142e+01"))
   d406 = T(parse(BigFloat," 0.56671495351937776962531783590e+00"))
   d407 = T(parse(BigFloat,"-0.30689499459498916912797304727e+01"))
@@ -696,13 +882,95 @@ immutable Vern6ConstantCache{T} <: OrdinaryDiffEqConstantCache
   b7::T
   b8::T
   b9::T
+  c10::T
+  a1001::T
+  a1004::T
+  a1005::T
+  a1006::T
+  a1007::T
+  a1008::T
+  a1009::T
+  c11::T
+  a1101::T
+  a1102::T
+  a1103::T
+  a1104::T
+  a1105::T
+  a1106::T
+  a1107::T
+  a1108::T
+  a1109::T
+  a1110::T
+  c12::T
+  a1201::T
+  a1202::T
+  a1203::T
+  a1204::T
+  a1205::T
+  a1206::T
+  a1207::T
+  a1208::T
+  a1209::T
+  a1210::T
+  a1211::T
+  r011::T
+  r012::T
+  r013::T
+  r014::T
+  r015::T
+  r016::T
+  r042::T
+  r043::T
+  r044::T
+  r045::T
+  r046::T
+  r052::T
+  r053::T
+  r054::T
+  r055::T
+  r056::T
+  r062::T
+  r063::T
+  r064::T
+  r065::T
+  r066::T
+  r072::T
+  r073::T
+  r074::T
+  r075::T
+  r076::T
+  r082::T
+  r083::T
+  r084::T
+  r085::T
+  r086::T
+  r092::T
+  r093::T
+  r094::T
+  r095::T
+  r096::T
+  r102::T
+  r103::T
+  r104::T
+  r105::T
+  r106::T
+  r112::T
+  r113::T
+  r114::T
+  r115::T
+  r116::T
+  r122::T
+  r123::T
+  r124::T
+  r125::T
+  r126::T
 end
 
 """
 
 From Verner's Website
 """
-function Vern6ConstantCache(T::Type = Float64)
+function Vern6ConstantCache(T::Type)
   c1   =T(3//50)
   c2   =T(1439//15000)
   c3   =T(1439//10000)
@@ -745,13 +1013,14 @@ function Vern6ConstantCache(T::Type = Float64)
   b7   =T(-1099436585155390846238326375//15055706496446408859196167)
   b8   =T(26171252653086373181571802//368794478890732346033505)
   b9   =T(1//30)
-
-  Vern6ConstantCache(c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,a91,a94,a95,a96,a97,a98,b1,b4,b5,b6,b7,b8,b9)
+  c10,a1001,a1004,a1005,a1006,a1007,a1008,a1009,c11,a1101,a1102,a1103,a1104,a1105,a1106,a1107,a1108,a1109,a1110,c12,a1201,a1202,a1203,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211 = Vern6Interp(T)
+  r011,r012,r013,r014,r015,r016,r042,r043,r044,r045,r046,r052,r053,r054,r055,r056,r062,r063,r064,r065,r066,r072,r073,r074,r075,r076,r082,r083,r084,r085,r086,r092,r093,r094,r095,r096,r102,r103,r104,r105,r106,r112,r113,r114,r115,r116,r122,r123,r124,r125,r126 = Vern6Interp_polyweights(T)
+  Vern6ConstantCache(c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,a91,a94,a95,a96,a97,a98,b1,b4,b5,b6,b7,b8,b9,c10,a1001,a1004,a1005,a1006,a1007,a1008,a1009,c11,a1101,a1102,a1103,a1104,a1105,a1106,a1107,a1108,a1109,a1110,c12,a1201,a1202,a1203,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211,r011,r012,r013,r014,r015,r016,r042,r043,r044,r045,r046,r052,r053,r054,r055,r056,r062,r063,r064,r065,r066,r072,r073,r074,r075,r076,r082,r083,r084,r085,r086,r092,r093,r094,r095,r096,r102,r103,r104,r105,r106,r112,r113,r114,r115,r116,r122,r123,r124,r125,r126)
 end
 
-function Vern6Interp(T::Type = Float64)
+function Vern6Interp(T::Type)
   # Extra stages for Order 5
-  c10   =  1//2
+  c10   = T(1//2)
   a1001 = T( parse(BigInt,"35289331988986254405692535758830683")//parse(BigInt,"2135620454874580332949729350544993288"))
   a1004 = T( parse(BigInt,"313937014583068512255490687992212890625")//parse(BigInt,"1028247080705354654473994781524199691557"))
   a1005 = T( parse(BigInt,"1309307687253621245836726130885318359375")//parse(BigInt,"6321490412177191231557635904400612215708"))
@@ -790,7 +1059,7 @@ end
 Coefficients for the polynomial
 bᵢΘ = ri1*Θ + ri2*Θ^2 + ri3*Θ^3 + ...
 """
-function Vern6Interp_polyweights(T::Type = Float64)
+function Vern6Interp_polyweights(T::Type)
   r011 = T(1)
   r012 = T(-940811006205413129//120948724610397495)
   r013 = T( 88342864458754360181//3265615564480732365)
@@ -910,7 +1179,7 @@ end
 On the Optimization of Some Nine-Stage Seventh-order Runge-Kutta Method, by M. Tanaka, S. Muramatsu and S. Yamashita,
 Information Processing Society of Japan, Vol. 33, No. 12 (1992) pages 1512-1526.
 """
-function TanYam7ConstantCache(T::Type = Float64)
+function TanYam7ConstantCache(T::Type)
   c1    =T(36259//463869)
   c2    =T(36259//309246)
   c3    =T(36259//206164)
@@ -1101,7 +1370,7 @@ end
 constructFeagin10
 
 """
-function Feagin10ConstantCache(T::Type = BigFloat)
+function Feagin10ConstantCache(T::Type)
   adaptiveConst = T(1//360)
   a0100 = T(1//10)
 
@@ -1469,7 +1738,7 @@ end
 constructFeagin12
 
 """
-function Feagin12ConstantCache(T::Type = BigFloat)
+function Feagin12ConstantCache(T::Type)
   adaptiveConst = T(49//640)
   c1  = T(1//5)
   c2  = T(5//9)
@@ -2121,7 +2390,7 @@ end
 constructFeagin14
 
 """
-function Feagin14ConstantCache(T::Type = BigFloat)
+function Feagin14ConstantCache(T::Type)
   adaptiveConst = T(1//1000)
   c1  = T(1//9)
   c2  = T(5//9)
@@ -2613,9 +2882,148 @@ immutable Vern7ConstantCache{T} <: OrdinaryDiffEqConstantCache
   bhat6::T
   bhat7::T
   bhat10::T
+  c11::T
+  a1101::T
+  a1104::T
+  a1105::T
+  a1106::T
+  a1107::T
+  a1108::T
+  a1109::T
+  c12::T
+  a1201::T
+  a1204::T
+  a1205::T
+  a1206::T
+  a1207::T
+  a1208::T
+  a1209::T
+  a1211::T
+  c13::T
+  a1301::T
+  a1304::T
+  a1305::T
+  a1306::T
+  a1307::T
+  a1308::T
+  a1309::T
+  a1311::T
+  a1312::T
+  c14::T
+  a1401::T
+  a1404::T
+  a1405::T
+  a1406::T
+  a1407::T
+  a1408::T
+  a1409::T
+  a1411::T
+  a1412::T
+  a1413::T
+  c15::T
+  a1501::T
+  a1504::T
+  a1505::T
+  a1506::T
+  a1507::T
+  a1508::T
+  a1509::T
+  a1511::T
+  a1512::T
+  a1513::T
+  c16::T
+  a1601::T
+  a1604::T
+  a1605::T
+  a1606::T
+  a1607::T
+  a1608::T
+  a1609::T
+  a1611::T
+  a1612::T
+  a1613::T
+  r011::T
+  r012::T
+  r013::T
+  r014::T
+  r015::T
+  r016::T
+  r017::T
+  r042::T
+  r043::T
+  r044::T
+  r045::T
+  r046::T
+  r047::T
+  r052::T
+  r053::T
+  r054::T
+  r055::T
+  r056::T
+  r057::T
+  r062::T
+  r063::T
+  r064::T
+  r065::T
+  r066::T
+  r067::T
+  r072::T
+  r073::T
+  r074::T
+  r075::T
+  r076::T
+  r077::T
+  r082::T
+  r083::T
+  r084::T
+  r085::T
+  r086::T
+  r087::T
+  r092::T
+  r093::T
+  r094::T
+  r095::T
+  r096::T
+  r097::T
+  r112::T
+  r113::T
+  r114::T
+  r115::T
+  r116::T
+  r117::T
+  r122::T
+  r123::T
+  r124::T
+  r125::T
+  r126::T
+  r127::T
+  r132::T
+  r133::T
+  r134::T
+  r135::T
+  r136::T
+  r137::T
+  r142::T
+  r143::T
+  r144::T
+  r145::T
+  r146::T
+  r147::T
+  r152::T
+  r153::T
+  r154::T
+  r155::T
+  r156::T
+  r157::T
+  r162::T
+  r163::T
+  r164::T
+  r165::T
+  r166::T
+  r167::T
 end
 
-function Vern7ConstantCache(T::Type = Float64)
+function Vern7ConstantCache(T::Type)
   c2        =  T(1//200)
   c3        =  T(49//450)
   c4        =  T(49//300)
@@ -2672,10 +3080,12 @@ function Vern7ConstantCache(T::Type = Float64)
   bhat6     =  T(parse(BigInt,"2682653613028767167314032381891560552585218935572349997")//parse(BigInt,"12258338284789875762081637252125169126464880985167722660"))
   bhat7     =  T(40977117022675781250//178949401077111131341)
   bhat10    =  T(2152106665253777//106040260335225546)
-  Vern7ConstantCache(c2,c3,c4,c5,c6,c7,c8,a021,a031,a032,a041,a043,a051,a053,a054,a061,a063,a064,a065,a071,a073,a074,a075,a076,a081,a083,a084,a085,a086,a087,a091,a093,a094,a095,a096,a097,a098,a101,a103,a104,a105,a106,a107,b1,b4,b5,b6,b7,b8,b9,bhat1,bhat4,bhat5,bhat6,bhat7,bhat10)
+  c11,a1101,a1104,a1105,a1106,a1107,a1108,a1109,c12,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1211,c13,a1301,a1304,a1305,a1306,a1307,a1308,a1309,a1311,a1312,c14,a1401,a1404,a1405,a1406,a1407,a1408,a1409,a1411,a1412,a1413,c15,a1501,a1504,a1505,a1506,a1507,a1508,a1509,a1511,a1512,a1513,c16,a1601,a1604,a1605,a1606,a1607,a1608,a1609,a1611,a1612,a1613 = Vern7Interp(T)
+  r011,r012,r013,r014,r015,r016,r017,r042,r043,r044,r045,r046,r047,r052,r053,r054,r055,r056,r057,r062,r063,r064,r065,r066,r067,r072,r073,r074,r075,r076,r077,r082,r083,r084,r085,r086,r087,r092,r093,r094,r095,r096,r097,r112,r113,r114,r115,r116,r117,r122,r123,r124,r125,r126,r127,r132,r133,r134,r135,r136,r137,r142,r143,r144,r145,r146,r147,r152,r153,r154,r155,r156,r157,r162,r163,r164,r165,r166,r167 = Vern7Interp_polyweights(T)
+  Vern7ConstantCache(c2,c3,c4,c5,c6,c7,c8,a021,a031,a032,a041,a043,a051,a053,a054,a061,a063,a064,a065,a071,a073,a074,a075,a076,a081,a083,a084,a085,a086,a087,a091,a093,a094,a095,a096,a097,a098,a101,a103,a104,a105,a106,a107,b1,b4,b5,b6,b7,b8,b9,bhat1,bhat4,bhat5,bhat6,bhat7,bhat10,c11,a1101,a1104,a1105,a1106,a1107,a1108,a1109,c12,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1211,c13,a1301,a1304,a1305,a1306,a1307,a1308,a1309,a1311,a1312,c14,a1401,a1404,a1405,a1406,a1407,a1408,a1409,a1411,a1412,a1413,c15,a1501,a1504,a1505,a1506,a1507,a1508,a1509,a1511,a1512,a1513,c16,a1601,a1604,a1605,a1606,a1607,a1608,a1609,a1611,a1612,a1613,r011,r012,r013,r014,r015,r016,r017,r042,r043,r044,r045,r046,r047,r052,r053,r054,r055,r056,r057,r062,r063,r064,r065,r066,r067,r072,r073,r074,r075,r076,r077,r082,r083,r084,r085,r086,r087,r092,r093,r094,r095,r096,r097,r112,r113,r114,r115,r116,r117,r122,r123,r124,r125,r126,r127,r132,r133,r134,r135,r136,r137,r142,r143,r144,r145,r146,r147,r152,r153,r154,r155,r156,r157,r162,r163,r164,r165,r166,r167)
 end
 
-function Vern7Interp(T::Type = Float64)
+function Vern7Interp(T::Type)
   c11     = T(1)
   a1101   = T(parse(BigFloat," .4715561848627222170431765108838175679569e-1"))
   a1104   = T(parse(BigFloat," .2575056429843415189596436101037687580986"))
@@ -2739,7 +3149,7 @@ function Vern7Interp(T::Type = Float64)
   return c11,a1101,a1104,a1105,a1106,a1107,a1108,a1109,c12,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1211,c13,a1301,a1304,a1305,a1306,a1307,a1308,a1309,a1311,a1312,c14,a1401,a1404,a1405,a1406,a1407,a1408,a1409,a1411,a1412,a1413,c15,a1501,a1504,a1505,a1506,a1507,a1508,a1509,a1511,a1512,a1513,c16,a1601,a1604,a1605,a1606,a1607,a1608,a1609,a1611,a1612,a1613
 end
 
-function Vern7Interp_polyweights(T::Type = Float64)
+function Vern7Interp_polyweights(T::Type)
   r011 = T(parse(BigFloat," 1"))
   r012 = T(parse(BigFloat,"-8.413387198332767469319987751201351965810"))
   r013 = T(parse(BigFloat," 33.67550888449089654479469983556967202215"))
@@ -2906,9 +3316,216 @@ immutable Vern8ConstantCache{T} <: OrdinaryDiffEqConstantCache
   bhat9::T
   bhat10::T
   bhat13::T
+  c14::T
+  a1401::T
+  a1406::T
+  a1407::T
+  a1408::T
+  a1409::T
+  a1410::T
+  a1411::T
+  a1412::T
+  c15::T
+  a1501::T
+  a1506::T
+  a1507::T
+  a1508::T
+  a1509::T
+  a1510::T
+  a1511::T
+  a1512::T
+  a1514::T
+  c16::T
+  a1601::T
+  a1606::T
+  a1607::T
+  a1608::T
+  a1609::T
+  a1610::T
+  a1611::T
+  a1612::T
+  a1614::T
+  a1615::T
+  c17::T
+  a1701::T
+  a1706::T
+  a1707::T
+  a1708::T
+  a1709::T
+  a1710::T
+  a1711::T
+  a1712::T
+  a1714::T
+  a1715::T
+  a1716::T
+  c18::T
+  a1801::T
+  a1806::T
+  a1807::T
+  a1808::T
+  a1809::T
+  a1810::T
+  a1811::T
+  a1812::T
+  a1814::T
+  a1815::T
+  a1816::T
+  a1817::T
+  c19::T
+  a1901::T
+  a1906::T
+  a1907::T
+  a1908::T
+  a1909::T
+  a1910::T
+  a1911::T
+  a1912::T
+  a1914::T
+  a1915::T
+  a1916::T
+  a1917::T
+  c20::T
+  a2001::T
+  a2006::T
+  a2007::T
+  a2008::T
+  a2009::T
+  a2010::T
+  a2011::T
+  a2012::T
+  a2014::T
+  a2015::T
+  a2016::T
+  a2017::T
+  c21::T
+  a2101::T
+  a2106::T
+  a2107::T
+  a2108::T
+  a2109::T
+  a2110::T
+  a2111::T
+  a2112::T
+  a2114::T
+  a2115::T
+  a2116::T
+  a2117::T
+  r011::T
+  r012::T
+  r013::T
+  r014::T
+  r015::T
+  r016::T
+  r017::T
+  r018::T
+  r062::T
+  r063::T
+  r064::T
+  r065::T
+  r066::T
+  r067::T
+  r068::T
+  r072::T
+  r073::T
+  r074::T
+  r075::T
+  r076::T
+  r077::T
+  r078::T
+  r082::T
+  r083::T
+  r084::T
+  r085::T
+  r086::T
+  r087::T
+  r088::T
+  r092::T
+  r093::T
+  r094::T
+  r095::T
+  r096::T
+  r097::T
+  r098::T
+  r102::T
+  r103::T
+  r104::T
+  r105::T
+  r106::T
+  r107::T
+  r108::T
+  r112::T
+  r113::T
+  r114::T
+  r115::T
+  r116::T
+  r117::T
+  r118::T
+  r122::T
+  r123::T
+  r124::T
+  r125::T
+  r126::T
+  r127::T
+  r128::T
+  r142::T
+  r143::T
+  r144::T
+  r145::T
+  r146::T
+  r147::T
+  r148::T
+  r152::T
+  r153::T
+  r154::T
+  r155::T
+  r156::T
+  r157::T
+  r158::T
+  r162::T
+  r163::T
+  r164::T
+  r165::T
+  r166::T
+  r167::T
+  r168::T
+  r172::T
+  r173::T
+  r174::T
+  r175::T
+  r176::T
+  r177::T
+  r178::T
+  r182::T
+  r183::T
+  r184::T
+  r185::T
+  r186::T
+  r187::T
+  r188::T
+  r192::T
+  r193::T
+  r194::T
+  r195::T
+  r196::T
+  r197::T
+  r198::T
+  r202::T
+  r203::T
+  r204::T
+  r205::T
+  r206::T
+  r207::T
+  r208::T
+  r212::T
+  r213::T
+  r214::T
+  r215::T
+  r216::T
+  r217::T
+  r218::T
 end
 
-function Vern8ConstantCache(T::Type = Float64)
+function Vern8ConstantCache(T::Type)
   c2    = T(1//20)
   c3    = T(341//3200)
   c4    = T(1023//6400)
@@ -2994,10 +3611,12 @@ function Vern8ConstantCache(T::Type = Float64)
   bhat9 = T( parse(BigInt,"22060647948996678611017711379974578860522018208949721559448560203338437626022142776381")//parse(BigInt,"1111542009262325874512959185795727215759010577565736079641376621381577236680929558640"))
   bhat10= T(-547971229495642458203125000//23237214025700991642563601)
   bhat13= T(-28735456870978964189//79783493704265043693)
-  Vern8ConstantCache(c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211,a1301,a1304,a1305,a1306,a1307,a1308,a1309,a1310,b1,b6,b7,b8,b9,b10,b11,b12,bhat1,bhat6,bhat7,bhat8,bhat9,bhat10,bhat13)
+  c14,a1401,a1406,a1407,a1408,a1409,a1410,a1411,a1412,c15,a1501,a1506,a1507,a1508,a1509,a1510,a1511,a1512,a1514,c16,a1601,a1606,a1607,a1608,a1609,a1610,a1611,a1612,a1614,a1615,c17,a1701,a1706,a1707,a1708,a1709,a1710,a1711,a1712,a1714,a1715,a1716,c18,a1801,a1806,a1807,a1808,a1809,a1810,a1811,a1812,a1814,a1815,a1816,a1817,c19,a1901,a1906,a1907,a1908,a1909,a1910,a1911,a1912,a1914,a1915,a1916,a1917,c20,a2001,a2006,a2007,a2008,a2009,a2010,a2011,a2012,a2014,a2015,a2016,a2017,c21,a2101,a2106,a2107,a2108,a2109,a2110,a2111,a2112,a2114,a2115,a2116,a2117 = Vern8Interp(T)
+  r011,r012,r013,r014,r015,r016,r017,r018,r062,r063,r064,r065,r066,r067,r068,r072,r073,r074,r075,r076,r077,r078,r082,r083,r084,r085,r086,r087,r088,r092,r093,r094,r095,r096,r097,r098,r102,r103,r104,r105,r106,r107,r108,r112,r113,r114,r115,r116,r117,r118,r122,r123,r124,r125,r126,r127,r128,r142,r143,r144,r145,r146,r147,r148,r152,r153,r154,r155,r156,r157,r158,r162,r163,r164,r165,r166,r167,r168,r172,r173,r174,r175,r176,r177,r178,r182,r183,r184,r185,r186,r187,r188,r192,r193,r194,r195,r196,r197,r198,r202,r203,r204,r205,r206,r207,r208,r212,r213,r214,r215,r216,r217,r218 = Vern8Interp_polyweights(T)
+  Vern8ConstantCache(c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211,a1301,a1304,a1305,a1306,a1307,a1308,a1309,a1310,b1,b6,b7,b8,b9,b10,b11,b12,bhat1,bhat6,bhat7,bhat8,bhat9,bhat10,bhat13,c14,a1401,a1406,a1407,a1408,a1409,a1410,a1411,a1412,c15,a1501,a1506,a1507,a1508,a1509,a1510,a1511,a1512,a1514,c16,a1601,a1606,a1607,a1608,a1609,a1610,a1611,a1612,a1614,a1615,c17,a1701,a1706,a1707,a1708,a1709,a1710,a1711,a1712,a1714,a1715,a1716,c18,a1801,a1806,a1807,a1808,a1809,a1810,a1811,a1812,a1814,a1815,a1816,a1817,c19,a1901,a1906,a1907,a1908,a1909,a1910,a1911,a1912,a1914,a1915,a1916,a1917,c20,a2001,a2006,a2007,a2008,a2009,a2010,a2011,a2012,a2014,a2015,a2016,a2017,c21,a2101,a2106,a2107,a2108,a2109,a2110,a2111,a2112,a2114,a2115,a2116,a2117,r011,r012,r013,r014,r015,r016,r017,r018,r062,r063,r064,r065,r066,r067,r068,r072,r073,r074,r075,r076,r077,r078,r082,r083,r084,r085,r086,r087,r088,r092,r093,r094,r095,r096,r097,r098,r102,r103,r104,r105,r106,r107,r108,r112,r113,r114,r115,r116,r117,r118,r122,r123,r124,r125,r126,r127,r128,r142,r143,r144,r145,r146,r147,r148,r152,r153,r154,r155,r156,r157,r158,r162,r163,r164,r165,r166,r167,r168,r172,r173,r174,r175,r176,r177,r178,r182,r183,r184,r185,r186,r187,r188,r192,r193,r194,r195,r196,r197,r198,r202,r203,r204,r205,r206,r207,r208,r212,r213,r214,r215,r216,r217,r218)
 end
 
-function Vern8Interp(T::Type = Float64)
+function Vern8Interp(T::Type)
   c14    = T(1)
   a1401  = T(parse(BigFloat," .4427989419007951074716746668098518862111e-1"))
   a1406  = T(parse(BigFloat," .3541049391724448744815552028733568354121"))
@@ -3095,7 +3714,7 @@ function Vern8Interp(T::Type = Float64)
   return c14,a1401,a1406,a1407,a1408,a1409,a1410,a1411,a1412,c15,a1501,a1506,a1507,a1508,a1509,a1510,a1511,a1512,a1514,c16,a1601,a1606,a1607,a1608,a1609,a1610,a1611,a1612,a1614,a1615,c17,a1701,a1706,a1707,a1708,a1709,a1710,a1711,a1712,a1714,a1715,a1716,c18,a1801,a1806,a1807,a1808,a1809,a1810,a1811,a1812,a1814,a1815,a1816,a1817,c19,a1901,a1906,a1907,a1908,a1909,a1910,a1911,a1912,a1914,a1915,a1916,a1917,c20,a2001,a2006,a2007,a2008,a2009,a2010,a2011,a2012,a2014,a2015,a2016,a2017,c21,a2101,a2106,a2107,a2108,a2109,a2110,a2111,a2112,a2114,a2115,a2116,a2117
 end
 
-function Vern8Interp_polyweights(T::Type = Float64)
+function Vern8Interp_polyweights(T::Type)
   r011   = T(parse(BigFloat," 1"))
   r012   = T(parse(BigFloat,"-10.03915465055451898280745009553727015838"))
   r013   = T(parse(BigFloat," 53.79210495862331394937504547285261606206"))
@@ -3302,7 +3921,7 @@ end
 Cheap Error Estimation for Runge-Kutta methods, by Ch. Tsitouras and S.N. Papakostas,
  Siam Journal on Scientific Computing, Vol. 20, Issue 6, Nov 1999.
 """
-function TsitPap8ConstantCache(T::Type = Float64)
+function TsitPap8ConstantCache(T::Type)
 
   c1    =T(9//142)
   c2    =T(24514//238491)
@@ -3498,12 +4117,300 @@ immutable Vern9ConstantCache{T} <: OrdinaryDiffEqConstantCache
   bhat12::T
   bhat13::T
   bhat16::T
+  c17::T
+  a1701::T
+  a1708::T
+  a1709::T
+  a1710::T
+  a1711::T
+  a1712::T
+  a1713::T
+  a1714::T
+  a1715::T
+  c18::T
+  a1801::T
+  a1808::T
+  a1809::T
+  a1810::T
+  a1811::T
+  a1812::T
+  a1813::T
+  a1814::T
+  a1815::T
+  a1817::T
+  c19::T
+  a1901::T
+  a1908::T
+  a1909::T
+  a1910::T
+  a1911::T
+  a1912::T
+  a1913::T
+  a1914::T
+  a1915::T
+  a1917::T
+  a1918::T
+  c20::T
+  a2001::T
+  a2008::T
+  a2009::T
+  a2010::T
+  a2011::T
+  a2012::T
+  a2013::T
+  a2014::T
+  a2015::T
+  a2017::T
+  a2018::T
+  a2019::T
+  c21::T
+  a2101::T
+  a2108::T
+  a2109::T
+  a2110::T
+  a2111::T
+  a2112::T
+  a2113::T
+  a2114::T
+  a2115::T
+  a2117::T
+  a2118::T
+  a2119::T
+  a2120::T
+  c22::T
+  a2201::T
+  a2208::T
+  a2209::T
+  a2210::T
+  a2211::T
+  a2212::T
+  a2213::T
+  a2214::T
+  a2215::T
+  a2217::T
+  a2218::T
+  a2219::T
+  a2220::T
+  a2221::T
+  c23::T
+  a2301::T
+  a2308::T
+  a2309::T
+  a2310::T
+  a2311::T
+  a2312::T
+  a2313::T
+  a2314::T
+  a2315::T
+  a2317::T
+  a2318::T
+  a2319::T
+  a2320::T
+  a2321::T
+  c24::T
+  a2401::T
+  a2408::T
+  a2409::T
+  a2410::T
+  a2411::T
+  a2412::T
+  a2413::T
+  a2414::T
+  a2415::T
+  a2417::T
+  a2418::T
+  a2419::T
+  a2420::T
+  a2421::T
+  c25::T
+  a2501::T
+  a2508::T
+  a2509::T
+  a2510::T
+  a2511::T
+  a2512::T
+  a2513::T
+  a2514::T
+  a2515::T
+  a2517::T
+  a2518::T
+  a2519::T
+  a2520::T
+  a2521::T
+  c26::T
+  a2601::T
+  a2608::T
+  a2609::T
+  a2610::T
+  a2611::T
+  a2612::T
+  a2613::T
+  a2614::T
+  a2615::T
+  a2617::T
+  a2618::T
+  a2619::T
+  a2620::T
+  a2621::T
+  r011::T
+  r012::T
+  r013::T
+  r014::T
+  r015::T
+  r016::T
+  r017::T
+  r018::T
+  r019::T
+  r082::T
+  r083::T
+  r084::T
+  r085::T
+  r086::T
+  r087::T
+  r088::T
+  r089::T
+  r092::T
+  r093::T
+  r094::T
+  r095::T
+  r096::T
+  r097::T
+  r098::T
+  r099::T
+  r102::T
+  r103::T
+  r104::T
+  r105::T
+  r106::T
+  r107::T
+  r108::T
+  r109::T
+  r112::T
+  r113::T
+  r114::T
+  r115::T
+  r116::T
+  r117::T
+  r118::T
+  r119::T
+  r122::T
+  r123::T
+  r124::T
+  r125::T
+  r126::T
+  r127::T
+  r128::T
+  r129::T
+  r132::T
+  r133::T
+  r134::T
+  r135::T
+  r136::T
+  r137::T
+  r138::T
+  r139::T
+  r142::T
+  r143::T
+  r144::T
+  r145::T
+  r146::T
+  r147::T
+  r148::T
+  r149::T
+  r152::T
+  r153::T
+  r154::T
+  r155::T
+  r156::T
+  r157::T
+  r158::T
+  r159::T
+  r172::T
+  r173::T
+  r174::T
+  r175::T
+  r176::T
+  r177::T
+  r178::T
+  r179::T
+  r182::T
+  r183::T
+  r184::T
+  r185::T
+  r186::T
+  r187::T
+  r188::T
+  r189::T
+  r192::T
+  r193::T
+  r194::T
+  r195::T
+  r196::T
+  r197::T
+  r198::T
+  r199::T
+  r202::T
+  r203::T
+  r204::T
+  r205::T
+  r206::T
+  r207::T
+  r208::T
+  r209::T
+  r212::T
+  r213::T
+  r214::T
+  r215::T
+  r216::T
+  r217::T
+  r218::T
+  r219::T
+  r222::T
+  r223::T
+  r224::T
+  r225::T
+  r226::T
+  r227::T
+  r228::T
+  r229::T
+  r232::T
+  r233::T
+  r234::T
+  r235::T
+  r236::T
+  r237::T
+  r238::T
+  r239::T
+  r242::T
+  r243::T
+  r244::T
+  r245::T
+  r246::T
+  r247::T
+  r248::T
+  r249::T
+  r252::T
+  r253::T
+  r254::T
+  r255::T
+  r256::T
+  r257::T
+  r258::T
+  r259::T
+  r262::T
+  r263::T
+  r264::T
+  r265::T
+  r266::T
+  r267::T
+  r268::T
+  r269::T
 end
 
 """
 From Verner's Webiste
 """
-function Vern9ConstantCache(T::Type = Float64)
+function Vern9ConstantCache(T::Type)
   c1     =T(1731//50000)
   c2     =T(parse(BigInt,"7630049")//parse(BigInt,"53810000")-parse(BigInt,"983539")//parse(BigInt,"53810000")*6^(1//2))
   c3     =T(parse(BigInt,"22890147")//parse(BigInt,"107620000")-parse(BigInt,"2950617")//parse(BigInt,"107620000")*6^(1//2))
@@ -3610,11 +4517,12 @@ function Vern9ConstantCache(T::Type = Float64)
   bhat12 =T(-parse(BigInt,"2129662374582324648106919795703373645353118273066742230724172731025813964712473647144010599206669825382719359113196238857709025512340589957")//parse(BigInt,"1035543739272367080885190546201097218891268728118207332592595987554851882972292670881794178380097716583123063485287435793657425889233080568"))
   bhat13 =T(parse(BigInt,"1084761591753640855844358063964843750000000")//parse(BigInt,"3182895486031249071938549691320502488733423"))
   bhat16 =T(1839190071060649887127895100784//38045139523510634351420875415397)
-
-  Vern9ConstantCache(c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0806,a0807,a0901,a0906,a0907,a0908,a1001,a1006,a1007,a1008,a1009,a1101,a1106,a1107,a1108,a1109,a1110,a1201,a1206,a1207,a1208,a1209,a1210,a1211,a1301,a1306,a1307,a1308,a1309,a1310,a1311,a1312,a1401,a1406,a1407,a1408,a1409,a1410,a1411,a1412,a1413,a1501,a1506,a1507,a1508,a1509,a1510,a1511,a1512,a1513,a1514,a1601,a1606,a1607,a1608,a1609,a1610,a1611,a1612,a1613,b1,b8,b9,b10,b11,b12,b13,b14,b15,bhat1,bhat8,bhat9,bhat10,bhat11,bhat12,bhat13,bhat16)
+  c17,a1701,a1708,a1709,a1710,a1711,a1712,a1713,a1714,a1715,c18,a1801,a1808,a1809,a1810,a1811,a1812,a1813,a1814,a1815,a1817,c19,a1901,a1908,a1909,a1910,a1911,a1912,a1913,a1914,a1915,a1917,a1918,c20,a2001,a2008,a2009,a2010,a2011,a2012,a2013,a2014,a2015,a2017,a2018,a2019,c21,a2101,a2108,a2109,a2110,a2111,a2112,a2113,a2114,a2115,a2117,a2118,a2119,a2120,c22,a2201,a2208,a2209,a2210,a2211,a2212,a2213,a2214,a2215,a2217,a2218,a2219,a2220,a2221,c23,a2301,a2308,a2309,a2310,a2311,a2312,a2313,a2314,a2315,a2317,a2318,a2319,a2320,a2321,c24,a2401,a2408,a2409,a2410,a2411,a2412,a2413,a2414,a2415,a2417,a2418,a2419,a2420,a2421,c25,a2501,a2508,a2509,a2510,a2511,a2512,a2513,a2514,a2515,a2517,a2518,a2519,a2520,a2521,c26,a2601,a2608,a2609,a2610,a2611,a2612,a2613,a2614,a2615,a2617,a2618,a2619,a2620,a2621 = Vern9Interp(T)
+  r011,r012,r013,r014,r015,r016,r017,r018,r019,r082,r083,r084,r085,r086,r087,r088,r089,r092,r093,r094,r095,r096,r097,r098,r099,r102,r103,r104,r105,r106,r107,r108,r109,r112,r113,r114,r115,r116,r117,r118,r119,r122,r123,r124,r125,r126,r127,r128,r129,r132,r133,r134,r135,r136,r137,r138,r139,r142,r143,r144,r145,r146,r147,r148,r149,r152,r153,r154,r155,r156,r157,r158,r159,r172,r173,r174,r175,r176,r177,r178,r179,r182,r183,r184,r185,r186,r187,r188,r189,r192,r193,r194,r195,r196,r197,r198,r199,r202,r203,r204,r205,r206,r207,r208,r209,r212,r213,r214,r215,r216,r217,r218,r219,r222,r223,r224,r225,r226,r227,r228,r229,r232,r233,r234,r235,r236,r237,r238,r239,r242,r243,r244,r245,r246,r247,r248,r249,r252,r253,r254,r255,r256,r257,r258,r259,r262,r263,r264,r265,r266,r267,r268,r269 = Vern9Interp_polyweights(T)
+  Vern9ConstantCache(c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0806,a0807,a0901,a0906,a0907,a0908,a1001,a1006,a1007,a1008,a1009,a1101,a1106,a1107,a1108,a1109,a1110,a1201,a1206,a1207,a1208,a1209,a1210,a1211,a1301,a1306,a1307,a1308,a1309,a1310,a1311,a1312,a1401,a1406,a1407,a1408,a1409,a1410,a1411,a1412,a1413,a1501,a1506,a1507,a1508,a1509,a1510,a1511,a1512,a1513,a1514,a1601,a1606,a1607,a1608,a1609,a1610,a1611,a1612,a1613,b1,b8,b9,b10,b11,b12,b13,b14,b15,bhat1,bhat8,bhat9,bhat10,bhat11,bhat12,bhat13,bhat16,c17,a1701,a1708,a1709,a1710,a1711,a1712,a1713,a1714,a1715,c18,a1801,a1808,a1809,a1810,a1811,a1812,a1813,a1814,a1815,a1817,c19,a1901,a1908,a1909,a1910,a1911,a1912,a1913,a1914,a1915,a1917,a1918,c20,a2001,a2008,a2009,a2010,a2011,a2012,a2013,a2014,a2015,a2017,a2018,a2019,c21,a2101,a2108,a2109,a2110,a2111,a2112,a2113,a2114,a2115,a2117,a2118,a2119,a2120,c22,a2201,a2208,a2209,a2210,a2211,a2212,a2213,a2214,a2215,a2217,a2218,a2219,a2220,a2221,c23,a2301,a2308,a2309,a2310,a2311,a2312,a2313,a2314,a2315,a2317,a2318,a2319,a2320,a2321,c24,a2401,a2408,a2409,a2410,a2411,a2412,a2413,a2414,a2415,a2417,a2418,a2419,a2420,a2421,c25,a2501,a2508,a2509,a2510,a2511,a2512,a2513,a2514,a2515,a2517,a2518,a2519,a2520,a2521,c26,a2601,a2608,a2609,a2610,a2611,a2612,a2613,a2614,a2615,a2617,a2618,a2619,a2620,a2621,r011,r012,r013,r014,r015,r016,r017,r018,r019,r082,r083,r084,r085,r086,r087,r088,r089,r092,r093,r094,r095,r096,r097,r098,r099,r102,r103,r104,r105,r106,r107,r108,r109,r112,r113,r114,r115,r116,r117,r118,r119,r122,r123,r124,r125,r126,r127,r128,r129,r132,r133,r134,r135,r136,r137,r138,r139,r142,r143,r144,r145,r146,r147,r148,r149,r152,r153,r154,r155,r156,r157,r158,r159,r172,r173,r174,r175,r176,r177,r178,r179,r182,r183,r184,r185,r186,r187,r188,r189,r192,r193,r194,r195,r196,r197,r198,r199,r202,r203,r204,r205,r206,r207,r208,r209,r212,r213,r214,r215,r216,r217,r218,r219,r222,r223,r224,r225,r226,r227,r228,r229,r232,r233,r234,r235,r236,r237,r238,r239,r242,r243,r244,r245,r246,r247,r248,r249,r252,r253,r254,r255,r256,r257,r258,r259,r262,r263,r264,r265,r266,r267,r268,r269)
 end
 
-function Vern9Interp(T::Type = Float64)
+function Vern9Interp(T::Type)
   #  FIVE ADDITIONAL STAGES FOR INTERPOLANT OF ORDER  8
   c17    = T(1)
   a1701  = T(parse(BigFloat," .1461197685842315252051541915018784713459e-1"))
@@ -3756,7 +4664,7 @@ function Vern9Interp(T::Type = Float64)
   return c17,a1701,a1708,a1709,a1710,a1711,a1712,a1713,a1714,a1715,c18,a1801,a1808,a1809,a1810,a1811,a1812,a1813,a1814,a1815,a1817,c19,a1901,a1908,a1909,a1910,a1911,a1912,a1913,a1914,a1915,a1917,a1918,c20,a2001,a2008,a2009,a2010,a2011,a2012,a2013,a2014,a2015,a2017,a2018,a2019,c21,a2101,a2108,a2109,a2110,a2111,a2112,a2113,a2114,a2115,a2117,a2118,a2119,a2120,c22,a2201,a2208,a2209,a2210,a2211,a2212,a2213,a2214,a2215,a2217,a2218,a2219,a2220,a2221,c23,a2301,a2308,a2309,a2310,a2311,a2312,a2313,a2314,a2315,a2317,a2318,a2319,a2320,a2321,c24,a2401,a2408,a2409,a2410,a2411,a2412,a2413,a2414,a2415,a2417,a2418,a2419,a2420,a2421,c25,a2501,a2508,a2509,a2510,a2511,a2512,a2513,a2514,a2515,a2517,a2518,a2519,a2520,a2521,c26,a2601,a2608,a2609,a2610,a2611,a2612,a2613,a2614,a2615,a2617,a2618,a2619,a2620,a2621
 end
 
-function Vern9Interp_polyweights(T::Type = Float64)
+function Vern9Interp_polyweights(T::Type)
   r011 = T(1)
   r012 = T(parse(BigFloat,"-28.33048870061739823290767301658881994700"))
   r013 = T(parse(BigFloat," 257.6535452078577977252092979905248156497"))
@@ -3911,4 +4819,15 @@ function Vern9Interp_polyweights(T::Type = Float64)
   r268 = T(parse(BigFloat," 3288.597775149621789973016480733216881572"))
   r269 = T(parse(BigFloat,"-782.8483098245396412116558219612402319811"))
   return r011,r012,r013,r014,r015,r016,r017,r018,r019,r082,r083,r084,r085,r086,r087,r088,r089,r092,r093,r094,r095,r096,r097,r098,r099,r102,r103,r104,r105,r106,r107,r108,r109,r112,r113,r114,r115,r116,r117,r118,r119,r122,r123,r124,r125,r126,r127,r128,r129,r132,r133,r134,r135,r136,r137,r138,r139,r142,r143,r144,r145,r146,r147,r148,r149,r152,r153,r154,r155,r156,r157,r158,r159,r172,r173,r174,r175,r176,r177,r178,r179,r182,r183,r184,r185,r186,r187,r188,r189,r192,r193,r194,r195,r196,r197,r198,r199,r202,r203,r204,r205,r206,r207,r208,r209,r212,r213,r214,r215,r216,r217,r218,r219,r222,r223,r224,r225,r226,r227,r228,r229,r232,r233,r234,r235,r236,r237,r238,r239,r242,r243,r244,r245,r246,r247,r248,r249,r252,r253,r254,r255,r256,r257,r258,r259,r262,r263,r264,r265,r266,r267,r268,r269
+end
+
+immutable LowOrderRosenbrockConstantCache{T} <: OrdinaryDiffEqConstantCache
+  c₃₂::T
+  d::T
+end
+
+function LowOrderRosenbrockConstantCache(T::Type)
+  c₃₂ = T(6 + sqrt(2))
+  d = T(1/(2+sqrt(2)))
+  LowOrderRosenbrockConstantCache(c₃₂,d)
 end

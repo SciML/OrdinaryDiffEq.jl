@@ -50,9 +50,9 @@ end
     integrator.saveiter += 1
     curt = pop!(integrator.saveat)
     if integrator.saveat!=integrator.t # If <t, interpolate
-      ode_addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.dt,integrator.f,integrator.alg)
+      ode_addsteps!(integrator)
       Θ = (curt - integrator.tprev)/integrator.dt
-      val = ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.kprev,integrator.k,integrator.alg)
+      val = ode_interpolant(Θ,integrator)
       copyat_or_push!(integrator.sol.t,integrator.saveiter,curt)
       copyat_or_push!(integrator.sol.u,integrator.saveiter,val)
     else # ==t, just save
