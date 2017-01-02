@@ -1,4 +1,4 @@
-@inline function initialize!{uType<:Number}(integrator,cache::Vern6ConstantCache,::Type{uType})
+@inline function initialize!(integrator,cache::Vern6ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
   integrator.kshortsize = 9
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
@@ -6,7 +6,7 @@ end
 
 function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{Vern6,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  initialize!(integrator,integrator.cache,typeof(integrator.u))
+  initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
@@ -46,7 +46,7 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
   nothing
 end
 
-@inline function initialize!{uType<:AbstractArray}(integrator,cache::Vern6Cache,::Type{uType})
+@inline function initialize!(integrator,cache::Vern6Cache)
   integrator.kshortsize = 9
   integrator.fsalfirst = integrator.cache.k1 ; integrator.fsallast = integrator.cache.k9
   k = eltype(integrator.sol.k)(integrator.kshortsize)
@@ -59,7 +59,7 @@ end
 
 function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{Vern6,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  initialize!(integrator,integrator.cache,typeof(integrator.u))
+  initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
@@ -118,7 +118,7 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
   nothing
 end
 
-@inline function initialize!{uType<:Number}(integrator,cache::Vern7ConstantCache,::Type{uType})
+@inline function initialize!(integrator,cache::Vern7ConstantCache)
   integrator.kshortsize = 10
   k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k = k
@@ -126,7 +126,7 @@ end
 
 function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{Vern7,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  initialize!(integrator,integrator.cache,typeof(integrator.u))
+  initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
@@ -167,7 +167,7 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
   nothing
 end
 
-@inline function initialize!{uType<:AbstractArray}(integrator,cache::Vern7Cache,::Type{uType})
+@inline function initialize!(integrator,cache::Vern7Cache)
   @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,update,utilde,tmp,atmp = integrator.cache
   integrator.kshortsize = 10
   k = eltype(integrator.sol.k)(integrator.kshortsize)
@@ -177,7 +177,7 @@ end
 
 function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{Vern7,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  initialize!(integrator,integrator.cache,typeof(integrator.u))
+  initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
@@ -244,7 +244,7 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
   nothing
 end
 
-@inline function initialize!{uType<:Number}(integrator,cache::Vern8ConstantCache,::Type{uType})
+@inline function initialize!(integrator,cache::Vern8ConstantCache)
   integrator.kshortsize = 13
   k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k = k
@@ -252,7 +252,7 @@ end
 
 function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{Vern8,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  initialize!(integrator,integrator.cache,typeof(integrator.u))
+  initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
@@ -298,7 +298,7 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
   nothing
 end
 
-@inline function initialize!{uType<:AbstractArray}(integrator,cache::Vern8Cache,::Type{uType})
+@inline function initialize!(integrator,cache::Vern8Cache)
   @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,utilde,update,tmp,atmp = integrator.cache
   integrator.kshortsize = 13
   k = eltype(integrator.sol.k)(integrator.kshortsize)
@@ -308,7 +308,7 @@ end
 
 function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{Vern8,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  initialize!(integrator,integrator.cache,typeof(integrator.u))
+  initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
@@ -387,7 +387,7 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
   nothing
 end
 
-@inline function initialize!{uType<:Number}(integrator,cache::Vern9ConstantCache,::Type{uType})
+@inline function initialize!(integrator,cache::Vern9ConstantCache)
   integrator.kshortsize = 16
   k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k = k
@@ -395,7 +395,7 @@ end
 
 function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{Vern9,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  initialize!(integrator,integrator.cache,typeof(integrator.u))
+  initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
@@ -445,7 +445,7 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
   nothing
 end
 
-@inline function initialize!{uType<:AbstractArray}(integrator,cache::Vern9Cache,::Type{uType})
+@inline function initialize!(integrator,cache::Vern9Cache)
   @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,utilde,update,tmp,atmp = integrator.cache
   integrator.kshortsize = 16
   k = eltype(integrator.sol.k)(integrator.kshortsize)
@@ -455,7 +455,7 @@ end
 
 function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{Vern9,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  initialize!(integrator,integrator.cache,typeof(integrator.u))
+  initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
