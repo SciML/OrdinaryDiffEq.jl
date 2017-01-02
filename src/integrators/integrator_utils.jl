@@ -11,14 +11,14 @@ end
 
   if integrator.opts.adaptive
     if integrator.tdir > tType(0)
-      dt = min(abs(dt),abs(top(integrator.tstops)-t)) # Step to the end
+      dt = min(abs(dt),abs(top(integrator.tstops)-integrator.t)) # Step to the end
     else
-      dt = -min(abs(dt),abs(top(integrator.tstops)-t))
+      dt = -min(abs(dt),abs(top(integrator.tstops)-integrator.t))
     end
   elseif integrator.dtcache == tType(0) # Use integrator.tstops
-    dt = integrator.tdir*abs(top(integrator.tstops)-t)
+    dt = integrator.tdir*abs(top(integrator.tstops)-integrator.t)
   else # always try to step with dtcache
-    dt = integrator.tdir*min(abs(integrator.dtcache),abs(top(integrator.tstops)-t)) # Step to the end
+    dt = integrator.tdir*min(abs(integrator.dtcache),abs(top(integrator.tstops)-integrator.t)) # Step to the end
   end
 
   if integrator.iter > integrator.opts.maxiters
