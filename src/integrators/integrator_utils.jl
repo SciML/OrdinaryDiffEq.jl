@@ -11,14 +11,14 @@ end
 
   if integrator.opts.adaptive
     if integrator.tdir > tType(0)
-      dt = min(abs(dt),abs(top(integrator.tstops)-integrator.t)) # Step to the end
+      integrator.dt = min(abs(integrator.dt),abs(top(integrator.tstops)-integrator.t)) # Step to the end
     else
-      dt = -min(abs(dt),abs(top(integrator.tstops)-integrator.t))
+      integrator.dt = -min(abs(integrator.dt),abs(top(integrator.tstops)-integrator.t))
     end
   elseif integrator.dtcache == tType(0) # Use integrator.tstops
-    dt = integrator.tdir*abs(top(integrator.tstops)-integrator.t)
+    integrator.dt = integrator.tdir*abs(top(integrator.tstops)-integrator.t)
   else # always try to step with dtcache
-    dt = integrator.tdir*min(abs(integrator.dtcache),abs(top(integrator.tstops)-integrator.t)) # Step to the end
+    integrator.dt = integrator.tdir*min(abs(integrator.dtcache),abs(top(integrator.tstops)-integrator.t)) # Step to the end
   end
 
   if integrator.iter > integrator.opts.maxiters
@@ -26,7 +26,7 @@ end
     ode_postamble!(integrator)
     return nothing
   end
-  if dt == tType(0)
+  if integrator.dt == tType(0)
     warn("dt == 0. Aborting")
     ode_postamble!(integrator)
     return nothing
@@ -36,6 +36,8 @@ end
     ode_postamble!(integrator)
     return nothing
   end
+
+  dt = integrator.dt
 
   if typeof(integrator.u)<:AbstractArray && !(typeof(integrator.opts.callback)<:Void)
     uidx = eachindex(integrator.uprev)
