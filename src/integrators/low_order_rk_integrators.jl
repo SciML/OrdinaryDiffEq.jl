@@ -83,18 +83,21 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
   nothing
 end
 
+@inline function initialize!{uType<:Number}(integrator,cache::BS5ConstantCache,::Type{uType})
+  integrator.kshortsize = 8
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
+end
+
 function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{BS5,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8 = BS5ConstantCache(uEltypeNoUnits)
-  integrator.kshortsize = 8
-  k = ksEltype(integrator.kshortsize)
-  integrator.k = k
-  integrator.fsalfirst = f(t,uprev) # Pre-start fsal
+  initialize!(integrator,integrator.cache,typeof(integrator.u))
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
       @unpack_integrator
+      @unpack c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8 = integrator.cache
       k1 = integrator.fsalfirst
       k2 = f(t+c1*dt,uprev+dt*a21*k1)
       k3 = f(t+c2*dt,uprev+dt*(a31*k1+a32*k2))
@@ -112,7 +115,7 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
         integrator.EEst = max(EEst1,EEst2)
       end
       if integrator.opts.calck
-        k[1]=k1; k[2]=k2; k[3]=k3;k[4]=k4;k[5]=k5;k[6]=k6;k[7]=k7;k[8]=k8
+        integrator.k[1]=k1; integrator.k[2]=k2; integrator.k[3]=k3;integrator.k[4]=k4;integrator.k[5]=k5;integrator.k[6]=k6;integrator.k[7]=k7;integrator.k[8]=k8
       end
       @pack_integrator
       ode_loopfooter!(integrator)
@@ -126,26 +129,28 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
   nothing
 end
 
+@inline function initialize!{uType<:AbstractArray}(integrator,cache::BS5Cache,::Type{uType})
+  integrator.kshortsize = 8
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k[1]=integrator.cache.k1; integrator.k[2]=integrator.cache.k2;
+  integrator.k[3]=integrator.cache.k3; integrator.k[4]=integrator.cache.k4;
+  integrator.k[5]=integrator.cache.k5; integrator.k[6]=integrator.cache.k6;
+  integrator.k[7]=integrator.cache.k7; integrator.k[8]=integrator.cache.k8
+  integrator.fsalfirst = integrator.cache.k1; integrator.fsallast = integrator.cache.k8  # setup pointers
+  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
+end
+
 function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{BS5,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8 = constructBS5(uEltypeNoUnits)
-  integrator.kshortsize = 8
-  uidx = eachindex(uprev)
-
-
-  @unpack k1,k2,k3,k4,k5,k6,k7,k8,utilde,uhat,tmp,atmp,atmptilde = integrator.cache
-
-  integrator.k = ksEltype(integrator.kshortsize)
-  integrator.k[1]=k1; integrator.k[2]=k2; integrator.k[3]=k3; integrator.k[4]=k4;
-  integrator.k[5]=k5; integrator.k[6]=k6; integrator.k[7]=k7; integrator.k[8]=k8
-
-  integrator.fsalfirst = k1; integrator.fsallast = k8  # setup pointers
-  f(t,uprev,k1) # Pre-start fsal
+  initialize!(integrator,integrator.cache,typeof(integrator.u))
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
       @unpack_integrator
+      @unpack k1,k2,k3,k4,k5,k6,k7,k8,utilde,uhat,tmp,atmp,atmptilde = integrator.cache
+      @unpack c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8 = integrator.cache.tab
       for i in uidx
         tmp[i] = uprev[i]+dt*a21*k1[i]
       end
@@ -313,29 +318,22 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
   nothing
 end
 
-#=
-@inline function initialize!{uType<:Number}(integrator,cache::DP5Cache,::Type{uType})
+@inline function initialize!{uType<:Number}(integrator,cache::DP5ConstantCache,::Type{uType})
   integrator.kshortsize = 4
-  integrator.k = ksEltype(integrator.kshortsize)
-  integrator.fsalfirst = f(t,uprev) # Pre-start fsal
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
 end
-=#
 
 function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{DP5,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = constructDP5(uEltypeNoUnits)
+  initialize!(integrator,integrator.cache,typeof(integrator.u))
   d1,d3,d4,d5,d6,d7 = DP5_dense_ds(uEltypeNoUnits)
-  #initialize!(integrator,integrator.cache,typeof(integrator.u))
-
-  integrator.kshortsize = 4
-  integrator.k = ksEltype(integrator.kshortsize)
-  integrator.fsalfirst = f(t,uprev) # Pre-start fsal
-
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
       @unpack_integrator
+      @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = integrator.cache
       k1 = integrator.fsalfirst
       k2 = f(t+c1*dt,uprev+dt*(a21*k1))
       k3 = f(t+c2*dt,uprev+dt*(a31*k1+a32*k2))
@@ -368,24 +366,24 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
   nothing
 end
 
+@inline function initialize!{uType<:AbstractArray}(integrator,cache::DP5Cache,::Type{uType})
+  integrator.kshortsize = 4
+  integrator.k = [integrator.cache.update,integrator.cache.bspl,integrator.cache.dense_tmp3,integrator.cache.dense_tmp4]
+  integrator.fsalfirst = integrator.cache.k1; integrator.fsallast = integrator.cache.k7
+  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
+end
 
 function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{DP5,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = constructDP5(uEltypeNoUnits)
   d1,d3,d4,d5,d6,d7 = DP5_dense_ds(uEltypeNoUnits)
-
-  @unpack k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,utilde,tmp,atmp = integrator.cache
-
-  uidx = eachindex(uprev)
-  integrator.kshortsize = 4
-  integrator.k = [update,bspl,dense_tmp3,dense_tmp4]
-  integrator.fsalfirst = k1; integrator.fsallast = k7
-  f(t,uprev,integrator.fsalfirst);  # Pre-start fsal
+  initialize!(integrator,integrator.cache,typeof(integrator.u))
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
       @unpack_integrator
+      @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = integrator.cache.tab
+      @unpack k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,utilde,tmp,atmp = integrator.cache
       for i in uidx
         tmp[i] = uprev[i]+dt*(a21*k1[i])
       end

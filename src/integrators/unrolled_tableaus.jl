@@ -331,8 +331,42 @@ function BS5Interp_polyweights(T::Type = Float64)
   return r016,r015,r014,r013,r012,r036,r035,r034,r033,r032,r046,r045,r044,r043,r042,r056,r055,r054,r053,r052,r066,r065,r064,r063,r062,r076,r075,r074,r073,r072,r086,r085,r084,r083,r082,r096,r095,r094,r093,r106,r105,r104,r103,r102,r116,r115,r114,r113,r112
 end
 
+immutable DP5ConstantCache{T} <: OrdinaryDiffEqConstantCache
+  a21::T
+  a31::T
+  a32::T
+  a41::T
+  a42::T
+  a43::T
+  a51::T
+  a52::T
+  a53::T
+  a54::T
+  a61::T
+  a62::T
+  a63::T
+  a64::T
+  a65::T
+  a71::T
+  a73::T
+  a74::T
+  a75::T
+  a76::T
+  b1::T
+  b3::T
+  b4::T
+  b5::T
+  b6::T
+  b7::T
+  c1::T
+  c2::T
+  c3::T
+  c4::T
+  c5::T
+  c6::T
+end
 
-function constructDP5(T::Type = Float64)
+function DP5ConstantCache(T::Type = Float64)
   a21 = T(1//5)
   a31 = T(3//40)
   a32 = T(9//40)
@@ -365,10 +399,92 @@ function constructDP5(T::Type = Float64)
   c4  = T(8//9)
   c5  = T(1)
   c6  = T(1)
-  return a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6
+  DP5ConstantCache(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6)
 end
 
-function constructDP8(T::Type = Float64)
+immutable DP8ConstantCache{T} <: OrdinaryDiffEqConstantCache
+  c7::T
+  c8::T
+  c9::T
+  c10::T
+  c11::T
+  c6::T
+  c5::T
+  c4::T
+  c3::T
+  c2::T
+  b1::T
+  b6::T
+  b7::T
+  b8::T
+  b9::T
+  b10::T
+  b11::T
+  b12::T
+  bhh1::T
+  bhh2::T
+  bhh3::T
+  er1::T
+  er6::T
+  er7::T
+  er8::T
+  er9::T
+  er10::T
+  er11::T
+  er12::T
+  a0201::T
+  a0301::T
+  a0302::T
+  a0401::T
+  a0403::T
+  a0501::T
+  a0503::T
+  a0504::T
+  a0601::T
+  a0604::T
+  a0605::T
+  a0701::T
+  a0704::T
+  a0705::T
+  a0706::T
+  a0801::T
+  a0804::T
+  a0805::T
+  a0806::T
+  a0807::T
+  a0901::T
+  a0904::T
+  a0905::T
+  a0906::T
+  a0907::T
+  a0908::T
+  a1001::T
+  a1004::T
+  a1005::T
+  a1006::T
+  a1007::T
+  a1008::T
+  a1009::T
+  a1101::T
+  a1104::T
+  a1105::T
+  a1106::T
+  a1107::T
+  a1108::T
+  a1109::T
+  a1110::T
+  a1201::T
+  a1204::T
+  a1205::T
+  a1206::T
+  a1207::T
+  a1208::T
+  a1209::T
+  a1210::T
+  a1211::T
+end
+
+function DP8ConstantCache(T::Type = Float64)
   c7     = T(1//4)
   c8     = T(4//13)
   c9     = T(127//195)
@@ -449,7 +565,7 @@ function constructDP8(T::Type = Float64)
   a1210  = T(parse(BigFloat," 1.23605671757943030647266201528e1"))
   a1211  = T(parse(BigFloat," 6.43392746015763530355970484046e-1"))
 
-  return c7,c8,c9,c10,c11,c6,c5,c4,c3,c2,b1,b6,b7,b8,b9,b10,b11,b12,bhh1,bhh2,bhh3,er1,er6,er7,er8,er9,er10,er11,er12,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211
+  DP8ConstantCache(c7,c8,c9,c10,c11,c6,c5,c4,c3,c2,b1,b6,b7,b8,b9,b10,b11,b12,bhh1,bhh2,bhh3,er1,er6,er7,er8,er9,er10,er11,er12,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211)
 end
 
 function DP8Interp(T::Type = BigFloat)
