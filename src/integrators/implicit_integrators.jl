@@ -32,24 +32,6 @@ end
   @pack integrator = t,dt,u,k
 end
 
-function ode_solve{uType<:Number,algType<:ImplicitEuler,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
-  initialize!(integrator,integrator.cache)
-  @inbounds while !isempty(integrator.tstops)
-    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
-      ode_loopheader!(integrator)
-      @ode_exit_conditions
-      perform_step!(integrator,integrator.cache)
-      ode_loopfooter!(integrator)
-      if isempty(integrator.tstops)
-        break
-      end
-    end
-    !isempty(integrator.tstops) && pop!(integrator.tstops)
-  end
-  ode_postamble!(integrator)
-  nothing
-end
-
 type RHS_IE{F,uType,tType,DiffCacheType,SizeType,uidxType} <: Function
   f::F
   u_old::uType
@@ -91,25 +73,6 @@ end
   end
   @pack integrator = t,dt,u,k
 end
-
-function ode_solve{uType<:AbstractArray,algType<:ImplicitEuler,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
-  initialize!(integrator,integrator.cache)
-  @inbounds while !isempty(integrator.tstops)
-    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
-      ode_loopheader!(integrator)
-      @ode_exit_conditions
-      perform_step!(integrator,integrator.cache)
-      ode_loopfooter!(integrator)
-      if isempty(integrator.tstops)
-        break
-      end
-    end
-    !isempty(integrator.tstops) && pop!(integrator.tstops)
-  end
-  ode_postamble!(integrator)
-  nothing
-end
-
 
 type RHS_Trap{F,uType,rateType,tType,SizeType,DiffCacheType,uidxType} <: Function
   f::F
@@ -161,24 +124,6 @@ end
   @pack integrator = t,dt,u,k
 end
 
-function ode_solve{uType<:AbstractArray,algType<:Trapezoid,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
-  initialize!(integrator,integrator.cache)
-  @inbounds while !isempty(integrator.tstops)
-    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
-      ode_loopheader!(integrator)
-      @ode_exit_conditions
-      perform_step!(integrator,integrator.cache)
-      ode_loopfooter!(integrator)
-      if isempty(integrator.tstops)
-        break
-      end
-    end
-    !isempty(integrator.tstops) && pop!(integrator.tstops)
-  end
-  ode_postamble!(integrator)
-  nothing
-end
-
 type RHS_Trap_Scalar{F,uType,rateType,tType} <: Function
   f::F
   u_old::uType
@@ -213,22 +158,4 @@ end
   integrator.fsallast = k
   u = uhold[1]
   @pack integrator = t,dt,u,k
-end
-
-function ode_solve{uType<:Number,algType<:Trapezoid,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
-  initialize!(integrator,integrator.cache)
-  @inbounds while !isempty(integrator.tstops)
-      while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
-      ode_loopheader!(integrator)
-      @ode_exit_conditions
-      perform_step!(integrator,integrator.cache)
-      ode_loopfooter!(integrator)
-      if isempty(integrator.tstops)
-        break
-      end
-    end
-    !isempty(integrator.tstops) && pop!(integrator.tstops)
-  end
-  ode_postamble!(integrator)
-  nothing
 end

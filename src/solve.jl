@@ -235,3 +235,21 @@ function solve!(integrator::ODEIntegrator;timeseries_errors = true,dense_errors 
   end
   nothing
 end
+
+function ode_solve(integrator::ODEIntegrator)
+  initialize!(integrator,integrator.cache)
+  @inbounds while !isempty(integrator.tstops)
+    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
+      ode_loopheader!(integrator)
+      @ode_exit_conditions
+      perform_step!(integrator,integrator.cache)
+      ode_loopfooter!(integrator)
+      if isempty(integrator.tstops)
+        break
+      end
+    end
+    !isempty(integrator.tstops) && pop!(integrator.tstops)
+  end
+  ode_postamble!(integrator)
+  nothing
+end

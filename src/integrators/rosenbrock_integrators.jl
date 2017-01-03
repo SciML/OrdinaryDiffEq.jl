@@ -109,24 +109,6 @@ end
   @pack integrator = t,dt,u,k
 end
 
-function ode_solve{uType<:AbstractArray,algType<:Rosenbrock23,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
-  initialize!(integrator,integrator.cache)
-  @inbounds while !isempty(integrator.tstops)
-    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
-      ode_loopheader!(integrator)
-      @ode_exit_conditions
-      perform_step!(integrator,integrator.cache)
-      ode_loopfooter!(integrator)
-      if isempty(integrator.tstops)
-        break
-      end
-    end
-    !isempty(integrator.tstops) && pop!(integrator.tstops)
-  end
-  ode_postamble!(integrator)
-  nothing
-end
-
 @inline function initialize!(integrator,cache::Rosenbrock23ConstantCache)
   integrator.kshortsize = 2
   k = eltype(integrator.sol.k)(2)
@@ -187,58 +169,4 @@ end
   integrator.k[1] = k₁
   integrator.k[2] = k₂
   @pack integrator = t,dt,u,k
-end
-
-function ode_solve{uType<:Number,algType<:Rosenbrock23,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
-  initialize!(integrator,integrator.cache)
-  @inbounds while !isempty(integrator.tstops)
-    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
-      ode_loopheader!(integrator)
-      @ode_exit_conditions
-      perform_step!(integrator,integrator.cache)
-      ode_loopfooter!(integrator)
-      if isempty(integrator.tstops)
-        break
-      end
-    end
-    !isempty(integrator.tstops) && pop!(integrator.tstops)
-  end
-  ode_postamble!(integrator)
-  nothing
-end
-
-function ode_solve{uType<:AbstractArray,algType<:Rosenbrock32,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
-  initialize!(integrator,integrator.cache)
-  @inbounds while !isempty(integrator.tstops)
-    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
-      ode_loopheader!(integrator)
-      @ode_exit_conditions
-      perform_step!(integrator,integrator.cache)
-      ode_loopfooter!(integrator)
-      if isempty(integrator.tstops)
-        break
-      end
-    end
-    !isempty(integrator.tstops) && pop!(integrator.tstops)
-  end
-  ode_postamble!(integrator)
-  nothing
-end
-
-function ode_solve{uType<:Number,algType<:Rosenbrock32,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
-  initialize!(integrator,integrator.cache)
-  @inbounds while !isempty(integrator.tstops)
-    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
-      ode_loopheader!(integrator)
-      @ode_exit_conditions
-      perform_step!(integrator,integrator.cache)
-      ode_loopfooter!(integrator)
-      if isempty(integrator.tstops)
-        break
-      end
-    end
-    !isempty(integrator.tstops) && pop!(integrator.tstops)
-  end
-  ode_postamble!(integrator)
-  nothing
 end
