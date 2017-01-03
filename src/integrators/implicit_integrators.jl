@@ -26,10 +26,10 @@ function ode_solve{uType<:Number,algType<:ImplicitEuler,tType,tstopsType,tTypeNo
       u_old[1] = uhold[1]
       rhs.t = t
       rhs.dt = dt
-      if alg_autodiff(alg)
+      if alg_autodiff(integrator.alg)
         nlres = NLsolve.nlsolve(adf,uhold)
       else
-        nlres = NLsolve.nlsolve(rhs,uhold,autodiff=alg_autodiff(alg))
+        nlres = NLsolve.nlsolve(rhs,uhold,autodiff=alg_autodiff(integrator.alg))
       end
       uhold[1] = nlres.zero[1]
       if integrator.opts.calck
@@ -84,10 +84,10 @@ function ode_solve{uType<:AbstractArray,algType<:ImplicitEuler,tType,tstopsType,
       rhs.dt = dt
       rhs.uidx = uidx
       rhs.sizeu = size(u)
-      if alg_autodiff(alg)
+      if alg_autodiff(integrator.alg)
         nlres = NLsolve.nlsolve(adf,uhold)
       else
-        nlres = NLsolve.nlsolve(rhs,uhold,autodiff=alg_autodiff(alg))
+        nlres = NLsolve.nlsolve(rhs,uhold,autodiff=alg_autodiff(integrator.alg))
       end
       copy!(uhold,nlres.zero)
       if integrator.opts.calck
@@ -149,10 +149,10 @@ function ode_solve{uType<:AbstractArray,algType<:Trapezoid,tType,tstopsType,tTyp
       rhs.dt = dt
       rhs.uidx = uidx
       rhs.sizeu = size(u)
-      if alg_autodiff(alg)
+      if alg_autodiff(integrator.alg)
         nlres = NLsolve.nlsolve(adf,uhold)
       else
-        nlres = NLsolve.nlsolve(rhs,uhold,autodiff=alg_autodiff(alg))
+        nlres = NLsolve.nlsolve(rhs,uhold,autodiff=alg_autodiff(integrator.alg))
       end
       copy!(uhold,nlres.zero)
       if integrator.opts.calck
@@ -200,10 +200,10 @@ function ode_solve{uType<:Number,algType<:Trapezoid,tType,tstopsType,tTypeNoUnit
       rhs.t = t
       rhs.dt = dt
       rhs.f_old = integrator.fsalfirst
-      if alg_autodiff(alg)
+      if alg_autodiff(integrator.alg)
         nlres = NLsolve.nlsolve(adf,uhold)
       else
-        nlres = NLsolve.nlsolve(rhs,uhold,autodiff=alg_autodiff(alg))
+        nlres = NLsolve.nlsolve(rhs,uhold,autodiff=alg_autodiff(integrator.alg))
       end
       uhold[1] = nlres.zero[1]
       k = f(t+dt,uhold[1])

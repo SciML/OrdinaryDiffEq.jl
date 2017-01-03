@@ -677,7 +677,7 @@ end
 Base.@pure alg_cache(alg::Feagin14,u,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t) = Feagin14ConstantCache(uEltypeNoUnits)
 
 
-immutable LowOrderRosenbrockCache{uType,rateType,vecuType,JType,TabType} <: OrdinaryDiffEqMutableCache
+immutable LowOrderRosenbrockCache{uType,rateType,vecuType,JType,TabType,TFType,UFType} <: OrdinaryDiffEqMutableCache
   u::uType
   k₁::rateType
   k₂::rateType
@@ -693,8 +693,11 @@ immutable LowOrderRosenbrockCache{uType,rateType,vecuType,JType,TabType} <: Ordi
   dT::uType
   J::JType
   W::JType
+  tmp::uType
   tmp2::uType
   tab::TabType
+  tf::TFType
+  uf::UFType
 end
 
 Base.@pure function alg_cache{uType<:AbstractArray}(alg::Rosenbrock23,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t)
@@ -713,8 +716,13 @@ Base.@pure function alg_cache{uType<:AbstractArray}(alg::Rosenbrock23,u::uType,r
   dT = similar(u)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J); tmp2 = similar(u)
+  tmp = reshape(vectmp2,size(u)...)
   tab = LowOrderRosenbrockConstantCache(uEltypeNoUnits,identity,identity)
-  LowOrderRosenbrockCache(u,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp2,tab)
+  vf = VectorF(f,size(u))
+  vfr = VectorFReturn(f,size(u))
+  tf = TimeGradientWrapper(vf,uprev,du2)
+  uf = UJacobianWrapper(vfr,t)
+  LowOrderRosenbrockCache(u,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,tab,tf,uf)
 end
 
 alg_cache{uType<:AbstractArray}(alg::Rosenbrock32,u::uType,

@@ -40,6 +40,7 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
         utilde += α[i]*kk[i]
       end
       u = uprev + dt*utilde
+      @show u,uprev,dt,utilde
       if integrator.opts.adaptive
         uEEst = αEEst[1]*kk[1]
         for i = 2:stages

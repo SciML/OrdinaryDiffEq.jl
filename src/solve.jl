@@ -18,7 +18,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   saveat = tType[],tstops = tType[],
   calck = (!isempty(setdiff(saveat,tstops)) || dense),
   adaptive = true,
-  gamma=.9,
+  gamma=9//10,
   abstol=1//10^6,
   reltol=1//10^3,
   qmax=qmax_default(alg),qmin=qmin_default(alg),
@@ -149,8 +149,9 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   end
 
   opts = DEOptions(maxiters,timeseries_steps,save_timeseries,adaptive,uEltype(abstol),
-    uEltypeNoUnits(reltol),gamma,qmax,qmin,dtmax,dtmin,internalnorm,progress,progress_steps,
-    progress_name,progress_message,beta1,beta2,tTypeNoUnits(qoldinit),dense,saveat_vec,
+    uEltypeNoUnits(reltol),tTypeNoUnits(gamma),tTypeNoUnits(qmax),tTypeNoUnits(qmin),
+    dtmax,dtmin,internalnorm,progress,progress_steps,
+    progress_name,progress_message,tTypeNoUnits(beta1),tTypeNoUnits(beta2),tTypeNoUnits(qoldinit),dense,saveat_vec,
     callback,isoutofdomain,calck)
 
   progress ? (prog = Juno.ProgressBar(name=progress_name)) : prog = nothing
@@ -209,7 +210,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   reeval_fsal = false
   qminc = inv(qmin) #facc1
   qmaxc = inv(qmax) #facc2
-  EEst = zero(t/t)
+  EEst = tTypeNoUnits(1)
 
   integrator = ODEIntegrator{algType,uType,tType,typeof(tstops_internal),
                              tTypeNoUnits,eltype(ks),typeof(sol),

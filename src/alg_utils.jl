@@ -39,11 +39,11 @@ function get_kseltype(alg::OrdinaryDiffEqAlgorithm,prob)
   isspecialdense(alg) ? ksEltype = Vector{rateType} : ksEltype = rateType
 end
 
-qmin_default(alg::OrdinaryDiffEqAlgorithm) = 0.2
-qmin_default(alg::DP8) = 0.333
+qmin_default(alg::OrdinaryDiffEqAlgorithm) = 1//5
+qmin_default(alg::DP8) = 1//3
 
-qmax_default(alg::OrdinaryDiffEqAlgorithm) = 10.0
-qmax_default(alg::DP8) = 6.0
+qmax_default(alg::OrdinaryDiffEqAlgorithm) = 10
+qmax_default(alg::DP8) = 6
 
 get_chunksize(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have a chunk size defined.")
 get_chunksize{CS,AD}(alg::ImplicitEuler{CS,AD}) = CS
@@ -104,11 +104,11 @@ alg_adaptive_order(alg::Feagin10) = 8
 alg_adaptive_order(alg::Feagin12) = 10
 alg_adaptive_order(alg::Feagin14) = 12
 
-beta2_default(alg::OrdinaryDiffEqAlgorithm) = 0.4/alg_order(alg)
-beta2_default(alg::DP8) = 0.0
-beta2_default(alg::DP5) = 0.04
-beta2_default(alg::DP5Threaded) = 0.04
+beta2_default(alg::OrdinaryDiffEqAlgorithm) = 2//(5alg_order(alg))
+beta2_default(alg::DP8) = 0//1
+beta2_default(alg::DP5) = 4//100
+beta2_default(alg::DP5Threaded) = 4//100
 
-beta1_default(alg::OrdinaryDiffEqAlgorithm,beta2) = 0.7/alg_order(alg)
-beta1_default(alg::DP8,beta2) = 1/alg_order(alg) - 0.2beta2
-beta1_default(alg::DP5,beta2) = 1/alg_order(alg) - 0.75beta2
+beta1_default(alg::OrdinaryDiffEqAlgorithm,beta2) = 7//(10alg_order(alg))
+beta1_default(alg::DP8,beta2) = typeof(beta2)(1//alg_order(alg)) - beta2/5
+beta1_default(alg::DP5,beta2) = typeof(beta2)(1//alg_order(alg)) - 3beta2/4

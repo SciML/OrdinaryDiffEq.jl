@@ -43,10 +43,6 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
     end
     !isempty(integrator.tstops) && pop!(integrator.tstops)
   end
-  if integrator.opts.calck
-    k = f(t,uprev)
-    push!(integrator.sol.k,k)
-  end
   ode_postamble!(integrator)
   nothing
 end

@@ -65,7 +65,6 @@ end
 function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{Midpoint,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
   initialize!(integrator,integrator.cache)
-  integrator.fsalfirst = f(t,uprev)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
@@ -144,7 +143,7 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
       @ode_exit_conditions
       @unpack_integrator
       halfdt = dt/2
-      k₁=integrator.fsalfirst
+      k₁ =integrator.fsalfirst
       ttmp = t+halfdt
       k₂ = f(ttmp,muladd(halfdt,k₁,uprev))
       k₃ = f(ttmp,muladd(halfdt,k₂,uprev))

@@ -1,4 +1,4 @@
-using OrdinaryDiffEq
+using OrdinaryDiffEq, DiffEqBase, Base.Test
 srand(100)
 setprecision(400)
 
@@ -9,7 +9,9 @@ prob = ODETestProblem(f,1/2,analytic)
 
 sol3 =solve(prob,RK4(),dt=1/2^(6),abstol=1,reltol=0)
 
-prob = ODETestProblem(f,BigInt(1)//BigInt(2),analytic)
+prob = ODETestProblem(f,BigInt(1)//BigInt(2),analytic,(BigInt(0)//BigInt(1),BigInt(1)//BigInt(1)))
+
+integrator = init(prob,RK4(),dt=BigInt(1)//BigInt(2)^(6),abstol=1,reltol=0)
 
 sol =solve(prob,RK4(),dt=BigInt(1)//BigInt(2)^(6),abstol=1,reltol=0)
 sol2 =solve(prob,RK4(),dt=BigInt(1)/BigInt(2)^(6),abstol=1,reltol=0)
@@ -25,8 +27,10 @@ sol4 =solve(prob,DP5(),dt=BigInt(1)//BigInt(2)^(3),adaptive=false)
 
 @test eltype(sol4.u) == Rational{BigInt}
 
-tab = constructDormandPrince8_64bit(Rational{BigInt})
-sol5 =solve(prob,ExplicitRK(),dt=BigInt(1)//BigInt(2)^(3),abstol=1,reltol=0,tableau=tab,adaptive=false)
+tabalg = ExplicitRK(tableau = constructDormandPrince(Rational{BigInt}))
+
+integrator = init(prob,tabalg,dt=BigInt(1)//BigInt(2)^(3),abstol=1,reltol=0,adaptive=false)
+sol5 =solve(prob,tabalg,dt=BigInt(1)//BigInt(2)^(3),abstol=1,reltol=0,adaptive=false)
 
 @test typeof(sol5.u[end]) == Rational{BigInt}
 

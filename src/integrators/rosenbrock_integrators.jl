@@ -1,32 +1,34 @@
-function ode_solve{uType<:AbstractArray,algType<:Rosenbrock23,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
-  @ode_preamble
-  @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp2 = integrator.cache
+@inline function initialize!(integrator,cache::LowOrderRosenbrockCache)
+  integrator.kshortsize = 2
+  @unpack k₁,k₂,fsalfirst,fsallast = integrator.cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = fsallast
-  sizeu = size(uprev) # Change to dynamic by call overloaded type
-  integrator.kshortsize = 2
-  function vecf(t,uprev,du)
-    f(t,reshape(uprev,sizeu...),reshape(du,sizeu...))
-    uprev = vec(uprev)
-    du = vec(du)
-  end
-  function vecfreturn(t,uprev,du)
-    f(t,reshape(uprev,sizeu...),reshape(du,sizeu...))
-    return vec(du)
-  end
-  tmp = reshape(vectmp2,sizeu...)
   integrator.k = [k₁,k₂]
-  f(t,uprev,fsalfirst)
+  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst)
+end
+
+function ode_solve{uType<:AbstractArray,algType<:Rosenbrock23,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
+  @ode_preamble
+  initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
       @unpack_integrator
+      @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,uf,tf = integrator.cache
       jidx = eachindex(J)
       @unpack c₃₂,d = integrator.cache.tab
+
+      # Setup Jacobian Calc
+      sizeu  = size(u)
+      tf.vf.sizeu = sizeu
+      tf.uprev = uprev
+      uf.vfr.sizeu = sizeu
+      uf.t = t
+
       #if alg_autodiff(alg)
-        ForwardDiff.derivative!(dT,(t)->vecfreturn(t,uprev,du2),t) # Time derivative of each component
-        ForwardDiff.jacobian!(J,(du1,uprev)->vecf(t,uprev,du1),vec(du1),vec(uprev))
+        ForwardDiff.derivative!(dT,tf,t) # Time derivative of each component
+        ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev))
       #else
       #  Calculus.finite_difference!((t)->vecfreturn(t,uprev,du2),[t],dT)
       #  Calculus.finite_difference_jacobian!((du1,uprev)->vecf(t,uprev,du1),vec(uprev),vec(du1),J)
@@ -34,7 +36,7 @@ function ode_solve{uType<:AbstractArray,algType<:Rosenbrock23,tType,tstopsType,t
 
       W[:] = I-dt*d*J # Can an allocation be cut here?
       @into! vectmp = W\vec(fsalfirst + dt*d*dT)
-      recursivecopy!(k₁,reshape(vectmp,sizeu...))
+      recursivecopy!(k₁,reshape(vectmp,size(u)...))
       for i in uidx
         u[i]=uprev[i]+dt*k₁[i]/2
       end
@@ -112,33 +114,25 @@ end
 
 function ode_solve{uType<:AbstractArray,algType<:Rosenbrock32,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp2 = integrator.cache
-
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = fsallast
-
-  sizeu = size(uprev) # Change to dynamic by call overloaded type
-  integrator.kshortsize = 2
-  function vecf(t,uprev,du)
-    f(t,reshape(uprev,sizeu...),reshape(du,sizeu...))
-    uprev = vec(uprev)
-    du = vec(du)
-  end
-  function vecfreturn(t,uprev,du)
-    f(t,reshape(uprev,sizeu...),reshape(du,sizeu...))
-    return vec(du)
-  end
-  integrator.k = [k₁,k₂]
-  f(t,uprev,integrator.fsalfirst)
+  initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
       @unpack_integrator
+      @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,uf,tf = integrator.cache
       jidx = eachindex(J)
       @unpack c₃₂,d = integrator.cache.tab
-      ForwardDiff.derivative!(dT,(t)->vecfreturn(t,uprev,du2),t) # Time derivative
-      ForwardDiff.jacobian!(J,(du1,uprev)->vecf(t,uprev,du1),vec(du1),vec(uprev))
+      # Setup Jacobian Calc
+      sizeu  = size(u)
+      tf.vf.sizeu = sizeu
+      tf.uprev = uprev
+      uf.vfr.sizeu = sizeu
+      uf.t = t
+
+      #if alg_autodiff(alg)
+        ForwardDiff.derivative!(dT,tf,t) # Time derivative of each component
+        ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev))
 
       W[:] = I-dt*d*J # Can an allocation be cut here?
       @into! vectmp = W\vec(integrator.fsalfirst + dt*d*dT)
@@ -182,8 +176,6 @@ end
 function ode_solve{uType<:Number,algType<:Rosenbrock32,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
   initialize!(integrator,integrator.cache)
-  tf = TimeDerivativeWrapper(f,uprev)
-  uf = UDerivativeWrapper(f,t)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
