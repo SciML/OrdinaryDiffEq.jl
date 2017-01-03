@@ -15,8 +15,6 @@ function ode_solve{uType<:AbstractArray,algType<:Rosenbrock23,tType,tstopsType,t
     return vec(du)
   end
   tmp = reshape(vectmp2,sizeu...)
-  uidx = eachindex(uprev)
-  jidx = eachindex(J)
   integrator.k = [k₁,k₂]
   f(t,uprev,fsalfirst)
   @inbounds while !isempty(integrator.tstops)
@@ -24,6 +22,7 @@ function ode_solve{uType<:AbstractArray,algType<:Rosenbrock23,tType,tstopsType,t
       ode_loopheader!(integrator)
       @ode_exit_conditions
       @unpack_integrator
+      jidx = eachindex(J)
       @unpack c₃₂,d = integrator.cache.tab
       #if alg_autodiff(alg)
         ForwardDiff.derivative!(dT,(t)->vecfreturn(t,uprev,du2),t) # Time derivative of each component
@@ -66,12 +65,16 @@ function ode_solve{uType<:AbstractArray,algType<:Rosenbrock23,tType,tstopsType,t
   nothing
 end
 
+@inline function initialize!(integrator,cache::LowOrderRosenbrockConstantCache)
+  integrator.kshortsize = 2
+  k = eltype(integrator.sol.k)(2)
+  integrator.k = k
+  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev)
+end
+
 function ode_solve{uType<:Number,algType<:Rosenbrock23,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  integrator.kshortsize = 2
-  k = ksEltype(2)
-  integrator.k = k
-  integrator.fsalfirst = f(t,uprev)
+  initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
@@ -91,10 +94,8 @@ function ode_solve{uType<:Number,algType<:Rosenbrock23,tType,tstopsType,tTypeNoU
         k₃ = W\(integrator.fsallast - c₃₂*(k₂-f₁)-2(k₁-integrator.fsalfirst)+dt*dT)
         integrator.EEst = abs((dt*(k₁ - 2k₂ + k₃)/6)./(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
       end
-      if integrator.opts.calck
-        k[1] = k₁
-        k[2] = k₂
-      end
+      integrator.k[1] = k₁
+      integrator.k[2] = k₂
       @pack_integrator
       ode_loopfooter!(integrator)
       if isempty(integrator.tstops)
@@ -125,8 +126,6 @@ function ode_solve{uType<:AbstractArray,algType<:Rosenbrock32,tType,tstopsType,t
     f(t,reshape(uprev,sizeu...),reshape(du,sizeu...))
     return vec(du)
   end
-  uidx = eachindex(uprev)
-  jidx = eachindex(J)
   integrator.k = [k₁,k₂]
   f(t,uprev,integrator.fsalfirst)
   @inbounds while !isempty(integrator.tstops)
@@ -134,6 +133,7 @@ function ode_solve{uType<:AbstractArray,algType<:Rosenbrock32,tType,tstopsType,t
       ode_loopheader!(integrator)
       @ode_exit_conditions
       @unpack_integrator
+      jidx = eachindex(J)
       @unpack c₃₂,d = integrator.cache.tab
       ForwardDiff.derivative!(dT,(t)->vecfreturn(t,uprev,du2),t) # Time derivative
       ForwardDiff.jacobian!(J,(du1,uprev)->vecf(t,uprev,du1),vec(du1),vec(uprev))
@@ -179,10 +179,7 @@ end
 
 function ode_solve{uType<:Number,algType<:Rosenbrock32,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  integrator.kshortsize = 2
-  k = ksEltype(2)
-  integrator.k = k
-  integrator.fsalfirst = f(t,uprev)
+  initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
@@ -204,10 +201,8 @@ function ode_solve{uType<:Number,algType<:Rosenbrock32,tType,tstopsType,tTypeNoU
       if integrator.opts.adaptive
         integrator.EEst = abs((dt*(k₁ - 2k₂ + k₃)/6)./(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
       end
-      if integrator.opts.calck
-        k[1] = k₁
-        k[2] = k₂
-      end
+      integrator.k[1] = k₁
+      integrator.k[2] = k₂
       @pack_integrator
       ode_loopfooter!(integrator)
       if isempty(integrator.tstops)
