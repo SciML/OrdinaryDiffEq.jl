@@ -13,28 +13,32 @@ end
   cache.uhold[1] = integrator.uprev; cache.u_old[1] = integrator.uprev
 end
 
+function perform_step!(integrator::ODEIntegrator,cache::ImplicitEulerConstantCache)
+  @unpack t,dt,uprev,u,f,k = integrator
+  @unpack uhold,u_old,rhs,adf = integrator.cache
+  u_old[1] = uhold[1]
+  rhs.t = t
+  rhs.dt = dt
+  if alg_autodiff(integrator.alg)
+    nlres = NLsolve.nlsolve(adf,uhold)
+  else
+    nlres = NLsolve.nlsolve(rhs,uhold,autodiff=alg_autodiff(integrator.alg))
+  end
+  uhold[1] = nlres.zero[1]
+  if integrator.opts.calck
+    k = f(t+dt,uhold[1])
+  end
+  u = uhold[1]
+  @pack integrator = t,dt,u,k
+end
+
 function ode_solve{uType<:Number,algType<:ImplicitEuler,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
-      @unpack t,dt,uprev,u,f,k = integrator
-      @unpack uhold,u_old,rhs,adf = integrator.cache
-      u_old[1] = uhold[1]
-      rhs.t = t
-      rhs.dt = dt
-      if alg_autodiff(integrator.alg)
-        nlres = NLsolve.nlsolve(adf,uhold)
-      else
-        nlres = NLsolve.nlsolve(rhs,uhold,autodiff=alg_autodiff(integrator.alg))
-      end
-      uhold[1] = nlres.zero[1]
-      if integrator.opts.calck
-        k = f(t+dt,uhold[1])
-      end
-      u = uhold[1]
-      @pack integrator = t,dt,u,k
+      perform_step!(integrator,integrator.cache)
       ode_loopfooter!(integrator)
       if isempty(integrator.tstops)
         break
@@ -67,30 +71,34 @@ end
   integrator.k = cache.k
 end
 
+function perform_step!(integrator::ODEIntegrator,cache::ImplicitEulerCache)
+  @unpack t,dt,uprev,u,f,k = integrator
+  uidx = eachindex(integrator.uprev)
+  @unpack u_old,dual_cache,k,adf,rhs,uhold = integrator.cache
+  copy!(u_old,uhold)
+  rhs.t = t
+  rhs.dt = dt
+  rhs.uidx = uidx
+  rhs.sizeu = size(u)
+  if alg_autodiff(integrator.alg)
+    nlres = NLsolve.nlsolve(adf,uhold)
+  else
+    nlres = NLsolve.nlsolve(rhs,uhold,autodiff=alg_autodiff(integrator.alg))
+  end
+  copy!(uhold,nlres.zero)
+  if integrator.opts.calck
+    f(t+dt,u,k)
+  end
+  @pack integrator = t,dt,u,k
+end
+
 function ode_solve{uType<:AbstractArray,algType<:ImplicitEuler,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
-      @unpack t,dt,uprev,u,f,k = integrator
-      uidx = eachindex(integrator.uprev)
-      @unpack u_old,dual_cache,k,adf,rhs,uhold = integrator.cache
-      copy!(u_old,uhold)
-      rhs.t = t
-      rhs.dt = dt
-      rhs.uidx = uidx
-      rhs.sizeu = size(u)
-      if alg_autodiff(integrator.alg)
-        nlres = NLsolve.nlsolve(adf,uhold)
-      else
-        nlres = NLsolve.nlsolve(rhs,uhold,autodiff=alg_autodiff(integrator.alg))
-      end
-      copy!(uhold,nlres.zero)
-      if integrator.opts.calck
-        f(t+dt,u,k)
-      end
-      @pack integrator = t,dt,u,k
+      perform_step!(integrator,integrator.cache)
       ode_loopfooter!(integrator)
       if isempty(integrator.tstops)
         break
@@ -131,31 +139,35 @@ end
   integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst)
 end
 
+function perform_step!(integrator::ODEIntegrator,cache::TrapezoidCache)
+  @unpack t,dt,uprev,u,f,k = integrator
+  uidx = eachindex(integrator.uprev)
+  @unpack u_old,dual_cache,k,rhs,adf,uhold = integrator.cache
+  copy!(u_old,uhold)
+  # copy!(rhs.f_old,f_old) Implicitly done by pointers: fsalfirst === f_old == rhs.f_old
+  rhs.t = t
+  rhs.dt = dt
+  rhs.uidx = uidx
+  rhs.sizeu = size(u)
+  if alg_autodiff(integrator.alg)
+    nlres = NLsolve.nlsolve(adf,uhold)
+  else
+    nlres = NLsolve.nlsolve(rhs,uhold,autodiff=alg_autodiff(integrator.alg))
+  end
+  copy!(uhold,nlres.zero)
+  if integrator.opts.calck
+    f(t+dt,u,k)
+  end
+  @pack integrator = t,dt,u,k
+end
+
 function ode_solve{uType<:AbstractArray,algType<:Trapezoid,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
-      @unpack t,dt,uprev,u,f,k = integrator
-      uidx = eachindex(integrator.uprev)
-      @unpack u_old,dual_cache,k,rhs,adf,uhold = integrator.cache
-      copy!(u_old,uhold)
-      # copy!(rhs.f_old,f_old) Implicitly done by pointers: fsalfirst === f_old == rhs.f_old
-      rhs.t = t
-      rhs.dt = dt
-      rhs.uidx = uidx
-      rhs.sizeu = size(u)
-      if alg_autodiff(integrator.alg)
-        nlres = NLsolve.nlsolve(adf,uhold)
-      else
-        nlres = NLsolve.nlsolve(rhs,uhold,autodiff=alg_autodiff(integrator.alg))
-      end
-      copy!(uhold,nlres.zero)
-      if integrator.opts.calck
-        f(t+dt,u,k)
-      end
-      @pack integrator = t,dt,u,k
+      perform_step!(integrator,integrator.cache)
       ode_loopfooter!(integrator)
       if isempty(integrator.tstops)
         break
@@ -184,28 +196,32 @@ end
   integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev)
 end
 
+function perform_step!(integrator::ODEIntegrator,cache::TrapezoidConstantCache)
+  @unpack t,dt,uprev,u,f,k = integrator
+  @unpack uhold,u_old,rhs,adf = integrator.cache
+  u_old[1] = uhold[1]
+  rhs.t = t
+  rhs.dt = dt
+  rhs.f_old = integrator.fsalfirst
+  if alg_autodiff(integrator.alg)
+    nlres = NLsolve.nlsolve(adf,uhold)
+  else
+    nlres = NLsolve.nlsolve(rhs,uhold,autodiff=alg_autodiff(integrator.alg))
+  end
+  uhold[1] = nlres.zero[1]
+  k = f(t+dt,uhold[1])
+  integrator.fsallast = k
+  u = uhold[1]
+  @pack integrator = t,dt,u,k
+end
+
 function ode_solve{uType<:Number,algType<:Trapezoid,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
       while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
-      @unpack t,dt,uprev,u,f,k = integrator
-      @unpack uhold,u_old,rhs,adf = integrator.cache
-      u_old[1] = uhold[1]
-      rhs.t = t
-      rhs.dt = dt
-      rhs.f_old = integrator.fsalfirst
-      if alg_autodiff(integrator.alg)
-        nlres = NLsolve.nlsolve(adf,uhold)
-      else
-        nlres = NLsolve.nlsolve(rhs,uhold,autodiff=alg_autodiff(integrator.alg))
-      end
-      uhold[1] = nlres.zero[1]
-      k = f(t+dt,uhold[1])
-      integrator.fsallast = k
-      u = uhold[1]
-      @pack integrator = t,dt,u,k
+      perform_step!(integrator,integrator.cache)
       ode_loopfooter!(integrator)
       if isempty(integrator.tstops)
         break

@@ -59,6 +59,7 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
   event_cache::ECType
   kshortsize::Int
   reeval_fsal::Bool
+  advance_to_tstop::Bool
   opts::O
   fsalfirst::rateType
   fsallast::rateType
@@ -66,11 +67,11 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
   ODEIntegrator(sol,u,k,t,dt,f,uprev,kprev,tprev,tstops,saveat,adaptiveorder,
     order,alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,dtpropose,dt_mod,tdir,qminc,
     qmaxc,EEst,qold,iter,saveiter,saveiter_dense,prog,cache,event_cache,
-    kshortsize,reeval_fsal,opts) = new(
+    kshortsize,reeval_fsal,advance_to_tstop,opts) = new(
     sol,u,k,t,dt,f,uprev,kprev,tprev,tstops,saveat,adaptiveorder,
       order,alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,dtpropose,dt_mod,tdir,qminc,
       qmaxc,EEst,qold,iter,saveiter,saveiter_dense,prog,cache,event_cache,
-      kshortsize,reeval_fsal,opts) # Leave off fsalfirst and last
+      kshortsize,reeval_fsal,advance_to_tstop,opts) # Leave off fsalfirst and last
 end
 
 function start(integrator::ODEIntegrator)
@@ -80,9 +81,17 @@ end
 
 function next(integrator::ODEIntegrator,state)
   state += 1
-  ode_loopheader!(integrator)
-  perform_step!(integrator,integrator.cache)
-  ode_loopfooter!(integrator)
+  if integrator.advance_to_tstop
+    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
+      ode_loopheader!(integrator)
+      perform_step!(integrator,integrator.cache)
+      ode_loopfooter!(integrator)
+    end
+  else
+    ode_loopheader!(integrator)
+    perform_step!(integrator,integrator.cache)
+    ode_loopfooter!(integrator)
+  end
   integrator.t == top(integrator.tstops) && pop!(integrator.tstops)
   integrator,state
 end
