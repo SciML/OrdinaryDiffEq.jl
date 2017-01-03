@@ -21,7 +21,7 @@ function ode_solve{uType<:Number,algType<:ImplicitEuler,tType,tstopsType,tTypeNo
       ode_loopheader!(integrator)
       @ode_exit_conditions
       @unpack t,dt,uprev,u,f,k = integrator
-            @unpack uhold,u_old,rhs,adf = integrator.cache
+      @unpack uhold,u_old,rhs,adf = integrator.cache
       u_old[1] = uhold[1]
       rhs.t = t
       rhs.dt = dt

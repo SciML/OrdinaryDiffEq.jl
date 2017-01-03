@@ -9,7 +9,7 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
       ode_loopheader!(integrator)
       @ode_exit_conditions
       @unpack t,dt,uprev,u,f,k = integrator
-            k = integrator.fsalfirst
+      k = integrator.fsalfirst
       u = muladd(dt,k,uprev)
       k = f(t+dt,u) # For the interpolation, needs k at the updated point
       integrator.fsallast = k
