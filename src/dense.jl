@@ -56,7 +56,6 @@ times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation(cache,tval::Number,id)
   @unpack ts,timeseries,ks,f,notsaveat_idxs = id
-  @show ts,notsaveat_idxs
   tdir = sign(ts[end]-ts[1])
   i = findfirst((x)->tdir*x>=tdir*tval,@view ts[notsaveat_idxs]) # It's in the interval ts[i-1] to ts[i]
   if ts[notsaveat_idxs[i]] == tval

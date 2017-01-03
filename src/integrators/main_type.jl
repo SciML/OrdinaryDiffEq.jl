@@ -73,7 +73,10 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
       kshortsize,reeval_fsal,opts) # Leave off fsalfirst and last
 end
 
-start(integrator::ODEIntegrator) = initialize!(integrator,integrator.cache)
+function start(integrator::ODEIntegrator)
+  initialize!(integrator,integrator.cache)
+  integrator.iter
+end
 
 function next(integrator::ODEIntegrator,state)
   state += 1
