@@ -1,10 +1,8 @@
 macro ode_callback(ex)
   esc(quote
-    function (alg,f,t,u,k,tprev,uprev,kprev,ts,timeseries,ks,dtprev,dt,saveat,cursaveat,saveiter,iter,save_timeseries,timeseries_steps,uEltype,ksEltype,dense,kshortsize,issimple_dense,fsal,fsalfirst,cache,calck,T,Ts)
-      reeval_fsal = false
+    function (integrator)
       event_occurred = false
       $(ex)
-      cursaveat,saveiter,dt,t,T,reeval_fsal
     end
   end)
 end
@@ -13,17 +11,17 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
   esc(quote
     # Event Handling
     if $interp_points!=0
-      ode_addsteps!(k,tprev,uprev,dtprev,alg,f)
-      Θs = linspace(0,1,$(interp_points))
+      ode_addsteps!(integrator)
+      Θs = linspace(typeof(integrator.t)(0),typeof(integrator.t)(1),$(interp_points))
     end
     interp_index = 0
     # Check if the event occured
-    if $event_f(t,u)<=0
+    if $event_f(integrator.t,integrator.u)<=0
       event_occurred = true
       interp_index = $interp_points
     elseif $interp_points!=0 # Use the interpolants for safety checking
       for i in 2:length(Θs)-1
-        if $event_f(t+dt*Θs[i],ode_interpolant(Θs[i],dtprev,uprev,u,kprev,k,alg))<0
+        if $event_f(integrator.t+integrator.dt*Θs[i],ode_interpolant(Θs[i],integrator))<0
           event_occurred = true
           interp_index = i
           break
@@ -32,59 +30,57 @@ macro ode_event(event_f,apply_event!,rootfind_event_loc=true,interp_points=5,ter
     end
 
     if event_occurred
-      if interp_index == $interp_points # If no safety interpolations, start in the middle as well
-        initial_Θ = [.5]
-      else
-        initial_Θ = [Θs[interp_index]] # Start at the closest
-      end
+      top_Θ = Θs[interp_index] # Top at the smallest
       if $rootfind_event_loc
-        find_zero = (Θ,val) -> begin
-          val[1] = $event_f(t+Θ[1]*dt,ode_interpolant(Θ[1],dtprev,uprev,u,kprev,k,alg))
+        find_zero = (Θ) -> begin
+          $event_f(integrator.tprev+Θ*integrator.dt,ode_interpolant(Θ,integrator))
         end
-        res = nlsolve(find_zero,initial_Θ)
-        val = ode_interpolant(res.zero[1],dtprev,uprev,u,kprev,k,alg)
-        copy!(u,val)
-        dtprev *= res.zero[1]
+        res = prevfloat(fzero(find_zero,typeof(integrator.t)(0),top_Θ))
+        val = ode_interpolant(res,integrator)
+        copy!(integrator.u,val)
+        integrator.dt *= res
       elseif interp_index != $interp_points
-          dtprev *= Θs[interp_index]
-          copy!(u,ode_interpolant(Θs[interp_index],dtprev,uprev,u,kprev,k,alg))
+          integrator.dt *= Θs[interp_index]
+          copy!(integrator.u,ode_interpolant(Θs[interp_index],integrator))
       end
       # If no solve and no interpolants, just use endpoint
 
-      t = tprev + dtprev
-      if calck
-        if isspecialdense(alg)
-          resize!(k,kshortsize) # Reset k for next step
-          k = typeof(k)() # Make a local blank k for saving
-          ode_addsteps!(k,tprev,uprev,dtprev,alg,f)
-        elseif typeof(u) <: Number
-          k = f(t,u)
+      integrator.t = integrator.tprev + integrator.dt
+      if integrator.opts.calck
+        if isspecialdense(integrator.alg)
+          resize!(integrator.k,integrator.kshortsize) # Reset k for next step
+          ode_addsteps!(integrator,Val{true},Val{false})
+        elseif typeof(integrator.u) <: Number
+          integrator.k = integrator.f(integrator.t,integrator.u)
         else
-          f(t,u,k)
+          integrator.f(integrator.t,integrator.u,integrator.k)
         end
       end
     end
 
-    @ode_savevalues
+    ode_savevalues!(integrator)
     if event_occurred
       if $terminate_on_event
         @ode_terminate
       else
-        $apply_event!(u,cache)
-        if calck
-          if !isspecialdense(alg)
-            if typeof(u) <: Number
-              k = f(t,u)
+        $apply_event!(integrator.u,integrator.cache)
+        if integrator.opts.calck
+          if isspecialdense(integrator.alg)
+            resize!(integrator.k,integrator.kshortsize) # Reset k for next step
+            ode_addsteps!(integrator,Val{true},Val{false})
+          else
+            if typeof(integrator.u) <: Number
+              integrator.k = integrator.f(integrator.t,integrator.u)
             else
-              f(t,u,k)
+              integrator.f(integrator.t,integrator.u,integrator.k)
             end
           end
         end
-        @ode_savevalues
-        if fsal
-          reeval_fsal = true
+        ode_savevalues!(integrator)
+        if isfsal(integrator.alg)
+          integrator.reeval_fsal = true
         end
-        dt *= $dt_safety # Safety dt change
+        integrator.dt_mod *= $dt_safety # Safety dt change
       end
     end
   end)
@@ -133,8 +129,5 @@ function cache_replace_length(ex::Any)
 end
 
 @def ode_terminate begin
-  T = t
-  while length(Ts)>1
-    pop!(Ts)
-  end
+  integrator.tstops.valtree = typeof(integrator.tstops.valtree)()
 end

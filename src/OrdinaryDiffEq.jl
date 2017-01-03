@@ -3,8 +3,9 @@ __precompile__()
 module OrdinaryDiffEq
 
   using DiffEqBase
-  import DiffEqBase: solve
-  using Parameters, GenericSVD, ForwardDiff, InplaceOps, RecursiveArrayTools, Ranges, NLsolve, RecipesBase, Juno, Calculus
+  import DiffEqBase: solve, solve!, init
+  using Parameters, GenericSVD, ForwardDiff, InplaceOps, RecursiveArrayTools,
+        Ranges, NLsolve, RecipesBase, Juno, Calculus, Roots, DataStructures
 
   import Base: linspace
   import ForwardDiff.Dual
@@ -16,6 +17,9 @@ module OrdinaryDiffEq
   include("misc_utils.jl")
   include("algorithms.jl")
   include("alg_utils.jl")
+  include("caches.jl")
+  include("integrators/unrolled_tableaus.jl")
+  include("integrators/main_type.jl")
   include("integrators/integrator_utils.jl")
   include("integrators/fixed_timestep_integrators.jl")
   include("integrators/explicit_rk_integrator.jl")
@@ -29,17 +33,18 @@ module OrdinaryDiffEq
   include("constants.jl")
   include("callbacks.jl")
   include("solve.jl")
+  include("initdt.jl")
   include("dense.jl")
-  include("integrators/unrolled_tableaus.jl")
-
+  include("derivative_wrappers.jl")
 
   #General Functions
-  export solve
+  export solve, solve!, init
 
   #Callback Necessary
   export ode_addsteps!, ode_interpolant, DIFFERENTIALEQUATIONSJL_SPECIALDENSEALGS,
         @ode_callback, @ode_event, @ode_change_cachesize, @ode_change_deleteat,
-        @ode_terminate, @ode_savevalues, copyat_or_push!, isspecialdense
+        @ode_terminate, ode_savevalues!, copyat_or_push!, isspecialdense,
+        ode_postable!,isfsal
 
   export constructDP5, constructVern6, constructDP8, constructDormandPrince, constructFeagin10,
         constructFeagin12, constructFeagin14

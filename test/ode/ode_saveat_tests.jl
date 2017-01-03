@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Plots, DiffEqProblemLibrary
+using OrdinaryDiffEq, DiffEqProblemLibrary, Base.Test
 
 prob = prob_ode_linear
 
@@ -67,3 +67,13 @@ sol2=solve(prob,Trapezoid(),dt=1/2^(2),save_timeseries=true,dense=false,saveat=[
 sol=solve(prob,Trapezoid(),dt=1/2^(2),save_timeseries=true,dense=false,saveat=[0,.125,.6,.61,.8])
 
 @test !(sol.t[2] ≈ 0)
+
+# Test Iterators
+
+sol2=solve(prob,DP5(),dt=1//2^(2),save_timeseries=false,dense=false,saveat=0:1//100:1)
+
+@test sol2.t ≈ collect(0:1//100:1)
+
+sol2=solve(prob,DP5(),dt=1//2^(2),save_timeseries=false,dense=false,saveat=linspace(0,1,100))
+
+@test sol2.t ≈ linspace(0,1,100)

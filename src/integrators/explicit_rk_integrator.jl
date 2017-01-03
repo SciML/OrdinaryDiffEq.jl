@@ -1,22 +1,23 @@
-function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{ExplicitRK,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
-  @ode_preamble
-  local A::Matrix{uEltypeNoUnits}
-  local c::Vector{uEltypeNoUnits}
-  local α::Vector{uEltypeNoUnits}
-  local αEEst::Vector{uEltypeNoUnits}
-  local stages::Int
-  @unpack A,c,α,αEEst,stages,fsal = integrator.tableau
-  A = A' # Transpose A to column major looping
-  kk = Array{rateType}(stages) # Not ks since that's for dense
-  local utilde::rateType
-  @inbounds for T in Ts
-    while t < T
-      @ode_loopheader
+@inline function initialize!(integrator,cache::ExplicitRKConstantCache)
+  if isfsal(integrator.alg) # pre-start FSAL
+    integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev)
+  end
+end
+
+function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O,algType<:ExplicitRK}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
+  initialize!(integrator,integrator.cache)
+  @inbounds while !isempty(integrator.tstops)
+    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
+      ode_loopheader!(integrator)
+      @ode_exit_conditions
+      @unpack t,dt,uprev,u,f,k = integrator
+            @unpack A,c,α,αEEst,stages = integrator.cache
+      @unpack kk = integrator.cache
       # Calc First
-      if fsal
-        kk[1] = fsalfirst
+      if isfsal(integrator.alg)
+        kk[1] = integrator.fsalfirst
       else
-        kk[1] = f(t,u)
+        kk[1] = f(t,uprev)
       end
       # Calc Middle
       for i = 2:stages-1
@@ -24,72 +25,62 @@ function ode_solve{uType<:Number,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateT
         for j = 1:i-1
           utilde += A[j,i]*kk[j]
         end
-        kk[i] = f(t+c[i]*dt,u+dt*utilde);
+        kk[i] = f(t+c[i]*dt,uprev+dt*utilde);
       end
       #Calc Last
       utilde = zero(kk[1])
       for j = 1:stages-1
         utilde += A[j,end]*kk[j]
       end
-      kk[end] = f(t+c[end]*dt,u+dt*utilde); fsallast = kk[end] # Uses fsallast as temp even if not fsal
+      kk[end] = f(t+c[end]*dt,uprev+dt*utilde); integrator.fsallast = kk[end] # Uses fsallast as temp even if not fsal
       # Accumulate Result
       utilde = α[1]*kk[1]
       for i = 2:stages
         utilde += α[i]*kk[i]
       end
-      if adaptive
-        utmp = u + dt*utilde
+      u = uprev + dt*utilde
+      if integrator.opts.adaptive
         uEEst = αEEst[1]*kk[1]
         for i = 2:stages
           uEEst += αEEst[i]*kk[i]
         end
-        EEst = abs( dt*(utilde-uEEst)/(abstol+max(abs(u),abs(utmp))*reltol))
-      else
-        u = u + dt*utilde
+        integrator.EEst = abs( dt*(utilde-uEEst)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
       end
-      if calck
+      if integrator.opts.calck
         k = kk[end]
       end
-      @ode_loopfooter
+      @pack integrator = t,dt,u,k
+      ode_loopfooter!(integrator)
+      if isempty(integrator.tstops)
+        break
+      end
     end
+    !isempty(integrator.tstops) && pop!(integrator.tstops)
   end
-  @ode_postamble
+  ode_postamble!(integrator)
+  nothing
 end
 
-function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}(integrator::ODEIntegrator{ExplicitRK,uType,uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5})
-  @ode_preamble
-  local A::Matrix{uEltypeNoUnits}
-  local c::Vector{uEltypeNoUnits}
-  local α::Vector{uEltypeNoUnits}
-  local αEEst::Vector{uEltypeNoUnits}
-  local stages::Int
-  uidx = eachindex(u)
-  @unpack A,c,α,αEEst,stages,fsal = integrator.tableau
-  A = A' # Transpose A to column major looping
-  kk = Vector{rateType}(0)
-  for i = 1:stages
-    push!(kk,similar(rate_prototype))
-  end
-  utilde = similar(rate_prototype)
-  tmp = similar(u)
-  atmp = similar(u,uEltypeNoUnits)
-  utmp = zeros(u)
-  uEEst = similar(rate_prototype)
-  fsallast = kk[end]
-  fsalfirst = kk[1]
-  if calck
-    k = kk[end]
-  end
-  f(t,u,kk[1]) # pre-start fsal
-  if custom_callback
-    cache = (u,tmp,utilde,uEEst,atmp,uprev,kprev,utmp,kk...)
-  end
-  @inbounds for T in Ts
-    while t < T
-      @ode_loopheader
+@inline function initialize!(integrator,cache::ExplicitRKCache)
+  integrator.k = cache.kk[end]
+  integrator.fsallast = cache.kk[end]
+  integrator.fsalfirst = cache.kk[1]
+  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
+end
+
+function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O,algType<:ExplicitRK}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
+  initialize!(integrator,integrator.cache)
+  @inbounds while !isempty(integrator.tstops)
+    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
+      ode_loopheader!(integrator)
+      @ode_exit_conditions
+      @unpack t,dt,uprev,u,f,k = integrator
+      uidx = eachindex(integrator.uprev)
+      @unpack A,c,α,αEEst,stages = integrator.cache.tab
+      @unpack kk,utilde,tmp,atmp,uEEst = integrator.cache
       # First
-      if !fsal
-        f(t,u,kk[1])
+      if !isfsal(integrator.alg)
+        f(t,uprev,kk[1])
       end
       # Middle
       for i = 2:stages-1
@@ -102,7 +93,7 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
           end
         end
         for l in uidx
-          tmp[l] = u[l]+dt*utilde[l]
+          tmp[l] = uprev[l]+dt*utilde[l]
         end
         f(t+c[i]*dt,tmp,kk[i])
       end
@@ -116,11 +107,11 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
         end
       end
       for l in uidx
-        utmp[l] = u[l]+dt*utilde[l]
+        u[l] = uprev[l]+dt*utilde[l]
       end
-      f(t+c[end]*dt,utmp,kk[end]) #fsallast is tmp even if not fsal
+      f(t+c[end]*dt,u,kk[end]) #fsallast is tmp even if not fsal
       #Accumulate
-      if !fsal
+      if !isfsal(integrator.alg)
         for i in uidx
           utilde[i] = α[1]*kk[1][i]
         end
@@ -130,10 +121,10 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
           end
         end
         for i in uidx
-          utmp[i] = u[i] + dt*utilde[i]
+          u[i] = uprev[i] + dt*utilde[i]
         end
       end
-      if adaptive
+      if integrator.opts.adaptive
         for i in uidx
           uEEst[i] = αEEst[1]*kk[1][i]
         end
@@ -143,14 +134,18 @@ function ode_solve{uType<:AbstractArray,uEltype,tType,uEltypeNoUnits,tTypeNoUnit
           end
         end
         for i in uidx
-          atmp[i] = (dt*(utilde[i]-uEEst[i])/(abstol+max(abs(u[i]),abs(utmp[i]))*reltol))
+          atmp[i] = (dt*(utilde[i]-uEEst[i])/(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol))
         end
-        EEst = internalnorm(atmp)
-      else
-        recursivecopy!(u,utmp)
+        integrator.EEst = integrator.opts.internalnorm(atmp)
       end
-      @ode_loopfooter
+      @pack integrator = t,dt,u,k
+      ode_loopfooter!(integrator)
+      if isempty(integrator.tstops)
+        break
+      end
     end
+    !isempty(integrator.tstops) && pop!(integrator.tstops)
   end
-  @ode_postamble
+  ode_postamble!(integrator)
+  nothing
 end

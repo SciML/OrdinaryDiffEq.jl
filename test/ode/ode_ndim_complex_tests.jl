@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Plots, DiffEqBase
+using OrdinaryDiffEq, DiffEqBase
 
 ## Start on Number
 f = (t,u) -> (2u)

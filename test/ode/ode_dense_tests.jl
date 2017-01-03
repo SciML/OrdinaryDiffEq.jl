@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Plots, DiffEqProblemLibrary
+using OrdinaryDiffEq, DiffEqProblemLibrary,Base.Test, DiffEqBase
 
 bools = Vector{Bool}(0)
 prob = prob_ode_linear
@@ -10,10 +10,6 @@ interpd = sol(0:1//2^(4):1)
 sol2 =solve(prob,Euler(),dt=1//2^(4),dense=true)
 
 sol3 =solve(prob,Euler(),dt=1//2^(5),dense=true)
-
-TEST_PLOT && plot(sol2)
-TEST_PLOT && plot!(float(sol2.t),interpd)
-TEST_PLOT && plot!(float(sol3.t[1:2:end]),sol3.timeseries[1:2:end])
 
 prob = prob_ode_2Dlinear
 sol =solve(prob,Euler(),dt=1//2^(2),dense=true)
@@ -30,26 +26,41 @@ sol =solve(prob,Euler(),dt=1//2^(2),dense=false)
 
 prob = prob_ode_linear
 
+sol =solve(prob,Midpoint(),dt=1//2^(2),dense=true)
+
+interpd = sol(0:1//2^(4):1)
+
+sol2 =solve(prob,Midpoint(),dt=1//2^(4),dense=true)
+
+@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 2e-2
+
+prob = prob_ode_2Dlinear
+
+sol =solve(prob,Midpoint(),dt=1//2^(2),dense=true)
+
+interpd = sol(0:1//2^(4):1)
+
+sol2 =solve(prob,Midpoint(),dt=1//2^(4),dense=true)
+
+@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 2.3e-2
+
+prob = prob_ode_linear
+
 sol =solve(prob,RK4(),dt=1//2^(2),dense=true)
 
 interpd = sol(0:1//2^(4):1)
 
 sol2 =solve(prob,RK4(),dt=1//2^(4),dense=true)
 
-@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 1e-2
-
-TEST_PLOT && plot(sol2)
-TEST_PLOT && plot!(float(sol2.t),interpd)
+@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 5e-5
 
 sol =solve(prob,DP5(),dense=true)
 
 sol2 =solve(prob,DP5(),dt=1//2^(4),dense=true,adaptive=false)
 
 interpd = sol(0:1//2^(4):1)
-TEST_PLOT && plot(sol2.t,interpd)
-TEST_PLOT && plot(sol)
 
-@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 1e-5
+@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 5e-6
 
 prob = prob_ode_2Dlinear
 
@@ -131,7 +142,7 @@ interpd = sol(0:1//2^(4):1)
 
 sol2 =solve(prob,TsitPap8(),dt=1//2^(4),dense=true,adaptive=false)
 
-@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 1e-3
+@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 2e-2
 
 prob = prob_ode_2Dlinear
 
@@ -230,8 +241,6 @@ sol2 =solve(prob,Vern7(),dt=1//2^(4),dense=true,adaptive=false)
 
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 3e-9
 
-TEST_PLOT && plot(sol2.t,interpd)
-
 prob = prob_ode_2Dlinear
 
 sol =solve(prob,Vern7(),dt=1//2^(2),dense=true)
@@ -300,7 +309,7 @@ interpd = sol(0:1//2^(4):1)
 
 sol2 =solve(prob,Rosenbrock23(),dt=1//2^(4),dense=true,adaptive=false)
 
-@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 1e-2
+@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 3e-3
 
 # plot(sol2.t,interpd)
 
@@ -312,7 +321,7 @@ interpd = sol(0:1//2^(4):1)
 
 sol2 =solve(prob,Rosenbrock23(),dt=1//2^(4),dense=true,adaptive=false)
 
-@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 1e-2
+@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 6e-3
 
 ### Rosenbrock32()
 
@@ -324,7 +333,7 @@ interpd = sol(0:1//2^(4):1)
 
 sol2 =solve(prob,Rosenbrock32(),dt=1//2^(4),dense=true,adaptive=false)
 
-@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 1e-2
+@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 3e-4
 
 # plot(sol2.t,interpd)
 
@@ -336,7 +345,31 @@ interpd = sol(0:1//2^(4):1)
 
 sol2 =solve(prob,Rosenbrock32(),dt=1//2^(4),dense=true,adaptive=false)
 
-@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 1e-2
+@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 6e-4
+
+### ImplicitEuler()
+
+prob = prob_ode_linear
+
+sol =solve(prob,ImplicitEuler(),dt=1//2^(2),dense=true)
+
+interpd = sol(0:1//2^(4):1)
+
+sol2 =solve(prob,ImplicitEuler(),dt=1//2^(4),dense=true,adaptive=false)
+
+@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 0.2
+
+# plot(sol2.t,interpd)
+
+prob = prob_ode_2Dlinear
+
+sol =solve(prob,ImplicitEuler(),dt=1//2^(2),dense=true)
+
+interpd = sol(0:1//2^(4):1)
+
+sol2 =solve(prob,ImplicitEuler(),dt=1//2^(4),dense=true,adaptive=false)
+
+@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < .354
 
 ### Trapezoid()
 
@@ -348,7 +381,7 @@ interpd = sol(0:1//2^(4):1)
 
 sol2 =solve(prob,Trapezoid(),dt=1//2^(4),dense=true,adaptive=false)
 
-@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 1e-2
+@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 7e-3
 
 # plot(sol2.t,interpd)
 
@@ -360,7 +393,7 @@ interpd = sol(0:1//2^(4):1)
 
 sol2 =solve(prob,Trapezoid(),dt=1//2^(4),dense=true,adaptive=false)
 
-@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 2e-2
+@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 1.4e-2
 
 ### DP8()
 

@@ -1,304 +1,201 @@
-immutable ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},uEltype,tType,uEltypeNoUnits,tTypeNoUnits,rateType,ksEltype,F,F2,F3,F4,F5}
-  timeseries::Vector{uType}
-  ts::Vector{tType}
-  ks::Vector{ksEltype}
-  f::F
-  u::uType
-  t::tType
-  dt::tType
-  Ts::Vector{tType}
-  maxiters::Int
-  timeseries_steps::Int
-  save_timeseries::Bool
-  adaptive::Bool
-  abstol::uEltype
-  reltol::uEltypeNoUnits
-  γ::tTypeNoUnits
-  qmax::tTypeNoUnits
-  qmin::tTypeNoUnits
-  dtmax::tType
-  dtmin::tType
-  internalnorm::F2
-  progress::Bool
-  tableau::ExplicitRKTableau
-  autodiff::Bool
-  adaptiveorder::Int
-  order::Int
-  progress_steps::Int
-  progress_name::String
-  progress_message::F5
-  β₁::tTypeNoUnits
-  β₂::tTypeNoUnits
-  qoldinit::tTypeNoUnits
-  fsal::Bool
-  dense::Bool
-  saveat::Vector{tType}
-  alg::algType
-  callback::F3
-  isoutofdomain::F4
-  custom_callback::Bool
-  calck::Bool
-end
+initialize{uType}(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) =
+                error("This algorithm does not have an initialization function")
 
-@def ode_preamble begin
-  local u::uType
-  local t::tType
-  local dt::tType
-  local Ts::Vector{tType}
-  local adaptiveorder::Int
-  @unpack f,u,t,dt,Ts,maxiters,timeseries_steps,γ,qmax,qmin,save_timeseries,adaptive,progress,autodiff,adaptiveorder,order,progress_steps,progress_name,progress_message,β₂,β₁,qoldinit,fsal, dense, saveat, alg, callback, isoutofdomain, custom_callback,calck = integrator
-  timeseries = integrator.timeseries
-  ts = integrator.ts
-  ks = integrator.ks
-  const calcprevs = !isempty(saveat) || custom_callback # Calculate the previous values
-  const issimple_dense = (ksEltype==rateType) # Means ks[i] = f(t[i],timeseries[i]), for Hermite
-  const dtcache = dt
-  # Need to initiate ks in the method
-
-  Tfinal = Ts[end]
-  local iter::Int = 0
-  local saveiter::Int = 1 # Starts at 1 so first save is at 2
-  local T::tType
-  sizeu = size(u)
-  local utmp::uType
-  local k::ksEltype
-  local kprev::ksEltype
-  local kshortsize::Int
-  local reeval_fsal::Bool
-  local rate_prototype::rateType
-  if ksEltype <: AbstractArray  && !issimple_dense
-    k = ksEltype[]
-    kprev = ksEltype[]
-    rate_prototype = ks[1][1]
-  elseif ksEltype <: Number
-    k = ksEltype(0)
-    kprev = ksEltype(0)
-    rate_prototype = ks[1][1]
-  else # it is simple_dense
-    k = ksEltype(zeros(Int64,ndims(u))...) # Needs the zero for dimension 3+
-    kprev = ksEltype(zeros(Int64,ndims(u))...)
-    rate_prototype = ks[1]
-  end
-
-  # Setup FSAL
-  if uType <: Number
-    utmp = zero(uType)
-    fsallast = zero(rateType)
-    if fsal
-      fsalfirst = f(t,u)
+@inline function ode_loopheader!(integrator)
+  integrator.iter += 1
+  if integrator.opts.adaptive
+    if integrator.tdir > 0
+      integrator.dt = min(abs(integrator.dt),abs(top(integrator.tstops)-integrator.t)) # Step to the end
     else
-      fsalfirst = zero(rateType)
+      integrator.dt = -min(abs(integrator.dt),abs(top(integrator.tstops)-integrator.t))
     end
-  else
-    utmp = zeros(u)
-    fsallast = similar(rate_prototype)
-    fsalfirst = similar(rate_prototype)
-    if fsal
-      f(t,u,fsalfirst)
-    end
-  end
-
-  local cursaveat::Int = 1
-  local Θ = one(t)/one(t) # No units
-  local tprev::tType = t
-  local uprev::uType = deepcopy(u)
-  local standard::uEltype = uEltype(0)
-  local q::tTypeNoUnits = 0
-  local dtpropose::tType = tType(0)
-  local q11::tTypeNoUnits = 0
-  local qold::tTypeNoUnits = qoldinit
-  local β₁::tTypeNoUnits
-  if uType <: Number || !custom_callback
-    cache = ()
-  end
-  qminc = inv(qmin) #facc1
-  qmaxc = inv(qmax) #facc2
-  local EEst::tTypeNoUnits = zero(uEltypeNoUnits)
-  if adaptive
-    @unpack abstol,reltol,qmax,dtmax,dtmin,internalnorm = integrator
-  end
-
-  if issimple_dense #If issimple_dense, then ks[1]=f(ts[1],timeseries[1])
-    const kshortsize = 1
-    if calck
-      if ksEltype <: AbstractArray
-        k = similar(rate_prototype)
-      end
-      kprev = copy(k)
-    end
-  end ## if not simple_dense, you have to initialize k and push the ks[1]!
-
-  progress && (prog = Juno.ProgressBar(name=progress_name))
-end
-
-@def ode_loopheader begin
-  iter += 1
-
-  if adaptive
-    dt = min(dt,abs(T-t)) # Step to the end
-  elseif dtcache == 0 # Use tstops
-    dt = abs(T-t)
+  elseif integrator.dtcache == zero(integrator.t) # Use integrator.tstops
+    integrator.dt = integrator.tdir*abs(top(integrator.tstops)-integrator.t)
   else # always try to step with dtcache
-    dt = min(dtcache,abs(T-t)) # Step to the end
+    integrator.dt = integrator.tdir*min(abs(integrator.dtcache),abs(top(integrator.tstops)-integrator.t)) # Step to the end
   end
+end
 
-  if iter > maxiters
+@def ode_exit_conditions begin
+  if integrator.iter > integrator.opts.maxiters
     warn("Interrupted. Larger maxiters is needed.")
-    @ode_postamble
+    ode_postamble!(integrator)
+    return nothing
   end
-  if dt == 0
+  if integrator.dt == zero(integrator.t)
     warn("dt == 0. Aborting")
-    @ode_postamble
+    ode_postamble!(integrator)
+    return nothing
   end
-  if any(isnan,u)
+  if any(isnan,integrator.uprev)
     warn("NaNs detected. Aborting")
-    @ode_postamble
-  end
-
-  if uType<:AbstractArray && custom_callback
-    uidx = eachindex(u)
+    ode_postamble!(integrator)
+    return nothing
   end
 end
 
-@def ode_savevalues begin
-  if !isempty(saveat) # Perform saveat
-    while cursaveat <= length(saveat) && saveat[cursaveat]<= t
-      saveiter += 1
-      if saveat[cursaveat]<t # If <t, interpolate
-        curt = saveat[cursaveat]
-        ode_addsteps!(k,tprev,uprev,dtprev,alg,f)
-        Θ = (curt - tprev)/dtprev
-        val = ode_interpolant(Θ,dtprev,uprev,u,kprev,k,alg)
-        copyat_or_push!(ts,saveiter,curt)
-        copyat_or_push!(timeseries,saveiter,val)
-      else # ==t, just save
-        copyat_or_push!(ts,saveiter,t)
-        copyat_or_push!(timeseries,saveiter,u)
-        if dense
-          copyat_or_push!(ks,saveiter,k)
-        end
+@inline function ode_savevalues!(integrator)
+  while !isempty(integrator.saveat) && integrator.tdir*top(integrator.saveat) <= integrator.tdir*integrator.t # Perform saveat
+    integrator.saveiter += 1
+    curt = pop!(integrator.saveat)
+    if integrator.saveat!=integrator.t # If <t, interpolate
+      ode_addsteps!(integrator)
+      Θ = (curt - integrator.tprev)/integrator.dt
+      val = ode_interpolant(Θ,integrator)
+      copyat_or_push!(integrator.sol.t,integrator.saveiter,curt)
+      copyat_or_push!(integrator.sol.u,integrator.saveiter,val)
+    else # ==t, just save
+      copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
+      copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
+      if integrator.opts.dense
+        integrator.saveiter_dense += 1
+        copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
+        copyat_or_push!(integrator.notsaveat_idxs,integrator.saveiter_dense,integrator.saveiter)
       end
-      cursaveat+=1
     end
   end
-  if save_timeseries && iter%timeseries_steps==0
-    saveiter += 1
-    copyat_or_push!(timeseries,saveiter,u)
-    copyat_or_push!(ts,saveiter,t)
-    if dense
-      copyat_or_push!(ks,saveiter,k)
+  if integrator.opts.save_timeseries && integrator.iter%integrator.opts.timeseries_steps==0
+    integrator.saveiter += 1
+    copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
+    copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
+    if integrator.opts.dense
+      integrator.saveiter_dense += 1
+      copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
+      copyat_or_push!(integrator.notsaveat_idxs,integrator.saveiter_dense,integrator.saveiter)
     end
   end
-  if !issimple_dense
-    resize!(k,kshortsize)
+  if isspecialdense(integrator.alg)
+    resize!(integrator.k,integrator.kshortsize)
   end
 end
 
-@def ode_postamble begin
-  if ts[end] != t
-    push!(ts,t)
-    push!(timeseries,u)
+@inline function ode_postamble!(integrator)
+  if integrator.sol.t[end] !=  integrator.t
+    integrator.saveiter += 1
+    copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
+    copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
+    if integrator.opts.dense
+      integrator.saveiter_dense +=1
+      copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
+      copyat_or_push!(integrator.notsaveat_idxs,integrator.saveiter_dense,integrator.saveiter)
+    end
   end
-  progress && Juno.done(prog)
-  return u,t
+  !(typeof(integrator.prog)<:Void) && Juno.done(integrator.prog)
 end
 
-@def ode_loopfooter begin
-  if adaptive
-    q11 = EEst^β₁
-    q = q11/(qold^β₂)
-    q = max(qmaxc,min(qminc,q/γ))
-    dtnew = dt/q
-    ttmp = t + dt
-    if !isoutofdomain(ttmp,utmp) && EEst <= 1.0 # Accept
-      t = ttmp
-      if uType <: AbstractArray # Treat mutables differently
-        recursivecopy!(u, utmp)
+@inline function ode_loopfooter!(integrator)
+  if integrator.opts.adaptive
+    q11 = integrator.EEst^integrator.opts.beta1
+    q = q11/(integrator.qold^integrator.opts.beta2)
+    q = max(integrator.qmaxc,min(integrator.qminc,q/integrator.opts.gamma))
+    dtnew = integrator.dt/q
+    ttmp = integrator.t + integrator.dt
+    if !integrator.opts.isoutofdomain(ttmp,integrator.u) && integrator.EEst <= 1.0 # Accept
+      integrator.t = ttmp
+      integrator.qold = max(integrator.EEst,integrator.opts.qoldinit)
+      if integrator.tdir > 0
+        integrator.dtpropose = min(integrator.opts.dtmax,dtnew)
       else
-        u = utmp
+        integrator.dtpropose = max(integrator.opts.dtmax,dtnew)
+      end
+      if integrator.tdir > 0
+        integrator.dtpropose = max(integrator.dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
+      else
+        integrator.dtpropose = min(integrator.dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
+      end
+      if !(typeof(integrator.opts.callback)<:Void)
+        integrator.opts.callback(integrator)
+      else
+        ode_savevalues!(integrator)
       end
 
-      qold = max(EEst,qoldinit)
-      dtpropose = min(dtmax,dtnew)
-      dtprev = dt
-      dt = max(dtpropose,dtmin) #abs to fix complex sqrt issue at end
-      if custom_callback
-        cursaveat,saveiter,dt,t,T,reeval_fsal = callback(alg,f,t,u,k,tprev,uprev,kprev,ts,timeseries,ks,dtprev,dt,saveat,cursaveat,saveiter,iter,save_timeseries,timeseries_steps,uEltype,ksEltype,dense,kshortsize,issimple_dense,fsal,fsalfirst,cache,calck,T,Ts)
+      if typeof(integrator.u) <: AbstractArray
+        recursivecopy!(integrator.uprev,integrator.u)
       else
-        @ode_savevalues
-        reeval_fsal = false
+        integrator.uprev = integrator.u
       end
 
-      if fsal
-        if reeval_fsal
-          if uType <: AbstractArray
-            f(t,u,fsalfirst)
+      integrator.dt = integrator.dt_mod*integrator.dtpropose
+
+      if isfsal(integrator.alg)
+        if integrator.reeval_fsal || (typeof(integrator.alg)<:DP8 && !integrator.opts.calck)
+          # Under these condtions, these algorithms are not FSAL anymore
+          if typeof(integrator.fsalfirst) <: AbstractArray
+            integrator.f(integrator.t,integrator.u,integrator.fsalfirst)
           else
-            fsalfirst = f(t,u)
+            integrator.fsalfirst = integrator.f(integrator.t,integrator.u)
           end
+          integrator.reeval_fsal = false
         else
-          if uType <: AbstractArray
-            recursivecopy!(fsalfirst,fsallast)
+          if typeof(integrator.fsalfirst) <: AbstractArray
+            recursivecopy!(integrator.fsalfirst,integrator.fsallast)
           else
-            fsalfirst = fsallast
+            integrator.fsalfirst = integrator.fsallast
           end
         end
       end
 
-      if calcprevs
-        # Store previous for interpolation
-        tprev = t
-        if uType <: AbstractArray
-          recursivecopy!(uprev,u)
-        else
-          uprev = u
-        end
-        if calck
-          if ksEltype <: AbstractArray
-            recursivecopy!(kprev,k)
+      if integrator.calcprevs
+        integrator.tprev = integrator.t
+        if !isspecialdense(integrator.alg) && integrator.opts.calck
+          if typeof(integrator.k) <: AbstractArray
+            recursivecopy!(integrator.kprev,integrator.k)
           else
-            kprev = k
+            integrator.kprev = integrator.k
           end
         end
       end
     else # Reject
-      dt = dt/min(qminc,q11/γ)
+      integrator.dt = integrator.dt/min(integrator.qminc,q11/integrator.opts.gamma)
     end
   else #Not adaptive
-    t += dt
-    if fsal
-      if uType <: AbstractArray
-        recursivecopy!(fsalfirst,fsallast)
-      else
-        fsalfirst = fsallast
-      end
-    end
-    dtprev = dt
-    if custom_callback
-      cursaveat,saveiter,dt,t,T,reeval_fsal = callback(alg,f,t,u,k,tprev,uprev,kprev,ts,timeseries,ks,dtprev,dt,saveat,cursaveat,saveiter,iter,save_timeseries,timeseries_steps,uEltype,ksEltype,dense,kshortsize,issimple_dense,fsal,fsalfirst,cache,calck,T,Ts)
+    integrator.t += integrator.dt
+
+    if !(typeof(integrator.opts.callback)<:Void)
+      integrator.opts.callback(integrator)
     else
-      @ode_savevalues
-      reeval_fsal = false
+      ode_savevalues!(integrator)
     end
-    if calcprevs
-      # Store previous for interpolation
-      tprev = t
-      if uType <: AbstractArray
-        recursivecopy!(uprev,u)
-      else
-        uprev = u
-      end
-      if calck
-        if ksEltype <: AbstractArray
-          recursivecopy!(kprev,k)
+
+    if typeof(integrator.u) <: AbstractArray
+      recursivecopy!(integrator.uprev,integrator.u)
+    else
+      integrator.uprev = integrator.u
+    end
+
+    integrator.dt *= integrator.dt_mod
+
+    if isfsal(integrator.alg)
+      if integrator.reeval_fsal || (typeof(integrator.alg)<:DP8 && !integrator.opts.calck) || typeof(integrator.alg)<:Union{Rosenbrock23,Rosenbrock32}
+        # Under these condtions, these algorithms are not FSAL anymore
+        if typeof(integrator.fsalfirst) <: AbstractArray
+          integrator.f(integrator.t,integrator.u,integrator.fsalfirst)
         else
-          kprev = k
+          integrator.fsalfirst = integrator.f(integrator.t,integrator.u)
+        end
+        integrator.reeval_fsal = false
+      else
+        if typeof(integrator.fsalfirst) <: AbstractArray
+          recursivecopy!(integrator.fsalfirst,integrator.fsallast)
+        else
+          integrator.fsalfirst = integrator.fsallast
+        end
+      end
+    end
+
+    if integrator.calcprevs
+      integrator.tprev = integrator.t
+      if !isspecialdense(integrator.alg) && integrator.opts.calck
+        if typeof(integrator.k) <: AbstractArray && !isspecialdense(integrator.alg)
+          recursivecopy!(integrator.kprev,integrator.k)
+        else
+          integrator.kprev = integrator.k
         end
       end
     end
   end
-  if progress && iter%progress_steps==0
-    Juno.msg(prog,progress_message(dt,t,u))
-    Juno.progress(prog,t/Tfinal)
+  if !(typeof(integrator.prog)<:Void) && integrator.iter%integrator.opts.progress_steps==0
+    Juno.msg(integrator.prog,integrator.opts.progress_message(integrator.dt,integrator.t,integrator.u))
+    Juno.progress(integrator.prog,integrator.t/integrator.sol.prob.tspan[2])
   end
 end

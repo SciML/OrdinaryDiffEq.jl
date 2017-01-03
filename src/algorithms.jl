@@ -1,112 +1,38 @@
 abstract OrdinaryDiffEqAlgorithm <: AbstractODEAlgorithm
 abstract OrdinaryDiffEqAdaptiveAlgorithm <: OrdinaryDiffEqAlgorithm
 
-@with_kw immutable Euler <: OrdinaryDiffEqAlgorithm
-  order::Int=1
+immutable Euler <: OrdinaryDiffEqAlgorithm end
+immutable Midpoint <: OrdinaryDiffEqAlgorithm end
+immutable RK4 <: OrdinaryDiffEqAlgorithm end
+
+@with_kw immutable ExplicitRK{TabType} <: OrdinaryDiffEqAdaptiveAlgorithm
+  tableau::TabType=ODE_DEFAULT_TABLEAU
 end
 
-@with_kw immutable Midpoint <: OrdinaryDiffEqAlgorithm
-  order::Int=2
-end
+immutable BS3 <: OrdinaryDiffEqAdaptiveAlgorithm end
+immutable BS5 <: OrdinaryDiffEqAdaptiveAlgorithm end
+immutable DP5 <: OrdinaryDiffEqAdaptiveAlgorithm end
+immutable DP5Threaded <: OrdinaryDiffEqAdaptiveAlgorithm end
+immutable Tsit5 <: OrdinaryDiffEqAdaptiveAlgorithm end
+immutable DP8 <: OrdinaryDiffEqAdaptiveAlgorithm end
+immutable Vern6 <: OrdinaryDiffEqAdaptiveAlgorithm end
+immutable Vern7 <: OrdinaryDiffEqAdaptiveAlgorithm end
+immutable Vern8 <: OrdinaryDiffEqAdaptiveAlgorithm end
+immutable TanYam7 <: OrdinaryDiffEqAdaptiveAlgorithm end
+immutable TsitPap8 <: OrdinaryDiffEqAdaptiveAlgorithm end
+immutable Vern9 <: OrdinaryDiffEqAdaptiveAlgorithm end
+immutable Feagin10 <: OrdinaryDiffEqAdaptiveAlgorithm end
+immutable Feagin12 <: OrdinaryDiffEqAdaptiveAlgorithm end
+immutable Feagin14 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
-@with_kw immutable RK4 <: OrdinaryDiffEqAlgorithm
-  order::Int=4
-end
+immutable ImplicitEuler{CS,AD} <: OrdinaryDiffEqAlgorithm end
+Base.@pure ImplicitEuler(;chunk_size=0,autodiff=true) = ImplicitEuler{chunk_size,autodiff}()
 
-@with_kw immutable ExplicitRK <: OrdinaryDiffEqAdaptiveAlgorithm
-  order::Int=4
-  adaptiveorder::Int=3
-end
+immutable Trapezoid{CS,AD} <: OrdinaryDiffEqAlgorithm end
+Base.@pure Trapezoid(;chunk_size=0,autodiff=true) = Trapezoid{chunk_size,autodiff}()
 
-@with_kw immutable BS3 <: OrdinaryDiffEqAdaptiveAlgorithm
-  order::Int=3
-  adaptiveorder::Int=2
-end
+immutable Rosenbrock23{CS,AD} <: OrdinaryDiffEqAdaptiveAlgorithm end
+Base.@pure Rosenbrock23(;chunk_size=0,autodiff=true) = Rosenbrock23{chunk_size,autodiff}()
 
-@with_kw immutable BS5 <: OrdinaryDiffEqAdaptiveAlgorithm
-  order::Int=5
-  adaptiveorder::Int=4
-end
-
-@with_kw immutable DP5 <: OrdinaryDiffEqAdaptiveAlgorithm
-  order::Int=5
-  adaptiveorder::Int=4
-end
-
-@with_kw immutable DP5Threaded <: OrdinaryDiffEqAdaptiveAlgorithm
-  order::Int=5
-  adaptiveorder::Int=4
-end
-
-@with_kw immutable Tsit5 <: OrdinaryDiffEqAdaptiveAlgorithm
-  order::Int=5
-  adaptiveorder::Int=4
-end
-
-@with_kw immutable DP8 <: OrdinaryDiffEqAdaptiveAlgorithm
-  order::Int=8
-  adaptiveorder::Int=8
-end
-
-@with_kw immutable Vern6 <: OrdinaryDiffEqAdaptiveAlgorithm
-  order::Int=6
-  adaptiveorder::Int=5
-end
-
-@with_kw immutable Vern7 <: OrdinaryDiffEqAdaptiveAlgorithm
-  order::Int=7
-  adaptiveorder::Int=6
-end
-
-@with_kw immutable Vern8 <: OrdinaryDiffEqAdaptiveAlgorithm
-  order::Int=8
-  adaptiveorder::Int=7
-end
-
-@with_kw immutable TanYam7 <: OrdinaryDiffEqAdaptiveAlgorithm
-  order::Int=7
-  adaptiveorder::Int=6
-end
-
-@with_kw immutable TsitPap8 <: OrdinaryDiffEqAdaptiveAlgorithm
-  order::Int=8
-  adaptiveorder::Int=7
-end
-
-@with_kw immutable Vern9 <: OrdinaryDiffEqAdaptiveAlgorithm
-  order::Int=9
-  adaptiveorder::Int=8
-end
-
-@with_kw immutable ImplicitEuler <: OrdinaryDiffEqAlgorithm
-  order::Int=1
-end
-
-@with_kw immutable Trapezoid <: OrdinaryDiffEqAlgorithm
-  order::Int=2
-end
-
-@with_kw immutable Rosenbrock23 <: OrdinaryDiffEqAdaptiveAlgorithm
-  order::Int=2
-  adaptiveorder::Int=2
-end
-
-@with_kw immutable Rosenbrock32 <: OrdinaryDiffEqAdaptiveAlgorithm
-  order::Int=3
-  adaptiveorder::Int=2
-end
-
-@with_kw immutable Feagin10 <: OrdinaryDiffEqAdaptiveAlgorithm
-  order::Int=10
-  adaptiveorder::Int=8
-end
-
-@with_kw immutable Feagin12 <: OrdinaryDiffEqAdaptiveAlgorithm
-  order::Int=12
-  adaptiveorder::Int=10
-end
-
-@with_kw immutable Feagin14 <: OrdinaryDiffEqAdaptiveAlgorithm
-  order::Int=14
-  adaptiveorder::Int=12
-end
+immutable Rosenbrock32{CS,AD} <: OrdinaryDiffEqAdaptiveAlgorithm end
+Base.@pure Rosenbrock32(;chunk_size=0,autodiff=true) = Rosenbrock32{chunk_size,autodiff}()

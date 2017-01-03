@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, NLsolve, DiffEqBase, Base.Test#, ParameterizedFunctions
+using OrdinaryDiffEq, NLsolve, DiffEqBase, Base.Test, Roots#, ParameterizedFunctions
 
 #=
 f = @ode_def BallBounce begin
@@ -32,12 +32,13 @@ tspan = (0.0,15.0)
 prob = ODEProblem(f,u0,tspan)
 
 
-sol = solve(prob,Tsit5(),callback=callback)
-#Plots.plotly()
+sol = solve(prob,Tsit5(),callback=callback,adaptive=false,dt=1/4)
 #plot(sol,denseplot=true)
 
 sol = solve(prob,Vern6(),callback=callback)
 #plot(sol,denseplot=true)
+
+sol33 = solve(prob,Vern7(),callback=callback)
 
 bounced = ODEProblem(f,sol[8],(0.0,1.0))
 sol_bounced = solve(bounced,Vern6(),callback=callback,dt=sol.t[9]-sol.t[8])
@@ -54,7 +55,7 @@ sol2= solve(prob,Vern6())
 sol3= solve(prob,Vern6(),saveat=[.5])
 
 default_callback = @ode_callback begin
-  @ode_savevalues
+  ode_savevalues!(integrator)
 end
 
 sol4 = solve(prob,Tsit5(),callback=default_callback)
@@ -71,3 +72,4 @@ prob2 = ODEProblem(f,u0,tspan2)
 sol5 = solve(prob2,Tsit5(),callback=terminate_callback)
 
 @test sol5[end][1] < 2e-13
+@test sol5.t[end] ≈ sqrt(50*2/9.81)

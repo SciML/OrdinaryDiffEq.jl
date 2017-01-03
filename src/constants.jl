@@ -28,19 +28,6 @@ Sets the default tableau for the ODE solver. Currently Dormand-Prince 4/5.
 """
 const ODE_DEFAULT_TABLEAU = constructDormandPrince()
 
-"""
-ODE_DEFAULT_CALLBACK
-
-All it does is call the saving functionality.
-"""
-@inline function ODE_DEFAULT_CALLBACK(alg,f,t,u,k,tprev,uprev,kprev,ts,timeseries,ks,dtprev,dt,
-  saveat,cursaveat,saveiter,iter,save_timeseries,timeseries_steps,uEltype,ksEltype,
-  dense,kshortsize,issimple_dense,fsal,fsalfirst,cache,calck,T,Ts)
-  @ode_savevalues
-  reeval_fsal = false
-  cursaveat,saveiter,dt,t,T,reeval_fsal
-end
-
 @inline ODE_DEFAULT_NORM(u) = sqrt(sum(abs2,u) / length(u))
 @inline ODE_DEFAULT_ISOUTOFDOMAIN(t,u) = false
 @inline ODE_DEFAULT_PROG_MESSAGE(dt,t,u) = "dt="*string(dt)*"\nt="*string(t)*"\nmax u="*string(maximum(abs.(u)))
