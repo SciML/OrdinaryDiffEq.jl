@@ -739,7 +739,7 @@ Base.@pure function alg_cache{uType<:AbstractArray}(alg::ImplicitEuler,u::uType,
   u_old = similar(u); k = similar(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,alg)})
   uhold = vec(u) # this makes uhold the same values as integrator.u
-  rhs = RHS_IE(f,u_old,t,t,dual_cache)
+  rhs = RHS_IE(f,u_old,t,t,dual_cache,size(u),eachindex(u))
   if alg_autodiff(alg)
     adf = autodiff_setup(rhs,uhold,alg)
   else
@@ -767,34 +767,54 @@ Base.@pure function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits
   ImplicitEulerConstantCache{typeof(uhold),typeof(rhs),typeof(adf),1}(uhold,u_old,rhs,adf)
 end
 
-immutable TrapezoidCache{uType,DiffCacheType,rateType,CS} <: OrdinaryDiffEqMutableCache
+immutable TrapezoidCache{uType,vecuType,DiffCacheType,rateType,rhsType,adfType,CS} <: OrdinaryDiffEqMutableCache
   u::uType
+  uhold::vecuType
+  u_old::uType
   dual_cache::DiffCacheType
   dual_cache2::DiffCacheType
-  u_old::uType
   k::rateType
+  rhs::rhsType
+  adf::adfType
 end
 
 Base.@pure function alg_cache{uType<:AbstractArray}(alg::Trapezoid,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t)
-  u_old = similar(u);k = similar(rate_prototype)
-  if get_chunksize(alg) != 0
-    dual_cache = DiffCache(u,alg)
-    dual_cache2 = DiffCache(u,alg)
-    TrapezoidCache{typeof(u),typeof(dual_cache),typeof(k),get_chunksize(alg)}(u,dual_cache,dual_cache2,u_old,k)
+  u_old = similar(u); k = similar(rate_prototype)
+  uhold = vec(u)
+  dual_cache = DiffCache(u,Val{determine_chunksize(u,alg)})
+  dual_cache2 = DiffCache(u,Val{determine_chunksize(u,alg)})
+  rhs = RHS_Trap(f,u_old,t,t,size(u),dual_cache,dual_cache2,eachindex(u))
+  if alg_autodiff(alg)
+    adf = autodiff_setup(rhs,uhold,alg)
   else
-    dual_cache = DiffCache(u)
-    dual_cache2 = DiffCache(u)
-    TrapezoidCache{typeof(u),typeof(dual_cache),typeof(k),ForwardDiff.pickchunksize(length(u))}(u,dual_cache,dual_cache2,u_old,k)
+    adf = nothing
   end
+  TrapezoidCache{typeof(u),typeof(uhold),typeof(dual_cache),typeof(k),
+    typeof(rhs),typeof(adf),determine_chunksize(u,alg)}(
+    u,uhold,u_old,dual_cache,dual_cache2,k,rhs,adf)
 end
 
-Base.@pure function alg_cache{uType}(alg::Trapezoid,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t)
-  if get_chunksize(alg) != 0
-    return ODEChunkCache{get_chunksize(alg)}()
-  else
-    return ODEChunkCache{ForwardDiff.pickchunksize(length(u))}()
-  end
+
+immutable TrapezoidConstantCache{vecuType,rhsType,adfType,CS} <: OrdinaryDiffEqMutableCache
+  uhold::vecuType
+  u_old::vecuType
+  rhs::rhsType
+  adf::adfType
 end
+
+Base.@pure function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t)
+  uhold = Vector{typeof(u)}(1)
+  u_old = Vector{typeof(u)}(1)
+  rhs = RHS_Trap_Scalar(f,u_old,t,t)
+  if alg_autodiff(alg)
+    adf = autodiff_setup(rhs,uhold,alg)
+  else
+    adf = nothing
+  end
+  TrapezoidConstantCache{typeof(uhold),typeof(rhs),typeof(adf),1}(uhold,u_old,rhs,adf)
+end
+
+
 
 get_chunksize(cache::DECache) = error("This cache does not have a chunksize.")
 Base.@pure get_chunksize{uType,DiffCacheType,rateType,CS}(cache::ImplicitEulerCache{uType,DiffCacheType,rateType,CS}) = CS

@@ -5,8 +5,8 @@ type RHS_IE_Scalar{F,uType,tType} <: Function
   dt::tType
 end
 
-function (p::RHS_IE_Scalar)(uprev,resid)
-  resid[1] = uprev[1] - p.u_old[1] - p.dt*p.f(p.t+p.dt,uprev)[1]
+function (p::RHS_IE_Scalar)(u,resid)
+  resid[1] = u[1] - p.u_old[1] - p.dt*p.f(p.t+p.dt,u)[1]
 end
 
 @inline function initialize!(integrator,cache::ImplicitEulerConstantCache)
@@ -48,18 +48,20 @@ function ode_solve{uType<:Number,algType<:ImplicitEuler,tType,tstopsType,tTypeNo
   nothing
 end
 
-type RHS_IE{F,uType,tType,DiffCacheType} <: Function
+type RHS_IE{F,uType,tType,DiffCacheType,SizeType,uidxType} <: Function
   f::F
   u_old::uType
   t::tType
   dt::tType
   dual_cache::DiffCacheType
+  sizeu::SizeType
+  uidx::uidxType
 end
 
 function (p::RHS_IE)(uprev,resid)
   du = get_du(p.dual_cache, eltype(uprev))
-  p.f(p.t+p.dt,reshape(uprev,size(uprev)),du)
-  for i in eachindex(uprev)
+  p.f(p.t+p.dt,reshape(uprev,p.sizeu),du)
+  for i in p.uidx
     resid[i] = uprev[i] - p.u_old[i] - p.dt*du[i]
   end
 end
@@ -80,6 +82,8 @@ function ode_solve{uType<:AbstractArray,algType<:ImplicitEuler,tType,tstopsType,
       copy!(u_old,uhold)
       rhs.t = t
       rhs.dt = dt
+      rhs.uidx = uidx
+      rhs.sizeu = size(u)
       if alg_autodiff(alg)
         nlres = NLsolve.nlsolve(adf,uhold)
       else
@@ -114,7 +118,7 @@ type RHS_Trap{F,uType,tType,SizeType,DiffCacheType,uidxType} <: Function
 end
 
 function (p::RHS_Trap)(uprev,resid)
-  du1 = get_du(p.dual_cache, eltype(uprev)); du2 = get_du(p.dual_cache2, eltype(p.u_old))
+  du1 = get_du(p.dual_cache, eltype(uprev)); du2 = get_du(p.dual_cache2, eltype(uprev))
   p.f(p.t,reshape(p.u_old,p.sizeu),du2)
   p.f(p.t+p.dt,reshape(uprev,p.sizeu),du1)
   for i in p.uidx
@@ -122,35 +126,24 @@ function (p::RHS_Trap)(uprev,resid)
   end
 end
 
+@inline function initialize!(integrator,cache::TrapezoidCache)
+  integrator.k = cache.k
+end
+
 function ode_solve{uType<:AbstractArray,algType<:Trapezoid,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  uidx = eachindex(uprev)
-  sizeu = size(uprev) # Change to dynamic by call overloaded type
-
-
-  @unpack u_old,dual_cache,dual_cache2,k = integrator.cache
-  integrator.k = k
-
-  dto2 = dt/2
-
-  rhs = RHS_Trap(f,u_old,t,dt,sizeu,dual_cache,dual_cache2,uidx)
-
-  uhold = vec(u)
-
-  if alg_autodiff(alg)
-    adf = autodiff_setup(rhs,uhold,integrator.cache)
-  end
-
+  initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
       @unpack_integrator
+      @unpack u_old,dual_cache,dual_cache2,k,rhs,adf,uhold = integrator.cache
       copy!(u_old,uhold)
       rhs.t = t
       rhs.dt = dt
-      # rhs.uidx = uidx
-      # rhs.sizeu = sizeu
+      rhs.uidx = uidx
+      rhs.sizeu = size(u)
       if alg_autodiff(alg)
         nlres = NLsolve.nlsolve(adf,uhold)
       else
@@ -183,24 +176,19 @@ function (p::RHS_Trap_Scalar)(uprev,resid)
   resid[1] = uprev[1] - p.u_old[1] - (p.dt/2)*(p.f(p.t,p.u_old)[1] + p.f(p.t+p.dt,uprev)[1])
 end
 
+@inline function initialize!(integrator,cache::TrapezoidConstantCache)
+  cache.uhold[1] = integrator.uprev; cache.u_old[1] = integrator.uprev
+end
+
 function ode_solve{uType<:Number,algType<:Trapezoid,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
-  dto2::tType = dt/2
-  uhold::Vector{uType} = Vector{uType}(1)
-  u_old::Vector{uType} = Vector{uType}(1)
-  uhold[1] = uprev; u_old[1] = uprev
-
-  rhs = RHS_Trap_Scalar(f,u_old,t,dt)
-
-  if alg_autodiff(alg)
-    adf = autodiff_setup(rhs,uhold,integrator.cache)
-  end
-
+  initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
       while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
       @unpack_integrator
+      @unpack uhold,u_old,rhs,adf = integrator.cache
       u_old[1] = uhold[1]
       rhs.t = t
       rhs.dt = dt
