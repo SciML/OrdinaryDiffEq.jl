@@ -30,9 +30,10 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   dtmin=tType <: AbstractFloat ? tType(10)*eps(tType) : tType(1//10^(10)),
   internalnorm = ODE_DEFAULT_NORM,
   isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
+  advance_to_tstop = false,
   progress=false,progress_steps=1000,progress_name="ODE",
   progress_message = ODE_DEFAULT_PROG_MESSAGE,
-  event_cache=nothing,callback=nothing,kwargs...)
+  userdata=nothing,callback=nothing,kwargs...)
 
   tspan = prob.tspan
   tdir = sign(tspan[end]-tspan[1])
@@ -187,7 +188,6 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uprev,kprev,f!,t)
 
   if dense
-    #notsaveat_idxs  = find((x)->(x∉saveat)||(x∈Ts),ts)
     id = InterpolationData(f!,timeseries,ts,ks,notsaveat_idxs)
     interp = (tvals) -> ode_interpolation(cache,tvals,id)
   else
@@ -215,18 +215,19 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   integrator = ODEIntegrator{algType,uType,tType,typeof(tstops_internal),
                              tTypeNoUnits,eltype(ks),typeof(sol),
                              typeof(rate_prototype),typeof(f!),typeof(prog),typeof(cache),
-                             typeof(event_cache),typeof(opts)}(
+                             typeof(userdata),typeof(opts)}(
                              sol,u,k,t,tType(dt),f!,uprev,kprev,tprev,
                              tstops_internal,saveat_internal,adaptiveorder,order,
                              alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,
                              dtpropose,dt_mod,tdir,qminc,qmaxc,EEst,qoldinit,
                              iter,saveiter,saveiter_dense,prog,cache,
-                             event_cache,kshortsize,reeval_fsal,opts)
+                             userdata,kshortsize,reeval_fsal,advance_to_tstop,opts)
   integrator
 end
 
 function solve!(integrator::ODEIntegrator;timeseries_errors = true,dense_errors = false)
   #@code_warntype ode_solve(integrator)
+  #for i in integrator end
   ode_solve(integrator)
 
   if typeof(integrator.sol.prob) <: AbstractODETestProblem

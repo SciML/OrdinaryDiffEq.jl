@@ -206,7 +206,42 @@ end
 
 Base.@pure alg_cache(alg::DP5,u,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t) = DP5ConstantCache(uEltypeNoUnits)
 
-Base.@pure alg_cache(alg::DP5Threaded,u,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t) = alg_cache(DP5(),u,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t)
+immutable DP5ThreadedCache{uType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  k1::rateType
+  k2::rateType
+  k3::rateType
+  k4::rateType
+  k5::rateType
+  k6::rateType
+  k7::rateType
+  dense_tmp3::rateType
+  dense_tmp4::rateType
+  update::rateType
+  bspl::rateType
+  utilde::uType
+  tmp::uType
+  atmp::uEltypeNoUnits
+  tab::TabType
+end
+
+Base.@pure function alg_cache{uType<:AbstractArray}(alg::DP5Threaded,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t)
+  k1 = similar(rate_prototype)
+  k2 = similar(rate_prototype)
+  k3 = similar(rate_prototype)
+  k4 = similar(rate_prototype)
+  k5 = similar(rate_prototype)
+  k6 = similar(rate_prototype)
+  k7 = similar(rate_prototype)
+  dense_tmp3 = similar(rate_prototype)
+  dense_tmp4 = similar(rate_prototype)
+  update = similar(rate_prototype)
+  bspl = similar(rate_prototype)
+  utilde = similar(u)
+  tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
+  tab = DP5ConstantCache(uEltypeNoUnits)
+  DP5ThreadedCache(u,k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,utilde,tmp,atmp,tab)
+end
 
 immutable Vern6Cache{uType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
   u::uType

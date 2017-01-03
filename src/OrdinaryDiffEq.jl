@@ -8,7 +8,13 @@ module OrdinaryDiffEq
         Ranges, NLsolve, RecipesBase, Juno, Calculus, Roots, DataStructures
 
   import Base: linspace
+
+  import Base: start, next, done, eltype
+
   import ForwardDiff.Dual
+
+  import DiffEqBase: resize!,cache_iter,terminate!,add_tstop!,add_saveat!,set_abstol!,
+         set_reltol!,get_du,get_dt,get_proposed_dt,modify_proposed_dt!,u_unmodified!
 
   #Constants
 
@@ -19,7 +25,7 @@ module OrdinaryDiffEq
   include("alg_utils.jl")
   include("caches.jl")
   include("integrators/unrolled_tableaus.jl")
-  include("integrators/main_type.jl")
+  include("integrators/type.jl")
   include("integrators/integrator_utils.jl")
   include("integrators/fixed_timestep_integrators.jl")
   include("integrators/explicit_rk_integrator.jl")
@@ -30,6 +36,7 @@ module OrdinaryDiffEq
   include("integrators/implicit_integrators.jl")
   include("integrators/rosenbrock_integrators.jl")
   include("integrators/threaded_rk_integrators.jl")
+  include("iterator_interface.jl")
   include("constants.jl")
   include("callbacks.jl")
   include("solve.jl")

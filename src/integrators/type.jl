@@ -25,7 +25,7 @@ type DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5}
   calck::Bool
 end
 
-type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}
+type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O} <: AbstractODEIntegrator
   sol::SolType
   u::uType
   k::ksEltype
@@ -56,9 +56,10 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
   saveiter_dense::Int
   prog::ProgressType
   cache::CacheType
-  event_cache::ECType
+  userdata::ECType
   kshortsize::Int
   reeval_fsal::Bool
+  advance_to_tstop::Bool
   opts::O
   fsalfirst::rateType
   fsallast::rateType
@@ -66,9 +67,9 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
   ODEIntegrator(sol,u,k,t,dt,f,uprev,kprev,tprev,tstops,saveat,adaptiveorder,
     order,alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,dtpropose,dt_mod,tdir,qminc,
     qmaxc,EEst,qold,iter,saveiter,saveiter_dense,prog,cache,event_cache,
-    kshortsize,reeval_fsal,opts) = new(
+    kshortsize,reeval_fsal,advance_to_tstop,opts) = new(
     sol,u,k,t,dt,f,uprev,kprev,tprev,tstops,saveat,adaptiveorder,
       order,alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,dtpropose,dt_mod,tdir,qminc,
       qmaxc,EEst,qold,iter,saveiter,saveiter_dense,prog,cache,event_cache,
-      kshortsize,reeval_fsal,opts) # Leave off fsalfirst and last
+      kshortsize,reeval_fsal,advance_to_tstop,opts) # Leave off fsalfirst and last
 end
