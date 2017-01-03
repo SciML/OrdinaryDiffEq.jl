@@ -771,8 +771,8 @@ immutable TrapezoidCache{uType,vecuType,DiffCacheType,rateType,rhsType,adfType,C
   u::uType
   uhold::vecuType
   u_old::uType
+  f_old::rateType
   dual_cache::DiffCacheType
-  dual_cache2::DiffCacheType
   k::rateType
   rhs::rhsType
   adf::adfType
@@ -780,10 +780,9 @@ end
 
 Base.@pure function alg_cache{uType<:AbstractArray}(alg::Trapezoid,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t)
   u_old = similar(u); k = similar(rate_prototype)
-  uhold = vec(u)
+  uhold = vec(u); f_old = similar(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,alg)})
-  dual_cache2 = DiffCache(u,Val{determine_chunksize(u,alg)})
-  rhs = RHS_Trap(f,u_old,t,t,size(u),dual_cache,dual_cache2,eachindex(u))
+  rhs = RHS_Trap(f,u_old,f_old,t,t,size(u),dual_cache,eachindex(u))
   if alg_autodiff(alg)
     adf = autodiff_setup(rhs,uhold,alg)
   else
@@ -791,7 +790,7 @@ Base.@pure function alg_cache{uType<:AbstractArray}(alg::Trapezoid,u::uType,rate
   end
   TrapezoidCache{typeof(u),typeof(uhold),typeof(dual_cache),typeof(k),
     typeof(rhs),typeof(adf),determine_chunksize(u,alg)}(
-    u,uhold,u_old,dual_cache,dual_cache2,k,rhs,adf)
+    u,uhold,u_old,f_old,dual_cache,k,rhs,adf)
 end
 
 
@@ -805,7 +804,7 @@ end
 Base.@pure function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t)
   uhold = Vector{typeof(u)}(1)
   u_old = Vector{typeof(u)}(1)
-  rhs = RHS_Trap_Scalar(f,u_old,t,t)
+  rhs = RHS_Trap_Scalar(f,u_old,rate_prototype,t,t)
   if alg_autodiff(alg)
     adf = autodiff_setup(rhs,uhold,alg)
   else
