@@ -2,6 +2,24 @@
   integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
 end
 
+function perform_step!(integrator::ODEIntegrator,cache::BS3ConstantCache)
+  @unpack t,dt,uprev,u,f,k = integrator
+  @unpack a21,a32,a41,a42,a43,c1,c2,b1,b2,b3,b4 = integrator.cache
+  k1 = integrator.fsalfirst
+  k2 = f(t+c1*dt,uprev+dt*a21*k1)
+  k3 = f(t+c2*dt,uprev+dt*a32*k2)
+  u = uprev+dt*(a41*k1+a42*k2+a43*k3)
+  k4 = f(t+dt,u); integrator.fsallast = k4
+  if integrator.opts.adaptive
+    utilde = uprev + dt*(b1*k1 + b2*k2 + b3*k3 + b4*k4)
+    integrator.EEst = abs( ((utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)))
+  end
+  if integrator.opts.calck
+    k = integrator.fsallast
+  end
+  @pack integrator = t,dt,u,k
+end
+
 function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{BS3,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)

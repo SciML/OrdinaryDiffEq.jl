@@ -13,7 +13,6 @@ end
   cache.uhold[1] = integrator.uprev; cache.u_old[1] = integrator.uprev
 end
 
-
 function ode_solve{uType<:Number,algType<:ImplicitEuler,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)

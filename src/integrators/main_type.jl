@@ -25,7 +25,7 @@ type DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5}
   calck::Bool
 end
 
-type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}
+type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O} <: AbstractODEIntegrator
   sol::SolType
   u::uType
   k::ksEltype
@@ -72,3 +72,39 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
       qmaxc,EEst,qold,iter,saveiter,saveiter_dense,prog,cache,event_cache,
       kshortsize,reeval_fsal,opts) # Leave off fsalfirst and last
 end
+
+start(integrator::ODEIntegrator) = initialize!(integrator,integrator.cache)
+
+function next(integrator::ODEIntegrator,state)
+  state += 1
+  ode_loopheader!(integrator)
+  perform_step!(integrator,integrator.cache)
+  ode_loopfooter!(integrator)
+  integrator.t == top(integrator.tstops) && pop!(integrator.tstops)
+  integrator,state
+end
+
+function done(integrator::ODEIntegrator,state)
+  if integrator.iter > integrator.opts.maxiters
+    warn("Interrupted. Larger maxiters is needed.")
+    ode_postamble!(integrator)
+    return true
+  end
+  if integrator.dt == zero(integrator.t)
+    warn("dt == 0. Aborting")
+    ode_postamble!(integrator)
+    return true
+  end
+  if any(isnan,integrator.uprev)
+    warn("NaNs detected. Aborting")
+    ode_postamble!(integrator)
+    return true
+  end
+  if isempty(integrator.tstops)
+    ode_postamble!(integrator)
+    return true
+  end
+  false
+end
+
+eltype(integrator::ODEIntegrator) = typeof(integrator)

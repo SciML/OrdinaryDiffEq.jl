@@ -8,7 +8,13 @@ module OrdinaryDiffEq
         Ranges, NLsolve, RecipesBase, Juno, Calculus, Roots, DataStructures
 
   import Base: linspace
+
+  import Base: start, next, done, eltype
+
   import ForwardDiff.Dual
+
+  import DiffEqBase: resize!,cache_iter,terminate!,add_tstop!,add_saveat!,set_abstol!,
+         set_reltol!,get_du,get_dt,get_proposed_dt,modify_proposed_dt!,u_unmodified!
 
   #Constants
 
