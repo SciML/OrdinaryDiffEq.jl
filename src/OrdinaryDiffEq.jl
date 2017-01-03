@@ -35,7 +35,7 @@ module OrdinaryDiffEq
   include("solve.jl")
   include("initdt.jl")
   include("dense.jl")
-
+  include("derivative_wrappers.jl")
 
   #General Functions
   export solve, solve!, init

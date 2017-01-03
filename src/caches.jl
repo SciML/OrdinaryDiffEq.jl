@@ -713,7 +713,7 @@ Base.@pure function alg_cache{uType<:AbstractArray}(alg::Rosenbrock23,u::uType,r
   dT = similar(u)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J); tmp2 = similar(u)
-  tab = LowOrderRosenbrockConstantCache(uEltypeNoUnits)
+  tab = LowOrderRosenbrockConstantCache(uEltypeNoUnits,identity,identity)
   LowOrderRosenbrockCache(u,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp2,tab)
 end
 
@@ -722,9 +722,30 @@ alg_cache{uType<:AbstractArray}(alg::Rosenbrock32,u::uType,
                                 uprev,kprev,f,t) =
                                 alg_cache(Rosenbrock23(),u,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t)
 
-Base.@pure alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t) = LowOrderRosenbrockConstantCache(uEltypeNoUnits)
-Base.@pure alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t) = LowOrderRosenbrockConstantCache(uEltypeNoUnits)
+immutable LowOrderRosenbrockConstantCache{T,TF,UF} <: OrdinaryDiffEqConstantCache
+  c₃₂::T
+  d::T
+  tf::TF
+  uf::UF
+end
 
+function LowOrderRosenbrockConstantCache(T::Type,tf,uf)
+  c₃₂ = T(6 + sqrt(2))
+  d = T(1/(2+sqrt(2)))
+  LowOrderRosenbrockConstantCache(c₃₂,d,tf,uf)
+end
+
+Base.@pure function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t)
+  tf = TimeDerivativeWrapper(f,u)
+  uf = UDerivativeWrapper(f,t)
+  LowOrderRosenbrockConstantCache(uEltypeNoUnits,tf,uf)
+end
+
+Base.@pure function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t)
+  tf = TimeDerivativeWrapper(f,u)
+  uf = UDerivativeWrapper(f,t)
+  LowOrderRosenbrockConstantCache(uEltypeNoUnits,tf,uf)
+end
 immutable ImplicitEulerCache{uType,vecuType,DiffCacheType,rateType,rhsType,adfType,CS} <: OrdinaryDiffEqMutableCache
   u::uType
   uhold::vecuType

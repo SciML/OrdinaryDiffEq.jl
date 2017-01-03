@@ -80,10 +80,12 @@ function ode_solve{uType<:Number,algType<:Rosenbrock23,tType,tstopsType,tTypeNoU
       ode_loopheader!(integrator)
       @ode_exit_conditions
       @unpack_integrator
-      @unpack c₃₂,d = integrator.cache
+      @unpack c₃₂,d,tf,uf = integrator.cache
       # Time derivative
-      dT = ForwardDiff.derivative((t)->f(t,uprev),t)
-      J = ForwardDiff.derivative((uprev)->f(t,uprev),uprev)
+      tf.u = uprev
+      uf.t = t
+      dT = ForwardDiff.derivative(tf,t)
+      J = ForwardDiff.derivative(uf,uprev)
       W = 1-dt*d*J
       k₁ = W\(integrator.fsalfirst + dt*d*dT)
       f₁ = f(t+dt/2,uprev+dt*k₁/2)
@@ -180,15 +182,19 @@ end
 function ode_solve{uType<:Number,algType<:Rosenbrock32,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
   @ode_preamble
   initialize!(integrator,integrator.cache)
+  tf = TimeDerivativeWrapper(f,uprev)
+  uf = UDerivativeWrapper(f,t)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
       @unpack_integrator
-      @unpack c₃₂,d = integrator.cache
+      @unpack c₃₂,d,tf,uf = integrator.cache
+      tf.u = uprev
+      uf.t = t
       # Time derivative
-      dT = ForwardDiff.derivative((t)->f(t,uprev),t)
-      J = ForwardDiff.derivative((uprev)->f(t,uprev),uprev)
+      dT = ForwardDiff.derivative(tf,t)
+      J = ForwardDiff.derivative(uf,uprev)
       W = 1-dt*d*J
       #f₀ = f(t,uprev)
       k₁ = W\(integrator.fsalfirst + dt*d*dT)
