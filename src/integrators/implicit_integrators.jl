@@ -13,7 +13,7 @@ end
   cache.uhold[1] = integrator.uprev; cache.u_old[1] = integrator.uprev
 end
 
-function perform_step!(integrator::ODEIntegrator,cache::ImplicitEulerConstantCache)
+@inline function perform_step!(integrator::ODEIntegrator,cache::ImplicitEulerConstantCache)
   @unpack t,dt,uprev,u,f,k = integrator
   @unpack uhold,u_old,rhs,adf = integrator.cache
   u_old[1] = uhold[1]
@@ -71,7 +71,7 @@ end
   integrator.k = cache.k
 end
 
-function perform_step!(integrator::ODEIntegrator,cache::ImplicitEulerCache)
+@inline function perform_step!(integrator::ODEIntegrator,cache::ImplicitEulerCache)
   @unpack t,dt,uprev,u,f,k = integrator
   uidx = eachindex(integrator.uprev)
   @unpack u_old,dual_cache,k,adf,rhs,uhold = integrator.cache
@@ -139,7 +139,7 @@ end
   integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst)
 end
 
-function perform_step!(integrator::ODEIntegrator,cache::TrapezoidCache)
+@inline function perform_step!(integrator::ODEIntegrator,cache::TrapezoidCache)
   @unpack t,dt,uprev,u,f,k = integrator
   uidx = eachindex(integrator.uprev)
   @unpack u_old,dual_cache,k,rhs,adf,uhold = integrator.cache
@@ -196,7 +196,7 @@ end
   integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev)
 end
 
-function perform_step!(integrator::ODEIntegrator,cache::TrapezoidConstantCache)
+@inline function perform_step!(integrator::ODEIntegrator,cache::TrapezoidConstantCache)
   @unpack t,dt,uprev,u,f,k = integrator
   @unpack uhold,u_old,rhs,adf = integrator.cache
   u_old[1] = uhold[1]

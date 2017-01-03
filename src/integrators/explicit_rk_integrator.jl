@@ -4,7 +4,7 @@
   end
 end
 
-function perform_step!(integrator::ODEIntegrator,cache::ExplicitRKConstantCache)
+@inline function perform_step!(integrator::ODEIntegrator,cache::ExplicitRKConstantCache)
   @unpack t,dt,uprev,u,f,k = integrator
   @unpack A,c,α,αEEst,stages = integrator.cache
   @unpack kk = integrator.cache
@@ -72,7 +72,7 @@ end
   integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
 end
 
-function perform_step!(integrator::ODEIntegrator,cache::ExplicitRKCache)
+@inline function perform_step!(integrator::ODEIntegrator,cache::ExplicitRKCache)
   @unpack t,dt,uprev,u,f,k = integrator
   uidx = eachindex(integrator.uprev)
   @unpack A,c,α,αEEst,stages = integrator.cache.tab

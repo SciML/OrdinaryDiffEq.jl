@@ -2,7 +2,7 @@
   integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
 end
 
-function perform_step!(integrator::ODEIntegrator,cache::EulerConstantCache)
+@inline function perform_step!(integrator::ODEIntegrator,cache::EulerConstantCache)
   @unpack t,dt,uprev,u,f,k = integrator
   k = integrator.fsalfirst
   u = muladd(dt,k,uprev)
@@ -37,7 +37,7 @@ end
   integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
-function perform_step!(integrator::ODEIntegrator,cache::EulerCache)
+@inline function perform_step!(integrator::ODEIntegrator,cache::EulerCache)
   @unpack t,dt,uprev,u,f,k = integrator
   uidx = eachindex(integrator.uprev)
   for i in uidx
@@ -69,7 +69,7 @@ end
   integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
 end
 
-function perform_step!(integrator::ODEIntegrator,cache::MidpointConstantCache)
+@inline function perform_step!(integrator::ODEIntegrator,cache::MidpointConstantCache)
   @unpack t,dt,uprev,u,f,k = integrator
         halfdt = dt/2
   k = integrator.fsalfirst
@@ -110,7 +110,7 @@ end
   integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # FSAL for interpolation
 end
 
-function perform_step!(integrator::ODEIntegrator,cache::MidpointCache)
+@inline function perform_step!(integrator::ODEIntegrator,cache::MidpointCache)
   @unpack t,dt,uprev,u,f,k = integrator
   uidx = eachindex(integrator.uprev)
   @unpack k,du,utilde,fsalfirst = integrator.cache
@@ -148,7 +148,7 @@ end
   integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
 end
 
-function perform_step!(integrator::ODEIntegrator,cache::RK4ConstantCache)
+@inline function perform_step!(integrator::ODEIntegrator,cache::RK4ConstantCache)
   @unpack t,dt,uprev,u,f,k = integrator
         halfdt = dt/2
   k₁ =integrator.fsalfirst
@@ -191,7 +191,7 @@ end
   integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # pre-start FSAL
 end
 
-function perform_step!(integrator::ODEIntegrator,cache::RK4Cache)
+@inline function perform_step!(integrator::ODEIntegrator,cache::RK4Cache)
   @unpack t,dt,uprev,u,f,k = integrator
   uidx = eachindex(integrator.uprev)
   @unpack tmp,k₁,k₂,k₃,k₄,k = integrator.cache

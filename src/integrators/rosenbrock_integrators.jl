@@ -7,7 +7,7 @@
   integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst)
 end
 
-function perform_step!(integrator::ODEIntegrator,cache::Rosenbrock23Cache)
+@inline function perform_step!(integrator::ODEIntegrator,cache::Rosenbrock23Cache)
   @unpack t,dt,uprev,u,f,k = integrator
   uidx = eachindex(integrator.uprev)
   @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,uf,tf = integrator.cache
@@ -62,7 +62,7 @@ end
   integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst)
 end
 
-function perform_step!(integrator::ODEIntegrator,cache::Rosenbrock32Cache)
+@inline function perform_step!(integrator::ODEIntegrator,cache::Rosenbrock32Cache)
   @unpack t,dt,uprev,u,f,k = integrator
   uidx = eachindex(integrator.uprev)
   @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,uf,tf = integrator.cache
@@ -134,7 +134,7 @@ end
   integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev)
 end
 
-function perform_step!(integrator::ODEIntegrator,cache::Rosenbrock23ConstantCache)
+@inline function perform_step!(integrator::ODEIntegrator,cache::Rosenbrock23ConstantCache)
   @unpack t,dt,uprev,u,f,k = integrator
   @unpack c₃₂,d,tf,uf = integrator.cache
   # Time derivative
@@ -164,7 +164,7 @@ end
   integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev)
 end
 
-function perform_step!(integrator::ODEIntegrator,cache::Rosenbrock32ConstantCache)
+@inline function perform_step!(integrator::ODEIntegrator,cache::Rosenbrock32ConstantCache)
   @unpack t,dt,uprev,u,f,k = integrator
   @unpack c₃₂,d,tf,uf = integrator.cache
   tf.u = uprev
