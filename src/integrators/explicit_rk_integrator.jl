@@ -5,14 +5,13 @@
 end
 
 function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O,algType<:ExplicitRK}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
-  @ode_preamble
   initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
-      @unpack_integrator
-      @unpack A,c,α,αEEst,stages = integrator.cache
+      @unpack t,dt,uprev,u,f,k = integrator
+            @unpack A,c,α,αEEst,stages = integrator.cache
       @unpack kk = integrator.cache
       # Calc First
       if isfsal(integrator.alg)
@@ -40,7 +39,6 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
         utilde += α[i]*kk[i]
       end
       u = uprev + dt*utilde
-      @show u,uprev,dt,utilde
       if integrator.opts.adaptive
         uEEst = αEEst[1]*kk[1]
         for i = 2:stages
@@ -51,7 +49,7 @@ function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,
       if integrator.opts.calck
         k = kk[end]
       end
-      @pack_integrator
+      @pack integrator = t,dt,u,k
       ode_loopfooter!(integrator)
       if isempty(integrator.tstops)
         break
@@ -71,13 +69,13 @@ end
 end
 
 function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O,algType<:ExplicitRK}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
-  @ode_preamble
   initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
-      @unpack_integrator
+      @unpack t,dt,uprev,u,f,k = integrator
+      uidx = eachindex(integrator.uprev)
       @unpack A,c,α,αEEst,stages = integrator.cache.tab
       @unpack kk,utilde,tmp,atmp,uEEst = integrator.cache
       # First
@@ -140,7 +138,7 @@ function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,S
         end
         integrator.EEst = integrator.opts.internalnorm(atmp)
       end
-      @pack_integrator
+      @pack integrator = t,dt,u,k
       ode_loopfooter!(integrator)
       if isempty(integrator.tstops)
         break

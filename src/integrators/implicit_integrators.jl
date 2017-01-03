@@ -15,14 +15,13 @@ end
 
 
 function ode_solve{uType<:Number,algType<:ImplicitEuler,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
-  @ode_preamble
   initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
-      @unpack_integrator
-      @unpack uhold,u_old,rhs,adf = integrator.cache
+      @unpack t,dt,uprev,u,f,k = integrator
+            @unpack uhold,u_old,rhs,adf = integrator.cache
       u_old[1] = uhold[1]
       rhs.t = t
       rhs.dt = dt
@@ -36,7 +35,7 @@ function ode_solve{uType<:Number,algType<:ImplicitEuler,tType,tstopsType,tTypeNo
         k = f(t+dt,uhold[1])
       end
       u = uhold[1]
-      @pack_integrator
+      @pack integrator = t,dt,u,k
       ode_loopfooter!(integrator)
       if isempty(integrator.tstops)
         break
@@ -57,7 +56,6 @@ type RHS_IE{F,uType,tType,DiffCacheType,SizeType,uidxType} <: Function
   sizeu::SizeType
   uidx::uidxType
 end
-
 function (p::RHS_IE)(uprev,resid)
   du = get_du(p.dual_cache, eltype(uprev))
   p.f(p.t+p.dt,reshape(uprev,p.sizeu),du)
@@ -71,13 +69,13 @@ end
 end
 
 function ode_solve{uType<:AbstractArray,algType<:ImplicitEuler,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
-  @ode_preamble
   initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
-      @unpack_integrator
+      @unpack t,dt,uprev,u,f,k = integrator
+      uidx = eachindex(integrator.uprev)
       @unpack u_old,dual_cache,k,adf,rhs,uhold = integrator.cache
       copy!(u_old,uhold)
       rhs.t = t
@@ -93,7 +91,7 @@ function ode_solve{uType<:AbstractArray,algType<:ImplicitEuler,tType,tstopsType,
       if integrator.opts.calck
         f(t+dt,u,k)
       end
-      @pack_integrator
+      @pack integrator = t,dt,u,k
       ode_loopfooter!(integrator)
       if isempty(integrator.tstops)
         break
@@ -135,13 +133,13 @@ end
 end
 
 function ode_solve{uType<:AbstractArray,algType<:Trapezoid,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
-  @ode_preamble
   initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
-      @unpack_integrator
+      @unpack t,dt,uprev,u,f,k = integrator
+      uidx = eachindex(integrator.uprev)
       @unpack u_old,dual_cache,k,rhs,adf,uhold = integrator.cache
       copy!(u_old,uhold)
       # copy!(rhs.f_old,f_old) Implicitly done by pointers: fsalfirst === f_old == rhs.f_old
@@ -158,7 +156,7 @@ function ode_solve{uType<:AbstractArray,algType<:Trapezoid,tType,tstopsType,tTyp
       if integrator.opts.calck
         f(t+dt,u,k)
       end
-      @pack_integrator
+      @pack integrator = t,dt,u,k
       ode_loopfooter!(integrator)
       if isempty(integrator.tstops)
         break
@@ -188,13 +186,12 @@ end
 end
 
 function ode_solve{uType<:Number,algType<:Trapezoid,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
-  @ode_preamble
   initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
       while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
-      @unpack_integrator
+      @unpack t,dt,uprev,u,f,k = integrator
       @unpack uhold,u_old,rhs,adf = integrator.cache
       u_old[1] = uhold[1]
       rhs.t = t
@@ -209,7 +206,7 @@ function ode_solve{uType<:Number,algType<:Trapezoid,tType,tstopsType,tTypeNoUnit
       k = f(t+dt,uhold[1])
       integrator.fsallast = k
       u = uhold[1]
-      @pack_integrator
+      @pack integrator = t,dt,u,k
       ode_loopfooter!(integrator)
       if isempty(integrator.tstops)
         break

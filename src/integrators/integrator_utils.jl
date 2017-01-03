@@ -1,9 +1,6 @@
 initialize{uType}(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) =
                 error("This algorithm does not have an initialization function")
 
-@def ode_preamble begin
-end
-
 @inline function ode_loopheader!(integrator)
   integrator.iter += 1
   if integrator.opts.adaptive
@@ -84,20 +81,6 @@ end
     end
   end
   !(typeof(integrator.prog)<:Void) && Juno.done(integrator.prog)
-end
-
-@def pack_integrator begin
-  @pack integrator = t
-  @pack integrator = dt
-  @pack integrator = u
-  @pack integrator = k
-end
-
-@def unpack_integrator begin
-  if typeof(integrator.u)<:AbstractArray
-    uidx = eachindex(integrator.uprev)
-  end
-  @unpack t,dt,uprev,u,f,k = integrator
 end
 
 @inline function ode_loopfooter!(integrator)

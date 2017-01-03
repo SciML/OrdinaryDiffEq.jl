@@ -8,13 +8,13 @@
 end
 
 function ode_solve{uType<:AbstractArray,algType<:Rosenbrock23,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
-  @ode_preamble
   initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
-      @unpack_integrator
+      @unpack t,dt,uprev,u,f,k = integrator
+      uidx = eachindex(integrator.uprev)
       @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,uf,tf = integrator.cache
       jidx = eachindex(J)
       @unpack c₃₂,d = integrator.cache.tab
@@ -55,7 +55,7 @@ function ode_solve{uType<:AbstractArray,algType<:Rosenbrock23,tType,tstopsType,t
         end
         integrator.EEst = integrator.opts.internalnorm(tmp2)
       end
-      @pack_integrator
+      @pack integrator = t,dt,u,k
       ode_loopfooter!(integrator)
       if isempty(integrator.tstops)
         break
@@ -75,14 +75,13 @@ end
 end
 
 function ode_solve{uType<:Number,algType<:Rosenbrock23,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
-  @ode_preamble
   initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
-      @unpack_integrator
-      @unpack c₃₂,d,tf,uf = integrator.cache
+      @unpack t,dt,uprev,u,f,k = integrator
+            @unpack c₃₂,d,tf,uf = integrator.cache
       # Time derivative
       tf.u = uprev
       uf.t = t
@@ -100,7 +99,7 @@ function ode_solve{uType<:Number,algType<:Rosenbrock23,tType,tstopsType,tTypeNoU
       end
       integrator.k[1] = k₁
       integrator.k[2] = k₂
-      @pack_integrator
+      @pack integrator = t,dt,u,k
       ode_loopfooter!(integrator)
       if isempty(integrator.tstops)
         break
@@ -113,13 +112,13 @@ function ode_solve{uType<:Number,algType<:Rosenbrock23,tType,tstopsType,tTypeNoU
 end
 
 function ode_solve{uType<:AbstractArray,algType<:Rosenbrock32,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
-  @ode_preamble
   initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
-      @unpack_integrator
+      @unpack t,dt,uprev,u,f,k = integrator
+      uidx = eachindex(integrator.uprev)
       @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,uf,tf = integrator.cache
       jidx = eachindex(J)
       @unpack c₃₂,d = integrator.cache.tab
@@ -161,7 +160,7 @@ function ode_solve{uType<:AbstractArray,algType<:Rosenbrock32,tType,tstopsType,t
         end
         integrator.EEst = integrator.opts.internalnorm(tmp2)
       end
-      @pack_integrator
+      @pack integrator = t,dt,u,k
       ode_loopfooter!(integrator)
       if isempty(integrator.tstops)
         break
@@ -174,14 +173,13 @@ function ode_solve{uType<:AbstractArray,algType<:Rosenbrock32,tType,tstopsType,t
 end
 
 function ode_solve{uType<:Number,algType<:Rosenbrock32,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{algType,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
-  @ode_preamble
   initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
-      @unpack_integrator
-      @unpack c₃₂,d,tf,uf = integrator.cache
+      @unpack t,dt,uprev,u,f,k = integrator
+            @unpack c₃₂,d,tf,uf = integrator.cache
       tf.u = uprev
       uf.t = t
       # Time derivative
@@ -201,7 +199,7 @@ function ode_solve{uType<:Number,algType<:Rosenbrock32,tType,tstopsType,tTypeNoU
       end
       integrator.k[1] = k₁
       integrator.k[2] = k₂
-      @pack_integrator
+      @pack integrator = t,dt,u,k
       ode_loopfooter!(integrator)
       if isempty(integrator.tstops)
         break
