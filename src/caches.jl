@@ -677,7 +677,30 @@ end
 Base.@pure alg_cache(alg::Feagin14,u,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t) = Feagin14ConstantCache(uEltypeNoUnits)
 
 
-immutable LowOrderRosenbrockCache{uType,rateType,vecuType,JType,TabType,TFType,UFType} <: OrdinaryDiffEqMutableCache
+immutable Rosenbrock23Cache{uType,rateType,vecuType,JType,TabType,TFType,UFType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  k₁::rateType
+  k₂::rateType
+  k₃::rateType
+  du1::rateType
+  du2::rateType
+  f₁::rateType
+  vectmp::vecuType
+  vectmp2::vecuType
+  vectmp3::vecuType
+  fsalfirst::rateType
+  fsallast::rateType
+  dT::uType
+  J::JType
+  W::JType
+  tmp::uType
+  tmp2::uType
+  tab::TabType
+  tf::TFType
+  uf::UFType
+end
+
+immutable Rosenbrock32Cache{uType,rateType,vecuType,JType,TabType,TFType,UFType} <: OrdinaryDiffEqMutableCache
   u::uType
   k₁::rateType
   k₂::rateType
@@ -717,43 +740,77 @@ Base.@pure function alg_cache{uType<:AbstractArray}(alg::Rosenbrock23,u::uType,r
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J); tmp2 = similar(u)
   tmp = reshape(vectmp2,size(u)...)
-  tab = LowOrderRosenbrockConstantCache(uEltypeNoUnits,identity,identity)
+  tab = Rosenbrock23ConstantCache(uEltypeNoUnits,identity,identity)
   vf = VectorF(f,size(u))
   vfr = VectorFReturn(f,size(u))
   tf = TimeGradientWrapper(vf,uprev,du2)
   uf = UJacobianWrapper(vfr,t)
-  LowOrderRosenbrockCache(u,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,tab,tf,uf)
+  Rosenbrock23Cache(u,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,tab,tf,uf)
 end
 
-alg_cache{uType<:AbstractArray}(alg::Rosenbrock32,u::uType,
-                                rate_prototype,uEltypeNoUnits,
-                                uprev,kprev,f,t) =
-                                alg_cache(Rosenbrock23(),u,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t)
+Base.@pure function alg_cache{uType<:AbstractArray}(alg::Rosenbrock32,u::uType,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t)
+  k₁ = similar(rate_prototype)
+  k₂ = similar(rate_prototype)
+  k₃ = similar(rate_prototype)
+  du1 = similar(rate_prototype)
+  du2 = similar(rate_prototype)
+  # f₀ = similar(u) fsalfirst
+  f₁ = similar(rate_prototype)
+  vectmp = similar(vec(u))
+  vectmp2 = similar(vec(u))
+  vectmp3 = similar(vec(u))
+  fsalfirst = similar(rate_prototype)
+  fsallast = similar(rate_prototype)
+  dT = similar(u)
+  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  W = similar(J); tmp2 = similar(u)
+  tmp = reshape(vectmp2,size(u)...)
+  tab = Rosenbrock32ConstantCache(uEltypeNoUnits,identity,identity)
+  vf = VectorF(f,size(u))
+  vfr = VectorFReturn(f,size(u))
+  tf = TimeGradientWrapper(vf,uprev,du2)
+  uf = UJacobianWrapper(vfr,t)
+  Rosenbrock32Cache(u,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,tab,tf,uf)
+end
 
-immutable LowOrderRosenbrockConstantCache{T,TF,UF} <: OrdinaryDiffEqConstantCache
+immutable Rosenbrock23ConstantCache{T,TF,UF} <: OrdinaryDiffEqConstantCache
   c₃₂::T
   d::T
   tf::TF
   uf::UF
 end
 
-function LowOrderRosenbrockConstantCache(T::Type,tf,uf)
+function Rosenbrock23ConstantCache(T::Type,tf,uf)
   c₃₂ = T(6 + sqrt(2))
   d = T(1/(2+sqrt(2)))
-  LowOrderRosenbrockConstantCache(c₃₂,d,tf,uf)
+  Rosenbrock23ConstantCache(c₃₂,d,tf,uf)
 end
 
 Base.@pure function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t)
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
-  LowOrderRosenbrockConstantCache(uEltypeNoUnits,tf,uf)
+  Rosenbrock23ConstantCache(uEltypeNoUnits,tf,uf)
+end
+
+immutable Rosenbrock32ConstantCache{T,TF,UF} <: OrdinaryDiffEqConstantCache
+  c₃₂::T
+  d::T
+  tf::TF
+  uf::UF
+end
+
+function Rosenbrock32ConstantCache(T::Type,tf,uf)
+  c₃₂ = T(6 + sqrt(2))
+  d = T(1/(2+sqrt(2)))
+  Rosenbrock32ConstantCache(c₃₂,d,tf,uf)
 end
 
 Base.@pure function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t)
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
-  LowOrderRosenbrockConstantCache(uEltypeNoUnits,tf,uf)
+  Rosenbrock32ConstantCache(uEltypeNoUnits,tf,uf)
 end
+
 immutable ImplicitEulerCache{uType,vecuType,DiffCacheType,rateType,rhsType,adfType,CS} <: OrdinaryDiffEqMutableCache
   u::uType
   uhold::vecuType

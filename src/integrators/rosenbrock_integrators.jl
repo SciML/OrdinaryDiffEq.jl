@@ -1,4 +1,13 @@
-@inline function initialize!(integrator,cache::LowOrderRosenbrockCache)
+@inline function initialize!(integrator,cache::Rosenbrock23Cache)
+  integrator.kshortsize = 2
+  @unpack k₁,k₂,fsalfirst,fsallast = integrator.cache
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = fsallast
+  integrator.k = [k₁,k₂]
+  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst)
+end
+
+@inline function initialize!(integrator,cache::Rosenbrock32Cache)
   integrator.kshortsize = 2
   @unpack k₁,k₂,fsalfirst,fsallast = integrator.cache
   integrator.fsalfirst = fsalfirst
@@ -67,7 +76,14 @@ function ode_solve{uType<:AbstractArray,algType<:Rosenbrock23,tType,tstopsType,t
   nothing
 end
 
-@inline function initialize!(integrator,cache::LowOrderRosenbrockConstantCache)
+@inline function initialize!(integrator,cache::Rosenbrock23ConstantCache)
+  integrator.kshortsize = 2
+  k = eltype(integrator.sol.k)(2)
+  integrator.k = k
+  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev)
+end
+
+@inline function initialize!(integrator,cache::Rosenbrock32ConstantCache)
   integrator.kshortsize = 2
   k = eltype(integrator.sol.k)(2)
   integrator.k = k

@@ -115,7 +115,7 @@ end
 """
 From MATLAB ODE Suite by Shampine
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,cache::LowOrderRosenbrockConstantCache)
+function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,cache::Rosenbrock23ConstantCache)
   d = cache.d
   c1 = Θ*(1-Θ)/(1-2d)
   c2 = Θ*(Θ-2d)/(1-2d)
@@ -125,7 +125,27 @@ end
 """
 From MATLAB ODE Suite by Shampine
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,cache::LowOrderRosenbrockCache)
+function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,cache::Rosenbrock23Cache)
+  d = cache.tab.d
+  c1 = Θ*(1-Θ)/(1-2d)
+  c2 = Θ*(Θ-2d)/(1-2d)
+  y₀ + dt*(c1*k[1] + c2*k[2])
+end
+
+"""
+From MATLAB ODE Suite by Shampine
+"""
+function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,cache::Rosenbrock32ConstantCache)
+  d = cache.d
+  c1 = Θ*(1-Θ)/(1-2d)
+  c2 = Θ*(Θ-2d)/(1-2d)
+  y₀ + dt*(c1*k[1] + c2*k[2])
+end
+
+"""
+From MATLAB ODE Suite by Shampine
+"""
+function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,cache::Rosenbrock32Cache)
   d = cache.tab.d
   c1 = Θ*(1-Θ)/(1-2d)
   c2 = Θ*(Θ-2d)/(1-2d)
