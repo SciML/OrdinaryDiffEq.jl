@@ -16,7 +16,10 @@ function next(integrator::ODEIntegrator,state)
     perform_step!(integrator,integrator.cache)
     ode_loopfooter!(integrator)
   end
-  !isempty(integrator.opts.tstops) && integrator.t == top(integrator.opts.tstops) && pop!(integrator.opts.tstops)
+  if !isempty(integrator.opts.tstops) && integrator.t == top(integrator.opts.tstops)
+   pop!(integrator.opts.tstops)
+   integrator.just_hit_tstop = true
+  end
   integrator,state
 end
 
@@ -34,6 +37,12 @@ function done(integrator::ODEIntegrator,state)
   if isempty(integrator.opts.tstops)
     ode_postamble!(integrator)
     return true
+  elseif integrator.just_hit_tstop
+    integrator.just_hit_tstop = false
+    if integrator.opts.stop_at_tstop
+      ode_postamble!(integrator)
+      return true
+    end
   end
   false
 end
