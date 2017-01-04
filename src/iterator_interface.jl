@@ -5,8 +5,8 @@ end
 
 function next(integrator::ODEIntegrator,state)
   state += 1
-  if integrator.advance_to_tstop
-    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
+  if integrator.opts.advance_to_tstop
+    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.opts.tstops)
       ode_loopheader!(integrator)
       perform_step!(integrator,integrator.cache)
       ode_loopfooter!(integrator)
@@ -16,7 +16,7 @@ function next(integrator::ODEIntegrator,state)
     perform_step!(integrator,integrator.cache)
     ode_loopfooter!(integrator)
   end
-  !isempty(integrator.tstops) && integrator.t == top(integrator.tstops) && pop!(integrator.tstops)
+  !isempty(integrator.opts.tstops) && integrator.t == top(integrator.opts.tstops) && pop!(integrator.opts.tstops)
   integrator,state
 end
 
@@ -31,7 +31,7 @@ function done(integrator::ODEIntegrator,state)
     ode_postamble!(integrator)
     return true
   end
-  if isempty(integrator.tstops)
+  if isempty(integrator.opts.tstops)
     ode_postamble!(integrator)
     return true
   end

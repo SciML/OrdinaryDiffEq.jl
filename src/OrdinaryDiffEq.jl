@@ -3,7 +3,9 @@ __precompile__()
 module OrdinaryDiffEq
 
   using DiffEqBase
-  import DiffEqBase: solve, solve!, init
+
+  import DiffEqBase: solve, solve!, init, step
+
   using Parameters, GenericSVD, ForwardDiff, InplaceOps, RecursiveArrayTools,
         Ranges, NLsolve, RecipesBase, Juno, Calculus, Roots, DataStructures
 
@@ -13,8 +15,7 @@ module OrdinaryDiffEq
 
   import ForwardDiff.Dual
 
-  import DiffEqBase: resize!,cache_iter,terminate!,add_tstop!,add_saveat!,set_abstol!,
-         set_reltol!,get_du,get_dt,get_proposed_dt,modify_proposed_dt!,u_unmodified!
+  import DiffEqBase: resize!,cache_iter,terminate!,get_du,get_dt,get_proposed_dt,modify_proposed_dt!,u_unmodified!
 
   #Constants
 

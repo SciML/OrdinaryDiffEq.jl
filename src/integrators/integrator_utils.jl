@@ -5,14 +5,14 @@ initialize{uType}(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) =
   integrator.iter += 1
   if integrator.opts.adaptive
     if integrator.tdir > 0
-      integrator.dt = min(abs(integrator.dt),abs(top(integrator.tstops)-integrator.t)) # Step to the end
+      integrator.dt = min(abs(integrator.dt),abs(top(integrator.opts.tstops)-integrator.t)) # Step to the end
     else
-      integrator.dt = -min(abs(integrator.dt),abs(top(integrator.tstops)-integrator.t))
+      integrator.dt = -min(abs(integrator.dt),abs(top(integrator.opts.tstops)-integrator.t))
     end
-  elseif integrator.dtcache == zero(integrator.t) # Use integrator.tstops
-    integrator.dt = integrator.tdir*abs(top(integrator.tstops)-integrator.t)
+  elseif integrator.dtcache == zero(integrator.t) # Use integrator.opts.tstops
+    integrator.dt = integrator.tdir*abs(top(integrator.opts.tstops)-integrator.t)
   else # always try to step with dtcache
-    integrator.dt = integrator.tdir*min(abs(integrator.dtcache),abs(top(integrator.tstops)-integrator.t)) # Step to the end
+    integrator.dt = integrator.tdir*min(abs(integrator.dtcache),abs(top(integrator.opts.tstops)-integrator.t)) # Step to the end
   end
 end
 
@@ -35,10 +35,10 @@ end
 end
 
 @inline function ode_savevalues!(integrator)
-  while !isempty(integrator.saveat) && integrator.tdir*top(integrator.saveat) <= integrator.tdir*integrator.t # Perform saveat
+  while !isempty(integrator.opts.saveat) && integrator.tdir*top(integrator.opts.saveat) <= integrator.tdir*integrator.t # Perform saveat
     integrator.saveiter += 1
-    curt = pop!(integrator.saveat)
-    if integrator.saveat!=integrator.t # If <t, interpolate
+    curt = pop!(integrator.opts.saveat)
+    if integrator.opts.saveat!=integrator.t # If <t, interpolate
       ode_addsteps!(integrator)
       Θ = (curt - integrator.tprev)/integrator.dt
       val = ode_interpolant(Θ,integrator)

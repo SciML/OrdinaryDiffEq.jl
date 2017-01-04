@@ -151,9 +151,10 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
 
   opts = DEOptions(maxiters,timeseries_steps,save_timeseries,adaptive,uEltype(abstol),
     uEltypeNoUnits(reltol),tTypeNoUnits(gamma),tTypeNoUnits(qmax),tTypeNoUnits(qmin),
-    dtmax,dtmin,internalnorm,progress,progress_steps,
-    progress_name,progress_message,tTypeNoUnits(beta1),tTypeNoUnits(beta2),tTypeNoUnits(qoldinit),dense,saveat_vec,
-    callback,isoutofdomain,calck)
+    dtmax,dtmin,internalnorm,tstops_internal,saveat_internal,userdata,
+    progress,progress_steps,
+    progress_name,progress_message,tTypeNoUnits(beta1),tTypeNoUnits(beta2),tTypeNoUnits(qoldinit),dense,
+    callback,isoutofdomain,calck,advance_to_tstop)
 
   progress ? (prog = Juno.ProgressBar(name=progress_name)) : prog = nothing
 
@@ -212,16 +213,16 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   qmaxc = inv(qmax) #facc2
   EEst = tTypeNoUnits(1)
 
-  integrator = ODEIntegrator{algType,uType,tType,typeof(tstops_internal),
+  integrator = ODEIntegrator{algType,uType,tType,
                              tTypeNoUnits,eltype(ks),typeof(sol),
                              typeof(rate_prototype),typeof(f!),typeof(prog),typeof(cache),
-                             typeof(userdata),typeof(opts)}(
+                             typeof(opts)}(
                              sol,u,k,t,tType(dt),f!,uprev,kprev,tprev,
-                             tstops_internal,saveat_internal,adaptiveorder,order,
+                             adaptiveorder,order,
                              alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,
                              dtpropose,dt_mod,tdir,qminc,qmaxc,EEst,qoldinit,
                              iter,saveiter,saveiter_dense,prog,cache,
-                             userdata,kshortsize,reeval_fsal,advance_to_tstop,opts)
+                             kshortsize,reeval_fsal,opts)
   integrator
 end
 
@@ -238,17 +239,17 @@ end
 
 function ode_solve(integrator::ODEIntegrator)
   initialize!(integrator,integrator.cache)
-  @inbounds while !isempty(integrator.tstops)
-    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
+  @inbounds while !isempty(integrator.opts.tstops)
+    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.opts.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
       perform_step!(integrator,integrator.cache)
       ode_loopfooter!(integrator)
-      if isempty(integrator.tstops)
+      if isempty(integrator.opts.tstops)
         break
       end
     end
-    !isempty(integrator.tstops) && pop!(integrator.tstops)
+    !isempty(integrator.opts.tstops) && pop!(integrator.opts.tstops)
   end
   ode_postamble!(integrator)
   nothing
