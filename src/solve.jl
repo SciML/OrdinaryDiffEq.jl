@@ -232,22 +232,14 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
                              dtpropose,dt_mod,tdir,EEst,qoldinit,
                              iter,saveiter,saveiter_dense,prog,cache,
                              kshortsize,just_hit_tstop,accept_step,reeval_fsal,opts)
+  initialize!(integrator,integrator.cache)
   integrator
 end
 
 function solve!(integrator::ODEIntegrator)
-  #@code_warntype ode_solve(integrator)
+  # Should be:
   #for i in integrator end
-  ode_solve(integrator)
-
-  if typeof(integrator.sol.prob) <: AbstractODETestProblem
-    calculate_solution_errors!(integrator.sol;timeseries_errors=integrator.opts.timeseries_errors,dense_errors=integrator.opts.dense_errors)
-  end
-  nothing
-end
-
-function ode_solve(integrator::ODEIntegrator)
-  initialize!(integrator,integrator.cache)
+  # But the performance is bad!
   @inbounds while !isempty(integrator.opts.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.opts.tstops)
       loopheader!(integrator)
@@ -261,5 +253,10 @@ function ode_solve(integrator::ODEIntegrator)
     !isempty(integrator.opts.tstops) && pop!(integrator.opts.tstops)
   end
   ode_postamble!(integrator)
+  nothing
+
+  if typeof(integrator.sol.prob) <: AbstractODETestProblem
+    calculate_solution_errors!(integrator.sol;timeseries_errors=integrator.opts.timeseries_errors,dense_errors=integrator.opts.dense_errors)
+  end
   nothing
 end

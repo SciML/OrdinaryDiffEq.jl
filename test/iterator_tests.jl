@@ -5,7 +5,6 @@ sol = solve(prob,BS3();dt=1//2^(4),tstops=[0.5],saveat=0:0.01:1)
 sol(0.9)
 
 integrator = init(prob,BS3();dt=1//2^(4),tstops=[0.5],saveat=0:0.01:1)
-start(integrator)
 step!(integrator)
 @test integrator.iter == 1
 solve!(integrator)
@@ -36,9 +35,10 @@ end
 integrator([1.0;2.0])
 
 integrator = init(prob,RK4();dt=1//2^(9))
-for i in take(integrator,12)
-end
+for i in take(integrator,12) end
 @test integrator.iter == 12
+for i in take(integrator,12) end
+@test integrator.iter == 24
 
 #=
 using Plots

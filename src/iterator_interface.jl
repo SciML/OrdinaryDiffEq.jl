@@ -1,12 +1,12 @@
 function start(integrator::ODEIntegrator)
-  initialize!(integrator,integrator.cache)
-  integrator.iter
+  0
 end
 
 function next(integrator::ODEIntegrator,state)
+  state += 1
   step!(integrator) # Iter updated in the step! header
   # Next is callbacks -> iterator  -> top
-  integrator,integrator.iter
+  integrator,state
 end
 
 done(integrator::ODEIntegrator) = done(integrator,integrator.iter)

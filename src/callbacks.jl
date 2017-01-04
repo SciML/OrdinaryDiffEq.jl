@@ -1,4 +1,4 @@
-function determine_event_occurance(integrator,callback)
+@inline function determine_event_occurance(integrator,callback)
   event_occurred = false
   if callback.interp_points!=0
     ode_addsteps!(integrator)
