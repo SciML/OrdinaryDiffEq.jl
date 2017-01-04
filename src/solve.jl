@@ -245,10 +245,10 @@ function ode_solve(integrator::ODEIntegrator)
   initialize!(integrator,integrator.cache)
   @inbounds while !isempty(integrator.opts.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.opts.tstops)
-      ode_loopheader!(integrator)
+      loopheader!(integrator)
       @ode_exit_conditions
       perform_step!(integrator,integrator.cache)
-      ode_loopfooter!(integrator)
+      loopfooter!(integrator)
       if isempty(integrator.opts.tstops)
         break
       end

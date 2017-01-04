@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, NLsolve, DiffEqBase, Base.Test, Roots#, ParameterizedFunctions
+using OrdinaryDiffEq, RecursiveArrayTools, DiffEqBase, Base.Test, Roots#, ParameterizedFunctions
 
 #=
 f = @ode_def BallBounce begin
@@ -55,7 +55,7 @@ sol2= solve(prob,Vern6())
 sol3= solve(prob,Vern6(),saveat=[.5])
 
 default_callback = @ode_callback begin
-  ode_savevalues!(integrator)
+  savevalues!(integrator)
 end
 
 sol4 = solve(prob,Tsit5(),callback=default_callback)

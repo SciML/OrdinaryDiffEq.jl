@@ -4,7 +4,7 @@ module OrdinaryDiffEq
 
   using DiffEqBase
 
-  import DiffEqBase: solve, solve!, init, step
+  import DiffEqBase: solve, solve!, init, step!
 
   using Parameters, GenericSVD, ForwardDiff, InplaceOps, RecursiveArrayTools,
         Ranges, NLsolve, RecipesBase, Juno, Calculus, Roots, DataStructures
@@ -15,7 +15,9 @@ module OrdinaryDiffEq
 
   import ForwardDiff.Dual
 
-  import DiffEqBase: resize!,cache_iter,terminate!,get_du,get_dt,get_proposed_dt,modify_proposed_dt!,u_unmodified!
+  import DiffEqBase: resize!,cache_iter,terminate!,get_du,
+                     get_dt,get_proposed_dt,modify_proposed_dt!,
+                     u_unmodified!,savevalues!
 
   #Constants
 
@@ -46,13 +48,13 @@ module OrdinaryDiffEq
   include("derivative_wrappers.jl")
 
   #General Functions
-  export solve, solve!, init
+  export solve, solve!, init, step!
 
   #Callback Necessary
-  export ode_addsteps!, ode_interpolant, DIFFERENTIALEQUATIONSJL_SPECIALDENSEALGS,
+  export ode_addsteps!, ode_interpolant,
         @ode_callback, @ode_event, @ode_change_cachesize, @ode_change_deleteat,
-        @ode_terminate, ode_savevalues!, copyat_or_push!, isspecialdense,
-        ode_postable!,isfsal
+        terminate!, savevalues!, copyat_or_push!, isspecialdense,
+        isfsal
 
   export constructDP5, constructVern6, constructDP8, constructDormandPrince, constructFeagin10,
         constructFeagin12, constructFeagin14

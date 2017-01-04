@@ -4,10 +4,12 @@ function start(integrator::ODEIntegrator)
 end
 
 function next(integrator::ODEIntegrator,state)
-  step(integrator) # Iter updated in the step header
+  step!(integrator) # Iter updated in the step! header
   # Next is callbacks -> iterator  -> top
   integrator,integrator.iter
 end
+
+done(integrator::ODEIntegrator) = done(integrator,integrator.iter)
 
 function done(integrator::ODEIntegrator,state)
   if integrator.iter > integrator.opts.maxiters
@@ -33,17 +35,22 @@ function done(integrator::ODEIntegrator,state)
   false
 end
 
-function step(integrator::ODEIntegrator)
+function step!(integrator::ODEIntegrator)
   if integrator.opts.advance_to_tstop
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.opts.tstops)
-      ode_loopheader!(integrator)
+      loopheader!(integrator)
       perform_step!(integrator,integrator.cache)
-      ode_loopfooter!(integrator)
+      loopfooter!(integrator)
     end
   else
-    ode_loopheader!(integrator)
+    loopheader!(integrator)
     perform_step!(integrator,integrator.cache)
-    ode_loopfooter!(integrator)
+    loopfooter!(integrator)
+    while !integrator.accept_step
+      loopheader!(integrator)
+      perform_step!(integrator,integrator.cache)
+      loopfooter!(integrator)
+    end
   end
   if !isempty(integrator.opts.tstops) && integrator.t == top(integrator.opts.tstops)
    pop!(integrator.opts.tstops)

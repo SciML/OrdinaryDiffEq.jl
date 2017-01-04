@@ -1,7 +1,7 @@
 initialize{uType}(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) =
                 error("This algorithm does not have an initialization function")
 
-@inline function ode_loopheader!(integrator)
+@inline function loopheader!(integrator)
   # Apply right after iterators / callbacks
   if integrator.iter > 0
     if (integrator.opts.adaptive && integrator.accept_step) || !integrator.opts.adaptive
@@ -16,14 +16,14 @@ initialize{uType}(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) =
   #Modify dt due to tstops
   if integrator.opts.adaptive && !isempty(integrator.opts.tstops)
     if integrator.tdir > 0
-      integrator.dt = min(abs(integrator.dt),abs(top(integrator.opts.tstops)-integrator.t)) # Step to the end
+      integrator.dt = min(abs(integrator.dt),abs(top(integrator.opts.tstops)-integrator.t)) # step! to the end
     else
       integrator.dt = -min(abs(integrator.dt),abs(top(integrator.opts.tstops)-integrator.t))
     end
   elseif integrator.dtcache == zero(integrator.t) && !isempty(integrator.opts.tstops) # Use integrator.opts.tstops
     integrator.dt = integrator.tdir*abs(top(integrator.opts.tstops)-integrator.t)
-  elseif !isempty(integrator.opts.tstops) # always try to step with dtcache
-    integrator.dt = integrator.tdir*min(abs(integrator.dtcache),abs(top(integrator.opts.tstops)-integrator.t)) # Step to the end
+  elseif !isempty(integrator.opts.tstops) # always try to step! with dtcache
+    integrator.dt = integrator.tdir*min(abs(integrator.dtcache),abs(top(integrator.opts.tstops)-integrator.t)) # step! to the end
   end
 end
 
@@ -45,7 +45,7 @@ end
   end
 end
 
-@inline function ode_savevalues!(integrator)
+@inline function savevalues!(integrator)
   while !isempty(integrator.opts.saveat) && integrator.tdir*top(integrator.opts.saveat) <= integrator.tdir*integrator.t # Perform saveat
     integrator.saveiter += 1
     curt = pop!(integrator.opts.saveat)
@@ -94,7 +94,7 @@ end
   !(typeof(integrator.prog)<:Void) && Juno.done(integrator.prog)
 end
 
-@inline function ode_loopfooter!(integrator)
+@inline function loopfooter!(integrator)
   if integrator.opts.adaptive
     q11 = integrator.EEst^integrator.opts.beta1
     q = q11/(integrator.qold^integrator.opts.beta2)
@@ -108,15 +108,16 @@ end
       if !(typeof(integrator.opts.callback)<:Void)
         integrator.opts.callback(integrator)
       else
-        ode_savevalues!(integrator)
+        savevalues!(integrator)
       end
     end
   else #Not adaptive
     integrator.t += integrator.dt
+    integrator.accept_step = true
     if !(typeof(integrator.opts.callback)<:Void)
       integrator.opts.callback(integrator)
     else
-      ode_savevalues!(integrator)
+      savevalues!(integrator)
     end
   end
   if !(typeof(integrator.prog)<:Void) && integrator.opts.progress && integrator.iter%integrator.opts.progress_steps==0
@@ -126,6 +127,9 @@ end
 end
 
 @inline function apply_step!(integrator)
+
+  integrator.accept_step = false # yay we got here, don't need this no more
+
   #Update uprev
   if typeof(integrator.u) <: AbstractArray
     recursivecopy!(integrator.uprev,integrator.u)

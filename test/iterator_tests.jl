@@ -6,7 +6,7 @@ sol(0.9)
 
 integrator = init(prob,BS3();dt=1//2^(4),tstops=[0.5],saveat=0:0.01:1)
 start(integrator)
-step(integrator)
+step!(integrator)
 @test integrator.iter == 1
 solve!(integrator)
 @test integrator.t == 1.0
@@ -16,10 +16,10 @@ integrator.t
 
 push!(integrator.opts.tstops,5.0)
 integrator.opts.advance_to_tstop=true
-step(integrator)
+step!(integrator)
 @test integrator.t == 5.0
 integrator.opts.advance_to_tstop=false
-step(integrator)
+step!(integrator)
 @test integrator.t > 5
 
 @test integrator.sol(0.9) == sol(0.9)
@@ -48,7 +48,7 @@ plot(integrator)
 for i in integrator
   display(plot!(integrator,vars=(0,1),legend=false))
 end
-step(integrator); plot!(integrator,vars=(0,1),legend=false)
+step!(integrator); plot!(integrator,vars=(0,1),legend=false)
 savefig("iteratorplot.png")
 
 integrator = init(prob,Tsit5();dt=1//2^(4),tstops=[0.5])
@@ -56,5 +56,5 @@ plot(integrator)
 for i in integrator
   display(plot!(integrator,vars=(0,1),legend=false,denseplot=false))
 end
-step(integrator); plot!(integrator,vars=(0,1),legend=false,denseplot=false)
+step!(integrator); plot!(integrator,vars=(0,1),legend=false,denseplot=false)
 =#
