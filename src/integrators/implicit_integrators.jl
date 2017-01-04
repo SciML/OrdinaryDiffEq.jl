@@ -25,9 +25,7 @@ end
     nlres = NLsolve.nlsolve(rhs,uhold,autodiff=alg_autodiff(integrator.alg))
   end
   uhold[1] = nlres.zero[1]
-  if integrator.opts.calck
-    k = f(t+dt,uhold[1])
-  end
+  k = f(t+dt,uhold[1])
   u = uhold[1]
   @pack integrator = t,dt,u,k
 end
@@ -68,9 +66,7 @@ end
     nlres = NLsolve.nlsolve(rhs,uhold,autodiff=alg_autodiff(integrator.alg))
   end
   copy!(uhold,nlres.zero)
-  if integrator.opts.calck
-    f(t+dt,u,k)
-  end
+  f(t+dt,u,k)
   @pack integrator = t,dt,u,k
 end
 
@@ -118,9 +114,7 @@ end
     nlres = NLsolve.nlsolve(rhs,uhold,autodiff=alg_autodiff(integrator.alg))
   end
   copy!(uhold,nlres.zero)
-  if integrator.opts.calck
-    f(t+dt,u,k)
-  end
+  f(t+dt,u,k)
   @pack integrator = t,dt,u,k
 end
 

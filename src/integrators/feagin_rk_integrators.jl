@@ -33,9 +33,7 @@ end
 end
 
 @inline function initialize!(integrator,cache::Feagin10Cache)
-  if integrator.calcprevs
-    integrator.kprev = similar(integrator.rate_prototype)
-  end
+  integrator.kprev = similar(integrator.rate_prototype)
   integrator.fsalfirst = integrator.cache.k1
   integrator.fsallast = integrator.cache.k
   integrator.k = integrator.cache.k
@@ -169,9 +167,7 @@ end
 end
 
 @inline function initialize!(integrator,cache::Feagin12Cache)
-  if integrator.calcprevs
-    integrator.kprev = similar(integrator.rate_prototype)
-  end
+  integrator.kprev = similar(integrator.rate_prototype)
   integrator.fsalfirst = integrator.cache.k1
   integrator.fsallast = integrator.cache.k
   integrator.k = integrator.cache.k
@@ -346,9 +342,7 @@ end
 end
 
 @inline function initialize!(integrator,cache::Feagin14Cache)
-  if integrator.calcprevs
-    integrator.kprev = similar(integrator.rate_prototype)
-  end
+  integrator.kprev = similar(integrator.rate_prototype)
   integrator.fsalfirst = integrator.cache.k1
   integrator.fsallast = integrator.cache.k
   integrator.k = integrator.cache.k

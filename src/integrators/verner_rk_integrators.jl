@@ -21,13 +21,11 @@ end
     utilde = uprev + dt*(b1*k1 + b4*k4 + b5*k5 + b6*k6 + b7*k7 + b8*k8 + b9*k9)
     integrator.EEst = abs( ((utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)))
   end
-  if integrator.opts.calck
-    integrator.k[1]=k1; integrator.k[2]=k2;
-    integrator.k[3]=k3; integrator.k[4]=k4;
-    integrator.k[5]=k5; integrator.k[6]=k6;
-    integrator.k[7]=k7; integrator.k[8]=k8;
-    integrator.k[9]=k9
-  end
+  integrator.k[1]=k1; integrator.k[2]=k2;
+  integrator.k[3]=k3; integrator.k[4]=k4;
+  integrator.k[5]=k5; integrator.k[6]=k6;
+  integrator.k[7]=k7; integrator.k[8]=k8;
+  integrator.k[9]=k9
   @pack integrator = t,dt,u,k
 end
 
@@ -113,13 +111,11 @@ end
   if integrator.opts.adaptive
     integrator.EEst = abs( ((update - dt*(bhat1*k1 + bhat4*k4 + bhat5*k5 + bhat6*k6 + bhat7*k7 + bhat10*k10))/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)))
   end
-  if integrator.opts.calck
-    integrator.k[1]=k1; integrator.k[2]=k2;
-    integrator.k[3]=k3; integrator.k[4]=k4;
-    integrator.k[5]=k5; integrator.k[6]=k6;
-    integrator.k[7]=k7; integrator.k[8]=k8;
-    integrator.k[9]=k9; integrator.k[10]=k10
-  end
+  integrator.k[1]=k1; integrator.k[2]=k2;
+  integrator.k[3]=k3; integrator.k[4]=k4;
+  integrator.k[5]=k5; integrator.k[6]=k6;
+  integrator.k[7]=k7; integrator.k[8]=k8;
+  integrator.k[9]=k9; integrator.k[10]=k10
   @pack integrator = t,dt,u,k
 end
 
@@ -213,15 +209,13 @@ end
   if integrator.opts.adaptive
     integrator.EEst = abs( ((update - dt*(bhat1*k1 + bhat6*k6 + bhat7*k7 + bhat8*k8 + bhat9*k9 + bhat10*k10 + bhat13*k13))/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)))
   end
-  if integrator.opts.calck
-    integrator.k[1]=k1; integrator.k[2]=k2;
-    integrator.k[3]=k3; integrator.k[4]=k4;
-    integrator.k[5]=k5; integrator.k[6]=k6;
-    integrator.k[7]=k7; integrator.k[8]=k8;
-    integrator.k[9]=k9; integrator.k[10]=k10;
-    integrator.k[11]=k11; integrator.k[12]=k12;
-    integrator.k[13]=k13
-  end
+  integrator.k[1]=k1; integrator.k[2]=k2;
+  integrator.k[3]=k3; integrator.k[4]=k4;
+  integrator.k[5]=k5; integrator.k[6]=k6;
+  integrator.k[7]=k7; integrator.k[8]=k8;
+  integrator.k[9]=k9; integrator.k[10]=k10;
+  integrator.k[11]=k11; integrator.k[12]=k12;
+  integrator.k[13]=k13
   @pack integrator = t,dt,u,k
 end
 
@@ -330,16 +324,14 @@ end
   if integrator.opts.adaptive
     integrator.EEst = abs((update - dt*(k1*bhat1 + k8*bhat8 + k9*bhat9 + k10*bhat10 + k11*bhat11 + k12*bhat12 + k13*bhat13 + k16*bhat16))/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
   end
-  if integrator.opts.calck
-    integrator.k[1]=k1; integrator.k[2]=k2;
-    integrator.k[3]=k3; integrator.k[4]=k4;
-    integrator.k[5]=k5; integrator.k[6]=k6;
-    integrator.k[7]=k7; integrator.k[8]=k8;
-    integrator.k[9]=k9; integrator.k[10]=k10;
-    integrator.k[11]=k11; integrator.k[12]=k12;
-    integrator.k[13]=k13; integrator.k[14]=k14;
-    integrator.k[15]=k15; integrator.k[16]=k16
-  end
+  integrator.k[1]=k1; integrator.k[2]=k2;
+  integrator.k[3]=k3; integrator.k[4]=k4;
+  integrator.k[5]=k5; integrator.k[6]=k6;
+  integrator.k[7]=k7; integrator.k[8]=k8;
+  integrator.k[9]=k9; integrator.k[10]=k10;
+  integrator.k[11]=k11; integrator.k[12]=k12;
+  integrator.k[13]=k13; integrator.k[14]=k14;
+  integrator.k[15]=k15; integrator.k[16]=k16
   @pack integrator = t,dt,u,k
 end
 

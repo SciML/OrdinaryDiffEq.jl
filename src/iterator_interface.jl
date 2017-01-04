@@ -4,8 +4,8 @@ function start(integrator::ODEIntegrator)
 end
 
 function next(integrator::ODEIntegrator,state)
-  integrator.iter += 1
-  step(integrator)
+  step(integrator) # Iter updated in the step header
+  # Next is callbacks -> iterator  -> top
   integrator,integrator.iter
 end
 
@@ -50,4 +50,5 @@ function step(integrator::ODEIntegrator)
    integrator.just_hit_tstop = true
   end
 end
+
 eltype(integrator::ODEIntegrator) = typeof(integrator)

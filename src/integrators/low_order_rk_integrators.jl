@@ -14,9 +14,7 @@ end
     utilde = uprev + dt*(b1*k1 + b2*k2 + b3*k3 + b4*k4)
     integrator.EEst = abs( ((utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)))
   end
-  if integrator.opts.calck
-    k = integrator.fsallast
-  end
+  k = integrator.fsallast
   @pack integrator = t,dt,u,k
 end
 
@@ -79,9 +77,7 @@ end
     EEst2 = abs( sum(((utilde-u)./(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))))
     integrator.EEst = max(EEst1,EEst2)
   end
-  if integrator.opts.calck
-    integrator.k[1]=k1; integrator.k[2]=k2; integrator.k[3]=k3;integrator.k[4]=k4;integrator.k[5]=k5;integrator.k[6]=k6;integrator.k[7]=k7;integrator.k[8]=k8
-  end
+  integrator.k[1]=k1; integrator.k[2]=k2; integrator.k[3]=k3;integrator.k[4]=k4;integrator.k[5]=k5;integrator.k[6]=k6;integrator.k[7]=k7;integrator.k[8]=k8
   @pack integrator = t,dt,u,k
 end
 
@@ -165,15 +161,13 @@ end
     utilde = uprev + dt*(b1*k1 + b2*k2 + b3*k3 + b4*k4 + b5*k5 + b6*k6 + b7*k7)
     integrator.EEst = abs(((utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)))
   end
-  if integrator.opts.calck
-    integrator.k[1] = k1
-    integrator.k[2] = k2
-    integrator.k[3] = k3
-    integrator.k[4] = k4
-    integrator.k[5] = k5
-    integrator.k[6] = k6
-    integrator.k[7] = k7
-  end
+  integrator.k[1] = k1
+  integrator.k[2] = k2
+  integrator.k[3] = k3
+  integrator.k[4] = k4
+  integrator.k[5] = k5
+  integrator.k[6] = k6
+  integrator.k[7] = k7
   @pack integrator = t,dt,u,k
 end
 
@@ -254,13 +248,11 @@ end
     utilde = uprev + dt*(b1*k1 + b3*k3 + b4*k4 + b5*k5 + b6*k6 + b7*k7)
     integrator.EEst = abs( ((utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)))
   end
-  if integrator.opts.calck
-    integrator.k[1] = update
-    bspl = k1 - update
-    integrator.k[2] = bspl
-    integrator.k[3] = update - k7 - bspl
-    integrator.k[4] = (d1*k1+d3*k3+d4*k4+d5*k5+d6*k6+d7*k7)
-  end
+  integrator.k[1] = update
+  bspl = k1 - update
+  integrator.k[2] = bspl
+  integrator.k[3] = update - k7 - bspl
+  integrator.k[4] = (d1*k1+d3*k3+d4*k4+d5*k5+d6*k6+d7*k7)
   @pack integrator = t,dt,u,k
 end
 
@@ -309,12 +301,10 @@ end
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
-  if integrator.opts.calck
-    for i in uidx
-      bspl[i] = k1[i] - update[i]
-      integrator.k[3][i] = update[i] - k7[i] - bspl[i]
-      integrator.k[4][i] = (d1*k1[i]+d3*k3[i]+d4*k4[i]+d5*k5[i]+d6*k6[i]+d7*k7[i])
-    end
+  for i in uidx
+    bspl[i] = k1[i] - update[i]
+    integrator.k[3][i] = update[i] - k7[i] - bspl[i]
+    integrator.k[4][i] = (d1*k1[i]+d3*k3[i]+d4*k4[i]+d5*k5[i]+d6*k6[i]+d7*k7[i])
   end
   @pack integrator = t,dt,u,k
 end

@@ -26,9 +26,7 @@ end
 end
 
 @inline function initialize!(integrator,cache::TanYam7Cache)
-  if integrator.calcprevs && integrator.opts.calck
-    integrator.kprev = similar(integrator.rate_prototype)
-  end
+  integrator.kprev = similar(integrator.rate_prototype)
   integrator.fsalfirst = integrator.cache.k1
   integrator.fsallast = integrator.cache.k
   integrator.k = integrator.cache.k
@@ -275,9 +273,7 @@ end
 end
 
 @inline function initialize!(integrator,cache::TsitPap8Cache)
-  if integrator.calcprevs
-    integrator.kprev = similar(integrator.rate_prototype)
-  end
+  integrator.kprev = similar(integrator.rate_prototype)
   integrator.fsalfirst = integrator.cache.k1
   integrator.fsallast = integrator.cache.k
   integrator.k = integrator.cache.k
