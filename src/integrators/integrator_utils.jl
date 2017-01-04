@@ -194,7 +194,7 @@ end
       end
     end
   end
-  if !(typeof(integrator.prog)<:Void) && integrator.iter%integrator.opts.progress_steps==0
+  if !(typeof(integrator.prog)<:Void) && integrator.opts.progress && integrator.iter%integrator.opts.progress_steps==0
     Juno.msg(integrator.prog,integrator.opts.progress_message(integrator.dt,integrator.t,integrator.u))
     Juno.progress(integrator.prog,integrator.t/integrator.sol.prob.tspan[2])
   end

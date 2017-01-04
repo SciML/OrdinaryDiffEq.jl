@@ -1,11 +1,10 @@
 function solve{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   prob::AbstractODEProblem{uType,tType,isinplace,F},
   alg::algType,timeseries=[],ts=[],ks=[];
-  timeseries_errors = true,dense_errors = false,
   kwargs...)
 
   integrator = init(prob,alg,timeseries,ts,ks;kwargs...)
-  solve!(integrator,timeseries_errors=timeseries_errors,dense_errors=dense_errors)
+  solve!(integrator)
   integrator.sol
 end
 
@@ -30,7 +29,8 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   dtmin=tType <: AbstractFloat ? tType(10)*eps(tType) : tType(1//10^(10)),
   internalnorm = ODE_DEFAULT_NORM,
   isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
-  advance_to_tstop = false,
+  timeseries_errors = true, dense_errors=false,
+  advance_to_tstop = false,stop_at_next_tstop=false,
   progress=false,progress_steps=1000,progress_name="ODE",
   progress_message = ODE_DEFAULT_PROG_MESSAGE,
   userdata=nothing,callback=nothing,kwargs...)
@@ -153,8 +153,10 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
     uEltypeNoUnits(reltol),tTypeNoUnits(gamma),tTypeNoUnits(qmax),tTypeNoUnits(qmin),
     dtmax,dtmin,internalnorm,tstops_internal,saveat_internal,userdata,
     progress,progress_steps,
-    progress_name,progress_message,tTypeNoUnits(beta1),tTypeNoUnits(beta2),tTypeNoUnits(qoldinit),dense,
-    callback,isoutofdomain,calck,advance_to_tstop)
+    progress_name,progress_message,
+    timeseries_errors,dense_errors,
+    tTypeNoUnits(beta1),tTypeNoUnits(beta2),tTypeNoUnits(qoldinit),dense,
+    callback,isoutofdomain,calck,advance_to_tstop,stop_at_next_tstop)
 
   progress ? (prog = Juno.ProgressBar(name=progress_name)) : prog = nothing
 
@@ -212,6 +214,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   qminc = inv(qmin) #facc1
   qmaxc = inv(qmax) #facc2
   EEst = tTypeNoUnits(1)
+  just_hit_tstop = false
 
   integrator = ODEIntegrator{algType,uType,tType,
                              tTypeNoUnits,eltype(ks),typeof(sol),
@@ -222,17 +225,17 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
                              alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,
                              dtpropose,dt_mod,tdir,qminc,qmaxc,EEst,qoldinit,
                              iter,saveiter,saveiter_dense,prog,cache,
-                             kshortsize,reeval_fsal,opts)
+                             kshortsize,just_hit_tstop,reeval_fsal,opts)
   integrator
 end
 
-function solve!(integrator::ODEIntegrator;timeseries_errors = true,dense_errors = false)
+function solve!(integrator::ODEIntegrator)
   #@code_warntype ode_solve(integrator)
   #for i in integrator end
   ode_solve(integrator)
 
   if typeof(integrator.sol.prob) <: AbstractODETestProblem
-    calculate_solution_errors!(integrator.sol;timeseries_errors=timeseries_errors,dense_errors=dense_errors)
+    calculate_solution_errors!(integrator.sol;timeseries_errors=integrator.opts.timeseries_errors,dense_errors=integrator.opts.dense_errors)
   end
   nothing
 end

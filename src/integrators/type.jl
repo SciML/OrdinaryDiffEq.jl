@@ -18,6 +18,8 @@ type DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5,tstopsType,
   progress_steps::Int
   progress_name::String
   progress_message::F5
+  timeseries_errors::Bool
+  dense_errors::Bool
   beta1::tTypeNoUnits
   beta2::tTypeNoUnits
   qoldinit::tTypeNoUnits
@@ -26,6 +28,7 @@ type DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5,tstopsType,
   isoutofdomain::F4
   calck::Bool
   advance_to_tstop::Bool
+  stop_at_next_tstop::Bool
 end
 
 type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,O} <: AbstractODEIntegrator
@@ -58,6 +61,7 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
   prog::ProgressType
   cache::CacheType
   kshortsize::Int
+  just_hit_tstop::Bool
   reeval_fsal::Bool
   opts::O
   fsalfirst::rateType
@@ -66,9 +70,9 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
   ODEIntegrator(sol,u,k,t,dt,f,uprev,kprev,tprev,adaptiveorder,
     order,alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,dtpropose,dt_mod,tdir,qminc,
       qmaxc,EEst,qold,iter,saveiter,saveiter_dense,prog,cache,
-      kshortsize,reeval_fsal,opts) = new(
+      kshortsize,just_hit_tstop,reeval_fsal,opts) = new(
     sol,u,k,t,dt,f,uprev,kprev,tprev,adaptiveorder,
       order,alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,dtpropose,dt_mod,tdir,qminc,
       qmaxc,EEst,qold,iter,saveiter,saveiter_dense,prog,cache,
-      kshortsize,reeval_fsal,opts) # Leave off fsalfirst and last
+      kshortsize,just_hit_tstop,reeval_fsal,opts) # Leave off fsalfirst and last
 end
