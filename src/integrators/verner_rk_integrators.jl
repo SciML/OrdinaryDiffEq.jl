@@ -31,24 +31,6 @@ end
   @pack integrator = t,dt,u,k
 end
 
-function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{Vern6,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
-  initialize!(integrator,integrator.cache)
-  @inbounds while !isempty(integrator.tstops)
-    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
-      ode_loopheader!(integrator)
-      @ode_exit_conditions
-      perform_step!(integrator,integrator.cache)
-      ode_loopfooter!(integrator)
-      if isempty(integrator.tstops)
-        break
-      end
-    end
-    !isempty(integrator.tstops) && pop!(integrator.tstops)
-  end
-  ode_postamble!(integrator)
-  nothing
-end
-
 @inline function initialize!(integrator,cache::Vern6Cache)
   integrator.kshortsize = 9
   integrator.fsalfirst = integrator.cache.k1 ; integrator.fsallast = integrator.cache.k9
@@ -107,24 +89,6 @@ end
   @pack integrator = t,dt,u,k
 end
 
-function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{Vern6,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
-  initialize!(integrator,integrator.cache)
-  @inbounds while !isempty(integrator.tstops)
-    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
-      ode_loopheader!(integrator)
-      @ode_exit_conditions
-      perform_step!(integrator,integrator.cache)
-      ode_loopfooter!(integrator)
-      if isempty(integrator.tstops)
-        break
-      end
-    end
-    !isempty(integrator.tstops) && pop!(integrator.tstops)
-  end
-  ode_postamble!(integrator)
-  nothing
-end
-
 @inline function initialize!(integrator,cache::Vern7ConstantCache)
   integrator.kshortsize = 10
   k = eltype(integrator.sol.k)(integrator.kshortsize)
@@ -157,24 +121,6 @@ end
     integrator.k[9]=k9; integrator.k[10]=k10
   end
   @pack integrator = t,dt,u,k
-end
-
-function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{Vern7,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
-  initialize!(integrator,integrator.cache)
-  @inbounds while !isempty(integrator.tstops)
-    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
-      ode_loopheader!(integrator)
-      @ode_exit_conditions
-      perform_step!(integrator,integrator.cache)
-      ode_loopfooter!(integrator)
-      if isempty(integrator.tstops)
-        break
-      end
-    end
-    !isempty(integrator.tstops) && pop!(integrator.tstops)
-  end
-  ode_postamble!(integrator)
-  nothing
 end
 
 @inline function initialize!(integrator,cache::Vern7Cache)
@@ -240,24 +186,6 @@ end
   @pack integrator = t,dt,u,k
 end
 
-function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{Vern7,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
-  initialize!(integrator,integrator.cache)
-  @inbounds while !isempty(integrator.tstops)
-    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
-      ode_loopheader!(integrator)
-      @ode_exit_conditions
-      perform_step!(integrator,integrator.cache)
-      ode_loopfooter!(integrator)
-      if isempty(integrator.tstops)
-        break
-      end
-    end
-    !isempty(integrator.tstops) && pop!(integrator.tstops)
-  end
-  ode_postamble!(integrator)
-  nothing
-end
-
 @inline function initialize!(integrator,cache::Vern8ConstantCache)
   integrator.kshortsize = 13
   k = eltype(integrator.sol.k)(integrator.kshortsize)
@@ -295,24 +223,6 @@ end
     integrator.k[13]=k13
   end
   @pack integrator = t,dt,u,k
-end
-
-function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{Vern8,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
-  initialize!(integrator,integrator.cache)
-  @inbounds while !isempty(integrator.tstops)
-    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
-      ode_loopheader!(integrator)
-      @ode_exit_conditions
-      perform_step!(integrator,integrator.cache)
-      ode_loopfooter!(integrator)
-      if isempty(integrator.tstops)
-        break
-      end
-    end
-    !isempty(integrator.tstops) && pop!(integrator.tstops)
-  end
-  ode_postamble!(integrator)
-  nothing
 end
 
 @inline function initialize!(integrator,cache::Vern8Cache)
@@ -390,24 +300,6 @@ end
   @pack integrator = t,dt,u,k
 end
 
-function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{Vern8,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
-  initialize!(integrator,integrator.cache)
-  @inbounds while !isempty(integrator.tstops)
-    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
-      ode_loopheader!(integrator)
-      @ode_exit_conditions
-      perform_step!(integrator,integrator.cache)
-      ode_loopfooter!(integrator)
-      if isempty(integrator.tstops)
-        break
-      end
-    end
-    !isempty(integrator.tstops) && pop!(integrator.tstops)
-  end
-  ode_postamble!(integrator)
-  nothing
-end
-
 @inline function initialize!(integrator,cache::Vern9ConstantCache)
   integrator.kshortsize = 16
   k = eltype(integrator.sol.k)(integrator.kshortsize)
@@ -449,24 +341,6 @@ end
     integrator.k[15]=k15; integrator.k[16]=k16
   end
   @pack integrator = t,dt,u,k
-end
-
-function ode_solve{uType<:Number,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{Vern9,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
-  initialize!(integrator,integrator.cache)
-  @inbounds while !isempty(integrator.tstops)
-    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
-      ode_loopheader!(integrator)
-      @ode_exit_conditions
-      perform_step!(integrator,integrator.cache)
-      ode_loopfooter!(integrator)
-      if isempty(integrator.tstops)
-        break
-      end
-    end
-    !isempty(integrator.tstops) && pop!(integrator.tstops)
-  end
-  ode_postamble!(integrator)
-  nothing
 end
 
 @inline function initialize!(integrator,cache::Vern9Cache)
@@ -554,22 +428,4 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   @pack integrator = t,dt,u,k
-end
-
-function ode_solve{uType<:AbstractArray,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O}(integrator::ODEIntegrator{Vern9,uType,tType,tstopsType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,ECType,O})
-  initialize!(integrator,integrator.cache)
-  @inbounds while !isempty(integrator.tstops)
-    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
-      ode_loopheader!(integrator)
-      @ode_exit_conditions
-      perform_step!(integrator,integrator.cache)
-      ode_loopfooter!(integrator)
-      if isempty(integrator.tstops)
-        break
-      end
-    end
-    !isempty(integrator.tstops) && pop!(integrator.tstops)
-  end
-  ode_postamble!(integrator)
-  nothing
 end
