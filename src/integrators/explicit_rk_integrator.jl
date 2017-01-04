@@ -41,9 +41,7 @@ end
     end
     integrator.EEst = abs( dt*(utilde-uEEst)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
   end
-  if integrator.opts.calck
-    k = kk[end]
-  end
+  k = kk[end]
   @pack integrator = t,dt,u,k
 end
 

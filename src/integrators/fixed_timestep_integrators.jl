@@ -44,11 +44,7 @@ end
 end
 
 @inline function initialize!(integrator,cache::MidpointCache)
-  if integrator.opts.calck # Not initialized if not dense
-    if integrator.calcprevs
-      integrator.kprev = similar(integrator.rate_prototype)
-    end
-  end
+  integrator.kprev = similar(integrator.rate_prototype)
   @unpack k,fsalfirst = integrator.cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
@@ -91,9 +87,7 @@ end
 end
 
 @inline function initialize!(integrator,cache::RK4Cache)
-  if integrator.calcprevs
-    integrator.kprev = similar(integrator.rate_prototype)
-  end
+  integrator.kprev = similar(integrator.rate_prototype)
   @unpack tmp,k₁,k₂,k₃,k₄,k = integrator.cache
   integrator.fsalfirst = k₁
   integrator.fsallast = k
