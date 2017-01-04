@@ -3,18 +3,16 @@ initialize{uType}(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) =
 
 @inline function ode_loopheader!(integrator)
   integrator.iter += 1
-  if !isempty(integrator.opts.tstops)
-    if integrator.opts.adaptive
-      if integrator.tdir > 0
-        integrator.dt = min(abs(integrator.dt),abs(top(integrator.opts.tstops)-integrator.t)) # Step to the end
-      else
-        integrator.dt = -min(abs(integrator.dt),abs(top(integrator.opts.tstops)-integrator.t))
-      end
-    elseif integrator.dtcache == zero(integrator.t) # Use integrator.opts.tstops
-      integrator.dt = integrator.tdir*abs(top(integrator.opts.tstops)-integrator.t)
-    else # always try to step with dtcache
-      integrator.dt = integrator.tdir*min(abs(integrator.dtcache),abs(top(integrator.opts.tstops)-integrator.t)) # Step to the end
+  if integrator.opts.adaptive && !isempty(integrator.opts.tstops)
+    if integrator.tdir > 0
+      integrator.dt = min(abs(integrator.dt),abs(top(integrator.opts.tstops)-integrator.t)) # Step to the end
+    else
+      integrator.dt = -min(abs(integrator.dt),abs(top(integrator.opts.tstops)-integrator.t))
     end
+  elseif integrator.dtcache == zero(integrator.t) && !isempty(integrator.opts.tstops) # Use integrator.opts.tstops
+    integrator.dt = integrator.tdir*abs(top(integrator.opts.tstops)-integrator.t)
+  elseif !isempty(integrator.opts.tstops) # always try to step with dtcache
+    integrator.dt = integrator.tdir*min(abs(integrator.dtcache),abs(top(integrator.opts.tstops)-integrator.t)) # Step to the end
   end
 end
 
