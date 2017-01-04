@@ -90,7 +90,8 @@ end
     q = max(integrator.qmaxc,min(integrator.qminc,q/integrator.opts.gamma))
     dtnew = integrator.dt/q
     ttmp = integrator.t + integrator.dt
-    if !integrator.opts.isoutofdomain(ttmp,integrator.u) && integrator.EEst <= 1.0 # Accept
+    integrator.accept_step = (!integrator.opts.isoutofdomain(ttmp,integrator.u) && integrator.EEst <= 1.0)
+    if integrator.accept_step # Accept
       integrator.t = ttmp
       integrator.qold = max(integrator.EEst,integrator.opts.qoldinit)
       if integrator.tdir > 0

@@ -62,6 +62,7 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
   cache::CacheType
   kshortsize::Int
   just_hit_tstop::Bool
+  accept_step::Bool
   reeval_fsal::Bool
   opts::O
   fsalfirst::rateType
@@ -70,9 +71,9 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
   ODEIntegrator(sol,u,k,t,dt,f,uprev,kprev,tprev,adaptiveorder,
     order,alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,dtpropose,dt_mod,tdir,qminc,
       qmaxc,EEst,qold,iter,saveiter,saveiter_dense,prog,cache,
-      kshortsize,just_hit_tstop,reeval_fsal,opts) = new(
+      kshortsize,just_hit_tstop,accept_step,reeval_fsal,opts) = new(
     sol,u,k,t,dt,f,uprev,kprev,tprev,adaptiveorder,
       order,alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,dtpropose,dt_mod,tdir,qminc,
       qmaxc,EEst,qold,iter,saveiter,saveiter_dense,prog,cache,
-      kshortsize,just_hit_tstop,reeval_fsal,opts) # Leave off fsalfirst and last
+      kshortsize,just_hit_tstop,accept_step,reeval_fsal,opts) # Leave off fsalfirst and last
 end
