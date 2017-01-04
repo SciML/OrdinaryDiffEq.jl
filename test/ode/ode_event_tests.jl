@@ -12,20 +12,18 @@ f = function (t,u,du)
   du[2] = -9.81
 end
 
-function event_f(t,u) # Event when event_f(t,u,k) == 0
+condtion= function (t,u,integrator) # Event when event_f(t,u,k) == 0
   u[1]
 end
 
-function apply_event!(u,cache)
-  u[2] = -u[2]
+affect! = function (integrator)
+  integrator.u[2] = -integrator.u[2]
 end
 
-const dt_safety = 1
-const interp_points = 10
-const terminate_on_event = false
-callback = @ode_callback begin
-  @ode_event event_f apply_event! true interp_points terminate_on_event dt_safety
-end
+interp_points = 10
+rootfind = true
+save_positions = (true,true)
+callback = Callback(condtion,affect!,rootfind,interp_points,save_positions)
 
 u0 = [50.0,0.0]
 tspan = (0.0,15.0)
@@ -54,17 +52,36 @@ sol2= solve(prob,Vern6())
 
 sol3= solve(prob,Vern6(),saveat=[.5])
 
-default_callback = @ode_callback begin
-  savevalues!(integrator)
+## Saving callback
+
+condtion= function (t,u,integrator) # Event when event_f(t,u,k) == 0
+  0
 end
 
-sol4 = solve(prob,Tsit5(),callback=default_callback)
+affect! = function (integrator) end
+
+interp_points = 0
+rootfind = false
+save_positions = (true,false)
+saving_callback = Callback(condtion,affect!,rootfind,interp_points,save_positions)
+
+sol4 = solve(prob,Tsit5(),callback=saving_callback)
 
 @test sol2(3) ≈ sol(3)
 
-terminate_callback = @ode_callback begin
-  @ode_event event_f apply_event! true interp_points true dt_safety
+
+condtion= function (t,u,integrator) # Event when event_f(t,u,k) == 0
+  u[1]
 end
+
+affect! = function (integrator)
+  terminate!(integrator)
+end
+
+interp_points = 10
+rootfind = true
+save_positions = (true,true)
+terminate_callback = Callback(condtion,affect!,rootfind,interp_points,save_positions)
 
 tspan2 = (0.0,Inf)
 prob2 = ODEProblem(f,u0,tspan2)

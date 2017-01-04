@@ -106,7 +106,9 @@ end
       integrator.t = ttmp
       calc_dt_propose!(integrator,dtnew)
       if !(typeof(integrator.opts.callback)<:Void)
-        integrator.opts.callback(integrator)
+        for c in integrator.opts.callback
+          apply_callback!(integrator,c)
+        end
       else
         savevalues!(integrator)
       end
@@ -115,7 +117,9 @@ end
     integrator.t += integrator.dt
     integrator.accept_step = true
     if !(typeof(integrator.opts.callback)<:Void)
-      integrator.opts.callback(integrator)
+      for c in integrator.opts.callback
+        apply_callback!(integrator,c)
+      end
     else
       savevalues!(integrator)
     end
