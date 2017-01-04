@@ -17,6 +17,11 @@ function ode_interpolant(Θ,integrator)
   ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.kprev,integrator.k,integrator.cache)
 end
 
+function current_interpolant(t,integrator)
+  Θ = (t-integrator.tprev)/integrator.dt
+  ode_interpolant(Θ,integrator)
+end
+
 ##
 
 """

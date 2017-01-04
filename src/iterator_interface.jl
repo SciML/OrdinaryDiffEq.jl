@@ -4,20 +4,9 @@ function start(integrator::ODEIntegrator)
 end
 
 function next(integrator::ODEIntegrator,state)
-  state += 1
-  if integrator.advance_to_tstop
-    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
-      ode_loopheader!(integrator)
-      perform_step!(integrator,integrator.cache)
-      ode_loopfooter!(integrator)
-    end
-  else
-    ode_loopheader!(integrator)
-    perform_step!(integrator,integrator.cache)
-    ode_loopfooter!(integrator)
-  end
-  !isempty(integrator.tstops) && integrator.t == top(integrator.tstops) && pop!(integrator.tstops)
-  integrator,state
+  integrator.iter += 1
+  step(integrator)
+  integrator,integrator.iter
 end
 
 function done(integrator::ODEIntegrator,state)
@@ -31,11 +20,34 @@ function done(integrator::ODEIntegrator,state)
     ode_postamble!(integrator)
     return true
   end
-  if isempty(integrator.tstops)
+  if isempty(integrator.opts.tstops)
     ode_postamble!(integrator)
     return true
+  elseif integrator.just_hit_tstop
+    integrator.just_hit_tstop = false
+    if integrator.opts.stop_at_next_tstop
+      ode_postamble!(integrator)
+      return true
+    end
   end
   false
 end
 
+function step(integrator::ODEIntegrator)
+  if integrator.opts.advance_to_tstop
+    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.opts.tstops)
+      ode_loopheader!(integrator)
+      perform_step!(integrator,integrator.cache)
+      ode_loopfooter!(integrator)
+    end
+  else
+    ode_loopheader!(integrator)
+    perform_step!(integrator,integrator.cache)
+    ode_loopfooter!(integrator)
+  end
+  if !isempty(integrator.opts.tstops) && integrator.t == top(integrator.opts.tstops)
+   pop!(integrator.opts.tstops)
+   integrator.just_hit_tstop = true
+  end
+end
 eltype(integrator::ODEIntegrator) = typeof(integrator)

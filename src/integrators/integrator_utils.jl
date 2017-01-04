@@ -3,16 +3,16 @@ initialize{uType}(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) =
 
 @inline function ode_loopheader!(integrator)
   integrator.iter += 1
-  if integrator.opts.adaptive
+  if integrator.opts.adaptive && !isempty(integrator.opts.tstops)
     if integrator.tdir > 0
-      integrator.dt = min(abs(integrator.dt),abs(top(integrator.tstops)-integrator.t)) # Step to the end
+      integrator.dt = min(abs(integrator.dt),abs(top(integrator.opts.tstops)-integrator.t)) # Step to the end
     else
-      integrator.dt = -min(abs(integrator.dt),abs(top(integrator.tstops)-integrator.t))
+      integrator.dt = -min(abs(integrator.dt),abs(top(integrator.opts.tstops)-integrator.t))
     end
-  elseif integrator.dtcache == zero(integrator.t) # Use integrator.tstops
-    integrator.dt = integrator.tdir*abs(top(integrator.tstops)-integrator.t)
-  else # always try to step with dtcache
-    integrator.dt = integrator.tdir*min(abs(integrator.dtcache),abs(top(integrator.tstops)-integrator.t)) # Step to the end
+  elseif integrator.dtcache == zero(integrator.t) && !isempty(integrator.opts.tstops) # Use integrator.opts.tstops
+    integrator.dt = integrator.tdir*abs(top(integrator.opts.tstops)-integrator.t)
+  elseif !isempty(integrator.opts.tstops) # always try to step with dtcache
+    integrator.dt = integrator.tdir*min(abs(integrator.dtcache),abs(top(integrator.opts.tstops)-integrator.t)) # Step to the end
   end
 end
 
@@ -35,10 +35,10 @@ end
 end
 
 @inline function ode_savevalues!(integrator)
-  while !isempty(integrator.saveat) && integrator.tdir*top(integrator.saveat) <= integrator.tdir*integrator.t # Perform saveat
+  while !isempty(integrator.opts.saveat) && integrator.tdir*top(integrator.opts.saveat) <= integrator.tdir*integrator.t # Perform saveat
     integrator.saveiter += 1
-    curt = pop!(integrator.saveat)
-    if integrator.saveat!=integrator.t # If <t, interpolate
+    curt = pop!(integrator.opts.saveat)
+    if integrator.opts.saveat!=integrator.t # If <t, interpolate
       ode_addsteps!(integrator)
       Θ = (curt - integrator.tprev)/integrator.dt
       val = ode_interpolant(Θ,integrator)
@@ -90,7 +90,8 @@ end
     q = max(integrator.qmaxc,min(integrator.qminc,q/integrator.opts.gamma))
     dtnew = integrator.dt/q
     ttmp = integrator.t + integrator.dt
-    if !integrator.opts.isoutofdomain(ttmp,integrator.u) && integrator.EEst <= 1.0 # Accept
+    integrator.accept_step = (!integrator.opts.isoutofdomain(ttmp,integrator.u) && integrator.EEst <= 1.0)
+    if integrator.accept_step # Accept
       integrator.t = ttmp
       integrator.qold = max(integrator.EEst,integrator.opts.qoldinit)
       if integrator.tdir > 0
@@ -194,7 +195,7 @@ end
       end
     end
   end
-  if !(typeof(integrator.prog)<:Void) && integrator.iter%integrator.opts.progress_steps==0
+  if !(typeof(integrator.prog)<:Void) && integrator.opts.progress && integrator.iter%integrator.opts.progress_steps==0
     Juno.msg(integrator.prog,integrator.opts.progress_message(integrator.dt,integrator.t,integrator.u))
     Juno.progress(integrator.prog,integrator.t/integrator.sol.prob.tspan[2])
   end

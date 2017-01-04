@@ -1,11 +1,10 @@
 function solve{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   prob::AbstractODEProblem{uType,tType,isinplace,F},
   alg::algType,timeseries=[],ts=[],ks=[];
-  timeseries_errors = true,dense_errors = false,
   kwargs...)
 
   integrator = init(prob,alg,timeseries,ts,ks;kwargs...)
-  solve!(integrator,timeseries_errors=timeseries_errors,dense_errors=dense_errors)
+  solve!(integrator)
   integrator.sol
 end
 
@@ -30,7 +29,8 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   dtmin=tType <: AbstractFloat ? tType(10)*eps(tType) : tType(1//10^(10)),
   internalnorm = ODE_DEFAULT_NORM,
   isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
-  advance_to_tstop = false,
+  timeseries_errors = true, dense_errors=false,
+  advance_to_tstop = false,stop_at_next_tstop=false,
   progress=false,progress_steps=1000,progress_name="ODE",
   progress_message = ODE_DEFAULT_PROG_MESSAGE,
   userdata=nothing,callback=nothing,kwargs...)
@@ -151,9 +151,12 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
 
   opts = DEOptions(maxiters,timeseries_steps,save_timeseries,adaptive,uEltype(abstol),
     uEltypeNoUnits(reltol),tTypeNoUnits(gamma),tTypeNoUnits(qmax),tTypeNoUnits(qmin),
-    dtmax,dtmin,internalnorm,progress,progress_steps,
-    progress_name,progress_message,tTypeNoUnits(beta1),tTypeNoUnits(beta2),tTypeNoUnits(qoldinit),dense,saveat_vec,
-    callback,isoutofdomain,calck)
+    dtmax,dtmin,internalnorm,tstops_internal,saveat_internal,userdata,
+    progress,progress_steps,
+    progress_name,progress_message,
+    timeseries_errors,dense_errors,
+    tTypeNoUnits(beta1),tTypeNoUnits(beta2),tTypeNoUnits(qoldinit),dense,
+    callback,isoutofdomain,calck,advance_to_tstop,stop_at_next_tstop)
 
   progress ? (prog = Juno.ProgressBar(name=progress_name)) : prog = nothing
 
@@ -211,44 +214,46 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   qminc = inv(qmin) #facc1
   qmaxc = inv(qmax) #facc2
   EEst = tTypeNoUnits(1)
+  just_hit_tstop = false
+  accept_step = false
 
-  integrator = ODEIntegrator{algType,uType,tType,typeof(tstops_internal),
+  integrator = ODEIntegrator{algType,uType,tType,
                              tTypeNoUnits,eltype(ks),typeof(sol),
                              typeof(rate_prototype),typeof(f!),typeof(prog),typeof(cache),
-                             typeof(userdata),typeof(opts)}(
+                             typeof(opts)}(
                              sol,u,k,t,tType(dt),f!,uprev,kprev,tprev,
-                             tstops_internal,saveat_internal,adaptiveorder,order,
+                             adaptiveorder,order,
                              alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,
                              dtpropose,dt_mod,tdir,qminc,qmaxc,EEst,qoldinit,
                              iter,saveiter,saveiter_dense,prog,cache,
-                             userdata,kshortsize,reeval_fsal,advance_to_tstop,opts)
+                             kshortsize,just_hit_tstop,accept_step,reeval_fsal,opts)
   integrator
 end
 
-function solve!(integrator::ODEIntegrator;timeseries_errors = true,dense_errors = false)
+function solve!(integrator::ODEIntegrator)
   #@code_warntype ode_solve(integrator)
   #for i in integrator end
   ode_solve(integrator)
 
   if typeof(integrator.sol.prob) <: AbstractODETestProblem
-    calculate_solution_errors!(integrator.sol;timeseries_errors=timeseries_errors,dense_errors=dense_errors)
+    calculate_solution_errors!(integrator.sol;timeseries_errors=integrator.opts.timeseries_errors,dense_errors=integrator.opts.dense_errors)
   end
   nothing
 end
 
 function ode_solve(integrator::ODEIntegrator)
   initialize!(integrator,integrator.cache)
-  @inbounds while !isempty(integrator.tstops)
-    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.tstops)
+  @inbounds while !isempty(integrator.opts.tstops)
+    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.opts.tstops)
       ode_loopheader!(integrator)
       @ode_exit_conditions
       perform_step!(integrator,integrator.cache)
       ode_loopfooter!(integrator)
-      if isempty(integrator.tstops)
+      if isempty(integrator.opts.tstops)
         break
       end
     end
-    !isempty(integrator.tstops) && pop!(integrator.tstops)
+    !isempty(integrator.opts.tstops) && pop!(integrator.opts.tstops)
   end
   ode_postamble!(integrator)
   nothing

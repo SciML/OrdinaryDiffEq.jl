@@ -129,5 +129,5 @@ function cache_replace_length(ex::Any)
 end
 
 @def ode_terminate begin
-  integrator.tstops.valtree = typeof(integrator.tstops.valtree)()
+  integrator.opts.tstops.valtree = typeof(integrator.opts.tstops.valtree)()
 end
