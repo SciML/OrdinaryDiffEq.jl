@@ -93,110 +93,90 @@ end
     integrator.accept_step = (!integrator.opts.isoutofdomain(ttmp,integrator.u) && integrator.EEst <= 1.0)
     if integrator.accept_step # Accept
       integrator.t = ttmp
-      integrator.qold = max(integrator.EEst,integrator.opts.qoldinit)
-      if integrator.tdir > 0
-        integrator.dtpropose = min(integrator.opts.dtmax,dtnew)
-      else
-        integrator.dtpropose = max(integrator.opts.dtmax,dtnew)
-      end
-      if integrator.tdir > 0
-        integrator.dtpropose = max(integrator.dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
-      else
-        integrator.dtpropose = min(integrator.dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
-      end
+      calc_dt_propose!(integrator,dtnew)
       if !(typeof(integrator.opts.callback)<:Void)
         integrator.opts.callback(integrator)
       else
         ode_savevalues!(integrator)
       end
-
-      if typeof(integrator.u) <: AbstractArray
-        recursivecopy!(integrator.uprev,integrator.u)
-      else
-        integrator.uprev = integrator.u
-      end
-
-      integrator.dt = integrator.dt_mod*integrator.dtpropose
-
-      if isfsal(integrator.alg)
-        if integrator.reeval_fsal || (typeof(integrator.alg)<:DP8 && !integrator.opts.calck)
-          # Under these condtions, these algorithms are not FSAL anymore
-          if typeof(integrator.fsalfirst) <: AbstractArray
-            integrator.f(integrator.t,integrator.u,integrator.fsalfirst)
-          else
-            integrator.fsalfirst = integrator.f(integrator.t,integrator.u)
-          end
-          integrator.reeval_fsal = false
-        else
-          if typeof(integrator.fsalfirst) <: AbstractArray
-            recursivecopy!(integrator.fsalfirst,integrator.fsallast)
-          else
-            integrator.fsalfirst = integrator.fsallast
-          end
-        end
-      end
-
-      if integrator.calcprevs
-        integrator.tprev = integrator.t
-        if !isspecialdense(integrator.alg) && integrator.opts.calck
-          if typeof(integrator.k) <: AbstractArray
-            recursivecopy!(integrator.kprev,integrator.k)
-          else
-            integrator.kprev = integrator.k
-          end
-        end
-      end
+      apply_step!(integrator)
     else # Reject
       integrator.dt = integrator.dt/min(integrator.qminc,q11/integrator.opts.gamma)
     end
   else #Not adaptive
     integrator.t += integrator.dt
-
     if !(typeof(integrator.opts.callback)<:Void)
       integrator.opts.callback(integrator)
     else
       ode_savevalues!(integrator)
     end
-
-    if typeof(integrator.u) <: AbstractArray
-      recursivecopy!(integrator.uprev,integrator.u)
-    else
-      integrator.uprev = integrator.u
-    end
-
-    integrator.dt *= integrator.dt_mod
-
-    if isfsal(integrator.alg)
-      if integrator.reeval_fsal || (typeof(integrator.alg)<:DP8 && !integrator.opts.calck) || typeof(integrator.alg)<:Union{Rosenbrock23,Rosenbrock32}
-        # Under these condtions, these algorithms are not FSAL anymore
-        if typeof(integrator.fsalfirst) <: AbstractArray
-          integrator.f(integrator.t,integrator.u,integrator.fsalfirst)
-        else
-          integrator.fsalfirst = integrator.f(integrator.t,integrator.u)
-        end
-        integrator.reeval_fsal = false
-      else
-        if typeof(integrator.fsalfirst) <: AbstractArray
-          recursivecopy!(integrator.fsalfirst,integrator.fsallast)
-        else
-          integrator.fsalfirst = integrator.fsallast
-        end
-      end
-    end
-
-    if integrator.calcprevs
-      integrator.tprev = integrator.t
-      if !isspecialdense(integrator.alg) && integrator.opts.calck
-        if typeof(integrator.k) <: AbstractArray && !isspecialdense(integrator.alg)
-          recursivecopy!(integrator.kprev,integrator.k)
-        else
-          integrator.kprev = integrator.k
-        end
-      end
-    end
+    apply_step!(integrator)
   end
   if !(typeof(integrator.prog)<:Void) && integrator.opts.progress && integrator.iter%integrator.opts.progress_steps==0
     Juno.msg(integrator.prog,integrator.opts.progress_message(integrator.dt,integrator.t,integrator.u))
     Juno.progress(integrator.prog,integrator.t/integrator.sol.prob.tspan[2])
+  end
+end
+
+@inline function apply_step!(integrator)
+  #Update uprev
+  if typeof(integrator.u) <: AbstractArray
+    recursivecopy!(integrator.uprev,integrator.u)
+  else
+    integrator.uprev = integrator.u
+  end
+
+  #Update dt if adaptive
+  if integrator.opts.adaptive
+    integrator.dt = integrator.dt_mod*integrator.dtpropose
+  end
+
+  # Update fsal if needed
+  if isfsal(integrator.alg)
+    if integrator.reeval_fsal || (typeof(integrator.alg)<:DP8 && !integrator.opts.calck) || (typeof(integrator.alg)<:Union{Rosenbrock23,Rosenbrock32} && !integrator.opts.adaptive)
+      # Under these condtions, these algorithms are not FSAL anymore
+      if typeof(integrator.fsalfirst) <: AbstractArray
+        integrator.f(integrator.t,integrator.u,integrator.fsalfirst)
+      else
+        integrator.fsalfirst = integrator.f(integrator.t,integrator.u)
+      end
+      integrator.reeval_fsal = false
+    else
+      if typeof(integrator.fsalfirst) <: AbstractArray
+        recursivecopy!(integrator.fsalfirst,integrator.fsallast)
+      else
+        integrator.fsalfirst = integrator.fsallast
+      end
+    end
+  end
+
+  # Update kprev
+  integrator.tprev = integrator.t
+  if integrator.calcprevs # Is this a micro-optimization that can be removed?
+    if !isspecialdense(integrator.alg) && integrator.opts.calck
+      if typeof(integrator.k) <: AbstractArray
+        recursivecopy!(integrator.kprev,integrator.k)
+      else
+        integrator.kprev = integrator.k
+      end
+    end
+  end
+
+  integrator.dt_mod = typeof(integrator.t)(1)
+end
+
+
+
+@inline function calc_dt_propose!(integrator,dtnew)
+  integrator.qold = max(integrator.EEst,integrator.opts.qoldinit)
+  if integrator.tdir > 0
+    integrator.dtpropose = min(integrator.opts.dtmax,dtnew)
+  else
+    integrator.dtpropose = max(integrator.opts.dtmax,dtnew)
+  end
+  if integrator.tdir > 0
+    integrator.dtpropose = max(integrator.dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
+  else
+    integrator.dtpropose = min(integrator.dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
   end
 end

@@ -50,4 +50,5 @@ function step(integrator::ODEIntegrator)
    integrator.just_hit_tstop = true
   end
 end
+
 eltype(integrator::ODEIntegrator) = typeof(integrator)
