@@ -149,6 +149,13 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
     push!(ks,[rate_prototype])
   end
 
+  if typeof(callback) <: DECallback
+    # Change it to a tuple
+    callback_internal = (callback,)
+  else
+    callback_internal = callback
+  end
+
   opts = DEOptions(maxiters,timeseries_steps,save_timeseries,adaptive,uEltype(abstol),
     uEltypeNoUnits(reltol),tTypeNoUnits(gamma),tTypeNoUnits(qmax),tTypeNoUnits(qmin),
     dtmax,dtmin,internalnorm,tstops_internal,saveat_internal,userdata,
@@ -156,7 +163,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
     progress_name,progress_message,
     timeseries_errors,dense_errors,
     tTypeNoUnits(beta1),tTypeNoUnits(beta2),tTypeNoUnits(qoldinit),dense,
-    callback,isoutofdomain,calck,advance_to_tstop,stop_at_next_tstop)
+    callback_internal,isoutofdomain,calck,advance_to_tstop,stop_at_next_tstop)
 
   progress ? (prog = Juno.ProgressBar(name=progress_name)) : prog = nothing
 
