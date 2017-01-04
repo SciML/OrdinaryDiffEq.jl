@@ -192,12 +192,13 @@ sim = test_convergence(dts,probnumbig,TanYam7())
 sim = test_convergence(dts,probbig,TanYam7())
 @test abs(sim.𝒪est[:l2]-7) < testTol
 
-tabalg = ExplicitRK(tableau=constructTanakaYamashitaEfficient7(BigFloat))
+tabalg = ExplicitRK(tableau=constructTanakaYamashitaEfficient7(Float64))
 sol1 =solve(probnum,TanYam7(),dt=1/2^6,adaptive=false,save_timeseries=false)
 sol2 =solve(probnum,tabalg,dt=1/2^6,adaptive=false,save_timeseries=false)
 
 @test sol1.u[end] - sol2.u[end] < 1e-10
 
+tabalg = ExplicitRK(tableau=constructTanakaYamashitaEfficient7(BigFloat))
 sol1 =solve(probbig,TanYam7(),dt=1/2^3,adaptive=false,save_timeseries=false)
 sol2 =solve(probbig,tabalg,dt=1/2^3,adaptive=false,save_timeseries=false)
 

@@ -2,7 +2,18 @@ initialize{uType}(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) =
                 error("This algorithm does not have an initialization function")
 
 @inline function ode_loopheader!(integrator)
+  # Apply right after iterators / callbacks
+  if integrator.iter > 0
+    if (integrator.opts.adaptive && integrator.accept_step) || !integrator.opts.adaptive
+      apply_step!(integrator)
+    elseif integrator.opts.adaptive && !integrator.accept_step
+      integrator.dt = integrator.dt/min(integrator.qminc,q11/integrator.opts.gamma)
+    end
+  end
+
   integrator.iter += 1
+
+  #Modify dt due to tstops
   if integrator.opts.adaptive && !isempty(integrator.opts.tstops)
     if integrator.tdir > 0
       integrator.dt = min(abs(integrator.dt),abs(top(integrator.opts.tstops)-integrator.t)) # Step to the end
@@ -99,9 +110,6 @@ end
       else
         ode_savevalues!(integrator)
       end
-      apply_step!(integrator)
-    else # Reject
-      integrator.dt = integrator.dt/min(integrator.qminc,q11/integrator.opts.gamma)
     end
   else #Not adaptive
     integrator.t += integrator.dt
@@ -110,7 +118,6 @@ end
     else
       ode_savevalues!(integrator)
     end
-    apply_step!(integrator)
   end
   if !(typeof(integrator.prog)<:Void) && integrator.opts.progress && integrator.iter%integrator.opts.progress_steps==0
     Juno.msg(integrator.prog,integrator.opts.progress_message(integrator.dt,integrator.t,integrator.u))
@@ -180,3 +187,5 @@ end
     integrator.dtpropose = min(integrator.dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
   end
 end
+
+(integrator::ODEIntegrator)(t) = current_interpolant(t,integrator)

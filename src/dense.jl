@@ -17,9 +17,14 @@ function ode_interpolant(Θ,integrator)
   ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.kprev,integrator.k,integrator.cache)
 end
 
-function current_interpolant(t,integrator)
+function current_interpolant(t::Number,integrator)
   Θ = (t-integrator.tprev)/integrator.dt
   ode_interpolant(Θ,integrator)
+end
+
+function current_interpolant(t::AbstractArray,integrator)
+  Θ = (t.-integrator.tprev)./integrator.dt
+  [ode_interpolant(ϕ,integrator) for ϕ in Θ]
 end
 
 ##
