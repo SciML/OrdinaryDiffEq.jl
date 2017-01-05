@@ -221,7 +221,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   EEst = tTypeNoUnits(1)
   just_hit_tstop = false
   accept_step = false
-  dtchangeable = is_dtchangeable(alg)
+  dtchangeable = isdtchangeable(alg)
 
   integrator = ODEIntegrator{algType,uType,tType,
                              tTypeNoUnits,eltype(ks),typeof(sol),

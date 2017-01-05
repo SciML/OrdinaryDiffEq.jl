@@ -1,40 +1,46 @@
-function isfsal(alg::OrdinaryDiffEqAlgorithm)
-  if typeof(alg) <: DP5 || typeof(alg) <: DP5Threaded || typeof(alg) <: DP8 ||
-     typeof(alg) <: BS3 || typeof(alg) <: BS5 || typeof(alg) <: Tsit5 ||
-     typeof(alg) <: Vern6 || typeof(alg) <: Rosenbrock23 ||
-     typeof(alg) <: Rosenbrock32 || typeof(alg)<:Euler ||
-     typeof(alg) <: Midpoint || typeof(alg) <: RK4 ||
-     typeof(alg) <: Feagin10 || typeof(alg) <: Feagin12 ||
-     typeof(alg) <: Feagin14 || typeof(alg) <: TanYam7 || typeof(alg) <: TsitPap8 ||
-     typeof(alg) <: Trapezoid
-    return true
-  else
-    return false
-  end
-end
-
+isfsal(alg::OrdinaryDiffEqAlgorithm) = false
+isfsal(alg::DP5) = true
+isfsal(alg::DP5Threaded) = true
+isfsal(alg::DP8) = true
+isfsal(alg::BS3) = true
+isfsal(alg::BS5) = true
+isfsal(alg::Tsit5) = true
+isfsal(alg::Vern6) = true
+isfsal(alg::Rosenbrock23) = true
+isfsal(alg::Rosenbrock32) = true
+isfsal(alg::Euler) = true
+isfsal(alg::Midpoint) = true
+isfsal(alg::RK4) = true
+isfsal(alg::Feagin10) = true
+isfsal(alg::Feagin12) = true
+isfsal(alg::Feagin14) = true
+isfsal(alg::TanYam7) = true
+isfsal(alg::TsitPap8) = true
+isfsal(alg::Trapezoid) = true
 isfsal(alg::ExplicitRK) = isfsal(alg.tableau)
 isfsal{MType,VType,fsal}(tab::ExplicitRKTableau{MType,VType,fsal}) = fsal
 isfsal(tab::ImplicitRKTableau) = false
 
-is_dtchangeable(alg::OrdinaryDiffEqAlgorithm) = true
+isspecialdense(alg::OrdinaryDiffEqAlgorithm) = false
+isspecialdense(alg::DP5) = true
+isspecialdense(alg::DP5Threaded) = true
+isspecialdense(alg::DP8) = true
+isspecialdense(alg::Rosenbrock23) = true
+isspecialdense(alg::Rosenbrock32) = true
+isspecialdense(alg::BS5) = true
+isspecialdense(alg::Tsit5) = true
+isspecialdense(alg::Vern6) = true
+isspecialdense(alg::Vern7) = true
+isspecialdense(alg::Vern8) = true
+isspecialdense(alg::Vern9) = true
 
-function isspecialdense(alg::OrdinaryDiffEqAlgorithm)
-  if typeof(alg) <: DP5 || typeof(alg) <: DP5Threaded || typeof(alg) <: DP8 || typeof(alg) <: BS5 || typeof(alg) <: Tsit5 || typeof(alg) <: Vern6 || typeof(alg) <: Vern7 || typeof(alg) <: Vern8 || typeof(alg) <: Vern9 ||
-  typeof(alg) <: Rosenbrock23 || typeof(alg) <: Rosenbrock32
-    return true
-  else
-    return false
-  end
-end
+isimplicit(alg::OrdinaryDiffEqAlgorithm) = false
+isimplicit(alg::ImplicitEuler) = true
+isimplicit(alg::Trapezoid) = true
 
-function isimplicit(alg::OrdinaryDiffEqAlgorithm)
-  if typeof(alg) <: ImplicitEuler || typeof(alg) <: Trapezoid
-    return true
-  else
-    return false
-  end
-end
+isdtchangeable(alg::OrdinaryDiffEqAlgorithm) = true
+
+ismultistep(alg::OrdinaryDiffEqAlgorithm) = false
 
 function get_kseltype(alg::OrdinaryDiffEqAlgorithm,prob)
   rateType = typeof(prob.u0/zero(prob.tspan[1]))
