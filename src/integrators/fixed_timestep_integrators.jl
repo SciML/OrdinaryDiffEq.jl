@@ -12,7 +12,7 @@ end
 end
 
 @inline function initialize!(integrator,cache::EulerCache)
-  @unpack k,fsalfirst = integrator.cache
+  @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
   integrator.k = k
@@ -45,7 +45,7 @@ end
 
 @inline function initialize!(integrator,cache::MidpointCache)
   integrator.kprev = similar(integrator.rate_prototype)
-  @unpack k,fsalfirst = integrator.cache
+  @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
   integrator.k = k
@@ -55,7 +55,7 @@ end
 @inline function perform_step!(integrator::ODEIntegrator,cache::MidpointCache)
   @unpack t,dt,uprev,u,f,k = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack k,du,utilde,fsalfirst = integrator.cache
+  @unpack k,du,utilde,fsalfirst = cache
   halfdt = dt/2
   for i in uidx
     utilde[i] = muladd(halfdt,integrator.fsalfirst[i],uprev[i])
@@ -88,7 +88,7 @@ end
 
 @inline function initialize!(integrator,cache::RK4Cache)
   integrator.kprev = similar(integrator.rate_prototype)
-  @unpack tmp,k₁,k₂,k₃,k₄,k = integrator.cache
+  @unpack tmp,k₁,k₂,k₃,k₄,k = cache
   integrator.fsalfirst = k₁
   integrator.fsallast = k
   integrator.k = k
@@ -98,7 +98,7 @@ end
 @inline function perform_step!(integrator::ODEIntegrator,cache::RK4Cache)
   @unpack t,dt,uprev,u,f,k = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack tmp,k₁,k₂,k₃,k₄,k = integrator.cache
+  @unpack tmp,k₁,k₂,k₃,k₄,k = cache
   halfdt = dt/2
   ttmp = t+halfdt
   for i in uidx

@@ -15,7 +15,7 @@ end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::ImplicitEulerConstantCache)
   @unpack t,dt,uprev,u,f,k = integrator
-  @unpack uhold,u_old,rhs,adf = integrator.cache
+  @unpack uhold,u_old,rhs,adf = cache
   u_old[1] = uhold[1]
   rhs.t = t
   rhs.dt = dt
@@ -54,7 +54,7 @@ end
 @inline function perform_step!(integrator::ODEIntegrator,cache::ImplicitEulerCache)
   @unpack t,dt,uprev,u,f,k = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack u_old,dual_cache,k,adf,rhs,uhold = integrator.cache
+  @unpack u_old,dual_cache,k,adf,rhs,uhold = cache
   copy!(u_old,uhold)
   rhs.t = t
   rhs.dt = dt
@@ -91,7 +91,7 @@ end
 
 @inline function initialize!(integrator,cache::TrapezoidCache)
   integrator.k = cache.k
-  @unpack k,f_old = integrator.cache
+  @unpack k,f_old = cache
   integrator.fsalfirst = f_old
   integrator.fsallast = cache.k
   integrator.k = k
@@ -101,7 +101,7 @@ end
 @inline function perform_step!(integrator::ODEIntegrator,cache::TrapezoidCache)
   @unpack t,dt,uprev,u,f,k = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack u_old,dual_cache,k,rhs,adf,uhold = integrator.cache
+  @unpack u_old,dual_cache,k,rhs,adf,uhold = cache
   copy!(u_old,uhold)
   # copy!(rhs.f_old,f_old) Implicitly done by pointers: fsalfirst === f_old == rhs.f_old
   rhs.t = t
@@ -137,7 +137,7 @@ end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::TrapezoidConstantCache)
   @unpack t,dt,uprev,u,f,k = integrator
-  @unpack uhold,u_old,rhs,adf = integrator.cache
+  @unpack uhold,u_old,rhs,adf = cache
   u_old[1] = uhold[1]
   rhs.t = t
   rhs.dt = dt

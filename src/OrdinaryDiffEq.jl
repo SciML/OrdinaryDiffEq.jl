@@ -4,7 +4,7 @@ module OrdinaryDiffEq
 
   using DiffEqBase
 
-  import DiffEqBase: solve, solve!, init, step!
+  import DiffEqBase: solve, solve!, init, step!, build_solution
 
   using Parameters, GenericSVD, ForwardDiff, InplaceOps, RecursiveArrayTools,
         Ranges, NLsolve, RecipesBase, Juno, Calculus, Roots, DataStructures
@@ -40,9 +40,11 @@ module OrdinaryDiffEq
   include("integrators/rosenbrock_integrators.jl")
   include("integrators/threaded_rk_integrators.jl")
   include("integrators/integrator_interface.jl")
+  include("integrators/composite_integrator.jl")
   include("iterator_interface.jl")
   include("constants.jl")
   include("callbacks.jl")
+  include("composite_solution.jl")
   include("solve.jl")
   include("initdt.jl")
   include("dense.jl")
@@ -65,5 +67,6 @@ module OrdinaryDiffEq
   export OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveAlgorithm,
         Euler, Midpoint, RK4, ExplicitRK, BS3, BS5, DP5, DP5Threaded, Tsit5,
         DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8, Vern9, ImplicitEuler,
-        Trapezoid, Rosenbrock23, Rosenbrock32, Feagin10, Feagin12, Feagin14
+        Trapezoid, Rosenbrock23, Rosenbrock32, Feagin10, Feagin12, Feagin14,
+        CompositeAlgorithm
 end # module

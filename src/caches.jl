@@ -1,16 +1,18 @@
 abstract OrdinaryDiffEqCache <: DECache
-abstract OrdinaryDiffEqConstantCache <: DECache
-abstract OrdinaryDiffEqMutableCache <: DECache
+abstract OrdinaryDiffEqConstantCache <: OrdinaryDiffEqCache
+abstract OrdinaryDiffEqMutableCache <: OrdinaryDiffEqCache
 immutable ODEEmptyCache <: OrdinaryDiffEqConstantCache end
 immutable ODEChunkCache{CS} <: OrdinaryDiffEqConstantCache end
 
-immutable CompositeCache{T} <: OrdinaryDiffEqCache
+type CompositeCache{T,F} <: OrdinaryDiffEqCache
   caches::T
+  choice_function::F
+  current::Int
 end
 
-Base.@pure function alg_cache(alg::CompositeAlgorithm,u,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t,::Type{Val{false}})
-  caches = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t)
-  CompositeCaches(caches)
+Base.@pure function alg_cache{T}(alg::CompositeAlgorithm,u,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t,::Type{Val{T}})
+  caches = map((x)->alg_cache(x,u,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t,Val{T}),alg.algs)
+  CompositeCache(caches,alg.choice_function,1)
 end
 
 alg_cache{F}(alg::OrdinaryDiffEqAlgorithm,prob,callback::F) = ODEEmptyCache()

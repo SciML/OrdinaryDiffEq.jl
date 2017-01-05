@@ -9,12 +9,23 @@ initialize{uType}(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) =
     if (integrator.opts.adaptive && integrator.accept_step) || !integrator.opts.adaptive
       apply_step!(integrator)
     elseif integrator.opts.adaptive && !integrator.accept_step
-      integrator.dt = integrator.dt/min(inv(integrator.opts.qmin),q11/integrator.opts.gamma)
+      integrator.dt = integrator.dt/min(inv(integrator.opts.qmin),integrator.q11/integrator.opts.gamma)
     end
   end
 
   integrator.iter += 1
   modify_dt_for_tstops!(integrator)
+  choose_algorithm!(integrator,integrator.cache)
+end
+
+@inline choose_algorithm!(integrator,cache::OrdinaryDiffEqCache) = nothing
+@inline function choose_algorithm!(integrator,cache::CompositeCache)
+  new_current = cache.choice_function(integrator)
+  if new_current != cache.current
+    initialize!(integrator,cache.caches[new_current])
+    reset_alg_dependent_opts!(integrator,integrator.alg.algs[cache.current],integrator.alg.algs[new_current])
+    cache.current = new_current
+  end
 end
 
 @inline function modify_dt_for_tstops!(integrator)
@@ -62,6 +73,9 @@ end
       val = ode_interpolant(Θ,integrator)
       copyat_or_push!(integrator.sol.t,integrator.saveiter,curt)
       copyat_or_push!(integrator.sol.u,integrator.saveiter,val)
+      if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
+        copyat_or_push!(integrator.sol.alg_choice,integrator.saveiter,integrator.cache.current)
+      end
     else # ==t, just save
       copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
       copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
@@ -69,6 +83,9 @@ end
         integrator.saveiter_dense += 1
         copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
         copyat_or_push!(integrator.notsaveat_idxs,integrator.saveiter_dense,integrator.saveiter)
+      end
+      if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
+        copyat_or_push!(integrator.sol.alg_choice,integrator.saveiter,integrator.cache.current)
       end
     end
   end
@@ -80,6 +97,9 @@ end
       integrator.saveiter_dense += 1
       copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
       copyat_or_push!(integrator.notsaveat_idxs,integrator.saveiter_dense,integrator.saveiter)
+    end
+    if typeof(integrator.alg) <: OrdinaryDiffEqCompositeAlgorithm
+      copyat_or_push!(integrator.sol.alg_choice,integrator.saveiter,integrator.cache.current)
     end
   end
   if isspecialdense(integrator.alg)
@@ -118,8 +138,8 @@ end
 
 @inline function loopfooter!(integrator)
   if integrator.opts.adaptive
-    q11 = integrator.EEst^integrator.opts.beta1
-    q = q11/(integrator.qold^integrator.opts.beta2)
+    integrator.q11 = integrator.EEst^integrator.opts.beta1
+    q = integrator.q11/(integrator.qold^integrator.opts.beta2)
     q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),q/integrator.opts.gamma))
     dtnew = integrator.dt/q
     ttmp = integrator.t + integrator.dt
@@ -246,20 +266,20 @@ for the second algorithm.
 """
 @inline function reset_alg_dependent_opts!(integrator,alg1,alg2)
   integrator.dtchangeable = isdtchangeable(alg2)
-  if integrator.adaptive == isadaptive(alg1)
-    integrator.adaptve = isadaptive(alg2)
+  if integrator.opts.adaptive == isadaptive(alg1)
+    integrator.opts.adaptive = isadaptive(alg2)
   end
-  if integrator.qmin == qmin_default(alg1)
-    integrator.qmin = qmin_default(alg2)
+  if integrator.opts.qmin == qmin_default(alg1)
+    integrator.opts.qmin = qmin_default(alg2)
   end
-  if integrator.qmax == qmax_default(alg1)
-    integrator.qmax == qmax_default(alg2)
+  if integrator.opts.qmax == qmax_default(alg1)
+    integrator.opts.qmax == qmax_default(alg2)
   end
-  if integrator.beta2 == beta2_default(alg1)
-    integrator.beta2 = beta2_default(alg2)
+  if integrator.opts.beta2 == beta2_default(alg1)
+    integrator.opts.beta2 = beta2_default(alg2)
   end
-  if integrator.beta1 == beta1_default(alg1,integrator.beta2)
-    integrator.beta1 = beta1_default(alg2,integrator.beta2)
+  if integrator.opts.beta1 == beta1_default(alg1,integrator.opts.beta2)
+    integrator.opts.beta1 = beta1_default(alg2,integrator.opts.beta2)
   end
 end
 

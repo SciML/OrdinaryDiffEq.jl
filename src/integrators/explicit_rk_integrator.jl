@@ -6,8 +6,8 @@ end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::ExplicitRKConstantCache)
   @unpack t,dt,uprev,u,f,k = integrator
-  @unpack A,c,α,αEEst,stages = integrator.cache
-  @unpack kk = integrator.cache
+  @unpack A,c,α,αEEst,stages = cache
+  @unpack kk = cache
   # Calc First
   if isfsal(integrator.alg)
     kk[1] = integrator.fsalfirst
@@ -55,8 +55,8 @@ end
 @inline function perform_step!(integrator::ODEIntegrator,cache::ExplicitRKCache)
   @unpack t,dt,uprev,u,f,k = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack A,c,α,αEEst,stages = integrator.cache.tab
-  @unpack kk,utilde,tmp,atmp,uEEst = integrator.cache
+  @unpack A,c,α,αEEst,stages = cache.tab
+  @unpack kk,utilde,tmp,atmp,uEEst = cache
   # First
   if !isfsal(integrator.alg)
     f(t,uprev,kk[1])

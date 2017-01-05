@@ -40,7 +40,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
 
   t = tspan[1]
 
-  if !(typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm) && dt == tType(0) && isempty(tstops)
+  if (!(typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm) && !(typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm)) && dt == tType(0) && isempty(tstops)
       error("Fixed timestep methods require a choice of dt or choosing the tstops")
   end
 
@@ -80,7 +80,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
 
   if typeof(alg) <: ExplicitRK
     @unpack order = alg.tableau
-  elseif (typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm) && alg.algs[1] <: ExplicitRK
+  elseif (typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm) && typeof(alg.algs[1]) <: ExplicitRK
     @unpack order = alg.algs[1].tableau
   end
 
@@ -127,6 +127,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   timeseries = convert(Vector{uType},timeseries_init)
   ts = convert(Vector{tType},ts_init)
   ks = convert(Vector{ksEltype},ks_init)
+  alg_choice = Int[]
 
   copyat_or_push!(ts,1,t)
   copyat_or_push!(timeseries,1,u)
@@ -191,16 +192,27 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t,Val{isinplace})
 
   if dense
-    id = InterpolationData(f,timeseries,ts,ks,notsaveat_idxs)
+    if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
+      id = CompositeInterpolationData(f,timeseries,ts,ks,alg_choice,notsaveat_idxs)
+    else
+      id = InterpolationData(f,timeseries,ts,ks,notsaveat_idxs)
+    end
     interp = (tvals) -> ode_interpolation(cache,tvals,id)
   else
     interp = (tvals) -> nothing
   end
 
-  sol = build_solution(prob,alg,ts,timeseries,
-                    dense=dense,k=ks,interp=interp,
-                    calculate_error = false)
-
+  if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
+    sol = build_solution(prob,alg,ts,timeseries,
+                      dense=dense,k=ks,interp=interp,
+                      alg_choice=alg_choice,
+                      calculate_error = false)
+  else
+    sol = build_solution(prob,alg,ts,timeseries,
+                      dense=dense,k=ks,interp=interp,
+                      calculate_error = false)
+  end
+  
   calcprevs = calck || !(typeof(callback)<:Void) # Calculate the previous values
   tprev = t
   dtcache = tType(dt)
@@ -215,6 +227,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   just_hit_tstop = false
   accept_step = false
   dtchangeable = isdtchangeable(alg)
+  q11 = tTypeNoUnits(1)
 
   integrator = ODEIntegrator{algType,uType,tType,
                              tTypeNoUnits,eltype(ks),typeof(sol),
@@ -222,7 +235,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
                              typeof(opts)}(
                              sol,u,k,t,tType(dt),f,uprev,kprev,tprev,
                              alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,dtchangeable,
-                             dtpropose,dt_mod,tdir,EEst,qoldinit,
+                             dtpropose,dt_mod,tdir,EEst,qoldinit,q11,
                              iter,saveiter,saveiter_dense,prog,cache,
                              kshortsize,just_hit_tstop,accept_step,reeval_fsal,opts)
   initialize!(integrator,integrator.cache)

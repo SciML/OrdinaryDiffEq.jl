@@ -6,6 +6,15 @@ immutable InterpolationData{F,uType,tType,kType}
   notsaveat_idxs::Vector{Int}
 end
 
+immutable CompositeInterpolationData{F,uType,tType,kType}
+  f::F
+  timeseries::uType
+  ts::tType
+  ks::kType
+  alg_choice::Vector{Int}
+  notsaveat_idxs::Vector{Int}
+end
+
 ## Integrator Dispatches
 
 # Can get rid of an allocation here with a function
@@ -13,12 +22,20 @@ end
 # cache array which can be modified.
 
 function ode_addsteps!{calcVal,calcVal2,calcVal3}(integrator,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
-  ode_addsteps!(integrator.k,integrator.t,integrator.uprev,integrator.dt,integrator.f,integrator.cache,always_calc_begin,allow_calc_end,force_calc_end)
+  if !(typeof(integrator.cache) <: CompositeCache)
+    ode_addsteps!(integrator.k,integrator.t,integrator.uprev,integrator.dt,integrator.f,integrator.cache,always_calc_begin,allow_calc_end,force_calc_end)
+  else
+    ode_addsteps!(integrator.k,integrator.t,integrator.uprev,integrator.dt,integrator.f,integrator.cache.caches[integrator.cache.current],always_calc_begin,allow_calc_end,force_calc_end)
+  end
 end
 
 function ode_interpolant(Θ,integrator)
   ode_addsteps!(integrator)
-  ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.kprev,integrator.k,integrator.cache)
+  if !(typeof(integrator.cache) <: CompositeCache)
+    ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.kprev,integrator.k,integrator.cache)
+  else
+    ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.kprev,integrator.k,integrator.cache.caches[integrator.cache.current])
+  end
 end
 
 function current_interpolant(t::Number,integrator)
@@ -55,8 +72,13 @@ function ode_interpolation(cache,tvals,id)
     else
       dt = ts[notsaveat_idxs[i]] - ts[notsaveat_idxs[i-1]]
       Θ = (t-ts[notsaveat_idxs[i-1]])/dt
-      ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],dt,f,cache) # update the kcurrent, since kprevious not used in special caches
-      vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i-1],ks[i],cache)
+      if typeof(cache) <: CompositeCache
+        ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],dt,f,cache.caches[id.alg_choice[notsaveat_idxs[i-1]]]) # update the kcurrent, since kprevious not used in special caches
+        vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i-1],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]])
+      else
+        ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],dt,f,cache) # update the kcurrent, since kprevious not used in special caches
+        vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i-1],ks[i],cache)
+      end
     end
   end
   vals
@@ -79,8 +101,13 @@ function ode_interpolation(cache,tval::Number,id)
   else
     dt = ts[notsaveat_idxs[i]] - ts[notsaveat_idxs[i-1]]
     Θ = (tval-ts[notsaveat_idxs[i-1]])/dt
-    ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],dt,f,cache) # update the kcurrent, since kprevious not used in special caches
-    val = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i-1],ks[i],cache)
+    if typeof(cache) <: CompositeCache
+      ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],dt,f,cache.caches[id.alg_choice[notsaveat_idxs[i-1]]]) # update the kcurrent, since kprevious not used in special caches
+      val = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i-1],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]])
+    else
+      ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],dt,f,cache) # update the kcurrent, since kprevious not used in special caches
+      val = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i-1],ks[i],cache)
+    end
   end
   val
 end

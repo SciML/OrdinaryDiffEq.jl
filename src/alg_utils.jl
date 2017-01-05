@@ -33,6 +33,7 @@ isspecialdense(alg::Vern6) = true
 isspecialdense(alg::Vern7) = true
 isspecialdense(alg::Vern8) = true
 isspecialdense(alg::Vern9) = true
+isspecialdense(alg::CompositeAlgorithm) = isspecialdense(alg.algs[1])
 
 isimplicit(alg::OrdinaryDiffEqAlgorithm) = false
 isimplicit(alg::ImplicitEuler) = true
@@ -44,6 +45,7 @@ ismultistep(alg::OrdinaryDiffEqAlgorithm) = false
 
 isadaptive(alg::OrdinaryDiffEqAlgorithm) = false
 isadaptive(alg::OrdinaryDiffEqAdaptiveAlgorithm) = true
+isadaptive(alg::OrdinaryDiffEqCompositeAlgorithm) = isadaptive(alg.algs[1])
 
 function get_kseltype(alg::OrdinaryDiffEqAlgorithm,prob)
   rateType = typeof(prob.u0/zero(prob.tspan[1]))
@@ -95,6 +97,8 @@ alg_order(alg::Rosenbrock32) = 3
 alg_order(alg::Feagin10) = 10
 alg_order(alg::Feagin12) = 12
 alg_order(alg::Feagin14) = 14
+
+alg_order(alg::CompositeAlgorithm) = alg_order(alg.algs[1])
 
 alg_adaptive_order(alg::ExplicitRK) = alg.tableau.adaptiveorder
 alg_adaptive_order(alg::BS3) = 2
