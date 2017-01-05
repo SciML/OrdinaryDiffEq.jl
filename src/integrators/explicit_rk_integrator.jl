@@ -39,7 +39,7 @@ end
     for i = 2:stages
       uEEst += αEEst[i]*kk[i]
     end
-    integrator.EEst = abs( dt*(utilde-uEEst)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+    integrator.EEst = integrator.opts.internalnorm( dt*(utilde-uEEst)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
   end
   k = kk[end]
   @pack integrator = t,dt,u,k

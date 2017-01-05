@@ -18,7 +18,7 @@ end
   u = uprev + dt*(k1*b1+k4*b4+k5*b5+k6*b6+k7*b7+k8*b8+k9*b9)
   if integrator.opts.adaptive
     utilde = uprev + dt*(k1*bhat1+k4*bhat4+k5*bhat5+k6*bhat6+k7*bhat7+k8*bhat8+k10*bhat10)
-    integrator.EEst = abs( ((utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)))
+    integrator.EEst = integrator.opts.internalnorm( ((utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)))
   end
   k = f(t+dt,u) # For the interpolation, needs k at the updated point
   integrator.fsallast = k
@@ -114,8 +114,8 @@ end
   update = dt*kupdate
   u = uprev + update
   if integrator.opts.adaptive
-    err5 = abs(dt*(k1*er1 + k6*er6 + k7*er7 + k8*er8 + k9*er9 + k10*er10 + k11*er11 + k12*er12)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)) # Order 5
-    err3 = abs((update - dt*(bhh1*k1 + bhh2*k9 + bhh3*k12))/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)) # Order 3
+    err5 = integrator.opts.internalnorm(dt*(k1*er1 + k6*er6 + k7*er7 + k8*er8 + k9*er9 + k10*er10 + k11*er11 + k12*er12)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)) # Order 5
+    err3 = integrator.opts.internalnorm((update - dt*(bhh1*k1 + bhh2*k9 + bhh3*k12))/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)) # Order 3
     err52 = err5*err5
     integrator.EEst = err52/sqrt(err52 + 0.01*err3*err3)
   end
@@ -265,7 +265,7 @@ end
   update = dt*(b1*k1+b6*k6+b7*k7+b8*k8+b9*k9+b10*k10+b11*k11+b12*k12)
   u = uprev + update
   if integrator.opts.adaptive
-    integrator.EEst = abs((update - dt*(k1*bhat1 + k6*bhat6 + k7*bhat7 + k8*bhat8 + k9*bhat9 + k10*bhat10 + k13*bhat13))/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+    integrator.EEst = integrator.opts.internalnorm((update - dt*(k1*bhat1 + k6*bhat6 + k7*bhat7 + k8*bhat8 + k9*bhat9 + k10*bhat10 + k13*bhat13))/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
   end
   k = f(t+dt,u)
   integrator.fsallast = k

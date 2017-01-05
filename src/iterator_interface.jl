@@ -6,7 +6,7 @@ function next(integrator::ODEIntegrator,state)
   state += 1
   step!(integrator) # Iter updated in the step! header
   # Next is callbacks -> iterator  -> top
-  (integrator.t,integrator.u),state
+  integrator,state
 end
 
 done(integrator::ODEIntegrator) = done(integrator,integrator.iter)
@@ -14,21 +14,21 @@ done(integrator::ODEIntegrator) = done(integrator,integrator.iter)
 function done(integrator::ODEIntegrator,state)
   if integrator.iter > integrator.opts.maxiters
     warn("Interrupted. Larger maxiters is needed.")
-    ode_postamble!(integrator)
+    postamble!(integrator)
     return true
   end
   if any(isnan,integrator.uprev)
     warn("NaNs detected. Aborting")
-    ode_postamble!(integrator)
+    postamble!(integrator)
     return true
   end
   if isempty(integrator.opts.tstops)
-    ode_postamble!(integrator)
+    postamble!(integrator)
     return true
   elseif integrator.just_hit_tstop
     integrator.just_hit_tstop = false
     if integrator.opts.stop_at_next_tstop
-      ode_postamble!(integrator)
+      postamble!(integrator)
       return true
     end
   end

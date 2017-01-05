@@ -21,7 +21,7 @@ end
     if isspecialdense(integrator.alg)
       resize!(integrator.k,integrator.kshortsize) # Reset k for next step!
       ode_addsteps!(integrator,Val{true},Val{false})
-    elseif typeof(integrator.u) <: Number
+    elseif typeof(integrator.cahce) <: OrdinaryDiffEqConstantCache
       integrator.k = integrator.f(integrator.t,integrator.u)
     else
       integrator.f(integrator.t,integrator.u,integrator.k)

@@ -25,7 +25,7 @@ end
   tmp = dt*((b1*k1 + b2*k2 + b3*k3 + b5*k5) + (b7*k7 + b9*k9 + b10*k10 + b11*k11) + (b12*k12 + b13*k13 + b14*k14 + b15*k15) + (b16*k16 + b17*k17))
   u = uprev + tmp
   if integrator.opts.adaptive
-    integrator.EEst = abs((dt*(k2 - k16) * adaptiveConst)./(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+    integrator.EEst = integrator.opts.internalnorm((dt*(k2 - k16) * adaptiveConst)./(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
   end
   k = f(t+dt,u) # For the interpolation, needs k at the updated point
   integrator.fsallast = k
@@ -161,7 +161,7 @@ end
   k = f(t+dt,u)
   integrator.fsallast = k
   if integrator.opts.adaptive
-    integrator.EEst = abs((dt*(k2 - k24) * adaptiveConst)./(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+    integrator.EEst = integrator.opts.internalnorm((dt*(k2 - k24) * adaptiveConst)./(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
   end
   @pack integrator = t,dt,u,k
 end
@@ -334,7 +334,7 @@ end
   tmp = dt*((b1*k1 + b2*k2 + b3*k3 + b5*k5) + (b7*k7 + b8*k8 + b10*k10 + b11*k11) + (b12*k12 + b14*k14 + b15*k15 + b16*k16) + (b18*k18 + b19*k19 + b20*k20 + b21*k21) + (b22*k22 + b23*k23 + b24*k24 + b25*k25) + (b26*k26 + b27*k27 + b28*k28 + b29*k29) + (b30*k30 + b31*k31 + b32*k32 + b33*k33) + (b34*k34 + b35*k35))
   u = uprev + tmp
   if integrator.opts.adaptive
-    integrator.EEst = abs((dt*(k2 - k34) * adaptiveConst)./(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+    integrator.EEst = integrator.opts.internalnorm((dt*(k2 - k34) * adaptiveConst)./(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
   end
   k = f(t+dt,u) # For the interpolation, needs k at the updated point
   integrator.fsallast = k

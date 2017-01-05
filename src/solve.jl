@@ -66,7 +66,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   if top(tstops_internal) == tspan[1]
     pop!(tstops_internal)
   end
-
+  f = prob.f
   u0 = prob.u0
   uEltype = eltype(u0)
 
@@ -84,17 +84,11 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
     @unpack order = alg.algs[1].tableau
   end
 
-  if !isinplace && typeof(u)<:AbstractArray
-    f! = (t,u,du) -> (du[:] = prob.f(t,u))
-  else
-    f! = prob.f
-  end
-
   uEltypeNoUnits = typeof(recursive_one(u))
   tTypeNoUnits   = typeof(recursive_one(t))
 
   if dt == zero(dt) && adaptive
-    dt = tType(ode_determine_initdt(u0,t,tdir,dtmax,uEltype(abstol),uEltypeNoUnits(reltol),internalnorm,f!,order))
+    dt = tType(ode_determine_initdt(u0,t,tdir,dtmax,uEltype(abstol),uEltypeNoUnits(reltol),internalnorm,f,order))
   end
 
   if sign(dt)!=tdir && dt!=tType(0)
@@ -138,10 +132,10 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   copyat_or_push!(timeseries,1,u)
 
   if !isspecialdense(alg)
-    if uType <: Number
-      rate_prototype = f!(t,u)
+    if !isinplace
+      rate_prototype = f(t,u)
     else
-      f!(t,u,rate_prototype)
+      f(t,u,rate_prototype)
     end
     push!(ks,rate_prototype)
   else # Just push a dummy in for special dense since first is not used.
@@ -194,10 +188,10 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
     uprev = deepcopy(u)
   end
 
-  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uprev,kprev,f!,t)
+  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t,Val{isinplace})
 
   if dense
-    id = InterpolationData(f!,timeseries,ts,ks,notsaveat_idxs)
+    id = InterpolationData(f,timeseries,ts,ks,notsaveat_idxs)
     interp = (tvals) -> ode_interpolation(cache,tvals,id)
   else
     interp = (tvals) -> nothing
@@ -224,9 +218,9 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
 
   integrator = ODEIntegrator{algType,uType,tType,
                              tTypeNoUnits,eltype(ks),typeof(sol),
-                             typeof(rate_prototype),typeof(f!),typeof(prog),typeof(cache),
+                             typeof(rate_prototype),typeof(f),typeof(prog),typeof(cache),
                              typeof(opts)}(
-                             sol,u,k,t,tType(dt),f!,uprev,kprev,tprev,
+                             sol,u,k,t,tType(dt),f,uprev,kprev,tprev,
                              alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,dtchangeable,
                              dtpropose,dt_mod,tdir,EEst,qoldinit,
                              iter,saveiter,saveiter_dense,prog,cache,
@@ -251,7 +245,7 @@ function solve!(integrator::ODEIntegrator)
     end
     handle_tstop!(integrator)
   end
-  ode_postamble!(integrator)
+  postamble!(integrator)
   if typeof(integrator.sol.prob) <: AbstractODETestProblem
     calculate_solution_errors!(integrator.sol;timeseries_errors=integrator.opts.timeseries_errors,dense_errors=integrator.opts.dense_errors)
   end

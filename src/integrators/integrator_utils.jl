@@ -37,17 +37,17 @@ end
 @def ode_exit_conditions begin
   if integrator.iter > integrator.opts.maxiters
     warn("Interrupted. Larger maxiters is needed.")
-    ode_postamble!(integrator)
+    postamble!(integrator)
     return nothing
   end
   if integrator.dt == zero(integrator.t)
     warn("dt == 0. Aborting")
-    ode_postamble!(integrator)
+    postamble!(integrator)
     return nothing
   end
   if any(isnan,integrator.uprev)
     warn("NaNs detected. Aborting")
-    ode_postamble!(integrator)
+    postamble!(integrator)
     return nothing
   end
 end
@@ -87,7 +87,7 @@ end
   end
 end
 
-@inline function ode_postamble!(integrator)
+@inline function postamble!(integrator)
 
   if integrator.opts.save_timeseries==false
     solution_endpoint_match_cur_integrator!(integrator)
@@ -175,7 +175,7 @@ end
   if isfsal(integrator.alg)
     if integrator.reeval_fsal || (typeof(integrator.alg)<:DP8 && !integrator.opts.calck) || (typeof(integrator.alg)<:Union{Rosenbrock23,Rosenbrock32} && !integrator.opts.adaptive)
       # Under these condtions, these algorithms are not FSAL anymore
-      if typeof(integrator.fsalfirst) <: AbstractArray
+      if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache
         integrator.f(integrator.t,integrator.u,integrator.fsalfirst)
       else
         integrator.fsalfirst = integrator.f(integrator.t,integrator.u)

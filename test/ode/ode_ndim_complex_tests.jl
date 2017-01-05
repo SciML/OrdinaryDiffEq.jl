@@ -8,6 +8,7 @@ prob = ODETestProblem(f,1/2+(1/4)im,analytic)
 sol = solve(prob,Tsit5(),dt=1/2^4)
 
 u0 = rand(Complex64,5,5,5)
+f = (t,u,du) -> (du.=2u)
 prob = ODETestProblem(f,u0,analytic)
 
 sol = solve(prob,Tsit5(),dt=1/2^4)

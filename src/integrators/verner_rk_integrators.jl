@@ -19,7 +19,7 @@ end
   integrator.fsallast = f(t+dt,u); k9 = integrator.fsallast
   if integrator.opts.adaptive
     utilde = uprev + dt*(b1*k1 + b4*k4 + b5*k5 + b6*k6 + b7*k7 + b8*k8 + b9*k9)
-    integrator.EEst = abs( ((utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)))
+    integrator.EEst = integrator.opts.internalnorm( ((utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)))
   end
   integrator.k[1]=k1; integrator.k[2]=k2;
   integrator.k[3]=k3; integrator.k[4]=k4;
@@ -109,7 +109,7 @@ end
   update = dt*(k1*b1 + k4*b4 + k5*b5 + k6*b6 + k7*b7 + k8*b8 + k9*b9)
   u = uprev + update
   if integrator.opts.adaptive
-    integrator.EEst = abs( ((update - dt*(bhat1*k1 + bhat4*k4 + bhat5*k5 + bhat6*k6 + bhat7*k7 + bhat10*k10))/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)))
+    integrator.EEst = integrator.opts.internalnorm( ((update - dt*(bhat1*k1 + bhat4*k4 + bhat5*k5 + bhat6*k6 + bhat7*k7 + bhat10*k10))/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)))
   end
   integrator.k[1]=k1; integrator.k[2]=k2;
   integrator.k[3]=k3; integrator.k[4]=k4;
@@ -207,7 +207,7 @@ end
   update = dt*(k1*b1 + k6*b6 + k7*b7 + k8*b8 + k9*b9 + k10*b10 + k11*b11 + k12*b12)
   u = uprev + update
   if integrator.opts.adaptive
-    integrator.EEst = abs( ((update - dt*(bhat1*k1 + bhat6*k6 + bhat7*k7 + bhat8*k8 + bhat9*k9 + bhat10*k10 + bhat13*k13))/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)))
+    integrator.EEst = integrator.opts.internalnorm( ((update - dt*(bhat1*k1 + bhat6*k6 + bhat7*k7 + bhat8*k8 + bhat9*k9 + bhat10*k10 + bhat13*k13))/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)))
   end
   integrator.k[1]=k1; integrator.k[2]=k2;
   integrator.k[3]=k3; integrator.k[4]=k4;
@@ -322,7 +322,7 @@ end
   update = dt*(k1*b1+k8*b8+k9*b9+k10*b10+k11*b11+k12*b12+k13*b13+k14*b14+k15*b15)
   u = uprev + update
   if integrator.opts.adaptive
-    integrator.EEst = abs((update - dt*(k1*bhat1 + k8*bhat8 + k9*bhat9 + k10*bhat10 + k11*bhat11 + k12*bhat12 + k13*bhat13 + k16*bhat16))/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+    integrator.EEst = integrator.opts.internalnorm((update - dt*(k1*bhat1 + k8*bhat8 + k9*bhat9 + k10*bhat10 + k11*bhat11 + k12*bhat12 + k13*bhat13 + k16*bhat16))/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
   end
   integrator.k[1]=k1; integrator.k[2]=k2;
   integrator.k[3]=k3; integrator.k[4]=k4;
