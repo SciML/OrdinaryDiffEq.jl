@@ -14,18 +14,23 @@ initialize{uType}(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) =
   end
 
   integrator.iter += 1
+  modify_dt_for_tstops!(integrator)
+end
 
-  #Modify dt due to tstops
-  if integrator.opts.adaptive && !isempty(integrator.opts.tstops)
-    if integrator.tdir > 0
-      integrator.dt = min(abs(integrator.dt),abs(top(integrator.opts.tstops)-integrator.t)) # step! to the end
-    else
-      integrator.dt = -min(abs(integrator.dt),abs(top(integrator.opts.tstops)-integrator.t))
+@inline function modify_dt_for_tstops!(integrator)
+  tstops = integrator.opts.tstops
+  if !isempty(tstops)
+    if integrator.opts.adaptive
+      if integrator.tdir > 0
+        integrator.dt = min(abs(integrator.dt),abs(top(tstops)-integrator.t)) # step! to the end
+      else
+        integrator.dt = -min(abs(integrator.dt),abs(top(tstops)-integrator.t))
+      end
+    elseif integrator.dtcache == zero(integrator.t) && integrator.dtchangeable # Use integrator.opts.tstops
+      integrator.dt = integrator.tdir*abs(top(tstops)-integrator.t)
+    elseif integrator.dtchangeable # always try to step! with dtcache, but lower if a tstops
+      integrator.dt = integrator.tdir*min(abs(integrator.dtcache),abs(top(tstops)-integrator.t)) # step! to the end
     end
-  elseif integrator.dtcache == zero(integrator.t) && !isempty(integrator.opts.tstops) && integrator.dtchangeable # Use integrator.opts.tstops
-    integrator.dt = integrator.tdir*abs(top(integrator.opts.tstops)-integrator.t)
-  elseif !isempty(integrator.opts.tstops) && integrator.dtchangeable # always try to step! with dtcache
-    integrator.dt = integrator.tdir*min(abs(integrator.dtcache),abs(top(integrator.opts.tstops)-integrator.t)) # step! to the end
   end
 end
 
