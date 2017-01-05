@@ -228,7 +228,6 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
                              typeof(rate_prototype),typeof(f!),typeof(prog),typeof(cache),
                              typeof(opts)}(
                              sol,u,k,t,tType(dt),f!,uprev,kprev,tprev,
-                             adaptiveorder,order,
                              alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,dtchangeable,
                              dtpropose,dt_mod,tdir,EEst,qoldinit,
                              iter,saveiter,saveiter_dense,prog,cache,

@@ -240,4 +240,24 @@ end
   end
 end
 
+"""
+If no user default, then this will change the default to the defaults
+for the second algorithm.
+"""
+@inline function reset_alg_dependent_opts!(integrator,alg1,alg2)
+  integrator.dtchangeable = isdtchangeable(alg2)
+  if integrator.qmin == qmin_default(alg1)
+    integrator.qmin = qmin_default(alg2)
+  end
+  if integrator.qmax == qmax_default(alg1)
+    integrator.qmax == qmax_default(alg2)
+  end
+  if integrator.beta2 == beta2_default(alg1)
+    integrator.beta2 = beta2_default(alg2)
+  end
+  if integrator.beta1 == beta1_default(alg1,integrator.beta2)
+    integrator.beta1 = beta1_default(alg2,integrator.beta2)
+  end
+end
+
 (integrator::ODEIntegrator)(t) = current_interpolant(t,integrator)
