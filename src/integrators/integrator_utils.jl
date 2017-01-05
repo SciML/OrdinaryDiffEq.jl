@@ -83,24 +83,17 @@ end
 end
 
 @inline function ode_postamble!(integrator)
+
   if integrator.opts.save_timeseries==false
     solution_endpoint_match_cur_integrator!(integrator)
   end
+
   resize!(integrator.sol.t,integrator.saveiter)
   resize!(integrator.sol.u,integrator.saveiter)
   resize!(integrator.sol.k,integrator.saveiter_dense)
+
   if integrator.sol.t[end] !=  integrator.t
     error("Solution endpoint doesn't match the current time in the postamble. This should never happen.")
-    #=
-    integrator.saveiter += 1
-    copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
-    copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
-    if integrator.opts.dense
-      integrator.saveiter_dense +=1
-      copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
-      copyat_or_push!(integrator.notsaveat_idxs,integrator.saveiter_dense,integrator.saveiter)
-    end
-    =#
   end
   !(typeof(integrator.prog)<:Void) && Juno.done(integrator.prog)
 end
@@ -220,6 +213,25 @@ end
     integrator.dtpropose = max(integrator.dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
   else
     integrator.dtpropose = min(integrator.dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
+  end
+end
+
+@inline function handle_tstop!(integrator)
+  tstops = integrator.opts.tstops
+  if !isempty(tstops)
+    t = integrator.t
+    ts_top = top(tstops)
+    if t == ts_top
+      pop!(tstops)
+      integrator.just_hit_tstop = true
+    elseif t > ts_top
+      if !integrator.dtchangeable
+        change_t_via_interpolation!(integrator, pop!(tstops), Val{true})
+        integrator.just_hit_tstop = true
+      else
+        error("Something went wrong. Integrator stepped past tstops but the algorithm was dtchangeable. Please report this error.")
+      end
+    end
   end
 end
 
