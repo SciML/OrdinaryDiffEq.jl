@@ -3,6 +3,8 @@ initialize{uType}(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) =
 
 @inline function loopheader!(integrator)
   # Apply right after iterators / callbacks
+
+  # Accept or reject the step
   if integrator.iter > 0
     if (integrator.opts.adaptive && integrator.accept_step) || !integrator.opts.adaptive
       apply_step!(integrator)
@@ -20,9 +22,9 @@ initialize{uType}(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) =
     else
       integrator.dt = -min(abs(integrator.dt),abs(top(integrator.opts.tstops)-integrator.t))
     end
-  elseif integrator.dtcache == zero(integrator.t) && !isempty(integrator.opts.tstops) # Use integrator.opts.tstops
+  elseif integrator.dtcache == zero(integrator.t) && !isempty(integrator.opts.tstops) && integrator.dtchangeable # Use integrator.opts.tstops
     integrator.dt = integrator.tdir*abs(top(integrator.opts.tstops)-integrator.t)
-  elseif !isempty(integrator.opts.tstops) # always try to step! with dtcache
+  elseif !isempty(integrator.opts.tstops) && integrator.dtchangeable # always try to step! with dtcache
     integrator.dt = integrator.tdir*min(abs(integrator.dtcache),abs(top(integrator.opts.tstops)-integrator.t)) # step! to the end
   end
 end
@@ -116,6 +118,7 @@ end
   else #Not adaptive
     integrator.t += integrator.dt
     integrator.accept_step = true
+    integrator.dtpropose = integrator.dt
     if !(typeof(integrator.opts.callback)<:Void)
       for c in integrator.opts.callback
         apply_callback!(integrator,c)
@@ -141,9 +144,11 @@ end
     integrator.uprev = integrator.u
   end
 
-  #Update dt if adaptive
-  if integrator.opts.adaptive
+  #Update dt if adaptive or if fixed and the dt is allowed to change
+  if integrator.opts.adaptive || integrator.dtchangeable
     integrator.dt = integrator.dt_mod*integrator.dtpropose
+  elseif integrator.dt != integrator.dt_mod*integrator.dtpropose && !integrator.dtchangeable
+    error("The current setup does not allow for changing dt.")
   end
 
   # Update fsal if needed

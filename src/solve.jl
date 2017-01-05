@@ -221,6 +221,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   EEst = tTypeNoUnits(1)
   just_hit_tstop = false
   accept_step = false
+  dtchangeable = is_dtchangeable(alg)
 
   integrator = ODEIntegrator{algType,uType,tType,
                              tTypeNoUnits,eltype(ks),typeof(sol),
@@ -228,7 +229,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
                              typeof(opts)}(
                              sol,u,k,t,tType(dt),f!,uprev,kprev,tprev,
                              adaptiveorder,order,
-                             alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,
+                             alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,dtchangeable,
                              dtpropose,dt_mod,tdir,EEst,qoldinit,
                              iter,saveiter,saveiter_dense,prog,cache,
                              kshortsize,just_hit_tstop,accept_step,reeval_fsal,opts)

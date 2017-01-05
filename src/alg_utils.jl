@@ -17,6 +17,8 @@ isfsal(alg::ExplicitRK) = isfsal(alg.tableau)
 isfsal{MType,VType,fsal}(tab::ExplicitRKTableau{MType,VType,fsal}) = fsal
 isfsal(tab::ImplicitRKTableau) = false
 
+is_dtchangeable(alg::OrdinaryDiffEqAlgorithm) = true
+
 function isspecialdense(alg::OrdinaryDiffEqAlgorithm)
   if typeof(alg) <: DP5 || typeof(alg) <: DP5Threaded || typeof(alg) <: DP8 || typeof(alg) <: BS5 || typeof(alg) <: Tsit5 || typeof(alg) <: Vern6 || typeof(alg) <: Vern7 || typeof(alg) <: Vern8 || typeof(alg) <: Vern9 ||
   typeof(alg) <: Rosenbrock23 || typeof(alg) <: Rosenbrock32
