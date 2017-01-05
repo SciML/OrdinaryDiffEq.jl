@@ -4,6 +4,15 @@ abstract OrdinaryDiffEqMutableCache <: DECache
 immutable ODEEmptyCache <: OrdinaryDiffEqConstantCache end
 immutable ODEChunkCache{CS} <: OrdinaryDiffEqConstantCache end
 
+immutable CompositeCache{T} <: OrdinaryDiffEqCache
+  caches::T
+end
+
+Base.@pure function alg_cache(alg::CompositeAlgorithm,u,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t)
+  caches = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t)
+  CompositeCaches(caches)
+end
+
 alg_cache{F}(alg::OrdinaryDiffEqAlgorithm,prob,callback::F) = ODEEmptyCache()
 
 immutable EulerCache{uType,rateType} <: OrdinaryDiffEqMutableCache

@@ -16,7 +16,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   dense = save_timeseries,
   saveat = tType[],tstops = tType[],
   calck = (!isempty(setdiff(saveat,tstops)) || dense),
-  adaptive = true,
+  adaptive = isadaptive(alg),
   gamma=9//10,
   abstol=1//10^6,
   reltol=1//10^3,
@@ -77,12 +77,11 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   ks = Vector{uType}(0)
 
   order = alg_order(alg)
-  adaptiveorder = 0
-
-  typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm ? adaptiveorder = alg_adaptive_order(alg) : adaptive = false
 
   if typeof(alg) <: ExplicitRK
-    @unpack order,adaptiveorder = alg.tableau
+    @unpack order = alg.tableau
+  elseif (typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm) && alg.algs[1] <: ExplicitRK
+    @unpack order = alg.algs[1].tableau
   end
 
   if !isinplace && typeof(u)<:AbstractArray

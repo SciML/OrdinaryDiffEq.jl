@@ -24,15 +24,23 @@ step!(integrator)
 @test integrator.sol(0.9) == sol(0.9)
 
 integrator = init(prob,Tsit5();dt=1//2^(4),tstops=[0.5],advance_to_tstop=true)
-for i in integrator
-  @test i.t ∈ [0.5,1.0]
+tupint = tuples(integrator)
+for (t,u) in tuples(integrator)
+  @test t ∈ [0.5,1.0]
 end
 
 integrator = init(prob,Tsit5();dt=1//2^(4),tstops=[0.5],advance_to_tstop=true,stop_at_next_tstop=true)
-for i in integrator
-  @test i.t == 0.5
+for (t,u) in tuples(integrator)
+  @test t == 0.5
 end
 integrator([1.0;2.0])
+
+integrator = init(prob,Tsit5();dt=1//2^(4),tstops=[0.5])
+for (tprev,uprev,t,u) in intervals(integrator)
+  @show tprev,t
+end
+integrator([1.0;2.0])
+
 
 integrator = init(prob,RK4();dt=1//2^(9))
 for i in take(integrator,12) end

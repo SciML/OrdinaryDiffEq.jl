@@ -246,6 +246,9 @@ for the second algorithm.
 """
 @inline function reset_alg_dependent_opts!(integrator,alg1,alg2)
   integrator.dtchangeable = isdtchangeable(alg2)
+  if integrator.adaptive == isadaptive(alg1)
+    integrator.adaptve = isadaptive(alg2)
+  end
   if integrator.qmin == qmin_default(alg1)
     integrator.qmin = qmin_default(alg2)
   end

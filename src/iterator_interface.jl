@@ -6,7 +6,7 @@ function next(integrator::ODEIntegrator,state)
   state += 1
   step!(integrator) # Iter updated in the step! header
   # Next is callbacks -> iterator  -> top
-  integrator,state
+  (integrator.t,integrator.u),state
 end
 
 done(integrator::ODEIntegrator) = done(integrator,integrator.iter)
@@ -56,3 +56,5 @@ function step!(integrator::ODEIntegrator)
 end
 
 eltype(integrator::ODEIntegrator) = typeof(integrator)
+
+tuple(integrator::ODEIntegrator) = IntegratorTuples(integrator)

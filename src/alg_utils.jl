@@ -42,6 +42,9 @@ isdtchangeable(alg::OrdinaryDiffEqAlgorithm) = true
 
 ismultistep(alg::OrdinaryDiffEqAlgorithm) = false
 
+isadaptive(alg::OrdinaryDiffEqAlgorithm) = false
+isadaptive(alg::OrdinaryDiffEqAdaptiveAlgorithm) = true
+
 function get_kseltype(alg::OrdinaryDiffEqAlgorithm,prob)
   rateType = typeof(prob.u0/zero(prob.tspan[1]))
   isspecialdense(alg) ? ksEltype = Vector{rateType} : ksEltype = rateType
