@@ -121,7 +121,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
 
   abstol = uEltype(1)*abstol
 
-  isspecialdense(alg) ? ksEltype = Vector{rateType} : ksEltype = rateType
+  ksEltype = Vector{rateType}
 
   # Have to convert incase passed in wrong.
   timeseries = convert(Vector{uType},timeseries_init)
@@ -131,17 +131,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
 
   copyat_or_push!(ts,1,t)
   copyat_or_push!(timeseries,1,u)
-
-  if !isspecialdense(alg)
-    if !isinplace
-      rate_prototype = f(t,u)
-    else
-      f(t,u,rate_prototype)
-    end
-    push!(ks,rate_prototype)
-  else # Just push a dummy in for special dense since first is not used.
-    push!(ks,[rate_prototype])
-  end
+  copyat_or_push!(ks,1,[rate_prototype])
 
   if typeof(callback) <: DECallback
     # Change it to a tuple
@@ -163,25 +153,8 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
 
   notsaveat_idxs = Int[1]
 
-  if ksEltype <: AbstractArray  &&  isspecialdense(alg)
-    k = ksEltype[]
-    kprev = ksEltype[]
-  elseif ksEltype <: Number
-    k = ksEltype(0)
-    kprev = ksEltype(0)
-  else # it is simple_dense
-    k = ksEltype(zeros(Int64,ndims(u))...) # Needs the zero for dimension 3+
-    kprev = ksEltype(zeros(Int64,ndims(u))...)
-  end
-
-  if !isspecialdense(alg) #If issimple_dense, then ks[1]=f(ts[1],timeseries[1])
-    if calck
-      if ksEltype <: AbstractArray
-        k = similar(rate_prototype)
-      end
-      kprev = copy(k)
-    end
-  end ## if not simple_dense, you have to initialize k and push the ks[1]!
+  k = ksEltype[]
+  kprev = ksEltype[]
 
   if uType <: Array
     uprev = copy(u)
@@ -212,7 +185,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
                       dense=dense,k=ks,interp=interp,
                       calculate_error = false)
   end
-  
+
   calcprevs = calck || !(typeof(callback)<:Void) # Calculate the previous values
   tprev = t
   dtcache = tType(dt)

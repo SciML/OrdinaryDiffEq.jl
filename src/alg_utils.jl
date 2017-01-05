@@ -17,7 +17,8 @@ isfsal(alg::Feagin14) = true
 isfsal(alg::TanYam7) = true
 isfsal(alg::TsitPap8) = true
 isfsal(alg::Trapezoid) = true
-isfsal(alg::ExplicitRK) = isfsal(alg.tableau)
+isfsal(alg::ImplicitEuler) = true
+isfsal(alg::ExplicitRK) = true
 isfsal{MType,VType,fsal}(tab::ExplicitRKTableau{MType,VType,fsal}) = fsal
 isfsal(tab::ImplicitRKTableau) = false
 
@@ -69,7 +70,6 @@ alg_autodiff{CS,AD}(alg::ImplicitEuler{CS,AD}) = AD
 alg_autodiff{CS,AD}(alg::Trapezoid{CS,AD}) = AD
 alg_autodiff{CS,AD}(alg::Rosenbrock23{CS,AD}) = AD
 alg_autodiff{CS,AD}(alg::Rosenbrock32{CS,AD}) = AD
-
 
 alg_order(alg::OrdinaryDiffEqAlgorithm) = error("Order is not defined for this algorithm")
 alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")

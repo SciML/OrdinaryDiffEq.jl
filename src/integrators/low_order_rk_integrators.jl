@@ -1,4 +1,6 @@
 @inline function initialize!(integrator,cache::BS3ConstantCache)
+  integrator.kshortsize = 2
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
 end
 
@@ -14,14 +16,18 @@ end
     utilde = uprev + dt*(b1*k1 + b2*k2 + b3*k3 + b4*k4)
     integrator.EEst = integrator.opts.internalnorm( ((utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)))
   end
-  k = integrator.fsallast
-  @pack integrator = t,dt,u,k
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  @pack integrator = t,dt,u
 end
 
 @inline function initialize!(integrator,cache::BS3Cache)
-  integrator.k = cache.k4
+  integrator.kshortsize = 2
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.fsalfirst = cache.k1  # done by pointers, no copying
   integrator.fsallast = cache.k4
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
 end
 

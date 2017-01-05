@@ -53,7 +53,7 @@ end
   end
 end
 
-@inline function savevalues!(integrator)
+@inline function savevalues!(integrator::ODEIntegrator)
   while !isempty(integrator.opts.saveat) && integrator.tdir*top(integrator.opts.saveat) <= integrator.tdir*integrator.t # Perform saveat
     integrator.saveiter += 1
     curt = pop!(integrator.opts.saveat)
@@ -63,7 +63,7 @@ end
       val = ode_interpolant(Θ,integrator)
       copyat_or_push!(integrator.sol.t,integrator.saveiter,curt)
       copyat_or_push!(integrator.sol.u,integrator.saveiter,val)
-      if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
+      if typeof(integrator.alg) <: OrdinaryDiffEqCompositeAlgorithm
         copyat_or_push!(integrator.sol.alg_choice,integrator.saveiter,integrator.cache.current)
       end
     else # ==t, just save
@@ -71,8 +71,8 @@ end
       copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
       if integrator.opts.dense
         integrator.saveiter_dense += 1
-        copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
         copyat_or_push!(integrator.notsaveat_idxs,integrator.saveiter_dense,integrator.saveiter)
+        copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
       end
       if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
         copyat_or_push!(integrator.sol.alg_choice,integrator.saveiter,integrator.cache.current)
@@ -202,6 +202,7 @@ end
 
   # Update kprev
   integrator.tprev = integrator.t
+  #=
   if integrator.calcprevs # Is this a micro-optimization that can be removed?
     if !isspecialdense(integrator.alg) && integrator.opts.calck
       if typeof(integrator.k) <: AbstractArray
@@ -211,6 +212,7 @@ end
       end
     end
   end
+  =#
 
   integrator.dt_mod = typeof(integrator.t)(1)
 end

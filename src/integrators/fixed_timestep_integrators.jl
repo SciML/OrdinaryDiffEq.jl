@@ -1,4 +1,6 @@
 @inline function initialize!(integrator,cache::EulerConstantCache)
+  integrator.kshortsize = 2
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
 end
 
@@ -8,14 +10,19 @@ end
   u = muladd(dt,k,uprev)
   k = f(t+dt,u) # For the interpolation, needs k at the updated point
   integrator.fsallast = k
-  @pack integrator = t,dt,u,k
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  @pack integrator = t,dt,u
 end
 
 @inline function initialize!(integrator,cache::EulerCache)
+  integrator.kshortsize = 2
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
-  integrator.k = k
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
@@ -31,24 +38,30 @@ end
 
 @inline function initialize!(integrator,cache::MidpointConstantCache)
   integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
+  integrator.kshortsize = 2
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
 end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::MidpointConstantCache)
   @unpack t,dt,uprev,u,f,k = integrator
-        halfdt = dt/2
+  halfdt = dt/2
   k = integrator.fsalfirst
   k = f(t+halfdt,uprev+halfdt*k)
   u = uprev + dt*k
   integrator.fsallast = f(t+dt,u) # For interpolation, then FSAL'd
-  @pack integrator = t,dt,u,k
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  @pack integrator = t,dt,u
 end
 
 @inline function initialize!(integrator,cache::MidpointCache)
-  integrator.kprev = similar(integrator.rate_prototype)
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
-  integrator.k = k
+  integrator.kshortsize = 2
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # FSAL for interpolation
 end
 
@@ -65,16 +78,18 @@ end
     u[i] = muladd(dt,du[i],uprev[i])
   end
   f(t+dt,u,k)
-  @pack integrator = t,dt,u,k
+  @pack integrator = t,dt,u
 end
 
 @inline function initialize!(integrator,cache::RK4ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
+  integrator.kshortsize = 2
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
 end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::RK4ConstantCache)
   @unpack t,dt,uprev,u,f,k = integrator
-        halfdt = dt/2
+  halfdt = dt/2
   k₁ =integrator.fsalfirst
   ttmp = t+halfdt
   k₂ = f(ttmp,muladd(halfdt,k₁,uprev))
@@ -83,15 +98,19 @@ end
   u = muladd(dt/6,muladd(2,(k₂ + k₃),k₁+k₄),uprev)
   k = f(t+dt,u)
   integrator.fsallast = k
-  @pack integrator = t,dt,u,k
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  @pack integrator = t,dt,u
 end
 
 @inline function initialize!(integrator,cache::RK4Cache)
-  integrator.kprev = similar(integrator.rate_prototype)
   @unpack tmp,k₁,k₂,k₃,k₄,k = cache
   integrator.fsalfirst = k₁
   integrator.fsallast = k
-  integrator.k = k
+  integrator.kshortsize = 2
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # pre-start FSAL
 end
 
@@ -117,5 +136,5 @@ end
     u[i] = muladd(dt/6,muladd(2,(k₂[i] + k₃[i]),k₁[i] + k₄[i]),uprev[i])
   end
   f(t+dt,u,k)
-  @pack integrator = t,dt,u,k
+  @pack integrator = t,dt,u
 end

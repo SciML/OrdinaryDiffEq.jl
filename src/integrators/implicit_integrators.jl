@@ -11,6 +11,9 @@ end
 
 @inline function initialize!(integrator,cache::ImplicitEulerConstantCache)
   cache.uhold[1] = integrator.uprev; cache.u_old[1] = integrator.uprev
+  integrator.kshortsize = 2
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev)
 end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::ImplicitEulerConstantCache)
@@ -26,8 +29,11 @@ end
   end
   uhold[1] = nlres.zero[1]
   k = f(t+dt,uhold[1])
+  integrator.fsallast = k
   u = uhold[1]
-  @pack integrator = t,dt,u,k
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = k
+  @pack integrator = t,dt,u
 end
 
 type RHS_IE{F,uType,tType,DiffCacheType,SizeType,uidxType} <: Function
@@ -48,7 +54,13 @@ function (p::RHS_IE)(uprev,resid)
 end
 
 @inline function initialize!(integrator,cache::ImplicitEulerCache)
-  integrator.k = cache.k
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst)
+  integrator.kshortsize = 2
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
 end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::ImplicitEulerCache)
@@ -67,7 +79,7 @@ end
   end
   copy!(uhold,nlres.zero)
   f(t+dt,u,k)
-  @pack integrator = t,dt,u,k
+  @pack integrator = t,dt,u
 end
 
 type RHS_Trap{F,uType,rateType,tType,SizeType,DiffCacheType,uidxType} <: Function
@@ -90,12 +102,14 @@ function (p::RHS_Trap)(uprev,resid)
 end
 
 @inline function initialize!(integrator,cache::TrapezoidCache)
-  integrator.k = cache.k
   @unpack k,f_old = cache
   integrator.fsalfirst = f_old
   integrator.fsallast = cache.k
-  integrator.k = k
   integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst)
+  integrator.kshortsize = 2
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
 end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::TrapezoidCache)
@@ -115,7 +129,7 @@ end
   end
   copy!(uhold,nlres.zero)
   f(t+dt,u,k)
-  @pack integrator = t,dt,u,k
+  @pack integrator = t,dt,u
 end
 
 type RHS_Trap_Scalar{F,uType,rateType,tType} <: Function
@@ -133,6 +147,8 @@ end
 @inline function initialize!(integrator,cache::TrapezoidConstantCache)
   cache.uhold[1] = integrator.uprev; cache.u_old[1] = integrator.uprev
   integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev)
+  integrator.kshortsize = 2
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
 end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::TrapezoidConstantCache)
@@ -151,5 +167,7 @@ end
   k = f(t+dt,uhold[1])
   integrator.fsallast = k
   u = uhold[1]
-  @pack integrator = t,dt,u,k
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  @pack integrator = t,dt,u
 end

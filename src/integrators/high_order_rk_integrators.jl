@@ -1,5 +1,7 @@
 @inline function initialize!(integrator,cache::TanYam7ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
+  integrator.kshortsize = 2
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
 end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::TanYam7ConstantCache)
@@ -22,14 +24,18 @@ end
   end
   k = f(t+dt,u) # For the interpolation, needs k at the updated point
   integrator.fsallast = k
-  @pack integrator = t,dt,u,k
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  @pack integrator = t,dt,u
 end
 
 @inline function initialize!(integrator,cache::TanYam7Cache)
-  integrator.kprev = similar(integrator.rate_prototype)
   integrator.fsalfirst = cache.k1
   integrator.fsallast = cache.k
-  integrator.k = cache.k
+  integrator.kshortsize = 2
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
 end
 
@@ -86,7 +92,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   f(t+dt,u,k)
-  @pack integrator = t,dt,u,k
+  @pack integrator = t,dt,u
 end
 
 @inline function initialize!(integrator,cache::DP8ConstantCache)
@@ -244,6 +250,8 @@ end
 
 @inline function initialize!(integrator,cache::TsitPap8ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
+  integrator.kshortsize = 2
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
 end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::TsitPap8ConstantCache)
@@ -269,14 +277,18 @@ end
   end
   k = f(t+dt,u)
   integrator.fsallast = k
-  @pack integrator = t,dt,u,k
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  @pack integrator = t,dt,u
 end
 
 @inline function initialize!(integrator,cache::TsitPap8Cache)
-  integrator.kprev = similar(integrator.rate_prototype)
   integrator.fsalfirst = cache.k1
   integrator.fsallast = cache.k
-  integrator.k = cache.k
+  integrator.kshortsize = 2
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t,integrator.uprev,cache.k1) # pre-start FSAL
   integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
 end
@@ -346,5 +358,5 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   f(t+dt,u,k)
-  @pack integrator = t,dt,u,k
+  @pack integrator = t,dt,u
 end

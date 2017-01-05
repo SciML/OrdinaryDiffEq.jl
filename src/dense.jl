@@ -117,8 +117,8 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
 
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
-function ode_interpolant(Θ,dt,y₀,y₁,k₀,k₁,cache) # Default interpolant is Hermite
-  (1-Θ)*y₀+Θ*y₁+Θ*(Θ-1)*((1-2Θ)*(y₁-y₀)+(Θ-1)*dt*k₀ + Θ*dt*k₁)
+function ode_interpolant(Θ,dt,y₀,y₁,k₀,k,cache) # Default interpolant is Hermite
+  (1-Θ)*y₀+Θ*y₁+Θ*(Θ-1)*((1-2Θ)*(y₁-y₀)+(Θ-1)*dt*k[1] + Θ*dt*k[2])
 end
 
 """
@@ -126,7 +126,8 @@ By default, simpledense
 """
 function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,dt,f,cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<1 || calcVal
-    if !(uprev<:AbstractArray)
+    error("You shouldn't be here. Go away (and report this... please?).")
+    if !(typeof(uprev)<:AbstractArray)
       copyat_or_push!(k,1,f(t,uprev))
     else
       rtmp = similar(integrator.kprev)
