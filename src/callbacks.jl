@@ -33,27 +33,15 @@ function apply_callback!(integrator,callback)
       find_zero = (Θ) -> begin
         callback.condition(integrator.tprev+Θ*integrator.dt,ode_interpolant(Θ,integrator),integrator)
       end
-      res = prevfloat(fzero(find_zero,typeof(integrator.t)(0),top_Θ))
-      val = ode_interpolant(res,integrator)
-      recursivecopy!(integrator.u,val)
-      integrator.dt *= res
+      Θ = prevfloat(fzero(find_zero,typeof(integrator.t)(0),top_Θ))
+      new_t = integrator.tprev + integrator.dt*Θ
     elseif interp_index != callback.interp_points
-        integrator.dt *= Θs[interp_index]
-        recursivecopy!(integrator.u,ode_interpolant(Θs[interp_index],integrator))
+      new_t = integrator.tprev + integrator.dt*Θs[interp_index]
+    else
+      # If no solve and no interpolants, just use endpoint
+      new_t = integrator.t
     end
-    # If no solve and no interpolants, just use endpoint
-
-    integrator.t = integrator.tprev + integrator.dt
-    if integrator.opts.calck
-      if isspecialdense(integrator.alg)
-        resize!(integrator.k,integrator.kshortsize) # Reset k for next step!
-        ode_addsteps!(integrator,Val{true},Val{false})
-      elseif typeof(integrator.u) <: Number
-        integrator.k = integrator.f(integrator.t,integrator.u)
-      else
-        integrator.f(integrator.t,integrator.u,integrator.k)
-      end
-    end
+    change_t_via_interpolation!(integrator,new_t)
   end
 
   if callback.save_positions[1]
@@ -62,25 +50,9 @@ function apply_callback!(integrator,callback)
 
   if event_occurred
     callback.affect!(integrator)
-    if integrator.opts.calck
-      if isspecialdense(integrator.alg)
-        resize!(integrator.k,integrator.kshortsize) # Reset k for next step!
-        ode_addsteps!(integrator,Val{true},Val{false})
-      else
-        if typeof(integrator.u) <: Number
-          integrator.k = integrator.f(integrator.t,integrator.u)
-        else
-          integrator.f(integrator.t,integrator.u,integrator.k)
-        end
-      end
-    end
-
+    reeval_internals_due_to_modification!(integrator)
     if callback.save_positions[2]
       savevalues!(integrator)
-    end
-
-    if (isfsal(integrator.alg) && !isspecialdense(integrator.alg)) || (isspecialdense(integrator.alg) && isfsal(integrator.alg) && !(integrator.fsalfirst===integrator.k)) ## This will stop double compute for simpledense FSAL
-      integrator.reeval_fsal = true
     end
   end
 end

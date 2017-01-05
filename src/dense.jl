@@ -8,6 +8,10 @@ end
 
 ## Integrator Dispatches
 
+# Can get rid of an allocation here with a function
+# get_tmp_arr(integrator.cache) which gives a pointer to some
+# cache array which can be modified.
+
 function ode_addsteps!{calcVal,calcVal2,calcVal3}(integrator,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   ode_addsteps!(integrator.k,integrator.t,integrator.uprev,integrator.dt,integrator.f,integrator.cache,always_calc_begin,allow_calc_end,force_calc_end)
 end

@@ -55,6 +55,11 @@ function step!(integrator::ODEIntegrator)
   if !isempty(integrator.opts.tstops) && integrator.t == top(integrator.opts.tstops)
    pop!(integrator.opts.tstops)
    integrator.just_hit_tstop = true
+  elseif !isempty(integrator.opts.tstops) && integrator.t > top(integrator.opts.tstops) && !integrator.dtchangeable
+    change_t_via_interpolation!(integrator,pop!(integrator.opts.tstops),Val{false})
+    integrator.just_hit_tstop = true
+  elseif !isempty(integrator.opts.tstops) && integrator.t > top(integrator.opts.tstops)
+    error("Something went wrong. Integrator stepped past tstops but the algorithm was dtchangeable. Please report this error.")
   end
 end
 

@@ -83,7 +83,30 @@ end
 end
 
 @inline function ode_postamble!(integrator)
+  if integrator.opts.save_timeseries==false
+    solution_endpoint_match_cur_integrator!(integrator)
+  end
+  resize!(integrator.sol.t,integrator.saveiter)
+  resize!(integrator.sol.u,integrator.saveiter)
+  resize!(integrator.sol.k,integrator.saveiter_dense)
   if integrator.sol.t[end] !=  integrator.t
+    error("Solution endpoint doesn't match the current time in the postamble. This should never happen.")
+    #=
+    integrator.saveiter += 1
+    copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
+    copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
+    if integrator.opts.dense
+      integrator.saveiter_dense +=1
+      copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
+      copyat_or_push!(integrator.notsaveat_idxs,integrator.saveiter_dense,integrator.saveiter)
+    end
+    =#
+  end
+  !(typeof(integrator.prog)<:Void) && Juno.done(integrator.prog)
+end
+
+@inline function solution_endpoint_match_cur_integrator!(integrator)
+  if integrator.sol.t[integrator.saveiter] !=  integrator.t
     integrator.saveiter += 1
     copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
     copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
@@ -93,7 +116,6 @@ end
       copyat_or_push!(integrator.notsaveat_idxs,integrator.saveiter_dense,integrator.saveiter)
     end
   end
-  !(typeof(integrator.prog)<:Void) && Juno.done(integrator.prog)
 end
 
 @inline function loopfooter!(integrator)

@@ -1,4 +1,4 @@
-using OrdinaryDiffEq
+using OrdinaryDiffEq, DiffEqProblemLibrary
 u0=rand(300,20).*ones(300,20)/2
 prob = prob_ode_2Dlinear_notinplace
 prob2 = prob_ode_2Dlinear

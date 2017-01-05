@@ -39,6 +39,7 @@ module OrdinaryDiffEq
   include("integrators/implicit_integrators.jl")
   include("integrators/rosenbrock_integrators.jl")
   include("integrators/threaded_rk_integrators.jl")
+  include("integrators/integrator_interface.jl")
   include("iterator_interface.jl")
   include("constants.jl")
   include("callbacks.jl")
