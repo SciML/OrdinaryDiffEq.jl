@@ -6,15 +6,25 @@
   Θs = linspace(typeof(integrator.t)(0),typeof(integrator.t)(1),callback.interp_points)
   interp_index = 0
   # Check if the event occured
-  if callback.condition(integrator.t,integrator.u,integrator)<=0
+  if callback.condition == true
     event_occurred = true
-    interp_index = callback.interp_points
-  elseif callback.interp_points!=0 # Use the interpolants for safety checking
-    for i in 2:length(Θs)-1
-      if callback.condition(integrator.t+integrator.dt*Θs[i],ode_interpolant(Θs[i],integrator),integrator)<0
-        event_occurred = true
-        interp_index = i
-        break
+  else
+    previous_condition = callback.condition(integrator.tprev,integrator.uprev,integrator)
+    if isapprox(previous_condition,0,rtol=callback.reltol,atol=callback.abstol)
+      prev_sign = 0
+    else
+      prev_sign = sign(previous_condition)
+    end
+    if prev_sign*sign(callback.condition(integrator.t,integrator.u,integrator))<0
+      event_occurred = true
+      interp_index = callback.interp_points
+    elseif callback.interp_points!=0 # Use the interpolants for safety checking
+      for i in 2:length(Θs)-1
+        if prev_sign*callback.condition(integrator.t+integrator.dt*Θs[i],ode_interpolant(Θs[i],integrator),integrator)<0
+          event_occurred = true
+          interp_index = i
+          break
+        end
       end
     end
   end
@@ -33,7 +43,7 @@ function apply_callback!(integrator,callback)
       find_zero = (Θ) -> begin
         callback.condition(integrator.tprev+Θ*integrator.dt,ode_interpolant(Θ,integrator),integrator)
       end
-      Θ = prevfloat(fzero(find_zero,typeof(integrator.t)(0),top_Θ))
+      Θ = prevfloat(prevfloat(fzero(find_zero,typeof(integrator.t)(0),top_Θ)))
       new_t = integrator.tprev + integrator.dt*Θ
     elseif interp_index != callback.interp_points
       new_t = integrator.tprev + integrator.dt*Θs[interp_index]

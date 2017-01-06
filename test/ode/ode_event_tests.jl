@@ -54,9 +54,7 @@ sol3= solve(prob,Vern6(),saveat=[.5])
 
 ## Saving callback
 
-condtion= function (t,u,integrator) # Event when event_f(t,u,k) == 0
-  0
-end
+condtion = true
 
 affect! = function (integrator) end
 
