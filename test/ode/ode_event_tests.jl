@@ -35,6 +35,7 @@ sol = solve(prob,Tsit5(),callback=callback,adaptive=false,dt=1/4)
 
 sol = solve(prob,Vern6(),callback=callback)
 #plot(sol,denseplot=true)
+sol = solve(prob,BS3(),callback=callback)
 
 sol33 = solve(prob,Vern7(),callback=callback)
 

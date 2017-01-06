@@ -23,3 +23,7 @@ end
   end
   integrator.reeval_fsal = true
 end
+
+@inline function u_modified!(integrator::ODEIntegrator,bool::Bool)
+  integrator.u_modified = bool
+end

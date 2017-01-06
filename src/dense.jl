@@ -23,9 +23,9 @@ end
 
 function ode_addsteps!{calcVal,calcVal2,calcVal3}(integrator,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if !(typeof(integrator.cache) <: CompositeCache)
-    ode_addsteps!(integrator.k,integrator.t,integrator.uprev,integrator.dt,integrator.f,integrator.cache,always_calc_begin,allow_calc_end,force_calc_end)
+    ode_addsteps!(integrator.k,integrator.t,integrator.uprev,integrator.u,integrator.dt,integrator.f,integrator.cache,always_calc_begin,allow_calc_end,force_calc_end)
   else
-    ode_addsteps!(integrator.k,integrator.t,integrator.uprev,integrator.dt,integrator.f,integrator.cache.caches[integrator.cache.current],always_calc_begin,allow_calc_end,force_calc_end)
+    ode_addsteps!(integrator.k,integrator.t,integrator.uprev,integrator.u,integrator.dt,integrator.f,integrator.cache.caches[integrator.cache.current],always_calc_begin,allow_calc_end,force_calc_end)
   end
 end
 
@@ -73,10 +73,10 @@ function ode_interpolation(cache,tvals,id)
       dt = ts[notsaveat_idxs[i]] - ts[notsaveat_idxs[i-1]]
       Θ = (t-ts[notsaveat_idxs[i-1]])/dt
       if typeof(cache) <: CompositeCache
-        ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],dt,f,cache.caches[id.alg_choice[notsaveat_idxs[i-1]]]) # update the kcurrent
+        ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache.caches[id.alg_choice[notsaveat_idxs[i-1]]]) # update the kcurrent
         vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]])
       else
-        ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],dt,f,cache) # update the kcurrent
+        ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache) # update the kcurrent
         vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache)
       end
     end
@@ -102,10 +102,10 @@ function ode_interpolation(cache,tval::Number,id)
     dt = ts[notsaveat_idxs[i]] - ts[notsaveat_idxs[i-1]]
     Θ = (tval-ts[notsaveat_idxs[i-1]])/dt
     if typeof(cache) <: CompositeCache
-      ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],dt,f,cache.caches[id.alg_choice[notsaveat_idxs[i-1]]]) # update the kcurrent
+      ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache.caches[id.alg_choice[notsaveat_idxs[i-1]]]) # update the kcurrent
       val = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]])
     else
-      ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],dt,f,cache) # update the kcurrent
+      ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache) # update the kcurrent
       val = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache)
     end
   end
@@ -124,15 +124,17 @@ end
 """
 By default, simpledense
 """
-function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,dt,f,cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
-  if length(k)<1 || calcVal
-    error("You shouldn't be here. Go away (and report this... please?).")
+function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+  if length(k)<2 || calcVal
     if !(typeof(uprev)<:AbstractArray)
       copyat_or_push!(k,1,f(t,uprev))
+      copyat_or_push!(k,2,f(t+dt,u))
     else
-      rtmp = similar(integrator.rate_prototype)
+      rtmp = similar(cache.fsalfirst)
       f(t,uprev,rtmp)
       copyat_or_push!(k,1,rtmp)
+      f(t+dt,u,rtmp)
+      copyat_or_push!(k,2,rtmp)
     end
   end
   nothing
@@ -600,7 +602,7 @@ function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP8Cache)
   y₀ + dt*Θ*(k[1] + Θ1*(k[2] + Θ*(k[3]+Θ1*conpar)))
 end
 
-function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,dt,f,cache::DP5ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::DP5ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<4 || calcVal
     @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = cache
     @unpack d1,d3,d4,d5,d6,d7 = cache
@@ -621,7 +623,7 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,dt,f,cache::DP5Const
   nothing
 end
 
-function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,dt,f,cache::DP5Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::DP5Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<4 || calcVal
     @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = cache.tab
     @unpack d1,d3,d4,d5,d6,d7 = cache.tab
@@ -644,7 +646,7 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,dt,f,cache::DP5Cache
   nothing
 end
 
-function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,dt,f,cache::Tsit5ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Tsit5ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<7 || calcVal
     @unpack c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,b1,b2,b3,b4,b5,b6,b7 = cache
     copyat_or_push!(k,1,f(t,uprev))
@@ -659,7 +661,7 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,dt,f,cache::Tsit5Con
   nothing
 end
 
-function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,dt,f,cache::Tsit5Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Tsit5Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<7 || calcVal
     @unpack c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,b1,b2,b3,b4,b5,b6,b7 = cache.tab
     rtmp = similar(cache.k1)
@@ -681,7 +683,7 @@ An Efficient Runge-Kutta (4,5) Pair by P.Bogacki and L.F.Shampine
 
 Called to add the extra k9, k10, k11 steps for the Order 5 interpolation when needed
 """
-function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,dt,f,cache::BS5ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::BS5ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if (length(k) < 8 || calcVal) || ((calcVal2 && length(k)< 11) || calcVal3)
   end
 
@@ -711,7 +713,7 @@ An Efficient Runge-Kutta (4,5) Pair by P.Bogacki and L.F.Shampine
 
 Called to add the extra k9, k10, k11 steps for the Order 5 interpolation when needed
 """
-function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,dt,f,cache::BS5Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::BS5Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if (length(k) < 8 || calcVal) || ((calcVal2 && length(k)< 11) || calcVal3)
     rtmp = similar(cache.k1)
   end
@@ -740,7 +742,7 @@ end
 """
 
 """
-function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,dt,f,cache::Vern6ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Vern6ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if (length(k) < 9 || calcVal) || ((calcVal2 && length(k)< 12) || calcVal3)
   end
 
@@ -768,7 +770,7 @@ end
 """
 
 """
-function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,dt,f,cache::Vern6Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Vern6Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if (length(k) < 9 || calcVal) || ((calcVal2 && length(k)< 12) || calcVal3)
     rtmp = similar(cache.k1)
   end
@@ -797,7 +799,7 @@ end
 """
 
 """
-function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,dt,f,cache::Vern7ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Vern7ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if (length(k) < 10 || calcVal) || ((calcVal2 && length(k)< 16) || calcVal3)
   end
 
@@ -829,7 +831,7 @@ end
 """
 
 """
-function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,dt,f,cache::Vern7Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Vern7Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if (length(k) < 10 || calcVal) || ((calcVal2 && length(k)< 16) || calcVal3)
     rtmp = similar(cache.k1)
   end
@@ -862,7 +864,7 @@ end
 """
 
 """
-function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,dt,f,cache::Vern8ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Vern8ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if (length(k) < 13 || calcVal) || ((calcVal2 && length(k)< 21) || calcVal3)
   end
   if length(k) <13 || calcVal
@@ -898,7 +900,7 @@ end
 """
 
 """
-function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,dt,f,cache::Vern8Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Vern8Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if (length(k) < 13 || calcVal) || ((calcVal2 && length(k)< 21) || calcVal3)
     rtmp = similar(cache.k1)
   end
@@ -935,7 +937,7 @@ end
 """
 
 """
-function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,dt,f,cache::Vern9ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Vern9ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if (length(k) < 16 || calcVal) || ((calcVal2 && length(k)< 26) || calcVal3)
   end
   if length(k) < 16 || calcVal
@@ -976,7 +978,7 @@ end
 """
 
 """
-function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,dt,f,cache::Vern9Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Vern9Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if (length(k) < 16 || calcVal) || ((calcVal2 && length(k)< 26) || calcVal3)
     rtmp = similar(cache.k1)
   end
@@ -1015,7 +1017,7 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,dt,f,cache::Vern9Cac
   nothing
 end
 
-function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,dt,f,cache::DP8ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::DP8ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<7 || calcVal
     @unpack c7,c8,c9,c10,c11,c6,c5,c4,c3,c2,b1,b6,b7,b8,b9,b10,b11,b12,bhh1,bhh2,bhh3,er1,er6,er7,er8,er9,er10,er11,er12,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211 = cache
     @unpack c14,c15,c16,a1401,a1407,a1408,a1409,a1410,a1411,a1412,a1413,a1501,a1506,a1507,a1508,a1511,a1512,a1513,a1514,a1601,a1606,a1607,a1608,a1609,a1613,a1614,a1615 = cache
@@ -1051,7 +1053,7 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,dt,f,cache::DP8Const
   end
 end
 
-function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,dt,f,cache::DP8Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::DP8Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<7 || calcVal
     @unpack c7,c8,c9,c10,c11,c6,c5,c4,c3,c2,b1,b6,b7,b8,b9,b10,b11,b12,bhh1,bhh2,bhh3,er1,er6,er7,er8,er9,er10,er11,er12,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211 = cache.tab
     @unpack c14,c15,c16,a1401,a1407,a1408,a1409,a1410,a1411,a1412,a1413,a1501,a1506,a1507,a1508,a1511,a1512,a1513,a1514,a1601,a1606,a1607,a1608,a1609,a1613,a1614,a1615 = cache.tab

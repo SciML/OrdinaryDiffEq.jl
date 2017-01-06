@@ -195,6 +195,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   saveiter_dense = 1
   kshortsize = 1
   reeval_fsal = false
+  u_modified = false
   EEst = tTypeNoUnits(1)
   just_hit_tstop = false
   accept_step = false
@@ -209,7 +210,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
                              alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,dtchangeable,
                              dtpropose,dt_mod,tdir,EEst,qoldinit,q11,
                              iter,saveiter,saveiter_dense,prog,cache,
-                             kshortsize,just_hit_tstop,accept_step,reeval_fsal,opts)
+                             kshortsize,just_hit_tstop,accept_step,reeval_fsal,u_modified,opts)
   initialize!(integrator,integrator.cache)
   integrator
 end

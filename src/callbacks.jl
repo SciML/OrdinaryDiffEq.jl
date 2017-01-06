@@ -59,8 +59,11 @@ function apply_callback!(integrator,callback)
   end
 
   if event_occurred
+    integrator.u_modified = true
     callback.affect!(integrator)
-    reeval_internals_due_to_modification!(integrator)
+    if integrator.u_modified
+      reeval_internals_due_to_modification!(integrator)
+    end
     if callback.save_positions[2]
       savevalues!(integrator)
     end

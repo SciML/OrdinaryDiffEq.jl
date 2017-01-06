@@ -24,7 +24,7 @@ end
 @inline function initialize!(integrator,cache::BS3Cache)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.fsalfirst = cache.k1  # done by pointers, no copying
+  integrator.fsalfirst = cache.fsalfirst  # done by pointers, no copying
   integrator.fsallast = cache.k4
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -34,7 +34,8 @@ end
 @inline function perform_step!(integrator::ODEIntegrator,cache::BS3Cache)
   @unpack t,dt,uprev,u,f,k = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack k1,k2,k3,k4,utilde,tmp,atmp = cache
+  @unpack k2,k3,k4,utilde,tmp,atmp = cache
+  k1 = cache.fsalfirst
   @unpack a21,a32,a41,a42,a43,c1,c2,b1,b2,b3,b4 = cache.tab
   for i in uidx
     tmp[i] = uprev[i]+dt*a21*k1[i]

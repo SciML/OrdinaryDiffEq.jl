@@ -104,8 +104,8 @@ end
 end
 
 @inline function initialize!(integrator,cache::RK4Cache)
-  @unpack tmp,k₁,k₂,k₃,k₄,k = cache
-  integrator.fsalfirst = k₁
+  @unpack tmp,fsalfirst,k₂,k₃,k₄,k = cache
+  integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
@@ -117,7 +117,8 @@ end
 @inline function perform_step!(integrator::ODEIntegrator,cache::RK4Cache)
   @unpack t,dt,uprev,u,f,k = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack tmp,k₁,k₂,k₃,k₄,k = cache
+  @unpack tmp,fsalfirst,k₂,k₃,k₄,k = cache
+  k₁ = fsalfirst
   halfdt = dt/2
   ttmp = t+halfdt
   for i in uidx

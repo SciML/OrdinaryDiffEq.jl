@@ -56,7 +56,7 @@ Base.@pure alg_cache(alg::Midpoint,u,rate_prototype,uEltypeNoUnits,uprev,f,t,::T
 immutable RK4Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
-  k₁::rateType
+  fsalfirst::rateType
   k₂::rateType
   k₃::rateType
   k₄::rateType
@@ -81,7 +81,7 @@ Base.@pure alg_cache(alg::RK4,u,rate_prototype,uEltypeNoUnits,uprev,f,t,::Type{V
 immutable BS3Cache{uType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
-  k1::rateType
+  fsalfirst::rateType
   k2::rateType
   k3::rateType
   k4::rateType
@@ -392,7 +392,7 @@ Base.@pure alg_cache(alg::Vern9,u,rate_prototype,uEltypeNoUnits,uprev,f,t,::Type
 immutable TanYam7Cache{uType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
-  k1::rateType
+  fsalfirst::rateType
   k2::rateType
   k3::rateType
   k4::rateType
@@ -485,7 +485,7 @@ Base.@pure alg_cache(alg::DP8,u,rate_prototype,uEltypeNoUnits,uprev,f,t,::Type{V
 immutable TsitPap8Cache{uType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
-  k1::rateType
+  fsalfirst::rateType
   k2::rateType
   k3::rateType
   k4::rateType
@@ -525,6 +525,7 @@ immutable ExplicitRKCache{uType,rateType,uEltypeNoUnits,ksEltype,TabType} <: Ord
   uEEst::rateType
   atmp::uEltypeNoUnits
   uprev::uType
+  fsalfirst::ksEltype
   fsallast::ksEltype
   kk::Vector{ksEltype}
   tab::TabType
@@ -535,6 +536,7 @@ Base.@pure function alg_cache(alg::ExplicitRK,u,rate_prototype,uEltypeNoUnits,up
   for i = 1:alg.tableau.stages
     push!(kk,similar(rate_prototype))
   end
+  fsalfirst = kk[1]
   if isfsal(alg.tableau)
     fsallast = kk[end]
   else
@@ -545,7 +547,7 @@ Base.@pure function alg_cache(alg::ExplicitRK,u,rate_prototype,uEltypeNoUnits,up
   atmp = similar(u,uEltypeNoUnits)
   uEEst = similar(rate_prototype)
   tab = ExplicitRKConstantCache(alg.tableau,rate_prototype)
-  ExplicitRKCache(u,tmp,utilde,uEEst,atmp,uprev,fsallast,kk,tab)
+  ExplicitRKCache(u,tmp,utilde,uEEst,atmp,uprev,fsalfirst,fsallast,kk,tab)
 end
 
 immutable ExplicitRKConstantCache{MType,VType,KType} <: OrdinaryDiffEqConstantCache
@@ -568,7 +570,7 @@ Base.@pure alg_cache(alg::ExplicitRK,u,rate_prototype,uEltypeNoUnits,uprev,f,t,:
 
 immutable Feagin10Cache{uType,uEltypeNoUnits,rateType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
-  k1::rateType
+  fsalfirst::rateType
   k2::rateType
   k3::rateType
   k4::rateType
@@ -607,7 +609,7 @@ Base.@pure alg_cache(alg::Feagin10,u,rate_prototype,uEltypeNoUnits,uprev,f,t,::T
 
 immutable Feagin12Cache{uType,uEltypeNoUnits,rateType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
-  k1::rateType
+  fsalfirst::rateType
   k2::rateType
   k3::rateType
   k4::rateType
@@ -657,7 +659,7 @@ Base.@pure alg_cache(alg::Feagin12,u,rate_prototype,uEltypeNoUnits,uprev,f,t,::T
 
 immutable Feagin14Cache{uType,uEltypeNoUnits,rateType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
-  k1::rateType
+  fsalfirst::rateType
   k2::rateType
   k3::rateType
   k4::rateType
