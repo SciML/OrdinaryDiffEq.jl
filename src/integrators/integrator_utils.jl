@@ -92,9 +92,7 @@ end
       copyat_or_push!(integrator.sol.alg_choice,integrator.saveiter,integrator.cache.current)
     end
   end
-  if isspecialdense(integrator.alg)
-    resize!(integrator.k,integrator.kshortsize)
-  end
+  resize!(integrator.k,integrator.kshortsize)
 end
 
 @inline function postamble!(integrator)

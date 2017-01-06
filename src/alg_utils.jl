@@ -20,21 +20,8 @@ isfsal(alg::Trapezoid) = true
 isfsal(alg::ImplicitEuler) = true
 isfsal(alg::ExplicitRK) = true
 isfsal{MType,VType,fsal}(tab::ExplicitRKTableau{MType,VType,fsal}) = fsal
-isfsal(tab::ImplicitRKTableau) = false
-
-isspecialdense(alg::OrdinaryDiffEqAlgorithm) = false
-isspecialdense(alg::DP5) = true
-isspecialdense(alg::DP5Threaded) = true
-isspecialdense(alg::DP8) = true
-isspecialdense(alg::Rosenbrock23) = true
-isspecialdense(alg::Rosenbrock32) = true
-isspecialdense(alg::BS5) = true
-isspecialdense(alg::Tsit5) = true
-isspecialdense(alg::Vern6) = true
-isspecialdense(alg::Vern7) = true
-isspecialdense(alg::Vern8) = true
-isspecialdense(alg::Vern9) = true
-isspecialdense(alg::CompositeAlgorithm) = isspecialdense(alg.algs[1])
+#isfsal(tab::ImplicitRKTableau) = false
+isfsal(alg::CompositeAlgorithm) = true # Every algorithm is assumed FSAL. Good assumption?
 
 isimplicit(alg::OrdinaryDiffEqAlgorithm) = false
 isimplicit(alg::ImplicitEuler) = true
@@ -47,11 +34,6 @@ ismultistep(alg::OrdinaryDiffEqAlgorithm) = false
 isadaptive(alg::OrdinaryDiffEqAlgorithm) = false
 isadaptive(alg::OrdinaryDiffEqAdaptiveAlgorithm) = true
 isadaptive(alg::OrdinaryDiffEqCompositeAlgorithm) = isadaptive(alg.algs[1])
-
-function get_kseltype(alg::OrdinaryDiffEqAlgorithm,prob)
-  rateType = typeof(prob.u0/zero(prob.tspan[1]))
-  isspecialdense(alg) ? ksEltype = Vector{rateType} : ksEltype = rateType
-end
 
 qmin_default(alg::OrdinaryDiffEqAlgorithm) = 1//5
 qmin_default(alg::DP8) = 1//3

@@ -1,19 +1,22 @@
-using OrdinaryDiffEq, DiffEqProblemLibrary
+using OrdinaryDiffEq, DiffEqProblemLibrary, Base.Test
 prob = prob_ode_2Dlinear
 choice_function(integrator) = (Int(integrator.t<0.5) + 1)
 alg_double = CompositeAlgorithm((Tsit5(),Tsit5()),choice_function)
+alg_double2 = CompositeAlgorithm((Vern6(),Vern6()),choice_function)
 alg_switch = CompositeAlgorithm((Vern7(),Tsit5()),choice_function)
 
-integrator = init(prob,alg_switch,dt=1/8)
-for i in take(integrator,4) end
-step!(integrator)
-step!(integrator)
-step!(integrator)
+@time sol1 = solve(prob_ode_linear,alg_double)
+@time sol2 = solve(prob_ode_linear,Tsit5())
+@test sol1.t == sol2.t
+@test sol1(0.8) == sol2(0.8)
 
-@time sol = solve(prob,alg_double)
-@time sol = solve(prob,Tsit5())
+integrator1 = init(prob,alg_double2)
+integrator2 = init(prob,Vern6())
+solve!(integrator1)
+solve!(integrator2)
 
-using BenchmarkTools
+@test integrator1.sol.t == integrator2.sol.t
 
-@benchmark sol = solve(prob,alg_double)
-@benchmark sol = solve(prob,Tsit5())
+sol = solve(prob,alg_switch)
+
+using Plots; plot(sol)

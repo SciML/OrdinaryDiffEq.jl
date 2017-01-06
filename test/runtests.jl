@@ -27,6 +27,7 @@ tic()
 @time @testset "Number Type Tests" begin include("ode/ode_numbertype_tests.jl") end
 @time @testset "Ndim Complex Tests" begin include("ode/ode_ndim_complex_tests.jl") end
 @time @testset "Iterator Tests" begin include("iterator_tests.jl") end
+@time @testset "Composite Algorithm Tests" begin include("iterator_tests.jl") end
 
 (LONGER_TESTS) && (@time @testset "Units Tests" begin include("units_tests.jl") end) # Too long for AppVeyor
 
