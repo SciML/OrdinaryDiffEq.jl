@@ -203,7 +203,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   q11 = tTypeNoUnits(1)
 
   integrator = ODEIntegrator{algType,uType,tType,
-                             tTypeNoUnits,eltype(ks),typeof(sol),
+                             tTypeNoUnits,typeof(tdir),eltype(ks),typeof(sol),
                              typeof(rate_prototype),typeof(f),typeof(prog),typeof(cache),
                              typeof(opts)}(
                              sol,u,k,t,tType(dt),f,uprev,tprev,

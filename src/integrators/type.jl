@@ -31,7 +31,7 @@ type DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5,tstopsType,
   stop_at_next_tstop::Bool
 end
 
-type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},tType,tTypeNoUnits,ksEltype,SolType,rateType,F,ProgressType,CacheType,O} <: AbstractODEIntegrator
+type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},tType,tTypeNoUnits,tdirType,ksEltype,SolType,rateType,F,ProgressType,CacheType,O} <: AbstractODEIntegrator
   sol::SolType
   u::uType
   k::ksEltype
@@ -46,9 +46,10 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
   calcprevs::Bool
   dtcache::tType
   dtchangeable::Bool
+
   dtpropose::tType
   dt_mod::tTypeNoUnits
-  tdir::Int
+  tdir::tdirType
   EEst::tTypeNoUnits
   qold::tTypeNoUnits
   q11::tTypeNoUnits
