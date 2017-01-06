@@ -17,7 +17,7 @@ module OrdinaryDiffEq
 
   import DiffEqBase: resize!,cache_iter,terminate!,get_du,
                      get_dt,get_proposed_dt,modify_proposed_dt!,
-                     u_unmodified!,savevalues!
+                     u_modified!,savevalues!
 
   #Constants
 
