@@ -47,22 +47,3 @@ for i in take(integrator,12) end
 @test integrator.iter == 12
 for i in take(integrator,12) end
 @test integrator.iter == 24
-
-#=
-using Plots
-integrator = init(prob,Tsit5();dt=1//2^(4),tstops=[0.5])
-pyplot(show=true)
-plot(integrator)
-for i in integrator
-  display(plot!(integrator,vars=(0,1),legend=false))
-end
-step!(integrator); plot!(integrator,vars=(0,1),legend=false)
-savefig("iteratorplot.png")
-
-integrator = init(prob,Tsit5();dt=1//2^(4),tstops=[0.5])
-plot(integrator)
-for i in integrator
-  display(plot!(integrator,vars=(0,1),legend=false,denseplot=false))
-end
-step!(integrator); plot!(integrator,vars=(0,1),legend=false,denseplot=false)
-=#
