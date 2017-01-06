@@ -1,19 +1,15 @@
 @inline function initialize!(integrator,cache::ExplicitRKConstantCache)
-  if isfsal(integrator.alg) # pre-start FSAL
-    integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev)
-  end
+  integrator.kshortsize = 2
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev)
 end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::ExplicitRKConstantCache)
-  @unpack t,dt,uprev,u,f,k = integrator
-  @unpack A,c,α,αEEst,stages = integrator.cache
-  @unpack kk = integrator.cache
+  @unpack t,dt,uprev,u,f = integrator
+  @unpack A,c,α,αEEst,stages = cache
+  @unpack kk = cache
   # Calc First
-  if isfsal(integrator.alg)
-    kk[1] = integrator.fsalfirst
-  else
-    kk[1] = f(t,uprev)
-  end
+  kk[1] = integrator.fsalfirst
   # Calc Middle
   for i = 2:stages-1
     utilde = zero(kk[1])
@@ -41,26 +37,31 @@ end
     end
     integrator.EEst = integrator.opts.internalnorm( dt*(utilde-uEEst)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
   end
-  k = kk[end]
-  @pack integrator = t,dt,u,k
+  if isfsal(integrator.alg.tableau)
+    integrator.fsallast = kk[end]
+  else
+    integrator.fsallast = f(t+dt,u)
+  end
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  @pack integrator = t,dt,u
 end
 
 @inline function initialize!(integrator,cache::ExplicitRKCache)
-  integrator.k = cache.kk[end]
-  integrator.fsallast = cache.kk[end]
+  integrator.kshortsize = 2
+  integrator.fsallast = cache.fsallast
   integrator.fsalfirst = cache.kk[1]
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
 end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::ExplicitRKCache)
   @unpack t,dt,uprev,u,f,k = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack A,c,α,αEEst,stages = integrator.cache.tab
-  @unpack kk,utilde,tmp,atmp,uEEst = integrator.cache
-  # First
-  if !isfsal(integrator.alg)
-    f(t,uprev,kk[1])
-  end
+  @unpack A,c,α,αEEst,stages = cache.tab
+  @unpack kk,utilde,tmp,atmp,uEEst = cache
   # Middle
   for i = 2:stages-1
     for l in uidx
@@ -90,7 +91,7 @@ end
   end
   f(t+c[end]*dt,u,kk[end]) #fsallast is tmp even if not fsal
   #Accumulate
-  if !isfsal(integrator.alg)
+  if !isfsal(integrator.alg.tableau)
     for i in uidx
       utilde[i] = α[1]*kk[1][i]
     end
@@ -117,5 +118,8 @@ end
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
-  @pack integrator = t,dt,u,k
+  if !isfsal(integrator.alg.tableau)
+    f(t+dt,u,integrator.fsallast)
+  end
+  @pack integrator = t,dt,u
 end

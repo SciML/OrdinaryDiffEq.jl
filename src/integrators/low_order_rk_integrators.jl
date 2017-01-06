@@ -1,10 +1,12 @@
 @inline function initialize!(integrator,cache::BS3ConstantCache)
+  integrator.kshortsize = 2
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
 end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::BS3ConstantCache)
   @unpack t,dt,uprev,u,f,k = integrator
-  @unpack a21,a32,a41,a42,a43,c1,c2,b1,b2,b3,b4 = integrator.cache
+  @unpack a21,a32,a41,a42,a43,c1,c2,b1,b2,b3,b4 = cache
   k1 = integrator.fsalfirst
   k2 = f(t+c1*dt,uprev+dt*a21*k1)
   k3 = f(t+c2*dt,uprev+dt*a32*k2)
@@ -14,22 +16,26 @@ end
     utilde = uprev + dt*(b1*k1 + b2*k2 + b3*k3 + b4*k4)
     integrator.EEst = integrator.opts.internalnorm( ((utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)))
   end
-  k = integrator.fsallast
-  @pack integrator = t,dt,u,k
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  @pack integrator = t,dt,u
 end
 
 @inline function initialize!(integrator,cache::BS3Cache)
-  integrator.k = cache.k4
+  integrator.kshortsize = 2
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.fsalfirst = cache.k1  # done by pointers, no copying
   integrator.fsallast = cache.k4
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
 end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::BS3Cache)
   @unpack t,dt,uprev,u,f,k = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack k1,k2,k3,k4,utilde,tmp,atmp = integrator.cache
-  @unpack a21,a32,a41,a42,a43,c1,c2,b1,b2,b3,b4 = integrator.cache.tab
+  @unpack k1,k2,k3,k4,utilde,tmp,atmp = cache
+  @unpack a21,a32,a41,a42,a43,c1,c2,b1,b2,b3,b4 = cache.tab
   for i in uidx
     tmp[i] = uprev[i]+dt*a21*k1[i]
   end
@@ -60,7 +66,7 @@ end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::BS5ConstantCache)
   @unpack t,dt,uprev,u,f,k = integrator
-        @unpack c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8 = integrator.cache
+        @unpack c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8 = cache
   k1 = integrator.fsalfirst
   k2 = f(t+c1*dt,uprev+dt*a21*k1)
   k3 = f(t+c2*dt,uprev+dt*(a31*k1+a32*k2))
@@ -85,19 +91,19 @@ end
   integrator.kshortsize = 8
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.k[1]=integrator.cache.k1; integrator.k[2]=integrator.cache.k2;
-  integrator.k[3]=integrator.cache.k3; integrator.k[4]=integrator.cache.k4;
-  integrator.k[5]=integrator.cache.k5; integrator.k[6]=integrator.cache.k6;
-  integrator.k[7]=integrator.cache.k7; integrator.k[8]=integrator.cache.k8
-  integrator.fsalfirst = integrator.cache.k1; integrator.fsallast = integrator.cache.k8  # setup pointers
+  integrator.k[1]=cache.k1; integrator.k[2]=cache.k2;
+  integrator.k[3]=cache.k3; integrator.k[4]=cache.k4;
+  integrator.k[5]=cache.k5; integrator.k[6]=cache.k6;
+  integrator.k[7]=cache.k7; integrator.k[8]=cache.k8
+  integrator.fsalfirst = cache.k1; integrator.fsallast = cache.k8  # setup pointers
   integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
 end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::BS5Cache)
   @unpack t,dt,uprev,u,f,k = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack k1,k2,k3,k4,k5,k6,k7,k8,utilde,uhat,tmp,atmp,atmptilde = integrator.cache
-  @unpack c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8 = integrator.cache.tab
+  @unpack k1,k2,k3,k4,k5,k6,k7,k8,utilde,uhat,tmp,atmp,atmptilde = cache
+  @unpack c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8 = cache.tab
   for i in uidx
     tmp[i] = uprev[i]+dt*a21*k1[i]
   end
@@ -148,7 +154,7 @@ end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::Tsit5ConstantCache)
   @unpack t,dt,uprev,u,f,k = integrator
-  @unpack c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,b1,b2,b3,b4,b5,b6,b7 = integrator.cache
+  @unpack c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,b1,b2,b3,b4,b5,b6,b7 = cache
   k1 = integrator.fsalfirst
   k2 = f(t+c1*dt,uprev+dt*(a21*k1))
   k3 = f(t+c2*dt,uprev+dt*(a31*k1+a32*k2))
@@ -173,24 +179,24 @@ end
 
 @inline function initialize!(integrator,cache::Tsit5Cache)
   integrator.kshortsize = 7
-  integrator.fsalfirst = integrator.cache.k1; integrator.fsallast = integrator.cache.k7 # setup pointers
+  integrator.fsalfirst = cache.k1; integrator.fsallast = cache.k7 # setup pointers
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   # Setup k pointers
-  integrator.k[1] = integrator.cache.k1
-  integrator.k[2] = integrator.cache.k2
-  integrator.k[3] = integrator.cache.k3
-  integrator.k[4] = integrator.cache.k4
-  integrator.k[5] = integrator.cache.k5
-  integrator.k[6] = integrator.cache.k6
-  integrator.k[7] = integrator.cache.k7
+  integrator.k[1] = cache.k1
+  integrator.k[2] = cache.k2
+  integrator.k[3] = cache.k3
+  integrator.k[4] = cache.k4
+  integrator.k[5] = cache.k5
+  integrator.k[6] = cache.k6
+  integrator.k[7] = cache.k7
   integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
 end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::Tsit5Cache)
   @unpack t,dt,uprev,u,f,k = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,b1,b2,b3,b4,b5,b6,b7 = integrator.cache.tab
-  @unpack k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp = integrator.cache
+  @unpack c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,b1,b2,b3,b4,b5,b6,b7 = cache.tab
+  @unpack k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp = cache
   for i in uidx
     tmp[i] = uprev[i]+dt*(a21*k1[i])
   end
@@ -233,8 +239,8 @@ end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::DP5ConstantCache)
   @unpack t,dt,uprev,u,f,k = integrator
-  @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = integrator.cache
-  @unpack d1,d3,d4,d5,d6,d7 = integrator.cache
+  @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = cache
+  @unpack d1,d3,d4,d5,d6,d7 = cache
   k1 = integrator.fsalfirst
   k2 = f(t+c1*dt,uprev+dt*(a21*k1))
   k3 = f(t+c2*dt,uprev+dt*(a31*k1+a32*k2))
@@ -258,17 +264,17 @@ end
 
 @inline function initialize!(integrator,cache::DP5Cache)
   integrator.kshortsize = 4
-  integrator.k = [integrator.cache.update,integrator.cache.bspl,integrator.cache.dense_tmp3,integrator.cache.dense_tmp4]
-  integrator.fsalfirst = integrator.cache.k1; integrator.fsallast = integrator.cache.k7
+  integrator.k = [cache.update,cache.bspl,cache.dense_tmp3,cache.dense_tmp4]
+  integrator.fsalfirst = cache.k1; integrator.fsallast = cache.k7
   integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
 end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::DP5Cache)
   @unpack t,dt,uprev,u,f,k = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = integrator.cache.tab
-  @unpack k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,utilde,tmp,atmp = integrator.cache
-  @unpack d1,d3,d4,d5,d6,d7 = integrator.cache.tab
+  @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = cache.tab
+  @unpack k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,utilde,tmp,atmp = cache
+  @unpack d1,d3,d4,d5,d6,d7 = cache.tab
   for i in uidx
     tmp[i] = uprev[i]+dt*(a21*k1[i])
   end

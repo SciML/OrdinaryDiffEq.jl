@@ -6,6 +6,15 @@ immutable InterpolationData{F,uType,tType,kType}
   notsaveat_idxs::Vector{Int}
 end
 
+immutable CompositeInterpolationData{F,uType,tType,kType}
+  f::F
+  timeseries::uType
+  ts::tType
+  ks::kType
+  alg_choice::Vector{Int}
+  notsaveat_idxs::Vector{Int}
+end
+
 ## Integrator Dispatches
 
 # Can get rid of an allocation here with a function
@@ -13,12 +22,20 @@ end
 # cache array which can be modified.
 
 function ode_addsteps!{calcVal,calcVal2,calcVal3}(integrator,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
-  ode_addsteps!(integrator.k,integrator.t,integrator.uprev,integrator.dt,integrator.f,integrator.cache,always_calc_begin,allow_calc_end,force_calc_end)
+  if !(typeof(integrator.cache) <: CompositeCache)
+    ode_addsteps!(integrator.k,integrator.t,integrator.uprev,integrator.dt,integrator.f,integrator.cache,always_calc_begin,allow_calc_end,force_calc_end)
+  else
+    ode_addsteps!(integrator.k,integrator.t,integrator.uprev,integrator.dt,integrator.f,integrator.cache.caches[integrator.cache.current],always_calc_begin,allow_calc_end,force_calc_end)
+  end
 end
 
 function ode_interpolant(Θ,integrator)
   ode_addsteps!(integrator)
-  ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.kprev,integrator.k,integrator.cache)
+  if !(typeof(integrator.cache) <: CompositeCache)
+    ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache)
+  else
+    ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache.caches[integrator.cache.current])
+  end
 end
 
 function current_interpolant(t::Number,integrator)
@@ -55,8 +72,13 @@ function ode_interpolation(cache,tvals,id)
     else
       dt = ts[notsaveat_idxs[i]] - ts[notsaveat_idxs[i-1]]
       Θ = (t-ts[notsaveat_idxs[i-1]])/dt
-      ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],dt,f,cache) # update the kcurrent, since kprevious not used in special caches
-      vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i-1],ks[i],cache)
+      if typeof(cache) <: CompositeCache
+        ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],dt,f,cache.caches[id.alg_choice[notsaveat_idxs[i-1]]]) # update the kcurrent
+        vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]])
+      else
+        ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],dt,f,cache) # update the kcurrent
+        vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache)
+      end
     end
   end
   vals
@@ -79,8 +101,13 @@ function ode_interpolation(cache,tval::Number,id)
   else
     dt = ts[notsaveat_idxs[i]] - ts[notsaveat_idxs[i-1]]
     Θ = (tval-ts[notsaveat_idxs[i-1]])/dt
-    ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],dt,f,cache) # update the kcurrent, since kprevious not used in special caches
-    val = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i-1],ks[i],cache)
+    if typeof(cache) <: CompositeCache
+      ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],dt,f,cache.caches[id.alg_choice[notsaveat_idxs[i-1]]]) # update the kcurrent
+      val = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]])
+    else
+      ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],dt,f,cache) # update the kcurrent
+      val = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache)
+    end
   end
   val
 end
@@ -90,8 +117,8 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
 
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
-function ode_interpolant(Θ,dt,y₀,y₁,k₀,k₁,cache) # Default interpolant is Hermite
-  (1-Θ)*y₀+Θ*y₁+Θ*(Θ-1)*((1-2Θ)*(y₁-y₀)+(Θ-1)*dt*k₀ + Θ*dt*k₁)
+function ode_interpolant(Θ,dt,y₀,y₁,k,cache) # Default interpolant is Hermite
+  (1-Θ)*y₀+Θ*y₁+Θ*(Θ-1)*((1-2Θ)*(y₁-y₀)+(Θ-1)*dt*k[1] + Θ*dt*k[2])
 end
 
 """
@@ -99,10 +126,11 @@ By default, simpledense
 """
 function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,dt,f,cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<1 || calcVal
-    if !(uprev<:AbstractArray)
+    error("You shouldn't be here. Go away (and report this... please?).")
+    if !(typeof(uprev)<:AbstractArray)
       copyat_or_push!(k,1,f(t,uprev))
     else
-      rtmp = similar(integrator.kprev)
+      rtmp = similar(integrator.rate_prototype)
       f(t,uprev,rtmp)
       copyat_or_push!(k,1,rtmp)
     end
@@ -113,7 +141,7 @@ end
 """
 Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Problems Page 192
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,cache::DP5ConstantCache)
+function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP5ConstantCache)
   Θ1 = 1-Θ
   y₀ + dt*Θ*(k[1]+Θ1*(k[2]+Θ*(k[3]+Θ1*k[4])))
 end
@@ -121,7 +149,7 @@ end
 """
 Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Problems Page 192
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,cache::DP5Cache)
+function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP5Cache)
   Θ1 = 1-Θ
   y₀ + dt*Θ*(k[1]+Θ1*(k[2]+Θ*(k[3]+Θ1*k[4])))
 end
@@ -129,7 +157,7 @@ end
 """
 From MATLAB ODE Suite by Shampine
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,cache::Rosenbrock23ConstantCache)
+function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Rosenbrock23ConstantCache)
   d = cache.d
   c1 = Θ*(1-Θ)/(1-2d)
   c2 = Θ*(Θ-2d)/(1-2d)
@@ -139,7 +167,7 @@ end
 """
 From MATLAB ODE Suite by Shampine
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,cache::Rosenbrock23Cache)
+function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Rosenbrock23Cache)
   d = cache.tab.d
   c1 = Θ*(1-Θ)/(1-2d)
   c2 = Θ*(Θ-2d)/(1-2d)
@@ -149,7 +177,7 @@ end
 """
 From MATLAB ODE Suite by Shampine
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,cache::Rosenbrock32ConstantCache)
+function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Rosenbrock32ConstantCache)
   d = cache.d
   c1 = Θ*(1-Θ)/(1-2d)
   c2 = Θ*(Θ-2d)/(1-2d)
@@ -159,7 +187,7 @@ end
 """
 From MATLAB ODE Suite by Shampine
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,cache::Rosenbrock32Cache)
+function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Rosenbrock32Cache)
   d = cache.tab.d
   c1 = Θ*(1-Θ)/(1-2d)
   c2 = Θ*(Θ-2d)/(1-2d)
@@ -172,7 +200,7 @@ simplifying assumption
 
 Ch. Tsitouras
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,cache::Tsit5Cache)
+function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Tsit5Cache)
   b1Θ = -1.0530884977290216Θ * (Θ - 1.3299890189751412)*(Θ^2 - 1.4364028541716351Θ + 0.7139816917074209)
   b2Θ = 0.1017Θ^2 * (Θ^2 - 2.1966568338249754Θ + 1.2949852507374631)
   b3Θ = 2.490627285651252793Θ^2 * (Θ^2 - 2.38535645472061657Θ + 1.57803468208092486)
@@ -193,7 +221,7 @@ simplifying assumption
 
 Ch. Tsitouras
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,cache::Tsit5ConstantCache)
+function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Tsit5ConstantCache)
   b1Θ = -1.0530884977290216Θ * (Θ - 1.3299890189751412)*(Θ^2 - 1.4364028541716351Θ + 0.7139816917074209)
   b2Θ = 0.1017Θ^2 * (Θ^2 - 2.1966568338249754Θ + 1.2949852507374631)
   b3Θ = 2.490627285651252793Θ^2 * (Θ^2 - 2.38535645472061657Θ + 1.57803468208092486)
@@ -207,7 +235,7 @@ end
 """
 Coefficients taken from RKSuite
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,cache::BS5ConstantCache)
+function ode_interpolant(Θ,dt,y₀,y₁,k,cache::BS5ConstantCache)
   @unpack r016,r015,r014,r013,r012,r036,r035,r034,r033,r032,r046,r045,r044,r043,r042,r056,r055,r054,r053,r052,r066,r065,r064,r063,r062,r076,r075,r074,r073,r072,r086,r085,r084,r083,r082,r096,r095,r094,r093,r106,r105,r104,r103,r102,r116,r115,r114,r113,r112 = cache
   Θ2 = Θ^2
   Θ3 = Θ2*Θ
@@ -266,7 +294,7 @@ end
 """
 Coefficients taken from RKSuite
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,cache::BS5Cache)
+function ode_interpolant(Θ,dt,y₀,y₁,k,cache::BS5Cache)
   @unpack r016,r015,r014,r013,r012,r036,r035,r034,r033,r032,r046,r045,r044,r043,r042,r056,r055,r054,r053,r052,r066,r065,r064,r063,r062,r076,r075,r074,r073,r072,r086,r085,r084,r083,r082,r096,r095,r094,r093,r106,r105,r104,r103,r102,r116,r115,r114,r113,r112 = cache.tab
   Θ2 = Θ^2
   Θ3 = Θ2*Θ
@@ -325,7 +353,7 @@ end
 """
 
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,cache::Vern6Cache)
+function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern6Cache)
   @unpack r011,r012,r013,r014,r015,r016,r042,r043,r044,r045,r046,r052,r053,r054,r055,r056,r062,r063,r064,r065,r066,r072,r073,r074,r075,r076,r082,r083,r084,r085,r086,r092,r093,r094,r095,r096,r102,r103,r104,r105,r106,r112,r113,r114,r115,r116,r122,r123,r124,r125,r126 = cache.tab
   Θ2 = Θ^2
   Θ3 = Θ2*Θ
@@ -348,7 +376,7 @@ end
 """
 
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,cache::Vern6ConstantCache)
+function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern6ConstantCache)
   @unpack r011,r012,r013,r014,r015,r016,r042,r043,r044,r045,r046,r052,r053,r054,r055,r056,r062,r063,r064,r065,r066,r072,r073,r074,r075,r076,r082,r083,r084,r085,r086,r092,r093,r094,r095,r096,r102,r103,r104,r105,r106,r112,r113,r114,r115,r116,r122,r123,r124,r125,r126 = cache
   Θ2 = Θ^2
   Θ3 = Θ2*Θ
@@ -371,7 +399,7 @@ end
 """
 
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,cache::Vern7ConstantCache)
+function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern7ConstantCache)
   @unpack r011,r012,r013,r014,r015,r016,r017,r042,r043,r044,r045,r046,r047,r052,r053,r054,r055,r056,r057,r062,r063,r064,r065,r066,r067,r072,r073,r074,r075,r076,r077,r082,r083,r084,r085,r086,r087,r092,r093,r094,r095,r096,r097,r112,r113,r114,r115,r116,r117,r122,r123,r124,r125,r126,r127,r132,r133,r134,r135,r136,r137,r142,r143,r144,r145,r146,r147,r152,r153,r154,r155,r156,r157,r162,r163,r164,r165,r166,r167 = cache
   Θ2 = Θ^2
   Θ3 = Θ2*Θ
@@ -398,7 +426,7 @@ end
 """
 
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,cache::Vern7Cache)
+function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern7Cache)
   @unpack r011,r012,r013,r014,r015,r016,r017,r042,r043,r044,r045,r046,r047,r052,r053,r054,r055,r056,r057,r062,r063,r064,r065,r066,r067,r072,r073,r074,r075,r076,r077,r082,r083,r084,r085,r086,r087,r092,r093,r094,r095,r096,r097,r112,r113,r114,r115,r116,r117,r122,r123,r124,r125,r126,r127,r132,r133,r134,r135,r136,r137,r142,r143,r144,r145,r146,r147,r152,r153,r154,r155,r156,r157,r162,r163,r164,r165,r166,r167 = cache.tab
   Θ2 = Θ^2
   Θ3 = Θ2*Θ
@@ -425,7 +453,7 @@ end
 """
 
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,cache::Vern8ConstantCache)
+function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern8ConstantCache)
   @unpack r011,r012,r013,r014,r015,r016,r017,r018,r062,r063,r064,r065,r066,r067,r068,r072,r073,r074,r075,r076,r077,r078,r082,r083,r084,r085,r086,r087,r088,r092,r093,r094,r095,r096,r097,r098,r102,r103,r104,r105,r106,r107,r108,r112,r113,r114,r115,r116,r117,r118,r122,r123,r124,r125,r126,r127,r128,r142,r143,r144,r145,r146,r147,r148,r152,r153,r154,r155,r156,r157,r158,r162,r163,r164,r165,r166,r167,r168,r172,r173,r174,r175,r176,r177,r178,r182,r183,r184,r185,r186,r187,r188,r192,r193,r194,r195,r196,r197,r198,r202,r203,r204,r205,r206,r207,r208,r212,r213,r214,r215,r216,r217,r218 = cache
   Θ2 = Θ^2
   Θ3 = Θ2*Θ
@@ -456,7 +484,7 @@ end
 """
 
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,cache::Vern8Cache)
+function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern8Cache)
   @unpack r011,r012,r013,r014,r015,r016,r017,r018,r062,r063,r064,r065,r066,r067,r068,r072,r073,r074,r075,r076,r077,r078,r082,r083,r084,r085,r086,r087,r088,r092,r093,r094,r095,r096,r097,r098,r102,r103,r104,r105,r106,r107,r108,r112,r113,r114,r115,r116,r117,r118,r122,r123,r124,r125,r126,r127,r128,r142,r143,r144,r145,r146,r147,r148,r152,r153,r154,r155,r156,r157,r158,r162,r163,r164,r165,r166,r167,r168,r172,r173,r174,r175,r176,r177,r178,r182,r183,r184,r185,r186,r187,r188,r192,r193,r194,r195,r196,r197,r198,r202,r203,r204,r205,r206,r207,r208,r212,r213,r214,r215,r216,r217,r218 = cache.tab
   Θ2 = Θ^2
   Θ3 = Θ2*Θ
@@ -487,7 +515,7 @@ end
 """
 
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,cache::Vern9ConstantCache)
+function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern9ConstantCache)
   @unpack r011,r012,r013,r014,r015,r016,r017,r018,r019,r082,r083,r084,r085,r086,r087,r088,r089,r092,r093,r094,r095,r096,r097,r098,r099,r102,r103,r104,r105,r106,r107,r108,r109,r112,r113,r114,r115,r116,r117,r118,r119,r122,r123,r124,r125,r126,r127,r128,r129,r132,r133,r134,r135,r136,r137,r138,r139,r142,r143,r144,r145,r146,r147,r148,r149,r152,r153,r154,r155,r156,r157,r158,r159,r172,r173,r174,r175,r176,r177,r178,r179,r182,r183,r184,r185,r186,r187,r188,r189,r192,r193,r194,r195,r196,r197,r198,r199,r202,r203,r204,r205,r206,r207,r208,r209,r212,r213,r214,r215,r216,r217,r218,r219,r222,r223,r224,r225,r226,r227,r228,r229,r232,r233,r234,r235,r236,r237,r238,r239,r242,r243,r244,r245,r246,r247,r248,r249,r252,r253,r254,r255,r256,r257,r258,r259,r262,r263,r264,r265,r266,r267,r268,r269 = cache
   Θ2 = Θ^2
   Θ3 = Θ2*Θ
@@ -522,7 +550,7 @@ end
 """
 
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,cache::Vern9Cache)
+function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern9Cache)
   @unpack r011,r012,r013,r014,r015,r016,r017,r018,r019,r082,r083,r084,r085,r086,r087,r088,r089,r092,r093,r094,r095,r096,r097,r098,r099,r102,r103,r104,r105,r106,r107,r108,r109,r112,r113,r114,r115,r116,r117,r118,r119,r122,r123,r124,r125,r126,r127,r128,r129,r132,r133,r134,r135,r136,r137,r138,r139,r142,r143,r144,r145,r146,r147,r148,r149,r152,r153,r154,r155,r156,r157,r158,r159,r172,r173,r174,r175,r176,r177,r178,r179,r182,r183,r184,r185,r186,r187,r188,r189,r192,r193,r194,r195,r196,r197,r198,r199,r202,r203,r204,r205,r206,r207,r208,r209,r212,r213,r214,r215,r216,r217,r218,r219,r222,r223,r224,r225,r226,r227,r228,r229,r232,r233,r234,r235,r236,r237,r238,r239,r242,r243,r244,r245,r246,r247,r248,r249,r252,r253,r254,r255,r256,r257,r258,r259,r262,r263,r264,r265,r266,r267,r268,r269 = cache.tab
   Θ2 = Θ^2
   Θ3 = Θ2*Θ
@@ -557,7 +585,7 @@ end
 """
 
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,cache::DP8ConstantCache)
+function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP8ConstantCache)
   Θ1 = 1-Θ
   conpar = k[4] + Θ*(k[5] + Θ1*(k[6]+Θ*k[7]))
   y₀ + dt*Θ*(k[1] + Θ1*(k[2] + Θ*(k[3]+Θ1*conpar)))
@@ -566,7 +594,7 @@ end
 """
 
 """
-function ode_interpolant(Θ,dt,y₀,y₁,kprevious,k,cache::DP8Cache)
+function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP8Cache)
   Θ1 = 1-Θ
   conpar = k[4] + Θ*(k[5] + Θ1*(k[6]+Θ*k[7]))
   y₀ + dt*Θ*(k[1] + Θ1*(k[2] + Θ*(k[3]+Θ1*conpar)))

@@ -38,7 +38,7 @@ Base.@pure Rosenbrock23(;chunk_size=0,autodiff=true) = Rosenbrock23{chunk_size,a
 immutable Rosenbrock32{CS,AD} <: OrdinaryDiffEqAdaptiveAlgorithm end
 Base.@pure Rosenbrock32(;chunk_size=0,autodiff=true) = Rosenbrock32{chunk_size,autodiff}()
 
-immutable CompositeAlgorithm{T,F} <: OrdinaryDiffEqAlgorithm
+immutable CompositeAlgorithm{T,F} <: OrdinaryDiffEqCompositeAlgorithm
   algs::T
   choice_function::F
 end

@@ -1,6 +1,6 @@
 @inline function initialize!(integrator,cache::Rosenbrock23Cache)
   integrator.kshortsize = 2
-  @unpack k₁,k₂,fsalfirst,fsallast = integrator.cache
+  @unpack k₁,k₂,fsalfirst,fsallast = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = fsallast
   integrator.k = [k₁,k₂]
@@ -10,9 +10,9 @@ end
 @inline function perform_step!(integrator::ODEIntegrator,cache::Rosenbrock23Cache)
   @unpack t,dt,uprev,u,f,k = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,uf,tf = integrator.cache
+  @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,uf,tf = cache
   jidx = eachindex(J)
-  @unpack c₃₂,d = integrator.cache.tab
+  @unpack c₃₂,d = cache.tab
 
   # Setup Jacobian Calc
   sizeu  = size(u)
@@ -55,7 +55,7 @@ end
 
 @inline function initialize!(integrator,cache::Rosenbrock32Cache)
   integrator.kshortsize = 2
-  @unpack k₁,k₂,fsalfirst,fsallast = integrator.cache
+  @unpack k₁,k₂,fsalfirst,fsallast = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = fsallast
   integrator.k = [k₁,k₂]
@@ -65,9 +65,9 @@ end
 @inline function perform_step!(integrator::ODEIntegrator,cache::Rosenbrock32Cache)
   @unpack t,dt,uprev,u,f,k = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,uf,tf = integrator.cache
+  @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,uf,tf = cache
   jidx = eachindex(J)
-  @unpack c₃₂,d = integrator.cache.tab
+  @unpack c₃₂,d = cache.tab
   # Setup Jacobian Calc
   sizeu  = size(u)
   tf.vf.sizeu = sizeu
@@ -118,7 +118,7 @@ end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::Rosenbrock23ConstantCache)
   @unpack t,dt,uprev,u,f,k = integrator
-  @unpack c₃₂,d,tf,uf = integrator.cache
+  @unpack c₃₂,d,tf,uf = cache
   # Time derivative
   tf.u = uprev
   uf.t = t
@@ -148,7 +148,7 @@ end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::Rosenbrock32ConstantCache)
   @unpack t,dt,uprev,u,f,k = integrator
-  @unpack c₃₂,d,tf,uf = integrator.cache
+  @unpack c₃₂,d,tf,uf = cache
   tf.u = uprev
   uf.t = t
   # Time derivative

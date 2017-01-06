@@ -9,12 +9,13 @@ initialize{uType}(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) =
     if (integrator.opts.adaptive && integrator.accept_step) || !integrator.opts.adaptive
       apply_step!(integrator)
     elseif integrator.opts.adaptive && !integrator.accept_step
-      integrator.dt = integrator.dt/min(inv(integrator.opts.qmin),q11/integrator.opts.gamma)
+      integrator.dt = integrator.dt/min(inv(integrator.opts.qmin),integrator.q11/integrator.opts.gamma)
     end
   end
 
   integrator.iter += 1
   modify_dt_for_tstops!(integrator)
+  choose_algorithm!(integrator,integrator.cache)
 end
 
 @inline function modify_dt_for_tstops!(integrator)
@@ -52,7 +53,7 @@ end
   end
 end
 
-@inline function savevalues!(integrator)
+@inline function savevalues!(integrator::ODEIntegrator)
   while !isempty(integrator.opts.saveat) && integrator.tdir*top(integrator.opts.saveat) <= integrator.tdir*integrator.t # Perform saveat
     integrator.saveiter += 1
     curt = pop!(integrator.opts.saveat)
@@ -62,13 +63,19 @@ end
       val = ode_interpolant(Θ,integrator)
       copyat_or_push!(integrator.sol.t,integrator.saveiter,curt)
       copyat_or_push!(integrator.sol.u,integrator.saveiter,val)
+      if typeof(integrator.alg) <: OrdinaryDiffEqCompositeAlgorithm
+        copyat_or_push!(integrator.sol.alg_choice,integrator.saveiter,integrator.cache.current)
+      end
     else # ==t, just save
       copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
       copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
       if integrator.opts.dense
         integrator.saveiter_dense += 1
-        copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
         copyat_or_push!(integrator.notsaveat_idxs,integrator.saveiter_dense,integrator.saveiter)
+        copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
+      end
+      if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
+        copyat_or_push!(integrator.sol.alg_choice,integrator.saveiter,integrator.cache.current)
       end
     end
   end
@@ -81,10 +88,11 @@ end
       copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
       copyat_or_push!(integrator.notsaveat_idxs,integrator.saveiter_dense,integrator.saveiter)
     end
+    if typeof(integrator.alg) <: OrdinaryDiffEqCompositeAlgorithm
+      copyat_or_push!(integrator.sol.alg_choice,integrator.saveiter,integrator.cache.current)
+    end
   end
-  if isspecialdense(integrator.alg)
-    resize!(integrator.k,integrator.kshortsize)
-  end
+  resize!(integrator.k,integrator.kshortsize)
 end
 
 @inline function postamble!(integrator)
@@ -118,8 +126,8 @@ end
 
 @inline function loopfooter!(integrator)
   if integrator.opts.adaptive
-    q11 = integrator.EEst^integrator.opts.beta1
-    q = q11/(integrator.qold^integrator.opts.beta2)
+    integrator.q11 = integrator.EEst^integrator.opts.beta1
+    q = integrator.q11/(integrator.qold^integrator.opts.beta2)
     q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),q/integrator.opts.gamma))
     dtnew = integrator.dt/q
     ttmp = integrator.t + integrator.dt
@@ -190,17 +198,7 @@ end
     end
   end
 
-  # Update kprev
   integrator.tprev = integrator.t
-  if integrator.calcprevs # Is this a micro-optimization that can be removed?
-    if !isspecialdense(integrator.alg) && integrator.opts.calck
-      if typeof(integrator.k) <: AbstractArray
-        recursivecopy!(integrator.kprev,integrator.k)
-      else
-        integrator.kprev = integrator.k
-      end
-    end
-  end
 
   integrator.dt_mod = typeof(integrator.t)(1)
 end
@@ -237,29 +235,6 @@ end
         error("Something went wrong. Integrator stepped past tstops but the algorithm was dtchangeable. Please report this error.")
       end
     end
-  end
-end
-
-"""
-If no user default, then this will change the default to the defaults
-for the second algorithm.
-"""
-@inline function reset_alg_dependent_opts!(integrator,alg1,alg2)
-  integrator.dtchangeable = isdtchangeable(alg2)
-  if integrator.adaptive == isadaptive(alg1)
-    integrator.adaptve = isadaptive(alg2)
-  end
-  if integrator.qmin == qmin_default(alg1)
-    integrator.qmin = qmin_default(alg2)
-  end
-  if integrator.qmax == qmax_default(alg1)
-    integrator.qmax == qmax_default(alg2)
-  end
-  if integrator.beta2 == beta2_default(alg1)
-    integrator.beta2 = beta2_default(alg2)
-  end
-  if integrator.beta1 == beta1_default(alg1,integrator.beta2)
-    integrator.beta1 = beta1_default(alg2,integrator.beta2)
   end
 end
 

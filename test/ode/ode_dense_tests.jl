@@ -54,6 +54,18 @@ sol2 =solve(prob,RK4(),dt=1//2^(4),dense=true)
 
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 5e-5
 
+prob = prob_ode_2Dlinear
+
+sol =solve(prob,RK4(),dt=1//2^(2),dense=true)
+
+interpd = sol(0:1//2^(4):1)
+
+sol2 =solve(prob,RK4(),dt=1//2^(4),dense=true)
+
+@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 1e-4
+
+prob = prob_ode_linear
+
 sol =solve(prob,DP5(),dense=true)
 
 sol2 =solve(prob,DP5(),dt=1//2^(4),dense=true,adaptive=false)
@@ -407,12 +419,6 @@ sol2 =solve(prob,DP8(),dt=1//2^(7),dense=true,adaptive=false)
 
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 2e-7
 
-#=
-plot(sol2.t,interpd)
-plot!(sol2)
-scatter!(sol.t,sol[:])
-=#
-
 prob = prob_ode_2Dlinear
 
 sol =solve(prob,DP8(),dt=1//2^(2),dense=true)
@@ -422,3 +428,25 @@ interpd = sol(0:1//2^(4):1)
 sol2 =solve(prob,DP8(),dt=1//2^(4),dense=true,adaptive=false)
 
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 2.01e-7
+
+### ExplicitRK()
+
+prob = prob_ode_linear
+
+sol =solve(prob,ExplicitRK(),dt=1//2^(2),dense=true)
+
+interpd = sol(0:1//2^(7):1)
+
+sol2 =solve(prob,ExplicitRK(),dt=1//2^(7),dense=true,adaptive=false)
+
+@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 6e-5
+
+prob = prob_ode_2Dlinear
+
+sol =solve(prob,ExplicitRK(),dt=1//2^(2),dense=true)
+
+interpd = sol(0:1//2^(4):1)
+
+sol2 =solve(prob,ExplicitRK(),dt=1//2^(4),dense=true,adaptive=false)
+
+@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 1e-3

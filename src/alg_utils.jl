@@ -17,22 +17,11 @@ isfsal(alg::Feagin14) = true
 isfsal(alg::TanYam7) = true
 isfsal(alg::TsitPap8) = true
 isfsal(alg::Trapezoid) = true
-isfsal(alg::ExplicitRK) = isfsal(alg.tableau)
+isfsal(alg::ImplicitEuler) = true
+isfsal(alg::ExplicitRK) = true
 isfsal{MType,VType,fsal}(tab::ExplicitRKTableau{MType,VType,fsal}) = fsal
-isfsal(tab::ImplicitRKTableau) = false
-
-isspecialdense(alg::OrdinaryDiffEqAlgorithm) = false
-isspecialdense(alg::DP5) = true
-isspecialdense(alg::DP5Threaded) = true
-isspecialdense(alg::DP8) = true
-isspecialdense(alg::Rosenbrock23) = true
-isspecialdense(alg::Rosenbrock32) = true
-isspecialdense(alg::BS5) = true
-isspecialdense(alg::Tsit5) = true
-isspecialdense(alg::Vern6) = true
-isspecialdense(alg::Vern7) = true
-isspecialdense(alg::Vern8) = true
-isspecialdense(alg::Vern9) = true
+#isfsal(tab::ImplicitRKTableau) = false
+isfsal(alg::CompositeAlgorithm) = true # Every algorithm is assumed FSAL. Good assumption?
 
 isimplicit(alg::OrdinaryDiffEqAlgorithm) = false
 isimplicit(alg::ImplicitEuler) = true
@@ -44,11 +33,7 @@ ismultistep(alg::OrdinaryDiffEqAlgorithm) = false
 
 isadaptive(alg::OrdinaryDiffEqAlgorithm) = false
 isadaptive(alg::OrdinaryDiffEqAdaptiveAlgorithm) = true
-
-function get_kseltype(alg::OrdinaryDiffEqAlgorithm,prob)
-  rateType = typeof(prob.u0/zero(prob.tspan[1]))
-  isspecialdense(alg) ? ksEltype = Vector{rateType} : ksEltype = rateType
-end
+isadaptive(alg::OrdinaryDiffEqCompositeAlgorithm) = isadaptive(alg.algs[1])
 
 qmin_default(alg::OrdinaryDiffEqAlgorithm) = 1//5
 qmin_default(alg::DP8) = 1//3
@@ -67,7 +52,6 @@ alg_autodiff{CS,AD}(alg::ImplicitEuler{CS,AD}) = AD
 alg_autodiff{CS,AD}(alg::Trapezoid{CS,AD}) = AD
 alg_autodiff{CS,AD}(alg::Rosenbrock23{CS,AD}) = AD
 alg_autodiff{CS,AD}(alg::Rosenbrock32{CS,AD}) = AD
-
 
 alg_order(alg::OrdinaryDiffEqAlgorithm) = error("Order is not defined for this algorithm")
 alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
@@ -95,6 +79,8 @@ alg_order(alg::Rosenbrock32) = 3
 alg_order(alg::Feagin10) = 10
 alg_order(alg::Feagin12) = 12
 alg_order(alg::Feagin14) = 14
+
+alg_order(alg::CompositeAlgorithm) = alg_order(alg.algs[1])
 
 alg_adaptive_order(alg::ExplicitRK) = alg.tableau.adaptiveorder
 alg_adaptive_order(alg::BS3) = 2
