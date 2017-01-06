@@ -200,19 +200,7 @@ end
     end
   end
 
-  # Update kprev
   integrator.tprev = integrator.t
-  #=
-  if integrator.calcprevs # Is this a micro-optimization that can be removed?
-    if !isspecialdense(integrator.alg) && integrator.opts.calck
-      if typeof(integrator.k) <: AbstractArray
-        recursivecopy!(integrator.kprev,integrator.k)
-      else
-        integrator.kprev = integrator.k
-      end
-    end
-  end
-  =#
 
   integrator.dt_mod = typeof(integrator.t)(1)
 end

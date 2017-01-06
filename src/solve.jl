@@ -154,7 +154,6 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   notsaveat_idxs = Int[1]
 
   k = ksEltype[]
-  kprev = ksEltype[]
 
   if uType <: Array
     uprev = copy(u)
@@ -162,7 +161,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
     uprev = deepcopy(u)
   end
 
-  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uprev,kprev,f,t,Val{isinplace})
+  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uprev,f,t,Val{isinplace})
 
   if dense
     if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
@@ -206,7 +205,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
                              tTypeNoUnits,eltype(ks),typeof(sol),
                              typeof(rate_prototype),typeof(f),typeof(prog),typeof(cache),
                              typeof(opts)}(
-                             sol,u,k,t,tType(dt),f,uprev,kprev,tprev,
+                             sol,u,k,t,tType(dt),f,uprev,tprev,
                              alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,dtchangeable,
                              dtpropose,dt_mod,tdir,EEst,qoldinit,q11,
                              iter,saveiter,saveiter_dense,prog,cache,
