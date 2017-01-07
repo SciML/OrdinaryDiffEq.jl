@@ -33,7 +33,8 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   advance_to_tstop = false,stop_at_next_tstop=false,
   progress=false,progress_steps=1000,progress_name="ODE",
   progress_message = ODE_DEFAULT_PROG_MESSAGE,
-  userdata=nothing,callback=nothing,kwargs...)
+  userdata=nothing,callback=nothing,
+  initialize_integrator=true,kwargs...)
 
   tspan = prob.tspan
   tdir = sign(tspan[end]-tspan[1])
@@ -210,7 +211,9 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
                              dtpropose,dt_mod,tdir,EEst,qoldinit,q11,
                              iter,saveiter,saveiter_dense,prog,cache,
                              kshortsize,just_hit_tstop,accept_step,reeval_fsal,u_modified,opts)
-  initialize!(integrator,integrator.cache,integrator.f)
+  if initialize_integrator
+    initialize!(integrator,integrator.cache)
+  end
   integrator
 end
 

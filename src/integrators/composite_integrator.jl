@@ -26,7 +26,7 @@ end
 
 @code_typed foo((1,1.0), 1)
 
-@generated function perform_step!(integrator::ODEIntegrator,cache::CompositeCache)
+@generated function perform_step!(integrator::ODEIntegrator,cache::CompositeCache,f=integrator.f)
   N = length(cache.parameters)
   :(@nif $(N+1) i->(i == num) i->(tup[i]) i->error("unreachable"))
 end
@@ -39,8 +39,8 @@ end
   resize!(integrator.k,integrator.kshortsize)
 end
 
-@inline function perform_step!(integrator::ODEIntegrator,cache::CompositeCache)
-  perform_step!(integrator,cache.caches[cache.current])
+@inline function perform_step!(integrator::ODEIntegrator,cache::CompositeCache,f=integrator.f)
+  perform_step!(integrator,cache.caches[cache.current],f)
 end
 
 @inline choose_algorithm!(integrator,cache::OrdinaryDiffEqCache) = nothing

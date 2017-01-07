@@ -5,8 +5,8 @@
   f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
 end
 
-@inline function perform_step!(integrator::ODEIntegrator,cache::DP5ThreadedCache)
-  @unpack t,dt,uprev,u,f,k = integrator
+@inline function perform_step!(integrator::ODEIntegrator,cache::DP5ThreadedCache,f=integrator.f)
+  @unpack t,dt,uprev,u,k = integrator
   uidx = eachindex(integrator.uprev)
   @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = cache.tab
   @unpack k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,utilde,tmp,atmp = cache
