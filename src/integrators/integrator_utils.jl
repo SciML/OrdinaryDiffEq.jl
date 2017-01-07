@@ -1,13 +1,13 @@
 initialize{uType}(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) =
                 error("This algorithm does not have an initialization function")
 
-@inline function loopheader!(integrator)
+@inline function loopheader!(integrator,f=integrator.f)
   # Apply right after iterators / callbacks
 
   # Accept or reject the step
   if integrator.iter > 0
     if (integrator.opts.adaptive && integrator.accept_step) || !integrator.opts.adaptive
-      apply_step!(integrator,integrator.f)
+      apply_step!(integrator,f)
     elseif integrator.opts.adaptive && !integrator.accept_step
       integrator.dt = integrator.dt/min(inv(integrator.opts.qmin),integrator.q11/integrator.opts.gamma)
     end
