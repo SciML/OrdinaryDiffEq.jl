@@ -14,7 +14,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   dt = tType(0),save_timeseries = true,
   timeseries_steps = 1,
   dense = save_timeseries,
-  saveat = tType[],tstops = tType[],
+  saveat = tType[],tstops = tType[],d_discontinuities= tType[],
   calck = (!isempty(setdiff(saveat,tstops)) || dense),
   adaptive = isadaptive(alg),
   gamma=9//10,
@@ -45,17 +45,12 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
       error("Fixed timestep methods require a choice of dt or choosing the tstops")
   end
 
-  if !isempty(tstops) && tdir*tspan[end] < tdir*maximum(tstops)
-      error("Final saving timepoint is past the solving timespan")
-  end
-  if !isempty(tstops) && tdir*t > tdir*minimum(tstops)
-      error("First saving timepoint is before the solving timespan")
-  end
+  d_discontinuities_col = collect(d_discontinuities)
 
   if tdir>0
-    tstops_internal = binary_minheap(convert(Vector{tType},collect(tstops)))
+    tstops_internal = binary_minheap(convert(Vector{tType},append!(collect(tstops),d_discontinuities_col)))
   else
-    tstops_internal = binary_maxheap(convert(Vector{tType},collect(tstops)))
+    tstops_internal = binary_maxheap(convert(Vector{tType},append!(collect(tstops),d_discontinuities_col)))
   end
 
   if !isempty(tstops) && tstops[end] != tspan[2]
@@ -114,7 +109,13 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
     pop!(saveat_internal)
   end
 
+  d_discontinuities_vec =  convert(Vector{tType},d_discontinuities_col)
 
+  if tdir>0
+    d_discontinuities_internal = binary_minheap(d_discontinuities_vec)
+  else
+    d_discontinuities_internal = binary_maxheap(d_discontinuities_vec)
+  end
 
 
 
@@ -143,7 +144,9 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
 
   opts = DEOptions(maxiters,timeseries_steps,save_timeseries,adaptive,uEltype(abstol),
     uEltypeNoUnits(reltol),tTypeNoUnits(gamma),tTypeNoUnits(qmax),tTypeNoUnits(qmin),
-    dtmax,dtmin,internalnorm,tstops_internal,saveat_internal,userdata,
+    dtmax,dtmin,internalnorm,
+    tstops_internal,saveat_internal,d_discontinuities_internal,
+    userdata,
     progress,progress_steps,
     progress_name,progress_message,
     timeseries_errors,dense_errors,

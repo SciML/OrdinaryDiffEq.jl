@@ -22,6 +22,7 @@ end
     ode_addsteps!(integrator,Val{true},Val{false})
   end
   integrator.reeval_fsal = true
+  integrator.u_modified = false
 end
 
 @inline function u_modified!(integrator::ODEIntegrator,bool::Bool)

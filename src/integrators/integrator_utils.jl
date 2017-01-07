@@ -16,6 +16,7 @@ initialize{uType}(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) =
   integrator.iter += 1
   modify_dt_for_tstops!(integrator)
   choose_algorithm!(integrator,integrator.cache)
+
 end
 
 @inline function modify_dt_for_tstops!(integrator)
@@ -181,15 +182,12 @@ end
 
   # Update fsal if needed
   if isfsal(integrator.alg)
-    if integrator.reeval_fsal || (typeof(integrator.alg)<:DP8 && !integrator.opts.calck) || (typeof(integrator.alg)<:Union{Rosenbrock23,Rosenbrock32} && !integrator.opts.adaptive)
-      # Under these condtions, these algorithms are not FSAL anymore
-      if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache
-        f(integrator.t,integrator.u,integrator.fsalfirst)
-      else
-        integrator.fsalfirst = f(integrator.t,integrator.u)
-      end
-      integrator.reeval_fsal = false
-    else
+    if !isempty(integrator.opts.d_discontinuities) && top(integrator.opts.d_discontinuities) == integrator.t
+      pop!(integrator.opts.d_discontinuities)
+      reset_fsal!(integrator,f)
+    elseif integrator.reeval_fsal || (typeof(integrator.alg)<:DP8 && !integrator.opts.calck) || (typeof(integrator.alg)<:Union{Rosenbrock23,Rosenbrock32} && !integrator.opts.adaptive)
+      reset_fsal!(integrator,f)
+    else # Do not reeval_fsal, instead copy! over
       if typeof(integrator.fsalfirst) <: AbstractArray
         recursivecopy!(integrator.fsalfirst,integrator.fsallast)
       else
@@ -236,6 +234,16 @@ end
       end
     end
   end
+end
+
+@inline function reset_fsal!(integrator,f=integrator.f)
+  # Under these condtions, these algorithms are not FSAL anymore
+  if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache
+    f(integrator.t,integrator.u,integrator.fsalfirst)
+  else
+    integrator.fsalfirst = f(integrator.t,integrator.u)
+  end
+  integrator.reeval_fsal = false
 end
 
 (integrator::ODEIntegrator)(t) = current_interpolant(t,integrator)

@@ -13,6 +13,7 @@ type DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5,tstopsType,
   internalnorm::F2
   tstops::tstopsType
   saveat::tstopsType
+  d_discontinuities::tstopsType
   userdata::ECType
   progress::Bool
   progress_steps::Int
