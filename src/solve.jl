@@ -185,7 +185,6 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
                       calculate_error = false)
   end
 
-  calcprevs = calck || !(typeof(callback)<:Void) # Calculate the previous values
   tprev = t
   dtcache = tType(dt)
   dtpropose = tType(dt)
@@ -207,7 +206,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
                              typeof(rate_prototype),typeof(f),typeof(prog),typeof(cache),
                              typeof(opts)}(
                              sol,u,k,t,tType(dt),f,uprev,tprev,
-                             alg,rate_prototype,notsaveat_idxs,calcprevs,dtcache,dtchangeable,
+                             alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,
                              dtpropose,dt_mod,tdir,EEst,qoldinit,q11,
                              iter,saveiter,saveiter_dense,prog,cache,
                              kshortsize,just_hit_tstop,accept_step,reeval_fsal,u_modified,opts)
