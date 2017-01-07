@@ -33,7 +33,7 @@ end
 
 =#
 
-@inline function initialize!(integrator,cache::CompositeCache)
+@inline function initialize!(integrator::ODEIntegrator,cache::CompositeCache,f=integrator.f)
   cache.current = cache.choice_function(integrator)
   initialize!(integrator,cache.caches[cache.current])
   resize!(integrator.k,integrator.kshortsize)

@@ -1,8 +1,8 @@
-@inline function initialize!(integrator,cache::DP5ThreadedCache)
+@inline function initialize!(integrator::ODEIntegrator,cache::DP5ThreadedCache,f=integrator.f)
   integrator.kshortsize = 4
   integrator.k = [cache.update,cache.bspl,cache.dense_tmp3,cache.dense_tmp4]
   integrator.fsalfirst = cache.k1; integrator.fsallast = cache.k7
-  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
+  f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
 end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::DP5ThreadedCache)

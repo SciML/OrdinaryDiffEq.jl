@@ -1,5 +1,5 @@
-@inline function initialize!(integrator,cache::Feagin10ConstantCache)
-  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
+@inline function initialize!(integrator::ODEIntegrator,cache::Feagin10ConstantCache,f=integrator.f)
+  integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
 end
@@ -36,14 +36,14 @@ end
   @pack integrator = t,dt,u
 end
 
-@inline function initialize!(integrator,cache::Feagin10Cache)
+@inline function initialize!(integrator::ODEIntegrator,cache::Feagin10Cache,f=integrator.f)
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
+  f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
 end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::Feagin10Cache)
@@ -130,8 +130,8 @@ end
   @pack integrator = t,dt,u
 end
 
-@inline function initialize!(integrator,cache::Feagin12ConstantCache)
-  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
+@inline function initialize!(integrator::ODEIntegrator,cache::Feagin12ConstantCache,f=integrator.f)
+  integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
 end
@@ -177,14 +177,14 @@ end
   @pack integrator = t,dt,u
 end
 
-@inline function initialize!(integrator,cache::Feagin12Cache)
+@inline function initialize!(integrator::ODEIntegrator,cache::Feagin12Cache,f=integrator.f)
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
+  f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
 end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::Feagin12Cache)
@@ -303,8 +303,8 @@ end
   @pack integrator = t,dt,u
 end
 
-@inline function initialize!(integrator,cache::Feagin14ConstantCache)
-  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
+@inline function initialize!(integrator::ODEIntegrator,cache::Feagin14ConstantCache,f=integrator.f)
+  integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
 end
@@ -359,14 +359,14 @@ end
   @pack integrator = t,dt,u
 end
 
-@inline function initialize!(integrator,cache::Feagin14Cache)
+@inline function initialize!(integrator::ODEIntegrator,cache::Feagin14Cache,f=integrator.f)
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
+  f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
 end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::Feagin14Cache)

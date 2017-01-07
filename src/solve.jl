@@ -210,7 +210,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
                              dtpropose,dt_mod,tdir,EEst,qoldinit,q11,
                              iter,saveiter,saveiter_dense,prog,cache,
                              kshortsize,just_hit_tstop,accept_step,reeval_fsal,u_modified,opts)
-  initialize!(integrator,integrator.cache)
+  initialize!(integrator,integrator.cache,integrator.f)
   integrator
 end
 

@@ -1,5 +1,5 @@
-@inline function initialize!(integrator,cache::Vern6ConstantCache)
-  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
+@inline function initialize!(integrator::ODEIntegrator,cache::Vern6ConstantCache,f=integrator.f)
+  integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
   integrator.kshortsize = 9
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
 end
@@ -29,7 +29,7 @@ end
   @pack integrator = t,dt,u,k
 end
 
-@inline function initialize!(integrator,cache::Vern6Cache)
+@inline function initialize!(integrator::ODEIntegrator,cache::Vern6Cache,f=integrator.f)
   integrator.kshortsize = 9
   integrator.fsalfirst = cache.k1 ; integrator.fsallast = cache.k9
   k = eltype(integrator.sol.k)(integrator.kshortsize)
@@ -37,7 +37,7 @@ end
   k[4]=cache.k4; k[5]=cache.k5; k[6]=cache.k6;
   k[7]=cache.k7; k[8]=cache.k8; k[9]=cache.k9 # Set the pointers
   integrator.k = k
-  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
+  f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
 end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::Vern6Cache)
@@ -87,7 +87,7 @@ end
   @pack integrator = t,dt,u,k
 end
 
-@inline function initialize!(integrator,cache::Vern7ConstantCache)
+@inline function initialize!(integrator::ODEIntegrator,cache::Vern7ConstantCache,f=integrator.f)
   integrator.kshortsize = 10
   k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k = k
@@ -119,7 +119,7 @@ end
   @pack integrator = t,dt,u,k
 end
 
-@inline function initialize!(integrator,cache::Vern7Cache)
+@inline function initialize!(integrator::ODEIntegrator,cache::Vern7Cache,f=integrator.f)
   @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,update,utilde,tmp,atmp = cache
   integrator.kshortsize = 10
   k = eltype(integrator.sol.k)(integrator.kshortsize)
@@ -182,7 +182,7 @@ end
   @pack integrator = t,dt,u,k
 end
 
-@inline function initialize!(integrator,cache::Vern8ConstantCache)
+@inline function initialize!(integrator::ODEIntegrator,cache::Vern8ConstantCache,f=integrator.f)
   integrator.kshortsize = 13
   k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k = k
@@ -219,7 +219,7 @@ end
   @pack integrator = t,dt,u,k
 end
 
-@inline function initialize!(integrator,cache::Vern8Cache)
+@inline function initialize!(integrator::ODEIntegrator,cache::Vern8Cache,f=integrator.f)
   @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,utilde,update,tmp,atmp = cache
   integrator.kshortsize = 13
   k = eltype(integrator.sol.k)(integrator.kshortsize)
@@ -294,7 +294,7 @@ end
   @pack integrator = t,dt,u,k
 end
 
-@inline function initialize!(integrator,cache::Vern9ConstantCache)
+@inline function initialize!(integrator::ODEIntegrator,cache::Vern9ConstantCache,f=integrator.f)
   integrator.kshortsize = 16
   k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k = k
@@ -335,7 +335,7 @@ end
   @pack integrator = t,dt,u,k
 end
 
-@inline function initialize!(integrator,cache::Vern9Cache)
+@inline function initialize!(integrator::ODEIntegrator,cache::Vern9Cache,f=integrator.f)
   @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,utilde,update,tmp,atmp = cache
   integrator.kshortsize = 16
   k = eltype(integrator.sol.k)(integrator.kshortsize)

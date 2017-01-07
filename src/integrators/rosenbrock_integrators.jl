@@ -1,10 +1,10 @@
-@inline function initialize!(integrator,cache::Rosenbrock23Cache)
+@inline function initialize!(integrator::ODEIntegrator,cache::Rosenbrock23Cache,f=integrator.f)
   integrator.kshortsize = 2
   @unpack k₁,k₂,fsalfirst,fsallast = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = fsallast
   integrator.k = [k₁,k₂]
-  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst)
+  f(integrator.t,integrator.uprev,integrator.fsalfirst)
 end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::Rosenbrock23Cache)
@@ -53,13 +53,13 @@ end
   @pack integrator = t,dt,u,k
 end
 
-@inline function initialize!(integrator,cache::Rosenbrock32Cache)
+@inline function initialize!(integrator::ODEIntegrator,cache::Rosenbrock32Cache,f=integrator.f)
   integrator.kshortsize = 2
   @unpack k₁,k₂,fsalfirst,fsallast = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = fsallast
   integrator.k = [k₁,k₂]
-  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst)
+  f(integrator.t,integrator.uprev,integrator.fsalfirst)
 end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::Rosenbrock32Cache)
@@ -109,11 +109,11 @@ end
   @pack integrator = t,dt,u,k
 end
 
-@inline function initialize!(integrator,cache::Rosenbrock23ConstantCache)
+@inline function initialize!(integrator::ODEIntegrator,cache::Rosenbrock23ConstantCache,f=integrator.f)
   integrator.kshortsize = 2
   k = eltype(integrator.sol.k)(2)
   integrator.k = k
-  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev)
+  integrator.fsalfirst = f(integrator.t,integrator.uprev)
 end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::Rosenbrock23ConstantCache)
@@ -139,11 +139,11 @@ end
   @pack integrator = t,dt,u,k
 end
 
-@inline function initialize!(integrator,cache::Rosenbrock32ConstantCache)
+@inline function initialize!(integrator::ODEIntegrator,cache::Rosenbrock32ConstantCache,f=integrator.f)
   integrator.kshortsize = 2
   k = eltype(integrator.sol.k)(2)
   integrator.k = k
-  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev)
+  integrator.fsalfirst = f(integrator.t,integrator.uprev)
 end
 
 @inline function perform_step!(integrator::ODEIntegrator,cache::Rosenbrock32ConstantCache)
