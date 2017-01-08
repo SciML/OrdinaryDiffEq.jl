@@ -9,14 +9,14 @@ function (p::RHS_IE_Scalar)(u,resid)
   resid[1] = u[1] - p.u_old[1] - p.dt*p.f(p.t+p.dt,u)[1]
 end
 
-@inline function initialize!(integrator::ODEIntegrator,cache::ImplicitEulerConstantCache,f=integrator.f)
+@inline function initialize!(integrator,cache::ImplicitEulerConstantCache,f=integrator.f)
   cache.uhold[1] = integrator.uprev; cache.u_old[1] = integrator.uprev
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.fsalfirst = f(integrator.t,integrator.uprev)
 end
 
-@inline function perform_step!(integrator::ODEIntegrator,cache::ImplicitEulerConstantCache,f=integrator.f)
+@inline function perform_step!(integrator,cache::ImplicitEulerConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   @unpack uhold,u_old,rhs,adf = cache
   u_old[1] = uhold[1]
@@ -53,7 +53,7 @@ function (p::RHS_IE)(uprev,resid)
   end
 end
 
-@inline function initialize!(integrator::ODEIntegrator,cache::ImplicitEulerCache,f=integrator.f)
+@inline function initialize!(integrator,cache::ImplicitEulerCache,f=integrator.f)
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   f(integrator.t,integrator.uprev,integrator.fsalfirst)
@@ -63,7 +63,7 @@ end
   integrator.k[2] = integrator.fsallast
 end
 
-@inline function perform_step!(integrator::ODEIntegrator,cache::ImplicitEulerCache,f=integrator.f)
+@inline function perform_step!(integrator,cache::ImplicitEulerCache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   uidx = eachindex(integrator.uprev)
   @unpack u_old,dual_cache,k,adf,rhs,uhold = cache
@@ -101,7 +101,7 @@ function (p::RHS_Trap)(uprev,resid)
   end
 end
 
-@inline function initialize!(integrator::ODEIntegrator,cache::TrapezoidCache,f=integrator.f)
+@inline function initialize!(integrator,cache::TrapezoidCache,f=integrator.f)
   @unpack k,f_old = cache
   integrator.fsalfirst = f_old
   integrator.fsallast = cache.k
@@ -112,7 +112,7 @@ end
   integrator.k[2] = integrator.fsallast
 end
 
-@inline function perform_step!(integrator::ODEIntegrator,cache::TrapezoidCache,f=integrator.f)
+@inline function perform_step!(integrator,cache::TrapezoidCache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   uidx = eachindex(integrator.uprev)
   @unpack u_old,dual_cache,k,rhs,adf,uhold = cache
@@ -144,14 +144,14 @@ function (p::RHS_Trap_Scalar)(uprev,resid)
   resid[1] = uprev[1] - p.u_old[1] - (p.dt/2)*(p.f_old + p.f(p.t+p.dt,uprev)[1])
 end
 
-@inline function initialize!(integrator::ODEIntegrator,cache::TrapezoidConstantCache,f=integrator.f)
+@inline function initialize!(integrator,cache::TrapezoidConstantCache,f=integrator.f)
   cache.uhold[1] = integrator.uprev; cache.u_old[1] = integrator.uprev
   integrator.fsalfirst = f(integrator.t,integrator.uprev)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
 end
 
-@inline function perform_step!(integrator::ODEIntegrator,cache::TrapezoidConstantCache,f=integrator.f)
+@inline function perform_step!(integrator,cache::TrapezoidConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   @unpack uhold,u_old,rhs,adf = cache
   u_old[1] = uhold[1]

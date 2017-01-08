@@ -1,10 +1,10 @@
-@inline function initialize!(integrator::ODEIntegrator,cache::TanYam7ConstantCache,f=integrator.f)
+@inline function initialize!(integrator,cache::TanYam7ConstantCache,f=integrator.f)
   integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
 end
 
-@inline function perform_step!(integrator::ODEIntegrator,cache::TanYam7ConstantCache,f=integrator.f)
+@inline function perform_step!(integrator,cache::TanYam7ConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   @unpack c1,c2,c3,c4,c5,c6,c7,a21,a31,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,a91,a93,a94,a95,a96,a97,a98,a101,a103,a104,a105,a106,a107,a108,b1,b4,b5,b6,b7,b8,b9,bhat1,bhat4,bhat5,bhat6,bhat7,bhat8,bhat10 = cache
   k1 = integrator.fsalfirst
@@ -29,7 +29,7 @@ end
   @pack integrator = t,dt,u
 end
 
-@inline function initialize!(integrator::ODEIntegrator,cache::TanYam7Cache,f=integrator.f)
+@inline function initialize!(integrator,cache::TanYam7Cache,f=integrator.f)
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.kshortsize = 2
@@ -39,7 +39,7 @@ end
   f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
 end
 
-@inline function perform_step!(integrator::ODEIntegrator,cache::TanYam7Cache,f=integrator.f)
+@inline function perform_step!(integrator,cache::TanYam7Cache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   uidx = eachindex(integrator.uprev)
   @unpack fsalfirst,k2,k3,k4,k5,k6,k7,k8,k9,k10,utilde,tmp,atmp,k = cache
@@ -96,13 +96,13 @@ end
   @pack integrator = t,dt,u
 end
 
-@inline function initialize!(integrator::ODEIntegrator,cache::DP8ConstantCache,f=integrator.f)
+@inline function initialize!(integrator,cache::DP8ConstantCache,f=integrator.f)
   integrator.kshortsize = 7
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
 end
 
-@inline function perform_step!(integrator::ODEIntegrator,cache::DP8ConstantCache,f=integrator.f)
+@inline function perform_step!(integrator,cache::DP8ConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   @unpack c7,c8,c9,c10,c11,c6,c5,c4,c3,c2,b1,b6,b7,b8,b9,b10,b11,b12,bhh1,bhh2,bhh3,er1,er6,er7,er8,er9,er10,er11,er12,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211 = cache
   k1 = integrator.fsalfirst
@@ -147,7 +147,7 @@ end
   @pack integrator = t,dt,u,k
 end
 
-@inline function initialize!(integrator::ODEIntegrator,cache::DP8Cache,f=integrator.f)
+@inline function initialize!(integrator,cache::DP8Cache,f=integrator.f)
   integrator.kshortsize = 7
   integrator.k = [cache.udiff,cache.bspl,cache.dense_tmp3,cache.dense_tmp4,cache.dense_tmp5,cache.dense_tmp6,cache.dense_tmp7]
   integrator.fsalfirst = cache.k1
@@ -155,7 +155,7 @@ end
   f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
 end
 
-@inline function perform_step!(integrator::ODEIntegrator,cache::DP8Cache,f=integrator.f)
+@inline function perform_step!(integrator,cache::DP8Cache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   uidx = eachindex(integrator.uprev)
   @unpack c7,c8,c9,c10,c11,c6,c5,c4,c3,c2,b1,b6,b7,b8,b9,b10,b11,b12,bhh1,bhh2,bhh3,er1,er6,er7,er8,er9,er10,er11,er12,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211 = cache.tab
@@ -249,13 +249,13 @@ end
   @pack integrator = t,dt,u,k
 end
 
-@inline function initialize!(integrator::ODEIntegrator,cache::TsitPap8ConstantCache,f=integrator.f)
+@inline function initialize!(integrator,cache::TsitPap8ConstantCache,f=integrator.f)
   integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
 end
 
-@inline function perform_step!(integrator::ODEIntegrator,cache::TsitPap8ConstantCache,f=integrator.f)
+@inline function perform_step!(integrator,cache::TsitPap8ConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   @unpack c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211,a1301,a1304,a1305,a1306,a1307,a1308,a1309,a1310,b1,b6,b7,b8,b9,b10,b11,b12,bhat1,bhat6,bhat7,bhat8,bhat9,bhat10,bhat13 = cache
   k1 = integrator.fsalfirst
@@ -283,7 +283,7 @@ end
   @pack integrator = t,dt,u
 end
 
-@inline function initialize!(integrator::ODEIntegrator,cache::TsitPap8Cache,f=integrator.f)
+@inline function initialize!(integrator,cache::TsitPap8Cache,f=integrator.f)
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.kshortsize = 2
@@ -293,7 +293,7 @@ end
   f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
 end
 
-@inline function perform_step!(integrator::ODEIntegrator,cache::TsitPap8Cache,f=integrator.f)
+@inline function perform_step!(integrator,cache::TsitPap8Cache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   uidx = eachindex(integrator.uprev)
   @unpack c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211,a1301,a1304,a1305,a1306,a1307,a1308,a1309,a1310,b1,b6,b7,b8,b9,b10,b11,b12,bhat1,bhat6,bhat7,bhat8,bhat9,bhat10,bhat13 = cache.tab

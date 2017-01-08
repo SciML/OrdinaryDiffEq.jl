@@ -67,11 +67,13 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
   fsallast::rateType
 
   ODEIntegrator(sol,u,k,t,dt,f,uprev,tprev,
-      alg,rate_prototype,notsaveat_idxs,dtcache,dtchangable,dtpropose,dt_mod,tdir,
+      alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,dtpropose,dt_mod,tdir,
       EEst,qold,q11,iter,saveiter,saveiter_dense,prog,cache,
       kshortsize,just_hit_tstop,accept_step,reeval_fsal,u_modified,opts) = new(
       sol,u,k,t,dt,f,uprev,tprev,
-      alg,rate_prototype,notsaveat_idxs,dtcache,dtchangable,dtpropose,dt_mod,tdir,
+      alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,dtpropose,dt_mod,tdir,
       EEst,qold,q11,iter,saveiter,saveiter_dense,prog,cache,
       kshortsize,just_hit_tstop,accept_step,reeval_fsal,u_modified,opts) # Leave off fsalfirst and last
 end
+
+# When this is changed, DelayDiffEq.jl must be changed as well!

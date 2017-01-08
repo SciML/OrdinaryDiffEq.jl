@@ -1,10 +1,10 @@
-@inline function initialize!(integrator::ODEIntegrator,cache::ExplicitRKConstantCache,f=integrator.f)
+@inline function initialize!(integrator,cache::ExplicitRKConstantCache,f=integrator.f)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.fsalfirst = f(integrator.t,integrator.uprev)
 end
 
-@inline function perform_step!(integrator::ODEIntegrator,cache::ExplicitRKConstantCache,f=integrator.f)
+@inline function perform_step!(integrator,cache::ExplicitRKConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack A,c,α,αEEst,stages = cache
   @unpack kk = cache
@@ -47,7 +47,7 @@ end
   @pack integrator = t,dt,u
 end
 
-@inline function initialize!(integrator::ODEIntegrator,cache::ExplicitRKCache,f=integrator.f)
+@inline function initialize!(integrator,cache::ExplicitRKCache,f=integrator.f)
   integrator.kshortsize = 2
   integrator.fsallast = cache.fsallast
   integrator.fsalfirst = cache.kk[1]
@@ -57,7 +57,7 @@ end
   f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
 end
 
-@inline function perform_step!(integrator::ODEIntegrator,cache::ExplicitRKCache,f=integrator.f)
+@inline function perform_step!(integrator,cache::ExplicitRKCache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   uidx = eachindex(integrator.uprev)
   @unpack A,c,α,αEEst,stages = cache.tab

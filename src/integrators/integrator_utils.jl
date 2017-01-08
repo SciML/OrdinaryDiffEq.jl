@@ -1,13 +1,13 @@
 initialize{uType}(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) =
                 error("This algorithm does not have an initialization function")
 
-@inline function loopheader!(integrator,f=integrator.f)
+@inline function loopheader!(integrator)
   # Apply right after iterators / callbacks
 
   # Accept or reject the step
   if integrator.iter > 0
     if (integrator.opts.adaptive && integrator.accept_step) || !integrator.opts.adaptive
-      apply_step!(integrator,f)
+      apply_step!(integrator)
     elseif integrator.opts.adaptive && !integrator.accept_step
       integrator.dt = integrator.dt/min(inv(integrator.opts.qmin),integrator.q11/integrator.opts.gamma)
     end
@@ -162,7 +162,7 @@ end
   end
 end
 
-@inline function apply_step!(integrator,f=integrator.f)
+@inline function apply_step!(integrator)
 
   integrator.accept_step = false # yay we got here, don't need this no more
 
@@ -184,9 +184,9 @@ end
   if isfsal(integrator.alg)
     if !isempty(integrator.opts.d_discontinuities) && top(integrator.opts.d_discontinuities) == integrator.t
       pop!(integrator.opts.d_discontinuities)
-      reset_fsal!(integrator,f)
+      reset_fsal!(integrator)
     elseif integrator.reeval_fsal || (typeof(integrator.alg)<:DP8 && !integrator.opts.calck) || (typeof(integrator.alg)<:Union{Rosenbrock23,Rosenbrock32} && !integrator.opts.adaptive)
-      reset_fsal!(integrator,f)
+      reset_fsal!(integrator)
     else # Do not reeval_fsal, instead copy! over
       if typeof(integrator.fsalfirst) <: AbstractArray
         recursivecopy!(integrator.fsalfirst,integrator.fsallast)
@@ -236,12 +236,12 @@ end
   end
 end
 
-@inline function reset_fsal!(integrator,f=integrator.f)
+@inline function reset_fsal!(integrator)
   # Under these condtions, these algorithms are not FSAL anymore
   if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache
-    f(integrator.t,integrator.u,integrator.fsalfirst)
+    integrator.f(integrator.t,integrator.u,integrator.fsalfirst)
   else
-    integrator.fsalfirst = f(integrator.t,integrator.u)
+    integrator.fsalfirst = integrator.f(integrator.t,integrator.u)
   end
   integrator.reeval_fsal = false
 end
