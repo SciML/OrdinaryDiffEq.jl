@@ -1,19 +1,19 @@
 ### Concrete Types
 
-type ODECompositeSolution{uType,tType,rateType,P,A} <: AbstractODESolution
+type ODECompositeSolution{uType,tType,rateType,P,A,IType} <: AbstractODESolution
   u::uType
   t::tType
   k::rateType
   prob::P
   alg::A
-  interp::Function
+  interp::IType
   alg_choice::Vector{Int}
   dense::Bool
   tslocation::Int
 end
 (sol::ODECompositeSolution)(t) = sol.interp(t)
 
-type ODECompositeTestSolution{uType,uType2,uEltype,tType,rateType,P,A} <: AbstractODETestSolution
+type ODECompositeTestSolution{uType,uType2,uEltype,tType,rateType,P,A,IType} <: AbstractODETestSolution
   u::uType
   u_analytic::uType2
   errors::Dict{Symbol,uEltype}
@@ -21,7 +21,7 @@ type ODECompositeTestSolution{uType,uType2,uEltype,tType,rateType,P,A} <: Abstra
   k::rateType
   prob::P
   alg::A
-  interp::Function
+  interp::IType
   alg_choice::Vector{Int}
   dense::Bool
   tslocation::Int

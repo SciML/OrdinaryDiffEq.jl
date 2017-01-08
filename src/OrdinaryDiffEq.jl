@@ -47,6 +47,7 @@ module OrdinaryDiffEq
   include("composite_solution.jl")
   include("solve.jl")
   include("initdt.jl")
+  include("interp_func.jl")
   include("dense.jl")
   include("derivative_wrappers.jl")
 

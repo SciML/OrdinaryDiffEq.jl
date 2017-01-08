@@ -6,7 +6,7 @@
   Θs = linspace(typeof(integrator.t)(0),typeof(integrator.t)(1),callback.interp_points)
   interp_index = 0
   # Check if the event occured
-  if callback.condition == true
+  if typeof(callback.condition) <: Void
     event_occurred = true
   else
     previous_condition = callback.condition(integrator.tprev,integrator.uprev,integrator)
@@ -34,22 +34,26 @@ end
 function apply_callback!(integrator,callback)
   event_occurred,interp_index,Θs = determine_event_occurance(integrator,callback)
   if event_occurred
-    if callback.interp_points!=0
-      top_Θ = Θs[interp_index] # Top at the smallest
-    else
-      top_Θ = typeof(integrator.t)(1)
-    end
-    if callback.rootfind
-      find_zero = (Θ) -> begin
-        callback.condition(integrator.tprev+Θ*integrator.dt,ode_interpolant(Θ,integrator),integrator)
-      end
-      Θ = prevfloat(prevfloat(fzero(find_zero,typeof(integrator.t)(0),top_Θ)))
-      new_t = integrator.tprev + integrator.dt*Θ
-    elseif interp_index != callback.interp_points
-      new_t = integrator.tprev + integrator.dt*Θs[interp_index]
-    else
-      # If no solve and no interpolants, just use endpoint
+    if typeof(callback.condition) <: Void
       new_t = integrator.t
+    else
+      if callback.interp_points!=0
+        top_Θ = Θs[interp_index] # Top at the smallest
+      else
+        top_Θ = typeof(integrator.t)(1)
+      end
+      if callback.rootfind
+        find_zero = (Θ) -> begin
+          callback.condition(integrator.tprev+Θ*integrator.dt,ode_interpolant(Θ,integrator),integrator)
+        end
+        Θ = prevfloat(prevfloat(fzero(find_zero,typeof(integrator.t)(0),top_Θ)))
+        new_t = integrator.tprev + integrator.dt*Θ
+      elseif interp_index != callback.interp_points
+        new_t = integrator.tprev + integrator.dt*Θs[interp_index]
+      else
+        # If no solve and no interpolants, just use endpoint
+        new_t = integrator.t
+      end
     end
     change_t_via_interpolation!(integrator,new_t)
   end

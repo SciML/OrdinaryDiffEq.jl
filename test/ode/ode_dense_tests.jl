@@ -22,7 +22,7 @@ sol2 =solve(prob,Euler(),dt=1//2^(4),dense=true)
 
 sol =solve(prob,Euler(),dt=1//2^(2),dense=false)
 
-@test sol(0.5) == nothing
+@test_throws BoundsError sol(0.5)
 
 prob = prob_ode_linear
 

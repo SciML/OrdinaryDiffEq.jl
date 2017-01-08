@@ -167,25 +167,20 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
 
   cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uprev,f,t,Val{isinplace})
 
-  if dense
-    if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
-      id = CompositeInterpolationData(f,timeseries,ts,ks,alg_choice,notsaveat_idxs)
-    else
-      id = InterpolationData(f,timeseries,ts,ks,notsaveat_idxs)
-    end
-    interp = (tvals) -> ode_interpolation(cache,tvals,id)
+  if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
+    id = CompositeInterpolationData(f,timeseries,ts,ks,alg_choice,notsaveat_idxs,cache)
   else
-    interp = (tvals) -> nothing
+    id = InterpolationData(f,timeseries,ts,ks,notsaveat_idxs,cache)
   end
 
   if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
     sol = build_solution(prob,alg,ts,timeseries,
-                      dense=dense,k=ks,interp=interp,
+                      dense=dense,k=ks,interp=id,
                       alg_choice=alg_choice,
                       calculate_error = false)
   else
     sol = build_solution(prob,alg,ts,timeseries,
-                      dense=dense,k=ks,interp=interp,
+                      dense=dense,k=ks,interp=id,
                       calculate_error = false)
   end
 

@@ -23,7 +23,7 @@ end
 interp_points = 10
 rootfind = true
 save_positions = (true,true)
-callback = Callback(condtion,affect!,rootfind,interp_points,save_positions)
+callback = Callback(condtion,affect!,rootfind,save_positions)
 
 u0 = [50.0,0.0]
 tspan = (0.0,15.0)
@@ -55,14 +55,11 @@ sol3= solve(prob,Vern6(),saveat=[.5])
 
 ## Saving callback
 
-condtion = true
-
+condtion = nothing
 affect! = function (integrator) end
-
-interp_points = 0
 rootfind = false
 save_positions = (true,false)
-saving_callback = Callback(condtion,affect!,rootfind,interp_points,save_positions)
+saving_callback = Callback(condtion,affect!,rootfind,save_positions)
 
 sol4 = solve(prob,Tsit5(),callback=saving_callback)
 
@@ -80,7 +77,7 @@ end
 interp_points = 10
 rootfind = true
 save_positions = (true,true)
-terminate_callback = Callback(condtion,affect!,rootfind,interp_points,save_positions)
+terminate_callback = Callback(condtion,affect!,rootfind,save_positions)
 
 tspan2 = (0.0,Inf)
 prob2 = ODEProblem(f,u0,tspan2)

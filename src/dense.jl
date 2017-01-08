@@ -1,20 +1,3 @@
-immutable InterpolationData{F,uType,tType,kType}
-  f::F
-  timeseries::uType
-  ts::tType
-  ks::kType
-  notsaveat_idxs::Vector{Int}
-end
-
-immutable CompositeInterpolationData{F,uType,tType,kType}
-  f::F
-  timeseries::uType
-  ts::tType
-  ks::kType
-  alg_choice::Vector{Int}
-  notsaveat_idxs::Vector{Int}
-end
-
 ## Integrator Dispatches
 
 # Can get rid of an allocation here with a function
@@ -56,8 +39,8 @@ ode_interpolation(tvals,ts,timeseries,ks)
 Get the value at tvals where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-function ode_interpolation(cache,tvals,id)
-  @unpack ts,timeseries,ks,f,notsaveat_idxs = id
+function ode_interpolation(tvals,id)
+  @unpack ts,timeseries,ks,f,notsaveat_idxs,cache = id
   tdir = sign(ts[end]-ts[1])
   idx = sortperm(tvals)
   i = 2 # Start the search thinking it's between ts[1] and ts[2]
@@ -90,8 +73,8 @@ ode_interpolation(tval::Number,ts,timeseries,ks)
 Get the value at tval where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-function ode_interpolation(cache,tval::Number,id)
-  @unpack ts,timeseries,ks,f,notsaveat_idxs = id
+function ode_interpolation(tval::Number,id)
+  @unpack ts,timeseries,ks,f,notsaveat_idxs,cache = id
   tdir = sign(ts[end]-ts[1])
   i = findfirst((x)->tdir*x>=tdir*tval,@view ts[notsaveat_idxs]) # It's in the interval ts[i-1] to ts[i]
   if ts[notsaveat_idxs[i]] == tval
