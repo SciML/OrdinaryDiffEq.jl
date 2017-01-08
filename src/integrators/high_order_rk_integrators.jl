@@ -124,7 +124,11 @@ end
     err5 = integrator.opts.internalnorm(dt*(k1*er1 + k6*er6 + k7*er7 + k8*er8 + k9*er9 + k10*er10 + k11*er11 + k12*er12)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)) # Order 5
     err3 = integrator.opts.internalnorm((update - dt*(bhh1*k1 + bhh2*k9 + bhh3*k12))/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)) # Order 3
     err52 = err5*err5
-    integrator.EEst = err52/sqrt(err52 + 0.01*err3*err3)
+    if err5 ≈ 0 && err3 ≈ 0
+      integrator.EEst = zero(typeof(integrator.EEst))
+    else
+      integrator.EEst = err52/sqrt(err52 + 0.01*err3*err3)
+    end
   end
   k13 = f(t+dt,u)
   integrator.fsallast = k13
@@ -218,7 +222,11 @@ end
     err5 = integrator.opts.internalnorm(atmp) # Order 5
     err3 = integrator.opts.internalnorm(atmp2) # Order 3
     err52 = err5*err5
-    integrator.EEst = err52/sqrt(err52 + 0.01*err3*err3)
+    if err5 ≈ 0 && err3 ≈ 0
+      integrator.EEst = zero(typeof(integrator.EEst))
+    else
+      integrator.EEst = err52/sqrt(err52 + 0.01*err3*err3)
+    end
   end
   f(t+dt,u,k13)
   if integrator.opts.calck
