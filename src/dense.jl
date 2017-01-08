@@ -4,11 +4,11 @@
 # get_tmp_arr(integrator.cache) which gives a pointer to some
 # cache array which can be modified.
 
-function ode_addsteps!{calcVal,calcVal2,calcVal3}(integrator,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+function ode_addsteps!{calcVal,calcVal2,calcVal3}(integrator,f=integrator.f,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if !(typeof(integrator.cache) <: CompositeCache)
-    ode_addsteps!(integrator.k,integrator.t,integrator.uprev,integrator.u,integrator.dt,integrator.f,integrator.cache,always_calc_begin,allow_calc_end,force_calc_end)
+    ode_addsteps!(integrator.k,integrator.t,integrator.uprev,integrator.u,integrator.dt,f,integrator.cache,always_calc_begin,allow_calc_end,force_calc_end)
   else
-    ode_addsteps!(integrator.k,integrator.t,integrator.uprev,integrator.u,integrator.dt,integrator.f,integrator.cache.caches[integrator.cache.current],always_calc_begin,allow_calc_end,force_calc_end)
+    ode_addsteps!(integrator.k,integrator.t,integrator.uprev,integrator.u,integrator.dt,f,integrator.cache.caches[integrator.cache.current],always_calc_begin,allow_calc_end,force_calc_end)
   end
 end
 

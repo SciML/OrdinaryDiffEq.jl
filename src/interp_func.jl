@@ -19,3 +19,21 @@ end
 
 (interp::InterpolationData)(tvals) = ode_interpolation(tvals,interp)
 (interp::CompositeInterpolationData)(tvals) = ode_interpolation(tvals,interp)
+
+
+function InterpolationData(id::InterpolationData,f)
+  InterpolationData(f,id.timeseries,
+                      id.ts,
+                      id.ks,
+                      id.notsaveat_idxs,
+                      id.cache)
+end
+
+function CompositeInterpolationData(id::CompositeInterpolationData,f)
+  CompositeInterpolationData(f,id.timeseries,
+                               id.ts,
+                               id.ks,
+                               id.alg_choice,
+                               id.notsaveat_idxs,
+                               id.cache)
+end
