@@ -19,7 +19,7 @@ end
 @inline function reeval_internals_due_to_modification!(integrator)
   if integrator.opts.calck
     resize!(integrator.k,integrator.kshortsize) # Reset k for next step!
-    ode_addsteps!(integrator,Val{true},Val{false})
+    ode_addsteps!(integrator,integrator.f,Val{true},Val{false})
   end
   integrator.reeval_fsal = true
   integrator.u_modified = false
