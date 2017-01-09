@@ -2,7 +2,5 @@ ODEInterface 0.0.10
 Unitful 0.0.4
 DiffEqDevTools
 DiffEqProblemLibrary
-ParameterizedFunctions 0.1.0
+ParameterizedFunctions 0.5.0
 ODEInterfaceDiffEq
-DataStructures
-Roots
