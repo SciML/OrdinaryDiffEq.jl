@@ -173,8 +173,12 @@ end
 
   integrator.u_modified = continuous_modified || discrete_modified
   if integrator.u_modified
-    integrator.reeval_fsal = true
+    handle_callback_modifiers!(integrator)
   end
+end
+
+@inline function handle_callback_modifiers!(integrator::ODEIntegrator)
+  integrator.reeval_fsal = true
 end
 
 @inline function apply_step!(integrator)

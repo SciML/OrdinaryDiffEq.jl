@@ -83,7 +83,7 @@ function find_callback_time(integrator,callback)
   new_t,prev_sign
 end
 
-function apply_callback!(integrator::ODEIntegrator,callback::ContinuousCallback,cb_time,prev_sign)
+function apply_callback!(integrator,callback::ContinuousCallback,cb_time,prev_sign)
   if cb_time != zero(typeof(integrator.t))
     change_t_via_interpolation!(integrator,integrator.tprev+cb_time)
   end
