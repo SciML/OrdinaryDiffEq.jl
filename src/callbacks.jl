@@ -6,36 +6,32 @@
   Θs = linspace(typeof(integrator.t)(0),typeof(integrator.t)(1),callback.interp_points)
   interp_index = 0
   # Check if the event occured
-  if typeof(callback.condition) <: Void
-    event_occurred = true
+  previous_condition = callback.condition(integrator.tprev,integrator.uprev,integrator)
+  if isapprox(previous_condition,0,rtol=callback.reltol,atol=callback.abstol)
+    prev_sign = 0
   else
-    previous_condition = callback.condition(integrator.tprev,integrator.uprev,integrator)
-    if isapprox(previous_condition,0,rtol=callback.reltol,atol=callback.abstol)
-      prev_sign = 0
-    else
-      prev_sign = sign(previous_condition)
-    end
-    if prev_sign*sign(callback.condition(integrator.t,integrator.u,integrator))<0
-      event_occurred = true
-      interp_index = callback.interp_points
-    elseif callback.interp_points!=0 # Use the interpolants for safety checking
-      for i in 2:length(Θs)-1
-        if prev_sign*callback.condition(integrator.t+integrator.dt*Θs[i],ode_interpolant(Θs[i],integrator),integrator)<0
-          event_occurred = true
-          interp_index = i
-          break
-        end
+    prev_sign = sign(previous_condition)
+  end
+  if ((prev_sign<0 && !(typeof(callback.affect!)<:Void)) || (prev_sign>0 && !(typeof(callback.affect_neg!)<:Void))) && prev_sign*sign(callback.condition(integrator.t,integrator.u,integrator))<0
+    event_occurred = true
+    interp_index = callback.interp_points
+  elseif callback.interp_points!=0 # Use the interpolants for safety checking
+    for i in 2:length(Θs)-1
+      if prev_sign*callback.condition(integrator.t+integrator.dt*Θs[i],ode_interpolant(Θs[i],integrator),integrator)<0
+        event_occurred = true
+        interp_index = i
+        break
       end
     end
   end
-  event_occurred,interp_index,Θs
+  event_occurred,interp_index,Θs,prev_sign
 end
 
-function apply_callback!(integrator,callback)
-  event_occurred,interp_index,Θs = determine_event_occurance(integrator,callback)
+function find_callback_time(integrator,callback)
+  event_occurred,interp_index,Θs,prev_sign = determine_event_occurance(integrator,callback)
   if event_occurred
     if typeof(callback.condition) <: Void
-      new_t = integrator.t
+      new_t = zero(typeof(integrator.t))
     else
       if callback.interp_points!=0
         top_Θ = Θs[interp_index] # Top at the smallest
@@ -47,31 +43,42 @@ function apply_callback!(integrator,callback)
           callback.condition(integrator.tprev+Θ*integrator.dt,ode_interpolant(Θ,integrator),integrator)
         end
         Θ = prevfloat(prevfloat(fzero(find_zero,typeof(integrator.t)(0),top_Θ)))
-        new_t = integrator.tprev + integrator.dt*Θ
+        new_t = integrator.dt*Θ
       elseif interp_index != callback.interp_points
-        new_t = integrator.tprev + integrator.dt*Θs[interp_index]
+        new_t = integrator.dt*Θs[interp_index]
       else
         # If no solve and no interpolants, just use endpoint
-        new_t = integrator.t
+        new_t = integrator.dt
       end
     end
-    change_t_via_interpolation!(integrator,new_t)
+  else
+    new_t = zero(typeof(integrator.t))
+  end
+  new_t,prev_sign
+end
+
+function apply_callback!(integrator,callback,cb_time=0,prev_sign=1)
+  if cb_time != 0
+    change_t_via_interpolation!(integrator,integrator.tprev+cb_time)
   end
 
   if callback.save_positions[1]
     savevalues!(integrator)
   end
 
-  if event_occurred
-    integrator.u_modified = true
+  integrator.u_modified = true
+  if prev_sign < 0 && !(typeof(callback.affect!) <: Void)
     callback.affect!(integrator)
-    if integrator.u_modified
-      reeval_internals_due_to_modification!(integrator)
-    end
-    if callback.save_positions[2]
-      savevalues!(integrator)
-    end
+  elseif !(typeof(callback.affect_neg!) <: Void)
+    callback.affect_neg!(integrator)
   end
+  if integrator.u_modified
+    reeval_internals_due_to_modification!(integrator)
+  end
+  if callback.save_positions[2]
+    savevalues!(integrator)
+  end
+
 end
 
 macro ode_change_cachesize(cache,resize_ex)

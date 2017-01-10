@@ -32,7 +32,7 @@ type DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5,tstopsType,
   stop_at_next_tstop::Bool
 end
 
-type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},tType,tTypeNoUnits,tdirType,ksEltype,SolType,rateType,F,ProgressType,CacheType,O} <: AbstractODEIntegrator
+type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,Number},tType,tTypeNoUnits,tdirType,ksEltype,SolType,rateType,F,ProgressType,CacheType,CBType,CBType2,O} <: AbstractODEIntegrator
   sol::SolType
   u::uType
   k::ksEltype
@@ -52,6 +52,8 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
   EEst::tTypeNoUnits
   qold::tTypeNoUnits
   q11::tTypeNoUnits
+  consistant_callbacks::CBType
+  conditional_callbacks::CBType2
   iter::Int
   saveiter::Int
   saveiter_dense::Int
@@ -68,11 +70,15 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
 
   ODEIntegrator(sol,u,k,t,dt,f,uprev,tprev,
       alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,dtpropose,dt_mod,tdir,
-      EEst,qold,q11,iter,saveiter,saveiter_dense,prog,cache,
+      EEst,qold,q11,
+      consistant_callbacks,conditional_callbacks,
+      iter,saveiter,saveiter_dense,prog,cache,
       kshortsize,just_hit_tstop,accept_step,reeval_fsal,u_modified,opts) = new(
       sol,u,k,t,dt,f,uprev,tprev,
       alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,dtpropose,dt_mod,tdir,
-      EEst,qold,q11,iter,saveiter,saveiter_dense,prog,cache,
+      EEst,qold,q11,
+      consistant_callbacks,conditional_callbacks,
+      iter,saveiter,saveiter_dense,prog,cache,
       kshortsize,just_hit_tstop,accept_step,reeval_fsal,u_modified,opts) # Leave off fsalfirst and last
 end
 

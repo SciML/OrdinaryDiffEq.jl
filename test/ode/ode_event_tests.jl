@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, RecursiveArrayTools, DiffEqBase, Base.Test, Roots#, ParameterizedFunctions
+using OrdinaryDiffEq, RecursiveArrayTools, DiffEqBase, Base.Test#, ParameterizedFunctions
 
 #=
 f = @ode_def BallBounce begin
@@ -16,14 +16,15 @@ condtion= function (t,u,integrator) # Event when event_f(t,u,k) == 0
   u[1]
 end
 
-affect! = function (integrator)
+affect! = nothing
+affect_neg! = function (integrator)
   integrator.u[2] = -integrator.u[2]
 end
 
 interp_points = 10
 rootfind = true
 save_positions = (true,true)
-callback = Callback(condtion,affect!,rootfind,save_positions)
+callback = Callback(condtion,affect!,rootfind,save_positions,affect_neg! = affect_neg!)
 
 u0 = [50.0,0.0]
 tspan = (0.0,15.0)
@@ -86,3 +87,18 @@ sol5 = solve(prob2,Tsit5(),callback=terminate_callback)
 
 @test sol5[end][1] < 2e-13
 @test sol5.t[end] ≈ sqrt(50*2/9.81)
+
+affect2! = function (integrator)
+  if integrator.t > 4
+    terminate!(integrator)
+  else
+    integrator.u[2] = -integrator.u[2]
+  end
+end
+terminate_callback2 = Callback(condtion,affect2!,rootfind,save_positions)
+
+
+sol5 = solve(prob2,Vern7(),callback=terminate_callback2)
+
+@test sol5[end][1] < 1e-12
+@test sol5.t[end] ≈ 3*sqrt(50*2/9.81)

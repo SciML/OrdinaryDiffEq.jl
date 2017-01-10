@@ -137,9 +137,20 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
 
   if typeof(callback) <: DECallback
     # Change it to a tuple
-    callback_internal = (callback,)
-  else
-    callback_internal = callback
+    if typeof(callback.condition) <: Void
+      conditional_callbacks = nothing
+      consistant_callbacks = (callback,)
+    else
+      conditional_callbacks = (callback,)
+      consistant_callbacks = nothing
+    end
+  elseif typeof(callback) <: Void
+    conditional_callbacks = nothing
+    consistant_callbacks = nothing
+  else # Collection of callbacks
+    idxs = [typeof(x.condition) <: Void for x in callback]
+    consistant_callbacks = callback[idxs]
+    conditional_callbacks = callback[!idxs]
   end
 
   opts = DEOptions(maxiters,timeseries_steps,save_timeseries,adaptive,uEltype(abstol),
@@ -151,7 +162,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
     progress_name,progress_message,
     timeseries_errors,dense_errors,
     tTypeNoUnits(beta1),tTypeNoUnits(beta2),tTypeNoUnits(qoldinit),dense,
-    callback_internal,isoutofdomain,calck,advance_to_tstop,stop_at_next_tstop)
+    callback,isoutofdomain,calck,advance_to_tstop,stop_at_next_tstop)
 
   progress ? (prog = Juno.ProgressBar(name=progress_name)) : prog = nothing
 
@@ -203,10 +214,12 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   integrator = ODEIntegrator{algType,uType,tType,
                              tTypeNoUnits,typeof(tdir),eltype(ks),typeof(sol),
                              typeof(rate_prototype),typeof(f),typeof(prog),typeof(cache),
+                             typeof(consistant_callbacks),typeof(conditional_callbacks),
                              typeof(opts)}(
                              sol,u,k,t,tType(dt),f,uprev,tprev,
                              alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,
                              dtpropose,dt_mod,tdir,EEst,qoldinit,q11,
+                             consistant_callbacks,conditional_callbacks,
                              iter,saveiter,saveiter_dense,prog,cache,
                              kshortsize,just_hit_tstop,accept_step,reeval_fsal,u_modified,opts)
   if initialize_integrator

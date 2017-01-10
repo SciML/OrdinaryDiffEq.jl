@@ -105,7 +105,6 @@ end
   resize!(integrator.sol.t,integrator.saveiter)
   resize!(integrator.sol.u,integrator.saveiter)
   resize!(integrator.sol.k,integrator.saveiter_dense)
-
   if integrator.sol.t[end] !=  integrator.t
     error("Solution endpoint doesn't match the current time in the postamble. This should never happen.")
   end
@@ -136,29 +135,38 @@ end
     if integrator.accept_step # Accept
       integrator.t = ttmp
       calc_dt_propose!(integrator,dtnew)
-      if !(typeof(integrator.opts.callback)<:Void)
-        for c in integrator.opts.callback
-          apply_callback!(integrator,c)
-        end
-      else
-        savevalues!(integrator)
-      end
+      handle_callbacks!(integrator)
     end
   else #Not adaptive
     integrator.t += integrator.dt
     integrator.accept_step = true
     integrator.dtpropose = integrator.dt
-    if !(typeof(integrator.opts.callback)<:Void)
-      for c in integrator.opts.callback
-        apply_callback!(integrator,c)
-      end
-    else
-      savevalues!(integrator)
-    end
+    handle_callbacks!(integrator)
   end
   if !(typeof(integrator.prog)<:Void) && integrator.opts.progress && integrator.iter%integrator.opts.progress_steps==0
     Juno.msg(integrator.prog,integrator.opts.progress_message(integrator.dt,integrator.t,integrator.u))
     Juno.progress(integrator.prog,integrator.t/integrator.sol.prob.tspan[2])
+  end
+end
+
+@inline function handle_callbacks!(integrator)
+  atleast_one_callback = false
+  if !(typeof(integrator.conditional_callbacks)<:Void)
+    cb_times = [find_callback_time(integrator,c) for c in integrator.conditional_callbacks]
+    idx = findmin([time[1] for time in cb_times])[2]
+    if cb_times[idx][1] != zero(typeof(integrator.t)) # if not, then no events
+      atleast_one_callback = true
+      apply_callback!(integrator,integrator.conditional_callbacks[idx],cb_times[idx][1],cb_times[idx][2])
+    end
+  end
+  if !(typeof(integrator.consistant_callbacks)<:Void)
+    atleast_one_callback = true
+    for c in integrator.consistant_callbacks
+      apply_callback!(integrator,c)
+    end
+  end
+  if !atleast_one_callback
+    savevalues!(integrator)
   end
 end
 
