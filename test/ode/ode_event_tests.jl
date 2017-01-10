@@ -99,7 +99,7 @@ sol3= solve(prob,Vern6(),saveat=[.5])
 
 ## Saving callback
 
-condtion = function (integrator)
+condtion = function (t,u,integrator)
   true
 end
 affect! = function (integrator) end
@@ -110,8 +110,18 @@ sol4 = solve(prob,Tsit5(),callback=saving_callback)
 
 @test sol2(3) ≈ sol(3)
 
+affect! = function (integrator)
+  u_modified!(integrator,false)
+end
+saving_callback2 = DiscreteCallback(condtion,affect!,save_positions)
+sol4 = solve(prob,Tsit5(),callback=saving_callback2)
 
-condtion= function (t,u,integrator) # Event when event_f(t,u,k) == 0
+cbs = CallbackSet(saving_callback,saving_callback2)
+sol4_extra = solve(prob,Tsit5(),callback=cbs)
+
+@test length(sol4_extra) == 2length(sol4) - 1
+
+condtion= function (t,u,integrator)
   u[1]
 end
 

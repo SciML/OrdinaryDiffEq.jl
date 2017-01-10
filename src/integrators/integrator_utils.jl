@@ -153,21 +153,27 @@ end
   discrete_callbacks = integrator.opts.callback.discrete_callbacks
   continuous_callbacks = integrator.opts.callback.continuous_callbacks
   atleast_one_callback = false
+
+  continuous_modified = false
+  discrete_modified = false
   if !(typeof(continuous_callbacks)<:Tuple{})
-    time,upcrossing,cb = find_first_continuous_callback(integrator,continuous_callbacks...)
+    time,upcrossing,idx,counter = find_first_continuous_callback(integrator,continuous_callbacks...)
     if time != zero(typeof(integrator.t)) && upcrossing != 0 # if not, then no events
       atleast_one_callback = true
-      apply_callback!(integrator,cb,time,upcrossing)
+      continuous_modified = apply_callback!(integrator,continuous_callbacks[idx],time,upcrossing)
     end
   end
   if !(typeof(discrete_callbacks)<:Tuple{})
     atleast_one_callback = true
-    for c in discrete_callbacks
-      apply_callback!(integrator,c)
-    end
+    discrete_modified = apply_discrete_callback!(integrator,discrete_callbacks...)
   end
   if !atleast_one_callback
     savevalues!(integrator)
+  end
+
+  integrator.u_modified = continuous_modified || discrete_modified
+  if integrator.u_modified
+    integrator.reeval_fsal = true
   end
 end
 

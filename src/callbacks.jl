@@ -1,22 +1,27 @@
+# Use Recursion to find the first callback for type-stability
+
+# Base Case: Only one callback
 function find_first_continuous_callback(integrator,callback::ContinuousCallback)
-  (find_callback_time(integrator,callback)...,callback)
+  (find_callback_time(integrator,callback)...,1,1)
 end
 
+# Starting Case: Compute on the first callback
 function find_first_continuous_callback(integrator,callback::ContinuousCallback,args...)
-  find_first_continuous_callback(integrator,find_callback_time(integrator,callback)...,callback,args...)
+  find_first_continuous_callback(integrator,find_callback_time(integrator,callback)...,1,1,args...)
 end
 
-function find_first_continuous_callback(integrator,tmin::Number,upcrossing::Float64,callback1,callback2)
+function find_first_continuous_callback(integrator,tmin::Number,upcrossing::Float64,idx::Int,counter::Int,callback2)
+  counter += 1 # counter is idx for callback2.
   tmin2,upcrossing2 = find_callback_time(integrator,callback2)
   if tmin < tmin2
-    return tmin,upcrossing,callback1
+    return tmin,upcrossing,idx,counter
   else
-    return tmin2,upcrossing,callback2
+    return tmin2,upcrossing,counter,counter
   end
 end
 
-function find_first_continuous_callback(integrator,tmin::Number,upcrossing::Float64,callback1,callback2,args...)
-  find_first_continuous_callback(integrator,find_first_continuous_callback(integrator,tmin,upcrossing,callback1,callback2)...,args...)
+function find_first_continuous_callback(integrator,tmin::Number,upcrossing::Float64,idx::Int,counter::Int,callback2,args...)
+  find_first_continuous_callback(integrator,find_first_continuous_callback(integrator,tmin,upcrossing,idx,counter,callback2)...,args...)
 end
 
 @inline function determine_event_occurance(integrator,callback)
@@ -78,7 +83,7 @@ function find_callback_time(integrator,callback)
   new_t,prev_sign
 end
 
-function apply_callback!(integrator::ODEIntegrator,callback,cb_time=zero(typeof(integrator.t)),prev_sign=1.0)
+function apply_callback!(integrator::ODEIntegrator,callback::ContinuousCallback,cb_time,prev_sign)
   if cb_time != zero(typeof(integrator.t))
     change_t_via_interpolation!(integrator,integrator.tprev+cb_time)
   end
@@ -88,18 +93,53 @@ function apply_callback!(integrator::ODEIntegrator,callback,cb_time=zero(typeof(
   end
 
   integrator.u_modified = true
-  if (prev_sign < 0 && !(typeof(callback.affect!) <: Void)) || typeof(callback)<:DiscreteCallback
+
+  if (prev_sign < 0 && !(typeof(callback.affect!) <: Void))
     callback.affect!(integrator)
   elseif !(typeof(callback.affect_neg!) <: Void)
     callback.affect_neg!(integrator)
   end
   if integrator.u_modified
     reeval_internals_due_to_modification!(integrator)
+    if callback.save_positions[2]
+      savevalues!(integrator)
+    end
+    return true
   end
-  if callback.save_positions[2]
+  false
+end
+
+#Base Case: Just one
+function apply_discrete_callback!(integrator::ODEIntegrator,callback::DiscreteCallback)
+  if callback.save_positions[1]
     savevalues!(integrator)
   end
+
+  integrator.u_modified = true
+  if callback.condition(integrator.tprev+integrator.dt,integrator.u,integrator)
+    callback.affect!(integrator)
+    if callback.save_positions[2]
+      savevalues!(integrator)
+    end
+  end
+  integrator.u_modified
 end
+
+#Starting: Get bool from first and do next
+function apply_discrete_callback!(integrator::ODEIntegrator,callback::DiscreteCallback,args...)
+  apply_discrete_callback!(integrator,apply_discrete_callback!(integrator,callback),args...)
+end
+
+function apply_discrete_callback!(integrator::ODEIntegrator,discrete_modified::Bool,callback::DiscreteCallback,args...)
+  bool = apply_discrete_callback!(integrator,apply_discrete_callback!(integrator,callback),args...)
+  discrete_modified || bool
+end
+
+function apply_discrete_callback!(integrator::ODEIntegrator,discrete_modified::Bool,callback::DiscreteCallback)
+  bool = apply_discrete_callback!(integrator,callback)
+  discrete_modified || bool
+end
+
 
 macro ode_change_cachesize(cache,resize_ex)
   resize_ex = cache_replace_length(resize_ex)

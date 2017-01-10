@@ -25,7 +25,6 @@ end
     resize!(integrator.k,integrator.kshortsize) # Reset k for next step!
     ode_addsteps!(integrator,integrator.f,Val{true},Val{false})
   end
-  integrator.reeval_fsal = true
   integrator.u_modified = false
 end
 
