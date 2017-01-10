@@ -1,3 +1,24 @@
+function find_first_continuous_callback(integrator,callback::ContinuousCallback)
+  (find_callback_time(integrator,callback)...,callback)
+end
+
+function find_first_continuous_callback(integrator,callback::ContinuousCallback,args...)
+  find_first_continuous_callback(integrator,find_callback_time(integrator,callback)...,callback,args...)
+end
+
+function find_first_continuous_callback(integrator,tmin::Number,upcrossing::Float64,callback1,callback2)
+  tmin2,upcrossing2 = find_callback_time(integrator,callback2)
+  if tmin < tmin2
+    return tmin,upcrossing,callback1
+  else
+    return tmin2,upcrossing,callback2
+  end
+end
+
+function find_first_continuous_callback(integrator,tmin::Number,upcrossing::Float64,callback1,callback2,args...)
+  find_first_continuous_callback(integrator,find_first_continuous_callback(integrator,tmin,upcrossing,callback1,callback2)...,args...)
+end
+
 @inline function determine_event_occurance(integrator,callback)
   event_occurred = false
   if callback.interp_points!=0
@@ -8,7 +29,7 @@
   # Check if the event occured
   previous_condition = callback.condition(integrator.tprev,integrator.uprev,integrator)
   if isapprox(previous_condition,0,rtol=callback.reltol,atol=callback.abstol)
-    prev_sign = 0
+    prev_sign = 0.0
   else
     prev_sign = sign(previous_condition)
   end
@@ -57,8 +78,8 @@ function find_callback_time(integrator,callback)
   new_t,prev_sign
 end
 
-function apply_callback!(integrator::ODEIntegrator,callback,cb_time=0,prev_sign=1)
-  if cb_time != 0
+function apply_callback!(integrator::ODEIntegrator,callback,cb_time=zero(typeof(integrator.t)),prev_sign=1.0)
+  if cb_time != zero(typeof(integrator.t))
     change_t_via_interpolation!(integrator,integrator.tprev+cb_time)
   end
 
@@ -67,7 +88,7 @@ function apply_callback!(integrator::ODEIntegrator,callback,cb_time=0,prev_sign=
   end
 
   integrator.u_modified = true
-  if prev_sign < 0 && !(typeof(callback.affect!) <: Void)
+  if (prev_sign < 0 && !(typeof(callback.affect!) <: Void)) || typeof(callback)<:DiscreteCallback
     callback.affect!(integrator)
   elseif !(typeof(callback.affect_neg!) <: Void)
     callback.affect_neg!(integrator)
@@ -78,7 +99,6 @@ function apply_callback!(integrator::ODEIntegrator,callback,cb_time=0,prev_sign=
   if callback.save_positions[2]
     savevalues!(integrator)
   end
-
 end
 
 macro ode_change_cachesize(cache,resize_ex)

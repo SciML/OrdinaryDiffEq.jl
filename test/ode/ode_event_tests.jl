@@ -18,7 +18,7 @@ end
 
 rootfind = true
 save_positions = (true,true)
-callback = Callback(condtion,affect!,rootfind,save_positions)
+callback = ContinuousCallback(condtion,affect!,rootfind,save_positions)
 
 sol = solve(prob,Tsit5(),callback=callback)
 
@@ -39,7 +39,7 @@ end
 
 rootfind = true
 save_positions = (true,true)
-callback = Callback(condtion,affect!,rootfind,save_positions)
+callback = ContinuousCallback(condtion,affect!,rootfind,save_positions)
 
 sol = solve(prob,Tsit5(),callback=callback,abstol=1e-8,reltol=1e-6)
 
@@ -67,7 +67,7 @@ end
 interp_points = 10
 rootfind = true
 save_positions = (true,true)
-callback = Callback(condtion,affect!,rootfind,save_positions,affect_neg! = affect_neg!)
+callback = ContinuousCallback(condtion,affect!,rootfind,save_positions,affect_neg! = affect_neg!)
 
 u0 = [50.0,0.0]
 tspan = (0.0,15.0)
@@ -99,11 +99,12 @@ sol3= solve(prob,Vern6(),saveat=[.5])
 
 ## Saving callback
 
-condtion = nothing
+condtion = function (integrator)
+  true
+end
 affect! = function (integrator) end
-rootfind = false
 save_positions = (true,false)
-saving_callback = Callback(condtion,affect!,rootfind,save_positions)
+saving_callback = DiscreteCallback(condtion,affect!,save_positions)
 
 sol4 = solve(prob,Tsit5(),callback=saving_callback)
 
@@ -121,7 +122,7 @@ end
 interp_points = 10
 rootfind = true
 save_positions = (true,true)
-terminate_callback = Callback(condtion,affect!,rootfind,save_positions)
+terminate_callback = ContinuousCallback(condtion,affect!,rootfind,save_positions)
 
 tspan2 = (0.0,Inf)
 prob2 = ODEProblem(f,u0,tspan2)
@@ -138,10 +139,30 @@ affect2! = function (integrator)
     integrator.u[2] = -integrator.u[2]
   end
 end
-terminate_callback2 = Callback(condtion,affect2!,rootfind,save_positions)
+terminate_callback2 = ContinuousCallback(condtion,affect2!,rootfind,save_positions)
 
 
 sol5 = solve(prob2,Vern7(),callback=terminate_callback2)
 
 @test sol5[end][1] < 1e-12
 @test sol5.t[end] ≈ 3*sqrt(50*2/9.81)
+
+condtion= function (t,u,integrator) # Event when event_f(t,u,k) == 0
+  t-4
+end
+
+affect! = function (integrator)
+  terminate!(integrator)
+end
+
+interp_points = 10
+rootfind = true
+save_positions = (true,true)
+terminate_callback3 = ContinuousCallback(condtion,affect!,rootfind,save_positions)
+
+bounce_then_exit = CallbackSet(callback,terminate_callback3)
+
+sol6 = solve(prob2,Vern7(),callback=bounce_then_exit)
+
+@test sol6[end][1] > 0
+@test sol6.t[end] ≈ 4

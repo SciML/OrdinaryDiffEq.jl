@@ -150,18 +150,19 @@ end
 end
 
 @inline function handle_callbacks!(integrator)
+  discrete_callbacks = integrator.opts.callback.discrete_callbacks
+  continuous_callbacks = integrator.opts.callback.continuous_callbacks
   atleast_one_callback = false
-  if !(typeof(integrator.conditional_callbacks)<:Void)
-    cb_times = [find_callback_time(integrator,c) for c in integrator.conditional_callbacks]
-    idx = findmin([time[1] for time in cb_times])[2]
-    if cb_times[idx][1] != zero(typeof(integrator.t)) # if not, then no events
+  if !(typeof(continuous_callbacks)<:Tuple{})
+    time,upcrossing,cb = find_first_continuous_callback(integrator,continuous_callbacks...)
+    if time != zero(typeof(integrator.t)) && upcrossing != 0 # if not, then no events
       atleast_one_callback = true
-      apply_callback!(integrator,integrator.conditional_callbacks[idx],cb_times[idx][1],cb_times[idx][2])
+      apply_callback!(integrator,cb,time,upcrossing)
     end
   end
-  if !(typeof(integrator.consistant_callbacks)<:Void)
+  if !(typeof(discrete_callbacks)<:Tuple{})
     atleast_one_callback = true
-    for c in integrator.consistant_callbacks
+    for c in discrete_callbacks
       apply_callback!(integrator,c)
     end
   end
