@@ -12,12 +12,12 @@
   else
     prev_sign = sign(previous_condition)
   end
-  if ((prev_sign<0 && !(typeof(callback.affect!)<:Void)) || (prev_sign>0 && !(typeof(callback.affect_neg!)<:Void))) && prev_sign*sign(callback.condition(integrator.t,integrator.u,integrator))<0
+  if ((prev_sign<0 && !(typeof(callback.affect!)<:Void)) || (prev_sign>0 && !(typeof(callback.affect_neg!)<:Void))) && prev_sign*sign(callback.condition(integrator.tprev+integrator.dt,integrator.u,integrator))<0
     event_occurred = true
     interp_index = callback.interp_points
   elseif callback.interp_points!=0 # Use the interpolants for safety checking
     for i in 2:length(Θs)-1
-      if prev_sign*callback.condition(integrator.t+integrator.dt*Θs[i],ode_interpolant(Θs[i],integrator),integrator)<0
+      if prev_sign*callback.condition(integrator.tprev+integrator.dt*Θs[i],ode_interpolant(Θs[i],integrator),integrator)<0
         event_occurred = true
         interp_index = i
         break
@@ -57,7 +57,7 @@ function find_callback_time(integrator,callback)
   new_t,prev_sign
 end
 
-function apply_callback!(integrator,callback,cb_time=0,prev_sign=1)
+function apply_callback!(integrator::ODEIntegrator,callback,cb_time=0,prev_sign=1)
   if cb_time != 0
     change_t_via_interpolation!(integrator,integrator.tprev+cb_time)
   end

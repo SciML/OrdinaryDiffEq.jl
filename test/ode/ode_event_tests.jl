@@ -1,5 +1,48 @@
 using OrdinaryDiffEq, RecursiveArrayTools, DiffEqBase, Base.Test#, ParameterizedFunctions
 
+
+f = function (t,u)
+  - u + sin(t)
+end
+
+
+prob = ODEProblem(f,1.0,(0.0,10.0))
+
+condtion= function (t,u,integrator) # Event when event_f(t,u,k) == 0
+  t - 2.95
+end
+
+affect! = function (integrator)
+  integrator.u = integrator.u + 2
+end
+
+rootfind = true
+save_positions = (true,true)
+callback = Callback(condtion,affect!,rootfind,save_positions)
+
+sol = solve(prob,Tsit5(),callback=callback)
+
+f = function (t,u,du)
+  du[1] = - u[1] + sin(t)
+end
+
+
+prob = ODEProblem(f,[1.0],(0.0,10.0))
+
+condtion= function (t,u,integrator) # Event when event_f(t,u,k) == 0
+  t - 2.95
+end
+
+affect! = function (integrator)
+  integrator.u = integrator.u + 2
+end
+
+rootfind = true
+save_positions = (true,true)
+callback = Callback(condtion,affect!,rootfind,save_positions)
+
+sol = solve(prob,Tsit5(),callback=callback,abstol=1e-8,reltol=1e-6)
+
 #=
 f = @ode_def BallBounce begin
   dy =  v

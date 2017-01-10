@@ -7,7 +7,11 @@
   elseif t != integrator.t
     new_u = integrator(t)
     integrator.t = t
-    recursivecopy!(integrator.u,new_u)
+    if typeof(integrator.u) <: AbstractArray
+      recursivecopy!(integrator.u,new_u)
+    else
+      integrator.u = new_u
+    end
     integrator.dt = integrator.t - integrator.tprev
     reeval_internals_due_to_modification!(integrator)
     if T
