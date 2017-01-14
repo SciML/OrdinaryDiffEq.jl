@@ -772,8 +772,8 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,uprev,f,t,:
   k₁ = similar(rate_prototype)
   k₂ = similar(rate_prototype)
   k₃ = similar(rate_prototype)
-  du1 = similar(rate_prototype)
-  du2 = similar(rate_prototype)
+  du1 = zeros(rate_prototype)
+  du2 = zeros(rate_prototype)
   # f₀ = similar(u) fsalfirst
   f₁ = similar(rate_prototype)
   vectmp = similar(vec(u))
@@ -797,8 +797,8 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,uprev,f,t,:
   k₁ = similar(rate_prototype)
   k₂ = similar(rate_prototype)
   k₃ = similar(rate_prototype)
-  du1 = similar(rate_prototype)
-  du2 = similar(rate_prototype)
+  du1 = zeros(rate_prototype)
+  du2 = zeros(rate_prototype)
   # f₀ = similar(u) fsalfirst
   f₁ = similar(rate_prototype)
   vectmp = similar(vec(u))

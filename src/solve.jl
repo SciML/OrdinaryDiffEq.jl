@@ -136,7 +136,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   copyat_or_push!(timeseries,1,u)
   copyat_or_push!(ks,1,[rate_prototype])
 
-  opts = DEOptions(maxiters,timeseries_steps,save_timeseries,adaptive,uEltype(abstol),
+  opts = DEOptions(Int(maxiters),timeseries_steps,save_timeseries,adaptive,uEltype(abstol),
     uEltypeNoUnits(reltol),tTypeNoUnits(gamma),tTypeNoUnits(qmax),tTypeNoUnits(qmin),
     dtmax,dtmin,internalnorm,
     tstops_internal,saveat_internal,d_discontinuities_internal,
