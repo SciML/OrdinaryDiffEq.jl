@@ -1,16 +1,17 @@
-function solve{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
+function solve{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile_flag}(
   prob::AbstractODEProblem{uType,tType,isinplace,F},
-  alg::algType,timeseries=[],ts=[],ks=[];
+  alg::algType,timeseries=[],ts=[],ks=[],recompile::Type{Val{recompile_flag}}=Val{true};
   kwargs...)
 
-  integrator = init(prob,alg,timeseries,ts,ks;kwargs...)
+  integrator = init(prob,alg,timeseries,ts,ks,recompile;kwargs...)
   solve!(integrator)
   integrator.sol
 end
 
-function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
+function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile_flag}(
   prob::AbstractODEProblem{uType,tType,isinplace,F},
-  alg::algType,timeseries_init=uType[],ts_init=tType[],ks_init=[];
+  alg::algType,timeseries_init=uType[],ts_init=tType[],ks_init=[],
+  recompile::Type{Val{recompile_flag}}=Val{true};
   dt = tType(0),save_timeseries = true,
   timeseries_steps = 1,
   dense = save_timeseries,
@@ -178,6 +179,16 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
                       calculate_error = false)
   end
 
+  if recompile_flag == true
+    FType = typeof(f)
+    SolType = typeof(sol)
+    cacheType = typeof(cache)
+  else
+    FType = Function
+    SolType = AbstractODESolution
+    cacheType =  OrdinaryDiffEqCache
+  end
+
   tprev = t
   dtcache = tType(dt)
   dtpropose = tType(dt)
@@ -195,8 +206,8 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F}(
   q11 = tTypeNoUnits(1)
 
   integrator = ODEIntegrator{algType,uType,tType,
-                             tTypeNoUnits,typeof(tdir),eltype(ks),typeof(sol),
-                             typeof(rate_prototype),typeof(f),typeof(prog),typeof(cache),
+                             tTypeNoUnits,typeof(tdir),eltype(ks),SolType,
+                             typeof(rate_prototype),FType,typeof(prog),cacheType,
                              typeof(opts)}(
                              sol,u,k,t,tType(dt),f,uprev,tprev,
                              alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,
