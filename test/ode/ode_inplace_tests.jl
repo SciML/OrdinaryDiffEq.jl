@@ -28,3 +28,5 @@ alloc1 = @allocated sol = solve(prob_ode_large2Dlinear,Euler(),dt=1//2^(8),save_
 alloc2 = @allocated sol2 = solve(prob_ode_large2Dlinear,Euler(),sol[:],sol.t,sol.k;dt=1//2^(8),save_timeseries=true)
 
 @test alloc2 <= alloc1
+
+sol =solve(prob,Tsit5())

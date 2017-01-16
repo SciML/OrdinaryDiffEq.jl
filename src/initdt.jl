@@ -1,5 +1,6 @@
 
-function ode_determine_initdt{uType,tType,uEltypeNoUnits}(u0::uType,t::tType,tdir,dtmax,abstol,reltol::uEltypeNoUnits,internalnorm,f,order)
+function ode_determine_initdt{tType,uType,F}(u0,t::tType,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,true,F},order)
+  f = prob.f
   f₀ = similar(u0./t); f₁ = similar(u0./t); u₁ = similar(u0)
   sk = abstol+abs.(u0)*reltol
   d₀ = internalnorm(u0./sk)
@@ -28,11 +29,12 @@ function ode_determine_initdt{uType,tType,uEltypeNoUnits}(u0::uType,t::tType,tdi
   dt = tdir*min(100dt₀,dt₁)
 end
 
-function ode_determine_initdt{uType<:Number,tType,uEltypeNoUnits}(u0::uType,t::tType,tdir,dtmax,abstol,reltol::uEltypeNoUnits,internalnorm,f,order)
+function ode_determine_initdt{uType,tType,F}(u0::uType,t,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,false,F},order)
+  f = prob.f
   sk = abstol+abs(u0)*reltol
-  d₀ = abs(u0/sk)
+  d₀ = internalnorm(u0/sk)
   f₀ = f(t,u0)
-  d₁ = abs(f₀/sk)
+  d₁ = internalnorm(f₀/sk)
   T0 = typeof(d₀)
   T1 = typeof(d₁)
   if d₀ < T0(1//10^(5)) || d₁ < T1(1//10^(5))
@@ -43,7 +45,7 @@ function ode_determine_initdt{uType<:Number,tType,uEltypeNoUnits}(u0::uType,t::t
   dt₀ = min(dt₀,tdir*dtmax)
   u₁ = u0 + tdir*dt₀*f₀
   f₁ = f(t+tdir*dt₀,u₁)
-  d₂ = abs((f₁-f₀)./(abstol+abs(u0)*reltol))/dt₀*tType(1)
+  d₂ = internalnorm((f₁-f₀)./(abstol+abs(u0)*reltol))/dt₀*tType(1)
   if max(d₁,d₂) <= T1(1//10^(15))
     dt₁ = max(tType(1//10^(6)),dt₀*1//10^(3))
   else

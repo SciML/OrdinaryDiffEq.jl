@@ -85,7 +85,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
   tTypeNoUnits   = typeof(recursive_one(t))
 
   if dt == zero(dt) && adaptive
-    dt = tType(ode_determine_initdt(u0,t,tdir,dtmax,uEltype(abstol),uEltypeNoUnits(reltol),internalnorm,f,order))
+    dt = tType(ode_determine_initdt(u0,t,tdir,dtmax,uEltype(abstol),uEltypeNoUnits(reltol),internalnorm,prob,order))
   end
 
   if sign(dt)!=tdir && dt!=tType(0)
