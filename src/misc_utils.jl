@@ -68,3 +68,6 @@ function to_muladd(ex)
 end
 is_add_operation(ex::Expr) = ex.head == :call && !isempty(ex.args) && ex.args[1] == :+
 is_add_operation(ex) = false
+
+realtype{T}(::Type{T}) = T
+realtype{T}(::Type{Complex{T}}) = T
