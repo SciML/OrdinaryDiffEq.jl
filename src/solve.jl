@@ -160,7 +160,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
     uprev = deepcopy(u)
   end
 
-  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uprev,f,t,Val{isinplace})
+  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,Val{isinplace})
 
   if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
     id = CompositeInterpolationData(f,timeseries,ts,ks,alg_choice,notsaveat_idxs,cache)
