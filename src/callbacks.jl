@@ -94,11 +94,20 @@ function apply_callback!(integrator,callback::ContinuousCallback,cb_time,prev_si
 
   integrator.u_modified = true
 
-  if (prev_sign < 0 && !(typeof(callback.affect!) <: Void))
-    callback.affect!(integrator)
-  elseif !(typeof(callback.affect_neg!) <: Void)
-    callback.affect_neg!(integrator)
+  if prev_sign < 0
+    if typeof(callback.affect!) <: Void
+      integrator.u_modified = false
+    else
+      callback.affect!(integrator)
+    end
+  elseif prev_sign > 0
+    if typeof(callback.affect_neg!) <: Void
+      integrator.u_modified = false
+    else
+      callback.affect_neg!(integrator)
+    end
   end
+  
   if integrator.u_modified
     reeval_internals_due_to_modification!(integrator)
     if callback.save_positions[2]
