@@ -143,13 +143,13 @@ sol5 = solve(prob2,Tsit5(),callback=terminate_callback)
 @test sol5.t[end] ≈ sqrt(50*2/9.81)
 
 affect2! = function (integrator)
-  if integrator.t > 4
+  if integrator.t >= 3.5
     terminate!(integrator)
   else
     integrator.u[2] = -integrator.u[2]
   end
 end
-terminate_callback2 = ContinuousCallback(condtion,affect2!,rootfind,save_positions)
+terminate_callback2 = ContinuousCallback(condtion,nothing,affect2!,rootfind,save_positions)
 
 
 sol5 = solve(prob2,Vern7(),callback=terminate_callback2)

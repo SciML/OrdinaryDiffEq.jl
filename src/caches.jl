@@ -25,7 +25,7 @@ immutable EulerCache{uType,rateType} <: OrdinaryDiffEqMutableCache
 end
 
 function alg_cache(alg::Euler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{true}})
-  EulerCache(u,uprev,similar(rate_prototype),similar(rate_prototype))
+  EulerCache(u,uprev,similar(rate_prototype,indices(rate_prototype)),similar(rate_prototype,indices(rate_prototype)))
 end
 
 immutable EulerConstantCache <: OrdinaryDiffEqConstantCache end
@@ -45,9 +45,9 @@ immutable MidpointConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::Midpoint,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{true}})
   utilde = similar(u)
-  k = similar(rate_prototype)
-  du = similar(rate_prototype)
-  fsalfirst = similar(rate_prototype)
+  k = similar(rate_prototype,indices(rate_prototype))
+  du = similar(rate_prototype,indices(rate_prototype))
+  fsalfirst = similar(rate_prototype,indices(rate_prototype))
   MidpointCache(u,uprev,k,du,utilde,fsalfirst)
 end
 
@@ -67,11 +67,11 @@ end
 immutable RK4ConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::RK4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{true}})
-  k₁ = similar(rate_prototype)
-  k₂ = similar(rate_prototype)
-  k₃ = similar(rate_prototype)
-  k₄ = similar(rate_prototype)
-  k = similar(rate_prototype)
+  k₁ = similar(rate_prototype,indices(rate_prototype))
+  k₂ = similar(rate_prototype,indices(rate_prototype))
+  k₃ = similar(rate_prototype,indices(rate_prototype))
+  k₄ = similar(rate_prototype,indices(rate_prototype))
+  k  = similar(rate_prototype,indices(rate_prototype))
   tmp = similar(u)
   RK4Cache(u,uprev,k₁,k₂,k₃,k₄,k,tmp)
 end
@@ -93,10 +93,10 @@ end
 
 function alg_cache(alg::BS3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{true}})
   tab = BS3ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
-  k1 = similar(rate_prototype)
-  k2 = similar(rate_prototype)
-  k3 = similar(rate_prototype)
-  k4 = similar(rate_prototype)
+  k1 = similar(rate_prototype,indices(rate_prototype))
+  k2 = similar(rate_prototype,indices(rate_prototype))
+  k3 = similar(rate_prototype,indices(rate_prototype))
+  k4 = similar(rate_prototype,indices(rate_prototype))
   utilde = similar(u)
   atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
@@ -125,14 +125,14 @@ end
 
 function alg_cache(alg::BS5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{true}})
   tab = BS5ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
-  k1 = similar(rate_prototype)
-  k2 = similar(rate_prototype)
-  k3 = similar(rate_prototype)
-  k4 = similar(rate_prototype)
-  k5 = similar(rate_prototype)
-  k6 = similar(rate_prototype)
-  k7 = similar(rate_prototype)
-  k8 = similar(rate_prototype)
+  k1 = similar(rate_prototype,indices(rate_prototype))
+  k2 = similar(rate_prototype,indices(rate_prototype))
+  k3 = similar(rate_prototype,indices(rate_prototype))
+  k4 = similar(rate_prototype,indices(rate_prototype))
+  k5 = similar(rate_prototype,indices(rate_prototype))
+  k6 = similar(rate_prototype,indices(rate_prototype))
+  k7 = similar(rate_prototype,indices(rate_prototype))
+  k8 = similar(rate_prototype,indices(rate_prototype))
   utilde = similar(u); uhat = similar(u)
   atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
@@ -159,13 +159,13 @@ end
 
 function alg_cache(alg::Tsit5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{true}})
   tab = Tsit5ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
-  k1 = similar(rate_prototype)
-  k2 = similar(rate_prototype)
-  k3 = similar(rate_prototype)
-  k4 = similar(rate_prototype)
-  k5 = similar(rate_prototype)
-  k6 = similar(rate_prototype)
-  k7 = similar(rate_prototype)
+  k1 = similar(rate_prototype,indices(rate_prototype))
+  k2 = similar(rate_prototype,indices(rate_prototype))
+  k3 = similar(rate_prototype,indices(rate_prototype))
+  k4 = similar(rate_prototype,indices(rate_prototype))
+  k5 = similar(rate_prototype,indices(rate_prototype))
+  k6 = similar(rate_prototype,indices(rate_prototype))
+  k7 = similar(rate_prototype,indices(rate_prototype))
   utilde = similar(u)
   atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
@@ -195,17 +195,17 @@ immutable DP5Cache{uType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutab
 end
 
 function alg_cache(alg::DP5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{true}})
-  k1 = similar(rate_prototype)
-  k2 = similar(rate_prototype)
-  k3 = similar(rate_prototype)
-  k4 = similar(rate_prototype)
-  k5 = similar(rate_prototype)
-  k6 = similar(rate_prototype)
-  k7 = similar(rate_prototype)
-  dense_tmp3 = similar(rate_prototype)
-  dense_tmp4 = similar(rate_prototype)
-  update = similar(rate_prototype)
-  bspl = similar(rate_prototype)
+  k1 = similar(rate_prototype,indices(rate_prototype))
+  k2 = similar(rate_prototype,indices(rate_prototype))
+  k3 = similar(rate_prototype,indices(rate_prototype))
+  k4 = similar(rate_prototype,indices(rate_prototype))
+  k5 = similar(rate_prototype,indices(rate_prototype))
+  k6 = similar(rate_prototype,indices(rate_prototype))
+  k7 = similar(rate_prototype,indices(rate_prototype))
+  dense_tmp3 = similar(rate_prototype,indices(rate_prototype))
+  dense_tmp4 = similar(rate_prototype,indices(rate_prototype))
+  update = similar(rate_prototype,indices(rate_prototype))
+  bspl = similar(rate_prototype,indices(rate_prototype))
   utilde = similar(u)
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
   tab = DP5ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
@@ -234,17 +234,17 @@ immutable DP5ThreadedCache{uType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDif
 end
 
 function alg_cache(alg::DP5Threaded,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{true}})
-  k1 = similar(rate_prototype)
-  k2 = similar(rate_prototype)
-  k3 = similar(rate_prototype)
-  k4 = similar(rate_prototype)
-  k5 = similar(rate_prototype)
-  k6 = similar(rate_prototype)
-  k7 = similar(rate_prototype)
-  dense_tmp3 = similar(rate_prototype)
-  dense_tmp4 = similar(rate_prototype)
-  update = similar(rate_prototype)
-  bspl = similar(rate_prototype)
+  k1 = similar(rate_prototype,indices(rate_prototype))
+  k2 = similar(rate_prototype,indices(rate_prototype))
+  k3 = similar(rate_prototype,indices(rate_prototype))
+  k4 = similar(rate_prototype,indices(rate_prototype))
+  k5 = similar(rate_prototype,indices(rate_prototype))
+  k6 = similar(rate_prototype,indices(rate_prototype))
+  k7 = similar(rate_prototype,indices(rate_prototype))
+  dense_tmp3 = similar(rate_prototype,indices(rate_prototype))
+  dense_tmp4 = similar(rate_prototype,indices(rate_prototype))
+  update = similar(rate_prototype,indices(rate_prototype))
+  bspl = similar(rate_prototype,indices(rate_prototype))
   utilde = similar(u)
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
   tab = DP5ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
@@ -270,10 +270,10 @@ end
 
 function alg_cache(alg::Vern6,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{true}})
   tab = Vern6ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
-  k1 = similar(rate_prototype)
-  k2 = similar(rate_prototype); k3 = similar(rate_prototype); k4 = similar(rate_prototype);
-  k5 = similar(rate_prototype); k6 = similar(rate_prototype); k7 = similar(rate_prototype);
-  k8 = similar(rate_prototype); k9 = similar(rate_prototype);
+  k1 = similar(rate_prototype,indices(rate_prototype))
+  k2 = similar(rate_prototype,indices(rate_prototype)); k3 = similar(rate_prototype,indices(rate_prototype)); k4 = similar(rate_prototype,indices(rate_prototype));
+  k5 = similar(rate_prototype,indices(rate_prototype)); k6 = similar(rate_prototype,indices(rate_prototype)); k7 = similar(rate_prototype,indices(rate_prototype));
+  k8 = similar(rate_prototype,indices(rate_prototype)); k9 = similar(rate_prototype,indices(rate_prototype));
   utilde = similar(u); tmp = similar(u); atmp = similar(u,uEltypeNoUnits);
   Vern6Cache(u,k1,k2,k3,k4,k5,k6,k7,k8,k9,utilde,tmp,atmp,tab)
 end
@@ -301,9 +301,9 @@ end
 
 function alg_cache(alg::Vern7,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{true}})
   tab = Vern7ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
-  k1 = similar(rate_prototype); k2 = similar(rate_prototype); k3 = similar(rate_prototype); k4 = similar(rate_prototype);
-  k5 = similar(rate_prototype); k6 = similar(rate_prototype); k7 = similar(rate_prototype); k8 = similar(rate_prototype);
-  k9 = similar(rate_prototype); k10 = similar(rate_prototype); utilde = similar(u); update = similar(u)
+  k1 = similar(rate_prototype,indices(rate_prototype)); k2 = similar(rate_prototype,indices(rate_prototype)); k3 = similar(rate_prototype,indices(rate_prototype)); k4 = similar(rate_prototype,indices(rate_prototype));
+  k5 = similar(rate_prototype,indices(rate_prototype)); k6 = similar(rate_prototype,indices(rate_prototype)); k7 = similar(rate_prototype,indices(rate_prototype)); k8 = similar(rate_prototype,indices(rate_prototype));
+  k9 = similar(rate_prototype,indices(rate_prototype)); k10 = similar(rate_prototype,indices(rate_prototype)); utilde = similar(u); update = similar(u)
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
   Vern7Cache(u,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,utilde,update,tmp,atmp,tab)
 end
@@ -335,12 +335,12 @@ end
 
 function alg_cache(alg::Vern8,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{true}})
   tab = Vern8ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
-  k1 = similar(rate_prototype); k2 = similar(rate_prototype); k3 = similar(rate_prototype);
-  k4 = similar(rate_prototype);
-  k5 = similar(rate_prototype); k6 = similar(rate_prototype); k7 = similar(rate_prototype);
-  k8 = similar(rate_prototype); tmp = similar(u)
-  k9 = similar(rate_prototype); k10 = similar(rate_prototype); k11 = similar(rate_prototype);
-  k12 = similar(rate_prototype); k13 = similar(rate_prototype)
+  k1 = similar(rate_prototype,indices(rate_prototype)); k2 = similar(rate_prototype,indices(rate_prototype)); k3 = similar(rate_prototype,indices(rate_prototype));
+  k4 = similar(rate_prototype,indices(rate_prototype));
+  k5 = similar(rate_prototype,indices(rate_prototype)); k6 = similar(rate_prototype,indices(rate_prototype)); k7 = similar(rate_prototype,indices(rate_prototype));
+  k8 = similar(rate_prototype,indices(rate_prototype)); tmp = similar(u)
+  k9 = similar(rate_prototype,indices(rate_prototype)); k10 = similar(rate_prototype,indices(rate_prototype)); k11 = similar(rate_prototype,indices(rate_prototype));
+  k12 = similar(rate_prototype,indices(rate_prototype)); k13 = similar(rate_prototype,indices(rate_prototype))
   utilde = similar(u); update = similar(u);
   atmp = similar(u,uEltypeNoUnits)
   Vern8Cache(u,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,utilde,update,tmp,atmp,tab)
@@ -375,14 +375,14 @@ end
 
 function alg_cache(alg::Vern9,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{true}})
   tab = Vern9ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
-  k1 = similar(rate_prototype); k2 = similar(rate_prototype);k3 = similar(rate_prototype);
-  k4 = similar(rate_prototype);
-  k5 = similar(rate_prototype); k6 = similar(rate_prototype);k7 = similar(rate_prototype);
-  k8 = similar(rate_prototype);
-  k9 = similar(rate_prototype); k10 = similar(rate_prototype); k11 = similar(rate_prototype);
-  k12 = similar(rate_prototype); update = similar(u)
-  k13 = similar(rate_prototype); k14 = similar(rate_prototype); k15 = similar(rate_prototype);
-  k16 =similar(rate_prototype);
+  k1 = similar(rate_prototype,indices(rate_prototype)); k2 = similar(rate_prototype,indices(rate_prototype));k3 = similar(rate_prototype,indices(rate_prototype));
+  k4 = similar(rate_prototype,indices(rate_prototype));
+  k5 = similar(rate_prototype,indices(rate_prototype)); k6 = similar(rate_prototype,indices(rate_prototype));k7 = similar(rate_prototype,indices(rate_prototype));
+  k8 = similar(rate_prototype,indices(rate_prototype));
+  k9 = similar(rate_prototype,indices(rate_prototype)); k10 = similar(rate_prototype,indices(rate_prototype)); k11 = similar(rate_prototype,indices(rate_prototype));
+  k12 = similar(rate_prototype,indices(rate_prototype)); update = similar(u)
+  k13 = similar(rate_prototype,indices(rate_prototype)); k14 = similar(rate_prototype,indices(rate_prototype)); k15 = similar(rate_prototype,indices(rate_prototype));
+  k16 =similar(rate_prototype,indices(rate_prototype));
   utilde = similar(u); tmp = similar(u); atmp = similar(u,uEltypeNoUnits);
   Vern9Cache(u,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,utilde,update,tmp,atmp,tab)
 end
@@ -411,10 +411,10 @@ end
 
 function alg_cache(alg::TanYam7,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{true}})
   tab = TanYam7ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
-  k1 = similar(rate_prototype); k2 = similar(rate_prototype) ; k3 = similar(rate_prototype); k4 = similar(rate_prototype)
-  k5 = similar(rate_prototype); k6 = similar(rate_prototype) ; k7 = similar(rate_prototype); k8 = similar(rate_prototype)
-  k9 = similar(rate_prototype); k10= similar(rate_prototype) ;
-  utilde = similar(u); tmp = similar(u); atmp = similar(u,uEltypeNoUnits); k = similar(rate_prototype)
+  k1 = similar(rate_prototype,indices(rate_prototype)); k2 = similar(rate_prototype,indices(rate_prototype)) ; k3 = similar(rate_prototype,indices(rate_prototype)); k4 = similar(rate_prototype,indices(rate_prototype))
+  k5 = similar(rate_prototype,indices(rate_prototype)); k6 = similar(rate_prototype,indices(rate_prototype)) ; k7 = similar(rate_prototype,indices(rate_prototype)); k8 = similar(rate_prototype,indices(rate_prototype))
+  k9 = similar(rate_prototype,indices(rate_prototype)); k10= similar(rate_prototype,indices(rate_prototype)) ;
+  utilde = similar(u); tmp = similar(u); atmp = similar(u,uEltypeNoUnits); k = similar(rate_prototype,indices(rate_prototype))
   TanYam7Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,utilde,tmp,atmp,k,tab)
 end
 
@@ -456,24 +456,24 @@ immutable DP8Cache{uType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutab
 end
 
 function alg_cache(alg::DP8,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{true}})
-  k1 = similar(rate_prototype); k2  = similar(rate_prototype); k3  = similar(rate_prototype);  k4 = similar(rate_prototype)
-  k5 = similar(rate_prototype); k6  = similar(rate_prototype); k7  = similar(rate_prototype);  k8 = similar(rate_prototype)
-  k9 = similar(rate_prototype); k10 = similar(rate_prototype); k11 = similar(rate_prototype); k12 = similar(rate_prototype)
-  kupdate = similar(rate_prototype); utilde = similar(u);
+  k1 = similar(rate_prototype,indices(rate_prototype)); k2  = similar(rate_prototype,indices(rate_prototype)); k3  = similar(rate_prototype,indices(rate_prototype));  k4 = similar(rate_prototype,indices(rate_prototype))
+  k5 = similar(rate_prototype,indices(rate_prototype)); k6  = similar(rate_prototype,indices(rate_prototype)); k7  = similar(rate_prototype,indices(rate_prototype));  k8 = similar(rate_prototype,indices(rate_prototype))
+  k9 = similar(rate_prototype,indices(rate_prototype)); k10 = similar(rate_prototype,indices(rate_prototype)); k11 = similar(rate_prototype,indices(rate_prototype)); k12 = similar(rate_prototype,indices(rate_prototype))
+  kupdate = similar(rate_prototype,indices(rate_prototype)); utilde = similar(u);
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits); atmp2 = similar(u,uEltypeNoUnits); update = similar(u)
-  k13 = similar(rate_prototype)
-  k14 = similar(rate_prototype)
-  k15 = similar(rate_prototype)
-  k16 = similar(rate_prototype)
-  udiff = similar(rate_prototype)
-  bspl = similar(rate_prototype)
+  k13 = similar(rate_prototype,indices(rate_prototype))
+  k14 = similar(rate_prototype,indices(rate_prototype))
+  k15 = similar(rate_prototype,indices(rate_prototype))
+  k16 = similar(rate_prototype,indices(rate_prototype))
+  udiff = similar(rate_prototype,indices(rate_prototype))
+  bspl = similar(rate_prototype,indices(rate_prototype))
   # dense_tmp1 = udiff
   # dense_tmp2 = bspl
-  dense_tmp3 = similar(rate_prototype)
-  dense_tmp4 = similar(rate_prototype)
-  dense_tmp5 = similar(rate_prototype)
-  dense_tmp6 = similar(rate_prototype)
-  dense_tmp7 = similar(rate_prototype)
+  dense_tmp3 = similar(rate_prototype,indices(rate_prototype))
+  dense_tmp4 = similar(rate_prototype,indices(rate_prototype))
+  dense_tmp5 = similar(rate_prototype,indices(rate_prototype))
+  dense_tmp6 = similar(rate_prototype,indices(rate_prototype))
+  dense_tmp7 = similar(rate_prototype,indices(rate_prototype))
   tab = DP8ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
   DP8Cache(u,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,kupdate,
            update,udiff,bspl,dense_tmp3,dense_tmp4,dense_tmp5,dense_tmp6,dense_tmp7,
@@ -508,10 +508,10 @@ end
 
 function alg_cache(alg::TsitPap8,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{true}})
   tab = TsitPap8ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
-  k1 = similar(rate_prototype); k2 = similar(rate_prototype); k3 = similar(rate_prototype); k4 = similar(rate_prototype)
-  k5 = similar(rate_prototype); k6 = similar(rate_prototype); k7 = similar(rate_prototype); k8 = similar(rate_prototype)
-  k9 = similar(rate_prototype); k10 = similar(rate_prototype); k11 = similar(rate_prototype); k12 = similar(rate_prototype)
-  k13 = similar(rate_prototype); update = similar(u); utilde = similar(u); k = similar(rate_prototype)
+  k1 = similar(rate_prototype,indices(rate_prototype)); k2 = similar(rate_prototype,indices(rate_prototype)); k3 = similar(rate_prototype,indices(rate_prototype)); k4 = similar(rate_prototype,indices(rate_prototype))
+  k5 = similar(rate_prototype,indices(rate_prototype)); k6 = similar(rate_prototype,indices(rate_prototype)); k7 = similar(rate_prototype,indices(rate_prototype)); k8 = similar(rate_prototype,indices(rate_prototype))
+  k9 = similar(rate_prototype,indices(rate_prototype)); k10 = similar(rate_prototype,indices(rate_prototype)); k11 = similar(rate_prototype,indices(rate_prototype)); k12 = similar(rate_prototype,indices(rate_prototype))
+  k13 = similar(rate_prototype,indices(rate_prototype)); update = similar(u); utilde = similar(u); k = similar(rate_prototype,indices(rate_prototype))
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits);
   TsitPap8Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,utilde,update,tmp,atmp,k,tab)
 end
@@ -534,18 +534,18 @@ end
 function alg_cache(alg::ExplicitRK,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{true}})
   kk = Vector{typeof(rate_prototype)}(0)
   for i = 1:alg.tableau.stages
-    push!(kk,similar(rate_prototype))
+    push!(kk,similar(rate_prototype,indices(rate_prototype)))
   end
   fsalfirst = kk[1]
   if isfsal(alg.tableau)
     fsallast = kk[end]
   else
-    fsallast = similar(rate_prototype)
+    fsallast = similar(rate_prototype,indices(rate_prototype))
   end
-  utilde = similar(rate_prototype)
+  utilde = similar(rate_prototype,indices(rate_prototype))
   tmp = similar(u)
   atmp = similar(u,uEltypeNoUnits)
-  uEEst = similar(rate_prototype)
+  uEEst = similar(rate_prototype,indices(rate_prototype))
   tab = ExplicitRKConstantCache(alg.tableau,rate_prototype)
   ExplicitRKCache(u,tmp,utilde,uEEst,atmp,uprev,fsalfirst,fsallast,kk,tab)
 end
@@ -596,11 +596,11 @@ end
 
 function alg_cache(alg::Feagin10,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{true}})
   tab = Feagin10ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
-  k1 = similar(rate_prototype); k2 = similar(rate_prototype); k3 = similar(rate_prototype); k4 = similar(rate_prototype); k5 = similar(rate_prototype)
-  k6 = similar(rate_prototype); k7 = similar(rate_prototype); k8 = similar(rate_prototype); k9 = similar(rate_prototype); k10 = similar(rate_prototype)
-  k11 = similar(rate_prototype); k12 = similar(rate_prototype); k13 = similar(rate_prototype); k14 = similar(rate_prototype)
-  k15 = similar(rate_prototype); k16 = similar(rate_prototype); k17 = similar(rate_prototype)
-  tmp = similar(u); atmp = similar(u,uEltypeNoUnits); k = similar(rate_prototype)
+  k1 = similar(rate_prototype,indices(rate_prototype)); k2 = similar(rate_prototype,indices(rate_prototype)); k3 = similar(rate_prototype,indices(rate_prototype)); k4 = similar(rate_prototype,indices(rate_prototype)); k5 = similar(rate_prototype,indices(rate_prototype))
+  k6 = similar(rate_prototype,indices(rate_prototype)); k7 = similar(rate_prototype,indices(rate_prototype)); k8 = similar(rate_prototype,indices(rate_prototype)); k9 = similar(rate_prototype,indices(rate_prototype)); k10 = similar(rate_prototype,indices(rate_prototype))
+  k11 = similar(rate_prototype,indices(rate_prototype)); k12 = similar(rate_prototype,indices(rate_prototype)); k13 = similar(rate_prototype,indices(rate_prototype)); k14 = similar(rate_prototype,indices(rate_prototype))
+  k15 = similar(rate_prototype,indices(rate_prototype)); k16 = similar(rate_prototype,indices(rate_prototype)); k17 = similar(rate_prototype,indices(rate_prototype))
+  tmp = similar(u); atmp = similar(u,uEltypeNoUnits); k = similar(rate_prototype,indices(rate_prototype))
 
   Feagin10Cache(u,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,k17,tmp,atmp,uprev,k,tab)
 end
@@ -643,13 +643,13 @@ end
 
 function alg_cache(alg::Feagin12,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{true}})
   tab = Feagin12ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
-  k1 = similar(rate_prototype); k2 = similar(rate_prototype); k3 = similar(rate_prototype); k4 = similar(rate_prototype); k5 = similar(rate_prototype)
-  k6 = similar(rate_prototype); k7 = similar(rate_prototype); k8 = similar(rate_prototype); k9 = similar(rate_prototype); k10 = similar(rate_prototype)
-  k11 = similar(rate_prototype); k12 = similar(rate_prototype); k13 = similar(rate_prototype); k14 = similar(rate_prototype)
-  k15 = similar(rate_prototype); k16 = similar(rate_prototype); k17 = similar(rate_prototype); k18 = similar(rate_prototype)
-  k19 = similar(rate_prototype); k20 = similar(rate_prototype); k21 = similar(rate_prototype); k22 = similar(rate_prototype)
-  k23 = similar(rate_prototype); k24 = similar(rate_prototype); k25 = similar(rate_prototype)
-  tmp = similar(u); atmp = similar(u,uEltypeNoUnits); k = similar(rate_prototype)
+  k1 = similar(rate_prototype,indices(rate_prototype)); k2 = similar(rate_prototype,indices(rate_prototype)); k3 = similar(rate_prototype,indices(rate_prototype)); k4 = similar(rate_prototype,indices(rate_prototype)); k5 = similar(rate_prototype,indices(rate_prototype))
+  k6 = similar(rate_prototype,indices(rate_prototype)); k7 = similar(rate_prototype,indices(rate_prototype)); k8 = similar(rate_prototype,indices(rate_prototype)); k9 = similar(rate_prototype,indices(rate_prototype)); k10 = similar(rate_prototype,indices(rate_prototype))
+  k11 = similar(rate_prototype,indices(rate_prototype)); k12 = similar(rate_prototype,indices(rate_prototype)); k13 = similar(rate_prototype,indices(rate_prototype)); k14 = similar(rate_prototype,indices(rate_prototype))
+  k15 = similar(rate_prototype,indices(rate_prototype)); k16 = similar(rate_prototype,indices(rate_prototype)); k17 = similar(rate_prototype,indices(rate_prototype)); k18 = similar(rate_prototype,indices(rate_prototype))
+  k19 = similar(rate_prototype,indices(rate_prototype)); k20 = similar(rate_prototype,indices(rate_prototype)); k21 = similar(rate_prototype,indices(rate_prototype)); k22 = similar(rate_prototype,indices(rate_prototype))
+  k23 = similar(rate_prototype,indices(rate_prototype)); k24 = similar(rate_prototype,indices(rate_prototype)); k25 = similar(rate_prototype,indices(rate_prototype))
+  tmp = similar(u); atmp = similar(u,uEltypeNoUnits); k = similar(rate_prototype,indices(rate_prototype))
 
   Feagin12Cache(u,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,k17,k18,k19,k20,k21,k22,k23,k24,k25,tmp,atmp,uprev,k,tab)
 end
@@ -703,16 +703,16 @@ end
 
 function alg_cache(alg::Feagin14,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{true}})
   tab = Feagin14ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
-  k1 = similar(rate_prototype); k2 = similar(rate_prototype); k3 = similar(rate_prototype); k4 = similar(rate_prototype); k5 = similar(rate_prototype)
-  k6 = similar(rate_prototype); k7 = similar(rate_prototype); k8 = similar(rate_prototype); k9 = similar(rate_prototype); k10 = similar(rate_prototype)
-  k11 = similar(rate_prototype); k12 = similar(rate_prototype); k13 = similar(rate_prototype); k14 = similar(rate_prototype)
-  k15 = similar(rate_prototype); k16 = similar(rate_prototype); k17 = similar(rate_prototype); k18 = similar(rate_prototype)
-  k19 = similar(rate_prototype); k20 = similar(rate_prototype); k21 = similar(rate_prototype); k22 = similar(rate_prototype)
-  k23 = similar(rate_prototype); k24 = similar(rate_prototype); k25 = similar(rate_prototype)
-  k26 = similar(rate_prototype); k27 = similar(rate_prototype); k28 = similar(rate_prototype)
-  k29 = similar(rate_prototype); k30 = similar(rate_prototype); k31 = similar(rate_prototype); k32 = similar(rate_prototype)
-  k33 = similar(rate_prototype); k34 = similar(rate_prototype); k35 = similar(rate_prototype)
-  tmp = similar(u); atmp = similar(u,uEltypeNoUnits); k = similar(rate_prototype)
+  k1 = similar(rate_prototype,indices(rate_prototype)); k2 = similar(rate_prototype,indices(rate_prototype)); k3 = similar(rate_prototype,indices(rate_prototype)); k4 = similar(rate_prototype,indices(rate_prototype)); k5 = similar(rate_prototype,indices(rate_prototype))
+  k6 = similar(rate_prototype,indices(rate_prototype)); k7 = similar(rate_prototype,indices(rate_prototype)); k8 = similar(rate_prototype,indices(rate_prototype)); k9 = similar(rate_prototype,indices(rate_prototype)); k10 = similar(rate_prototype,indices(rate_prototype))
+  k11 = similar(rate_prototype,indices(rate_prototype)); k12 = similar(rate_prototype,indices(rate_prototype)); k13 = similar(rate_prototype,indices(rate_prototype)); k14 = similar(rate_prototype,indices(rate_prototype))
+  k15 = similar(rate_prototype,indices(rate_prototype)); k16 = similar(rate_prototype,indices(rate_prototype)); k17 = similar(rate_prototype,indices(rate_prototype)); k18 = similar(rate_prototype,indices(rate_prototype))
+  k19 = similar(rate_prototype,indices(rate_prototype)); k20 = similar(rate_prototype,indices(rate_prototype)); k21 = similar(rate_prototype,indices(rate_prototype)); k22 = similar(rate_prototype,indices(rate_prototype))
+  k23 = similar(rate_prototype,indices(rate_prototype)); k24 = similar(rate_prototype,indices(rate_prototype)); k25 = similar(rate_prototype,indices(rate_prototype))
+  k26 = similar(rate_prototype,indices(rate_prototype)); k27 = similar(rate_prototype,indices(rate_prototype)); k28 = similar(rate_prototype,indices(rate_prototype))
+  k29 = similar(rate_prototype,indices(rate_prototype)); k30 = similar(rate_prototype,indices(rate_prototype)); k31 = similar(rate_prototype,indices(rate_prototype)); k32 = similar(rate_prototype,indices(rate_prototype))
+  k33 = similar(rate_prototype,indices(rate_prototype)); k34 = similar(rate_prototype,indices(rate_prototype)); k35 = similar(rate_prototype,indices(rate_prototype))
+  tmp = similar(u); atmp = similar(u,uEltypeNoUnits); k = similar(rate_prototype,indices(rate_prototype))
 
   Feagin14Cache(u,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,
                 k17,k18,k19,k20,k21,k22,k23,k24,k25,k26,k27,k28,k29,k30,
@@ -769,18 +769,18 @@ immutable Rosenbrock32Cache{uType,rateType,vecuType,JType,TabType,TFType,UFType}
 end
 
 function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{true}})
-  k₁ = similar(rate_prototype)
-  k₂ = similar(rate_prototype)
-  k₃ = similar(rate_prototype)
+  k₁ = similar(rate_prototype,indices(rate_prototype))
+  k₂ = similar(rate_prototype,indices(rate_prototype))
+  k₃ = similar(rate_prototype,indices(rate_prototype))
   du1 = zeros(rate_prototype)
   du2 = zeros(rate_prototype)
   # f₀ = similar(u) fsalfirst
-  f₁ = similar(rate_prototype)
+  f₁ = similar(rate_prototype,indices(rate_prototype))
   vectmp = similar(vec(u))
   vectmp2 = similar(vec(u))
   vectmp3 = similar(vec(u))
-  fsalfirst = similar(rate_prototype)
-  fsallast = similar(rate_prototype)
+  fsalfirst = similar(rate_prototype,indices(rate_prototype))
+  fsallast = similar(rate_prototype,indices(rate_prototype))
   dT = similar(u)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J); tmp2 = similar(u)
@@ -794,18 +794,18 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,tTypeNoUnit
 end
 
 function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{true}})
-  k₁ = similar(rate_prototype)
-  k₂ = similar(rate_prototype)
-  k₃ = similar(rate_prototype)
+  k₁ = similar(rate_prototype,indices(rate_prototype))
+  k₂ = similar(rate_prototype,indices(rate_prototype))
+  k₃ = similar(rate_prototype,indices(rate_prototype))
   du1 = zeros(rate_prototype)
   du2 = zeros(rate_prototype)
   # f₀ = similar(u) fsalfirst
-  f₁ = similar(rate_prototype)
+  f₁ = similar(rate_prototype,indices(rate_prototype))
   vectmp = similar(vec(u))
   vectmp2 = similar(vec(u))
   vectmp3 = similar(vec(u))
-  fsalfirst = similar(rate_prototype)
-  fsallast = similar(rate_prototype)
+  fsalfirst = similar(rate_prototype,indices(rate_prototype))
+  fsallast = similar(rate_prototype,indices(rate_prototype))
   dT = similar(u)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J); tmp2 = similar(u)
@@ -868,11 +868,11 @@ immutable ImplicitEulerCache{uType,vecuType,DiffCacheType,rateType,rhsType,adfTy
 end
 
 function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{true}})
-  u_old = similar(u); k = similar(rate_prototype)
+  u_old = similar(u); k = similar(rate_prototype,indices(rate_prototype))
   dual_cache = DiffCache(u,Val{determine_chunksize(u,alg)})
   uhold = vec(u) # this makes uhold the same values as integrator.u
   rhs = RHS_IE(f,u_old,t,t,dual_cache,size(u),eachindex(u))
-  fsalfirst = similar(rate_prototype)
+  fsalfirst = similar(rate_prototype,indices(rate_prototype))
   if alg_autodiff(alg)
     adf = autodiff_setup(rhs,uhold,alg)
   else
@@ -912,8 +912,8 @@ immutable TrapezoidCache{uType,vecuType,DiffCacheType,rateType,rhsType,adfType,C
 end
 
 function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{true}})
-  u_old = similar(u); k = similar(rate_prototype)
-  uhold = vec(u); f_old = similar(rate_prototype)
+  u_old = similar(u); k = similar(rate_prototype,indices(rate_prototype))
+  uhold = vec(u); f_old = similar(rate_prototype,indices(rate_prototype))
   dual_cache = DiffCache(u,Val{determine_chunksize(u,alg)})
   rhs = RHS_Trap(f,u_old,f_old,t,t,size(u),dual_cache,eachindex(u))
   if alg_autodiff(alg)

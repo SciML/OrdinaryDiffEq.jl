@@ -68,7 +68,13 @@ function find_callback_time(integrator,callback)
         find_zero = (Θ) -> begin
           callback.condition(integrator.tprev+Θ*integrator.dt,ode_interpolant(Θ,integrator),integrator)
         end
-        Θ = prevfloat(fzero(find_zero,typeof(integrator.t)(0),top_Θ))
+        Θ = prevfloat(prevfloat(fzero(find_zero,typeof(integrator.t)(0),top_Θ)))
+        # 2 prevfloat guerentees that the new time is either 1 or 2 floating point
+        # numbers just before the event, but not after. If there's a barrier
+        # which is never supposed to be crossed, then this will ensure that
+        # The item never leaves the domain. Otherwise Roots.jl can return
+        # a float which is slightly after, making it out of the domain, causing
+        # havoc.
         new_t = integrator.dt*Θ
       elseif interp_index != callback.interp_points
         new_t = integrator.dt*Θs[interp_index]
