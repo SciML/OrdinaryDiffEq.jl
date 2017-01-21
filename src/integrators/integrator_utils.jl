@@ -217,7 +217,7 @@ end
 
   integrator.tprev = integrator.t
 
-  integrator.dt_mod = typeof(integrator.t)(1)
+  integrator.dt_mod = one(typeof(integrator.t))
 end
 
 

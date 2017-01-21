@@ -142,6 +142,14 @@ function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP5Cache)
 end
 
 """
+Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Problems Page 192
+"""
+function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP5ThreadedCache)
+  Θ1 = 1-Θ
+  y₀ + dt*Θ*(k[1]+Θ1*(k[2]+Θ*(k[3]+Θ1*k[4])))
+end
+
+"""
 From MATLAB ODE Suite by Shampine
 """
 function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Rosenbrock23ConstantCache)
@@ -626,7 +634,30 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::DP5Cac
     bspl = k1 - rtmp
     copyat_or_push!(k,2,bspl)
     copyat_or_push!(k,3,rtmp - k7 - bspl)
-    push!(k,4,d1*k1+d3*k3+d4*k4+d5*k5+d6*k6+d7*k7)
+    copyat_or_push!(k,4,d1*k1+d3*k3+d4*k4+d5*k5+d6*k6+d7*k7)
+  end
+  nothing
+end
+
+function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::DP5ThreadedCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+  if length(k)<4 || calcVal
+    @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = cache.tab
+    @unpack d1,d3,d4,d5,d6,d7 = cache.tab
+    @unpack k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,utilde,tmp,atmp = cache
+    rtmp = similar(k1)
+    f(t,uprev,k1)
+    f(t+c1*dt,uprev+dt*(a21*k1),k2)
+    f(t+c2*dt,uprev+dt*(a31*k1+a32*k2),k3)
+    f(t+c3*dt,uprev+dt*(a41*k1+a42*k2+a43*k3),k4)
+    f(t+c4*dt,uprev+dt*(a51*k1+a52*k2+a53*k3+a54*k4),k5)
+    f(t+dt,uprev+dt*(a61*k1+a62*k2+a63*k3+a64*k4+a65*k5),k6)
+    rtmp = a71*k1+a73*k3+a74*k4+a75*k5+a76*k6
+    f(t+dt,uprev+dt*rtmp,k7)
+    copyat_or_push!(k,1,rtmp)
+    bspl = k1 - rtmp
+    copyat_or_push!(k,2,bspl)
+    copyat_or_push!(k,3,rtmp - k7 - bspl)
+    copyat_or_push!(k,4,d1*k1+d3*k3+d4*k4+d5*k5+d6*k6+d7*k7)
   end
   nothing
 end
@@ -1046,6 +1077,7 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::DP8Cac
     @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,update,udiff,bspl,dense_tmp3,dense_tmp4,dense_tmp5,dense_tmp6,dense_tmp7,kupdate,utilde,tmp,atmp,atmp2 = cache
     utmp = utilde
     k = [cache.udiff,cache.bspl,cache.dense_tmp3,cache.dense_tmp4,cache.dense_tmp5,cache.dense_tmp6,cache.dense_tmp7]
+    uidx = eachindex(u)
     f(t,uprev,k1)
     for i in uidx
       tmp[i] = uprev[i]+dt*(a0201*k1[i])

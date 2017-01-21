@@ -31,3 +31,7 @@ end
 @inline function u_modified!(integrator::ODEIntegrator,bool::Bool)
   integrator.u_modified = bool
 end
+
+u_cache(integrator::ODEIntegrator) = u_cache(integrator.cache)
+du_cache(integrator::ODEIntegrator)= du_cache(integrator.cache)
+full_cache(integrator::ODEIntegrator) = chain(u_cache(integrator),du_cache(integrator.cache))

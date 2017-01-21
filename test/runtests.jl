@@ -21,7 +21,7 @@ tic()
 @time @testset "Dense Tests" begin include("ode/ode_dense_tests.jl") end
 @time @testset "In-Place Tests" begin include("ode/ode_inplace_tests.jl") end
 @time @testset "Events Tests" begin include("ode/ode_event_tests.jl") end
-#@time @testset "Cache Tests" begin include("ode/ode_cache_tests.jl") end
+@time @testset "Cache Tests" begin include("ode/ode_cache_tests.jl") end
 @time @testset "saveat Tests" begin include("ode/ode_saveat_tests.jl") end
 (LONGER_TESTS) && @time @testset "Feagin Tests" begin include("ode/ode_feagin_tests.jl") end
 @time @testset "Number Type Tests" begin include("ode/ode_numbertype_tests.jl") end

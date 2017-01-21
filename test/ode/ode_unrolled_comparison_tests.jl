@@ -10,7 +10,7 @@ f = (t,u,du) -> begin
     du[i] = linear_bigα*u[i]
   end
 end
-prob_ode_bigfloat2Dlinear = ODETestProblem(f,map(BigFloat,rand(4,2)).*ones(4,2)/2,analytic,(0.0,10.0))
+probbig = ODETestProblem(f,map(BigFloat,rand(4,2)).*ones(4,2)/2,analytic,(0.0,10.0))
 
 linear = (t,u) -> (1.01*u)
 analytic_linear = (t,u0) -> u0*exp(1.01*t)
@@ -28,7 +28,6 @@ end
 analytic_2dlinear = (t,u0) -> u0*exp.(1.01*t)
 prob = ODETestProblem(f_2dlinear,rand(4,2),analytic_2dlinear,(0.0,10.0))
 
-probbig = prob_ode_bigfloat2Dlinear
 dts = 1.//2.^(7:-1:4)
 testTol = .2
 bools = Vector{Bool}(0)

@@ -155,6 +155,11 @@ function apply_discrete_callback!(integrator::ODEIntegrator,discrete_modified::B
   discrete_modified || bool
 end
 
+function resize!(integrator::ODEIntegrator,i::Int)
+  for c in full_cache(integrator)
+    resize!(c,i)
+  end
+end
 
 macro ode_change_cachesize(cache,resize_ex)
   resize_ex = cache_replace_length(resize_ex)

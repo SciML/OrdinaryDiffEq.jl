@@ -24,7 +24,7 @@ println("Units for Number pass")
 
 u0 = [1.0u"N" 2.0u"N"
       3.0u"N" 1.0u"N"]
-
+f = (t,y,dy) -> (dy .= 0.5.*y ./ 3.0u"s")
 prob = ODEProblem(f,u0,(0.0u"s",1.0u"s"))
 
 sol =solve(prob,RK4(),dt=1u"s"/10)

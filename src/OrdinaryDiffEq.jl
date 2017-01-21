@@ -7,7 +7,7 @@ module OrdinaryDiffEq
   import DiffEqBase: solve, solve!, init, step!, build_solution
 
   using Parameters, GenericSVD, ForwardDiff, InplaceOps, RecursiveArrayTools,
-        NLsolve, Juno, Calculus, Roots, DataStructures
+        NLsolve, Juno, Calculus, Roots, DataStructures, Iterators
 
   import Base: linspace
 
@@ -15,7 +15,7 @@ module OrdinaryDiffEq
 
   import ForwardDiff.Dual
 
-  import DiffEqBase: resize!,cache_iter,terminate!,get_du,
+  import DiffEqBase: resize!,full_cache,u_cache,du_cache,terminate!,get_du,
                      get_dt,get_proposed_dt,modify_proposed_dt!,
                      u_modified!,savevalues!
 

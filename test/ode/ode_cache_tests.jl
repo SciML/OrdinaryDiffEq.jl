@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, NLsolve
+using OrdinaryDiffEq, DiffEqBase
 
 NON_IMPLICIT_ALGS = filter((x)->isleaftype(x) && !OrdinaryDiffEq.isimplicit(x()),union(subtypes(OrdinaryDiffEqAlgorithm),subtypes(OrdinaryDiffEqAdaptiveAlgorithm)))
 
@@ -9,28 +9,32 @@ f = function (t,u,du)
   end
 end
 
-function event_f(t,u) # Event when event_f(t,u) == 0
+condition = function (t,u,integrator)
   1-maximum(u)
 end
 
-@noinline function apply_event!(u,cache)
-  @ode_change_cachesize cache length+1
+affect! = function (integrator)
+  u = integrator.u
+  resize!(integrator,length(u)+1)
   maxidx = findmax(u)[2]
   Θ = rand()
   u[maxidx] = Θ
   u[end] = 1-Θ
+  nothing
 end
 
-callback = @ode_callback begin
-  @ode_event event_f apply_event! true 10
-end
+rootfind = true
+save_positions = (true,true)
+callback = ContinuousCallback(condition,affect!,rootfind,save_positions)
+
 u0 = [0.2]
 tspan = (0.0,10.0)
 prob = ODEProblem(f,u0,tspan)
 sol = solve(prob,Tsit5(),callback=callback)
 
 #=
-plot(sol)
+using Plots
+plot(sol,vars=(0,1),plotdensity=10000)
 
 plot(sol.t,map((x)->length(x),sol[:]),lw=3,
      ylabel="Number of Cells",xlabel="Time")
@@ -46,9 +50,8 @@ for alg in NON_IMPLICIT_ALGS
   end
 end
 
-callback_no_interp = @ode_callback begin
-  @ode_event event_f apply_event! false 0
-end
+callback_no_interp = ContinuousCallback(condition,affect!,rootfind,save_positions)
+
 
 sol = solve(prob,Tsit5(),callback=callback_no_interp,dense=false)
 

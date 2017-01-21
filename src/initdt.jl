@@ -31,10 +31,10 @@ end
 
 function ode_determine_initdt{uType,tType,F}(u0::uType,t,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,false,F},order)
   f = prob.f
-  sk = abstol+abs(u0)*reltol
-  d₀ = internalnorm(u0/sk)
+  sk = abstol+abs.(u0)*reltol
+  d₀ = internalnorm(u0./sk)
   f₀ = f(t,u0)
-  d₁ = internalnorm(f₀/sk)
+  d₁ = internalnorm(f₀./sk)
   T0 = typeof(d₀)
   T1 = typeof(d₁)
   if d₀ < T0(1//10^(5)) || d₁ < T1(1//10^(5))
@@ -45,7 +45,7 @@ function ode_determine_initdt{uType,tType,F}(u0::uType,t,tdir,dtmax,abstol,relto
   dt₀ = min(dt₀,tdir*dtmax)
   u₁ = u0 + tdir*dt₀*f₀
   f₁ = f(t+tdir*dt₀,u₁)
-  d₂ = internalnorm((f₁-f₀)./(abstol+abs(u0)*reltol))/dt₀*tType(1)
+  d₂ = internalnorm((f₁-f₀)./(abstol+abs.(u0)*reltol))/dt₀*tType(1)
   if max(d₁,d₂) <= T1(1//10^(15))
     dt₁ = max(tType(1//10^(6)),dt₀*1//10^(3))
   else
