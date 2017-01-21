@@ -43,7 +43,7 @@ end
     interp_index = callback.interp_points
   elseif callback.interp_points!=0 # Use the interpolants for safety checking
     for i in 2:length(Θs)-1
-      if prev_sign*callback.condition(integrator.tprev+integrator.dt*Θs[i],ode_interpolant(Θs[i],integrator),integrator)<0
+      if ((prev_sign<0 && !(typeof(callback.affect!)<:Void)) || (prev_sign>0 && !(typeof(callback.affect_neg!)<:Void))) && prev_sign*callback.condition(integrator.tprev+integrator.dt*Θs[i],ode_interpolant(Θs[i],integrator),integrator)<0
         event_occurred = true
         interp_index = i
         break
@@ -68,7 +68,7 @@ function find_callback_time(integrator,callback)
         find_zero = (Θ) -> begin
           callback.condition(integrator.tprev+Θ*integrator.dt,ode_interpolant(Θ,integrator),integrator)
         end
-        Θ = prevfloat(prevfloat(fzero(find_zero,typeof(integrator.t)(0),top_Θ)))
+        Θ = prevfloat(fzero(find_zero,typeof(integrator.t)(0),top_Θ))
         new_t = integrator.dt*Θ
       elseif interp_index != callback.interp_points
         new_t = integrator.dt*Θs[interp_index]
@@ -107,7 +107,7 @@ function apply_callback!(integrator,callback::ContinuousCallback,cb_time,prev_si
       callback.affect_neg!(integrator)
     end
   end
-  
+
   if integrator.u_modified
     reeval_internals_due_to_modification!(integrator)
     if callback.save_positions[2]

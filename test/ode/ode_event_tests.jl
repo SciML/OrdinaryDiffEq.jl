@@ -67,7 +67,7 @@ end
 interp_points = 10
 rootfind = true
 save_positions = (true,true)
-callback = ContinuousCallback(condtion,affect!,rootfind,save_positions,affect_neg! = affect_neg!)
+callback = ContinuousCallback(condtion,affect!,affect_neg!,rootfind,save_positions)
 
 u0 = [50.0,0.0]
 tspan = (0.0,15.0)
