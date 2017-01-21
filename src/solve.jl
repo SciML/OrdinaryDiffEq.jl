@@ -92,7 +92,11 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
     error("dt has the wrong sign. Exiting")
   end
 
-  rate_prototype = u/zero(t)
+  if typeof(u) <: AbstractArray
+    rate_prototype = similar(u/zero(t),indices(u)) # rate doesn't need type info
+  else
+    rate_prototype = u/zero(t)
+  end
   rateType = typeof(rate_prototype) ## Can be different if united
 
   saveat_vec =  convert(Vector{tType},collect(saveat))
