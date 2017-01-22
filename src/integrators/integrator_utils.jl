@@ -9,7 +9,11 @@ initialize{uType}(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) =
     if (integrator.opts.adaptive && integrator.accept_step) || !integrator.opts.adaptive
       apply_step!(integrator)
     elseif integrator.opts.adaptive && !integrator.accept_step
-      integrator.dt = integrator.dt/min(inv(integrator.opts.qmin),integrator.q11/integrator.opts.gamma)
+      if integrator.isout
+        integrator.dt = integrator.dt*integrator.opts.qmin
+      else
+        integrator.dt = integrator.dt/min(inv(integrator.opts.qmin),integrator.q11/integrator.opts.gamma)
+      end
     end
   end
 
@@ -131,11 +135,14 @@ end
     q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),q/integrator.opts.gamma))
     dtnew = integrator.dt/q
     ttmp = integrator.t + integrator.dt
-    integrator.accept_step = (!integrator.opts.isoutofdomain(ttmp,integrator.u) && integrator.EEst <= 1.0)
+    integrator.isout = integrator.opts.isoutofdomain(ttmp,integrator.u)
+    integrator.accept_step = (!integrator.isout && integrator.EEst <= 1.0)
     if integrator.accept_step # Accept
       integrator.t = ttmp
       calc_dt_propose!(integrator,dtnew)
       handle_callbacks!(integrator)
+    elseif isout
+
     end
   else #Not adaptive
     integrator.t += integrator.dt

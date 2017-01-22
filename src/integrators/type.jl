@@ -60,6 +60,7 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
   kshortsize::Int
   just_hit_tstop::Bool
   accept_step::Bool
+  isout::Bool
   reeval_fsal::Bool
   u_modified::Bool
   opts::O
@@ -70,12 +71,12 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
       alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,dtpropose,dt_mod,tdir,
       EEst,qold,q11,
       iter,saveiter,saveiter_dense,prog,cache,
-      kshortsize,just_hit_tstop,accept_step,reeval_fsal,u_modified,opts) = new(
+      kshortsize,just_hit_tstop,accept_step,isout,reeval_fsal,u_modified,opts) = new(
       sol,u,k,t,dt,f,uprev,tprev,
       alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,dtpropose,dt_mod,tdir,
       EEst,qold,q11,
       iter,saveiter,saveiter_dense,prog,cache,
-      kshortsize,just_hit_tstop,accept_step,reeval_fsal,u_modified,opts) # Leave off fsalfirst and last
+      kshortsize,just_hit_tstop,accept_step,isout,reeval_fsal,u_modified,opts) # Leave off fsalfirst and last
 end
 
 # When this is changed, DelayDiffEq.jl must be changed as well!

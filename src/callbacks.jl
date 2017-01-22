@@ -184,9 +184,7 @@ function resize!(integrator::ODEIntegrator,cache::Union{ImplicitEulerCache,Trape
   end
   for c in dual_cache(integrator.cache)
     resize!(c.du,i)
-    @show typeof(c.dual_du)
     resize!(c.dual_du,i)
-    @show typeof(c.dual_du)
   end
   if alg_autodiff(integrator.alg)
     cache.adf = autodiff_setup(cache.rhs,cache.uhold,integrator.alg)

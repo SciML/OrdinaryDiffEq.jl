@@ -205,6 +205,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
   u_modified = false
   EEst = tTypeNoUnits(1)
   just_hit_tstop = false
+  isout = false
   accept_step = false
   dtchangeable = isdtchangeable(alg)
   q11 = tTypeNoUnits(1)
@@ -217,7 +218,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
                              alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,
                              dtpropose,dt_mod,tdir,EEst,qoldinit,q11,
                              iter,saveiter,saveiter_dense,prog,cache,
-                             kshortsize,just_hit_tstop,accept_step,reeval_fsal,u_modified,opts)
+                             kshortsize,just_hit_tstop,accept_step,isout,reeval_fsal,u_modified,opts)
   if initialize_integrator
     initialize!(integrator,integrator.cache)
   end
