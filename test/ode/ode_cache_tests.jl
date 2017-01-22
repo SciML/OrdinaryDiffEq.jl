@@ -32,6 +32,13 @@ tspan = (0.0,10.0)
 prob = ODEProblem(f,u0,tspan)
 sol = solve(prob,Tsit5(),callback=callback)
 
+# Chunk size must be fixed since otherwise it's dependent on size
+# when the size is less than 10, so errors here
+
+sol = solve(prob,ImplicitEuler(chunk_size=1),callback=callback,dt=1/10)
+
+sol = solve(prob,Trapezoid(chunk_size=1),callback=callback,dt=1/10)
+
 #=
 using Plots
 plot(sol,vars=(0,1),plotdensity=10000)
@@ -44,10 +51,8 @@ plot(ts,map((x)->x[1],sol.(ts)),lw=3,
 =#
 
 for alg in NON_IMPLICIT_ALGS
-  if !(alg <: Rosenbrock23) && !(alg <: Rosenbrock32)
-    println(alg)
-    sol = solve(prob,alg(),callback=callback,dt=1/10)
-  end
+  println(alg)
+  sol = solve(prob,alg(),callback=callback,dt=1/10)
 end
 
 callback_no_interp = ContinuousCallback(condition,affect!,rootfind,save_positions)
@@ -56,8 +61,6 @@ callback_no_interp = ContinuousCallback(condition,affect!,rootfind,save_position
 sol = solve(prob,Tsit5(),callback=callback_no_interp,dense=false)
 
 for alg in NON_IMPLICIT_ALGS
-  if !(alg <: Rosenbrock23) && !(alg <: Rosenbrock32)
-    println(alg)
-    sol = solve(prob,alg(),callback=callback,dt=1/10)
-  end
+  println(alg)
+  sol = solve(prob,alg(),callback=callback,dt=1/10)
 end

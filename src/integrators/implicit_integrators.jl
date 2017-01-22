@@ -102,8 +102,8 @@ function (p::RHS_Trap)(uprev,resid)
 end
 
 @inline function initialize!(integrator,cache::TrapezoidCache,f=integrator.f)
-  @unpack k,f_old = cache
-  integrator.fsalfirst = f_old
+  @unpack k,fsalfirst = cache
+  integrator.fsalfirst = fsalfirst
   integrator.fsallast = cache.k
   f(integrator.t,integrator.uprev,integrator.fsalfirst)
   integrator.kshortsize = 2
@@ -117,7 +117,7 @@ end
   uidx = eachindex(integrator.uprev)
   @unpack u_old,dual_cache,k,rhs,adf,uhold = cache
   copy!(u_old,uhold)
-  # copy!(rhs.f_old,f_old) Implicitly done by pointers: fsalfirst === f_old == rhs.f_old
+  # copy!(rhs.fsalfirst,fsalfirst) Implicitly done by pointers: fsalfirst === fsalfirst == rhs.fsalfirst
   rhs.t = t
   rhs.dt = dt
   rhs.uidx = uidx

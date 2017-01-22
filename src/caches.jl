@@ -788,7 +788,7 @@ end
 alg_cache(alg::Feagin14,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{false}}) = Feagin14ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
 
 
-immutable Rosenbrock23Cache{uType,rateType,vecuType,JType,TabType,TFType,UFType} <: OrdinaryDiffEqMutableCache
+type Rosenbrock23Cache{uType,rateType,vecuType,JType,TabType,TFType,UFType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k₁::rateType
@@ -812,7 +812,12 @@ immutable Rosenbrock23Cache{uType,rateType,vecuType,JType,TabType,TFType,UFType}
   uf::UFType
 end
 
-immutable Rosenbrock32Cache{uType,rateType,vecuType,JType,TabType,TFType,UFType} <: OrdinaryDiffEqMutableCache
+u_cache(c::Rosenbrock23Cache) = (c.u,c.uprev,c.tmp,c.tmp2,c.dT)
+du_cache(c::Rosenbrock23Cache) = (c.k₁,c.k₂,c.k₃,c.du1,c.du2,c.f₁,c.fsalfirst,c.fsallast)
+jac_cache(c::Rosenbrock23Cache) = (c.J,c.W)
+vecu_cache(c::Rosenbrock23Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
+
+type Rosenbrock32Cache{uType,rateType,vecuType,JType,TabType,TFType,UFType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k₁::rateType
@@ -835,6 +840,11 @@ immutable Rosenbrock32Cache{uType,rateType,vecuType,JType,TabType,TFType,UFType}
   tf::TFType
   uf::UFType
 end
+
+u_cache(c::Rosenbrock32Cache) = (c.u,c.uprev,c.tmp,c.tmp2,c.dT)
+du_cache(c::Rosenbrock32Cache) = (c.k₁,c.k₂,c.k₃,c.du1,c.du2,c.f₁,c.fsalfirst,c.fsallast)
+jac_cache(c::Rosenbrock32Cache) = (c.J,c.W)
+vecu_cache(c::Rosenbrock32Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
 
 function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{true}})
   k₁ = similar(rate_prototype)
@@ -924,7 +934,7 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,tTypeNoUnit
   Rosenbrock32ConstantCache(uEltypeNoUnits,tf,uf)
 end
 
-immutable ImplicitEulerCache{uType,vecuType,DiffCacheType,rateType,rhsType,adfType,CS} <: OrdinaryDiffEqMutableCache
+type ImplicitEulerCache{uType,vecuType,DiffCacheType,rateType,rhsType,adfType,CS} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uhold::vecuType
@@ -935,6 +945,11 @@ immutable ImplicitEulerCache{uType,vecuType,DiffCacheType,rateType,rhsType,adfTy
   rhs::rhsType
   adf::adfType
 end
+
+u_cache(c::ImplicitEulerCache)    = (c.u,c.uprev,c.u_old)
+du_cache(c::ImplicitEulerCache)   = (c.k,c.fsalfirst)
+vecu_cache(c::ImplicitEulerCache) = (c.uhold,)
+dual_cache(c::ImplicitEulerCache) = (c.dual_cache,)
 
 function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{true}})
   u_old = similar(u); k = similar(rate_prototype)
@@ -969,23 +984,28 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUni
   ImplicitEulerConstantCache{typeof(uhold),typeof(rhs),typeof(adf),1}(uhold,u_old,rhs,adf)
 end
 
-immutable TrapezoidCache{uType,vecuType,DiffCacheType,rateType,rhsType,adfType,CS} <: OrdinaryDiffEqMutableCache
+type TrapezoidCache{uType,vecuType,DiffCacheType,rateType,rhsType,adfType,CS} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uhold::vecuType
   u_old::uType
-  f_old::rateType
+  fsalfirst::rateType
   dual_cache::DiffCacheType
   k::rateType
   rhs::rhsType
   adf::adfType
 end
 
+u_cache(c::TrapezoidCache)    = (c.u,c.uprev,c.u_old)
+du_cache(c::TrapezoidCache)   = (c.k,c.fsalfirst)
+vecu_cache(c::TrapezoidCache) = (c.uhold,)
+dual_cache(c::TrapezoidCache) = (c.dual_cache,)
+
 function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{true}})
   u_old = similar(u); k = similar(rate_prototype)
-  uhold = vec(u); f_old = similar(rate_prototype)
+  uhold = vec(u); fsalfirst = similar(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,alg)})
-  rhs = RHS_Trap(f,u_old,f_old,t,t,size(u),dual_cache,eachindex(u))
+  rhs = RHS_Trap(f,u_old,fsalfirst,t,t,size(u),dual_cache,eachindex(u))
   if alg_autodiff(alg)
     adf = autodiff_setup(rhs,uhold,alg)
   else
@@ -993,7 +1013,7 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,u
   end
   TrapezoidCache{typeof(u),typeof(uhold),typeof(dual_cache),typeof(k),
     typeof(rhs),typeof(adf),determine_chunksize(u,alg)}(
-    u,uprev,uhold,u_old,f_old,dual_cache,k,rhs,adf)
+    u,uprev,uhold,u_old,fsalfirst,dual_cache,k,rhs,adf)
 end
 
 

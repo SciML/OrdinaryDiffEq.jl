@@ -155,9 +155,41 @@ function apply_discrete_callback!(integrator::ODEIntegrator,discrete_modified::B
   discrete_modified || bool
 end
 
-function resize!(integrator::ODEIntegrator,i::Int)
+resize!(integrator::ODEIntegrator,i::Int) = resize!(integrator,integrator.cache,i)
+function resize!(integrator::ODEIntegrator,cache,i)
   for c in full_cache(integrator)
     resize!(c,i)
+  end
+end
+
+function resize!(integrator::ODEIntegrator,cache::Union{Rosenbrock23Cache,Rosenbrock32Cache},i)
+  for c in full_cache(integrator)
+    resize!(c,i)
+  end
+  for c in vecu_cache(integrator.cache)
+    resize!(c,i)
+  end
+  Jvec = vec(cache.J)
+  cache.J = reshape(resize!(Jvec,i*i),i,i)
+  Wvec = vec(cache.W)
+  cache.W = reshape(resize!(Wvec,i*i),i,i)
+end
+
+function resize!(integrator::ODEIntegrator,cache::Union{ImplicitEulerCache,TrapezoidCache},i)
+  for c in full_cache(integrator)
+    resize!(c,i)
+  end
+  for c in vecu_cache(integrator.cache)
+    resize!(c,i)
+  end
+  for c in dual_cache(integrator.cache)
+    resize!(c.du,i)
+    @show typeof(c.dual_du)
+    resize!(c.dual_du,i)
+    @show typeof(c.dual_du)
+  end
+  if alg_autodiff(integrator.alg)
+    cache.adf = autodiff_setup(cache.rhs,cache.uhold,integrator.alg)
   end
 end
 
