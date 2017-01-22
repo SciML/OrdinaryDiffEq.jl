@@ -141,8 +141,6 @@ end
       integrator.t = ttmp
       calc_dt_propose!(integrator,dtnew)
       handle_callbacks!(integrator)
-    elseif isout
-
     end
   else #Not adaptive
     integrator.t += integrator.dt
