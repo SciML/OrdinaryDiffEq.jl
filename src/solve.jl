@@ -74,13 +74,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
   ks = Vector{uType}(0)
 
   order = alg_order(alg)
-
-  if typeof(alg) <: ExplicitRK
-    @unpack order = alg.tableau
-  elseif (typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm) && typeof(alg.algs[1]) <: ExplicitRK
-    @unpack order = alg.algs[1].tableau
-  end
-
+  
   uEltypeNoUnits = typeof(recursive_one(u))
   tTypeNoUnits   = typeof(recursive_one(t))
 
