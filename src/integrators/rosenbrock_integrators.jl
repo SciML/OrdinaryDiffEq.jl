@@ -30,20 +30,23 @@ end
   #end
 
   W[:] = I-dt*d*J # Can an allocation be cut here?
-  @into! vectmp = W\vec(fsalfirst + dt*d*dT)
+
+  Wfact = integrator.alg.factorization(W)
+
+  @into! vectmp = Wfact\vec(fsalfirst + dt*d*dT)
   recursivecopy!(k₁,reshape(vectmp,size(u)...))
   for i in uidx
     u[i]=uprev[i]+dt*k₁[i]/2
   end
   f(t+dt/2,u,f₁)
-  @into! vectmp2 = W\vec(f₁-k₁)
+  @into! vectmp2 = Wfact\vec(f₁-k₁)
   for i in uidx
     k₂[i] = tmp[i] + k₁[i]
     u[i] = uprev[i] + dt*k₂[i]
   end
   if integrator.opts.adaptive
     f(t+dt,u,integrator.fsallast)
-    @into! vectmp3 = W\vec(integrator.fsallast - c₃₂*(k₂-f₁)-2(k₁-fsalfirst)+dt*dT)
+    @into! vectmp3 = Wfact\vec(integrator.fsallast - c₃₂*(k₂-f₁)-2(k₁-fsalfirst)+dt*dT)
     k₃ = reshape(vectmp3,sizeu...)
     for i in uidx
       tmp2[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)./(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol)
@@ -80,13 +83,16 @@ end
     ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev))
 
   W[:] = I-dt*d*J # Can an allocation be cut here?
-  @into! vectmp = W\vec(integrator.fsalfirst + dt*d*dT)
+
+  Wfact = integrator.alg.factorization(W)
+
+  @into! vectmp = Wfact\vec(integrator.fsalfirst + dt*d*dT)
   recursivecopy!(k₁,reshape(vectmp,sizeu...))
   for i in uidx
     u[i]=uprev[i]+dt*k₁[i]/2
   end
   f(t+dt/2,u,f₁)
-  @into! vectmp2 = W\vec(f₁-k₁)
+  @into! vectmp2 = Wfact\vec(f₁-k₁)
   tmp = reshape(vectmp2,sizeu...)
   for i in uidx
     k₂[i] = tmp[i] + k₁[i]
@@ -95,7 +101,7 @@ end
     tmp[i] = uprev[i] + dt*k₂[i]
   end
   f(t+dt,tmp,integrator.fsallast)
-  @into! vectmp3 = W\vec(integrator.fsallast - c₃₂*(k₂-f₁)-2(k₁-integrator.fsalfirst)+dt*dT)
+  @into! vectmp3 = Wfact\vec(integrator.fsallast - c₃₂*(k₂-f₁)-2(k₁-integrator.fsalfirst)+dt*dT)
   k₃ = reshape(vectmp3,sizeu...)
   for i in uidx
     u[i] = uprev[i] + dt*(k₁[i] + 4k₂[i] + k₃[i])/6
