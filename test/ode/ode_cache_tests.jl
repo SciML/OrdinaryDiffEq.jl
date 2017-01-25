@@ -39,12 +39,13 @@ sol = solve(prob,ImplicitEuler(chunk_size=1),callback=callback,dt=1/10)
 sol = solve(prob,Trapezoid(chunk_size=1),callback=callback,dt=1/10)
 
 #=
-using Plots; plotly()
+using Plots; pyplot()
 p1 = plot(sol,vars=(0,1),plotdensity=10000,title="Amount of X in Cell 1")
 scatter!(sol,denseplot=false)
 p2 = plot(sol.t,map((x)->length(x),sol[:]),lw=3,
      ylabel="Number of Cells",xlabel="Time")
-plot(p1,p2,layout=(2,1))
+plot(p1,p2,layout=(2,1),size=(600,1000))
+savefig("cell.pdf")
 =#
 
 for alg in NON_IMPLICIT_ALGS
@@ -52,12 +53,11 @@ for alg in NON_IMPLICIT_ALGS
   sol = solve(prob,alg(),callback=callback,dt=1/10)
 end
 
-callback_no_interp = ContinuousCallback(condition,affect!,rootfind,save_positions)
-
-
+#=
 sol = solve(prob,Tsit5(),callback=callback_no_interp,dense=false)
 
 for alg in NON_IMPLICIT_ALGS
   println(alg)
   sol = solve(prob,alg(),callback=callback,dt=1/10)
 end
+=#

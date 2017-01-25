@@ -32,3 +32,4 @@ const ODE_DEFAULT_TABLEAU = constructDormandPrince()
 @inline ODE_DEFAULT_NORM(u::Number) = abs(u)
 @inline ODE_DEFAULT_ISOUTOFDOMAIN(t,u) = false
 @inline ODE_DEFAULT_PROG_MESSAGE(dt,t,u) = "dt="*string(dt)*"\nt="*string(t)*"\nmax u="*string(maximum(abs.(u)))
+@inline ODE_DEFAULT_UNSTABLE_CHECK(dt,t,u) = any(isnan,u)

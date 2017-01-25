@@ -42,17 +42,23 @@ end
 
 @def ode_exit_conditions begin
   if integrator.iter > integrator.opts.maxiters
-    warn("Interrupted. Larger maxiters is needed.")
+    if integrator.opts.verbose
+      warn("Interrupted. Larger maxiters is needed.")
+    end
     postamble!(integrator)
     return nothing
   end
   if integrator.dt == zero(integrator.t)
-    warn("dt == 0. Aborting")
+    if integrator.opts.verbose
+      warn("dt == 0. Aborting")
+    end
     postamble!(integrator)
     return nothing
   end
-  if any(isnan,integrator.uprev)
-    warn("NaNs detected. Aborting")
+  if integrator.opts.unstable_check(integrator.dt,integrator.t,integrator.u)
+    if integrator.opts.verbose
+      warn("Instability detected. Aborting")
+    end
     postamble!(integrator)
     return nothing
   end
