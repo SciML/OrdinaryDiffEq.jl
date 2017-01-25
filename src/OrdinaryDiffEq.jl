@@ -57,7 +57,6 @@ module OrdinaryDiffEq
 
   #Callback Necessary
   export ode_addsteps!, ode_interpolant,
-        @ode_callback, @ode_event, @ode_change_cachesize, @ode_change_deleteat,
         terminate!, savevalues!, copyat_or_push!, isfsal
 
   export constructDP5, constructVern6, constructDP8, constructDormandPrince, constructFeagin10,

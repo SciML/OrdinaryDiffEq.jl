@@ -1,4 +1,4 @@
-type DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5,tstopsType,ECType}
+type DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5,F6,tstopsType,ECType}
   maxiters::Int
   timeseries_steps::Int
   save_timeseries::Bool
@@ -27,6 +27,8 @@ type DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5,tstopsType,
   dense::Bool
   callback::F3
   isoutofdomain::F4
+  unstable_check::F6
+  verbose::Bool
   calck::Bool
   advance_to_tstop::Bool
   stop_at_next_tstop::Bool

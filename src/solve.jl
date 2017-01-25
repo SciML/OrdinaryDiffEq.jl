@@ -30,6 +30,8 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
   dtmin=tType <: AbstractFloat ? tType(10)*eps(tType) : tType(1//10^(10)),
   internalnorm = ODE_DEFAULT_NORM,
   isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
+  unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
+  verbose = true,
   timeseries_errors = true, dense_errors=false,
   advance_to_tstop = false,stop_at_next_tstop=false,
   progress=false,progress_steps=1000,progress_name="ODE",
@@ -74,7 +76,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
   ks = Vector{uType}(0)
 
   order = alg_order(alg)
-  
+
   uEltypeNoUnits = typeof(recursive_one(u))
   tTypeNoUnits   = typeof(recursive_one(t))
 
@@ -120,9 +122,6 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
 
 
   ### Algorithm-specific defaults ###
-
-  abstol = uEltype(1)*abstol
-
   ksEltype = Vector{rateType}
 
   # Have to convert incase passed in wrong.
@@ -135,7 +134,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
   copyat_or_push!(timeseries,1,u)
   copyat_or_push!(ks,1,[rate_prototype])
 
-  opts = DEOptions(Int(maxiters),timeseries_steps,save_timeseries,adaptive,uEltype(abstol),
+  opts = DEOptions(Int(maxiters),timeseries_steps,save_timeseries,adaptive,uEltype(uEltype(1)*abstol),
     uEltypeNoUnits(reltol),tTypeNoUnits(gamma),tTypeNoUnits(qmax),tTypeNoUnits(qmin),
     dtmax,dtmin,internalnorm,
     tstops_internal,saveat_internal,d_discontinuities_internal,
@@ -144,7 +143,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
     progress_name,progress_message,
     timeseries_errors,dense_errors,
     tTypeNoUnits(beta1),tTypeNoUnits(beta2),tTypeNoUnits(qoldinit),dense,
-    callbacks_internal,isoutofdomain,calck,advance_to_tstop,stop_at_next_tstop)
+    callbacks_internal,isoutofdomain,unstable_check,verbose,calck,advance_to_tstop,stop_at_next_tstop)
 
   progress ? (prog = Juno.ProgressBar(name=progress_name)) : prog = nothing
 
