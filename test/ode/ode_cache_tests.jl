@@ -2,10 +2,9 @@ using OrdinaryDiffEq, DiffEqBase
 
 NON_IMPLICIT_ALGS = filter((x)->isleaftype(x) && !OrdinaryDiffEq.isimplicit(x()),union(subtypes(OrdinaryDiffEqAlgorithm),subtypes(OrdinaryDiffEqAdaptiveAlgorithm)))
 
-const α = 0.3
 f = function (t,u,du)
   for i in 1:length(u)
-    du[i] = α*u[i]
+    du[i] = (0.3/length(u))*u[i]
   end
 end
 
@@ -28,7 +27,7 @@ save_positions = (true,true)
 callback = ContinuousCallback(condition,affect!,rootfind,save_positions)
 
 u0 = [0.2]
-tspan = (0.0,10.0)
+tspan = (0.0,100.0)
 prob = ODEProblem(f,u0,tspan)
 sol = solve(prob,Tsit5(),callback=callback)
 
@@ -40,14 +39,12 @@ sol = solve(prob,ImplicitEuler(chunk_size=1),callback=callback,dt=1/10)
 sol = solve(prob,Trapezoid(chunk_size=1),callback=callback,dt=1/10)
 
 #=
-using Plots
-plot(sol,vars=(0,1),plotdensity=10000)
-
-plot(sol.t,map((x)->length(x),sol[:]),lw=3,
+using Plots; plotly()
+p1 = plot(sol,vars=(0,1),plotdensity=10000,title="Amount of X in Cell 1")
+scatter!(sol,denseplot=false)
+p2 = plot(sol.t,map((x)->length(x),sol[:]),lw=3,
      ylabel="Number of Cells",xlabel="Time")
-ts = linspace(0,10,100)
-plot(ts,map((x)->x[1],sol.(ts)),lw=3,
-     ylabel="Amount of X in Cell 1",xlabel="Time")
+plot(p1,p2,layout=(2,1))
 =#
 
 for alg in NON_IMPLICIT_ALGS

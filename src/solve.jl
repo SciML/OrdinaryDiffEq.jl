@@ -74,7 +74,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
   ks = Vector{uType}(0)
 
   order = alg_order(alg)
-  
+
   uEltypeNoUnits = typeof(recursive_one(u))
   tTypeNoUnits   = typeof(recursive_one(t))
 
@@ -120,9 +120,6 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
 
 
   ### Algorithm-specific defaults ###
-
-  abstol = uEltype(1)*abstol
-
   ksEltype = Vector{rateType}
 
   # Have to convert incase passed in wrong.
@@ -135,7 +132,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
   copyat_or_push!(timeseries,1,u)
   copyat_or_push!(ks,1,[rate_prototype])
 
-  opts = DEOptions(Int(maxiters),timeseries_steps,save_timeseries,adaptive,uEltype(abstol),
+  opts = DEOptions(Int(maxiters),timeseries_steps,save_timeseries,adaptive,uEltype(uEltype(1)*abstol),
     uEltypeNoUnits(reltol),tTypeNoUnits(gamma),tTypeNoUnits(qmax),tTypeNoUnits(qmin),
     dtmax,dtmin,internalnorm,
     tstops_internal,saveat_internal,d_discontinuities_internal,
