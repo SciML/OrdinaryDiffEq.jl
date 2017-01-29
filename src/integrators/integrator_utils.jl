@@ -107,17 +107,10 @@ end
 end
 
 @inline function postamble!(integrator)
-
-  if integrator.opts.save_timeseries==false
-    solution_endpoint_match_cur_integrator!(integrator)
-  end
-
+  solution_endpoint_match_cur_integrator!(integrator)
   resize!(integrator.sol.t,integrator.saveiter)
   resize!(integrator.sol.u,integrator.saveiter)
   resize!(integrator.sol.k,integrator.saveiter_dense)
-  if integrator.sol.t[end] !=  integrator.t
-    error("Solution endpoint doesn't match the current time in the postamble. This should never happen.")
-  end
   !(typeof(integrator.prog)<:Void) && Juno.done(integrator.prog)
 end
 
