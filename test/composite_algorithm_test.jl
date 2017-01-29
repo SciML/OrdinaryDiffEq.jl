@@ -18,5 +18,3 @@ solve!(integrator2)
 @test integrator1.sol.t == integrator2.sol.t
 
 sol = solve(prob,alg_switch)
-
-using Plots; plot(sol)
