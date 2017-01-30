@@ -22,9 +22,7 @@ affect! = function (integrator)
   nothing
 end
 
-rootfind = true
-save_positions = (true,true)
-callback = ContinuousCallback(condition,affect!,rootfind,save_positions)
+callback = ContinuousCallback(condition,affect!)
 
 u0 = [0.2]
 tspan = (0.0,100.0)

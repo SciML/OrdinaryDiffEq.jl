@@ -18,7 +18,7 @@ end
 
 rootfind = true
 save_positions = (true,true)
-callback = ContinuousCallback(condition,affect!,rootfind,save_positions)
+callback = ContinuousCallback(condition,affect!)
 
 sol = solve(prob,Tsit5(),callback=callback)
 
@@ -37,9 +37,7 @@ affect! = function (integrator)
   integrator.u = integrator.u + 2
 end
 
-rootfind = true
-save_positions = (true,true)
-callback = ContinuousCallback(condtion,affect!,rootfind,save_positions)
+callback = ContinuousCallback(condtion,affect!)
 
 sol = solve(prob,Tsit5(),callback=callback,abstol=1e-8,reltol=1e-6)
 
@@ -64,10 +62,7 @@ affect_neg! = function (integrator)
   integrator.u[2] = -integrator.u[2]
 end
 
-interp_points = 10
-rootfind = true
-save_positions = (true,true)
-callback = ContinuousCallback(condtion,affect!,affect_neg!,rootfind,save_positions)
+callback = ContinuousCallback(condtion,affect!,affect_neg!)
 
 u0 = [50.0,0.0]
 tspan = (0.0,15.0)
@@ -103,8 +98,9 @@ condtion = function (t,u,integrator)
   true
 end
 affect! = function (integrator) end
+
 save_positions = (true,false)
-saving_callback = DiscreteCallback(condtion,affect!,save_positions)
+saving_callback = DiscreteCallback(condtion,affect!,save_positions=save_positions)
 
 sol4 = solve(prob,Tsit5(),callback=saving_callback)
 
@@ -130,9 +126,7 @@ affect! = function (integrator)
 end
 
 interp_points = 10
-rootfind = true
-save_positions = (true,true)
-terminate_callback = ContinuousCallback(condtion,affect!,rootfind,save_positions)
+terminate_callback = ContinuousCallback(condtion,affect!)
 
 tspan2 = (0.0,Inf)
 prob2 = ODEProblem(f,u0,tspan2)
@@ -149,7 +143,7 @@ affect2! = function (integrator)
     integrator.u[2] = -integrator.u[2]
   end
 end
-terminate_callback2 = ContinuousCallback(condtion,nothing,affect2!,rootfind,save_positions)
+terminate_callback2 = ContinuousCallback(condtion,nothing,affect2!)
 
 
 sol5 = solve(prob2,Vern7(),callback=terminate_callback2)
@@ -165,10 +159,7 @@ affect! = function (integrator)
   terminate!(integrator)
 end
 
-interp_points = 10
-rootfind = true
-save_positions = (true,true)
-terminate_callback3 = ContinuousCallback(condtion,affect!,rootfind,save_positions)
+terminate_callback3 = ContinuousCallback(condtion,affect!)
 
 bounce_then_exit = CallbackSet(callback,terminate_callback3)
 
