@@ -38,23 +38,29 @@ end
   else
     prev_sign = sign(previous_condition)
   end
+  prev_sign_index = 1
   if ((prev_sign<0 && !(typeof(callback.affect!)<:Void)) || (prev_sign>0 && !(typeof(callback.affect_neg!)<:Void))) && prev_sign*sign(callback.condition(integrator.tprev+integrator.dt,integrator.u,integrator))<0
     event_occurred = true
     interp_index = callback.interp_points
   elseif callback.interp_points!=0 # Use the interpolants for safety checking
     for i in 2:length(Θs)-1
-      if ((prev_sign<0 && !(typeof(callback.affect!)<:Void)) || (prev_sign>0 && !(typeof(callback.affect_neg!)<:Void))) && prev_sign*callback.condition(integrator.tprev+integrator.dt*Θs[i],ode_interpolant(Θs[i],integrator),integrator)<0
+      new_sign = callback.condition(integrator.tprev+integrator.dt*Θs[i],ode_interpolant(Θs[i],integrator),integrator)
+      if prev_sign == 0
+        prev_sign = new_sign
+        prev_sign_index = i
+      end
+      if ((prev_sign<0 && !(typeof(callback.affect!)<:Void)) || (prev_sign>0 && !(typeof(callback.affect_neg!)<:Void))) && prev_sign*new_sign<0
         event_occurred = true
         interp_index = i
         break
       end
     end
   end
-  event_occurred,interp_index,Θs,prev_sign
+  event_occurred,interp_index,Θs,prev_sign,prev_sign_index
 end
 
 function find_callback_time(integrator,callback)
-  event_occurred,interp_index,Θs,prev_sign = determine_event_occurance(integrator,callback)
+  event_occurred,interp_index,Θs,prev_sign,prev_sign_index = determine_event_occurance(integrator,callback)
   if event_occurred
     if typeof(callback.condition) <: Void
       new_t = zero(typeof(integrator.t))
@@ -68,7 +74,7 @@ function find_callback_time(integrator,callback)
         find_zero = (Θ) -> begin
           callback.condition(integrator.tprev+Θ*integrator.dt,ode_interpolant(Θ,integrator),integrator)
         end
-        Θ = prevfloat(prevfloat(fzero(find_zero,typeof(integrator.t)(0),top_Θ)))
+        Θ = prevfloat(prevfloat(fzero(find_zero,Θs[prev_sign_index],top_Θ)))
         # 2 prevfloat guerentees that the new time is either 1 or 2 floating point
         # numbers just before the event, but not after. If there's a barrier
         # which is never supposed to be crossed, then this will ensure that

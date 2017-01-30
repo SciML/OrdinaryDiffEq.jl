@@ -8,7 +8,7 @@ end
 
 prob = ODEProblem(f,1.0,(0.0,10.0))
 
-condtion= function (t,u,integrator) # Event when event_f(t,u,k) == 0
+condition= function (t,u,integrator) # Event when event_f(t,u,k) == 0
   t - 2.95
 end
 
@@ -18,7 +18,7 @@ end
 
 rootfind = true
 save_positions = (true,true)
-callback = ContinuousCallback(condtion,affect!,rootfind,save_positions)
+callback = ContinuousCallback(condition,affect!,rootfind,save_positions)
 
 sol = solve(prob,Tsit5(),callback=callback)
 

@@ -46,21 +46,21 @@ end
       warn("Interrupted. Larger maxiters is needed.")
     end
     postamble!(integrator)
-    return nothing
+    return integrator.sol
   end
   if integrator.dt == zero(integrator.t)
     if integrator.opts.verbose
       warn("dt == 0. Aborting")
     end
     postamble!(integrator)
-    return nothing
+    return integrator.sol
   end
   if integrator.opts.unstable_check(integrator.dt,integrator.t,integrator.u)
     if integrator.opts.verbose
       warn("Instability detected. Aborting")
     end
     postamble!(integrator)
-    return nothing
+    return integrator.sol
   end
 end
 
