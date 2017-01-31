@@ -10,7 +10,7 @@ end
 @inline function perform_step!(integrator,cache::Rosenbrock23Cache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,uf,tf = cache
+  @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,uf,tf,linsolve_tmp = cache
   jidx = eachindex(J)
   @unpack c₃₂,d = cache.tab
 
@@ -29,24 +29,40 @@ end
   #  Calculus.finite_difference_jacobian!((du1,uprev)->vecf(t,uprev,du1),vec(uprev),vec(du1),J)
   #end
 
-  W[:] = I-dt*d*J # Can an allocation be cut here?
+  for i in 1:length(u), j in 1:length(u)
+    W[i,j] = I[i,j]-dt*d*J[i,j]
+  end
 
   Wfact = integrator.alg.factorization(W)
 
-  @into! vectmp = Wfact\vec(fsalfirst + dt*d*dT)
+  for i in eachindex(u)
+    linsolve_tmp[i] = fsalfirst[i] + dt*d*dT[i]
+  end
+
+  @into! vectmp = Wfact\linsolve_tmp
   recursivecopy!(k₁,reshape(vectmp,size(u)...))
   for i in uidx
     u[i]=uprev[i]+dt*k₁[i]/2
   end
   f(t+dt/2,u,f₁)
-  @into! vectmp2 = Wfact\vec(f₁-k₁)
+
+  for i in eachindex(u)
+    linsolve_tmp[i] = f₁[i]-k₁[i]
+  end
+
+  @into! vectmp2 = Wfact\linsolve_tmp
   for i in uidx
     k₂[i] = tmp[i] + k₁[i]
     u[i] = uprev[i] + dt*k₂[i]
   end
   if integrator.opts.adaptive
     f(t+dt,u,integrator.fsallast)
-    @into! vectmp3 = Wfact\vec(integrator.fsallast - c₃₂*(k₂-f₁)-2(k₁-fsalfirst)+dt*dT)
+
+    for i in eachindex(u)
+      linsolve_tmp[i] = integrator.fsallast[i] - c₃₂*(k₂[i]-f₁[i])-2(k₁[i]-fsalfirst[i])+dt*dT[i]
+    end
+
+    @into! vectmp3 = Wfact\linsolve_tmp
     k₃ = reshape(vectmp3,sizeu...)
     for i in uidx
       tmp2[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)./(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol)
@@ -68,7 +84,7 @@ end
 @inline function perform_step!(integrator,cache::Rosenbrock32Cache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,uf,tf = cache
+  @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,uf,tf,linsolve_tmp = cache
   jidx = eachindex(J)
   @unpack c₃₂,d = cache.tab
   # Setup Jacobian Calc
@@ -82,17 +98,28 @@ end
     ForwardDiff.derivative!(dT,tf,t) # Time derivative of each component
     ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev))
 
-  W[:] = I-dt*d*J # Can an allocation be cut here?
+  for i in 1:length(u), j in 1:length(u)
+    W[i,j] = I[i,j]-dt*d*J[i,j]
+  end
+
 
   Wfact = integrator.alg.factorization(W)
 
-  @into! vectmp = Wfact\vec(integrator.fsalfirst + dt*d*dT)
+  for i in eachindex(u)
+    linsolve_tmp[i] = fsalfirst[i] + dt*d*dT[i]
+  end
+
+  @into! vectmp = Wfact\linsolve_tmp
+
   recursivecopy!(k₁,reshape(vectmp,sizeu...))
   for i in uidx
     u[i]=uprev[i]+dt*k₁[i]/2
   end
   f(t+dt/2,u,f₁)
-  @into! vectmp2 = Wfact\vec(f₁-k₁)
+  for i in eachindex(u)
+    linsolve_tmp[i] = f₁[i]-k₁[i]
+  end
+  @into! vectmp2 = Wfact\linsolve_tmp
   tmp = reshape(vectmp2,sizeu...)
   for i in uidx
     k₂[i] = tmp[i] + k₁[i]
@@ -101,7 +128,10 @@ end
     tmp[i] = uprev[i] + dt*k₂[i]
   end
   f(t+dt,tmp,integrator.fsallast)
-  @into! vectmp3 = Wfact\vec(integrator.fsallast - c₃₂*(k₂-f₁)-2(k₁-integrator.fsalfirst)+dt*dT)
+  for i in eachindex(u)
+    linsolve_tmp[i] = integrator.fsallast[i] - c₃₂*(k₂[i]-f₁[i])-2(k₁[i]-fsalfirst[i])+dt*dT[i]
+  end
+  @into! vectmp3 = Wfact\linsolve_tmp
   k₃ = reshape(vectmp3,sizeu...)
   for i in uidx
     u[i] = uprev[i] + dt*(k₁[i] + 4k₂[i] + k₃[i])/6

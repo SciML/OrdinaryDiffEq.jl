@@ -24,6 +24,30 @@ initialize{uType}(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) =
 
 end
 
+@def ode_exit_conditions begin
+  if integrator.iter > integrator.opts.maxiters
+    if integrator.opts.verbose
+      warn("Interrupted. Larger maxiters is needed.")
+    end
+    postamble!(integrator)
+    return integrator.sol
+  end
+  if !integrator.opts.force_dtmin && integrator.opts.adaptive && abs(integrator.dt) <= abs(integrator.opts.dtmin)
+    if integrator.opts.verbose
+      warn("dt <= dtmin. Aborting. If you would like to force continuation with dt=dtmin, set force_dtmin=true")
+    end
+    postamble!(integrator)
+    return integrator.sol
+  end
+  if integrator.opts.unstable_check(integrator.dt,integrator.t,integrator.u)
+    if integrator.opts.verbose
+      warn("Instability detected. Aborting")
+    end
+    postamble!(integrator)
+    return integrator.sol
+  end
+end
+
 @inline function modify_dt_for_tstops!(integrator)
   tstops = integrator.opts.tstops
   if !isempty(tstops)

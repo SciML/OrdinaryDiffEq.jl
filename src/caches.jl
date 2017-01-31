@@ -810,10 +810,11 @@ type Rosenbrock23Cache{uType,rateType,vecuType,JType,TabType,TFType,UFType} <: O
   tab::TabType
   tf::TFType
   uf::UFType
+  linsolve_tmp::vecuType
 end
 
 u_cache(c::Rosenbrock23Cache) = (c.u,c.uprev,c.tmp,c.tmp2,c.dT)
-du_cache(c::Rosenbrock23Cache) = (c.k₁,c.k₂,c.k₃,c.du1,c.du2,c.f₁,c.fsalfirst,c.fsallast)
+du_cache(c::Rosenbrock23Cache) = (c.k₁,c.k₂,c.k₃,c.du1,c.du2,c.f₁,c.fsalfirst,c.fsallast,c.linsolve_tmp)
 jac_cache(c::Rosenbrock23Cache) = (c.J,c.W)
 vecu_cache(c::Rosenbrock23Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
 
@@ -839,10 +840,11 @@ type Rosenbrock32Cache{uType,rateType,vecuType,JType,TabType,TFType,UFType} <: O
   tab::TabType
   tf::TFType
   uf::UFType
+  linsolve_tmp::vecuType
 end
 
 u_cache(c::Rosenbrock32Cache) = (c.u,c.uprev,c.tmp,c.tmp2,c.dT)
-du_cache(c::Rosenbrock32Cache) = (c.k₁,c.k₂,c.k₃,c.du1,c.du2,c.f₁,c.fsalfirst,c.fsallast)
+du_cache(c::Rosenbrock32Cache) = (c.k₁,c.k₂,c.k₃,c.du1,c.du2,c.f₁,c.fsalfirst,c.fsallast,c.linsolve_tmp)
 jac_cache(c::Rosenbrock32Cache) = (c.J,c.W)
 vecu_cache(c::Rosenbrock32Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
 
@@ -868,7 +870,8 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,tTypeNoUnit
   vfr = VectorFReturn(f,size(u))
   tf = TimeGradientWrapper(vf,uprev,du2)
   uf = UJacobianWrapper(vfr,t)
-  Rosenbrock23Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,tab,tf,uf)
+  linsolve_tmp = similar(vec(u))
+  Rosenbrock23Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,tab,tf,uf,linsolve_tmp)
 end
 
 function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{true}})
@@ -893,7 +896,8 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,tTypeNoUnit
   vfr = VectorFReturn(f,size(u))
   tf = TimeGradientWrapper(vf,uprev,du2)
   uf = UJacobianWrapper(vfr,t)
-  Rosenbrock32Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,tab,tf,uf)
+  linsolve_tmp = similar(vec(u))
+  Rosenbrock32Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,tab,tf,uf,linsolve_tmp)
 end
 
 immutable Rosenbrock23ConstantCache{T,TF,UF} <: OrdinaryDiffEqConstantCache
