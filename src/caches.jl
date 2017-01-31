@@ -788,7 +788,7 @@ end
 alg_cache(alg::Feagin14,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{false}}) = Feagin14ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
 
 
-type Rosenbrock23Cache{uType,rateType,vecuType,JType,TabType,TFType,UFType} <: OrdinaryDiffEqMutableCache
+type Rosenbrock23Cache{uType,rateType,vecuType,JType,TabType,TFType,UFType,F} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k₁::rateType
@@ -811,6 +811,7 @@ type Rosenbrock23Cache{uType,rateType,vecuType,JType,TabType,TFType,UFType} <: O
   tf::TFType
   uf::UFType
   linsolve_tmp::vecuType
+  factorization::F
 end
 
 u_cache(c::Rosenbrock23Cache) = (c.u,c.uprev,c.tmp,c.tmp2,c.dT)
@@ -818,7 +819,7 @@ du_cache(c::Rosenbrock23Cache) = (c.k₁,c.k₂,c.k₃,c.du1,c.du2,c.f₁,c.fsal
 jac_cache(c::Rosenbrock23Cache) = (c.J,c.W)
 vecu_cache(c::Rosenbrock23Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
 
-type Rosenbrock32Cache{uType,rateType,vecuType,JType,TabType,TFType,UFType} <: OrdinaryDiffEqMutableCache
+type Rosenbrock32Cache{uType,rateType,vecuType,JType,TabType,TFType,UFType,F} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k₁::rateType
@@ -841,6 +842,7 @@ type Rosenbrock32Cache{uType,rateType,vecuType,JType,TabType,TFType,UFType} <: O
   tf::TFType
   uf::UFType
   linsolve_tmp::vecuType
+  factorization::F
 end
 
 u_cache(c::Rosenbrock32Cache) = (c.u,c.uprev,c.tmp,c.tmp2,c.dT)
@@ -871,7 +873,7 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,tTypeNoUnit
   tf = TimeGradientWrapper(vf,uprev,du2)
   uf = UJacobianWrapper(vfr,t)
   linsolve_tmp = similar(vec(u))
-  Rosenbrock23Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,tab,tf,uf,linsolve_tmp)
+  Rosenbrock23Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,tab,tf,uf,linsolve_tmp,alg.factorization)
 end
 
 function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,::Type{Val{true}})
@@ -897,7 +899,7 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,tTypeNoUnit
   tf = TimeGradientWrapper(vf,uprev,du2)
   uf = UJacobianWrapper(vfr,t)
   linsolve_tmp = similar(vec(u))
-  Rosenbrock32Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,tab,tf,uf,linsolve_tmp)
+  Rosenbrock32Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,tab,tf,uf,linsolve_tmp,alg.factorization)
 end
 
 immutable Rosenbrock23ConstantCache{T,TF,UF} <: OrdinaryDiffEqConstantCache
