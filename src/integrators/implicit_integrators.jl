@@ -71,6 +71,9 @@ end
   uidx = eachindex(integrator.uprev)
   @unpack u_old,dual_cache,k,adf,rhs,uhold = cache
   copy!(u_old,uhold)
+  if integrator.iter > 1 && !integrator.u_modified
+    current_extrapolant!(uhold,t+dt,integrator)
+  end # else uhold is previous value.
   rhs.t = t
   rhs.dt = dt
   rhs.uidx = uidx
@@ -120,6 +123,9 @@ end
   uidx = eachindex(integrator.uprev)
   @unpack u_old,dual_cache,k,rhs,adf,uhold = cache
   copy!(u_old,uhold)
+  if integrator.iter > 1 && !integrator.u_modified
+    current_extrapolant!(uhold,t+dt,integrator)
+  end # else uhold is previous value.
   # copy!(rhs.fsalfirst,fsalfirst) Implicitly done by pointers: fsalfirst === fsalfirst == rhs.fsalfirst
   rhs.t = t
   rhs.dt = dt

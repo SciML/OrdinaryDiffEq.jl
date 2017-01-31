@@ -21,6 +21,15 @@ function ode_interpolant(Θ,integrator)
   end
 end
 
+function ode_interpolant!(val,Θ,integrator)
+  ode_addsteps!(integrator)
+  if !(typeof(integrator.cache) <: CompositeCache)
+    ode_interpolant!(val,Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache)
+  else
+    ode_interpolant!(val,Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache.caches[integrator.cache.current])
+  end
+end
+
 function current_interpolant(t::Number,integrator)
   Θ = (t-integrator.tprev)/integrator.dt
   ode_interpolant(Θ,integrator)
@@ -31,14 +40,43 @@ function current_interpolant(t::AbstractArray,integrator)
   [ode_interpolant(ϕ,integrator) for ϕ in Θ]
 end
 
+function current_interpolant!(val,t::Number,integrator)
+  Θ = (t-integrator.tprev)/integrator.dt
+  ode_interpolant!(val,Θ,integrator)
+end
+
+function current_interpolant!(val,t::AbstractArray,integrator)
+  t .= (t.-integrator.tprev)./integrator.dt
+  [ode_interpolant!(val,ϕ,integrator) for ϕ in t]
+end
+
 function current_extrapolant(t::Number,integrator)
   Θ = (t-integrator.tprev)/(integrator.t-integrator.tprev)
   ode_extrapolant(Θ,integrator)
 end
 
+function current_extrapolant!(val,t::Number,integrator)
+  Θ = (t-integrator.tprev)/(integrator.t-integrator.tprev)
+  ode_extrapolant!(val,Θ,integrator)
+end
+
 function current_extrapolant(t::AbstractArray,integrator)
   Θ = (t.-integrator.tprev)./(integrator.t-integrator.tprev)
   [ode_extrapolant(ϕ,integrator) for ϕ in Θ]
+end
+
+function current_extrapolant!(val,t::AbstractArray,integrator)
+  t .= (t.-integrator.tprev)./(integrator.t-integrator.tprev)
+  [ode_extrapolant!(val,ϕ,integrator) for ϕ in t]
+end
+
+function ode_extrapolant!(val,Θ,integrator)
+  ode_addsteps!(integrator)
+  if !(typeof(integrator.cache) <: CompositeCache)
+    ode_interpolant!(val,Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,integrator.cache)
+  else
+    ode_interpolant!(val,Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,integrator.cache.caches[integrator.cache.current])
+  end
 end
 
 function ode_extrapolant(Θ,integrator)

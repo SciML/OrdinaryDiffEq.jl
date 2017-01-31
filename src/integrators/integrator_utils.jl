@@ -282,3 +282,4 @@ end
 end
 
 (integrator::ODEIntegrator)(t) = current_interpolant(t,integrator)
+(integrator::ODEIntegrator)(val,t) = current_interpolant!(val,t,integrator)
