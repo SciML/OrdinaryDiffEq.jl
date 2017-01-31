@@ -72,9 +72,9 @@ end
     if integrator.opts.saveat!=integrator.t # If <t, interpolate
       ode_addsteps!(integrator)
       Θ = (curt - integrator.tprev)/integrator.dt
-      val = ode_interpolant(Θ,integrator)
+      val = ode_interpolant(Θ,integrator) # out of place, but no force copy later
       copyat_or_push!(integrator.sol.t,integrator.saveiter,curt)
-      copyat_or_push!(integrator.sol.u,integrator.saveiter,val)
+      copyat_or_push!(integrator.sol.u,integrator.saveiter,val,Val{false})
       if typeof(integrator.alg) <: OrdinaryDiffEqCompositeAlgorithm
         copyat_or_push!(integrator.sol.alg_choice,integrator.saveiter,integrator.cache.current)
       end
