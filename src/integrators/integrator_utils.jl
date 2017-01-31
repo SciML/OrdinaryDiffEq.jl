@@ -72,7 +72,7 @@ end
     if integrator.opts.saveat!=integrator.t # If <t, interpolate
       ode_addsteps!(integrator)
       Θ = (curt - integrator.tprev)/integrator.dt
-      val = ode_interpolant(Θ,integrator) # out of place, but no force copy later
+      val = ode_interpolant(Θ,integrator,indices(integrator.uprev),Val{0}) # out of place, but no force copy later
       copyat_or_push!(integrator.sol.t,integrator.saveiter,curt)
       copyat_or_push!(integrator.sol.u,integrator.saveiter,val,Val{false})
       if typeof(integrator.alg) <: OrdinaryDiffEqCompositeAlgorithm
@@ -281,8 +281,8 @@ end
   integrator.reeval_fsal = false
 end
 
-function (integrator::ODEIntegrator)(t,idxs=indices(integrator.uprev),deriv=Val{0})
+function (integrator::ODEIntegrator)(t,deriv::Type=Val{0};idxs=size(integrator.uprev))
   current_interpolant(t,integrator,idxs,deriv)
 end
 
-(integrator::ODEIntegrator)(val::AbstractArray,t::AbstractArray,idxs=indices(integrator.uprev),deriv=Val{0}) = current_interpolant!(val,t,integrator,idxs,deriv)
+(integrator::ODEIntegrator)(val::AbstractArray,t::Union{Number,AbstractArray},deriv::Type=Val{0};idxs=eachindex(integrator.uprev)) = current_interpolant!(val,t,integrator,idxs,deriv)

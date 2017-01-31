@@ -16,11 +16,17 @@ sol =solve(prob,Euler(),dt=1//2^(2),dense=true)
 
 interpd = sol(0:1//2^(4):1)
 
-sol(interpd,0:1//2^(4):1)
-
+A = rand(4,2)
+sol(A,0.777)
+A == sol(0.777)
 sol2 =solve(prob,Euler(),dt=1//2^(4),dense=true)
 
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < .2
+
+sol(interpd,0:1//2^(4):1)
+
+@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < .2
+
 
 sol =solve(prob,Euler(),dt=1//2^(2),dense=false)
 

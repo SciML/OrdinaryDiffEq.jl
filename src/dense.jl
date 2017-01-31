@@ -12,7 +12,7 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(integrator,f=integrator.f,alwa
   end
 end
 
-function ode_interpolant(Θ,integrator::DEIntegrator,idxs=indices(integrator.uprev),deriv=Val{0})
+function ode_interpolant(Θ,integrator::DEIntegrator,idxs,deriv)
   ode_addsteps!(integrator)
   if !(typeof(integrator.cache) <: CompositeCache)
     ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache,idxs,deriv)
@@ -21,7 +21,7 @@ function ode_interpolant(Θ,integrator::DEIntegrator,idxs=indices(integrator.upr
   end
 end
 
-function ode_interpolant!(val,Θ,integrator::DEIntegrator,idxs=indices(integrator.uprev),deriv=Val{0})
+function ode_interpolant!(val,Θ,integrator::DEIntegrator,idxs,deriv)
   ode_addsteps!(integrator)
   if !(typeof(integrator.cache) <: CompositeCache)
     ode_interpolant!(val,Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache,idxs,deriv)
@@ -30,44 +30,44 @@ function ode_interpolant!(val,Θ,integrator::DEIntegrator,idxs=indices(integrato
   end
 end
 
-function current_interpolant(t::Number,integrator::DEIntegrator,idxs=indices(integrator.uprev),deriv=Val{0})
+function current_interpolant(t::Number,integrator::DEIntegrator,idxs,deriv)
   Θ = (t-integrator.tprev)/integrator.dt
   ode_interpolant(Θ,integrator,idxs,deriv)
 end
 
-function current_interpolant(t,integrator::DEIntegrator,idxs=indices(integrator.uprev),deriv=Val{0})
+function current_interpolant(t,integrator::DEIntegrator,idxs,deriv)
   Θ = (t.-integrator.tprev)./integrator.dt
   [ode_interpolant(ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
-function current_interpolant!(val,t::Number,integrator::DEIntegrator,idxs=indices(integrator.uprev),deriv=Val{0})
+function current_interpolant!(val,t::Number,integrator::DEIntegrator,idxs,deriv)
   Θ = (t-integrator.tprev)/integrator.dt
   ode_interpolant!(val,Θ,integrator,idxs,deriv)
 end
 
-function current_interpolant!(val,t,integrator::DEIntegrator,idxs=indices(integrator.uprev),deriv=Val{0})
-  t .= (t.-integrator.tprev)./integrator.dt
-  [ode_interpolant!(val,ϕ,integrator,idxs,deriv) for ϕ in t]
+function current_interpolant!(val,t,integrator::DEIntegrator,idxs,deriv)
+  Θ = (t.-integrator.tprev)./integrator.dt
+  [ode_interpolant!(val,ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
-function current_extrapolant(t::Number,integrator::DEIntegrator,idxs=indices(integrator.uprev),deriv=Val{0})
+function current_extrapolant(t::Number,integrator::DEIntegrator,idxs=size(integrator.uprev),deriv=Val{0})
   Θ = (t-integrator.tprev)/(integrator.t-integrator.tprev)
   ode_extrapolant(Θ,integrator,idxs,deriv)
 end
 
-function current_extrapolant!(val,t::Number,integrator::DEIntegrator,idxs=indices(integrator.uprev),deriv=Val{0})
+function current_extrapolant!(val,t::Number,integrator::DEIntegrator,idxs=size(integrator.uprev),deriv=Val{0})
   Θ = (t-integrator.tprev)/(integrator.t-integrator.tprev)
   ode_extrapolant!(val,Θ,integrator,idxs,deriv)
 end
 
-function current_extrapolant(t::AbstractArray,integrator::DEIntegrator,idxs=indices(integrator.uprev),deriv=Val{0})
+function current_extrapolant(t::AbstractArray,integrator::DEIntegrator,idxs=size(integrator.uprev),deriv=Val{0})
   Θ = (t.-integrator.tprev)./(integrator.t-integrator.tprev)
   [ode_extrapolant(ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
-function current_extrapolant!(val,t,integrator::DEIntegrator,idxs=indices(integrator.uprev),deriv=Val{0})
-  t .= (t.-integrator.tprev)./(integrator.t-integrator.tprev)
-  [ode_extrapolant!(val,ϕ,integrator,idxs,deriv) for ϕ in t]
+function current_extrapolant!(val,t,integrator::DEIntegrator,idxs=size(integrator.uprev),deriv=Val{0})
+  Θ = (t.-integrator.tprev)./(integrator.t-integrator.tprev)
+  [ode_extrapolant!(val,ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
 function ode_extrapolant!(val,Θ,integrator::DEIntegrator,idxs,deriv)
@@ -79,7 +79,7 @@ function ode_extrapolant!(val,Θ,integrator::DEIntegrator,idxs,deriv)
   end
 end
 
-function ode_extrapolant(Θ,integrator::DEIntegrator,idxs=indices(integrator.uprev),deriv=Val{0})
+function ode_extrapolant(Θ,integrator::DEIntegrator,idxs,deriv)
   ode_addsteps!(integrator)
   if !(typeof(integrator.cache) <: CompositeCache)
     ode_interpolant(Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,integrator.cache,idxs,deriv)
@@ -114,8 +114,8 @@ function ode_interpolation(tvals,id)
     else
       dt = ts[notsaveat_idxs[i]] - ts[notsaveat_idxs[i-1]]
       Θ = (t-ts[notsaveat_idxs[i-1]])/dt
-      if idxs == nothing
-        idxs_internal = indices(timeseries[notsaveat_idxs[i-1]])
+      if idxs == nothing && eltype(timeseries) <: AbstractArray
+        idxs_internal = size(timeseries[notsaveat_idxs[i-1]])
       else
         idxs_internal = idxs
       end
@@ -154,8 +154,8 @@ function ode_interpolation!(vals,tvals,id)
     else
       dt = ts[notsaveat_idxs[i]] - ts[notsaveat_idxs[i-1]]
       Θ = (t-ts[notsaveat_idxs[i-1]])/dt
-      if idxs == nothing
-        idxs_internal = indices(vals[j])
+      if idxs == nothing && eltype(vals) <: AbstractArray
+        idxs_internal = eachindex(vals[j])
       else
         idxs_internal = idxs
       end
@@ -197,8 +197,8 @@ function ode_interpolation(tval::Number,id)
   else
     dt = ts[notsaveat_idxs[i]] - ts[notsaveat_idxs[i-1]]
     Θ = (tval-ts[notsaveat_idxs[i-1]])/dt
-    if idxs == nothing
-      idxs_internal = indices(timeseries[notsaveat_idxs[i-1]])
+    if idxs == nothing && eltype(timeseries) <: AbstractArray
+      idxs_internal = size(timeseries[notsaveat_idxs[i-1]])
     else
       idxs_internal = idxs
     end
@@ -233,7 +233,7 @@ function ode_interpolation!(out,tval::Number,id)
     dt = ts[notsaveat_idxs[i]] - ts[notsaveat_idxs[i-1]]
     Θ = (tval-ts[notsaveat_idxs[i-1]])/dt
     if idxs == nothing
-      idxs_internal = indices(out)
+      idxs_internal = eachindex(out)
     else
       idxs_internal = idxs
     end
@@ -267,8 +267,14 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache,always_
 end
 
 function ode_interpolant(Θ,dt,y₀,y₁,k,cache::OrdinaryDiffEqMutableCache,idxs,T::Type{Val{0}})
-  out = similar(y₀,idxs)
-  ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T)
+  if typeof(idxs) <: Tuple
+    out = similar(y₀,idxs)
+    idxs_internal=eachindex(y₀)
+  else
+    out = similar(y₀,length(idxs))
+    idxs_internal=idxs
+  end
+  ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs_internal,T)
   out
 end
 
@@ -280,8 +286,8 @@ Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 function ode_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{0}}) # Default interpolant is Hermite
   if typeof(y₀) <: AbstractArray
     out = similar(y₀,idxs)
-    for i in idxs
-      out[i] = (1-Θ)*y₀[i]+Θ*y₁[i]+Θ*(Θ-1)*((1-2Θ)*(y₁[i]-y₀[i])+(Θ-1)*dt*k[1][i] + Θ*dt*k[2][i])
+    for (j,i) in enumerate(idxs)
+      out[j] = (1-Θ)*y₀[i]+Θ*y₁[i]+Θ*(Θ-1)*((1-2Θ)*(y₁[i]-y₀[i])+(Θ-1)*dt*k[1][i] + Θ*dt*k[2][i])
     end
   else
     out = (1-Θ)*y₀+Θ*y₁+Θ*(Θ-1)*((1-2Θ)*(y₁-y₀)+(Θ-1)*dt*k[1] + Θ*dt*k[2])
@@ -295,8 +301,8 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
 function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{0}}) # Default interpolant is Hermite
-  for i in eachindex(out)
-    out[i] = (1-Θ)*y₀[i]+Θ*y₁[i]+Θ*(Θ-1)*((1-2Θ)*(y₁[i]-y₀[i])+(Θ-1)*dt*k[1][i] + Θ*dt*k[2][i])
+  for (j,i) in enumerate(idxs)
+    out[j] = (1-Θ)*y₀[i]+Θ*y₁[i]+Θ*(Θ-1)*((1-2Θ)*(y₁[i]-y₀[i])+(Θ-1)*dt*k[1][i] + Θ*dt*k[2][i])
   end
 end
 
@@ -313,8 +319,8 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
 """
 function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DP5Cache,idxs,T::Type{Val{0}})
   Θ1 = 1-Θ
-  for i in eachindex(out)
-    out[i] = y₀[i] + dt*Θ*(k[1][i]+Θ1*(k[2][i]+Θ*(k[3][i]+Θ1*k[4][i])))
+  for (j,i) in enumerate(idxs)
+    out[j] = y₀[i] + dt*Θ*(k[1][i]+Θ1*(k[2][i]+Θ*(k[3][i]+Θ1*k[4][i])))
   end
 end
 
@@ -323,8 +329,8 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
 """
 function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DP5ThreadedCache,idxs,T::Type{Val{0}})
   Θ1 = 1-Θ
-  for i in eachindex(out)
-    out[i] = y₀[i] + dt*Θ*(k[1][i]+Θ1*(k[2][i]+Θ*(k[3][i]+Θ1*k[4][i])))
+  for (j,i) in enumerate(idxs)
+    out[j] = y₀[i] + dt*Θ*(k[1][i]+Θ1*(k[2][i]+Θ*(k[3][i]+Θ1*k[4][i])))
   end
 end
 
@@ -345,8 +351,8 @@ function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Rosenbrock23Cache,idxs,T:
   d = cache.tab.d
   c1 = Θ*(1-Θ)/(1-2d)
   c2 = Θ*(Θ-2d)/(1-2d)
-  for i in eachindex(out)
-    out[i] = y₀[i] + dt*(c1*k[1][i] + c2*k[2][i])
+  for (j,i) in enumerate(idxs)
+    out[j] = y₀[i] + dt*(c1*k[1][i] + c2*k[2][i])
   end
 end
 
@@ -368,8 +374,8 @@ function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Rosenbrock32Cache,idxs,T:
   c1 = Θ*(1-Θ)/(1-2d)
   c2 = Θ*(Θ-2d)/(1-2d)
   y₀ + dt*(c1*k[1] + c2*k[2])
-  for i in eachindex(out)
-    out[i] = y₀[i] + dt*(c1*k[1][i] + c2*k[2][i])
+  for (j,i) in enumerate(idxs)
+    out[j] = y₀[i] + dt*(c1*k[1][i] + c2*k[2][i])
   end
 end
 
@@ -387,8 +393,8 @@ function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Tsit5Cache,idxs,T::Type{V
   b5Θ = 47.37952196281928122*(Θ - 1.203071208372362603)*(Θ - 0.658047292653547382)*Θ^2
   b6Θ = -34.87065786149660974*(Θ - 1.2)*(Θ - 0.666666666666666667)*Θ^2
   b7Θ = 2.5*(Θ - 1)*(Θ - 0.6)*Θ^2
-  for i in eachindex(out)
-    out[i] = y₀[i] + dt*(k[1][i]*b1Θ + k[2][i]*b2Θ + k[3][i]*b3Θ + k[4][i]*b4Θ + k[5][i]*b5Θ + k[6][i]*b6Θ + k[7][i]*b7Θ)
+  for (j,i) in enumerate(idxs)
+    out[j] = y₀[i] + dt*(k[1][i]*b1Θ + k[2][i]*b2Θ + k[3][i]*b3Θ + k[4][i]*b4Θ + k[5][i]*b5Θ + k[6][i]*b6Θ + k[7][i]*b7Θ)
   end
 end
 
@@ -524,8 +530,8 @@ function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::BS5Cache,idxs,T::Type{Val
   b9Θ =                     r093*Θ3 + r094*Θ4 + r095*Θ5 + r096*Θ6
   b10Θ=           r102*Θ2 + r103*Θ3 + r104*Θ4 + r105*Θ5 + r106*Θ6
   b11Θ=           r112*Θ2 + r113*Θ3 + r114*Θ4 + r115*Θ5 + r116*Θ6
-  for i in eachindex(out)
-    out[i] = y₀[i] + dt*Θ*k[1][i] + dt*(k[1][i]*b1Θ  + k[3][i]*b3Θ + k[4][i]*b4Θ  + k[5][i]*b5Θ + k[6][i]*b6Θ + k[7][i]*b7Θ + k[8][i]*b8Θ + k[9][i]*b9Θ + k[10][i]*b10Θ + k[11][i]*b11Θ)
+  for (j,i) in enumerate(idxs)
+    out[j] = y₀[i] + dt*Θ*k[1][i] + dt*(k[1][i]*b1Θ  + k[3][i]*b3Θ + k[4][i]*b4Θ  + k[5][i]*b5Θ + k[6][i]*b6Θ + k[7][i]*b7Θ + k[8][i]*b8Θ + k[9][i]*b9Θ + k[10][i]*b10Θ + k[11][i]*b11Θ)
   end
 end
 
@@ -549,8 +555,8 @@ function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Vern6Cache,idxs,T::Type{V
   b10Θ=          r102*Θ2 + r103*Θ3 + r104*Θ4 + r105*Θ5 + r106*Θ6
   b11Θ=          r112*Θ2 + r113*Θ3 + r114*Θ4 + r115*Θ5 + r116*Θ6
   b12Θ=          r122*Θ2 + r123*Θ3 + r124*Θ4 + r125*Θ5 + r126*Θ6
-  for i in eachindex(out)
-    out[i] = y₀[i] + dt*(k[1][i]*b1Θ + k[4][i]*b4Θ + k[5][i]*b5Θ + k[6][i]*b6Θ + k[7][i]*b7Θ + k[8][i]*b8Θ + k[9][i]*b9Θ + k[10][i]*b10Θ + k[11][i]*b11Θ + k[12][i]*b12Θ)
+  for (j,i) in enumerate(idxs)
+    out[j] = y₀[i] + dt*(k[1][i]*b1Θ + k[4][i]*b4Θ + k[5][i]*b5Θ + k[6][i]*b6Θ + k[7][i]*b7Θ + k[8][i]*b8Θ + k[9][i]*b9Θ + k[10][i]*b10Θ + k[11][i]*b11Θ + k[12][i]*b12Θ)
   end
 end
 
@@ -628,8 +634,8 @@ function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Vern7Cache,idxs,T::Type{V
   b14Θ=          r142*Θ2 + r143*Θ3 + r144*Θ4 + r145*Θ5 + r146*Θ6 + r147*Θ7
   b15Θ=          r152*Θ2 + r153*Θ3 + r154*Θ4 + r155*Θ5 + r156*Θ6 + r157*Θ7
   b16Θ=          r162*Θ2 + r163*Θ3 + r164*Θ4 + r165*Θ5 + r166*Θ6 + r167*Θ7
-  for i in eachindex(out)
-    out[i] = y₀[i] + dt*(k[1][i]*b1Θ + k[4][i]*b4Θ + k[5][i]*b5Θ + k[6][i]*b6Θ + k[7][i]*b7Θ + k[8][i]*b8Θ + k[9][i]*b9Θ + k[11][i]*b11Θ + k[12][i]*b12Θ + k[13][i]*b13Θ + k[14][i]*b14Θ + k[15][i]*b15Θ + k[16][i]*b16Θ)
+  for (j,i) in enumerate(idxs)
+    out[j] = y₀[i] + dt*(k[1][i]*b1Θ + k[4][i]*b4Θ + k[5][i]*b5Θ + k[6][i]*b6Θ + k[7][i]*b7Θ + k[8][i]*b8Θ + k[9][i]*b9Θ + k[11][i]*b11Θ + k[12][i]*b12Θ + k[13][i]*b13Θ + k[14][i]*b14Θ + k[15][i]*b15Θ + k[16][i]*b16Θ)
   end
 end
 
@@ -692,8 +698,8 @@ function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Vern8Cache,idxs,T::Type{V
   b19Θ=          r192*Θ2 + r193*Θ3 + r194*Θ4 + r195*Θ5 + r196*Θ6 + r197*Θ7 + r198*Θ8
   b20Θ=          r202*Θ2 + r203*Θ3 + r204*Θ4 + r205*Θ5 + r206*Θ6 + r207*Θ7 + r208*Θ8
   b21Θ=          r212*Θ2 + r213*Θ3 + r214*Θ4 + r215*Θ5 + r216*Θ6 + r217*Θ7 + r218*Θ8
-  for i in eachindex(out)
-    out[i] = y₀[i] + dt*(k[1][i]*b1Θ + k[6][i]*b6Θ + k[7][i]*b7Θ + k[8][i]*b8Θ + k[9][i]*b9Θ + k[10][i]*b10Θ + k[11][i]*b11Θ + k[12][i]*b12Θ + k[14][i]*b14Θ + k[15][i]*b15Θ + k[16][i]*b16Θ + k[17][i]*b17Θ + k[18][i]*b18Θ + k[19][i]*b19Θ + k[20][i]*b20Θ + k[21][i]*b21Θ)
+  for (j,i) in enumerate(idxs)
+    out[j] = y₀[i] + dt*(k[1][i]*b1Θ + k[6][i]*b6Θ + k[7][i]*b7Θ + k[8][i]*b8Θ + k[9][i]*b9Θ + k[10][i]*b10Θ + k[11][i]*b11Θ + k[12][i]*b12Θ + k[14][i]*b14Θ + k[15][i]*b15Θ + k[16][i]*b16Θ + k[17][i]*b17Θ + k[18][i]*b18Θ + k[19][i]*b19Θ + k[20][i]*b20Θ + k[21][i]*b21Θ)
   end
 end
 
@@ -764,8 +770,8 @@ function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Vern9Cache,idxs,T::Type{V
   b24Θ=          r242*Θ2 + r243*Θ3 + r244*Θ4 + r245*Θ5 + r246*Θ6 + r247*Θ7 + r248*Θ8 + r249*Θ9
   b25Θ=          r252*Θ2 + r253*Θ3 + r254*Θ4 + r255*Θ5 + r256*Θ6 + r257*Θ7 + r258*Θ8 + r259*Θ9
   b26Θ=          r262*Θ2 + r263*Θ3 + r264*Θ4 + r265*Θ5 + r266*Θ6 + r267*Θ7 + r268*Θ8 + r269*Θ9
-  for i in eachindex(out)
-    out[i] = y₀[i] + dt*(k[1][i]*b1Θ + k[8][i]*b8Θ + k[9][i]*b9Θ + k[10][i]*b10Θ + k[11][i]*b11Θ + k[12][i]*b12Θ + k[13][i]*b13Θ + k[14][i]*b14Θ + k[15][i]*b15Θ + k[17][i]*b17Θ + k[18][i]*b18Θ + k[19][i]*b19Θ + k[20][i]*b20Θ + k[21][i]*b21Θ + k[22][i]*b22Θ + k[23][i]*b23Θ + k[24][i]*b24Θ + k[25][i]*b25Θ + k[26][i]*b26Θ)
+  for (j,i) in enumerate(idxs)
+    out[j] = y₀[i] + dt*(k[1][i]*b1Θ + k[8][i]*b8Θ + k[9][i]*b9Θ + k[10][i]*b10Θ + k[11][i]*b11Θ + k[12][i]*b12Θ + k[13][i]*b13Θ + k[14][i]*b14Θ + k[15][i]*b15Θ + k[17][i]*b17Θ + k[18][i]*b18Θ + k[19][i]*b19Θ + k[20][i]*b20Θ + k[21][i]*b21Θ + k[22][i]*b22Θ + k[23][i]*b23Θ + k[24][i]*b24Θ + k[25][i]*b25Θ + k[26][i]*b26Θ)
   end
 end
 
@@ -783,8 +789,8 @@ end
 """
 function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DP8Cache,idxs,T::Type{Val{0}})
   Θ1 = 1-Θ
-  for i in eachindex(out)
-    out[i] = y₀[i] + dt*Θ*(k[1][i] + Θ1*(k[2][i] + Θ*(k[3][i]+Θ1*(k[4][i] + Θ*(k[5][i] + Θ1*(k[6][i]+Θ*k[7][i]))))))
+  for (j,i) in enumerate(idxs)
+    out[j] = y₀[i] + dt*Θ*(k[1][i] + Θ1*(k[2][i] + Θ*(k[3][i]+Θ1*(k[4][i] + Θ*(k[5][i] + Θ1*(k[6][i]+Θ*k[7][i]))))))
   end
 end
 

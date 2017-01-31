@@ -47,3 +47,19 @@ for i in take(integrator,12) end
 @test integrator.iter == 12
 for i in take(integrator,12) end
 @test integrator.iter == 24
+
+integrator = init(prob_ode_2Dlinear,Tsit5();dt=1//2^(4),tstops=[0.5],advance_to_tstop=true,stop_at_next_tstop=true)
+for (t,u) in tuples(integrator)
+  @test t == 0.5
+end
+A = integrator([1.0;2.0])
+B = integrator([1.0;2.0],idxs=1:2:5)
+
+@test minimum([A[i][1:2:5] == B[i] for i in 1:length(A)])
+
+integrator(A[1],0.5)
+@test A[1] == integrator(0.5)
+
+A = zeros(3)
+integrator(A,0.6,idxs=1:2:5)
+@test A == integrator(0.6;idxs=1:2:5)

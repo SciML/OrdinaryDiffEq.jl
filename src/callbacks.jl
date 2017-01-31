@@ -44,7 +44,7 @@ end
     interp_index = callback.interp_points
   elseif callback.interp_points!=0 # Use the interpolants for safety checking
     for i in 2:length(Θs)-1
-      new_sign = callback.condition(integrator.tprev+integrator.dt*Θs[i],ode_interpolant(Θs[i],integrator),integrator)
+      new_sign = callback.condition(integrator.tprev+integrator.dt*Θs[i],ode_interpolant(Θs[i],integrator,size(integrator.uprev),Val{0}),integrator)
       if prev_sign == 0
         prev_sign = new_sign
         prev_sign_index = i
@@ -72,7 +72,7 @@ function find_callback_time(integrator,callback)
       end
       if callback.rootfind
         find_zero = (Θ) -> begin
-          callback.condition(integrator.tprev+Θ*integrator.dt,ode_interpolant(Θ,integrator),integrator)
+          callback.condition(integrator.tprev+Θ*integrator.dt,ode_interpolant(Θ,integrator,size(integrator.uprev),Val{0}),integrator)
         end
         Θ = prevfloat(prevfloat(fzero(find_zero,Θs[prev_sign_index],top_Θ)))
         # 2 prevfloat guerentees that the new time is either 1 or 2 floating point
