@@ -220,22 +220,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
 end
 
 function solve!(integrator::ODEIntegrator)
-  # Should be:
-  #for i in integrator end
-  # But the performance is bad!
-  @inbounds while !isempty(integrator.opts.tstops)
-    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.opts.tstops)
-      loopheader!(integrator)
-      @ode_exit_conditions
-      perform_step!(integrator,integrator.cache)
-      loopfooter!(integrator)
-      if isempty(integrator.opts.tstops)
-        break
-      end
-    end
-    handle_tstop!(integrator)
-  end
-  postamble!(integrator)
+  for i in integrator end
   if typeof(integrator.sol.prob) <: AbstractODETestProblem
     calculate_solution_errors!(integrator.sol;timeseries_errors=integrator.opts.timeseries_errors,dense_errors=integrator.opts.dense_errors)
   end

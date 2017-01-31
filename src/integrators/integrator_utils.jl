@@ -41,30 +41,6 @@ end
   end
 end
 
-@def ode_exit_conditions begin
-  if integrator.iter > integrator.opts.maxiters
-    if integrator.opts.verbose
-      warn("Interrupted. Larger maxiters is needed.")
-    end
-    postamble!(integrator)
-    return integrator.sol
-  end
-  if !integrator.opts.force_dtmin && integrator.dt <= integrator.opts.dtmin
-    if integrator.opts.verbose
-      warn("dt <= dtmin. Aborting. If you would like to force continuation with dt=dtmin, set force_dtmin=true")
-    end
-    postamble!(integrator)
-    return integrator.sol
-  end
-  if integrator.opts.unstable_check(integrator.dt,integrator.t,integrator.u)
-    if integrator.opts.verbose
-      warn("Instability detected. Aborting")
-    end
-    postamble!(integrator)
-    return integrator.sol
-  end
-end
-
 @inline function savevalues!(integrator::ODEIntegrator)
   while !isempty(integrator.opts.saveat) && integrator.tdir*top(integrator.opts.saveat) <= integrator.tdir*integrator.t # Perform saveat
     integrator.saveiter += 1
@@ -136,7 +112,7 @@ end
     dtnew = integrator.dt/q
     ttmp = integrator.t + integrator.dt
     integrator.isout = integrator.opts.isoutofdomain(ttmp,integrator.u)
-    integrator.accept_step = (!integrator.isout && integrator.EEst <= 1.0) || (integrator.opts.force_dtmin && integrator.dt <= integrator.opts.dtmin)
+    integrator.accept_step = (!integrator.isout && integrator.EEst <= 1.0) || (integrator.opts.force_dtmin && abs(integrator.dt) <= abs(integrator.opts.dtmin))
     if integrator.accept_step # Accept
       integrator.t = ttmp
       integrator.qold = max(integrator.EEst,integrator.opts.qoldinit)
@@ -229,16 +205,8 @@ end
 
 
 @inline function calc_dt_propose!(integrator,dtnew)
-  if integrator.tdir > 0
-    integrator.dtpropose = min(integrator.opts.dtmax,dtnew)
-  else
-    integrator.dtpropose = max(integrator.opts.dtmax,dtnew)
-  end
-  if integrator.tdir > 0
-    integrator.dtpropose = max(integrator.dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
-  else
-    integrator.dtpropose = min(integrator.dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
-  end
+  integrator.dtpropose = integrator.tdir*min(abs(integrator.opts.dtmax),abs(dtnew))
+  integrator.dtpropose = integrator.tdir*max(abs(integrator.dtpropose),abs(integrator.opts.dtmin))
 end
 
 @inline function fix_dt_at_bounds!(integrator)
@@ -262,7 +230,7 @@ end
     if t == ts_top
       pop!(tstops)
       integrator.just_hit_tstop = true
-    elseif t > ts_top
+    elseif integrator.tdir*t > integrator.tdir*ts_top
       if !integrator.dtchangeable
         change_t_via_interpolation!(integrator, pop!(tstops), Val{true})
         integrator.just_hit_tstop = true
