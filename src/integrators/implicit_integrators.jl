@@ -20,6 +20,9 @@ end
   @unpack t,dt,uprev,u,k = integrator
   @unpack uhold,u_old,rhs,adf = cache
   u_old[1] = uhold[1]
+  if integrator.iter > 1 && !integrator.u_modified
+    uhold[1] = current_extrapolant(t+dt,integrator)
+  end # else uhold is previous value.
   rhs.t = t
   rhs.dt = dt
   if alg_autodiff(integrator.alg)
@@ -155,6 +158,9 @@ end
   @unpack t,dt,uprev,u,k = integrator
   @unpack uhold,u_old,rhs,adf = cache
   u_old[1] = uhold[1]
+  if integrator.iter > 1 && !integrator.u_modified
+    uhold[1] = current_extrapolant(t+dt,integrator)
+  end # else uhold is previous value.
   rhs.t = t
   rhs.dt = dt
   rhs.f_old = integrator.fsalfirst

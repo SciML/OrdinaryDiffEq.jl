@@ -157,8 +157,17 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
   else
     uprev = deepcopy(u)
   end
+  if alg_extrapolates(alg)
+    if uType <: Array
+      uprev2 = copy(u)
+    else
+      uprev2 = deepcopy(u)
+    end
+  else
+    uprev2 = uprev
+  end
 
-  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,f,t,Val{isinplace})
+  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,Val{isinplace})
 
   if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
     id = CompositeInterpolationData(f,timeseries,ts,ks,alg_choice,notsaveat_idxs,cache)
@@ -208,7 +217,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
                              tTypeNoUnits,typeof(tdir),eltype(ks),SolType,
                              typeof(rate_prototype),FType,typeof(prog),cacheType,
                              typeof(opts)}(
-                             sol,u,k,t,tType(dt),f,uprev,tprev,
+                             sol,u,k,t,tType(dt),f,uprev,uprev2,tprev,
                              alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,
                              dtpropose,dt_mod,tdir,EEst,qoldinit,q11,
                              iter,saveiter,saveiter_dense,prog,cache,

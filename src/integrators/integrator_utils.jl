@@ -138,12 +138,14 @@ end
     integrator.isout = integrator.opts.isoutofdomain(ttmp,integrator.u)
     integrator.accept_step = (!integrator.isout && integrator.EEst <= 1.0) || (integrator.opts.force_dtmin && abs(integrator.dt) <= abs(integrator.opts.dtmin))
     if integrator.accept_step # Accept
+      integrator.tprev = integrator.t
       integrator.t = ttmp
       integrator.qold = max(integrator.EEst,integrator.opts.qoldinit)
       calc_dt_propose!(integrator,dtnew)
       handle_callbacks!(integrator)
     end
   else #Not adaptive
+    integrator.tprev = integrator.t
     integrator.t += integrator.dt
     integrator.accept_step = true
     integrator.dtpropose = integrator.dt
@@ -192,6 +194,13 @@ end
   integrator.accept_step = false # yay we got here, don't need this no more
 
   #Update uprev
+  if alg_extrapolates(integrator.alg)
+    if typeof(integrator.u) <: AbstractArray
+      recursivecopy!(integrator.uprev2,integrator.uprev)
+    else
+      integrator.uprev2 = integrator.uprev
+    end
+  end
   if typeof(integrator.u) <: AbstractArray
     recursivecopy!(integrator.uprev,integrator.u)
   else
@@ -220,9 +229,6 @@ end
       end
     end
   end
-
-  integrator.tprev = integrator.t
-
   integrator.dt_mod = one(typeof(integrator.t))
 end
 

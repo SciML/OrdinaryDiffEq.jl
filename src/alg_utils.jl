@@ -47,6 +47,10 @@ get_chunksize{CS,AD}(alg::Trapezoid{CS,AD}) = CS
 get_chunksize{CS,AD}(alg::Rosenbrock23{CS,AD}) = CS
 get_chunksize{CS,AD}(alg::Rosenbrock32{CS,AD}) = CS
 
+alg_extrapolates(alg::OrdinaryDiffEqAlgorithm) = false
+alg_extrapolates(alg::ImplicitEuler) = true
+alg_extrapolates(alg::Trapezoid) = true
+
 alg_autodiff(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have an autodifferentiation option defined.")
 alg_autodiff{CS,AD}(alg::ImplicitEuler{CS,AD}) = AD
 alg_autodiff{CS,AD}(alg::Trapezoid{CS,AD}) = AD

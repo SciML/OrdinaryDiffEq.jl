@@ -31,6 +31,25 @@ function current_interpolant(t::AbstractArray,integrator)
   [ode_interpolant(ϕ,integrator) for ϕ in Θ]
 end
 
+function current_extrapolant(t::Number,integrator)
+  Θ = (t-integrator.tprev)/(integrator.t-integrator.tprev)
+  ode_extrapolant(Θ,integrator)
+end
+
+function current_extrapolant(t::AbstractArray,integrator)
+  Θ = (t.-integrator.tprev)./(integrator.t-integrator.tprev)
+  [ode_extrapolant(ϕ,integrator) for ϕ in Θ]
+end
+
+function ode_extrapolant(Θ,integrator)
+  ode_addsteps!(integrator)
+  if !(typeof(integrator.cache) <: CompositeCache)
+    ode_interpolant(Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,integrator.cache)
+  else
+    ode_interpolant(Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,integrator.cache.caches[integrator.cache.current])
+  end
+end
+
 ##
 
 """
@@ -101,10 +120,16 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
 function ode_interpolant(Θ,dt,y₀,y₁,k,cache) # Default interpolant is Hermite
-  (1-Θ)*y₀+Θ*y₁+Θ*(Θ-1)*((1-2Θ)*(y₁-y₀)+(Θ-1)*dt*k[1] + Θ*dt*k[2])
+  if typeof(y₀) <: AbstractArray
+    out = similar(y₀)
+    for i in eachindex(out)
+      out[i] = (1-Θ)*y₀[i]+Θ*y₁[i]+Θ*(Θ-1)*((1-2Θ)*(y₁[i]-y₀[i])+(Θ-1)*dt*k[1][i] + Θ*dt*k[2][i])
+    end
+  else
+    out = (1-Θ)*y₀+Θ*y₁+Θ*(Θ-1)*((1-2Θ)*(y₁-y₀)+(Θ-1)*dt*k[1] + Θ*dt*k[2])
+  end
+  out
 end
-
-
 
 """
 By default, simpledense
@@ -138,7 +163,11 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
 """
 function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP5Cache)
   Θ1 = 1-Θ
-  y₀ + dt*Θ*(k[1]+Θ1*(k[2]+Θ*(k[3]+Θ1*k[4])))
+  out = similar(y₀)
+  for i in eachindex(out)
+    out[i] = y₀[i] + dt*Θ*(k[1][i]+Θ1*(k[2][i]+Θ*(k[3][i]+Θ1*k[4][i])))
+  end
+  out
 end
 
 """
@@ -146,7 +175,11 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
 """
 function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP5ThreadedCache)
   Θ1 = 1-Θ
-  y₀ + dt*Θ*(k[1]+Θ1*(k[2]+Θ*(k[3]+Θ1*k[4])))
+  out = similar(y₀)
+  for i in eachindex(out)
+    out[i] = y₀[i] + dt*Θ*(k[1][i]+Θ1*(k[2][i]+Θ*(k[3][i]+Θ1*k[4][i])))
+  end
+  out
 end
 
 """
@@ -166,7 +199,11 @@ function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Rosenbrock23Cache)
   d = cache.tab.d
   c1 = Θ*(1-Θ)/(1-2d)
   c2 = Θ*(Θ-2d)/(1-2d)
-  y₀ + dt*(c1*k[1] + c2*k[2])
+  out = similar(y₀)
+  for i in eachindex(out)
+    out[i] = y₀[i] + dt*(c1*k[1][i] + c2*k[2][i])
+  end
+  out
 end
 
 """
@@ -187,6 +224,11 @@ function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Rosenbrock32Cache)
   c1 = Θ*(1-Θ)/(1-2d)
   c2 = Θ*(Θ-2d)/(1-2d)
   y₀ + dt*(c1*k[1] + c2*k[2])
+  out = similar(y₀)
+  for i in eachindex(out)
+    out[i] = y₀[i] + dt*(c1*k[1][i] + c2*k[2][i])
+  end
+  out
 end
 
 """
@@ -207,7 +249,7 @@ function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Tsit5Cache)
   for i in eachindex(out)
     out[i] = y₀[i] + dt*(k[1][i]*b1Θ + k[2][i]*b2Θ + k[3][i]*b3Θ + k[4][i]*b4Θ + k[5][i]*b5Θ + k[6][i]*b6Θ + k[7][i]*b7Θ)
   end
-  return out
+  out
 end
 
 """
@@ -342,7 +384,11 @@ function ode_interpolant(Θ,dt,y₀,y₁,k,cache::BS5Cache)
   b9Θ =                     r093*Θ3 + r094*Θ4 + r095*Θ5 + r096*Θ6
   b10Θ=           r102*Θ2 + r103*Θ3 + r104*Θ4 + r105*Θ5 + r106*Θ6
   b11Θ=           r112*Θ2 + r113*Θ3 + r114*Θ4 + r115*Θ5 + r116*Θ6
-  y₀ + dt*Θ*k[1] + dt*(k[1]*b1Θ  + k[3]*b3Θ + k[4]*b4Θ  + k[5]*b5Θ + k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ + k[10]*b10Θ + k[11]*b11Θ)
+  out = similar(y₀)
+  for i in eachindex(out)
+    out[i] = y₀[i] + dt*Θ*k[1][i] + dt*(k[1][i]*b1Θ  + k[3][i]*b3Θ + k[4][i]*b4Θ  + k[5][i]*b5Θ + k[6][i]*b6Θ + k[7][i]*b7Θ + k[8][i]*b8Θ + k[9][i]*b9Θ + k[10][i]*b10Θ + k[11][i]*b11Θ)
+  end
+  out
 end
 
 """
@@ -365,7 +411,12 @@ function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern6Cache)
   b10Θ=          r102*Θ2 + r103*Θ3 + r104*Θ4 + r105*Θ5 + r106*Θ6
   b11Θ=          r112*Θ2 + r113*Θ3 + r114*Θ4 + r115*Θ5 + r116*Θ6
   b12Θ=          r122*Θ2 + r123*Θ3 + r124*Θ4 + r125*Θ5 + r126*Θ6
-  y₀ + dt*(k[1]*b1Θ + k[4]*b4Θ + k[5]*b5Θ + k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ + k[10]*b10Θ + k[11]*b11Θ + k[12]*b12Θ)
+  out = similar(y₀)
+  for i in eachindex(out)
+    out[i] = y₀[i] + dt*(k[1][i]*b1Θ + k[4][i]*b4Θ + k[5][i]*b5Θ + k[6][i]*b6Θ + k[7][i]*b7Θ + k[8][i]*b8Θ + k[9][i]*b9Θ + k[10][i]*b10Θ + k[11][i]*b11Θ + k[12][i]*b12Θ)
+  end
+  out
+
 end
 
 """
@@ -442,7 +493,11 @@ function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern7Cache)
   b14Θ=          r142*Θ2 + r143*Θ3 + r144*Θ4 + r145*Θ5 + r146*Θ6 + r147*Θ7
   b15Θ=          r152*Θ2 + r153*Θ3 + r154*Θ4 + r155*Θ5 + r156*Θ6 + r157*Θ7
   b16Θ=          r162*Θ2 + r163*Θ3 + r164*Θ4 + r165*Θ5 + r166*Θ6 + r167*Θ7
-  y₀ + dt*(k[1]*b1Θ + k[4]*b4Θ + k[5]*b5Θ + k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ + k[11]*b11Θ + k[12]*b12Θ + k[13]*b13Θ + k[14]*b14Θ + k[15]*b15Θ + k[16]*b16Θ)
+  out = similar(y₀)
+  for i in eachindex(out)
+    out[i] = y₀[i] + dt*(k[1][i]*b1Θ + k[4][i]*b4Θ + k[5][i]*b5Θ + k[6][i]*b6Θ + k[7][i]*b7Θ + k[8][i]*b8Θ + k[9][i]*b9Θ + k[11][i]*b11Θ + k[12][i]*b12Θ + k[13][i]*b13Θ + k[14][i]*b14Θ + k[15][i]*b15Θ + k[16][i]*b16Θ)
+  end
+  out
 end
 
 """
@@ -504,7 +559,11 @@ function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern8Cache)
   b19Θ=          r192*Θ2 + r193*Θ3 + r194*Θ4 + r195*Θ5 + r196*Θ6 + r197*Θ7 + r198*Θ8
   b20Θ=          r202*Θ2 + r203*Θ3 + r204*Θ4 + r205*Θ5 + r206*Θ6 + r207*Θ7 + r208*Θ8
   b21Θ=          r212*Θ2 + r213*Θ3 + r214*Θ4 + r215*Θ5 + r216*Θ6 + r217*Θ7 + r218*Θ8
-  y₀ + dt*(k[1]*b1Θ + k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ + k[10]*b10Θ + k[11]*b11Θ + k[12]*b12Θ + k[14]*b14Θ + k[15]*b15Θ + k[16]*b16Θ + k[17]*b17Θ + k[18]*b18Θ + k[19]*b19Θ + k[20]*b20Θ + k[21]*b21Θ)
+  out = similar(y₀)
+  for i in eachindex(out)
+    out[i] = y₀[i] + dt*(k[1][i]*b1Θ + k[6][i]*b6Θ + k[7][i]*b7Θ + k[8][i]*b8Θ + k[9][i]*b9Θ + k[10][i]*b10Θ + k[11][i]*b11Θ + k[12][i]*b12Θ + k[14][i]*b14Θ + k[15][i]*b15Θ + k[16][i]*b16Θ + k[17][i]*b17Θ + k[18][i]*b18Θ + k[19][i]*b19Θ + k[20][i]*b20Θ + k[21][i]*b21Θ)
+  end
+  out
 end
 
 """
@@ -574,7 +633,11 @@ function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern9Cache)
   b24Θ=          r242*Θ2 + r243*Θ3 + r244*Θ4 + r245*Θ5 + r246*Θ6 + r247*Θ7 + r248*Θ8 + r249*Θ9
   b25Θ=          r252*Θ2 + r253*Θ3 + r254*Θ4 + r255*Θ5 + r256*Θ6 + r257*Θ7 + r258*Θ8 + r259*Θ9
   b26Θ=          r262*Θ2 + r263*Θ3 + r264*Θ4 + r265*Θ5 + r266*Θ6 + r267*Θ7 + r268*Θ8 + r269*Θ9
-  y₀ + dt*(k[1]*b1Θ + k[8]*b8Θ + k[9]*b9Θ + k[10]*b10Θ + k[11]*b11Θ + k[12]*b12Θ + k[13]*b13Θ + k[14]*b14Θ + k[15]*b15Θ + k[17]*b17Θ + k[18]*b18Θ + k[19]*b19Θ + k[20]*b20Θ + k[21]*b21Θ + k[22]*b22Θ + k[23]*b23Θ + k[24]*b24Θ + k[25]*b25Θ + k[26]*b26Θ)
+  out = similar(y₀)
+  for i in eachindex(out)
+    out[i] = y₀[i] + dt*(k[1][i]*b1Θ + k[8][i]*b8Θ + k[9][i]*b9Θ + k[10][i]*b10Θ + k[11][i]*b11Θ + k[12][i]*b12Θ + k[13][i]*b13Θ + k[14][i]*b14Θ + k[15][i]*b15Θ + k[17][i]*b17Θ + k[18][i]*b18Θ + k[19][i]*b19Θ + k[20][i]*b20Θ + k[21][i]*b21Θ + k[22][i]*b22Θ + k[23][i]*b23Θ + k[24][i]*b24Θ + k[25][i]*b25Θ + k[26][i]*b26Θ)
+  end
+  out
 end
 
 """
@@ -591,8 +654,11 @@ end
 """
 function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP8Cache)
   Θ1 = 1-Θ
-  conpar = k[4] + Θ*(k[5] + Θ1*(k[6]+Θ*k[7]))
-  y₀ + dt*Θ*(k[1] + Θ1*(k[2] + Θ*(k[3]+Θ1*conpar)))
+  out = similar(y₀)
+  for i in eachindex(out)
+    out[i] = y₀[i] + dt*Θ*(k[1][i] + Θ1*(k[2][i] + Θ*(k[3][i]+Θ1*(k[4][i] + Θ*(k[5][i] + Θ1*(k[6][i]+Θ*k[7][i]))))))
+  end
+  out
 end
 
 function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenbrock23ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
