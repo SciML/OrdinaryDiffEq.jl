@@ -281,5 +281,8 @@ end
   integrator.reeval_fsal = false
 end
 
-(integrator::ODEIntegrator)(t) = current_interpolant(t,integrator)
-(integrator::ODEIntegrator)(val,t) = current_interpolant!(val,t,integrator)
+function (integrator::ODEIntegrator)(t,idxs=indices(integrator.uprev),deriv=Val{0})
+  current_interpolant(t,integrator,idxs,deriv)
+end
+
+(integrator::ODEIntegrator)(val::AbstractArray,t::AbstractArray,idxs=indices(integrator.uprev),deriv=Val{0}) = current_interpolant!(val,t,integrator,idxs,deriv)

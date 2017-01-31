@@ -12,107 +12,79 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(integrator,f=integrator.f,alwa
   end
 end
 
-function ode_interpolant(Θ,integrator)
-  idxs = nothing
-  deriv = Val{0}
-  if idxs == nothing
-    idxs_internal = indices(integrator.uprev)
-  else
-    idxs_internal = idxs
-  end
+function ode_interpolant(Θ,integrator::DEIntegrator,idxs=indices(integrator.uprev),deriv=Val{0})
   ode_addsteps!(integrator)
   if !(typeof(integrator.cache) <: CompositeCache)
-    ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache,idxs_internal,deriv)
+    ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache,idxs,deriv)
   else
-    ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache.caches[integrator.cache.current],idxs_internal,deriv)
+    ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache.caches[integrator.cache.current],idxs,deriv)
   end
 end
 
-function ode_interpolant!(val,Θ,integrator)
-  idxs = nothing
-  deriv = Val{0}
-  if idxs == nothing
-    idxs_internal = indices(integrator.uprev)
-  else
-    idxs_internal = idxs
-  end
+function ode_interpolant!(val,Θ,integrator::DEIntegrator,idxs=indices(integrator.uprev),deriv=Val{0})
   ode_addsteps!(integrator)
   if !(typeof(integrator.cache) <: CompositeCache)
-    ode_interpolant!(val,Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache,idxs_internal,deriv)
+    ode_interpolant!(val,Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache,idxs,deriv)
   else
-    ode_interpolant!(val,Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache.caches[integrator.cache.current],idxs_internal,deriv)
+    ode_interpolant!(val,Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache.caches[integrator.cache.current],idxs,deriv)
   end
 end
 
-function current_interpolant(t::Number,integrator)
+function current_interpolant(t::Number,integrator::DEIntegrator,idxs=indices(integrator.uprev),deriv=Val{0})
   Θ = (t-integrator.tprev)/integrator.dt
-  ode_interpolant(Θ,integrator)
+  ode_interpolant(Θ,integrator,idxs,deriv)
 end
 
-function current_interpolant(t::AbstractArray,integrator)
+function current_interpolant(t,integrator::DEIntegrator,idxs=indices(integrator.uprev),deriv=Val{0})
   Θ = (t.-integrator.tprev)./integrator.dt
-  [ode_interpolant(ϕ,integrator) for ϕ in Θ]
+  [ode_interpolant(ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
-function current_interpolant!(val,t::Number,integrator)
+function current_interpolant!(val,t::Number,integrator::DEIntegrator,idxs=indices(integrator.uprev),deriv=Val{0})
   Θ = (t-integrator.tprev)/integrator.dt
-  ode_interpolant!(val,Θ,integrator)
+  ode_interpolant!(val,Θ,integrator,idxs,deriv)
 end
 
-function current_interpolant!(val,t::AbstractArray,integrator)
+function current_interpolant!(val,t,integrator::DEIntegrator,idxs=indices(integrator.uprev),deriv=Val{0})
   t .= (t.-integrator.tprev)./integrator.dt
-  [ode_interpolant!(val,ϕ,integrator) for ϕ in t]
+  [ode_interpolant!(val,ϕ,integrator,idxs,deriv) for ϕ in t]
 end
 
-function current_extrapolant(t::Number,integrator)
+function current_extrapolant(t::Number,integrator::DEIntegrator,idxs=indices(integrator.uprev),deriv=Val{0})
   Θ = (t-integrator.tprev)/(integrator.t-integrator.tprev)
-  ode_extrapolant(Θ,integrator)
+  ode_extrapolant(Θ,integrator,idxs,deriv)
 end
 
-function current_extrapolant!(val,t::Number,integrator)
+function current_extrapolant!(val,t::Number,integrator::DEIntegrator,idxs=indices(integrator.uprev),deriv=Val{0})
   Θ = (t-integrator.tprev)/(integrator.t-integrator.tprev)
-  ode_extrapolant!(val,Θ,integrator)
+  ode_extrapolant!(val,Θ,integrator,idxs,deriv)
 end
 
-function current_extrapolant(t::AbstractArray,integrator)
+function current_extrapolant(t::AbstractArray,integrator::DEIntegrator,idxs=indices(integrator.uprev),deriv=Val{0})
   Θ = (t.-integrator.tprev)./(integrator.t-integrator.tprev)
-  [ode_extrapolant(ϕ,integrator) for ϕ in Θ]
+  [ode_extrapolant(ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
-function current_extrapolant!(val,t::AbstractArray,integrator)
+function current_extrapolant!(val,t,integrator::DEIntegrator,idxs=indices(integrator.uprev),deriv=Val{0})
   t .= (t.-integrator.tprev)./(integrator.t-integrator.tprev)
-  [ode_extrapolant!(val,ϕ,integrator) for ϕ in t]
+  [ode_extrapolant!(val,ϕ,integrator,idxs,deriv) for ϕ in t]
 end
 
-function ode_extrapolant!(val,Θ,integrator)
-  idxs = nothing
-  deriv = Val{0}
-  if idxs == nothing
-    idxs_internal = indices(integrator.uprev)
-  else
-    idxs_internal = idxs
-  end
+function ode_extrapolant!(val,Θ,integrator::DEIntegrator,idxs,deriv)
   ode_addsteps!(integrator)
   if !(typeof(integrator.cache) <: CompositeCache)
-    ode_interpolant!(val,Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,integrator.cache,idxs_internal,deriv)
+    ode_interpolant!(val,Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,integrator.cache,idxs,deriv)
   else
-    ode_interpolant!(val,Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,integrator.cache.caches[integrator.cache.current],idxs_internal,deriv)
+    ode_interpolant!(val,Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,integrator.cache.caches[integrator.cache.current],idxs,deriv)
   end
 end
 
-function ode_extrapolant(Θ,integrator)
-  idxs = nothing
-  deriv = Val{0}
-  if idxs == nothing
-    idxs_internal = indices(integrator.uprev)
-  else
-    idxs_internal = idxs
-  end
+function ode_extrapolant(Θ,integrator::DEIntegrator,idxs=indices(integrator.uprev),deriv=Val{0})
   ode_addsteps!(integrator)
   if !(typeof(integrator.cache) <: CompositeCache)
-    ode_interpolant(Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,integrator.cache,idxs_internal,deriv)
+    ode_interpolant(Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,integrator.cache,idxs,deriv)
   else
-    ode_interpolant(Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,integrator.cache.caches[integrator.cache.current],idxs_internal,deriv)
+    ode_interpolant(Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,integrator.cache.caches[integrator.cache.current],idxs,deriv)
   end
 end
 
@@ -295,7 +267,7 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache,always_
 end
 
 function ode_interpolant(Θ,dt,y₀,y₁,k,cache::OrdinaryDiffEqMutableCache,idxs,T::Type{Val{0}})
-  out = similar(y₀)
+  out = similar(y₀,idxs)
   ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T)
   out
 end
@@ -307,8 +279,8 @@ Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
 function ode_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{0}}) # Default interpolant is Hermite
   if typeof(y₀) <: AbstractArray
-    out = similar(y₀)
-    for i in eachindex(out)
+    out = similar(y₀,idxs)
+    for i in idxs
       out[i] = (1-Θ)*y₀[i]+Θ*y₁[i]+Θ*(Θ-1)*((1-2Θ)*(y₁[i]-y₀[i])+(Θ-1)*dt*k[1][i] + Θ*dt*k[2][i])
     end
   else
