@@ -30,6 +30,7 @@ type DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5,F6,tstopsTy
   unstable_check::F6
   verbose::Bool
   calck::Bool
+  force_dtmin::Bool
   advance_to_tstop::Bool
   stop_at_next_tstop::Bool
 end

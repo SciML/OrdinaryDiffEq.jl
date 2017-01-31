@@ -18,6 +18,7 @@ initialize{uType}(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) =
   end
 
   integrator.iter += 1
+  fix_dt_at_bounds!(integrator)
   modify_dt_for_tstops!(integrator)
   choose_algorithm!(integrator,integrator.cache)
 
@@ -48,9 +49,9 @@ end
     postamble!(integrator)
     return integrator.sol
   end
-  if integrator.dt == zero(integrator.t)
+  if !integrator.opts.force_dtmin && integrator.dt == integrator.opts.dtmin
     if integrator.opts.verbose
-      warn("dt == 0. Aborting")
+      warn("dt == dtmin. Aborting. If you would like to force continuation with dt=dtmin, set force_dtmin=true")
     end
     postamble!(integrator)
     return integrator.sol
@@ -135,9 +136,10 @@ end
     dtnew = integrator.dt/q
     ttmp = integrator.t + integrator.dt
     integrator.isout = integrator.opts.isoutofdomain(ttmp,integrator.u)
-    integrator.accept_step = (!integrator.isout && integrator.EEst <= 1.0)
+    integrator.accept_step = (!integrator.isout && integrator.EEst <= 1.0) || (integrator.opts.force_dtmin && integrator.dt <= integrator.opts.dtmin)
     if integrator.accept_step # Accept
       integrator.t = ttmp
+      integrator.qold = max(integrator.EEst,integrator.opts.qoldinit)
       calc_dt_propose!(integrator,dtnew)
       handle_callbacks!(integrator)
     end
@@ -227,7 +229,6 @@ end
 
 
 @inline function calc_dt_propose!(integrator,dtnew)
-  integrator.qold = max(integrator.EEst,integrator.opts.qoldinit)
   if integrator.tdir > 0
     integrator.dtpropose = min(integrator.opts.dtmax,dtnew)
   else
@@ -237,6 +238,19 @@ end
     integrator.dtpropose = max(integrator.dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
   else
     integrator.dtpropose = min(integrator.dtpropose,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
+  end
+end
+
+@inline function fix_dt_at_bounds!(integrator)
+  if integrator.tdir > 0
+    integrator.dt = min(integrator.opts.dtmax,integrator.dt)
+  else
+    integrator.dt = max(integrator.opts.dtmax,integrator.dt)
+  end
+  if integrator.tdir > 0
+    integrator.dt = max(integrator.dt,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
+  else
+    integrator.dt = min(integrator.dt,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
   end
 end
 

@@ -62,7 +62,7 @@ affect_neg! = function (integrator)
   integrator.u[2] = -integrator.u[2]
 end
 
-callback = ContinuousCallback(condtion,affect!,affect_neg!)
+callback = ContinuousCallback(condtion,affect!,affect_neg!,interp_points=100)
 
 u0 = [50.0,0.0]
 tspan = (0.0,15.0)
@@ -125,7 +125,6 @@ affect! = function (integrator)
   terminate!(integrator)
 end
 
-interp_points = 10
 terminate_callback = ContinuousCallback(condtion,affect!)
 
 tspan2 = (0.0,Inf)
@@ -143,7 +142,7 @@ affect2! = function (integrator)
     integrator.u[2] = -integrator.u[2]
   end
 end
-terminate_callback2 = ContinuousCallback(condtion,nothing,affect2!)
+terminate_callback2 = ContinuousCallback(condtion,nothing,affect2!,interp_points=100)
 
 
 sol5 = solve(prob2,Vern7(),callback=terminate_callback2)
@@ -159,7 +158,7 @@ affect! = function (integrator)
   terminate!(integrator)
 end
 
-terminate_callback3 = ContinuousCallback(condtion,affect!)
+terminate_callback3 = ContinuousCallback(condtion,affect!,interp_points=100)
 
 bounce_then_exit = CallbackSet(callback,terminate_callback3)
 
