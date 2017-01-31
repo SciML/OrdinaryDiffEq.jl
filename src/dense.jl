@@ -87,6 +87,46 @@ function ode_interpolation(tvals,id)
 end
 
 """
+ode_interpolation(tvals,ts,timeseries,ks)
+
+Get the value at tvals where the solution is known at the
+times ts (sorted), with values timeseries and derivatives ks
+"""
+function ode_interpolation!(vals,tvals,id)
+  @unpack ts,timeseries,ks,f,notsaveat_idxs,cache = id
+  tdir = sign(ts[end]-ts[1])
+  idx = sortperm(tvals)
+  i = 2 # Start the search thinking it's between ts[1] and ts[2]
+  for j in idx
+    t = tvals[j]
+    i = findfirst((x)->tdir*x>=tdir*t,ts[notsaveat_idxs[i:end]])+i-1 # It's in the interval ts[i-1] to ts[i]
+    if ts[notsaveat_idxs[i]] == t
+      vals[j] = timeseries[notsaveat_idxs[i]]
+    elseif ts[notsaveat_idxs[i-1]] == t # Can happen if it's the first value!
+      vals[j] = timeseries[notsaveat_idxs[i-1]]
+    else
+      dt = ts[notsaveat_idxs[i]] - ts[notsaveat_idxs[i-1]]
+      Θ = (t-ts[notsaveat_idxs[i-1]])/dt
+      if typeof(cache) <: CompositeCache
+        ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache.caches[id.alg_choice[notsaveat_idxs[i-1]]]) # update the kcurrent
+        if eltype(timeseries) <: AbstractArray
+          ode_interpolant!(vals[j],Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]])
+        else
+          vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]])
+        end
+      else
+        ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache) # update the kcurrent
+        if eltype(timeseries) <: AbstractArray
+          ode_interpolant!(vals[j],Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache)
+        else
+          vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache)
+        end
+      end
+    end
+  end
+end
+
+"""
 ode_interpolation(tval::Number,ts,timeseries,ks)
 
 Get the value at tval where the solution is known at the
@@ -112,6 +152,33 @@ function ode_interpolation(tval::Number,id)
     end
   end
   val
+end
+
+"""
+ode_interpolation!(out,tval::Number,ts,timeseries,ks)
+
+Get the value at tval where the solution is known at the
+times ts (sorted), with values timeseries and derivatives ks
+"""
+function ode_interpolation!(out,tval::Number,id)
+  @unpack ts,timeseries,ks,f,notsaveat_idxs,cache = id
+  tdir = sign(ts[end]-ts[1])
+  i = findfirst((x)->tdir*x>=tdir*tval,@view ts[notsaveat_idxs]) # It's in the interval ts[i-1] to ts[i]
+  if ts[notsaveat_idxs[i]] == tval
+    val = timeseries[notsaveat_idxs[i]]
+  elseif ts[notsaveat_idxs[i-1]] == tval # Can happen if it's the first value!
+    push!(vals,timeseries[notsaveat_idxs[i-1]])
+  else
+    dt = ts[notsaveat_idxs[i]] - ts[notsaveat_idxs[i-1]]
+    Θ = (tval-ts[notsaveat_idxs[i-1]])/dt
+    if typeof(cache) <: CompositeCache
+      ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache.caches[id.alg_choice[notsaveat_idxs[i-1]]]) # update the kcurrent
+      ode_interpolant!(out,Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]])
+    else
+      ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache) # update the kcurrent
+      ode_interpolant!(out,Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache)
+    end
+  end
 end
 
 """

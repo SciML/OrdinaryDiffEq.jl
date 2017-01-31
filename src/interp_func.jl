@@ -19,7 +19,8 @@ end
 
 (interp::InterpolationData)(tvals) = ode_interpolation(tvals,interp)
 (interp::CompositeInterpolationData)(tvals) = ode_interpolation(tvals,interp)
-
+(interp::InterpolationData)(val,tvals) = ode_interpolation!(val,tvals,interp)
+(interp::CompositeInterpolationData)(val,tvals) = ode_interpolation!(val,tvals,interp)
 
 function InterpolationData(id::InterpolationData,f)
   InterpolationData(f,id.timeseries,
