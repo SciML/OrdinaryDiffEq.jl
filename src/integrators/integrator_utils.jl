@@ -49,9 +49,9 @@ end
     postamble!(integrator)
     return integrator.sol
   end
-  if !integrator.opts.force_dtmin && integrator.dt == integrator.opts.dtmin
+  if !integrator.opts.force_dtmin && integrator.dt <= integrator.opts.dtmin
     if integrator.opts.verbose
-      warn("dt == dtmin. Aborting. If you would like to force continuation with dt=dtmin, set force_dtmin=true")
+      warn("dt <= dtmin. Aborting. If you would like to force continuation with dt=dtmin, set force_dtmin=true")
     end
     postamble!(integrator)
     return integrator.sol

@@ -24,14 +24,14 @@ function done(integrator::ODEIntegrator,state)
       warn("Instability detected. Aborting")
     end
     postamble!(integrator)
-    return nothing
+    return true
   end
-  if integrator.dt == zero(integrator.t)
+  if !integrator.opts.force_dtmin && integrator.dt <= integrator.opts.dtmin
     if integrator.opts.verbose
-      warn("dt == 0. Aborting")
+      warn("dt <= dtmin. Aborting. If you would like to force continuation with dt=dtmin, set force_dtmin=true")
     end
     postamble!(integrator)
-    return nothing
+    return true
   end
   if isempty(integrator.opts.tstops)
     postamble!(integrator)
