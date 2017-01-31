@@ -972,7 +972,7 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUni
   ImplicitEulerCache{typeof(u),typeof(uhold),typeof(dual_cache),typeof(k),typeof(rhs),typeof(adf),determine_chunksize(u,alg)}(u,uprev,uprev2,uhold,dual_cache,u_old,k,fsalfirst,rhs,adf)
 end
 
-immutable ImplicitEulerConstantCache{vecuType,rhsType,adfType,CS} <: OrdinaryDiffEqMutableCache
+immutable ImplicitEulerConstantCache{vecuType,rhsType,adfType,CS} <: OrdinaryDiffEqConstantCache
   uhold::vecuType
   u_old::vecuType
   rhs::rhsType
@@ -1025,7 +1025,7 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,u
 end
 
 
-immutable TrapezoidConstantCache{vecuType,rhsType,adfType,CS} <: OrdinaryDiffEqMutableCache
+immutable TrapezoidConstantCache{vecuType,rhsType,adfType,CS} <: OrdinaryDiffEqConstantCache
   uhold::vecuType
   u_old::vecuType
   rhs::rhsType
