@@ -35,7 +35,7 @@ end
 
   Wfact = integrator.alg.factorization(W)
 
-  for i in eachindex(u)
+  for i in uidx
     linsolve_tmp[i] = fsalfirst[i] + dt*d*dT[i]
   end
 
@@ -46,7 +46,7 @@ end
   end
   f(t+dt/2,u,f₁)
 
-  for i in eachindex(u)
+  for i in uidx
     linsolve_tmp[i] = f₁[i]-k₁[i]
   end
 
@@ -58,7 +58,7 @@ end
   if integrator.opts.adaptive
     f(t+dt,u,integrator.fsallast)
 
-    for i in eachindex(u)
+    for i in uidx
       linsolve_tmp[i] = integrator.fsallast[i] - c₃₂*(k₂[i]-f₁[i])-2(k₁[i]-fsalfirst[i])+dt*dT[i]
     end
 
@@ -105,7 +105,7 @@ end
 
   Wfact = integrator.alg.factorization(W)
 
-  for i in eachindex(u)
+  for i in uidx
     linsolve_tmp[i] = fsalfirst[i] + dt*d*dT[i]
   end
 
@@ -116,7 +116,7 @@ end
     u[i]=uprev[i]+dt*k₁[i]/2
   end
   f(t+dt/2,u,f₁)
-  for i in eachindex(u)
+  for i in uidx
     linsolve_tmp[i] = f₁[i]-k₁[i]
   end
   @into! vectmp2 = Wfact\linsolve_tmp
@@ -128,7 +128,7 @@ end
     tmp[i] = uprev[i] + dt*k₂[i]
   end
   f(t+dt,tmp,integrator.fsallast)
-  for i in eachindex(u)
+  for i in uidx
     linsolve_tmp[i] = integrator.fsallast[i] - c₃₂*(k₂[i]-f₁[i])-2(k₁[i]-fsalfirst[i])+dt*dT[i]
   end
   @into! vectmp3 = Wfact\linsolve_tmp
