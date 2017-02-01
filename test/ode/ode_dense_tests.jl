@@ -20,6 +20,12 @@ interpd_idxs = sol(0:1//2^(4):1,idxs=1:2:5)
 
 @test minimum([interpd_idxs[i] == interpd[i][1:2:5] for i in 1:length(interpd)])
 
+interpd_single = sol(0:1//2^(4):1,idxs=1)
+
+@test typeof(interpd_single) <: Vector{Float64}
+
+@test typeof(sol(0.5,idxs=1)) <: Float64
+
 A = rand(4,2)
 sol(A,0.777)
 A == sol(0.777)

@@ -103,6 +103,8 @@ function ode_interpolation(tvals,id,idxs,deriv)
   i = 2 # Start the search thinking it's between ts[1] and ts[2]
   if idxs == nothing
     vals = Vector{eltype(timeseries)}(length(tvals))
+  elseif typeof(idxs) <: Number
+    vals = Vector{eltype(first(timeseries))}(length(tvals))
   else
     vals = Vector{Vector{eltype(first(timeseries))}}(length(tvals))
   end
@@ -303,7 +305,11 @@ function ode_interpolant(Θ,dt,y₀,y₁,k,cache::OrdinaryDiffEqMutableCache,idx
     idxs_internal=idxs
   end
   ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs_internal,T)
-  out
+  if typeof(idxs) <: Number
+    return first(out)
+  else
+    return out
+  end
 end
 
 """
