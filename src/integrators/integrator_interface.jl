@@ -5,11 +5,11 @@
   if t < integrator.tprev
     error("Current interpolant only works between tprev and t")
   elseif t != integrator.t
-    new_u = integrator(t)
+
     if typeof(integrator.u) <: AbstractArray
-      recursivecopy!(integrator.u,new_u)
+      integrator(integrator.u,t)
     else
-      integrator.u = new_u
+      integrator.u = integrator(t)
     end
     integrator.t = t
     integrator.dt = integrator.t - integrator.tprev
