@@ -291,7 +291,7 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache,always_
       f(t,uprev,rtmp)
       copyat_or_push!(k,1,rtmp)
       f(t+dt,u,rtmp)
-      copyat_or_push!(k,2,rtmp)
+      copyat_or_push!(k,2,rtmp,Val{false})
     end
   end
   nothing
