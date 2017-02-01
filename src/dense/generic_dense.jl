@@ -4,7 +4,7 @@
 # get_tmp_arr(integrator.cache) which gives a pointer to some
 # cache array which can be modified.
 
-function ode_addsteps!{calcVal,calcVal2,calcVal3}(integrator,f=integrator.f,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+@inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(integrator,f=integrator.f,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if !(typeof(integrator.cache) <: CompositeCache)
     ode_addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.u,integrator.dt,f,integrator.cache,always_calc_begin,allow_calc_end,force_calc_end)
   else
@@ -12,7 +12,7 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(integrator,f=integrator.f,alwa
   end
 end
 
-function ode_interpolant(Θ,integrator::DEIntegrator,idxs,deriv)
+@inline function ode_interpolant(Θ,integrator::DEIntegrator,idxs,deriv)
   ode_addsteps!(integrator)
   if !(typeof(integrator.cache) <: CompositeCache)
     val = ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache,idxs,deriv)
@@ -22,7 +22,7 @@ function ode_interpolant(Θ,integrator::DEIntegrator,idxs,deriv)
   val
 end
 
-function ode_interpolant!(val,Θ,integrator::DEIntegrator,idxs,deriv)
+@inline function ode_interpolant!(val,Θ,integrator::DEIntegrator,idxs,deriv)
   ode_addsteps!(integrator)
   if !(typeof(integrator.cache) <: CompositeCache)
     ode_interpolant!(val,Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache,idxs,deriv)
@@ -31,47 +31,47 @@ function ode_interpolant!(val,Θ,integrator::DEIntegrator,idxs,deriv)
   end
 end
 
-function current_interpolant(t::Number,integrator::DEIntegrator,idxs,deriv)
+@inline function current_interpolant(t::Number,integrator::DEIntegrator,idxs,deriv)
   Θ = (t-integrator.tprev)/integrator.dt
   ode_interpolant(Θ,integrator,idxs,deriv)
 end
 
-function current_interpolant(t,integrator::DEIntegrator,idxs,deriv)
+@inline function current_interpolant(t,integrator::DEIntegrator,idxs,deriv)
   Θ = (t.-integrator.tprev)./integrator.dt
   [ode_interpolant(ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
-function current_interpolant!(val,t::Number,integrator::DEIntegrator,idxs,deriv)
+@inline function current_interpolant!(val,t::Number,integrator::DEIntegrator,idxs,deriv)
   Θ = (t-integrator.tprev)/integrator.dt
   ode_interpolant!(val,Θ,integrator,idxs,deriv)
 end
 
-function current_interpolant!(val,t,integrator::DEIntegrator,idxs,deriv)
+@inline function current_interpolant!(val,t,integrator::DEIntegrator,idxs,deriv)
   Θ = (t.-integrator.tprev)./integrator.dt
   [ode_interpolant!(val,ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
-function current_extrapolant(t::Number,integrator::DEIntegrator,idxs=size(integrator.uprev),deriv=Val{0})
+@inline function current_extrapolant(t::Number,integrator::DEIntegrator,idxs=size(integrator.uprev),deriv=Val{0})
   Θ = (t-integrator.tprev)/(integrator.t-integrator.tprev)
   ode_extrapolant(Θ,integrator,idxs,deriv)
 end
 
-function current_extrapolant!(val,t::Number,integrator::DEIntegrator,idxs=size(integrator.uprev),deriv=Val{0})
+@inline function current_extrapolant!(val,t::Number,integrator::DEIntegrator,idxs=size(integrator.uprev),deriv=Val{0})
   Θ = (t-integrator.tprev)/(integrator.t-integrator.tprev)
   ode_extrapolant!(val,Θ,integrator,idxs,deriv)
 end
 
-function current_extrapolant(t::AbstractArray,integrator::DEIntegrator,idxs=size(integrator.uprev),deriv=Val{0})
+@inline function current_extrapolant(t::AbstractArray,integrator::DEIntegrator,idxs=size(integrator.uprev),deriv=Val{0})
   Θ = (t.-integrator.tprev)./(integrator.t-integrator.tprev)
   [ode_extrapolant(ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
-function current_extrapolant!(val,t,integrator::DEIntegrator,idxs=size(integrator.uprev),deriv=Val{0})
+@inline function current_extrapolant!(val,t,integrator::DEIntegrator,idxs=size(integrator.uprev),deriv=Val{0})
   Θ = (t.-integrator.tprev)./(integrator.t-integrator.tprev)
   [ode_extrapolant!(val,ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
-function ode_extrapolant!(val,Θ,integrator::DEIntegrator,idxs,deriv)
+@inline function ode_extrapolant!(val,Θ,integrator::DEIntegrator,idxs,deriv)
   ode_addsteps!(integrator)
   if !(typeof(integrator.cache) <: CompositeCache)
     ode_interpolant!(val,Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,integrator.cache,idxs,deriv)
@@ -80,7 +80,7 @@ function ode_extrapolant!(val,Θ,integrator::DEIntegrator,idxs,deriv)
   end
 end
 
-function ode_extrapolant(Θ,integrator::DEIntegrator,idxs,deriv)
+@inline function ode_extrapolant(Θ,integrator::DEIntegrator,idxs,deriv)
   ode_addsteps!(integrator)
   if !(typeof(integrator.cache) <: CompositeCache)
     ode_interpolant(Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,integrator.cache,idxs,deriv)
@@ -97,7 +97,7 @@ ode_interpolation(tvals,ts,timeseries,ks)
 Get the value at tvals where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-function ode_interpolation(tvals,id,idxs,deriv)
+@inline function ode_interpolation(tvals,id,idxs,deriv)
   @unpack ts,timeseries,ks,f,notsaveat_idxs,cache = id
   tdir = sign(ts[end]-ts[1])
   idx = sortperm(tvals)
@@ -109,7 +109,7 @@ function ode_interpolation(tvals,id,idxs,deriv)
   else
     vals = Vector{Vector{eltype(first(timeseries))}}(length(tvals))
   end
-  for j in idx
+  @inbounds for j in idx
     t = tvals[j]
     i = findfirst((x)->tdir*x>=tdir*t,ts[notsaveat_idxs[i:end]])+i-1 # It's in the interval ts[i-1] to ts[i]
     if ts[notsaveat_idxs[i]] == t
@@ -150,12 +150,12 @@ ode_interpolation(tvals,ts,timeseries,ks)
 Get the value at tvals where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-function ode_interpolation!(vals,tvals,id,idxs,deriv)
+@inline function ode_interpolation!(vals,tvals,id,idxs,deriv)
   @unpack ts,timeseries,ks,f,notsaveat_idxs,cache = id
   tdir = sign(ts[end]-ts[1])
   idx = sortperm(tvals)
   i = 2 # Start the search thinking it's between ts[1] and ts[2]
-  for j in idx
+  @inbounds for j in idx
     t = tvals[j]
     i = findfirst((x)->tdir*x>=tdir*t,ts[notsaveat_idxs[i:end]])+i-1 # It's in the interval ts[i-1] to ts[i]
     if ts[notsaveat_idxs[i]] == t
@@ -203,11 +203,11 @@ ode_interpolation(tval::Number,ts,timeseries,ks)
 Get the value at tval where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-function ode_interpolation(tval::Number,id,idxs,deriv)
+@inline function ode_interpolation(tval::Number,id,idxs,deriv)
   @unpack ts,timeseries,ks,f,notsaveat_idxs,cache = id
   tdir = sign(ts[end]-ts[1])
-  i = findfirst((x)->tdir*x>=tdir*tval,@view ts[notsaveat_idxs]) # It's in the interval ts[i-1] to ts[i]
-  if ts[notsaveat_idxs[i]] == tval
+  @inbounds i = findfirst((x)->tdir*x>=tdir*tval,@view ts[notsaveat_idxs]) # It's in the interval ts[i-1] to ts[i]
+  @inbounds if ts[notsaveat_idxs[i]] == tval
     if idxs == nothing
       val = timeseries[notsaveat_idxs[i]]
     else
@@ -244,11 +244,11 @@ ode_interpolation!(out,tval::Number,ts,timeseries,ks)
 Get the value at tval where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-function ode_interpolation!(out,tval::Number,id,idxs,deriv)
+@inline function ode_interpolation!(out,tval::Number,id,idxs,deriv)
   @unpack ts,timeseries,ks,f,notsaveat_idxs,cache = id
   tdir = sign(ts[end]-ts[1])
-  i = findfirst((x)->tdir*x>=tdir*tval,@view ts[notsaveat_idxs]) # It's in the interval ts[i-1] to ts[i]
-  if ts[notsaveat_idxs[i]] == tval
+  @inbounds i = findfirst((x)->tdir*x>=tdir*tval,@view ts[notsaveat_idxs]) # It's in the interval ts[i-1] to ts[i]
+  @inbounds if ts[notsaveat_idxs[i]] == tval
     if idxs == nothing
       copy!(out,timeseries[notsaveat_idxs[i]])
     else
@@ -297,7 +297,7 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache,always_
   nothing
 end
 
-function ode_interpolant(Θ,dt,y₀,y₁,k,cache::OrdinaryDiffEqMutableCache,idxs,T::Type{Val{0}})
+@inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::OrdinaryDiffEqMutableCache,idxs,T::Type{Val{0}})
   if typeof(idxs) <: Tuple
     out = similar(y₀,idxs)
     idxs_internal=eachindex(y₀)
@@ -318,14 +318,14 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
 
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
-function ode_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{0}}) # Default interpolant is Hermite
+@inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{0}}) # Default interpolant is Hermite
   if typeof(y₀) <: AbstractArray
     if typeof(idxs) <: Tuple
       out = similar(y₀,idxs)
     else
       out = similar(y₀,length(idxs))
     end
-    for (j,i) in enumerate(idxs)
+    @inbounds for (j,i) in enumerate(idxs)
       out[j] = (1-Θ)*y₀[i]+Θ*y₁[i]+Θ*(Θ-1)*((1-2Θ)*(y₁[i]-y₀[i])+(Θ-1)*dt*k[1][i] + Θ*dt*k[2][i])
     end
   else
@@ -339,8 +339,8 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
 
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
-function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{0}}) # Default interpolant is Hermite
-  for (j,i) in enumerate(idxs)
+@inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{0}}) # Default interpolant is Hermite
+  @inbounds for (j,i) in enumerate(idxs)
     out[j] = (1-Θ)*y₀[i]+Θ*y₁[i]+Θ*(Θ-1)*((1-2Θ)*(y₁[i]-y₀[i])+(Θ-1)*dt*k[1][i] + Θ*dt*k[2][i])
   end
 end
