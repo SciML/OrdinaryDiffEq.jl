@@ -101,14 +101,26 @@ function ode_interpolation(tvals,id,idxs,deriv)
   tdir = sign(ts[end]-ts[1])
   idx = sortperm(tvals)
   i = 2 # Start the search thinking it's between ts[1] and ts[2]
-  vals = Vector{eltype(timeseries)}(length(tvals))
+  if idxs == nothing
+    vals = Vector{eltype(timeseries)}(length(tvals))
+  else
+    vals = Vector{Vector{eltype(first(timeseries))}}(length(tvals))
+  end
   for j in idx
     t = tvals[j]
     i = findfirst((x)->tdir*x>=tdir*t,ts[notsaveat_idxs[i:end]])+i-1 # It's in the interval ts[i-1] to ts[i]
     if ts[notsaveat_idxs[i]] == t
-      vals[j] = timeseries[notsaveat_idxs[i]]
+      if idxs == nothing
+        vals[j] = timeseries[notsaveat_idxs[i]]
+      else
+        vals[j] = timeseries[notsaveat_idxs[i]][idxs]
+      end
     elseif ts[notsaveat_idxs[i-1]] == t # Can happen if it's the first value!
-      vals[j] = timeseries[notsaveat_idxs[i-1]]
+      if idxs == nothing
+        vals[j] = timeseries[notsaveat_idxs[i-1]]
+      else
+        vals[j] = timeseries[notsaveat_idxs[i-1]][idxs]
+      end
     else
       dt = ts[notsaveat_idxs[i]] - ts[notsaveat_idxs[i-1]]
       Θ = (t-ts[notsaveat_idxs[i-1]])/dt
@@ -144,9 +156,17 @@ function ode_interpolation!(vals,tvals,id,idxs,deriv)
     t = tvals[j]
     i = findfirst((x)->tdir*x>=tdir*t,ts[notsaveat_idxs[i:end]])+i-1 # It's in the interval ts[i-1] to ts[i]
     if ts[notsaveat_idxs[i]] == t
-      vals[j] = timeseries[notsaveat_idxs[i]]
+      if idxs == nothing
+        vals[j] = timeseries[notsaveat_idxs[i]]
+      else
+        vals[j] = timeseries[notsaveat_idxs[i]][idxs]
+      end
     elseif ts[notsaveat_idxs[i-1]] == t # Can happen if it's the first value!
-      vals[j] = timeseries[notsaveat_idxs[i-1]]
+      if idxs == nothing
+        vals[j] = timeseries[notsaveat_idxs[i-1]]
+      else
+        vals[j] = timeseries[notsaveat_idxs[i-1]][idxs]
+      end
     else
       dt = ts[notsaveat_idxs[i]] - ts[notsaveat_idxs[i-1]]
       Θ = (t-ts[notsaveat_idxs[i-1]])/dt
@@ -185,9 +205,17 @@ function ode_interpolation(tval::Number,id,idxs,deriv)
   tdir = sign(ts[end]-ts[1])
   i = findfirst((x)->tdir*x>=tdir*tval,@view ts[notsaveat_idxs]) # It's in the interval ts[i-1] to ts[i]
   if ts[notsaveat_idxs[i]] == tval
-    val = timeseries[notsaveat_idxs[i]]
+    if idxs == nothing
+      val = timeseries[notsaveat_idxs[i]]
+    else
+      val = timeseries[notsaveat_idxs[i]][idxs]
+    end
   elseif ts[notsaveat_idxs[i-1]] == tval # Can happen if it's the first value!
-    push!(vals,timeseries[notsaveat_idxs[i-1]])
+    if idxs == nothing
+      val = timeseries[notsaveat_idxs[i-1]]
+    else
+      val = timeseries[notsaveat_idxs[i-1]][idxs]
+    end
   else
     dt = ts[notsaveat_idxs[i]] - ts[notsaveat_idxs[i-1]]
     Θ = (tval-ts[notsaveat_idxs[i-1]])/dt
@@ -218,9 +246,17 @@ function ode_interpolation!(out,tval::Number,id,idxs,deriv)
   tdir = sign(ts[end]-ts[1])
   i = findfirst((x)->tdir*x>=tdir*tval,@view ts[notsaveat_idxs]) # It's in the interval ts[i-1] to ts[i]
   if ts[notsaveat_idxs[i]] == tval
-    val = timeseries[notsaveat_idxs[i]]
+    if idxs == nothing
+      copy!(out,timeseries[notsaveat_idxs[i]])
+    else
+      copy!(out,timeseries[notsaveat_idxs[i]][idxs])
+    end
   elseif ts[notsaveat_idxs[i-1]] == tval # Can happen if it's the first value!
-    push!(vals,timeseries[notsaveat_idxs[i-1]])
+    if idxs == nothing
+      copy!(out,timeseries[notsaveat_idxs[i-1]])
+    else
+      copy!(out,timeseries[notsaveat_idxs[i-1]][idxs])
+    end
   else
     dt = ts[notsaveat_idxs[i]] - ts[notsaveat_idxs[i-1]]
     Θ = (tval-ts[notsaveat_idxs[i-1]])/dt
@@ -277,7 +313,11 @@ Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
 function ode_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{0}}) # Default interpolant is Hermite
   if typeof(y₀) <: AbstractArray
-    out = similar(y₀,idxs)
+    if typeof(idxs) <: Tuple
+      out = similar(y₀,idxs)
+    else
+      out = similar(y₀,length(idxs))
+    end
     for (j,i) in enumerate(idxs)
       out[j] = (1-Θ)*y₀[i]+Θ*y₁[i]+Θ*(Θ-1)*((1-2Θ)*(y₁[i]-y₀[i])+(Θ-1)*dt*k[1][i] + Θ*dt*k[2][i])
     end

@@ -16,6 +16,10 @@ sol =solve(prob,Euler(),dt=1//2^(2),dense=true)
 
 interpd = sol(0:1//2^(4):1)
 
+interpd_idxs = sol(0:1//2^(4):1,idxs=1:2:5)
+
+@test minimum([interpd_idxs[i] == interpd[i][1:2:5] for i in 1:length(interpd)])
+
 A = rand(4,2)
 sol(A,0.777)
 A == sol(0.777)
