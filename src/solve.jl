@@ -37,6 +37,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
   progress=false,progress_steps=1000,progress_name="ODE",
   progress_message = ODE_DEFAULT_PROG_MESSAGE,
   userdata=nothing,callback=nothing,
+  allow_extrapolation = alg_extrapolates(alg),
   initialize_integrator=true,kwargs...)
 
   tspan = prob.tspan
@@ -157,7 +158,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
   else
     uprev = deepcopy(u)
   end
-  if alg_extrapolates(alg)
+  if allow_extrapolation
     if uType <: Array
       uprev2 = copy(u)
     else
