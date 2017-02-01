@@ -17,10 +17,10 @@ immutable CompositeInterpolationData{F,uType,tType,kType,cacheType} <: Function
   cache::cacheType
 end
 
-(interp::InterpolationData)(tvals) = ode_interpolation(tvals,interp)
-(interp::CompositeInterpolationData)(tvals) = ode_interpolation(tvals,interp)
-(interp::InterpolationData)(val,tvals) = ode_interpolation!(val,tvals,interp)
-(interp::CompositeInterpolationData)(val,tvals) = ode_interpolation!(val,tvals,interp)
+(interp::InterpolationData)(tvals,idxs,deriv) = ode_interpolation(tvals,interp,idxs,deriv)
+(interp::CompositeInterpolationData)(tvals,idxs,deriv) = ode_interpolation(tvals,interp,idxs,deriv)
+(interp::InterpolationData)(val,tvals,idxs,deriv) = ode_interpolation!(val,tvals,interp,idxs,deriv)
+(interp::CompositeInterpolationData)(val,tvals,idxs,deriv) = ode_interpolation!(val,tvals,interp,idxs,deriv)
 
 function InterpolationData(id::InterpolationData,f)
   InterpolationData(f,id.timeseries,

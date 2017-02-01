@@ -96,9 +96,7 @@ ode_interpolation(tvals,ts,timeseries,ks)
 Get the value at tvals where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-function ode_interpolation(tvals,id)
-  idxs = nothing
-  deriv = Val{0}
+function ode_interpolation(tvals,id,idxs,deriv)
   @unpack ts,timeseries,ks,f,notsaveat_idxs,cache = id
   tdir = sign(ts[end]-ts[1])
   idx = sortperm(tvals)
@@ -137,9 +135,7 @@ ode_interpolation(tvals,ts,timeseries,ks)
 Get the value at tvals where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-function ode_interpolation!(vals,tvals,id)
-  idxs = nothing
-  deriv = Val{0}
+function ode_interpolation!(vals,tvals,id,idxs,deriv)
   @unpack ts,timeseries,ks,f,notsaveat_idxs,cache = id
   tdir = sign(ts[end]-ts[1])
   idx = sortperm(tvals)
@@ -184,9 +180,7 @@ ode_interpolation(tval::Number,ts,timeseries,ks)
 Get the value at tval where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-function ode_interpolation(tval::Number,id)
-  idxs = nothing
-  deriv = Val{0}
+function ode_interpolation(tval::Number,id,idxs,deriv)
   @unpack ts,timeseries,ks,f,notsaveat_idxs,cache = id
   tdir = sign(ts[end]-ts[1])
   i = findfirst((x)->tdir*x>=tdir*tval,@view ts[notsaveat_idxs]) # It's in the interval ts[i-1] to ts[i]
@@ -219,9 +213,7 @@ ode_interpolation!(out,tval::Number,ts,timeseries,ks)
 Get the value at tval where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-function ode_interpolation!(out,tval::Number,id)
-  idxs = nothing
-  deriv = Val{0}
+function ode_interpolation!(out,tval::Number,id,idxs,deriv)
   @unpack ts,timeseries,ks,f,notsaveat_idxs,cache = id
   tdir = sign(ts[end]-ts[1])
   i = findfirst((x)->tdir*x>=tdir*tval,@view ts[notsaveat_idxs]) # It's in the interval ts[i-1] to ts[i]

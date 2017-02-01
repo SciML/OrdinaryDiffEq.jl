@@ -11,7 +11,8 @@ type ODECompositeSolution{uType,tType,rateType,P,A,IType} <: AbstractODESolution
   dense::Bool
   tslocation::Int
 end
-(sol::ODECompositeSolution)(t) = sol.interp(t)
+(sol::ODECompositeSolution)(t,deriv::Type=Val{0};idxs=nothing) = sol.interp(t,idxs,deriv)
+(sol::ODECompositeSolution)(v,t,deriv::Type=Val{0};idxs=nothing) = sol.interp(v,t,idxs,deriv)
 
 type ODECompositeTestSolution{uType,uType2,uEltype,tType,rateType,P,A,IType} <: AbstractODETestSolution
   u::uType
@@ -26,7 +27,8 @@ type ODECompositeTestSolution{uType,uType2,uEltype,tType,rateType,P,A,IType} <: 
   dense::Bool
   tslocation::Int
 end
-(sol::ODECompositeTestSolution)(t) = sol.interp(t)
+(sol::ODECompositeTestSolution)(t,deriv::Type=Val{0};idxs=nothing) = sol.interp(t,idxs,deriv)
+(sol::ODECompositeTestSolution)(v,t,deriv::Type=Val{0};idxs=nothing) = sol.interp(v,t,idxs,deriv)
 
 function build_solution{uType,tType,isinplace}(
         prob::AbstractODEProblem{uType,tType,isinplace},
