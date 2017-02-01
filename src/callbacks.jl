@@ -32,19 +32,46 @@ end
   Θs = linspace(typeof(integrator.t)(0),typeof(integrator.t)(1),callback.interp_points)
   interp_index = 0
   # Check if the event occured
-  previous_condition = callback.condition(integrator.tprev,integrator.uprev,integrator)
+  if typeof(callback.idxs) <: Void
+    previous_condition = callback.condition(integrator.tprev,integrator.uprev,integrator)
+  else
+    previous_condition = callback.condition(integrator.tprev,integrator.uprev[callback.idxs],integrator)
+  end
   if isapprox(previous_condition,0,rtol=callback.reltol,atol=callback.abstol)
     prev_sign = 0.0
   else
     prev_sign = sign(previous_condition)
   end
   prev_sign_index = 1
-  if ((prev_sign<0 && !(typeof(callback.affect!)<:Void)) || (prev_sign>0 && !(typeof(callback.affect_neg!)<:Void))) && prev_sign*sign(callback.condition(integrator.tprev+integrator.dt,integrator.u,integrator))<0
+  if typeof(callback.idxs) <: Void
+    next_sign = sign(callback.condition(integrator.tprev+integrator.dt,integrator.u,integrator))
+  else
+    next_sign = sign(callback.condition(integrator.tprev+integrator.dt,integrator.u[callback.idxs],integrator))
+  end
+  if ((prev_sign<0 && !(typeof(callback.affect!)<:Void)) || (prev_sign>0 && !(typeof(callback.affect_neg!)<:Void))) && prev_sign*next_sign<0
     event_occurred = true
     interp_index = callback.interp_points
   elseif callback.interp_points!=0 # Use the interpolants for safety checking
+    if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache
+      if typeof(callback.idxs) <: Void
+        idxs_internal = eachindex(integrator.cache.tmp)
+        tmp = integrator.cache.tmp
+      elseif typeof(callback.idxs) <: Number
+        idxs_internal = callback.idxs
+      else
+        idxs_internal = callback.idxs
+        tmp = @view integrator.cache.tmp[callback.idxs]
+      end
+    else
+      idxs_internal = callback.idxs
+    end
     for i in 2:length(Θs)-1
-      new_sign = callback.condition(integrator.tprev+integrator.dt*Θs[i],ode_interpolant(Θs[i],integrator,size(integrator.uprev),Val{0}),integrator)
+      if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache && !(typeof(callback.idxs) <: Number)
+        ode_interpolant!(tmp,Θs[i],integrator,idxs_internal,Val{0})
+      else
+        tmp = ode_interpolant(Θs[i],integrator,idxs_internal,Val{0})
+      end
+      new_sign = callback.condition(integrator.tprev+integrator.dt*Θs[i],tmp,integrator)
       if prev_sign == 0
         prev_sign = new_sign
         prev_sign_index = i
@@ -71,8 +98,26 @@ function find_callback_time(integrator,callback)
         top_Θ = typeof(integrator.t)(1)
       end
       if callback.rootfind
+        if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache
+          if typeof(callback.idxs) <: Void
+            idxs_internal = eachindex(integrator.cache.tmp)
+            tmp = integrator.cache.tmp
+          elseif typeof(callback.idxs) <: Number
+            idxs_internal = callback.idxs
+          else
+            idxs_internal = callback.idxs
+            tmp = @view integrator.cache.tmp[callback.idxs]
+          end
+        else
+          idxs_internal = callback.idxs
+        end
         find_zero = (Θ) -> begin
-          callback.condition(integrator.tprev+Θ*integrator.dt,ode_interpolant(Θ,integrator,size(integrator.uprev),Val{0}),integrator)
+          if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache && !(typeof(callback.idxs) <: Number)
+            ode_interpolant!(tmp,Θ,integrator,idxs_internal,Val{0})
+          else
+            tmp = ode_interpolant(Θ,integrator,idxs_internal,Val{0})
+          end
+          callback.condition(integrator.tprev+Θ*integrator.dt,tmp,integrator)
         end
         Θ = prevfloat(prevfloat(fzero(find_zero,Θs[prev_sign_index],top_Θ)))
         # 2 prevfloat guerentees that the new time is either 1 or 2 floating point

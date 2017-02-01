@@ -15,10 +15,11 @@ end
 function ode_interpolant(Θ,integrator::DEIntegrator,idxs,deriv)
   ode_addsteps!(integrator)
   if !(typeof(integrator.cache) <: CompositeCache)
-    ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache,idxs,deriv)
+    val = ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache,idxs,deriv)
   else
-    ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache.caches[integrator.cache.current],idxs,deriv)
+    val = ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache.caches[integrator.cache.current],idxs,deriv)
   end
+  val
 end
 
 function ode_interpolant!(val,Θ,integrator::DEIntegrator,idxs,deriv)

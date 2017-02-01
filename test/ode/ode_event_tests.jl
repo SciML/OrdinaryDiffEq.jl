@@ -16,8 +16,6 @@ affect! = function (integrator)
   integrator.u = integrator.u + 2
 end
 
-rootfind = true
-save_positions = (true,true)
 callback = ContinuousCallback(condition,affect!)
 
 sol = solve(prob,Tsit5(),callback=callback)
@@ -70,6 +68,24 @@ prob = ODEProblem(f,u0,tspan)
 
 
 sol = solve(prob,Tsit5(),callback=callback,adaptive=false,dt=1/4)
+
+condtion_single = function (t,u,integrator) # Event when event_f(t,u,k) == 0
+  u
+end
+
+affect! = nothing
+affect_neg! = function (integrator)
+  integrator.u[2] = -integrator.u[2]
+end
+
+callback_single = ContinuousCallback(condtion_single,affect!,affect_neg!,interp_points=100,idxs=1)
+
+u0 = [50.0,0.0]
+tspan = (0.0,15.0)
+prob = ODEProblem(f,u0,tspan)
+
+sol = solve(prob,Tsit5(),callback=callback_single,adaptive=false,dt=1/4)
+
 #plot(sol,denseplot=true)
 
 sol = solve(prob,Vern6(),callback=callback)

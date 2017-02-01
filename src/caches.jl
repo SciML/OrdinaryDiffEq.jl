@@ -20,15 +20,16 @@ alg_cache{F}(alg::OrdinaryDiffEqAlgorithm,prob,callback::F) = ODEEmptyCache()
 immutable EulerCache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
+  tmp::uType
   k::rateType
   fsalfirst::rateType
 end
 
 function alg_cache(alg::Euler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
-  EulerCache(u,uprev,similar(rate_prototype),similar(rate_prototype))
+  EulerCache(u,uprev,similar(u),similar(rate_prototype),similar(rate_prototype))
 end
 
-u_cache(c::EulerCache) = (c.u,c.uprev)
+u_cache(c::EulerCache) = (c.u,c.uprev,c.tmp)
 du_cache(c::EulerCache) = (c.k,c.fsalfirst)
 
 immutable EulerConstantCache <: OrdinaryDiffEqConstantCache end
@@ -40,21 +41,21 @@ immutable MidpointCache{uType,rateType} <: OrdinaryDiffEqMutableCache
   uprev::uType
   k::rateType
   du::rateType
-  utilde::uType
+  tmp::uType
   fsalfirst::rateType
 end
 
-u_cache(c::MidpointCache) = (c.u,c.uprev,c.utilde)
+u_cache(c::MidpointCache) = (c.u,c.uprev,c.tmp)
 du_cache(c::MidpointCache) = (c.k,c.du,c.fsalfirst)
 
 immutable MidpointConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::Midpoint,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
-  utilde = similar(u)
+  tmp = similar(u)
   k = similar(rate_prototype)
   du = similar(rate_prototype)
   fsalfirst = similar(rate_prototype)
-  MidpointCache(u,uprev,k,du,utilde,fsalfirst)
+  MidpointCache(u,uprev,k,du,tmp,fsalfirst)
 end
 
 alg_cache(alg::Midpoint,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = MidpointConstantCache()
@@ -947,6 +948,7 @@ type ImplicitEulerCache{uType,vecuType,DiffCacheType,rateType,rhsType,adfType,CS
   uhold::vecuType
   dual_cache::DiffCacheType
   u_old::uType
+  tmp::uType
   k::rateType
   fsalfirst::rateType
   rhs::rhsType
@@ -969,7 +971,10 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUni
   else
     adf = nothing
   end
-  ImplicitEulerCache{typeof(u),typeof(uhold),typeof(dual_cache),typeof(k),typeof(rhs),typeof(adf),determine_chunksize(u,alg)}(u,uprev,uprev2,uhold,dual_cache,u_old,k,fsalfirst,rhs,adf)
+  tmp = u_old
+  ImplicitEulerCache{typeof(u),typeof(uhold),typeof(dual_cache),typeof(k),
+                     typeof(rhs),typeof(adf),determine_chunksize(u,alg)}(
+                     u,uprev,uprev2,uhold,dual_cache,u_old,tmp,k,fsalfirst,rhs,adf)
 end
 
 immutable ImplicitEulerConstantCache{vecuType,rhsType,adfType,CS} <: OrdinaryDiffEqConstantCache
@@ -999,6 +1004,7 @@ type TrapezoidCache{uType,vecuType,DiffCacheType,rateType,rhsType,adfType,CS} <:
   u_old::uType
   fsalfirst::rateType
   dual_cache::DiffCacheType
+  tmp::uType
   k::rateType
   rhs::rhsType
   adf::adfType
@@ -1019,9 +1025,10 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,u
   else
     adf = nothing
   end
+  tmp = u_old
   TrapezoidCache{typeof(u),typeof(uhold),typeof(dual_cache),typeof(k),
     typeof(rhs),typeof(adf),determine_chunksize(u,alg)}(
-    u,uprev,uprev2,uhold,u_old,fsalfirst,dual_cache,k,rhs,adf)
+    u,uprev,uprev2,uhold,u_old,fsalfirst,dual_cache,tmp,k,rhs,adf)
 end
 
 

@@ -68,12 +68,12 @@ end
 @inline function perform_step!(integrator,cache::MidpointCache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack k,du,utilde,fsalfirst = cache
+  @unpack k,du,tmp,fsalfirst = cache
   halfdt = dt/2
   for i in uidx
-    utilde[i] = muladd(halfdt,integrator.fsalfirst[i],uprev[i])
+    tmp[i] = muladd(halfdt,integrator.fsalfirst[i],uprev[i])
   end
-  f(t+halfdt,utilde,du)
+  f(t+halfdt,tmp,du)
   for i in uidx
     u[i] = muladd(dt,du[i],uprev[i])
   end
