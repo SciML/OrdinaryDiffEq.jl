@@ -148,7 +148,7 @@ prob2 = ODEProblem(f,u0,tspan2)
 
 sol5 = solve(prob2,Tsit5(),callback=terminate_callback)
 
-@test sol5[end][1] < 2e-13
+@test sol5[end][1] < 3e-12
 @test sol5.t[end] ≈ sqrt(50*2/9.81)
 
 affect2! = function (integrator)
