@@ -1,5 +1,5 @@
 # This definitely needs cleaning
-using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase, DiffEqProblemLibrary
+using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase, DiffEqProblemLibrary, Base.Test
 probArr = Vector{ODETestProblem}(2)
 probArr[1] = prob_ode_linear
 
@@ -9,7 +9,6 @@ srand(100)
 println("Convergence Test on Linear")
 dts = 1.//2.^(8:-1:4)
 testTol = 0.2
-superduperbool = Vector{Bool}(2)
 
 for i = 1:2
   prob = probArr[i]

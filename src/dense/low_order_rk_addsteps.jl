@@ -150,7 +150,7 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Tsit5C
     end
     f(t+dt,tmp,k6)
     for i in uidx
-      u[i] = uprev[i]+dt*(a71*k1[i]+a72*k2[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i])
+      tmp[i] = uprev[i]+dt*(a71*k1[i]+a72*k2[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i])
     end
     f(t+dt,u,k7)
     copyat_or_push!(k,1,k1)

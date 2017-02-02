@@ -9,7 +9,7 @@ end
   @unpack adaptiveConst,a0100,a0200,a0201,a0300,a0302,a0400,a0402,a0403,a0500,a0503,a0504,a0600,a0603,a0604,a0605,a0700,a0704,a0705,a0706,a0800,a0805,a0806,a0807,a0900,a0905,a0906,a0907,a0908,a1000,a1005,a1006,a1007,a1008,a1009,a1100,a1105,a1106,a1107,a1108,a1109,a1110,a1200,a1203,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211,a1300,a1302,a1303,a1305,a1306,a1307,a1308,a1309,a1310,a1311,a1312,a1400,a1401,a1404,a1406,a1412,a1413,a1500,a1502,a1514,a1600,a1601,a1602,a1604,a1605,a1606,a1607,a1608,a1609,a1610,a1611,a1612,a1613,a1614,a1615,b1,b2,b3,b4,b5,b6,b7,b8,b9,b10,b11,b12,b13,b14,b15,b16,b17,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16 = cache
   k1  = integrator.fsalfirst
   k2  = f(t + c1*dt,uprev  + dt*(a0100*k1))
-  k3  = f(t + c2*dt ,uprev + dt*(a0200*k1 + a0201*k2))
+  k3  = f(t + c2*dt,uprev + dt*(a0200*k1 + a0201*k2))
   k4  = f(t + c3*dt,uprev  + dt*(a0300*k1              + a0302*k3))
   k5  = f(t + c4*dt,uprev  + dt*(a0400*k1              + a0402*k3 + a0403*k4))
   k6  = f(t + c5*dt,uprev  + dt*(a0500*k1                           + a0503*k4 + a0504*k5))
@@ -24,8 +24,7 @@ end
   k15 = f(t + c14*dt,uprev + dt*(a1400*k1 + a1401*k2                           + a1404*k5              + a1406*k7 +                                                                     a1412*k13 + a1413*k14))
   k16 = f(t + c15*dt,uprev + dt*(a1500*k1              + a1502*k3                                                                                                                                                     + a1514*k15))
   k17 = f(t + c16*dt,uprev + dt*(a1600*k1 + a1601*k2 + a1602*k3              + a1604*k5 + a1605*k6 + a1606*k7 + a1607*k8 + a1608*k9 + a1609*k10 + a1610*k11 + a1611*k12 + a1612*k13 + a1613*k14 + a1614*k15 + a1615*k16))
-  tmp = dt*((b1*k1 + b2*k2 + b3*k3 + b5*k5) + (b7*k7 + b9*k9 + b10*k10 + b11*k11) + (b12*k12 + b13*k13 + b14*k14 + b15*k15) + (b16*k16 + b17*k17))
-  u = uprev + tmp
+  u = uprev + dt*(b1*k1 + b2*k2 + b3*k3 + b5*k5 + b7*k7 + b9*k9 + b10*k10 + b11*k11 + b12*k12 + b13*k13 + b14*k14 + b15*k15 + b16*k16 + b17*k17)
   if integrator.opts.adaptive
     integrator.EEst = integrator.opts.internalnorm((dt*(k2 - k16) * adaptiveConst)./(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
   end
