@@ -50,7 +50,11 @@ module OrdinaryDiffEq
   include("initdt.jl")
   include("interp_func.jl")
   include("dense/generic_dense.jl")
-  include("dense.jl")
+  include("dense/interpolants.jl")
+  include("dense/stiff_addsteps.jl")
+  include("dense/low_order_rk_addsteps.jl")
+  include("dense/verner_addsteps.jl")
+  include("dense/high_order_rk_addsteps.jl")
   include("derivative_wrappers.jl")
 
   #General Functions
