@@ -2,6 +2,10 @@ abstract OrdinaryDiffEqAlgorithm <: AbstractODEAlgorithm
 abstract OrdinaryDiffEqAdaptiveAlgorithm <: OrdinaryDiffEqAlgorithm
 abstract OrdinaryDiffEqCompositeAlgorithm <: OrdinaryDiffEqAlgorithm
 
+immutable Discrete{apply_map,scale_by_time} <: OrdinaryDiffEqAlgorithm end
+
+Base.@pure Discrete(;apply_map=true,scale_by_time=false) = Discrete{apply_map,scale_by_time}()
+
 immutable Euler <: OrdinaryDiffEqAlgorithm end
 immutable Midpoint <: OrdinaryDiffEqAlgorithm end
 immutable RK4 <: OrdinaryDiffEqAlgorithm end

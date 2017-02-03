@@ -1,3 +1,38 @@
+@inline function initialize!(integrator,cache::DiscreteConstantCache,f=integrator.f)
+  integrator.kshortsize = 0
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+end
+
+@inline function initialize!(integrator,cache::DiscreteCache,f=integrator.f)
+  integrator.kshortsize = 0
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+end
+
+@inline function perform_step!(integrator,cache::DiscreteConstantCache,f=integrator.f)
+  if discrete_apply_map(integrator.alg)
+    if discrete_scale_by_time(integrator.alg)
+      integrator.u = integrator.uprev + integrator.dt*f(integrator.t,integrator.uprev)
+    else
+      integrator.u = f(integrator.t,integrator.uprev)
+    end
+  end
+end
+
+@inline function perform_step!(integrator,cache::DiscreteCache,f=integrator.f)
+  @unpack u,uprev,dt,t = integrator
+  @unpack du = cache
+  if discrete_apply_map(integrator.alg)
+    if discrete_scale_by_time(integrator.alg)
+      f(t,uprev,du)
+      for i in eachindex(integrator.u)
+        u[i] = @muladd uprev[i] + dt*du[i]
+      end
+    else
+      f(t,uprev,u)
+    end
+  end
+end
+
 @inline function initialize!(integrator,cache::EulerConstantCache,f=integrator.f)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)

@@ -60,6 +60,7 @@ alg_autodiff{CS,AD}(alg::Rosenbrock32{CS,AD}) = AD
 alg_order(alg::OrdinaryDiffEqAlgorithm) = error("Order is not defined for this algorithm")
 alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
 
+alg_order(alg::Discrete) = 0
 alg_order(alg::Euler) = 1
 alg_order(alg::Midpoint) = 2
 alg_order(alg::RK4) = 4
@@ -106,10 +107,16 @@ alg_adaptive_order(alg::Feagin12) = 10
 alg_adaptive_order(alg::Feagin14) = 12
 
 beta2_default(alg::OrdinaryDiffEqAlgorithm) = 2//(5alg_order(alg))
+beta2_default(alg::Discrete) = 0
 beta2_default(alg::DP8) = 0//1
 beta2_default(alg::DP5) = 4//100
 beta2_default(alg::DP5Threaded) = 4//100
 
 beta1_default(alg::OrdinaryDiffEqAlgorithm,beta2) = 7//(10alg_order(alg))
+beta1_default(alg::Discrete,beta2) = 0
 beta1_default(alg::DP8,beta2) = typeof(beta2)(1//alg_order(alg)) - beta2/5
 beta1_default(alg::DP5,beta2) = typeof(beta2)(1//alg_order(alg)) - 3beta2/4
+
+
+discrete_apply_map{apply_map,scale_by_time}(alg::Discrete{apply_map,scale_by_time}) = apply_map
+discrete_scale_by_time{apply_map,scale_by_time}(alg::Discrete{apply_map,scale_by_time}) = scale_by_time

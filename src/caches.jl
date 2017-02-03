@@ -17,6 +17,23 @@ end
 
 alg_cache{F}(alg::OrdinaryDiffEqAlgorithm,prob,callback::F) = ODEEmptyCache()
 
+immutable DiscreteCache{uType,rateType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  du::rateType
+end
+
+u_cache(c::DiscreteCache) = (c.u,c.uprev)
+du_cache(c::DiscreteCache) = (c.du)
+
+function alg_cache(alg::Discrete,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+  DiscreteCache(u,uprev,rate_prototype)
+end
+
+immutable DiscreteConstantCache <: OrdinaryDiffEqConstantCache end
+
+alg_cache(alg::Discrete,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = DiscreteConstantCache()
+
 immutable EulerCache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
