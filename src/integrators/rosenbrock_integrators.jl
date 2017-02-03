@@ -28,15 +28,15 @@ end
   #  Calculus.finite_difference!((t)->vecfreturn(t,uprev,du2),[t],dT)
   #  Calculus.finite_difference_jacobian!((du1,uprev)->vecf(t,uprev,du1),vec(uprev),vec(du1),J)
   #end
-
+  a = -dt*d
   for i in 1:length(u), j in 1:length(u)
-    W[i,j] = I[i,j]-dt*d*J[i,j]
+    W[i,j] = @muladd I[i,j]+a*J[i,j]
   end
 
   Wfact = integrator.alg.factorization(W)
-
+  a = -a
   for i in uidx
-    linsolve_tmp[i] = fsalfirst[i] + dt*d*dT[i]
+    linsolve_tmp[i] = @muladd fsalfirst[i] + a*dT[i]
   end
 
   @into! vectmp = Wfact\linsolve_tmp
@@ -53,7 +53,7 @@ end
   @into! vectmp2 = Wfact\linsolve_tmp
   for i in uidx
     k₂[i] = tmp[i] + k₁[i]
-    u[i] = uprev[i] + dt*k₂[i]
+    u[i] = @muladd uprev[i] + dt*k₂[i]
   end
   if integrator.opts.adaptive
     f(t+dt,u,integrator.fsallast)
