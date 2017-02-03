@@ -41,10 +41,11 @@ end
 
   @into! vectmp = Wfact\linsolve_tmp
   recursivecopy!(k₁,reshape(vectmp,size(u)...))
+  dto2 = dt/2
   for i in uidx
-    u[i]=uprev[i]+dt*k₁[i]/2
+    u[i]= @muladd uprev[i]+dto2*k₁[i]
   end
-  f(t+dt/2,u,f₁)
+  f(t+dto2,u,f₁)
 
   for i in uidx
     linsolve_tmp[i] = f₁[i]-k₁[i]
@@ -65,7 +66,7 @@ end
     @into! vectmp3 = Wfact\linsolve_tmp
     k₃ = reshape(vectmp3,sizeu...)
     for i in uidx
-      tmp2[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)./(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol)
+      tmp2[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol)
     end
     integrator.EEst = integrator.opts.internalnorm(tmp2)
   end
@@ -98,24 +99,28 @@ end
     ForwardDiff.derivative!(dT,tf,t) # Time derivative of each component
     ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev))
 
+  a = -dt*d
   for i in 1:length(u), j in 1:length(u)
-    W[i,j] = I[i,j]-dt*d*J[i,j]
+    W[i,j] = @muladd I[i,j]+a*J[i,j]
   end
 
 
   Wfact = integrator.alg.factorization(W)
 
+  a = -a
   for i in uidx
-    linsolve_tmp[i] = fsalfirst[i] + dt*d*dT[i]
+    linsolve_tmp[i] = @muladd fsalfirst[i] + a*dT[i]
   end
 
   @into! vectmp = Wfact\linsolve_tmp
 
   recursivecopy!(k₁,reshape(vectmp,sizeu...))
+
+  dto2 = dt/2
   for i in uidx
-    u[i]=uprev[i]+dt*k₁[i]/2
+    u[i]= @muladd uprev[i]+dto2*k₁[i]
   end
-  f(t+dt/2,u,f₁)
+  f(t+dto2,u,f₁)
   for i in uidx
     linsolve_tmp[i] = f₁[i]-k₁[i]
   end
@@ -125,7 +130,7 @@ end
     k₂[i] = tmp[i] + k₁[i]
   end
   for i in uidx
-    tmp[i] = uprev[i] + dt*k₂[i]
+    tmp[i] = @muladd uprev[i] + dt*k₂[i]
   end
   f(t+dt,tmp,integrator.fsallast)
   for i in uidx
@@ -138,7 +143,7 @@ end
   end
   if integrator.opts.adaptive
     for i in uidx
-      tmp2[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)/(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol)
+      tmp2[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)/@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol)
     end
     integrator.EEst = integrator.opts.internalnorm(tmp2)
   end
@@ -160,15 +165,18 @@ end
   uf.t = t
   dT = ForwardDiff.derivative(tf,t)
   J = ForwardDiff.derivative(uf,uprev)
-  W = 1-dt*d*J
-  k₁ = W\(integrator.fsalfirst + dt*d*dT)
-  f₁ = f(t+dt/2,uprev+dt*k₁/2)
+  a = -dt*d
+  W = @muladd 1+a*J
+  a = -a
+  k₁ = W\@muladd(integrator.fsalfirst + a*dT)
+  dto2 = dt/2
+  f₁ = f(t+dto2,@muladd uprev+dto2*k₁)
   k₂ = W\(f₁-k₁) + k₁
-  u = uprev + dt*k₂
+  u = @muladd uprev + dt*k₂
   if integrator.opts.adaptive
     integrator.fsallast = f(t+dt,u)
     k₃ = W\(integrator.fsallast - c₃₂*(k₂-f₁)-2(k₁-integrator.fsalfirst)+dt*dT)
-    integrator.EEst = integrator.opts.internalnorm((dt*(k₁ - 2k₂ + k₃)/6)./(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+    integrator.EEst = integrator.opts.internalnorm((dt*(k₁ - 2k₂ + k₃)/6)./@muladd(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
   end
   integrator.k[1] = k₁
   integrator.k[2] = k₂
@@ -190,17 +198,20 @@ end
   # Time derivative
   dT = ForwardDiff.derivative(tf,t)
   J = ForwardDiff.derivative(uf,uprev)
-  W = 1-dt*d*J
+  a = -dt*d
+  W = 1+a*J
   #f₀ = f(t,uprev)
-  k₁ = W\(integrator.fsalfirst + dt*d*dT)
-  f₁ = f(t+dt/2,uprev+dt*k₁/2)
+  a = -a
+  k₁ = W\@muladd(integrator.fsalfirst + a*dT)
+  dto2 = dt/2
+  f₁ = f(t+dto2,@muladd(uprev+dto2*k₁))
   k₂ = W\(f₁-k₁) + k₁
-  tmp = uprev + dt*k₂
+  tmp = @muladd uprev + dt*k₂
   integrator.fsallast = f(t+dt,tmp)
   k₃ = W\(integrator.fsallast - c₃₂*(k₂-f₁)-2(k₁-integrator.fsalfirst)+dt*dT)
   u = uprev + dt*(k₁ + 4k₂ + k₃)/6
   if integrator.opts.adaptive
-    integrator.EEst = integrator.opts.internalnorm((dt*(k₁ - 2k₂ + k₃)/6)./(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+    integrator.EEst = integrator.opts.internalnorm((dt*(k₁ - 2k₂ + k₃)/6)./@muladd(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
   end
   integrator.k[1] = k₁
   integrator.k[2] = k₂
