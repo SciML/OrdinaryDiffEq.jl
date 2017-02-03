@@ -15,7 +15,7 @@ end
   k6 = f(@muladd(t + c5*dt),uprev+dt*(a61*k1       +a63*k3+a64*k4+a65*k5))
   k7 = f(@muladd(t + c6*dt),uprev+dt*(a71*k1       +a73*k3+a74*k4+a75*k5+a76*k6))
   k8 = f(t+dt,uprev+dt*(a81*k1       +a83*k3+a84*k4+a85*k5+a86*k6+a87*k7))
-  u =    uprev+dt*(a91*k1              +a94*k4+a95*k5+a96*k6+a97*k7+a98*k8)
+  u =  uprev+dt*(a91*k1              +a94*k4+a95*k5+a96*k6+a97*k7+a98*k8)
   integrator.fsallast = f(t+dt,u); k9 = integrator.fsallast
   if integrator.opts.adaptive
     utilde = uprev + dt*(b1*k1 + b4*k4 + b5*k5 + b6*k6 + b7*k7 + b8*k8 + b9*k9)
