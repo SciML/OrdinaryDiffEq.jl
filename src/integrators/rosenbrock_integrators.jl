@@ -60,7 +60,7 @@ end
     f(t+dt,u,integrator.fsallast)
 
     for i in uidx
-      linsolve_tmp[i] = integrator.fsallast[i] - c₃₂*(k₂[i]-f₁[i])-2(k₁[i]-fsalfirst[i])+dt*dT[i]
+      linsolve_tmp[i] = @muladd integrator.fsallast[i] - c₃₂*(k₂[i]-f₁[i])-2(k₁[i]-fsalfirst[i])+dt*dT[i]
     end
 
     @into! vectmp3 = Wfact\linsolve_tmp
@@ -134,7 +134,7 @@ end
   end
   f(t+dt,tmp,integrator.fsallast)
   for i in uidx
-    linsolve_tmp[i] = integrator.fsallast[i] - c₃₂*(k₂[i]-f₁[i])-2(k₁[i]-fsalfirst[i])+dt*dT[i]
+    linsolve_tmp[i] = @muladd integrator.fsallast[i] - c₃₂*(k₂[i]-f₁[i])-2(k₁[i]-fsalfirst[i])+dt*dT[i]
   end
   @into! vectmp3 = Wfact\linsolve_tmp
   k₃ = reshape(vectmp3,sizeu...)
@@ -175,7 +175,7 @@ end
   u = @muladd uprev + dt*k₂
   if integrator.opts.adaptive
     integrator.fsallast = f(t+dt,u)
-    k₃ = W\(integrator.fsallast - c₃₂*(k₂-f₁)-2(k₁-integrator.fsalfirst)+dt*dT)
+    k₃ = W\@muladd(integrator.fsallast - c₃₂*(k₂-f₁)-2(k₁-integrator.fsalfirst)+dt*dT)
     integrator.EEst = integrator.opts.internalnorm((dt*(k₁ - 2k₂ + k₃)/6)./@muladd(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
   end
   integrator.k[1] = k₁
@@ -208,7 +208,7 @@ end
   k₂ = W\(f₁-k₁) + k₁
   tmp = @muladd uprev + dt*k₂
   integrator.fsallast = f(t+dt,tmp)
-  k₃ = W\(integrator.fsallast - c₃₂*(k₂-f₁)-2(k₁-integrator.fsalfirst)+dt*dT)
+  k₃ = W\@muladd(integrator.fsallast - c₃₂*(k₂-f₁)-2(k₁-integrator.fsalfirst)+dt*dT)
   u = uprev + dt*(k₁ + 4k₂ + k₃)/6
   if integrator.opts.adaptive
     integrator.EEst = integrator.opts.internalnorm((dt*(k₁ - 2k₂ + k₃)/6)./@muladd(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
