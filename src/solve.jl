@@ -137,7 +137,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
 
   opts = DEOptions(Int(maxiters),timeseries_steps,save_timeseries,adaptive,uEltype(uEltype(1)*abstol),
     uEltypeNoUnits(reltol),tTypeNoUnits(gamma),tTypeNoUnits(qmax),tTypeNoUnits(qmin),
-    tTypeNoUnits(dtmax),tTypeNoUnits(dtmin),internalnorm,
+    tType(dtmax),tType(dtmin),internalnorm,
     tstops_internal,saveat_internal,d_discontinuities_internal,
     userdata,
     progress,progress_steps,
