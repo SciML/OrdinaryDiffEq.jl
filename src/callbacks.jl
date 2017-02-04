@@ -51,7 +51,7 @@ end
   if ((prev_sign<0 && !(typeof(callback.affect!)<:Void)) || (prev_sign>0 && !(typeof(callback.affect_neg!)<:Void))) && prev_sign*next_sign<0
     event_occurred = true
     interp_index = callback.interp_points
-  elseif callback.interp_points!=0 # Use the interpolants for safety checking
+  elseif callback.interp_points!=0  && !(typeof(integrator.alg) <: Discrete)# Use the interpolants for safety checking
     if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache
       if typeof(callback.idxs) <: Void
         idxs_internal = eachindex(integrator.cache.tmp)
@@ -97,7 +97,7 @@ function find_callback_time(integrator,callback)
       else
         top_Θ = typeof(integrator.t)(1)
       end
-      if callback.rootfind
+      if callback.rootfind && !(typeof(integrator.alg) <: Discrete)
         if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache
           if typeof(callback.idxs) <: Void
             idxs_internal = eachindex(integrator.cache.tmp)
@@ -127,7 +127,7 @@ function find_callback_time(integrator,callback)
         # a float which is slightly after, making it out of the domain, causing
         # havoc.
         new_t = integrator.dt*Θ
-      elseif interp_index != callback.interp_points
+      elseif interp_index != callback.interp_points && !(typeof(integrator.alg) <: Discrete)
         new_t = integrator.dt*Θs[interp_index]
       else
         # If no solve and no interpolants, just use endpoint

@@ -69,7 +69,7 @@ end
   while !isempty(integrator.opts.saveat) && integrator.tdir*top(integrator.opts.saveat) <= integrator.tdir*integrator.t # Perform saveat
     integrator.saveiter += 1
     curt = pop!(integrator.opts.saveat)
-    if integrator.opts.saveat!=integrator.t # If <t, interpolate
+    if curt!=integrator.t # If <t, interpolate
       ode_addsteps!(integrator)
       Θ = (curt - integrator.tprev)/integrator.dt
       val = ode_interpolant(Θ,integrator,indices(integrator.uprev),Val{0}) # out of place, but no force copy later
@@ -86,7 +86,7 @@ end
         copyat_or_push!(integrator.notsaveat_idxs,integrator.saveiter_dense,integrator.saveiter)
         copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
       end
-      if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
+      if typeof(integrator.alg) <: OrdinaryDiffEqCompositeAlgorithm
         copyat_or_push!(integrator.sol.alg_choice,integrator.saveiter,integrator.cache.current)
       end
     end
