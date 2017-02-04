@@ -36,7 +36,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
   advance_to_tstop = false,stop_at_next_tstop=false,
   progress=false,progress_steps=1000,progress_name="ODE",
   progress_message = ODE_DEFAULT_PROG_MESSAGE,
-  userdata=nothing,callback=nothing,
+  userdata=nothing,callback=CallbackSet(),
   allow_extrapolation = alg_extrapolates(alg),
   initialize_integrator=true,kwargs...)
 
@@ -45,7 +45,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
 
   t = tspan[1]
 
-  if (!(typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm) && !(typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm)) && !(typeof(alg) <: Discrete) && dt == tType(0) && isempty(tstops)
+  if (!(typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm) && !(typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm)) && dt == tType(0) && isempty(tstops)
       error("Fixed timestep methods require a choice of dt or choosing the tstops")
   end
 
@@ -83,8 +83,6 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
 
   if dt == zero(dt) && adaptive
     dt = tType(ode_determine_initdt(u0,t,tdir,dtmax,uEltype(abstol),uEltypeNoUnits(reltol),internalnorm,prob,order))
-  elseif typeof(alg) <: Discrete && dt == zero(dt)
-    dt = tdir*tType(1)
   end
 
   if sign(dt)!=tdir && dt!=tType(0)

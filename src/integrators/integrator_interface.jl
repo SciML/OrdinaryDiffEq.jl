@@ -35,3 +35,4 @@ end
 u_cache(integrator::ODEIntegrator) = u_cache(integrator.cache)
 du_cache(integrator::ODEIntegrator)= du_cache(integrator.cache)
 full_cache(integrator::ODEIntegrator) = chain(u_cache(integrator),du_cache(integrator.cache))
+add_tstop!(integrator::ODEIntegrator,t) = push!(integrator.opts.tstops,t)
