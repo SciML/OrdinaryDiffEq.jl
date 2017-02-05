@@ -4,8 +4,8 @@ abstract OrdinaryDiffEqCompositeAlgorithm <: OrdinaryDiffEqAlgorithm
 
 immutable Discrete{apply_map,scale_by_time} <: OrdinaryDiffEqAlgorithm end
 
-Base.@pure Discrete(;apply_map=true,scale_by_time=false) = Discrete{apply_map,scale_by_time}()
-
+Base.@pure Discrete(;apply_map=false,scale_by_time=false) = Discrete{apply_map,scale_by_time}()
+Base.@pure FunctionMap(;scale_by_time=false) = Discrete{true,scale_by_time}()
 immutable Euler <: OrdinaryDiffEqAlgorithm end
 immutable Midpoint <: OrdinaryDiffEqAlgorithm end
 immutable RK4 <: OrdinaryDiffEqAlgorithm end

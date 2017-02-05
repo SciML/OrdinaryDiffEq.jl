@@ -145,7 +145,7 @@ function apply_callback!(integrator,callback::ContinuousCallback,cb_time,prev_si
     change_t_via_interpolation!(integrator,integrator.tprev+cb_time)
   end
 
-  if callback.save_positions[1]
+  @inbounds if callback.save_positions[1]
     savevalues!(integrator)
   end
 
@@ -167,7 +167,7 @@ function apply_callback!(integrator,callback::ContinuousCallback,cb_time,prev_si
 
   if integrator.u_modified
     reeval_internals_due_to_modification!(integrator)
-    if callback.save_positions[2]
+    @inbounds if callback.save_positions[2]
       savevalues!(integrator)
     end
     return true
@@ -176,15 +176,15 @@ function apply_callback!(integrator,callback::ContinuousCallback,cb_time,prev_si
 end
 
 #Base Case: Just one
-function apply_discrete_callback!(integrator::ODEIntegrator,callback::DiscreteCallback)
-  if callback.save_positions[1]
+@inline function apply_discrete_callback!(integrator::ODEIntegrator,callback::DiscreteCallback)
+  @inbounds if callback.save_positions[1]
     savevalues!(integrator)
   end
 
   integrator.u_modified = true
   if callback.condition(integrator.tprev+integrator.dt,integrator.u,integrator)
     callback.affect!(integrator)
-    if callback.save_positions[2]
+    @inbounds if callback.save_positions[2]
       savevalues!(integrator)
     end
   end
@@ -192,16 +192,16 @@ function apply_discrete_callback!(integrator::ODEIntegrator,callback::DiscreteCa
 end
 
 #Starting: Get bool from first and do next
-function apply_discrete_callback!(integrator::ODEIntegrator,callback::DiscreteCallback,args...)
+@inline function apply_discrete_callback!(integrator::ODEIntegrator,callback::DiscreteCallback,args...)
   apply_discrete_callback!(integrator,apply_discrete_callback!(integrator,callback),args...)
 end
 
-function apply_discrete_callback!(integrator::ODEIntegrator,discrete_modified::Bool,callback::DiscreteCallback,args...)
+@inline function apply_discrete_callback!(integrator::ODEIntegrator,discrete_modified::Bool,callback::DiscreteCallback,args...)
   bool = apply_discrete_callback!(integrator,apply_discrete_callback!(integrator,callback),args...)
   discrete_modified || bool
 end
 
-function apply_discrete_callback!(integrator::ODEIntegrator,discrete_modified::Bool,callback::DiscreteCallback)
+@inline function apply_discrete_callback!(integrator::ODEIntegrator,discrete_modified::Bool,callback::DiscreteCallback)
   bool = apply_discrete_callback!(integrator,callback)
   discrete_modified || bool
 end

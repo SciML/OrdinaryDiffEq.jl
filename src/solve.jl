@@ -12,11 +12,12 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
   prob::AbstractODEProblem{uType,tType,isinplace,F},
   alg::algType,timeseries_init=uType[],ts_init=tType[],ks_init=[],
   recompile::Type{Val{recompile_flag}}=Val{true};
-  dt = tType(0),save_timeseries = true,
+  save_timeseries = true,
   timeseries_steps = 1,
-  dense = save_timeseries,
+  dense = save_timeseries && !(typeof(alg) <: Discrete),
   saveat = tType[],tstops = tType[],d_discontinuities= tType[],
   calck = (!isempty(setdiff(saveat,tstops)) || dense),
+  dt = typeof(alg) <: Discrete && isempty(tstops) ? tType(1) : tType(0),
   adaptive = isadaptive(alg),
   gamma=9//10,
   abstol=1//10^6,
@@ -135,8 +136,16 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
   copyat_or_push!(timeseries,1,u)
   copyat_or_push!(ks,1,[rate_prototype])
 
-  opts = DEOptions(Int(maxiters),timeseries_steps,save_timeseries,adaptive,uEltype(uEltype(1)*abstol),
-    uEltypeNoUnits(reltol),tTypeNoUnits(gamma),tTypeNoUnits(qmax),tTypeNoUnits(qmin),
+  if typeof(alg) <: Discrete
+    abstol_internal = zero(uEltype)
+    reltol_internal = zero(uEltypeNoUnits)
+  else
+    abstol_internal = uEltype(uEltype(1)*abstol)
+    reltol_internal = uEltypeNoUnits(reltol)
+  end
+
+  opts = DEOptions(Int(maxiters),timeseries_steps,save_timeseries,adaptive,abstol_internal,
+    reltol_internal,tTypeNoUnits(gamma),tTypeNoUnits(qmax),tTypeNoUnits(qmin),
     tType(dtmax),tType(dtmin),internalnorm,
     tstops_internal,saveat_internal,d_discontinuities_internal,
     userdata,

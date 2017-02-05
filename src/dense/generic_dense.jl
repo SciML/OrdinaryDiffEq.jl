@@ -137,7 +137,8 @@ times ts (sorted), with values timeseries and derivatives ks
         vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]],idxs_internal,deriv)
       else
         ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache) # update the kcurrent
-        vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache,idxs_internal,deriv)
+        (typeof(cache) <: (DiscreteCache) || typeof(cache) <: DiscreteConstantCache) ? kval = 0 : kval = ks[i]
+        vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],kval,cache,idxs_internal,deriv)
       end
     end
   end
@@ -190,7 +191,8 @@ times ts (sorted), with values timeseries and derivatives ks
         if eltype(timeseries) <: AbstractArray
           ode_interpolant!(vals[j],Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache,idxs_internal,deriv)
         else
-          vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache,idxs_internal,deriv)
+          (typeof(cache) <: (DiscreteCache) || typeof(cache) <: DiscreteConstantCache) ? kval = 0 : kval = ks[i]
+          vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],kval,cache,idxs_internal,deriv)
         end
       end
     end
@@ -232,7 +234,8 @@ times ts (sorted), with values timeseries and derivatives ks
       val = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]],idxs_internal,deriv)
     else
       ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache) # update the kcurrent
-      val = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache,idxs_internal,deriv)
+      (typeof(cache) <: (DiscreteCache) || typeof(cache) <: DiscreteConstantCache) ? kval = 0 : kval = ks[i]
+      val = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],kval,cache,idxs_internal,deriv)
     end
   end
   val
@@ -273,7 +276,8 @@ times ts (sorted), with values timeseries and derivatives ks
       ode_interpolant!(out,Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]],idxs_internal,deriv)
     else
       ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache) # update the kcurrent
-      ode_interpolant!(out,Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache,idxs_internal,deriv)
+      (typeof(cache) <: (DiscreteCache) || typeof(cache) <: DiscreteConstantCache) ? kval = 0 : kval = ks[i]
+      ode_interpolant!(out,Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],kval,cache,idxs_internal,deriv)
     end
   end
 end

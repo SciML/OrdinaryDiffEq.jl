@@ -81,10 +81,12 @@ end
     else # ==t, just save
       copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
       copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
-      if integrator.opts.dense
-        integrator.saveiter_dense += 1
+      if typeof(integrator.alg) <: Discrete || integrator.opts.dense
+        integrator.saveiter_dense +=1
         copyat_or_push!(integrator.notsaveat_idxs,integrator.saveiter_dense,integrator.saveiter)
-        copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
+        if integrator.opts.dense
+          copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
+        end
       end
       if typeof(integrator.alg) <: OrdinaryDiffEqCompositeAlgorithm
         copyat_or_push!(integrator.sol.alg_choice,integrator.saveiter,integrator.cache.current)
@@ -95,10 +97,12 @@ end
     integrator.saveiter += 1
     copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
     copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
-    if integrator.opts.dense
-      integrator.saveiter_dense += 1
-      copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
+    if typeof(integrator.alg) <: Discrete || integrator.opts.dense
+      integrator.saveiter_dense +=1
       copyat_or_push!(integrator.notsaveat_idxs,integrator.saveiter_dense,integrator.saveiter)
+      if integrator.opts.dense
+        copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
+      end
     end
     if typeof(integrator.alg) <: OrdinaryDiffEqCompositeAlgorithm
       copyat_or_push!(integrator.sol.alg_choice,integrator.saveiter,integrator.cache.current)
@@ -120,10 +124,12 @@ end
     integrator.saveiter += 1
     copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
     copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
-    if integrator.opts.dense
+    if typeof(integrator.alg) <: Discrete || integrator.opts.dense
       integrator.saveiter_dense +=1
-      copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
       copyat_or_push!(integrator.notsaveat_idxs,integrator.saveiter_dense,integrator.saveiter)
+      if integrator.opts.dense
+        copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
+      end
     end
   end
 end
