@@ -111,7 +111,7 @@ times ts (sorted), with values timeseries and derivatives ks
   end
   @inbounds for j in idx
     t = tvals[j]
-    i = findfirst((x)->tdir*x>=tdir*t,ts[notsaveat_idxs[i:end]])+i-1 # It's in the interval ts[i-1] to ts[i]
+    i = searchsortedfirst(@view(ts[notsaveat_idxs[i:end]]),t,rev=tdir<0)+i-1 # It's in the interval ts[i-1] to ts[i]
     if ts[notsaveat_idxs[i]] == t
       if idxs == nothing
         vals[j] = timeseries[notsaveat_idxs[i]]
@@ -158,7 +158,7 @@ times ts (sorted), with values timeseries and derivatives ks
   i = 2 # Start the search thinking it's between ts[1] and ts[2]
   @inbounds for j in idx
     t = tvals[j]
-    i = findfirst((x)->tdir*x>=tdir*t,ts[notsaveat_idxs[i:end]])+i-1 # It's in the interval ts[i-1] to ts[i]
+    i = searchsortedfirst(@view(ts[notsaveat_idxs[i:end]]),t,rev=tdir<0)+i-1 # It's in the interval ts[i-1] to ts[i]
     if ts[notsaveat_idxs[i]] == t
       if idxs == nothing
         vals[j] = timeseries[notsaveat_idxs[i]]
@@ -208,7 +208,7 @@ times ts (sorted), with values timeseries and derivatives ks
 @inline function ode_interpolation(tval::Number,id,idxs,deriv)
   @unpack ts,timeseries,ks,f,notsaveat_idxs,cache = id
   tdir = sign(ts[end]-ts[1])
-  @inbounds i = findfirst((x)->tdir*x>=tdir*tval,@view ts[notsaveat_idxs]) # It's in the interval ts[i-1] to ts[i]
+  @inbounds i = searchsortedfirst(@view(ts[notsaveat_idxs]),tval,rev=tdir<0) # It's in the interval ts[i-1] to ts[i]
   @inbounds if ts[notsaveat_idxs[i]] == tval
     if idxs == nothing
       val = timeseries[notsaveat_idxs[i]]
@@ -250,7 +250,7 @@ times ts (sorted), with values timeseries and derivatives ks
 @inline function ode_interpolation!(out,tval::Number,id,idxs,deriv)
   @unpack ts,timeseries,ks,f,notsaveat_idxs,cache = id
   tdir = sign(ts[end]-ts[1])
-  @inbounds i = findfirst((x)->tdir*x>=tdir*tval,@view ts[notsaveat_idxs]) # It's in the interval ts[i-1] to ts[i]
+  @inbounds i = searchsortedfirst(@view(ts[notsaveat_idxs]),tval,rev=tdir<0) # It's in the interval ts[i-1] to ts[i]
   @inbounds if ts[notsaveat_idxs[i]] == tval
     if idxs == nothing
       copy!(out,timeseries[notsaveat_idxs[i]])
