@@ -111,7 +111,7 @@ times ts (sorted), with values timeseries and derivatives ks
   end
   @inbounds for j in idx
     t = tvals[j]
-    i = searchsortedfirst(@view(ts[notsaveat_idxs[i:end]]),t,rev=tdir<0)+i-1 # It's in the interval ts[i-1] to ts[i]
+    i = searchsortedfirst(@view(ts[@view(notsaveat_idxs[i:end])]),t,rev=tdir<0)+i-1 # It's in the interval ts[i-1] to ts[i]
     if ts[notsaveat_idxs[i]] == t
       if idxs == nothing
         vals[j] = timeseries[notsaveat_idxs[i]]
@@ -158,7 +158,7 @@ times ts (sorted), with values timeseries and derivatives ks
   i = 2 # Start the search thinking it's between ts[1] and ts[2]
   @inbounds for j in idx
     t = tvals[j]
-    i = searchsortedfirst(@view(ts[notsaveat_idxs[i:end]]),t,rev=tdir<0)+i-1 # It's in the interval ts[i-1] to ts[i]
+    i = searchsortedfirst(@view(ts[@view(notsaveat_idxs[i:end])]),t,rev=tdir<0)+i-1 # It's in the interval ts[i-1] to ts[i]
     if ts[notsaveat_idxs[i]] == t
       if idxs == nothing
         vals[j] = timeseries[notsaveat_idxs[i]]
