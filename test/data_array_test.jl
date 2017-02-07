@@ -5,7 +5,7 @@ type SimType{T} <: DEDataArray{T}
     f1::T
 end
 
-function f(t,u,du)
+f = function (t,u,du)
     du[1] = -0.5*u[1] + u.f1
     du[2] = -0.5*u[2]
 end
@@ -14,11 +14,11 @@ const tstop1 = [5.]
 const tstop2 = [8.]
 const tstop = [5.;8.]
 
-function condition(t,u,integrator)
+condition = function (t,u,integrator)
   t in tstop1
 end
 
-function affect!(integrator)
+affect! = function (integrator)
   for c in user_cache(integrator)
     c.f1 = 1.5
   end
@@ -28,11 +28,11 @@ save_positions = (true,true)
 
 cb = DiscreteCallback(condition, affect!, save_positions)
 
-function condition2(t,u,integrator)
+condition2 = function (t,u,integrator)
   t in tstop2
 end
 
-function affect2!(integrator)
+affect2! = function (integrator)
   for c in user_cache(integrator)
     c.f1 = -1.5
   end
