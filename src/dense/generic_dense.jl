@@ -103,7 +103,11 @@ times ts (sorted), with values timeseries and derivatives ks
   idx = sortperm(tvals)
   i = 2 # Start the search thinking it's between ts[1] and ts[2]
   if idxs == nothing
-    vals = Vector{eltype(timeseries)}(length(tvals))
+    if (eltype(timeseries) <: AbstractArray) && !(eltype(timeseries) <: Array)
+      vals = Vector{Vector{eltype(first(timeseries))}}(length(tvals))
+    else
+      vals = Vector{eltype(timeseries)}(length(tvals))
+    end
   elseif typeof(idxs) <: Number
     vals = Vector{eltype(first(timeseries))}(length(tvals))
   else
