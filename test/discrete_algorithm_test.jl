@@ -4,7 +4,7 @@ sol =solve(prob_ode_linear,Discrete())
 
 @test sol[1] == sol[end]
 
-@test sol(0.5) == sol[1]
+@test sol(0.5:0.1:0.7) == [sol[1],sol[1],sol[1]]
 
 sol =solve(prob_ode_2Dlinear,Discrete())
 
