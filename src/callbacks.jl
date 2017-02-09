@@ -244,7 +244,7 @@ function resize!(integrator::ODEIntegrator,cache::Union{ImplicitEulerCache,Trape
 end
 
 function resize!(integrator::ODEIntegrator,cache::DiscreteCache,i)
-  for c in u_cache(integrator)
+  for c in user_cache(integrator)
     resize!(c,i)
   end
   if discrete_scale_by_time(integrator.alg)
