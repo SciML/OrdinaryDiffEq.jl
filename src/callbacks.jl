@@ -13,10 +13,11 @@ end
 function find_first_continuous_callback(integrator,tmin::Number,upcrossing::Float64,idx::Int,counter::Int,callback2)
   counter += 1 # counter is idx for callback2.
   tmin2,upcrossing2 = find_callback_time(integrator,callback2)
-  if tmin < tmin2
-    return tmin,upcrossing,idx,counter
-  else
+
+  if (tmin2 < tmin && tmin2 != zero(typeof(tmin))) || tmin == zero(typeof(tmin))
     return tmin2,upcrossing,counter,counter
+  else
+    return tmin,upcrossing,idx,counter
   end
 end
 
