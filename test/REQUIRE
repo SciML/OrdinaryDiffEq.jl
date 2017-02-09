@@ -4,3 +4,4 @@ DiffEqDevTools 0.6.0
 DiffEqProblemLibrary
 ParameterizedFunctions 0.5.0
 ODEInterfaceDiffEq
+DiffEqBase 0.10.0
