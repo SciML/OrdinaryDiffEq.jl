@@ -35,7 +35,7 @@ end
 user_cache(integrator::ODEIntegrator) = (integrator.cache.u,integrator.cache.uprev,integrator.cache.tmp)
 u_cache(integrator::ODEIntegrator) = u_cache(integrator.cache)
 du_cache(integrator::ODEIntegrator)= du_cache(integrator.cache)
-full_cache(integrator::ODEIntegrator) = chain(u_cache(integrator),du_cache(integrator.cache))
+full_cache(integrator::ODEIntegrator) = chain(user_cache(integrator),u_cache(integrator),du_cache(integrator.cache))
 default_non_user_cache(integrator::ODEIntegrator) = chain(u_cache(integrator),du_cache(integrator.cache))
 @inline add_tstop!(integrator::ODEIntegrator,t) = push!(integrator.opts.tstops,t)
 
