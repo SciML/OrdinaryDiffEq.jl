@@ -48,6 +48,8 @@ function resize!(integrator::ODEIntegrator,cache,i)
 end
 
 resize_non_user_cache!(integrator::ODEIntegrator,i::Int) = resize_non_user_cache!(integrator,integrator.cache,i)
+deleteat_non_user_cache!(integrator::ODEIntegrator,i) = deleteat_non_user_cache!(integrator,integrator.cache,i)
+addat_non_user_cache!(integrator::ODEIntegrator,i) = addat_non_user_cache!(integrator,integrator.cache,i)
 
 function resize_non_user_cache!(integrator::ODEIntegrator,cache,i)
   for c in default_non_user_cache(integrator)
@@ -84,18 +86,32 @@ function resize_non_user_cache!(integrator::ODEIntegrator,cache::Union{ImplicitE
   end
 end
 
-function resize_non_user_cache!(integrator::ODEIntegrator,cache::DiscreteCache,i)
-  if discrete_scale_by_time(integrator.alg)
-    for c in du_cache(integrator)
-      resize!(c,i)
-    end
-  end
+function deleteat_non_user_cache!(integrator::ODEIntegrator,cache,idxs)
+  # ordering doesn't matter in deterministic cache, so just resize
+  # to match the size of u
+  i = length(integrator.u)
+  resize_non_user_cache!(integrator,cache,i)
 end
 
-function deleteat!(integrator::ODEIntegrator,i::Int)
-  for c in full_cache(integrator)
-    deleteat!(c,i)
+function addat_non_user_cache!(integrator::ODEIntegrator,cache,idxs)
+  # ordering doesn't matter in deterministic cache, so just resize
+  # to match the size of u
+  i = length(integrator.u)
+  resize_non_user_cache!(integrator,cache,i)
+end
+
+function deleteat!(integrator::ODEIntegrator,idxs)
+  for c in user_cache(integrator)
+    deleteat!(c,idxs)
   end
+  deleteat_non_user_cache!(integrator,cache,idxs)
+end
+
+function addat!(integrator::ODEIntegrator,idxs)
+  for c in user_cache(integrator)
+    addat!(c,idxs)
+  end
+  addat_non_user_cache!(integrator,cache,idxs)
 end
 
 function terminate!(integrator::ODEIntegrator)
