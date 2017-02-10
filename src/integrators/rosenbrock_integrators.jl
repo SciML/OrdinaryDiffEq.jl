@@ -10,7 +10,7 @@ end
 @inline function perform_step!(integrator,cache::Rosenbrock23Cache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,uf,tf,linsolve_tmp = cache
+  @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp = cache
   jidx = eachindex(J)
   @unpack c₃₂,d = cache.tab
 
@@ -53,7 +53,7 @@ end
 
   @into! vectmp2 = Wfact\linsolve_tmp
   for i in uidx
-    k₂[i] = tmp[i] + k₁[i]
+    k₂[i] = vectmp2[i] + k₁[i]
     u[i] = @muladd uprev[i] + dt*k₂[i]
   end
   if integrator.opts.adaptive
@@ -66,9 +66,9 @@ end
     @into! vectmp3 = Wfact\linsolve_tmp
     k₃ = reshape(vectmp3,sizeu...)
     for i in uidx
-      tmp2[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol)
+      tmp[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol)
     end
-    integrator.EEst = integrator.opts.internalnorm(tmp2)
+    integrator.EEst = integrator.opts.internalnorm(tmp)
   end
   @pack integrator = t,dt,u,k
 end
@@ -85,7 +85,7 @@ end
 @inline function perform_step!(integrator,cache::Rosenbrock32Cache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,uf,tf,linsolve_tmp = cache
+  @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp = cache
   jidx = eachindex(J)
   @unpack c₃₂,d = cache.tab
   # Setup Jacobian Calc
@@ -127,7 +127,7 @@ end
   @into! vectmp2 = Wfact\linsolve_tmp
   tmp = reshape(vectmp2,sizeu...)
   for i in uidx
-    k₂[i] = tmp[i] + k₁[i]
+    k₂[i] = vectmp2[i] + k₁[i]
   end
   for i in uidx
     tmp[i] = @muladd uprev[i] + dt*k₂[i]
@@ -143,9 +143,9 @@ end
   end
   if integrator.opts.adaptive
     for i in uidx
-      tmp2[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)/@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol)
+      tmp[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)/@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol)
     end
-    integrator.EEst = integrator.opts.internalnorm(tmp2)
+    integrator.EEst = integrator.opts.internalnorm(tmp)
   end
   @pack integrator = t,dt,u,k
 end

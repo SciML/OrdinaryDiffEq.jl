@@ -35,18 +35,28 @@ end
 user_cache(integrator::ODEIntegrator) = (integrator.cache.u,integrator.cache.uprev,integrator.cache.tmp)
 u_cache(integrator::ODEIntegrator) = u_cache(integrator.cache)
 du_cache(integrator::ODEIntegrator)= du_cache(integrator.cache)
-full_cache(integrator::ODEIntegrator) = chain(user_cache(integrator),u_cache(integrator),du_cache(integrator.cache))
+full_cache(integrator::ODEIntegrator) = chain(u_cache(integrator),du_cache(integrator.cache))
+default_non_user_cache(integrator::ODEIntegrator) = chain(u_cache(integrator),du_cache(integrator.cache))
 @inline add_tstop!(integrator::ODEIntegrator,t) = push!(integrator.opts.tstops,t)
 
 resize!(integrator::ODEIntegrator,i::Int) = resize!(integrator,integrator.cache,i)
 function resize!(integrator::ODEIntegrator,cache,i)
-  for c in full_cache(integrator)
+  for c in user_cache(integrator)
+    resize!(c,i)
+  end
+  resize_non_user_cache!(integrator,cache,i)
+end
+
+resize_non_user_cache!(integrator::ODEIntegrator,i::Int) = resize_non_user_cache!(integrator,integrator.cache,i)
+
+function resize_non_user_cache!(integrator::ODEIntegrator,cache,i)
+  for c in default_non_user_cache(integrator)
     resize!(c,i)
   end
 end
 
-function resize!(integrator::ODEIntegrator,cache::Union{Rosenbrock23Cache,Rosenbrock32Cache},i)
-  for c in full_cache(integrator)
+function resize_non_user_cache!(integrator::ODEIntegrator,cache::Union{Rosenbrock23Cache,Rosenbrock32Cache},i)
+  for c in default_non_user_cache(integrator)
     resize!(c,i)
   end
   for c in vecu_cache(integrator.cache)
@@ -58,8 +68,8 @@ function resize!(integrator::ODEIntegrator,cache::Union{Rosenbrock23Cache,Rosenb
   cache.W = reshape(resize!(Wvec,i*i),i,i)
 end
 
-function resize!(integrator::ODEIntegrator,cache::Union{ImplicitEulerCache,TrapezoidCache},i)
-  for c in full_cache(integrator)
+function resize_non_user_cache!(integrator::ODEIntegrator,cache::Union{ImplicitEulerCache,TrapezoidCache},i)
+  for c in default_non_user_cache(integrator)
     resize!(c,i)
   end
   for c in vecu_cache(integrator.cache)
@@ -74,10 +84,7 @@ function resize!(integrator::ODEIntegrator,cache::Union{ImplicitEulerCache,Trape
   end
 end
 
-function resize!(integrator::ODEIntegrator,cache::DiscreteCache,i)
-  for c in user_cache(integrator)
-    resize!(c,i)
-  end
+function resize_non_user_cache!(integrator::ODEIntegrator,cache::DiscreteCache,i)
   if discrete_scale_by_time(integrator.alg)
     for c in du_cache(integrator)
       resize!(c,i)
