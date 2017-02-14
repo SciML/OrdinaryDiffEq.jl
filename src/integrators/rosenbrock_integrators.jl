@@ -10,7 +10,7 @@ end
 @inline function perform_step!(integrator,cache::Rosenbrock23Cache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp = cache
+  @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,jac_config = cache
   jidx = eachindex(J)
   @unpack c₃₂,d = cache.tab
 
@@ -23,7 +23,7 @@ end
 
   #if alg_autodiff(alg)
     ForwardDiff.derivative!(dT,tf,t) # Time derivative of each component
-    ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev))
+    ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
   #else
   #  Calculus.finite_difference!((t)->vecfreturn(t,uprev,du2),[t],dT)
   #  Calculus.finite_difference_jacobian!((du1,uprev)->vecf(t,uprev,du1),vec(uprev),vec(du1),J)
@@ -85,7 +85,7 @@ end
 @inline function perform_step!(integrator,cache::Rosenbrock32Cache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp = cache
+  @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,jac_config = cache
   jidx = eachindex(J)
   @unpack c₃₂,d = cache.tab
   # Setup Jacobian Calc
@@ -97,7 +97,7 @@ end
 
   #if alg_autodiff(alg)
     ForwardDiff.derivative!(dT,tf,t) # Time derivative of each component
-    ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev))
+    ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
 
   a = -dt*d
   for i in 1:length(u), j in 1:length(u)
