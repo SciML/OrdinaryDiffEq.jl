@@ -68,6 +68,9 @@ function resize_non_user_cache!(integrator::ODEIntegrator,cache::Union{Rosenbroc
   cache.J = reshape(resize!(Jvec,i*i),i,i)
   Wvec = vec(cache.W)
   cache.W = reshape(resize!(Wvec,i*i),i,i)
+  for c in cache.jac_config.duals
+    resize!(c,i)
+  end
 end
 
 function resize_non_user_cache!(integrator::ODEIntegrator,cache::Union{ImplicitEulerCache,TrapezoidCache},i)

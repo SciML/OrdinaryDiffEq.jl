@@ -36,6 +36,11 @@ sol = solve(prob,ImplicitEuler(chunk_size=1),callback=callback,dt=1/10)
 
 sol = solve(prob,Trapezoid(chunk_size=1),callback=callback,dt=1/10)
 
+sol = solve(prob,Rosenbrock23(chunk_size=1),callback=callback,dt=1/10)
+
+sol = solve(prob,Rosenbrock32(chunk_size=1),callback=callback,dt=1/10)
+
+
 #=
 using Plots; pyplot()
 p1 = plot(sol,vars=(0,1),plotdensity=10000,title="Amount of X in Cell 1")
