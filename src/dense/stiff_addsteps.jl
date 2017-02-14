@@ -28,7 +28,7 @@ end
 
 function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenbrock23Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<2 || calcVal
-    @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,uf,tf,linsolve_tmp = cache
+    @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp = cache
     @unpack c₃₂,d = cache.tab
     uidx = eachindex(uprev)
 
@@ -48,22 +48,24 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenb
     ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev))
     =#
 
+    a = -dt*d
     for i in 1:length(uprev), j in 1:length(uprev)
-      W[i,j] = I[i,j]-dt*d*J[i,j]
+      W[i,j] = I[i,j]+a*J[i,j]
     end
 
     Wfact = cache.factorization(W)
 
+    a = -a
     for i in uidx
-      linsolve_tmp[i] = fsalfirst[i] + dt*d*dT[i]
+      linsolve_tmp[i] = @muladd fsalfirst[i] + a*dT[i]
     end
 
     @into! vectmp = Wfact\linsolve_tmp
     recursivecopy!(k₁,reshape(vectmp,size(u)...))
     for i in uidx
-      tmp2[i]=uprev[i]+dt*k₁[i]/2
+      tmp[i]=uprev[i]+dt*k₁[i]/2
     end
-    f(t+dt/2,tmp2,f₁)
+    f(t+dt/2,tmp,f₁)
 
     for i in uidx
       linsolve_tmp[i] = f₁[i]-k₁[i]
@@ -81,7 +83,7 @@ end
 
 function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenbrock32Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<2 || calcVal
-    @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tmp2,uf,tf,linsolve_tmp = cache
+    @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp = cache
     @unpack c₃₂,d = cache.tab
     uidx = eachindex(uprev)
 
@@ -101,22 +103,24 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenb
     ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev))
     =#
 
+    a = -dt*d
     for i in 1:length(u), j in 1:length(u)
-      W[i,j] = I[i,j]-dt*d*J[i,j]
+      W[i,j] = @muladd I[i,j]+a*J[i,j]
     end
 
     Wfact = cache.factorization(W)
 
+    a = -a
     for i in uidx
-      linsolve_tmp[i] = fsalfirst[i] + dt*d*dT[i]
+      linsolve_tmp[i] = @muladd fsalfirst[i] + a*dT[i]
     end
 
     @into! vectmp = Wfact\linsolve_tmp
     recursivecopy!(k₁,reshape(vectmp,size(u)...))
     for i in uidx
-      tmp2[i]=uprev[i]+dt*k₁[i]/2
+      tmp[i]=uprev[i]+dt*k₁[i]/2
     end
-    f(t+dt/2,tmp2,f₁)
+    f(t+dt/2,tmp,f₁)
 
     for i in uidx
       linsolve_tmp[i] = f₁[i]-k₁[i]
