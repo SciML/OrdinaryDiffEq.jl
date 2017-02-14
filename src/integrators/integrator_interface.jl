@@ -32,12 +32,13 @@ end
   integrator.u_modified = bool
 end
 
-user_cache(integrator::ODEIntegrator) = (integrator.cache.u,integrator.cache.uprev,integrator.cache.tmp)
+user_cache(integrator::ODEIntegrator) = user_cache(integrator.cache)
 u_cache(integrator::ODEIntegrator) = u_cache(integrator.cache)
 du_cache(integrator::ODEIntegrator)= du_cache(integrator.cache)
 full_cache(integrator::ODEIntegrator) = chain(user_cache(integrator),u_cache(integrator),du_cache(integrator.cache))
 default_non_user_cache(integrator::ODEIntegrator) = chain(u_cache(integrator),du_cache(integrator.cache))
 @inline add_tstop!(integrator::ODEIntegrator,t) = push!(integrator.opts.tstops,t)
+user_cache(cache::OrdinaryDiffEqCache) = (cache.u,cache.uprev,cache.tmp)
 
 resize!(integrator::ODEIntegrator,i::Int) = resize!(integrator,integrator.cache,i)
 function resize!(integrator::ODEIntegrator,cache,i)
@@ -68,10 +69,9 @@ function resize_non_user_cache!(integrator::ODEIntegrator,cache::Union{Rosenbroc
   cache.J = reshape(resize!(Jvec,i*i),i,i)
   Wvec = vec(cache.W)
   cache.W = reshape(resize!(Wvec,i*i),i,i)
-  for c in cache.jac_config.duals
-    resize!(c,i)
-  end
+  resize!(cache.jac_config.duals[1],i)
 end
+user_cache(cache::Union{Rosenbrock23Cache,Rosenbrock32Cache}) = (cache.u,cache.uprev,cache.jac_config.duals[2])
 
 function resize_non_user_cache!(integrator::ODEIntegrator,cache::Union{ImplicitEulerCache,TrapezoidCache},i)
   for c in default_non_user_cache(integrator)

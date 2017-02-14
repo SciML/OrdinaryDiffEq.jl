@@ -832,7 +832,7 @@ type Rosenbrock23Cache{uType,uArrayType,rateType,vecuType,JType,TabType,TFType,U
   jac_config::JCType
 end
 
-u_cache(c::Rosenbrock23Cache) = (c.dT,)
+u_cache(c::Rosenbrock23Cache) = (c.dT,c.tmp)
 du_cache(c::Rosenbrock23Cache) = (c.k₁,c.k₂,c.k₃,c.du1,c.du2,c.f₁,c.fsalfirst,c.fsallast,c.linsolve_tmp)
 jac_cache(c::Rosenbrock23Cache) = (c.J,c.W)
 vecu_cache(c::Rosenbrock23Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
@@ -863,7 +863,7 @@ type Rosenbrock32Cache{uType,uArrayType,rateType,vecuType,JType,TabType,TFType,U
   jac_config::JCType
 end
 
-u_cache(c::Rosenbrock32Cache) = (c.dT,)
+u_cache(c::Rosenbrock32Cache) = (c.dT,c.tmp)
 du_cache(c::Rosenbrock32Cache) = (c.k₁,c.k₂,c.k₃,c.du1,c.du2,c.f₁,c.fsalfirst,c.fsallast,c.linsolve_tmp)
 jac_cache(c::Rosenbrock32Cache) = (c.J,c.W)
 vecu_cache(c::Rosenbrock32Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
