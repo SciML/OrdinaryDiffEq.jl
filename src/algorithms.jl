@@ -50,6 +50,15 @@ immutable Rosenbrock32{CS,AD,F} <: OrdinaryDiffEqAdaptiveAlgorithm
 end
 Base.@pure Rosenbrock32(;chunk_size=0,autodiff=true,factorization=lufact!) = Rosenbrock32{chunk_size,autodiff,typeof(factorization)}(factorization)
 
+immutable GeneralRosenbrock{CS,AD,F,TabType} <: OrdinaryDiffEqAdaptiveAlgorithm
+  tableau::TabType
+  factorization::F
+end
+
+Base.@pure GeneralRosenbrock(;chunk_size=0,autodiff=true,
+                    factorization=lufact!,tableau=ROSENBROCK_DEFAULT_TABLEAU) =
+                    GeneralRosenbrock{chunk_size,autodiff,typeof(factorization),typeof(tableau)}(tableau,factorization)
+
 immutable CompositeAlgorithm{T,F} <: OrdinaryDiffEqCompositeAlgorithm
   algs::T
   choice_function::F
