@@ -100,7 +100,7 @@ times ts (sorted), with values timeseries and derivatives ks
 @inline function ode_interpolation(tvals,id,idxs,deriv)
   @unpack ts,timeseries,ks,f,notsaveat_idxs,cache = id
   tdir = sign(ts[end]-ts[1])
-  idx = sortperm(tvals)
+  idx = sortperm(tvals,rev=tdir<0)
   i = 2 # Start the search thinking it's between ts[1] and ts[2]
   if idxs == nothing
     if (eltype(timeseries) <: AbstractArray) && !(eltype(timeseries) <: Array)
@@ -159,7 +159,7 @@ times ts (sorted), with values timeseries and derivatives ks
 @inline function ode_interpolation!(vals,tvals,id,idxs,deriv)
   @unpack ts,timeseries,ks,f,notsaveat_idxs,cache = id
   tdir = sign(ts[end]-ts[1])
-  idx = sortperm(tvals)
+  idx = sortperm(tvals,rev=tdir<0)
   i = 2 # Start the search thinking it's between ts[1] and ts[2]
   @inbounds for j in idx
     t = tvals[j]
