@@ -1,6 +1,6 @@
-abstract OrdinaryDiffEqCache <: DECache
-abstract OrdinaryDiffEqConstantCache <: OrdinaryDiffEqCache
-abstract OrdinaryDiffEqMutableCache <: OrdinaryDiffEqCache
+@compat abstract type OrdinaryDiffEqCache <: DECache end
+@compat abstract type OrdinaryDiffEqConstantCache <: OrdinaryDiffEqCache end
+@compat abstract type OrdinaryDiffEqMutableCache <: OrdinaryDiffEqCache end
 immutable ODEEmptyCache <: OrdinaryDiffEqConstantCache end
 immutable ODEChunkCache{CS} <: OrdinaryDiffEqConstantCache end
 
@@ -237,6 +237,14 @@ u_cache(c::DP5Cache) = (c.utilde,c.atmp)
 du_cache(c::DP5Cache) = (c.k1,c.k2,c.k3,c.k4,c.k5,c.k6,c.k7,c.dense_tmp3,c.dense_tmp4,c.update,c.bspl)
 
 function alg_cache(alg::DP5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+  @show u
+  @show rate_prototype
+  @show uEltypeNoUnits
+  @show tTypeNoUnits
+  @show uprev
+  @show uprev2
+  @show f
+  @show t
   k1 = zeros(rate_prototype)
   k2 = zeros(rate_prototype)
   k3 = zeros(rate_prototype)
@@ -249,9 +257,12 @@ function alg_cache(alg::DP5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,u
   update = zeros(rate_prototype)
   bspl = zeros(rate_prototype)
   utilde = similar(u,indices(u))
+  @show typeof(utilde)
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits,indices(u))
   tab = DP5ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
-  DP5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,utilde,tmp,atmp,tab)
+  cache = DP5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,utilde,tmp,atmp,tab)
+  @show typeof(cache)
+  cache
 end
 
 alg_cache(alg::DP5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = DP5ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
