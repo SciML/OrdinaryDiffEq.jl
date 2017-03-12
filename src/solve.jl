@@ -183,6 +183,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
 
   cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,Val{isinplace})
 
+  @show cache
   @show typeof(cache)
 
   if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
