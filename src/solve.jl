@@ -50,6 +50,10 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
       error("Fixed timestep methods require a choice of dt or choosing the tstops")
   end
 
+  if tspan[1] == tspan[2]
+    error("Timespan is trivial")
+  end
+
   d_discontinuities_col = collect(d_discontinuities)
 
   if tdir>0
