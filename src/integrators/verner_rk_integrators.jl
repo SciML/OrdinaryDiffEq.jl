@@ -82,7 +82,7 @@ end
   if integrator.opts.adaptive
     for i in uidx
       utilde[i] = @muladd uprev[i] + dt*(b1*k1[i] + b4*k4[i] + b5*k5[i] + b6*k6[i] + b7*k7[i] + b8*k8[i] + b9*k9[i])
-      atmp[i] = ((utilde[i]-u[i])/@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol))
+      atmp[i] = ((utilde[i]-u[i])/@muladd(integrator.opts.abstol+max(abs.(uprev[i]),abs.(u[i]))*integrator.opts.reltol))
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
@@ -112,7 +112,7 @@ end
   update = dt*(@muladd(k1*b1 + k4*b4 + k5*b5 + k6*b6 + k7*b7 + k8*b8 + k9*b9))
   u = uprev + update
   if integrator.opts.adaptive
-    integrator.EEst = integrator.opts.internalnorm( ((update - dt*(@muladd(bhat1*k1 + bhat4*k4 + bhat5*k5 + bhat6*k6 + bhat7*k7 + bhat10*k10)))/@muladd(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)))
+    integrator.EEst = integrator.opts.internalnorm( ((update - dt*(@muladd(bhat1*k1 + bhat4*k4 + bhat5*k5 + bhat6*k6 + bhat7*k7 + bhat10*k10)))/@muladd(integrator.opts.abstol+max(abs.(uprev),abs.(u))*integrator.opts.reltol)))
   end
   integrator.k[1]=k1; integrator.k[2]=k2;
   integrator.k[3]=k3; integrator.k[4]=k4;
@@ -179,7 +179,7 @@ end
   end
   if integrator.opts.adaptive
     for i in uidx
-      atmp[i] = (@muladd(update[i] - dt*(bhat1*k1[i] + bhat4*k4[i] + bhat5*k5[i] + bhat6*k6[i] + bhat7*k7[i] + bhat10*k10[i]))/@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol))
+      atmp[i] = (@muladd(update[i] - dt*(bhat1*k1[i] + bhat4*k4[i] + bhat5*k5[i] + bhat6*k6[i] + bhat7*k7[i] + bhat10*k10[i]))/@muladd(integrator.opts.abstol+max(abs.(uprev[i]),abs.(u[i]))*integrator.opts.reltol))
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
@@ -212,7 +212,7 @@ end
   update = dt*(@muladd(k1*b1 + k6*b6 + k7*b7 + k8*b8 + k9*b9 + k10*b10 + k11*b11 + k12*b12))
   u = uprev + update
   if integrator.opts.adaptive
-    integrator.EEst = integrator.opts.internalnorm( (@muladd(update - dt*(bhat1*k1 + bhat6*k6 + bhat7*k7 + bhat8*k8 + bhat9*k9 + bhat10*k10 + bhat13*k13))/@muladd(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)))
+    integrator.EEst = integrator.opts.internalnorm( (@muladd(update - dt*(bhat1*k1 + bhat6*k6 + bhat7*k7 + bhat8*k8 + bhat9*k9 + bhat10*k10 + bhat13*k13))/@muladd(integrator.opts.abstol+max(abs.(uprev),abs.(u))*integrator.opts.reltol)))
   end
   integrator.k[1]=k1; integrator.k[2]=k2;
   integrator.k[3]=k3; integrator.k[4]=k4;
@@ -293,7 +293,7 @@ end
   end
   if integrator.opts.adaptive
     for i in uidx
-      atmp[i] = (@muladd(update[i] - dt*(bhat1*k1[i] + bhat6*k6[i] + bhat7*k7[i] + bhat8*k8[i] + bhat9*k9[i] + bhat10*k10[i] + bhat13*k13[i]))/@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol))
+      atmp[i] = (@muladd(update[i] - dt*(bhat1*k1[i] + bhat6*k6[i] + bhat7*k7[i] + bhat8*k8[i] + bhat9*k9[i] + bhat10*k10[i] + bhat13*k13[i]))/@muladd(integrator.opts.abstol+max(abs.(uprev[i]),abs.(u[i]))*integrator.opts.reltol))
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
@@ -329,7 +329,7 @@ end
   update = dt*(@muladd(k1*b1+k8*b8+k9*b9+k10*b10+k11*b11+k12*b12+k13*b13+k14*b14+k15*b15))
   u = uprev + update
   if integrator.opts.adaptive
-    integrator.EEst = integrator.opts.internalnorm(@muladd(update - dt*(k1*bhat1 + k8*bhat8 + k9*bhat9 + k10*bhat10 + k11*bhat11 + k12*bhat12 + k13*bhat13 + k16*bhat16))/@muladd(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+    integrator.EEst = integrator.opts.internalnorm(@muladd(update - dt*(k1*bhat1 + k8*bhat8 + k9*bhat9 + k10*bhat10 + k11*bhat11 + k12*bhat12 + k13*bhat13 + k16*bhat16))/@muladd(integrator.opts.abstol+max(abs.(uprev),abs.(u))*integrator.opts.reltol))
   end
   integrator.k[1]=k1; integrator.k[2]=k2;
   integrator.k[3]=k3; integrator.k[4]=k4;
@@ -423,7 +423,7 @@ end
   end
   if integrator.opts.adaptive
     for i in uidx
-      atmp[i] = (@muladd(update[i] - dt*(k1[i]*bhat1 + k8[i]*bhat8 + k9[i]*bhat9 + k10[i]*bhat10 + k11[i]*bhat11 + k12[i]*bhat12 + k13[i]*bhat13 + k16[i]*bhat16))/@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol))
+      atmp[i] = (@muladd(update[i] - dt*(k1[i]*bhat1 + k8[i]*bhat8 + k9[i]*bhat9 + k10[i]*bhat10 + k11[i]*bhat11 + k12[i]*bhat12 + k13[i]*bhat13 + k16[i]*bhat16))/@muladd(integrator.opts.abstol+max(abs.(uprev[i]),abs.(u[i]))*integrator.opts.reltol))
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
