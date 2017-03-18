@@ -74,7 +74,12 @@ end
       Θ = (curt - integrator.tprev)/integrator.dt
       val = ode_interpolant(Θ,integrator,indices(integrator.uprev),Val{0}) # out of place, but no force copy later
       copyat_or_push!(integrator.sol.t,integrator.saveiter,curt)
-      copyat_or_push!(integrator.sol.u,integrator.saveiter,val,Val{false})
+      if eltype(integrator.sol.u) <: DEDataArray
+        save_val = copy_non_array_fields(integrator.uprev,val)
+      else
+        save_val = val
+      end
+      copyat_or_push!(integrator.sol.u,integrator.saveiter,save_val,Val{false})
       if typeof(integrator.alg) <: OrdinaryDiffEqCompositeAlgorithm
         copyat_or_push!(integrator.sol.alg_choice,integrator.saveiter,integrator.cache.current)
       end

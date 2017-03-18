@@ -102,6 +102,7 @@ times ts (sorted), with values timeseries and derivatives ks
   tdir = sign(ts[end]-ts[1])
   idx = sortperm(tvals,rev=tdir<0)
   i = 2 # Start the search thinking it's between ts[1] and ts[2]
+  tvals[idx[end]] > ts[end] && error("Solution interpolation cannot extrapolate past the final timepoint. Either solve on a longer timespan or use the local extrapolation from the integrator interface.")
   if idxs == nothing
     if (eltype(timeseries) <: AbstractArray) && !(eltype(timeseries) <: Array)
       vals = Vector{Vector{eltype(first(timeseries))}}(length(tvals))
@@ -161,6 +162,7 @@ times ts (sorted), with values timeseries and derivatives ks
   tdir = sign(ts[end]-ts[1])
   idx = sortperm(tvals,rev=tdir<0)
   i = 2 # Start the search thinking it's between ts[1] and ts[2]
+  tvals[idx[end]] > ts[end] && error("Solution interpolation cannot extrapolate past the final timepoint. Either solve on a longer timespan or use the local extrapolation from the integrator interface.")
   @inbounds for j in idx
     t = tvals[j]
     i = searchsortedfirst(@view(ts[@view(notsaveat_idxs[i:end])]),t,rev=tdir<0)+i-1 # It's in the interval ts[i-1] to ts[i]
@@ -217,6 +219,7 @@ times ts (sorted), with values timeseries and derivatives ks
 """
 @inline function ode_interpolation(tval::Number,id,idxs,deriv)
   @unpack ts,timeseries,ks,f,notsaveat_idxs,cache = id
+  tval > ts[end] && error("Solution interpolation cannot extrapolate past the final timepoint. Either solve on a longer timespan or use the local extrapolation from the integrator interface.")
   tdir = sign(ts[end]-ts[1])
   @inbounds i = searchsortedfirst(@view(ts[notsaveat_idxs]),tval,rev=tdir<0) # It's in the interval ts[i-1] to ts[i]
   @inbounds if ts[notsaveat_idxs[i]] == tval
@@ -260,6 +263,7 @@ times ts (sorted), with values timeseries and derivatives ks
 """
 @inline function ode_interpolation!(out,tval::Number,id,idxs,deriv)
   @unpack ts,timeseries,ks,f,notsaveat_idxs,cache = id
+  tval > ts[end] && error("Solution interpolation cannot extrapolate past the final timepoint. Either solve on a longer timespan or use the local extrapolation from the integrator interface.")
   tdir = sign(ts[end]-ts[1])
   @inbounds i = searchsortedfirst(@view(ts[notsaveat_idxs]),tval,rev=tdir<0) # It's in the interval ts[i-1] to ts[i]
   @inbounds if ts[notsaveat_idxs[i]] == tval

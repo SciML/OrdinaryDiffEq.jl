@@ -4,6 +4,8 @@ module OrdinaryDiffEq
 
   using DiffEqBase
 
+  using Compat
+
   import DiffEqBase: solve, solve!, init, step!, build_solution
 
   using Parameters, GenericSVD, ForwardDiff, InplaceOps, RecursiveArrayTools,

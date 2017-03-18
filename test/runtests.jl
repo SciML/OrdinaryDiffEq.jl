@@ -1,8 +1,6 @@
 using OrdinaryDiffEq, DiffEqProblemLibrary, DiffEqDevTools
 
-if VERSION <= v"0.5+"
-  using ODEInterfaceDiffEq
-end
+using ODEInterfaceDiffEq
 using Base.Test
 
 const CPU_FLOPS = peakflops()
