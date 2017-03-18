@@ -27,7 +27,6 @@ done(integrator::ODEIntegrator) = done(integrator,integrator.iter)
     return true
   end
   if !integrator.opts.force_dtmin && integrator.opts.adaptive && abs(integrator.dt) <= abs(integrator.opts.dtmin)
-    @show integrator.dt,integrator.opts.dtmin
     if integrator.opts.verbose
       warn("dt <= dtmin. Aborting. If you would like to force continuation with dt=dtmin, set force_dtmin=true")
     end

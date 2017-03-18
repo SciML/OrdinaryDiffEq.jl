@@ -1,6 +1,6 @@
-abstract OrdinaryDiffEqCache <: DECache
-abstract OrdinaryDiffEqConstantCache <: OrdinaryDiffEqCache
-abstract OrdinaryDiffEqMutableCache <: OrdinaryDiffEqCache
+@compat abstract type OrdinaryDiffEqCache <: DECache end
+@compat abstract type OrdinaryDiffEqConstantCache <: OrdinaryDiffEqCache end
+@compat abstract type OrdinaryDiffEqMutableCache <: OrdinaryDiffEqCache end
 immutable ODEEmptyCache <: OrdinaryDiffEqConstantCache end
 immutable ODEChunkCache{CS} <: OrdinaryDiffEqConstantCache end
 
@@ -251,7 +251,8 @@ function alg_cache(alg::DP5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,u
   utilde = similar(u,indices(u))
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits,indices(u))
   tab = DP5ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
-  DP5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,utilde,tmp,atmp,tab)
+  cache = DP5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,utilde,tmp,atmp,tab)
+  cache
 end
 
 alg_cache(alg::DP5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = DP5ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))

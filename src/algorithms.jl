@@ -1,6 +1,6 @@
-abstract OrdinaryDiffEqAlgorithm <: AbstractODEAlgorithm
-abstract OrdinaryDiffEqAdaptiveAlgorithm <: OrdinaryDiffEqAlgorithm
-abstract OrdinaryDiffEqCompositeAlgorithm <: OrdinaryDiffEqAlgorithm
+@compat abstract type OrdinaryDiffEqAlgorithm <: AbstractODEAlgorithm end
+@compat abstract type OrdinaryDiffEqAdaptiveAlgorithm <: OrdinaryDiffEqAlgorithm end
+@compat abstract type OrdinaryDiffEqCompositeAlgorithm <: OrdinaryDiffEqAlgorithm end
 
 immutable Discrete{apply_map,scale_by_time} <: OrdinaryDiffEqAlgorithm end
 

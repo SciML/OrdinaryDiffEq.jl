@@ -224,6 +224,7 @@ sol2 =solve(prob,Vern6(),dt=1//2^(7),dense=true,adaptive=false)
 #plot!(sol.t,sol[:])
 #scatter!(sol.t,sol[:])
 
+f = (t,u,du) -> (du .= linear_bigα.*u)
 prob_ode_bigfloatveclinear = ODEProblem(f,[parse(BigFloat,"0.5")],(0.0,1.0))
 prob = prob_ode_bigfloatveclinear
 
