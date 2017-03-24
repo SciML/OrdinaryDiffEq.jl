@@ -220,8 +220,8 @@ end
 
   #Update dt if adaptive or if fixed and the dt is allowed to change
   if integrator.opts.adaptive || integrator.dtchangeable
-    integrator.dt = integrator.dt_mod*integrator.dtpropose
-  elseif integrator.dt != integrator.dt_mod*integrator.dtpropose && !integrator.dtchangeable
+    integrator.dt = integrator.dtpropose
+  elseif integrator.dt != integrator.dtpropose && !integrator.dtchangeable
     error("The current setup does not allow for changing dt.")
   end
 
@@ -240,7 +240,6 @@ end
       end
     end
   end
-  integrator.dt_mod = one(typeof(integrator.t))
 end
 
 

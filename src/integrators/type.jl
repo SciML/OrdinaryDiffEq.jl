@@ -51,7 +51,6 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
   dtcache::tType
   dtchangeable::Bool
   dtpropose::tType
-  dt_mod::tTypeNoUnits
   tdir::tdirType
   EEst::tTypeNoUnits
   qold::tTypeNoUnits
@@ -72,12 +71,12 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType<:Union{AbstractArray,N
   fsallast::rateType
 
   ODEIntegrator(sol,u,k,t,dt,f,uprev,uprev2,tprev,
-      alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,dtpropose,dt_mod,tdir,
+      alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,dtpropose,tdir,
       EEst,qold,q11,
       iter,saveiter,saveiter_dense,prog,cache,
       kshortsize,just_hit_tstop,accept_step,isout,reeval_fsal,u_modified,opts) = new(
       sol,u,k,t,dt,f,uprev,uprev2,tprev,
-      alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,dtpropose,dt_mod,tdir,
+      alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,dtpropose,tdir,
       EEst,qold,q11,
       iter,saveiter,saveiter_dense,prog,cache,
       kshortsize,just_hit_tstop,accept_step,isout,reeval_fsal,u_modified,opts) # Leave off fsalfirst and last

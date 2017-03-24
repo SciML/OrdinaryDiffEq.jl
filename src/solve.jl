@@ -213,7 +213,6 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
   tprev = t
   dtcache = tType(dt)
   dtpropose = tType(dt)
-  dt_mod = tTypeNoUnits(1)
   iter = 0
   saveiter = 1 # Starts at 1 so first save is at 2
   saveiter_dense = 1
@@ -233,7 +232,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
                              typeof(opts)}(
                              sol,u,k,t,tType(dt),f,uprev,uprev2,tprev,
                              alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,
-                             dtpropose,dt_mod,tdir,EEst,qoldinit,q11,
+                             dtpropose,tdir,EEst,qoldinit,q11,
                              iter,saveiter,saveiter_dense,prog,cache,
                              kshortsize,just_hit_tstop,accept_step,isout,reeval_fsal,u_modified,opts)
   if initialize_integrator

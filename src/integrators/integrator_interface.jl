@@ -32,6 +32,9 @@ end
   integrator.u_modified = bool
 end
 
+@inline get_proposed_dt(integrator::ODEIntegrator) = integrator.dtpropose
+@inline set_proposed_dt!(integrator::ODEIntegrator,dt) = (integrator.dtpropose = dt)
+
 user_cache(integrator::ODEIntegrator) = user_cache(integrator.cache)
 u_cache(integrator::ODEIntegrator) = u_cache(integrator.cache)
 du_cache(integrator::ODEIntegrator)= du_cache(integrator.cache)
