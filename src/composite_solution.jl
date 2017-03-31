@@ -27,6 +27,7 @@ type ODECompositeTestSolution{uType,uType2,uEltype,tType,rateType,P,A,IType} <: 
   alg_choice::Vector{Int}
   dense::Bool
   tslocation::Int
+  retcode::Symbol
 end
 (sol::ODECompositeTestSolution)(t,deriv::Type=Val{0};idxs=nothing) = sol.interp(t,idxs,deriv)
 (sol::ODECompositeTestSolution)(v,t,deriv::Type=Val{0};idxs=nothing) = sol.interp(v,t,idxs,deriv)
