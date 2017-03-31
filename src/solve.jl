@@ -237,6 +237,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
                              kshortsize,just_hit_tstop,accept_step,isout,reeval_fsal,u_modified,opts)
   if initialize_integrator
     initialize!(integrator,integrator.cache)
+    initialize!(callbacks_internal,t,u,integrator)
   end
   integrator
 end
@@ -258,5 +259,6 @@ function solve!(integrator::ODEIntegrator)
   if typeof(integrator.sol.prob) <: AbstractODETestProblem
     calculate_solution_errors!(integrator.sol;timeseries_errors=integrator.opts.timeseries_errors,dense_errors=integrator.opts.dense_errors)
   end
+  integrator.sol.retcode = :Success
   nothing
 end

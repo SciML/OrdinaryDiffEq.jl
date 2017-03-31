@@ -6,7 +6,7 @@ module OrdinaryDiffEq
 
   using Compat
 
-  import DiffEqBase: solve, solve!, init, step!, build_solution
+  import DiffEqBase: solve, solve!, init, step!, build_solution, initialize!
 
   using Parameters, GenericSVD, ForwardDiff, InplaceOps, RecursiveArrayTools,
         NLsolve, Juno, Calculus, Roots, DataStructures, Iterators

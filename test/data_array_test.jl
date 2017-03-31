@@ -26,7 +26,7 @@ end
 
 save_positions = (true,true)
 
-cb = DiscreteCallback(condition, affect!, save_positions)
+cb = DiscreteCallback(condition, affect!, save_positions=save_positions)
 
 condition2 = function (t,u,integrator)
   t in tstop2
@@ -40,7 +40,7 @@ end
 
 save_positions = (false,true)
 
-cb2 = DiscreteCallback(condition2, affect2!, save_positions)
+cb2 = DiscreteCallback(condition2, affect2!, save_positions=save_positions)
 
 cbs = CallbackSet(cb,cb2)
 

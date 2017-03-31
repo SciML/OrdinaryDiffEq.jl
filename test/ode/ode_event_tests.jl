@@ -125,7 +125,7 @@ sol4 = solve(prob,Tsit5(),callback=saving_callback)
 affect! = function (integrator)
   u_modified!(integrator,false)
 end
-saving_callback2 = DiscreteCallback(condtion,affect!,save_positions)
+saving_callback2 = DiscreteCallback(condtion,affect!,save_positions=save_positions)
 sol4 = solve(prob,Tsit5(),callback=saving_callback2)
 
 cbs = CallbackSet(saving_callback,saving_callback2)
