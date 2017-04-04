@@ -27,7 +27,7 @@ end
   k17 = f(@muladd(@muladd(t + c16*dt)),@muladd(uprev + dt*(a1600*k1 + a1601*k2 + a1602*k3              + a1604*k5 + a1605*k6 + a1606*k7 + a1607*k8 + a1608*k9 + a1609*k10 + a1610*k11 + a1611*k12 + a1612*k13 + a1613*k14 + a1614*k15 + a1615*k16)))
   u = @muladd uprev + dt*(b1*k1 + b2*k2 + b3*k3 + b5*k5 + b7*k7 + b9*k9 + b10*k10 + b11*k11 + b12*k12 + b13*k13 + b14*k14 + b15*k15 + b16*k16 + b17*k17)
   if integrator.opts.adaptive
-    integrator.EEst = integrator.opts.internalnorm((dt*(k2 - k16) * adaptiveConst)./@muladd(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+    integrator.EEst = integrator.opts.internalnorm((dt*(k2 - k16) * adaptiveConst)./@muladd(integrator.opts.abstol+max(abs.(uprev),abs.(u))*integrator.opts.reltol))
   end
   k = f(t+dt,u) # For the interpolation, needs k at the updated point
   integrator.fsallast = k
@@ -170,7 +170,7 @@ end
   k = f(t+dt,u)
   integrator.fsallast = k
   if integrator.opts.adaptive
-    integrator.EEst = integrator.opts.internalnorm((dt*(k2 - k24) * adaptiveConst)./@muladd(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+    integrator.EEst = integrator.opts.internalnorm((dt*(k2 - k24) * adaptiveConst)./@muladd(integrator.opts.abstol+max(abs.(uprev),abs.(u))*integrator.opts.reltol))
   end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -295,7 +295,7 @@ end
   end
   if integrator.opts.adaptive
     for i in uidx
-      atmp[i] = (dt*(k2[i] - k24[i]) * adaptiveConst)/@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol)
+      atmp[i] = (dt*(k2[i] - k24[i]) * adaptiveConst)./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol)
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
@@ -350,7 +350,7 @@ end
   k35 = f(@muladd(t + c34*dt),@muladd(uprev + dt*(a3400*k1 + a3401*k2 + a3402*k3              + a3404*k5              + a3406*k7 + a3407*k8              + a3409*k10 + a3410*k11 + a3411*k12 + a3412*k13 + a3413*k14 + a3414*k15 + a3415*k16 + a3416*k17 + a3417*k18 + a3418*k19 + a3419*k20 + a3420*k21 + a3421*k22 + a3422*k23 + a3423*k24 + a3424*k25 + a3425*k26 + a3426*k27 + a3427*k28 + a3428*k29 + a3429*k30 + a3430*k31 + a3431*k32 + a3432*k33 + a3433*k34)))
   u = @muladd uprev + dt*(b1*k1 + b2*k2 + b3*k3 + b5*k5 + b7*k7 + b8*k8 + b10*k10 + b11*k11 + b12*k12 + b14*k14 + b15*k15 + b16*k16 + b18*k18 + b19*k19 + b20*k20 + b21*k21 + b22*k22 + b23*k23 + b24*k24 + b25*k25 + b26*k26 + b27*k27 + b28*k28 + b29*k29 + b30*k30 + b31*k31 + b32*k32 + b33*k33 + b34*k34 + b35*k35)
   if integrator.opts.adaptive
-    integrator.EEst = integrator.opts.internalnorm((dt*(k2 - k34) * adaptiveConst)./@muladd(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+    integrator.EEst = integrator.opts.internalnorm((dt*(k2 - k34) * adaptiveConst)./@muladd(integrator.opts.abstol+max(abs.(uprev),abs.(u))*integrator.opts.reltol))
   end
   k = f(t+dt,u) # For the interpolation, needs k at the updated point
   integrator.fsallast = k

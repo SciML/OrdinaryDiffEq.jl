@@ -143,7 +143,7 @@ end
   end
   if integrator.opts.adaptive
     for i in uidx
-      tmp[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)/@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol)
+      tmp[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol)
     end
     integrator.EEst = integrator.opts.internalnorm(tmp)
   end
@@ -176,7 +176,7 @@ end
   if integrator.opts.adaptive
     integrator.fsallast = f(t+dt,u)
     k₃ = W\@muladd(integrator.fsallast - c₃₂*(k₂-f₁)-2(k₁-integrator.fsalfirst)+dt*dT)
-    integrator.EEst = integrator.opts.internalnorm((dt*(k₁ - 2k₂ + k₃)/6)./@muladd(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+    integrator.EEst = integrator.opts.internalnorm((dt*(k₁ - 2k₂ + k₃)/6)./@muladd(integrator.opts.abstol+max(abs.(uprev),abs.(u))*integrator.opts.reltol))
   end
   integrator.k[1] = k₁
   integrator.k[2] = k₂
@@ -211,7 +211,7 @@ end
   k₃ = W\@muladd(integrator.fsallast - c₃₂*(k₂-f₁)-2(k₁-integrator.fsalfirst)+dt*dT)
   u = uprev + dt*(k₁ + 4k₂ + k₃)/6
   if integrator.opts.adaptive
-    integrator.EEst = integrator.opts.internalnorm((dt*(k₁ - 2k₂ + k₃)/6)./@muladd(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+    integrator.EEst = integrator.opts.internalnorm((dt*(k₁ - 2k₂ + k₃)/6)./@muladd(integrator.opts.abstol+max(abs.(uprev),abs.(u))*integrator.opts.reltol))
   end
   integrator.k[1] = k₁
   integrator.k[2] = k₂

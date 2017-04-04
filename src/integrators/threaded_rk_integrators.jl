@@ -80,6 +80,6 @@ end
 @noinline function dp5threaded_adaptiveloop(dt,utilde,uprev,b1,k1,b3,k3,b4,k4,b5,k5,b6,k6,b7,k7,atmp,u,abstol,reltol,uidx)
   Threads.@threads for i in uidx
     utilde[i] = @muladd uprev[i] + dt*(b1*k1[i] + b3*k3[i] + b4*k4[i] + b5*k5[i] + b6*k6[i] + b7*k7[i])
-    atmp[i] = ((utilde[i]-u[i])/@muladd(abstol+max(abs(uprev[i]),abs(u[i]))*reltol))
+    atmp[i] = ((utilde[i]-u[i])./@muladd(abstol+max(abs(uprev[i]),abs(u[i]))*reltol))
   end
 end
