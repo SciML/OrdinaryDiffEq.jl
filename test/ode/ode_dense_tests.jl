@@ -70,7 +70,7 @@ sol(interpd_1d,0:1//2^(4):1)
 
 sol2 =solve(prob,SSPRK22(),dt=1//2^(4),dense=true)
 
-@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd_1d)) < 0.15
+@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd_1d)) < 1.5e-2
 
 prob = prob_ode_2Dlinear
 
