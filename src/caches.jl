@@ -139,8 +139,8 @@ immutable SSPRK104Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
   fsalfirst::rateType
 end
 
-u_cache(c::SSPRK104Cache) = ()
-du_cache(c::SSPRK104Cache) = (c.k,c.du,c.fsalfirst)
+u_cache(c::SSPRK104Cache) = (c.u₄,)
+du_cache(c::SSPRK104Cache) = (c.k,c.du,c.fsalfirst,c.k₄)
 
 immutable SSPRK104ConstantCache <: OrdinaryDiffEqConstantCache end
 
