@@ -88,6 +88,19 @@ sol(interpd,0:1//2^(4):1)
 sol2 =solve(prob,SSPRK33(),dt=1//2^(4),dense=true)
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 1.5e-3
 
+# SSPRK104
+prob = prob_ode_linear
+sol =solve(prob,SSPRK104(),dt=1//2^(2),dense=true)
+sol(interpd_1d,0:1//2^(4):1)
+sol2 =solve(prob,SSPRK104(),dt=1//2^(4),dense=true)
+@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd_1d)) < 1.5e-5
+
+prob = prob_ode_2Dlinear
+sol =solve(prob,SSPRK104(),dt=1//2^(2),dense=true)
+sol(interpd,0:1//2^(4):1)
+sol2 =solve(prob,SSPRK104(),dt=1//2^(4),dense=true)
+@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 3.e-5
+
 # RK4
 prob = prob_ode_linear
 

@@ -34,7 +34,24 @@ end
 alg = SSPRK33()
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
+  # This corresponds to Simpson's rule; due to symmetric quadrature nodes,
+  # it is of degree 4 instead of 3, as would be expected.
   @test abs(sim.𝒪est[:final]-1-OrdinaryDiffEq.alg_order(alg)) < testTol
+end
+for prob in test_problems_linear
+  sim = test_convergence(dts, prob, alg)
+  @test abs(sim.𝒪est[:final]-OrdinaryDiffEq.alg_order(alg)) < testTol
+end
+for prob in test_problems_nonlinear
+  sim = test_convergence(dts, prob, alg)
+  @test abs(sim.𝒪est[:final]-OrdinaryDiffEq.alg_order(alg)) < testTol
+end
+
+
+alg = SSPRK104()
+for prob in test_problems_only_time
+  sim = test_convergence(dts, prob, alg)
+  @test abs(sim.𝒪est[:final]-OrdinaryDiffEq.alg_order(alg)) < testTol
 end
 for prob in test_problems_linear
   sim = test_convergence(dts, prob, alg)
