@@ -10,6 +10,7 @@ immutable Euler <: OrdinaryDiffEqAlgorithm end
 immutable Midpoint <: OrdinaryDiffEqAlgorithm end
 immutable RK4 <: OrdinaryDiffEqAlgorithm end
 immutable SSPRK22 <: OrdinaryDiffEqAlgorithm end
+immutable SSPRK33 <: OrdinaryDiffEqAlgorithm end
 
 @with_kw immutable ExplicitRK{TabType} <: OrdinaryDiffEqAdaptiveAlgorithm
   tableau::TabType=ODE_DEFAULT_TABLEAU
