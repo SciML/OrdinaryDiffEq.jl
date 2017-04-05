@@ -9,6 +9,9 @@ Base.@pure FunctionMap(;scale_by_time=false) = Discrete{true,scale_by_time}()
 immutable Euler <: OrdinaryDiffEqAlgorithm end
 immutable Midpoint <: OrdinaryDiffEqAlgorithm end
 immutable RK4 <: OrdinaryDiffEqAlgorithm end
+immutable SSPRK22 <: OrdinaryDiffEqAlgorithm end
+immutable SSPRK33 <: OrdinaryDiffEqAlgorithm end
+immutable SSPRK104 <: OrdinaryDiffEqAlgorithm end
 
 @with_kw immutable ExplicitRK{TabType} <: OrdinaryDiffEqAdaptiveAlgorithm
   tableau::TabType=ODE_DEFAULT_TABLEAU
