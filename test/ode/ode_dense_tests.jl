@@ -82,6 +82,8 @@ sol2 =solve(prob,SSPRK22(),dt=1//2^(4),dense=true)
 
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 2.5e-2
 
+prob = prob_ode_linear
+
 sol =solve(prob,RK4(),dt=1//2^(2),dense=true)
 
 sol(interpd_1d,0:1//2^(4):1)
