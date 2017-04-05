@@ -77,6 +77,32 @@ end
 
 alg_cache(alg::Midpoint,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = MidpointConstantCache()
 
+
+immutable SSPRK22Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  k::rateType
+  du::rateType
+  tmp::uType
+  fsalfirst::rateType
+end
+
+u_cache(c::SSPRK22Cache) = ()
+du_cache(c::SSPRK22Cache) = (c.k,c.du,c.fsalfirst)
+
+immutable SSPRK22ConstantCache <: OrdinaryDiffEqConstantCache end
+
+function alg_cache(alg::SSPRK22,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+  tmp = similar(u)
+  k = zeros(rate_prototype)
+  du = zeros(rate_prototype)
+  fsalfirst = zeros(rate_prototype)
+  SSPRK22Cache(u,uprev,k,du,tmp,fsalfirst)
+end
+
+alg_cache(alg::SSPRK22,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = SSPRK22ConstantCache()
+
+
 immutable RK4Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType

@@ -40,6 +40,7 @@ module OrdinaryDiffEq
   include("integrators/high_order_rk_integrators.jl")
   include("integrators/verner_rk_integrators.jl")
   include("integrators/feagin_rk_integrators.jl")
+  include("integrators/ssprk_integrators.jl")
   include("integrators/implicit_integrators.jl")
   include("integrators/rosenbrock_integrators.jl")
   include("integrators/threaded_rk_integrators.jl")
@@ -73,7 +74,7 @@ module OrdinaryDiffEq
   # Reexport the Alg Types
 
   export OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqCompositeAlgorithm,
-        Discrete, FunctionMap, Euler, Midpoint, RK4, ExplicitRK, BS3, BS5, DP5, DP5Threaded, Tsit5,
+        Discrete, FunctionMap, Euler, Midpoint, SSPRK22, RK4, ExplicitRK, BS3, BS5, DP5, DP5Threaded, Tsit5,
         DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8, Vern9, ImplicitEuler,
         Trapezoid, Rosenbrock23, Rosenbrock32, Feagin10, Feagin12, Feagin14,
         CompositeAlgorithm
