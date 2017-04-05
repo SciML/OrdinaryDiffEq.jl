@@ -64,6 +64,24 @@ sol2 =solve(prob,Midpoint(),dt=1//2^(4),dense=true)
 
 prob = prob_ode_linear
 
+sol =solve(prob,SSPRK22(),dt=1//2^(2),dense=true)
+
+sol(interpd_1d,0:1//2^(4):1)
+
+sol2 =solve(prob,SSPRK22(),dt=1//2^(4),dense=true)
+
+@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd_1d)) < 0.15
+
+prob = prob_ode_2Dlinear
+
+sol =solve(prob,SSPRK22(),dt=1//2^(2),dense=true)
+
+sol(interpd,0:1//2^(4):1)
+
+sol2 =solve(prob,SSPRK22(),dt=1//2^(4),dense=true)
+
+@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 2.5e-2
+
 sol =solve(prob,RK4(),dt=1//2^(2),dense=true)
 
 sol(interpd_1d,0:1//2^(4):1)
