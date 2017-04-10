@@ -201,9 +201,9 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,recompile_f
   cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,Val{isinplace})
 
   if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
-    id = CompositeInterpolationData(f,timeseries,ts,ks,alg_choice,notsaveat_idxs,cache)
+    id = CompositeInterpolationData(f,timeseries,ts,ks,alg_choice,notsaveat_idxs,dense,cache)
   else
-    id = InterpolationData(f,timeseries,ts,ks,notsaveat_idxs,cache)
+    id = InterpolationData(f,timeseries,ts,ks,notsaveat_idxs,dense,cache)
   end
 
   if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
