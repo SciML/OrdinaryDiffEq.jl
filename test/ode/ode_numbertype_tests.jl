@@ -3,13 +3,13 @@ srand(100)
 setprecision(400)
 
 f = (t,u) -> (2u)
-analytic = (t,u0) -> u0*exp(t)
-prob = ODETestProblem(f,1/2,analytic)
+(p::typeof(f))(::Type{Val{:analytic}},t,u0) = u0*exp(t)
+prob = ODEProblem(f,1/2,(0.0,1.0))
 
 
 sol3 =solve(prob,RK4(),dt=1/2^(6),abstol=1,reltol=0)
 
-prob = ODETestProblem(f,BigInt(1)//BigInt(2),analytic,(BigInt(0)//BigInt(1),BigInt(1)//BigInt(1)))
+prob = ODEProblem(f,BigInt(1)//BigInt(2),(BigInt(0)//BigInt(1),BigInt(1)//BigInt(1)))
 
 integrator = init(prob,RK4(),dt=BigInt(1)//BigInt(2)^(6),abstol=1,reltol=0)
 
@@ -34,4 +34,4 @@ sol5 =solve(prob,tabalg,dt=BigInt(1)//BigInt(2)^(3),abstol=1,reltol=0,adaptive=f
 
 @test typeof(sol5.u[end]) == Rational{BigInt}
 
-prob = ODETestProblem(f,1/2+1/2im,analytic)
+prob = ODEProblem(f,1/2+1/2im,(0.0,1.0))
