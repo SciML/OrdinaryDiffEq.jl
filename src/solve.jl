@@ -156,7 +156,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,recompile_f
     if save_idxs == nothing
       copyat_or_push!(timeseries,1,u)
     else
-      copyat_or_push!(timeseries,1,u[save_idxs])
+      copyat_or_push!(timeseries,1,u[save_idxs],Val{false})
     end
     copyat_or_push!(ks,1,[rate_prototype])
   else

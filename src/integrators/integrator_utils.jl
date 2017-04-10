@@ -95,7 +95,7 @@ end
       if integrator.opts.save_idxs ==nothing
         copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
       else
-        copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u[integrator.opts.save_idxs])
+        copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u[integrator.opts.save_idxs],Val{false})
       end
       if typeof(integrator.alg) <: Discrete || integrator.opts.dense
         integrator.saveiter_dense +=1
@@ -104,7 +104,7 @@ end
           if integrator.opts.save_idxs ==nothing
             copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
           else
-            copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,[k[integrator.opts.save_idxs] for k in integrator.k])
+            copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,[k[integrator.opts.save_idxs] for k in integrator.k],Val{false})
           end
         end
       end
@@ -118,7 +118,7 @@ end
     if integrator.opts.save_idxs == nothing
       copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
     else
-      copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u[integrator.opts.save_idxs])
+      copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u[integrator.opts.save_idxs],Val{false})
     end
     copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
     if typeof(integrator.alg) <: Discrete || integrator.opts.dense
@@ -128,7 +128,7 @@ end
         if integrator.opts.save_idxs == nothing
           copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
         else
-          copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,[k[integrator.opts.save_idxs] for k in integrator.k])
+          copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,[k[integrator.opts.save_idxs] for k in integrator.k],Val{false})
         end
       end
     end
@@ -154,7 +154,7 @@ end
     if integrator.opts.save_idxs == nothing
       copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
     else
-      copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u[integrator.opts.save_idxs])
+      copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u[integrator.opts.save_idxs],Val{false})
     end
     if typeof(integrator.alg) <: Discrete || integrator.opts.dense
       integrator.saveiter_dense +=1
@@ -163,7 +163,7 @@ end
         if integrator.opts.save_idxs == nothing
           copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
         else
-          copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,[k[integrator.opts.save_idxs] for k in integrator.k])
+          copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,[k[integrator.opts.save_idxs] for k in integrator.k],Val{false})
         end
       end
     end
