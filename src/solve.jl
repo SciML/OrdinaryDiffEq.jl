@@ -1,5 +1,5 @@
-function solve{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile_flag}(
-  prob::AbstractODEProblem{uType,tType,isinplace,F},
+function solve{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
+  prob::AbstractODEProblem{uType,tType,isinplace},
   alg::algType,timeseries=[],ts=[],ks=[],recompile::Type{Val{recompile_flag}}=Val{true};
   kwargs...)
 
@@ -8,14 +8,15 @@ function solve{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompil
   integrator.sol
 end
 
-function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile_flag}(
-  prob::AbstractODEProblem{uType,tType,isinplace,F},
+function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
+  prob::AbstractODEProblem{uType,tType,isinplace},
   alg::algType,timeseries_init=uType[],ts_init=tType[],ks_init=[],
   recompile::Type{Val{recompile_flag}}=Val{true};
-  save_timeseries = true,
   timeseries_steps = 1,
-  dense = save_timeseries && !(typeof(alg) <: Discrete),
   saveat = tType[],tstops = tType[],d_discontinuities= tType[],
+  save_everystep = isempty(saveat),
+  save_timeseries = nothing,
+  dense = save_everystep && !(typeof(alg) <: Discrete),
   calck = (!isempty(setdiff(saveat,tstops)) || dense),
   dt = typeof(alg) <: Discrete && isempty(tstops) ? tType(1) : tType(0),
   adaptive = isadaptive(alg),
@@ -40,6 +41,11 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
   userdata=nothing,callback=CallbackSet(),
   allow_extrapolation = alg_extrapolates(alg),
   initialize_integrator=true,kwargs...)
+
+  if save_timeseries != nothing
+    warn("save_timeseries is deprecated. Use save_everystep instead")
+    save_everystep = save_timeseries
+  end
 
   tspan = prob.tspan
   tdir = sign(tspan[end]-tspan[1])
@@ -101,7 +107,13 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
   end
   rateType = typeof(rate_prototype) ## Can be different if united
 
-  saveat_vec =  convert(Vector{tType},collect(saveat))
+  if typeof(saveat) <: Number
+    saveat_vec = convert(Vector{tType},saveat:saveat:(tspan[end]-saveat))
+    # Exclude the endpoint because of floating point issues
+  else
+    saveat_vec =  convert(Vector{tType},collect(saveat))
+  end
+
   if !isempty(saveat_vec) && saveat_vec[end] == tspan[2]
     pop!(saveat_vec)
   end
@@ -148,7 +160,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
     reltol_internal = uEltypeNoUnits(reltol)
   end
 
-  opts = DEOptions(Int(maxiters),timeseries_steps,save_timeseries,adaptive,abstol_internal,
+  opts = DEOptions(Int(maxiters),timeseries_steps,save_everystep,adaptive,abstol_internal,
     reltol_internal,tTypeNoUnits(gamma),tTypeNoUnits(qmax),tTypeNoUnits(qmin),
     tType(dtmax),tType(dtmin),internalnorm,
     tstops_internal,saveat_internal,d_discontinuities_internal,

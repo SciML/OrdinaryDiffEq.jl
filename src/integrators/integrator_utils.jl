@@ -101,7 +101,7 @@ end
       end
     end
   end
-  if integrator.opts.save_timeseries && integrator.iter%integrator.opts.timeseries_steps==0
+  if integrator.opts.save_everystep && integrator.iter%integrator.opts.timeseries_steps==0
     integrator.saveiter += 1
     copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
     copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)

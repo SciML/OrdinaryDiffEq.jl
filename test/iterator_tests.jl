@@ -1,10 +1,10 @@
 using OrdinaryDiffEq, DiffEqProblemLibrary, Base.Test, DiffEqBase
 prob = prob_ode_linear
 
-sol = solve(prob,BS3();dt=1//2^(4),tstops=[0.5],saveat=0:0.01:1)
+sol = solve(prob,BS3();dt=1//2^(4),tstops=[0.5],saveat=0.01,save_everystep=true)
 sol(0.9)
 
-integrator = init(prob,BS3();dt=1//2^(4),tstops=[0.5],saveat=0:0.01:1)
+integrator = init(prob,BS3();dt=1//2^(4),tstops=[0.5],saveat=0.01,save_everystep=true)
 step!(integrator)
 @test integrator.iter == 1
 solve!(integrator)

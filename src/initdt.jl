@@ -1,5 +1,5 @@
 
-function ode_determine_initdt{tType,uType,F}(u0,t::tType,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,true,F},order)
+function ode_determine_initdt{tType,uType}(u0,t::tType,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,true},order)
   f = prob.f
   f₀ = similar(u0./t); f₁ = similar(u0./t); u₁ = similar(u0)
   sk = abstol+abs.(u0)*reltol
@@ -29,7 +29,7 @@ function ode_determine_initdt{tType,uType,F}(u0,t::tType,tdir,dtmax,abstol,relto
   dt = tdir*min(100dt₀,dt₁)
 end
 
-function ode_determine_initdt{uType,tType,F}(u0::uType,t,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,false,F},order)
+function ode_determine_initdt{uType,tType}(u0::uType,t,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,false},order)
   f = prob.f
   sk = abstol+abs.(u0)*reltol
   d₀ = internalnorm(u0./sk)

@@ -1,7 +1,7 @@
 type DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5,F6,tstopsType,ECType}
   maxiters::Int
   timeseries_steps::Int
-  save_timeseries::Bool
+  save_everystep::Bool
   adaptive::Bool
   abstol::uEltype
   reltol::uEltypeNoUnits
