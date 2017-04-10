@@ -2,8 +2,8 @@ using OrdinaryDiffEq, DiffEqBase, Base.Test
 srand(100)
 
 linear = (t,u) -> (1.01*u)
-analytic_linear = (t,u0) -> u0*exp(1.01*t)
-prob = ODETestProblem(linear,1/2,analytic_linear,(0.0,1.0))
+(p::typeof(linear))(::Type{Val{:analytic}},t,u0) = u0*exp(1.01*t)
+prob = ODEProblem(linear,1/2,(0.0,1.0))
 
 sol =solve(prob,Tsit5(),dt=1//2^(6),tstops=[1/2])
 

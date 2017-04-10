@@ -124,7 +124,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,F,recompile
     d_discontinuities_internal = binary_maxheap(d_discontinuities_vec)
   end
 
-  callbacks_internal = CallbackSet(callback)
+  callbacks_internal = CallbackSet(callback,prob.callback)
 
 
   ### Algorithm-specific defaults ###
@@ -256,7 +256,7 @@ function solve!(integrator::ODEIntegrator)
     handle_tstop!(integrator)
   end
   postamble!(integrator)
-  if typeof(integrator.sol.prob) <: AbstractODETestProblem
+  if has_analytic(integrator.sol.prob.f)
     calculate_solution_errors!(integrator.sol;timeseries_errors=integrator.opts.timeseries_errors,dense_errors=integrator.opts.dense_errors)
   end
   integrator.sol.retcode = :Success
