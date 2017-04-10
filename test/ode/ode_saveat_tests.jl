@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqProblemLibrary, Base.Test
+using OrdinaryDiffEq, DiffEqBase, DiffEqProblemLibrary, Base.Test
 
 prob = prob_ode_linear
 
@@ -89,3 +89,18 @@ sol2=solve(prob,DP5(),dt=1//2^(2),save_everystep=false,dense=false,saveat=0:1//1
 sol2=solve(prob,DP5(),dt=1//2^(2),save_everystep=false,dense=false,saveat=linspace(0,1,100))
 
 @test sol2.t ≈ linspace(0,1,100)
+
+f = (t,u,du) -> prob.f(t,u,du)
+prob2 = ODEProblem(f,vec(prob.u0),prob.tspan)
+
+sol2=solve(prob2,DP5(),dt=1//2^(2),saveat=.1,save_idxs=1:2:5)
+
+for u in sol2.u
+  @test length(u) == 3
+end
+
+sol2=solve(prob2,DP5(),dt=1//2^(2),saveat=.1,save_idxs=1:2:5,save_everystep=true)
+sol=solve(prob2,DP5(),dt=1//2^(2))
+sol2(0.35)
+sol(0.35)
+@test sol2(0.35) == sol(0.35)[1:2:5]

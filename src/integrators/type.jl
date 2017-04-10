@@ -1,4 +1,4 @@
-type DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5,F6,tstopsType,ECType}
+type DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5,F6,tstopsType,ECType,SType}
   maxiters::Int
   timeseries_steps::Int
   save_everystep::Bool
@@ -11,6 +11,7 @@ type DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5,F6,tstopsTy
   dtmax::tType
   dtmin::tType
   internalnorm::F2
+  save_idxs::SType
   tstops::tstopsType
   saveat::tstopsType
   d_discontinuities::tstopsType

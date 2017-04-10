@@ -14,6 +14,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,recompile_f
   recompile::Type{Val{recompile_flag}}=Val{true};
   timeseries_steps = 1,
   saveat = tType[],tstops = tType[],d_discontinuities= tType[],
+  save_idxs = nothing,
   save_everystep = isempty(saveat),
   save_timeseries = nothing,
   dense = save_everystep && !(typeof(alg) <: Discrete),
@@ -149,7 +150,11 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,recompile_f
   alg_choice = Int[]
 
   copyat_or_push!(ts,1,t)
-  copyat_or_push!(timeseries,1,u)
+  if save_idxs == nothing
+    copyat_or_push!(timeseries,1,u)
+  else
+    copyat_or_push!(timeseries,1,u[save_idxs])
+  end
   copyat_or_push!(ks,1,[rate_prototype])
 
   if typeof(alg) <: Discrete
@@ -162,7 +167,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,recompile_f
 
   opts = DEOptions(Int(maxiters),timeseries_steps,save_everystep,adaptive,abstol_internal,
     reltol_internal,tTypeNoUnits(gamma),tTypeNoUnits(qmax),tTypeNoUnits(qmin),
-    tType(dtmax),tType(dtmin),internalnorm,
+    tType(dtmax),tType(dtmin),internalnorm,save_idxs,
     tstops_internal,saveat_internal,d_discontinuities_internal,
     userdata,
     progress,progress_steps,

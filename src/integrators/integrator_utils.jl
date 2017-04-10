@@ -1,4 +1,4 @@
-initialize{uType}(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) =
+save_idxsinitialize{uType}(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) =
                 error("This algorithm does not have an initialization function")
 
 @inline function loopheader!(integrator)
@@ -75,7 +75,11 @@ end
     if curt!=integrator.t # If <t, interpolate
       ode_addsteps!(integrator)
       Θ = (curt - integrator.tprev)/integrator.dt
-      val = ode_interpolant(Θ,integrator,indices(integrator.uprev),Val{0}) # out of place, but no force copy later
+      if integrator.opts.save_idxs == nothing
+        val = ode_interpolant(Θ,integrator,indices(integrator.uprev),Val{0}) # out of place, but no force copy later
+      else
+        val = ode_interpolant(Θ,integrator,integrator.opts.save_idxs,Val{0}) # out of place, but no force copy later
+      end
       copyat_or_push!(integrator.sol.t,integrator.saveiter,curt)
       if eltype(integrator.sol.u) <: DEDataArray
         save_val = copy_non_array_fields(integrator.uprev,val)
@@ -88,12 +92,20 @@ end
       end
     else # ==t, just save
       copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
-      copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
+      if integrator.opts.save_idxs ==nothing
+        copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
+      else
+        copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u[integrator.opts.save_idxs])
+      end
       if typeof(integrator.alg) <: Discrete || integrator.opts.dense
         integrator.saveiter_dense +=1
         copyat_or_push!(integrator.notsaveat_idxs,integrator.saveiter_dense,integrator.saveiter)
         if integrator.opts.dense
-          copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
+          if integrator.opts.save_idxs ==nothing
+            copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
+          else
+            copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,[k[integrator.opts.save_idxs] for k in integrator.k])
+          end
         end
       end
       if typeof(integrator.alg) <: OrdinaryDiffEqCompositeAlgorithm
@@ -103,13 +115,21 @@ end
   end
   if integrator.opts.save_everystep && integrator.iter%integrator.opts.timeseries_steps==0
     integrator.saveiter += 1
-    copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
+    if integrator.opts.save_idxs == nothing
+      copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
+    else
+      copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u[integrator.opts.save_idxs])
+    end
     copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
     if typeof(integrator.alg) <: Discrete || integrator.opts.dense
       integrator.saveiter_dense +=1
       copyat_or_push!(integrator.notsaveat_idxs,integrator.saveiter_dense,integrator.saveiter)
       if integrator.opts.dense
-        copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
+        if integrator.opts.save_idxs == nothing
+          copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
+        else
+          copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,[k[integrator.opts.save_idxs] for k in integrator.k])
+        end
       end
     end
     if typeof(integrator.alg) <: OrdinaryDiffEqCompositeAlgorithm
@@ -131,12 +151,20 @@ end
   if integrator.sol.t[integrator.saveiter] !=  integrator.t
     integrator.saveiter += 1
     copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
-    copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
+    if integrator.opts.save_idxs == nothing
+      copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
+    else
+      copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u[integrator.opts.save_idxs])
+    end
     if typeof(integrator.alg) <: Discrete || integrator.opts.dense
       integrator.saveiter_dense +=1
       copyat_or_push!(integrator.notsaveat_idxs,integrator.saveiter_dense,integrator.saveiter)
       if integrator.opts.dense
-        copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
+        if integrator.opts.save_idxs == nothing
+          copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
+        else
+          copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,[k[integrator.opts.save_idxs] for k in integrator.k])
+        end
       end
     end
   end
