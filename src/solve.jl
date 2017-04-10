@@ -16,7 +16,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,recompile_f
   saveat = tType[],tstops = tType[],d_discontinuities= tType[],
   save_idxs = nothing,
   save_everystep = isempty(saveat),
-  save_timeseries = nothing,
+  save_timeseries = nothing,save_start = true,
   dense = save_everystep && !(typeof(alg) <: Discrete),
   calck = (!isempty(setdiff(saveat,tstops)) || dense),
   dt = typeof(alg) <: Discrete && isempty(tstops) ? tType(1) : tType(0),
@@ -149,13 +149,20 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,recompile_f
   ks = convert(Vector{ksEltype},ks_init)
   alg_choice = Int[]
 
-  copyat_or_push!(ts,1,t)
-  if save_idxs == nothing
-    copyat_or_push!(timeseries,1,u)
+  if save_start
+    saveiter = 1 # Starts at 1 so first save is at 2
+    saveiter_dense = 1
+    copyat_or_push!(ts,1,t)
+    if save_idxs == nothing
+      copyat_or_push!(timeseries,1,u)
+    else
+      copyat_or_push!(timeseries,1,u[save_idxs])
+    end
+    copyat_or_push!(ks,1,[rate_prototype])
   else
-    copyat_or_push!(timeseries,1,u[save_idxs])
+    saveiter = 0 # Starts at 0 so first save is at 1
+    saveiter_dense = 0
   end
-  copyat_or_push!(ks,1,[rate_prototype])
 
   if typeof(alg) <: Discrete
     abstol_internal = zero(uEltype)
@@ -173,7 +180,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,recompile_f
     progress,progress_steps,
     progress_name,progress_message,
     timeseries_errors,dense_errors,
-    tTypeNoUnits(beta1),tTypeNoUnits(beta2),tTypeNoUnits(qoldinit),dense,
+    tTypeNoUnits(beta1),tTypeNoUnits(beta2),tTypeNoUnits(qoldinit),dense,save_start,
     callbacks_internal,isoutofdomain,unstable_check,verbose,calck,force_dtmin,
     advance_to_tstop,stop_at_next_tstop)
 
@@ -231,8 +238,6 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,recompile_f
   dtcache = tType(dt)
   dtpropose = tType(dt)
   iter = 0
-  saveiter = 1 # Starts at 1 so first save is at 2
-  saveiter_dense = 1
   kshortsize = 1
   reeval_fsal = false
   u_modified = false

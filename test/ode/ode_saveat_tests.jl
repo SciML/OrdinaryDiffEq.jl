@@ -104,3 +104,8 @@ sol=solve(prob2,DP5(),dt=1//2^(2))
 sol2(0.35)
 sol(0.35)
 @test sol2(0.35) == sol(0.35)[1:2:5]
+
+sol=solve(prob2,DP5(),dt=1//2^(2),save_start=false)
+
+@test sol.t[1] == 1//2^(2)
+@test sol(0.35)[1:2:5] == sol2(0.35)
