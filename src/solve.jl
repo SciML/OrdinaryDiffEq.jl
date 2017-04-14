@@ -39,7 +39,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,recompile_f
   advance_to_tstop = false,stop_at_next_tstop=false,
   progress=false,progress_steps=1000,progress_name="ODE",
   progress_message = ODE_DEFAULT_PROG_MESSAGE,
-  userdata=nothing,callback=CallbackSet(),
+  userdata=nothing,callback=nothing,
   allow_extrapolation = alg_extrapolates(alg),
   initialize_integrator=true,kwargs...)
 
