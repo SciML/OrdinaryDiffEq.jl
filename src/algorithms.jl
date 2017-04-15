@@ -13,6 +13,10 @@ immutable SSPRK22 <: OrdinaryDiffEqAlgorithm end
 immutable SSPRK33 <: OrdinaryDiffEqAlgorithm end
 immutable SSPRK104 <: OrdinaryDiffEqAlgorithm end
 
+immutable Verlet <: OrdinaryDiffEqAlgorithm end
+immutable SymplecticEuler <: OrdinaryDiffEqAlgorithm end
+immutable VelocityVerlet <: OrdinaryDiffEqAdaptiveAlgorithm end
+
 @with_kw immutable ExplicitRK{TabType} <: OrdinaryDiffEqAdaptiveAlgorithm
   tableau::TabType=ODE_DEFAULT_TABLEAU
 end

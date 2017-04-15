@@ -105,7 +105,7 @@ times ts (sorted), with values timeseries and derivatives ks
   tvals[idx[end]] > ts[end] && error("Solution interpolation cannot extrapolate past the final timepoint. Either solve on a longer timespan or use the local extrapolation from the integrator interface.")
   tvals[idx[1]] < ts[1] && error("Solution interpolation cannot extrapolate before the first timepoint. Either start solving earlier or use the local extrapolation from the integrator interface.")
   if idxs == nothing
-    if (eltype(timeseries) <: AbstractArray) && !(eltype(timeseries) <: Array)
+    if (eltype(timeseries) <: Union{AbstractArray,ArrayPartition}) && !(eltype(timeseries) <: Array)
       vals = Vector{Vector{eltype(first(timeseries))}}(length(tvals))
     else
       vals = Vector{eltype(timeseries)}(length(tvals))
@@ -133,8 +133,8 @@ times ts (sorted), with values timeseries and derivatives ks
     else
       dt = ts[notsaveat_idxs[i]] - ts[notsaveat_idxs[i-1]]
       Θ = (t-ts[notsaveat_idxs[i-1]])/dt
-      if idxs == nothing && eltype(timeseries) <: AbstractArray
-        idxs_internal = size(timeseries[notsaveat_idxs[i-1]])
+      if idxs == nothing && eltype(timeseries) <: Union{AbstractArray,ArrayPartition}
+        idxs_internal = indices(timeseries[notsaveat_idxs[i-1]])
       else
         idxs_internal = idxs
       end
@@ -190,20 +190,20 @@ times ts (sorted), with values timeseries and derivatives ks
       end
       if typeof(cache) <: CompositeCache
         ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache.caches[id.alg_choice[notsaveat_idxs[i-1]]]) # update the kcurrent
-        if eltype(timeseries) <: AbstractArray
+        if eltype(timeseries) <: Union{AbstractArray,ArrayPartition}
           ode_interpolant!(vals[j],Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]],idxs_internal,deriv)
         else
           vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]],idxs_internal,deriv)
         end
       elseif typeof(cache) <: (DiscreteCache) || typeof(cache) <: DiscreteConstantCache
-        if eltype(timeseries) <: AbstractArray
+        if eltype(timeseries) <: Union{AbstractArray,ArrayPartition}
           ode_interpolant!(vals[j],Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],0,cache,idxs_internal,deriv)
         else
           vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],0,cache,idxs_internal,deriv)
         end
       else
         ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache) # update the kcurrent
-        if eltype(timeseries) <: AbstractArray
+        if eltype(timeseries) <: Union{AbstractArray,ArrayPartition}
           ode_interpolant!(vals[j],Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache,idxs_internal,deriv)
         else
           vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache,idxs_internal,deriv)
@@ -240,8 +240,8 @@ times ts (sorted), with values timeseries and derivatives ks
   else
     dt = ts[notsaveat_idxs[i]] - ts[notsaveat_idxs[i-1]]
     Θ = (tval-ts[notsaveat_idxs[i-1]])/dt
-    if idxs == nothing && eltype(timeseries) <: AbstractArray
-      idxs_internal = size(timeseries[notsaveat_idxs[i-1]])
+    if idxs == nothing && eltype(timeseries) <: Union{AbstractArray,ArrayPartition}
+      idxs_internal = indices(timeseries[notsaveat_idxs[i-1]])
     else
       idxs_internal = idxs
     end
@@ -322,11 +322,13 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache,always_
 end
 
 @inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::OrdinaryDiffEqMutableCache,idxs,T::Type{Val{0}})
+  @show idxs
+  @show y₀
   if typeof(idxs) <: Tuple
     out = similar(y₀,idxs)
     idxs_internal=eachindex(y₀)
   else
-    out = similar(y₀,length(idxs))
+    out = similar(y₀,indices(idxs))
     idxs_internal=idxs
   end
   ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs_internal,T)
@@ -347,7 +349,7 @@ Herimte Interpolation, chosen if no other dispatch for ode_interpolant
     if typeof(idxs) <: Tuple
       out = similar(y₀,idxs)
     else
-      out = similar(y₀,length(idxs))
+      out = similar(y₀,indices(idxs))
     end
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = (1-Θ)*y₀[i]+Θ*y₁[i]+Θ*(Θ-1)*((1-2Θ)*(y₁[i]-y₀[i])+(Θ-1)*dt*k[1][i] + Θ*dt*k[2][i])

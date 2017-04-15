@@ -1,4 +1,3 @@
-
 function ode_determine_initdt{tType,uType}(u0,t::tType,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,true},order)
   f = prob.f
   f₀ = similar(u0./t); f₁ = similar(u0./t); u₁ = similar(u0)

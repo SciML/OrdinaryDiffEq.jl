@@ -1,5 +1,5 @@
-function solve{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
-  prob::AbstractODEProblem{uType,tType,isinplace},
+function solve{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
+  prob::AbstractODEProblem,
   alg::algType,timeseries=[],ts=[],ks=[],recompile::Type{Val{recompile_flag}}=Val{true};
   kwargs...)
 
@@ -8,18 +8,18 @@ function solve{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,recompile_
   integrator.sol
 end
 
-function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
-  prob::AbstractODEProblem{uType,tType,isinplace},
-  alg::algType,timeseries_init=uType[],ts_init=tType[],ks_init=[],
+function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
+  prob::AbstractODEProblem,
+  alg::algType,timeseries_init=typeof(prob.u0)[],ts_init=eltype(prob.tspan)[],ks_init=[],
   recompile::Type{Val{recompile_flag}}=Val{true};
   timeseries_steps = 1,
-  saveat = tType[],tstops = tType[],d_discontinuities= tType[],
+  saveat = eltype(prob.tspan)[],tstops = eltype(prob.tspan)[],d_discontinuities= eltype(prob.tspan)[],
   save_idxs = nothing,
   save_everystep = isempty(saveat),
   save_timeseries = nothing,save_start = true,
   dense = save_everystep && !(typeof(alg) <: Discrete),
   calck = (!isempty(setdiff(saveat,tstops)) || dense),
-  dt = typeof(alg) <: Discrete && isempty(tstops) ? tType(1) : tType(0),
+  dt = typeof(alg) <: Discrete && isempty(tstops) ? eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
   adaptive = isadaptive(alg),
   gamma=9//10,
   abstol=1//10^6,
@@ -29,8 +29,8 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,recompile_f
   beta2=beta2_default(alg),
   beta1=beta1_default(alg,beta2),
   maxiters = 1000000,
-  dtmax=tType((prob.tspan[end]-prob.tspan[1])),
-  dtmin=tType <: AbstractFloat ? tType(10)*eps(tType) : tType(1//10^(10)),
+  dtmax=eltype(prob.tspan)((prob.tspan[end]-prob.tspan[1])),
+  dtmin=eltype(prob.tspan) <: AbstractFloat ? eltype(prob.tspan)(10)*eps(eltype(prob.tspan)) : eltype(prob.tspan)(1//10^(10)),
   internalnorm = ODE_DEFAULT_NORM,
   isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
   unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
@@ -48,6 +48,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,recompile_f
     save_everystep = save_timeseries
   end
 
+  tType = eltype(prob.tspan)
   tspan = prob.tspan
   tdir = sign(tspan[end]-tspan[1])
 
@@ -79,12 +80,23 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,recompile_f
     pop!(tstops_internal)
   end
   f = prob.f
-  u0 = prob.u0
-  uEltype = eltype(u0)
 
   # Get the control variables
 
-  (uType<:Array || uType <: Number) ? u = copy(u0) : u = deepcopy(u0)
+  if typeof(prob) <: SecondOrderODEProblem
+    u = ArrayPartition(prob.u0,prob.du0,Val{true})
+  elseif typeof(prob.u0) <: Array
+    u = copy(prob.u0)
+  elseif typeof(prob.u0) <: Number
+    u = prob.u0
+  elseif typeof(prob.u0) <: Tuple
+    u = ArrayPartition(prob.u0,Val{true})
+  else
+    u = deepcopy(prob.u0)
+  end
+
+  uType = typeof(u)
+  uEltype = eltype(u)
 
   ks = Vector{uType}(0)
 
@@ -94,14 +106,14 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,recompile_f
   tTypeNoUnits   = typeof(recursive_one(t))
 
   if dt == zero(dt) && adaptive
-    dt = tType(ode_determine_initdt(u0,t,tdir,dtmax,uEltype(abstol),uEltypeNoUnits(reltol),internalnorm,prob,order))
+    dt = tType(ode_determine_initdt(u,t,tdir,dtmax,uEltype(abstol),uEltypeNoUnits(reltol),internalnorm,prob,order))
   end
 
   if sign(dt)!=tdir && dt!=tType(0)
     error("dt has the wrong sign. Exiting")
   end
 
-  if typeof(u) <: AbstractArray
+  if typeof(u) <: Union{AbstractArray,Tuple}
     rate_prototype = similar(u/zero(t),indices(u)) # rate doesn't need type info
   else
     rate_prototype = u/zero(t)
@@ -165,8 +177,8 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,recompile_f
   end
 
   if typeof(alg) <: Discrete
-    abstol_internal = zero(uEltype)
-    reltol_internal = zero(uEltypeNoUnits)
+    abstol_internal = zero(u)
+    reltol_internal = zero(first(u)/t)
   else
     abstol_internal = uEltype(uEltype(1)*abstol)
     reltol_internal = uEltypeNoUnits(reltol)
@@ -205,7 +217,7 @@ function init{uType,tType,isinplace,algType<:OrdinaryDiffEqAlgorithm,recompile_f
     uprev2 = uprev
   end
 
-  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,Val{isinplace})
+  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,Val{isinplace(prob)})
 
   if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
     id = CompositeInterpolationData(f,timeseries,ts,ks,alg_choice,notsaveat_idxs,dense,cache)
