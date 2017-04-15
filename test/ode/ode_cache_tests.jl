@@ -51,9 +51,13 @@ plot(p1,p2,layout=(2,1),size=(600,1000))
 savefig("cell.pdf")
 =#
 
-for alg in NON_IMPLICIT_ALGS
+CACHE_TEST_ALGS = [Euler(),Midpoint(),RK4(),SSPRK104(),SSPRK22(),SSPRK33(),
+    BS3(),BS5(),DP5(),DP5Threaded(),DP8(),Feagin10(),Feagin12(),Feagin14(),
+    TanYam7(),Tsit5(),TsitPap8(),Vern6(),Vern7(),Vern8(),Vern9()]
+
+for alg in CACHE_TEST_ALGS
   println(alg)
-  sol = solve(prob,alg(),callback=callback,dt=1/10)
+  sol = solve(prob,alg,callback=callback,dt=1/10)
 end
 
 #=
