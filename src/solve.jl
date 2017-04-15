@@ -83,9 +83,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
 
   # Get the control variables
 
-  if typeof(prob) <: SecondOrderODEProblem
-    u = ArrayPartition(prob.u0,prob.du0,Val{true})
-  elseif typeof(prob.u0) <: Array
+  if typeof(prob.u0) <: Array
     u = copy(prob.u0)
   elseif typeof(prob.u0) <: Number
     u = prob.u0

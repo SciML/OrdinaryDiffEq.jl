@@ -9,6 +9,7 @@ isfsal(alg::Vern6) = true
 isfsal(alg::Rosenbrock23) = true
 isfsal(alg::Rosenbrock32) = true
 isfsal(alg::Euler) = true
+isfsal(alg::SymplecticEuler) = true
 isfsal(alg::Midpoint) = true
 isfsal(alg::SSPRK22) = true
 isfsal(alg::SSPRK33) = true
@@ -65,6 +66,7 @@ alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is a
 
 alg_order(alg::Discrete) = 0
 alg_order(alg::Euler) = 1
+alg_order(alg::SymplecticEuler) = 1
 alg_order(alg::Midpoint) = 2
 alg_order(alg::SSPRK22) = 2
 alg_order(alg::SSPRK33) = 3

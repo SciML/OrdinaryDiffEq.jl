@@ -53,6 +53,25 @@ immutable EulerConstantCache <: OrdinaryDiffEqConstantCache end
 
 alg_cache(alg::Euler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = EulerConstantCache()
 
+immutable SymplecticEulerCache{uType,rateType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  k::rateType
+  fsalfirst::rateType
+end
+
+function alg_cache(alg::SymplecticEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+  SymplecticEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype))
+end
+
+u_cache(c::SymplecticEulerCache) = ()
+du_cache(c::SymplecticEulerCache) = (c.k,c.fsalfirst)
+
+immutable SymplecticEulerConstantCache <: OrdinaryDiffEqConstantCache end
+
+alg_cache(alg::SymplecticEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = SymplecticEulerConstantCache()
+
 immutable MidpointCache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType

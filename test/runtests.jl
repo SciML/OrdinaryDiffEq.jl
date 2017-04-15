@@ -17,6 +17,7 @@ tic()
 (LONGER_TESTS) && @time @testset "Unrolled Tests" begin include("ode/ode_unrolled_comparison_tests.jl") end
 @time @testset "Initial Dt Tests" begin include("ode/ode_initdt_tests.jl") end
 @time @testset "Rosenbrock Tests" begin include("ode/ode_rosenbrock_tests.jl") end
+@time @testset "Partitioned Methods Tests" begin include("ode/partitioned_methods_tests.jl") end
 @time @testset "SSPRK Tests" begin include("ode/ode_ssprk_tests.jl") end
 @time @testset "Dense Tests" begin include("ode/ode_dense_tests.jl") end
 @time @testset "In-Place Tests" begin include("ode/ode_inplace_tests.jl") end

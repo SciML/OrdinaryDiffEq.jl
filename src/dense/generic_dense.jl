@@ -105,13 +105,15 @@ times ts (sorted), with values timeseries and derivatives ks
   tvals[idx[end]] > ts[end] && error("Solution interpolation cannot extrapolate past the final timepoint. Either solve on a longer timespan or use the local extrapolation from the integrator interface.")
   tvals[idx[1]] < ts[1] && error("Solution interpolation cannot extrapolate before the first timepoint. Either start solving earlier or use the local extrapolation from the integrator interface.")
   if idxs == nothing
-    if (eltype(timeseries) <: Union{AbstractArray,ArrayPartition}) && !(eltype(timeseries) <: Array)
+    if (eltype(timeseries) <: AbstractArray) && !(eltype(timeseries) <: Array)
       vals = Vector{Vector{eltype(first(timeseries))}}(length(tvals))
     else
       vals = Vector{eltype(timeseries)}(length(tvals))
     end
   elseif typeof(idxs) <: Number
     vals = Vector{eltype(first(timeseries))}(length(tvals))
+  elseif eltype(timeseries) <: ArrayPartition
+    vals = Vector{eltype(timeseries)}(length(tvals))
   else
     vals = Vector{Vector{eltype(first(timeseries))}}(length(tvals))
   end
@@ -322,8 +324,6 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache,always_
 end
 
 @inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::OrdinaryDiffEqMutableCache,idxs,T::Type{Val{0}})
-  @show idxs
-  @show y₀
   if typeof(idxs) <: Tuple
     out = similar(y₀,idxs)
     idxs_internal=eachindex(y₀)
@@ -368,5 +368,18 @@ Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 @inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{0}}) # Default interpolant is Hermite
   @inbounds for (j,i) in enumerate(idxs)
     out[j] = (1-Θ)*y₀[i]+Θ*y₁[i]+Θ*(Θ-1)*((1-2Θ)*(y₁[i]-y₀[i])+(Θ-1)*dt*k[1][i] + Θ*dt*k[2][i])
+  end
+end
+
+"""
+Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Problems Page 190
+
+Herimte Interpolation, chosen if no other dispatch for ode_interpolant
+"""
+@inline function ode_interpolant!(all_out,Θ,dt,all_y₀::ArrayPartition,all_y₁,all_k,cache,all_idxs,T::Type{Val{0}}) # Default interpolant is Hermite
+  for (out,y₀,y₁,idxs,k1,k2) in zip(all_out.x,all_y₀.x,all_y₁.x,all_idxs,all_k[1].x,all_k[2].x)
+    @inbounds for (j,i) in enumerate(idxs...)
+      out[j] = (1-Θ)*y₀[i]+Θ*y₁[i]+Θ*(Θ-1)*((1-2Θ)*(y₁[i]-y₀[i])+(Θ-1)*dt*k1[i] + Θ*dt*k2[i])
+    end
   end
 end

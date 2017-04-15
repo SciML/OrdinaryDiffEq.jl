@@ -264,7 +264,7 @@ end
     elseif integrator.reeval_fsal || (typeof(integrator.alg)<:DP8 && !integrator.opts.calck) || (typeof(integrator.alg)<:Union{Rosenbrock23,Rosenbrock32} && !integrator.opts.adaptive)
       reset_fsal!(integrator)
     else # Do not reeval_fsal, instead copy! over
-      if typeof(integrator.fsalfirst) <: AbstractArray
+      if typeof(integrator.fsalfirst) <: Union{AbstractArray,ArrayPartition}
         recursivecopy!(integrator.fsalfirst,integrator.fsallast)
       else
         integrator.fsalfirst = integrator.fsallast
