@@ -48,6 +48,10 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     save_everystep = save_timeseries
   end
 
+  if prob.mass_matrix != I
+    error("This solver is not able to use mass matrices.")
+  end
+
   tType = eltype(prob.tspan)
   tspan = prob.tspan
   tdir = sign(tspan[end]-tspan[1])
