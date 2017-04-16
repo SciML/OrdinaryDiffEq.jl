@@ -1,3 +1,5 @@
+isautodifferentiable(alg::OrdinaryDiffEqAlgorithm) = true
+
 isfsal(alg::OrdinaryDiffEqAlgorithm) = false
 isfsal(alg::DP5) = true
 isfsal(alg::DP5Threaded) = true
