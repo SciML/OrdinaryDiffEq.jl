@@ -1078,7 +1078,7 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,tTypeNoUnit
   Rosenbrock32ConstantCache(uEltypeNoUnits,tf,uf)
 end
 
-type ImplicitEulerCache{uType,uArrayType,vecuType,DiffCacheType,rateType,rhsType,nl_rhsType,CS} <: OrdinaryDiffEqMutableCache
+type ImplicitEulerCache{uType,uArrayType,vecuType,DiffCacheType,rateType,rhsType,nl_rhsType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -1099,22 +1099,18 @@ dual_cache(c::ImplicitEulerCache) = (c.dual_cache,)
 
 function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
   u_old = similar(u,indices(u)); k = zeros(rate_prototype)
-  dual_cache = DiffCache(u,Val{determine_chunksize(u,alg)})
+  dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
   uhold = vec(u) # this makes uhold the same values as integrator.u
   rhs = RHS_IE(f,u_old,t,t,dual_cache,size(u),eachindex(u))
   fsalfirst = zeros(rate_prototype)
-  if alg_autodiff(alg)
-    nl_rhs = autodiff_setup(rhs,uhold,alg)
-  else
-    nl_rhs = non_autodiff_setup(rhs,uhold,alg)
-  end
+  nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
   tmp = u_old
   ImplicitEulerCache{typeof(u),typeof(u_old),typeof(uhold),typeof(dual_cache),typeof(k),
-                     typeof(rhs),typeof(nl_rhs),determine_chunksize(u,alg)}(
+                     typeof(rhs),typeof(nl_rhs)}(
                      u,uprev,uprev2,uhold,dual_cache,u_old,tmp,k,fsalfirst,rhs,nl_rhs)
 end
 
-immutable ImplicitEulerConstantCache{vecuType,rhsType,nl_rhsType,CS} <: OrdinaryDiffEqConstantCache
+immutable ImplicitEulerConstantCache{vecuType,rhsType,nl_rhsType} <: OrdinaryDiffEqConstantCache
   uhold::vecuType
   u_old::vecuType
   rhs::rhsType
@@ -1125,15 +1121,11 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUni
   uhold = Vector{typeof(u)}(1)
   u_old = Vector{typeof(u)}(1)
   rhs = RHS_IE_Scalar(f,u_old,t,t)
-  if alg_autodiff(alg)
-    nl_rhs = autodiff_setup(rhs,uhold,alg)
-  else
-    nl_rhs = non_autodiff_setup(rhs,uhold,alg)
-  end
-  ImplicitEulerConstantCache{typeof(uhold),typeof(rhs),typeof(nl_rhs),1}(uhold,u_old,rhs,nl_rhs)
+  nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
+  ImplicitEulerConstantCache{typeof(uhold),typeof(rhs),typeof(nl_rhs)}(uhold,u_old,rhs,nl_rhs)
 end
 
-type TrapezoidCache{uType,uArrayType,vecuType,DiffCacheType,rateType,rhsType,nl_rhsType,CS} <: OrdinaryDiffEqMutableCache
+type TrapezoidCache{uType,uArrayType,vecuType,DiffCacheType,rateType,rhsType,nl_rhsType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -1155,21 +1147,16 @@ dual_cache(c::TrapezoidCache) = (c.dual_cache,)
 function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
   u_old = similar(u,indices(u)); k = zeros(rate_prototype)
   uhold = vec(u); fsalfirst = zeros(rate_prototype)
-  dual_cache = DiffCache(u,Val{determine_chunksize(u,alg)})
+  dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
   rhs = RHS_Trap(f,u_old,fsalfirst,t,t,size(u),dual_cache,eachindex(u))
-  if alg_autodiff(alg)
-    nl_rhs = autodiff_setup(rhs,uhold,alg)
-  else
-    nl_rhs = non_autodiff_setup(rhs,uhold,alg)
-  end
+  nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
   tmp = u_old
   TrapezoidCache{typeof(u),typeof(u_old),typeof(uhold),typeof(dual_cache),typeof(k),
-    typeof(rhs),typeof(nl_rhs),determine_chunksize(u,alg)}(
-    u,uprev,uprev2,uhold,u_old,fsalfirst,dual_cache,tmp,k,rhs,nl_rhs)
+    typeof(rhs),typeof(nl_rhs)}(u,uprev,uprev2,uhold,u_old,fsalfirst,dual_cache,tmp,k,rhs,nl_rhs)
 end
 
 
-immutable TrapezoidConstantCache{vecuType,rhsType,nl_rhsType,CS} <: OrdinaryDiffEqConstantCache
+immutable TrapezoidConstantCache{vecuType,rhsType,nl_rhsType} <: OrdinaryDiffEqConstantCache
   uhold::vecuType
   u_old::vecuType
   rhs::rhsType
@@ -1180,12 +1167,8 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,u
   uhold = Vector{typeof(u)}(1)
   u_old = Vector{typeof(u)}(1)
   rhs = RHS_Trap_Scalar(f,u_old,rate_prototype,t,t)
-  if alg_autodiff(alg)
-    nl_rhs = autodiff_setup(rhs,uhold,alg)
-  else
-    nl_rhs = non_autodiff_setup(rhs,uhold,alg)
-  end
-  TrapezoidConstantCache{typeof(uhold),typeof(rhs),typeof(nl_rhs),1}(uhold,u_old,rhs,nl_rhs)
+  nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
+  TrapezoidConstantCache{typeof(uhold),typeof(rhs),typeof(nl_rhs)}(uhold,u_old,rhs,nl_rhs)
 end
 
 

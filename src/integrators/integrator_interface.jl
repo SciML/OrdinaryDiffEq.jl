@@ -87,9 +87,7 @@ function resize_non_user_cache!(integrator::ODEIntegrator,cache::Union{ImplicitE
     resize!(c.du,i)
     resize!(c.dual_du,i)
   end
-  if alg_autodiff(integrator.alg)
-    cache.nl_rhs = autodiff_setup(cache.rhs,cache.uhold,integrator.alg)
-  end
+  cache.nl_rhs = integrator.alg.nlsolve(Val{:init},cache.rhs,cache.uhold)
 end
 
 function deleteat_non_user_cache!(integrator::ODEIntegrator,cache,idxs)

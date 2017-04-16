@@ -39,15 +39,15 @@ immutable Feagin10 <: OrdinaryDiffEqAdaptiveAlgorithm end
 immutable Feagin12 <: OrdinaryDiffEqAdaptiveAlgorithm end
 immutable Feagin14 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
-immutable ImplicitEuler{CS,AD,F} <: OrdinaryDiffEqAlgorithm
+immutable ImplicitEuler{F} <: OrdinaryDiffEqAlgorithm
   nlsolve::F
 end
-Base.@pure ImplicitEuler(;chunk_size=0,autodiff=true,nlsolve=DEFAULT_LINSOLVE) = ImplicitEuler{chunk_size,autodiff,typeof(nlsolve)}(nlsolve)
+Base.@pure ImplicitEuler(;nlsolve=NLSOLVEJL_SETUP()) = ImplicitEuler{typeof(nlsolve)}(nlsolve)
 
-immutable Trapezoid{CS,AD,F} <: OrdinaryDiffEqAlgorithm
+immutable Trapezoid{F} <: OrdinaryDiffEqAlgorithm
   nlsolve::F
 end
-Base.@pure Trapezoid(;chunk_size=0,autodiff=true,nlsolve=DEFAULT_LINSOLVE) = Trapezoid{chunk_size,autodiff,typeof(nlsolve)}(nlsolve)
+Base.@pure Trapezoid(;nlsolve=NLSOLVEJL_SETUP()) = Trapezoid{typeof(nlsolve)}(nlsolve)
 
 immutable Rosenbrock23{CS,AD,F} <: OrdinaryDiffEqAdaptiveAlgorithm
   linsolve::F
