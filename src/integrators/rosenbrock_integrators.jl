@@ -33,13 +33,13 @@ end
     W[i,j] = @muladd I[i,j]+a*J[i,j]
   end
 
-  Wfact = integrator.alg.factorization(W)
   a = -a
   for i in uidx
     linsolve_tmp[i] = @muladd fsalfirst[i] + a*dT[i]
   end
 
-  @into! vectmp = Wfact\linsolve_tmp
+  integrator.alg.linsolve(vectmp,W,linsolve_tmp,true)
+
   recursivecopy!(k₁,reshape(vectmp,size(u)...))
   dto2 = dt/2
   for i in uidx
@@ -51,7 +51,8 @@ end
     linsolve_tmp[i] = f₁[i]-k₁[i]
   end
 
-  @into! vectmp2 = Wfact\linsolve_tmp
+  integrator.alg.linsolve(vectmp2,W,linsolve_tmp)
+
   for i in uidx
     k₂[i] = vectmp2[i] + k₁[i]
     u[i] = @muladd uprev[i] + dt*k₂[i]
@@ -63,7 +64,8 @@ end
       linsolve_tmp[i] = @muladd integrator.fsallast[i] - c₃₂*(k₂[i]-f₁[i])-2(k₁[i]-fsalfirst[i])+dt*dT[i]
     end
 
-    @into! vectmp3 = Wfact\linsolve_tmp
+    integrator.alg.linsolve(vectmp3,W,linsolve_tmp)
+
     k₃ = reshape(vectmp3,sizeu...)
     for i in uidx
       tmp[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol)
@@ -104,15 +106,12 @@ end
     W[i,j] = @muladd I[i,j]+a*J[i,j]
   end
 
-
-  Wfact = integrator.alg.factorization(W)
-
   a = -a
   for i in uidx
     linsolve_tmp[i] = @muladd fsalfirst[i] + a*dT[i]
   end
 
-  @into! vectmp = Wfact\linsolve_tmp
+  integrator.alg.linsolve(vectmp,W,linsolve_tmp,true)
 
   recursivecopy!(k₁,reshape(vectmp,sizeu...))
 
@@ -124,7 +123,7 @@ end
   for i in uidx
     linsolve_tmp[i] = f₁[i]-k₁[i]
   end
-  @into! vectmp2 = Wfact\linsolve_tmp
+  integrator.alg.linsolve(vectmp2,W,linsolve_tmp)
   tmp = reshape(vectmp2,sizeu...)
   for i in uidx
     k₂[i] = vectmp2[i] + k₁[i]
@@ -136,7 +135,7 @@ end
   for i in uidx
     linsolve_tmp[i] = @muladd integrator.fsallast[i] - c₃₂*(k₂[i]-f₁[i])-2(k₁[i]-fsalfirst[i])+dt*dT[i]
   end
-  @into! vectmp3 = Wfact\linsolve_tmp
+  integrator.alg.linsolve(vectmp3,W,linsolve_tmp)
   k₃ = reshape(vectmp3,sizeu...)
   for i in uidx
     u[i] = uprev[i] + dt*(k₁[i] + 4k₂[i] + k₃[i])/6

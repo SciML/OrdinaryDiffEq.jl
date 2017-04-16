@@ -14,11 +14,7 @@ Base.@pure DiffCache{CS}(u::AbstractArray,T::Type{Val{CS}}) = DiffCache(eltype(u
 get_du{T<:Dual}(dc::DiffCache, ::Type{T}) = dc.dual_du
 get_du(dc::DiffCache, T) = dc.du
 
-type MutableReference{T}
-val::T
-end
-
-Base.@pure function autodiff_setup(f!, initial_x::Vector,alg)
+function autodiff_setup(f!, initial_x::Vector,alg)
   autodiff_setup(f!, initial_x,Val{determine_chunksize(initial_x,alg)})
 end
 
@@ -30,7 +26,7 @@ Base.@pure function determine_chunksize(u,alg)
   end
 end
 
-Base.@pure function autodiff_setup{CS}(f!, initial_x::Vector,chunk_size::Type{Val{CS}})
+function autodiff_setup{CS}(f!, initial_x::Vector,chunk_size::Type{Val{CS}})
 
     permf! = (fx, x) -> f!(x, fx)
 
@@ -46,9 +42,6 @@ Base.@pure function autodiff_setup{CS}(f!, initial_x::Vector,chunk_size::Type{Va
 
     return DifferentiableMultivariateFunction(f!, g!, fg!)
 end
-
-#Base.getindex(m::MutableReference)=m.val
-#Base.setindex!(m::MutableReference{T}, v::{T},I...) = m.val=v
 
 realtype{T}(::Type{T}) = T
 realtype{T}(::Type{Complex{T}}) = T

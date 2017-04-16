@@ -51,7 +51,7 @@ sol = solve(prob,Rosenbrock32())
 
 prob = prob_ode_bigfloat2Dlinear
 
-sim = test_convergence(dts,prob,Rosenbrock32(factorization=qrfact!))
+sim = test_convergence(dts,prob,Rosenbrock32(linsolve=LinSolveFactorize(qrfact!)))
 @test abs(sim.𝒪est[:final]-3) < testTol
 
 sol = solve(prob,Rosenbrock32())

@@ -947,7 +947,7 @@ type Rosenbrock23Cache{uType,uArrayType,rateType,vecuType,JType,TabType,TFType,U
   tf::TFType
   uf::UFType
   linsolve_tmp::vecuType
-  factorization::F
+  linsolve::F
   jac_config::JCType
 end
 
@@ -978,7 +978,7 @@ type Rosenbrock32Cache{uType,uArrayType,rateType,vecuType,JType,TabType,TFType,U
   tf::TFType
   uf::UFType
   linsolve_tmp::vecuType
-  factorization::F
+  linsolve::F
   jac_config::JCType
 end
 
@@ -1011,7 +1011,7 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,tTypeNoUnit
   uf = UJacobianWrapper(vfr,t)
   linsolve_tmp = vec(similar(u,indices(u)))
   jac_config = ForwardDiff.JacobianConfig{determine_chunksize(u,alg)}(vec(du1),vec(uprev))
-  Rosenbrock23Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,alg.factorization,jac_config)
+  Rosenbrock23Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,alg.linsolve,jac_config)
 end
 
 function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
@@ -1037,7 +1037,7 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,tTypeNoUnit
   uf = UJacobianWrapper(vfr,t)
   linsolve_tmp = vec(similar(u,indices(u)))
   jac_config = ForwardDiff.JacobianConfig{determine_chunksize(u,alg)}(vec(du1),vec(uprev))
-  Rosenbrock32Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,alg.factorization,jac_config)
+  Rosenbrock32Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,alg.linsolve,jac_config)
 end
 
 immutable Rosenbrock23ConstantCache{T,TF,UF} <: OrdinaryDiffEqConstantCache

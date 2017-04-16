@@ -53,14 +53,12 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenb
       W[i,j] = I[i,j]+a*J[i,j]
     end
 
-    Wfact = cache.factorization(W)
-
     a = -a
     for i in uidx
       linsolve_tmp[i] = @muladd fsalfirst[i] + a*dT[i]
     end
 
-    @into! vectmp = Wfact\linsolve_tmp
+    cache.linsolve(vectmp,W,linsolve_tmp,true)
     recursivecopy!(k₁,reshape(vectmp,size(u)...))
     for i in uidx
       tmp[i]=uprev[i]+dt*k₁[i]/2
@@ -71,7 +69,7 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenb
       linsolve_tmp[i] = f₁[i]-k₁[i]
     end
 
-    @into! vectmp2 = Wfact\linsolve_tmp
+    cache.linsolve(vectmp2,W,linsolve_tmp)
     for i in uidx
       k₂[i] = tmp[i] + k₁[i]
     end
@@ -108,14 +106,12 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenb
       W[i,j] = @muladd I[i,j]+a*J[i,j]
     end
 
-    Wfact = cache.factorization(W)
-
     a = -a
     for i in uidx
       linsolve_tmp[i] = @muladd fsalfirst[i] + a*dT[i]
     end
 
-    @into! vectmp = Wfact\linsolve_tmp
+    cache.linsolve(vectmp,W,linsolve_tmp,true)
     recursivecopy!(k₁,reshape(vectmp,size(u)...))
     for i in uidx
       tmp[i]=uprev[i]+dt*k₁[i]/2
@@ -126,7 +122,7 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenb
       linsolve_tmp[i] = f₁[i]-k₁[i]
     end
 
-    @into! vectmp2 = Wfact\linsolve_tmp
+    cache.linsolve(vectmp2,W,linsolve_tmp)
     for i in uidx
       k₂[i] = tmp[i] + k₁[i]
     end

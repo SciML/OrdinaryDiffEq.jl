@@ -40,24 +40,24 @@ immutable Feagin12 <: OrdinaryDiffEqAdaptiveAlgorithm end
 immutable Feagin14 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 immutable ImplicitEuler{CS,AD,F} <: OrdinaryDiffEqAlgorithm
-  factorization::F
+  nlsolve::F
 end
-Base.@pure ImplicitEuler(;chunk_size=0,autodiff=true,factorization=lufact!) = ImplicitEuler{chunk_size,autodiff,typeof(factorization)}(factorization)
+Base.@pure ImplicitEuler(;chunk_size=0,autodiff=true,linsolve=DEFAULT_LINSOLVE) = ImplicitEuler{chunk_size,autodiff,typeof(linsolve)}(linsolve)
 
 immutable Trapezoid{CS,AD,F} <: OrdinaryDiffEqAlgorithm
-  factorization::F
+  nlsolve::F
 end
-Base.@pure Trapezoid(;chunk_size=0,autodiff=true,factorization=lufact!) = Trapezoid{chunk_size,autodiff,typeof(factorization)}(factorization)
+Base.@pure Trapezoid(;chunk_size=0,autodiff=true,linsolve=DEFAULT_LINSOLVE) = Trapezoid{chunk_size,autodiff,typeof(linsolve)}(linsolve)
 
 immutable Rosenbrock23{CS,AD,F} <: OrdinaryDiffEqAdaptiveAlgorithm
-  factorization::F
+  linsolve::F
 end
-Base.@pure Rosenbrock23(;chunk_size=0,autodiff=true,factorization=lufact!) = Rosenbrock23{chunk_size,autodiff,typeof(factorization)}(factorization)
+Base.@pure Rosenbrock23(;chunk_size=0,autodiff=true,linsolve=DEFAULT_LINSOLVE) = Rosenbrock23{chunk_size,autodiff,typeof(linsolve)}(linsolve)
 
 immutable Rosenbrock32{CS,AD,F} <: OrdinaryDiffEqAdaptiveAlgorithm
-  factorization::F
+  linsolve::F
 end
-Base.@pure Rosenbrock32(;chunk_size=0,autodiff=true,factorization=lufact!) = Rosenbrock32{chunk_size,autodiff,typeof(factorization)}(factorization)
+Base.@pure Rosenbrock32(;chunk_size=0,autodiff=true,linsolve=DEFAULT_LINSOLVE) = Rosenbrock32{chunk_size,autodiff,typeof(linsolve)}(linsolve)
 
 immutable CompositeAlgorithm{T,F} <: OrdinaryDiffEqCompositeAlgorithm
   algs::T
