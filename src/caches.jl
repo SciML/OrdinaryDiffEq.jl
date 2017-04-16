@@ -1078,7 +1078,7 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,tTypeNoUnit
   Rosenbrock32ConstantCache(uEltypeNoUnits,tf,uf)
 end
 
-type ImplicitEulerCache{uType,uArrayType,vecuType,DiffCacheType,rateType,rhsType,adfType,CS} <: OrdinaryDiffEqMutableCache
+type ImplicitEulerCache{uType,uArrayType,vecuType,DiffCacheType,rateType,rhsType,nl_rhsType,CS} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -1089,7 +1089,7 @@ type ImplicitEulerCache{uType,uArrayType,vecuType,DiffCacheType,rateType,rhsType
   k::rateType
   fsalfirst::rateType
   rhs::rhsType
-  adf::adfType
+  nl_rhs::nl_rhsType
 end
 
 u_cache(c::ImplicitEulerCache)    = (c.uprev2,c.u_old)
@@ -1104,21 +1104,21 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUni
   rhs = RHS_IE(f,u_old,t,t,dual_cache,size(u),eachindex(u))
   fsalfirst = zeros(rate_prototype)
   if alg_autodiff(alg)
-    adf = autodiff_setup(rhs,uhold,alg)
+    nl_rhs = autodiff_setup(rhs,uhold,alg)
   else
-    adf = nothing
+    nl_rhs = non_autodiff_setup(rhs,uhold,alg)
   end
   tmp = u_old
   ImplicitEulerCache{typeof(u),typeof(u_old),typeof(uhold),typeof(dual_cache),typeof(k),
-                     typeof(rhs),typeof(adf),determine_chunksize(u,alg)}(
-                     u,uprev,uprev2,uhold,dual_cache,u_old,tmp,k,fsalfirst,rhs,adf)
+                     typeof(rhs),typeof(nl_rhs),determine_chunksize(u,alg)}(
+                     u,uprev,uprev2,uhold,dual_cache,u_old,tmp,k,fsalfirst,rhs,nl_rhs)
 end
 
-immutable ImplicitEulerConstantCache{vecuType,rhsType,adfType,CS} <: OrdinaryDiffEqConstantCache
+immutable ImplicitEulerConstantCache{vecuType,rhsType,nl_rhsType,CS} <: OrdinaryDiffEqConstantCache
   uhold::vecuType
   u_old::vecuType
   rhs::rhsType
-  adf::adfType
+  nl_rhs::nl_rhsType
 end
 
 function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
@@ -1126,14 +1126,14 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUni
   u_old = Vector{typeof(u)}(1)
   rhs = RHS_IE_Scalar(f,u_old,t,t)
   if alg_autodiff(alg)
-    adf = autodiff_setup(rhs,uhold,alg)
+    nl_rhs = autodiff_setup(rhs,uhold,alg)
   else
-    adf = nothing
+    nl_rhs = non_autodiff_setup(rhs,uhold,alg)
   end
-  ImplicitEulerConstantCache{typeof(uhold),typeof(rhs),typeof(adf),1}(uhold,u_old,rhs,adf)
+  ImplicitEulerConstantCache{typeof(uhold),typeof(rhs),typeof(nl_rhs),1}(uhold,u_old,rhs,nl_rhs)
 end
 
-type TrapezoidCache{uType,uArrayType,vecuType,DiffCacheType,rateType,rhsType,adfType,CS} <: OrdinaryDiffEqMutableCache
+type TrapezoidCache{uType,uArrayType,vecuType,DiffCacheType,rateType,rhsType,nl_rhsType,CS} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -1144,7 +1144,7 @@ type TrapezoidCache{uType,uArrayType,vecuType,DiffCacheType,rateType,rhsType,adf
   tmp::uType
   k::rateType
   rhs::rhsType
-  adf::adfType
+  nl_rhs::nl_rhsType
 end
 
 u_cache(c::TrapezoidCache)    = (c.uprev2,c.u_old)
@@ -1158,22 +1158,22 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,u
   dual_cache = DiffCache(u,Val{determine_chunksize(u,alg)})
   rhs = RHS_Trap(f,u_old,fsalfirst,t,t,size(u),dual_cache,eachindex(u))
   if alg_autodiff(alg)
-    adf = autodiff_setup(rhs,uhold,alg)
+    nl_rhs = autodiff_setup(rhs,uhold,alg)
   else
-    adf = nothing
+    nl_rhs = non_autodiff_setup(rhs,uhold,alg)
   end
   tmp = u_old
   TrapezoidCache{typeof(u),typeof(u_old),typeof(uhold),typeof(dual_cache),typeof(k),
-    typeof(rhs),typeof(adf),determine_chunksize(u,alg)}(
-    u,uprev,uprev2,uhold,u_old,fsalfirst,dual_cache,tmp,k,rhs,adf)
+    typeof(rhs),typeof(nl_rhs),determine_chunksize(u,alg)}(
+    u,uprev,uprev2,uhold,u_old,fsalfirst,dual_cache,tmp,k,rhs,nl_rhs)
 end
 
 
-immutable TrapezoidConstantCache{vecuType,rhsType,adfType,CS} <: OrdinaryDiffEqConstantCache
+immutable TrapezoidConstantCache{vecuType,rhsType,nl_rhsType,CS} <: OrdinaryDiffEqConstantCache
   uhold::vecuType
   u_old::vecuType
   rhs::rhsType
-  adf::adfType
+  nl_rhs::nl_rhsType
 end
 
 function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
@@ -1181,11 +1181,11 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,u
   u_old = Vector{typeof(u)}(1)
   rhs = RHS_Trap_Scalar(f,u_old,rate_prototype,t,t)
   if alg_autodiff(alg)
-    adf = autodiff_setup(rhs,uhold,alg)
+    nl_rhs = autodiff_setup(rhs,uhold,alg)
   else
-    adf = nothing
+    nl_rhs = non_autodiff_setup(rhs,uhold,alg)
   end
-  TrapezoidConstantCache{typeof(uhold),typeof(rhs),typeof(adf),1}(uhold,u_old,rhs,adf)
+  TrapezoidConstantCache{typeof(uhold),typeof(rhs),typeof(nl_rhs),1}(uhold,u_old,rhs,nl_rhs)
 end
 
 

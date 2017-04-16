@@ -18,6 +18,10 @@ function autodiff_setup(f!, initial_x::Vector,alg)
   autodiff_setup(f!, initial_x,Val{determine_chunksize(initial_x,alg)})
 end
 
+function non_autodiff_setup(f!, initial_x::Vector,alg)
+  non_autodiff_setup(f!, initial_x,Val{determine_chunksize(initial_x,alg)})
+end
+
 Base.@pure function determine_chunksize(u,alg)
   if get_chunksize(alg) != 0
     return get_chunksize(alg)
@@ -41,6 +45,10 @@ function autodiff_setup{CS}(f!, initial_x::Vector,chunk_size::Type{Val{CS}})
     end
 
     return DifferentiableMultivariateFunction(f!, g!, fg!)
+end
+
+function non_autodiff_setup{CS}(f!, initial_x::Vector,chunk_size::Type{Val{CS}})
+  DifferentiableMultivariateFunction(f!)
 end
 
 realtype{T}(::Type{T}) = T

@@ -18,18 +18,14 @@ end
 
 @inline function perform_step!(integrator,cache::ImplicitEulerConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
-  @unpack uhold,u_old,rhs,adf = cache
+  @unpack uhold,u_old,rhs,nl_rhs = cache
   u_old[1] = uhold[1]
   if integrator.iter > 1 && !integrator.u_modified
     uhold[1] = current_extrapolant(t+dt,integrator)
   end # else uhold is previous value.
   rhs.t = t
   rhs.dt = dt
-  if alg_autodiff(integrator.alg)
-    nlres = NLsolve.nlsolve(adf,uhold)
-  else
-    nlres = NLsolve.nlsolve(rhs,uhold,autodiff=alg_autodiff(integrator.alg))
-  end
+  nlres = NLsolve.nlsolve(nl_rhs,uhold)
   uhold[1] = nlres.zero[1]
   k = f(t+dt,uhold[1])
   integrator.fsallast = k
@@ -69,7 +65,7 @@ end
 @inline function perform_step!(integrator,cache::ImplicitEulerCache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack u_old,dual_cache,k,adf,rhs,uhold = cache
+  @unpack u_old,dual_cache,k,nl_rhs,rhs,uhold = cache
   copy!(u_old,uhold)
   if integrator.iter > 1 && !integrator.u_modified
     current_extrapolant!(uhold,t+dt,integrator)
@@ -78,11 +74,7 @@ end
   rhs.dt = dt
   rhs.uidx = uidx
   rhs.sizeu = size(u)
-  if alg_autodiff(integrator.alg)
-    nlres = NLsolve.nlsolve(adf,uhold)
-  else
-    nlres = NLsolve.nlsolve(rhs,uhold,autodiff=alg_autodiff(integrator.alg))
-  end
+  nlres = NLsolve.nlsolve(nl_rhs,uhold)
   copy!(uhold,nlres.zero)
   f(t+dt,u,k)
   @pack integrator = t,dt,u
@@ -121,7 +113,7 @@ end
 @inline function perform_step!(integrator,cache::TrapezoidCache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack u_old,dual_cache,k,rhs,adf,uhold = cache
+  @unpack u_old,dual_cache,k,rhs,nl_rhs,uhold = cache
   copy!(u_old,uhold)
   if integrator.iter > 1 && !integrator.u_modified
     current_extrapolant!(uhold,t+dt,integrator)
@@ -131,11 +123,7 @@ end
   rhs.dt = dt
   rhs.uidx = uidx
   rhs.sizeu = size(u)
-  if alg_autodiff(integrator.alg)
-    nlres = NLsolve.nlsolve(adf,uhold)
-  else
-    nlres = NLsolve.nlsolve(rhs,uhold,autodiff=alg_autodiff(integrator.alg))
-  end
+  nlres = NLsolve.nlsolve(nl_rhs,uhold)
   copy!(uhold,nlres.zero)
   f(t+dt,u,k)
   @pack integrator = t,dt,u
@@ -162,7 +150,7 @@ end
 
 @inline function perform_step!(integrator,cache::TrapezoidConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
-  @unpack uhold,u_old,rhs,adf = cache
+  @unpack uhold,u_old,rhs,nl_rhs = cache
   u_old[1] = uhold[1]
   if integrator.iter > 1 && !integrator.u_modified
     uhold[1] = current_extrapolant(t+dt,integrator)
@@ -170,11 +158,7 @@ end
   rhs.t = t
   rhs.dt = dt
   rhs.f_old = integrator.fsalfirst
-  if alg_autodiff(integrator.alg)
-    nlres = NLsolve.nlsolve(adf,uhold)
-  else
-    nlres = NLsolve.nlsolve(rhs,uhold,autodiff=alg_autodiff(integrator.alg))
-  end
+  nlres = NLsolve.nlsolve(nl_rhs,uhold)
   uhold[1] = nlres.zero[1]
   k = f(t+dt,uhold[1])
   integrator.fsallast = k
