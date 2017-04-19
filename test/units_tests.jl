@@ -13,10 +13,10 @@ sol =solve(prob,Midpoint(),dt=1u"s"/10)
 
 sol =solve(prob,ExplicitRK())
 
-for alg in NON_IMPLICIT_ALGS
-  if !(alg <: DP5Threaded) && !(alg <: Rosenbrock23) && !(alg <: Rosenbrock32)
+for alg in CACHE_TEST_ALGS
+  if !(typeof(alg) <: DP5Threaded)
     @show alg
-    sol = solve(prob,alg(),dt=1u"s"/10)
+    sol = solve(prob,alg,dt=1u"s"/10)
   end
 end
 
@@ -34,11 +34,9 @@ sol =solve(prob,DP5())
 
 sol =solve(prob,DP5Threaded())
 
-for alg in NON_IMPLICIT_ALGS
-  if !(alg <: Rosenbrock23) && !(alg <: Rosenbrock32)
-    @show alg
-    sol = solve(prob,alg(),dt=1u"s"/10)
-  end
+for alg in CACHE_TEST_ALGS
+  @show alg
+  sol = solve(prob,alg(),dt=1u"s"/10)
 end
 
 println("Units for 2D pass")

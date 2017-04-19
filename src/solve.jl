@@ -22,8 +22,8 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   dt = typeof(alg) <: Discrete && isempty(tstops) ? eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
   adaptive = isadaptive(alg),
   gamma=9//10,
-  abstol=1//10^6,
-  reltol=1//10^3,
+  abstol=nothing,
+  reltol=nothing,
   qmax=qmax_default(alg),qmin=qmin_default(alg),
   qoldinit=1//10^4, fullnormalize=true,
   beta2=beta2_default(alg),
@@ -111,8 +111,28 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   uEltypeNoUnits = typeof(recursive_one(u))
   tTypeNoUnits   = typeof(recursive_one(t))
 
+  if typeof(alg) <: Discrete
+    abstol_internal = zero(u)
+  elseif abstol == nothing
+    if uEltypeNoUnits == uEltype || !(typeof(u) <: ArrayPartition)
+      abstol_internal = uEltype(uEltype(1)*1//10^6)
+    else
+      abstol_internal = ones(u).*1//10^6
+    end
+  else
+    abstol_internal = abstol
+  end
+
+  if typeof(alg) <: Discrete
+    reltol_internal = zero(first(u)/t)
+  elseif reltol == nothing
+    reltol_internal = uEltypeNoUnits(1//10^3)
+  else
+    reltol_internal = reltol
+  end
+
   if dt == zero(dt) && adaptive
-    dt = tType(ode_determine_initdt(u,t,tdir,dtmax,uEltype(abstol),uEltypeNoUnits(reltol),internalnorm,prob,order))
+    dt = tType(ode_determine_initdt(u,t,tdir,dtmax,abstol_internal,reltol_internal,internalnorm,prob,order))
   end
 
   if sign(dt)!=tdir && dt!=tType(0)
@@ -180,14 +200,6 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   else
     saveiter = 0 # Starts at 0 so first save is at 1
     saveiter_dense = 0
-  end
-
-  if typeof(alg) <: Discrete
-    abstol_internal = zero(u)
-    reltol_internal = zero(first(u)/t)
-  else
-    abstol_internal = uEltype(uEltype(1)*abstol)
-    reltol_internal = uEltypeNoUnits(reltol)
   end
 
   opts = DEOptions(Int(maxiters),timeseries_steps,save_everystep,adaptive,abstol_internal,

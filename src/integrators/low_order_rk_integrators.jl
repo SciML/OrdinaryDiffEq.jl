@@ -16,7 +16,7 @@ end
   k4 = f(t+dt,u); integrator.fsallast = k4
   if integrator.opts.adaptive
     utilde = @muladd uprev + dt*(b1*k1 + b2*k2 + b3*k3 + b4*k4)
-    integrator.EEst = integrator.opts.internalnorm( ((utilde-u)./@muladd(integrator.opts.abstol+max(abs.(uprev),abs.(u))*integrator.opts.reltol)))
+    integrator.EEst = integrator.opts.internalnorm( ((utilde-u)./@muladd(integrator.opts.abstol+max(abs.(uprev),abs.(u)).*integrator.opts.reltol)))
   end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -56,7 +56,7 @@ end
   if integrator.opts.adaptive
     for i in uidx
       utilde[i] = @muladd uprev[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b4*k4[i])
-      atmp[i] = ((utilde[i]-u[i])./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol))
+      atmp[i] = ((utilde[i]-u[i])./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol))
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
@@ -85,8 +85,8 @@ end
   if integrator.opts.adaptive
     uhat   = dt*@muladd(bhat1*k1 + bhat3*k3 + bhat4*k4 + bhat5*k5 + bhat6*k6)
     utilde = @muladd uprev + dt*(btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7 + btilde8*k8)
-    EEst1 = integrator.opts.internalnorm( sum(((uhat)./@muladd(integrator.opts.abstol+max(abs.(uprev),abs.(u))*integrator.opts.reltol))))
-    EEst2 = integrator.opts.internalnorm( sum(((utilde-u)./@muladd(integrator.opts.abstol+max(abs.(uprev),abs.(u))*integrator.opts.reltol))))
+    EEst1 = integrator.opts.internalnorm( sum(((uhat)./@muladd(integrator.opts.abstol+max(abs.(uprev),abs.(u)).*integrator.opts.reltol))))
+    EEst2 = integrator.opts.internalnorm( sum(((utilde-u)./@muladd(integrator.opts.abstol+max(abs.(uprev),abs.(u)).*integrator.opts.reltol))))
     integrator.EEst = max(EEst1,EEst2)
   end
   integrator.k[1]=k1; integrator.k[2]=k2; integrator.k[3]=k3;integrator.k[4]=k4;integrator.k[5]=k5;integrator.k[6]=k6;integrator.k[7]=k7;integrator.k[8]=k8
@@ -143,8 +143,8 @@ end
     for i in uidx
       uhat[i]   = dt*@muladd(bhat1*k1[i] + bhat3*k3[i] + bhat4*k4[i] + bhat5*k5[i] + bhat6*k6[i])
       utilde[i] = @muladd uprev[i] + dt*(btilde1*k1[i] + btilde2*k2[i] + btilde3*k3[i] + btilde4*k4[i] + btilde5*k5[i] + btilde6*k6[i] + btilde7*k7[i] + btilde8*k8[i])
-      atmp[i] = ((uhat[i])./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol))
-      atmptilde[i] = ((utilde[i]-u[i])./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol))
+      atmp[i] = ((uhat[i])./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol))
+      atmptilde[i] = ((utilde[i]-u[i])./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol))
     end
     EEst1 = integrator.opts.internalnorm(atmp)
     EEst2 = integrator.opts.internalnorm(atmptilde)
@@ -173,7 +173,7 @@ end
   integrator.fsallast = f(t+dt,u); k7 = integrator.fsallast
   if integrator.opts.adaptive
     utilde = @muladd uprev + dt*(b1*k1 + b2*k2 + b3*k3 + b4*k4 + b5*k5 + b6*k6 + b7*k7)
-    integrator.EEst = integrator.opts.internalnorm(((utilde-u)./@muladd(integrator.opts.abstol+max(abs.(uprev),abs.(u))*integrator.opts.reltol)))
+    integrator.EEst = integrator.opts.internalnorm(((utilde-u)./@muladd(integrator.opts.abstol+max(abs.(uprev),abs.(u)).*integrator.opts.reltol)))
   end
   integrator.k[1] = k1
   integrator.k[2] = k2
@@ -233,7 +233,7 @@ end
   if integrator.opts.adaptive
     for i in uidx
       utilde[i] = @muladd uprev[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b4*k4[i] + b5*k5[i] + b6*k6[i] + b7*k7[i])
-      atmp[i] = ((utilde[i]-u[i])./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol))
+      atmp[i] = ((utilde[i]-u[i])./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol))
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
@@ -262,7 +262,7 @@ end
   integrator.fsallast = f(t+dt,u); k7 = integrator.fsallast
   if integrator.opts.adaptive
     utilde = uprev + dt*(b1*k1 + b3*k3 + b4*k4 + b5*k5 + b6*k6 + b7*k7)
-    integrator.EEst = integrator.opts.internalnorm( ((utilde-u)./@muladd(integrator.opts.abstol+max(abs.(uprev),abs.(u))*integrator.opts.reltol)))
+    integrator.EEst = integrator.opts.internalnorm( ((utilde-u)./@muladd(integrator.opts.abstol+max(abs.(uprev),abs.(u)).*integrator.opts.reltol)))
   end
   integrator.k[1] = update
   bspl = k1 - update
@@ -314,7 +314,7 @@ end
   if integrator.opts.adaptive
     for i in uidx
       utilde[i] = @muladd uprev[i] + dt*(b1*k1[i] + b3*k3[i] + b4*k4[i] + b5*k5[i] + b6*k6[i] + b7*k7[i])
-      atmp[i] = ((utilde[i]-u[i])./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol))
+      atmp[i] = ((utilde[i]-u[i])./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol))
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end

@@ -21,7 +21,7 @@ end
   u = @muladd uprev + dt*(k1*b1+k4*b4+k5*b5+k6*b6+k7*b7+k8*b8+k9*b9)
   if integrator.opts.adaptive
     utilde = @muladd uprev + dt*(k1*bhat1+k4*bhat4+k5*bhat5+k6*bhat6+k7*bhat7+k8*bhat8+k10*bhat10)
-    integrator.EEst = integrator.opts.internalnorm( ((utilde-u)./@muladd(integrator.opts.abstol+max(abs.(uprev),abs.(u))*integrator.opts.reltol)))
+    integrator.EEst = integrator.opts.internalnorm( ((utilde-u)./@muladd(integrator.opts.abstol+max(abs.(uprev),abs.(u)).*integrator.opts.reltol)))
   end
   k = f(t+dt,u) # For the interpolation, needs k at the updated point
   integrator.fsallast = k
@@ -90,7 +90,7 @@ end
   if integrator.opts.adaptive
     for i in uidx
       utilde[i] = uprev[i] + dt*(k1[i]*bhat1+k4[i]*bhat4+k5[i]*bhat5+k6[i]*bhat6+k7[i]*bhat7+k8[i]*bhat8+k10[i]*bhat10)
-      atmp[i] = ((utilde[i]-u[i])./(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol))
+      atmp[i] = ((utilde[i]-u[i])./(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol))
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
@@ -124,8 +124,8 @@ end
   update = dt*kupdate
   u = uprev + update
   if integrator.opts.adaptive
-    err5 = integrator.opts.internalnorm(dt*(@muladd(k1*er1 + k6*er6 + k7*er7 + k8*er8 + k9*er9 + k10*er10 + k11*er11 + k12*er12))./@muladd(integrator.opts.abstol+max(abs.(uprev),abs.(u))*integrator.opts.reltol)) # Order 5
-    err3 = integrator.opts.internalnorm(@muladd(update - dt*(bhh1*k1 + bhh2*k9 + bhh3*k12))./@muladd(integrator.opts.abstol+max(abs.(uprev),abs.(u))*integrator.opts.reltol)) # Order 3
+    err5 = integrator.opts.internalnorm(dt*(@muladd(k1*er1 + k6*er6 + k7*er7 + k8*er8 + k9*er9 + k10*er10 + k11*er11 + k12*er12))./@muladd(integrator.opts.abstol+max(abs.(uprev),abs.(u)).*integrator.opts.reltol)) # Order 5
+    err3 = integrator.opts.internalnorm(@muladd(update - dt*(bhh1*k1 + bhh2*k9 + bhh3*k12))./@muladd(integrator.opts.abstol+max(abs.(uprev),abs.(u)).*integrator.opts.reltol)) # Order 3
     err52 = err5*err5
     if err5 ≈ 0 && err3 ≈ 0
       integrator.EEst = zero(typeof(integrator.EEst))
@@ -220,8 +220,8 @@ end
   end
   if integrator.opts.adaptive
     for i in uidx
-      atmp[i] = (dt*(@muladd(k1[i]*er1 + k6[i]*er6 + k7[i]*er7 + k8[i]*er8 + k9[i]*er9 + k10[i]*er10 + k11[i]*er11 + k12[i]*er12))./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol))
-      atmp2[i]= (@muladd(update[i] - dt*(bhh1*k1[i] + bhh2*k9[i] + bhh3*k12[i]))./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol))
+      atmp[i] = (dt*(@muladd(k1[i]*er1 + k6[i]*er6 + k7[i]*er7 + k8[i]*er8 + k9[i]*er9 + k10[i]*er10 + k11[i]*er11 + k12[i]*er12))./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol))
+      atmp2[i]= (@muladd(update[i] - dt*(bhh1*k1[i] + bhh2*k9[i] + bhh3*k12[i]))./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol))
     end
     err5 = integrator.opts.internalnorm(atmp) # Order 5
     err3 = integrator.opts.internalnorm(atmp2) # Order 3
@@ -287,7 +287,7 @@ end
   update = dt*(@muladd(b1*k1+b6*k6+b7*k7+b8*k8+b9*k9+b10*k10+b11*k11+b12*k12))
   u = uprev + update
   if integrator.opts.adaptive
-    integrator.EEst = integrator.opts.internalnorm(@muladd(update - dt*(k1*bhat1 + k6*bhat6 + k7*bhat7 + k8*bhat8 + k9*bhat9 + k10*bhat10 + k13*bhat13))./@muladd(integrator.opts.abstol+max(abs.(uprev),abs.(u))*integrator.opts.reltol))
+    integrator.EEst = integrator.opts.internalnorm(@muladd(update - dt*(k1*bhat1 + k6*bhat6 + k7*bhat7 + k8*bhat8 + k9*bhat9 + k10*bhat10 + k13*bhat13))./@muladd(integrator.opts.abstol+max(abs.(uprev),abs.(u)).*integrator.opts.reltol))
   end
   k = f(t+dt,u)
   integrator.fsallast = k
@@ -368,7 +368,7 @@ end
   end
   if integrator.opts.adaptive
     for i in uidx
-      atmp[i] = (@muladd(update[i] - dt*(k1[i]*bhat1 + k6[i]*bhat6 + k7[i]*bhat7 + k8[i]*bhat8 + k9[i]*bhat9 + k10[i]*bhat10 + k13[i]*bhat13))./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i]))*integrator.opts.reltol))
+      atmp[i] = (@muladd(update[i] - dt*(k1[i]*bhat1 + k6[i]*bhat6 + k7[i]*bhat7 + k8[i]*bhat8 + k9[i]*bhat9 + k10[i]*bhat10 + k13[i]*bhat13))./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol))
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
