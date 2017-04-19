@@ -51,7 +51,7 @@ end
 
 immutable NLSOLVEJL_SETUP{CS,AD} end
 Base.@pure NLSOLVEJL_SETUP(;chunk_size=0,autodiff=true) = NLSOLVEJL_SETUP{chunk_size,autodiff}()
-(p::NLSOLVEJL_SETUP)(f,u0) = NLsolve.nlsolve(f,u0)
+(p::NLSOLVEJL_SETUP)(f,u0) = (res=NLsolve.nlsolve(f,u0); res.zero)
 function (p::NLSOLVEJL_SETUP{CS,AD}){CS,AD}(::Type{Val{:init}},f,u0_prototype)
   if AD
     return non_autodiff_setup(f,u0_prototype)

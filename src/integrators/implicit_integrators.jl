@@ -25,8 +25,8 @@ end
   end # else uhold is previous value.
   rhs.t = t
   rhs.dt = dt
-  nlres = NLsolve.nlsolve(nl_rhs,uhold)
-  uhold[1] = nlres.zero[1]
+  nlres = integrator.alg.nlsolve(nl_rhs,uhold)
+  uhold[1] = nlres[1]
   k = f(t+dt,uhold[1])
   integrator.fsallast = k
   u = uhold[1]
@@ -74,8 +74,8 @@ end
   rhs.dt = dt
   rhs.uidx = uidx
   rhs.sizeu = size(u)
-  nlres = NLsolve.nlsolve(nl_rhs,uhold)
-  copy!(uhold,nlres.zero)
+  nlres = integrator.alg.nlsolve(nl_rhs,uhold)
+  copy!(uhold,nlres)
   f(t+dt,u,k)
   @pack integrator = t,dt,u
 end
@@ -123,8 +123,8 @@ end
   rhs.dt = dt
   rhs.uidx = uidx
   rhs.sizeu = size(u)
-  nlres = NLsolve.nlsolve(nl_rhs,uhold)
-  copy!(uhold,nlres.zero)
+  nlres = integrator.alg.nlsolve(nl_rhs,uhold)
+  copy!(uhold,nlres)
   f(t+dt,u,k)
   @pack integrator = t,dt,u
 end
@@ -158,8 +158,8 @@ end
   rhs.t = t
   rhs.dt = dt
   rhs.f_old = integrator.fsalfirst
-  nlres = NLsolve.nlsolve(nl_rhs,uhold)
-  uhold[1] = nlres.zero[1]
+  nlres = integrator.alg.nlsolve(nl_rhs,uhold)
+  uhold[1] = nlres[1]
   k = f(t+dt,uhold[1])
   integrator.fsallast = k
   u = uhold[1]
