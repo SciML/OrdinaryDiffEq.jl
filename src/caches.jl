@@ -925,14 +925,14 @@ end
 alg_cache(alg::Feagin14,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = Feagin14ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
 
 
-type Rosenbrock23Cache{uType,uArrayType,rateType,vecuType,JType,TabType,TFType,UFType,F,JCType} <: OrdinaryDiffEqMutableCache
+type Rosenbrock23Cache{uType,uArrayType,rateType,du2Type,vecuType,JType,TabType,TFType,UFType,F,JCType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k₁::rateType
   k₂::rateType
   k₃::rateType
   du1::rateType
-  du2::rateType
+  du2::du2Type
   f₁::rateType
   vectmp::vecuType
   vectmp2::vecuType
@@ -956,14 +956,14 @@ du_cache(c::Rosenbrock23Cache) = (c.k₁,c.k₂,c.k₃,c.du1,c.du2,c.f₁,c.fsal
 jac_cache(c::Rosenbrock23Cache) = (c.J,c.W)
 vecu_cache(c::Rosenbrock23Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
 
-type Rosenbrock32Cache{uType,uArrayType,rateType,vecuType,JType,TabType,TFType,UFType,F,JCType} <: OrdinaryDiffEqMutableCache
+type Rosenbrock32Cache{uType,uArrayType,rateType,du2Type,vecuType,JType,TabType,TFType,UFType,F,JCType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k₁::rateType
   k₂::rateType
   k₃::rateType
   du1::rateType
-  du2::rateType
+  du2::du2Type
   f₁::rateType
   vectmp::vecuType
   vectmp2::vecuType
@@ -992,7 +992,11 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,tTypeNoUnit
   k₂ = zeros(rate_prototype)
   k₃ = zeros(rate_prototype)
   du1 = zeros(rate_prototype)
-  du2 = zeros(rate_prototype)
+  if alg_autodiff(alg)
+    du2 = zeros(Dual{determine_chunksize(u,alg), eltype(u)}, length(u))
+  else
+    du2 = zeros(rate_prototype)
+  end
   # f₀ = similar(u) fsalfirst
   f₁ = zeros(rate_prototype)
   vectmp = vec(similar(u,indices(u)))
@@ -1011,7 +1015,9 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,tTypeNoUnit
   uf = UJacobianWrapper(vfr,t)
   linsolve_tmp = vec(similar(u,indices(u)))
   jac_config = ForwardDiff.JacobianConfig{determine_chunksize(u,alg)}(vec(du1),vec(uprev))
-  Rosenbrock23Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,alg.linsolve,jac_config)
+  Rosenbrock23Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,
+                    fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,alg.linsolve,
+                    jac_config)
 end
 
 function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
@@ -1019,7 +1025,11 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,tTypeNoUnit
   k₂ = zeros(rate_prototype)
   k₃ = zeros(rate_prototype)
   du1 = zeros(rate_prototype)
-  du2 = zeros(rate_prototype)
+  if alg_autodiff(alg)
+    du2 = zeros(Dual{determine_chunksize(u,alg), eltype(u)}, length(u))
+  else
+    du2 = zeros(rate_prototype)
+  end
   # f₀ = similar(u) fsalfirst
   f₁ = zeros(rate_prototype)
   vectmp = vec(similar(u,indices(u)))

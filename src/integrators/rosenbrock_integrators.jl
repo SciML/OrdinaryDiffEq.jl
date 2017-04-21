@@ -22,7 +22,7 @@ end
   uf.t = t
 
   #if alg_autodiff(alg)
-    ForwardDiff.derivative!(dT,tf,t) # Time derivative of each component
+    dT = ForwardDiff.derivative(tf,t) # Time derivative of each component
     ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
   #else
   #  Calculus.finite_difference!((t)->vecfreturn(t,uprev,du2),[t],dT)
