@@ -163,7 +163,11 @@ end
   tf.u = uprev
   uf.t = t
   dT = ForwardDiff.derivative(tf,t)
-  J = ForwardDiff.derivative(uf,uprev)
+  if typeof(uprev) <: AbstractArray
+    J = ForwardDiff.jacobian(uf,uprev)
+  else
+    J = ForwardDiff.derivative(uf,uprev)
+  end
   a = -dt*d
   W = @muladd 1+a*J
   a = -a
@@ -196,7 +200,11 @@ end
   uf.t = t
   # Time derivative
   dT = ForwardDiff.derivative(tf,t)
-  J = ForwardDiff.derivative(uf,uprev)
+  if typeof(uprev) <: AbstractArray
+    J = ForwardDiff.jacobian(uf,uprev)
+  else
+    J = ForwardDiff.derivative(uf,uprev)
+  end
   a = -dt*d
   W = 1+a*J
   #f₀ = f(t,uprev)
