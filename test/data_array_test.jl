@@ -1,4 +1,4 @@
-using DiffEqBase, OrdinaryDiffEq
+using DiffEqBase, OrdinaryDiffEq, Base.Test
 
 type SimType{T} <: DEDataArray{T}
     x::Array{T,1}
@@ -26,7 +26,7 @@ end
 
 save_positions = (true,true)
 
-cb = DiscreteCallback(condition, affect!, save_positions=save_positions)
+cb = DiscreteCallback(condition, affect!; save_positions=save_positions)
 
 condition2 = function (t,u,integrator)
   t in tstop2
