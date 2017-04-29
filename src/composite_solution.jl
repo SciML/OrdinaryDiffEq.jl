@@ -1,7 +1,7 @@
-type ODECompositeSolution{T,N,uType,uType2,uEltype,tType,rateType,P,A,IType} <: AbstractODESolution{T,N}
+type ODECompositeSolution{T,N,uType,uType2,EType,tType,rateType,P,A,IType} <: AbstractODESolution{T,N}
   u::uType
   u_analytic::uType2
-  errors::Dict{Symbol,uEltype}
+  errors::EType
   t::tType
   k::rateType
   prob::P
