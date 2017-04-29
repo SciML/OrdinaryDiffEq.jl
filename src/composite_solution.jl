@@ -1,4 +1,4 @@
-type ODECompositeSolution{uType,uType2,uEltype,tType,rateType,P,A,IType} <: AbstractODESolution
+type ODECompositeSolution{T,N,uType,uType2,uEltype,tType,rateType,P,A,IType} <: AbstractODESolution{T,N}
   u::uType
   u_analytic::uType2
   errors::Dict{Symbol,uEltype}
@@ -21,15 +21,31 @@ function build_solution{uType,tType,isinplace}(
         k=[],interp = (tvals) -> nothing,
         timeseries_errors=true,dense_errors=true,
         calculate_error = true, retcode = :Default, kwargs...)
-  if has_analytic(prob.f)
+
+  T = eltype(eltype(u))
+  if typeof(prob.u0) <: Tuple
+    N = length((size(ArrayPartition(prob.u0))..., length(u)))
+  else
+    N = length((size(prob.u0)..., length(u)))
+  end
+
+  if typeof(prob.f) <: Tuple
+    f = prob.f[1]
+  else
+    f = prob.f
+  end
+
+  if has_analytic(f)
     u_analytic = Vector{uType}(0)
     errors = Dict{Symbol,eltype(u[1])}()
-    sol = ODECompositeSolution(u,u_analytic,errors,t,k,prob,alg,interp,alg_choice,dense,0,retcode)
+    sol = ODECompositeSolution{T,N,typeof(u),typeof(u_analytic),typeof(errors),typeof(t),typeof(k),
+                       typeof(prob),typeof(alg),typeof(interp)}(u,u_analytic,errors,t,k,prob,alg,interp,alg_choice,dense,0,retcode)
     if calculate_error
       calculate_solution_errors!(sol;timeseries_errors=timeseries_errors,dense_errors=dense_errors)
     end
     return sol
   else
-    return ODECompositeSolution(u,nothing,nothing,t,k,prob,alg,interp,alg_choice,dense,0,retcode)
+    return ODECompositeSolution{T,N,typeof(u),typeof(u_analytic),typeof(errors),typeof(t),typeof(k),
+                       typeof(prob),typeof(alg),typeof(interp)}(u,nothing,nothing,t,k,prob,alg,interp,alg_choice,dense,0,retcode)
   end
 end
