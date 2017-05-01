@@ -8,6 +8,8 @@ module OrdinaryDiffEq
 
   import DiffEqBase: solve, solve!, init, step!, build_solution, initialize!
 
+  import DiffEqBase: ODE_DEFAULT_NORM, ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE, ODE_DEFAULT_UNSTABLE_CHECK
+
   using Parameters, GenericSVD, ForwardDiff, InplaceOps, RecursiveArrayTools,
         NLsolve, Juno, Calculus, Roots, DataStructures, Iterators
 

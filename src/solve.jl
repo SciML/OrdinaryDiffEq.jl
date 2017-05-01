@@ -108,7 +108,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
 
   order = alg_order(alg)
 
-  if typeof(u) <: AbstractArray
+  if typeof(u) <: Union{Number,AbstractArray,ArrayPartition}
     uEltypeNoUnits = typeof(recursive_one(u))
     tTypeNoUnits   = typeof(recursive_one(t))
   else
@@ -296,6 +296,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     initialize!(integrator,integrator.cache)
     initialize!(callbacks_internal,t,u,integrator)
   end
+
   integrator
 end
 
