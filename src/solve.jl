@@ -108,8 +108,13 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
 
   order = alg_order(alg)
 
-  uEltypeNoUnits = typeof(recursive_one(u))
-  tTypeNoUnits   = typeof(recursive_one(t))
+  if typeof(u) <: AbstractArray
+    uEltypeNoUnits = typeof(recursive_one(u))
+    tTypeNoUnits   = typeof(recursive_one(t))
+  else
+    uEltypeNoUnits = recursive_eltype(u./u)
+    tTypeNoUnits   = recursive_eltype(t./t)
+  end
 
   if typeof(alg) <: Discrete
     abstol_internal = zero(u)
@@ -308,7 +313,7 @@ function solve!(integrator::ODEIntegrator)
     handle_tstop!(integrator)
   end
   postamble!(integrator)
-  
+
   if typeof(integrator.sol.prob.f) <: Tuple
     f = integrator.sol.prob.f[1]
   else

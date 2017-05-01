@@ -29,8 +29,8 @@ Sets the default tableau for the ODE solver. Currently Dormand-Prince 4/5.
 const ODE_DEFAULT_TABLEAU = constructDormandPrince()
 
 @inline UNITLESS_ABS2(x) = abs2(x)/(typeof(x)(one(x))*typeof(x)(one(x)))
-@inline ODE_DEFAULT_NORM(u) = sqrt(sum(UNITLESS_ABS2,u) / length(u))
-@inline ODE_DEFAULT_NORM(u::Number) = abs(u)
+@inline ODE_DEFAULT_NORM(u::AbstractArray) = sqrt(sum(UNITLESS_ABS2,u) / length(u))
+@inline ODE_DEFAULT_NORM(u) = norm(u)
 @inline ODE_DEFAULT_ISOUTOFDOMAIN(t,u) = false
 @inline ODE_DEFAULT_PROG_MESSAGE(dt,t,u) = "dt="*string(dt)*"\nt="*string(t)*"\nmax u="*string(maximum(abs.(u)))
 @inline ODE_DEFAULT_UNSTABLE_CHECK(dt,t,u) = false
