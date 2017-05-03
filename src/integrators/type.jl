@@ -72,22 +72,7 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,tTypeNoUnits,tdi
   fsalfirst::rateType
   fsallast::rateType
 
-  if VERSION < v"0.6-"
-
-    ODEIntegrator(sol,u,k,t,dt,f,uprev,uprev2,tprev,
-        alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,dtpropose,tdir,
-        EEst,qold,q11,
-        iter,saveiter,saveiter_dense,prog,cache,
-        kshortsize,just_hit_tstop,accept_step,isout,reeval_fsal,u_modified,opts) = new(
-        sol,u,k,t,dt,f,uprev,uprev2,tprev,
-        alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,dtpropose,tdir,
-        EEst,qold,q11,
-        iter,saveiter,saveiter_dense,prog,cache,
-        kshortsize,just_hit_tstop,accept_step,isout,reeval_fsal,u_modified,opts) # Leave off fsalfirst and last
-
-  else
-
-    function (::Type{ODEIntegrator{algType,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,
+  function (::Type{ODEIntegrator{algType,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,
                 rateType,F,ProgressType,CacheType,O}}){algType,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,
                 rateType,F,ProgressType,CacheType,O}(sol,u,k,t,dt,f,uprev,uprev2,tprev,
       alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,dtpropose,tdir,
@@ -101,7 +86,6 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,tTypeNoUnits,tdi
       EEst,qold,q11,
       iter,saveiter,saveiter_dense,prog,cache,
       kshortsize,just_hit_tstop,accept_step,isout,reeval_fsal,u_modified,opts) # Leave off fsalfirst and last
-    end
   end
 end
 

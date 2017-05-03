@@ -43,10 +43,17 @@ integrator([1.0;2.0])
 
 
 integrator = init(prob,RK4();dt=1//2^(9))
-for i in Base.Iterators.take(integrator,12) end
-@test integrator.iter == 12
-for i in Base.Iterators.take(integrator,12) end
-@test integrator.iter == 24
+if VERSION < v"0.6-"
+  for i in take(integrator,12) end
+  @test integrator.iter == 12
+  for i in take(integrator,12) end
+  @test integrator.iter == 24
+else
+  for i in Base.Iterators.take(integrator,12) end
+  @test integrator.iter == 12
+  for i in Base.Iterators.take(integrator,12) end
+  @test integrator.iter == 24
+end
 
 integrator = init(prob_ode_2Dlinear,Tsit5();dt=1//2^(4),tstops=[0.5],advance_to_tstop=true,stop_at_next_tstop=true)
 for (t,u) in tuples(integrator)
