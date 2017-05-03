@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqProblemLibrary, Base.Test, DiffEqBase
+using OrdinaryDiffEq, DiffEqProblemLibrary, Base.Test, DiffEqBase, Iterators
 prob = prob_ode_linear
 
 sol = solve(prob,BS3();dt=1//2^(4),tstops=[0.5],saveat=0.01,save_everystep=true)
