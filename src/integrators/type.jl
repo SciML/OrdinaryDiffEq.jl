@@ -72,16 +72,36 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,tTypeNoUnits,tdi
   fsalfirst::rateType
   fsallast::rateType
 
-  ODEIntegrator(sol,u,k,t,dt,f,uprev,uprev2,tprev,
+  if VERSION < v"0.6-"
+
+    ODEIntegrator(sol,u,k,t,dt,f,uprev,uprev2,tprev,
+        alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,dtpropose,tdir,
+        EEst,qold,q11,
+        iter,saveiter,saveiter_dense,prog,cache,
+        kshortsize,just_hit_tstop,accept_step,isout,reeval_fsal,u_modified,opts) = new(
+        sol,u,k,t,dt,f,uprev,uprev2,tprev,
+        alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,dtpropose,tdir,
+        EEst,qold,q11,
+        iter,saveiter,saveiter_dense,prog,cache,
+        kshortsize,just_hit_tstop,accept_step,isout,reeval_fsal,u_modified,opts) # Leave off fsalfirst and last
+
+  else
+
+    function (::ODEIntegrator){algType,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,
+                rateType,F,ProgressType,CacheType,O}(sol,u,k,t,dt,f,uprev,uprev2,tprev,
       alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,dtpropose,tdir,
       EEst,qold,q11,
       iter,saveiter,saveiter_dense,prog,cache,
-      kshortsize,just_hit_tstop,accept_step,isout,reeval_fsal,u_modified,opts) = new(
-      sol,u,k,t,dt,f,uprev,uprev2,tprev,
+      kshortsize,just_hit_tstop,accept_step,isout,reeval_fsal,u_modified,opts)
+
+      new{algType,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,
+                  rateType,F,ProgressType,CacheType,O}(sol,u,k,t,dt,f,uprev,uprev2,tprev,
       alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,dtpropose,tdir,
       EEst,qold,q11,
       iter,saveiter,saveiter_dense,prog,cache,
       kshortsize,just_hit_tstop,accept_step,isout,reeval_fsal,u_modified,opts) # Leave off fsalfirst and last
+    end
+  end
 end
 
 # When this is changed, DelayDiffEq.jl must be changed as well!
