@@ -348,10 +348,12 @@ Herimte Interpolation, chosen if no other dispatch for ode_interpolant
   if typeof(y₀) <: AbstractArray
     if typeof(idxs) <: Tuple
       out = similar(y₀,idxs)
+      iter_idxs = enumerate(idxs...)
     else
       out = similar(y₀,indices(idxs))
+      iter_idxs = enumerate(idxs)
     end
-    @inbounds for (j,i) in enumerate(idxs)
+    @inbounds for (j,i) in iter_idxs
       out[j] = (1-Θ)*y₀[i]+Θ*y₁[i]+Θ*(Θ-1)*((1-2Θ)*(y₁[i]-y₀[i])+(Θ-1)*dt*k[1][i] + Θ*dt*k[2][i])
     end
   else
