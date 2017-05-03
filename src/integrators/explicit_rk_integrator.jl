@@ -35,7 +35,7 @@ end
     for i = 2:stages
       uEEst = @muladd uEEst + αEEst[i]*kk[i]
     end
-    integrator.EEst = integrator.opts.internalnorm( dt*(utilde-uEEst)./@muladd(integrator.opts.abstol+max(abs.(uprev),abs.(u)).*integrator.opts.reltol))
+    integrator.EEst = integrator.opts.internalnorm( dt*(utilde-uEEst)./@muladd(integrator.opts.abstol+max.(abs.(uprev),abs.(u)).*integrator.opts.reltol))
   end
   if isfsal(integrator.alg.tableau)
     integrator.fsallast = kk[end]
