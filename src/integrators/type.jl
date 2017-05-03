@@ -87,7 +87,8 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,tTypeNoUnits,tdi
 
   else
 
-    function (::ODEIntegrator){algType,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,
+    function (::Type{ODEIntegrator{algType,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,
+                rateType,F,ProgressType,CacheType,O}}){algType,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,
                 rateType,F,ProgressType,CacheType,O}(sol,u,k,t,dt,f,uprev,uprev2,tprev,
       alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,dtpropose,tdir,
       EEst,qold,q11,
