@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqProblemLibrary, Base.Test, DiffEqBase, Iterators
+using OrdinaryDiffEq, DiffEqProblemLibrary, Base.Test, DiffEqBase
 prob = prob_ode_linear
 
 sol = solve(prob,BS3();dt=1//2^(4),tstops=[0.5],saveat=0.01,save_everystep=true)
@@ -43,9 +43,9 @@ integrator([1.0;2.0])
 
 
 integrator = init(prob,RK4();dt=1//2^(9))
-for i in take(integrator,12) end
+for i in Base.Iterators.take(integrator,12) end
 @test integrator.iter == 12
-for i in take(integrator,12) end
+for i in Base.Iterators.take(integrator,12) end
 @test integrator.iter == 24
 
 integrator = init(prob_ode_2Dlinear,Tsit5();dt=1//2^(4),tstops=[0.5],advance_to_tstop=true,stop_at_next_tstop=true)
