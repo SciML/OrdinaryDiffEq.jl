@@ -52,7 +52,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     if min((mm != I for mm in prob.mass_matrix)...)
       error("This solver is not able to use mass matrices.")
     end
-  elseif prob.mass_matrix != I
+  elseif !(typeof(prob)<:DiscreteProblem) && prob.mass_matrix != I
     error("This solver is not able to use mass matrices.")
   end
 
