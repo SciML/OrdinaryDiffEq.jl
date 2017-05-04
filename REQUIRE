@@ -3,7 +3,6 @@ DiffEqBase 1.1.0
 Parameters 0.5.0
 ForwardDiff 0.2.4
 GenericSVD 0.0.2
-Compat 0.8.8
 InplaceOps 0.0.5
 NLsolve 0.9.1
 RecursiveArrayTools 0.2.0
@@ -12,4 +11,4 @@ Calculus 0.1.15
 Roots 0.2.1
 DataStructures 0.4.6
 Iterators
-Compat 0.17.0
+Compat 0.18.0
