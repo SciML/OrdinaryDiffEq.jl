@@ -40,7 +40,7 @@ type RHS_IE{F,uType,tType,DiffEqDiffTools.DiffCacheType,SizeType,uidxType} <: Fu
   u_old::uType
   t::tType
   dt::tType
-  dual_cache::DiffEqDiffTools.DiffCacheType
+  dual_cache::DiffCacheType
   sizeu::SizeType
   uidx::uidxType
 end
@@ -87,7 +87,7 @@ type RHS_Trap{F,uType,rateType,tType,SizeType,DiffEqDiffTools.DiffCacheType,uidx
   t::tType
   dt::tType
   sizeu::SizeType
-  dual_cache::DiffEqDiffTools.DiffCacheType
+  dual_cache::DiffCacheType
   uidx::uidxType
 end
 
