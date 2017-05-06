@@ -6,9 +6,11 @@ module OrdinaryDiffEq
 
   using Compat
 
+  # Interfaces
   import DiffEqBase: solve, solve!, init, step!, build_solution, initialize!
 
-  import DiffEqBase: ODE_DEFAULT_NORM, ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE, ODE_DEFAULT_UNSTABLE_CHECK
+  # Internal utils
+  import DiffEqBase: realtype, ODE_DEFAULT_NORM, ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE, ODE_DEFAULT_UNSTABLE_CHECK
 
   using Parameters, GenericSVD, ForwardDiff, InplaceOps, RecursiveArrayTools,
         NLsolve, Juno, Calculus, Roots, DataStructures, Iterators
@@ -19,15 +21,12 @@ module OrdinaryDiffEq
 
   import ForwardDiff.Dual
 
+  # Integrator Interface
   import DiffEqBase: resize!,deleteat!,addat!,full_cache,user_cache,u_cache,du_cache,
                      resize_non_user_cache!,deleteat_non_user_cache!,addat_non_user_cache!,
                      terminate!,get_du, get_dt,get_proposed_dt,set_proposed_dt!,
                      u_modified!,savevalues!,add_tstop!,add_saveat!,set_reltol!,
                      set_abstol!
-
-  #Constants
-
-  const TEST_FLOPS_CUTOFF = 1e10
 
   include("misc_utils.jl")
   include("algorithms.jl")
