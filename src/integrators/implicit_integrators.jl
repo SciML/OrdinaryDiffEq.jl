@@ -35,7 +35,7 @@ end
   @pack integrator = t,dt,u
 end
 
-type RHS_IE{F,uType,tType,DiffCacheType,SizeType,uidxType} <: Function
+type RHS_IE{F,uType,tType,DiffEqDiffTools.DiffCacheType,SizeType,uidxType} <: Function
   f::F
   u_old::uType
   t::tType
@@ -45,7 +45,7 @@ type RHS_IE{F,uType,tType,DiffCacheType,SizeType,uidxType} <: Function
   uidx::uidxType
 end
 function (p::RHS_IE)(uprev,resid)
-  du = get_du(p.dual_cache, eltype(uprev))
+  du = DiffEqDiffTools.get_du(p.dual_cache, eltype(uprev))
   p.f(p.t+p.dt,reshape(uprev,p.sizeu),du)
   for i in p.uidx
     resid[i] = uprev[i] - p.u_old[i] - p.dt*du[i]
@@ -80,7 +80,7 @@ end
   @pack integrator = t,dt,u
 end
 
-type RHS_Trap{F,uType,rateType,tType,SizeType,DiffCacheType,uidxType} <: Function
+type RHS_Trap{F,uType,rateType,tType,SizeType,DiffEqDiffTools.DiffCacheType,uidxType} <: Function
   f::F
   u_old::uType
   f_old::rateType
@@ -92,7 +92,7 @@ type RHS_Trap{F,uType,rateType,tType,SizeType,DiffCacheType,uidxType} <: Functio
 end
 
 function (p::RHS_Trap)(uprev,resid)
-  du1 = get_du(p.dual_cache, eltype(uprev))
+  du1 = DiffEqDiffTools.get_du(p.dual_cache, eltype(uprev))
   p.f(p.t+p.dt,reshape(uprev,p.sizeu),du1)
   for i in p.uidx
     resid[i] = @muladd uprev[i] - p.u_old[i] - (p.dt/2)*(du1[i]+p.f_old[i])

@@ -25,6 +25,8 @@ module OrdinaryDiffEq
                      u_modified!,savevalues!,add_tstop!,add_saveat!,set_reltol!,
                      set_abstol!
 
+  import DiffEqDiffTools
+
   #Constants
 
   const TEST_FLOPS_CUTOFF = 1e10
