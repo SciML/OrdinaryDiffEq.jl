@@ -1,26 +1,26 @@
-immutable DiffCache{T, S}
+immutable DiffEqDiffTools.DiffCache{T, S}
     du::Vector{T}
     dual_du::Vector{S}
 end
 
-Base.@pure function DiffCache{chunk_size}(T, length, ::Type{Val{chunk_size}})
-    DiffCache(zeros(T, length), zeros(Dual{chunk_size, T}, length))
+Base.@pure function DiffEqDiffTools.DiffCache{chunk_size}(T, length, ::Type{Val{chunk_size}})
+    DiffEqDiffTools.DiffCache(zeros(T, length), zeros(Dual{chunk_size, T}, length))
 end
 
-Base.@pure DiffCache(u::AbstractArray) = DiffCache(eltype(u),length(u),Val{ForwardDiff.pickchunksize(length(u))})
-Base.@pure DiffCache(u::AbstractArray,nlsolve) = DiffCache(eltype(u),length(u),Val{get_chunksize(nlsolve)})
-Base.@pure DiffCache{CS}(u::AbstractArray,T::Type{Val{CS}}) = DiffCache(eltype(u),length(u),T)
+Base.@pure DiffEqDiffTools.DiffCache(u::AbstractArray) = DiffEqDiffTools.DiffCache(eltype(u),length(u),Val{ForwardDiff.pickchunksize(length(u))})
+Base.@pure DiffEqDiffTools.DiffCache(u::AbstractArray,nlsolve) = DiffEqDiffTools.DiffCache(eltype(u),length(u),Val{DiffEqDiffTools.get_chunksize(nlsolve)})
+Base.@pure DiffEqDiffTools.DiffCache{CS}(u::AbstractArray,T::Type{Val{CS}}) = DiffEqDiffTools.DiffCache(eltype(u),length(u),T)
 
-get_du{T<:Dual}(dc::DiffCache, ::Type{T}) = dc.dual_du
-get_du(dc::DiffCache, T) = dc.du
+DiffEqDiffTools.get_du{T<:Dual}(dc::DiffEqDiffTools.DiffCache, ::Type{T}) = dc.dual_du
+DiffEqDiffTools.get_du(dc::DiffEqDiffTools.DiffCache, T) = dc.du
 
-realtype{T}(::Type{T}) = T
-realtype{T}(::Type{Complex{T}}) = T
+DiffEqDiffTools.realtype{T}(::Type{T}) = T
+DiffEqDiffTools.realtype{T}(::Type{Complex{T}}) = T
 
 # Default nlsolve behavior, should move to DiffEqDiffTools.jl
 
-Base.@pure determine_chunksize(u,alg::DEAlgorithm) = determine_chunksize(u,get_chunksize(alg))
-Base.@pure function determine_chunksize(u,CS)
+Base.@pure DiffEqDiffTools.determine_chunksize(u,alg::DEAlgorithm) = DiffEqDiffTools.determine_chunksize(u,DiffEqDiffTools.get_chunksize(alg))
+Base.@pure function DiffEqDiffTools.determine_chunksize(u,CS)
   if CS != 0
     return CS
   else
@@ -28,7 +28,7 @@ Base.@pure function determine_chunksize(u,CS)
   end
 end
 
-function autodiff_setup{CS}(f!, initial_x::Vector,chunk_size::Type{Val{CS}})
+function DiffEqDiffTools.autodiff_setup{CS}(f!, initial_x::Vector,chunk_size::Type{Val{CS}})
 
     permf! = (fx, x) -> f!(x, fx)
 
@@ -45,22 +45,22 @@ function autodiff_setup{CS}(f!, initial_x::Vector,chunk_size::Type{Val{CS}})
     return DifferentiableMultivariateFunction(f!, g!, fg!)
 end
 
-function non_autodiff_setup(f!, initial_x::Vector)
+function non_DiffEqDiffTools.autodiff_setup(f!, initial_x::Vector)
   DifferentiableMultivariateFunction(f!)
 end
 
-immutable NLSOLVEJL_SETUP{CS,AD} end
-Base.@pure NLSOLVEJL_SETUP(;chunk_size=0,autodiff=true) = NLSOLVEJL_SETUP{chunk_size,autodiff}()
-(p::NLSOLVEJL_SETUP)(f,u0) = (res=NLsolve.nlsolve(f,u0); res.zero)
-function (p::NLSOLVEJL_SETUP{CS,AD}){CS,AD}(::Type{Val{:init}},f,u0_prototype)
+immutable DiffEqDiffTools.NLSOLVEJL_SETUP{CS,AD} end
+Base.@pure DiffEqDiffTools.NLSOLVEJL_SETUP(;chunk_size=0,autodiff=true) = DiffEqDiffTools.NLSOLVEJL_SETUP{chunk_size,autodiff}()
+(p::DiffEqDiffTools.NLSOLVEJL_SETUP)(f,u0) = (res=NLsolve.nlsolve(f,u0); res.zero)
+function (p::DiffEqDiffTools.NLSOLVEJL_SETUP{CS,AD}){CS,AD}(::Type{Val{:init}},f,u0_prototype)
   if AD
-    return non_autodiff_setup(f,u0_prototype)
+    return non_DiffEqDiffTools.autodiff_setup(f,u0_prototype)
   else
-    return autodiff_setup(f,u0_prototype,Val{determine_chunksize(initial_x,CS)})
+    return DiffEqDiffTools.autodiff_setup(f,u0_prototype,Val{DiffEqDiffTools.determine_chunksize(initial_x,CS)})
   end
 end
 
-get_chunksize(x) = 0
-get_chunksize{CS,AD}(x::NLSOLVEJL_SETUP{CS,AD}) = CS
+DiffEqDiffTools.get_chunksize(x) = 0
+DiffEqDiffTools.get_chunksize{CS,AD}(x::DiffEqDiffTools.NLSOLVEJL_SETUP{CS,AD}) = CS
 
-export NLSOLVEJL_SETUP
+export DiffEqDiffTools.NLSOLVEJL_SETUP
