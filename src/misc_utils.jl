@@ -14,9 +14,6 @@ Base.@pure DiffCache{CS}(u::AbstractArray,T::Type{Val{CS}}) = DiffCache(eltype(u
 get_du{T<:Dual}(dc::DiffCache, ::Type{T}) = dc.dual_du
 get_du(dc::DiffCache, T) = dc.du
 
-realtype{T}(::Type{T}) = T
-realtype{T}(::Type{Complex{T}}) = T
-
 # Default nlsolve behavior, should move to DiffEqDiffTools.jl
 
 Base.@pure determine_chunksize(u,alg::DEAlgorithm) = determine_chunksize(u,get_chunksize(alg))
