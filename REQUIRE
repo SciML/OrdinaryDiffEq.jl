@@ -5,7 +5,7 @@ ForwardDiff 0.2.4
 GenericSVD 0.0.2
 InplaceOps 0.0.5
 NLsolve 0.9.1
-RecursiveArrayTools 0.2.0
+RecursiveArrayTools 0.6.0
 Juno 0.2.5
 Calculus 0.1.15
 Roots 0.2.1
