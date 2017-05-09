@@ -328,13 +328,13 @@ end
     out = similar(y₀,idxs)
     idxs_internal=eachindex(y₀)
   else
-    out = similar(y₀,indices(idxs))
+    !(typeof(idxs) <: Number) && (out = similar(y₀,indices(idxs)))
     idxs_internal=idxs
   end
-  ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs_internal,T)
   if typeof(idxs) <: Number
-    return first(out)
+    return ode_interpolant!(nothing,Θ,dt,y₀,y₁,k,cache,idxs_internal,T)
   else
+    ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs_internal,T)
     return out
   end
 end
@@ -368,8 +368,12 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
 @inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{0}}) # Default interpolant is Hermite
-  @inbounds for (j,i) in enumerate(idxs)
-    out[j] = (1-Θ)*y₀[i]+Θ*y₁[i]+Θ*(Θ-1)*((1-2Θ)*(y₁[i]-y₀[i])+(Θ-1)*dt*k[1][i] + Θ*dt*k[2][i])
+  if out == nothing
+    return (1-Θ)*y₀[idxs]+Θ*y₁[idxs]+Θ*(Θ-1)*((1-2Θ)*(y₁[idxs]-y₀[idxs])+(Θ-1)*dt*k[1][idxs] + Θ*dt*k[2][idxs])
+  else
+    @inbounds for (j,i) in enumerate(idxs)
+      out[j] = (1-Θ)*y₀[i]+Θ*y₁[i]+Θ*(Θ-1)*((1-2Θ)*(y₁[i]-y₀[i])+(Θ-1)*dt*k[1][i] + Θ*dt*k[2][i])
+    end
   end
 end
 
@@ -378,7 +382,7 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
 
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
-@inline function ode_interpolant!(all_out,Θ,dt,all_y₀::ArrayPartition,all_y₁,all_k,cache,all_idxs,T::Type{Val{0}}) # Default interpolant is Hermite
+@inline function ode_interpolant!(all_out::ArrayPartition,Θ,dt,all_y₀,all_y₁,all_k,cache,all_idxs,T::Type{Val{0}}) # Default interpolant is Hermite
   for (out,y₀,y₁,idxs,k1,k2) in zip(all_out.x,all_y₀.x,all_y₁.x,all_idxs,all_k[1].x,all_k[2].x)
     @inbounds for (j,i) in enumerate(idxs...)
       out[j] = (1-Θ)*y₀[i]+Θ*y₁[i]+Θ*(Θ-1)*((1-2Θ)*(y₁[i]-y₀[i])+(Θ-1)*dt*k1[i] + Θ*dt*k2[i])
