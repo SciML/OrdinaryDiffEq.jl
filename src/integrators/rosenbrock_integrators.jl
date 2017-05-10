@@ -31,27 +31,31 @@ end
     end
   end
 
-  if has_jac(f)
-    f(Val{:jac},t,u,J)
-  else
-    if alg_autodiff(integrator.alg)
-      ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
-    else
-      Calculus.finite_difference_jacobian!(uf,vec(uprev),vec(du1),J)
-    end
-  end
+  γ = dt*d
 
-  a = -dt*d
-  for i in 1:length(u), j in 1:length(u)
-    W[i,j] = @muladd I[i,j]+a*J[i,j]
-  end
-
-  a = -a
   for i in uidx
-    linsolve_tmp[i] = @muladd fsalfirst[i] + a*dT[i]
+    linsolve_tmp[i] = @muladd fsalfirst[i] + γ*dT[i]
   end
 
-  integrator.alg.linsolve(vectmp,W,linsolve_tmp,true)
+  if has_invW(f)
+    f(Val{:invW},t,u,γ,W) # W == inverse W
+    A_mul_B!(vectmp,W,linsolve_tmp)
+  else
+    if has_jac(f)
+      f(Val{:jac},t,u,J)
+    else
+      if alg_autodiff(integrator.alg)
+        ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
+      else
+        Calculus.finite_difference_jacobian!(uf,vec(uprev),vec(du1),J)
+      end
+    end
+    for i in 1:length(u), j in 1:length(u)
+      W[i,j] = @muladd I[i,j]-γ*J[i,j]
+    end
+    integrator.alg.linsolve(vectmp,W,linsolve_tmp,true)
+  end
+
 
   recursivecopy!(k₁,reshape(vectmp,size(u)...))
   dto2 = dt/2
@@ -64,7 +68,11 @@ end
     linsolve_tmp[i] = f₁[i]-k₁[i]
   end
 
-  integrator.alg.linsolve(vectmp2,W,linsolve_tmp)
+  if has_invW(f)
+    A_mul_B!(vectmp2,W,linsolve_tmp)
+  else
+    integrator.alg.linsolve(vectmp2,W,linsolve_tmp)
+  end
 
   for i in uidx
     k₂[i] = vectmp2[i] + k₁[i]
@@ -77,7 +85,11 @@ end
       linsolve_tmp[i] = @muladd integrator.fsallast[i] - c₃₂*(k₂[i]-f₁[i])-2(k₁[i]-fsalfirst[i])+dt*dT[i]
     end
 
-    integrator.alg.linsolve(vectmp3,W,linsolve_tmp)
+    if has_invW(f)
+      A_mul_B!(vectmp3,W,linsolve_tmp)
+    else
+      integrator.alg.linsolve(vectmp3,W,linsolve_tmp)
+    end
 
     k₃ = reshape(vectmp3,sizeu...)
     for i in uidx
@@ -120,29 +132,30 @@ end
     end
   end
 
+  γ = dt*d
 
-  a = -dt*d
-
-  if has_jac(f)
-    f(Val{:jac},t,u,J)
-  else
-    if alg_autodiff(integrator.alg)
-      ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
-    else
-      Calculus.finite_difference_jacobian!(uf,vec(uprev),vec(du1),J)
-    end
-  end
-
-  for i in 1:length(u), j in 1:length(u)
-    W[i,j] = @muladd I[i,j]+a*J[i,j]
-  end
-
-  a = -a
   for i in uidx
-    linsolve_tmp[i] = @muladd fsalfirst[i] + a*dT[i]
+    linsolve_tmp[i] = @muladd fsalfirst[i] + γ*dT[i]
   end
 
-  integrator.alg.linsolve(vectmp,W,linsolve_tmp,true)
+  if has_invW(f)
+    f(Val{:invW},t,u,γ,W) # W == inverse W
+    A_mul_B!(vectmp,W,linsolve_tmp)
+  else
+    if has_jac(f)
+      f(Val{:jac},t,u,J)
+    else
+      if alg_autodiff(integrator.alg)
+        ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
+      else
+        Calculus.finite_difference_jacobian!(uf,vec(uprev),vec(du1),J)
+      end
+    end
+    for i in 1:length(u), j in 1:length(u)
+      W[i,j] = @muladd I[i,j]-γ*J[i,j]
+    end
+    integrator.alg.linsolve(vectmp,W,linsolve_tmp,true)
+  end
 
   recursivecopy!(k₁,reshape(vectmp,sizeu...))
 
@@ -154,7 +167,13 @@ end
   for i in uidx
     linsolve_tmp[i] = f₁[i]-k₁[i]
   end
-  integrator.alg.linsolve(vectmp2,W,linsolve_tmp)
+
+  if has_invW(f)
+    A_mul_B!(vectmp2,W,linsolve_tmp)
+  else
+    integrator.alg.linsolve(vectmp2,W,linsolve_tmp)
+  end
+
   tmp = reshape(vectmp2,sizeu...)
   for i in uidx
     k₂[i] = vectmp2[i] + k₁[i]
@@ -166,7 +185,13 @@ end
   for i in uidx
     linsolve_tmp[i] = @muladd integrator.fsallast[i] - c₃₂*(k₂[i]-f₁[i])-2(k₁[i]-fsalfirst[i])+dt*dT[i]
   end
-  integrator.alg.linsolve(vectmp3,W,linsolve_tmp)
+
+  if has_invW(f)
+    A_mul_B!(vectmp3,W,linsolve_tmp)
+  else
+    integrator.alg.linsolve(vectmp3,W,linsolve_tmp)
+  end
+
   k₃ = reshape(vectmp3,sizeu...)
   for i in uidx
     u[i] = uprev[i] + dt*(k₁[i] + 4k₂[i] + k₃[i])/6
