@@ -30,7 +30,7 @@ type UJacobianWrapper{VFRType,tType} <: Function
 end
 
 (p::UJacobianWrapper)(du1,uprev) = p.vfr(p.t,uprev,du1)
-
+(p::UJacobianWrapper)(uprev) = (du1 = similar(uprev); p.vfr(p.t,uprev,du1); du1)
 
 type TimeDerivativeWrapper{F,uType} <: Function
   f::F

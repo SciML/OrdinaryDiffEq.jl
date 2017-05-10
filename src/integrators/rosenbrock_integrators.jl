@@ -21,13 +21,26 @@ end
   uf.vfr.sizeu = sizeu
   uf.t = t
 
-  #if alg_autodiff(alg)
-    dT = ForwardDiff.derivative(tf,t) # Time derivative of each component
-    ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
-  #else
-  #  Calculus.finite_difference!((t)->vecfreturn(t,uprev,du2),[t],dT)
-  #  Calculus.finite_difference_jacobian!((du1,uprev)->vecf(t,uprev,du1),vec(uprev),vec(du1),J)
-  #end
+  if has_tgrad(f)
+    f(Val{:tgrad},t,u,dT)
+  else
+    if alg_autodiff(integrator.alg)
+      dT = ForwardDiff.derivative(tf,t) # Should update to inplace, https://github.com/JuliaDiff/ForwardDiff.jl/pull/219
+    else
+      dT = Calculus.finite_difference(tf,t)
+    end
+  end
+
+  if has_jac(f)
+    f(Val{:jac},t,u,J)
+  else
+    if alg_autodiff(integrator.alg)
+      ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
+    else
+      Calculus.finite_difference_jacobian!(uf,vec(uprev),vec(du1),J)
+    end
+  end
+
   a = -dt*d
   for i in 1:length(u), j in 1:length(u)
     W[i,j] = @muladd I[i,j]+a*J[i,j]
@@ -97,11 +110,29 @@ end
   uf.vfr.sizeu = sizeu
   uf.t = t
 
-  #if alg_autodiff(alg)
-    ForwardDiff.derivative!(dT,tf,t) # Time derivative of each component
-    ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
+  if has_tgrad(f)
+    f(Val{:tgrad},t,u,dT)
+  else
+    if alg_autodiff(integrator.alg)
+      dT = ForwardDiff.derivative(tf,t) # Should update to inplace, https://github.com/JuliaDiff/ForwardDiff.jl/pull/219
+    else
+      dT = Calculus.finite_difference(tf,t)
+    end
+  end
+
 
   a = -dt*d
+
+  if has_jac(f)
+    f(Val{:jac},t,u,J)
+  else
+    if alg_autodiff(integrator.alg)
+      ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
+    else
+      Calculus.finite_difference_jacobian!(uf,vec(uprev),vec(du1),J)
+    end
+  end
+
   for i in 1:length(u), j in 1:length(u)
     W[i,j] = @muladd I[i,j]+a*J[i,j]
   end
