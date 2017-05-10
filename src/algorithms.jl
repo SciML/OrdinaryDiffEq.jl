@@ -51,13 +51,15 @@ Base.@pure Trapezoid(;nlsolve=NLSOLVEJL_SETUP()) = Trapezoid{typeof(nlsolve)}(nl
 
 immutable Rosenbrock23{CS,AD,F} <: OrdinaryDiffEqAdaptiveAlgorithm
   linsolve::F
+  diff_type::Symbol
 end
-Base.@pure Rosenbrock23(;chunk_size=0,autodiff=true,linsolve=DEFAULT_LINSOLVE) = Rosenbrock23{chunk_size,autodiff,typeof(linsolve)}(linsolve)
+Base.@pure Rosenbrock23(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE) = Rosenbrock23{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
 
 immutable Rosenbrock32{CS,AD,F} <: OrdinaryDiffEqAdaptiveAlgorithm
   linsolve::F
+  diff_type::Symbol
 end
-Base.@pure Rosenbrock32(;chunk_size=0,autodiff=true,linsolve=DEFAULT_LINSOLVE) = Rosenbrock32{chunk_size,autodiff,typeof(linsolve)}(linsolve)
+Base.@pure Rosenbrock32(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE) = Rosenbrock32{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
 
 immutable CompositeAlgorithm{T,F} <: OrdinaryDiffEqCompositeAlgorithm
   algs::T

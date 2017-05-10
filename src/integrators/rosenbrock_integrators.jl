@@ -27,7 +27,7 @@ end
     if alg_autodiff(integrator.alg)
       dT = ForwardDiff.derivative(tf,t) # Should update to inplace, https://github.com/JuliaDiff/ForwardDiff.jl/pull/219
     else
-      dT = Calculus.finite_difference(tf,t)
+      dT = Calculus.finite_difference(tf,t,integrator.alg.diff_type)
     end
   end
 
@@ -47,7 +47,7 @@ end
       if alg_autodiff(integrator.alg)
         ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
       else
-        Calculus.finite_difference_jacobian!(uf,vec(uprev),vec(du1),J)
+        Calculus.finite_difference_jacobian!(uf,vec(uprev),vec(du1),J,integrator.alg.diff_type)
       end
     end
     for i in 1:length(u), j in 1:length(u)
@@ -128,7 +128,7 @@ end
     if alg_autodiff(integrator.alg)
       dT = ForwardDiff.derivative(tf,t) # Should update to inplace, https://github.com/JuliaDiff/ForwardDiff.jl/pull/219
     else
-      dT = Calculus.finite_difference(tf,t)
+      dT = Calculus.finite_difference(tf,t,integrator.alg.diff_type)
     end
   end
 
@@ -148,7 +148,7 @@ end
       if alg_autodiff(integrator.alg)
         ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
       else
-        Calculus.finite_difference_jacobian!(uf,vec(uprev),vec(du1),J)
+        Calculus.finite_difference_jacobian!(uf,vec(uprev),vec(du1),J,integrator.alg.diff_type)
       end
     end
     for i in 1:length(u), j in 1:length(u)
