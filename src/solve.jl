@@ -152,7 +152,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   rateType = typeof(rate_prototype) ## Can be different if united
 
   if typeof(saveat) <: Number
-    saveat_vec = convert(Vector{tType},saveat:saveat:(tspan[end]-saveat))
+    saveat_vec = convert(Vector{tType},tspan[1]+saveat:saveat:(tspan[end]-saveat))
     # Exclude the endpoint because of floating point issues
   else
     saveat_vec =  convert(Vector{tType},collect(saveat))
