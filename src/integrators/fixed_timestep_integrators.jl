@@ -29,9 +29,9 @@ end
       end
     else
       f(t,uprev,u)
-      if typeof(uprev) <: DEDataArray # Needs to get the fields, since updated uprev
-        copy_non_array_fields!(u,uprev)
-      end
+    end
+    if typeof(uprev) <: DEDataArray # Needs to get the fields, since updated uprev
+      copy_non_array_fields!(u,uprev)
     end
   end
 end
