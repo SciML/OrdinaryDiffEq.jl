@@ -51,3 +51,31 @@ sol = solve(prob,Tsit5(),callback = cbs, tstops=tstop)
 sol(1.5:0.5:2.5)
 
 @test [sol[i].f1 for i in eachindex(sol)] == [zeros(9);1.5*ones(5);-1.5*ones(4)]
+
+using DiffEqBase, OrdinaryDiffEq
+
+A = diagm([0.3,0.6,0.9])
+B = [1 2 3].'
+C = [1/3 1/3 1/3]
+
+type SimType2{T} <: DEDataArray{T}
+    x::Vector{T}
+    y::Vector{T}
+    u::Vector{T}
+end
+
+function mysystem(t,x,dx,u)
+    ucalc = u(t,x)
+    x.u = ucalc
+    x.y = C*x.x
+    dx[:] = A*x.x + B*x.u
+end
+
+input = (t,x)->(1*one(t)≤t≤2*one(t)?[one(t)]:[zero(t)])
+prob = DiscreteProblem((t,x,dx)->mysystem(t,x,dx,input), SimType2(zeros(3), zeros(1), zeros(1)), (0//1,4//1))
+sln = solve(prob, FunctionMap(scale_by_time=false), dt = 1//10)
+
+u1 = [sln[idx].u for idx in 1:length(sln)]
+u2 = [sln(t).u for t in linspace(0,4,41)]
+@test any(x->x[1]>0, u1)
+@test any(x->x[1]>0, u2)
