@@ -26,7 +26,7 @@ function ode_determine_initdt{tType,uType}(u0,t::tType,tdir,dtmax,abstol,reltol,
   else
     dt₁ = tType(10.0^(-(2+log10(unitless_max))/(order)))
   end
-  dt = tdir*min(100dt₀,dt₁)
+  dt = tdir*min(100dt₀,dt₁,tdir*dtmax)
 end
 
 function ode_determine_initdt{uType,tType}(u0::uType,t,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,false},order)
@@ -51,5 +51,5 @@ function ode_determine_initdt{uType,tType}(u0::uType,t,tdir,dtmax,abstol,reltol,
   else
     dt₁ = tType(10.0^(-(2+log10(max(d₁,d₂)/T1(1)))/(order)))
   end
-  dt = tdir*min(100dt₀,dt₁)
+  dt = tdir*min(100dt₀,dt₁,tdir*dtmax)
 end
