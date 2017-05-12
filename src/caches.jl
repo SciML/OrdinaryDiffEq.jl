@@ -27,7 +27,7 @@ u_cache(c::DiscreteCache) = ()
 du_cache(c::DiscreteCache) = (c.du)
 
 function alg_cache(alg::Discrete,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
-  DiscreteCache(u,uprev,rate_prototype)
+  DiscreteCache(u,uprev,discrete_scale_by_time(alg) ? rate_prototype : similar(u))
 end
 
 immutable DiscreteConstantCache <: OrdinaryDiffEqConstantCache end

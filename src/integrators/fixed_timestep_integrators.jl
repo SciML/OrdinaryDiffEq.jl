@@ -11,9 +11,9 @@ end
 @inline function perform_step!(integrator,cache::DiscreteConstantCache,f=integrator.f)
   if discrete_apply_map(integrator.alg)
     if discrete_scale_by_time(integrator.alg)
-      integrator.u = integrator.uprev + integrator.dt*f(integrator.t,integrator.uprev)
+      integrator.u = integrator.uprev + integrator.dt*f(integrator.t+integrator.dt,integrator.uprev)
     else
-      integrator.u = f(integrator.t,integrator.uprev)
+      integrator.u = f(integrator.t+integrator.dt,integrator.uprev)
     end
   end
 end
@@ -23,12 +23,12 @@ end
   @unpack du = cache
   if discrete_apply_map(integrator.alg)
     if discrete_scale_by_time(integrator.alg)
-      f(t,uprev,du)
+      f(t+dt,uprev,du)
       for i in eachindex(integrator.u)
         u[i] = @muladd uprev[i] + dt*du[i]
       end
     else
-      f(t,uprev,u)
+      f(t+dt,uprev,u)
     end
     if typeof(uprev) <: DEDataArray # Needs to get the fields, since updated uprev
       copy_non_array_fields!(u,uprev)
