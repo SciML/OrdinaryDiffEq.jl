@@ -51,7 +51,7 @@ end
       end
     end
     for i in 1:length(u), j in 1:length(u)
-      W[i,j] = @muladd I[i,j]-γ*J[i,j]
+      W[i,j] = @muladd integrator.sol.prob.mass_matrix[i,j]-γ*J[i,j]
     end
     integrator.alg.linsolve(vectmp,W,linsolve_tmp,true)
   end
@@ -152,7 +152,7 @@ end
       end
     end
     for i in 1:length(u), j in 1:length(u)
-      W[i,j] = @muladd I[i,j]-γ*J[i,j]
+      W[i,j] = @muladd integrator.sol.prob.mass_matrix[i,j]-γ*J[i,j]
     end
     integrator.alg.linsolve(vectmp,W,linsolve_tmp,true)
   end
