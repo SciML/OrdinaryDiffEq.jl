@@ -32,33 +32,24 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenb
     @unpack c₃₂,d = cache.tab
     uidx = eachindex(uprev)
 
-    #=
+    γ = dt*d
 
-    ### Jacobian does not need to be re-evaluated after an event
-    ### Since it's unchanged
-
-    # Setup Jacobian Calc
-    sizeu  = size(u)
-    tf.vf.sizeu = sizeu
-    tf.uprev = uprev
-    uf.vfr.sizeu = sizeu
-    uf.t = t
-
-    ForwardDiff.derivative!(dT,tf,t) # Time derivative of each component
-    ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev))
-    =#
-
-    a = -dt*d
-    for i in 1:length(uprev), j in 1:length(uprev)
-      W[i,j] = I[i,j]+a*J[i,j]
-    end
-
-    a = -a
     for i in uidx
-      linsolve_tmp[i] = @muladd fsalfirst[i] + a*dT[i]
+      linsolve_tmp[i] = @muladd fsalfirst[i] + γ*dT[i]
     end
 
-    cache.linsolve(vectmp,W,linsolve_tmp,true)
+    if has_invW(f)
+      f(Val{:invW},t,u,γ,W) # W == inverse W
+      A_mul_B!(vectmp,W,linsolve_tmp)
+    else
+      ### Jacobian does not need to be re-evaluated after an event
+      ### Since it's unchanged
+      for i in 1:length(u), j in 1:length(u)
+        W[i,j] = @muladd I[i,j]-γ*J[i,j]
+      end
+      cache.linsolve(vectmp,W,linsolve_tmp,true)
+    end
+
     recursivecopy!(k₁,reshape(vectmp,size(u)...))
     for i in uidx
       tmp[i]=uprev[i]+dt*k₁[i]/2
@@ -69,7 +60,12 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenb
       linsolve_tmp[i] = f₁[i]-k₁[i]
     end
 
-    cache.linsolve(vectmp2,W,linsolve_tmp)
+    if has_invW(f)
+      A_mul_B!(vectmp2,W,linsolve_tmp)
+    else
+      cache.linsolve(vectmp2,W,linsolve_tmp)
+    end
+
     for i in uidx
       k₂[i] = tmp[i] + k₁[i]
     end
@@ -85,33 +81,24 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenb
     @unpack c₃₂,d = cache.tab
     uidx = eachindex(uprev)
 
-    #=
+    γ = dt*d
 
-    ### Jacobian does not need to be re-evaluated after an event
-    ### Since it's unchanged
-
-    # Setup Jacobian Calc
-    sizeu  = size(u)
-    tf.vf.sizeu = sizeu
-    tf.uprev = uprev
-    uf.vfr.sizeu = sizeu
-    uf.t = t
-
-    ForwardDiff.derivative!(dT,tf,t) # Time derivative of each component
-    ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev))
-    =#
-
-    a = -dt*d
-    for i in 1:length(u), j in 1:length(u)
-      W[i,j] = @muladd I[i,j]+a*J[i,j]
-    end
-
-    a = -a
     for i in uidx
-      linsolve_tmp[i] = @muladd fsalfirst[i] + a*dT[i]
+      linsolve_tmp[i] = @muladd fsalfirst[i] + γ*dT[i]
     end
 
-    cache.linsolve(vectmp,W,linsolve_tmp,true)
+    if has_invW(f)
+      f(Val{:invW},t,u,γ,W) # W == inverse W
+      A_mul_B!(vectmp,W,linsolve_tmp)
+    else
+      ### Jacobian does not need to be re-evaluated after an event
+      ### Since it's unchanged
+      for i in 1:length(u), j in 1:length(u)
+        W[i,j] = @muladd I[i,j]-γ*J[i,j]
+      end
+      integrator.alg.linsolve(vectmp,W,linsolve_tmp,true)
+    end
+
     recursivecopy!(k₁,reshape(vectmp,size(u)...))
     for i in uidx
       tmp[i]=uprev[i]+dt*k₁[i]/2
@@ -122,7 +109,12 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenb
       linsolve_tmp[i] = f₁[i]-k₁[i]
     end
 
-    cache.linsolve(vectmp2,W,linsolve_tmp)
+    if has_invW(f)
+      A_mul_B!(vectmp2,W,linsolve_tmp)
+    else
+      cache.linsolve(vectmp2,W,linsolve_tmp)
+    end
+
     for i in uidx
       k₂[i] = tmp[i] + k₁[i]
     end
