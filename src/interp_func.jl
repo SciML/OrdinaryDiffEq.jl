@@ -19,10 +19,10 @@ immutable CompositeInterpolationData{F,uType,tType,kType,cacheType} <: Function
   cache::cacheType
 end
 
-(interp::InterpolationData)(tvals,idxs,deriv) = (typeof(interp.cache) <: Union{DiscreteCache,DiscreteConstantCache}) || interp.dense ? ode_interpolation(tvals,interp,idxs,deriv) : error("Dense output must be enabled in order to interpolate. This requires save_everystep=true and dense=true.")
-(interp::CompositeInterpolationData)(tvals,idxs,deriv) = (typeof(interp.cache) <: Union{DiscreteCache,DiscreteConstantCache}) || interp.dense ? ode_interpolation(tvals,interp,idxs,deriv) : error("Dense output must be enabled in order to interpolate. This requires save_everystep=true and dense=true.")
-(interp::InterpolationData)(val,tvals,idxs,deriv) = (typeof(interp.cache) <: Union{DiscreteCache,DiscreteConstantCache}) || interp.dense ? ode_interpolation!(val,tvals,interp,idxs,deriv) : error("Dense output must be enabled in order to interpolate. This requires save_everystep=true and dense=true.")
-(interp::CompositeInterpolationData)(val,tvals,idxs,deriv) = (typeof(interp.cache) <: Union{DiscreteCache,DiscreteConstantCache}) || interp.dense ? ode_interpolation!(val,tvals,interp,idxs,deriv) : error("Dense output must be enabled in order to interpolate. This requires save_everystep=true and dense=true.")
+(interp::InterpolationData)(tvals,idxs,deriv) = ode_interpolation(tvals,interp,idxs,deriv)
+(interp::CompositeInterpolationData)(tvals,idxs,deriv) = ode_interpolation(tvals,interp,idxs,deriv)
+(interp::InterpolationData)(val,tvals,idxs,deriv) = ode_interpolation!(val,tvals,interp,idxs,deriv)
+(interp::CompositeInterpolationData)(val,tvals,idxs,deriv) = ode_interpolation!(val,tvals,interp,idxs,deriv)
 
 function InterpolationData(id::InterpolationData,f)
   InterpolationData(f,id.timeseries,

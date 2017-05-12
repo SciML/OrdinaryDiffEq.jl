@@ -40,7 +40,7 @@ sol(interpd,0:1//2^(4):1)
 
 sol =solve(prob,Euler(),dt=1//2^(2),dense=false)
 
-@test_throws ErrorException sol(0.5)
+@test !(sol(0.6)[4,2] ≈ 0)
 
 prob = prob_ode_linear
 

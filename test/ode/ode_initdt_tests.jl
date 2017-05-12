@@ -1,4 +1,4 @@
-using OrdinaryDiffEq,DiffEqProblemLibrary, DiffEqDevTools
+using OrdinaryDiffEq,DiffEqProblemLibrary, DiffEqDevTools, Base.Test
 
 prob = prob_ode_linear
 println("Solve and Plot")
