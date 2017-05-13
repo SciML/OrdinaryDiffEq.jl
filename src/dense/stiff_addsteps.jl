@@ -3,7 +3,7 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenb
     dT = ForwardDiff.derivative(tf,t)
     J = ForwardDiff.derivative(uf,uprev)
     W = 1-dt*d*J
-    k₁ = W\(integrator.fsalfirst + dt*d*dT)
+    k₁ = W\(f(t,uprev) + dt*d*dT)
     f₁ = f(t+dt/2,uprev+dt*k₁/2)
     k₂ = W\(f₁-k₁) + k₁
     copyat_or_push!(k,1,k₁)
@@ -17,7 +17,7 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenb
     dT = ForwardDiff.derivative(tf,t)
     J = ForwardDiff.derivative(uf,uprev)
     W = 1-dt*d*J
-    k₁ = W\(integrator.fsalfirst + dt*d*dT)
+    k₁ = W\(f(t,uprev) + dt*d*dT)
     f₁ = f(t+dt/2,uprev+dt*k₁/2)
     k₂ = W\(f₁-k₁) + k₁
     copyat_or_push!(k,1,k₁)
@@ -96,7 +96,7 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenb
       for i in 1:length(u), j in 1:length(u)
         W[i,j] = @muladd I[i,j]-γ*J[i,j]
       end
-      integrator.alg.linsolve(vectmp,W,linsolve_tmp,true)
+      cache.linsolve(vectmp,W,linsolve_tmp,true)
     end
 
     recursivecopy!(k₁,reshape(vectmp,size(u)...))
