@@ -18,6 +18,8 @@ isfsal(alg::SSPRK22) = true
 isfsal(alg::SSPRK33) = true
 isfsal(alg::SSPRK104) = true
 isfsal(alg::RK4) = true
+isfsal(alg::IIF1) = true
+isfsal(alg::IIF2) = true
 isfsal(alg::Feagin10) = true
 isfsal(alg::Feagin12) = true
 isfsal(alg::Feagin14) = true
@@ -33,6 +35,8 @@ isfsal(alg::CompositeAlgorithm) = true # Every algorithm is assumed FSAL. Good a
 isimplicit(alg::OrdinaryDiffEqAlgorithm) = false
 isimplicit(alg::ImplicitEuler) = true
 isimplicit(alg::Trapezoid) = true
+isimplicit(alg::IIF1) = true
+isimplicit(alg::IIF2) = true
 
 isdtchangeable(alg::OrdinaryDiffEqAlgorithm) = true
 
@@ -68,6 +72,8 @@ alg_order(alg::Euler) = 1
 alg_order(alg::SplitEuler) = 1
 alg_order(alg::SymplecticEuler) = 1
 alg_order(alg::Midpoint) = 2
+alg_order(alg::IIF1) = 1
+alg_order(alg::IIF2) = 2
 alg_order(alg::SSPRK22) = 2
 alg_order(alg::SSPRK33) = 3
 alg_order(alg::SSPRK104) = 4

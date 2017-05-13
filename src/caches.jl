@@ -1181,7 +1181,90 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,u
   TrapezoidConstantCache{typeof(uhold),typeof(rhs),typeof(nl_rhs)}(uhold,u_old,rhs,nl_rhs)
 end
 
+immutable IIF1ConstantCache{vecuType,rhsType,nl_rhsType} <: OrdinaryDiffEqConstantCache
+  uhold::vecuType
+  rhs::rhsType
+  nl_rhs::nl_rhsType
+end
 
+immutable IIF1Cache{uType,vecuType,DiffCacheType,rhsType,nl_rhsType,rateType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  uhold::vecuType
+  dual_cache::DiffCacheType
+  tmp::uType
+  rhs::rhsType
+  nl_rhs::nl_rhsType
+  rtmp1::rateType
+  fsalfirst::rateType
+  k::rateType
+end
+
+u_cache(c::IIF1Cache)    = (c.uprev2,c.u_old)
+du_cache(c::IIF1Cache)   = (c.rtmp1,c.tmp,c.fsalfirst,c.k)
+vecu_cache(c::IIF1Cache) = (c.uhold,)
+dual_cache(c::IIF1Cache) = (c.dual_cache,)
+
+function alg_cache(alg::IIF1,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
+  uhold = Vector{typeof(u)}(1)
+  tmp = zero(rate_prototype)
+  rhs = RHS_IIF1_Scalar(f,tmp,t,t)
+  nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
+  IIF1ConstantCache(uhold,rhs,nl_rhs)
+end
+
+function alg_cache(alg::IIF1,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+
+  tmp = similar(u,indices(u)); rtmp1 = zeros(rate_prototype)
+  dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
+  uhold = vec(u) # this makes uhold the same values as integrator.u
+  rhs = RHS_IIF1(f,tmp,t,t,dual_cache,size(u),eachindex(u))
+  k = similar(rate_prototype); fsalfirst = similar(rate_prototype)
+  nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
+  IIF1Cache(u,uprev,uhold,dual_cache,tmp,rhs,nl_rhs,rtmp1,fsalfirst,k)
+end
+
+immutable IIF2ConstantCache{vecuType,rhsType,nl_rhsType} <: OrdinaryDiffEqConstantCache
+  uhold::vecuType
+  rhs::rhsType
+  nl_rhs::nl_rhsType
+end
+
+immutable IIF2Cache{uType,vecuType,DiffCacheType,rhsType,nl_rhsType,rateType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  uhold::vecuType
+  dual_cache::DiffCacheType
+  tmp::uType
+  rhs::rhsType
+  nl_rhs::nl_rhsType
+  rtmp1::rateType
+  fsalfirst::rateType
+  k::rateType
+end
+
+u_cache(c::IIF2Cache)    = (c.uprev2,c.u_old)
+du_cache(c::IIF2Cache)   = (c.rtmp1,c.tmp,c.fsalfirst,c.k)
+vecu_cache(c::IIF2Cache) = (c.uhold,)
+dual_cache(c::IIF2Cache) = (c.dual_cache,)
+
+function alg_cache(alg::IIF2,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
+  uhold = Vector{typeof(u)}(1)
+  tmp = zero(rate_prototype)
+  rhs = RHS_IIF2_Scalar(f,tmp,t,t)
+  nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
+  IIF2ConstantCache(uhold,rhs,nl_rhs)
+end
+
+function alg_cache(alg::IIF2,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+  tmp = similar(u,indices(u)); rtmp1 = zeros(rate_prototype)
+  dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
+  uhold = vec(u) # this makes uhold the same values as integrator.u
+  k = similar(rate_prototype); fsalfirst = similar(rate_prototype)
+  rhs = RHS_IIF2(f,tmp,t,t,dual_cache,size(u),eachindex(u))
+  nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
+  IIF2Cache(u,uprev,uhold,dual_cache,tmp,rhs,nl_rhs,rtmp1,fsalfirst,k)
+end
 
 get_chunksize(cache::DECache) = error("This cache does not have a chunksize.")
 get_chunksize{uType,DiffCacheType,rateType,CS}(cache::ImplicitEulerCache{uType,DiffCacheType,rateType,CS}) = CS

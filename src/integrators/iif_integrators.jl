@@ -1,0 +1,140 @@
+type RHS_IIF1_Scalar{F,CType,tType} <: Function
+  f::F
+  t::tType
+  dt::tType
+  tmp::CType
+end
+
+function (p::RHS_IIF1_Scalar)(u,resid)
+  resid[1] = u[1] - p.tmp - p.dt*p.f[2](p.t+p.dt,u[1])[1]
+end
+
+type RHS_IIF2_Scalar{F,CType,tType} <: Function
+  f::F
+  t::tType
+  dt::tType
+  tmp::CType
+end
+
+function (p::RHS_IIF2_Scalar)(u,resid)
+  resid[1] = u[1] - p.tmp - 0.5p.dt*p.f[2](p.t+p.dt,u[1])[1]
+end
+
+@inline function initialize!(integrator,cache::Union{IIF1ConstantCache,IIF2ConstantCache},f=integrator.f)
+  integrator.kshortsize = 2
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  A = integrator.f[1](integrator.t,integrator.u)
+  cache.uhold[1] = f[2](integrator.t,integrator.uprev)
+  integrator.fsalfirst = A*integrator.uprev + cache.uhold[1]
+end
+
+@inline function perform_step!(integrator,cache::Union{IIF1ConstantCache,IIF2ConstantCache},f=integrator.f)
+  @unpack t,dt,uprev,u = integrator
+  @unpack uhold,rhs,nl_rhs = cache
+
+  # If adaptive, this should be computed after and cached
+  A = integrator.f[1](t,u)
+  if typeof(cache) <: IIF1ConstantCache
+    tmp = expm(A*dt)*(uprev)
+  elseif typeof(cache) <: IIF2ConstantCache
+    tmp = expm(A*dt)*(uprev + 0.5dt*uhold[1]) # This uhold only works for non-adaptive
+  end
+
+  if integrator.iter > 1 && !integrator.u_modified
+    uhold[1] = current_extrapolant(t+dt,integrator)
+  end # else uhold is previous value.
+
+  rhs.t = t
+  rhs.dt = dt
+  rhs.tmp = tmp
+  nlres = integrator.alg.nlsolve(nl_rhs,uhold)
+  uhold[1] = integrator.f[2](t+dt,nlres[1])
+  u = nlres[1]
+  integrator.fsallast = A*u + uhold[1]
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  @pack integrator = t,dt,u
+end
+
+type RHS_IIF1{F,uType,tType,DiffCacheType,SizeType,uidxType} <: Function
+  f::F
+  tmp::uType
+  t::tType
+  dt::tType
+  dual_cache::DiffCacheType
+  sizeu::SizeType
+  uidx::uidxType
+end
+function (p::RHS_IIF1)(u,resid)
+  du = get_du(p.dual_cache, eltype(u))
+  p.f[2](p.t+p.dt,reshape(u,p.sizeu),du)
+  for i in p.uidx
+    resid[i] = u[i] - p.tmp[i] - p.dt*du[i]
+  end
+end
+
+type RHS_IIF2{F,uType,tType,DiffCacheType,SizeType,uidxType} <: Function
+  f::F
+  tmp::uType
+  t::tType
+  dt::tType
+  dual_cache::DiffCacheType
+  sizeu::SizeType
+  uidx::uidxType
+end
+function (p::RHS_IIF2)(u,resid)
+  du = get_du(p.dual_cache, eltype(u))
+  p.f[2](p.t+p.dt,reshape(u,p.sizeu),du)
+  for i in p.uidx
+    resid[i] = u[i] - p.tmp[i] - 0.5p.dt*du[i]
+  end
+end
+
+@inline function initialize!(integrator,cache::Union{IIF1Cache,IIF2Cache},f=integrator.f)
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+  integrator.kshortsize = 2
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  A = integrator.f[1](integrator.t,integrator.u,cache.rtmp1)
+  f[2](integrator.t,integrator.uprev,cache.rtmp1)
+  A_mul_B!(cache.k,A,integrator.uprev)
+  integrator.fsalfirst .= cache.k .+ cache.rtmp1
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
+
+@inline function perform_step!(integrator,cache::Union{IIF1Cache,IIF2Cache},f=integrator.f)
+  @unpack rtmp1,tmp,k = cache
+  @unpack uhold,rhs,nl_rhs = cache
+  @unpack t,dt,uprev,u = integrator
+
+  for i in eachindex(u)
+    k[i] = uprev[i]
+  end
+
+  if typeof(cache) <: IIF2Cache
+    for i in eachindex(uprev)
+      k[i] += 0.5dt*rtmp1[i]
+    end
+  end
+
+  A = integrator.f[1](t,uprev,rtmp1)
+  M = expm(A*dt)
+  A_mul_B!(tmp,M,k)
+
+  if integrator.iter > 1 && !integrator.u_modified
+    current_extrapolant!(uhold,t+dt,integrator)
+  end # else uhold is previous value.
+
+  rhs.t = t
+  rhs.dt = dt
+  rhs.tmp = tmp
+  rhs.uidx = eachindex(u)
+  rhs.sizeu = size(u)
+  nlres = integrator.alg.nlsolve(nl_rhs,uhold)
+
+  copy!(u,nlres)
+  integrator.f[2](t+dt,nlres,rtmp1)
+  integrator.fsallast .= A*u .+ rtmp1
+  @pack integrator = t,dt,u
+end

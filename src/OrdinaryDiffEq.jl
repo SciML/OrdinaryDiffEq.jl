@@ -38,6 +38,7 @@ module OrdinaryDiffEq
   include("integrators/fixed_timestep_integrators.jl")
   include("integrators/symplectic_integrators.jl")
   include("integrators/split_integrators.jl")
+  include("integrators/iif_integrators.jl")
   include("integrators/explicit_rk_integrator.jl")
   include("integrators/low_order_rk_integrators.jl")
   include("integrators/high_order_rk_integrators.jl")
@@ -81,6 +82,8 @@ module OrdinaryDiffEq
         DP5, DP5Threaded, Tsit5, DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8, Vern9, ImplicitEuler,
         Trapezoid, Rosenbrock23, Rosenbrock32, Feagin10, Feagin12, Feagin14,
         CompositeAlgorithm
+
+  export IIF1, IIF2
 
   export SymplecticEuler
 
