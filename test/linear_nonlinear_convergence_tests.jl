@@ -12,6 +12,10 @@ sim  = test_convergence(dts,prob,IIF1())
 @test abs(sim.𝒪est[:l2]-1) < 0.2
 sim  = test_convergence(dts,prob,IIF2())
 @test abs(sim.𝒪est[:l2]-2) < 0.2
+sim  = test_convergence(dts,prob,LawsonEuler())
+@test abs(sim.𝒪est[:l2]-1) < 0.2
+sim  = test_convergence(dts,prob,NorsettEuler())
+@test abs(sim.𝒪est[:l2]-1) < 0.2
 
 u0 = rand(2)
 A = Strang(2)
@@ -33,3 +37,9 @@ sim  = test_convergence(dts,prob,IIF1())
 
 sim  = test_convergence(dts,prob,IIF2())
 @test abs(sim.𝒪est[:l2]-2) < 0.1
+
+sim  = test_convergence(dts,prob,LawsonEuler())
+@test abs(sim.𝒪est[:l2]-1) < 0.1
+
+#sim  = test_convergence(dts,prob,NorsettEuler())
+#@test abs(sim.𝒪est[:l2]-1) < 0.1

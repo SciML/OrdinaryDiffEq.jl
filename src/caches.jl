@@ -1266,6 +1266,46 @@ function alg_cache(alg::IIF2,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,
   IIF2Cache(u,uprev,uhold,dual_cache,tmp,rhs,nl_rhs,rtmp1,fsalfirst,k)
 end
 
+immutable LawsonEulerCache{uType,rateType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  k::rateType
+  rtmp::rateType
+  fsalfirst::rateType
+end
+
+function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+  LawsonEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),zeros(rate_prototype))
+end
+
+u_cache(c::LawsonEulerCache) = ()
+du_cache(c::LawsonEulerCache) = (c.k,c.fsalfirst,c.rtmp)
+
+immutable LawsonEulerConstantCache <: OrdinaryDiffEqConstantCache end
+
+alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = LawsonEulerConstantCache()
+
+immutable NorsettEulerCache{uType,rateType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  k::rateType
+  rtmp::rateType
+  fsalfirst::rateType
+end
+
+function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+  NorsettEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),zeros(rate_prototype))
+end
+
+u_cache(c::NorsettEulerCache) = ()
+du_cache(c::NorsettEulerCache) = (c.k,c.fsalfirst)
+
+immutable NorsettEulerConstantCache <: OrdinaryDiffEqConstantCache end
+
+alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = NorsettEulerConstantCache()
+
 get_chunksize(cache::DECache) = error("This cache does not have a chunksize.")
 get_chunksize{uType,DiffCacheType,rateType,CS}(cache::ImplicitEulerCache{uType,DiffCacheType,rateType,CS}) = CS
 get_chunksize{uType,DiffCacheType,rateType,CS}(cache::TrapezoidCache{uType,DiffCacheType,rateType,CS}) = CS

@@ -39,6 +39,7 @@ module OrdinaryDiffEq
   include("integrators/symplectic_integrators.jl")
   include("integrators/split_integrators.jl")
   include("integrators/iif_integrators.jl")
+  include("integrators/exponential_rk_integrators.jl")
   include("integrators/explicit_rk_integrator.jl")
   include("integrators/low_order_rk_integrators.jl")
   include("integrators/high_order_rk_integrators.jl")
@@ -84,6 +85,8 @@ module OrdinaryDiffEq
         CompositeAlgorithm
 
   export IIF1, IIF2
+
+  export LawsonEuler, NorsettEuler
 
   export SymplecticEuler
 

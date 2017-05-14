@@ -10,6 +10,8 @@ isfsal(alg::Tsit5) = true
 isfsal(alg::Vern6) = true
 isfsal(alg::Rosenbrock23) = true
 isfsal(alg::Rosenbrock32) = true
+isfsal(alg::LawsonEuler) = true
+isfsal(alg::NorsettEuler) = true
 isfsal(alg::Euler) = true
 isfsal(alg::SplitEuler) = true
 isfsal(alg::SymplecticEuler) = true
@@ -31,6 +33,10 @@ isfsal(alg::ExplicitRK) = true
 isfsal{MType,VType,fsal}(tab::ExplicitRKTableau{MType,VType,fsal}) = fsal
 #isfsal(tab::ImplicitRKTableau) = false
 isfsal(alg::CompositeAlgorithm) = true # Every algorithm is assumed FSAL. Good assumption?
+
+fsal_typeof(alg::OrdinaryDiffEqAlgorithm,rate_prototype) = typeof(rate_prototype)
+#fsal_typeof(alg::LawsonEuler,rate_prototype) = Vector{typeof(rate_prototype)}
+#fsal_typeof(alg::NorsettEuler,rate_prototype) = Vector{typeof(rate_prototype)}
 
 isimplicit(alg::OrdinaryDiffEqAlgorithm) = false
 isimplicit(alg::ImplicitEuler) = true
@@ -69,6 +75,8 @@ alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is a
 
 alg_order(alg::Discrete) = 0
 alg_order(alg::Euler) = 1
+alg_order(alg::LawsonEuler) = 1
+alg_order(alg::NorsettEuler) = 1
 alg_order(alg::SplitEuler) = 1
 alg_order(alg::SymplecticEuler) = 1
 alg_order(alg::Midpoint) = 2

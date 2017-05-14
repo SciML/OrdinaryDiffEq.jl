@@ -71,6 +71,9 @@ immutable IIF2{F} <: OrdinaryDiffEqAlgorithm
 end
 Base.@pure IIF2(;nlsolve=NLSOLVEJL_SETUP()) = IIF2{typeof(nlsolve)}(nlsolve)
 
+immutable LawsonEuler <: OrdinaryDiffEqAlgorithm end
+immutable NorsettEuler <: OrdinaryDiffEqAlgorithm end
+
 immutable CompositeAlgorithm{T,F} <: OrdinaryDiffEqCompositeAlgorithm
   algs::T
   choice_function::F

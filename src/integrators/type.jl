@@ -37,7 +37,7 @@ type DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5,F6,tstopsTy
   stop_at_next_tstop::Bool
 end
 
-type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,rateType,F,ProgressType,CacheType,O} <: AbstractODEIntegrator
+type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,rateType,F,ProgressType,CacheType,O,FSALType} <: AbstractODEIntegrator
   sol::SolType
   u::uType
   k::ksEltype
@@ -69,19 +69,19 @@ type ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,tTypeNoUnits,tdi
   reeval_fsal::Bool
   u_modified::Bool
   opts::O
-  fsalfirst::rateType
-  fsallast::rateType
+  fsalfirst::FSALType
+  fsallast::FSALType
 
   function (::Type{ODEIntegrator{algType,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,
-                rateType,F,ProgressType,CacheType,O}}){algType,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,
-                rateType,F,ProgressType,CacheType,O}(sol,u,k,t,dt,f,uprev,uprev2,tprev,
+                rateType,F,ProgressType,CacheType,O,FSALType}}){algType,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,
+                rateType,F,ProgressType,CacheType,O,FSALType}(sol,u,k,t,dt,f,uprev,uprev2,tprev,
       alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,dtpropose,tdir,
       EEst,qold,q11,
       iter,saveiter,saveiter_dense,prog,cache,
       kshortsize,just_hit_tstop,accept_step,isout,reeval_fsal,u_modified,opts)
 
       new{algType,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,
-                  rateType,F,ProgressType,CacheType,O}(sol,u,k,t,dt,f,uprev,uprev2,tprev,
+                  rateType,F,ProgressType,CacheType,O,FSALType}(sol,u,k,t,dt,f,uprev,uprev2,tprev,
       alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,dtpropose,tdir,
       EEst,qold,q11,
       iter,saveiter,saveiter_dense,prog,cache,
