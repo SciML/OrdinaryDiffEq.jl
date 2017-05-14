@@ -92,7 +92,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   # Get the control variables
 
   if typeof(prob.u0) <: Array
-    u = copy(prob.u0)
+    u = recursivecopy(prob.u0)
   elseif typeof(prob.u0) <: Number
     u = prob.u0
   elseif typeof(prob.u0) <: Tuple
@@ -102,7 +102,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   end
 
   uType = typeof(u)
-  uEltype = eltype(u)
+  uEltype = recursive_eltype(u)
 
   ks = Vector{uType}(0)
 
