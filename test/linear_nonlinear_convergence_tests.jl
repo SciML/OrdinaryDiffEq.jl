@@ -27,7 +27,7 @@ function (p::typeof(f1))(::Type{Val{:analytic}},t,u0)
 end
 prob = SplitODEProblem((f1,f2),u0,(0.0,1.0))
 
-integrator = init(prob,IIF2(),dt=1/10)
+integrator = init(prob,NorsettEuler(),dt=1/10)
 step!(integrator)
 integrator.cache
 
@@ -41,5 +41,5 @@ sim  = test_convergence(dts,prob,IIF2())
 sim  = test_convergence(dts,prob,LawsonEuler())
 @test abs(sim.𝒪est[:l2]-1) < 0.1
 
-#sim  = test_convergence(dts,prob,NorsettEuler())
-#@test abs(sim.𝒪est[:l2]-1) < 0.1
+sim  = test_convergence(dts,prob,NorsettEuler())
+@test abs(sim.𝒪est[:l2]-1) < 0.1

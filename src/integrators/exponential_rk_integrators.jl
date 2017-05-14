@@ -13,7 +13,7 @@ end
   rtmp = f[2](t+dt,u)
   k = A*u + rtmp # For the interpolation, needs k at the updated point
   integrator.fsallast = rtmp
-  integrator.k[1] = integrator.fsalfirst
+  integrator.k[1] = integrator.fsalfirst # this is wrong, since it's just rtmp. Should fsal this value though
   integrator.k[2] = k
   @pack integrator = t,dt,u
 end
@@ -24,7 +24,7 @@ end
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = rtmp
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.k[1] = fsalfirst
+  integrator.k[1] = fsalfirst # this is wrong, since it's just rtmp. Should fsal this value though
   integrator.k[2] = k
   A = f[1](integrator.t,integrator.u,rtmp)
   A_mul_B!(cache.k,A,integrator.u)
@@ -87,9 +87,9 @@ end
   A_mul_B!(tmp,A,uprev)
   tmp .+= rtmp
   A_mul_B!(rtmp,M,tmp)
-  tmp .= uprev .+ rtmp
+  u .= uprev .+ rtmp
   A_mul_B!(tmp,A,u)
   f[2](t+dt,u,rtmp)
-  k = tmp .+  rtmp
+  k .= tmp .+  rtmp
   @pack integrator = t,dt,u
 end
