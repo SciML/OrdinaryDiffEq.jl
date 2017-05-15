@@ -52,6 +52,14 @@ From MATLAB ODE Suite by Shampine
   y₀ + dt*(c1*k[1] + c2*k[2])
 end
 
+# First Derivative of the dense output
+@inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Rosenbrock23ConstantCache,idxs,T::Type{Val{1}})
+  d = cache.d
+  c1diff = (1-2*Θ)/(1-2*d)
+  c2diff = (2*Θ-2*d)/(1-2*d)
+  dt*(c1diff*k[1] + c2diff*k[2])
+end
+
 """
 From MATLAB ODE Suite by Shampine
 """
@@ -64,6 +72,19 @@ From MATLAB ODE Suite by Shampine
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = y₀[i] + dt*(c1*k[1][i] + c2*k[2][i])
+    end
+  end
+end
+
+@inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Rosenbrock23Cache,idxs,T::Type{Val{1}})
+  d = cache.tab.d
+  c1diff = (1-2*Θ)/(1-2*d)
+  c2diff = (2*Θ-2*d)/(1-2*d)
+  if out == nothing
+    return dt*(c1diff*k[1][idxs] + c2diff*k[2][idxs])
+  else
+    @inbounds for (j,i) in enumerate(idxs)
+      out[j] = dt*(c1diff*k[1][i] + c2diff*k[2][i])
     end
   end
 end
