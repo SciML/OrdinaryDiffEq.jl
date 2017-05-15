@@ -34,6 +34,7 @@ tic()
 @time @testset "saveat Tests" begin include("ode/ode_saveat_tests.jl") end
 (LONGER_TESTS) && @time @testset "Feagin Tests" begin include("ode/ode_feagin_tests.jl") end
 @time @testset "Number Type Tests" begin include("ode/ode_numbertype_tests.jl") end
+@time @testset "Static Array Tests" begin include("static_array_tests.jl") end
 @time @testset "Data Array Tests" begin include("data_array_test.jl") end
 @time @testset "Ndim Complex Tests" begin include("ode/ode_ndim_complex_tests.jl") end
 @time @testset "Iterator Tests" begin include("iterator_tests.jl") end

@@ -233,13 +233,13 @@ end
 
   #Update uprev
   if alg_extrapolates(integrator.alg)
-    if typeof(integrator.u) <: AbstractArray
+    if isinplace(integrator.sol.prob)
       recursivecopy!(integrator.uprev2,integrator.uprev)
     else
       integrator.uprev2 = integrator.uprev
     end
   end
-  if typeof(integrator.u) <: AbstractArray
+  if isinplace(integrator.sol.prob)
     recursivecopy!(integrator.uprev,integrator.u)
   else
     integrator.uprev = integrator.u
@@ -260,7 +260,7 @@ end
     elseif integrator.reeval_fsal || (typeof(integrator.alg)<:DP8 && !integrator.opts.calck) || (typeof(integrator.alg)<:Union{Rosenbrock23,Rosenbrock32} && !integrator.opts.adaptive)
       reset_fsal!(integrator)
     else # Do not reeval_fsal, instead copy! over
-      if typeof(integrator.fsalfirst) <: Union{AbstractArray,ArrayPartition}
+      if isinplace(integrator.sol.prob)
         recursivecopy!(integrator.fsalfirst,integrator.fsallast)
       else
         integrator.fsalfirst = integrator.fsallast
