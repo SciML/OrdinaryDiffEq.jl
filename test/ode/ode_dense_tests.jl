@@ -374,11 +374,19 @@ sol2 =solve(prob,Vern9(),dt=1//2^(4),dense=true,adaptive=false)
 
 prob = prob_ode_linear
 
-sol =solve(prob,Rosenbrock23(),dt=1//2^(2),dense=true)
+sol =solve(prob,Rosenbrock23(),dt=1//2^(12),dense=true)
 
-sol(interpd_1d,0:1//2^(4):1)
+sol(0:1//2^(4):1)
 
-sol(interpd_1d,0:1//2^(4):1,Val{1})
+sol(0:1//2^(4):1,Val{1})
+
+@which sol(0.55,Val{1})
+@which ode_interpolation(tvals,interp,idxs,deriv)
+@which sol.interp(0.55,nothing,Val{1})
+using ForwardDiff
+ForwardDiff.derivative(sol,0.55)
+using Calculus
+derivative(sol,0.55)
 
 sol2 =solve(prob,Rosenbrock23(),dt=1//2^(4),dense=true,adaptive=false)
 

@@ -57,7 +57,8 @@ end
   d = cache.d
   c1diff = (1-2*Θ)/(1-2*d)
   c2diff = (2*Θ-2*d)/(1-2*d)
-  dt*(c1diff*k[1] + c2diff*k[2])
+  @show "here!"
+  c1diff*k[1] + c2diff*k[2]
 end
 
 """
@@ -81,10 +82,10 @@ end
   c1diff = (1-2*Θ)/(1-2*d)
   c2diff = (2*Θ-2*d)/(1-2*d)
   if out == nothing
-    return dt*(c1diff*k[1][idxs] + c2diff*k[2][idxs])
+    return c1diff*k[1][idxs] + c2diff*k[2][idxs]
   else
     @inbounds for (j,i) in enumerate(idxs)
-      out[j] = dt*(c1diff*k[1][i] + c2diff*k[2][i])
+      out[j] = c1diff*k[1][i] + c2diff*k[2][i]
     end
   end
 end

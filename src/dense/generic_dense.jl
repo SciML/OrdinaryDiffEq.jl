@@ -121,13 +121,13 @@ times ts (sorted), with values timeseries and derivatives ks
   @inbounds for j in idx
     t = tvals[j]
     i = searchsortedfirst(@view(ts[@view(notsaveat_idxs[i:end])]),t,rev=tdir<0)+i-1 # It's in the interval ts[i-1] to ts[i]
-    if ts[notsaveat_idxs[i]] == t
+    if deriv == Val{0} && ts[notsaveat_idxs[i]] == t
       if idxs == nothing
         vals[j] = timeseries[notsaveat_idxs[i]]
       else
         vals[j] = timeseries[notsaveat_idxs[i]][idxs]
       end
-    elseif ts[notsaveat_idxs[i-1]] == t # Can happen if it's the first value!
+    elseif deriv == Val{0} && ts[notsaveat_idxs[i-1]] == t # Can happen if it's the first value!
       if idxs == nothing
         vals[j] = timeseries[notsaveat_idxs[i-1]]
       else
@@ -178,13 +178,13 @@ times ts (sorted), with values timeseries and derivatives ks
   @inbounds for j in idx
     t = tvals[j]
     i = searchsortedfirst(@view(ts[@view(notsaveat_idxs[i:end])]),t,rev=tdir<0)+i-1 # It's in the interval ts[i-1] to ts[i]
-    if ts[notsaveat_idxs[i]] == t
+    if deriv == Val{0} && ts[notsaveat_idxs[i]] == t
       if idxs == nothing
         vals[j] = timeseries[notsaveat_idxs[i]]
       else
         vals[j] = timeseries[notsaveat_idxs[i]][idxs]
       end
-    elseif ts[notsaveat_idxs[i-1]] == t # Can happen if it's the first value!
+    elseif deriv == Val{0} && ts[notsaveat_idxs[i-1]] == t # Can happen if it's the first value!
       if idxs == nothing
         vals[j] = timeseries[notsaveat_idxs[i-1]]
       else
@@ -242,13 +242,13 @@ times ts (sorted), with values timeseries and derivatives ks
   tval < ts[1] && error("Solution interpolation cannot extrapolate before the first timepoint. Either start solving earlier or use the local extrapolation from the integrator interface.")
   tdir = sign(ts[end]-ts[1])
   @inbounds i = searchsortedfirst(@view(ts[notsaveat_idxs]),tval,rev=tdir<0) # It's in the interval ts[i-1] to ts[i]
-  @inbounds if ts[notsaveat_idxs[i]] == tval
+  @inbounds if deriv == Val{0} && ts[notsaveat_idxs[i]] == tval
     if idxs == nothing
       val = timeseries[notsaveat_idxs[i]]
     else
       val = timeseries[notsaveat_idxs[i]][idxs]
     end
-  elseif ts[notsaveat_idxs[i-1]] == tval # Can happen if it's the first value!
+  elseif deriv == Val{0} && ts[notsaveat_idxs[i-1]] == tval # Can happen if it's the first value!
     if idxs == nothing
       val = timeseries[notsaveat_idxs[i-1]]
     else
@@ -273,6 +273,8 @@ times ts (sorted), with values timeseries and derivatives ks
       val = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]],idxs_internal,deriv)
     else
       ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache) # update the kcurrent
+      @show deriv
+      println(@which(ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache,idxs_internal,deriv)))
       val = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache,idxs_internal,deriv)
     end
   end
@@ -292,13 +294,13 @@ times ts (sorted), with values timeseries and derivatives ks
   tval < ts[1] && error("Solution interpolation cannot extrapolate before the first timepoint. Either start solving earlier or use the local extrapolation from the integrator interface.")
   tdir = sign(ts[end]-ts[1])
   @inbounds i = searchsortedfirst(@view(ts[notsaveat_idxs]),tval,rev=tdir<0) # It's in the interval ts[i-1] to ts[i]
-  @inbounds if ts[notsaveat_idxs[i]] == tval
+  @inbounds if deriv == Val{0} && ts[notsaveat_idxs[i]] == tval
     if idxs == nothing
       copy!(out,timeseries[notsaveat_idxs[i]])
     else
       copy!(out,timeseries[notsaveat_idxs[i]][idxs])
     end
-  elseif ts[notsaveat_idxs[i-1]] == tval # Can happen if it's the first value!
+  elseif deriv == Val{0} && ts[notsaveat_idxs[i-1]] == tval # Can happen if it's the first value!
     if idxs == nothing
       copy!(out,timeseries[notsaveat_idxs[i-1]])
     else
@@ -368,7 +370,7 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
 
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
-@inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{1}}) # Default interpolant is Hermite
+@inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{0}}) # Default interpolant is Hermite
   if typeof(y₀) <: AbstractArray
     if typeof(idxs) <: Tuple
       out = similar(y₀,idxs)
