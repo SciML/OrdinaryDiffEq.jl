@@ -121,13 +121,15 @@ times ts (sorted), with values timeseries and derivatives ks
   @inbounds for j in idx
     t = tvals[j]
     i = searchsortedfirst(@view(ts[@view(notsaveat_idxs[i:end])]),t,rev=tdir<0)+i-1 # It's in the interval ts[i-1] to ts[i]
-    if ts[notsaveat_idxs[i]] == t
+    avoid_constant_ends = deriv != Val{0} || typeof(t) <: ForwardDiff.Dual
+    avoid_constant_ends && i==1 && (i+=1)
+    if !avoid_constant_ends && ts[notsaveat_idxs[i]] == t
       if idxs == nothing
         vals[j] = timeseries[notsaveat_idxs[i]]
       else
         vals[j] = timeseries[notsaveat_idxs[i]][idxs]
       end
-    elseif ts[notsaveat_idxs[i-1]] == t # Can happen if it's the first value!
+    elseif !avoid_constant_ends && ts[notsaveat_idxs[i-1]] == t # Can happen if it's the first value!
       if idxs == nothing
         vals[j] = timeseries[notsaveat_idxs[i-1]]
       else
@@ -144,7 +146,7 @@ times ts (sorted), with values timeseries and derivatives ks
       else
         idxs_internal = idxs
       end
-      
+
       if typeof(cache) <: (DiscreteCache) || typeof(cache) <: DiscreteConstantCache
         vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],0,cache,idxs_internal,deriv)
       elseif !id.dense
@@ -178,13 +180,15 @@ times ts (sorted), with values timeseries and derivatives ks
   @inbounds for j in idx
     t = tvals[j]
     i = searchsortedfirst(@view(ts[@view(notsaveat_idxs[i:end])]),t,rev=tdir<0)+i-1 # It's in the interval ts[i-1] to ts[i]
-    if ts[notsaveat_idxs[i]] == t
+    avoid_constant_ends = deriv != Val{0} || typeof(t) <: ForwardDiff.Dual
+    avoid_constant_ends && i==1 && (i+=1)
+    if !avoid_constant_ends && ts[notsaveat_idxs[i]] == t
       if idxs == nothing
         vals[j] = timeseries[notsaveat_idxs[i]]
       else
         vals[j] = timeseries[notsaveat_idxs[i]][idxs]
       end
-    elseif ts[notsaveat_idxs[i-1]] == t # Can happen if it's the first value!
+    elseif !avoid_constant_ends && ts[notsaveat_idxs[i-1]] == t # Can happen if it's the first value!
       if idxs == nothing
         vals[j] = timeseries[notsaveat_idxs[i-1]]
       else
@@ -242,13 +246,15 @@ times ts (sorted), with values timeseries and derivatives ks
   tval < ts[1] && error("Solution interpolation cannot extrapolate before the first timepoint. Either start solving earlier or use the local extrapolation from the integrator interface.")
   tdir = sign(ts[end]-ts[1])
   @inbounds i = searchsortedfirst(@view(ts[notsaveat_idxs]),tval,rev=tdir<0) # It's in the interval ts[i-1] to ts[i]
-  @inbounds if ts[notsaveat_idxs[i]] == tval
+  avoid_constant_ends = deriv != Val{0} || typeof(tval) <: ForwardDiff.Dual
+  avoid_constant_ends && i==1 && (i+=1)
+  @inbounds if !avoid_constant_ends && ts[notsaveat_idxs[i]] == tval
     if idxs == nothing
       val = timeseries[notsaveat_idxs[i]]
     else
       val = timeseries[notsaveat_idxs[i]][idxs]
     end
-  elseif ts[notsaveat_idxs[i-1]] == tval # Can happen if it's the first value!
+  elseif !avoid_constant_ends && ts[notsaveat_idxs[i-1]] == tval # Can happen if it's the first value!
     if idxs == nothing
       val = timeseries[notsaveat_idxs[i-1]]
     else
@@ -292,13 +298,15 @@ times ts (sorted), with values timeseries and derivatives ks
   tval < ts[1] && error("Solution interpolation cannot extrapolate before the first timepoint. Either start solving earlier or use the local extrapolation from the integrator interface.")
   tdir = sign(ts[end]-ts[1])
   @inbounds i = searchsortedfirst(@view(ts[notsaveat_idxs]),tval,rev=tdir<0) # It's in the interval ts[i-1] to ts[i]
-  @inbounds if ts[notsaveat_idxs[i]] == tval
+  avoid_constant_ends = deriv != Val{0} || typeof(tval) <: ForwardDiff.Dual
+  avoid_constant_ends && i==1 && (i+=1)
+  @inbounds if !avoid_constant_ends && ts[notsaveat_idxs[i]] == tval
     if idxs == nothing
       copy!(out,timeseries[notsaveat_idxs[i]])
     else
       copy!(out,timeseries[notsaveat_idxs[i]][idxs])
     end
-  elseif ts[notsaveat_idxs[i-1]] == tval # Can happen if it's the first value!
+  elseif !avoid_constant_ends && ts[notsaveat_idxs[i-1]] == tval # Can happen if it's the first value!
     if idxs == nothing
       copy!(out,timeseries[notsaveat_idxs[i-1]])
     else
@@ -345,7 +353,7 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache,always_
   nothing
 end
 
-@inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::OrdinaryDiffEqMutableCache,idxs,T::Type{Val{0}})
+@inline function ode_interpolant{TI}(Θ,dt,y₀,y₁,k,cache::OrdinaryDiffEqMutableCache,idxs,T::Type{Val{TI}})
   if typeof(idxs) <: Tuple
     out = similar(y₀,idxs)
     idxs_internal=eachindex(y₀)
@@ -363,12 +371,21 @@ end
 
 ##################### Hermite Interpolants
 
+# If no dispatch found, assume Hermite
+function ode_interpolant{TI}(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{TI}})
+  hermite_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T)
+end
+
+function ode_interpolant!{TI}(out,Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{TI}})
+  hermite_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T)
+end
+
 """
 Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Problems Page 190
 
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
-@inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{0}}) # Default interpolant is Hermite
+@inline function hermite_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{0}}) # Default interpolant is Hermite
   if typeof(y₀) <: AbstractArray
     if typeof(idxs) <: Tuple
       out = similar(y₀,idxs)
@@ -391,7 +408,7 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
 
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
-@inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{0}}) # Default interpolant is Hermite
+@inline function hermite_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{0}}) # Default interpolant is Hermite
   if out == nothing
     return (1-Θ)*y₀[idxs]+Θ*y₁[idxs]+Θ*(Θ-1)*((1-2Θ)*(y₁[idxs]-y₀[idxs])+(Θ-1)*dt*k[1][idxs] + Θ*dt*k[2][idxs])
   else
@@ -406,7 +423,7 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
 
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
-@inline function ode_interpolant!(all_out::ArrayPartition,Θ,dt,all_y₀,all_y₁,all_k,cache,all_idxs,T::Type{Val{0}}) # Default interpolant is Hermite
+@inline function hermite_interpolant!(all_out::ArrayPartition,Θ,dt,all_y₀,all_y₁,all_k,cache,all_idxs,T::Type{Val{0}}) # Default interpolant is Hermite
   for (out,y₀,y₁,idxs,k1,k2) in zip(all_out.x,all_y₀.x,all_y₁.x,all_idxs,all_k[1].x,all_k[2].x)
     @inbounds for (j,i) in enumerate(idxs...)
       out[j] = (1-Θ)*y₀[i]+Θ*y₁[i]+Θ*(Θ-1)*((1-2Θ)*(y₁[i]-y₀[i])+(Θ-1)*dt*k1[i] + Θ*dt*k2[i])
@@ -418,7 +435,7 @@ end
 
 
 
-@inline function linear_interpolant(Θ,dt,y₀,y₁,idxs,T::Type{Val{0}}) # Default interpolant is Hermite
+@inline function linear_interpolant(Θ,dt,y₀,y₁,idxs,T::Type{Val{0}})
   if typeof(y₀) <: AbstractArray
     if typeof(idxs) <: Tuple
       out = similar(y₀,idxs)

@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, DiffEqProblemLibrary,Base.Test, DiffEqBase
+using Calculus, ForwardDiff
 
 bools = Vector{Bool}(0)
 prob = prob_ode_linear
@@ -12,6 +13,7 @@ sol2 =solve(prob,Euler(),dt=1//2^(4),dense=true)
 sol3 =solve(prob,Euler(),dt=1//2^(5),dense=true)
 
 prob = prob_ode_2Dlinear
+
 sol =solve(prob,Euler(),dt=1//2^(2),dense=true)
 
 interpd = sol(0:1//2^(4):1)
@@ -373,9 +375,23 @@ sol2 =solve(prob,Vern9(),dt=1//2^(4),dense=true,adaptive=false)
 
 prob = prob_ode_linear
 
-sol =solve(prob,Rosenbrock23(),dt=1//2^(2),dense=true)
+sol =solve(prob,Rosenbrock23(),dt=1//2^(12),dense=true)
 
-sol(interpd_1d,0:1//2^(4):1)
+sol(0:1//2^(4):1)
+
+sol(0:1//2^(4):1,Val{1})
+
+const deriv_test_points = linspace(0,1,10)
+
+for t in deriv_test_points
+  deriv = sol(t,Val{1})
+  if t == 0
+    #@test deriv ≈ derivative(sol,0.00,:forward)
+  elseif t != 1
+    #@test deriv ≈ derivative(sol,t)
+  end
+  @test deriv ≈ ForwardDiff.derivative(sol,t)
+end
 
 sol2 =solve(prob,Rosenbrock23(),dt=1//2^(4),dense=true,adaptive=false)
 
