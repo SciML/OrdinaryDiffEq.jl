@@ -45,7 +45,7 @@ end
 """
 From MATLAB ODE Suite by Shampine
 """
-@inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Rosenbrock23ConstantCache,idxs,T::Type{Val{0}})
+@inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{Rosenbrock23ConstantCache,Rosenbrock32ConstantCache},idxs,T::Type{Val{0}})
   d = cache.d
   c1 = Θ*(1-Θ)/(1-2d)
   c2 = Θ*(Θ-2d)/(1-2d)
@@ -53,18 +53,17 @@ From MATLAB ODE Suite by Shampine
 end
 
 # First Derivative of the dense output
-@inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Rosenbrock23ConstantCache,idxs,T::Type{Val{1}})
+@inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{Rosenbrock23ConstantCache,Rosenbrock32ConstantCache},idxs,T::Type{Val{1}})
   d = cache.d
   c1diff = (1-2*Θ)/(1-2*d)
   c2diff = (2*Θ-2*d)/(1-2*d)
-  @show "here!"
   c1diff*k[1] + c2diff*k[2]
 end
 
 """
 From MATLAB ODE Suite by Shampine
 """
-@inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Rosenbrock23Cache,idxs,T::Type{Val{0}})
+@inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{Rosenbrock23Cache,Rosenbrock32Cache},idxs,T::Type{Val{0}})
   d = cache.tab.d
   c1 = Θ*(1-Θ)/(1-2d)
   c2 = Θ*(Θ-2d)/(1-2d)
@@ -77,7 +76,7 @@ From MATLAB ODE Suite by Shampine
   end
 end
 
-@inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Rosenbrock23Cache,idxs,T::Type{Val{1}})
+@inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{Rosenbrock23Cache,Rosenbrock32Cache},idxs,T::Type{Val{1}})
   d = cache.tab.d
   c1diff = (1-2*Θ)/(1-2*d)
   c2diff = (2*Θ-2*d)/(1-2*d)
@@ -86,33 +85,6 @@ end
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = c1diff*k[1][i] + c2diff*k[2][i]
-    end
-  end
-end
-
-"""
-From MATLAB ODE Suite by Shampine
-"""
-@inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Rosenbrock32ConstantCache,idxs,T::Type{Val{0}})
-  d = cache.d
-  c1 = Θ*(1-Θ)/(1-2d)
-  c2 = Θ*(Θ-2d)/(1-2d)
-  y₀ + dt*(c1*k[1] + c2*k[2])
-end
-
-"""
-From MATLAB ODE Suite by Shampine
-"""
-@inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Rosenbrock32Cache,idxs,T::Type{Val{0}})
-  d = cache.tab.d
-  c1 = Θ*(1-Θ)/(1-2d)
-  c2 = Θ*(Θ-2d)/(1-2d)
-  y₀ + dt*(c1*k[1] + c2*k[2])
-  if out == nothing
-    return y₀[idxs] + dt*(c1*k[1][idxs] + c2*k[2][idxs])
-  else
-    @inbounds for (j,i) in enumerate(idxs)
-      out[j] = y₀[i] + dt*(c1*k[1][i] + c2*k[2][i])
     end
   end
 end

@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, DiffEqProblemLibrary,Base.Test, DiffEqBase
+using Calculus, ForwardDiff
 
 bools = Vector{Bool}(0)
 prob = prob_ode_linear
@@ -380,13 +381,17 @@ sol(0:1//2^(4):1)
 
 sol(0:1//2^(4):1,Val{1})
 
-@which sol(0.55,Val{1})
-@which ode_interpolation(tvals,interp,idxs,deriv)
-@which sol.interp(0.55,nothing,Val{1})
-using ForwardDiff
-ForwardDiff.derivative(sol,0.55)
-using Calculus
-derivative(sol,0.55)
+const deriv_test_points = linspace(0,1,10)
+
+for t in deriv_test_points
+  deriv = sol(t,Val{1})
+  if t == 0
+    #@test deriv ≈ derivative(sol,0.00,:forward)
+  elseif t != 1
+    #@test deriv ≈ derivative(sol,t)
+  end
+  @test deriv ≈ ForwardDiff.derivative(sol,t)
+end
 
 sol2 =solve(prob,Rosenbrock23(),dt=1//2^(4),dense=true,adaptive=false)
 
