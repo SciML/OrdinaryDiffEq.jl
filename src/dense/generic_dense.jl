@@ -144,7 +144,7 @@ times ts (sorted), with values timeseries and derivatives ks
       else
         idxs_internal = idxs
       end
-      
+
       if typeof(cache) <: (DiscreteCache) || typeof(cache) <: DiscreteConstantCache
         vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],0,cache,idxs_internal,deriv)
       elseif !id.dense
@@ -345,7 +345,7 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache,always_
   nothing
 end
 
-@inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::OrdinaryDiffEqMutableCache,idxs,T::Type{Val{0}})
+@inline function ode_interpolant{TI}(Θ,dt,y₀,y₁,k,cache::OrdinaryDiffEqMutableCache,idxs,T::Type{Val{TI}})
   if typeof(idxs) <: Tuple
     out = similar(y₀,idxs)
     idxs_internal=eachindex(y₀)
@@ -368,7 +368,7 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
 
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
-@inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{0}}) # Default interpolant is Hermite
+@inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{1}}) # Default interpolant is Hermite
   if typeof(y₀) <: AbstractArray
     if typeof(idxs) <: Tuple
       out = similar(y₀,idxs)

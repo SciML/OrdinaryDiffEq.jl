@@ -12,6 +12,7 @@ sol2 =solve(prob,Euler(),dt=1//2^(4),dense=true)
 sol3 =solve(prob,Euler(),dt=1//2^(5),dense=true)
 
 prob = prob_ode_2Dlinear
+
 sol =solve(prob,Euler(),dt=1//2^(2),dense=true)
 
 interpd = sol(0:1//2^(4):1)
@@ -376,6 +377,8 @@ prob = prob_ode_linear
 sol =solve(prob,Rosenbrock23(),dt=1//2^(2),dense=true)
 
 sol(interpd_1d,0:1//2^(4):1)
+
+sol(interpd_1d,0:1//2^(4):1,Val{1})
 
 sol2 =solve(prob,Rosenbrock23(),dt=1//2^(4),dense=true,adaptive=false)
 
