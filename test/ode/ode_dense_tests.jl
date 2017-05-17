@@ -46,22 +46,22 @@ sol2 =solve(prob,Midpoint(),dt=1//2^(4),dense=true)
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd_1d)) < 2e-2
 
 prob = prob_ode_2Dlinear
-sol =solve(prob,Midpoint(),dt=1//2^(2),dense=true)
+sol = solve(prob,Midpoint(),dt=1//2^(2),dense=true)
 sol(interpd,0:1//2^(4):1)
-sol2 =solve(prob,Midpoint(),dt=1//2^(4),dense=true)
+sol2 = solve(prob,Midpoint(),dt=1//2^(4),dense=true)
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 2.3e-2
 
 ### SSPRK22()
 prob = prob_ode_linear
-sol =solve(prob,SSPRK22(),dt=1//2^(2),dense=true)
+sol = solve(prob,SSPRK22(),dt=1//2^(2),dense=true)
 sol(interpd_1d,0:1//2^(4):1)
-sol2 =solve(prob,SSPRK22(),dt=1//2^(4),dense=true)
+sol2 = solve(prob,SSPRK22(),dt=1//2^(4),dense=true)
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd_1d)) < 1.5e-2
 
 prob = prob_ode_2Dlinear
-sol =solve(prob,SSPRK22(),dt=1//2^(2),dense=true)
+sol = solve(prob,SSPRK22(),dt=1//2^(2),dense=true)
 sol(interpd,0:1//2^(4):1)
-sol2 =solve(prob,SSPRK22(),dt=1//2^(4),dense=true)
+sol2 = solve(prob,SSPRK22(),dt=1//2^(4),dense=true)
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 2.5e-2
 
 ### SSPRK33()
@@ -79,35 +79,35 @@ sol2 = solve(prob,SSPRK33(),dt=1//2^(4),dense=true)
 
 ### SSPRK104()
 prob = prob_ode_linear
-sol =solve(prob,SSPRK104(),dt=1//2^(2),dense=true)
+sol = solve(prob,SSPRK104(),dt=1//2^(2),dense=true)
 sol(interpd_1d,0:1//2^(4):1)
-sol2 =solve(prob,SSPRK104(),dt=1//2^(4),dense=true)
+sol2 = solve(prob,SSPRK104(),dt=1//2^(4),dense=true)
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd_1d)) < 1.5e-5
 
 prob = prob_ode_2Dlinear
-sol =solve(prob,SSPRK104(),dt=1//2^(2),dense=true)
+sol = solve(prob,SSPRK104(),dt=1//2^(2),dense=true)
 sol(interpd,0:1//2^(4):1)
-sol2 =solve(prob,SSPRK104(),dt=1//2^(4),dense=true)
+sol2 = solve(prob,SSPRK104(),dt=1//2^(4),dense=true)
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 3.e-5
 
 ### RK4()
 prob = prob_ode_linear
-sol =solve(prob,RK4(),dt=1//2^(2),dense=true)
+sol = solve(prob,RK4(),dt=1//2^(2),dense=true)
 sol(interpd_1d,0:1//2^(4):1)
-sol2 =solve(prob,RK4(),dt=1//2^(4),dense=true)
+sol2 = solve(prob,RK4(),dt=1//2^(4),dense=true)
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd_1d)) < 5e-5
 
 prob = prob_ode_2Dlinear
-sol =solve(prob,RK4(),dt=1//2^(2),dense=true)
+sol = solve(prob,RK4(),dt=1//2^(2),dense=true)
 sol(interpd,0:1//2^(4):1)
-sol2 =solve(prob,RK4(),dt=1//2^(4),dense=true)
+sol2 = solve(prob,RK4(),dt=1//2^(4),dense=true)
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 1e-4
 
 ### DP5()
 prob = prob_ode_linear
-sol =solve(prob,DP5(),dense=true)
+sol = solve(prob,DP5(),dense=true)
 
-sol2 =solve(prob,DP5(),dt=1//2^(4),dense=true,adaptive=false)
+sol2 = solve(prob,DP5(),dt=1//2^(4),dense=true,adaptive=false)
 sol(interpd_1d,0:1//2^(4):1)
 
 diff_test_points = linspace(0,1,10)
@@ -119,8 +119,8 @@ end
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd_1d)) < 5e-6
 
 prob = prob_ode_2Dlinear
-sol =solve(prob,DP5(),dense=true)
-sol2 =solve(prob,DP5(),dt=1//2^(4),dense=true,adaptive=false)
+sol = solve(prob,DP5(),dense=true)
+sol2 = solve(prob,DP5(),dt=1//2^(4),dense=true,adaptive=false)
 sol(interpd,0:1//2^(4):1)
 
 #TODO: convert this to a 2D test
@@ -141,30 +141,36 @@ sol2 = solve(prob,BS3(),dt=1//2^(4),dense=true,adaptive=false)
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd_1d)) < 1e-3
 
 prob = prob_ode_2Dlinear
-sol =solve(prob,BS3(),dt=1//2^(2),dense=true)
+sol = solve(prob,BS3(),dt=1//2^(2),dense=true)
 sol(interpd,0:1//2^(4):1)
-sol2 =solve(prob,BS3(),dt=1//2^(4),dense=true,adaptive=false)
+sol2 = solve(prob,BS3(),dt=1//2^(4),dense=true,adaptive=false)
 
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 1e-3
 
 ### Tsit5()
 prob = prob_ode_linear
-sol =solve(prob,Tsit5(),dt=1//2^(2),dense=true)
+sol = solve(prob,Tsit5(),dt=1//2^(2),dense=true)
 sol(interpd_1d,0:1//2^(4):1)
-sol2 =solve(prob,Tsit5(),dt=1//2^(4),dense=true,adaptive=false)
+sol2 = solve(prob,Tsit5(),dt=1//2^(4),dense=true,adaptive=false)
+
+diff_test_points = linspace(0,1,10)
+for t in diff_test_points
+  deriv = sol(t,Val{1})
+  @test deriv ≈ ForwardDiff.derivative(sol,t)
+end
 
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd_1d)) < 1e-5
 
 prob = prob_ode_2Dlinear
-sol =solve(prob,Tsit5(),dt=1//2^(2),dense=true)
+sol = solve(prob,Tsit5(),dt=1//2^(2),dense=true)
 sol(interpd,0:1//2^(4):1)
-sol2 =solve(prob,Tsit5(),dt=1//2^(4),dense=true,adaptive=false)
+sol2 = solve(prob,Tsit5(),dt=1//2^(4),dense=true,adaptive=false)
 
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 1e-5
 
 ### TanYam7()
 prob = prob_ode_linear
-sol =solve(prob,TanYam7(),dt=1//2^(2),dense=true)
+sol = solve(prob,TanYam7(),dt=1//2^(2),dense=true)
 sol(interpd_1d,0:1//2^(4):1)
 sol2 = solve(prob,TanYam7(),dt=1//2^(4),dense=true,adaptive=false)
 
@@ -173,7 +179,7 @@ sol2 = solve(prob,TanYam7(),dt=1//2^(4),dense=true,adaptive=false)
 prob = prob_ode_2Dlinear
 sol = solve(prob,TanYam7(),dt=1//2^(2),dense=true)
 sol(interpd,0:1//2^(4):1)
-sol2 =solve(prob,TanYam7(),dt=1//2^(4),dense=true,adaptive=false)
+sol2 = solve(prob,TanYam7(),dt=1//2^(4),dense=true,adaptive=false)
 
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 1e-3
 
@@ -208,6 +214,18 @@ sol2 = solve(prob,Feagin10(),dt=1//2^(4),dense=true,adaptive=false)
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 1e-3
 
 ### Vern6()
+prob = prob_ode_linear
+sol = solve(prob,Vern6(),dt=1//2^(2),dense=true)
+sol2 = solve(prob,Vern6(),dt=1//2^(4),dense=true,adaptive=false)
+@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd_1d)) < 1e-3
+
+diff_test_points = linspace(0,1,10)
+for t in diff_test_points
+  deriv = sol(t,Val{1})
+  @test deriv ≈ ForwardDiff.derivative(sol,t)
+end
+
+# BigFloat tests
 const linear_bigα = parse(BigFloat,"1.01")
 f = (t,u) -> (linear_bigα*u)
 prob_ode_bigfloatlinear = ODEProblem(f,parse(BigFloat,"0.5"),(0.0,1.0))
@@ -224,7 +242,7 @@ end
 
 interpd_1d_big = sol(0:1//2^(7):1)
 
-sol2 =solve(prob,Vern6(),dt=1//2^(7),dense=true,adaptive=false)
+sol2 = solve(prob,Vern6(),dt=1//2^(7),dense=true,adaptive=false)
 
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd_1d_big)) < 1e-7
 
@@ -277,6 +295,12 @@ sol = solve(prob,Vern7(),dt=1//2^(2),dense=true)
 sol(interpd_1d,0:1//2^(4):1)
 sol2 = solve(prob,Vern7(),dt=1//2^(4),dense=true,adaptive=false)
 
+diff_test_points = linspace(0,1,10)
+for t in diff_test_points
+  deriv = sol(t,Val{1})
+  @test deriv ≈ ForwardDiff.derivative(sol,t)
+end
+
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd_1d)) < 3e-9
 
 prob = prob_ode_2Dlinear
@@ -292,6 +316,12 @@ prob = prob_ode_linear
 sol = solve(prob,Vern8(),dt=1//2^(2),dense=true)
 sol(interpd_1d,0:1//2^(4):1)
 sol2 = solve(prob,Vern8(),dt=1//2^(4),dense=true,adaptive=false)
+
+diff_test_points = linspace(0,1,10)
+for t in diff_test_points
+  deriv = sol(t,Val{1})
+  @test deriv ≈ ForwardDiff.derivative(sol,t)
+end
 
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd_1d)) < 1e-7
 
@@ -310,6 +340,12 @@ prob = prob_ode_linear
 sol = solve(prob,Vern9(),dt=1//2^(2),dense=true)
 sol(interpd_1d,0:1//2^(4):1)
 sol2 = solve(prob,Vern9(),dt=1//2^(4),dense=true,adaptive=false)
+
+diff_test_points = linspace(0,1,10)
+for t in diff_test_points
+  deriv = sol(t,Val{1})
+  @test deriv ≈ ForwardDiff.derivative(sol,t)
+end
 
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd_1d)) < 1e-9
 
@@ -414,6 +450,12 @@ prob = prob_ode_linear
 sol = solve(prob,DP8(),dt=1//2^(2),dense=true)
 sol(interpd_1d_long,0:1//2^(7):1)
 sol2 = solve(prob,DP8(),dt=1//2^(7),dense=true,adaptive=false)
+
+diff_test_points = linspace(0,1,10)
+for t in diff_test_points
+  deriv = sol(t,Val{1})
+  @test deriv ≈ ForwardDiff.derivative(sol,t)
+end
 
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd_1d_long)) < 2e-7
 
