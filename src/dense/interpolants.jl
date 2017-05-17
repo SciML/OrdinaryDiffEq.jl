@@ -14,16 +14,30 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
   y₀ + dt*Θ*(k[1]+Θ1*(k[2]+Θ*(k[3]+Θ1*k[4])))
 end
 
+@inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP5ConstantCache,idxs,T::Type{Val{1}})
+  k[1] + k[2]*(1 - 2*Θ) + Θ*(2*k[3] + 2*k[4] + Θ*(-3*k[3] - 6*k[4] + 4*k[4]*Θ))
+end
+
 """
 Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Problems Page 192
 """
 @inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DP5Cache,idxs,T::Type{Val{0}})
   Θ1 = 1-Θ
   if out == nothing
-    return y₀[idxs] + dt*(c1*k[1][idxs] + c2*k[2][idxs])
+    return y₀[idx] + dt*Θ*(k[1][idx]+Θ1*(k[2][idx]+Θ*(k[3][i]+Θ1*k[4][idx])))
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = y₀[i] + dt*Θ*(k[1][i]+Θ1*(k[2][i]+Θ*(k[3][i]+Θ1*k[4][i])))
+    end
+  end
+end
+
+@inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DP5Cache,idxs,T::Type{Val{1}})
+  if out == nothing
+    return k[1][idx] + k[2][idx]*(1 - 2*Θ) + Θ*(2*k[3][idx] + 2*k[4][idx] + Θ*(-3*k[3][idx] - 6*k[4][idx] + 4*k[4][idx]*Θ))
+  else
+    @inbounds for (j,i) in enumerate(idxs)
+      out[j] = k[1][i] + k[2][i]*(1 - 2*Θ) + Θ*(2*k[3][i] + 2*k[4][i] + Θ*(-3*k[3][i] - 6*k[4][i] + 4*k[4][i]*Θ))
     end
   end
 end
@@ -38,6 +52,16 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = y₀[i] + dt*Θ*(k[1][i]+Θ1*(k[2][i]+Θ*(k[3][i]+Θ1*k[4][i])))
+    end
+  end
+end
+
+@inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DP5ThreadedCache,idxs,T::Type{Val{1}})
+  if out == nothing
+    return k[1][idx] + k[2][idx]*(1 - 2*Θ) + Θ*(2*k[3][idx] + 2*k[4][idx] + Θ*(-3*k[3][idx] - 6*k[4][idx] + 4*k[4][idx]*Θ))
+  else
+    @inbounds for (j,i) in enumerate(idxs)
+      out[j] = k[1][i] + k[2][i]*(1 - 2*Θ) + Θ*(2*k[3][i] + 2*k[4][i] + Θ*(-3*k[3][i] - 6*k[4][i] + 4*k[4][i]*Θ))
     end
   end
 end
@@ -151,7 +175,6 @@ end
 
 @inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::BS5ConstantCache,idxs,T::Type{Val{1}})
   @unpack r016,r015,r014,r013,r012,r036,r035,r034,r033,r032,r046,r045,r044,r043,r042,r056,r055,r054,r053,r052,r066,r065,r064,r063,r062,r076,r075,r074,r073,r072,r086,r085,r084,r083,r082,r096,r095,r094,r093,r106,r105,r104,r103,r102,r116,r115,r114,r113,r112 = cache
-  #TODO change names to <name>diff
   b1Θdiff  = @evalpoly(Θ, 0, 2*r012, 3*r013, 4*r014, 5*r015, 6*r016)
   b3Θdiff  = @evalpoly(Θ, 0, 2*r032, 3*r033, 4*r034, 5*r035, 6*r036)
   b4Θdiff  = @evalpoly(Θ, 0, 2*r042, 3*r043, 4*r044, 5*r045, 6*r046)
@@ -192,6 +215,29 @@ Coefficients taken from RKSuite
   end
 end
 
+@inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::BS5Cache,idxs,T::Type{Val{1}})
+  @unpack r016,r015,r014,r013,r012,r036,r035,r034,r033,r032,r046,r045,r044,r043,r042,r056,r055,r054,r053,r052,r066,r065,r064,r063,r062,r076,r075,r074,r073,r072,r086,r085,r084,r083,r082,r096,r095,r094,r093,r106,r105,r104,r103,r102,r116,r115,r114,r113,r112 = cache.tab
+
+  b1Θdiff  = @evalpoly(Θ, 0, 2*r012, 3*r013, 4*r014, 5*r015, 6*r016)
+  b3Θdiff  = @evalpoly(Θ, 0, 2*r032, 3*r033, 4*r034, 5*r035, 6*r036)
+  b4Θdiff  = @evalpoly(Θ, 0, 2*r042, 3*r043, 4*r044, 5*r045, 6*r046)
+  b5Θdiff  = @evalpoly(Θ, 0, 2*r052, 3*r053, 4*r054, 5*r055, 6*r056)
+  b6Θdiff  = @evalpoly(Θ, 0, 2*r062, 3*r063, 4*r064, 5*r065, 6*r066)
+  b7Θdiff  = @evalpoly(Θ, 0, 2*r072, 3*r073, 4*r074, 5*r075, 6*r076)
+  b8Θdiff  = @evalpoly(Θ, 0, 2*r082, 3*r083, 4*r084, 5*r085, 6*r086)
+  b9Θdiff  = @evalpoly(Θ, 0,      0, 3*r093, 4*r094, 5*r095, 6*r096)
+  b10Θdiff = @evalpoly(Θ, 0, 2*r102, 3*r103, 4*r104, 5*r105, 6*r106)
+  b11Θdiff = @evalpoly(Θ, 0, 2*r112, 3*r113, 4*r114, 5*r115, 6*r116)
+
+  if out == nothing
+    return k[1][idxs] + k[1][idxs]*b1Θdiff  + k[3][idxs]*b3Θdiff + k[4][idxs]*b4Θdiff  + k[5][idxs]*b5Θdiff + k[6][idxs]*b6Θdiff + k[7][idxs]*b7Θdiff + k[8][idxs]*b8Θdiff + k[9][idxs]*b9Θdiff + k[10][idxs]*b10Θdiff + k[11][idxs]*b11Θdiff
+  else
+    @inbounds for (j,i) in enumerate(idxs)
+      out[j] = k[1][i] + k[1][i]*b1Θdiff  + k[3][i]*b3Θdiff + k[4][i]*b4Θdiff  + k[5][i]*b5Θdiff + k[6][i]*b6Θdiff + k[7][i]*b7Θdiff + k[8][i]*b8Θdiff + k[9][i]*b9Θdiff + k[10][i]*b10Θdiff + k[11][i]*b11Θdiff
+    end
+  end
+end
+
 """
 
 """
@@ -218,6 +264,29 @@ end
   end
 end
 
+@inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Vern6Cache,idxs,T::Type{Val{1}})
+  @unpack r011,r012,r013,r014,r015,r016,r042,r043,r044,r045,r046,r052,r053,r054,r055,r056,r062,r063,r064,r065,r066,r072,r073,r074,r075,r076,r082,r083,r084,r085,r086,r092,r093,r094,r095,r096,r102,r103,r104,r105,r106,r112,r113,r114,r115,r116,r122,r123,r124,r125,r126 = cache.tab
+
+  b1Θdiff  = @evalpoly(Θ, r011, 2*r012, 3*r013, 4*r014, 5*r015, 6*r016)
+  b4Θdiff  = @evalpoly(Θ,    0, 2*r042, 3*r043, 4*r044, 5*r045, 6*r046)
+  b5Θdiff  = @evalpoly(Θ,    0, 2*r052, 3*r053, 4*r054, 5*r055, 6*r056)
+  b6Θdiff  = @evalpoly(Θ,    0, 2*r062, 3*r063, 4*r064, 5*r065, 6*r066)
+  b7Θdiff  = @evalpoly(Θ,    0, 2*r072, 3*r073, 4*r074, 5*r075, 6*r076)
+  b8Θdiff  = @evalpoly(Θ,    0, 2*r082, 3*r083, 4*r084, 5*r085, 6*r086)
+  b9Θdiff  = @evalpoly(Θ,    0, 2*r092, 3*r093, 4*r094, 5*r095, 6*r096)
+  b10Θdiff = @evalpoly(Θ,    0, 2*r102, 3*r103, 4*r104, 5*r105, 6*r106)
+  b11Θdiff = @evalpoly(Θ,    0, 2*r112, 3*r113, 4*r114, 5*r115, 6*r116)
+  b12Θdiff = @evalpoly(Θ,    0, 2*r122, 3*r123, 4*r124, 5*r125, 6*r126)
+
+  if out == nothing
+    return k[1][idx]*b1Θdiff + k[4][idx]*b4Θdiff + k[5][idx]*b5Θdiff + k[6][idx]*b6Θdiff + k[7][idx]*b7Θdiff + k[8][idx]*b8Θdiff + k[9][idx]*b9Θdiff + k[10][idx]*b10Θdiff + k[11][idx]*b11Θdiff + k[12][idx]*b12Θdiff
+  else
+    @inbounds for (j,i) in enumerate(idxs)
+      out[j] = k[1][i]*b1Θdiff + k[4][i]*b4Θdiff + k[5][i]*b5Θdiff + k[6][i]*b6Θdiff + k[7][i]*b7Θdiff + k[8][i]*b8Θdiff + k[9][i]*b9Θdiff + k[10][i]*b10Θdiff + k[11][i]*b11Θdiff + k[12][i]*b12Θdiff
+    end
+  end
+end
+
 """
 
 """
@@ -236,6 +305,23 @@ end
   b12Θ = @evalpoly(Θ, 0,    0, r122, r123, r124, r125, r126)
 
   y₀ + dt*(k[1]*b1Θ + k[4]*b4Θ + k[5]*b5Θ + k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ + k[10]*b10Θ + k[11]*b11Θ + k[12]*b12Θ)
+end
+
+@inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern6ConstantCache,idxs,T::Type{Val{1}})
+  @unpack r011,r012,r013,r014,r015,r016,r042,r043,r044,r045,r046,r052,r053,r054,r055,r056,r062,r063,r064,r065,r066,r072,r073,r074,r075,r076,r082,r083,r084,r085,r086,r092,r093,r094,r095,r096,r102,r103,r104,r105,r106,r112,r113,r114,r115,r116,r122,r123,r124,r125,r126 = cache
+
+  b1Θdiff  = @evalpoly(Θ, r011, 2*r012, 3*r013, 4*r014, 5*r015, 6*r016)
+  b4Θdiff  = @evalpoly(Θ,    0, 2*r042, 3*r043, 4*r044, 5*r045, 6*r046)
+  b5Θdiff  = @evalpoly(Θ,    0, 2*r052, 3*r053, 4*r054, 5*r055, 6*r056)
+  b6Θdiff  = @evalpoly(Θ,    0, 2*r062, 3*r063, 4*r064, 5*r065, 6*r066)
+  b7Θdiff  = @evalpoly(Θ,    0, 2*r072, 3*r073, 4*r074, 5*r075, 6*r076)
+  b8Θdiff  = @evalpoly(Θ,    0, 2*r082, 3*r083, 4*r084, 5*r085, 6*r086)
+  b9Θdiff  = @evalpoly(Θ,    0, 2*r092, 3*r093, 4*r094, 5*r095, 6*r096)
+  b10Θdiff = @evalpoly(Θ,    0, 2*r102, 3*r103, 4*r104, 5*r105, 6*r106)
+  b11Θdiff = @evalpoly(Θ,    0, 2*r112, 3*r113, 4*r114, 5*r115, 6*r116)
+  b12Θdiff = @evalpoly(Θ,    0, 2*r122, 3*r123, 4*r124, 5*r125, 6*r126)
+
+  k[1]*b1Θdiff + k[4]*b4Θdiff + k[5]*b5Θdiff + k[6]*b6Θdiff + k[7]*b7Θdiff + k[8]*b8Θdiff + k[9]*b9Θdiff + k[10]*b10Θdiff + k[11]*b11Θdiff + k[12]*b12Θdiff
 end
 
 """
@@ -316,6 +402,29 @@ end
   y₀ + dt*(k[1]*b1Θ + k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ + k[10]*b10Θ + k[11]*b11Θ + k[12]*b12Θ + k[14]*b14Θ + k[15]*b15Θ + k[16]*b16Θ + k[17]*b17Θ + k[18]*b18Θ + k[19]*b19Θ + k[20]*b20Θ + k[21]*b21Θ)
 end
 
+@inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern8ConstantCache,idxs,T::Type{Val{1}})
+  @unpack r011,r012,r013,r014,r015,r016,r017,r018,r062,r063,r064,r065,r066,r067,r068,r072,r073,r074,r075,r076,r077,r078,r082,r083,r084,r085,r086,r087,r088,r092,r093,r094,r095,r096,r097,r098,r102,r103,r104,r105,r106,r107,r108,r112,r113,r114,r115,r116,r117,r118,r122,r123,r124,r125,r126,r127,r128,r142,r143,r144,r145,r146,r147,r148,r152,r153,r154,r155,r156,r157,r158,r162,r163,r164,r165,r166,r167,r168,r172,r173,r174,r175,r176,r177,r178,r182,r183,r184,r185,r186,r187,r188,r192,r193,r194,r195,r196,r197,r198,r202,r203,r204,r205,r206,r207,r208,r212,r213,r214,r215,r216,r217,r218 = cache
+
+  b1Θdiff  = @evalpoly(Θ, r011, 2*r012, 3*r013, 4*r014, 5*r015, 6*r016, 7*r017, 8*r018)
+  b6Θdiff  = @evalpoly(Θ,    0, 2*r062, 3*r063, 4*r064, 5*r065, 6*r066, 7*r067, 8*r068)
+  b7Θdiff  = @evalpoly(Θ,    0, 2*r072, 3*r073, 4*r074, 5*r075, 6*r076, 7*r077, 8*r078)
+  b8Θdiff  = @evalpoly(Θ,    0, 2*r082, 3*r083, 4*r084, 5*r085, 6*r086, 7*r087, 8*r088)
+  b9Θdiff  = @evalpoly(Θ,    0, 2*r092, 3*r093, 4*r094, 5*r095, 6*r096, 7*r097, 8*r098)
+  b10Θdiff = @evalpoly(Θ,    0, 2*r102, 3*r103, 4*r104, 5*r105, 6*r106, 7*r107, 8*r108)
+  b11Θdiff = @evalpoly(Θ,    0, 2*r112, 3*r113, 4*r114, 5*r115, 6*r116, 7*r117, 8*r118)
+  b12Θdiff = @evalpoly(Θ,    0, 2*r122, 3*r123, 4*r124, 5*r125, 6*r126, 7*r127, 8*r128)
+  b14Θdiff = @evalpoly(Θ,    0, 2*r142, 3*r143, 4*r144, 5*r145, 6*r146, 7*r147, 8*r148)
+  b15Θdiff = @evalpoly(Θ,    0, 2*r152, 3*r153, 4*r154, 5*r155, 6*r156, 7*r157, 8*r158)
+  b16Θdiff = @evalpoly(Θ,    0, 2*r162, 3*r163, 4*r164, 5*r165, 6*r166, 7*r167, 8*r168)
+  b17Θdiff = @evalpoly(Θ,    0, 2*r172, 3*r173, 4*r174, 5*r175, 6*r176, 7*r177, 8*r178)
+  b18Θdiff = @evalpoly(Θ,    0, 2*r182, 3*r183, 4*r184, 5*r185, 6*r186, 7*r187, 8*r188)
+  b19Θdiff = @evalpoly(Θ,    0, 2*r192, 3*r193, 4*r194, 5*r195, 6*r196, 7*r197, 8*r198)
+  b20Θdiff = @evalpoly(Θ,    0, 2*r202, 3*r203, 4*r204, 5*r205, 6*r206, 7*r207, 8*r208)
+  b21Θdiff = @evalpoly(Θ,    0, 2*r212, 3*r213, 4*r214, 5*r215, 6*r216, 7*r217, 8*r218)
+
+  k[1]*b1Θdiff + k[6]*b6Θdiff + k[7]*b7Θdiff + k[8]*b8Θdiff + k[9]*b9Θdiff + k[10]*b10Θdiff + k[11]*b11Θdiff + k[12]*b12Θdiff + k[14]*b14Θdiff + k[15]*b15Θdiff + k[16]*b16Θdiff + k[17]*b17Θdiff + k[18]*b18Θdiff + k[19]*b19Θdiff + k[20]*b20Θdiff + k[21]*b21Θdiff
+end
+
 """
 
 """
@@ -344,6 +453,35 @@ end
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = y₀[i] + dt*(k[1][i]*b1Θ + k[6][i]*b6Θ + k[7][i]*b7Θ + k[8][i]*b8Θ + k[9][i]*b9Θ + k[10][i]*b10Θ + k[11][i]*b11Θ + k[12][i]*b12Θ + k[14][i]*b14Θ + k[15][i]*b15Θ + k[16][i]*b16Θ + k[17][i]*b17Θ + k[18][i]*b18Θ + k[19][i]*b19Θ + k[20][i]*b20Θ + k[21][i]*b21Θ)
+    end
+  end
+end
+
+@inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Vern8Cache,idxs,T::Type{Val{1}})
+  @unpack r011,r012,r013,r014,r015,r016,r017,r018,r062,r063,r064,r065,r066,r067,r068,r072,r073,r074,r075,r076,r077,r078,r082,r083,r084,r085,r086,r087,r088,r092,r093,r094,r095,r096,r097,r098,r102,r103,r104,r105,r106,r107,r108,r112,r113,r114,r115,r116,r117,r118,r122,r123,r124,r125,r126,r127,r128,r142,r143,r144,r145,r146,r147,r148,r152,r153,r154,r155,r156,r157,r158,r162,r163,r164,r165,r166,r167,r168,r172,r173,r174,r175,r176,r177,r178,r182,r183,r184,r185,r186,r187,r188,r192,r193,r194,r195,r196,r197,r198,r202,r203,r204,r205,r206,r207,r208,r212,r213,r214,r215,r216,r217,r218 = cache.tab
+
+  b1Θdiff  = @evalpoly(Θ, r011, 2*r012, 3*r013, 4*r014, 5*r015, 6*r016, 7*r017, 8*r018)
+  b6Θdiff  = @evalpoly(Θ,    0, 2*r062, 3*r063, 4*r064, 5*r065, 6*r066, 7*r067, 8*r068)
+  b7Θdiff  = @evalpoly(Θ,    0, 2*r072, 3*r073, 4*r074, 5*r075, 6*r076, 7*r077, 8*r078)
+  b8Θdiff  = @evalpoly(Θ,    0, 2*r082, 3*r083, 4*r084, 5*r085, 6*r086, 7*r087, 8*r088)
+  b9Θdiff  = @evalpoly(Θ,    0, 2*r092, 3*r093, 4*r094, 5*r095, 6*r096, 7*r097, 8*r098)
+  b10Θdiff = @evalpoly(Θ,    0, 2*r102, 3*r103, 4*r104, 5*r105, 6*r106, 7*r107, 8*r108)
+  b11Θdiff = @evalpoly(Θ,    0, 2*r112, 3*r113, 4*r114, 5*r115, 6*r116, 7*r117, 8*r118)
+  b12Θdiff = @evalpoly(Θ,    0, 2*r122, 3*r123, 4*r124, 5*r125, 6*r126, 7*r127, 8*r128)
+  b14Θdiff = @evalpoly(Θ,    0, 2*r142, 3*r143, 4*r144, 5*r145, 6*r146, 7*r147, 8*r148)
+  b15Θdiff = @evalpoly(Θ,    0, 2*r152, 3*r153, 4*r154, 5*r155, 6*r156, 7*r157, 8*r158)
+  b16Θdiff = @evalpoly(Θ,    0, 2*r162, 3*r163, 4*r164, 5*r165, 6*r166, 7*r167, 8*r168)
+  b17Θdiff = @evalpoly(Θ,    0, 2*r172, 3*r173, 4*r174, 5*r175, 6*r176, 7*r177, 8*r178)
+  b18Θdiff = @evalpoly(Θ,    0, 2*r182, 3*r183, 4*r184, 5*r185, 6*r186, 7*r187, 8*r188)
+  b19Θdiff = @evalpoly(Θ,    0, 2*r192, 3*r193, 4*r194, 5*r195, 6*r196, 7*r197, 8*r198)
+  b20Θdiff = @evalpoly(Θ,    0, 2*r202, 3*r203, 4*r204, 5*r205, 6*r206, 7*r207, 8*r208)
+  b21Θdiff = @evalpoly(Θ,    0, 2*r212, 3*r213, 4*r214, 5*r215, 6*r216, 7*r217, 8*r218)
+
+  if out == nothing
+    return k[1][idx]*b1Θdiff + k[6][idx]*b6Θdiff + k[7][idx]*b7Θdiff + k[8][idx]*b8Θdiff + k[9][idx]*b9Θdiff + k[10][idx]*b10Θdiff + k[11][idx]*b11Θdiff + k[12][idx]*b12Θdiff + k[14][idx]*b14Θdiff + k[15][idx]*b15Θdiff + k[16][idx]*b16Θdiff + k[17][idx]*b17Θdiff + k[18][idx]*b18Θdiff + k[19][idx]*b19Θdiff + k[20][idx]*b20Θdiff + k[21][idx]*b21Θdiff
+  else
+    @inbounds for (j,i) in enumerate(idxs)
+      out[j] = k[1][i]*b1Θdiff + k[6][i]*b6Θdiff + k[7][i]*b7Θdiff + k[8][i]*b8Θdiff + k[9][i]*b9Θdiff + k[10][i]*b10Θdiff + k[11][i]*b11Θdiff + k[12][i]*b12Θdiff + k[14][i]*b14Θdiff + k[15][i]*b15Θdiff + k[16][i]*b16Θdiff + k[17][i]*b17Θdiff + k[18][i]*b18Θdiff + k[19][i]*b19Θdiff + k[20][i]*b20Θdiff + k[21][i]*b21Θdiff
     end
   end
 end
