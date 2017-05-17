@@ -287,6 +287,12 @@ interpd_1d_long = sol(0:1//2^(7):1)
 
 sol2 =solve(prob,BS5(),dt=1//2^(7),dense=true,adaptive=false)
 
+diff_test_points = linspace(0,1,10)
+for t in diff_test_points
+  deriv = sol(t,Val{1})
+  @test deriv ≈ ForwardDiff.derivative(sol,t)
+end
+
 @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd_1d_long)) < 2e-7
 
 # plot(sol2.t,interpd)
