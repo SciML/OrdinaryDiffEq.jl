@@ -1,6 +1,6 @@
 function ode_determine_initdt{tType,uType}(u0,t::tType,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,true},order)
   f = prob.f
-  f₀ = similar(u0./t); f₁ = similar(u0./t); u₁ = similar(u0)
+  f₀ = zeros(u0./t); f₁ = zeros(u0./t); u₁ = zeros(u0)
   sk = abstol+abs.(u0).*reltol
   d₀ = internalnorm(u0./sk)
   f(t,u0,f₀)
