@@ -24,7 +24,7 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
 @inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DP5Cache,idxs,T::Type{Val{0}})
   Θ1 = 1-Θ
   if out == nothing
-    return y₀[idx] + dt*Θ*(k[1][idx]+Θ1*(k[2][idx]+Θ*(k[3][i]+Θ1*k[4][idx])))
+    return y₀[idxs] + dt*Θ*(k[1][idxs]+Θ1*(k[2][idxs]+Θ*(k[3][i]+Θ1*k[4][idxs])))
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = y₀[i] + dt*Θ*(k[1][i]+Θ1*(k[2][i]+Θ*(k[3][i]+Θ1*k[4][i])))
@@ -34,7 +34,7 @@ end
 
 @inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DP5Cache,idxs,T::Type{Val{1}})
   if out == nothing
-    return k[1][idx] + k[2][idx]*(1 - 2*Θ) + Θ*(2*k[3][idx] + 2*k[4][idx] + Θ*(-3*k[3][idx] - 6*k[4][idx] + 4*k[4][idx]*Θ))
+    return k[1][idxs] + k[2][idxs]*(1 - 2*Θ) + Θ*(2*k[3][idxs] + 2*k[4][idxs] + Θ*(-3*k[3][idxs] - 6*k[4][idxs] + 4*k[4][idxs]*Θ))
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = k[1][i] + k[2][i]*(1 - 2*Θ) + Θ*(2*k[3][i] + 2*k[4][i] + Θ*(-3*k[3][i] - 6*k[4][i] + 4*k[4][i]*Θ))
@@ -48,7 +48,7 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
 @inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DP5ThreadedCache,idxs,T::Type{Val{0}})
   Θ1 = 1-Θ
   if out == nothing
-    return y₀[idxs] + dt*(c1*k[1][idxs] + c2*k[2][idxs])
+    return y₀[idxs] + dt*Θ*(k[1][idxs]+Θ1*(k[2][idxs]+Θ*(k[3][idxs]+Θ1*k[4][idxs])))
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = y₀[i] + dt*Θ*(k[1][i]+Θ1*(k[2][i]+Θ*(k[3][i]+Θ1*k[4][i])))
@@ -58,7 +58,7 @@ end
 
 @inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DP5ThreadedCache,idxs,T::Type{Val{1}})
   if out == nothing
-    return k[1][idx] + k[2][idx]*(1 - 2*Θ) + Θ*(2*k[3][idx] + 2*k[4][idx] + Θ*(-3*k[3][idx] - 6*k[4][idx] + 4*k[4][idx]*Θ))
+    return k[1][idxs] + k[2][idxs]*(1 - 2*Θ) + Θ*(2*k[3][idxs] + 2*k[4][idxs] + Θ*(-3*k[3][idxs] - 6*k[4][idxs] + 4*k[4][idxs]*Θ))
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = k[1][i] + k[2][i]*(1 - 2*Θ) + Θ*(2*k[3][i] + 2*k[4][i] + Θ*(-3*k[3][i] - 6*k[4][i] + 4*k[4][i]*Θ))
@@ -279,7 +279,7 @@ end
   b12Θdiff = @evalpoly(Θ,    0, 2*r122, 3*r123, 4*r124, 5*r125, 6*r126)
 
   if out == nothing
-    return k[1][idx]*b1Θdiff + k[4][idx]*b4Θdiff + k[5][idx]*b5Θdiff + k[6][idx]*b6Θdiff + k[7][idx]*b7Θdiff + k[8][idx]*b8Θdiff + k[9][idx]*b9Θdiff + k[10][idx]*b10Θdiff + k[11][idx]*b11Θdiff + k[12][idx]*b12Θdiff
+    return k[1][idxs]*b1Θdiff + k[4][idxs]*b4Θdiff + k[5][idxs]*b5Θdiff + k[6][idxs]*b6Θdiff + k[7][idxs]*b7Θdiff + k[8][idxs]*b8Θdiff + k[9][idxs]*b9Θdiff + k[10][idxs]*b10Θdiff + k[11][idxs]*b11Θdiff + k[12][idxs]*b12Θdiff
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = k[1][i]*b1Θdiff + k[4][i]*b4Θdiff + k[5][i]*b5Θdiff + k[6][i]*b6Θdiff + k[7][i]*b7Θdiff + k[8][i]*b8Θdiff + k[9][i]*b9Θdiff + k[10][i]*b10Θdiff + k[11][i]*b11Θdiff + k[12][i]*b12Θdiff
@@ -478,7 +478,7 @@ end
   b21Θdiff = @evalpoly(Θ,    0, 2*r212, 3*r213, 4*r214, 5*r215, 6*r216, 7*r217, 8*r218)
 
   if out == nothing
-    return k[1][idx]*b1Θdiff + k[6][idx]*b6Θdiff + k[7][idx]*b7Θdiff + k[8][idx]*b8Θdiff + k[9][idx]*b9Θdiff + k[10][idx]*b10Θdiff + k[11][idx]*b11Θdiff + k[12][idx]*b12Θdiff + k[14][idx]*b14Θdiff + k[15][idx]*b15Θdiff + k[16][idx]*b16Θdiff + k[17][idx]*b17Θdiff + k[18][idx]*b18Θdiff + k[19][idx]*b19Θdiff + k[20][idx]*b20Θdiff + k[21][idx]*b21Θdiff
+    return k[1][idxs]*b1Θdiff + k[6][idxs]*b6Θdiff + k[7][idxs]*b7Θdiff + k[8][idxs]*b8Θdiff + k[9][idxs]*b9Θdiff + k[10][idxs]*b10Θdiff + k[11][idxs]*b11Θdiff + k[12][idxs]*b12Θdiff + k[14][idxs]*b14Θdiff + k[15][idxs]*b15Θdiff + k[16][idxs]*b16Θdiff + k[17][idxs]*b17Θdiff + k[18][idxs]*b18Θdiff + k[19][idxs]*b19Θdiff + k[20][idxs]*b20Θdiff + k[21][idxs]*b21Θdiff
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = k[1][i]*b1Θdiff + k[6][i]*b6Θdiff + k[7][i]*b7Θdiff + k[8][i]*b8Θdiff + k[9][i]*b9Θdiff + k[10][i]*b10Θdiff + k[11][i]*b11Θdiff + k[12][i]*b12Θdiff + k[14][i]*b14Θdiff + k[15][i]*b15Θdiff + k[16][i]*b16Θdiff + k[17][i]*b17Θdiff + k[18][i]*b18Θdiff + k[19][i]*b19Θdiff + k[20][i]*b20Θdiff + k[21][i]*b21Θdiff
