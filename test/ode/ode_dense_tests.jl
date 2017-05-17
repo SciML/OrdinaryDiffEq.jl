@@ -3,7 +3,7 @@ using Calculus, ForwardDiff
 
 
 # use `PRINT_TESTS = true` to print the tests, including results
-const PRINT_TESTS = true
+const PRINT_TESTS = false
 print_results(x) = if PRINT_TESTS; @printf("%s \n", x) end
 
 
