@@ -15,16 +15,26 @@ for idx in eachindex(interpolation_results_2d)
   interpolation_results_2d[idx] = zeros(prob_ode_2Dlinear.u0)
 end
 
+const deriv_test_points = linspace(0,1,10)
+
 # perform the regression tests
 # NOTE: If you want to add new tests (for new algorithms), you have to run the
 #       commands below to get numerical values for `tol_ode_linear` and
 #       `tol_ode_2Dlinear`.
-function regression_test(alg, tol_ode_linear, tol_ode_2Dlinear)
+function regression_test(alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = false)
   PRINT_TESTS && println("\n", alg)
 
   sol  = solve(prob_ode_linear, alg, dt=1//2^(2), dense=true)
   sol(interpolation_results_1d, interpolation_points)
   sol(interpolation_points[1])
+
+  if test_diff1
+    for t in deriv_test_points
+      deriv = sol(t,Val{1})
+      @test deriv ≈ ForwardDiff.derivative(sol,t)
+    end
+  end
+
   sol2 = solve(prob_ode_linear, alg, dt=1//2^(4), dense=true, adaptive=false)
   print_results( @test maximum(abs.(sol2[:] - interpolation_results_1d)) < tol_ode_linear )
 
@@ -92,13 +102,13 @@ regression_test(SSPRK104(), 1.5e-5, 3e-5)
 regression_test(RK4(), 4.5e-5, 1e-4)
 
 # DP5
-regression_test(DP5(), 5e-6, 1e-5)
+regression_test(DP5(), 5e-6, 1e-5; test_diff1 = true)
 
 # BS3
 regression_test(BS3(), 5e-4, 8e-4)
 
 # Tsit5
-regression_test(Tsit5(), 2e-6, 4e-6)
+regression_test(Tsit5(), 2e-6, 4e-6; test_diff1 = true)
 
 # TanYam7
 regression_test(TanYam7(), 4e-4, 6e-4)
@@ -110,7 +120,7 @@ regression_test(TsitPap8(), 1e-3, 3e-3)
 regression_test(Feagin10(), 6e-4, 9e-4)
 
 # Vern6
-regression_test(Vern6(), 7e-8, 7e-8)
+regression_test(Vern6(), 7e-8, 7e-8; test_diff1 = true)
 
 const linear_bigα = parse(BigFloat, "1.01")
 f = (t,u) -> (linear_bigα*u)
@@ -130,7 +140,7 @@ sol2 = solve(prob, Vern6(), dt=1//2^(4), dense=true, adaptive=false)
 print_results( @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd_big)) < 5e-8 )
 
 # BS5
-regression_test(BS5(), 4e-8, 6e-8)
+regression_test(BS5(), 4e-8, 6e-8; test_diff1 = true)
 
 prob = prob_ode_linear
 sol  = solve(prob, BS5(), dt=1//2^(1), dense=true, adaptive=false)
@@ -139,32 +149,16 @@ sol2 = solve(prob, BS5(), dt=1//2^(7), dense=true, adaptive=false)
 print_results( @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd_1d_long)) < 2e-7 )
 
 # Vern7
-regression_test(Vern7(), 3e-9, 5e-9)
+regression_test(Vern7(), 3e-9, 5e-9; test_diff1 = true)
 
 # Vern8
-regression_test(Vern8(), 3e-8, 5e-8)
+regression_test(Vern8(), 3e-8, 5e-8; test_diff1 = true)
 
 # Vern9
-regression_test(Vern9(), 1e-9, 2e-9)
+regression_test(Vern9(), 1e-9, 2e-9; test_diff1 = true)
 
 # Rosenbrock23
-regression_test(Rosenbrock23(), 3e-3, 6e-3)
-
-prob = prob_ode_linear
-sol  = solve(prob, Rosenbrock23(), dt=1//2^(12), dense=true)
-sol(0:1//2^(4):1)
-sol(0:1//2^(4):1,Val{1})
-
-const deriv_test_points = linspace(0,1,10)
-for t in deriv_test_points
-  deriv = sol(t,Val{1})
-  if t == 0
-    #@test deriv ≈ derivative(sol,0.00,:forward)
-  elseif t != 1
-    #@test deriv ≈ derivative(sol,t)
-  end
-  @test deriv ≈ ForwardDiff.derivative(sol,t)
-end
+regression_test(Rosenbrock23(), 3e-3, 6e-3; test_diff1 = true)
 
 # Rosenbrock32
 regression_test(Rosenbrock32(), 4e-4, 6e-4)
@@ -176,7 +170,7 @@ regression_test(ImplicitEuler(), 0.2, 0.354)
 regression_test(Trapezoid(), 7e-3, 1.4e-2)
 
 # DP8
-regression_test(DP8(), 2e-7, 3e-7)
+regression_test(DP8(), 2e-7, 3e-7; test_diff1 = true)
 
 prob = prob_ode_linear
 sol  = solve(prob, DP8(), dt=1//2^(2), dense=true)
