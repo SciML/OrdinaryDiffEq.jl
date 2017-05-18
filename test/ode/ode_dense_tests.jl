@@ -14,6 +14,7 @@ const interpolation_results_2d = Vector{typeof(prob_ode_2Dlinear.u0)}(length(int
 for idx in eachindex(interpolation_results_2d)
   interpolation_results_2d[idx] = zeros(prob_ode_2Dlinear.u0)
 end
+
 const deriv_test_points = linspace(0,1,10)
 
 # perform the regression tests
