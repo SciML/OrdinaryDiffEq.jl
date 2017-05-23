@@ -4,7 +4,7 @@ immutable DiffCache{T, S}
 end
 
 Base.@pure function DiffCache{chunk_size}(T, length, ::Type{Val{chunk_size}})
-    DiffCache(zeros(T, length), zeros(Dual{chunk_size, T}, length))
+    DiffCache(zeros(T, length), zeros(Dual{:DiffEqNLSolve,T,chunk_size}, length))
 end
 
 Base.@pure DiffCache(u::AbstractArray) = DiffCache(eltype(u),length(u),Val{ForwardDiff.pickchunksize(length(u))})
@@ -30,7 +30,7 @@ function autodiff_setup{CS}(f!, initial_x::Vector,chunk_size::Type{Val{CS}})
     permf! = (fx, x) -> f!(x, fx)
 
     fx2 = copy(initial_x)
-    jac_cfg = ForwardDiff.JacobianConfig{CS}(initial_x, initial_x)
+    jac_cfg = ForwardDiff.JacobianConfig(:DiffEqNLSolve, initial_x, ForwardDiff.Chunk{CS}())
     g! = (x, gx) -> ForwardDiff.jacobian!(gx, permf!, fx2, x, jac_cfg)
 
     fg! = (x, fx, gx) -> begin

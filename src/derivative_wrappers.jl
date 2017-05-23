@@ -17,12 +17,12 @@ function (p::VectorFReturn)(t,uprev,du)
   vec(du)
 end
 
-type TimeGradientWrapper{VFType,uType,rateType} <: Function
+type TimeGradientWrapper{VFType,uType} <: Function
   vf::VFType
   uprev::uType
-  du2::rateType
 end
-(p::TimeGradientWrapper)(t) = p.vf(t,p.uprev,p.du2)
+(p::TimeGradientWrapper)(t) = (du2 = similar(p.uprev); p.vf(t,p.uprev,du2); du2)
+(p::TimeGradientWrapper)(du2,t) = p.vf(t,p.uprev,du2)
 
 type UJacobianWrapper{VFRType,tType} <: Function
   vfr::VFRType
