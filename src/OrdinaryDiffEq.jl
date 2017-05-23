@@ -12,8 +12,10 @@ module OrdinaryDiffEq
   # Internal utils
   import DiffEqBase: realtype, ODE_DEFAULT_NORM, ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE, ODE_DEFAULT_UNSTABLE_CHECK
 
+  import RecursiveArrayTools: chain
+
   using Parameters, GenericSVD, ForwardDiff, RecursiveArrayTools,
-        NLsolve, Juno, Calculus, Roots, DataStructures, Iterators, StaticArrays
+        NLsolve, Juno, Calculus, Roots, DataStructures, StaticArrays
 
   import Base: linspace
 

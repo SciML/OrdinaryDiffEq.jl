@@ -1010,7 +1010,7 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,tTypeNoUnit
   tf = TimeGradientWrapper(vf,uprev)
   uf = UJacobianWrapper(vfr,t)
   linsolve_tmp = vec(similar(u,indices(u)))
-  jac_config = ForwardDiff.JacobianConfig{determine_chunksize(u,alg)}(vec(du1),vec(uprev))
+  jac_config = ForwardDiff.JacobianConfig(uf,vec(du1),vec(uprev),ForwardDiff.Chunk{determine_chunksize(u,alg)}())
   Rosenbrock23Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,
                     fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,alg.linsolve,
                     jac_config)
@@ -1038,7 +1038,7 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,tTypeNoUnit
   tf = TimeGradientWrapper(vf,uprev)
   uf = UJacobianWrapper(vfr,t)
   linsolve_tmp = vec(similar(u,indices(u)))
-  jac_config = ForwardDiff.JacobianConfig{determine_chunksize(u,alg)}(vec(du1),vec(uprev))
+  jac_config = ForwardDiff.JacobianConfig(uf,vec(du1),vec(uprev),ForwardDiff.Chunk{determine_chunksize(u,alg)}())
   Rosenbrock32Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,alg.linsolve,jac_config)
 end
 
