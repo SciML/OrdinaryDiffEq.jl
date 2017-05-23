@@ -25,7 +25,7 @@ end
     f(Val{:tgrad},t,u,dT)
   else
     if alg_autodiff(integrator.alg)
-      dT = ForwardDiff.derivative(tf,t) # Should update to inplace, https://github.com/JuliaDiff/ForwardDiff.jl/pull/219
+      ForwardDiff.derivative!(dT,tf,vec(du2),t) # Should update to inplace, https://github.com/JuliaDiff/ForwardDiff.jl/pull/219
     else
       dT = Calculus.finite_difference(tf,t,integrator.alg.diff_type)
     end
@@ -126,7 +126,7 @@ end
     f(Val{:tgrad},t,u,dT)
   else
     if alg_autodiff(integrator.alg)
-      dT = ForwardDiff.derivative(tf,t) # Should update to inplace, https://github.com/JuliaDiff/ForwardDiff.jl/pull/219
+      ForwardDiff.derivative!(dT,tf,vec(du2),t) # Should update to inplace, https://github.com/JuliaDiff/ForwardDiff.jl/pull/219
     else
       dT = Calculus.finite_difference(tf,t,integrator.alg.diff_type)
     end
