@@ -12,7 +12,7 @@ function ode_determine_initdt{tType,uType}(u0,t::tType,tdir,dtmax,abstol,reltol,
   else
     dt₀ = tType((d₀/d₁)/100)
   end
-  dt₀ = min(dt₀,dtmax)
+  dt₀ = min(dt₀,tdir*dtmax)
   @inbounds for i in eachindex(u0)
      u₁[i] = u0[i] + tdir*dt₀*f₀[i]
   end
@@ -26,7 +26,7 @@ function ode_determine_initdt{tType,uType}(u0,t::tType,tdir,dtmax,abstol,reltol,
   else
     dt₁ = tType(10.0^(-(2+log10(unitless_max))/(order)))
   end
-  dt = tdir*min(100dt₀,dt₁,dtmax)
+  dt = tdir*min(100dt₀,dt₁,tdir*dtmax)
 end
 
 function ode_determine_initdt{uType,tType}(u0::uType,t,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,false},order)
@@ -42,7 +42,7 @@ function ode_determine_initdt{uType,tType}(u0::uType,t,tdir,dtmax,abstol,reltol,
   else
     dt₀ = tType((d₀/d₁)/100)
   end
-  dt₀ = min(dt₀,dtmax)
+  dt₀ = min(dt₀,tdir*dtmax)
   u₁ = u0 + tdir*dt₀*f₀
   f₁ = f(t+tdir*dt₀,u₁)
   d₂ = internalnorm((f₁-f₀)./(abstol+abs.(u0).*reltol))/dt₀*tType(1)
@@ -51,5 +51,5 @@ function ode_determine_initdt{uType,tType}(u0::uType,t,tdir,dtmax,abstol,reltol,
   else
     dt₁ = tType(10.0^(-(2+log10(max(d₁,d₂)/T1(1)))/(order)))
   end
-  dt = tdir*min(100dt₀,dt₁,dtmax)
+  dt = tdir*min(100dt₀,dt₁,tdir*dtmax)
 end
