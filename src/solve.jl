@@ -147,9 +147,6 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     dt *= tdir # Allow positive dt, but auto-convert
   end
 
-  dt = tdir*min(abs(dtmax),abs(dt))
-  dt = tdir*max(abs(dt),abs(dtmin))
-
   if typeof(u) <: Union{AbstractArray,Tuple}
     rate_prototype = similar(u/zero(t),indices(u)) # rate doesn't need type info
   else

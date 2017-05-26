@@ -13,6 +13,8 @@ sol =solve(prob,RK4(),dt=1//3,tstops=[1/2])
 
 @test sol.t == [0,1/3,1/2,1/3+1/2,1]
 
+integrator = init(prob,RK4(),tstops=[1/5,1/4,1/3,1/2,3/4])
+
 sol =solve(prob,RK4(),tstops=[1/5,1/4,1/3,1/2,3/4])
 
 @test sol.t == [0,1/5,1/4,1/3,1/2,3/4,1]
