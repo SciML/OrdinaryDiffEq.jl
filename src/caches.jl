@@ -992,11 +992,7 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,tTypeNoUnit
   k₂ = zeros(rate_prototype)
   k₃ = zeros(rate_prototype)
   du1 = zeros(rate_prototype)
-  if alg_autodiff(alg)
-    du2 = zeros(Dual{determine_chunksize(u,alg), eltype(u)}, length(u))
-  else
-    du2 = zeros(rate_prototype)
-  end
+  du2 = zeros(rate_prototype)
   # f₀ = similar(u) fsalfirst
   f₁ = zeros(rate_prototype)
   vectmp = vec(similar(u,indices(u)))
@@ -1011,10 +1007,10 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,tTypeNoUnit
   tab = Rosenbrock23ConstantCache(uEltypeNoUnits,identity,identity)
   vf = VectorF(f,size(u))
   vfr = VectorFReturn(f,size(u))
-  tf = TimeGradientWrapper(vf,uprev,du2)
+  tf = TimeGradientWrapper(vf,uprev)
   uf = UJacobianWrapper(vfr,t)
   linsolve_tmp = vec(similar(u,indices(u)))
-  jac_config = ForwardDiff.JacobianConfig{determine_chunksize(u,alg)}(vec(du1),vec(uprev))
+  jac_config = ForwardDiff.JacobianConfig(uf,vec(du1),vec(uprev),ForwardDiff.Chunk{determine_chunksize(u,alg)}())
   Rosenbrock23Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,
                     fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,alg.linsolve,
                     jac_config)
@@ -1025,11 +1021,7 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,tTypeNoUnit
   k₂ = zeros(rate_prototype)
   k₃ = zeros(rate_prototype)
   du1 = zeros(rate_prototype)
-  if alg_autodiff(alg)
-    du2 = zeros(Dual{determine_chunksize(u,alg), eltype(u)}, length(u))
-  else
-    du2 = zeros(rate_prototype)
-  end
+  du2 = zeros(rate_prototype)
   # f₀ = similar(u) fsalfirst
   f₁ = zeros(rate_prototype)
   vectmp = vec(similar(u,indices(u)))
@@ -1043,10 +1035,10 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,tTypeNoUnit
   tab = Rosenbrock32ConstantCache(uEltypeNoUnits,identity,identity)
   vf = VectorF(f,size(u))
   vfr = VectorFReturn(f,size(u))
-  tf = TimeGradientWrapper(vf,uprev,du2)
+  tf = TimeGradientWrapper(vf,uprev)
   uf = UJacobianWrapper(vfr,t)
   linsolve_tmp = vec(similar(u,indices(u)))
-  jac_config = ForwardDiff.JacobianConfig{determine_chunksize(u,alg)}(vec(du1),vec(uprev))
+  jac_config = ForwardDiff.JacobianConfig(uf,vec(du1),vec(uprev),ForwardDiff.Chunk{determine_chunksize(u,alg)}())
   Rosenbrock32Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,alg.linsolve,jac_config)
 end
 
