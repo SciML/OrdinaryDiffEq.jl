@@ -62,7 +62,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
 
   t = tspan[1]
 
-  if (!(typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm) && !(typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm)) && dt == tType(0) && isempty(tstops)
+  if ((!(typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm) && !(typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm)) || !adaptive) && dt == tType(0) && isempty(tstops)
       error("Fixed timestep methods require a choice of dt or choosing the tstops")
   end
 
