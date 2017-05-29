@@ -36,13 +36,17 @@ function regression_test(alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = fal
   end
 
   sol2 = solve(prob_ode_linear, alg, dt=1//2^(4), dense=true, adaptive=false)
-  print_results( @test maximum(abs.(sol2[:] - interpolation_results_1d)) < tol_ode_linear )
+  for i in eachindex(sol2)
+    print_results( @test maximum(abs.(sol2[i] - interpolation_results_1d[i])) < tol_ode_linear )
+  end
 
   sol  = solve(prob_ode_2Dlinear, alg, dt=1//2^(2), dense=true)
   sol(interpolation_results_2d,  interpolation_points)
   sol(interpolation_points[1])
   sol2 = solve(prob_ode_2Dlinear, alg, dt=1//2^(4), dense=true, adaptive=false)
-  print_results( @test maximum(maximum.(abs.(sol2[:] - interpolation_results_2d))) < tol_ode_2Dlinear)
+  for i in eachindex(sol2)
+    print_results( @test maximum(maximum.(abs.(sol2[i] - interpolation_results_2d[i]))) < tol_ode_2Dlinear)
+  end
 end
 
 
