@@ -11,11 +11,11 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
 """
 @inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP5ConstantCache,idxs,T::Type{Val{0}})
   Θ1 = 1-Θ
-  y₀ + dt*Θ*(k[1]+Θ1*(k[2]+Θ*(k[3]+Θ1*k[4])))
+  @. y₀ + dt*Θ*(k[1]+Θ1*(k[2]+Θ*(k[3]+Θ1*k[4])))
 end
 
 @inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP5ConstantCache,idxs,T::Type{Val{1}})
-  k[1] + k[2]*(1 - 2*Θ) + Θ*(2*k[3] + 2*k[4] + Θ*(-3*k[3] - 6*k[4] + 4*k[4]*Θ))
+  @. k[1] + k[2]*(1 - 2*Θ) + Θ*(2*k[3] + 2*k[4] + Θ*(-3*k[3] - 6*k[4] + 4*k[4]*Θ))
 end
 
 """
@@ -24,7 +24,9 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
 @inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DP5Cache,idxs,T::Type{Val{0}})
   Θ1 = 1-Θ
   if out == nothing
-    return y₀[idxs] + dt*Θ*(k[1][idxs]+Θ1*(k[2][idxs]+Θ*(k[3][i]+Θ1*k[4][idxs])))
+    return @. y₀[idxs] + dt*Θ*(k[1][idxs]+Θ1*(k[2][idxs]+Θ*(k[3][i]+Θ1*k[4][idxs])))
+  elseif idxs == nothing
+    @. out = y₀ + dt*Θ*(k[1]+Θ1*(k[2]+Θ*(k[3]+Θ1*k[4])))
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = y₀[i] + dt*Θ*(k[1][i]+Θ1*(k[2][i]+Θ*(k[3][i]+Θ1*k[4][i])))
@@ -35,6 +37,8 @@ end
 @inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DP5Cache,idxs,T::Type{Val{1}})
   if out == nothing
     return k[1][idxs] + k[2][idxs]*(1 - 2*Θ) + Θ*(2*k[3][idxs] + 2*k[4][idxs] + Θ*(-3*k[3][idxs] - 6*k[4][idxs] + 4*k[4][idxs]*Θ))
+  elseif idxs == nothing
+    @. out = k[1] + k[2]*(1 - 2*Θ) + Θ*(2*k[3] + 2*k[4] + Θ*(-3*k[3] - 6*k[4] + 4*k[4]*Θ))
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = k[1][i] + k[2][i]*(1 - 2*Θ) + Θ*(2*k[3][i] + 2*k[4][i] + Θ*(-3*k[3][i] - 6*k[4][i] + 4*k[4][i]*Θ))
@@ -49,6 +53,8 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
   Θ1 = 1-Θ
   if out == nothing
     return y₀[idxs] + dt*Θ*(k[1][idxs]+Θ1*(k[2][idxs]+Θ*(k[3][idxs]+Θ1*k[4][idxs])))
+  elseif idxs == nothing
+    @. out = y₀ + dt*Θ*(k[1]+Θ1*(k[2]+Θ*(k[3]+Θ1*k[4])))
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = y₀[i] + dt*Θ*(k[1][i]+Θ1*(k[2][i]+Θ*(k[3][i]+Θ1*k[4][i])))
@@ -59,6 +65,8 @@ end
 @inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DP5ThreadedCache,idxs,T::Type{Val{1}})
   if out == nothing
     return k[1][idxs] + k[2][idxs]*(1 - 2*Θ) + Θ*(2*k[3][idxs] + 2*k[4][idxs] + Θ*(-3*k[3][idxs] - 6*k[4][idxs] + 4*k[4][idxs]*Θ))
+  elseif idxs == nothing
+    @. out = k[1] + k[2]*(1 - 2*Θ) + Θ*(2*k[3] + 2*k[4] + Θ*(-3*k[3] - 6*k[4] + 4*k[4]*Θ))
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = k[1][i] + k[2][i]*(1 - 2*Θ) + Θ*(2*k[3][i] + 2*k[4][i] + Θ*(-3*k[3][i] - 6*k[4][i] + 4*k[4][i]*Θ))
@@ -73,7 +81,7 @@ From MATLAB ODE Suite by Shampine
   d = cache.d
   c1 = Θ*(1-Θ)/(1-2d)
   c2 = Θ*(Θ-2d)/(1-2d)
-  y₀ + dt*(c1*k[1] + c2*k[2])
+  @. y₀ + dt*(c1*k[1] + c2*k[2])
 end
 
 # First Derivative of the dense output
@@ -81,7 +89,7 @@ end
   d = cache.d
   c1diff = (1-2*Θ)/(1-2*d)
   c2diff = (2*Θ-2*d)/(1-2*d)
-  c1diff*k[1] + c2diff*k[2]
+  @. c1diff*k[1] + c2diff*k[2]
 end
 
 """
@@ -93,6 +101,8 @@ From MATLAB ODE Suite by Shampine
   c2 = Θ*(Θ-2d)/(1-2d)
   if out == nothing
     return y₀[idxs] + dt*(c1*k[1][idxs] + c2*k[2][idxs])
+  elseif idxs == nothing
+    @. out = y₀ + dt*(c1*k[1] + c2*k[2])
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = y₀[i] + dt*(c1*k[1][i] + c2*k[2][i])
@@ -106,6 +116,8 @@ end
   c2diff = (2*Θ-2*d)/(1-2*d)
   if out == nothing
     return c1diff*k[1][idxs] + c2diff*k[2][idxs]
+  elseif idxs == nothing
+    @. out = c1diff*k[1] + c2diff*k[2]
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = c1diff*k[1][i] + c2diff*k[2][i]
@@ -129,6 +141,8 @@ Ch. Tsitouras
   b7Θ = 2.5*(Θ - 1)*(Θ - 0.6)*Θ^2
   if out == nothing
     return y₀[idxs] + dt*(k[1][idxs]*b1Θ + k[2][idxs]*b2Θ + k[3][idxs]*b3Θ + k[4][idxs]*b4Θ + k[5][idxs]*b5Θ + k[6][idxs]*b6Θ + k[7][idxs]*b7Θ)
+  elseif idxs == nothing
+    @. out = y₀ + dt*(k[1]*b1Θ + k[2]*b2Θ + k[3]*b3Θ + k[4]*b4Θ + k[5]*b5Θ + k[6]*b6Θ + k[7]*b7Θ)
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = y₀[i] + dt*(k[1][i]*b1Θ + k[2][i]*b2Θ + k[3][i]*b3Θ + k[4][i]*b4Θ + k[5][i]*b5Θ + k[6][i]*b6Θ + k[7][i]*b7Θ)
@@ -146,6 +160,8 @@ end
   b7Θdiff = Θ*(3.0 + Θ*(-12.0 + 10.0*Θ))
   if out == nothing
     return k[1][idxs]*b1Θdiff + k[2][idxs]*b2Θdiff + k[3][idxs]*b3Θdiff + k[4][idxs]*b4Θdiff + k[5][idxs]*b5Θdiff + k[6][idxs]*b6Θdiff + k[7][idxs]*b7Θdiff
+  elseif idxs == nothing
+    @. out = k[1]*b1Θdiff + k[2]*b2Θdiff + k[3]*b3Θdiff + k[4]*b4Θdiff + k[5]*b5Θdiff + k[6]*b6Θdiff + k[7]*b7Θdiff
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = k[1][i]*b1Θdiff + k[2][i]*b2Θdiff + k[3][i]*b3Θdiff + k[4][i]*b4Θdiff + k[5][i]*b5Θdiff + k[6][i]*b6Θdiff + k[7][i]*b7Θdiff
@@ -167,7 +183,7 @@ Ch. Tsitouras
   b5Θ = 47.37952196281928122*(Θ - 1.203071208372362603)*(Θ - 0.658047292653547382)*Θ^2
   b6Θ = -34.87065786149660974*(Θ - 1.2)*(Θ - 0.666666666666666667)*Θ^2
   b7Θ = 2.5*(Θ - 1)*(Θ - 0.6)*Θ^2
-  y₀ + dt*(k[1]*b1Θ + k[2]*b2Θ + k[3]*b3Θ + k[4]*b4Θ + k[5]*b5Θ + k[6]*b6Θ + k[7]*b7Θ)
+  @. y₀ + dt*(k[1]*b1Θ + k[2]*b2Θ + k[3]*b3Θ + k[4]*b4Θ + k[5]*b5Θ + k[6]*b6Θ + k[7]*b7Θ)
 end
 
 @inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Tsit5ConstantCache,idxs,T::Type{Val{1}})
@@ -178,7 +194,7 @@ end
   b5Θdiff = Θ*(75.018626833022078 + Θ*(-264.53671468429920 + 189.518087851277125*Θ))
   b6Θdiff = Θ*(-55.79305257839457 + Θ*(195.27568402438104 - 139.48263144598644*Θ))
   b7Θdiff = Θ*(3.0 + Θ*(-12.0 + 10.0*Θ))
-  k[1]*b1Θdiff + k[2]*b2Θdiff + k[3]*b3Θdiff + k[4]*b4Θdiff + k[5]*b5Θdiff + k[6]*b6Θdiff + k[7]*b7Θdiff
+  @. k[1]*b1Θdiff + k[2]*b2Θdiff + k[3]*b3Θdiff + k[4]*b4Θdiff + k[5]*b5Θdiff + k[6]*b6Θdiff + k[7]*b7Θdiff
 end
 
 """
@@ -198,7 +214,7 @@ Coefficients taken from RKSuite
   b10Θ = @evalpoly(Θ, 0, 0, r102, r103, r104, r105, r106)
   b11Θ = @evalpoly(Θ, 0, 0, r112, r113, r114, r115, r116)
 
-  y₀ + dt*Θ*k[1] + dt*(k[1]*b1Θ  + k[3]*b3Θ + k[4]*b4Θ  + k[5]*b5Θ + k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ + k[10]*b10Θ + k[11]*b11Θ)
+  @. y₀ + dt*Θ*k[1] + dt*(k[1]*b1Θ  + k[3]*b3Θ + k[4]*b4Θ  + k[5]*b5Θ + k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ + k[10]*b10Θ + k[11]*b11Θ)
 end
 
 @inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::BS5ConstantCache,idxs,T::Type{Val{1}})
@@ -214,7 +230,7 @@ end
   b10Θdiff = @evalpoly(Θ, 0, 2*r102, 3*r103, 4*r104, 5*r105, 6*r106)
   b11Θdiff = @evalpoly(Θ, 0, 2*r112, 3*r113, 4*r114, 5*r115, 6*r116)
 
-  k[1] + k[1]*b1Θdiff  + k[3]*b3Θdiff + k[4]*b4Θdiff  + k[5]*b5Θdiff + k[6]*b6Θdiff + k[7]*b7Θdiff + k[8]*b8Θdiff + k[9]*b9Θdiff + k[10]*b10Θdiff + k[11]*b11Θdiff
+  @. k[1] + k[1]*b1Θdiff  + k[3]*b3Θdiff + k[4]*b4Θdiff  + k[5]*b5Θdiff + k[6]*b6Θdiff + k[7]*b7Θdiff + k[8]*b8Θdiff + k[9]*b9Θdiff + k[10]*b10Θdiff + k[11]*b11Θdiff
 end
 
 """
@@ -236,6 +252,8 @@ Coefficients taken from RKSuite
 
   if out == nothing
     return y₀[idxs] + dt*Θ*k[1][idxs] + dt*(k[1][idxs]*b1Θ  + k[3][idxs]*b3Θ + k[4][idxs]*b4Θ  + k[5][idxs]*b5Θ + k[6][idxs]*b6Θ + k[7][idxs]*b7Θ + k[8][idxs]*b8Θ + k[9][idxs]*b9Θ + k[10][idxs]*b10Θ + k[11][idxs]*b11Θ)
+  elseif idxs == nothing
+    @. out = y₀ + dt*Θ*k[1] + dt*(k[1]*b1Θ  + k[3]*b3Θ + k[4]*b4Θ  + k[5]*b5Θ + k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ + k[10]*b10Θ + k[11]*b11Θ)
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = y₀[i] + dt*Θ*k[1][i] + dt*(k[1][i]*b1Θ  + k[3][i]*b3Θ + k[4][i]*b4Θ  + k[5][i]*b5Θ + k[6][i]*b6Θ + k[7][i]*b7Θ + k[8][i]*b8Θ + k[9][i]*b9Θ + k[10][i]*b10Θ + k[11][i]*b11Θ)
@@ -259,6 +277,8 @@ end
 
   if out == nothing
     return k[1][idxs] + k[1][idxs]*b1Θdiff  + k[3][idxs]*b3Θdiff + k[4][idxs]*b4Θdiff  + k[5][idxs]*b5Θdiff + k[6][idxs]*b6Θdiff + k[7][idxs]*b7Θdiff + k[8][idxs]*b8Θdiff + k[9][idxs]*b9Θdiff + k[10][idxs]*b10Θdiff + k[11][idxs]*b11Θdiff
+  elseif idxs == nothing
+    @. out = k[1] + k[1]*b1Θdiff  + k[3]*b3Θdiff + k[4]*b4Θdiff  + k[5]*b5Θdiff + k[6]*b6Θdiff + k[7]*b7Θdiff + k[8]*b8Θdiff + k[9][i]*b9Θdiff + k[10][i]*b10Θdiff + k[11][i]*b11Θdiff
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = k[1][i] + k[1][i]*b1Θdiff  + k[3][i]*b3Θdiff + k[4][i]*b4Θdiff  + k[5][i]*b5Θdiff + k[6][i]*b6Θdiff + k[7][i]*b7Θdiff + k[8][i]*b8Θdiff + k[9][i]*b9Θdiff + k[10][i]*b10Θdiff + k[11][i]*b11Θdiff
@@ -285,6 +305,8 @@ end
 
   if out == nothing
     return y₀[idxs] + dt*(k[1][idxs]*b1Θ + k[4][idxs]*b4Θ + k[5][idxs]*b5Θ + k[6][idxs]*b6Θ + k[7][idxs]*b7Θ + k[8][idxs]*b8Θ + k[9][idxs]*b9Θ + k[10][idxs]*b10Θ + k[11][idxs]*b11Θ + k[12][idxs]*b12Θ)
+  elseif idxs == nothing
+    @. out = y₀ + dt*(k[1]*b1Θ + k[4]*b4Θ + k[5]*b5Θ + k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ + k[10]*b10Θ + k[11]*b11Θ + k[12]*b12Θ)
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = y₀[i] + dt*(k[1][i]*b1Θ + k[4][i]*b4Θ + k[5][i]*b5Θ + k[6][i]*b6Θ + k[7][i]*b7Θ + k[8][i]*b8Θ + k[9][i]*b9Θ + k[10][i]*b10Θ + k[11][i]*b11Θ + k[12][i]*b12Θ)
@@ -308,6 +330,8 @@ end
 
   if out == nothing
     return k[1][idxs]*b1Θdiff + k[4][idxs]*b4Θdiff + k[5][idxs]*b5Θdiff + k[6][idxs]*b6Θdiff + k[7][idxs]*b7Θdiff + k[8][idxs]*b8Θdiff + k[9][idxs]*b9Θdiff + k[10][idxs]*b10Θdiff + k[11][idxs]*b11Θdiff + k[12][idxs]*b12Θdiff
+  elseif idxs == nothing
+    @. out = k[1]*b1Θdiff + k[4]*b4Θdiff + k[5]*b5Θdiff + k[6]*b6Θdiff + k[7]*b7Θdiff + k[8]*b8Θdiff + k[9]*b9Θdiff + k[10]*b10Θdiff + k[11]*b11Θdiff + k[12]*b12Θdiff
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = k[1][i]*b1Θdiff + k[4][i]*b4Θdiff + k[5][i]*b5Θdiff + k[6][i]*b6Θdiff + k[7][i]*b7Θdiff + k[8][i]*b8Θdiff + k[9][i]*b9Θdiff + k[10][i]*b10Θdiff + k[11][i]*b11Θdiff + k[12][i]*b12Θdiff
@@ -332,7 +356,7 @@ end
   b11Θ = @evalpoly(Θ, 0,    0, r112, r113, r114, r115, r116)
   b12Θ = @evalpoly(Θ, 0,    0, r122, r123, r124, r125, r126)
 
-  y₀ + dt*(k[1]*b1Θ + k[4]*b4Θ + k[5]*b5Θ + k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ + k[10]*b10Θ + k[11]*b11Θ + k[12]*b12Θ)
+  @. y₀ + dt*(k[1]*b1Θ + k[4]*b4Θ + k[5]*b5Θ + k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ + k[10]*b10Θ + k[11]*b11Θ + k[12]*b12Θ)
 end
 
 @inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern6ConstantCache,idxs,T::Type{Val{1}})
@@ -349,7 +373,7 @@ end
   b11Θdiff = @evalpoly(Θ,    0, 2*r112, 3*r113, 4*r114, 5*r115, 6*r116)
   b12Θdiff = @evalpoly(Θ,    0, 2*r122, 3*r123, 4*r124, 5*r125, 6*r126)
 
-  k[1]*b1Θdiff + k[4]*b4Θdiff + k[5]*b5Θdiff + k[6]*b6Θdiff + k[7]*b7Θdiff + k[8]*b8Θdiff + k[9]*b9Θdiff + k[10]*b10Θdiff + k[11]*b11Θdiff + k[12]*b12Θdiff
+  @. k[1]*b1Θdiff + k[4]*b4Θdiff + k[5]*b5Θdiff + k[6]*b6Θdiff + k[7]*b7Θdiff + k[8]*b8Θdiff + k[9]*b9Θdiff + k[10]*b10Θdiff + k[11]*b11Θdiff + k[12]*b12Θdiff
 end
 
 """
@@ -372,7 +396,7 @@ end
   b15Θ = @evalpoly(Θ, 0,    0, r152, r153, r154, r155, r156, r157)
   b16Θ = @evalpoly(Θ, 0,    0, r162, r163, r164, r165, r166, r167)
 
-  y₀ + dt*(k[1]*b1Θ + k[4]*b4Θ + k[5]*b5Θ + k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ + k[11]*b11Θ + k[12]*b12Θ + k[13]*b13Θ + k[14]*b14Θ + k[15]*b15Θ + k[16]*b16Θ)
+  @. y₀ + dt*(k[1]*b1Θ + k[4]*b4Θ + k[5]*b5Θ + k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ + k[11]*b11Θ + k[12]*b12Θ + k[13]*b13Θ + k[14]*b14Θ + k[15]*b15Θ + k[16]*b16Θ)
 end
 
 @inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern7ConstantCache,idxs,T::Type{Val{1}})
@@ -392,7 +416,7 @@ end
   b15Θdiff = @evalpoly(Θ,    0, 2*r152, 3*r153, 4*r154, 5*r155, 6*r156, 7*r157)
   b16Θdiff = @evalpoly(Θ,    0, 2*r162, 3*r163, 4*r164, 5*r165, 6*r166, 7*r167)
 
-  k[1]*b1Θdiff + k[4]*b4Θdiff + k[5]*b5Θdiff + k[6]*b6Θdiff + k[7]*b7Θdiff + k[8]*b8Θdiff + k[9]*b9Θdiff + k[11]*b11Θdiff + k[12]*b12Θdiff + k[13]*b13Θdiff + k[14]*b14Θdiff + k[15]*b15Θdiff + k[16]*b16Θdiff
+  @. k[1]*b1Θdiff + k[4]*b4Θdiff + k[5]*b5Θdiff + k[6]*b6Θdiff + k[7]*b7Θdiff + k[8]*b8Θdiff + k[9]*b9Θdiff + k[11]*b11Θdiff + k[12]*b12Θdiff + k[13]*b13Θdiff + k[14]*b14Θdiff + k[15]*b15Θdiff + k[16]*b16Θdiff
 end
 
 """
@@ -417,6 +441,8 @@ end
 
   if out == nothing
     return y₀[idxs] + dt*(k[1][idxs]*b1Θ + k[4][idxs]*b4Θ + k[5][idxs]*b5Θ + k[6][idxs]*b6Θ + k[7][idxs]*b7Θ + k[8][idxs]*b8Θ + k[9][idxs]*b9Θ + k[11][idxs]*b11Θ + k[12][idxs]*b12Θ + k[13][idxs]*b13Θ + k[14][idxs]*b14Θ + k[15][idxs]*b15Θ + k[16][idxs]*b16Θ)
+  elseif idxs == nothing
+    @. out = y₀ + dt*(k[1]*b1Θ + k[4]*b4Θ + k[5]*b5Θ + k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ + k[11]*b11Θ + k[12]*b12Θ + k[13]*b13Θ + k[14]*b14Θ + k[15]*b15Θ + k[16]*b16Θ)
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = y₀[i] + dt*(k[1][i]*b1Θ + k[4][i]*b4Θ + k[5][i]*b5Θ + k[6][i]*b6Θ + k[7][i]*b7Θ + k[8][i]*b8Θ + k[9][i]*b9Θ + k[11][i]*b11Θ + k[12][i]*b12Θ + k[13][i]*b13Θ + k[14][i]*b14Θ + k[15][i]*b15Θ + k[16][i]*b16Θ)
@@ -443,6 +469,8 @@ end
 
   if out == nothing
     return k[1][idxs]*b1Θdiff + k[4][idxs]*b4Θdiff + k[5][idxs]*b5Θdiff + k[6][idxs]*b6Θdiff + k[7][idxs]*b7Θdiff + k[8][idxs]*b8Θdiff + k[9][idxs]*b9Θdiff + k[11][idxs]*b11Θdiff + k[12][idxs]*b12Θdiff + k[13][idxs]*b13Θdiff + k[14][idxs]*b14Θdiff + k[15][idxs]*b15Θdiff + k[16][idxs]*b16Θdiff
+  elseif idxs == nothing
+    @. out = k[1]*b1Θdiff + k[4]*b4Θdiff + k[5]*b5Θdiff + k[6]*b6Θdiff + k[7]*b7Θdiff + k[8]*b8Θdiff + k[9]*b9Θdiff + k[11]*b11Θdiff + k[12]*b12Θdiff + k[13]*b13Θdiff + k[14]*b14Θdiff + k[15]*b15Θdiff + k[16]*b16Θdiff
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = k[1][i]*b1Θdiff + k[4][i]*b4Θdiff + k[5][i]*b5Θdiff + k[6][i]*b6Θdiff + k[7][i]*b7Θdiff + k[8][i]*b8Θdiff + k[9][i]*b9Θdiff + k[11][i]*b11Θdiff + k[12][i]*b12Θdiff + k[13][i]*b13Θdiff + k[14][i]*b14Θdiff + k[15][i]*b15Θdiff + k[16][i]*b16Θdiff
@@ -473,7 +501,7 @@ end
   b20Θ = @evalpoly(Θ, 0,    0, r202, r203, r204, r205, r206, r207, r208)
   b21Θ = @evalpoly(Θ, 0,    0, r212, r213, r214, r215, r216, r217, r218)
 
-  y₀ + dt*(k[1]*b1Θ + k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ + k[10]*b10Θ + k[11]*b11Θ + k[12]*b12Θ + k[14]*b14Θ + k[15]*b15Θ + k[16]*b16Θ + k[17]*b17Θ + k[18]*b18Θ + k[19]*b19Θ + k[20]*b20Θ + k[21]*b21Θ)
+  @. y₀ + dt*(k[1]*b1Θ + k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ + k[10]*b10Θ + k[11]*b11Θ + k[12]*b12Θ + k[14]*b14Θ + k[15]*b15Θ + k[16]*b16Θ + k[17]*b17Θ + k[18]*b18Θ + k[19]*b19Θ + k[20]*b20Θ + k[21]*b21Θ)
 end
 
 @inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern8ConstantCache,idxs,T::Type{Val{1}})
@@ -496,7 +524,7 @@ end
   b20Θdiff = @evalpoly(Θ,    0, 2*r202, 3*r203, 4*r204, 5*r205, 6*r206, 7*r207, 8*r208)
   b21Θdiff = @evalpoly(Θ,    0, 2*r212, 3*r213, 4*r214, 5*r215, 6*r216, 7*r217, 8*r218)
 
-  k[1]*b1Θdiff + k[6]*b6Θdiff + k[7]*b7Θdiff + k[8]*b8Θdiff + k[9]*b9Θdiff + k[10]*b10Θdiff + k[11]*b11Θdiff + k[12]*b12Θdiff + k[14]*b14Θdiff + k[15]*b15Θdiff + k[16]*b16Θdiff + k[17]*b17Θdiff + k[18]*b18Θdiff + k[19]*b19Θdiff + k[20]*b20Θdiff + k[21]*b21Θdiff
+  @. k[1]*b1Θdiff + k[6]*b6Θdiff + k[7]*b7Θdiff + k[8]*b8Θdiff + k[9]*b9Θdiff + k[10]*b10Θdiff + k[11]*b11Θdiff + k[12]*b12Θdiff + k[14]*b14Θdiff + k[15]*b15Θdiff + k[16]*b16Θdiff + k[17]*b17Θdiff + k[18]*b18Θdiff + k[19]*b19Θdiff + k[20]*b20Θdiff + k[21]*b21Θdiff
 end
 
 """
@@ -524,6 +552,8 @@ end
 
   if out == nothing
     return y₀[idxs] + dt*(k[1][idxs]*b1Θ + k[6][idxs]*b6Θ + k[7][idxs]*b7Θ + k[8][idxs]*b8Θ + k[9][idxs]*b9Θ + k[10][idxs]*b10Θ + k[11][idxs]*b11Θ + k[12][idxs]*b12Θ + k[14][idxs]*b14Θ + k[15][idxs]*b15Θ + k[16][idxs]*b16Θ + k[17][idxs]*b17Θ + k[18][idxs]*b18Θ + k[19][idxs]*b19Θ + k[20][idxs]*b20Θ + k[21][idxs]*b21Θ)
+  elseif idxs == nothing
+    @. out = y₀ + dt*(k[1]*b1Θ + k[6]*b6Θ + k[7]*b7Θ + k[8]*b8Θ + k[9]*b9Θ + k[10]*b10Θ + k[11]*b11Θ + k[12]*b12Θ + k[14]*b14Θ + k[15]*b15Θ + k[16]*b16Θ + k[17]*b17Θ + k[18]*b18Θ + k[19]*b19Θ + k[20]*b20Θ + k[21]*b21Θ)
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = y₀[i] + dt*(k[1][i]*b1Θ + k[6][i]*b6Θ + k[7][i]*b7Θ + k[8][i]*b8Θ + k[9][i]*b9Θ + k[10][i]*b10Θ + k[11][i]*b11Θ + k[12][i]*b12Θ + k[14][i]*b14Θ + k[15][i]*b15Θ + k[16][i]*b16Θ + k[17][i]*b17Θ + k[18][i]*b18Θ + k[19][i]*b19Θ + k[20][i]*b20Θ + k[21][i]*b21Θ)
@@ -553,6 +583,8 @@ end
 
   if out == nothing
     return k[1][idxs]*b1Θdiff + k[6][idxs]*b6Θdiff + k[7][idxs]*b7Θdiff + k[8][idxs]*b8Θdiff + k[9][idxs]*b9Θdiff + k[10][idxs]*b10Θdiff + k[11][idxs]*b11Θdiff + k[12][idxs]*b12Θdiff + k[14][idxs]*b14Θdiff + k[15][idxs]*b15Θdiff + k[16][idxs]*b16Θdiff + k[17][idxs]*b17Θdiff + k[18][idxs]*b18Θdiff + k[19][idxs]*b19Θdiff + k[20][idxs]*b20Θdiff + k[21][idxs]*b21Θdiff
+  elseif idxs == nothing
+    @. out = k[1]*b1Θdiff + k[6]*b6Θdiff + k[7]*b7Θdiff + k[8]*b8Θdiff + k[9]*b9Θdiff + k[10]*b10Θdiff + k[11]*b11Θdiff + k[12]*b12Θdiff + k[14]*b14Θdiff + k[15]*b15Θdiff + k[16]*b16Θdiff + k[17]*b17Θdiff + k[18]*b18Θdiff + k[19]*b19Θdiff + k[20]*b20Θdiff + k[21]*b21Θdiff
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = k[1][i]*b1Θdiff + k[6][i]*b6Θdiff + k[7][i]*b7Θdiff + k[8][i]*b8Θdiff + k[9][i]*b9Θdiff + k[10][i]*b10Θdiff + k[11][i]*b11Θdiff + k[12][i]*b12Θdiff + k[14][i]*b14Θdiff + k[15][i]*b15Θdiff + k[16][i]*b16Θdiff + k[17][i]*b17Θdiff + k[18][i]*b18Θdiff + k[19][i]*b19Θdiff + k[20][i]*b20Θdiff + k[21][i]*b21Θdiff
@@ -586,7 +618,7 @@ end
   b25Θ = @evalpoly(Θ, 0,    0, r252, r253, r254, r255, r256, r257, r258, r259)
   b26Θ = @evalpoly(Θ, 0,    0, r262, r263, r264, r265, r266, r267, r268, r269)
 
-  y₀ + dt*(k[1]*b1Θ + k[8]*b8Θ + k[9]*b9Θ + k[10]*b10Θ + k[11]*b11Θ + k[12]*b12Θ + k[13]*b13Θ + k[14]*b14Θ + k[15]*b15Θ + k[17]*b17Θ + k[18]*b18Θ + k[19]*b19Θ + k[20]*b20Θ + k[21]*b21Θ + k[22]*b22Θ + k[23]*b23Θ + k[24]*b24Θ + k[25]*b25Θ + k[26]*b26Θ)
+  @. y₀ + dt*(k[1]*b1Θ + k[8]*b8Θ + k[9]*b9Θ + k[10]*b10Θ + k[11]*b11Θ + k[12]*b12Θ + k[13]*b13Θ + k[14]*b14Θ + k[15]*b15Θ + k[17]*b17Θ + k[18]*b18Θ + k[19]*b19Θ + k[20]*b20Θ + k[21]*b21Θ + k[22]*b22Θ + k[23]*b23Θ + k[24]*b24Θ + k[25]*b25Θ + k[26]*b26Θ)
 end
 
 @inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern9ConstantCache,idxs,T::Type{Val{1}})
@@ -612,7 +644,7 @@ end
   b25Θdiff = @evalpoly(Θ,    0, 2*r252, 3*r253, 4*r254, 5*r255, 6*r256, 7*r257, 8*r258, 9*r259)
   b26Θdiff = @evalpoly(Θ,    0, 2*r262, 3*r263, 4*r264, 5*r265, 6*r266, 7*r267, 8*r268, 9*r269)
 
-  k[1]*b1Θdiff + k[8]*b8Θdiff + k[9]*b9Θdiff + k[10]*b10Θdiff + k[11]*b11Θdiff + k[12]*b12Θdiff + k[13]*b13Θdiff + k[14]*b14Θdiff + k[15]*b15Θdiff + k[17]*b17Θdiff + k[18]*b18Θdiff + k[19]*b19Θdiff + k[20]*b20Θdiff + k[21]*b21Θdiff + k[22]*b22Θdiff + k[23]*b23Θdiff + k[24]*b24Θdiff + k[25]*b25Θdiff + k[26]*b26Θdiff
+  @. k[1]*b1Θdiff + k[8]*b8Θdiff + k[9]*b9Θdiff + k[10]*b10Θdiff + k[11]*b11Θdiff + k[12]*b12Θdiff + k[13]*b13Θdiff + k[14]*b14Θdiff + k[15]*b15Θdiff + k[17]*b17Θdiff + k[18]*b18Θdiff + k[19]*b19Θdiff + k[20]*b20Θdiff + k[21]*b21Θdiff + k[22]*b22Θdiff + k[23]*b23Θdiff + k[24]*b24Θdiff + k[25]*b25Θdiff + k[26]*b26Θdiff
 end
 
 """
@@ -643,6 +675,8 @@ end
 
   if out == nothing
     return y₀[idxs] + dt*(k[1][idxs]*b1Θ + k[8][idxs]*b8Θ + k[9][idxs]*b9Θ + k[10][idxs]*b10Θ + k[11][idxs]*b11Θ + k[12][idxs]*b12Θ + k[13][idxs]*b13Θ + k[14][idxs]*b14Θ + k[15][idxs]*b15Θ + k[17][idxs]*b17Θ + k[18][idxs]*b18Θ + k[19][idxs]*b19Θ + k[20][idxs]*b20Θ + k[21][idxs]*b21Θ + k[22][idxs]*b22Θ + k[23][idxs]*b23Θ + k[24][idxs]*b24Θ + k[25][idxs]*b25Θ + k[26][idxs]*b26Θ)
+  elseif idxs == nothing
+    @. out = y₀ + dt*(k[1]*b1Θ + k[8]*b8Θ + k[9]*b9Θ + k[10]*b10Θ + k[11]*b11Θ + k[12]*b12Θ + k[13]*b13Θ + k[14]*b14Θ + k[15]*b15Θ + k[17]*b17Θ + k[18]*b18Θ + k[19]*b19Θ + k[20]*b20Θ + k[21]*b21Θ + k[22]*b22Θ + k[23]*b23Θ + k[24]*b24Θ + k[25]*b25Θ + k[26]*b26Θ)
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = y₀[i] + dt*(k[1][i]*b1Θ + k[8][i]*b8Θ + k[9][i]*b9Θ + k[10][i]*b10Θ + k[11][i]*b11Θ + k[12][i]*b12Θ + k[13][i]*b13Θ + k[14][i]*b14Θ + k[15][i]*b15Θ + k[17][i]*b17Θ + k[18][i]*b18Θ + k[19][i]*b19Θ + k[20][i]*b20Θ + k[21][i]*b21Θ + k[22][i]*b22Θ + k[23][i]*b23Θ + k[24][i]*b24Θ + k[25][i]*b25Θ + k[26][i]*b26Θ)
@@ -675,6 +709,8 @@ end
 
   if out == nothing
     return k[1][idxs]*b1Θdiff + k[8][idxs]*b8Θdiff + k[9][idxs]*b9Θdiff + k[10][idxs]*b10Θdiff + k[11][idxs]*b11Θdiff + k[12][idxs]*b12Θdiff + k[13][idxs]*b13Θdiff + k[14][idxs]*b14Θdiff + k[15][idxs]*b15Θdiff + k[17][idxs]*b17Θdiff + k[18][idxs]*b18Θdiff + k[19][idxs]*b19Θdiff + k[20][idxs]*b20Θdiff + k[21][idxs]*b21Θdiff + k[22][idxs]*b22Θdiff + k[23][idxs]*b23Θdiff + k[24][idxs]*b24Θdiff + k[25][idxs]*b25Θdiff + k[26][idxs]*b26Θdiff
+  elseif idxs == nothing
+    @. out = k[1]*b1Θdiff + k[8]*b8Θdiff + k[9]*b9Θdiff + k[10]*b10Θdiff + k[11]*b11Θdiff + k[12]*b12Θdiff + k[13]*b13Θdiff + k[14]*b14Θdiff + k[15]*b15Θdiff + k[17]*b17Θdiff + k[18]*b18Θdiff + k[19]*b19Θdiff + k[20]*b20Θdiff + k[21]*b21Θdiff + k[22]*b22Θdiff + k[23]*b23Θdiff + k[24]*b24Θdiff + k[25]*b25Θdiff + k[26]*b26Θdiff
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = k[1][i]*b1Θdiff + k[8][i]*b8Θdiff + k[9][i]*b9Θdiff + k[10][i]*b10Θdiff + k[11][i]*b11Θdiff + k[12][i]*b12Θdiff + k[13][i]*b13Θdiff + k[14][i]*b14Θdiff + k[15][i]*b15Θdiff + k[17][i]*b17Θdiff + k[18][i]*b18Θdiff + k[19][i]*b19Θdiff + k[20][i]*b20Θdiff + k[21][i]*b21Θdiff + k[22][i]*b22Θdiff + k[23][i]*b23Θdiff + k[24][i]*b24Θdiff + k[25][i]*b25Θdiff + k[26][i]*b26Θdiff
@@ -688,7 +724,7 @@ end
 @inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP8ConstantCache,idxs,T::Type{Val{0}})
   Θ1 = 1-Θ
   conpar = k[4] + Θ*(k[5] + Θ1*(k[6]+Θ*k[7]))
-  y₀ + dt*Θ*(k[1] + Θ1*(k[2] + Θ*(k[3]+Θ1*conpar)))
+  @. y₀ + dt*Θ*(k[1] + Θ1*(k[2] + Θ*(k[3]+Θ1*conpar)))
 end
 
 @inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP8ConstantCache,idxs,T::Type{Val{1}})
@@ -698,7 +734,7 @@ end
   b4diff = 4*k[4] - 8*k[5] - 12*k[6] + 4*k[7]
   b5diff = 5*k[5] + 15*k[6] - 15*k[7]
   b6diff = -6*k[6] + 18*k[7] #- 7*k[7]
-  return b1diff + Θ*(b2diff + Θ*(b3diff + Θ*(b4diff + Θ*(b5diff + Θ*(b6diff - 7*k[7]*Θ)))))
+  @. b1diff + Θ*(b2diff + Θ*(b3diff + Θ*(b4diff + Θ*(b5diff + Θ*(b6diff - 7*k[7]*Θ)))))
 end
 
 """
@@ -708,6 +744,8 @@ end
   Θ1 = 1-Θ
   if out == nothing
     return y₀[idxs] + dt*Θ*(k[1][idxs] + Θ1*(k[2][idxs] + Θ*(k[3][idxs]+Θ1*(k[4][idxs] + Θ*(k[5][idxs] + Θ1*(k[6][idxs]+Θ*k[7][idxs]))))))
+  elseif idxs == nothing
+    @. out = y₀ + dt*Θ*(k[1] + Θ1*(k[2] + Θ*(k[3]+Θ1*(k[4] + Θ*(k[5] + Θ1*(k[6]+Θ*k[7]))))))
   else
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = y₀[i] + dt*Θ*(k[1][i] + Θ1*(k[2][i] + Θ*(k[3][i]+Θ1*(k[4][i] + Θ*(k[5][i] + Θ1*(k[6][i]+Θ*k[7][i]))))))
@@ -724,9 +762,17 @@ end
     b5diff = 5*k[5][idxs] + 15*k[6][idxs] - 15*k[7][idxs]
     b6diff = -6*k[6][idxs] + 18*k[7][idxs]
     return b1diff + Θ*(b2diff + Θ*(b3diff + Θ*(b4diff + Θ*(b5diff + Θ*(b6diff - 7*k[7][idxs]*Θ)))))
+  elseif idxs == nothing
+    b1diff = k[1] + k[2]
+    b2diff = -2*k[2] + 2*k[3] + 2*k[4]
+    b3diff = -3*k[3] - 6*k[4] + 3*k[5] + 3*k[6]
+    b4diff = 4*k[4] - 8*k[5] - 12*k[6] + 4*k[7]
+    b5diff = 5*k[5] + 15*k[6] - 15*k[7]
+    b6diff = -6*k[6] + 18*k[7]
+    out[j] = b1diff + Θ*(b2diff + Θ*(b3diff + Θ*(b4diff + Θ*(b5diff + Θ*(b6diff - 7*k[7]*Θ)))))
   else
     @inbounds for (j,i) in enumerate(idxs)
-      b1diff = k[1][i] + k[2][idxs]
+      b1diff = k[1][i] + k[2][i]
       b2diff = -2*k[2][i] + 2*k[3][i] + 2*k[4][i]
       b3diff = -3*k[3][i] - 6*k[4][i] + 3*k[5][i] + 3*k[6][i]
       b4diff = 4*k[4][i] - 8*k[5][i] - 12*k[6][i] + 4*k[7][i]
