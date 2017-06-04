@@ -1100,15 +1100,16 @@ vecu_cache(c::ImplicitEulerCache) = (c.uhold,)
 dual_cache(c::ImplicitEulerCache) = (c.dual_cache,)
 
 function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
-  u_old = similar(u,indices(u)); k = zeros(rate_prototype)
+  tmp = similar(u)
+  u_old = vec(tmp); k = zeros(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
   uhold = vec(u) # this makes uhold the same values as integrator.u
   rhs = RHS_IE(f,u_old,t,t,dual_cache,size(u),eachindex(u))
   fsalfirst = zeros(rate_prototype)
   nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
-  tmp = u_old
-  ImplicitEulerCache{typeof(u),typeof(u_old),typeof(uhold),typeof(dual_cache),typeof(k),
-                     typeof(rhs),typeof(nl_rhs)}(
+
+  ImplicitEulerCache{typeof(u),typeof(u_old),typeof(uhold),typeof(dual_cache),
+                     typeof(k),typeof(rhs),typeof(nl_rhs)}(
                      u,uprev,uprev2,uhold,dual_cache,u_old,tmp,k,fsalfirst,rhs,nl_rhs)
 end
 
@@ -1147,12 +1148,13 @@ vecu_cache(c::TrapezoidCache) = (c.uhold,)
 dual_cache(c::TrapezoidCache) = (c.dual_cache,)
 
 function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
-  u_old = similar(u,indices(u)); k = zeros(rate_prototype)
+  tmp = similar(u)
+  u_old = vec(tmp); k = zeros(rate_prototype)
   uhold = vec(u); fsalfirst = zeros(rate_prototype)
+  f_old = vec(fsalfirst)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
-  rhs = RHS_Trap(f,u_old,fsalfirst,t,t,size(u),dual_cache,eachindex(u))
+  rhs = RHS_Trap(f,u_old,f_old,t,t,size(u),dual_cache,eachindex(u))
   nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
-  tmp = u_old
   TrapezoidCache{typeof(u),typeof(u_old),typeof(uhold),typeof(dual_cache),typeof(k),
     typeof(rhs),typeof(nl_rhs)}(u,uprev,uprev2,uhold,u_old,fsalfirst,dual_cache,tmp,k,rhs,nl_rhs)
 end
@@ -1206,7 +1208,6 @@ function alg_cache(alg::IIF1,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,
 end
 
 function alg_cache(alg::IIF1,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
-
   tmp = similar(u,indices(u)); rtmp1 = zeros(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
   uhold = vec(u) # this makes uhold the same values as integrator.u

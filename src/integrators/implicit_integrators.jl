@@ -6,7 +6,7 @@ type RHS_IE_Scalar{F,uType,tType} <: Function
 end
 
 function (p::RHS_IE_Scalar)(u,resid)
-  resid[1] = u[1] - p.u_old[1] - p.dt*p.f(p.t+p.dt,u[1])[1]
+  resid[1] = u[1] .- p.u_old[1] .- p.dt.*p.f(p.t+p.dt,u[1])[1]
 end
 
 @inline function initialize!(integrator,cache::ImplicitEulerConstantCache,f=integrator.f)
@@ -47,9 +47,7 @@ end
 function (p::RHS_IE)(uprev,resid)
   du = get_du(p.dual_cache, eltype(uprev))
   p.f(p.t+p.dt,reshape(uprev,p.sizeu),du)
-  for i in p.uidx
-    resid[i] = uprev[i] - p.u_old[i] - p.dt*du[i]
-  end
+  @. resid = uprev - p.u_old - p.dt*du
 end
 
 @inline function initialize!(integrator,cache::ImplicitEulerCache,f=integrator.f)
@@ -94,9 +92,7 @@ end
 function (p::RHS_Trap)(uprev,resid)
   du1 = get_du(p.dual_cache, eltype(uprev))
   p.f(p.t+p.dt,reshape(uprev,p.sizeu),du1)
-  for i in p.uidx
-    resid[i] = @muladd uprev[i] - p.u_old[i] - (p.dt/2)*(du1[i]+p.f_old[i])
-  end
+  @. resid = @muladd uprev - p.u_old - (p.dt/2)*(du1+p.f_old)
 end
 
 @inline function initialize!(integrator,cache::TrapezoidCache,f=integrator.f)
@@ -138,7 +134,7 @@ type RHS_Trap_Scalar{F,uType,rateType,tType} <: Function
 end
 
 function (p::RHS_Trap_Scalar)(uprev,resid)
-  resid[1] = @muladd uprev[1] - p.u_old[1] - (p.dt/2)*(p.f_old + p.f(p.t+p.dt,uprev[1])[1])
+  resid[1] = uprev[1] .- p.u_old[1] .- (p.dt/2).*(p.f_old .+ p.f(p.t+p.dt,uprev[1])[1])
 end
 
 @inline function initialize!(integrator,cache::TrapezoidConstantCache,f=integrator.f)

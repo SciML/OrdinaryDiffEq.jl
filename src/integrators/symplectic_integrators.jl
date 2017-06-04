@@ -13,9 +13,7 @@
   ku = integrator.k[1].x[1]
   kdu = integrator.k[2].x[2]
   f[2](integrator.t,uprev,duprev,kdu)
-  for i in eachindex(du)
-    du[i] = muladd(integrator.dt,kdu[i],duprev[i])
-  end
+  du = muladd.(integrator.dt,kdu,duprev)
   f[1](integrator.t,uprev,du,ku)
 end
 
@@ -26,15 +24,10 @@ end
   kuprev = integrator.k[1].x[1]
   ku  = integrator.k[2].x[1]
   kdu = integrator.k[2].x[2]
-  uidx = eachindex(integrator.uprev)
-  for i in eachindex(u)
-    u[i] = muladd(dt,kuprev[i],uprev[i])
-  end
+  u .= muladd.(dt,kuprev,uprev)
   # Now actually compute the step
   # Do it at the end for interpolations!
   f[2](integrator.t,uprev,duprev,kdu)
-  for i in eachindex(du)
-    du[i] = muladd(dt,kdu[i],duprev[i])
-  end
+  du .= muladd.(dt,kdu,duprev)
   f[1](integrator.t,uprev,du,ku)
 end
