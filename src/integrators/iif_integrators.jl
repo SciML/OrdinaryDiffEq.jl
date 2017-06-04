@@ -37,7 +37,7 @@ end
   if typeof(cache) <: IIF1ConstantCache
     tmp = expm(A*dt)*(uprev)
   elseif typeof(cache) <: IIF2ConstantCache
-    tmp = expm(A*dt)*(uprev + 0.5dt*uhold[1]) # This uhold only works for non-adaptive
+    tmp = expm(A*dt)*(uprev .+ 0.5dt.*uhold[1]) # This uhold only works for non-adaptive
   end
 
   if integrator.iter > 1 && !integrator.u_modified
@@ -68,9 +68,7 @@ end
 function (p::RHS_IIF1)(u,resid)
   du = get_du(p.dual_cache, eltype(u))
   p.f[2](p.t+p.dt,reshape(u,p.sizeu),du)
-  for i in p.uidx
-    resid[i] = u[i] - p.tmp[i] - p.dt*du[i]
-  end
+  @. resid = u - p.tmp - p.dt*du
 end
 
 type RHS_IIF2{F,uType,tType,DiffCacheType,SizeType,uidxType} <: Function
@@ -85,9 +83,7 @@ end
 function (p::RHS_IIF2)(u,resid)
   du = get_du(p.dual_cache, eltype(u))
   p.f[2](p.t+p.dt,reshape(u,p.sizeu),du)
-  for i in p.uidx
-    resid[i] = u[i] - p.tmp[i] - 0.5p.dt*du[i]
-  end
+  @. resid = u - p.tmp - 0.5p.dt*du
 end
 
 @inline function initialize!(integrator,cache::Union{IIF1Cache,IIF2Cache},f=integrator.f)
@@ -108,14 +104,9 @@ end
   @unpack uhold,rhs,nl_rhs = cache
   @unpack t,dt,uprev,u = integrator
 
-  for i in eachindex(u)
-    k[i] = uprev[i]
-  end
-
+  @. k = uprev
   if typeof(cache) <: IIF2Cache
-    for i in eachindex(uprev)
-      k[i] += 0.5dt*rtmp1[i]
-    end
+    @. k += 0.5dt*rtmp1
   end
 
   A = integrator.f[1](t,uprev,rtmp1)
