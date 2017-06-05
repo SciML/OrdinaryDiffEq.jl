@@ -51,22 +51,22 @@ end
   [ode_interpolant!(val,ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
-@inline function current_extrapolant(t::Number,integrator::DEIntegrator,idxs=size(integrator.uprev),deriv=Val{0})
+@inline function current_extrapolant(t::Number,integrator::DEIntegrator,idxs=nothing,deriv=Val{0})
   Θ = (t-integrator.tprev)/(integrator.t-integrator.tprev)
   ode_extrapolant(Θ,integrator,idxs,deriv)
 end
 
-@inline function current_extrapolant!(val,t::Number,integrator::DEIntegrator,idxs=size(integrator.uprev),deriv=Val{0})
+@inline function current_extrapolant!(val,t::Number,integrator::DEIntegrator,idxs=nothing,deriv=Val{0})
   Θ = (t-integrator.tprev)/(integrator.t-integrator.tprev)
   ode_extrapolant!(val,Θ,integrator,idxs,deriv)
 end
 
-@inline function current_extrapolant(t::AbstractArray,integrator::DEIntegrator,idxs=size(integrator.uprev),deriv=Val{0})
+@inline function current_extrapolant(t::AbstractArray,integrator::DEIntegrator,idxs=nothing,deriv=Val{0})
   Θ = (t.-integrator.tprev)./(integrator.t-integrator.tprev)
   [ode_extrapolant(ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
-@inline function current_extrapolant!(val,t,integrator::DEIntegrator,idxs=size(integrator.uprev),deriv=Val{0})
+@inline function current_extrapolant!(val,t,integrator::DEIntegrator,idxs=nothing,deriv=Val{0})
   Θ = (t.-integrator.tprev)./(integrator.t-integrator.tprev)
   [ode_extrapolant!(val,ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
@@ -105,18 +105,12 @@ times ts (sorted), with values timeseries and derivatives ks
   i = 2 # Start the search thinking it's between ts[1] and ts[2]
   tvals[idx[end]] > ts[end] && error("Solution interpolation cannot extrapolate past the final timepoint. Either solve on a longer timespan or use the local extrapolation from the integrator interface.")
   tvals[idx[1]] < ts[1] && error("Solution interpolation cannot extrapolate before the first timepoint. Either start solving earlier or use the local extrapolation from the integrator interface.")
-  if idxs == nothing
-    if (eltype(timeseries) <: AbstractArray) && !(eltype(timeseries) <: Union{StaticArray,Array})
-      vals = Vector{Vector{eltype(first(timeseries))}}(length(tvals))
-    else
-      vals = Vector{eltype(timeseries)}(length(tvals))
-    end
-  elseif typeof(idxs) <: Number
+  if typeof(idxs) <: Number
     vals = Vector{eltype(first(timeseries))}(length(tvals))
-  elseif eltype(timeseries) <: ArrayPartition
-    vals = Vector{eltype(timeseries)}(length(tvals))
+  elseif typeof(idxs) <: AbstractVector
+     vals = Vector{Vector{eltype(first(timeseries))}}(length(tvals))
   else
-    vals = Vector{Vector{eltype(first(timeseries))}}(length(tvals))
+    vals = Vector{eltype(timeseries)}(length(tvals))
   end
   @inbounds for j in idx
     t = tvals[j]
@@ -138,25 +132,16 @@ times ts (sorted), with values timeseries and derivatives ks
     else
       dt = ts[notsaveat_idxs[i]] - ts[notsaveat_idxs[i-1]]
       Θ = (t-ts[notsaveat_idxs[i-1]])/dt
-
-      if idxs == nothing && eltype(timeseries) <: ArrayPartition
-        idxs_internal = indices(timeseries[notsaveat_idxs[i-1]])
-      elseif idxs == nothing && eltype(timeseries) <: AbstractArray
-        idxs_internal = size(timeseries[notsaveat_idxs[i-1]])
-      else
-        idxs_internal = idxs
-      end
-
       if typeof(cache) <: (DiscreteCache) || typeof(cache) <: DiscreteConstantCache
-        vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],0,cache,idxs_internal,deriv)
+        vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],0,cache,idxs,deriv)
       elseif !id.dense
-        vals[j] = linear_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],idxs_internal,deriv)
+        vals[j] = linear_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],idxs,deriv)
       elseif typeof(cache) <: CompositeCache
         ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache.caches[id.alg_choice[notsaveat_idxs[i-1]]]) # update the kcurrent
-        vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]],idxs_internal,deriv)
+        vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]],idxs,deriv)
       else
         ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache) # update the kcurrent
-        vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache,idxs_internal,deriv)
+        vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache,idxs,deriv)
       end
     end
   end
@@ -197,36 +182,31 @@ times ts (sorted), with values timeseries and derivatives ks
     else
       dt = ts[notsaveat_idxs[i]] - ts[notsaveat_idxs[i-1]]
       Θ = (t-ts[notsaveat_idxs[i-1]])/dt
-      if idxs == nothing && eltype(vals) <: AbstractArray
-        idxs_internal = eachindex(vals[j])
-      else
-        idxs_internal = idxs
-      end
       if typeof(cache) <: (DiscreteCache) || typeof(cache) <: DiscreteConstantCache
-        if eltype(timeseries) <: Union{AbstractArray,ArrayPartition}
-          ode_interpolant!(vals[j],Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],0,cache,idxs_internal,deriv)
+        if eltype(timeseries) <: AbstractArray
+          ode_interpolant!(vals[j],Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],0,cache,idxs,deriv)
         else
-          vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],0,cache,idxs_internal,deriv)
+          vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],0,cache,idxs,deriv)
         end
       elseif !id.dense
-        if eltype(timeseries) <: Union{AbstractArray,ArrayPartition}
-          linear_interpolant!(vals[j],Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],idxs_internal,deriv)
+        if eltype(timeseries) <: AbstractArray
+          linear_interpolant!(vals[j],Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],idxs,deriv)
         else
-          vals[j] = linear_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],idxs_internal,deriv)
+          vals[j] = linear_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],idxs,deriv)
         end
       elseif typeof(cache) <: CompositeCache
         ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache.caches[id.alg_choice[notsaveat_idxs[i-1]]]) # update the kcurrent
-        if eltype(timeseries) <: Union{AbstractArray,ArrayPartition}
-          ode_interpolant!(vals[j],Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]],idxs_internal,deriv)
+        if eltype(timeseries) <: AbstractArray
+          ode_interpolant!(vals[j],Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]],idxs,deriv)
         else
-          vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]],idxs_internal,deriv)
+          vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]],idxs,deriv)
         end
       else
         ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache) # update the kcurrent
-        if eltype(timeseries) <: Union{AbstractArray,ArrayPartition}
-          ode_interpolant!(vals[j],Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache,idxs_internal,deriv)
+        if eltype(timeseries) <: AbstractArray
+          ode_interpolant!(vals[j],Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache,idxs,deriv)
         else
-          vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache,idxs_internal,deriv)
+          vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache,idxs,deriv)
         end
       end
     end
@@ -263,23 +243,16 @@ times ts (sorted), with values timeseries and derivatives ks
   else
     dt = ts[notsaveat_idxs[i]] - ts[notsaveat_idxs[i-1]]
     Θ = (tval-ts[notsaveat_idxs[i-1]])/dt
-    if idxs == nothing && eltype(timeseries) <: ArrayPartition
-      idxs_internal = indices(timeseries[notsaveat_idxs[i-1]])
-    elseif idxs == nothing && eltype(timeseries) <: AbstractArray
-      idxs_internal = size(timeseries[notsaveat_idxs[i-1]])
-    else
-      idxs_internal = idxs
-    end
     if typeof(cache) <: (DiscreteCache) || typeof(cache) <: DiscreteConstantCache
-      val = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],0,cache,idxs_internal,deriv)
+      val = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],0,cache,idxs,deriv)
     elseif !id.dense
-      val = linear_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],idxs_internal,deriv)
+      val = linear_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],idxs,deriv)
     elseif typeof(cache) <: CompositeCache
       ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache.caches[id.alg_choice[notsaveat_idxs[i-1]]]) # update the kcurrent
-      val = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]],idxs_internal,deriv)
+      val = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]],idxs,deriv)
     else
       ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache) # update the kcurrent
-      val = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache,idxs_internal,deriv)
+      val = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache,idxs,deriv)
     end
   end
   val
@@ -315,21 +288,16 @@ times ts (sorted), with values timeseries and derivatives ks
   else
     dt = ts[notsaveat_idxs[i]] - ts[notsaveat_idxs[i-1]]
     Θ = (tval-ts[notsaveat_idxs[i-1]])/dt
-    if idxs == nothing
-      idxs_internal = eachindex(out)
-    else
-      idxs_internal = idxs
-    end
     if typeof(cache) <: (DiscreteCache) || typeof(cache) <: DiscreteConstantCache
-      ode_interpolant!(out,Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],0,cache,idxs_internal,deriv)
+      ode_interpolant!(out,Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],0,cache,idxs,deriv)
     elseif !id.dense
-      linear_interpolant!(out,Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],idxs_internal,deriv)
+      linear_interpolant!(out,Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],idxs,deriv)
     elseif typeof(cache) <: CompositeCache
       ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache.caches[id.alg_choice[notsaveat_idxs[i-1]]]) # update the kcurrent
-      ode_interpolant!(out,Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]],idxs_internal,deriv)
+      ode_interpolant!(out,Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]],idxs,deriv)
     else
       ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache) # update the kcurrent
-      ode_interpolant!(out,Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache,idxs_internal,deriv)
+      ode_interpolant!(out,Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache,idxs,deriv)
     end
   end
 end
@@ -354,17 +322,15 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache,always_
 end
 
 @inline function ode_interpolant{TI}(Θ,dt,y₀,y₁,k,cache::OrdinaryDiffEqMutableCache,idxs,T::Type{Val{TI}})
-  if typeof(idxs) <: Tuple
-    out = similar(y₀,idxs)
-    idxs_internal=eachindex(y₀)
+  if typeof(idxs) <: Void
+    out = similar(y₀)
   else
     !(typeof(idxs) <: Number) && (out = similar(y₀,indices(idxs)))
-    idxs_internal=idxs
   end
   if typeof(idxs) <: Number
-    return ode_interpolant!(nothing,Θ,dt,y₀,y₁,k,cache,idxs_internal,T)
+    return ode_interpolant!(nothing,Θ,dt,y₀,y₁,k,cache,idxs,T)
   else
-    ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs_internal,T)
+    ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T)
     return out
   end
 end
@@ -386,19 +352,11 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
 @inline function hermite_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{0}}) # Default interpolant is Hermite
-  if typeof(y₀) <: AbstractArray
-    if typeof(idxs) <: Tuple
-      out = similar(y₀,idxs)
-      iter_idxs = enumerate(idxs)
-    else
-      out = similar(y₀,indices(idxs))
-      iter_idxs = enumerate(idxs)
-    end
-    @inbounds for (j,i) in iter_idxs
-      out[j] = (1-Θ)*y₀[i]+Θ*y₁[i]+Θ*(Θ-1)*((1-2Θ)*(y₁[i]-y₀[i])+(Θ-1)*dt*k[1][i] + Θ*dt*k[2][i])
-    end
+  if typeof(idxs) <: Void
+    out = @. (1-Θ)*y₀+Θ*y₁+Θ*(Θ-1)*((1-2Θ)*(y₁-y₀)+(Θ-1)*dt*k[1] + Θ*dt*k[2])
   else
-    out = (1-Θ)*y₀+Θ*y₁+Θ*(Θ-1)*((1-2Θ)*(y₁-y₀)+(Θ-1)*dt*k[1] + Θ*dt*k[2])
+    out = similar(y₀,indices(idxs))
+    @views @. out = (1-Θ)*y₀[idxs]+Θ*y₁[idxs]+Θ*(Θ-1)*((1-2Θ)*(y₁[idxs]-y₀[idxs])+(Θ-1)*dt*k[1][idxs] + Θ*dt*k[2][idxs])
   end
   out
 end
@@ -407,19 +365,11 @@ end
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
 @inline function hermite_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{1}}) # Default interpolant is Hermite
-  if typeof(y₀) <: AbstractArray
-    if typeof(idxs) <: Tuple
-      out = similar(y₀,idxs)
-      iter_idxs = enumerate(idxs)
-    else
-      out = similar(y₀,indices(idxs))
-      iter_idxs = enumerate(idxs)
-    end
-    @inbounds for (j,i) in iter_idxs
-      out[j] = k[1][i] + Θ*(-4*dt*k[1][i] - 2*dt*k[2][i] - 6*y₀[i] + Θ*(3*dt*k[1][i] + 3*dt*k[2][i] + 6*y₀[i] - 6*y₁[i]) + 6*y₁[i])/dt
-    end
+  if typeof(idxs) <: Void
+    out = @. k[1] + Θ*(-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(3*dt*k[1] + 3*dt*k[2] + 6*y₀ - 6*y₁) + 6*y₁)/dt
   else
-    out = k[1] + Θ*(-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(3*dt*k[1] + 3*dt*k[2] + 6*y₀ - 6*y₁) + 6*y₁)/dt
+    out = similar(y₀,indices(idxs))
+    @views @. out = k[1][idxs] + Θ*(-4*dt*k[1][idxs] - 2*dt*k[2][idxs] - 6*y₀[idxs] + Θ*(3*dt*k[1][idxs] + 3*dt*k[2][idxs] + 6*y₀[idxs] - 6*y₁[idxs]) + 6*y₁[idxs])/dt
   end
   out
 end
@@ -428,19 +378,11 @@ end
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
 @inline function hermite_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{2}}) # Default interpolant is Hermite
-  if typeof(y₀) <: AbstractArray
-    if typeof(idxs) <: Tuple
-      out = similar(y₀,idxs)
-      iter_idxs = enumerate(idxs)
-    else
-      out = similar(y₀,indices(idxs))
-      iter_idxs = enumerate(idxs)
-    end
-    @inbounds for (j,i) in iter_idxs
-      out[j] = (-4*dt*k[1][i] - 2*dt*k[2][i] - 6*y₀[i] + Θ*(6*dt*k[1][i] + 6*dt*k[2][i] + 12*y₀[i] - 12*y₁[i]) + 6*y₁[i])/(dt*dt)
-    end
+  if typeof(idxs) <: Void
+    out = @. (-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁) + 6*y₁)/(dt*dt)
   else
-    out = (-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁) + 6*y₁)/(dt*dt)
+    out = similar(y₀,indices(idxs))
+    @views @. out = (-4*dt*k[1][idxs] - 2*dt*k[2][idxs] - 6*y₀[idxs] + Θ*(6*dt*k[1][idxs] + 6*dt*k[2][idxs] + 12*y₀[idxs] - 12*y₁[idxs]) + 6*y₁[idxs])/(dt*dt)
   end
   out
 end
@@ -449,19 +391,11 @@ end
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
 @inline function hermite_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{3}}) # Default interpolant is Hermite
-  if typeof(y₀) <: AbstractArray
-    if typeof(idxs) <: Tuple
-      out = similar(y₀,idxs)
-      iter_idxs = enumerate(idxs)
-    else
-      out = similar(y₀,indices(idxs))
-      iter_idxs = enumerate(idxs)
-    end
-    @inbounds for (j,i) in iter_idxs
-      out[j] = (6*dt*k[1][i] + 6*dt*k[2][i] + 12*y₀[i] - 12*y₁[i])/(dt*dt*dt)
-    end
+  if typeof(idxs) <: Void
+    out = @. (6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁)/(dt*dt*dt)
   else
-    out = (6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁)/(dt*dt*dt)
+    out = similar(y₀,indices(idxs))
+    @views @. out = (6*dt*k[1][idxs] + 6*dt*k[2][idxs] + 12*y₀[idxs] - 12*y₁[idxs])/(dt*dt*dt)
   end
   out
 end
@@ -474,10 +408,10 @@ Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 @inline function hermite_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{0}}) # Default interpolant is Hermite
   if out == nothing
     return (1-Θ)*y₀[idxs]+Θ*y₁[idxs]+Θ*(Θ-1)*((1-2Θ)*(y₁[idxs]-y₀[idxs])+(Θ-1)*dt*k[1][idxs] + Θ*dt*k[2][idxs])
+  elseif idxs == nothing
+    @. out = (1-Θ)*y₀+Θ*y₁+Θ*(Θ-1)*((1-2Θ)*(y₁-y₀)+(Θ-1)*dt*k[1] + Θ*dt*k[2])
   else
-    @inbounds for (j,i) in enumerate(idxs)
-      out[j] = (1-Θ)*y₀[i]+Θ*y₁[i]+Θ*(Θ-1)*((1-2Θ)*(y₁[i]-y₀[i])+(Θ-1)*dt*k[1][i] + Θ*dt*k[2][i])
-    end
+    @views @. out = (1-Θ)*y₀[idxs]+Θ*y₁[idxs]+Θ*(Θ-1)*((1-2Θ)*(y₁[idxs]-y₀[idxs])+(Θ-1)*dt*k[1][idxs] + Θ*dt*k[2][idxs])
   end
 end
 
@@ -487,10 +421,10 @@ Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 @inline function hermite_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{1}}) # Default interpolant is Hermite
   if out == nothing
     return k[1][idxs] + Θ*(-4*dt*k[1][idxs] - 2*dt*k[2][idxs] - 6*y₀[idxs] + Θ*(3*dt*k[1][idxs] + 3*dt*k[2][idxs] + 6*y₀[idxs] - 6*y₁[idxs]) + 6*y₁[idxs])/dt
+  elseif idxs == nothing
+    @. out = k[1] + Θ*(-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(3*dt*k[1] + 3*dt*k[2] + 6*y₀ - 6*y₁) + 6*y₁)/dt
   else
-    @inbounds for (j,i) in enumerate(idxs)
-      out[j] = k[1][i] + Θ*(-4*dt*k[1][i] - 2*dt*k[2][i] - 6*y₀[i] + Θ*(3*dt*k[1][i] + 3*dt*k[2][i] + 6*y₀[i] - 6*y₁[i]) + 6*y₁[i])/dt
-    end
+    @views @. out = k[1][idxs] + Θ*(-4*dt*k[1][idxs] - 2*dt*k[2][idxs] - 6*y₀[idxs] + Θ*(3*dt*k[1][idxs] + 3*dt*k[2][idxs] + 6*y₀[idxs] - 6*y₁[idxs]) + 6*y₁[idxs])/dt
   end
 end
 
@@ -500,10 +434,10 @@ Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 @inline function hermite_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{2}}) # Default interpolant is Hermite
   if out == nothing
     return (-4*dt*k[1][idxs] - 2*dt*k[2][idxs] - 6*y₀[idxs] + Θ*(6*dt*k[1][idxs] + 6*dt*k[2][idxs] + 12*y₀[idxs] - 12*y₁[idxs]) + 6*y₁[idxs])/(dt*dt)
+  elseif idxs == nothing
+    @. out = (-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁) + 6*y₁)/(dt*dt)
   else
-    @inbounds for (j,i) in enumerate(idxs)
-      out[j] = (-4*dt*k[1][i] - 2*dt*k[2][i] - 6*y₀[i] + Θ*(6*dt*k[1][i] + 6*dt*k[2][i] + 12*y₀[i] - 12*y₁[i]) + 6*y₁[i])/(dt*dt)
-    end
+    @views @. out = (-4*dt*k[1][idxs] - 2*dt*k[2][idxs] - 6*y₀[idxs] + Θ*(6*dt*k[1][idxs] + 6*dt*k[2][idxs] + 12*y₀[idxs] - 12*y₁[idxs]) + 6*y₁[idxs])/(dt*dt)
   end
 end
 
@@ -513,95 +447,40 @@ Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 @inline function hermite_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{3}}) # Default interpolant is Hermite
   if out == nothing
     return (6*dt*k[1][idxs] + 6*dt*k[2][idxs] + 12*y₀[idxs] - 12*y₁[idxs])/(dt*dt*dt)
+  elseif idxs == nothing
+    @. out = (6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁)/(dt*dt*dt)
   else
-    @inbounds for (j,i) in enumerate(idxs)
-      out[j] = (6*dt*k[1][i] + 6*dt*k[2][i] + 12*y₀[i] - 12*y₁[i])/(dt*dt*dt)
-    end
+    @views @. out = (6*dt*k[1][idxs] + 6*dt*k[2][idxs] + 12*y₀[idxs] - 12*y₁[idxs])/(dt*dt*dt)
   end
 end
-
-"""
-Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Problems Page 190
-
-Herimte Interpolation, chosen if no other dispatch for ode_interpolant
-"""
-@inline function hermite_interpolant!(all_out::ArrayPartition,Θ,dt,all_y₀,all_y₁,all_k,cache,all_idxs,T::Type{Val{0}}) # Default interpolant is Hermite
-  for (out,y₀,y₁,idxs,k1,k2) in zip(all_out.x,all_y₀.x,all_y₁.x,all_idxs,all_k[1].x,all_k[2].x)
-    @inbounds for (j,i) in enumerate(idxs...)
-      out[j] = (1-Θ)*y₀[i]+Θ*y₁[i]+Θ*(Θ-1)*((1-2Θ)*(y₁[i]-y₀[i])+(Θ-1)*dt*k1[i] + Θ*dt*k2[i])
-    end
-  end
-end
-
-"""
-Herimte Interpolation, chosen if no other dispatch for ode_interpolant
-"""
-@inline function hermite_interpolant!(all_out::ArrayPartition,Θ,dt,all_y₀,all_y₁,all_k,cache,all_idxs,T::Type{Val{1}}) # Default interpolant is Hermite
-  for (out,y₀,y₁,idxs,k1,k2) in zip(all_out.x,all_y₀.x,all_y₁.x,all_idxs,all_k[1].x,all_k[2].x)
-    @inbounds for (j,i) in enumerate(idxs...)
-      out[j] = k[1][i] + Θ*(-4*dt*k[1][i] - 2*dt*k[2][i] - 6*y₀[i] + Θ*(3*dt*k[1][i] + 3*dt*k[2][i] + 6*y₀[i] - 6*y₁[i]) + 6*y₁[i])/dt
-    end
-  end
-end
-
-"""
-Herimte Interpolation, chosen if no other dispatch for ode_interpolant
-"""
-@inline function hermite_interpolant!(all_out::ArrayPartition,Θ,dt,all_y₀,all_y₁,all_k,cache,all_idxs,T::Type{Val{2}}) # Default interpolant is Hermite
-  for (out,y₀,y₁,idxs,k1,k2) in zip(all_out.x,all_y₀.x,all_y₁.x,all_idxs,all_k[1].x,all_k[2].x)
-    @inbounds for (j,i) in enumerate(idxs...)
-      out[j] = (-4*dt*k[1][i] - 2*dt*k[2][i] - 6*y₀[i] + Θ*(6*dt*k[1][i] + 6*dt*k[2][i] + 12*y₀[i] - 12*y₁[i]) + 6*y₁[i])/(dt*dt)
-    end
-  end
-end
-
-"""
-Herimte Interpolation, chosen if no other dispatch for ode_interpolant
-"""
-@inline function hermite_interpolant!(all_out::ArrayPartition,Θ,dt,all_y₀,all_y₁,all_k,cache,all_idxs,T::Type{Val{3}}) # Default interpolant is Hermite
-  for (out,y₀,y₁,idxs,k1,k2) in zip(all_out.x,all_y₀.x,all_y₁.x,all_idxs,all_k[1].x,all_k[2].x)
-    @inbounds for (j,i) in enumerate(idxs...)
-      out[j] = (6*dt*k[1][i] + 6*dt*k[2][i] + 12*y₀[i] - 12*y₁[i])/(dt*dt*dt)
-    end
-  end
-end
-
 
 ######################## Linear Interpolants
 
 @inline function linear_interpolant(Θ,dt,y₀,y₁,idxs,T::Type{Val{0}})
   if typeof(y₀) <: AbstractArray
-    if typeof(idxs) <: Tuple
-      out = similar(y₀,idxs)
-      iter_idxs = enumerate(eachindex(y₀))
+    if typeof(idxs) <: Void
+      out = @. (1-Θ)*y₀ + Θ*y₁
     else
       out = similar(y₀,indices(idxs))
-      iter_idxs = enumerate(idxs)
-    end
-    Θm1 = (1-Θ)
-    @inbounds for (j,i) in iter_idxs
-      out[j] = Θm1*y₀[i] + Θ*y₁[i]
+      Θm1 = (1-Θ)
+      @views @. out = Θm1*y₀[idxs] + Θ*y₁[idxs]
     end
   else
-    out = (1-Θ)*y₀ + Θ*y₁
+    out = @. (1-Θ)*y₀ + Θ*y₁
   end
   out
 end
 
 @inline function linear_interpolant(Θ,dt,y₀,y₁,idxs,T::Type{Val{1}})
   if typeof(y₀) <: AbstractArray
-    if typeof(idxs) <: Tuple
-      out = similar(y₀,idxs)
-      iter_idxs = enumerate(eachindex(y₀))
+    if typeof(idxs) <: Void
+      out = @. (y₁ - y₀)/dt
     else
       out = similar(y₀,indices(idxs))
-      iter_idxs = enumerate(idxs)
-    end
-    @inbounds for (j,i) in iter_idxs
-      out[j] = (y₁[i] - y₀[i])/dt
+      @views @. out = (y₁[idxs] - y₀[idxs])/dt
     end
   else
-    out = (1-Θ)*y₀ + Θ*y₁
+    out = @. (y₁ - y₀)/dt
   end
   out
 end
@@ -613,10 +492,10 @@ Linear Interpolation
   Θm1 = (1-Θ)
   if out == nothing
     return Θm1*y₀[idxs] + Θ*y₁[idxs]
+  elseif idxs == nothing
+    @. out = Θm1*y₀ + Θ*y₁
   else
-    @inbounds for (j,i) in enumerate(idxs)
-      out[j] = Θm1*y₀[i] + Θ*y₁[i]
-    end
+    @views @. out = Θm1*y₀[idxs] + Θ*y₁[idxs]
   end
 end
 
@@ -626,32 +505,9 @@ Linear Interpolation
 @inline function linear_interpolant!(out,Θ,dt,y₀,y₁,idxs,T::Type{Val{1}})
   if out == nothing
     return (y₁[idxs] - y₀[idxs])/dt
+  elseif idxs == nothing
+    @. out = (y₁ - y₀)/dt
   else
-    @inbounds for (j,i) in enumerate(idxs)
-      out[j] = (y₁[i] - y₀[i])/dt
-    end
-  end
-end
-
-"""
-Linear Interpolation
-"""
-@inline function linear_interpolant!(all_out::ArrayPartition,Θ,dt,all_y₀,all_y₁,cache,all_idxs,T::Type{Val{0}})
-  Θm1 = (1-Θ)
-  for (out,y₀,y₁,idxs) in zip(all_out.x,all_y₀.x,all_y₁.x,all_idxs)
-    @inbounds for (j,i) in enumerate(idxs...)
-      out[j] = Θm1*y₀[i] + Θ*y₁[i]
-    end
-  end
-end
-
-"""
-Linear Interpolation
-"""
-@inline function linear_interpolant!(all_out::ArrayPartition,Θ,dt,all_y₀,all_y₁,cache,all_idxs,T::Type{Val{1}})
-  for (out,y₀,y₁,idxs) in zip(all_out.x,all_y₀.x,all_y₁.x,all_idxs)
-    @inbounds for (j,i) in enumerate(idxs...)
-      out[j] = (y₁[i] - y₀[i])/dt
-    end
+    @views @. out = (y₁[idxs] - y₀[idxs])/dt
   end
 end

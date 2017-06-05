@@ -13,9 +13,7 @@ function ode_determine_initdt{tType,uType}(u0,t::tType,tdir,dtmax,abstol,reltol,
     dt₀ = tType((d₀/d₁)/100)
   end
   dt₀ = min(dt₀,tdir*dtmax)
-  @inbounds for i in eachindex(u0)
-     u₁[i] = u0[i] + tdir*dt₀*f₀[i]
-  end
+  @. u₁ = @muladd u0 + tdir*dt₀*f₀
   f(t+tdir*dt₀,u₁,f₁)
   tmp = (f₁.-f₀)./(abstol+abs.(u0).*reltol)*tType(1)
   d₂ = internalnorm(tmp)/dt₀

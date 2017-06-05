@@ -75,11 +75,7 @@ end
     if curt!=integrator.t # If <t, interpolate
       ode_addsteps!(integrator)
       Θ = (curt - integrator.tprev)/integrator.dt
-      if integrator.opts.save_idxs == nothing
-        val = ode_interpolant(Θ,integrator,indices(integrator.uprev),Val{0}) # out of place, but no force copy later
-      else
-        val = ode_interpolant(Θ,integrator,integrator.opts.save_idxs,Val{0}) # out of place, but no force copy later
-      end
+      val = ode_interpolant(Θ,integrator,integrator.opts.save_idxs,Val{0}) # out of place, but no force copy later
       copyat_or_push!(integrator.sol.t,integrator.saveiter,curt)
       save_val = val
       copyat_or_push!(integrator.sol.u,integrator.saveiter,save_val,Val{false})
@@ -318,8 +314,8 @@ end
   integrator.reeval_fsal = false
 end
 
-function (integrator::ODEIntegrator)(t,deriv::Type=Val{0};idxs=size(integrator.uprev))
+function (integrator::ODEIntegrator)(t,deriv::Type=Val{0};idxs=nothing)
   current_interpolant(t,integrator,idxs,deriv)
 end
 
-(integrator::ODEIntegrator)(val::AbstractArray,t::Union{Number,AbstractArray},deriv::Type=Val{0};idxs=eachindex(integrator.uprev)) = current_interpolant!(val,t,integrator,idxs,deriv)
+(integrator::ODEIntegrator)(val::AbstractArray,t::Union{Number,AbstractArray},deriv::Type=Val{0};idxs=nothing) = current_interpolant!(val,t,integrator,idxs,deriv)

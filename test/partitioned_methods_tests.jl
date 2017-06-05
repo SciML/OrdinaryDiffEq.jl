@@ -14,6 +14,7 @@ prob = PartitionedODEProblem((f1,f2),(u0,v0),(0.0,5.0))
 sol = solve(prob,SymplecticEuler(),dt=1/100)
 
 interp_time = 0:0.001:5
+interp = sol(0.5)
 interps = sol(interp_time)
 
 prob = SecondOrderODEProblem(f2,u0,v0,(0.0,5.0))

@@ -7,9 +7,9 @@ end
 @inline function perform_step!(integrator,cache::SSPRK22ConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   k = integrator.fsalfirst
-  tmp = uprev + dt*k
+  tmp = @. uprev + dt*k
   k = f(t+dt,tmp)
-  u = (uprev + tmp + dt*k) / 2
+  u = @. (uprev + tmp + dt*k) / 2
   integrator.fsallast = f(t+dt,u) # For interpolation, then FSAL'd
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -31,13 +31,9 @@ end
   @unpack t,dt,uprev,u,k = integrator
   uidx = eachindex(integrator.uprev)
   @unpack k,du,tmp,fsalfirst = cache
-  for i in uidx
-    tmp[i] = @muladd uprev[i] + dt*integrator.fsalfirst[i]
-  end
+  @. tmp = @muladd uprev + dt*integrator.fsalfirst
   f(t+dt,tmp,k)
-  for i in uidx
-    u[i] = (uprev[i] + tmp[i] + dt*k[i]) / 2
-  end
+  @. u = (uprev + tmp + dt*k) / 2
   f(t+dt,u,k)
   @pack integrator = t,dt,u
 end
@@ -78,17 +74,11 @@ end
   @unpack t,dt,uprev,u,k = integrator
   uidx = eachindex(integrator.uprev)
   @unpack k,du,tmp,fsalfirst = cache
-  for i in uidx
-    tmp[i] = @muladd uprev[i] + dt*integrator.fsalfirst[i]
-  end
+  @. tmp = @muladd uprev + dt*integrator.fsalfirst
   f(t+dt,tmp,k)
-  for i in uidx
-    tmp[i] = (3*uprev[i] + tmp[i] + dt*k[i]) / 4
-  end
+  @. tmp = (3*uprev + tmp + dt*k) / 4
   f(t+dt/2,tmp,k)
-  for i in uidx
-    u[i] = (uprev[i] + 2*tmp[i] + 2*dt*k[i]) / 3
-  end
+  @. u = (uprev + 2*tmp + 2*dt*k) / 3
   f(t+dt,u,k)
   @pack integrator = t,dt,u
 end
@@ -152,46 +142,25 @@ end
   dt_3 = dt/3
   dt_2 = dt/2
 
-  for i in uidx
-    tmp[i] = @muladd uprev[i] + dt_6 * integrator.fsalfirst[i]
-  end # u₁
+  @. tmp = @muladd uprev + dt_6 * integrator.fsalfirst
   f(t+dt_6, tmp, k)
-  for i in uidx
-    tmp[i] = @muladd tmp[i] + dt_6 * k[i]
-  end # u₂
+  @. tmp = @muladd tmp + dt_6 * k
   f(t+dt_3, tmp, k)
-  for i in uidx
-    tmp[i] = @muladd tmp[i] + dt_6 * k[i]
-  end # u₃
+  @. tmp = @muladd tmp + dt_6 * k
   f(t+dt_2, tmp, k)
-  for i in uidx
-    u₄[i] = @muladd tmp[i] + dt_6 * k[i]
-  end # u₄
+  @. u₄ = @muladd tmp + dt_6 * k
   f(t+2*dt_3, u₄, k₄)
-  for i in uidx
-    tmp[i] = @muladd (3*uprev[i] + 2*u₄[i] + 2*dt_6 * k₄[i]) / 5
-  end # u₅
+  @. tmp = @muladd (3*uprev + 2*u₄ + 2*dt_6 * k₄) / 5
   f(t+dt_3, tmp, k)
-  for i in uidx
-    tmp[i] = @muladd tmp[i] + dt_6 * k[i]
-  end # u₆
+  @. tmp = @muladd tmp + dt_6 * k
   f(t+dt_2, tmp, k)
-  for i in uidx
-    tmp[i] = @muladd tmp[i] + dt_6 * k[i]
-  end # u₇
+  @. tmp = @muladd tmp + dt_6 * k
   f(t+2*dt_3, tmp, k)
-  for i in uidx
-    tmp[i] = @muladd tmp[i] + dt_6 * k[i]
-  end # u₈
+  @. tmp = @muladd tmp + dt_6 * k
   f(t+5*dt_6, tmp, k)
-  for i in uidx
-    tmp[i] = @muladd tmp[i] + dt_6 * k[i]
-  end # u₉
+  @. tmp = @muladd tmp + dt_6 * k
   f(t+dt, tmp, k)
-  for i in uidx
-    u[i] = @muladd (uprev[i] + 9*(u₄[i] + dt_6*k₄[i]) + 15*(tmp[i] + dt_6*k[i])) / 25
-  end
-
+  @. u = @muladd (uprev + 9*(u₄ + dt_6*k₄) + 15*(tmp + dt_6*k)) / 25
   f(t+dt,u,k)
   @pack integrator = t,dt,u
 end

@@ -11,7 +11,7 @@ end
 @inline function perform_step!(integrator,cache::DiscreteConstantCache,f=integrator.f)
   if discrete_apply_map(integrator.alg)
     if discrete_scale_by_time(integrator.alg)
-      integrator.u = integrator.uprev + integrator.dt*f(integrator.t+integrator.dt,integrator.uprev)
+      integrator.u = integrator.uprev .+ integrator.dt.*f(integrator.t+integrator.dt,integrator.uprev)
     else
       integrator.u = f(integrator.t+integrator.dt,integrator.uprev)
     end
@@ -24,9 +24,7 @@ end
   if discrete_apply_map(integrator.alg)
     if discrete_scale_by_time(integrator.alg)
       f(t+dt,uprev,du)
-      for i in eachindex(integrator.u)
-        u[i] = @muladd uprev[i] + dt*du[i]
-      end
+      @. u = @muladd uprev + dt*du
     else
       f(t+dt,uprev,u)
     end
@@ -45,7 +43,7 @@ end
 @inline function perform_step!(integrator,cache::EulerConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   k = integrator.fsalfirst
-  u = muladd(dt,k,uprev)
+  u = muladd.(dt,k,uprev)
   k = f(t+dt,u) # For the interpolation, needs k at the updated point
   integrator.fsallast = k
   integrator.k[1] = integrator.fsalfirst
@@ -67,9 +65,7 @@ end
 @inline function perform_step!(integrator,cache::EulerCache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   uidx = eachindex(integrator.uprev)
-  for i in uidx
-    u[i] = muladd(dt,integrator.fsalfirst[i],uprev[i])
-  end
+  @. u = muladd(dt,integrator.fsalfirst,uprev)
   f(t+dt,u,integrator.fsallast) # For the interpolation, needs k at the updated point
   @pack integrator = t,dt,u,k
 end
@@ -84,8 +80,8 @@ end
   @unpack t,dt,uprev,u,k = integrator
   halfdt = dt/2
   k = integrator.fsalfirst
-  k = f(t+halfdt,uprev+halfdt*k)
-  u = uprev + dt*k
+  k = f(t+halfdt,uprev.+halfdt.*k)
+  u = uprev .+ dt.*k
   integrator.fsallast = f(t+dt,u) # For interpolation, then FSAL'd
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -108,13 +104,9 @@ end
   uidx = eachindex(integrator.uprev)
   @unpack k,du,tmp,fsalfirst = cache
   halfdt = dt/2
-  for i in uidx
-    tmp[i] = muladd(halfdt,integrator.fsalfirst[i],uprev[i])
-  end
+  @. tmp = muladd(halfdt,integrator.fsalfirst,uprev)
   f(t+halfdt,tmp,du)
-  for i in uidx
-    u[i] = muladd(dt,du[i],uprev[i])
-  end
+  @. u = muladd(dt,du,uprev)
   f(t+dt,u,k)
   @pack integrator = t,dt,u
 end
@@ -130,10 +122,10 @@ end
   halfdt = dt/2
   k₁ =integrator.fsalfirst
   ttmp = t+halfdt
-  k₂ = f(ttmp,muladd(halfdt,k₁,uprev))
-  k₃ = f(ttmp,muladd(halfdt,k₂,uprev))
-  k₄ = f(t+dt,muladd(dt,k₃,uprev))
-  u = muladd(dt/6,muladd(2,(k₂ + k₃),k₁+k₄),uprev)
+  k₂ = f(ttmp,muladd.(halfdt,k₁,uprev))
+  k₃ = f(ttmp,muladd.(halfdt,k₂,uprev))
+  k₄ = f(t+dt,muladd.(dt,k₃,uprev))
+  u = muladd.(dt/6,muladd.(2,(k₂ .+ k₃),k₁.+k₄),uprev)
   k = f(t+dt,u)
   integrator.fsallast = k
   integrator.k[1] = integrator.fsalfirst
@@ -159,21 +151,13 @@ end
   k₁ = fsalfirst
   halfdt = dt/2
   ttmp = t+halfdt
-  for i in uidx
-    tmp[i] = muladd(halfdt,k₁[i],uprev[i])
-  end
+  @. tmp = muladd(halfdt,k₁,uprev)
   f(ttmp,tmp,k₂)
-  for i in uidx
-    tmp[i] = muladd(halfdt,k₂[i],uprev[i])
-  end
+  @. tmp = muladd(halfdt,k₂,uprev)
   f(ttmp,tmp,k₃)
-  for i in uidx
-    tmp[i] = muladd(dt,k₃[i],uprev[i])
-  end
+  @. tmp = muladd(dt,k₃,uprev)
   f(t+dt,tmp,k₄)
-  for i in uidx
-    u[i] = muladd(dt/6,muladd(2,(k₂[i] + k₃[i]),k₁[i] + k₄[i]),uprev[i])
-  end
+  @. u = muladd(dt/6,muladd(2,(k₂ + k₃),k₁ + k₄),uprev)
   f(t+dt,u,k)
   @pack integrator = t,dt,u
 end
