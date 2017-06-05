@@ -105,18 +105,12 @@ times ts (sorted), with values timeseries and derivatives ks
   i = 2 # Start the search thinking it's between ts[1] and ts[2]
   tvals[idx[end]] > ts[end] && error("Solution interpolation cannot extrapolate past the final timepoint. Either solve on a longer timespan or use the local extrapolation from the integrator interface.")
   tvals[idx[1]] < ts[1] && error("Solution interpolation cannot extrapolate before the first timepoint. Either start solving earlier or use the local extrapolation from the integrator interface.")
-  if idxs == nothing
-    if (eltype(timeseries) <: AbstractArray) && !(eltype(timeseries) <: Union{StaticArray,Array})
-      vals = Vector{Vector{eltype(first(timeseries))}}(length(tvals))
-    else
-      vals = Vector{eltype(timeseries)}(length(tvals))
-    end
-  elseif typeof(idxs) <: Number
+  if typeof(idxs) <: Number
     vals = Vector{eltype(first(timeseries))}(length(tvals))
-  elseif eltype(timeseries) <: ArrayPartition
-    vals = Vector{eltype(timeseries)}(length(tvals))
+  elseif typeof(idxs) <: AbstractVector
+     vals = Vector{Vector{eltype(first(timeseries))}}(length(tvals))
   else
-    vals = Vector{Vector{eltype(first(timeseries))}}(length(tvals))
+    vals = Vector{eltype(timeseries)}(length(tvals))
   end
   @inbounds for j in idx
     t = tvals[j]
@@ -189,27 +183,27 @@ times ts (sorted), with values timeseries and derivatives ks
       dt = ts[notsaveat_idxs[i]] - ts[notsaveat_idxs[i-1]]
       Θ = (t-ts[notsaveat_idxs[i-1]])/dt
       if typeof(cache) <: (DiscreteCache) || typeof(cache) <: DiscreteConstantCache
-        if eltype(timeseries) <: Union{AbstractArray,ArrayPartition}
+        if eltype(timeseries) <: AbstractArray
           ode_interpolant!(vals[j],Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],0,cache,idxs,deriv)
         else
           vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],0,cache,idxs,deriv)
         end
       elseif !id.dense
-        if eltype(timeseries) <: Union{AbstractArray,ArrayPartition}
+        if eltype(timeseries) <: AbstractArray
           linear_interpolant!(vals[j],Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],idxs,deriv)
         else
           vals[j] = linear_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],idxs,deriv)
         end
       elseif typeof(cache) <: CompositeCache
         ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache.caches[id.alg_choice[notsaveat_idxs[i-1]]]) # update the kcurrent
-        if eltype(timeseries) <: Union{AbstractArray,ArrayPartition}
+        if eltype(timeseries) <: AbstractArray
           ode_interpolant!(vals[j],Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]],idxs,deriv)
         else
           vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]],idxs,deriv)
         end
       else
         ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache) # update the kcurrent
-        if eltype(timeseries) <: Union{AbstractArray,ArrayPartition}
+        if eltype(timeseries) <: AbstractArray
           ode_interpolant!(vals[j],Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache,idxs,deriv)
         else
           vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache,idxs,deriv)

@@ -108,13 +108,8 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
 
   order = alg_order(alg)
 
-  if typeof(u) <: Union{Number,AbstractArray,ArrayPartition}
-    uEltypeNoUnits = typeof(recursive_one(u))
-    tTypeNoUnits   = typeof(recursive_one(t))
-  else
-    uEltypeNoUnits = recursive_eltype(u./u)
-    tTypeNoUnits   = recursive_eltype(t./t)
-  end
+  uEltypeNoUnits = typeof(one(uEltype))
+  tTypeNoUnits   = typeof(one(tType))
 
   if typeof(alg) <: Discrete
     abstol_internal = zero(u)
@@ -147,10 +142,10 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     dt *= tdir # Allow positive dt, but auto-convert
   end
 
-  if typeof(u) <: Union{AbstractArray,Tuple}
-    rate_prototype = similar(u/zero(t),indices(u)) # rate doesn't need type info
+  if typeof(u) <: AbstractArray && !(typeof(u) <: SArray) && !(eltype(u) <: SArray) && !(typeof(u) <: ArrayPartition)# Could this be more efficient for other arrays?
+    rate_prototype = similar(u,typeof(oneunit(uEltype)/oneunit(tType)))
   else
-    rate_prototype = u/zero(t)
+    rate_prototype = u./oneunit(tType)
   end
   rateType = typeof(rate_prototype) ## Can be different if united
 
