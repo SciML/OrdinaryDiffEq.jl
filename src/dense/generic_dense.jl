@@ -105,18 +105,12 @@ times ts (sorted), with values timeseries and derivatives ks
   i = 2 # Start the search thinking it's between ts[1] and ts[2]
   tvals[idx[end]] > ts[end] && error("Solution interpolation cannot extrapolate past the final timepoint. Either solve on a longer timespan or use the local extrapolation from the integrator interface.")
   tvals[idx[1]] < ts[1] && error("Solution interpolation cannot extrapolate before the first timepoint. Either start solving earlier or use the local extrapolation from the integrator interface.")
-  if idxs == nothing
-    if (eltype(timeseries) <: AbstractArray) && !(eltype(timeseries) <: Union{StaticArray,Array})
-      vals = Vector{Vector{eltype(first(timeseries))}}(length(tvals))
-    else
-      vals = Vector{eltype(timeseries)}(length(tvals))
-    end
-  elseif typeof(idxs) <: Number
+  if typeof(idxs) <: Number
     vals = Vector{eltype(first(timeseries))}(length(tvals))
-  elseif eltype(timeseries) <: ArrayPartition
-    vals = Vector{eltype(timeseries)}(length(tvals))
+  elseif typeof(idxs) <: AbstractVector
+     vals = Vector{Vector{eltype(first(timeseries))}}(length(tvals)) 
   else
-    vals = Vector{Vector{eltype(first(timeseries))}}(length(tvals))
+    vals = Vector{eltype(timeseries)}(length(tvals))
   end
   @inbounds for j in idx
     t = tvals[j]
