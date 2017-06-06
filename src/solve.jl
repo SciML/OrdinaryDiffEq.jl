@@ -142,7 +142,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     dt *= tdir # Allow positive dt, but auto-convert
   end
 
-  if typeof(u) <: AbstractArray && !(typeof(u) <: SArray) && !(eltype(u) <: SArray) && !(typeof(u) <: ArrayPartition)# Could this be more efficient for other arrays?
+  if isinplace(prob) && typeof(u) <: AbstractArray && eltype(u) <: Number # Could this be more efficient for other arrays?
     rate_prototype = similar(u,typeof(oneunit(uEltype)/oneunit(tType)))
   else
     rate_prototype = u./oneunit(tType)
