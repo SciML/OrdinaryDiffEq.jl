@@ -353,10 +353,12 @@ Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
 @inline function hermite_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{0}}) # Default interpolant is Hermite
   if typeof(idxs) <: Void
-    out = @. (1-Θ)*y₀+Θ*y₁+Θ*(Θ-1)*((1-2Θ)*(y₁-y₀)+(Θ-1)*dt*k[1] + Θ*dt*k[2])
+    #out = @. (1-Θ)*y₀+Θ*y₁+Θ*(Θ-1)*((1-2Θ)*(y₁-y₀)+(Θ-1)*dt*k[1] + Θ*dt*k[2])
+    out = (1-Θ)*y₀+Θ*y₁+Θ*(Θ-1)*((1-2Θ)*(y₁-y₀)+(Θ-1)*dt*k[1] + Θ*dt*k[2])
   else
-    out = similar(y₀,indices(idxs))
-    @views @. out = (1-Θ)*y₀[idxs]+Θ*y₁[idxs]+Θ*(Θ-1)*((1-2Θ)*(y₁[idxs]-y₀[idxs])+(Θ-1)*dt*k[1][idxs] + Θ*dt*k[2][idxs])
+    #out = similar(y₀,indices(idxs))
+    #@views @. out = (1-Θ)*y₀[idxs]+Θ*y₁[idxs]+Θ*(Θ-1)*((1-2Θ)*(y₁[idxs]-y₀[idxs])+(Θ-1)*dt*k[1][idxs] + Θ*dt*k[2][idxs])
+    @views out = (1-Θ)*y₀[idxs]+Θ*y₁[idxs]+Θ*(Θ-1)*((1-2Θ)*(y₁[idxs]-y₀[idxs])+(Θ-1)*dt*k[1][idxs] + Θ*dt*k[2][idxs])
   end
   out
 end
@@ -366,10 +368,12 @@ Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
 @inline function hermite_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{1}}) # Default interpolant is Hermite
   if typeof(idxs) <: Void
-    out = @. k[1] + Θ*(-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(3*dt*k[1] + 3*dt*k[2] + 6*y₀ - 6*y₁) + 6*y₁)/dt
+    #out = @. k[1] + Θ*(-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(3*dt*k[1] + 3*dt*k[2] + 6*y₀ - 6*y₁) + 6*y₁)/dt
+    out = k[1] + Θ*(-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(3*dt*k[1] + 3*dt*k[2] + 6*y₀ - 6*y₁) + 6*y₁)/dt
   else
-    out = similar(y₀,indices(idxs))
-    @views @. out = k[1][idxs] + Θ*(-4*dt*k[1][idxs] - 2*dt*k[2][idxs] - 6*y₀[idxs] + Θ*(3*dt*k[1][idxs] + 3*dt*k[2][idxs] + 6*y₀[idxs] - 6*y₁[idxs]) + 6*y₁[idxs])/dt
+    #out = similar(y₀,indices(idxs))
+    #@views @. out = k[1][idxs] + Θ*(-4*dt*k[1][idxs] - 2*dt*k[2][idxs] - 6*y₀[idxs] + Θ*(3*dt*k[1][idxs] + 3*dt*k[2][idxs] + 6*y₀[idxs] - 6*y₁[idxs]) + 6*y₁[idxs])/dt
+    @views out = k[1][idxs] + Θ*(-4*dt*k[1][idxs] - 2*dt*k[2][idxs] - 6*y₀[idxs] + Θ*(3*dt*k[1][idxs] + 3*dt*k[2][idxs] + 6*y₀[idxs] - 6*y₁[idxs]) + 6*y₁[idxs])/dt
   end
   out
 end
@@ -379,10 +383,12 @@ Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
 @inline function hermite_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{2}}) # Default interpolant is Hermite
   if typeof(idxs) <: Void
-    out = @. (-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁) + 6*y₁)/(dt*dt)
+    #out = @. (-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁) + 6*y₁)/(dt*dt)
+    out = (-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁) + 6*y₁)/(dt*dt)
   else
-    out = similar(y₀,indices(idxs))
-    @views @. out = (-4*dt*k[1][idxs] - 2*dt*k[2][idxs] - 6*y₀[idxs] + Θ*(6*dt*k[1][idxs] + 6*dt*k[2][idxs] + 12*y₀[idxs] - 12*y₁[idxs]) + 6*y₁[idxs])/(dt*dt)
+    #out = similar(y₀,indices(idxs))
+    #@views @. out = (-4*dt*k[1][idxs] - 2*dt*k[2][idxs] - 6*y₀[idxs] + Θ*(6*dt*k[1][idxs] + 6*dt*k[2][idxs] + 12*y₀[idxs] - 12*y₁[idxs]) + 6*y₁[idxs])/(dt*dt)
+    @views out = (-4*dt*k[1][idxs] - 2*dt*k[2][idxs] - 6*y₀[idxs] + Θ*(6*dt*k[1][idxs] + 6*dt*k[2][idxs] + 12*y₀[idxs] - 12*y₁[idxs]) + 6*y₁[idxs])/(dt*dt)
   end
   out
 end
@@ -392,10 +398,12 @@ Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
 @inline function hermite_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{3}}) # Default interpolant is Hermite
   if typeof(idxs) <: Void
-    out = @. (6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁)/(dt*dt*dt)
+    #out = @. (6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁)/(dt*dt*dt)
+    out = (6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁)/(dt*dt*dt)
   else
-    out = similar(y₀,indices(idxs))
-    @views @. out = (6*dt*k[1][idxs] + 6*dt*k[2][idxs] + 12*y₀[idxs] - 12*y₁[idxs])/(dt*dt*dt)
+    #out = similar(y₀,indices(idxs))
+    #@views @. out = (6*dt*k[1][idxs] + 6*dt*k[2][idxs] + 12*y₀[idxs] - 12*y₁[idxs])/(dt*dt*dt)
+    @views out = (6*dt*k[1][idxs] + 6*dt*k[2][idxs] + 12*y₀[idxs] - 12*y₁[idxs])/(dt*dt*dt)
   end
   out
 end
@@ -409,9 +417,15 @@ Herimte Interpolation, chosen if no other dispatch for ode_interpolant
   if out == nothing
     return (1-Θ)*y₀[idxs]+Θ*y₁[idxs]+Θ*(Θ-1)*((1-2Θ)*(y₁[idxs]-y₀[idxs])+(Θ-1)*dt*k[1][idxs] + Θ*dt*k[2][idxs])
   elseif idxs == nothing
-    @. out = (1-Θ)*y₀+Θ*y₁+Θ*(Θ-1)*((1-2Θ)*(y₁-y₀)+(Θ-1)*dt*k[1] + Θ*dt*k[2])
+    #@. out = (1-Θ)*y₀+Θ*y₁+Θ*(Θ-1)*((1-2Θ)*(y₁-y₀)+(Θ-1)*dt*k[1] + Θ*dt*k[2])
+    @inbounds for i in eachindex(out)
+      out[i] = (1-Θ)*y₀[i]+Θ*y₁[i]+Θ*(Θ-1)*((1-2Θ)*(y₁[i]-y₀[i])+(Θ-1)*dt*k[1][i] + Θ*dt*k[2][i])
+    end
   else
-    @views @. out = (1-Θ)*y₀[idxs]+Θ*y₁[idxs]+Θ*(Θ-1)*((1-2Θ)*(y₁[idxs]-y₀[idxs])+(Θ-1)*dt*k[1][idxs] + Θ*dt*k[2][idxs])
+    #@views @. out = (1-Θ)*y₀[idxs]+Θ*y₁[idxs]+Θ*(Θ-1)*((1-2Θ)*(y₁[idxs]-y₀[idxs])+(Θ-1)*dt*k[1][idxs] + Θ*dt*k[2][idxs])
+    @inbounds for (j,i) in enumerate(idxs)
+      out[j] = (1-Θ)*y₀[i]+Θ*y₁[i]+Θ*(Θ-1)*((1-2Θ)*(y₁[i]-y₀[i])+(Θ-1)*dt*k[1][i] + Θ*dt*k[2][i])
+    end
   end
 end
 
@@ -422,9 +436,15 @@ Herimte Interpolation, chosen if no other dispatch for ode_interpolant
   if out == nothing
     return k[1][idxs] + Θ*(-4*dt*k[1][idxs] - 2*dt*k[2][idxs] - 6*y₀[idxs] + Θ*(3*dt*k[1][idxs] + 3*dt*k[2][idxs] + 6*y₀[idxs] - 6*y₁[idxs]) + 6*y₁[idxs])/dt
   elseif idxs == nothing
-    @. out = k[1] + Θ*(-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(3*dt*k[1] + 3*dt*k[2] + 6*y₀ - 6*y₁) + 6*y₁)/dt
+    #@. out = k[1] + Θ*(-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(3*dt*k[1] + 3*dt*k[2] + 6*y₀ - 6*y₁) + 6*y₁)/dt
+    @inbounds for i in eachindex(out)
+      out[i] = k[1][i] + Θ*(-4*dt*k[1][i] - 2*dt*k[2][i] - 6*y₀[i] + Θ*(3*dt*k[1][i] + 3*dt*k[2][i] + 6*y₀[i] - 6*y₁[i]) + 6*y₁[i])/dt
+    end
   else
-    @views @. out = k[1][idxs] + Θ*(-4*dt*k[1][idxs] - 2*dt*k[2][idxs] - 6*y₀[idxs] + Θ*(3*dt*k[1][idxs] + 3*dt*k[2][idxs] + 6*y₀[idxs] - 6*y₁[idxs]) + 6*y₁[idxs])/dt
+    #@views @. out = k[1][idxs] + Θ*(-4*dt*k[1][idxs] - 2*dt*k[2][idxs] - 6*y₀[idxs] + Θ*(3*dt*k[1][idxs] + 3*dt*k[2][idxs] + 6*y₀[idxs] - 6*y₁[idxs]) + 6*y₁[idxs])/dt
+    @inbounds for (j,i) in enumerate(idxs)
+      out[j] = k[1][i] + Θ*(-4*dt*k[1][i] - 2*dt*k[2][i] - 6*y₀[i] + Θ*(3*dt*k[1][i] + 3*dt*k[2][i] + 6*y₀[i] - 6*y₁[i]) + 6*y₁[i])/dt
+    end
   end
 end
 
@@ -435,9 +455,15 @@ Herimte Interpolation, chosen if no other dispatch for ode_interpolant
   if out == nothing
     return (-4*dt*k[1][idxs] - 2*dt*k[2][idxs] - 6*y₀[idxs] + Θ*(6*dt*k[1][idxs] + 6*dt*k[2][idxs] + 12*y₀[idxs] - 12*y₁[idxs]) + 6*y₁[idxs])/(dt*dt)
   elseif idxs == nothing
-    @. out = (-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁) + 6*y₁)/(dt*dt)
+    #@. out = (-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁) + 6*y₁)/(dt*dt)
+    @inbounds for i in eachindex(out)
+      out[i] = (-4*dt*k[1][i] - 2*dt*k[2][i] - 6*y₀[i] + Θ*(6*dt*k[1][i] + 6*dt*k[2][i] + 12*y₀[i] - 12*y₁[i]) + 6*y₁[i])/(dt*dt)
+    end
   else
-    @views @. out = (-4*dt*k[1][idxs] - 2*dt*k[2][idxs] - 6*y₀[idxs] + Θ*(6*dt*k[1][idxs] + 6*dt*k[2][idxs] + 12*y₀[idxs] - 12*y₁[idxs]) + 6*y₁[idxs])/(dt*dt)
+    #@views @. out = (-4*dt*k[1][idxs] - 2*dt*k[2][idxs] - 6*y₀[idxs] + Θ*(6*dt*k[1][idxs] + 6*dt*k[2][idxs] + 12*y₀[idxs] - 12*y₁[idxs]) + 6*y₁[idxs])/(dt*dt)
+    @inbounds for (j,i) in enumerate(idxs)
+      out[j] = (-4*dt*k[1][i] - 2*dt*k[2][i] - 6*y₀[i] + Θ*(6*dt*k[1][i] + 6*dt*k[2][i] + 12*y₀[i] - 12*y₁[i]) + 6*y₁[i])/(dt*dt)
+    end
   end
 end
 
@@ -448,39 +474,41 @@ Herimte Interpolation, chosen if no other dispatch for ode_interpolant
   if out == nothing
     return (6*dt*k[1][idxs] + 6*dt*k[2][idxs] + 12*y₀[idxs] - 12*y₁[idxs])/(dt*dt*dt)
   elseif idxs == nothing
-    @. out = (6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁)/(dt*dt*dt)
+    # @. out = (6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁)/(dt*dt*dt)
+    for i in eachindex(out)
+      out[i] = (6*dt*k[1][i] + 6*dt*k[2][i] + 12*y₀[i] - 12*y₁[i])/(dt*dt*dt)
+    end
   else
-    @views @. out = (6*dt*k[1][idxs] + 6*dt*k[2][idxs] + 12*y₀[idxs] - 12*y₁[idxs])/(dt*dt*dt)
+    #@views @. out = (6*dt*k[1][idxs] + 6*dt*k[2][idxs] + 12*y₀[idxs] - 12*y₁[idxs])/(dt*dt*dt)
+    for (j,i) in enumerate(idxs)
+      out[j] = (6*dt*k[1][i] + 6*dt*k[2][i] + 12*y₀[i] - 12*y₁[i])/(dt*dt*dt)
+    end
   end
 end
 
 ######################## Linear Interpolants
 
 @inline function linear_interpolant(Θ,dt,y₀,y₁,idxs,T::Type{Val{0}})
-  if typeof(y₀) <: AbstractArray
-    if typeof(idxs) <: Void
-      out = @. (1-Θ)*y₀ + Θ*y₁
-    else
-      out = similar(y₀,indices(idxs))
-      Θm1 = (1-Θ)
-      @views @. out = Θm1*y₀[idxs] + Θ*y₁[idxs]
-    end
+  if typeof(idxs) <: Void
+    #out = @. (1-Θ)*y₀ + Θ*y₁
+    out = (1-Θ)*y₀ + Θ*y₁
   else
-    out = @. (1-Θ)*y₀ + Θ*y₁
+    #out = similar(y₀,indices(idxs))
+    Θm1 = (1-Θ)
+    #@views @. out = Θm1*y₀[idxs] + Θ*y₁[idxs]
+    @views out = Θm1*y₀[idxs] + Θ*y₁[idxs]
   end
   out
 end
 
 @inline function linear_interpolant(Θ,dt,y₀,y₁,idxs,T::Type{Val{1}})
-  if typeof(y₀) <: AbstractArray
-    if typeof(idxs) <: Void
-      out = @. (y₁ - y₀)/dt
-    else
-      out = similar(y₀,indices(idxs))
-      @views @. out = (y₁[idxs] - y₀[idxs])/dt
-    end
+  if typeof(idxs) <: Void
+    #out = @. (y₁ - y₀)/dt
+    out = (y₁ - y₀)/dt
   else
-    out = @. (y₁ - y₀)/dt
+    #out = similar(y₀,indices(idxs))
+    #@views @. out = (y₁[idxs] - y₀[idxs])/dt
+    @views out = (y₁[idxs] - y₀[idxs])/dt
   end
   out
 end
@@ -493,9 +521,15 @@ Linear Interpolation
   if out == nothing
     return Θm1*y₀[idxs] + Θ*y₁[idxs]
   elseif idxs == nothing
-    @. out = Θm1*y₀ + Θ*y₁
+    #@. out = Θm1*y₀ + Θ*y₁
+    @inbounds for i in eachindex(out)
+      out[i] = Θm1*y₀[i] + Θ*y₁[i]
+    end
   else
-    @views @. out = Θm1*y₀[idxs] + Θ*y₁[idxs]
+    #@views @. out = Θm1*y₀[idxs] + Θ*y₁[idxs]
+    @inbounds for (j,i) in enumerate(idxs)
+      out[j] = Θm1*y₀[i] + Θ*y₁[i]
+    end
   end
 end
 
@@ -506,8 +540,14 @@ Linear Interpolation
   if out == nothing
     return (y₁[idxs] - y₀[idxs])/dt
   elseif idxs == nothing
-    @. out = (y₁ - y₀)/dt
+    #@. out = (y₁ - y₀)/dt
+    @inbounds for i in eachindex(out)
+      out[i] = (y₁[i] - y₀[i])/dt
+    end
   else
-    @views @. out = (y₁[idxs] - y₀[idxs])/dt
+    #@views @. out = (y₁[idxs] - y₀[idxs])/dt
+    @inbounds for (j,i) in enumerate(idxs)
+      out[j] = (y₁[i] - y₀[i])/dt
+    end
   end
 end

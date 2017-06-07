@@ -52,10 +52,8 @@ end
         Calculus.finite_difference_jacobian!(uf,vec(uprev),vec(du1),J,integrator.alg.diff_type)
       end
     end
-    @fastmath for i in 1:length(u)
-      @simd for j in 1:length(u)
+    for i in 1:length(u), j in 1:length(u)
         @inbounds W[i,j] = @muladd mass_matrix[i,j]-γ*J[i,j]
-      end
     end
     integrator.alg.linsolve(vectmp,W,linsolve_tmp_vec,true)
   end
@@ -165,10 +163,8 @@ end#
         Calculus.finite_difference_jacobian!(uf,vec(uprev),vec(du1),J,integrator.alg.diff_type)
       end
     end
-    @fastmath for i in 1:length(u)
-      @simd for j in 1:length(u)
+    for i in 1:length(u), j in 1:length(u)
         @inbounds W[i,j] = @muladd mass_matrix[i,j]-γ*J[i,j]
-      end
     end
     integrator.alg.linsolve(vectmp,W,linsolve_tmp_vec,true)
   end
