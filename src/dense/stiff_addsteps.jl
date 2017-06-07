@@ -34,7 +34,10 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenb
 
     γ = dt*d
 
-    @. linsolve_tmp = @muladd fsalfirst + γ*dT
+    #@. linsolve_tmp = @muladd fsalfirst + γ*dT
+    @tight_loop_macros for i in uidx
+      @inbounds linsolve_tmp[i] = @muladd fsalfirst[i] + γ*dT[i]
+    end
 
     if has_invW(f)
       f(Val{:invW},t,u,γ,W) # W == inverse W
@@ -43,24 +46,32 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenb
       ### Jacobian does not need to be re-evaluated after an event
       ### Since it's unchanged
       for i in 1:length(u), j in 1:length(u)
-        W[i,j] = @muladd I[i,j]-γ*J[i,j]
+        @inbounds W[i,j] = @muladd I[i,j]-γ*J[i,j]
       end
       cache.linsolve(vectmp,W,linsolve_tmp_vec,true)
     end
 
     recursivecopy!(k₁,reshape(vectmp,size(u)...))
-    @. tmp=uprev+dt*k₁/2
+    #@. tmp=uprev+dt*k₁/2
+    @tight_loop_macros for i in uidx
+      @inbounds tmp[i] = uprev[i] + dt*k₁[i]/2
+    end
     f(t+dt/2,tmp,f₁)
 
-    @. linsolve_tmp = f₁-k₁
-
+    #@. linsolve_tmp = f₁-k₁
+    @tight_loop_macros for i in uidx
+      @inbounds linsolve_tmp[i] = f₁[i]-k₁[i]
+    end
     if has_invW(f)
       A_mul_B!(vectmp2,W,linsolve_tmp_vec)
     else
       cache.linsolve(vectmp2,W,linsolve_tmp_vec)
     end
 
-    @. k₂ = tmp + k₁
+    #@. k₂ = tmp + k₁
+    @tight_loop_macros for i in uidx
+      @inbounds k₂[i] = tmp[i] + k₁[i]
+    end
     copyat_or_push!(k,1,k₁)
     copyat_or_push!(k,2,k₂)
   end
@@ -75,7 +86,10 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenb
 
     γ = dt*d
 
-    @. linsolve_tmp = @muladd fsalfirst + γ*dT
+    #@. linsolve_tmp = @muladd fsalfirst + γ*dT
+    @tight_loop_macros for i in uidx
+      @inbounds linsolve_tmp[i] = @muladd fsalfirst[i] + γ*dT[i]
+    end
 
     if has_invW(f)
       f(Val{:invW},t,u,γ,W) # W == inverse W
@@ -84,15 +98,23 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenb
       ### Jacobian does not need to be re-evaluated after an event
       ### Since it's unchanged
       for i in 1:length(u), j in 1:length(u)
-        W[i,j] = @muladd I[i,j]-γ*J[i,j]
+        @inbounds W[i,j] = @muladd I[i,j]-γ*J[i,j]
       end
       cache.linsolve(vectmp,W,linsolve_tmp_vec,true)
     end
 
     recursivecopy!(k₁,reshape(vectmp,size(u)...))
-    @. tmp=uprev+dt*k₁/2
+
+    #@. tmp=uprev+dt*k₁/2
+    @tight_loop_macros for i in uidx
+      @inbounds tmp[i] = uprev[i] + dt*k₁[i]/2
+    end
     f(t+dt/2,tmp,f₁)
-    @. linsolve_tmp = f₁-k₁
+
+    #@. linsolve_tmp = f₁-k₁
+    @tight_loop_macros for i in uidx
+      @inbounds linsolve_tmp[i] = f₁[i]-k₁[i]
+    end
 
     if has_invW(f)
       A_mul_B!(vectmp2,W,linsolve_tmp_vec)
@@ -100,7 +122,10 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenb
       cache.linsolve(vectmp2,W,linsolve_tmp_vec)
     end
 
-    @. k₂ = tmp + k₁
+    @tight_loop_macros for i in uidx
+      @inbounds k₂[i] = tmp[i] + k₁[i]
+    end
+
     copyat_or_push!(k,1,k₁)
     copyat_or_push!(k,2,k₂)
   end
