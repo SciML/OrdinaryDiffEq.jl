@@ -169,7 +169,7 @@ end
     @fastmath q = q11/(qold^beta2)
     integrator.q11 = q11
     @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),q/integrator.opts.gamma))
-    dtnew = integrator.dt/q
+    @fastmath dtnew = integrator.dt/q
     ttmp = integrator.t + integrator.dt
     integrator.isout = integrator.opts.isoutofdomain(ttmp,integrator.u)
     integrator.accept_step = (!integrator.isout && integrator.EEst <= 1.0) || (integrator.opts.force_dtmin && abs(integrator.dt) <= abs(integrator.opts.dtmin))
