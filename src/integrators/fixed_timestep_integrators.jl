@@ -42,7 +42,7 @@ end
   if discrete_apply_map(integrator.alg)
     if discrete_scale_by_time(integrator.alg)
       f(t+dt,uprev,du)
-      @fastmath @simd for i in eachindex(integrator.u)
+      @tight_loop_macros for i in eachindex(integrator.u)
         @inbounds u[i] = @muladd uprev[i] + dt*du[i]
       end
     else
@@ -86,7 +86,7 @@ end
   @unpack t,dt,uprev,u,k = integrator
   fsalfirst,fsallast = integrator.fsalfirst,integrator.fsallast
   uidx = eachindex(integrator.uprev)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds u[i] = muladd(dt,fsalfirst[i],uprev[i])
   end
   f(t+dt,u,fsallast) # For the interpolation, needs k at the updated point
@@ -151,11 +151,11 @@ end
   uidx = eachindex(integrator.uprev)
   @unpack k,du,tmp,fsalfirst = cache
   halfdt = dt/2
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = muladd(halfdt,fsalfirst[i],uprev[i])
   end
   f(t+halfdt,tmp,du)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds u[i] = muladd(dt,du[i],uprev[i])
   end
   f(t+dt,u,k)
@@ -202,19 +202,19 @@ end
   k₁ = fsalfirst
   halfdt = dt/2
   ttmp = t+halfdt
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = muladd(halfdt,k₁[i],uprev[i])
   end
   f(ttmp,tmp,k₂)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = muladd(halfdt,k₂[i],uprev[i])
   end
   f(ttmp,tmp,k₃)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = muladd(dt,k₃[i],uprev[i])
   end
   f(t+dt,tmp,k₄)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds u[i] = muladd(dt/6,muladd(2,(k₂[i] + k₃[i]),k₁[i] + k₄[i]),uprev[i])
   end
   f(t+dt,u,k)

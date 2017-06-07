@@ -16,7 +16,7 @@
   dt = integrator.dt
   #du = muladd.(integrator.dt,kdu,duprev)
   duidx = eachindex(du)
-  @fastmath @simd for i in duidx
+  @tight_loop_macros for i in duidx
     @inbounds du[i] = muladd(dt,kdu[i],duprev[i])
   end
   f[1](integrator.t,uprev,du,ku)
@@ -32,14 +32,14 @@ end
   ku  = integrator.k[2].x[1]
   kdu = integrator.k[2].x[2]
   #u .= muladd.(dt,kuprev,uprev)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds u[i] = muladd(dt,kuprev[i],uprev[i])
   end
   # Now actually compute the step
   # Do it at the end for interpolations!
   f[2](integrator.t,uprev,duprev,kdu)
   #du .= muladd.(dt,kdu,duprev)
-  @fastmath @simd for i in duidx
+  @tight_loop_macros for i in duidx
     du[i] = muladd(dt,kdu[i],duprev[i])
   end
   f[1](integrator.t,uprev,du,ku)

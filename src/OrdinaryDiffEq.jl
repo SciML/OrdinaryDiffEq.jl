@@ -30,6 +30,10 @@ module OrdinaryDiffEq
                      u_modified!,savevalues!,add_tstop!,add_saveat!,set_reltol!,
                      set_abstol!
 
+  macro tight_loop_macros(ex)
+   :($(esc(ex)))
+  end
+
   include("misc_utils.jl")
   include("algorithms.jl")
   include("alg_utils.jl")

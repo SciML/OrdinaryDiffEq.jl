@@ -154,56 +154,56 @@ end
   @unpack kk,utilde,tmp,atmp,uEEst = cache
   # Middle
   for i = 2:stages-1
-    @fastmath @simd for l in uidx
+    @tight_loop_macros for l in uidx
       @inbounds utilde[l] = zero(kk[1][1])
     end
     for j = 1:i-1
-      @fastmath @simd for l in uidx
+      @tight_loop_macros for l in uidx
         @inbounds utilde[l] = @muladd utilde[l] + A[j,i]*kk[j][l]
       end
     end
-    @fastmath @simd for l in uidx
+    @tight_loop_macros for l in uidx
       @inbounds tmp[l] = @muladd uprev[l]+dt*utilde[l]
     end
     f(@muladd(t+c[i]*dt),tmp,kk[i])
   end
   #Last
-  @fastmath @simd for l in uidx
+  @tight_loop_macros for l in uidx
     @inbounds utilde[l] = zero(kk[1][1])
   end
   for j = 1:stages-1
-    @fastmath @simd for l in uidx
+    @tight_loop_macros for l in uidx
       @inbounds utilde[l] = @muladd utilde[l] + A[j,end]*kk[j][l]
     end
   end
-  @fastmath @simd for l in uidx
+  @tight_loop_macros for l in uidx
     @inbounds u[l] = @muladd uprev[l]+dt*utilde[l]
   end
   f(@muladd(t+c[end]*dt),u,kk[end]) #fsallast is tmp even if not fsal
   #Accumulate
   if !isfsal(integrator.alg.tableau)
-    @fastmath @simd for i in uidx
+    @tight_loop_macros for i in uidx
       @inbounds utilde[i] = α[1]*kk[1][i]
     end
     for i = 2:stages
-      @fastmath @simd for l in uidx
+      @tight_loop_macros for l in uidx
         @inbounds utilde[l] = @muladd utilde[l] + α[i]*kk[i][l]
       end
     end
-    @fastmath @simd for i in uidx
+    @tight_loop_macros for i in uidx
       @inbounds u[i] = @muladd uprev[i] + dt*utilde[i]
     end
   end
   if integrator.opts.adaptive
-    @fastmath @simd for i in uidx
+    @tight_loop_macros for i in uidx
       @inbounds uEEst[i] = αEEst[1]*kk[1][i]
     end
     for i = 2:stages
-      @fastmath @simd for j in uidx
+      @tight_loop_macros for j in uidx
         @inbounds uEEst[j] = @muladd uEEst[j] + αEEst[i]*kk[i][j]
       end
     end
-    @fastmath @simd for i in uidx
+    @tight_loop_macros for i in uidx
       @inbounds atmp[i] = (dt*(utilde[i]-uEEst[i])./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol))
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)

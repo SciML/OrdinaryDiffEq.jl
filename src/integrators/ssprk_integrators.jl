@@ -44,11 +44,11 @@ end
   @unpack t,dt,uprev,u,k = integrator
   uidx = eachindex(integrator.uprev)
   @unpack k,du,tmp,fsalfirst = cache
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i] + dt*integrator.fsalfirst[i]
   end
   f(t+dt,tmp,k)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds u[i] = @muladd (uprev[i] + tmp[i] + dt*k[i]) / 2
   end
   f(t+dt,u,k)
@@ -105,15 +105,15 @@ end
   @unpack t,dt,uprev,u,k = integrator
   uidx = eachindex(integrator.uprev)
   @unpack k,du,tmp,fsalfirst = cache
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i] + dt*integrator.fsalfirst[i]
   end
   f(t+dt,tmp,k)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd (3*uprev[i] + tmp[i] + dt*k[i]) / 4
   end
   f(t+dt/2,tmp,k)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds u[i] = @muladd (uprev[i] + 2*tmp[i] + 2*dt*k[i]) / 3
   end
   f(t+dt,u,k)
@@ -211,43 +211,43 @@ end
   dt_3 = dt/3
   dt_2 = dt/2
 
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i] + dt_6 * integrator.fsalfirst[i]
   end # u₁
   f(t+dt_6, tmp, k)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd tmp[i] + dt_6 * k[i]
   end # u₂
   f(t+dt_3, tmp, k)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd tmp[i] + dt_6 * k[i]
   end # u₃
   f(t+dt_2, tmp, k)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds u₄[i] = @muladd tmp[i] + dt_6 * k[i]
   end # u₄
   f(t+2*dt_3, u₄, k₄)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd (3*uprev[i] + 2*u₄[i] + 2*dt_6 * k₄[i]) / 5
   end # u₅
   f(t+dt_3, tmp, k)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd tmp[i] + dt_6 * k[i]
   end # u₆
   f(t+dt_2, tmp, k)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd tmp[i] + dt_6 * k[i]
   end # u₇
   f(t+2*dt_3, tmp, k)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd tmp[i] + dt_6 * k[i]
   end # u₈
   f(t+5*dt_6, tmp, k)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd tmp[i] + dt_6 * k[i]
   end # u₉
   f(t+dt, tmp, k)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds u[i] = @muladd (uprev[i] + 9*(u₄[i] + dt_6*k₄[i]) + 15*(tmp[i] + dt_6*k[i])) / 25
   end
 

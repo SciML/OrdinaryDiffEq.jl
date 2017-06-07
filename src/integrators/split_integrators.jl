@@ -44,12 +44,12 @@ end
   fsalfirst,fsallast = integrator.fsalfirst,integrator.fsallast
   tmp = cache.tmp
   uidx = eachindex(u)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds u[i] = muladd(dt,fsalfirst[i],uprev[i])
   end
   f[1](t+dt,u,integrator.fsallast) # For the interpolation, needs k at the updated point
   f[2](t+dt,u,integrator.cache.tmp) # For the interpolation, needs k at the updated point
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds fsallast[i] += tmp[i]
   end
   @pack integrator = t,dt,u,k

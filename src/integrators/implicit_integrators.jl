@@ -48,7 +48,7 @@ function (p::RHS_IE)(uprev,resid)
   du = get_du(p.dual_cache, eltype(uprev))
   p.f(p.t+p.dt,reshape(uprev,p.sizeu),du)
   #@. resid = uprev - p.u_old - p.dt*du
-  @fastmath @simd for i in p.uidx
+  @tight_loop_macros for i in p.uidx
     @inbounds resid[i] = uprev[i] - p.u_old[i] - p.dt*du[i]
   end
 end
@@ -96,7 +96,7 @@ function (p::RHS_Trap)(uprev,resid)
   du1 = get_du(p.dual_cache, eltype(uprev))
   p.f(p.t+p.dt,reshape(uprev,p.sizeu),du1)
   #@. resid = @muladd uprev - p.u_old - (p.dt/2)*(du1+p.f_old)
-  @fastmath @simd for i in p.uidx
+  @tight_loop_macros for i in p.uidx
     @inbounds resid[i] = @muladd uprev[i] - p.u_old[i] - (p.dt/2)*(du1[i]+p.f_old[i])
   end
 end

@@ -115,47 +115,47 @@ end
   k1 = fsalfirst
   f(t,uprev,k1)
   a = dt*a21
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+a*k1[i]
   end
   f(@muladd(t + c1*dt),tmp,k2)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+dt*(a31*k1[i]+a32*k2[i])
   end
   f(@muladd(t + c2*dt),tmp,k3)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+dt*(a41*k1[i]+a43*k3[i])
   end
   f(@muladd(t + c3*dt),tmp,k4)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+dt*(a51*k1[i]+a53*k3[i]+a54*k4[i])
   end
   f(@muladd(t + c4*dt),tmp,k5)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+dt*(a61*k1[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
   end
   f(@muladd(t + c5*dt),tmp,k6)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+dt*(a71*k1[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i])
   end
   f(@muladd(t + c6*dt),tmp,k7)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+dt*(a81*k1[i]+a83*k3[i]+a84*k4[i]+a85*k5[i]+a86*k6[i]+a87*k7[i])
   end
   f(@muladd(t + c7*dt),tmp,k8)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+dt*(a91*k1[i]+a93*k3[i]+a94*k4[i]+a95*k5[i]+a96*k6[i]+a97*k7[i]+a98*k8[i])
   end
   f(t+dt,tmp,k9)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+dt*(a101*k1[i]+a103*k3[i]+a104*k4[i]+a105*k5[i]+a106*k6[i]+a107*k7[i]+a108*k8[i])
   end
   f(t+dt,tmp,k10)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     u[i] = uprev[i] + dt*(k1[i]*b1+k4[i]*b4+k5[i]*b5+k6[i]*b6+k7[i]*b7+k8[i]*b8+k9[i]*b9)
   end
   if integrator.opts.adaptive
-    @fastmath @simd for i in uidx
+    @tight_loop_macros for i in uidx
       @inbounds utilde[i] = uprev[i] + dt*(k1[i]*bhat1+k4[i]*bhat4+k5[i]*bhat5+k6[i]*bhat6+k7[i]*bhat7+k8[i]*bhat8+k10[i]*bhat10)
       @inbounds atmp[i] = ((utilde[i]-u[i])./(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol))
     end
@@ -357,57 +357,57 @@ end
   @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,update,udiff,bspl,dense_tmp3,dense_tmp4,dense_tmp5,dense_tmp6,dense_tmp7,kupdate,utilde,tmp,atmp,atmp2 = cache
   f(t,uprev,k1)
   a = dt*a0201
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+a*k1[i]
   end
   f(@muladd(t + c2*dt),tmp,k2)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+dt*(a0301*k1[i]+a0302*k2[i])
   end
   f(@muladd(t + c3*dt),tmp,k3)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+dt*(a0401*k1[i]+a0403*k3[i])
   end
   f(@muladd(t + c4*dt),tmp,k4)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+dt*(a0501*k1[i]+a0503*k3[i]+a0504*k4[i])
   end
   f(@muladd(t + c5*dt),tmp,k5)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+dt*(a0601*k1[i]+a0604*k4[i]+a0605*k5[i])
   end
   f(@muladd(t + c6*dt),tmp,k6)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+dt*(a0701*k1[i]+a0704*k4[i]+a0705*k5[i]+a0706*k6[i])
   end
   f(@muladd(t + c7*dt),tmp,k7)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+dt*(a0801*k1[i]+a0804*k4[i]+a0805*k5[i]+a0806*k6[i]+a0807*k7[i])
   end
   f(@muladd(t + c8*dt),tmp,k8)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+dt*(a0901*k1[i]+a0904*k4[i]+a0905*k5[i]+a0906*k6[i]+a0907*k7[i]+a0908*k8[i])
   end
   f(@muladd(t + c9*dt),tmp,k9)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+dt*(a1001*k1[i]+a1004*k4[i]+a1005*k5[i]+a1006*k6[i]+a1007*k7[i]+a1008*k8[i]+a1009*k9[i])
   end
   f(@muladd(t + c10*dt),tmp,k10)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+dt*(a1101*k1[i]+a1104*k4[i]+a1105*k5[i]+a1106*k6[i]+a1107*k7[i]+a1108*k8[i]+a1109*k9[i]+a1110*k10[i])
   end
   f(@muladd(t + c11*dt),tmp,k11)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+dt*(a1201*k1[i]+a1204*k4[i]+a1205*k5[i]+a1206*k6[i]+a1207*k7[i]+a1208*k8[i]+a1209*k9[i]+a1210*k10[i]+a1211*k11[i])
   end
   f(t+dt,tmp,k12)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds kupdate[i] = @muladd b1*k1[i]+b6*k6[i]+b7*k7[i]+b8*k8[i]+b9*k9[i]+b10*k10[i]+b11*k11[i]+b12*k12[i]
     @inbounds update[i] = dt*kupdate[i]
     @inbounds u[i] = uprev[i] + update[i]
   end
   if integrator.opts.adaptive
-    @fastmath @simd for i in uidx
+    @tight_loop_macros for i in uidx
       @inbounds atmp[i] = (dt*(@muladd(k1[i]*er1 + k6[i]*er6 + k7[i]*er7 + k8[i]*er8 + k9[i]*er9 + k10[i]*er10 + k11[i]*er11 + k12[i]*er12))./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol))
       @inbounds atmp2[i]= (@muladd(update[i] - dt*(bhh1*k1[i] + bhh2*k9[i] + bhh3*k12[i]))./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol))
     end
@@ -424,19 +424,19 @@ end
   if integrator.opts.calck
     @unpack c14,c15,c16,a1401,a1407,a1408,a1409,a1410,a1411,a1412,a1413,a1501,a1506,a1507,a1508,a1511,a1512,a1513,a1514,a1601,a1606,a1607,a1608,a1609,a1613,a1614,a1615 = cache.tab
     @unpack d401,d406,d407,d408,d409,d410,d411,d412,d413,d414,d415,d416,d501,d506,d507,d508,d509,d510,d511,d512,d513,d514,d515,d516,d601,d606,d607,d608,d609,d610,d611,d612,d613,d614,d615,d616,d701,d706,d707,d708,d709,d710,d711,d712,d713,d714,d715,d716 = cache.tab
-    @fastmath @simd for i in uidx
+    @tight_loop_macros for i in uidx
       @inbounds tmp[i] = @muladd uprev[i]+dt*(a1401*k1[i]+a1407*k7[i]+a1408*k8[i]+a1409*k9[i]+a1410*k10[i]+a1411*k11[i]+a1412*k12[i]+a1413*k13[i])
     end
     f(@muladd(t + c14*dt),tmp,k14)
-    @fastmath @simd for i in uidx
+    @tight_loop_macros for i in uidx
       @inbounds tmp[i] = @muladd uprev[i]+dt*(a1501*k1[i]+a1506*k6[i]+a1507*k7[i]+a1508*k8[i]+a1511*k11[i]+a1512*k12[i]+a1513*k13[i]+a1514*k14[i])
     end
     f(@muladd(t + c15*dt),tmp,k15)
-    @fastmath @simd for i in uidx
+    @tight_loop_macros for i in uidx
       @inbounds tmp[i] = @muladd uprev[i]+dt*(a1601*k1[i]+a1606*k6[i]+a1607*k7[i]+a1608*k8[i]+a1609*k9[i]+a1613*k13[i]+a1614*k14[i]+a1615*k15[i])
     end
     f(@muladd(t + c16*dt),tmp,k16)
-    @fastmath @simd for i in uidx
+    @tight_loop_macros for i in uidx
       @inbounds udiff[i]= kupdate[i]
       @inbounds bspl[i] = k1[i] - udiff[i]
       @inbounds integrator.k[3][i] = udiff[i] - k13[i] - bspl[i]
@@ -578,60 +578,60 @@ end
   k1 = cache.fsalfirst
   f(t,uprev,k1)
   a = dt*a0201
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+a*k1[i]
   end
   f(@muladd(t + c1*dt),tmp,k2)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+dt*(a0301*k1[i]+a0302*k2[i])
   end
   f(@muladd(t + c2*dt),tmp,k3)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+dt*(a0401*k1[i]+a0403*k3[i])
   end
   f(@muladd(t + c3*dt),tmp,k4)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+dt*(a0501*k1[i]+a0503*k3[i]+a0504*k4[i])
   end
   f(@muladd(t + c4*dt),tmp,k5)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+dt*(a0601*k1[i]+a0604*k4[i]+a0605*k5[i])
   end
   f(@muladd(t + c5*dt),tmp,k6)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+dt*(a0701*k1[i]+a0704*k4[i]+a0705*k5[i]+a0706*k6[i])
   end
   f(@muladd(t + c6*dt),tmp,k7)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+dt*(a0801*k1[i]+a0804*k4[i]+a0805*k5[i]+a0806*k6[i]+a0807*k7[i])
   end
   f(@muladd(t + c7*dt),tmp,k8)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+dt*(a0901*k1[i]+a0904*k4[i]+a0905*k5[i]+a0906*k6[i]+a0907*k7[i]+a0908*k8[i])
   end
   f(@muladd(t + c8*dt),tmp,k9)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+dt*(a1001*k1[i]+a1004*k4[i]+a1005*k5[i]+a1006*k6[i]+a1007*k7[i]+a1008*k8[i]+a1009*k9[i])
   end
   f(@muladd(t + c9*dt),tmp,k10)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+dt*(a1101*k1[i]+a1104*k4[i]+a1105*k5[i]+a1106*k6[i]+a1107*k7[i]+a1108*k8[i]+a1109*k9[i]+a1110*k10[i])
   end
   f(@muladd(t + c10*dt),tmp,k11)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+dt*(a1201*k1[i]+a1204*k4[i]+a1205*k5[i]+a1206*k6[i]+a1207*k7[i]+a1208*k8[i]+a1209*k9[i]+a1210*k10[i]+a1211*k11[i])
   end
   f(t+dt,tmp,k12)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i]+dt*(a1301*k1[i]+a1304*k4[i]+a1305*k5[i]+a1306*k6[i]+a1307*k7[i]+a1308*k8[i]+a1309*k9[i]+a1310*k10[i])
   end
   f(t+dt,tmp,k13)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds update[i] = dt*@muladd(b1*k1[i]+b6*k6[i]+b7*k7[i]+b8*k8[i]+b9*k9[i]+b10*k10[i]+b11*k11[i]+b12*k12[i])
     @inbounds u[i] = uprev[i] + update[i]
   end
   if integrator.opts.adaptive
-    @fastmath @simd for i in uidx
+    @tight_loop_macros for i in uidx
       @inbounds atmp[i] = (@muladd(update[i] - dt*(k1[i]*bhat1 + k6[i]*bhat6 + k7[i]*bhat7 + k8[i]*bhat8 + k9[i]*bhat9 + k10[i]*bhat10 + k13[i]*bhat13))./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol))
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)

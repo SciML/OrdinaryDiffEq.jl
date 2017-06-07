@@ -35,7 +35,7 @@ end
   γ = dt*d
 
   #@. linsolve_tmp = @muladd fsalfirst + γ*dT
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds linsolve_tmp[i] = @muladd fsalfirst[i] + γ*dT[i]
   end
 
@@ -65,12 +65,12 @@ end
   dto2 = dt/2
 
   #@. u= @muladd uprev+dto2*k₁
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds u[i] = @muladd uprev[i]+dto2*k₁[i]
   end
   f(t+dto2,u,f₁)
   #@. linsolve_tmp = f₁-k₁
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds linsolve_tmp[i] = f₁[i]-k₁[i]
   end
 
@@ -83,7 +83,7 @@ end
   tmp2 = reshape(vectmp2,sizeu...)
   #@. k₂ = tmp2 + k₁
   #@. u = @muladd uprev + dt*k₂
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds k₂[i] = tmp2[i] + k₁[i]
     @inbounds u[i] = @muladd uprev[i] + dt*k₂[i]
   end
@@ -92,7 +92,7 @@ end
     f(t+dt,u,integrator.fsallast)
 
     #@. linsolve_tmp = @muladd integrator.fsallast - c₃₂*(k₂-f₁)-2(k₁-fsalfirst)+dt*dT
-    @fastmath @simd for i in uidx
+    @tight_loop_macros for i in uidx
       @inbounds linsolve_tmp[i] = @muladd fsallast[i] - c₃₂*(k₂[i]-f₁[i])-2(k₁[i]-fsalfirst[i])+dt*dT[i]
     end
 
@@ -104,7 +104,7 @@ end
 
     k₃ = reshape(vectmp3,sizeu...)
     #@. tmp = (dt*(k₁ - 2k₂ + k₃)/6)./@muladd(integrator.opts.abstol+max(abs(uprev),abs(u)).*integrator.opts.reltol)
-    @fastmath @simd for i in uidx
+    @tight_loop_macros for i in uidx
       @inbounds tmp[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol)
     end
     integrator.EEst = integrator.opts.internalnorm(tmp)
@@ -148,7 +148,7 @@ end#
   γ = dt*d
 
   #@. linsolve_tmp = @muladd fsalfirst + γ*dT
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds linsolve_tmp[i] = @muladd fsalfirst[i] + γ*dT[i]
   end
 
@@ -177,12 +177,12 @@ end#
 
   dto2 = dt/2
   #@. u= @muladd uprev+dto2*k₁
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds u[i] = @muladd uprev[i]+dto2*k₁[i]
   end
   f(t+dto2,u,f₁)
   #@. linsolve_tmp = f₁-k₁
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds linsolve_tmp[i] = f₁[i]-k₁[i]
   end
 
@@ -195,14 +195,14 @@ end#
   tmp2 = reshape(vectmp2,sizeu...)
   #@. k₂ = tmp2 + k₁
   #@. u = @muladd uprev + dt*k₂
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds k₂[i] = tmp2[i] + k₁[i]
     @inbounds tmp[i] = @muladd uprev[i] + dt*k₂[i]
   end
 
 
   f(t+dt,tmp,integrator.fsallast)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds linsolve_tmp[i] = @muladd fsallast[i] - c₃₂*(k₂[i]-f₁[i])-2(k₁[i]-fsalfirst[i])+dt*dT[i]
   end
 
@@ -214,13 +214,13 @@ end#
 
   k₃ = reshape(vectmp3,sizeu...)
   #@. u = uprev + dt*(k₁ + 4k₂ + k₃)/6
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds u[i] = uprev[i] + dt*(k₁[i] + 4k₂[i] + k₃[i])/6
   end
 
   if integrator.opts.adaptive
     #@. tmp = (dt*(k₁ - 2k₂ + k₃)/6)./@muladd(integrator.opts.abstol+max(abs(uprev),abs(u)).*integrator.opts.reltol)
-    @fastmath @simd for i in uidx
+    @tight_loop_macros for i in uidx
       @inbounds tmp[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol)
     end
     integrator.EEst = integrator.opts.internalnorm(tmp)

@@ -137,75 +137,75 @@ end
   @unpack k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,k17,tmp,atmp,uprev,k = cache
   k1 = cache.fsalfirst
   a =  dt*a0100
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + a*k1[i]
   end
   f(@muladd(t + c1*dt),tmp,k2)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a0200*k1[i] + a0201*k2[i])
   end
   f(@muladd(t + c2*dt) ,tmp,k3)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a0300*k1[i] + a0302*k3[i])
   end
   f(@muladd(t + c3*dt),tmp,k4)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a0400*k1[i] + a0402*k3[i] + a0403*k4[i])
   end
   f(@muladd(t + c4*dt),tmp,k5)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a0500*k1[i] + a0503*k4[i] + a0504*k5[i])
   end
   f(@muladd(t + c5*dt),tmp,k6)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a0600*k1[i] + a0603*k4[i] + a0604*k5[i] + a0605*k6[i])
   end
   f(@muladd(t + c6*dt),tmp,k7)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a0700*k1[i] + a0704*k5[i] + a0705*k6[i] + a0706*k7[i])
   end
   f(@muladd(t + c7*dt),tmp,k8)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a0800*k1[i] + a0805*k6[i] + a0806*k7[i] + a0807*k8[i])
   end
   f(@muladd(t + c8*dt),tmp,k9)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a0900*k1[i] + a0905*k6[i] + a0906*k7[i] + a0907*k8[i] + a0908*k9[i])
   end
   f(@muladd(t + c9*dt),tmp,k10)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a1000*k1[i] + a1005*k6[i] + a1006*k7[i] + a1007*k8[i] + a1008*k9[i] + a1009*k10[i])
   end
   f(@muladd(t + c10*dt),tmp,k11)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a1100*k1[i] + a1105*k6[i] + a1106*k7[i] + a1107*k8[i] + a1108*k9[i] + a1109*k10[i] + a1110*k11[i])
   end
   f(@muladd(t + c11*dt),tmp,k12)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a1200*k1[i] + a1203*k4[i] + a1204*k5[i] + a1205*k6[i] + a1206*k7[i] + a1207*k8[i] + a1208*k9[i] + a1209*k10[i] + a1210*k11[i] + a1211*k12[i])
   end
   f(@muladd(t + c12*dt),tmp,k13)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a1300*k1[i] + a1302*k3[i] + a1303*k4[i] + a1305*k6[i] + a1306*k7[i] + a1307*k8[i] + a1308*k9[i] + a1309*k10[i] + a1310*k11[i] + a1311*k12[i] + a1312*k13[i])
   end
   f(@muladd(t + c13*dt),tmp,k14)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a1400*k1[i] + a1401*k2[i] + a1404*k5[i] + a1406*k7[i] + a1412*k13[i] + a1413*k14[i])
   end
   f(@muladd(t + c14*dt),tmp,k15)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a1500*k1[i] + a1502*k3[i] + a1514*k15[i])
   end
   f(@muladd(t + c15*dt),tmp,k16)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a1600*k1[i] + a1601*k2[i] + a1602*k3[i] + a1604*k5[i] + a1605*k6[i] + a1606*k7[i] + a1607*k8[i] + a1608*k9[i] + a1609*k10[i] + a1610*k11[i] + a1611*k12[i] + a1612*k13[i] + a1613*k14[i] + a1614*k15[i] + a1615*k16[i])
   end
   f(@muladd(t + c16*dt),tmp,k17)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     u[i] = @muladd uprev[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i] + b7*k7[i] + b9*k9[i] + b10*k10[i] + b11*k11[i] + b12*k12[i] + b13*k13[i] + b14*k14[i] + b15*k15[i] + b16*k16[i] + b17*k17[i])
   end
   if integrator.opts.adaptive
-    @fastmath @simd for i in uidx
+    @tight_loop_macros for i in uidx
       @inbounds atmp[i] =  (dt*(k2[i] - k16[i]) * adaptiveConst)./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol)
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
@@ -387,107 +387,107 @@ end
   @unpack k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,k17,k18,k19,k20,k21,k22,k23,k24,k25,tmp,atmp,uprev,k = cache
   k1 = cache.fsalfirst
   a = dt*a0100
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + a*k1[i]
   end
   f(@muladd(t + c1*dt),tmp,k2)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a0200*k1[i] + a0201*k2[i])
   end
   f(@muladd(t + c2*dt) ,tmp,k3)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a0300*k1[i] + a0302*k3[i])
   end
   f(@muladd(t + c3*dt),tmp,k4)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a0400*k1[i] + a0402*k3[i] + a0403*k4[i])
   end
   f(@muladd(t + c4*dt),tmp,k5)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a0500*k1[i] + a0503*k4[i] + a0504*k5[i])
   end
   f(@muladd(t + c5*dt),tmp,k6)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a0600*k1[i] + a0603*k4[i] + a0604*k5[i] + a0605*k6[i])
   end
   f(@muladd(t + c6*dt),tmp,k7)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a0700*k1[i] + a0704*k5[i] + a0705*k6[i] + a0706*k7[i])
   end
   f(@muladd(t + c7*dt),tmp,k8)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a0800*k1[i] + a0805*k6[i] + a0806*k7[i] + a0807*k8[i])
   end
   f(@muladd(t + c8*dt),tmp,k9)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a0900*k1[i] + a0905*k6[i] + a0906*k7[i] + a0907*k8[i] + a0908*k9[i])
   end
   f(@muladd(t + c9*dt),tmp,k10)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a1000*k1[i] + a1005*k6[i] + a1006*k7[i] + a1007*k8[i] + a1008*k9[i] + a1009*k10[i])
   end
   f(@muladd(t + c10*dt),tmp,k11)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a1100*k1[i] + a1105*k6[i] + a1106*k7[i] + a1107*k8[i] + a1108*k9[i] + a1109*k10[i] + a1110*k11[i])
   end
   f(@muladd(t + c11*dt),tmp,k12)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a1200*k1[i] + a1208*k9[i] + a1209*k10[i] + a1210*k11[i] + a1211*k12[i])
   end
   f(@muladd(t + c12*dt),tmp,k13)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a1300*k1[i] + a1308*k9[i] + a1309*k10[i] + a1310*k11[i] + a1311*k12[i] + a1312*k13[i])
   end
   f(@muladd(t + c13*dt),tmp,k14)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a1400*k1[i] + a1408*k9[i] + a1409*k10[i] + a1410*k11[i] + a1411*k12[i] + a1412*k13[i] + a1413*k14[i])
   end
   f(@muladd(t + c14*dt),tmp,k15)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a1500*k1[i] + a1508*k9[i] + a1509*k10[i] + a1510*k11[i] + a1511*k12[i] + a1512*k13[i] + a1513*k14[i] + a1514*k15[i])
   end
   f(@muladd(t + c15*dt),tmp,k16)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*((a1600*k1[i] + a1608*k9[i] + a1609*k10[i]) + (a1610*k11[i] + a1611*k12[i] + a1612*k13[i] + a1613*k14[i]) + (a1614*k15[i] + a1615*k16[i]))
   end
   f(@muladd(t + c16*dt),tmp,k17)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*((a1700*k1[i] + a1705*k6[i] + a1706*k7[i]) + (a1707*k8[i] + a1708*k9[i] + a1709*k10[i] + a1710*k11[i]) + (a1711*k12[i] + a1712*k13[i] + a1713*k14[i] + a1714*k15[i]) + (a1715*k16[i] + a1716*k17[i]))
   end
   f(@muladd(t + c17*dt),tmp,k18)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*((a1800*k1[i] + a1805*k6[i] + a1806*k7[i]) + (a1807*k8[i] + a1808*k9[i] + a1809*k10[i] + a1810*k11[i]) + (a1811*k12[i] + a1812*k13[i] + a1813*k14[i] + a1814*k15[i]) + (a1815*k16[i] + a1816*k17[i] + a1817*k18[i]))
   end
   f(@muladd(t + c18*dt),tmp,k19)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*((a1900*k1[i] + a1904*k5[i] + a1905*k6[i]) + (a1906*k7[i] + a1908*k9[i] + a1909*k10[i] + a1910*k11[i]) + (a1911*k12[i] + a1912*k13[i] + a1913*k14[i] + a1914*k15[i]) + (a1915*k16[i] + a1916*k17[i] + a1917*k18[i] + a1918*k19[i]))
   end
   f(@muladd(t + c19*dt),tmp,k20)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*((a2000*k1[i] + a2003*k4[i] + a2004*k5[i]) + (a2005*k6[i] + a2007*k8[i] + a2009*k10[i] + a2010*k11[i]) + (a2017*k18[i] + a2018*k19[i] + a2019*k20[i]))
   end
   f(@muladd(t + c20*dt),tmp,k21)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*((a2100*k1[i] + a2102*k3[i] + a2103*k4[i]) + (a2106*k7[i] + a2107*k8[i] + a2109*k10[i] + a2110*k11[i]) + (a2117*k18[i] + a2118*k19[i] + a2119*k20[i] + a2120*k21[i]))
   end
   f(@muladd(t + c21*dt),tmp,k22)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*((a2200*k1[i] + a2201*k2[i] + a2204*k5[i]) + (a2206*k7[i] + a2220*k21[i] + a2221*k22[i]))
   end
   f(@muladd(t + c22*dt),tmp,k23)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a2300*k1[i] + a2302*k3[i] + a2322*k23[i])
   end
   f(@muladd(t + c23*dt),tmp,k24)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*((a2400*k1[i] + a2401*k2[i] + a2402*k3[i]) + (a2404*k5[i] + a2406*k7[i] + a2407*k8[i] + a2408*k9[i]) + (a2409*k10[i] + a2410*k11[i] + a2411*k12[i] + a2412*k13[i]) + (a2413*k14[i] + a2414*k15[i] + a2415*k16[i] + a2416*k17[i]) + (a2417*k18[i] + a2418*k19[i] + a2419*k20[i] + a2420*k21[i]) + (a2421*k22[i] + a2422*k23[i] + a2423*k24[i]))
   end
   f(@muladd(t + c24*dt),tmp,k25)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     u[i] = @muladd uprev[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i] + b7*k7[i] + b8*k8[i] + b10*k10[i] + b11*k11[i] + b13*k13[i] + b14*k14[i] + b15*k15[i] + b16*k16[i] + b17*k17[i] + b18*k18[i] + b19*k19[i] + b20*k20[i] + b21*k21[i] + b22*k22[i] + b23*k23[i] + b24*k24[i] + b25*k25[i])
   end
   if integrator.opts.adaptive
-    @fastmath @simd for i in uidx
+    @tight_loop_macros for i in uidx
       @inbounds atmp[i] =  (dt*(k2[i] - k24[i]) * adaptiveConst)./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol)
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
@@ -709,147 +709,147 @@ end
   k1 = cache.fsalfirst
   f(t,uprev,k1)
   a = dt*a0100
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + a*k1[i]
   end
   f(@muladd(t + c1*dt),tmp,k2)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a0200*k1[i] + a0201*k2[i])
   end
   f(@muladd(t + c2*dt) ,tmp,k3)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a0300*k1[i] + a0302*k3[i])
   end
   f(@muladd(t + c3*dt),tmp,k4)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a0400*k1[i] + a0402*k3[i] + a0403*k4[i])
   end
   f(@muladd(t + c4*dt),tmp,k5)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a0500*k1[i] + a0503*k4[i] + a0504*k5[i])
   end
   f(@muladd(t + c5*dt),tmp,k6)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a0600*k1[i] + a0603*k4[i] + a0604*k5[i] + a0605*k6[i])
   end
   f(@muladd(t + c6*dt),tmp,k7)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a0700*k1[i] + a0704*k5[i] + a0705*k6[i] + a0706*k7[i])
   end
   f(@muladd(t + c7*dt),tmp,k8)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a0800*k1[i] + a0805*k6[i] + a0806*k7[i] + a0807*k8[i])
   end
   f(@muladd(t + c8*dt),tmp,k9)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a0900*k1[i] + a0905*k6[i] + a0906*k7[i] + a0907*k8[i] + a0908*k9[i])
   end
   f(@muladd(t + c9*dt),tmp,k10)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a1000*k1[i] + a1005*k6[i] + a1006*k7[i] + a1007*k8[i] + a1008*k9[i] + a1009*k10[i])
   end
   f(@muladd(t + c10*dt),tmp,k11)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a1100*k1[i] + a1105*k6[i] + a1106*k7[i] + a1107*k8[i] + a1108*k9[i] + a1109*k10[i] + a1110*k11[i])
   end
   f(@muladd(t + c11*dt),tmp,k12)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a1200*k1[i] + a1208*k9[i] + a1209*k10[i] + a1210*k11[i] + a1211*k12[i])
   end
   f(@muladd(t + c12*dt),tmp,k13)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a1300*k1[i] + a1308*k9[i] + a1309*k10[i] + a1310*k11[i] + a1311*k12[i] + a1312*k13[i])
   end
   f(@muladd(t + c13*dt),tmp,k14)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a1400*k1[i] + a1408*k9[i] + a1409*k10[i] + a1410*k11[i] + a1411*k12[i] + a1412*k13[i] + a1413*k14[i])
   end
   f(@muladd(t + c14*dt),tmp,k15)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a1500*k1[i] + a1508*k9[i] + a1509*k10[i] + a1510*k11[i] + a1511*k12[i] + a1512*k13[i] + a1513*k14[i] + a1514*k15[i])
   end
   f(@muladd(t + c15*dt),tmp,k16)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a1600*k1[i] + a1608*k9[i] + a1609*k10[i] + a1610*k11[i] + a1611*k12[i] + a1612*k13[i] + a1613*k14[i] + a1614*k15[i] + a1615*k16[i])
   end
   f(@muladd(t + c16*dt),tmp,k17)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a1700*k1[i] + a1712*k13[i] + a1713*k14[i] + a1714*k15[i] + a1715*k16[i] + a1716*k17[i])
   end
   f(@muladd(t + c17*dt),tmp,k18)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a1800*k1[i] + a1812*k13[i] + a1813*k14[i] + a1814*k15[i] + a1815*k16[i] + a1816*k17[i] + a1817*k18[i])
   end
   f(@muladd(t + c18*dt),tmp,k19)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a1900*k1[i] + a1912*k13[i] + a1913*k14[i] + a1914*k15[i] + a1915*k16[i] + a1916*k17[i] + a1917*k18[i] + a1918*k19[i])
   end
   f(@muladd(t + c19*dt),tmp,k20)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a2000*k1[i] + a2012*k13[i] + a2013*k14[i] + a2014*k15[i] + a2015*k16[i] + a2016*k17[i] + a2017*k18[i] + a2018*k19[i] + a2019*k20[i])
   end
   f(@muladd(t + c20*dt),tmp,k21)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a2100*k1[i] + a2112*k13[i] + a2113*k14[i] + a2114*k15[i] + a2115*k16[i] + a2116*k17[i] + a2117*k18[i] + a2118*k19[i] + a2119*k20[i] + a2120*k21[i])
   end
   f(@muladd(t + c21*dt),tmp,k22)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a2200*k1[i] + a2212*k13[i] + a2213*k14[i] + a2214*k15[i] + a2215*k16[i] + a2216*k17[i] + a2217*k18[i] + a2218*k19[i] + a2219*k20[i] + a2220*k21[i] + a2221*k22[i])
   end
   f(@muladd(t + c22*dt),tmp,k23)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a2300*k1[i] + a2308*k9[i] + a2309*k10[i] + a2310*k11[i] + a2311*k12[i] + a2312*k13[i] + a2313*k14[i] + a2314*k15[i] + a2315*k16[i] + a2316*k17[i] + a2317*k18[i] + a2318*k19[i] + a2319*k20[i] + a2320*k21[i] + a2321*k22[i] + a2322*k23[i])
   end
   f(@muladd(t + c23*dt),tmp,k24)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a2400*k1[i] + a2408*k9[i] + a2409*k10[i] + a2410*k11[i] + a2411*k12[i] + a2412*k13[i] + a2413*k14[i] + a2414*k15[i] + a2415*k16[i] + a2416*k17[i] + a2417*k18[i] + a2418*k19[i] + a2419*k20[i] + a2420*k21[i] + a2421*k22[i] + a2422*k23[i] + a2423*k24[i])
   end
   f(@muladd(t + c24*dt),tmp,k25)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a2500*k1[i] + a2508*k9[i] + a2509*k10[i] + a2510*k11[i] + a2511*k12[i] + a2512*k13[i] + a2513*k14[i] + a2514*k15[i] + a2515*k16[i] + a2516*k17[i] + a2517*k18[i] + a2518*k19[i] + a2519*k20[i] + a2520*k21[i] + a2521*k22[i] + a2522*k23[i] + a2523*k24[i] + a2524*k25[i])
   end
   f(@muladd(t + c25*dt),tmp,k26)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a2600*k1[i] + a2605*k6[i] + a2606*k7[i] + a2607*k8[i] + a2608*k9[i] + a2609*k10[i] + a2610*k11[i] + a2612*k13[i] + a2613*k14[i] + a2614*k15[i] + a2615*k16[i] + a2616*k17[i] + a2617*k18[i] + a2618*k19[i] + a2619*k20[i] + a2620*k21[i] + a2621*k22[i] + a2622*k23[i] + a2623*k24[i] + a2624*k25[i] + a2625*k26[i])
   end
   f(@muladd(t + c26*dt),tmp,k27)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a2700*k1[i] + a2705*k6[i] + a2706*k7[i] + a2707*k8[i] + a2708*k9[i] + a2709*k10[i] + a2711*k12[i] + a2712*k13[i] + a2713*k14[i] + a2714*k15[i] + a2715*k16[i] + a2716*k17[i] + a2717*k18[i] + a2718*k19[i] + a2719*k20[i] + a2720*k21[i] + a2721*k22[i] + a2722*k23[i] + a2723*k24[i] + a2724*k25[i] + a2725*k26[i] + a2726*k27[i])
   end
   f(@muladd(t + c27*dt),tmp,k28)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a2800*k1[i] + a2805*k6[i] + a2806*k7[i] + a2807*k8[i] + a2808*k9[i] + a2810*k11[i] + a2811*k12[i] + a2813*k14[i] + a2814*k15[i] + a2815*k16[i] + a2823*k24[i] + a2824*k25[i] + a2825*k26[i] + a2826*k27[i] + a2827*k28[i])
   end
   f(@muladd(t + c28*dt),tmp,k29)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a2900*k1[i] + a2904*k5[i] + a2905*k6[i] + a2906*k7[i] + a2909*k10[i] + a2910*k11[i] + a2911*k12[i] + a2913*k14[i] + a2914*k15[i] + a2915*k16[i] + a2923*k24[i] + a2924*k25[i] + a2925*k26[i] + a2926*k27[i] + a2927*k28[i] + a2928*k29[i])
   end
   f(@muladd(t + c29*dt),tmp,k30)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a3000*k1[i] + a3003*k4[i] + a3004*k5[i] + a3005*k6[i] + a3007*k8[i] + a3009*k10[i] + a3010*k11[i] + a3013*k14[i] + a3014*k15[i] + a3015*k16[i] + a3023*k24[i] + a3024*k25[i] + a3025*k26[i] + a3027*k28[i] + a3028*k29[i] + a3029*k30[i])
   end
   f(@muladd(t + c30*dt),tmp,k31)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a3100*k1[i] + a3102*k3[i] + a3103*k4[i] + a3106*k7[i] + a3107*k8[i] + a3109*k10[i] + a3110*k11[i] + a3113*k14[i] + a3114*k15[i] + a3115*k16[i] + a3123*k24[i] + a3124*k25[i] + a3125*k26[i] + a3127*k28[i] + a3128*k29[i] + a3129*k30[i] + a3130*k31[i])
   end
   f(@muladd(t + c31*dt),tmp,k32)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a3200*k1[i] + a3201*k2[i] + a3204*k5[i] + a3206*k7[i] + a3230*k31[i] + a3231*k32[i])
   end
   f(@muladd(t + c32*dt),tmp,k33)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a3300*k1[i] + a3302*k3[i] + a3332*k33[i])
   end
   f(@muladd(t + c33*dt),tmp,k34)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     @inbounds tmp[i] =  @muladd uprev[i] + dt*(a3400*k1[i] + a3401*k2[i] + a3402*k3[i] + a3404*k5[i] + a3406*k7[i] + a3407*k8[i] + a3409*k10[i] + a3410*k11[i] + a3411*k12[i] + a3412*k13[i] + a3413*k14[i] + a3414*k15[i] + a3415*k16[i] + a3416*k17[i] + a3417*k18[i] + a3418*k19[i] + a3419*k20[i] + a3420*k21[i] + a3421*k22[i] + a3422*k23[i] + a3423*k24[i] + a3424*k25[i] + a3425*k26[i] + a3426*k27[i] + a3427*k28[i] + a3428*k29[i] + a3429*k30[i] + a3430*k31[i] + a3431*k32[i] + a3432*k33[i] + a3433*k34[i])
   end
   f(@muladd(t + c34*dt),tmp,k35)
-  @fastmath @simd for i in uidx
+  @tight_loop_macros for i in uidx
     u[i] = @muladd uprev[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i] + b7*k7[i] + b8*k8[i] + b10*k10[i] + b11*k11[i] + b12*k12[i] + b14*k14[i] + b15*k15[i] + b16*k16[i] + b18*k18[i] + b19*k19[i] + b20*k20[i] + b21*k21[i] + b22*k22[i] + b23*k23[i] + b24*k24[i] + b25*k25[i] + b26*k26[i] + b27*k27[i] + b28*k28[i] + b29*k29[i] + b30*k30[i] + b31*k31[i] + b32*k32[i] + b33*k33[i] + b34*k34[i] + b35*k35[i])
   end
   if integrator.opts.adaptive
-    @fastmath @simd for i in uidx
+    @tight_loop_macros for i in uidx
       @inbounds atmp[i] =  (dt*(k2[i] - k34[i]) * adaptiveConst)./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol)
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
