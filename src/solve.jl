@@ -131,7 +131,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     reltol_internal = reltol
   end
 
-  dtmax > 0 && tdir < 0 && (dtmax *= tdir) # Allow positive dtmax, but auto-convert
+  dtmax > zero(dtmax) && tdir < 0 && (dtmax *= tdir) # Allow positive dtmax, but auto-convert
   # dtmin is all abs => does not care about sign already.
   if dt == zero(dt) && adaptive
     dt = tType(ode_determine_initdt(u,t,tdir,dtmax,abstol_internal,reltol_internal,internalnorm,prob,order))

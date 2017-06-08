@@ -1,6 +1,6 @@
 function ode_determine_initdt{tType,uType}(u0,t::tType,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,true},order)
   f = prob.f
-  f₀ = zeros(u0./t); f₁ = zeros(u0./t); u₁ = zeros(u0); sk = zeros(u0); tmp = zeros(u0)
+  f₀ = zeros(u0./t); f₁ = zeros(u0./t); u₁ = zeros(u0); sk = zeros(u0); tmp = zeros(u0,typeof(one(u0[1])))
   uidx = eachindex(u0)
   #sk = abstol+abs.(u0).*reltol
   #d₀ = internalnorm(u0./sk)
@@ -15,7 +15,7 @@ function ode_determine_initdt{tType,uType}(u0,t::tType,tdir,dtmax,abstol,reltol,
   #d₁ = internalnorm((f₀./sk*tType(1))/tType(1))
 
   @tight_loop_macros for i in uidx
-    tmp[i] = (f₀[i]./sk[i]*tType(1))/tType(1)
+    tmp[i] = (f₀[i]./sk[i]*tType(1))
   end
   d₁ = internalnorm(tmp)
 
@@ -27,7 +27,7 @@ function ode_determine_initdt{tType,uType}(u0,t::tType,tdir,dtmax,abstol,reltol,
     dt₀ = tType((d₀/d₁)/100)
   end
   dt₀ = min(dt₀,tdir*dtmax)
-  
+
   #@. u₁ = @muladd u0 + tdir*dt₀*f₀
   @tight_loop_macros for i in uidx
     @inbounds u₁[i] = u0[i] + tdir*dt₀*f₀[i]
