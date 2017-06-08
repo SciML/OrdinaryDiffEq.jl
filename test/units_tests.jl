@@ -36,7 +36,7 @@ sol =solve(prob,DP5Threaded())
 
 for alg in CACHE_TEST_ALGS
   @show alg
-  sol = solve(prob,alg(),dt=1u"s"/10)
+  sol = solve(prob,alg,dt=1u"s"/10)
 end
 
 println("Units for 2D pass")
