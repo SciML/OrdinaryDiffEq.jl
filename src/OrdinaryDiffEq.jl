@@ -2,7 +2,8 @@ __precompile__()
 
 module OrdinaryDiffEq
 
-  using DiffEqBase
+  using Reexport
+  @reexport using DiffEqBase
 
   using Compat
 
