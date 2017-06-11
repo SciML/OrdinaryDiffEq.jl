@@ -1,7 +1,7 @@
 using DiffEqBase, OrdinaryDiffEq, Base.Test, DiffEqDevTools, SpecialMatrices
 const μ = 1.01
 f2 = (t,u) -> μ * u
-f1 = (t,u) -> μ
+f1 = μ
 (p::typeof(f1))(::Type{Val{:analytic}},t,u0) = u0.*exp.(2μ*t)
 
 prob = SplitODEProblem((f1,f2),1/2,(0.0,1.0))
@@ -19,7 +19,7 @@ sim  = test_convergence(dts,prob,NorsettEuler())
 
 u0 = rand(2)
 A = Strang(2)
-f1 = (t,u,du) -> A
+f1 = A
 f2 = (t,u,du) -> du .= μ .* u
 function (p::typeof(f1))(::Type{Val{:analytic}},t,u0)
  tmp = (A+μ*I)*t

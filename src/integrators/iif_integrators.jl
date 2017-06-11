@@ -33,7 +33,7 @@ end
   @unpack uhold,rhs,nl_rhs = cache
 
   # If adaptive, this should be computed after and cached
-  A = integrator.f[1](t,u)
+  A = integrator.f[1]
   if typeof(cache) <: IIF1ConstantCache
     tmp = expm(A*dt)*(uprev)
   elseif typeof(cache) <: IIF2ConstantCache
@@ -91,7 +91,7 @@ end
   integrator.fsallast = cache.k
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  A = integrator.f[1](integrator.t,integrator.u,cache.rtmp1)
+  A = integrator.f[1]
   f[2](integrator.t,integrator.uprev,cache.rtmp1)
   A_mul_B!(cache.k,A,integrator.uprev)
   integrator.fsalfirst .= cache.k .+ cache.rtmp1
@@ -109,7 +109,7 @@ end
     @. k += 0.5dt*rtmp1
   end
 
-  A = integrator.f[1](t,uprev,rtmp1)
+  A = integrator.f[1]
   M = expm(A*dt)
   A_mul_B!(tmp,M,k)
 

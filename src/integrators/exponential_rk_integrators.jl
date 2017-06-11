@@ -1,14 +1,14 @@
 @inline function initialize!(integrator,cache::LawsonEulerConstantCache,f=integrator.f)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  rtmp = f[2](integrator.t,integrator.uprev)
+  rtmp = f[2]
   integrator.fsalfirst = rtmp # Pre-start fsal
 end
 
 @inline function perform_step!(integrator,cache::LawsonEulerConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   rtmp = integrator.fsalfirst
-  A = f[1](t,u)
+  A = f[1]
   u = expm(dt*A)*(uprev + dt*rtmp)
   rtmp = f[2](t+dt,u)
   k = A*u + rtmp # For the interpolation, needs k at the updated point
@@ -26,7 +26,7 @@ end
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = fsalfirst # this is wrong, since it's just rtmp. Should fsal this value though
   integrator.k[2] = k
-  A = f[1](integrator.t,integrator.u,rtmp)
+  A = f[1]
   A_mul_B!(cache.k,A,integrator.u)
   f[2](integrator.t,integrator.uprev,rtmp) # For the interpolation, needs k at the updated point
   integrator.fsalfirst .= cache.k .+ rtmp
@@ -35,7 +35,7 @@ end
 @inline function perform_step!(integrator,cache::LawsonEulerCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack k,rtmp,tmp = cache
-  A = f[1](t,u,integrator.fsalfirst)
+  A = f[1]
   M = expm(dt*A)
   tmp .= uprev .+ dt.*integrator.fsalfirst
   A_mul_B!(u,M,tmp)
@@ -55,7 +55,7 @@ end
 @inline function perform_step!(integrator,cache::NorsettEulerConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   rtmp = integrator.fsalfirst
-  A = f[1](t,u)
+  A = f[1]
   u = uprev + ((expm(dt*A)-I)/A)*(A*uprev + rtmp)
   rtmp = f[2](t+dt,u)
   k = A*u + rtmp # For the interpolation, needs k at the updated point
@@ -82,7 +82,7 @@ end
 @inline function perform_step!(integrator,cache::NorsettEulerCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack k,rtmp,tmp = cache
-  A = f[1](t,u,integrator.fsalfirst)
+  A = f[1]
   M = ((expm(dt*A)-I)/A)
   A_mul_B!(tmp,A,uprev)
   tmp .+= rtmp
