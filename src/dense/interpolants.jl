@@ -118,6 +118,35 @@ end
 end
 
 """
+Second order strong stability preserving (SSP) interpolant for the
+two stage, second order SSP Runge-Kutta method.
+
+Ketcheson, Lóczi, Jangabylova, Kusmanov: Dense output for SSP RK methods (2017).
+"""
+@inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::SSPRK22ConstantCache,idxs,T::Type{Val{0}})
+  Θ1 = 1-Θ
+  #@. Θ1*y₀ + Θ*Θ1*(y₀ + dt*k[1]) + Θ^2*y₁
+  Θ1*y₀ + Θ*Θ1*(y₀ + dt*k[1]) + Θ^2*y₁
+end
+
+@inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::SSPRK22Cache,idxs,T::Type{Val{0}})
+  Θ1 = 1-Θ
+  if out == nothing
+    return @. Θ1*y₀[idxs] + Θ*Θ1*(y₀[idxs] + dt*k[1][idxs]) + Θ^2*y₁[idxs]
+  elseif idxs == nothing
+    #@. out = Θ1*y₀ + Θ*(1-Θ)*(y₀ + dt*k[1]) + Θ^2*y₁
+    @inbounds for i in eachindex(out)
+      out[i] = Θ1*y₀[i] + Θ*(1-Θ)*(y₀[i] + dt*k[1][i]) + Θ^2*y₁[i]
+    end
+  else
+    #@views @. out = Θ1*y₀[idxs] + Θ*(1-Θ)*(y₀[idxs] + dt*k[1][idxs]) + Θ^2*y₁[idxs]
+    @inbounds for (j,i) in enumerate(idxs)
+      out[j] = Θ1*y₀[i] + Θ*(1-Θ)*(y₀[i] + dt*k[1][i]) + Θ^2*y₁[i]
+    end
+  end
+end
+
+"""
 Runge–Kutta pairs of order 5(4) satisfying only the first column
 simplifying assumption
 
