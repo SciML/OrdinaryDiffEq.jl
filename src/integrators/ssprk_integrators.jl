@@ -55,7 +55,7 @@ end
 
 @inline function initialize!(integrator,cache::SSPRK33ConstantCache,f=integrator.f)
   integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
-  integrator.kshortsize = 2
+  integrator.kshortsize = 1
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
 end
 
@@ -69,7 +69,6 @@ end
   u = (uprev + 2*tmp + 2*dt*k) / 3
   integrator.fsallast = f(t+dt,u) # For interpolation, then FSAL'd
   integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
   @pack integrator = t,dt,u
 end
 
@@ -77,10 +76,9 @@ end
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
-  integrator.kshortsize = 2
+  integrator.kshortsize = 1
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
   f(integrator.t,integrator.uprev,integrator.fsalfirst) # FSAL for interpolation
 end
 

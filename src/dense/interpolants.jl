@@ -118,30 +118,28 @@ end
 end
 
 """
-Second order strong stability preserving (SSP) interpolant for the
-two stage, second order SSP Runge-Kutta method.
+Second order strong stability preserving (SSP) interpolant.
 
 Ketcheson, Lóczi, Jangabylova, Kusmanov: Dense output for SSP RK methods (2017).
 """
-@inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::SSPRK22ConstantCache,idxs,T::Type{Val{0}})
-  Θ1 = 1-Θ
-  #@. Θ1*y₀ + Θ*Θ1*(y₀ + dt*k[1]) + Θ^2*y₁
-  Θ1*y₀ + Θ*Θ1*(y₀ + dt*k[1]) + Θ^2*y₁
+@inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{SSPRK22ConstantCache,SSPRK33ConstantCache},idxs,T::Type{Val{0}})
+  #@. (1-Θ^2)*y₀ + Θ^2*y₁ + Θ*(1-Θ)*dt*k[1]
+  (1-Θ^2)*y₀ + Θ^2*y₁ + Θ*(1-Θ)*dt*k[1]
 end
 
-@inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::SSPRK22Cache,idxs,T::Type{Val{0}})
+@inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{SSPRK22Cache,SSPRK33Cache},idxs,T::Type{Val{0}})
   Θ1 = 1-Θ
   if out == nothing
-    return @. Θ1*y₀[idxs] + Θ*Θ1*(y₀[idxs] + dt*k[1][idxs]) + Θ^2*y₁[idxs]
+    return @. (1-Θ^2)*y₀[idxs] + Θ^2*y₁[idxs] + Θ*(1-Θ)*dt*k[1][idxs]
   elseif idxs == nothing
-    #@. out = Θ1*y₀ + Θ*(1-Θ)*(y₀ + dt*k[1]) + Θ^2*y₁
+    #@. out = (1-Θ^2)*y₀ + Θ^2*y₁ + Θ*(1-Θ)*dt*k[1]
     @inbounds for i in eachindex(out)
-      out[i] = Θ1*y₀[i] + Θ*(1-Θ)*(y₀[i] + dt*k[1][i]) + Θ^2*y₁[i]
+      out[i] = (1-Θ^2)*y₀[i] + Θ^2*y₁[i] + Θ*(1-Θ)*dt*k[1][i]
     end
   else
-    #@views @. out = Θ1*y₀[idxs] + Θ*(1-Θ)*(y₀[idxs] + dt*k[1][idxs]) + Θ^2*y₁[idxs]
+    #@views @. out = (1-Θ^2)*y₀[idxs] + Θ^2*y₁[idxs] + Θ*(1-Θ)*dt*k[1][idxs]
     @inbounds for (j,i) in enumerate(idxs)
-      out[j] = Θ1*y₀[i] + Θ*(1-Θ)*(y₀[i] + dt*k[1][i]) + Θ^2*y₁[i]
+      out[j] = (1-Θ^2)*y₀[i] + Θ^2*y₁[i] + Θ*(1-Θ)*dt*k[1][i]
     end
   end
 end

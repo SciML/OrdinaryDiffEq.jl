@@ -81,6 +81,11 @@ for prob in test_problems_nonlinear
   sim = test_convergence(dts, prob, alg)
   @test abs(sim.𝒪est[:final]-OrdinaryDiffEq.alg_order(alg)) < testTol
 end
+# test SSP property of dense output
+sol = solve(test_problem_ssp, alg, dt=1.)
+@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, true, linspace(0,8))
+sol = solve(test_problem_ssp_inplace, alg, dt=1.)
+@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, true, linspace(0,8))
 
 
 alg = SSPRK104()
