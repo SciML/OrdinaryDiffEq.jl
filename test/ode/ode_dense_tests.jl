@@ -99,6 +99,9 @@ regression_test(SSPRK22(), 1.5e-2, 2.5e-2)
 # SSPRK33
 regression_test(SSPRK33(), 7.5e-4, 1.5e-3)
 
+# SSPRK432
+regression_test(SSPRK432(), 3.0e-4, 3.0e-4)
+
 # SSPRK104
 regression_test(SSPRK104(), 1.5e-5, 3e-5)
 

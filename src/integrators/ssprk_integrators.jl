@@ -116,6 +116,91 @@ end
   @pack integrator = t,dt,u
 end
 
+
+@inline function initialize!(integrator,cache::SSPRK432ConstantCache,f=integrator.f)
+  integrator.kshortsize = 1
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
+end
+
+@inline function perform_step!(integrator,cache::SSPRK432ConstantCache,f=integrator.f)
+  @unpack t,dt,uprev,u = integrator
+  dt_2 = dt / 2
+  k = integrator.fsalfirst
+  tmp = @muladd uprev + dt_2*k # u1
+  k = f(t+dt_2, tmp)
+  tmp = @muladd tmp   + dt_2*k # u2
+  k = f(t+dt, tmp)
+  tmp = @muladd tmp   + dt_2*k
+  if integrator.opts.adaptive
+    utilde = @muladd (uprev + 2*tmp) / 3
+  end
+  tmp = @muladd (2*uprev + tmp) / 3 #u3
+  k = f(t+dt_2, tmp)
+  u = @muladd tmp + dt_2*k
+  integrator.fsallast = f(t+dt,u)
+  if integrator.opts.adaptive
+    integrator.EEst = integrator.opts.internalnorm( ((utilde-u)./@muladd(integrator.opts.abstol+max.(abs.(uprev),abs.(u)).*integrator.opts.reltol)))
+  end
+  integrator.k[1] = integrator.fsalfirst
+  @pack integrator = t,dt,u
+end
+
+@inline function initialize!(integrator,cache::SSPRK432Cache,f=integrator.f)
+  integrator.kshortsize = 1
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.fsalfirst = cache.fsalfirst  # done by pointers, no copying
+  integrator.fsallast = cache.k
+  integrator.k[1] = integrator.fsalfirst
+  f(integrator.t, integrator.uprev, integrator.fsalfirst) # Pre-start fsal
+end
+
+@inline function perform_step!(integrator,cache::SSPRK432Cache,f=integrator.f)
+  @unpack t,dt,uprev,u = integrator
+  uidx = eachindex(integrator.uprev)
+  @unpack k,tmp,fsalfirst,utilde,atmp = cache
+  dt_2 = dt / 2
+
+   # u1
+  @tight_loop_macros for i in uidx
+    @inbounds tmp[i] = @muladd uprev[i] + dt_2*fsalfirst[i]
+  end
+  f(t+dt_2, tmp, k)
+  # u2
+  @tight_loop_macros for i in uidx
+    @inbounds tmp[i] = @muladd tmp[i] + dt_2*k[i]
+  end
+  f(t+dt, tmp, k)
+  #
+  @tight_loop_macros for i in uidx
+    @inbounds tmp[i] = @muladd tmp[i] + dt_2*k[i]
+  end
+  if integrator.opts.adaptive
+    @tight_loop_macros for i in uidx
+      @inbounds utilde[i] = @muladd (uprev[i] + 2*tmp[i]) / 3
+    end
+  end
+  # u3
+  @tight_loop_macros for i in uidx
+    @inbounds tmp[i] = @muladd (2*uprev[i] + tmp[i]) / 3
+  end
+  f(t+dt_2, tmp, k)
+  #
+  @tight_loop_macros for i in uidx
+    @inbounds u[i] = @muladd tmp[i] + dt_2*k[i]
+  end
+
+  if integrator.opts.adaptive
+    @tight_loop_macros for i in uidx
+      @inbounds atmp[i] = ((utilde[i]-u[i])./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol))
+    end
+    integrator.EEst = integrator.opts.internalnorm(atmp)
+  end
+  f(t+dt, u, k)
+  @pack integrator = t,dt,u
+end
+
+
 @inline function initialize!(integrator,cache::SSPRK104ConstantCache,f=integrator.f)
   integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
   integrator.kshortsize = 2

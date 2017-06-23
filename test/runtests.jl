@@ -7,7 +7,7 @@ const CPU_FLOPS = peakflops()
 const LONGER_TESTS = false
 
 const CACHE_TEST_ALGS = [Euler(),Midpoint(),RK4(),SSPRK104(),SSPRK22(),SSPRK33(),
-    BS3(),BS5(),DP5(),DP5Threaded(),DP8(),Feagin10(),Feagin12(),Feagin14(),
+    SSPRK432(),BS3(),BS5(),DP5(),DP5Threaded(),DP8(),Feagin10(),Feagin12(),Feagin14(),
     TanYam7(),Tsit5(),TsitPap8(),Vern6(),Vern7(),Vern8(),Vern9()]
 
 #Start Test Script
