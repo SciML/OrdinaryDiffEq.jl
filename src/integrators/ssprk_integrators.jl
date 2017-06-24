@@ -253,9 +253,9 @@ end
 
 #=
 @inline function perform_step!(integrator,cache::SSPRK104Cache,f=integrator.f)
-  @unpack t,dt,uprev,u,k = integrator
+  @unpack t,dt,uprev,u = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack u₄,k,k₄,du,tmp,fsalfirst = cache
+  @unpack k₄,tmp,fsalfirst = cache
   dt_6 = dt/6
   dt_3 = dt/3
   dt_2 = dt/2
@@ -266,9 +266,9 @@ end
   f(t+dt_3, tmp, k)
   @. tmp = @muladd tmp + dt_6 * k
   f(t+dt_2, tmp, k)
-  @. u₄ = @muladd tmp + dt_6 * k
-  f(t+2*dt_3, u₄, k₄)
-  @. tmp = @muladd (3*uprev + 2*u₄ + 2*dt_6 * k₄) / 5
+  @. u = @muladd tmp + dt_6 * k
+  f(t+2*dt_3, u, k₄)
+  @. tmp = @muladd (3*uprev + 2*u + 2*dt_6 * k₄) / 5
   f(t+dt_3, tmp, k)
   @. tmp = @muladd tmp + dt_6 * k
   f(t+dt_2, tmp, k)
@@ -278,7 +278,7 @@ end
   f(t+5*dt_6, tmp, k)
   @. tmp = @muladd tmp + dt_6 * k
   f(t+dt, tmp, k)
-  @. u = @muladd (uprev + 9*(u₄ + dt_6*k₄) + 15*(tmp + dt_6*k)) / 25
+  @. u = @muladd (uprev + 9*(u + dt_6*k₄) + 15*(tmp + dt_6*k)) / 25
   f(t+dt,u,k)
   @pack integrator = t,dt,u
 end
