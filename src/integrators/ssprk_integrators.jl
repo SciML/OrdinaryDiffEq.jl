@@ -60,13 +60,13 @@ end
 end
 
 @inline function perform_step!(integrator,cache::SSPRK33ConstantCache,f=integrator.f)
-  @unpack t,dt,uprev,u,k = integrator
+  @unpack t,dt,uprev,u = integrator
   k = integrator.fsalfirst
   tmp = uprev + dt*k
   k = f(t+dt,tmp)
-  tmp = (3*uprev + tmp + dt*k) / 4
+  tmp = @muladd (3*uprev + tmp + dt*k) / 4
   k = f(t+dt/2,tmp)
-  u = (uprev + 2*tmp + 2*dt*k) / 3
+  u = @muladd (uprev + 2*tmp + 2*dt*k) / 3
   integrator.fsallast = f(t+dt,u) # For interpolation, then FSAL'd
   integrator.k[1] = integrator.fsalfirst
   @pack integrator = t,dt,u
@@ -98,9 +98,9 @@ end
 =#
 
 @inline function perform_step!(integrator,cache::SSPRK33Cache,f=integrator.f)
-  @unpack t,dt,uprev,u,k = integrator
+  @unpack t,dt,uprev,u = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack k,du,tmp,fsalfirst = cache
+  @unpack k,tmp,fsalfirst = cache
   @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i] + dt*integrator.fsalfirst[i]
   end

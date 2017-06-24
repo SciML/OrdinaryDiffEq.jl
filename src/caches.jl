@@ -145,22 +145,20 @@ immutable SSPRK33Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k::rateType
-  du::rateType
   tmp::uType
   fsalfirst::rateType
 end
 
 u_cache(c::SSPRK33Cache) = ()
-du_cache(c::SSPRK33Cache) = (c.k,c.du,c.fsalfirst)
+du_cache(c::SSPRK33Cache) = (c.k,c.fsalfirst)
 
 immutable SSPRK33ConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::SSPRK33,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
   tmp = similar(u)
   k = zeros(rate_prototype)
-  du = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
-  SSPRK33Cache(u,uprev,k,du,tmp,fsalfirst)
+  SSPRK33Cache(u,uprev,k,tmp,fsalfirst)
 end
 
 alg_cache(alg::SSPRK33,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = SSPRK33ConstantCache()
