@@ -5,7 +5,7 @@
 end
 
 @inline function perform_step!(integrator,cache::SSPRK22ConstantCache,f=integrator.f)
-  @unpack t,dt,uprev,u,k = integrator
+  @unpack t,dt,uprev,u = integrator
   k = integrator.fsalfirst
   tmp = @. uprev + dt*k
   k = f(t+dt,tmp)
@@ -27,9 +27,9 @@ end
 
 #=
 @inline function perform_step!(integrator,cache::SSPRK22Cache,f=integrator.f)
-  @unpack t,dt,uprev,u,k = integrator
+  @unpack t,dt,uprev,u = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack k,du,tmp,fsalfirst = cache
+  @unpack k,tmp,fsalfirst = cache
   @. tmp = @muladd uprev + dt*integrator.fsalfirst
   f(t+dt,tmp,k)
   @. u = (uprev + tmp + dt*k) / 2
@@ -39,9 +39,9 @@ end
 =#
 
 @inline function perform_step!(integrator,cache::SSPRK22Cache,f=integrator.f)
-  @unpack t,dt,uprev,u,k = integrator
+  @unpack t,dt,uprev,u = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack k,du,tmp,fsalfirst = cache
+  @unpack k,tmp,fsalfirst = cache
   @tight_loop_macros for i in uidx
     @inbounds tmp[i] = @muladd uprev[i] + dt*integrator.fsalfirst[i]
   end
@@ -84,9 +84,9 @@ end
 
 #=
 @inline function perform_step!(integrator,cache::SSPRK33Cache,f=integrator.f)
-  @unpack t,dt,uprev,u,k = integrator
+  @unpack t,dt,uprev,u = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack k,du,tmp,fsalfirst = cache
+  @unpack k,tmp,fsalfirst = cache
   @. tmp = @muladd uprev + dt*integrator.fsalfirst
   f(t+dt,tmp,k)
   @. tmp = (3*uprev + tmp + dt*k) / 4
@@ -208,31 +208,31 @@ end
 end
 
 @inline function perform_step!(integrator,cache::SSPRK104ConstantCache,f=integrator.f)
-  @unpack t,dt,uprev,u,k = integrator
+  @unpack t,dt,uprev,u = integrator
   k = integrator.fsalfirst
   dt_6 = dt/6
   dt_3 = dt/3
   dt_2 = dt/2
 
-  tmp = uprev + dt_6 * k # u₁
+  tmp = @muladd uprev + dt_6 * k # u₁
   k = f(t+dt_6, tmp)
-  tmp = tmp + dt_6 * k # u₂
+  tmp = @muladd tmp + dt_6 * k # u₂
   k = f(t+dt_3, tmp)
-  tmp = tmp + dt_6 * k # u₃
+  tmp = @muladd tmp + dt_6 * k # u₃
   k = f(t+dt_2, tmp)
-  u₄ = tmp + dt_6 * k # u₄
-  k₄ = f(t+2*dt_3, u₄)
-  tmp = (3*uprev + 2*u₄ + 2*dt_6 * k₄) / 5 # u₅
+  u = @muladd tmp + dt_6 * k # u₄
+  k₄ = f(t+2*dt_3, u)
+  tmp = @muladd (3*uprev + 2*u + dt_3 * k₄) / 5 # u₅
   k = f(t+dt_3, tmp)
-  tmp = tmp + dt_6 * k # u₆
+  tmp = @muladd tmp + dt_6 * k # u₆
   k = f(t+dt_2, tmp)
-  tmp = tmp + dt_6 * k # u₇
+  tmp = @muladd tmp + dt_6 * k # u₇
   k = f(t+2*dt_3, tmp)
-  tmp = tmp + dt_6 * k # u₈
+  tmp = @muladd tmp + dt_6 * k # u₈
   k = f(t+5*dt_6, tmp)
-  tmp = tmp + dt_6 * k # u₉
+  tmp = @muladd tmp + dt_6 * k # u₉
   k = f(t+dt, tmp)
-  u = (uprev + 9*(u₄ + dt_6*k₄) + 15*(tmp + dt_6*k)) / 25
+  u = @muladd (uprev + 9*(u + dt_6*k₄) + 15*(tmp + dt_6*k)) / 25
 
   integrator.fsallast = f(t+dt,u) # For interpolation, then FSAL'd
   integrator.k[1] = integrator.fsalfirst
@@ -285,9 +285,9 @@ end
 =#
 
 @inline function perform_step!(integrator,cache::SSPRK104Cache,f=integrator.f)
-  @unpack t,dt,uprev,u,k = integrator
+  @unpack t,dt,uprev,u = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack u₄,k,k₄,du,tmp,fsalfirst = cache
+  @unpack k,k₄,tmp,fsalfirst = cache
   dt_6 = dt/6
   dt_3 = dt/3
   dt_2 = dt/2
@@ -305,11 +305,11 @@ end
   end # u₃
   f(t+dt_2, tmp, k)
   @tight_loop_macros for i in uidx
-    @inbounds u₄[i] = @muladd tmp[i] + dt_6 * k[i]
+    @inbounds u[i] = @muladd tmp[i] + dt_6 * k[i]
   end # u₄
-  f(t+2*dt_3, u₄, k₄)
+  f(t+2*dt_3, u, k₄)
   @tight_loop_macros for i in uidx
-    @inbounds tmp[i] = @muladd (3*uprev[i] + 2*u₄[i] + 2*dt_6 * k₄[i]) / 5
+    @inbounds tmp[i] = @muladd (3*uprev[i] + 2*u[i] + 2*dt_6 * k₄[i]) / 5
   end # u₅
   f(t+dt_3, tmp, k)
   @tight_loop_macros for i in uidx
@@ -329,7 +329,7 @@ end
   end # u₉
   f(t+dt, tmp, k)
   @tight_loop_macros for i in uidx
-    @inbounds u[i] = @muladd (uprev[i] + 9*(u₄[i] + dt_6*k₄[i]) + 15*(tmp[i] + dt_6*k[i])) / 25
+    @inbounds u[i] = @muladd (uprev[i] + 9*(u[i] + dt_6*k₄[i]) + 15*(tmp[i] + dt_6*k[i])) / 25
   end
 
   f(t+dt,u,k)
