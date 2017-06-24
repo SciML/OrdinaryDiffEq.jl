@@ -23,6 +23,7 @@ immutable SplitEuler <: OrdinaryDiffEqAlgorithm end
   tableau::TabType=ODE_DEFAULT_TABLEAU
 end
 
+immutable SSPRK432 <: OrdinaryDiffEqAdaptiveAlgorithm end
 immutable BS3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 immutable BS5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 immutable DP5 <: OrdinaryDiffEqAdaptiveAlgorithm end

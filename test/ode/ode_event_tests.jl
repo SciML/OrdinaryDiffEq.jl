@@ -163,7 +163,7 @@ terminate_callback2 = ContinuousCallback(condtion,nothing,affect2!,interp_points
 
 sol5 = solve(prob2,Vern7(),callback=terminate_callback2)
 
-@test sol5[end][1] < 1e-12
+@test sol5[end][1] < 1.3e-12
 @test sol5.t[end] ≈ 3*sqrt(50*2/9.81)
 
 condtion= function (t,u,integrator) # Event when event_f(t,u,k) == 0

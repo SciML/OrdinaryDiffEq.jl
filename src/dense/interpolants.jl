@@ -122,12 +122,12 @@ Second order strong stability preserving (SSP) interpolant.
 
 Ketcheson, Lóczi, Jangabylova, Kusmanov: Dense output for SSP RK methods (2017).
 """
-@inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{SSPRK22ConstantCache,SSPRK33ConstantCache},idxs,T::Type{Val{0}})
+@inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{SSPRK22ConstantCache,SSPRK33ConstantCache,SSPRK432ConstantCache},idxs,T::Type{Val{0}})
   #@. (1-Θ^2)*y₀ + Θ^2*y₁ + Θ*(1-Θ)*dt*k[1]
   (1-Θ^2)*y₀ + Θ^2*y₁ + Θ*(1-Θ)*dt*k[1]
 end
 
-@inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{SSPRK22Cache,SSPRK33Cache},idxs,T::Type{Val{0}})
+@inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{SSPRK22Cache,SSPRK33Cache,SSPRK432Cache},idxs,T::Type{Val{0}})
   Θ1 = 1-Θ
   if out == nothing
     return @. (1-Θ^2)*y₀[idxs] + Θ^2*y₁[idxs] + Θ*(1-Θ)*dt*k[1][idxs]
