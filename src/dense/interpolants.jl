@@ -127,6 +127,11 @@ Ketcheson, Lóczi, Jangabylova, Kusmanov: Dense output for SSP RK methods (2017)
   (1-Θ^2)*y₀ + Θ^2*y₁ + Θ*(1-Θ)*dt*k[1]
 end
 
+@inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{SSPRK22ConstantCache,SSPRK33ConstantCache,SSPRK432ConstantCache},idxs,T::Type{Val{1}})
+  #@. -2Θ*y₀ + 2Θ*y₁ + (1-2Θ)*dt*k[1]
+  -2Θ/dt*y₀ + 2Θ/dt*y₁ + (1-2Θ)*k[1]
+end
+
 @inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{SSPRK22Cache,SSPRK33Cache,SSPRK432Cache},idxs,T::Type{Val{0}})
   Θ1 = 1-Θ
   if out == nothing
@@ -140,6 +145,23 @@ end
     #@views @. out = (1-Θ^2)*y₀[idxs] + Θ^2*y₁[idxs] + Θ*(1-Θ)*dt*k[1][idxs]
     @inbounds for (j,i) in enumerate(idxs)
       out[j] = (1-Θ^2)*y₀[i] + Θ^2*y₁[i] + Θ*(1-Θ)*dt*k[1][i]
+    end
+  end
+end
+
+@inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{SSPRK22Cache,SSPRK33Cache,SSPRK432Cache},idxs,T::Type{Val{1}})
+  Θ1 = 1-Θ
+  if out == nothing
+    return @. -2Θ/dt*y₀[idxs] + 2Θ/dt*y₁[idxs] + (1-2Θ)*k[1][idxs]
+  elseif idxs == nothing
+    #@. out = -2Θ/dt*y₀ + 2Θ/dt*y₁ + (1-2Θ)*k[1]
+    @inbounds for i in eachindex(out)
+      out[i] = -2Θ/dt*y₀[i] + 2Θ/dt*y₁[i] + (1-2Θ)*k[1][i]
+    end
+  else
+    #@views @. out = -2Θ/dt*y₀[idxs] + 2Θ/dt*y₁[idxs] + (1-2Θ)*k[1][idxs]
+    @inbounds for (j,i) in enumerate(idxs)
+      out[j] = -2Θ/dt*y₀[i] + 2Θ/dt*y₁[i] + (1-2Θ)*k[1][i]
     end
   end
 end
