@@ -94,13 +94,13 @@ regression_test(Euler(), 0.2, 0.2)
 regression_test(Midpoint(), 1.5e-2, 2.3e-2)
 
 # SSPRK22
-regression_test(SSPRK22(), 1.5e-2, 2.5e-2)
+regression_test(SSPRK22(), 1.5e-2, 2.5e-2; test_diff1 = true)
 
 # SSPRK33
-regression_test(SSPRK33(), 7.5e-4, 1.5e-3)
+regression_test(SSPRK33(), 7.5e-4, 1.5e-3; test_diff1 = true)
 
 # SSPRK432
-regression_test(SSPRK432(), 3.0e-4, 3.0e-4)
+regression_test(SSPRK432(), 3.0e-4, 3.0e-4; test_diff1 = true)
 
 # SSPRK104
 regression_test(SSPRK104(), 1.5e-5, 3e-5)
