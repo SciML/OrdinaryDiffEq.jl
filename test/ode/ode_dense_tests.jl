@@ -15,6 +15,14 @@ for idx in eachindex(interpolation_results_2d)
   interpolation_results_2d[idx] = zeros(prob_ode_2Dlinear.u0)
 end
 
+f_linear_inplace = (t,u,du) -> begin @. du = 1.01 * u end
+(::typeof(f_linear_inplace))(::Type{Val{:analytic}}, t, u0) = exp(1.01*t)*u0
+prob_ode_linear_inplace = ODEProblem(f_linear_inplace, [0.5], (0.,1.))
+const interpolation_results_1d_inplace = Vector{typeof(prob_ode_linear_inplace.u0)}(length(interpolation_points))
+for idx in eachindex(interpolation_results_1d_inplace)
+  interpolation_results_1d_inplace[idx] = zeros(prob_ode_linear_inplace.u0)
+end
+
 const deriv_test_points = linspace(0,1,10)
 
 # perform the regression tests
@@ -24,14 +32,30 @@ const deriv_test_points = linspace(0,1,10)
 function regression_test(alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = false)
   PRINT_TESTS && println("\n", alg)
 
-  sol  = solve(prob_ode_linear, alg, dt=1//2^(2), dense=true)
+  sol = solve(prob_ode_linear, alg, dt=1//2^(2), dense=true)
   sol(interpolation_results_1d, interpolation_points)
   sol(interpolation_points[1])
-
   if test_diff1
     for t in deriv_test_points
-      deriv = sol(t,Val{1})
-      @test deriv ≈ ForwardDiff.derivative(sol,t)
+      deriv = sol(t, Val{1})
+      @test deriv ≈ ForwardDiff.derivative(sol, t)
+    end
+  end
+
+  sol = solve(prob_ode_linear_inplace, alg, dt=1//2^(2), dense=true)
+  sol(interpolation_results_1d_inplace, interpolation_points, idxs=1:1)
+  sol(interpolation_results_1d_inplace, interpolation_points)
+  sol(interpolation_points[1], idxs=1:1)
+  sol(interpolation_points[1])
+  if test_diff1
+    sol(interpolation_results_1d_inplace, interpolation_points, Val{1}, idxs=1:1)
+    sol(interpolation_results_1d_inplace, interpolation_points, Val{1})
+    sol(interpolation_points[1], Val{1}, idxs=1:1)
+    der = sol(interpolation_points[1], Val{1})
+    @test interpolation_results_1d_inplace[1] ≈ der
+    for t in deriv_test_points
+      deriv = sol(t, Val{1}, idxs=1)
+      @test deriv ≈ ForwardDiff.derivative(t->sol(t,idxs=1), t)
     end
   end
 
