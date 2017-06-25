@@ -181,7 +181,7 @@ function apply_callback!(integrator,callback::ContinuousCallback,cb_time,prev_si
 end
 
 #Base Case: Just one
-@inline function apply_discrete_callback!(integrator::ODEIntegrator,callback::DiscreteCallback)
+@inline function apply_discrete_callback!(integrator,callback::DiscreteCallback)
   @inbounds if callback.save_positions[1]
     savevalues!(integrator)
   end
@@ -197,16 +197,16 @@ end
 end
 
 #Starting: Get bool from first and do next
-@inline function apply_discrete_callback!(integrator::ODEIntegrator,callback::DiscreteCallback,args...)
+@inline function apply_discrete_callback!(integrator,callback::DiscreteCallback,args...)
   apply_discrete_callback!(integrator,apply_discrete_callback!(integrator,callback),args...)
 end
 
-@inline function apply_discrete_callback!(integrator::ODEIntegrator,discrete_modified::Bool,callback::DiscreteCallback,args...)
+@inline function apply_discrete_callback!(integrator,discrete_modified::Bool,callback::DiscreteCallback,args...)
   bool = apply_discrete_callback!(integrator,apply_discrete_callback!(integrator,callback),args...)
   discrete_modified || bool
 end
 
-@inline function apply_discrete_callback!(integrator::ODEIntegrator,discrete_modified::Bool,callback::DiscreteCallback)
+@inline function apply_discrete_callback!(integrator,discrete_modified::Bool,callback::DiscreteCallback)
   bool = apply_discrete_callback!(integrator,callback)
   discrete_modified || bool
 end
