@@ -95,22 +95,20 @@ immutable MidpointCache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k::rateType
-  du::rateType
   tmp::uType
   fsalfirst::rateType
 end
 
 u_cache(c::MidpointCache) = ()
-du_cache(c::MidpointCache) = (c.k,c.du,c.fsalfirst)
+du_cache(c::MidpointCache) = (c.k,c.fsalfirst)
 
 immutable MidpointConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::Midpoint,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
   tmp = similar(u)
   k = zeros(rate_prototype)
-  du = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
-  MidpointCache(u,uprev,k,du,tmp,fsalfirst)
+  MidpointCache(u,uprev,k,tmp,fsalfirst)
 end
 
 alg_cache(alg::Midpoint,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = MidpointConstantCache()

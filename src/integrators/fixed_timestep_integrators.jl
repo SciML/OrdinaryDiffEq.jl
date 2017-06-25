@@ -147,16 +147,16 @@ end
 =#
 
 @inline function perform_step!(integrator,cache::MidpointCache,f=integrator.f)
-  @unpack t,dt,uprev,u,k = integrator
+  @unpack t,dt,uprev,u = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack k,du,tmp,fsalfirst = cache
+  @unpack k,tmp,fsalfirst = cache
   halfdt = dt/2
   @tight_loop_macros for i in uidx
     @inbounds tmp[i] = muladd(halfdt,fsalfirst[i],uprev[i])
   end
-  f(t+halfdt,tmp,du)
+  f(t+halfdt,tmp,k)
   @tight_loop_macros for i in uidx
-    @inbounds u[i] = muladd(dt,du[i],uprev[i])
+    @inbounds u[i] = muladd(dt,k[i],uprev[i])
   end
   f(t+dt,u,k)
   @pack integrator = t,dt,u
