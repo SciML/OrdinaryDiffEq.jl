@@ -205,7 +205,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     saveiter_dense = 0
   end
 
-  opts = DEOptions(Int(maxiters),timeseries_steps,save_everystep,adaptive,abstol_internal,
+  opts = DEOptions(maxiters,timeseries_steps,save_everystep,adaptive,abstol_internal,
     reltol_internal,tTypeNoUnits(gamma),tTypeNoUnits(qmax),tTypeNoUnits(qmin),
     tType(dtmax),tType(dtmin),internalnorm,save_idxs,
     tstops_internal,saveat_internal,d_discontinuities_internal,
