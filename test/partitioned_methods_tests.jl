@@ -12,6 +12,7 @@ end
 prob = PartitionedODEProblem((f1,f2),(u0,v0),(0.0,5.0))
 
 sol = solve(prob,SymplecticEuler(),dt=1/100)
+sol_verlet = solve(prob,VelocityVerlet(),dt=1/100)
 
 interp_time = 0:0.001:5
 interp = sol(0.5)
@@ -19,9 +20,12 @@ interps = sol(interp_time)
 
 prob = SecondOrderODEProblem(f2,u0,v0,(0.0,5.0))
 sol2 = solve(prob,SymplecticEuler(),dt=1/100)
+sol2_verlet = solve(prob,VelocityVerlet(),dt=1/100)
 
 @test sol[end][1] == sol2[end][1]
+@test sol_verlet[end][1] == sol2_verlet[end][1]
 @test sol[end][5] == sol2[end][5]
+@test sol_verlet[end][5] == sol2_verlet[end][5]
 
 f = function (t,u,du)
   du.x[1] .= u.x[2]
