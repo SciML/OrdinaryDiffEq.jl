@@ -149,9 +149,11 @@ function apply_callback!(integrator,callback::ContinuousCallback,cb_time,prev_si
   if cb_time != zero(typeof(integrator.t))
     change_t_via_interpolation!(integrator,integrator.tprev+cb_time)
   end
+  saved_in_cb = false
 
   @inbounds if callback.save_positions[1]
-    savevalues!(integrator)
+    savevalues!(integrator,true)
+    saved_in_cb = true
   end
 
   integrator.u_modified = true
@@ -173,27 +175,31 @@ function apply_callback!(integrator,callback::ContinuousCallback,cb_time,prev_si
   if integrator.u_modified
     reeval_internals_due_to_modification!(integrator)
     @inbounds if callback.save_positions[2]
-      savevalues!(integrator)
+      savevalues!(integrator,true)
+      saved_in_cb = true
     end
-    return true
+    return true,saved_in_cb
   end
-  false
+  false,saved_in_cb
 end
 
 #Base Case: Just one
 @inline function apply_discrete_callback!(integrator,callback::DiscreteCallback)
+  saved_in_cb = false
   @inbounds if callback.save_positions[1]
-    savevalues!(integrator)
+    savevalues!(integrator,true)
+    saved_in_cb = true
   end
 
   integrator.u_modified = true
   if callback.condition(integrator.t,integrator.u,integrator)
     callback.affect!(integrator)
     @inbounds if callback.save_positions[2]
-      savevalues!(integrator)
+      savevalues!(integrator,true)
+      saved_in_cb = true
     end
   end
-  integrator.u_modified
+  integrator.u_modified,saved_in_cb
 end
 
 #Starting: Get bool from first and do next
