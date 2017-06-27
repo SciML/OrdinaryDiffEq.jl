@@ -204,15 +204,15 @@ end
 
 #Starting: Get bool from first and do next
 @inline function apply_discrete_callback!(integrator,callback::DiscreteCallback,args...)
-  apply_discrete_callback!(integrator,apply_discrete_callback!(integrator,callback),args...)
+  apply_discrete_callback!(integrator,apply_discrete_callback!(integrator,callback)...,args...)
 end
 
-@inline function apply_discrete_callback!(integrator,discrete_modified::Bool,callback::DiscreteCallback,args...)
-  bool = apply_discrete_callback!(integrator,apply_discrete_callback!(integrator,callback),args...)
-  discrete_modified || bool
+@inline function apply_discrete_callback!(integrator,discrete_modified::Bool,saved_in_cb::Bool,callback::DiscreteCallback,args...)
+  bool,saved_in_cb2 = apply_discrete_callback!(integrator,apply_discrete_callback!(integrator,callback)...,args...)
+  discrete_modified || bool, saved_in_cb || saved_in_cb2
 end
 
-@inline function apply_discrete_callback!(integrator,discrete_modified::Bool,callback::DiscreteCallback)
-  bool = apply_discrete_callback!(integrator,callback)
-  discrete_modified || bool
+@inline function apply_discrete_callback!(integrator,discrete_modified::Bool,saved_in_cb::Bool,callback::DiscreteCallback)
+  bool,saved_in_cb2 = apply_discrete_callback!(integrator,callback)
+  discrete_modified || bool, saved_in_cb || saved_in_cb2
 end
