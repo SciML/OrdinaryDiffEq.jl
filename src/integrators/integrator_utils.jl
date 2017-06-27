@@ -206,9 +206,9 @@ end
   continuous_modified = false
   discrete_modified = false
   if !(typeof(continuous_callbacks)<:Tuple{})
+    atleast_one_callback = true
     time,upcrossing,idx,counter = find_first_continuous_callback(integrator,continuous_callbacks...)
     if time != zero(typeof(integrator.t)) && upcrossing != 0 # if not, then no events
-      atleast_one_callback = true
       continuous_modified = apply_callback!(integrator,continuous_callbacks[idx],time,upcrossing)
     end
   end
@@ -217,6 +217,7 @@ end
     discrete_modified = apply_discrete_callback!(integrator,discrete_callbacks...)
   end
   if !atleast_one_callback
+    @show "this one"
     savevalues!(integrator)
   end
 
