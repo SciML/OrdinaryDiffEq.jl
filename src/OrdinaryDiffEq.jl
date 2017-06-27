@@ -95,7 +95,7 @@ module OrdinaryDiffEq
 
   export LawsonEuler, NorsettEuler
 
-  export SymplecticEuler
+  export SymplecticEuler, VelocityVerlet
 
   #export Verlet, VelocityVerlet
 
