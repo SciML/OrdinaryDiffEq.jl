@@ -54,6 +54,7 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   uprev,duprev = integrator.uprev.x
+  f[1](integrator.t,uprev,duprev,integrator.k[1].x[1])
   f[2](integrator.t,uprev,duprev,integrator.k[1].x[2])
 end
 
@@ -71,7 +72,6 @@ end
   f[2](integrator.t,u,duprev,kdu)
   # v(t+Δt) = v(t) + 1/2*(a(t)+a(t+Δt))*Δt
   @tight_loop_macros for i in eachindex(du)
-    du[i] = muladd(dt,(1//2*kduprev[i]+kdu[i]),duprev[i])
+    du[i] = duprev[i] + dt*(1//2*kduprev[i] + 1//2*kdu[i])
   end
-  f[2](integrator.t,uprev,duprev,kduprev)
 end
