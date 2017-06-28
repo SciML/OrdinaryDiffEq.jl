@@ -205,8 +205,8 @@ end
     u[i] = @muladd uprev[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i] + b7*k7[i] + b9*k9[i] + b10*k10[i] + b11*k11[i] + b12*k12[i] + b13*k13[i] + b14*k14[i] + b15*k15[i] + b16*k16[i] + b17*k17[i])
   end
   if integrator.opts.adaptive
-    @tight_loop_macros for i in uidx
-      @inbounds atmp[i] =  (dt*(k2[i] - k16[i]) * adaptiveConst)./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol)
+    @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
+      @inbounds atmp[i] =  (dt*(k2[i] - k16[i]) * adaptiveConst)./@muladd(atol+max(abs(uprev[i]),abs(u[i])).*rtol)
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
@@ -487,8 +487,8 @@ end
     u[i] = @muladd uprev[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i] + b7*k7[i] + b8*k8[i] + b10*k10[i] + b11*k11[i] + b13*k13[i] + b14*k14[i] + b15*k15[i] + b16*k16[i] + b17*k17[i] + b18*k18[i] + b19*k19[i] + b20*k20[i] + b21*k21[i] + b22*k22[i] + b23*k23[i] + b24*k24[i] + b25*k25[i])
   end
   if integrator.opts.adaptive
-    @tight_loop_macros for i in uidx
-      @inbounds atmp[i] =  (dt*(k2[i] - k24[i]) * adaptiveConst)./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol)
+    @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
+      @inbounds atmp[i] =  (dt*(k2[i] - k24[i]) * adaptiveConst)./@muladd(atol+max(abs(uprev[i]),abs(u[i])).*rtol)
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
@@ -849,8 +849,8 @@ end
     u[i] = @muladd uprev[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i] + b7*k7[i] + b8*k8[i] + b10*k10[i] + b11*k11[i] + b12*k12[i] + b14*k14[i] + b15*k15[i] + b16*k16[i] + b18*k18[i] + b19*k19[i] + b20*k20[i] + b21*k21[i] + b22*k22[i] + b23*k23[i] + b24*k24[i] + b25*k25[i] + b26*k26[i] + b27*k27[i] + b28*k28[i] + b29*k29[i] + b30*k30[i] + b31*k31[i] + b32*k32[i] + b33*k33[i] + b34*k34[i] + b35*k35[i])
   end
   if integrator.opts.adaptive
-    @tight_loop_macros for i in uidx
-      @inbounds atmp[i] =  (dt*(k2[i] - k34[i]) * adaptiveConst)./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol)
+    @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
+      @inbounds atmp[i] =  (dt*(k2[i] - k34[i]) * adaptiveConst)./@muladd(atol+max(abs(uprev[i]),abs(u[i])).*rtol)
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
