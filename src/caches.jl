@@ -364,7 +364,6 @@ function alg_cache(alg::Tsit5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev
   utilde = similar(u,indices(u))
   atmp = similar(u,uEltypeNoUnits,indices(u))
   tmp = similar(u)
-  atmptilde = similar(u,uEltypeNoUnits,indices(u))
   Tsit5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp,tab)
 end
 
