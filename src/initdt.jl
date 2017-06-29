@@ -1,13 +1,15 @@
 function ode_determine_initdt{tType,uType}(u0,t::tType,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,true},order)
   f = prob.f
-  f₀ = zeros(u0./t); f₁ = zeros(u0./t); u₁ = zeros(u0); sk = zeros(u0); tmp = zeros(u0,typeof(one(u0[1])))
+  f₀ = zeros(u0./t); f₁ = zeros(u0./t); u₁ = zeros(u0); sk = zeros(u0);
+  # Hack to  make a generic u0 with no units, https://github.com/JuliaLang/julia/issues/22216
+  typeof(u0[1]) <: AbstractArray ? tmp = zeros(u0,typeof(ones(u0[1]))) : tmp = zeros(u0,typeof(one(u0[1])))
   uidx = eachindex(u0)
   #sk = abstol+abs.(u0).*reltol
   #d₀ = internalnorm(u0./sk)
 
   @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(abstol),Iterators.cycle(reltol))
     @inbounds sk[i] = (atol+abs(u0[i])*rtol)
-    @inbounds tmp[i] = u0[i]/sk[i]
+    @inbounds tmp[i] = u0[i]./sk[i]
   end
   d₀ = internalnorm(tmp)
 
@@ -37,7 +39,7 @@ function ode_determine_initdt{tType,uType}(u0,t::tType,tdir,dtmax,abstol,reltol,
 
   #tmp = (f₁.-f₀)./(abstol+abs.(u0).*reltol)*tType(1)
   @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(abstol),Iterators.cycle(reltol))
-    tmp[i] = (f₁[i]-f₀[i])/(atol+abs(u0[i])*rtol)*tType(1)
+    tmp[i] = (f₁[i]-f₀[i])./(atol+abs(u0[i])*rtol)*tType(1)
   end
 
   d₂ = internalnorm(tmp)/dt₀
