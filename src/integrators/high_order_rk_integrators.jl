@@ -155,9 +155,9 @@ end
     u[i] = uprev[i] + dt*(k1[i]*b1+k4[i]*b4+k5[i]*b5+k6[i]*b6+k7[i]*b7+k8[i]*b8+k9[i]*b9)
   end
   if integrator.opts.adaptive
-    @tight_loop_macros for i in uidx
+    @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
       @inbounds utilde[i] = uprev[i] + dt*(k1[i]*bhat1+k4[i]*bhat4+k5[i]*bhat5+k6[i]*bhat6+k7[i]*bhat7+k8[i]*bhat8+k10[i]*bhat10)
-      @inbounds atmp[i] = ((utilde[i]-u[i])./(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol))
+      @inbounds atmp[i] = ((utilde[i]-u[i])./(atol+max(abs(uprev[i]),abs(u[i])).*rtol))
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
@@ -407,9 +407,9 @@ end
     @inbounds u[i] = uprev[i] + update[i]
   end
   if integrator.opts.adaptive
-    @tight_loop_macros for i in uidx
-      @inbounds atmp[i] = (dt*(@muladd(k1[i]*er1 + k6[i]*er6 + k7[i]*er7 + k8[i]*er8 + k9[i]*er9 + k10[i]*er10 + k11[i]*er11 + k12[i]*er12))./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol))
-      @inbounds atmp2[i]= (@muladd(update[i] - dt*(bhh1*k1[i] + bhh2*k9[i] + bhh3*k12[i]))./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol))
+    @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
+      @inbounds atmp[i] = (dt*(@muladd(k1[i]*er1 + k6[i]*er6 + k7[i]*er7 + k8[i]*er8 + k9[i]*er9 + k10[i]*er10 + k11[i]*er11 + k12[i]*er12))./@muladd(atol+max(abs(uprev[i]),abs(u[i])).*rtol))
+      @inbounds atmp2[i]= (@muladd(update[i] - dt*(bhh1*k1[i] + bhh2*k9[i] + bhh3*k12[i]))./@muladd(atol+max(abs(uprev[i]),abs(u[i])).*rtol))
     end
     err5 = integrator.opts.internalnorm(atmp) # Order 5
     err3 = integrator.opts.internalnorm(atmp2) # Order 3
@@ -631,8 +631,8 @@ end
     @inbounds u[i] = uprev[i] + update[i]
   end
   if integrator.opts.adaptive
-    @tight_loop_macros for i in uidx
-      @inbounds atmp[i] = (@muladd(update[i] - dt*(k1[i]*bhat1 + k6[i]*bhat6 + k7[i]*bhat7 + k8[i]*bhat8 + k9[i]*bhat9 + k10[i]*bhat10 + k13[i]*bhat13))./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol))
+    @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
+      @inbounds atmp[i] = (@muladd(update[i] - dt*(k1[i]*bhat1 + k6[i]*bhat6 + k7[i]*bhat7 + k8[i]*bhat8 + k9[i]*bhat9 + k10[i]*bhat10 + k13[i]*bhat13))./@muladd(atol+max(abs(uprev[i]),abs(u[i])).*rtol))
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end

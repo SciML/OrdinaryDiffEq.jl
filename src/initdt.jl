@@ -5,8 +5,8 @@ function ode_determine_initdt{tType,uType}(u0,t::tType,tdir,dtmax,abstol,reltol,
   #sk = abstol+abs.(u0).*reltol
   #d₀ = internalnorm(u0./sk)
 
-  @tight_loop_macros for i in uidx
-    @inbounds sk[i] = (abstol+abs(u0[i])*reltol)
+  @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(abstol),Iterators.cycle(reltol))
+    @inbounds sk[i] = (atol+abs(u0[i])*rtol)
     @inbounds tmp[i] = u0[i]/sk[i]
   end
   d₀ = internalnorm(tmp)
@@ -36,8 +36,8 @@ function ode_determine_initdt{tType,uType}(u0,t::tType,tdir,dtmax,abstol,reltol,
   f(t+tdir*dt₀,u₁,f₁)
 
   #tmp = (f₁.-f₀)./(abstol+abs.(u0).*reltol)*tType(1)
-  @tight_loop_macros for i in uidx
-    tmp[i] = (f₁[i]-f₀[i])/(abstol+abs(u0[i])*reltol)*tType(1)
+  @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(abstol),Iterators.cycle(reltol))
+    tmp[i] = (f₁[i]-f₀[i])/(atol+abs(u0[i])*rtol)*tType(1)
   end
 
   d₂ = internalnorm(tmp)/dt₀

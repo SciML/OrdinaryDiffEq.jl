@@ -102,8 +102,8 @@ end
 
     k₃ = reshape(vectmp3,sizeu...)
     #@. tmp = (dt*(k₁ - 2k₂ + k₃)/6)./@muladd(integrator.opts.abstol+max(abs(uprev),abs(u)).*integrator.opts.reltol)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol)
+    @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
+      @inbounds tmp[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)./@muladd(atol+max(abs(uprev[i]),abs(u[i])).*rtol)
     end
     integrator.EEst = integrator.opts.internalnorm(tmp)
   end
@@ -216,8 +216,8 @@ end#
 
   if integrator.opts.adaptive
     #@. tmp = (dt*(k₁ - 2k₂ + k₃)/6)./@muladd(integrator.opts.abstol+max(abs(uprev),abs(u)).*integrator.opts.reltol)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol)
+    @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
+      @inbounds tmp[i] = (dt*(k₁[i] - 2k₂[i] + k₃[i])/6)./@muladd(atol+max(abs(uprev[i]),abs(u[i])).*rtol)
     end
     integrator.EEst = integrator.opts.internalnorm(tmp)
   end
