@@ -40,7 +40,7 @@ end
   f[2](integrator.t,uprev,duprev,kdu)
   #du .= muladd.(dt,kdu,duprev)
   @tight_loop_macros for i in duidx
-    du[i] = muladd(dt,kdu[i],duprev[i])
+    @inbounds du[i] = muladd(dt,kdu[i],duprev[i])
   end
   f[1](integrator.t,uprev,du,ku)
 end
@@ -62,18 +62,18 @@ end
   @unpack t,dt = integrator
   uprev,duprev = integrator.uprev.x
   u,du = integrator.u.x
-  kduprev = integrator.k[1].x[2]
-  kdu = integrator.k[2].x[2]
+  ku, kdu = integrator.k[1].x[1], integrator.k[1].x[2]
   # x(t+Δt) = x(t) + v(t)*Δt + 1/2*a(t)*Δt^2
-  f[2](integrator.t,uprev,duprev,kduprev)
+  f[2](integrator.t,uprev,duprev,ku)
   @tight_loop_macros for i in eachindex(u)
-    @inbounds u[i] = @muladd uprev[i]+duprev[i]*dt+(1//2*kduprev[i])*dt^2
+    @inbounds u[i] = @muladd uprev[i]+duprev[i]*dt+(1//2*ku[i])*dt^2
   end
   f[2](integrator.t,u,duprev,kdu)
   # v(t+Δt) = v(t) + 1/2*(a(t)+a(t+Δt))*Δt
   @tight_loop_macros for i in eachindex(du)
-    du[i] = duprev[i] + dt*(1//2*kduprev[i] + 1//2*kdu[i])
+    @inbounds du[i] = @muladd duprev[i] + dt*(1//2*ku[i] + 1//2*kdu[i])
   end
+  f[1](integrator.t,u,duprev,ku)
 end
 
 @inline function initialize!(integrator,cache::Ruth3Cache,f=integrator.f)
