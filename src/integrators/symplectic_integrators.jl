@@ -54,7 +54,6 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   uprev,duprev = integrator.uprev.x
-  f[1](integrator.t,uprev,duprev,integrator.k[1].x[1])
   f[2](integrator.t,uprev,duprev,integrator.k[1].x[2])
 end
 
@@ -73,7 +72,8 @@ end
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] = @muladd duprev[i] + dt*(1//2*ku[i] + 1//2*kdu[i])
   end
-  f[1](integrator.t,u,duprev,ku)
+  copy!(integrator.k[2].x[1],du)
+  copy!(integrator.k[2].x[2],kdu)
 end
 
 @inline function initialize!(integrator,cache::Ruth3Cache,f=integrator.f)
