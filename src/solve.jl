@@ -48,11 +48,13 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     save_everystep = save_timeseries
   end
 
-  if typeof(prob)<:Union{PartitionedODEProblem,PartitionedConstrainedODEProblem}
+  if typeof(prob.f)<:Tuple
     if min((mm != I for mm in prob.mass_matrix)...)
       error("This solver is not able to use mass matrices.")
     end
-  elseif !(typeof(prob)<:Union{DiscreteProblem,Rosenbrock23,Rosenbrock32}) && prob.mass_matrix != I
+  elseif !(typeof(prob)<:DiscreteProblem) &&
+         !(typeof(alg) <: Union{Rosenbrock23,Rosenbrock32}) &&
+         prob.mass_matrix != I
     error("This solver is not able to use mass matrices.")
   end
 
