@@ -145,7 +145,7 @@ times ts (sorted), with values timeseries and derivatives ks
       end
     end
   end
-  vals
+  DiffEqArray(vals, tvals)
 end
 
 """

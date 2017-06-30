@@ -91,7 +91,7 @@ interpd_idxs = sol(0:1//2^(4):1,idxs=1:2:5)
 
 interpd_single = sol(0:1//2^(4):1,idxs=1)
 
-@test typeof(interpd_single) <: Vector{Float64}
+@test typeof(interpd_single.u) <: Vector{Float64}
 
 @test typeof(sol(0.5,idxs=1)) <: Float64
 
@@ -100,11 +100,11 @@ sol(A,0.777)
 A == sol(0.777)
 sol2 = solve(prob, Euler(), dt=1//2^(4), dense=true)
 
-@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < .2
+@test maximum(map((x)->maximum(abs.(x)),sol2 - interpd)) < .2
 
 sol(interpd, 0:1//2^(4):1)
 
-@test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < .2
+@test maximum(map((x)->maximum(abs.(x)),sol2 - interpd)) < .2
 
 sol  = solve(prob, Euler(), dt=1//2^(2), dense=false)
 
@@ -168,7 +168,7 @@ prob = prob_ode_bigfloatveclinear
 sol  = solve(prob, Vern6(), dt=1//2^(2), dense=true)
 interpd_big = sol(0:1//2^(4):1)
 sol2 = solve(prob, Vern6(), dt=1//2^(4), dense=true, adaptive=false)
-print_results( @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd_big)) < 5e-8 )
+print_results( @test maximum(map((x)->maximum(abs.(x)),sol2 - interpd_big)) < 5e-8 )
 
 # BS5
 regression_test(BS5(), 4e-8, 6e-8; test_diff1 = true)
@@ -177,7 +177,7 @@ prob = prob_ode_linear
 sol  = solve(prob, BS5(), dt=1//2^(1), dense=true, adaptive=false)
 interpd_1d_long = sol(0:1//2^(7):1)
 sol2 = solve(prob, BS5(), dt=1//2^(7), dense=true, adaptive=false)
-print_results( @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd_1d_long)) < 2e-7 )
+print_results( @test maximum(map((x)->maximum(abs.(x)),sol2 - interpd_1d_long)) < 2e-7 )
 
 # Vern7
 regression_test(Vern7(), 3e-9, 5e-9; test_diff1 = true)
@@ -205,21 +205,22 @@ regression_test(DP8(), 2e-7, 3e-7; test_diff1 = true)
 
 prob = prob_ode_linear
 sol  = solve(prob, DP8(), dt=1//2^(2), dense=true)
-sol(interpd_1d_long,0:1//2^(7):1)
+sol(interpd_1d_long, 0:1//2^(7):1) # inplace update
 sol2 = solve(prob, DP8(), dt=1//2^(7), dense=true, adaptive=false)
-print_results( @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd_1d_long)) < 2e-7 )
+print_results( @test maximum(map((x)->maximum(abs.(x)),sol2 - interpd_1d_long)) < 2e-7 )
 
 # ExplicitRK
 regression_test(ExplicitRK(), 7e-5, 2e-4)
 
 prob = prob_ode_linear
 sol  = solve(prob, ExplicitRK(), dt=1//2^(2), dense=true)
+# inplace interp of solution
 sol(interpd_1d_long,0:1//2^(7):1)
 sol2 = solve(prob, ExplicitRK(), dt=1//2^(7), dense=true, adaptive=false)
-print_results( @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd_1d_long)) < 6e-5 )
+print_results( @test maximum(map((x)->maximum(abs.(x)),sol2 - interpd_1d_long)) < 6e-5 )
 
 prob = prob_ode_2Dlinear
 sol  = solve(prob, ExplicitRK(), dt=1//2^(2), dense=true)
 sol(interpd, 0:1//2^(4):1)
 sol2 = solve(prob, ExplicitRK(), dt=1//2^(4), dense=true, adaptive=false)
-print_results( @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd)) < 2e-4 )
+print_results( @test maximum(map((x)->maximum(abs.(x)),sol2 - interpd)) < 2e-4 )
