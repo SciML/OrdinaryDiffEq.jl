@@ -16,6 +16,7 @@ immutable SSPRK104 <: OrdinaryDiffEqAlgorithm end
 #immutable Verlet <: OrdinaryDiffEqAlgorithm end
 immutable SymplecticEuler <: OrdinaryDiffEqAlgorithm end
 immutable VelocityVerlet <: OrdinaryDiffEqAlgorithm end
+immutable Ruth3 <: OrdinaryDiffEqAlgorithm end
 
 immutable SplitEuler <: OrdinaryDiffEqAlgorithm end
 

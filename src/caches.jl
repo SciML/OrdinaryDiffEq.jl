@@ -113,6 +113,28 @@ end
 
 alg_cache(alg::VelocityVerlet,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = VelocityVerletConstantCache()
 
+immutable Ruth3Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  k::rateType
+  fsalfirst::rateType
+end
+
+u_cache(c::Ruth3Cache) = ()
+du_cache(c::Ruth3Cache) = (c.k,c.fsalfirst)
+
+immutable Ruth3ConstantCache <: OrdinaryDiffEqConstantCache end
+
+function alg_cache(alg::Ruth3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+  tmp = similar(u)
+  k = zeros(rate_prototype)
+  fsalfirst = zeros(rate_prototype)
+  Ruth3Cache(u,uprev,k,tmp,fsalfirst)
+end
+
+alg_cache(alg::Ruth3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = Ruth3ConstantCache()
+
 immutable MidpointCache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType

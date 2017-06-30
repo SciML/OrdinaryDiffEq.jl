@@ -40,7 +40,7 @@ end
   f[2](integrator.t,uprev,duprev,kdu)
   #du .= muladd.(dt,kdu,duprev)
   @tight_loop_macros for i in duidx
-    du[i] = muladd(dt,kdu[i],duprev[i])
+    @inbounds du[i] = muladd(dt,kdu[i],duprev[i])
   end
   f[1](integrator.t,uprev,du,ku)
 end
@@ -61,17 +61,68 @@ end
   @unpack t,dt = integrator
   uprev,duprev = integrator.uprev.x
   u,du = integrator.u.x
-  kduprev = integrator.k[1].x[2]
-  kdu = integrator.k[2].x[2]
+  ku, kdu = integrator.k[1].x[1], integrator.k[1].x[2]
   # x(t+Δt) = x(t) + v(t)*Δt + 1/2*a(t)*Δt^2
-  f[2](integrator.t,uprev,duprev,kduprev)
+  f[2](integrator.t,uprev,duprev,ku)
   @tight_loop_macros for i in eachindex(u)
-    @inbounds u[i] = @muladd uprev[i]+duprev[i]*dt+(1//2*kduprev[i])*dt^2
+    @inbounds u[i] = @muladd uprev[i]+duprev[i]*dt+(1//2*ku[i])*dt^2
   end
   f[2](integrator.t,u,duprev,kdu)
   # v(t+Δt) = v(t) + 1/2*(a(t)+a(t+Δt))*Δt
   @tight_loop_macros for i in eachindex(du)
-    du[i] = muladd(dt,(1//2*kduprev[i]+kdu[i]),duprev[i])
+    @inbounds du[i] = @muladd duprev[i] + dt*(1//2*ku[i] + 1//2*kdu[i])
   end
-  f[2](integrator.t,uprev,duprev,kduprev)
+  copy!(integrator.k[2].x[1],du)
+  copy!(integrator.k[2].x[2],kdu)
+end
+
+@inline function initialize!(integrator,cache::Ruth3Cache,f=integrator.f)
+  integrator.kshortsize = 2
+  @unpack k,fsalfirst = cache
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = k
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  uprev,duprev = integrator.uprev.x
+  f[1](integrator.t,uprev,duprev,integrator.k[1].x[1])
+  f[2](integrator.t,uprev,duprev,integrator.k[1].x[2])
+end
+
+@inline function perform_step!(integrator,cache::Ruth3Cache,f=integrator.f)
+  @unpack t,dt = integrator
+  uprev,duprev = integrator.uprev.x
+  u,du = integrator.u.x
+  ku, kdu = integrator.k[2].x[1], integrator.k[2].x[2]
+  # update position
+  @tight_loop_macros for i in eachindex(u)
+    @inbounds u[i] = @muladd uprev[i]+duprev[i]*dt
+  end
+  # update velocity
+  f[2](integrator.t,u,duprev,kdu)
+  @tight_loop_macros for i in eachindex(du)
+    @inbounds du[i] = @muladd duprev[i] + dt*(-1//24)*kdu[i]
+  end
+
+  # update position & velocity
+  f[1](integrator.t,u,du,ku)
+  @tight_loop_macros for i in eachindex(u)
+    @inbounds u[i] += dt*(-2//3)*ku[i]
+  end
+
+  f[2](integrator.t,u,ku,kdu)
+  @tight_loop_macros for i in eachindex(du)
+    @inbounds du[i] += dt*(3//4)*kdu[i]
+  end
+
+  # update position & velocity
+  f[1](integrator.t,u,du,ku)
+  @tight_loop_macros for i in eachindex(u)
+    @inbounds u[i] += dt*(2//3)*ku[i]
+  end
+
+  f[2](integrator.t,u,ku,kdu)
+  @tight_loop_macros for i in eachindex(du)
+    @inbounds du[i] += dt*(7//24)*kdu[i]
+  end
 end
