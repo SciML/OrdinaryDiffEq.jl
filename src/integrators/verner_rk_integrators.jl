@@ -140,9 +140,9 @@ end
   end
   f(t+dt,u,k9)
   if integrator.opts.adaptive
-    @tight_loop_macros for i in uidx
+    @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
       @inbounds utilde[i] = @muladd uprev[i] + dt*(b1*k1[i] + b4*k4[i] + b5*k5[i] + b6*k6[i] + b7*k7[i] + b8*k8[i] + b9*k9[i])
-      @inbounds atmp[i] = ((utilde[i]-u[i])./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol))
+      @inbounds atmp[i] = ((utilde[i]-u[i])./@muladd(atol+max(abs(uprev[i]),abs(u[i])).*rtol))
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
@@ -303,8 +303,8 @@ end
     @inbounds u[i] = uprev[i] + update[i]
   end
   if integrator.opts.adaptive
-    @tight_loop_macros for i in uidx
-      @inbounds atmp[i] = (@muladd(update[i] - dt*(bhat1*k1[i] + bhat4*k4[i] + bhat5*k5[i] + bhat6*k6[i] + bhat7*k7[i] + bhat10*k10[i]))./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol))
+    @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
+      @inbounds atmp[i] = (@muladd(update[i] - dt*(bhat1*k1[i] + bhat4*k4[i] + bhat5*k5[i] + bhat6*k6[i] + bhat7*k7[i] + bhat10*k10[i]))./@muladd(atol+max(abs(uprev[i]),abs(u[i])).*rtol))
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
@@ -493,8 +493,8 @@ end
     @inbounds u[i] = uprev[i] + update[i]
   end
   if integrator.opts.adaptive
-    @tight_loop_macros for i in uidx
-      @inbounds atmp[i] = (@muladd(update[i] - dt*(bhat1*k1[i] + bhat6*k6[i] + bhat7*k7[i] + bhat8*k8[i] + bhat9*k9[i] + bhat10*k10[i] + bhat13*k13[i]))./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol))
+    @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
+      @inbounds atmp[i] = (@muladd(update[i] - dt*(bhat1*k1[i] + bhat6*k6[i] + bhat7*k7[i] + bhat8*k8[i] + bhat9*k9[i] + bhat10*k10[i] + bhat13*k13[i]))./@muladd(atol+max(abs(uprev[i]),abs(u[i])).*rtol))
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
@@ -709,8 +709,8 @@ end
     @inbounds u[i] = uprev[i] + update[i]
   end
   if integrator.opts.adaptive
-    @tight_loop_macros for i in uidx
-      @inbounds atmp[i] = (@muladd(update[i] - dt*(k1[i]*bhat1 + k8[i]*bhat8 + k9[i]*bhat9 + k10[i]*bhat10 + k11[i]*bhat11 + k12[i]*bhat12 + k13[i]*bhat13 + k16[i]*bhat16))./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol))
+    @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
+      @inbounds atmp[i] = (@muladd(update[i] - dt*(k1[i]*bhat1 + k8[i]*bhat8 + k9[i]*bhat9 + k10[i]*bhat10 + k11[i]*bhat11 + k12[i]*bhat12 + k13[i]*bhat13 + k16[i]*bhat16))./@muladd(atol+max(abs(uprev[i]),abs(u[i])).*rtol))
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end

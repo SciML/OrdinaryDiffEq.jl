@@ -203,8 +203,8 @@ end
         @inbounds uEEst[j] = @muladd uEEst[j] + αEEst[i]*kk[i][j]
       end
     end
-    @tight_loop_macros for i in uidx
-      @inbounds atmp[i] = (dt*(utilde[i]-uEEst[i])./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol))
+    @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
+      @inbounds atmp[i] = (dt*(utilde[i]-uEEst[i])./@muladd(atol+max(abs(uprev[i]),abs(u[i])).*rtol))
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end

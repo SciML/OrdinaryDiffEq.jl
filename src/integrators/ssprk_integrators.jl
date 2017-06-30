@@ -191,8 +191,8 @@ end
   end
 
   if integrator.opts.adaptive
-    @tight_loop_macros for i in uidx
-      @inbounds atmp[i] = ((utilde[i]-u[i])./@muladd(integrator.opts.abstol+max(abs(uprev[i]),abs(u[i])).*integrator.opts.reltol))
+    @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
+      @inbounds atmp[i] = ((utilde[i]-u[i])./@muladd(atol+max(abs(uprev[i]),abs(u[i])).*rtol))
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
