@@ -9,7 +9,7 @@ f2 = function (t,u,v,dv)
   dv .= -2u
 end
 
-prob = PartitionedODEProblem((f1,f2),(u0,v0),(0.0,5.0))
+prob = ODEProblem((f1,f2),(u0,v0),(0.0,5.0))
 
 sol = solve(prob,SymplecticEuler(),dt=1/100)
 sol_verlet = solve(prob,VelocityVerlet(),dt=1/100)
