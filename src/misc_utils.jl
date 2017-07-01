@@ -1,15 +1,15 @@
-immutable DiffCache{T, S}
+immutable DiffCache{T<:AbstractArray, S<:AbstractArray}
     du::T
     dual_du::S
 end
 
-Base.@pure function DiffCache{chunk_size}(T, length, ::Type{Val{chunk_size}})
-    DiffCache(zeros(T, length), zeros(Dual{:DiffEqNLSolve,T,chunk_size}, length))
+Base.@pure function DiffCache{chunk_size}(T, size, ::Type{Val{chunk_size}})
+    DiffCache(zeros(T, size...), zeros(Dual{:DiffEqNLSolve,T,chunk_size}, size...))
 end
 
-Base.@pure DiffCache(u::AbstractArray) = DiffCache(eltype(u),length(u),Val{ForwardDiff.pickchunksize(length(u))})
-Base.@pure DiffCache(u::AbstractArray,nlsolve) = DiffCache(eltype(u),length(u),Val{get_chunksize(nlsolve)})
-Base.@pure DiffCache{CS}(u::AbstractArray,T::Type{Val{CS}}) = DiffCache(eltype(u),length(u),T)
+Base.@pure DiffCache(u::AbstractArray) = DiffCache(eltype(u),size(u),Val{ForwardDiff.pickchunksize(length(u))})
+Base.@pure DiffCache(u::AbstractArray,nlsolve) = DiffCache(eltype(u),size(u),Val{get_chunksize(nlsolve)})
+Base.@pure DiffCache{CS}(u::AbstractArray,T::Type{Val{CS}}) = DiffCache(eltype(u),size(u),T)
 
 get_du{T<:Dual}(dc::DiffCache, ::Type{T}) = dc.dual_du
 get_du(dc::DiffCache, T) = dc.du
