@@ -10,7 +10,7 @@ f2 = function (t,u,v,dv)
 end
 function (::typeof(f2))(::Type{Val{:analytic}}, x, y0)
   u0, v0 = y0
-  ArrayPartition((u0*cos(x) + v0*sin(x), -u0*sin(x) + v0*cos(x)))
+  ArrayPartition(u0*cos(x) + v0*sin(x), -u0*sin(x) + v0*cos(x))
 end
 
 prob = ODEProblem((f1,f2),(u0,v0),(0.0,5.0))
@@ -22,6 +22,7 @@ sol_ruth3 = solve(prob,Ruth3(),dt=1/100)
 interp_time = 0:0.001:5
 interp = sol(0.5)
 interps = sol(interp_time)
+
 
 prob = SecondOrderODEProblem(f2,u0,v0,(0.0,5.0))
 (::typeof(prob.f[1]))(::Type{Val{:analytic}},t,u0) = f2(Val{:analytic},t,u0)
@@ -43,7 +44,7 @@ dts = 1.//2.^(8:-1:4)
 # Symplectic Euler
 sim = test_convergence(dts,prob,SymplecticEuler(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 1 rtol = 1e-1
-@test_broken sim.𝒪est[:L2] ≈ 1 rtol = 1e-1
+@test sim.𝒪est[:L2] ≈ 1 rtol = 1e-1
 # Verlet
 sim = test_convergence(dts,prob,VelocityVerlet(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 2 rtol = 1e-1
@@ -54,7 +55,7 @@ position_error = :final => [mean(sim[i].u[2].x[1] - sim[i].u_analytic[2].x[1]) f
 # Ruth
 sim = test_convergence(dts,prob,Ruth3(),dense_errors=true)
 @test_broken sim.𝒪est[:l2] ≈ 3 rtol = 1e-1
-@test_broken sim.𝒪est[:L2] ≈ 2 rtol = 1e-1
+@test_broken sim.𝒪est[:L2] ≈ 3 rtol = 1e-1
 
 f = function (t,u,du)
   du.x[1] .= u.x[2]
