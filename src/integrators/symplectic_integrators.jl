@@ -63,15 +63,17 @@ end
   u,du = integrator.u.x
   ku, kdu = integrator.k[1].x[1], integrator.k[1].x[2]
   # x(t+Δt) = x(t) + v(t)*Δt + 1/2*a(t)*Δt^2
-  f[2](integrator.t,uprev,duprev,ku)
+  f[2](t,uprev,duprev,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] = @muladd uprev[i]+duprev[i]*dt+(1//2*ku[i])*dt^2
   end
-  f[2](integrator.t,u,duprev,kdu)
+  f[2](t+dt,u,duprev,kdu)
   # v(t+Δt) = v(t) + 1/2*(a(t)+a(t+Δt))*Δt
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] = @muladd duprev[i] + dt*(1//2*ku[i] + 1//2*kdu[i])
   end
+  copy!(integrator.k[1].x[1],integrator.k[2].x[1])
+  copy!(integrator.k[1].x[2],integrator.k[2].x[2])
   copy!(integrator.k[2].x[1],du)
   copy!(integrator.k[2].x[2],kdu)
 end
