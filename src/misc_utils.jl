@@ -1,6 +1,6 @@
 immutable DiffCache{T, S}
-    du::Vector{T}
-    dual_du::Vector{S}
+    du::T
+    dual_du::S
 end
 
 Base.@pure function DiffCache{chunk_size}(T, length, ::Type{Val{chunk_size}})
