@@ -52,6 +52,18 @@ sim = test_convergence(dts,prob,VelocityVerlet(),dense_errors=true)
 # Test that position converges faster for Verlet
 position_error = :final => [mean(sim[i].u[2].x[1] - sim[i].u_analytic[2].x[1]) for i in 1:length(sim)]
 @test first(DiffEqDevTools.calc𝒪estimates(position_error).second) ≈ 3.0 rtol=1e-1
+
+# 2nd Order Tableaus
+sim = test_convergence(dts,prob,VerletLeapfrog(),dense_errors=true)
+@test sim.𝒪est[:l2] ≈ 2 rtol = 1e-1
+@test sim.𝒪est[:L2] ≈ 2 rtol = 1e-1
+sim = test_convergence(dts,prob,PseudoVerletLeapfrog(),dense_errors=true)
+@test sim.𝒪est[:l2] ≈ 2 rtol = 1e-1
+@test sim.𝒪est[:L2] ≈ 2 rtol = 1e-1
+sim = test_convergence(dts,prob,McAte2(),dense_errors=true)
+@test sim.𝒪est[:l2] ≈ 2 rtol = 1e-1
+@test sim.𝒪est[:L2] ≈ 2 rtol = 1e-1
+
 # Ruth
 sim = test_convergence(dts,prob,Ruth3(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 3 rtol = 1e-1
@@ -69,10 +81,14 @@ sim = test_convergence(dts,prob,CalvoSanz4(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
 
-dts = 1.//2.^(5:-1:1)
+dts = 1.//2.^(4:-1:0)
+sim = test_convergence(dts,prob,McAte5(),dense_errors=true)
+@test sim.𝒪est[:l2] ≈ 5 rtol = 1e-1
+@test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
+
 sim = test_convergence(dts,prob,Yoshida6(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 6 rtol = 1e-1
-@test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
+@test sim.𝒪est[:L2] ≈ 4.69 rtol = 1e-1
 
 f = function (t,u,du)
   du.x[1] .= u.x[2]

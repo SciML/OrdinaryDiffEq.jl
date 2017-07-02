@@ -1,3 +1,34 @@
+immutable Symplectic2ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+  a1::T
+  a2::T
+  b1::T
+  b2::T
+end
+
+Base.@pure function PseudoVerletLeapfrogConstantCache(T,T2)
+  a1 = T(1)
+  a2 = T(0)
+  b1 = T(1//2)
+  b2 = T(1//2)
+  Symplectic2ConstantCache{T,T2}(a1,a2,b1,b2)
+end
+
+Base.@pure function McAte2ConstantCache(T,T2)
+  a2 = T(1 - (1/2)*sqrt(T(2)))
+  a1 = T(1 - a2)
+  b2 = T(1/(2*(1-a2)))
+  b1 = T(1 - b2)
+  Symplectic2ConstantCache{T,T2}(a1,a2,b1,b2)
+end
+
+Base.@pure function VerletLeapfrogConstantCache(T,T2)
+  a1 = T(1//2)
+  a2 = T(1//2)
+  b1 = T(0)
+  b2 = T(1)
+  Symplectic2ConstantCache{T,T2}(a1,a2,b1,b2)
+end
+
 immutable Symplectic3ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   a1::T
   a2::T
@@ -62,7 +93,7 @@ Base.@pure function McAte4ConstantCache(T,T2)
   Symplectic4ConstantCache{T,T2}(a1,a2,a3,a4,b1,b2,b3,b4)
 end
 
-immutable CalvoSanz4ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+immutable Symplectic45ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   a1::T
   a2::T
   a3::T
@@ -86,7 +117,38 @@ Base.@pure function CalvoSanz4ConstantCache(T,T2)
   b3= T(0.61479130717558)
   b4=-T(0.14054801465937)
   b5= T(0.12501982279453)
-  CalvoSanz4ConstantCache{T,T2}(a1,a2,a3,a4,a5,b1,b2,b3,b4,b5)
+  Symplectic45ConstantCache{T,T2}(a1,a2,a3,a4,a5,b1,b2,b3,b4,b5)
+end
+
+immutable Symplectic5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+  a1::T
+  a2::T
+  a3::T
+  a4::T
+  a5::T
+  a6::T
+  b1::T
+  b2::T
+  b3::T
+  b4::T
+  b5::T
+  b6::T
+end
+
+Base.@pure function McAte5ConstantCache(T,T2)
+  a1=T(0.339839625839110000)
+  a2=T(-0.088601336903027329)
+  a3=T(0.5858564768259621188)
+  a4=T(-0.603039356536491888)
+  a5=T(0.3235807965546976394)
+  a6=T(0.4423637942197494587)
+  b1=T(0.1193900292875672758)
+  b2=T(0.6989273703824752308)
+  b3=T(-0.1713123582716007754)
+  b4=T(0.4012695022513534480)
+  b5=T(0.0107050818482359840)
+  b6=T(-0.0589796254980311632)
+  Symplectic5ConstantCache{T,T2}(a1,a2,a3,a4,a5,a6,b1,b2,b3,b4,b5,b6)
 end
 
 immutable Symplectic6ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache

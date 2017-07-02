@@ -105,7 +105,8 @@ module OrdinaryDiffEq
 
   export LawsonEuler, NorsettEuler
 
-  export SymplecticEuler, VelocityVerlet, Ruth3, McAte3, CandyRoz4, McAte4,
+  export SymplecticEuler, VelocityVerlet, VerletLeapfrog, PseudoVerletLeapfrog,
+         McAte2, Ruth3, McAte3, CandyRoz4, McAte4, McAte42, McAte5,
          CalvoSanz4, Yoshida6
 
   export SplitEuler
