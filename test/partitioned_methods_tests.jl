@@ -65,6 +65,14 @@ sim = test_convergence(dts,prob,CandyRoz4(),dense_errors=true)
 sim = test_convergence(dts,prob,McAte4(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
+sim = test_convergence(dts,prob,CalvoSanz4(),dense_errors=true)
+@test sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
+@test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
+
+dts = 1.//2.^(5:-1:1)
+sim = test_convergence(dts,prob,Yoshida6(),dense_errors=true)
+@test sim.𝒪est[:l2] ≈ 6 rtol = 1e-1
+@test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
 
 f = function (t,u,du)
   du.x[1] .= u.x[2]

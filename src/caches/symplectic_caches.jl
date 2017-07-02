@@ -100,3 +100,47 @@ function alg_cache(alg::CandyRoz4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,u
 end
 
 alg_cache(alg::CandyRoz4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = McAte4ConstantCache()
+
+immutable CalvoSanz4Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  k::rateType
+  fsalfirst::rateType
+  tab::tableauType
+end
+
+u_cache(c::CalvoSanz4) = ()
+du_cache(c::CalvoSanz4) = (c.k,c.fsalfirst)
+
+function alg_cache(alg::CalvoSanz4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+  tmp = similar(u)
+  k = zeros(rate_prototype)
+  fsalfirst = zeros(rate_prototype)
+  tab = CalvoSanz4ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  CalvoSanz4Cache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+alg_cache(alg::CalvoSanz4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = CalvoSanz4ConstantCache()
+
+immutable Symplectic6Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  k::rateType
+  fsalfirst::rateType
+  tab::tableauType
+end
+
+u_cache(c::Symplectic6Cache) = ()
+du_cache(c::Symplectic6Cache) = (c.k,c.fsalfirst)
+
+function alg_cache(alg::Yoshida6,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+  tmp = similar(u)
+  k = zeros(rate_prototype)
+  fsalfirst = zeros(rate_prototype)
+  tab = Yoshida6ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  Symplectic6Cache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+alg_cache(alg::Yoshida6,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = Yoshida6ConstantCache()
