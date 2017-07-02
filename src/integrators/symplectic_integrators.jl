@@ -81,7 +81,7 @@ end
   copy!(integrator.k[2].x[2],kdu)
 end
 
-@inline function initialize!(integrator,cache::Ruth3Cache,f=integrator.f)
+@inline function initialize!(integrator,cache::Symplectic3Cache,f=integrator.f)
   integrator.kshortsize = 2
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
@@ -94,40 +94,41 @@ end
   f[2](integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
-@inline function perform_step!(integrator,cache::Ruth3Cache,f=integrator.f)
+@inline function perform_step!(integrator,cache::Symplectic3Cache,f=integrator.f)
   @unpack t,dt = integrator
+  @unpack a1,a2,a3,b1,b2,b3 = cache.tab
   uprev,duprev = integrator.uprev.x
   u,du = integrator.u.x
   ku, kdu = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
   # update position
   @tight_loop_macros for i in eachindex(u)
-    @inbounds u[i] = uprev[i]+dt*(7//24)*duprev[i]
+    @inbounds u[i] = uprev[i]+dt*b1*duprev[i]
   end
   # update velocity
   f[2](integrator.t,u,duprev,kdu)
   @tight_loop_macros for i in eachindex(du)
-    @inbounds du[i] = duprev[i] + dt*(2//3)*kdu[i]
+    @inbounds du[i] = duprev[i] + dt*a1*kdu[i]
   end
   # update position & velocity
   f[1](integrator.t,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
-    @inbounds u[i] += dt*(3//4)*ku[i]
+    @inbounds u[i] += dt*b2*ku[i]
   end
 
   f[2](integrator.t,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
-    @inbounds du[i] += dt*(-2//3)*kdu[i]
+    @inbounds du[i] += dt*a2*kdu[i]
   end
 
   # update position & velocity
   f[1](integrator.t,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
-    @inbounds u[i] += dt*(-1//24)*ku[i]
+    @inbounds u[i] += dt*b3*ku[i]
   end
 
   f[2](integrator.t,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
-    @inbounds du[i] += dt*(1)*kdu[i]
+    @inbounds du[i] += dt*a3*kdu[i]
   end
   copy!(integrator.k[1].x[1],integrator.k[2].x[1])
   copy!(integrator.k[1].x[2],integrator.k[2].x[2])

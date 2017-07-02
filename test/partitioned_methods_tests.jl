@@ -56,6 +56,9 @@ position_error = :final => [mean(sim[i].u[2].x[1] - sim[i].u_analytic[2].x[1]) f
 sim = test_convergence(dts,prob,Ruth3(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 3 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 3 rtol = 1e-1
+sim = test_convergence(dts,prob,McAte3(),dense_errors=true)
+@test sim.𝒪est[:l2] ≈ 3 rtol = 1e-1
+@test sim.𝒪est[:L2] ≈ 3 rtol = 1e-1
 
 f = function (t,u,du)
   du.x[1] .= u.x[2]

@@ -43,6 +43,7 @@ module OrdinaryDiffEq
   include("caches.jl")
   include("tableaus/low_order_rk_tableaus.jl")
   include("tableaus/high_order_rk_tableaus.jl")
+  include("tableaus/symplectic_tableaus.jl")
   include("tableaus/verner_tableaus.jl")
   include("tableaus/feagin_tableaus.jl")
   include("integrators/type.jl")
@@ -100,9 +101,7 @@ module OrdinaryDiffEq
 
   export LawsonEuler, NorsettEuler
 
-  export SymplecticEuler, VelocityVerlet, Ruth3
-
-  #export Verlet, VelocityVerlet
+  export SymplecticEuler, VelocityVerlet, Ruth3, McAte3
 
   export SplitEuler
 end # module
