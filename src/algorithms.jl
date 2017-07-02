@@ -76,6 +76,15 @@ Base.@pure IIF2(;nlsolve=NLSOLVEJL_SETUP()) = IIF2{typeof(nlsolve)}(nlsolve)
 immutable LawsonEuler <: OrdinaryDiffEqAlgorithm end
 immutable NorsettEuler <: OrdinaryDiffEqAlgorithm end
 
+immutable GeneralRosenbrock{CS,AD,F,TabType} <: OrdinaryDiffEqAdaptiveAlgorithm
+  tableau::TabType
+  factorization::F
+end
+
+Base.@pure GeneralRosenbrock(;chunk_size=0,autodiff=true,
+                    factorization=lufact!,tableau=ROSENBROCK_DEFAULT_TABLEAU) =
+                    GeneralRosenbrock{chunk_size,autodiff,typeof(factorization),typeof(tableau)}(tableau,factorization)
+
 immutable CompositeAlgorithm{T,F} <: OrdinaryDiffEqCompositeAlgorithm
   algs::T
   choice_function::F
