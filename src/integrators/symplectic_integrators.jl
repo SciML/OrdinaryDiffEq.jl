@@ -54,8 +54,8 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   uprev,duprev = integrator.uprev.x
-  f[1](integrator.t,uprev,duprev,integrator.k[1].x[1])
-  f[2](integrator.t,uprev,duprev,integrator.k[1].x[2])
+  f[1](integrator.t,uprev,duprev,integrator.k[2].x[1])
+  f[2](integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 @inline function perform_step!(integrator,cache::VelocityVerletCache,f=integrator.f)
@@ -88,8 +88,8 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   uprev,duprev = integrator.uprev.x
-  f[1](integrator.t,uprev,duprev,integrator.k[1].x[1])
-  f[2](integrator.t,uprev,duprev,integrator.k[1].x[2])
+  f[1](integrator.t,uprev,duprev,integrator.k[2].x[1])
+  f[2](integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 @inline function perform_step!(integrator,cache::Ruth3Cache,f=integrator.f)
