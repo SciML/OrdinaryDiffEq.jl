@@ -48,7 +48,7 @@ sim = test_convergence(dts,prob,SymplecticEuler(),dense_errors=true)
 # Verlet
 sim = test_convergence(dts,prob,VelocityVerlet(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 2 rtol = 1e-1
-@test_broken sim.𝒪est[:L2] ≈ 2 rtol = 1e-1
+@test sim.𝒪est[:L2] ≈ 2 rtol = 1e-1
 # Test that position converges faster for Verlet
 position_error = :final => [mean(sim[i].u[2].x[1] - sim[i].u_analytic[2].x[1]) for i in 1:length(sim)]
 @test first(DiffEqDevTools.calc𝒪estimates(position_error).second) ≈ 3.0 rtol=1e-1

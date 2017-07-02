@@ -105,7 +105,7 @@ du_cache(c::VelocityVerletCache) = (c.k,c.fsalfirst)
 immutable VelocityVerletConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::VelocityVerlet,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
-  tmp = similar(u)
+  tmp = zeros(rate_prototype)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
   VelocityVerletCache(u,uprev,k,tmp,fsalfirst)

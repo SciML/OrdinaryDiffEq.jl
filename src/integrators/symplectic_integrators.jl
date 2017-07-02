@@ -61,7 +61,7 @@ end
   @unpack t,dt = integrator
   uprev,duprev = integrator.uprev.x
   u,du = integrator.u.x
-  ku, kdu = integrator.k[1].x[1], integrator.k[1].x[2]
+  ku, kdu = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
   # x(t+Δt) = x(t) + v(t)*Δt + 1/2*a(t)*Δt^2
   f[2](t,uprev,duprev,ku)
   @tight_loop_macros for i in eachindex(u)
