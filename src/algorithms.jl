@@ -18,6 +18,10 @@ immutable SymplecticEuler <: OrdinaryDiffEqAlgorithm end
 immutable VelocityVerlet <: OrdinaryDiffEqAlgorithm end
 immutable Ruth3 <: OrdinaryDiffEqAlgorithm end
 immutable McAte3 <: OrdinaryDiffEqAlgorithm end
+immutable CandyRoz4 <: OrdinaryDiffEqAlgorithm end
+immutable McAte4 <: OrdinaryDiffEqAlgorithm end
+immutable CalvoSanz4 <: OrdinaryDiffEqAlgorithm end
+immutable Yoshida6 <: OrdinaryDiffEqAlgorithm end
 
 immutable SplitEuler <: OrdinaryDiffEqAlgorithm end
 

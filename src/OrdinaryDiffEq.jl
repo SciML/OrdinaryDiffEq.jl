@@ -41,6 +41,7 @@ module OrdinaryDiffEq
   include("algorithms.jl")
   include("alg_utils.jl")
   include("caches.jl")
+  include("caches/symplectic_caches.jl")
   include("tableaus/low_order_rk_tableaus.jl")
   include("tableaus/high_order_rk_tableaus.jl")
   include("tableaus/symplectic_tableaus.jl")
@@ -91,17 +92,21 @@ module OrdinaryDiffEq
 
   # Reexport the Alg Types
 
-  export OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveAlgorithm, OrdinaryDiffEqCompositeAlgorithm,
-        Discrete, FunctionMap, Euler, Midpoint, SSPRK22, SSPRK33, SSPRK432, SSPRK104, RK4, ExplicitRK, BS3, BS5,
-        DP5, DP5Threaded, Tsit5, DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8, Vern9, ImplicitEuler,
-        Trapezoid, Rosenbrock23, Rosenbrock32, Feagin10, Feagin12, Feagin14,
-        CompositeAlgorithm
+  export OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveAlgorithm,
+         OrdinaryDiffEqCompositeAlgorithm
+
+  export Discrete, FunctionMap, Euler, Midpoint, SSPRK22, SSPRK33, SSPRK432,
+         SSPRK104, RK4, ExplicitRK, BS3, BS5,
+         DP5, DP5Threaded, Tsit5, DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8,
+         Vern9, ImplicitEuler, Trapezoid, Rosenbrock23, Rosenbrock32,
+         Feagin10, Feagin12, Feagin14, CompositeAlgorithm
 
   export IIF1, IIF2
 
   export LawsonEuler, NorsettEuler
 
-  export SymplecticEuler, VelocityVerlet, Ruth3, McAte3
+  export SymplecticEuler, VelocityVerlet, Ruth3, McAte3, CandyRoz4, McAte4,
+         CalvoSanz4, Yoshida6
 
   export SplitEuler
 end # module
