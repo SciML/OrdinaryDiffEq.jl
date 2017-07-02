@@ -35,11 +35,16 @@ module OrdinaryDiffEq
    :($(esc(ex)))
   end
 
+  const CompiledFloats = Union{Float32,Float64}
+
   include("misc_utils.jl")
   include("algorithms.jl")
   include("alg_utils.jl")
   include("caches.jl")
-  include("integrators/unrolled_tableaus.jl")
+  include("tableaus/low_order_rk_tableaus.jl")
+  include("tableaus/high_order_rk_tableaus.jl")
+  include("tableaus/verner_tableaus.jl")
+  include("tableaus/feagin_tableaus.jl")
   include("integrators/type.jl")
   include("integrators/integrator_utils.jl")
   include("integrators/fixed_timestep_integrators.jl")

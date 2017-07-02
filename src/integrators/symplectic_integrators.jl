@@ -1,3 +1,5 @@
+# http://www.chimica.unipd.it/antonino.polimeno/pubblica/downloads/JChemPhys_101_4062.pdf
+
 @inline function initialize!(integrator,cache::SymplecticEulerCache,f=integrator.f)
   integrator.kshortsize = 2
   @unpack k,fsalfirst = cache
