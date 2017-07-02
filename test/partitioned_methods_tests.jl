@@ -54,7 +54,7 @@ position_error = :final => [mean(sim[i].u[2].x[1] - sim[i].u_analytic[2].x[1]) f
 @test first(DiffEqDevTools.calc𝒪estimates(position_error).second) ≈ 3.0 rtol=1e-1
 # Ruth
 sim = test_convergence(dts,prob,Ruth3(),dense_errors=true)
-@test_broken sim.𝒪est[:l2] ≈ 3 rtol = 1e-1
+@test sim.𝒪est[:l2] ≈ 3 rtol = 1e-1
 @test_broken sim.𝒪est[:L2] ≈ 3 rtol = 1e-1
 
 f = function (t,u,du)
