@@ -319,7 +319,7 @@ end
   @unpack a21,a31,a32,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4 = cache.tab
   mass_matrix = integrator.sol.prob.mass_matrix
 
-  utile = du
+  utilde = du
   atmp = du
 
   # Setup Jacobian Calc
@@ -339,11 +339,14 @@ end
     end
   end
 
-  γ1 = dt*d1
+  d1dt = dt*d1
   a21dt = a21*dt
 
+  f(t,uprev,du)
+
   @tight_loop_macros for i in uidx
-    @inbounds linsolve_tmp[i] = fsalfirst[i] + γ1*dT[i]
+    #@inbounds linsolve_tmp[i] = fsalfirst[i] + γ1*dT[i]
+    @inbounds linsolve_tmp[i] = du[i] + d1dt*dT[i]
   end
 
   if has_invW(f)
@@ -416,15 +419,15 @@ end
   k4 = reshape(vectmp4,sizeu...)
 
   @tight_loop_macros for i in uidx
-    @inbounds u[i] = dt*(b1*k1[i] + b2*k₂[i] + b3*k3[i] + b4*k4[i])
+    @inbounds u[i] = uprev[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b4*k4[i])
   end
 
   f(t,u,fsallast)
 
   if integrator.opts.adaptive
     @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
-      @inbounds utilde[i] = @muladd uprev[i] + dt*(b1tilde*k1[i] + b2tilde*k2[i] + b3tilde*k3[i] + b4tilde*k4[i])
-      @inbounds atmp[i] = ((utilde[i]-u[i])./@muladd(atol+max(abs(uprev[i]),abs(u[i])).*rtol))
+      @inbounds utilde[i] = @muladd uprev[i] + dt*(btilde1*k1[i] + btilde2*k2[i] + btilde3*k3[i] + btilde4*k4[i])
+      @inbounds atmp[i] = ((utilde[i])./@muladd(atol+max(abs(uprev[i]),abs(u[i])).*rtol))
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end

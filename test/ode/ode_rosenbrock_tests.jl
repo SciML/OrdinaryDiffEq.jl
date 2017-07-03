@@ -66,10 +66,16 @@ sim = test_convergence(dts,prob,Rosenbrock32(linsolve=LinSolveFactorize(qrfact!)
 sol = solve(prob,Rosenbrock32())
 @test length(sol) < 20
 
+#=
+
 ### RosShamp4
 
+dts = 1.//2.^(8:-1:3)
+
+prob = prob_ode_linear
+
 sim = test_convergence(dts,prob,RosShamp4())
-@test abs(sim.𝒪est[:final]-2) < testTol
+@test abs(sim.𝒪est[:final]-4) < testTol
 
 sol = solve(prob,RosShamp4())
 @test length(sol) < 20
@@ -77,16 +83,79 @@ sol = solve(prob,RosShamp4())
 prob = prob_ode_2Dlinear
 
 sim = test_convergence(dts,prob,RosShamp4())
-@test abs(sim.𝒪est[:final]-2) < testTol
+@test abs(sim.𝒪est[:final]-4) < testTol
 
 sol = solve(prob,RosShamp4())
 @test length(sol) < 20
+
+integrator = init(prob,RosShamp4())
+step!(integrator)
+
+prob = prob_ode_bigfloat2Dlinear
 
 sim = test_convergence(dts,prob,RosShamp4())
-@test abs(sim.𝒪est[:final]-2) < testTol
+@test abs(sim.𝒪est[:final]-4) < testTol
 
 sol = solve(prob,RosShamp4())
 @test length(sol) < 20
+
+### Veldd4
+
+dts = 1.//2.^(8:-1:3)
+
+prob = prob_ode_linear
+
+sim = test_convergence(dts,prob,Veldd4())
+@test abs(sim.𝒪est[:final]-2) < testTol
+
+sol = solve(prob,Veldd4())
+@test length(sol) < 20
+
+prob = prob_ode_2Dlinear
+
+sim = test_convergence(dts,prob,Veldd4())
+@test abs(sim.𝒪est[:final]-4) < testTol
+
+sol = solve(prob,Veldd4())
+@test length(sol) < 20
+
+prob = prob_ode_bigfloat2Dlinear
+
+sim = test_convergence(dts,prob,Veldd4())
+@test abs(sim.𝒪est[:final]-5.87) < testTol
+
+sol = solve(prob,Veldd4())
+@test length(sol) < 20
+
+### Velds4
+
+dts = 1.//2.^(8:-1:3)
+
+prob = prob_ode_linear
+
+sim = test_convergence(dts,prob,Velds4())
+@test abs(sim.𝒪est[:final]-2) < testTol
+
+sol = solve(prob,Velds4())
+@test length(sol) < 20
+
+prob = prob_ode_2Dlinear
+
+sim = test_convergence(dts,prob,Velds4())
+@test abs(sim.𝒪est[:final]-4) < testTol
+
+sol = solve(prob,Velds4())
+@test length(sol) < 20
+
+prob = prob_ode_bigfloat2Dlinear
+
+sim = test_convergence(dts,prob,Velds4())
+@test abs(sim.𝒪est[:final]-5.87) < testTol
+
+sol = solve(prob,Velds4())
+@test length(sol) < 20
+
+=#
 
 ### Test on Stiff
 

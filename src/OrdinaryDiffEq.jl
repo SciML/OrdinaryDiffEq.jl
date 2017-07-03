@@ -110,7 +110,7 @@ module OrdinaryDiffEq
          Vern9, ImplicitEuler, Trapezoid,
          Feagin10, Feagin12, Feagin14, CompositeAlgorithm
 
-  export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd43, Velds4, GRK4T, GRK4A,
+  export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
          Ros4LStab
 
   export IIF1, IIF2
