@@ -220,3 +220,91 @@ function alg_cache(alg::Yoshida6,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,up
 end
 
 alg_cache(alg::Yoshida6,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = Yoshida6ConstantCache()
+
+immutable Symplectic62Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  k::rateType
+  fsalfirst::rateType
+  tab::tableauType
+end
+
+u_cache(c::Symplectic62Cache) = ()
+du_cache(c::Symplectic62Cache) = (c.k,c.fsalfirst)
+
+function alg_cache(alg::KahanLi6,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+  tmp = similar(u)
+  k = zeros(rate_prototype)
+  fsalfirst = zeros(rate_prototype)
+  tab = KahanLi6ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  Symplectic62Cache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+alg_cache(alg::KahanLi6,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = KahanLi6ConstantCache()
+
+immutable McAte8Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  k::rateType
+  fsalfirst::rateType
+  tab::tableauType
+end
+
+u_cache(c::McAte8Cache) = ()
+du_cache(c::McAte8Cache) = (c.k,c.fsalfirst)
+
+function alg_cache(alg::McAte8,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+  tmp = similar(u)
+  k = zeros(rate_prototype)
+  fsalfirst = zeros(rate_prototype)
+  tab = McAte8ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  McAte8Cache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+alg_cache(alg::McAte8,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = McAte8ConstantCache()
+
+immutable KahanLi8Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  k::rateType
+  fsalfirst::rateType
+  tab::tableauType
+end
+
+u_cache(c::KahanLi8Cache) = ()
+du_cache(c::KahanLi8Cache) = (c.k,c.fsalfirst)
+
+function alg_cache(alg::KahanLi8,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+  tmp = similar(u)
+  k = zeros(rate_prototype)
+  fsalfirst = zeros(rate_prototype)
+  tab = KahanLi8ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  KahanLi8Cache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+alg_cache(alg::KahanLi8,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = KahanLi8ConstantCache()
+
+immutable SofSpa10Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  k::rateType
+  fsalfirst::rateType
+  tab::tableauType
+end
+
+u_cache(c::SofSpa10Cache) = ()
+du_cache(c::SofSpa10Cache) = (c.k,c.fsalfirst)
+
+function alg_cache(alg::SofSpa10,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+  tmp = similar(u)
+  k = zeros(rate_prototype)
+  fsalfirst = zeros(rate_prototype)
+  tab = SofSpa10ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  SofSpa10Cache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+alg_cache(alg::SofSpa10,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = SofSpa10ConstantCache()

@@ -47,6 +47,10 @@ isfsal(alg::McAte4) = true
 isfsal(alg::McAte42) = true
 isfsal(alg::McAte5) = true
 isfsal(alg::Yoshida6) = true
+isfsal(alg::KahanLi6) = true
+isfsal(alg::McAte8) = true
+isfsal(alg::KahanLi8) = true
+isfsal(alg::SofSpa10) = true
 
 fsal_typeof(alg::OrdinaryDiffEqAlgorithm,rate_prototype) = typeof(rate_prototype)
 #fsal_typeof(alg::LawsonEuler,rate_prototype) = Vector{typeof(rate_prototype)}
@@ -106,6 +110,10 @@ alg_order(alg::CalvoSanz4) = 4
 alg_order(alg::McAte42) = 4
 alg_order(alg::McAte5) = 5
 alg_order(alg::Yoshida6) = 6
+alg_order(alg::KahanLi6) = 6
+alg_order(alg::McAte8) = 8
+alg_order(alg::KahanLi8) = 8
+alg_order(alg::SofSpa10) = 10
 
 alg_order(alg::Midpoint) = 2
 alg_order(alg::IIF1) = 1

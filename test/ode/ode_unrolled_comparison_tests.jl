@@ -163,9 +163,9 @@ sol2 =solve(probbig,Vern6(),dt=1/2^6)
 ### Vern7()
 
 dts = 1.//2.^(6:-1:3)
-sim = test_convergence(dts,probnumbig,Vern7())
+sim = test_convergence(dts,probnumbig,Vern7(),dense_errors=true)
 @test abs.(sim.𝒪est[:l2]-7) < testTol
-sim = test_convergence(dts,probbig,Vern7())
+sim = test_convergence(dts,probbig,Vern7(),dense_errors=true)
 @test abs.(sim.𝒪est[:l2]-7) < testTol
 
 tabalg = ExplicitRK(tableau=constructVerner7(BigFloat))
@@ -212,9 +212,9 @@ sol2 =solve(prob,TanYam7(),dt=1/2^6)
 ### Vern8()
 
 dts = 1.//2.^(6:-1:3)
-sim = test_convergence(dts,probnumbig,Vern8())
+sim = test_convergence(dts,probnumbig,Vern8(),dense_errors=true)
 @test abs.(sim.𝒪est[:l2]-8) < testTol
-sim = test_convergence(dts,probbig,Vern8())
+sim = test_convergence(dts,probbig,Vern8(),dense_errors=true)
 @test abs.(sim.𝒪est[:l2]-8) < testTol
 
 tabalg = ExplicitRK(tableau=constructVerner8(BigFloat))
@@ -283,9 +283,9 @@ sol2 =solve(prob,TsitPap8(),dt=1/2^6)
 ### Vern9()
 
 dts = 1.//2.^(6:-1:3)
-sim = test_convergence(dts,probnumbig,Vern9())
+sim = test_convergence(dts,probnumbig,Vern9(),dense_errors=true)
 @test abs.(sim.𝒪est[:l2]-9) < testTol
-sim = test_convergence(dts,probbig,Vern9())
+sim = test_convergence(dts,probbig,Vern9(),dense_errors=true)
 @test abs.(sim.𝒪est[:l2]-9) < testTol
 
 

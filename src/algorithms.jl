@@ -27,6 +27,10 @@ immutable CalvoSanz4 <: OrdinaryDiffEqAlgorithm end
 immutable McAte42 <: OrdinaryDiffEqAlgorithm end
 immutable McAte5 <: OrdinaryDiffEqAlgorithm end
 immutable Yoshida6 <: OrdinaryDiffEqAlgorithm end
+immutable KahanLi6 <: OrdinaryDiffEqAlgorithm end
+immutable McAte8 <: OrdinaryDiffEqAlgorithm end
+immutable KahanLi8 <: OrdinaryDiffEqAlgorithm end
+immutable SofSpa10 <: OrdinaryDiffEqAlgorithm end
 
 immutable SplitEuler <: OrdinaryDiffEqAlgorithm end
 

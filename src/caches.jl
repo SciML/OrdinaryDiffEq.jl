@@ -1,6 +1,6 @@
-@compat abstract type OrdinaryDiffEqCache <: DECache end
-@compat abstract type OrdinaryDiffEqConstantCache <: OrdinaryDiffEqCache end
-@compat abstract type OrdinaryDiffEqMutableCache <: OrdinaryDiffEqCache end
+abstract type OrdinaryDiffEqCache <: DECache end
+abstract type OrdinaryDiffEqConstantCache <: OrdinaryDiffEqCache end
+abstract type OrdinaryDiffEqMutableCache <: OrdinaryDiffEqCache end
 immutable ODEEmptyCache <: OrdinaryDiffEqConstantCache end
 immutable ODEChunkCache{CS} <: OrdinaryDiffEqConstantCache end
 
