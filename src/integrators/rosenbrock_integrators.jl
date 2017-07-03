@@ -301,3 +301,133 @@ end
   integrator.k[2] = k₂
   @pack integrator = t,dt,u,k
 end
+
+@inline function initialize!(integrator,cache::Rosenbrock4Cache,f=integrator.f)
+  integrator.kshortsize = 2
+  @unpack k₁,k₂,fsalfirst,fsallast = cache
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = fsallast
+  integrator.k = [fsalfirst,fsallast]
+  f(integrator.t,integrator.uprev,integrator.fsalfirst)
+end
+
+@inline function perform_step!(integrator,cache::Rosenbrock4Cache,f=integrator.f)
+  @unpack t,dt,uprev,u,k = integrator
+  uidx = eachindex(integrator.uprev)
+  @unpack k1,k2,k3,k4,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,fsalfirst,fsallast,dT,J,W,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
+  jidx = eachindex(J)
+  @unpack a21,a31,a32,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4 = cache.tab
+  mass_matrix = integrator.sol.prob.mass_matrix
+
+  utile = du
+  atmp = du
+
+  # Setup Jacobian Calc
+  sizeu  = size(u)
+  tf.vf.sizeu = sizeu
+  tf.uprev = uprev
+  uf.vfr.sizeu = sizeu
+  uf.t = t
+
+  if has_tgrad(f)
+    f(Val{:tgrad},t,u,dT)
+  else
+    if alg_autodiff(integrator.alg)
+      ForwardDiff.derivative!(dT,tf,vec(du2),t) # Should update to inplace, https://github.com/JuliaDiff/ForwardDiff.jl/pull/219
+    else
+      dT = Calculus.finite_difference(tf,t,integrator.alg.diff_type)
+    end
+  end
+
+  γ1 = dt*d1
+  a21dt = a21*dt
+
+  @tight_loop_macros for i in uidx
+    @inbounds linsolve_tmp[i] = fsalfirst[i] + γ1*dT[i]
+  end
+
+  if has_invW(f)
+    f(Val{:invW},t,u,gamma,W) # W == inverse W
+    A_mul_B!(vectmp,W,linsolve_tmp_vec)
+  else
+    if has_jac(f)
+      f(Val{:jac},t,u,J)
+    else
+      if alg_autodiff(integrator.alg)
+        ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
+      else
+        Calculus.finite_difference_jacobian!(uf,vec(uprev),vec(du1),J,integrator.alg.diff_type)
+      end
+    end
+    for j in 1:length(u), i in 1:length(u)
+        @inbounds W[i,j] = @muladd mass_matrix[i,j]-gamma*J[i,j]
+    end
+    integrator.alg.linsolve(vectmp,W,linsolve_tmp_vec,true)
+  end
+
+  recursivecopy!(k1,reshape(vectmp,size(u)...))
+
+  @tight_loop_macros for i in uidx
+    @inbounds u[i] = uprev[i]+a21dt*k1[i]
+  end
+
+  f(t+c2*dt,u,du)
+
+  @tight_loop_macros for i in uidx
+    @inbounds linsolve_tmp[i] = du[i] + dt*(d2*dT[i] + C21*k1[i])
+  end
+
+  if has_invW(f)
+    A_mul_B!(vectmp2,W,linsolve_tmp_vec)
+  else
+    integrator.alg.linsolve(vectmp2,W,linsolve_tmp_vec)
+  end
+
+  k2 = reshape(vectmp2,sizeu...)
+
+  @tight_loop_macros for i in uidx
+    @inbounds u[i] = uprev[i] + dt*(a31*k1[i] + a32*k2[i])
+  end
+
+  f(t+c3*dt,u,du)
+
+  @tight_loop_macros for i in uidx
+    @inbounds linsolve_tmp[i] = du[i] + dt*(d3*dT[i] + C31*k1[i] + C32*k2[i])
+  end
+
+  if has_invW(f)
+    A_mul_B!(vectmp3,W,linsolve_tmp_vec)
+  else
+    integrator.alg.linsolve(vectmp3,W,linsolve_tmp_vec)
+  end
+
+  k3 = reshape(vectmp3,sizeu...)
+
+  @tight_loop_macros for i in uidx
+    @inbounds linsolve_tmp[i] = du[i] + dt*(d4*dT[i] + C41*k1[i] + C42*k2[i] + C43*k3[i])
+  end
+
+  if has_invW(f)
+    A_mul_B!(vectmp4,W,linsolve_tmp_vec)
+  else
+    integrator.alg.linsolve(vectmp4,W,linsolve_tmp_vec)
+  end
+
+  k4 = reshape(vectmp4,sizeu...)
+
+  @tight_loop_macros for i in uidx
+    @inbounds u[i] = dt*(b1*k1[i] + b2*k₂[i] + b3*k3[i] + b4*k4[i])
+  end
+
+  f(t,u,fsallast)
+
+  if integrator.opts.adaptive
+    @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
+      @inbounds utilde[i] = @muladd uprev[i] + dt*(b1tilde*k1[i] + b2tilde*k2[i] + b3tilde*k3[i] + b4tilde*k4[i])
+      @inbounds atmp[i] = ((utilde[i]-u[i])./@muladd(atol+max(abs(uprev[i]),abs(u[i])).*rtol))
+    end
+    integrator.EEst = integrator.opts.internalnorm(atmp)
+  end
+
+  @pack integrator = t,dt,u,k
+end

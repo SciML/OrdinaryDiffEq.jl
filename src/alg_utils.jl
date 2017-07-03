@@ -10,6 +10,12 @@ isfsal(alg::Tsit5) = true
 isfsal(alg::Vern6) = true
 isfsal(alg::Rosenbrock23) = true
 isfsal(alg::Rosenbrock32) = true
+isfsal(alg::RosShamp4) = true
+isfsal(alg::Veldd4) = true
+isfsal(alg::Velds4) = true
+isfsal(alg::GRK4T) = true
+isfsal(alg::GRK4A) = true
+isfsal(alg::Ros4LStab) = true
 isfsal(alg::LawsonEuler) = true
 isfsal(alg::NorsettEuler) = true
 isfsal(alg::Euler) = true
@@ -138,11 +144,18 @@ alg_order(alg::TanYam7) = 7
 alg_order(alg::TsitPap8) = 8
 alg_order(alg::ImplicitEuler) = 1
 alg_order(alg::Trapezoid) = 2
-alg_order(alg::Rosenbrock23) = 2
-alg_order(alg::Rosenbrock32) = 3
 alg_order(alg::Feagin10) = 10
 alg_order(alg::Feagin12) = 12
 alg_order(alg::Feagin14) = 14
+
+alg_order(alg::Rosenbrock23) = 2
+alg_order(alg::Rosenbrock32) = 3
+alg_order(alg::RosShamp4) = 4
+alg_order(alg::Veldd4) = 4
+alg_order(alg::Velds4) = 4
+alg_order(alg::GRK4T) = 4
+alg_order(alg::GRK4A) = 4
+alg_order(alg::Ros4LStab) = 4
 
 alg_order(alg::CompositeAlgorithm) = alg_order(alg.algs[1])
 
@@ -160,11 +173,18 @@ alg_adaptive_order(alg::Vern8) = 7
 alg_adaptive_order(alg::Vern9) = 8
 alg_adaptive_order(alg::TanYam7) = 6
 alg_adaptive_order(alg::TsitPap8) = 7
-alg_adaptive_order(alg::Rosenbrock23) = 3
-alg_adaptive_order(alg::Rosenbrock32) = 2
 alg_adaptive_order(alg::Feagin10) = 8
 alg_adaptive_order(alg::Feagin12) = 10
 alg_adaptive_order(alg::Feagin14) = 12
+
+alg_adaptive_order(alg::Rosenbrock23) = 3
+alg_adaptive_order(alg::Rosenbrock32) = 2
+alg_adaptive_order(alg::RosShamp4) = 3
+alg_adaptive_order(alg::Veldd4) = 3
+alg_adaptive_order(alg::Velds4) = 3
+alg_adaptive_order(alg::GRK4T) = 3
+alg_adaptive_order(alg::GRK4A) = 3
+alg_adaptive_order(alg::Ros4LStab) = 3
 
 beta2_default(alg::OrdinaryDiffEqAlgorithm) = 2//(5alg_order(alg))
 beta2_default(alg::Discrete) = 0

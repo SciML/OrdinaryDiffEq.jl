@@ -3,7 +3,7 @@ using Calculus, ForwardDiff
 
 
 # use `PRINT_TESTS = true` to print the tests, including results
-const PRINT_TESTS = true
+const PRINT_TESTS = false
 print_results(x) = if PRINT_TESTS; @printf("%s \n", x) end
 
 
@@ -69,7 +69,6 @@ function regression_test(alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = fal
   sol(interpolation_points[1])
   sol2 = solve(prob_ode_2Dlinear, alg, dt=1//2^(4), dense=true, adaptive=false)
   for i in eachindex(sol2)
-    @show maximum(maximum.(abs.(sol2[i] - interpolation_results_2d[i])))
     print_results( @test maximum(maximum.(abs.(sol2[i] - interpolation_results_2d[i]))) < tol_ode_2Dlinear)
   end
 end
