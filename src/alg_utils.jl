@@ -85,6 +85,13 @@ qmax_default(alg::DP8) = 6
 get_chunksize(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have a chunk size defined.")
 get_chunksize{CS,AD}(alg::Rosenbrock23{CS,AD}) = CS
 get_chunksize{CS,AD}(alg::Rosenbrock32{CS,AD}) = CS
+get_chunksize{CS,AD}(alg::RosShamp4{CS,AD}) = CS
+get_chunksize{CS,AD}(alg::Veldd4{CS,AD}) = CS
+get_chunksize{CS,AD}(alg::Velds4{CS,AD}) = CS
+get_chunksize{CS,AD}(alg::GRK4T{CS,AD}) = CS
+get_chunksize{CS,AD}(alg::GRK4A{CS,AD}) = CS
+get_chunksize{CS,AD}(alg::Ros4LStab{CS,AD}) = CS
+
 
 alg_extrapolates(alg::OrdinaryDiffEqAlgorithm) = false
 alg_extrapolates(alg::ImplicitEuler) = true
@@ -93,6 +100,13 @@ alg_extrapolates(alg::Trapezoid) = true
 alg_autodiff(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have an autodifferentiation option defined.")
 alg_autodiff{CS,AD}(alg::Rosenbrock23{CS,AD}) = AD
 alg_autodiff{CS,AD}(alg::Rosenbrock32{CS,AD}) = AD
+alg_autodiff{CS,AD}(alg::RosShamp4{CS,AD}) = AD
+alg_autodiff{CS,AD}(alg::Veldd4{CS,AD}) = AD
+alg_autodiff{CS,AD}(alg::Velds4{CS,AD}) = AD
+alg_autodiff{CS,AD}(alg::GRK4T{CS,AD}) = AD
+alg_autodiff{CS,AD}(alg::GRK4A{CS,AD}) = AD
+alg_autodiff{CS,AD}(alg::Ros4LStab{CS,AD}) = AD
+
 
 alg_order(alg::OrdinaryDiffEqAlgorithm) = error("Order is not defined for this algorithm")
 alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")

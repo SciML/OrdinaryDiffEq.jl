@@ -38,6 +38,8 @@ sim = test_convergence(dts,prob,Rosenbrock23())
 sol = solve(prob,Rosenbrock23())
 @test length(sol) < 20
 
+
+
 ### Rosenbrock32()
 
 prob = prob_ode_linear
@@ -62,6 +64,28 @@ sim = test_convergence(dts,prob,Rosenbrock32(linsolve=LinSolveFactorize(qrfact!)
 @test abs(sim.𝒪est[:final]-3) < testTol
 
 sol = solve(prob,Rosenbrock32())
+@test length(sol) < 20
+
+### RosShamp4
+
+sim = test_convergence(dts,prob,RosShamp4())
+@test abs(sim.𝒪est[:final]-2) < testTol
+
+sol = solve(prob,RosShamp4())
+@test length(sol) < 20
+
+prob = prob_ode_2Dlinear
+
+sim = test_convergence(dts,prob,RosShamp4())
+@test abs(sim.𝒪est[:final]-2) < testTol
+
+sol = solve(prob,RosShamp4())
+@test length(sol) < 20
+
+sim = test_convergence(dts,prob,RosShamp4())
+@test abs(sim.𝒪est[:final]-2) < testTol
+
+sol = solve(prob,RosShamp4())
 @test length(sol) < 20
 
 ### Test on Stiff

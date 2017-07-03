@@ -25,7 +25,7 @@ immutable Ros4ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   d4::T
 end
 
-function RosShampConstantCache(T::Type,T2::Type)
+function RosShamp4ConstantCache(T::Type,T2::Type)
   a21=T(2)
   a31=T(48//25)
   a32=T(6//25)
@@ -50,10 +50,10 @@ function RosShampConstantCache(T::Type,T2::Type)
   d2=T(-3//2)
   d3=T( 2.42)
   d4=T( 0.116)
-  Ros4ConstantCache(a21,a31,a32,C2,C3,C3,C4,C4,C4,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4)
+  Ros4ConstantCache(a21,a31,a32,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4)
 end
 
-function VelddConstantCache(T::Type,T2::Type)
+function Veldd4ConstantCache(T::Type,T2::Type)
   a21= T(2.000000000000000)
   a31= T(4.812234362695436)
   a32= T(4.578146956747842)
@@ -80,7 +80,7 @@ function VelddConstantCache(T::Type,T2::Type)
   d4=-T(0.03805623938054428)
 end
 
-function VeldsConstantCache(T::Type,T2::Type)
+function Velds4ConstantCache(T::Type,T2::Type)
   a21= T(2)
   a31= T(7//4)
   a32= T(1//4)
@@ -105,7 +105,7 @@ function VeldsConstantCache(T::Type,T2::Type)
   d2=-T(3//2)
   d3=-T(3//4)
   d4= T(1//4)
-  Ros4ConstantCache(a21,a31,a32,C2,C3,C3,C4,C4,C4,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4)
+  Ros4ConstantCache(a21,a31,a32,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4)
 end
 
 function GRK4TConstantCache(T::Type,T2::Type)
@@ -133,7 +133,7 @@ function GRK4TConstantCache(T::Type,T2::Type)
   d2=-T(0.03962966775244303)
   d3= T(0.5507789395789127)
   d4=-T(0.05535098457052764)
-  Ros4ConstantCache(a21,a31,a32,C2,C3,C3,C4,C4,C4,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4)
+  Ros4ConstantCache(a21,a31,a32,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4)
 end
 
 function GRK4AConstantCache(T::Type,T2::Type)
@@ -161,7 +161,7 @@ function GRK4AConstantCache(T::Type,T2::Type)
   d2=-T(0.3726723954840920)
   d3= T(0.06629196544571492)
   d4= T(0.4340946962568634)
-  Ros4ConstantCache(a21,a31,a32,C2,C3,C3,C4,C4,C4,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4)
+  Ros4ConstantCache(a21,a31,a32,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4)
 end
 
 function Ros4LStabConstantCache(T::Type,T2::Type)
@@ -189,4 +189,5 @@ function Ros4LStabConstantCache(T::Type,T2::Type)
   d2=-T(1.769193891319233)
   d3= T(0.7592633437920482)
   d4=-T(0.1049021087100450)
+  Ros4ConstantCache(a21,a31,a32,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4)
 end

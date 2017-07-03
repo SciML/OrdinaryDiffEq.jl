@@ -175,7 +175,6 @@ type Rosenbrock4Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,
   du::rateType
   du1::rateType
   du2::du2Type
-  f₁::rateType
   vectmp::vecuType
   vectmp2::vecuType
   vectmp3::vecuType
@@ -218,7 +217,7 @@ function alg_cache(alg::RosShamp4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,u
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J);
   tmp = similar(u,indices(u))
-  tab = Rosenbrock23ConstantCache(uEltypeNoUnits,identity,identity)
+  tab = RosShamp4ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
   vf = VectorF(f,size(u))
   vfr = VectorFReturn(f,size(u))
   tf = TimeGradientWrapper(vf,uprev)

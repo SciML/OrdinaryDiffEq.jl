@@ -304,7 +304,7 @@ end
 
 @inline function initialize!(integrator,cache::Rosenbrock4Cache,f=integrator.f)
   integrator.kshortsize = 2
-  @unpack k₁,k₂,fsalfirst,fsallast = cache
+  @unpack fsalfirst,fsallast = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = fsallast
   integrator.k = [fsalfirst,fsallast]
