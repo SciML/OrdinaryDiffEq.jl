@@ -410,7 +410,7 @@ end
   end
 
   if has_invW(f)
-    f(Val{:invW},t,u,gamma,W) # W == inverse W
+    f(Val{:invW_t},t,u,dt*gamma,W) # W == inverse W
     A_mul_B!(vectmp,W,linsolve_tmp_vec)
   else
     if has_jac(f)
