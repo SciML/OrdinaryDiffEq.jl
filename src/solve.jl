@@ -68,27 +68,18 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
       error("Fixed timestep methods require a choice of dt or choosing the tstops")
   end
 
-  if tspan[1] == tspan[2]
+  if tspan[1] == tspan[end]
     error("Timespan is trivial")
   end
 
-  d_discontinuities_col = collect(d_discontinuities)
+  tstops_vec = collect(tType,Iterators.filter(x->tdir*tspan[1]<tdir*x≤tdir*tspan[end],Iterators.flatten((tstops,d_discontinuities,tspan[end]))))
 
   if tdir>0
-    tstops_internal = binary_minheap(convert(Vector{tType},append!(collect(tstops),d_discontinuities_col)))
+    tstops_internal = binary_minheap(tstops_vec)
   else
-    tstops_internal = binary_maxheap(convert(Vector{tType},append!(collect(tstops),d_discontinuities_col)))
+    tstops_internal = binary_maxheap(tstops_vec)
   end
 
-  if !isempty(tstops) && tstops[end] != tspan[2]
-    push!(tstops_internal,tspan[2])
-  elseif isempty(tstops)
-    push!(tstops_internal,tspan[2])
-  end
-
-  if top(tstops_internal) == tspan[1]
-    pop!(tstops_internal)
-  end
   f = prob.f
 
   # Get the control variables
@@ -152,14 +143,10 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   rateType = typeof(rate_prototype) ## Can be different if united
 
   if typeof(saveat) <: Number
-    saveat_vec = convert(Vector{tType},tspan[1]+saveat:saveat:(tspan[end]-saveat))
+    saveat_vec = collect(tType,tspan[1]+saveat:saveat:(tspan[end]-saveat))
     # Exclude the endpoint because of floating point issues
   else
-    saveat_vec =  convert(Vector{tType},collect(saveat))
-  end
-
-  if !isempty(saveat_vec) && saveat_vec[end] == tspan[2]
-    pop!(saveat_vec)
+    saveat_vec = collect(tType,Iterators.filter(x->tdir*tspan[1]<tdir*x<tdir*tspan[end],saveat))
   end
 
   if tdir>0
@@ -168,11 +155,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     saveat_internal = binary_maxheap(saveat_vec)
   end
 
-  if !isempty(saveat_internal) && top(saveat_internal) == tspan[1]
-    pop!(saveat_internal)
-  end
-
-  d_discontinuities_vec =  convert(Vector{tType},d_discontinuities_col)
+  d_discontinuities_vec =  collect(tType,d_discontinuities)
 
   if tdir>0
     d_discontinuities_internal = binary_minheap(d_discontinuities_vec)
