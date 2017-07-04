@@ -1,3 +1,110 @@
+immutable ROS3PConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+  a21::T
+  a31::T
+  a32::T
+  C21::T
+  C31::T
+  C32::T
+  b1::T
+  b2::T
+  b3::T
+  btilde1::T
+  btilde2::T
+  btilde3::T
+  gamma::T2
+  c2::T2
+  c3::T2
+  d1::T
+  d2::T
+  d3::T
+end
+
+function ROS3PConstantCache(T::Type,T2::Type)
+  gamma = T(1/2 + sqrt(3)/6)
+  igamma = inv(gamma)
+  a21 = T(igamma)
+  a31 = T(igamma)
+  a32 = T(0)
+  C21 = T(-igamma^2)
+  tmp = -igamma*(2 - (1/2)*igamma)
+  C31 = -igamma*(1-tmp)
+  C32 = tmp
+  tmp = igamma*(2/3 - (1/6)*igamma)
+  b1 = igamma*(1+tmp)
+  b2 = tmp
+  b3 = (1/3)*igamma
+  btilde1 = T(2.113248654051871)
+  btilde2 = T(1.000000000000000)
+  btilde3 = T(0.4226497308103742)
+  c2 = T(1)
+  c3 = T(1)
+  d1 = T(0.7886751345948129)
+  d2 = T(-0.2113248654051871)
+  d3 = T(-1.077350269189626)
+  ROS3PConstantCache(a21,a31,a32,C21,C31,C32,b1,b2,b3,btilde1,btilde2,btilde3,gamma,c2,c3,d1,d2,d3)
+end
+
+immutable Rodas3ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+  a21::T
+  a31::T
+  a32::T
+  a41::T
+  a42::T
+  a43::T
+  C21::T
+  C31::T
+  C32::T
+  C41::T
+  C42::T
+  C43::T
+  b1::T
+  b2::T
+  b3::T
+  b4::T
+  btilde1::T
+  btilde2::T
+  btilde3::T
+  btilde4::T
+  gamma::T2
+  c2::T2
+  c3::T2
+  d1::T
+  d2::T
+  d3::T
+end
+
+function Rodas3ConstantCache(T::Type,T2::Type)
+  gamma = T(1//2)
+  a21 = T(0)
+  a31 = T(2)
+  a32 = T(0)
+  a41 = T(2)
+  a42 = T(0)
+  a43 = T(1)
+  C21 = T(4)
+  C31 = T(1)
+  C32 = T(-1)
+  C41 = T(1)
+  C42 = T(-1)
+  C43 = T(-8//3)
+  b1 = T(2)
+  b2 = T(0)
+  b3 = T(1)
+  b4 = T(1)
+  btilde1 = T(0.0)
+  btilde2 = T(0.0)
+  btilde3 = T(0.0)
+  btilde4 = T(1.0)
+  c2 = T(0.0)
+  c3 = T(1.0)
+  c4 = T(1.0)
+  d1 = T(1//2)
+  d2 = T(3//2)
+  d3 = T(0)
+  d4 = T(0)
+  Rodas3ConstantCache(a21,a31,a32,a41,a42,a43,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4)
+end
+
 immutable Ros4ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   a21::T
   a31::T

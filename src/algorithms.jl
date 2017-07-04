@@ -91,6 +91,18 @@ immutable Rosenbrock32{CS,AD,F} <: OrdinaryDiffEqAdaptiveAlgorithm
 end
 Base.@pure Rosenbrock32(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE) = Rosenbrock32{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
 
+immutable ROS3P{CS,AD,F} <: OrdinaryDiffEqAdaptiveAlgorithm
+  linsolve::F
+  diff_type::Symbol
+end
+Base.@pure ROS3P(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE) = ROS3P{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
+
+immutable Rodas3{CS,AD,F} <: OrdinaryDiffEqAdaptiveAlgorithm
+  linsolve::F
+  diff_type::Symbol
+end
+Base.@pure Rodas3(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE) = Rodas3{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
+
 immutable RosShamp4{CS,AD,F} <: OrdinaryDiffEqAdaptiveAlgorithm
   linsolve::F
   diff_type::Symbol
