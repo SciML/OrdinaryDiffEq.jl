@@ -66,8 +66,6 @@ sim = test_convergence(dts,prob,Rosenbrock32(linsolve=LinSolveFactorize(qrfact!)
 sol = solve(prob,Rosenbrock32())
 @test length(sol) < 20
 
-#=
-
 ### RosShamp4
 
 dts = 1.//2.^(8:-1:3)
@@ -87,9 +85,6 @@ sim = test_convergence(dts,prob,RosShamp4())
 
 sol = solve(prob,RosShamp4())
 @test length(sol) < 20
-
-integrator = init(prob,RosShamp4())
-step!(integrator)
 
 prob = prob_ode_bigfloat2Dlinear
 
@@ -154,8 +149,6 @@ sim = test_convergence(dts,prob,Velds4())
 
 sol = solve(prob,Velds4())
 @test length(sol) < 20
-
-=#
 
 ### Test on Stiff
 

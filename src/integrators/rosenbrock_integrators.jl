@@ -319,8 +319,8 @@ end
   @unpack a21,a31,a32,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4 = cache.tab
   mass_matrix = integrator.sol.prob.mass_matrix
 
-  utilde = du
-  atmp = du
+  utilde = similar(du)
+  atmp = similar(du)
 
   # Setup Jacobian Calc
   sizeu  = size(u)
@@ -340,13 +340,10 @@ end
   end
 
   d1dt = dt*d1
-  a21dt = a21*dt
-
-  f(t,uprev,du)
 
   @tight_loop_macros for i in uidx
-    #@inbounds linsolve_tmp[i] = fsalfirst[i] + γ1*dT[i]
-    @inbounds linsolve_tmp[i] = du[i] + d1dt*dT[i]
+    @inbounds linsolve_tmp[i] = fsalfirst[i] + d1dt*dT[i]
+    #@inbounds linsolve_tmp[i] = du[i] + d1dt*dT[i]
   end
 
   if has_invW(f)
@@ -363,7 +360,7 @@ end
       end
     end
     for j in 1:length(u), i in 1:length(u)
-        @inbounds W[i,j] = @muladd mass_matrix[i,j]-gamma*J[i,j]
+        @inbounds W[i,j] = @muladd mass_matrix[i,j]/(dt*gamma)-J[i,j]
     end
     integrator.alg.linsolve(vectmp,W,linsolve_tmp_vec,true)
   end
@@ -371,13 +368,13 @@ end
   recursivecopy!(k1,reshape(vectmp,size(u)...))
 
   @tight_loop_macros for i in uidx
-    @inbounds u[i] = uprev[i]+a21dt*k1[i]
+    @inbounds u[i] = uprev[i]+a21*k1[i]
   end
 
   f(t+c2*dt,u,du)
 
   @tight_loop_macros for i in uidx
-    @inbounds linsolve_tmp[i] = du[i] + dt*(d2*dT[i] + C21*k1[i])
+    @inbounds linsolve_tmp[i] = du[i] + dt*d2*dT[i] + C21*k1[i]/dt
   end
 
   if has_invW(f)
@@ -389,13 +386,13 @@ end
   k2 = reshape(vectmp2,sizeu...)
 
   @tight_loop_macros for i in uidx
-    @inbounds u[i] = uprev[i] + dt*(a31*k1[i] + a32*k2[i])
+    @inbounds u[i] = uprev[i] + a31*k1[i] + a32*k2[i]
   end
 
   f(t+c3*dt,u,du)
 
   @tight_loop_macros for i in uidx
-    @inbounds linsolve_tmp[i] = du[i] + dt*(d3*dT[i] + C31*k1[i] + C32*k2[i])
+    @inbounds linsolve_tmp[i] = du[i] + dt*d3*dT[i] + C31*k1[i]/dt + C32*k2[i]/dt
   end
 
   if has_invW(f)
@@ -407,7 +404,7 @@ end
   k3 = reshape(vectmp3,sizeu...)
 
   @tight_loop_macros for i in uidx
-    @inbounds linsolve_tmp[i] = du[i] + dt*(d4*dT[i] + C41*k1[i] + C42*k2[i] + C43*k3[i])
+    @inbounds linsolve_tmp[i] = du[i] + dt*d4*dT[i] + C41*k1[i]/dt + C42*k2[i]/dt + C43*k3[i]/dt
   end
 
   if has_invW(f)
@@ -419,14 +416,14 @@ end
   k4 = reshape(vectmp4,sizeu...)
 
   @tight_loop_macros for i in uidx
-    @inbounds u[i] = uprev[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b4*k4[i])
+    @inbounds u[i] = uprev[i] + b1*k1[i] + b2*k2[i] + b3*k3[i] + b4*k4[i]
   end
 
   f(t,u,fsallast)
 
   if integrator.opts.adaptive
     @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
-      @inbounds utilde[i] = @muladd uprev[i] + dt*(btilde1*k1[i] + btilde2*k2[i] + btilde3*k3[i] + btilde4*k4[i])
+      @inbounds utilde[i] = @muladd btilde1*k1[i] + btilde2*k2[i] + btilde3*k3[i] + btilde4*k4[i]
       @inbounds atmp[i] = ((utilde[i])./@muladd(atol+max(abs(uprev[i]),abs(u[i])).*rtol))
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
