@@ -71,6 +71,7 @@ immutable Rodas3ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   d1::T
   d2::T
   d3::T
+  d4::T
 end
 
 function Rodas3ConstantCache(T::Type,T2::Type)

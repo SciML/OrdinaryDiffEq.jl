@@ -64,6 +64,58 @@ sim = test_convergence(dts,prob,Rosenbrock32(linsolve=LinSolveFactorize(qrfact!)
 sol = solve(prob,Rosenbrock32())
 @test length(sol) < 20
 
+### ROS3P()
+
+prob = prob_ode_linear
+
+sim = test_convergence(dts,prob,ROS3P())
+@test abs(sim.𝒪est[:final]-3) < testTol
+
+sol = solve(prob,ROS3P())
+@test length(sol) < 20
+
+prob = prob_ode_2Dlinear
+
+sim = test_convergence(dts,prob,ROS3P())
+@test abs(sim.𝒪est[:final]-3) < testTol
+
+sol = solve(prob,ROS3P())
+@test length(sol) < 20
+
+prob = prob_ode_bigfloat2Dlinear
+
+sim = test_convergence(dts,prob,ROS3P(linsolve=LinSolveFactorize(qrfact!)))
+@test abs(sim.𝒪est[:final]-3) < testTol
+
+sol = solve(prob,ROS3P(linsolve=LinSolveFactorize(qrfact!)))
+@test length(sol) < 20
+
+### Rodas3()
+
+prob = prob_ode_linear
+
+sim = test_convergence(dts,prob,Rodas3())
+@test abs(sim.𝒪est[:final]-3) < testTol
+
+sol = solve(prob,Rodas3())
+@test length(sol) < 20
+
+prob = prob_ode_2Dlinear
+
+sim = test_convergence(dts,prob,Rodas3())
+@test abs(sim.𝒪est[:final]-3) < testTol
+
+sol = solve(prob,Rodas3())
+@test length(sol) < 20
+
+prob = prob_ode_bigfloat2Dlinear
+
+sim = test_convergence(dts,prob,Rodas3(linsolve=LinSolveFactorize(qrfact!)))
+@test abs(sim.𝒪est[:final]-3) < testTol
+
+sol = solve(prob,Rodas3(linsolve=LinSolveFactorize(qrfact!)))
+@test length(sol) < 20
+
 ### RosShamp4
 
 dts = 1.//2.^(8:-1:3)
