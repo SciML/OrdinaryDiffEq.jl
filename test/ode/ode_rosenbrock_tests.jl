@@ -38,8 +38,6 @@ sim = test_convergence(dts,prob,Rosenbrock23())
 sol = solve(prob,Rosenbrock23())
 @test length(sol) < 20
 
-
-
 ### Rosenbrock32()
 
 prob = prob_ode_linear
@@ -148,6 +146,90 @@ sim = test_convergence(dts,prob,Velds4())
 @test abs(sim.𝒪est[:final]-5.87) < testTol
 
 sol = solve(prob,Velds4())
+@test length(sol) < 20
+
+### GRK4T
+
+dts = 1.//2.^(8:-1:3)
+
+prob = prob_ode_linear
+
+sim = test_convergence(dts,prob,GRK4T())
+@test abs(sim.𝒪est[:final]-2) < testTol
+
+sol = solve(prob,GRK4T())
+@test length(sol) < 20
+
+prob = prob_ode_2Dlinear
+
+sim = test_convergence(dts,prob,GRK4T())
+@test abs(sim.𝒪est[:final]-4) < testTol
+
+sol = solve(prob,GRK4T())
+@test length(sol) < 20
+
+prob = prob_ode_bigfloat2Dlinear
+
+sim = test_convergence(dts,prob,GRK4T())
+@test abs(sim.𝒪est[:final]-5.87) < testTol
+
+sol = solve(prob,GRK4T())
+@test length(sol) < 20
+
+### GRK4A
+
+dts = 1.//2.^(8:-1:3)
+
+prob = prob_ode_linear
+
+sim = test_convergence(dts,prob,GRK4A())
+@test abs(sim.𝒪est[:final]-2) < testTol
+
+sol = solve(prob,GRK4A())
+@test length(sol) < 20
+
+prob = prob_ode_2Dlinear
+
+sim = test_convergence(dts,prob,GRK4A())
+@test abs(sim.𝒪est[:final]-4) < testTol
+
+sol = solve(prob,GRK4A())
+@test length(sol) < 20
+
+prob = prob_ode_bigfloat2Dlinear
+
+sim = test_convergence(dts,prob,GRK4A())
+@test abs(sim.𝒪est[:final]-5.87) < testTol
+
+sol = solve(prob,GRK4A())
+@test length(sol) < 20
+
+### Ros4LStab
+
+dts = 1.//2.^(8:-1:3)
+
+prob = prob_ode_linear
+
+sim = test_convergence(dts,prob,Ros4LStab())
+@test abs(sim.𝒪est[:final]-2) < testTol
+
+sol = solve(prob,Ros4LStab())
+@test length(sol) < 20
+
+prob = prob_ode_2Dlinear
+
+sim = test_convergence(dts,prob,Ros4LStab())
+@test abs(sim.𝒪est[:final]-4) < testTol
+
+sol = solve(prob,Ros4LStab())
+@test length(sol) < 20
+
+prob = prob_ode_bigfloat2Dlinear
+
+sim = test_convergence(dts,prob,Ros4LStab())
+@test abs(sim.𝒪est[:final]-5.87) < testTol
+
+sol = solve(prob,Ros4LStab())
 @test length(sol) < 20
 
 ### Test on Stiff
