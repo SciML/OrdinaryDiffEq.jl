@@ -302,6 +302,69 @@ end
   @pack integrator = t,dt,u,k
 end
 
+@inline function initialize!(integrator,cache::Rosenbrock4ConstantCache,f=integrator.f)
+  integrator.kshortsize = 2
+  k = eltype(integrator.sol.k)(2)
+  integrator.k = k
+  integrator.fsalfirst = f(integrator.t,integrator.uprev)
+end
+
+@inline function perform_step!(integrator,cache::Rosenbrock4ConstantCache,f=integrator.f)
+  @unpack t,dt,uprev,u,k = integrator
+  @unpack tf,uf = cache
+  @unpack a21,a31,a32,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4 = cache.tab
+
+  # Setup Jacobian Calc
+  tf.u = uprev
+  uf.t = t
+
+  dT = ForwardDiff.derivative(tf,t)
+  if typeof(uprev) <: AbstractArray
+    J = ForwardDiff.jacobian(uf,uprev)
+  else
+    J = ForwardDiff.derivative(uf,uprev)
+  end
+
+  d1dt = dt*d1
+  linsolve_tmp = integrator.fsalfirst + d1dt*dT
+  W = @muladd 1/(dt*gamma)-J
+
+  k1 = W\linsolve_tmp
+  u = uprev+a21*k1
+  du = f(t+c2*dt,u)
+
+  linsolve_tmp = du + dt*d2*dT + C21*k1/dt
+
+  k2 = W\linsolve_tmp
+
+  u = uprev + a31*k1 + a32*k2
+
+  du = f(t+c3*dt,u)
+
+  linsolve_tmp = du + dt*d3*dT + C31*k1/dt + C32*k2/dt
+
+  k3 = W\linsolve_tmp
+
+  linsolve_tmp = du + dt*d4*dT + C41*k1/dt + C42*k2/dt + C43*k3/dt
+
+  k4 = W\linsolve_tmp
+
+  u = uprev + b1*k1 + b2*k2 + b3*k3 + b4*k4
+
+  fsallast = f(t,u)
+
+  if integrator.opts.adaptive
+    utilde = @muladd btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4
+    atmp = ((utilde)./@muladd(integrator.opts.abstol+max(abs.(uprev),abs.(u)).*integrator.opts.reltol))
+    integrator.EEst = integrator.opts.internalnorm(atmp)
+  end
+
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = fsallast
+  integrator.fsallast = fsallast
+  @pack integrator = t,dt,u,k
+end
+
 @inline function initialize!(integrator,cache::Rosenbrock4Cache,f=integrator.f)
   integrator.kshortsize = 2
   @unpack fsalfirst,fsallast = cache
@@ -319,8 +382,8 @@ end
   @unpack a21,a31,a32,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4 = cache.tab
   mass_matrix = integrator.sol.prob.mass_matrix
 
-  utilde = similar(du)
-  atmp = similar(du)
+  utilde = du
+  atmp = du
 
   # Setup Jacobian Calc
   sizeu  = size(u)
