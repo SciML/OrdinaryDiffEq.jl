@@ -373,7 +373,7 @@ end
 @inline function perform_step!(integrator,cache::Rosenbrock33Cache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack k1,k2,k3,k4,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,fsalfirst,fsallast,dT,J,W,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
+  @unpack du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,fsalfirst,fsallast,dT,J,W,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
   jidx = eachindex(J)
   @unpack a21,a31,a32,C21,C31,C32,b1,b2,b3,btilde1,btilde2,btilde3,gamma,c2,c3,d1,d2,d3 = cache.tab
   mass_matrix = integrator.sol.prob.mass_matrix
@@ -424,7 +424,7 @@ end
     integrator.alg.linsolve(vectmp,W,linsolve_tmp_vec,true)
   end
 
-  recursivecopy!(k1,reshape(vectmp,size(u)...))
+  k1 = reshape(vectmp,sizeu...)
 
   @tight_loop_macros for i in uidx
     @inbounds u[i] = uprev[i]+a21*k1[i]
@@ -556,7 +556,7 @@ end
 @inline function perform_step!(integrator,cache::Rosenbrock34Cache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack k1,k2,k3,k4,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,fsalfirst,fsallast,dT,J,W,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
+  @unpack du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,fsalfirst,fsallast,dT,J,W,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
   jidx = eachindex(J)
   @unpack a21,a31,a32,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4 = cache.tab
   mass_matrix = integrator.sol.prob.mass_matrix
@@ -607,7 +607,7 @@ end
     integrator.alg.linsolve(vectmp,W,linsolve_tmp_vec,true)
   end
 
-  recursivecopy!(k1,reshape(vectmp,size(u)...))
+  k1 = reshape(vectmp,sizeu...)
 
   #=
   a21 == 0 and c2 == 0
@@ -758,7 +758,7 @@ end
 @inline function perform_step!(integrator,cache::Rosenbrock4Cache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack k1,k2,k3,k4,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,fsalfirst,fsallast,dT,J,W,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
+  @unpack du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,fsalfirst,fsallast,dT,J,W,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
   jidx = eachindex(J)
   @unpack a21,a31,a32,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4 = cache.tab
   mass_matrix = integrator.sol.prob.mass_matrix
@@ -809,7 +809,7 @@ end
     integrator.alg.linsolve(vectmp,W,linsolve_tmp_vec,true)
   end
 
-  recursivecopy!(k1,reshape(vectmp,size(u)...))
+  k1 = reshape(vectmp,sizeu...)
 
   @tight_loop_macros for i in uidx
     @inbounds u[i] = uprev[i]+a21*k1[i]
