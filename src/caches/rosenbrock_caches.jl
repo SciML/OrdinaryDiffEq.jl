@@ -581,12 +581,49 @@ function alg_cache(alg::Ros4LStab,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,u
   Rosenbrock4ConstantCache(tf,uf,Ros4LStabConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits)))
 end
 
-################################################################################
+###############################################################################
 
 ### Rodas methods
 
-#=
-function alg_cache(alg::Ros4LStab,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+immutable Rodas4ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
+  tf::TF
+  uf::UF
+  tab::Tab
+end
+
+type Rodas4Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,TabType,TFType,UFType,F,JCType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  du::rateType
+  du1::rateType
+  du2::du2Type
+  vectmp::vecuType
+  vectmp2::vecuType
+  vectmp3::vecuType
+  vectmp4::vecuType
+  vectmp5::vecuType
+  vectmp6::vecuType
+  fsalfirst::rateType
+  fsallast::rateType
+  dT::uArrayType
+  J::JType
+  W::JType
+  tmp::uArrayType
+  tab::TabType
+  tf::TFType
+  uf::UFType
+  linsolve_tmp::LinuType
+  linsolve_tmp_vec::vecuType
+  linsolve::F
+  jac_config::JCType
+end
+
+u_cache(c::Rodas4Cache) = (c.dT,c.tmp)
+du_cache(c::Rodas4Cache) = (c.k₁,c.k₂,c.k₃,c.du1,c.du2,c.f₁,c.fsalfirst,c.fsallast,c.linsolve_tmp)
+jac_cache(c::Rodas4Cache) = (c.J,c.W)
+vecu_cache(c::Rodas4Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
+
+function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
   k1 = zeros(rate_prototype)
   k2 = zeros(rate_prototype)
   k3 = zeros(rate_prototype)
@@ -598,13 +635,15 @@ function alg_cache(alg::Ros4LStab,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,u
   vectmp2 = vec(similar(u,indices(u)))
   vectmp3 = vec(similar(u,indices(u)))
   vectmp4 = vec(similar(u,indices(u)))
+  vectmp5 = vec(similar(u,indices(u)))
+  vectmp6 = vec(similar(u,indices(u)))
   fsalfirst = zeros(rate_prototype)
   fsallast = zeros(rate_prototype)
   dT = similar(u,indices(u))
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J);
   tmp = similar(u,indices(u))
-  tab = Ros4LStabConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  tab = Rodas4ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
   vf = VectorF(f,size(u))
   vfr = VectorFReturn(f,size(u))
   tf = TimeGradientWrapper(vf,uprev)
@@ -616,14 +655,26 @@ function alg_cache(alg::Ros4LStab,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,u
   else
     jac_config = nothing
   end
-  Rosenbrock4Cache(u,uprev,k1,k2,k3,k4,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
+  Rodas4Cache(u,uprev,k1,k2,k3,k4,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
+                    vectmp5,vectmp6,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
                     linsolve_tmp_vec,alg.linsolve,jac_config)
 end
 
-function alg_cache(alg::Ros4LStab,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
+function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
-  Rosenbrock4ConstantCache(tf,uf,Ros4LStabConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits)))
+  Rodas4ConstantCache(tf,uf,Rodas4ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits)))
 end
-=#
+
+function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
+  tf = TimeDerivativeWrapper(f,u)
+  uf = UDerivativeWrapper(f,t)
+  Rodas4ConstantCache(tf,uf,Rodas42ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits)))
+end
+
+function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
+  tf = TimeDerivativeWrapper(f,u)
+  uf = UDerivativeWrapper(f,t)
+  Rodas4ConstantCache(tf,uf,Rodas4PConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits)))
+end

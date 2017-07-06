@@ -18,6 +18,9 @@ isfsal(alg::Velds4) = true
 isfsal(alg::GRK4T) = true
 isfsal(alg::GRK4A) = true
 isfsal(alg::Ros4LStab) = true
+isfsal(alg::Rodas4) = true
+isfsal(alg::Rodas42) = true
+isfsal(alg::Rodas4P) = true
 isfsal(alg::LawsonEuler) = true
 isfsal(alg::NorsettEuler) = true
 isfsal(alg::Euler) = true
@@ -178,6 +181,9 @@ alg_order(alg::Velds4) = 4
 alg_order(alg::GRK4T) = 4
 alg_order(alg::GRK4A) = 4
 alg_order(alg::Ros4LStab) = 4
+alg_order(alg::Rodas4) = 4
+alg_order(alg::Rodas42) = 4
+alg_order(alg::Rodas4P) = 4
 
 alg_order(alg::CompositeAlgorithm) = alg_order(alg.algs[1])
 
@@ -209,6 +215,9 @@ alg_adaptive_order(alg::Velds4) = 3
 alg_adaptive_order(alg::GRK4T) = 3
 alg_adaptive_order(alg::GRK4A) = 3
 alg_adaptive_order(alg::Ros4LStab) = 3
+alg_adaptive_order(alg::Rodas4) = 3
+alg_adaptive_order(alg::Rodas42) = 3
+alg_adaptive_order(alg::Rodas4P) = 3
 
 beta2_default(alg::OrdinaryDiffEqAlgorithm) = 2//(5alg_order(alg))
 beta2_default(alg::Discrete) = 0
