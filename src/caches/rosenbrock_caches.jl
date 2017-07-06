@@ -594,6 +594,10 @@ end
 type Rodas4Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,TabType,TFType,UFType,F,JCType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
+  k1::rateType
+  k2::rateType
+  k3::rateType
+  k4::rateType
   du::rateType
   du1::rateType
   du2::du2Type
@@ -667,10 +671,86 @@ function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   Rodas4ConstantCache(tf,uf,Rodas4ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits)))
 end
 
+function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+  k1 = zeros(rate_prototype)
+  k2 = zeros(rate_prototype)
+  k3 = zeros(rate_prototype)
+  k4 = zeros(rate_prototype)
+  du = zeros(rate_prototype)
+  du1 = zeros(rate_prototype)
+  du2 = zeros(rate_prototype)
+  vectmp = vec(similar(u,indices(u)))
+  vectmp2 = vec(similar(u,indices(u)))
+  vectmp3 = vec(similar(u,indices(u)))
+  vectmp4 = vec(similar(u,indices(u)))
+  vectmp5 = vec(similar(u,indices(u)))
+  vectmp6 = vec(similar(u,indices(u)))
+  fsalfirst = zeros(rate_prototype)
+  fsallast = zeros(rate_prototype)
+  dT = similar(u,indices(u))
+  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  W = similar(J);
+  tmp = similar(u,indices(u))
+  tab = Rodas42ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  vf = VectorF(f,size(u))
+  vfr = VectorFReturn(f,size(u))
+  tf = TimeGradientWrapper(vf,uprev)
+  uf = UJacobianWrapper(vfr,t)
+  linsolve_tmp = similar(u,indices(u))
+  linsolve_tmp_vec = vec(linsolve_tmp)
+  if alg_autodiff(alg)
+    jac_config = ForwardDiff.JacobianConfig(uf,vec(du1),vec(uprev),ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+  else
+    jac_config = nothing
+  end
+  Rodas4Cache(u,uprev,k1,k2,k3,k4,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
+                    vectmp5,vectmp6,
+                    fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
+                    linsolve_tmp_vec,alg.linsolve,jac_config)
+end
+
 function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
   Rodas4ConstantCache(tf,uf,Rodas42ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits)))
+end
+
+function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+  k1 = zeros(rate_prototype)
+  k2 = zeros(rate_prototype)
+  k3 = zeros(rate_prototype)
+  k4 = zeros(rate_prototype)
+  du = zeros(rate_prototype)
+  du1 = zeros(rate_prototype)
+  du2 = zeros(rate_prototype)
+  vectmp = vec(similar(u,indices(u)))
+  vectmp2 = vec(similar(u,indices(u)))
+  vectmp3 = vec(similar(u,indices(u)))
+  vectmp4 = vec(similar(u,indices(u)))
+  vectmp5 = vec(similar(u,indices(u)))
+  vectmp6 = vec(similar(u,indices(u)))
+  fsalfirst = zeros(rate_prototype)
+  fsallast = zeros(rate_prototype)
+  dT = similar(u,indices(u))
+  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  W = similar(J);
+  tmp = similar(u,indices(u))
+  tab = Rodas4PConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  vf = VectorF(f,size(u))
+  vfr = VectorFReturn(f,size(u))
+  tf = TimeGradientWrapper(vf,uprev)
+  uf = UJacobianWrapper(vfr,t)
+  linsolve_tmp = similar(u,indices(u))
+  linsolve_tmp_vec = vec(linsolve_tmp)
+  if alg_autodiff(alg)
+    jac_config = ForwardDiff.JacobianConfig(uf,vec(du1),vec(uprev),ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+  else
+    jac_config = nothing
+  end
+  Rodas4Cache(u,uprev,k1,k2,k3,k4,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
+                    vectmp5,vectmp6,
+                    fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
+                    linsolve_tmp_vec,alg.linsolve,jac_config)
 end
 
 function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})

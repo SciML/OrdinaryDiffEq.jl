@@ -878,7 +878,7 @@ end
 
 ################################################################################
 
-#### ROS4 type method
+#### Rodas4 type method
 
 @inline function initialize!(integrator,cache::Rodas4ConstantCache,f=integrator.f)
   integrator.kshortsize = 2
@@ -977,7 +977,6 @@ end
   @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,gamma,c2,c3,c4,d1,d2,d3,d4 = cache.tab
   mass_matrix = integrator.sol.prob.mass_matrix
 
-  utilde = du
   atmp = du
 
   # Setup Jacobian Calc
@@ -1062,6 +1061,12 @@ end
   k3 = reshape(vectmp3,sizeu...)
 
   @tight_loop_macros for i in uidx
+    @inbounds u[i] = uprev[i] + a41*k1[i] + a42*k2[i] + a43*k3[i]
+  end
+
+  f(t+c4*dt,u,du)
+
+  @tight_loop_macros for i in uidx
     @inbounds linsolve_tmp[i] = du[i] + dt*d4*dT[i] + C41*k1[i]/dt + C42*k2[i]/dt + C43*k3[i]/dt
   end
 
@@ -1074,15 +1079,48 @@ end
   k4 = reshape(vectmp4,sizeu...)
 
   @tight_loop_macros for i in uidx
-    @inbounds u[i] = uprev[i] + b1*k1[i] + b2*k2[i] + b3*k3[i] + b4*k4[i]
+    @inbounds u[i] = uprev[i] + a51*k1[i] + a52*k2[i] + a53*k3[i] + a54*k4[i]
+  end
+
+  f(t+dt,u,du)
+
+  @tight_loop_macros for i in uidx
+    @inbounds linsolve_tmp[i] = du[i] + C52*k2[i]/dt + C54*k4[i]/dt + C51*k1[i]/dt + C53*k3[i]/dt
+  end
+
+  if has_invW(f)
+    A_mul_B!(vectmp5,W,linsolve_tmp_vec)
+  else
+    integrator.alg.linsolve(vectmp5,W,linsolve_tmp_vec)
+  end
+
+  k5 = reshape(vectmp5,sizeu...)
+
+  @tight_loop_macros for i in uidx
+    @inbounds u[i] = u[i] + k5[i]
   end
 
   f(t,u,fsallast)
 
+  @tight_loop_macros for i in uidx
+    @inbounds linsolve_tmp[i] = fsallast[i] + C61*k1[i]/dt + C62*k2[i]/dt + C63*k3[i]/dt + C64*k4[i]/dt + C65*k5[i]/dt
+  end
+
+  if has_invW(f)
+    A_mul_B!(vectmp6,W,linsolve_tmp_vec)
+  else
+    integrator.alg.linsolve(vectmp6,W,linsolve_tmp_vec)
+  end
+
+  k6 = reshape(vectmp6,sizeu...)
+
+  @tight_loop_macros for i in uidx
+    @inbounds u[i] = u[i] + k6[i]
+  end
+
   if integrator.opts.adaptive
     @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
-      @inbounds utilde[i] = @muladd btilde1*k1[i] + btilde2*k2[i] + btilde3*k3[i] + btilde4*k4[i]
-      @inbounds atmp[i] = ((utilde[i])./@muladd(atol+max(abs(uprev[i]),abs(u[i])).*rtol))
+      @inbounds atmp[i] = ((k6[i])./@muladd(atol+max(abs(uprev[i]),abs(u[i])).*rtol))
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end

@@ -98,7 +98,9 @@ get_chunksize{CS,AD}(alg::Velds4{CS,AD}) = CS
 get_chunksize{CS,AD}(alg::GRK4T{CS,AD}) = CS
 get_chunksize{CS,AD}(alg::GRK4A{CS,AD}) = CS
 get_chunksize{CS,AD}(alg::Ros4LStab{CS,AD}) = CS
-
+get_chunksize{CS,AD}(alg::Rodas4{CS,AD}) = CS
+get_chunksize{CS,AD}(alg::Rodas42{CS,AD}) = CS
+get_chunksize{CS,AD}(alg::Rodas4P{CS,AD}) = CS
 
 alg_extrapolates(alg::OrdinaryDiffEqAlgorithm) = false
 alg_extrapolates(alg::ImplicitEuler) = true
@@ -115,7 +117,9 @@ alg_autodiff{CS,AD}(alg::Velds4{CS,AD}) = AD
 alg_autodiff{CS,AD}(alg::GRK4T{CS,AD}) = AD
 alg_autodiff{CS,AD}(alg::GRK4A{CS,AD}) = AD
 alg_autodiff{CS,AD}(alg::Ros4LStab{CS,AD}) = AD
-
+alg_autodiff{CS,AD}(alg::Rodas4{CS,AD}) = AD
+alg_autodiff{CS,AD}(alg::Rodas42{CS,AD}) = AD
+alg_autodiff{CS,AD}(alg::Rodas4P{CS,AD}) = AD
 
 alg_order(alg::OrdinaryDiffEqAlgorithm) = error("Order is not defined for this algorithm")
 alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")

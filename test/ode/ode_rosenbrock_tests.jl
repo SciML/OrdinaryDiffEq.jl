@@ -284,6 +284,49 @@ sim = test_convergence(dts,prob,Ros4LStab(linsolve=LinSolveFactorize(qrfact!)))
 sol = solve(prob,Ros4LStab(linsolve=LinSolveFactorize(qrfact!)))
 @test length(sol) < 20
 
+### Rodas4 Algorithms
+
+prob = prob_ode_linear
+
+sim = test_convergence(dts,prob,Rodas4())
+@test abs(sim.𝒪est[:final]-4) < testTol
+
+sol = solve(prob,Rodas4())
+@test length(sol) < 20
+
+sim = test_convergence(dts,prob,Rodas42())
+@test abs(sim.𝒪est[:final]-4) < testTol
+
+sol = solve(prob,Rodas42())
+@test length(sol) < 20
+
+sim = test_convergence(dts,prob,Rodas4P())
+@test abs(sim.𝒪est[:final]-4) < testTol
+
+sol = solve(prob,Rodas4P())
+@test length(sol) < 20
+
+prob = prob_ode_2Dlinear
+
+sim = test_convergence(dts,prob,Rodas4())
+@test abs(sim.𝒪est[:final]-4) < testTol
+
+sol = solve(prob,Rodas4())
+@test length(sol) < 20
+
+sim = test_convergence(dts,prob,Rodas42())
+@test abs(sim.𝒪est[:final]-4) < testTol
+
+sol = solve(prob,Rodas42())
+@test length(sol) < 20
+
+sim = test_convergence(dts,prob,Rodas4P())
+@test abs(sim.𝒪est[:final]-4) < testTol
+
+sol = solve(prob,Rodas4P())
+@test length(sol) < 20
+
+
 ### Test on Stiff
 
 prob = deepcopy(prob_ode_rober)
