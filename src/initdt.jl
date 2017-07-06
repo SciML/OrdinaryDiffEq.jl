@@ -14,6 +14,9 @@ function ode_determine_initdt{tType,uType}(u0,t::tType,tdir,dtmax,abstol,reltol,
   d₀ = internalnorm(tmp)
 
   f(t,u0,f₀)
+  if any((isnan(x) for x in f₀))
+    error("First function call produced NaNs. Exiting.")
+  end
   #d₁ = internalnorm((f₀./sk*tType(1))/tType(1))
 
   @tight_loop_macros for i in uidx
@@ -58,6 +61,9 @@ function ode_determine_initdt{uType,tType}(u0::uType,t,tdir,dtmax,abstol,reltol,
   sk = abstol+abs.(u0).*reltol
   d₀ = internalnorm(u0./sk)
   f₀ = f(t,u0)
+  if isnan(f₀)
+    error("First function call produced NaNs. Exiting.")
+  end
   d₁ = internalnorm(f₀./sk)
   T0 = typeof(d₀)
   T1 = typeof(d₁)
