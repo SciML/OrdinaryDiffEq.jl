@@ -1004,7 +1004,6 @@ end
 
   @tight_loop_macros for i in uidx
     @inbounds linsolve_tmp[i] = fsalfirst[i] + d1dt*dT[i]
-    #@inbounds linsolve_tmp[i] = du[i] + d1dt*dT[i]
   end
 
   if has_invW(f)
@@ -1107,7 +1106,7 @@ end
   f(t,u,fsallast)
 
   @tight_loop_macros for i in uidx
-    @inbounds linsolve_tmp[i] = fsallast[i] + C61*k1[i]/dt + C62*k2[i]/dt + C63*k3[i]/dt + C64*k4[i]/dt + C65*k5[i]/dt
+    @inbounds linsolve_tmp[i] = fsallast[i] + C61*k1[i]/dt + C62*k2[i]/dt + C65*k5[i]/dt + C64*k4[i]/dt + C63*k3[i]/dt
   end
 
   if has_invW(f)
