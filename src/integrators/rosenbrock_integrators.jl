@@ -881,8 +881,8 @@ end
 #### Rodas4 type method
 
 @inline function initialize!(integrator,cache::Rodas4ConstantCache,f=integrator.f)
-  integrator.kshortsize = 2
-  k = eltype(integrator.sol.k)(2)
+  integrator.kshortsize = 3
+  k = eltype(integrator.sol.k)(3)
   integrator.k = k
   integrator.fsalfirst = f(integrator.t,integrator.uprev)
 end
@@ -954,25 +954,29 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = du
+  if integrator.opts.calck
+    @unpack h21,h22,h23,h24,h25,h31,h32,h33,h34,h35 = cache.tab
+    integrator.k[1] = h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5
+    integrator.k[2] = h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5
+  end
+
   integrator.fsallast = du
   @pack integrator = t,dt,u,k
 end
 
 @inline function initialize!(integrator,cache::Rodas4Cache,f=integrator.f)
-  integrator.kshortsize = 2
-  @unpack fsalfirst,fsallast = cache
+  integrator.kshortsize = 3
+  @unpack fsalfirst,fsallast,k1,k2,k3,k4 = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = fsallast
-  integrator.k = [fsalfirst,fsallast]
+  integrator.k = [k1,k2,k3,k4]
   f(integrator.t,integrator.uprev,integrator.fsalfirst)
 end
 
 @inline function perform_step!(integrator,cache::Rodas4Cache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,vectmp5,vectmp6,fsalfirst,fsallast,dT,J,W,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
+  @unpack du,du1,du2,k1,k2,k3,k4,vectmp,vectmp2,vectmp3,vectmp4,vectmp5,vectmp6,fsalfirst,fsallast,dT,J,W,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
   jidx = eachindex(J)
   @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,gamma,c2,c3,c4,d1,d2,d3,d4 = cache.tab
   mass_matrix = integrator.sol.prob.mass_matrix
@@ -1022,7 +1026,7 @@ end
     integrator.alg.linsolve(vectmp,W,linsolve_tmp_vec,true)
   end
 
-  k1 = reshape(vectmp,sizeu...)
+  recursivecopy!(k1,reshape(vectmp,size(u)...))
 
   @tight_loop_macros for i in uidx
     @inbounds u[i] = uprev[i]+a21*k1[i]
@@ -1040,7 +1044,7 @@ end
     integrator.alg.linsolve(vectmp2,W,linsolve_tmp_vec)
   end
 
-  k2 = reshape(vectmp2,sizeu...)
+  recursivecopy!(k2,reshape(vectmp2,size(u)...))
 
   @tight_loop_macros for i in uidx
     @inbounds u[i] = uprev[i] + a31*k1[i] + a32*k2[i]
@@ -1058,7 +1062,7 @@ end
     integrator.alg.linsolve(vectmp3,W,linsolve_tmp_vec)
   end
 
-  k3 = reshape(vectmp3,sizeu...)
+  recursivecopy!(k3,reshape(vectmp3,size(u)...))
 
   @tight_loop_macros for i in uidx
     @inbounds u[i] = uprev[i] + a41*k1[i] + a42*k2[i] + a43*k3[i]
@@ -1076,7 +1080,7 @@ end
     integrator.alg.linsolve(vectmp4,W,linsolve_tmp_vec)
   end
 
-  k4 = reshape(vectmp4,sizeu...)
+  recursivecopy!(k4,reshape(vectmp4,size(u)...))
 
   @tight_loop_macros for i in uidx
     @inbounds u[i] = uprev[i] + a51*k1[i] + a52*k2[i] + a53*k3[i] + a54*k4[i]

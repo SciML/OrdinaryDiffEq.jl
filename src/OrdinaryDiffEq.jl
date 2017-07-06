@@ -83,6 +83,7 @@ module OrdinaryDiffEq
   include("interp_func.jl")
   include("dense/generic_dense.jl")
   include("dense/interpolants.jl")
+  include("dense/rosenbrock_interpolants.jl")
   include("dense/stiff_addsteps.jl")
   include("dense/low_order_rk_addsteps.jl")
   include("dense/verner_addsteps.jl")
