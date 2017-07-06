@@ -162,14 +162,19 @@ end
   end
 end
 
+@inline function stepsize_controller(integrator,cache)
+  # PI-controller
+  EEst,beta1,q11,qold,beta2 = integrator.EEst, integrator.opts.beta1, integrator.q11,integrator.qold,integrator.opts.beta2
+  @fastmath q11 = EEst^beta1
+  @fastmath q = q11/(qold^beta2)
+  integrator.q11 = q11
+  @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),q/integrator.opts.gamma))
+  @fastmath dtnew = integrator.dt/q
+end
+
 @inline function loopfooter!(integrator)
   if integrator.opts.adaptive
-    EEst,beta1,q11,qold,beta2 = integrator.EEst, integrator.opts.beta1, integrator.q11,integrator.qold,integrator.opts.beta2
-    @fastmath q11 = EEst^beta1
-    @fastmath q = q11/(qold^beta2)
-    integrator.q11 = q11
-    @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),q/integrator.opts.gamma))
-    @fastmath dtnew = integrator.dt/q
+    dtnew = stepsize_controller(integrator,integrator.cache)
     ttmp = integrator.t + integrator.dt
     integrator.isout = integrator.opts.isoutofdomain(ttmp,integrator.u)
     integrator.accept_step = (!integrator.isout && integrator.EEst <= 1.0) || (integrator.opts.force_dtmin && abs(integrator.dt) <= abs(integrator.opts.dtmin))
