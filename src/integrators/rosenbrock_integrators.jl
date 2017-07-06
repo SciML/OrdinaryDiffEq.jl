@@ -896,6 +896,22 @@ end
   tf.u = uprev
   uf.t = t
 
+  dtC21 = C21/dt
+  dtC31 = C31/dt
+  dtC32 = C32/dt
+  dtC41 = C41/dt
+  dtC42 = C42/dt
+  dtC43 = C43/dt
+  dtC51 = C51/dt
+  dtC52 = C52/dt
+  dtC53 = C53/dt
+  dtC54 = C54/dt
+  dtC61 = C61/dt
+  dtC62 = C62/dt
+  dtC63 = C63/dt
+  dtC64 = C64/dt
+  dtC65 = C65/dt
+
   dT = ForwardDiff.derivative(tf,t)
   if typeof(uprev) <: AbstractArray
     J = ForwardDiff.jacobian(uf,uprev)
@@ -904,14 +920,20 @@ end
   end
 
   d1dt = dt*d1
-  linsolve_tmp = integrator.fsalfirst + d1dt*dT
-  W = @muladd 1/(dt*gamma)-J
+
+  du = f(t,uprev)
+
+  linsolve_tmp = du + d1dt*dT
+
+  W = 1/(dt*gamma)-J
 
   k1 = W\linsolve_tmp
+
   u = uprev+a21*k1
+
   du = f(t+c2*dt,u)
 
-  linsolve_tmp = du + dt*d2*dT + C21*k1/dt
+  linsolve_tmp = du + dt*d2*dT + dtC21*k1
 
   k2 = W\linsolve_tmp
 
@@ -919,7 +941,7 @@ end
 
   du = f(t+c3*dt,u)
 
-  linsolve_tmp = du + dt*d3*dT + C31*k1/dt + C32*k2/dt
+  linsolve_tmp = du + dt*d3*dT + (dtC31*k1 + dtC32*k2)
 
   k3 = W\linsolve_tmp
 
@@ -927,7 +949,7 @@ end
 
   du = f(t+c4*dt,u)
 
-  linsolve_tmp = du + dt*d4*dT + C41*k1/dt + C42*k2/dt + C43*k3/dt
+  linsolve_tmp = du + dt*d4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
 
   k4 = W\linsolve_tmp
 
@@ -935,7 +957,7 @@ end
 
   du = f(t+dt,u)
 
-  linsolve_tmp = du + C52*k2/dt + C54*k4/dt + C51*k1/dt + C53*k3/dt
+  linsolve_tmp = du + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
 
   k5 = W\linsolve_tmp
 
@@ -943,7 +965,7 @@ end
 
   du = f(t+dt,u)
 
-  linsolve_tmp = du + C61*k1/dt + C62*k2/dt + C63*k3/dt + C64*k4/dt + C65*k5/dt
+  linsolve_tmp = du + (dtC61*k1 + dtC62*k2 + dtC65*k5 + dtC64*k4 + dtC63*k3)
 
   k6 = W\linsolve_tmp
 
@@ -983,6 +1005,22 @@ end
 
   atmp = du
 
+  dtC21 = C21/dt
+  dtC31 = C31/dt
+  dtC32 = C32/dt
+  dtC41 = C41/dt
+  dtC42 = C42/dt
+  dtC43 = C43/dt
+  dtC51 = C51/dt
+  dtC52 = C52/dt
+  dtC53 = C53/dt
+  dtC54 = C54/dt
+  dtC61 = C61/dt
+  dtC62 = C62/dt
+  dtC63 = C63/dt
+  dtC64 = C64/dt
+  dtC65 = C65/dt
+
   # Setup Jacobian Calc
   sizeu  = size(u)
   tf.vf.sizeu = sizeu
@@ -1002,8 +1040,10 @@ end
 
   d1dt = dt*d1
 
+  f(t,uprev,du)
+
   @tight_loop_macros for i in uidx
-    @inbounds linsolve_tmp[i] = fsalfirst[i] + d1dt*dT[i]
+    @inbounds linsolve_tmp[i] = du[i] + d1dt*dT[i]
   end
 
   if has_invW(f)
@@ -1034,7 +1074,7 @@ end
   f(t+c2*dt,u,du)
 
   @tight_loop_macros for i in uidx
-    @inbounds linsolve_tmp[i] = du[i] + dt*d2*dT[i] + C21*k1[i]/dt
+    @inbounds linsolve_tmp[i] = du[i] + dt*d2*dT[i] + dtC21*k1[i]
   end
 
   if has_invW(f)
@@ -1052,7 +1092,7 @@ end
   f(t+c3*dt,u,du)
 
   @tight_loop_macros for i in uidx
-    @inbounds linsolve_tmp[i] = du[i] + dt*d3*dT[i] + C31*k1[i]/dt + C32*k2[i]/dt
+    @inbounds linsolve_tmp[i] = du[i] + dt*d3*dT[i] + dtC31*k1[i] + dtC32*k2[i]
   end
 
   if has_invW(f)
@@ -1070,7 +1110,7 @@ end
   f(t+c4*dt,u,du)
 
   @tight_loop_macros for i in uidx
-    @inbounds linsolve_tmp[i] = du[i] + dt*d4*dT[i] + C41*k1[i]/dt + C42*k2[i]/dt + C43*k3[i]/dt
+    @inbounds linsolve_tmp[i] = du[i] + dt*d4*dT[i] + dtC41*k1[i] + dtC42*k2[i] + dtC43*k3[i]
   end
 
   if has_invW(f)
@@ -1088,7 +1128,7 @@ end
   f(t+dt,u,du)
 
   @tight_loop_macros for i in uidx
-    @inbounds linsolve_tmp[i] = du[i] + C52*k2[i]/dt + C54*k4[i]/dt + C51*k1[i]/dt + C53*k3[i]/dt
+    @inbounds linsolve_tmp[i] = du[i] + dtC52*k2[i] + dtC54*k4[i] + dtC51*k1[i] + dtC53*k3[i]
   end
 
   if has_invW(f)
@@ -1103,10 +1143,10 @@ end
     @inbounds u[i] = u[i] + k5[i]
   end
 
-  f(t,u,fsallast)
+  f(t,u,du)
 
   @tight_loop_macros for i in uidx
-    @inbounds linsolve_tmp[i] = fsallast[i] + C61*k1[i]/dt + C62*k2[i]/dt + C65*k5[i]/dt + C64*k4[i]/dt + C63*k3[i]/dt
+    @inbounds linsolve_tmp[i] = du[i] + dtC61*k1[i] + dtC62*k2[i] + dtC65*k5[i] + dtC64*k4[i] + dtC63*k3[i]
   end
 
   if has_invW(f)
