@@ -172,6 +172,13 @@ end
   @fastmath dtnew = integrator.dt/q
 end
 
+@inline function stepsize_controller(integrator,cache::Rodas4Cache)
+  # Standard stepsize controller
+  qtmp = integrator.EEst^(1/(alg_adaptive_order(integrator.alg)+1))/integrator.opts.gamma
+  @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
+  @fastmath dtnew = integrator.dt/q
+end
+
 @inline function loopfooter!(integrator)
   if integrator.opts.adaptive
     dtnew = stepsize_controller(integrator,integrator.cache)
