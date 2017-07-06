@@ -594,10 +594,8 @@ end
 type Rodas4Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,TabType,TFType,UFType,F,JCType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
-  k1::rateType
-  k2::rateType
-  k3::rateType
-  k4::rateType
+  dense1::rateType
+  dense2::rateType
   du::rateType
   du1::rateType
   du2::du2Type
@@ -628,10 +626,8 @@ jac_cache(c::Rodas4Cache) = (c.J,c.W)
 vecu_cache(c::Rodas4Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
 
 function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
-  k1 = zeros(rate_prototype)
-  k2 = zeros(rate_prototype)
-  k3 = zeros(rate_prototype)
-  k4 = zeros(rate_prototype)
+  dense1 = zeros(rate_prototype)
+  dense2 = zeros(rate_prototype)
   du = zeros(rate_prototype)
   du1 = zeros(rate_prototype)
   du2 = zeros(rate_prototype)
@@ -659,7 +655,7 @@ function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   else
     jac_config = nothing
   end
-  Rodas4Cache(u,uprev,k1,k2,k3,k4,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
+  Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
                     vectmp5,vectmp6,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
                     linsolve_tmp_vec,alg.linsolve,jac_config)
@@ -672,10 +668,8 @@ function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
 end
 
 function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
-  k1 = zeros(rate_prototype)
-  k2 = zeros(rate_prototype)
-  k3 = zeros(rate_prototype)
-  k4 = zeros(rate_prototype)
+  dense1 = zeros(rate_prototype)
+  dense2 = zeros(rate_prototype)
   du = zeros(rate_prototype)
   du1 = zeros(rate_prototype)
   du2 = zeros(rate_prototype)
@@ -703,7 +697,7 @@ function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upr
   else
     jac_config = nothing
   end
-  Rodas4Cache(u,uprev,k1,k2,k3,k4,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
+  Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
                     vectmp5,vectmp6,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
                     linsolve_tmp_vec,alg.linsolve,jac_config)
@@ -716,10 +710,8 @@ function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upr
 end
 
 function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
-  k1 = zeros(rate_prototype)
-  k2 = zeros(rate_prototype)
-  k3 = zeros(rate_prototype)
-  k4 = zeros(rate_prototype)
+  dense1 = zeros(rate_prototype)
+  dense2 = zeros(rate_prototype)
   du = zeros(rate_prototype)
   du1 = zeros(rate_prototype)
   du2 = zeros(rate_prototype)
@@ -747,7 +739,7 @@ function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upr
   else
     jac_config = nothing
   end
-  Rodas4Cache(u,uprev,k1,k2,k3,k4,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
+  Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
                     vectmp5,vectmp6,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
                     linsolve_tmp_vec,alg.linsolve,jac_config)

@@ -62,3 +62,20 @@ end
 @inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Rodas4ConstantCache,idxs,T::Type{Val{0}})
   y₀*(1-Θ)+Θ*(y₁+(1-Θ)*(k[1] + Θ*k[2]))
 end
+
+"""
+From MATLAB ODE Suite by Shampine
+"""
+@inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Rodas4Cache,idxs,T::Type{Val{0}})
+  if out == nothing
+    return y₀[idxs]*(1-Θ)+Θ*(y₁[idxs]+(1-Θ)*(k[1][idxs] + Θ*k[2][idxs]))
+  elseif idxs == nothing
+    @inbounds for i in eachindex(out)
+      out[i] = y₀[i]*(1-Θ)+Θ*(y₁[i]+(1-Θ)*(k[1][i] + Θ*k[2][i]))
+    end
+  else
+    @inbounds for (j,i) in enumerate(idxs)
+      out[j] = y₀[i]*(1-Θ)+Θ*(y₁[i]+(1-Θ)*(k[1][i] + Θ*k[2][i]))
+    end
+  end
+end

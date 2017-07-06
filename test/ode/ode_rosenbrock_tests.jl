@@ -311,20 +311,23 @@ sol = solve(prob,Rodas4P())
 
 prob = prob_ode_2Dlinear
 
-sim = test_convergence(dts,prob,Rodas4())
+sim = test_convergence(dts,prob,Rodas4(),dense_errors=true)
 @test abs(sim.𝒪est[:final]-4) < testTol
+@test abs(sim.𝒪est[:L2]-4) < testTol
 
 sol = solve(prob,Rodas4())
 @test length(sol) < 20
 
-sim = test_convergence(dts,prob,Rodas42())
+sim = test_convergence(dts,prob,Rodas42(),dense_errors=true)
 @test abs(sim.𝒪est[:final]-4) < testTol
+@test abs(sim.𝒪est[:L2]-4) < testTol
 
 sol = solve(prob,Rodas42())
 @test length(sol) < 20
 
-sim = test_convergence(dts,prob,Rodas4P())
+sim = test_convergence(dts,prob,Rodas4P(),dense_errors=true)
 @test abs(sim.𝒪est[:final]-4) < testTol
+@test abs(sim.𝒪est[:L2]-4) < testTol
 
 sol = solve(prob,Rodas4P())
 @test length(sol) < 20

@@ -29,6 +29,9 @@ end
 function DiffEqBase.interp_summary{cacheType<:Union{Rosenbrock23ConstantCache,Rosenbrock32ConstantCache,Rosenbrock23Cache,Rosenbrock32Cache}}(interp::OrdinaryDiffEqInterpolation{cacheType})
   interp.dense ? "specialized 2nd order \"free\" stiffness-aware interpolation" : "1st order linear"
 end
+function DiffEqBase.interp_summary{cacheType<:Union{Rodas4ConstantCache,Rodas4Cache}}(interp::OrdinaryDiffEqInterpolation{cacheType})
+  interp.dense ? "specialized 3rd order \"free\" stiffness-aware interpolation" : "1st order linear"
+end
 function DiffEqBase.interp_summary{cacheType<:Union{SSPRK22,SSPRK22ConstantCache,SSPRK33,SSPRK33ConstantCache,SSPRK432,SSPRK432ConstantCache}}(interp::OrdinaryDiffEqInterpolation{cacheType})
   interp.dense ? "2nd order \"free\" SSP interpolation" : "1st order linear"
 end
