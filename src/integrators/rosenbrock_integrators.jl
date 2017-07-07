@@ -1178,3 +1178,393 @@ end
 
   @pack integrator = t,dt,u,k
 end
+
+###############################################################################
+
+### Rodas5 Method
+
+@inline function initialize!(integrator,cache::Rosenbrock5ConstantCache,f=integrator.f)
+  integrator.kshortsize = 2
+  k = eltype(integrator.sol.k)(2)
+  integrator.k = k
+  integrator.fsalfirst = f(integrator.t,integrator.uprev)
+end
+
+@inline function perform_step!(integrator,cache::Rosenbrock5ConstantCache,f=integrator.f)
+  @unpack t,dt,uprev,u,k = integrator
+  @unpack tf,uf = cache
+  @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,C71,C72,C73,C74,C75,C76,C81,C82,C83,C84,C85,C86,C87,gamma,d1,d2,d3,d4,d5,c2,c3,c4,c5 = cache.tab
+  # Setup Jacobian Calc
+  tf.u = uprev
+  uf.t = t
+
+  dtC21 = C21/dt
+  dtC31 = C31/dt
+  dtC32 = C32/dt
+  dtC41 = C41/dt
+  dtC42 = C42/dt
+  dtC43 = C43/dt
+  dtC51 = C51/dt
+  dtC52 = C52/dt
+  dtC53 = C53/dt
+  dtC54 = C54/dt
+  dtC61 = C61/dt
+  dtC62 = C62/dt
+  dtC63 = C63/dt
+  dtC64 = C64/dt
+  dtC65 = C65/dt
+  dtC71 = C71/dt
+  dtC72 = C72/dt
+  dtC73 = C73/dt
+  dtC74 = C74/dt
+  dtC75 = C75/dt
+  dtC76 = C76/dt
+  dtC81 = C81/dt
+  dtC82 = C82/dt
+  dtC83 = C83/dt
+  dtC84 = C84/dt
+  dtC85 = C85/dt
+  dtC86 = C86/dt
+  dtC87 = C87/dt
+
+  dT = ForwardDiff.derivative(tf,t)
+  if typeof(uprev) <: AbstractArray
+    J = ForwardDiff.jacobian(uf,uprev)
+  else
+    J = ForwardDiff.derivative(uf,uprev)
+  end
+
+  d1dt = dt*d1
+
+  du1 = f(t,uprev)
+
+  linsolve_tmp = du1 + d1dt*dT
+
+  W = 1/(dt*gamma)-J
+
+  k1 = W\linsolve_tmp
+
+  u = uprev+a21*k1
+
+  du = f(t+c2*dt,u)
+
+  linsolve_tmp = du + dt*d2*dT + dtC21*k1
+
+  k2 = W\linsolve_tmp
+
+  u = uprev + a31*k1 + a32*k2
+
+  du = f(t+c3*dt,u)
+
+  linsolve_tmp = du + dt*d3*dT + (dtC31*k1 + dtC32*k2)
+
+  k3 = W\linsolve_tmp
+
+  u = uprev + a41*k1 + a42*k2 + a43*k3
+
+  du = f(t+c4*dt,u)
+
+  linsolve_tmp = du + dt*d4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
+
+  k4 = W\linsolve_tmp
+
+  u = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
+
+  du = f(t+c5*dt,u)
+
+  linsolve_tmp = du + dt*d5*dT + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
+
+  k5 = W\linsolve_tmp
+
+  u = uprev + a61*k1 + a62*k2 + a63*k3 + a64*k4 + a65*k5
+
+  du = f(t+dt,u)
+
+  linsolve_tmp = du + (dtC61*k1 + dtC62*k2 + dtC63*k3 + dtC64*k4 + dtC65*k5)
+
+  k6 = W\linsolve_tmp
+
+  u = u + k6
+
+  du = f(t+dt,u)
+
+  linsolve_tmp = du + (dtC71*k1 + dtC72*k2 + dtC73*k3 + dtC74*k4 + dtC75*k5 + dtC76*k6)
+
+  k7 = W\linsolve_tmp
+
+  u = u + k7
+
+  du = f(t+dt,u)
+
+  linsolve_tmp = du + (dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7)
+
+  k8 = W\linsolve_tmp
+
+  u = u + k8
+
+  du = f(t+dt,u)
+
+  if integrator.opts.adaptive
+    atmp = ((k8)./@muladd(integrator.opts.abstol+max(abs.(uprev),abs.(u)).*integrator.opts.reltol))
+    integrator.EEst = integrator.opts.internalnorm(atmp)
+  end
+
+  if integrator.opts.calck
+    #=
+    @unpack h21,h22,h23,h24,h25,h31,h32,h33,h34,h35 = cache.tab
+    integrator.k[1] = h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5
+    integrator.k[2] = h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5
+    =#
+    integrator.k[1] = du1
+    integrator.k[2] = du
+  end
+
+  integrator.fsallast = du
+  @pack integrator = t,dt,u,k
+end
+
+@inline function initialize!(integrator,cache::Rosenbrock5Cache,f=integrator.f)
+  integrator.kshortsize = 2
+  @unpack fsalfirst,fsallast,dense1,dense2 = cache
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = fsallast
+  integrator.k = [fsalfirst,fsallast]
+  f(integrator.t,integrator.uprev,integrator.fsalfirst)
+end
+
+@inline function perform_step!(integrator,cache::Rosenbrock5Cache,f=integrator.f)
+  @unpack t,dt,uprev,u,k = integrator
+  uidx = eachindex(integrator.uprev)
+  @unpack du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,vectmp5,vectmp6,vectmp7,vectmp8,fsalfirst,fsallast,dT,J,W,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
+  jidx = eachindex(J)
+  @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,C71,C72,C73,C74,C75,C76,C81,C82,C83,C84,C85,C86,C87,gamma,d1,d2,d3,d4,d5,c2,c3,c4,c5 = cache.tab
+  mass_matrix = integrator.sol.prob.mass_matrix
+
+  atmp = du
+
+  dtC21 = C21/dt
+  dtC31 = C31/dt
+  dtC32 = C32/dt
+  dtC41 = C41/dt
+  dtC42 = C42/dt
+  dtC43 = C43/dt
+  dtC51 = C51/dt
+  dtC52 = C52/dt
+  dtC53 = C53/dt
+  dtC54 = C54/dt
+  dtC61 = C61/dt
+  dtC62 = C62/dt
+  dtC63 = C63/dt
+  dtC64 = C64/dt
+  dtC65 = C65/dt
+  dtC71 = C71/dt
+  dtC72 = C72/dt
+  dtC73 = C73/dt
+  dtC74 = C74/dt
+  dtC75 = C75/dt
+  dtC76 = C76/dt
+  dtC81 = C81/dt
+  dtC82 = C82/dt
+  dtC83 = C83/dt
+  dtC84 = C84/dt
+  dtC85 = C85/dt
+  dtC86 = C86/dt
+  dtC87 = C87/dt
+
+  # Setup Jacobian Calc
+  sizeu  = size(u)
+  tf.vf.sizeu = sizeu
+  tf.uprev = uprev
+  uf.vfr.sizeu = sizeu
+  uf.t = t
+
+  if has_tgrad(f)
+    f(Val{:tgrad},t,u,dT)
+  else
+    if alg_autodiff(integrator.alg)
+      ForwardDiff.derivative!(dT,tf,vec(du2),t) # Should update to inplace, https://github.com/JuliaDiff/ForwardDiff.jl/pull/219
+    else
+      dT = Calculus.finite_difference(tf,t,integrator.alg.diff_type)
+    end
+  end
+
+  d1dt = dt*d1
+
+  f(t,uprev,fsalfirst)
+
+  @tight_loop_macros for i in uidx
+    @inbounds linsolve_tmp[i] = fsalfirst[i] + d1dt*dT[i]
+  end
+
+  if has_invW(f)
+    f(Val{:invW_t},t,u,dt*gamma,W) # W == inverse W
+    A_mul_B!(vectmp,W,linsolve_tmp_vec)
+  else
+    if has_jac(f)
+      f(Val{:jac},t,u,J)
+    else
+      if alg_autodiff(integrator.alg)
+        ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
+      else
+        Calculus.finite_difference_jacobian!(uf,vec(uprev),vec(du1),J,integrator.alg.diff_type)
+      end
+    end
+    for j in 1:length(u), i in 1:length(u)
+        @inbounds W[i,j] = @muladd mass_matrix[i,j]/(dt*gamma)-J[i,j]
+    end
+    integrator.alg.linsolve(vectmp,W,linsolve_tmp_vec,true)
+  end
+
+  k1 = reshape(vectmp,sizeu...)
+
+  @tight_loop_macros for i in uidx
+    @inbounds u[i] = uprev[i]+a21*k1[i]
+  end
+
+  f(t+c2*dt,u,du)
+
+  @tight_loop_macros for i in uidx
+    @inbounds linsolve_tmp[i] = du[i] + dt*d2*dT[i] + dtC21*k1[i]
+  end
+
+  if has_invW(f)
+    A_mul_B!(vectmp2,W,linsolve_tmp_vec)
+  else
+    integrator.alg.linsolve(vectmp2,W,linsolve_tmp_vec)
+  end
+
+  k2 = reshape(vectmp2,sizeu...)
+
+  @tight_loop_macros for i in uidx
+    @inbounds u[i] = uprev[i] + a31*k1[i] + a32*k2[i]
+  end
+
+  f(t+c3*dt,u,du)
+
+  @tight_loop_macros for i in uidx
+    @inbounds linsolve_tmp[i] = du[i] + dt*d3*dT[i] + dtC31*k1[i] + dtC32*k2[i]
+  end
+
+  if has_invW(f)
+    A_mul_B!(vectmp3,W,linsolve_tmp_vec)
+  else
+    integrator.alg.linsolve(vectmp3,W,linsolve_tmp_vec)
+  end
+
+  k3 = reshape(vectmp3,sizeu...)
+
+  @tight_loop_macros for i in uidx
+    @inbounds u[i] = uprev[i] + a41*k1[i] + a42*k2[i] + a43*k3[i]
+  end
+
+  f(t+c4*dt,u,du)
+
+  @tight_loop_macros for i in uidx
+    @inbounds linsolve_tmp[i] = du[i] + dt*d4*dT[i] + dtC41*k1[i] + dtC42*k2[i] + dtC43*k3[i]
+  end
+
+  if has_invW(f)
+    A_mul_B!(vectmp4,W,linsolve_tmp_vec)
+  else
+    integrator.alg.linsolve(vectmp4,W,linsolve_tmp_vec)
+  end
+
+  k4 = reshape(vectmp4,sizeu...)
+
+  @tight_loop_macros for i in uidx
+    @inbounds u[i] = uprev[i] + a51*k1[i] + a52*k2[i] + a53*k3[i] + a54*k4[i]
+  end
+
+  f(t+c5*dt,u,du)
+
+  @tight_loop_macros for i in uidx
+    @inbounds linsolve_tmp[i] = du[i] + dtC52*k2[i] + dtC54*k4[i] + dtC51*k1[i] + dtC53*k3[i]
+  end
+
+  if has_invW(f)
+    A_mul_B!(vectmp5,W,linsolve_tmp_vec)
+  else
+    integrator.alg.linsolve(vectmp5,W,linsolve_tmp_vec)
+  end
+
+  k5 = reshape(vectmp5,sizeu...)
+
+  @tight_loop_macros for i in uidx
+    @inbounds u[i] = uprev[i] + a61*k1[i] + a62*k2[i] + a63*k3[i] + a64*k4[i] + a65*k5[i]
+  end
+
+  f(t+dt,u,du)
+
+  @tight_loop_macros for i in uidx
+    @inbounds linsolve_tmp[i] = du[i] + dtC61*k1[i] + dtC62*k2[i] + dtC63*k3[i] + dtC64*k4[i] + dtC65*k5[i]
+  end
+
+  if has_invW(f)
+    A_mul_B!(vectmp6,W,linsolve_tmp_vec)
+  else
+    integrator.alg.linsolve(vectmp6,W,linsolve_tmp_vec)
+  end
+
+  k6 = reshape(vectmp6,sizeu...)
+
+  @tight_loop_macros for i in uidx
+    @inbounds u[i] = u[i] + k6[i]
+  end
+
+  f(t+dt,u,du)
+
+  @tight_loop_macros for i in uidx
+    @inbounds linsolve_tmp[i] = du[i] + dtC71*k1[i] + dtC72*k2[i] + dtC73*k3[i] + dtC74*k4[i] + dtC75*k5[i] + dtC76*k6[i]
+  end
+
+  if has_invW(f)
+    A_mul_B!(vectmp7,W,linsolve_tmp_vec)
+  else
+    integrator.alg.linsolve(vectmp7,W,linsolve_tmp_vec)
+  end
+
+  k7 = reshape(vectmp7,sizeu...)
+
+  @tight_loop_macros for i in uidx
+    @inbounds u[i] = u[i] + k7[i]
+  end
+
+  f(t+dt,u,du)
+
+  @tight_loop_macros for i in uidx
+    @inbounds linsolve_tmp[i] = du[i] + dtC81*k1[i] + dtC82*k2[i] + dtC83*k3[i] + dtC84*k4[i] + dtC85*k5[i] + dtC86*k6[i] + dtC87*k7[i]
+  end
+
+  if has_invW(f)
+    A_mul_B!(vectmp8,W,linsolve_tmp_vec)
+  else
+    integrator.alg.linsolve(vectmp8,W,linsolve_tmp_vec)
+  end
+
+  k8 = reshape(vectmp8,sizeu...)
+
+  @tight_loop_macros for i in uidx
+    @inbounds u[i] = u[i] + k8[i]
+  end
+
+  f(t+dt,u,fsallast)
+
+  if integrator.opts.adaptive
+    @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
+      @inbounds atmp[i] = ((k8[i])./@muladd(atol+max(abs(uprev[i]),abs(u[i])).*rtol))
+    end
+    integrator.EEst = integrator.opts.internalnorm(atmp)
+  end
+
+  if integrator.opts.calck
+    #=
+    @unpack h21,h22,h23,h24,h25,h31,h32,h33,h34,h35 = cache.tab
+    @tight_loop_macros for i in uidx
+      integrator.k[1][i] = h21*k1[i] + h22*k2[i] + h23*k3[i] + h24*k4[i] + h25*k5[i]
+      integrator.k[2][i] = h31*k1[i] + h32*k2[i] + h33*k3[i] + h34*k4[i] + h35*k5[i]
+    end
+    =#
+  end
+
+  @pack integrator = t,dt,u,k
+end

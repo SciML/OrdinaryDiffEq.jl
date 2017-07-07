@@ -157,6 +157,12 @@ immutable Rodas4P{CS,AD,F} <: OrdinaryDiffEqAdaptiveAlgorithm
 end
 Base.@pure Rodas4P(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE) = Rodas4P{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
 
+immutable Rodas5{CS,AD,F} <: OrdinaryDiffEqAdaptiveAlgorithm
+  linsolve::F
+  diff_type::Symbol
+end
+Base.@pure Rodas5(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE) = Rodas5{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
+
 immutable GeneralRosenbrock{CS,AD,F,TabType} <: OrdinaryDiffEqAdaptiveAlgorithm
   tableau::TabType
   factorization::F

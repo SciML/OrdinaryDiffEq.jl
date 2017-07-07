@@ -21,6 +21,7 @@ isfsal(alg::Ros4LStab) = true
 isfsal(alg::Rodas4) = true
 isfsal(alg::Rodas42) = true
 isfsal(alg::Rodas4P) = true
+isfsal(alg::Rodas5) = true
 isfsal(alg::LawsonEuler) = true
 isfsal(alg::NorsettEuler) = true
 isfsal(alg::Euler) = true
@@ -101,6 +102,7 @@ get_chunksize{CS,AD}(alg::Ros4LStab{CS,AD}) = CS
 get_chunksize{CS,AD}(alg::Rodas4{CS,AD}) = CS
 get_chunksize{CS,AD}(alg::Rodas42{CS,AD}) = CS
 get_chunksize{CS,AD}(alg::Rodas4P{CS,AD}) = CS
+get_chunksize{CS,AD}(alg::Rodas5{CS,AD}) = CS
 
 alg_extrapolates(alg::OrdinaryDiffEqAlgorithm) = false
 alg_extrapolates(alg::ImplicitEuler) = true
@@ -120,6 +122,7 @@ alg_autodiff{CS,AD}(alg::Ros4LStab{CS,AD}) = AD
 alg_autodiff{CS,AD}(alg::Rodas4{CS,AD}) = AD
 alg_autodiff{CS,AD}(alg::Rodas42{CS,AD}) = AD
 alg_autodiff{CS,AD}(alg::Rodas4P{CS,AD}) = AD
+alg_autodiff{CS,AD}(alg::Rodas5{CS,AD}) = AD
 
 alg_order(alg::OrdinaryDiffEqAlgorithm) = error("Order is not defined for this algorithm")
 alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
@@ -188,6 +191,7 @@ alg_order(alg::Ros4LStab) = 4
 alg_order(alg::Rodas4) = 4
 alg_order(alg::Rodas42) = 4
 alg_order(alg::Rodas4P) = 4
+alg_order(alg::Rodas5) = 5
 
 alg_order(alg::CompositeAlgorithm) = alg_order(alg.algs[1])
 
@@ -222,6 +226,7 @@ alg_adaptive_order(alg::Ros4LStab) = 3
 alg_adaptive_order(alg::Rodas4) = 3
 alg_adaptive_order(alg::Rodas42) = 3
 alg_adaptive_order(alg::Rodas4P) = 3
+alg_adaptive_order(alg::Rodas5) = 4
 
 beta2_default(alg::OrdinaryDiffEqAlgorithm) = 2//(5alg_order(alg))
 beta2_default(alg::Discrete) = 0

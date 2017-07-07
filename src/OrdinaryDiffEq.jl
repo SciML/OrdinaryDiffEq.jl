@@ -112,7 +112,7 @@ module OrdinaryDiffEq
          Feagin10, Feagin12, Feagin14, CompositeAlgorithm
 
   export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
-         Ros4LStab, ROS3P, Rodas3, Rodas4, Rodas42, Rodas4P
+         Ros4LStab, ROS3P, Rodas3, Rodas4, Rodas42, Rodas4P, Rodas5
 
   export IIF1, IIF2
 

@@ -332,6 +332,26 @@ sim = test_convergence(dts,prob,Rodas4P(),dense_errors=true)
 sol = solve(prob,Rodas4P())
 @test length(sol) < 20
 
+### Rodas5
+
+prob = prob_ode_linear
+
+dts = 1.//2.^(7:-1:3)
+sim = test_convergence(dts,prob,Rodas5(),dense_errors=true)
+@test abs(sim.𝒪est[:final]-5) < testTol
+@test abs(sim.𝒪est[:L2]-4) < testTol
+
+sol = solve(prob,Rodas5())
+@test length(sol) < 20
+
+prob = prob_ode_2Dlinear
+
+sim = test_convergence(dts,prob,Rodas5(),dense_errors=true)
+@test abs(sim.𝒪est[:final]-5) < testTol
+@test abs(sim.𝒪est[:L2]-4) < testTol
+
+sol = solve(prob,Rodas5())
+@test length(sol) < 20
 
 ### Test on Stiff
 
