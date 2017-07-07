@@ -12,3 +12,24 @@ OrdinaryDiffEq.jl is a component package in the DifferentialEquations ecosystem.
 ordinary differential equation solvers and utilities. While completely independent
 and usable on its own, users interested in using this
 functionality should check out [DifferentialEquations.jl](https://github.com/JuliaDiffEq/DifferentialEquations.jl).
+
+## API
+
+OrdinaryDiffEq.jl is part of the JuliaDiffEq common interface, but can be used independently of DifferentialEquations.jl. The only requirement is that the user passes an OrdinaryDiffEq.jl algorithm to `solve`. For example, we can solve the [ODE tutorial from the docs](http://docs.juliadiffeq.org/latest/tutorials/ode_example.html) using the `Tsit5()` algorithm:
+
+```julia
+using OrdinaryDiffEq
+f(t,u) = 1.01*u
+u0=1/2
+tspan = (0.0,1.0)
+prob = ODEProblem(f,u0,tspan)
+sol = solve(prob,Tsit5(),reltol=1e-8,abstol=1e-8)
+using Plots
+plot(sol,linewidth=5,title="Solution to the linear ODE with a thick line",
+     xaxis="Time (t)",yaxis="u(t) (in μm)",label="My Thick Line!") # legend=false
+plot!(sol.t, t->0.5*exp(1.01t),lw=3,ls=:dash,label="True Solution!")
+```
+
+## Available Solvers
+
+For the list of available solvers, please refer to the [DifferentialEquations.jl ODE Solvers page](http://docs.juliadiffeq.org/latest/solvers/ode_solve.html#OrdinaryDiffEq.jl-1) and the [Refined ODE Solvers page](http://docs.juliadiffeq.org/latest/solvers/refined_ode_solve.html).
