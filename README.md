@@ -30,7 +30,7 @@ plot(sol,linewidth=5,title="Solution to the linear ODE with a thick line",
 plot!(sol.t, t->0.5*exp(1.01t),lw=3,ls=:dash,label="True Solution!")
 ```
 
-That uses the inplace syntax `f(t,u)`, while the out-of-place syntax is shown in the Lorenz example:
+That example uses the out-of-place syntax `f(t,u)`, while the inplace syntax (more efficient for systems of equations) is shown in the Lorenz example:
 
 ```julia
 using OrdinaryDiffEq
