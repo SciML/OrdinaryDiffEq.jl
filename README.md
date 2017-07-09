@@ -5,7 +5,6 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/crn27g5aj1r567m5?svg=true)](https://ci.appveyor.com/project/ChrisRackauckas/ordinarydiffeq-jl)
 [![Coverage Status](https://coveralls.io/repos/github/JuliaDiffEq/OrdinaryDiffEq.jl/badge.svg)](https://coveralls.io/github/JuliaDiffEq/OrdinaryDiffEq.jl)
 [![codecov.io](http://codecov.io/github/ChrisRackauckas/OrdinaryDiffEq.jl/coverage.svg?branch=master)](http://codecov.io/github/JuliaDiffEq/OrdinaryDiffEq.jl?branch=master)
-[![OrdinaryDiffEq](http://pkg.julialang.org/badges/OrdinaryDiffEq_0.5.svg)](http://pkg.julialang.org/?pkg=OrdinaryDiffEq)
 [![OrdinaryDiffEq](http://pkg.julialang.org/badges/OrdinaryDiffEq_0.6.svg)](http://pkg.julialang.org/?pkg=OrdinaryDiffEq)
 
 OrdinaryDiffEq.jl is a component package in the DifferentialEquations ecosystem. It holds the
