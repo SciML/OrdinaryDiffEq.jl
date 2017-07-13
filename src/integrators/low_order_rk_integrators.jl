@@ -2,6 +2,11 @@
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
 end
 
 #=
@@ -112,6 +117,14 @@ end
   integrator.kshortsize = 8
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  @inbounds for i in 2:integrator.kshortsize-1
+    integrator.k[i] = zero(integrator.fsalfirst)
+  end
+  integrator.k[integrator.kshortsize] = integrator.fsallast
 end
 
 #=
@@ -166,7 +179,6 @@ end
 
 @inline function initialize!(integrator,cache::BS5Cache,f=integrator.f)
   integrator.kshortsize = 8
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1]=cache.k1; integrator.k[2]=cache.k2;
   integrator.k[3]=cache.k3; integrator.k[4]=cache.k4;
@@ -262,6 +274,14 @@ end
   integrator.kshortsize = 7
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  @inbounds for i in 2:integrator.kshortsize-1
+    integrator.k[i] = zero(integrator.fsalfirst)
+  end
+  integrator.k[integrator.kshortsize] = integrator.fsallast
 end
 
 #=
@@ -406,6 +426,12 @@ end
   integrator.kshortsize = 4
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  @inbounds for i in eachindex(integrator.k)
+    integrator.k[i] = zero(integrator.fsalfirst)
+  end
 end
 
 #=
