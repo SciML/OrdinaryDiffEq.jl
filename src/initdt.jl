@@ -61,7 +61,7 @@ function ode_determine_initdt{uType,tType}(u0::uType,t,tdir,dtmax,abstol,reltol,
   sk = abstol+abs.(u0).*reltol
   d₀ = internalnorm(u0./sk)
   f₀ = f(t,u0)
-  if any(isnan(f₀))
+  if any((isnan(x) for x in f₀))
     error("First function call produced NaNs. Exiting.")
   end
   d₁ = internalnorm(f₀./sk)
