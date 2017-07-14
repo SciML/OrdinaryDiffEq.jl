@@ -163,9 +163,8 @@ end
   integrator.k = k
 
   # Avoid undefined entries if k is an array of arrays
-  prototype = f(integrator.t, integrator.uprev)
   @inbounds for i in eachindex(integrator.k)
-    integrator.k[i] = zero(prototype)
+    integrator.k[i] = zero(integrator.uprev)./oneunit(integrator.t)
   end
 end
 
@@ -331,9 +330,8 @@ end
   integrator.k = k
 
   # Avoid undefined entries if k is an array of arrays
-  prototype = f(integrator.t, integrator.uprev)
   @inbounds for i in eachindex(integrator.k)
-    integrator.k[i] = zero(prototype)
+    integrator.k[i] = zero(integrator.uprev)./oneunit(integrator.t)
   end
 end
 
@@ -527,9 +525,8 @@ end
   integrator.k = k
 
   # Avoid undefined entries if k is an array of arrays
-  prototype = f(integrator.t, integrator.uprev)
   @inbounds for i in eachindex(integrator.k)
-    integrator.k[i] = zero(prototype)
+    integrator.k[i] = zero(integrator.uprev)./oneunit(integrator.t)
   end
 end
 
