@@ -68,7 +68,7 @@ end
   end
 end
 
-@inline function savevalues!(integrator::ODEIntegrator,force_save=false)
+@inline function savevalues!(integrator,force_save=false)
   while !isempty(integrator.opts.saveat) && integrator.tdir*top(integrator.opts.saveat) <= integrator.tdir*integrator.t # Perform saveat
     integrator.saveiter += 1
     curt = pop!(integrator.opts.saveat)
