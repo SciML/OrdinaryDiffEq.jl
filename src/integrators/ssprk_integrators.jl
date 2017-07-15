@@ -2,6 +2,10 @@
   integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
   integrator.kshortsize = 1
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
 end
 
 @inline function perform_step!(integrator,cache::SSPRK22ConstantCache,f=integrator.f)
@@ -57,6 +61,10 @@ end
   integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
   integrator.kshortsize = 1
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
 end
 
 @inline function perform_step!(integrator,cache::SSPRK33ConstantCache,f=integrator.f)
@@ -121,6 +129,10 @@ end
   integrator.kshortsize = 1
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
 end
 
 @inline function perform_step!(integrator,cache::SSPRK432ConstantCache,f=integrator.f)
@@ -205,6 +217,11 @@ end
   integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
 end
 
 @inline function perform_step!(integrator,cache::SSPRK104ConstantCache,f=integrator.f)

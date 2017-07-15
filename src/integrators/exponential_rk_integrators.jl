@@ -3,6 +3,11 @@
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   rtmp = f[2]
   integrator.fsalfirst = rtmp # Pre-start fsal
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = zero(integrator.fsalfirst)
 end
 
 @inline function perform_step!(integrator,cache::LawsonEulerConstantCache,f=integrator.f)
@@ -50,6 +55,11 @@ end
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   rtmp = f[2](integrator.t,integrator.uprev)
   integrator.fsalfirst = rtmp # Pre-start fsal
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = zero(integrator.fsalfirst)
 end
 
 @inline function perform_step!(integrator,cache::NorsettEulerConstantCache,f=integrator.f)

@@ -14,6 +14,11 @@ end
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.fsalfirst = f(integrator.t,integrator.uprev)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
 end
 
 @inline function perform_step!(integrator,cache::ImplicitEulerConstantCache,f=integrator.f)
@@ -148,6 +153,11 @@ end
   integrator.fsalfirst = f(integrator.t,integrator.uprev)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
 end
 
 @inline function perform_step!(integrator,cache::TrapezoidConstantCache,f=integrator.f)

@@ -2,6 +2,14 @@
   integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
   integrator.kshortsize = 9
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  @inbounds for i in 2:integrator.kshortsize-1
+    integrator.k[i] = zero(integrator.fsalfirst)
+  end
+  integrator.k[integrator.kshortsize] = integrator.fsallast
 end
 
 #=
@@ -153,6 +161,11 @@ end
   integrator.kshortsize = 10
   k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k = k
+
+  # Avoid undefined entries if k is an array of arrays
+  @inbounds for i in eachindex(integrator.k)
+    integrator.k[i] = zero(integrator.uprev)./oneunit(integrator.t)
+  end
 end
 
 #=
@@ -315,6 +328,11 @@ end
   integrator.kshortsize = 13
   k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k = k
+
+  # Avoid undefined entries if k is an array of arrays
+  @inbounds for i in eachindex(integrator.k)
+    integrator.k[i] = zero(integrator.uprev)./oneunit(integrator.t)
+  end
 end
 
 #=
@@ -505,6 +523,11 @@ end
   integrator.kshortsize = 16
   k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k = k
+
+  # Avoid undefined entries if k is an array of arrays
+  @inbounds for i in eachindex(integrator.k)
+    integrator.k[i] = zero(integrator.uprev)./oneunit(integrator.t)
+  end
 end
 
 #=
