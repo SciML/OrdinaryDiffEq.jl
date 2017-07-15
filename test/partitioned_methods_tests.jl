@@ -77,6 +77,9 @@ sim = test_convergence(dts,prob,CandyRoz4(),dense_errors=true)
 sim = test_convergence(dts,prob,McAte4(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
+sim = test_convergence(dts,prob,McAte42(),dense_errors=true)
+@test_broken sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
+@test_broken sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
 sim = test_convergence(dts,prob,CalvoSanz4(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1

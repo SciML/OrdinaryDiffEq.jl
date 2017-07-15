@@ -324,11 +324,11 @@ end
   end
 
   f[2](tnew,u,du,kdu)
-  #=
-  @tight_loop_macros for i in eachindex(du)
-    @inbounds du[i] += dt*a5*kdu[i]
+  if typeof(integrator.alg) <: McAte42
+    @tight_loop_macros for i in eachindex(du)
+      @inbounds du[i] += dt*a5*kdu[i]
+    end
   end
-  =#
   copy!(integrator.k[1].x[1],integrator.k[2].x[1])
   copy!(integrator.k[1].x[2],integrator.k[2].x[2])
   copy!(integrator.k[2].x[1],du)
