@@ -26,6 +26,11 @@ end
   A = integrator.f[1](integrator.t,integrator.u)
   cache.uhold[1] = f[2](integrator.t,integrator.uprev)
   integrator.fsalfirst = A*integrator.uprev + cache.uhold[1]
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsalfirst
 end
 
 @inline function perform_step!(integrator,cache::Union{IIF1ConstantCache,IIF2ConstantCache},f=integrator.f)

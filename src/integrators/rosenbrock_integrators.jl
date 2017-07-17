@@ -229,6 +229,11 @@ end
   k = eltype(integrator.sol.k)(2)
   integrator.k = k
   integrator.fsalfirst = f(integrator.t,integrator.uprev)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = zero(integrator.fsalfirst)
+  integrator.k[2] = zero(integrator.fsalfirst)
 end
 
 @inline function perform_step!(integrator,cache::Rosenbrock23ConstantCache,f=integrator.f)
@@ -267,6 +272,11 @@ end
   k = eltype(integrator.sol.k)(2)
   integrator.k = k
   integrator.fsalfirst = f(integrator.t,integrator.uprev)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = zero(integrator.fsalfirst)
+  integrator.k[2] = zero(integrator.fsalfirst)
 end
 
 @inline function perform_step!(integrator,cache::Rosenbrock32ConstantCache,f=integrator.f)
@@ -307,6 +317,11 @@ end
   k = eltype(integrator.sol.k)(2)
   integrator.k = k
   integrator.fsalfirst = f(integrator.t,integrator.uprev)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
 end
 
 @inline function perform_step!(integrator,cache::Rosenbrock33ConstantCache,f=integrator.f)
@@ -486,6 +501,11 @@ end
   k = eltype(integrator.sol.k)(2)
   integrator.k = k
   integrator.fsalfirst = f(integrator.t,integrator.uprev)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
 end
 
 @inline function perform_step!(integrator,cache::Rosenbrock34ConstantCache,f=integrator.f)
@@ -688,6 +708,11 @@ end
   k = eltype(integrator.sol.k)(2)
   integrator.k = k
   integrator.fsalfirst = f(integrator.t,integrator.uprev)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
 end
 
 @inline function perform_step!(integrator,cache::Rosenbrock4ConstantCache,f=integrator.f)
@@ -885,6 +910,11 @@ end
   k = eltype(integrator.sol.k)(2)
   integrator.k = k
   integrator.fsalfirst = f(integrator.t,integrator.uprev)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = zero(integrator.fsalfirst)
+  integrator.k[2] = zero(integrator.fsalfirst)
 end
 
 @inline function perform_step!(integrator,cache::Rodas4ConstantCache,f=integrator.f)
@@ -1188,6 +1218,11 @@ end
   k = eltype(integrator.sol.k)(2)
   integrator.k = k
   integrator.fsalfirst = f(integrator.t,integrator.uprev)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
 end
 
 @inline function perform_step!(integrator,cache::Rosenbrock5ConstantCache,f=integrator.f)
