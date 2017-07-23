@@ -61,6 +61,10 @@ immutable McAte8 <: OrdinaryDiffEqAlgorithm end
 immutable KahanLi8 <: OrdinaryDiffEqAlgorithm end
 immutable SofSpa10 <: OrdinaryDiffEqAlgorithm end
 
+# Nyström methods
+
+immutable Nystrom4 <: OrdinaryDiffEqAlgorithm end
+
 ################################################################################
 
 # Fully implicit methods

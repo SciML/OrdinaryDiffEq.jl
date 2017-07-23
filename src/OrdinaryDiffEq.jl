@@ -50,6 +50,7 @@ module OrdinaryDiffEq
   include("caches/linear_nonlinear_caches.jl")
   include("caches/symplectic_caches.jl")
   include("caches/rosenbrock_caches.jl")
+  include("caches/nystrom_caches.jl")
   include("tableaus/low_order_rk_tableaus.jl")
   include("tableaus/high_order_rk_tableaus.jl")
   include("tableaus/symplectic_tableaus.jl")
@@ -60,6 +61,7 @@ module OrdinaryDiffEq
   include("integrators/integrator_utils.jl")
   include("integrators/fixed_timestep_integrators.jl")
   include("integrators/symplectic_integrators.jl")
+  include("integrators/rkn_integrators.jl")
   include("integrators/split_integrators.jl")
   include("integrators/iif_integrators.jl")
   include("integrators/exponential_rk_integrators.jl")
@@ -123,4 +125,6 @@ module OrdinaryDiffEq
          CalvoSanz4, Yoshida6, KahanLi6, McAte8, KahanLi8, SofSpa10
 
   export SplitEuler
+
+  export Nystrom4
 end # module
