@@ -50,7 +50,7 @@ module OrdinaryDiffEq
   include("caches/linear_nonlinear_caches.jl")
   include("caches/symplectic_caches.jl")
   include("caches/rosenbrock_caches.jl")
-  include("caches/nystrom_caches.jl")
+  include("caches/rkn_caches.jl")
   include("tableaus/low_order_rk_tableaus.jl")
   include("tableaus/high_order_rk_tableaus.jl")
   include("tableaus/symplectic_tableaus.jl")
