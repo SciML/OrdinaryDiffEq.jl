@@ -27,7 +27,7 @@ end
   ku, kdu = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
   k₁ = fsalfirst
   halfdt = dt/2
-  dtsq = (dt^2)/2
+  dtsq = dt^2
   eighth_dtsq = dtsq/8
   half_dtsq = dtsq/2
   ttmp = t+halfdt
@@ -53,10 +53,10 @@ end
     @inbounds kdu[i] = muladd(dt,k₃.x[2][i],duprev[i])
   end
 
-  f[1](t+dt,ku,kdu,k₄.x[1])
+  # f[1](t+dt,ku,kdu,k₄.x[1])
   f[2](t+dt,ku,kdu,k₄.x[2])
   @tight_loop_macros for i in uidx
-    @inbounds u[i] = muladd(dt/6, k₁.x[1][i] + k₂.x[1][i] + k₃.x[1][i],uprev[i])
+    @inbounds u[i] = muladd(dt, duprev[i], muladd(dtsq/6, k₁.x[1][i] + k₂.x[1][i] + k₃.x[1][i],uprev[i]))
     @inbounds du[i] = muladd(dt/6,muladd(2,(k₂.x[2][i] + k₃.x[2][i]),k₁.x[2][i] + k₄.x[2][i]),duprev[i])
   end
   f[1](t+dt,ku,kdu,k.x[1])
