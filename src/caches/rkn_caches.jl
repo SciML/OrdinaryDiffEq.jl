@@ -26,3 +26,25 @@ end
 
 # alg_cache(alg::Nystrom4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = Nystrom4ConstantCache()
 
+immutable Nystrom4VelocityIndependentCache{uType,rateType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  fsalfirst::rateType
+  k₂::rateType
+  k₃::rateType
+  k::rateType
+  tmp::uType
+end
+
+u_cache(c::Nystrom4VelocityIndependentCache) = ()
+du_cache(c::Nystrom4VelocityIndependentCache) = (c.fsalfirst,c.k₂,c.k₃,c.k)
+
+function alg_cache(alg::Nystrom4VelocityIndependent,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+  k₁ = zeros(rate_prototype)
+  k₂ = zeros(rate_prototype)
+  k₃ = zeros(rate_prototype)
+  k  = zeros(rate_prototype)
+  tmp = similar(u)
+  Nystrom4VelocityIndependentCache(u,uprev,k₁,k₂,k₃,k,tmp)
+end
+

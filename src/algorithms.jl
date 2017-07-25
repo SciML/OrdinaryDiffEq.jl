@@ -64,6 +64,7 @@ immutable SofSpa10 <: OrdinaryDiffEqAlgorithm end
 # Nyström methods
 
 immutable Nystrom4 <: OrdinaryDiffEqAlgorithm end
+immutable Nystrom4VelocityIndependent <: OrdinaryDiffEqAlgorithm end
 
 ################################################################################
 
