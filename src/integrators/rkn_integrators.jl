@@ -22,7 +22,7 @@ end
   @unpack t,dt,k = integrator
   u,du = integrator.u.x
   uprev,duprev = integrator.uprev.x
-  uidx = eachindex(integrator.uprev)
+  uidx = eachindex(integrator.uprev.x[1])
   @unpack tmp,fsalfirst,k₂,k₃,k₄,k = cache
   ku, kdu = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
   k₁ = fsalfirst
