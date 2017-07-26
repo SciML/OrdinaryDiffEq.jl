@@ -15,7 +15,7 @@ function ode_determine_initdt{tType,uType}(u0,t::tType,tdir,dtmax,abstol,reltol,
 
   f(t,u0,f₀)
   if any((isnan(x) for x in f₀))
-    error("First function call produced NaNs. Exiting.")
+    warn("First function call produced NaNs. Exiting.")
   end
   #d₁ = internalnorm((f₀./sk*tType(1))/tType(1))
 
