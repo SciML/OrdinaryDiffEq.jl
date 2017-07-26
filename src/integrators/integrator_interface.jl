@@ -111,14 +111,14 @@ function deleteat!(integrator::ODEIntegrator,idxs)
   for c in user_cache(integrator)
     deleteat!(c,idxs)
   end
-  deleteat_non_user_cache!(integrator,cache,idxs)
+  deleteat_non_user_cache!(integrator,integrator.cache,idxs)
 end
 
 function addat!(integrator::ODEIntegrator,idxs)
   for c in user_cache(integrator)
     addat!(c,idxs)
   end
-  addat_non_user_cache!(integrator,cache,idxs)
+  addat_non_user_cache!(integrator,integrator.cache,idxs)
 end
 
 function terminate!(integrator::ODEIntegrator)
