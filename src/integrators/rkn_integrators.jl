@@ -95,24 +95,19 @@ end
   @tight_loop_macros for i in uidx
     ## y₁ = y₀ + hy'₀ + h²∑b̄ᵢk'ᵢ
     @inbounds ku[i] = muladd(halfdt, duprev[i], muladd(eighth_dtsq,k₁.x[2][i],uprev[i]))
-    ## y'₁ = y'₀ + h∑bᵢk'ᵢ
-    @inbounds kdu[i] = muladd(halfdt,k₁.x[2][i],duprev[i])
   end
 
-  # f[1](ttmp,ku,kdu,k₂.x[1])
-  f[2](ttmp,ku,kdu,k₂.x[2])
+  f[2](ttmp,ku,du,k₂.x[2])
   @tight_loop_macros for i in uidx
     @inbounds ku[i] = muladd(dt, duprev[i], muladd(half_dtsq,k₂.x[2][i],uprev[i]))
-    @inbounds kdu[i] = muladd(dt,k₂.x[2][i],duprev[i])
   end
 
-  # f[1](t+dt,ku,kdu,k₃.x[1])
-  f[2](t+dt,ku,kdu,k₃.x[2])
+  f[2](t+dt,ku,du,k₃.x[2])
   @tight_loop_macros for i in uidx
-      @inbounds u[i] = muladd(dt, duprev[i], muladd(dtsq/6, muladd(2, k₂.x[2][i], k₁.x[2][i]),uprev[i]))
+    @inbounds u[i] = muladd(dt, duprev[i], muladd(dtsq/6, muladd(2, k₂.x[2][i], k₁.x[2][i]),uprev[i]))
     @inbounds du[i] = muladd(dt/6,muladd(4, k₂.x[2][i], k₁.x[2][i] + k₃.x[2][i]),duprev[i])
   end
-  f[1](t+dt,ku,kdu,k.x[1])
-  f[2](t+dt,ku,kdu,k.x[2])
+  f[1](t+dt,ku,du,k.x[1])
+  f[2](t+dt,ku,du,k.x[2])
 end
 
