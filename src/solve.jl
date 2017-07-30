@@ -128,8 +128,11 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   # dtmin is all abs => does not care about sign already.
   if dt == zero(dt) && adaptive
     dt = tType(ode_determine_initdt(u,t,tdir,dtmax,abstol_internal,reltol_internal,internalnorm,prob,order))
-    if sign(dt)!=tdir && dt!=tType(0)
+    if sign(dt)!=tdir && dt!=tType(0) && !isnan(dt)
       error("Automatic dt setting has the wrong sign. Exiting. Please report this error.")
+    end
+    if isnan(dt)
+      warn("Automatic dt set the starting dt as NaN, causing instability.")
     end
   elseif adaptive && dt > zero(dt) && tdir < 0
     dt *= tdir # Allow positive dt, but auto-convert

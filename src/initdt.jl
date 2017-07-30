@@ -15,7 +15,7 @@
 
   f(t,u0,f₀)
   if any((isnan(x) for x in f₀))
-    error("First function call produced NaNs. Exiting.")
+    warn("First function call produced NaNs. Exiting.")
   end
   #d₁ = internalnorm((f₀./sk*tType(1))/tType(1))
 
@@ -48,7 +48,7 @@
   d₂ = internalnorm(tmp)/dt₀
   # Hairer has d₂ = sqrt(sum(abs2,tmp))/dt₀, note the lack of norm correction
   unitless_max = max(d₁/typeof(d₁)(one(d₁)),d₂/typeof(d₂)(one(d₂)))
-  if unitless_max<=1//10^(15)
+  if unitless_max<=1//Int64(10)^(15)
     dt₁ = max(tType(1//10^(6)),dt₀*1//10^(3))
   else
     dt₁ = tType(10.0^(-(2+log10(unitless_max))/(order)))
@@ -76,7 +76,7 @@ end
   u₁ = @. u0 + (tdir*dt₀)*f₀
   f₁ = f(t+tdir*dt₀,u₁)
   d₂ = internalnorm(@. (f₁-f₀)/(abstol+abs(u0)*reltol))/dt₀*tType(1)
-  if max(d₁,d₂) <= T1(1//10^(15))
+  if max(d₁,d₂) <= T1(1//Int64(10)^(15))
     dt₁ = max(tType(1//10^(6)),dt₀*1//10^(3))
   else
     dt₁ = tType(10.0^(-(2+log10(max(d₁,d₂)/T1(1)))/(order)))
