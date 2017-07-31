@@ -25,7 +25,7 @@ end
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   A = integrator.f[1](integrator.t,integrator.u)
   cache.uhold[1] = f[2](integrator.t,integrator.uprev)
-  integrator.fsalfirst = A*integrator.uprev + cache.uhold[1]
+  integrator.fsalfirst = A*integrator.uprev .+ cache.uhold[1]
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -33,7 +33,7 @@ end
   integrator.k[2] = integrator.fsalfirst
 end
 
-@inline function perform_step!(integrator,cache::Union{IIF1ConstantCache,IIF2ConstantCache},f=integrator.f)
+@inline @muladd function perform_step!(integrator,cache::Union{IIF1ConstantCache,IIF2ConstantCache},f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack uhold,rhs,nl_rhs = cache
 
@@ -42,7 +42,7 @@ end
   if typeof(cache) <: IIF1ConstantCache
     tmp = expm(A*dt)*(uprev)
   elseif typeof(cache) <: IIF2ConstantCache
-    tmp = expm(A*dt)*(uprev .+ 0.5dt.*uhold[1]) # This uhold only works for non-adaptive
+    tmp = expm(A*dt)*(@. uprev + 0.5dt*uhold[1]) # This uhold only works for non-adaptive
   end
 
   if integrator.iter > 1 && !integrator.u_modified
@@ -55,7 +55,7 @@ end
   nlres = integrator.alg.nlsolve(nl_rhs,uhold)
   uhold[1] = integrator.f[2](t+dt,nlres[1])
   u = nlres[1]
-  integrator.fsallast = A*u + uhold[1]
+  integrator.fsallast = A*u .+ uhold[1]
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   @pack integrator = t,dt,u
@@ -99,7 +99,7 @@ end
   A = integrator.f[1]
   f[2](integrator.t,integrator.uprev,cache.rtmp1)
   A_mul_B!(cache.k,A,integrator.uprev)
-  integrator.fsalfirst .= cache.k .+ cache.rtmp1
+  @. integrator.fsalfirst = cache.k + cache.rtmp1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
 end
@@ -111,7 +111,7 @@ end
 
   @. k = uprev
   if typeof(cache) <: IIF2Cache
-    @. k += 0.5dt*rtmp1
+    @. k = k + 0.5dt*rtmp1
   end
 
   A = integrator.f[1]
@@ -131,6 +131,6 @@ end
 
   copy!(u,nlres)
   integrator.f[2](t+dt,nlres,rtmp1)
-  integrator.fsallast .= A*u .+ rtmp1
+  integrator.fsallast = A*u .+ rtmp1
   @pack integrator = t,dt,u
 end
