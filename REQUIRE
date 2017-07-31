@@ -11,3 +11,4 @@ Roots 0.2.1
 DataStructures 0.4.6
 Compat 0.18.0
 Reexport
+MuladdMacro

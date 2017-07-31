@@ -7,6 +7,8 @@ module OrdinaryDiffEq
 
   using Compat
 
+  using MuladdMacro
+
   # Interfaces
   import DiffEqBase: solve, solve!, init, step!, build_solution, initialize!
 
