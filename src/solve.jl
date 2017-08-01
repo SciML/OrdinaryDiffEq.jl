@@ -43,11 +43,6 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   allow_extrapolation = alg_extrapolates(alg),
   initialize_integrator=true,kwargs...)
 
-  if save_timeseries != nothing
-    warn("save_timeseries is deprecated. Use save_everystep instead")
-    save_everystep = save_timeseries
-  end
-
   if typeof(prob.f)<:Tuple
     if min((mm != I for mm in prob.mass_matrix)...)
       error("This solver is not able to use mass matrices.")
@@ -132,7 +127,9 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
       error("Automatic dt setting has the wrong sign. Exiting. Please report this error.")
     end
     if isnan(dt)
-      warn("Automatic dt set the starting dt as NaN, causing instability.")
+      if verbose
+        warn("Automatic dt set the starting dt as NaN, causing instability.")
+      end
     end
   elseif adaptive && dt > zero(dt) && tdir < 0
     dt *= tdir # Allow positive dt, but auto-convert
