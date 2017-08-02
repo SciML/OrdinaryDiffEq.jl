@@ -119,3 +119,23 @@ u = ArrayPartition((u0,v0))
 prob = ODEProblem(f,u,(0.0,5.0))
 
 sol = solve(prob,Euler(),dt=1/100)
+
+################# Out of place symplectic
+
+using DiffEqBase, OrdinaryDiffEq, Base.Test, RecursiveArrayTools, DiffEqDevTools
+
+u0 = 0.0
+v0 = 1.0
+f1 = function (t,u,v)
+  v
+end
+f2 = function (t,u,v)
+  dv = -u
+end
+function (::typeof(f2))(::Type{Val{:analytic}}, x, y0)
+  u0, v0 = y0
+  ArrayPartition(u0*cos(x) + v0*sin(x), -u0*sin(x) + v0*cos(x))
+end
+
+prob = ODEProblem((f1,f2),(u0,v0),(0.0,5.0),iip=false)
+@test_broken sol = solve(prob,SymplecticEuler(),dt=1/2)
