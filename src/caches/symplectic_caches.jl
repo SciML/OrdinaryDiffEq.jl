@@ -55,7 +55,7 @@ function alg_cache(alg::VerletLeapfrog,u,rate_prototype,uEltypeNoUnits,tTypeNoUn
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
-  tab = VerletLeapfrogConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  tab = VerletLeapfrogConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
   Symplectic2Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
@@ -65,7 +65,7 @@ function alg_cache(alg::PseudoVerletLeapfrog,u,rate_prototype,uEltypeNoUnits,tTy
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
-  tab = PseudoVerletLeapfrogConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  tab = PseudoVerletLeapfrogConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
   Symplectic2Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
@@ -75,7 +75,7 @@ function alg_cache(alg::McAte2,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
-  tab = McAte2ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  tab = McAte2ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
   Symplectic2Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
@@ -97,7 +97,7 @@ function alg_cache(alg::Ruth3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
-  tab = Ruth3ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  tab = Ruth3ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
   Symplectic3Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
@@ -107,7 +107,7 @@ function alg_cache(alg::McAte3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
-  tab = McAte3ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  tab = McAte3ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
   Symplectic3Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
@@ -129,7 +129,7 @@ function alg_cache(alg::McAte4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
-  tab = McAte4ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  tab = McAte4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
   Symplectic4Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
@@ -139,7 +139,7 @@ function alg_cache(alg::CandyRoz4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,u
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
-  tab = CandyRoz4ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  tab = CandyRoz4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
   Symplectic4Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
@@ -161,7 +161,7 @@ function alg_cache(alg::CalvoSanz4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
-  tab = CalvoSanz4ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  tab = CalvoSanz4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
   Symplectic45Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
@@ -171,7 +171,7 @@ function alg_cache(alg::McAte42,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upr
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
-  tab = McAte42ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  tab = McAte42ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
   Symplectic45Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
@@ -193,7 +193,7 @@ function alg_cache(alg::McAte5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
-  tab = McAte5ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  tab = McAte5ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
   Symplectic5Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
@@ -215,7 +215,7 @@ function alg_cache(alg::Yoshida6,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,up
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
-  tab = Yoshida6ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  tab = Yoshida6ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
   Symplectic6Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
@@ -237,7 +237,7 @@ function alg_cache(alg::KahanLi6,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,up
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
-  tab = KahanLi6ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  tab = KahanLi6ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
   Symplectic62Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
@@ -259,7 +259,7 @@ function alg_cache(alg::McAte8,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
-  tab = McAte8ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  tab = McAte8ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
   McAte8Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
@@ -281,7 +281,7 @@ function alg_cache(alg::KahanLi8,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,up
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
-  tab = KahanLi8ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  tab = KahanLi8ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
   KahanLi8Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
@@ -303,7 +303,7 @@ function alg_cache(alg::SofSpa10,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,up
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
-  tab = SofSpa10ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  tab = SofSpa10ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
   SofSpa10Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 

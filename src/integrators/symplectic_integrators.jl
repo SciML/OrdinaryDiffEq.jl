@@ -1,6 +1,6 @@
 # http://www.chimica.unipd.it/antonino.polimeno/pubblica/downloads/JChemPhys_101_4062.pdf
 
-@inline function initialize!(integrator,cache::SymplecticEulerCache,f=integrator.f)
+@inline function initialize!(integrator,cache::SymplecticEulerConstantCache,f=integrator.f)
   integrator.kshortsize = 2
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
@@ -18,7 +18,7 @@
   integrator.k[1].x[1] = f[1](integrator.t,uprev,du)
 end
 
-@inline function perform_step!(integrator,cache::SymplecticEulerCache,f=integrator.f)
+@inline function perform_step!(integrator,cache::SymplecticEulerConstantCache,f=integrator.f)
   @unpack t,dt = integrator
   uprev,duprev = integrator.uprev.x
   u,du = integrator.u.x

@@ -137,5 +137,5 @@ function (::typeof(f2))(::Type{Val{:analytic}}, x, y0)
   ArrayPartition(u0*cos(x) + v0*sin(x), -u0*sin(x) + v0*cos(x))
 end
 
-prob = ODEProblem((f1,f2),(u0,v0),(0.0,5.0),iip=false)
+prob = ODEProblem((f1,f2),(u0,v0),(0.0,5.0)) # iip wrong
 @test_broken sol = solve(prob,SymplecticEuler(),dt=1/2)
