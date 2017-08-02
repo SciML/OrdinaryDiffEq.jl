@@ -77,6 +77,9 @@ sim = test_convergence(dts,prob,CandyRoz4(),dense_errors=true)
 sim = test_convergence(dts,prob,McAte4(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
+sim = test_convergence(dts,prob,McAte42(),dense_errors=true)
+@test_broken sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
+@test_broken sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
 sim = test_convergence(dts,prob,CalvoSanz4(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
@@ -124,3 +127,23 @@ u = ArrayPartition((u0,v0))
 prob = ODEProblem(f,u,(0.0,5.0))
 
 sol = solve(prob,Euler(),dt=1/100)
+
+################# Out of place symplectic
+
+using DiffEqBase, OrdinaryDiffEq, Base.Test, RecursiveArrayTools, DiffEqDevTools
+
+u0 = 0.0
+v0 = 1.0
+f1 = function (t,u,v)
+  v
+end
+f2 = function (t,u,v)
+  dv = -u
+end
+function (::typeof(f2))(::Type{Val{:analytic}}, x, y0)
+  u0, v0 = y0
+  ArrayPartition(u0*cos(x) + v0*sin(x), -u0*sin(x) + v0*cos(x))
+end
+
+prob = ODEProblem((f1,f2),(u0,v0),(0.0,5.0)) # iip wrong
+@test_broken sol = solve(prob,SymplecticEuler(),dt=1/2)

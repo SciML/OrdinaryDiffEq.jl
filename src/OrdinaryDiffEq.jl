@@ -7,11 +7,13 @@ module OrdinaryDiffEq
 
   using Compat
 
+  using MuladdMacro
+
   # Interfaces
   import DiffEqBase: solve, solve!, init, step!, build_solution, initialize!
 
   # Internal utils
-  import DiffEqBase: realtype, ODE_DEFAULT_NORM, ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE, ODE_DEFAULT_UNSTABLE_CHECK
+  import DiffEqBase: ODE_DEFAULT_NORM, ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE, ODE_DEFAULT_UNSTABLE_CHECK
 
   import RecursiveArrayTools: chain
 

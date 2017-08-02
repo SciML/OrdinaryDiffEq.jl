@@ -224,7 +224,7 @@ function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J);
   tmp = similar(u,indices(u))
-  tab = ROS3PConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  tab = ROS3PConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
   vf = VectorF(f,size(u))
   vfr = VectorFReturn(f,size(u))
   tf = TimeGradientWrapper(vf,uprev)
@@ -244,7 +244,7 @@ end
 function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
-  Rosenbrock33ConstantCache(tf,uf,ROS3PConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits)))
+  Rosenbrock33ConstantCache(tf,uf,ROS3PConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
 type Rosenbrock34Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,TabType,TFType,UFType,F,JCType} <: OrdinaryDiffEqMutableCache
@@ -291,7 +291,7 @@ function alg_cache(alg::Rodas3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J);
   tmp = similar(u,indices(u))
-  tab = Rodas3ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  tab = Rodas3ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
   vf = VectorF(f,size(u))
   vfr = VectorFReturn(f,size(u))
   tf = TimeGradientWrapper(vf,uprev)
@@ -317,7 +317,7 @@ end
 function alg_cache(alg::Rodas3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
-  Rosenbrock34ConstantCache(tf,uf,Rodas3ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits)))
+  Rosenbrock34ConstantCache(tf,uf,Rodas3ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
 
@@ -373,7 +373,7 @@ function alg_cache(alg::RosShamp4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,u
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J);
   tmp = similar(u,indices(u))
-  tab = RosShamp4ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  tab = RosShamp4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
   vf = VectorF(f,size(u))
   vfr = VectorFReturn(f,size(u))
   tf = TimeGradientWrapper(vf,uprev)
@@ -393,7 +393,7 @@ end
 function alg_cache(alg::RosShamp4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
-  Rosenbrock4ConstantCache(tf,uf,RosShamp4ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits)))
+  Rosenbrock4ConstantCache(tf,uf,RosShamp4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
 function alg_cache(alg::Veldd4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
@@ -410,7 +410,7 @@ function alg_cache(alg::Veldd4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J);
   tmp = similar(u,indices(u))
-  tab = Veldd4ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  tab = Veldd4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
   vf = VectorF(f,size(u))
   vfr = VectorFReturn(f,size(u))
   tf = TimeGradientWrapper(vf,uprev)
@@ -430,7 +430,7 @@ end
 function alg_cache(alg::Veldd4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
-  Rosenbrock4ConstantCache(tf,uf,Veldd4ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits)))
+  Rosenbrock4ConstantCache(tf,uf,Veldd4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
 function alg_cache(alg::Velds4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
@@ -447,7 +447,7 @@ function alg_cache(alg::Velds4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J);
   tmp = similar(u,indices(u))
-  tab = Velds4ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  tab = Velds4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
   vf = VectorF(f,size(u))
   vfr = VectorFReturn(f,size(u))
   tf = TimeGradientWrapper(vf,uprev)
@@ -467,7 +467,7 @@ end
 function alg_cache(alg::Velds4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
-  Rosenbrock4ConstantCache(tf,uf,Velds4ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits)))
+  Rosenbrock4ConstantCache(tf,uf,Velds4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
 function alg_cache(alg::GRK4T,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
@@ -484,7 +484,7 @@ function alg_cache(alg::GRK4T,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J);
   tmp = similar(u,indices(u))
-  tab = GRK4TConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  tab = GRK4TConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
   vf = VectorF(f,size(u))
   vfr = VectorFReturn(f,size(u))
   tf = TimeGradientWrapper(vf,uprev)
@@ -504,7 +504,7 @@ end
 function alg_cache(alg::GRK4T,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
-  Rosenbrock4ConstantCache(tf,uf,GRK4TConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits)))
+  Rosenbrock4ConstantCache(tf,uf,GRK4TConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
 function alg_cache(alg::GRK4A,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
@@ -521,7 +521,7 @@ function alg_cache(alg::GRK4A,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J);
   tmp = similar(u,indices(u))
-  tab = GRK4AConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  tab = GRK4AConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
   vf = VectorF(f,size(u))
   vfr = VectorFReturn(f,size(u))
   tf = TimeGradientWrapper(vf,uprev)
@@ -541,7 +541,7 @@ end
 function alg_cache(alg::GRK4A,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
-  Rosenbrock4ConstantCache(tf,uf,GRK4AConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits)))
+  Rosenbrock4ConstantCache(tf,uf,GRK4AConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
 function alg_cache(alg::Ros4LStab,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
@@ -558,7 +558,7 @@ function alg_cache(alg::Ros4LStab,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,u
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J);
   tmp = similar(u,indices(u))
-  tab = Ros4LStabConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  tab = Ros4LStabConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
   vf = VectorF(f,size(u))
   vfr = VectorFReturn(f,size(u))
   tf = TimeGradientWrapper(vf,uprev)
@@ -578,7 +578,7 @@ end
 function alg_cache(alg::Ros4LStab,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
-  Rosenbrock4ConstantCache(tf,uf,Ros4LStabConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits)))
+  Rosenbrock4ConstantCache(tf,uf,Ros4LStabConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
 ###############################################################################
@@ -643,7 +643,7 @@ function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J);
   tmp = similar(u,indices(u))
-  tab = Rodas4ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  tab = Rodas4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
   vf = VectorF(f,size(u))
   vfr = VectorFReturn(f,size(u))
   tf = TimeGradientWrapper(vf,uprev)
@@ -664,7 +664,7 @@ end
 function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
-  Rodas4ConstantCache(tf,uf,Rodas4ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits)))
+  Rodas4ConstantCache(tf,uf,Rodas4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
 function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
@@ -685,7 +685,7 @@ function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upr
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J);
   tmp = similar(u,indices(u))
-  tab = Rodas42ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  tab = Rodas42ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
   vf = VectorF(f,size(u))
   vfr = VectorFReturn(f,size(u))
   tf = TimeGradientWrapper(vf,uprev)
@@ -706,7 +706,7 @@ end
 function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
-  Rodas4ConstantCache(tf,uf,Rodas42ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits)))
+  Rodas4ConstantCache(tf,uf,Rodas42ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
 function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
@@ -727,7 +727,7 @@ function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upr
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J);
   tmp = similar(u,indices(u))
-  tab = Rodas4PConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  tab = Rodas4PConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
   vf = VectorF(f,size(u))
   vfr = VectorFReturn(f,size(u))
   tf = TimeGradientWrapper(vf,uprev)
@@ -748,7 +748,7 @@ end
 function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
-  Rodas4ConstantCache(tf,uf,Rodas4PConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits)))
+  Rodas4ConstantCache(tf,uf,Rodas4PConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
 ################################################################################
@@ -817,7 +817,7 @@ function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J);
   tmp = similar(u,indices(u))
-  tab = Rodas5ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits))
+  tab = Rodas5ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
   vf = VectorF(f,size(u))
   vfr = VectorFReturn(f,size(u))
   tf = TimeGradientWrapper(vf,uprev)
@@ -838,5 +838,5 @@ end
 function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
-  Rosenbrock5ConstantCache(tf,uf,Rodas5ConstantCache(realtype(uEltypeNoUnits),realtype(tTypeNoUnits)))
+  Rosenbrock5ConstantCache(tf,uf,Rodas5ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end

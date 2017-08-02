@@ -38,7 +38,7 @@ affect2! = function (integrator)
   end
 end
 
-save_positions = (false,true)
+save_positions = (true,true)
 
 cb2 = DiscreteCallback(condition2, affect2!, save_positions=save_positions)
 

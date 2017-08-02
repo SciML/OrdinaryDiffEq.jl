@@ -2,53 +2,14 @@
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.fsalfirst = f(integrator.t,integrator.uprev)
-end
 
-@inline function perform_step!(integrator,cache::ExplicitRKConstantCache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
-  @unpack A,c,α,αEEst,stages = cache
-  @unpack kk = cache
-  # Calc First
-  kk[1] = integrator.fsalfirst
-  # Calc Middle
-  for i = 2:stages-1
-    utilde = zero(kk[1])
-    for j = 1:i-1
-      utilde = @muladd utilde + A[j,i]*kk[j]
-    end
-    kk[i] = f(@muladd(t+c[i]*dt),@muladd(uprev+dt*utilde));
-  end
-  #Calc Last
-  utilde = zero(kk[1])
-  for j = 1:stages-1
-    utilde = @muladd utilde + A[j,end]*kk[j]
-  end
-  kk[end] = f(@muladd(t+c[end]*dt),@muladd(uprev+dt*utilde)); integrator.fsallast = kk[end] # Uses fsallast as temp even if not fsal
-  # Accumulate Result
-  utilde = α[1]*kk[1]
-  for i = 2:stages
-    utilde = @muladd utilde + α[i]*kk[i]
-  end
-  u = @muladd uprev + dt*utilde
-  if integrator.opts.adaptive
-    uEEst = αEEst[1]*kk[1]
-    for i = 2:stages
-      uEEst = @muladd uEEst + αEEst[i]*kk[i]
-    end
-    integrator.EEst = integrator.opts.internalnorm( dt*(utilde-uEEst)./@muladd(integrator.opts.abstol+max.(abs.(uprev),abs.(u)).*integrator.opts.reltol))
-  end
-  if isfsal(integrator.alg.tableau)
-    integrator.fsallast = kk[end]
-  else
-    integrator.fsallast = f(t+dt,u)
-  end
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  @pack integrator = t,dt,u
 end
 
-#=
-@inline function perform_step!(integrator,cache::ExplicitRKConstantCache,f=integrator.f)
+@inline @muladd function perform_step!(integrator,cache::ExplicitRKConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack A,c,α,αEEst,stages = cache
   @unpack kk = cache
@@ -58,28 +19,28 @@ end
   for i = 2:stages-1
     utilde = zero(kk[1])
     for j = 1:i-1
-      utilde = @. @muladd utilde + A[j,i]*kk[j]
+      utilde = @. utilde + A[j,i]*kk[j]
     end
-    kk[i] = f(@muladd(t+c[i]*dt),@muladd(uprev+dt*utilde));
+    kk[i] = f(t+c[i]*dt, @. uprev + dt*utilde);
   end
   #Calc Last
   utilde = zero(kk[1])
   for j = 1:stages-1
-    utilde = @. @muladd utilde + A[j,end]*kk[j]
+    utilde = @. utilde + A[j,end]*kk[j]
   end
-  kk[end] = f(@muladd(t+c[end]*dt),@muladd(uprev+dt*utilde)); integrator.fsallast = kk[end] # Uses fsallast as temp even if not fsal
+  kk[end] = f(t+c[end]*dt, @. uprev + dt*utilde); integrator.fsallast = kk[end] # Uses fsallast as temp even if not fsal
   # Accumulate Result
   utilde = α[1]*kk[1]
   for i = 2:stages
-    utilde = @. @muladd utilde + α[i]*kk[i]
+    utilde = @. utilde + α[i]*kk[i]
   end
-  u = @. @muladd uprev + dt*utilde
+  u = @. uprev + dt*utilde
   if integrator.opts.adaptive
     uEEst = αEEst[1]*kk[1]
     for i = 2:stages
-      uEEst = @. @muladd uEEst + αEEst[i]*kk[i]
+      uEEst = @. uEEst + αEEst[i]*kk[i]
     end
-    tmp = @. dt*(utilde-uEEst)./@muladd(integrator.opts.abstol+max.(abs.(uprev),abs.(u)).*integrator.opts.reltol)
+    tmp = @. dt*(utilde-uEEst)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
     integrator.EEst = integrator.opts.internalnorm(tmp)
   end
   if isfsal(integrator.alg.tableau)
@@ -91,7 +52,6 @@ end
   integrator.k[2] = integrator.fsallast
   @pack integrator = t,dt,u
 end
-=#
 
 @inline function initialize!(integrator,cache::ExplicitRKCache,f=integrator.f)
   integrator.kshortsize = 2
@@ -104,7 +64,7 @@ end
 end
 
 #=
-@inline function perform_step!(integrator,cache::ExplicitRKCache,f=integrator.f)
+@inline @muladd function perform_step!(integrator,cache::ExplicitRKCache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   @unpack A,c,α,αEEst,stages = cache.tab
   @unpack kk,utilde,tmp,atmp,uEEst = cache
@@ -112,32 +72,32 @@ end
   for i = 2:stages-1
     @. utilde = zero(kk[1][1])
     for j = 1:i-1
-      @. utilde = @muladd utilde + A[j,i]*kk[j]
+      @. utilde = utilde + A[j,i]*kk[j]
     end
-    @. tmp = @muladd uprev+dt*utilde
-    f(@muladd(t+c[i]*dt),tmp,kk[i])
+    @. tmp = uprev+dt*utilde
+    f(t+c[i]*dt,tmp,kk[i])
   end
   #Last
   @. utilde = zero(kk[1][1])
   for j = 1:stages-1
-    @. utilde = @muladd utilde + A[j,end]*kk[j]
+    @. utilde = utilde + A[j,end]*kk[j]
   end
-  @. u = @muladd uprev+dt*utilde
-  f(@muladd(t+c[end]*dt),u,kk[end]) #fsallast is tmp even if not fsal
+  @. u = uprev+dt*utilde
+  f(t+c[end]*dt),u,kk[end]) #fsallast is tmp even if not fsal
   #Accumulate
   if !isfsal(integrator.alg.tableau)
     @. utilde = α[1]*kk[1]
     for i = 2:stages
-      @. utilde = @muladd utilde + α[i]*kk[i]
+      @. utilde = utilde + α[i]*kk[i]
     end
-    @. u = @muladd uprev + dt*utilde
+    @. u = uprev + dt*utilde
   end
   if integrator.opts.adaptive
     @. uEEst = αEEst[1]*kk[1]
     for i = 2:stages
-      @. uEEst = @muladd uEEst + αEEst[i]*kk[i]
+      @. uEEst = uEEst + αEEst[i]*kk[i]
     end
-    @. atmp = (dt*(utilde-uEEst)/@muladd(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+    @. atmp = (dt*(utilde-uEEst)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   if !isfsal(integrator.alg.tableau)
@@ -147,7 +107,7 @@ end
 end
 =#
 
-@inline function perform_step!(integrator,cache::ExplicitRKCache,f=integrator.f)
+@inline @muladd function perform_step!(integrator,cache::ExplicitRKCache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   uidx = eachindex(integrator.uprev)
   @unpack A,c,α,αEEst,stages = cache.tab
@@ -159,13 +119,13 @@ end
     end
     for j = 1:i-1
       @tight_loop_macros for l in uidx
-        @inbounds utilde[l] = @muladd utilde[l] + A[j,i]*kk[j][l]
+        @inbounds utilde[l] = utilde[l] + A[j,i]*kk[j][l]
       end
     end
     @tight_loop_macros for l in uidx
-      @inbounds tmp[l] = @muladd uprev[l]+dt*utilde[l]
+      @inbounds tmp[l] = uprev[l]+dt*utilde[l]
     end
-    f(@muladd(t+c[i]*dt),tmp,kk[i])
+    f(t+c[i]*dt,tmp,kk[i])
   end
   #Last
   @tight_loop_macros for l in uidx
@@ -173,13 +133,13 @@ end
   end
   for j = 1:stages-1
     @tight_loop_macros for l in uidx
-      @inbounds utilde[l] = @muladd utilde[l] + A[j,end]*kk[j][l]
+      @inbounds utilde[l] = utilde[l] + A[j,end]*kk[j][l]
     end
   end
   @tight_loop_macros for l in uidx
-    @inbounds u[l] = @muladd uprev[l]+dt*utilde[l]
+    @inbounds u[l] = uprev[l]+dt*utilde[l]
   end
-  f(@muladd(t+c[end]*dt),u,kk[end]) #fsallast is tmp even if not fsal
+  f(t+c[end]*dt,u,kk[end]) #fsallast is tmp even if not fsal
   #Accumulate
   if !isfsal(integrator.alg.tableau)
     @tight_loop_macros for i in uidx
@@ -187,11 +147,11 @@ end
     end
     for i = 2:stages
       @tight_loop_macros for l in uidx
-        @inbounds utilde[l] = @muladd utilde[l] + α[i]*kk[i][l]
+        @inbounds utilde[l] = utilde[l] + α[i]*kk[i][l]
       end
     end
     @tight_loop_macros for i in uidx
-      @inbounds u[i] = @muladd uprev[i] + dt*utilde[i]
+      @inbounds u[i] = uprev[i] + dt*utilde[i]
     end
   end
   if integrator.opts.adaptive
@@ -200,11 +160,11 @@ end
     end
     for i = 2:stages
       @tight_loop_macros for j in uidx
-        @inbounds uEEst[j] = @muladd uEEst[j] + αEEst[i]*kk[i][j]
+        @inbounds uEEst[j] = uEEst[j] + αEEst[i]*kk[i][j]
       end
     end
     @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
-      @inbounds atmp[i] = (dt*(utilde[i]-uEEst[i])./@muladd(atol+max(abs(uprev[i]),abs(u[i])).*rtol))
+      @inbounds atmp[i] = dt*(utilde[i]-uEEst[i])/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end

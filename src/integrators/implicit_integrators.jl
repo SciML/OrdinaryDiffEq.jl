@@ -14,6 +14,11 @@ end
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.fsalfirst = f(integrator.t,integrator.uprev)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
 end
 
 @inline function perform_step!(integrator,cache::ImplicitEulerConstantCache,f=integrator.f)
@@ -97,7 +102,7 @@ function (p::RHS_Trap)(uprev,resid)
   p.f(p.t+p.dt,reshape(uprev,p.sizeu),du1)
   #@. resid = @muladd uprev - p.u_old - (p.dt/2)*(du1+p.f_old)
   @tight_loop_macros for i in p.uidx
-    @inbounds resid[i] = @muladd uprev[i] - p.u_old[i] - (p.dt/2)*(du1[i]+p.f_old[i])
+    @inbounds resid[i] = uprev[i] - p.u_old[i] - (p.dt/2)*(du1[i]+p.f_old[i])
   end
 end
 
@@ -148,6 +153,11 @@ end
   integrator.fsalfirst = f(integrator.t,integrator.uprev)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
 end
 
 @inline function perform_step!(integrator,cache::TrapezoidConstantCache,f=integrator.f)
