@@ -67,7 +67,7 @@ du_cache(c::Rosenbrock32Cache) = (c.k₁,c.k₂,c.k₃,c.du1,c.du2,c.f₁,c.fsal
 jac_cache(c::Rosenbrock32Cache) = (c.J,c.W)
 vecu_cache(c::Rosenbrock32Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
 
-function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   k₁ = zeros(rate_prototype)
   k₂ = zeros(rate_prototype)
   k₃ = zeros(rate_prototype)
@@ -102,7 +102,7 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,tTypeNoUnit
                     linsolve_tmp_vec,alg.linsolve,jac_config)
 end
 
-function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   k₁ = zeros(rate_prototype)
   k₂ = zeros(rate_prototype)
   k₃ = zeros(rate_prototype)
@@ -146,7 +146,7 @@ function Rosenbrock23ConstantCache(T::Type,tf,uf)
   Rosenbrock23ConstantCache(c₃₂,d,tf,uf)
 end
 
-function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
+function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}})
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
   Rosenbrock23ConstantCache(uEltypeNoUnits,tf,uf)
@@ -165,7 +165,7 @@ function Rosenbrock32ConstantCache(T::Type,tf,uf)
   Rosenbrock32ConstantCache(c₃₂,d,tf,uf)
 end
 
-function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
+function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}})
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
   Rosenbrock32ConstantCache(uEltypeNoUnits,tf,uf)
@@ -211,7 +211,7 @@ du_cache(c::Rosenbrock33Cache) = (c.k₁,c.k₂,c.k₃,c.du1,c.du2,c.f₁,c.fsal
 jac_cache(c::Rosenbrock33Cache) = (c.J,c.W)
 vecu_cache(c::Rosenbrock33Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
 
-function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   du = zeros(rate_prototype)
   du1 = zeros(rate_prototype)
   du2 = zeros(rate_prototype)
@@ -242,7 +242,7 @@ function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev
                     linsolve_tmp_vec,alg.linsolve,jac_config)
 end
 
-function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
+function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}})
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
   Rosenbrock33ConstantCache(tf,uf,ROS3PConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
@@ -278,7 +278,7 @@ du_cache(c::Rosenbrock34Cache) = (c.k₁,c.k₂,c.k₃,c.du1,c.du2,c.f₁,c.fsal
 jac_cache(c::Rosenbrock34Cache) = (c.J,c.W)
 vecu_cache(c::Rosenbrock34Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
 
-function alg_cache(alg::Rodas3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::Rodas3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   du = zeros(rate_prototype)
   du1 = zeros(rate_prototype)
   du2 = zeros(rate_prototype)
@@ -315,7 +315,7 @@ struct Rosenbrock34ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
   tab::Tab
 end
 
-function alg_cache(alg::Rodas3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
+function alg_cache(alg::Rodas3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}})
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
   Rosenbrock34ConstantCache(tf,uf,Rodas3ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
@@ -360,7 +360,7 @@ du_cache(c::Rosenbrock4Cache) = (c.k₁,c.k₂,c.k₃,c.du1,c.du2,c.f₁,c.fsalf
 jac_cache(c::Rosenbrock4Cache) = (c.J,c.W)
 vecu_cache(c::Rosenbrock4Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
 
-function alg_cache(alg::RosShamp4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::RosShamp4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   du = zeros(rate_prototype)
   du1 = zeros(rate_prototype)
   du2 = zeros(rate_prototype)
@@ -391,13 +391,13 @@ function alg_cache(alg::RosShamp4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,u
                     linsolve_tmp_vec,alg.linsolve,jac_config)
 end
 
-function alg_cache(alg::RosShamp4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
+function alg_cache(alg::RosShamp4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}})
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
   Rosenbrock4ConstantCache(tf,uf,RosShamp4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
-function alg_cache(alg::Veldd4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::Veldd4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   du = zeros(rate_prototype)
   du1 = zeros(rate_prototype)
   du2 = zeros(rate_prototype)
@@ -428,13 +428,13 @@ function alg_cache(alg::Veldd4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
                     linsolve_tmp_vec,alg.linsolve,jac_config)
 end
 
-function alg_cache(alg::Veldd4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
+function alg_cache(alg::Veldd4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}})
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
   Rosenbrock4ConstantCache(tf,uf,Veldd4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
-function alg_cache(alg::Velds4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::Velds4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   du = zeros(rate_prototype)
   du1 = zeros(rate_prototype)
   du2 = zeros(rate_prototype)
@@ -465,13 +465,13 @@ function alg_cache(alg::Velds4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
                     linsolve_tmp_vec,alg.linsolve,jac_config)
 end
 
-function alg_cache(alg::Velds4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
+function alg_cache(alg::Velds4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}})
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
   Rosenbrock4ConstantCache(tf,uf,Velds4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
-function alg_cache(alg::GRK4T,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::GRK4T,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   du = zeros(rate_prototype)
   du1 = zeros(rate_prototype)
   du2 = zeros(rate_prototype)
@@ -502,13 +502,13 @@ function alg_cache(alg::GRK4T,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev
                     linsolve_tmp_vec,alg.linsolve,jac_config)
 end
 
-function alg_cache(alg::GRK4T,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
+function alg_cache(alg::GRK4T,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}})
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
   Rosenbrock4ConstantCache(tf,uf,GRK4TConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
-function alg_cache(alg::GRK4A,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::GRK4A,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   du = zeros(rate_prototype)
   du1 = zeros(rate_prototype)
   du2 = zeros(rate_prototype)
@@ -539,13 +539,13 @@ function alg_cache(alg::GRK4A,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev
                     linsolve_tmp_vec,alg.linsolve,jac_config)
 end
 
-function alg_cache(alg::GRK4A,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
+function alg_cache(alg::GRK4A,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}})
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
   Rosenbrock4ConstantCache(tf,uf,GRK4AConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
-function alg_cache(alg::Ros4LStab,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::Ros4LStab,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   du = zeros(rate_prototype)
   du1 = zeros(rate_prototype)
   du2 = zeros(rate_prototype)
@@ -576,7 +576,7 @@ function alg_cache(alg::Ros4LStab,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,u
                     linsolve_tmp_vec,alg.linsolve,jac_config)
 end
 
-function alg_cache(alg::Ros4LStab,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
+function alg_cache(alg::Ros4LStab,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}})
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
   Rosenbrock4ConstantCache(tf,uf,Ros4LStabConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
@@ -626,7 +626,7 @@ du_cache(c::Rodas4Cache) = (c.k₁,c.k₂,c.k₃,c.du1,c.du2,c.f₁,c.fsalfirst,
 jac_cache(c::Rodas4Cache) = (c.J,c.W)
 vecu_cache(c::Rodas4Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
 
-function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   dense1 = zeros(rate_prototype)
   dense2 = zeros(rate_prototype)
   du = zeros(rate_prototype)
@@ -662,13 +662,13 @@ function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
                     linsolve_tmp_vec,alg.linsolve,jac_config)
 end
 
-function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
+function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}})
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
   Rodas4ConstantCache(tf,uf,Rodas4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
-function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   dense1 = zeros(rate_prototype)
   dense2 = zeros(rate_prototype)
   du = zeros(rate_prototype)
@@ -704,13 +704,13 @@ function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upr
                     linsolve_tmp_vec,alg.linsolve,jac_config)
 end
 
-function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
+function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}})
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
   Rodas4ConstantCache(tf,uf,Rodas42ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
-function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   dense1 = zeros(rate_prototype)
   dense2 = zeros(rate_prototype)
   du = zeros(rate_prototype)
@@ -746,7 +746,7 @@ function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upr
                     linsolve_tmp_vec,alg.linsolve,jac_config)
 end
 
-function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
+function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}})
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
   Rodas4ConstantCache(tf,uf,Rodas4PConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
@@ -798,7 +798,7 @@ du_cache(c::Rosenbrock5Cache) = (c.k₁,c.k₂,c.k₃,c.du1,c.du2,c.f₁,c.fsalf
 jac_cache(c::Rosenbrock5Cache) = (c.J,c.W)
 vecu_cache(c::Rosenbrock5Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
 
-function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   dense1 = zeros(rate_prototype)
   dense2 = zeros(rate_prototype)
   du = zeros(rate_prototype)
@@ -836,7 +836,7 @@ function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
                     linsolve_tmp_vec,alg.linsolve,jac_config)
 end
 
-function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
+function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}})
   tf = TimeDerivativeWrapper(f,u)
   uf = UDerivativeWrapper(f,t)
   Rosenbrock5ConstantCache(tf,uf,Rodas5ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))

@@ -6,7 +6,7 @@ struct SymplecticEulerCache{uType,rateType} <: OrdinaryDiffEqMutableCache
   fsalfirst::rateType
 end
 
-function alg_cache(alg::SymplecticEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::SymplecticEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   SymplecticEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype))
 end
 
@@ -15,7 +15,7 @@ du_cache(c::SymplecticEulerCache) = (c.k,c.fsalfirst)
 
 struct SymplecticEulerConstantCache <: OrdinaryDiffEqConstantCache end
 
-alg_cache(alg::SymplecticEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = SymplecticEulerConstantCache()
+alg_cache(alg::SymplecticEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = SymplecticEulerConstantCache()
 
 struct VelocityVerletCache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -30,14 +30,14 @@ du_cache(c::VelocityVerletCache) = (c.k,c.fsalfirst)
 
 struct VelocityVerletConstantCache <: OrdinaryDiffEqConstantCache end
 
-function alg_cache(alg::VelocityVerlet,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::VelocityVerlet,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   tmp = zeros(rate_prototype)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
   VelocityVerletCache(u,uprev,k,tmp,fsalfirst)
 end
 
-alg_cache(alg::VelocityVerlet,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = VelocityVerletConstantCache()
+alg_cache(alg::VelocityVerlet,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = VelocityVerletConstantCache()
 
 struct Symplectic2Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -51,7 +51,7 @@ end
 u_cache(c::Symplectic2Cache) = ()
 du_cache(c::Symplectic2Cache) = (c.k,c.fsalfirst)
 
-function alg_cache(alg::VerletLeapfrog,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::VerletLeapfrog,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
@@ -59,9 +59,9 @@ function alg_cache(alg::VerletLeapfrog,u,rate_prototype,uEltypeNoUnits,tTypeNoUn
   Symplectic2Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
-alg_cache(alg::VerletLeapfrog,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = VerletLeapfrogConstantCache()
+alg_cache(alg::VerletLeapfrog,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = VerletLeapfrogConstantCache()
 
-function alg_cache(alg::PseudoVerletLeapfrog,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::PseudoVerletLeapfrog,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
@@ -69,9 +69,9 @@ function alg_cache(alg::PseudoVerletLeapfrog,u,rate_prototype,uEltypeNoUnits,tTy
   Symplectic2Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
-alg_cache(alg::PseudoVerletLeapfrog,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = PseudoVerletLeapfrogConstantCache()
+alg_cache(alg::PseudoVerletLeapfrog,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = PseudoVerletLeapfrogConstantCache()
 
-function alg_cache(alg::McAte2,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::McAte2,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
@@ -79,7 +79,7 @@ function alg_cache(alg::McAte2,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   Symplectic2Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
-alg_cache(alg::McAte2,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = McAte2ConstantCache()
+alg_cache(alg::McAte2,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = McAte2ConstantCache()
 
 struct Symplectic3Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -93,7 +93,7 @@ end
 u_cache(c::Symplectic3Cache) = ()
 du_cache(c::Symplectic3Cache) = (c.k,c.fsalfirst)
 
-function alg_cache(alg::Ruth3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::Ruth3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
@@ -101,9 +101,9 @@ function alg_cache(alg::Ruth3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev
   Symplectic3Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
-alg_cache(alg::Ruth3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = Ruth3ConstantCache()
+alg_cache(alg::Ruth3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = Ruth3ConstantCache()
 
-function alg_cache(alg::McAte3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::McAte3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
@@ -111,7 +111,7 @@ function alg_cache(alg::McAte3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   Symplectic3Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
-alg_cache(alg::McAte3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = McAte3ConstantCache()
+alg_cache(alg::McAte3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = McAte3ConstantCache()
 
 struct Symplectic4Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -125,7 +125,7 @@ end
 u_cache(c::Symplectic4Cache) = ()
 du_cache(c::Symplectic4Cache) = (c.k,c.fsalfirst)
 
-function alg_cache(alg::McAte4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::McAte4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
@@ -133,9 +133,9 @@ function alg_cache(alg::McAte4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   Symplectic4Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
-alg_cache(alg::McAte4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = McAte4ConstantCache()
+alg_cache(alg::McAte4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = McAte4ConstantCache()
 
-function alg_cache(alg::CandyRoz4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::CandyRoz4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
@@ -143,7 +143,7 @@ function alg_cache(alg::CandyRoz4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,u
   Symplectic4Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
-alg_cache(alg::CandyRoz4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = McAte4ConstantCache()
+alg_cache(alg::CandyRoz4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = McAte4ConstantCache()
 
 struct Symplectic45Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -157,7 +157,7 @@ end
 u_cache(c::Symplectic45Cache) = ()
 du_cache(c::Symplectic45Cache) = (c.k,c.fsalfirst)
 
-function alg_cache(alg::CalvoSanz4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::CalvoSanz4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
@@ -165,9 +165,9 @@ function alg_cache(alg::CalvoSanz4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
   Symplectic45Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
-alg_cache(alg::CalvoSanz4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = CalvoSanz4ConstantCache()
+alg_cache(alg::CalvoSanz4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = CalvoSanz4ConstantCache()
 
-function alg_cache(alg::McAte42,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::McAte42,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
@@ -175,7 +175,7 @@ function alg_cache(alg::McAte42,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upr
   Symplectic45Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
-alg_cache(alg::McAte42,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = McAte42ConstantCache()
+alg_cache(alg::McAte42,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = McAte42ConstantCache()
 
 struct Symplectic5Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -189,7 +189,7 @@ end
 u_cache(c::Symplectic5Cache) = ()
 du_cache(c::Symplectic5Cache) = (c.k,c.fsalfirst)
 
-function alg_cache(alg::McAte5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::McAte5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
@@ -197,7 +197,7 @@ function alg_cache(alg::McAte5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   Symplectic5Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
-alg_cache(alg::McAte5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = McAte5ConstantCache()
+alg_cache(alg::McAte5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = McAte5ConstantCache()
 
 struct Symplectic6Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -211,7 +211,7 @@ end
 u_cache(c::Symplectic6Cache) = ()
 du_cache(c::Symplectic6Cache) = (c.k,c.fsalfirst)
 
-function alg_cache(alg::Yoshida6,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::Yoshida6,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
@@ -219,7 +219,7 @@ function alg_cache(alg::Yoshida6,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,up
   Symplectic6Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
-alg_cache(alg::Yoshida6,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = Yoshida6ConstantCache()
+alg_cache(alg::Yoshida6,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = Yoshida6ConstantCache()
 
 struct Symplectic62Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -233,7 +233,7 @@ end
 u_cache(c::Symplectic62Cache) = ()
 du_cache(c::Symplectic62Cache) = (c.k,c.fsalfirst)
 
-function alg_cache(alg::KahanLi6,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::KahanLi6,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
@@ -241,7 +241,7 @@ function alg_cache(alg::KahanLi6,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,up
   Symplectic62Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
-alg_cache(alg::KahanLi6,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = KahanLi6ConstantCache()
+alg_cache(alg::KahanLi6,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = KahanLi6ConstantCache()
 
 struct McAte8Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -255,7 +255,7 @@ end
 u_cache(c::McAte8Cache) = ()
 du_cache(c::McAte8Cache) = (c.k,c.fsalfirst)
 
-function alg_cache(alg::McAte8,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::McAte8,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
@@ -263,7 +263,7 @@ function alg_cache(alg::McAte8,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   McAte8Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
-alg_cache(alg::McAte8,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = McAte8ConstantCache()
+alg_cache(alg::McAte8,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = McAte8ConstantCache()
 
 struct KahanLi8Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -277,7 +277,7 @@ end
 u_cache(c::KahanLi8Cache) = ()
 du_cache(c::KahanLi8Cache) = (c.k,c.fsalfirst)
 
-function alg_cache(alg::KahanLi8,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::KahanLi8,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
@@ -285,7 +285,7 @@ function alg_cache(alg::KahanLi8,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,up
   KahanLi8Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
-alg_cache(alg::KahanLi8,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = KahanLi8ConstantCache()
+alg_cache(alg::KahanLi8,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = KahanLi8ConstantCache()
 
 struct SofSpa10Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -299,7 +299,7 @@ end
 u_cache(c::SofSpa10Cache) = ()
 du_cache(c::SofSpa10Cache) = (c.k,c.fsalfirst)
 
-function alg_cache(alg::SofSpa10,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::SofSpa10,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
@@ -307,4 +307,4 @@ function alg_cache(alg::SofSpa10,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,up
   SofSpa10Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
-alg_cache(alg::SofSpa10,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = SofSpa10ConstantCache()
+alg_cache(alg::SofSpa10,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = SofSpa10ConstantCache()

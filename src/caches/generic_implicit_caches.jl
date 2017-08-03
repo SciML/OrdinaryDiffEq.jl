@@ -17,7 +17,7 @@ du_cache(c::GenericImplicitEulerCache)   = (c.k,c.fsalfirst)
 vecu_cache(c::GenericImplicitEulerCache) = (c.uhold,)
 dual_cache(c::GenericImplicitEulerCache) = (c.dual_cache,)
 
-function alg_cache(alg::GenericImplicitEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::GenericImplicitEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   tmp = similar(u)
   C = vec(tmp); k = zeros(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
@@ -39,7 +39,7 @@ struct GenericImplicitEulerConstantCache{vecuType,rhsType,nl_rhsType} <: Ordinar
 end
 
 function alg_cache(alg::GenericImplicitEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,::Type{Val{false}})
+                   uprev,uprev2,f,t,reltol,::Type{Val{false}})
   uhold = Vector{typeof(u)}(1)
   C = Vector{typeof(u)}(1)
   rhs = ImplicitRHS_Scalar(f,C,t,t,t)
@@ -66,7 +66,7 @@ du_cache(c::GenericTrapezoidCache)   = (c.k,c.fsalfirst)
 vecu_cache(c::GenericTrapezoidCache) = (c.uhold,)
 dual_cache(c::GenericTrapezoidCache) = (c.dual_cache,)
 
-function alg_cache(alg::GenericTrapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::GenericTrapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   tmp = similar(u)
   C = vec(tmp); k = zeros(rate_prototype)
   uhold = vec(u); fsalfirst = zeros(rate_prototype)
@@ -85,7 +85,7 @@ struct GenericTrapezoidConstantCache{vecuType,rhsType,nl_rhsType} <: OrdinaryDif
   nl_rhs::nl_rhsType
 end
 
-function alg_cache(alg::GenericTrapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}})
+function alg_cache(alg::GenericTrapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}})
   uhold = Vector{typeof(u)}(1)
   C = Vector{typeof(u)}(1)
   rhs = ImplicitRHS_Scalar(f,C,t,t,t)

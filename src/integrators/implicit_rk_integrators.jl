@@ -27,8 +27,8 @@ end
   end
   z = u - uprev
   iter = 0
-  κ = 1e-2
-  tol = min(0.03,first(integrator.opts.reltol)^(0.5))
+  κ = cache.κ
+  tol = cache.tol
 
   iter += 1
   b = -z + dt*f(t+dt,uprev + z)
@@ -106,8 +106,8 @@ end
 
   @. z = u - uprev
   iter = 0
-  κ = 1e-2
-  tol = min(0.03,first(integrator.opts.reltol)^(0.5))
+  κ = cache.κ
+  tol = cache.tol
 
   iter += 1
   f(t+dt,u,k)
@@ -185,8 +185,8 @@ end
   end
   z = u - uprev
   iter = 0
-  κ = 1e-2
-  tol = min(0.03,first(integrator.opts.reltol)^(0.5))
+  κ = cache.κ
+  tol = cache.tol
 
   iter += 1
   b = -z + dto2*f(t+dt,uprev + z)
@@ -264,8 +264,8 @@ end
 
   @. z = u - uprev
   iter = 0
-  κ = 1e-2
-  tol = min(0.03,first(integrator.opts.reltol)^(0.5))
+  κ = cache.κ
+  tol = cache.tol
 
   iter += 1
   f(t+dto2,u,k)
