@@ -21,7 +21,7 @@ end
 
 function (p::ImplicitRHS)(u,resid)
   du1 = get_du(p.dual_cache, eltype(u))
-  p.f(p.t+p.dt,reshape(uprev,size(du1)),du1)
+  p.f(p.t+p.dt,reshape(u,size(du1)),du1)
   vecdu1 = vec(du1)
   @. resid = u - p.C - p.a*vecdu1
 end
