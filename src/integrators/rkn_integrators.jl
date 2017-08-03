@@ -41,13 +41,13 @@ end
 
   f[2](ttmp,ku,kdu,k₂.x[2])
   @tight_loop_macros for i in uidx
-    @inbounds ku[i]  = @muladd uprev[i] + halfdt*duprev[i] + eighth_dtsq*k₁.x[1][i]
+    @inbounds ku[i]  = @muladd uprev[i] + halfdt*duprev[i] + eighth_dtsq*k₁.x[2][i]
     @inbounds kdu[i] = @muladd duprev[i] + halfdt*k₂.x[2][i]
   end
 
   f[2](ttmp,ku,kdu,k₃.x[2])
   @tight_loop_macros for i in uidx
-    @inbounds ku[i]  = @muladd uprev[i] + dt*duprev[i] + half_dtsq*k₃.x[1][i]
+    @inbounds ku[i]  = @muladd uprev[i] + dt*duprev[i] + half_dtsq*k₃.x[2][i]
     @inbounds kdu[i] = @muladd duprev[i] + dt*k₃.x[2][i]
   end
 
@@ -107,4 +107,3 @@ end
   f[1](t+dt,ku,du,k.x[1])
   f[2](t+dt,ku,du,k.x[2])
 end
-
