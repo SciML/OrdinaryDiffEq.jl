@@ -36,3 +36,10 @@ for i = 1:2
   sim132 = test_convergence(dts,prob,GenericTrapezoid(nlsolve=NLSOLVEJL_SETUP(autodiff=false)))
   @test abs(sim132.𝒪est[:final]-2) < testTol
 end
+
+prob = prob_ode_linear
+dts = 1.//2.^(8:-1:4)
+sim12 = test_convergence(dts,prob,ImplicitEuler())
+@test abs(sim12.𝒪est[:final]-1) < testTol
+sim13 = test_convergence(dts,prob,Trapezoid())
+@test abs(sim13.𝒪est[:final]-2) < testTol
