@@ -14,6 +14,7 @@ mutable struct ImplicitEulerCache{uType,rateType,J,JC,UF,uEltypeNoUnits} <: Ordi
   ηold::uEltypeNoUnits
   κ::uEltypeNoUnits
   tol::uEltypeNoUnits
+  newton_iters::Int
 end
 
 u_cache(c::ImplicitEulerCache)    = (c.uprev2,c.z,c.dz)
@@ -49,7 +50,7 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,
   else
     tol = min(0.03,first(reltol)^(0.5))
   end
-  ImplicitEulerCache(u,uprev,uprev2,du1,fsalfirst,k,z,dz,J,W,jac_config,uf,ηold,κ,tol)
+  ImplicitEulerCache(u,uprev,uprev2,du1,fsalfirst,k,z,dz,J,W,jac_config,uf,ηold,κ,tol,10000)
 end
 
 mutable struct ImplicitEulerConstantCache{F,uEltypeNoUnits} <: OrdinaryDiffEqConstantCache
@@ -57,6 +58,7 @@ mutable struct ImplicitEulerConstantCache{F,uEltypeNoUnits} <: OrdinaryDiffEqCon
   ηold::uEltypeNoUnits
   κ::uEltypeNoUnits
   tol::uEltypeNoUnits
+  newton_iters::Int
 end
 
 function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,
@@ -75,7 +77,7 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,
     tol = min(0.03,first(reltol)^(0.5))
   end
 
-  ImplicitEulerConstantCache(uf,ηold,κ,tol)
+  ImplicitEulerConstantCache(uf,ηold,κ,tol,100000)
 end
 
 mutable struct TrapezoidConstantCache{F,uEltypeNoUnits} <: OrdinaryDiffEqConstantCache
@@ -83,6 +85,7 @@ mutable struct TrapezoidConstantCache{F,uEltypeNoUnits} <: OrdinaryDiffEqConstan
   ηold::uEltypeNoUnits
   κ::uEltypeNoUnits
   tol::uEltypeNoUnits
+  newton_iters::Int
 end
 
 function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
@@ -101,7 +104,7 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
     tol = min(0.03,first(reltol)^(0.5))
   end
 
-  TrapezoidConstantCache(uf,ηold,κ,tol)
+  TrapezoidConstantCache(uf,ηold,κ,tol,10000)
 end
 
 mutable struct TrapezoidCache{uType,rateType,J,JC,UF,uEltypeNoUnits} <: OrdinaryDiffEqMutableCache
@@ -120,6 +123,7 @@ mutable struct TrapezoidCache{uType,rateType,J,JC,UF,uEltypeNoUnits} <: Ordinary
   ηold::uEltypeNoUnits
   κ::uEltypeNoUnits
   tol::uEltypeNoUnits
+  newton_iters::Int
 end
 
 u_cache(c::TrapezoidCache)    = (c.uprev2,c.z,c.dz)
@@ -157,5 +161,5 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,
 
   ηold = one(uEltypeNoUnits)
 
-  TrapezoidCache(u,uprev,uprev2,du1,fsalfirst,k,z,dz,J,W,jac_config,uf,ηold,κ,tol)
+  TrapezoidCache(u,uprev,uprev2,du1,fsalfirst,k,z,dz,J,W,jac_config,uf,ηold,κ,tol,10000)
 end

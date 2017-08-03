@@ -18,6 +18,7 @@ end
   else
     u = uprev
   end
+
   if typeof(uprev) <: AbstractArray
     J = ForwardDiff.jacobian(uf,uprev)
     W = I - dt*J
@@ -25,6 +26,7 @@ end
     J = ForwardDiff.derivative(uf,uprev)
     W = 1 - dt*J
   end
+
   z = u - uprev
   iter = 0
   κ = cache.κ
@@ -56,6 +58,7 @@ end
   end
 
   cache.ηold = η
+  cache.newton_iters = iter
   u = uprev + z
   integrator.fsallast = f(t+dt,u)
   integrator.k[1] = integrator.fsalfirst
@@ -90,17 +93,22 @@ end
   if has_invW(f)
     f(Val{:invW},t,uprev,dt,W) # W == inverse W
   else
-    if has_jac(f)
-      f(Val{:jac},t,uprev,J)
-    else
-      if alg_autodiff(integrator.alg)
-        ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
+    if cache.newton_iters == 1 && cache.ηold < 1e-3
+      new_jac = false
+    else # Compute a new Jacobian
+      new_jac = true
+      if has_jac(f)
+        f(Val{:jac},t,uprev,J)
       else
-        Calculus.finite_difference_jacobian!(uf,vec(uprev),vec(du1),J,integrator.alg.diff_type)
+        if alg_autodiff(integrator.alg)
+          ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
+        else
+          Calculus.finite_difference_jacobian!(uf,vec(uprev),vec(du1),J,integrator.alg.diff_type)
+        end
       end
-    end
-    for j in 1:length(u), i in 1:length(u)
-        @inbounds W[i,j] = @muladd mass_matrix[i,j]-dt*J[i,j]
+      for j in 1:length(u), i in 1:length(u)
+          @inbounds W[i,j] = @muladd mass_matrix[i,j]-dt*J[i,j]
+      end
     end
   end
 
@@ -149,6 +157,7 @@ end
   end
 
   cache.ηold = η
+  cache.newton_iters = iter
   @. u = uprev + z
   f(t+dt,u,integrator.fsallast)
   @pack integrator = t,dt,u
@@ -214,6 +223,7 @@ end
   end
 
   cache.ηold = η
+  cache.newton_iters = iter
   u = uprev + 2z
   integrator.fsallast = f(t+dt,u)
   integrator.k[1] = integrator.fsalfirst
@@ -248,17 +258,22 @@ end
   if has_invW(f)
     f(Val{:invW},t,uprev,dt,W) # W == inverse W
   else
-    if has_jac(f)
-      f(Val{:jac},t,uprev,J)
-    else
-      if alg_autodiff(integrator.alg)
-        ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
+    if cache.newton_iters == 1 && cache.ηold < 1e-3
+      new_jac = false
+    else # Compute a new Jacobian
+      new_jac = true
+      if has_jac(f)
+        f(Val{:jac},t,uprev,J)
       else
-        Calculus.finite_difference_jacobian!(uf,vec(uprev),vec(du1),J,integrator.alg.diff_type)
+        if alg_autodiff(integrator.alg)
+          ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
+        else
+          Calculus.finite_difference_jacobian!(uf,vec(uprev),vec(du1),J,integrator.alg.diff_type)
+        end
       end
-    end
-    for j in 1:length(u), i in 1:length(u)
-        @inbounds W[i,j] = @muladd mass_matrix[i,j]-dto2*J[i,j]
+      for j in 1:length(u), i in 1:length(u)
+          @inbounds W[i,j] = @muladd mass_matrix[i,j]-dto2*J[i,j]
+      end
     end
   end
 
@@ -274,7 +289,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(k)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(k),true)
+    integrator.alg.linsolve(vec(dz),W,vec(k),new_jac)
   end
   ndz = integrator.opts.internalnorm(dz)
   z .+= dz
@@ -307,6 +322,7 @@ end
   end
 
   cache.ηold = η
+  cache.newton_iters = iter
   @. u = uprev + 2*z
   f(t+dt,u,integrator.fsallast)
   @pack integrator = t,dt,u
