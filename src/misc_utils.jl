@@ -1,10 +1,12 @@
+struct DiffEqNLSolveTag end
+
 immutable DiffCache{T<:AbstractArray, S<:AbstractArray}
     du::T
     dual_du::S
 end
 
 Base.@pure function DiffCache{chunk_size}(T, size, ::Type{Val{chunk_size}})
-    DiffCache(zeros(T, size...), zeros(Dual{:DiffEqNLSolve,T,chunk_size}, size...))
+    DiffCache(zeros(T, size...), zeros(Dual{typeof(ForwardDiff.Tag(Void,T)),T,chunk_size}, size...))
 end
 
 Base.@pure DiffCache(u::AbstractArray) = DiffCache(eltype(u),size(u),Val{ForwardDiff.pickchunksize(length(u))})
@@ -28,11 +30,11 @@ end
 function autodiff_setup{CS}(f!, initial_x::Vector,chunk_size::Type{Val{CS}})
 
     permf! = (fx, x) -> f!(x, fx)
-
     fx2 = copy(initial_x)
-    jac_cfg = ForwardDiff.JacobianConfig(:DiffEqNLSolve, initial_x, ForwardDiff.Chunk{CS}())
+    jac_cfg = ForwardDiff.JacobianConfig(nothing,
+                                         initial_x, initial_x,
+                                         ForwardDiff.Chunk{CS}())
     g! = (x, gx) -> ForwardDiff.jacobian!(gx, permf!, fx2, x, jac_cfg)
-
     fg! = (x, fx, gx) -> begin
         jac_res = DiffBase.DiffResult(fx, gx)
         ForwardDiff.jacobian!(jac_res, permf!, fx2, x, jac_cfg)
@@ -51,9 +53,9 @@ Base.@pure NLSOLVEJL_SETUP(;chunk_size=0,autodiff=true) = NLSOLVEJL_SETUP{chunk_
 (p::NLSOLVEJL_SETUP)(f,u0) = (res=NLsolve.nlsolve(f,u0); res.zero)
 function (p::NLSOLVEJL_SETUP{CS,AD}){CS,AD}(::Type{Val{:init}},f,u0_prototype)
   if AD
-    return non_autodiff_setup(f,u0_prototype)
+    return autodiff_setup(f,u0_prototype,Val{determine_chunksize(u0_prototype,CS)})
   else
-    return autodiff_setup(f,u0_prototype,Val{determine_chunksize(initial_x,CS)})
+    return non_autodiff_setup(f,u0_prototype)
   end
 end
 

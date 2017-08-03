@@ -1,16 +1,33 @@
-type RHS_IE_Scalar{F,uType,tType} <: Function
+type ImplicitRHS_Scalar{F,uType,tType} <: Function
   f::F
-  u_old::uType
+  C::uType
+  a::tType
   t::tType
   dt::tType
 end
 
-function (p::RHS_IE_Scalar)(u,resid)
-  resid[1] = u[1] .- p.u_old[1] .- p.dt.*p.f(p.t+p.dt,u[1])[1]
+function (p::ImplicitRHS_Scalar)(u,resid)
+  resid[1] = first(u) .- first(p.C) .- p.a.*first(p.f(p.t+p.dt,first(u)))
+end
+
+type ImplicitRHS{F,uType,tType,DiffCacheType} <: Function
+  f::F
+  C::uType
+  a::tType
+  t::tType
+  dt::tType
+  dual_cache::DiffCacheType
+end
+
+function (p::ImplicitRHS)(u,resid)
+  du1 = get_du(p.dual_cache, eltype(u))
+  p.f(p.t+p.dt,reshape(uprev,size(du1)),du1)
+  vecdu1 = vec(du1)
+  @. resid = u - p.C - p.a*vecdu1
 end
 
 @inline function initialize!(integrator,cache::ImplicitEulerConstantCache,f=integrator.f)
-  cache.uhold[1] = integrator.uprev; cache.u_old[1] = integrator.uprev
+  cache.uhold[1] = integrator.uprev; cache.C[1] = integrator.uprev
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.fsalfirst = f(integrator.t,integrator.uprev)
@@ -23,13 +40,14 @@ end
 
 @inline function perform_step!(integrator,cache::ImplicitEulerConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
-  @unpack uhold,u_old,rhs,nl_rhs = cache
-  u_old[1] = uhold[1]
+  @unpack uhold,C,rhs,nl_rhs = cache
+  C[1] = uhold[1]
   if integrator.iter > 1 && !integrator.u_modified
     uhold[1] = current_extrapolant(t+dt,integrator)
   end # else uhold is previous value.
   rhs.t = t
   rhs.dt = dt
+  rhs.a = dt
   nlres = integrator.alg.nlsolve(nl_rhs,uhold)
   uhold[1] = nlres[1]
   k = f(t+dt,uhold[1])
@@ -38,24 +56,6 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = k
   @pack integrator = t,dt,u
-end
-
-type RHS_IE{F,uType,tType,DiffCacheType,SizeType,uidxType} <: Function
-  f::F
-  u_old::uType
-  t::tType
-  dt::tType
-  dual_cache::DiffCacheType
-  sizeu::SizeType
-  uidx::uidxType
-end
-function (p::RHS_IE)(uprev,resid)
-  du = get_du(p.dual_cache, eltype(uprev))
-  p.f(p.t+p.dt,reshape(uprev,p.sizeu),du)
-  #@. resid = uprev - p.u_old - p.dt*du
-  @tight_loop_macros for i in p.uidx
-    @inbounds resid[i] = uprev[i] - p.u_old[i] - p.dt*du[i]
-  end
 end
 
 @inline function initialize!(integrator,cache::ImplicitEulerCache,f=integrator.f)
@@ -71,39 +71,18 @@ end
 @inline function perform_step!(integrator,cache::ImplicitEulerCache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack u_old,dual_cache,k,nl_rhs,rhs,uhold = cache
-  copy!(u_old,uhold)
+  @unpack C,dual_cache,k,nl_rhs,rhs,uhold = cache
+  copy!(C,uhold)
   if integrator.iter > 1 && !integrator.u_modified
     current_extrapolant!(u,t+dt,integrator)
   end # else uhold is previous value.
   rhs.t = t
   rhs.dt = dt
-  rhs.uidx = uidx
-  rhs.sizeu = size(u)
+  rhs.a = dt
   nlres = integrator.alg.nlsolve(nl_rhs,uhold)
   copy!(uhold,nlres)
   f(t+dt,u,k)
   @pack integrator = t,dt,u
-end
-
-type RHS_Trap{F,uType,rateType,tType,SizeType,DiffCacheType,uidxType} <: Function
-  f::F
-  u_old::uType
-  f_old::rateType
-  t::tType
-  dt::tType
-  sizeu::SizeType
-  dual_cache::DiffCacheType
-  uidx::uidxType
-end
-
-function (p::RHS_Trap)(uprev,resid)
-  du1 = get_du(p.dual_cache, eltype(uprev))
-  p.f(p.t+p.dt,reshape(uprev,p.sizeu),du1)
-  #@. resid = @muladd uprev - p.u_old - (p.dt/2)*(du1+p.f_old)
-  @tight_loop_macros for i in p.uidx
-    @inbounds resid[i] = uprev[i] - p.u_old[i] - (p.dt/2)*(du1[i]+p.f_old[i])
-  end
 end
 
 @inline function initialize!(integrator,cache::TrapezoidCache,f=integrator.f)
@@ -120,36 +99,23 @@ end
 @inline function perform_step!(integrator,cache::TrapezoidCache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack u_old,dual_cache,k,rhs,nl_rhs,uhold = cache
-  copy!(u_old,uhold)
+  @unpack C,dual_cache,k,rhs,nl_rhs,uhold = cache
+  C .= uhold .+ (dt/2).*vec(integrator.fsalfirst)
   if integrator.iter > 1 && !integrator.u_modified
     current_extrapolant!(u,t+dt,integrator)
   end # else uhold is previous value.
   # copy!(rhs.fsalfirst,fsalfirst) Implicitly done by pointers: fsalfirst === fsalfirst == rhs.fsalfirst
   rhs.t = t
   rhs.dt = dt
-  rhs.uidx = uidx
-  rhs.sizeu = size(u)
+  rhs.a = dt/2
   nlres = integrator.alg.nlsolve(nl_rhs,uhold)
   copy!(uhold,nlres)
   f(t+dt,u,k)
   @pack integrator = t,dt,u
 end
 
-type RHS_Trap_Scalar{F,uType,rateType,tType} <: Function
-  f::F
-  u_old::uType
-  f_old::rateType
-  t::tType
-  dt::tType
-end
-
-function (p::RHS_Trap_Scalar)(uprev,resid)
-  resid[1] = uprev[1] .- p.u_old[1] .- (p.dt/2).*(p.f_old .+ p.f(p.t+p.dt,uprev[1])[1])
-end
-
 @inline function initialize!(integrator,cache::TrapezoidConstantCache,f=integrator.f)
-  cache.uhold[1] = integrator.uprev; cache.u_old[1] = integrator.uprev
+  cache.uhold[1] = integrator.uprev; cache.C[1] = integrator.uprev
   integrator.fsalfirst = f(integrator.t,integrator.uprev)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
@@ -162,14 +128,14 @@ end
 
 @inline function perform_step!(integrator,cache::TrapezoidConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
-  @unpack uhold,u_old,rhs,nl_rhs = cache
-  u_old[1] = uhold[1]
+  @unpack uhold,C,rhs,nl_rhs = cache
+  C[1] = first(uhold) + (dt/2)*first(integrator.fsalfirst)
   if integrator.iter > 1 && !integrator.u_modified
     uhold[1] = current_extrapolant(t+dt,integrator)
   end # else uhold is previous value.
   rhs.t = t
   rhs.dt = dt
-  rhs.f_old = integrator.fsalfirst
+  rhs.a = dt/2
   nlres = integrator.alg.nlsolve(nl_rhs,uhold)
   uhold[1] = nlres[1]
   k = f(t+dt,uhold[1])

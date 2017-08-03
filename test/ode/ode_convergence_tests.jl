@@ -29,10 +29,10 @@ for i = 1:2
 
   sim12 = test_convergence(dts,prob,ImplicitEuler(nlsolve=NLSOLVEJL_SETUP(autodiff=true)))
   @test abs(sim12.𝒪est[:final]-1) < testTol
-  sim122 = test_convergence(dts,prob,ImplicitEuler(nlsolve=NLSOLVEJL_SETUP(autodiff=true)))
+  sim122 = test_convergence(dts,prob,ImplicitEuler(nlsolve=NLSOLVEJL_SETUP(autodiff=false)))
   @test abs(sim122.𝒪est[:final]-1) < testTol
   sim13 = test_convergence(dts,prob,Trapezoid(nlsolve=NLSOLVEJL_SETUP(autodiff=true)))
   @test abs(sim13.𝒪est[:final]-2) < testTol
-  sim132 = test_convergence(dts,prob,Trapezoid(nlsolve=NLSOLVEJL_SETUP(autodiff=true)))
+  sim132 = test_convergence(dts,prob,Trapezoid(nlsolve=NLSOLVEJL_SETUP(autodiff=false)))
   @test abs(sim132.𝒪est[:final]-2) < testTol
 end
