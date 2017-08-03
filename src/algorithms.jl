@@ -65,6 +65,7 @@ struct SofSpa10 <: OrdinaryDiffEqAlgorithm end
 
 struct Nystrom4 <: OrdinaryDiffEqAlgorithm end
 struct Nystrom4VelocityIndependent <: OrdinaryDiffEqAlgorithm end
+struct Nystrom5VelocityIndependent <: OrdinaryDiffEqAlgorithm end
 
 ################################################################################
 

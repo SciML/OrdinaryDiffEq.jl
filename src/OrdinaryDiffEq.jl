@@ -128,5 +128,5 @@ module OrdinaryDiffEq
 
   export SplitEuler
 
-  export Nystrom4, Nystrom4VelocityIndependent
+  export Nystrom4, Nystrom4VelocityIndependent, Nystrom5VelocityIndependent
 end # module
