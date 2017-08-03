@@ -90,6 +90,7 @@ end
   half_dtsq = dtsq/2
   ttmp = t+halfdt
 
+  f[2](ttmp,uprev,duprev,k₁.x[2])
   @tight_loop_macros for i in uidx
     ## y₁ = y₀ + hy'₀ + h²∑b̄ᵢk'ᵢ
     @inbounds ku[i] = @muladd uprev[i] + halfdt*duprev[i] + eighth_dtsq*k₁.x[2][i]
