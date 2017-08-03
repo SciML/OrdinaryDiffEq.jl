@@ -194,11 +194,11 @@ regression_test(Rosenbrock23(), 3e-3, 6e-3; test_diff1 = true)
 # Rosenbrock32
 regression_test(Rosenbrock32(), 4e-4, 6e-4)
 
-# ImplicitEuler
-regression_test(ImplicitEuler(), 0.2, 0.354)
+# GenericImplicitEuler
+regression_test(GenericImplicitEuler(), 0.2, 0.354)
 
-# Trapezoid
-regression_test(Trapezoid(), 7e-3, 1.4e-2)
+# GenericTrapezoid
+regression_test(GenericTrapezoid(), 7e-3, 1.4e-2)
 
 # DP8
 regression_test(DP8(), 2e-7, 3e-7; test_diff1 = true)

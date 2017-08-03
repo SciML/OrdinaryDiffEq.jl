@@ -32,9 +32,9 @@ sol = solve(prob,Tsit5(),callback=callback)
 # Chunk size must be fixed since otherwise it's dependent on size
 # when the size is less than 10, so errors here
 
-sol = solve(prob,ImplicitEuler(nlsolve=NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/10)
+sol = solve(prob,GenericImplicitEuler(nlsolve=NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/10)
 
-sol = solve(prob,Trapezoid(nlsolve=NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/10)
+sol = solve(prob,GenericTrapezoid(nlsolve=NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/10)
 
 sol = solve(prob,Rosenbrock23(chunk_size=1),callback=callback,dt=1/10)
 

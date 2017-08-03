@@ -39,6 +39,8 @@ isfsal(alg::Feagin12) = true
 isfsal(alg::Feagin14) = true
 isfsal(alg::TanYam7) = true
 isfsal(alg::TsitPap8) = true
+isfsal(alg::GenericTrapezoid) = true
+isfsal(alg::GenericImplicitEuler) = true
 isfsal(alg::Trapezoid) = true
 isfsal(alg::ImplicitEuler) = true
 isfsal(alg::ExplicitRK) = true
@@ -72,6 +74,8 @@ fsal_typeof(alg::OrdinaryDiffEqAlgorithm,rate_prototype) = typeof(rate_prototype
 #fsal_typeof(alg::NorsettEuler,rate_prototype) = Vector{typeof(rate_prototype)}
 
 isimplicit(alg::OrdinaryDiffEqAlgorithm) = false
+isimplicit(alg::GenericImplicitEuler) = true
+isimplicit(alg::GenericTrapezoid) = true
 isimplicit(alg::ImplicitEuler) = true
 isimplicit(alg::Trapezoid) = true
 isimplicit(alg::IIF1) = true
@@ -108,6 +112,8 @@ get_chunksize{CS,AD}(alg::Rodas4P{CS,AD}) = CS
 get_chunksize{CS,AD}(alg::Rodas5{CS,AD}) = CS
 
 alg_extrapolates(alg::OrdinaryDiffEqAlgorithm) = false
+alg_extrapolates(alg::GenericImplicitEuler) = true
+alg_extrapolates(alg::GenericTrapezoid) = true
 alg_extrapolates(alg::ImplicitEuler) = true
 alg_extrapolates(alg::Trapezoid) = true
 
@@ -178,6 +184,8 @@ alg_order(alg::Vern8) = 8
 alg_order(alg::Vern9) = 9
 alg_order(alg::TanYam7) = 7
 alg_order(alg::TsitPap8) = 8
+alg_order(alg::GenericImplicitEuler) = 1
+alg_order(alg::GenericTrapezoid) = 2
 alg_order(alg::ImplicitEuler) = 1
 alg_order(alg::Trapezoid) = 2
 alg_order(alg::Feagin10) = 10

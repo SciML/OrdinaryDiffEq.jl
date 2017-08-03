@@ -79,7 +79,7 @@ function resize_non_user_cache!(integrator::ODEIntegrator,cache::Union{Rosenbroc
 end
 user_cache(cache::Union{Rosenbrock23Cache,Rosenbrock32Cache}) = (cache.u,cache.uprev,cache.jac_config.duals[2])
 
-function resize_non_user_cache!(integrator::ODEIntegrator,cache::Union{ImplicitEulerCache,TrapezoidCache},i)
+function resize_non_user_cache!(integrator::ODEIntegrator,cache::Union{GenericImplicitEulerCache,GenericTrapezoidCache},i)
   for c in default_non_user_cache(integrator)
     resize!(c,i)
   end

@@ -68,17 +68,24 @@ struct Nystrom4VelocityIndependent <: OrdinaryDiffEqAlgorithm end
 
 ################################################################################
 
-# Fully implicit methods
+# Generic implicit methods
 
-struct ImplicitEuler{F} <: OrdinaryDiffEqAlgorithm
+struct GenericImplicitEuler{F} <: OrdinaryDiffEqAlgorithm
   nlsolve::F
 end
-Base.@pure ImplicitEuler(;nlsolve=NLSOLVEJL_SETUP()) = ImplicitEuler{typeof(nlsolve)}(nlsolve)
+Base.@pure GenericImplicitEuler(;nlsolve=NLSOLVEJL_SETUP()) = GenericImplicitEuler{typeof(nlsolve)}(nlsolve)
 
-struct Trapezoid{F} <: OrdinaryDiffEqAlgorithm
+struct GenericTrapezoid{F} <: OrdinaryDiffEqAlgorithm
   nlsolve::F
 end
-Base.@pure Trapezoid(;nlsolve=NLSOLVEJL_SETUP()) = Trapezoid{typeof(nlsolve)}(nlsolve)
+Base.@pure GenericTrapezoid(;nlsolve=NLSOLVEJL_SETUP()) = GenericTrapezoid{typeof(nlsolve)}(nlsolve)
+
+################################################################################
+
+# Implicit RK Methods
+
+struct ImplicitEuler <: OrdinaryDiffEqAlgorithm end
+struct Trapezoid <: OrdinaryDiffEqAlgorithm end
 
 ################################################################################
 
