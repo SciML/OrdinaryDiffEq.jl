@@ -111,7 +111,7 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
   TrapezoidConstantCache(uf,ηold,κ,tol,10000,uprev3,tprev2)
 end
 
-mutable struct TrapezoidCache{uType,rateType,J,JC,UF,uEltypeNoUnits} <: OrdinaryDiffEqMutableCache
+mutable struct TrapezoidCache{uType,rateType,J,JC,UF,uEltypeNoUnits,tType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -128,6 +128,8 @@ mutable struct TrapezoidCache{uType,rateType,J,JC,UF,uEltypeNoUnits} <: Ordinary
   κ::uEltypeNoUnits
   tol::uEltypeNoUnits
   newton_iters::Int
+  uprev3::uType
+  tprev2::tType
 end
 
 u_cache(c::TrapezoidCache)    = (c.uprev2,c.z,c.dz)
@@ -163,7 +165,10 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,
     tol = min(0.03,first(reltol)^(0.5))
   end
 
+  uprev3 = similar(u)
+  tprev2 = t
+
   ηold = one(uEltypeNoUnits)
 
-  TrapezoidCache(u,uprev,uprev2,du1,fsalfirst,k,z,dz,J,W,jac_config,uf,ηold,κ,tol,10000)
+  TrapezoidCache(u,uprev,uprev2,du1,fsalfirst,k,z,dz,J,W,jac_config,uf,ηold,κ,tol,10000,uprev3,tprev2)
 end

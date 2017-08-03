@@ -84,7 +84,7 @@ Base.@pure GenericTrapezoid(;nlsolve=NLSOLVEJL_SETUP()) = GenericTrapezoid{typeo
 
 # Implicit RK Methods
 
-struct ImplicitEuler{CS,AD,F,K,T} <: OrdinaryDiffEqAlgorithm
+struct ImplicitEuler{CS,AD,F,K,T} <: OrdinaryDiffEqAdaptiveAlgorithm
   linsolve::F
   diff_type::Symbol
   κ::K
@@ -92,7 +92,7 @@ struct ImplicitEuler{CS,AD,F,K,T} <: OrdinaryDiffEqAlgorithm
 end
 Base.@pure ImplicitEuler(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing) = ImplicitEuler{chunk_size,autodiff,typeof(linsolve),typeof(κ),typeof(tol)}(linsolve,diff_type,κ,tol)
 
-struct Trapezoid{CS,AD,F,K,T} <: OrdinaryDiffEqAlgorithm
+struct Trapezoid{CS,AD,F,K,T} <: OrdinaryDiffEqAdaptiveAlgorithm
   linsolve::F
   diff_type::Symbol
   κ::K

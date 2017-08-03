@@ -57,6 +57,15 @@ end
     z = z + dz
   end
 
+  if integrator.opts.adaptive && integrator.iter > 1
+    # Use 2rd divided differences a la SPICE and Shampine
+    uprev2 = integrator.uprev2
+    tprev = integrator.tprev
+    DD3 = ((u - uprev)/((dt)*(t+dt-tprev)) + (uprev-uprev2)/((t-tprev)*(t+dt-tprev)))
+    dEst = (dt^2)*abs(DD3/6)
+    integrator.EEst = dEst/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
+  end
+
   cache.ηold = η
   cache.newton_iters = iter
   u = uprev + z
@@ -159,8 +168,22 @@ end
   cache.ηold = η
   cache.newton_iters = iter
   @. u = uprev + z
-  f(t+dt,u,integrator.fsallast)
 
+  if integrator.opts.adaptive && integrator.iter > 1
+    # Use 2rd divided differences a la SPICE and Shampine
+    uprev2 = integrator.uprev2
+    tprev = integrator.tprev
+    dt1 = (dt)*(t+dt-tprev)
+    dt2 = (t-tprev)*(t+dt-tprev)
+    @tight_loop_macros for (i,atol,rtol) in zip(eachindex(u),Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
+      @inbounds DD3 = (u[i] - uprev[i])/dt1 + (uprev[i]-uprev2[i])/dt2
+      dEst = (dt^2)*abs(DD3)/6
+      @inbounds k[i] = dEst/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
+    end
+    integrator.EEst = integrator.opts.internalnorm(k)
+  end
+
+  f(t+dt,u,integrator.fsallast)
   @pack integrator = t,dt,u
 end
 
@@ -239,11 +262,11 @@ end
       tprev2 = cache.tprev2
       DD31 = ((u - uprev)/((dt)*(t+dt-tprev)) + (uprev-uprev2)/((t-tprev)*(t+dt-tprev)))
       DD30 = ((uprev - uprev2)/((t-tprev)*(t-tprev2)) + (uprev2-uprev3)/((tprev-tprev2)*(t-tprev2)))
-      err = (dt^3)*abs(((DD31 - DD30)/(t+dt-tprev2))/12)
-      integrator.EEst = err/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
+      dEst = (dt^3)*abs(((DD31 - DD30)/(t+dt-tprev2))/12)
+      integrator.EEst = dEst/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
       if integrator.EEst <= 1
         cache.uprev3 = uprev2
-        cache.tprev2 = tprev2
+        cache.tprev2 = tprev
       end
     elseif integrator.iter > 1
       integrator.EEst = 1
@@ -350,6 +373,38 @@ end
   cache.ηold = η
   cache.newton_iters = iter
   @. u = uprev + 2*z
+
+  if integrator.opts.adaptive
+    if integrator.iter > 2
+      # Use 3rd divided differences a la SPICE and Shampine
+      uprev2 = integrator.uprev2
+      tprev = integrator.tprev
+      uprev3 = cache.uprev3
+      tprev2 = cache.tprev2
+      dt1 = (dt)*(t+dt-tprev)
+      dt2 = ((t-tprev)*(t+dt-tprev))
+      dt3 = ((t-tprev)*(t-tprev2))
+      dt4 = ((tprev-tprev2)*(t-tprev2))
+      @tight_loop_macros for (i,atol,rtol) in zip(eachindex(u),Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
+        @inbounds DD31 = (u[i] - uprev[i])/dt1 + (uprev[i]-uprev2[i])/dt2
+        @inbounds DD30 = (uprev[i] - uprev2[i])/dt3 + (uprev2[i]-uprev3[i])/dt4
+        dEst = (dt^3)*abs(((DD31 - DD30)/(t+dt-tprev2))/12)
+        @inbounds k[i] = dEst/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
+      end
+      integrator.EEst = integrator.opts.internalnorm(k)
+      if integrator.EEst <= 1
+        copy!(cache.uprev3,uprev2)
+        cache.tprev2 = tprev
+      end
+    elseif integrator.iter > 1
+      integrator.EEst = 1
+      copy!(cache.uprev3,integrator.uprev2)
+      cache.tprev2 = integrator.tprev
+    else
+      integrator.EEst = 1
+    end
+  end
+
   f(t+dt,u,integrator.fsallast)
   @pack integrator = t,dt,u
 end

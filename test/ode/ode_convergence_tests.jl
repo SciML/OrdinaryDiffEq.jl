@@ -47,24 +47,3 @@ for i = 1:2
            GenericTrapezoid(nlsolve=NLSOLVEJL_SETUP(autodiff=false)))
   @test abs(sim142.𝒪est[:final]-2) < testTol
 end
-
-prob = prob_ode_linear
-dts = 1.//2.^(8:-1:4)
-sim12 = test_convergence(dts,prob,ImplicitEuler())
-@test abs(sim12.𝒪est[:final]-1) < testTol
-sim13 = test_convergence(dts,prob,Trapezoid())
-@test abs(sim13.𝒪est[:final]-2) < testTol
-
-@time sol = solve(prob,ImplicitEuler(),dt=1/1000)
-@time sol = solve(prob,GenericImplicitEuler(),dt=1/1000)
-
-prob.tspan = (0.0,1.0)
-@time sol = solve(prob,Trapezoid(),dt=1/1000)
-@time sol = solve(prob,GenericTrapezoid(),dt=1/1000)
-
-prob = prob_ode_2Dlinear
-dts = 1.//2.^(8:-1:4)
-sim12 = test_convergence(dts,prob,ImplicitEuler())
-@test abs(sim12.𝒪est[:final]-1) < testTol
-sim13 = test_convergence(dts,prob,Trapezoid())
-@test abs(sim13.𝒪est[:final]-2) < testTol

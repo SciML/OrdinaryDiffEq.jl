@@ -21,7 +21,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   calck = (!isempty(setdiff(saveat,tstops)) || dense),
   dt = typeof(alg) <: Discrete && isempty(tstops) ? eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
   adaptive = isadaptive(alg),
-  gamma=9//10,
+  gamma=gamma_default(alg),
   abstol=nothing,
   reltol=nothing,
   qmax=qmax_default(alg),qmin=qmin_default(alg),
