@@ -1,4 +1,4 @@
-immutable Vern6Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
+struct Vern6Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k1::rateType
@@ -31,7 +31,7 @@ end
 
 alg_cache(alg::Vern6,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = Vern6ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
 
-immutable Vern7Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
+struct Vern7Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k1::rateType
@@ -66,7 +66,7 @@ end
 alg_cache(alg::Vern7,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = Vern7ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
 
 
-immutable Vern8Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
+struct Vern8Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k1::rateType
@@ -107,7 +107,7 @@ end
 
 alg_cache(alg::Vern8,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = Vern8ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
 
-immutable Vern9Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
+struct Vern9Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k1::rateType

@@ -5,11 +5,11 @@ end
 u_cache(c::EulerCache) = ()
 du_cache(c::EulerCache) = (c.k,c.fsalfirst)
 
-immutable EulerConstantCache <: OrdinaryDiffEqConstantCache end
+struct EulerConstantCache <: OrdinaryDiffEqConstantCache end
 
 alg_cache(alg::Euler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = EulerConstantCache()
 
-immutable MidpointCache{uType,rateType} <: OrdinaryDiffEqMutableCache
+struct MidpointCache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k::rateType
@@ -20,7 +20,7 @@ end
 u_cache(c::MidpointCache) = ()
 du_cache(c::MidpointCache) = (c.k,c.fsalfirst)
 
-immutable MidpointConstantCache <: OrdinaryDiffEqConstantCache end
+struct MidpointConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::Midpoint,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
   tmp = similar(u)
@@ -31,7 +31,7 @@ end
 
 alg_cache(alg::Midpoint,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = MidpointConstantCache()
 
-immutable RK4Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
+struct RK4Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -45,7 +45,7 @@ end
 u_cache(c::RK4Cache) = ()
 du_cache(c::RK4Cache) = (c.fsalfirst,c.k₂,c.k₃,c.k₄,c.k)
 
-immutable RK4ConstantCache <: OrdinaryDiffEqConstantCache end
+struct RK4ConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::RK4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
   k₁ = zeros(rate_prototype)
@@ -59,7 +59,7 @@ end
 
 alg_cache(alg::RK4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = RK4ConstantCache()
 
-immutable BS3Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
+struct BS3Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -89,7 +89,7 @@ end
 
 alg_cache(alg::BS3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = BS3ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
 
-immutable BS5Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
+struct BS5Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k1::rateType
@@ -130,7 +130,7 @@ end
 
 alg_cache(alg::BS5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = BS5ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
 
-immutable Tsit5Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
+struct Tsit5Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k1::rateType
@@ -166,7 +166,7 @@ end
 
 alg_cache(alg::Tsit5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = Tsit5ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
 
-immutable DP5Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
+struct DP5Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k1::rateType
@@ -210,7 +210,7 @@ end
 
 alg_cache(alg::DP5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = DP5ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
 
-immutable DP5ThreadedCache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
+struct DP5ThreadedCache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k1::rateType

@@ -31,7 +31,7 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUni
                      u,uprev,uprev2,uhold,dual_cache,u_old,tmp,k,fsalfirst,rhs,nl_rhs)
 end
 
-immutable ImplicitEulerConstantCache{vecuType,rhsType,nl_rhsType} <: OrdinaryDiffEqConstantCache
+struct ImplicitEulerConstantCache{vecuType,rhsType,nl_rhsType} <: OrdinaryDiffEqConstantCache
   uhold::vecuType
   u_old::vecuType
   rhs::rhsType
@@ -78,7 +78,7 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,u
 end
 
 
-immutable TrapezoidConstantCache{vecuType,rhsType,nl_rhsType} <: OrdinaryDiffEqConstantCache
+struct TrapezoidConstantCache{vecuType,rhsType,nl_rhsType} <: OrdinaryDiffEqConstantCache
   uhold::vecuType
   u_old::vecuType
   rhs::rhsType

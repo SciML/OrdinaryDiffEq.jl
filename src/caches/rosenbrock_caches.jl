@@ -3,7 +3,7 @@
 
 # Shampine's Low-order Rosenbrocks
 
-type Rosenbrock23Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,TabType,TFType,UFType,F,JCType} <: OrdinaryDiffEqMutableCache
+mutable struct Rosenbrock23Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,TabType,TFType,UFType,F,JCType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k₁::rateType
@@ -35,7 +35,7 @@ du_cache(c::Rosenbrock23Cache) = (c.k₁,c.k₂,c.k₃,c.du1,c.du2,c.f₁,c.fsal
 jac_cache(c::Rosenbrock23Cache) = (c.J,c.W)
 vecu_cache(c::Rosenbrock23Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
 
-type Rosenbrock32Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,TabType,TFType,UFType,F,JCType} <: OrdinaryDiffEqMutableCache
+mutable struct Rosenbrock32Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,TabType,TFType,UFType,F,JCType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k₁::rateType
@@ -132,7 +132,7 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,tTypeNoUnit
   Rosenbrock32Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,linsolve_tmp_vec,alg.linsolve,jac_config)
 end
 
-immutable Rosenbrock23ConstantCache{T,TF,UF} <: OrdinaryDiffEqConstantCache
+struct Rosenbrock23ConstantCache{T,TF,UF} <: OrdinaryDiffEqConstantCache
   c₃₂::T
   d::T
   tf::TF
@@ -151,7 +151,7 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,tTypeNoUnit
   Rosenbrock23ConstantCache(uEltypeNoUnits,tf,uf)
 end
 
-immutable Rosenbrock32ConstantCache{T,TF,UF} <: OrdinaryDiffEqConstantCache
+struct Rosenbrock32ConstantCache{T,TF,UF} <: OrdinaryDiffEqConstantCache
   c₃₂::T
   d::T
   tf::TF
@@ -174,13 +174,13 @@ end
 
 ### 3rd order specialized Rosenbrocks
 
-immutable Rosenbrock33ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
+struct Rosenbrock33ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
   tf::TF
   uf::UF
   tab::Tab
 end
 
-type Rosenbrock33Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,TabType,TFType,UFType,F,JCType} <: OrdinaryDiffEqMutableCache
+mutable struct Rosenbrock33Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,TabType,TFType,UFType,F,JCType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   du::rateType
@@ -247,7 +247,7 @@ function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev
   Rosenbrock33ConstantCache(tf,uf,ROS3PConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
-type Rosenbrock34Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,TabType,TFType,UFType,F,JCType} <: OrdinaryDiffEqMutableCache
+mutable struct Rosenbrock34Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,TabType,TFType,UFType,F,JCType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   du::rateType
@@ -308,7 +308,7 @@ function alg_cache(alg::Rodas3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
                     linsolve_tmp_vec,alg.linsolve,jac_config)
 end
 
-immutable Rosenbrock34ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
+struct Rosenbrock34ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
   tf::TF
   uf::UF
   tab::Tab
@@ -323,13 +323,13 @@ end
 
 ################################################################################
 
-immutable Rosenbrock4ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
+struct Rosenbrock4ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
   tf::TF
   uf::UF
   tab::Tab
 end
 
-type Rosenbrock4Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,TabType,TFType,UFType,F,JCType} <: OrdinaryDiffEqMutableCache
+mutable struct Rosenbrock4Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,TabType,TFType,UFType,F,JCType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   du::rateType
@@ -585,13 +585,13 @@ end
 
 ### Rodas methods
 
-immutable Rodas4ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
+struct Rodas4ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
   tf::TF
   uf::UF
   tab::Tab
 end
 
-type Rodas4Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,TabType,TFType,UFType,F,JCType} <: OrdinaryDiffEqMutableCache
+mutable struct Rodas4Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,TabType,TFType,UFType,F,JCType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   dense1::rateType
@@ -755,13 +755,13 @@ end
 
 ### Rosenbrock5
 
-immutable Rosenbrock5ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
+struct Rosenbrock5ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
   tf::TF
   uf::UF
   tab::Tab
 end
 
-type Rosenbrock5Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,TabType,TFType,UFType,F,JCType} <: OrdinaryDiffEqMutableCache
+mutable struct Rosenbrock5Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,TabType,TFType,UFType,F,JCType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   dense1::rateType

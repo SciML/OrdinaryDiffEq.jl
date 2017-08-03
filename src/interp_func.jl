@@ -1,6 +1,6 @@
 abstract type OrdinaryDiffEqInterpolation{cacheType} <: AbstractDiffEqInterpolation end
 
-immutable InterpolationData{F,uType,tType,kType,cacheType} <: OrdinaryDiffEqInterpolation{cacheType}
+struct InterpolationData{F,uType,tType,kType,cacheType} <: OrdinaryDiffEqInterpolation{cacheType}
   f::F
   timeseries::uType
   ts::tType
@@ -10,7 +10,7 @@ immutable InterpolationData{F,uType,tType,kType,cacheType} <: OrdinaryDiffEqInte
   cache::cacheType
 end
 
-immutable CompositeInterpolationData{F,uType,tType,kType,cacheType} <: OrdinaryDiffEqInterpolation{cacheType}
+struct CompositeInterpolationData{F,uType,tType,kType,cacheType} <: OrdinaryDiffEqInterpolation{cacheType}
   f::F
   timeseries::uType
   ts::tType

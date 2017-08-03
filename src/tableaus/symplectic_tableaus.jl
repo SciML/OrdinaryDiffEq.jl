@@ -1,4 +1,4 @@
-immutable Symplectic2ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct Symplectic2ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   a1::T
   a2::T
   b1::T
@@ -29,7 +29,7 @@ Base.@pure function VerletLeapfrogConstantCache(T,T2)
   Symplectic2ConstantCache{T,T2}(a1,a2,b1,b2)
 end
 
-immutable Symplectic3ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct Symplectic3ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   a1::T
   a2::T
   a3::T
@@ -58,7 +58,7 @@ Base.@pure function McAte3ConstantCache(T,T2)
   Symplectic3ConstantCache{T,T2}(a1,a2,a3,b1,b2,b3)
 end
 
-immutable Symplectic4ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct Symplectic4ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   a1::T
   a2::T
   a3::T
@@ -105,7 +105,7 @@ Base.@pure function McAte4ConstantCache(T::Type,T2::Type)
   Symplectic4ConstantCache{T,T2}(a1,a2,a3,a4,b1,b2,b3,b4)
 end
 
-immutable Symplectic45ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct Symplectic45ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   a1::T
   a2::T
   a3::T
@@ -163,7 +163,7 @@ Base.@pure function McAte42ConstantCache(T::Type,T2::Type)
   Symplectic45ConstantCache{T,T2}(a1,a2,a3,a4,a5,b1,b2,b3,b4,b5)
 end
 
-immutable Symplectic5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct Symplectic5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   a1::T
   a2::T
   a3::T
@@ -210,7 +210,7 @@ Base.@pure function McAte5ConstantCache(T::Type,T2::Type)
   Symplectic5ConstantCache{T,T2}(a1,a2,a3,a4,a5,a6,b1,b2,b3,b4,b5,b6)
 end
 
-immutable Symplectic6ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct Symplectic6ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   a1::T
   a2::T
   a3::T
@@ -249,7 +249,7 @@ Base.@pure function Yoshida6ConstantCache(T,T2)
   Symplectic6ConstantCache{T,T2}(a1,a2,a3,a4,a5,a6,a7,a8,b1,b2,b3,b4,b5,b6,b7,b8)
 end
 
-immutable Symplectic62ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct Symplectic62ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   a1::T
   a2::T
   a3::T
@@ -320,7 +320,7 @@ Base.@pure function KahanLi6ConstantCache(T::Type,T2::Type)
   Symplectic62ConstantCache{T,T2}(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,b1,b2,b3,b4,b5,b6,b7,b8,b9,b10)
 end
 
-immutable McAte8ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct McAte8ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   a1::T
   a2::T
   a3::T
@@ -429,7 +429,7 @@ Base.@pure function McAte8ConstantCache(T::Type,T2::Type)
                             b1,b2,b3,b4,b5,b6,b7,b8,b9,b10,b11,b12,b13,b14,b15,b16)
 end
 
-immutable KahanLi8ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct KahanLi8ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   a1::T
   a2::T
   a3::T
@@ -550,7 +550,7 @@ Base.@pure function KahanLi8ConstantCache(T::Type,T2::Type)
                               b1,b2,b3,b4,b5,b6,b7,b8,b9,b10,b11,b12,b13,b14,b15,b16,b17,b18)
 end
 
-immutable SofSpa10ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct SofSpa10ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   a1::T
   a2::T
   a3::T

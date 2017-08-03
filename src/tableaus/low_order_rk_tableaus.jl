@@ -1,4 +1,4 @@
-immutable BS3ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct BS3ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   a21::T
   a32::T
   a41::T
@@ -52,7 +52,7 @@ function BS3ConstantCache(T::Type,T2::Type)
   BS3ConstantCache(a21,a32,a41,a42,a43,c1,c2,b1,b2,b3,b4)
 end
 
-immutable Tsit5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct Tsit5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   c1::T2
   c2::T2
   c3::T2
@@ -165,7 +165,7 @@ function Tsit5ConstantCache(T::Type,T2::Type)
   Tsit5ConstantCache(c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,b1,b2,b3,b4,b5,b6,b7)
 end
 
-immutable BS5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct BS5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   c1::T2
   c2::T2
   c3::T2
@@ -647,7 +647,7 @@ function BS5Interp_polyweights(T::Type)
   return r016,r015,r014,r013,r012,r036,r035,r034,r033,r032,r046,r045,r044,r043,r042,r056,r055,r054,r053,r052,r066,r065,r064,r063,r062,r076,r075,r074,r073,r072,r086,r085,r084,r083,r082,r096,r095,r094,r093,r106,r105,r104,r103,r102,r116,r115,r114,r113,r112
 end
 
-immutable DP5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct DP5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   a21::T
   a31::T
   a32::T

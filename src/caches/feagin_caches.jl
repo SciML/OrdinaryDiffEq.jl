@@ -1,4 +1,4 @@
-immutable Feagin10Cache{uType,uEltypeNoUnits,rateType,TabType} <: OrdinaryDiffEqMutableCache
+struct Feagin10Cache{uType,uEltypeNoUnits,rateType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -40,7 +40,7 @@ end
 
 alg_cache(alg::Feagin10,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = Feagin10ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
 
-immutable Feagin12Cache{uType,uEltypeNoUnits,rateType,TabType} <: OrdinaryDiffEqMutableCache
+struct Feagin12Cache{uType,uEltypeNoUnits,rateType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -93,7 +93,7 @@ end
 alg_cache(alg::Feagin12,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = Feagin12ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
 
 
-immutable Feagin14Cache{uType,uEltypeNoUnits,rateType,TabType} <: OrdinaryDiffEqMutableCache
+struct Feagin14Cache{uType,uEltypeNoUnits,rateType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType

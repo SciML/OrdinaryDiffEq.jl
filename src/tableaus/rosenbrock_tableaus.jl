@@ -1,4 +1,4 @@
-immutable ROS3PConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct ROS3PConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   a21::T
   a31::T
   a32::T
@@ -44,7 +44,7 @@ function ROS3PConstantCache(T::Type,T2::Type)
   ROS3PConstantCache(a21,a31,a32,C21,C31,C32,b1,b2,b3,btilde1,btilde2,btilde3,gamma,c2,c3,d1,d2,d3)
 end
 
-immutable Rodas3ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct Rodas3ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   a21::T
   a31::T
   a32::T
@@ -106,7 +106,7 @@ function Rodas3ConstantCache(T::Type,T2::Type)
   Rodas3ConstantCache(a21,a31,a32,a41,a42,a43,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4)
 end
 
-immutable Ros4ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct Ros4ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   a21::T
   a31::T
   a32::T
@@ -301,7 +301,7 @@ function Ros4LStabConstantCache(T::Type,T2::Type)
   Ros4ConstantCache(a21,a31,a32,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4)
 end
 
-immutable RodasConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct RodasConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   a21::T
   a31::T
   a32::T
@@ -514,7 +514,7 @@ function Rodas4PConstantCache(T::Type,T2::Type)
                     h21,h22,h23,h24,h25,h31,h32,h33,h34,h35)
 end
 
-immutable Rodas5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct Rodas5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   a21::T
   a31::T
   a32::T

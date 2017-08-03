@@ -1,10 +1,10 @@
-immutable IIF1ConstantCache{vecuType,rhsType,nl_rhsType} <: OrdinaryDiffEqConstantCache
+struct IIF1ConstantCache{vecuType,rhsType,nl_rhsType} <: OrdinaryDiffEqConstantCache
   uhold::vecuType
   rhs::rhsType
   nl_rhs::nl_rhsType
 end
 
-immutable IIF1Cache{uType,vecuType,DiffCacheType,rhsType,nl_rhsType,rateType} <: OrdinaryDiffEqMutableCache
+struct IIF1Cache{uType,vecuType,DiffCacheType,rhsType,nl_rhsType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uhold::vecuType
@@ -40,13 +40,13 @@ function alg_cache(alg::IIF1,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,
   IIF1Cache(u,uprev,uhold,dual_cache,tmp,rhs,nl_rhs,rtmp1,fsalfirst,k)
 end
 
-immutable IIF2ConstantCache{vecuType,rhsType,nl_rhsType} <: OrdinaryDiffEqConstantCache
+struct IIF2ConstantCache{vecuType,rhsType,nl_rhsType} <: OrdinaryDiffEqConstantCache
   uhold::vecuType
   rhs::rhsType
   nl_rhs::nl_rhsType
 end
 
-immutable IIF2Cache{uType,vecuType,DiffCacheType,rhsType,nl_rhsType,rateType} <: OrdinaryDiffEqMutableCache
+struct IIF2Cache{uType,vecuType,DiffCacheType,rhsType,nl_rhsType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uhold::vecuType
@@ -82,7 +82,7 @@ function alg_cache(alg::IIF2,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,
   IIF2Cache(u,uprev,uhold,dual_cache,tmp,rhs,nl_rhs,rtmp1,fsalfirst,k)
 end
 
-immutable LawsonEulerCache{uType,rateType} <: OrdinaryDiffEqMutableCache
+struct LawsonEulerCache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
@@ -98,11 +98,11 @@ end
 u_cache(c::LawsonEulerCache) = ()
 du_cache(c::LawsonEulerCache) = (c.k,c.fsalfirst,c.rtmp)
 
-immutable LawsonEulerConstantCache <: OrdinaryDiffEqConstantCache end
+struct LawsonEulerConstantCache <: OrdinaryDiffEqConstantCache end
 
 alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = LawsonEulerConstantCache()
 
-immutable NorsettEulerCache{uType,rateType} <: OrdinaryDiffEqMutableCache
+struct NorsettEulerCache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
@@ -118,6 +118,6 @@ end
 u_cache(c::NorsettEulerCache) = ()
 du_cache(c::NorsettEulerCache) = (c.k,c.fsalfirst)
 
-immutable NorsettEulerConstantCache <: OrdinaryDiffEqConstantCache end
+struct NorsettEulerConstantCache <: OrdinaryDiffEqConstantCache end
 
 alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = NorsettEulerConstantCache()

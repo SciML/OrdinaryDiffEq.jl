@@ -1,4 +1,4 @@
-immutable SymplecticEulerCache{uType,rateType} <: OrdinaryDiffEqMutableCache
+struct SymplecticEulerCache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
@@ -13,11 +13,11 @@ end
 u_cache(c::SymplecticEulerCache) = ()
 du_cache(c::SymplecticEulerCache) = (c.k,c.fsalfirst)
 
-immutable SymplecticEulerConstantCache <: OrdinaryDiffEqConstantCache end
+struct SymplecticEulerConstantCache <: OrdinaryDiffEqConstantCache end
 
 alg_cache(alg::SymplecticEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = SymplecticEulerConstantCache()
 
-immutable VelocityVerletCache{uType,rateType} <: OrdinaryDiffEqMutableCache
+struct VelocityVerletCache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
@@ -28,7 +28,7 @@ end
 u_cache(c::VelocityVerletCache) = ()
 du_cache(c::VelocityVerletCache) = (c.k,c.fsalfirst)
 
-immutable VelocityVerletConstantCache <: OrdinaryDiffEqConstantCache end
+struct VelocityVerletConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::VelocityVerlet,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
   tmp = zeros(rate_prototype)
@@ -39,7 +39,7 @@ end
 
 alg_cache(alg::VelocityVerlet,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = VelocityVerletConstantCache()
 
-immutable Symplectic2Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
+struct Symplectic2Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
@@ -81,7 +81,7 @@ end
 
 alg_cache(alg::McAte2,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = McAte2ConstantCache()
 
-immutable Symplectic3Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
+struct Symplectic3Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
@@ -113,7 +113,7 @@ end
 
 alg_cache(alg::McAte3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = McAte3ConstantCache()
 
-immutable Symplectic4Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
+struct Symplectic4Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
@@ -145,7 +145,7 @@ end
 
 alg_cache(alg::CandyRoz4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = McAte4ConstantCache()
 
-immutable Symplectic45Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
+struct Symplectic45Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
@@ -177,7 +177,7 @@ end
 
 alg_cache(alg::McAte42,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = McAte42ConstantCache()
 
-immutable Symplectic5Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
+struct Symplectic5Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
@@ -199,7 +199,7 @@ end
 
 alg_cache(alg::McAte5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = McAte5ConstantCache()
 
-immutable Symplectic6Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
+struct Symplectic6Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
@@ -221,7 +221,7 @@ end
 
 alg_cache(alg::Yoshida6,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = Yoshida6ConstantCache()
 
-immutable Symplectic62Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
+struct Symplectic62Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
@@ -243,7 +243,7 @@ end
 
 alg_cache(alg::KahanLi6,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = KahanLi6ConstantCache()
 
-immutable McAte8Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
+struct McAte8Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
@@ -265,7 +265,7 @@ end
 
 alg_cache(alg::McAte8,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = McAte8ConstantCache()
 
-immutable KahanLi8Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
+struct KahanLi8Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
@@ -287,7 +287,7 @@ end
 
 alg_cache(alg::KahanLi8,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = KahanLi8ConstantCache()
 
-immutable SofSpa10Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
+struct SofSpa10Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType

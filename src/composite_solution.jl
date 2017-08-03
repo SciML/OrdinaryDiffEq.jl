@@ -1,4 +1,4 @@
-type ODECompositeSolution{T,N,uType,uType2,EType,tType,rateType,P,A,IType} <: AbstractODESolution{T,N}
+mutable struct ODECompositeSolution{T,N,uType,uType2,EType,tType,rateType,P,A,IType} <: AbstractODESolution{T,N}
   u::uType
   u_analytic::uType2
   errors::EType

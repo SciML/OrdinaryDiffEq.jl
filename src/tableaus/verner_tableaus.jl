@@ -1,4 +1,4 @@
-immutable Vern6ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct Vern6ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   c1::T2
   c2::T2
   c3::T2
@@ -421,7 +421,7 @@ function Vern6Interp_polyweights(T::Type)
   return r011,r012,r013,r014,r015,r016,r042,r043,r044,r045,r046,r052,r053,r054,r055,r056,r062,r063,r064,r065,r066,r072,r073,r074,r075,r076,r082,r083,r084,r085,r086,r092,r093,r094,r095,r096,r102,r103,r104,r105,r106,r112,r113,r114,r115,r116,r122,r123,r124,r125,r126
 end
 
-immutable Vern7ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct Vern7ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   c2::T2
   c3::T2
   c4::T2
@@ -1037,7 +1037,7 @@ function Vern7Interp_polyweights(T::Type)
   return r011,r012,r013,r014,r015,r016,r017,r042,r043,r044,r045,r046,r047,r052,r053,r054,r055,r056,r057,r062,r063,r064,r065,r066,r067,r072,r073,r074,r075,r076,r077,r082,r083,r084,r085,r086,r087,r092,r093,r094,r095,r096,r097,r112,r113,r114,r115,r116,r117,r122,r123,r124,r125,r126,r127,r132,r133,r134,r135,r136,r137,r142,r143,r144,r145,r146,r147,r152,r153,r154,r155,r156,r157,r162,r163,r164,r165,r166,r167
 end
 
-immutable Vern8ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct Vern8ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   c2::T2
   c3::T2
   c4::T2
@@ -1942,7 +1942,7 @@ function Vern8Interp_polyweights(T::Type)
   return r011,r012,r013,r014,r015,r016,r017,r018,r062,r063,r064,r065,r066,r067,r068,r072,r073,r074,r075,r076,r077,r078,r082,r083,r084,r085,r086,r087,r088,r092,r093,r094,r095,r096,r097,r098,r102,r103,r104,r105,r106,r107,r108,r112,r113,r114,r115,r116,r117,r118,r122,r123,r124,r125,r126,r127,r128,r142,r143,r144,r145,r146,r147,r148,r152,r153,r154,r155,r156,r157,r158,r162,r163,r164,r165,r166,r167,r168,r172,r173,r174,r175,r176,r177,r178,r182,r183,r184,r185,r186,r187,r188,r192,r193,r194,r195,r196,r197,r198,r202,r203,r204,r205,r206,r207,r208,r212,r213,r214,r215,r216,r217,r218
 end
 
-immutable Vern9ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct Vern9ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   c1::T2
   c2::T2
   c3::T2

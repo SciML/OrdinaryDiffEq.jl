@@ -1,4 +1,4 @@
-immutable SSPRK22Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
+struct SSPRK22Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k::rateType
@@ -9,7 +9,7 @@ end
 u_cache(c::SSPRK22Cache) = ()
 du_cache(c::SSPRK22Cache) = (c.k,c.fsalfirst)
 
-immutable SSPRK22ConstantCache <: OrdinaryDiffEqConstantCache end
+struct SSPRK22ConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::SSPRK22,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
   tmp = similar(u)
@@ -21,7 +21,7 @@ end
 alg_cache(alg::SSPRK22,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = SSPRK22ConstantCache()
 
 
-immutable SSPRK33Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
+struct SSPRK33Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k::rateType
@@ -32,7 +32,7 @@ end
 u_cache(c::SSPRK33Cache) = ()
 du_cache(c::SSPRK33Cache) = (c.k,c.fsalfirst)
 
-immutable SSPRK33ConstantCache <: OrdinaryDiffEqConstantCache end
+struct SSPRK33ConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::SSPRK33,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
   tmp = similar(u)
@@ -44,7 +44,7 @@ end
 alg_cache(alg::SSPRK33,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = SSPRK33ConstantCache()
 
 
-immutable SSPRK432Cache{uType,rateType,uArrayType,uEltypeNoUnits} <: OrdinaryDiffEqMutableCache
+struct SSPRK432Cache{uType,rateType,uArrayType,uEltypeNoUnits} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k::rateType
@@ -57,7 +57,7 @@ end
 u_cache(c::SSPRK432Cache) = (c.utilde,c.atmp)
 du_cache(c::SSPRK432Cache) = (c.k,c.fsalfirst)
 
-immutable SSPRK432ConstantCache <: OrdinaryDiffEqConstantCache end
+struct SSPRK432ConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::SSPRK432,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
   tmp = similar(u)
@@ -71,7 +71,7 @@ end
 alg_cache(alg::SSPRK432,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{false}}) = SSPRK432ConstantCache()
 
 
-immutable SSPRK104Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
+struct SSPRK104Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k::rateType
@@ -83,7 +83,7 @@ end
 u_cache(c::SSPRK104Cache) = ()
 du_cache(c::SSPRK104Cache) = (c.k,c.fsalfirst,c.k₄)
 
-immutable SSPRK104ConstantCache <: OrdinaryDiffEqConstantCache end
+struct SSPRK104ConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::SSPRK104,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
   tmp = similar(u)
