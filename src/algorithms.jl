@@ -84,17 +84,21 @@ Base.@pure GenericTrapezoid(;nlsolve=NLSOLVEJL_SETUP()) = GenericTrapezoid{typeo
 
 # Implicit RK Methods
 
-struct ImplicitEuler{CS,AD,F} <: OrdinaryDiffEqAlgorithm
+struct ImplicitEuler{CS,AD,F,K,T} <: OrdinaryDiffEqAlgorithm
   linsolve::F
   diff_type::Symbol
+  κ::K
+  tol::T
 end
-Base.@pure ImplicitEuler(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE) = ImplicitEuler{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
+Base.@pure ImplicitEuler(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing) = ImplicitEuler{chunk_size,autodiff,typeof(linsolve),typeof(κ),typeof(tol)}(linsolve,diff_type,κ,tol)
 
-struct Trapezoid{CS,AD,F} <: OrdinaryDiffEqAlgorithm
+struct Trapezoid{CS,AD,F,K,T} <: OrdinaryDiffEqAlgorithm
   linsolve::F
   diff_type::Symbol
+  κ::K
+  tol::T
 end
-Base.@pure Trapezoid(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE) = Trapezoid{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
+Base.@pure Trapezoid(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing) = Trapezoid{chunk_size,autodiff,typeof(linsolve),typeof(κ),typeof(tol)}(linsolve,diff_type,κ,tol)
 
 ################################################################################
 

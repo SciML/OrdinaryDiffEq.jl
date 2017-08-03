@@ -34,13 +34,14 @@ end
   b = -z + dt*f(t+dt,uprev + z)
   dz = W\b
   ndz = abs(dz)
+  z = z + dz
 
-  #if integrator.iter > 1
-  #  η = max(cache.ηold,eps(first(u)))^(0.8)
-  #  do_newton = (η*ndz > κ*tol)
-  #else
+  η = max(cache.ηold,eps(first(u)))^(0.8)
+  if integrator.iter > 1
+    do_newton = (η*ndz > κ*tol)
+  else
     do_newton = true
-  #end
+  end
 
   while do_newton
     iter += 1
@@ -54,7 +55,7 @@ end
     z = z + dz
   end
 
-  #cache.ηold = η
+  cache.ηold = η
   u = uprev + z
   integrator.fsallast = f(t+dt,u)
   integrator.k[1] = integrator.fsalfirst
@@ -118,13 +119,15 @@ end
     integrator.alg.linsolve(vec(dz),W,vec(k),true)
   end
   ndz = integrator.opts.internalnorm(dz)
+  z .+= dz
+  @. u = uprev + z
 
-  #if integrator.iter > 1
-  #  η = max(cache.ηold,eps(first(u)))^(0.8)
-  #  do_newton = (η*ndz > κ*tol)
-  #else
+  η = max(cache.ηold,eps(first(u)))^(0.8)
+  if integrator.iter > 1
+    do_newton = (η*ndz > κ*tol)
+  else
     do_newton = true
-  #end
+  end
 
   while do_newton
     iter += 1
@@ -145,7 +148,7 @@ end
     @. u = uprev + z
   end
 
-  #cache.ηold = η
+  cache.ηold = η
   @. u = uprev + z
   f(t+dt,u,integrator.fsallast)
   @pack integrator = t,dt,u
@@ -189,13 +192,14 @@ end
   b = -z + dto2*f(t+dt,uprev + z)
   dz = W\b
   ndz = abs(dz)
+  z = z + dz
 
-  #if integrator.iter > 1
-  #  η = max(cache.ηold,eps(first(u)))^(0.8)
-  #  do_newton = (η*ndz > κ*tol)
-  #else
+  η = max(cache.ηold,eps(first(u)))^(0.8)
+  if integrator.iter > 1
+    do_newton = (η*ndz > κ*tol)
+  else
     do_newton = true
-  #end
+  end
 
   while do_newton
     iter += 1
@@ -209,7 +213,7 @@ end
     z = z + dz
   end
 
-  #cache.ηold = η
+  cache.ηold = η
   u = uprev + 2z
   integrator.fsallast = f(t+dt,u)
   integrator.k[1] = integrator.fsalfirst
@@ -273,13 +277,15 @@ end
     integrator.alg.linsolve(vec(dz),W,vec(k),true)
   end
   ndz = integrator.opts.internalnorm(dz)
+  z .+= dz
+  @. u = uprev + z
 
-  #if integrator.iter > 1
-  #  η = max(cache.ηold,eps(first(u)))^(0.8)
-  #  do_newton = (η*ndz > κ*tol)
-  #else
+  η = max(cache.ηold,eps(first(u)))^(0.8)
+  if integrator.iter > 1
+    do_newton = (η*ndz > κ*tol)
+  else
     do_newton = true
-  #end
+  end
 
   while do_newton
     iter += 1
@@ -300,7 +306,7 @@ end
     @. u = uprev + z
   end
 
-  #cache.ηold = η
+  cache.ηold = η
   @. u = uprev + 2*z
   f(t+dt,u,integrator.fsallast)
   @pack integrator = t,dt,u

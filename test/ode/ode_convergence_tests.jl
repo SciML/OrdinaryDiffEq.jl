@@ -58,6 +58,9 @@ sim13 = test_convergence(dts,prob,Trapezoid())
 @time sol = solve(prob,ImplicitEuler(),dt=1/1000)
 @time sol = solve(prob,GenericImplicitEuler(),dt=1/1000)
 
+@time sol = solve(prob,Trapezoid(),dt=1/1000)
+@time sol = solve(prob,GenericTrapezoid(),dt=1/1000)
+
 prob = prob_ode_2Dlinear
 dts = 1.//2.^(8:-1:4)
 sim12 = test_convergence(dts,prob,ImplicitEuler())
@@ -65,8 +68,7 @@ sim12 = test_convergence(dts,prob,ImplicitEuler())
 sim13 = test_convergence(dts,prob,Trapezoid())
 @test abs(sim13.𝒪est[:final]-2) < testTol
 
-
-#=
+using BenchmarkTools
 @benchmark sol = solve(prob,ImplicitEuler(),dt=1/1000)
 
 
@@ -97,7 +99,7 @@ sim13 = test_convergence(dts,prob,Trapezoid())
 
 
 
-@benchmark sol = solve(prob,Trapezoid(),dt=1/10)
+@benchmark sol = solve(prob,Trapezoid(),dt=1/1000)
 
 
 
@@ -111,5 +113,4 @@ sim13 = test_convergence(dts,prob,Trapezoid())
 
 
 
-@benchmark sol = solve(prob,GenericTrapezoid(),dt=1/10)
-=#
+@benchmark sol = solve(prob,GenericTrapezoid(),dt=1/1000)
