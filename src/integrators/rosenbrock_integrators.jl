@@ -23,7 +23,7 @@ end
   uf.t = t
 
   if has_tgrad(f)
-    f(Val{:tgrad},t,u,dT)
+    f(Val{:tgrad},t,uprev,dT)
   else
     if alg_autodiff(integrator.alg)
       ForwardDiff.derivative!(dT,tf,vec(du2),t) # Should update to inplace, https://github.com/JuliaDiff/ForwardDiff.jl/pull/219
@@ -40,11 +40,11 @@ end
   end
 
   if has_invW(f)
-    f(Val{:invW},t,u,γ,W) # W == inverse W
+    f(Val{:invW},t,uprev,γ,W) # W == inverse W
     A_mul_B!(vectmp,W,linsolve_tmp_vec)
   else
     if has_jac(f)
-      f(Val{:jac},t,u,J)
+      f(Val{:jac},t,uprev,J)
     else
       if alg_autodiff(integrator.alg)
         ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
@@ -134,7 +134,7 @@ end#
   uf.t = t
 
   if has_tgrad(f)
-    f(Val{:tgrad},t,u,dT)
+    f(Val{:tgrad},t,uprev,dT)
   else
     if alg_autodiff(integrator.alg)
       ForwardDiff.derivative!(dT,tf,vec(du2),t) # Should update to inplace, https://github.com/JuliaDiff/ForwardDiff.jl/pull/219
@@ -151,11 +151,11 @@ end#
   end
 
   if has_invW(f)
-    f(Val{:invW},t,u,γ,W) # W == inverse W
+    f(Val{:invW},t,uprev,γ,W) # W == inverse W
     A_mul_B!(vectmp,W,linsolve_tmp_vec)
   else
     if has_jac(f)
-      f(Val{:jac},t,u,J)
+      f(Val{:jac},t,uprev,J)
     else
       if alg_autodiff(integrator.alg)
         ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
@@ -404,7 +404,7 @@ end
   uf.t = t
 
   if has_tgrad(f)
-    f(Val{:tgrad},t,u,dT)
+    f(Val{:tgrad},t,uprev,dT)
   else
     if alg_autodiff(integrator.alg)
       ForwardDiff.derivative!(dT,tf,vec(du2),t) # Should update to inplace, https://github.com/JuliaDiff/ForwardDiff.jl/pull/219
@@ -421,11 +421,11 @@ end
   end
 
   if has_invW(f)
-    f(Val{:invW_t},t,u,dt*gamma,W) # W == inverse W
+    f(Val{:invW_t},t,uprev,dt*gamma,W) # W == inverse W
     A_mul_B!(vectmp,W,linsolve_tmp_vec)
   else
     if has_jac(f)
-      f(Val{:jac},t,u,J)
+      f(Val{:jac},t,uprev,J)
     else
       if alg_autodiff(integrator.alg)
         ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
@@ -592,7 +592,7 @@ end
   uf.t = t
 
   if has_tgrad(f)
-    f(Val{:tgrad},t,u,dT)
+    f(Val{:tgrad},t,uprev,dT)
   else
     if alg_autodiff(integrator.alg)
       ForwardDiff.derivative!(dT,tf,vec(du2),t) # Should update to inplace, https://github.com/JuliaDiff/ForwardDiff.jl/pull/219
@@ -609,11 +609,11 @@ end
   end
 
   if has_invW(f)
-    f(Val{:invW_t},t,u,dt*gamma,W) # W == inverse W
+    f(Val{:invW_t},t,uprev,dt*gamma,W) # W == inverse W
     A_mul_B!(vectmp,W,linsolve_tmp_vec)
   else
     if has_jac(f)
-      f(Val{:jac},t,u,J)
+      f(Val{:jac},t,uprev,J)
     else
       if alg_autodiff(integrator.alg)
         ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
@@ -799,7 +799,7 @@ end
   uf.t = t
 
   if has_tgrad(f)
-    f(Val{:tgrad},t,u,dT)
+    f(Val{:tgrad},t,uprev,dT)
   else
     if alg_autodiff(integrator.alg)
       ForwardDiff.derivative!(dT,tf,vec(du2),t) # Should update to inplace, https://github.com/JuliaDiff/ForwardDiff.jl/pull/219
@@ -816,11 +816,11 @@ end
   end
 
   if has_invW(f)
-    f(Val{:invW_t},t,u,dt*gamma,W) # W == inverse W
+    f(Val{:invW_t},t,uprev,dt*gamma,W) # W == inverse W
     A_mul_B!(vectmp,W,linsolve_tmp_vec)
   else
     if has_jac(f)
-      f(Val{:jac},t,u,J)
+      f(Val{:jac},t,uprev,J)
     else
       if alg_autodiff(integrator.alg)
         ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
@@ -1059,7 +1059,7 @@ end
   uf.t = t
 
   if has_tgrad(f)
-    f(Val{:tgrad},t,u,dT)
+    f(Val{:tgrad},t,uprev,dT)
   else
     if alg_autodiff(integrator.alg)
       ForwardDiff.derivative!(dT,tf,vec(du2),t) # Should update to inplace, https://github.com/JuliaDiff/ForwardDiff.jl/pull/219
@@ -1077,11 +1077,11 @@ end
   end
 
   if has_invW(f)
-    f(Val{:invW_t},t,u,dt*gamma,W) # W == inverse W
+    f(Val{:invW_t},t,uprev,dt*gamma,W) # W == inverse W
     A_mul_B!(vectmp,W,linsolve_tmp_vec)
   else
     if has_jac(f)
-      f(Val{:jac},t,u,J)
+      f(Val{:jac},t,uprev,J)
     else
       if alg_autodiff(integrator.alg)
         ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
@@ -1414,7 +1414,7 @@ end
   uf.t = t
 
   if has_tgrad(f)
-    f(Val{:tgrad},t,u,dT)
+    f(Val{:tgrad},t,uprev,dT)
   else
     if alg_autodiff(integrator.alg)
       ForwardDiff.derivative!(dT,tf,vec(du2),t) # Should update to inplace, https://github.com/JuliaDiff/ForwardDiff.jl/pull/219
@@ -1432,11 +1432,11 @@ end
   end
 
   if has_invW(f)
-    f(Val{:invW_t},t,u,dt*gamma,W) # W == inverse W
+    f(Val{:invW_t},t,uprev,dt*gamma,W) # W == inverse W
     A_mul_B!(vectmp,W,linsolve_tmp_vec)
   else
     if has_jac(f)
-      f(Val{:jac},t,u,J)
+      f(Val{:jac},t,uprev,J)
     else
       if alg_autodiff(integrator.alg)
         ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
