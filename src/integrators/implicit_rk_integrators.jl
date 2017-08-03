@@ -160,6 +160,7 @@ end
   cache.newton_iters = iter
   @. u = uprev + z
   f(t+dt,u,integrator.fsallast)
+
   @pack integrator = t,dt,u
 end
 
@@ -228,6 +229,31 @@ end
   integrator.fsallast = f(t+dt,u)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
+
+  if integrator.opts.adaptive
+    if integrator.iter > 2
+      # Use 3rd divided differences a la SPICE and Shampine
+      uprev2 = integrator.uprev2
+      tprev = integrator.tprev
+      uprev3 = cache.uprev3
+      tprev2 = cache.tprev2
+      DD31 = ((u - uprev)/((dt)*(t+dt-tprev)) + (uprev-uprev2)/((t-tprev)*(t+dt-tprev)))
+      DD30 = ((uprev - uprev2)/((t-tprev)*(t-tprev2)) + (uprev2-uprev3)/((tprev-tprev2)*(t-tprev2)))
+      err = (dt^3)*abs(((DD31 - DD30)/(t+dt-tprev2))/12)
+      integrator.EEst = err/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
+      if integrator.EEst <= 1
+        cache.uprev3 = uprev2
+        cache.tprev2 = tprev2
+      end
+    elseif integrator.iter > 1
+      integrator.EEst = 1
+      cache.uprev3 = integrator.uprev2
+      cache.tprev2 = integrator.tprev
+    else
+      integrator.EEst = 1
+    end
+  end
+
   @pack integrator = t,dt,u
 end
 

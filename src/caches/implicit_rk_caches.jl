@@ -80,18 +80,22 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,
   ImplicitEulerConstantCache(uf,ηold,κ,tol,100000)
 end
 
-mutable struct TrapezoidConstantCache{F,uEltypeNoUnits} <: OrdinaryDiffEqConstantCache
+mutable struct TrapezoidConstantCache{F,uEltypeNoUnits,uType,tType} <: OrdinaryDiffEqConstantCache
   uf::F
   ηold::uEltypeNoUnits
   κ::uEltypeNoUnits
   tol::uEltypeNoUnits
   newton_iters::Int
+  uprev3::uType
+  tprev2::tType
 end
 
 function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,reltol,::Type{Val{false}})
   uf = UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
+  uprev3 = u
+  tprev2 = t
 
   if alg.κ != nothing
     κ = alg.κ
@@ -104,7 +108,7 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
     tol = min(0.03,first(reltol)^(0.5))
   end
 
-  TrapezoidConstantCache(uf,ηold,κ,tol,10000)
+  TrapezoidConstantCache(uf,ηold,κ,tol,10000,uprev3,tprev2)
 end
 
 mutable struct TrapezoidCache{uType,rateType,J,JC,UF,uEltypeNoUnits} <: OrdinaryDiffEqMutableCache

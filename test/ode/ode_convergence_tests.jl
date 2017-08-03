@@ -58,6 +58,7 @@ sim13 = test_convergence(dts,prob,Trapezoid())
 @time sol = solve(prob,ImplicitEuler(),dt=1/1000)
 @time sol = solve(prob,GenericImplicitEuler(),dt=1/1000)
 
+prob.tspan = (0.0,1.0)
 @time sol = solve(prob,Trapezoid(),dt=1/1000)
 @time sol = solve(prob,GenericTrapezoid(),dt=1/1000)
 
@@ -67,50 +68,3 @@ sim12 = test_convergence(dts,prob,ImplicitEuler())
 @test abs(sim12.𝒪est[:final]-1) < testTol
 sim13 = test_convergence(dts,prob,Trapezoid())
 @test abs(sim13.𝒪est[:final]-2) < testTol
-
-using BenchmarkTools
-@benchmark sol = solve(prob,ImplicitEuler(),dt=1/1000)
-
-
-
-
-
-
-
-
-
-
-
-
-
-@benchmark sol = solve(prob,GenericImplicitEuler(),dt=1/1000)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-@benchmark sol = solve(prob,Trapezoid(),dt=1/1000)
-
-
-
-
-
-
-
-
-
-
-
-
-
-@benchmark sol = solve(prob,GenericTrapezoid(),dt=1/1000)
