@@ -28,6 +28,8 @@ for i = 1:2
   println("Convergence Test on Stiff")
   dts = 1.//2.^(8:-1:4)
 
+  sim11 = test_convergence(dts,prob,ImplicitEuler())
+  @test abs(sim11.𝒪est[:final]-1) < testTol
   sim12 = test_convergence(dts,prob,
           GenericImplicitEuler(nlsolve=NLSOLVEJL_SETUP(autodiff=true)))
   @test abs(sim12.𝒪est[:final]-1) < testTol
@@ -48,3 +50,33 @@ sim12 = test_convergence(dts,prob,ImplicitEuler())
 @test abs(sim12.𝒪est[:final]-1) < testTol
 sim13 = test_convergence(dts,prob,Trapezoid())
 @test abs(sim13.𝒪est[:final]-2) < testTol
+
+@time sol = solve(prob,ImplicitEuler(),dt=1/1000)
+@time sol = solve(prob,GenericImplicitEuler(),dt=1/1000)
+
+prob = prob_ode_2Dlinear
+dts = 1.//2.^(8:-1:4)
+sim12 = test_convergence(dts,prob,ImplicitEuler())
+@test abs(sim12.𝒪est[:final]-1) < testTol
+sim13 = test_convergence(dts,prob,Trapezoid())
+@test abs(sim13.𝒪est[:final]-2) < testTol
+
+sim13 = test_convergence(dts,prob,GenericImplicitEuler())
+
+
+
+@benchmark sol = solve(prob,ImplicitEuler(),dt=1/10)
+
+
+
+
+
+
+
+
+
+
+
+
+
+@benchmark sol = solve(prob,GenericImplicitEuler(),dt=1/10)

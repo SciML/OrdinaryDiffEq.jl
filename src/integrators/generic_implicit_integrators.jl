@@ -1,4 +1,4 @@
-type ImplicitRHS_Scalar{F,uType,tType} <: Function
+mutable struct ImplicitRHS_Scalar{F,uType,tType} <: Function
   f::F
   C::uType
   a::tType
@@ -10,7 +10,7 @@ function (p::ImplicitRHS_Scalar)(u,resid)
   resid[1] = first(u) .- first(p.C) .- p.a.*first(p.f(p.t+p.dt,first(u)))
 end
 
-type ImplicitRHS{F,uType,tType,DiffCacheType} <: Function
+mutable struct ImplicitRHS{F,uType,tType,DiffCacheType} <: Function
   f::F
   C::uType
   a::tType
