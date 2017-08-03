@@ -27,14 +27,20 @@ end
   end
   z = u - uprev
   iter = 0
-  do_newton = true
   κ = 1e-2
-  tol = 1e-8
+  tol = min(0.03,first(integrator.opts.reltol)^(0.5))
 
   iter += 1
   b = -z + dt*f(t+dt,uprev + z)
   dz = W\b
   ndz = abs(dz)
+
+  #if integrator.iter > 1
+  #  η = max(cache.ηold,eps(first(u)))^(0.8)
+  #  do_newton = (η*ndz > κ*tol)
+  #else
+    do_newton = true
+  #end
 
   while do_newton
     iter += 1
@@ -44,18 +50,17 @@ end
     ndz = abs(dz)
     θ = ndz/ndzprev
     η = θ/(1-θ)
-    if η*ndz <= κ*tol
-      do_newton=false
-    end
+    do_newton = (η*ndz > κ*tol)
     z = z + dz
   end
 
+  #cache.ηold = η
   u = uprev + z
   integrator.fsallast = f(t+dt,u)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   @pack integrator = t,dt,u
-end
+end#
 
 @inline function initialize!(integrator,cache::ImplicitEulerCache,f=integrator.f)
   integrator.kshortsize = 2
@@ -100,20 +105,26 @@ end
 
   @. z = u - uprev
   iter = 0
-  do_newton = true
   κ = 1e-2
-  tol = 1e-8
+  tol = min(0.03,first(integrator.opts.reltol)^(0.5))
 
   iter += 1
   f(t+dt,u,k)
   scale!(k,dt)
   k .-= z
   if has_invW(f)
-    A_mul_B!(dz,W,k) # Here W is actually invW
+    A_mul_B!(vec(dz),W,vec(k)) # Here W is actually invW
   else
     integrator.alg.linsolve(vec(dz),W,vec(k),true)
   end
   ndz = integrator.opts.internalnorm(dz)
+
+  #if integrator.iter > 1
+  #  η = max(cache.ηold,eps(first(u)))^(0.8)
+  #  do_newton = (η*ndz > κ*tol)
+  #else
+    do_newton = true
+  #end
 
   while do_newton
     iter += 1
@@ -129,12 +140,12 @@ end
     ndz = integrator.opts.internalnorm(dz)
     θ = ndz/ndzprev
     η = θ/(1-θ)
-    if η*ndz <= κ*tol
-      do_newton=false
-    end
+    do_newton = (η*ndz > κ*tol)
     z .+= dz
+    @. u = uprev + z
   end
 
+  #cache.ηold = η
   @. u = uprev + z
   f(t+dt,u,integrator.fsallast)
   @pack integrator = t,dt,u
@@ -171,14 +182,20 @@ end
   end
   z = u - uprev
   iter = 0
-  do_newton = true
   κ = 1e-2
-  tol = 1e-8
+  tol = min(0.03,first(integrator.opts.reltol)^(0.5))
 
   iter += 1
   b = -z + dto2*f(t+dt,uprev + z)
   dz = W\b
   ndz = abs(dz)
+
+  #if integrator.iter > 1
+  #  η = max(cache.ηold,eps(first(u)))^(0.8)
+  #  do_newton = (η*ndz > κ*tol)
+  #else
+    do_newton = true
+  #end
 
   while do_newton
     iter += 1
@@ -188,12 +205,11 @@ end
     ndz = abs(dz)
     θ = ndz/ndzprev
     η = θ/(1-θ)
-    if η*ndz <= κ*tol
-      do_newton=false
-    end
+    do_newton = (η*ndz > κ*tol)
     z = z + dz
   end
 
+  #cache.ηold = η
   u = uprev + 2z
   integrator.fsallast = f(t+dt,u)
   integrator.k[1] = integrator.fsalfirst
@@ -222,7 +238,7 @@ end
   else
     copy!(u,uprev)
   end
-
+  dto2 = dt/2
   uf.t = t
 
   if has_invW(f)
@@ -238,34 +254,40 @@ end
       end
     end
     for j in 1:length(u), i in 1:length(u)
-        @inbounds W[i,j] = @muladd mass_matrix[i,j]-dt*J[i,j]
+        @inbounds W[i,j] = @muladd mass_matrix[i,j]-dto2*J[i,j]
     end
   end
 
   @. z = u - uprev
   iter = 0
-  do_newton = true
   κ = 1e-2
-  tol = 1e-8
+  tol = min(0.03,first(integrator.opts.reltol)^(0.5))
 
   iter += 1
-  f(t+dt,u,k)
-  scale!(k,dt)
+  f(t+dto2,u,k)
+  scale!(k,dto2)
   k .-= z
   if has_invW(f)
-    A_mul_B!(dz,W,k) # Here W is actually invW
+    A_mul_B!(vec(dz),W,vec(k)) # Here W is actually invW
   else
     integrator.alg.linsolve(vec(dz),W,vec(k),true)
   end
   ndz = integrator.opts.internalnorm(dz)
 
+  #if integrator.iter > 1
+  #  η = max(cache.ηold,eps(first(u)))^(0.8)
+  #  do_newton = (η*ndz > κ*tol)
+  #else
+    do_newton = true
+  #end
+
   while do_newton
     iter += 1
-    f(t+dt,u,k)
-    scale!(k,dt)
+    f(t+dto2,u,k)
+    scale!(k,dto2)
     k .-= z
     if has_invW(f)
-      A_mul_B!(dz,W,k) # Here W is actually invW
+      A_mul_B!(vec(dz),W,vec(k)) # Here W is actually invW
     else
       integrator.alg.linsolve(vec(dz),W,vec(k),false)
     end
@@ -273,13 +295,13 @@ end
     ndz = integrator.opts.internalnorm(dz)
     θ = ndz/ndzprev
     η = θ/(1-θ)
-    if η*ndz <= κ*tol
-      do_newton=false
-    end
+    do_newton = (η*ndz > κ*tol)
     z .+= dz
+    @. u = uprev + z
   end
 
-  @. u = uprev + z
+  #cache.ηold = η
+  @. u = uprev + 2*z
   f(t+dt,u,integrator.fsallast)
   @pack integrator = t,dt,u
 end
