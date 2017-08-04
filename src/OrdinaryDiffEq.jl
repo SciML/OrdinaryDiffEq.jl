@@ -48,7 +48,8 @@ module OrdinaryDiffEq
   include("caches/ssprk_caches.jl")
   include("caches/feagin_caches.jl")
   include("caches/verner_caches.jl")
-  include("caches/implicit_caches.jl")
+  include("caches/implicit_rk_caches.jl")
+  include("caches/generic_implicit_caches.jl")
   include("caches/linear_nonlinear_caches.jl")
   include("caches/symplectic_caches.jl")
   include("caches/rosenbrock_caches.jl")
@@ -73,7 +74,8 @@ module OrdinaryDiffEq
   include("integrators/verner_rk_integrators.jl")
   include("integrators/feagin_rk_integrators.jl")
   include("integrators/ssprk_integrators.jl")
-  include("integrators/implicit_integrators.jl")
+  include("integrators/implicit_rk_integrators.jl")
+  include("integrators/generic_implicit_integrators.jl")
   include("integrators/rosenbrock_integrators.jl")
   include("integrators/threaded_rk_integrators.jl")
   include("integrators/integrator_interface.jl")
@@ -112,8 +114,11 @@ module OrdinaryDiffEq
   export Discrete, FunctionMap, Euler, Midpoint, SSPRK22, SSPRK33, SSPRK432,
          SSPRK104, RK4, ExplicitRK, BS3, BS5,
          DP5, DP5Threaded, Tsit5, DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8,
-         Vern9, ImplicitEuler, Trapezoid,
-         Feagin10, Feagin12, Feagin14, CompositeAlgorithm
+         Vern9,Feagin10, Feagin12, Feagin14, CompositeAlgorithm
+
+  export ImplicitEuler, Trapezoid, TRBDF2
+
+  export GenericImplicitEuler, GenericTrapezoid
 
   export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
          Ros4LStab, ROS3P, Rodas3, Rodas4, Rodas42, Rodas4P, Rodas5

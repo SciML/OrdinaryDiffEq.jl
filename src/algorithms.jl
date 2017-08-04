@@ -69,17 +69,46 @@ struct Nystrom5VelocityIndependent <: OrdinaryDiffEqAlgorithm end
 
 ################################################################################
 
-# Fully implicit methods
+# Generic implicit methods
 
-struct ImplicitEuler{F} <: OrdinaryDiffEqAlgorithm
+struct GenericImplicitEuler{F} <: OrdinaryDiffEqAdaptiveAlgorithm
   nlsolve::F
 end
-Base.@pure ImplicitEuler(;nlsolve=NLSOLVEJL_SETUP()) = ImplicitEuler{typeof(nlsolve)}(nlsolve)
+Base.@pure GenericImplicitEuler(;nlsolve=NLSOLVEJL_SETUP()) = GenericImplicitEuler{typeof(nlsolve)}(nlsolve)
 
-struct Trapezoid{F} <: OrdinaryDiffEqAlgorithm
+struct GenericTrapezoid{F} <: OrdinaryDiffEqAdaptiveAlgorithm
   nlsolve::F
 end
-Base.@pure Trapezoid(;nlsolve=NLSOLVEJL_SETUP()) = Trapezoid{typeof(nlsolve)}(nlsolve)
+Base.@pure GenericTrapezoid(;nlsolve=NLSOLVEJL_SETUP()) = GenericTrapezoid{typeof(nlsolve)}(nlsolve)
+
+################################################################################
+
+# Implicit RK Methods
+
+struct ImplicitEuler{CS,AD,F,K,T} <: OrdinaryDiffEqAdaptiveAlgorithm
+  linsolve::F
+  diff_type::Symbol
+  κ::K
+  tol::T
+end
+Base.@pure ImplicitEuler(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing) = ImplicitEuler{chunk_size,autodiff,typeof(linsolve),typeof(κ),typeof(tol)}(linsolve,diff_type,κ,tol)
+
+struct Trapezoid{CS,AD,F,K,T} <: OrdinaryDiffEqAdaptiveAlgorithm
+  linsolve::F
+  diff_type::Symbol
+  κ::K
+  tol::T
+end
+Base.@pure Trapezoid(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing) = Trapezoid{chunk_size,autodiff,typeof(linsolve),typeof(κ),typeof(tol)}(linsolve,diff_type,κ,tol)
+
+struct TRBDF2{CS,AD,F,K,T} <: OrdinaryDiffEqAdaptiveAlgorithm
+  linsolve::F
+  diff_type::Symbol
+  κ::K
+  tol::T
+  smooth_est::Bool
+end
+Base.@pure TRBDF2(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,smooth_est=true) = TRBDF2{chunk_size,autodiff,typeof(linsolve),typeof(κ),typeof(tol)}(linsolve,diff_type,κ,tol,smooth_est)
 
 ################################################################################
 

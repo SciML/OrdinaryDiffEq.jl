@@ -8,6 +8,8 @@ mutable struct DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5,F
   gamma::tTypeNoUnits
   qmax::tTypeNoUnits
   qmin::tTypeNoUnits
+  qsteady_max::tTypeNoUnits
+  qsteady_min::tTypeNoUnits
   dtmax::tType
   dtmin::tType
   internalnorm::F2

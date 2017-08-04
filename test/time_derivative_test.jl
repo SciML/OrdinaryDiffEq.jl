@@ -14,9 +14,9 @@ sol = solve(prob,Rosenbrock32(),reltol=1e-9,abstol=1e-9)
 @test sol.errors[:final] < 1e-5
 sol = solve(prob,Rosenbrock23())
 @test sol.errors[:final] < 1e-10
-sol = solve(prob,ImplicitEuler(),dt=1/10)
+sol = solve(prob,GenericImplicitEuler(),dt=1/10)
 @test sol.errors[:final] < 1e-1
-sol = solve(prob,Trapezoid(),dt=1/10)
+sol = solve(prob,GenericTrapezoid(),dt=1/10)
 @test sol.errors[:final] < 1e-12
 
 for alg in CACHE_TEST_ALGS

@@ -1,5 +1,6 @@
 # This definitely needs cleaning
-using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase, DiffEqProblemLibrary, Base.Test
+using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase,
+      DiffEqProblemLibrary, Base.Test
 probArr = Vector{ODEProblem}(2)
 probArr[1] = prob_ode_linear
 
@@ -27,12 +28,25 @@ for i = 1:2
   println("Convergence Test on Stiff")
   dts = 1.//2.^(8:-1:4)
 
-  sim12 = test_convergence(dts,prob,ImplicitEuler(nlsolve=NLSOLVEJL_SETUP(autodiff=true)))
+  sim11 = test_convergence(dts,prob,ImplicitEuler())
+  @test abs(sim11.𝒪est[:final]-1) < testTol
+
+  sim12 = test_convergence(dts,prob,
+          GenericImplicitEuler(nlsolve=NLSOLVEJL_SETUP(autodiff=true)))
   @test abs(sim12.𝒪est[:final]-1) < testTol
-  sim122 = test_convergence(dts,prob,ImplicitEuler(nlsolve=NLSOLVEJL_SETUP(autodiff=false)))
-  @test abs(sim122.𝒪est[:final]-1) < testTol
-  sim13 = test_convergence(dts,prob,Trapezoid(nlsolve=NLSOLVEJL_SETUP(autodiff=true)))
+  sim122 = test_convergence(dts,prob,
+           GenericImplicitEuler(nlsolve=NLSOLVEJL_SETUP(autodiff=false)))
+
+  sim13 = test_convergence(dts,prob,Trapezoid())
   @test abs(sim13.𝒪est[:final]-2) < testTol
-  sim132 = test_convergence(dts,prob,Trapezoid(nlsolve=NLSOLVEJL_SETUP(autodiff=false)))
-  @test abs(sim132.𝒪est[:final]-2) < testTol
+
+  sim14 = test_convergence(dts,prob,
+          GenericTrapezoid(nlsolve=NLSOLVEJL_SETUP(autodiff=true)))
+  @test abs(sim14.𝒪est[:final]-2) < testTol
+  sim142 = test_convergence(dts,prob,
+           GenericTrapezoid(nlsolve=NLSOLVEJL_SETUP(autodiff=false)))
+  @test abs(sim142.𝒪est[:final]-2) < testTol
+
+  sim14 = test_convergence(dts,prob,TRBDF2())
+  @test abs(sim14.𝒪est[:final]-2) < testTol
 end

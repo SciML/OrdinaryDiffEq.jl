@@ -21,10 +21,12 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   calck = (!isempty(setdiff(saveat,tstops)) || dense),
   dt = typeof(alg) <: Discrete && isempty(tstops) ? eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
   adaptive = isadaptive(alg),
-  gamma=9//10,
+  gamma=gamma_default(alg),
   abstol=nothing,
   reltol=nothing,
   qmax=qmax_default(alg),qmin=qmin_default(alg),
+  qsteady_min = qsteady_min_default(alg),
+  qsteady_max = qsteady_min_default(alg),
   qoldinit=1//10^4, fullnormalize=true,
   beta2=beta2_default(alg),
   beta1=beta1_default(alg,beta2),
@@ -192,6 +194,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
 
   opts = DEOptions(maxiters,timeseries_steps,save_everystep,adaptive,abstol_internal,
     reltol_internal,tTypeNoUnits(gamma),tTypeNoUnits(qmax),tTypeNoUnits(qmin),
+    tTypeNoUnits(qsteady_max),tTypeNoUnits(qsteady_min),
     tType(dtmax),tType(dtmin),internalnorm,save_idxs,
     tstops_internal,saveat_internal,d_discontinuities_internal,
     userdata,
@@ -223,7 +226,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     uprev2 = uprev
   end
 
-  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,Val{isinplace(prob)})
+  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol_internal,Val{isinplace(prob)})
 
   if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
     id = CompositeInterpolationData(f,timeseries,ts,ks,alg_choice,notsaveat_idxs,dense,cache)

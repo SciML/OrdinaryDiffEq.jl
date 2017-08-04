@@ -39,8 +39,11 @@ isfsal(alg::Feagin12) = true
 isfsal(alg::Feagin14) = true
 isfsal(alg::TanYam7) = true
 isfsal(alg::TsitPap8) = true
+isfsal(alg::GenericTrapezoid) = true
+isfsal(alg::GenericImplicitEuler) = true
 isfsal(alg::Trapezoid) = true
 isfsal(alg::ImplicitEuler) = true
+isfsal(alg::TRBDF2) = true
 isfsal(alg::ExplicitRK) = true
 isfsal{MType,VType,fsal}(tab::ExplicitRKTableau{MType,VType,fsal}) = fsal
 #isfsal(tab::ImplicitRKTableau) = false
@@ -73,8 +76,11 @@ fsal_typeof(alg::OrdinaryDiffEqAlgorithm,rate_prototype) = typeof(rate_prototype
 #fsal_typeof(alg::NorsettEuler,rate_prototype) = Vector{typeof(rate_prototype)}
 
 isimplicit(alg::OrdinaryDiffEqAlgorithm) = false
+isimplicit(alg::GenericImplicitEuler) = true
+isimplicit(alg::GenericTrapezoid) = true
 isimplicit(alg::ImplicitEuler) = true
 isimplicit(alg::Trapezoid) = true
+isimplicit(alg::TRBDF2) = true
 isimplicit(alg::IIF1) = true
 isimplicit(alg::IIF2) = true
 
@@ -93,6 +99,9 @@ qmax_default(alg::OrdinaryDiffEqAlgorithm) = 10
 qmax_default(alg::DP8) = 6
 
 get_chunksize(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have a chunk size defined.")
+get_chunksize{CS,AD}(alg::ImplicitEuler{CS,AD}) = CS
+get_chunksize{CS,AD}(alg::Trapezoid{CS,AD}) = CS
+get_chunksize{CS,AD}(alg::TRBDF2{CS,AD}) = CS
 get_chunksize{CS,AD}(alg::Rosenbrock23{CS,AD}) = CS
 get_chunksize{CS,AD}(alg::Rosenbrock32{CS,AD}) = CS
 get_chunksize{CS,AD}(alg::ROS3P{CS,AD}) = CS
@@ -109,10 +118,16 @@ get_chunksize{CS,AD}(alg::Rodas4P{CS,AD}) = CS
 get_chunksize{CS,AD}(alg::Rodas5{CS,AD}) = CS
 
 alg_extrapolates(alg::OrdinaryDiffEqAlgorithm) = false
+alg_extrapolates(alg::GenericImplicitEuler) = true
+alg_extrapolates(alg::GenericTrapezoid) = true
 alg_extrapolates(alg::ImplicitEuler) = true
 alg_extrapolates(alg::Trapezoid) = true
+alg_extrapolates(alg::TRBDF2) = true
 
 alg_autodiff(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have an autodifferentiation option defined.")
+alg_autodiff{CS,AD}(alg::ImplicitEuler{CS,AD}) = AD
+alg_autodiff{CS,AD}(alg::Trapezoid{CS,AD}) = AD
+alg_autodiff{CS,AD}(alg::TRBDF2{CS,AD}) = AD
 alg_autodiff{CS,AD}(alg::Rosenbrock23{CS,AD}) = AD
 alg_autodiff{CS,AD}(alg::Rosenbrock32{CS,AD}) = AD
 alg_autodiff{CS,AD}(alg::ROS3P{CS,AD}) = AD
@@ -180,8 +195,11 @@ alg_order(alg::Vern8) = 8
 alg_order(alg::Vern9) = 9
 alg_order(alg::TanYam7) = 7
 alg_order(alg::TsitPap8) = 8
+alg_order(alg::GenericImplicitEuler) = 1
+alg_order(alg::GenericTrapezoid) = 2
 alg_order(alg::ImplicitEuler) = 1
 alg_order(alg::Trapezoid) = 2
+alg_order(alg::TRBDF2) = 2
 alg_order(alg::Feagin10) = 10
 alg_order(alg::Feagin12) = 12
 alg_order(alg::Feagin14) = 14
@@ -247,6 +265,16 @@ beta1_default(alg::Discrete,beta2) = 0
 beta1_default(alg::DP8,beta2) = typeof(beta2)(1//alg_order(alg)) - beta2/5
 beta1_default(alg::DP5,beta2) = typeof(beta2)(1//alg_order(alg)) - 3beta2/4
 beta1_default(alg::DP5Threaded,beta2) = typeof(beta2)(1//alg_order(alg)) - 3beta2/4
+
+gamma_default(alg::OrdinaryDiffEqAlgorithm) = 9//10
+
+qsteady_min_default(alg::OrdinaryDiffEqAlgorithm) = 1
+qsteady_max_default(alg::OrdinaryDiffEqAlgorithm) = 1
+qsteady_max_default(alg::ImplicitEuler) = 6//5
+qsteady_max_default(alg::GenericImplicitEuler) = 6//5
+qsteady_max_default(alg::Trapezoid) = 6//5
+qsteady_max_default(alg::GenericTrapezoid) = 6//5
+qsteady_max_default(alg::TRBDF2) = 6//5
 
 discrete_apply_map{apply_map,scale_by_time}(alg::Discrete{apply_map,scale_by_time}) = apply_map
 discrete_scale_by_time{apply_map,scale_by_time}(alg::Discrete{apply_map,scale_by_time}) = scale_by_time
