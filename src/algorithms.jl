@@ -100,6 +100,14 @@ struct Trapezoid{CS,AD,F,K,T} <: OrdinaryDiffEqAdaptiveAlgorithm
 end
 Base.@pure Trapezoid(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing) = Trapezoid{chunk_size,autodiff,typeof(linsolve),typeof(κ),typeof(tol)}(linsolve,diff_type,κ,tol)
 
+struct TRBDF2{CS,AD,F,K,T} <: OrdinaryDiffEqAdaptiveAlgorithm
+  linsolve::F
+  diff_type::Symbol
+  κ::K
+  tol::T
+end
+Base.@pure TRBDF2(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing) = TRBDF2{chunk_size,autodiff,typeof(linsolve),typeof(κ),typeof(tol)}(linsolve,diff_type,κ,tol)
+
 ################################################################################
 
 # Rosenbrock Methods
