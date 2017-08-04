@@ -62,7 +62,7 @@ end
 u_cache(c::Nystrom5VelocityIndependentCache) = ()
 du_cache(c::Nystrom5VelocityIndependentCache) = (c.fsalfirst,c.k₂,c.k₃,c.k₄,c.k)
 
-function alg_cache(alg::Nystrom5VelocityIndependent,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,::Type{Val{true}})
+function alg_cache(alg::Nystrom5VelocityIndependent,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   k₁ = zeros(rate_prototype)
   k₂ = zeros(rate_prototype)
   k₃ = zeros(rate_prototype)
@@ -71,4 +71,3 @@ function alg_cache(alg::Nystrom5VelocityIndependent,u,rate_prototype,uEltypeNoUn
   tmp = similar(u)
   Nystrom5VelocityIndependentCache(u,uprev,k₁,k₂,k₃,k₄,k,tmp)
 end
-
