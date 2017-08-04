@@ -42,16 +42,6 @@ end
   integrator.k[2] = integrator.fsallast
   @pack integrator = t,dt,u
 end
-
-@inline function initialize!(integrator,cache::Feagin10Cache,f=integrator.f)
-  integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.k
-  integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
-end
 =#
 
 @inline @muladd function perform_step!(integrator,cache::Feagin10ConstantCache,f=integrator.f)
@@ -128,7 +118,7 @@ end
     k17 = f(t + c16*dt,tmp)
     utmp = similar(u)
     @tight_loop_macros for i in uidx
-      utmp[i] = uprev[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i] + b7*k7[i] + b9*k9[i] + b10*k10[i] + b11*k11[i] + b12*k12[i] + b13*k13[i] + b14*k14[i] + b15*k15[i] + b16*k16[i] + b17*k17[i])
+      @inbounds utmp[i] = uprev[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i] + b7*k7[i] + b9*k9[i] + b10*k10[i] + b11*k11[i] + b12*k12[i] + b13*k13[i] + b14*k14[i] + b15*k15[i] + b16*k16[i] + b17*k17[i])
     end
     u = convert(typeof(u),utmp) # fixes problem with StaticArrays
     if integrator.opts.adaptive
@@ -299,7 +289,7 @@ end
   end
   f(t + c16*dt,tmp,k17)
   @tight_loop_macros for i in uidx
-    u[i] = uprev[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i] + b7*k7[i] + b9*k9[i] + b10*k10[i] + b11*k11[i] + b12*k12[i] + b13*k13[i] + b14*k14[i] + b15*k15[i] + b16*k16[i] + b17*k17[i])
+    @inbounds u[i] = uprev[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i] + b7*k7[i] + b9*k9[i] + b10*k10[i] + b11*k11[i] + b12*k12[i] + b13*k13[i] + b14*k14[i] + b15*k15[i] + b16*k16[i] + b17*k17[i])
   end
   if integrator.opts.adaptive
     @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
@@ -472,7 +462,7 @@ end
     k25 = f(t + c24*dt,tmp)
     utmp = similar(u)
     @tight_loop_macros for i in uidx
-      utmp[i] = uprev[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i] + b7*k7[i] + b8*k8[i] + b10*k10[i] + b11*k11[i] + b13*k13[i] + b14*k14[i] + b15*k15[i] + b16*k16[i] + b17*k17[i] + b18*k18[i] + b19*k19[i] + b20*k20[i] + b21*k21[i] + b22*k22[i] + b23*k23[i] + b24*k24[i] + b25*k25[i])
+      @inbounds utmp[i] = uprev[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i] + b7*k7[i] + b8*k8[i] + b10*k10[i] + b11*k11[i] + b13*k13[i] + b14*k14[i] + b15*k15[i] + b16*k16[i] + b17*k17[i] + b18*k18[i] + b19*k19[i] + b20*k20[i] + b21*k21[i] + b22*k22[i] + b23*k23[i] + b24*k24[i] + b25*k25[i])
     end
     u = convert(typeof(u),utmp) # fixes problem with StaticArrays
     k = f(t+dt,u)
@@ -701,7 +691,7 @@ end
   end
   f(t + c24*dt,tmp,k25)
   @tight_loop_macros for i in uidx
-    u[i] = uprev[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i] + b7*k7[i] + b8*k8[i] + b10*k10[i] + b11*k11[i] + b13*k13[i] + b14*k14[i] + b15*k15[i] + b16*k16[i] + b17*k17[i] + b18*k18[i] + b19*k19[i] + b20*k20[i] + b21*k21[i] + b22*k22[i] + b23*k23[i] + b24*k24[i] + b25*k25[i])
+    @inbounds u[i] = uprev[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i] + b7*k7[i] + b8*k8[i] + b10*k10[i] + b11*k11[i] + b13*k13[i] + b14*k14[i] + b15*k15[i] + b16*k16[i] + b17*k17[i] + b18*k18[i] + b19*k19[i] + b20*k20[i] + b21*k21[i] + b22*k22[i] + b23*k23[i] + b24*k24[i] + b25*k25[i])
   end
   if integrator.opts.adaptive
     @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
@@ -923,7 +913,7 @@ end
     k35 = f(t + c34*dt,tmp)
     utmp = similar(u)
     @tight_loop_macros for i in uidx
-      utmp[i] = uprev[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i] + b7*k7[i] + b8*k8[i] + b10*k10[i] + b11*k11[i] + b12*k12[i] + b14*k14[i] + b15*k15[i] + b16*k16[i] + b18*k18[i] + b19*k19[i] + b20*k20[i] + b21*k21[i] + b22*k22[i] + b23*k23[i] + b24*k24[i] + b25*k25[i] + b26*k26[i] + b27*k27[i] + b28*k28[i] + b29*k29[i] + b30*k30[i] + b31*k31[i] + b32*k32[i] + b33*k33[i] + b34*k34[i] + b35*k35[i])
+      @inbounds utmp[i] = uprev[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i] + b7*k7[i] + b8*k8[i] + b10*k10[i] + b11*k11[i] + b12*k12[i] + b14*k14[i] + b15*k15[i] + b16*k16[i] + b18*k18[i] + b19*k19[i] + b20*k20[i] + b21*k21[i] + b22*k22[i] + b23*k23[i] + b24*k24[i] + b25*k25[i] + b26*k26[i] + b27*k27[i] + b28*k28[i] + b29*k29[i] + b30*k30[i] + b31*k31[i] + b32*k32[i] + b33*k33[i] + b34*k34[i] + b35*k35[i])
     end
     u = convert(typeof(u),utmp) # fixes problem with StaticArrays
     if integrator.opts.adaptive
@@ -1222,7 +1212,7 @@ end
   end
   f(t + c34*dt,tmp,k35)
   @tight_loop_macros for i in uidx
-    u[i] = uprev[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i] + b7*k7[i] + b8*k8[i] + b10*k10[i] + b11*k11[i] + b12*k12[i] + b14*k14[i] + b15*k15[i] + b16*k16[i] + b18*k18[i] + b19*k19[i] + b20*k20[i] + b21*k21[i] + b22*k22[i] + b23*k23[i] + b24*k24[i] + b25*k25[i] + b26*k26[i] + b27*k27[i] + b28*k28[i] + b29*k29[i] + b30*k30[i] + b31*k31[i] + b32*k32[i] + b33*k33[i] + b34*k34[i] + b35*k35[i])
+    @inbounds u[i] = uprev[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i] + b7*k7[i] + b8*k8[i] + b10*k10[i] + b11*k11[i] + b12*k12[i] + b14*k14[i] + b15*k15[i] + b16*k16[i] + b18*k18[i] + b19*k19[i] + b20*k20[i] + b21*k21[i] + b22*k22[i] + b23*k23[i] + b24*k24[i] + b25*k25[i] + b26*k26[i] + b27*k27[i] + b28*k28[i] + b29*k29[i] + b30*k30[i] + b31*k31[i] + b32*k32[i] + b33*k33[i] + b34*k34[i] + b35*k35[i])
   end
   if integrator.opts.adaptive
     @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
