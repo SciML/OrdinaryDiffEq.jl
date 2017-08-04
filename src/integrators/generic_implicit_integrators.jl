@@ -59,8 +59,8 @@ end
     uprev2 = integrator.uprev2
     tprev = integrator.tprev
     DD3 = ((u - uprev)/((dt)*(t+dt-tprev)) + (uprev-uprev2)/((t-tprev)*(t+dt-tprev)))
-    dEst = (dt^2)*abs(DD3/6)
-    integrator.EEst = dEst/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
+    dEst = @. (dt^2)*abs(DD3/6)
+    integrator.EEst = integrator.opts.internalnorm(@. dEst/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
   else
     integrator.EEst = 1
   end
@@ -139,8 +139,8 @@ end
       tprev2 = cache.tprev2
       DD31 = ((u - uprev)/((dt)*(t+dt-tprev)) + (uprev-uprev2)/((t-tprev)*(t+dt-tprev)))
       DD30 = ((uprev - uprev2)/((t-tprev)*(t-tprev2)) + (uprev2-uprev3)/((tprev-tprev2)*(t-tprev2)))
-      dEst = (dt^3)*abs(((DD31 - DD30)/(t+dt-tprev2))/12)
-      integrator.EEst = dEst/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
+      dEst = @. (dt^3)*abs(((DD31 - DD30)/(t+dt-tprev2))/12)
+      integrator.EEst = integrator.opts.internalnorm(@. dEst/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
       if integrator.EEst <= 1
         cache.uprev3 = uprev2
         cache.tprev2 = tprev

@@ -35,7 +35,7 @@ end
   iter += 1
   b = -z .+ dt.*f(t+dt,uprev + z)
   dz = W\b
-  ndz = abs(dz)
+  ndz = integrator.opts.internalnorm(dz)
   z = z + dz
 
   η = max(cache.ηold,eps(first(u)))^(0.8)
@@ -50,7 +50,7 @@ end
     b = -z .+ dt.*f(t+dt,uprev + z)
     dz = W\b
     ndzprev = ndz
-    ndz = abs(dz)
+    ndz = integrator.opts.internalnorm(dz)
     θ = ndz/ndzprev
     η = θ/(1-θ)
     do_newton = (η*ndz > κ*tol)
@@ -233,7 +233,7 @@ end
   iter += 1
   b = -z .+ dto2.*f(t+dto2,uprev + z)
   dz = W\b
-  ndz = abs(dz)
+  ndz = integrator.opts.internalnorm(dz)
   z = z + dz
 
   η = max(cache.ηold,eps(first(u)))^(0.8)
@@ -248,7 +248,7 @@ end
     b = -z .+ dto2.*f(t+dto2,uprev + z)
     dz = W\b
     ndzprev = ndz
-    ndz = abs(dz)
+    ndz = integrator.opts.internalnorm(dz)
     θ = ndz/ndzprev
     η = θ/(1-θ)
     do_newton = (η*ndz > κ*tol)
@@ -468,7 +468,7 @@ end
   uᵧ = @. (uprev + d*zprev) + d*zᵧ
   b = dt.*f(t+γdt,uᵧ) .- zᵧ
   Δzᵧ = W\b
-  ndz = abs(Δzᵧ)
+  ndz = integrator.opts.internalnorm(Δzᵧ)
   zᵧ = zᵧ + Δzᵧ
 
   uᵧ = @. (uprev + d*zprev) + d*zᵧ
@@ -485,9 +485,8 @@ end
     uᵧ = @. (uprev + d*zprev) + d*zᵧ
     b = dt.*f(t+γdt,uᵧ) .- zᵧ
     Δzᵧ = W\b
-    ndz = abs(Δzᵧ)
     ndzprev = ndz
-    ndz = abs(Δzᵧ)
+    ndz = integrator.opts.internalnorm(Δzᵧ)
     θ = ndz/ndzprev
     η = θ/(1-θ)
     do_newton = (η*ndz > κ*tol)
@@ -506,7 +505,7 @@ end
   u = @. (uprev + ω*zprev + ω*zᵧ) + d*z
   b = dt.*f(t+dt,u) .- z
   dz = W\b
-  ndz = abs(dz)
+  ndz = integrator.opts.internalnorm(dz)
   z = z + dz
 
   η = max(η,eps(first(u)))^(0.8)
@@ -518,7 +517,7 @@ end
     b = dt.*f(t+dt,u) .- z
     dz = W\b
     ndzprev = ndz
-    ndz = abs(dz)
+    ndz = integrator.opts.internalnorm(dz)
     θ = ndz/ndzprev
     η = θ/(1-θ)
     do_newton = (η*ndz > κ*tol)
@@ -542,7 +541,7 @@ end
     else
       Est = est
     end
-    integrator.EEst = @. abs(Est)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
+    integrator.EEst = integrator.opts.internalnorm(@. abs(Est)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
   end
 
   integrator.u = u
