@@ -33,12 +33,12 @@ end
 
   f[2](ttmp,uprev,duprev,k₁.x[2])
   ## y₁ = y₀ + hy'₀ + h²∑b̄ᵢk'ᵢ
-  @. ku = uprev + halfdt*duprev + eigth_dtsq*k₁.x[2]
+  @. ku = uprev + halfdt*duprev + eighth_dtsq*k₁.x[2]
   ## y'₁ = y'₀ + h∑bᵢk'ᵢ
   @. kdu = duprev + halfdt*k₁.x[2]
 
   f[2](ttmp,ku,kdu,k₂.x[2])
-  @. ku = uprev + halfdt*duprev + eight_dtsq*k₁.x[2]
+  @. ku = uprev + halfdt*duprev + eighth_dtsq*k₁.x[2]
   @. kdu = duprev + halfdt*k₂.x[2]
 
   f[2](ttmp,ku,kdu,k₃.x[2])
@@ -83,7 +83,7 @@ end
 
   f[2](ttmp,uprev,duprev,k₁.x[2])
   ## y₁ = y₀ + hy'₀ + h²∑b̄ᵢk'ᵢ
-  @. ku = uprev + halfdt*duprev + eigth_dtsq*k₁.x[2]
+  @. ku = uprev + halfdt*duprev + eighth_dtsq*k₁.x[2]
 
   f[2](ttmp,ku,du,k₂.x[2])
   @. ku = uprev + dt*duprev + half_dtsq*k₂.x[2]
