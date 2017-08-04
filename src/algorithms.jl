@@ -105,8 +105,9 @@ struct TRBDF2{CS,AD,F,K,T} <: OrdinaryDiffEqAdaptiveAlgorithm
   diff_type::Symbol
   κ::K
   tol::T
+  smooth_est::Bool
 end
-Base.@pure TRBDF2(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing) = TRBDF2{chunk_size,autodiff,typeof(linsolve),typeof(κ),typeof(tol)}(linsolve,diff_type,κ,tol)
+Base.@pure TRBDF2(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,smooth_est=true) = TRBDF2{chunk_size,autodiff,typeof(linsolve),typeof(κ),typeof(tol)}(linsolve,diff_type,κ,tol,smooth_est)
 
 ################################################################################
 

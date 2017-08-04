@@ -232,7 +232,7 @@ end
   tol = cache.tol
 
   iter += 1
-  b = -z + dto2*f(t+dt,uprev + z)
+  b = -z + dto2*f(t+dto2,uprev + z)
   dz = W\b
   ndz = abs(dz)
   z = z + dz
@@ -439,30 +439,50 @@ end
   @unpack t,dt,uprev,u,k = integrator
   @unpack uf = cache
   uf.t = t
-  dto2 = dt/2
+  γ = 2 - sqrt(2)
+  ω = sqrt(2)/4
+  d = γ/2
 
-  if integrator.iter > 1 && !integrator.u_modified
-    u = current_extrapolant(t+dt,integrator)
-  else
-    u = uprev
-  end
-  if typeof(uprev) <: AbstractArray
-    J = ForwardDiff.jacobian(uf,uprev)
-    W = I - dto2*J
-  else
-    J = ForwardDiff.derivative(uf,uprev)
-    W = 1 - dto2*J
-  end
-  z = u - uprev
-  iter = 0
+  b1 = ω
+  bhat1 = (1-ω)/3
+  b2 = ω
+  bhat2 = (3ω + 1)/3
+  b3 = d
+  bhat3 = d/3
+
+  γdt = γ*dt
   κ = cache.κ
   tol = cache.tol
 
-  iter += 1
-  b = -z + dto2*f(t+dt,uprev + z)
-  dz = W\b
-  ndz = abs(dz)
-  z = z + dz
+  #=
+  if integrator.iter > 1 && !integrator.u_modified
+    uᵧ = current_extrapolant(t+dt,integrator)
+  else
+    uᵧ = uprev
+  end
+  =#
+
+  if typeof(uprev) <: AbstractArray
+    J = ForwardDiff.jacobian(uf,uprev)
+    W = I - d*dt*J
+  else
+    J = ForwardDiff.derivative(uf,uprev)
+    W = 1 - d*dt*J
+  end
+
+  zprev = dt*integrator.fsalfirst
+
+  ##### Solve Trapezoid Step
+
+  zᵧ = zprev
+  iter = 1
+  uᵧ = (uprev + d*zprev) + d*zᵧ
+  b = dt*f(t+γdt,uᵧ) - zᵧ
+  Δzᵧ = W\b
+  ndz = abs(Δzᵧ)
+  zᵧ = zᵧ + Δzᵧ
+
+  uᵧ = (uprev + d*zprev) + d*zᵧ
 
   η = max(cache.ηold,eps(first(u)))^(0.8)
   if integrator.iter > 1
@@ -471,9 +491,42 @@ end
     do_newton = true
   end
 
-  while do_newton
+  while iter < 5 #do_newton
     iter += 1
-    b = -z + dto2*f(t+dto2,uprev + z)
+    uᵧ = (uprev + d*zprev) + d*zᵧ
+    b = dt*f(t+γdt,uᵧ) - zᵧ
+    Δzᵧ = W\b
+    ndz = abs(Δzᵧ)
+    ndzprev = ndz
+    ndz = abs(Δzᵧ)
+    θ = ndz/ndzprev
+    η = θ/(1-θ)
+    do_newton = (η*ndz > κ*tol)
+    zᵧ = zᵧ + Δzᵧ
+  end
+
+  uᵧ = (uprev + d*zprev) + d*zᵧ
+
+  ################################## Solve BDF2 Step
+
+  ### Initial Guess From Shampine
+  z = (1.5 + sqrt(2))*zprev + (2.5 + 2sqrt(2))*zᵧ -
+      (6 + 4.5sqrt(2))*(uᵧ - uprev)
+
+  iter = 1
+  u = (uprev + ω*zprev + ω*zᵧ) + d*z
+  b = dt*f(t+dt,u) - z
+  dz = W\b
+  ndz = abs(dz)
+  z = z + dz
+
+  η = max(η,eps(first(u)))^(0.8)
+  do_newton = (η*ndz > κ*tol)
+
+  while iter < 5 #do_newton
+    iter += 1
+    u = (uprev + ω*zprev + ω*zᵧ) + d*z
+    b = dt*f(t+dt,u) - z
     dz = W\b
     ndzprev = ndz
     ndz = abs(dz)
@@ -483,35 +536,24 @@ end
     z = z + dz
   end
 
-  cache.ηold = η
-  cache.newton_iters = iter
-  u = uprev + 2z
-  integrator.fsallast = f(t+dt,u)
+  u = (uprev + ω*zprev + ω*zᵧ) + d*z
+
+  ################################### Finalize
+
+  integrator.fsallast = z/dt
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
+  cache.ηold = η
+  cache.newton_iters = iter
 
   if integrator.opts.adaptive
-    if integrator.iter > 2
-      # Use 3rd divided differences a la SPICE and Shampine
-      uprev2 = integrator.uprev2
-      tprev = integrator.tprev
-      uprev3 = cache.uprev3
-      tprev2 = cache.tprev2
-      DD31 = ((u - uprev)/((dt)*(t+dt-tprev)) + (uprev-uprev2)/((t-tprev)*(t+dt-tprev)))
-      DD30 = ((uprev - uprev2)/((t-tprev)*(t-tprev2)) + (uprev2-uprev3)/((tprev-tprev2)*(t-tprev2)))
-      dEst = (dt^3)*abs(((DD31 - DD30)/(t+dt-tprev2))/12)
-      integrator.EEst = dEst/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
-      if integrator.EEst <= 1
-        cache.uprev3 = uprev2
-        cache.tprev2 = tprev
-      end
-    elseif integrator.iter > 1
-      integrator.EEst = 1
-      cache.uprev3 = integrator.uprev2
-      cache.tprev2 = integrator.tprev
+    est = (bhat1-b1)*zprev + (bhat2-b2)*zᵧ + (bhat3-b3)*z
+    if integrator.alg.smooth_est # From Shampine
+      Est = W\est
     else
-      integrator.EEst = 1
+      Est = est
     end
+    integrator.EEst = abs(Est)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
   end
 
   @pack integrator = t,dt,u
