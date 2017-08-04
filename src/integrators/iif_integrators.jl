@@ -131,6 +131,6 @@ end
 
   copy!(u,nlres)
   integrator.f[2](t+dt,nlres,rtmp1)
-  integrator.fsallast = A*u .+ rtmp1
+  integrator.fsallast .= A*u .+ rtmp1
   @pack integrator = t,dt,u
 end
