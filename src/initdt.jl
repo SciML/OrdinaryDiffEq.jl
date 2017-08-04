@@ -42,7 +42,7 @@ end
   f = prob.f
 
   sk = @. abstol+abs(u0)*reltol
-  d₀ = internalnorm(@. u0/sk*oneunit(tType))
+  d₀ = internalnorm(@. u0/sk)
 
   f₀ = f(t,u0)
   if any((isnan(x) for x in f₀))
