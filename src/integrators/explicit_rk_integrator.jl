@@ -63,7 +63,6 @@ end
   f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
 end
 
-#=
 @inline @muladd function perform_step!(integrator,cache::ExplicitRKCache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
   @unpack A,c,α,αEEst,stages = cache.tab
@@ -83,7 +82,7 @@ end
     @. utilde = utilde + A[j,end]*kk[j]
   end
   @. u = uprev+dt*utilde
-  f(t+c[end]*dt),u,kk[end]) #fsallast is tmp even if not fsal
+  f(t+c[end]*dt,u,kk[end]) #fsallast is tmp even if not fsal
   #Accumulate
   if !isfsal(integrator.alg.tableau)
     @. utilde = α[1]*kk[1]
@@ -97,75 +96,7 @@ end
     for i = 2:stages
       @. uEEst = uEEst + αEEst[i]*kk[i]
     end
-    @. atmp = (dt*(utilde-uEEst)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
-    integrator.EEst = integrator.opts.internalnorm(atmp)
-  end
-  if !isfsal(integrator.alg.tableau)
-    f(t+dt,u,integrator.fsallast)
-  end
-  @pack integrator = t,dt,u
-end
-=#
-
-@inline @muladd function perform_step!(integrator,cache::ExplicitRKCache,f=integrator.f)
-  @unpack t,dt,uprev,u,k = integrator
-  uidx = eachindex(integrator.uprev)
-  @unpack A,c,α,αEEst,stages = cache.tab
-  @unpack kk,utilde,tmp,atmp,uEEst = cache
-  # Middle
-  for i = 2:stages-1
-    @tight_loop_macros for l in uidx
-      @inbounds utilde[l] = zero(kk[1][1])
-    end
-    for j = 1:i-1
-      @tight_loop_macros for l in uidx
-        @inbounds utilde[l] = utilde[l] + A[j,i]*kk[j][l]
-      end
-    end
-    @tight_loop_macros for l in uidx
-      @inbounds tmp[l] = uprev[l]+dt*utilde[l]
-    end
-    f(t+c[i]*dt,tmp,kk[i])
-  end
-  #Last
-  @tight_loop_macros for l in uidx
-    @inbounds utilde[l] = zero(kk[1][1])
-  end
-  for j = 1:stages-1
-    @tight_loop_macros for l in uidx
-      @inbounds utilde[l] = utilde[l] + A[j,end]*kk[j][l]
-    end
-  end
-  @tight_loop_macros for l in uidx
-    @inbounds u[l] = uprev[l]+dt*utilde[l]
-  end
-  f(t+c[end]*dt,u,kk[end]) #fsallast is tmp even if not fsal
-  #Accumulate
-  if !isfsal(integrator.alg.tableau)
-    @tight_loop_macros for i in uidx
-      @inbounds utilde[i] = α[1]*kk[1][i]
-    end
-    for i = 2:stages
-      @tight_loop_macros for l in uidx
-        @inbounds utilde[l] = utilde[l] + α[i]*kk[i][l]
-      end
-    end
-    @tight_loop_macros for i in uidx
-      @inbounds u[i] = uprev[i] + dt*utilde[i]
-    end
-  end
-  if integrator.opts.adaptive
-    @tight_loop_macros for i in uidx
-      @inbounds uEEst[i] = αEEst[1]*kk[1][i]
-    end
-    for i = 2:stages
-      @tight_loop_macros for j in uidx
-        @inbounds uEEst[j] = uEEst[j] + αEEst[i]*kk[i][j]
-      end
-    end
-    @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
-      @inbounds atmp[i] = dt*(utilde[i]-uEEst[i])/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
-    end
+    @. atmp = dt*(utilde-uEEst)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   if !isfsal(integrator.alg.tableau)
