@@ -55,15 +55,15 @@ end
 
 
 @inline function initialize!(integrator,cache::Nystrom4VelocityIndependentCache,f=integrator.f)
-  @unpack tmp,fsalfirst,k₂,k = cache
-  uprev,duprev = integrator.uprev.x
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
 
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
+
+  uprev,duprev = integrator.uprev.x
   f[1](integrator.t,uprev,duprev,integrator.k[2].x[1])
   f[2](integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
@@ -98,22 +98,22 @@ end
 
 
 @inline function initialize!(integrator,cache::Nystrom5VelocityIndependentCache,f=integrator.f)
-  @unpack tmp,fsalfirst,k₂,k = cache
-  uprev,duprev = integrator.uprev.x
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
 
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
+
+  uprev,duprev = integrator.uprev.x
   f[1](integrator.t,uprev,duprev,integrator.k[2].x[1])
   f[2](integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 #=
 @inline @muladd function perform_step!(integrator,cache::Nystrom5VelocityIndependentCache,f=integrator.f)
-  @unpack t,dt,k = integrator
+  @unpack t,dt = integrator
   u,du = integrator.u.x
   uprev,duprev = integrator.uprev.x
   @unpack tmp,fsalfirst,k₂,k₃,k₄,k = cache
@@ -128,9 +128,7 @@ end
   @. ku = uprev + (2//3*dt)*duprev + (-1//27*dtsq)*k₁.x[2] + (7//27*dtsq)*k₂.x[2]
 
   f[2](t+2//3*dt,ku,du,k₃.x[2])
-  @tight_loop_macros for i in uidx
-    @inbounds ku[i] = uprev[i] + dt*duprev[i] + (3//10*dtsq)*k₁.x[2][i] + (-2//35*dtsq)*k₂.x[2][i] + (9//35*dtsq)*k₃.x[2][i]
-  end
+  @. ku = uprev + dt*duprev + (3//10*dtsq)*k₁.x[2] + (-2//35*dtsq)*k₂.x[2] + (9//35*dtsq)*k₃.x[2]
 
   f[2](t+dt,ku,du,k₄.x[2])
   @. u  = uprev + dt*duprev + (14//336*dtsq)*k₁.x[2] + (100//336*dtsq)*k₂.x[2] + (54//336*dtsq)*k₃.x[2]

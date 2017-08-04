@@ -15,7 +15,7 @@ end
   u = @. (uprev + tmp + dt*k) / 2
   integrator.fsallast = f(t+dt,u) # For interpolation, then FSAL'd
   integrator.k[1] = integrator.fsalfirst
-  @pack integrator = t,dt,u
+  integrator.u = u
 end
 
 @inline function initialize!(integrator,cache::SSPRK22Cache,f=integrator.f)
@@ -35,7 +35,6 @@ end
   f(t+dt,tmp,k)
   @. u = (uprev + tmp + dt*k) / 2
   f(t+dt,u,k)
-  @pack integrator = t,dt,u
 end
 
 @inline function initialize!(integrator,cache::SSPRK33ConstantCache,f=integrator.f)
@@ -57,7 +56,7 @@ end
   u = @. (uprev + 2*tmp + 2*dt*k) / 3
   integrator.fsallast = f(t+dt,u) # For interpolation, then FSAL'd
   integrator.k[1] = integrator.fsalfirst
-  @pack integrator = t,dt,u
+  integrator.u = u
 end
 
 @inline function initialize!(integrator,cache::SSPRK33Cache,f=integrator.f)
@@ -79,7 +78,6 @@ end
   f(t+dt/2,tmp,k)
   @. u = (uprev + 2*tmp + 2*dt*k) / 3
   f(t+dt,u,k)
-  @pack integrator = t,dt,u
 end
 
 @inline function initialize!(integrator,cache::SSPRK432ConstantCache,f=integrator.f)
@@ -111,7 +109,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(@. (utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
   end
   integrator.k[1] = integrator.fsalfirst
-  @pack integrator = t,dt,u
+  integrator.u = u
 end
 
 @inline function initialize!(integrator,cache::SSPRK432Cache,f=integrator.f)
@@ -150,7 +148,6 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   f(t+dt, u, k)
-  @pack integrator = t,dt,u
 end
 
 
@@ -194,7 +191,7 @@ end
   integrator.fsallast = f(t+dt,u) # For interpolation, then FSAL'd
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  @pack integrator = t,dt,u
+  integrator.u = u
 end
 
 @inline function initialize!(integrator,cache::SSPRK104Cache,f=integrator.f)
@@ -235,5 +232,4 @@ end
   f(t+dt, tmp, k)
   @. u = (uprev + 9*(u + dt_6*k₄) + 15*(tmp + dt_6*k)) / 25
   f(t+dt,u,k)
-  @pack integrator = t,dt,u
 end

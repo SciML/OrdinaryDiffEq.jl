@@ -15,7 +15,7 @@ end
   integrator.fsallast = f[1](t+dt,u) + f[2](t+dt,u)  # For the interpolation, needs k at the updated point
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  @pack integrator = t,dt,u
+  integrator.u = u
 end
 
 @inline function initialize!(integrator,cache::SplitEulerCache,f=integrator.f)
@@ -37,5 +37,4 @@ end
   f[1](t+dt,u,integrator.fsallast) # For the interpolation, needs k at the updated point
   f[2](t+dt,u,cache.tmp) # For the interpolation, needs k at the updated point
   integrator.fsallast .+= cache.tmp
-  @pack integrator = t,dt,u
 end

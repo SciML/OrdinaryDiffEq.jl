@@ -26,7 +26,7 @@ end
   end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  @pack integrator = t,dt,u
+  integrator.u = u
 end
 
 @inline function initialize!(integrator,cache::BS3Cache,f=integrator.f)
@@ -57,7 +57,6 @@ end
     @. atmp = (utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
-  @pack integrator = t,dt,u
 end
 
 @inline function initialize!(integrator,cache::BS5ConstantCache,f=integrator.f)
@@ -96,7 +95,7 @@ end
     integrator.EEst = max(EEst1,EEst2)
   end
   integrator.k[1]=k1; integrator.k[2]=k2; integrator.k[3]=k3;integrator.k[4]=k4;integrator.k[5]=k5;integrator.k[6]=k6;integrator.k[7]=k7;integrator.k[8]=k8
-  @pack integrator = t,dt,u
+  integrator.u = u
 end
 =#
 
@@ -169,7 +168,7 @@ end
     end
   end
   integrator.k[1]=k1; integrator.k[2]=k2; integrator.k[3]=k3;integrator.k[4]=k4;integrator.k[5]=k5;integrator.k[6]=k6;integrator.k[7]=k7;integrator.k[8]=k8
-  @pack integrator = t,dt,u
+  integrator.u = u
 end
 
 @inline function initialize!(integrator,cache::BS5Cache,f=integrator.f)
@@ -212,7 +211,6 @@ end
     EEst2 = integrator.opts.internalnorm(atmptilde)
     integrator.EEst = max(EEst1,EEst2)
   end
-  @pack integrator = t,dt,u
 end
 =#
 
@@ -261,7 +259,6 @@ end
     EEst2 = integrator.opts.internalnorm(atmptilde)
     integrator.EEst = max(EEst1,EEst2)
   end
-  @pack integrator = t,dt,u
 end
 
 @inline function initialize!(integrator,cache::Tsit5ConstantCache,f=integrator.f)
@@ -303,7 +300,7 @@ end
   integrator.k[5] = k5
   integrator.k[6] = k6
   integrator.k[7] = k7
-  @pack integrator = t,dt,u
+  integrator.u = u
 end
 =#
 
@@ -370,7 +367,7 @@ end
   integrator.k[5] = k5
   integrator.k[6] = k6
   integrator.k[7] = k7
-  @pack integrator = t,dt,u
+  integrator.u = u
 end
 
 @inline function initialize!(integrator,cache::Tsit5Cache,f=integrator.f)
@@ -411,7 +408,6 @@ end
     @. atmp = (utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
-  @pack integrator = t,dt,u
 end
 =#
 
@@ -452,7 +448,6 @@ end
     end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
-  @pack integrator = t,dt,u
 end
 
 @inline function initialize!(integrator,cache::DP5ConstantCache,f=integrator.f)
@@ -492,7 +487,7 @@ end
   integrator.k[2] = bspl
   integrator.k[3] = @. update - k7 - bspl
   integrator.k[4] = @. d1*k1+d3*k3+d4*k4+d5*k5+d6*k6+d7*k7
-  @pack integrator = t,dt,u
+  integrator.u = u
 end
 =#
 
@@ -571,7 +566,7 @@ end
     integrator.k[3] = update - k7 - bspl
     integrator.k[4] = d1*k1+d3*k3+d4*k4+d5*k5+d6*k6+d7*k7
   end
-  @pack integrator = t,dt,u
+  integrator.u = u
 end
 
 @inline function initialize!(integrator,cache::DP5Cache,f=integrator.f)
@@ -610,7 +605,6 @@ end
   @. bspl = k1 - update
   @. integrator.k[3] = update - k7 - bspl
   @. integrator.k[4] = d1*k1+d3*k3+d4*k4+d5*k5+d6*k6+d7*k7
-  @pack integrator = t,dt,u
 end
 =#
 
@@ -658,5 +652,4 @@ end
     @inbounds integrator.k[3][i] = update[i] - k7[i] - bspl[i]
     @inbounds integrator.k[4][i] = d1*k1[i]+d3*k3[i]+d4*k4[i]+d5*k5[i]+d6*k6[i]+d7*k7[i]
   end
-  @pack integrator = t,dt,u
 end

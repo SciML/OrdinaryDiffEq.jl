@@ -50,7 +50,7 @@ end
   end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  @pack integrator = t,dt,u
+  integrator.u = u
 end
 
 @inline function initialize!(integrator,cache::ExplicitRKCache,f=integrator.f)
@@ -64,7 +64,7 @@ end
 end
 
 @inline @muladd function perform_step!(integrator,cache::ExplicitRKCache,f=integrator.f)
-  @unpack t,dt,uprev,u,k = integrator
+  @unpack t,dt,uprev,u = integrator
   @unpack A,c,α,αEEst,stages = cache.tab
   @unpack kk,utilde,tmp,atmp,uEEst = cache
   # Middle
@@ -102,5 +102,4 @@ end
   if !isfsal(integrator.alg.tableau)
     f(t+dt,u,integrator.fsallast)
   end
-  @pack integrator = t,dt,u
 end

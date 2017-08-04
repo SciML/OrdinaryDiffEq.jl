@@ -89,7 +89,6 @@ end
     end
     integrator.EEst = integrator.opts.internalnorm(tmp)
   end
-  @pack integrator = t,dt,u
 end
 
 @inline function initialize!(integrator,cache::Rosenbrock32Cache,f=integrator.f)
@@ -183,7 +182,6 @@ end#
     end
     integrator.EEst = integrator.opts.internalnorm(tmp)
   end
-  @pack integrator = t,dt,u
 end
 
 @inline function initialize!(integrator,cache::Rosenbrock23ConstantCache,f=integrator.f)
@@ -226,7 +224,7 @@ end
   end
   integrator.k[1] = k₁
   integrator.k[2] = k₂
-  @pack integrator = t,dt,u
+  integrator.u = u
 end
 
 @inline function initialize!(integrator,cache::Rosenbrock32ConstantCache,f=integrator.f)
@@ -271,7 +269,7 @@ end
   end
   integrator.k[1] = k₁
   integrator.k[2] = k₂
-  @pack integrator = t,dt,u
+  integrator.u = u
 end
 
 @inline function initialize!(integrator,cache::Rosenbrock33ConstantCache,f=integrator.f)
@@ -334,7 +332,7 @@ end
 
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  @pack integrator = t,dt,u
+  integrator.u = u
 end
 
 @inline function initialize!(integrator,cache::Rosenbrock33Cache,f=integrator.f)
@@ -433,8 +431,6 @@ end
     @. atmp = utilde/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
-
-  @pack integrator = t,dt,u
 end
 
 ################################################################################
@@ -504,7 +500,7 @@ end
 
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  @pack integrator = t,dt,u
+  integrator.u = u
 end
 
 @inline function initialize!(integrator,cache::Rosenbrock34Cache,f=integrator.f)
@@ -571,9 +567,7 @@ end
   #=
   a21 == 0 and c2 == 0
   so du = fsalfirst!
-  @tight_loop_macros for i in uidx
-    @inbounds u[i] = uprev[i]+a21*k1[i]
-  end
+  @. u = uprev + a21*k1
 
   f(t+c2*dt,u,du)
   =#
@@ -624,8 +618,6 @@ end
     @. atmp = utilde/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
-
-  @pack integrator = t,dt,u
 end
 
 
@@ -698,7 +690,7 @@ end
 
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  @pack integrator = t,dt,u
+  integrator.u = u
 end
 
 @inline function initialize!(integrator,cache::Rosenbrock4Cache,f=integrator.f)
@@ -812,8 +804,6 @@ end
     @. atmp = utilde/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
-
-  @pack integrator = t,dt,u
 end
 
 ################################################################################
@@ -928,7 +918,7 @@ end
   end
 
   integrator.fsallast = du
-  @pack integrator = t,dt,u
+  integrator.u = u
 end
 
 
@@ -1095,8 +1085,6 @@ end
     @. integrator.k[1] = h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5
     @. integrator.k[2] = h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5
   end
-
-  @pack integrator = t,dt,u
 end
 
 ###############################################################################
@@ -1272,7 +1260,7 @@ end
   end
 
   integrator.fsallast = du
-  @pack integrator = t,dt,u
+  integrator.u = u
 end
 
 @inline function initialize!(integrator,cache::Rosenbrock5Cache,f=integrator.f)
@@ -1492,6 +1480,4 @@ end
     @. integrator.k[2] = h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5
     =#
   end
-
-  @pack integrator = t,dt,u
 end

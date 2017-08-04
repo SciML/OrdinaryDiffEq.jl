@@ -10,7 +10,7 @@
 end
 
 @inline @muladd function perform_step!(integrator,cache::ImplicitEulerConstantCache,f=integrator.f)
-  @unpack t,dt,uprev,u,k = integrator
+  @unpack t,dt,uprev,u = integrator
   @unpack uf = cache
   uf.t = t
   if integrator.iter > 1 && !integrator.u_modified
@@ -75,7 +75,7 @@ end
   integrator.fsallast = f(t+dt,u)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  @pack integrator = t,dt,u
+  integrator.u = u
 end#
 
 @inline function initialize!(integrator,cache::ImplicitEulerCache,f=integrator.f)
@@ -194,7 +194,6 @@ end
   end
 
   f(t+dt,u,integrator.fsallast)
-  @pack integrator = t,dt,u
 end
 
 @inline function initialize!(integrator,cache::TrapezoidConstantCache,f=integrator.f)
@@ -209,7 +208,7 @@ end
 end
 
 @inline @muladd function perform_step!(integrator,cache::TrapezoidConstantCache,f=integrator.f)
-  @unpack t,dt,uprev,u,k = integrator
+  @unpack t,dt,uprev,u = integrator
   @unpack uf = cache
   uf.t = t
   dto2 = dt/2
@@ -287,14 +286,13 @@ end
     end
   end
 
-  @pack integrator = t,dt,u
+  integrator.u = u
 end
 
 @inline function initialize!(integrator,cache::TrapezoidCache,f=integrator.f)
   integrator.kshortsize = 2
-  @unpack k,fsalfirst = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -421,7 +419,6 @@ end
   end
 
   f(t+dt,u,integrator.fsallast)
-  @pack integrator = t,dt,u
 end
 
 @inline function initialize!(integrator,cache::TRBDF2ConstantCache,f=integrator.f)
@@ -436,7 +433,7 @@ end
 end
 
 @inline @muladd function perform_step!(integrator,cache::TRBDF2ConstantCache,f=integrator.f)
-  @unpack t,dt,uprev,u,k = integrator
+  @unpack t,dt,uprev,u = integrator
   @unpack uf = cache
   uf.t = t
   γ = 2 - sqrt(2)
@@ -548,14 +545,13 @@ end
     integrator.EEst = @. abs(Est)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
   end
 
-  @pack integrator = t,dt,u
+  integrator.u = u
 end
 
 @inline function initialize!(integrator,cache::TRBDF2Cache,f=integrator.f)
   integrator.kshortsize = 2
-  @unpack k,fsalfirst = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -715,5 +711,4 @@ end
   @. integrator.fsallast = z/dt
   cache.ηold = η
   cache.newton_iters = iter
-  @pack integrator = t,dt,u
 end

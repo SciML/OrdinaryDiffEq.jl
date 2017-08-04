@@ -40,7 +40,7 @@ end
   integrator.fsallast = k
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  @pack integrator = t,dt,u
+  integrator.u = u
 end
 =#
 
@@ -155,7 +155,7 @@ end
   integrator.fsallast = k
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  @pack integrator = t,dt,u
+  integrator.u = u
 end
 
 @inline function initialize!(integrator,cache::Feagin10Cache,f=integrator.f)
@@ -213,7 +213,6 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   f(t+dt,u,integrator.fsallast) # For the interpolation, needs k at the updated point
-  @pack integrator = t,dt,u
 end
 =#
 
@@ -298,7 +297,6 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   f(t+dt,u,integrator.fsallast) # For the interpolation, needs k at the updated point
-  @pack integrator = t,dt,u
 end
 
 @inline function initialize!(integrator,cache::Feagin12ConstantCache,f=integrator.f)
@@ -352,7 +350,7 @@ end
   end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  @pack integrator = t,dt,u
+  integrator.u = u
 end
 =#
 
@@ -509,7 +507,7 @@ end
   end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  @pack integrator = t,dt,u
+  integrator.u = u
 end
 
 @inline function initialize!(integrator,cache::Feagin12Cache,f=integrator.f)
@@ -583,7 +581,6 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   f(t+dt,u,k)
-  @pack integrator = t,dt,u
 end
 =#
 
@@ -700,7 +697,6 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   f(t+dt,u,k)
-  @pack integrator = t,dt,u
 end
 
 @inline function initialize!(integrator,cache::Feagin14ConstantCache,f=integrator.f)
@@ -763,7 +759,7 @@ end
   integrator.fsallast = k
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  @pack integrator = t,dt,u
+  integrator.u = u
 end
 =#
 
@@ -968,7 +964,7 @@ end
   integrator.fsallast = k
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  @pack integrator = t,dt,u
+  integrator.u = u
 end
 
 @inline function initialize!(integrator,cache::Feagin14Cache,f=integrator.f)
@@ -1063,7 +1059,6 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   f(t+dt,u,integrator.fsallast) # For the interpolation, needs k at the updated point
-  @pack integrator = t,dt,u
 end
 =#
 
@@ -1221,5 +1216,4 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   f(t+dt,u,integrator.fsallast) # For the interpolation, needs k at the updated point
-  @pack integrator = t,dt,u
 end

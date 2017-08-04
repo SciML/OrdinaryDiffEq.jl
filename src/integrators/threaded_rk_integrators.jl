@@ -28,7 +28,6 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   dp5threaded_denseloop(bspl,update,k1,k3,k4,k5,k6,k7,integrator.k,d1,d3,d4,d5,d6,d7,uidx)
-  @pack integrator = t,dt,u
 end
 
 @noinline @muladd function dp5threaded_denseloop(bspl,update,k1,k3,k4,k5,k6,k7,k,d1,d3,d4,d5,d6,d7,uidx)

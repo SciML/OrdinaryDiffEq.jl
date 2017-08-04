@@ -67,14 +67,18 @@ end
   f[1](t,uprev,du,ku)
 end
 
-@inline function initialize!(integrator,cache::VelocityVerletCache,f=integrator.f)
+@inline function initialize!(integrator,cache::C,f=integrator.f) where
+    {C<:Union{VelocityVerletCache,Symplectic2Cache,Symplectic3Cache,Symplectic4Cache,
+              Symplectic45Cache,Symplectic5Cache,Symplectic6Cache,Symplectic62Cache,
+              McAte8Cache,KahanLi8Cache,SofSpa10Cache}}
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+
   integrator.kshortsize = 2
-  @unpack k,fsalfirst = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
+
   uprev,duprev = integrator.uprev.x
   f[1](integrator.t,uprev,duprev,integrator.k[2].x[1])
   f[2](integrator.t,uprev,duprev,integrator.k[2].x[2])
@@ -95,19 +99,6 @@ end
   copy!(integrator.k[1].x[2],integrator.k[2].x[2])
   copy!(integrator.k[2].x[1],du)
   copy!(integrator.k[2].x[2],kdu)
-end
-
-@inline function initialize!(integrator,cache::Symplectic2Cache,f=integrator.f)
-  integrator.kshortsize = 2
-  @unpack k,fsalfirst = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  uprev,duprev = integrator.uprev.x
-  f[1](integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f[2](integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 @inline @muladd function perform_step!(integrator,cache::Symplectic2Cache,f=integrator.f)
@@ -132,19 +123,6 @@ end
   copy!(integrator.k[1].x[2],integrator.k[2].x[2])
   copy!(integrator.k[2].x[1],du)
   copy!(integrator.k[2].x[2],kdu)
-end
-
-@inline function initialize!(integrator,cache::Symplectic3Cache,f=integrator.f)
-  integrator.kshortsize = 2
-  @unpack k,fsalfirst = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  uprev,duprev = integrator.uprev.x
-  f[1](integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f[2](integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 @inline @muladd function perform_step!(integrator,cache::Symplectic3Cache,f=integrator.f)
@@ -177,19 +155,6 @@ end
   copy!(integrator.k[1].x[2],integrator.k[2].x[2])
   copy!(integrator.k[2].x[1],du)
   copy!(integrator.k[2].x[2],kdu)
-end
-
-@inline function initialize!(integrator,cache::Symplectic4Cache,f=integrator.f)
-  integrator.kshortsize = 2
-  @unpack k,fsalfirst = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  uprev,duprev = integrator.uprev.x
-  f[1](integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f[2](integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 @inline @muladd function perform_step!(integrator,cache::Symplectic4Cache,f=integrator.f)
@@ -230,19 +195,6 @@ end
   copy!(integrator.k[1].x[2],integrator.k[2].x[2])
   copy!(integrator.k[2].x[1],du)
   copy!(integrator.k[2].x[2],kdu)
-end
-
-@inline function initialize!(integrator,cache::Symplectic45Cache,f=integrator.f)
-  integrator.kshortsize = 2
-  @unpack k,fsalfirst = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  uprev,duprev = integrator.uprev.x
-  f[1](integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f[2](integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 @inline @muladd function perform_step!(integrator,cache::Symplectic45Cache,f=integrator.f)
@@ -293,19 +245,6 @@ end
   copy!(integrator.k[1].x[2],integrator.k[2].x[2])
   copy!(integrator.k[2].x[1],du)
   copy!(integrator.k[2].x[2],kdu)
-end
-
-@inline function initialize!(integrator,cache::Symplectic5Cache,f=integrator.f)
-  integrator.kshortsize = 2
-  @unpack k,fsalfirst = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  uprev,duprev = integrator.uprev.x
-  f[1](integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f[2](integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 @inline @muladd function perform_step!(integrator,cache::Symplectic5Cache,f=integrator.f)
@@ -361,19 +300,6 @@ end
   copy!(integrator.k[1].x[2],integrator.k[2].x[2])
   copy!(integrator.k[2].x[1],du)
   copy!(integrator.k[2].x[2],kdu)
-end
-
-@inline function initialize!(integrator,cache::Symplectic6Cache,f=integrator.f)
-  integrator.kshortsize = 2
-  @unpack k,fsalfirst = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  uprev,duprev = integrator.uprev.x
-  f[1](integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f[2](integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 @inline @muladd function perform_step!(integrator,cache::Symplectic6Cache,f=integrator.f)
@@ -443,19 +369,6 @@ end
   copy!(integrator.k[1].x[2],integrator.k[2].x[2])
   copy!(integrator.k[2].x[1],du)
   copy!(integrator.k[2].x[2],kdu)
-end
-
-@inline function initialize!(integrator,cache::Symplectic62Cache,f=integrator.f)
-  integrator.kshortsize = 2
-  @unpack k,fsalfirst = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  uprev,duprev = integrator.uprev.x
-  f[1](integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f[2](integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 @inline @muladd function perform_step!(integrator,cache::Symplectic62Cache,f=integrator.f)
@@ -539,19 +452,6 @@ end
   copy!(integrator.k[1].x[2],integrator.k[2].x[2])
   copy!(integrator.k[2].x[1],du)
   copy!(integrator.k[2].x[2],kdu)
-end
-
-@inline function initialize!(integrator,cache::McAte8Cache,f=integrator.f)
-  integrator.kshortsize = 2
-  @unpack k,fsalfirst = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  uprev,duprev = integrator.uprev.x
-  f[1](integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f[2](integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 @inline @muladd function perform_step!(integrator,cache::McAte8Cache,f=integrator.f)
@@ -678,19 +578,6 @@ end
   copy!(integrator.k[1].x[2],integrator.k[2].x[2])
   copy!(integrator.k[2].x[1],du)
   copy!(integrator.k[2].x[2],kdu)
-end
-
-@inline function initialize!(integrator,cache::KahanLi8Cache,f=integrator.f)
-  integrator.kshortsize = 2
-  @unpack k,fsalfirst = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  uprev,duprev = integrator.uprev.x
-  f[1](integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f[2](integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 @inline @muladd function perform_step!(integrator,cache::KahanLi8Cache,f=integrator.f)
@@ -831,19 +718,6 @@ end
   copy!(integrator.k[1].x[2],integrator.k[2].x[2])
   copy!(integrator.k[2].x[1],du)
   copy!(integrator.k[2].x[2],kdu)
-end
-
-@inline function initialize!(integrator,cache::SofSpa10Cache,f=integrator.f)
-  integrator.kshortsize = 2
-  @unpack k,fsalfirst = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  uprev,duprev = integrator.uprev.x
-  f[1](integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f[2](integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 @inline @muladd function perform_step!(integrator,cache::SofSpa10Cache,f=integrator.f)
