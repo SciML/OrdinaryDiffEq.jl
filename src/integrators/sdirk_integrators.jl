@@ -698,7 +698,11 @@ end
     be1 = (bhat1-b1); be2 = (bhat2-b2); be3 = (bhat3-b3)
     @. est = be1*zprev + be2*zᵧ + be3*z
     if integrator.alg.smooth_est # From Shampine
-      integrator.alg.linsolve(vec(k),W,vec(est),false)
+      if has_invW(f)
+        A_mul_B!(vec(k),W,vec(est))
+      else
+        integrator.alg.linsolve(vec(k),W,vec(est),false)
+      end
     else
       k .= est
     end
