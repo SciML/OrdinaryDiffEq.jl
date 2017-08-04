@@ -1186,12 +1186,12 @@ end
   du = f(t+c5*dt,u)
 
   # linsolve_tmp = @. du + dt*d5*dT + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
-  if typeof(u) <: AbstractArray
+  if typeof(u) <: AbstractArray && !(typeof(u) <: SArray)
     tmp = similar(du)
     @tight_loop_macros for i in eachindex(tmp)
       @inbounds tmp[i] = du[i] + dt*d5*dT[i] + (dtC52*k2[i] + dtC54*k4[i] + dtC52*k5[i] + dtC53*k4[i])
     end
-    linsolve_tmp = convert(typeof(linsolve_tmp), tmp)
+    linsolve_tmp = tmp
   else
     linsolve_tmp = du + dt*d5*dT + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
   end
@@ -1211,12 +1211,12 @@ end
   du = f(t+dt,u)
 
   # linsolve_tmp = @. du + (dtC71*k1 + dtC72*k2 + dtC73*k3 + dtC74*k4 + dtC75*k5 + dtC76*k6)
-  if typeof(u) <: AbstractArray
+  if typeof(u) <: AbstractArray && !(typeof(u) <: SArray)
     tmp = similar(du)
     @tight_loop_macros for i in eachindex(tmp)
       @inbounds tmp[i] = du[i] + (dtC71*k1[i] + dtC72*k2[i] + dtC73*k3[i] + dtC74*k4[i] + dtC75*k5[i] + dtC76*k6[i])
     end
-    linsolve_tmp = convert(typeof(linsolve_tmp), tmp)
+    linsolve_tmp = tmp
   else
     linsolve_tmp = du + (dtC71*k1 + dtC72*k2 + dtC73*k3 + dtC74*k4 + dtC75*k5 + dtC76*k6)
   end
@@ -1228,12 +1228,12 @@ end
   du = f(t+dt,u)
 
   # linsolve_tmp = @. du + (dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7)
-  if typeof(u) <: AbstractArray
+  if typeof(u) <: AbstractArray && !(typeof(u) <: SArray)
     tmp = similar(du)
     @tight_loop_macros for i in eachindex(tmp)
       @inbounds tmp[i] = du[i] + (dtC81*k1[i] + dtC82*k2[i] + dtC83*k3[i] + dtC84*k4[i] + dtC85*k5[i] + dtC86*k6[i] + dtC87*k7[i])
     end
-    linsolve_tmp = convert(typeof(linsolve_tmp), tmp)
+    linsolve_tmp = tmp
   else
     linsolve_tmp = du + (dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7)
   end

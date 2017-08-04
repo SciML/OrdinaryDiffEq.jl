@@ -26,6 +26,9 @@ module OrdinaryDiffEq
 
   import ForwardDiff.Dual
 
+  # Required by temporary fix in not in-place methods with 12+ broadcasts
+  import StaticArrays: SArray
+
   # Integrator Interface
   import DiffEqBase: resize!,deleteat!,addat!,full_cache,user_cache,u_cache,du_cache,
                      resize_non_user_cache!,deleteat_non_user_cache!,addat_non_user_cache!,

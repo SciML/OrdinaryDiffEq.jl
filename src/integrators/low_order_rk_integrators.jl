@@ -104,7 +104,7 @@ end
   @unpack c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8 = cache
   k1 = integrator.fsalfirst
   a = dt*a21
-  if typeof(u) <: AbstractArray
+  if typeof(u) <: AbstractArray && !(typeof(u) <: SArray)
     uidx = eachindex(uprev)
     tmp = similar(uprev)
     @tight_loop_macros for i in uidx
@@ -135,7 +135,7 @@ end
     @tight_loop_macros for i in uidx
       @inbounds utmp[i] = uprev[i]+dt*(a81*k1[i]+a83*k3[i]+a84*k4[i]+a85*k5[i]+a86*k6[i]+a87*k7[i])
     end
-    u = convert(typeof(u),utmp) # fixes problem with StaticArrays
+    u = utmp
     integrator.fsallast = f(t+dt,u); k8 = integrator.fsallast
     if integrator.opts.adaptive
       atmp = similar(u, typeof(one(recursive_eltype(u))), indices(u))
@@ -162,8 +162,8 @@ end
     if integrator.opts.adaptive
       uhat   = dt*(bhat1*k1 + bhat3*k3 + bhat4*k4 + bhat5*k5 + bhat6*k6)
       utilde = uprev + dt*(btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7 + btilde8*k8)
-      EEst1 = integrator.opts.internalnorm(uhat/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
-      EEst2 = integrator.opts.internalnorm((utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+      EEst1 = integrator.opts.internalnorm(@. uhat/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+      EEst2 = integrator.opts.internalnorm(@. (utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
       integrator.EEst = max(EEst1,EEst2)
     end
   end
@@ -309,7 +309,7 @@ end
   @unpack c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,b1,b2,b3,b4,b5,b6,b7 = cache
   k1 = integrator.fsalfirst
   a = dt*a21
-  if typeof(u) <: AbstractArray
+  if typeof(u) <: AbstractArray && !(typeof(u) <: SArray)
     uidx = eachindex(uprev)
     tmp = similar(uprev)
     @tight_loop_macros for i in uidx
@@ -336,7 +336,7 @@ end
     @tight_loop_macros for i in uidx
       @inbounds utmp[i] = uprev[i]+dt*(a71*k1[i]+a72*k2[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i])
     end
-    u = convert(typeof(u),utmp) # fixes problem with StaticArrays where typeof(u) != typeof(utmp)
+    u = utmp
     integrator.fsallast = f(t+dt,u); k7 = integrator.fsallast
     if integrator.opts.adaptive
       atmp = similar(u, typeof(one(recursive_eltype(u))), indices(u))
@@ -356,7 +356,7 @@ end
     integrator.fsallast = f(t+dt,u); k7 = integrator.fsallast
     if integrator.opts.adaptive
       utilde = uprev + dt*(b1*k1 + b2*k2 + b3*k3 + b4*k4 + b5*k5 + b6*k6 + b7*k7)
-      tmp = ((utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+      tmp = @. ((utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
       integrator.EEst = integrator.opts.internalnorm(tmp)
     end
   end
@@ -497,7 +497,7 @@ end
   @unpack d1,d3,d4,d5,d6,d7 = cache
   k1 = integrator.fsalfirst
   a = dt*a21
-  if typeof(u) <: AbstractArray
+  if typeof(u) <: AbstractArray && !(typeof(u) <: SArray)
     uidx = eachindex(uprev)
     tmp = similar(uprev)
     @tight_loop_macros for i in uidx
@@ -525,7 +525,7 @@ end
       @inbounds tmp[i] = a71*k1[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i]
       @inbounds utmp[i] = uprev[i]+dt*tmp[i]
     end
-    u = convert(typeof(u), utmp) # fixes problem with StaticArrays
+    u = utmp
     integrator.fsallast = f(t+dt,u); k7 = integrator.fsallast
     if integrator.opts.adaptive
       atmp = similar(u, typeof(one(recursive_eltype(u))), indices(u))
@@ -535,7 +535,7 @@ end
       end
       integrator.EEst = integrator.opts.internalnorm(atmp)
     end
-    integrator.k[1] = convert(typeof(integrator.k[1]), tmp)
+    integrator.k[1] = tmp
     k2tmp = similar(integrator.k[2]); k3tmp = similar(integrator.k[3])
     k4tmp = similar(integrator.k[4])
     @tight_loop_macros for i in uidx
@@ -543,9 +543,7 @@ end
       @inbounds k3tmp[i] = tmp[i] - k7[i] - k2tmp[i]
       @inbounds k4tmp[i] = d1*k1[i]+d3*k3[i]+d4*k4[i]+d5*k5[i]+d6*k6[i]+d7*k7[i]
     end
-    integrator.k[2] = convert(typeof(integrator.k[2]), k2tmp)
-    integrator.k[3] = convert(typeof(integrator.k[3]), k3tmp)
-    integrator.k[4] = convert(typeof(integrator.k[4]), k4tmp)
+    integrator.k[2] = k2tmp; integrator.k[3] = k3tmp; integrator.k[4] = k4tmp
   else
     k2 = f(t+c1*dt, uprev+a*k1)
     k3 = f(t+c2*dt, uprev+dt*(a31*k1+a32*k2))
@@ -557,7 +555,7 @@ end
     integrator.fsallast = f(t+dt,u); k7 = integrator.fsallast
     if integrator.opts.adaptive
       utilde = uprev + dt*(b1*k1 + b3*k3 + b4*k4 + b5*k5 + b6*k6 + b7*k7)
-      tmp = ((utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+      tmp = @. ((utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
       integrator.EEst = integrator.opts.internalnorm(tmp)
     end
     integrator.k[1] = update
