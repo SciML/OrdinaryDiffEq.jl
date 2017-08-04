@@ -203,13 +203,14 @@ end
   tf.u = uprev
   uf.t = t
   dT = ForwardDiff.derivative(tf,t)
+  a = -dt*d
   if typeof(uprev) <: AbstractArray
     J = ForwardDiff.jacobian(uf,uprev)
+    W = I + a*J
   else
     J = ForwardDiff.derivative(uf,uprev)
+    W = 1 + a*J
   end
-  a = -dt*d
-  W = @. 1+a*J
   a = -a
   k₁ = W\(@. integrator.fsalfirst + a*dT)
   dto2 = dt/2
@@ -246,13 +247,14 @@ end
   uf.t = t
   # Time derivative
   dT = ForwardDiff.derivative(tf,t)
+  a = -dt*d
   if typeof(uprev) <: AbstractArray
     J = ForwardDiff.jacobian(uf,uprev)
+    W = I + a*J
   else
     J = ForwardDiff.derivative(uf,uprev)
+    W = 1 + a*J
   end
-  a = -dt*d
-  W = @. 1+a*J
   #f₀ = f(t,uprev)
   a = -a
   k₁ = W\(@. integrator.fsalfirst + a*dT)
@@ -296,13 +298,14 @@ end
   dT = ForwardDiff.derivative(tf,t)
   if typeof(uprev) <: AbstractArray
     J = ForwardDiff.jacobian(uf,uprev)
+    W = I/(dt*gamma) - J
   else
     J = ForwardDiff.derivative(uf,uprev)
+    W = 1/(dt*gamma) - J
   end
 
   d1dt = dt*d1
   linsolve_tmp = @. integrator.fsalfirst + d1dt*dT
-  W = 1/(dt*gamma)-J
 
   k1 = W\linsolve_tmp
   u = @. uprev+a21*k1
@@ -459,13 +462,14 @@ end
   dT = ForwardDiff.derivative(tf,t)
   if typeof(uprev) <: AbstractArray
     J = ForwardDiff.jacobian(uf,uprev)
+    W = I/(dt*gamma) - J
   else
     J = ForwardDiff.derivative(uf,uprev)
+    W = 1/(dt*gamma) - J
   end
 
   d1dt = dt*d1
   linsolve_tmp = @. integrator.fsalfirst + d1dt*dT
-  W = 1/(dt*gamma)-J
 
   k1 = W\linsolve_tmp
   u = uprev # +a21*k1 a21 == 0
@@ -649,13 +653,14 @@ end
   dT = ForwardDiff.derivative(tf,t)
   if typeof(uprev) <: AbstractArray
     J = ForwardDiff.jacobian(uf,uprev)
+    W = I/(dt*gamma) - J
   else
     J = ForwardDiff.derivative(uf,uprev)
+    W = 1/(dt*gamma) - J
   end
 
   d1dt = dt*d1
   linsolve_tmp = @. integrator.fsalfirst + d1dt*dT
-  W = 1/(dt*gamma)-J
 
   k1 = W\linsolve_tmp
   u = @. uprev+a21*k1
@@ -850,8 +855,10 @@ end
   dT = ForwardDiff.derivative(tf,t)
   if typeof(uprev) <: AbstractArray
     J = ForwardDiff.jacobian(uf,uprev)
+    W = I/(dt*gamma) - J
   else
     J = ForwardDiff.derivative(uf,uprev)
+    W = 1/(dt*gamma) - J
   end
 
   d1dt = dt*d1
@@ -859,8 +866,6 @@ end
   du = f(t,uprev)
 
   linsolve_tmp = @. du + d1dt*dT
-
-  W = 1/(dt*gamma)-J
 
   k1 = W\linsolve_tmp
 
@@ -1143,8 +1148,10 @@ end
   dT = ForwardDiff.derivative(tf,t)
   if typeof(uprev) <: AbstractArray
     J = ForwardDiff.jacobian(uf,uprev)
+    W = I/(dt*gamma) - J
   else
     J = ForwardDiff.derivative(uf,uprev)
+    W = 1/(dt*gamma) - J
   end
 
   d1dt = dt*d1
@@ -1152,8 +1159,6 @@ end
   du1 = f(t,uprev)
 
   linsolve_tmp = @. du1 + d1dt*dT
-
-  W = 1/(dt*gamma)-J
 
   k1 = W\linsolve_tmp
 

@@ -24,7 +24,7 @@ end
     W = I - dt*J
   else
     J = ForwardDiff.derivative(uf,uprev)
-    W = @. 1 - dt*J
+    W = 1 - dt*J
   end
 
   z = u - uprev
@@ -223,7 +223,7 @@ end
     W = I - dto2*J
   else
     J = ForwardDiff.derivative(uf,uprev)
-    W = @. 1 - dto2*J
+    W = 1 - dto2*J
   end
   z = u - uprev
   iter = 0
@@ -456,7 +456,7 @@ end
     W = I - d*dt*J
   else
     J = ForwardDiff.derivative(uf,uprev)
-    W = @. 1 - d*dt*J
+    W = 1 - d*dt*J
   end
 
   zprev = dt*integrator.fsalfirst
