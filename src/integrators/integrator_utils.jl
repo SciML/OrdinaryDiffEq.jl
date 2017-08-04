@@ -169,6 +169,10 @@ end
   @fastmath q = q11/(qold^beta2)
   integrator.q11 = q11
   @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),q/integrator.opts.gamma))
+  if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
+    @show "here!"
+    q = one(q)
+  end
   @fastmath dtnew = integrator.dt/q
 end
 
@@ -288,8 +292,9 @@ end
 
 
 @inline function calc_dt_propose!(integrator,dtnew)
-  integrator.dtpropose = integrator.tdir*min(abs(integrator.opts.dtmax),abs(dtnew))
-  integrator.dtpropose = integrator.tdir*max(abs(integrator.dtpropose),abs(integrator.opts.dtmin))
+  dtpropose = integrator.tdir*min(abs(integrator.opts.dtmax),abs(dtnew))
+  dtpropose = integrator.tdir*max(abs(dtpropose),abs(integrator.opts.dtmin))
+  integrator.dtpropose = dtpropose
 end
 
 @inline function fix_dt_at_bounds!(integrator)

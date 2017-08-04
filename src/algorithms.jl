@@ -70,12 +70,12 @@ struct Nystrom4VelocityIndependent <: OrdinaryDiffEqAlgorithm end
 
 # Generic implicit methods
 
-struct GenericImplicitEuler{F} <: OrdinaryDiffEqAlgorithm
+struct GenericImplicitEuler{F} <: OrdinaryDiffEqAdaptiveAlgorithm
   nlsolve::F
 end
 Base.@pure GenericImplicitEuler(;nlsolve=NLSOLVEJL_SETUP()) = GenericImplicitEuler{typeof(nlsolve)}(nlsolve)
 
-struct GenericTrapezoid{F} <: OrdinaryDiffEqAlgorithm
+struct GenericTrapezoid{F} <: OrdinaryDiffEqAdaptiveAlgorithm
   nlsolve::F
 end
 Base.@pure GenericTrapezoid(;nlsolve=NLSOLVEJL_SETUP()) = GenericTrapezoid{typeof(nlsolve)}(nlsolve)

@@ -25,6 +25,8 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   abstol=nothing,
   reltol=nothing,
   qmax=qmax_default(alg),qmin=qmin_default(alg),
+  qsteady_min = qsteady_min_default(alg),
+  qsteady_max = qsteady_min_default(alg),
   qoldinit=1//10^4, fullnormalize=true,
   beta2=beta2_default(alg),
   beta1=beta1_default(alg,beta2),
@@ -192,6 +194,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
 
   opts = DEOptions(maxiters,timeseries_steps,save_everystep,adaptive,abstol_internal,
     reltol_internal,tTypeNoUnits(gamma),tTypeNoUnits(qmax),tTypeNoUnits(qmin),
+    tTypeNoUnits(qsteady_max),tTypeNoUnits(qsteady_min),
     tType(dtmax),tType(dtmin),internalnorm,save_idxs,
     tstops_internal,saveat_internal,d_discontinuities_internal,
     userdata,

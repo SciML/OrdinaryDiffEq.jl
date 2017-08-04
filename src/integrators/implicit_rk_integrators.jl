@@ -361,13 +361,10 @@ end
 
   η = max(cache.ηold,eps(first(u)))^(0.8)
   if integrator.iter > 1
-    @show η*ndz,κ*tol
     do_newton = (η*ndz > κ*tol)
   else
     do_newton = true
   end
-
-  @show "thisdz",ndz
 
   while do_newton
     iter += 1
@@ -381,7 +378,6 @@ end
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
-    @show "seconddz",ndz
     θ = ndz/ndzprev
     η = θ/(1-θ)
     do_newton = (η*ndz > κ*tol)

@@ -260,5 +260,12 @@ beta1_default(alg::DP5Threaded,beta2) = typeof(beta2)(1//alg_order(alg)) - 3beta
 
 gamma_default(alg::OrdinaryDiffEqAlgorithm) = 9//10
 
+qsteady_min_default(alg::OrdinaryDiffEqAlgorithm) = 1
+qsteady_max_default(alg::OrdinaryDiffEqAlgorithm) = 1
+qsteady_max_default(alg::ImplicitEuler) = 6//5
+qsteady_max_default(alg::GenericImplicitEuler) = 6//5
+qsteady_max_default(alg::Trapezoid) = 6//5
+qsteady_max_default(alg::GenericTrapezoid) = 6//5
+
 discrete_apply_map{apply_map,scale_by_time}(alg::Discrete{apply_map,scale_by_time}) = apply_map
 discrete_scale_by_time{apply_map,scale_by_time}(alg::Discrete{apply_map,scale_by_time}) = scale_by_time
