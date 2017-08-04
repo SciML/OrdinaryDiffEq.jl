@@ -38,8 +38,8 @@ end
   integrator.k[2] = integrator.fsallast
 end
 
-@inline function perform_step!(integrator,cache::GenericImplicitEulerConstantCache,f=integrator.f)
-  @unpack t,dt,uprev,u,k = integrator
+@inline @muladd function perform_step!(integrator,cache::GenericImplicitEulerConstantCache,f=integrator.f)
+  @unpack t,dt,uprev,u = integrator
   @unpack uhold,C,rhs,nl_rhs = cache
   C[1] = uprev
   if integrator.iter > 1 && !integrator.u_modified
@@ -81,8 +81,8 @@ end
   integrator.k[2] = integrator.fsallast
 end
 
-@inline function perform_step!(integrator,cache::GenericImplicitEulerCache,f=integrator.f)
-  @unpack t,dt,uprev,u,k = integrator
+@inline @muladd function perform_step!(integrator,cache::GenericImplicitEulerCache,f=integrator.f)
+  @unpack t,dt,uprev,u = integrator
   uidx = eachindex(integrator.uprev)
   @unpack C,dual_cache,k,nl_rhs,rhs,uhold = cache
   copy!(C,uprev)
@@ -127,8 +127,8 @@ end
   integrator.k[2] = integrator.fsallast
 end
 
-@inline function perform_step!(integrator,cache::GenericTrapezoidCache,f=integrator.f)
-  @unpack t,dt,uprev,u,k = integrator
+@inline @muladd function perform_step!(integrator,cache::GenericTrapezoidCache,f=integrator.f)
+  @unpack t,dt,uprev,u = integrator
   uidx = eachindex(integrator.uprev)
   @unpack C,dual_cache,k,rhs,nl_rhs,uhold = cache
   C .= vec(uprev) .+ (dt/2).*vec(integrator.fsalfirst)
@@ -189,8 +189,8 @@ end
   integrator.k[2] = integrator.fsallast
 end
 
-@inline function perform_step!(integrator,cache::GenericTrapezoidConstantCache,f=integrator.f)
-  @unpack t,dt,uprev,u,k = integrator
+@inline @muladd function perform_step!(integrator,cache::GenericTrapezoidConstantCache,f=integrator.f)
+  @unpack t,dt,uprev,u = integrator
   @unpack uhold,C,rhs,nl_rhs = cache
   C[1] = first(uprev) + (dt/2)*first(integrator.fsalfirst)
   if integrator.iter > 1 && !integrator.u_modified
