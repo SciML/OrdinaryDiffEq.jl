@@ -57,6 +57,10 @@ end
     z = z + dz
   end
 
+  cache.ηold = η
+  cache.newton_iters = iter
+  u = uprev + z
+
   if integrator.opts.adaptive && integrator.iter > 1
     # Use 2rd divided differences a la SPICE and Shampine
     uprev2 = integrator.uprev2
@@ -64,11 +68,10 @@ end
     DD3 = ((u - uprev)/((dt)*(t+dt-tprev)) + (uprev-uprev2)/((t-tprev)*(t+dt-tprev)))
     dEst = (dt^2)*abs(DD3/6)
     integrator.EEst = dEst/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
+  else
+    integrator.EEst = 1
   end
 
-  cache.ηold = η
-  cache.newton_iters = iter
-  u = uprev + z
   integrator.fsallast = f(t+dt,u)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -115,9 +118,14 @@ end
           Calculus.finite_difference_jacobian!(uf,vec(uprev),vec(du1),J,integrator.alg.diff_type)
         end
       end
+    end
+    if integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps()
+      new_W = true
       for j in 1:length(u), i in 1:length(u)
           @inbounds W[i,j] = @muladd mass_matrix[i,j]-dt*J[i,j]
       end
+    else
+      new_W = false
     end
   end
 
@@ -133,7 +141,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(k)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(k),true)
+    integrator.alg.linsolve(vec(dz),W,vec(k),new_W)
   end
   ndz = integrator.opts.internalnorm(dz)
   z .+= dz
@@ -181,6 +189,8 @@ end
       @inbounds k[i] = dEst/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
     end
     integrator.EEst = integrator.opts.internalnorm(k)
+  else
+    integrator.EEst = 1
   end
 
   f(t+dt,u,integrator.fsallast)
@@ -320,9 +330,14 @@ end
           Calculus.finite_difference_jacobian!(uf,vec(uprev),vec(du1),J,integrator.alg.diff_type)
         end
       end
+    end
+    if integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps()
+      new_W = true
       for j in 1:length(u), i in 1:length(u)
           @inbounds W[i,j] = @muladd mass_matrix[i,j]-dto2*J[i,j]
       end
+    else
+      new_W = false
     end
   end
 
@@ -338,7 +353,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(k)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(k),new_jac)
+    integrator.alg.linsolve(vec(dz),W,vec(k),new_W)
   end
   ndz = integrator.opts.internalnorm(dz)
   z .+= dz
@@ -346,10 +361,13 @@ end
 
   η = max(cache.ηold,eps(first(u)))^(0.8)
   if integrator.iter > 1
+    @show η*ndz,κ*tol
     do_newton = (η*ndz > κ*tol)
   else
     do_newton = true
   end
+
+  @show "thisdz",ndz
 
   while do_newton
     iter += 1
@@ -363,6 +381,7 @@ end
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
+    @show "seconddz",ndz
     θ = ndz/ndzprev
     η = θ/(1-θ)
     do_newton = (η*ndz > κ*tol)

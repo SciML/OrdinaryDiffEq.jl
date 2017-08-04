@@ -47,7 +47,7 @@ function alg_cache(alg::GenericImplicitEuler,u,rate_prototype,uEltypeNoUnits,tTy
   GenericImplicitEulerConstantCache{typeof(uhold),typeof(rhs),typeof(nl_rhs)}(uhold,C,rhs,nl_rhs)
 end
 
-mutable struct GenericTrapezoidCache{uType,uArrayType,vecuType,DiffCacheType,rateType,rhsType,nl_rhsType} <: OrdinaryDiffEqMutableCache
+mutable struct GenericTrapezoidCache{uType,uArrayType,vecuType,DiffCacheType,rateType,rhsType,nl_rhsType,tType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -59,9 +59,11 @@ mutable struct GenericTrapezoidCache{uType,uArrayType,vecuType,DiffCacheType,rat
   k::rateType
   rhs::rhsType
   nl_rhs::nl_rhsType
+  uprev3::uType
+  tprev2::tType
 end
 
-u_cache(c::GenericTrapezoidCache)    = (c.uprev2,c.C)
+u_cache(c::GenericTrapezoidCache)    = (c.uprev2,c.C,c.uprev3)
 du_cache(c::GenericTrapezoidCache)   = (c.k,c.fsalfirst)
 vecu_cache(c::GenericTrapezoidCache) = (c.uhold,)
 dual_cache(c::GenericTrapezoidCache) = (c.dual_cache,)
@@ -73,16 +75,23 @@ function alg_cache(alg::GenericTrapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNo
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
   rhs = ImplicitRHS(f,C,t,t,t,dual_cache)
   nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
-  GenericTrapezoidCache{typeof(u),typeof(C),typeof(uhold),typeof(dual_cache),typeof(k),
-    typeof(rhs),typeof(nl_rhs)}(u,uprev,uprev2,uhold,C,fsalfirst,dual_cache,tmp,k,rhs,nl_rhs)
+  uprev3 = similar(u)
+  tprev2 = t
+  GenericTrapezoidCache{typeof(u),typeof(C),typeof(uhold),
+                        typeof(dual_cache),typeof(k),
+                        typeof(rhs),typeof(nl_rhs),typeof(t)}(
+                        u,uprev,uprev2,uhold,C,fsalfirst,
+                        dual_cache,tmp,k,rhs,nl_rhs,uprev3,tprev2)
 end
 
 
-struct GenericTrapezoidConstantCache{vecuType,rhsType,nl_rhsType} <: OrdinaryDiffEqConstantCache
+mutable struct GenericTrapezoidConstantCache{vecuType,rhsType,nl_rhsType,uType,tType} <: OrdinaryDiffEqConstantCache
   uhold::vecuType
   C::vecuType
   rhs::rhsType
   nl_rhs::nl_rhsType
+  uprev3::uType
+  tprev2::tType
 end
 
 function alg_cache(alg::GenericTrapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}})
@@ -90,7 +99,9 @@ function alg_cache(alg::GenericTrapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNo
   C = Vector{typeof(u)}(1)
   rhs = ImplicitRHS_Scalar(f,C,t,t,t)
   nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
-  GenericTrapezoidConstantCache{typeof(uhold),typeof(rhs),typeof(nl_rhs)}(uhold,C,rhs,nl_rhs)
+  uprev3 = u
+  tprev2 = t
+  GenericTrapezoidConstantCache(uhold,C,rhs,nl_rhs,uprev3,tprev2)
 end
 
 get_chunksize{uType,DiffCacheType,rateType,CS}(cache::GenericImplicitEulerCache{uType,DiffCacheType,rateType,CS}) = CS

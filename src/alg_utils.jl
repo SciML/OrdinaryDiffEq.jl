@@ -259,7 +259,6 @@ beta1_default(alg::DP5,beta2) = typeof(beta2)(1//alg_order(alg)) - 3beta2/4
 beta1_default(alg::DP5Threaded,beta2) = typeof(beta2)(1//alg_order(alg)) - 3beta2/4
 
 gamma_default(alg::OrdinaryDiffEqAlgorithm) = 9//10
-gamma_default(alg::Trapezoid) = 4//5 # Divided differences are less safe! 
 
 discrete_apply_map{apply_map,scale_by_time}(alg::Discrete{apply_map,scale_by_time}) = apply_map
 discrete_scale_by_time{apply_map,scale_by_time}(alg::Discrete{apply_map,scale_by_time}) = scale_by_time
