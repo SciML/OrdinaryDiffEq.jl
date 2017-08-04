@@ -207,12 +207,16 @@ end
 mutable struct TRBDF2Cache{uType,rateType,J,JC,UF,uEltypeNoUnits,tType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
-  uprev2::uType
+  uᵧ::uType
   du1::rateType
   fsalfirst::rateType
   k::rateType
+  zprev::uType
+  zᵧ::uType
   z::uType
-  dz::uType
+  Δzᵧ::uType
+  Δz::uType
+  est::uType
   J::J
   W::J
   jac_config::JC
@@ -221,23 +225,22 @@ mutable struct TRBDF2Cache{uType,rateType,J,JC,UF,uEltypeNoUnits,tType} <: Ordin
   κ::uEltypeNoUnits
   tol::uEltypeNoUnits
   newton_iters::Int
-  uprev3::uType
-  tprev2::tType
 end
 
-u_cache(c::TRBDF2Cache)    = (c.uprev2,c.z,c.dz)
+u_cache(c::TRBDF2Cache)    = (c.uprev2,c.zᵧ,c.z,c.Δzᵧ,c.Δz)
 du_cache(c::TRBDF2Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
+  uᵧ = similar(u)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
-  z = similar(u)
-  dz = similar(u)
+  zprev = similar(u); zᵧ = similar(u); z = similar(u)
+  Δzᵧ = similar(u); Δz = similar(u)
   fsalfirst = zeros(rate_prototype)
-  k = zeros(rate_prototype)
+  k = zeros(rate_prototype); est = similar(u)
   vfr = VectorFReturn(f,size(u))
   uf = UJacobianWrapper(vfr,t)
   if alg_autodiff(alg)
@@ -258,10 +261,10 @@ function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,
     tol = min(0.03,first(reltol)^(0.5))
   end
 
-  uprev3 = similar(u)
-  tprev2 = t
-
   ηold = one(uEltypeNoUnits)
 
-  TRBDF2Cache(u,uprev,uprev2,du1,fsalfirst,k,z,dz,J,W,jac_config,uf,ηold,κ,tol,10000,uprev3,tprev2)
+  TRBDF2Cache{typeof(u),typeof(rate_prototype),typeof(J),typeof(jac_config),
+              typeof(uf),uEltypeNoUnits,typeof(t)}(
+              u,uprev,uᵧ,du1,fsalfirst,k,zprev,zᵧ,z,Δzᵧ,Δz,est,J,
+              W,jac_config,uf,ηold,κ,tol,10000)
 end

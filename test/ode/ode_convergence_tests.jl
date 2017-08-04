@@ -46,11 +46,7 @@ for i = 1:2
   sim142 = test_convergence(dts,prob,
            GenericTrapezoid(nlsolve=NLSOLVEJL_SETUP(autodiff=false)))
   @test abs(sim142.𝒪est[:final]-2) < testTol
+
+  sim14 = test_convergence(dts,prob,TRBDF2())
+  @test abs(sim14.𝒪est[:final]-2) < testTol
 end
-
-prob = prob_ode_linear
-dts = 1.//2.^(8:-1:4)
-sim14 = test_convergence(dts,prob,TRBDF2(),dense_errors=true)
-@test abs(sim14.𝒪est[:final]-2) < testTol
-
-sol = solve(prob,TRBDF2())
