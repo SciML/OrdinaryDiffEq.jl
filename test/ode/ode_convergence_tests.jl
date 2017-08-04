@@ -47,3 +47,12 @@ for i = 1:2
            GenericTrapezoid(nlsolve=NLSOLVEJL_SETUP(autodiff=false)))
   @test abs(sim142.𝒪est[:final]-2) < testTol
 end
+
+
+f(x,y) = x+y
+g(x) = f(x...)
+pmap(g,collect(zip(1:5,6:10)))
+
+
+f(x,y) = x+y
+pmap(f,1:5,6:10)
