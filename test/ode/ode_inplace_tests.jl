@@ -6,9 +6,6 @@ prob2 = prob_ode_2Dlinear
 sol =solve(prob,Euler(),dt=1//2^(4),save_everystep=false)
 sol =solve(prob2,Euler(),dt=1//2^(4),save_everystep=false)
 
-@time sol =solve(prob,Euler(),dt=1//2^(6),save_everystep=false)
-@time sol2 =solve(prob2,Euler(),dt=1//2^(6),save_everystep=false)
-
 alloc1 = @allocated sol =solve(prob,Euler(),dt=1//2^(6),save_everystep=false)
 alloc2 = @allocated sol2 =solve(prob2,Euler(),dt=1//2^(6),save_everystep=false)
 

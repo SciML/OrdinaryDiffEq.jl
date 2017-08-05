@@ -52,7 +52,6 @@ savefig("cell.pdf")
 =#
 
 for alg in CACHE_TEST_ALGS
-  println(alg)
   sol = solve(prob,alg,callback=callback,dt=1/10)
 end
 

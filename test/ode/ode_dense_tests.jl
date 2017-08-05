@@ -153,8 +153,8 @@ regression_test(Feagin10(), 6e-4, 9e-4)
 # Vern6
 regression_test(Vern6(), 7e-8, 7e-8; test_diff1 = true)
 
-const linear_bigα = parse(BigFloat, "1.01")
-f = (t,u) -> (linear_bigα*u)
+const linear_bigα4 = parse(BigFloat, "1.01")
+f = (t,u) -> (linear_bigα4*u)
 prob_ode_bigfloatlinear = ODEProblem(f,parse(BigFloat,"0.5"),(0.0,1.0))
 prob = prob_ode_bigfloatlinear
 

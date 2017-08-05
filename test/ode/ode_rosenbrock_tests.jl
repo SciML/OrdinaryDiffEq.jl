@@ -5,10 +5,10 @@ using OrdinaryDiffEq, DiffEqProblemLibrary, DiffEqDevTools, Base.Test
 dts = 1.//2.^(8:-1:4)
 testTol = 0.2
 
-const linear_bigα = parse(BigFloat,"1.01")
+const linear_bigα3 = parse(BigFloat,"1.01")
 f_2dlinearbig = (t,u,du) -> begin
   for i in 1:length(u)
-    du[i] = linear_bigα*u[i]
+    du[i] = linear_bigα3*u[i]
   end
 end
 (f::typeof(f_2dlinearbig))(::Type{Val{:analytic}},t,u0) = u0*exp.(1.01*t)

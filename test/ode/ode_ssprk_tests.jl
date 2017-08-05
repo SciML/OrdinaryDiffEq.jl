@@ -21,10 +21,10 @@ f = (t,u,du)->du[1]=sin(u[1])
 (p::typeof(f))(::Type{Val{:analytic}},t,u0) = [2*acot(exp(-t)*cot(0.5))]
 prob_ode_nonlinear_inplace = ODEProblem(f,[1.],(0.,0.5))
 
-const linear_bigα = parse(BigFloat,"1.01")
+const linear_bigα2 = parse(BigFloat,"1.01")
 f_2dlinearbig = (t,u,du) -> begin
   for i in 1:length(u)
-    du[i] = linear_bigα*u[i]
+    du[i] = linear_bigα2*u[i]
   end
 end
 (f::typeof(f_2dlinearbig))(::Type{Val{:analytic}},t,u0) = u0*exp.(1.01*t)

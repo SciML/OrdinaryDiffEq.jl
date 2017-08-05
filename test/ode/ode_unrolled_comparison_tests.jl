@@ -1,16 +1,16 @@
 using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase, Base.Test, ODEInterfaceDiffEq
 
-const linear_bigα = parse(BigFloat,"1.01")
-f = (t,u) -> (linear_bigα*u)
-(p::typeof(f))(::Type{Val{:analytic}},t,u0) = u0*exp(linear_bigα*t)
+const linear_bigα5 = parse(BigFloat,"1.01")
+f = (t,u) -> (linear_bigα5*u)
+(p::typeof(f))(::Type{Val{:analytic}},t,u0) = u0*exp(linear_bigα5*t)
 prob_ode_bigfloatlinear = ODEProblem(f,parse(BigFloat,"0.5"),(0.0,10.0))
 
 f = (t,u,du) -> begin
   for i in 1:length(u)
-    du[i] = linear_bigα*u[i]
+    du[i] = linear_bigα5*u[i]
   end
 end
-(p::typeof(f))(::Type{Val{:analytic}},t,u0) = u0*exp(linear_bigα*t)
+(p::typeof(f))(::Type{Val{:analytic}},t,u0) = u0*exp(linear_bigα5*t)
 probbig = ODEProblem(f,map(BigFloat,rand(4,2)).*ones(4,2)/2,(0.0,10.0))
 
 linear = (t,u) -> (1.01*u)

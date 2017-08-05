@@ -7,13 +7,11 @@ probArr[1] = prob_ode_linear
 probArr[2] = prob_ode_2Dlinear
 srand(100)
 ## Convergence Testing
-println("Convergence Test on Linear")
 dts = 1.//2.^(8:-1:4)
 testTol = 0.2
 
 for i = 1:2
   prob = probArr[i]
-  println("Special RKs")
   sim = test_convergence(dts,prob,Euler())
   @test abs(sim.𝒪est[:final]-1) < testTol
   sim2 = test_convergence(dts,prob,Midpoint())
@@ -25,7 +23,6 @@ for i = 1:2
 
   ### Stiff Solvers
 
-  println("Convergence Test on Stiff")
   dts = 1.//2.^(8:-1:4)
 
   sim11 = test_convergence(dts,prob,ImplicitEuler())

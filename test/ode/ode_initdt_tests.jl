@@ -1,14 +1,11 @@
 using OrdinaryDiffEq,DiffEqProblemLibrary, DiffEqDevTools, Base.Test
 
 prob = prob_ode_linear
-println("Solve and Plot")
 sol =solve(prob,Rosenbrock32())
 dt₀ = sol.t[2]
 
 prob = prob_ode_2Dlinear
 
-## Solve and plot
-println("Solve and Plot")
 tab = constructBogakiShampine3()
 sol =solve(prob,ExplicitRK(),tableau=tab)
 dt₀ = sol.t[2]
