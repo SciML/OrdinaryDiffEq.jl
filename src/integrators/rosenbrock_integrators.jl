@@ -1194,7 +1194,7 @@ end
   if typeof(u) <: AbstractArray && !(typeof(u) <: SArray)
     tmp = similar(du)
     @tight_loop_macros for i in eachindex(tmp)
-      @inbounds tmp[i] = du[i] + dt*d5*dT[i] + (dtC52*k2[i] + dtC54*k4[i] + dtC52*k5[i] + dtC53*k4[i])
+      @inbounds tmp[i] = du[i] + dt*d5*dT[i] + (dtC52*k2[i] + dtC54*k4[i] + dtC51*k1[i] + dtC53*k3[i])
     end
     linsolve_tmp = tmp
   else
@@ -1405,7 +1405,10 @@ end
 
   f(t+c5*dt,u,du)
 
-  @. linsolve_tmp = du + dt*d5*dT + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
+#  @. linsolve_tmp = du + dt*d5*dT + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
+  @tight_loop_macros for i in uidx
+    @inbounds linsolve_tmp[i] = du[i] + dt*d5*dT[i] + (dtC52*k2[i] + dtC54*k4[i] + dtC51*k1[i] + dtC53*k3[i])
+  end
 
   if has_invW(f)
     A_mul_B!(vectmp5,W,linsolve_tmp_vec)
