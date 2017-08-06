@@ -48,7 +48,7 @@ end
     do_newton = true
   end
 
-  while do_newton
+  while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     b = -z + dt*f(t+dt,uprev + z)
     dz = W\b
@@ -168,7 +168,7 @@ end
     do_newton = true
   end
 
-  while do_newton
+  while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     f(t+dt,u,k)
     scale!(k,dt)
@@ -261,7 +261,7 @@ end
     do_newton = true
   end
 
-  while do_newton
+  while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     b = -z + dto2*f(t+dto2,uprev + z)
     dz = W\b
@@ -386,7 +386,7 @@ end
     do_newton = true
   end
 
-  while do_newton
+  while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     f(t+dto2,u,k)
     scale!(k,dto2)
@@ -656,7 +656,7 @@ end
     do_newton = true
   end
 
-  while do_newton
+  while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. uᵧ = (uprev + d*zprev) + d*zᵧ
     f(t+γdt,uᵧ,k)
@@ -697,7 +697,7 @@ end
   η = max(η,eps(first(u)))^(0.8)
   do_newton = (η*ndz > κ*tol)
 
-  while do_newton
+  while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     @. u = (uprev + ω*zprev + ω*zᵧ) + d*z
     f(t+dt,u,k)
     @. k = dt*k - z

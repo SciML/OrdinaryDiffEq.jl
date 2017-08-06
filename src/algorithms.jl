@@ -106,12 +106,16 @@ struct ImplicitEuler{CS,AD,F,K,T} <: OrdinaryDiffEqAdaptiveAlgorithm
   κ::K
   tol::T
   extrapolant::Symbol
+  min_newton_iter::Int
+  max_newton_iter::Int
 end
 Base.@pure ImplicitEuler(;chunk_size=0,autodiff=true,diff_type=:central,
                           linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
-                          extrapolant=:constant) = ImplicitEuler{chunk_size,autodiff,typeof(linsolve),
+                          extrapolant=:constant,min_newton_iter=1,
+                          max_newton_iter=7) = ImplicitEuler{chunk_size,autodiff,typeof(linsolve),
                           typeof(κ),typeof(tol)}(
-                          linsolve,diff_type,κ,tol,extrapolant)
+                          linsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
+                          max_newton_iter)
 
 struct Trapezoid{CS,AD,F,K,T} <: OrdinaryDiffEqAdaptiveAlgorithm
   linsolve::F
@@ -119,13 +123,17 @@ struct Trapezoid{CS,AD,F,K,T} <: OrdinaryDiffEqAdaptiveAlgorithm
   κ::K
   tol::T
   extrapolant::Symbol
+  min_newton_iter::Int
+  max_newton_iter::Int
 end
 Base.@pure Trapezoid(;chunk_size=0,autodiff=true,diff_type=:central,
                       linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
-                      extrapolant=:constant) =
+                      extrapolant=:constant,min_newton_iter=1,
+                      max_newton_iter=7) =
                       Trapezoid{chunk_size,autodiff,typeof(linsolve),
                       typeof(κ),typeof(tol)}(
-                      linsolve,diff_type,κ,tol,extrapolant)
+                      linsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
+                      max_newton_iter)
 
 struct TRBDF2{CS,AD,F,K,T} <: OrdinaryDiffEqAdaptiveAlgorithm
   linsolve::F
@@ -134,12 +142,16 @@ struct TRBDF2{CS,AD,F,K,T} <: OrdinaryDiffEqAdaptiveAlgorithm
   tol::T
   smooth_est::Bool
   extrapolant::Symbol
+  min_newton_iter::Int
+  max_newton_iter::Int
 end
 Base.@pure TRBDF2(;chunk_size=0,autodiff=true,diff_type=:central,
                    linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
-                   smooth_est=true,extrapolant=:constant) =
+                   smooth_est=true,extrapolant=:constant,min_newton_iter=1,
+                   max_newton_iter=7) =
  TRBDF2{chunk_size,autodiff,typeof(linsolve),typeof(κ),typeof(tol)}(
-        linsolve,diff_type,κ,tol,smooth_est,extrapolant)
+        linsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
+        max_newton_iter)
 
 ################################################################################
 
