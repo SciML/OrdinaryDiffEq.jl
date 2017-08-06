@@ -25,6 +25,7 @@ tic()
 @time @testset "Differentiation Trait Tests" begin include("differentiation_traits_tests.jl") end
 @time @testset "Partitioned Methods Tests" begin include("partitioned_methods_tests.jl") end
 @time @testset "Split Methods Tests" begin include("split_methods_tests.jl") end
+@time @testset "Linear Methods Tests" begin include("linear_method_tests.jl") end
 @time @testset "SSPRK Tests" begin include("ode/ode_ssprk_tests.jl") end
 @time @testset "Dense Tests" begin include("ode/ode_dense_tests.jl") end
 @time @testset "In-Place Tests" begin include("ode/ode_inplace_tests.jl") end
