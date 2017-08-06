@@ -61,14 +61,31 @@ end
   L = integrator.f
   update_coefficients!(L,t+dt,u)
 
-  # Check is_constant before redoing
-  for j in 1:length(u), i in 1:length(u)
-      @inbounds W[i,j] = @muladd mass_matrix[i,j]-dt*L[i,j]
+
+  if typeof(L) <: AbstractDiffEqLinearOperator
+
+      # Of the form u' = A(t)u
+
+      # Check is_constant before redoing
+      for j in 1:length(u), i in 1:length(u)
+          @inbounds W[i,j] = @muladd mass_matrix[i,j]-dt*L[i,j]
+      end
+      k .= uprev # + B
+      integrator.alg.linsolve(vec(u),W,vec(k),true)
+
+  else # Must be a DiffEqAffineOperator
+
+      # Of the form u' = A(t)u + B(t)
+      # Generalize later!
+      A = L.As[1]
+      B = L.Bs[1]
+
+      for j in 1:length(u), i in 1:length(u)
+          @inbounds W[i,j] = @muladd mass_matrix[i,j]-dt*A[i,j]
+      end
+      k .= uprev .+ B
+      integrator.alg.linsolve(vec(u),W,vec(k),true)
   end
-
-  k .= uprev # + B
-
-  integrator.alg.linsolve(vec(u),W,vec(k),true)
 
   if integrator.opts.adaptive && integrator.iter > 1
     # Use 2rd divided differences a la SPICE and Shampine
