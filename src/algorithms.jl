@@ -83,6 +83,15 @@ Base.@pure GenericTrapezoid(;nlsolve=NLSOLVEJL_SETUP()) = GenericTrapezoid{typeo
 
 ################################################################################
 
+# Linear Methods
+
+struct LinearImplicitEuler{F} <: OrdinaryDiffEqAdaptiveAlgorithm
+  linsolve::F
+end
+Base.@pure LinearImplicitEuler(;linsolve=DEFAULT_LINSOLVE) = LinearImplicitEuler{typeof(linsolve)}(linsolve)
+
+################################################################################
+
 # Implicit RK Methods
 
 struct ImplicitEuler{CS,AD,F,K,T} <: OrdinaryDiffEqAdaptiveAlgorithm

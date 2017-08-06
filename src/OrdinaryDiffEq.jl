@@ -42,6 +42,7 @@ module OrdinaryDiffEq
   include("misc_utils.jl")
   include("algorithms.jl")
   include("alg_utils.jl")
+
   include("caches/basic_caches.jl")
   include("caches/low_order_rk_caches.jl")
   include("caches/high_order_rk_caches.jl")
@@ -50,22 +51,26 @@ module OrdinaryDiffEq
   include("caches/verner_caches.jl")
   include("caches/sdirk_caches.jl")
   include("caches/generic_implicit_caches.jl")
+  include("caches/linear_caches.jl")
   include("caches/linear_nonlinear_caches.jl")
   include("caches/symplectic_caches.jl")
   include("caches/rosenbrock_caches.jl")
   include("caches/rkn_caches.jl")
+
   include("tableaus/low_order_rk_tableaus.jl")
   include("tableaus/high_order_rk_tableaus.jl")
   include("tableaus/symplectic_tableaus.jl")
   include("tableaus/verner_tableaus.jl")
   include("tableaus/feagin_tableaus.jl")
   include("tableaus/rosenbrock_tableaus.jl")
+
   include("integrators/type.jl")
   include("integrators/integrator_utils.jl")
   include("integrators/fixed_timestep_integrators.jl")
   include("integrators/symplectic_integrators.jl")
   include("integrators/rkn_integrators.jl")
   include("integrators/split_integrators.jl")
+  include("integrators/linear_integrators.jl")
   include("integrators/iif_integrators.jl")
   include("integrators/exponential_rk_integrators.jl")
   include("integrators/explicit_rk_integrator.jl")
@@ -80,13 +85,7 @@ module OrdinaryDiffEq
   include("integrators/threaded_rk_integrators.jl")
   include("integrators/integrator_interface.jl")
   include("integrators/composite_integrator.jl")
-  include("iterator_interface.jl")
-  include("constants.jl")
-  include("callbacks.jl")
-  include("composite_solution.jl")
-  include("solve.jl")
-  include("initdt.jl")
-  include("interp_func.jl")
+
   include("dense/generic_dense.jl")
   include("dense/interpolants.jl")
   include("dense/rosenbrock_interpolants.jl")
@@ -95,6 +94,14 @@ module OrdinaryDiffEq
   include("dense/verner_addsteps.jl")
   include("dense/high_order_rk_addsteps.jl")
   include("derivative_wrappers.jl")
+
+  include("iterator_interface.jl")
+  include("constants.jl")
+  include("callbacks.jl")
+  include("composite_solution.jl")
+  include("solve.jl")
+  include("initdt.jl")
+  include("interp_func.jl")
 
   #General Functions
   export solve, solve!, init, step!
@@ -119,6 +126,8 @@ module OrdinaryDiffEq
   export ImplicitEuler, Trapezoid, TRBDF2
 
   export GenericImplicitEuler, GenericTrapezoid
+
+  export LinearImplicitEuler
 
   export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
          Ros4LStab, ROS3P, Rodas3, Rodas4, Rodas42, Rodas4P, Rodas5
