@@ -25,7 +25,7 @@ for i = 1:2
 
   dts = 1.//2.^(8:-1:4)
 
-  sim11 = test_convergence(dts,prob,ImplicitEuler())
+  sim11 = test_convergence(dts,prob,ImplicitEuler(extrapolant = :linear))
   @test abs(sim11.𝒪est[:final]-1) < testTol
 
   sim12 = test_convergence(dts,prob,

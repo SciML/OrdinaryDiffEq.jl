@@ -13,9 +13,12 @@ end
   @unpack t,dt,uprev,u,k = integrator
   @unpack uf = cache
   uf.t = t
-  if integrator.iter > 1 && !integrator.u_modified
+
+  if integrator.iter > 1 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     u = current_extrapolant(t+dt,integrator)
-  else
+  elseif integrator.alg.extrapolant == :linear
+    u = uprev + integrator.fsalfirst*dt
+  else # :constant
     u = uprev
   end
 
@@ -94,8 +97,19 @@ end
   @unpack uf,du1,dz,z,k,J,W,jac_config = cache
   mass_matrix = integrator.sol.prob.mass_matrix
 
-  if integrator.iter > 1 && !integrator.u_modified
+
+  if integrator.iter > 1 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     current_extrapolant!(u,t+dt,integrator)
+  elseif integrator.alg.extrapolant == :linear
+    @. u = uprev + integrator.fsalfirst*dt
+  else # :constant
+    copy!(u,uprev)
+  end
+
+  if integrator.iter > 1 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
+    current_extrapolant!(u,t+dt,integrator)
+  elseif integrator.alg.extrapolant == :linear
+    u .= uprev .+ integrator.fsalfirst.*dt
   else
     copy!(u,uprev)
   end
@@ -214,11 +228,14 @@ end
   uf.t = t
   dto2 = dt/2
 
-  if integrator.iter > 1 && !integrator.u_modified
+  if integrator.iter > 1 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     u = current_extrapolant(t+dt,integrator)
-  else
+  elseif integrator.alg.extrapolant == :linear
+    u = uprev + integrator.fsalfirst*dt
+  else # :constant
     u = uprev
   end
+
   if typeof(uprev) <: AbstractArray
     J = ForwardDiff.jacobian(uf,uprev)
     W = I - dto2*J
@@ -306,11 +323,14 @@ end
   @unpack uf,du1,dz,z,k,J,W,jac_config = cache
   mass_matrix = integrator.sol.prob.mass_matrix
 
-  if integrator.iter > 1 && !integrator.u_modified
+  if integrator.iter > 1 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     current_extrapolant!(u,t+dt,integrator)
+  elseif integrator.alg.extrapolant == :linear
+    @. u = uprev + integrator.fsalfirst*dt
   else
     copy!(u,uprev)
   end
+
   dto2 = dt/2
   uf.t = t
 
@@ -462,6 +482,7 @@ end
     W = 1 - d*dt*J
   end
 
+  # TODO: Add extrapolant initial guess
   zprev = dt*integrator.fsalfirst
 
   ##### Solve Trapezoid Step

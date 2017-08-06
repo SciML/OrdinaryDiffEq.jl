@@ -73,13 +73,19 @@ struct Nystrom5VelocityIndependent <: OrdinaryDiffEqAlgorithm end
 
 struct GenericImplicitEuler{F} <: OrdinaryDiffEqAdaptiveAlgorithm
   nlsolve::F
+  extrapolant::Symbol
 end
-Base.@pure GenericImplicitEuler(;nlsolve=NLSOLVEJL_SETUP()) = GenericImplicitEuler{typeof(nlsolve)}(nlsolve)
+Base.@pure GenericImplicitEuler(;
+            nlsolve=NLSOLVEJL_SETUP(),extrapolant=:constant) =
+            GenericImplicitEuler{typeof(nlsolve)}(nlsolve,extrapolant)
 
 struct GenericTrapezoid{F} <: OrdinaryDiffEqAdaptiveAlgorithm
   nlsolve::F
+  extrapolant::Symbol
 end
-Base.@pure GenericTrapezoid(;nlsolve=NLSOLVEJL_SETUP()) = GenericTrapezoid{typeof(nlsolve)}(nlsolve)
+Base.@pure GenericTrapezoid(;
+            nlsolve=NLSOLVEJL_SETUP(),extrapolant=:constant) =
+            GenericTrapezoid{typeof(nlsolve)}(nlsolve,extrapolant)
 
 ################################################################################
 
@@ -99,16 +105,27 @@ struct ImplicitEuler{CS,AD,F,K,T} <: OrdinaryDiffEqAdaptiveAlgorithm
   diff_type::Symbol
   κ::K
   tol::T
+  extrapolant::Symbol
 end
-Base.@pure ImplicitEuler(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing) = ImplicitEuler{chunk_size,autodiff,typeof(linsolve),typeof(κ),typeof(tol)}(linsolve,diff_type,κ,tol)
+Base.@pure ImplicitEuler(;chunk_size=0,autodiff=true,diff_type=:central,
+                          linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
+                          extrapolant=:constant) = ImplicitEuler{chunk_size,autodiff,typeof(linsolve),
+                          typeof(κ),typeof(tol)}(
+                          linsolve,diff_type,κ,tol,extrapolant)
 
 struct Trapezoid{CS,AD,F,K,T} <: OrdinaryDiffEqAdaptiveAlgorithm
   linsolve::F
   diff_type::Symbol
   κ::K
   tol::T
+  extrapolant::Symbol
 end
-Base.@pure Trapezoid(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing) = Trapezoid{chunk_size,autodiff,typeof(linsolve),typeof(κ),typeof(tol)}(linsolve,diff_type,κ,tol)
+Base.@pure Trapezoid(;chunk_size=0,autodiff=true,diff_type=:central,
+                      linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
+                      extrapolant=:constant) =
+                      Trapezoid{chunk_size,autodiff,typeof(linsolve),
+                      typeof(κ),typeof(tol)}(
+                      linsolve,diff_type,κ,tol,extrapolant)
 
 struct TRBDF2{CS,AD,F,K,T} <: OrdinaryDiffEqAdaptiveAlgorithm
   linsolve::F
@@ -116,8 +133,13 @@ struct TRBDF2{CS,AD,F,K,T} <: OrdinaryDiffEqAdaptiveAlgorithm
   κ::K
   tol::T
   smooth_est::Bool
+  extrapolant::Symbol
 end
-Base.@pure TRBDF2(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,smooth_est=true) = TRBDF2{chunk_size,autodiff,typeof(linsolve),typeof(κ),typeof(tol)}(linsolve,diff_type,κ,tol,smooth_est)
+Base.@pure TRBDF2(;chunk_size=0,autodiff=true,diff_type=:central,
+                   linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
+                   smooth_est=true,extrapolant=:constant) =
+ TRBDF2{chunk_size,autodiff,typeof(linsolve),typeof(κ),typeof(tol)}(
+        linsolve,diff_type,κ,tol,smooth_est,extrapolant)
 
 ################################################################################
 
