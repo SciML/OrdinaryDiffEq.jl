@@ -1,4 +1,4 @@
-using DiffEqBase, OrdinaryDiffEq, Base.Test, DiffEqDevTools, SpecialMatrices
+using DiffEqBase, OrdinaryDiffEq, Base.Test, DiffEqDevTools, SpecialMatrices, DiffEqOperators
 u0 = rand(2)
 A = Strang(2)
 
