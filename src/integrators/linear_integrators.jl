@@ -83,7 +83,7 @@ end
       for j in 1:length(u), i in 1:length(u)
           @inbounds W[i,j] = @muladd mass_matrix[i,j]-dt*A[i,j]
       end
-      k .= uprev .+ B
+      @. k = uprev + dt*B
       integrator.alg.linsolve(vec(u),W,vec(k),true)
   end
 
@@ -102,6 +102,36 @@ end
   else
     integrator.EEst = 1
   end
+
+  f(t+dt,u,integrator.fsallast)
+  @pack integrator = t,dt,u
+end
+
+@inline function initialize!(integrator,cache::StrangSplittingCache,f=integrator.f)
+  integrator.kshortsize = 2
+  @unpack k,fsalfirst = cache
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = k
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
+end
+
+@inline function perform_step!(integrator,cache::StrangSplittingCache,f=integrator.f)
+  @unpack t,dt,uprev,u = integrator
+  @unpack W,k = cache
+  mass_matrix = integrator.sol.prob.mass_matrix
+
+  L = integrator.f
+  update_coefficients!(L,t+dt,u)
+
+
+  # Of the form u' = (A(t) + B(t))*u
+
+  A,B = L.As
+
+  u .= expm((dt/2)*B.A)*expm(dt*A.A)*expm((dt/2)*B.A)*uprev
 
   f(t+dt,u,integrator.fsallast)
   @pack integrator = t,dt,u
