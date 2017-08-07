@@ -29,7 +29,7 @@ function perform_step!(integrator,cache::DiscreteCache,f=integrator.f)
       f(t+dt,uprev,u)
     end
     if typeof(uprev) <: DEDataArray # Needs to get the fields, since updated uprev
-      copy_non_array_fields!(u,uprev)
+      copy_fields!(u,uprev)
     end
   end
 end
