@@ -2,7 +2,7 @@
 
 using OrdinaryDiffEq, DiffEqProblemLibrary, DiffEqDevTools, Base.Test
 
-dts = 1.//2.^(8:-1:4)
+dts = 1.//2.^(6:-1:3)
 testTol = 0.2
 
 const linear_bigα3 = parse(BigFloat,"1.01")
@@ -32,10 +32,12 @@ sim = test_convergence(dts,prob,Rosenbrock23())
 sol = solve(prob,Rosenbrock23())
 @test length(sol) < 20
 
-sim = test_convergence(dts,prob,Rosenbrock23())
+prob = prob_ode_bigfloat2Dlinear
+
+sim = test_convergence(dts,prob,Rosenbrock23(linsolve=LinSolveFactorize(qrfact!)))
 @test abs(sim.𝒪est[:final]-2) < testTol
 
-sol = solve(prob,Rosenbrock23())
+sol = solve(prob,Rosenbrock32())
 @test length(sol) < 20
 
 ### Rosenbrock32()
@@ -51,14 +53,6 @@ sol = solve(prob,Rosenbrock32())
 prob = prob_ode_2Dlinear
 
 sim = test_convergence(dts,prob,Rosenbrock32())
-@test abs(sim.𝒪est[:final]-3) < testTol
-
-sol = solve(prob,Rosenbrock32())
-@test length(sol) < 20
-
-prob = prob_ode_bigfloat2Dlinear
-
-sim = test_convergence(dts,prob,Rosenbrock32(linsolve=LinSolveFactorize(qrfact!)))
 @test abs(sim.𝒪est[:final]-3) < testTol
 
 sol = solve(prob,Rosenbrock32())
@@ -82,14 +76,6 @@ sim = test_convergence(dts,prob,ROS3P())
 sol = solve(prob,ROS3P())
 @test length(sol) < 20
 
-prob = prob_ode_bigfloat2Dlinear
-
-sim = test_convergence(dts,prob,ROS3P(linsolve=LinSolveFactorize(qrfact!)))
-@test abs(sim.𝒪est[:final]-3) < testTol
-
-sol = solve(prob,ROS3P(linsolve=LinSolveFactorize(qrfact!)))
-@test length(sol) < 20
-
 ### Rodas3()
 
 prob = prob_ode_linear
@@ -108,17 +94,7 @@ sim = test_convergence(dts,prob,Rodas3())
 sol = solve(prob,Rodas3())
 @test length(sol) < 20
 
-prob = prob_ode_bigfloat2Dlinear
-
-sim = test_convergence(dts,prob,Rodas3(linsolve=LinSolveFactorize(qrfact!)))
-@test abs(sim.𝒪est[:final]-3) < testTol
-
-sol = solve(prob,Rodas3(linsolve=LinSolveFactorize(qrfact!)))
-@test length(sol) < 20
-
 ### RosShamp4
-
-dts = 1.//2.^(8:-1:3)
 
 prob = prob_ode_linear
 
@@ -134,20 +110,10 @@ sim = test_convergence(dts,prob,RosShamp4())
 @test abs(sim.𝒪est[:final]-4) < testTol
 
 sol = solve(prob,RosShamp4())
-@test length(sol) < 20
-
-prob = prob_ode_bigfloat2Dlinear
-
-sim = test_convergence(dts,prob,RosShamp4(linsolve=LinSolveFactorize(qrfact!)))
-@test abs(sim.𝒪est[:final]-4) < testTol
-
-sol = solve(prob,RosShamp4(linsolve=LinSolveFactorize(qrfact!)))
 @test length(sol) < 20
 
 ### Veldd4
 
-dts = 1.//2.^(8:-1:3)
-
 prob = prob_ode_linear
 
 sim = test_convergence(dts,prob,Veldd4())
@@ -162,20 +128,10 @@ sim = test_convergence(dts,prob,Veldd4())
 @test abs(sim.𝒪est[:final]-4) < testTol
 
 sol = solve(prob,Veldd4())
-@test length(sol) < 20
-
-prob = prob_ode_bigfloat2Dlinear
-
-sim = test_convergence(dts,prob,Veldd4(linsolve=LinSolveFactorize(qrfact!)))
-@test abs(sim.𝒪est[:final]-4) < testTol
-
-sol = solve(prob,Veldd4(linsolve=LinSolveFactorize(qrfact!)))
 @test length(sol) < 20
 
 ### Velds4
 
-dts = 1.//2.^(8:-1:3)
-
 prob = prob_ode_linear
 
 sim = test_convergence(dts,prob,Velds4())
@@ -190,20 +146,10 @@ sim = test_convergence(dts,prob,Velds4())
 @test abs(sim.𝒪est[:final]-4) < testTol
 
 sol = solve(prob,Velds4())
-@test length(sol) < 20
-
-prob = prob_ode_bigfloat2Dlinear
-
-sim = test_convergence(dts,prob,Velds4(linsolve=LinSolveFactorize(qrfact!)))
-@test abs(sim.𝒪est[:final]-4) < testTol
-
-sol = solve(prob,Velds4(linsolve=LinSolveFactorize(qrfact!)))
 @test length(sol) < 20
 
 ### GRK4T
 
-dts = 1.//2.^(8:-1:3)
-
 prob = prob_ode_linear
 
 sim = test_convergence(dts,prob,GRK4T())
@@ -218,19 +164,10 @@ sim = test_convergence(dts,prob,GRK4T())
 @test abs(sim.𝒪est[:final]-4) < testTol
 
 sol = solve(prob,GRK4T())
-@test length(sol) < 20
-
-prob = prob_ode_bigfloat2Dlinear
-
-sim = test_convergence(dts,prob,GRK4T(linsolve=LinSolveFactorize(qrfact!)))
-@test abs(sim.𝒪est[:final]-4) < testTol
-
-sol = solve(prob,GRK4T(linsolve=LinSolveFactorize(qrfact!)))
 @test length(sol) < 20
 
 ### GRK4A
-
-dts = 1.//2.^(8:-1:3)
+dts = 1.//2.^(7:-1:4)
 
 prob = prob_ode_linear
 
@@ -246,20 +183,10 @@ sim = test_convergence(dts,prob,GRK4A())
 @test abs(sim.𝒪est[:final]-4) < testTol
 
 sol = solve(prob,GRK4A())
-@test length(sol) < 20
-
-prob = prob_ode_bigfloat2Dlinear
-
-sim = test_convergence(dts,prob,GRK4A(linsolve=LinSolveFactorize(qrfact!)))
-@test abs(sim.𝒪est[:final]-4) < testTol
-
-sol = solve(prob,GRK4A(linsolve=LinSolveFactorize(qrfact!)))
 @test length(sol) < 20
 
 ### Ros4LStab
 
-dts = 1.//2.^(8:-1:3)
-
 prob = prob_ode_linear
 
 sim = test_convergence(dts,prob,Ros4LStab())
@@ -276,15 +203,9 @@ sim = test_convergence(dts,prob,Ros4LStab())
 sol = solve(prob,Ros4LStab())
 @test length(sol) < 20
 
-prob = prob_ode_bigfloat2Dlinear
-
-sim = test_convergence(dts,prob,Ros4LStab(linsolve=LinSolveFactorize(qrfact!)))
-@test abs(sim.𝒪est[:final]-4) < testTol
-
-sol = solve(prob,Ros4LStab(linsolve=LinSolveFactorize(qrfact!)))
-@test length(sol) < 20
-
 ### Rodas4 Algorithms
+
+dts = 1.//2.^(8:-1:5)
 
 prob = prob_ode_linear
 
@@ -296,7 +217,7 @@ sol = solve(prob,Rodas4())
 @test length(sol) < 20
 
 sim = test_convergence(dts,prob,Rodas42(),dense_errors=true)
-@test abs(sim.𝒪est[:final]-4.3) < testTol
+@test abs(sim.𝒪est[:final]-4) < testTol
 @test abs(sim.𝒪est[:L2]-4) < testTol
 
 sol = solve(prob,Rodas42())
@@ -319,7 +240,7 @@ sol = solve(prob,Rodas4())
 @test length(sol) < 20
 
 sim = test_convergence(dts,prob,Rodas42(),dense_errors=true)
-@test abs(sim.𝒪est[:final]-4.3) < testTol
+@test abs(sim.𝒪est[:final]-4) < testTol
 @test abs(sim.𝒪est[:L2]-4) < testTol
 
 sol = solve(prob,Rodas42())
@@ -352,10 +273,3 @@ sim = test_convergence(dts,prob,Rodas5(),dense_errors=true)
 
 sol = solve(prob,Rodas5())
 @test length(sol) < 20
-
-### Test on Stiff
-
-prob = deepcopy(prob_ode_rober)
-prob.tspan = (0.0,1e5)
-
-sol = solve(prob,Rosenbrock23())

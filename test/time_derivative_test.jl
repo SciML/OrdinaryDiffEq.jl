@@ -18,12 +18,12 @@ sol = solve(prob,GenericImplicitEuler(),dt=1/10)
 @test sol.errors[:final] < 1e-1
 sol = solve(prob,GenericTrapezoid(),dt=1/10)
 @test sol.errors[:final] < 1e-12
+sol = solve(prob,Euler(),dt=1/100)
+@test sol.errors[:final] < 6e-3
 
 for alg in CACHE_TEST_ALGS
-  sol = solve(prob,alg,dt=1/100)
-  if typeof(alg) <: Euler
-    @test sol.errors[:final] < 6e-3
-  else
+  sol = solve(prob,alg,dt=1/10)
+  if !(typeof(alg) <: Euler)
     @test sol.errors[:final] < 4e-14
   end
 end

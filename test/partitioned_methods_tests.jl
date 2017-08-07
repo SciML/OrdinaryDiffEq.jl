@@ -40,7 +40,7 @@ sol2_verlet(0.1)
 @test sol_verlet[end][3] == sol2_verlet[end][3]
 @test sol_ruth3[end][3] == sol2_ruth3[end][3]
 
-dts = 1.//2.^(8:-1:4)
+dts = 1.//2.^(6:-1:3)
 # Symplectic Euler
 sim = test_convergence(dts,prob,SymplecticEuler(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 1 rtol = 1e-1
