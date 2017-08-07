@@ -198,7 +198,6 @@ end
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.u = u
 end
 
 @inline function perform_step!(integrator,cache::GenericTrapezoidCache,f=integrator.f)
