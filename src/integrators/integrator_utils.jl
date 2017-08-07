@@ -1,7 +1,7 @@
 save_idxsinitialize{uType}(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) =
                 error("This algorithm does not have an initialization function")
 
-@inline function loopheader!(integrator)
+function loopheader!(integrator)
   # Apply right after iterators / callbacks
 
   # Accept or reject the step
@@ -51,7 +51,7 @@ end
   end
 end
 
-@inline function modify_dt_for_tstops!(integrator)
+function modify_dt_for_tstops!(integrator)
   tstops = integrator.opts.tstops
   if !isempty(tstops)
     if integrator.opts.adaptive
@@ -68,7 +68,7 @@ end
   end
 end
 
-@inline function savevalues!(integrator::ODEIntegrator,force_save=false)
+function savevalues!(integrator::ODEIntegrator,force_save=false)
   while !isempty(integrator.opts.saveat) && integrator.tdir*top(integrator.opts.saveat) <= integrator.tdir*integrator.t # Perform saveat
     integrator.saveiter += 1
     curt = pop!(integrator.opts.saveat)
@@ -131,7 +131,7 @@ end
   resize!(integrator.k,integrator.kshortsize)
 end
 
-@inline function postamble!(integrator)
+function postamble!(integrator)
   solution_endpoint_match_cur_integrator!(integrator)
   resize!(integrator.sol.t,integrator.saveiter)
   resize!(integrator.sol.u,integrator.saveiter)
@@ -139,7 +139,7 @@ end
   !(typeof(integrator.prog)<:Void) && Juno.done(integrator.prog)
 end
 
-@inline function solution_endpoint_match_cur_integrator!(integrator)
+function solution_endpoint_match_cur_integrator!(integrator)
   if integrator.sol.t[integrator.saveiter] !=  integrator.t
     integrator.saveiter += 1
     copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
@@ -185,7 +185,7 @@ end
 end
 =#
 
-@inline function loopfooter!(integrator)
+function loopfooter!(integrator)
   if integrator.opts.adaptive
     dtnew = stepsize_controller(integrator,integrator.cache)
     ttmp = integrator.t + integrator.dt
@@ -216,7 +216,7 @@ end
   end
 end
 
-@inline function handle_callbacks!(integrator)
+function handle_callbacks!(integrator)
   discrete_callbacks = integrator.opts.callback.discrete_callbacks
   continuous_callbacks = integrator.opts.callback.continuous_callbacks
   atleast_one_callback = false
@@ -247,7 +247,7 @@ end
   integrator.reeval_fsal = true
 end
 
-@inline function apply_step!(integrator)
+function apply_step!(integrator)
 
   integrator.accept_step = false # yay we got here, don't need this no more
 
@@ -289,8 +289,6 @@ end
   end
 end
 
-
-
 @inline function calc_dt_propose!(integrator,dtnew)
   dtpropose = integrator.tdir*min(abs(integrator.opts.dtmax),abs(dtnew))
   dtpropose = integrator.tdir*max(abs(dtpropose),abs(integrator.opts.dtmin))
@@ -310,7 +308,7 @@ end
   end
 end
 
-@inline function handle_tstop!(integrator)
+function handle_tstop!(integrator)
   tstops = integrator.opts.tstops
   if !isempty(tstops)
     t = integrator.t
