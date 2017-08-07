@@ -1,8 +1,5 @@
-ODEInterface 0.0.10
-Unitful 0.0.4
 DiffEqDevTools 0.6.0
 DiffEqProblemLibrary
 ParameterizedFunctions 0.5.0
-ODEInterfaceDiffEq
 SpecialMatrices
 StaticArrays

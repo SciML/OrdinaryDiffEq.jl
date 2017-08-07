@@ -1,6 +1,4 @@
 using OrdinaryDiffEq, DiffEqProblemLibrary, DiffEqDevTools
-
-using ODEInterfaceDiffEq
 using Base.Test
 
 const CPU_FLOPS = peakflops()
