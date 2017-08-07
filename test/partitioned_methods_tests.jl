@@ -13,7 +13,7 @@ function (::typeof(f2))(::Type{Val{:analytic}}, x, y0)
   ArrayPartition(u0*cos(x) + v0*sin(x), -u0*sin(x) + v0*cos(x))
 end
 
-prob = ODEProblem((f1,f2),(u0,v0),(0.0,5.0))
+prob = DynamicalODEProblem(f1,f2,u0,v0,(0.0,5.0))
 
 sol = solve(prob,SymplecticEuler(),dt=1/2)
 sol_verlet = solve(prob,VelocityVerlet(),dt=1/100)
@@ -25,7 +25,7 @@ interps = sol(interp_time)
 
 
 prob = SecondOrderODEProblem(f2,u0,v0,(0.0,5.0))
-(::typeof(prob.f[1]))(::Type{Val{:analytic}},t,u0) = f2(Val{:analytic},t,u0)
+(::typeof(prob.f))(::Type{Val{:analytic}},t,u0) = f2(Val{:analytic},t,u0)
 
 sol2 = solve(prob,SymplecticEuler(),dt=1/2)
 sol2_verlet = solve(prob,VelocityVerlet(),dt=1/100)

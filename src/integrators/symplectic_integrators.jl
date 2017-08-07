@@ -12,10 +12,10 @@
   # So that way FSAL interpolation
   uprev,duprev = integrator.uprev.x
   u,du = integrator.u.x
-  integrator.k[2].x[2] = f[2](integrator.t,uprev,duprev)
+  integrator.k[2].x[2] = f.f2(integrator.t,uprev,duprev)
   dt = integrator.dt
   du = muladd(dt,kdu,duprev)
-  integrator.k[1].x[1] = f[1](integrator.t,uprev,du)
+  integrator.k[1].x[1] = f.f1(integrator.t,uprev,du)
 end
 
 @inline function perform_step!(integrator,cache::SymplecticEulerConstantCache,f=integrator.f)
@@ -28,9 +28,9 @@ end
   u = muladd.(dt,kuprev,uprev)
   # Now actually compute the step
   # Do it at the end for interpolations!
-  kdu = f[2](t,uprev,duprev)
+  kdu = f.f2(t,uprev,duprev)
   du = muladd.(dt,kdu,duprev)
-  ku = f[1](t,uprev,du)
+  ku = f.f1(t,uprev,du)
   integrator.fsallast = ku
 end
 
@@ -48,14 +48,14 @@ end
   u,du = integrator.u.x
   ku = integrator.k[1].x[1]
   kdu = integrator.k[2].x[2]
-  f[2](integrator.t,uprev,duprev,kdu)
+  f.f2(integrator.t,uprev,duprev,kdu)
   dt = integrator.dt
   #du = muladd.(integrator.dt,kdu,duprev)
   duidx = eachindex(du)
   @tight_loop_macros for i in duidx
     @inbounds du[i] = muladd(dt,kdu[i],duprev[i])
   end
-  f[1](integrator.t,uprev,du,ku)
+  f.f1(integrator.t,uprev,du,ku)
 end
 
 @inline function perform_step!(integrator,cache::SymplecticEulerCache,f=integrator.f)
@@ -73,12 +73,12 @@ end
   end
   # Now actually compute the step
   # Do it at the end for interpolations!
-  f[2](t,uprev,duprev,kdu)
+  f.f2(t,uprev,duprev,kdu)
   #du .= muladd.(dt,kdu,duprev)
   @tight_loop_macros for i in duidx
     @inbounds du[i] = muladd(dt,kdu[i],duprev[i])
   end
-  f[1](t,uprev,du,ku)
+  f.f1(t,uprev,du,ku)
 end
 
 @inline function initialize!(integrator,cache::VelocityVerletCache,f=integrator.f)
@@ -90,8 +90,8 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   uprev,duprev = integrator.uprev.x
-  f[1](integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f[2](integrator.t,uprev,duprev,integrator.k[2].x[2])
+  f.f1(integrator.t,uprev,duprev,integrator.k[2].x[1])
+  f.f2(integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 @inline function perform_step!(integrator,cache::VelocityVerletCache,f=integrator.f)
@@ -100,11 +100,11 @@ end
   u,du = integrator.u.x
   ku, kdu = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
   # x(t+Δt) = x(t) + v(t)*Δt + 1/2*a(t)*Δt^2
-  f[2](t,uprev,duprev,ku)
+  f.f2(t,uprev,duprev,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] = @muladd uprev[i]+duprev[i]*dt+(1//2*ku[i])*dt^2
   end
-  f[2](t+dt,u,duprev,kdu)
+  f.f2(t+dt,u,duprev,kdu)
   # v(t+Δt) = v(t) + 1/2*(a(t)+a(t+Δt))*Δt
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] = @muladd duprev[i] + dt*(1//2*ku[i] + 1//2*kdu[i])
@@ -124,8 +124,8 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   uprev,duprev = integrator.uprev.x
-  f[1](integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f[2](integrator.t,uprev,duprev,integrator.k[2].x[2])
+  f.f1(integrator.t,uprev,duprev,integrator.k[2].x[1])
+  f.f2(integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 @inline function perform_step!(integrator,cache::Symplectic2Cache,f=integrator.f)
@@ -139,18 +139,18 @@ end
     @inbounds u[i] = uprev[i]+dt*b1*duprev[i]
   end
   # update velocity
-  f[2](t,u,duprev,kdu)
+  f.f2(t,u,duprev,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] = duprev[i] + dt*a1*kdu[i]
   end
   # update position & velocity
   tnew = t+a1*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b2*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a2*kdu[i]
   end
@@ -169,8 +169,8 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   uprev,duprev = integrator.uprev.x
-  f[1](integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f[2](integrator.t,uprev,duprev,integrator.k[2].x[2])
+  f.f1(integrator.t,uprev,duprev,integrator.k[2].x[1])
+  f.f2(integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 @inline function perform_step!(integrator,cache::Symplectic3Cache,f=integrator.f)
@@ -184,30 +184,30 @@ end
     @inbounds u[i] = uprev[i]+dt*b1*duprev[i]
   end
   # update velocity
-  f[2](integrator.t,u,duprev,kdu)
+  f.f2(integrator.t,u,duprev,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] = duprev[i] + dt*a1*kdu[i]
   end
   # update position & velocity
   tnew = t+a1*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b2*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a2*kdu[i]
   end
 
   # update position & velocity
   tnew += a2*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b3*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a3*kdu[i]
   end
@@ -226,8 +226,8 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   uprev,duprev = integrator.uprev.x
-  f[1](integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f[2](integrator.t,uprev,duprev,integrator.k[2].x[2])
+  f.f1(integrator.t,uprev,duprev,integrator.k[2].x[1])
+  f.f2(integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 @inline function perform_step!(integrator,cache::Symplectic4Cache,f=integrator.f)
@@ -241,42 +241,42 @@ end
     @inbounds u[i] = uprev[i]+dt*b1*duprev[i]
   end
   # update velocity
-  f[2](t,u,duprev,kdu)
+  f.f2(t,u,duprev,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] = duprev[i] + dt*a1*kdu[i]
   end
   # update position & velocity
   tnew = t+a1*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b2*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a2*kdu[i]
   end
 
   # update position & velocity
   tnew += a2*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b3*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a3*kdu[i]
   end
 
   # update position & velocity
   tnew += a3*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b4*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a4*kdu[i]
   end
@@ -295,8 +295,8 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   uprev,duprev = integrator.uprev.x
-  f[1](integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f[2](integrator.t,uprev,duprev,integrator.k[2].x[2])
+  f.f1(integrator.t,uprev,duprev,integrator.k[2].x[1])
+  f.f2(integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 @inline function perform_step!(integrator,cache::Symplectic45Cache,f=integrator.f)
@@ -310,54 +310,54 @@ end
     @inbounds u[i] = uprev[i]+dt*b1*duprev[i]
   end
   # update velocity
-  f[2](t,u,duprev,kdu)
+  f.f2(t,u,duprev,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] = duprev[i] + dt*a1*kdu[i]
   end
   # update position & velocity
   tnew = t+a1*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b2*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a2*kdu[i]
   end
 
   # update position & velocity
   tnew += a2*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b3*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a3*kdu[i]
   end
 
   # update position & velocity
   tnew += a3*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b4*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a4*kdu[i]
   end
 
   # update position & velocity
   tnew += a4*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b5*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   if typeof(integrator.alg) <: McAte42
     @tight_loop_macros for i in eachindex(du)
       @inbounds du[i] += dt*a5*kdu[i]
@@ -378,8 +378,8 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   uprev,duprev = integrator.uprev.x
-  f[1](integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f[2](integrator.t,uprev,duprev,integrator.k[2].x[2])
+  f.f1(integrator.t,uprev,duprev,integrator.k[2].x[1])
+  f.f2(integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 @inline function perform_step!(integrator,cache::Symplectic5Cache,f=integrator.f)
@@ -393,65 +393,65 @@ end
     @inbounds u[i] = uprev[i]+dt*b1*duprev[i]
   end
   # update velocity
-  f[2](integrator.t,u,duprev,kdu)
+  f.f2(integrator.t,u,duprev,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] = duprev[i] + dt*a1*kdu[i]
   end
   # update position & velocity
   tnew = t+a1*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b2*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a2*kdu[i]
   end
 
   # update position & velocity
   tnew += a2*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b3*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a3*kdu[i]
   end
 
   # update position & velocity
   tnew += a3*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b4*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a4*kdu[i]
   end
 
   # update position & velocity
   tnew += a4*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b5*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a5*kdu[i]
   end
 
   tnew += t+a5*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b6*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a6*kdu[i]
   end
@@ -470,8 +470,8 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   uprev,duprev = integrator.uprev.x
-  f[1](integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f[2](integrator.t,uprev,duprev,integrator.k[2].x[2])
+  f.f1(integrator.t,uprev,duprev,integrator.k[2].x[1])
+  f.f2(integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 @inline function perform_step!(integrator,cache::Symplectic6Cache,f=integrator.f)
@@ -485,87 +485,87 @@ end
     @inbounds u[i] = uprev[i]+dt*b1*duprev[i]
   end
   # update velocity
-  f[2](integrator.t,u,duprev,kdu)
+  f.f2(integrator.t,u,duprev,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] = duprev[i] + dt*a1*kdu[i]
   end
   # update position & velocity
   tnew = t+a1*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b2*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a2*kdu[i]
   end
 
   # update position & velocity
   tnew += a2*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b3*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a3*kdu[i]
   end
 
   # update position & velocity
   tnew += a3*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b4*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a4*kdu[i]
   end
 
   # update position & velocity
   tnew += a4*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b5*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a5*kdu[i]
   end
 
   tnew += a5*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b6*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a6*kdu[i]
   end
 
   tnew += a6*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b7*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a7*kdu[i]
   end
 
   tnew += a7*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b8*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   #=
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a8*kdu[i]
@@ -586,8 +586,8 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   uprev,duprev = integrator.uprev.x
-  f[1](integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f[2](integrator.t,uprev,duprev,integrator.k[2].x[2])
+  f.f1(integrator.t,uprev,duprev,integrator.k[2].x[1])
+  f.f2(integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 @inline function perform_step!(integrator,cache::Symplectic62Cache,f=integrator.f)
@@ -601,109 +601,109 @@ end
     @inbounds u[i] = uprev[i]+dt*b1*duprev[i]
   end
   # update velocity
-  f[2](integrator.t,u,duprev,kdu)
+  f.f2(integrator.t,u,duprev,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] = duprev[i] + dt*a1*kdu[i]
   end
   # update position & velocity
   tnew = t+a1*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b2*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a2*kdu[i]
   end
 
   # update position & velocity
   tnew += a2*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b3*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a3*kdu[i]
   end
 
   # update position & velocity
   tnew += a3*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b4*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a4*kdu[i]
   end
 
   # update position & velocity
   tnew += a4*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b5*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a5*kdu[i]
   end
 
   tnew += a5*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b6*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a6*kdu[i]
   end
 
   tnew += a6*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b7*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a7*kdu[i]
   end
 
   tnew += a7*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b8*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a8*kdu[i]
   end
 
   tnew += a8*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b9*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a9*kdu[i]
   end
 
   tnew += a9*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b10*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   #=
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a10*kdu[i]
@@ -724,8 +724,8 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   uprev,duprev = integrator.uprev.x
-  f[1](integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f[2](integrator.t,uprev,duprev,integrator.k[2].x[2])
+  f.f1(integrator.t,uprev,duprev,integrator.k[2].x[1])
+  f.f2(integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 @inline function perform_step!(integrator,cache::McAte8Cache,f=integrator.f)
@@ -740,175 +740,175 @@ end
     @inbounds u[i] = uprev[i]+dt*b1*duprev[i]
   end
   # update velocity
-  f[2](integrator.t,u,duprev,kdu)
+  f.f2(integrator.t,u,duprev,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] = duprev[i] + dt*a1*kdu[i]
   end
   # update position & velocity
   tnew = t+a1*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b2*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a2*kdu[i]
   end
 
   # update position & velocity
   tnew += a2*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b3*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a3*kdu[i]
   end
 
   # update position & velocity
   tnew += a3*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b4*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a4*kdu[i]
   end
 
   # update position & velocity
   tnew += a4*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b5*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a5*kdu[i]
   end
 
   tnew += a5*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b6*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a6*kdu[i]
   end
 
   tnew += a6*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b7*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a7*kdu[i]
   end
 
   tnew += a7*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b8*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a8*kdu[i]
   end
 
   tnew += a8*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b9*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a9*kdu[i]
   end
 
   tnew += a9*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b10*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a10*kdu[i]
   end
 
   tnew += a10*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b11*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a11*kdu[i]
   end
 
   tnew += a11*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b12*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a12*kdu[i]
   end
 
   tnew += a12*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b13*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a13*kdu[i]
   end
 
   tnew += a13*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b14*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a14*kdu[i]
   end
 
   tnew += a14*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b15*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a15*kdu[i]
   end
 
   tnew += a15*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b16*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   #=
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a16*kdu[i]
@@ -929,8 +929,8 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   uprev,duprev = integrator.uprev.x
-  f[1](integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f[2](integrator.t,uprev,duprev,integrator.k[2].x[2])
+  f.f1(integrator.t,uprev,duprev,integrator.k[2].x[1])
+  f.f2(integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 @inline function perform_step!(integrator,cache::KahanLi8Cache,f=integrator.f)
@@ -945,197 +945,197 @@ end
     @inbounds u[i] = uprev[i]+dt*b1*duprev[i]
   end
   # update velocity
-  f[2](integrator.t,u,duprev,kdu)
+  f.f2(integrator.t,u,duprev,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] = duprev[i] + dt*a1*kdu[i]
   end
   # update position & velocity
   tnew = t+a1*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b2*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a2*kdu[i]
   end
 
   # update position & velocity
   tnew += a2*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b3*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a3*kdu[i]
   end
 
   # update position & velocity
   tnew += a3*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b4*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a4*kdu[i]
   end
 
   # update position & velocity
   tnew += a4*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b5*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a5*kdu[i]
   end
 
   tnew += a5*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b6*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a6*kdu[i]
   end
 
   tnew += a6*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b7*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a7*kdu[i]
   end
 
   tnew += a7*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b8*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a8*kdu[i]
   end
 
   tnew += a8*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b9*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a9*kdu[i]
   end
 
   tnew += a9*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b10*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a10*kdu[i]
   end
 
   tnew += a10*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b11*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a11*kdu[i]
   end
 
   tnew += a11*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b12*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a12*kdu[i]
   end
 
   tnew += a12*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b13*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a13*kdu[i]
   end
 
   tnew += a13*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b14*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a14*kdu[i]
   end
 
   tnew += a14*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b15*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a15*kdu[i]
   end
 
   tnew += a15*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b16*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a16*kdu[i]
   end
 
   tnew += a16*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b17*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a17*kdu[i]
   end
 
   tnew += a17*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b18*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   #=
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a18*kdu[i]
@@ -1156,8 +1156,8 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   uprev,duprev = integrator.uprev.x
-  f[1](integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f[2](integrator.t,uprev,duprev,integrator.k[2].x[2])
+  f.f1(integrator.t,uprev,duprev,integrator.k[2].x[1])
+  f.f2(integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 @inline function perform_step!(integrator,cache::SofSpa10Cache,f=integrator.f)
@@ -1176,395 +1176,395 @@ end
     @inbounds u[i] = uprev[i]+dt*b1*duprev[i]
   end
   # update velocity
-  f[2](integrator.t,u,duprev,kdu)
+  f.f2(integrator.t,u,duprev,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] = duprev[i] + dt*a1*kdu[i]
   end
   # update position & velocity
   tnew = t+a1*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b2*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a2*kdu[i]
   end
 
   # update position & velocity
   tnew += a2*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b3*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a3*kdu[i]
   end
 
   # update position & velocity
   tnew += a3*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b4*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a4*kdu[i]
   end
 
   # update position & velocity
   tnew += a4*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b5*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a5*kdu[i]
   end
 
   tnew += a5*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b6*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a6*kdu[i]
   end
 
   tnew += a6*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b7*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a7*kdu[i]
   end
 
   tnew += a7*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b8*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a8*kdu[i]
   end
 
   tnew += a8*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b9*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a9*kdu[i]
   end
 
   tnew += a9*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b10*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a10*kdu[i]
   end
 
   tnew += a10*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b11*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a11*kdu[i]
   end
 
   tnew += a11*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b12*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a12*kdu[i]
   end
 
   tnew += a12*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b13*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a13*kdu[i]
   end
 
   tnew += a13*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b14*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a14*kdu[i]
   end
 
   tnew += a14*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b15*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a15*kdu[i]
   end
 
   tnew += a15*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b16*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a16*kdu[i]
   end
 
   tnew += a16*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b17*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a17*kdu[i]
   end
 
   tnew += a17*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b18*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a18*kdu[i]
   end
 
   tnew += a18*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b19*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a19*kdu[i]
   end
 
   tnew += a19*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b20*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a20*kdu[i]
   end
 
   tnew += a20*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b21*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a21*kdu[i]
   end
 
   tnew += a21*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b22*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a22*kdu[i]
   end
 
   tnew += a22*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b23*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a23*kdu[i]
   end
 
   tnew += a23*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b24*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a24*kdu[i]
   end
 
   tnew += a24*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b25*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a25*kdu[i]
   end
 
   tnew += a25*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b26*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a26*kdu[i]
   end
 
   tnew += a26*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b27*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a27*kdu[i]
   end
 
   tnew += a27*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b28*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a28*kdu[i]
   end
 
   tnew += a28*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b29*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a29*kdu[i]
   end
 
   tnew += a29*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b30*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a30*kdu[i]
   end
 
   tnew += a30*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b31*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a31*kdu[i]
   end
 
   tnew += a31*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b32*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a32*kdu[i]
   end
 
   tnew += a32*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b33*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a33*kdu[i]
   end
 
   tnew += a33*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b34*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a34*kdu[i]
   end
 
   tnew += a34*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b35*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a35*kdu[i]
   end
 
   tnew += a35*dt
-  f[1](tnew,u,du,ku)
+  f.f1(tnew,u,du,ku)
   @tight_loop_macros for i in eachindex(u)
     @inbounds u[i] += dt*b36*ku[i]
   end
 
-  f[2](tnew,u,du,kdu)
+  f.f2(tnew,u,du,kdu)
   #=
   @tight_loop_macros for i in eachindex(du)
     @inbounds du[i] += dt*a30*kdu[i]
