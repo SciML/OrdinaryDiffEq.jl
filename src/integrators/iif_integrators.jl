@@ -33,7 +33,7 @@ end
   integrator.k[2] = integrator.fsalfirst
 end
 
-@inline @muladd function perform_step!(integrator,cache::Union{IIF1ConstantCache,IIF2ConstantCache},f=integrator.f)
+@inline function perform_step!(integrator,cache::Union{IIF1ConstantCache,IIF2ConstantCache},f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack uhold,rhs,nl_rhs = cache
 
@@ -42,7 +42,7 @@ end
   if typeof(cache) <: IIF1ConstantCache
     tmp = expm(A*dt)*(uprev)
   elseif typeof(cache) <: IIF2ConstantCache
-    tmp = expm(A*dt)*(@. uprev + 0.5dt*uhold[1]) # This uhold only works for non-adaptive
+    @muladd tmp = expm(A*dt)*(@. uprev + 0.5dt*uhold[1]) # This uhold only works for non-adaptive
   end
 
   if integrator.iter > 1 && !integrator.u_modified
@@ -58,7 +58,7 @@ end
   integrator.fsallast = A*u .+ uhold[1]
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  @pack integrator = t,dt,u
+  integrator.u = u
 end
 
 type RHS_IIF1{F,uType,tType,DiffCacheType,SizeType,uidxType} <: Function
@@ -111,7 +111,7 @@ end
 
   @. k = uprev
   if typeof(cache) <: IIF2Cache
-    @. k = k + 0.5dt*rtmp1
+    @muladd @. k = k + 0.5dt*rtmp1
   end
 
   A = integrator.f[1]
@@ -131,6 +131,5 @@ end
 
   copy!(u,nlres)
   integrator.f[2](t+dt,nlres,rtmp1)
-  integrator.fsallast = A*u .+ rtmp1
-  @pack integrator = t,dt,u
+  integrator.fsallast .= A*u .+ rtmp1
 end
