@@ -1,4 +1,4 @@
-@inline function change_t_via_interpolation!{T}(integrator,t,modify_save_endpoint::Type{Val{T}}=Val{false})
+function change_t_via_interpolation!{T}(integrator,t,modify_save_endpoint::Type{Val{T}}=Val{false})
   # Can get rid of an allocation here with a function
   # get_tmp_arr(integrator.cache) which gives a pointer to some
   # cache array which can be modified.
@@ -20,7 +20,7 @@
   end
 end
 
-@inline function reeval_internals_due_to_modification!(integrator)
+function reeval_internals_due_to_modification!(integrator)
   if integrator.opts.calck
     resize!(integrator.k,integrator.kshortsize) # Reset k for next step!
     ode_addsteps!(integrator,integrator.f,Val{true},Val{false})
@@ -28,19 +28,19 @@ end
   integrator.u_modified = false
 end
 
-@inline function u_modified!(integrator::ODEIntegrator,bool::Bool)
+function u_modified!(integrator::ODEIntegrator,bool::Bool)
   integrator.u_modified = bool
 end
 
-@inline get_proposed_dt(integrator::ODEIntegrator) = integrator.dtpropose
-@inline set_proposed_dt!(integrator::ODEIntegrator,dt) = (integrator.dtpropose = dt)
+get_proposed_dt(integrator::ODEIntegrator) = integrator.dtpropose
+set_proposed_dt!(integrator::ODEIntegrator,dt) = (integrator.dtpropose = dt)
 
 user_cache(integrator::ODEIntegrator) = user_cache(integrator.cache)
 u_cache(integrator::ODEIntegrator) = u_cache(integrator.cache)
 du_cache(integrator::ODEIntegrator)= du_cache(integrator.cache)
 full_cache(integrator::ODEIntegrator) = chain(user_cache(integrator),u_cache(integrator),du_cache(integrator.cache))
 default_non_user_cache(integrator::ODEIntegrator) = chain(u_cache(integrator),du_cache(integrator.cache))
-@inline function add_tstop!(integrator::ODEIntegrator,t)
+function add_tstop!(integrator::ODEIntegrator,t)
   t < integrator.t && error("Tried to add a tstop that is behind the current time. This is strictly forbidden")
   push!(integrator.opts.tstops,t)
 end

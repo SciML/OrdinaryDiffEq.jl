@@ -162,7 +162,7 @@ function solution_endpoint_match_cur_integrator!(integrator)
   end
 end
 
-@inline function stepsize_controller(integrator,cache)
+function stepsize_controller(integrator,cache)
   # PI-controller
   EEst,beta1,q11,qold,beta2 = integrator.EEst, integrator.opts.beta1, integrator.q11,integrator.qold,integrator.opts.beta2
   @fastmath q11 = EEst^beta1
@@ -177,7 +177,7 @@ end
 end
 
 #=
-@inline function stepsize_controller(integrator,cache::Rodas4Cache)
+function stepsize_controller(integrator,cache::Rodas4Cache)
   # Standard stepsize controller
   qtmp = integrator.EEst^(1/(alg_adaptive_order(integrator.alg)+1))/integrator.opts.gamma
   @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
@@ -243,7 +243,7 @@ function handle_callbacks!(integrator)
   end
 end
 
-@inline function handle_callback_modifiers!(integrator::ODEIntegrator)
+function handle_callback_modifiers!(integrator::ODEIntegrator)
   integrator.reeval_fsal = true
 end
 
@@ -289,13 +289,13 @@ function apply_step!(integrator)
   end
 end
 
-@inline function calc_dt_propose!(integrator,dtnew)
+function calc_dt_propose!(integrator,dtnew)
   dtpropose = integrator.tdir*min(abs(integrator.opts.dtmax),abs(dtnew))
   dtpropose = integrator.tdir*max(abs(dtpropose),abs(integrator.opts.dtmin))
   integrator.dtpropose = dtpropose
 end
 
-@inline function fix_dt_at_bounds!(integrator)
+function fix_dt_at_bounds!(integrator)
   if integrator.tdir > 0
     integrator.dt = min(integrator.opts.dtmax,integrator.dt)
   else
@@ -327,7 +327,7 @@ function handle_tstop!(integrator)
   end
 end
 
-@inline function reset_fsal!(integrator)
+function reset_fsal!(integrator)
   # Under these condtions, these algorithms are not FSAL anymore
   if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache
     integrator.f(integrator.t,integrator.u,integrator.fsalfirst)

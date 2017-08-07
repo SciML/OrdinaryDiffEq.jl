@@ -4,7 +4,7 @@
 ## y₁ = y₀ + hy'₀ + h²∑b̄ᵢk'ᵢ
 ## y'₁ = y'₀ + h∑bᵢk'ᵢ
 
-@inline function initialize!(integrator,cache::Nystrom4Cache,f=integrator.f)
+function initialize!(integrator,cache::Nystrom4Cache,f=integrator.f)
   @unpack tmp,fsalfirst,k₂,k₃,k₄,k = cache
   uprev,duprev = integrator.uprev.x
 
@@ -18,7 +18,7 @@
   f.f2(integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
-@inline @muladd function perform_step!(integrator,cache::Nystrom4Cache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::Nystrom4Cache,f=integrator.f)
   @unpack t,dt = integrator
   u,du = integrator.u.x
   uprev,duprev = integrator.uprev.x
@@ -54,7 +54,7 @@ end
 end
 
 
-@inline function initialize!(integrator,cache::Nystrom4VelocityIndependentCache,f=integrator.f)
+function initialize!(integrator,cache::Nystrom4VelocityIndependentCache,f=integrator.f)
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
 
@@ -68,7 +68,7 @@ end
   f.f2(integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
-@inline @muladd function perform_step!(integrator,cache::Nystrom4VelocityIndependentCache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::Nystrom4VelocityIndependentCache,f=integrator.f)
   @unpack t,dt = integrator
   u,du = integrator.u.x
   uprev,duprev = integrator.uprev.x
@@ -97,7 +97,7 @@ end
 end
 
 
-@inline function initialize!(integrator,cache::Nystrom5VelocityIndependentCache,f=integrator.f)
+function initialize!(integrator,cache::Nystrom5VelocityIndependentCache,f=integrator.f)
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
 
@@ -112,7 +112,7 @@ end
 end
 
 #=
-@inline @muladd function perform_step!(integrator,cache::Nystrom5VelocityIndependentCache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::Nystrom5VelocityIndependentCache,f=integrator.f)
   @unpack t,dt = integrator
   u,du = integrator.u.x
   uprev,duprev = integrator.uprev.x
@@ -139,7 +139,7 @@ end
 end
 =#
 
-@inline @muladd function perform_step!(integrator,cache::Nystrom5VelocityIndependentCache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::Nystrom5VelocityIndependentCache,f=integrator.f)
   @unpack t,dt = integrator
   u,du = integrator.u.x
   uprev,duprev = integrator.uprev.x

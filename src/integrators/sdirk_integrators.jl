@@ -1,4 +1,4 @@
-@inline function initialize!(integrator,cache::ImplicitEulerConstantCache,f=integrator.f)
+function initialize!(integrator,cache::ImplicitEulerConstantCache,f=integrator.f)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
@@ -9,7 +9,7 @@
   integrator.k[2] = integrator.fsallast
 end
 
-@inline @muladd function perform_step!(integrator,cache::ImplicitEulerConstantCache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::ImplicitEulerConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack uf = cache
   uf.t = t
@@ -81,7 +81,7 @@ end
   integrator.u = u
 end#
 
-@inline function initialize!(integrator,cache::ImplicitEulerCache,f=integrator.f)
+function initialize!(integrator,cache::ImplicitEulerCache,f=integrator.f)
   integrator.kshortsize = 2
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
@@ -92,7 +92,7 @@ end#
   f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
-@inline @muladd function perform_step!(integrator,cache::ImplicitEulerCache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::ImplicitEulerCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack uf,du1,dz,z,k,J,W,jac_config = cache
   mass_matrix = integrator.sol.prob.mass_matrix
@@ -210,7 +210,7 @@ end
   f(t+dt,u,integrator.fsallast)
 end
 
-@inline function initialize!(integrator,cache::TrapezoidConstantCache,f=integrator.f)
+function initialize!(integrator,cache::TrapezoidConstantCache,f=integrator.f)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
@@ -221,7 +221,7 @@ end
   integrator.k[2] = integrator.fsallast
 end
 
-@inline @muladd function perform_step!(integrator,cache::TrapezoidConstantCache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::TrapezoidConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack uf = cache
   uf.t = t
@@ -306,7 +306,7 @@ end
   integrator.u = u
 end
 
-@inline function initialize!(integrator,cache::TrapezoidCache,f=integrator.f)
+function initialize!(integrator,cache::TrapezoidCache,f=integrator.f)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
@@ -316,7 +316,7 @@ end
   f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
-@inline @muladd function perform_step!(integrator,cache::TrapezoidCache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::TrapezoidCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack uf,du1,dz,z,k,J,W,jac_config = cache
   mass_matrix = integrator.sol.prob.mass_matrix
@@ -441,7 +441,7 @@ end
   f(t+dt,u,integrator.fsallast)
 end
 
-@inline function initialize!(integrator,cache::TRBDF2ConstantCache,f=integrator.f)
+function initialize!(integrator,cache::TRBDF2ConstantCache,f=integrator.f)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
@@ -452,7 +452,7 @@ end
   integrator.k[2] = integrator.fsallast
 end
 
-@inline @muladd function perform_step!(integrator,cache::TRBDF2ConstantCache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::TRBDF2ConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack uf = cache
   uf.t = t
@@ -568,7 +568,7 @@ end
   integrator.u = u
 end
 
-@inline function initialize!(integrator,cache::TRBDF2Cache,f=integrator.f)
+function initialize!(integrator,cache::TRBDF2Cache,f=integrator.f)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
@@ -578,7 +578,7 @@ end
   f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
-@inline @muladd function perform_step!(integrator,cache::TRBDF2Cache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::TRBDF2Cache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack uf,du1,uᵧ,Δzᵧ,Δz,zprev,zᵧ,z,k,J,W,jac_config,est = cache
   mass_matrix = integrator.sol.prob.mass_matrix

@@ -1,4 +1,4 @@
-@inline function initialize!(integrator,cache::Rosenbrock23Cache,f=integrator.f)
+function initialize!(integrator,cache::Rosenbrock23Cache,f=integrator.f)
   integrator.kshortsize = 2
   @unpack k₁,k₂,fsalfirst,fsallast = cache
   integrator.fsalfirst = fsalfirst
@@ -7,7 +7,7 @@
   f(integrator.t,integrator.uprev,integrator.fsalfirst)
 end
 
-@inline @muladd function perform_step!(integrator,cache::Rosenbrock23Cache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::Rosenbrock23Cache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   uidx = eachindex(integrator.uprev)
   @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
@@ -91,7 +91,7 @@ end
   end
 end
 
-@inline function initialize!(integrator,cache::Rosenbrock32Cache,f=integrator.f)
+function initialize!(integrator,cache::Rosenbrock32Cache,f=integrator.f)
   integrator.kshortsize = 2
   @unpack k₁,k₂,fsalfirst,fsallast = cache
   integrator.fsalfirst = fsalfirst
@@ -100,7 +100,7 @@ end
   f(integrator.t,integrator.uprev,integrator.fsalfirst)
 end#
 
-@inline @muladd function perform_step!(integrator,cache::Rosenbrock32Cache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::Rosenbrock32Cache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   uidx = eachindex(integrator.uprev)
   @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
@@ -184,7 +184,7 @@ end#
   end
 end
 
-@inline function initialize!(integrator,cache::Rosenbrock23ConstantCache,f=integrator.f)
+function initialize!(integrator,cache::Rosenbrock23ConstantCache,f=integrator.f)
   integrator.kshortsize = 2
   k = eltype(integrator.sol.k)(2)
   integrator.k = k
@@ -196,7 +196,7 @@ end
   integrator.k[2] = zero(integrator.fsalfirst)
 end
 
-@inline @muladd function perform_step!(integrator,cache::Rosenbrock23ConstantCache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::Rosenbrock23ConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack c₃₂,d,tf,uf = cache
   # Time derivative
@@ -228,7 +228,7 @@ end
   integrator.u = u
 end
 
-@inline function initialize!(integrator,cache::Rosenbrock32ConstantCache,f=integrator.f)
+function initialize!(integrator,cache::Rosenbrock32ConstantCache,f=integrator.f)
   integrator.kshortsize = 2
   k = eltype(integrator.sol.k)(2)
   integrator.k = k
@@ -240,7 +240,7 @@ end
   integrator.k[2] = zero(integrator.fsalfirst)
 end
 
-@inline @muladd function perform_step!(integrator,cache::Rosenbrock32ConstantCache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::Rosenbrock32ConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack c₃₂,d,tf,uf = cache
   tf.u = uprev
@@ -274,7 +274,7 @@ end
   integrator.u = u
 end
 
-@inline function initialize!(integrator,cache::Rosenbrock33ConstantCache,f=integrator.f)
+function initialize!(integrator,cache::Rosenbrock33ConstantCache,f=integrator.f)
   integrator.kshortsize = 2
   k = eltype(integrator.sol.k)(2)
   integrator.k = k
@@ -286,7 +286,7 @@ end
   integrator.k[2] = integrator.fsallast
 end
 
-@inline @muladd function perform_step!(integrator,cache::Rosenbrock33ConstantCache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::Rosenbrock33ConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack tf,uf = cache
   @unpack a21,a31,a32,C21,C31,C32,b1,b2,b3,btilde1,btilde2,btilde3,gamma,c2,c3,d1,d2,d3 = cache.tab
@@ -338,7 +338,7 @@ end
   integrator.u = u
 end
 
-@inline function initialize!(integrator,cache::Rosenbrock33Cache,f=integrator.f)
+function initialize!(integrator,cache::Rosenbrock33Cache,f=integrator.f)
   integrator.kshortsize = 2
   @unpack fsalfirst,fsallast = cache
   integrator.fsalfirst = fsalfirst
@@ -347,7 +347,7 @@ end
   f(integrator.t,integrator.uprev,integrator.fsalfirst)
 end
 
-@inline @muladd function perform_step!(integrator,cache::Rosenbrock33Cache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::Rosenbrock33Cache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,fsalfirst,fsallast,dT,J,W,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
   @unpack a21,a31,a32,C21,C31,C32,b1,b2,b3,btilde1,btilde2,btilde3,gamma,c2,c3,d1,d2,d3 = cache.tab
@@ -438,7 +438,7 @@ end
 
 ################################################################################
 
-@inline function initialize!(integrator,cache::Rosenbrock34ConstantCache,f=integrator.f)
+function initialize!(integrator,cache::Rosenbrock34ConstantCache,f=integrator.f)
   integrator.kshortsize = 2
   k = eltype(integrator.sol.k)(2)
   integrator.k = k
@@ -450,7 +450,7 @@ end
   integrator.k[2] = integrator.fsallast
 end
 
-@inline @muladd function perform_step!(integrator,cache::Rosenbrock34ConstantCache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::Rosenbrock34ConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack tf,uf = cache
   @unpack a21,a31,a32,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4 = cache.tab
@@ -507,7 +507,7 @@ end
   integrator.u = u
 end
 
-@inline function initialize!(integrator,cache::Rosenbrock34Cache,f=integrator.f)
+function initialize!(integrator,cache::Rosenbrock34Cache,f=integrator.f)
   integrator.kshortsize = 2
   @unpack fsalfirst,fsallast = cache
   integrator.fsalfirst = fsalfirst
@@ -516,7 +516,7 @@ end
   f(integrator.t,integrator.uprev,integrator.fsalfirst)
 end
 
-@inline @muladd function perform_step!(integrator,cache::Rosenbrock34Cache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::Rosenbrock34Cache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   uidx = eachindex(integrator.uprev)
   @unpack du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,fsalfirst,fsallast,dT,J,W,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
@@ -629,7 +629,7 @@ end
 
 #### ROS4 type method
 
-@inline function initialize!(integrator,cache::Rosenbrock4ConstantCache,f=integrator.f)
+function initialize!(integrator,cache::Rosenbrock4ConstantCache,f=integrator.f)
   integrator.kshortsize = 2
   k = eltype(integrator.sol.k)(2)
   integrator.k = k
@@ -641,7 +641,7 @@ end
   integrator.k[2] = integrator.fsallast
 end
 
-@inline @muladd function perform_step!(integrator,cache::Rosenbrock4ConstantCache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::Rosenbrock4ConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack tf,uf = cache
   @unpack a21,a31,a32,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4 = cache.tab
@@ -698,7 +698,7 @@ end
   integrator.u = u
 end
 
-@inline function initialize!(integrator,cache::Rosenbrock4Cache,f=integrator.f)
+function initialize!(integrator,cache::Rosenbrock4Cache,f=integrator.f)
   integrator.kshortsize = 2
   @unpack fsalfirst,fsallast = cache
   integrator.fsalfirst = fsalfirst
@@ -707,7 +707,7 @@ end
   f(integrator.t,integrator.uprev,integrator.fsalfirst)
 end
 
-@inline @muladd function perform_step!(integrator,cache::Rosenbrock4Cache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::Rosenbrock4Cache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   uidx = eachindex(integrator.uprev)
   @unpack du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,fsalfirst,fsallast,dT,J,W,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
@@ -815,7 +815,7 @@ end
 
 #### Rodas4 type method
 
-@inline function initialize!(integrator,cache::Rodas4ConstantCache,f=integrator.f)
+function initialize!(integrator,cache::Rodas4ConstantCache,f=integrator.f)
   integrator.kshortsize = 2
   k = eltype(integrator.sol.k)(2)
   integrator.k = k
@@ -827,7 +827,7 @@ end
   integrator.k[2] = zero(integrator.fsalfirst)
 end
 
-@inline @muladd function perform_step!(integrator,cache::Rodas4ConstantCache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::Rodas4ConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack tf,uf = cache
   @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,gamma,c2,c3,c4,d1,d2,d3,d4 = cache.tab
@@ -927,7 +927,7 @@ end
 end
 
 
-@inline function initialize!(integrator,cache::Rodas4Cache,f=integrator.f)
+function initialize!(integrator,cache::Rodas4Cache,f=integrator.f)
   integrator.kshortsize = 2
   @unpack fsalfirst,fsallast,dense1,dense2 = cache
   integrator.fsalfirst = fsalfirst
@@ -936,7 +936,7 @@ end
   f(integrator.t,integrator.uprev,integrator.fsalfirst)
 end
 
-@inline @muladd function perform_step!(integrator,cache::Rodas4Cache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::Rodas4Cache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   uidx = eachindex(integrator.uprev)
   @unpack du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,vectmp5,vectmp6,fsalfirst,fsallast,dT,J,W,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
@@ -1096,7 +1096,7 @@ end
 
 ### Rodas5 Method
 
-@inline function initialize!(integrator,cache::Rosenbrock5ConstantCache,f=integrator.f)
+function initialize!(integrator,cache::Rosenbrock5ConstantCache,f=integrator.f)
   integrator.kshortsize = 2
   k = eltype(integrator.sol.k)(2)
   integrator.k = k
@@ -1108,7 +1108,7 @@ end
   integrator.k[2] = integrator.fsallast
 end
 
-@inline @muladd function perform_step!(integrator,cache::Rosenbrock5ConstantCache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::Rosenbrock5ConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack tf,uf = cache
   @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,C71,C72,C73,C74,C75,C76,C81,C82,C83,C84,C85,C86,C87,gamma,d1,d2,d3,d4,d5,c2,c3,c4,c5 = cache.tab
@@ -1268,7 +1268,7 @@ end
   integrator.u = u
 end
 
-@inline function initialize!(integrator,cache::Rosenbrock5Cache,f=integrator.f)
+function initialize!(integrator,cache::Rosenbrock5Cache,f=integrator.f)
   integrator.kshortsize = 2
   @unpack fsalfirst,fsallast,dense1,dense2 = cache
   integrator.fsalfirst = fsalfirst
@@ -1277,7 +1277,7 @@ end
   f(integrator.t,integrator.uprev,integrator.fsalfirst)
 end
 
-@inline @muladd function perform_step!(integrator,cache::Rosenbrock5Cache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::Rosenbrock5Cache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   uidx = eachindex(integrator.uprev)
   @unpack du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,vectmp5,vectmp6,vectmp7,vectmp8,fsalfirst,fsallast,dT,J,W,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache

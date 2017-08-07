@@ -1,9 +1,9 @@
-@inline function initialize!(integrator,cache::DiscreteConstantCache,f=integrator.f)
+function initialize!(integrator,cache::DiscreteConstantCache,f=integrator.f)
   integrator.kshortsize = 0
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
 end
 
-@inline function perform_step!(integrator,cache::DiscreteConstantCache,f=integrator.f)
+function perform_step!(integrator,cache::DiscreteConstantCache,f=integrator.f)
   if discrete_apply_map(integrator.alg)
     if discrete_scale_by_time(integrator.alg)
       @muladd integrator.u = integrator.uprev .+ integrator.dt.*f(integrator.t+integrator.dt,integrator.uprev)
@@ -13,12 +13,12 @@ end
   end
 end
 
-@inline function initialize!(integrator,cache::DiscreteCache,f=integrator.f)
+function initialize!(integrator,cache::DiscreteCache,f=integrator.f)
   integrator.kshortsize = 0
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
 end
 
-@inline function perform_step!(integrator,cache::DiscreteCache,f=integrator.f)
+function perform_step!(integrator,cache::DiscreteCache,f=integrator.f)
   @unpack u,uprev,dt,t = integrator
   @unpack du = cache
   if discrete_apply_map(integrator.alg)
@@ -34,7 +34,7 @@ end
   end
 end
 
-@inline function initialize!(integrator,cache::EulerConstantCache,f=integrator.f)
+function initialize!(integrator,cache::EulerConstantCache,f=integrator.f)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
@@ -45,7 +45,7 @@ end
   integrator.k[2] = integrator.fsallast
 end
 
-@inline function perform_step!(integrator,cache::EulerConstantCache,f=integrator.f)
+function perform_step!(integrator,cache::EulerConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @muladd u = @. uprev + dt*integrator.fsalfirst
   k = f(t+dt,u) # For the interpolation, needs k at the updated point
@@ -55,7 +55,7 @@ end
   integrator.u = u
 end
 
-@inline function initialize!(integrator,cache::EulerCache,f=integrator.f)
+function initialize!(integrator,cache::EulerCache,f=integrator.f)
   integrator.kshortsize = 2
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
@@ -66,13 +66,13 @@ end
   f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
-@inline function perform_step!(integrator,cache::EulerCache,f=integrator.f)
+function perform_step!(integrator,cache::EulerCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @muladd @. u = uprev + dt*integrator.fsalfirst
   f(t+dt,u,integrator.fsallast) # For the interpolation, needs k at the updated point
 end
 
-@inline function initialize!(integrator,cache::MidpointConstantCache,f=integrator.f)
+function initialize!(integrator,cache::MidpointConstantCache,f=integrator.f)
   integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
@@ -83,7 +83,7 @@ end
   integrator.k[2] = integrator.fsallast
 end
 
-@inline @muladd function perform_step!(integrator,cache::MidpointConstantCache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::MidpointConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   halfdt = dt/2
   k = f(t+halfdt, @. uprev + halfdt*integrator.fsalfirst)
@@ -94,7 +94,7 @@ end
   integrator.u = u
 end
 
-@inline function initialize!(integrator,cache::MidpointCache,f=integrator.f)
+function initialize!(integrator,cache::MidpointCache,f=integrator.f)
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
@@ -105,7 +105,7 @@ end
   f(integrator.t,integrator.uprev,integrator.fsalfirst) # FSAL for interpolation
 end
 
-@inline @muladd function perform_step!(integrator,cache::MidpointCache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::MidpointCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack tmp,k,fsalfirst = cache
   halfdt = dt/2
@@ -115,7 +115,7 @@ end
   f(t+dt,u,k)
 end
 
-@inline function initialize!(integrator,cache::RK4ConstantCache,f=integrator.f)
+function initialize!(integrator,cache::RK4ConstantCache,f=integrator.f)
   integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
@@ -126,7 +126,7 @@ end
   integrator.k[2] = integrator.fsallast
 end
 
-@inline @muladd function perform_step!(integrator,cache::RK4ConstantCache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::RK4ConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   halfdt = dt/2
   k₁ =integrator.fsalfirst
@@ -141,7 +141,7 @@ end
   integrator.u = u
 end
 
-@inline function initialize!(integrator,cache::RK4Cache,f=integrator.f)
+function initialize!(integrator,cache::RK4Cache,f=integrator.f)
   @unpack tmp,fsalfirst,k₂,k₃,k₄,k = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
@@ -152,7 +152,7 @@ end
   f(integrator.t,integrator.uprev,integrator.fsalfirst) # pre-start FSAL
 end
 
-@inline @muladd function perform_step!(integrator,cache::RK4Cache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::RK4Cache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack tmp,fsalfirst,k₂,k₃,k₄,k = cache
   k₁ = fsalfirst

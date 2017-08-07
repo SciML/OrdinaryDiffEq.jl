@@ -1,4 +1,4 @@
-@inline function initialize!(integrator,cache::LinearImplicitEulerConstantCache,f=integrator.f)
+function initialize!(integrator,cache::LinearImplicitEulerConstantCache,f=integrator.f)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
@@ -9,7 +9,7 @@
   integrator.k[2] = integrator.fsallast
 end
 
-@inline function perform_step!(integrator,cache::LinearImplicitEulerConstantCache,f=integrator.f)
+function perform_step!(integrator,cache::LinearImplicitEulerConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u,k = integrator
 
   L = update_coefficients(integrator.f,t+dt,u)
@@ -42,7 +42,7 @@ end
   @pack integrator = t,dt,u
 end#
 
-@inline function initialize!(integrator,cache::LinearImplicitEulerCache,f=integrator.f)
+function initialize!(integrator,cache::LinearImplicitEulerCache,f=integrator.f)
   integrator.kshortsize = 2
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
@@ -53,7 +53,7 @@ end#
   f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
-@inline function perform_step!(integrator,cache::LinearImplicitEulerCache,f=integrator.f)
+function perform_step!(integrator,cache::LinearImplicitEulerCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack W,k = cache
   mass_matrix = integrator.sol.prob.mass_matrix
@@ -107,7 +107,7 @@ end
   @pack integrator = t,dt,u
 end
 
-@inline function initialize!(integrator,cache::StrangSplittingCache,f=integrator.f)
+function initialize!(integrator,cache::StrangSplittingCache,f=integrator.f)
   integrator.kshortsize = 2
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
@@ -118,7 +118,7 @@ end
   f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
-@inline function perform_step!(integrator,cache::StrangSplittingCache,f=integrator.f)
+function perform_step!(integrator,cache::StrangSplittingCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack W,k = cache
   mass_matrix = integrator.sol.prob.mass_matrix

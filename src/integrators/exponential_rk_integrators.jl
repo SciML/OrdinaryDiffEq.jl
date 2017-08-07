@@ -1,4 +1,4 @@
-@inline function initialize!(integrator,cache::LawsonEulerConstantCache,f=integrator.f)
+function initialize!(integrator,cache::LawsonEulerConstantCache,f=integrator.f)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   rtmp = f[2]
@@ -10,7 +10,7 @@
   integrator.k[2] = zero(integrator.fsalfirst)
 end
 
-@inline function perform_step!(integrator,cache::LawsonEulerConstantCache,f=integrator.f)
+function perform_step!(integrator,cache::LawsonEulerConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   rtmp = integrator.fsalfirst
   A = f[1]
@@ -23,7 +23,7 @@ end
   integrator.u = u
 end
 
-@inline function initialize!(integrator,cache::LawsonEulerCache,f=integrator.f)
+function initialize!(integrator,cache::LawsonEulerCache,f=integrator.f)
   integrator.kshortsize = 2
   @unpack k,fsalfirst,rtmp = cache
   integrator.fsalfirst = fsalfirst
@@ -37,7 +37,7 @@ end
   @. integrator.fsalfirst = k + rtmp
 end
 
-@inline function perform_step!(integrator,cache::LawsonEulerCache,f=integrator.f)
+function perform_step!(integrator,cache::LawsonEulerCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack k,rtmp,tmp = cache
   A = f[1]
@@ -49,7 +49,7 @@ end
   @. k = tmp + rtmp
 end
 
-@inline function initialize!(integrator,cache::NorsettEulerConstantCache,f=integrator.f)
+function initialize!(integrator,cache::NorsettEulerConstantCache,f=integrator.f)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   rtmp = f[2](integrator.t,integrator.uprev)
@@ -61,7 +61,7 @@ end
   integrator.k[2] = zero(integrator.fsalfirst)
 end
 
-@inline function perform_step!(integrator,cache::NorsettEulerConstantCache,f=integrator.f)
+function perform_step!(integrator,cache::NorsettEulerConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   rtmp = integrator.fsalfirst
   A = f[1]
@@ -74,7 +74,7 @@ end
   integrator.u = u
 end
 
-@inline function initialize!(integrator,cache::NorsettEulerCache,f=integrator.f)
+function initialize!(integrator,cache::NorsettEulerCache,f=integrator.f)
   integrator.kshortsize = 2
   @unpack k,fsalfirst,rtmp = cache
   integrator.fsalfirst = fsalfirst
@@ -88,7 +88,7 @@ end
   @. integrator.fsalfirst = k + rtmp
 end
 
-@inline function perform_step!(integrator,cache::NorsettEulerCache,f=integrator.f)
+function perform_step!(integrator,cache::NorsettEulerCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack k,rtmp,tmp = cache
   A = f[1]

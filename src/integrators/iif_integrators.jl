@@ -20,7 +20,7 @@ function (p::RHS_IIF2_Scalar)(u,resid)
   resid[1] = u[1] - p.tmp - 0.5p.dt*p.f[2](p.t+p.dt,u[1])[1]
 end
 
-@inline function initialize!(integrator,cache::Union{IIF1ConstantCache,IIF2ConstantCache},f=integrator.f)
+function initialize!(integrator,cache::Union{IIF1ConstantCache,IIF2ConstantCache},f=integrator.f)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   A = integrator.f[1](integrator.t,integrator.u)
@@ -33,7 +33,7 @@ end
   integrator.k[2] = integrator.fsalfirst
 end
 
-@inline function perform_step!(integrator,cache::Union{IIF1ConstantCache,IIF2ConstantCache},f=integrator.f)
+function perform_step!(integrator,cache::Union{IIF1ConstantCache,IIF2ConstantCache},f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack uhold,rhs,nl_rhs = cache
 
@@ -91,7 +91,7 @@ function (p::RHS_IIF2)(u,resid)
   @. resid = u - p.tmp - 0.5p.dt*du
 end
 
-@inline function initialize!(integrator,cache::Union{IIF1Cache,IIF2Cache},f=integrator.f)
+function initialize!(integrator,cache::Union{IIF1Cache,IIF2Cache},f=integrator.f)
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.kshortsize = 2
@@ -104,7 +104,7 @@ end
   integrator.k[2] = integrator.fsallast
 end
 
-@inline function perform_step!(integrator,cache::Union{IIF1Cache,IIF2Cache},f=integrator.f)
+function perform_step!(integrator,cache::Union{IIF1Cache,IIF2Cache},f=integrator.f)
   @unpack rtmp1,tmp,k = cache
   @unpack uhold,rhs,nl_rhs = cache
   @unpack t,dt,uprev,u = integrator
