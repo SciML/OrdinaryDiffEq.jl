@@ -1,5 +1,5 @@
 julia 0.6.0
-DiffEqBase 1.16.0
+DiffEqBase 1.19.1
 Parameters 0.5.0
 ForwardDiff 0.5.0
 GenericSVD 0.0.2
