@@ -71,6 +71,7 @@ isfsal(alg::SofSpa10) = true
 
 isfsal(alg::Nystrom4) = true
 isfsal(alg::Nystrom4VelocityIndependent) = true
+isfsal(alg::IRKN4) = true
 isfsal(alg::Nystrom5VelocityIndependent) = true
 
 fsal_typeof(alg::OrdinaryDiffEqAlgorithm,rate_prototype) = typeof(rate_prototype)
@@ -127,6 +128,7 @@ alg_extrapolates(alg::ImplicitEuler) = true
 alg_extrapolates(alg::LinearImplicitEuler) = true
 alg_extrapolates(alg::Trapezoid) = true
 alg_extrapolates(alg::TRBDF2) = true
+alg_extrapolates(alg::IRKN4) = true
 
 alg_autodiff(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have an autodifferentiation option defined.")
 alg_autodiff{CS,AD}(alg::ImplicitEuler{CS,AD}) = AD
@@ -176,6 +178,7 @@ alg_order(alg::SofSpa10) = 10
 
 alg_order(alg::Nystrom4) = 4
 alg_order(alg::Nystrom4VelocityIndependent) = 4
+alg_order(alg::IRKN4) = 4
 alg_order(alg::Nystrom5VelocityIndependent) = 5
 
 alg_order(alg::Midpoint) = 2
