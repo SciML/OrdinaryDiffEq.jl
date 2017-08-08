@@ -156,7 +156,7 @@ end
     f.f2(tprev+3//4*dt,uprev2,duprev2,k₃.x[2])
     @tight_loop_macros for i in uidx
       @inbounds u[i]  = @muladd uprev[i] + (3//2*dt)*duprev[i] + (1//2*-dt)*duprev2[i] + (7//24*dtsq)*(k₂.x[1][i]-k₂.x[2][i]) + (1//8*dtsq)*(k₃.x[1][i]-k₃.x[2][i])
-      @inbounds du[i] = @muladd duprev[i] + dt*(19//18*k₁.x[1][i] + 1//18*k₁.x[2][i] + (-1//6)*(k₂.x[1][i]-k₂.x[2][i]) + 11//18*(k₃.x[1][i]-k₃.x[2][i]))
+      @inbounds du[i] = @muladd duprev[i] + dt*(19//18*k₁.x[1][i] - 1//18*k₁.x[2][i] + (-1//6)*(k₂.x[1][i]-k₂.x[2][i]) + 11//18*(k₃.x[1][i]-k₃.x[2][i]))
     end
     f.f1(t+3//4*dt,ku,du,k.x[1])
     f.f2(t+3//4*dt,ku,du,k.x[2])
