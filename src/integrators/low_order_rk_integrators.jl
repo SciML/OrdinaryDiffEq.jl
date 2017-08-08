@@ -238,7 +238,7 @@ end
   f(t+dt,u,k6)
   if integrator.opts.adaptive
     @. utilde = dt*(btilde1*k1 + btilde3*k3 + btilde4*k4 + btilde5*k5)
-    calculate_residuals!(atmp, utilde, uprev, integrator.opts.abstol, integrator.opts.reltol)
+    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 end
@@ -274,7 +274,7 @@ end
     @tight_loop_macros for i in uidx
       @inbounds utilde[i] = dt*(btilde1*k1[i] + btilde3*k3[i] + btilde4*k4[i] + btilde5*k5[i])
     end
-    calculate_residuals!(atmp, utilde, uprev, integrator.opts.abstol, integrator.opts.reltol)
+    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 end
