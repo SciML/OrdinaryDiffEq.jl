@@ -59,6 +59,309 @@ end
   end
 end
 
+function initialize!(integrator,cache::OwrenZen3ConstantCache,f=integrator.f)
+    integrator.kshortsize = 4
+    integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+    integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
+
+    # Avoid undefined entries if k is an array of arrays
+    integrator.fsallast = zero(integrator.fsalfirst)
+    integrator.k[1] = integrator.fsalfirst
+    @inbounds for i in 2:integrator.kshortsize-1
+      integrator.k[i] = zero(integrator.fsalfirst)
+    end
+    integrator.k[integrator.kshortsize] = integrator.fsallast
+end
+
+@muladd function perform_step!(integrator,cache::OwrenZen3ConstantCache,f=integrator.f)
+  @unpack t,dt,uprev,u = integrator
+  @unpack a21,a31,a32,a41,a42,a43,c1,c2,b1,b2 = cache
+  k1 = integrator.fsalfirst
+  a1 = dt*a21
+  k2 = f(t+c1*dt, @. uprev+a1*k1)
+  tmp = @. uprev+ dt*(a31*k1 + a32*k2)
+  k3 = f(t+c2*dt,tmp)
+  u = @. uprev+dt*(a41*k1+a42*k2+a43*k3)
+  k4 = f(t+dt,u); integrator.fsallast = k4
+  if integrator.opts.adaptive
+    utilde = @. uprev + dt*(b1*k1 + b2*k2)
+    tmp = @. (utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
+    integrator.EEst = integrator.opts.internalnorm(tmp)
+  end
+  integrator.k[1]=k1; integrator.k[2]=k2; integrator.k[3]=k3; integrator.k[4]=k4
+  integrator.u = u
+end
+
+function initialize!(integrator,cache::OwrenZen3Cache,f=integrator.f)
+    integrator.kshortsize = 4
+    integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+    integrator.k[1]=cache.k1; integrator.k[2]=cache.k2;
+    integrator.k[3]=cache.k3; integrator.k[4]=cache.k4;
+    integrator.fsalfirst = cache.k1; integrator.fsallast = cache.k4  # setup pointers
+    f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
+end
+
+@muladd function perform_step!(integrator,cache::OwrenZen3Cache,f=integrator.f)
+  @unpack t,dt,uprev,u = integrator
+  @unpack k1,k2,k3,k4,utilde,tmp,atmp = cache
+  @unpack a21,a31,a32,a41,a42,a43,c1,c2,b1,b2 = cache.tab
+  a1 = dt*a21
+  @. tmp = uprev+a1*k1
+  f(t+c1*dt,tmp,k2)
+  @. tmp = uprev+dt*(a31*k1+a32*k2)
+  f(t+c2*dt,tmp,k3)
+  @. u = uprev+dt*(a41*k1+a42*k2+a43*k3)
+  f(t+dt,u,k4)
+  if integrator.opts.adaptive
+    @. utilde = uprev + dt*(b1*k1 + b2*k2)
+    @. atmp = (utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
+    integrator.EEst = integrator.opts.internalnorm(atmp)
+  end
+end
+
+function initialize!(integrator,cache::OwrenZen4ConstantCache,f=integrator.f)
+  integrator.kshortsize = 6
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  @inbounds for i in 2:integrator.kshortsize-1
+    integrator.k[i] = zero(integrator.fsalfirst)
+  end
+  integrator.k[integrator.kshortsize] = integrator.fsallast
+end
+
+@muladd function perform_step!(integrator,cache::OwrenZen4ConstantCache,f=integrator.f)
+  @unpack t,dt,uprev,u = integrator
+  @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,c1,c2,c3,c4,b1,b3,b4 = cache
+  k1 = integrator.fsalfirst
+  a = dt*a21
+  if typeof(u) <: AbstractArray && !(typeof(u) <: SArray)
+    uidx = eachindex(uprev)
+    tmp = similar(uprev)
+    @tight_loop_macros for i in uidx
+      @inbounds tmp[i] = uprev[i]+a*k1[i]
+    end
+    k2 = f(t+c1*dt,tmp)
+    @tight_loop_macros for i in uidx
+      @inbounds tmp[i] = uprev[i]+dt*(a31*k1[i]+a32*k2[i])
+    end
+    k3 = f(t+c2*dt,tmp)
+    @tight_loop_macros for i in uidx
+      @inbounds tmp[i] = uprev[i]+dt*(a41*k1[i]+a42*k2[i]+a43*k3[i])
+    end
+    k4 = f(t+c3*dt,tmp)
+    @tight_loop_macros for i in uidx
+      @inbounds tmp[i] = uprev[i]+dt*(a51*k1[i]+a52*k2[i]+a53*k3[i]+a54*k4[i])
+    end
+    k5 = f(t+c4*dt,tmp)
+    @tight_loop_macros for i in uidx
+      @inbounds u[i] = uprev[i]+dt*(a61*k1[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
+    end
+    integrator.fsallast = f(t+dt,u); k6 = integrator.fsallast
+    if integrator.opts.adaptive
+      atmp = similar(u, typeof(one(recursive_eltype(u))), indices(u))
+      @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
+        @inbounds utilde   = uprev[i] + dt*(b1*k1[i] + b3*k3[i] + b4*k4[i])
+        @inbounds atmp[i] = (utilde-u[i])/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
+      end
+      integrator.EEst = integrator.opts.internalnorm(atmp)
+    end
+  else
+    k2 = f(t+c1*dt, uprev+a*k1)
+    k3 = f(t+c2*dt, uprev+dt*(a31*k1+a32*k2))
+    k4 = f(t+c3*dt, uprev+dt*(a41*k1+a42*k2+a43*k3))
+    k5 = f(t+c4*dt, uprev+dt*(a51*k1+a52*k2+a53*k3+a54*k4))
+    u = uprev+dt*(a61*k1+a63*k3+a64*k4+a65*k5)
+    integrator.fsallast = f(t+dt,u); k6 = integrator.fsallast
+    if integrator.opts.adaptive
+      utilde = uprev + dt*(b1*k1 + b3*k3 + b4*k4)
+      integrator.EEst = integrator.opts.internalnorm(@. (utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+    end
+  end
+  integrator.k[1]=k1; integrator.k[2]=k2; integrator.k[3]=k3;integrator.k[4]=k4;
+  integrator.k[5]=k5;integrator.k[6]=k6
+  integrator.u = u
+end
+
+function initialize!(integrator,cache::OwrenZen4Cache,f=integrator.f)
+  integrator.kshortsize = 6
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k[1]=cache.k1; integrator.k[2]=cache.k2;
+  integrator.k[3]=cache.k3; integrator.k[4]=cache.k4;
+  integrator.k[5]=cache.k5; integrator.k[6]=cache.k6;
+  integrator.fsalfirst = cache.k1; integrator.fsallast = cache.k6  # setup pointers
+  f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
+end
+
+@muladd function perform_step!(integrator,cache::OwrenZen4Cache,f=integrator.f)
+  @unpack t,dt,uprev,u = integrator
+  uidx = eachindex(integrator.uprev)
+  @unpack k1,k2,k3,k4,k5,k6,utilde,tmp,atmp = cache
+  @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,c1,c2,c3,c4,b1,b3,b4 = cache.tab
+  a = dt*a21
+  @tight_loop_macros for i in uidx
+    @inbounds tmp[i] = uprev[i]+a*k1[i]
+  end
+  f(t+c1*dt,tmp,k2)
+  @tight_loop_macros for i in uidx
+    @inbounds tmp[i] = uprev[i]+dt*(a31*k1[i]+a32*k2[i])
+  end
+  f(t+c2*dt,tmp,k3)
+  @tight_loop_macros for i in uidx
+    @inbounds tmp[i] = uprev[i]+dt*(a41*k1[i]+a42*k2[i]+a43*k3[i])
+  end
+  f(t+c3*dt,tmp,k4)
+  @tight_loop_macros for i in uidx
+    @inbounds tmp[i] = uprev[i]+dt*(a51*k1[i]+a52*k2[i]+a53*k3[i]+a54*k4[i])
+  end
+  f(t+c4*dt,tmp,k5)
+  @tight_loop_macros for i in uidx
+    @inbounds u[i] = uprev[i]+dt*(a61*k1[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
+  end
+  f(t+dt,u,k6)
+  if integrator.opts.adaptive
+    @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
+      @inbounds utilde   = uprev[i] + dt*(b1*k1[i] + b3*k3[i] + b4*k4[i])
+      @inbounds atmp[i] = (utilde-u[i])/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
+    end
+    integrator.EEst = integrator.opts.internalnorm(atmp)
+  end
+end
+
+function initialize!(integrator,cache::OwrenZen5ConstantCache,f=integrator.f)
+  integrator.kshortsize = 8
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  @inbounds for i in 2:integrator.kshortsize-1
+    integrator.k[i] = zero(integrator.fsalfirst)
+  end
+  integrator.k[integrator.kshortsize] = integrator.fsallast
+end
+
+@muladd function perform_step!(integrator,cache::OwrenZen5ConstantCache,f=integrator.f)
+  @unpack t,dt,uprev,u = integrator
+  @unpack a21,a31,a32,a41,a42,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,c1,c2,c3,c4,c5,c6,b1,b3,b4,b5,b6 = cache
+  k1 = integrator.fsalfirst
+  a = dt*a21
+  if typeof(u) <: AbstractArray && !(typeof(u) <: SArray)
+    uidx = eachindex(uprev)
+    tmp = similar(uprev)
+    @tight_loop_macros for i in uidx
+      @inbounds tmp[i] = uprev[i]+a*k1[i]
+    end
+    k2 = f(t+c1*dt,tmp)
+    @tight_loop_macros for i in uidx
+      @inbounds tmp[i] = uprev[i]+dt*(a31*k1[i]+a32*k2[i])
+    end
+    k3 = f(t+c2*dt,tmp)
+    @tight_loop_macros for i in uidx
+      @inbounds tmp[i] = uprev[i]+dt*(a41*k1[i]+a42*k2[i]+k3[i])
+    end
+    k4 = f(t+c3*dt,tmp)
+    @tight_loop_macros for i in uidx
+      @inbounds tmp[i] = uprev[i]+dt*(a51*k1[i]+a52*k2[i]+a53*k3[i]+a54*k4[i])
+    end
+    k5 = f(t+c4*dt,tmp)
+    @tight_loop_macros for i in uidx
+      @inbounds tmp[i] = uprev[i]+dt*(a61*k1[i]+a62*k2[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
+    end
+    k6 = f(t+c5*dt,tmp)
+    @tight_loop_macros for i in uidx
+      @inbounds tmp[i] = uprev[i]+dt*(a71*k1[i]+a72*k2[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i])
+    end
+    k7 = f(t+c6*dt,tmp)
+    @tight_loop_macros for i in uidx
+      @inbounds u[i] = uprev[i]+dt*(a81*k1[i]+a83*k3[i]+a84*k4[i]+a85*k5[i]+a86*k6[i]+a87*k7[i])
+    end
+    integrator.fsallast = f(t+dt,u); k8 = integrator.fsallast
+    if integrator.opts.adaptive
+      atmp = similar(u, typeof(one(recursive_eltype(u))), indices(u))
+      @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
+        @inbounds utilde   = uprev[i] + dt*(b1*k1[i] + b3*k3[i] + b4*k4[i] + b5*k5[i] + b6*k6[i])
+        @inbounds atmp[i] = (utilde-u[i])/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
+      end
+      integrator.EEst = integrator.opts.internalnorm(atmp)
+    end
+  else
+    k2 = f(t+c1*dt, uprev+a*k1)
+    k3 = f(t+c2*dt, uprev+dt*(a31*k1+a32*k2))
+    k4 = f(t+c3*dt, uprev+dt*(a41*k1+a42*k2+k3))
+    k5 = f(t+c4*dt, uprev+dt*(a51*k1+a52*k2+a53*k3+a54*k4))
+    k6 = f(t+c5*dt, uprev+dt*(a61*k1+a62*k2+a63*k3+a64*k4+a65*k5))
+    k7 = f(t+c6*dt, uprev+dt*(a71*k1+a72*k2+a73*k3+a74*k4+a75*k5+a76*k6))
+    u = uprev+dt*(a81*k1+a83*k3+a84*k4+a85*k5+a86*k6+a87*k7)
+    integrator.fsallast = f(t+dt,u); k8 = integrator.fsallast
+    if integrator.opts.adaptive
+      utilde = uprev + dt*(b1*k1 + b3*k3 + b4*k4 + b5*k5 + b6*k6)
+      integrator.EEst = integrator.opts.internalnorm(@. (utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+    end
+  end
+  integrator.k[1]=k1; integrator.k[2]=k2; integrator.k[3]=k3; integrator.k[4]=k4
+  integrator.k[5]=k5; integrator.k[6]=k6; integrator.k[7]=k7; integrator.k[8]=k8
+  integrator.u = u
+end
+
+function initialize!(integrator,cache::OwrenZen5Cache,f=integrator.f)
+  integrator.kshortsize = 8
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k[1]=cache.k1; integrator.k[2]=cache.k2;
+  integrator.k[3]=cache.k3; integrator.k[4]=cache.k4;
+  integrator.k[5]=cache.k5; integrator.k[6]=cache.k6;
+  integrator.k[7]=cache.k7; integrator.k[8]=cache.k8;
+  integrator.fsalfirst = cache.k1; integrator.fsallast = cache.k8  # setup pointers
+  f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
+end
+
+@muladd function perform_step!(integrator,cache::OwrenZen5Cache,f=integrator.f)
+  @unpack t,dt,uprev,u = integrator
+  uidx = eachindex(integrator.uprev)
+  @unpack k1,k2,k3,k4,k5,k6,k7,k8,utilde,tmp,atmp = cache
+  @unpack a21,a31,a32,a41,a42,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,c1,c2,c3,c4,c5,c6,b1,b3,b4,b5,b6 = cache.tab
+  a = dt*a21
+  @tight_loop_macros for i in uidx
+    @inbounds tmp[i] = uprev[i]+a*k1[i]
+  end
+  f(t+c1*dt,tmp,k2)
+  @tight_loop_macros for i in uidx
+    @inbounds tmp[i] = uprev[i]+dt*(a31*k1[i]+a32*k2[i])
+  end
+  f(t+c2*dt,tmp,k3)
+  @tight_loop_macros for i in uidx
+    @inbounds tmp[i] = uprev[i]+dt*(a41*k1[i]+a42*k2[i]+k3[i])
+  end
+  f(t+c3*dt,tmp,k4)
+  @tight_loop_macros for i in uidx
+    @inbounds tmp[i] = uprev[i]+dt*(a51*k1[i]+a52*k2[i]+a53*k3[i]+a54*k4[i])
+  end
+  f(t+c4*dt,tmp,k5)
+  @tight_loop_macros for i in uidx
+    @inbounds tmp[i] = uprev[i]+dt*(a61*k1[i]+a62*k2[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
+  end
+  f(t+dt,tmp,k6)
+  @tight_loop_macros for i in uidx
+    @inbounds tmp[i] = uprev[i]+dt*(a71*k1[i]+a72*k2[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i])
+  end
+  f(t+c6*dt,tmp,k7)
+  @tight_loop_macros for i in uidx
+    @inbounds u[i] = uprev[i]+dt*(a81*k1[i]+a83*k3[i]+a84*k4[i]+a85*k5[i]+a86*k6[i]+a87*k7[i])
+  end
+  f(t+dt,u,k8)
+  if integrator.opts.adaptive
+    @tight_loop_macros for (i,atol,rtol) in zip(uidx,Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
+      @inbounds utilde   = uprev[i] + dt*(b1*k1[i] + b3*k3[i] + b4*k4[i] + b5*k5[i] + b6*k6[i])
+      @inbounds atmp[i] = (utilde-u[i])/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
+    end
+    integrator.EEst = integrator.opts.internalnorm(atmp)
+  end
+end
+
 function initialize!(integrator,cache::BS5ConstantCache,f=integrator.f)
   integrator.kshortsize = 8
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)

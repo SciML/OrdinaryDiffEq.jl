@@ -155,6 +155,108 @@ end
 
 alg_cache(alg::BS3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = BS3ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
 
+struct OwrenZen3Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  k1::rateType
+  k2::rateType
+  k3::rateType
+  k4::rateType
+  utilde::uArrayType
+  tmp::uType
+  atmp::uEltypeNoUnits
+  tab::TabType
+end
+
+u_cache(c::OwrenZen3Cache) = (c.atmp,c.utilde)
+du_cache(c::OwrenZen3Cache) = (c.fsalfirst,c.k2,c.k3,c.k4)
+
+function alg_cache(alg::OwrenZen3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
+  tab = OwrenZen3ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
+  k1 = zeros(rate_prototype)
+  k2 = zeros(rate_prototype)
+  k3 = zeros(rate_prototype)
+  k4 = zeros(rate_prototype)
+  utilde = similar(u,indices(u))
+  atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u)
+  OwrenZen3Cache(u,uprev,k1,k2,k3,k4,utilde,tmp,atmp,tab)
+end
+
+alg_cache(alg::OwrenZen3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = OwrenZen3ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
+
+struct OwrenZen4Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  k1::rateType
+  k2::rateType
+  k3::rateType
+  k4::rateType
+  k5::rateType
+  k6::rateType
+  utilde::uArrayType
+  tmp::uType
+  atmp::uEltypeNoUnits
+  tab::TabType
+end
+
+u_cache(c::OwrenZen4Cache) = (c.atmp,c.utilde)
+du_cache(c::OwrenZen4Cache) = (c.fsalfirst,c.k2,c.k3,c.k4,c.k5,c.k6)
+
+function alg_cache(alg::OwrenZen4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
+  tab = OwrenZen4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
+  k1 = zeros(rate_prototype)
+  k2 = zeros(rate_prototype)
+  k3 = zeros(rate_prototype)
+  k4 = zeros(rate_prototype)
+  k5 = zeros(rate_prototype)
+  k6 = zeros(rate_prototype)
+  utilde = similar(u,indices(u))
+  atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u)
+  OwrenZen4Cache(u,uprev,k1,k2,k3,k4,k5,k6,utilde,tmp,atmp,tab)
+end
+
+alg_cache(alg::OwrenZen4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = OwrenZen4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
+
+struct OwrenZen5Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  k1::rateType
+  k2::rateType
+  k3::rateType
+  k4::rateType
+  k5::rateType
+  k6::rateType
+  k7::rateType
+  k8::rateType
+  utilde::uArrayType
+  tmp::uType
+  atmp::uEltypeNoUnits
+  tab::TabType
+end
+
+u_cache(c::OwrenZen5Cache) = (c.atmp,c.utilde)
+du_cache(c::OwrenZen5Cache) = (c.fsalfirst,c.k2,c.k3,c.k4,c.k5,c.k6,c.k7,c.k8)
+
+function alg_cache(alg::OwrenZen5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
+  tab = OwrenZen5ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
+  k1 = zeros(rate_prototype)
+  k2 = zeros(rate_prototype)
+  k3 = zeros(rate_prototype)
+  k4 = zeros(rate_prototype)
+  k5 = zeros(rate_prototype)
+  k6 = zeros(rate_prototype)
+  k7 = zeros(rate_prototype)
+  k8 = zeros(rate_prototype)
+  utilde = similar(u,indices(u))
+  atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u)
+  OwrenZen5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,utilde,tmp,atmp,tab)
+end
+
+alg_cache(alg::OwrenZen5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = OwrenZen5ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
+
 struct BS5Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType

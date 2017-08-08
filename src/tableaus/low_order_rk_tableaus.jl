@@ -73,7 +73,6 @@ struct OwrenZen3ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   b2::T
   r13::T
   r12::T
-  r11::T
   r23::T
   r22::T
   r33::T
@@ -253,7 +252,6 @@ struct OwrenZen5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   a32::T
   a41::T
   a42::T
-  a43::T
   a51::T
   a52::T
   a53::T
@@ -330,7 +328,7 @@ Base.@pure function OwrenZen5ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}
     a62 = T(-0.7084548104956269)
     a63 = T(0.8658892128279884)
     a64 = T(0.15462307371928363)
-    a64 = T(0.06184922948771345)
+    a65 = T(0.06184922948771345)
     a71 = T(-0.02947695035460993)
     a72 = T(0.18500664893617022)
     a73 = T(0.4802345261121857)
@@ -382,7 +380,7 @@ Base.@pure function OwrenZen5ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}
     r84 = T(-8.384615384615385)
     r83 = T(5.769230769230769)
     r82 = T(-1.3846153846153846)
-    OwrenZen5ConstantCache(a21,a31,a32,a41,a42,a43,a51,a52,a53,
+    OwrenZen5ConstantCache(a21,a31,a32,a41,a42,a51,a52,a53,
                            a54,a61,a62,a63,a64,a65,a71,a72,a73,
                            a74,a75,a76,a81,a83,a84,a85,a86,a87,
                            c1,c2,c3,c4,c5,c6,b1,b3,b4,b5,b6,r15,
@@ -406,7 +404,7 @@ Base.@pure function OwrenZen5ConstantCache{T,T2}(::Type{T},::Type{T2})
   a62 = T(-243//343)
   a63 = T(297//343)
   a64 = T(1485//9604)
-  a64 = T(297//4802)
+  a65 = T(297//4802)
   a71 = T(-133//4512)
   a72 = T(1113//6016)
   a73 = T(7945//16544)
@@ -458,7 +456,7 @@ Base.@pure function OwrenZen5ConstantCache{T,T2}(::Type{T},::Type{T2})
   r84 = T(-109//13)
   r83 = T(75//13)
   r82 = T(-18//13)
-  OwrenZen5ConstantCache(a21,a31,a32,a41,a42,a43,a51,a52,a53,
+  OwrenZen5ConstantCache(a21,a31,a32,a41,a42,a51,a52,a53,
                          a54,a61,a62,a63,a64,a65,a71,a72,a73,
                          a74,a75,a76,a81,a83,a84,a85,a86,a87,
                          c1,c2,c3,c4,c5,c6,b1,b3,b4,b5,b6,r15,
