@@ -91,10 +91,12 @@ end
   ku, kdu = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
   # x(t+Δt) = x(t) + v(t)*Δt + 1/2*a(t)*Δt^2
   f.f2(t,uprev,duprev,ku)
-  @. u = uprev + dt*duprev + dt^2*(1//2*ku)
+  dtsq = dt^2
+  half = cache.half
+  @. u = uprev + dt*duprev + dtsq*(half*ku)
   f.f2(t+dt,u,duprev,kdu)
   # v(t+Δt) = v(t) + 1/2*(a(t)+a(t+Δt))*Δt
-  @. du = duprev + dt*(1//2*ku + 1//2*kdu)
+  @. du = duprev + dt*(half*ku + half*kdu)
   copy!(integrator.k[1].x[1],integrator.k[2].x[1])
   copy!(integrator.k[1].x[2],integrator.k[2].x[2])
   copy!(integrator.k[2].x[1],du)

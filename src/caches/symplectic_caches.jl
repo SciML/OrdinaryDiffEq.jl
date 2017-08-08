@@ -17,27 +17,31 @@ struct SymplecticEulerConstantCache <: OrdinaryDiffEqConstantCache end
 
 alg_cache(alg::SymplecticEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = SymplecticEulerConstantCache()
 
-struct VelocityVerletCache{uType,rateType} <: OrdinaryDiffEqMutableCache
+struct VelocityVerletCache{uType,rateType,uEltypeNoUnits} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
   k::rateType
   fsalfirst::rateType
+  half::uEltypeNoUnits
 end
 
 u_cache(c::VelocityVerletCache) = ()
 du_cache(c::VelocityVerletCache) = (c.k,c.fsalfirst)
 
-struct VelocityVerletConstantCache <: OrdinaryDiffEqConstantCache end
+struct VelocityVerletConstantCache{uEltypeNoUnits} <: OrdinaryDiffEqConstantCache
+    half::uEltypeNoUnits
+end
 
 function alg_cache(alg::VelocityVerlet,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   tmp = zeros(rate_prototype)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
-  VelocityVerletCache(u,uprev,k,tmp,fsalfirst)
+  half = uEltypeNoUnits(1//2)
+  VelocityVerletCache(u,uprev,k,tmp,fsalfirst,half)
 end
 
-alg_cache(alg::VelocityVerlet,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = VelocityVerletConstantCache()
+alg_cache(alg::VelocityVerlet,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = VelocityVerletConstantCache(uEltypeNoUnits(1//2))
 
 struct Symplectic2Cache{uType,rateType,tableauType} <: OrdinaryDiffEqMutableCache
   u::uType
