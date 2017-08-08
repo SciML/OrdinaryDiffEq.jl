@@ -19,7 +19,7 @@ struct Euler <: OrdinaryDiffEqAlgorithm end
 struct Heun <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Ralston <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Midpoint <: OrdinaryDiffEqAdaptiveAlgorithm end
-struct RK4 <: OrdinaryDiffEqAlgorithm end
+struct RK4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct OwrenZen3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct OwrenZen4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct OwrenZen5 <: OrdinaryDiffEqAdaptiveAlgorithm end

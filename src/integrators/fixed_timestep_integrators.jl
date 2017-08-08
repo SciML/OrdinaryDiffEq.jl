@@ -238,6 +238,21 @@ end
   k₄ = f(t+dt, @. uprev + dt*k₃)
   u = @. uprev + (dt/6)*(2*(k₂ + k₃) + (k₁+k₄))
   integrator.fsallast = f(t+dt,u)
+  if integrator.opts.adaptive
+      # Shampine Solving ODEs and DDEs with Residual Control Estimate
+      k₅ = integrator.fsallast
+      σ₁ = 1/2 - sqrt(3)/6
+      σ₂ = 1/2 + sqrt(3)/6
+      p1 = (1-σ₁)*uprev+σ₁*u+σ₁*(σ₁-1)*((1-2σ₁)*(u-uprev)+(σ₁-1)*dt*k₁ + σ₁*dt*k₅)
+      p2 = (1-σ₂)*uprev+σ₂*u+σ₂*(σ₂-1)*((1-2σ₂)*(u-uprev)+(σ₂-1)*dt*k₁ + σ₂*dt*k₅)
+      pprime1 = k₁ + σ₁*(-4*dt*k₁ - 2*dt*k₅ - 6*uprev +
+                σ₁*(3*dt*k₁ + 3*dt*k₅ + 6*uprev - 6*u) + 6*u)/dt
+      pprime2 = k₁ + σ₂*(-4*dt*k₁ - 2*dt*k₅ - 6*uprev +
+                σ₂*(3*dt*k₁ + 3*dt*k₅ + 6*uprev - 6*u) + 6*u)/dt
+      r1 = dt*(f(t+σ₁*dt,p1) - pprime1)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
+      r2 = dt*(f(t+σ₂*dt,p2) - pprime2)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
+      integrator.EEst = 2.1342*max(r1,r2)
+  end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
@@ -268,4 +283,25 @@ end
   f(t+dt,tmp,k₄)
   @. u = uprev + (dt/6)*(2*(k₂ + k₃) + (k₁ + k₄))
   f(t+dt,u,k)
+  if integrator.opts.adaptive
+      # Shampine Solving ODEs and DDEs with Residual Control Estimate
+      k₅ = k; p1 = k₂; p2 = k₃; pprime1 = k₄; pprime2 = tmp # Alias some cache arrays
+      σ₁ = 1/2 - sqrt(3)/6
+      σ₂ = 1/2 + sqrt(3)/6
+      @tight_loop_macros for i in eachindex(u)
+          @inbounds p1[i] = (1-σ₁)*uprev[i]+σ₁*u[i]+σ₁*(σ₁-1)*((1-2σ₁)*(u[i]-uprev[i])+(σ₁-1)*dt*k₁[i] + σ₁*dt*k₅[i])
+          @inbounds p2[i] = (1-σ₂)*uprev[i]+σ₂*u[i]+σ₂*(σ₂-1)*((1-2σ₂)*(u[i]-uprev[i])+(σ₂-1)*dt*k₁[i] + σ₂*dt*k₅[i])
+          @inbounds pprime1[i] = k₁[i] + σ₁*(-4*dt*k₁[i] - 2*dt*k₅[i] - 6*uprev[i] +
+                    σ₁*(3*dt*k₁[i] + 3*dt*k₅[i] + 6*uprev[i] - 6*u[i]) + 6*u[i])/dt
+          @inbounds pprime2[i] = k₁[i] + σ₂*(-4*dt*k₁[i] - 2*dt*k₅[i] - 6*uprev[i] +
+                    σ₂*(3*dt*k₁[i] + 3*dt*k₅[i] + 6*uprev[i] - 6*u[i]) + 6*u[i])/dt
+      end
+      f(t+σ₁*dt,p1,tmp)
+      @. p1 = dt*(tmp - pprime1)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
+      e1 = integrator.opts.internalnorm(p1)
+      f(t+σ₂*dt,p2,tmp)
+      @. p2 = dt*(tmp - pprime2)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
+      e2 = integrator.opts.internalnorm(p2)
+      integrator.EEst = 2.1342*max(e1,e2)
+  end
 end
