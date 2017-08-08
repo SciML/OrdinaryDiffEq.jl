@@ -20,6 +20,9 @@ struct Heun <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Ralston <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Midpoint <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct RK4 <: OrdinaryDiffEqAlgorithm end
+struct OwrenZen3 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct OwrenZen4 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct OwrenZen5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct SSPRK22 <: OrdinaryDiffEqAlgorithm end
 struct SSPRK33 <: OrdinaryDiffEqAlgorithm end
 struct SSPRK104 <: OrdinaryDiffEqAlgorithm end
