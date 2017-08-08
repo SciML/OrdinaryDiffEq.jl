@@ -82,7 +82,7 @@ function alg_cache(alg::BS3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,u
   k3 = zeros(rate_prototype)
   k4 = zeros(rate_prototype)
   utilde = similar(u,indices(u))
-  atmp = similar(u,uEltypeNoUnits,indices(u))
+  atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
   BS3Cache(u,uprev,k1,k2,k3,k4,utilde,tmp,atmp,tab)
 end
