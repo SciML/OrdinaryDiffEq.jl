@@ -28,6 +28,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   qsteady_min = qsteady_min_default(alg),
   qsteady_max = qsteady_min_default(alg),
   qoldinit=1//10^4, fullnormalize=true,
+  failfactor = 2,
   beta2=beta2_default(alg),
   beta1=beta1_default(alg,beta2),
   maxiters = 1000000,
@@ -195,7 +196,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   opts = DEOptions(maxiters,timeseries_steps,save_everystep,adaptive,abstol_internal,
     reltol_internal,tTypeNoUnits(gamma),tTypeNoUnits(qmax),tTypeNoUnits(qmin),
     tTypeNoUnits(qsteady_max),tTypeNoUnits(qsteady_min),
-    tType(dtmax),tType(dtmin),internalnorm,save_idxs,
+    tTypeNoUnits(failfactor),tType(dtmax),tType(dtmin),internalnorm,save_idxs,
     tstops_internal,saveat_internal,d_discontinuities_internal,
     userdata,
     progress,progress_steps,
@@ -266,6 +267,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   just_hit_tstop = false
   isout = false
   accept_step = false
+  force_stepfail = false
   dtchangeable = isdtchangeable(alg)
   q11 = tTypeNoUnits(1)
 
@@ -277,7 +279,8 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
                              alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,
                              dtpropose,tdir,EEst,qoldinit,q11,
                              iter,saveiter,saveiter_dense,prog,cache,
-                             kshortsize,just_hit_tstop,accept_step,isout,reeval_fsal,u_modified,opts)
+                             kshortsize,force_stepfail,just_hit_tstop,
+                             accept_step,isout,reeval_fsal,u_modified,opts)
   if initialize_integrator
     initialize!(integrator,integrator.cache)
     initialize!(callbacks_internal,t,u,integrator)

@@ -10,6 +10,7 @@ mutable struct DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5,F
   qmin::tTypeNoUnits
   qsteady_max::tTypeNoUnits
   qsteady_min::tTypeNoUnits
+  failfactor::tTypeNoUnits
   dtmax::tType
   dtmin::tType
   internalnorm::F2
@@ -65,6 +66,7 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,tTypeN
   prog::ProgressType
   cache::CacheType
   kshortsize::Int
+  force_stepfail::Bool
   just_hit_tstop::Bool
   accept_step::Bool
   isout::Bool
@@ -76,18 +78,22 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,tTypeN
 
   function (::Type{ODEIntegrator{algType,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,
                 rateType,F,ProgressType,CacheType,O,FSALType}}){algType,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,
-                rateType,F,ProgressType,CacheType,O,FSALType}(sol,u,k,t,dt,f,uprev,uprev2,tprev,
+                rateType,F,ProgressType,CacheType,O,FSALType}(
+                sol,u,k,t,dt,f,uprev,uprev2,tprev,
       alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,dtpropose,tdir,
       EEst,qold,q11,
       iter,saveiter,saveiter_dense,prog,cache,
-      kshortsize,just_hit_tstop,accept_step,isout,reeval_fsal,u_modified,opts)
+      kshortsize,force_stepfail,just_hit_tstop,
+      accept_step,isout,reeval_fsal,u_modified,opts)
 
       new{algType,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,
-                  rateType,F,ProgressType,CacheType,O,FSALType}(sol,u,k,t,dt,f,uprev,uprev2,tprev,
+                  rateType,F,ProgressType,CacheType,O,FSALType}(
+                  sol,u,k,t,dt,f,uprev,uprev2,tprev,
       alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,dtpropose,tdir,
       EEst,qold,q11,
       iter,saveiter,saveiter_dense,prog,cache,
-      kshortsize,just_hit_tstop,accept_step,isout,reeval_fsal,u_modified,opts) # Leave off fsalfirst and last
+      kshortsize,force_stepfail,just_hit_tstop,
+      accept_step,isout,reeval_fsal,u_modified,opts) # Leave off fsalfirst and last
   end
 end
 

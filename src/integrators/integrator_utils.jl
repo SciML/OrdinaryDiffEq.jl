@@ -11,7 +11,7 @@ function loopheader!(integrator)
     elseif integrator.opts.adaptive && !integrator.accept_step
       if integrator.isout
         integrator.dt = integrator.dt*integrator.opts.qmin
-      else
+      elseif !integrator.force_stepfail
         integrator.dt = integrator.dt/min(inv(integrator.opts.qmin),integrator.q11/integrator.opts.gamma)
       end
     end
@@ -21,7 +21,6 @@ function loopheader!(integrator)
   fix_dt_at_bounds!(integrator)
   modify_dt_for_tstops!(integrator)
   choose_algorithm!(integrator,integrator.cache)
-
 end
 
 @def ode_exit_conditions begin
@@ -60,9 +59,12 @@ function modify_dt_for_tstops!(integrator)
       else
         integrator.dt = -min(abs(integrator.dt),abs(top(tstops)-integrator.t))
       end
-    elseif integrator.dtcache == zero(integrator.t) && integrator.dtchangeable # Use integrator.opts.tstops
+    elseif integrator.dtcache == zero(integrator.t) && integrator.dtchangeable
+      # Use integrator.opts.tstops
       integrator.dt = integrator.tdir*abs(top(tstops)-integrator.t)
-    elseif integrator.dtchangeable # always try to step! with dtcache, but lower if a tstops
+  elseif integrator.dtchangeable && !integrator.force_stepfail
+      # always try to step! with dtcache, but lower if a tstops
+      # however, if force_stepfail then don't set to dtcache, and no tstop worry
       integrator.dt = integrator.tdir*min(abs(integrator.dtcache),abs(top(tstops)-integrator.t)) # step! to the end
     end
   end
@@ -187,7 +189,10 @@ end
 
 function loopfooter!(integrator)
   ttmp = integrator.t + integrator.dt
-  if integrator.opts.adaptive
+  if integrator.force_stepfail
+      integrator.accept_step = false
+      integrator.dt = integrator.dt/integrator.opts.failfactor
+  elseif integrator.opts.adaptive
     dtnew = stepsize_controller(integrator,integrator.cache)
     integrator.isout = integrator.opts.isoutofdomain(ttmp,integrator.u)
     integrator.accept_step = (!integrator.isout && integrator.EEst <= 1.0) || (integrator.opts.force_dtmin && abs(integrator.dt) <= abs(integrator.opts.dtmin))
@@ -203,7 +208,7 @@ function loopfooter!(integrator)
       calc_dt_propose!(integrator,dtnew)
       handle_callbacks!(integrator)
     end
-  else #Not adaptive
+  elseif !integrator.opts.adaptive #Not adaptive
     integrator.tprev = integrator.t
     if typeof(integrator.t)<:AbstractFloat && !isempty(integrator.opts.tstops)
       tstop = top(integrator.opts.tstops)
