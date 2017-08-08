@@ -8,7 +8,7 @@ end
 @muladd function perform_step!(integrator,cache::DP5ThreadedCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = cache.tab
+  @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,btilde1,btilde3,btilde4,btilde5,btilde6,btilde7,c1,c2,c3,c4,c5,c6 = cache.tab
   @unpack k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,utilde,tmp,atmp = cache
   @unpack d1,d3,d4,d5,d6,d7 = cache.tab
   dp5threaded_loop1(dt,tmp,uprev,a21,k1,uidx)
@@ -24,7 +24,8 @@ end
   dp5threaded_loop6(dt,u,uprev,a71,k1,a73,k3,a74,k4,a75,k5,a76,k6,update,uidx)
   f(t+dt,u,integrator.fsallast)
   if integrator.opts.adaptive
-    dp5threaded_adaptiveloop(dt,utilde,uprev,b1,k1,b3,k3,b4,k4,b5,k5,b6,k6,b7,k7,atmp,u,integrator.opts.abstol,integrator.opts.reltol,uidx)
+    dp5threaded_adaptiveloop(dt,utilde,btilde1,k1,btilde3,k3,btilde4,k4,btilde5,k5,btilde6,k6,btilde7,k7,uidx)
+    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   dp5threaded_denseloop(bspl,update,k1,k3,k4,k5,k6,k7,integrator.k,d1,d3,d4,d5,d6,d7,uidx)
@@ -76,10 +77,8 @@ end
   end
 end
 
-@noinline @muladd function dp5threaded_adaptiveloop(dt,utilde,uprev,b1,k1,b3,k3,b4,k4,b5,k5,b6,k6,b7,k7,atmp,u,abstol,reltol,uidx)
-  #Threads.@threads for (i,atol,rtol) in zip(uidx,Iterators.cycle(abstol),Iterators.cycle(reltol)) # warnings due to iterators
-  for (i,atol,rtol) in zip(uidx,Iterators.cycle(abstol),Iterators.cycle(reltol))
-    utilde[i] = uprev[i] + dt*(b1*k1[i] + b3*k3[i] + b4*k4[i] + b5*k5[i] + b6*k6[i] + b7*k7[i])
-    atmp[i] = (utilde[i]-u[i])/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
+@noinline @muladd function dp5threaded_adaptiveloop(dt,utilde,btilde1,k1,btilde3,k3,btilde4,k4,btilde5,k5,btilde6,k6,btilde7,k7,uidx)
+  Threads.@threads for i in uidx
+    utilde[i] = dt*(btilde1*k1[i] + btilde3*k3[i] + btilde4*k4[i] + btilde5*k5[i] + btilde6*k6[i] + btilde7*k7[i])
   end
 end
