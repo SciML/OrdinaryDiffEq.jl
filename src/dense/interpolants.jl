@@ -260,7 +260,7 @@ end
 end
 
 @inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::OwrenZen4ConstantCache,idxs,T::Type{Val{0}})
-  @unpack r14,r13,r12,r34,r33,r32,r44,r43,r42,r54,r53,r52,r64,r63,r62 = cache.tab
+  @unpack r14,r13,r12,r34,r33,r32,r44,r43,r42,r54,r53,r52,r64,r63,r62 = cache
 
   b1Θ  = @evalpoly(Θ, 0, 1, r12, r13, r14)
   b3Θ  = @evalpoly(Θ, 0, 0, r32, r33, r34)
