@@ -48,6 +48,7 @@ end
     do_newton = true
   end
 
+  fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     b = -z .+ dt.*f(t+dt,uprev + z)
@@ -55,9 +56,18 @@ end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
     θ = ndz/ndzprev
+    if θ > 1 || ndz*(θ^(integrator.alg.max_newton_iter - iter)/(1-θ)) > κ*tol
+      fail_convergence = true
+      break
+    end
     η = θ/(1-θ)
     do_newton = (η*ndz > κ*tol)
     z = z + dz
+  end
+
+  if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
+    integrator.force_stepfail = true
+    return
   end
 
   cache.ηold = η
@@ -119,7 +129,7 @@ end
   if has_invW(f)
     f(Val{:invW},t,uprev,dt,W) # W == inverse W
   else
-    if cache.newton_iters == 1 && cache.ηold < 1e-3
+    if cache.newton_iters == 1 && cache.ηold < integrator.alg.new_jac_conv_bound
       new_jac = false
     else # Compute a new Jacobian
       new_jac = true
@@ -168,6 +178,7 @@ end
     do_newton = true
   end
 
+  fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     f(t+dt,u,k)
@@ -181,10 +192,19 @@ end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
     θ = ndz/ndzprev
+    if θ > 1 || ndz*(θ^(integrator.alg.max_newton_iter - iter)/(1-θ)) > κ*tol
+      fail_convergence = true
+      break
+    end
     η = θ/(1-θ)
     do_newton = (η*ndz > κ*tol)
     z .+= dz
     @. u = uprev + z
+  end
+
+  if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
+    integrator.force_stepfail = true
+    return
   end
 
   cache.ηold = η
@@ -260,6 +280,7 @@ end
     do_newton = true
   end
 
+  fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     b = -z .+ dto2.*f(t+dto2,uprev + z)
@@ -267,9 +288,18 @@ end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
     θ = ndz/ndzprev
+    if θ > 1 || ndz*(θ^(integrator.alg.max_newton_iter - iter)/(1-θ)) > κ*tol
+      fail_convergence = true
+      break
+    end
     η = θ/(1-θ)
     do_newton = (η*ndz > κ*tol)
     z = z + dz
+  end
+
+  if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
+    integrator.force_stepfail = true
+    return
   end
 
   cache.ηold = η
@@ -335,7 +365,7 @@ end
   if has_invW(f)
     f(Val{:invW},t,uprev,dt,W) # W == inverse W
   else
-    if cache.newton_iters == 1 && cache.ηold < 1e-3
+    if cache.newton_iters == 1 && cache.ηold < integrator.alg.new_jac_conv_bound
       new_jac = false
     else # Compute a new Jacobian
       new_jac = true
@@ -384,6 +414,7 @@ end
     do_newton = true
   end
 
+  fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     f(t+dto2,u,k)
@@ -397,10 +428,19 @@ end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
     θ = ndz/ndzprev
+    if θ > 1 || ndz*(θ^(integrator.alg.max_newton_iter - iter)/(1-θ)) > κ*tol
+      fail_convergence = true
+      break
+    end
     η = θ/(1-θ)
     do_newton = (η*ndz > κ*tol)
     z .+= dz
     @. u = uprev + z
+  end
+
+  if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
+    integrator.force_stepfail = true
+    return
   end
 
   cache.ηold = η
@@ -501,7 +541,8 @@ end
     do_newton = true
   end
 
-  while iter < 5 #do_newton
+  fail_convergence = false
+  while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     uᵧ = @. (uprev + d*zprev) + d*zᵧ
     b = dt.*f(t+γdt,uᵧ) .- zᵧ
@@ -509,9 +550,18 @@ end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(Δzᵧ)
     θ = ndz/ndzprev
+    if θ > 1 || ndz*(θ^(integrator.alg.max_newton_iter - iter)/(1-θ)) > κ*tol
+      fail_convergence = true
+      break
+    end
     η = θ/(1-θ)
     do_newton = (η*ndz > κ*tol)
     zᵧ = zᵧ + Δzᵧ
+  end
+
+  if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
+    integrator.force_stepfail = true
+    return
   end
 
   uᵧ = @. (uprev + d*zprev) + d*zᵧ
@@ -532,7 +582,8 @@ end
   η = max(η,eps(first(u)))^(0.8)
   do_newton = (η*ndz > κ*tol)
 
-  while iter < 5 #do_newton
+  fail_convergence = false
+  while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = @. (uprev + ω*zprev + ω*zᵧ) + d*z
     b = dt.*f(t+dt,u) .- z
@@ -540,9 +591,18 @@ end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
     θ = ndz/ndzprev
+    if θ > 1 || ndz*(θ^(integrator.alg.max_newton_iter - iter)/(1-θ)) > κ*tol
+      fail_convergence = true
+      break
+    end
     η = θ/(1-θ)
     do_newton = (η*ndz > κ*tol)
     z = z + dz
+  end
+
+  if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
+    integrator.force_stepfail = true
+    return
   end
 
   u = @. (uprev + ω*zprev + ω*zᵧ) + d*z
@@ -602,7 +662,7 @@ end
   if has_invW(f)
     f(Val{:invW},t,uprev,dt*d,W) # W == inverse W
   else
-    if cache.newton_iters == 1 && cache.ηold < 1e-3
+    if cache.newton_iters == 1 && cache.ηold < integrator.alg.new_jac_conv_bound
       new_jac = false
     else # Compute a new Jacobian
       new_jac = true
@@ -651,6 +711,7 @@ end
     do_newton = true
   end
 
+  fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. uᵧ = (uprev + d*zprev) + d*zᵧ
@@ -664,9 +725,18 @@ end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(Δzᵧ)
     θ = ndz/ndzprev
+    if θ > 1 || ndz*(θ^(integrator.alg.max_newton_iter - iter)/(1-θ)) > κ*tol
+      fail_convergence = true
+      break
+    end
     η = θ/(1-θ)
     do_newton = (η*ndz > κ*tol)
     @. zᵧ = zᵧ + Δzᵧ
+  end
+
+  if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
+    integrator.force_stepfail = true
+    return
   end
 
   @. uᵧ = (uprev + d*zprev) + d*zᵧ
@@ -692,6 +762,7 @@ end
   η = max(η,eps(first(u)))^(0.8)
   do_newton = (η*ndz > κ*tol)
 
+  fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     @. u = (uprev + ω*zprev + ω*zᵧ) + d*z
     f(t+dt,u,k)
@@ -704,9 +775,18 @@ end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(Δz)
     θ = ndz/ndzprev
+    if θ > 1 || ndz*(θ^(integrator.alg.max_newton_iter - iter)/(1-θ)) > κ*tol
+      fail_convergence = true
+      break
+    end
     η = θ/(1-θ)
     do_newton = (η*ndz > κ*tol)
     @. z = z + Δz
+  end
+
+  if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
+    integrator.force_stepfail = true
+    return
   end
 
   @. u = (uprev + ω*zprev + ω*zᵧ) + d*z
