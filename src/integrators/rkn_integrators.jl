@@ -57,8 +57,8 @@ end
     @inbounds u[i]  = muladd(dt, duprev[i], muladd(dtsq/6, k₁.x[2][i] + k₂.x[2][i] + k₃.x[2][i], uprev[i]))
     @inbounds du[i] = muladd(dt/6, muladd(2, (k₂.x[2][i] + k₃.x[2][i]), k₁.x[2][i] + k₄.x[2][i]), duprev[i])
   end
-  f.f1(t+dt,ku,kdu,k.x[1])
-  f.f2(t+dt,ku,kdu,k.x[2])
+  f.f1(t+dt,u,kdu,k.x[1])
+  f.f2(t+dt,u,kdu,k.x[2])
 end
 
 @inline function initialize!(integrator,cache::Nystrom4VelocityIndependentCache,f=integrator.f)
@@ -105,8 +105,8 @@ end
     @inbounds u[i] = muladd(dt, duprev[i], muladd(dtsq/6, muladd(2, k₂.x[2][i], k₁.x[2][i]),uprev[i]))
     @inbounds du[i] = muladd(dt/6,muladd(4, k₂.x[2][i], k₁.x[2][i] + k₃.x[2][i]),duprev[i])
   end
-  f.f1(t+dt,ku,du,k.x[1])
-  f.f2(t+dt,ku,du,k.x[2])
+  f.f1(t+dt,u,du,k.x[1])
+  f.f2(t+dt,u,du,k.x[2])
 end
 
 @inline function initialize!(integrator,cache::IRKN4Cache,f=integrator.f)
@@ -141,25 +141,25 @@ end
     f.f2(t+1//4*dt,    uprev, duprev, k₁.x[1])
     f.f2(tprev+1//4*dt,uprev2,duprev2,k₁.x[2])
     @tight_loop_macros for i in uidx
-      @inbounds ku[i] = @muladd uprev[i]  + (1//4*dt)*duprev[i]  + (1//32*dtsq)*k₁.x[1][i]
-      @inbounds ku[i] = @muladd uprev2[i] + (1//4*dt)*duprev2[i] + (1//32*dtsq)*k₁.x[2][i]
+      @inbounds ku[i]  = @muladd uprev[i]  + (1//4*dt)*duprev[i]  + (1//32*dtsq)*k₁.x[1][i]
+      @inbounds kdu[i] = @muladd uprev2[i] + (1//4*dt)*duprev2[i] + (1//32*dtsq)*k₁.x[2][i]
     end
 
-    f.f2(t+1//4*dt,    uprev, duprev, k₂.x[1])
-    f.f2(tprev+1//4*dt,uprev2,duprev2,k₂.x[2])
+    f.f2(t+1//4*dt,    ku, duprev, k₂.x[1])
+    f.f2(tprev+1//4*dt,kdu,duprev2,k₂.x[2])
     @tight_loop_macros for i in uidx
-      @inbounds ku[i] = @muladd uprev[i]  + (3//4*dt)*duprev[i]  + (9//32*dtsq)*k₂.x[1][i]
-      @inbounds ku[i] = @muladd uprev2[i] + (3//4*dt)*duprev2[i] + (9//32*dtsq)*k₂.x[2][i]
+      @inbounds ku[i]  = @muladd uprev[i]  + (3//4*dt)*duprev[i]  + (9//32*dtsq)*k₂.x[1][i]
+      @inbounds kdu[i] = @muladd uprev2[i] + (3//4*dt)*duprev2[i] + (9//32*dtsq)*k₂.x[2][i]
     end
 
-    f.f2(t+3//4*dt,    uprev, duprev, k₃.x[1])
-    f.f2(tprev+3//4*dt,uprev2,duprev2,k₃.x[2])
+    f.f2(t+3//4*dt,    ku, duprev, k₃.x[1])
+    f.f2(tprev+3//4*dt,kdu,duprev2,k₃.x[2])
     @tight_loop_macros for i in uidx
       @inbounds u[i]  = @muladd uprev[i] + (3//2*dt)*duprev[i] + (1//2*-dt)*duprev2[i] + (7//24*dtsq)*(k₂.x[1][i]-k₂.x[2][i]) + (1//8*dtsq)*(k₃.x[1][i]-k₃.x[2][i])
       @inbounds du[i] = @muladd duprev[i] + dt*(19//18*k₁.x[1][i] - 1//18*k₁.x[2][i] + (-1//6)*(k₂.x[1][i]-k₂.x[2][i]) + 11//18*(k₃.x[1][i]-k₃.x[2][i]))
     end
-    f.f1(t+3//4*dt,ku,du,k.x[1])
-    f.f2(t+3//4*dt,ku,du,k.x[2])
+    f.f1(t+dt,u,du,k.x[1])
+    f.f2(t+dt,u,du,k.x[2])
   end # end if
 end
 
@@ -207,6 +207,6 @@ end
     @inbounds u[i]  = @muladd uprev[i] + dt*duprev[i] + (14//336*dtsq)*k₁.x[2][i] + (100//336*dtsq)*k₂.x[2][i] + (54//336*dtsq)*k₃.x[2][i]
     @inbounds du[i] = @muladd duprev[i] + (14//336*dt)*k₁.x[2][i] + (125//336*dt)*k₂.x[2][i] + (162//336*dt)*k₃.x[2][i] + (35//336*dt)*k₄.x[2][i]
   end
-  f.f1(t+dt,ku,du,k.x[1])
-  f.f2(t+dt,ku,du,k.x[2])
+  f.f1(t+dt,u,du,k.x[1])
+  f.f2(t+dt,u,du,k.x[2])
 end
