@@ -220,6 +220,165 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::BS5Cac
 end
 =#
 
+function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::OwrenZen3ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+  if length(k)<4 || calcVal
+    k1 = f(t,uprev)
+    a1 = dt*a21
+    k2 = f(t+c1*dt, @. uprev+a1*k1)
+    tmp = @. uprev+ dt*(a31*k1 + a32*k2)
+    k3 = f(t+c2*dt,tmp)
+    u = @. uprev+dt*(a41*k1+a42*k2+a43*k3)
+    k4 = f(t+dt,u); integrator.fsallast = k4
+    copyat_or_push!(k,1,k1)
+    copyat_or_push!(k,2,k2)
+    copyat_or_push!(k,3,k3)
+    copyat_or_push!(k,4,k4)
+  end
+  nothing
+end
+
+function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::OwrenZen3Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+  if length(k)<4 || calcVal
+    @unpack k1,k2,k3,k4,utilde,tmp,atmp = cache
+    @unpack a21,a31,a32,a41,a42,a43,c1,c2,b1,b2 = cache.tab
+    a1 = dt*a21
+    @. tmp = uprev+a1*k1
+    f(t+c1*dt,tmp,k2)
+    @. tmp = uprev+dt*(a31*k1+a32*k2)
+    f(t+c2*dt,tmp,k3)
+    @. u = uprev+dt*(a41*k1+a42*k2+a43*k3)
+    f(t+dt,u,k4)
+    copyat_or_push!(k,1,k1)
+    copyat_or_push!(k,2,k2)
+    copyat_or_push!(k,3,k3)
+    copyat_or_push!(k,4,k4)
+  end
+  nothing
+end
+
+function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::OwrenZen4ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+  if length(k)<4 || calcVal
+    k1 = f(t,uprev)
+    a = dt*a21
+    k2 = f(t+c1*dt, uprev+a*k1)
+    k3 = f(t+c2*dt, uprev+dt*(a31*k1+a32*k2))
+    k4 = f(t+c3*dt, uprev+dt*(a41*k1+a42*k2+a43*k3))
+    k5 = f(t+c4*dt, uprev+dt*(a51*k1+a52*k2+a53*k3+a54*k4))
+    u = uprev+dt*(a61*k1+a63*k3+a64*k4+a65*k5)
+    integrator.fsallast = f(t+dt,u); k6 = integrator.fsallast
+    copyat_or_push!(k,1,k1)
+    copyat_or_push!(k,2,k2)
+    copyat_or_push!(k,3,k3)
+    copyat_or_push!(k,4,k4)
+    copyat_or_push!(k,5,k5)
+    copyat_or_push!(k,6,k6)
+  end
+  nothing
+end
+
+function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::OwrenZen4Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+  if length(k)<4 || calcVal
+    @unpack k1,k2,k3,k4,k5,k6,utilde,tmp,atmp = cache
+    @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,c1,c2,c3,c4,b1,b3,b4 = cache.tab
+    a = dt*a21
+    @tight_loop_macros for i in uidx
+      @inbounds tmp[i] = uprev[i]+a*k1[i]
+    end
+    f(t+c1*dt,tmp,k2)
+    @tight_loop_macros for i in uidx
+      @inbounds tmp[i] = uprev[i]+dt*(a31*k1[i]+a32*k2[i])
+    end
+    f(t+c2*dt,tmp,k3)
+    @tight_loop_macros for i in uidx
+      @inbounds tmp[i] = uprev[i]+dt*(a41*k1[i]+a42*k2[i]+a43*k3[i])
+    end
+    f(t+c3*dt,tmp,k4)
+    @tight_loop_macros for i in uidx
+      @inbounds tmp[i] = uprev[i]+dt*(a51*k1[i]+a52*k2[i]+a53*k3[i]+a54*k4[i])
+    end
+    f(t+c4*dt,tmp,k5)
+    @tight_loop_macros for i in uidx
+      @inbounds u[i] = uprev[i]+dt*(a61*k1[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
+    end
+    f(t+dt,u,k6)
+    copyat_or_push!(k,1,k1)
+    copyat_or_push!(k,2,k2)
+    copyat_or_push!(k,3,k3)
+    copyat_or_push!(k,4,k4)
+    copyat_or_push!(k,5,k5)
+    copyat_or_push!(k,6,k6)
+  end
+  nothing
+end
+
+function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::OwrenZen5ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+  if length(k)<4 || calcVal
+    k1 = f(t,uprev)
+    a = dt*a21
+    k2 = f(t+c1*dt, uprev+a*k1)
+    k3 = f(t+c2*dt, uprev+dt*(a31*k1+a32*k2))
+    k4 = f(t+c3*dt, uprev+dt*(a41*k1+a42*k2+k3))
+    k5 = f(t+c4*dt, uprev+dt*(a51*k1+a52*k2+a53*k3+a54*k4))
+    k6 = f(t+c5*dt, uprev+dt*(a61*k1+a62*k2+a63*k3+a64*k4+a65*k5))
+    k7 = f(t+c6*dt, uprev+dt*(a71*k1+a72*k2+a73*k3+a74*k4+a75*k5+a76*k6))
+    u = uprev+dt*(a81*k1+a83*k3+a84*k4+a85*k5+a86*k6+a87*k7)
+    integrator.fsallast = f(t+dt,u); k8 = integrator.fsallast
+    copyat_or_push!(k,1,k1)
+    copyat_or_push!(k,2,k2)
+    copyat_or_push!(k,3,k3)
+    copyat_or_push!(k,4,k4)
+    copyat_or_push!(k,5,k5)
+    copyat_or_push!(k,6,k6)
+    copyat_or_push!(k,7,k7)
+    copyat_or_push!(k,8,k8)
+  end
+  nothing
+end
+
+function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::OwrenZen5Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+  if length(k)<4 || calcVal
+    uidx = eachindex(integrator.uprev)
+    @unpack k1,k2,k3,k4,k5,k6,k7,k8,utilde,tmp,atmp = cache
+    @unpack a21,a31,a32,a41,a42,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,c1,c2,c3,c4,c5,c6,b1,b3,b4,b5,b6 = cache.tab
+    a = dt*a21
+    @tight_loop_macros for i in uidx
+      @inbounds tmp[i] = uprev[i]+a*k1[i]
+    end
+    f(t+c1*dt,tmp,k2)
+    @tight_loop_macros for i in uidx
+      @inbounds tmp[i] = uprev[i]+dt*(a31*k1[i]+a32*k2[i])
+    end
+    f(t+c2*dt,tmp,k3)
+    @tight_loop_macros for i in uidx
+      @inbounds tmp[i] = uprev[i]+dt*(a41*k1[i]+a42*k2[i]+k3[i])
+    end
+    f(t+c3*dt,tmp,k4)
+    @tight_loop_macros for i in uidx
+      @inbounds tmp[i] = uprev[i]+dt*(a51*k1[i]+a52*k2[i]+a53*k3[i]+a54*k4[i])
+    end
+    f(t+c4*dt,tmp,k5)
+    @tight_loop_macros for i in uidx
+      @inbounds tmp[i] = uprev[i]+dt*(a61*k1[i]+a62*k2[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
+    end
+    f(t+dt,tmp,k6)
+    @tight_loop_macros for i in uidx
+      @inbounds tmp[i] = uprev[i]+dt*(a71*k1[i]+a72*k2[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i])
+    end
+    f(t+c6*dt,tmp,k7)
+    @tight_loop_macros for i in uidx
+      @inbounds u[i] = uprev[i]+dt*(a81*k1[i]+a83*k3[i]+a84*k4[i]+a85*k5[i]+a86*k6[i]+a87*k7[i])
+    end
+    f(t+dt,u,k8)
+    copyat_or_push!(k,1,k1)
+    copyat_or_push!(k,2,k2)
+    copyat_or_push!(k,3,k3)
+    copyat_or_push!(k,4,k4)
+    copyat_or_push!(k,5,k5)
+    copyat_or_push!(k,6,k6)
+  end
+  nothing
+end
+
 function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::DP5ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<4 || calcVal
     @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6 = cache
