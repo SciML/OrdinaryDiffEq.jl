@@ -186,9 +186,9 @@ end
 =#
 
 function loopfooter!(integrator)
+  ttmp = integrator.t + integrator.dt
   if integrator.opts.adaptive
     dtnew = stepsize_controller(integrator,integrator.cache)
-    ttmp = integrator.t + integrator.dt
     integrator.isout = integrator.opts.isoutofdomain(ttmp,integrator.u)
     integrator.accept_step = (!integrator.isout && integrator.EEst <= 1.0) || (integrator.opts.force_dtmin && abs(integrator.dt) <= abs(integrator.opts.dtmin))
     if integrator.accept_step # Accept
@@ -205,7 +205,12 @@ function loopfooter!(integrator)
     end
   else #Not adaptive
     integrator.tprev = integrator.t
-    integrator.t += integrator.dt
+    if typeof(integrator.t)<:AbstractFloat && !isempty(integrator.opts.tstops)
+      tstop = top(integrator.opts.tstops)
+      abs(ttmp - tstop) < 10eps(integrator.t) ? (integrator.t = tstop) : (integrator.t = ttmp)
+    else
+      integrator.t = ttmp
+    end
     integrator.accept_step = true
     integrator.dtpropose = integrator.dt
     handle_callbacks!(integrator)
