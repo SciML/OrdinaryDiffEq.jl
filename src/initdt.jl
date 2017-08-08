@@ -1,18 +1,10 @@
 @muladd function ode_determine_initdt{tType,uType}(u0,t::tType,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,true},order)
   f = prob.f
-
-  f₀ = zeros(u0./t); f₁ = zeros(u0./t); u₁ = zeros(u0); sk = zeros(u0);
-  # Hack to  make a generic u0 with no units
-  # https://github.com/JuliaLang/julia/issues/22216
-  fu0 = first(u0)
-  typeof(fu0) <: AbstractArray ?
-        tmp = zeros(u0,typeof(ones(fu0))) : tmp = zeros(u0,typeof(one(fu0)))
-
   oneunit_tType = oneunit(tType)
   dtmax_tdir = tdir*dtmax
 
-  @. sk = abstol+abs(u0)*reltol
-  @. tmp = u0/sk
+  sk = @. abstol+abs(u0)*reltol
+  tmp = @. u0/sk
   d₀ = internalnorm(tmp)
 
   f₀ = zeros(u0./t)
@@ -32,6 +24,7 @@
   dt₀ = min(dt₀,dtmax_tdir)
   dt₀_tdir = tdir*dt₀
 
+  u₁ = similar(u0) # required by DEDataArray
   @. u₁ = u0 + dt₀_tdir*f₀
   f₁ = similar(f₀)
   f(t+dt₀_tdir,u₁,f₁)
