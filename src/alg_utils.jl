@@ -25,6 +25,8 @@ isfsal(alg::Rodas5) = true
 isfsal(alg::LawsonEuler) = true
 isfsal(alg::NorsettEuler) = true
 isfsal(alg::Euler) = true
+isfsal(alg::Heun) = true
+isfsal(alg::Ralston) = true
 isfsal(alg::SplitEuler) = true
 isfsal(alg::Midpoint) = true
 isfsal(alg::SSPRK22) = true
@@ -152,6 +154,8 @@ alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is a
 
 alg_order(alg::Discrete) = 0
 alg_order(alg::Euler) = 1
+alg_order(alg::Heun) = 2
+alg_order(alg::Ralston) = 2
 alg_order(alg::LawsonEuler) = 1
 alg_order(alg::NorsettEuler) = 1
 alg_order(alg::SplitEuler) = 1
@@ -228,6 +232,8 @@ alg_order(alg::Rodas5) = 5
 alg_order(alg::CompositeAlgorithm) = alg_order(alg.algs[1])
 
 alg_adaptive_order(alg::ExplicitRK) = alg.tableau.adaptiveorder
+alg_adaptive_order(alg::Heun) = 1
+alg_adaptive_order(alg::Ralston) = 1
 alg_adaptive_order(alg::SSPRK432) = 2
 alg_adaptive_order(alg::BS3) = 2
 alg_adaptive_order(alg::BS5) = 4

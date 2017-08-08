@@ -1,3 +1,30 @@
+struct EulerCache{uType,rateType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  k::rateType
+  fsalfirst::rateType
+end
+
+struct SplitEulerCache{uType,rateType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  k::rateType
+  fsalfirst::rateType
+end
+
+function alg_cache(alg::SplitEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
+  SplitEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype))
+end
+
+u_cache(c::SplitEulerCache) = ()
+du_cache(c::SplitEulerCache) = (c.k,c.fsalfirst)
+
+struct SplitEulerConstantCache <: OrdinaryDiffEqConstantCache end
+
+alg_cache(alg::SplitEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = SplitEulerConstantCache()
+
 function alg_cache(alg::Euler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   EulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype))
 end
@@ -9,24 +36,63 @@ struct EulerConstantCache <: OrdinaryDiffEqConstantCache end
 
 alg_cache(alg::Euler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = EulerConstantCache()
 
+struct HeunCache{uType,rateType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  k::rateType
+  utilde::rateType
+  fsalfirst::rateType
+end
+
+struct RalstonCache{uType,rateType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  k::rateType
+  utilde::rateType
+  fsalfirst::rateType
+end
+
+u_cache(c::Union{HeunCache,RalstonCache}) = ()
+du_cache(c::Union{HeunCache,RalstonCache}) = (c.k,c.fsalfirst,c.utilde)
+
+function alg_cache(alg::Heun,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
+  HeunCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),zeros(rate_prototype))
+end
+
+function alg_cache(alg::Ralston,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
+  RalstonCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),zeros(rate_prototype))
+end
+
+struct HeunConstantCache <: OrdinaryDiffEqConstantCache end
+
+alg_cache(alg::Heun,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = HeunConstantCache()
+
+struct RalstonConstantCache <: OrdinaryDiffEqConstantCache end
+
+alg_cache(alg::Ralston,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = RalstonConstantCache()
+
 struct MidpointCache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k::rateType
   tmp::uType
+  utilde::rateType
   fsalfirst::rateType
 end
 
 u_cache(c::MidpointCache) = ()
-du_cache(c::MidpointCache) = (c.k,c.fsalfirst)
+du_cache(c::MidpointCache) = (c.k,c.fsalfirst,c.utilde)
 
 struct MidpointConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::Midpoint,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   tmp = similar(u)
   k = zeros(rate_prototype)
+  utilde = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
-  MidpointCache(u,uprev,k,tmp,fsalfirst)
+  MidpointCache(u,uprev,k,tmp,utilde,fsalfirst)
 end
 
 alg_cache(alg::Midpoint,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = MidpointConstantCache()

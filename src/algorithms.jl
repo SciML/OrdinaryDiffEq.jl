@@ -16,7 +16,9 @@ Base.@pure FunctionMap(;scale_by_time=false) = Discrete{true,scale_by_time}()
 end
 
 struct Euler <: OrdinaryDiffEqAlgorithm end
-struct Midpoint <: OrdinaryDiffEqAlgorithm end
+struct Heun <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct Ralston <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct Midpoint <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct RK4 <: OrdinaryDiffEqAlgorithm end
 struct SSPRK22 <: OrdinaryDiffEqAlgorithm end
 struct SSPRK33 <: OrdinaryDiffEqAlgorithm end

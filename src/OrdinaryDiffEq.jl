@@ -121,8 +121,8 @@ module OrdinaryDiffEq
   export OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveAlgorithm,
          OrdinaryDiffEqCompositeAlgorithm
 
-  export Discrete, FunctionMap, Euler, Midpoint, SSPRK22, SSPRK33, SSPRK432,
-         SSPRK104, RK4, ExplicitRK, BS3, BS5,
+  export Discrete, FunctionMap, Euler, Heun, Ralston, Midpoint, SSPRK22,
+         SSPRK33, SSPRK432, SSPRK104, RK4, ExplicitRK, BS3, BS5,
          DP5, DP5Threaded, Tsit5, DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8,
          Vern9,Feagin10, Feagin12, Feagin14, CompositeAlgorithm
 
