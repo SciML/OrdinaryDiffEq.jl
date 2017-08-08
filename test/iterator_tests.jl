@@ -42,7 +42,7 @@ end
 integrator([1.0;2.0])
 
 
-integrator = init(prob,RK4();dt=1//2^(9))
+integrator = init(prob,RK4();dt=1//2^(9), adaptive=false)
 for i in Compat.Iterators.take(integrator,12) end
 @test integrator.iter == 12
 for i in Compat.Iterators.take(integrator,12) end
