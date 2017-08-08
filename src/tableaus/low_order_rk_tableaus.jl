@@ -6,10 +6,10 @@ struct BS3ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   a43::T
   c1::T2
   c2::T2
-  b1::T
-  b2::T
-  b3::T
-  b4::T
+  btilde1::T
+  btilde2::T
+  btilde3::T
+  btilde4::T
 end
 
 """
@@ -25,11 +25,15 @@ Base.@pure function BS3ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Typ
   a43 = T(0.4444444444444444)
   c1 = T2(0.5)
   c2 = T2(0.75)
-  b1 = T(0.2916666666666667)
-  b2 = T(0.25)
-  b3 = T(0.3333333333333333)
-  b4 = T(0.125)
-  BS3ConstantCache(a21,a32,a41,a42,a43,c1,c2,b1,b2,b3,b4)
+  # b1 = T(0.2916666666666667)
+  # b2 = T(0.25)
+  # b3 = T(0.3333333333333333)
+  # b4 = T(0.125)
+  btilde1 = T(0.06944444444444445)
+  btilde2 = T(-0.08333333333333333)
+  btilde3 = T(-0.1111111111111111)
+  btilde4 = T(0.125)
+  BS3ConstantCache(a21,a32,a41,a42,a43,c1,c2,btilde1,btilde2,btilde3,btilde4)
 end
 
 """
@@ -45,11 +49,15 @@ function BS3ConstantCache(T::Type,T2::Type)
   a43 = T(4//9)
   c1 = T2(1//2)
   c2 = T2(3//4)
-  b1 = T(7//24)
-  b2 = T(1//4)
-  b3 = T(1//3)
-  b4 = T(1//8)
-  BS3ConstantCache(a21,a32,a41,a42,a43,c1,c2,b1,b2,b3,b4)
+  # b1 = T(7//24)
+  # b2 = T(1//4)
+  # b3 = T(1//3)
+  # b4 = T(1//8)
+  btilde1 = T(5//72)
+  btilde2 = T(-1//12)
+  btilde3 = T(-1//9)
+  btilde4 = T(1//8)
+  BS3ConstantCache(a21,a32,a41,a42,a43,c1,c2,btilde1,btilde2,btilde3,btilde4)
 end
 
 struct Tsit5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
@@ -80,13 +88,13 @@ struct Tsit5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   a74::T
   a75::T
   a76::T
-  b1::T
-  b2::T
-  b3::T
-  b4::T
-  b5::T
-  b6::T
-  b7::T
+  btilde1::T
+  btilde2::T
+  btilde3::T
+  btilde4::T
+  btilde5::T
+  btilde6::T
+  btilde7::T
 end
 
 Base.@pure function Tsit5ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
@@ -117,14 +125,21 @@ Base.@pure function Tsit5ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::T
   a74=       T(1.379008574103742)
   a75=       T(-3.290069515436081)
   a76=       T(2.324710524099774)
-  b1 =       T(0.09468075576583945)
-  b2 =       T(0.009183565540343254)
-  b3 =       T(0.4877705284247616)
-  b4 =       T(1.234297566930479)
-  b5 =       T(-2.7077123499835256)
-  b6 =       T(1.866628418170587)
-  b7 =       T(0.015151515151515152)
-  Tsit5ConstantCache(c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,b1,b2,b3,b4,b5,b6,b7)
+  # b1 =       T(0.09468075576583945)
+  # b2 =       T(0.009183565540343254)
+  # b3 =       T(0.4877705284247616)
+  # b4 =       T(1.234297566930479)
+  # b5 =       T(-2.7077123499835256)
+  # b6 =       T(1.866628418170587)
+  # b7 =       T(0.015151515151515152)
+  btilde1 =  T(-0.00178001105222577714)
+  btilde2 =  T(-0.0008164344596567469)
+  btilde3 =  T(0.007880878010261995)
+  btilde4 =  T(-0.1447110071732629)
+  btilde5 =  T(0.5823571654525552)
+  btilde6 =  T(-0.45808210592918697)
+  btilde7 =  T(0.015151515151515152)
+  Tsit5ConstantCache(c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7)
 end
 
 function Tsit5ConstantCache(T::Type,T2::Type)
@@ -155,14 +170,21 @@ function Tsit5ConstantCache(T::Type,T2::Type)
   a74=       T(parse(BigFloat,"1.379008574103741893192274821856872770756462643091360525934940067397245698027561293331"))
   a75=       T(parse(BigFloat,"-3.290069515436080679901047585711363850115683290894936158531296799594813811049925401677"))
   a76=       T(parse(BigFloat,"2.324710524099773982415355918398765796109060233222962411944060046314465391054716027841"))
-  b1 =       T(parse(BigFloat,".9468075576583945807478876255758922856117527357724631226139574065785592789071067303271e-1"))
-  b2 =       T(parse(BigFloat,".9183565540343253096776363936645313759813746240984095238905939532922955247253608687270e-2"))
-  b3 =       T(parse(BigFloat,".4877705284247615707855642599631228241516691959761363774365216240304071651579571959813"))
-  b4 =       T(parse(BigFloat,"1.234297566930478985655109673884237654035539930748192848315425833500484878378061439761"))
-  b5 =       T(parse(BigFloat,"-2.707712349983525454881109975059321670689605166938197378763992255714444407154902012702"))
-  b6 =       T(parse(BigFloat,"1.866628418170587035753719399566211498666255505244122593996591602841258328965767580089"))
-  b7 =       T(1//66)
-  Tsit5ConstantCache(c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,b1,b2,b3,b4,b5,b6,b7)
+  # b1 =       T(parse(BigFloat,".9468075576583945807478876255758922856117527357724631226139574065785592789071067303271e-1"))
+  # b2 =       T(parse(BigFloat,".9183565540343253096776363936645313759813746240984095238905939532922955247253608687270e-2"))
+  # b3 =       T(parse(BigFloat,".4877705284247615707855642599631228241516691959761363774365216240304071651579571959813"))
+  # b4 =       T(parse(BigFloat,"1.234297566930478985655109673884237654035539930748192848315425833500484878378061439761"))
+  # b5 =       T(parse(BigFloat,"-2.707712349983525454881109975059321670689605166938197378763992255714444407154902012702"))
+  # b6 =       T(parse(BigFloat,"1.866628418170587035753719399566211498666255505244122593996591602841258328965767580089"))
+  # b7 =       T(1//66)
+  btilde1 =  T(parse(BigFloat,"-1.780011052225771443378550607539534775944678804333659557637450799792588061629796e-03"))
+  btilde2 =  T(parse(BigFloat,"-8.164344596567469032236360633546862401862537590159047610940604670770447527463931e-04"))
+  btilde3 =  T(parse(BigFloat,"7.880878010261996010314727672526304238628733777103128603258129604952959142646516e-03"))
+  btilde4 =  T(parse(BigFloat,"-1.44711007173262907537165147972635116720922712343167677619514233896760819649515e-01"))
+  btilde5 =  T(parse(BigFloat,"5.823571654525552250199376106520421794260781239567387797673045438803694038950012e-01"))
+  btilde6 =  T(parse(BigFloat,"-4.580821059291869466616365188325542974428047279788398179474684434732070620889539e-01"))
+  btilde7 =  T(1//66)
+  Tsit5ConstantCache(c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7)
 end
 
 struct BS5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
@@ -204,7 +226,6 @@ struct BS5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   bhat5::T
   bhat6::T
   btilde1::T
-  btilde2::T
   btilde3::T
   btilde4::T
   btilde5::T
@@ -337,17 +358,23 @@ Base.@pure function BS5ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Typ
   bhat4  =T(-0.016490384615384615)
   bhat5  =T(0.018984375)
   bhat6  =T(-0.010526315789473684)
-  btilde1=T(0.07084476451760402)
-  btilde2=T(0)
-  btilde3=T(0.2956730769230769)
-  btilde4=T(0.17965747482208388)
-  btilde5=T(0.029861111111111113)
-  btilde6=T(0.3462886755067825)
-  btilde7=T(0.07176240133870539)
+#  btilde1=T(0.07084476451760402)
+#  btilde2=T(0)
+#  btilde3=T(0.2956730769230769)
+#  btilde4=T(0.17965747482208388)
+#  btilde5=T(0.029861111111111113)
+#  btilde6=T(0.3462886755067825)
+#  btilde7=T(0.07176240133870539)
+  btilde1=T(-0.0019478942125547064)
+  btilde3=T(0.009048699186152193)
+  btilde4=T(-0.015478743126634073)
+  btilde5=T(0.021222718253968254)
+  btilde6=T(-0.013276905111429694)
+  btilde7=T(-0.005480370770138146)
   btilde8=T(0.005912495780636172)
   c6,c7,c8,a91,a92,a93,a94,a95,a96,a97,a98,a101,a102,a103,a104,a105,a106,a107,a108,a109,a111,a112,a113,a114,a115,a116,a117,a118,a119,a1110 = BS5Interp(T,T2)
   r016,r015,r014,r013,r012,r036,r035,r034,r033,r032,r046,r045,r044,r043,r042,r056,r055,r054,r053,r052,r066,r065,r064,r063,r062,r076,r075,r074,r073,r072,r086,r085,r084,r083,r082,r096,r095,r094,r093,r106,r105,r104,r103,r102,r116,r115,r114,r113,r112 = BS5Interp_polyweights(T)
-  BS5ConstantCache(c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8,c6,c7,c8,a91,a92,a93,a94,a95,a96,a97,a98,a101,a102,a103,a104,a105,a106,a107,a108,a109,a111,a112,a113,a114,a115,a116,a117,a118,a119,a1110,r016,r015,r014,r013,r012,r036,r035,r034,r033,r032,r046,r045,r044,r043,r042,r056,r055,r054,r053,r052,r066,r065,r064,r063,r062,r076,r075,r074,r073,r072,r086,r085,r084,r083,r082,r096,r095,r094,r093,r106,r105,r104,r103,r102,r116,r115,r114,r113,r112)
+  BS5ConstantCache(c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8,c6,c7,c8,a91,a92,a93,a94,a95,a96,a97,a98,a101,a102,a103,a104,a105,a106,a107,a108,a109,a111,a112,a113,a114,a115,a116,a117,a118,a119,a1110,r016,r015,r014,r013,r012,r036,r035,r034,r033,r032,r046,r045,r044,r043,r042,r056,r055,r054,r053,r052,r066,r065,r064,r063,r062,r076,r075,r074,r073,r072,r086,r085,r084,r083,r082,r096,r095,r094,r093,r106,r105,r104,r103,r102,r116,r115,r114,r113,r112)
 end
 
 """
@@ -395,17 +422,23 @@ function BS5ConstantCache(T::Type,T2::Type)
   bhat4  =T(-343//20800)
   bhat5  =T(243//12800)
   bhat6  =T(-1//95)
-  btilde1=T(2479//34992)
-  btilde2=T(0)
-  btilde3=T(123//416)
-  btilde4=T(612941//3411720)
-  btilde5=T(43//1440)
-  btilde6=T(2272//6561)
-  btilde7=T(79937//1113912)
+  #  btilde1=T(2479//34992)
+  #  btilde2=T(0)
+  #  btilde3=T(123//416)
+  #  btilde4=T(612941//3411720)
+  #  btilde5=T(43//1440)
+  #  btilde6=T(2272//6561)
+  #  btilde7=T(79937//1113912)
+  btilde1=T(-3817//1959552)
+  btilde3=T(140181//15491840)
+  btilde4=T(-4224731//272937600)
+  btilde5=T(8557//403200)
+  btilde6=T(-57928//4363065)
+  btilde7=T(-23930231//4366535040)
   btilde8=T(3293//556956)
   c6,c7,c8,a91,a92,a93,a94,a95,a96,a97,a98,a101,a102,a103,a104,a105,a106,a107,a108,a109,a111,a112,a113,a114,a115,a116,a117,a118,a119,a1110 = BS5Interp(T,T2)
   r016,r015,r014,r013,r012,r036,r035,r034,r033,r032,r046,r045,r044,r043,r042,r056,r055,r054,r053,r052,r066,r065,r064,r063,r062,r076,r075,r074,r073,r072,r086,r085,r084,r083,r082,r096,r095,r094,r093,r106,r105,r104,r103,r102,r116,r115,r114,r113,r112 = BS5Interp_polyweights(T)
-  BS5ConstantCache(c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8,c6,c7,c8,a91,a92,a93,a94,a95,a96,a97,a98,a101,a102,a103,a104,a105,a106,a107,a108,a109,a111,a112,a113,a114,a115,a116,a117,a118,a119,a1110,r016,r015,r014,r013,r012,r036,r035,r034,r033,r032,r046,r045,r044,r043,r042,r056,r055,r054,r053,r052,r066,r065,r064,r063,r062,r076,r075,r074,r073,r072,r086,r085,r084,r083,r082,r096,r095,r094,r093,r106,r105,r104,r103,r102,r116,r115,r114,r113,r112)
+  BS5ConstantCache(c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,bhat1,bhat3,bhat4,bhat5,bhat6,btilde1,btilde3,btilde4,btilde5,btilde6,btilde7,btilde8,c6,c7,c8,a91,a92,a93,a94,a95,a96,a97,a98,a101,a102,a103,a104,a105,a106,a107,a108,a109,a111,a112,a113,a114,a115,a116,a117,a118,a119,a1110,r016,r015,r014,r013,r012,r036,r035,r034,r033,r032,r046,r045,r044,r043,r042,r056,r055,r054,r053,r052,r066,r065,r064,r063,r062,r076,r075,r074,r073,r072,r086,r085,r084,r083,r082,r096,r095,r094,r093,r106,r105,r104,r103,r102,r116,r115,r114,r113,r112)
 end
 
 """
@@ -668,12 +701,12 @@ struct DP5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   a74::T
   a75::T
   a76::T
-  b1::T
-  b3::T
-  b4::T
-  b5::T
-  b6::T
-  b7::T
+  btilde1::T
+  btilde3::T
+  btilde4::T
+  btilde5::T
+  btilde6::T
+  btilde7::T
   c1::T2
   c2::T2
   c3::T2
@@ -709,12 +742,18 @@ Base.@pure function DP5ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Typ
   a74 = T(0.6510416666666666)
   a75 = T(-0.322376179245283)
   a76 = T(0.13095238095238096)
-  b1  = T(0.08991319444444444)
-  b3  = T(0.4534890685834082)
-  b4  = T(0.6140625)
-  b5  = T(-0.2715123820754717)
-  b6  = T(0.08904761904761904)
-  b7  = T(0.025)
+  # b1  = T(0.08991319444444444)
+  # b3  = T(0.4534890685834082)
+  # b4  = T(0.6140625)
+  # b5  = T(-0.2715123820754717)
+  # b6  = T(0.08904761904761904)
+  # b7  = T(0.025)
+  btilde1 = T(-0.0012326388888888888)
+  btilde3 = T(0.0042527702905061394)
+  btilde4 = T(-0.03697916666666667)
+  btilde5 = T(0.05086379716981132)
+  btilde6 = T(-0.0419047619047619)
+  btilde7 = T(0.025)
   c1 = T2(0.2)
   c2 = T2(0.3)
   c3 = T2(0.8)
@@ -722,7 +761,7 @@ Base.@pure function DP5ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Typ
   c5 = T2(1)
   c6 = T2(1)
   d1,d3,d4,d5,d6,d7 = DP5_dense_ds(T)
-  DP5ConstantCache(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6,d1,d3,d4,d5,d6,d7)
+  DP5ConstantCache(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,btilde1,btilde3,btilde4,btilde5,btilde6,btilde7,c1,c2,c3,c4,c5,c6,d1,d3,d4,d5,d6,d7)
 end
 
 Base.@pure function DP5_dense_ds{T<:CompiledFloats}(::Type{T})
@@ -756,12 +795,18 @@ function DP5ConstantCache(T::Type,T2::Type)
   a74 = T(125//192)
   a75 = T(-2187//6784)
   a76 = T(11//84)
-  b1  = T(5179//57600)
-  b3  = T(7571//16695)
-  b4  = T(393//640)
-  b5  = T(-92097//339200)
-  b6  = T(187//2100)
-  b7  = T(1//40)
+  #  b1  = T(5179//57600)
+  #  b3  = T(7571//16695)
+  #  b4  = T(393//640)
+  #  b5  = T(-92097//339200)
+  #  b6  = T(187//2100)
+  #  b7  = T(1//40)
+  btilde1 = T(-71//57600)
+  btilde3 = T(71//16695)
+  btilde4 = T(-71//1920)
+  btilde5 = T(17253//339200)
+  btilde6 = T(-22//525)
+  btilde7 = T(1//40)
   c1 = T2(1//5)
   c2 = T2(3//10)
   c3 = T2(4//5)
@@ -769,7 +814,7 @@ function DP5ConstantCache(T::Type,T2::Type)
   c5 = T2(1)
   c6 = T2(1)
   d1,d3,d4,d5,d6,d7 = DP5_dense_ds(T)
-  DP5ConstantCache(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,b1,b3,b4,b5,b6,b7,c1,c2,c3,c4,c5,c6,d1,d3,d4,d5,d6,d7)
+  DP5ConstantCache(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,btilde1,btilde3,btilde4,btilde5,btilde6,btilde7,c1,c2,c3,c4,c5,c6,d1,d3,d4,d5,d6,d7)
 end
 
 function DP5_dense_ds(T)
