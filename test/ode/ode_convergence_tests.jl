@@ -14,6 +14,10 @@ for i = 1:2
   prob = probArr[i]
   sim = test_convergence(dts,prob,Euler())
   @test abs(sim.𝒪est[:final]-1) < testTol
+  sim2 = test_convergence(dts,prob,Heun())
+  @test abs(sim2.𝒪est[:l∞]-2) < testTol
+  sim2 = test_convergence(dts,prob,Ralston())
+  @test abs(sim2.𝒪est[:l∞]-2) < testTol
   sim2 = test_convergence(dts,prob,Midpoint())
   @test abs(sim2.𝒪est[:l∞]-2) < testTol
   sim3 = test_convergence(dts,prob,RK4())

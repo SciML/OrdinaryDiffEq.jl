@@ -34,33 +34,6 @@ struct DiscreteConstantCache <: OrdinaryDiffEqConstantCache end
 
 alg_cache(alg::Discrete,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = DiscreteConstantCache()
 
-struct EulerCache{uType,rateType} <: OrdinaryDiffEqMutableCache
-  u::uType
-  uprev::uType
-  tmp::uType
-  k::rateType
-  fsalfirst::rateType
-end
-
-struct SplitEulerCache{uType,rateType} <: OrdinaryDiffEqMutableCache
-  u::uType
-  uprev::uType
-  tmp::uType
-  k::rateType
-  fsalfirst::rateType
-end
-
-function alg_cache(alg::SplitEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
-  SplitEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype))
-end
-
-u_cache(c::SplitEulerCache) = ()
-du_cache(c::SplitEulerCache) = (c.k,c.fsalfirst)
-
-struct SplitEulerConstantCache <: OrdinaryDiffEqConstantCache end
-
-alg_cache(alg::SplitEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = SplitEulerConstantCache()
-
 struct ExplicitRKCache{uType,rateType,uEltypeNoUnits,ksEltype,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType

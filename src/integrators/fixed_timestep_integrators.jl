@@ -72,6 +72,98 @@ function perform_step!(integrator,cache::EulerCache,f=integrator.f)
   f(t+dt,u,integrator.fsallast) # For the interpolation, needs k at the updated point
 end
 
+function initialize!(integrator,cache::Union{HeunConstantCache,RalstonConstantCache},f=integrator.f)
+  integrator.kshortsize = 2
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
+
+function perform_step!(integrator,cache::Union{HeunConstantCache,RalstonConstantCache},f=integrator.f)
+  @unpack t,dt,uprev,u = integrator
+  fsalfirst = integrator.fsalfirst
+
+  if typeof(cache) <: HeunConstantCache
+      a = dt
+  else # Ralston
+      a = 3dt/4
+  end
+
+  @muladd tmp = @. uprev + a*fsalfirst
+
+  k2 = f(t+a,tmp)
+
+  if typeof(cache) <: HeunConstantCache
+      @muladd u = @. uprev + (dt/2)*(fsalfirst + k2)
+  else
+      @muladd u = @. uprev + (dt/3)*fsalfirst + (2dt/3)*k2
+  end
+
+  if integrator.opts.adaptive
+      if typeof(cache) <: HeunConstantCache
+          @muladd utilde = @. (dt/2)*(k2 - fsalfirst)
+      else
+          @muladd utilde = @. (2dt/3)*(k2 - fsalfirst)
+      end
+
+      tmp = @. utilde/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
+      integrator.EEst = integrator.opts.internalnorm(tmp)
+  end
+  k = f(t+dt,u)
+  integrator.fsallast = k
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end
+
+function initialize!(integrator,cache::Union{HeunCache,RalstonCache},f=integrator.f)
+  integrator.kshortsize = 2
+  @unpack k,fsalfirst = cache
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = k
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
+end
+
+function perform_step!(integrator,cache::Union{HeunCache,RalstonCache},f=integrator.f)
+  @unpack t,dt,uprev,u = integrator
+  @unpack fsalfirst,k,utilde = cache
+
+  if typeof(cache) <: HeunCache
+      a = dt
+  else # Ralston
+      a = 3dt/4
+  end
+
+  @muladd @. utilde = uprev + a*fsalfirst
+
+  f(t+a,utilde,k)
+
+  if typeof(cache) <: HeunCache
+      @muladd @. u = uprev + (dt/2)*(fsalfirst + k)
+  else
+      @muladd @. u = uprev + (dt/3)*fsalfirst + (2dt/3)*k
+  end
+
+  if integrator.opts.adaptive
+      if typeof(cache) <: HeunCache
+          @muladd @. utilde = (dt/2)*(k - fsalfirst)
+      else
+          @muladd @. utilde = (2dt/3)*(k - fsalfirst)
+      end
+
+      @. utilde = utilde/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
+      integrator.EEst = integrator.opts.internalnorm(utilde)
+  end
+  f(t+dt,u,integrator.fsallast) # For the interpolation, needs k at the updated point
+end
+
 function initialize!(integrator,cache::MidpointConstantCache,f=integrator.f)
   integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
   integrator.kshortsize = 2
@@ -89,6 +181,11 @@ end
   k = f(t+halfdt, @. uprev + halfdt*integrator.fsalfirst)
   u = @. uprev + dt*k
   integrator.fsallast = f(t+dt,u) # For interpolation, then FSAL'd
+  if integrator.opts.adaptive
+      utilde = @. dt*(integrator.fsalfirst - k)
+      tmp = @. utilde/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
+      integrator.EEst = integrator.opts.internalnorm(tmp)
+  end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
@@ -107,11 +204,16 @@ end
 
 @muladd function perform_step!(integrator,cache::MidpointCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
-  @unpack tmp,k,fsalfirst = cache
+  @unpack tmp,k,fsalfirst,utilde = cache
   halfdt = dt/2
   @. tmp = uprev + halfdt*fsalfirst
   f(t+halfdt,tmp,k)
   @. u = uprev + dt*k
+  if integrator.opts.adaptive
+      @. utilde = dt*(fsalfirst - k)
+      @. utilde = (utilde)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
+      integrator.EEst = integrator.opts.internalnorm(utilde)
+  end
   f(t+dt,u,k)
 end
 
