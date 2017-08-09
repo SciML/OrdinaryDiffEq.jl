@@ -42,12 +42,12 @@ end
   u = @. uprev + dt*utilde
 
   if integrator.opts.adaptive
-    uEEst = αEEst[1]*kk[1]
+    utilde = (α[1]-αEEst[1])*kk[1]
     for i = 2:stages
-      uEEst = @. uEEst + αEEst[i]*kk[i]
+      utilde = @. utilde + (α[i]-αEEst[i])*kk[i]
     end
-    uEEst = dt*uEEst
-    atmp = calculate_residuals(uEEst, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+    utilde = dt*utilde
+    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 

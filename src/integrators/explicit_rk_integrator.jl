@@ -42,11 +42,11 @@ end
   u = @. uprev + dt*utilde
 
   if integrator.opts.adaptive
-    uEEst = αEEst[1]*kk[1]
+    utilde = (α[1]-αEEst[1])*kk[1]
     for i = 2:stages
-      uEEst = @. uEEst + αEEst[i]*kk[i]
+      utilde = @. utilde + (α[i]-αEEst[i])*kk[i]
     end
-    utilde = dt*uEEst
+    utilde = dt*utilde
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
@@ -73,7 +73,7 @@ end
 @muladd function perform_step!(integrator, cache::ExplicitRKCache, repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
   @unpack A,c,α,αEEst,stages = cache.tab
-  @unpack kk,utilde,tmp,atmp,uEEst = cache
+  @unpack kk,utilde,tmp,atmp = cache
 
   # Middle
   for i = 2:stages-1
@@ -103,11 +103,11 @@ end
   end
 
   if integrator.opts.adaptive
-    @. uEEst = αEEst[1]*kk[1]
+    @. utilde = (α[1]-αEEst[1])*kk[1]
     for i = 2:stages
-      @. uEEst = uEEst + αEEst[i]*kk[i]
+      @. utilde = utilde + (α[i]-αEEst[i])*kk[i]
     end
-    @. utilde = dt*uEEst
+    @. utilde = dt*utilde
     calculate_residuals!(atmp, utilde, uprev, u,
                          integrator.opts.abstol, integrator.opts.reltol)
     integrator.EEst = integrator.opts.internalnorm(atmp)

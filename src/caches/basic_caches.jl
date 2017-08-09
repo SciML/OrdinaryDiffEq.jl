@@ -39,7 +39,6 @@ struct ExplicitRKCache{uType,rateType,uEltypeNoUnits,ksEltype,TabType} <: Ordina
   uprev::uType
   tmp::uType
   utilde::rateType
-  uEEst::rateType
   atmp::uEltypeNoUnits
   fsalfirst::ksEltype
   fsallast::ksEltype
@@ -48,7 +47,7 @@ struct ExplicitRKCache{uType,rateType,uEltypeNoUnits,ksEltype,TabType} <: Ordina
 end
 
 u_cache(c::ExplicitRKCache) = (c.utilde,c.atmp,c.update)
-du_cache(c::ExplicitRKCache) = (c.uEEst,c.kk...)
+du_cache(c::ExplicitRKCache) = (c.kk...)
 
 function alg_cache(alg::ExplicitRK,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   kk = Vector{typeof(rate_prototype)}(0)
@@ -64,9 +63,8 @@ function alg_cache(alg::ExplicitRK,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
   utilde = zeros(rate_prototype)
   tmp = similar(u)
   atmp = similar(u,uEltypeNoUnits,indices(u))
-  uEEst = zeros(rate_prototype)
   tab = ExplicitRKConstantCache(alg.tableau,rate_prototype)
-  ExplicitRKCache(u,uprev,tmp,utilde,uEEst,atmp,fsalfirst,fsallast,kk,tab)
+  ExplicitRKCache(u,uprev,tmp,utilde,atmp,fsalfirst,fsallast,kk,tab)
 end
 
 struct ExplicitRKConstantCache{MType,VType,KType} <: OrdinaryDiffEqConstantCache
