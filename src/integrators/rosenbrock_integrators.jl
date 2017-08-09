@@ -41,7 +41,7 @@ end
   # Jacobian
   if has_invW(f)
     # skip calculation of inv(W) if step is repeated
-    repeat_step || f(Val{:invW}, t, uprev, γ, W) # W == inverse W
+    !repeat_step && f(Val{:invW}, t, uprev, γ, W) # W == inverse W
 
     A_mul_B!(vectmp, W, linsolve_tmp_vec)
   else
@@ -143,7 +143,7 @@ end
 
   if has_invW(f)
     # skip calculation of inv(W) if step is repeated
-    repeat_step || f(Val{:invW}, t, uprev, γ, W) # W == inverse W
+    !repeat_step && f(Val{:invW}, t, uprev, γ, W) # W == inverse W
 
     A_mul_B!(vectmp, W, linsolve_tmp_vec)
   else
@@ -440,7 +440,7 @@ end
   # Jacobian
   if has_invW(f)
     # skip calculation of inv(W) if step is repeated
-    repeat_step || f(Val{:invW_t}, t, uprev, dtgamma, W) # W == inverse W
+    !repeat_step && f(Val{:invW_t}, t, uprev, dtgamma, W) # W == inverse W
 
     A_mul_B!(vectmp, W, linsolve_tmp_vec)
   else
@@ -847,7 +847,7 @@ end
   # Jacobian
   if has_invW(f)
     # skip calculation of inv(W) if step is repeated
-    repeat_step || f(Val{:invW_t}, t, uprev, dtgamma, W) # W == inverse W
+    !repeat_step && f(Val{:invW_t}, t, uprev, dtgamma, W) # W == inverse W
 
     A_mul_B!(vectmp, W, linsolve_tmp_vec)
   else
@@ -1093,7 +1093,7 @@ end
   # Jacobian
   if has_invW(f)
     # skip calculation of inv(W) if step is repeated
-    repeat_step || f(Val{:invW_t}, t, uprev, dtgamma, W) # W == inverse W
+    !repeat_step && f(Val{:invW_t}, t, uprev, dtgamma, W) # W == inverse W
 
     A_mul_B!(vectmp, W, linsolve_tmp_vec)
   else
@@ -1441,7 +1441,7 @@ end
   # Jacobian
   if has_invW(f)
     # skip calculation of inv(W) if step is repeated
-    repeat_step || f(Val{:invW_t}, t, uprev, dtgamma, W) # W == inverse W
+    !repeat_step && f(Val{:invW_t}, t, uprev, dtgamma, W) # W == inverse W
 
     A_mul_B!(vectmp, W, linsolve_tmp_vec)
   else
