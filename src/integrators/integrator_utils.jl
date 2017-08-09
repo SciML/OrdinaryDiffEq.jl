@@ -177,35 +177,46 @@ function stepsize_controller!(integrator,cache)
   end
   q
 end
-step_accept_controller!(integrator,cache,q) = integrator.dt/q #dtnew
+function step_accept_controller!(integrator,cache,q)
+  integrator.qold = max(integrator.EEst,integrator.opts.qoldinit)
+  integrator.dt/q #dtnew
+end
 function step_fail_controller!(integrator,cache)
   integrator.dt = integrator.dt/min(inv(integrator.opts.qmin),integrator.q11/integrator.opts.gamma)
 end
 
-#=
-function stepsize_controller!(integrator,cache::Rodas4Cache)
+const StandardControllerCaches = Union{ImplicitEulerCache,
+                                   ImplicitEulerConstantCache}
+
+function stepsize_controller!(integrator,cache::StandardControllerCaches)
   # Standard stepsize controller
   qtmp = integrator.EEst^(1/(alg_adaptive_order(integrator.alg)+1))/integrator.opts.gamma
   @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
-  @fastmath dtnew = integrator.dt/q
+  integrator.qold = integrator.dt/q
+  q
 end
-step_accept_controller!(integrator,cache,dtnew) = integrator.dt/q # dtnew
-function step_fail_controller!(integrator,cache)
-  integrator.dt = dtnew
+function step_accept_controller!(integrator,cache::StandardControllerCaches,q)
+  integrator.dt/q # dtnew
 end
-=#
+function step_fail_controller!(integrator,cache::StandardControllerCaches)
+  integrator.dt = integrator.qold
+end
 
-function stepsize_controller!(integrator,cache::ImplicitEuler)
+const PredictiveControllerCaches = Union{TrapezoidConstantCache,TrapezoidCache,
+                                         TRBDF2ConstantCache,TRBDF2Cache}
+
+function stepsize_controller!(integrator,cache::PredictiveControllerCaches)
   # Gustafsson predictive stepsize controller
   gamma = integrator.opts.gamma
   niters = cache.newton_iters
-  fac = min(gamma,(1+2*niters)*gamma/(niters+2*niters))
-  expo = 1/(alg_adaptive_order(integrator.alg)+1)
+  fac = min(gamma,(1+2*integrator.alg.max_newton_iter)*gamma/(niters+2*integrator.alg.max_newton_iter))
+  expo = 1/(alg_order(integrator.alg)+1)
   qtmp = (integrator.EEst^expo)/fac
   @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
-  @fastmath dtnew1 = integrator.dt/q
+  integrator.qold = q
+  q
 end
-function step_accept_controller!(integrator,cache::ImplicitEuler,q)
+function step_accept_controller!(integrator,cache::PredictiveControllerCaches,q)
   if integrator.success_iter > 0
     expo = 1/(alg_adaptive_order(integrator.alg)+1)
     qgus=(integrator.dtacc/integrator.dt)*(((integrator.EEst^2)/integrator.erracc)^expo)
@@ -218,11 +229,11 @@ function step_accept_controller!(integrator,cache::ImplicitEuler,q)
   integrator.erracc = max(1e-2,integrator.EEst)
   integrator.dt/qacc
 end
-function step_fail_controller!(integrator,cache::ImplicitEuler)
+function step_fail_controller!(integrator,cache::PredictiveControllerCaches)
   if integrator.success_iter == 0
     integrator.dt *= 0.1
   else
-    integrator.dt = integrator.dt/q
+    integrator.dt = integrator.dt/integrator.qold
   end
 end
 
@@ -244,7 +255,6 @@ function loopfooter!(integrator)
       else
         integrator.t = ttmp
       end
-      integrator.qold = max(integrator.EEst,integrator.opts.qoldinit)
       calc_dt_propose!(integrator,dtnew)
       handle_callbacks!(integrator)
     end

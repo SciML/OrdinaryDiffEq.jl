@@ -280,6 +280,12 @@ alg_adaptive_order(alg::Rodas42) = 3
 alg_adaptive_order(alg::Rodas4P) = 3
 alg_adaptive_order(alg::Rodas5) = 4
 
+alg_adaptive_order(alg::GenericImplicitEuler) = 0
+alg_adaptive_order(alg::GenericTrapezoid) = 1
+alg_adaptive_order(alg::ImplicitEuler) = 0
+alg_adaptive_order(alg::Trapezoid) = 1
+alg_adaptive_order(alg::TRBDF2) = 1
+
 beta2_default(alg::OrdinaryDiffEqAlgorithm) = 2//(5alg_order(alg))
 beta2_default(alg::Discrete) = 0
 beta2_default(alg::DP8) = 0//1
