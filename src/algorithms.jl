@@ -1,5 +1,6 @@
 abstract type OrdinaryDiffEqAlgorithm <: AbstractODEAlgorithm end
 abstract type OrdinaryDiffEqAdaptiveAlgorithm <: OrdinaryDiffEqAlgorithm end
+abstract type OrdinaryDiffEqNewtonAdaptiveAlgorithm{Controller} <: OrdinaryDiffEqAdaptiveAlgorithm end
 abstract type OrdinaryDiffEqCompositeAlgorithm <: OrdinaryDiffEqAlgorithm end
 
 struct Discrete{apply_map,scale_by_time} <: OrdinaryDiffEqAlgorithm end
@@ -108,7 +109,7 @@ struct StrangSplitting <: OrdinaryDiffEqAlgorithm end
 
 # Implicit RK Methods
 
-struct ImplicitEuler{CS,AD,F,K,T,T2} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct ImplicitEuler{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{Controller}
   linsolve::F
   diff_type::Symbol
   κ::K
@@ -121,12 +122,14 @@ end
 Base.@pure ImplicitEuler(;chunk_size=0,autodiff=true,diff_type=:central,
                           linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
                           extrapolant=:constant,min_newton_iter=1,
-                          max_newton_iter=7,new_jac_conv_bound = 1e-3) = ImplicitEuler{chunk_size,autodiff,typeof(linsolve),
-                          typeof(κ),typeof(tol),typeof(new_jac_conv_bound)}(
+                          max_newton_iter=7,new_jac_conv_bound = 1e-3,
+                          controller = :Predictive) =
+                          ImplicitEuler{chunk_size,autodiff,typeof(linsolve),
+                          typeof(κ),typeof(tol),typeof(new_jac_conv_bound),controller}(
                           linsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
                           max_newton_iter,new_jac_conv_bound)
 
-struct Trapezoid{CS,AD,F,K,T,T2} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct Trapezoid{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{Controller}
   linsolve::F
   diff_type::Symbol
   κ::K
@@ -139,13 +142,14 @@ end
 Base.@pure Trapezoid(;chunk_size=0,autodiff=true,diff_type=:central,
                       linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
                       extrapolant=:constant,min_newton_iter=1,
-                      max_newton_iter=7,new_jac_conv_bound = 1e-3) =
+                      max_newton_iter=7,new_jac_conv_bound = 1e-3,
+                      controller = :PI) =
                       Trapezoid{chunk_size,autodiff,typeof(linsolve),
-                      typeof(κ),typeof(tol),typeof(new_jac_conv_bound)}(
+                      typeof(κ),typeof(tol),typeof(new_jac_conv_bound),controller}(
                       linsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
                       max_newton_iter,new_jac_conv_bound)
 
-struct TRBDF2{CS,AD,F,K,T,T2} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct TRBDF2{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{Controller}
   linsolve::F
   diff_type::Symbol
   κ::K
@@ -159,9 +163,10 @@ end
 Base.@pure TRBDF2(;chunk_size=0,autodiff=true,diff_type=:central,
                    linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
                    smooth_est=true,extrapolant=:constant,min_newton_iter=1,
-                   max_newton_iter=7,new_jac_conv_bound = 1e-3) =
+                   max_newton_iter=7,new_jac_conv_bound = 1e-3,
+                   controller = :Predictive) =
  TRBDF2{chunk_size,autodiff,typeof(linsolve),
-        typeof(κ),typeof(tol),typeof(new_jac_conv_bound)}(
+        typeof(κ),typeof(tol),typeof(new_jac_conv_bound),controller}(
         linsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
         max_newton_iter,new_jac_conv_bound)
 

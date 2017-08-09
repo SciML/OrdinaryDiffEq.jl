@@ -13,7 +13,7 @@ function loopheader!(integrator)
       if integrator.isout
         integrator.dt = integrator.dt*integrator.opts.qmin
       elseif !integrator.force_stepfail
-        step_fail_controller!(integrator,integrator.cache)
+        step_reject_controller!(integrator,integrator.alg)
       end
     end
   end
@@ -166,7 +166,8 @@ function solution_endpoint_match_cur_integrator!(integrator)
   end
 end
 
-function stepsize_controller!(integrator,cache)
+### Default is PI-controller
+function stepsize_controller!(integrator,alg)
   # PI-controller
   EEst,beta1,q11,qold,beta2 = integrator.EEst, integrator.opts.beta1, integrator.q11,integrator.qold,integrator.opts.beta2
   @fastmath q11 = EEst^beta1
@@ -178,38 +179,39 @@ function stepsize_controller!(integrator,cache)
   end
   q
 end
-function step_accept_controller!(integrator,cache,q)
+function step_accept_controller!(integrator,alg,q)
   integrator.qold = max(integrator.EEst,integrator.opts.qoldinit)
   integrator.dt/q #dtnew
 end
-function step_fail_controller!(integrator,cache)
+function step_reject_controller!(integrator,alg)
   integrator.dt = integrator.dt/min(inv(integrator.opts.qmin),integrator.q11/integrator.opts.gamma)
 end
 
-const StandardControllerCaches = Union{GenericImplicitEuler,GenericTrapezoid}
+const StandardControllerAlgs = Union{GenericImplicitEuler,GenericTrapezoid}
 
-const PredictiveControllerCaches = Union{ImplicitEulerCache,ImplicitEulerConstantCache,
-                                    TrapezoidConstantCache,TrapezoidCache,
-                                    TRBDF2ConstantCache,TRBDF2Cache}
-
-function stepsize_controller!(integrator,cache::StandardControllerCaches)
+function stepsize_controller!(integrator,alg::Union{StandardControllerAlgs,
+                              OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Standard}})
   # Standard stepsize controller
   qtmp = integrator.EEst^(1/(alg_adaptive_order(integrator.alg)+1))/integrator.opts.gamma
   @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
   integrator.qold = integrator.dt/q
   q
 end
-function step_accept_controller!(integrator,cache::StandardControllerCaches,q)
+function step_accept_controller!(integrator,alg::Union{StandardControllerAlgs,
+                              OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Standard}},q)
   integrator.dt/q # dtnew
 end
-function step_fail_controller!(integrator,cache::StandardControllerCaches)
+function step_reject_controller!(integrator,alg::Union{StandardControllerAlgs,
+                              OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Standard}})
   integrator.dt = integrator.qold
 end
 
-function stepsize_controller!(integrator,cache::PredictiveControllerCaches)
+function stepsize_controller!(integrator,
+                        alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Predictive})
+
   # Gustafsson predictive stepsize controller
   gamma = integrator.opts.gamma
-  niters = cache.newton_iters
+  niters = integrator.cache.newton_iters
   fac = min(gamma,(1+2*integrator.alg.max_newton_iter)*gamma/(niters+2*integrator.alg.max_newton_iter))
   expo = 1/(alg_order(integrator.alg)+1)
   qtmp = (integrator.EEst^expo)/fac
@@ -217,7 +219,8 @@ function stepsize_controller!(integrator,cache::PredictiveControllerCaches)
   integrator.qold = q
   q
 end
-function step_accept_controller!(integrator,cache::PredictiveControllerCaches,q)
+function step_accept_controller!(integrator,
+                      alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Predictive},q)
   if integrator.success_iter > 0
     expo = 1/(alg_adaptive_order(integrator.alg)+1)
     qgus=(integrator.dtacc/integrator.dt)*(((integrator.EEst^2)/integrator.erracc)^expo)
@@ -230,7 +233,8 @@ function step_accept_controller!(integrator,cache::PredictiveControllerCaches,q)
   integrator.erracc = max(1e-2,integrator.EEst)
   integrator.dt/qacc
 end
-function step_fail_controller!(integrator,cache::PredictiveControllerCaches)
+function step_reject_controller!(integrator,
+                        alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Predictive})
   if integrator.success_iter == 0
     integrator.dt *= 0.1
   else
@@ -245,12 +249,12 @@ function loopfooter!(integrator)
       integrator.accept_step = false
       integrator.dt = integrator.dt/integrator.opts.failfactor
   elseif integrator.opts.adaptive
-    q = stepsize_controller!(integrator,integrator.cache)
+    q = stepsize_controller!(integrator,integrator.alg)
     integrator.isout = integrator.opts.isoutofdomain(ttmp,integrator.u)
     integrator.accept_step = (!integrator.isout && integrator.EEst <= 1.0) || (integrator.opts.force_dtmin && abs(integrator.dt) <= abs(integrator.opts.dtmin))
     if integrator.accept_step # Accept
       integrator.last_stepfail = false
-      dtnew = step_accept_controller!(integrator,integrator.cache,q)
+      dtnew = step_accept_controller!(integrator,integrator.alg,q)
       integrator.tprev = integrator.t
       if typeof(integrator.t)<:AbstractFloat && !isempty(integrator.opts.tstops)
         tstop = top(integrator.opts.tstops)
