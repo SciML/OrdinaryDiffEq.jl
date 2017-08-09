@@ -7,12 +7,13 @@ function loopheader!(integrator)
   # Accept or reject the step
   if integrator.iter > 0
     if (integrator.opts.adaptive && integrator.accept_step) || !integrator.opts.adaptive
+      integrator.success_iter += 1
       apply_step!(integrator)
     elseif integrator.opts.adaptive && !integrator.accept_step
       if integrator.isout
         integrator.dt = integrator.dt*integrator.opts.qmin
       elseif !integrator.force_stepfail
-        integrator.dt = integrator.dt/min(inv(integrator.opts.qmin),integrator.q11/integrator.opts.gamma)
+        step_fail_controller!(integrator,integrator.cache)
       end
     end
   end
@@ -164,7 +165,7 @@ function solution_endpoint_match_cur_integrator!(integrator)
   end
 end
 
-function stepsize_controller(integrator,cache)
+function stepsize_controller!(integrator,cache)
   # PI-controller
   EEst,beta1,q11,qold,beta2 = integrator.EEst, integrator.opts.beta1, integrator.q11,integrator.qold,integrator.opts.beta2
   @fastmath q11 = EEst^beta1
@@ -172,20 +173,58 @@ function stepsize_controller(integrator,cache)
   integrator.q11 = q11
   @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),q/integrator.opts.gamma))
   if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
-    @show "here!"
     q = one(q)
   end
-  @fastmath dtnew = integrator.dt/q
+  q
+end
+step_accept_controller!(integrator,cache,q) = integrator.dt/q #dtnew
+function step_fail_controller!(integrator,cache)
+  integrator.dt = integrator.dt/min(inv(integrator.opts.qmin),integrator.q11/integrator.opts.gamma)
 end
 
 #=
-function stepsize_controller(integrator,cache::Rodas4Cache)
+function stepsize_controller!(integrator,cache::Rodas4Cache)
   # Standard stepsize controller
   qtmp = integrator.EEst^(1/(alg_adaptive_order(integrator.alg)+1))/integrator.opts.gamma
   @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
   @fastmath dtnew = integrator.dt/q
 end
+step_accept_controller!(integrator,cache,dtnew) = integrator.dt/q # dtnew
+function step_fail_controller!(integrator,cache)
+  integrator.dt = dtnew
+end
 =#
+
+function stepsize_controller!(integrator,cache::ImplicitEuler)
+  # Gustafsson predictive stepsize controller
+  gamma = integrator.opts.gamma
+  niters = cache.newton_iters
+  fac = min(gamma,(1+2*niters)*gamma/(niters+2*niters))
+  expo = 1/(alg_adaptive_order(integrator.alg)+1)
+  qtmp = (integrator.EEst^expo)/fac
+  @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
+  @fastmath dtnew1 = integrator.dt/q
+end
+function step_accept_controller!(integrator,cache::ImplicitEuler,q)
+  if integrator.success_iter > 0
+    expo = 1/(alg_adaptive_order(integrator.alg)+1)
+    qgus=(integrator.dtacc/integrator.dt)*(((integrator.EEst^2)/integrator.erracc)^expo)
+    qgus = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qgus/integrator.opts.gamma))
+    qacc=max(q,qgus)
+  else
+    qacc = q
+  end
+  integrator.dtacc = integrator.dt
+  integrator.erracc = max(1e-2,integrator.EEst)
+  integrator.dt/qacc
+end
+function step_fail_controller!(integrator,cache::ImplicitEuler)
+  if integrator.success_iter == 0
+    integrator.dt *= 0.1
+  else
+    integrator.dt = integrator.dt/q
+  end
+end
 
 function loopfooter!(integrator)
   ttmp = integrator.t + integrator.dt
@@ -193,10 +232,11 @@ function loopfooter!(integrator)
       integrator.accept_step = false
       integrator.dt = integrator.dt/integrator.opts.failfactor
   elseif integrator.opts.adaptive
-    dtnew = stepsize_controller(integrator,integrator.cache)
+    q = stepsize_controller!(integrator,integrator.cache)
     integrator.isout = integrator.opts.isoutofdomain(ttmp,integrator.u)
     integrator.accept_step = (!integrator.isout && integrator.EEst <= 1.0) || (integrator.opts.force_dtmin && abs(integrator.dt) <= abs(integrator.opts.dtmin))
     if integrator.accept_step # Accept
+      dtnew = step_accept_controller!(integrator,integrator.cache,q)
       integrator.tprev = integrator.t
       if typeof(integrator.t)<:AbstractFloat && !isempty(integrator.opts.tstops)
         tstop = top(integrator.opts.tstops)

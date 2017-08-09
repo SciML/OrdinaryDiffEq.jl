@@ -25,7 +25,7 @@ function perform_step!(integrator,cache::LinearImplicitEulerConstantCache,f=inte
 
   u = W\k
 
-  if integrator.opts.adaptive && integrator.iter > 1
+  if integrator.opts.adaptive && integrator.success_iter > 0
     # Use 2rd divided differences a la SPICE and Shampine
     uprev2 = integrator.uprev2
     tprev = integrator.tprev
@@ -87,7 +87,7 @@ function perform_step!(integrator,cache::LinearImplicitEulerCache,f=integrator.f
       integrator.alg.linsolve(vec(u),W,vec(k),true)
   end
 
-  if integrator.opts.adaptive && integrator.iter > 1
+  if integrator.opts.adaptive && integrator.success_iter > 0
     # Use 2rd divided differences a la SPICE and Shampine
     uprev2 = integrator.uprev2
     tprev = integrator.tprev
