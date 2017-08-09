@@ -1,4 +1,4 @@
-function initialize!(integrator,cache::LawsonEulerConstantCache,f=integrator.f)
+function initialize!(integrator, cache::LawsonEulerConstantCache)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   rtmp = f[2]
@@ -10,8 +10,8 @@ function initialize!(integrator,cache::LawsonEulerConstantCache,f=integrator.f)
   integrator.k[2] = zero(integrator.fsalfirst)
 end
 
-function perform_step!(integrator,cache::LawsonEulerConstantCache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+function perform_step!(integrator, cache::LawsonEulerConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   rtmp = integrator.fsalfirst
   A = f[1]
   @muladd u = expm(dt*A)*(@. uprev + dt*rtmp)
@@ -23,7 +23,7 @@ function perform_step!(integrator,cache::LawsonEulerConstantCache,f=integrator.f
   integrator.u = u
 end
 
-function initialize!(integrator,cache::LawsonEulerCache,f=integrator.f)
+function initialize!(integrator, cache::LawsonEulerCache)
   integrator.kshortsize = 2
   @unpack k,fsalfirst,rtmp = cache
   integrator.fsalfirst = fsalfirst
@@ -31,14 +31,14 @@ function initialize!(integrator,cache::LawsonEulerCache,f=integrator.f)
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = fsalfirst # this is wrong, since it's just rtmp. Should fsal this value though
   integrator.k[2] = k
-  A = f[1]
+  A = integrator.f[1]
   A_mul_B!(k,A,integrator.u)
-  f[2](integrator.t,integrator.uprev,rtmp) # For the interpolation, needs k at the updated point
+  integrator.f[2](integrator.t, integrator.uprev, rtmp) # For the interpolation, needs k at the updated point
   @. integrator.fsalfirst = k + rtmp
 end
 
-function perform_step!(integrator,cache::LawsonEulerCache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+function perform_step!(integrator, cache::LawsonEulerCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack k,rtmp,tmp = cache
   A = f[1]
   M = expm(dt*A)
@@ -49,10 +49,10 @@ function perform_step!(integrator,cache::LawsonEulerCache,f=integrator.f)
   @. k = tmp + rtmp
 end
 
-function initialize!(integrator,cache::NorsettEulerConstantCache,f=integrator.f)
+function initialize!(integrator, cache::NorsettEulerConstantCache)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  rtmp = f[2](integrator.t,integrator.uprev)
+  rtmp = integrator.f[2](integrator.t, integrator.uprev)
   integrator.fsalfirst = rtmp # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -61,8 +61,8 @@ function initialize!(integrator,cache::NorsettEulerConstantCache,f=integrator.f)
   integrator.k[2] = zero(integrator.fsalfirst)
 end
 
-function perform_step!(integrator,cache::NorsettEulerConstantCache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+function perform_step!(integrator, cache::NorsettEulerConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   rtmp = integrator.fsalfirst
   A = f[1]
   u = uprev .+ ((expm(dt*A)-I)/A)*(A*uprev .+ rtmp)
@@ -74,7 +74,7 @@ function perform_step!(integrator,cache::NorsettEulerConstantCache,f=integrator.
   integrator.u = u
 end
 
-function initialize!(integrator,cache::NorsettEulerCache,f=integrator.f)
+function initialize!(integrator, cache::NorsettEulerCache)
   integrator.kshortsize = 2
   @unpack k,fsalfirst,rtmp = cache
   integrator.fsalfirst = fsalfirst
@@ -82,14 +82,14 @@ function initialize!(integrator,cache::NorsettEulerCache,f=integrator.f)
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = fsalfirst
   integrator.k[2] = k
-  A = f[1](integrator.t,integrator.u,rtmp)
+  A = integrator.f[1](integrator.t, integrator.u,rtmp)
   A_mul_B!(k,A,integrator.u)
-  f[2](integrator.t,integrator.uprev,rtmp) # For the interpolation, needs k at the updated point
+  integrator.f[2](integrator.t, integrator.uprev, rtmp) # For the interpolation, needs k at the updated point
   @. integrator.fsalfirst = k + rtmp
 end
 
-function perform_step!(integrator,cache::NorsettEulerCache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+function perform_step!(integrator, cache::NorsettEulerCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack k,rtmp,tmp = cache
   A = f[1]
   M = ((expm(dt*A)-I)/A)

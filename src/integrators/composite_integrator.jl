@@ -26,21 +26,21 @@ end
 
 @code_typed foo((1,1.0), 1)
 
-@generated function perform_step!(integrator,cache::CompositeCache,f=integrator.f)
+@generated function perform_step!(integrator, cache::CompositeCache, repeat_step=false)
   N = length(cache.parameters)
   :(@nif $(N+1) i->(i == num) i->(tup[i]) i->error("unreachable"))
 end
 
 =#
 
-function initialize!(integrator,cache::CompositeCache,f=integrator.f)
+function initialize!(integrator, cache::CompositeCache)
   cache.current = cache.choice_function(integrator)
-  initialize!(integrator,cache.caches[cache.current])
-  resize!(integrator.k,integrator.kshortsize)
+  initialize!(integrator, cache.caches[cache.current])
+  resize!(integrator.k, integrator.kshortsize)
 end
 
-function perform_step!(integrator,cache::CompositeCache,f=integrator.f)
-  perform_step!(integrator,cache.caches[cache.current],f)
+function perform_step!(integrator, cache::CompositeCache, repeat_step=false)
+  perform_step!(integrator, cache.caches[cache.current], repeat_step)
 end
 
 choose_algorithm!(integrator,cache::OrdinaryDiffEqCache) = nothing
