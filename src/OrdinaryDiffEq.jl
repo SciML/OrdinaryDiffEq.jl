@@ -26,6 +26,9 @@ module OrdinaryDiffEq
 
   import ForwardDiff.Dual
 
+  # Required by temporary fix in not in-place methods with 12+ broadcasts
+  import StaticArrays: SArray
+
   # Integrator Interface
   import DiffEqBase: resize!,deleteat!,addat!,full_cache,user_cache,u_cache,du_cache,
                      resize_non_user_cache!,deleteat_non_user_cache!,addat_non_user_cache!,
@@ -118,8 +121,9 @@ module OrdinaryDiffEq
   export OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveAlgorithm,
          OrdinaryDiffEqCompositeAlgorithm
 
-  export Discrete, FunctionMap, Euler, Midpoint, SSPRK22, SSPRK33, SSPRK432,
-         SSPRK104, RK4, ExplicitRK, BS3, BS5,
+  export Discrete, FunctionMap, Euler, Heun, Ralston, Midpoint, SSPRK22,
+         SSPRK33, SSPRK432, SSPRK104, RK4, ExplicitRK,
+         OwrenZen3, OwrenZen4, OwrenZen5, BS3, BS5,
          DP5, DP5Threaded, Tsit5, DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8,
          Vern9,Feagin10, Feagin12, Feagin14, CompositeAlgorithm
 

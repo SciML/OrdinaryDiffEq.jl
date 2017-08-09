@@ -16,8 +16,13 @@ Base.@pure FunctionMap(;scale_by_time=false) = Discrete{true,scale_by_time}()
 end
 
 struct Euler <: OrdinaryDiffEqAlgorithm end
-struct Midpoint <: OrdinaryDiffEqAlgorithm end
-struct RK4 <: OrdinaryDiffEqAlgorithm end
+struct Heun <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct Ralston <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct Midpoint <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct RK4 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct OwrenZen3 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct OwrenZen4 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct OwrenZen5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct SSPRK22 <: OrdinaryDiffEqAlgorithm end
 struct SSPRK33 <: OrdinaryDiffEqAlgorithm end
 struct SSPRK104 <: OrdinaryDiffEqAlgorithm end
@@ -103,7 +108,7 @@ struct StrangSplitting <: OrdinaryDiffEqAlgorithm end
 
 # Implicit RK Methods
 
-struct ImplicitEuler{CS,AD,F,K,T} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct ImplicitEuler{CS,AD,F,K,T,T2} <: OrdinaryDiffEqAdaptiveAlgorithm
   linsolve::F
   diff_type::Symbol
   κ::K
@@ -111,16 +116,17 @@ struct ImplicitEuler{CS,AD,F,K,T} <: OrdinaryDiffEqAdaptiveAlgorithm
   extrapolant::Symbol
   min_newton_iter::Int
   max_newton_iter::Int
+  new_jac_conv_bound::T2
 end
 Base.@pure ImplicitEuler(;chunk_size=0,autodiff=true,diff_type=:central,
                           linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
                           extrapolant=:constant,min_newton_iter=1,
-                          max_newton_iter=7) = ImplicitEuler{chunk_size,autodiff,typeof(linsolve),
-                          typeof(κ),typeof(tol)}(
+                          max_newton_iter=7,new_jac_conv_bound = 1e-3) = ImplicitEuler{chunk_size,autodiff,typeof(linsolve),
+                          typeof(κ),typeof(tol),typeof(new_jac_conv_bound)}(
                           linsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
-                          max_newton_iter)
+                          max_newton_iter,new_jac_conv_bound)
 
-struct Trapezoid{CS,AD,F,K,T} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct Trapezoid{CS,AD,F,K,T,T2} <: OrdinaryDiffEqAdaptiveAlgorithm
   linsolve::F
   diff_type::Symbol
   κ::K
@@ -128,17 +134,18 @@ struct Trapezoid{CS,AD,F,K,T} <: OrdinaryDiffEqAdaptiveAlgorithm
   extrapolant::Symbol
   min_newton_iter::Int
   max_newton_iter::Int
+  new_jac_conv_bound::T2
 end
 Base.@pure Trapezoid(;chunk_size=0,autodiff=true,diff_type=:central,
                       linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
                       extrapolant=:constant,min_newton_iter=1,
-                      max_newton_iter=7) =
+                      max_newton_iter=7,new_jac_conv_bound = 1e-3) =
                       Trapezoid{chunk_size,autodiff,typeof(linsolve),
-                      typeof(κ),typeof(tol)}(
+                      typeof(κ),typeof(tol),typeof(new_jac_conv_bound)}(
                       linsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
-                      max_newton_iter)
+                      max_newton_iter,new_jac_conv_bound)
 
-struct TRBDF2{CS,AD,F,K,T} <: OrdinaryDiffEqAdaptiveAlgorithm
+struct TRBDF2{CS,AD,F,K,T,T2} <: OrdinaryDiffEqAdaptiveAlgorithm
   linsolve::F
   diff_type::Symbol
   κ::K
@@ -147,14 +154,16 @@ struct TRBDF2{CS,AD,F,K,T} <: OrdinaryDiffEqAdaptiveAlgorithm
   extrapolant::Symbol
   min_newton_iter::Int
   max_newton_iter::Int
+  new_jac_conv_bound::T2
 end
 Base.@pure TRBDF2(;chunk_size=0,autodiff=true,diff_type=:central,
                    linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
                    smooth_est=true,extrapolant=:constant,min_newton_iter=1,
-                   max_newton_iter=7) =
- TRBDF2{chunk_size,autodiff,typeof(linsolve),typeof(κ),typeof(tol)}(
+                   max_newton_iter=7,new_jac_conv_bound = 1e-3) =
+ TRBDF2{chunk_size,autodiff,typeof(linsolve),
+        typeof(κ),typeof(tol),typeof(new_jac_conv_bound)}(
         linsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
-        max_newton_iter)
+        max_newton_iter,new_jac_conv_bound)
 
 ################################################################################
 

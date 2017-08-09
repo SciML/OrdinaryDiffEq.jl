@@ -23,7 +23,7 @@ for idx in eachindex(interpolation_results_1d_inplace)
   interpolation_results_1d_inplace[idx] = zeros(prob_ode_linear_inplace.u0)
 end
 
-const deriv_test_points = linspace(0,1,10)
+const deriv_test_points = linspace(0,1,5)
 
 # perform the regression tests
 # NOTE: If you want to add new tests (for new algorithms), you have to run the

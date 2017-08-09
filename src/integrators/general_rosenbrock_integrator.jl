@@ -1,4 +1,4 @@
-@inline function initialize!(integrator,cache::GenRosen4ConstantCache,f=integrator.f)
+function initialize!(integrator,cache::GenRosen4ConstantCache,f=integrator.f)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.fsalfirst = f(integrator.t,integrator.uprev)
@@ -9,7 +9,7 @@
   integrator.k[2] = integrator.fsallast
 end
 
-@inline @muladd function perform_step!(integrator,cache::GenRosen4ConstantCache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::GenRosen4ConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack A,c,α,αEEst,stages = cache
   @unpack kk = cache
@@ -50,5 +50,5 @@ end
   end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  @pack integrator = t,dt,u
+  integrator.u = u
 end

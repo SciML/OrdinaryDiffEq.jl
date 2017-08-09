@@ -221,6 +221,135 @@ end
   end
 end
 
+@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::OwrenZen3ConstantCache,idxs,T::Type{Val{0}})
+  @unpack r13,r12,r23,r22,r33,r32 = cache
+
+  b1Θ  = @evalpoly(Θ, 0, 1, r12, r13)
+  b2Θ  = @evalpoly(Θ, 0, 0, r22, r23)
+  b3Θ  = @evalpoly(Θ, 0, 0, r32, r33)
+  b4Θ  = @evalpoly(Θ, 0, 0, -1, 1)
+
+  if idxs == nothing
+    return y₀ + dt*(k[1]*b1Θ  + k[2]*b2Θ + k[3]*b3Θ + k[4]*b4Θ)
+  else
+    return y₀[idxs] + dt*(k[1][idxs]*b1Θ  + k[2][idxs]*b2Θ + k[3][idxs]*b3Θ +
+           k[4][idxs]*b4Θ)
+  end
+end
+
+@inline @muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::OwrenZen3Cache,idxs,T::Type{Val{0}})
+  @unpack r13,r12,r23,r22,r33,r32 = cache.tab
+
+  b1Θ  = @evalpoly(Θ, 0, 1, r12, r13)
+  b2Θ  = @evalpoly(Θ, 0, 0, r22, r23)
+  b3Θ  = @evalpoly(Θ, 0, 0, r32, r33)
+  b4Θ  = @evalpoly(Θ, 0, 0, -1, 1)
+
+  if out == nothing
+    return y₀[idxs] + dt*(k[1][idxs]*b1Θ  + k[2][idxs]*b2Θ + k[3][idxs]*b3Θ +
+           k[4][idxs]*b4Θ)
+  elseif idxs == nothing
+    @inbounds for i in eachindex(out)
+      out[i] = y₀[i] + dt*(k[1][i]*b1Θ  + k[2][i]*b2Θ + k[3][i]*b3Θ + k[4][i]*b4Θ)
+    end
+  else
+    @inbounds for (j,i) in enumerate(idxs)
+        out[j] = y₀[i] + dt*(k[1][i]*b1Θ  + k[2][i]*b2Θ + k[3][i]*b3Θ + k[4][i]*b4Θ)
+    end
+  end
+end
+
+@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::OwrenZen4ConstantCache,idxs,T::Type{Val{0}})
+  @unpack r14,r13,r12,r34,r33,r32,r44,r43,r42,r54,r53,r52,r64,r63,r62 = cache
+
+  b1Θ  = @evalpoly(Θ, 0, 1, r12, r13, r14)
+  b3Θ  = @evalpoly(Θ, 0, 0, r32, r33, r34)
+  b4Θ  = @evalpoly(Θ, 0, 0, r42, r43, r44)
+  b5Θ  = @evalpoly(Θ, 0, 0, r52, r53, r54)
+  b6Θ  = @evalpoly(Θ, 0, 0, r62, r63, r64)
+
+  if idxs == nothing
+    return y₀ + dt*(k[1]*b1Θ + k[3]*b3Θ + k[4]*b4Θ + k[5]*b5Θ + k[6]*b6Θ)
+  else
+    return y₀[idxs] + dt*(k[1][idxs]*b1Θ + k[3][idxs]*b3Θ +
+           k[4][idxs]*b4Θ + k[5][idxs]*b5Θ + k[6][idxs]*b6Θ)
+  end
+end
+
+@inline @muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::OwrenZen4Cache,idxs,T::Type{Val{0}})
+  @unpack r14,r13,r12,r34,r33,r32,r44,r43,r42,r54,r53,r52,r64,r63,r62 = cache.tab
+
+  b1Θ  = @evalpoly(Θ, 0, 1, r12, r13, r14)
+  b3Θ  = @evalpoly(Θ, 0, 0, r32, r33, r34)
+  b4Θ  = @evalpoly(Θ, 0, 0, r42, r43, r44)
+  b5Θ  = @evalpoly(Θ, 0, 0, r52, r53, r54)
+  b6Θ  = @evalpoly(Θ, 0, 0, r62, r63, r64)
+
+  if out == nothing
+    return y₀[idxs] + dt*(k[1][idxs]*b1Θ  + k[3][idxs]*b3Θ +
+           k[4][idxs]*b4Θ + k[5][idxs]*b5Θ + k[6][idxs]*b6Θ)
+  elseif idxs == nothing
+    @inbounds for i in eachindex(out)
+      out[i] = y₀[i] + dt*(k[1][i]*b1Θ  + k[3][i]*b3Θ + k[4][i]*b4Θ +
+               k[5][i]*b5Θ + k[6][i]*b6Θ)
+    end
+  else
+    @inbounds for (j,i) in enumerate(idxs)
+        out[j] = y₀[i] + dt*(k[1][i]*b1Θ  + k[3][i]*b3Θ + k[4][i]*b4Θ +
+                 k[5][i]*b5Θ + k[6][i]*b6Θ)
+    end
+  end
+end
+
+@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::OwrenZen5ConstantCache,idxs,T::Type{Val{0}})
+  @unpack r15,r14,r13,r12,r35,r34,r33,r32,r45,r44,r43,r42,r55,r54,r53,r52,r65,r64,r63,r62,r75,r74,r73,r72,r85,r84,r83,r82 = cache
+
+  b1Θ  = @evalpoly(Θ, 0, 1, r12, r13, r14, r15)
+  b3Θ  = @evalpoly(Θ, 0, 0, r32, r33, r34, r35)
+  b4Θ  = @evalpoly(Θ, 0, 0, r42, r43, r44, r45)
+  b5Θ  = @evalpoly(Θ, 0, 0, r52, r53, r54, r55)
+  b6Θ  = @evalpoly(Θ, 0, 0, r62, r63, r64, r65)
+  b7Θ  = @evalpoly(Θ, 0, 0, r72, r73, r74, r75)
+  b8Θ  = @evalpoly(Θ, 0, 0, r82, r83, r84, r85)
+
+  if idxs == nothing
+    return y₀ + dt*(k[1]*b1Θ  + k[3]*b3Θ + k[4]*b4Θ + k[5]*b5Θ + k[6]*b6Θ
+           + k[7]*b7Θ + k[8]*b8Θ)
+  else
+    return y₀[idxs] + dt*(k[1][idxs]*b1Θ  + k[3][idxs]*b3Θ +
+           k[4][idxs]*b4Θ + k[5][idxs]*b5Θ + k[6][idxs]*b6Θ +
+           k[7][idxs]*b7Θ + k[8][idxs]*b8Θ)
+  end
+end
+
+@inline @muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::OwrenZen5Cache,idxs,T::Type{Val{0}})
+  @unpack r15,r14,r13,r12,r35,r34,r33,r32,r45,r44,r43,r42,r55,r54,r53,r52,r65,r64,r63,r62,r75,r74,r73,r72,r85,r84,r83,r82 = cache.tab
+
+  b1Θ  = @evalpoly(Θ, 0, 1, r12, r13, r14, r15)
+  b3Θ  = @evalpoly(Θ, 0, 0, r32, r33, r34, r35)
+  b4Θ  = @evalpoly(Θ, 0, 0, r42, r43, r44, r45)
+  b5Θ  = @evalpoly(Θ, 0, 0, r52, r53, r54, r55)
+  b6Θ  = @evalpoly(Θ, 0, 0, r62, r63, r64, r65)
+  b7Θ  = @evalpoly(Θ, 0, 0, r72, r73, r74, r75)
+  b8Θ  = @evalpoly(Θ, 0, 0, r82, r83, r84, r85)
+
+  if out == nothing
+    return y₀[idxs] + dt*(k[1][idxs]*b1Θ  + k[3][idxs]*b3Θ +
+           k[4][idxs]*b4Θ + k[5][idxs]*b5Θ + k[6][idxs]*b6Θ +
+           k[7][idxs]*b7Θ + k[8][idxs]*b8Θ)
+  elseif idxs == nothing
+    @inbounds for i in eachindex(out)
+      out[i] = y₀[i] + dt*(k[1][i]*b1Θ  + k[3][i]*b3Θ + k[4][i]*b4Θ +
+               k[5][i]*b5Θ + k[6][i]*b6Θ + k[7][i]*b7Θ + k[8][i]*b8Θ)
+    end
+  else
+    @inbounds for (j,i) in enumerate(idxs)
+        out[j] = y₀[i] + dt*(k[1][i]*b1Θ + k[3][i]*b3Θ + k[4][i]*b4Θ +
+                 k[5][i]*b5Θ + k[6][i]*b6Θ + k[7][i]*b7Θ + k[8][i]*b8Θ)
+    end
+  end
+end
+
 """
 Coefficients taken from RKSuite
 """

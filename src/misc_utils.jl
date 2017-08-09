@@ -63,3 +63,42 @@ get_chunksize(x) = 0
 get_chunksize{CS,AD}(x::NLSOLVEJL_SETUP{CS,AD}) = CS
 
 export NLSOLVEJL_SETUP
+
+"""
+    calculate_residuals!(out, ũ, u₀, u₁, α, ρ)
+
+Save element-wise residuals
+```math
+\frac{ũ}{α+\max{|u₀|,|u₁|}*ρ}
+```
+in `out`.
+"""
+@inline @muladd function calculate_residuals!(out, ũ, u₀, u₁, α, ρ)
+    @. out = ũ / (α + max(abs(u₀), abs(u₁)) * ρ)
+end
+
+@inline @muladd function calculate_residuals!(out::Array{T}, ũ::Array{T}, u₀::Array{T},
+                                              u₁::Array{T}, α::T, ρ::T) where {T<:Number}
+    @tight_loop_macros for i in eachindex(out)
+        @inbounds out[i] = ũ[i] / (α + max(abs(u₀[i]), abs(u₁[i])) * ρ)
+    end
+end
+
+"""
+    calculate_residuals(ũ, u₀, u₁, α, ρ)
+
+Calculate element-wise residuals
+```math
+\frac{ũ}{α+\max{|u₀|,|u₁|}*ρ}.
+```
+"""
+@inline @muladd function calculate_residuals(ũ, u₀, u₁, α, ρ)
+    @. ũ / (α + max(abs(u₀), abs(u₁)) * ρ)
+end
+
+@inline @muladd function calculate_residuals(ũ::Array{T}, u₀::Array{T}, u₁::Array{T}, α::T,
+                                             ρ::T) where {T<:Number}
+    out = similar(ũ, typeof(one(recursive_eltype(ũ))), indices(ũ))
+    calculate_residuals!(out, ũ, u₀, u₁, α, ρ)
+    out
+end

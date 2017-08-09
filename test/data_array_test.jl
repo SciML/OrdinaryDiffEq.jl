@@ -1,6 +1,6 @@
 using DiffEqBase, OrdinaryDiffEq, Base.Test
 
-type SimType{T} <: DEDataArray{T}
+type SimType{T} <: DEDataVector{T}
     x::Array{T,1}
     f1::T
 end
@@ -58,7 +58,7 @@ A = diagm([0.3,0.6,0.9])
 B = [1 2 3].'
 C = [1/3 1/3 1/3]
 
-type SimType2{T} <: DEDataArray{T}
+type SimType2{T} <: DEDataVector{T}
     x::Vector{T}
     y::Vector{T}
     u::Vector{T}

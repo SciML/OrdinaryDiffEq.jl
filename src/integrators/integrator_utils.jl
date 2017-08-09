@@ -1,7 +1,7 @@
 save_idxsinitialize{uType}(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) =
                 error("This algorithm does not have an initialization function")
 
-@inline function loopheader!(integrator)
+function loopheader!(integrator)
   # Apply right after iterators / callbacks
 
   # Accept or reject the step
@@ -11,7 +11,7 @@ save_idxsinitialize{uType}(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) 
     elseif integrator.opts.adaptive && !integrator.accept_step
       if integrator.isout
         integrator.dt = integrator.dt*integrator.opts.qmin
-      else
+      elseif !integrator.force_stepfail
         integrator.dt = integrator.dt/min(inv(integrator.opts.qmin),integrator.q11/integrator.opts.gamma)
       end
     end
@@ -21,7 +21,6 @@ save_idxsinitialize{uType}(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) 
   fix_dt_at_bounds!(integrator)
   modify_dt_for_tstops!(integrator)
   choose_algorithm!(integrator,integrator.cache)
-
 end
 
 @def ode_exit_conditions begin
@@ -51,7 +50,7 @@ end
   end
 end
 
-@inline function modify_dt_for_tstops!(integrator)
+function modify_dt_for_tstops!(integrator)
   tstops = integrator.opts.tstops
   if !isempty(tstops)
     if integrator.opts.adaptive
@@ -60,15 +59,18 @@ end
       else
         integrator.dt = -min(abs(integrator.dt),abs(top(tstops)-integrator.t))
       end
-    elseif integrator.dtcache == zero(integrator.t) && integrator.dtchangeable # Use integrator.opts.tstops
+    elseif integrator.dtcache == zero(integrator.t) && integrator.dtchangeable
+      # Use integrator.opts.tstops
       integrator.dt = integrator.tdir*abs(top(tstops)-integrator.t)
-    elseif integrator.dtchangeable # always try to step! with dtcache, but lower if a tstops
+  elseif integrator.dtchangeable && !integrator.force_stepfail
+      # always try to step! with dtcache, but lower if a tstops
+      # however, if force_stepfail then don't set to dtcache, and no tstop worry
       integrator.dt = integrator.tdir*min(abs(integrator.dtcache),abs(top(tstops)-integrator.t)) # step! to the end
     end
   end
 end
 
-@inline function savevalues!(integrator::ODEIntegrator,force_save=false)
+function savevalues!(integrator::ODEIntegrator,force_save=false)
   while !isempty(integrator.opts.saveat) && integrator.tdir*top(integrator.opts.saveat) <= integrator.tdir*integrator.t # Perform saveat
     integrator.saveiter += 1
     curt = pop!(integrator.opts.saveat)
@@ -131,7 +133,7 @@ end
   resize!(integrator.k,integrator.kshortsize)
 end
 
-@inline function postamble!(integrator)
+function postamble!(integrator)
   solution_endpoint_match_cur_integrator!(integrator)
   resize!(integrator.sol.t,integrator.saveiter)
   resize!(integrator.sol.u,integrator.saveiter)
@@ -139,7 +141,7 @@ end
   !(typeof(integrator.prog)<:Void) && Juno.done(integrator.prog)
 end
 
-@inline function solution_endpoint_match_cur_integrator!(integrator)
+function solution_endpoint_match_cur_integrator!(integrator)
   if integrator.sol.t[integrator.saveiter] !=  integrator.t
     integrator.saveiter += 1
     copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
@@ -162,7 +164,7 @@ end
   end
 end
 
-@inline function stepsize_controller(integrator,cache)
+function stepsize_controller(integrator,cache)
   # PI-controller
   EEst,beta1,q11,qold,beta2 = integrator.EEst, integrator.opts.beta1, integrator.q11,integrator.qold,integrator.opts.beta2
   @fastmath q11 = EEst^beta1
@@ -177,7 +179,7 @@ end
 end
 
 #=
-@inline function stepsize_controller(integrator,cache::Rodas4Cache)
+function stepsize_controller(integrator,cache::Rodas4Cache)
   # Standard stepsize controller
   qtmp = integrator.EEst^(1/(alg_adaptive_order(integrator.alg)+1))/integrator.opts.gamma
   @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
@@ -185,10 +187,13 @@ end
 end
 =#
 
-@inline function loopfooter!(integrator)
-  if integrator.opts.adaptive
+function loopfooter!(integrator)
+  ttmp = integrator.t + integrator.dt
+  if integrator.force_stepfail
+      integrator.accept_step = false
+      integrator.dt = integrator.dt/integrator.opts.failfactor
+  elseif integrator.opts.adaptive
     dtnew = stepsize_controller(integrator,integrator.cache)
-    ttmp = integrator.t + integrator.dt
     integrator.isout = integrator.opts.isoutofdomain(ttmp,integrator.u)
     integrator.accept_step = (!integrator.isout && integrator.EEst <= 1.0) || (integrator.opts.force_dtmin && abs(integrator.dt) <= abs(integrator.opts.dtmin))
     if integrator.accept_step # Accept
@@ -203,9 +208,14 @@ end
       calc_dt_propose!(integrator,dtnew)
       handle_callbacks!(integrator)
     end
-  else #Not adaptive
+  elseif !integrator.opts.adaptive #Not adaptive
     integrator.tprev = integrator.t
-    integrator.t += integrator.dt
+    if typeof(integrator.t)<:AbstractFloat && !isempty(integrator.opts.tstops)
+      tstop = top(integrator.opts.tstops)
+      abs(ttmp - tstop) < 10eps(integrator.t) ? (integrator.t = tstop) : (integrator.t = ttmp)
+    else
+      integrator.t = ttmp
+    end
     integrator.accept_step = true
     integrator.dtpropose = integrator.dt
     handle_callbacks!(integrator)
@@ -216,7 +226,7 @@ end
   end
 end
 
-@inline function handle_callbacks!(integrator)
+function handle_callbacks!(integrator)
   discrete_callbacks = integrator.opts.callback.discrete_callbacks
   continuous_callbacks = integrator.opts.callback.continuous_callbacks
   atleast_one_callback = false
@@ -243,11 +253,11 @@ end
   end
 end
 
-@inline function handle_callback_modifiers!(integrator::ODEIntegrator)
+function handle_callback_modifiers!(integrator::ODEIntegrator)
   integrator.reeval_fsal = true
 end
 
-@inline function apply_step!(integrator)
+function apply_step!(integrator)
 
   integrator.accept_step = false # yay we got here, don't need this no more
 
@@ -289,15 +299,13 @@ end
   end
 end
 
-
-
-@inline function calc_dt_propose!(integrator,dtnew)
+function calc_dt_propose!(integrator,dtnew)
   dtpropose = integrator.tdir*min(abs(integrator.opts.dtmax),abs(dtnew))
   dtpropose = integrator.tdir*max(abs(dtpropose),abs(integrator.opts.dtmin))
   integrator.dtpropose = dtpropose
 end
 
-@inline function fix_dt_at_bounds!(integrator)
+function fix_dt_at_bounds!(integrator)
   if integrator.tdir > 0
     integrator.dt = min(integrator.opts.dtmax,integrator.dt)
   else
@@ -310,7 +318,7 @@ end
   end
 end
 
-@inline function handle_tstop!(integrator)
+function handle_tstop!(integrator)
   tstops = integrator.opts.tstops
   if !isempty(tstops)
     t = integrator.t
@@ -329,7 +337,7 @@ end
   end
 end
 
-@inline function reset_fsal!(integrator)
+function reset_fsal!(integrator)
   # Under these condtions, these algorithms are not FSAL anymore
   if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache
     integrator.f(integrator.t,integrator.u,integrator.fsalfirst)

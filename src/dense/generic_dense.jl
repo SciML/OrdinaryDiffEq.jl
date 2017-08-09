@@ -97,7 +97,7 @@ ode_interpolation(tvals,ts,timeseries,ks)
 Get the value at tvals where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-@inline function ode_interpolation(tvals,id,idxs,deriv)
+function ode_interpolation(tvals,id,idxs,deriv)
   @unpack ts,timeseries,ks,f,cache = id
   id.dense ? notsaveat_idxs = id.notsaveat_idxs : notsaveat_idxs = 1:length(timeseries)
   tdir = sign(ts[end]-ts[1])
@@ -154,7 +154,7 @@ ode_interpolation(tvals,ts,timeseries,ks)
 Get the value at tvals where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-@inline function ode_interpolation!(vals,tvals,id,idxs,deriv)
+function ode_interpolation!(vals,tvals,id,idxs,deriv)
   @unpack ts,timeseries,ks,f,cache = id
   id.dense ? notsaveat_idxs = id.notsaveat_idxs : notsaveat_idxs = 1:length(timeseries)
   tdir = sign(ts[end]-ts[1])
@@ -219,7 +219,7 @@ ode_interpolation(tval::Number,ts,timeseries,ks)
 Get the value at tval where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-@inline function ode_interpolation(tval::Number,id,idxs,deriv)
+function ode_interpolation(tval::Number,id,idxs,deriv)
   @unpack ts,timeseries,ks,f,cache = id
   id.dense ? notsaveat_idxs = id.notsaveat_idxs : notsaveat_idxs = 1:length(timeseries)
   tval > ts[end] && error("Solution interpolation cannot extrapolate past the final timepoint. Either solve on a longer timespan or use the local extrapolation from the integrator interface.")
@@ -264,7 +264,7 @@ ode_interpolation!(out,tval::Number,ts,timeseries,ks)
 Get the value at tval where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-@inline function ode_interpolation!(out,tval::Number,id,idxs,deriv)
+function ode_interpolation!(out,tval::Number,id,idxs,deriv)
   @unpack ts,timeseries,ks,f,cache = id
   id.dense ? notsaveat_idxs = id.notsaveat_idxs : notsaveat_idxs = 1:length(timeseries)
   tval > ts[end] && error("Solution interpolation cannot extrapolate past the final timepoint. Either solve on a longer timespan or use the local extrapolation from the integrator interface.")

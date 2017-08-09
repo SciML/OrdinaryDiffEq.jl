@@ -13,7 +13,7 @@ function (::typeof(f2))(::Type{Val{:analytic}}, x, y0)
   ArrayPartition(u0*cos(x) + v0*sin(x), -u0*sin(x) + v0*cos(x))
 end
 
-prob = ODEProblem((f1,f2),(u0,v0),(0.0,5.0))
+prob = DynamicalODEProblem(f1,f2,u0,v0,(0.0,5.0))
 
 sol = solve(prob,SymplecticEuler(),dt=1/2)
 sol_verlet = solve(prob,VelocityVerlet(),dt=1/100)
@@ -25,7 +25,7 @@ interps = sol(interp_time)
 
 
 prob = SecondOrderODEProblem(f2,u0,v0,(0.0,5.0))
-(::typeof(prob.f[1]))(::Type{Val{:analytic}},t,u0) = f2(Val{:analytic},t,u0)
+(::typeof(prob.f))(::Type{Val{:analytic}},t,u0) = f2(Val{:analytic},t,u0)
 
 sol2 = solve(prob,SymplecticEuler(),dt=1/2)
 sol2_verlet = solve(prob,VelocityVerlet(),dt=1/100)
@@ -40,7 +40,7 @@ sol2_verlet(0.1)
 @test sol_verlet[end][3] == sol2_verlet[end][3]
 @test sol_ruth3[end][3] == sol2_ruth3[end][3]
 
-dts = 1.//2.^(8:-1:4)
+dts = 1.//2.^(6:-1:3)
 # Symplectic Euler
 sim = test_convergence(dts,prob,SymplecticEuler(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 1 rtol = 1e-1

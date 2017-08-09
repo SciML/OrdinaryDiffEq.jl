@@ -25,41 +25,21 @@ end
 callback = ContinuousCallback(condition,affect!)
 
 u0 = [0.2]
-tspan = (0.0,100.0)
+tspan = (0.0,50.0)
 prob = ODEProblem(f,u0,tspan)
 sol = solve(prob,Tsit5(),callback=callback)
 
 # Chunk size must be fixed since otherwise it's dependent on size
 # when the size is less than 10, so errors here
 
-sol = solve(prob,GenericImplicitEuler(nlsolve=NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/10)
+sol = solve(prob,GenericImplicitEuler(nlsolve=NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/2)
 
-sol = solve(prob,GenericTrapezoid(nlsolve=NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/10)
+sol = solve(prob,GenericTrapezoid(nlsolve=NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/2)
 
-sol = solve(prob,Rosenbrock23(chunk_size=1),callback=callback,dt=1/10)
+sol = solve(prob,Rosenbrock23(chunk_size=1),callback=callback,dt=1/2)
 
-sol = solve(prob,Rosenbrock32(chunk_size=1),callback=callback,dt=1/10)
-
-
-#=
-using Plots; pyplot()
-p1 = plot(sol,vars=(0,1),plotdensity=10000,title="Amount of X in Cell 1")
-scatter!(sol,denseplot=false)
-p2 = plot(sol.t,map((x)->length(x),sol[:]),lw=3,
-     ylabel="Number of Cells",xlabel="Time")
-plot(p1,p2,layout=(2,1),size=(600,1000))
-savefig("cell.pdf")
-=#
+sol = solve(prob,Rosenbrock32(chunk_size=1),callback=callback,dt=1/2)
 
 for alg in CACHE_TEST_ALGS
-  sol = solve(prob,alg,callback=callback,dt=1/10)
+  sol = solve(prob,alg,callback=callback,dt=1/2)
 end
-
-#=
-sol = solve(prob,Tsit5(),callback=callback_no_interp,dense=false)
-
-for alg in NON_IMPLICIT_ALGS
-  println(alg)
-  sol = solve(prob,alg(),callback=callback,dt=1/10)
-end
-=#
