@@ -21,6 +21,7 @@ function loopheader!(integrator)
   integrator.iter += 1
   fix_dt_at_bounds!(integrator)
   modify_dt_for_tstops!(integrator)
+  integrator.force_stepfail = false
   choose_algorithm!(integrator,integrator.cache)
 end
 
@@ -185,8 +186,11 @@ function step_fail_controller!(integrator,cache)
   integrator.dt = integrator.dt/min(inv(integrator.opts.qmin),integrator.q11/integrator.opts.gamma)
 end
 
-const StandardControllerCaches = Union{ImplicitEulerCache,
-                                   ImplicitEulerConstantCache}
+const StandardControllerCaches = Union{GenericImplicitEuler,GenericTrapezoid}
+
+const PredictiveControllerCaches = Union{ImplicitEulerCache,ImplicitEulerConstantCache,
+                                    TrapezoidConstantCache,TrapezoidCache,
+                                    TRBDF2ConstantCache,TRBDF2Cache}
 
 function stepsize_controller!(integrator,cache::StandardControllerCaches)
   # Standard stepsize controller
@@ -201,9 +205,6 @@ end
 function step_fail_controller!(integrator,cache::StandardControllerCaches)
   integrator.dt = integrator.qold
 end
-
-const PredictiveControllerCaches = Union{TrapezoidConstantCache,TrapezoidCache,
-                                         TRBDF2ConstantCache,TRBDF2Cache}
 
 function stepsize_controller!(integrator,cache::PredictiveControllerCaches)
   # Gustafsson predictive stepsize controller
@@ -240,6 +241,7 @@ end
 function loopfooter!(integrator)
   ttmp = integrator.t + integrator.dt
   if integrator.force_stepfail
+      integrator.last_stepfail = true
       integrator.accept_step = false
       integrator.dt = integrator.dt/integrator.opts.failfactor
   elseif integrator.opts.adaptive
@@ -247,6 +249,7 @@ function loopfooter!(integrator)
     integrator.isout = integrator.opts.isoutofdomain(ttmp,integrator.u)
     integrator.accept_step = (!integrator.isout && integrator.EEst <= 1.0) || (integrator.opts.force_dtmin && abs(integrator.dt) <= abs(integrator.opts.dtmin))
     if integrator.accept_step # Accept
+      integrator.last_stepfail = false
       dtnew = step_accept_controller!(integrator,integrator.cache,q)
       integrator.tprev = integrator.t
       if typeof(integrator.t)<:AbstractFloat && !isempty(integrator.opts.tstops)

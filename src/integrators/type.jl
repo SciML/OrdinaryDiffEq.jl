@@ -70,6 +70,7 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,tTypeN
   cache::CacheType
   kshortsize::Int
   force_stepfail::Bool
+  last_stepfail::Bool
   just_hit_tstop::Bool
   accept_step::Bool
   isout::Bool
@@ -86,7 +87,7 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,tTypeN
       alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,dtpropose,tdir,
       EEst,qold,q11,erracc,dtacc,success_iter,
       iter,saveiter,saveiter_dense,prog,cache,
-      kshortsize,force_stepfail,just_hit_tstop,
+      kshortsize,force_stepfail,last_stepfail,just_hit_tstop,
       accept_step,isout,reeval_fsal,u_modified,opts)
 
       new{algType,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,
@@ -95,7 +96,7 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,tTypeN
       alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,dtpropose,tdir,
       EEst,qold,q11,erracc,dtacc,success_iter,
       iter,saveiter,saveiter_dense,prog,cache,
-      kshortsize,force_stepfail,just_hit_tstop,
+      kshortsize,force_stepfail,last_stepfail,just_hit_tstop,
       accept_step,isout,reeval_fsal,u_modified,opts) # Leave off fsalfirst and last
   end
 end

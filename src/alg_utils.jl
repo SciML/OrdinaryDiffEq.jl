@@ -284,7 +284,7 @@ alg_adaptive_order(alg::GenericImplicitEuler) = 0
 alg_adaptive_order(alg::GenericTrapezoid) = 1
 alg_adaptive_order(alg::ImplicitEuler) = 0
 alg_adaptive_order(alg::Trapezoid) = 1
-alg_adaptive_order(alg::TRBDF2) = 1
+alg_adaptive_order(alg::TRBDF2) = 2
 
 beta2_default(alg::OrdinaryDiffEqAlgorithm) = 2//(5alg_order(alg))
 beta2_default(alg::Discrete) = 0

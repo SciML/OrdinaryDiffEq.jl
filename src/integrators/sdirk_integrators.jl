@@ -129,7 +129,7 @@ end
   if has_invW(f)
     f(Val{:invW},t,uprev,dt,W) # W == inverse W
   else
-    if cache.newton_iters == 1 && cache.ηold < integrator.alg.new_jac_conv_bound
+    if !integrator.last_stepfail && cache.newton_iters == 1 && cache.ηold < integrator.alg.new_jac_conv_bound
       new_jac = false
     else # Compute a new Jacobian
       new_jac = true
@@ -365,7 +365,7 @@ end
   if has_invW(f)
     f(Val{:invW},t,uprev,dt,W) # W == inverse W
   else
-    if cache.newton_iters == 1 && cache.ηold < integrator.alg.new_jac_conv_bound
+    if !integrator.last_stepfail && cache.newton_iters == 1 && cache.ηold < integrator.alg.new_jac_conv_bound
       new_jac = false
     else # Compute a new Jacobian
       new_jac = true
@@ -662,7 +662,7 @@ end
   if has_invW(f)
     f(Val{:invW},t,uprev,dt*d,W) # W == inverse W
   else
-    if cache.newton_iters == 1 && cache.ηold < integrator.alg.new_jac_conv_bound
+    if !integrator.last_stepfail && cache.newton_iters == 1 && cache.ηold < integrator.alg.new_jac_conv_bound
       new_jac = false
     else # Compute a new Jacobian
       new_jac = true
