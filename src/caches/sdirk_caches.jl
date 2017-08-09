@@ -303,15 +303,13 @@ end
 mutable struct SDIRK2Cache{uType,rateType,J,JC,UF,uEltypeNoUnits,tType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
-  uᵧ::uType
   du1::rateType
   fsalfirst::rateType
   k::rateType
-  zprev::uType
-  zᵧ::uType
-  z::uType
-  Δzᵧ::uType
-  Δz::uType
+  z₁::uType
+  z₂::uType
+  dz₁::uType
+  dz₂::uType
   est::uType
   J::J
   W::J
@@ -330,11 +328,10 @@ function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
-  uᵧ = similar(u)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
-  zprev = similar(u); zᵧ = similar(u); z = similar(u)
-  Δzᵧ = similar(u); Δz = similar(u)
+  z₁ = similar(u); z₂ = similar(u)
+  dz₁ = similar(u); dz₂ = similar(u)
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype); est = similar(u)
   vfr = VectorFReturn(f,size(u))
@@ -361,6 +358,6 @@ function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,
 
   SDIRK2Cache{typeof(u),typeof(rate_prototype),typeof(J),typeof(jac_config),
               typeof(uf),uEltypeNoUnits,typeof(t)}(
-              u,uprev,uᵧ,du1,fsalfirst,k,zprev,zᵧ,z,Δzᵧ,Δz,est,J,
+              u,uprev,du1,fsalfirst,k,z₁,z₂,dz₁,dz₂,est,J,
               W,jac_config,uf,ηold,κ,tol,10000)
 end

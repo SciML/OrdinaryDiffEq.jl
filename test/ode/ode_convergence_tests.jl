@@ -50,4 +50,30 @@ for i = 1:2
 
   sim14 = test_convergence(dts,prob,TRBDF2())
   @test abs(sim14.𝒪est[:final]-2) < testTol
+
+  sim15 = test_convergence(dts,prob,SDIRK2())
+  @test abs(sim15.𝒪est[:final]-2) < testTol
 end
+
+using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase,
+      DiffEqProblemLibrary, Base.Test
+
+
+testTol = 0.2
+dts = 1.//2.^(8:-1:4)
+prob = prob_ode_linear
+sim13 = test_convergence(dts,prob,SDIRK2())
+@test abs(sim13.𝒪est[:final]-2) < testTol
+
+sol = solve(prob,SDIRK2())
+sol = solve(prob,TRBDF2())
+
+sol = solve(prob,SDIRK2(),reltol=1e-6)
+sol = solve(prob,TRBDF2(),reltol=1e-6)
+
+prob = prob_ode_2Dlinear
+sim13 = test_convergence(dts,prob,SDIRK2())
+@test abs(sim13.𝒪est[:final]-2) < testTol
+
+sol = solve(prob,SDIRK2())
+sol = solve(prob,TRBDF2())

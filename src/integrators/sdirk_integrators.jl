@@ -793,7 +793,6 @@ end
 
   ################################### Finalize
 
-
   if integrator.opts.adaptive
     be1 = (bhat1-b1); be2 = (bhat2-b2); be3 = (bhat3-b3)
     @. est = be1*zprev + be2*zᵧ + be3*z
@@ -855,7 +854,7 @@ end
   u = @. uprev + z₁
   b = dt.*f(t+dt,u) .- z₁
   dz₁ = W\b
-  ndz = integrator.opts.internalnorm(Δz₁)
+  ndz = integrator.opts.internalnorm(dz₁)
   z₁ = z₁ + dz₁
 
   u = @. uprev + z₁
@@ -874,7 +873,7 @@ end
     b = dt.*f(t+dt,u) .- z₁
     dz₁ = W\b
     ndzprev = ndz
-    ndz = integrator.opts.internalnorm(Δz₁)
+    ndz = integrator.opts.internalnorm(dz₁)
     θ = ndz/ndzprev
     if θ > 1 || ndz*(θ^(integrator.alg.max_newton_iter - iter)/(1-θ)) > κ*tol
       fail_convergence = true
@@ -892,15 +891,15 @@ end
 
   u = @. uprev + z₁
 
-  ################################## Solve BDF2 Step
+  ################################## Solve Step 2
 
   ### Initial Guess Is α₁ = c₂/γ, c₂ = 0 => z₂ = α₁z₁ = 0
-  z₂ = 0
+  z₂ = zero(u)
 
   iter = 1
   u = @. uprev - z₁ + z₂
-  b = dt.*f(t+dt,u) .- z₂
-  dz = W\b
+  b = dt.*f(t,u) .- z₂
+  dz₂ = W\b
   ndz = integrator.opts.internalnorm(dz₂)
   z₂ = z₂ + dz₂
 
@@ -911,7 +910,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = @. uprev - z₁ + z₂
-    b = dt.*f(t+dt,u) .- z₂
+    b = dt.*f(t,u) .- z₂
     dz₂ = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz₂)
@@ -931,18 +930,18 @@ end
     return
   end
 
-  u = @. uprev - z₁ + z₂
-
   ################################### Finalize
 
-  integrator.fsallast = z/dt
+  u = @. uprev + z₁/2 + z₂/2
+
+  integrator.fsallast = f(t,u)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   cache.ηold = η
   cache.newton_iters = iter
 
   if integrator.opts.adaptive
-    est = (bhat1-b1)*zprev + (bhat2-b2)*zᵧ + (bhat3-b3)*z
+    est = @. z₁/2 - z₂/2
     if integrator.alg.smooth_est # From Shampine
       Est = W\est
     else
@@ -966,27 +965,15 @@ end
 
 @muladd function perform_step!(integrator,cache::SDIRK2Cache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
-  @unpack uf,du1,uᵧ,Δzᵧ,Δz,zprev,zᵧ,z,k,J,W,jac_config,est = cache
+  @unpack uf,du1,dz₁,dz₂,z₁,z₂,k,J,W,jac_config,est = cache
   mass_matrix = integrator.sol.prob.mass_matrix
 
   uf.t = t
-  γ = 2 - sqrt(2)
-  ω = sqrt(2)/4
-  d = γ/2
-
-  b1 = ω
-  bhat1 = (1-ω)/3
-  b2 = ω
-  bhat2 = (3ω + 1)/3
-  b3 = d
-  bhat3 = d/3
-
-  γdt = γ*dt
   κ = cache.κ
   tol = cache.tol
 
   if has_invW(f)
-    f(Val{:invW},t,uprev,dt*d,W) # W == inverse W
+    f(Val{:invW},t,uprev,dt,W) # W == inverse W
   else
     if !integrator.last_stepfail && cache.newton_iters == 1 && cache.ηold < integrator.alg.new_jac_conv_bound
       new_jac = false
@@ -1004,31 +991,33 @@ end
     end
     if integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps()
       new_W = true
-      ddt = d*dt
       for j in 1:length(u), i in 1:length(u)
-          @inbounds W[i,j] = mass_matrix[i,j]-ddt*J[i,j]
+          @inbounds W[i,j] = mass_matrix[i,j]-dt*J[i,j]
       end
     else
       new_W = false
     end
   end
 
-  @. zprev = dt*integrator.fsalfirst
-  @. zᵧ = zprev
+  # TODO: Add extrapolant initial guess
+  @. u = uprev
+
+  ##### Step 1
+
+  @. z₁ = u - uprev
+
   iter = 1
-
-  @. uᵧ = (uprev + d*zprev) + d*zᵧ
-  f(t+γdt,uᵧ,k)
-  @. k = dt*k - zᵧ
+  @. u = uprev + z₁
+  f(t+dt,u,k)
+  @. k = dt*k - z₁
   if has_invW(f)
-    A_mul_B!(vec(Δzᵧ),W,vec(k)) # Here W is actually invW
+    A_mul_B!(vec(dz₁),W,vec(k)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(Δzᵧ),W,vec(k),new_W)
+    integrator.alg.linsolve(vec(dz₁),W,vec(k),new_W)
   end
-  ndz = integrator.opts.internalnorm(Δzᵧ)
-  @. zᵧ = zᵧ + Δzᵧ
-
-  @. uᵧ = (uprev + d*zprev) + d*zᵧ
+  ndz = integrator.opts.internalnorm(dz₁)
+  @. z₁ = z₁ + dz₁
+  @. u = uprev + z₁
 
   η = max(cache.ηold,eps(first(u)))^(0.8)
   if integrator.success_iter > 0
@@ -1040,16 +1029,17 @@ end
   fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
-    @. uᵧ = (uprev + d*zprev) + d*zᵧ
-    f(t+γdt,uᵧ,k)
-    @. k = dt*k - zᵧ
+
+    @. u = uprev + z₁
+    f(t+dt,u,k)
+    @. k = dt*k - z₁
     if has_invW(f)
-      A_mul_B!(vec(Δzᵧ),W,vec(k)) # Here W is actually invW
+      A_mul_B!(vec(dz₁),W,vec(k)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(Δzᵧ),W,vec(k),false)
+      integrator.alg.linsolve(vec(dz₁),W,vec(k),new_W)
     end
     ndzprev = ndz
-    ndz = integrator.opts.internalnorm(Δzᵧ)
+    ndz = integrator.opts.internalnorm(dz₁)
     θ = ndz/ndzprev
     if θ > 1 || ndz*(θ^(integrator.alg.max_newton_iter - iter)/(1-θ)) > κ*tol
       fail_convergence = true
@@ -1057,7 +1047,7 @@ end
     end
     η = θ/(1-θ)
     do_newton = (η*ndz > κ*tol)
-    @. zᵧ = zᵧ + Δzᵧ
+    @. z₁ = z₁ + dz₁
   end
 
   if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
@@ -1065,41 +1055,42 @@ end
     return
   end
 
-  @. uᵧ = (uprev + d*zprev) + d*zᵧ
+  @. u = uprev + z₁
 
-  ################################## Solve BDF2 Step
+  ################################## Solve Step 2
 
-  ### Initial Guess From Shampine
-  a1 = (1.5 + sqrt(2)); a2 = (2.5 + 2sqrt(2)); a3 = (6 + 4.5sqrt(2))
-  @. z = a1*zprev + a2*zᵧ - a3*(uᵧ - uprev)
+  ### Initial Guess
+  @. z₂ = zero(u)
+
   iter = 1
-
-  @. u = (uprev + ω*zprev + ω*zᵧ) + d*z
-  f(t+dt,u,k)
-  @. k = dt*k - z
+  @.  u = uprev - z₁ + z₂
+  f(t,u,k)
+  @. k = dt*k - z₂
   if has_invW(f)
-    A_mul_B!(vec(Δz),W,vec(k)) # Here W is actually invW
+    A_mul_B!(vec(dz₂),W,vec(k)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(Δz),W,vec(k),false)
+    integrator.alg.linsolve(vec(dz₂),W,vec(k),false)
   end
-  ndz = integrator.opts.internalnorm(Δz)
-  @. z = z + Δz
+  ndz = integrator.opts.internalnorm(dz₂)
+  @. z₂ = z₂ + dz₂
 
   η = max(η,eps(first(u)))^(0.8)
   do_newton = (η*ndz > κ*tol)
 
   fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
-    @. u = (uprev + ω*zprev + ω*zᵧ) + d*z
-    f(t+dt,u,k)
-    @. k = dt*k - z
+
+
+    @.  u = uprev - z₁ + z₂
+    f(t,u,k)
+    @. k = dt*k - z₂
     if has_invW(f)
-      A_mul_B!(vec(Δz),W,vec(k)) # Here W is actually invW
+      A_mul_B!(vec(dz₂),W,vec(k)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(Δz),W,vec(k),false)
+      integrator.alg.linsolve(vec(dz₂),W,vec(k),false)
     end
     ndzprev = ndz
-    ndz = integrator.opts.internalnorm(Δz)
+    ndz = integrator.opts.internalnorm(dz₂)
     θ = ndz/ndzprev
     if θ > 1 || ndz*(θ^(integrator.alg.max_newton_iter - iter)/(1-θ)) > κ*tol
       fail_convergence = true
@@ -1107,7 +1098,7 @@ end
     end
     η = θ/(1-θ)
     do_newton = (η*ndz > κ*tol)
-    @. z = z + Δz
+    @. z₂ = z₂ + dz₂
   end
 
   if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
@@ -1115,14 +1106,12 @@ end
     return
   end
 
-  @. u = (uprev + ω*zprev + ω*zᵧ) + d*z
-
   ################################### Finalize
 
+  @. u = uprev + z₁/2 + z₂/2
 
   if integrator.opts.adaptive
-    be1 = (bhat1-b1); be2 = (bhat2-b2); be3 = (bhat3-b3)
-    @. est = be1*zprev + be2*zᵧ + be3*z
+    @. est = z₁/2 - z₂/2
     if integrator.alg.smooth_est # From Shampine
       if has_invW(f)
         A_mul_B!(vec(k),W,vec(est))
@@ -1138,7 +1127,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(est)
   end
 
-  @. integrator.fsallast = z/dt
+  f(t,u,integrator.fsallast)
   cache.ηold = η
   cache.newton_iters = iter
 end
