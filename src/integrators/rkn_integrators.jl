@@ -32,7 +32,6 @@ end
   half_dtsq = dtsq/2
   ttmp = t+halfdt
 
-  f.f2(ttmp,uprev,duprev,k₁.x[2])
   @tight_loop_macros for i in uidx
     ## y₁ = y₀ + hy'₀ + h²∑b̄ᵢk'ᵢ
     @inbounds ku[i]  = @muladd uprev[i] + halfdt*duprev[i] + eighth_dtsq*k₁.x[2][i]
@@ -89,7 +88,6 @@ end
   half_dtsq = dtsq/2
   ttmp = t+halfdt
 
-  f.f2(ttmp,uprev,duprev,k₁.x[2])
   @tight_loop_macros for i in uidx
     ## y₁ = y₀ + hy'₀ + h²∑b̄ᵢk'ᵢ
     @inbounds ku[i] = @muladd uprev[i] + halfdt*duprev[i] + eighth_dtsq*k₁.x[2][i]
@@ -138,11 +136,11 @@ end
     k₁ = fsalfirst
     dtsq = dt^2
 
-    f.f2(t+1//4*dt,    uprev, duprev, k₁.x[1])
-    f.f2(tprev+1//4*dt,uprev2,duprev2,k₁.x[2])
+    f.f2(t+1//4*dt,    uprev, duprev, k.x[1])
+    f.f2(tprev+1//4*dt,uprev2,duprev2,k.x[2])
     @tight_loop_macros for i in uidx
-      @inbounds ku[i]  = @muladd uprev[i]  + (1//4*dt)*duprev[i]  + (1//32*dtsq)*k₁.x[1][i]
-      @inbounds kdu[i] = @muladd uprev2[i] + (1//4*dt)*duprev2[i] + (1//32*dtsq)*k₁.x[2][i]
+      @inbounds ku[i]  = @muladd uprev[i]  + (1//4*dt)*duprev[i]  + (1//32*dtsq)*k.x[1][i]
+      @inbounds kdu[i] = @muladd uprev2[i] + (1//4*dt)*duprev2[i] + (1//32*dtsq)*k.x[2][i]
     end
 
     f.f2(t+1//4*dt,    ku, duprev, k₂.x[1])
@@ -156,7 +154,7 @@ end
     f.f2(tprev+3//4*dt,kdu,duprev2,k₃.x[2])
     @tight_loop_macros for i in uidx
       @inbounds u[i]  = @muladd uprev[i] + (3//2*dt)*duprev[i] + (1//2*-dt)*duprev2[i] + (7//24*dtsq)*(k₂.x[1][i]-k₂.x[2][i]) + (1//8*dtsq)*(k₃.x[1][i]-k₃.x[2][i])
-      @inbounds du[i] = @muladd duprev[i] + dt*(19//18*k₁.x[1][i] - 1//18*k₁.x[2][i] + (-1//6)*(k₂.x[1][i]-k₂.x[2][i]) + 11//18*(k₃.x[1][i]-k₃.x[2][i]))
+      @inbounds du[i] = @muladd duprev[i] + dt*(19//18*k.x[1][i] - 1//18*k.x[2][i] + (-1//6)*(k₂.x[1][i]-k₂.x[2][i]) + 11//18*(k₃.x[1][i]-k₃.x[2][i]))
     end
     f.f1(t+dt,u,du,k.x[1])
     f.f2(t+dt,u,du,k.x[2])
@@ -187,7 +185,6 @@ end
   k₁ = fsalfirst
   dtsq = dt^2
 
-  f.f2(t+1//5*dt,uprev,duprev,k₁.x[2])
   @tight_loop_macros for i in uidx
     @inbounds ku[i] = @muladd uprev[i] + (1//5*dt)*duprev[i] + (1//50*dtsq)*k₁.x[2][i]
   end
