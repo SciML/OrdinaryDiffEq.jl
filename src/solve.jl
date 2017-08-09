@@ -270,6 +270,9 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   force_stepfail = false
   dtchangeable = isdtchangeable(alg)
   q11 = tTypeNoUnits(1)
+  success_iter = 0
+  erracc = tTypeNoUnits(1)
+  dtacc = tTypeNoUnits(1)
 
   integrator = ODEIntegrator{algType,uType,tType,
                              tTypeNoUnits,typeof(tdir),eltype(ks),SolType,
@@ -278,6 +281,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
                              sol,u,k,t,tType(dt),f,uprev,uprev2,tprev,
                              alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,
                              dtpropose,tdir,EEst,qoldinit,q11,
+                             erracc,dtacc,success_iter,
                              iter,saveiter,saveiter_dense,prog,cache,
                              kshortsize,force_stepfail,just_hit_tstop,
                              accept_step,isout,reeval_fsal,u_modified,opts)

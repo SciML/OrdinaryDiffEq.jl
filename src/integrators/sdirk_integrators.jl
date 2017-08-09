@@ -14,7 +14,7 @@ end
   @unpack uf = cache
   uf.t = t
 
-  if integrator.iter > 1 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
+  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     u = current_extrapolant(t+dt,integrator)
   elseif integrator.alg.extrapolant == :linear
     u = uprev + integrator.fsalfirst*dt
@@ -42,7 +42,7 @@ end
   z = z + dz
 
   η = max(cache.ηold,eps(first(u)))^(0.8)
-  if integrator.iter > 1
+  if integrator.success_iter > 0
     do_newton = (η*ndz > κ*tol)
   else
     do_newton = true
@@ -74,7 +74,7 @@ end
   cache.newton_iters = iter
   u = uprev + z
 
-  if integrator.opts.adaptive && integrator.iter > 1
+  if integrator.opts.adaptive && integrator.success_iter > 0
     # Use 2rd divided differences a la SPICE and Shampine
     uprev2 = integrator.uprev2
     tprev = integrator.tprev
@@ -108,7 +108,7 @@ end
   mass_matrix = integrator.sol.prob.mass_matrix
 
 
-  if integrator.iter > 1 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
+  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     current_extrapolant!(u,t+dt,integrator)
   elseif integrator.alg.extrapolant == :linear
     @. u = uprev + integrator.fsalfirst*dt
@@ -116,7 +116,7 @@ end
     copy!(u,uprev)
   end
 
-  if integrator.iter > 1 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
+  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     current_extrapolant!(u,t+dt,integrator)
   elseif integrator.alg.extrapolant == :linear
     u .= uprev .+ integrator.fsalfirst.*dt
@@ -172,7 +172,7 @@ end
   @. u = uprev + z
 
   η = max(cache.ηold,eps(first(u)))^(0.8)
-  if integrator.iter > 1
+  if integrator.success_iter > 0
     do_newton = (η*ndz > κ*tol)
   else
     do_newton = true
@@ -211,7 +211,7 @@ end
   cache.newton_iters = iter
   @. u = uprev + z
 
-  if integrator.opts.adaptive && integrator.iter > 1
+  if integrator.opts.adaptive && integrator.success_iter > 0
     # Use 2rd divided differences a la SPICE and Shampine
     uprev2 = integrator.uprev2
     tprev = integrator.tprev
@@ -247,7 +247,7 @@ end
   uf.t = t
   dto2 = dt/2
 
-  if integrator.iter > 1 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
+  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     u = current_extrapolant(t+dt,integrator)
   elseif integrator.alg.extrapolant == :linear
     u = uprev + integrator.fsalfirst*dt
@@ -274,7 +274,7 @@ end
   z = z + dz
 
   η = max(cache.ηold,eps(first(u)))^(0.8)
-  if integrator.iter > 1
+  if integrator.success_iter > 0
     do_newton = (η*ndz > κ*tol)
   else
     do_newton = true
@@ -324,7 +324,7 @@ end
         cache.uprev3 = uprev2
         cache.tprev2 = tprev
       end
-    elseif integrator.iter > 1
+    elseif integrator.success_iter > 0
       integrator.EEst = 1
       cache.uprev3 = integrator.uprev2
       cache.tprev2 = integrator.tprev
@@ -351,7 +351,7 @@ end
   @unpack uf,du1,dz,z,k,J,W,jac_config = cache
   mass_matrix = integrator.sol.prob.mass_matrix
 
-  if integrator.iter > 1 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
+  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     current_extrapolant!(u,t+dt,integrator)
   elseif integrator.alg.extrapolant == :linear
     @. u = uprev + integrator.fsalfirst*dt
@@ -408,7 +408,7 @@ end
   @. u = uprev + z
 
   η = max(cache.ηold,eps(first(u)))^(0.8)
-  if integrator.iter > 1
+  if integrator.success_iter > 0
     do_newton = (η*ndz > κ*tol)
   else
     do_newton = true
@@ -469,7 +469,7 @@ end
         copy!(cache.uprev3,uprev2)
         cache.tprev2 = tprev
       end
-    elseif integrator.iter > 1
+    elseif integrator.success_iter > 0
       integrator.EEst = 1
       copy!(cache.uprev3,integrator.uprev2)
       cache.tprev2 = integrator.tprev
@@ -535,7 +535,7 @@ end
   uᵧ = @. (uprev + d*zprev) + d*zᵧ
 
   η = max(cache.ηold,eps(first(u)))^(0.8)
-  if integrator.iter > 1
+  if integrator.success_iter > 0
     do_newton = (η*ndz > κ*tol)
   else
     do_newton = true
@@ -705,7 +705,7 @@ end
   @. uᵧ = (uprev + d*zprev) + d*zᵧ
 
   η = max(cache.ηold,eps(first(u)))^(0.8)
-  if integrator.iter > 1
+  if integrator.success_iter > 0
     do_newton = (η*ndz > κ*tol)
   else
     do_newton = true

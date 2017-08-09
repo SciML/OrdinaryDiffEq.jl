@@ -44,7 +44,7 @@ end
   @unpack uhold,C,rhs,nl_rhs = cache
   C[1] = uprev
 
-  if integrator.iter > 1 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
+  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     uhold[1] = current_extrapolant(t+dt,integrator)
   elseif integrator.alg.extrapolant == :linear
     uhold[1] = uprev + integrator.fsalfirst*dt
@@ -60,7 +60,7 @@ end
   integrator.fsallast = f(t+dt,uhold[1])
   u = uhold[1]
 
-  if integrator.opts.adaptive && integrator.iter > 1
+  if integrator.opts.adaptive && integrator.success_iter > 0
     # Use 2rd divided differences a la SPICE and Shampine
     uprev2 = integrator.uprev2
     tprev = integrator.tprev
@@ -94,7 +94,7 @@ end
   @unpack C,dual_cache,k,nl_rhs,rhs,uhold = cache
   copy!(C,uprev)
 
-  if integrator.iter > 1 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
+  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     current_extrapolant!(u,t+dt,integrator)
   elseif integrator.alg.extrapolant == :linear
     u .= uprev .+ integrator.fsalfirst.*dt
@@ -108,7 +108,7 @@ end
   nlres = integrator.alg.nlsolve(nl_rhs,uhold)
   copy!(uhold,nlres)
 
-  if integrator.opts.adaptive && integrator.iter > 1
+  if integrator.opts.adaptive && integrator.success_iter > 0
     # Use 2rd divided differences a la SPICE and Shampine
     uprev2 = integrator.uprev2
     tprev = integrator.tprev
@@ -144,7 +144,7 @@ function perform_step!(integrator,cache::GenericTrapezoidConstantCache,f=integra
   @unpack uhold,C,rhs,nl_rhs = cache
   C[1] = first(uprev) + (dt/2)*first(integrator.fsalfirst)
 
-  if integrator.iter > 1 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
+  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     uhold[1] = current_extrapolant(t+dt,integrator)
   elseif integrator.alg.extrapolant == :linear
     uhold[1] = uprev + integrator.fsalfirst*dt
@@ -175,7 +175,7 @@ function perform_step!(integrator,cache::GenericTrapezoidConstantCache,f=integra
         cache.uprev3 = uprev2
         cache.tprev2 = tprev
       end
-    elseif integrator.iter > 1
+    elseif integrator.success_iter > 0
       integrator.EEst = 1
       cache.uprev3 = integrator.uprev2
       cache.tprev2 = integrator.tprev
@@ -206,7 +206,7 @@ function perform_step!(integrator,cache::GenericTrapezoidCache,f=integrator.f)
   @unpack C,dual_cache,k,rhs,nl_rhs,uhold = cache
   C .= vec(uprev) .+ (dt/2).*vec(integrator.fsalfirst)
 
-  if integrator.iter > 1 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
+  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     current_extrapolant!(u,t+dt,integrator)
   elseif integrator.alg.extrapolant == :linear
     u .= uprev .+ integrator.fsalfirst.*dt
@@ -243,7 +243,7 @@ function perform_step!(integrator,cache::GenericTrapezoidCache,f=integrator.f)
         copy!(cache.uprev3,uprev2)
         cache.tprev2 = tprev
       end
-    elseif integrator.iter > 1
+    elseif integrator.success_iter > 0
       integrator.EEst = 1
       copy!(cache.uprev3,integrator.uprev2)
       cache.tprev2 = integrator.tprev
