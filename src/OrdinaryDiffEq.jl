@@ -128,7 +128,7 @@ module OrdinaryDiffEq
          DP5, DP5Threaded, Tsit5, DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8,
          Vern9,Feagin10, Feagin12, Feagin14, CompositeAlgorithm
 
-  export ImplicitEuler, Trapezoid, TRBDF2, SDIRK2
+  export ImplicitEuler, Trapezoid, TRBDF2, SDIRK2, Kvaerno3, KenCarp3, Cash4
 
   export GenericImplicitEuler, GenericTrapezoid
 

@@ -1145,7 +1145,7 @@ end
 @muladd function perform_step!(integrator,cache::Union{Kvaerno3ConstantCache,KenCarp3ConstantCache},f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack uf = cache
-  @unpack γ,a31,a32,a41,a42,a43,bhat1,bhat2,bhat3,bhat4,c3 = cache.tab
+  @unpack γ,a31,a32,a41,a42,a43,bhat1,bhat2,bhat3,bhat4,c3,α1,α2 = cache.tab
   uf.t = t
   γdt = γ*dt
   κ = cache.κ
@@ -1206,14 +1206,15 @@ end
 
   ################################## Solve Step 3
 
-
+  # Guess is from Hermite derivative on z₁ and z₂
+  z₃ = α1*z₁ + α2*z₂
 
   iter = 1
-  u = @. uprev - z₁ + z₂
-  b = dt.*f(t,u) .- z₂
-  dz₂ = W\b
-  ndz = integrator.opts.internalnorm(dz₂)
-  z₂ = z₂ + dz₂
+  u = @. uprev + a31*z₁ + a32*z₂ + γ*z₃
+  b = dt.*f(t,u) .- z₃
+  dz₃ = W\b
+  ndz = integrator.opts.internalnorm(dz₃)
+  z₃ = z₃ + dz₃
 
   η = max(η,eps(first(u)))^(0.8)
   do_newton = (η*ndz > κ*tol)
@@ -1221,12 +1222,12 @@ end
   fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
-    u = @. uprev - z₁ + z₂
-    b = dt.*f(t,u) .- z₂
-    dz₂ = W\b
+    u = @. uprev + a31*z₁ + a32*z₂ + γ*z₃
+    b = dt.*f(t,u) .- z₃
+    dz₃ = W\b
     ndzprev = ndz
-    ndz = integrator.opts.internalnorm(dz₂)
-    z₂ = z₂ + dz₂
+    ndz = integrator.opts.internalnorm(dz₃)
+    z₃ = z₃ + dz₃
     θ = ndz/ndzprev
     if θ > 1 || ndz*(θ^(integrator.alg.max_newton_iter - iter)/(1-θ)) > κ*tol
       fail_convergence = true
@@ -1234,7 +1235,49 @@ end
     end
     η = θ/(1-θ)
     do_newton = (η*ndz > κ*tol)
-    z₂ = z₂ + dz₂
+    z₃ = z₃ + dz₃
+  end
+
+  if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
+    integrator.force_stepfail = true
+    return
+  end
+
+  ################################## Solve Step 4
+
+  if typeof(cache) <: Kvaerno3ConstantCache
+    z₄ = a31*z₁ + a32*z₂ + γ*z₃ # use yhat as prediction
+  elseif typeof(cache) <: KenCarp3ConstantCache
+    @unpack α41,α43 = cache.tab
+    z₄ = α41*z₁ + α43*z₃
+  end
+
+  iter = 1
+  u = @. uprev + a41*z₁ + a42*z₂ + a43*z₃ + γ*z₄
+  b = dt.*f(t,u) .- z₄
+  dz₄ = W\b
+  ndz = integrator.opts.internalnorm(dz₄)
+  z₄ = z₄ + dz₄
+
+  η = max(η,eps(first(u)))^(0.8)
+  do_newton = (η*ndz > κ*tol)
+
+  fail_convergence = false
+  while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
+    iter += 1
+    u = @. uprev + a41*z₁ + a42*z₂ + a43*z₃ + γ*z₄
+    b = dt.*f(t,u) .- z₄
+    dz₄ = W\b
+    ndzprev = ndz
+    ndz = integrator.opts.internalnorm(dz₄)
+    θ = ndz/ndzprev
+    if θ > 1 || ndz*(θ^(integrator.alg.max_newton_iter - iter)/(1-θ)) > κ*tol
+      fail_convergence = true
+      break
+    end
+    η = θ/(1-θ)
+    do_newton = (η*ndz > κ*tol)
+    z₄ = z₄ + dz₄
   end
 
   if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
@@ -1244,7 +1287,7 @@ end
 
   ################################### Finalize
 
-  u = @. uprev + z₁/2 + z₂/2
+  u = @. uprev + a41*z₁ + a42*z₂ + a43*z₃ + γ*z₄
 
   integrator.fsallast = f(t,u)
   integrator.k[1] = integrator.fsalfirst
@@ -1253,7 +1296,7 @@ end
   cache.newton_iters = iter
 
   if integrator.opts.adaptive
-    est = @. z₁/2 - z₂/2
+    est = @. (bhat1-a41)*z₁ + (bhat2-a42)*z₂ + (bhat3-a43)*z₃ + (bhat4-γ)*z₄
     if integrator.alg.smooth_est # From Shampine
       Est = W\est
     else

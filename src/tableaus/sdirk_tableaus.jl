@@ -10,7 +10,63 @@ struct ESDIRK4Tableau{T,T2}
     bhat3::T
     bhat4::T
     c3::T2
+    α1::T
+    α2::T
+    α41::T
+    α43::T
 end
+
+#=
+Derivative of Hermite Polynomial
+k[1] + Θ*(-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(3*dt*k[1] + 3*dt*k[2] + 6*y₀ - 6*y₁) + 6*y₁)/dt
+
+Extrapolation for ESDIRK interior step 3
+dt = c2 since interval is [c1,c2] and c1 = 0
+θ =  c3/c2 the extrapolation point
+z = dt*k
+
+z₁ + Θ*(-4dt*z₁ - 2dt*z₂ - 6y₀ + Θ*(3dt*z₁ + 3z₂ + 6y₀ - 6y₁ ) + 6y₁)/dt
+
+Test Expression on TRBDF2:
+c2 = 2 - sqrt(2)
+c3 = 1
+θ = c3/c2; dt = c2
+
+Coefficient on z₁:
+(1 + (-4θ + 3θ^2))*z₁
+1 + (-4θ + 3θ^2) - (1.5 + sqrt(2)) # 1.5 + sqrt(2) given by Shampine
+
+Coefficient on z₂:
+(-2θ + 3θ^2)*z₂
+(-2θ + 3θ^2) - (2.5 + 2sqrt(2)) # 2.5 + 2sqrt(2) given by Shampine
+
+Coefficient on y₀-y₁:
+θ*(θ*6(y₀-y₁)+6(y₁-y₀))/dt
+θ*(-6θ(y₁-y₀)+6(y₁-y₀))/dt
+(y₁-y₀)6θ*(1-θ)/dt
+
+(6θ*(1-θ)/dt)*(y₁-y₀)
+
+6θ*(1-θ)/dt - (- (6 + 4.5sqrt(2)))  # - (6 + 4.5sqrt(2)) given by Shampine
+
+# Write only in terms of z primatives
+y₀ = uprev
+y₁ = uprev + γ*z₁ + γ*z₂
+y₁-y₀ = γ*z₁ + γ*z₂
+
+# Full Expression
+((1 + (-4θ + 3θ^2)) + (6θ*(1-θ)/dt)*γ)*z₁ + ((-2θ + 3θ^2) + (6θ*(1-θ)/dt)*γ)*z₂
+=#
+
+#=
+# Kvaerno3
+# Predict z4 from yhat
+
+yhat = uprev + a31*z1 + a32*z2 + γ*z3
+z₄ = yhat - uprev = a31*z1 + a32*z2 + γ*z3
+
+# Note Hermite is too small of an interval for this one!!!
+=#
 
 function Kvaerno3Tableau(T,T2)
   γ   = T(0.4358665215)
@@ -24,8 +80,28 @@ function Kvaerno3Tableau(T,T2)
   bhat3 = T(0.4358665215)
   bhat4 = T(0.0)
   c3 = T2(1)
-  ESDIRK4Tableau(γ,a31,a32,a41,a42,a43,bhat1,bhat2,bhat3,bhat4,c3)
+  c2 = 2γ
+  θ = c3/c2
+  α1 = ((1 + (-4θ + 3θ^2)) + (6θ*(1-θ)/c2)*γ)
+  α2 = ((-2θ + 3θ^2) + (6θ*(1-θ)/c2)*γ)
+  α41 = T(0.0)
+  α43 = T(0.0)
+  ESDIRK4Tableau(γ,a31,a32,a41,a42,a43,bhat1,bhat2,bhat3,bhat4,c3,α1,α2,α41,α43)
 end
+
+#=
+# KenCarp3
+# Predict z4 from Hermite z2 and z1
+# Not z3 because c3 < c2 !
+
+θ = c3/c2
+dt = c2
+((1 + (-4θ + 3θ^2)) + (6θ*(1-θ)/c2)*γ)
+((-2θ + 3θ^2) + (6θ*(1-θ)/c2)*γ)
+θ = c4/c2
+((1 + (-4θ + 3θ^2)) + (6θ*(1-θ)/c2)*γ)
+((-2θ + 3θ^2) + (6θ*(1-θ)/c2)*γ)
+=#
 
 function KenCarp3Tableau(T,T2)
   γ  = T(1767732205903//4055673282236)
@@ -39,7 +115,14 @@ function KenCarp3Tableau(T,T2)
   bhat3 = T(9247589265047//10645013368117)
   bhat4 = T(2193209047091//5459859503100)
   c3 = T2(3//5)
-  ESDIRK4Tableau(γ,a31,a32,a41,a42,a43,bhat1,bhat2,bhat3,bhat4,c3)
+  c2 = 2γ
+  θ = c3/c2
+  α1 = ((1 + (-4θ + 3θ^2)) + (6θ*(1-θ)/c2)*γ)
+  α2 = ((-2θ + 3θ^2) + (6θ*(1-θ)/c2)*γ)
+  θ = 1/c2
+  α41 = ((1 + (-4θ + 3θ^2)) + (6θ*(1-θ)/c2)*γ)
+  α43 = ((-2θ + 3θ^2) + (6θ*(1-θ)/c2)*γ)
+  ESDIRK4Tableau(γ,a31,a32,a41,a42,a43,bhat1,bhat2,bhat3,bhat4,c3,α1,α2,α41,α43)
 end
 
 struct Cash4Tableau{T,T2}

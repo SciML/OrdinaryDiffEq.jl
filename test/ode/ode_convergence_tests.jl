@@ -64,16 +64,30 @@ dts = 1.//2.^(8:-1:4)
 prob = prob_ode_linear
 sim13 = test_convergence(dts,prob,SDIRK2())
 @test abs(sim13.𝒪est[:final]-2) < testTol
+sim13 = test_convergence(dts,prob,Kvaerno3())
+@test abs(sim13.𝒪est[:final]-3) < testTol
+sim13 = test_convergence(dts,prob,KenCarp3())
+@test abs(sim13.𝒪est[:final]-3) < testTol
 
+sol = solve(prob,Kvaerno3())
+sol = solve(prob,KenCarp3())
 sol = solve(prob,SDIRK2())
 sol = solve(prob,TRBDF2())
 
+sol = solve(prob,Kvaerno3(),reltol=1e-6)
+sol = solve(prob,KenCarp3(),reltol=1e-6)
 sol = solve(prob,SDIRK2(),reltol=1e-6)
 sol = solve(prob,TRBDF2(),reltol=1e-6)
 
 prob = prob_ode_2Dlinear
 sim13 = test_convergence(dts,prob,SDIRK2())
 @test abs(sim13.𝒪est[:final]-2) < testTol
+sim13 = test_convergence(dts,prob,Kvaerno3())
+@test abs(sim13.𝒪est[:final]-3) < testTol
+sim13 = test_convergence(dts,prob,KenCarp3())
+@test abs(sim13.𝒪est[:final]-3) < testTol
 
+sol = solve(prob,Kvaerno3())
+sol = solve(prob,KenCarp3())
 sol = solve(prob,SDIRK2())
 sol = solve(prob,TRBDF2())
