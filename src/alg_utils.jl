@@ -314,7 +314,7 @@ alg_adaptive_order(alg::TRBDF2) = 1
 alg_adaptive_order(alg::SDIRK2) = 1
 alg_adaptive_order(alg::Kvaerno3) = 2
 alg_adaptive_order(alg::KenCarp3) = 2
-alg_adaptive_order(alg::Cash4) = 2
+alg_adaptive_order(alg::Cash4) = 3
 
 beta2_default(alg::OrdinaryDiffEqAlgorithm) = 2//(5alg_order(alg))
 beta2_default(alg::Discrete) = 0

@@ -612,10 +612,12 @@ mutable struct Cash4Cache{uType,rateType,J,JC,UF,uEltypeNoUnits,tType,Tab} <: Or
   z₂::uType
   z₃::uType
   z₄::uType
+  z₅::uType
   dz₁::uType
   dz₂::uType
   dz₃::uType
   dz₄::uType
+  dz₅::uType
   est::uType
   J::J
   W::J
@@ -638,7 +640,9 @@ function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
   z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u)
+  z₅ = similar(u)
   dz₁ = similar(u); dz₂ = similar(u); dz₃ = similar(u); dz₄ = similar(u)
+  dz₅ = similar(u)
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype); est = similar(u)
   vfr = VectorFReturn(f,size(u))
@@ -667,6 +671,6 @@ function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,
 
   Cash4Cache{typeof(u),typeof(rate_prototype),typeof(J),typeof(jac_config),
               typeof(uf),uEltypeNoUnits,typeof(t),typeof(tab)}(
-              u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,dz₁,dz₂,dz₃,dz₄,est,J,
+              u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,dz₁,dz₂,dz₃,dz₄,dz₅,est,J,
               W,jac_config,uf,ηold,κ,tol,10000,tab)
 end

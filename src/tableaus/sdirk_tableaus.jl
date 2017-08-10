@@ -40,7 +40,7 @@ Coefficient on z₂:
 (-2θ + 3θ^2)*z₂
 (-2θ + 3θ^2) - (2.5 + 2sqrt(2)) # 2.5 + 2sqrt(2) given by Shampine
 
-Coefficient on y₀-y₁:
+Coefficient on y₁-y₀:
 θ*(θ*6(y₀-y₁)+6(y₁-y₀))/dt
 θ*(-6θ(y₁-y₀)+6(y₁-y₀))/dt
 (y₁-y₀)6θ*(1-θ)/dt
@@ -141,10 +141,54 @@ struct Cash4Tableau{T,T2}
   b2hat1::T
   b3hat1::T
   b4hat1::T
+  b1hat2::T
+  b2hat2::T
+  b3hat2::T
+  b4hat2::T
   c2::T2
   c3::T2
   c4::T2
 end
+
+#=
+Extrapolation for Cash interior step 3
+dt = c1-c2 since interval is [c2,c1] and c1 = 0
+c2 < c1, so z₂ is the left
+θ =  (c3-c1)/dt the extrapolation point
+z = dt*k
+
+z₂ + Θ*(-4dt*z₂ - 2dt*z₁ - 6y₀ + Θ*(3dt*z₂ + 3z₁ + 6y₀ - 6y₁ ) + 6y₁)/dt
+
+Coefficient on z₁:
+(-2θ + 3θ^2)
+
+Coefficient on z₂:
+(1 + (-4θ + 3θ^2))
+
+Coefficient on y₁-y₀:
+(6θ*(1-θ)/dt)
+
+# Write only in terms of z primatives
+y₁ = uprev + a21*z₁ + γ*z₂
+y₀ = uprev + γ*z₁
+y₁-y₀ = (a21-γ)*z₁ + γ*z₂
+
+θ = 1.1
+Full z₁ coefficient: (-2θ + 3θ^2) + (6θ*(1-θ)/dt)*(a21-γ)
+Full z₂ coefficient: (1 + (-4θ + 3θ^2)) + (6θ*(1-θ)/dt)*γ
+
+f(θ)= (-2θ + 3θ^2) + (6θ*(1-θ)/dt)*(a21-γ)
+g(θ) = (1 + (-4θ + 3θ^2)) + (6θ*(1-θ)/dt)*γ
+t = linspace(0,1.5,100)
+y = f.(t)
+z = g.(t)
+plot(t,y)
+plot!(t,z)
+
+The extrapolation is really bad that far
+Hairer's extrapolation is no better.
+Using constant extrapolations
+=#
 
 function Cash4Tableau(T,T2)
   γ = T(0.435866521508)
@@ -169,9 +213,8 @@ function Cash4Tableau(T,T2)
   c2 = -T2(0.7)
   c3 = T2(0.8)
   c4 = T2(0.924556761814)
-
   Cash4Tableau(γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,
-               b1hat1,b2hat1,b3hat1,b4hat1,c2,c3,c4)
+               b1hat1,b2hat1,b3hat1,b4hat1,b1hat2,b2hat2,b3hat2,b4hat2,c2,c3,c4)
 end
 
 struct Hairer4Tableau{T,T2}
@@ -272,6 +315,7 @@ function Hairer4Tableau(T,T2)
   A = [c1 c2
   γ*c1 a21*c1+γ*c2]
   b = [c3,a31*c1+a32*c2+γ*c3]
+  A\b
   =#
   ANU1= T(88//100)
   ANU2= T(44//100)

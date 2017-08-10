@@ -244,16 +244,17 @@ struct Cash4{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm
   min_newton_iter::Int
   max_newton_iter::Int
   new_jac_conv_bound::T2
+  embedding::Int
 end
         Base.@pure Cash4(;chunk_size=0,autodiff=true,diff_type=:central,
                            linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
                            smooth_est=true,extrapolant=:constant,min_newton_iter=1,
                            max_newton_iter=7,new_jac_conv_bound = 1e-3,
-                           controller = :Predictive) =
-         KenCarp3{chunk_size,autodiff,typeof(linsolve),
+                           controller = :Predictive,embedding=3) =
+         Cash4{chunk_size,autodiff,typeof(linsolve),
                 typeof(κ),typeof(tol),typeof(new_jac_conv_bound),controller}(
                 linsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
-                max_newton_iter,new_jac_conv_bound)
+                max_newton_iter,new_jac_conv_bound,embedding)
 ################################################################################
 
 # Rosenbrock Methods
