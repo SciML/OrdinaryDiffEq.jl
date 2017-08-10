@@ -131,7 +131,7 @@ end
   if length(k)<4 || calcVal
     @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,c1,c2,c3,c4,c5,c6 = cache.tab
     @unpack d1,d3,d4,d5,d6,d7 = cache.tab
-    @unpack k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,utilde,tmp,atmp = cache
+    @unpack k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,tmp = cache
     f(t,uprev,k1)
     @. tmp = uprev+dt*(a21*k1)
     f(t+c1*dt,tmp,k2)
@@ -161,7 +161,7 @@ end
   if length(k)<4 || calcVal
     @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,c1,c2,c3,c4,c5,c6 = cache.tab
     @unpack d1,d3,d4,d5,d6,d7 = cache.tab
-    @unpack k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,utilde,tmp,atmp = cache
+    @unpack k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,tmp = cache
     uidx = eachindex(uprev)
     f(t,uprev,k1)
     @tight_loop_macros for i in uidx
@@ -220,7 +220,7 @@ end
 @muladd function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Tsit5Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<7 || calcVal
     @unpack c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76 = cache.tab
-    @unpack k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp = cache
+    @unpack k1,k2,k3,k4,k5,k6,k7,tmp = cache
     @. tmp = uprev+dt*(a21*k1)
     f(t+c1*dt,tmp,k2)
     @. tmp = uprev+dt*(a31*k1+a32*k2)
@@ -279,7 +279,7 @@ Called to add the extra k9, k10, k11 steps for the Order 5 interpolation when ne
 """
 @muladd function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::BS5Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k) < 8 || calcVal
-    @unpack k1,k2,k3,k4,k5,k6,k7,k8,utilde,uhat,tmp,atmp,atmptilde = cache
+    @unpack k1,k2,k3,k4,k5,k6,k7,k8,tmp = cache
     @unpack c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87 = cache.tab
     @. tmp = uprev+dt*a21*k1
     f(t+c1*dt,tmp,k2)
@@ -338,8 +338,8 @@ end
 
 function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::OwrenZen3Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<4 || calcVal
-    @unpack k1,k2,k3,k4,utilde,tmp,atmp = cache
-    @unpack a21,a31,a32,a41,a42,a43,c1,c2,b1,b2 = cache.tab
+    @unpack k1,k2,k3,k4,tmp = cache
+    @unpack a21,a31,a32,a41,a42,a43,c1,c2 = cache.tab
     a1 = dt*a21
     @. tmp = uprev+a1*k1
     f(t+c1*dt,tmp,k2)
@@ -503,7 +503,7 @@ end
   if length(k)<4 || calcVal
     @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,c1,c2,c3,c4,c5,c6 = cache.tab
     @unpack d1,d3,d4,d5,d6,d7 = cache.tab
-    @unpack k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,utilde,tmp,atmp = cache
+    @unpack k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,tmp = cache
     uidx = eachindex(uprev)
     f(t,uprev,k1)
     @tight_loop_macros for i in uidx
@@ -527,15 +527,15 @@ end
     end
     f(t+dt,tmp,k6)
     @tight_loop_macros for i in uidx
-      update[i] = a71*k1[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i]
+      @inbounds update[i] = a71*k1[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i]
       @inbounds tmp[i] = uprev[i]+dt*update[i]
     end
     f(t+dt,tmp,k7)
     copyat_or_push!(k,1,update)
     @tight_loop_macros for i in uidx
-      bspl[i] = k1[i] - update[i]
-      dense_tmp3[i] = update[i] - k7[i] - bspl[i]
-      dense_tmp4[i] = (d1*k1[i]+d3*k3[i]+d4*k4[i]+d5*k5[i]+d6*k6[i]+d7*k7[i])
+      @inbounds bspl[i] = k1[i] - update[i]
+      @inbounds dense_tmp3[i] = update[i] - k7[i] - bspl[i]
+      @inbounds dense_tmp4[i] = (d1*k1[i]+d3*k3[i]+d4*k4[i]+d5*k5[i]+d6*k6[i]+d7*k7[i])
     end
     copyat_or_push!(k,2,bspl)
     copyat_or_push!(k,3,dense_tmp3)
@@ -548,7 +548,7 @@ end
   if length(k)<4 || calcVal
     @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,c1,c2,c3,c4,c5,c6 = cache.tab
     @unpack d1,d3,d4,d5,d6,d7 = cache.tab
-    @unpack k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,utilde,tmp,atmp = cache
+    @unpack k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,tmp = cache
     uidx = eachindex(uprev)
     f(t,uprev,k1)
     @tight_loop_macros for i in uidx
@@ -607,7 +607,7 @@ end
 @muladd function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Tsit5Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<7 || calcVal
     @unpack c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76 = cache.tab
-    @unpack k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp = cache
+    @unpack k1,k2,k3,k4,k5,k6,k7,tmp = cache
     uidx = eachindex(uprev)
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a21*k1[i])
@@ -680,7 +680,7 @@ Called to add the extra k9, k10, k11 steps for the Order 5 interpolation when ne
 @muladd function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::BS5Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k) < 8 || calcVal
     uidx = eachindex(uprev)
-    @unpack k1,k2,k3,k4,k5,k6,k7,k8,utilde,uhat,tmp,atmp,atmptilde = cache
+    @unpack k1,k2,k3,k4,k5,k6,k7,k8,tmp = cache
     @unpack c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87 = cache.tab
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*a21*k1[i]
