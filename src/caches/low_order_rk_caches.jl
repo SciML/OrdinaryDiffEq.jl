@@ -269,14 +269,12 @@ struct BS5Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDif
   k7::rateType
   k8::rateType
   utilde::uArrayType
-  uhat::uType
   tmp::uType
   atmp::uEltypeNoUnits
-  atmptilde::uEltypeNoUnits
   tab::TabType
 end
 
-u_cache(c::BS5Cache) = (c.utilde,c.uhat,c.atmp,c.atmptilde)
+u_cache(c::BS5Cache) = (c.utilde,c.atmp)
 du_cache(c::BS5Cache) = (c.k1,c.k2,c.k3,c.k4,c.k5,c.k6,c.k7,c.k8)
 
 function alg_cache(alg::BS5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
@@ -289,11 +287,10 @@ function alg_cache(alg::BS5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,u
   k6 = zeros(rate_prototype)
   k7 = zeros(rate_prototype)
   k8 = zeros(rate_prototype)
-  utilde = similar(u,indices(u)); uhat = similar(u,indices(u))
+  utilde = similar(u,indices(u))
   atmp = similar(u,uEltypeNoUnits,indices(u))
   tmp = similar(u)
-  atmptilde = similar(u,uEltypeNoUnits,indices(u))
-  BS5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,utilde,uhat,tmp,atmp,atmptilde,tab)
+  BS5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,utilde,tmp,atmp,tab)
 end
 
 alg_cache(alg::BS5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = BS5ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
