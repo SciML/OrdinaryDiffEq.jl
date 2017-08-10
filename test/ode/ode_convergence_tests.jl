@@ -53,8 +53,15 @@ for i = 1:2
 
   sim15 = test_convergence(dts,prob,SDIRK2())
   @test abs(sim15.𝒪est[:final]-2) < testTol
+
+  sim16 = test_convergence(dts,prob,Kvaerno3())
+  @test abs(sim16.𝒪est[:final]-3) < testTol
+  sim17 = test_convergence(dts,prob,KenCarp3())
+  @test abs(sim17.𝒪est[:final]-3) < testTol
+
 end
 
+#=
 using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase,
       DiffEqProblemLibrary, Base.Test
 
@@ -91,3 +98,9 @@ sol = solve(prob,Kvaerno3())
 sol = solve(prob,KenCarp3())
 sol = solve(prob,SDIRK2())
 sol = solve(prob,TRBDF2())
+
+sol = solve(prob,Kvaerno3(),reltol=1e-6)
+sol = solve(prob,KenCarp3(),reltol=1e-6)
+sol = solve(prob,SDIRK2(),reltol=1e-6)
+sol = solve(prob,TRBDF2(),reltol=1e-6)
+=#

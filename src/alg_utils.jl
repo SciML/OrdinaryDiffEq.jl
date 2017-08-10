@@ -308,7 +308,9 @@ alg_adaptive_order(alg::GenericImplicitEuler) = 0
 alg_adaptive_order(alg::GenericTrapezoid) = 1
 alg_adaptive_order(alg::ImplicitEuler) = 0
 alg_adaptive_order(alg::Trapezoid) = 1
-alg_adaptive_order(alg::TRBDF2) = 2
+ # this is actually incorrect and is purposefully decreased as this tends
+ # to track the real error much better
+alg_adaptive_order(alg::TRBDF2) = 1
 alg_adaptive_order(alg::SDIRK2) = 1
 alg_adaptive_order(alg::Kvaerno3) = 2
 alg_adaptive_order(alg::KenCarp3) = 2
