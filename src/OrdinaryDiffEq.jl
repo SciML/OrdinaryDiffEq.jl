@@ -66,6 +66,7 @@ module OrdinaryDiffEq
   include("tableaus/verner_tableaus.jl")
   include("tableaus/feagin_tableaus.jl")
   include("tableaus/rosenbrock_tableaus.jl")
+  include("tableaus/sdirk_tableaus.jl")
 
   include("integrators/type.jl")
   include("integrators/integrator_utils.jl")
