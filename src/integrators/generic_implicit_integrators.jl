@@ -26,12 +26,12 @@ function (p::ImplicitRHS)(u,resid)
   @. resid = u - p.C - p.a*vecdu1
 end
 
-function initialize!(integrator,cache::C,f=integrator.f) where
+function initialize!(integrator, cache::C) where
     {C<:Union{GenericImplicitEulerConstantCache,GenericTrapezoidConstantCache}}
   cache.uhold[1] = integrator.uprev; cache.C[1] = integrator.uprev
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.fsalfirst = f(integrator.t,integrator.uprev)
+  integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev)
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -39,15 +39,15 @@ function initialize!(integrator,cache::C,f=integrator.f) where
   integrator.k[2] = integrator.fsallast
 end
 
-@muladd function perform_step!(integrator,cache::GenericImplicitEulerConstantCache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+@muladd function perform_step!(integrator, cache::GenericImplicitEulerConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uhold,C,rhs,nl_rhs = cache
   C[1] = uprev
 
   if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     uhold[1] = current_extrapolant(t+dt,integrator)
   elseif integrator.alg.extrapolant == :linear
-    uhold[1] = uprev + integrator.fsalfirst*dt
+    uhold[1] = @. uprev + integrator.fsalfirst*dt
   else # :constant
     uhold[1] = uprev
   end
@@ -64,9 +64,14 @@ end
     # Use 2rd divided differences a la SPICE and Shampine
     uprev2 = integrator.uprev2
     tprev = integrator.tprev
-    DD3 = ((u - uprev)/((dt)*(t+dt-tprev)) + (uprev-uprev2)/((t-tprev)*(t+dt-tprev)))
-    dEst = @. (dt^2)*abs(DD3/6)
-    integrator.EEst = integrator.opts.internalnorm(@. dEst/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+
+    dt1 = 1/(dt*(t+dt-tprev))
+    dt2 = 1/((t-tprev)*(t+dt-tprev))
+    dt3 = dt^2/6
+
+    dEst = @. dt3*abs(dt1*(u - uprev) + dt2*(uprev-uprev2))
+    atmp = calculate_residuals(dEst, uprev, u, integrator.opts.abstol, integrator.opts.abstol)
+    integrator.EEst = integrator.opts.internalnorm(atmp)
   else
     integrator.EEst = 1
   end
@@ -76,28 +81,28 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::C,f=integrator.f) where
+function initialize!(integrator, cache::C) where
     {C<:Union{GenericImplicitEulerCache,GenericTrapezoidCache}}
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  f(integrator.t,integrator.uprev,integrator.fsalfirst)
+  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst)
 
+  # Avoid undefined entries if k is an array of arrays
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
 end
 
-@muladd function perform_step!(integrator,cache::GenericImplicitEulerCache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
-  uidx = eachindex(integrator.uprev)
+@muladd function perform_step!(integrator, cache::GenericImplicitEulerCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack C,dual_cache,k,nl_rhs,rhs,uhold = cache
   copy!(C,uprev)
 
   if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     current_extrapolant!(u,t+dt,integrator)
   elseif integrator.alg.extrapolant == :linear
-    u .= uprev .+ integrator.fsalfirst.*dt
+    @. u = uprev + integrator.fsalfirst*dt
   else
     copy!(u,uprev)
   end
@@ -112,13 +117,14 @@ end
     # Use 2rd divided differences a la SPICE and Shampine
     uprev2 = integrator.uprev2
     tprev = integrator.tprev
-    dt1 = (dt)*(t+dt-tprev)
-    dt2 = (t-tprev)*(t+dt-tprev)
-    @tight_loop_macros for (i,atol,rtol) in zip(eachindex(u),Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
-      @inbounds DD3 = (u[i] - uprev[i])/dt1 + (uprev[i]-uprev2[i])/dt2
-      dEst = (dt^2)*abs(DD3)/6
-      @inbounds k[i] = dEst/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
-    end
+
+    dt1 = 1/((dt)*(t+dt-tprev))
+    dt2 = 1/((t-tprev)*(t+dt-tprev))
+    dt3 = dt^2/6
+
+    @. k = dt3*abs(dt1*(u - uprev) + dt2*(uprev-uprev2))
+    # does not work with units - additional unitless array required!
+    calculate_residuals!(k, k, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
     integrator.EEst = integrator.opts.internalnorm(k)
   else
     integrator.EEst = 1
@@ -127,9 +133,9 @@ end
   f(t+dt,u,k)
 end
 
-function initialize!(integrator,cache::GenericTrapezoidConstantCache,f=integrator.f)
+function initialize!(integrator, cache::GenericTrapezoidConstantCache)
   cache.uhold[1] = integrator.uprev; cache.C[1] = integrator.uprev
-  integrator.fsalfirst = f(integrator.t,integrator.uprev)
+  integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
 
@@ -139,15 +145,15 @@ function initialize!(integrator,cache::GenericTrapezoidConstantCache,f=integrato
   integrator.k[2] = integrator.fsallast
 end
 
-function perform_step!(integrator,cache::GenericTrapezoidConstantCache,f=integrator.f)
-  @unpack t,dt,uprev,u,k = integrator
+function perform_step!(integrator, cache::GenericTrapezoidConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,u,k,f = integrator
   @unpack uhold,C,rhs,nl_rhs = cache
   C[1] = first(uprev) + (dt/2)*first(integrator.fsalfirst)
 
   if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     uhold[1] = current_extrapolant(t+dt,integrator)
   elseif integrator.alg.extrapolant == :linear
-    uhold[1] = uprev + integrator.fsalfirst*dt
+    uhold[1] = @. uprev + integrator.fsalfirst*dt
   else # :constant
     uhold[1] = uprev
   end
@@ -167,10 +173,15 @@ function perform_step!(integrator,cache::GenericTrapezoidConstantCache,f=integra
       tprev = integrator.tprev
       uprev3 = cache.uprev3
       tprev2 = cache.tprev2
-      DD31 = ((u - uprev)/((dt)*(t+dt-tprev)) + (uprev-uprev2)/((t-tprev)*(t+dt-tprev)))
-      DD30 = ((uprev - uprev2)/((t-tprev)*(t-tprev2)) + (uprev2-uprev3)/((tprev-tprev2)*(t-tprev2)))
-      dEst = @. (dt^3)*abs(((DD31 - DD30)/(t+dt-tprev2))/12)
-      integrator.EEst = integrator.opts.internalnorm(@. dEst/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+
+      dt1 = 1/(dt*(t+dt-tprev))
+      dt2 = (tprev-dt-tprev2)/((t-tprev)*(t+dt-tprev)*(t-tprev2))
+      dt3 = -1/((tprev-tprev2)*(t-tprev2))
+      dt4 = dt^3/abs(12*(t+dt-tprev2))
+
+      dEst = @. dt4*abs(dt1*(u-uprev) + dt2*(uprev-uprev2) + dt3*(uprev2-uprev3))
+      atmp = calculate_residuals(dEst, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+      integrator.EEst = integrator.opts.internalnorm(atmp)
       if integrator.EEst <= 1
         cache.uprev3 = uprev2
         cache.tprev2 = tprev
@@ -189,19 +200,19 @@ function perform_step!(integrator,cache::GenericTrapezoidConstantCache,f=integra
   @pack integrator = t,dt,u
 end
 
-function initialize!(integrator,cache::GenericTrapezoidCache,f=integrator.f)
+function initialize!(integrator, cache::GenericTrapezoidCache)
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = cache.k
-  f(integrator.t,integrator.uprev,integrator.fsalfirst)
+  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
 end
 
-function perform_step!(integrator,cache::GenericTrapezoidCache,f=integrator.f)
-  @unpack t,dt,uprev,u,k = integrator
+function perform_step!(integrator, cache::GenericTrapezoidCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   uidx = eachindex(integrator.uprev)
   @unpack C,dual_cache,k,rhs,nl_rhs,uhold = cache
   C .= vec(uprev) .+ (dt/2).*vec(integrator.fsalfirst)
@@ -209,7 +220,7 @@ function perform_step!(integrator,cache::GenericTrapezoidCache,f=integrator.f)
   if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     current_extrapolant!(u,t+dt,integrator)
   elseif integrator.alg.extrapolant == :linear
-    u .= uprev .+ integrator.fsalfirst.*dt
+    @. u = uprev + integrator.fsalfirst*dt
   else
     copy!(u,uprev)
   end
@@ -228,16 +239,15 @@ function perform_step!(integrator,cache::GenericTrapezoidCache,f=integrator.f)
       tprev = integrator.tprev
       uprev3 = cache.uprev3
       tprev2 = cache.tprev2
-      dt1 = (dt)*(t+dt-tprev)
-      dt2 = ((t-tprev)*(t+dt-tprev))
-      dt3 = ((t-tprev)*(t-tprev2))
-      dt4 = ((tprev-tprev2)*(t-tprev2))
-      @tight_loop_macros for (i,atol,rtol) in zip(eachindex(u),Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
-        @inbounds DD31 = (u[i] - uprev[i])/dt1 + (uprev[i]-uprev2[i])/dt2
-        @inbounds DD30 = (uprev[i] - uprev2[i])/dt3 + (uprev2[i]-uprev3[i])/dt4
-        dEst = (dt^3)*abs(((DD31 - DD30)/(t+dt-tprev2))/12)
-        @inbounds k[i] = dEst/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
-      end
+
+      dt1 = 1/(dt*(t+dt-tprev))
+      dt2 = (tprev-dt-tprev2)/((t-tprev)*(t+dt-tprev)*(t-tprev2))
+      dt3 = -1/((tprev-tprev2)*(t-tprev2))
+      dt4 = dt^3/abs(12*(t+dt-tprev2))
+
+      @. k = dt4*abs(dt1*(u-uprev) + dt2*(uprev-uprev2) + dt3*(uprev2-uprev3))
+      # does not work with units - additional unitless array required!
+      calculate_residuals!(k, k, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
       integrator.EEst = integrator.opts.internalnorm(k)
       if integrator.EEst <= 1
         copy!(cache.uprev3,uprev2)
