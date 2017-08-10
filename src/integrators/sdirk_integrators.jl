@@ -524,6 +524,7 @@ end
 
   ##### Solve Trapezoid Step
 
+  # TODO: Add extrapolation
   zᵧ = zprev
   iter = 1
   uᵧ = @. (uprev + d*zprev) + d*zᵧ
@@ -688,6 +689,8 @@ end
   end
 
   @. zprev = dt*integrator.fsalfirst
+
+  # TODO: Add extrapolation
   @. zᵧ = zprev
   iter = 1
 
@@ -1161,6 +1164,7 @@ end
 
   ##### Step 2
 
+  # TODO: Add extrapolation for guess
   z₂ = z₁
 
   iter = 1
