@@ -287,7 +287,7 @@ end
 
   cache.ηold = η
   cache.newton_iters = iter
-  u = u .+ dz
+  u = @. u + (z + dz)
 
   if integrator.opts.adaptive
     if integrator.iter > 2
@@ -430,7 +430,7 @@ end
 
   cache.ηold = η
   cache.newton_iters = iter
-  u .+= dz
+  @. u += z + dz
 
   if integrator.opts.adaptive
     if integrator.iter > 2
@@ -492,12 +492,6 @@ end
   c1 = γ/4
   c2 = a2/2
 
-  # b1 = ω
-  # bhat1 = (1-ω)/3
-  # b2 = ω
-  # bhat2 = (3ω + 1)/3
-  # b3 = d
-  # bhat3 = d/3
   btilde1 = (1-sqrt(2))/3
   btilde2 = 1/3
   btilde3 = (sqrt(2)-2)/3
@@ -644,12 +638,6 @@ end
   c1 = γ/4
   c2 = a2/2
 
-  # b1 = ω
-  # bhat1 = (1-ω)/3
-  # b2 = ω
-  # bhat2 = (3ω + 1)/3
-  # b3 = d
-  # bhat3 = d/3
   btilde1 = (1-sqrt(2))/3
   btilde2 = 1/3
   btilde3 = (sqrt(2)-2)/3

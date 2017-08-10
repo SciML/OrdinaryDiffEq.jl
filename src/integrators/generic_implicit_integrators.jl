@@ -204,7 +204,7 @@ function initialize!(integrator, cache::GenericTrapezoidCache)
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = cache.k
-  f(integrator.t,integrator.uprev,integrator.fsalfirst)
+  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
