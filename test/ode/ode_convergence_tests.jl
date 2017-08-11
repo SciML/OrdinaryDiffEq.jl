@@ -35,6 +35,7 @@ for i = 1:2
   sim12 = test_convergence(dts,prob,
           GenericImplicitEuler(nlsolve=NLSOLVEJL_SETUP(autodiff=true)))
   @test abs(sim12.𝒪est[:final]-1) < testTol
+
   sim122 = test_convergence(dts,prob,
            GenericImplicitEuler(nlsolve=NLSOLVEJL_SETUP(autodiff=false)))
 
@@ -44,6 +45,7 @@ for i = 1:2
   sim14 = test_convergence(dts,prob,
           GenericTrapezoid(nlsolve=NLSOLVEJL_SETUP(autodiff=true)))
   @test abs(sim14.𝒪est[:final]-2) < testTol
+
   sim142 = test_convergence(dts,prob,
            GenericTrapezoid(nlsolve=NLSOLVEJL_SETUP(autodiff=false)))
   @test abs(sim142.𝒪est[:final]-2) < testTol
@@ -53,6 +55,9 @@ for i = 1:2
 
   sim15 = test_convergence(dts,prob,SDIRK2())
   @test abs(sim15.𝒪est[:final]-2) < testTol
+
+  sim152 = test_convergence(dts,prob,SSPSDIRK2())
+  @test abs(sim152.𝒪est[:final]-2) < testTol
 
   sim16 = test_convergence(dts,prob,Kvaerno3())
   @test abs(sim16.𝒪est[:final]-3) < testTol
@@ -73,6 +78,7 @@ for i = 1:2
 
 end
 
+#=
 using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase,
       DiffEqProblemLibrary, Base.Test
 
@@ -80,6 +86,7 @@ using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase,
 testTol = 0.2
 dts = 1.//2.^(8:-1:4)
 prob = prob_ode_linear
+
 dts = 1.//2.^(7:-1:4)
 sim13 = test_convergence(dts,prob,Kvaerno4())
 @test abs(sim13.𝒪est[:final]-3) < testTol
@@ -92,6 +99,7 @@ sol = solve(prob,TRBDF2(),reltol=1e-6)
 
 prob = prob_ode_2Dlinear
 dts = 1.//2.^(7:-1:4)
+
 sim13 = test_convergence(dts,prob,Kvaerno4())
 @test abs(sim13.𝒪est[:final]-3) < testTol
 
@@ -100,3 +108,4 @@ sol = solve(prob,TRBDF2())
 
 sol = solve(prob,Kvaerno4(),reltol=1e-6)
 sol = solve(prob,TRBDF2(),reltol=1e-6)
+=#
