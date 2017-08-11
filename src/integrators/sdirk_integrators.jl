@@ -13,7 +13,7 @@ end
   @unpack t,dt,uprev,u,f = integrator
   @unpack uf,κ,tol = cache
 
-  κtol = κ*tol # save in cache instead of κ and tol?
+  κtol = κ*tol
 
   if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     u = current_extrapolant(t+dt,integrator)
@@ -34,6 +34,7 @@ end
 
   z = u .- uprev
   iter = 1
+  u = uprev .+ z
   b = dt.*f(t+dt,u) .- z
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
@@ -45,8 +46,8 @@ end
   fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
-    u = u .+ dz
-    b = dt.*f(t+dt,uprev + z) .- z
+    u = uprev .+ z
+    b = dt.*f(t+dt,u) .- z
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -67,18 +68,23 @@ end
 
   cache.ηold = η
   cache.newton_iters = iter
-  u = u .+ dz
+  u = uprev .+ z
 
   if integrator.opts.adaptive && integrator.success_iter > 0
-    # Use 2rd divided differences a la SPICE and Shampine
+    # local truncation error (LTE) bound by dt^2/2*max|y''(t)|
+    # use 2nd divided difference (DD) a la SPICE and Shampine
     uprev2 = integrator.uprev2
     tprev = integrator.tprev
 
-    dt1 = 1/(dt*(t+dt-tprev))
-    dt2 = 1/((t-tprev)*(t+dt-tprev))
-    dt3 = dt^2/6
+    # TODO: change recursive calculation to better algorithm
+    diff10 = t-tprev
+    diff11 = dt
+    diff20 = t+dt-tprev
+    c = 7/12 # default correction factor in SPICE (LTE overestimated by DD)
+    r = c*dt^2 # by mean value theorem 2nd DD equals y''(s)/2 for some s
 
-    dEst = @. dt3*abs(dt1*(u - uprev) + dt2*(uprev-uprev2))
+    dEst = @. r*abs(((u-uprev)/diff11-(uprev-uprev2)/diff10)/diff20)
+
     atmp = calculate_residuals(dEst, uprev, u, integrator.opts.abstol,
                                integrator.opts.reltol)
     integrator.EEst = integrator.opts.internalnorm(atmp)
@@ -108,7 +114,7 @@ end
   @unpack uf,du1,dz,z,k,J,W,jac_config,κ,tol = cache
   mass_matrix = integrator.sol.prob.mass_matrix
 
-  κtol = κ*tol # save in cache instead of κ and tol?
+  κtol = κ*tol
 
   if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     current_extrapolant!(u,t+dt,integrator)
@@ -151,6 +157,7 @@ end
 
   @. z = u - uprev
   iter = 1
+  @. u = uprev + z
   f(t+dt,u,k)
   scale!(k,dt)
   k .-= z
@@ -168,7 +175,7 @@ end
   fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
-    u .+= dz
+    @. u = uprev + z
     f(t+dt,u,k)
     scale!(k,dt)
     k .-= z
@@ -196,18 +203,23 @@ end
 
   cache.ηold = η
   cache.newton_iters = iter
-  u .+= dz
+  @. u = uprev + z
 
   if integrator.opts.adaptive && integrator.success_iter > 0
-    # Use 2rd divided differences a la SPICE and Shampine
+    # local truncation error (LTE) bound by dt^2/2*max|y''(t)|
+    # use 2nd divided difference (DD) a la SPICE and Shampine
     uprev2 = integrator.uprev2
     tprev = integrator.tprev
 
-    dt1 = 1/(dt*(t+dt-tprev))
-    dt2 = 1/((t-tprev)*(t+dt-tprev))
-    dt3 = dt^2/6
+    # TODO: change recursive calculation to better algorithm
+    diff10 = t-tprev
+    diff11 = dt
+    diff20 = t+dt-tprev
+    c = 7/12 # default correction factor in SPICE (LTE overestimated by DD)
+    r = c*dt^2 # by mean value theorem 2nd DD equals y''(s)/2 for some s
 
-    @. k = dt3*abs(dt1*(u - uprev) + dt2*(uprev-uprev2))
+    @. k = r*abs(((u-uprev)/diff11-(uprev-uprev2)/diff10)/diff20)
+
     # does not work with units - additional unitless array required!
     calculate_residuals!(k, k, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
     integrator.EEst = integrator.opts.internalnorm(k)
@@ -234,7 +246,7 @@ end
   @unpack uf,κ,tol = cache
   dto2 = dt/2
 
-  κtol = κ*tol # save in cache instead of κ and tol?
+  κtol = κ*tol
 
   if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     u = current_extrapolant(t+dt,integrator)
@@ -252,8 +264,10 @@ end
     J = ForwardDiff.derivative(uf,uprev)
     W = 1 - dto2*J
   end
+
   z = u .- uprev
   iter = 1
+  u = uprev .+ z
   b = dto2.*f(t+dto2,u) .- z
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
@@ -265,7 +279,7 @@ end
   fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
-    u = u .+ dz
+    u = uprev .+ z
     b = dto2.*f(t+dto2,u) .- z
     dz = W\b
     ndzprev = ndz
@@ -287,23 +301,32 @@ end
 
   cache.ηold = η
   cache.newton_iters = iter
-  u = @. u + (z + dz)
+  u = @. uprev + 2*z
 
   if integrator.opts.adaptive
     if integrator.iter > 2
-      # Use 3rd divided differences a la SPICE and Shampine
+      # local truncation error (LTE) bound by dt^3/12*max|y'''(t)|
+      # use 3rd divided differences (DD) a la SPICE and Shampine
       uprev2 = integrator.uprev2
       tprev = integrator.tprev
       uprev3 = cache.uprev3
       tprev2 = cache.tprev2
 
-      dt1 = 1/(dt*(t+dt-tprev))
-      dt2 = (tprev-dt-tprev2)/((t-tprev)*(t+dt-tprev)*(t-tprev2))
-      dt3 = -1/((tprev-tprev2)*(t-tprev2))
-      dt4 = dt^3/abs(12*(t+dt-tprev2))
+      # TODO: change recursive calculation to better algorithm
+      diff10 = tprev-tprev2
+      diff11 = t-tprev
+      diff12 = dt
+      diff20 = t-tprev2
+      diff21 = t+dt-tprev
+      diff30 = t+dt-tprev2
+      c = 7/12 # default correction factor in SPICE (LTE overestimated by DD)
+      r = c*dt^3/2 # by mean value theorem 3rd DD equals y'''(s)/6 for some s
 
-      dEst = @. dt4*abs(dt1*(u-uprev) + dt2*(uprev-uprev2) + dt3*(uprev2-uprev3))
-      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
+      DD31 = @. ((u-uprev)/diff12 - (uprev-uprev2)/diff11)/diff21
+      DD30 = @. ((uprev-uprev2)/diff11 - (uprev2-uprev3)/diff10)/diff20
+      dEst = @. r*abs((DD31-DD30)/diff30) # scaled 3rd DD
+
+      atmp = calculate_residuals(dEst, uprev, u, integrator.opts.abstol,
                                  integrator.opts.reltol)
       integrator.EEst = integrator.opts.internalnorm(atmp)
       if integrator.EEst <= 1
@@ -340,7 +363,7 @@ end
   @unpack uf,du1,dz,z,k,J,W,jac_config,κ,tol = cache
   mass_matrix = integrator.sol.prob.mass_matrix
 
-  κtol = κ*tol # save in cache instead of κ and tol?
+  κtol = κ*tol
 
   if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     current_extrapolant!(u,t+dt,integrator)
@@ -385,6 +408,7 @@ end
 
   @. z = u - uprev
   iter = 1
+  @. u = uprev + z
   f(t+dto2,u,k)
   scale!(k,dto2)
   k .-= z
@@ -399,10 +423,11 @@ end
   η = max(cache.ηold,eps(first(u)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
+
   fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
-    u .+= dz
+    @. u = uprev + z
     f(t+dto2,u,k)
     scale!(k,dto2)
     k .-= z
@@ -430,22 +455,31 @@ end
 
   cache.ηold = η
   cache.newton_iters = iter
-  @. u += z + dz
+  @. u = uprev + 2*z
 
   if integrator.opts.adaptive
     if integrator.iter > 2
-      # Use 3rd divided differences a la SPICE and Shampine
+      # local truncation error (LTE) bound by dt^3/12*max|y'''(t)|
+      # use 3rd divided difference (DD) a la SPICE and Shampine
       uprev2 = integrator.uprev2
       tprev = integrator.tprev
       uprev3 = cache.uprev3
       tprev2 = cache.tprev2
 
-      dt1 = 1/(dt*(t+dt-tprev))
-      dt2 = (tprev-dt-tprev2)/((t-tprev)*(t+dt-tprev)*(t-tprev2))
-      dt3 = -1/((tprev-tprev2)*(t-tprev2))
-      dt4 = dt^3/abs(12*(t+dt-tprev2))
+      # TODO: change recursive calculation to better algorithm
+      diff10 = tprev-tprev2
+      diff11 = t-tprev
+      diff12 = dt
+      diff20 = t-tprev2
+      diff21 = t+dt-tprev
+      diff30 = t+dt-tprev2
+      c = 7/12 # default correction factor in SPICE (LTE overestimated by DD)
+      r = c*dt^3/2 # by mean value theorem 3rd DD equals y'''(s)/6 for some s
 
-      @. k = dt4*abs(dt1*(u-uprev) + dt2*(uprev-uprev2) + dt3*(uprev2-uprev3))
+      @. z = ((u-uprev)/diff12 - (uprev-uprev2)/diff11)/diff21 # DD31
+      @. k = ((uprev-uprev2)/diff11 - (uprev2-uprev3)/diff10)/diff20 # DD30
+      @. k = r*abs((z-k)/diff30) # scaled 3rd DD
+
       # does not work with units - additional unitless array required!
       calculate_residuals!(k, k, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
       integrator.EEst = integrator.opts.internalnorm(k)
@@ -489,14 +523,11 @@ end
   a1 = -sqrt(2)/2
   a2 = 1 + sqrt(2)/2
 
-  c1 = γ/4
-  c2 = a2/2
-
   btilde1 = (1-sqrt(2))/3
   btilde2 = 1/3
   btilde3 = (sqrt(2)-2)/3
 
-  κtol = κ*tol # save in cache instead of κ and tol?
+  κtol = κ*tol
 
   γdt = γ*dt
   ddt = d*dt
@@ -510,14 +541,16 @@ end
     W = 1 - ddt*J
   end
 
-  # TODO: Add extrapolant initial guess
   zprev = dt.*integrator.fsalfirst
 
   ##### Solve Trapezoid Step
 
-  zᵧ = zprev
+  # TODO: Add extrapolant initial guess
+  zᵧ = zprev # might change hence equality not used in calculations below
+
   iter = 1
-  uᵧ = @. uprev + γ*zᵧ
+  tmp = @. uprev + d*zprev # reduces calculations in Newton iteration
+  uᵧ = @. tmp + d*zᵧ
   b = dt.*f(t+γdt,uᵧ) .- zᵧ
   Δzᵧ = W\b
   ndz = integrator.opts.internalnorm(Δzᵧ)
@@ -529,7 +562,7 @@ end
   fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
-    uᵧ = @. uᵧ + d*Δzᵧ
+    uᵧ = @. tmp + d*zᵧ
     b = dt.*f(t+γdt,uᵧ) .- zᵧ
     Δzᵧ = W\b
     ndzprev = ndz
@@ -552,10 +585,19 @@ end
   ################################## Solve BDF2 Step
 
   ### Initial Guess From Shampine
+
+  #=
+  Original assignments
+    uᵧ = @. (uprev + d*zprev) + d*zᵧ
+    z = @. (1.5 + sqrt(2))*zprev + (2.5 + 2sqrt(2))*zᵧ - (6 + 4.5sqrt(2))*(uᵧ - uprev)
+  with d = (2 - sqrt(2))/2 can be simplified to
+    z = @. -sqrt(2)/2*zprev + (1 + sqrt(2)/2)*zᵧ
+  =#
   z = @. a1*zprev + a2*zᵧ
 
   iter = 1
-  u = @. uprev + c1*zprev + c2*zᵧ
+  tmp = @. uprev + ω*zprev + ω*zᵧ # reduces calculations in Newton iteration
+  u = @. tmp + d*z
   b = dt.*f(t+dt,u) .- z
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
@@ -567,7 +609,7 @@ end
   fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
-    u = @. u + d*dz
+    u = @. tmp + d*z
     b = dt.*f(t+dt,u) .- z
     dz = W\b
     ndzprev = ndz
@@ -587,18 +629,18 @@ end
     return
   end
 
-  u = @. u + d*dz
+  u = @. tmp + d*z
 
   ################################### Finalize
 
   if integrator.opts.adaptive
-    est = @. btilde1*zprev + btilde2*zᵧ + btilde3*z
+    tmp = @. btilde1*zprev + btilde2*zᵧ + btilde3*z
     if integrator.alg.smooth_est # From Shampine
-      Est = W\est
+      est = W\tmp
     else
-      Est = est
+      est = tmp
     end
-    atmp = calculate_residuals(Est, uprev, u, integrator.opts.abstol,
+    atmp = calculate_residuals(est, uprev, u, integrator.opts.abstol,
                                integrator.opts.reltol)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
@@ -623,7 +665,7 @@ end
 
 @muladd function perform_step!(integrator, cache::TRBDF2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
-  @unpack uf,du1,uᵧ,Δzᵧ,Δz,zprev,zᵧ,z,k,J,W,jac_config,est,κ,tol = cache
+  @unpack uf,du1,uᵧ,Δzᵧ,Δz,zprev,zᵧ,z,k,J,W,jac_config,tmp,κ,tol = cache
   mass_matrix = integrator.sol.prob.mass_matrix
 
   # Precalculations
@@ -635,14 +677,11 @@ end
   a1 = -sqrt(2)/2
   a2 = 1 + sqrt(2)/2
 
-  c1 = γ/4
-  c2 = a2/2
-
   btilde1 = (1-sqrt(2))/3
   btilde2 = 1/3
   btilde3 = (sqrt(2)-2)/3
 
-  κtol = κ*tol # save in cache instead of κ and tol?
+  κtol = κ*tol
 
   γdt = γ*dt
   ddt = d*dt
@@ -678,14 +717,16 @@ end
     end
   end
 
-  # TODO: Add extrapolant initial guess
   @. zprev = dt*integrator.fsalfirst
 
   ##### Solve Trapezoid Step
 
-  @. zᵧ = zprev
+  # TODO: Add extrapolant initial guess
+  @. zᵧ = zprev # might change hence equality not used in calculations below
+
   iter = 1
-  @. uᵧ = uprev + γ*zprev
+  @. tmp = uprev + d*zprev # reduces calculations in Newton iteration
+  @. uᵧ = tmp + d*zᵧ
   f(t+γdt,uᵧ,k)
   @. k = dt*k - zᵧ
   if has_invW(f)
@@ -702,7 +743,7 @@ end
   fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
-    @. uᵧ += d*Δzᵧ
+    @. uᵧ = tmp + d*zᵧ
     f(t+γdt,uᵧ,k)
     @. k = dt*k - zᵧ
     if has_invW(f)
@@ -730,10 +771,19 @@ end
   ################################## Solve BDF2 Step
 
   ### Initial Guess From Shampine
+
+  #=
+  Original assignments
+    @. uᵧ = (uprev + d*zprev) + d*zᵧ
+    @. z = (1.5 + sqrt(2))*zprev + (2.5 + 2sqrt(2))*zᵧ - (6 + 4.5sqrt(2))*(uᵧ - uprev)
+  with d = (2 - sqrt(2))/2 can be simplified to
+    @. z = -sqrt(2)/2*zprev + (1 + sqrt(2)/2)*zᵧ
+  =#
   @. z = a1*zprev + a2*zᵧ
 
   iter = 1
-  @. u = uprev + c1*zprev + c2*zᵧ
+  @. tmp = uprev + ω*zprev + ω*zᵧ # reduces calculations in Newton iteration
+  @. u = tmp + d*z
   f(t+dt,u,k)
   @. k = dt*k - z
   if has_invW(f)
@@ -750,7 +800,7 @@ end
   fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
-    @. u += d*Δz
+    @. u = tmp + d*z
     f(t+dt,u,k)
     @. k = dt*k - z
     if has_invW(f)
@@ -775,24 +825,24 @@ end
     return
   end
 
-  @. u += d*Δz
+  @. u = tmp + d*z
 
   ################################### Finalize
 
   if integrator.opts.adaptive
-    @. est = btilde1*zprev + btilde2*zᵧ + btilde3*z
+    @. tmp = btilde1*zprev + btilde2*zᵧ + btilde3*z
     if integrator.alg.smooth_est # From Shampine
       if has_invW(f)
-        A_mul_B!(vec(k),W,vec(est))
+        A_mul_B!(vec(k),W,vec(tmp))
       else
-        integrator.alg.linsolve(vec(k),W,vec(est),false)
+        integrator.alg.linsolve(vec(k),W,vec(tmp),false)
       end
     else
-      k .= est
+      k .= tmp
     end
     # does not work with units - additional unitless array required!
-    calculate_residuals!(est, k, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
-    integrator.EEst = integrator.opts.internalnorm(est)
+    calculate_residuals!(tmp, k, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+    integrator.EEst = integrator.opts.internalnorm(tmp)
   end
 
   @. integrator.fsallast = z/dt

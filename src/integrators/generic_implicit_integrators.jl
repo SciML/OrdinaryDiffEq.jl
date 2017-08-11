@@ -61,15 +61,20 @@ end
   u = uhold[1]
 
   if integrator.opts.adaptive && integrator.success_iter > 0
-    # Use 2rd divided differences a la SPICE and Shampine
+    # local truncation error (LTE) bound by dt^2/2*max|y''(t)|
+    # use 2nd divided difference (DD) a la SPICE and Shampine
     uprev2 = integrator.uprev2
     tprev = integrator.tprev
 
-    dt1 = 1/(dt*(t+dt-tprev))
-    dt2 = 1/((t-tprev)*(t+dt-tprev))
-    dt3 = dt^2/6
+    # TODO: change recursive calculation to better algorithm
+    diff10 = t-tprev
+    diff11 = dt
+    diff20 = t+dt-tprev
+    c = 7/12 # default correction factor in SPICE (LTE overestimated by DD)
+    r = c*dt^2 # by mean value theorem 2nd DD equals y''(s)/2 for some s
 
-    dEst = @. dt3*abs(dt1*(u - uprev) + dt2*(uprev-uprev2))
+    dEst = @. r*abs(((u-uprev)/diff11-(uprev-uprev2)/diff10)/diff20)
+
     atmp = calculate_residuals(dEst, uprev, u, integrator.opts.abstol, integrator.opts.abstol)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   else
@@ -114,15 +119,20 @@ end
   copy!(uhold,nlres)
 
   if integrator.opts.adaptive && integrator.success_iter > 0
-    # Use 2rd divided differences a la SPICE and Shampine
+    # local truncation error (LTE) bound by dt^2/2*max|y''(t)|
+    # use 2nd divided difference (DD) a la SPICE and Shampine
     uprev2 = integrator.uprev2
     tprev = integrator.tprev
 
-    dt1 = 1/((dt)*(t+dt-tprev))
-    dt2 = 1/((t-tprev)*(t+dt-tprev))
-    dt3 = dt^2/6
+    # TODO: change recursive calculation to better algorithm
+    diff10 = t-tprev
+    diff11 = dt
+    diff20 = t+dt-tprev
+    c = 7/12 # default correction factor in SPICE (LTE overestimated by DD)
+    r = c*dt^2 # by mean value theorem 2nd DD equals y''(s)/2 for some s
 
-    @. k = dt3*abs(dt1*(u - uprev) + dt2*(uprev-uprev2))
+    @. k = r*abs(((u-uprev)/diff11-(uprev-uprev2)/diff10)/diff20)
+
     # does not work with units - additional unitless array required!
     calculate_residuals!(k, k, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
     integrator.EEst = integrator.opts.internalnorm(k)
@@ -168,18 +178,27 @@ function perform_step!(integrator, cache::GenericTrapezoidConstantCache, repeat_
 
   if integrator.opts.adaptive
     if integrator.iter > 2
-      # Use 3rd divided differences a la SPICE and Shampine
+      # local truncation error (LTE) bound by dt^3/12*max|y'''(t)|
+      # use 3rd divided differences (DD) a la SPICE and Shampine
       uprev2 = integrator.uprev2
       tprev = integrator.tprev
       uprev3 = cache.uprev3
       tprev2 = cache.tprev2
 
-      dt1 = 1/(dt*(t+dt-tprev))
-      dt2 = (tprev-dt-tprev2)/((t-tprev)*(t+dt-tprev)*(t-tprev2))
-      dt3 = -1/((tprev-tprev2)*(t-tprev2))
-      dt4 = dt^3/abs(12*(t+dt-tprev2))
+      # TODO: change recursive calculation to better algorithm
+      diff10 = tprev-tprev2
+      diff11 = t-tprev
+      diff12 = dt
+      diff20 = t-tprev2
+      diff21 = t+dt-tprev
+      diff30 = t+dt-tprev2
+      c = 7/12 # default correction factor in SPICE (LTE overestimated by DD)
+      r = c*dt^3/2 # by mean value theorem 3rd DD equals y'''(s)/6 for some s
 
-      dEst = @. dt4*abs(dt1*(u-uprev) + dt2*(uprev-uprev2) + dt3*(uprev2-uprev3))
+      DD31 = @. ((u-uprev)/diff12 - (uprev-uprev2)/diff11)/diff21
+      DD30 = @. ((uprev-uprev2)/diff11 - (uprev2-uprev3)/diff10)/diff20
+      dEst = @. r*abs((DD31-DD30)/diff30) # scaled 3rd DD
+
       atmp = calculate_residuals(dEst, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
       integrator.EEst = integrator.opts.internalnorm(atmp)
       if integrator.EEst <= 1
@@ -214,7 +233,7 @@ end
 function perform_step!(integrator, cache::GenericTrapezoidCache, repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
   uidx = eachindex(integrator.uprev)
-  @unpack C,dual_cache,k,rhs,nl_rhs,uhold = cache
+  @unpack C,dual_cache,k,rhs,nl_rhs,uhold,tmp = cache
   C .= vec(uprev) .+ (dt/2).*vec(integrator.fsalfirst)
 
   if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
@@ -234,18 +253,27 @@ function perform_step!(integrator, cache::GenericTrapezoidCache, repeat_step=fal
 
   if integrator.opts.adaptive
     if integrator.iter > 2
-      # Use 3rd divided differences a la SPICE and Shampine
+      # local truncation error (LTE) bound by dt^3/12*max|y'''(t)|
+      # use 3rd divided difference (DD) a la SPICE and Shampine
       uprev2 = integrator.uprev2
       tprev = integrator.tprev
       uprev3 = cache.uprev3
       tprev2 = cache.tprev2
 
-      dt1 = 1/(dt*(t+dt-tprev))
-      dt2 = (tprev-dt-tprev2)/((t-tprev)*(t+dt-tprev)*(t-tprev2))
-      dt3 = -1/((tprev-tprev2)*(t-tprev2))
-      dt4 = dt^3/abs(12*(t+dt-tprev2))
+      # TODO: change recursive calculation to better algorithm
+      diff10 = tprev-tprev2
+      diff11 = t-tprev
+      diff12 = dt
+      diff20 = t-tprev2
+      diff21 = t+dt-tprev
+      diff30 = t+dt-tprev2
+      c = 7/12 # default correction factor in SPICE (LTE overestimated by DD)
+      r = c*dt^3/2 # by mean value theorem 3rd DD equals y'''(s)/6 for some s
 
-      @. k = dt4*abs(dt1*(u-uprev) + dt2*(uprev-uprev2) + dt3*(uprev2-uprev3))
+      @. tmp = ((u-uprev)/diff12 - (uprev-uprev2)/diff11)/diff21 # DD31
+      @. k = ((uprev-uprev2)/diff11 - (uprev2-uprev3)/diff10)/diff20 # DD30
+      @. k = r*abs((tmp-k)/diff30) # scaled 3rd DD
+
       # does not work with units - additional unitless array required!
       calculate_residuals!(k, k, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
       integrator.EEst = integrator.opts.internalnorm(k)
