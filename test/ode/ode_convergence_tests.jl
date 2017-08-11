@@ -35,6 +35,7 @@ for i = 1:2
   sim12 = test_convergence(dts,prob,
           GenericImplicitEuler(nlsolve=NLSOLVEJL_SETUP(autodiff=true)))
   @test abs(sim12.𝒪est[:final]-1) < testTol
+
   sim122 = test_convergence(dts,prob,
            GenericImplicitEuler(nlsolve=NLSOLVEJL_SETUP(autodiff=false)))
 
@@ -44,6 +45,7 @@ for i = 1:2
   sim14 = test_convergence(dts,prob,
           GenericTrapezoid(nlsolve=NLSOLVEJL_SETUP(autodiff=true)))
   @test abs(sim14.𝒪est[:final]-2) < testTol
+
   sim142 = test_convergence(dts,prob,
            GenericTrapezoid(nlsolve=NLSOLVEJL_SETUP(autodiff=false)))
   @test abs(sim142.𝒪est[:final]-2) < testTol
@@ -53,6 +55,9 @@ for i = 1:2
 
   sim15 = test_convergence(dts,prob,SDIRK2())
   @test abs(sim15.𝒪est[:final]-2) < testTol
+
+  sim152 = test_convergence(dts,prob,SSPSDIRK2())
+  @test abs(sim152.𝒪est[:final]-2) < testTol
 
   sim16 = test_convergence(dts,prob,Kvaerno3())
   @test abs(sim16.𝒪est[:final]-3) < testTol
@@ -71,74 +76,46 @@ for i = 1:2
   sim110 = test_convergence(dts,prob,Hairer42())
   @test abs(sim110.𝒪est[:final]-4) < testTol
 
+  sim111 = test_convergence(dts,prob,Kvaerno4())
+  @test abs(sim111.𝒪est[:final]-4) < testTol
+
+  sim112 = test_convergence(dts,prob,KenCarp4())
+  @test abs(sim112.𝒪est[:final]-4) < testTol
+
+  sim113 = test_convergence(dts,prob,Kvaerno5())
+  @test abs(sim113.𝒪est[:final]-5) < testTol
+
+  sim114 = test_convergence(dts,prob,KenCarp5())
+  @test abs(sim114.𝒪est[:final]-5) < testTol
 end
 
 #=
 using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase,
       DiffEqProblemLibrary, Base.Test
 
-
 testTol = 0.2
 dts = 1.//2.^(8:-1:4)
 prob = prob_ode_linear
-sim13 = test_convergence(dts,prob,SDIRK2())
-@test abs(sim13.𝒪est[:final]-2) < testTol
-sim13 = test_convergence(dts,prob,Kvaerno3())
-@test abs(sim13.𝒪est[:final]-3) < testTol
-sim13 = test_convergence(dts,prob,KenCarp3())
-@test abs(sim13.𝒪est[:final]-3) < testTol
-dts = 1.//2.^(7:-1:4)
-sim13 = test_convergence(dts,prob,Cash4())
-@test abs(sim13.𝒪est[:final]-4) < testTol
-sim13 = test_convergence(dts,prob,Hairer4())
-@test abs(sim13.𝒪est[:final]-4) < testTol
-sim13 = test_convergence(dts,prob,Hairer42())
-@test abs(sim13.𝒪est[:final]-4) < testTol
 
-sol = solve(prob,Hairer4())
-sol = solve(prob,Hairer42())
-sol = solve(prob,Cash4())
-sol = solve(prob,Kvaerno3())
-sol = solve(prob,KenCarp3())
-sol = solve(prob,SDIRK2())
+dts = 1.//2.^(7:-1:4)
+sim13 = test_convergence(dts,prob,KenCarp5())
+@test abs(sim13.𝒪est[:final]-5) < testTol
+
+sol = solve(prob,KenCarp5())
 sol = solve(prob,TRBDF2())
 
-sol = solve(prob,Hairer4(),reltol=1e-6)
-sol = solve(prob,Hairer42(),reltol=1e-6)
-sol = solve(prob,Cash4(),reltol=1e-6)
-sol = solve(prob,Kvaerno3(),reltol=1e-6)
-sol = solve(prob,KenCarp3(),reltol=1e-6)
-sol = solve(prob,SDIRK2(),reltol=1e-6)
+sol = solve(prob,KenCarp5(),reltol=1e-6)
 sol = solve(prob,TRBDF2(),reltol=1e-6)
 
 prob = prob_ode_2Dlinear
-sim13 = test_convergence(dts,prob,SDIRK2())
-@test abs(sim13.𝒪est[:final]-2) < testTol
-sim13 = test_convergence(dts,prob,Kvaerno3())
-@test abs(sim13.𝒪est[:final]-3) < testTol
-sim13 = test_convergence(dts,prob,KenCarp3())
-@test abs(sim13.𝒪est[:final]-3) < testTol
 dts = 1.//2.^(7:-1:4)
-sim13 = test_convergence(dts,prob,Cash4())
-@test abs(sim13.𝒪est[:final]-4) < testTol
-sim13 = test_convergence(dts,prob,Hairer4())
-@test abs(sim13.𝒪est[:final]-4) < testTol
-sim13 = test_convergence(dts,prob,Hairer42())
-@test abs(sim13.𝒪est[:final]-4) < testTol
 
-sol = solve(prob,Hairer4())
-sol = solve(prob,Hairer42())
-sol = solve(prob,Cash4())
-sol = solve(prob,Kvaerno3())
-sol = solve(prob,KenCarp3())
-sol = solve(prob,SDIRK2())
+sim13 = test_convergence(dts,prob,KenCarp5())
+@test abs(sim13.𝒪est[:final]-5) < testTol
+
+sol = solve(prob,KenCarp5())
 sol = solve(prob,TRBDF2())
 
-sol = solve(prob,Hairer4(),reltol=1e-6)
-sol = solve(prob,Hairer42(),reltol=1e-6)
-sol = solve(prob,Cash4(),reltol=1e-6)
-sol = solve(prob,Kvaerno3(),reltol=1e-6)
-sol = solve(prob,KenCarp3(),reltol=1e-6)
-sol = solve(prob,SDIRK2(),reltol=1e-6)
+sol = solve(prob,KenCarp5(),reltol=1e-6)
 sol = solve(prob,TRBDF2(),reltol=1e-6)
 =#

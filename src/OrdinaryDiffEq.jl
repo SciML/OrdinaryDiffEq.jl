@@ -114,8 +114,9 @@ module OrdinaryDiffEq
   export ode_addsteps!, ode_interpolant,
         terminate!, savevalues!, copyat_or_push!, isfsal
 
-  export constructDP5, constructVern6, constructDP8, constructDormandPrince, constructFeagin10,
-        constructFeagin12, constructFeagin14
+  export constructDP5, constructVern6, constructDP8,
+         constructDormandPrince, constructFeagin10,
+         constructFeagin12, constructFeagin14
 
   # Reexport the Alg Types
 
@@ -129,7 +130,7 @@ module OrdinaryDiffEq
          Vern9,Feagin10, Feagin12, Feagin14, CompositeAlgorithm
 
   export ImplicitEuler, Trapezoid, TRBDF2, SDIRK2, Kvaerno3, KenCarp3, Cash4,
-         Hairer4, Hairer42
+         Hairer4, Hairer42, SSPSDIRK2, Kvaerno4, Kvaerno5, KenCarp4, KenCarp5
 
   export GenericImplicitEuler, GenericTrapezoid
 
