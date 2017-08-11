@@ -62,4 +62,4 @@ sol2 = solve(prob, KahanLi8(), dt=1/10);
 
 ## Available Solvers
 
-For the list of available solvers, please refer to the [DifferentialEquations.jl ODE Solvers page](http://docs.juliadiffeq.org/latest/solvers/ode_solve.html#OrdinaryDiffEq.jl-1) and the [Refined ODE Solvers page](http://docs.juliadiffeq.org/latest/solvers/refined_ode_solve.html).
+For the list of available solvers, please refer to the [DifferentialEquations.jl ODE Solvers page](http://docs.juliadiffeq.org/latest/solvers/ode_solve.html#OrdinaryDiffEq.jl-1) and the [Dynamical ODE Solvers page](http://docs.juliadiffeq.org/latest/solvers/dynamical_solve.html).
