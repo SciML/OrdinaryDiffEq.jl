@@ -63,8 +63,15 @@ for i = 1:2
   sim18 = test_convergence(dts,prob,Cash4())
   @test abs(sim18.𝒪est[:final]-4) < testTol
 
+  sim19 = test_convergence(dts,prob,Hairer4())
+  @test abs(sim19.𝒪est[:final]-4) < testTol
+
+  sim110 = test_convergence(dts,prob,Hairer42())
+  @test abs(sim110.𝒪est[:final]-4) < testTol
+
 end
 
+#=
 using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase,
       DiffEqProblemLibrary, Base.Test
 
@@ -86,12 +93,16 @@ sim13 = test_convergence(dts,prob,Hairer4())
 sim13 = test_convergence(dts,prob,Hairer42())
 @test abs(sim13.𝒪est[:final]-4) < testTol
 
+sol = solve(prob,Hairer4())
+sol = solve(prob,Hairer42())
 sol = solve(prob,Cash4())
 sol = solve(prob,Kvaerno3())
 sol = solve(prob,KenCarp3())
 sol = solve(prob,SDIRK2())
 sol = solve(prob,TRBDF2())
 
+sol = solve(prob,Hairer4(),reltol=1e-6)
+sol = solve(prob,Hairer42(),reltol=1e-6)
 sol = solve(prob,Cash4(),reltol=1e-6)
 sol = solve(prob,Kvaerno3(),reltol=1e-6)
 sol = solve(prob,KenCarp3(),reltol=1e-6)
@@ -113,14 +124,19 @@ sim13 = test_convergence(dts,prob,Hairer4())
 sim13 = test_convergence(dts,prob,Hairer42())
 @test abs(sim13.𝒪est[:final]-4) < testTol
 
+sol = solve(prob,Hairer4())
+sol = solve(prob,Hairer42())
 sol = solve(prob,Cash4())
 sol = solve(prob,Kvaerno3())
 sol = solve(prob,KenCarp3())
 sol = solve(prob,SDIRK2())
 sol = solve(prob,TRBDF2())
 
+sol = solve(prob,Hairer4(),reltol=1e-6)
+sol = solve(prob,Hairer42(),reltol=1e-6)
 sol = solve(prob,Cash4(),reltol=1e-6)
 sol = solve(prob,Kvaerno3(),reltol=1e-6)
 sol = solve(prob,KenCarp3(),reltol=1e-6)
 sol = solve(prob,SDIRK2(),reltol=1e-6)
 sol = solve(prob,TRBDF2(),reltol=1e-6)
+=#

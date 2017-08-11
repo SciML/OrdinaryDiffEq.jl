@@ -674,3 +674,118 @@ function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,
               u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,dz₁,dz₂,dz₃,dz₄,dz₅,est,J,
               W,jac_config,uf,ηold,κ,tol,10000,tab)
 end
+
+mutable struct Hairer4ConstantCache{F,uEltypeNoUnits,uType,tType,Tab} <: OrdinaryDiffEqConstantCache
+  uf::F
+  ηold::uEltypeNoUnits
+  κ::uEltypeNoUnits
+  tol::uEltypeNoUnits
+  newton_iters::Int
+  uprev3::uType
+  tprev2::tType
+  tab::Tab
+end
+
+function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
+                   uprev,uprev2,f,t,reltol,::Type{Val{false}})
+  uf = UDerivativeWrapper(f,t)
+  ηold = one(uEltypeNoUnits)
+  uprev3 = u
+  tprev2 = t
+
+  if alg.κ != nothing
+    κ = alg.κ
+  else
+    κ = uEltypeNoUnits(1//100)
+  end
+  if alg.tol != nothing
+    tol = alg.tol
+  else
+    tol = min(0.03,first(reltol)^(0.5))
+  end
+
+  if typeof(alg) <: Hairer4
+    tab = Hairer4Tableau(real(uEltypeNoUnits),real(tTypeNoUnits))
+  else
+    tab = Hairer42Tableau(real(uEltypeNoUnits),real(tTypeNoUnits))
+  end
+
+  Hairer4ConstantCache(uf,ηold,κ,tol,10000,uprev3,tprev2,tab)
+end
+
+mutable struct Hairer4Cache{uType,rateType,J,JC,UF,uEltypeNoUnits,tType,Tab} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  du1::rateType
+  fsalfirst::rateType
+  k::rateType
+  z₁::uType
+  z₂::uType
+  z₃::uType
+  z₄::uType
+  z₅::uType
+  dz₁::uType
+  dz₂::uType
+  dz₃::uType
+  dz₄::uType
+  dz₅::uType
+  est::uType
+  J::J
+  W::J
+  jac_config::JC
+  uf::UF
+  ηold::uEltypeNoUnits
+  κ::uEltypeNoUnits
+  tol::uEltypeNoUnits
+  newton_iters::Int
+  tab::Tab
+end
+
+u_cache(c::Hairer4Cache)    = (c.uprev2,c.zᵧ,c.z,c.Δzᵧ,c.Δz)
+du_cache(c::Hairer4Cache)   = (c.k,c.fsalfirst)
+
+function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
+
+  du1 = zeros(rate_prototype)
+  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  W = similar(J)
+  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u)
+  z₅ = similar(u)
+  dz₁ = similar(u); dz₂ = similar(u); dz₃ = similar(u); dz₄ = similar(u)
+  dz₅ = similar(u)
+  fsalfirst = zeros(rate_prototype)
+  k = zeros(rate_prototype); est = similar(u)
+  vfr = VectorFReturn(f,size(u))
+  uf = UJacobianWrapper(vfr,t)
+  if alg_autodiff(alg)
+    jac_config = ForwardDiff.JacobianConfig(uf,vec(du1),vec(uprev),
+                    ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+  else
+    jac_config = nothing
+  end
+
+  if alg.κ != nothing
+    κ = alg.κ
+  else
+    κ = uEltypeNoUnits(1//100)
+  end
+  if alg.tol != nothing
+    tol = alg.tol
+  else
+    tol = min(0.03,first(reltol)^(0.5))
+  end
+
+  if typeof(alg) <: Hairer4
+    tab = Hairer4Tableau(real(uEltypeNoUnits),real(tTypeNoUnits))
+  else # Hairer42
+    tab = Hairer42Tableau(real(uEltypeNoUnits),real(tTypeNoUnits))
+  end
+
+  ηold = one(uEltypeNoUnits)
+
+  Hairer4Cache{typeof(u),typeof(rate_prototype),typeof(J),typeof(jac_config),
+              typeof(uf),uEltypeNoUnits,typeof(t),typeof(tab)}(
+              u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,dz₁,dz₂,dz₃,dz₄,dz₅,est,J,
+              W,jac_config,uf,ηold,κ,tol,10000,tab)
+end

@@ -2128,7 +2128,8 @@ end
   @unpack t,dt,uprev,u = integrator
   @unpack uf = cache
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
-  @unpack b1hat1, b2hat1, b3hat1, b4hat1, b1hat2, b2hat2, b3hat2, b4hat2 = cache.tab
+  @unpack α21,α31,α32,α41,α43 = cache.tab
+  @unpack bhat1, bhat2, bhat3, bhat4 = cache.tab
   uf.t = t
   γdt = γ*dt
   κ = cache.κ
@@ -2184,8 +2185,7 @@ end
 
   ##### Step 2
 
-  # TODO: Add extrapolation for guess
-  z₂ = zero(u)
+  z₂ = α21*z₁
 
   iter = 1
   u = @. uprev + a21*z₁ + γ*z₂
@@ -2226,8 +2226,7 @@ end
 
   ################################## Solve Step 3
 
-  # Guess starts from z₁
-  z₃ = @. z₁
+  z₃ = @. α31*z₁ + α32*z₂
 
   iter = 1
   u = @. uprev + a31*z₁ + a32*z₂ + γ*z₃
@@ -2264,8 +2263,7 @@ end
 
   ################################## Solve Step 4
 
-  # Use constant z prediction
-  z₄ = @. z₃
+  z₄ = @. α41*z₁ + α43*z₃
 
   iter = 1
   u = @. uprev + a41*z₁ + a42*z₂ + a43*z₃ + γ*z₄
@@ -2303,7 +2301,7 @@ end
   ################################## Solve Step 5
 
   # Use yhat2 for prediction
-  z₅ = @. b1hat2*z₁ + b2hat2*z₂ + b3hat2*z₃ + b4hat2*z₄
+  z₅ = @. bhat1*z₁ + bhat2*z₂ + bhat3*z₃ + bhat4*z₄
 
   iter = 1
   u = @. uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + γ*z₅
@@ -2349,11 +2347,7 @@ end
   cache.newton_iters = iter
 
   if integrator.opts.adaptive
-    if integrator.alg.embedding == 3
-      est = @. (b1hat2-a51)*z₁ + (b2hat2-a52)*z₂ + (b3hat2-a53)*z₃ + (b4hat2-a54)*z₄ - γ*z₅
-    else
-      est = @. (b1hat1-a51)*z₁ + (b2hat1-a52)*z₂ + (b3hat1-a53)*z₃ + (b4hat1-a54)*z₄ - γ*z₅
-    end
+    est = @. (bhat1-a51)*z₁ + (bhat2-a52)*z₂ + (bhat3-a53)*z₃ + (bhat4-a54)*z₄ - γ*z₅
     if integrator.alg.smooth_est # From Shampine
       Est = W\est
     else
@@ -2378,7 +2372,8 @@ end
   @unpack t,dt,uprev,u = integrator
   @unpack uf,du1,dz₁,dz₂,dz₃,dz₄,dz₅,z₁,z₂,z₃,z₄,z₅,k,J,W,jac_config,est = cache
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
-  @unpack b1hat1, b2hat1, b3hat1, b4hat1, b1hat2, b2hat2, b3hat2, b4hat2 = cache.tab
+  @unpack α21,α31,α32,α41,α43 = cache.tab
+  @unpack bhat1, bhat2, bhat3, bhat4 = cache.tab
   mass_matrix = integrator.sol.prob.mass_matrix
 
   uf.t = t
@@ -2415,7 +2410,7 @@ end
   ##### Step 1
 
   # TODO: Add extrapolation for guess
-  @. z₁ .= zero(z₁)
+  @. z₁ = zero(z₁)
 
   iter = 1
   @. u = uprev + γ*z₁
@@ -2466,8 +2461,7 @@ end
 
   ##### Step 2
 
-  # TODO: Add extrapolation for guess
-  @. z₂ .= zero(z₂)
+  @. z₂ = α21*z₁
 
   iter = 1
   @. u = uprev + a21*z₁ + γ*z₂
@@ -2518,8 +2512,7 @@ end
 
   ################################## Solve Step 3
 
-  # Guess starts from z₁
-  @. z₃ = z₁
+  @. z₃ = α31*z₁ + α32*z₂
 
   iter = 1
   @. u = uprev + a31*z₁ + a32*z₂ + γ*z₃
@@ -2567,7 +2560,7 @@ end
   ################################## Solve Step 4
 
   # Use constant z prediction
-  @. z₄ = z₃
+  @. z₄ = α41*z₁ + α43*z₃
 
   iter = 1
 
@@ -2615,8 +2608,8 @@ end
 
   ################################## Solve Step 5
 
-  # Use constant z prediction
-  @. z₅ = b1hat2*z₁ + b2hat2*z₂ + b3hat2*z₃ + b4hat2*z₄
+  # Use yhat prediction
+  @. z₅ = bhat1*z₁ + bhat2*z₂ + bhat3*z₃ + bhat4*z₄
 
   iter = 1
   @. u = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + γ*z₅
@@ -2666,11 +2659,7 @@ end
   @. u = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + γ*z₅
 
   if integrator.opts.adaptive
-    if integrator.alg.embedding == 3
-      @. est = (b1hat2-a51)*z₁ + (b2hat2-a52)*z₂ + (b3hat2-a53)*z₃ + (b4hat2-a54)*z₄ - γ*z₅
-    else
-      @. est = (b1hat1-a51)*z₁ + (b2hat1-a52)*z₂ + (b3hat1-a53)*z₃ + (b4hat1-a54)*z₄ - γ*z₅
-    end
+    @. est = (bhat1-a51)*z₁ + (bhat2-a52)*z₂ + (bhat3-a53)*z₃ + (bhat4-a54)*z₄ - γ*z₅
     if integrator.alg.smooth_est # From Shampine
       if has_invW(f)
         A_mul_B!(vec(k),W,vec(est))
