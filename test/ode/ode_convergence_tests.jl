@@ -76,38 +76,43 @@ for i = 1:2
   sim110 = test_convergence(dts,prob,Hairer42())
   @test abs(sim110.𝒪est[:final]-4) < testTol
 
-  sim13 = test_convergence(dts,prob,Kvaerno4())
-  @test abs(sim13.𝒪est[:final]-4) < testTol
+  sim111 = test_convergence(dts,prob,Kvaerno4())
+  @test abs(sim111.𝒪est[:final]-4) < testTol
+
+  sim112 = test_convergence(dts,prob,KenCarp4())
+  @test abs(sim112.𝒪est[:final]-4) < testTol
+
+  sim113 = test_convergence(dts,prob,Kvaerno5())
+  @test abs(sim113.𝒪est[:final]-5) < testTol
 end
 
 #=
 using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase,
       DiffEqProblemLibrary, Base.Test
 
-
 testTol = 0.2
 dts = 1.//2.^(8:-1:4)
 prob = prob_ode_linear
 
 dts = 1.//2.^(7:-1:4)
-sim13 = test_convergence(dts,prob,Kvaerno4())
-@test abs(sim13.𝒪est[:final]-4) < testTol
+sim13 = test_convergence(dts,prob,Kvaerno5())
+@test abs(sim13.𝒪est[:final]-5) < testTol
 
-sol = solve(prob,Kvaerno4())
+sol = solve(prob,Kvaerno5())
 sol = solve(prob,TRBDF2())
 
-sol = solve(prob,Kvaerno4(),reltol=1e-6)
+sol = solve(prob,Kvaerno5(),reltol=1e-6)
 sol = solve(prob,TRBDF2(),reltol=1e-6)
 
 prob = prob_ode_2Dlinear
 dts = 1.//2.^(7:-1:4)
 
-sim13 = test_convergence(dts,prob,Kvaerno4())
-@test abs(sim13.𝒪est[:final]-4) < testTol
+sim13 = test_convergence(dts,prob,Kvaerno5())
+@test abs(sim13.𝒪est[:final]-5) < testTol
 
-sol = solve(prob,Kvaerno4())
+sol = solve(prob,Kvaerno5())
 sol = solve(prob,TRBDF2())
 
-sol = solve(prob,Kvaerno4(),reltol=1e-6)
+sol = solve(prob,Kvaerno5(),reltol=1e-6)
 sol = solve(prob,TRBDF2(),reltol=1e-6)
 =#
