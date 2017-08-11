@@ -2896,7 +2896,10 @@ end
   @. z₅ = bhat1*z₁ + bhat2*z₂ + bhat3*z₃ + bhat4*z₄
 
   iter = 1
-  @. u = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + γ*z₅
+  #@. u = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + γ*z₅
+  @tight_loop_macros for i in eachindex(u)
+    u[i] = uprev[i] + a51*z₁[i] + a52*z₂[i] + a53*z₃[i] + a54*z₄[i] + γ*z₅[i]
+  end
   f(t+dt,u,k)
   @. k = dt*k - z₅
   if has_invW(f)
@@ -2913,7 +2916,10 @@ end
   fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
-    @. u = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + γ*z₅
+    #@. u = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + γ*z₅
+    @tight_loop_macros for i in eachindex(u)
+      u[i] = uprev[i] + a51*z₁[i] + a52*z₂[i] + a53*z₃[i] + a54*z₄[i] + γ*z₅[i]
+    end
     f(t+dt,u,k)
     @. k = dt*k - z₅
     if has_invW(f)
@@ -2940,10 +2946,16 @@ end
 
   ################################### Finalize
 
-  @. u = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + γ*z₅
+  #@. u = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + γ*z₅
+  @tight_loop_macros for i in eachindex(u)
+    u[i] = uprev[i] + a51*z₁[i] + a52*z₂[i] + a53*z₃[i] + a54*z₄[i] + γ*z₅[i]
+  end
 
   if integrator.opts.adaptive
-    @. est = (bhat1-a51)*z₁ + (bhat2-a52)*z₂ + (bhat3-a53)*z₃ + (bhat4-a54)*z₄ - γ*z₅
+    #@. est = (bhat1-a51)*z₁ + (bhat2-a52)*z₂ + (bhat3-a53)*z₃ + (bhat4-a54)*z₄ - γ*z₅
+    @tight_loop_macros for i in eachindex(u)
+      est[i] = (bhat1-a51)*z₁[i] + (bhat2-a52)*z₂[i] + (bhat3-a53)*z₃[i] + (bhat4-a54)*z₄[i] - γ*z₅[i]
+    end
     if integrator.alg.smooth_est # From Shampine
       if has_invW(f)
         A_mul_B!(vec(k),W,vec(est))
