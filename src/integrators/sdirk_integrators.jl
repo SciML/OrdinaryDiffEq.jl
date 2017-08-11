@@ -2711,8 +2711,6 @@ end
     copy!(u,uprev)
   end
 
-  @show z₁
-
   @. z₁ = u - uprev
 
   iter = 1
@@ -2989,8 +2987,6 @@ end
     end
     integrator.EEst = integrator.opts.internalnorm(est)
   end
-
-  @show z₁,z₅,integrator.EEst,integrator.force_stepfail
 
   @. integrator.fsallast = z₅/dt
   cache.ηold = η
