@@ -10,10 +10,10 @@ struct ESDIRK4Tableau{T,T2}
     bhat3::T
     bhat4::T
     c3::T2
-    α1::T
-    α2::T
+    α31::T
+    α32::T
     α41::T
-    α43::T
+    α42::T
 end
 
 #=
@@ -82,11 +82,11 @@ function Kvaerno3Tableau(T,T2)
   c3 = T2(1)
   c2 = 2γ
   θ = c3/c2
-  α1 = ((1 + (-4θ + 3θ^2)) + (6θ*(1-θ)/c2)*γ)
-  α2 = ((-2θ + 3θ^2) + (6θ*(1-θ)/c2)*γ)
+  α31 = ((1 + (-4θ + 3θ^2)) + (6θ*(1-θ)/c2)*γ)
+  α32 = ((-2θ + 3θ^2) + (6θ*(1-θ)/c2)*γ)
   α41 = T(0.0)
-  α43 = T(0.0)
-  ESDIRK4Tableau(γ,a31,a32,a41,a42,a43,bhat1,bhat2,bhat3,bhat4,c3,α1,α2,α41,α43)
+  α42 = T(0.0)
+  ESDIRK4Tableau(γ,a31,a32,a41,a42,a43,bhat1,bhat2,bhat3,bhat4,c3,α31,α32,α41,α42)
 end
 
 #=
@@ -117,12 +117,12 @@ function KenCarp3Tableau(T,T2)
   c3 = T2(3//5)
   c2 = 2γ
   θ = c3/c2
-  α1 = ((1 + (-4θ + 3θ^2)) + (6θ*(1-θ)/c2)*γ)
-  α2 = ((-2θ + 3θ^2) + (6θ*(1-θ)/c2)*γ)
+  α31 = ((1 + (-4θ + 3θ^2)) + (6θ*(1-θ)/c2)*γ)
+  α32 = ((-2θ + 3θ^2) + (6θ*(1-θ)/c2)*γ)
   θ = 1/c2
   α41 = ((1 + (-4θ + 3θ^2)) + (6θ*(1-θ)/c2)*γ)
-  α43 = ((-2θ + 3θ^2) + (6θ*(1-θ)/c2)*γ)
-  ESDIRK4Tableau(γ,a31,a32,a41,a42,a43,bhat1,bhat2,bhat3,bhat4,c3,α1,α2,α41,α43)
+  α42 = ((-2θ + 3θ^2) + (6θ*(1-θ)/c2)*γ)
+  ESDIRK4Tableau(γ,a31,a32,a41,a42,a43,bhat1,bhat2,bhat3,bhat4,c3,α31,α32,α41,α42)
 end
 
 struct Cash4Tableau{T,T2}
@@ -533,4 +533,29 @@ function Hairer42Tableau(T,T2)
                  bhat1,bhat2,bhat3,bhat4,c2,c3,c4,r11,r12,r13,r14,
                  r21,r22,r23,r24,r31,r32,r33,r34,r41,r42,r43,r44,r51,
                  r52,r53,r54,α21,α31,α32,α41,α43)
+end
+
+struct Kvaerno4Tableau{T,T2}
+  γ::T
+  a31::T
+  a32::T
+  a41::T
+  a42::T
+  a43::T
+  a51::T
+  a52::T
+  a53::T
+  a54::T
+  bhat1::T
+  bhat2::T
+  bhat3::T
+  bhat4::T
+  c2::T2
+  c3::T2
+  c4::T2
+  α21::T
+  α31::T
+  α32::T
+  α41::T
+  α43::T
 end

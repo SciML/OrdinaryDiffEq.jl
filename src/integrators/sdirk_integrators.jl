@@ -1145,7 +1145,7 @@ end
 @muladd function perform_step!(integrator,cache::Union{Kvaerno3ConstantCache,KenCarp3ConstantCache},f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack uf = cache
-  @unpack γ,a31,a32,a41,a42,a43,bhat1,bhat2,bhat3,bhat4,c3,α1,α2 = cache.tab
+  @unpack γ,a31,a32,a41,a42,a43,bhat1,bhat2,bhat3,bhat4,c3,α31,α32 = cache.tab
   uf.t = t
   γdt = γ*dt
   κ = cache.κ
@@ -1247,8 +1247,8 @@ end
   if typeof(cache) <: Kvaerno3ConstantCache
     z₄ = @. a31*z₁ + a32*z₂ + γ*z₃ # use yhat as prediction
   elseif typeof(cache) <: KenCarp3ConstantCache
-    @unpack α41,α43 = cache.tab
-    z₄ = @. α41*z₁ + α43*z₃
+    @unpack α41,α42 = cache.tab
+    z₄ = @. α41*z₁ + α42*z₂
   end
 
   iter = 1
@@ -1320,7 +1320,7 @@ end
 @muladd function perform_step!(integrator,cache::Union{Kvaerno3Cache,KenCarp3Cache},f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack uf,du1,dz₁,dz₂,dz₃,dz₄,z₁,z₂,z₃,z₄,k,J,W,jac_config,est = cache
-  @unpack γ,a31,a32,a41,a42,a43,bhat1,bhat2,bhat3,bhat4,c3,α1,α2 = cache.tab
+  @unpack γ,a31,a32,a41,a42,a43,bhat1,bhat2,bhat3,bhat4,c3,α31,α32 = cache.tab
   mass_matrix = integrator.sol.prob.mass_matrix
 
   uf.t = t
@@ -1412,7 +1412,7 @@ end
   ################################## Solve Step 3
 
   # Guess is from Hermite derivative on z₁ and z₂
-  @. z₃ = α1*z₁ + α2*z₂
+  @. z₃ = α31*z₁ + α32*z₂
 
   iter = 1
   @. u = uprev + a31*z₁ + a32*z₂ + γ*z₃
@@ -1462,8 +1462,8 @@ end
   if typeof(cache) <: Kvaerno3Cache
     @. z₄ = a31*z₁ + a32*z₂ + γ*z₃ # use yhat as prediction
   elseif typeof(cache) <: KenCarp3Cache
-    @unpack α41,α43 = cache.tab
-    @. z₄ = α41*z₁ + α43*z₃
+    @unpack α41,α42 = cache.tab
+    @. z₄ = α41*z₁ + α42*z₂
   end
   iter = 1
 
