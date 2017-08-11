@@ -1862,7 +1862,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = uprev + γ*z₁
-    f(t+2γ*dt,u,k)
+    f(t+γ*dt,u,k)
     @. k = dt*k - z₁
     if has_invW(f)
       A_mul_B!(vec(dz₁),W,vec(k)) # Here W is actually invW
@@ -1893,7 +1893,7 @@ end
 
   iter = 1
   @. u = uprev + a21*z₁ + γ*z₂
-  f(t+2γ*dt,u,k)
+  f(t+c2*dt,u,k)
   @. k = dt*k - z₂
   if has_invW(f)
     A_mul_B!(vec(dz₂),W,vec(k)) # Here W is actually invW
@@ -1914,7 +1914,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = uprev + a21*z₁ + γ*z₂
-    f(t+2γ*dt,u,k)
+    f(t+c2*dt,u,k)
     @. k = dt*k - z₂
     if has_invW(f)
       A_mul_B!(vec(dz₂),W,vec(k)) # Here W is actually invW
@@ -2373,6 +2373,536 @@ end
   @unpack uf,du1,dz₁,dz₂,dz₃,dz₄,dz₅,z₁,z₂,z₃,z₄,z₅,k,J,W,jac_config,est = cache
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack α21,α31,α32,α41,α43 = cache.tab
+  @unpack bhat1, bhat2, bhat3, bhat4 = cache.tab
+  mass_matrix = integrator.sol.prob.mass_matrix
+
+  uf.t = t
+  κ = cache.κ
+  tol = cache.tol
+
+  if has_invW(f)
+    f(Val{:invW},t,uprev,dt,W) # W == inverse W
+  else
+    if !integrator.last_stepfail && cache.newton_iters == 1 && cache.ηold < integrator.alg.new_jac_conv_bound
+      new_jac = false
+    else # Compute a new Jacobian
+      new_jac = true
+      if has_jac(f)
+        f(Val{:jac},t,uprev,J)
+      else
+        if alg_autodiff(integrator.alg)
+          ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
+        else
+          Calculus.finite_difference_jacobian!(uf,vec(uprev),vec(du1),J,integrator.alg.diff_type)
+        end
+      end
+    end
+    if integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps()
+      new_W = true
+      for j in 1:length(u), i in 1:length(u)
+          @inbounds W[i,j] = mass_matrix[i,j]-dt*γ*J[i,j]
+      end
+    else
+      new_W = false
+    end
+  end
+
+  ##### Step 1
+
+  # TODO: Add extrapolation for guess
+  @. z₁ = zero(z₁)
+
+  iter = 1
+  @. u = uprev + γ*z₁
+  f(t+γ*dt,u,k)
+  @. k = dt*k - z₁
+  if has_invW(f)
+    A_mul_B!(vec(dz₁),W,vec(k)) # Here W is actually invW
+  else
+    integrator.alg.linsolve(vec(dz₁),W,vec(k),new_W)
+  end
+  ndz = integrator.opts.internalnorm(dz₁)
+  @. z₁ = z₁ + dz₁
+
+  η = max(cache.ηold,eps(first(u)))^(0.8)
+  if integrator.success_iter > 0
+    do_newton = (η*ndz > κ*tol)
+  else
+    do_newton = true
+  end
+
+  fail_convergence = false
+  while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
+    iter += 1
+    @. u = uprev + γ*z₁
+    f(t+γ*dt,u,k)
+    @. k = dt*k - z₁
+    if has_invW(f)
+      A_mul_B!(vec(dz₁),W,vec(k)) # Here W is actually invW
+    else
+      integrator.alg.linsolve(vec(dz₁),W,vec(k),false)
+    end
+    ndzprev = ndz
+    ndz = integrator.opts.internalnorm(dz₁)
+    θ = ndz/ndzprev
+    if θ > 1 || ndz*(θ^(integrator.alg.max_newton_iter - iter)/(1-θ)) > κ*tol
+      fail_convergence = true
+      break
+    end
+    η = θ/(1-θ)
+    do_newton = (η*ndz > κ*tol)
+    @. z₁ = z₁ + dz₁
+  end
+
+  if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
+    integrator.force_stepfail = true
+    return
+  end
+
+  ##### Step 2
+
+  @. z₂ = α21*z₁
+
+  iter = 1
+  @. u = uprev + a21*z₁ + γ*z₂
+  f(t+c2*dt,u,k)
+  @. k = dt*k - z₂
+  if has_invW(f)
+    A_mul_B!(vec(dz₂),W,vec(k)) # Here W is actually invW
+  else
+    integrator.alg.linsolve(vec(dz₂),W,vec(k),new_W)
+  end
+  ndz = integrator.opts.internalnorm(dz₂)
+  @. z₂ = z₂ + dz₂
+
+  η = max(cache.ηold,eps(first(u)))^(0.8)
+  if integrator.success_iter > 0
+    do_newton = (η*ndz > κ*tol)
+  else
+    do_newton = true
+  end
+
+  fail_convergence = false
+  while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
+    iter += 1
+    @. u = uprev + a21*z₁ + γ*z₂
+    f(t+c2*dt,u,k)
+    @. k = dt*k - z₂
+    if has_invW(f)
+      A_mul_B!(vec(dz₂),W,vec(k)) # Here W is actually invW
+    else
+      integrator.alg.linsolve(vec(dz₂),W,vec(k),false)
+    end
+    ndzprev = ndz
+    ndz = integrator.opts.internalnorm(dz₂)
+    θ = ndz/ndzprev
+    if θ > 1 || ndz*(θ^(integrator.alg.max_newton_iter - iter)/(1-θ)) > κ*tol
+      fail_convergence = true
+      break
+    end
+    η = θ/(1-θ)
+    do_newton = (η*ndz > κ*tol)
+    @. z₂ = z₂ + dz₂
+  end
+
+  if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
+    integrator.force_stepfail = true
+    return
+  end
+
+  ################################## Solve Step 3
+
+  @. z₃ = α31*z₁ + α32*z₂
+
+  iter = 1
+  @. u = uprev + a31*z₁ + a32*z₂ + γ*z₃
+  f(t+c3*dt,u,k)
+  @. k = dt*k - z₃
+  if has_invW(f)
+    A_mul_B!(vec(dz₃),W,vec(k)) # Here W is actually invW
+  else
+    integrator.alg.linsolve(vec(dz₃),W,vec(k),false)
+  end
+  ndz = integrator.opts.internalnorm(dz₃)
+  @. z₃ = z₃ + dz₃
+
+  η = max(η,eps(first(u)))^(0.8)
+  do_newton = (η*ndz > κ*tol)
+
+  fail_convergence = false
+  while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
+    iter += 1
+    u = @. uprev + a31*z₁ + a32*z₂ + γ*z₃
+    f(t+c3*dt,u,k)
+    @. k = dt*k - z₃
+    if has_invW(f)
+      A_mul_B!(vec(dz₃),W,vec(k)) # Here W is actually invW
+    else
+      integrator.alg.linsolve(vec(dz₃),W,vec(k),false)
+    end
+    ndzprev = ndz
+    ndz = integrator.opts.internalnorm(dz₃)
+    θ = ndz/ndzprev
+    if θ > 1 || ndz*(θ^(integrator.alg.max_newton_iter - iter)/(1-θ)) > κ*tol
+      fail_convergence = true
+      break
+    end
+    η = θ/(1-θ)
+    do_newton = (η*ndz > κ*tol)
+    @. z₃ = z₃ + dz₃
+  end
+
+  if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
+    integrator.force_stepfail = true
+    return
+  end
+
+  ################################## Solve Step 4
+
+  # Use constant z prediction
+  @. z₄ = α41*z₁ + α43*z₃
+
+  iter = 1
+
+  @. u = uprev + a41*z₁ + a42*z₂ + a43*z₃ + γ*z₄
+  f(t+dt,u,k)
+  @. k = dt*k - z₄
+  if has_invW(f)
+    A_mul_B!(vec(dz₄),W,vec(k)) # Here W is actually invW
+  else
+    integrator.alg.linsolve(vec(dz₄),W,vec(k),false)
+  end
+  ndz = integrator.opts.internalnorm(dz₄)
+  @. z₄ = z₄ + dz₄
+
+  η = max(η,eps(first(u)))^(0.8)
+  do_newton = (η*ndz > κ*tol)
+
+  fail_convergence = false
+  while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
+    iter += 1
+    @. u = uprev + a41*z₁ + a42*z₂ + a43*z₃ + γ*z₄
+    f(t+dt,u,k)
+    @. k = dt*k - z₄
+    if has_invW(f)
+      A_mul_B!(vec(dz₄),W,vec(k)) # Here W is actually invW
+    else
+      integrator.alg.linsolve(vec(dz₄),W,vec(k),false)
+    end
+    ndzprev = ndz
+    ndz = integrator.opts.internalnorm(dz₄)
+    θ = ndz/ndzprev
+    if θ > 1 || ndz*(θ^(integrator.alg.max_newton_iter - iter)/(1-θ)) > κ*tol
+      fail_convergence = true
+      break
+    end
+    η = θ/(1-θ)
+    do_newton = (η*ndz > κ*tol)
+    @. z₄ = z₄ + dz₄
+  end
+
+  if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
+    integrator.force_stepfail = true
+    return
+  end
+
+  ################################## Solve Step 5
+
+  # Use yhat prediction
+  @. z₅ = bhat1*z₁ + bhat2*z₂ + bhat3*z₃ + bhat4*z₄
+
+  iter = 1
+  @. u = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + γ*z₅
+  f(t+dt,u,k)
+  @. k = dt*k - z₅
+  if has_invW(f)
+    A_mul_B!(vec(dz₅),W,vec(k)) # Here W is actually invW
+  else
+    integrator.alg.linsolve(vec(dz₅),W,vec(k),false)
+  end
+  ndz = integrator.opts.internalnorm(dz₅)
+  @. z₅ = z₅ + dz₅
+
+  η = max(η,eps(first(u)))^(0.8)
+  do_newton = (η*ndz > κ*tol)
+
+  fail_convergence = false
+  while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
+    iter += 1
+    @. u = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + γ*z₅
+    f(t+dt,u,k)
+    @. k = dt*k - z₅
+    if has_invW(f)
+      A_mul_B!(vec(dz₅),W,vec(k)) # Here W is actually invW
+    else
+      integrator.alg.linsolve(vec(dz₅),W,vec(k),false)
+    end
+    ndzprev = ndz
+    ndz = integrator.opts.internalnorm(dz₅)
+    θ = ndz/ndzprev
+    if θ > 1 || ndz*(θ^(integrator.alg.max_newton_iter - iter)/(1-θ)) > κ*tol
+      fail_convergence = true
+      break
+    end
+    η = θ/(1-θ)
+    do_newton = (η*ndz > κ*tol)
+    @. z₅ = z₅ + dz₅
+  end
+
+  if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
+    integrator.force_stepfail = true
+    return
+  end
+
+  ################################### Finalize
+
+  @. u = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + γ*z₅
+
+  if integrator.opts.adaptive
+    @. est = (bhat1-a51)*z₁ + (bhat2-a52)*z₂ + (bhat3-a53)*z₃ + (bhat4-a54)*z₄ - γ*z₅
+    if integrator.alg.smooth_est # From Shampine
+      if has_invW(f)
+        A_mul_B!(vec(k),W,vec(est))
+      else
+        integrator.alg.linsolve(vec(k),W,vec(est),false)
+      end
+    else
+      k .= est
+    end
+    @tight_loop_macros for (i,atol,rtol) in zip(eachindex(u),Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
+      est[i] = abs(k[i])/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
+    end
+    integrator.EEst = integrator.opts.internalnorm(est)
+  end
+
+  f(t,u,integrator.fsallast)
+  cache.ηold = η
+  cache.newton_iters = iter
+end
+
+function initialize!(integrator,cache::Kvaerno4ConstantCache,f=integrator.f)
+  integrator.kshortsize = 2
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
+
+@muladd function perform_step!(integrator,cache::Kvaerno4ConstantCache,f=integrator.f)
+  @unpack t,dt,uprev,u = integrator
+  @unpack uf = cache
+  @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,c3,c4 = cache.tab
+  @unpack α31,α32,α41,α43 = cache.tab
+  @unpack bhat1, bhat2, bhat3, bhat4 = cache.tab
+  uf.t = t
+  γdt = γ*dt
+  κ = cache.κ
+  tol = cache.tol
+
+  if typeof(uprev) <: AbstractArray
+    J = ForwardDiff.jacobian(uf,uprev)
+    W = I - dt*γ*J
+  else
+    J = ForwardDiff.derivative(uf,uprev)
+    W = 1 - dt*γ*J
+  end
+
+  z₁ = dt*integrator.fsalfirst
+
+  ##### Step 2
+
+  # TODO: Add extrapolation
+  z₂ = z₁
+
+  iter = 1
+  u = @. uprev + γ*z₁ + γ*z₂
+  b = dt.*f(t+2*γ*dt,u) .- z₂
+  dz₂ = W\b
+  ndz = integrator.opts.internalnorm(dz₂)
+  z₂ = z₂ + dz₂
+
+  η = max(cache.ηold,eps(first(u)))^(0.8)
+  if integrator.success_iter > 0
+    do_newton = (η*ndz > κ*tol)
+  else
+    do_newton = true
+  end
+
+  fail_convergence = false
+  while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
+    iter += 1
+    u = @. uprev + γ*z₁ + γ*z₂
+    b = dt.*f(t+2*γ*dt,u) .- z₂
+    dz₂ = W\b
+    ndzprev = ndz
+    ndz = integrator.opts.internalnorm(dz₂)
+    θ = ndz/ndzprev
+    if θ > 1 || ndz*(θ^(integrator.alg.max_newton_iter - iter)/(1-θ)) > κ*tol
+      fail_convergence = true
+      break
+    end
+    η = θ/(1-θ)
+    do_newton = (η*ndz > κ*tol)
+    z₂ = z₂ + dz₂
+  end
+
+  if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
+    integrator.force_stepfail = true
+    return
+  end
+
+  ################################## Solve Step 3
+
+  z₃ = @. α31*z₁ + α32*z₂
+
+  iter = 1
+  u = @. uprev + a31*z₁ + a32*z₂ + γ*z₃
+  b = dt.*f(t+c3*dt,u) .- z₃
+  dz₃ = W\b
+  ndz = integrator.opts.internalnorm(dz₃)
+  z₃ = z₃ + dz₃
+
+  η = max(η,eps(first(u)))^(0.8)
+  do_newton = (η*ndz > κ*tol)
+
+  fail_convergence = false
+  while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
+    iter += 1
+    u = @. uprev + a31*z₁ + a32*z₂ + γ*z₃
+    b = dt.*f(t+c3*dt,u) .- z₃
+    dz₃ = W\b
+    ndzprev = ndz
+    ndz = integrator.opts.internalnorm(dz₃)
+    θ = ndz/ndzprev
+    if θ > 1 || ndz*(θ^(integrator.alg.max_newton_iter - iter)/(1-θ)) > κ*tol
+      fail_convergence = true
+      break
+    end
+    η = θ/(1-θ)
+    do_newton = (η*ndz > κ*tol)
+    z₃ = z₃ + dz₃
+  end
+
+  if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
+    integrator.force_stepfail = true
+    return
+  end
+
+  ################################## Solve Step 4
+
+  z₄ = @. α41*z₁ + α43*z₃
+
+  iter = 1
+  u = @. uprev + a41*z₁ + a42*z₂ + a43*z₃ + γ*z₄
+  b = dt.*f(t+c4*dt,u) .- z₄
+  dz₄ = W\b
+  ndz = integrator.opts.internalnorm(dz₄)
+  z₄ = z₄ + dz₄
+
+  η = max(η,eps(first(u)))^(0.8)
+  do_newton = (η*ndz > κ*tol)
+
+  fail_convergence = false
+  while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
+    iter += 1
+    u = @. uprev + a41*z₁ + a42*z₂ + a43*z₃ + γ*z₄
+    b = dt.*f(t+c4*dt,u) .- z₄
+    dz₄ = W\b
+    ndzprev = ndz
+    ndz = integrator.opts.internalnorm(dz₄)
+    θ = ndz/ndzprev
+    if θ > 1 || ndz*(θ^(integrator.alg.max_newton_iter - iter)/(1-θ)) > κ*tol
+      fail_convergence = true
+      break
+    end
+    η = θ/(1-θ)
+    do_newton = (η*ndz > κ*tol)
+    z₄ = z₄ + dz₄
+  end
+
+  if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
+    integrator.force_stepfail = true
+    return
+  end
+
+  ################################## Solve Step 5
+
+  # Use yhat2 for prediction
+  z₅ = @. bhat1*z₁ + bhat2*z₂ + bhat3*z₃ + bhat4*z₄
+
+  iter = 1
+  u = @. uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + γ*z₅
+  b = dt.*f(t+dt,u) .- z₅
+  dz₅ = W\b
+  ndz = integrator.opts.internalnorm(dz₅)
+  z₅ = z₅ + dz₅
+
+  η = max(η,eps(first(u)))^(0.8)
+  do_newton = (η*ndz > κ*tol)
+
+  fail_convergence = false
+  while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
+    iter += 1
+    u = @. uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₅ + γ*z₅
+    b = dt.*f(t+dt,u) .- z₅
+    dz₅ = W\b
+    ndzprev = ndz
+    ndz = integrator.opts.internalnorm(dz₅)
+    θ = ndz/ndzprev
+    if θ > 1 || ndz*(θ^(integrator.alg.max_newton_iter - iter)/(1-θ)) > κ*tol
+      fail_convergence = true
+      break
+    end
+    η = θ/(1-θ)
+    do_newton = (η*ndz > κ*tol)
+    z₅ = z₅ + dz₅
+  end
+
+  if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
+    integrator.force_stepfail = true
+    return
+  end
+
+  ################################### Finalize
+
+  u = @. uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + γ*z₅
+
+  integrator.fsallast = f(t+dt,u)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  cache.ηold = η
+  cache.newton_iters = iter
+
+  if integrator.opts.adaptive
+    est = @. (bhat1-a51)*z₁ + (bhat2-a52)*z₂ + (bhat3-a53)*z₃ + (bhat4-a54)*z₄ - γ*z₅
+    if integrator.alg.smooth_est # From Shampine
+      Est = W\est
+    else
+      Est = est
+    end
+    integrator.EEst = integrator.opts.internalnorm(@. abs(Est)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+  end
+  integrator.u = u
+end
+
+function initialize!(integrator,cache::Kvaerno4Cache,f=integrator.f)
+  integrator.kshortsize = 2
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
+end
+
+@muladd function perform_step!(integrator,cache::Kvaerno4Cache,f=integrator.f)
+  @unpack t,dt,uprev,u = integrator
+  @unpack uf,du1,dz₁,dz₂,dz₃,dz₄,dz₅,z₁,z₂,z₃,z₄,z₅,k,J,W,jac_config,est = cache
+  @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c3,c4 = cache.tab
+  @unpack α31,α32,α41,α43 = cache.tab
   @unpack bhat1, bhat2, bhat3, bhat4 = cache.tab
   mass_matrix = integrator.sol.prob.mass_matrix
 

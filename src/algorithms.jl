@@ -191,6 +191,27 @@ Base.@pure SDIRK2(;chunk_size=0,autodiff=true,diff_type=:central,
         linsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
         max_newton_iter,new_jac_conv_bound)
 
+struct SSPSDIRK2{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{Controller}
+  linsolve::F
+  diff_type::Symbol
+  κ::K
+  tol::T
+  smooth_est::Bool
+  extrapolant::Symbol
+  min_newton_iter::Int
+  max_newton_iter::Int
+  new_jac_conv_bound::T2
+end
+Base.@pure SSPSDIRK2(;chunk_size=0,autodiff=true,diff_type=:central,
+                   linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
+                   smooth_est=true,extrapolant=:constant,min_newton_iter=1,
+                   max_newton_iter=7,new_jac_conv_bound = 1e-3,
+                   controller = :Predictive) =
+ SSPSDIRK2{chunk_size,autodiff,typeof(linsolve),
+        typeof(κ),typeof(tol),typeof(new_jac_conv_bound),controller}(
+        linsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
+        max_newton_iter,new_jac_conv_bound)
+
 struct Kvaerno3{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{Controller}
   linsolve::F
   diff_type::Symbol
@@ -294,6 +315,90 @@ Base.@pure Hairer42(;chunk_size=0,autodiff=true,diff_type=:central,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
                    controller = :Predictive) =
  Hairer42{chunk_size,autodiff,typeof(linsolve),
+        typeof(κ),typeof(tol),typeof(new_jac_conv_bound),controller}(
+        linsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
+        max_newton_iter,new_jac_conv_bound)
+
+struct Kvaerno4{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{Controller}
+  linsolve::F
+  diff_type::Symbol
+  κ::K
+  tol::T
+  smooth_est::Bool
+  extrapolant::Symbol
+  min_newton_iter::Int
+  max_newton_iter::Int
+  new_jac_conv_bound::T2
+end
+Base.@pure Kvaerno4(;chunk_size=0,autodiff=true,diff_type=:central,
+                   linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
+                   smooth_est=true,extrapolant=:constant,min_newton_iter=1,
+                   max_newton_iter=7,new_jac_conv_bound = 1e-3,
+                   controller = :Predictive) =
+ Kvaerno4{chunk_size,autodiff,typeof(linsolve),
+        typeof(κ),typeof(tol),typeof(new_jac_conv_bound),controller}(
+        linsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
+        max_newton_iter,new_jac_conv_bound)
+
+struct Kvaerno5{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{Controller}
+  linsolve::F
+  diff_type::Symbol
+  κ::K
+  tol::T
+  smooth_est::Bool
+  extrapolant::Symbol
+  min_newton_iter::Int
+  max_newton_iter::Int
+  new_jac_conv_bound::T2
+end
+Base.@pure Kvaerno5(;chunk_size=0,autodiff=true,diff_type=:central,
+                   linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
+                   smooth_est=true,extrapolant=:constant,min_newton_iter=1,
+                   max_newton_iter=7,new_jac_conv_bound = 1e-3,
+                   controller = :Predictive) =
+ Kvaerno5{chunk_size,autodiff,typeof(linsolve),
+        typeof(κ),typeof(tol),typeof(new_jac_conv_bound),controller}(
+        linsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
+        max_newton_iter,new_jac_conv_bound)
+
+struct KenCarp4{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{Controller}
+  linsolve::F
+  diff_type::Symbol
+  κ::K
+  tol::T
+  smooth_est::Bool
+  extrapolant::Symbol
+  min_newton_iter::Int
+  max_newton_iter::Int
+  new_jac_conv_bound::T2
+end
+Base.@pure KenCarp4(;chunk_size=0,autodiff=true,diff_type=:central,
+                   linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
+                   smooth_est=true,extrapolant=:constant,min_newton_iter=1,
+                   max_newton_iter=7,new_jac_conv_bound = 1e-3,
+                   controller = :Predictive) =
+ KenCarp4{chunk_size,autodiff,typeof(linsolve),
+        typeof(κ),typeof(tol),typeof(new_jac_conv_bound),controller}(
+        linsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
+        max_newton_iter,new_jac_conv_bound)
+
+struct KenCarp5{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{Controller}
+  linsolve::F
+  diff_type::Symbol
+  κ::K
+  tol::T
+  smooth_est::Bool
+  extrapolant::Symbol
+  min_newton_iter::Int
+  max_newton_iter::Int
+  new_jac_conv_bound::T2
+end
+Base.@pure KenCarp5(;chunk_size=0,autodiff=true,diff_type=:central,
+                   linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
+                   smooth_est=true,extrapolant=:constant,min_newton_iter=1,
+                   max_newton_iter=7,new_jac_conv_bound = 1e-3,
+                   controller = :Predictive) =
+ KenCarp5{chunk_size,autodiff,typeof(linsolve),
         typeof(κ),typeof(tol),typeof(new_jac_conv_bound),controller}(
         linsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
         max_newton_iter,new_jac_conv_bound)
