@@ -10,7 +10,8 @@ end
 
 function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   prob::AbstractODEProblem,
-  alg::algType,timeseries_init=typeof(prob.u0)[],ts_init=eltype(prob.tspan)[],ks_init=[],
+  alg::algType,timeseries_init=typeof(prob.u0)[],
+  ts_init=eltype(prob.tspan)[],ks_init=[],
   recompile::Type{Val{recompile_flag}}=Val{true};
   timeseries_steps = 1,
   saveat = eltype(prob.tspan)[],tstops = eltype(prob.tspan)[],d_discontinuities= eltype(prob.tspan)[],
