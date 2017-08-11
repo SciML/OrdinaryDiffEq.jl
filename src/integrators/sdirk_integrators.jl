@@ -2058,7 +2058,7 @@ end
 
   u = @. uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + γ*z₅
 
-  integrator.fsallast = f(t+dt,u)
+  integrator.fsallast = z₅/dt
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   cache.ηold = η
@@ -2402,7 +2402,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(est)
   end
 
-  f(t,u,integrator.fsallast)
+  @. integrator.fsallast = z₅/dt
   cache.ηold = η
   cache.newton_iters = iter
 end
