@@ -88,34 +88,3 @@ for i = 1:2
   sim114 = test_convergence(dts,prob,KenCarp5())
   @test abs(sim114.𝒪est[:final]-5) < testTol
 end
-
-#=
-using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase,
-      DiffEqProblemLibrary, Base.Test
-
-testTol = 0.2
-dts = 1.//2.^(8:-1:4)
-prob = prob_ode_linear
-
-dts = 1.//2.^(7:-1:4)
-sim13 = test_convergence(dts,prob,KenCarp5())
-@test abs(sim13.𝒪est[:final]-5) < testTol
-
-sol = solve(prob,KenCarp5())
-sol = solve(prob,TRBDF2())
-
-sol = solve(prob,KenCarp5(),reltol=1e-6)
-sol = solve(prob,TRBDF2(),reltol=1e-6)
-
-prob = prob_ode_2Dlinear
-dts = 1.//2.^(7:-1:4)
-
-sim13 = test_convergence(dts,prob,KenCarp5())
-@test abs(sim13.𝒪est[:final]-5) < testTol
-
-sol = solve(prob,KenCarp5())
-sol = solve(prob,TRBDF2())
-
-sol = solve(prob,KenCarp5(),reltol=1e-6)
-sol = solve(prob,TRBDF2(),reltol=1e-6)
-=#
