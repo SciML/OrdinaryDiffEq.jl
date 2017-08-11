@@ -60,6 +60,8 @@ for i = 1:2
   sim17 = test_convergence(dts,prob,KenCarp3())
   @test abs(sim17.𝒪est[:final]-3) < testTol
 
+  dts = 1.//2.^(7:-1:4)
+
   sim18 = test_convergence(dts,prob,Cash4())
   @test abs(sim18.𝒪est[:final]-4) < testTol
 
