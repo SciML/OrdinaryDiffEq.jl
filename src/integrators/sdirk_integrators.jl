@@ -1491,7 +1491,7 @@ end
   ################################## Solve Step 3
 
   # Guess is from Hermite derivative on z₁ and z₂
-  z₃ = @. α1*z₁ + α2*z₂
+  z₃ = @. α31*z₁ + α32*z₂
 
   iter = 1
   u = @. uprev + a31*z₁ + a32*z₂ + γ*z₃
@@ -2411,8 +2411,8 @@ end
 @muladd function perform_step!(integrator,cache::Hairer4ConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack uf = cache
-  @unpack γ,a21,a31,a32,a41,a42,a51,a52,a53,a54,c2,c3,c4 = cache.tab
-  @unpack α21,α31,α32,α41,α42 = cache.tab
+  @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
+  @unpack α21,α31,α32,α41,α43 = cache.tab
   @unpack bhat1, bhat2, bhat3, bhat4 = cache.tab
   uf.t = t
   γdt = γ*dt
@@ -2547,7 +2547,7 @@ end
 
   ################################## Solve Step 4
 
-  z₄ = @. α41*z₁ + α42*z₂
+  z₄ = @. α41*z₁ + α43*z₃
 
   iter = 1
   u = @. uprev + a41*z₁ + a42*z₂ + a43*z₃ + γ*z₄
