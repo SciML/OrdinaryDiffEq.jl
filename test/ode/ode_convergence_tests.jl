@@ -76,6 +76,8 @@ for i = 1:2
   sim110 = test_convergence(dts,prob,Hairer42())
   @test abs(sim110.𝒪est[:final]-4) < testTol
 
+  sim13 = test_convergence(dts,prob,Kvaerno4())
+  @test abs(sim13.𝒪est[:final]-4) < testTol
 end
 
 #=
@@ -89,7 +91,7 @@ prob = prob_ode_linear
 
 dts = 1.//2.^(7:-1:4)
 sim13 = test_convergence(dts,prob,Kvaerno4())
-@test abs(sim13.𝒪est[:final]-3) < testTol
+@test abs(sim13.𝒪est[:final]-4) < testTol
 
 sol = solve(prob,Kvaerno4())
 sol = solve(prob,TRBDF2())
@@ -101,7 +103,7 @@ prob = prob_ode_2Dlinear
 dts = 1.//2.^(7:-1:4)
 
 sim13 = test_convergence(dts,prob,Kvaerno4())
-@test abs(sim13.𝒪est[:final]-3) < testTol
+@test abs(sim13.𝒪est[:final]-4) < testTol
 
 sol = solve(prob,Kvaerno4())
 sol = solve(prob,TRBDF2())

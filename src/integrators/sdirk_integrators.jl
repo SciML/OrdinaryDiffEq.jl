@@ -2411,8 +2411,8 @@ end
 @muladd function perform_step!(integrator,cache::Hairer4ConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack uf = cache
-  @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
-  @unpack α21,α31,α32,α41,α43 = cache.tab
+  @unpack γ,a21,a31,a32,a41,a42,a51,a52,a53,a54,c2,c3,c4 = cache.tab
+  @unpack α21,α31,α32,α41,α42 = cache.tab
   @unpack bhat1, bhat2, bhat3, bhat4 = cache.tab
   uf.t = t
   γdt = γ*dt
@@ -2547,7 +2547,7 @@ end
 
   ################################## Solve Step 4
 
-  z₄ = @. α41*z₁ + α43*z₃
+  z₄ = @. α41*z₁ + α42*z₂
 
   iter = 1
   u = @. uprev + a41*z₁ + a42*z₂ + a43*z₃ + γ*z₄
@@ -2991,8 +2991,7 @@ end
   @unpack t,dt,uprev,u = integrator
   @unpack uf = cache
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,c3,c4 = cache.tab
-  @unpack α31,α32,α41,α43 = cache.tab
-  @unpack bhat1, bhat2, bhat3, bhat4 = cache.tab
+  @unpack α21,α31,α32,α41,α42 = cache.tab
   uf.t = t
   γdt = γ*dt
   κ = cache.κ
@@ -3010,8 +3009,7 @@ end
 
   ##### Step 2
 
-  # TODO: Add extrapolation
-  z₂ = z₁
+  z₂ = zero(u)
 
   iter = 1
   u = @. uprev + γ*z₁ + γ*z₂
@@ -3089,7 +3087,7 @@ end
 
   ################################## Solve Step 4
 
-  z₄ = @. α41*z₁ + α43*z₃
+  z₄ = @. α41*z₁ + α42*z₂
 
   iter = 1
   u = @. uprev + a41*z₁ + a42*z₂ + a43*z₃ + γ*z₄
@@ -3127,7 +3125,7 @@ end
   ################################## Solve Step 5
 
   # Use yhat2 for prediction
-  z₅ = @. bhat1*z₁ + bhat2*z₂ + bhat3*z₃ + bhat4*z₄
+  z₅ = @. a41*z₁ + a42*z₂ + a43*z₃ + γ*z₄
 
   iter = 1
   u = @. uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + γ*z₅
@@ -3173,7 +3171,7 @@ end
   cache.newton_iters = iter
 
   if integrator.opts.adaptive
-    est = @. (bhat1-a51)*z₁ + (bhat2-a52)*z₂ + (bhat3-a53)*z₃ + (bhat4-a54)*z₄ - γ*z₅
+    est = @. (a41-a51)*z₁ + (a42-a52)*z₂ + (a43-a53)*z₃ + (γ-a54)*z₄ - γ*z₅
     if integrator.alg.smooth_est # From Shampine
       Est = W\est
     else
@@ -3197,9 +3195,8 @@ end
 @muladd function perform_step!(integrator,cache::Kvaerno4Cache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack uf,du1,dz₁,dz₂,dz₃,dz₄,dz₅,z₁,z₂,z₃,z₄,z₅,k,J,W,jac_config,est = cache
-  @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c3,c4 = cache.tab
-  @unpack α31,α32,α41,α43 = cache.tab
-  @unpack bhat1, bhat2, bhat3, bhat4 = cache.tab
+  @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,c3,c4 = cache.tab
+  @unpack α21,α31,α32,α41,α42 = cache.tab
   mass_matrix = integrator.sol.prob.mass_matrix
 
   uf.t = t
@@ -3235,62 +3232,15 @@ end
 
   ##### Step 1
 
-  # TODO: Add extrapolation for guess
-  @. z₁ = zero(z₁)
-
-  iter = 1
-  @. u = uprev + γ*z₁
-  f(t+γ*dt,u,k)
-  @. k = dt*k - z₁
-  if has_invW(f)
-    A_mul_B!(vec(dz₁),W,vec(k)) # Here W is actually invW
-  else
-    integrator.alg.linsolve(vec(dz₁),W,vec(k),new_W)
-  end
-  ndz = integrator.opts.internalnorm(dz₁)
-  @. z₁ = z₁ + dz₁
-
-  η = max(cache.ηold,eps(first(u)))^(0.8)
-  if integrator.success_iter > 0
-    do_newton = (η*ndz > κ*tol)
-  else
-    do_newton = true
-  end
-
-  fail_convergence = false
-  while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
-    iter += 1
-    @. u = uprev + γ*z₁
-    f(t+2γ*dt,u,k)
-    @. k = dt*k - z₁
-    if has_invW(f)
-      A_mul_B!(vec(dz₁),W,vec(k)) # Here W is actually invW
-    else
-      integrator.alg.linsolve(vec(dz₁),W,vec(k),false)
-    end
-    ndzprev = ndz
-    ndz = integrator.opts.internalnorm(dz₁)
-    θ = ndz/ndzprev
-    if θ > 1 || ndz*(θ^(integrator.alg.max_newton_iter - iter)/(1-θ)) > κ*tol
-      fail_convergence = true
-      break
-    end
-    η = θ/(1-θ)
-    do_newton = (η*ndz > κ*tol)
-    @. z₁ = z₁ + dz₁
-  end
-
-  if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
-    integrator.force_stepfail = true
-    return
-  end
+  @. z₁ = dt*integrator.fsalfirst
 
   ##### Step 2
 
-  @. z₂ = α21*z₁
+  # TODO: Allow other choices here
+  @. z₂ = zero(u)
 
   iter = 1
-  @. u = uprev + a21*z₁ + γ*z₂
+  @. u = uprev + γ*z₁ + γ*z₂
   f(t+2γ*dt,u,k)
   @. k = dt*k - z₂
   if has_invW(f)
@@ -3311,7 +3261,7 @@ end
   fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
-    @. u = uprev + a21*z₁ + γ*z₂
+    @. u = uprev + γ*z₁ + γ*z₂
     f(t+2γ*dt,u,k)
     @. k = dt*k - z₂
     if has_invW(f)
@@ -3358,7 +3308,7 @@ end
   fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
-    u = @. uprev + a31*z₁ + a32*z₂ + γ*z₃
+    @. u = uprev + a31*z₁ + a32*z₂ + γ*z₃
     f(t+c3*dt,u,k)
     @. k = dt*k - z₃
     if has_invW(f)
@@ -3386,7 +3336,7 @@ end
   ################################## Solve Step 4
 
   # Use constant z prediction
-  @. z₄ = α41*z₁ + α43*z₃
+  @. z₄ = α41*z₁ + α42*z₂
 
   iter = 1
 
@@ -3435,10 +3385,13 @@ end
   ################################## Solve Step 5
 
   # Use yhat prediction
-  @. z₅ = bhat1*z₁ + bhat2*z₂ + bhat3*z₃ + bhat4*z₄
+  @. z₅ = a41*z₁ + a42*z₂ + a43*z₃ + γ*z₄
 
   iter = 1
-  @. u = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + γ*z₅
+  #@. u = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + γ*z₅
+  @tight_loop_macros for i in eachindex(u)
+    u[i] = uprev[i] + a51*z₁[i] + a52*z₂[i] + a53*z₃[i] + a54*z₄[i] + γ*z₅[i]
+  end
   f(t+dt,u,k)
   @. k = dt*k - z₅
   if has_invW(f)
@@ -3455,7 +3408,10 @@ end
   fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
-    @. u = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + γ*z₅
+    #@. u = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + γ*z₅
+    @tight_loop_macros for i in eachindex(u)
+      u[i] = uprev[i] + a51*z₁[i] + a52*z₂[i] + a53*z₃[i] + a54*z₄[i] + γ*z₅[i]
+    end
     f(t+dt,u,k)
     @. k = dt*k - z₅
     if has_invW(f)
@@ -3482,10 +3438,13 @@ end
 
   ################################### Finalize
 
-  @. u = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + γ*z₅
+  #@. u = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + γ*z₅
+  @tight_loop_macros for i in eachindex(u)
+    u[i] = uprev[i] + a51*z₁[i] + a52*z₂[i] + a53*z₃[i] + a54*z₄[i] + γ*z₅[i]
+  end
 
   if integrator.opts.adaptive
-    @. est = (bhat1-a51)*z₁ + (bhat2-a52)*z₂ + (bhat3-a53)*z₃ + (bhat4-a54)*z₄ - γ*z₅
+    @. est = (a41-a51)*z₁ + (a42-a52)*z₂ + (a43-a53)*z₃ + (γ-a54)*z₄ - γ*z₅
     if integrator.alg.smooth_est # From Shampine
       if has_invW(f)
         A_mul_B!(vec(k),W,vec(est))
