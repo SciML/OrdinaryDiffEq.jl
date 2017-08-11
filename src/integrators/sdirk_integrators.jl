@@ -998,8 +998,13 @@ end
     end
   end
 
-  # TODO: Add extrapolant initial guess
-  @. u = uprev
+  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
+    current_extrapolant!(u,t+dt,integrator)
+  elseif integrator.alg.extrapolant == :linear
+    u .= uprev .+ integrator.fsalfirst.*dt
+  else
+    copy!(u,uprev)
+  end
 
   ##### Step 1
 
@@ -1304,8 +1309,13 @@ end
     end
   end
 
-  # TODO: Add extrapolant initial guess
-  @. u = uprev
+  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
+    current_extrapolant!(u,t+dt,integrator)
+  elseif integrator.alg.extrapolant == :linear
+    @. u = uprev + integrator.fsalfirst*dt
+  else
+    copy!(u,uprev)
+  end
 
   ##### Step 1
 
@@ -1572,7 +1582,7 @@ end
 
   u = @. uprev + a41*z₁ + a42*z₂ + a43*z₃ + γ*z₄
 
-  integrator.fsallast = f(t+dt,u)
+  integrator.fsallast = z₄/dt
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   cache.ηold = η
@@ -1814,7 +1824,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(est)
   end
 
-  f(t,u,integrator.fsallast)
+  @. integrator.fsallast = z₄/dt
   cache.ηold = η
   cache.newton_iters = iter
 end
@@ -2624,7 +2634,7 @@ end
 
   u = @. uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + γ*z₅
 
-  integrator.fsallast = f(t+dt,u)
+  integrator.fsallast = z₅/dt
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   cache.ηold = η
@@ -2693,8 +2703,17 @@ end
 
   ##### Step 1
 
-  # TODO: Add extrapolation for guess
-  @. z₁ = zero(z₁)
+  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
+    current_extrapolant!(u,t+γ*dt,integrator)
+  elseif integrator.alg.extrapolant == :linear
+    @. u = uprev + γ*dt*integrator.fsalfirst
+  else
+    copy!(u,uprev)
+  end
+
+  @show z₁
+
+  @. z₁ = u - uprev
 
   iter = 1
   @. u = uprev + γ*z₁
@@ -2971,7 +2990,9 @@ end
     integrator.EEst = integrator.opts.internalnorm(est)
   end
 
-  f(t,u,integrator.fsallast)
+  @show z₁,z₅,integrator.EEst,integrator.force_stepfail
+
+  @. integrator.fsallast = z₅/dt
   cache.ηold = η
   cache.newton_iters = iter
 end
@@ -2986,6 +3007,7 @@ function initialize!(integrator,cache::Kvaerno4ConstantCache,f=integrator.f)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
 end
+
 
 @muladd function perform_step!(integrator,cache::Kvaerno4ConstantCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
@@ -3165,7 +3187,7 @@ end
 
   u = @. uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + γ*z₅
 
-  integrator.fsallast = f(t+dt,u)
+  integrator.fsallast = z₅/dt
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   cache.ηold = η
@@ -3461,7 +3483,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(est)
   end
 
-  f(t,u,integrator.fsallast)
+  @. integrator.fsallast = z₅/dt
   cache.ηold = η
   cache.newton_iters = iter
 end
@@ -3693,7 +3715,7 @@ end
 
   u = @. uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + γ*z₆
 
-  integrator.fsallast = f(t+dt,u)
+  integrator.fsallast = z₆/dt
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   cache.ηold = η
@@ -4048,7 +4070,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(est)
   end
 
-  f(t,u,integrator.fsallast)
+  @. integrator.fsallast = z₆/dt
   cache.ηold = η
   cache.newton_iters = iter
 end
@@ -4317,7 +4339,7 @@ end
 
   u = @. uprev + a71*z₁ +  a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆ + γ*z₇
 
-  integrator.fsallast = f(t+dt,u)
+  integrator.fsallast = z₇/dt
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   cache.ηold = η
@@ -4729,7 +4751,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(est)
   end
 
-  f(t,u,integrator.fsallast)
+  @. integrator.fsallast = z₇/dt
   cache.ηold = η
   cache.newton_iters = iter
 end
@@ -5036,7 +5058,7 @@ end
 
   u = @. uprev + a81*z₁ +  a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇ + γ*z₈
 
-  integrator.fsallast = f(t+dt,u)
+  integrator.fsallast = z₈/dt
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   cache.ηold = η
@@ -5504,7 +5526,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(est)
   end
 
-  f(t,u,integrator.fsallast)
+  @. integrator.fsallast = z₈/dt
   cache.ηold = η
   cache.newton_iters = iter
 end
