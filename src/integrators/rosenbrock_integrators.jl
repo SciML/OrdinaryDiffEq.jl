@@ -54,8 +54,7 @@ end
         if alg_autodiff(integrator.alg)
           ForwardDiff.jacobian!(J, uf, vec(du1), vec(uprev), jac_config)
         else
-          Calculus.finite_difference_jacobian!(uf, vec(uprev), vec(du1), J,
-                                               integrator.alg.diff_type)
+          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
         end
       end
       for j in 1:length(u), i in 1:length(u)
@@ -156,8 +155,7 @@ end
         if alg_autodiff(integrator.alg)
           ForwardDiff.jacobian!(J, uf, vec(du1), vec(uprev), jac_config)
         else
-          Calculus.finite_difference_jacobian!(uf, vec(uprev), vec(du1), J,
-                                               integrator.alg.diff_type)
+          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
         end
       end
       for j in 1:length(u), i in 1:length(u)
@@ -453,8 +451,7 @@ end
         if alg_autodiff(integrator.alg)
           ForwardDiff.jacobian!(J, uf, vec(du1), vec(uprev), jac_config)
         else
-          Calculus.finite_difference_jacobian!(uf, vec(uprev), vec(du1), J,
-                                               integrator.alg.diff_type)
+          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
         end
       end
       for j in 1:length(u), i in 1:length(u)
@@ -647,8 +644,7 @@ end
         if alg_autodiff(integrator.alg)
           ForwardDiff.jacobian!(J, uf, vec(du1), vec(uprev), jac_config)
         else
-          Calculus.finite_difference_jacobian!(uf, vec(uprev), vec(du1), J,
-                                               integrator.alg.diff_type)
+          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
         end
       end
       for j in 1:length(u), i in 1:length(u)
@@ -860,8 +856,7 @@ end
         if alg_autodiff(integrator.alg)
           ForwardDiff.jacobian!(J, uf, vec(du1), vec(uprev), jac_config)
         else
-          Calculus.finite_difference_jacobian!(uf, vec(uprev), vec(du1), J,
-                                               integrator.alg.diff_type)
+          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
         end
       end
       for j in 1:length(u), i in 1:length(u)
@@ -1106,7 +1101,7 @@ end
         if alg_autodiff(integrator.alg)
           ForwardDiff.jacobian!(J, uf, vec(du1), vec(uprev), jac_config)
         else
-          Calculus.finite_difference_jacobian!(uf, vec(uprev), vec(du1), J, integrator.alg.diff_type)
+          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
         end
       end
       for j in 1:length(u), i in 1:length(u)
@@ -1454,8 +1449,7 @@ end
         if alg_autodiff(integrator.alg)
           ForwardDiff.jacobian!(J, uf, vec(du1), vec(uprev), jac_config)
         else
-          Calculus.finite_difference_jacobian!(uf, vec(uprev), vec(du1), J,
-                                              integrator.alg.diff_type)
+          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
         end
       end
       for j in 1:length(u), i in 1:length(u)

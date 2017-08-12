@@ -24,9 +24,11 @@ end
 (p::TimeGradientWrapper)(t) = (du2 = similar(p.uprev); p.vf(t,p.uprev,du2); du2)
 (p::TimeGradientWrapper)(du2,t) = p.vf(t,p.uprev,du2)
 
-mutable struct UJacobianWrapper{VFRType,tType} <: Function
+mutable struct UJacobianWrapper{VFRType,tType,CacheType} <: Function
   vfr::VFRType
   t::tType
+  x1::CacheType
+  fx1::CacheType
 end
 
 (p::UJacobianWrapper)(du1,uprev) = p.vfr(p.t,uprev,du1)
