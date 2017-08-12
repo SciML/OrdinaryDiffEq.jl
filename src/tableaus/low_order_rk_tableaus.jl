@@ -529,6 +529,28 @@ struct Tsit5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   btilde5::T
   btilde6::T
   btilde7::T
+  r11::T
+  r12::T
+  r13::T
+  r14::T
+  r22::T
+  r23::T
+  r24::T
+  r32::T
+  r33::T
+  r34::T
+  r42::T
+  r43::T
+  r44::T
+  r52::T
+  r53::T
+  r54::T
+  r62::T
+  r63::T
+  r64::T
+  r72::T
+  r73::T
+  r74::T
 end
 
 Base.@pure function Tsit5ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
@@ -573,7 +595,9 @@ Base.@pure function Tsit5ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::T
   btilde5 =  T(0.5823571654525552)
   btilde6 =  T(-0.45808210592918697)
   btilde7 =  T(0.015151515151515152)
-  Tsit5ConstantCache(c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7)
+
+  r11,r12,r13,r14,r22,r23,r24,r32,r33,r34,r42,r43,r44,r52,r53,r54,r62,r63,r64,r72,r73,r74 = Tsit5Interp(T)
+  Tsit5ConstantCache(c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,r11,r12,r13,r14,r22,r23,r24,r32,r33,r34,r42,r43,r44,r52,r53,r54,r62,r63,r64,r72,r73,r74)
 end
 
 function Tsit5ConstantCache(T::Type,T2::Type)
@@ -618,7 +642,97 @@ function Tsit5ConstantCache(T::Type,T2::Type)
   btilde5 =  T(parse(BigFloat,"5.823571654525552250199376106520421794260781239567387797673045438803694038950012e-01"))
   btilde6 =  T(parse(BigFloat,"-4.580821059291869466616365188325542974428047279788398179474684434732070620889539e-01"))
   btilde7 =  T(1//66)
-  Tsit5ConstantCache(c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7)
+
+  r11,r12,r13,r14,r22,r23,r24,r32,r33,r34,r42,r43,r44,r52,r53,r54,r62,r63,r64,r72,r73,r74 = Tsit5Interp(T)
+  Tsit5ConstantCache(c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7,r11,r12,r13,r14,r22,r23,r24,r32,r33,r34,r42,r43,r44,r52,r53,r54,r62,r63,r64,r72,r73,r74)
+end
+
+"""
+Coefficients for the polynomial
+bᵢΘ = ri1*Θ + ri2*Θ^2 + ri3*Θ^3 + ...
+
+These are the coefficients of the expanded form of the polynomials from
+
+Runge–Kutta pairs of order 5(4) satisfying only the first column
+simplifying assumption
+
+Ch. Tsitouras
+"""
+function Tsit5Interp(::Type{T}) where {T<:CompiledFloats}
+  r11 = T(1.0)
+  r12 = T(-2.763706197274826)
+  r13 = T(2.9132554618219126)
+  r14 = T(-1.0530884977290216)
+
+  r22 = T(0.13169999999999998)
+  r23 = T(-0.2234)
+  r24 = T(0.1017)
+
+  r32 = T(3.9302962368947516)
+  r33 = T(-5.941033872131505)
+  r34 = T(2.490627285651253)
+
+  r42 = T(-12.411077166933676)
+  r43 = T(30.33818863028232)
+  r44 = T(-16.548102889244902)
+
+  r52 = T(37.50931341651104)
+  r53 = T(-88.1789048947664)
+  r54 = T(47.37952196281928)
+
+  r62 = T(-27.896526289197286)
+  r63 = T(65.09189467479366)
+  r64 = T(-34.87065786149661)
+
+  r72 = T(1.5)
+  r73 = T(-4)
+  r74 = T(2.5)
+
+  return r11,r12,r13,r14,r22,r23,r24,r32,r33,r34,r42,r43,r44,r52,r53,r54,r62,r63,r64,r72,r73,r74
+end
+
+"""
+Coefficients for the polynomial
+bᵢΘ = ri1*Θ + ri2*Θ^2 + ri3*Θ^3 + ...
+
+These are the coefficients of the expanded form of the polynomials from
+
+Runge–Kutta pairs of order 5(4) satisfying only the first column
+simplifying assumption
+
+Ch. Tsitouras
+"""
+function Tsit5Interp(T::Type)
+  r11 = T(parse(BigFloat,"0.999999999999999974283372471559910888475488471328"))
+  r12 = T(parse(BigFloat,"-2.763706197274825911336735930481400260916070804192"))
+  r13 = T(parse(BigFloat,"2.91325546182191274375068099306808"))
+  r14 = T(-1.0530884977290216)
+
+  r22 = T(parse(BigFloat,"0.13169999999999999727"))
+  r23 = T(parse(BigFloat,"-0.22339999999999999818"))
+  r24 = T(0.1017)
+
+  r32 = T(parse(BigFloat,"3.93029623689475152850687446709813398"))
+  r33 = T(parse(BigFloat,"-5.94103387213150473470249202589458001"))
+  r34 = T(parse(BigFloat,"2.490627285651252793"))
+
+  r42 = T(parse(BigFloat,"-12.411077166933676983734381540685453484102414134010752"))
+  r43 = T(parse(BigFloat,"30.3381886302823215981729903691836576"))
+  r44 = T(parse(BigFloat,"-16.54810288924490272"))
+
+  r52 = T(parse(BigFloat,"37.50931341651103919496903965334519631242339792120440212"))
+  r53 = T(parse(BigFloat,"-88.1789048947664011014276693541209817"))
+  r54 = T(parse(BigFloat,"47.37952196281928122"))
+
+  r62 = T(parse(BigFloat,"-27.896526289197287805948263144598643896"))
+  r63 = T(parse(BigFloat,"65.09189467479367152629021928716553658"))
+  r64 = T(parse(BigFloat,"-34.87065786149660974"))
+
+  r72 = T(1.5)
+  r73 = T(-4)
+  r74 = T(2.5)
+
+  return r11,r12,r13,r14,r22,r23,r24,r32,r33,r34,r42,r43,r44,r52,r53,r54,r62,r63,r64,r72,r73,r74
 end
 
 struct BS5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
