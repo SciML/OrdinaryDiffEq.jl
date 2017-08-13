@@ -1010,12 +1010,9 @@ function initialize!(integrator, cache::Rodas4ConstantCache)
   integrator.kshortsize = 2
   k = eltype(integrator.sol.k)(2)
   integrator.k = k
-  integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev)
-
   # Avoid undefined entries if k is an array of arrays
-  integrator.fsallast = zero(integrator.fsalfirst)
-  integrator.k[1] = zero(integrator.fsalfirst)
-  integrator.k[2] = zero(integrator.fsalfirst)
+  integrator.k[1] = zero(integrator.u)
+  integrator.k[2] = zero(integrator.u)
 end
 
 @muladd function perform_step!(integrator, cache::Rodas4ConstantCache, repeat_step=false)
@@ -1108,24 +1105,19 @@ end
     integrator.k[1] = @. h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5
     integrator.k[2] = @. h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5
   end
-
-  integrator.fsallast = du
   integrator.u = u
 end
 
 
 function initialize!(integrator, cache::Rodas4Cache)
   integrator.kshortsize = 2
-  @unpack fsalfirst,fsallast,dense1,dense2 = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = fsallast
+  @unpack dense1,dense2 = cache
   integrator.k = [dense1,dense2]
-  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst)
 end
 
 @muladd function perform_step!(integrator, cache::Rodas4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
-  @unpack du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,vectmp5,vectmp6,fsalfirst,fsallast,dT,J,W,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
+  @unpack du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,vectmp5,vectmp6,dT,J,W,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
   @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,gamma,c2,c3,c4,d1,d2,d3,d4 = cache.tab
 
   # Assignments
