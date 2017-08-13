@@ -205,7 +205,7 @@ sol = solve(prob,Ros4LStab())
 
 ### Rodas4 Algorithms
 
-dts = 1.//2.^(8:-1:5)
+dts = 1.//2.^(7:-1:4)
 
 prob = prob_ode_linear
 
@@ -217,7 +217,7 @@ sol = solve(prob,Rodas4())
 @test length(sol) < 20
 
 sim = test_convergence(dts,prob,Rodas42(),dense_errors=true)
-@test abs(sim.𝒪est[:final]-4) < testTol
+@test abs(sim.𝒪est[:final]-5) < testTol
 @test abs(sim.𝒪est[:L2]-4) < testTol
 
 sol = solve(prob,Rodas42())
@@ -240,7 +240,7 @@ sol = solve(prob,Rodas4())
 @test length(sol) < 20
 
 sim = test_convergence(dts,prob,Rodas42(),dense_errors=true)
-@test abs(sim.𝒪est[:final]-4) < testTol
+@test abs(sim.𝒪est[:final]-5) < testTol
 @test abs(sim.𝒪est[:L2]-4) < testTol
 
 sol = solve(prob,Rodas42())
