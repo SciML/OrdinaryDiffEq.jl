@@ -55,7 +55,6 @@ struct Feagin14 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 # Symplectic methods
 
-#struct Verlet <: OrdinaryDiffEqAlgorithm end
 struct SymplecticEuler <: OrdinaryDiffEqAlgorithm end
 struct VelocityVerlet <: OrdinaryDiffEqAlgorithm end
 struct VerletLeapfrog <: OrdinaryDiffEqAlgorithm end

@@ -74,7 +74,7 @@ end
   if mass_matrix == I
     tmp .= k₁
   else
-    A_mul_B!(tmp,mass_matrix,k₁) # vectmp == k₁
+    A_mul_B!(tmp,mass_matrix,k₁)
   end
 
   @. linsolve_tmp = f₁ - tmp
@@ -190,11 +190,11 @@ end
   if mass_matrix == I
     tmp .= k₁
   else
-    A_mul_B!(tmp,mass_matrix,k₁) # vectmp == k₁
+    A_mul_B!(tmp,mass_matrix,k₁)
   end
 
   @. linsolve_tmp = f₁ - tmp
-  
+
   if has_invW(f)
     A_mul_B!(vectmp2, W, linsolve_tmp_vec)
   else
@@ -498,7 +498,14 @@ end
   @. u = uprev + a21*k1
   f(t+c2*dt, u, du)
 
-  @. linsolve_tmp = du + dtd2*dT + dtC21*k1
+  if mass_matrix == I
+    @. linsolve_tmp = du + dtd2*dT + dtC21*k1
+  else
+    @. du1 = dtC21*k1
+    A_mul_B!(du2,mass_matrix,du1)
+    @. linsolve_tmp = du + dtd2*dT + du2
+  end
+
   if has_invW(f)
     A_mul_B!(vectmp2, W, linsolve_tmp_vec)
   else
@@ -509,7 +516,14 @@ end
   @. u = uprev + a31*k1 + a32*k2
   f(t+c3*dt, u, du)
 
-  @. linsolve_tmp = du + dtd3*dT + dtC31*k1 + dtC32*k2
+  if mass_matrix == I
+    @. linsolve_tmp = du + dtd3*dT + dtC31*k1 + dtC32*k2
+  else
+    @. du1 = dtC31*k1 + dtC32*k2
+    A_mul_B!(du2,mass_matrix,du1)
+    @. linsolve_tmp = du + dtd3*dT + du2
+  end
+
   if has_invW(f)
     A_mul_B!(vectmp3, W, linsolve_tmp_vec)
   else
@@ -698,7 +712,14 @@ end
   f(t+c2*dt,u,du)
   =#
 
-  @. linsolve_tmp = fsalfirst + dtd2*dT + dtC21*k1
+  if mass_matrix == I
+    @. linsolve_tmp = fsalfirst + dtd2*dT + dtC21*k1
+  else
+    @. du1 = dtC21*k1
+    A_mul_B!(du2,mass_matrix,du1)
+    @. linsolve_tmp = fsalfirst + dtd2*dT + du2
+  end
+
   if has_invW(f)
     A_mul_B!(vectmp2, W, linsolve_tmp_vec)
   else
@@ -709,7 +730,14 @@ end
   @. u = uprev + a31*k1 + a32*k2
   f(t+c3*dt, u, du)
 
-  @. linsolve_tmp = du + dtd3*dT + dtC31*k1 + dtC32*k2
+  if mass_matrix == I
+    @. linsolve_tmp = du + dtd3*dT + dtC31*k1 + dtC32*k2
+  else
+    @. du1 = dtC31*k1 + dtC32*k2
+    A_mul_B!(du2,mass_matrix,du1)
+    @. linsolve_tmp = du + dtd3*dT + du2
+  end
+
   if has_invW(f)
     A_mul_B!(vectmp3, W, linsolve_tmp_vec)
   else
@@ -717,7 +745,14 @@ end
   end
 
   k3 = reshape(vectmp3, sizeu...)
-  @. linsolve_tmp = du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
+
+  if mass_matrix == I
+    @. linsolve_tmp = du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
+  else
+    @. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
+    A_mul_B!(du2,mass_matrix,du1)
+    @. linsolve_tmp = du + dtd4*dT + du2
+  end
 
   if has_invW(f)
     A_mul_B!(vectmp4, W, linsolve_tmp_vec)
@@ -728,6 +763,8 @@ end
   k4 = reshape(vectmp4, sizeu...)
   @. u = uprev + b1*k1 + b2*k2 + b3*k3 + b4*k4
   f(t, u, fsallast)
+
+  #@show k1,k2,k3,k4
 
   if integrator.opts.adaptive
     @. utilde = btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4
@@ -905,7 +942,14 @@ end
   @. u = uprev + a21*k1
   f(t+c2*dt, u, du)
 
-  @. linsolve_tmp = du + dtd2*dT + dtC21*k1
+  if mass_matrix == I
+    @. linsolve_tmp = du + dtd2*dT + dtC21*k1
+  else
+    @. du1 = dtC21*k1
+    A_mul_B!(du2,mass_matrix,du1)
+    @. linsolve_tmp = du + dtd2*dT + du2
+  end
+
   if has_invW(f)
     A_mul_B!(vectmp2, W, linsolve_tmp_vec)
   else
@@ -916,7 +960,14 @@ end
   @. u = uprev + a31*k1 + a32*k2
   f(t+c3*dt, u, du)
 
-  @. linsolve_tmp = du + dtd3*dT + dtC31*k1 + dtC32*k2
+  if mass_matrix == I
+    @. linsolve_tmp = du + dtd3*dT + dtC31*k1 + dtC32*k2
+  else
+    @. du1 = dtC31*k1 + dtC32*k2
+    A_mul_B!(du2,mass_matrix,du1)
+    @. linsolve_tmp = du + dtd3*dT + du2
+  end
+
   if has_invW(f)
     A_mul_B!(vectmp3, W, linsolve_tmp_vec)
   else
@@ -925,7 +976,14 @@ end
 
   k3 = reshape(vectmp3, sizeu...)
 
-  @. linsolve_tmp = du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
+  if mass_matrix == I
+    @. linsolve_tmp = du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
+  else
+    @. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
+    A_mul_B!(du2,mass_matrix,du1)
+    @. linsolve_tmp = du + dtd4*dT + du2
+  end
+
   if has_invW(f)
     A_mul_B!(vectmp4, W, linsolve_tmp_vec)
   else
@@ -1150,7 +1208,14 @@ end
   @. u = uprev + a21*k1
   f(t+c2*dt, u, du)
 
-  @. linsolve_tmp = du + dtd2*dT + dtC21*k1
+  if mass_matrix == I
+    @. linsolve_tmp = du + dtd2*dT + dtC21*k1
+  else
+    @. du1 = dtC21*k1
+    A_mul_B!(du2,mass_matrix,du1)
+    @. linsolve_tmp = du + dtd2*dT + du2
+  end
+
   if has_invW(f)
     A_mul_B!(vectmp2, W, linsolve_tmp_vec)
   else
@@ -1161,7 +1226,14 @@ end
   @. u = uprev + a31*k1 + a32*k2
   f(t+c3*dt, u, du)
 
-  @. linsolve_tmp = du + dtd3*dT + (dtC31*k1 + dtC32*k2)
+  if mass_matrix == I
+    @. linsolve_tmp = du + dtd3*dT + (dtC31*k1 + dtC32*k2)
+  else
+    @. du1 = dtC31*k1 + dtC32*k2
+    A_mul_B!(du2,mass_matrix,du1)
+    @. linsolve_tmp = du + dtd3*dT + du2
+  end
+
   if has_invW(f)
     A_mul_B!(vectmp3, W, linsolve_tmp_vec)
   else
@@ -1172,7 +1244,13 @@ end
   @. u = uprev + a41*k1 + a42*k2 + a43*k3
   f(t+c4*dt, u, du)
 
-  @. linsolve_tmp = du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
+  if mass_matrix == I
+    @. linsolve_tmp = du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
+  else
+    @. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
+    A_mul_B!(du2,mass_matrix,du1)
+    @. linsolve_tmp = du + dtd4*dT + du2
+  end
 
   if has_invW(f)
     A_mul_B!(vectmp4, W, linsolve_tmp_vec)
@@ -1184,7 +1262,14 @@ end
   @. u = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
   f(t+dt, u, du)
 
-  @. linsolve_tmp = du + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
+  if mass_matrix == I
+    @. linsolve_tmp = du + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
+  else
+    @. du1 = dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3
+    A_mul_B!(du2,mass_matrix,du1)
+    @. linsolve_tmp = du + du2
+  end
+
   if has_invW(f)
     A_mul_B!(vectmp5, W, linsolve_tmp_vec)
   else
@@ -1195,10 +1280,20 @@ end
   u .+= k5
   f(t, u, du)
 
-  # @. linsolve_tmp = du + (dtC61*k1 + dtC62*k2 + dtC65*k5 + dtC64*k4 + dtC63*k3)
-  @tight_loop_macros for i in uidx
-    @inbounds linsolve_tmp[i] = du[i] + (dtC61*k1[i] + dtC62*k2[i] + dtC65*k5[i] + dtC64*k4[i] + dtC63*k3[i])
+  if mass_matrix == I
+    # @. linsolve_tmp = du + (dtC61*k1 + dtC62*k2 + dtC65*k5 + dtC64*k4 + dtC63*k3)
+    @tight_loop_macros for i in uidx
+      @inbounds linsolve_tmp[i] = du[i] + (dtC61*k1[i] + dtC62*k2[i] + dtC65*k5[i] + dtC64*k4[i] + dtC63*k3[i])
+    end
+  else
+    # @. linsolve_tmp = dtC61*k1 + dtC62*k2 + dtC65*k5 + dtC64*k4 + dtC63*k3
+    @tight_loop_macros for i in uidx
+      @inbounds du1[i] = dtC61*k1[i] + dtC62*k2[i] + dtC65*k5[i] + dtC64*k4[i] + dtC63*k3[i]
+    end
+    A_mul_B!(du2,mass_matrix,du1)
+    @. linsolve_tmp = du + du2
   end
+
   if has_invW(f)
     A_mul_B!(vectmp6, W, linsolve_tmp_vec)
   else
@@ -1499,7 +1594,16 @@ end
   @. u = uprev + a21*k1
   f(t+c2*dt, u, du)
 
-  @. linsolve_tmp = du + dtd2*dT + dtC21*k1
+
+
+  if mass_matrix == I
+    @. linsolve_tmp = du + dtd2*dT + dtC21*k1
+  else
+    @. du1 = dtC21*k1
+    A_mul_B!(du2,mass_matrix,du1)
+    @. linsolve_tmp = du + dtd2*dT + du2
+  end
+
   if has_invW(f)
     A_mul_B!(vectmp2, W, linsolve_tmp_vec)
   else
@@ -1510,7 +1614,14 @@ end
   @. u = uprev + a31*k1 + a32*k2
   f(t+c3*dt, u, du)
 
-  @. linsolve_tmp = du + dtd3*dT + (dtC31*k1 + dtC32*k2)
+  if mass_matrix == I
+    @. linsolve_tmp = du + dtd3*dT + (dtC31*k1 + dtC32*k2)
+  else
+    @. du1 = dtC31*k1 + dtC32*k2
+    A_mul_B!(du2,mass_matrix,du1)
+    @. linsolve_tmp = du + dtd3*dT + du2
+  end
+
   if has_invW(f)
     A_mul_B!(vectmp3, W, linsolve_tmp_vec)
   else
@@ -1521,7 +1632,14 @@ end
   @. u = uprev + a41*k1 + a42*k2 + a43*k3
   f(t+c4*dt, u, du)
 
-  @. linsolve_tmp = du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
+  if mass_matrix == I
+    @. linsolve_tmp = du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
+  else
+    @. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
+    A_mul_B!(du2,mass_matrix,du1)
+    @. linsolve_tmp = du + dtd4*dT + du2
+  end
+
   if has_invW(f)
     A_mul_B!(vectmp4, W, linsolve_tmp_vec)
   else
@@ -1532,10 +1650,17 @@ end
   @. u = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
   f(t+c5*dt, u, du)
 
-#  @. linsolve_tmp = du + dtd5*dT + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
-  @tight_loop_macros for i in uidx
-    @inbounds linsolve_tmp[i] = du[i] + dtd5*dT[i] + (dtC52*k2[i] + dtC54*k4[i] + dtC51*k1[i] + dtC53*k3[i])
+  if mass_matrix == I
+    #  @. linsolve_tmp = du + dtd5*dT + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
+      @tight_loop_macros for i in uidx
+        @inbounds linsolve_tmp[i] = du[i] + dtd5*dT[i] + (dtC52*k2[i] + dtC54*k4[i] + dtC51*k1[i] + dtC53*k3[i])
+      end
+  else
+    @. du1 = dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3
+    A_mul_B!(du2,mass_matrix,du1)
+    @. linsolve_tmp = du + dtd5*dT + du2
   end
+
   if has_invW(f)
     A_mul_B!(vectmp5, W, linsolve_tmp_vec)
   else
@@ -1549,10 +1674,20 @@ end
   end
   f(t+dt, u, du)
 
-  # @. linsolve_tmp = du + (dtC61*k1 + dtC62*k2 + dtC63*k3 + dtC64*k4 + dtC65*k5)
-  @tight_loop_macros for i in uidx
-    @inbounds linsolve_tmp[i] = du[i] + (dtC61*k1[i] + dtC62*k2[i] + dtC63*k3[i] + dtC64*k4[i] + dtC65*k5[i])
+  if mass_matrix == I
+    # @. linsolve_tmp = du + (dtC61*k1 + dtC62*k2 + dtC63*k3 + dtC64*k4 + dtC65*k5)
+    @tight_loop_macros for i in uidx
+      @inbounds linsolve_tmp[i] = du[i] + (dtC61*k1[i] + dtC62*k2[i] + dtC63*k3[i] + dtC64*k4[i] + dtC65*k5[i])
+    end
+  else
+    # @. du1 = dtC61*k1 + dtC62*k2 + dtC63*k3 + dtC64*k4 + dtC65*k5
+    @tight_loop_macros for i in uidx
+      @inbounds du1[i] = dtC61*k1[i] + dtC62*k2[i] + dtC63*k3[i] + dtC64*k4[i] + dtC65*k5[i]
+    end
+    A_mul_B!(du2,mass_matrix,du1)
+    @. linsolve_tmp = du + du2
   end
+
   if has_invW(f)
     A_mul_B!(vectmp6, W, linsolve_tmp_vec)
   else
@@ -1563,10 +1698,20 @@ end
   u .+= k6
   f(t+dt, u, du)
 
-  # @. linsolve_tmp = du + (dtC71*k1 + dtC72*k2 + dtC73*k3 + dtC74*k4 + dtC75*k5 + dtC76*k6)
-  @tight_loop_macros for i in uidx
-    @inbounds linsolve_tmp[i] = du[i] + (dtC71*k1[i] + dtC72*k2[i] + dtC73*k3[i] + dtC74*k4[i] + dtC75*k5[i] + dtC76*k6[i])
+  if mass_matrix == I
+    # @. linsolve_tmp = du + (dtC71*k1 + dtC72*k2 + dtC73*k3 + dtC74*k4 + dtC75*k5 + dtC76*k6)
+    @tight_loop_macros for i in uidx
+      @inbounds linsolve_tmp[i] = du[i] + (dtC71*k1[i] + dtC72*k2[i] + dtC73*k3[i] + dtC74*k4[i] + dtC75*k5[i] + dtC76*k6[i])
+    end
+  else
+    # @. du1 =dtC72*k2 + dtC73*k3 + dtC74*k4 + dtC75*k5 + dtC76*k6
+    @tight_loop_macros for i in uidx
+      @inbounds du1[i] = dtC71*k1[i] + dtC72*k2[i] + dtC73*k3[i] + dtC74*k4[i] + dtC75*k5[i] + dtC76*k6[i]
+    end
+    A_mul_B!(du2,mass_matrix,du1)
+    @. linsolve_tmp = du + du2
   end
+
   if has_invW(f)
     A_mul_B!(vectmp7, W, linsolve_tmp_vec)
   else
@@ -1577,10 +1722,20 @@ end
   u .+= k7
   f(t+dt, u, du)
 
-  # @. linsolve_tmp = du + (dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7)
-  @tight_loop_macros for i in uidx
-    @inbounds linsolve_tmp[i] = du[i] + (dtC81*k1[i] + dtC82*k2[i] + dtC83*k3[i] + dtC84*k4[i] + dtC85*k5[i] + dtC86*k6[i] + dtC87*k7[i])
+  if mass_matrix == I
+    # @. linsolve_tmp = du + (dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7)
+    @tight_loop_macros for i in uidx
+      @inbounds linsolve_tmp[i] = du[i] + (dtC81*k1[i] + dtC82*k2[i] + dtC83*k3[i] + dtC84*k4[i] + dtC85*k5[i] + dtC86*k6[i] + dtC87*k7[i])
+    end
+  else
+    # @. du1 = dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7
+    @tight_loop_macros for i in uidx
+      @inbounds du1[i] = dtC81*k1[i] + dtC82*k2[i] + dtC83*k3[i] + dtC84*k4[i] + dtC85*k5[i] + dtC86*k6[i] + dtC87*k7[i]
+    end
+    A_mul_B!(du2,mass_matrix,du1)
+    @. linsolve_tmp = du + du2
   end
+
   if has_invW(f)
     A_mul_B!(vectmp8, W, linsolve_tmp_vec)
   else
