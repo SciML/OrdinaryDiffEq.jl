@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, RecursiveArrayTools, DiffEqBase, Base.Test#, ParameterizedFunctions
+using OrdinaryDiffEq, RecursiveArrayTools, Base.Test#, ParameterizedFunctions
 
 
 f = function (t,u)

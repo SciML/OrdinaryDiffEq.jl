@@ -1,4 +1,4 @@
-using DiffEqBase, OrdinaryDiffEq, Base.Test
+using OrdinaryDiffEq, Base.Test
 
 f1 = (t,u) -> 2u
 f2 = (t,u) -> 2u

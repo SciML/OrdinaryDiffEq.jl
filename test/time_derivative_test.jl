@@ -1,4 +1,4 @@
-using DiffEqBase, OrdinaryDiffEq, Base.Test
+using OrdinaryDiffEq, Base.Test
 
 function time_derivative(t,u,du)
   du[1] = -t

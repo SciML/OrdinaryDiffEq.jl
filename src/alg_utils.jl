@@ -18,9 +18,9 @@ isfsal(alg::Velds4) = true
 isfsal(alg::GRK4T) = true
 isfsal(alg::GRK4A) = true
 isfsal(alg::Ros4LStab) = true
-isfsal(alg::Rodas4) = true
-isfsal(alg::Rodas42) = true
-isfsal(alg::Rodas4P) = true
+isfsal(alg::Rodas4) = false
+isfsal(alg::Rodas42) = false
+isfsal(alg::Rodas4P) = false
 isfsal(alg::Rodas5) = true
 isfsal(alg::LawsonEuler) = true
 isfsal(alg::NorsettEuler) = true
@@ -85,10 +85,12 @@ isfsal(alg::McAte8) = true
 isfsal(alg::KahanLi8) = true
 isfsal(alg::SofSpa10) = true
 
+isfsal(alg::IRKN3) = true
 isfsal(alg::Nystrom4) = true
 isfsal(alg::Nystrom4VelocityIndependent) = true
 isfsal(alg::IRKN4) = true
 isfsal(alg::Nystrom5VelocityIndependent) = true
+isfsal(alg::DPRKN6) = true
 
 fsal_typeof(alg::OrdinaryDiffEqAlgorithm,rate_prototype) = typeof(rate_prototype)
 #fsal_typeof(alg::LawsonEuler,rate_prototype) = Vector{typeof(rate_prototype)}
@@ -178,6 +180,7 @@ alg_extrapolates(alg::Cash4) = true
 alg_extrapolates(alg::Hairer4) = true
 alg_extrapolates(alg::Hairer42) = true
 alg_extrapolates(alg::IRKN4) = true
+alg_extrapolates(alg::IRKN3) = true
 
 alg_autodiff(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have an autodifferentiation option defined.")
 alg_autodiff{CS,AD}(alg::ImplicitEuler{CS,AD}) = AD
@@ -238,10 +241,12 @@ alg_order(alg::McAte8) = 8
 alg_order(alg::KahanLi8) = 8
 alg_order(alg::SofSpa10) = 10
 
+alg_order(alg::IRKN3) = 3
 alg_order(alg::Nystrom4) = 4
 alg_order(alg::Nystrom4VelocityIndependent) = 4
 alg_order(alg::IRKN4) = 4
 alg_order(alg::Nystrom5VelocityIndependent) = 5
+alg_order(alg::DPRKN6) = 6
 
 alg_order(alg::Midpoint) = 2
 alg_order(alg::IIF1) = 1

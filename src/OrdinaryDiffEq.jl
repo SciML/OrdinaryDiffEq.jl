@@ -67,6 +67,7 @@ module OrdinaryDiffEq
   include("tableaus/feagin_tableaus.jl")
   include("tableaus/rosenbrock_tableaus.jl")
   include("tableaus/sdirk_tableaus.jl")
+  include("tableaus/rkn_tableaus.jl")
 
   include("integrators/type.jl")
   include("integrators/integrator_utils.jl")
@@ -120,9 +121,6 @@ module OrdinaryDiffEq
 
   # Reexport the Alg Types
 
-  export OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveAlgorithm,
-         OrdinaryDiffEqCompositeAlgorithm
-
   export Discrete, FunctionMap, Euler, Heun, Ralston, Midpoint, SSPRK22,
          SSPRK33, SSPRK432, SSPRK104, RK4, ExplicitRK,
          OwrenZen3, OwrenZen4, OwrenZen5, BS3, BS5,
@@ -150,5 +148,5 @@ module OrdinaryDiffEq
   export SplitEuler
 
   export Nystrom4, Nystrom4VelocityIndependent, Nystrom5VelocityIndependent,
-         IRKN4
+         IRKN3, IRKN4, DPRKN6
 end # module

@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqBase, Base.Test
+using OrdinaryDiffEq, Base.Test
 
 jac_called = false
 tgrad_called = false

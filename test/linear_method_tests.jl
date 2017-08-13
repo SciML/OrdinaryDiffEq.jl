@@ -1,4 +1,4 @@
-using DiffEqBase, OrdinaryDiffEq, Base.Test, DiffEqDevTools, SpecialMatrices, DiffEqOperators
+using OrdinaryDiffEq, Base.Test, DiffEqDevTools, SpecialMatrices, DiffEqOperators
 u0 = rand(2)
 A = DiffEqArrayOperator(Strang(2))
 function (p::typeof(A))(::Type{Val{:analytic}},t,u0)

@@ -116,14 +116,6 @@ end
     copy!(u,uprev)
   end
 
-  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
-    current_extrapolant!(u,t+dt,integrator)
-  elseif integrator.alg.extrapolant == :linear
-    u .= uprev .+ integrator.fsalfirst.*dt
-  else
-    copy!(u,uprev)
-  end
-
   uf.t = t
 
   if has_invW(f)
@@ -161,7 +153,12 @@ end
   iter += 1
   f(t+dt,u,k)
   scale!(k,dt)
-  k .-= z
+  if mass_matrix == I
+    k .-= z
+  else
+    A_mul_B!(du1,mass_matrix,z)
+    k .-= du1
+  end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(k)) # Here W is actually invW
   else
@@ -183,7 +180,12 @@ end
     iter += 1
     f(t+dt,u,k)
     scale!(k,dt)
-    k .-= z
+    if mass_matrix == I
+      k .-= z
+    else
+      A_mul_B!(du1,mass_matrix,z)
+      k .-= du1
+    end
     if has_invW(f)
       A_mul_B!(dz,W,k) # Here W is actually invW
     else
@@ -209,7 +211,6 @@ end
 
   cache.ηold = η
   cache.newton_iters = iter
-  @. u = uprev + z
 
   if integrator.opts.adaptive && integrator.success_iter > 0
     # Use 2rd divided differences a la SPICE and Shampine
@@ -248,9 +249,9 @@ end
   dto2 = dt/2
 
   if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
-    u = current_extrapolant(t+dt,integrator)
+    u = current_extrapolant(t+dto2,integrator)
   elseif integrator.alg.extrapolant == :linear
-    u = uprev + integrator.fsalfirst*dt
+    u = uprev + integrator.fsalfirst*dto2
   else # :constant
     u = uprev
   end
@@ -351,15 +352,17 @@ end
   @unpack uf,du1,dz,z,k,J,W,jac_config = cache
   mass_matrix = integrator.sol.prob.mass_matrix
 
+  dto2 = dt/2
+
   if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
-    current_extrapolant!(u,t+dt,integrator)
+    current_extrapolant!(u,t+dto2,integrator)
   elseif integrator.alg.extrapolant == :linear
-    @. u = uprev + integrator.fsalfirst*dt
+    @. u = uprev + integrator.fsalfirst*dto2
   else
     copy!(u,uprev)
   end
 
-  dto2 = dt/2
+
   uf.t = t
 
   if has_invW(f)
@@ -397,7 +400,12 @@ end
   iter += 1
   f(t+dto2,u,k)
   scale!(k,dto2)
-  k .-= z
+  if mass_matrix == I
+    k .-= z
+  else
+    A_mul_B!(du1,mass_matrix,z)
+    k .-= du1
+  end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(k)) # Here W is actually invW
   else
@@ -419,7 +427,12 @@ end
     iter += 1
     f(t+dto2,u,k)
     scale!(k,dto2)
-    k .-= z
+    if mass_matrix == I
+      k .-= z
+    else
+      A_mul_B!(du1,mass_matrix,z)
+      k .-= du1
+    end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(k)) # Here W is actually invW
     else
@@ -999,9 +1012,9 @@ end
   end
 
   if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
-    current_extrapolant!(u,t+dt,integrator)
+    current_extrapolant!(u,t+γ*dt,integrator)
   elseif integrator.alg.extrapolant == :linear
-    u .= uprev .+ integrator.fsalfirst.*dt
+    u .= uprev .+ integrator.fsalfirst.*γ.*dt
   else
     copy!(u,uprev)
   end
@@ -1310,9 +1323,9 @@ end
   end
 
   if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
-    current_extrapolant!(u,t+dt,integrator)
+    current_extrapolant!(u,t+γ*dt,integrator)
   elseif integrator.alg.extrapolant == :linear
-    @. u = uprev + integrator.fsalfirst*dt
+    u .= uprev .+ integrator.fsalfirst.*γ.*dt
   else
     copy!(u,uprev)
   end

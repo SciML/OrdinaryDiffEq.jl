@@ -1,4 +1,4 @@
-using DiffEqBase, OrdinaryDiffEq, Base.Test, DiffEqDevTools, SpecialMatrices
+using OrdinaryDiffEq, Base.Test, DiffEqDevTools, SpecialMatrices
 const μ = 1.01
 f2 = (t,u) -> μ * u
 f1 = DiffEqArrayOperator(μ)
