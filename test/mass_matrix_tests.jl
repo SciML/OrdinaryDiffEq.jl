@@ -58,6 +58,11 @@ sol2 = solve(prob2,Rodas5())
 
 @test norm(sol .- sol2) ≈ 0 atol=1e-9
 
+sol = solve(prob,  ImplicitEuler())
+sol2 = solve(prob2,ImplicitEuler())
+
+@test norm(sol .- sol2) ≈ 0 atol=1e-9
+
 #sol = solve(prob, SDIRK2())
 #sol2 = solve(prob2, SDIRK2())
 
