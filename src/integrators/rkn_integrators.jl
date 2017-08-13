@@ -4,8 +4,14 @@
 ## y₁ = y₀ + hy'₀ + h²∑b̄ᵢk'ᵢ
 ## y'₁ = y'₀ + h∑bᵢk'ᵢ
 
-function initialize!(integrator,cache::Nystrom4Cache,f=integrator.f)
-  @unpack tmp,fsalfirst,k₂,k₃,k₄,k = cache
+const NystromDefaultInitialization = Union{Nystrom4Cache,
+                                           Nystrom4VelocityIndependentCache,
+                                           Nystrom5VelocityIndependentCache,
+                                           IRKN3Cache, IRKN4Cache,
+                                           DPRKN6Cache}
+
+function initialize!(integrator,cache::NystromDefaultInitialization,f=integrator.f)
+  @unpack fsalfirst,k = cache
   uprev,duprev = integrator.uprev.x
 
   integrator.fsalfirst = fsalfirst
@@ -53,20 +59,6 @@ end
 end
 
 
-function initialize!(integrator,cache::Nystrom4VelocityIndependentCache,f=integrator.f)
-  integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.k
-
-  integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-
-  uprev,duprev = integrator.uprev.x
-  f.f1(integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f.f2(integrator.t,uprev,duprev,integrator.k[2].x[2])
-end
-
 @muladd function perform_step!(integrator,cache::Nystrom4VelocityIndependentCache,f=integrator.f)
   @unpack t,dt = integrator
   u,du = integrator.u.x
@@ -92,20 +84,6 @@ end
 
   f.f1(t+dt,u,du,k.x[1])
   f.f2(t+dt,u,du,k.x[2])
-end
-
-function initialize!(integrator,cache::IRKN3Cache,f=integrator.f)
-  @unpack tmp,fsalfirst,k₂,k = cache
-  uprev,duprev = integrator.uprev.x
-
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
-  integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  f.f1(integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f.f2(integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 @muladd function perform_step!(integrator,cache::IRKN3Cache,f=integrator.f)
@@ -139,20 +117,6 @@ end
     f.f1(t+dt,u,du,k.x[1])
     f.f2(t+dt,u,du,k.x[2])
   end # end if
-end
-
-function initialize!(integrator,cache::IRKN4Cache,f=integrator.f)
-  @unpack tmp,fsalfirst,k₂,k = cache
-  uprev,duprev = integrator.uprev.x
-
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
-  integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  f.f1(integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f.f2(integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 @muladd function perform_step!(integrator,cache::IRKN4Cache,f=integrator.f)
@@ -194,20 +158,6 @@ end
     f.f1(t+dt,u,du,k.x[1])
     f.f2(t+dt,u,du,k.x[2])
   end # end if
-end
-
-function initialize!(integrator,cache::Nystrom5VelocityIndependentCache,f=integrator.f)
-  integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.k
-
-  integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-
-  uprev,duprev = integrator.uprev.x
-  f.f1(integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f.f2(integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 #=
@@ -266,20 +216,6 @@ end
   end
   f.f1(t+dt,u,du,k.x[1])
   f.f2(t+dt,u,du,k.x[2])
-end
-
-function initialize!(integrator,cache::DPRKN6Cache,f=integrator.f)
-  integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.k
-
-  integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-
-  uprev,duprev = integrator.uprev.x
-  f.f1(integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f.f2(integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 @muladd function perform_step!(integrator,cache::DPRKN6Cache,f=integrator.f)
