@@ -406,7 +406,12 @@ end
   iter += 1
   f(t+dto2,u,k)
   scale!(k,dto2)
-  k .-= z
+  if mass_matrix == I
+    k .-= z
+  else
+    A_mul_B!(du1,mass_matrix,z)
+    k .-= du1
+  end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(k)) # Here W is actually invW
   else
@@ -428,7 +433,12 @@ end
     iter += 1
     f(t+dto2,u,k)
     scale!(k,dto2)
-    k .-= z
+    if mass_matrix == I
+      k .-= z
+    else
+      A_mul_B!(du1,mass_matrix,z)
+      k .-= du1
+    end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(k)) # Here W is actually invW
     else
