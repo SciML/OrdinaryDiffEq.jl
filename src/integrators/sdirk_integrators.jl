@@ -161,7 +161,12 @@ end
   iter += 1
   f(t+dt,u,k)
   scale!(k,dt)
-  k .-= z
+  if mass_matrix == I
+    k .-= z
+  else
+    A_mul_B!(du1,mass_matrix,z)
+    k .-= du1
+  end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(k)) # Here W is actually invW
   else
@@ -183,7 +188,12 @@ end
     iter += 1
     f(t+dt,u,k)
     scale!(k,dt)
-    k .-= z
+    if mass_matrix == I
+      k .-= z
+    else
+      A_mul_B!(du1,mass_matrix,z)
+      k .-= du1
+    end
     if has_invW(f)
       A_mul_B!(dz,W,k) # Here W is actually invW
     else
@@ -209,7 +219,6 @@ end
 
   cache.ηold = η
   cache.newton_iters = iter
-  @. u = uprev + z
 
   if integrator.opts.adaptive && integrator.success_iter > 0
     # Use 2rd divided differences a la SPICE and Shampine
@@ -397,7 +406,12 @@ end
   iter += 1
   f(t+dto2,u,k)
   scale!(k,dto2)
-  k .-= z
+  if mass_matrix == I
+    k .-= z
+  else
+    A_mul_B!(du1,mass_matrix,z)
+    k .-= du1
+  end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(k)) # Here W is actually invW
   else
@@ -419,7 +433,12 @@ end
     iter += 1
     f(t+dto2,u,k)
     scale!(k,dto2)
-    k .-= z
+    if mass_matrix == I
+      k .-= z
+    else
+      A_mul_B!(du1,mass_matrix,z)
+      k .-= du1
+    end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(k)) # Here W is actually invW
     else

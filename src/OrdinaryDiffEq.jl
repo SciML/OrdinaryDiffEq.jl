@@ -121,9 +121,6 @@ module OrdinaryDiffEq
 
   # Reexport the Alg Types
 
-  export OrdinaryDiffEqAlgorithm, OrdinaryDiffEqAdaptiveAlgorithm,
-         OrdinaryDiffEqCompositeAlgorithm
-
   export Discrete, FunctionMap, Euler, Heun, Ralston, Midpoint, SSPRK22,
          SSPRK33, SSPRK432, SSPRK104, RK4, ExplicitRK,
          OwrenZen3, OwrenZen4, OwrenZen5, BS3, BS5,

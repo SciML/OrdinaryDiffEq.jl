@@ -52,7 +52,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
       error("This solver is not able to use mass matrices.")
     end
   elseif !(typeof(prob)<:DiscreteProblem) &&
-         !(typeof(alg) <: Union{Rosenbrock23,Rosenbrock32}) &&
+         !(typeof(alg) <: Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm,OrdinaryDiffEqImplicitAlgorithm}) &&
          prob.mass_matrix != I
     error("This solver is not able to use mass matrices.")
   end
@@ -126,7 +126,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   dtmax > zero(dtmax) && tdir < 0 && (dtmax *= tdir) # Allow positive dtmax, but auto-convert
   # dtmin is all abs => does not care about sign already.
   if dt == zero(dt) && adaptive
-    dt = tType(ode_determine_initdt(u,t,tdir,dtmax,abstol_internal,reltol_internal,internalnorm,prob,order))
+    dt = tType(ode_determine_initdt(u,t,tdir,dtmax,abstol_internal,reltol_internal,internalnorm,prob,order,alg))
     if sign(dt)!=tdir && dt!=tType(0) && !isnan(dt)
       error("Automatic dt setting has the wrong sign. Exiting. Please report this error.")
     end

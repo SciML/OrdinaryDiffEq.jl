@@ -20,6 +20,7 @@ tic()
 @time @testset "Initial Dt Tests" begin include("ode/ode_initdt_tests.jl") end
 @time @testset "OwrenZen Tests" begin include("owrenzen_tests.jl") end
 @time @testset "Rosenbrock Tests" begin include("ode/ode_rosenbrock_tests.jl") end
+@time @testset "Mass Matrix Tests" begin include("mass_matrix_tests.jl") end
 @time @testset "Differentiation Trait Tests" begin include("differentiation_traits_tests.jl") end
 @time @testset "Partitioned Methods Tests" begin include("partitioned_methods_tests.jl") end
 @time @testset "Split Methods Tests" begin include("split_methods_tests.jl") end
