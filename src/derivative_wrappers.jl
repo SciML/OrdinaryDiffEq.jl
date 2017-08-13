@@ -20,6 +20,7 @@ end
 mutable struct TimeGradientWrapper{VFType,uType} <: Function
   vf::VFType
   uprev::uType
+  fx1::uType
 end
 (p::TimeGradientWrapper)(t) = (du2 = similar(p.uprev); p.vf(t,p.uprev,du2); du2)
 (p::TimeGradientWrapper)(du2,t) = p.vf(t,p.uprev,du2)

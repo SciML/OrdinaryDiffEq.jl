@@ -31,7 +31,7 @@ end
       if alg_autodiff(integrator.alg)
         ForwardDiff.derivative!(dT, tf, vec(du2), t)
       else
-        dT = Calculus.finite_difference(tf, t, integrator.alg.diff_type)
+        DiffEqDiffTools.finite_difference!(dT, tf, t, Val{integrator.alg.diff_type}, vec(du2), Val{:DiffEqDerivativeWrapper})
       end
     end
   end
@@ -133,7 +133,7 @@ end
       if alg_autodiff(integrator.alg)
         ForwardDiff.derivative!(dT, tf, vec(du2), t)
       else
-        dT = Calculus.finite_difference(tf, t, integrator.alg.diff_type)
+        DiffEqDiffTools.finite_difference!(dT, tf, t, Val{integrator.alg.diff_type}, vec(du2), Val{:DiffEqDerivativeWrapper})
       end
     end
   end
@@ -428,7 +428,7 @@ end
       if alg_autodiff(integrator.alg)
         ForwardDiff.derivative!(dT, tf, vec(du2), t)
       else
-        dT = Calculus.finite_difference(tf, t, integrator.alg.diff_type)
+        DiffEqDiffTools.finite_difference!(dT, tf, t, Val{integrator.alg.diff_type}, vec(du2), Val{:DiffEqDerivativeWrapper})
       end
     end
   end
@@ -622,7 +622,7 @@ end
       if alg_autodiff(integrator.alg)
         ForwardDiff.derivative!(dT, tf, vec(du2), t)
       else
-        dT = Calculus.finite_difference(tf, t, integrator.alg.diff_type)
+        DiffEqDiffTools.finite_difference!(dT, tf, t, Val{integrator.alg.diff_type}, vec(du2), Val{:DiffEqDerivativeWrapper})
       end
     end
   end
@@ -833,7 +833,7 @@ end
       if alg_autodiff(integrator.alg)
         ForwardDiff.derivative!(dT, tf, vec(du2), t)
       else
-        dT = Calculus.finite_difference(tf, t, integrator.alg.diff_type)
+        DiffEqDiffTools.finite_difference!(dT, tf, t, Val{integrator.alg.diff_type}, vec(du2), Val{:DiffEqDerivativeWrapper})
       end
     end
   end
@@ -1076,7 +1076,7 @@ end
       if alg_autodiff(integrator.alg)
         ForwardDiff.derivative!(dT, tf, vec(du2), t)
       else
-        dT = Calculus.finite_difference(tf, t, integrator.alg.diff_type)
+        DiffEqDiffTools.finite_difference!(dT, tf, t, Val{integrator.alg.diff_type}, vec(du2), Val{:DiffEqDerivativeWrapper})
       end
     end
   end
@@ -1424,7 +1424,7 @@ end
       if alg_autodiff(integrator.alg)
         ForwardDiff.derivative!(dT, tf, vec(du2), t)
       else
-        dT = Calculus.finite_difference(tf, t, integrator.alg.diff_type)
+        DiffEqDiffTools.finite_difference!(dT, tf, t, Val{integrator.alg.diff_type}, vec(du2), Val{:DiffEqDerivativeWrapper})
       end
     end
   end
