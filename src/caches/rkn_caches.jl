@@ -48,6 +48,29 @@ function alg_cache(alg::Nystrom4VelocityIndependent,u,rate_prototype,uEltypeNoUn
   Nystrom4VelocityIndependentCache(u,uprev,k₁,k₂,k₃,k,tmp)
 end
 
+struct IRKN3Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  uprev2::uType
+  fsalfirst::rateType
+  k₂::rateType
+  k::rateType
+  tmp::uType
+  onestep_cache::Nystrom4VelocityIndependentCache
+end
+
+u_cache(c::IRKN3Cache) = ()
+du_cache(c::IRKN3Cache) = (c.fsalfirst,c.k₂,c.k)
+
+function alg_cache(alg::IRKN3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
+  k₁ = zeros(rate_prototype)
+  k₂ = zeros(rate_prototype)
+  k₃ = zeros(rate_prototype)
+  k  = zeros(rate_prototype)
+  tmp = similar(u)
+  IRKN3Cache(u,uprev,uprev2,k₁,k₂,k,tmp,Nystrom4VelocityIndependentCache(u,uprev,k₁,k₂,k₃,k,tmp))
+end
+
 struct IRKN4Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
@@ -61,7 +84,7 @@ struct IRKN4Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
 end
 
 u_cache(c::IRKN4Cache) = ()
-du_cache(c::IRKN4Cache) = (c.fsalfirst,c.k₂,c.k₃,c.k,c.k_₁,c.k_₂,c.k_₃)
+du_cache(c::IRKN4Cache) = (c.fsalfirst,c.k₂,c.k₃,c.k)
 
 function alg_cache(alg::IRKN4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
   k₁ = zeros(rate_prototype)

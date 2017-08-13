@@ -85,6 +85,7 @@ isfsal(alg::McAte8) = true
 isfsal(alg::KahanLi8) = true
 isfsal(alg::SofSpa10) = true
 
+isfsal(alg::IRKN3) = true
 isfsal(alg::Nystrom4) = true
 isfsal(alg::Nystrom4VelocityIndependent) = true
 isfsal(alg::IRKN4) = true
@@ -179,6 +180,7 @@ alg_extrapolates(alg::Cash4) = true
 alg_extrapolates(alg::Hairer4) = true
 alg_extrapolates(alg::Hairer42) = true
 alg_extrapolates(alg::IRKN4) = true
+alg_extrapolates(alg::IRKN3) = true
 
 alg_autodiff(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have an autodifferentiation option defined.")
 alg_autodiff{CS,AD}(alg::ImplicitEuler{CS,AD}) = AD
@@ -239,6 +241,7 @@ alg_order(alg::McAte8) = 8
 alg_order(alg::KahanLi8) = 8
 alg_order(alg::SofSpa10) = 10
 
+alg_order(alg::IRKN3) = 3
 alg_order(alg::Nystrom4) = 4
 alg_order(alg::Nystrom4VelocityIndependent) = 4
 alg_order(alg::IRKN4) = 4

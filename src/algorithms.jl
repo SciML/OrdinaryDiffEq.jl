@@ -69,6 +69,7 @@ struct SofSpa10 <: OrdinaryDiffEqAlgorithm end
 
 # Nyström methods
 
+struct IRKN3 <: OrdinaryDiffEqAlgorithm end
 struct Nystrom4 <: OrdinaryDiffEqAlgorithm end
 struct Nystrom4VelocityIndependent <: OrdinaryDiffEqAlgorithm end
 struct IRKN4 <: OrdinaryDiffEqAlgorithm end
