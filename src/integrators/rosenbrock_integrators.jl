@@ -71,7 +71,13 @@ end
   @. u = uprev + dto2*k₁
   f(t+dto2, u, f₁)
 
-  @. linsolve_tmp = f₁ - k₁
+  if mass_matrix == I
+    tmp .= k₁
+  else
+    A_mul_B!(tmp,mass_matrix,k₁) # vectmp == k₁
+  end
+
+  @. linsolve_tmp = f₁ - tmp
   if has_invW(f)
     A_mul_B!(vectmp2, W, linsolve_tmp_vec)
   else
@@ -85,7 +91,15 @@ end
   if integrator.opts.adaptive
     f(t+dt, u, fsallast)
 
-    @. linsolve_tmp = fsallast - c₃₂*(k₂-f₁) - 2(k₁-fsalfirst) + dt*dT
+    if mass_matrix == I
+      @. linsolve_tmp = fsallast - c₃₂*(k₂-f₁) - 2(k₁-fsalfirst) + dt*dT
+    else
+      @. du2 = c₃₂*k₂ + 2k₁
+      A_mul_B!(du1,mass_matrix,du2)
+      @. linsolve_tmp = fsallast - du1 + c₃₂*f₁ + 2fsalfirst + dt*dT
+    end
+
+
     if has_invW(f)
       A_mul_B!(vectmp3, W, linsolve_tmp_vec)
     else
@@ -173,7 +187,14 @@ end
   @. u = uprev + dto2*k₁
   f(t+dto2, u, f₁)
 
-  @. linsolve_tmp = f₁ - k₁
+  if mass_matrix == I
+    tmp .= k₁
+  else
+    A_mul_B!(tmp,mass_matrix,k₁) # vectmp == k₁
+  end
+
+  @. linsolve_tmp = f₁ - tmp
+  
   if has_invW(f)
     A_mul_B!(vectmp2, W, linsolve_tmp_vec)
   else
@@ -185,7 +206,14 @@ end
   @. tmp = uprev + dt*k₂
   f(t+dt, tmp, fsallast)
 
-  @. linsolve_tmp = fsallast - c₃₂*(k₂-f₁) - 2(k₁-fsalfirst) + dt*dT
+  if mass_matrix == I
+    @. linsolve_tmp = fsallast - c₃₂*(k₂-f₁) - 2(k₁-fsalfirst) + dt*dT
+  else
+    @. du2 = c₃₂*k₂ + 2k₁
+    A_mul_B!(du1,mass_matrix,du2)
+    @. linsolve_tmp = fsallast - du1 + c₃₂*f₁ + 2fsalfirst + dt*dT
+  end
+
   if has_invW(f)
     A_mul_B!(vectmp3, W, linsolve_tmp_vec)
   else

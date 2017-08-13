@@ -1,4 +1,4 @@
-@muladd function ode_determine_initdt{tType,uType}(u0,t::tType,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,true},order)
+@muladd function ode_determine_initdt{tType,uType}(u0,t::tType,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,true},order,alg)
   f = prob.f
   oneunit_tType = oneunit(tType)
   dtmax_tdir = tdir*dtmax
@@ -9,6 +9,13 @@
 
   f₀ = zeros(u0./t)
   f(t,u0,f₀)
+
+  if prob.mass_matrix != I
+    ftmp = similar(f₀)
+    alg.linsolve(ftmp, copy(prob.mass_matrix), f₀, true)
+    f₀ .= ftmp
+  end
+
   if any((isnan(x) for x in f₀))
     warn("First function call produced NaNs. Exiting.")
   end
@@ -28,6 +35,11 @@
   @. u₁ = u0 + dt₀_tdir*f₀
   f₁ = similar(f₀)
   f(t+dt₀_tdir,u₁,f₁)
+
+  if prob.mass_matrix != I
+    alg.linsolve(ftmp, prob.mass_matrix, f₁, false)
+    f₁ .= ftmp
+  end
 
   @. tmp = (f₁-f₀)/sk*oneunit_tType
   d₂ = internalnorm(tmp)/dt₀*oneunit_tType
