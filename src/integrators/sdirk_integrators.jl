@@ -116,14 +116,6 @@ end
     copy!(u,uprev)
   end
 
-  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
-    current_extrapolant!(u,t+dt,integrator)
-  elseif integrator.alg.extrapolant == :linear
-    u .= uprev .+ integrator.fsalfirst.*dt
-  else
-    copy!(u,uprev)
-  end
-
   uf.t = t
 
   if has_invW(f)
@@ -257,9 +249,9 @@ end
   dto2 = dt/2
 
   if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
-    u = current_extrapolant(t+dt,integrator)
+    u = current_extrapolant(t+dto2,integrator)
   elseif integrator.alg.extrapolant == :linear
-    u = uprev + integrator.fsalfirst*dt
+    u = uprev + integrator.fsalfirst*dto2
   else # :constant
     u = uprev
   end
@@ -360,15 +352,17 @@ end
   @unpack uf,du1,dz,z,k,J,W,jac_config = cache
   mass_matrix = integrator.sol.prob.mass_matrix
 
+  dto2 = dt/2
+
   if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
-    current_extrapolant!(u,t+dt,integrator)
+    current_extrapolant!(u,t+dto2,integrator)
   elseif integrator.alg.extrapolant == :linear
-    @. u = uprev + integrator.fsalfirst*dt
+    @. u = uprev + integrator.fsalfirst*dto2
   else
     copy!(u,uprev)
   end
 
-  dto2 = dt/2
+
   uf.t = t
 
   if has_invW(f)
@@ -1018,9 +1012,9 @@ end
   end
 
   if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
-    current_extrapolant!(u,t+dt,integrator)
+    current_extrapolant!(u,t+γ*dt,integrator)
   elseif integrator.alg.extrapolant == :linear
-    u .= uprev .+ integrator.fsalfirst.*dt
+    u .= uprev .+ integrator.fsalfirst.*γ.*dt
   else
     copy!(u,uprev)
   end
@@ -1329,9 +1323,9 @@ end
   end
 
   if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
-    current_extrapolant!(u,t+dt,integrator)
+    current_extrapolant!(u,t+γ*dt,integrator)
   elseif integrator.alg.extrapolant == :linear
-    @. u = uprev + integrator.fsalfirst*dt
+    u .= uprev .+ integrator.fsalfirst.*γ.*dt
   else
     copy!(u,uprev)
   end
