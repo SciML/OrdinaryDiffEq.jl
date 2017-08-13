@@ -54,7 +54,7 @@
   dt = tdir*min(100dt₀,dt₁,dtmax_tdir)
 end
 
-@muladd function ode_determine_initdt{uType,tType}(u0::uType,t,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,false},order)
+@muladd function ode_determine_initdt{uType,tType}(u0::uType,t,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,false},order,alg)
   f = prob.f
   oneunit_tType = oneunit(tType)
   dtmax_tdir = tdir*dtmax
