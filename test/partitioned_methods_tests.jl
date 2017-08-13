@@ -112,6 +112,9 @@ sim = test_convergence(dts,prob,Nystrom4(),dense_errors=true)
 sim = test_convergence(dts,prob,Nystrom4VelocityIndependent(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
+sim = test_convergence(dts,prob,IRKN3(),dense_errors=true)
+@test sim.𝒪est[:l2] ≈ 3 rtol = 1e-1
+@test sim.𝒪est[:L2] ≈ 3 rtol = 1e-1
 sim = test_convergence(dts,prob,IRKN4(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1

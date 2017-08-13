@@ -94,6 +94,53 @@ end
   f.f2(t+dt,u,du,k.x[2])
 end
 
+function initialize!(integrator,cache::IRKN3Cache,f=integrator.f)
+  @unpack tmp,fsalfirst,k₂,k = cache
+  uprev,duprev = integrator.uprev.x
+
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = k
+  integrator.kshortsize = 2
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  f.f1(integrator.t,uprev,duprev,integrator.k[2].x[1])
+  f.f2(integrator.t,uprev,duprev,integrator.k[2].x[2])
+end
+
+@muladd function perform_step!(integrator,cache::IRKN3Cache,f=integrator.f)
+  # if there's a discontinuity or the solver is in the first step
+  if integrator.iter < 2 && !integrator.u_modified
+    perform_step!(integrator,integrator.cache.onestep_cache)
+  else
+    @unpack t,dt,k,tprev = integrator
+    u,du = integrator.u.x
+    uprev, duprev  = integrator.uprev.x
+    uprev2,duprev2 = integrator.uprev2.x
+    uidx = eachindex(integrator.uprev.x[1])
+    @unpack tmp,fsalfirst,k₂,k = cache
+    ku, kdu = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
+    k₁ = fsalfirst
+    dtsq = dt^2
+
+    f.f2(t+1//2*dt,    uprev, duprev, k.x[1])
+    f.f2(tprev+1//2*dt,uprev2,duprev2,k.x[2])
+    @tight_loop_macros for i in uidx
+      @inbounds ku[i]  = uprev[i]  + (1//2*dt)*duprev[i]  + (1//8*dtsq)*k.x[1][i]
+      @inbounds kdu[i] = uprev2[i] + (1//2*dt)*duprev2[i] + (1//8*dtsq)*k.x[2][i]
+    end
+
+    f.f2(t+1//2*dt,    ku, duprev, k₂.x[1])
+    f.f2(tprev+1//2*dt,kdu,duprev2,k₂.x[2])
+    @tight_loop_macros for i in uidx
+      @inbounds u[i]  = uprev[i] + (3//2*dt)*duprev[i] + (1//2*-dt)*duprev2[i] + (5//12*dtsq)*(k₂.x[1][i]-k₂.x[2][i])
+      @inbounds du[i] = duprev[i] + dt*(2//3*k.x[1][i] + 1//3*k.x[2][i] + 5//6*(k₂.x[1][i]-k₂.x[2][i]))
+    end
+    f.f1(t+dt,u,du,k.x[1])
+    f.f2(t+dt,u,du,k.x[2])
+  end # end if
+end
+
 @inline function initialize!(integrator,cache::IRKN4Cache,f=integrator.f)
   @unpack tmp,fsalfirst,k₂,k = cache
   uprev,duprev = integrator.uprev.x
