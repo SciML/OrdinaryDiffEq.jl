@@ -1,3 +1,88 @@
+struct IRKN3ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+  bconst1::T
+  bconst2::T
+  c1::T2
+  a21::T
+  b1::T
+  b2::T
+  bbar1::T
+  bbar2::T
+end
+
+Base.@pure function IRKN3ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+  bconst1 = T(1.5)
+  bconst2 = T(-0.5)
+  c1 = T2(0.5)
+  a21 = T(0.125)
+  b1 = T(0.6666666666666666)
+  b2 = T(0.8333333333333334)
+  bbar1 = T(0.3333333333333333)
+  bbar2 = T(0.4166666666666667)
+  IRKN3ConstantCache(bconst1,bconst2,c1,a21,b1,b2,bbar1,bbar2)
+end
+
+function IRKN3ConstantCache(T::Type,T2::Type)
+  bconst1 = T(3//2)
+  bconst2 = T(-1//2)
+  c1      = T2(1//2)
+  a21     = T(1//8)
+  b1      = T(2//3)
+  b2      = T(5//6)
+  bbar1   = T(1//3)
+  bbar2   = T(5//12)
+  IRKN3ConstantCache(bconst1,bconst2,c1,a21,b1,b2,bbar1,bbar2)
+end
+
+struct IRKN4ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+  bconst1::T
+  bconst2::T
+  c1::T2
+  c2::T2
+  a21::T
+  # a31::T
+  a32::T
+  b1::T
+  b2::T
+  b3::T
+  bbar1::T
+  bbar2::T
+  bbar3::T
+end
+
+Base.@pure function IRKN4ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+  bconst1 = T(1.5)
+  bconst2 = T(-0.5)
+  c1      = T2(0.25)
+  c2      = T2(0.75)
+  a21     = T(0.03125)
+  # a31     = T(0)
+  a32     = T(0.28125)
+  b1      = T(1.0555555555555556)
+  b2      = T(-0.16666666666666666)
+  b3      = T(0.6111111111111112)
+  bbar1   = T(-0.05555555555555555)
+  bbar2   = T(0.2916666666666667)
+  bbar3   = T(0.125)
+  IRKN4ConstantCache(bconst1,bconst2,c1,c2,a21,a32,b1,b2,b3,bbar1,bbar2,bbar3)
+end
+
+function IRKN4ConstantCache(T::Type,T2::Type)
+  bconst1 = T(3//2)
+  bconst2 = T(-1//2)
+  c1      = T2(1//4)
+  c2      = T2(3//4)
+  a21     = T(1//32)
+  # a31     = T(0)
+  a32     = T(9//32)
+  b1      = T(19//18)
+  b2      = T(-1//6)
+  b3      = T(11//18)
+  bbar1   = T(-1//18)
+  bbar2   = T(7//24)
+  bbar3   = T(1//8)
+  IRKN4ConstantCache(bconst1,bconst2,c1,c2,a21,a32,b1,b2,b3,bbar1,bbar2,bbar3)
+end
+
 struct DPRKN6ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   c1::T2
   c2::T2
