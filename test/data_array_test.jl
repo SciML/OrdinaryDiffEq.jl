@@ -1,4 +1,4 @@
-using DiffEqBase, OrdinaryDiffEq, Base.Test
+using OrdinaryDiffEq, Base.Test
 
 type SimType{T} <: DEDataVector{T}
     x::Array{T,1}
@@ -52,7 +52,7 @@ sol(1.5:0.5:2.5)
 
 @test [sol[i].f1 for i in eachindex(sol)] == [zeros(9);1.5*ones(5);-1.5*ones(4)]
 
-using DiffEqBase, OrdinaryDiffEq
+using OrdinaryDiffEq
 
 A = diagm([0.3,0.6,0.9])
 B = [1 2 3].'

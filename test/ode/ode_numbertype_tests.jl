@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqBase, Base.Test
+using OrdinaryDiffEq, Base.Test
 srand(100)
 setprecision(400)
 

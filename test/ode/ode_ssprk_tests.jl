@@ -1,4 +1,4 @@
-using DiffEqBase, OrdinaryDiffEq, DiffEqProblemLibrary, DiffEqDevTools, Base.Test
+using OrdinaryDiffEq, DiffEqProblemLibrary, DiffEqDevTools, Base.Test
 
 srand(100)
 

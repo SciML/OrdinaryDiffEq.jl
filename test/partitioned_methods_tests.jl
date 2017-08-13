@@ -1,4 +1,4 @@
-using DiffEqBase, OrdinaryDiffEq, Base.Test, RecursiveArrayTools, DiffEqDevTools
+using OrdinaryDiffEq, Base.Test, RecursiveArrayTools, DiffEqDevTools
 
 u0 = zeros(2)
 v0 = ones(2)
@@ -138,7 +138,7 @@ sol = solve(prob,Euler(),dt=1/100)
 
 ################# Out of place symplectic
 
-using DiffEqBase, OrdinaryDiffEq, Base.Test, RecursiveArrayTools, DiffEqDevTools
+using OrdinaryDiffEq, Base.Test, RecursiveArrayTools, DiffEqDevTools
 
 u0 = 0.0
 v0 = 1.0

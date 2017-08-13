@@ -1,5 +1,5 @@
 using StaticArrays
-using DiffEqBase, OrdinaryDiffEq
+using OrdinaryDiffEq
 
 u0 = zeros(MVector{2,Float64}, 2)
 u0[1] = ones(MVector{2,Float64}) + 1
