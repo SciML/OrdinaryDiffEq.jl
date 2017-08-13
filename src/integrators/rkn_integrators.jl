@@ -4,8 +4,14 @@
 ## y₁ = y₀ + hy'₀ + h²∑b̄ᵢk'ᵢ
 ## y'₁ = y'₀ + h∑bᵢk'ᵢ
 
-function initialize!(integrator,cache::Nystrom4Cache,f=integrator.f)
-  @unpack tmp,fsalfirst,k₂,k₃,k₄,k = cache
+const NystromDefaultInitialization = Union{Nystrom4Cache,
+                                           Nystrom4VelocityIndependentCache,
+                                           Nystrom5VelocityIndependentCache,
+                                           IRKN3Cache, IRKN4Cache,
+                                           DPRKN6Cache}
+
+function initialize!(integrator,cache::NystromDefaultInitialization,f=integrator.f)
+  @unpack fsalfirst,k = cache
   uprev,duprev = integrator.uprev.x
 
   integrator.fsalfirst = fsalfirst
@@ -52,21 +58,6 @@ end
   f.f2(t+dt,u,du,k.x[2])
 end
 
-
-function initialize!(integrator,cache::Nystrom4VelocityIndependentCache,f=integrator.f)
-  integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.k
-
-  integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-
-  uprev,duprev = integrator.uprev.x
-  f.f1(integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f.f2(integrator.t,uprev,duprev,integrator.k[2].x[2])
-end
-
 @muladd function perform_step!(integrator,cache::Nystrom4VelocityIndependentCache,f=integrator.f)
   @unpack t,dt = integrator
   u,du = integrator.u.x
@@ -94,20 +85,6 @@ end
   f.f2(t+dt,u,du,k.x[2])
 end
 
-function initialize!(integrator,cache::IRKN3Cache,f=integrator.f)
-  @unpack tmp,fsalfirst,k₂,k = cache
-  uprev,duprev = integrator.uprev.x
-
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
-  integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  f.f1(integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f.f2(integrator.t,uprev,duprev,integrator.k[2].x[2])
-end
-
 @muladd function perform_step!(integrator,cache::IRKN3Cache,f=integrator.f)
   # if there's a discontinuity or the solver is in the first step
   if integrator.iter < 2 && !integrator.u_modified
@@ -119,43 +96,29 @@ end
     uprev2,duprev2 = integrator.uprev2.x
     uidx = eachindex(integrator.uprev.x[1])
     @unpack tmp,fsalfirst,k₂,k = cache
+    @unpack bconst1,bconst2,c1,a21,b1,b2,bbar1,bbar2 = cache.tab
     ku, kdu = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
     k₁ = fsalfirst
-    dtsq = dt^2
 
-    f.f2(t+1//2*dt,    uprev, duprev, k.x[1])
-    f.f2(tprev+1//2*dt,uprev2,duprev2,k.x[2])
+    f.f2(t+c1*dt,    uprev, duprev, k.x[1])
+    f.f2(tprev+c1*dt,uprev2,duprev2,k.x[2])
     @tight_loop_macros for i in uidx
-      @inbounds ku[i]  = uprev[i]  + (1//2*dt)*duprev[i]  + (1//8*dtsq)*k.x[1][i]
-      @inbounds kdu[i] = uprev2[i] + (1//2*dt)*duprev2[i] + (1//8*dtsq)*k.x[2][i]
+      @inbounds ku[i]  = uprev[i]  + dt*(c1*duprev[i]  + dt*a21*k.x[1][i])
+      @inbounds kdu[i] = uprev2[i] + dt*(c1*duprev2[i] + dt*a21*k.x[2][i])
     end
 
-    f.f2(t+1//2*dt,    ku, duprev, k₂.x[1])
-    f.f2(tprev+1//2*dt,kdu,duprev2,k₂.x[2])
+    f.f2(t+c1*dt,    ku, duprev, k₂.x[1])
+    f.f2(tprev+c1*dt,kdu,duprev2,k₂.x[2])
     @tight_loop_macros for i in uidx
-      @inbounds u[i]  = uprev[i] + (3//2*dt)*duprev[i] + (1//2*-dt)*duprev2[i] + (5//12*dtsq)*(k₂.x[1][i]-k₂.x[2][i])
-      @inbounds du[i] = duprev[i] + dt*(2//3*k.x[1][i] + 1//3*k.x[2][i] + 5//6*(k₂.x[1][i]-k₂.x[2][i]))
+      @inbounds u[i]  = uprev[i] + bconst1*dt*duprev[i] + dt*(bconst2*duprev2[i] + dt*bbar2*(k₂.x[1][i]-k₂.x[2][i]))
+      @inbounds du[i] = duprev[i] + dt*(b1*k.x[1][i] + bbar1*k.x[2][i] + b2*(k₂.x[1][i]-k₂.x[2][i]))
     end
     f.f1(t+dt,u,du,k.x[1])
     f.f2(t+dt,u,du,k.x[2])
   end # end if
 end
 
-@inline function initialize!(integrator,cache::IRKN4Cache,f=integrator.f)
-  @unpack tmp,fsalfirst,k₂,k = cache
-  uprev,duprev = integrator.uprev.x
-
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
-  integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  f.f1(integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f.f2(integrator.t,uprev,duprev,integrator.k[2].x[2])
-end
-
-@inline function perform_step!(integrator,cache::IRKN4Cache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::IRKN4Cache,f=integrator.f)
   # if there's a discontinuity or the solver is in the first step
   if integrator.iter < 2 && !integrator.u_modified
     perform_step!(integrator,integrator.cache.onestep_cache)
@@ -166,47 +129,34 @@ end
     uprev2,duprev2 = integrator.uprev2.x
     uidx = eachindex(integrator.uprev.x[1])
     @unpack tmp,fsalfirst,k₂,k₃,k = cache
+    @unpack bconst1,bconst2,c1,c2,a21,a32,b1,b2,b3,bbar1,bbar2,bbar3 = cache.tab
     ku, kdu = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
     k₁ = fsalfirst
     dtsq = dt^2
 
-    f.f2(t+1//4*dt,    uprev, duprev, k.x[1])
-    f.f2(tprev+1//4*dt,uprev2,duprev2,k.x[2])
+    f.f2(t+c1*dt,    uprev, duprev, k.x[1])
+    f.f2(tprev+c1*dt,uprev2,duprev2,k.x[2])
     @tight_loop_macros for i in uidx
-      @inbounds ku[i]  = @muladd uprev[i]  + (1//4*dt)*duprev[i]  + (1//32*dtsq)*k.x[1][i]
-      @inbounds kdu[i] = @muladd uprev2[i] + (1//4*dt)*duprev2[i] + (1//32*dtsq)*k.x[2][i]
+      @inbounds ku[i]  = uprev[i]  + dt*(c1*duprev[i]  + dt*a21*k.x[1][i])
+      @inbounds kdu[i]  = uprev2[i]  + dt*(c1*duprev2[i]  + dt*a21*k.x[2][i])
     end
 
-    f.f2(t+1//4*dt,    ku, duprev, k₂.x[1])
-    f.f2(tprev+1//4*dt,kdu,duprev2,k₂.x[2])
+    f.f2(t+c1*dt,    ku, duprev, k₂.x[1])
+    f.f2(tprev+c1*dt,kdu,duprev2,k₂.x[2])
     @tight_loop_macros for i in uidx
-      @inbounds ku[i]  = @muladd uprev[i]  + (3//4*dt)*duprev[i]  + (9//32*dtsq)*k₂.x[1][i]
-      @inbounds kdu[i] = @muladd uprev2[i] + (3//4*dt)*duprev2[i] + (9//32*dtsq)*k₂.x[2][i]
+      @inbounds ku[i]  = uprev[i]  + dt*(c2*duprev[i]  + dt*a32*k₂.x[1][i])
+      @inbounds kdu[i]  = uprev2[i]  + dt*(c2*duprev2[i]  + dt*a32*k₂.x[2][i])
     end
 
-    f.f2(t+3//4*dt,    ku, duprev, k₃.x[1])
-    f.f2(tprev+3//4*dt,kdu,duprev2,k₃.x[2])
+    f.f2(t+c2*dt,    ku, duprev, k₃.x[1])
+    f.f2(tprev+c2*dt,kdu,duprev2,k₃.x[2])
     @tight_loop_macros for i in uidx
-      @inbounds u[i]  = @muladd uprev[i] + (3//2*dt)*duprev[i] + (1//2*-dt)*duprev2[i] + (7//24*dtsq)*(k₂.x[1][i]-k₂.x[2][i]) + (1//8*dtsq)*(k₃.x[1][i]-k₃.x[2][i])
-      @inbounds du[i] = @muladd duprev[i] + dt*(19//18*k.x[1][i] - 1//18*k.x[2][i] + (-1//6)*(k₂.x[1][i]-k₂.x[2][i]) + 11//18*(k₃.x[1][i]-k₃.x[2][i]))
+      @inbounds u[i]  = uprev[i] + dt*bconst1*duprev[i] + dt*(bconst2*duprev2[i] + dt*(bbar2*(k₂.x[1][i]-k₂.x[2][i]) + bbar3*(k₃.x[1][i]-k₃.x[2][i])))
+      @inbounds du[i] = duprev[i] + dt*(b1*k.x[1][i] + bbar1*k.x[2][i] + b2*(k₂.x[1][i]-k₂.x[2][i]) + b3*(k₃.x[1][i]-k₃.x[2][i]))
     end
     f.f1(t+dt,u,du,k.x[1])
     f.f2(t+dt,u,du,k.x[2])
   end # end if
-end
-
-function initialize!(integrator,cache::Nystrom5VelocityIndependentCache,f=integrator.f)
-  integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.k
-
-  integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-
-  uprev,duprev = integrator.uprev.x
-  f.f1(integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f.f2(integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 #=
@@ -243,42 +193,27 @@ end
   uprev,duprev = integrator.uprev.x
   uidx = eachindex(integrator.uprev.x[1])
   @unpack tmp,fsalfirst,k₂,k₃,k₄,k = cache
+  @unpack c1, c2, a21, a31, a32, a41, a42, a43, bbar1, bbar2, bbar3, b1, b2, b3, b4 = cache.tab
   ku, kdu = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
   k₁ = fsalfirst
-  dtsq = dt^2
 
+  @. ku = uprev + dt*(c1*duprev + dt*a21*k₁.x[2])
 
-  @. ku = uprev + (1//5*dt)*duprev + (1//50*dtsq)*k₁.x[2]
+  f.f2(t+c1*dt,ku,du,k₂.x[2])
+  @. ku = uprev + dt*(c2*duprev + dt*(a31*k₁.x[2] + a32*k₂.x[2]))
 
-  f.f2(t+1//5*dt,ku,du,k₂.x[2])
-  @. ku = uprev + (2//3*dt)*duprev + (-1//27*dtsq)*k₁.x[2] + (7//27*dtsq)*k₂.x[2]
-
-  f.f2(t+2//3*dt,ku,du,k₃.x[2])
+  f.f2(t+c2*dt,ku,du,k₃.x[2])
   @tight_loop_macros for i in uidx
-    @inbounds ku[i] = uprev[i] + dt*duprev[i] + (3//10*dtsq)*k₁.x[2][i] + (-2//35*dtsq)*k₂.x[2][i] + (9//35*dtsq)*k₃.x[2][i]
+    @inbounds ku[i] = uprev[i] + dt*(duprev[i] + dt*(a41*k₁.x[2][i] + a42*k₂.x[2][i] + a43*k₃.x[2][i]))
   end
 
   f.f2(t+dt,ku,du,k₄.x[2])
   @tight_loop_macros for i in uidx
-    @inbounds u[i]  = uprev[i] + dt*duprev[i] + (14//336*dtsq)*k₁.x[2][i] + (100//336*dtsq)*k₂.x[2][i] + (54//336*dtsq)*k₃.x[2][i]
-    @inbounds du[i] = duprev[i] + (14//336*dt)*k₁.x[2][i] + (125//336*dt)*k₂.x[2][i] + (162//336*dt)*k₃.x[2][i] + (35//336*dt)*k₄.x[2][i]
+    @inbounds u[i]  = uprev[i] + dt*(duprev[i] + dt*(bbar1*k₁.x[2][i] + bbar2*k₂.x[2][i] + bbar3*k₃.x[2][i]))
+    @inbounds du[i] = duprev[i] + dt*(b1*k₁.x[2][i] + b2*k₂.x[2][i] + b3*k₃.x[2][i] + b4*k₄.x[2][i])
   end
   f.f1(t+dt,u,du,k.x[1])
   f.f2(t+dt,u,du,k.x[2])
-end
-
-function initialize!(integrator,cache::DPRKN6Cache,f=integrator.f)
-  integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.k
-
-  integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-
-  uprev,duprev = integrator.uprev.x
-  f.f1(integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f.f2(integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
 @muladd function perform_step!(integrator,cache::DPRKN6Cache,f=integrator.f)
