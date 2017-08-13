@@ -105,6 +105,7 @@ struct DPRKN6Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: Ordinary
   k4::rateType
   k5::rateType
   k6::rateType
+  k::rateType
   utilde::uArrayType
   tmp::uType
   atmp::uEltypeNoUnits
@@ -122,9 +123,10 @@ function alg_cache(alg::DPRKN6,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   k4 = zeros(rate_prototype)
   k5 = zeros(rate_prototype)
   k6 = zeros(rate_prototype)
+  k  = zeros(rate_prototype)
   utilde = similar(u,indices(u))
   atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
-  DPRKN6Cache(u,uprev,k1,k2,k3,k4,k5,k6,utilde,tmp,atmp,tab)
+  DPRKN6Cache(u,uprev,k1,k2,k3,k4,k5,k6,k,utilde,tmp,atmp,tab)
 end
 
