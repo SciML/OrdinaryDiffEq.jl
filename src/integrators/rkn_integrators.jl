@@ -221,7 +221,7 @@ end
   u,du = integrator.u.x
   uprev,duprev = integrator.uprev.x
   @unpack tmp,atmp,fsalfirst,k2,k3,k4,k5,k6,k,utilde = cache
-  @unpack c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, b1, b3, b4, b5, bp1, bp3, bp4, bp5, bp6, bhat1, bhat2, bhat3, bphat1, bphat3, bphat4, bphat5, bphat6 = cache.tab
+  @unpack c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, b1, b3, b4, b5, bp1, bp3, bp4, bp5, bp6, btilde1, btilde2, btilde3, btilde4, btilde5, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6 = cache.tab
   ku, kdu = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
   uidx = eachindex(integrator.uprev.x[2])
   k1 = fsalfirst
@@ -260,11 +260,11 @@ end
   f.f2(t+dt,u,du,k.x[2])
   if integrator.opts.adaptive
     uhat, duhat = utilde.x
+    dtsq = dt^2
     @tight_loop_macros for i in uidx
-      @inbounds uhat[i]  = uprev[i] + dt*(duprev[i] + dt*(bhat1*k1.x[2][i] + bhat2*k2.x[2][i] + bhat3*k3.x[2][i]))
-      @inbounds duhat[i] = duprev[i]+ dt*(bphat1*k1.x[2][i] + bphat3*k3.x[2][i] + bphat4*k4.x[2][i] + bphat5*k5.x[2][i] + bphat6*k6.x[2][i])
+      @inbounds uhat[i]  = dtsq*(btilde1*k1.x[2][i] + btilde2*k2.x[2][i] + btilde3*k3.x[2][i] + btilde4*k4.x[2][i] + btilde5*k5.x[2][i])
+      @inbounds duhat[i] = dt*(bptilde1*k1.x[2][i] + bptilde3*k3.x[2][i] + bptilde4*k4.x[2][i] + bptilde5*k5.x[2][i] + bptilde6*k6.x[2][i])
     end
-    @. utilde = integrator.u - utilde
     calculate_residuals!(atmp, utilde, integrator.uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
