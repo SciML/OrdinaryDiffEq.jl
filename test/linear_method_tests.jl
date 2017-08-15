@@ -30,5 +30,5 @@ function (p::typeof(L))(::Type{Val{:analytic}},t,u0)
 end
 
 prob = ODEProblem(L,u0,(0.0,1.0))
-sol = solve(prob,StrangSplitting(),dt=1/10)
+sol = solve(prob,MidpointSplitting(),dt=1/10)
 using Plots; pyplot; plot(sol)

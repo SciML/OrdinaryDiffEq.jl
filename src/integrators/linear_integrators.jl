@@ -107,7 +107,7 @@ function perform_step!(integrator,cache::LinearImplicitEulerCache,f=integrator.f
   @pack integrator = t,dt,u
 end
 
-function initialize!(integrator,cache::StrangSplittingCache,f=integrator.f)
+function initialize!(integrator,cache::MidpointSplittingCache,f=integrator.f)
   integrator.kshortsize = 2
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
@@ -126,7 +126,7 @@ macro swap!(x,y)
   end
 end
 
-function perform_step!(integrator,cache::StrangSplittingCache,f=integrator.f)
+function perform_step!(integrator,cache::MidpointSplittingCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack W,k,tmp = cache
   mass_matrix = integrator.sol.prob.mass_matrix
