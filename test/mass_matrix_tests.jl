@@ -56,17 +56,17 @@ sol2 = solve(prob2,Rodas4())
 sol = solve(prob,  Rodas5())
 sol2 = solve(prob2,Rodas5())
 
-@test norm(sol .- sol2) ≈ 0 atol=1e-9
+@test norm(sol .- sol2) ≈ 0 atol=1e-7
 
 sol = solve(prob,  ImplicitEuler())
 sol2 = solve(prob2,ImplicitEuler())
 
-@test norm(sol .- sol2) ≈ 0 atol=1e-9
+@test norm(sol .- sol2) ≈ 0 atol=1e-7
 
 sol = solve(prob,  Trapezoid())
 sol2 = solve(prob2,Trapezoid())
 
-@test norm(sol .- sol2) ≈ 0 atol=1e-9
+@test norm(sol .- sol2) ≈ 0 atol=1e-7
 
 
 #=
