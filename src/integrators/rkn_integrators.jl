@@ -249,6 +249,12 @@ end
     @inbounds u[i]  = uprev[i] + dt*(duprev[i] + dt*(b1 *k1.x[2][i] + b3 *k3.x[2][i] + b4 *k4.x[2][i] + b5 *k5.x[2][i])) # b1 -- b5, no b2
     @inbounds du[i] = duprev[i]                + dt*(bp1*k1.x[2][i] + bp3*k3.x[2][i] + bp4*k4.x[2][i] + bp5*k5.x[2][i] + bp6*k6.x[2][i]) # bp1 -- bp6, no bp2
   end
+  #=
+  @tight_loop_macros for i in uidx
+    @inbounds u[i]  = uprev[i] + dt*(duprev[i] + dt*(bhat1*k1.x[2][i] + bhat2*k2.x[2][i] + bhat3*k3.x[2][i]))
+    @inbounds du[i] = duprev[i]+ dt*(bphat1*k1.x[2][i] + bphat3*k3.x[2][i] + bphat4*k4.x[2][i] + bphat5*k5.x[2][i] + bphat6*k6.x[2][i])
+  end
+  =#
 
   f.f1(t+dt,u,du,k.x[1])
   f.f2(t+dt,u,du,k.x[2])
@@ -258,6 +264,7 @@ end
       @inbounds uhat[i]  = uprev[i] + dt*(duprev[i] + dt*(bhat1*k1.x[2][i] + bhat2*k2.x[2][i] + bhat3*k3.x[2][i]))
       @inbounds duhat[i] = duprev[i]+ dt*(bphat1*k1.x[2][i] + bphat3*k3.x[2][i] + bphat4*k4.x[2][i] + bphat5*k5.x[2][i] + bphat6*k6.x[2][i])
     end
+    @. utilde = integrator.u - utilde
     calculate_residuals!(atmp, utilde, integrator.uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
