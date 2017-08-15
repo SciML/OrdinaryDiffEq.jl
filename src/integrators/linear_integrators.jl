@@ -139,14 +139,14 @@ function perform_step!(integrator,cache::MidpointSplittingCache,f=integrator.f)
 
   copy!(tmp, uprev)
   for B in reverse(Bs)
-    u .= expm((dt/2)*B.α.coeff*B.A)*tmp
+    u .= expm((dt/2)*B)*tmp
     @swap!(tmp,u)
   end
 
-  u .= expm(dt*A.α.coeff*A.A)*tmp
+  u .= expm(dt*A)*tmp
 
   for B in Bs
-    tmp .= expm((dt/2)*B.α.coeff*B.A)*u
+    tmp .= expm((dt/2)*B)*u
     @swap!(u,tmp)
   end
 
