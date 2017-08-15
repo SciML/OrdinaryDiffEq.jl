@@ -174,18 +174,18 @@ struct DPRKN6ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   bp4::T
   bp5::T
   bp6::T
-  btilde1::T
-  btilde2::T
-  btilde3::T
-  # btilde4::T
-  # btilde5::T
-  # btilde6::T
-  bptilde1::T
-  # bptilde2::T
-  bptilde3::T
-  bptilde4::T
-  bptilde5::T
-  bptilde6::T
+  bhat1::T
+  bhat2::T
+  bhat3::T
+  # bhat4::T
+  # bhat5::T
+  # bhat6::T
+  bphat1::T
+  # bphat2::T
+  bphat3::T
+  bphat4::T
+  bphat5::T
+  bphat6::T
 end
 
 Base.@pure function DPRKN6ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
@@ -213,19 +213,19 @@ Base.@pure function DPRKN6ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::
   b4 = T(0.12242553717457041)
   b5 = T(0.011172560192168035)
   bp1 = T(0.07811016144349478)
-  bp3 = T(3.220718367176496)
-  bp4 = T(3.203195646399356)
+  bp3 = T(0.3888434787059826)
+  bp4 = T(0.3713207579288423)
   bp5 = T(0.11172560192168035)
   bp6 = T(0.05)
-  btilde1 = T(1.0588592603704183)
-  btilde2 = T(-2.406751371924452)
-  btilde3 = T(1.8478921115540339)
-  bptilde1 = T(0.054605887939221276)
-  bptilde3 = T(0.46126678590362685)
-  bptilde4 = T(0.19588085947931266)
-  bptilde5 = T(0.38824646667783924)
-  bptilde6 = T(-0.1)
-  DPRKN6ConstantCache(c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, b1, b3, b4, b5, bp1, bp3, bp4, bp5, bp6, btilde1, btilde2, btilde3, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6)
+  bhat1 = T(1.0588592603704183)
+  bhat2 = T(-2.406751371924452)
+  bhat3 = T(1.8478921115540339)
+  bphat1 = T(0.054605887939221276)
+  bphat3 = T(0.46126678590362685)
+  bphat4 = T(0.19588085947931266)
+  bphat5 = T(0.38824646667783924)
+  bphat6 = T(-0.1)
+  DPRKN6ConstantCache(c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, b1, b3, b4, b5, bp1, bp3, bp4, bp5, bp6, bhat1, bhat2, bhat3, bphat1, bphat3, bphat4, bphat5, bphat6)
 end
 
 function DPRKN6ConstantCache(T::Type,T2::Type)
@@ -258,22 +258,22 @@ function DPRKN6ConstantCache(T::Type,T2::Type)
   # b6       = T(0)
   bp1      = b1
   # bp2      = b2
-  bp3      = T((32_8922_5579+96856R)/10_2405_6540)
-  bp4      = T((32_8922_5579-96856R)/10_2405_6540)
+  bp3      = T((389225579+96856R)/10_2405_6540)
+  bp4      = T((389225579-96856R)/10_2405_6540)
   bp5      = T(2000//17901)
   bp6      = T(1//20)
-  btilde1  = T((2701+23R)/4563)
-  btilde2  = T(-(9829+131R)/9126)
-  btilde3  = T(5(1798+17R)/9126)
-  # btilde4  = T(0)
-  # btilde5  = T(0)
-  # btilde6  = T(0)
-  bptilde1 = T(115//2106)
-  # btildep2 = T(0)
-  bptilde3 = T((8411_9543+366_727R)/2560_14135)
-  bptilde4 = T((8411_9543-366_727R)/2560_14135)
-  bptilde5 = T(6950//17901)
-  bptilde6 = T(-1//10)
-  DPRKN6ConstantCache(c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, b1, b3, b4, b5, bp1, bp3, bp4, bp5, bp6, btilde1, btilde2, btilde3, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6)
+  bhat1  = T((2701+23R)/4563)
+  bhat2  = T(-(9829+131R)/9126)
+  bhat3  = T(5(1798+17R)/9126)
+  # bhat4  = T(0)
+  # bhat5  = T(0)
+  # bhat6  = T(0)
+  bphat1 = T(115//2106)
+  # bhatp2 = T(0)
+  bphat3 = T((8411_9543+366_727R)/2560_14135)
+  bphat4 = T((8411_9543-366_727R)/2560_14135)
+  bphat5 = T(6950//17901)
+  bphat6 = T(-1//10)
+  DPRKN6ConstantCache(c1, c2, c3, c4, c5, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a63, a64, a65, b1, b3, b4, b5, bp1, bp3, bp4, bp5, bp6, bhat1, bhat2, bhat3, bphat1, bphat3, bphat4, bphat5, bphat6)
 end
 
