@@ -252,5 +252,14 @@ end
 
   f.f1(t+dt,u,du,k.x[1])
   f.f2(t+dt,u,du,k.x[2])
+  if integrator.opts.adaptive
+    uhat, duhat = utilde.x
+    @tight_loop_macros for i in uidx
+      @inbounds uhat[i]  = uprev[i] + dt*(duprev[i] + dt*(bhat1*k1.x[2][i] + bhat2*k2.x[2][i] + bhat3*k3.x[2][i]))
+      @inbounds duhat[i] = duprev[i]+ dt*(bphat1*k1.x[2][i] + bphat3*k3.x[2][i] + bphat4*k4.x[2][i] + bphat5*k5.x[2][i] + bphat6*k6.x[2][i])
+    end
+    calculate_residuals!(atmp, utilde, integrator.uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol)
+    integrator.EEst = integrator.opts.internalnorm(atmp)
+  end
 end
 
