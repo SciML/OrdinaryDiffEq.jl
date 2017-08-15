@@ -128,6 +128,17 @@ sim = test_convergence(dts,prob,SofSpa10(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 10 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
 
+# Methods need BigFloat to test convergence rate
+dts = big"1.0"./big"2.0".^(5:-1:1)
+prob.u0 = [big"0.0", big"0.0"], [big"1.0", big"1.0"]
+sim = test_convergence(dts,prob,DPRKN6(),dense_errors=true)
+@test sim.𝒪est[:l2] ≈ 6 rtol = 1e-1
+@test sim.𝒪est[:L2] ≈ 6 rtol = 3e-1
+# Adaptive methods regression test
+sol = solve(prob, OrdinaryDiffEq.DPRKN6(), reltol=1e-3)
+@test length(sol.u) < 20
+
+
 f = function (t,u,du)
   du.x[1] .= u.x[2]
   du.x[2] .= -2u.x[1]
@@ -158,13 +169,3 @@ end
 
 prob = ODEProblem((f1,f2),(u0,v0),(0.0,5.0)) # iip wrong
 @test_broken sol = solve(prob,SymplecticEuler(),dt=1/2)
-
-# Methods need BigFloat to test convergence rate
-dts = big"1.0"./big"2.0".^(5:-1:1)
-prob.u0 = [big"0.0", big"0.0"], [big"1.0", big"1.0"]
-sim = test_convergence(dts,prob,DPRKN6(),dense_errors=true)
-@test sim.𝒪est[:l2] ≈ 6 rtol = 1e-1
-@test sim.𝒪est[:L2] ≈ 6 rtol = 3e-1
-# Adaptive methods regression test
-sol = solve(prob, OrdinaryDiffEq.DPRKN6(), reltol=1e-3)
-@test length(sol.u) < 20
