@@ -122,6 +122,10 @@ dts = 1.0./2.0.^(5:-1:0)
 sim = test_convergence(dts,prob,Nystrom5VelocityIndependent(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 5 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 5 rtol = 1e-1
+dts = 1.0./2.0.^(3:-1:-1)
+sim = test_convergence(dts,prob,DPRKN8(),dense_errors=true)
+@test sim.𝒪est[:l2] ≈ 8 rtol = 1e-1
+@test sim.𝒪est[:L2] ≈ 2 rtol = 5e-1
 
 dts = 1.0./2.0.^(2:-1:-2)
 sim = test_convergence(dts,prob,SofSpa10(),dense_errors=true)
@@ -134,14 +138,12 @@ prob.u0 = [big"0.0", big"0.0"], [big"1.0", big"1.0"]
 sim = test_convergence(dts,prob,DPRKN6(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 6 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 6 rtol = 3e-1
-sim = test_convergence(dts,prob,OrdinaryDiffEq.DPRKN8(),dense_errors=true)
-@test_broken sim.𝒪est[:l2] ≈ 8 rtol = 1e-1
-@test_broken sim.𝒪est[:L2] ≈ 8 rtol = 3e-1
+
 # Adaptive methods regression test
 sol = solve(prob, DPRKN6(), reltol=1e-3)
 @test length(sol.u) < 20
-sol = solve(prob, OrdinaryDiffEq.DPRKN8(), reltol=1e-3)
-@test_broken length(sol.u) < 20
+sol = solve(prob, DPRKN8(), reltol=1e-3)
+@test length(sol.u) < 13
 
 
 f = function (t,u,du)
