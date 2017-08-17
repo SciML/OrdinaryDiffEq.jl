@@ -149,4 +149,5 @@ module OrdinaryDiffEq
 
   export Nystrom4, Nystrom4VelocityIndependent, Nystrom5VelocityIndependent,
          IRKN3, IRKN4, DPRKN6
+         #,DPRKN8 This algorithm is broken
 end # module

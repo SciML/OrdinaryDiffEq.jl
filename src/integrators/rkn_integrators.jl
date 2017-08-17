@@ -308,7 +308,7 @@ end
     @inbounds ku[i] = uprev[i] + dt*(c7*duprev[i] + dt*(a81*k1.x[2][i] + a82*k2.x[2][i] + a83*k3.x[2][i] + a84*k4.x[2][i] + a85*k5.x[2][i] + a86*k6.x[2][i] + a87*k7.x[2][i]))
   end
 
-  f.f2(t+dt*c7,ku ,du,k8.x[2])
+  f.f2(t+dt*c7,ku,du,k8.x[2])
   @tight_loop_macros for i in uidx
     @inbounds ku[i] = uprev[i] + dt*(c8*duprev[i] + dt*(a91*k1.x[2][i] + a93*k3.x[2][i] + a94*k4.x[2][i] + a95*k5.x[2][i] + a96*k6.x[2][i] + a97*k7.x[2][i])) # no a92 & a98
   end
@@ -328,7 +328,6 @@ end
       @inbounds uhat[i]  = dtsq*(btilde1*k1.x[2][i] + btilde3*k3.x[2][i] + btilde4*k4.x[2][i] + btilde5*k5.x[2][i] + btilde6*k6.x[2][i] + btilde7*k7.x[2][i])
       @inbounds duhat[i] = dt*(bptilde1*k1.x[2][i] + bptilde3*k3.x[2][i] + bptilde4*k4.x[2][i] + bptilde5*k5.x[2][i] + bptilde6*k6.x[2][i] + bptilde7*k7.x[2][i] + bptilde8*k8.x[2][i] + bptilde9*k9.x[2][i])
     end
-    @. utilde = integrator.u - utilde
     calculate_residuals!(atmp, utilde, integrator.uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
