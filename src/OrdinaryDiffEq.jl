@@ -111,6 +111,8 @@ module OrdinaryDiffEq
   #General Functions
   export solve, solve!, init, step!
 
+  export OrdinaryDiffEqAlgorithm
+
   #Callback Necessary
   export ode_addsteps!, ode_interpolant,
         terminate!, savevalues!, copyat_or_push!, isfsal
