@@ -1,5 +1,5 @@
 using OrdinaryDiffEq, DiffEqProblemLibrary, Base.Test, DiffEqBase
-using Calculus, ForwardDiff
+using ForwardDiff
 
 
 # use `PRINT_TESTS = true` to print the tests, including results
