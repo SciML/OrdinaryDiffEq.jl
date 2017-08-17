@@ -448,14 +448,14 @@ end
 
 Base.@pure function DPRKN8ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
   DPRKN8ConstantCache(
-  T(0.05),
-  T(0.1),
-  T(0.3),
-  T(0.5),
-  T(0.7),
-  T(0.9),
-  T(1.0),
-  T(1.0),
+  T2(0.05),
+  T2(0.1),
+  T2(0.3),
+  T2(0.5),
+  T2(0.7),
+  T2(0.9),
+  T2(1.0),
+  T2(1.0),
   T(0.00125),
   T(0.0016666666666666668),
   T(0.0033333333333333335),
