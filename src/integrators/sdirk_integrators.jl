@@ -630,11 +630,11 @@ end
   cache.newton_iters = iter
 
   if integrator.opts.adaptive
-    est = (bhat1-b1)*zprev + (bhat2-b2)*zᵧ + (bhat3-b3)*z
+    tmp = (bhat1-b1)*zprev + (bhat2-b2)*zᵧ + (bhat3-b3)*z
     if integrator.alg.smooth_est # From Shampine
-      Est = W\est
+      Est = W\tmp
     else
-      Est = est
+      Est = tmp
     end
     integrator.EEst = integrator.opts.internalnorm(@. abs(Est)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
   end
@@ -654,7 +654,7 @@ end
 
 @muladd function perform_step!(integrator,cache::TRBDF2Cache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
-  @unpack uf,du1,uᵧ,Δzᵧ,Δz,zprev,zᵧ,z,k,J,W,jac_config,est = cache
+  @unpack uf,du1,uᵧ,Δzᵧ,Δz,zprev,zᵧ,z,k,J,W,jac_config,tmp = cache
   mass_matrix = integrator.sol.prob.mass_matrix
 
   uf.t = t
@@ -811,20 +811,20 @@ end
 
   if integrator.opts.adaptive
     be1 = (bhat1-b1); be2 = (bhat2-b2); be3 = (bhat3-b3)
-    @. est = be1*zprev + be2*zᵧ + be3*z
+    @. tmp = be1*zprev + be2*zᵧ + be3*z
     if integrator.alg.smooth_est # From Shampine
       if has_invW(f)
-        A_mul_B!(vec(k),W,vec(est))
+        A_mul_B!(vec(k),W,vec(tmp))
       else
-        integrator.alg.linsolve(vec(k),W,vec(est),false)
+        integrator.alg.linsolve(vec(k),W,vec(tmp),false)
       end
     else
-      k .= est
+      k .= tmp
     end
     @tight_loop_macros for (i,atol,rtol) in zip(eachindex(u),Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
-      est[i] = abs(k[i])/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
+      tmp[i] = abs(k[i])/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
     end
-    integrator.EEst = integrator.opts.internalnorm(est)
+    integrator.EEst = integrator.opts.internalnorm(tmp)
   end
 
   @. integrator.fsallast = z/dt
@@ -953,11 +953,11 @@ end
   cache.newton_iters = iter
 
   if integrator.opts.adaptive
-    est = @. z₁/2 - z₂/2
+    tmp = @. z₁/2 - z₂/2
     if integrator.alg.smooth_est # From Shampine
-      Est = W\est
+      Est = W\tmp
     else
-      Est = est
+      Est = tmp
     end
     integrator.EEst = integrator.opts.internalnorm(@. abs(Est)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
   end
@@ -977,7 +977,7 @@ end
 
 @muladd function perform_step!(integrator,cache::SDIRK2Cache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
-  @unpack uf,du1,dz₁,dz₂,z₁,z₂,k,J,W,jac_config,est = cache
+  @unpack uf,du1,dz₁,dz₂,z₁,z₂,k,J,W,jac_config,tmp = cache
   mass_matrix = integrator.sol.prob.mass_matrix
 
   uf.t = t
@@ -1126,20 +1126,20 @@ end
   @. u = uprev + z₁/2 + z₂/2
 
   if integrator.opts.adaptive
-    @. est = z₁/2 - z₂/2
+    @. tmp = z₁/2 - z₂/2
     if integrator.alg.smooth_est # From Shampine
       if has_invW(f)
-        A_mul_B!(vec(k),W,vec(est))
+        A_mul_B!(vec(k),W,vec(tmp))
       else
-        integrator.alg.linsolve(vec(k),W,vec(est),false)
+        integrator.alg.linsolve(vec(k),W,vec(tmp),false)
       end
     else
-      k .= est
+      k .= tmp
     end
     @tight_loop_macros for (i,atol,rtol) in zip(eachindex(u),Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
-      est[i] = abs(k[i])/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
+      tmp[i] = abs(k[i])/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
     end
-    integrator.EEst = integrator.opts.internalnorm(est)
+    integrator.EEst = integrator.opts.internalnorm(tmp)
   end
 
   f(t,u,integrator.fsallast)
@@ -1285,7 +1285,7 @@ end
 
 @muladd function perform_step!(integrator,cache::SSPSDIRK2Cache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
-  @unpack uf,du1,dz₁,dz₂,z₁,z₂,k,J,W,jac_config,est = cache
+  @unpack uf,du1,dz₁,dz₂,z₁,z₂,k,J,W,jac_config,tmp = cache
   mass_matrix = integrator.sol.prob.mass_matrix
 
   γ = eltype(u)(1//4)
@@ -1602,11 +1602,11 @@ end
   cache.newton_iters = iter
 
   if integrator.opts.adaptive
-    est = @. (bhat1-a41)*z₁ + (bhat2-a42)*z₂ + (bhat3-a43)*z₃ + (bhat4-γ)*z₄
+    tmp = @. (bhat1-a41)*z₁ + (bhat2-a42)*z₂ + (bhat3-a43)*z₃ + (bhat4-γ)*z₄
     if integrator.alg.smooth_est # From Shampine
-      Est = W\est
+      Est = W\tmp
     else
-      Est = est
+      Est = tmp
     end
     integrator.EEst = integrator.opts.internalnorm(@. abs(Est)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
   end
@@ -1626,7 +1626,7 @@ end
 
 @muladd function perform_step!(integrator,cache::Union{Kvaerno3Cache,KenCarp3Cache},f=integrator.f)
   @unpack t,dt,uprev,u = integrator
-  @unpack uf,du1,dz₁,dz₂,dz₃,dz₄,z₁,z₂,z₃,z₄,k,J,W,jac_config,est = cache
+  @unpack uf,du1,dz₁,dz₂,dz₃,dz₄,z₁,z₂,z₃,z₄,k,J,W,jac_config,tmp = cache
   @unpack γ,a31,a32,a41,a42,a43,bhat1,bhat2,bhat3,bhat4,c3,α31,α32 = cache.tab
   mass_matrix = integrator.sol.prob.mass_matrix
 
@@ -1821,20 +1821,20 @@ end
   @. u = uprev + a41*z₁ + a42*z₂ + a43*z₃ + γ*z₄
 
   if integrator.opts.adaptive
-    @. est = (bhat1-a41)*z₁ + (bhat2-a42)*z₂ + (bhat3-a43)*z₃ + (bhat4-γ)*z₄
+    @. tmp = (bhat1-a41)*z₁ + (bhat2-a42)*z₂ + (bhat3-a43)*z₃ + (bhat4-γ)*z₄
     if integrator.alg.smooth_est # From Shampine
       if has_invW(f)
-        A_mul_B!(vec(k),W,vec(est))
+        A_mul_B!(vec(k),W,vec(tmp))
       else
-        integrator.alg.linsolve(vec(k),W,vec(est),false)
+        integrator.alg.linsolve(vec(k),W,vec(tmp),false)
       end
     else
-      k .= est
+      k .= tmp
     end
     @tight_loop_macros for (i,atol,rtol) in zip(eachindex(u),Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
-      est[i] = abs(k[i])/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
+      tmp[i] = abs(k[i])/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
     end
-    integrator.EEst = integrator.opts.internalnorm(est)
+    integrator.EEst = integrator.opts.internalnorm(tmp)
   end
 
   @. integrator.fsallast = z₄/dt
@@ -2079,14 +2079,14 @@ end
 
   if integrator.opts.adaptive
     if integrator.alg.embedding == 3
-      est = @. (b1hat2-a51)*z₁ + (b2hat2-a52)*z₂ + (b3hat2-a53)*z₃ + (b4hat2-a54)*z₄ - γ*z₅
+      tmp = @. (b1hat2-a51)*z₁ + (b2hat2-a52)*z₂ + (b3hat2-a53)*z₃ + (b4hat2-a54)*z₄ - γ*z₅
     else
-      est = @. (b1hat1-a51)*z₁ + (b2hat1-a52)*z₂ + (b3hat1-a53)*z₃ + (b4hat1-a54)*z₄ - γ*z₅
+      tmp = @. (b1hat1-a51)*z₁ + (b2hat1-a52)*z₂ + (b3hat1-a53)*z₃ + (b4hat1-a54)*z₄ - γ*z₅
     end
     if integrator.alg.smooth_est # From Shampine
-      Est = W\est
+      Est = W\tmp
     else
-      Est = est
+      Est = tmp
     end
     integrator.EEst = integrator.opts.internalnorm(@. abs(Est)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
   end
@@ -2105,7 +2105,7 @@ end
 
 @muladd function perform_step!(integrator,cache::Cash4Cache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
-  @unpack uf,du1,dz₁,dz₂,dz₃,dz₄,dz₅,z₁,z₂,z₃,z₄,z₅,k,J,W,jac_config,est = cache
+  @unpack uf,du1,dz₁,dz₂,dz₃,dz₄,dz₅,z₁,z₂,z₃,z₄,z₅,k,J,W,jac_config,tmp = cache
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack b1hat1, b2hat1, b3hat1, b4hat1, b1hat2, b2hat2, b3hat2, b4hat2 = cache.tab
   mass_matrix = integrator.sol.prob.mass_matrix
@@ -2396,23 +2396,23 @@ end
 
   if integrator.opts.adaptive
     if integrator.alg.embedding == 3
-      @. est = (b1hat2-a51)*z₁ + (b2hat2-a52)*z₂ + (b3hat2-a53)*z₃ + (b4hat2-a54)*z₄ - γ*z₅
+      @. tmp = (b1hat2-a51)*z₁ + (b2hat2-a52)*z₂ + (b3hat2-a53)*z₃ + (b4hat2-a54)*z₄ - γ*z₅
     else
-      @. est = (b1hat1-a51)*z₁ + (b2hat1-a52)*z₂ + (b3hat1-a53)*z₃ + (b4hat1-a54)*z₄ - γ*z₅
+      @. tmp = (b1hat1-a51)*z₁ + (b2hat1-a52)*z₂ + (b3hat1-a53)*z₃ + (b4hat1-a54)*z₄ - γ*z₅
     end
     if integrator.alg.smooth_est # From Shampine
       if has_invW(f)
-        A_mul_B!(vec(k),W,vec(est))
+        A_mul_B!(vec(k),W,vec(tmp))
       else
-        integrator.alg.linsolve(vec(k),W,vec(est),false)
+        integrator.alg.linsolve(vec(k),W,vec(tmp),false)
       end
     else
-      k .= est
+      k .= tmp
     end
     @tight_loop_macros for (i,atol,rtol) in zip(eachindex(u),Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
-      est[i] = abs(k[i])/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
+      tmp[i] = abs(k[i])/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
     end
-    integrator.EEst = integrator.opts.internalnorm(est)
+    integrator.EEst = integrator.opts.internalnorm(tmp)
   end
 
   @. integrator.fsallast = z₅/dt
@@ -2654,11 +2654,11 @@ end
   cache.newton_iters = iter
 
   if integrator.opts.adaptive
-    est = @. (bhat1-a51)*z₁ + (bhat2-a52)*z₂ + (bhat3-a53)*z₃ + (bhat4-a54)*z₄ - γ*z₅
+    tmp = @. (bhat1-a51)*z₁ + (bhat2-a52)*z₂ + (bhat3-a53)*z₃ + (bhat4-a54)*z₄ - γ*z₅
     if integrator.alg.smooth_est # From Shampine
-      Est = W\est
+      Est = W\tmp
     else
-      Est = est
+      Est = tmp
     end
     integrator.EEst = integrator.opts.internalnorm(@. abs(Est)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
   end
@@ -2677,7 +2677,7 @@ end
 
 @muladd function perform_step!(integrator,cache::Hairer4Cache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
-  @unpack uf,du1,dz₁,dz₂,dz₃,dz₄,dz₅,z₁,z₂,z₃,z₄,z₅,k,J,W,jac_config,est = cache
+  @unpack uf,du1,dz₁,dz₂,dz₃,dz₄,dz₅,z₁,z₂,z₃,z₄,z₅,k,J,W,jac_config,tmp = cache
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack α21,α31,α32,α41,α43 = cache.tab
   @unpack bhat1, bhat2, bhat3, bhat4 = cache.tab
@@ -2982,23 +2982,23 @@ end
   end
 
   if integrator.opts.adaptive
-    #@. est = (bhat1-a51)*z₁ + (bhat2-a52)*z₂ + (bhat3-a53)*z₃ + (bhat4-a54)*z₄ - γ*z₅
+    #@. tmp = (bhat1-a51)*z₁ + (bhat2-a52)*z₂ + (bhat3-a53)*z₃ + (bhat4-a54)*z₄ - γ*z₅
     @tight_loop_macros for i in eachindex(u)
-      est[i] = (bhat1-a51)*z₁[i] + (bhat2-a52)*z₂[i] + (bhat3-a53)*z₃[i] + (bhat4-a54)*z₄[i] - γ*z₅[i]
+      tmp[i] = (bhat1-a51)*z₁[i] + (bhat2-a52)*z₂[i] + (bhat3-a53)*z₃[i] + (bhat4-a54)*z₄[i] - γ*z₅[i]
     end
     if integrator.alg.smooth_est # From Shampine
       if has_invW(f)
-        A_mul_B!(vec(k),W,vec(est))
+        A_mul_B!(vec(k),W,vec(tmp))
       else
-        integrator.alg.linsolve(vec(k),W,vec(est),false)
+        integrator.alg.linsolve(vec(k),W,vec(tmp),false)
       end
     else
-      k .= est
+      k .= tmp
     end
     @tight_loop_macros for (i,atol,rtol) in zip(eachindex(u),Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
-      est[i] = abs(k[i])/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
+      tmp[i] = abs(k[i])/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
     end
-    integrator.EEst = integrator.opts.internalnorm(est)
+    integrator.EEst = integrator.opts.internalnorm(tmp)
   end
 
   @. integrator.fsallast = z₅/dt
@@ -3203,11 +3203,11 @@ end
   cache.newton_iters = iter
 
   if integrator.opts.adaptive
-    est = @. (a41-a51)*z₁ + (a42-a52)*z₂ + (a43-a53)*z₃ + (γ-a54)*z₄ - γ*z₅
+    tmp = @. (a41-a51)*z₁ + (a42-a52)*z₂ + (a43-a53)*z₃ + (γ-a54)*z₄ - γ*z₅
     if integrator.alg.smooth_est # From Shampine
-      Est = W\est
+      Est = W\tmp
     else
-      Est = est
+      Est = tmp
     end
     integrator.EEst = integrator.opts.internalnorm(@. abs(Est)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
   end
@@ -3226,7 +3226,7 @@ end
 
 @muladd function perform_step!(integrator,cache::Kvaerno4Cache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
-  @unpack uf,du1,dz₁,dz₂,dz₃,dz₄,dz₅,z₁,z₂,z₃,z₄,z₅,k,J,W,jac_config,est = cache
+  @unpack uf,du1,dz₁,dz₂,dz₃,dz₄,dz₅,z₁,z₂,z₃,z₄,z₅,k,J,W,jac_config,tmp = cache
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,c3,c4 = cache.tab
   @unpack α21,α31,α32,α41,α42 = cache.tab
   mass_matrix = integrator.sol.prob.mass_matrix
@@ -3476,20 +3476,20 @@ end
   end
 
   if integrator.opts.adaptive
-    @. est = (a41-a51)*z₁ + (a42-a52)*z₂ + (a43-a53)*z₃ + (γ-a54)*z₄ - γ*z₅
+    @. tmp = (a41-a51)*z₁ + (a42-a52)*z₂ + (a43-a53)*z₃ + (γ-a54)*z₄ - γ*z₅
     if integrator.alg.smooth_est # From Shampine
       if has_invW(f)
-        A_mul_B!(vec(k),W,vec(est))
+        A_mul_B!(vec(k),W,vec(tmp))
       else
-        integrator.alg.linsolve(vec(k),W,vec(est),false)
+        integrator.alg.linsolve(vec(k),W,vec(tmp),false)
       end
     else
-      k .= est
+      k .= tmp
     end
     @tight_loop_macros for (i,atol,rtol) in zip(eachindex(u),Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
-      est[i] = abs(k[i])/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
+      tmp[i] = abs(k[i])/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
     end
-    integrator.EEst = integrator.opts.internalnorm(est)
+    integrator.EEst = integrator.opts.internalnorm(tmp)
   end
 
   @. integrator.fsallast = z₅/dt
@@ -3731,11 +3731,11 @@ end
   cache.newton_iters = iter
 
   if integrator.opts.adaptive
-    est = @. (bhat1-a61)*z₁ + (bhat3-a63)*z₃ + (bhat4-a64)*z₄ + (bhat5-a65)*z₅ + (bhat6-γ)*z₆
+    tmp = @. (bhat1-a61)*z₁ + (bhat3-a63)*z₃ + (bhat4-a64)*z₄ + (bhat5-a65)*z₅ + (bhat6-γ)*z₆
     if integrator.alg.smooth_est # From Shampine
-      Est = W\est
+      Est = W\tmp
     else
-      Est = est
+      Est = tmp
     end
     integrator.EEst = integrator.opts.internalnorm(@. abs(Est)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
   end
@@ -3754,7 +3754,7 @@ end
 
 @muladd function perform_step!(integrator,cache::KenCarp4Cache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
-  @unpack uf,du1,dz₁,dz₂,dz₃,dz₄,dz₅,dz₆,z₁,z₂,z₃,z₄,z₅,z₆,k,J,W,jac_config,est = cache
+  @unpack uf,du1,dz₁,dz₂,dz₃,dz₄,dz₅,dz₆,z₁,z₂,z₃,z₄,z₅,z₆,k,J,W,jac_config,tmp = cache
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,c3,c4,c5 = cache.tab
   @unpack α31,α32,α41,α42,α51,α52,α53,α54,α61,α62,α63,α64,α65 = cache.tab
   @unpack bhat1,bhat3,bhat4,bhat5,bhat6 = cache.tab
@@ -4060,23 +4060,23 @@ end
   end
 
   if integrator.opts.adaptive
-    #@. est = (bhat1-a61)*z₁ + (bhat3-a63)*z₃ + (bhat4-a64)*z₄ + (bhat5-a65)*z₅ + (bhat6-γ)*z₆
+    #@. tmp = (bhat1-a61)*z₁ + (bhat3-a63)*z₃ + (bhat4-a64)*z₄ + (bhat5-a65)*z₅ + (bhat6-γ)*z₆
     for i in eachindex(u)
-      est[i] = (bhat1-a61)*z₁[i] + (bhat3-a63)*z₃[i] + (bhat4-a64)*z₄[i] + (bhat5-a65)*z₅[i] + (bhat6-γ)*z₆[i]
+      tmp[i] = (bhat1-a61)*z₁[i] + (bhat3-a63)*z₃[i] + (bhat4-a64)*z₄[i] + (bhat5-a65)*z₅[i] + (bhat6-γ)*z₆[i]
     end
     if integrator.alg.smooth_est # From Shampine
       if has_invW(f)
-        A_mul_B!(vec(k),W,vec(est))
+        A_mul_B!(vec(k),W,vec(tmp))
       else
-        integrator.alg.linsolve(vec(k),W,vec(est),false)
+        integrator.alg.linsolve(vec(k),W,vec(tmp),false)
       end
     else
-      k .= est
+      k .= tmp
     end
     @tight_loop_macros for (i,atol,rtol) in zip(eachindex(u),Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
-      est[i] = abs(k[i])/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
+      tmp[i] = abs(k[i])/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
     end
-    integrator.EEst = integrator.opts.internalnorm(est)
+    integrator.EEst = integrator.opts.internalnorm(tmp)
   end
 
   @. integrator.fsallast = z₆/dt
@@ -4355,11 +4355,11 @@ end
   cache.newton_iters = iter
 
   if integrator.opts.adaptive
-    est = @. (a61-a71)*z₁ + (a63-a73)*z₃ + (a64-a74)*z₄ + (a65-a75)*z₅ + (γ-a76)*z₆ - γ*z₇
+    tmp = @. (a61-a71)*z₁ + (a63-a73)*z₃ + (a64-a74)*z₄ + (a65-a75)*z₅ + (γ-a76)*z₆ - γ*z₇
     if integrator.alg.smooth_est # From Shampine
-      Est = W\est
+      Est = W\tmp
     else
-      Est = est
+      Est = tmp
     end
     integrator.EEst = integrator.opts.internalnorm(@. abs(Est)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
   end
@@ -4378,7 +4378,7 @@ end
 
 @muladd function perform_step!(integrator,cache::Kvaerno5Cache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
-  @unpack uf,du1,dz₁,dz₂,dz₃,dz₄,dz₅,dz₆,dz₇,z₁,z₂,z₃,z₄,z₅,z₆,z₇,k,J,W,jac_config,est = cache
+  @unpack uf,du1,dz₁,dz₂,dz₃,dz₄,dz₅,dz₆,dz₇,z₁,z₂,z₃,z₄,z₅,z₆,z₇,k,J,W,jac_config,tmp = cache
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,c3,c4,c5,c6 = cache.tab
   @unpack α31,α32,α41,α42,α43,α51,α52,α53,α61,α62,α63 = cache.tab
   mass_matrix = integrator.sol.prob.mass_matrix
@@ -4741,23 +4741,23 @@ end
   end
 
   if integrator.opts.adaptive
-    #@. est = (a61-a71)*z₁ + (a63-a73)*z₃ + (a64-a74)*z₄ + (a65-a75)*z₅ + (γ-a76)*z₆ - γ*z₇
+    #@. tmp = (a61-a71)*z₁ + (a63-a73)*z₃ + (a64-a74)*z₄ + (a65-a75)*z₅ + (γ-a76)*z₆ - γ*z₇
     for i in eachindex(u)
-      est[i] = (a61-a71)*z₁[i] + (a63-a73)*z₃[i] + (a64-a74)*z₄[i] + (a65-a75)*z₅[i] + (γ-a76)*z₆[i] - γ*z₇[i]
+      tmp[i] = (a61-a71)*z₁[i] + (a63-a73)*z₃[i] + (a64-a74)*z₄[i] + (a65-a75)*z₅[i] + (γ-a76)*z₆[i] - γ*z₇[i]
     end
     if integrator.alg.smooth_est # From Shampine
       if has_invW(f)
-        A_mul_B!(vec(k),W,vec(est))
+        A_mul_B!(vec(k),W,vec(tmp))
       else
-        integrator.alg.linsolve(vec(k),W,vec(est),false)
+        integrator.alg.linsolve(vec(k),W,vec(tmp),false)
       end
     else
-      k .= est
+      k .= tmp
     end
     @tight_loop_macros for (i,atol,rtol) in zip(eachindex(u),Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
-      est[i] = abs(k[i])/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
+      tmp[i] = abs(k[i])/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
     end
-    integrator.EEst = integrator.opts.internalnorm(est)
+    integrator.EEst = integrator.opts.internalnorm(tmp)
   end
 
   @. integrator.fsallast = z₇/dt
@@ -5074,11 +5074,11 @@ end
   cache.newton_iters = iter
 
   if integrator.opts.adaptive
-    est = @. (bhat1-a81)*z₁ + (bhat4-a84)*z₄ + (bhat5-a85)*z₅ + (bhat6-a86)*z₆ + (bhat7-a87)*z₇ + (bhat8-γ)*z₈
+    tmp = @. (bhat1-a81)*z₁ + (bhat4-a84)*z₄ + (bhat5-a85)*z₅ + (bhat6-a86)*z₆ + (bhat7-a87)*z₇ + (bhat8-γ)*z₈
     if integrator.alg.smooth_est # From Shampine
-      Est = W\est
+      Est = W\tmp
     else
-      Est = est
+      Est = tmp
     end
     integrator.EEst = integrator.opts.internalnorm(@. abs(Est)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
   end
@@ -5097,7 +5097,7 @@ end
 
 @muladd function perform_step!(integrator,cache::KenCarp5Cache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
-  @unpack uf,du1,dz₁,dz₂,dz₃,dz₄,dz₅,dz₆,dz₇,dz₈,z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,k,J,W,jac_config,est = cache
+  @unpack uf,du1,dz₁,dz₂,dz₃,dz₄,dz₅,dz₆,dz₇,dz₈,z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,k,J,W,jac_config,tmp = cache
   @unpack γ,a31,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a84,a85,a86,a87,c3,c4,c5,c6,c7 = cache.tab
   @unpack α31,α32,α41,α42,α51,α52,α61,α62,α71,α72,α73,α74,α75,α81,α82,α83,α84,α85 = cache.tab
   @unpack bhat1,bhat4,bhat5,bhat6,bhat7,bhat8 = cache.tab
@@ -5515,24 +5515,24 @@ end
   end
 
   if integrator.opts.adaptive
-    #@. est = (bhat1-a81)*z₁ + (bhat4-a84)*z₄ + (bhat5-a85)*z₅ + (bhat6-a86)*z₆ + (bhat7-a87)*z₇ + (bhat8-γ)*z₈
-    #@. est = (a61-a71)*z₁ + (a63-a73)*z₃ + (a64-a74)*z₄ + (a65-a75)*z₅ + (γ-a76)*z₆ - γ*z₇
+    #@. tmp = (bhat1-a81)*z₁ + (bhat4-a84)*z₄ + (bhat5-a85)*z₅ + (bhat6-a86)*z₆ + (bhat7-a87)*z₇ + (bhat8-γ)*z₈
+    #@. tmp = (a61-a71)*z₁ + (a63-a73)*z₃ + (a64-a74)*z₄ + (a65-a75)*z₅ + (γ-a76)*z₆ - γ*z₇
     for i in eachindex(u)
-      est[i] = (bhat1-a81)*z₁[i] + (bhat4-a84)*z₄[i] + (bhat5-a85)*z₅[i] + (bhat6-a86)*z₆[i] + (bhat7-a87)*z₇[i] + (bhat8-γ)*z₈[i]
+      tmp[i] = (bhat1-a81)*z₁[i] + (bhat4-a84)*z₄[i] + (bhat5-a85)*z₅[i] + (bhat6-a86)*z₆[i] + (bhat7-a87)*z₇[i] + (bhat8-γ)*z₈[i]
     end
     if integrator.alg.smooth_est # From Shampine
       if has_invW(f)
-        A_mul_B!(vec(k),W,vec(est))
+        A_mul_B!(vec(k),W,vec(tmp))
       else
-        integrator.alg.linsolve(vec(k),W,vec(est),false)
+        integrator.alg.linsolve(vec(k),W,vec(tmp),false)
       end
     else
-      k .= est
+      k .= tmp
     end
     @tight_loop_macros for (i,atol,rtol) in zip(eachindex(u),Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
-      est[i] = abs(k[i])/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
+      tmp[i] = abs(k[i])/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
     end
-    integrator.EEst = integrator.opts.internalnorm(est)
+    integrator.EEst = integrator.opts.internalnorm(tmp)
   end
 
   @. integrator.fsallast = z₈/dt

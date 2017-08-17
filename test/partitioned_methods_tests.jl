@@ -122,6 +122,7 @@ dts = 1.0./2.0.^(5:-1:0)
 sim = test_convergence(dts,prob,Nystrom5VelocityIndependent(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 5 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 5 rtol = 1e-1
+dts = 1.0./2.0.^(3:-1:-1)
 
 dts = 1.0./2.0.^(2:-1:-2)
 sim = test_convergence(dts,prob,SofSpa10(),dense_errors=true)
@@ -130,13 +131,20 @@ sim = test_convergence(dts,prob,SofSpa10(),dense_errors=true)
 
 # Methods need BigFloat to test convergence rate
 dts = big"1.0"./big"2.0".^(5:-1:1)
-prob.u0 = [big"0.0", big"0.0"], [big"1.0", big"1.0"]
-sim = test_convergence(dts,prob,DPRKN6(),dense_errors=true)
+prob_big = SecondOrderODEProblem(f2,[big"0.0", big"0.0"],[big"1.0",big"1.0"],(big"0.",big"70."))
+(::typeof(prob_big.f))(::Type{Val{:analytic}},t,u0) = f2(Val{:analytic},t,u0)
+sim = test_convergence(dts,prob_big,DPRKN6(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 6 rtol = 1e-1
-@test sim.𝒪est[:L2] ≈ 6 rtol = 3e-1
+@test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
+sim = test_convergence(dts,prob_big,DPRKN8(),dense_errors=true)
+@test sim.𝒪est[:l2] ≈ 8 rtol = 1e-1
+@test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
+
 # Adaptive methods regression test
-sol = solve(prob, OrdinaryDiffEq.DPRKN6(), reltol=1e-3)
+sol = solve(prob, DPRKN6(), reltol=1e-3)
 @test length(sol.u) < 20
+sol = solve(prob, DPRKN8(), reltol=1e-3)
+@test length(sol.u) < 13
 
 
 f = function (t,u,du)

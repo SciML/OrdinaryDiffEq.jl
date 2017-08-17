@@ -7,6 +7,7 @@ mutable struct ImplicitEulerCache{uType,rateType,J,JC,UF,uEltypeNoUnits} <: Ordi
   k::rateType
   z::uType
   dz::uType
+  tmp::uType
   J::J
   W::J
   jac_config::JC
@@ -27,7 +28,7 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
   z = similar(u)
-  dz = similar(u)
+  dz = similar(u); tmp = similar(u)
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
   vfr = VectorFReturn(f,size(u))
@@ -50,7 +51,7 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,
   else
     tol = min(0.03,first(reltol)^(0.5))
   end
-  ImplicitEulerCache(u,uprev,uprev2,du1,fsalfirst,k,z,dz,J,W,jac_config,uf,ηold,κ,tol,10000)
+  ImplicitEulerCache(u,uprev,uprev2,du1,fsalfirst,k,z,dz,tmp,J,W,jac_config,uf,ηold,κ,tol,10000)
 end
 
 mutable struct ImplicitEulerConstantCache{F,uEltypeNoUnits} <: OrdinaryDiffEqConstantCache
@@ -120,6 +121,7 @@ mutable struct TrapezoidCache{uType,rateType,J,JC,UF,uEltypeNoUnits,tType} <: Or
   k::rateType
   z::uType
   dz::uType
+  tmp::uType
   J::J
   W::J
   jac_config::JC
@@ -142,7 +144,7 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
   z = similar(u)
-  dz = similar(u)
+  dz = similar(u); tmp = similar(u)
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
   vfr = VectorFReturn(f,size(u))
@@ -170,7 +172,7 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,
 
   ηold = one(uEltypeNoUnits)
 
-  TrapezoidCache(u,uprev,uprev2,du1,fsalfirst,k,z,dz,J,W,jac_config,uf,ηold,κ,tol,10000,uprev3,tprev2)
+  TrapezoidCache(u,uprev,uprev2,du1,fsalfirst,k,z,dz,tmp,J,W,jac_config,uf,ηold,κ,tol,10000,uprev3,tprev2)
 end
 
 mutable struct TRBDF2ConstantCache{F,uEltypeNoUnits,uType,tType} <: OrdinaryDiffEqConstantCache
@@ -216,7 +218,7 @@ mutable struct TRBDF2Cache{uType,rateType,J,JC,UF,uEltypeNoUnits,tType} <: Ordin
   z::uType
   Δzᵧ::uType
   Δz::uType
-  est::uType
+  tmp::uType
   J::J
   W::J
   jac_config::JC
@@ -240,7 +242,7 @@ function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,
   zprev = similar(u); zᵧ = similar(u); z = similar(u)
   Δzᵧ = similar(u); Δz = similar(u)
   fsalfirst = zeros(rate_prototype)
-  k = zeros(rate_prototype); est = similar(u)
+  k = zeros(rate_prototype); tmp = similar(u)
   vfr = VectorFReturn(f,size(u))
   uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
   if alg_autodiff(alg)
@@ -265,7 +267,7 @@ function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,
 
   TRBDF2Cache{typeof(u),typeof(rate_prototype),typeof(J),typeof(jac_config),
               typeof(uf),uEltypeNoUnits,typeof(t)}(
-              u,uprev,uᵧ,du1,fsalfirst,k,zprev,zᵧ,z,Δzᵧ,Δz,est,J,
+              u,uprev,uᵧ,du1,fsalfirst,k,zprev,zᵧ,z,Δzᵧ,Δz,tmp,J,
               W,jac_config,uf,ηold,κ,tol,10000)
 end
 
@@ -310,7 +312,7 @@ mutable struct SDIRK2Cache{uType,rateType,J,JC,UF,uEltypeNoUnits,tType} <: Ordin
   z₂::uType
   dz₁::uType
   dz₂::uType
-  est::uType
+  tmp::uType
   J::J
   W::J
   jac_config::JC
@@ -333,7 +335,7 @@ function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,
   z₁ = similar(u); z₂ = similar(u)
   dz₁ = similar(u); dz₂ = similar(u)
   fsalfirst = zeros(rate_prototype)
-  k = zeros(rate_prototype); est = similar(u)
+  k = zeros(rate_prototype); tmp = similar(u)
   vfr = VectorFReturn(f,size(u))
   uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
   if alg_autodiff(alg)
@@ -358,7 +360,7 @@ function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,
 
   SDIRK2Cache{typeof(u),typeof(rate_prototype),typeof(J),typeof(jac_config),
               typeof(uf),uEltypeNoUnits,typeof(t)}(
-              u,uprev,du1,fsalfirst,k,z₁,z₂,dz₁,dz₂,est,J,
+              u,uprev,du1,fsalfirst,k,z₁,z₂,dz₁,dz₂,tmp,J,
               W,jac_config,uf,ηold,κ,tol,10000)
 end
 
@@ -403,7 +405,7 @@ mutable struct SSPSDIRK2Cache{uType,rateType,J,JC,UF,uEltypeNoUnits,tType} <: Or
   z₂::uType
   dz₁::uType
   dz₂::uType
-  est::uType
+  tmp::uType
   J::J
   W::J
   jac_config::JC
@@ -426,7 +428,7 @@ function alg_cache(alg::SSPSDIRK2,u,rate_prototype,uEltypeNoUnits,
   z₁ = similar(u); z₂ = similar(u)
   dz₁ = similar(u); dz₂ = similar(u)
   fsalfirst = zeros(rate_prototype)
-  k = zeros(rate_prototype); est = similar(u)
+  k = zeros(rate_prototype); tmp = similar(u)
   vfr = VectorFReturn(f,size(u))
   uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
   if alg_autodiff(alg)
@@ -451,7 +453,7 @@ function alg_cache(alg::SSPSDIRK2,u,rate_prototype,uEltypeNoUnits,
 
   SSPSDIRK2Cache{typeof(u),typeof(rate_prototype),typeof(J),typeof(jac_config),
               typeof(uf),uEltypeNoUnits,typeof(t)}(
-              u,uprev,du1,fsalfirst,k,z₁,z₂,dz₁,dz₂,est,J,
+              u,uprev,du1,fsalfirst,k,z₁,z₂,dz₁,dz₂,tmp,J,
               W,jac_config,uf,ηold,κ,tol,10000)
 end
 
@@ -503,7 +505,7 @@ mutable struct Kvaerno3Cache{uType,rateType,J,JC,UF,uEltypeNoUnits,tType,Tab} <:
   dz₂::uType
   dz₃::uType
   dz₄::uType
-  est::uType
+  tmp::uType
   J::J
   W::J
   jac_config::JC
@@ -527,7 +529,7 @@ function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,
   z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u)
   dz₁ = similar(u); dz₂ = similar(u); dz₃ = similar(u); dz₄ = similar(u)
   fsalfirst = zeros(rate_prototype)
-  k = zeros(rate_prototype); est = similar(u)
+  k = zeros(rate_prototype); tmp = similar(u)
   vfr = VectorFReturn(f,size(u))
   uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
   if alg_autodiff(alg)
@@ -554,7 +556,7 @@ function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,
 
   Kvaerno3Cache{typeof(u),typeof(rate_prototype),typeof(J),typeof(jac_config),
               typeof(uf),uEltypeNoUnits,typeof(t),typeof(tab)}(
-              u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,dz₁,dz₂,dz₃,dz₄,est,J,
+              u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,dz₁,dz₂,dz₃,dz₄,tmp,J,
               W,jac_config,uf,ηold,κ,tol,10000,tab)
 end
 
@@ -606,7 +608,7 @@ mutable struct KenCarp3Cache{uType,rateType,J,JC,UF,uEltypeNoUnits,tType,Tab} <:
   dz₂::uType
   dz₃::uType
   dz₄::uType
-  est::uType
+  tmp::uType
   J::J
   W::J
   jac_config::JC
@@ -630,7 +632,7 @@ function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,
   z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u)
   dz₁ = similar(u); dz₂ = similar(u); dz₃ = similar(u); dz₄ = similar(u)
   fsalfirst = zeros(rate_prototype)
-  k = zeros(rate_prototype); est = similar(u)
+  k = zeros(rate_prototype); tmp = similar(u)
   vfr = VectorFReturn(f,size(u))
   uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
   if alg_autodiff(alg)
@@ -657,7 +659,7 @@ function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,
 
   KenCarp3Cache{typeof(u),typeof(rate_prototype),typeof(J),typeof(jac_config),
               typeof(uf),uEltypeNoUnits,typeof(t),typeof(tab)}(
-              u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,dz₁,dz₂,dz₃,dz₄,est,J,
+              u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,dz₁,dz₂,dz₃,dz₄,tmp,J,
               W,jac_config,uf,ηold,κ,tol,10000,tab)
 end
 
@@ -711,7 +713,7 @@ mutable struct Cash4Cache{uType,rateType,J,JC,UF,uEltypeNoUnits,tType,Tab} <: Or
   dz₃::uType
   dz₄::uType
   dz₅::uType
-  est::uType
+  tmp::uType
   J::J
   W::J
   jac_config::JC
@@ -737,7 +739,7 @@ function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,
   dz₁ = similar(u); dz₂ = similar(u); dz₃ = similar(u); dz₄ = similar(u)
   dz₅ = similar(u)
   fsalfirst = zeros(rate_prototype)
-  k = zeros(rate_prototype); est = similar(u)
+  k = zeros(rate_prototype); tmp = similar(u)
   vfr = VectorFReturn(f,size(u))
   uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
   if alg_autodiff(alg)
@@ -764,7 +766,7 @@ function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,
 
   Cash4Cache{typeof(u),typeof(rate_prototype),typeof(J),typeof(jac_config),
               typeof(uf),uEltypeNoUnits,typeof(t),typeof(tab)}(
-              u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,dz₁,dz₂,dz₃,dz₄,dz₅,est,J,
+              u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,dz₁,dz₂,dz₃,dz₄,dz₅,tmp,J,
               W,jac_config,uf,ηold,κ,tol,10000,tab)
 end
 
@@ -822,7 +824,7 @@ mutable struct Hairer4Cache{uType,rateType,J,JC,UF,uEltypeNoUnits,tType,Tab} <: 
   dz₃::uType
   dz₄::uType
   dz₅::uType
-  est::uType
+  tmp::uType
   J::J
   W::J
   jac_config::JC
@@ -848,7 +850,7 @@ function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,
   dz₁ = similar(u); dz₂ = similar(u); dz₃ = similar(u); dz₄ = similar(u)
   dz₅ = similar(u)
   fsalfirst = zeros(rate_prototype)
-  k = zeros(rate_prototype); est = similar(u)
+  k = zeros(rate_prototype); tmp = similar(u)
   vfr = VectorFReturn(f,size(u))
   uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
   if alg_autodiff(alg)
@@ -879,7 +881,7 @@ function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,
 
   Hairer4Cache{typeof(u),typeof(rate_prototype),typeof(J),typeof(jac_config),
               typeof(uf),uEltypeNoUnits,typeof(t),typeof(tab)}(
-              u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,dz₁,dz₂,dz₃,dz₄,dz₅,est,J,
+              u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,dz₁,dz₂,dz₃,dz₄,dz₅,tmp,J,
               W,jac_config,uf,ηold,κ,tol,10000,tab)
 end
 
@@ -933,7 +935,7 @@ mutable struct Kvaerno4Cache{uType,rateType,J,JC,UF,uEltypeNoUnits,tType,Tab} <:
   dz₃::uType
   dz₄::uType
   dz₅::uType
-  est::uType
+  tmp::uType
   J::J
   W::J
   jac_config::JC
@@ -959,7 +961,7 @@ function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,
   dz₁ = similar(u); dz₂ = similar(u); dz₃ = similar(u); dz₄ = similar(u)
   dz₅ = similar(u)
   fsalfirst = zeros(rate_prototype)
-  k = zeros(rate_prototype); est = similar(u)
+  k = zeros(rate_prototype); tmp = similar(u)
   vfr = VectorFReturn(f,size(u))
   uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
   if alg_autodiff(alg)
@@ -986,7 +988,7 @@ function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,
 
   Kvaerno4Cache{typeof(u),typeof(rate_prototype),typeof(J),typeof(jac_config),
               typeof(uf),uEltypeNoUnits,typeof(t),typeof(tab)}(
-              u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,dz₁,dz₂,dz₃,dz₄,dz₅,est,J,
+              u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,dz₁,dz₂,dz₃,dz₄,dz₅,tmp,J,
               W,jac_config,uf,ηold,κ,tol,10000,tab)
 end
 
@@ -1042,7 +1044,7 @@ mutable struct KenCarp4Cache{uType,rateType,J,JC,UF,uEltypeNoUnits,tType,Tab} <:
   dz₄::uType
   dz₅::uType
   dz₆::uType
-  est::uType
+  tmp::uType
   J::J
   W::J
   jac_config::JC
@@ -1068,7 +1070,7 @@ function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,
   dz₁ = similar(u); dz₂ = similar(u); dz₃ = similar(u); dz₄ = similar(u)
   dz₅ = similar(u); dz₆ = similar(u)
   fsalfirst = zeros(rate_prototype)
-  k = zeros(rate_prototype); est = similar(u)
+  k = zeros(rate_prototype); tmp = similar(u)
   vfr = VectorFReturn(f,size(u))
   uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
   if alg_autodiff(alg)
@@ -1095,7 +1097,7 @@ function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,
 
   KenCarp4Cache{typeof(u),typeof(rate_prototype),typeof(J),typeof(jac_config),
               typeof(uf),uEltypeNoUnits,typeof(t),typeof(tab)}(
-              u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,z₆,dz₁,dz₂,dz₃,dz₄,dz₅,dz₆,est,J,
+              u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,z₆,dz₁,dz₂,dz₃,dz₄,dz₅,dz₆,tmp,J,
               W,jac_config,uf,ηold,κ,tol,10000,tab)
 end
 
@@ -1153,7 +1155,7 @@ mutable struct Kvaerno5Cache{uType,rateType,J,JC,UF,uEltypeNoUnits,tType,Tab} <:
   dz₅::uType
   dz₆::uType
   dz₇::uType
-  est::uType
+  tmp::uType
   J::J
   W::J
   jac_config::JC
@@ -1179,7 +1181,7 @@ function alg_cache(alg::Kvaerno5,u,rate_prototype,uEltypeNoUnits,
   dz₁ = similar(u); dz₂ = similar(u); dz₃ = similar(u); dz₄ = similar(u)
   dz₅ = similar(u); dz₆ = similar(u); dz₇ = similar(u)
   fsalfirst = zeros(rate_prototype)
-  k = zeros(rate_prototype); est = similar(u)
+  k = zeros(rate_prototype); tmp = similar(u)
   vfr = VectorFReturn(f,size(u))
   uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
   if alg_autodiff(alg)
@@ -1206,7 +1208,7 @@ function alg_cache(alg::Kvaerno5,u,rate_prototype,uEltypeNoUnits,
 
   Kvaerno5Cache{typeof(u),typeof(rate_prototype),typeof(J),typeof(jac_config),
               typeof(uf),uEltypeNoUnits,typeof(t),typeof(tab)}(
-              u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,z₆,z₇,dz₁,dz₂,dz₃,dz₄,dz₅,dz₆,dz₇,est,J,
+              u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,z₆,z₇,dz₁,dz₂,dz₃,dz₄,dz₅,dz₆,dz₇,tmp,J,
               W,jac_config,uf,ηold,κ,tol,10000,tab)
 end
 
@@ -1266,7 +1268,7 @@ mutable struct KenCarp5Cache{uType,rateType,J,JC,UF,uEltypeNoUnits,tType,Tab} <:
   dz₆::uType
   dz₇::uType
   dz₈::uType
-  est::uType
+  tmp::uType
   J::J
   W::J
   jac_config::JC
@@ -1292,7 +1294,7 @@ function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,
   dz₁ = similar(u); dz₂ = similar(u); dz₃ = similar(u); dz₄ = similar(u)
   dz₅ = similar(u); dz₆ = similar(u); dz₇ = similar(u); dz₈ = similar(u)
   fsalfirst = zeros(rate_prototype)
-  k = zeros(rate_prototype); est = similar(u)
+  k = zeros(rate_prototype); tmp = similar(u)
   vfr = VectorFReturn(f,size(u))
   uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
   if alg_autodiff(alg)
@@ -1320,6 +1322,6 @@ function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,
   KenCarp5Cache{typeof(u),typeof(rate_prototype),typeof(J),typeof(jac_config),
               typeof(uf),uEltypeNoUnits,typeof(t),typeof(tab)}(
               u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,
-              dz₁,dz₂,dz₃,dz₄,dz₅,dz₆,dz₇,dz₈,est,J,
+              dz₁,dz₂,dz₃,dz₄,dz₅,dz₆,dz₇,dz₈,tmp,J,
               W,jac_config,uf,ηold,κ,tol,10000,tab)
 end
