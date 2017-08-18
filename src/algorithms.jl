@@ -532,3 +532,12 @@ struct CompositeAlgorithm{T,F} <: OrdinaryDiffEqCompositeAlgorithm
   algs::T
   choice_function::F
 end
+
+################################################################################
+
+### Algorithm Groups
+
+const MassMatrixAlgorithms = Union{OrdinaryDiffEqRosenbrockAlgorithm,
+                                   OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
+                                   ImplicitEuler,
+                                   Trapezoid}

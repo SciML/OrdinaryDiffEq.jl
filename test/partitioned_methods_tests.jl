@@ -135,7 +135,7 @@ prob_big = SecondOrderODEProblem(f2,[big"0.0", big"0.0"],[big"1.0",big"1.0"],(bi
 (::typeof(prob_big.f))(::Type{Val{:analytic}},t,u0) = f2(Val{:analytic},t,u0)
 sim = test_convergence(dts,prob_big,DPRKN6(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 6 rtol = 1e-1
-@test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
+@test sim.𝒪est[:L2] ≈ 6 rtol = 1e-1
 sim = test_convergence(dts,prob_big,DPRKN8(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 8 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
@@ -144,9 +144,9 @@ sim = test_convergence(dts,prob_big,DPRKN12(),dense_errors=true)
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
 
 # Adaptive methods regression test
-sol = solve(prob, DPRKN6(), reltol=1e-3)
+sol = solve(prob, DPRKN6())
 @test length(sol.u) < 20
-sol = solve(prob, DPRKN8(), reltol=1e-3)
+sol = solve(prob, DPRKN8())
 @test length(sol.u) < 13
 sol = solve(prob, DPRKN12())
 @test length(sol.u) < 9

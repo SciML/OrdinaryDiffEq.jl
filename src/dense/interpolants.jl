@@ -1131,3 +1131,47 @@ end
     end
   end
 end
+
+@inline @muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DPRKN6Cache,idxs,T::Type{Val{0}})
+  k1,k2,k3,k4,k5,k6 = k
+  @unpack r14,r13,r12,r11,r10,r34,r33,r32,r31,r44,r43,r42,r41,r54,r53,r52,r51,r64,r63,r62,r61,rp14,rp13,rp12,rp11,rp10,rp34,rp33,rp32,rp31,rp44,rp43,rp42,rp41,rp54,rp53,rp52,rp51,rp64,rp63,rp62,rp61 = cache.tab
+
+  uprev,duprev = y₀.x
+  dtsq = dt^2
+
+  b1Θ  = @evalpoly(Θ, r10, r11, r12, r13, r14)
+  b3Θ  = @evalpoly(Θ, 0  , r31, r32, r33, r34)
+  b4Θ  = @evalpoly(Θ, 0  , r41, r42, r43, r44)
+  b5Θ  = @evalpoly(Θ, 0  , r51, r52, r53, r54)
+  b6Θ  = @evalpoly(Θ, 0  , r61, r62, r63, r64)
+
+  bp1Θ  = @evalpoly(Θ, rp10, rp11, rp12, rp13, rp14)
+  bp3Θ  = @evalpoly(Θ, 0   , rp31, rp32, rp33, rp34)
+  bp4Θ  = @evalpoly(Θ, 0   , rp41, rp42, rp43, rp44)
+  bp5Θ  = @evalpoly(Θ, 0   , rp51, rp52, rp53, rp54)
+  bp6Θ  = @evalpoly(Θ, 0   , rp61, rp62, rp63, rp64)
+
+  @inbounds if out == nothing
+    return uprev[idxs] + dt*Θ*(duprev[idxs] + dt*Θ*(b1Θ*k1.x[2][idxs] +
+                 b3Θ*k3.x[2][idxs] +
+                 b4Θ*k4.x[2][idxs] + b5Θ*k5.x[2][idxs] + b6Θ*k6.x[2][idxs])),
+           duprev[idxs] + dt*Θ*(bp1Θ*k1.x[2][idxs] + bp3Θ*k3.x[2][idxs] +
+               bp4Θ*k4.x[2][idxs] + bp5Θ*k5.x[2][idxs] + bp6Θ*k6.x[2][idxs])
+  elseif idxs == nothing
+    for i in eachindex(out.x[2])
+      out.x[1][i]  = uprev[i] + dt*Θ*(duprev[i] + dt*Θ*(b1Θ*k1.x[2][i] +
+                           b3Θ*k3.x[2][i] +
+                           b4Θ*k4.x[2][i] + b5Θ*k5.x[2][i] + b6Θ*k6.x[2][i]))
+      out.x[2][i] =  duprev[i] + dt*Θ*(bp1Θ*k1.x[2][i] + bp3Θ*k3.x[2][i] +
+                        bp4Θ*k4.x[2][i] + bp5Θ*k5.x[2][i] + bp6Θ*k6.x[2][i])
+    end
+  else
+    for (j,i) in enumerate(idxs)
+      out.x[1][j]  = uprev[i] + dt*Θ*(duprev[i] + dt*Θ*(b1Θ*k1.x[2][i] +
+                           b3Θ*k3.x[2][i] +
+                           b4Θ*k4.x[2][i] + b5Θ*k5.x[2][i] + b6Θ*k6.x[2][i]))
+      out.x[2][j] = duprev[i] + dt*Θ*(bp1Θ*k1.x[2][i] + bp3Θ*k3.x[2][i] +
+                        bp4Θ*k4.x[2][i] + bp5Θ*k5.x[2][i] + bp6Θ*k6.x[2][i])
+    end
+  end
+end

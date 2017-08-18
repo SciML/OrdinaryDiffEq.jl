@@ -217,6 +217,24 @@ end
   f.f2(t+dt,u,du,k.x[2])
 end
 
+function initialize!(integrator,cache::DPRKN6Cache,f=integrator.f)
+  @unpack fsalfirst,k = cache
+  uprev,duprev = integrator.uprev.x
+
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = k
+  integrator.kshortsize = 6
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k[1] = cache.fsalfirst
+  integrator.k[2] = cache.k2
+  integrator.k[3] = cache.k3
+  integrator.k[4] = cache.k4
+  integrator.k[5] = cache.k5
+  integrator.k[6] = cache.k6
+  f.f1(integrator.t,uprev,duprev,integrator.fsallast.x[1])
+  f.f2(integrator.t,uprev,duprev,integrator.fsallast.x[2])
+end
+
 @muladd function perform_step!(integrator,cache::DPRKN6Cache,f=integrator.f)
   @unpack t,dt = integrator
   u,du = integrator.u.x
