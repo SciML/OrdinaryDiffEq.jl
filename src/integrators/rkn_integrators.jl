@@ -8,7 +8,8 @@ const NystromDefaultInitialization = Union{Nystrom4Cache,
                                            Nystrom4VelocityIndependentCache,
                                            Nystrom5VelocityIndependentCache,
                                            IRKN3Cache, IRKN4Cache,
-                                           DPRKN6Cache, DPRKN8Cache}
+                                           DPRKN6Cache, DPRKN8Cache,
+                                           DPRKN12Cache}
 
 function initialize!(integrator,cache::NystromDefaultInitialization,f=integrator.f)
   @unpack fsalfirst,k = cache

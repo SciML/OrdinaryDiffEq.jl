@@ -198,3 +198,59 @@ function alg_cache(alg::DPRKN8,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   tmp = similar(u)
   DPRKN8Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k,utilde,tmp,atmp,tab)
 end
+
+struct DPRKN12Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  fsalfirst::rateType
+  k2::rateType
+  k3::rateType
+  k4::rateType
+  k5::rateType
+  k6::rateType
+  k7::rateType
+  k8::rateType
+  k9::rateType
+  k10::rateType
+  k11::rateType
+  k12::rateType
+  k13::rateType
+  k14::rateType
+  k15::rateType
+  k16::rateType
+  k17::rateType
+  k::rateType
+  utilde::uArrayType
+  tmp::uType
+  atmp::uEltypeNoUnits
+  tab::TabType
+end
+
+u_cache(c::DPRKN12Cache) = (c.atmp,c.utilde)
+du_cache(c::DPRKN12Cache) = (c.fsalfirst,c.k2,c.k3,c.k4,c.k5,c.k6,c.k7,c.k8,c.k9,c.k10,c.k11,c.k12,c.k13,c.k14,c.k15,c.k16,c.k17)
+
+function alg_cache(alg::DPRKN12,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
+  tab = DPRKN12ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
+  k1 = zeros(rate_prototype)
+  k2 = zeros(rate_prototype)
+  k3 = zeros(rate_prototype)
+  k4 = zeros(rate_prototype)
+  k5 = zeros(rate_prototype)
+  k6 = zeros(rate_prototype)
+  k7 = zeros(rate_prototype)
+  k8 = zeros(rate_prototype)
+  k9 = zeros(rate_prototype)
+  k10 = zeros(rate_prototype)
+  k11 = zeros(rate_prototype)
+  k12 = zeros(rate_prototype)
+  k13 = zeros(rate_prototype)
+  k14 = zeros(rate_prototype)
+  k15 = zeros(rate_prototype)
+  k16 = zeros(rate_prototype)
+  k17 = zeros(rate_prototype)
+  k  = zeros(rate_prototype)
+  utilde = similar(u,indices(u))
+  atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u)
+  DPRKN12Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,k17,k,utilde,tmp,atmp,tab)
+end
