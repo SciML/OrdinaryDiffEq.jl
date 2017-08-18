@@ -111,6 +111,8 @@ module OrdinaryDiffEq
   #General Functions
   export solve, solve!, init, step!
 
+  export OrdinaryDiffEqAlgorithm
+
   #Callback Necessary
   export ode_addsteps!, ode_interpolant,
         terminate!, savevalues!, copyat_or_push!, isfsal
@@ -148,5 +150,5 @@ module OrdinaryDiffEq
   export SplitEuler
 
   export Nystrom4, Nystrom4VelocityIndependent, Nystrom5VelocityIndependent,
-         IRKN3, IRKN4, DPRKN6
+         IRKN3, IRKN4, DPRKN6, DPRKN8
 end # module

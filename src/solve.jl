@@ -52,7 +52,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
       error("This solver is not able to use mass matrices.")
     end
   elseif !(typeof(prob)<:DiscreteProblem) &&
-         !(typeof(alg) <: Union{OrdinaryDiffEqAdaptiveImplicitAlgorithm,OrdinaryDiffEqImplicitAlgorithm}) &&
+         !(typeof(alg) <:MassMatrixAlgorithms) &&
          prob.mass_matrix != I
     error("This solver is not able to use mass matrices.")
   end

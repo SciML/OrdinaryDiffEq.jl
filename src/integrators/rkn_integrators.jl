@@ -8,7 +8,7 @@ const NystromDefaultInitialization = Union{Nystrom4Cache,
                                            Nystrom4VelocityIndependentCache,
                                            Nystrom5VelocityIndependentCache,
                                            IRKN3Cache, IRKN4Cache,
-                                           DPRKN6Cache}
+                                           DPRKN6Cache, DPRKN8Cache}
 
 function initialize!(integrator,cache::NystromDefaultInitialization,f=integrator.f)
   @unpack fsalfirst,k = cache
@@ -216,6 +216,24 @@ end
   f.f2(t+dt,u,du,k.x[2])
 end
 
+function initialize!(integrator,cache::DPRKN6Cache,f=integrator.f)
+  @unpack fsalfirst,k = cache
+  uprev,duprev = integrator.uprev.x
+
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = k
+  integrator.kshortsize = 6
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k[1] = cache.fsalfirst
+  integrator.k[2] = cache.k2
+  integrator.k[3] = cache.k3
+  integrator.k[4] = cache.k4
+  integrator.k[5] = cache.k5
+  integrator.k[6] = cache.k6
+  f.f1(integrator.t,uprev,duprev,integrator.fsallast.x[1])
+  f.f2(integrator.t,uprev,duprev,integrator.fsallast.x[2])
+end
+
 @muladd function perform_step!(integrator,cache::DPRKN6Cache,f=integrator.f)
   @unpack t,dt = integrator
   u,du = integrator.u.x
@@ -270,3 +288,65 @@ end
   end
 end
 
+@muladd function perform_step!(integrator,cache::DPRKN8Cache,f=integrator.f)
+  @unpack t,dt = integrator
+  u,du = integrator.u.x
+  uprev,duprev = integrator.uprev.x
+  @unpack tmp,atmp,fsalfirst,k2,k3,k4,k5,k6,k7,k8,k9,k,utilde = cache
+  @unpack c1, c2, c3, c4, c5, c6, c7, c8, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a82, a83, a84, a85, a86, a87, a91, a93, a94, a95, a96, a97, b1, b3, b4, b5, b6, b7, bp1, bp3, bp4, bp5, bp6, bp7, bp8, btilde1, btilde3, btilde4, btilde5, btilde6, btilde7, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6, bptilde7, bptilde8, bptilde9 = cache.tab
+  ku, kdu = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
+  uidx = eachindex(integrator.uprev.x[2])
+  k1 = fsalfirst
+
+  @. ku = uprev + dt*(c1*duprev + dt*a21*k1.x[2])
+
+  f.f2(t+dt*c1,ku,du,k2.x[2])
+  @. ku = uprev + dt*(c2*duprev + dt*(a31*k1.x[2] + a32*k2.x[2]))
+
+  f.f2(t+dt*c2,ku,du,k3.x[2])
+  @. ku = uprev + dt*(c3*duprev + dt*(a41*k1.x[2] + a42*k2.x[2] + a43*k3.x[2]))
+
+  f.f2(t+dt*c3,ku,du,k4.x[2])
+  @tight_loop_macros for i in uidx
+    @inbounds ku[i] = uprev[i] + dt*(c4*duprev[i] + dt*(a51*k1.x[2][i] + a52*k2.x[2][i] + a53*k3.x[2][i] + a54*k4.x[2][i]))
+  end
+
+  f.f2(t+dt*c4,ku,du,k5.x[2])
+  @tight_loop_macros for i in uidx
+    @inbounds ku[i] = uprev[i] + dt*(c5*duprev[i] + dt*(a61*k1.x[2][i] + a62*k2.x[2][i] + a63*k3.x[2][i] + a64*k4.x[2][i] + a65*k5.x[2][i]))
+  end
+
+  f.f2(t+dt*c5,ku,du,k6.x[2])
+  @tight_loop_macros for i in uidx
+    @inbounds ku[i] = uprev[i] + dt*(c6*duprev[i] + dt*(a71*k1.x[2][i] + a72*k2.x[2][i] + a73*k3.x[2][i] + a74*k4.x[2][i] + a75*k5.x[2][i] + a76*k6.x[2][i]))
+  end
+
+  f.f2(t+dt*c6,ku,du,k7.x[2])
+  @tight_loop_macros for i in uidx
+    @inbounds ku[i] = uprev[i] + dt*(c7*duprev[i] + dt*(a81*k1.x[2][i] + a82*k2.x[2][i] + a83*k3.x[2][i] + a84*k4.x[2][i] + a85*k5.x[2][i] + a86*k6.x[2][i] + a87*k7.x[2][i]))
+  end
+
+  f.f2(t+dt*c7,ku,du,k8.x[2])
+  @tight_loop_macros for i in uidx
+    @inbounds ku[i] = uprev[i] + dt*(c8*duprev[i] + dt*(a91*k1.x[2][i] + a93*k3.x[2][i] + a94*k4.x[2][i] + a95*k5.x[2][i] + a96*k6.x[2][i] + a97*k7.x[2][i])) # no a92 & a98
+  end
+
+  f.f2(t+dt*c8,ku,du,k9.x[2])
+  @tight_loop_macros for i in uidx
+    @inbounds u[i]  = uprev[i] + dt*(duprev[i] + dt*(b1 *k1.x[2][i] + b3 *k3.x[2][i] + b4 *k4.x[2][i] + b5 *k5.x[2][i] + b6 *k6.x[2][i] + b7 *k7.x[2][i])) # b1 -- b7, no b2
+    @inbounds du[i] = duprev[i]+ dt*(bp1*k1.x[2][i] + bp3*k3.x[2][i] + bp4*k4.x[2][i] + bp5*k5.x[2][i] + bp6*k6.x[2][i] + bp7*k7.x[2][i] + bp8*k8.x[2][i]) # bp1 -- bp8, no bp2
+  end
+
+  f.f1(t+dt,u,du,k.x[1])
+  f.f2(t+dt,u,du,k.x[2])
+  if integrator.opts.adaptive
+    uhat, duhat = utilde.x
+    dtsq = dt^2
+    @tight_loop_macros for i in uidx
+      @inbounds uhat[i]  = dtsq*(btilde1*k1.x[2][i] + btilde3*k3.x[2][i] + btilde4*k4.x[2][i] + btilde5*k5.x[2][i] + btilde6*k6.x[2][i] + btilde7*k7.x[2][i])
+      @inbounds duhat[i] = dt*(bptilde1*k1.x[2][i] + bptilde3*k3.x[2][i] + bptilde4*k4.x[2][i] + bptilde5*k5.x[2][i] + bptilde6*k6.x[2][i] + bptilde7*k7.x[2][i] + bptilde8*k8.x[2][i] + bptilde9*k9.x[2][i])
+    end
+    calculate_residuals!(atmp, utilde, integrator.uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol)
+    integrator.EEst = integrator.opts.internalnorm(atmp)
+  end
+end

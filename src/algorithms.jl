@@ -81,6 +81,7 @@ struct Nystrom4VelocityIndependent <: OrdinaryDiffEqAlgorithm end
 struct IRKN4 <: OrdinaryDiffEqAlgorithm end
 struct Nystrom5VelocityIndependent <: OrdinaryDiffEqAlgorithm end
 struct DPRKN6 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct DPRKN8 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 ################################################################################
 
@@ -530,3 +531,12 @@ struct CompositeAlgorithm{T,F} <: OrdinaryDiffEqCompositeAlgorithm
   algs::T
   choice_function::F
 end
+
+################################################################################
+
+### Algorithm Groups
+
+const MassMatrixAlgorithms = Union{OrdinaryDiffEqRosenbrockAlgorithm,
+                                   OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
+                                   ImplicitEuler,
+                                   Trapezoid}
