@@ -15,6 +15,9 @@ struct Discrete{apply_map,scale_by_time} <: OrdinaryDiffEqAlgorithm end
 Base.@pure Discrete(;apply_map=false,scale_by_time=false) = Discrete{apply_map,scale_by_time}()
 Base.@pure FunctionMap(;scale_by_time=false) = Discrete{true,scale_by_time}()
 
+const MassMatrixAlgorithms = Union{OrdinaryDiffEqRosenbrockAlgorithm,ImplicitEuler,
+                                   Trapezoid}
+
 ###############################################################################
 
 # RK methods
