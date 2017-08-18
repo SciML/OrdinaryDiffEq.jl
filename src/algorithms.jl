@@ -536,5 +536,7 @@ end
 
 ### Algorithm Groups
 
-const MassMatrixAlgorithms = Union{OrdinaryDiffEqRosenbrockAlgorithm,ImplicitEuler,
+const MassMatrixAlgorithms = Union{OrdinaryDiffEqRosenbrockAlgorithm,
+                                   OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
+                                   ImplicitEuler,
                                    Trapezoid}
