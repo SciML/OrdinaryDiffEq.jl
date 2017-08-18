@@ -139,13 +139,17 @@ sim = test_convergence(dts,prob_big,DPRKN6(),dense_errors=true)
 sim = test_convergence(dts,prob_big,DPRKN8(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 8 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
+sim = test_convergence(dts,prob_big,DPRKN12(),dense_errors=true)
+@test sim.𝒪est[:l2] ≈ 12 rtol = 1e-1
+@test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
 
 # Adaptive methods regression test
 sol = solve(prob, DPRKN6(), reltol=1e-3)
 @test length(sol.u) < 20
 sol = solve(prob, DPRKN8(), reltol=1e-3)
 @test length(sol.u) < 13
-
+sol = solve(prob, DPRKN12())
+@test length(sol.u) < 9
 
 f = function (t,u,du)
   du.x[1] .= u.x[2]
