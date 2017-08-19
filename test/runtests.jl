@@ -39,6 +39,7 @@ tic()
 @time @testset "Data Array Tests" begin include("data_array_test.jl") end
 @time @testset "Ndim Complex Tests" begin include("ode/ode_ndim_complex_tests.jl") end
 @time @testset "Iterator Tests" begin include("iterator_tests.jl") end
+@time @testset "u_modifed Tests" begin include("umodified_test.jl") end
 @time @testset "Composite Algorithm Tests" begin include("composite_algorithm_test.jl") end
 
 toc()

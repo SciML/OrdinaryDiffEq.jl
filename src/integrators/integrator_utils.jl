@@ -308,6 +308,7 @@ function handle_callbacks!(integrator)
   if integrator.u_modified
     handle_callback_modifiers!(integrator)
   end
+  integrator.u_modified = false
 end
 
 function handle_callback_modifiers!(integrator::ODEIntegrator)
@@ -344,7 +345,7 @@ function apply_step!(integrator)
     if !isempty(integrator.opts.d_discontinuities) && top(integrator.opts.d_discontinuities) == integrator.t
       pop!(integrator.opts.d_discontinuities)
       reset_fsal!(integrator)
-    elseif integrator.reeval_fsal || (typeof(integrator.alg)<:DP8 && !integrator.opts.calck) || (typeof(integrator.alg)<:Union{Rosenbrock23,Rosenbrock32} && !integrator.opts.adaptive)
+    elseif integrator.reeval_fsal || integrator.u_modified || (typeof(integrator.alg)<:DP8 && !integrator.opts.calck) || (typeof(integrator.alg)<:Union{Rosenbrock23,Rosenbrock32} && !integrator.opts.adaptive)
       reset_fsal!(integrator)
     else # Do not reeval_fsal, instead copy! over
       if isinplace(integrator.sol.prob)
@@ -402,6 +403,7 @@ function reset_fsal!(integrator)
     integrator.fsalfirst = integrator.f(integrator.t,integrator.u)
   end
   integrator.reeval_fsal = false
+  integrator.u_modified = false
 end
 
 function (integrator::ODEIntegrator)(t,deriv::Type=Val{0};idxs=nothing)
