@@ -269,10 +269,11 @@ end
   tol = cache.tol
 
   iter += 1
-  b = -z .+ dto2.*f(t+dto2,uprev + z)
+  b = -z .+ dt.*f(t+dto2,(uprev + u)/2)
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z = z + dz
+  u = uprev + z
 
   η = max(cache.ηold,eps(first(u)))^(0.8)
   if integrator.success_iter > 0
@@ -284,7 +285,7 @@ end
   fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
-    b = -z .+ dto2.*f(t+dto2,uprev + z)
+    b = -z .+ dt.*f(t+dto2,(uprev + u)/2)
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -296,6 +297,7 @@ end
     η = θ/(1-θ)
     do_newton = (η*ndz > κ*tol)
     z = z + dz
+    u = uprev + z
   end
 
   if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
@@ -305,7 +307,7 @@ end
 
   cache.ηold = η
   cache.newton_iters = iter
-  u = uprev + 2z
+  u = uprev + z
   integrator.fsallast = f(t+dt,u)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -399,7 +401,7 @@ end
 
   iter += 1
   f(t+dto2,u,k)
-  scale!(k,dto2)
+  scale!(k,dt)
   if mass_matrix == I
     k .-= z
   else
@@ -413,7 +415,8 @@ end
   end
   ndz = integrator.opts.internalnorm(dz)
   z .+= dz
-  @. u = uprev + z
+  # u = uprev + z then  u = (uprev+u)/2 = (uprev+uprev+z)/2 = uprev + z/2
+  @. u = uprev + z/2
 
   η = max(cache.ηold,eps(first(u)))^(0.8)
   if integrator.success_iter > 0
@@ -426,7 +429,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     f(t+dto2,u,k)
-    scale!(k,dto2)
+    scale!(k,dt)
     if mass_matrix == I
       k .-= z
     else
@@ -448,7 +451,8 @@ end
     η = θ/(1-θ)
     do_newton = (η*ndz > κ*tol)
     z .+= dz
-    @. u = uprev + z
+    # u = uprev + z then  u = (uprev+u)/2 = (uprev+uprev+z)/2 = uprev + z/2
+    @. u = uprev + z/2
   end
 
   if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
@@ -458,7 +462,7 @@ end
 
   cache.ηold = η
   cache.newton_iters = iter
-  @. u = uprev + 2*z
+  @. u = uprev + z
 
   if integrator.opts.adaptive
     if integrator.iter > 2
