@@ -2,7 +2,7 @@ function change_t_via_interpolation!{T}(integrator,t,modify_save_endpoint::Type{
   # Can get rid of an allocation here with a function
   # get_tmp_arr(integrator.cache) which gives a pointer to some
   # cache array which can be modified.
-  if t < integrator.tprev
+  if integrator.tdir*t < integrator.tdir*integrator.tprev
     error("Current interpolant only works between tprev and t")
   elseif t != integrator.t
 
