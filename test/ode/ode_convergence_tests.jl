@@ -27,7 +27,7 @@ for i = 1:2
 
   ### Stiff Solvers
 
-  dts = 1.//2.^(8:-1:4)
+  dts = 1.//2.^(9:-1:5)
 
   sim11 = test_convergence(dts,prob,ImplicitEuler(extrapolant = :linear))
   @test abs(sim11.𝒪est[:final]-1) < testTol
@@ -40,6 +40,9 @@ for i = 1:2
            GenericImplicitEuler(nlsolve=NLSOLVEJL_SETUP(autodiff=false)))
 
   sim13 = test_convergence(dts,prob,ImplicitMidpoint())
+  @test abs(sim13.𝒪est[:final]-2) < testTol
+
+  sim13 = test_convergence(dts,prob,Trapezoid())
   @test abs(sim13.𝒪est[:final]-2) < testTol
 
   sim14 = test_convergence(dts,prob,

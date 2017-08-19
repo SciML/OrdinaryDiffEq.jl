@@ -30,7 +30,7 @@ end
     W = 1 - dt*J
   end
 
-  z = u - uprev
+  z = @. (u - uprev)
   iter = 0
   κ = cache.κ
   tol = cache.tol
@@ -145,7 +145,7 @@ end
     end
   end
 
-  @. z = u - uprev
+  @. z = (u - uprev)
   iter = 0
   κ = cache.κ
   tol = cache.tol
@@ -263,7 +263,7 @@ end
     J = ForwardDiff.derivative(uf,uprev)
     W = 1 - dto2*J
   end
-  z = u - uprev
+  z = @. (u - uprev)
   iter = 0
   κ = cache.κ
   tol = cache.tol
@@ -396,7 +396,7 @@ end
     end
   end
 
-  @. z = u - uprev
+  @. z = (u - uprev)
   iter = 0
   κ = cache.κ
   tol = cache.tol
@@ -520,12 +520,14 @@ end
   dto2 = dt/2
 
   if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
-    u = current_extrapolant(t+dto2,integrator)
+    u = current_extrapolant(t+dt,integrator)
   elseif integrator.alg.extrapolant == :linear
-    u = uprev + integrator.fsalfirst*dto2
+    u = uprev + integrator.fsalfirst*dt
   else # :constant
     u = uprev
   end
+
+  zprev = integrator.fsalfirst*dt
 
   if typeof(uprev) <: AbstractArray
     J = ForwardDiff.jacobian(uf,uprev)
@@ -534,13 +536,14 @@ end
     J = ForwardDiff.derivative(uf,uprev)
     W = 1 - dto2*J
   end
-  z = u - uprev
+  z = @. (u - uprev)
   iter = 0
   κ = cache.κ
   tol = cache.tol
 
   iter += 1
-  b = -z .+ dto2.*f(t+dto2,uprev + z)
+  u = uprev + (zprev + z)/2
+  b = -z .+ dt.*f(t+dt,u)
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z = z + dz
@@ -555,7 +558,8 @@ end
   fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
-    b = -z .+ dto2.*f(t+dto2,uprev + z)
+    u = uprev + (zprev + z)/2
+    b = -z .+ dt.*f(t+dt,u)
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -576,7 +580,7 @@ end
 
   cache.ηold = η
   cache.newton_iters = iter
-  u = uprev + 2z
+  u = uprev + (zprev + z)/2
   integrator.fsallast = f(t+dt,u)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -622,13 +626,14 @@ end
   @unpack t,dt,uprev,u = integrator
   @unpack uf,du1,dz,z,k,J,W,jac_config = cache
   mass_matrix = integrator.sol.prob.mass_matrix
+  fsalfirst = integrator.fsalfirst
 
   dto2 = dt/2
 
   if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
-    current_extrapolant!(u,t+dto2,integrator)
+    current_extrapolant!(u,t+dt,integrator)
   elseif integrator.alg.extrapolant == :linear
-    @. u = uprev + integrator.fsalfirst*dto2
+    @. u = uprev + integrator.fsalfirst*dt
   else
     copy!(u,uprev)
   end
@@ -656,21 +661,21 @@ end
     if integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps()
       new_W = true
       for j in 1:length(u), i in 1:length(u)
-          @inbounds W[i,j] = mass_matrix[i,j]-dto2*J[i,j]
+          @inbounds W[i,j] = mass_matrix[i,j]-dt*J[i,j]
       end
     else
       new_W = false
     end
   end
 
-  @. z = u - uprev
+  @. z = (u - uprev)
   iter = 0
   κ = cache.κ
   tol = cache.tol
 
   iter += 1
-  f(t+dto2,u,k)
-  scale!(k,dto2)
+  f(t+dt,u,k)
+  scale!(k,dt)
   if mass_matrix == I
     k .-= z
   else
@@ -684,7 +689,7 @@ end
   end
   ndz = integrator.opts.internalnorm(dz)
   z .+= dz
-  @. u = uprev + z
+  @. u = uprev + (dt*fsalfirst + z)/2
 
   η = max(cache.ηold,eps(first(u)))^(0.8)
   if integrator.success_iter > 0
@@ -696,8 +701,8 @@ end
   fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
-    f(t+dto2,u,k)
-    scale!(k,dto2)
+    f(t+dt,u,k)
+    scale!(k,dt)
     if mass_matrix == I
       k .-= z
     else
@@ -719,7 +724,7 @@ end
     η = θ/(1-θ)
     do_newton = (η*ndz > κ*tol)
     z .+= dz
-    @. u = uprev + z
+    @. u = uprev + (dt*fsalfirst + z)/2
   end
 
   if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
@@ -729,7 +734,6 @@ end
 
   cache.ηold = η
   cache.newton_iters = iter
-  @. u = uprev + 2*z
 
   if integrator.opts.adaptive
     if integrator.iter > 2
