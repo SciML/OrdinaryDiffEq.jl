@@ -39,7 +39,7 @@ for i = 1:2
   sim122 = test_convergence(dts,prob,
            GenericImplicitEuler(nlsolve=NLSOLVEJL_SETUP(autodiff=false)))
 
-  sim13 = test_convergence(dts,prob,Trapezoid())
+  sim13 = test_convergence(dts,prob,ImplicitMidpoint())
   @test abs(sim13.𝒪est[:final]-2) < testTol
 
   sim14 = test_convergence(dts,prob,

@@ -139,6 +139,25 @@ Base.@pure ImplicitEuler(;chunk_size=0,autodiff=true,diff_type=:central,
                           linsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
                           max_newton_iter,new_jac_conv_bound)
 
+struct ImplicitMidpoint{CS,AD,F,K,T,T2} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
+  linsolve::F
+  diff_type::Symbol
+  κ::K
+  tol::T
+  extrapolant::Symbol
+  min_newton_iter::Int
+  max_newton_iter::Int
+  new_jac_conv_bound::T2
+end
+Base.@pure ImplicitMidpoint(;chunk_size=0,autodiff=true,diff_type=:central,
+                      linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
+                      extrapolant=:constant,min_newton_iter=1,
+                      max_newton_iter=7,new_jac_conv_bound = 1e-3) =
+                      ImplicitMidpoint{chunk_size,autodiff,typeof(linsolve),
+                      typeof(κ),typeof(tol),typeof(new_jac_conv_bound)}(
+                      linsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
+                      max_newton_iter,new_jac_conv_bound)
+
 struct Trapezoid{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
   diff_type::Symbol
