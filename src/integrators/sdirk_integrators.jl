@@ -2193,7 +2193,7 @@ end
 
 @muladd function perform_step!(integrator, cache::Cash4ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
-  @unpack u,κ,tol = cache
+  @unpack uf,κ,tol = cache
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack b1hat1,b2hat1,b3hat1,b4hat1,b1hat2,b2hat2,b3hat2,b4hat2 = cache.tab
 
@@ -3937,7 +3937,7 @@ function initialize!(integrator, cache::KenCarp4ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::KenCarp4ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uf,κ,tol = cache
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,c3,c4,c5 = cache.tab
   @unpack α31,α32,α41,α42,α51,α52,α53,α54,α61,α62,α63,α64,α65 = cache.tab
