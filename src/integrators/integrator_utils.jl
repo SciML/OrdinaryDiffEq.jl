@@ -6,7 +6,7 @@ function loopheader!(integrator)
 
   # Accept or reject the step
   if integrator.iter > 0
-    if (integrator.opts.adaptive && integrator.accept_step) || !integrator.opts.adaptive
+    if ((integrator.opts.adaptive && integrator.accept_step) || !integrator.opts.adaptive) && !integrator.force_stepfail
       integrator.success_iter += 1
       apply_step!(integrator)
     elseif integrator.opts.adaptive && !integrator.accept_step
@@ -245,9 +245,13 @@ end
 function loopfooter!(integrator)
   ttmp = integrator.t + integrator.dt
   if integrator.force_stepfail
+      if integrator.opts.adaptive
+        integrator.dt = integrator.dt/integrator.opts.failfactor
+      elseif integrator.last_stepfail
+        error("Newton steps could not converge and algorithm is not adaptive. Use a lower dt.")
+      end
       integrator.last_stepfail = true
       integrator.accept_step = false
-      integrator.dt = integrator.dt/integrator.opts.failfactor
   elseif integrator.opts.adaptive
     q = stepsize_controller!(integrator,integrator.alg)
     integrator.isout = integrator.opts.isoutofdomain(ttmp,integrator.u)
@@ -273,6 +277,7 @@ function loopfooter!(integrator)
     else
       integrator.t = ttmp
     end
+    integrator.last_stepfail = false
     integrator.accept_step = true
     integrator.dtpropose = integrator.dt
     handle_callbacks!(integrator)
