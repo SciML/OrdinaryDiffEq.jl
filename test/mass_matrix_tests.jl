@@ -58,18 +58,22 @@ sol2 = solve(prob2,Rodas5())
 
 @test norm(sol .- sol2) ≈ 0 atol=1e-7
 
-sol = solve(prob,  ImplicitEuler())
-sol2 = solve(prob2,ImplicitEuler())
+sol = solve(prob,  ImplicitEuler(),dt=1/10,adaptive=false)
+sol2 = solve(prob2,ImplicitEuler(),dt=1/10,adaptive=false)
 
 @test norm(sol .- sol2) ≈ 0 atol=1e-7
+
+sol = solve(prob,  ImplicitMidpoint(),dt=1/10)
+sol2 = solve(prob2,ImplicitMidpoint(),dt=1/10)
+
+@test norm(sol .- sol2) ≈ 0 atol=1e-7
+
+#=
 
 sol = solve(prob,  Trapezoid())
 sol2 = solve(prob2,Trapezoid())
 
 @test norm(sol .- sol2) ≈ 0 atol=1e-7
-
-
-#=
 
 sol = solve(prob,  TRBDF2())
 sol2 = solve(prob2,TRBDF2())
@@ -80,8 +84,6 @@ sol2 = solve(prob2,TRBDF2())
 #sol2 = solve(prob2, SDIRK2())
 
 #@test norm(sol .- sol2) ≈ 0 atol=1e-11
-
-
 
 sol = solve(prob,   TRBDF2(),adaptive=false,dt=1/10)
 sol2 = solve(prob2, TRBDF2(),adaptive=false,dt=1/10)

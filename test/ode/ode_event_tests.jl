@@ -2,14 +2,14 @@ using OrdinaryDiffEq, RecursiveArrayTools, Base.Test#, ParameterizedFunctions
 
 
 f = function (t,u)
-  - u + sin(t)
+  - u + sin(-t)
 end
 
 
-prob = ODEProblem(f,1.0,(0.0,10.0))
+prob = ODEProblem(f,1.0,(0.0,-10.0))
 
 condition= function (t,u,integrator) # Event when event_f(t,u,k) == 0
-  t - 2.95
+  - t - 2.95
 end
 
 affect! = function (integrator)

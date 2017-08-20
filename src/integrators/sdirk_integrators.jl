@@ -1,7 +1,7 @@
-function initialize!(integrator,cache::ImplicitEulerConstantCache,f=integrator.f)
+function initialize!(integrator,cache::ImplicitEulerConstantCache,repeat_step=false)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -9,14 +9,12 @@ function initialize!(integrator,cache::ImplicitEulerConstantCache,f=integrator.f
   integrator.k[2] = integrator.fsallast
 end
 
-@muladd function perform_step!(integrator,cache::ImplicitEulerConstantCache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+@muladd function perform_step!(integrator,cache::ImplicitEulerConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uf = cache
   uf.t = t
 
-  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
-    u = current_extrapolant(t+dt,integrator)
-  elseif integrator.alg.extrapolant == :linear
+  if integrator.alg.extrapolant == :linear
     u = uprev + integrator.fsalfirst*dt
   else # :constant
     u = uprev
@@ -30,7 +28,7 @@ end
     W = 1 - dt*J
   end
 
-  z = u - uprev
+  z = @. (u - uprev)
   iter = 0
   κ = cache.κ
   tol = cache.tol
@@ -91,7 +89,7 @@ end
   integrator.u = u
 end#
 
-function initialize!(integrator,cache::ImplicitEulerCache,f=integrator.f)
+function initialize!(integrator,cache::ImplicitEulerCache,repeat_step=false)
   integrator.kshortsize = 2
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
@@ -99,22 +97,13 @@ function initialize!(integrator,cache::ImplicitEulerCache,f=integrator.f)
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
-@muladd function perform_step!(integrator,cache::ImplicitEulerCache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+@muladd function perform_step!(integrator,cache::ImplicitEulerCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uf,du1,dz,z,k,J,W,jac_config = cache
   mass_matrix = integrator.sol.prob.mass_matrix
-
-
-  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
-    current_extrapolant!(u,t+dt,integrator)
-  elseif integrator.alg.extrapolant == :linear
-    @. u = uprev + integrator.fsalfirst*dt
-  else # :constant
-    copy!(u,uprev)
-  end
 
   uf.t = t
 
@@ -145,7 +134,12 @@ end
     end
   end
 
-  @. z = u - uprev
+  if integrator.alg.extrapolant == :linear
+    @. z = integrator.fsalfirst*dt
+  else # :constant
+    @. z = zero(u)
+  end
+
   iter = 0
   κ = cache.κ
   tol = cache.tol
@@ -231,10 +225,10 @@ end
   f(t+dt,u,integrator.fsallast)
 end
 
-function initialize!(integrator,cache::TrapezoidConstantCache,f=integrator.f)
+function initialize!(integrator,cache::ImplicitMidpointConstantCache,repeat_step=false)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -242,18 +236,16 @@ function initialize!(integrator,cache::TrapezoidConstantCache,f=integrator.f)
   integrator.k[2] = integrator.fsallast
 end
 
-@muladd function perform_step!(integrator,cache::TrapezoidConstantCache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+@muladd function perform_step!(integrator,cache::ImplicitMidpointConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uf = cache
   uf.t = t
   dto2 = dt/2
 
-  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
-    u = current_extrapolant(t+dto2,integrator)
-  elseif integrator.alg.extrapolant == :linear
-    u = uprev + integrator.fsalfirst*dto2
+  if integrator.alg.extrapolant == :linear
+    z = integrator.fsalfirst*dt
   else # :constant
-    u = uprev
+    z = zero(u)
   end
 
   if typeof(uprev) <: AbstractArray
@@ -263,16 +255,17 @@ end
     J = ForwardDiff.derivative(uf,uprev)
     W = 1 - dto2*J
   end
-  z = u - uprev
+
   iter = 0
   κ = cache.κ
   tol = cache.tol
 
   iter += 1
-  b = -z .+ dto2.*f(t+dto2,uprev + z)
+  b = -z .+ dt.*f(t+dto2,(uprev + u)/2)
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z = z + dz
+  u = uprev + z
 
   η = max(cache.ηold,eps(first(u)))^(0.8)
   if integrator.success_iter > 0
@@ -284,7 +277,7 @@ end
   fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
-    b = -z .+ dto2.*f(t+dto2,uprev + z)
+    b = -z .+ dt.*f(t+dto2,(uprev + u)/2)
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -296,6 +289,7 @@ end
     η = θ/(1-θ)
     do_newton = (η*ndz > κ*tol)
     z = z + dz
+    u = uprev + z
   end
 
   if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
@@ -305,11 +299,12 @@ end
 
   cache.ηold = η
   cache.newton_iters = iter
-  u = uprev + 2z
+  u = uprev + z
   integrator.fsallast = f(t+dt,u)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
 
+  #=
   if integrator.opts.adaptive
     if integrator.iter > 2
       # Use 3rd divided differences a la SPICE and Shampine
@@ -333,33 +328,32 @@ end
       integrator.EEst = 1
     end
   end
+  =#
 
   integrator.u = u
 end
 
-function initialize!(integrator,cache::TrapezoidCache,f=integrator.f)
+function initialize!(integrator,cache::ImplicitMidpointCache,repeat_step=false)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
-@muladd function perform_step!(integrator,cache::TrapezoidCache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+@muladd function perform_step!(integrator,cache::ImplicitMidpointCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uf,du1,dz,z,k,J,W,jac_config = cache
   mass_matrix = integrator.sol.prob.mass_matrix
 
   dto2 = dt/2
 
-  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
-    current_extrapolant!(u,t+dto2,integrator)
-  elseif integrator.alg.extrapolant == :linear
-    @. u = uprev + integrator.fsalfirst*dto2
+  if integrator.alg.extrapolant == :linear
+    @. z = integrator.fsalfirst*dt
   else
-    copy!(u,uprev)
+    @. z = zero(u)
   end
 
 
@@ -392,14 +386,13 @@ end
     end
   end
 
-  @. z = u - uprev
   iter = 0
   κ = cache.κ
   tol = cache.tol
 
   iter += 1
   f(t+dto2,u,k)
-  scale!(k,dto2)
+  scale!(k,dt)
   if mass_matrix == I
     k .-= z
   else
@@ -413,7 +406,8 @@ end
   end
   ndz = integrator.opts.internalnorm(dz)
   z .+= dz
-  @. u = uprev + z
+  # u = uprev + z then  u = (uprev+u)/2 = (uprev+uprev+z)/2 = uprev + z/2
+  @. u = uprev + z/2
 
   η = max(cache.ηold,eps(first(u)))^(0.8)
   if integrator.success_iter > 0
@@ -426,7 +420,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     f(t+dto2,u,k)
-    scale!(k,dto2)
+    scale!(k,dt)
     if mass_matrix == I
       k .-= z
     else
@@ -448,7 +442,8 @@ end
     η = θ/(1-θ)
     do_newton = (η*ndz > κ*tol)
     z .+= dz
-    @. u = uprev + z
+    # u = uprev + z then  u = (uprev+u)/2 = (uprev+uprev+z)/2 = uprev + z/2
+    @. u = uprev + z/2
   end
 
   if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
@@ -458,7 +453,272 @@ end
 
   cache.ηold = η
   cache.newton_iters = iter
-  @. u = uprev + 2*z
+  @. u = uprev + z
+
+  #=
+  if integrator.opts.adaptive
+    if integrator.iter > 2
+      # Use 3rd divided differences a la SPICE and Shampine
+      uprev2 = integrator.uprev2
+      tprev = integrator.tprev
+      uprev3 = cache.uprev3
+      tprev2 = cache.tprev2
+      dt1 = (dt)*(t+dt-tprev)
+      dt2 = ((t-tprev)*(t+dt-tprev))
+      dt3 = ((t-tprev)*(t-tprev2))
+      dt4 = ((tprev-tprev2)*(t-tprev2))
+      @tight_loop_macros for (i,atol,rtol) in zip(eachindex(u),Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
+        @inbounds DD31 = (u[i] - uprev[i])/dt1 + (uprev[i]-uprev2[i])/dt2
+        @inbounds DD30 = (uprev[i] - uprev2[i])/dt3 + (uprev2[i]-uprev3[i])/dt4
+        dEst = (dt^3)*abs(((DD31 - DD30)/(t+dt-tprev2))/12)
+        @inbounds k[i] = dEst/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
+      end
+      integrator.EEst = integrator.opts.internalnorm(k)
+      if integrator.EEst <= 1
+        copy!(cache.uprev3,uprev2)
+        cache.tprev2 = tprev
+      end
+    elseif integrator.success_iter > 0
+      integrator.EEst = 1
+      copy!(cache.uprev3,integrator.uprev2)
+      cache.tprev2 = integrator.tprev
+    else
+      integrator.EEst = 1
+    end
+  end
+  =#
+
+  f(t+dt,u,integrator.fsallast)
+end
+
+function initialize!(integrator,cache::TrapezoidConstantCache,repeat_step=false)
+  integrator.kshortsize = 2
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
+
+@muladd function perform_step!(integrator,cache::TrapezoidConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
+  @unpack uf = cache
+  uf.t = t
+  dto2 = dt/2
+
+  zprev = integrator.fsalfirst*dt
+
+  if typeof(uprev) <: AbstractArray
+    J = ForwardDiff.jacobian(uf,uprev)
+    W = I - dto2*J
+  else
+    J = ForwardDiff.derivative(uf,uprev)
+    W = 1 - dto2*J
+  end
+
+  z = zprev # Constant extrapolation
+
+  iter = 0
+  κ = cache.κ
+  tol = cache.tol
+
+  iter += 1
+  u = uprev + (zprev + z)/2
+  b = -z .+ dt.*f(t+dt,u)
+  dz = W\b
+  ndz = integrator.opts.internalnorm(dz)
+  z = z + dz
+
+  η = max(cache.ηold,eps(first(u)))^(0.8)
+  if integrator.success_iter > 0
+    do_newton = (η*ndz > κ*tol)
+  else
+    do_newton = true
+  end
+
+  fail_convergence = false
+  while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
+    iter += 1
+    u = uprev + (zprev + z)/2
+    b = -z .+ dt.*f(t+dt,u)
+    dz = W\b
+    ndzprev = ndz
+    ndz = integrator.opts.internalnorm(dz)
+    θ = ndz/ndzprev
+    if θ > 1 || ndz*(θ^(integrator.alg.max_newton_iter - iter)/(1-θ)) > κ*tol
+      fail_convergence = true
+      break
+    end
+    η = θ/(1-θ)
+    do_newton = (η*ndz > κ*tol)
+    z = z + dz
+  end
+
+  if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
+    integrator.force_stepfail = true
+    return
+  end
+
+  cache.ηold = η
+  cache.newton_iters = iter
+  u = uprev + (zprev + z)/2
+  integrator.fsallast = f(t+dt,u)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+
+  if integrator.opts.adaptive
+    if integrator.iter > 2
+      # Use 3rd divided differences a la SPICE and Shampine
+      uprev2 = integrator.uprev2
+      tprev = integrator.tprev
+      uprev3 = cache.uprev3
+      tprev2 = cache.tprev2
+      DD31 = ((u - uprev)/((dt)*(t+dt-tprev)) + (uprev-uprev2)/((t-tprev)*(t+dt-tprev)))
+      DD30 = ((uprev - uprev2)/((t-tprev)*(t-tprev2)) + (uprev2-uprev3)/((tprev-tprev2)*(t-tprev2)))
+      dEst = (dt^3)*abs(((DD31 - DD30)/(t+dt-tprev2))/12)
+      integrator.EEst = @. dEst/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
+      if integrator.EEst <= 1
+        cache.uprev3 = uprev2
+        cache.tprev2 = tprev
+      end
+    elseif integrator.success_iter > 0
+      integrator.EEst = 1
+      cache.uprev3 = integrator.uprev2
+      cache.tprev2 = integrator.tprev
+    else
+      integrator.EEst = 1
+    end
+  end
+
+  integrator.u = u
+end
+
+function initialize!(integrator,cache::TrapezoidCache,repeat_step=false)
+  integrator.kshortsize = 2
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
+end
+
+@muladd function perform_step!(integrator,cache::TrapezoidCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
+  @unpack uf,du1,dz,z,k,J,W,jac_config = cache
+  mass_matrix = integrator.sol.prob.mass_matrix
+  fsalfirst = integrator.fsalfirst
+
+  dto2 = dt/2
+
+  #=
+  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
+    current_extrapolant!(u,t+dt,integrator)
+  elseif integrator.alg.extrapolant == :linear
+    @. u = uprev + integrator.fsalfirst*dt
+  else
+    copy!(u,uprev)
+  end
+  =#
+
+  uf.t = t
+
+  if has_invW(f)
+    f(Val{:invW},t,uprev,dt,W) # W == inverse W
+  else
+    if !integrator.last_stepfail && cache.newton_iters == 1 && cache.ηold < integrator.alg.new_jac_conv_bound
+      new_jac = false
+    else # Compute a new Jacobian
+      new_jac = true
+      if has_jac(f)
+        f(Val{:jac},t,uprev,J)
+      else
+        if alg_autodiff(integrator.alg)
+          ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
+        else
+          Calculus.finite_difference_jacobian!(uf,vec(uprev),vec(du1),J,integrator.alg.diff_type)
+        end
+      end
+    end
+    if integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps()
+      new_W = true
+      for j in 1:length(u), i in 1:length(u)
+          @inbounds W[i,j] = mass_matrix[i,j]-dto2*J[i,j]
+      end
+    else
+      new_W = false
+    end
+  end
+
+  @. z = dt*fsalfirst
+  iter = 0
+  κ = cache.κ
+  tol = cache.tol
+
+  iter += 1
+  @. u = uprev + (dt*fsalfirst + z)/2
+  f(t+dt,u,k)
+  scale!(k,dt)
+  if mass_matrix == I
+    k .-= z
+  else
+    A_mul_B!(du1,mass_matrix,z)
+    k .-= du1
+  end
+  if has_invW(f)
+    A_mul_B!(vec(dz),W,vec(k)) # Here W is actually invW
+  else
+    integrator.alg.linsolve(vec(dz),W,vec(k),new_W)
+  end
+  ndz = integrator.opts.internalnorm(dz)
+  z .+= dz
+  @. u = uprev + (dt*fsalfirst + z)/2
+
+  η = max(cache.ηold,eps(first(u)))^(0.8)
+  if integrator.success_iter > 0
+    do_newton = (η*ndz > κ*tol)
+  else
+    do_newton = true
+  end
+
+  fail_convergence = false
+  while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
+    iter += 1
+    f(t+dt,u,k)
+    scale!(k,dt)
+    if mass_matrix == I
+      k .-= z
+    else
+      A_mul_B!(du1,mass_matrix,z)
+      k .-= du1
+    end
+    if has_invW(f)
+      A_mul_B!(vec(dz),W,vec(k)) # Here W is actually invW
+    else
+      integrator.alg.linsolve(vec(dz),W,vec(k),false)
+    end
+    ndzprev = ndz
+    ndz = integrator.opts.internalnorm(dz)
+    θ = ndz/ndzprev
+    if θ > 1 || ndz*(θ^(integrator.alg.max_newton_iter - iter)/(1-θ)) > κ*tol
+      fail_convergence = true
+      break
+    end
+    η = θ/(1-θ)
+    do_newton = (η*ndz > κ*tol)
+    z .+= dz
+    @. u = uprev + (dt*fsalfirst + z)/2
+  end
+
+  if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
+    integrator.force_stepfail = true
+    return
+  end
+
+  cache.ηold = η
+  cache.newton_iters = iter
 
   if integrator.opts.adaptive
     if integrator.iter > 2
@@ -494,10 +754,10 @@ end
   f(t+dt,u,integrator.fsallast)
 end
 
-function initialize!(integrator,cache::TRBDF2ConstantCache,f=integrator.f)
+function initialize!(integrator,cache::TRBDF2ConstantCache,repeat_step=false)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -505,8 +765,8 @@ function initialize!(integrator,cache::TRBDF2ConstantCache,f=integrator.f)
   integrator.k[2] = integrator.fsallast
 end
 
-@muladd function perform_step!(integrator,cache::TRBDF2ConstantCache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+@muladd function perform_step!(integrator,cache::TRBDF2ConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uf = cache
   uf.t = t
   γ = 2 - sqrt(2)
@@ -642,18 +902,18 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::TRBDF2Cache,f=integrator.f)
+function initialize!(integrator,cache::TRBDF2Cache,repeat_step=false)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
-@muladd function perform_step!(integrator,cache::TRBDF2Cache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+@muladd function perform_step!(integrator,cache::TRBDF2Cache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uf,du1,uᵧ,Δzᵧ,Δz,zprev,zᵧ,z,k,J,W,jac_config,tmp = cache
   mass_matrix = integrator.sol.prob.mass_matrix
 
@@ -832,10 +1092,10 @@ end
   cache.newton_iters = iter
 end
 
-function initialize!(integrator,cache::SDIRK2ConstantCache,f=integrator.f)
+function initialize!(integrator,cache::SDIRK2ConstantCache,repeat_step=false)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -843,8 +1103,8 @@ function initialize!(integrator,cache::SDIRK2ConstantCache,f=integrator.f)
   integrator.k[2] = integrator.fsallast
 end
 
-@muladd function perform_step!(integrator,cache::SDIRK2ConstantCache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+@muladd function perform_step!(integrator,cache::SDIRK2ConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uf = cache
   uf.t = t
   κ = cache.κ
@@ -965,18 +1225,18 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::SDIRK2Cache,f=integrator.f)
+function initialize!(integrator,cache::SDIRK2Cache,repeat_step=false)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
-@muladd function perform_step!(integrator,cache::SDIRK2Cache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+@muladd function perform_step!(integrator,cache::SDIRK2Cache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uf,du1,dz₁,dz₂,z₁,z₂,k,J,W,jac_config,tmp = cache
   mass_matrix = integrator.sol.prob.mass_matrix
 
@@ -1014,14 +1274,12 @@ end
   if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     current_extrapolant!(u,t+γ*dt,integrator)
   elseif integrator.alg.extrapolant == :linear
-    u .= uprev .+ integrator.fsalfirst.*γ.*dt
+    z₁ .= integrator.fsalfirst.*dt
   else
-    copy!(u,uprev)
+    @. z₁ = 0
   end
 
   ##### Step 1
-
-  @. z₁ = u - uprev
 
   iter = 1
   @. u = uprev + z₁
@@ -1147,10 +1405,10 @@ end
   cache.newton_iters = iter
 end
 
-function initialize!(integrator,cache::SSPSDIRK2ConstantCache,f=integrator.f)
+function initialize!(integrator,cache::SSPSDIRK2ConstantCache,repeat_step=false)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -1158,8 +1416,8 @@ function initialize!(integrator,cache::SSPSDIRK2ConstantCache,f=integrator.f)
   integrator.k[2] = integrator.fsallast
 end
 
-@muladd function perform_step!(integrator,cache::SSPSDIRK2ConstantCache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+@muladd function perform_step!(integrator,cache::SSPSDIRK2ConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uf = cache
   uf.t = t
 
@@ -1273,18 +1531,18 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::SSPSDIRK2Cache,f=integrator.f)
+function initialize!(integrator,cache::SSPSDIRK2Cache,repeat_step=false)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
-@muladd function perform_step!(integrator,cache::SSPSDIRK2Cache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+@muladd function perform_step!(integrator,cache::SSPSDIRK2Cache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uf,du1,dz₁,dz₂,z₁,z₂,k,J,W,jac_config,tmp = cache
   mass_matrix = integrator.sol.prob.mass_matrix
 
@@ -1325,9 +1583,9 @@ end
   if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     current_extrapolant!(u,t+γ*dt,integrator)
   elseif integrator.alg.extrapolant == :linear
-    u .= uprev .+ integrator.fsalfirst.*γ.*dt
+    @. z₁ = integrator.fsalfirst*dt
   else
-    copy!(u,uprev)
+    @. z₁ = 0
   end
 
   ##### Step 1
@@ -1438,10 +1696,10 @@ end
   cache.newton_iters = iter
 end
 
-function initialize!(integrator,cache::Union{Kvaerno3ConstantCache,KenCarp3ConstantCache},f=integrator.f)
+function initialize!(integrator,cache::Union{Kvaerno3ConstantCache,KenCarp3ConstantCache},repeat_step=false)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -1449,8 +1707,8 @@ function initialize!(integrator,cache::Union{Kvaerno3ConstantCache,KenCarp3Const
   integrator.k[2] = integrator.fsallast
 end
 
-@muladd function perform_step!(integrator,cache::Union{Kvaerno3ConstantCache,KenCarp3ConstantCache},f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+@muladd function perform_step!(integrator,cache::Union{Kvaerno3ConstantCache,KenCarp3ConstantCache},repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uf = cache
   @unpack γ,a31,a32,a41,a42,a43,bhat1,bhat2,bhat3,bhat4,c3,α31,α32 = cache.tab
   uf.t = t
@@ -1614,18 +1872,18 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::Union{Kvaerno3Cache,KenCarp3Cache},f=integrator.f)
+function initialize!(integrator,cache::Union{Kvaerno3Cache,KenCarp3Cache},repeat_step=false)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
-@muladd function perform_step!(integrator,cache::Union{Kvaerno3Cache,KenCarp3Cache},f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+@muladd function perform_step!(integrator,cache::Union{Kvaerno3Cache,KenCarp3Cache},repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uf,du1,dz₁,dz₂,dz₃,dz₄,z₁,z₂,z₃,z₄,k,J,W,jac_config,tmp = cache
   @unpack γ,a31,a32,a41,a42,a43,bhat1,bhat2,bhat3,bhat4,c3,α31,α32 = cache.tab
   mass_matrix = integrator.sol.prob.mass_matrix
@@ -1842,10 +2100,10 @@ end
   cache.newton_iters = iter
 end
 
-function initialize!(integrator,cache::Cash4ConstantCache,f=integrator.f)
+function initialize!(integrator,cache::Cash4ConstantCache,repeat_step=false)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -1853,8 +2111,8 @@ function initialize!(integrator,cache::Cash4ConstantCache,f=integrator.f)
   integrator.k[2] = integrator.fsallast
 end
 
-@muladd function perform_step!(integrator,cache::Cash4ConstantCache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+@muladd function perform_step!(integrator,cache::Cash4ConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uf = cache
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack b1hat1, b2hat1, b3hat1, b4hat1, b1hat2, b2hat2, b3hat2, b4hat2 = cache.tab
@@ -2093,18 +2351,18 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::Cash4Cache,f=integrator.f)
+function initialize!(integrator,cache::Cash4Cache,repeat_step=false)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
-@muladd function perform_step!(integrator,cache::Cash4Cache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+@muladd function perform_step!(integrator,cache::Cash4Cache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uf,du1,dz₁,dz₂,dz₃,dz₄,dz₅,z₁,z₂,z₃,z₄,z₅,k,J,W,jac_config,tmp = cache
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack b1hat1, b2hat1, b3hat1, b4hat1, b1hat2, b2hat2, b3hat2, b4hat2 = cache.tab
@@ -2420,10 +2678,10 @@ end
   cache.newton_iters = iter
 end
 
-function initialize!(integrator,cache::Hairer4ConstantCache,f=integrator.f)
+function initialize!(integrator,cache::Hairer4ConstantCache,repeat_step=false)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -2431,8 +2689,8 @@ function initialize!(integrator,cache::Hairer4ConstantCache,f=integrator.f)
   integrator.k[2] = integrator.fsallast
 end
 
-@muladd function perform_step!(integrator,cache::Hairer4ConstantCache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+@muladd function perform_step!(integrator,cache::Hairer4ConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uf = cache
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack α21,α31,α32,α41,α43 = cache.tab
@@ -2665,18 +2923,18 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::Hairer4Cache,f=integrator.f)
+function initialize!(integrator,cache::Hairer4Cache,repeat_step=false)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
-@muladd function perform_step!(integrator,cache::Hairer4Cache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+@muladd function perform_step!(integrator,cache::Hairer4Cache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uf,du1,dz₁,dz₂,dz₃,dz₄,dz₅,z₁,z₂,z₃,z₄,z₅,k,J,W,jac_config,tmp = cache
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack α21,α31,α32,α41,α43 = cache.tab
@@ -2719,9 +2977,9 @@ end
   if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     current_extrapolant!(u,t+γ*dt,integrator)
   elseif integrator.alg.extrapolant == :linear
-    @. u = uprev + γ*dt*integrator.fsalfirst
+    @. z₁ = dt*integrator.fsalfirst
   else
-    copy!(u,uprev)
+    @. z₁ = 0
   end
 
   @. z₁ = u - uprev
@@ -3006,10 +3264,10 @@ end
   cache.newton_iters = iter
 end
 
-function initialize!(integrator,cache::Kvaerno4ConstantCache,f=integrator.f)
+function initialize!(integrator,cache::Kvaerno4ConstantCache,repeat_step=false)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -3018,8 +3276,8 @@ function initialize!(integrator,cache::Kvaerno4ConstantCache,f=integrator.f)
 end
 
 
-@muladd function perform_step!(integrator,cache::Kvaerno4ConstantCache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+@muladd function perform_step!(integrator,cache::Kvaerno4ConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uf = cache
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,c3,c4 = cache.tab
   @unpack α21,α31,α32,α41,α42 = cache.tab
@@ -3214,18 +3472,18 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::Kvaerno4Cache,f=integrator.f)
+function initialize!(integrator,cache::Kvaerno4Cache,repeat_step=false)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
-@muladd function perform_step!(integrator,cache::Kvaerno4Cache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+@muladd function perform_step!(integrator,cache::Kvaerno4Cache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uf,du1,dz₁,dz₂,dz₃,dz₄,dz₅,z₁,z₂,z₃,z₄,z₅,k,J,W,jac_config,tmp = cache
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,c3,c4 = cache.tab
   @unpack α21,α31,α32,α41,α42 = cache.tab
@@ -3497,10 +3755,10 @@ end
   cache.newton_iters = iter
 end
 
-function initialize!(integrator,cache::KenCarp4ConstantCache,f=integrator.f)
+function initialize!(integrator,cache::KenCarp4ConstantCache,repeat_step=false)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -3508,8 +3766,8 @@ function initialize!(integrator,cache::KenCarp4ConstantCache,f=integrator.f)
   integrator.k[2] = integrator.fsallast
 end
 
-@muladd function perform_step!(integrator,cache::KenCarp4ConstantCache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+@muladd function perform_step!(integrator,cache::KenCarp4ConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uf = cache
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,c3,c4,c5 = cache.tab
   @unpack α31,α32,α41,α42,α51,α52,α53,α54,α61,α62,α63,α64,α65 = cache.tab
@@ -3742,18 +4000,18 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::KenCarp4Cache,f=integrator.f)
+function initialize!(integrator,cache::KenCarp4Cache,repeat_step=false)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
-@muladd function perform_step!(integrator,cache::KenCarp4Cache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+@muladd function perform_step!(integrator,cache::KenCarp4Cache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uf,du1,dz₁,dz₂,dz₃,dz₄,dz₅,dz₆,z₁,z₂,z₃,z₄,z₅,z₆,k,J,W,jac_config,tmp = cache
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,c3,c4,c5 = cache.tab
   @unpack α31,α32,α41,α42,α51,α52,α53,α54,α61,α62,α63,α64,α65 = cache.tab
@@ -4084,10 +4342,10 @@ end
   cache.newton_iters = iter
 end
 
-function initialize!(integrator,cache::Kvaerno5ConstantCache,f=integrator.f)
+function initialize!(integrator,cache::Kvaerno5ConstantCache,repeat_step=false)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -4095,8 +4353,8 @@ function initialize!(integrator,cache::Kvaerno5ConstantCache,f=integrator.f)
   integrator.k[2] = integrator.fsallast
 end
 
-@muladd function perform_step!(integrator,cache::Kvaerno5ConstantCache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+@muladd function perform_step!(integrator,cache::Kvaerno5ConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uf = cache
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,c3,c4,c5,c6 = cache.tab
   @unpack α31,α32,α41,α42,α43,α51,α52,α53,α61,α62,α63 = cache.tab
@@ -4366,18 +4624,18 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::Kvaerno5Cache,f=integrator.f)
+function initialize!(integrator,cache::Kvaerno5Cache,repeat_step=false)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
-@muladd function perform_step!(integrator,cache::Kvaerno5Cache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+@muladd function perform_step!(integrator,cache::Kvaerno5Cache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uf,du1,dz₁,dz₂,dz₃,dz₄,dz₅,dz₆,dz₇,z₁,z₂,z₃,z₄,z₅,z₆,z₇,k,J,W,jac_config,tmp = cache
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,c3,c4,c5,c6 = cache.tab
   @unpack α31,α32,α41,α42,α43,α51,α52,α53,α61,α62,α63 = cache.tab
@@ -4765,10 +5023,10 @@ end
   cache.newton_iters = iter
 end
 
-function initialize!(integrator,cache::KenCarp5ConstantCache,f=integrator.f)
+function initialize!(integrator,cache::KenCarp5ConstantCache,repeat_step=false)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -4776,8 +5034,8 @@ function initialize!(integrator,cache::KenCarp5ConstantCache,f=integrator.f)
   integrator.k[2] = integrator.fsallast
 end
 
-@muladd function perform_step!(integrator,cache::KenCarp5ConstantCache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+@muladd function perform_step!(integrator,cache::KenCarp5ConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uf = cache
   @unpack γ,a31,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a84,a85,a86,a87,c3,c4,c5,c6,c7 = cache.tab
   @unpack α31,α32,α41,α42,α51,α52,α61,α62,α71,α72,α73,α74,α75,α81,α82,α83,α84,α85 = cache.tab
@@ -5085,18 +5343,18 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::KenCarp5Cache,f=integrator.f)
+function initialize!(integrator,cache::KenCarp5Cache,repeat_step=false)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
-@muladd function perform_step!(integrator,cache::KenCarp5Cache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+@muladd function perform_step!(integrator,cache::KenCarp5Cache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uf,du1,dz₁,dz₂,dz₃,dz₄,dz₅,dz₆,dz₇,dz₈,z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,k,J,W,jac_config,tmp = cache
   @unpack γ,a31,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a84,a85,a86,a87,c3,c4,c5,c6,c7 = cache.tab
   @unpack α31,α32,α41,α42,α51,α52,α61,α62,α71,α72,α73,α74,α75,α81,α82,α83,α84,α85 = cache.tab

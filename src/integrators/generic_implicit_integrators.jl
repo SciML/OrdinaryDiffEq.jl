@@ -26,12 +26,12 @@ function (p::ImplicitRHS)(u,resid)
   @. resid = u - p.C - p.a*vecdu1
 end
 
-function initialize!(integrator,cache::C,f=integrator.f) where
+function initialize!(integrator,cache::C) where
     {C<:Union{GenericImplicitEulerConstantCache,GenericTrapezoidConstantCache}}
   cache.uhold[1] = integrator.uprev; cache.C[1] = integrator.uprev
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.fsalfirst = f(integrator.t,integrator.uprev)
+  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev)
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -39,8 +39,8 @@ function initialize!(integrator,cache::C,f=integrator.f) where
   integrator.k[2] = integrator.fsallast
 end
 
-@muladd function perform_step!(integrator,cache::GenericImplicitEulerConstantCache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+@muladd function perform_step!(integrator,cache::GenericImplicitEulerConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uhold,C,rhs,nl_rhs = cache
   C[1] = uprev
 
@@ -76,11 +76,11 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::C,f=integrator.f) where
+function initialize!(integrator,cache::C) where
     {C<:Union{GenericImplicitEulerCache,GenericTrapezoidCache}}
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  f(integrator.t,integrator.uprev,integrator.fsalfirst)
+  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst)
 
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
@@ -88,8 +88,8 @@ function initialize!(integrator,cache::C,f=integrator.f) where
   integrator.k[2] = integrator.fsallast
 end
 
-@muladd function perform_step!(integrator,cache::GenericImplicitEulerCache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+@muladd function perform_step!(integrator,cache::GenericImplicitEulerCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   uidx = eachindex(integrator.uprev)
   @unpack C,dual_cache,k,nl_rhs,rhs,uhold = cache
   copy!(C,uprev)
@@ -127,9 +127,9 @@ end
   f(t+dt,u,k)
 end
 
-function initialize!(integrator,cache::GenericTrapezoidConstantCache,f=integrator.f)
+function initialize!(integrator,cache::GenericTrapezoidConstantCache)
   cache.uhold[1] = integrator.uprev; cache.C[1] = integrator.uprev
-  integrator.fsalfirst = f(integrator.t,integrator.uprev)
+  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
 
@@ -139,8 +139,8 @@ function initialize!(integrator,cache::GenericTrapezoidConstantCache,f=integrato
   integrator.k[2] = integrator.fsallast
 end
 
-function perform_step!(integrator,cache::GenericTrapezoidConstantCache,f=integrator.f)
-  @unpack t,dt,uprev,u,k = integrator
+function perform_step!(integrator,cache::GenericTrapezoidConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,k,f = integrator
   @unpack uhold,C,rhs,nl_rhs = cache
   C[1] = first(uprev) + (dt/2)*first(integrator.fsalfirst)
 
@@ -189,19 +189,19 @@ function perform_step!(integrator,cache::GenericTrapezoidConstantCache,f=integra
   @pack integrator = t,dt,u
 end
 
-function initialize!(integrator,cache::GenericTrapezoidCache,f=integrator.f)
+function initialize!(integrator,cache::GenericTrapezoidCache)
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = cache.k
-  f(integrator.t,integrator.uprev,integrator.fsalfirst)
+  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst)
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
 end
 
-function perform_step!(integrator,cache::GenericTrapezoidCache,f=integrator.f)
-  @unpack t,dt,uprev,u,k = integrator
+function perform_step!(integrator,cache::GenericTrapezoidCache,repeat_step=false)
+  @unpack t,dt,uprev,u,k,f = integrator
   uidx = eachindex(integrator.uprev)
   @unpack C,dual_cache,k,rhs,nl_rhs,uhold = cache
   C .= vec(uprev) .+ (dt/2).*vec(integrator.fsalfirst)

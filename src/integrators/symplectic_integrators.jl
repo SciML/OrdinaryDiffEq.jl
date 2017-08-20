@@ -1,6 +1,6 @@
 # http://www.chimica.unipd.it/antonino.polimeno/pubblica/downloads/JChemPhys_101_4062.pdf
 
-function initialize!(integrator,cache::SymplecticEulerConstantCache,f=integrator.f)
+function initialize!(integrator,cache::SymplecticEulerConstantCache,repeat_step=false)
   integrator.kshortsize = 2
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
@@ -12,13 +12,13 @@ function initialize!(integrator,cache::SymplecticEulerConstantCache,f=integrator
   # So that way FSAL interpolation
   uprev,duprev = integrator.uprev.x
   u,du = integrator.u.x
-  integrator.k[2].x[2] = f.f2(integrator.t,uprev,duprev)
+  integrator.k[2].x[2] = integrator.f.f2(integrator.t,uprev,duprev)
   @muladd du = @. duprev + integrator.dt*integrator.k[2].x[2]
-  integrator.k[1].x[1] = f.f1(integrator.t,uprev,du)
+  integrator.k[1].x[1] = integrator.f.f1(integrator.t,uprev,du)
 end
 
-@muladd function perform_step!(integrator,cache::SymplecticEulerConstantCache,f=integrator.f)
-  @unpack t,dt = integrator
+@muladd function perform_step!(integrator,cache::SymplecticEulerConstantCache,repeat_step=false)
+  @unpack t,dt,f = integrator
   uprev,duprev = integrator.uprev.x
   u,du = integrator.u.x
   kuprev = integrator.k[1].x[1]
@@ -33,7 +33,7 @@ end
   integrator.fsallast = ku
 end
 
-function initialize!(integrator,cache::SymplecticEulerCache,f=integrator.f)
+function initialize!(integrator,cache::SymplecticEulerCache,repeat_step=false)
   integrator.kshortsize = 2
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
@@ -47,13 +47,13 @@ function initialize!(integrator,cache::SymplecticEulerCache,f=integrator.f)
   u,du = integrator.u.x
   ku = integrator.k[1].x[1]
   kdu = integrator.k[2].x[2]
-  f.f2(integrator.t,uprev,duprev,kdu)
+  integrator.f.f2(integrator.t,uprev,duprev,kdu)
   @muladd @. du = duprev + integrator.dt*kdu
-  f.f1(integrator.t,uprev,du,ku)
+  integrator.f.f1(integrator.t,uprev,du,ku)
 end
 
-@muladd function perform_step!(integrator,cache::SymplecticEulerCache,f=integrator.f)
-  @unpack t,dt = integrator
+@muladd function perform_step!(integrator,cache::SymplecticEulerCache,repeat_step=false)
+  @unpack t,dt,f = integrator
   uprev,duprev = integrator.uprev.x
   u,du = integrator.u.x
   kuprev = integrator.k[1].x[1]
@@ -67,7 +67,7 @@ end
   f.f1(t,uprev,du,ku)
 end
 
-function initialize!(integrator,cache::C,f=integrator.f) where
+function initialize!(integrator,cache::C,repeat_step=false) where
     {C<:Union{VelocityVerletCache,Symplectic2Cache,Symplectic3Cache,Symplectic4Cache,
               Symplectic45Cache,Symplectic5Cache,Symplectic6Cache,Symplectic62Cache,
               McAte8Cache,KahanLi8Cache,SofSpa10Cache}}
@@ -80,12 +80,12 @@ function initialize!(integrator,cache::C,f=integrator.f) where
   integrator.k[2] = integrator.fsallast
 
   uprev,duprev = integrator.uprev.x
-  f.f1(integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f.f2(integrator.t,uprev,duprev,integrator.k[2].x[2])
+  integrator.f.f1(integrator.t,uprev,duprev,integrator.k[2].x[1])
+  integrator.f.f2(integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
-@muladd function perform_step!(integrator,cache::VelocityVerletCache,f=integrator.f)
-  @unpack t,dt = integrator
+@muladd function perform_step!(integrator,cache::VelocityVerletCache,repeat_step=false)
+  @unpack t,dt,f = integrator
   uprev,duprev = integrator.uprev.x
   u,du = integrator.u.x
   ku, kdu = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
@@ -103,8 +103,8 @@ end
   copy!(integrator.k[2].x[2],kdu)
 end
 
-@muladd function perform_step!(integrator,cache::Symplectic2Cache,f=integrator.f)
-  @unpack t,dt = integrator
+@muladd function perform_step!(integrator,cache::Symplectic2Cache,repeat_step=false)
+  @unpack t,dt,f = integrator
   @unpack a1,a2,b1,b2 = cache.tab
   uprev,duprev = integrator.uprev.x
   u,du = integrator.u.x
@@ -127,8 +127,8 @@ end
   copy!(integrator.k[2].x[2],kdu)
 end
 
-@muladd function perform_step!(integrator,cache::Symplectic3Cache,f=integrator.f)
-  @unpack t,dt = integrator
+@muladd function perform_step!(integrator,cache::Symplectic3Cache,repeat_step=false)
+  @unpack t,dt,f = integrator
   @unpack a1,a2,a3,b1,b2,b3 = cache.tab
   uprev,duprev = integrator.uprev.x
   u,du = integrator.u.x
@@ -159,8 +159,8 @@ end
   copy!(integrator.k[2].x[2],kdu)
 end
 
-@muladd function perform_step!(integrator,cache::Symplectic4Cache,f=integrator.f)
-  @unpack t,dt = integrator
+@muladd function perform_step!(integrator,cache::Symplectic4Cache,repeat_step=false)
+  @unpack t,dt,f = integrator
   @unpack a1,a2,a3,a4,b1,b2,b3,b4 = cache.tab
   uprev,duprev = integrator.uprev.x
   u,du = integrator.u.x
@@ -199,8 +199,8 @@ end
   copy!(integrator.k[2].x[2],kdu)
 end
 
-@muladd function perform_step!(integrator,cache::Symplectic45Cache,f=integrator.f)
-  @unpack t,dt = integrator
+@muladd function perform_step!(integrator,cache::Symplectic45Cache,repeat_step=false)
+  @unpack t,dt,f = integrator
   @unpack a1,a2,a3,a4,a5,b1,b2,b3,b4,b5 = cache.tab
   uprev,duprev = integrator.uprev.x
   u,du = integrator.u.x
@@ -249,8 +249,8 @@ end
   copy!(integrator.k[2].x[2],kdu)
 end
 
-@muladd function perform_step!(integrator,cache::Symplectic5Cache,f=integrator.f)
-  @unpack t,dt = integrator
+@muladd function perform_step!(integrator,cache::Symplectic5Cache,repeat_step=false)
+  @unpack t,dt,f = integrator
   @unpack a1,a2,a3,a4,a5,a6,b1,b2,b3,b4,b5,b6 = cache.tab
   uprev,duprev = integrator.uprev.x
   u,du = integrator.u.x
@@ -304,8 +304,8 @@ end
   copy!(integrator.k[2].x[2],kdu)
 end
 
-@muladd function perform_step!(integrator,cache::Symplectic6Cache,f=integrator.f)
-  @unpack t,dt = integrator
+@muladd function perform_step!(integrator,cache::Symplectic6Cache,repeat_step=false)
+  @unpack t,dt,f = integrator
   @unpack a1,a2,a3,a4,a5,a6,a7,a8,b1,b2,b3,b4,b5,b6,b7,b8 = cache.tab
   uprev,duprev = integrator.uprev.x
   u,du = integrator.u.x
@@ -373,8 +373,8 @@ end
   copy!(integrator.k[2].x[2],kdu)
 end
 
-@muladd function perform_step!(integrator,cache::Symplectic62Cache,f=integrator.f)
-  @unpack t,dt = integrator
+@muladd function perform_step!(integrator,cache::Symplectic62Cache,repeat_step=false)
+  @unpack t,dt,f = integrator
   @unpack a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,b1,b2,b3,b4,b5,b6,b7,b8,b9,b10 = cache.tab
   uprev,duprev = integrator.uprev.x
   u,du = integrator.u.x
@@ -456,8 +456,8 @@ end
   copy!(integrator.k[2].x[2],kdu)
 end
 
-@muladd function perform_step!(integrator,cache::McAte8Cache,f=integrator.f)
-  @unpack t,dt = integrator
+@muladd function perform_step!(integrator,cache::McAte8Cache,repeat_step=false)
+  @unpack t,dt,f = integrator
   @unpack a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,
           b1,b2,b3,b4,b5,b6,b7,b8,b9,b10,b11,b12,b13,b14,b15,b16 = cache.tab
   uprev,duprev = integrator.uprev.x
@@ -582,8 +582,8 @@ end
   copy!(integrator.k[2].x[2],kdu)
 end
 
-@muladd function perform_step!(integrator,cache::KahanLi8Cache,f=integrator.f)
-  @unpack t,dt = integrator
+@muladd function perform_step!(integrator,cache::KahanLi8Cache,repeat_step=false)
+  @unpack t,dt,f = integrator
   @unpack a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,
           b1,b2,b3,b4,b5,b6,b7,b8,b9,b10,b11,b12,b13,b14,b15,b16,b17,b18 = cache.tab
   uprev,duprev = integrator.uprev.x
@@ -722,8 +722,8 @@ end
   copy!(integrator.k[2].x[2],kdu)
 end
 
-@muladd function perform_step!(integrator,cache::SofSpa10Cache,f=integrator.f)
-  @unpack t,dt = integrator
+@muladd function perform_step!(integrator,cache::SofSpa10Cache,repeat_step=false)
+  @unpack t,dt,f = integrator
   @unpack a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,
           a19,a20,a21,a22,a23,a24,a25,a26,a27,a28,a29,a30,a31,a32,a33,a34,
           a35,a36,

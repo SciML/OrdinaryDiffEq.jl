@@ -111,6 +111,8 @@ module OrdinaryDiffEq
   #General Functions
   export solve, solve!, init, step!
 
+  export OrdinaryDiffEqAlgorithm
+
   #Callback Necessary
   export ode_addsteps!, ode_interpolant,
         terminate!, savevalues!, copyat_or_push!, isfsal
@@ -127,8 +129,9 @@ module OrdinaryDiffEq
          DP5, DP5Threaded, Tsit5, DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8,
          Vern9,Feagin10, Feagin12, Feagin14, CompositeAlgorithm
 
-  export ImplicitEuler, Trapezoid, TRBDF2, SDIRK2, Kvaerno3, KenCarp3, Cash4,
-         Hairer4, Hairer42, SSPSDIRK2, Kvaerno4, Kvaerno5, KenCarp4, KenCarp5
+  export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, Kvaerno3,
+         KenCarp3, Cash4, Hairer4, Hairer42, SSPSDIRK2, Kvaerno4, Kvaerno5,
+         KenCarp4, KenCarp5
 
   export GenericImplicitEuler, GenericTrapezoid
 
@@ -137,7 +140,7 @@ module OrdinaryDiffEq
   export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
          Ros4LStab, ROS3P, Rodas3, Rodas4, Rodas42, Rodas4P, Rodas5
 
-  export IIF1, IIF2
+  export GenericIIF1, GenericIIF2
 
   export LawsonEuler, NorsettEuler
 
@@ -148,5 +151,5 @@ module OrdinaryDiffEq
   export SplitEuler
 
   export Nystrom4, Nystrom4VelocityIndependent, Nystrom5VelocityIndependent,
-         IRKN3, IRKN4, DPRKN6, DPRKN8
+         IRKN3, IRKN4, DPRKN6, DPRKN8, DPRKN12
 end # module
