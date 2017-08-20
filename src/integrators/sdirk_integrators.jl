@@ -278,7 +278,7 @@ end
   iter = 1
   tstep = t + dto2
   # u = uprev + z then  u = (uprev+u)/2 = (uprev+uprev+z)/2 = uprev + z/2
-  u = @. uprev + 1//2*z
+  u = @. uprev + z/2
   b = dt.*f(tstep,u) .- z
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
@@ -292,7 +292,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     # u = uprev + z then  u = (uprev+u)/2 = (uprev+uprev+z)/2 = uprev + z/2
-    u = @. uprev + 1//2*z
+    u = @. uprev + z/2
     b = dt.*f(tstep,u) .- z
     dz = W\b
     ndzprev = ndz
@@ -424,7 +424,7 @@ end
   iter = 1
   tstep = t + dto2
   # u = uprev + z then  u = (uprev+u)/2 = (uprev+uprev+z)/2 = uprev + z/2
-  @. u = uprev + 1//2*z
+  @. u = uprev + z/2
   f(tstep,u,k)
   if mass_matrix == I
     @. b = dt*k - z
@@ -448,7 +448,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     # u = uprev + z then  u = (uprev+u)/2 = (uprev+uprev+z)/2 = uprev + z/2
-    @. u = uprev + 1//2*z
+    @. u = uprev + z/2
     f(tstep,u,k)
     if mass_matrix == I
       @. b = dt*k - z
@@ -537,7 +537,7 @@ function initialize!(integrator, cache::TrapezoidConstantCache)
   integrator.k[2] = integrator.fsallast
 end
 
-@muladd function perform_step!(integrator,cache::TrapezoidConstantCache,f=integrator.f)
+@muladd function perform_step!(integrator, cache::TrapezoidConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
   @unpack uf,κ,tol = cache
 
@@ -564,7 +564,7 @@ end
   iter = 1
   tstep = t + dt
   tmp = @. uprev + dto2*integrator.fsalfirst
-  u = @. tmp + 1//2*z
+  u = @. tmp + z/2
   b = dt.*f(tstep,u) .- z
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
@@ -577,7 +577,7 @@ end
   fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
-    u = @. tmp + 1//2*z
+    u = @. tmp + z/2
     b = dt.*f(tstep,u) .- z
     dz = W\b
     ndzprev = ndz
@@ -597,7 +597,7 @@ end
     return
   end
 
-  u = @. tmp + 1//2*z
+  u = @. tmp + z/2
 
   cache.ηold = η
   cache.newton_iters = iter
@@ -703,7 +703,7 @@ end
   iter = 1
   tstep = t + dt
   @. tmp = uprev + dto2*integrator.fsalfirst
-  @. u = tmp + 1//2*z
+  @. u = tmp + z/2
   f(tstep,u,k)
   if mass_matrix == I
     @. b = dt*k - z
@@ -726,7 +726,7 @@ end
   fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
-    @. u = tmp + 1//2*z
+    @. u = tmp + z/2
     f(tstep,u,k)
     if mass_matrix == I
       @. b = dt*k - z
@@ -756,7 +756,7 @@ end
     return
   end
 
-  @. u = tmp + 1//2*z
+  @. u = tmp + z/2
 
   cache.ηold = η
   cache.newton_iters = iter
@@ -2809,8 +2809,8 @@ function initialize!(integrator, cache::Hairer4ConstantCache)
   integrator.k[2] = integrator.fsallast
 end
 
-@muladd function perform_step!(integrator,cache::Hairer4ConstantCache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+@muladd function perform_step!(integrator, cache::Hairer4ConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uf,κ,tol = cache
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack α21,α31,α32,α41,α43 = cache.tab
@@ -3418,8 +3418,8 @@ function initialize!(integrator, cache::Kvaerno4ConstantCache)
 end
 
 
-@muladd function perform_step!(integrator,cache::Kvaerno4ConstantCache,f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+@muladd function perform_step!(integrator, cache::Kvaerno4ConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uf,κ,tol = cache
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,c3,c4 = cache.tab
   @unpack α21,α31,α32,α41,α42 = cache.tab
@@ -3534,7 +3534,7 @@ end
   # initial step of Newton iteration
   iter = 1
   tstep = t + c4*dt
-  tmp = @. uprev + a41*z₁ + a42*z₂ * a43*z₃
+  tmp = @. uprev + a41*z₁ + a42*z₂ + a43*z₃
   u = @. tmp + γ*z₄
   b = dt.*f(tstep,u) .- z₄
   dz = W\b
@@ -4412,7 +4412,7 @@ end
   iter = 1
   tstep = t + c5*dt
   @. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
-  @. u = uprev + γ*z₅
+  @. u = tmp + γ*z₅
   f(tstep,u,k)
   @. b = dt*k - z₅
   if has_invW(f)
