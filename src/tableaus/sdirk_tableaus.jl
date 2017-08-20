@@ -1,3 +1,49 @@
+struct TRBDF2Tableau{T,T2}
+  γ::T2
+  d::T
+  ω::T
+  btilde1::T
+  btilde2::T
+  btilde3::T
+  α1::T
+  α2::T
+end
+
+#=
+Tableau:
+
+c = [0; γ; 1]
+A = [0  0  0
+     d  d  0
+     ω  ω  d]
+b = [ω; ω; d]
+bhat = [(1-ω)/3; (3ω+1)/3; d/3]
+
+where γ=2-√2, d=γ/2, and ω=(√2)/4. Hence
+
+btilde = bhat-b = [(1-4ω)/3; 1/3; -2d/3] = [(1-√2)/3; 1/3; (√2-2)/3]
+
+Let uᵧ and u be approximations to u(t+γ*dt) and u(t+dt). Then initial guesses of
+approximations zᵧ and z to dt*f(t+γ*dt,uᵧ) and dt*f(t+dt,u) according to Shampine:
+
+zᵧ = zprev
+
+z = (1.5+√2)*zprev + (2.5+2√2)*zᵧ - (6+4.5√2)*(uᵧ-uprev) = (by def. of uᵧ)
+  = (1.5+√2)*zprev + (2.5+2√2)*zᵧ - (6+4.5√2)*(d*zᵧ + d*zprev) =
+  = (-√2)/2*zprev + (1+(√2)/2)*zᵧ
+=#
+function TRBDF2Tableau(T,T2)
+  γ = T2(2-sqrt(2))
+  d = T(1-sqrt(2)/2)
+  ω = T(sqrt(2)/4)
+  btilde1 = T((1-sqrt(2))/3)
+  btilde2 = T(1//3)
+  btilde3 = T((sqrt(2)-2)/3)
+  α1 = T(-sqrt(2)/2)
+  α2 = T(1+sqrt(2)/2)
+  TRBDF2Tableau(γ,d,ω,btilde1,btilde2,btilde3,α1,α2)
+end
+
 struct ESDIRK4Tableau{T,T2}
     γ::T
     a31::T
@@ -5,10 +51,10 @@ struct ESDIRK4Tableau{T,T2}
     a41::T
     a42::T
     a43::T
-    bhat1::T
-    bhat2::T
-    bhat3::T
-    bhat4::T
+    btilde1::T
+    btilde2::T
+    btilde3::T
+    btilde4::T
     c3::T2
     α31::T
     α32::T
@@ -75,10 +121,14 @@ function Kvaerno3Tableau(T,T2)
   a41 = T(0.308809969973036)
   a42 = T(1.490563388254106)
   a43 = -T(1.235239879727145)
-  bhat1 = T(0.490563388419108)
-  bhat2 = T(0.073570090080892)
-  bhat3 = T(0.4358665215)
-  bhat4 = T(0.0)
+  # bhat1 = T(0.490563388419108)
+  # bhat2 = T(0.073570090080892)
+  # bhat3 = T(0.4358665215)
+  # bhat4 = T(0.0)
+  btilde1 = T(0.181753418446072) # bhat1-a41
+  btilde2 = T(-1.416993298173214) # bhat2-a42
+  btilde3 = T(1.671106401227145) # bhat3-a43
+  btilde4 = -γ # bhat4-γ
   c3 = T2(1)
   c2 = 2γ
   θ = c3/c2
@@ -86,7 +136,7 @@ function Kvaerno3Tableau(T,T2)
   α32 = ((-2θ + 3θ^2) + (6θ*(1-θ)/c2)*γ)
   α41 = T(0.0)
   α42 = T(0.0)
-  ESDIRK4Tableau(γ,a31,a32,a41,a42,a43,bhat1,bhat2,bhat3,bhat4,c3,α31,α32,α41,α42)
+  ESDIRK4Tableau(γ,a31,a32,a41,a42,a43,btilde1,btilde2,btilde3,btilde4,c3,α31,α32,α41,α42)
 end
 
 #=
@@ -110,10 +160,14 @@ function KenCarp3Tableau(T,T2)
   a41 = T(1471266399579//7840856788654)
   a42 = -T(4482444167858//7529755066697)
   a43 = T(11266239266428//11593286722821)
-  bhat1 = T(2756255671327//12835298489170)
-  bhat2 = -T(10771552573575//22201958757719)
-  bhat3 = T(9247589265047//10645013368117)
-  bhat4 = T(2193209047091//5459859503100)
+  # bhat1 = T(2756255671327//12835298489170)
+  # bhat2 = -T(10771552573575//22201958757719)
+  # bhat3 = T(9247589265047//10645013368117)
+  # bhat4 = T(2193209047091//5459859503100)
+  btilde1 = T(parse(BigInt,"681815649026867975666107")//parse(BigInt,"25159934323302256049469295")) # bhat1-a41
+  btilde2 = T(parse(BigInt,"18411887981491912264464127")//parse(BigInt,"167175311446532472108584143")) # bhat2-a42
+  btilde3 = T(parse(BigInt,"-12719313754959329011138489")//parse(BigInt,"123410692144842870217698057")) # bhat3-a43
+  btilde4 = T(parse(BigInt,"-47289384293135913063989")//parse(BigInt,"1383962894467812063558225")) # bhat4-γ
   c3 = T2(3//5)
   c2 = 2γ
   θ = c3/c2
@@ -122,7 +176,7 @@ function KenCarp3Tableau(T,T2)
   θ = 1/c2
   α41 = ((1 + (-4θ + 3θ^2)) + (6θ*(1-θ)/c2)*γ)
   α42 = ((-2θ + 3θ^2) + (6θ*(1-θ)/c2)*γ)
-  ESDIRK4Tableau(γ,a31,a32,a41,a42,a43,bhat1,bhat2,bhat3,bhat4,c3,α31,α32,α41,α42)
+  ESDIRK4Tableau(γ,a31,a32,a41,a42,a43,btilde1,btilde2,btilde3,btilde4,c3,α31,α32,α41,α42)
 end
 
 struct Cash4Tableau{T,T2}
@@ -233,6 +287,11 @@ struct Hairer4Tableau{T,T2}
   bhat2::T
   bhat3::T
   bhat4::T
+  btilde1::T
+  btilde2::T
+  btilde3::T
+  btilde4::T
+  btilde5::T
   c2::T2
   c3::T2
   c4::T2
@@ -339,6 +398,12 @@ function Hairer4Tableau(T,T2)
   bhat3 = T(225//32)
   bhat4 = T(-85//12)
 
+  btilde1 = T(3//16) # bhat1-a51
+  btilde2 = T(27//32) # bhat2-a52
+  btilde3 = T(-25//32) # bhat3-a53
+  btilde4 = T(0) # bhat4-a54
+  btilde5 = -γ
+
   #=
   d11 = T(61//27)
   d12 = T(-185//54)
@@ -412,9 +477,10 @@ function Hairer4Tableau(T,T2)
   α43 = T(155//187)
 
  Hairer4Tableau(γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,
-                 bhat1,bhat2,bhat3,bhat4,c2,c3,c4,r11,r12,r13,r14,
-                 r21,r22,r23,r24,r31,r32,r33,r34,r41,r42,r43,r44,r51,
-                 r52,r53,r54,α21,α31,α32,α41,α43)
+                bhat1,bhat2,bhat3,bhat4,btilde1,btilde2,btilde3,
+                btilde4,btilde5,c2,c3,c4,r11,r12,r13,r14,
+                r21,r22,r23,r24,r31,r32,r33,r34,r41,r42,r43,r44,r51,
+                r52,r53,r54,α21,α31,α32,α41,α43)
 end
 
 
@@ -478,6 +544,12 @@ function Hairer42Tableau(T,T2)
   bhat3 = T(11244716//4704885)
   bhat4 = T(-96203066666797//23297141763930)
 
+  btilde1 = T(4580576//5834025) # bhat1-a51
+  btilde2 = T(9740224//15662025) # bhat2-a52
+  btilde3 = T(-46144//4704885) # bhat3-a53
+  btilde4 = T(-13169581145812//11648570881965) # bhat4-a54
+  btilde5 = -γ
+
   #=
   d11 = T(24.74416644927758)
   d12 = -T(4.325375951824688)
@@ -530,7 +602,8 @@ function Hairer42Tableau(T,T2)
   α43 = T(0.3372498196189311)
 
   Hairer4Tableau(γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,
-                 bhat1,bhat2,bhat3,bhat4,c2,c3,c4,r11,r12,r13,r14,
+                 bhat1,bhat2,bhat3,bhat4,btilde1,btilde2,btilde3,btilde4,btilde5,
+                 c2,c3,c4,r11,r12,r13,r14,
                  r21,r22,r23,r24,r31,r32,r33,r34,r41,r42,r43,r44,r51,
                  r52,r53,r54,α21,α31,α32,α41,α43)
 end
@@ -546,6 +619,11 @@ struct Kvaerno4Tableau{T,T2}
   a52::T
   a53::T
   a54::T
+  btilde1::T
+  btilde2::T
+  btilde3::T
+  btilde4::T
+  btilde5::T
   c3::T2
   c4::T2
   α21::T
@@ -584,6 +662,11 @@ function Kvaerno4Tableau(T,T2)
   a52 = T(0.117330441357768)
   a53 = T(0.61667803039168)
   a54 = T(-0.326899891110444)
+  btilde1 = T(-0.054625497244906) # a41 - a51
+  btilde2 = T(-0.494208893625092) # a42 - a52
+  btilde3 = T(0.221934499759553) # a43 - a53
+  btilde4 = T(0.762766412610444) # γ - a54
+  btilde5 = -γ
   c3 = T2(0.468238744853136)
   c4 = T2(1)
   α21 = T(2) # c2/γ
@@ -592,6 +675,7 @@ function Kvaerno4Tableau(T,T2)
   α41 = T(-0.14714018016178376)
   α42 = T(1.1471401801617838)
   Kvaerno4Tableau(γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,
+                  btilde1,btilde2,btilde3,btilde4,btilde5,
                   c3,c4,α21,α31,α32,α41,α42)
 end
 
@@ -610,6 +694,11 @@ struct KenCarp4Tableau{T,T2}
   a63::T
   a64::T
   a65::T
+  btilde1::T
+  btilde3::T
+  btilde4::T
+  btilde5::T
+  btilde6::T
   c3::T2
   c4::T2
   c5::T2
@@ -627,11 +716,6 @@ struct KenCarp4Tableau{T,T2}
   α63::T
   α64::T
   α65::T
-  bhat1::T
-  bhat3::T
-  bhat4::T
-  bhat5::T
-  bhat6::T
 end
 
 #=
@@ -709,14 +793,19 @@ function KenCarp4Tableau(T,T2)
   a63 = T(15625//83664)
   a64 = T(69875//102672)
   a65 = -T(2260//8211)
+  # bhat1 = T(4586570599//29645900160)
+  # bhat3 = T(178811875//945068544)
+  # bhat4 = T(814220225//1159782912)
+  # bhat5 = -T(3700637//11593932)
+  # bhat6 = T(61727//225920)
+  btilde1 = T(-31666707//9881966720) # bhat1-a61
+  btilde3 = T(256875//105007616) # bhat3-a63
+  btilde4 = T(2768025//128864768) # bhat4-a64
+  btilde5 = T(-169839//3864644) # bhat5-a65
+  btilde6 = T(5247//225920) # bhat6-γ
   c3 = T2(83//250)
   c4 = T2(31//50)
   c5 = T2(17//20)
-  bhat1 = T(4586570599//29645900160)
-  bhat3 = T(178811875//945068544)
-  bhat4 = T(814220225//1159782912)
-  bhat5 = -T(3700637//11593932)
-  bhat6 = T(61727//225920)
   α21 = T(2) # c2/γ
   α31 = T(42//125)
   α32 = T(83//125)
@@ -732,8 +821,9 @@ function KenCarp4Tableau(T,T2)
   α64 = T(-3360875//8098936)
   α65 = T(7040//4913)
   KenCarp4Tableau(γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,
-                  c3,c4,c5,α21,α31,α32,α41,α42,α51,α52,α53,α54,
-                  α61,α62,α63,α64,α65,bhat1,bhat3,bhat4,bhat5,bhat6)
+                  btilde1,btilde3,btilde4,btilde5,btilde6,
+                  c3,c4,c5,
+                  α21,α31,α32,α41,α42,α51,α52,α53,α54,α61,α62,α63,α64,α65)
 end
 
 struct Kvaerno5Tableau{T,T2}
@@ -756,6 +846,12 @@ struct Kvaerno5Tableau{T,T2}
   a74::T
   a75::T
   a76::T
+  btilde1::T
+  btilde3::T
+  btilde4::T
+  btilde5::T
+  btilde6::T
+  btilde7::T
   c3::T2
   c4::T2
   c5::T2
@@ -837,6 +933,12 @@ function Kvaerno5Tableau(T,T2)
   a74 = -T(0.04118626728321046)
   a75 = T(0.62993304899016403)
   a76 = T(0.06962479448202728)
+  btilde1 = T(0.00195889053627933) # a61-a71
+  btilde3 = T(0.01251571594786333) # a63-a73
+  btilde4 = T(0.06565284626324187) # a64-a74
+  btilde5 = -T(0.01050265826535727) # a65-a75
+  btilde6 = T(0.19037520551797272) # γ-a76
+  btilde7 = -γ
   α21 = T(2) # c2/γ
   α31 = T(-1.366025403784441)
   α32 = T(2.3660254037844357)
@@ -855,6 +957,7 @@ function Kvaerno5Tableau(T,T2)
   c6 = T(1)
   Kvaerno5Tableau(γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,
                   a61,a63,a64,a65,a71,a73,a74,a75,a76,
+                  btilde1,btilde3,btilde4,btilde5,btilde6,btilde7,
                   c3,c4,c5,c6,α31,α32,α41,α42,α43,α51,α52,α53,
                   α61,α62,α63)
 end
@@ -905,12 +1008,12 @@ struct KenCarp5Tableau{T,T2}
   α83::T
   α84::T
   α85::T
-  bhat1::T
-  bhat4::T
-  bhat5::T
-  bhat6::T
-  bhat7::T
-  bhat8::T
+  btilde1::T
+  btilde4::T
+  btilde5::T
+  btilde6::T
+  btilde7::T
+  btilde8::T
 end
 
 #=
@@ -989,12 +1092,18 @@ function KenCarp5Tableau(T,T2)
   a85 = -T(1143369518992//8141816002931)
   a86 = -T(39379526789629//19018526304540)
   a87 = T(32727382324388//42900044865799)
-  bhat1 = -T(975461918565//9796059967033)
-  bhat4 = T(78070527104295//32432590147079)
-  bhat5 = -T(548382580838//3424219808633)
-  bhat6 = -T(33438840321285//15594753105479)
-  bhat7 = T(3629800801594//4656183773603)
-  bhat8 = T(4035322873751//18575991585200)
+  # bhat1 = -T(975461918565//9796059967033)
+  # bhat4 = T(78070527104295//32432590147079)
+  # bhat5 = -T(548382580838//3424219808633)
+  # bhat6 = -T(33438840321285//15594753105479)
+  # bhat7 = T(3629800801594//4656183773603)
+  # bhat8 = T(4035322873751//18575991585200)
+  btilde1 = -T(360431431567533808054934//89473089856732078284381229) # bhat1-a81
+  btilde4 = T(21220331609936495351431026//309921249937726682547321949) # bhat4-a84
+  btilde5 = -T(42283193605833819490634//2144566741190883522084871) # bhat5-a85
+  btilde6 = -T(21843466548811234473856609//296589222149359214696574660) # bhat6-a86
+  btilde7 = T(3333910710978735057753642//199750492790973993533703797) # bhat7-a87
+  btilde8 = T(45448919757//3715198317040) # bhat8-γ
   c3 = T2(2935347310677//11292855782101)
   c4 = T2(1426016391358//7196633302097)
   c5 = T2(92//100)
@@ -1023,5 +1132,5 @@ function KenCarp5Tableau(T,T2)
                   a71,a73,a74,a75,a76,a81,a84,a85,a86,a87,
                   c3,c4,c5,c6,c7,α31,α32,α41,α42,α51,α52,
                   α61,α62,α71,α72,α73,α74,α75,α81,α82,α83,α84,α85,
-                  bhat1,bhat4,bhat5,bhat6,bhat7,bhat8)
+                  btilde1,btilde4,btilde5,btilde6,btilde7,btilde8)
 end

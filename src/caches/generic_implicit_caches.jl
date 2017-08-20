@@ -1,4 +1,4 @@
-mutable struct GenericImplicitEulerCache{uType,uArrayType,vecuType,DiffCacheType,rateType,rhsType,nl_rhsType} <: OrdinaryDiffEqMutableCache
+mutable struct GenericImplicitEulerCache{uType,uArrayType,vecuType,DiffCacheType,uNoUnitsType,rateType,rhsType,nl_rhsType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -6,6 +6,7 @@ mutable struct GenericImplicitEulerCache{uType,uArrayType,vecuType,DiffCacheType
   dual_cache::DiffCacheType
   C::uArrayType
   tmp::uType
+  atmp::uNoUnitsType
   k::rateType
   fsalfirst::rateType
   rhs::rhsType
@@ -18,7 +19,7 @@ vecu_cache(c::GenericImplicitEulerCache) = (c.uhold,)
 dual_cache(c::GenericImplicitEulerCache) = (c.dual_cache,)
 
 function alg_cache(alg::GenericImplicitEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
-  tmp = similar(u)
+  tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
   C = vec(tmp); k = zeros(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
   uhold = vec(u) # this makes uhold the same values as integrator.u
@@ -27,8 +28,8 @@ function alg_cache(alg::GenericImplicitEuler,u,rate_prototype,uEltypeNoUnits,tTy
   nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
 
   GenericImplicitEulerCache{typeof(u),typeof(C),typeof(uhold),typeof(dual_cache),
-                     typeof(k),typeof(rhs),typeof(nl_rhs)}(
-                     u,uprev,uprev2,uhold,dual_cache,C,tmp,k,fsalfirst,rhs,nl_rhs)
+                     typeof(atmp),typeof(k),typeof(rhs),typeof(nl_rhs)}(
+                     u,uprev,uprev2,uhold,dual_cache,C,tmp,atmp,k,fsalfirst,rhs,nl_rhs)
 end
 
 struct GenericImplicitEulerConstantCache{vecuType,rhsType,nl_rhsType} <: OrdinaryDiffEqConstantCache
@@ -47,7 +48,7 @@ function alg_cache(alg::GenericImplicitEuler,u,rate_prototype,uEltypeNoUnits,tTy
   GenericImplicitEulerConstantCache{typeof(uhold),typeof(rhs),typeof(nl_rhs)}(uhold,C,rhs,nl_rhs)
 end
 
-mutable struct GenericTrapezoidCache{uType,uArrayType,vecuType,DiffCacheType,rateType,rhsType,nl_rhsType,tType} <: OrdinaryDiffEqMutableCache
+mutable struct GenericTrapezoidCache{uType,uArrayType,vecuType,DiffCacheType,uNoUnitsType,rateType,rhsType,nl_rhsType,tType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -56,6 +57,7 @@ mutable struct GenericTrapezoidCache{uType,uArrayType,vecuType,DiffCacheType,rat
   fsalfirst::rateType
   dual_cache::DiffCacheType
   tmp::uType
+  atmp::uNoUnitsType
   k::rateType
   rhs::rhsType
   nl_rhs::nl_rhsType
@@ -69,7 +71,7 @@ vecu_cache(c::GenericTrapezoidCache) = (c.uhold,)
 dual_cache(c::GenericTrapezoidCache) = (c.dual_cache,)
 
 function alg_cache(alg::GenericTrapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
-  tmp = similar(u)
+  tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
   C = vec(tmp); k = zeros(rate_prototype)
   uhold = vec(u); fsalfirst = zeros(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
@@ -78,10 +80,10 @@ function alg_cache(alg::GenericTrapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNo
   uprev3 = similar(u)
   tprev2 = t
   GenericTrapezoidCache{typeof(u),typeof(C),typeof(uhold),
-                        typeof(dual_cache),typeof(k),
+                        typeof(dual_cache),typeof(atmp),typeof(k),
                         typeof(rhs),typeof(nl_rhs),typeof(t)}(
                         u,uprev,uprev2,uhold,C,fsalfirst,
-                        dual_cache,tmp,k,rhs,nl_rhs,uprev3,tprev2)
+                        dual_cache,tmp,atmp,k,rhs,nl_rhs,uprev3,tprev2)
 end
 
 
