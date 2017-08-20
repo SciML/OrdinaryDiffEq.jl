@@ -531,10 +531,10 @@ end
 
   if typeof(uprev) <: AbstractArray
     J = ForwardDiff.jacobian(uf,uprev)
-    W = I - dto2*J
+    W = I - dt*J
   else
     J = ForwardDiff.derivative(uf,uprev)
-    W = 1 - dto2*J
+    W = 1 - dt*J
   end
   z = @. (u - uprev)
   iter = 0

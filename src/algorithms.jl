@@ -558,5 +558,4 @@ end
 
 const MassMatrixAlgorithms = Union{OrdinaryDiffEqRosenbrockAlgorithm,
                                    OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
-                                   ImplicitEuler,
-                                   Trapezoid}
+                                   ImplicitEuler,ImplicitMidpoint}
