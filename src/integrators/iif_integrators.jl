@@ -1,23 +1,13 @@
-type RHS_IIF1_Scalar{F,CType,tType} <: Function
+type RHS_IIF_Scalar{F,CType,tType,aType} <: Function
   f::F
   t::tType
   dt::tType
   tmp::CType
+  a::aType
 end
 
-function (p::RHS_IIF1_Scalar)(u,resid)
-  resid[1] = u[1] - p.tmp - p.dt*p.f[2](p.t+p.dt,u[1])[1]
-end
-
-type RHS_IIF2_Scalar{F,CType,tType} <: Function
-  f::F
-  t::tType
-  dt::tType
-  tmp::CType
-end
-
-function (p::RHS_IIF2_Scalar)(u,resid)
-  resid[1] = u[1] - p.tmp - 0.5p.dt*p.f[2](p.t+p.dt,u[1])[1]
+function (p::RHS_IIF_Scalar)(u,resid)
+  resid[1] = first(u) - p.tmp - p.a*p.dt*first(p.f[2](p.t+p.dt,first(u)))
 end
 
 function initialize!(integrator,cache::Union{IIF1ConstantCache,IIF2ConstantCache})
@@ -61,34 +51,18 @@ function perform_step!(integrator,cache::Union{IIF1ConstantCache,IIF2ConstantCac
   integrator.u = u
 end
 
-type RHS_IIF1{F,uType,tType,DiffCacheType,SizeType,uidxType} <: Function
+type RHS_IIF{F,uType,tType,DiffCacheType,aType} <: Function
   f::F
   tmp::uType
   t::tType
   dt::tType
   dual_cache::DiffCacheType
-  sizeu::SizeType
-  uidx::uidxType
+  a::aType
 end
-function (p::RHS_IIF1)(u,resid)
+function (p::RHS_IIF)(u,resid)
   du = get_du(p.dual_cache, eltype(u))
-  p.f[2](p.t+p.dt,reshape(u,p.sizeu),du)
-  @. resid = u - p.tmp - p.dt*du
-end
-
-type RHS_IIF2{F,uType,tType,DiffCacheType,SizeType,uidxType} <: Function
-  f::F
-  tmp::uType
-  t::tType
-  dt::tType
-  dual_cache::DiffCacheType
-  sizeu::SizeType
-  uidx::uidxType
-end
-function (p::RHS_IIF2)(u,resid)
-  du = get_du(p.dual_cache, eltype(u))
-  p.f[2](p.t+p.dt,reshape(u,p.sizeu),du)
-  @. resid = u - p.tmp - 0.5p.dt*du
+  p.f[2](p.t+p.dt,reshape(u,size(u)),du)
+  @. resid = u - p.tmp - p.a*p.dt*du
 end
 
 function initialize!(integrator,cache::Union{IIF1Cache,IIF2Cache})
@@ -114,9 +88,7 @@ function perform_step!(integrator,cache::Union{IIF1Cache,IIF2Cache},repeat_step=
     @muladd @. k = k + 0.5dt*rtmp1
   end
 
-  A = integrator.f[1]
-  M = expm(A*dt)
-  A_mul_B!(tmp,M,k)
+  A_mul_B!(tmp,cache.expA,k)
 
   if integrator.success_iter > 0 && !integrator.u_modified
     current_extrapolant!(uhold,t+dt,integrator)

@@ -4,7 +4,7 @@ f2 = (t,u) -> μ * u
 f1 = DiffEqArrayOperator(μ)
 (p::typeof(f1))(::Type{Val{:analytic}},t,u0) = u0.*exp.(2μ*t)
 
-prob = ODEProblem((f1,f2),1/2,(0.0,1.0))
+prob = SplitODEProblem(f1,f2,1/2,(0.0,1.0))
 srand(100)
 dts = 1./2.^(7:-1:4) #14->7 good plot
 println("IIF scalar")
@@ -25,7 +25,7 @@ function (p::typeof(f1))(::Type{Val{:analytic}},t,u0)
  tmp = (A+μ*I)*t
  expm(tmp)*u0
 end
-prob = ODEProblem((f1,f2),u0,(0.0,1.0))
+prob = SplitODEProblem(f1,f2,u0,(0.0,1.0))
 
 integrator = init(prob,NorsettEuler(),dt=1/10)
 step!(integrator)

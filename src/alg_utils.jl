@@ -122,6 +122,8 @@ isimplicit(alg::IIF1) = true
 isimplicit(alg::IIF2) = true
 
 isdtchangeable(alg::OrdinaryDiffEqAlgorithm) = true
+isdtchangeable(alg::IIF1) = false
+isdtchangeable(alg::IIF2) = false
 
 ismultistep(alg::OrdinaryDiffEqAlgorithm) = false
 

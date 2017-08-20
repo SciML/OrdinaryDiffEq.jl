@@ -22,7 +22,7 @@ u_cache(c::ImplicitEulerCache)    = (c.uprev2,c.z,c.dz)
 du_cache(c::ImplicitEulerCache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
@@ -63,7 +63,7 @@ mutable struct ImplicitEulerConstantCache{F,uEltypeNoUnits} <: OrdinaryDiffEqCon
 end
 
 function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
   uf = UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
 
@@ -92,7 +92,7 @@ mutable struct ImplicitMidpointConstantCache{F,uEltypeNoUnits,uType,tType} <: Or
 end
 
 function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,reltol,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
   uf = UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
   uprev3 = u
@@ -138,7 +138,7 @@ u_cache(c::ImplicitMidpointCache)    = (c.uprev2,c.z,c.dz)
 du_cache(c::ImplicitMidpointCache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
@@ -186,7 +186,7 @@ mutable struct TrapezoidConstantCache{F,uEltypeNoUnits,uType,tType} <: OrdinaryD
 end
 
 function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,reltol,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
   uf = UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
   uprev3 = u
@@ -232,7 +232,7 @@ u_cache(c::TrapezoidCache)    = (c.uprev2,c.z,c.dz)
 du_cache(c::TrapezoidCache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
@@ -280,7 +280,7 @@ mutable struct TRBDF2ConstantCache{F,uEltypeNoUnits,uType,tType} <: OrdinaryDiff
 end
 
 function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,reltol,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
   uf = UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
   uprev3 = u
@@ -327,7 +327,7 @@ u_cache(c::TRBDF2Cache)    = (c.uprev2,c.zᵧ,c.z,c.Δzᵧ,c.Δz)
 du_cache(c::TRBDF2Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   uᵧ = similar(u)
@@ -376,7 +376,7 @@ mutable struct SDIRK2ConstantCache{F,uEltypeNoUnits,uType,tType} <: OrdinaryDiff
 end
 
 function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,reltol,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
   uf = UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
   uprev3 = u
@@ -421,7 +421,7 @@ u_cache(c::SDIRK2Cache)    = (c.uprev2,c.zᵧ,c.z,c.Δzᵧ,c.Δz)
 du_cache(c::SDIRK2Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
@@ -469,7 +469,7 @@ mutable struct SSPSDIRK2ConstantCache{F,uEltypeNoUnits,uType,tType} <: OrdinaryD
 end
 
 function alg_cache(alg::SSPSDIRK2,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,reltol,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
   uf = UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
   uprev3 = u
@@ -514,7 +514,7 @@ u_cache(c::SSPSDIRK2Cache)    = (c.uprev2,c.zᵧ,c.z,c.Δzᵧ,c.Δz)
 du_cache(c::SSPSDIRK2Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::SSPSDIRK2,u,rate_prototype,uEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
@@ -563,7 +563,7 @@ mutable struct Kvaerno3ConstantCache{F,uEltypeNoUnits,uType,tType,Tab} <: Ordina
 end
 
 function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,reltol,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
   uf = UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
   uprev3 = u
@@ -615,7 +615,7 @@ u_cache(c::Kvaerno3Cache)    = (c.uprev2,c.zᵧ,c.z,c.Δzᵧ,c.Δz)
 du_cache(c::Kvaerno3Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
@@ -666,7 +666,7 @@ mutable struct KenCarp3ConstantCache{F,uEltypeNoUnits,uType,tType,Tab} <: Ordina
 end
 
 function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,reltol,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
   uf = UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
   uprev3 = u
@@ -718,7 +718,7 @@ u_cache(c::KenCarp3Cache)    = (c.uprev2,c.zᵧ,c.z,c.Δzᵧ,c.Δz)
 du_cache(c::KenCarp3Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
@@ -769,7 +769,7 @@ mutable struct Cash4ConstantCache{F,uEltypeNoUnits,uType,tType,Tab} <: OrdinaryD
 end
 
 function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,reltol,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
   uf = UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
   uprev3 = u
@@ -823,7 +823,7 @@ u_cache(c::Cash4Cache)    = (c.uprev2,c.zᵧ,c.z,c.Δzᵧ,c.Δz)
 du_cache(c::Cash4Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
@@ -876,7 +876,7 @@ mutable struct Hairer4ConstantCache{F,uEltypeNoUnits,uType,tType,Tab} <: Ordinar
 end
 
 function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,reltol,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
   uf = UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
   uprev3 = u
@@ -934,7 +934,7 @@ u_cache(c::Hairer4Cache)    = (c.uprev2,c.zᵧ,c.z,c.Δzᵧ,c.Δz)
 du_cache(c::Hairer4Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
@@ -991,7 +991,7 @@ mutable struct Kvaerno4ConstantCache{F,uEltypeNoUnits,uType,tType,Tab} <: Ordina
 end
 
 function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,reltol,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
   uf = UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
   uprev3 = u
@@ -1045,7 +1045,7 @@ u_cache(c::Kvaerno4Cache)    = (c.uprev2,c.zᵧ,c.z,c.Δzᵧ,c.Δz)
 du_cache(c::Kvaerno4Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
@@ -1098,7 +1098,7 @@ mutable struct KenCarp4ConstantCache{F,uEltypeNoUnits,uType,tType,Tab} <: Ordina
 end
 
 function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,reltol,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
   uf = UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
   uprev3 = u
@@ -1154,7 +1154,7 @@ u_cache(c::KenCarp4Cache)    = (c.uprev2,c.zᵧ,c.z,c.Δzᵧ,c.Δz)
 du_cache(c::KenCarp4Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
@@ -1207,7 +1207,7 @@ mutable struct Kvaerno5ConstantCache{F,uEltypeNoUnits,uType,tType,Tab} <: Ordina
 end
 
 function alg_cache(alg::Kvaerno5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,reltol,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
   uf = UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
   uprev3 = u
@@ -1265,7 +1265,7 @@ u_cache(c::Kvaerno5Cache)    = (c.uprev2,c.zᵧ,c.z,c.Δzᵧ,c.Δz)
 du_cache(c::Kvaerno5Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::Kvaerno5,u,rate_prototype,uEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
@@ -1318,7 +1318,7 @@ mutable struct KenCarp5ConstantCache{F,uEltypeNoUnits,uType,tType,Tab} <: Ordina
 end
 
 function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,reltol,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
   uf = UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
   uprev3 = u
@@ -1378,7 +1378,7 @@ u_cache(c::KenCarp5Cache)    = (c.uprev2,c.zᵧ,c.z,c.Δzᵧ,c.Δz)
 du_cache(c::KenCarp5Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?

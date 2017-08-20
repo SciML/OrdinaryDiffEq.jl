@@ -10,8 +10,8 @@ mutable struct CompositeCache{T,F} <: OrdinaryDiffEqCache
   current::Int
 end
 
-function alg_cache{T}(alg::CompositeAlgorithm,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{T}})
-  caches = map((x)->alg_cache(x,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,Val{T}),alg.algs)
+function alg_cache{T}(alg::CompositeAlgorithm,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{T}})
+  caches = map((x)->alg_cache(x,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,Val{T}),alg.algs)
   CompositeCache(caches,alg.choice_function,1)
 end
 
@@ -26,13 +26,13 @@ end
 u_cache(c::DiscreteCache) = ()
 du_cache(c::DiscreteCache) = (c.du)
 
-function alg_cache(alg::Discrete,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
+function alg_cache(alg::Discrete,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
   DiscreteCache(u,uprev,discrete_scale_by_time(alg) ? rate_prototype : similar(u))
 end
 
 struct DiscreteConstantCache <: OrdinaryDiffEqConstantCache end
 
-alg_cache(alg::Discrete,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = DiscreteConstantCache()
+alg_cache(alg::Discrete,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}}) = DiscreteConstantCache()
 
 struct ExplicitRKCache{uType,rateType,uEltypeNoUnits,ksEltype,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -49,7 +49,7 @@ end
 u_cache(c::ExplicitRKCache) = (c.utilde,c.atmp,c.update)
 du_cache(c::ExplicitRKCache) = (c.kk...)
 
-function alg_cache(alg::ExplicitRK,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{true}})
+function alg_cache(alg::ExplicitRK,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
   kk = Vector{typeof(rate_prototype)}(0)
   for i = 1:alg.tableau.stages
     push!(kk,zeros(rate_prototype))
@@ -83,7 +83,7 @@ function ExplicitRKConstantCache(tableau,rate_prototype)
   ExplicitRKConstantCache(A,c,α,αEEst,stages,kk)
 end
 
-alg_cache(alg::ExplicitRK,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,reltol,::Type{Val{false}}) = ExplicitRKConstantCache(alg.tableau,rate_prototype)
+alg_cache(alg::ExplicitRK,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}}) = ExplicitRKConstantCache(alg.tableau,rate_prototype)
 
 get_chunksize(cache::DECache) = error("This cache does not have a chunksize.")
 get_chunksize{CS}(cache::ODEChunkCache{CS}) = CS
