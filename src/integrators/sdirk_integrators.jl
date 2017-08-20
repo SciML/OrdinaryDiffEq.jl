@@ -14,9 +14,7 @@ end
   @unpack uf = cache
   uf.t = t
 
-  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
-    u = current_extrapolant(t+dt,integrator)
-  elseif integrator.alg.extrapolant == :linear
+  if integrator.alg.extrapolant == :linear
     u = uprev + integrator.fsalfirst*dt
   else # :constant
     u = uprev
@@ -136,12 +134,10 @@ end
     end
   end
 
-  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
-    current_extrapolant!(u,t+dt,integrator)
-  elseif integrator.alg.extrapolant == :linear
+  if integrator.alg.extrapolant == :linear
     @. z = integrator.fsalfirst*dt
   else # :constant
-    @. z = 0
+    @. z = zero(u)
   end
 
   iter = 0
@@ -246,9 +242,7 @@ end
   uf.t = t
   dto2 = dt/2
 
-  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
-    u = current_extrapolant(t+dt,integrator)
-  elseif integrator.alg.extrapolant == :linear
+  if integrator.alg.extrapolant == :linear
     z = integrator.fsalfirst*dt
   else # :constant
     z = zero(u)
@@ -356,9 +350,7 @@ end
 
   dto2 = dt/2
 
-  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
-    current_extrapolant!(u,t+dt,integrator)
-  elseif integrator.alg.extrapolant == :linear
+  if integrator.alg.extrapolant == :linear
     @. z = integrator.fsalfirst*dt
   else
     @. z = zero(u)
@@ -515,16 +507,6 @@ end
   @unpack uf = cache
   uf.t = t
   dto2 = dt/2
-
-  #=
-  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
-    u = current_extrapolant(t+dt,integrator)
-  elseif integrator.alg.extrapolant == :linear
-    u = uprev + integrator.fsalfirst*dt
-  else # :constant
-    u = uprev
-  end
-  =#
 
   zprev = integrator.fsalfirst*dt
 

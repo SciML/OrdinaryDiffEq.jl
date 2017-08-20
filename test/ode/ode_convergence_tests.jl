@@ -91,26 +91,3 @@ for i = 1:2
   sim114 = test_convergence(dts,prob,KenCarp5())
   @test abs(sim114.𝒪est[:final]-5) < testTol
 end
-
-
-# This definitely needs cleaning
-using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase,
-      DiffEqProblemLibrary, Base.Test
-probArr = Vector{ODEProblem}(2)
-probArr[1] = prob_ode_linear
-
-probArr[2] = prob_ode_2Dlinear
-srand(100)
-## Convergence Testing
-dts = 1.//2.^(8:-1:4)
-testTol = 0.2
-
-prob = prob_ode_linear
-
-sim13 = test_convergence(dts,prob,ImplicitMidpoint())
-@test abs(sim13.𝒪est[:final]-2) < testTol
-
-prob = prob_ode_2Dlinear
-
-sim13 = test_convergence(dts,prob,ImplicitMidpoint())
-@test abs(sim13.𝒪est[:final]-2) < testTol

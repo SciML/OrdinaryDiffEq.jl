@@ -19,7 +19,7 @@ end
 end
 
 function initialize!(integrator,cache::SSPRK22Cache)
-  @unpack k,fsalfirst,f = cache
+  @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
   integrator.kshortsize = 1
@@ -60,7 +60,7 @@ end
 end
 
 function initialize!(integrator,cache::SSPRK33Cache)
-  @unpack k,fsalfirst,f = cache
+  @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
   integrator.kshortsize = 1
@@ -195,7 +195,7 @@ end
 end
 
 function initialize!(integrator,cache::SSPRK104Cache)
-  @unpack k,fsalfirst,f = cache
+  @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
   integrator.kshortsize = 2
