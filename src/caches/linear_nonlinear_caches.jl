@@ -35,9 +35,9 @@ function alg_cache(alg::IIF1,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,
   tmp = similar(u,indices(u)); rtmp1 = zeros(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
   uhold = vec(u) # this makes uhold the same values as integrator.u
-  A = integrator.f.A
+  A = f.f1
   expA = expm(A*dt)
-  rhs = RHS_IIF(f,tmp,t,t,dual_cache,uEltypeNoUnits(1//2))
+  rhs = RHS_IIF(f,tmp,t,t,dual_cache,uEltypeNoUnits(1//1))
   k = similar(rate_prototype); fsalfirst = similar(rate_prototype)
   nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
   IIF1Cache(u,uprev,uhold,dual_cache,tmp,rhs,nl_rhs,rtmp1,fsalfirst,expA,k)
@@ -80,7 +80,7 @@ function alg_cache(alg::IIF2,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,
   tmp = similar(u,indices(u)); rtmp1 = zeros(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
   uhold = vec(u) # this makes uhold the same values as integrator.u
-  A = integrator.f.A
+  A = f.f1
   expA = expm(A*dt)
   k = similar(rate_prototype); fsalfirst = similar(rate_prototype)
   rhs = RHS_IIF(f,tmp,t,t,dual_cache,uEltypeNoUnits(1//2))
@@ -88,17 +88,20 @@ function alg_cache(alg::IIF2,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,
   IIF2Cache(u,uprev,uhold,dual_cache,tmp,rhs,nl_rhs,rtmp1,fsalfirst,expA,k)
 end
 
-struct LawsonEulerCache{uType,rateType} <: OrdinaryDiffEqMutableCache
+struct LawsonEulerCache{uType,rateType,expType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
   k::rateType
   rtmp::rateType
+  expA::expType
   fsalfirst::rateType
 end
 
 function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
-  LawsonEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),zeros(rate_prototype))
+  A = f.f1
+  expA = expm(A*dt)
+  LawsonEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),expA,zeros(rate_prototype))
 end
 
 u_cache(c::LawsonEulerCache) = ()
@@ -108,17 +111,20 @@ struct LawsonEulerConstantCache <: OrdinaryDiffEqConstantCache end
 
 alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}}) = LawsonEulerConstantCache()
 
-struct NorsettEulerCache{uType,rateType} <: OrdinaryDiffEqMutableCache
+struct NorsettEulerCache{uType,rateType,expType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
   k::rateType
   rtmp::rateType
+  expA::expType
   fsalfirst::rateType
 end
 
 function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
-  NorsettEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),zeros(rate_prototype))
+  A = f.f1
+  expA = expm(A*dt)
+  NorsettEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),expA,zeros(rate_prototype))
 end
 
 u_cache(c::NorsettEulerCache) = ()
