@@ -11,7 +11,7 @@ const NystromDefaultInitialization = Union{Nystrom4Cache,
                                            DPRKN6Cache, DPRKN8Cache,
                                            DPRKN12Cache}
 
-function initialize!(integrator,cache::NystromDefaultInitialization,f=integrator.f)
+function initialize!(integrator,cache::NystromDefaultInitialization)
   @unpack fsalfirst,k = cache
   uprev,duprev = integrator.uprev.x
 
@@ -21,12 +21,12 @@ function initialize!(integrator,cache::NystromDefaultInitialization,f=integrator
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  f.f1(integrator.t,uprev,duprev,integrator.k[2].x[1])
-  f.f2(integrator.t,uprev,duprev,integrator.k[2].x[2])
+  integrator.f.f1(integrator.t,uprev,duprev,integrator.k[2].x[1])
+  integrator.f.f2(integrator.t,uprev,duprev,integrator.k[2].x[2])
 end
 
-@muladd function perform_step!(integrator,cache::Nystrom4Cache,f=integrator.f)
-  @unpack t,dt = integrator
+@muladd function perform_step!(integrator,cache::Nystrom4Cache,repeat_step=false)
+  @unpack t,dt,f = integrator
   u,du = integrator.u.x
   uprev,duprev = integrator.uprev.x
   @unpack tmp,fsalfirst,k₂,k₃,k₄,k = cache
@@ -59,8 +59,8 @@ end
   f.f2(t+dt,u,du,k.x[2])
 end
 
-@muladd function perform_step!(integrator,cache::Nystrom4VelocityIndependentCache,f=integrator.f)
-  @unpack t,dt = integrator
+@muladd function perform_step!(integrator,cache::Nystrom4VelocityIndependentCache,repeat_step=false)
+  @unpack t,dt,f = integrator
   u,du = integrator.u.x
   uprev,duprev = integrator.uprev.x
   @unpack tmp,fsalfirst,k₂,k₃,k = cache
@@ -86,12 +86,12 @@ end
   f.f2(t+dt,u,du,k.x[2])
 end
 
-@muladd function perform_step!(integrator,cache::IRKN3Cache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::IRKN3Cache,repeat_step=false)
   # if there's a discontinuity or the solver is in the first step
   if integrator.iter < 2 && !integrator.u_modified
     perform_step!(integrator,integrator.cache.onestep_cache)
   else
-    @unpack t,dt,k,tprev = integrator
+    @unpack t,dt,k,tprev,f = integrator
     u,du = integrator.u.x
     uprev, duprev  = integrator.uprev.x
     uprev2,duprev2 = integrator.uprev2.x
@@ -119,12 +119,12 @@ end
   end # end if
 end
 
-@muladd function perform_step!(integrator,cache::IRKN4Cache,f=integrator.f)
+@muladd function perform_step!(integrator,cache::IRKN4Cache,repeat_step=false)
   # if there's a discontinuity or the solver is in the first step
   if integrator.iter < 2 && !integrator.u_modified
     perform_step!(integrator,integrator.cache.onestep_cache)
   else
-    @unpack t,dt,k,tprev = integrator
+    @unpack t,dt,k,tprev,f = integrator
     u,du = integrator.u.x
     uprev, duprev  = integrator.uprev.x
     uprev2,duprev2 = integrator.uprev2.x
@@ -161,8 +161,8 @@ end
 end
 
 #=
-@muladd function perform_step!(integrator,cache::Nystrom5VelocityIndependentCache,f=integrator.f)
-  @unpack t,dt = integrator
+@muladd function perform_step!(integrator,cache::Nystrom5VelocityIndependentCache,repeat_step=false)
+  @unpack t,dt,f = integrator
   u,du = integrator.u.x
   uprev,duprev = integrator.uprev.x
   @unpack tmp,fsalfirst,k₂,k₃,k₄,k = cache
@@ -188,8 +188,8 @@ end
 end
 =#
 
-@muladd function perform_step!(integrator,cache::Nystrom5VelocityIndependentCache,f=integrator.f)
-  @unpack t,dt = integrator
+@muladd function perform_step!(integrator,cache::Nystrom5VelocityIndependentCache,repeat_step=false)
+  @unpack t,dt,f = integrator
   u,du = integrator.u.x
   uprev,duprev = integrator.uprev.x
   uidx = eachindex(integrator.uprev.x[1])
@@ -217,7 +217,7 @@ end
   f.f2(t+dt,u,du,k.x[2])
 end
 
-function initialize!(integrator,cache::DPRKN6Cache,f=integrator.f)
+function initialize!(integrator,cache::DPRKN6Cache,repeat_step=false)
   @unpack fsalfirst,k = cache
   uprev,duprev = integrator.uprev.x
 
@@ -231,12 +231,12 @@ function initialize!(integrator,cache::DPRKN6Cache,f=integrator.f)
   integrator.k[4] = cache.k4
   integrator.k[5] = cache.k5
   integrator.k[6] = cache.k6
-  f.f1(integrator.t,uprev,duprev,integrator.fsallast.x[1])
-  f.f2(integrator.t,uprev,duprev,integrator.fsallast.x[2])
+  integrator.f.f1(integrator.t,uprev,duprev,integrator.fsallast.x[1])
+  integrator.f.f2(integrator.t,uprev,duprev,integrator.fsallast.x[2])
 end
 
-@muladd function perform_step!(integrator,cache::DPRKN6Cache,f=integrator.f)
-  @unpack t,dt = integrator
+@muladd function perform_step!(integrator,cache::DPRKN6Cache,repeat_step=false)
+  @unpack t,dt,f = integrator
   u,du = integrator.u.x
   uprev,duprev = integrator.uprev.x
   @unpack tmp,atmp,fsalfirst,k2,k3,k4,k5,k6,k,utilde = cache
@@ -289,8 +289,8 @@ end
   end
 end
 
-@muladd function perform_step!(integrator,cache::DPRKN8Cache,f=integrator.f)
-  @unpack t,dt = integrator
+@muladd function perform_step!(integrator,cache::DPRKN8Cache,repeat_step=false)
+  @unpack t,dt,f = integrator
   u,du = integrator.u.x
   uprev,duprev = integrator.uprev.x
   @unpack tmp,atmp,fsalfirst,k2,k3,k4,k5,k6,k7,k8,k9,k,utilde = cache
@@ -352,8 +352,8 @@ end
   end
 end
 
-@muladd function perform_step!(integrator,cache::DPRKN12Cache,f=integrator.f)
-  @unpack t,dt = integrator
+@muladd function perform_step!(integrator,cache::DPRKN12Cache,repeat_step=false)
+  @unpack t,dt,f = integrator
   u,du = integrator.u.x
   uprev,duprev = integrator.uprev.x
   @unpack tmp,atmp,fsalfirst,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,k17,k,utilde = cache

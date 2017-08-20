@@ -93,7 +93,7 @@ struct GenericImplicitEuler{F} <: OrdinaryDiffEqAdaptiveAlgorithm
   extrapolant::Symbol
 end
 Base.@pure GenericImplicitEuler(;
-            nlsolve=NLSOLVEJL_SETUP(),extrapolant=:constant) =
+            nlsolve=NLSOLVEJL_SETUP(),extrapolant=:linear) =
             GenericImplicitEuler{typeof(nlsolve)}(nlsolve,extrapolant)
 
 struct GenericTrapezoid{F} <: OrdinaryDiffEqAdaptiveAlgorithm
@@ -101,7 +101,7 @@ struct GenericTrapezoid{F} <: OrdinaryDiffEqAdaptiveAlgorithm
   extrapolant::Symbol
 end
 Base.@pure GenericTrapezoid(;
-            nlsolve=NLSOLVEJL_SETUP(),extrapolant=:constant) =
+            nlsolve=NLSOLVEJL_SETUP(),extrapolant=:linear) =
             GenericTrapezoid{typeof(nlsolve)}(nlsolve,extrapolant)
 
 ################################################################################
@@ -131,7 +131,7 @@ struct ImplicitEuler{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveA
 end
 Base.@pure ImplicitEuler(;chunk_size=0,autodiff=true,diff_type=:central,
                           linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
-                          extrapolant=:constant,min_newton_iter=1,
+                          extrapolant=:linear,min_newton_iter=1,
                           max_newton_iter=7,new_jac_conv_bound = 1e-3,
                           controller = :Predictive) =
                           ImplicitEuler{chunk_size,autodiff,typeof(linsolve),
@@ -151,7 +151,7 @@ struct ImplicitMidpoint{CS,AD,F,K,T,T2} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
 end
 Base.@pure ImplicitMidpoint(;chunk_size=0,autodiff=true,diff_type=:central,
                       linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
-                      extrapolant=:constant,min_newton_iter=1,
+                      extrapolant=:linear,min_newton_iter=1,
                       max_newton_iter=7,new_jac_conv_bound = 1e-3) =
                       ImplicitMidpoint{chunk_size,autodiff,typeof(linsolve),
                       typeof(κ),typeof(tol),typeof(new_jac_conv_bound)}(
@@ -170,7 +170,7 @@ struct Trapezoid{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgor
 end
 Base.@pure Trapezoid(;chunk_size=0,autodiff=true,diff_type=:central,
                       linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
-                      extrapolant=:constant,min_newton_iter=1,
+                      extrapolant=:linear,min_newton_iter=1,
                       max_newton_iter=7,new_jac_conv_bound = 1e-3,
                       controller = :PI) =
                       Trapezoid{chunk_size,autodiff,typeof(linsolve),
@@ -191,7 +191,7 @@ struct TRBDF2{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorith
 end
 Base.@pure TRBDF2(;chunk_size=0,autodiff=true,diff_type=:central,
                  linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
-                 smooth_est=true,extrapolant=:constant,min_newton_iter=1,
+                 smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                  max_newton_iter=7,new_jac_conv_bound = 1e-3,
                  controller = :Predictive) =
 TRBDF2{chunk_size,autodiff,typeof(linsolve),
@@ -212,7 +212,7 @@ struct SDIRK2{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorith
 end
 Base.@pure SDIRK2(;chunk_size=0,autodiff=true,diff_type=:central,
                    linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
-                   smooth_est=true,extrapolant=:constant,min_newton_iter=1,
+                   smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
                    controller = :Predictive) =
  SDIRK2{chunk_size,autodiff,typeof(linsolve),
@@ -233,7 +233,7 @@ struct SSPSDIRK2{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAlgorithm{CS,
 end
 Base.@pure SSPSDIRK2(;chunk_size=0,autodiff=true,diff_type=:central,
                    linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
-                   smooth_est=true,extrapolant=:constant,min_newton_iter=1,
+                   smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
                    controller = :Predictive) =
  SSPSDIRK2{chunk_size,autodiff,typeof(linsolve),
@@ -254,7 +254,7 @@ struct Kvaerno3{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgori
 end
 Base.@pure Kvaerno3(;chunk_size=0,autodiff=true,diff_type=:central,
                    linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
-                   smooth_est=true,extrapolant=:constant,min_newton_iter=1,
+                   smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
                    controller = :Predictive) =
  Kvaerno3{chunk_size,autodiff,typeof(linsolve),
@@ -275,7 +275,7 @@ struct KenCarp3{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgori
 end
 Base.@pure KenCarp3(;chunk_size=0,autodiff=true,diff_type=:central,
                    linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
-                   smooth_est=true,extrapolant=:constant,min_newton_iter=1,
+                   smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
                    controller = :Predictive) =
  KenCarp3{chunk_size,autodiff,typeof(linsolve),
@@ -298,7 +298,7 @@ struct Cash4{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm
 end
 Base.@pure Cash4(;chunk_size=0,autodiff=true,diff_type=:central,
                    linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
-                   smooth_est=true,extrapolant=:constant,min_newton_iter=1,
+                   smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
                    controller = :Predictive,embedding=3) =
  Cash4{chunk_size,autodiff,typeof(linsolve),
@@ -319,7 +319,7 @@ struct Hairer4{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorit
 end
 Base.@pure Hairer4(;chunk_size=0,autodiff=true,diff_type=:central,
                    linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
-                   smooth_est=true,extrapolant=:constant,min_newton_iter=1,
+                   smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
                    controller = :Predictive) =
  Hairer4{chunk_size,autodiff,typeof(linsolve),
@@ -340,7 +340,7 @@ struct Hairer42{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgori
 end
 Base.@pure Hairer42(;chunk_size=0,autodiff=true,diff_type=:central,
                    linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
-                   smooth_est=true,extrapolant=:constant,min_newton_iter=1,
+                   smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
                    controller = :Predictive) =
  Hairer42{chunk_size,autodiff,typeof(linsolve),
@@ -361,7 +361,7 @@ struct Kvaerno4{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgori
 end
 Base.@pure Kvaerno4(;chunk_size=0,autodiff=true,diff_type=:central,
                    linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
-                   smooth_est=true,extrapolant=:constant,min_newton_iter=1,
+                   smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
                    controller = :Predictive) =
  Kvaerno4{chunk_size,autodiff,typeof(linsolve),
@@ -382,7 +382,7 @@ struct Kvaerno5{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgori
 end
 Base.@pure Kvaerno5(;chunk_size=0,autodiff=true,diff_type=:central,
                    linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
-                   smooth_est=true,extrapolant=:constant,min_newton_iter=1,
+                   smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
                    controller = :Predictive) =
  Kvaerno5{chunk_size,autodiff,typeof(linsolve),
@@ -403,7 +403,7 @@ struct KenCarp4{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgori
 end
 Base.@pure KenCarp4(;chunk_size=0,autodiff=true,diff_type=:central,
                    linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
-                   smooth_est=true,extrapolant=:constant,min_newton_iter=1,
+                   smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
                    controller = :Predictive) =
  KenCarp4{chunk_size,autodiff,typeof(linsolve),
@@ -424,7 +424,7 @@ struct KenCarp5{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgori
 end
 Base.@pure KenCarp5(;chunk_size=0,autodiff=true,diff_type=:central,
                    linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
-                   smooth_est=true,extrapolant=:constant,min_newton_iter=1,
+                   smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
                    controller = :Predictive) =
  KenCarp5{chunk_size,autodiff,typeof(linsolve),

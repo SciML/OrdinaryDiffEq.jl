@@ -20,7 +20,7 @@ function (p::RHS_IIF2_Scalar)(u,resid)
   resid[1] = u[1] - p.tmp - 0.5p.dt*p.f[2](p.t+p.dt,u[1])[1]
 end
 
-function initialize!(integrator,cache::Union{IIF1ConstantCache,IIF2ConstantCache},f=integrator.f)
+function initialize!(integrator,cache::Union{IIF1ConstantCache,IIF2ConstantCache})
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   A = integrator.f[1](integrator.t,integrator.u)
@@ -33,8 +33,8 @@ function initialize!(integrator,cache::Union{IIF1ConstantCache,IIF2ConstantCache
   integrator.k[2] = integrator.fsalfirst
 end
 
-function perform_step!(integrator,cache::Union{IIF1ConstantCache,IIF2ConstantCache},f=integrator.f)
-  @unpack t,dt,uprev,u = integrator
+function perform_step!(integrator,cache::Union{IIF1ConstantCache,IIF2ConstantCache},repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uhold,rhs,nl_rhs = cache
 
   # If adaptive, this should be computed after and cached
@@ -91,23 +91,23 @@ function (p::RHS_IIF2)(u,resid)
   @. resid = u - p.tmp - 0.5p.dt*du
 end
 
-function initialize!(integrator,cache::Union{IIF1Cache,IIF2Cache},f=integrator.f)
+function initialize!(integrator,cache::Union{IIF1Cache,IIF2Cache})
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   A = integrator.f[1]
-  f[2](integrator.t,integrator.uprev,cache.rtmp1)
+  integrator.f[2](integrator.t,integrator.uprev,cache.rtmp1)
   A_mul_B!(cache.k,A,integrator.uprev)
   @. integrator.fsalfirst = cache.k + cache.rtmp1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
 end
 
-function perform_step!(integrator,cache::Union{IIF1Cache,IIF2Cache},f=integrator.f)
+function perform_step!(integrator,cache::Union{IIF1Cache,IIF2Cache},repeat_step=false)
   @unpack rtmp1,tmp,k = cache
   @unpack uhold,rhs,nl_rhs = cache
-  @unpack t,dt,uprev,u = integrator
+  @unpack t,dt,uprev,u,f = integrator
 
   @. k = uprev
   if typeof(cache) <: IIF2Cache
