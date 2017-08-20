@@ -121,7 +121,7 @@ struct StrangSplitting <: OrdinaryDiffEqAlgorithm end
 
 struct ImplicitEuler{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
-  diff_type::Symbol
+  diff_type::DataType
   κ::K
   tol::T
   extrapolant::Symbol
@@ -129,7 +129,7 @@ struct ImplicitEuler{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveA
   max_newton_iter::Int
   new_jac_conv_bound::T2
 end
-Base.@pure ImplicitEuler(;chunk_size=0,autodiff=true,diff_type=:central,
+Base.@pure ImplicitEuler(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                           linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
                           extrapolant=:constant,min_newton_iter=1,
                           max_newton_iter=7,new_jac_conv_bound = 1e-3,
@@ -141,7 +141,7 @@ Base.@pure ImplicitEuler(;chunk_size=0,autodiff=true,diff_type=:central,
 
 struct ImplicitMidpoint{CS,AD,F,K,T,T2} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
   linsolve::F
-  diff_type::Symbol
+  diff_type::DataType
   κ::K
   tol::T
   extrapolant::Symbol
@@ -149,7 +149,7 @@ struct ImplicitMidpoint{CS,AD,F,K,T,T2} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
   max_newton_iter::Int
   new_jac_conv_bound::T2
 end
-Base.@pure ImplicitMidpoint(;chunk_size=0,autodiff=true,diff_type=:central,
+Base.@pure ImplicitMidpoint(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                       linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
                       extrapolant=:constant,min_newton_iter=1,
                       max_newton_iter=7,new_jac_conv_bound = 1e-3) =
@@ -160,7 +160,7 @@ Base.@pure ImplicitMidpoint(;chunk_size=0,autodiff=true,diff_type=:central,
 
 struct Trapezoid{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
-  diff_type::Symbol
+  diff_type::DataType
   κ::K
   tol::T
   extrapolant::Symbol
@@ -168,7 +168,7 @@ struct Trapezoid{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgor
   max_newton_iter::Int
   new_jac_conv_bound::T2
 end
-Base.@pure Trapezoid(;chunk_size=0,autodiff=true,diff_type=:central,
+Base.@pure Trapezoid(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                       linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
                       extrapolant=:linear,min_newton_iter=1,
                       max_newton_iter=7,new_jac_conv_bound = 1e-3,
@@ -180,7 +180,7 @@ Base.@pure Trapezoid(;chunk_size=0,autodiff=true,diff_type=:central,
 
 struct TRBDF2{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
-  diff_type::Symbol
+  diff_type::DataType
   κ::K
   tol::T
   smooth_est::Bool
@@ -189,7 +189,7 @@ struct TRBDF2{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorith
   max_newton_iter::Int
   new_jac_conv_bound::T2
 end
-Base.@pure TRBDF2(;chunk_size=0,autodiff=true,diff_type=:central,
+Base.@pure TRBDF2(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                  linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
                  smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                  max_newton_iter=7,new_jac_conv_bound = 1e-3,
@@ -201,7 +201,7 @@ TRBDF2{chunk_size,autodiff,typeof(linsolve),
 
 struct SDIRK2{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
-  diff_type::Symbol
+  diff_type::DataType
   κ::K
   tol::T
   smooth_est::Bool
@@ -210,7 +210,7 @@ struct SDIRK2{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorith
   max_newton_iter::Int
   new_jac_conv_bound::T2
 end
-Base.@pure SDIRK2(;chunk_size=0,autodiff=true,diff_type=:central,
+Base.@pure SDIRK2(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                    linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
                    smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
@@ -222,7 +222,7 @@ Base.@pure SDIRK2(;chunk_size=0,autodiff=true,diff_type=:central,
 
 struct SSPSDIRK2{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD} # Not adaptive
   linsolve::F
-  diff_type::Symbol
+  diff_type::DataType
   κ::K
   tol::T
   smooth_est::Bool
@@ -231,7 +231,7 @@ struct SSPSDIRK2{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAlgorithm{CS,
   max_newton_iter::Int
   new_jac_conv_bound::T2
 end
-Base.@pure SSPSDIRK2(;chunk_size=0,autodiff=true,diff_type=:central,
+Base.@pure SSPSDIRK2(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                    linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
                    smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
@@ -243,7 +243,7 @@ Base.@pure SSPSDIRK2(;chunk_size=0,autodiff=true,diff_type=:central,
 
 struct Kvaerno3{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
-  diff_type::Symbol
+  diff_type::DataType
   κ::K
   tol::T
   smooth_est::Bool
@@ -252,7 +252,7 @@ struct Kvaerno3{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgori
   max_newton_iter::Int
   new_jac_conv_bound::T2
 end
-Base.@pure Kvaerno3(;chunk_size=0,autodiff=true,diff_type=:central,
+Base.@pure Kvaerno3(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                    linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
                    smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
@@ -264,7 +264,7 @@ Base.@pure Kvaerno3(;chunk_size=0,autodiff=true,diff_type=:central,
 
 struct KenCarp3{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
-  diff_type::Symbol
+  diff_type::DataType
   κ::K
   tol::T
   smooth_est::Bool
@@ -273,7 +273,7 @@ struct KenCarp3{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgori
   max_newton_iter::Int
   new_jac_conv_bound::T2
 end
-Base.@pure KenCarp3(;chunk_size=0,autodiff=true,diff_type=:central,
+Base.@pure KenCarp3(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                    linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
                    smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
@@ -286,7 +286,7 @@ Base.@pure KenCarp3(;chunk_size=0,autodiff=true,diff_type=:central,
 
 struct Cash4{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
-  diff_type::Symbol
+  diff_type::DataType
   κ::K
   tol::T
   smooth_est::Bool
@@ -296,7 +296,7 @@ struct Cash4{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm
   new_jac_conv_bound::T2
   embedding::Int
 end
-Base.@pure Cash4(;chunk_size=0,autodiff=true,diff_type=:central,
+Base.@pure Cash4(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                    linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
                    smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
@@ -308,7 +308,7 @@ Base.@pure Cash4(;chunk_size=0,autodiff=true,diff_type=:central,
 
 struct Hairer4{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
-  diff_type::Symbol
+  diff_type::DataType
   κ::K
   tol::T
   smooth_est::Bool
@@ -317,7 +317,7 @@ struct Hairer4{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorit
   max_newton_iter::Int
   new_jac_conv_bound::T2
 end
-Base.@pure Hairer4(;chunk_size=0,autodiff=true,diff_type=:central,
+Base.@pure Hairer4(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                    linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
                    smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
@@ -329,7 +329,7 @@ Base.@pure Hairer4(;chunk_size=0,autodiff=true,diff_type=:central,
 
 struct Hairer42{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
-  diff_type::Symbol
+  diff_type::DataType
   κ::K
   tol::T
   smooth_est::Bool
@@ -338,7 +338,7 @@ struct Hairer42{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgori
   max_newton_iter::Int
   new_jac_conv_bound::T2
 end
-Base.@pure Hairer42(;chunk_size=0,autodiff=true,diff_type=:central,
+Base.@pure Hairer42(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                    linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
                    smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
@@ -350,7 +350,7 @@ Base.@pure Hairer42(;chunk_size=0,autodiff=true,diff_type=:central,
 
 struct Kvaerno4{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
-  diff_type::Symbol
+  diff_type::DataType
   κ::K
   tol::T
   smooth_est::Bool
@@ -359,7 +359,7 @@ struct Kvaerno4{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgori
   max_newton_iter::Int
   new_jac_conv_bound::T2
 end
-Base.@pure Kvaerno4(;chunk_size=0,autodiff=true,diff_type=:central,
+Base.@pure Kvaerno4(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                    linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
                    smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
@@ -371,7 +371,7 @@ Base.@pure Kvaerno4(;chunk_size=0,autodiff=true,diff_type=:central,
 
 struct Kvaerno5{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
-  diff_type::Symbol
+  diff_type::DataType
   κ::K
   tol::T
   smooth_est::Bool
@@ -380,7 +380,7 @@ struct Kvaerno5{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgori
   max_newton_iter::Int
   new_jac_conv_bound::T2
 end
-Base.@pure Kvaerno5(;chunk_size=0,autodiff=true,diff_type=:central,
+Base.@pure Kvaerno5(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                    linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
                    smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
@@ -392,7 +392,7 @@ Base.@pure Kvaerno5(;chunk_size=0,autodiff=true,diff_type=:central,
 
 struct KenCarp4{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
-  diff_type::Symbol
+  diff_type::DataType
   κ::K
   tol::T
   smooth_est::Bool
@@ -401,7 +401,7 @@ struct KenCarp4{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgori
   max_newton_iter::Int
   new_jac_conv_bound::T2
 end
-Base.@pure KenCarp4(;chunk_size=0,autodiff=true,diff_type=:central,
+Base.@pure KenCarp4(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                    linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
                    smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
@@ -413,7 +413,7 @@ Base.@pure KenCarp4(;chunk_size=0,autodiff=true,diff_type=:central,
 
 struct KenCarp5{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
-  diff_type::Symbol
+  diff_type::DataType
   κ::K
   tol::T
   smooth_est::Bool
@@ -422,7 +422,7 @@ struct KenCarp5{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgori
   max_newton_iter::Int
   new_jac_conv_bound::T2
 end
-Base.@pure KenCarp5(;chunk_size=0,autodiff=true,diff_type=:central,
+Base.@pure KenCarp5(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                    linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
                    smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
@@ -438,87 +438,87 @@ Base.@pure KenCarp5(;chunk_size=0,autodiff=true,diff_type=:central,
 
 struct Rosenbrock23{CS,AD,F} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
   linsolve::F
-  diff_type::Symbol
+  diff_type::DataType
 end
-Base.@pure Rosenbrock23(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE) = Rosenbrock23{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
+Base.@pure Rosenbrock23(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = Rosenbrock23{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
 
 struct Rosenbrock32{CS,AD,F} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
   linsolve::F
-  diff_type::Symbol
+  diff_type::DataType
 end
-Base.@pure Rosenbrock32(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE) = Rosenbrock32{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
+Base.@pure Rosenbrock32(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = Rosenbrock32{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
 
 struct ROS3P{CS,AD,F} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
   linsolve::F
-  diff_type::Symbol
+  diff_type::DataType
 end
-Base.@pure ROS3P(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE) = ROS3P{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
+Base.@pure ROS3P(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = ROS3P{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
 
 struct Rodas3{CS,AD,F} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
   linsolve::F
-  diff_type::Symbol
+  diff_type::DataType
 end
-Base.@pure Rodas3(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE) = Rodas3{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
+Base.@pure Rodas3(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = Rodas3{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
 
 struct RosShamp4{CS,AD,F} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
   linsolve::F
-  diff_type::Symbol
+  diff_type::DataType
 end
-Base.@pure RosShamp4(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE) = RosShamp4{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
+Base.@pure RosShamp4(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = RosShamp4{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
 
 struct Veldd4{CS,AD,F} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
   linsolve::F
-  diff_type::Symbol
+  diff_type::DataType
 end
-Base.@pure Veldd4(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE) = Veldd4{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
+Base.@pure Veldd4(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = Veldd4{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
 
 struct Velds4{CS,AD,F} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
   linsolve::F
-  diff_type::Symbol
+  diff_type::DataType
 end
-Base.@pure Velds4(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE) = Velds4{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
+Base.@pure Velds4(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = Velds4{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
 
 struct GRK4T{CS,AD,F} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
   linsolve::F
-  diff_type::Symbol
+  diff_type::DataType
 end
-Base.@pure GRK4T(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE) = GRK4T{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
+Base.@pure GRK4T(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = GRK4T{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
 
 struct GRK4A{CS,AD,F} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
   linsolve::F
-  diff_type::Symbol
+  diff_type::DataType
 end
-Base.@pure GRK4A(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE) = GRK4A{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
+Base.@pure GRK4A(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = GRK4A{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
 
 struct Ros4LStab{CS,AD,F} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
   linsolve::F
-  diff_type::Symbol
+  diff_type::DataType
 end
-Base.@pure Ros4LStab(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE) = Ros4LStab{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
+Base.@pure Ros4LStab(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = Ros4LStab{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
 
 struct Rodas4{CS,AD,F} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
   linsolve::F
-  diff_type::Symbol
+  diff_type::DataType
 end
-Base.@pure Rodas4(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE) = Rodas4{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
+Base.@pure Rodas4(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = Rodas4{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
 
 struct Rodas42{CS,AD,F} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
   linsolve::F
-  diff_type::Symbol
+  diff_type::DataType
 end
-Base.@pure Rodas42(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE) = Rodas42{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
+Base.@pure Rodas42(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = Rodas42{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
 
 struct Rodas4P{CS,AD,F} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
   linsolve::F
-  diff_type::Symbol
+  diff_type::DataType
 end
-Base.@pure Rodas4P(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE) = Rodas4P{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
+Base.@pure Rodas4P(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = Rodas4P{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
 
 struct Rodas5{CS,AD,F} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
   linsolve::F
-  diff_type::Symbol
+  diff_type::DataType
 end
-Base.@pure Rodas5(;chunk_size=0,autodiff=true,diff_type=:central,linsolve=DEFAULT_LINSOLVE) = Rodas5{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
+Base.@pure Rodas5(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = Rodas5{chunk_size,autodiff,typeof(linsolve)}(linsolve,diff_type)
 
 struct GeneralRosenbrock{CS,AD,F,TabType} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
   tableau::TabType
