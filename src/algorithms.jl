@@ -233,7 +233,7 @@ struct SSPSDIRK2{CS,AD,F,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAlgorithm{CS,
 end
 Base.@pure SSPSDIRK2(;chunk_size=0,autodiff=true,diff_type=:central,
                    linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
-                   smooth_est=true,extrapolant=:linear,min_newton_iter=1,
+                   smooth_est=true,extrapolant=:constant,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
                    controller = :Predictive) =
  SSPSDIRK2{chunk_size,autodiff,typeof(linsolve),
