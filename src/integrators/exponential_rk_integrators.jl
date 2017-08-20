@@ -87,12 +87,12 @@ end
 
 function perform_step!(integrator, cache::NorsettEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
-  @unpack k,rtmp,tmp,expA = cache
+  @unpack k,rtmp,tmp,expA,phi1 = cache
   A = f.f1
-  M = ((expA-I)/A)
+
   A_mul_B!(tmp,A,uprev)
   tmp .+= rtmp
-  A_mul_B!(rtmp,M,tmp)
+  A_mul_B!(rtmp,phi1,tmp)
   @. u = uprev + rtmp
   A_mul_B!(tmp,A,u)
   f.f2(t+dt,u,rtmp)

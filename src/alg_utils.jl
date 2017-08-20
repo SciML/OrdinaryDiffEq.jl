@@ -37,8 +37,8 @@ isfsal(alg::SSPRK33) = true
 isfsal(alg::SSPRK432) = true
 isfsal(alg::SSPRK104) = true
 isfsal(alg::RK4) = true
-isfsal(alg::IIF1) = true
-isfsal(alg::IIF2) = true
+isfsal(alg::GenericIIF1) = true
+isfsal(alg::GenericIIF2) = true
 isfsal(alg::Feagin10) = true
 isfsal(alg::Feagin12) = true
 isfsal(alg::Feagin14) = true
@@ -118,12 +118,14 @@ isimplicit(alg::KenCarp5) = true
 isimplicit(alg::Cash4) = true
 isimplicit(alg::Hairer4) = true
 isimplicit(alg::Hairer42) = true
-isimplicit(alg::IIF1) = true
-isimplicit(alg::IIF2) = true
+isimplicit(alg::GenericIIF1) = true
+isimplicit(alg::GenericIIF2) = true
 
 isdtchangeable(alg::OrdinaryDiffEqAlgorithm) = true
-isdtchangeable(alg::IIF1) = false
-isdtchangeable(alg::IIF2) = false
+isdtchangeable(alg::GenericIIF1) = false
+isdtchangeable(alg::GenericIIF2) = false
+isdtchangeable(alg::LawsonEuler) = false
+isdtchangeable(alg::NorsettEuler) = false
 
 ismultistep(alg::OrdinaryDiffEqAlgorithm) = false
 
@@ -260,8 +262,8 @@ alg_order(alg::DPRKN8) = 8
 alg_order(alg::DPRKN12) = 12
 
 alg_order(alg::Midpoint) = 2
-alg_order(alg::IIF1) = 1
-alg_order(alg::IIF2) = 2
+alg_order(alg::GenericIIF1) = 1
+alg_order(alg::GenericIIF2) = 2
 alg_order(alg::SSPRK22) = 2
 alg_order(alg::SSPRK33) = 3
 alg_order(alg::SSPRK432) = 3

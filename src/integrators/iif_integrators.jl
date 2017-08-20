@@ -10,7 +10,7 @@ function (p::RHS_IIF_Scalar)(u,resid)
   resid[1] = first(u) - p.tmp - p.a*p.dt*first(p.f.f2(p.t+p.dt,first(u)))
 end
 
-function initialize!(integrator,cache::Union{IIF1ConstantCache,IIF2ConstantCache})
+function initialize!(integrator,cache::Union{GenericIIF1ConstantCache,GenericIIF2ConstantCache})
   integrator.kshortsize = 2
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
   A = integrator.f.f1
@@ -23,15 +23,15 @@ function initialize!(integrator,cache::Union{IIF1ConstantCache,IIF2ConstantCache
   integrator.k[2] = integrator.fsalfirst
 end
 
-function perform_step!(integrator,cache::Union{IIF1ConstantCache,IIF2ConstantCache},repeat_step=false)
+function perform_step!(integrator,cache::Union{GenericIIF1ConstantCache,GenericIIF2ConstantCache},repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
   @unpack uhold,rhs,nl_rhs = cache
 
   # If adaptive, this should be computed after and cached
   A = integrator.f.f1
-  if typeof(cache) <: IIF1ConstantCache
+  if typeof(cache) <: GenericIIF1ConstantCache
     tmp = expm(A*dt)*(uprev)
-  elseif typeof(cache) <: IIF2ConstantCache
+  elseif typeof(cache) <: GenericIIF2ConstantCache
     @muladd tmp = expm(A*dt)*(@. uprev + 0.5dt*uhold[1]) # This uhold only works for non-adaptive
   end
 
@@ -65,7 +65,7 @@ function (p::RHS_IIF)(u,resid)
   @. resid = u - p.tmp - p.a*p.dt*du
 end
 
-function initialize!(integrator,cache::Union{IIF1Cache,IIF2Cache})
+function initialize!(integrator,cache::Union{GenericIIF1Cache,GenericIIF2Cache})
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.kshortsize = 2
@@ -78,13 +78,13 @@ function initialize!(integrator,cache::Union{IIF1Cache,IIF2Cache})
   integrator.k[2] = integrator.fsallast
 end
 
-function perform_step!(integrator,cache::Union{IIF1Cache,IIF2Cache},repeat_step=false)
+function perform_step!(integrator,cache::Union{GenericIIF1Cache,GenericIIF2Cache},repeat_step=false)
   @unpack rtmp1,tmp,k = cache
   @unpack uhold,rhs,nl_rhs = cache
   @unpack t,dt,uprev,u,f = integrator
 
   @. k = uprev
-  if typeof(cache) <: IIF2Cache
+  if typeof(cache) <: GenericIIF2Cache
     @muladd @. k = k + 0.5dt*rtmp1
   end
 

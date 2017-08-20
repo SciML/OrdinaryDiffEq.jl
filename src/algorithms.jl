@@ -531,15 +531,15 @@ Base.@pure GeneralRosenbrock(;chunk_size=0,autodiff=true,
 
 ######################################
 
-struct IIF1{F} <: OrdinaryDiffEqAlgorithm
+struct GenericIIF1{F} <: OrdinaryDiffEqAlgorithm
   nlsolve::F
 end
-Base.@pure IIF1(;nlsolve=NLSOLVEJL_SETUP()) = IIF1{typeof(nlsolve)}(nlsolve)
+Base.@pure GenericIIF1(;nlsolve=NLSOLVEJL_SETUP()) = GenericIIF1{typeof(nlsolve)}(nlsolve)
 
-struct IIF2{F} <: OrdinaryDiffEqAlgorithm
+struct GenericIIF2{F} <: OrdinaryDiffEqAlgorithm
   nlsolve::F
 end
-Base.@pure IIF2(;nlsolve=NLSOLVEJL_SETUP()) = IIF2{typeof(nlsolve)}(nlsolve)
+Base.@pure GenericIIF2(;nlsolve=NLSOLVEJL_SETUP()) = GenericIIF2{typeof(nlsolve)}(nlsolve)
 
 struct LawsonEuler <: OrdinaryDiffEqAlgorithm end
 struct NorsettEuler <: OrdinaryDiffEqAlgorithm end
