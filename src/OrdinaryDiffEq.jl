@@ -18,7 +18,7 @@ module OrdinaryDiffEq
   import RecursiveArrayTools: chain
 
   using Parameters, GenericSVD, ForwardDiff, RecursiveArrayTools,
-        NLsolve, Juno, Calculus, Roots, DataStructures
+        NLsolve, Juno, Roots, DataStructures, DiffEqDiffTools
 
   import Base: linspace
 
