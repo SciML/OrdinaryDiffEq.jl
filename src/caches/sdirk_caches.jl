@@ -148,7 +148,7 @@ function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
   vfr = VectorFReturn(f,size(u))
-  uf = UJacobianWrapper(vfr,t)
+  uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
   if alg_autodiff(alg)
     jac_config = ForwardDiff.JacobianConfig(uf,vec(du1),vec(uprev),
                     ForwardDiff.Chunk{determine_chunksize(u,alg)}())
