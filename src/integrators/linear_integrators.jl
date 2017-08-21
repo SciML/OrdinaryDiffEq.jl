@@ -118,14 +118,6 @@ function initialize!(integrator,cache::MidpointSplittingCache,f=integrator.f)
   f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
-macro swap!(x,y)
-  quote
-    local tmp = $(esc(x))
-    $(esc(x)) = $(esc(y))
-    $(esc(y)) = tmp
-  end
-end
-
 function perform_step!(integrator,cache::MidpointSplittingCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
   @unpack W,k,tmp = cache
