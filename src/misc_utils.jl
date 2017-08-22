@@ -102,3 +102,11 @@ end
     calculate_residuals!(out, ũ, u₀, u₁, α, ρ)
     out
 end
+
+macro swap!(x,y)
+  quote
+    local tmp = $(esc(x))
+    $(esc(x)) = $(esc(y))
+    $(esc(y)) = tmp
+  end
+end

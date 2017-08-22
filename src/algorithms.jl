@@ -113,7 +113,7 @@ struct LinearImplicitEuler{F} <: OrdinaryDiffEqAdaptiveAlgorithm
 end
 Base.@pure LinearImplicitEuler(;linsolve=DEFAULT_LINSOLVE) = LinearImplicitEuler{typeof(linsolve)}(linsolve)
 
-struct StrangSplitting <: OrdinaryDiffEqAlgorithm end
+struct MidpointSplitting <: OrdinaryDiffEqAlgorithm end
 
 ################################################################################
 

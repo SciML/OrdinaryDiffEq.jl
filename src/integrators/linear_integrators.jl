@@ -107,7 +107,7 @@ function perform_step!(integrator,cache::LinearImplicitEulerCache,f=integrator.f
   @pack integrator = t,dt,u
 end
 
-function initialize!(integrator,cache::StrangSplittingCache,f=integrator.f)
+function initialize!(integrator,cache::MidpointSplittingCache,f=integrator.f)
   integrator.kshortsize = 2
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
@@ -118,20 +118,29 @@ function initialize!(integrator,cache::StrangSplittingCache,f=integrator.f)
   f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
-function perform_step!(integrator,cache::StrangSplittingCache,f=integrator.f)
+function perform_step!(integrator,cache::MidpointSplittingCache,f=integrator.f)
   @unpack t,dt,uprev,u = integrator
-  @unpack W,k = cache
+  @unpack W,k,tmp = cache
   mass_matrix = integrator.sol.prob.mass_matrix
 
   L = integrator.f
-  update_coefficients!(L,t+dt,u)
+  update_coefficients!(L,t+dt/2,u)
 
+  A = L.As[1]
+  Bs = L.As[2:end]
 
-  # Of the form u' = (A(t) + B(t))*u
+  copy!(tmp, uprev)
+  for B in reverse(Bs)
+    u .= expm((dt/2)*B)*tmp
+    @swap!(tmp,u)
+  end
 
-  A,B = L.As
+  u .= expm(dt*A)*tmp
 
-  u .= expm((dt/2)*B.A)*expm(dt*A.A)*expm((dt/2)*B.A)*uprev
+  for B in Bs
+    tmp .= expm((dt/2)*B)*u
+    @swap!(u,tmp)
+  end
 
   f(t+dt,u,integrator.fsallast)
   @pack integrator = t,dt,u
