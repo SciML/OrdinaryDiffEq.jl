@@ -131,17 +131,29 @@ function perform_step!(integrator,cache::MidpointSplittingCache,f=integrator.f)
 
   copy!(tmp, uprev)
   for B in reverse(Bs)
-    u .= expm((dt/2)*B)*tmp
+    propagate!(u, B, dt/2, tmp)
     @swap!(tmp,u)
   end
 
-  u .= expm(dt*A)*tmp
+  propagate!(u, A, dt, tmp)
 
   for B in Bs
-    tmp .= expm((dt/2)*B)*u
+    propagate!(tmp, B, dt/2, u)
     @swap!(u,tmp)
   end
 
   f(t+dt,u,integrator.fsallast)
   @pack integrator = t,dt,u
+end
+
+function propagate!(v, L, t, u)
+  if has_expmv!(L)
+    expmv!(v, L, t, u)
+  elseif has_expmv(L)
+    v .= expmv(L, t, u)
+  elseif has_expm(L)
+    v .= expm(L, t)*u
+  else
+    error("No way to propagate an operator of type $(typeof(L)) (did you provide an exponentiation algorithm?)")
+  end
 end
