@@ -82,6 +82,7 @@ struct IRKN4Cache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
   k₃::rateType
   k::rateType
   tmp::uType
+  tmp2::uType
   onestep_cache::Nystrom4VelocityIndependentCache
   tab::TabType
 end
@@ -95,8 +96,9 @@ function alg_cache(alg::IRKN4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev
   k₃ = zeros(rate_prototype)
   k  = zeros(rate_prototype)
   tmp = similar(u)
+  tmp2 = similar(u)
   tab = IRKN4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
-  IRKN4Cache(u,uprev,uprev2,k₁,k₂,k₃,k,tmp,Nystrom4VelocityIndependentCache(u,uprev,k₁,k₂,k₃,k,tmp),tab)
+  IRKN4Cache(u,uprev,uprev2,k₁,k₂,k₃,k,tmp,tmp2,Nystrom4VelocityIndependentCache(u,uprev,k₁,k₂,k₃,k,tmp),tab)
 end
 
 struct Nystrom5VelocityIndependentCache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
