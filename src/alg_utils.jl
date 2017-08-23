@@ -94,6 +94,7 @@ isfsal(alg::Nystrom5VelocityIndependent) = true
 isfsal(alg::DPRKN6) = true
 isfsal(alg::DPRKN8) = true
 isfsal(alg::DPRKN12) = true
+isfsal(alg::ERKN4) = true
 
 fsal_typeof(alg::OrdinaryDiffEqAlgorithm,rate_prototype) = typeof(rate_prototype)
 #fsal_typeof(alg::LawsonEuler,rate_prototype) = Vector{typeof(rate_prototype)}
@@ -260,6 +261,7 @@ alg_order(alg::Nystrom5VelocityIndependent) = 5
 alg_order(alg::DPRKN6) = 6
 alg_order(alg::DPRKN8) = 8
 alg_order(alg::DPRKN12) = 12
+alg_order(alg::ERKN4) = 4
 
 alg_order(alg::Midpoint) = 2
 alg_order(alg::GenericIIF1) = 1
