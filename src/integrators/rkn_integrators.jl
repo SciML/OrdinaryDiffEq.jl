@@ -100,7 +100,7 @@ end
   # if there's a discontinuity or the solver is in the first step
   if integrator.iter < 2 && !integrator.u_modified
     perform_step!(integrator,integrator.cache.onestep_cache)
-    f.f2(t+c1*dt,u,du,k1cache.x[1])
+    copy!(k1cache.x[1], k.x[2])
     f.f2(t+c1*dt,uprev,duprev,k1cache.x[2])
     @. kdu= uprev + dt*(c1*duprev + dt*a21*k1cache.x[2])
     f.f2(t+c1*dt,kdu,duprev,k₂.x[2])
@@ -135,7 +135,7 @@ end
   # if there's a discontinuity or the solver is in the first step
   if integrator.iter < 2 && !integrator.u_modified
     perform_step!(integrator,integrator.cache.onestep_cache)
-    f.f2(t+c1*dt,u,du,k1cache.x[1])
+    copy!(k1cache.x[1], k.x[2])
     f.f2(t+c1*dt,uprev,duprev,k1cache.x[2])
     @. kdu= uprev + dt*(c1*duprev + dt*a21*k1cache.x[2])
     f.f2(t+c1*dt,kdu,duprev,k₂.x[2])
