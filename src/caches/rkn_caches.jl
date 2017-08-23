@@ -254,3 +254,33 @@ function alg_cache(alg::DPRKN12,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upr
   tmp = similar(u)
   DPRKN12Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,k17,k,utilde,tmp,atmp,tab)
 end
+
+struct ERKN4Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  fsalfirst::rateType
+  k2::rateType
+  k3::rateType
+  k4::rateType
+  k::rateType
+  utilde::uArrayType
+  tmp::uType
+  atmp::uEltypeNoUnits
+  tab::TabType
+end
+
+u_cache(c::ERKN4Cache) = (c.atmp,c.utilde)
+du_cache(c::ERKN4Cache) = (c.fsalfirst,c.k2,c.k3,c.k4,c.k)
+
+function alg_cache(alg::ERKN4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
+  tab = ERKN4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
+  k1 = zeros(rate_prototype)
+  k2 = zeros(rate_prototype)
+  k3 = zeros(rate_prototype)
+  k4 = zeros(rate_prototype)
+  k  = zeros(rate_prototype)
+  utilde = similar(u,indices(u))
+  atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u)
+  ERKN4Cache(u,uprev,k1,k2,k3,k4,k,utilde,tmp,atmp,tab)
+end
