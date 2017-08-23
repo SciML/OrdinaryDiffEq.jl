@@ -8,8 +8,8 @@ const NystromDefaultInitialization = Union{Nystrom4Cache,
                                            Nystrom4VelocityIndependentCache,
                                            Nystrom5VelocityIndependentCache,
                                            IRKN3Cache, IRKN4Cache,
-                                           DPRKN6Cache, DPRKN8Cache,
-                                           DPRKN12Cache}
+                                           DPRKN8Cache, DPRKN12Cache,
+                                           ERKN4Cache}
 
 function initialize!(integrator,cache::NystromDefaultInitialization)
   @unpack fsalfirst,k = cache
@@ -449,6 +449,44 @@ end
     @tight_loop_macros for i in uidx
       @inbounds uhat[i]  = dtsq*(btilde1*k1.x[2][i] + btilde7*k7.x[2][i] + btilde8*k8.x[2][i] + btilde9*k9.x[2][i] + btilde10*k10.x[2][i] + btilde11*k11.x[2][i] + btilde12*k12.x[2][i] + btilde13*k13.x[2][i] + btilde14*k14.x[2][i] + btilde15*k15.x[2][i]) # btilde1 & btilde7 -- btilde15
       @inbounds duhat[i] = dt*(bptilde1*k1.x[2][i] + bptilde7*k7.x[2][i] + bptilde8*k8.x[2][i] + bptilde9*k9.x[2][i] + bptilde10*k10.x[2][i] + bptilde11*k11.x[2][i] + bptilde12*k12.x[2][i] + bptilde13*k13.x[2][i] + bptilde14*k14.x[2][i] + bptilde15*k15.x[2][i] + bptilde16*k16.x[2][i] + bptilde17*k17.x[2][i]) # bptilde1 & bptilde7 -- bptilde17
+    end
+    calculate_residuals!(atmp, utilde, integrator.uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol)
+    integrator.EEst = integrator.opts.internalnorm(atmp)
+  end
+end
+
+@muladd function perform_step!(integrator,cache::ERKN4Cache,repeat_step=false)
+  @unpack t,dt,f = integrator
+  u,du = integrator.u.x
+  uprev,duprev = integrator.uprev.x
+  @unpack tmp,atmp,fsalfirst,k2,k3,k4,k,utilde = cache
+  @unpack c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3, b4, bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4, bptilde1, bptilde2, bptilde3, bptilde4 = cache.tab
+  ku, kdu = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
+  uidx = eachindex(integrator.uprev.x[2])
+  k1 = fsalfirst
+
+  @. ku = uprev + dt*(c1*duprev + dt*a21*k1.x[2])
+
+  f.f2(t+dt*c1,ku,du,k2.x[2])
+  @. ku = uprev + dt*(c2*duprev + dt*(a31*k1.x[2] + a32*k2.x[2]))
+
+  f.f2(t+dt*c2,ku,du,k3.x[2])
+  @. ku = uprev + dt*(c3*duprev + dt*(a41*k1.x[2] + a42*k2.x[2] + a43*k3.x[2]))
+
+  f.f2(t+dt*c3,ku,du,k4.x[2])
+  @tight_loop_macros for i in uidx
+    @inbounds u[i]  = uprev[i] + dt*(duprev[i] + dt*(b1 *k1.x[2][i] + b2 *k2.x[2][i] + b3 *k3.x[2][i] + b4 *k4.x[2][i]))
+    @inbounds du[i] = duprev[i]                + dt*(bp1*k1.x[2][i] + bp2*k2.x[2][i] + bp3*k3.x[2][i] + bp4*k4.x[2][i])
+  end
+
+  f.f1(t+dt,u,du,k.x[1])
+  f.f2(t+dt,u,du,k.x[2])
+  if integrator.opts.adaptive
+    uhat, duhat = utilde.x
+    dtsq = dt^2
+    @tight_loop_macros for i in uidx
+      @inbounds uhat[i]  = dtsq*(btilde1*k1.x[2][i] + btilde2*k2.x[2][i] + btilde3*k3.x[2][i] + btilde4*k4.x[2][i])
+      @inbounds duhat[i] = dt*(bptilde1*k1.x[2][i] + bptilde2*k2.x[2][i] + bptilde3*k3.x[2][i] + bptilde4*k4.x[2][i])
     end
     calculate_residuals!(atmp, utilde, integrator.uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol)
     integrator.EEst = integrator.opts.internalnorm(atmp)
