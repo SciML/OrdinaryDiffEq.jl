@@ -118,9 +118,6 @@ sim = test_convergence(dts,prob,IRKN3(),dense_errors=true)
 sim = test_convergence(dts,prob,IRKN4(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
-sim = test_convergence(dts,prob,ERKN4(),dense_errors=true)
-@test_broken sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
-@test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
 dts = 1.0./2.0.^(5:-1:0)
 sim = test_convergence(dts,prob,Nystrom5VelocityIndependent(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 5 rtol = 1e-1
@@ -143,6 +140,9 @@ sim = test_convergence(dts,prob_big,DPRKN8(),dense_errors=true)
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
 sim = test_convergence(dts,prob_big,DPRKN12(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 12 rtol = 1e-1
+@test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
+sim = test_convergence(dts,prob_big,ERKN4(),dense_errors=true)
+@test sim.𝒪est[:l2] ≈ 5 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
 
 # Adaptive methods regression test
