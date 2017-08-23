@@ -105,10 +105,8 @@ end
     f.f2(t+c1*dt,kdu,duprev,k₂.x[2])
   else
     f.f2(t+c1*dt,    uprev, duprev, k1cache.x[1])
-    @tight_loop_macros for i in uidx
-      @inbounds ku[i]  = uprev[i]  + dt*(c1*duprev[i]  + dt*a21*k1cache.x[1][i])
-      @inbounds kdu[i] = uprev2[i] + dt*(c1*duprev2[i] + dt*a21*k1cache.x[2][i])
-    end
+    @. ku  = uprev  + dt*(c1*duprev  + dt*a21*k1cache.x[1])
+    @. kdu = uprev2 + dt*(c1*duprev2 + dt*a21*k1cache.x[2])
 
     f.f2(t+c1*dt,    ku, duprev, k₂.x[1])
     @tight_loop_macros for i in uidx
@@ -143,16 +141,12 @@ end
     f.f2(t+c1*dt,kdu,duprev,k₃.x[2])
   else
     f.f2(t+c1*dt,    uprev, duprev, k1cache.x[1])
-    @tight_loop_macros for i in uidx
-      @inbounds ku[i]  = uprev[i]  + dt*(c1*duprev[i]  + dt*a21*k1cache.x[1][i])
-      @inbounds kdu[i]  = uprev2[i]  + dt*(c1*duprev2[i]  + dt*a21*k1cache.x[2][i])
-    end
+    @. ku  = uprev  + dt*(c1*duprev  + dt*a21*k1cache.x[1])
+    @. kdu = uprev2+ dt*(c1*duprev2 + dt*a21*k1cache.x[2])
 
     f.f2(t+c1*dt,    ku, duprev, k₂.x[1])
-    @tight_loop_macros for i in uidx
-      @inbounds ku[i]  = uprev[i]  + dt*(c2*duprev[i]  + dt*a32*k₂.x[1][i])
-      @inbounds kdu[i]  = uprev2[i]  + dt*(c2*duprev2[i]  + dt*a32*k₂.x[2][i])
-    end
+    @. ku  = uprev  + dt*(c2*duprev  + dt*a32*k₂.x[1])
+    @. kdu = uprev2 + dt*(c2*duprev2 + dt*a32*k₂.x[2])
 
     f.f2(t+c2*dt,    ku, duprev, k₃.x[1])
     @tight_loop_macros for i in uidx
