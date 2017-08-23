@@ -142,7 +142,6 @@ end
     @. kdu= uprev + dt*(c2*duprev + dt*a32*k1cache.x[2])
     f.f2(t+c1*dt,kdu,duprev,k₃.x[2])
   else
-    f.f2(t+c1*dt,    uprev, duprev, k1cache.x[1])
     @. ku  = uprev  + dt*(c1*duprev  + dt*a21*k1cache.x[1])
     @. kdu = uprev2+ dt*(c1*duprev2 + dt*a21*k1cache.x[2])
 
