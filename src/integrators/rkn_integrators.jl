@@ -100,23 +100,24 @@ end
   # if there's a discontinuity or the solver is in the first step
   if integrator.iter < 2 && !integrator.u_modified
     perform_step!(integrator,integrator.cache.onestep_cache)
+    f.f2(t+c1*dt,u,du,k1cache.x[1])
     f.f2(t+c1*dt,uprev,duprev,k1cache.x[2])
     @. kdu= uprev + dt*(c1*duprev + dt*a21*k1cache.x[2])
     f.f2(t+c1*dt,kdu,duprev,k₂.x[2])
   else
-    f.f2(t+c1*dt,    uprev, duprev, k1cache.x[1])
     @. ku  = uprev  + dt*(c1*duprev  + dt*a21*k1cache.x[1])
     @. kdu = uprev2 + dt*(c1*duprev2 + dt*a21*k1cache.x[2])
 
-    f.f2(t+c1*dt,    ku, duprev, k₂.x[1])
+    f.f2(t+c1*dt, ku, duprev, k₂.x[1])
     @tight_loop_macros for i in uidx
       @inbounds u[i]  = uprev[i] + bconst1*dt*duprev[i] + dt*(bconst2*duprev2[i] + dt*bbar2*(k₂.x[1][i]-k₂.x[2][i]))
       @inbounds du[i] = duprev[i] + dt*(b1*k1cache.x[1][i] + bbar1*k1cache.x[2][i] + b2*(k₂.x[1][i]-k₂.x[2][i]))
     end
     f.f1(t+dt,u,du,k.x[1])
     f.f2(t+dt,u,du,k.x[2])
-    copy!(k1cache.x[2],k1cache.x[1])
     copy!(k₂.x[2],k₂.x[1])
+    copy!(k1cache.x[2],k1cache.x[1])
+    copy!(k1cache.x[1],k.x[2])
   end # end if
 end
 
@@ -134,6 +135,7 @@ end
   # if there's a discontinuity or the solver is in the first step
   if integrator.iter < 2 && !integrator.u_modified
     perform_step!(integrator,integrator.cache.onestep_cache)
+    f.f2(t+c1*dt,u,du,k1cache.x[1])
     f.f2(t+c1*dt,uprev,duprev,k1cache.x[2])
     @. kdu= uprev + dt*(c1*duprev + dt*a21*k1cache.x[2])
     f.f2(t+c1*dt,kdu,duprev,k₂.x[2])
@@ -155,9 +157,10 @@ end
     end
     f.f1(t+dt,u,du,k.x[1])
     f.f2(t+dt,u,du,k.x[2])
-    copy!(k1cache.x[2],k1cache.x[1])
     copy!(k₂.x[2],k₂.x[1])
     copy!(k₃.x[2],k₃.x[1])
+    copy!(k1cache.x[2],k1cache.x[1])
+    copy!(k1cache.x[1],k.x[2])
   end # end if
 end
 
