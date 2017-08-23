@@ -87,35 +87,38 @@ end
 end
 
 @muladd function perform_step!(integrator,cache::IRKN3Cache,repeat_step=false)
+  @unpack t,dt,k,tprev,f = integrator
+  u,du = integrator.u.x
+  uprev, duprev  = integrator.uprev.x
+  uprev2,duprev2 = integrator.uprev2.x
+  uidx = eachindex(integrator.uprev.x[1])
+  @unpack tmp,fsalfirst,k₂,k = cache
+  @unpack bconst1,bconst2,c1,a21,b1,b2,bbar1,bbar2 = cache.tab
+  ku, kdu = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
+  k1cache = integrator.cache.tmp2
+  k₁ = fsalfirst
   # if there's a discontinuity or the solver is in the first step
   if integrator.iter < 2 && !integrator.u_modified
     perform_step!(integrator,integrator.cache.onestep_cache)
+    f.f2(t+c1*dt,uprev,duprev,k1cache.x[2])
+    @. kdu= uprev + dt*(c1*duprev + dt*a21*k1cache.x[2])
+    f.f2(t+c1*dt,kdu,duprev,k₂.x[2])
   else
-    @unpack t,dt,k,tprev,f = integrator
-    u,du = integrator.u.x
-    uprev, duprev  = integrator.uprev.x
-    uprev2,duprev2 = integrator.uprev2.x
-    uidx = eachindex(integrator.uprev.x[1])
-    @unpack tmp,fsalfirst,k₂,k = cache
-    @unpack bconst1,bconst2,c1,a21,b1,b2,bbar1,bbar2 = cache.tab
-    ku, kdu = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
-    k₁ = fsalfirst
-
-    f.f2(t+c1*dt,    uprev, duprev, k.x[1])
-    f.f2(tprev+c1*dt,uprev2,duprev2,k.x[2])
+    f.f2(t+c1*dt,    uprev, duprev, k1cache.x[1])
     @tight_loop_macros for i in uidx
-      @inbounds ku[i]  = uprev[i]  + dt*(c1*duprev[i]  + dt*a21*k.x[1][i])
-      @inbounds kdu[i] = uprev2[i] + dt*(c1*duprev2[i] + dt*a21*k.x[2][i])
+      @inbounds ku[i]  = uprev[i]  + dt*(c1*duprev[i]  + dt*a21*k1cache.x[1][i])
+      @inbounds kdu[i] = uprev2[i] + dt*(c1*duprev2[i] + dt*a21*k1cache.x[2][i])
     end
 
     f.f2(t+c1*dt,    ku, duprev, k₂.x[1])
-    f.f2(tprev+c1*dt,kdu,duprev2,k₂.x[2])
     @tight_loop_macros for i in uidx
       @inbounds u[i]  = uprev[i] + bconst1*dt*duprev[i] + dt*(bconst2*duprev2[i] + dt*bbar2*(k₂.x[1][i]-k₂.x[2][i]))
-      @inbounds du[i] = duprev[i] + dt*(b1*k.x[1][i] + bbar1*k.x[2][i] + b2*(k₂.x[1][i]-k₂.x[2][i]))
+      @inbounds du[i] = duprev[i] + dt*(b1*k1cache.x[1][i] + bbar1*k1cache.x[2][i] + b2*(k₂.x[1][i]-k₂.x[2][i]))
     end
     f.f1(t+dt,u,du,k.x[1])
     f.f2(t+dt,u,du,k.x[2])
+    copy!(k1cache.x[2],k1cache.x[1])
+    copy!(k₂.x[2],k₂.x[1])
   end # end if
 end
 
@@ -136,6 +139,8 @@ end
     f.f2(t+c1*dt,uprev,duprev,k1cache.x[2])
     @. kdu= uprev + dt*(c1*duprev + dt*a21*k1cache.x[2])
     f.f2(t+c1*dt,kdu,duprev,k₂.x[2])
+    @. kdu= uprev + dt*(c2*duprev + dt*a32*k1cache.x[2])
+    f.f2(t+c1*dt,kdu,duprev,k₃.x[2])
   else
     f.f2(t+c1*dt,    uprev, duprev, k1cache.x[1])
     @tight_loop_macros for i in uidx
@@ -150,7 +155,6 @@ end
     end
 
     f.f2(t+c2*dt,    ku, duprev, k₃.x[1])
-    f.f2(tprev+c2*dt,kdu,duprev2,k₃.x[2])
     @tight_loop_macros for i in uidx
       @inbounds u[i]  = uprev[i] + dt*bconst1*duprev[i] + dt*(bconst2*duprev2[i] + dt*(bbar2*(k₂.x[1][i]-k₂.x[2][i]) + bbar3*(k₃.x[1][i]-k₃.x[2][i])))
       @inbounds du[i] = duprev[i] + dt*(b1*k1cache.x[1][i] + bbar1*k1cache.x[2][i] + b2*(k₂.x[1][i]-k₂.x[2][i]) + b3*(k₃.x[1][i]-k₃.x[2][i]))
