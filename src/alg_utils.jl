@@ -424,3 +424,24 @@ qsteady_max_default(alg::Hairer42) = 6//5
 
 discrete_apply_map{apply_map,scale_by_time}(alg::Discrete{apply_map,scale_by_time}) = apply_map
 discrete_scale_by_time{apply_map,scale_by_time}(alg::Discrete{apply_map,scale_by_time}) = scale_by_time
+
+# SSP coefficients
+"""
+    ssp_coefficient(alg)
+
+Return the SSP coefficient of the ODE algorithm `alg`. If one time step of size
+`dt` with `alg` can be written as a convex combination of explicit Euler steps
+with step sizes `cᵢ * dt`, the SSP coefficient is the minimal value of `1/cᵢ`.
+
+# Examples
+```julia-repl
+julia> ssp_coefficient(SSPRK104())
+6
+```
+"""
+ssp_coefficient(alg) = error("$alg is not a strong stability preserving method.")
+ssp_coefficient(alg::Euler) = 1
+ssp_coefficient(alg::SSPRK22) = 1
+ssp_coefficient(alg::SSPRK33) = 1
+ssp_coefficient(alg::SSPRK432) = 2
+ssp_coefficient(alg::SSPRK104) = 6
