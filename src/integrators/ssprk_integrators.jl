@@ -74,12 +74,16 @@ end
 
 @muladd function perform_step!(integrator,cache::SSPRK33Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
-  @unpack k,tmp,fsalfirst = cache
+  @unpack k,tmp,fsalfirst,stage_limiter!,step_limiter! = cache
   @. tmp = uprev + dt*fsalfirst
+  stage_limiter!(tmp, f, t+dt)
   f(t+dt,tmp,k)
   @. tmp = (3*uprev + tmp + dt*k) / 4
+  stage_limiter!(tmp, f, t+dt/2)
   f(t+dt/2,tmp,k)
   @. u = (uprev + 2*tmp + 2*dt*k) / 3
+  stage_limiter!(u, f, t+dt)
+  step_limiter!(u, f, t+dt)
   f(t+dt,u,k)
 end
 
@@ -126,17 +130,20 @@ end
 
 @muladd function perform_step!(integrator,cache::SSPRK432Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
-  @unpack k,tmp,fsalfirst,utilde,atmp = cache
+  @unpack k,tmp,fsalfirst,utilde,atmp,stage_limiter!,step_limiter! = cache
   dt_2 = dt / 2
 
    # u1
   @. tmp = uprev + dt_2*fsalfirst
+  stage_limiter!(tmp, f, t+dt_2)
   f(t+dt_2, tmp, k)
   # u2
   @. tmp = tmp + dt_2*k
+  stage_limiter!(tmp, f, t+dt)
   f(t+dt, tmp, k)
   #
   @. tmp = tmp + dt_2*k
+  stage_limiter!(tmp, f, t+dt+dt_2)
   if integrator.opts.adaptive
     @. utilde = (uprev + 2*tmp) / 3
   end
@@ -145,6 +152,8 @@ end
   f(t+dt_2, tmp, k)
   #
   @. u = tmp + dt_2*k
+  stage_limiter!(u, f, t+dt)
+  step_limiter!(u, f, t+dt)
 
   if integrator.opts.adaptive
     @. atmp = (utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
@@ -210,29 +219,40 @@ end
 
 @muladd function perform_step!(integrator,cache::SSPRK104Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
-  @unpack k,k₄,tmp,fsalfirst = cache
+  @unpack k,k₄,tmp,fsalfirst,stage_limiter!,step_limiter! = cache
   dt_6 = dt/6
   dt_3 = dt/3
   dt_2 = dt/2
 
   @. tmp = uprev + dt_6 * integrator.fsalfirst
+  stage_limiter!(tmp, f, t+dt_6)
   f(t+dt_6, tmp, k)
   @. tmp = tmp + dt_6 * k
+  stage_limiter!(tmp, f, t+dt_3)
   f(t+dt_3, tmp, k)
   @. tmp = tmp + dt_6 * k
+  stage_limiter!(tmp, f, t+dt_2)
   f(t+dt_2, tmp, k)
   @. u = tmp + dt_6 * k
+  stage_limiter!(u, f, t+2*dt_3)
   f(t+2*dt_3, u, k₄)
   @. tmp = (3*uprev + 2*u + 2*dt_6 * k₄) / 5
+  stage_limiter!(tmp, f, t+dt_3)
   f(t+dt_3, tmp, k)
   @. tmp = tmp + dt_6 * k
+  stage_limiter!(tmp, f, t+dt_2)
   f(t+dt_2, tmp, k)
   @. tmp = tmp + dt_6 * k
+  stage_limiter!(tmp, f, t+2*dt_3)
   f(t+2*dt_3, tmp, k)
   @. tmp = tmp + dt_6 * k
+  stage_limiter!(tmp, f, t+5*dt_6)
   f(t+5*dt_6, tmp, k)
   @. tmp = tmp + dt_6 * k
+  stage_limiter!(tmp, f, t+dt)
   f(t+dt, tmp, k)
   @. u = (uprev + 9*(u + dt_6*k₄) + 15*(tmp + dt_6*k)) / 25
+  stage_limiter!(u, f, t+dt)
+  step_limiter!(u, f, t+dt)
   f(t+dt,u,k)
 end
