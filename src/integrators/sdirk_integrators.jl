@@ -4129,7 +4129,7 @@ end
 
   ################################## Solve Step 5
 
-  z₆ = @. α61*z₁ + α62*z₂ + α63*z₃ + α64*z₄
+  z₆ = @. α61*z₁ + α62*z₂ + α63*z₃ + α64*z₄ + α65*z₅
 
   # initial step of Newton iteration
   iter = 1
