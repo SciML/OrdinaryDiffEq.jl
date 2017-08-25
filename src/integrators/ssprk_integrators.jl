@@ -30,10 +30,13 @@ end
 
 @muladd function perform_step!(integrator,cache::SSPRK22Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
-  @unpack k,tmp,fsalfirst = cache
+  @unpack k,tmp,fsalfirst,stage_limiter!,step_limiter! = cache
   @. tmp = uprev + dt*integrator.fsalfirst
+  stage_limiter!(tmp, f, t+dt)
   f(t+dt,tmp,k)
   @. u = (uprev + tmp + dt*k) / 2
+  stage_limiter!(u, f, t+dt)
+  step_limiter!(u, f, t+dt)
   f(t+dt,u,k)
 end
 

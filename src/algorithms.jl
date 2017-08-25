@@ -23,6 +23,8 @@ Base.@pure FunctionMap(;scale_by_time=false) = Discrete{true,scale_by_time}()
   tableau::TabType=ODE_DEFAULT_TABLEAU
 end
 
+@inline trivial_limiter!(u, f, t) = nothing
+
 struct Euler <: OrdinaryDiffEqAlgorithm end
 struct Heun <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Ralston <: OrdinaryDiffEqAdaptiveAlgorithm end
@@ -31,7 +33,13 @@ struct RK4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct OwrenZen3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct OwrenZen4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct OwrenZen5 <: OrdinaryDiffEqAdaptiveAlgorithm end
-struct SSPRK22 <: OrdinaryDiffEqAlgorithm end
+struct SSPRK22{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+end
+function SSPRK22(stage_limiter! = trivial_limiter!, step_limiter! = trivial_limiter!)
+  SSPRK22{typeof(stage_limiter!), typeof(step_limiter!)}(stage_limiter!, step_limiter!)
+end
 struct SSPRK33 <: OrdinaryDiffEqAlgorithm end
 struct SSPRK104 <: OrdinaryDiffEqAlgorithm end
 struct SSPRK432 <: OrdinaryDiffEqAdaptiveAlgorithm end
