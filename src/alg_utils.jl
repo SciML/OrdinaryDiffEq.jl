@@ -445,3 +445,7 @@ ssp_coefficient(alg::SSPRK22) = 1
 ssp_coefficient(alg::SSPRK33) = 1
 ssp_coefficient(alg::SSPRK432) = 2
 ssp_coefficient(alg::SSPRK104) = 6
+
+# We shouldn't do this probably.
+#ssp_coefficient(alg::ImplicitEuler) = Inf
+ssp_coefficient(alg::SSPSDIRK2) = 4
