@@ -127,6 +127,24 @@ sol = solve(test_problem_ssp_inplace, alg, dt=8/5, adaptive=false)
 @test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, true, linspace(0,8))
 
 
+alg = SSPRK932()
+for prob in test_problems_only_time
+  sim = test_convergence(dts, prob, alg)
+  @test abs(sim.𝒪est[:final]-OrdinaryDiffEq.alg_order(alg)) < testTol
+end
+for prob in test_problems_linear
+  sim = test_convergence(dts, prob, alg)
+  @test abs(sim.𝒪est[:final]-OrdinaryDiffEq.alg_order(alg)) < testTol
+end
+for prob in test_problems_nonlinear
+  sim = test_convergence(dts, prob, alg)
+  @test abs(sim.𝒪est[:final]-OrdinaryDiffEq.alg_order(alg)) < testTol
+end
+# test SSP coefficient
+sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg), dense=false)
+@test all(sol.u .>= 0)
+
+
 alg = SSPRK104()
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
