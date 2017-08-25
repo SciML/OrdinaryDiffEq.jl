@@ -1,10 +1,12 @@
-struct LinearImplicitEulerCache{uType,rateType,J} <: OrdinaryDiffEqMutableCache
+struct LinearImplicitEulerCache{uType,rateType,J,uNoUnitsType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
   fsalfirst::rateType
   W::J
   k::rateType
+  tmp::uType
+  atmp::uNoUnitsType
 end
 
 u_cache(c::LinearImplicitEulerCache)    = (c.uprev2,c.z,c.dz)
@@ -14,7 +16,8 @@ function alg_cache(alg::LinearImplicitEuler,u,rate_prototype,uEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
   W = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   k = zeros(rate_prototype); fsalfirst = zeros(rate_prototype)
-  LinearImplicitEulerCache(u,uprev,uprev2,fsalfirst,W,k)
+  tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
+  LinearImplicitEulerCache(u,uprev,uprev2,fsalfirst,W,k,tmp,atmp)
 end
 
 struct LinearImplicitEulerConstantCache <: OrdinaryDiffEqConstantCache
