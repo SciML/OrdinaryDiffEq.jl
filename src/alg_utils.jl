@@ -36,6 +36,7 @@ isfsal(alg::SSPRK22) = true
 isfsal(alg::SSPRK33) = true
 isfsal(alg::SSPRK432) = true
 isfsal(alg::SSPRK932) = true
+isfsal(alg::SSPRK54) = true
 isfsal(alg::SSPRK104) = true
 isfsal(alg::RK4) = true
 isfsal(alg::GenericIIF1) = true
@@ -271,6 +272,7 @@ alg_order(alg::SSPRK22) = 2
 alg_order(alg::SSPRK33) = 3
 alg_order(alg::SSPRK432) = 3
 alg_order(alg::SSPRK932) = 3
+alg_order(alg::SSPRK54) = 4
 alg_order(alg::SSPRK104) = 4
 alg_order(alg::RK4) = 4
 alg_order(alg::ExplicitRK) = alg.tableau.order
@@ -448,6 +450,7 @@ ssp_coefficient(alg::SSPRK22) = 1
 ssp_coefficient(alg::SSPRK33) = 1
 ssp_coefficient(alg::SSPRK432) = 2
 ssp_coefficient(alg::SSPRK932) = 6
+ssp_coefficient(alg::SSPRK54) = 1.508
 ssp_coefficient(alg::SSPRK104) = 6
 
 # We shouldn't do this probably.

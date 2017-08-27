@@ -129,6 +129,9 @@ regression_test(SSPRK432(), 4.0e-4, 8.0e-4; test_diff1 = true)
 # SSPRK932
 regression_test(SSPRK932(), 6.e-5, 1.e-4; test_diff1 = true)
 
+# SSPRK54
+regression_test(SSPRK54(), 3.5e-5, 5.5e-5)
+
 # SSPRK104
 regression_test(SSPRK104(), 1.5e-5, 3e-5)
 
