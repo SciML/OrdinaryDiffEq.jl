@@ -145,6 +145,25 @@ sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg), 
 @test all(sol.u .>= 0)
 
 
+alg = SSPRK54()
+for prob in test_problems_only_time
+  sim = test_convergence(dts, prob, alg)
+  @test abs(sim.𝒪est[:final]-OrdinaryDiffEq.alg_order(alg)) < testTol
+end
+for prob in test_problems_linear
+  sim = test_convergence(dts, prob, alg)
+  @test abs(sim.𝒪est[:final]-OrdinaryDiffEq.alg_order(alg)) < testTol
+end
+for prob in test_problems_nonlinear
+  sim = test_convergence(dts, prob, alg)
+  # convergence order seems to be better for this problem
+  @test abs(sim.𝒪est[:final]-0.5-OrdinaryDiffEq.alg_order(alg)) < testTol
+end
+# test SSP coefficient
+sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg), dense=false)
+@test all(sol.u .>= 0)
+
+
 alg = SSPRK104()
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
