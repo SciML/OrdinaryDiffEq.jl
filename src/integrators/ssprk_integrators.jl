@@ -448,17 +448,23 @@ end
 @muladd function perform_step!(integrator,cache::SSPRK432ConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
   dt_2 = dt / 2
-  tmp = @. uprev + dt_2*integrator.fsalfirst # u1
-  k = f(t+dt_2, tmp)
-  tmp = @. tmp   + dt_2*k # u2
-  k = f(t+dt, tmp)
-  tmp = @. tmp   + dt_2*k
+
+  # u1
+  u = @. uprev + dt_2*integrator.fsalfirst
+  k = f(t+dt_2, u)
+  # u2
+  u = @. u + dt_2*k
+  k = f(t+dt, u)
+  u = @. u + dt_2*k
   if integrator.opts.adaptive
-    utilde = @. (uprev + 2*tmp) / 3
+    utilde = @. (uprev + 2*u) / 3
   end
-  tmp = @. (2*uprev + tmp) / 3 #u3
-  k = f(t+dt_2, tmp)
-  u = @. tmp + dt_2*k
+  # u3
+  u = @. (2*uprev + u) / 3
+  k = f(t+dt_2, u)
+  # u
+  u = @. u + dt_2*k
+
   integrator.fsallast = f(t+dt,u)
   if integrator.opts.adaptive
     integrator.EEst = integrator.opts.internalnorm(@. (utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
@@ -478,28 +484,28 @@ end
 
 @muladd function perform_step!(integrator,cache::SSPRK432Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
-  @unpack k,tmp,fsalfirst,utilde,atmp,stage_limiter!,step_limiter! = cache
+  @unpack k,fsalfirst,utilde,atmp,stage_limiter!,step_limiter! = cache
   dt_2 = dt / 2
 
   # u1
-  @. tmp = uprev + dt_2*fsalfirst
-  stage_limiter!(tmp, f, t+dt_2)
-  f(t+dt_2, tmp, k)
+  @. u = uprev + dt_2*fsalfirst
+  stage_limiter!(u, f, t+dt_2)
+  f(t+dt_2, u, k)
   # u2
-  @. tmp = tmp + dt_2*k
-  stage_limiter!(tmp, f, t+dt)
-  f(t+dt, tmp, k)
+  @. u = u + dt_2*k
+  stage_limiter!(u, f, t+dt)
+  f(t+dt, u, k)
   #
-  @. tmp = tmp + dt_2*k
-  stage_limiter!(tmp, f, t+dt+dt_2)
+  @. u = u + dt_2*k
+  stage_limiter!(u, f, t+dt+dt_2)
   if integrator.opts.adaptive
-    @. utilde = (uprev + 2*tmp) / 3
+    @. utilde = (uprev + 2*u) / 3
   end
   # u3
-  @. tmp = (2*uprev + tmp) / 3
-  f(t+dt_2, tmp, k)
+  @. u = (2*uprev + u) / 3
+  f(t+dt_2, u, k)
   #
-  @. u = tmp + dt_2*k
+  @. u = u + dt_2*k
   stage_limiter!(u, f, t+dt)
   step_limiter!(u, f, t+dt)
 
@@ -527,28 +533,39 @@ end
   dt_3 = dt / 3
   dt_2 = dt / 2
 
-  tmp = @. uprev + dt_6*integrator.fsalfirst # u1
-  k = f(t+dt_6, tmp)
-  tmp = @. tmp   + dt_6*k # u2
-  k = f(t+dt_3, tmp)
-  tmp = @. tmp   + dt_6*k # u3
-  k = f(t+dt_2, tmp)
-  tmp = @. tmp   + dt_6*k # u4
-  k = f(t+2*dt_3, tmp)
-  tmp = @. tmp   + dt_6*k # u5
-  k = f(t+5*dt_6, tmp)
-  tmp = @. tmp   + dt_6*k # u6
+  # u1
+  u = @. uprev + dt_6*integrator.fsalfirst
+  k = f(t+dt_6, u)
+  # u2
+  u = @. u + dt_6*k
+  k = f(t+dt_3, u)
+  # u3
+  u = @. u + dt_6*k
+  k = f(t+dt_2, u)
+  # u4
+  u = @. u + dt_6*k
+  k = f(t+2*dt_3, u)
+  # u5
+  u = @. u + dt_6*k
+  k = f(t+5*dt_6, u)
+  # u6
+  u = @. u + dt_6*k
   if integrator.opts.adaptive
-    k = f(t+dt, tmp)
-    utilde = @. (uprev + 6*tmp + 6*dt*k) / 7
+    k = f(t+dt, u)
+    utilde = @. (uprev + 6*u + 6*dt*k) / 7
   end
-  tmp = @. (3*uprev + dt_2*integrator.fsalfirst + 2*tmp) / 5 # u6*
-  k = f(t+dt_2, tmp)
-  tmp = @. tmp   + dt_6*k # u7*
-  k = f(t+2*dt_3, tmp)
-  tmp = @. tmp   + dt_6*k # u8*
-  k = f(t+5*dt_6, tmp)
-  u = @. tmp     + dt_6*k # u9*
+  # u6*
+  u = @. (3*uprev + dt_2*integrator.fsalfirst + 2*u) / 5
+  k = f(t+dt_2, u)
+  # u7*
+  u = @. u + dt_6*k
+  k = f(t+2*dt_3, u)
+  # u8*
+  u = @. u + dt_6*k
+  k = f(t+5*dt_6, u)
+  # u
+  u = @. u + dt_6*k
+
   integrator.fsallast = f(t+dt,u)
   if integrator.opts.adaptive
     integrator.EEst = integrator.opts.internalnorm(@. (utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
@@ -568,53 +585,53 @@ end
 
 @muladd function perform_step!(integrator,cache::SSPRK932Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
-  @unpack k,tmp,fsalfirst,utilde,atmp,stage_limiter!,step_limiter! = cache
+  @unpack k,fsalfirst,utilde,atmp,stage_limiter!,step_limiter! = cache
   dt_6 = dt / 6
   dt_3 = dt / 3
   dt_2 = dt / 2
 
   # u1
-  @. tmp = uprev + dt_6*fsalfirst
-  stage_limiter!(tmp, f, t+dt_6)
-  f(t+dt_6, tmp, k)
+  @. u = uprev + dt_6*fsalfirst
+  stage_limiter!(u, f, t+dt_6)
+  f(t+dt_6, u, k)
   # u2
-  @. tmp = tmp + dt_6*k
-  stage_limiter!(tmp, f, t+dt_3)
-  f(t+dt_3, tmp, k)
+  @. u = u + dt_6*k
+  stage_limiter!(u, f, t+dt_3)
+  f(t+dt_3, u, k)
   # u3
-  @. tmp = tmp + dt_6*k
-  stage_limiter!(tmp, f, t+dt_2)
-  f(t+dt_2, tmp, k)
+  @. u = u + dt_6*k
+  stage_limiter!(u, f, t+dt_2)
+  f(t+dt_2, u, k)
   # u4
-  @. tmp = tmp + dt_6*k
-  stage_limiter!(tmp, f, t+2*dt_3)
-  f(t+2*dt_3, tmp, k)
+  @. u = u + dt_6*k
+  stage_limiter!(u, f, t+2*dt_3)
+  f(t+2*dt_3, u, k)
   # u5
-  @. tmp = tmp + dt_6*k
-  stage_limiter!(tmp, f, t+5*dt_6)
-  f(t+5*dt_6, tmp, k)
+  @. u = u + dt_6*k
+  stage_limiter!(u, f, t+5*dt_6)
+  f(t+5*dt_6, u, k)
   # u6
-  @. tmp = tmp + dt_6*k
+  @. u = u + dt_6*k
   if integrator.opts.adaptive
-    stage_limiter!(tmp, f, t+dt)
-    f(t+dt, tmp, k)
-    @. utilde = (uprev + 6*tmp + 6*dt*k) / 7
+    stage_limiter!(u, f, t+dt)
+    f(t+dt, u, k)
+    @. utilde = (uprev + 6*u + 6*dt*k) / 7
     stage_limiter!(utilde, f, t+dt)
   end
   # u6*
-  @. tmp = (3*uprev + dt_2*fsalfirst + 2*tmp) / 5
-  stage_limiter!(tmp, f, t+dt_6)
-  f(t+dt_2, tmp, k)
+  @. u = (3*uprev + dt_2*fsalfirst + 2*u) / 5
+  stage_limiter!(u, f, t+dt_6)
+  f(t+dt_2, u, k)
   # u7*
-  @. tmp = tmp + dt_6*k
-  stage_limiter!(tmp, f, t+2*dt_3)
-  f(t+2*dt_3, tmp, k)
+  @. u = u + dt_6*k
+  stage_limiter!(u, f, t+2*dt_3)
+  f(t+2*dt_3, u, k)
   # u8*
-  @. tmp = tmp + dt_6*k
-  stage_limiter!(tmp, f, t+5*dt_6)
-  f(t+5*dt_6, tmp, k)
+  @. u = u + dt_6*k
+  stage_limiter!(u, f, t+5*dt_6)
+  f(t+5*dt_6, u, k)
   # u9*
-  @. u = tmp + dt_6*k
+  @. u = u + dt_6*k
   stage_limiter!(u, f, t+dt)
   step_limiter!(u, f, t+dt)
 
