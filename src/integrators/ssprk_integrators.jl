@@ -326,6 +326,99 @@ end
 end
 
 
+function initialize!(integrator,cache::SSPRK83ConstantCache)
+  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
+  integrator.kshortsize = 1
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+end
+
+@muladd function perform_step!(integrator,cache::SSPRK83ConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
+  @unpack α50,α51,α54,α61,α65,α72,α73,α76,β10,β21,β32,β43,β54,β65,β76,β87,c1,c2,c3,c4,c5,c6,c7 = cache
+
+  # u1 -> save as u
+  u = @. uprev + β10 * dt * integrator.fsalfirst
+  k = f(t+c1*dt, u)
+  # u2
+  u₂ = @. u + β21 * dt * k
+  k = f(t+c2*dt, u₂)
+  # u3
+  u₃ = @. u₂ + β32 * dt * k
+  k = f(t+c3*dt, u₃)
+  # u4
+  tmp = @. u₃ + β43 * dt * k
+  k = f(t+c4*dt, tmp)
+  # u5
+  tmp = @. α50 * uprev + α51 * u + α54 * tmp + β54 * dt * k
+  k = f(t+c5*dt, tmp)
+  # u6
+  tmp = @. α61 * u + α65 * tmp + β65 * dt * k
+  k = f(t+c6*dt, tmp)
+  # u7
+  tmp = @. α72 * u₂ + α73 * u₃ + α76 * tmp + β76 * dt * k
+  k = f(t+c7*dt, tmp)
+  # u
+  u = @. tmp + β87 * dt * k
+
+  integrator.fsallast = f(t+dt,u) # For interpolation, then FSAL'd
+  integrator.k[1] = integrator.fsalfirst
+  integrator.u = u
+end
+
+function initialize!(integrator,cache::SSPRK83Cache)
+  @unpack k,fsalfirst = cache
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = k
+  integrator.kshortsize = 1
+  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # FSAL for interpolation
+end
+
+@muladd function perform_step!(integrator,cache::SSPRK83Cache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
+  @unpack k,tmp,u₂,u₃,fsalfirst,stage_limiter!,step_limiter!,α50,α51,α54,α61,α65,α72,α73,α76,β10,β21,β32,β43,β54,β65,β76,β87,c1,c2,c3,c4,c5,c6,c7 = cache
+
+  # u1 -> save as u
+  @. u = uprev + β10 * dt * integrator.fsalfirst
+  stage_limiter!(u, f, t+c1*dt)
+  f(t+c1*dt, u, k)
+  # u2
+  @. u₂ = u + β21 * dt * k
+  stage_limiter!(u₂, f, t+c2*dt)
+  f(t+c2*dt, u₂, k)
+  # u3
+  @. u₃ = u₂ + β32 * dt * k
+  stage_limiter!(u₃, f, t+c3*dt)
+  f(t+c3*dt, u₃, k)
+  # u4
+  @. tmp = u₃ + β43 * dt * k
+  stage_limiter!(tmp, f, t+c4*dt)
+  f(t+c4*dt, tmp, k)
+  # u5
+  @. tmp = α50 * uprev + α51 * u + α54 * tmp + β54 * dt * k
+  stage_limiter!(tmp, f, t+c5*dt)
+  f(t+c5*dt, tmp, k)
+  # u6
+  @. tmp = α61 * u + α65 * tmp + β65 * dt * k
+  stage_limiter!(tmp, f, t+c6*dt)
+  f(t+c6*dt, tmp, k)
+  # u7
+  @. tmp = α72 * u₂ + α73 * u₃ + α76 * tmp + β76 * dt * k
+  stage_limiter!(tmp, f, t+c7*dt)
+  f(t+c7*dt, tmp, k)
+  # u
+  @. u = tmp + β87 * dt * k
+  stage_limiter!(u, f, t+dt)
+  step_limiter!(u, f, t+dt)
+  f(t+dt, u, k)
+end
+
+
 function initialize!(integrator,cache::SSPRK432ConstantCache)
   integrator.kshortsize = 1
   integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
