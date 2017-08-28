@@ -1,6 +1,6 @@
 function initialize!(integrator, cache::LawsonEulerConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   rtmp = integrator.f.f2(integrator.t,integrator.uprev)
   integrator.fsalfirst = rtmp # Pre-start fsal
 
@@ -28,7 +28,7 @@ function initialize!(integrator, cache::LawsonEulerCache)
   @unpack k,fsalfirst,rtmp = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = rtmp
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = fsalfirst # this is wrong, since it's just rtmp. Should fsal this value though
   integrator.k[2] = k
   A = integrator.f.f1(integrator.t,integrator.u,k)
@@ -49,7 +49,7 @@ end
 
 function initialize!(integrator, cache::NorsettEulerConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   rtmp = integrator.f.f2(integrator.t, integrator.uprev)
   integrator.fsalfirst = rtmp # Pre-start fsal
 
@@ -77,7 +77,7 @@ function initialize!(integrator, cache::NorsettEulerCache)
   @unpack k,fsalfirst,rtmp = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = rtmp
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = fsalfirst
   integrator.k[2] = k
   integrator.f.f1(integrator.t,integrator.u,k)

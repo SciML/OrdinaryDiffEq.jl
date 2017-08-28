@@ -18,7 +18,7 @@ function initialize!(integrator,cache::NystromDefaultInitialization)
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f.f1(integrator.t,uprev,duprev,integrator.k[2].x[1])

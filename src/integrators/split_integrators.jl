@@ -1,6 +1,6 @@
 function initialize!(integrator,cache::SplitEulerConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f[1](integrator.t,integrator.uprev) + integrator.f[2](integrator.t,integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -23,7 +23,7 @@ function initialize!(integrator,cache::SplitEulerCache)
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f[1](integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point

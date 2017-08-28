@@ -3,7 +3,8 @@ function initialize!(integrator, cache::Rosenbrock23Cache)
   @unpack k₁,k₂,fsalfirst,fsallast = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = fsallast
-  integrator.k = [k₁,k₂]
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k .= [k₁,k₂]
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst)
 end
 
@@ -119,7 +120,8 @@ function initialize!(integrator, cache::Rosenbrock32Cache)
   @unpack k₁,k₂,fsalfirst,fsallast = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = fsallast
-  integrator.k = [k₁,k₂]
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k .= [k₁,k₂]
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst)
 end
 
@@ -231,8 +233,7 @@ end
 
 function initialize!(integrator, cache::Rosenbrock23ConstantCache)
   integrator.kshortsize = 2
-  k = eltype(integrator.sol.k)(2)
-  integrator.k = k
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev)
 
   # Avoid undefined entries if k is an array of arrays
@@ -287,8 +288,7 @@ end
 
 function initialize!(integrator, cache::Rosenbrock32ConstantCache)
   integrator.kshortsize = 2
-  k = eltype(integrator.sol.k)(2)
-  integrator.k = k
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev)
 
   # Avoid undefined entries if k is an array of arrays
@@ -346,8 +346,7 @@ end
 
 function initialize!(integrator, cache::Rosenbrock33ConstantCache)
   integrator.kshortsize = 2
-  k = eltype(integrator.sol.k)(2)
-  integrator.k = k
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev)
 
   # Avoid undefined entries if k is an array of arrays
@@ -421,7 +420,8 @@ function initialize!(integrator, cache::Rosenbrock33Cache)
   @unpack fsalfirst,fsallast = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = fsallast
-  integrator.k = [fsalfirst,fsallast]
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k .= [fsalfirst,fsallast]
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst)
 end
 
@@ -543,8 +543,7 @@ end
 
 function initialize!(integrator, cache::Rosenbrock34ConstantCache)
   integrator.kshortsize = 2
-  k = eltype(integrator.sol.k)(2)
-  integrator.k = k
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev)
 
   # Avoid undefined entries if k is an array of arrays
@@ -624,7 +623,8 @@ function initialize!(integrator, cache::Rosenbrock34Cache)
   @unpack fsalfirst,fsallast = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = fsallast
-  integrator.k = [fsalfirst,fsallast]
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k .= [fsalfirst,fsallast]
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst)
 end
 
@@ -777,8 +777,7 @@ end
 
 function initialize!(integrator, cache::Rosenbrock4ConstantCache)
   integrator.kshortsize = 2
-  k = eltype(integrator.sol.k)(2)
-  integrator.k = k
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev)
 
   # Avoid undefined entries if k is an array of arrays
@@ -859,7 +858,8 @@ function initialize!(integrator, cache::Rosenbrock4Cache)
   @unpack fsalfirst,fsallast = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = fsallast
-  integrator.k = [fsalfirst,fsallast]
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k .= [fsalfirst,fsallast]
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst)
 end
 
@@ -1003,8 +1003,7 @@ end
 
 function initialize!(integrator, cache::Rodas4ConstantCache)
   integrator.kshortsize = 2
-  k = eltype(integrator.sol.k)(2)
-  integrator.k = k
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   # Avoid undefined entries if k is an array of arrays
   integrator.k[1] = zero(integrator.u)
   integrator.k[2] = zero(integrator.u)
@@ -1107,7 +1106,8 @@ end
 function initialize!(integrator, cache::Rodas4Cache)
   integrator.kshortsize = 2
   @unpack dense1,dense2 = cache
-  integrator.k = [dense1,dense2]
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k .= [dense1,dense2]
 end
 
 @muladd function perform_step!(integrator, cache::Rodas4Cache, repeat_step=false)
@@ -1309,8 +1309,7 @@ end
 
 function initialize!(integrator, cache::Rosenbrock5ConstantCache)
   integrator.kshortsize = 2
-  k = eltype(integrator.sol.k)(2)
-  integrator.k = k
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev)
 
   # Avoid undefined entries if k is an array of arrays
@@ -1477,7 +1476,8 @@ function initialize!(integrator, cache::Rosenbrock5Cache)
   @unpack fsalfirst,fsallast,dense1,dense2 = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = fsallast
-  integrator.k = [fsalfirst,fsallast]
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k .= [fsalfirst,fsallast]
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst)
 end
 

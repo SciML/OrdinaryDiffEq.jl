@@ -34,6 +34,7 @@ tic()
 @time @testset "Events Tests" begin include("ode/ode_event_tests.jl") end
 @time @testset "Cache Tests" begin include("ode/ode_cache_tests.jl") end
 @time @testset "saveat Tests" begin include("ode/ode_saveat_tests.jl") end
+@time @testset "save_idxs Tests" begin include("ode/ode_saveidxs_tests.jl") end
 
 @time @testset "Number Type Tests" begin include("ode/ode_numbertype_tests.jl") end
 @time @testset "Static Array Tests" begin include("static_array_tests.jl") end
