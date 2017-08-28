@@ -10,9 +10,13 @@ end
 
 @muladd function perform_step!(integrator,cache::SSPRK22ConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
-  tmp = @. uprev + dt*integrator.fsalfirst
-  k = f(t+dt,tmp)
-  u = @. (uprev + tmp + dt*k) / 2
+
+  # u1 -> stored as u
+  u = @. uprev + dt*integrator.fsalfirst
+  k = f(t+dt, u)
+  # u
+  u = @. (uprev + u + dt*k) / 2
+
   integrator.fsallast = f(t+dt,u) # For interpolation, then FSAL'd
   integrator.k[1] = integrator.fsalfirst
   integrator.u = u
@@ -30,14 +34,17 @@ end
 
 @muladd function perform_step!(integrator,cache::SSPRK22Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
-  @unpack k,tmp,fsalfirst,stage_limiter!,step_limiter! = cache
-  @. tmp = uprev + dt*integrator.fsalfirst
-  stage_limiter!(tmp, f, t+dt)
-  f(t+dt,tmp,k)
-  @. u = (uprev + tmp + dt*k) / 2
+  @unpack k,fsalfirst,stage_limiter!,step_limiter! = cache
+
+  # u1 -> stored as u
+  @. u = uprev + dt*fsalfirst
+  stage_limiter!(u, f, t+dt)
+  f(t+dt, u, k)
+  # u
+  @. u = (uprev + u + dt*k) / 2
   stage_limiter!(u, f, t+dt)
   step_limiter!(u, f, t+dt)
-  f(t+dt,u,k)
+  f(t+dt, u, k)
 end
 
 
@@ -53,11 +60,16 @@ end
 
 @muladd function perform_step!(integrator,cache::SSPRK33ConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
-  tmp = @. uprev + dt*integrator.fsalfirst
-  k = f(t+dt,tmp)
-  tmp = @. (3*uprev + tmp + dt*k) / 4
-  k = f(t+dt/2,tmp)
-  u = @. (uprev + 2*tmp + 2*dt*k) / 3
+
+  # u1
+  u = @. uprev + dt*integrator.fsalfirst
+  k = f(t+dt, u)
+  # u2
+  u = @. (3*uprev + u + dt*k) / 4
+  k = f(t+dt/2, u)
+  # u
+  u = @. (uprev + 2*u + 2*dt*k) / 3
+
   integrator.fsallast = f(t+dt,u) # For interpolation, then FSAL'd
   integrator.k[1] = integrator.fsalfirst
   integrator.u = u
@@ -75,17 +87,21 @@ end
 
 @muladd function perform_step!(integrator,cache::SSPRK33Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
-  @unpack k,tmp,fsalfirst,stage_limiter!,step_limiter! = cache
-  @. tmp = uprev + dt*fsalfirst
-  stage_limiter!(tmp, f, t+dt)
-  f(t+dt,tmp,k)
-  @. tmp = (3*uprev + tmp + dt*k) / 4
-  stage_limiter!(tmp, f, t+dt/2)
-  f(t+dt/2,tmp,k)
-  @. u = (uprev + 2*tmp + 2*dt*k) / 3
+  @unpack k,fsalfirst,stage_limiter!,step_limiter! = cache
+
+  # u1
+  @. u = uprev + dt*fsalfirst
+  stage_limiter!(u, f, t+dt)
+  f(t+dt, u, k)
+  # u2
+  @. u = (3*uprev + u + dt*k) / 4
+  stage_limiter!(u, f, t+dt/2)
+  f(t+dt/2, u, k)
+  # u
+  @. u = (uprev + 2*u + 2*dt*k) / 3
   stage_limiter!(u, f, t+dt)
   step_limiter!(u, f, t+dt)
-  f(t+dt,u,k)
+  f(t+dt, u, k)
 end
 
 
