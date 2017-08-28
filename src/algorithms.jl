@@ -43,6 +43,26 @@ struct SSPRK33{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   step_limiter!::StepLimiter
 end
 SSPRK33(stage_limiter! = trivial_limiter!) = SSPRK33(stage_limiter!, trivial_limiter!)
+struct SSPRK53{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+end
+SSPRK53(stage_limiter! = trivial_limiter!) = SSPRK53(stage_limiter!, trivial_limiter!)
+struct SSPRK63{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+end
+SSPRK63(stage_limiter! = trivial_limiter!) = SSPRK63(stage_limiter!, trivial_limiter!)
+struct SSPRK73{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+end
+SSPRK73(stage_limiter! = trivial_limiter!) = SSPRK73(stage_limiter!, trivial_limiter!)
+struct SSPRK83{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+end
+SSPRK83(stage_limiter! = trivial_limiter!) = SSPRK83(stage_limiter!, trivial_limiter!)
 struct SSPRK432{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
