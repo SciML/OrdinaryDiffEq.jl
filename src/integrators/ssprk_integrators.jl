@@ -667,11 +667,11 @@ end
   # u₃
   u₃ = @. α30 * uprev + α32 * u₂ + β32 * dt * k
   k₃ = f(t+c3*dt, u₃)
-  # u₄
-  u₄ = @. α40 * uprev + α43 * u₃ + β43 * dt * k₃
-  k = f(t+c4*dt, u₄)
+  # u₄ -> stored as tmp
+  tmp = @. α40 * uprev + α43 * u₃ + β43 * dt * k₃
+  k = f(t+c4*dt, tmp)
   # u
-  u = @. α52 * u₂ + α53 * u₃ + β53 * dt * k₃ + α54 * u₄ + β54 * dt * k
+  u = @. α52 * u₂ + α53 * u₃ + β53 * dt * k₃ + α54 * tmp + β54 * dt * k
 
   integrator.fsallast = f(t+dt,u) # For interpolation, then FSAL'd
   integrator.k[1] = integrator.fsalfirst
@@ -692,7 +692,7 @@ end
 
 @muladd function perform_step!(integrator,cache::SSPRK54Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
-  @unpack k,k₃,u₂,u₃,u₄,fsalfirst,stage_limiter!,step_limiter!,β10,α20,α21,β21,α30,α32,β32,α40,α43,β43,α52,α53,β53,α54,β54,c1,c2,c3,c4 = cache
+  @unpack k,k₃,u₂,u₃,tmp,fsalfirst,stage_limiter!,step_limiter!,β10,α20,α21,β21,α30,α32,β32,α40,α43,β43,α52,α53,β53,α54,β54,c1,c2,c3,c4 = cache
 
   # u₁
   @. u₂ = uprev + β10 * dt * integrator.fsalfirst
@@ -706,12 +706,12 @@ end
   @. u₃ = α30 * uprev + α32 * u₂ + β32 * dt * k
   stage_limiter!(u₃, f, t+c3*dt)
   f(t+c3*dt, u₃, k₃)
-  # u₄
-  @. u₄ = α40 * uprev + α43 * u₃ + β43 * dt * k₃
-  stage_limiter!(u₄, f, t+c4*dt)
-  f(t+c4*dt, u₄, k)
+  # u₄ -> stored as tmp
+  @. tmp = α40 * uprev + α43 * u₃ + β43 * dt * k₃
+  stage_limiter!(tmp, f, t+c4*dt)
+  f(t+c4*dt, tmp, k)
   # u
-  @. u = α52 * u₂ + α53 * u₃ + β53 * dt * k₃ + α54 * u₄ + β54 * dt * k
+  @. u = α52 * u₂ + α53 * u₃ + β53 * dt * k₃ + α54 * tmp + β54 * dt * k
   stage_limiter!(u, f, t+dt)
   step_limiter!(u, f, t+dt)
   f(t+dt, u, k)

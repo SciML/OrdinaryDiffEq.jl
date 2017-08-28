@@ -2,6 +2,7 @@ struct SSPRK22Cache{uType,rateType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMu
   u::uType
   uprev::uType
   k::rateType
+  tmp::uType # needed for callbacks...
   fsalfirst::rateType
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
@@ -13,9 +14,10 @@ du_cache(c::SSPRK22Cache) = (c.k,c.fsalfirst)
 struct SSPRK22ConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::SSPRK22,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
+  tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
-  SSPRK22Cache(u,uprev,k,fsalfirst,alg.stage_limiter!,alg.step_limiter!)
+  SSPRK22Cache(u,uprev,k,tmp,fsalfirst,alg.stage_limiter!,alg.step_limiter!)
 end
 
 alg_cache(alg::SSPRK22,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}}) = SSPRK22ConstantCache()
@@ -25,6 +27,7 @@ struct SSPRK33Cache{uType,rateType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMu
   u::uType
   uprev::uType
   k::rateType
+  tmp::uType # needed for callbacks...
   fsalfirst::rateType
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
@@ -36,9 +39,10 @@ du_cache(c::SSPRK33Cache) = (c.k,c.fsalfirst)
 struct SSPRK33ConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::SSPRK33,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
+  tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
-  SSPRK33Cache(u,uprev,k,fsalfirst,alg.stage_limiter!,alg.step_limiter!)
+  SSPRK33Cache(u,uprev,k,tmp,fsalfirst,alg.stage_limiter!,alg.step_limiter!)
 end
 
 alg_cache(alg::SSPRK33,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}}) = SSPRK33ConstantCache()
@@ -468,6 +472,7 @@ struct SSPRK432Cache{uType,rateType,uArrayType,uEltypeNoUnits,StageLimiter,StepL
   u::uType
   uprev::uType
   k::rateType
+  tmp::uType # needed for callbacks
   fsalfirst::rateType
   utilde::uArrayType
   atmp::uEltypeNoUnits
@@ -481,11 +486,12 @@ du_cache(c::SSPRK432Cache) = (c.k,c.fsalfirst)
 struct SSPRK432ConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::SSPRK432,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
+  tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
   utilde = similar(u,indices(u))
   atmp = similar(u,uEltypeNoUnits,indices(u))
-  SSPRK432Cache(u,uprev,k,fsalfirst,utilde,atmp,alg.stage_limiter!,alg.step_limiter!)
+  SSPRK432Cache(u,uprev,k,tmp,fsalfirst,utilde,atmp,alg.stage_limiter!,alg.step_limiter!)
 end
 
 alg_cache(alg::SSPRK432,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}}) = SSPRK432ConstantCache()
@@ -495,6 +501,7 @@ struct SSPRK932Cache{uType,rateType,uArrayType,uEltypeNoUnits,StageLimiter,StepL
   u::uType
   uprev::uType
   k::rateType
+  tmp::uType # needed for callbacks
   fsalfirst::rateType
   utilde::uArrayType
   atmp::uEltypeNoUnits
@@ -508,11 +515,12 @@ du_cache(c::SSPRK932Cache) = (c.k,c.fsalfirst)
 struct SSPRK932ConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::SSPRK932,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
+  tmp = similar(u)
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
   utilde = similar(u,indices(u))
   atmp = similar(u,uEltypeNoUnits,indices(u))
-  SSPRK932Cache(u,uprev,k,fsalfirst,utilde,atmp,alg.stage_limiter!,alg.step_limiter!)
+  SSPRK932Cache(u,uprev,k,tmp,fsalfirst,utilde,atmp,alg.stage_limiter!,alg.step_limiter!)
 end
 
 alg_cache(alg::SSPRK932,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}}) = SSPRK932ConstantCache()
@@ -525,7 +533,7 @@ struct SSPRK54Cache{uType,rateType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMu
   k₃::rateType
   u₂::uType
   u₃::uType
-  u₄::uType
+  tmp::uType # needed for callbacks
   fsalfirst::rateType
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
@@ -550,7 +558,7 @@ struct SSPRK54Cache{uType,rateType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMu
   c4::Float64
 end
 
-u_cache(c::SSPRK54Cache) = (c.u₂,c.u₃,c.u₄)
+u_cache(c::SSPRK54Cache) = (c.u₂,c.u₃)
 du_cache(c::SSPRK54Cache) = (c.k,c.fsalfirst,c.k₃)
 
 struct SSPRK54ConstantCache <: OrdinaryDiffEqConstantCache
@@ -578,7 +586,7 @@ end
 function alg_cache(alg::SSPRK54,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
   u₂ = similar(u)
   u₃ = similar(u)
-  u₄ = similar(u)
+  tmp = similar(u)
   k = zeros(rate_prototype)
   k₃ = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
@@ -601,7 +609,7 @@ function alg_cache(alg::SSPRK54,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upr
   c2 = 0.58607968896779994
   c3 = 0.47454236302687003
   c4 = 0.93501063100923998
-  SSPRK54Cache(u,uprev,k,k₃,u₂,u₃,u₄,fsalfirst,alg.stage_limiter!,alg.step_limiter!,
+  SSPRK54Cache(u,uprev,k,k₃,u₂,u₃,tmp,fsalfirst,alg.stage_limiter!,alg.step_limiter!,
                 β10,α20,α21,β21,α30,α32,β32,α40,α43,β43,α52,α53,β53,α54,β54,c1,c2,c3,c4)
 end
 
