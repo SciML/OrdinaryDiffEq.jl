@@ -2,7 +2,7 @@ struct SSPRK22Cache{uType,rateType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMu
   u::uType
   uprev::uType
   k::rateType
-  tmp::uType # needed for callbacks...
+  tmp::uType # superfluous, only needed for callbacks...
   fsalfirst::rateType
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
@@ -27,7 +27,7 @@ struct SSPRK33Cache{uType,rateType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMu
   u::uType
   uprev::uType
   k::rateType
-  tmp::uType # needed for callbacks...
+  tmp::uType # superfluous, only needed for callbacks...
   fsalfirst::rateType
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
@@ -472,7 +472,7 @@ struct SSPRK432Cache{uType,rateType,uArrayType,uEltypeNoUnits,StageLimiter,StepL
   u::uType
   uprev::uType
   k::rateType
-  tmp::uType # needed for callbacks
+  tmp::uType # superfluous, only needed for callbacks
   fsalfirst::rateType
   utilde::uArrayType
   atmp::uEltypeNoUnits
@@ -501,7 +501,7 @@ struct SSPRK932Cache{uType,rateType,uArrayType,uEltypeNoUnits,StageLimiter,StepL
   u::uType
   uprev::uType
   k::rateType
-  tmp::uType # needed for callbacks
+  tmp::uType # superfluous, only needed for callbacks
   fsalfirst::rateType
   utilde::uArrayType
   atmp::uEltypeNoUnits
@@ -533,7 +533,7 @@ struct SSPRK54Cache{uType,rateType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMu
   k₃::rateType
   u₂::uType
   u₃::uType
-  tmp::uType # needed for callbacks
+  tmp::uType # should be u₄, but tmp is needed for callbacks
   fsalfirst::rateType
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
@@ -605,10 +605,10 @@ function alg_cache(alg::SSPRK54,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upr
   β53 = 0.063692468666290
   α54 = 0.386708617503269
   β54 = 0.226007483236906
-  c1 = 0.39175222700391998
-  c2 = 0.58607968896779994
-  c3 = 0.47454236302687003
-  c4 = 0.93501063100923998
+  c1 = 0.391752226571890
+  c2 = 0.586079689311540
+  c3 = 0.474542363121400
+  c4 = 0.935010630967653
   SSPRK54Cache(u,uprev,k,k₃,u₂,u₃,tmp,fsalfirst,alg.stage_limiter!,alg.step_limiter!,
                 β10,α20,α21,β21,α30,α32,β32,α40,α43,β43,α52,α53,β53,α54,β54,c1,c2,c3,c4)
 end
@@ -629,10 +629,10 @@ function alg_cache(alg::SSPRK54,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upr
   β53 = 0.063692468666290
   α54 = 0.386708617503269
   β54 = 0.226007483236906
-  c1 = 0.39175222700391998
-  c2 = 0.58607968896779994
-  c3 = 0.47454236302687003
-  c4 = 0.93501063100923998
+  c1 = 0.391752226571890
+  c2 = 0.586079689311540
+  c3 = 0.474542363121400
+  c4 = 0.935010630967653
   SSPRK54ConstantCache(β10,α20,α21,β21,α30,α32,β32,α40,α43,β43,α52,α53,β53,α54,β54,c1,c2,c3,c4)
 end
 
