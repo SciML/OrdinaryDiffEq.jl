@@ -232,6 +232,117 @@ function alg_cache(alg::SSPRK63,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upr
 end
 
 
+struct SSPRK73Cache{uType,rateType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  k::rateType
+  tmp::uType
+  u₁::uType
+  fsalfirst::rateType
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+  α40::Float64
+  α43::Float64
+  α50::Float64
+  α51::Float64
+  α54::Float64
+  α73::Float64
+  α76::Float64
+  β10::Float64
+  β21::Float64
+  β32::Float64
+  β43::Float64
+  β54::Float64
+  β65::Float64
+  β76::Float64
+  c1::Float64
+  c2::Float64
+  c3::Float64
+  c4::Float64
+  c5::Float64
+  c6::Float64
+end
+
+u_cache(c::SSPRK73Cache) = (c.tmp,c.u₁)
+du_cache(c::SSPRK73Cache) = (c.k,c.fsalfirst)
+
+struct SSPRK73ConstantCache <: OrdinaryDiffEqConstantCache
+  α40::Float64
+  α43::Float64
+  α50::Float64
+  α51::Float64
+  α54::Float64
+  α73::Float64
+  α76::Float64
+  β10::Float64
+  β21::Float64
+  β32::Float64
+  β43::Float64
+  β54::Float64
+  β65::Float64
+  β76::Float64
+  c1::Float64
+  c2::Float64
+  c3::Float64
+  c4::Float64
+  c5::Float64
+  c6::Float64
+end
+
+function alg_cache(alg::SSPRK73,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
+  tmp = similar(u)
+  u₁ = similar(u)
+  k = zeros(rate_prototype)
+  fsalfirst = zeros(rate_prototype)
+  α40 = 0.184962588071072
+  α43 = 0.815037411928928
+  α50 = 0.180718656570380
+  α51 = 0.314831034403793
+  α54 = 0.504450309025826
+  α73 = 0.120199000000000
+  α76 = 0.879801000000000
+  β10 = 0.233213863663009
+  β21 = 0.233213863663009
+  β32 = 0.233213863663009
+  β43 = 0.190078023865845
+  β54 = 0.117644805593912
+  β65 = 0.233213863663009
+  β76 = 0.205181790464579
+  c1 = 0.233213863663009
+  c2 = 0.466427727326018
+  c3 = 0.699641590989027
+  c4 = 0.760312095463379
+  c5 = 0.574607439040817
+  c6 = 0.807821302703826
+  SSPRK73Cache(u,uprev,k,tmp,u₁,fsalfirst,alg.stage_limiter!,alg.step_limiter!,
+                α40,α43,α50,α51,α54,α73,α76,β10,β21,β32,β43,β54,β65,β76,c1,c2,c3,c4,c5,c6)
+end
+
+function alg_cache(alg::SSPRK73,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
+  α40 = 0.184962588071072
+  α43 = 0.815037411928928
+  α50 = 0.180718656570380
+  α51 = 0.314831034403793
+  α54 = 0.504450309025826
+  α73 = 0.120199000000000
+  α76 = 0.879801000000000
+  β10 = 0.233213863663009
+  β21 = 0.233213863663009
+  β32 = 0.233213863663009
+  β43 = 0.190078023865845
+  β54 = 0.117644805593912
+  β65 = 0.233213863663009
+  β76 = 0.205181790464579
+  c1 = 0.233213863663009
+  c2 = 0.466427727326018
+  c3 = 0.699641590989027
+  c4 = 0.760312095463379
+  c5 = 0.574607439040817
+  c6 = 0.807821302703826
+  SSPRK73ConstantCache(α40,α43,α50,α51,α54,α73,α76,β10,β21,β32,β43,β54,β65,β76,c1,c2,c3,c4,c5,c6)
+end
+
+
 struct SSPRK432Cache{uType,rateType,uArrayType,uEltypeNoUnits,StageLimiter,StepLimiter} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
