@@ -107,8 +107,8 @@ function ode_interpolation(tvals,id,idxs,deriv)
   tdir*tvals[idx[1]] < tdir*ts[1] && error("Solution interpolation cannot extrapolate before the first timepoint. Either start solving earlier or use the local extrapolation from the integrator interface.")
   if typeof(idxs) <: Number
     vals = Vector{eltype(first(timeseries))}(length(tvals))
-  elseif typeof(idxs) <: AbstractVector
-     vals = Vector{Vector{eltype(first(timeseries))}}(length(tvals))
+  elseif typeof(idxs) <: AbstractArray
+    vals = Vector{Array{eltype(first(timeseries)),dims(idxs)}}(length(tvals))
   else
     vals = Vector{eltype(timeseries)}(length(tvals))
   end
