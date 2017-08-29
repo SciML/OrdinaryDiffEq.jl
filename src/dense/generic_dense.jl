@@ -108,7 +108,7 @@ function ode_interpolation(tvals,id,idxs,deriv)
   if typeof(idxs) <: Number
     vals = Vector{eltype(first(timeseries))}(length(tvals))
   elseif typeof(idxs) <: AbstractArray
-    vals = Vector{Array{eltype(first(timeseries)),dims(idxs)}}(length(tvals))
+    vals = Vector{Array{eltype(first(timeseries)),ndims(idxs)}}(length(tvals))
   else
     vals = Vector{eltype(timeseries)}(length(tvals))
   end
