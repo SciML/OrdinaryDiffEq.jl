@@ -175,10 +175,20 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
 
 
   ### Algorithm-specific defaults ###
-  ksEltype = Vector{rateType}
+  if save_idxs == nothing
+    ksEltype = Vector{rateType}
+  else
+    ks_prototype = rate_prototype[save_idxs]
+    ksEltype = Vector{typeof(ks_prototype)}
+  end
 
   # Have to convert incase passed in wrong.
-  timeseries = convert(Vector{uType},timeseries_init)
+  if save_idxs == nothing
+    timeseries = convert(Vector{uType},timeseries_init)
+  else
+    u_initial = u[save_idxs]
+    timeseries = convert(Vector{typeof(u_initial)},timeseries_init)
+  end
   ts = convert(Vector{tType},ts_init)
   ks = convert(Vector{ksEltype},ks_init)
   alg_choice = Int[]
@@ -189,10 +199,11 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     copyat_or_push!(ts,1,t)
     if save_idxs == nothing
       copyat_or_push!(timeseries,1,u)
+      copyat_or_push!(ks,1,[rate_prototype])
     else
-      copyat_or_push!(timeseries,1,u[save_idxs],Val{false})
+      copyat_or_push!(timeseries,1,u_initial,Val{false})
+      copyat_or_push!(ks,1,[ks_prototype])
     end
-    copyat_or_push!(ks,1,[rate_prototype])
   else
     saveiter = 0 # Starts at 0 so first save is at 1
     saveiter_dense = 0
@@ -215,7 +226,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
 
   notsaveat_idxs = Int[1]
 
-  k = ksEltype[]
+  k = rateType[]
 
   if uType <: Array
     uprev = copy(u)
@@ -281,7 +292,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   dtacc = tTypeNoUnits(1)
 
   integrator = ODEIntegrator{algType,uType,tType,
-                             tTypeNoUnits,typeof(tdir),eltype(ks),SolType,
+                             tTypeNoUnits,typeof(tdir),typeof(k),SolType,
                              typeof(rate_prototype),FType,typeof(prog),cacheType,
                              typeof(opts),fsal_typeof(alg,rate_prototype)}(
                              sol,u,k,t,tType(dt),f,uprev,uprev2,tprev,

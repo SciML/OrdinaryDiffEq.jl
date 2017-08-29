@@ -1,6 +1,6 @@
 function initialize!(integrator, cache::ImplicitEulerConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -104,7 +104,7 @@ function initialize!(integrator, cache::ImplicitEulerCache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
@@ -243,7 +243,7 @@ end
 
 function initialize!(integrator, cache::ImplicitMidpointConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -331,7 +331,7 @@ function initialize!(integrator, cache::ImplicitMidpointCache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
@@ -454,7 +454,7 @@ end
 
 function initialize!(integrator, cache::TrapezoidConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -576,7 +576,7 @@ function initialize!(integrator, cache::TrapezoidCache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
@@ -734,7 +734,7 @@ end
 
 function initialize!(integrator, cache::TRBDF2ConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -878,7 +878,7 @@ function initialize!(integrator, cache::TRBDF2Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
@@ -1061,7 +1061,7 @@ end
 
 function initialize!(integrator, cache::SDIRK2ConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -1204,7 +1204,7 @@ function initialize!(integrator, cache::SDIRK2Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
@@ -1385,7 +1385,7 @@ end
 
 function initialize!(integrator, cache::SSPSDIRK2ConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -1522,7 +1522,7 @@ function initialize!(integrator, cache::SSPSDIRK2Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
@@ -1691,7 +1691,7 @@ end
 
 function initialize!(integrator, cache::Union{Kvaerno3ConstantCache,KenCarp3ConstantCache})
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -1875,7 +1875,7 @@ function initialize!(integrator, cache::Union{Kvaerno3Cache,KenCarp3Cache})
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
@@ -2112,7 +2112,7 @@ end
 
 function initialize!(integrator, cache::Cash4ConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -2386,7 +2386,7 @@ function initialize!(integrator, cache::Cash4Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
@@ -2730,7 +2730,7 @@ end
 
 function initialize!(integrator, cache::Hairer4ConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -2993,7 +2993,7 @@ function initialize!(integrator, cache::Hairer4Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
@@ -3338,7 +3338,7 @@ end
 
 function initialize!(integrator, cache::Kvaerno4ConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -3568,7 +3568,7 @@ function initialize!(integrator, cache::Kvaerno4Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
@@ -3857,7 +3857,7 @@ end
 
 function initialize!(integrator, cache::KenCarp4ConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -4125,7 +4125,7 @@ function initialize!(integrator, cache::KenCarp4Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
@@ -4469,7 +4469,7 @@ end
 
 function initialize!(integrator, cache::Kvaerno5ConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -4780,7 +4780,7 @@ function initialize!(integrator, cache::Kvaerno5Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
@@ -5180,7 +5180,7 @@ end
 
 function initialize!(integrator, cache::KenCarp5ConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -5533,7 +5533,7 @@ function initialize!(integrator, cache::KenCarp5Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point

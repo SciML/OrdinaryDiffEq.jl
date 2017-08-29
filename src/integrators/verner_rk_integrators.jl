@@ -1,7 +1,7 @@
 function initialize!(integrator, cache::Vern6ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
   integrator.kshortsize = 9
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -117,11 +117,11 @@ end
 function initialize!(integrator, cache::Vern6Cache)
   integrator.kshortsize = 9
   integrator.fsalfirst = cache.k1 ; integrator.fsallast = cache.k9
-  k = eltype(integrator.sol.k)(integrator.kshortsize)
+  @unpack k = integrator
+  resize!(k, integrator.kshortsize)
   k[1]=cache.k1; k[2]=cache.k2; k[3]=cache.k3;
   k[4]=cache.k4; k[5]=cache.k5; k[6]=cache.k6;
   k[7]=cache.k7; k[8]=cache.k8; k[9]=cache.k9 # Set the pointers
-  integrator.k = k
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # Pre-start fsal
 end
 
@@ -204,8 +204,7 @@ end
 
 function initialize!(integrator, cache::Vern7ConstantCache)
   integrator.kshortsize = 10
-  k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.k = k
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
   @inbounds for i in eachindex(integrator.k)
@@ -326,10 +325,10 @@ end
 
 function initialize!(integrator, cache::Vern7Cache)
   @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10 = cache
+  @unpack k = integrator
   integrator.kshortsize = 10
-  k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(k, integrator.kshortsize)
   k[1]=k1;k[2]=k2;k[3]=k3;k[4]=k4;k[5]=k5;k[6]=k6;k[7]=k7;k[8]=k8;k[9]=k9;k[10]=k10 # Setup pointers
-  integrator.k = k
 end
 
 #=
@@ -423,8 +422,7 @@ end
 
 function initialize!(integrator, cache::Vern8ConstantCache)
   integrator.kshortsize = 13
-  k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.k = k
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
   @inbounds for i in eachindex(integrator.k)
@@ -567,10 +565,10 @@ end
 
 function initialize!(integrator, cache::Vern8Cache)
   @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13 = cache
+  @unpack k = integrator
   integrator.kshortsize = 13
-  k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(k, integrator.kshortsize)
   k[1]=k1;k[2]=k2;k[3]=k3;k[4]=k4;k[5]=k5;k[6]=k6;k[7]=k7;k[8]=k8;k[9]=k9;k[10]=k10;k[11]=k11;k[12]=k12;k[13]=k13 # Setup pointers
-  integrator.k = k
 end
 
 #=
@@ -682,8 +680,7 @@ end
 
 function initialize!(integrator, cache::Vern9ConstantCache)
   integrator.kshortsize = 16
-  k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.k = k
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
   @inbounds for i in eachindex(integrator.k)
@@ -846,10 +843,10 @@ end
 
 function initialize!(integrator, cache::Vern9Cache)
   @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16 = cache
+  @unpack k = integrator
   integrator.kshortsize = 16
-  k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(k, integrator.kshortsize)
   k[1]=k1;k[2]=k2;k[3]=k3;k[4]=k4;k[5]=k5;k[6]=k6;k[7]=k7;k[8]=k8;k[9]=k9;k[10]=k10;k[11]=k11;k[12]=k12;k[13]=k13;k[14]=k14;k[15]=k15;k[16]=k16 # Setup pointers
-  integrator.k = k
 end
 
 #=

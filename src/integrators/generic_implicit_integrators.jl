@@ -30,7 +30,7 @@ function initialize!(integrator,
                      cache::Union{GenericImplicitEulerConstantCache,GenericTrapezoidConstantCache})
   cache.uhold[1] = integrator.uprev; cache.C[1] = integrator.uprev
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev)
 
   # Avoid undefined entries if k is an array of arrays
@@ -92,7 +92,7 @@ function initialize!(integrator,
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst)
 
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
 end
@@ -143,7 +143,7 @@ function initialize!(integrator, cache::GenericTrapezoidConstantCache)
   cache.uhold[1] = integrator.uprev; cache.C[1] = integrator.uprev
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -220,7 +220,7 @@ function initialize!(integrator, cache::GenericTrapezoidCache)
   integrator.fsallast = cache.k
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
 end

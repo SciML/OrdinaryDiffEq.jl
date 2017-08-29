@@ -1,6 +1,6 @@
 function initialize!(integrator, cache::ExplicitRKConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev)
 
   # Avoid undefined entries if k is an array of arrays
@@ -64,7 +64,7 @@ function initialize!(integrator, cache::ExplicitRKCache)
   integrator.kshortsize = 2
   integrator.fsallast = cache.fsallast
   integrator.fsalfirst = cache.kk[1]
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # Pre-start fsal
