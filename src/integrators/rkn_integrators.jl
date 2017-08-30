@@ -220,14 +220,14 @@ end
   f.f2(t+dt,u,du,k.x[2])
 end
 
-function initialize!(integrator,cache::DPRKN6Cache,repeat_step=false)
+function initialize!(integrator, cache::DPRKN6Cache)
   @unpack fsalfirst,k = cache
   uprev,duprev = integrator.uprev.x
 
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
   integrator.kshortsize = 6
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = cache.fsalfirst
   integrator.k[2] = cache.k2
   integrator.k[3] = cache.k3
