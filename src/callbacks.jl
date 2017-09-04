@@ -59,22 +59,16 @@ end
   elseif callback.interp_points!=0  && !(typeof(integrator.alg) <: Discrete)# Use the interpolants for safety checking
     if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache
       if typeof(callback.idxs) <: Void
-        idxs_internal = eachindex(integrator.cache.tmp)
         tmp = integrator.cache.tmp
-      elseif typeof(callback.idxs) <: Number
-        idxs_internal = callback.idxs
-      else
-        idxs_internal = callback.idxs
+      else !(typeof(callback.idxs) <: Number)
         tmp = @view integrator.cache.tmp[callback.idxs]
       end
-    else
-      idxs_internal = callback.idxs
     end
     for i in 2:length(Θs)-1
       if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache && !(typeof(callback.idxs) <: Number)
-        ode_interpolant!(tmp,Θs[i],integrator,idxs_internal,Val{0})
+        ode_interpolant!(tmp,Θs[i],integrator,callback.idxs,Val{0})
       else
-        tmp = ode_interpolant(Θs[i],integrator,idxs_internal,Val{0})
+        tmp = ode_interpolant(Θs[i],integrator,callback.idxs,Val{0})
       end
       new_sign = callback.condition(integrator.tprev+integrator.dt*Θs[i],tmp,integrator)
       if prev_sign == 0
@@ -105,22 +99,16 @@ function find_callback_time(integrator,callback)
       if callback.rootfind && !(typeof(integrator.alg) <: Discrete)
         if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache
           if typeof(callback.idxs) <: Void
-            idxs_internal = eachindex(integrator.cache.tmp)
             tmp = integrator.cache.tmp
-          elseif typeof(callback.idxs) <: Number
-            idxs_internal = callback.idxs
-          else
-            idxs_internal = callback.idxs
+          else !(typeof(callback.idxs) <: Number)
             tmp = @view integrator.cache.tmp[callback.idxs]
           end
-        else
-          idxs_internal = callback.idxs
         end
         find_zero = (Θ) -> begin
           if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache && !(typeof(callback.idxs) <: Number)
-            ode_interpolant!(tmp,Θ,integrator,idxs_internal,Val{0})
+            ode_interpolant!(tmp,Θ,integrator,callback.idxs,Val{0})
           else
-            tmp = ode_interpolant(Θ,integrator,idxs_internal,Val{0})
+            tmp = ode_interpolant(Θ,integrator,callback.idxs,Val{0})
           end
           callback.condition(integrator.tprev+Θ*integrator.dt,tmp,integrator)
         end
