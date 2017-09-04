@@ -9,6 +9,7 @@ end
 #=
 @muladd function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::OwrenZen4ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<4 || calcVal
+    @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,c1,c2,c3,c4 = cache
     k1 = f(t,uprev)
     a = dt*a21
     k2 = f(t+c1*dt, @. uprev+a*k1)
@@ -16,7 +17,7 @@ end
     k4 = f(t+c3*dt, @. uprev+dt*(a41*k1+a42*k2+a43*k3))
     k5 = f(t+c4*dt, @. uprev+dt*(a51*k1+a52*k2+a53*k3+a54*k4))
     u = @. uprev+dt*(a61*k1+a63*k3+a64*k4+a65*k5)
-    integrator.fsallast = f(t+dt,u); k6 = integrator.fsallast
+    k6 = f(t+dt,u)
     copyat_or_push!(k,1,k1)
     copyat_or_push!(k,2,k2)
     copyat_or_push!(k,3,k3)
@@ -54,6 +55,7 @@ end
 
 @muladd function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::OwrenZen5ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<4 || calcVal
+    @unpack a21,a31,a32,a41,a42,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,c1,c2,c3,c4,c5,c6 = cache
     k1 = f(t,uprev)
     a = dt*a21
     k2 = f(t+c1*dt, @. uprev+a*k1)
@@ -63,7 +65,7 @@ end
     k6 = f(t+c5*dt, @. uprev+dt*(a61*k1+a62*k2+a63*k3+a64*k4+a65*k5))
     k7 = f(t+c6*dt, @. uprev+dt*(a71*k1+a72*k2+a73*k3+a74*k4+a75*k5+a76*k6))
     u = @. uprev+dt*(a81*k1+a83*k3+a84*k4+a85*k5+a86*k6+a87*k7)
-    integrator.fsallast = f(t+dt,u); k8 = integrator.fsallast
+    k8 = f(t+dt,u)
     copyat_or_push!(k,1,k1)
     copyat_or_push!(k,2,k2)
     copyat_or_push!(k,3,k3)
@@ -78,7 +80,6 @@ end
 
 @muladd function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::OwrenZen5Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<4 || calcVal
-    uidx = eachindex(integrator.uprev)
     @unpack k1,k2,k3,k4,k5,k6,k7,k8,tmp = cache
     @unpack a21,a31,a32,a41,a42,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,c1,c2,c3,c4,c5,c6 = cache.tab
     a = dt*a21
@@ -321,13 +322,14 @@ end
 
 @muladd function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::OwrenZen3ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<4 || calcVal
+    @unpack a21,a31,a32,a41,a42,a43,c1,c2 = cache
     k1 = f(t,uprev)
     a1 = dt*a21
     k2 = f(t+c1*dt, @. uprev+a1*k1)
     tmp = @. uprev+ dt*(a31*k1 + a32*k2)
     k3 = f(t+c2*dt,tmp)
     u = @. uprev+dt*(a41*k1+a42*k2+a43*k3)
-    k4 = f(t+dt,u); integrator.fsallast = k4
+    k4 = f(t+dt,u)
     copyat_or_push!(k,1,k1)
     copyat_or_push!(k,2,k2)
     copyat_or_push!(k,3,k3)
@@ -357,6 +359,7 @@ end
 
 @muladd function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::OwrenZen4ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<4 || calcVal
+    @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,c1,c2,c3,c4 = cache
     k1 = f(t,uprev)
     a = dt*a21
     k2 = f(t+c1*dt, uprev+a*k1)
@@ -364,7 +367,7 @@ end
     k4 = f(t+c3*dt, uprev+dt*(a41*k1+a42*k2+a43*k3))
     k5 = f(t+c4*dt, uprev+dt*(a51*k1+a52*k2+a53*k3+a54*k4))
     u = uprev+dt*(a61*k1+a63*k3+a64*k4+a65*k5)
-    integrator.fsallast = f(t+dt,u); k6 = integrator.fsallast
+    k6 = f(t+dt,u)
     copyat_or_push!(k,1,k1)
     copyat_or_push!(k,2,k2)
     copyat_or_push!(k,3,k3)
@@ -412,6 +415,7 @@ end
 
 @muladd function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::OwrenZen5ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<4 || calcVal
+    @unpack a21,a31,a32,a41,a42,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,c1,c2,c3,c4,c5,c6 = cache
     k1 = f(t,uprev)
     a = dt*a21
     k2 = f(t+c1*dt, uprev+a*k1)
@@ -421,7 +425,7 @@ end
     k6 = f(t+c5*dt, uprev+dt*(a61*k1+a62*k2+a63*k3+a64*k4+a65*k5))
     k7 = f(t+c6*dt, uprev+dt*(a71*k1+a72*k2+a73*k3+a74*k4+a75*k5+a76*k6))
     u = uprev+dt*(a81*k1+a83*k3+a84*k4+a85*k5+a86*k6+a87*k7)
-    integrator.fsallast = f(t+dt,u); k8 = integrator.fsallast
+    k8 = f(t+dt,u)
     copyat_or_push!(k,1,k1)
     copyat_or_push!(k,2,k2)
     copyat_or_push!(k,3,k3)
@@ -436,7 +440,7 @@ end
 
 @muladd function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::OwrenZen5Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<4 || calcVal
-    uidx = eachindex(integrator.uprev)
+    uidx = eachindex(uprev)
     @unpack k1,k2,k3,k4,k5,k6,k7,k8,tmp = cache
     @unpack a21,a31,a32,a41,a42,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,c1,c2,c3,c4,c5,c6 = cache.tab
     a = dt*a21
