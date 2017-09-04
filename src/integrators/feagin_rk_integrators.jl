@@ -1,7 +1,7 @@
 function initialize!(integrator, cache::Feagin10ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -123,7 +123,7 @@ end
     end
     u = utmp
     if integrator.opts.adaptive
-      @tight_loop_macros for i in uidxs
+      @tight_loop_macros for i in uidx
         @inbounds tmp[i] = dt*(k2[i] - k16[i]) * adaptiveConst
       end
       atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
@@ -164,7 +164,7 @@ function initialize!(integrator, cache::Feagin10Cache)
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # Pre-start fsal
@@ -306,7 +306,7 @@ end
 function initialize!(integrator, cache::Feagin12ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -335,17 +335,17 @@ end
   k14 = f(t + c13*dt, @. uprev + dt*(a1300*k1                                                                                            + a1308*k9 + a1309*k10 + a1310*k11 + a1311*k12 + a1312*k13))
   k15 = f(t + c14*dt, @. uprev + dt*(a1400*k1                                                                                            + a1408*k9 + a1409*k10 + a1410*k11 + a1411*k12 + a1412*k13 + a1413*k14))
   k16 = f(t + c15*dt, @. uprev + dt*(a1500*k1                                                                                            + a1508*k9 + a1509*k10 + a1510*k11 + a1511*k12 + a1512*k13 + a1513*k14 + a1514*k15))
-  k17 = f(t + c16*dt, @. uprev + dt*(a1600*k1                                                                                            + a1608*k9 + a1609*k10 + a1610*k11 + a1611*k12 + a1612*k13 + a1613*k14 + a1614*k15 + a1615*k16))
-  k18 = f(t + c17*dt, @. uprev + dt*(a1700*k1                                                     + a1705*k6 + a1706*k7 + a1707*k8 + a1708*k9 + a1709*k10 + a1710*k11 + a1711*k12 + a1712*k13 + a1713*k14 + a1714*k15 + a1715*k16 + a1716*k17))
-  k19 = f(t + c18*dt, @. uprev + dt*(a1800*k1                                                     + a1805*k6 + a1806*k7 + a1807*k8 + a1808*k9 + a1809*k10 + a1810*k11 + a1811*k12 + a1812*k13 + a1813*k14 + a1814*k15 + a1815*k16 + a1816*k17 + a1817*k18))
-  k20 = f(t + c19*dt, @. uprev + dt*(a1900*k1                                        + a1904*k5 + a1905*k6 + a1906*k7              + a1908*k9 + a1909*k10 + a1910*k11 + a1911*k12 + a1912*k13 + a1913*k14 + a1914*k15 + a1915*k16 + a1916*k17 + a1917*k18 + a1918*k19))
-  k21 = f(t + c20*dt, @. uprev + dt*(a2000*k1                           + a2003*k4 + a2004*k5 + a2005*k6              + a2007*k8              + a2009*k10 + a2010*k11                                                                                     + a2017*k18 + a2018*k19 + a2019*k20))
-  k22 = f(t + c21*dt, @. uprev + dt*(a2100*k1              + a2102*k3 + a2103*k4                           + a2106*k7 + a2107*k8              + a2109*k10 + a2110*k11                                                                                     + a2117*k18 + a2118*k19 + a2119*k20 + a2120*k21))
-  k23 = f(t + c22*dt, @. uprev + dt*(a2200*k1 + a2201*k2                           + a2204*k5              + a2206*k7                                                                                                                                                                                     + a2220*k21 + a2221*k22))
+  k17 = f(t + c16*dt, @. uprev + dt*((a1600*k1                                                                                            + a1608*k9 + a1609*k10) + (a1610*k11 + a1611*k12 + a1612*k13 + a1613*k14) + (a1614*k15 + a1615*k16)))
+  k18 = f(t + c17*dt, @. uprev + dt*((a1700*k1                                                     + a1705*k6 + a1706*k7) + (a1707*k8 + a1708*k9 + a1709*k10 + a1710*k11) + (a1711*k12 + a1712*k13 + a1713*k14 + a1714*k15) + (a1715*k16 + a1716*k17)))
+  k19 = f(t + c18*dt, @. uprev + dt*((a1800*k1                                                     + a1805*k6 + a1806*k7) + (a1807*k8 + a1808*k9 + a1809*k10 + a1810*k11) + (a1811*k12 + a1812*k13 + a1813*k14 + a1814*k15) + (a1815*k16 + a1816*k17 + a1817*k18)))
+  k20 = f(t + c19*dt, @. uprev + dt*((a1900*k1                                        + a1904*k5 + a1905*k6) + (a1906*k7              + a1908*k9 + a1909*k10 + a1910*k11) + (a1911*k12 + a1912*k13 + a1913*k14 + a1914*k15) + (a1915*k16 + a1916*k17 + a1917*k18 + a1918*k19)))
+  k21 = f(t + c20*dt, @. uprev + dt*((a2000*k1                           + a2003*k4 + a2004*k5) + (a2005*k6              + a2007*k8              + a2009*k10 + a2010*k11)                                                                                     + (a2017*k18 + a2018*k19 + a2019*k20)))
+  k22 = f(t + c21*dt, @. uprev + dt*((a2100*k1              + a2102*k3 + a2103*k4)                           + (a2106*k7 + a2107*k8              + a2109*k10 + a2110*k11)                                                                                     + (a2117*k18 + a2118*k19 + a2119*k20 + a2120*k21)))
+  k23 = f(t + c22*dt, @. uprev + dt*((a2200*k1 + a2201*k2                           + a2204*k5)              + (a2206*k7                                                                                                                                                                                     + a2220*k21 + a2221*k22)))
   k24 = f(t + c23*dt, @. uprev + dt*(a2300*k1              + a2302*k3                                                                                                                                                                                                                                                                     + a2322*k23))
-  k25 = f(t + c24*dt, @. uprev + dt*(a2400*k1 + a2401*k2 + a2402*k3              + a2404*k5              + a2406*k7 + a2407*k8 + a2408*k9 + a2409*k10 + a2410*k11 + a2411*k12 + a2412*k13 + a2413*k14 + a2414*k15 + a2415*k16 + a2416*k17 + a2417*k18 + a2418*k19 + a2419*k20 + a2420*k21 + a2421*k22 + a2422*k23 + a2423*k24))
+  k25 = f(t + c24*dt, @. uprev + dt*((a2400*k1 + a2401*k2 + a2402*k3)              + (a2404*k5              + a2406*k7 + a2407*k8 + a2408*k9) + (a2409*k10 + a2410*k11 + a2411*k12 + a2412*k13) + (a2413*k14 + a2414*k15 + a2415*k16 + a2416*k17) + (a2417*k18 + a2418*k19 + a2419*k20 + a2420*k21) + (a2421*k22 + a2422*k23 + a2423*k24)))
 
-  u = @. uprev + dt*(b1*k1 + b2*k2 + b3*k3 + b5*k5 + b7*k7 + b8*k8 + b10*k10 + b11*k11 + b13*k13 + b14*k14 + b15*k15 + b16*k16 + b17*k17 + b18*k18 + b19*k19 + b20*k20 + b21*k21 + b22*k22 + b23*k23 + b24*k24 + b25*k25)
+  u = @. uprev + dt*((b1*k1 + b2*k2 + b3*k3 + b5*k5) + (b7*k7 + b8*k8 + b10*k10 + b11*k11) + (b13*k13 + b14*k14 + b15*k15 + b16*k16) + (b17*k17 + b18*k18 + b19*k19 + b20*k20) + (b21*k21 + b22*k22 + b23*k23) + (b24*k24 + b25*k25))
   k = f(t+dt,u)
   integrator.fsallast = k
   if integrator.opts.adaptive
@@ -465,7 +465,7 @@ end
     k25 = f(t + c24*dt,tmp)
     utmp = similar(u)
     @tight_loop_macros for i in uidx
-      @inbounds utmp[i] = uprev[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i] + b7*k7[i] + b8*k8[i] + b10*k10[i] + b11*k11[i] + b13*k13[i] + b14*k14[i] + b15*k15[i] + b16*k16[i] + b17*k17[i] + b18*k18[i] + b19*k19[i] + b20*k20[i] + b21*k21[i] + b22*k22[i] + b23*k23[i] + b24*k24[i] + b25*k25[i])
+      @inbounds utmp[i] = uprev[i] + dt*((b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i]) + (b7*k7[i] + b8*k8[i] + b10*k10[i] + b11*k11[i]) + (b13*k13[i] + b14*k14[i] + b15*k15[i] + b16*k16[i]) + (b17*k17[i] + b18*k18[i] + b19*k19[i] + b20*k20[i]) + (b21*k21[i] + b22*k22[i] + b23*k23[i]) + (b24*k24[i] + b25*k25[i]))
     end
     u = utmp
     k = f(t+dt,u)
@@ -493,16 +493,16 @@ end
     k14 = f(t + c13*dt, uprev + dt*(a1300*k1                                                                                            + a1308*k9 + a1309*k10 + a1310*k11 + a1311*k12 + a1312*k13))
     k15 = f(t + c14*dt, uprev + dt*(a1400*k1                                                                                            + a1408*k9 + a1409*k10 + a1410*k11 + a1411*k12 + a1412*k13 + a1413*k14))
     k16 = f(t + c15*dt, uprev + dt*(a1500*k1                                                                                            + a1508*k9 + a1509*k10 + a1510*k11 + a1511*k12 + a1512*k13 + a1513*k14 + a1514*k15))
-    k17 = f(t + c16*dt, uprev + dt*(a1600*k1                                                                                            + a1608*k9 + a1609*k10 + a1610*k11 + a1611*k12 + a1612*k13 + a1613*k14 + a1614*k15 + a1615*k16))
-    k18 = f(t + c17*dt, uprev + dt*(a1700*k1                                                     + a1705*k6 + a1706*k7 + a1707*k8 + a1708*k9 + a1709*k10 + a1710*k11 + a1711*k12 + a1712*k13 + a1713*k14 + a1714*k15 + a1715*k16 + a1716*k17))
-    k19 = f(t + c18*dt, uprev + dt*(a1800*k1                                                     + a1805*k6 + a1806*k7 + a1807*k8 + a1808*k9 + a1809*k10 + a1810*k11 + a1811*k12 + a1812*k13 + a1813*k14 + a1814*k15 + a1815*k16 + a1816*k17 + a1817*k18))
-    k20 = f(t + c19*dt, uprev + dt*(a1900*k1                                        + a1904*k5 + a1905*k6 + a1906*k7              + a1908*k9 + a1909*k10 + a1910*k11 + a1911*k12 + a1912*k13 + a1913*k14 + a1914*k15 + a1915*k16 + a1916*k17 + a1917*k18 + a1918*k19))
-    k21 = f(t + c20*dt, uprev + dt*(a2000*k1                           + a2003*k4 + a2004*k5 + a2005*k6              + a2007*k8              + a2009*k10 + a2010*k11                                                                                     + a2017*k18 + a2018*k19 + a2019*k20))
-    k22 = f(t + c21*dt, uprev + dt*(a2100*k1              + a2102*k3 + a2103*k4                           + a2106*k7 + a2107*k8              + a2109*k10 + a2110*k11                                                                                     + a2117*k18 + a2118*k19 + a2119*k20 + a2120*k21))
-    k23 = f(t + c22*dt, uprev + dt*(a2200*k1 + a2201*k2                           + a2204*k5              + a2206*k7                                                                                                                                                                                     + a2220*k21 + a2221*k22))
+    k17 = f(t + c16*dt, uprev + dt*((a1600*k1                                                                                            + a1608*k9 + a1609*k10) + (a1610*k11 + a1611*k12 + a1612*k13 + a1613*k14) + (a1614*k15 + a1615*k16)))
+    k18 = f(t + c17*dt, uprev + dt*((a1700*k1                                                     + a1705*k6 + a1706*k7) + (a1707*k8 + a1708*k9 + a1709*k10 + a1710*k11) + (a1711*k12 + a1712*k13 + a1713*k14 + a1714*k15) + (a1715*k16 + a1716*k17)))
+    k19 = f(t + c18*dt, uprev + dt*((a1800*k1                                                     + a1805*k6 + a1806*k7) + (a1807*k8 + a1808*k9 + a1809*k10 + a1810*k11) + (a1811*k12 + a1812*k13 + a1813*k14 + a1814*k15) + (a1815*k16 + a1816*k17 + a1817*k18)))
+    k20 = f(t + c19*dt, uprev + dt*((a1900*k1                                        + a1904*k5 + a1905*k6) + (a1906*k7              + a1908*k9 + a1909*k10 + a1910*k11) + (a1911*k12 + a1912*k13 + a1913*k14 + a1914*k15) + (a1915*k16 + a1916*k17 + a1917*k18 + a1918*k19)))
+    k21 = f(t + c20*dt, uprev + dt*((a2000*k1                           + a2003*k4 + a2004*k5) + (a2005*k6              + a2007*k8              + a2009*k10 + a2010*k11)                                                                                     + (a2017*k18 + a2018*k19 + a2019*k20)))
+    k22 = f(t + c21*dt, uprev + dt*((a2100*k1              + a2102*k3 + a2103*k4)                           + (a2106*k7 + a2107*k8              + a2109*k10 + a2110*k11)                                                                                     + (a2117*k18 + a2118*k19 + a2119*k20 + a2120*k21)))
+    k23 = f(t + c22*dt, uprev + dt*((a2200*k1 + a2201*k2                           + a2204*k5)              + (a2206*k7                                                                                                                                                                                     + a2220*k21 + a2221*k22)))
     k24 = f(t + c23*dt, uprev + dt*(a2300*k1              + a2302*k3                                                                                                                                                                                                                                                                     + a2322*k23))
-    k25 = f(t + c24*dt, uprev + dt*(a2400*k1 + a2401*k2 + a2402*k3              + a2404*k5              + a2406*k7 + a2407*k8 + a2408*k9 + a2409*k10 + a2410*k11 + a2411*k12 + a2412*k13 + a2413*k14 + a2414*k15 + a2415*k16 + a2416*k17 + a2417*k18 + a2418*k19 + a2419*k20 + a2420*k21 + a2421*k22 + a2422*k23 + a2423*k24))
-    u = uprev + dt*(b1*k1 + b2*k2 + b3*k3 + b5*k5 + b7*k7 + b8*k8 + b10*k10 + b11*k11 + b13*k13 + b14*k14 + b15*k15 + b16*k16 + b17*k17 + b18*k18 + b19*k19 + b20*k20 + b21*k21 + b22*k22 + b23*k23 + b24*k24 + b25*k25)
+    k25 = f(t + c24*dt, uprev + dt*((a2400*k1 + a2401*k2 + a2402*k3)              + (a2404*k5              + a2406*k7 + a2407*k8 + a2408*k9) + (a2409*k10 + a2410*k11 + a2411*k12 + a2412*k13) + (a2413*k14 + a2414*k15 + a2415*k16 + a2416*k17) + (a2417*k18 + a2418*k19 + a2419*k20 + a2420*k21) + (a2421*k22 + a2422*k23 + a2423*k24)))
+    u = uprev + dt*((b1*k1 + b2*k2 + b3*k3 + b5*k5) + (b7*k7 + b8*k8 + b10*k10 + b11*k11) + (b13*k13 + b14*k14 + b15*k15 + b16*k16) + (b17*k17 + b18*k18 + b19*k19 + b20*k20) + (b21*k21 + b22*k22 + b23*k23) + (b24*k24 + b25*k25))
     k = f(t+dt,u)
     integrator.fsallast = k
     if integrator.opts.adaptive
@@ -511,6 +511,7 @@ end
       integrator.EEst = integrator.opts.internalnorm(atmp)
     end
   end
+
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
@@ -520,7 +521,7 @@ function initialize!(integrator, cache::Feagin12Cache)
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # Pre-start fsal
@@ -581,7 +582,7 @@ end
   f(t + c23*dt,tmp,k24)
   @. tmp = uprev + dt*((a2400*k1 + a2401*k2 + a2402*k3) + (a2404*k5 + a2406*k7 + a2407*k8 + a2408*k9) + (a2409*k10 + a2410*k11 + a2411*k12 + a2412*k13) + (a2413*k14 + a2414*k15 + a2415*k16 + a2416*k17) + (a2417*k18 + a2418*k19 + a2419*k20 + a2420*k21) + (a2421*k22 + a2422*k23 + a2423*k24))
   f(t + c24*dt,tmp,k25)
-  @. u = uprev + dt*(b1*k1 + b2*k2 + b3*k3 + b5*k5 + b7*k7 + b8*k8 + b10*k10 + b11*k11 + b13*k13 + b14*k14 + b15*k15 + b16*k16 + b17*k17 + b18*k18 + b19*k19 + b20*k20 + b21*k21 + b22*k22 + b23*k23 + b24*k24 + b25*k25)
+  @. u = uprev + dt*((b1*k1 + b2*k2 + b3*k3 + b5*k5) + (b7*k7 + b8*k8 + b10*k10 + b11*k11) + (b13*k13 + b14*k14 + b15*k15 + b16*k16) + (b17*k17 + b18*k18 + b19*k19 + b20*k20) + (b21*k21 + b22*k22 + b23*k23) + (b24*k24 + b25*k25))
   if integrator.opts.adaptive
     @. tmp = dt*(k2 - k24) * adaptiveConst
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
@@ -695,7 +696,7 @@ end
   end
   f(t + c24*dt,tmp,k25)
   @tight_loop_macros for i in uidx
-    @inbounds u[i] = uprev[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i] + b7*k7[i] + b8*k8[i] + b10*k10[i] + b11*k11[i] + b13*k13[i] + b14*k14[i] + b15*k15[i] + b16*k16[i] + b17*k17[i] + b18*k18[i] + b19*k19[i] + b20*k20[i] + b21*k21[i] + b22*k22[i] + b23*k23[i] + b24*k24[i] + b25*k25[i])
+    @inbounds u[i] = uprev[i] + dt*((b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i]) + (b7*k7[i] + b8*k8[i] + b10*k10[i] + b11*k11[i]) + (b13*k13[i] + b14*k14[i] + b15*k15[i] + b16*k16[i]) + (b17*k17[i] + b18*k18[i] + b19*k19[i] + b20*k20[i]) + (b21*k21[i] + b22*k22[i] + b23*k23[i]) + (b24*k24[i] + b25*k25[i]))
   end
   if integrator.opts.adaptive
     @tight_loop_macros for i in uidx
@@ -710,7 +711,7 @@ end
 function initialize!(integrator,cache::Feagin14ConstantCache,f=integrator.f)
   integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -981,7 +982,7 @@ function initialize!(integrator, cache::Feagin14Cache)
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # Pre-start fsal

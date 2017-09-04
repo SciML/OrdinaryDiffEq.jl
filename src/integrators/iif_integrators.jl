@@ -12,7 +12,7 @@ end
 
 function initialize!(integrator,cache::Union{GenericIIF1ConstantCache,GenericIIF2ConstantCache})
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   A = integrator.f.f1
   cache.uhold[1] = integrator.f.f2(integrator.t,integrator.uprev)
   integrator.fsalfirst = integrator.f.f1(integrator.t,integrator.uprev) .+ cache.uhold[1]
@@ -69,7 +69,7 @@ function initialize!(integrator,cache::Union{GenericIIF1Cache,GenericIIF2Cache})
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   A = integrator.f.f1
   integrator.f.f2(integrator.t,integrator.uprev,cache.rtmp1)
   A_mul_B!(cache.k,A,integrator.uprev)

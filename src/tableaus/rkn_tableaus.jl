@@ -141,6 +141,92 @@ function Nystrom5VelocityIndependentConstantCache(T::Type,T2::Type)
   Nystrom5VelocityIndependentConstantCache(c1, c2, a21, a31, a32, a41, a42, a43, bbar1, bbar2, bbar3, b1, b2, b3, b4)
 end
 
+struct ERKN4ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+  c1::T2
+  c2::T2
+  c3::T2
+  a21::T
+  a31::T
+  a32::T
+  a41::T
+  a42::T
+  a43::T
+  b1::T
+  b2::T
+  b3::T
+  b4::T
+  bp1::T # bp denotes bprime
+  bp2::T
+  bp3::T
+  bp4::T
+  btilde1::T
+  btilde2::T
+  btilde3::T
+  btilde4::T
+  bptilde1::T
+  bptilde2::T
+  bptilde3::T
+  bptilde4::T
+end
+
+function ERKN4ConstantCache(T::Type,T2::Type)
+  c1 = T2(1//4)
+  c2 = T2(7//10)
+  c3 = T2(1)
+  a21 = T(1//32)
+  a31 = T(19//600)
+  a32 = T(16//75)
+  a41 = T(32//315)
+  a42 = T(58//315)
+  a43 = T(3//14)
+  btilde1 = T(1//21 - 14//375)
+  btilde2 = T(28//81 - 136//375)
+  btilde3 = T(50//567 - 2//25)
+  btilde4 = T(1//54 - 1//50)
+  bptilde1 = T(1//14 - 17//231)
+  bptilde2 = T(32//81 - 116//297)
+  bptilde3 = T(250//567 - 925//2079)
+  bptilde4 = T(5//54 - 1//11)
+  b1 = T(1//21)
+  b2 = T(28//81)
+  b3 = T(50//567)
+  b4 = T(1//54)
+  bp1 = T(1//14)
+  bp2 = T(32//81)
+  bp3 = T(250//567)
+  bp4 = T(5//54)
+  ERKN4ConstantCache(c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3, b4, bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4, bptilde1, bptilde2, bptilde3, bptilde4)
+end
+
+Base.@pure function ERKN4ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+ERKN4ConstantCache(
+                  T2(0.25),
+                  T2(0.7),
+                  T2(1.0),
+                  T(0.03125),
+                  T(0.03166666666666667),
+                  T(0.21333333333333335),
+                  T(0.10158730158730159),
+                  T(0.18412698412698414),
+                  T(0.21428571428571427),
+                  T(0.047619047619047616),
+                  T(0.345679012345679),
+                  T(0.08818342151675485),
+                  T(0.018518518518518517),
+                  T(0.07142857142857142),
+                  T(0.3950617283950617),
+                  T(0.4409171075837742),
+                  T(0.09259259259259259),
+                  T(0.010285714285714285),
+                  T(-0.016987654320987654),
+                  T(0.00818342151675485),
+                  T(-0.0014814814814814814),
+                  T(-0.0021645021645021645),
+                  T(0.004489337822671156),
+                  T(-0.004008337341670675),
+                  T(0.0016835016835016834))
+end
+
 struct DPRKN6ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   c1::T2
   c2::T2
@@ -418,8 +504,6 @@ function DPRKN6ConstantCache(T::Type,T2::Type)
                       rp33,rp32,rp31,rp44,rp43,rp42,rp41,rp54,rp53,rp52,rp51,
                       rp64,rp63,rp62,rp61)
 end
-
-
 
 struct DPRKN8ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   c1::T2

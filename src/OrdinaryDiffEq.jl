@@ -124,8 +124,9 @@ module OrdinaryDiffEq
   # Reexport the Alg Types
 
   export Discrete, FunctionMap, Euler, Heun, Ralston, Midpoint, SSPRK22,
-         SSPRK33, SSPRK432, SSPRK104, RK4, ExplicitRK,
-         OwrenZen3, OwrenZen4, OwrenZen5, BS3, BS5,
+         SSPRK33, SSPRK53, SSPRK63, SSPRK73, SSPRK83, SSPRK432, SSPRK932,
+         SSPRK54, SSPRK104, RK4, ExplicitRK, OwrenZen3, OwrenZen4, OwrenZen5,
+         BS3, BS5,
          DP5, DP5Threaded, Tsit5, DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8,
          Vern9,Feagin10, Feagin12, Feagin14, CompositeAlgorithm
 
@@ -151,5 +152,5 @@ module OrdinaryDiffEq
   export SplitEuler
 
   export Nystrom4, Nystrom4VelocityIndependent, Nystrom5VelocityIndependent,
-         IRKN3, IRKN4, DPRKN6, DPRKN8, DPRKN12
+         IRKN3, IRKN4, DPRKN6, DPRKN8, DPRKN12, ERKN4
 end # module

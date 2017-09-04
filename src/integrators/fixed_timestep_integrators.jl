@@ -1,6 +1,6 @@
 function initialize!(integrator,cache::DiscreteConstantCache)
   integrator.kshortsize = 0
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
 end
 
 function perform_step!(integrator,cache::DiscreteConstantCache,repeat_step=false)
@@ -15,7 +15,7 @@ end
 
 function initialize!(integrator,cache::DiscreteCache)
   integrator.kshortsize = 0
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
 end
 
 function perform_step!(integrator,cache::DiscreteCache,repeat_step=false)
@@ -36,7 +36,7 @@ end
 
 function initialize!(integrator,cache::EulerConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -60,7 +60,7 @@ function initialize!(integrator,cache::EulerCache)
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
@@ -74,7 +74,7 @@ end
 
 function initialize!(integrator,cache::Union{HeunConstantCache,RalstonConstantCache})
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -125,7 +125,7 @@ function initialize!(integrator,cache::Union{HeunCache,RalstonCache})
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
@@ -167,7 +167,7 @@ end
 function initialize!(integrator,cache::MidpointConstantCache)
   integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -196,7 +196,7 @@ function initialize!(integrator,cache::MidpointCache)
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # FSAL for interpolation
@@ -220,7 +220,7 @@ end
 function initialize!(integrator,cache::RK4ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -249,9 +249,9 @@ end
                 σ₁*(3*dt*k₁ + 3*dt*k₅ + 6*uprev - 6*u) + 6*u)/dt
       pprime2 = k₁ + σ₂*(-4*dt*k₁ - 2*dt*k₅ - 6*uprev +
                 σ₂*(3*dt*k₁ + 3*dt*k₅ + 6*uprev - 6*u) + 6*u)/dt
-      r1 = dt*(f(t+σ₁*dt,p1) - pprime1)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
-      r2 = dt*(f(t+σ₂*dt,p2) - pprime2)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
-      integrator.EEst = 2.1342*max(r1,r2)
+      e1 = integrator.opts.internalnorm(calculate_residuals(dt*(f(t+σ₁*dt,p1) - pprime1), uprev, u, integrator.opts.abstol, integrator.opts.reltol))
+      e2 = integrator.opts.internalnorm(calculate_residuals(dt*(f(t+σ₂*dt,p2) - pprime2), uprev, u, integrator.opts.abstol, integrator.opts.reltol))
+      integrator.EEst = 2.1342*max(e1,e2)
   end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -263,7 +263,7 @@ function initialize!(integrator,cache::RK4Cache)
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # pre-start FSAL
@@ -294,7 +294,7 @@ end
                     σ₁*(3*dt*k₁[i] + 3*dt*k₅[i] + 6*uprev[i] - 6*u[i]) + 6*u[i])/dt
       end
       f(t+σ₁*dt,p,tmp)
-      @. p = dt*(tmp - pprime)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
+      calculate_residuals!(p, dt*(tmp - pprime), uprev, u, integrator.opts.abstol, integrator.opts.reltol)
       e1 = integrator.opts.internalnorm(p)
       @tight_loop_macros for i in eachindex(u)
         @inbounds p[i] = (1-σ₂)*uprev[i]+σ₂*u[i]+σ₂*(σ₂-1)*((1-2σ₂)*(u[i]-uprev[i])+(σ₂-1)*dt*k₁[i] + σ₂*dt*k₅[i])
@@ -302,7 +302,7 @@ end
                   σ₂*(3*dt*k₁[i] + 3*dt*k₅[i] + 6*uprev[i] - 6*u[i]) + 6*u[i])/dt
       end
       f(t+σ₂*dt,p,tmp)
-      @. p = dt*(tmp - pprime)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
+      calculate_residuals!(p, dt*(tmp - pprime), uprev, u, integrator.opts.abstol, integrator.opts.reltol)
       e2 = integrator.opts.internalnorm(p)
       integrator.EEst = 2.1342*max(e1,e2)
   end

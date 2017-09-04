@@ -1,11 +1,11 @@
 # http://www.chimica.unipd.it/antonino.polimeno/pubblica/downloads/JChemPhys_101_4062.pdf
 
-function initialize!(integrator,cache::SymplecticEulerConstantCache,repeat_step=false)
+function initialize!(integrator,cache::SymplecticEulerConstantCache)
   integrator.kshortsize = 2
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   # Do the calculation pre
@@ -33,12 +33,12 @@ end
   integrator.fsallast = ku
 end
 
-function initialize!(integrator,cache::SymplecticEulerCache,repeat_step=false)
+function initialize!(integrator,cache::SymplecticEulerCache)
   integrator.kshortsize = 2
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   # Do the calculation pre
@@ -67,7 +67,7 @@ end
   f.f1(t,uprev,du,ku)
 end
 
-function initialize!(integrator,cache::C,repeat_step=false) where
+function initialize!(integrator,cache::C) where
     {C<:Union{VelocityVerletCache,Symplectic2Cache,Symplectic3Cache,Symplectic4Cache,
               Symplectic45Cache,Symplectic5Cache,Symplectic6Cache,Symplectic62Cache,
               McAte8Cache,KahanLi8Cache,SofSpa10Cache}}
@@ -75,7 +75,7 @@ function initialize!(integrator,cache::C,repeat_step=false) where
   integrator.fsallast = cache.k
 
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
 

@@ -1,7 +1,7 @@
-function initialize!(integrator,cache::LinearImplicitEulerConstantCache,f=integrator.f)
+function initialize!(integrator, cache::LinearImplicitEulerConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -9,7 +9,7 @@ function initialize!(integrator,cache::LinearImplicitEulerConstantCache,f=integr
   integrator.k[2] = integrator.fsallast
 end
 
-function perform_step!(integrator,cache::LinearImplicitEulerConstantCache,f=integrator.f)
+@muladd function perform_step!(integrator, cache::LinearImplicitEulerConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,k = integrator
 
   L = update_coefficients(integrator.f,t+dt,u)
@@ -26,12 +26,21 @@ function perform_step!(integrator,cache::LinearImplicitEulerConstantCache,f=inte
   u = W\k
 
   if integrator.opts.adaptive && integrator.success_iter > 0
-    # Use 2rd divided differences a la SPICE and Shampine
+    # local truncation error (LTE) bound by dt^2/2*max|y''(t)|
+    # use 2nd divided differences (DD) a la SPICE and Shampine
+
+    # TODO: check numerical stability
     uprev2 = integrator.uprev2
     tprev = integrator.tprev
-    DD3 = ((u - uprev)/((dt)*(t+dt-tprev)) + (uprev-uprev2)/((t-tprev)*(t+dt-tprev)))
-    dEst = (dt^2)*abs(DD3/6)
-    integrator.EEst = dEst/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
+
+    dt1 = dt*(t+dt-tprev)
+    dt2 = (t-tprev)*(t+dt-tprev)
+    c = 7/12 # default correction factor in SPICE (LTE overestimated by DD)
+    r = c*dt^2 # by mean value theorem 2nd DD equals y''(s)/2 for some s
+
+    tmp = @. r*abs((u - uprev)/dt1 - (uprev - uprev2)/dt2)
+    atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+    integrator.EEst = integrator.opts.internalnorm(atmp)
   else
     integrator.EEst = 1
   end
@@ -39,28 +48,26 @@ function perform_step!(integrator,cache::LinearImplicitEulerConstantCache,f=inte
   integrator.fsallast = f(t+dt,u)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  @pack integrator = t,dt,u
-end#
-
-function initialize!(integrator,cache::LinearImplicitEulerCache,f=integrator.f)
-  integrator.kshortsize = 2
-  @unpack k,fsalfirst = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.u = u
 end
 
-function perform_step!(integrator,cache::LinearImplicitEulerCache,f=integrator.f)
+function initialize!(integrator, cache::LinearImplicitEulerCache)
+  integrator.kshortsize = 2
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
+end
+
+@muladd function perform_step!(integrator, cache::LinearImplicitEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u = integrator
-  @unpack W,k = cache
+  @unpack W,k,tmp,atmp = cache
   mass_matrix = integrator.sol.prob.mass_matrix
 
   L = integrator.f
   update_coefficients!(L,t+dt,u)
-
 
   if typeof(L) <: AbstractDiffEqLinearOperator
 
@@ -71,8 +78,6 @@ function perform_step!(integrator,cache::LinearImplicitEulerCache,f=integrator.f
           @inbounds W[i,j] = @muladd mass_matrix[i,j]-dt*L[i,j]
       end
       k .= uprev # + B
-      integrator.alg.linsolve(vec(u),W,vec(k),true)
-
   else # Must be a DiffEqAffineOperator
 
       # Of the form u' = A(t)u + B(t)
@@ -84,41 +89,44 @@ function perform_step!(integrator,cache::LinearImplicitEulerCache,f=integrator.f
           @inbounds W[i,j] = @muladd mass_matrix[i,j]-dt*A[i,j]
       end
       @. k = uprev + dt*B
-      integrator.alg.linsolve(vec(u),W,vec(k),true)
   end
 
+  integrator.alg.linsolve(vec(u), W, vec(k), true)
+
   if integrator.opts.adaptive && integrator.success_iter > 0
-    # Use 2rd divided differences a la SPICE and Shampine
+    # local truncation error (LTE) bound by dt^2/2*max|y''(t)|
+    # use 2nd divided differences (DD) a la SPICE and Shampine
+
+    # TODO: check numerical stability
     uprev2 = integrator.uprev2
     tprev = integrator.tprev
+
     dt1 = (dt)*(t+dt-tprev)
     dt2 = (t-tprev)*(t+dt-tprev)
-    @tight_loop_macros for (i,atol,rtol) in zip(eachindex(u),Iterators.cycle(integrator.opts.abstol),Iterators.cycle(integrator.opts.reltol))
-      @inbounds DD3 = (u[i] - uprev[i])/dt1 + (uprev[i]-uprev2[i])/dt2
-      dEst = (dt^2)*abs(DD3)/6
-      @inbounds k[i] = dEst/(atol+max(abs(uprev[i]),abs(u[i]))*rtol)
-    end
-    integrator.EEst = integrator.opts.internalnorm(k)
+    c = 7/12 # default correction factor in SPICE (LTE overestimated by DD)
+    r = c*dt^2 # by mean value theorem 2nd DD equals y''(s)/2 for some s
+
+    @. tmp = r*abs((u - uprev)/dt1 - (uprev - uprev2)/dt2)
+    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+    integrator.EEst = integrator.opts.internalnorm(atmp)
   else
     integrator.EEst = 1
   end
 
   f(t+dt,u,integrator.fsallast)
-  @pack integrator = t,dt,u
 end
 
-function initialize!(integrator,cache::MidpointSplittingCache,f=integrator.f)
+function initialize!(integrator, cache::MidpointSplittingCache)
   integrator.kshortsize = 2
-  @unpack k,fsalfirst = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  f(integrator.t,integrator.uprev,integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
-function perform_step!(integrator,cache::MidpointSplittingCache,f=integrator.f)
+function perform_step!(integrator, cache::MidpointSplittingCache, repeat_step=false)
   @unpack t,dt,uprev,u = integrator
   @unpack W,k,tmp = cache
   mass_matrix = integrator.sol.prob.mass_matrix
@@ -143,5 +151,4 @@ function perform_step!(integrator,cache::MidpointSplittingCache,f=integrator.f)
   end
 
   f(t+dt,u,integrator.fsallast)
-  @pack integrator = t,dt,u
 end

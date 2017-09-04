@@ -1,7 +1,7 @@
 function initialize!(integrator,cache::TanYam7ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -120,7 +120,7 @@ function initialize!(integrator, cache::TanYam7Cache)
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # Pre-start fsal
@@ -221,7 +221,7 @@ end
 
 function initialize!(integrator, cache::DP8ConstantCache)
   integrator.kshortsize = 7
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -444,7 +444,8 @@ end
 
 function initialize!(integrator, cache::DP8Cache)
   integrator.kshortsize = 7
-  integrator.k = [cache.udiff,cache.bspl,cache.dense_tmp3,cache.dense_tmp4,cache.dense_tmp5,cache.dense_tmp6,cache.dense_tmp7]
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k .= [cache.udiff,cache.bspl,cache.dense_tmp3,cache.dense_tmp4,cache.dense_tmp5,cache.dense_tmp6,cache.dense_tmp7]
   integrator.fsalfirst = cache.k1
   integrator.fsallast = cache.k13
   integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
@@ -620,7 +621,7 @@ end
 function initialize!(integrator, cache::TsitPap8ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -758,7 +759,7 @@ function initialize!(integrator, cache::TsitPap8Cache)
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # Pre-start fsal

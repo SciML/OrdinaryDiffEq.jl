@@ -1,6 +1,6 @@
 function initialize!(integrator, cache::ImplicitEulerConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -75,17 +75,19 @@ end
   cache.newton_iters = iter
 
   if integrator.opts.adaptive && integrator.success_iter > 0
-    # Use 2rd divided differences a la SPICE and Shampine
+    # local truncation error (LTE) bound by dt^2/2*max|y''(t)|
+    # use 2nd divided differences (DD) a la SPICE and Shampine
 
-    # TODO: check mathematical correctness and numerical stability
+    # TODO: check numerical stability
     uprev2 = integrator.uprev2
     tprev = integrator.tprev
 
     dt1 = dt*(t+dt-tprev)
     dt2 = (t-tprev)*(t+dt-tprev)
-    r = dt^2/6
+    c = 7/12 # default correction factor in SPICE (LTE overestimated by DD)
+    r = c*dt^2 # by mean value theorem 2nd DD equals y''(s)/2 for some s
 
-    tmp = @. r*abs((u - uprev)/dt1 + (uprev - uprev2)/dt2)
+    tmp = @. r*abs((u - uprev)/dt1 - (uprev - uprev2)/dt2)
     atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   else
@@ -102,7 +104,7 @@ function initialize!(integrator, cache::ImplicitEulerCache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
@@ -217,17 +219,19 @@ end
   cache.newton_iters = iter
 
   if integrator.opts.adaptive && integrator.success_iter > 0
-    # Use 2rd divided differences a la SPICE and Shampine
+    # local truncation error (LTE) bound by dt^2/2*max|y''(t)|
+    # use 2nd divided differences (DD) a la SPICE and Shampine
 
-    # TODO: check mathematical correctness and numerical stability
+    # TODO: check numerical stability
     uprev2 = integrator.uprev2
     tprev = integrator.tprev
 
     dt1 = dt*(t+dt-tprev)
     dt2 = (t-tprev)*(t+dt-tprev)
-    r = dt^2/6
+    c = 7/12 # default correction factor in SPICE (LTE overestimated by DD)
+    r = c*dt^2 # by mean value theorem 2nd DD equals y''(s)/2 for some s
 
-    @. tmp = r*abs((u - uprev)/dt1 + (uprev - uprev2)/dt2)
+    @. tmp = r*abs((u - uprev)/dt1 - (uprev - uprev2)/dt2)
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   else
@@ -239,7 +243,7 @@ end
 
 function initialize!(integrator, cache::ImplicitMidpointConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -317,44 +321,6 @@ end
   cache.ηold = η
   cache.newton_iters = iter
 
-  #=
-  if integrator.opts.adaptive
-    if integrator.iter > 2
-      # Use 3rd divided differences a la SPICE and Shampine
-
-      # TODO: check mathematical correctness and numerical stability
-      uprev2 = integrator.uprev2
-      tprev = integrator.tprev
-      uprev3 = cache.uprev3
-      tprev2 = cache.tprev2
-
-      dt1 = dt*(t+dt-tprev)
-      dt2 = (t-tprev)*(t+dt-tprev)
-      dt3 = (t-tprev)*(t-tprev2)
-      dt4 = (tprev-tprev2)*(t-tprev2)
-      dt5 = t+dt-tprev2
-      r = dt^3/12
-
-      # tmp = @. r*abs(((u - uprev)/dt1 + (uprev - uprev2)/dt2) - ((uprev - uprev2)/dt3 + (uprev2 - uprev3)/dt4)/dt5)
-      DD31 = @. (u - uprev)/dt1 + (uprev - uprev2)/dt2
-      DD30 = @. (uprev - uprev2)/dt3 + (uprev2 - uprev3)/dt4
-      tmp = @. r*abs((DD31 - DD30)/dt5)
-      atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
-      integrator.EEst = integrator.opts.internalnorm(atmp)
-      if integrator.EEst <= 1
-        cache.uprev3 = uprev2
-        cache.tprev2 = tprev
-      end
-    elseif integrator.success_iter > 0
-      integrator.EEst = 1
-      cache.uprev3 = integrator.uprev2
-      cache.tprev2 = integrator.tprev
-    else
-      integrator.EEst = 1
-    end
-  end
-  =#
-
   integrator.fsallast = f(t+dt,u)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -365,7 +331,7 @@ function initialize!(integrator, cache::ImplicitMidpointCache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
@@ -483,52 +449,12 @@ end
   cache.ηold = η
   cache.newton_iters = iter
 
-  #=
-  if integrator.opts.adaptive
-    if integrator.iter > 2
-      # Use 3rd divided differences a la SPICE and Shampine
-
-      # TODO: check mathematical correctness and numerical stability
-      uprev2 = integrator.uprev2
-      tprev = integrator.tprev
-      uprev3 = cache.uprev3
-      tprev2 = cache.tprev2
-
-      dt1 = dt*(t+dt-tprev)
-      dt2 = (t-tprev)*(t+dt-tprev)
-      dt3 = (t-tprev)*(t-tprev2)
-      dt4 = (tprev-tprev2)*(t-tprev2)
-      dt5 = t+dt-tprev2
-      r = dt^3/12
-
-      # @. tmp = r*abs(((u - uprev)/dt1 + (uprev - uprev2)/dt2) - ((uprev - uprev2)/dt3 + (uprev2 - uprev3)/dt4)/dt5)
-      @inbounds for i in eachindex(u)
-        DD31 = (u[i] - uprev[i])/dt1 + (uprev[i] - uprev2[i])/dt2
-        DD30 = (uprev[i] - uprev2[i])/dt3 + (uprev2[i] - uprev3[i])/dt4
-        tmp[i] = r*abs((DD31 - DD30)/dt5)
-      end
-      calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
-      integrator.EEst = integrator.opts.internalnorm(atmp)
-      if integrator.EEst <= 1
-        copy!(cache.uprev3,uprev2)
-        cache.tprev2 = tprev
-      end
-    elseif integrator.success_iter > 0
-      integrator.EEst = 1
-      copy!(cache.uprev3,integrator.uprev2)
-      cache.tprev2 = integrator.tprev
-    else
-      integrator.EEst = 1
-    end
-  end
-  =#
-
   f(t+dt,u,integrator.fsallast)
 end
 
 function initialize!(integrator, cache::TrapezoidConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -604,9 +530,10 @@ end
 
   if integrator.opts.adaptive
     if integrator.iter > 2
-      # Use 3rd divided differences a la SPICE and Shampine
+      # local truncation error (LTE) bound by dt^3/12*max|y'''(t)|
+      # use 3rd divided differences (DD) a la SPICE and Shampine
 
-      # TODO: check mathematical correctness and numerical stability
+      # TODO: check numerical stability
       uprev2 = integrator.uprev2
       tprev = integrator.tprev
       uprev3 = cache.uprev3
@@ -617,11 +544,12 @@ end
       dt3 = (t-tprev)*(t-tprev2)
       dt4 = (tprev-tprev2)*(t-tprev2)
       dt5 = t+dt-tprev2
-      r = dt^3/12
+      c = 7/12 # default correction factor in SPICE (LTE overestimated by DD)
+      r = c*dt^3/2 # by mean value theorem 3rd DD equals y'''(s)/6 for some s
 
-      # tmp = @. r*abs(((u - uprev)/dt1 + (uprev - uprev2)/dt2) - ((uprev - uprev2)/dt3 + (uprev2 - uprev3)/dt4)/dt5)
-      DD31 = @. (u - uprev)/dt1 + (uprev - uprev2)/dt2
-      DD30 = @. (uprev - uprev2)/dt3 + (uprev2 - uprev3)/dt4
+      # tmp = @. r*abs(((u - uprev)/dt1 - (uprev - uprev2)/dt2) - ((uprev - uprev2)/dt3 - (uprev2 - uprev3)/dt4)/dt5)
+      DD31 = @. (u - uprev)/dt1 - (uprev - uprev2)/dt2
+      DD30 = @. (uprev - uprev2)/dt3 - (uprev2 - uprev3)/dt4
       tmp = @. r*abs((DD31 - DD30)/dt5)
       atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
       integrator.EEst = integrator.opts.internalnorm(atmp)
@@ -648,7 +576,7 @@ function initialize!(integrator, cache::TrapezoidCache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
@@ -763,9 +691,10 @@ end
 
   if integrator.opts.adaptive
     if integrator.iter > 2
-      # Use 3rd divided differences a la SPICE and Shampine
+      # local truncation error (LTE) bound by dt^3/12*max|y'''(t)|
+      # use 3rd divided differences (DD) a la SPICE and Shampine
 
-      # TODO: check mathematical correctness and numerical stability
+      # TODO: check numerical stability
       uprev2 = integrator.uprev2
       tprev = integrator.tprev
       uprev3 = cache.uprev3
@@ -776,12 +705,13 @@ end
       dt3 = (t-tprev)*(t-tprev2)
       dt4 = (tprev-tprev2)*(t-tprev2)
       dt5 = t+dt-tprev2
-      r = dt^3/12
+      c = 7/12 # default correction factor in SPICE (LTE overestimated by DD)
+      r = c*dt^3/2 # by mean value theorem 3rd DD equals y'''(s)/6 for some s
 
-      # @. tmp = r*abs(((u - uprev)/dt1 + (uprev - uprev2)/dt2) - ((uprev - uprev2)/dt3 + (uprev2 - uprev3)/dt4)/dt5)
+      # @. tmp = r*abs(((u - uprev)/dt1 - (uprev - uprev2)/dt2) - ((uprev - uprev2)/dt3 - (uprev2 - uprev3)/dt4)/dt5)
       @inbounds for i in eachindex(u)
-        DD31 = (u[i] - uprev[i])/dt1 + (uprev[i] - uprev2[i])/dt2
-        DD30 = (uprev[i] - uprev2[i])/dt3 + (uprev2[i] - uprev3[i])/dt4
+        DD31 = (u[i] - uprev[i])/dt1 - (uprev[i] - uprev2[i])/dt2
+        DD30 = (uprev[i] - uprev2[i])/dt3 - (uprev2[i] - uprev3[i])/dt4
         tmp[i] = r*abs((DD31 - DD30)/dt5)
       end
       calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
@@ -804,7 +734,7 @@ end
 
 function initialize!(integrator, cache::TRBDF2ConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -948,7 +878,7 @@ function initialize!(integrator, cache::TRBDF2Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
@@ -1131,7 +1061,7 @@ end
 
 function initialize!(integrator, cache::SDIRK2ConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -1274,7 +1204,7 @@ function initialize!(integrator, cache::SDIRK2Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
@@ -1455,7 +1385,7 @@ end
 
 function initialize!(integrator, cache::SSPSDIRK2ConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -1592,7 +1522,7 @@ function initialize!(integrator, cache::SSPSDIRK2Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
@@ -1761,7 +1691,7 @@ end
 
 function initialize!(integrator, cache::Union{Kvaerno3ConstantCache,KenCarp3ConstantCache})
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -1945,7 +1875,7 @@ function initialize!(integrator, cache::Union{Kvaerno3Cache,KenCarp3Cache})
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
@@ -2182,7 +2112,7 @@ end
 
 function initialize!(integrator, cache::Cash4ConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -2456,7 +2386,7 @@ function initialize!(integrator, cache::Cash4Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
@@ -2800,7 +2730,7 @@ end
 
 function initialize!(integrator, cache::Hairer4ConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -3063,7 +2993,7 @@ function initialize!(integrator, cache::Hairer4Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
@@ -3408,7 +3338,7 @@ end
 
 function initialize!(integrator, cache::Kvaerno4ConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -3638,7 +3568,7 @@ function initialize!(integrator, cache::Kvaerno4Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
@@ -3927,7 +3857,7 @@ end
 
 function initialize!(integrator, cache::KenCarp4ConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -4129,7 +4059,7 @@ end
 
   ################################## Solve Step 5
 
-  z₆ = @. α61*z₁ + α62*z₂ + α63*z₃ + α64*z₄
+  z₆ = @. α61*z₁ + α62*z₂ + α63*z₃ + α64*z₄ + α65*z₅
 
   # initial step of Newton iteration
   iter = 1
@@ -4195,7 +4125,7 @@ function initialize!(integrator, cache::KenCarp4Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
@@ -4539,7 +4469,7 @@ end
 
 function initialize!(integrator, cache::Kvaerno5ConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -4850,7 +4780,7 @@ function initialize!(integrator, cache::Kvaerno5Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
@@ -5250,7 +5180,7 @@ end
 
 function initialize!(integrator, cache::KenCarp5ConstantCache)
   integrator.kshortsize = 2
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -5603,7 +5533,7 @@ function initialize!(integrator, cache::KenCarp5Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.k = eltype(integrator.sol.k)(integrator.kshortsize)
+  resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
