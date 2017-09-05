@@ -71,7 +71,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     error("Timespan is trivial")
   end
 
-  tstops_vec = collect(tType,Iterators.filter(x->tdir*tspan[1]<tdir*x≤tdir*tspan[end],Iterators.flatten((tstops,d_discontinuities,tspan[end]))))
+  tstops_vec = collect(tType,Iterators.filter(x->tdir*tspan[1]<tdir*tType(x)≤tdir*tspan[end],Iterators.flatten((tstops,d_discontinuities,tspan[end]))))
 
   if tdir>0
     tstops_internal = binary_minheap(tstops_vec)
@@ -163,7 +163,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     saveat_internal = binary_maxheap(saveat_vec)
   end
 
-  d_discontinuities_vec =  collect(tType,d_discontinuities)
+  d_discontinuities_vec =  collect(d_discontinuities)
 
   if tdir>0
     d_discontinuities_internal = binary_minheap(d_discontinuities_vec)

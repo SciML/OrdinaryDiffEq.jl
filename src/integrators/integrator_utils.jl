@@ -72,7 +72,7 @@ function modify_dt_for_tstops!(integrator)
   end
 end
 
-function savevalues!(integrator::ODEIntegrator,force_save=false)
+function savevalues!(integrator::ODEIntegrator,force_save=false,reduce_size=true)
   while !isempty(integrator.opts.saveat) && integrator.tdir*top(integrator.opts.saveat) <= integrator.tdir*integrator.t # Perform saveat
     integrator.saveiter += 1
     curt = pop!(integrator.opts.saveat)
@@ -132,7 +132,7 @@ function savevalues!(integrator::ODEIntegrator,force_save=false)
       copyat_or_push!(integrator.sol.alg_choice,integrator.saveiter,integrator.cache.current)
     end
   end
-  resize!(integrator.k,integrator.kshortsize)
+  reduce_size && resize!(integrator.k,integrator.kshortsize)
 end
 
 function postamble!(integrator)
@@ -302,7 +302,7 @@ function handle_callbacks!(integrator)
       continuous_modified,saved_in_cb = apply_callback!(integrator,continuous_callbacks[idx],time,upcrossing)
     end
   end
-  if !(typeof(discrete_callbacks)<:Tuple{})
+  if !integrator.force_stepfail && !(typeof(discrete_callbacks)<:Tuple{})
     discrete_modified,saved_in_cb = apply_discrete_callback!(integrator,discrete_callbacks...)
   end
   if !saved_in_cb
@@ -346,12 +346,14 @@ function apply_step!(integrator)
   end
 
   # Update fsal if needed
-  if isfsal(integrator.alg)
-    if !isempty(integrator.opts.d_discontinuities) && top(integrator.opts.d_discontinuities) == integrator.t
-      pop!(integrator.opts.d_discontinuities)
-      reset_fsal!(integrator)
-    elseif integrator.reeval_fsal || integrator.u_modified || (typeof(integrator.alg)<:DP8 && !integrator.opts.calck) || (typeof(integrator.alg)<:Union{Rosenbrock23,Rosenbrock32} && !integrator.opts.adaptive)
-      reset_fsal!(integrator)
+  if !isempty(integrator.opts.d_discontinuities) &&
+      typeof(integrator.t)(top(integrator.opts.d_discontinuities)) == integrator.t
+
+      handle_discontinuities!(integrator)
+      isfsal(integrator.alg) && reset_fsal!(integrator)
+  elseif isfsal(integrator.alg)
+    if integrator.reeval_fsal || integrator.u_modified || (typeof(integrator.alg)<:DP8 && !integrator.opts.calck) || (typeof(integrator.alg)<:Union{Rosenbrock23,Rosenbrock32} && !integrator.opts.adaptive)
+        reset_fsal!(integrator)
     else # Do not reeval_fsal, instead copy! over
       if isinplace(integrator.sol.prob)
         recursivecopy!(integrator.fsalfirst,integrator.fsallast)
@@ -360,6 +362,10 @@ function apply_step!(integrator)
       end
     end
   end
+end
+
+function handle_discontinuities!(integrator)
+    pop!(integrator.opts.d_discontinuities)
 end
 
 function calc_dt_propose!(integrator,dtnew)
