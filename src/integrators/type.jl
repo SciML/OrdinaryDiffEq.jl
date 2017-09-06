@@ -1,10 +1,10 @@
-mutable struct DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5,F6,tstopsType,discType,ECType,SType,MI}
+mutable struct DEOptions{absType,relType,tTypeNoUnits,tType,F2,F3,F4,F5,F6,tstopsType,discType,ECType,SType,MI}
   maxiters::MI
   timeseries_steps::Int
   save_everystep::Bool
   adaptive::Bool
-  abstol::uEltype
-  reltol::uEltypeNoUnits
+  abstol::absType
+  reltol::relType
   gamma::tTypeNoUnits
   qmax::tTypeNoUnits
   qmin::tTypeNoUnits
