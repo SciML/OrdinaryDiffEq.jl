@@ -40,7 +40,7 @@ mutable struct DEOptions{uEltype,uEltypeNoUnits,tTypeNoUnits,tType,F2,F3,F4,F5,F
   stop_at_next_tstop::Bool
 end
 
-mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,rateType,F,ProgressType,CacheType,O,FSALType} <: AbstractODEIntegrator
+mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,F,ProgressType,CacheType,O,FSALType} <: AbstractODEIntegrator
   sol::SolType
   u::uType
   k::ksEltype
@@ -51,7 +51,6 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,tTypeN
   uprev2::uType
   tprev::tType
   alg::algType
-  rate_prototype::rateType
   notsaveat_idxs::Vector{Int}
   dtcache::tType
   dtchangeable::Bool
@@ -81,19 +80,19 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,tTypeN
   fsallast::FSALType
 
   function (::Type{ODEIntegrator{algType,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,
-                rateType,F,ProgressType,CacheType,O,FSALType}}){algType,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,
-                rateType,F,ProgressType,CacheType,O,FSALType}(
+                F,ProgressType,CacheType,O,FSALType}}){algType,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,
+                F,ProgressType,CacheType,O,FSALType}(
                 sol,u,k,t,dt,f,uprev,uprev2,tprev,
-      alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,dtpropose,tdir,
+      alg,notsaveat_idxs,dtcache,dtchangeable,dtpropose,tdir,
       EEst,qold,q11,erracc,dtacc,success_iter,
       iter,saveiter,saveiter_dense,prog,cache,
       kshortsize,force_stepfail,last_stepfail,just_hit_tstop,
       accept_step,isout,reeval_fsal,u_modified,opts)
 
       new{algType,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,
-                  rateType,F,ProgressType,CacheType,O,FSALType}(
+                  F,ProgressType,CacheType,O,FSALType}(
                   sol,u,k,t,dt,f,uprev,uprev2,tprev,
-      alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,dtpropose,tdir,
+      alg,notsaveat_idxs,dtcache,dtchangeable,dtpropose,tdir,
       EEst,qold,q11,erracc,dtacc,success_iter,
       iter,saveiter,saveiter_dense,prog,cache,
       kshortsize,force_stepfail,last_stepfail,just_hit_tstop,

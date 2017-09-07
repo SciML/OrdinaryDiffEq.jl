@@ -293,10 +293,10 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
 
   integrator = ODEIntegrator{algType,uType,tType,
                              tTypeNoUnits,typeof(tdir),typeof(k),SolType,
-                             typeof(rate_prototype),FType,typeof(prog),cacheType,
+                             FType,typeof(prog),cacheType,
                              typeof(opts),fsal_typeof(alg,rate_prototype)}(
                              sol,u,k,t,tType(dt),f,uprev,uprev2,tprev,
-                             alg,rate_prototype,notsaveat_idxs,dtcache,dtchangeable,
+                             alg,notsaveat_idxs,dtcache,dtchangeable,
                              dtpropose,tdir,EEst,qoldinit,q11,
                              erracc,dtacc,success_iter,
                              iter,saveiter,saveiter_dense,prog,cache,
