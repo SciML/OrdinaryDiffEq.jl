@@ -71,7 +71,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     error("Timespan is trivial")
   end
 
-  tstops_vec = collect(tType,Iterators.filter(x->tdir*tspan[1]<tdir*x≤tdir*tspan[end],Iterators.flatten((tstops,d_discontinuities,tspan[end]))))
+  tstops_vec = vec(collect(tType,Iterators.filter(x->tdir*tspan[1]<tdir*x≤tdir*tspan[end],Iterators.flatten((tstops,d_discontinuities,tspan[end])))))
 
   if tdir>0
     tstops_internal = binary_minheap(tstops_vec)
@@ -154,7 +154,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     saveat_vec = collect(tType,tspan[1]+saveat:saveat:(tspan[end]-saveat))
     # Exclude the endpoint because of floating point issues
   else
-    saveat_vec = collect(tType,Iterators.filter(x->tdir*tspan[1]<tdir*x<tdir*tspan[end],saveat))
+    saveat_vec = vec(collect(tType,Iterators.filter(x->tdir*tspan[1]<tdir*x<tdir*tspan[end],saveat)))
   end
 
   if tdir>0
@@ -163,7 +163,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     saveat_internal = binary_maxheap(saveat_vec)
   end
 
-  d_discontinuities_vec =  collect(tType,d_discontinuities)
+  d_discontinuities_vec = vec(collect(d_discontinuities))
 
   if tdir>0
     d_discontinuities_internal = binary_minheap(d_discontinuities_vec)
@@ -209,18 +209,21 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     saveiter_dense = 0
   end
 
-  opts = DEOptions(maxiters,timeseries_steps,save_everystep,adaptive,abstol_internal,
-    reltol_internal,tTypeNoUnits(gamma),tTypeNoUnits(qmax),tTypeNoUnits(qmin),
-    tTypeNoUnits(qsteady_max),tTypeNoUnits(qsteady_min),
-    tTypeNoUnits(failfactor),tType(dtmax),tType(dtmin),internalnorm,save_idxs,
-    tstops_internal,saveat_internal,d_discontinuities_internal,
-    userdata,
-    progress,progress_steps,
-    progress_name,progress_message,
-    timeseries_errors,dense_errors,
-    tTypeNoUnits(beta1),tTypeNoUnits(beta2),tTypeNoUnits(qoldinit),dense,save_start,
-    callbacks_internal,isoutofdomain,unstable_check,verbose,calck,force_dtmin,
-    advance_to_tstop,stop_at_next_tstop)
+  opts = DEOptions{typeof(abstol_internal),typeof(reltol_internal),tTypeNoUnits,tType,
+                   typeof(internalnorm),typeof(callbacks_internal),typeof(isoutofdomain),
+                   typeof(progress_message),typeof(unstable_check),typeof(tstops_internal),
+                   typeof(d_discontinuities_internal),typeof(userdata),typeof(save_idxs),
+                   typeof(maxiters)}(
+                       maxiters,timeseries_steps,save_everystep,adaptive,abstol_internal,
+                       reltol_internal,tTypeNoUnits(gamma),tTypeNoUnits(qmax),
+                       tTypeNoUnits(qmin),tTypeNoUnits(qsteady_max),
+                       tTypeNoUnits(qsteady_min),tTypeNoUnits(failfactor),tType(dtmax),
+                       tType(dtmin),internalnorm,save_idxs,tstops_internal,saveat_internal,
+                       d_discontinuities_internal,userdata,progress,progress_steps,
+                       progress_name,progress_message,timeseries_errors,dense_errors,
+                       tTypeNoUnits(beta1),tTypeNoUnits(beta2),tTypeNoUnits(qoldinit),dense,
+                       save_start,callbacks_internal,isoutofdomain,unstable_check,verbose,
+                       calck,force_dtmin,advance_to_tstop,stop_at_next_tstop)
 
   progress ? (prog = Juno.ProgressBar(name=progress_name)) : prog = nothing
 
