@@ -347,7 +347,7 @@ function apply_step!(integrator)
 
   # Update fsal if needed
   if !isempty(integrator.opts.d_discontinuities) &&
-      typeof(integrator.t)(top(integrator.opts.d_discontinuities)) == integrator.t
+      top(integrator.opts.d_discontinuities) == integrator.t
 
       handle_discontinuities!(integrator)
       isfsal(integrator.alg) && reset_fsal!(integrator)
