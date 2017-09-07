@@ -307,3 +307,80 @@ end
       integrator.EEst = 2.1342*max(e1,e2)
   end
 end
+
+
+function initialize!(integrator,cache::CarpenterKennedy2N54ConstantCache)
+  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
+  integrator.kshortsize = 1
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+end
+
+@muladd function perform_step!(integrator,cache::CarpenterKennedy2N54ConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
+  @unpack A2,A3,A4,A5,B1,B2,B3,B4,B5,c2,c3,c4,c5 = cache
+
+  # u1
+  tmp = @. dt*integrator.fsalfirst
+  u   = @. uprev + B1*tmp
+  # u2
+  k = f(t+c2*dt, u)
+  tmp = @. A2*tmp + dt*k
+  u   = @. u + B2*tmp
+  # u3
+  k = f(t+c3*dt, u)
+  tmp = @. A3*tmp + dt*k
+  u   = @. u + B3*tmp
+  # u4
+  k = f(t+c4*dt, u)
+  tmp = @. A4*tmp + dt*k
+  u   = @. u + B4*tmp
+  # u5 = u
+  k = f(t+c5*dt, u)
+  tmp = @. A5*tmp + dt*k
+  u   = @. u + B5*tmp
+
+  integrator.fsallast = f(t+dt,u) # For interpolation, then FSAL'd
+  integrator.k[1] = integrator.fsalfirst
+  integrator.u = u
+end
+
+function initialize!(integrator,cache::CarpenterKennedy2N54Cache)
+  @unpack k,fsalfirst = cache
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = k
+  integrator.kshortsize = 1
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.f(integrator.t,integrator.uprev,integrator.fsalfirst) # FSAL for interpolation
+end
+
+@muladd function perform_step!(integrator,cache::CarpenterKennedy2N54Cache,repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
+  @unpack k,fsalfirst,tmp,A2,A3,A4,A5,B1,B2,B3,B4,B5,c2,c3,c4,c5 = cache
+
+  # u1
+  @. tmp = dt*fsalfirst
+  @. u   = uprev + B1*tmp
+  # u2
+  f(t+c2*dt, u, k)
+  @. tmp = A2*tmp + dt*k
+  @. u   = u + B2*tmp
+  # u3
+  f(t+c3*dt, u, k)
+  @. tmp = A3*tmp + dt*k
+  @. u   = u + B3*tmp
+  # u4
+  f(t+c4*dt, u, k)
+  @. tmp = A4*tmp + dt*k
+  @. u   = u + B4*tmp
+  # u5 = u
+  f(t+c5*dt, u, k)
+  @. tmp = A5*tmp + dt*k
+  @. u   = u + B5*tmp
+  
+  f(t+dt, u, k)
+end

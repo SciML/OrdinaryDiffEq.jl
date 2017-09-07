@@ -150,6 +150,9 @@ regression_test(SSPRK104(), 1.5e-5, 3e-5)
 # RK4
 regression_test(RK4(), 4.5e-5, 1e-4)
 
+# CarpenterKennedy2N54
+regression_test(CarpenterKennedy2N54(), 3.0e-5, 5.0e-5)
+
 # DP5
 regression_test(DP5(), 5e-6, 1e-5; test_diff1 = true)
 

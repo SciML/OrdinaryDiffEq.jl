@@ -125,6 +125,86 @@ end
 
 alg_cache(alg::RK4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}}) = RK4ConstantCache()
 
+
+struct CarpenterKennedy2N54Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  k::rateType
+  tmp::uType
+  fsalfirst::rateType
+  A2::Float64
+  A3::Float64
+  A4::Float64
+  A5::Float64
+  B1::Float64
+  B2::Float64
+  B3::Float64
+  B4::Float64
+  B5::Float64
+  c2::Float64
+  c3::Float64
+  c4::Float64
+  c5::Float64
+end
+
+u_cache(c::CarpenterKennedy2N54Cache) = ()
+du_cache(c::CarpenterKennedy2N54Cache) = (c.k,c.fsalfirst)
+
+struct CarpenterKennedy2N54ConstantCache <: OrdinaryDiffEqConstantCache
+  A2::Float64
+  A3::Float64
+  A4::Float64
+  A5::Float64
+  B1::Float64
+  B2::Float64
+  B3::Float64
+  B4::Float64
+  B5::Float64
+  c2::Float64
+  c3::Float64
+  c4::Float64
+  c5::Float64
+end
+
+function alg_cache(alg::CarpenterKennedy2N54,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
+  tmp = similar(u)
+  k = zeros(rate_prototype)
+  fsalfirst = zeros(rate_prototype)
+  A2 = -567301805773/1357537059087
+  A3 = -2404267990393/2016746695238
+  A4 = -3550918686646/2091501179385
+  A5 = -1275806237668/842570457699
+  B1 = 1432997174477/9575080441755
+  B2 = 5161836677717/13612068292357
+  B3 = 1720146321549/2090206949498
+  B4 = 3134564353537/4481467310338
+  B5 = 2277821191437/14882151754819
+  c2 = 1432997174477/9575080441755
+  c3 = 2526269341429/6820363962896
+  c4 = 2006345519317/3224310063776
+  c5 = 2802321613138/2924317926251
+  CarpenterKennedy2N54Cache(u,uprev,k,tmp,fsalfirst,A2,A3,A4,A5,B1,B2,B3,B4,B5,c2,c3,c4,c5)
+end
+
+function alg_cache(alg::CarpenterKennedy2N54,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
+  A2 = -567301805773/1357537059087
+  A3 = -2404267990393/2016746695238
+  A4 = -3550918686646/2091501179385
+  A5 = -1275806237668/842570457699
+  B1 = 1432997174477/9575080441755
+  B2 = 5161836677717/13612068292357
+  B3 = 1720146321549/2090206949498
+  B4 = 3134564353537/4481467310338
+  B5 = 2277821191437/14882151754819
+  c2 = 1432997174477/9575080441755
+  c3 = 2526269341429/6820363962896
+  c4 = 2006345519317/3224310063776
+  c5 = 2802321613138/2924317926251
+  CarpenterKennedy2N54ConstantCache(A2,A3,A4,A5,B1,B2,B3,B4,B5,c2,c3,c4,c5)
+end
+
+
+
 struct BS3Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
