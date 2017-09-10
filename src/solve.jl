@@ -34,7 +34,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   beta1=beta1_default(alg,beta2),
   maxiters = 1000000,
   dtmax=eltype(prob.tspan)((prob.tspan[end]-prob.tspan[1])),
-  dtmin=typeof(one(eltype(prob.tspan)) <: AbstractFloat ? eltype(prob.tspan)(10)*eps(one(eltype(prob.tspan))) : eltype(prob.tspan)(1//10^(10)),
+  dtmin=typeof(one(eltype(prob.tspan))) <: AbstractFloat ? eltype(prob.tspan)(10)*eps(one(eltype(prob.tspan))) : eltype(prob.tspan)(1//10^(10)),
   internalnorm = ODE_DEFAULT_NORM,
   isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
   unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
