@@ -227,6 +227,88 @@ ERKN4ConstantCache(
                   T(0.0016835016835016834))
 end
 
+struct ERKN5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+  c1::T2
+  c2::T2
+  c3::T2
+  a21::T
+  a31::T
+  a32::T
+  a41::T
+  a42::T
+  a43::T
+  b1::T
+  b2::T
+  b3::T
+  b4::T
+  bp1::T # bp denotes bprime
+  bp2::T
+  bp3::T
+  bp4::T
+  btilde1::T
+  btilde2::T
+  btilde3::T
+  btilde4::T
+  # bptilde1::T
+  # bptilde2::T
+  # bptilde3::T
+  # bptilde4::T
+end
+
+function ERKN5ConstantCache(T::Type,T2::Type)
+  c1 = T2(1//2)
+  c2 = T2(19//70)
+  c3 = T2(44//51)
+  a21 = T(1//8)
+  a31 = T(2907//343000)
+  a32 = T(1216//42875)
+  a41 = T(6624772//128538819)
+  a42 = T(6273905//54121608)
+  a43 = T(210498365//1028310552)
+  b1 = T(479//5016)
+  b2 = T(235//1776)
+  b3 = T(145775//641744)
+  b4 = T(309519//6873416)
+  btilde1 = T(479//5016 - 184883//2021250)
+  btilde2 = T(235//1776 - 411163//3399375)
+  btilde3 = T(145775//641744 - 6//25)
+  btilde4 = T(309519//6873416 - 593028//12464375)
+  bp1 = b1
+  bp2 = T(235//888)
+  bp3 = T(300125//962616)
+  bp4 = T(2255067//6873416)
+  # bptilde1 = T(0)
+  # bptilde2 = T(0)
+  # bptilde3 = T(0)
+  # bptilde4 = T(0)
+  ERKN5ConstantCache(c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3, b4, bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4)
+end
+
+Base.@pure function ERKN5ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+  ERKN5ConstantCache(
+                     T2(0.5),
+                     T2(0.2714285714285714),
+                     T2(0.8627450980392157),
+                     T(0.125),
+                     T(0.008475218658892128),
+                     T(0.028361516034985424),
+                     T(0.051539076300366506),
+                     T(0.11592236875149756),
+                     T(0.20470310704348388),
+                     T(0.09549441786283891),
+                     T(0.13231981981981983),
+                     T(0.22715444164651324),
+                     T(0.04503132067082801),
+                     T(0.09549441786283891),
+                     T(0.26463963963963966),
+                     T(0.3117806061814888),
+                     T(0.32808533631603265),
+                     T(0.004024782736060931),
+                     T(0.011367291781577495),
+                     T(-0.012845558353486749),
+                     T(-0.0025465161641516788))
+end
+
 struct DPRKN6ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   c1::T2
   c2::T2
