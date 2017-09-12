@@ -330,7 +330,7 @@ struct RodasConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   C63::T
   C64::T
   C65::T
-  gamma::T2
+  gamma::T
   c2::T2
   c3::T2
   c4::T2
