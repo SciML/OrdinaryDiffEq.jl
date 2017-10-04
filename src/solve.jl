@@ -151,8 +151,11 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   rateType = typeof(rate_prototype) ## Can be different if united
 
   if typeof(saveat) <: Number
-    saveat_vec = collect(tType,tspan[1]+saveat:saveat:(tspan[end]-saveat))
-    # Exclude the endpoint because of floating point issues
+    if (tspan[1]:saveat:tspan[end])[end] == tspan[end]
+      saveat_vec = collect(tType,tspan[1]+saveat:saveat:tspan[end])
+    else
+      saveat_vec = collect(tType,tspan[1]+saveat:saveat:(tspan[end]-saveat))
+    end
   else
     saveat_vec = vec(collect(tType,Iterators.filter(x->tdir*tspan[1]<tdir*x<tdir*tspan[end],saveat)))
   end
