@@ -1,7 +1,7 @@
 julia 0.6.0
 DiffEqBase 1.23.0
 Parameters 0.5.0
-ForwardDiff 0.5.0
+ForwardDiff 0.5.0 0.6.0
 GenericSVD 0.0.2
 NLsolve 0.9.1
 RecursiveArrayTools 0.12.0
