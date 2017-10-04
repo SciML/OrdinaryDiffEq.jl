@@ -152,9 +152,9 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
 
   if typeof(saveat) <: Number
     if (tspan[1]:saveat:tspan[end])[end] == tspan[end]
-      saveat_vec = collect(tType,tspan[1]+saveat:saveat:tspan[end])
+      saveat_vec = convert(Vector{tType},collect(tType,tspan[1]+saveat:saveat:tspan[end]))
     else
-      saveat_vec = collect(tType,tspan[1]+saveat:saveat:(tspan[end]-saveat))
+      saveat_vec = convert(Vector{tType},collect(tType,tspan[1]+saveat:saveat:(tspan[end]-saveat)))
     end
   else
     saveat_vec = vec(collect(tType,Iterators.filter(x->tdir*tspan[1]<tdir*x<tdir*tspan[end],saveat)))
