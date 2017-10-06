@@ -31,7 +31,7 @@ function autodiff_setup{CS}(f!, initial_x::Vector,chunk_size::Type{Val{CS}})
 
     permf! = (fx, x) -> f!(x, fx)
     fx2 = copy(initial_x)
-    jac_cfg = ForwardDiff.JacobianConfig(nothing,
+    jac_cfg = ForwardDiff.JacobianConfig(permf!,
                                          initial_x, initial_x,
                                          ForwardDiff.Chunk{CS}())
     g! = (x, gx) -> ForwardDiff.jacobian!(gx, permf!, fx2, x, jac_cfg)
@@ -149,4 +149,3 @@ macro swap!(x,y)
     $(esc(y)) = tmp
   end
 end
-
