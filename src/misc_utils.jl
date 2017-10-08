@@ -27,11 +27,10 @@ Base.@pure function determine_chunksize(u,CS)
   end
 end
 
-function autodiff_setup{CS}(f!, initial_x::Vector,chunk_size::Type{Val{CS}})
-
+function autodiff_setup{CS}(f!, initial_x::Vector, chunk_size::Type{Val{CS}})
     permf! = (fx, x) -> f!(x, fx)
     fx2 = copy(initial_x)
-    jac_cfg = ForwardDiff.JacobianConfig(permf!,
+    jac_cfg = ForwardDiff.JacobianConfig(nothing, #TODO: this has to be adapted for ForwardDiff master.: permf!,
                                          initial_x, initial_x,
                                          ForwardDiff.Chunk{CS}())
     g! = (x, gx) -> ForwardDiff.jacobian!(gx, permf!, fx2, x, jac_cfg)
