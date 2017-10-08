@@ -182,3 +182,64 @@ sol6 = solve(prob2,Vern7(),callback=bounce_then_exit)
 
 @test sol6[end][1] > 0
 @test sol6.t[end] ≈ 4
+
+
+# More ODE event tests, cf. #201, #199, #198, #197
+
+function test_callback_inplace(alg)
+    f = (t, u, du) -> @. du = u
+    cb = ContinuousCallback((t,u,int) -> u[1] - exp(1), terminate!)
+    prob = ODEProblem(f, [1.0], (0.0, 2.0), callback=cb)
+    sol = solve(prob, alg)
+    sol.u[end][1] - exp(1) < 1.e-5
+end
+
+function test_callback_outofplace(alg)
+    f = (t, u) -> u
+    cb = ContinuousCallback((t,u,int) -> u[1] - exp(1), terminate!)
+    prob = ODEProblem(f, [1.0], (0.0, 2.0), callback=cb)
+    sol = solve(prob, alg)
+    sol.u[end][1] - exp(1) < 1.e-5
+end
+
+function test_callback_scalar(alg)
+    f = (t, u) -> u
+    cb = ContinuousCallback((t,u,int) -> u - exp(1), terminate!)
+    prob = ODEProblem(f, 1.0, (0.0, 2.0), callback=cb)
+    sol = solve(prob, alg)
+    sol.u[end] - exp(1) < 1.e-5
+end
+
+@test test_callback_inplace(BS3())
+@test test_callback_inplace(BS5())
+@test test_callback_inplace(DP5())
+@test test_callback_inplace(DP8())
+@test test_callback_inplace(Feagin10())
+@test test_callback_inplace(Feagin12())
+@test test_callback_inplace(Feagin14())
+@test test_callback_inplace(TanYam7())
+@test test_callback_inplace(Tsit5())
+@test test_callback_inplace(TsitPap8())
+@test test_callback_inplace(Vern6())
+@test test_callback_inplace(Vern7())
+@test test_callback_inplace(Vern8())
+@test test_callback_inplace(Vern9())
+@test test_callback_inplace(Rosenbrock23())
+@test test_callback_inplace(Rosenbrock32())
+
+@test test_callback_scalar(BS3())
+@test test_callback_scalar(BS5())
+@test test_callback_scalar(DP5())
+@test test_callback_scalar(DP8())
+@test test_callback_scalar(Feagin10())
+@test test_callback_scalar(Feagin12())
+@test test_callback_scalar(Feagin14())
+@test test_callback_scalar(TanYam7())
+@test test_callback_scalar(Tsit5())
+@test test_callback_scalar(TsitPap8())
+@test test_callback_scalar(Vern6())
+@test test_callback_scalar(Vern7())
+@test test_callback_scalar(Vern8())
+@test test_callback_scalar(Vern9())
+@test test_callback_scalar(Rosenbrock23())
+@test test_callback_scalar(Rosenbrock32())
