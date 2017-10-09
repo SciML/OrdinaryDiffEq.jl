@@ -307,15 +307,15 @@ By default, simpledense
 """
 function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<2 || calcVal
-    if !(typeof(uprev)<:AbstractArray)
-      copyat_or_push!(k,1,f(t,uprev))
-      copyat_or_push!(k,2,f(t+dt,u))
-    else
-      rtmp = similar(cache.fsalfirst)
+    if isinplace(f,3)
+      rtmp = similar(u, eltype(eltype(k)))
       f(t,uprev,rtmp)
       copyat_or_push!(k,1,rtmp)
       f(t+dt,u,rtmp)
       copyat_or_push!(k,2,rtmp,Val{false})
+    else
+      copyat_or_push!(k,1,f(t,uprev))
+      copyat_or_push!(k,2,f(t+dt,u))
     end
   end
   nothing
