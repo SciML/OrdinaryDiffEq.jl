@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, RecursiveArrayTools, Base.Test#, ParameterizedFunctions
+using OrdinaryDiffEq, RecursiveArrayTools, Base.Test
 
 
 f = function (t,u)
@@ -226,24 +226,24 @@ end
 @test test_callback_inplace(Vern9())
 @test test_callback_inplace(Rosenbrock23())
 @test test_callback_inplace(Rosenbrock32())
-#=
+
 @test test_callback_outofplace(BS3())
-@test test_callback_outofplace(BS5())
-@test test_callback_outofplace(DP5())
+@test_broken test_callback_outofplace(BS5())
+@test_broken test_callback_outofplace(DP5())
 @test test_callback_outofplace(DP8())
 @test test_callback_outofplace(Feagin10())
 @test test_callback_outofplace(Feagin12())
 @test test_callback_outofplace(Feagin14())
 @test test_callback_outofplace(TanYam7())
-@test test_callback_outofplace(Tsit5())
+@test_broken test_callback_outofplace(Tsit5())
 @test test_callback_outofplace(TsitPap8())
-@test test_callback_outofplace(Vern6())
-@test test_callback_outofplace(Vern7())
-@test test_callback_outofplace(Vern8())
-@test test_callback_outofplace(Vern9())
-@test test_callback_outofplace(Rosenbrock23())
-@test test_callback_outofplace(Rosenbrock32())
-=#
+@test_broken test_callback_outofplace(Vern6())
+@test_broken test_callback_outofplace(Vern7())
+@test_broken test_callback_outofplace(Vern8())
+@test_broken test_callback_outofplace(Vern9())
+@test_broken test_callback_outofplace(Rosenbrock23())
+@test_broken test_callback_outofplace(Rosenbrock32())
+
 @test test_callback_scalar(BS3())
 @test test_callback_scalar(BS5())
 @test test_callback_scalar(DP5())
