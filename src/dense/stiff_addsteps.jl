@@ -1,8 +1,14 @@
 function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenbrock23ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<2 || calcVal
     @unpack tf,uf,d = cache
-    dT = ForwardDiff.derivative(tf,t)
-    J = ForwardDiff.derivative(uf,uprev)
+    dT = ForwardDiff.derivative(tf, t)
+    if typeof(uprev) <: AbstractArray
+      J = ForwardDiff.jacobian(uf, uprev)
+      W = I - γ*J
+    else
+      J = ForwardDiff.derivative(uf, uprev)
+      W = 1 - γ*J
+    end
     W = 1-dt*d*J
     k₁ = W\(f(t,uprev) + dt*d*dT)
     f₁ = f(t+dt/2,uprev+dt*k₁/2)
@@ -16,8 +22,14 @@ end
 function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenbrock32ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<2 || calcVal
     @unpack tf,uf,d = cache
-    dT = ForwardDiff.derivative(tf,t)
-    J = ForwardDiff.derivative(uf,uprev)
+    dT = ForwardDiff.derivative(tf, t)
+    if typeof(uprev) <: AbstractArray
+      J = ForwardDiff.jacobian(uf, uprev)
+      W = I - γ*J
+    else
+      J = ForwardDiff.derivative(uf, uprev)
+      W = 1 - γ*J
+    end
     W = 1-dt*d*J
     k₁ = W\(f(t,uprev) .+ dt.*d.*dT)
     f₁ = f(t+dt/2,uprev.+dt.*k₁/2)
