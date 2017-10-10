@@ -241,8 +241,8 @@ end
 @test_broken test_callback_outofplace(Vern7())
 @test_broken test_callback_outofplace(Vern8())
 @test_broken test_callback_outofplace(Vern9())
-@test test_callback_outofplace(Rosenbrock23())
-@test test_callback_outofplace(Rosenbrock32())
+@test_broken test_callback_outofplace(Rosenbrock23())
+@test_broken test_callback_outofplace(Rosenbrock32())
 
 @test test_callback_scalar(BS3())
 @test test_callback_scalar(BS5())
