@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, RecursiveArrayTools, Base.Test
+using OrdinaryDiffEq, RecursiveArrayTools, Base.Test, StaticArrays
 
 
 f = function (t,u)
@@ -185,21 +185,20 @@ sol6 = solve(prob2,Vern7(),callback=bounce_then_exit)
 
 
 # More ODE event tests, cf. #201, #199, #198, #197
-
 function test_callback_inplace(alg)
     f = (t, u, du) -> @. du = u
     cb = ContinuousCallback((t,u,int) -> u[1] - exp(1), terminate!)
     prob = ODEProblem(f, [1.0], (0.0, 2.0), callback=cb)
     sol = solve(prob, alg)
-    sol.u[end][1] - exp(1) < 1.e-5
+    sol.u[end][1] ≈ exp(1)
 end
 
 function test_callback_outofplace(alg)
-    f = (t, u) -> u
+    f = (t, u) -> copy(u)
     cb = ContinuousCallback((t,u,int) -> u[1] - exp(1), terminate!)
     prob = ODEProblem(f, [1.0], (0.0, 2.0), callback=cb)
     sol = solve(prob, alg)
-    sol.u[end][1] - exp(1) < 1.e-5
+    sol.u[end][1] ≈ exp(1)
 end
 
 function test_callback_scalar(alg)
@@ -207,7 +206,23 @@ function test_callback_scalar(alg)
     cb = ContinuousCallback((t,u,int) -> u - exp(1), terminate!)
     prob = ODEProblem(f, 1.0, (0.0, 2.0), callback=cb)
     sol = solve(prob, alg)
-    sol.u[end] - exp(1) < 1.e-5
+    sol.u[end] ≈ exp(1)
+end
+
+function test_callback_svector(alg)
+    f = (t, u) -> u
+    cb = ContinuousCallback((t,u,int) -> u[1] - exp(1), terminate!)
+    prob = ODEProblem(f, SVector(1.0), (0.0, 2.0), callback=cb)
+    sol = solve(prob, alg)
+    sol.u[end][1] ≈ exp(1)
+end
+
+function test_callback_mvector(alg)
+    f = (t, u) -> copy(u)
+    cb = ContinuousCallback((t,u,int) -> u[1] - exp(1), terminate!)
+    prob = ODEProblem(f, MVector(1.0), (0.0, 2.0), callback=cb)
+    sol = solve(prob, alg)
+    sol.u[end][1] ≈ exp(1)
 end
 
 @test test_callback_inplace(BS3())
@@ -228,21 +243,21 @@ end
 @test test_callback_inplace(Rosenbrock32())
 
 @test test_callback_outofplace(BS3())
-@test_broken test_callback_outofplace(BS5())
-@test_broken test_callback_outofplace(DP5())
+@test test_callback_outofplace(BS5())
+@test test_callback_outofplace(DP5())
 @test test_callback_outofplace(DP8())
 @test test_callback_outofplace(Feagin10())
 @test test_callback_outofplace(Feagin12())
 @test test_callback_outofplace(Feagin14())
 @test test_callback_outofplace(TanYam7())
-@test_broken test_callback_outofplace(Tsit5())
+@test test_callback_outofplace(Tsit5())
 @test test_callback_outofplace(TsitPap8())
-@test_broken test_callback_outofplace(Vern6())
-@test_broken test_callback_outofplace(Vern7())
-@test_broken test_callback_outofplace(Vern8())
-@test_broken test_callback_outofplace(Vern9())
-@test_broken test_callback_outofplace(Rosenbrock23())
-@test_broken test_callback_outofplace(Rosenbrock32())
+@test test_callback_outofplace(Vern6())
+@test test_callback_outofplace(Vern7())
+@test test_callback_outofplace(Vern8())
+@test test_callback_outofplace(Vern9())
+@test test_callback_outofplace(Rosenbrock23())
+@test test_callback_outofplace(Rosenbrock32())
 
 @test test_callback_scalar(BS3())
 @test test_callback_scalar(BS5())
@@ -260,3 +275,40 @@ end
 @test test_callback_scalar(Vern9())
 @test test_callback_scalar(Rosenbrock23())
 @test test_callback_scalar(Rosenbrock32())
+
+#TODO: these tests need https://github.com/JuliaDiffEq/RecursiveArrayTools.jl/pull/21
+#=
+@test test_callback_svector(BS3())
+@test test_callback_svector(BS5())
+@test test_callback_svector(DP5())
+@test test_callback_svector(DP8())
+@test test_callback_svector(Feagin10())
+@test test_callback_svector(Feagin12())
+@test test_callback_svector(Feagin14())
+@test test_callback_svector(TanYam7())
+@test test_callback_svector(Tsit5())
+@test test_callback_svector(TsitPap8())
+@test test_callback_svector(Vern6())
+@test test_callback_svector(Vern7())
+@test test_callback_svector(Vern8())
+@test test_callback_svector(Vern9())
+@test test_callback_svector(Rosenbrock23())
+@test test_callback_svector(Rosenbrock32())
+
+@test test_callback_mvector(BS3())
+@test test_callback_mvector(BS5())
+@test test_callback_mvector(DP5())
+@test test_callback_mvector(DP8())
+@test test_callback_mvector(Feagin10())
+@test test_callback_mvector(Feagin12())
+@test test_callback_mvector(Feagin14())
+@test test_callback_mvector(TanYam7())
+@test test_callback_mvector(Tsit5())
+@test test_callback_mvector(TsitPap8())
+@test test_callback_mvector(Vern6())
+@test test_callback_mvector(Vern7())
+@test test_callback_mvector(Vern8())
+@test test_callback_mvector(Vern9())
+@test test_callback_mvector(Rosenbrock23())
+@test test_callback_mvector(Rosenbrock32())
+=#
