@@ -276,8 +276,6 @@ end
 @test test_callback_scalar(Rosenbrock23())
 @test test_callback_scalar(Rosenbrock32())
 
-#TODO: these tests need https://github.com/JuliaDiffEq/RecursiveArrayTools.jl/pull/21
-#=
 @test test_callback_svector(BS3())
 @test test_callback_svector(BS5())
 @test test_callback_svector(DP5())
@@ -311,4 +309,3 @@ end
 @test test_callback_mvector(Vern9())
 @test test_callback_mvector(Rosenbrock23())
 @test test_callback_mvector(Rosenbrock32())
-=#
