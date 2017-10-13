@@ -180,16 +180,19 @@ end
       @inbounds tmp[i] = uprev[i]+dt*(a51*k1[i]+a52*k2[i]+a53*k3[i]+a54*k4[i])
     end
     k5 = f(t+c4*dt,tmp)
+    # NOTE: This has to be done since u is aliased with uprev.
+    utmp = similar(u)
     @tight_loop_macros for i in uidx
-      @inbounds u[i] = uprev[i]+dt*(a61*k1[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
+      @inbounds utmp[i] = uprev[i]+dt*(a61*k1[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
     end
-    integrator.fsallast = f(t+dt,u); k6 = integrator.fsallast
+    u = utmp
+    k6 = f(t+dt,u); integrator.fsallast = k6
     if integrator.opts.adaptive
       atmp = similar(u, typeof(one(recursive_eltype(u))), indices(u))
       @tight_loop_macros for i in uidx
-        @inbounds utilde   = dt*(btilde1*k1[i] + btilde3*k3[i] + btilde4*k4[i] + btilde5*k5[i])
+        @inbounds tmp[i] = dt*(btilde1*k1[i] + btilde3*k3[i] + btilde4*k4[i] + btilde5*k5[i])
       end
-      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+      calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
       integrator.EEst = integrator.opts.internalnorm(atmp)
     end
   else
@@ -198,15 +201,15 @@ end
     k4 = f(t+c3*dt, uprev+dt*(a41*k1+a42*k2+a43*k3))
     k5 = f(t+c4*dt, uprev+dt*(a51*k1+a52*k2+a53*k3+a54*k4))
     u = uprev+dt*(a61*k1+a63*k3+a64*k4+a65*k5)
-    integrator.fsallast = f(t+dt,u); k6 = integrator.fsallast
+    k6 = f(t+dt,u); integrator.fsallast = k6
     if integrator.opts.adaptive
       utilde = dt*(btilde1*k1 + btilde3*k3 + btilde4*k4 + btilde5*k5)
       atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
       integrator.EEst = integrator.opts.internalnorm(atmp)
     end
   end
-  integrator.k[1]=k1; integrator.k[2]=k2; integrator.k[3]=k3;integrator.k[4]=k4;
-  integrator.k[5]=k5;integrator.k[6]=k6
+  integrator.k[1]=k1; integrator.k[2]=k2; integrator.k[3]=k3; integrator.k[4]=k4;
+  integrator.k[5]=k5; integrator.k[6]=k6
   integrator.u = u
 end
 
@@ -350,10 +353,13 @@ end
       @inbounds tmp[i] = uprev[i]+dt*(a71*k1[i]+a72*k2[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i])
     end
     k7 = f(t+c6*dt,tmp)
+    # NOTE: This has to be done since u is aliased with uprev.
+    utmp = similar(u)
     @tight_loop_macros for i in uidx
-      @inbounds u[i] = uprev[i]+dt*(a81*k1[i]+a83*k3[i]+a84*k4[i]+a85*k5[i]+a86*k6[i]+a87*k7[i])
+      @inbounds utmp[i] = uprev[i]+dt*(a81*k1[i]+a83*k3[i]+a84*k4[i]+a85*k5[i]+a86*k6[i]+a87*k7[i])
     end
-    integrator.fsallast = f(t+dt,u); k8 = integrator.fsallast
+    u = utmp
+    k8 = f(t+dt,u); integrator.fsallast = k8
     if integrator.opts.adaptive
       @tight_loop_macros for i in uidx
         @inbounds tmp[i] = dt*(btilde1*k1[i] + btilde3*k3[i] + btilde4*k4[i] + btilde5*k5[i] + btilde6*k6[i] + btilde7*k7[i])
@@ -369,7 +375,7 @@ end
     k6 = f(t+c5*dt, uprev+dt*(a61*k1+a62*k2+a63*k3+a64*k4+a65*k5))
     k7 = f(t+c6*dt, uprev+dt*(a71*k1+a72*k2+a73*k3+a74*k4+a75*k5+a76*k6))
     u = uprev+dt*(a81*k1+a83*k3+a84*k4+a85*k5+a86*k6+a87*k7)
-    integrator.fsallast = f(t+dt,u); k8 = integrator.fsallast
+    k8 = f(t+dt,u); integrator.fsallast = k8
     if integrator.opts.adaptive
       utilde = dt*(btilde1*k1 + btilde3*k3 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7)
       atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
@@ -407,7 +413,7 @@ end
   @. tmp = uprev+dt*(a51*k1+a52*k2+a53*k3+a54*k4)
   f(t+c4*dt,tmp,k5)
   @. tmp = uprev+dt*(a61*k1+a62*k2+a63*k3+a64*k4+a65*k5)
-  f(t+dt,tmp,k6)
+  f(t+c5*dt,tmp,k6)
   @. tmp = uprev+dt*(a71*k1+a72*k2+a73*k3+a74*k4+a75*k5+a76*k6)
   f(t+c6*dt,tmp,k7)
   @. u = uprev+dt*(a81*k1+a83*k3+a84*k4+a85*k5+a86*k6+a87*k7)
@@ -445,7 +451,7 @@ end
   @tight_loop_macros for i in uidx
     @inbounds tmp[i] = uprev[i]+dt*(a61*k1[i]+a62*k2[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
   end
-  f(t+dt,tmp,k6)
+  f(t+c5*dt,tmp,k6)
   @tight_loop_macros for i in uidx
     @inbounds tmp[i] = uprev[i]+dt*(a71*k1[i]+a72*k2[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i])
   end
