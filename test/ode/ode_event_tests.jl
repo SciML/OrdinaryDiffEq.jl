@@ -227,6 +227,8 @@ end
 
 @test test_callback_inplace(BS3())
 @test test_callback_inplace(BS5())
+@test test_callback_inplace(SSPRK432())
+@test test_callback_inplace(SSPRK932())
 @test test_callback_inplace(OwrenZen3())
 @test test_callback_inplace(OwrenZen4())
 @test test_callback_inplace(OwrenZen5())
@@ -247,6 +249,8 @@ end
 
 @test test_callback_outofplace(BS3())
 @test test_callback_outofplace(BS5())
+@test test_callback_outofplace(SSPRK432())
+@test test_callback_outofplace(SSPRK932())
 @test test_callback_outofplace(OwrenZen3())
 @test test_callback_outofplace(OwrenZen4())
 @test test_callback_outofplace(OwrenZen5())
@@ -267,6 +271,8 @@ end
 
 @test test_callback_scalar(BS3())
 @test test_callback_scalar(BS5())
+@test test_callback_scalar(SSPRK432())
+@test test_callback_scalar(SSPRK932())
 @test test_callback_scalar(OwrenZen3())
 @test test_callback_scalar(OwrenZen4())
 @test test_callback_scalar(OwrenZen5())
@@ -287,6 +293,8 @@ end
 
 @test test_callback_svector(BS3())
 @test test_callback_svector(BS5())
+@test test_callback_svector(SSPRK432())
+@test test_callback_svector(SSPRK932())
 @test test_callback_svector(OwrenZen3())
 @test test_callback_svector(OwrenZen4())
 @test test_callback_svector(OwrenZen5())
@@ -307,6 +315,8 @@ end
 
 @test test_callback_mvector(BS3())
 @test test_callback_mvector(BS5())
+@test test_callback_mvector(SSPRK432())
+@test test_callback_mvector(SSPRK932())
 @test test_callback_mvector(OwrenZen3())
 @test test_callback_mvector(OwrenZen4())
 @test test_callback_mvector(OwrenZen5())
