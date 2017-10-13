@@ -249,7 +249,7 @@ struct OwrenZen3Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: Ordin
 end
 
 u_cache(c::OwrenZen3Cache) = (c.atmp,c.utilde)
-du_cache(c::OwrenZen3Cache) = (c.fsalfirst,c.k2,c.k3,c.k4)
+du_cache(c::OwrenZen3Cache) = (c.k1,c.k2,c.k3,c.k4)
 
 function alg_cache(alg::OwrenZen3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
   tab = OwrenZen3ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
@@ -281,7 +281,7 @@ struct OwrenZen4Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: Ordin
 end
 
 u_cache(c::OwrenZen4Cache) = (c.atmp,c.utilde)
-du_cache(c::OwrenZen4Cache) = (c.fsalfirst,c.k2,c.k3,c.k4,c.k5,c.k6)
+du_cache(c::OwrenZen4Cache) = (c.k1,c.k2,c.k3,c.k4,c.k5,c.k6)
 
 function alg_cache(alg::OwrenZen4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
   tab = OwrenZen4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
@@ -317,7 +317,7 @@ struct OwrenZen5Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: Ordin
 end
 
 u_cache(c::OwrenZen5Cache) = (c.atmp,c.utilde)
-du_cache(c::OwrenZen5Cache) = (c.fsalfirst,c.k2,c.k3,c.k4,c.k5,c.k6,c.k7,c.k8)
+du_cache(c::OwrenZen5Cache) = (c.k1,c.k2,c.k3,c.k4,c.k5,c.k6,c.k7,c.k8)
 
 function alg_cache(alg::OwrenZen5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
   tab = OwrenZen5ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
