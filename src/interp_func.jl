@@ -35,6 +35,15 @@ end
 function DiffEqBase.interp_summary{cacheType<:Union{SSPRK22,SSPRK22ConstantCache,SSPRK33,SSPRK33ConstantCache,SSPRK432,SSPRK432ConstantCache}}(interp::OrdinaryDiffEqInterpolation{cacheType})
   interp.dense ? "2nd order \"free\" SSP interpolation" : "1st order linear"
 end
+function DiffEqBase.interp_summary{cacheType<:Union{OwrenZen3Cache,OwrenZen3ConstantCache}}(interp::OrdinaryDiffEqInterpolation{cacheType})
+  interp.dense ? "specialized 3rd order \"free\" interpolation" : "1st order linear"
+end
+function DiffEqBase.interp_summary{cacheType<:Union{OwrenZen4Cache,OwrenZen4ConstantCache}}(interp::OrdinaryDiffEqInterpolation{cacheType})
+  interp.dense ? "specialized 4th order \"free\" interpolation" : "1st order linear"
+end
+function DiffEqBase.interp_summary{cacheType<:Union{OwrenZen5Cache,OwrenZen5ConstantCache}}(interp::OrdinaryDiffEqInterpolation{cacheType})
+  interp.dense ? "specialized 5th order \"free\" interpolation" : "1st order linear"
+end
 function DiffEqBase.interp_summary{cacheType<:Union{Tsit5Cache,Tsit5ConstantCache}}(interp::OrdinaryDiffEqInterpolation{cacheType})
   interp.dense ? "specialized 4th order \"free\" interpolation" : "1st order linear"
 end
