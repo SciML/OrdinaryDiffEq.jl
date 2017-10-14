@@ -6,6 +6,22 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Discre
   nothing
 end
 
+function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Union{SSPRK22ConstantCache,SSPRK33ConstantCache,SSPRK432ConstantCache},always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+  if length(k)<1 || calcVal
+    copyat_or_push!(k,1,f(t,uprev))
+  end
+  nothing
+end
+
+function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Union{SSPRK22Cache,SSPRK33Cache,SSPRK432Cache},always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+  if length(k)<1 || calcVal
+    rtmp = similar(u, eltype(eltype(k)))
+    f(t,uprev,rtmp)
+    copyat_or_push!(k,1,rtmp)
+  end
+  nothing
+end
+
 #=
 @muladd function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::OwrenZen4ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<4 || calcVal
@@ -338,17 +354,19 @@ end
   nothing
 end
 
-function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::OwrenZen3Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+@muladd function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::OwrenZen3Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<4 || calcVal
     @unpack k1,k2,k3,k4,tmp = cache
     @unpack a21,a31,a32,a41,a42,a43,c1,c2 = cache.tab
+    # NOTE: k1 does not need to be evaluated since it is aliased with integrator.fsalfirst.
     a1 = dt*a21
     @. tmp = uprev+a1*k1
     f(t+c1*dt,tmp,k2)
     @. tmp = uprev+dt*(a31*k1+a32*k2)
     f(t+c2*dt,tmp,k3)
-    @. u = uprev+dt*(a41*k1+a42*k2+a43*k3)
-    f(t+dt,u,k4)
+    # NOTE: We should not change u here.
+    @. tmp = uprev+dt*(a41*k1+a42*k2+a43*k3)
+    f(t+dt,tmp,k4)
     copyat_or_push!(k,1,k1)
     copyat_or_push!(k,2,k2)
     copyat_or_push!(k,3,k3)
@@ -358,7 +376,7 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::OwrenZ
 end
 
 @muladd function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::OwrenZen4ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
-  if length(k)<4 || calcVal
+  if length(k)<6 || calcVal
     @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,c1,c2,c3,c4 = cache
     k1 = f(t,uprev)
     a = dt*a21
@@ -379,9 +397,11 @@ end
 end
 
 @muladd function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::OwrenZen4Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
-  if length(k)<4 || calcVal
+  if length(k)<6 || calcVal
+    uidx = eachindex(uprev)
     @unpack k1,k2,k3,k4,k5,k6,tmp = cache
     @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,c1,c2,c3,c4 = cache.tab
+    # NOTE: k1 does not need to be evaluated since it is aliased with integrator.fsalfirst.
     a = dt*a21
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+a*k1[i]
@@ -399,10 +419,11 @@ end
       @inbounds tmp[i] = uprev[i]+dt*(a51*k1[i]+a52*k2[i]+a53*k3[i]+a54*k4[i])
     end
     f(t+c4*dt,tmp,k5)
+    # NOTE: We should not change u here.
     @tight_loop_macros for i in uidx
-      @inbounds u[i] = uprev[i]+dt*(a61*k1[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
+      @inbounds tmp[i] = uprev[i]+dt*(a61*k1[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
     end
-    f(t+dt,u,k6)
+    f(t+dt,tmp,k6)
     copyat_or_push!(k,1,k1)
     copyat_or_push!(k,2,k2)
     copyat_or_push!(k,3,k3)
@@ -414,7 +435,7 @@ end
 end
 
 @muladd function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::OwrenZen5ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
-  if length(k)<4 || calcVal
+  if length(k)<8 || calcVal
     @unpack a21,a31,a32,a41,a42,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,c1,c2,c3,c4,c5,c6 = cache
     k1 = f(t,uprev)
     a = dt*a21
@@ -439,10 +460,11 @@ end
 end
 
 @muladd function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::OwrenZen5Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
-  if length(k)<4 || calcVal
+  if length(k)<8 || calcVal
     uidx = eachindex(uprev)
     @unpack k1,k2,k3,k4,k5,k6,k7,k8,tmp = cache
     @unpack a21,a31,a32,a41,a42,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,c1,c2,c3,c4,c5,c6 = cache.tab
+    # NOTE: k1 does not need to be evaluated since it is aliased with integrator.fsalfirst.
     a = dt*a21
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+a*k1[i]
@@ -463,21 +485,24 @@ end
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a61*k1[i]+a62*k2[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
     end
-    f(t+dt,tmp,k6)
+    f(t+c5*dt,tmp,k6)
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a71*k1[i]+a72*k2[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i])
     end
     f(t+c6*dt,tmp,k7)
+    # NOTE: We should not change u here.
     @tight_loop_macros for i in uidx
-      @inbounds u[i] = uprev[i]+dt*(a81*k1[i]+a83*k3[i]+a84*k4[i]+a85*k5[i]+a86*k6[i]+a87*k7[i])
+      @inbounds tmp[i] = uprev[i]+dt*(a81*k1[i]+a83*k3[i]+a84*k4[i]+a85*k5[i]+a86*k6[i]+a87*k7[i])
     end
-    f(t+dt,u,k8)
+    f(t+dt,tmp,k8)
     copyat_or_push!(k,1,k1)
     copyat_or_push!(k,2,k2)
     copyat_or_push!(k,3,k3)
     copyat_or_push!(k,4,k4)
     copyat_or_push!(k,5,k5)
     copyat_or_push!(k,6,k6)
+    copyat_or_push!(k,7,k7)
+    copyat_or_push!(k,8,k8)
   end
   nothing
 end
