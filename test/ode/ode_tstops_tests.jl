@@ -34,3 +34,17 @@ sol = solve(prob,RK4(),tstops=0:1//16:1, adaptive=false)
 sol = solve(prob,RK4(),tstops=linspace(0,1,100), adaptive=false)
 
 @test sol.t == collect(linspace(0,1,100))
+
+for tdir in [-1.; 1.]
+    prob2 = ODEProblem(linear,1/2,(0.0,tdir*1.0))
+    integrator = init(prob2,Tsit5())
+    tstops = tdir .* [0,1/5,1/4,1/3,1/2,3/4,1]
+    for tstop in tstops
+        add_tstop!(integrator, tstop)
+    end
+    @test_throws ErrorException add_tstop!(integrator, -0.1 * tdir)
+    solve!(integrator)
+    for tstop in tstops
+        @test tstop ∈ integrator.sol.t
+    end
+end
