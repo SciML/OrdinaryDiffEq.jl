@@ -47,7 +47,7 @@ du_cache(integrator::ODEIntegrator)= du_cache(integrator.cache)
 full_cache(integrator::ODEIntegrator) = chain(user_cache(integrator),u_cache(integrator),du_cache(integrator.cache))
 default_non_user_cache(integrator::ODEIntegrator) = chain(u_cache(integrator),du_cache(integrator.cache))
 function add_tstop!(integrator::ODEIntegrator,t)
-  t < integrator.t && error("Tried to add a tstop that is behind the current time. This is strictly forbidden")
+  integrator.tdir * (t - integrator.t) < 0 && error("Tried to add a tstop that is behind the current time. This is strictly forbidden")
   push!(integrator.opts.tstops,t)
 end
 user_cache(cache::OrdinaryDiffEqCache) = (cache.u,cache.uprev,cache.tmp)
