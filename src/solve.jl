@@ -310,7 +310,27 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
                              just_hit_tstop,accept_step,isout,reeval_fsal,
                              u_modified,opts)
   if initialize_integrator
+    integrator.u_modified = true
+
     initialize!(callbacks_internal,t,u,integrator)
+
+    # if the user modifies u, we need to fix previous values before initializing
+    # FSAL in order for the starting derivatives to be correct
+    if integrator.u_modified
+      if alg_extrapolates(integrator.alg)
+        if isinplace(integrator.sol.prob)
+          recursivecopy!(integrator.uprev2,integrator.uprev)
+        else
+          integrator.uprev2 = integrator.uprev
+        end
+      end
+      if isinplace(integrator.sol.prob)
+        recursivecopy!(integrator.uprev,integrator.u)
+      else
+        integrator.uprev = integrator.u
+      end
+    end
+
     initialize!(integrator,integrator.cache)
   end
 
