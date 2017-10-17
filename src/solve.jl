@@ -310,8 +310,8 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
                              just_hit_tstop,accept_step,isout,reeval_fsal,
                              u_modified,opts)
   if initialize_integrator
-    initialize!(integrator,integrator.cache)
     initialize!(callbacks_internal,t,u,integrator)
+    initialize!(integrator,integrator.cache)
   end
 
   integrator
