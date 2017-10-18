@@ -329,6 +329,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
       else
         integrator.uprev = integrator.u
       end
+      integrator.u_modified = false
     end
 
     initialize!(integrator,integrator.cache)
