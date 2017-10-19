@@ -126,19 +126,6 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
 
   dtmax > zero(dtmax) && tdir < 0 && (dtmax *= tdir) # Allow positive dtmax, but auto-convert
   # dtmin is all abs => does not care about sign already.
-  if dt == zero(dt) && adaptive
-    dt = tType(ode_determine_initdt(u,t,tdir,dtmax,abstol_internal,reltol_internal,internalnorm,prob,order,alg))
-    if sign(dt)!=tdir && dt!=tType(0) && !isnan(dt)
-      error("Automatic dt setting has the wrong sign. Exiting. Please report this error.")
-    end
-    if isnan(dt)
-      if verbose
-        warn("Automatic dt set the starting dt as NaN, causing instability.")
-      end
-    end
-  elseif adaptive && dt > zero(dt) && tdir < 0
-    dt *= tdir # Allow positive dt, but auto-convert
-  end
 
   if isinplace(prob) && typeof(u) <: AbstractArray && eltype(u) <: Number # Could this be more efficient for other arrays?
     if !(typeof(u) <: ArrayPartition)
@@ -345,6 +332,22 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     end
 
     initialize!(integrator,integrator.cache)
+  end
+
+  if integrator.dt == zero(integrator.dt) && integrator.opts.adaptive
+    integrator.dt = tType(ode_determine_initdt(integrator.u,integrator.t,
+    integrator.tdir,integrator.opts.dtmax,integrator.opts.abstol,integrator.opts.reltol,
+    integrator.opts.internalnorm,integrator.sol.prob,order,integrator.alg))
+    if sign(integrator.dt)!=integrator.tdir && integrator.dt!=tType(0) && !isnan(integrator.dt)
+      error("Automatic dt setting has the wrong sign. Exiting. Please report this error.")
+    end
+    if isnan(integrator.dt)
+      if verbose
+        warn("Automatic dt set the starting dt as NaN, causing instability.")
+      end
+    end
+  elseif integrator.opts.adaptive && integrator.dt > zero(integrator.dt) && integrator.tdir < 0
+    integrator.dt *= integrator.tdir # Allow positive dt, but auto-convert
   end
 
   integrator
