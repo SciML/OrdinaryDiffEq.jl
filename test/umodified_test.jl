@@ -13,7 +13,7 @@ end
 
 prob = OrdinaryDiffEq.ODEProblem(eom_lorenz!, [0., 10.0, 0], (zero(T), T))
 integ1 = init(prob, Tsit5(); diff_eq_kwargs...)
-prob.u0 = prob.u0 .+ d0/sqrt(3)
+@. prob.u0 = prob.u0 + d0/sqrt(3)
 integ2 = init(prob, Tsit5(); diff_eq_kwargs...)
 integ1.opts.advance_to_tstop=true
 integ2.opts.advance_to_tstop=true
