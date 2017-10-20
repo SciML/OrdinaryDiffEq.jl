@@ -17,7 +17,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   saveat = eltype(prob.tspan)[],tstops = eltype(prob.tspan)[],d_discontinuities= eltype(prob.tspan)[],
   save_idxs = nothing,
   save_everystep = isempty(saveat),
-  save_timeseries = nothing,save_start = true,
+  save_timeseries = nothing,save_start = true,save_end = true,
   dense = save_everystep && !(typeof(alg) <: Discrete),
   calck = (!isempty(setdiff(saveat,tstops)) || dense),
   dt = typeof(alg) <: Discrete && isempty(tstops) ? eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
@@ -213,7 +213,8 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
                        d_discontinuities_internal,userdata,progress,progress_steps,
                        progress_name,progress_message,timeseries_errors,dense_errors,
                        tTypeNoUnits(beta1),tTypeNoUnits(beta2),tTypeNoUnits(qoldinit),dense,
-                       save_start,callbacks_internal,isoutofdomain,unstable_check,verbose,
+                       save_start,save_end,callbacks_internal,isoutofdomain,
+                       unstable_check,verbose,
                        calck,force_dtmin,advance_to_tstop,stop_at_next_tstop)
 
   progress ? (prog = Juno.ProgressBar(name=progress_name)) : prog = nothing
@@ -321,15 +322,15 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
         end
       end
 
-      # reset this as it is now handled so the integrators should proceed as normal
-      integrator.u_modified = false
-
       if initialize_save &&
         (any((c)->c.save_positions[2],callbacks_internal.discrete_callbacks) ||
         any((c)->c.save_positions[2],callbacks_internal.continuous_callbacks))
         savevalues!(integrator,true)
       end
     end
+
+    # reset this as it is now handled so the integrators should proceed as normal
+    integrator.u_modified = false
 
     initialize!(integrator,integrator.cache)
   end

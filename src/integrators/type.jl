@@ -30,6 +30,7 @@ mutable struct DEOptions{absType,relType,tTypeNoUnits,tType,F2,F3,F4,F5,F6,tstop
   qoldinit::tTypeNoUnits
   dense::Bool
   save_start::Bool
+  save_end::Bool
   callback::F3
   isoutofdomain::F4
   unstable_check::F6
