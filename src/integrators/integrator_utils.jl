@@ -31,7 +31,7 @@ end
       warn("Interrupted. Larger maxiters is needed.")
     end
     postamble!(integrator)
-    integrator.sol.retcode = :MaxIters
+    integrator.sol = solution_new_retcode(integrator.sol,:MaxIters)
     return integrator.sol
   end
   if !integrator.opts.force_dtmin && integrator.opts.adaptive && abs(integrator.dt) <= abs(integrator.opts.dtmin)
@@ -39,7 +39,7 @@ end
       warn("dt <= dtmin. Aborting. If you would like to force continuation with dt=dtmin, set force_dtmin=true")
     end
     postamble!(integrator)
-    integrator.sol.retcode = :DtLessThanMin
+    integrator.sol = solution_new_retcode(integrator.sol,:DtLessThanMin)
     return integrator.sol
   end
   if integrator.opts.unstable_check(integrator.dt,integrator.t,integrator.u)
@@ -47,7 +47,7 @@ end
       warn("Instability detected. Aborting")
     end
     postamble!(integrator)
-    integrator.sol.retcode = :Unstable
+    integrator.sol = solution_new_retcode(integrator.sol,:Unstable)
     return integrator.sol
   end
 end

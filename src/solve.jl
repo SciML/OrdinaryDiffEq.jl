@@ -378,6 +378,6 @@ function solve!(integrator::ODEIntegrator)
   if has_analytic(f)
     calculate_solution_errors!(integrator.sol;timeseries_errors=integrator.opts.timeseries_errors,dense_errors=integrator.opts.dense_errors)
   end
-  integrator.sol.retcode = :Success
+  integrator.sol = solution_new_retcode(integrator.sol,:Success)
   nothing
 end

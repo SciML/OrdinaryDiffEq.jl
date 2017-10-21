@@ -1,4 +1,4 @@
-mutable struct ODECompositeSolution{T,N,uType,uType2,EType,tType,rateType,P,A,IType} <: AbstractODESolution{T,N}
+struct ODECompositeSolution{T,N,uType,uType2,EType,tType,rateType,P,A,IType} <: AbstractODESolution{T,N}
   u::uType
   u_analytic::uType2
   errors::EType
@@ -49,3 +49,15 @@ function build_solution{uType,tType,isinplace}(
                        typeof(prob),typeof(alg),typeof(interp)}(u,nothing,nothing,t,k,prob,alg,interp,alg_choice,dense,0,retcode)
   end
 end
+
+function DiffEqBase.solution_new_retcode(sol::ODECompositeSolution,retcode)
+  T = eltype(eltype(sol.u))
+  N = length((size(sol.u[1])..., length(sol.u)))
+
+  ODECompositeSolution{T,N,typeof(sol.u),typeof(sol.u_analytic),typeof(sol.errors),
+                     typeof(sol.t),typeof(sol.k),
+                     typeof(sol.prob),typeof(sol.alg),typeof(sol.interp)}(
+                     sol.u,sol.u_analytic,sol.errors,sol.t,sol.k,sol.prob,
+                     sol.alg,sol.interp,sol.alg_choice,sol.dense,sol.tslocation,
+                     retcode)
+ end
