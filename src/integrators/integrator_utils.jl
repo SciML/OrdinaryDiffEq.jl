@@ -267,8 +267,6 @@ function loopfooter!(integrator)
       else
         integrator.t = ttmp
       end
-      calc_dt_propose!(integrator,dtnew)
-      @show integrator.t
       handle_callbacks!(integrator)
     end
   elseif !integrator.opts.adaptive #Not adaptive
