@@ -16,7 +16,7 @@
     f₀ .= ftmp
   end
 
-  if any((isnan(x) for x in f₀))
+  if any(isnan,f₀)
     warn("First function call produced NaNs. Exiting.")
   end
 
