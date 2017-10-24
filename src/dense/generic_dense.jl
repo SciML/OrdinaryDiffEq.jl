@@ -203,7 +203,7 @@ function ode_interpolation!(vals,tvals,id,idxs,deriv)
         end
       else
         ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache) # update the kcurrent
-        if eltype(timeseries) <: AbstractArray
+        if eltype(vals[j]) <: AbstractArray
           ode_interpolant!(vals[j],Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache,idxs,deriv)
         else
           vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache,idxs,deriv)
