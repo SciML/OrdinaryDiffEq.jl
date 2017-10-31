@@ -11,9 +11,13 @@
   f(t,u0,f₀)
 
   if prob.mass_matrix != I
-    ftmp = similar(f₀)
-    alg.linsolve(ftmp, copy(prob.mass_matrix), f₀, true)
-    f₀ .= ftmp
+    try
+      ftmp = similar(f₀)
+      alg.linsolve(ftmp, copy(prob.mass_matrix), f₀, true)
+      f₀ .= ftmp
+    catch
+      return tType(1//10^(6))
+    end
   end
 
   if any(isnan,f₀)
