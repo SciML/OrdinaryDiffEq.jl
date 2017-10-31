@@ -11,8 +11,8 @@
   f(t,u0,f₀)
 
   if prob.mass_matrix != I
+    ftmp = similar(f₀)
     try
-      ftmp = similar(f₀)
       alg.linsolve(ftmp, copy(prob.mass_matrix), f₀, true)
       f₀ .= ftmp
     catch
