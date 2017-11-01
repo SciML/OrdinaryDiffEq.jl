@@ -154,7 +154,7 @@ sol = solve(prob, DPRKN6())
 sol = solve(prob, DPRKN8())
 @test length(sol.u) < 13
 sol = solve(prob, DPRKN12())
-@test length(sol.u) < 9
+@test length(sol.u) < 10
 sol = solve(prob, ERKN4(),reltol=1e-8)
 @test length(sol.u) < 38
 sol = solve(prob, ERKN5(),reltol=1e-8)
