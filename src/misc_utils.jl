@@ -6,7 +6,7 @@ immutable DiffCache{T<:AbstractArray, S<:AbstractArray}
 end
 
 Base.@pure function DiffCache{chunk_size}(T, size, ::Type{Val{chunk_size}})
-    DiffCache(zeros(T, size...), zeros(Dual{typeof(ForwardDiff.Tag(Void,T)),T,chunk_size}, size...))
+    DiffCache(zeros(T, size...), zeros(Dual{typeof(ForwardDiff.Tag(DiffEqNLSolveTag(),T)),T,chunk_size}, size...))
 end
 
 Base.@pure DiffCache(u::AbstractArray) = DiffCache(eltype(u),size(u),Val{ForwardDiff.pickchunksize(length(u))})
@@ -30,13 +30,13 @@ end
 function autodiff_setup{CS}(f!, initial_x::Vector, chunk_size::Type{Val{CS}})
     permf! = (fx, x) -> f!(x, fx)
     fx2 = copy(initial_x)
-    jac_cfg = ForwardDiff.JacobianConfig(nothing, #TODO: this has to be adapted for ForwardDiff master.: permf!,
+    jac_cfg = ForwardDiff.JacobianConfig(DiffEqNLSolveTag(), #TODO: this has to be adapted for ForwardDiff master.: permf!,
                                          initial_x, initial_x,
                                          ForwardDiff.Chunk{CS}())
-    g! = (x, gx) -> ForwardDiff.jacobian!(gx, permf!, fx2, x, jac_cfg)
+    g! = (x, gx) -> ForwardDiff.jacobian!(gx, permf!, fx2, x, jac_cfg,Val{false}())
     fg! = (x, fx, gx) -> begin
         jac_res = DiffBase.DiffResult(fx, gx)
-        ForwardDiff.jacobian!(jac_res, permf!, fx2, x, jac_cfg)
+        ForwardDiff.jacobian!(jac_res, permf!, fx2, x, jac_cfg,Val{false}())
         DiffBase.value(jac_res)
     end
 
