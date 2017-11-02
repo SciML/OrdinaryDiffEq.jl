@@ -14,7 +14,9 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   ts_init=eltype(prob.tspan)[],ks_init=[],
   recompile::Type{Val{recompile_flag}}=Val{true};
   timeseries_steps = 1,
-  saveat = eltype(prob.tspan)[],tstops = eltype(prob.tspan)[],d_discontinuities= eltype(prob.tspan)[],
+  saveat = eltype(prob.tspan)[],
+  tstops = eltype(prob.tspan)[],
+  d_discontinuities= eltype(prob.tspan)[],
   save_idxs = nothing,
   save_everystep = isempty(saveat),
   save_timeseries = nothing,save_start = true,save_end = true,
