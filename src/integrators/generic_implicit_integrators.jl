@@ -1,18 +1,18 @@
 mutable struct ImplicitRHS_Scalar{F,uType,tType} <: Function
   f::F
-  C::uType
+  tmp::uType
   a::tType
   t::tType
   dt::tType
 end
 
 function (p::ImplicitRHS_Scalar)(u,resid)
-  resid[1] = first(u) .- first(p.C) .- p.a.*first(p.f(p.t+p.dt,first(u)))
+  resid[1] = first(u) .- p.tmp .- p.a.*first(p.f(p.t+p.dt,first(u)))
 end
 
 mutable struct ImplicitRHS{F,uType,tType,DiffCacheType} <: Function
   f::F
-  C::uType
+  tmp::uType
   a::tType
   t::tType
   dt::tType
@@ -21,14 +21,13 @@ end
 
 function (p::ImplicitRHS)(u,resid)
   du1 = get_du(p.dual_cache, eltype(u))
-  p.f(p.t+p.dt,reshape(u,size(du1)),du1)
-  vecdu1 = vec(du1)
-  @. resid = u - p.C - p.a*vecdu1
+  p.f(p.t+p.dt,u,du1)
+  @. resid = u - p.tmp - p.a*du1
 end
 
 function initialize!(integrator,
                      cache::Union{GenericImplicitEulerConstantCache,GenericTrapezoidConstantCache})
-  cache.uhold[1] = integrator.uprev; cache.C[1] = integrator.uprev
+  cache.uhold[1] = integrator.uprev
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev)
@@ -41,8 +40,8 @@ end
 
 @muladd function perform_step!(integrator, cache::GenericImplicitEulerConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
-  @unpack uhold,C,rhs,nl_rhs = cache
-  C[1] = uprev
+  @unpack uhold,rhs,nl_rhs = cache
+  rhs.tmp = uprev
 
   if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     uhold[1] = current_extrapolant(t+dt,integrator)
@@ -99,8 +98,8 @@ end
 
 @muladd function perform_step!(integrator, cache::GenericImplicitEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
-  @unpack C,dual_cache,k,nl_rhs,rhs,uhold,tmp,atmp = cache
-  copy!(C,uprev)
+  @unpack dual_cache,k,nl_rhs,rhs,tmp,atmp = cache
+  copy!(tmp,uprev)
 
   if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     current_extrapolant!(u,t+dt,integrator)
@@ -113,8 +112,8 @@ end
   rhs.t = t
   rhs.dt = dt
   rhs.a = dt
-  nlres = integrator.alg.nlsolve(nl_rhs,uhold)
-  copy!(uhold,nlres)
+  nlres = integrator.alg.nlsolve(nl_rhs,u)
+  copy!(u,nlres)
 
   if integrator.opts.adaptive && integrator.success_iter > 0
     # local truncation error (LTE) bound by dt^2/2*max|y''(t)|
@@ -140,7 +139,7 @@ end
 end
 
 function initialize!(integrator, cache::GenericTrapezoidConstantCache)
-  cache.uhold[1] = integrator.uprev; cache.C[1] = integrator.uprev
+  cache.uhold[1] = integrator.uprev
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
@@ -153,8 +152,8 @@ end
 
 @muladd function perform_step!(integrator, cache::GenericTrapezoidConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
-  @unpack uhold,C,rhs,nl_rhs = cache
-  C[1] = first(uprev) + (dt/2)*first(integrator.fsalfirst)
+  @unpack uhold,rhs,nl_rhs = cache
+  rhs.tmp = first(uprev) .+ (dt/2).*first(integrator.fsalfirst)
 
   if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     uhold[1] = current_extrapolant(t+dt,integrator)
@@ -227,8 +226,8 @@ end
 
 @muladd function perform_step!(integrator, cache::GenericTrapezoidCache, repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
-  @unpack C,dual_cache,k,rhs,nl_rhs,uhold,tmp,atmp = cache
-  C .= vec(uprev) .+ (dt/2).*vec(integrator.fsalfirst)
+  @unpack dual_cache,k,rhs,nl_rhs,tmp,atmp = cache
+  tmp .= uprev .+ (dt/2).*integrator.fsalfirst
 
   if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     current_extrapolant!(u,t+dt,integrator)
@@ -242,8 +241,8 @@ end
   rhs.t = t
   rhs.dt = dt
   rhs.a = dt/2
-  nlres = integrator.alg.nlsolve(nl_rhs,uhold)
-  copy!(uhold,nlres)
+  nlres = integrator.alg.nlsolve(nl_rhs,u)
+  copy!(u,nlres)
 
   if integrator.opts.adaptive
     if integrator.iter > 2
