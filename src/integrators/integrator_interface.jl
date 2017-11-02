@@ -89,14 +89,11 @@ function resize_non_user_cache!(integrator::ODEIntegrator,cache::Union{GenericIm
   for c in default_non_user_cache(integrator)
     resize!(c,i)
   end
-  for c in vecu_cache(integrator.cache)
-    resize!(c,i)
-  end
   for c in dual_cache(integrator.cache)
     resize!(c.du,i)
     resize!(c.dual_du,i)
   end
-  cache.nl_rhs = integrator.alg.nlsolve(Val{:init},cache.rhs,cache.uhold)
+  cache.nl_rhs = integrator.alg.nlsolve(Val{:init},cache.rhs,cache.u)
 end
 
 function deleteat_non_user_cache!(integrator::ODEIntegrator,cache,idxs)
