@@ -212,7 +212,8 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator,u0 = integrator.sol.prob.u
 end
 
 function DiffEqBase.auto_dt_reset!(integrator::ODEIntegrator)
-  integrator.dt = tType(ode_determine_initdt(integrator.u,integrator.t,
+  integrator.dt = ode_determine_initdt(integrator.u,integrator.t,
   integrator.tdir,integrator.opts.dtmax,integrator.opts.abstol,integrator.opts.reltol,
-  integrator.opts.internalnorm,integrator.sol.prob,order,integrator.alg))
+  integrator.opts.internalnorm,integrator.sol.prob,alg_order(integrator.alg),
+  integrator.alg)
 end
