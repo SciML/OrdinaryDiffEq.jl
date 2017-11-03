@@ -134,7 +134,7 @@ end
 DiffEqBase.has_reinit(integrator::ODEIntegrator) = true
 function DiffEqBase.reinit!(integrator::ODEIntegrator,u0 = integrator.sol.prob.u0;
   t0 = integrator.sol.prob.tspan[1], tf = integrator.sol.prob.tspan[2],
-  erase_sol = true, tstops = nothing, saveat = nothing)
+  erase_sol = true, tstops = nothing, saveat = nothing, reinit_cache = true)
 
   if isinplace(integrator.sol.prob)
     recursivecopy!(integrator.u,u0)
@@ -188,6 +188,7 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator,u0 = integrator.sol.prob.u
       resize!(integrator.sol.alg_choice,resize_start)
     end
     integrator.saveiter = resize_start
+    resize!(integrator.sol.interp.notsaveat_idxs,resize_start)
   end
   integrator.iter = 0
   integrator.success_iter = 0
@@ -196,5 +197,13 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator,u0 = integrator.sol.prob.u
   integrator.qold = integrator.opts.qoldinit
   integrator.q11 = typeof(integrator.t)(1)
 
-  initialize!(integrator,integrator.cache)
+  if reinit_cache
+    initialize!(integrator,integrator.cache)
+  end
+end
+
+function DiffEqBase.auto_dt_reset!(integrator::ODEIntegrator)
+  integrator.dt = tType(ode_determine_initdt(integrator.u,integrator.t,
+  integrator.tdir,integrator.opts.dtmax,integrator.opts.abstol,integrator.opts.reltol,
+  integrator.opts.internalnorm,integrator.sol.prob,order,integrator.alg))
 end

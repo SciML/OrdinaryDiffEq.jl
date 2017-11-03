@@ -338,9 +338,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   end
 
   if integrator.dt == zero(integrator.dt) && integrator.opts.adaptive
-    integrator.dt = tType(ode_determine_initdt(integrator.u,integrator.t,
-    integrator.tdir,integrator.opts.dtmax,integrator.opts.abstol,integrator.opts.reltol,
-    integrator.opts.internalnorm,integrator.sol.prob,order,integrator.alg))
+    auto_dt_reset!(integrator)
     if sign(integrator.dt)!=integrator.tdir && integrator.dt!=tType(0) && !isnan(integrator.dt)
       error("Automatic dt setting has the wrong sign. Exiting. Please report this error.")
     end
