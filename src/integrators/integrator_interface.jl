@@ -134,7 +134,9 @@ end
 DiffEqBase.has_reinit(integrator::ODEIntegrator) = true
 function DiffEqBase.reinit!(integrator::ODEIntegrator,u0 = integrator.sol.prob.u0;
   t0 = integrator.sol.prob.tspan[1], tf = integrator.sol.prob.tspan[2],
-  erase_sol = true, tstops = nothing, saveat = nothing, reinit_cache = true)
+  erase_sol = true, tstops = nothing, saveat = nothing,
+  reset_dt = true,
+  reinit_cache = true)
 
   if isinplace(integrator.sol.prob)
     recursivecopy!(integrator.u,u0)
@@ -192,10 +194,17 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator,u0 = integrator.sol.prob.u
   end
   integrator.iter = 0
   integrator.success_iter = 0
+  integrator.u_modified = false
 
   # full re-initialize the PI in timestepping
   integrator.qold = integrator.opts.qoldinit
-  integrator.q11 = typeof(integrator.t)(1)
+  integrator.q11 = typeof(integrator.q11)(1)
+  erracc = typeof(integrator.erracc)(1)
+  dtacc = typeof(integrator.dtacc)(1)
+
+  if reset_dt
+    auto_dt_reset!(integrator)
+  end
 
   if reinit_cache
     initialize!(integrator,integrator.cache)
