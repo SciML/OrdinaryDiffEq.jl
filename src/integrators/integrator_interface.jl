@@ -199,8 +199,8 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator,u0 = integrator.sol.prob.u
   # full re-initialize the PI in timestepping
   integrator.qold = integrator.opts.qoldinit
   integrator.q11 = typeof(integrator.q11)(1)
-  erracc = typeof(integrator.erracc)(1)
-  dtacc = typeof(integrator.dtacc)(1)
+  integrator.erracc = typeof(integrator.erracc)(1)
+  integrator.dtacc = typeof(integrator.dtacc)(1)
 
   if reset_dt
     auto_dt_reset!(integrator)
