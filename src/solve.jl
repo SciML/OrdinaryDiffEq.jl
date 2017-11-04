@@ -74,14 +74,6 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     error("Timespan is trivial")
   end
 
-  tstops_vec = vec(collect(tType,Iterators.filter(x->tdir*tspan[1]<tdir*x≤tdir*tspan[end],Iterators.flatten((tstops,d_discontinuities,tspan[end])))))
-
-  if tdir>0
-    tstops_internal = binary_minheap(tstops_vec)
-  else
-    tstops_internal = binary_maxheap(tstops_vec)
-  end
-
   f = prob.f
 
   # Get the control variables
@@ -140,29 +132,8 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   end
   rateType = typeof(rate_prototype) ## Can be different if united
 
-  if typeof(saveat) <: Number
-    if (tspan[1]:saveat:tspan[end])[end] == tspan[end]
-      saveat_vec = convert(Vector{tType},collect(tType,tspan[1]+saveat:saveat:tspan[end]))
-    else
-      saveat_vec = convert(Vector{tType},collect(tType,tspan[1]+saveat:saveat:(tspan[end]-saveat)))
-    end
-  else
-    saveat_vec = vec(collect(tType,Iterators.filter(x->tdir*tspan[1]<tdir*x<tdir*tspan[end],saveat)))
-  end
-
-  if tdir>0
-    saveat_internal = binary_minheap(saveat_vec)
-  else
-    saveat_internal = binary_maxheap(saveat_vec)
-  end
-
-  d_discontinuities_vec = vec(collect(d_discontinuities))
-
-  if tdir>0
-    d_discontinuities_internal = binary_minheap(d_discontinuities_vec)
-  else
-    d_discontinuities_internal = binary_maxheap(d_discontinuities_vec)
-  end
+  tstops_internal, saveat_internal, d_discontinuities_internal =
+    tstop_saveat_disc_handling(tstops,saveat,d_discontinuities,tdir,tspan,tType)
 
   callbacks_internal = CallbackSet(callback,prob.callback)
 
@@ -206,13 +177,16 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
                    typeof(internalnorm),typeof(callbacks_internal),typeof(isoutofdomain),
                    typeof(progress_message),typeof(unstable_check),typeof(tstops_internal),
                    typeof(d_discontinuities_internal),typeof(userdata),typeof(save_idxs),
-                   typeof(maxiters)}(
+                   typeof(maxiters),typeof(tstops),typeof(saveat),
+                   typeof(d_discontinuities)}(
                        maxiters,timeseries_steps,save_everystep,adaptive,abstol_internal,
                        reltol_internal,tTypeNoUnits(gamma),tTypeNoUnits(qmax),
                        tTypeNoUnits(qmin),tTypeNoUnits(qsteady_max),
                        tTypeNoUnits(qsteady_min),tTypeNoUnits(failfactor),tType(dtmax),
                        tType(dtmin),internalnorm,save_idxs,tstops_internal,saveat_internal,
-                       d_discontinuities_internal,userdata,progress,progress_steps,
+                       d_discontinuities_internal,
+                       tstops,saveat,d_discontinuities,
+                       userdata,progress,progress_steps,
                        progress_name,progress_message,timeseries_errors,dense_errors,
                        tTypeNoUnits(beta1),tTypeNoUnits(beta2),tTypeNoUnits(qoldinit),dense,
                        save_start,save_end,callbacks_internal,isoutofdomain,
@@ -380,4 +354,41 @@ function solve!(integrator::ODEIntegrator)
   end
   integrator.sol = solution_new_retcode(integrator.sol,:Success)
   nothing
+end
+
+# Helpers
+
+function tstop_saveat_disc_handling(tstops,saveat,d_discontinuities,tdir,tspan,tType)
+  tstops_vec = vec(collect(tType,Iterators.filter(x->tdir*tspan[1]<tdir*x≤tdir*tspan[end],Iterators.flatten((tstops,d_discontinuities,tspan[end])))))
+
+  if tdir>0
+    tstops_internal = binary_minheap(tstops_vec)
+  else
+    tstops_internal = binary_maxheap(tstops_vec)
+  end
+
+  if typeof(saveat) <: Number
+    if (tspan[1]:saveat:tspan[end])[end] == tspan[end]
+      saveat_vec = convert(Vector{tType},collect(tType,tspan[1]+saveat:saveat:tspan[end]))
+    else
+      saveat_vec = convert(Vector{tType},collect(tType,tspan[1]+saveat:saveat:(tspan[end]-saveat)))
+    end
+  else
+    saveat_vec = vec(collect(tType,Iterators.filter(x->tdir*tspan[1]<tdir*x<tdir*tspan[end],saveat)))
+  end
+
+  if tdir>0
+    saveat_internal = binary_minheap(saveat_vec)
+  else
+    saveat_internal = binary_maxheap(saveat_vec)
+  end
+
+  d_discontinuities_vec = vec(collect(d_discontinuities))
+
+  if tdir>0
+    d_discontinuities_internal = binary_minheap(d_discontinuities_vec)
+  else
+    d_discontinuities_internal = binary_maxheap(d_discontinuities_vec)
+  end
+  tstops_internal,saveat_internal,d_discontinuities_internal
 end

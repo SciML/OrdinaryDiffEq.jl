@@ -134,7 +134,10 @@ end
 DiffEqBase.has_reinit(integrator::ODEIntegrator) = true
 function DiffEqBase.reinit!(integrator::ODEIntegrator,u0 = integrator.sol.prob.u0;
   t0 = integrator.sol.prob.tspan[1], tf = integrator.sol.prob.tspan[2],
-  erase_sol = true, tstops = nothing, saveat = nothing,
+  erase_sol = true,
+  tstops = integrator.opts.tstops_cache,
+  saveat = integrator.opts.saveat_cache,
+  d_discontinuities = integrator.opts.d_discontinuities_cache,
   reset_dt = (integrator.dtcache != zero(integrator.dt)) && integrator.opts.adaptive,
   reinit_cache = true)
 
@@ -157,23 +160,14 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator,u0 = integrator.sol.prob.u
   integrator.t = t0
   integrator.tprev = t0
 
-  # Get rid of tstops states
-  while !isempty(integrator.opts.tstops)
-    pop!(integrator.opts.tstops)
-  end
-  push!(integrator.opts.tstops,tf)
-  if tstops != nothing
-    push!(integrator.opts.tstops,tstops)
-  end
+  tstops_internal, saveat_internal, d_discontinuities_internal =
+    tstop_saveat_disc_handling(tstops,saveat,d_discontinuities,
+    integrator.tdir,(t0,tf),typeof(integrator.t))
 
-  # Get rid of saveat states
-  while !isempty(integrator.opts.saveat)
-    pop!(integrator.opts.saveat)
-  end
-  if saveat != nothing
-    push!(integrator.opts.saveat,saveat)
-  end
-
+  integrator.opts.tstops = tstops_internal
+  integrator.opts.saveat = saveat_internal
+  integrator.opts.d_discontinuities = d_discontinuities_internal
+  
   if erase_sol
     if integrator.opts.save_start
       resize_start = 1
