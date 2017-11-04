@@ -760,8 +760,6 @@ end
   @. u = uprev + b1*k1 + b2*k2 + b3*k3 + b4*k4
   f(t, u, fsallast)
 
-  #@show k1,k2,k3,k4
-
   if integrator.opts.adaptive
     @. utilde = btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,

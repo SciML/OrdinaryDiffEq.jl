@@ -127,3 +127,89 @@ end
 function terminate!(integrator::ODEIntegrator)
   integrator.opts.tstops.valtree = typeof(integrator.opts.tstops.valtree)()
 end
+
+DiffEqBase.has_reinit(integrator::ODEIntegrator) = true
+function DiffEqBase.reinit!(integrator::ODEIntegrator,u0 = integrator.sol.prob.u0;
+  t0 = integrator.sol.prob.tspan[1], tf = integrator.sol.prob.tspan[2],
+  erase_sol = true,
+  tstops = integrator.opts.tstops_cache,
+  saveat = integrator.opts.saveat_cache,
+  d_discontinuities = integrator.opts.d_discontinuities_cache,
+  reset_dt = (integrator.dtcache == zero(integrator.dt)) && integrator.opts.adaptive,
+  reinit_callbacks = true,
+  reinit_cache = true)
+
+  if isinplace(integrator.sol.prob)
+    recursivecopy!(integrator.u,u0)
+    recursivecopy!(integrator.uprev,integrator.u)
+  else
+    integrator.u = u0
+    integrator.uprev = integrator.u
+  end
+
+  if alg_extrapolates(integrator.alg)
+    if isinplace(integrator.sol.prob)
+      recursivecopy!(integrator.uprev2,integrator.uprev)
+    else
+      integrator.uprev2 = integrator.uprev
+    end
+  end
+
+  integrator.t = t0
+  integrator.tprev = t0
+
+  tstops_internal, saveat_internal, d_discontinuities_internal =
+    tstop_saveat_disc_handling(tstops,saveat,d_discontinuities,
+    integrator.tdir,(t0,tf),typeof(integrator.t))
+
+  integrator.opts.tstops = tstops_internal
+  integrator.opts.saveat = saveat_internal
+  integrator.opts.d_discontinuities = d_discontinuities_internal
+
+  if erase_sol
+    if integrator.opts.save_start
+      resize_start = 1
+    else
+      resize_start = 0
+    end
+    resize!(integrator.sol.u,resize_start)
+    resize!(integrator.sol.t,resize_start)
+    resize!(integrator.sol.k,resize_start)
+    if integrator.sol.u_analytic != nothing
+      resize!(integrator.sol.u_analytic,0)
+    end
+    if typeof(integrator.alg) <: OrdinaryDiffEqCompositeAlgorithm
+      resize!(integrator.sol.alg_choice,resize_start)
+    end
+    integrator.saveiter = resize_start
+    resize!(integrator.sol.interp.notsaveat_idxs,resize_start)
+  end
+  integrator.iter = 0
+  integrator.success_iter = 0
+  integrator.u_modified = false
+
+  # full re-initialize the PI in timestepping
+  integrator.qold = integrator.opts.qoldinit
+  integrator.q11 = typeof(integrator.q11)(1)
+  integrator.erracc = typeof(integrator.erracc)(1)
+  integrator.dtacc = typeof(integrator.dtacc)(1)
+
+  if reset_dt
+    auto_dt_reset!(integrator)
+  end
+
+  if reinit_callbacks
+    initialize_callbacks!(integrator)
+  end
+
+  if reinit_cache
+    initialize!(integrator,integrator.cache)
+  end
+end
+
+function DiffEqBase.auto_dt_reset!(integrator::ODEIntegrator)
+  integrator.dt = ode_determine_initdt(integrator.u,integrator.t,
+  integrator.tdir,integrator.opts.dtmax,integrator.opts.abstol,integrator.opts.reltol,
+  integrator.opts.internalnorm,integrator.sol.prob,alg_order(integrator.alg),
+  integrator.alg)
+end
