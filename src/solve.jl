@@ -275,39 +275,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
                              just_hit_tstop,accept_step,isout,reeval_fsal,
                              u_modified,opts)
   if initialize_integrator
-
-    integrator.u_modified = true
-
-    u_modified = initialize!(callbacks_internal,t,u,integrator)
-
-    # if the user modifies u, we need to fix previous values before initializing
-    # FSAL in order for the starting derivatives to be correct
-    if u_modified
-
-      if isinplace(integrator.sol.prob)
-        recursivecopy!(integrator.uprev,integrator.u)
-      else
-        integrator.uprev = integrator.u
-      end
-
-      if alg_extrapolates(integrator.alg)
-        if isinplace(integrator.sol.prob)
-          recursivecopy!(integrator.uprev2,integrator.uprev)
-        else
-          integrator.uprev2 = integrator.uprev
-        end
-      end
-
-      if initialize_save &&
-        (any((c)->c.save_positions[2],callbacks_internal.discrete_callbacks) ||
-        any((c)->c.save_positions[2],callbacks_internal.continuous_callbacks))
-        savevalues!(integrator,true)
-      end
-    end
-
-    # reset this as it is now handled so the integrators should proceed as normal
-    integrator.u_modified = false
-
+    initialize_callbacks!(integrator)
     initialize!(integrator,integrator.cache)
   end
 
@@ -391,4 +359,41 @@ function tstop_saveat_disc_handling(tstops,saveat,d_discontinuities,tdir,tspan,t
     d_discontinuities_internal = binary_maxheap(d_discontinuities_vec)
   end
   tstops_internal,saveat_internal,d_discontinuities_internal
+end
+
+function initialize_callbacks!(integrator)
+  t = integrator.t
+  u = integrator.u
+  callbacks = integrator.opts.callback
+  integrator.u_modified = true
+
+  u_modified = initialize!(callbacks,t,u,integrator)
+
+  # if the user modifies u, we need to fix previous values before initializing
+  # FSAL in order for the starting derivatives to be correct
+  if u_modified
+
+    if isinplace(integrator.sol.prob)
+      recursivecopy!(integrator.uprev,integrator.u)
+    else
+      integrator.uprev = integrator.u
+    end
+
+    if alg_extrapolates(integrator.alg)
+      if isinplace(integrator.sol.prob)
+        recursivecopy!(integrator.uprev2,integrator.uprev)
+      else
+        integrator.uprev2 = integrator.uprev
+      end
+    end
+
+    if initialize_save &&
+      (any((c)->c.save_positions[2],callbacks.discrete_callbacks) ||
+      any((c)->c.save_positions[2],callbacks.continuous_callbacks))
+      savevalues!(integrator,true)
+    end
+  end
+
+  # reset this as it is now handled so the integrators should proceed as normal
+  integrator.u_modified = false
 end
