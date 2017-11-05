@@ -260,7 +260,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   q11 = tTypeNoUnits(1)
   success_iter = 0
   erracc = tTypeNoUnits(1)
-  dtacc = tTypeNoUnits(1)
+  dtacc = tType(1)
 
   integrator = ODEIntegrator{algType,uType,tType,
                              tTypeNoUnits,typeof(tdir),typeof(k),SolType,

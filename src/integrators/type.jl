@@ -64,7 +64,7 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,tTypeN
   qold::tTypeNoUnits
   q11::tTypeNoUnits
   erracc::tTypeNoUnits
-  dtacc::tTypeNoUnits
+  dtacc::tType
   success_iter::Int
   iter::Int
   saveiter::Int
