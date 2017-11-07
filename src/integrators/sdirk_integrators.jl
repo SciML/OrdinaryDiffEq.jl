@@ -135,7 +135,8 @@ end
         if alg_autodiff(integrator.alg)
           ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
         else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
+          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
+          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
         end
       end
     end
@@ -364,7 +365,8 @@ end
         if alg_autodiff(integrator.alg)
           ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
         else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
+          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
+          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
         end
       end
     end
@@ -911,7 +913,8 @@ end
         if alg_autodiff(integrator.alg)
           ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
         else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
+          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
+          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
         end
       end
     end
@@ -1234,7 +1237,8 @@ end
         if alg_autodiff(integrator.alg)
           ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
         else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
+          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
+          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
         end
       end
     end
@@ -1557,7 +1561,8 @@ end
         if alg_autodiff(integrator.alg)
           ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
         else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
+          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
+          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
         end
       end
     end
@@ -1907,7 +1912,8 @@ end
         if alg_autodiff(integrator.alg)
           ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
         else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
+          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
+          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
         end
       end
     end
@@ -2420,7 +2426,8 @@ end
         if alg_autodiff(integrator.alg)
           ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
         else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
+          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
+          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
         end
       end
     end
@@ -3028,7 +3035,8 @@ end
         if alg_autodiff(integrator.alg)
           ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
         else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
+          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
+          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
         end
       end
     end
@@ -3603,7 +3611,8 @@ end
         if alg_autodiff(integrator.alg)
           ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
         else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
+          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
+          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
         end
       end
     end
@@ -4160,7 +4169,8 @@ end
         if alg_autodiff(integrator.alg)
           ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
         else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
+          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
+          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
         end
       end
     end
@@ -4815,7 +4825,8 @@ end
         if alg_autodiff(integrator.alg)
           ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
         else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
+          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
+          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
         end
       end
     end
@@ -5568,7 +5579,8 @@ end
         if alg_autodiff(integrator.alg)
           ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
         else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
+          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
+          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
         end
       end
     end
