@@ -132,12 +132,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
-        else
-          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -362,12 +357,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
-        else
-          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -910,12 +900,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
-        else
-          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -1234,12 +1219,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
-        else
-          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -1558,12 +1538,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
-        else
-          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -1909,12 +1884,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
-        else
-          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -2423,12 +2393,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
-        else
-          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -3032,12 +2997,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
-        else
-          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -3608,12 +3568,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
-        else
-          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -4166,12 +4121,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
-        else
-          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -4822,12 +4772,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
-        else
-          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -5576,12 +5521,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
-        else
-          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated

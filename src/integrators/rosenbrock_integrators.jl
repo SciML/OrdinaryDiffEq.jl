@@ -29,12 +29,7 @@ end
     else
       tf.vf.sizeu = sizeu
       tf.uprev = uprev
-      if alg_autodiff(integrator.alg)
-        ForwardDiff.derivative!(dT, tf, vec(du2), t)
-      else
-        RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
-        DiffEqDiffTools.finite_difference!(dT, tf, t, integrator.alg.diff_type, RealOrComplex, Val{:DiffEqDerivativeWrapper}, vec(du2))
-      end
+      derivative!(dT, tf, t, vec(du2), integrator)
     end
   end
 
@@ -53,12 +48,7 @@ end
       else
         uf.vfr.sizeu = sizeu
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J, uf, vec(du1), vec(uprev), jac_config)
-        else
-          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
       for j in 1:length(u), i in 1:length(u)
           @inbounds W[i,j] = mass_matrix[i,j] - γ*J[i,j]
@@ -148,12 +138,7 @@ end
     else
       tf.vf.sizeu = sizeu
       tf.uprev = uprev
-      if alg_autodiff(integrator.alg)
-        ForwardDiff.derivative!(dT, tf, vec(du2), t)
-      else
-        RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
-        DiffEqDiffTools.finite_difference!(dT, tf, t, integrator.alg.diff_type, RealOrComplex, Val{:DiffEqDerivativeWrapper}, vec(du2))
-      end
+      derivative!(dT, tf, t, vec(du2), integrator)
     end
   end
 
@@ -171,12 +156,7 @@ end
       else
         uf.vfr.sizeu = sizeu
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J, uf, vec(du1), vec(uprev), jac_config)
-        else
-          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
       for j in 1:length(u), i in 1:length(u)
         @inbounds W[i,j] = mass_matrix[i,j] - γ*J[i,j]
@@ -457,12 +437,7 @@ end
     else
       tf.vf.sizeu = sizeu
       tf.uprev = uprev
-      if alg_autodiff(integrator.alg)
-        ForwardDiff.derivative!(dT, tf, vec(du2), t)
-      else
-        RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
-        DiffEqDiffTools.finite_difference!(dT, tf, t, integrator.alg.diff_type, RealOrComplex, Val{:DiffEqDerivativeWrapper}, vec(du2))
-      end
+      derivative!(dT, tf, t, vec(du2), integrator)
     end
   end
 
@@ -481,12 +456,7 @@ end
       else
         uf.vfr.sizeu = sizeu
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J, uf, vec(du1), vec(uprev), jac_config)
-        else
-          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
       for j in 1:length(u), i in 1:length(u)
           @inbounds W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
@@ -667,12 +637,7 @@ end
     else
       tf.vf.sizeu = sizeu
       tf.uprev = uprev
-      if alg_autodiff(integrator.alg)
-        ForwardDiff.derivative!(dT, tf, vec(du2), t)
-      else
-        RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
-        DiffEqDiffTools.finite_difference!(dT, tf, t, integrator.alg.diff_type, RealOrComplex, Val{:DiffEqDerivativeWrapper}, vec(du2))
-      end
+      derivative!(dT, tf, t, vec(du2), integrator)
     end
   end
 
@@ -690,12 +655,7 @@ end
       else
         uf.vfr.sizeu = sizeu
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J, uf, vec(du1), vec(uprev), jac_config)
-        else
-          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
       for j in 1:length(u), i in 1:length(u)
           @inbounds W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
@@ -901,12 +861,7 @@ end
     else
       tf.vf.sizeu = sizeu
       tf.uprev = uprev
-      if alg_autodiff(integrator.alg)
-        ForwardDiff.derivative!(dT, tf, vec(du2), t)
-      else
-        RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
-        DiffEqDiffTools.finite_difference!(dT, tf, t, integrator.alg.diff_type, RealOrComplex, Val{:DiffEqDerivativeWrapper}, vec(du2))
-      end
+      derivative!(dT, tf, t, vec(du2), integrator)
     end
   end
 
@@ -925,12 +880,7 @@ end
       else
         uf.vfr.sizeu = sizeu
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J, uf, vec(du1), vec(uprev), jac_config)
-        else
-          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
       for j in 1:length(u), i in 1:length(u)
           @inbounds W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
@@ -1159,12 +1109,7 @@ end
     else
       tf.vf.sizeu = sizeu
       tf.uprev = uprev
-      if alg_autodiff(integrator.alg)
-        ForwardDiff.derivative!(dT, tf, vec(du2), t)
-      else
-        RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
-        DiffEqDiffTools.finite_difference!(dT, tf, t, integrator.alg.diff_type, RealOrComplex, Val{:DiffEqDerivativeWrapper}, vec(du2))
-      end
+      derivative!(dT, tf, t, vec(du2), integrator)
     end
   end
 
@@ -1185,12 +1130,7 @@ end
       else
         uf.vfr.sizeu = sizeu
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J, uf, vec(du1), vec(uprev), jac_config)
-        else
-          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
       for j in 1:length(u), i in 1:length(u)
           @inbounds W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
@@ -1546,12 +1486,7 @@ end
     else
       tf.vf.sizeu = sizeu
       tf.uprev = uprev
-      if alg_autodiff(integrator.alg)
-        ForwardDiff.derivative!(dT, tf, vec(du2), t)
-      else
-        RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
-        DiffEqDiffTools.finite_difference!(dT, tf, t, integrator.alg.diff_type, RealOrComplex, Val{:DiffEqDerivativeWrapper}, vec(du2))
-      end
+      derivative!(dT, tf, t, vec(du2), integrator)
     end
   end
 
@@ -1572,12 +1507,7 @@ end
       else
         uf.vfr.sizeu = sizeu
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J, uf, vec(du1), vec(uprev), jac_config)
-        else
-          RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, RealOrComplex, Val{:JacobianWrapper}, vec(du1))
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
       for j in 1:length(u), i in 1:length(u)
           @inbounds W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
