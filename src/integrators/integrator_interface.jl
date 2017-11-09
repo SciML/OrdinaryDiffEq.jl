@@ -136,7 +136,7 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator,u0 = integrator.sol.prob.u
   saveat = integrator.opts.saveat_cache,
   d_discontinuities = integrator.opts.d_discontinuities_cache,
   reset_dt = (integrator.dtcache == zero(integrator.dt)) && integrator.opts.adaptive,
-  reinit_callbacks = true,
+  reinit_callbacks = true, initialize_save = true,
   reinit_cache = true)
 
   if isinplace(integrator.sol.prob)
@@ -199,7 +199,7 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator,u0 = integrator.sol.prob.u
   end
 
   if reinit_callbacks
-    initialize_callbacks!(integrator)
+    initialize_callbacks!(integrator, initialize_save)
   end
 
   if reinit_cache

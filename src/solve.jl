@@ -275,7 +275,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
                              just_hit_tstop,accept_step,isout,reeval_fsal,
                              u_modified,opts)
   if initialize_integrator
-    initialize_callbacks!(integrator)
+    initialize_callbacks!(integrator, initialize_save)
     initialize!(integrator,integrator.cache)
   end
 
@@ -361,7 +361,7 @@ function tstop_saveat_disc_handling(tstops,saveat,d_discontinuities,tdir,tspan,t
   tstops_internal,saveat_internal,d_discontinuities_internal
 end
 
-function initialize_callbacks!(integrator)
+function initialize_callbacks!(integrator, initialize_save = true)
   t = integrator.t
   u = integrator.u
   callbacks = integrator.opts.callback

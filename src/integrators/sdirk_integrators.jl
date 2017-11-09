@@ -132,11 +132,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
-        else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -361,11 +357,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
-        else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -908,11 +900,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
-        else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -1231,11 +1219,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
-        else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -1554,11 +1538,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
-        else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -1904,11 +1884,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
-        else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -2417,11 +2393,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
-        else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -3025,11 +2997,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
-        else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -3600,11 +3568,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
-        else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -4157,11 +4121,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
-        else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -4812,11 +4772,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
-        else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -5565,11 +5521,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
-        else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), Val{integrator.alg.diff_type}, vec(du1), Val{:JacobianWrapper})
-        end
+        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
