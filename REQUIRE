@@ -6,7 +6,7 @@ GenericSVD 0.0.2
 NLsolve 0.12.1
 RecursiveArrayTools 0.12.0
 Juno 0.2.5
-DiffEqDiffTools
+DiffEqDiffTools 0.1.0
 Roots 0.2.1
 DataStructures 0.4.6
 Compat 0.18.0
