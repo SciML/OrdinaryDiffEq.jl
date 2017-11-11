@@ -216,6 +216,9 @@ function stepsize_controller!(integrator,
   expo = 1/(alg_order(integrator.alg)+1)
   qtmp = (integrator.EEst^expo)/fac
   @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
+  if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
+    q = one(q)
+  end
   integrator.qold = q
   q
 end
