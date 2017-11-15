@@ -334,3 +334,17 @@ end
 @test test_callback_mvector(Vern9())
 @test test_callback_mvector(Rosenbrock23())
 @test test_callback_mvector(Rosenbrock32())
+
+# Test ContinuousCallback hits values on the steps
+t_event = 100.0
+f_simple(t,u) = 1.00001*u
+event_triggered = false
+condition_simple(t,u,integrator) = t_event-t
+function affect_simple!(integrator)
+  global event_triggered
+  event_triggered = true
+end
+cb = ContinuousCallback(condition_simple, nothing, affect_simple!)
+prob = ODEProblem(f_simple, [1.0], (0.0, 2.0*t_event))
+sol = solve(prob,Tsit5(),callback=cb, adaptive = false, dt = 10.0)
+@test event_triggered
