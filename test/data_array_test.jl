@@ -139,9 +139,9 @@ function mat_affect2!(integrator)
 end
 
 save_positions = (true,true)
-cb = DiscreteCallback(condition, affect!, save_positions=save_positions)
+cb = DiscreteCallback(mat_condition, mat_affect!, save_positions=save_positions)
 save_positions = (false,true)
-cb2 = DiscreteCallback(condition2, affect2!, save_positions=save_positions)
+cb2 = DiscreteCallback(mat_condition2, mat_affect2!, save_positions=save_positions)
 cbs = CallbackSet(cb,cb2)
 
 
