@@ -132,7 +132,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -357,7 +357,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -900,7 +900,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -1219,7 +1219,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -1538,7 +1538,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -1884,7 +1884,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -2393,7 +2393,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -2997,7 +2997,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -3568,7 +3568,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -4121,7 +4121,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -4772,7 +4772,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
@@ -5521,7 +5521,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated

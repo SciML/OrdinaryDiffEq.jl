@@ -28,7 +28,7 @@ end
       f(Val{:tgrad}, t, uprev, dT)
     else
       tf.uprev = uprev
-      derivative!(dT, tf, t, vec(du2), integrator)
+      derivative!(dT, tf, t, du2, integrator)
     end
   end
 
@@ -47,7 +47,7 @@ end
       else
 
         uf.t = t
-        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
       end
       for j in 1:length(u), i in 1:length(u)
           @inbounds W[i,j] = mass_matrix[i,j] - γ*J[i,j]
@@ -137,7 +137,7 @@ end
     else
 
       tf.uprev = uprev
-      derivative!(dT, tf, t, vec(du2), integrator)
+      derivative!(dT, tf, t, du2, integrator)
     end
   end
 
@@ -155,7 +155,7 @@ end
       else
 
         uf.t = t
-        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
       end
       for j in 1:length(u), i in 1:length(u)
         @inbounds W[i,j] = mass_matrix[i,j] - γ*J[i,j]
@@ -436,7 +436,7 @@ end
     else
 
       tf.uprev = uprev
-      derivative!(dT, tf, t, vec(du2), integrator)
+      derivative!(dT, tf, t, du2, integrator)
     end
   end
 
@@ -455,7 +455,7 @@ end
       else
 
         uf.t = t
-        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
       end
       for j in 1:length(u), i in 1:length(u)
           @inbounds W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
@@ -636,7 +636,7 @@ end
     else
 
       tf.uprev = uprev
-      derivative!(dT, tf, t, vec(du2), integrator)
+      derivative!(dT, tf, t, du2, integrator)
     end
   end
 
@@ -654,7 +654,7 @@ end
       else
 
         uf.t = t
-        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
       end
       for j in 1:length(u), i in 1:length(u)
           @inbounds W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
@@ -860,7 +860,7 @@ end
     else
 
       tf.uprev = uprev
-      derivative!(dT, tf, t, vec(du2), integrator)
+      derivative!(dT, tf, t, du2, integrator)
     end
   end
 
@@ -879,7 +879,7 @@ end
       else
 
         uf.t = t
-        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
       end
       for j in 1:length(u), i in 1:length(u)
           @inbounds W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
@@ -1106,9 +1106,8 @@ end
     if has_tgrad(f)
       f(Val{:tgrad}, t, uprev, dT)
     else
-
       tf.uprev = uprev
-      derivative!(dT, tf, t, vec(du2), integrator)
+      derivative!(dT, tf, t, du2, integrator)
     end
   end
 
@@ -1129,7 +1128,7 @@ end
       else
 
         uf.t = t
-        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
       end
       for j in 1:length(u), i in 1:length(u)
           @inbounds W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
@@ -1483,9 +1482,8 @@ end
     if has_tgrad(f)
       f(Val{:tgrad},t,uprev,dT)
     else
-
       tf.uprev = uprev
-      derivative!(dT, tf, t, vec(du2), integrator)
+      derivative!(dT, tf, t, du2, integrator)
     end
   end
 
@@ -1504,9 +1502,8 @@ end
       if has_jac(f)
         f(Val{:jac}, t, uprev, J)
       else
-
         uf.t = t
-        jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
       end
       for j in 1:length(u), i in 1:length(u)
           @inbounds W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
