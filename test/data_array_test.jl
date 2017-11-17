@@ -109,9 +109,6 @@ u2 = [sln(t).u for t in linspace(0,4,41)]
 ######################
 # DEDataMatrix
 
-Base.A_ldiv_B!(A::DEDataArray,F::Factorization, B::DEDataArray) = A_ldiv_B!(A.x,F,B.x)
-Base.A_ldiv_B!(F::Factorization,A::Base.ReshapedArray{T1,T2,T3,T4}) where {T1,T2,T3<:DEDataArray,T4} = A_ldiv_B!(F,vec(A.parent.x))
-
 type SimTypeg{T,T2} <: DEDataMatrix{T}
     x::Array{T,2} # two dimensional
     f1::T2
@@ -120,22 +117,22 @@ end
 const tstop1 = [10.0]
 const tstop2 = [300.]
 
-function condition(t,u,integrator)
+function mat_condition(t,u,integrator)
   t in tstop1
 end
 
-function condition2(t,u,integrator)
+function mat_condition2(t,u,integrator)
   t in tstop2
 end
 
-function affect!(integrator)
+function mat_affect!(integrator)
   for c in user_cache(integrator)
     c.f1 = +1.0
   end
 #  integrator.u[1,1] = 0.001
 end
 
-function affect2!(integrator)
+function mat_affect2!(integrator)
   for c in user_cache(integrator)
     c.f1 = 0.0
   end
