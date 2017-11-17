@@ -1,39 +1,20 @@
-mutable struct VectorF{F,SizeType} <: Function
-  f::F
-  sizeu::SizeType
-end
-function (p::VectorF)(t,uprev,du)
-  p.f(t,reshape(uprev,p.sizeu...),reshape(du,p.sizeu...))
-  uprev = vec(uprev)
-  du = vec(du)
-end
-
-mutable struct VectorFReturn{F,SizeType} <: Function
-  f::F
-  sizeu::SizeType
-end
-function (p::VectorFReturn)(t,uprev,du)
-  p.f(t,reshape(uprev,p.sizeu...),reshape(du,p.sizeu...))
-  vec(du)
-end
-
-mutable struct TimeGradientWrapper{VFType,uType} <: Function
-  vf::VFType
+mutable struct TimeGradientWrapper{fType,uType} <: Function
+  f::fType
   uprev::uType
   fx1::uType
 end
-(p::TimeGradientWrapper)(t) = (du2 = similar(p.uprev); p.vf(t,p.uprev,du2); du2)
-(p::TimeGradientWrapper)(du2,t) = p.vf(t,p.uprev,du2)
+(p::TimeGradientWrapper)(t) = (du2 = similar(p.uprev); p.f(t,p.uprev,du2); du2)
+(p::TimeGradientWrapper)(du2,t) = p.f(t,p.uprev,du2)
 
-mutable struct UJacobianWrapper{VFRType,tType,CacheType} <: Function
-  vfr::VFRType
+mutable struct UJacobianWrapper{fType,tType,CacheType} <: Function
+  f::fType
   t::tType
   x1::CacheType
   fx1::CacheType
 end
 
-(p::UJacobianWrapper)(du1,uprev) = p.vfr(p.t,uprev,du1)
-(p::UJacobianWrapper)(uprev) = (du1 = similar(uprev); p.vfr(p.t,uprev,du1); du1)
+(p::UJacobianWrapper)(du1,uprev) = p.f(p.t,uprev,du1)
+(p::UJacobianWrapper)(uprev) = (du1 = similar(uprev); p.f(p.t,uprev,du1); du1)
 
 mutable struct TimeDerivativeWrapper{F,uType} <: Function
   f::F
