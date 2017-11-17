@@ -598,11 +598,7 @@ end
         f(Val{:jac},t,uprev,J)
       else
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J,uf,vec(du1),vec(uprev),jac_config)
-        else
-          Calculus.finite_difference_jacobian!(uf,vec(uprev),vec(du1),J,integrator.alg.diff_type)
-        end
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
       end
     end
     # skip calculation of W if step is repeated
