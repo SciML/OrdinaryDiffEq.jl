@@ -85,10 +85,9 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,tTypeNoUnit
   W = similar(J);
   tmp = similar(u,indices(u))
   tab = Rosenbrock23ConstantCache(uEltypeNoUnits,identity,identity)
-  vf = VectorF(f,size(u))
-  vfr = VectorFReturn(f,size(u))
-  tf = TimeGradientWrapper(vf,uprev,zeros(uprev))
-  uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
+
+  tf = TimeGradientWrapper(f,uprev,zeros(uprev))
+  uf = UJacobianWrapper(f,t,uprev,du1)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
   if alg_autodiff(alg)
@@ -119,10 +118,9 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,tTypeNoUnit
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J); tmp = similar(u,indices(u))
   tab = Rosenbrock32ConstantCache(uEltypeNoUnits,identity,identity)
-  vf = VectorF(f,size(u))
-  vfr = VectorFReturn(f,size(u))
-  tf = TimeGradientWrapper(vf,uprev,zeros(uprev))
-  uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
+
+  tf = TimeGradientWrapper(f,uprev,zeros(uprev))
+  uf = UJacobianWrapper(f,t,uprev,du1)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
   if alg_autodiff(alg)
@@ -226,10 +224,9 @@ function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev
   W = similar(J);
   tmp = similar(u,indices(u))
   tab = ROS3PConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
-  vf = VectorF(f,size(u))
-  vfr = VectorFReturn(f,size(u))
-  tf = TimeGradientWrapper(vf,uprev,zeros(uprev))
-  uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
+
+  tf = TimeGradientWrapper(f,uprev,zeros(uprev))
+  uf = UJacobianWrapper(f,t,uprev,du1)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
   if alg_autodiff(alg)
@@ -293,10 +290,9 @@ function alg_cache(alg::Rodas3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   W = similar(J);
   tmp = similar(u,indices(u))
   tab = Rodas3ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
-  vf = VectorF(f,size(u))
-  vfr = VectorFReturn(f,size(u))
-  tf = TimeGradientWrapper(vf,uprev,zeros(uprev))
-  uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
+
+  tf = TimeGradientWrapper(f,uprev,zeros(uprev))
+  uf = UJacobianWrapper(f,t,uprev,du1)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
   if alg_autodiff(alg)
@@ -375,10 +371,9 @@ function alg_cache(alg::RosShamp4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,u
   W = similar(J);
   tmp = similar(u,indices(u))
   tab = RosShamp4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
-  vf = VectorF(f,size(u))
-  vfr = VectorFReturn(f,size(u))
-  tf = TimeGradientWrapper(vf,uprev,zeros(uprev))
-  uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
+
+  tf = TimeGradientWrapper(f,uprev,zeros(uprev))
+  uf = UJacobianWrapper(f,t,uprev,du1)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
   if alg_autodiff(alg)
@@ -412,10 +407,9 @@ function alg_cache(alg::Veldd4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   W = similar(J);
   tmp = similar(u,indices(u))
   tab = Veldd4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
-  vf = VectorF(f,size(u))
-  vfr = VectorFReturn(f,size(u))
-  tf = TimeGradientWrapper(vf,uprev,zeros(uprev))
-  uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
+
+  tf = TimeGradientWrapper(f,uprev,zeros(uprev))
+  uf = UJacobianWrapper(f,t,uprev,du1)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
   if alg_autodiff(alg)
@@ -449,10 +443,9 @@ function alg_cache(alg::Velds4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   W = similar(J);
   tmp = similar(u,indices(u))
   tab = Velds4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
-  vf = VectorF(f,size(u))
-  vfr = VectorFReturn(f,size(u))
-  tf = TimeGradientWrapper(vf,uprev,zeros(uprev))
-  uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
+
+  tf = TimeGradientWrapper(f,uprev,zeros(uprev))
+  uf = UJacobianWrapper(f,t,uprev,du1)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
   if alg_autodiff(alg)
@@ -486,10 +479,9 @@ function alg_cache(alg::GRK4T,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev
   W = similar(J);
   tmp = similar(u,indices(u))
   tab = GRK4TConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
-  vf = VectorF(f,size(u))
-  vfr = VectorFReturn(f,size(u))
-  tf = TimeGradientWrapper(vf,uprev,zeros(uprev))
-  uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
+
+  tf = TimeGradientWrapper(f,uprev,zeros(uprev))
+  uf = UJacobianWrapper(f,t,uprev,du1)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
   if alg_autodiff(alg)
@@ -523,10 +515,9 @@ function alg_cache(alg::GRK4A,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev
   W = similar(J);
   tmp = similar(u,indices(u))
   tab = GRK4AConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
-  vf = VectorF(f,size(u))
-  vfr = VectorFReturn(f,size(u))
-  tf = TimeGradientWrapper(vf,uprev,zeros(uprev))
-  uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
+
+  tf = TimeGradientWrapper(f,uprev,zeros(uprev))
+  uf = UJacobianWrapper(f,t,uprev,du1)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
   if alg_autodiff(alg)
@@ -560,10 +551,9 @@ function alg_cache(alg::Ros4LStab,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,u
   W = similar(J);
   tmp = similar(u,indices(u))
   tab = Ros4LStabConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
-  vf = VectorF(f,size(u))
-  vfr = VectorFReturn(f,size(u))
-  tf = TimeGradientWrapper(vf,uprev,zeros(uprev))
-  uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
+
+  tf = TimeGradientWrapper(f,uprev,zeros(uprev))
+  uf = UJacobianWrapper(f,t,uprev,du1)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
   if alg_autodiff(alg)
@@ -645,10 +635,9 @@ function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   W = similar(J);
   tmp = similar(u,indices(u))
   tab = Rodas4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
-  vf = VectorF(f,size(u))
-  vfr = VectorFReturn(f,size(u))
-  tf = TimeGradientWrapper(vf,uprev,zeros(uprev))
-  uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
+
+  tf = TimeGradientWrapper(f,uprev,zeros(uprev))
+  uf = UJacobianWrapper(f,t,uprev,du1)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
   if alg_autodiff(alg)
@@ -687,10 +676,9 @@ function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upr
   W = similar(J);
   tmp = similar(u,indices(u))
   tab = Rodas42ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
-  vf = VectorF(f,size(u))
-  vfr = VectorFReturn(f,size(u))
-  tf = TimeGradientWrapper(vf,uprev,zeros(uprev))
-  uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
+
+  tf = TimeGradientWrapper(f,uprev,zeros(uprev))
+  uf = UJacobianWrapper(f,t,uprev,du1)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
   if alg_autodiff(alg)
@@ -729,10 +717,9 @@ function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upr
   W = similar(J);
   tmp = similar(u,indices(u))
   tab = Rodas4PConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
-  vf = VectorF(f,size(u))
-  vfr = VectorFReturn(f,size(u))
-  tf = TimeGradientWrapper(vf,uprev,zeros(uprev))
-  uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
+
+  tf = TimeGradientWrapper(f,uprev,zeros(uprev))
+  uf = UJacobianWrapper(f,t,uprev,du1)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
   if alg_autodiff(alg)
@@ -819,10 +806,9 @@ function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   W = similar(J);
   tmp = similar(u,indices(u))
   tab = Rodas5ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
-  vf = VectorF(f,size(u))
-  vfr = VectorFReturn(f,size(u))
-  tf = TimeGradientWrapper(vf,uprev,zeros(uprev))
-  uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
+
+  tf = TimeGradientWrapper(f,uprev,zeros(uprev))
+  uf = UJacobianWrapper(f,t,uprev,du1)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
   if alg_autodiff(alg)

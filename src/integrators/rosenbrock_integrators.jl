@@ -27,7 +27,6 @@ end
     if has_tgrad(f)
       f(Val{:tgrad}, t, uprev, dT)
     else
-      tf.vf.sizeu = sizeu
       tf.uprev = uprev
       derivative!(dT, tf, t, vec(du2), integrator)
     end
@@ -46,7 +45,7 @@ end
       if has_jac(f)
         f(Val{:jac}, t, uprev, J)
       else
-        uf.vfr.sizeu = sizeu
+
         uf.t = t
         jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
@@ -136,7 +135,7 @@ end
     if has_tgrad(f)
       f(Val{:tgrad}, t, uprev, dT)
     else
-      tf.vf.sizeu = sizeu
+
       tf.uprev = uprev
       derivative!(dT, tf, t, vec(du2), integrator)
     end
@@ -154,7 +153,7 @@ end
       if has_jac(f)
         f(Val{:jac}, t, uprev, J)
       else
-        uf.vfr.sizeu = sizeu
+
         uf.t = t
         jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
@@ -435,7 +434,7 @@ end
     if has_tgrad(f)
       f(Val{:tgrad}, t, uprev,dT)
     else
-      tf.vf.sizeu = sizeu
+
       tf.uprev = uprev
       derivative!(dT, tf, t, vec(du2), integrator)
     end
@@ -454,7 +453,7 @@ end
       if has_jac(f)
         f(Val{:jac}, t, uprev, J)
       else
-        uf.vfr.sizeu = sizeu
+
         uf.t = t
         jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
@@ -635,7 +634,7 @@ end
     if has_tgrad(f)
       f(Val{:tgrad},t,uprev,dT)
     else
-      tf.vf.sizeu = sizeu
+
       tf.uprev = uprev
       derivative!(dT, tf, t, vec(du2), integrator)
     end
@@ -653,7 +652,7 @@ end
       if has_jac(f)
         f(Val{:jac}, t, uprev,J)
       else
-        uf.vfr.sizeu = sizeu
+
         uf.t = t
         jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
@@ -859,7 +858,7 @@ end
     if has_tgrad(f)
       f(Val{:tgrad}, t, uprev, dT)
     else
-      tf.vf.sizeu = sizeu
+
       tf.uprev = uprev
       derivative!(dT, tf, t, vec(du2), integrator)
     end
@@ -878,7 +877,7 @@ end
       if has_jac(f)
         f(Val{:jac}, t, uprev, J)
       else
-        uf.vfr.sizeu = sizeu
+
         uf.t = t
         jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
@@ -1107,7 +1106,7 @@ end
     if has_tgrad(f)
       f(Val{:tgrad}, t, uprev, dT)
     else
-      tf.vf.sizeu = sizeu
+
       tf.uprev = uprev
       derivative!(dT, tf, t, vec(du2), integrator)
     end
@@ -1128,7 +1127,7 @@ end
       if has_jac(f)
         f(Val{:jac}, t, uprev, J)
       else
-        uf.vfr.sizeu = sizeu
+
         uf.t = t
         jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
@@ -1484,7 +1483,7 @@ end
     if has_tgrad(f)
       f(Val{:tgrad},t,uprev,dT)
     else
-      tf.vf.sizeu = sizeu
+
       tf.uprev = uprev
       derivative!(dT, tf, t, vec(du2), integrator)
     end
@@ -1505,7 +1504,7 @@ end
       if has_jac(f)
         f(Val{:jac}, t, uprev, J)
       else
-        uf.vfr.sizeu = sizeu
+
         uf.t = t
         jacobian!(J, uf, vec(uprev), vec(du1), integrator, jac_config)
       end
