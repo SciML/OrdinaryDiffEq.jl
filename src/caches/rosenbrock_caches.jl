@@ -85,17 +85,13 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,tTypeNoUnit
   W = similar(J);
   tmp = similar(u,indices(u))
   tab = Rosenbrock23ConstantCache(uEltypeNoUnits,identity,identity)
-
-  tf = TimeGradientWrapper(f,uprev,zeros(uprev))
-  uf = UJacobianWrapper(f,t,tmp,du2)
+  tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev)
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
-  if alg_autodiff(alg)
-jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
-                ForwardDiff.Chunk{determine_chunksize(u,alg)}())
-  else
-    jac_config = nothing
-  end
+
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
+
   Rosenbrock23Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
                     linsolve_tmp_vec,alg.linsolve,jac_config)
@@ -119,15 +115,11 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,tTypeNoUnit
   W = similar(J); tmp = similar(u,indices(u))
   tab = Rosenbrock32ConstantCache(uEltypeNoUnits,identity,identity)
 
-  tf = TimeGradientWrapper(f,uprev,zeros(uprev))
-  uf = UJacobianWrapper(f,t,tmp,du2)
+  tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev)
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
-  if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
-  else
-    jac_config = nothing
-  end
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock32Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,linsolve_tmp_vec,alg.linsolve,jac_config)
 end
 
@@ -145,8 +137,8 @@ function Rosenbrock23ConstantCache(T::Type,tf,uf)
 end
 
 function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
-  tf = TimeDerivativeWrapper(f,u)
-  uf = UDerivativeWrapper(f,t)
+  tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   Rosenbrock23ConstantCache(uEltypeNoUnits,tf,uf)
 end
 
@@ -164,8 +156,8 @@ function Rosenbrock32ConstantCache(T::Type,tf,uf)
 end
 
 function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
-  tf = TimeDerivativeWrapper(f,u)
-  uf = UDerivativeWrapper(f,t)
+  tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   Rosenbrock32ConstantCache(uEltypeNoUnits,tf,uf)
 end
 
@@ -224,24 +216,19 @@ function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev
   W = similar(J);
   tmp = similar(u,indices(u))
   tab = ROS3PConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
-
-  tf = TimeGradientWrapper(f,uprev,zeros(uprev))
-  uf = UJacobianWrapper(f,t,tmp,du2)
+  tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev)
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
-  if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
-  else
-    jac_config = nothing
-  end
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock33Cache(u,uprev,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
                     linsolve_tmp_vec,alg.linsolve,jac_config)
 end
 
 function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
-  tf = TimeDerivativeWrapper(f,u)
-  uf = UDerivativeWrapper(f,t)
+  tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   Rosenbrock33ConstantCache(tf,uf,ROS3PConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
@@ -291,15 +278,11 @@ function alg_cache(alg::Rodas3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   tmp = similar(u,indices(u))
   tab = Rodas3ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
 
-  tf = TimeGradientWrapper(f,uprev,zeros(uprev))
-  uf = UJacobianWrapper(f,t,tmp,du2)
+  tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev)
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
-  if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
-  else
-    jac_config = nothing
-  end
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock34Cache(u,uprev,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
                     linsolve_tmp_vec,alg.linsolve,jac_config)
@@ -312,8 +295,8 @@ struct Rosenbrock34ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::Rodas3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
-  tf = TimeDerivativeWrapper(f,u)
-  uf = UDerivativeWrapper(f,t)
+  tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   Rosenbrock34ConstantCache(tf,uf,Rodas3ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
@@ -372,23 +355,19 @@ function alg_cache(alg::RosShamp4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,u
   tmp = similar(u,indices(u))
   tab = RosShamp4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
 
-  tf = TimeGradientWrapper(f,uprev,zeros(uprev))
-  uf = UJacobianWrapper(f,t,tmp,du2)
+  tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev)
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
-  if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
-  else
-    jac_config = nothing
-  end
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock4Cache(u,uprev,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
                     linsolve_tmp_vec,alg.linsolve,jac_config)
 end
 
 function alg_cache(alg::RosShamp4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
-  tf = TimeDerivativeWrapper(f,u)
-  uf = UDerivativeWrapper(f,t)
+  tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   Rosenbrock4ConstantCache(tf,uf,RosShamp4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
@@ -408,23 +387,19 @@ function alg_cache(alg::Veldd4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   tmp = similar(u,indices(u))
   tab = Veldd4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
 
-  tf = TimeGradientWrapper(f,uprev,zeros(uprev))
-  uf = UJacobianWrapper(f,t,tmp,du2)
+  tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev)
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
-  if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
-  else
-    jac_config = nothing
-  end
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock4Cache(u,uprev,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
                     linsolve_tmp_vec,alg.linsolve,jac_config)
 end
 
 function alg_cache(alg::Veldd4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
-  tf = TimeDerivativeWrapper(f,u)
-  uf = UDerivativeWrapper(f,t)
+  tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   Rosenbrock4ConstantCache(tf,uf,Veldd4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
@@ -444,23 +419,19 @@ function alg_cache(alg::Velds4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   tmp = similar(u,indices(u))
   tab = Velds4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
 
-  tf = TimeGradientWrapper(f,uprev,zeros(uprev))
-  uf = UJacobianWrapper(f,t,tmp,du2)
+  tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev)
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
-  if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
-  else
-    jac_config = nothing
-  end
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock4Cache(u,uprev,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
                     linsolve_tmp_vec,alg.linsolve,jac_config)
 end
 
 function alg_cache(alg::Velds4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
-  tf = TimeDerivativeWrapper(f,u)
-  uf = UDerivativeWrapper(f,t)
+  tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   Rosenbrock4ConstantCache(tf,uf,Velds4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
@@ -480,23 +451,19 @@ function alg_cache(alg::GRK4T,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev
   tmp = similar(u,indices(u))
   tab = GRK4TConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
 
-  tf = TimeGradientWrapper(f,uprev,zeros(uprev))
-  uf = UJacobianWrapper(f,t,tmp,du2)
+  tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev)
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
-  if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
-  else
-    jac_config = nothing
-  end
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock4Cache(u,uprev,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
                     linsolve_tmp_vec,alg.linsolve,jac_config)
 end
 
 function alg_cache(alg::GRK4T,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
-  tf = TimeDerivativeWrapper(f,u)
-  uf = UDerivativeWrapper(f,t)
+  tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   Rosenbrock4ConstantCache(tf,uf,GRK4TConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
@@ -516,23 +483,19 @@ function alg_cache(alg::GRK4A,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev
   tmp = similar(u,indices(u))
   tab = GRK4AConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
 
-  tf = TimeGradientWrapper(f,uprev,zeros(uprev))
-  uf = UJacobianWrapper(f,t,tmp,du2)
+  tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev)
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
-  if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
-  else
-    jac_config = nothing
-  end
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock4Cache(u,uprev,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
                     linsolve_tmp_vec,alg.linsolve,jac_config)
 end
 
 function alg_cache(alg::GRK4A,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
-  tf = TimeDerivativeWrapper(f,u)
-  uf = UDerivativeWrapper(f,t)
+  tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   Rosenbrock4ConstantCache(tf,uf,GRK4AConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
@@ -552,23 +515,19 @@ function alg_cache(alg::Ros4LStab,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,u
   tmp = similar(u,indices(u))
   tab = Ros4LStabConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
 
-  tf = TimeGradientWrapper(f,uprev,zeros(uprev))
-  uf = UJacobianWrapper(f,t,tmp,du2)
+  tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev)
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
-  if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
-  else
-    jac_config = nothing
-  end
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock4Cache(u,uprev,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
                     linsolve_tmp_vec,alg.linsolve,jac_config)
 end
 
 function alg_cache(alg::Ros4LStab,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
-  tf = TimeDerivativeWrapper(f,u)
-  uf = UDerivativeWrapper(f,t)
+  tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   Rosenbrock4ConstantCache(tf,uf,Ros4LStabConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
@@ -636,15 +595,11 @@ function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   tmp = similar(u,indices(u))
   tab = Rodas4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
 
-  tf = TimeGradientWrapper(f,uprev,zeros(uprev))
-  uf = UJacobianWrapper(f,t,tmp,du2)
+  tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev)
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
-  if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
-  else
-    jac_config = nothing
-  end
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
                     vectmp5,vectmp6,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
@@ -652,8 +607,8 @@ function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
 end
 
 function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
-  tf = TimeDerivativeWrapper(f,u)
-  uf = UDerivativeWrapper(f,t)
+  tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   Rodas4ConstantCache(tf,uf,Rodas4ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
@@ -677,15 +632,11 @@ function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upr
   tmp = similar(u,indices(u))
   tab = Rodas42ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
 
-  tf = TimeGradientWrapper(f,uprev,zeros(uprev))
-  uf = UJacobianWrapper(f,t,tmp,du2)
+  tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev)
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
-  if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
-  else
-    jac_config = nothing
-  end
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
                     vectmp5,vectmp6,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
@@ -693,8 +644,8 @@ function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upr
 end
 
 function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
-  tf = TimeDerivativeWrapper(f,u)
-  uf = UDerivativeWrapper(f,t)
+  tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   Rodas4ConstantCache(tf,uf,Rodas42ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
@@ -718,15 +669,11 @@ function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upr
   tmp = similar(u,indices(u))
   tab = Rodas4PConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
 
-  tf = TimeGradientWrapper(f,uprev,zeros(uprev))
-  uf = UJacobianWrapper(f,t,tmp,du2)
+  tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev)
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
-  if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
-  else
-    jac_config = nothing
-  end
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
                     vectmp5,vectmp6,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
@@ -734,8 +681,8 @@ function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upr
 end
 
 function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
-  tf = TimeDerivativeWrapper(f,u)
-  uf = UDerivativeWrapper(f,t)
+  tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   Rodas4ConstantCache(tf,uf,Rodas4PConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
 
@@ -807,15 +754,11 @@ function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   tmp = similar(u,indices(u))
   tab = Rodas5ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits))
 
-  tf = TimeGradientWrapper(f,uprev,zeros(uprev))
-  uf = UJacobianWrapper(f,t,tmp,du2)
+  tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev)
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
-  if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
-  else
-    jac_config = nothing
-  end
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock5Cache(u,uprev,dense1,dense2,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
                     vectmp5,vectmp6,vectmp7,vectmp8,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
@@ -823,7 +766,7 @@ function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
 end
 
 function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
-  tf = TimeDerivativeWrapper(f,u)
-  uf = UDerivativeWrapper(f,t)
+  tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   Rosenbrock5ConstantCache(tf,uf,Rodas5ConstantCache(real(uEltypeNoUnits),real(tTypeNoUnits)))
 end
