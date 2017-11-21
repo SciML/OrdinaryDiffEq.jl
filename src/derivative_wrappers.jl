@@ -22,11 +22,10 @@ function build_jac_config(alg,uf,du1,uprev,u,tmp,du2)
     if alg_autodiff(alg)
       jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
     else
-      RealOrComplex = eltype(u) <: Complex ? Val{:Complex} : Val{:Real}
       if alg.diff_type != Val{:complex}
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,tmp,du1,du2)
+        jac_config = DiffEqDiffTools.JacobianCache(tmp,du1,du2,alg.diff_type)
       else
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing)
+        jac_config = DiffEqDiffTools.JacobianCache(Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing,alg.diff_type)
       end
     end
   else
