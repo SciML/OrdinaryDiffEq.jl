@@ -35,10 +35,18 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,
   k = zeros(rate_prototype)
   atmp = similar(u,uEltypeNoUnits)
 
-  uf = UJacobianWrapper(f,t,tmp,dz)
-  if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
-                    ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
+  if !has_jac(f)
+    if alg_autodiff(alg)
+      jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+    else
+      RealOrComplex = eltype(u) <: Complex ? Val{:Complex} : Val{:Real}
+      if alg.diff_type != Val{:complex}
+        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,tmp,du1,dz)
+      else
+        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing)
+      end
+    end
   else
     jac_config = nothing
   end
@@ -67,7 +75,7 @@ end
 
 function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
-  uf = UDerivativeWrapper(f,t)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
 
   if alg.κ != nothing
@@ -94,7 +102,7 @@ end
 
 function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
-  uf = UDerivativeWrapper(f,t)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
 
   if alg.κ != nothing
@@ -146,10 +154,18 @@ function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
 
-  uf = UJacobianWrapper(f,t,tmp,dz)
-  if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
-                    ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
+  if !has_jac(f)
+    if alg_autodiff(alg)
+      jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+    else
+      RealOrComplex = eltype(u) <: Complex ? Val{:Complex} : Val{:Real}
+      if alg.diff_type != Val{:complex}
+        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,tmp,du1,dz)
+      else
+        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing)
+      end
+    end
   else
     jac_config = nothing
   end
@@ -182,7 +198,7 @@ end
 
 function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
-  uf = UDerivativeWrapper(f,t)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
   uprev3 = u
   tprev2 = t
@@ -240,10 +256,18 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
 
-  uf = UJacobianWrapper(f,t,tmp,dz)
-  if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
-                    ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
+  if !has_jac(f)
+    if alg_autodiff(alg)
+      jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+    else
+      RealOrComplex = eltype(u) <: Complex ? Val{:Complex} : Val{:Real}
+      if alg.diff_type != Val{:complex}
+        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,tmp,du1,dz)
+      else
+        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing)
+      end
+    end
   else
     jac_config = nothing
   end
@@ -278,7 +302,7 @@ end
 
 function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
-  uf = UDerivativeWrapper(f,t)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
 
   if alg.κ != nothing
@@ -336,10 +360,18 @@ function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,
   k = zeros(rate_prototype)
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
 
-  uf = UJacobianWrapper(f,t,tmp,dz)
-  if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
-                    ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
+  if !has_jac(f)
+    if alg_autodiff(alg)
+      jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+    else
+      RealOrComplex = eltype(u) <: Complex ? Val{:Complex} : Val{:Real}
+      if alg.diff_type != Val{:complex}
+        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,tmp,du1,dz)
+      else
+        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing)
+      end
+    end
   else
     jac_config = nothing
   end
@@ -375,7 +407,7 @@ end
 
 function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
-  uf = UDerivativeWrapper(f,t)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
 
   if alg.κ != nothing
@@ -429,10 +461,18 @@ function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,
   k = zeros(rate_prototype)
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
 
-  uf = UJacobianWrapper(f,t,tmp,dz)
-  if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
-                    ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
+  if !has_jac(f)
+    if alg_autodiff(alg)
+      jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+    else
+      RealOrComplex = eltype(u) <: Complex ? Val{:Complex} : Val{:Real}
+      if alg.diff_type != Val{:complex}
+        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,tmp,du1,dz)
+      else
+        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing)
+      end
+    end
   else
     jac_config = nothing
   end
@@ -466,7 +506,7 @@ end
 
 function alg_cache(alg::SSPSDIRK2,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
-  uf = UDerivativeWrapper(f,t)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
   uprev3 = u
   tprev2 = t
@@ -521,10 +561,18 @@ function alg_cache(alg::SSPSDIRK2,u,rate_prototype,uEltypeNoUnits,
   k = zeros(rate_prototype)
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
 
-  uf = UJacobianWrapper(f,t,tmp,dz)
-  if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
-                    ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
+  if !has_jac(f)
+    if alg_autodiff(alg)
+      jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+    else
+      RealOrComplex = eltype(u) <: Complex ? Val{:Complex} : Val{:Real}
+      if alg.diff_type != Val{:complex}
+        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,tmp,du1,dz)
+      else
+        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing)
+      end
+    end
   else
     jac_config = nothing
   end
@@ -559,7 +607,7 @@ end
 
 function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
-  uf = UDerivativeWrapper(f,t)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
 
   if alg.κ != nothing
@@ -618,10 +666,18 @@ function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,
   k = zeros(rate_prototype)
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
 
-  uf = UJacobianWrapper(f,t,tmp,dz)
-  if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
-                    ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
+  if !has_jac(f)
+    if alg_autodiff(alg)
+      jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+    else
+      RealOrComplex = eltype(u) <: Complex ? Val{:Complex} : Val{:Real}
+      if alg.diff_type != Val{:complex}
+        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,tmp,du1,dz)
+      else
+        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing)
+      end
+    end
   else
     jac_config = nothing
   end
@@ -658,7 +714,7 @@ end
 
 function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
-  uf = UDerivativeWrapper(f,t)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
 
   if alg.κ != nothing
@@ -717,10 +773,18 @@ function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,
   k = zeros(rate_prototype)
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
 
-  uf = UJacobianWrapper(f,t,tmp,dz)
-  if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
-                    ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
+  if !has_jac(f)
+    if alg_autodiff(alg)
+      jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+    else
+      RealOrComplex = eltype(u) <: Complex ? Val{:Complex} : Val{:Real}
+      if alg.diff_type != Val{:complex}
+        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,tmp,du1,dz)
+      else
+        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing)
+      end
+    end
   else
     jac_config = nothing
   end
@@ -757,7 +821,7 @@ end
 
 function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
-  uf = UDerivativeWrapper(f,t)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
 
   if alg.κ != nothing
@@ -818,10 +882,18 @@ function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,
   k = zeros(rate_prototype)
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
 
-  uf = UJacobianWrapper(f,t,tmp,dz)
-  if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
-                    ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
+  if !has_jac(f)
+    if alg_autodiff(alg)
+      jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+    else
+      RealOrComplex = eltype(u) <: Complex ? Val{:Complex} : Val{:Real}
+      if alg.diff_type != Val{:complex}
+        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,tmp,du1,dz)
+      else
+        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing)
+      end
+    end
   else
     jac_config = nothing
   end
@@ -858,7 +930,7 @@ end
 
 function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
-  uf = UDerivativeWrapper(f,t)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
 
   if alg.κ != nothing
@@ -923,10 +995,18 @@ function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,
   k = zeros(rate_prototype)
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
 
-  uf = UJacobianWrapper(f,t,tmp,dz)
-  if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
-                    ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
+  if !has_jac(f)
+    if alg_autodiff(alg)
+      jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+    else
+      RealOrComplex = eltype(u) <: Complex ? Val{:Complex} : Val{:Real}
+      if alg.diff_type != Val{:complex}
+        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,tmp,du1,dz)
+      else
+        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing)
+      end
+    end
   else
     jac_config = nothing
   end
@@ -967,7 +1047,7 @@ end
 
 function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
-  uf = UDerivativeWrapper(f,t)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
   uprev3 = u
   tprev2 = t
@@ -1030,10 +1110,18 @@ function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,
   k = zeros(rate_prototype)
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
 
-  uf = UJacobianWrapper(f,t,tmp,dz)
-  if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
-                    ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
+  if !has_jac(f)
+    if alg_autodiff(alg)
+      jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+    else
+      RealOrComplex = eltype(u) <: Complex ? Val{:Complex} : Val{:Real}
+      if alg.diff_type != Val{:complex}
+        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,tmp,du1,dz)
+      else
+        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing)
+      end
+    end
   else
     jac_config = nothing
   end
@@ -1070,7 +1158,7 @@ end
 
 function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
-  uf = UDerivativeWrapper(f,t)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
   uprev3 = u
   tprev2 = t
@@ -1134,10 +1222,18 @@ function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,
   k = zeros(rate_prototype)
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
 
-  uf = UJacobianWrapper(f,t,tmp,dz)
-  if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
-                    ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
+  if !has_jac(f)
+    if alg_autodiff(alg)
+      jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+    else
+      RealOrComplex = eltype(u) <: Complex ? Val{:Complex} : Val{:Real}
+      if alg.diff_type != Val{:complex}
+        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,tmp,du1,dz)
+      else
+        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing)
+      end
+    end
   else
     jac_config = nothing
   end
@@ -1174,7 +1270,7 @@ end
 
 function alg_cache(alg::Kvaerno5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
-  uf = UDerivativeWrapper(f,t)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
 
   if alg.κ != nothing
@@ -1237,10 +1333,18 @@ function alg_cache(alg::Kvaerno5,u,rate_prototype,uEltypeNoUnits,
   k = zeros(rate_prototype)
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
 
-  uf = UJacobianWrapper(f,t,tmp,dz)
-  if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
-                    ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
+  if !has_jac(f)
+    if alg_autodiff(alg)
+      jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+    else
+      RealOrComplex = eltype(u) <: Complex ? Val{:Complex} : Val{:Real}
+      if alg.diff_type != Val{:complex}
+        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,tmp,du1,dz)
+      else
+        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing)
+      end
+    end
   else
     jac_config = nothing
   end
@@ -1277,7 +1381,7 @@ end
 
 function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
-  uf = UDerivativeWrapper(f,t)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
 
   if alg.κ != nothing
@@ -1341,10 +1445,18 @@ function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,
   k = zeros(rate_prototype)
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
 
-  uf = UJacobianWrapper(f,t,tmp,dz)
-  if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
-                    ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
+  if !has_jac(f)
+    if alg_autodiff(alg)
+      jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+    else
+      RealOrComplex = eltype(u) <: Complex ? Val{:Complex} : Val{:Real}
+      if alg.diff_type != Val{:complex}
+        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,tmp,du1,dz)
+      else
+        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing)
+      end
+    end
   else
     jac_config = nothing
   end
