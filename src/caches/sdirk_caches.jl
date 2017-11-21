@@ -36,20 +36,7 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,
   atmp = similar(u,uEltypeNoUnits)
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
-  if !has_jac(f)
-    if alg_autodiff(alg)
-      jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
-    else
-      RealOrComplex = eltype(u) <: Complex ? Val{:Complex} : Val{:Real}
-      if alg.diff_type != Val{:complex}
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,tmp,du1,dz)
-      else
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing)
-      end
-    end
-  else
-    jac_config = nothing
-  end
+  jac_config = build_jac_config(alg,uf,du1,uprev,u,tmp,dz)
   ηold = one(uEltypeNoUnits)
 
   if alg.κ != nothing
@@ -155,20 +142,7 @@ function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,
   k = zeros(rate_prototype)
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
-  if !has_jac(f)
-    if alg_autodiff(alg)
-      jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
-    else
-      RealOrComplex = eltype(u) <: Complex ? Val{:Complex} : Val{:Real}
-      if alg.diff_type != Val{:complex}
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,tmp,du1,dz)
-      else
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing)
-      end
-    end
-  else
-    jac_config = nothing
-  end
+  jac_config = build_jac_config(alg,uf,du1,uprev,u,tmp,dz)
 
   if alg.κ != nothing
     κ = alg.κ
@@ -257,20 +231,7 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,
   k = zeros(rate_prototype)
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
-  if !has_jac(f)
-    if alg_autodiff(alg)
-      jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
-    else
-      RealOrComplex = eltype(u) <: Complex ? Val{:Complex} : Val{:Real}
-      if alg.diff_type != Val{:complex}
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,tmp,du1,dz)
-      else
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing)
-      end
-    end
-  else
-    jac_config = nothing
-  end
+  jac_config = build_jac_config(alg,uf,du1,uprev,u,tmp,dz)
 
   if alg.κ != nothing
     κ = alg.κ
@@ -361,20 +322,7 @@ function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
-  if !has_jac(f)
-    if alg_autodiff(alg)
-      jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
-    else
-      RealOrComplex = eltype(u) <: Complex ? Val{:Complex} : Val{:Real}
-      if alg.diff_type != Val{:complex}
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,tmp,du1,dz)
-      else
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing)
-      end
-    end
-  else
-    jac_config = nothing
-  end
+  jac_config = build_jac_config(alg,uf,du1,uprev,u,tmp,dz)
 
   if alg.κ != nothing
     κ = alg.κ
@@ -462,20 +410,7 @@ function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
-  if !has_jac(f)
-    if alg_autodiff(alg)
-      jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
-    else
-      RealOrComplex = eltype(u) <: Complex ? Val{:Complex} : Val{:Real}
-      if alg.diff_type != Val{:complex}
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,tmp,du1,dz)
-      else
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing)
-      end
-    end
-  else
-    jac_config = nothing
-  end
+  jac_config = build_jac_config(alg,uf,du1,uprev,u,tmp,dz)
 
   if alg.κ != nothing
     κ = alg.κ
@@ -562,20 +497,7 @@ function alg_cache(alg::SSPSDIRK2,u,rate_prototype,uEltypeNoUnits,
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
-  if !has_jac(f)
-    if alg_autodiff(alg)
-      jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
-    else
-      RealOrComplex = eltype(u) <: Complex ? Val{:Complex} : Val{:Real}
-      if alg.diff_type != Val{:complex}
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,tmp,du1,dz)
-      else
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing)
-      end
-    end
-  else
-    jac_config = nothing
-  end
+  jac_config = build_jac_config(alg,uf,du1,uprev,u,tmp,dz)
 
   if alg.κ != nothing
     κ = alg.κ
@@ -667,20 +589,7 @@ function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
-  if !has_jac(f)
-    if alg_autodiff(alg)
-      jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
-    else
-      RealOrComplex = eltype(u) <: Complex ? Val{:Complex} : Val{:Real}
-      if alg.diff_type != Val{:complex}
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,tmp,du1,dz)
-      else
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing)
-      end
-    end
-  else
-    jac_config = nothing
-  end
+  jac_config = build_jac_config(alg,uf,du1,uprev,u,tmp,dz)
 
   if alg.κ != nothing
     κ = alg.κ
@@ -774,20 +683,7 @@ function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
-  if !has_jac(f)
-    if alg_autodiff(alg)
-      jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
-    else
-      RealOrComplex = eltype(u) <: Complex ? Val{:Complex} : Val{:Real}
-      if alg.diff_type != Val{:complex}
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,tmp,du1,dz)
-      else
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing)
-      end
-    end
-  else
-    jac_config = nothing
-  end
+  jac_config = build_jac_config(alg,uf,du1,uprev,u,tmp,dz)
 
   if alg.κ != nothing
     κ = alg.κ
@@ -883,20 +779,7 @@ function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
-  if !has_jac(f)
-    if alg_autodiff(alg)
-      jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
-    else
-      RealOrComplex = eltype(u) <: Complex ? Val{:Complex} : Val{:Real}
-      if alg.diff_type != Val{:complex}
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,tmp,du1,dz)
-      else
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing)
-      end
-    end
-  else
-    jac_config = nothing
-  end
+  jac_config = build_jac_config(alg,uf,du1,uprev,u,tmp,dz)
 
   if alg.κ != nothing
     κ = alg.κ
@@ -996,20 +879,7 @@ function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
-  if !has_jac(f)
-    if alg_autodiff(alg)
-      jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
-    else
-      RealOrComplex = eltype(u) <: Complex ? Val{:Complex} : Val{:Real}
-      if alg.diff_type != Val{:complex}
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,tmp,du1,dz)
-      else
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing)
-      end
-    end
-  else
-    jac_config = nothing
-  end
+  jac_config = build_jac_config(alg,uf,du1,uprev,u,tmp,dz)
 
   if alg.κ != nothing
     κ = alg.κ
@@ -1111,20 +981,7 @@ function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
-  if !has_jac(f)
-    if alg_autodiff(alg)
-      jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
-    else
-      RealOrComplex = eltype(u) <: Complex ? Val{:Complex} : Val{:Real}
-      if alg.diff_type != Val{:complex}
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,tmp,du1,dz)
-      else
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing)
-      end
-    end
-  else
-    jac_config = nothing
-  end
+  jac_config = build_jac_config(alg,uf,du1,uprev,u,tmp,dz)
 
   if alg.κ != nothing
     κ = alg.κ
@@ -1223,20 +1080,7 @@ function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
-  if !has_jac(f)
-    if alg_autodiff(alg)
-      jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
-    else
-      RealOrComplex = eltype(u) <: Complex ? Val{:Complex} : Val{:Real}
-      if alg.diff_type != Val{:complex}
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,tmp,du1,dz)
-      else
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing)
-      end
-    end
-  else
-    jac_config = nothing
-  end
+  jac_config = build_jac_config(alg,uf,du1,uprev,u,tmp,dz)
 
   if alg.κ != nothing
     κ = alg.κ
@@ -1334,20 +1178,7 @@ function alg_cache(alg::Kvaerno5,u,rate_prototype,uEltypeNoUnits,
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
-  if !has_jac(f)
-    if alg_autodiff(alg)
-      jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
-    else
-      RealOrComplex = eltype(u) <: Complex ? Val{:Complex} : Val{:Real}
-      if alg.diff_type != Val{:complex}
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,tmp,du1,dz)
-      else
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing)
-      end
-    end
-  else
-    jac_config = nothing
-  end
+  jac_config = build_jac_config(alg,uf,du1,uprev,u,tmp,dz)
 
   if alg.κ != nothing
     κ = alg.κ
@@ -1446,20 +1277,7 @@ function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
-  if !has_jac(f)
-    if alg_autodiff(alg)
-      jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
-    else
-      RealOrComplex = eltype(u) <: Complex ? Val{:Complex} : Val{:Real}
-      if alg.diff_type != Val{:complex}
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,tmp,du1,dz)
-      else
-        jac_config = DiffEqDiffTools.JacobianCache(alg.diff_type,RealOrComplex,Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing)
-      end
-    end
-  else
-    jac_config = nothing
-  end
+  jac_config = build_jac_config(alg,uf,du1,uprev,u,tmp,dz)
 
   if alg.κ != nothing
     κ = alg.κ
