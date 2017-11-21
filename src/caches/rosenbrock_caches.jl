@@ -90,7 +90,7 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,tTypeNoUnit
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
 
-  jac_config = build_jac_config(alg,uf,du1,uprev,u,tmp,du2)
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
 
   Rosenbrock23Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
@@ -119,7 +119,7 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,tTypeNoUnit
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
-  jac_config = build_jac_config(alg,uf,du1,uprev,u,tmp,du2)
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock32Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,linsolve_tmp_vec,alg.linsolve,jac_config)
 end
 
@@ -220,7 +220,7 @@ function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
-  jac_config = build_jac_config(alg,uf,du1,uprev,u,tmp,du2)
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock33Cache(u,uprev,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
                     linsolve_tmp_vec,alg.linsolve,jac_config)
@@ -282,7 +282,7 @@ function alg_cache(alg::Rodas3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
-  jac_config = build_jac_config(alg,uf,du1,uprev,u,tmp,du2)
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock34Cache(u,uprev,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
                     linsolve_tmp_vec,alg.linsolve,jac_config)
@@ -359,7 +359,7 @@ function alg_cache(alg::RosShamp4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,u
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
-  jac_config = build_jac_config(alg,uf,du1,uprev,u,tmp,du2)
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock4Cache(u,uprev,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
                     linsolve_tmp_vec,alg.linsolve,jac_config)
@@ -391,7 +391,7 @@ function alg_cache(alg::Veldd4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
-  jac_config = build_jac_config(alg,uf,du1,uprev,u,tmp,du2)
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock4Cache(u,uprev,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
                     linsolve_tmp_vec,alg.linsolve,jac_config)
@@ -423,7 +423,7 @@ function alg_cache(alg::Velds4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
-  jac_config = build_jac_config(alg,uf,du1,uprev,u,tmp,du2)
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock4Cache(u,uprev,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
                     linsolve_tmp_vec,alg.linsolve,jac_config)
@@ -455,7 +455,7 @@ function alg_cache(alg::GRK4T,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
-  jac_config = build_jac_config(alg,uf,du1,uprev,u,tmp,du2)
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock4Cache(u,uprev,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
                     linsolve_tmp_vec,alg.linsolve,jac_config)
@@ -487,7 +487,7 @@ function alg_cache(alg::GRK4A,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
-  jac_config = build_jac_config(alg,uf,du1,uprev,u,tmp,du2)
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock4Cache(u,uprev,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
                     linsolve_tmp_vec,alg.linsolve,jac_config)
@@ -519,7 +519,7 @@ function alg_cache(alg::Ros4LStab,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,u
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
-  jac_config = build_jac_config(alg,uf,du1,uprev,u,tmp,du2)
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock4Cache(u,uprev,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
                     linsolve_tmp_vec,alg.linsolve,jac_config)
@@ -599,7 +599,7 @@ function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
-  jac_config = build_jac_config(alg,uf,du1,uprev,u,tmp,du2)
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
                     vectmp5,vectmp6,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
@@ -636,7 +636,7 @@ function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upr
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
-  jac_config = build_jac_config(alg,uf,du1,uprev,u,tmp,du2)
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
                     vectmp5,vectmp6,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
@@ -673,7 +673,7 @@ function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upr
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
-  jac_config = build_jac_config(alg,uf,du1,uprev,u,tmp,du2)
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
                     vectmp5,vectmp6,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
@@ -758,7 +758,7 @@ function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,upre
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
-  jac_config = build_jac_config(alg,uf,du1,uprev,u,tmp,du2)
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock5Cache(u,uprev,dense1,dense2,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
                     vectmp5,vectmp6,vectmp7,vectmp8,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,

@@ -17,7 +17,7 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, f
     nothing
 end
 
-function build_jac_config(alg,uf,du1,uprev,u,tmp,du2)
+function build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   if !has_jac(f)
     if alg_autodiff(alg)
       jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
