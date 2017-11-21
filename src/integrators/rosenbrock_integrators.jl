@@ -27,13 +27,8 @@ end
     if has_tgrad(f)
       f(Val{:tgrad}, t, uprev, dT)
     else
-      tf.vf.sizeu = sizeu
       tf.uprev = uprev
-      if alg_autodiff(integrator.alg)
-        ForwardDiff.derivative!(dT, tf, vec(du2), t)
-      else
-        DiffEqDiffTools.finite_difference!(dT, tf, t, integrator.alg.diff_type, vec(du2), Val{:DiffEqDerivativeWrapper})
-      end
+      derivative!(dT, tf, t, du2, integrator)
     end
   end
 
@@ -50,13 +45,9 @@ end
       if has_jac(f)
         f(Val{:jac}, t, uprev, J)
       else
-        uf.vfr.sizeu = sizeu
+
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J, uf, vec(du1), vec(uprev), jac_config)
-        else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, vec(du1), Val{:JacobianWrapper})
-        end
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
       end
       for j in 1:length(u), i in 1:length(u)
           @inbounds W[i,j] = mass_matrix[i,j] - γ*J[i,j]
@@ -144,13 +135,9 @@ end
     if has_tgrad(f)
       f(Val{:tgrad}, t, uprev, dT)
     else
-      tf.vf.sizeu = sizeu
+
       tf.uprev = uprev
-      if alg_autodiff(integrator.alg)
-        ForwardDiff.derivative!(dT, tf, vec(du2), t)
-      else
-        DiffEqDiffTools.finite_difference!(dT, tf, t, integrator.alg.diff_type, vec(du2), Val{:DiffEqDerivativeWrapper})
-      end
+      derivative!(dT, tf, t, du2, integrator)
     end
   end
 
@@ -159,20 +146,14 @@ end
   if has_invW(f)
     # skip calculation of inv(W) if step is repeated
     !repeat_step && f(Val{:invW}, t, uprev, γ, W) # W == inverse W
-
     A_mul_B!(vectmp, W, linsolve_tmp_vec)
   else
     if !repeat_step # skip calculation of J and W if step is repeated
       if has_jac(f)
         f(Val{:jac}, t, uprev, J)
       else
-        uf.vfr.sizeu = sizeu
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J, uf, vec(du1), vec(uprev), jac_config)
-        else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, vec(du1), Val{:JacobianWrapper})
-        end
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
       end
       for j in 1:length(u), i in 1:length(u)
         @inbounds W[i,j] = mass_matrix[i,j] - γ*J[i,j]
@@ -451,13 +432,9 @@ end
     if has_tgrad(f)
       f(Val{:tgrad}, t, uprev,dT)
     else
-      tf.vf.sizeu = sizeu
+
       tf.uprev = uprev
-      if alg_autodiff(integrator.alg)
-        ForwardDiff.derivative!(dT, tf, vec(du2), t)
-      else
-        DiffEqDiffTools.finite_difference!(dT, tf, t, integrator.alg.diff_type, vec(du2), Val{:DiffEqDerivativeWrapper})
-      end
+      derivative!(dT, tf, t, du2, integrator)
     end
   end
 
@@ -474,13 +451,9 @@ end
       if has_jac(f)
         f(Val{:jac}, t, uprev, J)
       else
-        uf.vfr.sizeu = sizeu
+
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J, uf, vec(du1), vec(uprev), jac_config)
-        else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, vec(du1), Val{:JacobianWrapper})
-        end
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
       end
       for j in 1:length(u), i in 1:length(u)
           @inbounds W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
@@ -659,13 +632,9 @@ end
     if has_tgrad(f)
       f(Val{:tgrad},t,uprev,dT)
     else
-      tf.vf.sizeu = sizeu
+
       tf.uprev = uprev
-      if alg_autodiff(integrator.alg)
-        ForwardDiff.derivative!(dT, tf, vec(du2), t)
-      else
-        DiffEqDiffTools.finite_difference!(dT, tf, t, integrator.alg.diff_type, vec(du2), Val{:DiffEqDerivativeWrapper})
-      end
+      derivative!(dT, tf, t, du2, integrator)
     end
   end
 
@@ -681,13 +650,9 @@ end
       if has_jac(f)
         f(Val{:jac}, t, uprev,J)
       else
-        uf.vfr.sizeu = sizeu
+
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J, uf, vec(du1), vec(uprev), jac_config)
-        else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, vec(du1), Val{:JacobianWrapper})
-        end
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
       end
       for j in 1:length(u), i in 1:length(u)
           @inbounds W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
@@ -759,8 +724,6 @@ end
   k4 = reshape(vectmp4, sizeu...)
   @. u = uprev + b1*k1 + b2*k2 + b3*k3 + b4*k4
   f(t, u, fsallast)
-
-  #@show k1,k2,k3,k4
 
   if integrator.opts.adaptive
     @. utilde = btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4
@@ -893,13 +856,9 @@ end
     if has_tgrad(f)
       f(Val{:tgrad}, t, uprev, dT)
     else
-      tf.vf.sizeu = sizeu
+
       tf.uprev = uprev
-      if alg_autodiff(integrator.alg)
-        ForwardDiff.derivative!(dT, tf, vec(du2), t)
-      else
-        DiffEqDiffTools.finite_difference!(dT, tf, t, integrator.alg.diff_type, vec(du2), Val{:DiffEqDerivativeWrapper})
-      end
+      derivative!(dT, tf, t, du2, integrator)
     end
   end
 
@@ -916,13 +875,9 @@ end
       if has_jac(f)
         f(Val{:jac}, t, uprev, J)
       else
-        uf.vfr.sizeu = sizeu
+
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J, uf, vec(du1), vec(uprev), jac_config)
-        else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, vec(du1), Val{:JacobianWrapper})
-        end
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
       end
       for j in 1:length(u), i in 1:length(u)
           @inbounds W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
@@ -1149,13 +1104,8 @@ end
     if has_tgrad(f)
       f(Val{:tgrad}, t, uprev, dT)
     else
-      tf.vf.sizeu = sizeu
       tf.uprev = uprev
-      if alg_autodiff(integrator.alg)
-        ForwardDiff.derivative!(dT, tf, vec(du2), t)
-      else
-        DiffEqDiffTools.finite_difference!(dT, tf, t, integrator.alg.diff_type, vec(du2), Val{:DiffEqDerivativeWrapper})
-      end
+      derivative!(dT, tf, t, du2, integrator)
     end
   end
 
@@ -1174,13 +1124,9 @@ end
       if has_jac(f)
         f(Val{:jac}, t, uprev, J)
       else
-        uf.vfr.sizeu = sizeu
+
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J, uf, vec(du1), vec(uprev), jac_config)
-        else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, vec(du1), Val{:JacobianWrapper})
-        end
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
       end
       for j in 1:length(u), i in 1:length(u)
           @inbounds W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
@@ -1534,13 +1480,8 @@ end
     if has_tgrad(f)
       f(Val{:tgrad},t,uprev,dT)
     else
-      tf.vf.sizeu = sizeu
       tf.uprev = uprev
-      if alg_autodiff(integrator.alg)
-        ForwardDiff.derivative!(dT, tf, vec(du2), t)
-      else
-        DiffEqDiffTools.finite_difference!(dT, tf, t, integrator.alg.diff_type, vec(du2), Val{:DiffEqDerivativeWrapper})
-      end
+      derivative!(dT, tf, t, du2, integrator)
     end
   end
 
@@ -1559,13 +1500,8 @@ end
       if has_jac(f)
         f(Val{:jac}, t, uprev, J)
       else
-        uf.vfr.sizeu = sizeu
         uf.t = t
-        if alg_autodiff(integrator.alg)
-          ForwardDiff.jacobian!(J, uf, vec(du1), vec(uprev), jac_config)
-        else
-          DiffEqDiffTools.finite_difference_jacobian!(J, uf, vec(uprev), integrator.alg.diff_type, vec(du1), Val{:JacobianWrapper})
-        end
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
       end
       for j in 1:length(u), i in 1:length(u)
           @inbounds W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]

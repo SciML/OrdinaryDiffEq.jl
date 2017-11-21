@@ -53,7 +53,7 @@ end
   else
     next_sign = sign(callback.condition(integrator.t,@view(integrator.u[callback.idxs]),integrator))
   end
-  if ((prev_sign<0 && !(typeof(callback.affect!)<:Void)) || (prev_sign>0 && !(typeof(callback.affect_neg!)<:Void))) && prev_sign*next_sign<0
+  if ((prev_sign<0 && !(typeof(callback.affect!)<:Void)) || (prev_sign>0 && !(typeof(callback.affect_neg!)<:Void))) && prev_sign*next_sign<=0
     event_occurred = true
     interp_index = callback.interp_points
   elseif callback.interp_points!=0  && !(typeof(integrator.alg) <: Discrete)# Use the interpolants for safety checking

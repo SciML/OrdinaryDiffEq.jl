@@ -73,31 +73,30 @@ struct RalstonConstantCache <: OrdinaryDiffEqConstantCache end
 
 alg_cache(alg::Ralston,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}}) = RalstonConstantCache()
 
-struct MidpointCache{uType,rateType} <: OrdinaryDiffEqMutableCache
+struct MidpointCache{uType,rateType,uEltypeNoUnits} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k::rateType
   tmp::uType
-  utilde::rateType
+  atmp::uEltypeNoUnits
   fsalfirst::rateType
 end
 
-u_cache(c::MidpointCache) = ()
-du_cache(c::MidpointCache) = (c.k,c.fsalfirst,c.utilde)
+u_cache(c::MidpointCache) = (c.atmp,)
+du_cache(c::MidpointCache) = (c.k,c.fsalfirst)
 
 struct MidpointConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::Midpoint,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
-  tmp = similar(u)
+  tmp = similar(u); atmp = similar(u, uEltypeNoUnits)
   k = zeros(rate_prototype)
-  utilde = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
-  MidpointCache(u,uprev,k,tmp,utilde,fsalfirst)
+  MidpointCache(u,uprev,k,tmp,atmp,fsalfirst)
 end
 
 alg_cache(alg::Midpoint,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}}) = MidpointConstantCache()
 
-struct RK4Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
+struct RK4Cache{uType,rateType,uEltypeNoUnits} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -106,9 +105,10 @@ struct RK4Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
   k₄::rateType
   k::rateType
   tmp::uType
+  atmp::uEltypeNoUnits
 end
 
-u_cache(c::RK4Cache) = ()
+u_cache(c::RK4Cache) = (c.atmp,)
 du_cache(c::RK4Cache) = (c.fsalfirst,c.k₂,c.k₃,c.k₄,c.k)
 
 struct RK4ConstantCache <: OrdinaryDiffEqConstantCache end
@@ -119,8 +119,8 @@ function alg_cache(alg::RK4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,u
   k₃ = zeros(rate_prototype)
   k₄ = zeros(rate_prototype)
   k  = zeros(rate_prototype)
-  tmp = similar(u)
-  RK4Cache(u,uprev,k₁,k₂,k₃,k₄,k,tmp)
+  tmp = similar(u); atmp = similar(u, uEltypeNoUnits)
+  RK4Cache(u,uprev,k₁,k₂,k₃,k₄,k,tmp,atmp)
 end
 
 alg_cache(alg::RK4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}}) = RK4ConstantCache()

@@ -10,6 +10,38 @@
   f₀ = zeros(u0./t)
   f(t,u0,f₀)
 
+
+  #=
+  Try/catch around the linear solving. This will catch singular matrices defined
+  by DAEs and thus we use the tType(1//10^(6)) default from Hairer. Note that
+  this will not always catch singular matrices, an example from Andreas:
+
+  julia> A = fill(rand(), 2, 2)
+  2×2 Array{Float64,2}:
+   0.637947  0.637947
+   0.637947  0.637947
+
+  julia> inv(A)
+  2×2 Array{Float64,2}:
+    9.0072e15  -9.0072e15
+   -9.0072e15   9.0072e15
+
+  The only way to make this more correct is to check
+
+  issingular(A) = rank(A) < min(size(A)...)
+
+  but that would introduce another svdfact in rank (which may not be possible
+  anyways if the mass_matrix is not actually an array). Instead we stick to the
+  user-chosen factorization. Sometimes this will cause `ftmp` to be absurdly
+  large like shown there, but that later gets caught in the quick estimates
+  below which then makes it spit out the default
+
+  dt₀ = tType(1//10^(6))
+
+  so that is a a cheaper way to get to the same place than an svdfact and
+  still works for matrix-free definitions of the mass matrix.
+  =#
+
   if prob.mass_matrix != I
     ftmp = similar(f₀)
     try
@@ -33,6 +65,13 @@
     dt₀ = tType((d₀/d₁)/100)
   end
   dt₀ = min(dt₀,dtmax_tdir)
+
+  if tType <: AbstractFloat && dt₀ < 10eps(tType)
+    # This catches Andreas' non-singular example
+    # should act like it's singular
+    return tType(1//10^(6))
+  end
+
   dt₀_tdir = tdir*dt₀
 
   u₁ = similar(u0) # required by DEDataArray

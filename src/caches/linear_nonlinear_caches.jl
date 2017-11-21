@@ -4,10 +4,9 @@ struct GenericIIF1ConstantCache{vecuType,rhsType,nl_rhsType} <: OrdinaryDiffEqCo
   nl_rhs::nl_rhsType
 end
 
-struct GenericIIF1Cache{uType,vecuType,DiffCacheType,rhsType,nl_rhsType,rateType,expType} <: OrdinaryDiffEqMutableCache
+struct GenericIIF1Cache{uType,DiffCacheType,rhsType,nl_rhsType,rateType,expType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
-  uhold::vecuType
   dual_cache::DiffCacheType
   tmp::uType
   rhs::rhsType
@@ -18,15 +17,13 @@ struct GenericIIF1Cache{uType,vecuType,DiffCacheType,rhsType,nl_rhsType,rateType
   k::rateType
 end
 
-u_cache(c::GenericIIF1Cache)    = (c.uprev2,c.u_old)
-du_cache(c::GenericIIF1Cache)   = (c.rtmp1,c.tmp,c.fsalfirst,c.k)
-vecu_cache(c::GenericIIF1Cache) = (c.uhold,)
+u_cache(c::GenericIIF1Cache)    = ()
+du_cache(c::GenericIIF1Cache)   = (c.rtmp1,c.fsalfirst,c.k)
 dual_cache(c::GenericIIF1Cache) = (c.dual_cache,)
 
 function alg_cache(alg::GenericIIF1,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
   uhold = Vector{typeof(u)}(1)
-  tmp = zero(rate_prototype)
-  rhs = RHS_IIF_Scalar(f,tmp,t,t,one(uEltypeNoUnits))
+  rhs = RHS_IIF_Scalar(f,zero(u),t,t,one(uEltypeNoUnits))
   nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
   GenericIIF1ConstantCache(uhold,rhs,nl_rhs)
 end
@@ -34,13 +31,12 @@ end
 function alg_cache(alg::GenericIIF1,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
   tmp = similar(u,indices(u)); rtmp1 = zeros(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
-  uhold = vec(u) # this makes uhold the same values as integrator.u
   A = f.f1
   expA = expm(A*dt)
-  rhs = RHS_IIF(f,tmp,t,t,dual_cache,uEltypeNoUnits(1//1))
+  rhs = RHS_IIF(f,tmp,t,t,uEltypeNoUnits(1//1),dual_cache)
   k = similar(rate_prototype); fsalfirst = similar(rate_prototype)
-  nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
-  GenericIIF1Cache(u,uprev,uhold,dual_cache,tmp,rhs,nl_rhs,rtmp1,fsalfirst,expA,k)
+  nl_rhs = alg.nlsolve(Val{:init},rhs,u)
+  GenericIIF1Cache(u,uprev,dual_cache,tmp,rhs,nl_rhs,rtmp1,fsalfirst,expA,k)
 end
 
 struct GenericIIF2ConstantCache{vecuType,rhsType,nl_rhsType} <: OrdinaryDiffEqConstantCache
@@ -49,10 +45,9 @@ struct GenericIIF2ConstantCache{vecuType,rhsType,nl_rhsType} <: OrdinaryDiffEqCo
   nl_rhs::nl_rhsType
 end
 
-struct GenericIIF2Cache{uType,vecuType,DiffCacheType,rhsType,nl_rhsType,rateType,expType} <: OrdinaryDiffEqMutableCache
+struct GenericIIF2Cache{uType,DiffCacheType,rhsType,nl_rhsType,rateType,expType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
-  uhold::vecuType
   dual_cache::DiffCacheType
   tmp::uType
   rhs::rhsType
@@ -63,14 +58,13 @@ struct GenericIIF2Cache{uType,vecuType,DiffCacheType,rhsType,nl_rhsType,rateType
   k::rateType
 end
 
-u_cache(c::GenericIIF2Cache)    = (c.uprev2,c.u_old)
-du_cache(c::GenericIIF2Cache)   = (c.rtmp1,c.tmp,c.fsalfirst,c.k)
-vecu_cache(c::GenericIIF2Cache) = (c.uhold,)
+u_cache(c::GenericIIF2Cache)    = ()
+du_cache(c::GenericIIF2Cache)   = (c.rtmp1,c.fsalfirst,c.k)
 dual_cache(c::GenericIIF2Cache) = (c.dual_cache,)
 
 function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
   uhold = Vector{typeof(u)}(1)
-  tmp = zero(rate_prototype)
+  tmp = zero(u)
   rhs = RHS_IIF_Scalar(f,tmp,t,t,uEltypeNoUnits(1//2))
   nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
   GenericIIF2ConstantCache(uhold,rhs,nl_rhs)
@@ -79,13 +73,12 @@ end
 function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
   tmp = similar(u,indices(u)); rtmp1 = zeros(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
-  uhold = vec(u) # this makes uhold the same values as integrator.u
   A = f.f1
   expA = expm(A*dt)
   k = similar(rate_prototype); fsalfirst = similar(rate_prototype)
-  rhs = RHS_IIF(f,tmp,t,t,dual_cache,uEltypeNoUnits(1//2))
-  nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
-  GenericIIF2Cache(u,uprev,uhold,dual_cache,tmp,rhs,nl_rhs,rtmp1,fsalfirst,expA,k)
+  rhs = RHS_IIF(f,tmp,t,t,uEltypeNoUnits(1//2),dual_cache)
+  nl_rhs = alg.nlsolve(Val{:init},rhs,u)
+  GenericIIF2Cache(u,uprev,dual_cache,tmp,rhs,nl_rhs,rtmp1,fsalfirst,expA,k)
 end
 
 struct LawsonEulerCache{uType,rateType,expType} <: OrdinaryDiffEqMutableCache

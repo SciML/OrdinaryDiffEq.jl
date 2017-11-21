@@ -18,6 +18,7 @@ tic()
 @time @testset "Adaptive Tests" begin include("ode/ode_adaptive_tests.jl") end
 @time @testset "Tstops Tests" begin include("ode/ode_tstops_tests.jl") end
 @time @testset "Backwards Tests" begin include("ode/ode_backwards_test.jl") end
+@time @testset "Reinit Tests" begin include("reinit_test.jl") end
 @time @testset "Initial Dt Tests" begin include("ode/ode_initdt_tests.jl") end
 @time @testset "OwrenZen Tests" begin include("owrenzen_tests.jl") end
 @time @testset "Rosenbrock Tests" begin include("ode/ode_rosenbrock_tests.jl") end

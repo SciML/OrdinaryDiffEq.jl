@@ -35,7 +35,7 @@ good_sol = solve(prob,Rosenbrock23())
 @test tgrad_called == true
 
 function Lotka2(t,u,du)
-  du[1] = u[1] - u[1] * u[2] # REPL[7], line 3:
+  du[1] = u[1] - u[1] * u[2]
   du[2] = -3 * u[2] + 1 * u[1] * u[2]
   nothing
 end

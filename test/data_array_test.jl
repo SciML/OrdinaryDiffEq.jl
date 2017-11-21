@@ -101,3 +101,64 @@ u1 = [sln[idx].u for idx in 1:length(sln)]
 u2 = [sln(t).u for t in linspace(0,4,41)]
 @test any(x->x[1]>0, u1)
 @test any(x->x[1]>0, u2)
+
+
+
+
+
+######################
+# DEDataMatrix
+
+type SimTypeg{T,T2} <: DEDataMatrix{T}
+    x::Array{T,2} # two dimensional
+    f1::T2
+end
+
+const tstop1 = [10.0]
+const tstop2 = [300.]
+
+function mat_condition(t,u,integrator)
+  t in tstop1
+end
+
+function mat_condition2(t,u,integrator)
+  t in tstop2
+end
+
+function mat_affect!(integrator)
+  for c in user_cache(integrator)
+    c.f1 = +1.0
+  end
+#  integrator.u[1,1] = 0.001
+end
+
+function mat_affect2!(integrator)
+  for c in user_cache(integrator)
+    c.f1 = 0.0
+  end
+end
+
+save_positions = (true,true)
+cb = DiscreteCallback(mat_condition, mat_affect!, save_positions=save_positions)
+save_positions = (false,true)
+cb2 = DiscreteCallback(mat_condition2, mat_affect2!, save_positions=save_positions)
+cbs = CallbackSet(cb,cb2)
+
+
+function sigmoid(t,u,du)
+  du[1,1] = 0.01*u[1,1]*(1-u[1,1]/20)
+  du[1,2] = 0.01*u[1,2]*(1-u[1,2]/20)
+  du[2,1] = 0.01*u[2,1]*(1-u[2,1]/20)
+  du[2,2] = u.f1*du[1,1]
+end
+
+u0 = SimTypeg(fill(0.00001,2,2),0.0)
+tspan = (0.0,3000.0)
+prob = ODEProblem(sigmoid,u0,tspan)
+
+const tstop =[tstop1;tstop2]
+sol = solve(prob,Tsit5(),callback = cbs, tstops=tstop)
+sol = solve(prob,Rodas4(),callback = cbs, tstops=tstop)
+sol = solve(prob,Kvaerno3(),callback = cbs, tstops=tstop)
+@test_broken sol = solve(prob,Rodas4(autodiff=false),callback = cbs, tstops=tstop)
+@test_broken sol = solve(prob,Kvaerno3(autodiff=false),callback = cbs, tstops=tstop)

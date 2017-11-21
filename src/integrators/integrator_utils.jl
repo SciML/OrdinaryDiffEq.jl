@@ -144,7 +144,7 @@ function postamble!(integrator)
 end
 
 function solution_endpoint_match_cur_integrator!(integrator)
-  if integrator.opts.save_end && integrator.sol.t[integrator.saveiter] !=  integrator.t
+  if integrator.opts.save_end && (integrator.saveiter == 0 || integrator.sol.t[integrator.saveiter] !=  integrator.t)
     integrator.saveiter += 1
     copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
     if integrator.opts.save_idxs == nothing
@@ -216,6 +216,9 @@ function stepsize_controller!(integrator,
   expo = 1/(alg_order(integrator.alg)+1)
   qtmp = (integrator.EEst^expo)/fac
   @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
+  if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
+    q = one(q)
+  end
   integrator.qold = q
   q
 end

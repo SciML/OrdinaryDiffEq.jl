@@ -14,7 +14,9 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   ts_init=eltype(prob.tspan)[],ks_init=[],
   recompile::Type{Val{recompile_flag}}=Val{true};
   timeseries_steps = 1,
-  saveat = eltype(prob.tspan)[],tstops = eltype(prob.tspan)[],d_discontinuities= eltype(prob.tspan)[],
+  saveat = eltype(prob.tspan)[],
+  tstops = eltype(prob.tspan)[],
+  d_discontinuities= eltype(prob.tspan)[],
   save_idxs = nothing,
   save_everystep = isempty(saveat),
   save_timeseries = nothing,save_start = true,save_end = true,
@@ -34,7 +36,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   beta1=beta1_default(alg,beta2),
   maxiters = 1000000,
   dtmax=eltype(prob.tspan)((prob.tspan[end]-prob.tspan[1])),
-  dtmin=typeof(one(eltype(prob.tspan))) <: AbstractFloat ? eltype(prob.tspan)(10)*eps(one(eltype(prob.tspan))) : eltype(prob.tspan)(1//10^(10)),
+  dtmin=typeof(one(eltype(prob.tspan))) <: AbstractFloat ? 10*eps(eltype(prob.tspan)) : eltype(prob.tspan)(1//10^(10)),
   internalnorm = ODE_DEFAULT_NORM,
   isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
   unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
@@ -70,14 +72,6 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
 
   if tspan[1] == tspan[end]
     error("Timespan is trivial")
-  end
-
-  tstops_vec = vec(collect(tType,Iterators.filter(x->tdir*tspan[1]<tdir*x≤tdir*tspan[end],Iterators.flatten((tstops,d_discontinuities,tspan[end])))))
-
-  if tdir>0
-    tstops_internal = binary_minheap(tstops_vec)
-  else
-    tstops_internal = binary_maxheap(tstops_vec)
   end
 
   f = prob.f
@@ -138,29 +132,8 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   end
   rateType = typeof(rate_prototype) ## Can be different if united
 
-  if typeof(saveat) <: Number
-    if (tspan[1]:saveat:tspan[end])[end] == tspan[end]
-      saveat_vec = convert(Vector{tType},collect(tType,tspan[1]+saveat:saveat:tspan[end]))
-    else
-      saveat_vec = convert(Vector{tType},collect(tType,tspan[1]+saveat:saveat:(tspan[end]-saveat)))
-    end
-  else
-    saveat_vec = vec(collect(tType,Iterators.filter(x->tdir*tspan[1]<tdir*x<tdir*tspan[end],saveat)))
-  end
-
-  if tdir>0
-    saveat_internal = binary_minheap(saveat_vec)
-  else
-    saveat_internal = binary_maxheap(saveat_vec)
-  end
-
-  d_discontinuities_vec = vec(collect(d_discontinuities))
-
-  if tdir>0
-    d_discontinuities_internal = binary_minheap(d_discontinuities_vec)
-  else
-    d_discontinuities_internal = binary_maxheap(d_discontinuities_vec)
-  end
+  tstops_internal, saveat_internal, d_discontinuities_internal =
+    tstop_saveat_disc_handling(tstops,saveat,d_discontinuities,tdir,tspan,tType)
 
   callbacks_internal = CallbackSet(callback,prob.callback)
 
@@ -204,13 +177,16 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
                    typeof(internalnorm),typeof(callbacks_internal),typeof(isoutofdomain),
                    typeof(progress_message),typeof(unstable_check),typeof(tstops_internal),
                    typeof(d_discontinuities_internal),typeof(userdata),typeof(save_idxs),
-                   typeof(maxiters)}(
+                   typeof(maxiters),typeof(tstops),typeof(saveat),
+                   typeof(d_discontinuities)}(
                        maxiters,timeseries_steps,save_everystep,adaptive,abstol_internal,
                        reltol_internal,tTypeNoUnits(gamma),tTypeNoUnits(qmax),
                        tTypeNoUnits(qmin),tTypeNoUnits(qsteady_max),
                        tTypeNoUnits(qsteady_min),tTypeNoUnits(failfactor),tType(dtmax),
                        tType(dtmin),internalnorm,save_idxs,tstops_internal,saveat_internal,
-                       d_discontinuities_internal,userdata,progress,progress_steps,
+                       d_discontinuities_internal,
+                       tstops,saveat,d_discontinuities,
+                       userdata,progress,progress_steps,
                        progress_name,progress_message,timeseries_errors,dense_errors,
                        tTypeNoUnits(beta1),tTypeNoUnits(beta2),tTypeNoUnits(qoldinit),dense,
                        save_start,save_end,callbacks_internal,isoutofdomain,
@@ -284,7 +260,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   q11 = tTypeNoUnits(1)
   success_iter = 0
   erracc = tTypeNoUnits(1)
-  dtacc = tTypeNoUnits(1)
+  dtacc = tType(1)
 
   integrator = ODEIntegrator{algType,uType,tType,
                              tTypeNoUnits,typeof(tdir),typeof(k),SolType,
@@ -299,46 +275,12 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
                              just_hit_tstop,accept_step,isout,reeval_fsal,
                              u_modified,opts)
   if initialize_integrator
-
-    integrator.u_modified = true
-
-    u_modified = initialize!(callbacks_internal,t,u,integrator)
-
-    # if the user modifies u, we need to fix previous values before initializing
-    # FSAL in order for the starting derivatives to be correct
-    if u_modified
-
-      if isinplace(integrator.sol.prob)
-        recursivecopy!(integrator.uprev,integrator.u)
-      else
-        integrator.uprev = integrator.u
-      end
-
-      if alg_extrapolates(integrator.alg)
-        if isinplace(integrator.sol.prob)
-          recursivecopy!(integrator.uprev2,integrator.uprev)
-        else
-          integrator.uprev2 = integrator.uprev
-        end
-      end
-
-      if initialize_save &&
-        (any((c)->c.save_positions[2],callbacks_internal.discrete_callbacks) ||
-        any((c)->c.save_positions[2],callbacks_internal.continuous_callbacks))
-        savevalues!(integrator,true)
-      end
-    end
-
-    # reset this as it is now handled so the integrators should proceed as normal
-    integrator.u_modified = false
-
+    initialize_callbacks!(integrator, initialize_save)
     initialize!(integrator,integrator.cache)
   end
 
   if integrator.dt == zero(integrator.dt) && integrator.opts.adaptive
-    integrator.dt = tType(ode_determine_initdt(integrator.u,integrator.t,
-    integrator.tdir,integrator.opts.dtmax,integrator.opts.abstol,integrator.opts.reltol,
-    integrator.opts.internalnorm,integrator.sol.prob,order,integrator.alg))
+    auto_dt_reset!(integrator)
     if sign(integrator.dt)!=integrator.tdir && integrator.dt!=tType(0) && !isnan(integrator.dt)
       error("Automatic dt setting has the wrong sign. Exiting. Please report this error.")
     end
@@ -380,4 +322,78 @@ function solve!(integrator::ODEIntegrator)
   end
   integrator.sol = solution_new_retcode(integrator.sol,:Success)
   nothing
+end
+
+# Helpers
+
+function tstop_saveat_disc_handling(tstops,saveat,d_discontinuities,tdir,tspan,tType)
+  tstops_vec = vec(collect(tType,Iterators.filter(x->tdir*tspan[1]<tdir*x≤tdir*tspan[end],Iterators.flatten((tstops,d_discontinuities,tspan[end])))))
+
+  if tdir>0
+    tstops_internal = binary_minheap(tstops_vec)
+  else
+    tstops_internal = binary_maxheap(tstops_vec)
+  end
+
+  if typeof(saveat) <: Number
+    if (tspan[1]:saveat:tspan[end])[end] == tspan[end]
+      saveat_vec = convert(Vector{tType},collect(tType,tspan[1]+saveat:saveat:tspan[end]))
+    else
+      saveat_vec = convert(Vector{tType},collect(tType,tspan[1]+saveat:saveat:(tspan[end]-saveat)))
+    end
+  else
+    saveat_vec = vec(collect(tType,Iterators.filter(x->tdir*tspan[1]<tdir*x<tdir*tspan[end],saveat)))
+  end
+
+  if tdir>0
+    saveat_internal = binary_minheap(saveat_vec)
+  else
+    saveat_internal = binary_maxheap(saveat_vec)
+  end
+
+  d_discontinuities_vec = vec(collect(d_discontinuities))
+
+  if tdir>0
+    d_discontinuities_internal = binary_minheap(d_discontinuities_vec)
+  else
+    d_discontinuities_internal = binary_maxheap(d_discontinuities_vec)
+  end
+  tstops_internal,saveat_internal,d_discontinuities_internal
+end
+
+function initialize_callbacks!(integrator, initialize_save = true)
+  t = integrator.t
+  u = integrator.u
+  callbacks = integrator.opts.callback
+  integrator.u_modified = true
+
+  u_modified = initialize!(callbacks,t,u,integrator)
+
+  # if the user modifies u, we need to fix previous values before initializing
+  # FSAL in order for the starting derivatives to be correct
+  if u_modified
+
+    if isinplace(integrator.sol.prob)
+      recursivecopy!(integrator.uprev,integrator.u)
+    else
+      integrator.uprev = integrator.u
+    end
+
+    if alg_extrapolates(integrator.alg)
+      if isinplace(integrator.sol.prob)
+        recursivecopy!(integrator.uprev2,integrator.uprev)
+      else
+        integrator.uprev2 = integrator.uprev
+      end
+    end
+
+    if initialize_save &&
+      (any((c)->c.save_positions[2],callbacks.discrete_callbacks) ||
+      any((c)->c.save_positions[2],callbacks.continuous_callbacks))
+      savevalues!(integrator,true)
+    end
+  end
+
+  # reset this as it is now handled so the integrators should proceed as normal
+  integrator.u_modified = false
 end

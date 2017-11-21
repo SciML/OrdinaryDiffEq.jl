@@ -34,10 +34,10 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
   atmp = similar(u,uEltypeNoUnits)
-  vfr = VectorFReturn(f,size(u))
-  uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
+
+  uf = UJacobianWrapper(f,t,uprev,du1)
   if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,vec(du1),vec(uprev),
+    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
                     ForwardDiff.Chunk{determine_chunksize(u,alg)}())
   else
     jac_config = nothing
@@ -145,10 +145,10 @@ function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,
   tmp = similar(u); b = similar(u)
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
-  vfr = VectorFReturn(f,size(u))
-  uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
+
+  uf = UJacobianWrapper(f,t,uprev,du1)
   if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,vec(du1),vec(uprev),
+    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
                     ForwardDiff.Chunk{determine_chunksize(u,alg)}())
   else
     jac_config = nothing
@@ -239,10 +239,10 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
-  vfr = VectorFReturn(f,size(u))
-  uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
+
+  uf = UJacobianWrapper(f,t,uprev,du1)
   if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,vec(du1),vec(uprev),
+    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
                     ForwardDiff.Chunk{determine_chunksize(u,alg)}())
   else
     jac_config = nothing
@@ -335,10 +335,10 @@ function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
-  vfr = VectorFReturn(f,size(u))
-  uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
+
+  uf = UJacobianWrapper(f,t,uprev,du1)
   if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,vec(du1),vec(uprev),
+    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
                     ForwardDiff.Chunk{determine_chunksize(u,alg)}())
   else
     jac_config = nothing
@@ -428,10 +428,10 @@ function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
-  vfr = VectorFReturn(f,size(u))
-  uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
+
+  uf = UJacobianWrapper(f,t,uprev,du1)
   if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,vec(du1),vec(uprev),
+    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
                     ForwardDiff.Chunk{determine_chunksize(u,alg)}())
   else
     jac_config = nothing
@@ -520,10 +520,10 @@ function alg_cache(alg::SSPSDIRK2,u,rate_prototype,uEltypeNoUnits,
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
-  vfr = VectorFReturn(f,size(u))
-  uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
+
+  uf = UJacobianWrapper(f,t,uprev,du1)
   if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,vec(du1),vec(uprev),
+    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
                     ForwardDiff.Chunk{determine_chunksize(u,alg)}())
   else
     jac_config = nothing
@@ -617,10 +617,10 @@ function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
-  vfr = VectorFReturn(f,size(u))
-  uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
+
+  uf = UJacobianWrapper(f,t,uprev,du1)
   if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,vec(du1),vec(uprev),
+    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
                     ForwardDiff.Chunk{determine_chunksize(u,alg)}())
   else
     jac_config = nothing
@@ -716,10 +716,10 @@ function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
-  vfr = VectorFReturn(f,size(u))
-  uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
+
+  uf = UJacobianWrapper(f,t,uprev,du1)
   if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,vec(du1),vec(uprev),
+    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
                     ForwardDiff.Chunk{determine_chunksize(u,alg)}())
   else
     jac_config = nothing
@@ -817,10 +817,10 @@ function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
-  vfr = VectorFReturn(f,size(u))
-  uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
+
+  uf = UJacobianWrapper(f,t,uprev,du1)
   if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,vec(du1),vec(uprev),
+    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
                     ForwardDiff.Chunk{determine_chunksize(u,alg)}())
   else
     jac_config = nothing
@@ -922,10 +922,10 @@ function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
-  vfr = VectorFReturn(f,size(u))
-  uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
+
+  uf = UJacobianWrapper(f,t,uprev,du1)
   if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,vec(du1),vec(uprev),
+    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
                     ForwardDiff.Chunk{determine_chunksize(u,alg)}())
   else
     jac_config = nothing
@@ -1029,10 +1029,10 @@ function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
-  vfr = VectorFReturn(f,size(u))
-  uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
+
+  uf = UJacobianWrapper(f,t,uprev,du1)
   if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,vec(du1),vec(uprev),
+    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
                     ForwardDiff.Chunk{determine_chunksize(u,alg)}())
   else
     jac_config = nothing
@@ -1133,10 +1133,10 @@ function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
-  vfr = VectorFReturn(f,size(u))
-  uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
+
+  uf = UJacobianWrapper(f,t,uprev,du1)
   if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,vec(du1),vec(uprev),
+    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
                     ForwardDiff.Chunk{determine_chunksize(u,alg)}())
   else
     jac_config = nothing
@@ -1236,10 +1236,10 @@ function alg_cache(alg::Kvaerno5,u,rate_prototype,uEltypeNoUnits,
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
-  vfr = VectorFReturn(f,size(u))
-  uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
+
+  uf = UJacobianWrapper(f,t,uprev,du1)
   if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,vec(du1),vec(uprev),
+    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
                     ForwardDiff.Chunk{determine_chunksize(u,alg)}())
   else
     jac_config = nothing
@@ -1340,10 +1340,10 @@ function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
   tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
-  vfr = VectorFReturn(f,size(u))
-  uf = UJacobianWrapper(vfr,t,vec(uprev),vec(du1))
+
+  uf = UJacobianWrapper(f,t,uprev,du1)
   if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,vec(du1),vec(uprev),
+    jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
                     ForwardDiff.Chunk{determine_chunksize(u,alg)}())
   else
     jac_config = nothing

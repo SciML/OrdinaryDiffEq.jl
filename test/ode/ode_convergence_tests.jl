@@ -58,6 +58,9 @@ for i = 1:2
   sim14 = test_convergence(dts,prob,TRBDF2())
   @test abs(sim14.𝒪est[:final]-2) < testTol
 
+  sim152 = test_convergence(dts,prob,TRBDF2(autodiff=false))
+  @test abs(sim152.𝒪est[:final]-2) < testTol+0.1
+
   sim15 = test_convergence(dts,prob,SDIRK2())
   @test abs(sim15.𝒪est[:final]-2) < testTol
 

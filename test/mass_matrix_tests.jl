@@ -89,3 +89,35 @@ sol = solve(prob,   TRBDF2(),adaptive=false,dt=1/10)
 sol2 = solve(prob2, TRBDF2(),adaptive=false,dt=1/10)
 
 =#
+
+# Singular mass matrices
+
+function f!(t, u, du)
+    du[1] = u[2]
+    du[2] = u[2] - 1.
+    return
+end
+
+u0 = [0.,1.]
+tspan = (0.0, 1.0)
+
+M = zeros(2,2)
+M[1,1] = 1.
+
+m_ode_prob = ODEProblem(f!, u0, tspan, mass_matrix=M)
+sol = solve(m_ode_prob, Rosenbrock23())
+
+M = [0.637947  0.637947
+     0.637947  0.637947]
+
+inv(M) # not caught as singular
+
+function f2!(t, u, du)
+    du[1] = u[2]
+    du[2] = u[1]
+    return
+end
+u0 = zeros(2)
+
+m_ode_prob = ODEProblem(f2!, u0, tspan, mass_matrix=M)
+sol = solve(m_ode_prob, Rosenbrock23())

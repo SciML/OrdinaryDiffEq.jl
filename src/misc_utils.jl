@@ -27,11 +27,13 @@ Base.@pure function determine_chunksize(u,CS)
   end
 end
 
-function autodiff_setup{CS}(f!, initial_x::Vector, chunk_size::Type{Val{CS}})
-    permf! = (fx, x) -> f!(x, fx)
-    fx2 = copy(initial_x)
-    jac_cfg = ForwardDiff.JacobianConfig(DiffEqNLSolveTag(), #TODO: this has to be adapted for ForwardDiff master.: permf!,
-                                         initial_x, initial_x,
+function autodiff_setup{CS}(f!, initial_x, chunk_size::Type{Val{CS}})
+    fvec! = NLsolve.reshape_f(f!, initial_x)
+    permf! = (fx, x) -> fvec!(x, fx)
+
+    fx2 = vec(copy(initial_x))
+    jac_cfg = ForwardDiff.JacobianConfig(DiffEqNLSolveTag(),
+                                         vec(initial_x), vec(initial_x),
                                          ForwardDiff.Chunk{CS}())
     g! = (x, gx) -> ForwardDiff.jacobian!(gx, permf!, fx2, x, jac_cfg,Val{false}())
     fg! = (x, fx, gx) -> begin
@@ -40,16 +42,16 @@ function autodiff_setup{CS}(f!, initial_x::Vector, chunk_size::Type{Val{CS}})
         DiffBase.value(jac_res)
     end
 
-    return DifferentiableMultivariateFunction(f!, g!, fg!)
+    return DifferentiableMultivariateFunction(fvec!, g!, fg!)
 end
 
-function non_autodiff_setup(f!, initial_x::Vector)
-  DifferentiableMultivariateFunction(f!)
+function non_autodiff_setup(f!, initial_x)
+  DifferentiableMultivariateFunction(f!, initial_x)
 end
 
 immutable NLSOLVEJL_SETUP{CS,AD} end
 Base.@pure NLSOLVEJL_SETUP(;chunk_size=0,autodiff=true) = NLSOLVEJL_SETUP{chunk_size,autodiff}()
-(p::NLSOLVEJL_SETUP)(f,u0) = (res=NLsolve.nlsolve(f,u0); res.zero)
+(p::NLSOLVEJL_SETUP)(f,u0; kwargs...) = (res=NLsolve.nlsolve(f,u0; kwargs...); res.zero)
 function (p::NLSOLVEJL_SETUP{CS,AD}){CS,AD}(::Type{Val{:init}},f,u0_prototype)
   if AD
     return autodiff_setup(f,u0_prototype,Val{determine_chunksize(u0_prototype,CS)})
