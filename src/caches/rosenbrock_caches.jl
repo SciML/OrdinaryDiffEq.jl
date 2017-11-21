@@ -91,8 +91,8 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,tTypeNoUnit
   linsolve_tmp = similar(u,indices(u))
   linsolve_tmp_vec = vec(linsolve_tmp)
   if alg_autodiff(alg)
-    jac_config = ForwardDiff.JacobianConfig(uf,vec(du1),vec(uprev),
-                    ForwardDiff.Chunk{determine_chunksize(u,alg)}())
+jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,
+                ForwardDiff.Chunk{determine_chunksize(u,alg)}())
   else
     jac_config = nothing
   end
