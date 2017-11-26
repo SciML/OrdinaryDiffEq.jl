@@ -167,7 +167,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),new_W)
+    cache.linsolve(vec(dz),W,vec(b),new_W)
   end
   ndz = integrator.opts.internalnorm(dz)
   z .+= dz
@@ -190,7 +190,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -393,7 +393,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),new_W)
+    cache.linsolve(vec(dz),W,vec(b),new_W)
   end
   ndz = integrator.opts.internalnorm(dz)
   z .+= dz
@@ -417,7 +417,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -630,7 +630,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),new_W)
+    cache.linsolve(vec(dz),W,vec(b),new_W)
   end
   ndz = integrator.opts.internalnorm(dz)
   z .+= dz
@@ -653,7 +653,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -929,7 +929,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),new_W)
+    cache.linsolve(vec(dz),W,vec(b),new_W)
   end
   ndz = integrator.opts.internalnorm(dz)
   zᵧ .+= dz
@@ -947,7 +947,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -981,7 +981,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),false)
   end
   ndz = integrator.opts.internalnorm(dz)
   z .+= dz
@@ -999,7 +999,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -1031,7 +1031,7 @@ end
       if has_invW(f)
         A_mul_B!(vec(tmp),W,vec(dz))
       else
-        integrator.alg.linsolve(vec(tmp),W,vec(dz),false)
+        cache.linsolve(vec(tmp),W,vec(dz),false)
       end
     else
       tmp .= dz
@@ -1251,7 +1251,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),new_W)
+    cache.linsolve(vec(dz),W,vec(b),new_W)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₁ .+= dz
@@ -1269,7 +1269,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -1302,7 +1302,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),false)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₂ .+= dz
@@ -1319,7 +1319,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -1351,7 +1351,7 @@ end
       if has_invW(f)
         A_mul_B!(vec(tmp),W,vec(dz))
       else
-        integrator.alg.linsolve(vec(tmp),W,vec(dz),false)
+        cache.linsolve(vec(tmp),W,vec(dz),false)
       end
     else
       tmp .= dz
@@ -1570,7 +1570,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),new_W)
+    cache.linsolve(vec(dz),W,vec(b),new_W)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₁ .+= dz
@@ -1588,7 +1588,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -1620,7 +1620,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),false)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₂ .+= dz
@@ -1636,7 +1636,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -1913,7 +1913,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),new_W)
+    cache.linsolve(vec(dz),W,vec(b),new_W)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₂ .+= dz
@@ -1931,7 +1931,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -1965,7 +1965,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),false)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₃ .+= dz
@@ -1983,7 +1983,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -2020,7 +2020,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),false)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₄ .+= dz
@@ -2038,7 +2038,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -2070,7 +2070,7 @@ end
       if has_invW(f)
         A_mul_B!(vec(tmp),W,vec(dz))
       else
-        integrator.alg.linsolve(vec(tmp),W,vec(dz),false)
+        cache.linsolve(vec(tmp),W,vec(dz),false)
       end
     else
       tmp .= dz
@@ -2418,7 +2418,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),new_W)
+    cache.linsolve(vec(dz),W,vec(b),new_W)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₁ .+= dz
@@ -2436,7 +2436,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -2470,7 +2470,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),new_W)
+    cache.linsolve(vec(dz),W,vec(b),new_W)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₂ .+= dz
@@ -2488,7 +2488,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -2522,7 +2522,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),false)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₃ .+= dz
@@ -2540,7 +2540,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -2574,7 +2574,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),false)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₄ .+= dz
@@ -2592,7 +2592,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -2626,7 +2626,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),false)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₅ .+= dz
@@ -2644,7 +2644,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -2684,7 +2684,7 @@ end
       if has_invW(f)
         A_mul_B!(vec(tmp),W,vec(dz))
       else
-        integrator.alg.linsolve(vec(tmp),W,vec(dz),false)
+        cache.linsolve(vec(tmp),W,vec(dz),false)
       end
     else
       tmp .= dz
@@ -3029,7 +3029,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),new_W)
+    cache.linsolve(vec(dz),W,vec(b),new_W)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₁ .+= dz
@@ -3047,7 +3047,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -3080,7 +3080,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),new_W)
+    cache.linsolve(vec(dz),W,vec(b),new_W)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₂ .+= dz
@@ -3098,7 +3098,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -3131,7 +3131,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),false)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₃ .+= dz
@@ -3149,7 +3149,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -3183,7 +3183,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),false)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₄ .+= dz
@@ -3201,7 +3201,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -3235,7 +3235,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),false)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₅ .+= dz
@@ -3253,7 +3253,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -3288,7 +3288,7 @@ end
       if has_invW(f)
         A_mul_B!(vec(tmp),W,vec(dz))
       else
-        integrator.alg.linsolve(vec(tmp),W,vec(dz),false)
+        cache.linsolve(vec(tmp),W,vec(dz),false)
       end
     else
       tmp .= dz
@@ -3598,7 +3598,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),new_W)
+    cache.linsolve(vec(dz),W,vec(b),new_W)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₂ .+= dz
@@ -3616,7 +3616,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -3649,7 +3649,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),false)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₃ .+= dz
@@ -3667,7 +3667,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -3701,7 +3701,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),false)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₄ .+= dz
@@ -3719,7 +3719,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -3753,7 +3753,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),false)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₅ .+= dz
@@ -3771,7 +3771,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -3803,7 +3803,7 @@ end
       if has_invW(f)
         A_mul_B!(vec(tmp),W,vec(dz))
       else
-        integrator.alg.linsolve(vec(tmp),W,vec(dz),false)
+        cache.linsolve(vec(tmp),W,vec(dz),false)
       end
     else
       tmp .= dz
@@ -4151,7 +4151,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),new_W)
+    cache.linsolve(vec(dz),W,vec(b),new_W)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₂ .+= dz
@@ -4169,7 +4169,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -4202,7 +4202,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),false)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₃ .+= dz
@@ -4220,7 +4220,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -4254,7 +4254,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),false)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₄ .+= dz
@@ -4271,7 +4271,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -4304,7 +4304,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),false)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₅ .+= dz
@@ -4322,7 +4322,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -4358,7 +4358,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),false)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₆ .+= dz
@@ -4376,7 +4376,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -4411,7 +4411,7 @@ end
       if has_invW(f)
         A_mul_B!(vec(tmp),W,vec(dz))
       else
-        integrator.alg.linsolve(vec(tmp),W,vec(dz),false)
+        cache.linsolve(vec(tmp),W,vec(dz),false)
       end
     else
       tmp .= dz
@@ -4802,7 +4802,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),new_W)
+    cache.linsolve(vec(dz),W,vec(b),new_W)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₂ .+= dz
@@ -4820,7 +4820,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -4853,7 +4853,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),false)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₃ .+= dz
@@ -4871,7 +4871,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -4905,7 +4905,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),false)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₄ .+= dz
@@ -4923,7 +4923,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -4956,7 +4956,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),false)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₅ .+= dz
@@ -4974,7 +4974,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -5007,7 +5007,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),false)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₆ .+= dz
@@ -5025,7 +5025,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -5065,7 +5065,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),false)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₇ .+= dz
@@ -5083,7 +5083,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -5118,7 +5118,7 @@ end
       if has_invW(f)
         A_mul_B!(vec(tmp),W,vec(dz))
       else
-        integrator.alg.linsolve(vec(tmp),W,vec(dz),false)
+        cache.linsolve(vec(tmp),W,vec(dz),false)
       end
     else
       tmp .= dz
@@ -5551,7 +5551,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),new_W)
+    cache.linsolve(vec(dz),W,vec(b),new_W)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₂ .+= dz
@@ -5569,7 +5569,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -5602,7 +5602,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),false)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₃ .+= dz
@@ -5620,7 +5620,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -5654,7 +5654,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),false)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₄ .+= dz
@@ -5672,7 +5672,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -5705,7 +5705,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),false)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₅ .+= dz
@@ -5723,7 +5723,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -5756,7 +5756,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),false)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₆ .+= dz
@@ -5774,7 +5774,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -5813,7 +5813,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),false)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₇ .+= dz
@@ -5831,7 +5831,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -5870,7 +5870,7 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    integrator.alg.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),false)
   end
   ndz = integrator.opts.internalnorm(dz)
   z₈ .+= dz
@@ -5888,7 +5888,7 @@ end
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
     else
-      integrator.alg.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -5923,7 +5923,7 @@ end
       if has_invW(f)
         A_mul_B!(vec(tmp),W,vec(dz))
       else
-        integrator.alg.linsolve(vec(tmp),W,vec(dz),false)
+        cache.linsolve(vec(tmp),W,vec(dz),false)
       end
     else
       tmp .= dz

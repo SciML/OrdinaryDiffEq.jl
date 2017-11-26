@@ -91,7 +91,7 @@ end
       @. k = uprev + dt*B
   end
 
-  integrator.alg.linsolve(vec(u), W, vec(k), true)
+  cache.linsolve(vec(u), W, vec(k), true)
 
   if integrator.opts.adaptive && integrator.success_iter > 0
     # local truncation error (LTE) bound by dt^2/2*max|y''(t)|

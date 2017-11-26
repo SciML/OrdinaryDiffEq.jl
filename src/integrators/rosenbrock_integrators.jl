@@ -55,7 +55,7 @@ end
     end
 
     # use existing factorization of W if step is repeated
-    integrator.alg.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
+    cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
   end
 
   recursivecopy!(k₁, reshape(vectmp, size(u)...))
@@ -72,7 +72,7 @@ end
   if has_invW(f)
     A_mul_B!(vectmp2, W, linsolve_tmp_vec)
   else
-    integrator.alg.linsolve(vectmp2, W, linsolve_tmp_vec)
+    cache.linsolve(vectmp2, W, linsolve_tmp_vec)
   end
 
   tmp2 = reshape(vectmp2, sizeu...)
@@ -94,7 +94,7 @@ end
     if has_invW(f)
       A_mul_B!(vectmp3, W, linsolve_tmp_vec)
     else
-      integrator.alg.linsolve(vectmp3, W, linsolve_tmp_vec)
+      cache.linsolve(vectmp3, W, linsolve_tmp_vec)
     end
 
     k₃ = reshape(vectmp3, sizeu...)
@@ -161,7 +161,7 @@ end
     end
 
     # use existing factorization of W if step is repeated
-    integrator.alg.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
+    cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
   end
 
   recursivecopy!(k₁, reshape(vectmp, sizeu...))
@@ -179,7 +179,7 @@ end
   if has_invW(f)
     A_mul_B!(vectmp2, W, linsolve_tmp_vec)
   else
-    integrator.alg.linsolve(vectmp2, W, linsolve_tmp_vec)
+    cache.linsolve(vectmp2, W, linsolve_tmp_vec)
   end
 
   tmp2 = reshape(vectmp2, sizeu...)
@@ -198,7 +198,7 @@ end
   if has_invW(f)
     A_mul_B!(vectmp3, W, linsolve_tmp_vec)
   else
-    integrator.alg.linsolve(vectmp3, W, linsolve_tmp_vec)
+    cache.linsolve(vectmp3, W, linsolve_tmp_vec)
   end
 
   k₃ = reshape(vectmp3, sizeu...)
@@ -461,7 +461,7 @@ end
     end
 
     # use existing factorization of W if step is repeated
-    integrator.alg.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
+    cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
   end
 
   k1 = reshape(vectmp, sizeu...)
@@ -479,7 +479,7 @@ end
   if has_invW(f)
     A_mul_B!(vectmp2, W, linsolve_tmp_vec)
   else
-    integrator.alg.linsolve(vectmp2, W, linsolve_tmp_vec)
+    cache.linsolve(vectmp2, W, linsolve_tmp_vec)
   end
 
   k2 = reshape(vectmp2, sizeu...)
@@ -497,7 +497,7 @@ end
   if has_invW(f)
     A_mul_B!(vectmp3, W, linsolve_tmp_vec)
   else
-    integrator.alg.linsolve(vectmp3, W, linsolve_tmp_vec)
+    cache.linsolve(vectmp3, W, linsolve_tmp_vec)
   end
 
   k3 = reshape(vectmp3, sizeu...)
@@ -660,7 +660,7 @@ end
     end
 
     # use existing factorization of W if step is repeated
-    integrator.alg.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
+    cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
   end
 
   k1 = reshape(vectmp, sizeu...)
@@ -684,7 +684,7 @@ end
   if has_invW(f)
     A_mul_B!(vectmp2, W, linsolve_tmp_vec)
   else
-    integrator.alg.linsolve(vectmp2, W, linsolve_tmp_vec)
+    cache.linsolve(vectmp2, W, linsolve_tmp_vec)
   end
 
   k2 = reshape(vectmp2, sizeu...)
@@ -702,7 +702,7 @@ end
   if has_invW(f)
     A_mul_B!(vectmp3, W, linsolve_tmp_vec)
   else
-    integrator.alg.linsolve(vectmp3, W, linsolve_tmp_vec)
+    cache.linsolve(vectmp3, W, linsolve_tmp_vec)
   end
 
   k3 = reshape(vectmp3, sizeu...)
@@ -718,7 +718,7 @@ end
   if has_invW(f)
     A_mul_B!(vectmp4, W, linsolve_tmp_vec)
   else
-    integrator.alg.linsolve(vectmp4, W, linsolve_tmp_vec)
+    cache.linsolve(vectmp4, W, linsolve_tmp_vec)
   end
 
   k4 = reshape(vectmp4, sizeu...)
@@ -885,7 +885,7 @@ end
     end
 
     # use existing factorization of W if step is repeated
-    integrator.alg.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
+    cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
   end
 
   k1 = reshape(vectmp, sizeu...)
@@ -903,7 +903,7 @@ end
   if has_invW(f)
     A_mul_B!(vectmp2, W, linsolve_tmp_vec)
   else
-    integrator.alg.linsolve(vectmp2, W, linsolve_tmp_vec)
+    cache.linsolve(vectmp2, W, linsolve_tmp_vec)
   end
 
   k2 = reshape(vectmp2, sizeu...)
@@ -921,7 +921,7 @@ end
   if has_invW(f)
     A_mul_B!(vectmp3, W, linsolve_tmp_vec)
   else
-    integrator.alg.linsolve(vectmp3, W, linsolve_tmp_vec)
+    cache.linsolve(vectmp3, W, linsolve_tmp_vec)
   end
 
   k3 = reshape(vectmp3, sizeu...)
@@ -937,7 +937,7 @@ end
   if has_invW(f)
     A_mul_B!(vectmp4, W, linsolve_tmp_vec)
   else
-    integrator.alg.linsolve(vectmp4, W, linsolve_tmp_vec)
+    cache.linsolve(vectmp4, W, linsolve_tmp_vec)
   end
 
   k4 = reshape(vectmp4, sizeu...)
@@ -1134,7 +1134,7 @@ end
     end
 
     # use existing factorization of W if step is repeated
-    integrator.alg.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
+    cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
   end
 
   k1 = reshape(vectmp, sizeu...)
@@ -1152,7 +1152,7 @@ end
   if has_invW(f)
     A_mul_B!(vectmp2, W, linsolve_tmp_vec)
   else
-    integrator.alg.linsolve(vectmp2, W, linsolve_tmp_vec)
+    cache.linsolve(vectmp2, W, linsolve_tmp_vec)
   end
 
   k2 = reshape(vectmp2, sizeu...)
@@ -1170,7 +1170,7 @@ end
   if has_invW(f)
     A_mul_B!(vectmp3, W, linsolve_tmp_vec)
   else
-    integrator.alg.linsolve(vectmp3, W, linsolve_tmp_vec)
+    cache.linsolve(vectmp3, W, linsolve_tmp_vec)
   end
 
   k3 = reshape(vectmp3, sizeu...)
@@ -1188,7 +1188,7 @@ end
   if has_invW(f)
     A_mul_B!(vectmp4, W, linsolve_tmp_vec)
   else
-    integrator.alg.linsolve(vectmp4, W, linsolve_tmp_vec)
+    cache.linsolve(vectmp4, W, linsolve_tmp_vec)
   end
 
   k4 = reshape(vectmp4, sizeu...)
@@ -1206,7 +1206,7 @@ end
   if has_invW(f)
     A_mul_B!(vectmp5, W, linsolve_tmp_vec)
   else
-    integrator.alg.linsolve(vectmp5, W, linsolve_tmp_vec)
+    cache.linsolve(vectmp5, W, linsolve_tmp_vec)
   end
 
   k5 = reshape(vectmp5, sizeu...)
@@ -1230,7 +1230,7 @@ end
   if has_invW(f)
     A_mul_B!(vectmp6, W, linsolve_tmp_vec)
   else
-    integrator.alg.linsolve(vectmp6, W, linsolve_tmp_vec)
+    cache.linsolve(vectmp6, W, linsolve_tmp_vec)
   end
 
   k6 = reshape(vectmp6, sizeu...)
@@ -1509,7 +1509,7 @@ end
     end
 
     # use existing factorization of W if step is repeated
-    integrator.alg.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
+    cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
   end
 
   k1 = reshape(vectmp, sizeu...)
@@ -1529,7 +1529,7 @@ end
   if has_invW(f)
     A_mul_B!(vectmp2, W, linsolve_tmp_vec)
   else
-    integrator.alg.linsolve(vectmp2, W, linsolve_tmp_vec)
+    cache.linsolve(vectmp2, W, linsolve_tmp_vec)
   end
 
   k2 = reshape(vectmp2, sizeu...)
@@ -1547,7 +1547,7 @@ end
   if has_invW(f)
     A_mul_B!(vectmp3, W, linsolve_tmp_vec)
   else
-    integrator.alg.linsolve(vectmp3, W, linsolve_tmp_vec)
+    cache.linsolve(vectmp3, W, linsolve_tmp_vec)
   end
 
   k3 = reshape(vectmp3, sizeu...)
@@ -1565,7 +1565,7 @@ end
   if has_invW(f)
     A_mul_B!(vectmp4, W, linsolve_tmp_vec)
   else
-    integrator.alg.linsolve(vectmp4, W, linsolve_tmp_vec)
+    cache.linsolve(vectmp4, W, linsolve_tmp_vec)
   end
 
   k4 = reshape(vectmp4, sizeu...)
@@ -1586,7 +1586,7 @@ end
   if has_invW(f)
     A_mul_B!(vectmp5, W, linsolve_tmp_vec)
   else
-    integrator.alg.linsolve(vectmp5, W, linsolve_tmp_vec)
+    cache.linsolve(vectmp5, W, linsolve_tmp_vec)
   end
 
   k5 = reshape(vectmp5, sizeu...)
@@ -1613,7 +1613,7 @@ end
   if has_invW(f)
     A_mul_B!(vectmp6, W, linsolve_tmp_vec)
   else
-    integrator.alg.linsolve(vectmp6, W, linsolve_tmp_vec)
+    cache.linsolve(vectmp6, W, linsolve_tmp_vec)
   end
 
   k6 = reshape(vectmp6, sizeu...)
@@ -1637,7 +1637,7 @@ end
   if has_invW(f)
     A_mul_B!(vectmp7, W, linsolve_tmp_vec)
   else
-    integrator.alg.linsolve(vectmp7, W, linsolve_tmp_vec)
+    cache.linsolve(vectmp7, W, linsolve_tmp_vec)
   end
 
   k7 = reshape(vectmp7, sizeu...)
@@ -1661,7 +1661,7 @@ end
   if has_invW(f)
     A_mul_B!(vectmp8, W, linsolve_tmp_vec)
   else
-    integrator.alg.linsolve(vectmp8, W, linsolve_tmp_vec)
+    cache.linsolve(vectmp8, W, linsolve_tmp_vec)
   end
 
   k8 = reshape(vectmp8, sizeu...)
