@@ -16,7 +16,7 @@ function alg_cache(alg::LinearImplicitEuler,u,rate_prototype,uEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
   W = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   k = zeros(rate_prototype); fsalfirst = zeros(rate_prototype)
-  tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u); atmp = similar(u,uEltypeNoUnits,indices(u))
   LinearImplicitEulerCache(u,uprev,uprev2,fsalfirst,W,k,tmp,atmp)
 end
 

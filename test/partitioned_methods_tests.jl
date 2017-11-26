@@ -23,6 +23,7 @@ interp_time = 0:0.001:5
 interp = sol(0.5)
 interps = sol(interp_time)
 
+sol_tsit5 = solve(prob,Tsit5())
 
 prob = SecondOrderODEProblem(f2,u0,v0,(0.0,5.0))
 (::typeof(prob.f))(::Type{Val{:analytic}},t,u0) = f2(Val{:analytic},t,u0)

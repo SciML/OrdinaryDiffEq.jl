@@ -123,7 +123,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
 
   if isinplace(prob) && typeof(u) <: AbstractArray && eltype(u) <: Number # Could this be more efficient for other arrays?
     if !(typeof(u) <: ArrayPartition)
-      rate_prototype = similar(u,typeof(oneunit(uEltype)/oneunit(tType)))
+      rate_prototype = similar(u,typeof(oneunit(uEltype)/oneunit(tType)),indices(u))
     else
       rate_prototype = similar(u, typeof.(oneunit.(recursive_eltype.(u.x))./oneunit(tType))...)
     end

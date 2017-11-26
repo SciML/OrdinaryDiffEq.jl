@@ -29,11 +29,11 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
-  z = similar(u)
-  dz = similar(u); tmp = similar(u); b = similar(u)
+  z = similar(u,indices(u))
+  dz = similar(u,indices(u)); tmp = similar(u,indices(u)); b = similar(u,indices(u))
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
-  atmp = similar(u,uEltypeNoUnits)
+  atmp = similar(u,uEltypeNoUnits,indices(u))
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
@@ -135,9 +135,9 @@ function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
-  z = similar(u)
-  dz = similar(u)
-  tmp = similar(u); b = similar(u)
+  z = similar(u,indices(u))
+  dz = similar(u,indices(u))
+  tmp = similar(u); b = similar(u,indices(u))
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
 
@@ -224,9 +224,10 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
-  z = similar(u)
-  dz = similar(u)
-  tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
+  z = similar(u,indices(u))
+  dz = similar(u,indices(u))
+  tmp = similar(u); b = similar(u,indices(u));
+  atmp = similar(u,uEltypeNoUnits,indices(u))
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
 
@@ -315,11 +316,13 @@ function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
-  zprev = similar(u); zᵧ = similar(u); z = similar(u)
-  dz = similar(u)
+  zprev = similar(u,indices(u));
+  zᵧ = similar(u,indices(u)); z = similar(u,indices(u))
+  dz = similar(u,indices(u))
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
-  tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u); b = similar(u,indices(u));
+  atmp = similar(u,uEltypeNoUnits,indices(u))
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
@@ -403,11 +406,13 @@ function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
-  z₁ = similar(u); z₂ = similar(u)
-  dz = similar(u)
+  z₁ = similar(u,indices(u));
+  z₂ = similar(u,indices(u))
+  dz = similar(u,indices(u))
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
-  tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u); b = similar(u,indices(u));
+  atmp = similar(u,uEltypeNoUnits,indices(u))
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
@@ -490,11 +495,13 @@ function alg_cache(alg::SSPSDIRK2,u,rate_prototype,uEltypeNoUnits,
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
-  z₁ = similar(u); z₂ = similar(u)
-  dz = similar(u)
+  z₁ = similar(u,indices(u));
+  z₂ = similar(u,indices(u))
+  dz = similar(u,indices(u))
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
-  tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u); b = similar(u,indices(u));
+  atmp = similar(u,uEltypeNoUnits,indices(u))
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
@@ -582,11 +589,13 @@ function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
-  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u)
-  dz = similar(u)
+  z₁ = similar(u,indices(u)); z₂ = similar(u,indices(u));
+  z₃ = similar(u,indices(u)); z₄ = similar(u,indices(u))
+  dz = similar(u,indices(u))
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
-  tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u); b = similar(u,indices(u));
+  atmp = similar(u,uEltypeNoUnits,indices(u))
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
@@ -676,11 +685,13 @@ function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
-  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u)
-  dz = similar(u)
+  z₁ = similar(u,indices(u)); z₂ = similar(u,indices(u));
+  z₃ = similar(u,indices(u)); z₄ = similar(u,indices(u))
+  dz = similar(u,indices(u))
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
-  tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u); b = similar(u,indices(u));
+  atmp = similar(u,uEltypeNoUnits,indices(u))
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
@@ -771,12 +782,14 @@ function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
-  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u)
-  z₅ = similar(u)
-  dz = similar(u)
+  z₁ = similar(u,indices(u)); z₂ = similar(u,indices(u));
+  z₃ = similar(u,indices(u)); z₄ = similar(u,indices(u))
+  z₅ = similar(u,indices(u))
+  dz = similar(u,indices(u))
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
-  tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u); b = similar(u,indices(u));
+  atmp = similar(u,uEltypeNoUnits,indices(u))
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
@@ -871,12 +884,14 @@ function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
-  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u)
-  z₅ = similar(u)
-  dz = similar(u)
+  z₁ = similar(u,indices(u)); z₂ = similar(u,indices(u));
+  z₃ = similar(u,indices(u)); z₄ = similar(u,indices(u))
+  z₅ = similar(u,indices(u))
+  dz = similar(u,indices(u))
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
-  tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u); b = similar(u,indices(u));
+  atmp = similar(u,uEltypeNoUnits,indices(u))
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
@@ -973,12 +988,14 @@ function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
-  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u)
-  z₅ = similar(u)
-  dz = similar(u)
+  z₁ = similar(u,indices(u)); z₂ = similar(u,indices(u));
+  z₃ = similar(u,indices(u)); z₄ = similar(u,indices(u))
+  z₅ = similar(u,indices(u))
+  dz = similar(u,indices(u))
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
-  tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u); b = similar(u,indices(u));
+  atmp = similar(u,uEltypeNoUnits,indices(u))
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
@@ -1072,12 +1089,14 @@ function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
-  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u)
-  z₅ = similar(u); z₆ = similar(u)
-  dz = similar(u)
+  z₁ = similar(u,indices(u)); z₂ = similar(u,indices(u));
+  z₃ = similar(u,indices(u)); z₄ = similar(u,indices(u))
+  z₅ = similar(u,indices(u)); z₆ = similar(u,indices(u))
+  dz = similar(u,indices(u))
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
-  tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u); b = similar(u,indices(u));
+  atmp = similar(u,uEltypeNoUnits,indices(u))
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
@@ -1170,12 +1189,15 @@ function alg_cache(alg::Kvaerno5,u,rate_prototype,uEltypeNoUnits,
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
-  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u)
-  z₅ = similar(u); z₆ = similar(u); z₇ = similar(u)
-  dz = similar(u)
+  z₁ = similar(u,indices(u)); z₂ = similar(u,indices(u));
+  z₃ = similar(u,indices(u)); z₄ = similar(u,indices(u))
+  z₅ = similar(u,indices(u)); z₆ = similar(u,indices(u));
+  z₇ = similar(u,indices(u))
+  dz = similar(u,indices(u))
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
-  tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u); b = similar(u,indices(u));
+  atmp = similar(u,uEltypeNoUnits,indices(u))
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
@@ -1269,12 +1291,15 @@ function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
-  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u)
-  z₅ = similar(u); z₆ = similar(u); z₇ = similar(u); z₈ = similar(u)
-  dz = similar(u)
+  z₁ = similar(u,indices(u)); z₂ = similar(u,indices(u));
+  z₃ = similar(u,indices(u)); z₄ = similar(u,indices(u))
+  z₅ = similar(u,indices(u)); z₆ = similar(u,indices(u));
+  z₇ = similar(u,indices(u)); z₈ = similar(u,indices(u))
+  dz = similar(u,indices(u))
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
-  tmp = similar(u); b = similar(u); atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u); b = similar(u,indices(u));
+  atmp = similar(u,uEltypeNoUnits,indices(u))
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
