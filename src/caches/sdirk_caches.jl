@@ -1141,7 +1141,7 @@ function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,
   ηold = one(uEltypeNoUnits)
 
   KenCarp4Cache{typeof(u),typeof(rate_prototype),typeof(atmp),typeof(J),typeof(uf),
-              typeof(jac_config),uEltypeNoUnits,typeof(tab),typeof(linsolve),typeof(linsolve)}(
+              typeof(jac_config),uEltypeNoUnits,typeof(tab),typeof(linsolve)}(
               u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,z₆,dz,b,tmp,atmp,J,
               W,uf,jac_config,linsolve,linsolve,ηold,κ,tol,10000,tab)
 end
