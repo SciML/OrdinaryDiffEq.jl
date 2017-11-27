@@ -42,7 +42,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z = z .+ dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
@@ -136,7 +136,7 @@ end
       end
     end
     # skip calculation of W if step is repeated
-    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(integrator.EEst)*oneunit(integrator.t))
+    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t)))
       new_W = true
       for j in 1:length(u), i in 1:length(u)
         @inbounds W[i,j] = mass_matrix[i,j]-dt*J[i,j]
@@ -172,7 +172,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z .+= dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
@@ -284,7 +284,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z = z .+ dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
@@ -361,7 +361,7 @@ end
       end
     end
     # skip calculation of W if step is repeated
-    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(integrator.EEst)*oneunit(integrator.t))
+    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t)))
       new_W = true
       for j in 1:length(u), i in 1:length(u)
           @inbounds W[i,j] = mass_matrix[i,j]-dto2*J[i,j]
@@ -398,7 +398,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z .+= dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
@@ -488,7 +488,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z = z .+ dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
@@ -602,7 +602,7 @@ end
       end
     end
     # skip calculation of W if step is repeated
-    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(integrator.EEst)*oneunit(integrator.t))
+    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t)))
       new_W = true
       for j in 1:length(u), i in 1:length(u)
         @inbounds W[i,j] = mass_matrix[i,j]-dto2*J[i,j]
@@ -635,7 +635,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z .+= dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
@@ -769,7 +769,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   zᵧ = zᵧ .+ dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
@@ -811,7 +811,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z = z .+ dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -900,7 +900,7 @@ end
       end
     end
     # skip calculation of W if step is repeated
-    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(integrator.EEst)*oneunit(integrator.t))
+    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t)))
       new_W = true
       mass_matrix = integrator.sol.prob.mass_matrix
       for j in 1:length(u), i in 1:length(u)
@@ -934,7 +934,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   zᵧ .+= dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
@@ -986,7 +986,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z .+= dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -1092,7 +1092,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₁ = z₁ .+ dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
@@ -1133,7 +1133,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₂ = z₂ .+ dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -1219,7 +1219,7 @@ end
       end
     end
     # skip calculation of W if step is repeated
-    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(integrator.EEst)*oneunit(integrator.t))
+    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t)))
       new_W = true
       mass_matrix = integrator.sol.prob.mass_matrix
       for j in 1:length(u), i in 1:length(u)
@@ -1256,7 +1256,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₁ .+= dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
@@ -1307,7 +1307,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₂ .+= dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -1417,7 +1417,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₁ = z₁ .+ dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
@@ -1458,7 +1458,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₂ = z₂ .+ dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -1538,7 +1538,7 @@ end
       end
     end
     # skip calculation of W if step is repeated
-    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(integrator.EEst)*oneunit(integrator.t))
+    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t)))
       new_W = true
       mass_matrix = integrator.sol.prob.mass_matrix
       for j in 1:length(u), i in 1:length(u)
@@ -1575,7 +1575,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₁ .+= dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
@@ -1625,7 +1625,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₂ .+= dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   fail_convergence = false
@@ -1713,7 +1713,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₂ = z₂ .+ dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   fail_convergence = false
@@ -1753,7 +1753,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₃ = z₃ .+ dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   fail_convergence = false
@@ -1797,7 +1797,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₄ = z₄ .+ dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   fail_convergence = false
@@ -1884,7 +1884,7 @@ end
       end
     end
     # skip calculation of W if step is repeated
-    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(integrator.EEst)*oneunit(integrator.t))
+    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t)))
       new_W = true
       mass_matrix = integrator.sol.prob.mass_matrix
       for j in 1:length(u), i in 1:length(u)
@@ -1918,7 +1918,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₂ .+= dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
@@ -1970,7 +1970,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₃ .+= dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -2025,7 +2025,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₄ .+= dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -2128,7 +2128,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₁ = z₁ .+ dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
@@ -2170,7 +2170,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₂ = z₂ .+ dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
@@ -2212,7 +2212,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₃ = z₃ .+ dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -2254,7 +2254,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₄ = z₄ .+ dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -2296,7 +2296,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₅ = z₅ .+ dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   fail_convergence = false
@@ -2393,7 +2393,7 @@ end
       end
     end
     # skip calculation of W if step is repeated
-    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(integrator.EEst)*oneunit(integrator.t))
+    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t)))
       new_W = true
       mass_matrix = integrator.sol.prob.mass_matrix
       for j in 1:length(u), i in 1:length(u)
@@ -2423,7 +2423,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₁ .+= dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
@@ -2475,7 +2475,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₂ .+= dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
@@ -2527,7 +2527,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₃ .+= dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -2579,7 +2579,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₄ .+= dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -2631,7 +2631,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₅ .+= dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -2741,7 +2741,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₁ = z₁ .+ dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
@@ -2782,7 +2782,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₂ = z₂ .+ dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
@@ -2823,7 +2823,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₃ = z₃ .+ dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -2864,7 +2864,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₄ = z₄ .+ dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -2906,7 +2906,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₅ = z₅ .+ dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -2997,7 +2997,7 @@ end
       end
     end
     # skip calculation of W if step is repeated
-    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(integrator.EEst)*oneunit(integrator.t))
+    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t)))
       new_W = true
       mass_matrix = integrator.sol.prob.mass_matrix
       for j in 1:length(u), i in 1:length(u)
@@ -3034,7 +3034,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₁ .+= dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
@@ -3085,7 +3085,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₂ .+= dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
@@ -3136,7 +3136,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₃ .+= dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -3188,7 +3188,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₄ .+= dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -3240,7 +3240,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₅ .+= dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -3353,7 +3353,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₂ = z₂ .+ dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
@@ -3394,7 +3394,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₃ = z₃ .+ dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -3435,7 +3435,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₄ = z₄ .+ dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -3477,7 +3477,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₅ = z₅ .+ dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -3568,7 +3568,7 @@ end
       end
     end
     # skip calculation of W if step is repeated
-    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(integrator.EEst)*oneunit(integrator.t))
+    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t)))
       new_W = true
       mass_matrix = integrator.sol.prob.mass_matrix
       for j in 1:length(u), i in 1:length(u)
@@ -3603,7 +3603,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₂ .+= dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
@@ -3654,7 +3654,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₃ .+= dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -3706,7 +3706,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₄ .+= dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -3758,7 +3758,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₅ .+= dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -3867,7 +3867,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₂ = z₂ .+ dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
@@ -3908,7 +3908,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₃ = z₃ .+ dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -3949,7 +3949,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₄ = z₄ .+ dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -3990,7 +3990,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₅ = z₅ .+ dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -4031,7 +4031,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₆ = z₆ .+ dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   fail_convergence = false
@@ -4121,7 +4121,7 @@ end
       end
     end
     # skip calculation of W if step is repeated
-    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(integrator.EEst)*oneunit(integrator.t))
+    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t)))
       new_W = true
       mass_matrix = integrator.sol.prob.mass_matrix
       for j in 1:length(u), i in 1:length(u)
@@ -4156,7 +4156,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₂ .+= dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
@@ -4207,7 +4207,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₃ .+= dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -4259,7 +4259,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₄ .+= dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   fail_convergence = false
@@ -4309,7 +4309,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₅ .+= dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -4363,7 +4363,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₆ .+= dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -4475,7 +4475,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₂ = z₂ .+ dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
@@ -4516,7 +4516,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₃ = z₃ .+ dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -4557,7 +4557,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₄ = z₄ .+ dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -4598,7 +4598,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₅ = z₅ .+ dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -4639,7 +4639,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₆ = z₆ .+ dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -4681,7 +4681,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₇ = z₇ .+ dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -4772,7 +4772,7 @@ end
       end
     end
     # skip calculation of W if step is repeated
-    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(integrator.EEst)*oneunit(integrator.t))
+    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t)))
       new_W = true
       mass_matrix = integrator.sol.prob.mass_matrix
       for j in 1:length(u), i in 1:length(u)
@@ -4807,7 +4807,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₂ .+= dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
@@ -4858,7 +4858,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₃ .+= dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -4910,7 +4910,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₄ .+= dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -4961,7 +4961,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₅ .+= dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -5012,7 +5012,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₆ .+= dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -5070,7 +5070,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₇ .+= dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -5182,7 +5182,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₂ = z₂ .+ dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
@@ -5223,7 +5223,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₃ = z₃ .+ dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -5264,7 +5264,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₄ = z₄ .+ dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -5305,7 +5305,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₅ = z₅ .+ dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -5346,7 +5346,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₆ = z₆ .+ dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -5387,7 +5387,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₇ = z₇ .+ dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -5429,7 +5429,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₈ = z₈ .+ dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -5521,7 +5521,7 @@ end
       end
     end
     # skip calculation of W if step is repeated
-    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(integrator.EEst)*oneunit(integrator.t))
+    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t)))
       new_W = true
       mass_matrix = integrator.sol.prob.mass_matrix
       for j in 1:length(u), i in 1:length(u)
@@ -5556,7 +5556,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₂ .+= dz
 
-  η = max(cache.ηold,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
@@ -5607,7 +5607,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₃ .+= dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -5659,7 +5659,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₄ .+= dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -5710,7 +5710,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₅ .+= dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -5761,7 +5761,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₆ .+= dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -5818,7 +5818,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₇ .+= dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
@@ -5875,7 +5875,7 @@ end
   ndz = integrator.opts.internalnorm(dz)
   z₈ .+= dz
 
-  η = max(η,eps(first(integrator.opts.reltol)))^(0.8)
+  η = max(η,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
 
   # Newton iteration
