@@ -284,7 +284,7 @@ end
       @inbounds uhat[i]  = dtsq*(btilde1*k1[i] + btilde2*k2[i] + btilde3*k3[i] + btilde4*k4[i] + btilde5*k5[i])
       @inbounds duhat[i] = dt*(bptilde1*k1[i] + bptilde3*k3[i] + bptilde4*k4[i] + bptilde5*k5[i] + bptilde6*k6[i])
     end
-    calculate_residuals!(atmp, utilde, integrator.uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol)
+    calculate_residuals!(atmp, utilde, integrator.uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 end
@@ -347,7 +347,7 @@ end
       @inbounds uhat[i]  = dtsq*(btilde1*k1[i] + btilde3*k3[i] + btilde4*k4[i] + btilde5*k5[i] + btilde6*k6[i] + btilde7*k7[i])
       @inbounds duhat[i] = dt*(bptilde1*k1[i] + bptilde3*k3[i] + bptilde4*k4[i] + bptilde5*k5[i] + bptilde6*k6[i] + bptilde7*k7[i] + bptilde8*k8[i] + bptilde9*k9[i])
     end
-    calculate_residuals!(atmp, utilde, integrator.uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol)
+    calculate_residuals!(atmp, utilde, integrator.uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 end
@@ -450,7 +450,7 @@ end
       @inbounds uhat[i]  = dtsq*(btilde1*k1[i] + btilde7*k7[i] + btilde8*k8[i] + btilde9*k9[i] + btilde10*k10[i] + btilde11*k11[i] + btilde12*k12[i] + btilde13*k13[i] + btilde14*k14[i] + btilde15*k15[i]) # btilde1 & btilde7 -- btilde15
       @inbounds duhat[i] = dt*(bptilde1*k1[i] + bptilde7*k7[i] + bptilde8*k8[i] + bptilde9*k9[i] + bptilde10*k10[i] + bptilde11*k11[i] + bptilde12*k12[i] + bptilde13*k13[i] + bptilde14*k14[i] + bptilde15*k15[i] + bptilde16*k16[i] + bptilde17*k17[i]) # bptilde1 & bptilde7 -- bptilde17
     end
-    calculate_residuals!(atmp, utilde, integrator.uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol)
+    calculate_residuals!(atmp, utilde, integrator.uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 end
@@ -488,7 +488,7 @@ end
       @inbounds uhat[i]  = dtsq*(btilde1*k1[i] + btilde2*k2[i] + btilde3*k3[i] + btilde4*k4[i])
       @inbounds duhat[i] = dt*(bptilde1*k1[i] + bptilde2*k2[i] + bptilde3*k3[i] + bptilde4*k4[i])
     end
-    calculate_residuals!(atmp, utilde, integrator.uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol)
+    calculate_residuals!(atmp, utilde, integrator.uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 end
@@ -525,7 +525,7 @@ end
     @tight_loop_macros for i in uidx
       @inbounds uhat[i]  = dtsq*(btilde1*k1[i] + btilde2*k2[i] + btilde3*k3[i] + btilde4*k4[i])
     end
-    calculate_residuals!(atmp, uhat, integrator.uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol)
+    calculate_residuals!(atmp, uhat, integrator.uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 end

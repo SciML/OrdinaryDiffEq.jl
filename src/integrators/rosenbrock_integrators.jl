@@ -101,7 +101,7 @@ end
 
     @. tmp = dto6*(k₁ - 2*k₂ + k₃)
     # does not work with units - additional unitless array required!
-    calculate_residuals!(tmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+    calculate_residuals!(tmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(tmp)
   end
 end
@@ -207,7 +207,7 @@ end
   if integrator.opts.adaptive
     @. tmp = dto6*(k₁ - 2*k₂ + k₃)
     # does not work with units - additional unitless array required!
-    calculate_residuals!(tmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+    calculate_residuals!(tmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(tmp)
   end
 end
@@ -258,7 +258,7 @@ end
 
     utilde = @. dto6*(k₁ - 2*k₂ + k₃)
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                               integrator.opts.reltol)
+                               integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 
@@ -316,7 +316,7 @@ end
   if integrator.opts.adaptive
     utilde = @. dto6*(k₁ - 2k₂ + k₃)
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                               integrator.opts.reltol)
+                               integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 
@@ -387,7 +387,7 @@ end
   if integrator.opts.adaptive
     utilde = @. btilde1*k1 + btilde2*k2 + btilde3*k3
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                               integrator.opts.reltol)
+                               integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 
@@ -507,7 +507,7 @@ end
   if integrator.opts.adaptive
     @. utilde = btilde1*k1 + btilde2*k2 + btilde3*k3
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                         integrator.opts.reltol)
+                         integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 end
@@ -582,7 +582,7 @@ end
   if integrator.opts.adaptive
     utilde = @. btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                               integrator.opts.reltol)
+                               integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 
@@ -728,7 +728,7 @@ end
   if integrator.opts.adaptive
     @. utilde = btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                         integrator.opts.reltol)
+                         integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 end
@@ -807,7 +807,7 @@ end
   if integrator.opts.adaptive
     utilde = @. btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                               integrator.opts.reltol)
+                               integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 
@@ -947,7 +947,7 @@ end
   if integrator.opts.adaptive
     @. utilde = btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
-                         integrator.opts.reltol)
+                         integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 end
@@ -1045,7 +1045,7 @@ end
 
   if integrator.opts.adaptive
     atmp = calculate_residuals(k6, uprev, u, integrator.opts.abstol,
-                               integrator.opts.reltol)
+                               integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 
@@ -1238,7 +1238,7 @@ end
 
   if integrator.opts.adaptive
     calculate_residuals!(atmp, k6, uprev, u, integrator.opts.abstol,
-                         integrator.opts.reltol)
+                         integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 
@@ -1399,7 +1399,7 @@ end
 
   if integrator.opts.adaptive
     atmp = calculate_residuals(k8, uprev, u, integrator.opts.abstol,
-                               integrator.opts.reltol)
+                               integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 
@@ -1670,7 +1670,7 @@ end
 
   if integrator.opts.adaptive
     calculate_residuals!(atmp, k8, uprev, u, integrator.opts.abstol,
-                         integrator.opts.reltol)
+                         integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 

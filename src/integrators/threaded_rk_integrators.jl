@@ -26,7 +26,7 @@ end
   f(t+dt,u,integrator.fsallast)
   if integrator.opts.adaptive
     dp5threaded_adaptiveloop(dt,utilde,btilde1,k1,btilde3,k3,btilde4,k4,btilde5,k5,btilde6,k6,btilde7,k7,uidx)
-    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   dp5threaded_denseloop(bspl,update,k1,k3,k4,k5,k6,k7,integrator.k,d1,d3,d4,d5,d6,d7,uidx)

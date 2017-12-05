@@ -1,9 +1,9 @@
-@muladd function ode_determine_initdt{tType,uType}(u0,t::tType,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,true},order,alg)
+@muladd function ode_determine_initdt{tType,uType}(u0,t,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,true},order,alg)
   f = prob.f
   oneunit_tType = oneunit(tType)
   dtmax_tdir = tdir*dtmax
 
-  sk = @. abstol+abs(u0)*reltol
+  sk = @. abstol+internalnorm(u0)*reltol
   tmp = @. u0/sk
   d₀ = internalnorm(tmp)
 
@@ -97,12 +97,12 @@
   dt = tdir*min(100dt₀,dt₁,dtmax_tdir)
 end
 
-@muladd function ode_determine_initdt{uType,tType}(u0::uType,t,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,false},order,alg)
+@muladd function ode_determine_initdt{uType,tType}(u0,t,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,false},order,alg)
   f = prob.f
   oneunit_tType = oneunit(tType)
   dtmax_tdir = tdir*dtmax
 
-  sk = @. abstol+abs(u0)*reltol
+  sk = @. abstol+internalnorm(u0)*reltol
   d₀ = internalnorm(@. u0/sk)
 
   f₀ = f(t,u0)
