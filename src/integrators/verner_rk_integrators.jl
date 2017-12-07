@@ -29,7 +29,7 @@ end
   integrator.fsallast = f(t+dt,u); k9 = integrator.fsallast
   if integrator.opts.adaptive
     utilde = @. dt*(btilde1*k1 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9)
-    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   integrator.k[1]=k1; integrator.k[2]=k2;
@@ -87,7 +87,7 @@ end
       @tight_loop_macros for i in uidx
         @inbounds tmp[i] = dt*(btilde1*k1[i] + btilde4*k4[i] + btilde5*k5[i] + btilde6*k6[i] + btilde7*k7[i] + btilde8*k8[i] + btilde9*k9[i])
       end
-      atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+      atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
     end
   else
@@ -102,7 +102,7 @@ end
     integrator.fsallast = f(t+dt,u); k9 = integrator.fsallast
     if integrator.opts.adaptive
       utilde = dt*(btilde1*k1 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9)
-      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
     end
   end
@@ -149,7 +149,7 @@ end
   f(t+dt,u,k9)
   if integrator.opts.adaptive
     @. utilde = dt*(btilde1*k1 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9)
-    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 end
@@ -197,7 +197,7 @@ end
     @tight_loop_macros for i in uidx
       @inbounds utilde[i] = dt*(btilde1*k1[i] + btilde4*k4[i] + btilde5*k5[i] + btilde6*k6[i] + btilde7*k7[i] + btilde8*k8[i] + btilde9*k9[i])
     end
-    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 end
@@ -230,7 +230,7 @@ end
   u = @. uprev + dt*(b1*k1 + b4*k4 + b5*k5 + b6*k6 + b7*k7 + b8*k8 + b9*k9)
   if integrator.opts.adaptive
     utilde = @. dt*(btilde1*k1 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9 + btilde10*k10)
-    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   integrator.k[1]=k1; integrator.k[2]=k2;
@@ -295,7 +295,7 @@ end
       @tight_loop_macros for i in uidx
         @inbounds tmp[i] = dt*(btilde1*k1[i] + btilde4*k4[i] + btilde5*k5[i] + btilde6*k6[i] + btilde7*k7[i] + btilde8*k8[i] + btilde9*k9[i] + btilde10*k10[i])
       end
-      atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+      atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
     end
   else
@@ -311,7 +311,7 @@ end
     u = uprev + dt*(b1*k1 + b4*k4 + b5*k5 + b6*k6 + b7*k7 + b8*k8 + b9*k9)
     if integrator.opts.adaptive
       utilde = dt*(btilde1*k1 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9 + btilde10*k10)
-      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
     end
   end
@@ -359,7 +359,7 @@ end
   @. u = uprev + dt*(b1*k1 + b4*k4 + b5*k5 + b6*k6 + b7*k7 + b8*k8 + b9*k9)
   if integrator.opts.adaptive
     @. utilde = dt*(btilde1*k1 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9 + btilde10*k10)
-    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 end
@@ -415,7 +415,7 @@ end
     @tight_loop_macros for i in uidx
       @inbounds utilde[i] = dt*(btilde1*k1[i] + btilde4*k4[i] + btilde5*k5[i] + btilde6*k6[i] + btilde7*k7[i] + btilde8*k8[i] + btilde9*k9[i] + btilde10*k10[i])
     end
-    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 end
@@ -451,7 +451,7 @@ end
   u = @. uprev + dt*(b1*k1 + b6*k6 + b7*k7 + b8*k8 + b9*k9 + b10*k10 + b11*k11 + b12*k12)
   if integrator.opts.adaptive
     utilde = @. dt*(btilde1*k1 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9 + btilde10*k10 + btilde11*k11 + btilde12*k12 + btilde13*k13)
-    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   integrator.k[1]=k1; integrator.k[2]=k2;
@@ -530,7 +530,7 @@ end
       @tight_loop_macros for i in uidx
         @inbounds tmp[i] = dt*(btilde1*k1[i] + btilde6*k6[i] + btilde7*k7[i] + btilde8*k8[i] + btilde9*k9[i] + btilde10*k10[i] + btilde11*k11[i] + btilde12*k12[i] + btilde13*k13[i])
       end
-      atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+      atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
     end
   else
@@ -549,7 +549,7 @@ end
     u = uprev + dt*(b1*k1 + b6*k6 + b7*k7 + b8*k8 + b9*k9 + b10*k10 + b11*k11 + b12*k12)
     if integrator.opts.adaptive
       utilde = dt*(btilde1*k1 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9 + btilde10*k10 + btilde11*k11 + btilde12*k12 + btilde13*k13)
-      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
     end
   end
@@ -605,7 +605,7 @@ end
   @. u = uprev + dt*(b1*k1 + b6*k6 + b7*k7 + b8*k8 + b9*k9 + b10*k10 + b11*k11 + b12*k12)
   if integrator.opts.adaptive
     @. utilde = dt*(btilde1*k1 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9 + btilde10*k10 + btilde11*k11 + btilde12*k12 + btilde13*k13)
-    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 end
@@ -673,7 +673,7 @@ end
     @tight_loop_macros for i in uidx
       @inbounds utilde[i] = dt*(btilde1*k1[i] + btilde6*k6[i] + btilde7*k7[i] + btilde8*k8[i] + btilde9*k9[i] + btilde10*k10[i] + btilde11*k11[i] + btilde12*k12[i] + btilde13*k13[i])
     end
-    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 end
@@ -712,7 +712,7 @@ end
   u = @. uprev + dt*(b1*k1+b8*k8+b9*k9+b10*k10+b11*k11+b12*k12+b13*k13+b14*k14+b15*k15)
   if integrator.opts.adaptive
     utilde = @. dt*(btilde1*k1 + btilde8*k8 + btilde9*k9 + btilde10*k10 + btilde11*k11 + btilde12*k12 + btilde13*k13 + btilde14*k14 + btilde15*k15 + btilde16*k16)
-    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   integrator.k[1]=k1; integrator.k[2]=k2;
@@ -804,7 +804,7 @@ end
       @tight_loop_macros for i in uidx
         @inbounds tmp[i] = dt*(btilde1*k1[i] + btilde8*k8[i] + btilde9*k9[i] + btilde10*k10[i] + btilde11*k11[i] + btilde12*k12[i] + btilde13*k13[i] + btilde14*k14[i] + btilde15*k15[i] + btilde16*k16[i])
       end
-      atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+      atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
     end
   else
@@ -826,7 +826,7 @@ end
     u = uprev + dt*(b1*k1+b8*k8+b9*k9+b10*k10+b11*k11+b12*k12+b13*k13+b14*k14+b15*k15)
     if integrator.opts.adaptive
       utilde = dt*(btilde1*k1 + btilde8*k8 + btilde9*k9 + btilde10*k10 + btilde11*k11 + btilde12*k12 + btilde13*k13 + btilde14*k14 + btilde15*k15 + btilde16*k16)
-      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
     end
   end
@@ -889,7 +889,7 @@ end
   @. u = uprev + dt*(b1*k1+b8*k8+b9*k9+b10*k10+b11*k11+b12*k12+b13*k13+b14*k14+b15*k15)
   if integrator.opts.adaptive
     @. utilde = dt*(btilde1*k1 + btilde8*k8 + btilde9*k9 + btilde10*k10 + btilde11*k11 + btilde12*k12 + btilde13*k13 + btilde14*k14 + btilde15*k15 + btilde16*k16)
-    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 end
@@ -969,7 +969,7 @@ end
     @tight_loop_macros for i in uidx
       @inbounds utilde[i] = dt*(btilde1*k1[i] + btilde8*k8[i] + btilde9*k9[i] + btilde10*k10[i] + btilde11*k11[i] + btilde12*k12[i] + btilde13*k13[i] + btilde14*k14[i] + btilde15*k15[i] + btilde16*k16[i])
     end
-    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 end

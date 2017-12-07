@@ -21,14 +21,14 @@ u_cache(c::GenericIIF1Cache)    = ()
 du_cache(c::GenericIIF1Cache)   = (c.rtmp1,c.fsalfirst,c.k)
 dual_cache(c::GenericIIF1Cache) = (c.dual_cache,)
 
-function alg_cache(alg::GenericIIF1,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
+function alg_cache(alg::GenericIIF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
   uhold = Vector{typeof(u)}(1)
   rhs = RHS_IIF_Scalar(f,zero(u),t,t,one(uEltypeNoUnits))
   nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
   GenericIIF1ConstantCache(uhold,rhs,nl_rhs)
 end
 
-function alg_cache(alg::GenericIIF1,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
+function alg_cache(alg::GenericIIF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
   tmp = similar(u,indices(u)); rtmp1 = zeros(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
   A = f.f1
@@ -62,7 +62,7 @@ u_cache(c::GenericIIF2Cache)    = ()
 du_cache(c::GenericIIF2Cache)   = (c.rtmp1,c.fsalfirst,c.k)
 dual_cache(c::GenericIIF2Cache) = (c.dual_cache,)
 
-function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
+function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
   uhold = Vector{typeof(u)}(1)
   tmp = zero(u)
   rhs = RHS_IIF_Scalar(f,tmp,t,t,uEltypeNoUnits(1//2))
@@ -70,7 +70,7 @@ function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits
   GenericIIF2ConstantCache(uhold,rhs,nl_rhs)
 end
 
-function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
+function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
   tmp = similar(u,indices(u)); rtmp1 = zeros(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
   A = f.f1
@@ -91,7 +91,7 @@ struct LawsonEulerCache{uType,rateType,expType} <: OrdinaryDiffEqMutableCache
   fsalfirst::rateType
 end
 
-function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
+function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
   A = f.f1
   expA = expm(A*dt)
   LawsonEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),expA,zeros(rate_prototype))
@@ -102,7 +102,7 @@ du_cache(c::LawsonEulerCache) = (c.k,c.fsalfirst,c.rtmp)
 
 struct LawsonEulerConstantCache <: OrdinaryDiffEqConstantCache end
 
-alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}}) = LawsonEulerConstantCache()
+alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}}) = LawsonEulerConstantCache()
 
 struct NorsettEulerCache{uType,rateType,expType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -115,7 +115,7 @@ struct NorsettEulerCache{uType,rateType,expType} <: OrdinaryDiffEqMutableCache
   fsalfirst::rateType
 end
 
-function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
+function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
   A = f.f1
   expA = expm(A*dt)
   phi1 = ((expA-I)/A)
@@ -127,4 +127,4 @@ du_cache(c::NorsettEulerCache) = (c.k,c.fsalfirst)
 
 struct NorsettEulerConstantCache <: OrdinaryDiffEqConstantCache end
 
-alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}}) = NorsettEulerConstantCache()
+alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}}) = NorsettEulerConstantCache()

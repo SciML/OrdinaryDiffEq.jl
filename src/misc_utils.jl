@@ -74,14 +74,15 @@ Save element-wise residuals
 ```
 in `out`.
 """
-@inline @muladd function calculate_residuals!(out, ũ, u₀, u₁, α, ρ)
-    @. out = ũ / (α + max(abs(u₀), abs(u₁)) * ρ)
+@inline @muladd function calculate_residuals!(out, ũ, u₀, u₁, α, ρ, internalnorm)
+    @. out = ũ / (α + max(internalnorm(u₀), internalnorm(u₁)) * ρ)
 end
 
 @inline @muladd function calculate_residuals!(out::Array{T}, ũ::Array{T}, u₀::Array{T},
-                                              u₁::Array{T}, α::T, ρ::Real) where {T<:Number}
+                                              u₁::Array{T}, α::T, ρ::Real,
+                                              internalnorm) where {T<:Number}
     @tight_loop_macros for i in eachindex(out)
-        @inbounds out[i] = ũ[i] / (α + max(abs(u₀[i]), abs(u₁[i])) * ρ)
+        @inbounds out[i] = ũ[i] / (α + max(internalnorm(u₀[i]), internalnorm(u₁[i])) * ρ)
     end
 end
 
@@ -94,14 +95,15 @@ Save element-wise residuals
 ```
 in `out`.
 """
-@inline @muladd function calculate_residuals!(out, u₀, u₁, α, ρ)
-    @. out = (u₁ - u₀) / (α + max(abs(u₀), abs(u₁)) * ρ)
+@inline @muladd function calculate_residuals!(out, u₀, u₁, α, ρ, internalnorm)
+    @. out = (u₁ - u₀) / (α + max(internalnorm(u₀), internalnorm(u₁)) * ρ)
 end
 
 @inline @muladd function calculate_residuals!(out::Array{T}, u₀::Array{T},
-                                              u₁::Array{T}, α::T, ρ::Real) where {T<:Number}
+                                              u₁::Array{T}, α::T, ρ::Real,
+                                              internalnorm) where {T<:Number}
     @tight_loop_macros for i in eachindex(out)
-        @inbounds out[i] = (u₁[i] - u₀[i]) / (α + max(abs(u₀[i]), abs(u₁[i])) * ρ)
+        @inbounds out[i] = (u₁[i] - u₀[i]) / (α + max(internalnorm(u₀[i]), internalnorm(u₁[i])) * ρ)
     end
 end
 
@@ -113,14 +115,14 @@ Calculate element-wise residuals
 \frac{ũ}{α+\max{|u₀|,|u₁|}*ρ}.
 ```
 """
-@inline @muladd function calculate_residuals(ũ, u₀, u₁, α, ρ)
-    @. ũ / (α + max(abs(u₀), abs(u₁)) * ρ)
+@inline @muladd function calculate_residuals(ũ, u₀, u₁, α, ρ, internalnorm)
+    @. ũ / (α + max(internalnorm(u₀), internalnorm(u₁)) * ρ)
 end
 
 @inline @muladd function calculate_residuals(ũ::Array{T}, u₀::Array{T}, u₁::Array{T}, α::T,
-                                             ρ::Real) where {T<:Number}
+                                             ρ::Real, internalnorm) where {T<:Number}
     out = similar(ũ)
-    calculate_residuals!(out, ũ, u₀, u₁, α, ρ)
+    calculate_residuals!(out, ũ, u₀, u₁, α, ρ, internalnorm)
     out
 end
 
@@ -132,14 +134,14 @@ Calculate element-wise residuals
 \frac{u₁-u₀}{α+\max{|u₀|,|u₁|}*ρ}.
 ```
 """
-@inline @muladd function calculate_residuals(u₀, u₁, α, ρ)
-    @. (u₁ - u₀) / (α + max(abs(u₀), abs(u₁)) * ρ)
+@inline @muladd function calculate_residuals(u₀, u₁, α, ρ, internalnorm)
+    @. (u₁ - u₀) / (α + max(internalnorm(u₀), internalnorm(u₁)) * ρ)
 end
 
 @inline @muladd function calculate_residuals(u₀::Array{T}, u₁::Array{T}, α::T,
-                                             ρ::Real) where {T<:Number}
+                                             ρ::Real, internalnorm) where {T<:Number}
     out = similar(u₀)
-    calculate_residuals!(out, u₀, u₁, α, ρ)
+    calculate_residuals!(out, u₀, u₁, α, ρ, internalnorm)
     out
 end
 

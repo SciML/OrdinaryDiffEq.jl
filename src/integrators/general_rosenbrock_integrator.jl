@@ -47,7 +47,7 @@ end
       utilde = @. utilde + (α[i]-αEEst[i])*kk[i]
     end
     utilde = dt*utilde
-    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol)
+    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 
