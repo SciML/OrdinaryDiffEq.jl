@@ -188,7 +188,7 @@ end
     u = utmp
     k6 = f(t+dt,u); integrator.fsallast = k6
     if integrator.opts.adaptive
-      atmp = similar(u, typeof(one(recursive_eltype(u))), indices(u))
+      atmp = similar(u, typeof(one(recursive_unitless_eltype(u))), indices(u))
       @tight_loop_macros for i in uidx
         @inbounds tmp[i] = dt*(btilde1*k1[i] + btilde3*k3[i] + btilde4*k4[i] + btilde5*k5[i])
       end

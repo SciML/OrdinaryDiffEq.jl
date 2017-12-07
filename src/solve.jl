@@ -89,20 +89,21 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   end
 
   uType = typeof(u)
-  uEltype = recursive_eltype(u)
+  uBottomEltype = recursive_bottom_eltype(u)
+  uBottomEltypeNoUnits = recursive_unitless_bottom_eltype(u)
 
   ks = Vector{uType}(0)
 
   order = alg_order(alg)
 
-  uEltypeNoUnits = typeof(one(uEltype))
+  uEltypeNoUnits = recursive_unitless_eltype(u)
   tTypeNoUnits   = typeof(one(tType))
 
   if typeof(alg) <: Discrete
     abstol_internal = zero(u)
   elseif abstol == nothing
-    if uEltypeNoUnits == uEltype || !(typeof(u) <: ArrayPartition)
-      abstol_internal = uEltype(uEltype(1)*1//10^6)
+    if uBottomEltypeNoUnits == uBottomEltype || !(typeof(u) <: ArrayPartition)
+      abstol_internal = uBottomEltype(uBottomEltype(1)*1//10^6)
     else
       abstol_internal = ones(u).*1//10^6
     end
@@ -113,7 +114,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   if typeof(alg) <: Discrete
     reltol_internal = zero(first(u)/t)
   elseif reltol == nothing
-    reltol_internal = uEltypeNoUnits(1//10^3)
+    reltol_internal = uBottomEltypeNoUnits(1//10^3)
   else
     reltol_internal = reltol
   end
@@ -123,9 +124,9 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
 
   if isinplace(prob) && typeof(u) <: AbstractArray && eltype(u) <: Number # Could this be more efficient for other arrays?
     if !(typeof(u) <: ArrayPartition)
-      rate_prototype = similar(u,typeof(oneunit(uEltype)/oneunit(tType)),indices(u))
+      rate_prototype = similar(u,typeof(oneunit(uBottomEltype)/oneunit(tType)),indices(u))
     else
-      rate_prototype = similar(u, typeof.(oneunit.(recursive_eltype.(u.x))./oneunit(tType))...)
+      rate_prototype = similar(u, typeof.(oneunit.(recursive_bottom_eltype.(u.x))./oneunit(tType))...)
     end
   else
     rate_prototype = u./oneunit(tType)
@@ -214,7 +215,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     uprev2 = uprev
   end
 
-  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol_internal,Val{isinplace(prob)})
+  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol_internal,Val{isinplace(prob)})
 
   if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
     id = CompositeInterpolationData(f,timeseries,ts,ks,alg_choice,notsaveat_idxs,dense,cache)

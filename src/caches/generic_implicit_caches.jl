@@ -15,7 +15,7 @@ u_cache(c::GenericImplicitEulerCache)    = (c.uprev2,)
 du_cache(c::GenericImplicitEulerCache)   = (c.k,c.fsalfirst)
 dual_cache(c::GenericImplicitEulerCache) = (c.dual_cache,)
 
-function alg_cache(alg::GenericImplicitEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
+function alg_cache(alg::GenericImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits,indices(u))
   k = zeros(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
@@ -34,7 +34,7 @@ struct GenericImplicitEulerConstantCache{vecuType,rhsType,nl_rhsType} <: Ordinar
   nl_rhs::nl_rhsType
 end
 
-function alg_cache(alg::GenericImplicitEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,
+function alg_cache(alg::GenericImplicitEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
   uhold = Vector{typeof(u)}(1)
   rhs = ImplicitRHS_Scalar(f,zero(u),t,t,t)
@@ -61,7 +61,7 @@ u_cache(c::GenericTrapezoidCache)    = (c.uprev2,c.uprev3)
 du_cache(c::GenericTrapezoidCache)   = (c.k,c.fsalfirst)
 dual_cache(c::GenericTrapezoidCache) = (c.dual_cache,)
 
-function alg_cache(alg::GenericTrapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
+function alg_cache(alg::GenericTrapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits,indices(u))
   k = zeros(rate_prototype)
   fsalfirst = zeros(rate_prototype)
@@ -85,7 +85,7 @@ mutable struct GenericTrapezoidConstantCache{vecuType,rhsType,nl_rhsType,uType,t
   tprev2::tType
 end
 
-function alg_cache(alg::GenericTrapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
+function alg_cache(alg::GenericTrapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
   uhold = Vector{typeof(u)}(1)
   rhs = ImplicitRHS_Scalar(f,zero(u),t,t,t)
   nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
