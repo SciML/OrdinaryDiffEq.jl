@@ -328,9 +328,12 @@ end
     # determine output type
     # required for calculation of time derivatives with autodifferentiation
     oneunit_Θ = oneunit(Θ)
-    S = promote_type(typeof(oneunit_Θ * oneunit(eltype(y₀))), # Θ*y₀
+    if isempty(k)
+      S = promote_type(typeof(oneunit_Θ * oneunit(eltype(y₀)))) # Θ*y₀
+    else
+      S = promote_type(typeof(oneunit_Θ * oneunit(eltype(y₀))), # Θ*y₀
                      typeof(oneunit_Θ * oneunit(dt) * oneunit(eltype(k[1])))) # Θ*dt*k
-
+    end
     if typeof(idxs) <: Void
       out = similar(y₀, S)
     else
