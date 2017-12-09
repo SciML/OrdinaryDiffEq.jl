@@ -7,7 +7,7 @@
   tmp = @. u0/sk
   d₀ = internalnorm(tmp)
 
-  f₀ = zeros(u0./t)
+  f₀ = u0/t; fill!(f₀,zero(eltype(f₀)))
   f(t,u0,f₀)
 
 
