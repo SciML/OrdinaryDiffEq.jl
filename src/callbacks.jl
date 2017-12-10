@@ -93,8 +93,10 @@ function find_callback_time(integrator,callback)
     else
       if callback.interp_points!=0
         top_Θ = Θs[interp_index] # Top at the smallest
+        bottom_θ = Θs[prev_sign_index]
       else
         top_Θ = typeof(integrator.t)(1)
+        bottom_θ = typeof(integrator.t)(0)
       end
       if callback.rootfind && !(typeof(integrator.alg) <: Discrete)
         if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache
@@ -112,7 +114,7 @@ function find_callback_time(integrator,callback)
           end
           callback.condition(integrator.tprev+Θ*integrator.dt,tmp,integrator)
         end
-        Θ = prevfloat(prevfloat(fzero(find_zero,Θs[prev_sign_index],top_Θ)))
+        Θ = prevfloat(prevfloat(fzero(find_zero,bottom_θ,top_Θ)))
         # 2 prevfloat guerentees that the new time is either 1 or 2 floating point
         # numbers just before the event, but not after. If there's a barrier
         # which is never supposed to be crossed, then this will ensure that
