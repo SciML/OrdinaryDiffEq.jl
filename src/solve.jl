@@ -70,10 +70,6 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
       error("Fixed timestep methods require a choice of dt or choosing the tstops")
   end
 
-  if tspan[1] == tspan[end]
-    error("Timespan is trivial")
-  end
-
   f = prob.f
 
   # Get the control variables
