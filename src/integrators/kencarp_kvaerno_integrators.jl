@@ -10,16 +10,9 @@ function initialize!(integrator, cache::Kvaerno3ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::Kvaerno3ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uf,κ,tol = cache
   @unpack γ,a31,a32,a41,a42,a43,btilde1,btilde2,btilde3,btilde4,c3,α31,α32 = cache.tab
-
-  if typeof(integrator.f) <: Tuple
-    f = integrator.f[1]
-    f2 = integrator.f[2]
-  else
-    f = integrator.f
-  end
 
   # precalculations
   κtol = κ*tol
@@ -194,28 +187,13 @@ function initialize!(integrator, cache::Kvaerno3Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-
-  if typeof(integrator.f) <: Tuple
-    f = integrator.f[1]
-    f2 = integrator.f[2]
-  else
-    f = integrator.f
-  end
-
-  f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
 @muladd function perform_step!(integrator, cache::Kvaerno3Cache, repeat_step=false)
-  @unpack t,dt,uprev,u = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uf,du1,dz,z₁,z₂,z₃,z₄,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
   @unpack γ,a31,a32,a41,a42,a43,btilde1,btilde2,btilde3,btilde4,c3,α31,α32 = cache.tab
-
-  if typeof(integrator.f) <: Tuple
-    f = integrator.f[1]
-    f2 = integrator.f[2]
-  else
-    f = integrator.f
-  end
 
   # precalculations
   κtol = κ*tol
@@ -440,7 +418,15 @@ end
 function initialize!(integrator, cache::KenCarp3ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
+
+  if typeof(integrator.f) <: Tuple
+    f = integrator.f[1]
+    f2 = integrator.f[2]
+  else
+    f = integrator.f
+  end
+
+  integrator.fsalfirst = f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -1394,7 +1380,15 @@ end
 function initialize!(integrator, cache::KenCarp4ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
+
+  if typeof(integrator.f) <: Tuple
+    f = integrator.f[1]
+    f2 = integrator.f[2]
+  else
+    f = integrator.f
+  end
+
+  integrator.fsalfirst = f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -2729,7 +2723,15 @@ end
 function initialize!(integrator, cache::KenCarp5ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
+
+  if typeof(integrator.f) <: Tuple
+    f = integrator.f[1]
+    f2 = integrator.f[2]
+  else
+    f = integrator.f
+  end
+
+  fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
