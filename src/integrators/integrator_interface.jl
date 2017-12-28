@@ -41,6 +41,14 @@ function set_proposed_dt!(integrator::ODEIntegrator,integrator2::ODEIntegrator)
   integrator.dtacc = integrator2.dtacc
 end
 
+@inline function DiffEqBase.get_du(integrator::ODEIntegrator)
+  integrator.fsallast
+end
+
+@inline function DiffEqBase.get_du!(out,integrator::ODEIntegrator)
+  out .= integrator.fsallast
+end
+
 user_cache(integrator::ODEIntegrator) = user_cache(integrator.cache)
 u_cache(integrator::ODEIntegrator) = u_cache(integrator.cache)
 du_cache(integrator::ODEIntegrator)= du_cache(integrator.cache)
