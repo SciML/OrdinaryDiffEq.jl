@@ -426,7 +426,7 @@ function initialize!(integrator, cache::KenCarp3ConstantCache)
     f = integrator.f
   end
 
-  integrator.fsalfirst = f(integrator.t, integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -481,7 +481,8 @@ end
   tmp = @. uprev + γ*z₁
 
   if typeof(integrator.f) <: SplitFunction
-    k1 = dt*f2(t,uprev)
+    # This assumes the implicit part is cheaper than the explicit part
+    k1 = dt*integrator.fsalfirst - z₁
     tmp += ea21*k1
   end
 
@@ -640,9 +641,9 @@ end
   end
 
   if typeof(integrator.f) <: SplitFunction
-    integrator.k[1] = integrator.f(t,uprev)
-    integrator.k[2] = integrator.f(t+dt,u)
-    integrator.fsallast = f(t+dt,u)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.fsallast = integrator.f(t+dt,u)
+    integrator.k[2] = integrator.fsallast
   else
     integrator.fsallast = z₄./dt
     integrator.k[1] = integrator.fsalfirst
