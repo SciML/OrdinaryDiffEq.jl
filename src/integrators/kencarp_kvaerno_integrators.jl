@@ -10,9 +10,16 @@ function initialize!(integrator, cache::Union{Kvaerno3ConstantCache,KenCarp3Cons
 end
 
 @muladd function perform_step!(integrator, cache::Union{Kvaerno3ConstantCache,KenCarp3ConstantCache}, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u = integrator
   @unpack uf,κ,tol = cache
   @unpack γ,a31,a32,a41,a42,a43,btilde1,btilde2,btilde3,btilde4,c3,α31,α32 = cache.tab
+
+  if typeof(integrator.f) <: Tuple
+    f = integrator.f[1]
+    f2 = integrator.f[2]
+  else
+    f = integrator.f
+  end
 
   # precalculations
   κtol = κ*tol
@@ -187,13 +194,28 @@ function initialize!(integrator, cache::Union{Kvaerno3Cache,KenCarp3Cache})
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
+
+  if typeof(integrator.f) <: Tuple
+    f = integrator.f[1]
+    f2 = integrator.f[2]
+  else
+    f = integrator.f
+  end
+
+  f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
 @muladd function perform_step!(integrator, cache::Union{Kvaerno3Cache,KenCarp3Cache}, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u = integrator
   @unpack uf,du1,dz,z₁,z₂,z₃,z₄,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
   @unpack γ,a31,a32,a41,a42,a43,btilde1,btilde2,btilde3,btilde4,c3,α31,α32 = cache.tab
+
+  if typeof(integrator.f) <: Tuple
+    f = integrator.f[1]
+    f2 = integrator.f[2]
+  else
+    f = integrator.f
+  end
 
   # precalculations
   κtol = κ*tol
@@ -942,11 +964,18 @@ function initialize!(integrator, cache::KenCarp4ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::KenCarp4ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u = integrator
   @unpack uf,κ,tol = cache
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,c3,c4,c5 = cache.tab
   @unpack α31,α32,α41,α42,α51,α52,α53,α54,α61,α62,α63,α64,α65 = cache.tab
   @unpack btilde1,btilde3,btilde4,btilde5,btilde6 = cache.tab
+
+  if typeof(integrator.f) <: Tuple
+    f = integrator.f[1]
+    f2 = integrator.f[2]
+  else
+    f = integrator.f
+  end
 
   # precalculations
   κtol = κ*tol
@@ -1203,15 +1232,28 @@ function initialize!(integrator, cache::KenCarp4Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  if typeof(integrator.f) <: Tuple
+    f = integrator.f[1]
+    f2 = integrator.f[2]
+  else
+    f = integrator.f
+  end
+  f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
 @muladd function perform_step!(integrator, cache::KenCarp4Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u = integrator
   @unpack uf,du1,dz,z₁,z₂,z₃,z₄,z₅,z₆,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,c3,c4,c5 = cache.tab
   @unpack α31,α32,α41,α42,α51,α52,α53,α54,α61,α62,α63,α64,α65 = cache.tab
   @unpack btilde1,btilde3,btilde4,btilde5,btilde6 = cache.tab
+
+  if typeof(integrator.f) <: Tuple
+    f = integrator.f[1]
+    f2 = integrator.f[2]
+  else
+    f = integrator.f
+  end
 
   # precalculations
   κtol = κ*tol
@@ -2257,11 +2299,18 @@ function initialize!(integrator, cache::KenCarp5ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::KenCarp5ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u = integrator
   @unpack uf,κ,tol = cache
   @unpack γ,a31,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a84,a85,a86,a87,c3,c4,c5,c6,c7 = cache.tab
   @unpack α31,α32,α41,α42,α51,α52,α61,α62,α71,α72,α73,α74,α75,α81,α82,α83,α84,α85 = cache.tab
   @unpack btilde1,btilde4,btilde5,btilde6,btilde7,btilde8 = cache.tab
+
+  if typeof(integrator.f) <: Tuple
+    f = integrator.f[1]
+    f2 = integrator.f[2]
+  else
+    f = integrator.f
+  end
 
   # precalculations
   κtol = κ*tol
@@ -2603,15 +2652,28 @@ function initialize!(integrator, cache::KenCarp5Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  if typeof(integrator.f) <: Tuple
+    f = integrator.f[1]
+    f2 = integrator.f[2]
+  else
+    f = integrator.f
+  end
+  f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
 @muladd function perform_step!(integrator, cache::KenCarp5Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u = integrator
   @unpack uf,du1,dz,z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
   @unpack γ,a31,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a84,a85,a86,a87,c3,c4,c5,c6,c7 = cache.tab
   @unpack α31,α32,α41,α42,α51,α52,α61,α62,α71,α72,α73,α74,α75,α81,α82,α83,α84,α85 = cache.tab
   @unpack btilde1,btilde4,btilde5,btilde6,btilde7,btilde8 = cache.tab
+
+  if typeof(integrator.f) <: Tuple
+    f = integrator.f[1]
+    f2 = integrator.f[2]
+  else
+    f = integrator.f
+  end
 
   # precalculations
   κtol = κ*tol
