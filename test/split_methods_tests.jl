@@ -73,7 +73,7 @@ f2 = (t,u) -> u
 
 prob = SplitODEProblem(f1,f2,1.0,(0.0,1.0))
 function (::typeof(prob.f))(::Type{Val{:analytic}},t,u0)
-    exp(3t)*u0
+    exp(2t)*u0
 end
 
 sol = solve(prob,KenCarp3())
