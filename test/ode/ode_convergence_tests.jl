@@ -96,3 +96,7 @@ for i = 1:2
   sim114 = test_convergence(dts,prob,KenCarp5())
   @test abs(sim114.𝒪est[:final]-5) < testTol
 end
+
+
+
+sim17 = test_convergence(dts,probArr[2],KenCarp3())

@@ -2789,7 +2789,7 @@ function initialize!(integrator, cache::KenCarp5ConstantCache)
     f = integrator.f
   end
 
-  fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -3157,7 +3157,7 @@ function initialize!(integrator, cache::KenCarp5Cache)
   else
     f = integrator.f
   end
-  f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
 @muladd function perform_step!(integrator, cache::KenCarp5Cache, repeat_step=false)
