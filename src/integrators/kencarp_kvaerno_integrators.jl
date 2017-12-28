@@ -519,17 +519,17 @@ end
 
   ################################## Solve Step 3
 
-  # Guess is from Hermite derivative on z₁ and z₂
-  z₃ = @. α31*z₁ + α32*z₂
-
   iter = 1
   tstep = t + c3*dt
 
   if typeof(integrator.f) <: SplitFunction
+    z₃ = z₂
     u = @. tmp + γ*z₂
     k2 = dt*f2(tstep, u)
     tmp = @. uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
   else
+    # Guess is from Hermite derivative on z₁ and z₂
+    z₃ = @. α31*z₁ + α32*z₂
     tmp = @. uprev + a31*z₁ + a32*z₂
   end
 
@@ -567,17 +567,17 @@ end
 
   ################################## Solve Step 4
 
-  @unpack α41,α42 = cache.tab
-  z₄ = @. α41*z₁ + α42*z₂
-
   iter = 1
   tstep = t + dt
 
   if typeof(integrator.f) <: SplitFunction
+    z₄ = z₃
     u = @. tmp + γ*z₃
     k3 = dt*f2(tstep, u)
     tmp = @. uprev + a41*z₁ + a42*z₂ + a43*z₃ + ea41*k1 + ea42*k2 + ea43*k3
   else
+    @unpack α41,α42 = cache.tab
+    z₄ = @. α41*z₁ + α42*z₂
     tmp = @. uprev + a41*z₁ + a42*z₂ + a43*z₃
   end
 

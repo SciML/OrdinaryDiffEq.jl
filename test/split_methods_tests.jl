@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, DiffEqDevTools, Base.Test
+testTol = 0.2
 
 # Test that the infrustructure works
 
@@ -44,14 +45,11 @@ prob = SplitODEProblem(f1,f2,1.0,(0.0,1.0))
 function (::typeof(prob.f))(::Type{Val{:analytic}},t,u0)
     exp(2t)*u0
 end
-sol = solve(prob,SplitEuler(),dt=1/10)
-sol2 = solve(prob,Euler(),dt=1/10)
-@test sol2[end] == sol[end]
-@test sol2(0.345) == sol(0.345)
 
 sol = solve(prob,KenCarp3())
 dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp3())
+@test abs(sim.𝒪est[:l∞]-3) < testTol
 
 # Now test only the second part
 
@@ -62,14 +60,11 @@ prob = SplitODEProblem(f1,f2,1.0,(0.0,1.0))
 function (::typeof(prob.f))(::Type{Val{:analytic}},t,u0)
     exp(2t)*u0
 end
-sol = solve(prob,SplitEuler(),dt=1/10)
-sol2 = solve(prob,Euler(),dt=1/10)
-@test sol2[end] == sol[end]
-@test sol2(0.345) == sol(0.345)
 
 sol = solve(prob,KenCarp3())
 dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp3())
+@test abs(sim.𝒪est[:l∞]-3) < testTol
 
 # Test together
 
@@ -78,9 +73,10 @@ f2 = (t,u) -> u
 
 prob = SplitODEProblem(f1,f2,1.0,(0.0,1.0))
 function (::typeof(prob.f))(::Type{Val{:analytic}},t,u0)
-    exp(2t)*u0
+    exp(3t)*u0
 end
 
-sol = solve(prob,KenCarp3(),dt=1/8)
-dts = 1.//2.^(8:-1:4)
-sim = test_convergence(dts,prob,KenCarp3(min_newton_iter=5))
+sol = solve(prob,KenCarp3())
+dts = 1.//2.^(12:-1:8)
+sim = test_convergence(dts,prob,KenCarp3())
+@test abs(sim.𝒪est[:l∞]-3) < testTol
