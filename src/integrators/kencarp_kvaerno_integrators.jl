@@ -653,20 +653,15 @@ function initialize!(integrator, cache::KenCarp3Cache)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
 
-  if typeof(integrator.f) <: SplitFunction
-    f = integrator.f.f1
-    f2 = integrator.f.f2
-  else
-    f = integrator.f
-  end
-
-  f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
 @muladd function perform_step!(integrator, cache::KenCarp3Cache, repeat_step=false)
   @unpack t,dt,uprev,u = integrator
-  @unpack uf,du1,dz,z₁,z₂,z₃,z₄,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
+  @unpack uf,du1,dz,z₁,z₂,z₃,z₄,k1,k2,k3,k4,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
   @unpack γ,a31,a32,a41,a42,a43,btilde1,btilde2,btilde3,btilde4,c3,α31,α32 = cache.tab
+  @unpack ea21,ea31,ea32,ea41,ea42,ea43,eb1,eb2,eb3,eb4 = cache.tab
+  @unpack ebtilde1,ebtilde2,ebtilde3,ebtilde4 = cache.tab
 
   if typeof(integrator.f) <: SplitFunction
     f = integrator.f.f1
@@ -712,11 +707,9 @@ end
     # Explicit tableau is not FSAL
     # Make this not compute on repeat
     if !repeat_step && !integrator.last_stepfail
-      f(integrator.t, integrator.uprev, integrator.fsalfirst)
-      f2(integrator.t, integrator.uprev, k1)
+      f(integrator.t, integrator.uprev, z₁)
+      z₁ .*= dt
     end
-    @. z₁ = dt*integrator.fsalfirst
-    @. z₁ += dt*a21*k1
   else
     # FSAL Step 1
     @. z₁ = dt*integrator.fsalfirst
@@ -731,11 +724,12 @@ end
   iter = 1
   tstep = t + 2*γdt
 
+  @. tmp = uprev + γ*z₁
+
   if typeof(integrator.f) <: SplitFunction
-    f2(integrator.t, integrator.uprev, k1)
-    @. tmp = uprev + γ*z₁
-  else
-    @. tmp = uprev + γ*z₁
+    # This assumes the implicit part is cheaper than the explicit part
+    @. k1 = dt*integrator.fsalfirst - z₁
+    @. tmp += ea21*k1
   end
 
   @. u = tmp + γ*z₂
@@ -783,13 +777,21 @@ end
 
   ################################## Solve Step 3
 
-  # Guess is from Hermite derivative on z₁ and z₂
-  @. z₃ = α31*z₁ + α32*z₂
-
   # initial step of Newton iteration
   iter = 1
   tstep = t + c3*dt
-  @. tmp = uprev + a31*z₁ + a32*z₂
+
+  if typeof(integrator.f) <: SplitFunction
+    z₃ .= z₂
+    @. u = tmp + γ*z₂
+    f2(tstep, u, k2); k2 .*= dt
+    @. tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
+  else
+    # Guess is from Hermite derivative on z₁ and z₂
+    @. z₃ = α31*z₁ + α32*z₂
+    @. tmp = uprev + a31*z₁ + a32*z₂
+  end
+
   @. u = tmp + γ*z₃
   f(tstep,u,k)
   @. b = dt*k - z₃
@@ -835,16 +837,23 @@ end
 
   ################################## Solve Step 4
 
-  if typeof(cache) <: Kvaerno3Cache
-    @. z₄ = a31*z₁ + a32*z₂ + γ*z₃ # use yhat as prediction
-  elseif typeof(cache) <: KenCarp3Cache
-    @unpack α41,α42 = cache.tab
-    @. z₄ = α41*z₁ + α42*z₂
-  end
-
   iter = 1
   tstep = t + dt
-  @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
+
+  if typeof(integrator.f) <: SplitFunction
+    z₄ .= z₃
+    @. u = tmp + γ*z₃
+    f2(tstep, u, k3); k3 .*= dt
+    #@. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃ + ea41*k1 + ea42*k2 + ea43*k3
+    for i in eachindex(tmp)
+      tmp[i] = uprev[i] + a41*z₁[i] + a42*z₂[i] + a43*z₃[i] + ea41*k1[i] + ea42*k2[i] + ea43*k3[i]
+    end
+  else
+    @unpack α41,α42 = cache.tab
+    @. z₄ = α41*z₁ + α42*z₂
+    @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
+  end
+
   @. u = tmp + γ*z₄
   f(tstep,u,k)
   @. b = dt*k - z₄
@@ -889,6 +898,10 @@ end
   end
 
   @. u = tmp + γ*z₄
+  if typeof(integrator.f) <: SplitFunction
+    f2(tstep, u, k4); k4 .*= dt
+    @. u = uprev + a41*z₁ + a42*z₂ + a43*z₃ + γ*z₄ + eb1*k1 + eb2*k2 + eb3*k3 + eb4*k4
+  end
 
   ################################### Finalize
 
@@ -896,7 +909,14 @@ end
   cache.newton_iters = iter
 
   if integrator.opts.adaptive
-    @. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄
+    if typeof(integrator.f) <: SplitFunction
+      #@. dz = btilde1*z₁  + btilde2*z₂  + btilde3*z₃ + btilde4*z₄ + ebtilde1*k1 + ebtilde2*k2 + ebtilde3*k3 + ebtilde4*k4
+      for i in eachindex(dz)
+        dz[i] = btilde1*z₁[i]  + btilde2*z₂[i]  + btilde3*z₃[i] + btilde4*z₄[i] + ebtilde1*k1[i] + ebtilde2*k2[i] + ebtilde3*k3[i] + ebtilde4*k4[i]
+      end
+    else
+      @. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄
+    end
     if integrator.alg.smooth_est # From Shampine
       if has_invW(f)
         A_mul_B!(vec(tmp),W,vec(dz))
@@ -910,7 +930,11 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 
-  @. integrator.fsallast = z₄/dt
+  if typeof(integrator.f) <: SplitFunction
+    integrator.f(t+dt,u,integrator.fsallast)
+  else
+    @. integrator.fsallast = z₄/dt
+  end
 end
 
 function initialize!(integrator, cache::Kvaerno4ConstantCache)

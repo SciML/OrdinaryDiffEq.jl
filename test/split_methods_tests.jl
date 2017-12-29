@@ -110,3 +110,78 @@ sol = solve(prob,KenCarp5())
 dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
 @test abs(sim.𝒪est[:l∞]-5) < testTol
+
+# Now test only the first part
+
+f1 = (t,u,du) -> du .= 2u
+f2 = (t,u,du) -> du .= 0.0
+
+prob = SplitODEProblem(f1,f2,rand(4,2),(0.0,1.0))
+function (::typeof(prob.f))(::Type{Val{:analytic}},t,u0)
+    exp(2t)*u0
+end
+
+sol = solve(prob,KenCarp3())
+dts = 1.//2.^(8:-1:4)
+sim = test_convergence(dts,prob,KenCarp3())
+@test abs(sim.𝒪est[:l∞]-3) < testTol
+
+sol = solve(prob,KenCarp4())
+dts = 1.//2.^(8:-1:4)
+sim = test_convergence(dts,prob,KenCarp4())
+@test abs(sim.𝒪est[:l∞]-4) < testTol
+
+sol = solve(prob,KenCarp5())
+dts = 1.//2.^(8:-1:4)
+sim = test_convergence(dts,prob,KenCarp5())
+@test abs(sim.𝒪est[:l∞]-5) < testTol
+
+# Now test only the second part
+
+f1 = (t,u,du) -> du.= 0.0
+f2 = (t,u,du) -> du.= 2u
+
+prob = SplitODEProblem(f1,f2,rand(4,2),(0.0,1.0))
+function (::typeof(prob.f))(::Type{Val{:analytic}},t,u0)
+    exp(2t)*u0
+end
+
+sol = solve(prob,KenCarp3())
+dts = 1.//2.^(8:-1:4)
+sim = test_convergence(dts,prob,KenCarp3())
+@test abs(sim.𝒪est[:l∞]-3) < testTol
+
+sol = solve(prob,KenCarp4())
+dts = 1.//2.^(8:-1:4)
+sim = test_convergence(dts,prob,KenCarp4())
+@test abs(sim.𝒪est[:l∞]-4) < testTol
+
+sol = solve(prob,KenCarp5())
+dts = 1.//2.^(8:-1:4)
+sim = test_convergence(dts,prob,KenCarp5())
+@test abs(sim.𝒪est[:l∞]-5) < testTol
+
+# Test together
+
+f1 = (t,u,du) -> du .= u
+f2 = (t,u,du) -> du .= u
+
+prob = SplitODEProblem(f1,f2,rand(4,2),(0.0,1.0))
+function (::typeof(prob.f))(::Type{Val{:analytic}},t,u0)
+    exp(2t)*u0
+end
+
+sol = solve(prob,KenCarp3())
+dts = 1.//2.^(12:-1:8)
+sim = test_convergence(dts,prob,KenCarp3())
+@test abs(sim.𝒪est[:l∞]-3) < testTol
+
+sol = solve(prob,KenCarp4())
+dts = 1.//2.^(8:-1:4)
+sim = test_convergence(dts,prob,KenCarp4())
+@test abs(sim.𝒪est[:l∞]-4) < testTol
+
+sol = solve(prob,KenCarp5())
+dts = 1.//2.^(8:-1:4)
+sim = test_convergence(dts,prob,KenCarp5())
+@test abs(sim.𝒪est[:l∞]-5) < testTol
