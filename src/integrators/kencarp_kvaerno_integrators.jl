@@ -1229,7 +1229,7 @@ end
   ##### Step 2
 
   # TODO: Allow other choices here
-  z₂ .= zero(u)
+  z₂ .= zero.(u)
 
   # initial step of Newton iteration
   iter = 1
@@ -1873,7 +1873,7 @@ end
   ##### Step 2
 
   # TODO: Allow other choices here
-  z₂ .= zero(u)
+  z₂ .= zero.(u)
 
   # initial step of Newton iteration
   iter = 1
@@ -2599,7 +2599,7 @@ end
   ##### Step 2
 
   # TODO: Allow other choices here
-  z₂ .= zero(u)
+  z₂ .= zero.(u)
 
   # initial step of Newton iteration
   iter = 1
@@ -3387,21 +3387,20 @@ function initialize!(integrator, cache::KenCarp5Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  if typeof(integrator.f) <: SplitFunction
-    f = integrator.f.f1
-    f2 = integrator.f.f2
-  else
-    f = integrator.f
-  end
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
 end
 
 @muladd function perform_step!(integrator, cache::KenCarp5Cache, repeat_step=false)
   @unpack t,dt,uprev,u = integrator
   @unpack uf,du1,dz,z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
+  @unpack k1,k2,k3,k4,k5,k6,k7,k8 = cache
   @unpack γ,a31,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a84,a85,a86,a87,c3,c4,c5,c6,c7 = cache.tab
   @unpack α31,α32,α41,α42,α51,α52,α61,α62,α71,α72,α73,α74,α75,α81,α82,α83,α84,α85 = cache.tab
   @unpack btilde1,btilde4,btilde5,btilde6,btilde7,btilde8 = cache.tab
+  @unpack ea21,ea31,ea32,ea41,ea43,ea51,ea53,ea54,ea61,ea63,ea64,ea65 = cache.tab
+  @unpack ea71,ea73,ea74,ea75,ea76,ea81,ea83,ea84,ea85,ea86,ea87 = cache.tab
+  @unpack eb1,eb4,eb5,eb6,eb7,eb8 = cache.tab
+  @unpack ebtilde1,ebtilde4,ebtilde5,ebtilde6,ebtilde7,ebtilde8 = cache.tab
 
   if typeof(integrator.f) <: SplitFunction
     f = integrator.f.f1
@@ -3446,17 +3445,34 @@ end
 
   ##### Step 1
 
-  @. z₁ = dt*integrator.fsalfirst
+  if typeof(integrator.f) <: SplitFunction
+    # Explicit tableau is not FSAL
+    # Make this not compute on repeat
+    if !repeat_step && !integrator.last_stepfail
+      f(integrator.t, integrator.uprev, z₁)
+      z₁ .*= dt
+    end
+  else
+    # FSAL Step 1
+    @. z₁ = dt*integrator.fsalfirst
+  end
 
   ##### Step 2
 
   # TODO: Allow other choices here
-  z₂ .= zero(u)
+  z₂ .= zero.(u)
 
   # initial step of Newton iteration
   iter = 1
   tstep = t + 2*γdt
   @. tmp = uprev + γ*z₁
+
+  if typeof(integrator.f) <: SplitFunction
+    # This assumes the implicit part is cheaper than the explicit part
+    @. k1 = dt*integrator.fsalfirst - z₁
+    @. tmp += ea21*k1
+  end
+
   @. u = tmp + γ*z₂
   f(tstep,u,k)
   @. b = dt*k - z₂
@@ -3502,12 +3518,24 @@ end
 
   ################################## Solve Step 3
 
-  @. z₃ = α31*z₁ + α32*z₂
-
   # initial step of Newton iteration
   iter = 1
   tstep = t + c3*dt
-  @. tmp = uprev + a31*z₁ + a32*z₂
+
+  if typeof(integrator.f) <: SplitFunction
+    z₃ .= z₂
+    @. u = tmp + γ*z₂
+    f2(tstep, u, k2); k2 .*= dt
+    #@. tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
+    for i in eachindex(u)
+      @inbounds tmp[i] = uprev[i] + a31*z₁[i] + a32*z₂[i] + ea31*k1[i] + ea32*k2[i]
+    end
+  else
+    # Guess is from Hermite derivative on z₁ and z₂
+    @. z₃ = a31*z₁ + α32*z₂
+    @. tmp = uprev + a31*z₁ + a32*z₂
+  end
+
   @. u = tmp + γ*z₃
   f(tstep,u,k)
   @. b = dt*k - z₃
@@ -3553,13 +3581,23 @@ end
 
   ################################## Solve Step 4
 
-  # Use constant z prediction
-  @. z₄ = α41*z₁ + α42*z₂
-
   # initial step of Newton iteration
   iter = 1
   tstep = t + c4*dt
-  @. tmp = uprev + a41*z₁ + a43*z₃
+
+  if typeof(integrator.f) <: SplitFunction
+    z₄ .= z₃
+    @. u = tmp + γ*z₃
+    f2(tstep, u, k3); k3 .*= dt
+    #@. tmp = uprev + a41*z₁ + a43*z₃ + ea41*k1 + ea43*k3
+    for i in eachindex(u)
+      @inbounds tmp[i] = uprev[i] + a41*z₁[i] + a43*z₃[i] + ea41*k1[i] + ea43*k3[i]
+    end
+  else
+    @. z₄ = α41*z₁ + α42*z₂
+    @. tmp = uprev + a41*z₁ + a43*z₃
+  end
+
   @. u = tmp + γ*z₄
   f(tstep,u,k)
   @. b = dt*k - z₄
@@ -3605,12 +3643,23 @@ end
 
   ################################## Solve Step 5
 
-  @. z₅ = α51*z₁ + α52*z₂
-
   # initial step of Newton iteration
   iter = 1
   tstep = t + c5*dt
-  @. tmp = uprev + a51*z₁ + a53*z₃ + a54*z₄
+
+  if typeof(integrator.f) <: SplitFunction
+    z₅ .= z₄
+    @. u = tmp + γ*z₄
+    f2(tstep, u, k4); k4 .*= dt
+    #@. tmp = uprev + a51*z₁ + a53*z₃ + a54*z₄ + ea51*k1 + ea53*k3 + ea54*k4
+    for i in eachindex(u)
+      @inbounds tmp[i] = uprev[i] + a51*z₁[i] + a53*z₃[i] + a54*z₄[i] + ea51*k1[i] + ea53*k3[i] + ea54*k4[i]
+    end
+  else
+    @. z₅ = α51*z₁ + α52*z₂
+    @. tmp = uprev + a51*z₁ + a53*z₃ + a54*z₄
+  end
+
   @. u = tmp + γ*z₅
   f(tstep,u,k)
   @. b = dt*k - z₅
@@ -3656,12 +3705,26 @@ end
 
   ################################## Solve Step 6
 
-  @. z₆ = α61*z₁ + α62*z₂
-
   # initial step of Newton iteration
   iter = 1
   tstep = t + c6*dt
-  @. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅
+
+  if typeof(integrator.f) <: SplitFunction
+    z₆ .= z₅
+    @. u = tmp + γ*z₅
+    f2(tstep, u, k5); k5 .*= dt
+    #@. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + ea61*k1 + ea63*k3 + ea64*k4 + ea65*k5
+    for i in eachindex(u)
+      @inbounds tmp[i] = uprev[i] + a61*z₁[i] + a63*z₃[i] + a64*z₄[i] + a65*z₅[i] + ea61*k1[i] + ea63*k3[i] + ea64*k4[i] + ea65*k5[i]
+    end
+  else
+    @. z₆ = α61*z₁ + α62*z₂
+    #@. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅
+    for i in eachindex(u)
+      @inbounds tmp[i] = uprev[i] + a61*z₁[i] + a63*z₃[i] + a64*z₄[i] + a65*z₅[i]
+    end
+  end
+
   @. u = tmp + γ*z₆
   f(tstep,u,k)
   @. b = dt*k - z₆
@@ -3707,18 +3770,29 @@ end
 
   ################################## Solve Step 7
 
-  #@. z₇ = α71*z₁ + α72*z₂ + α73*z₃ + α74*z₄ + α75*z₅
-  @tight_loop_macros for i in eachindex(u)
-    @inbounds z₇[i] = α71*z₁[i] + α72*z₂[i] + α73*z₃[i] + α74*z₄[i] + α75*z₅[i]
-  end
-
   # initial step of Newton iteration
   iter = 1
   tstep = t + c7*dt
-  #@. tmp = uprev + a71*z₁ + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
-  @tight_loop_macros for i in eachindex(u)
-    @inbounds tmp[i] = uprev[i] + a71*z₁[i] + a73*z₃[i] + a74*z₄[i] + a75*z₅[i] + a76*z₆[i]
+
+  if typeof(integrator.f) <: SplitFunction
+    z₇ .= z₆
+    @. u = tmp + γ*z₆
+    f2(tstep, u, k6); k6 .*= dt
+    #@. tmp = uprev + a71*z₁ +  a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆ + ea71*k1 + ea73*k3 + ea74*k4 + ea75*k5 + ea76*k6
+    for i in eachindex(u)
+      @inbounds tmp[i] = uprev[i] + a71*z₁[i] +  a73*z₃[i] + a74*z₄[i] + a75*z₅[i] + a76*z₆[i] + ea71*k1[i] + ea73*k3[i] + ea74*k4[i] + ea75*k5[i] + ea76*k6[i]
+    end
+  else
+    #@. z₇ = α71*z₁ + α72*z₂ + α73*z₃ + α74*z₄ + α75*z₅
+    @tight_loop_macros for i in eachindex(u)
+      @inbounds z₇[i] = α71*z₁[i] + α72*z₂[i] + α73*z₃[i] + α74*z₄[i] + α75*z₅[i]
+    end
+    #@. tmp = uprev + a71*z₁ + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
+    @tight_loop_macros for i in eachindex(u)
+      @inbounds tmp[i] = uprev[i] + a71*z₁[i] + a73*z₃[i] + a74*z₄[i] + a75*z₅[i] + a76*z₆[i]
+    end
   end
+
   @. u = tmp + γ*z₇
   f(tstep,u,k)
   @. b = dt*k - z₇
@@ -3764,18 +3838,29 @@ end
 
   ################################## Solve Step 8
 
-  #@. z₈ = α81*z₁ + α82*z₂ + α83*z₃ + α84*z₄ + α85*z₅
-  @tight_loop_macros for i in eachindex(u)
-    @inbounds z₈[i] = α81*z₁[i] + α82*z₂[i] + α83*z₃[i] + α84*z₄[i] + α85*z₅[i]
-  end
-
   # initial step of Newton iteration
   iter = 1
   tstep = t + dt
-  #@. u = uprev + a81*z₁ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇
-  @tight_loop_macros for i in eachindex(u)
-    @inbounds tmp[i] = uprev[i] + a81*z₁[i] + a84*z₄[i] + a85*z₅[i] + a86*z₆[i] + a87*z₇[i]
+
+  if typeof(integrator.f) <: SplitFunction
+    z₈ .= z₇
+    @. u = tmp + γ*z₇
+    f2(tstep, u, k7); k7 .*= dt
+    #@. tmp = uprev + a81*z₁ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇ + ea81*k1 + ea83*k3 + ea84*k4 + ea85*k5 + ea86*k6 + ea87*k7
+    for i in eachindex(u)
+      @inbounds tmp[i] = uprev[i] + a81*z₁[i] + a84*z₄[i] + a85*z₅[i] + a86*z₆[i] + a87*z₇[i] + ea81*k1[i] + ea83*k3[i] + ea84*k4[i] + ea85*k5[i] + ea86*k6[i] + ea87*k7[i]
+    end
+  else
+    #@. z₈ = α81*z₁ + α82*z₂ + α83*z₃ + α84*z₄ + α85*z₅
+    @tight_loop_macros for i in eachindex(u)
+      @inbounds z₈[i] = α81*z₁[i] + α82*z₂[i] + α83*z₃[i] + α84*z₄[i] + α85*z₅[i]
+    end
+    #@. tmp = uprev + a81*z₁ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇
+    @tight_loop_macros for i in eachindex(u)
+      @inbounds tmp[i] = uprev[i] + a81*z₁[i] + a84*z₄[i] + a85*z₅[i] + a86*z₆[i] + a87*z₇[i]
+    end
   end
+
   @. u = tmp + γ*z₈
   f(tstep,u,k)
   @. b = dt*k - z₈
@@ -3820,6 +3905,13 @@ end
   end
 
   @. u = tmp + γ*z₈
+  if typeof(integrator.f) <: SplitFunction
+    f2(tstep, u, k8); k8 .*= dt
+    # @. u = uprev + a81*z₁ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇ + γ*z₈ + eb1*k1 + eb4*k4 + eb5*k5 + eb6*k6 + eb7*k7 + eb8*k8
+    for i in eachindex(u)
+      @inbounds u[i] = uprev[i] + a81*z₁[i] + a84*z₄[i] + a85*z₅[i] + a86*z₆[i] + a87*z₇[i] + γ*z₈[i] + eb1*k1[i] + eb4*k4[i] + eb5*k5[i] + eb6*k6[i] + eb7*k7[i] + eb8*k8[i]
+    end
+  end
 
   ################################### Finalize
 
@@ -3827,10 +3919,20 @@ end
   cache.newton_iters = iter
 
   if integrator.opts.adaptive
-    # @. dz = btilde1*z₁ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇ + btilde8*z₈
-    @tight_loop_macros for i in eachindex(u)
-      @inbounds dz[i] = btilde1*z₁[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i] + btilde7*z₇[i] + btilde8*z₈[i]
+
+    if typeof(integrator.f) <: SplitFunction
+      #@. dz =  btilde1*z₁ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇ + btilde8*z₈ + ebtilde1*k1 + ebtilde4*k4 + ebtilde5*k5 + ebtilde6*k6 + ebtilde7*k7 + ebtilde8*k8
+      for i in eachindex(u)
+        dz[i] =  btilde1*z₁[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i] + btilde7*z₇[i] + btilde8*z₈[i] + ebtilde1*k1[i] + ebtilde4*k4[i] + ebtilde5*k5[i] + ebtilde6*k6[i] + ebtilde7*k7[i] + ebtilde8*k8[i]
+      end
+    else
+      # @. dz = btilde1*z₁ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇ + btilde8*z₈
+      @tight_loop_macros for i in eachindex(u)
+        @inbounds dz[i] = btilde1*z₁[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i] + btilde7*z₇[i] + btilde8*z₈[i]
+      end
+
     end
+
     if integrator.alg.smooth_est # From Shampine
       if has_invW(f)
         A_mul_B!(vec(tmp),W,vec(dz))
@@ -3844,5 +3946,9 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 
-  @. integrator.fsallast = z₈/dt
+  if typeof(integrator.f) <: SplitFunction
+    integrator.f(t+dt,u,integrator.fsallast)
+  else
+    @. integrator.fsallast = z₈/dt
+  end
 end
