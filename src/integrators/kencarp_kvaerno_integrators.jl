@@ -565,7 +565,7 @@ end
   tstep = t + dt
 
   if typeof(integrator.f) <: SplitFunction
-    z₄ = z₃
+    z₄ = z₂
     u = @. tmp + γ*z₃
     k3 = dt*f2(tstep, u)
     tmp = @. uprev + a41*z₁ + a42*z₂ + a43*z₃ + ea41*k1 + ea42*k2 + ea43*k3
@@ -844,7 +844,7 @@ end
   tstep = t + dt
 
   if typeof(integrator.f) <: SplitFunction
-    z₄ .= z₃
+    z₄ .= z₂
     @. u = tmp + γ*z₃
     f2(tstep, u, k3); k3 .*= dt
     #@. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃ + ea41*k1 + ea42*k2 + ea43*k3
@@ -1617,7 +1617,7 @@ end
   tstep = t + c4*dt
 
   if typeof(integrator.f) <: SplitFunction
-    z₄ = z₃
+    z₄ = z₂
     u = @. tmp + γ*z₃
     k3 = dt*f2(tstep, u)
     tmp = @. uprev + a41*z₁ + a42*z₂ + a43*z₃ + ea41*k1 + ea42*k2 + ea43*k3
@@ -2000,7 +2000,7 @@ end
   tstep = t + c4*dt
 
   if typeof(integrator.f) <: SplitFunction
-    z₄ .= z₃
+    z₄ .= z₂
     @. u = tmp + γ*z₃
     f2(tstep, u, k3); k3 .*= dt
     #@. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃ + ea41*k1 + ea42*k2 + ea43*k3
@@ -3101,7 +3101,7 @@ end
   tstep = t + c4*dt
 
   if typeof(integrator.f) <: SplitFunction
-    z₄ = z₃
+    z₄ = z₂
     u = @. tmp + γ*z₃
     k3 = dt*f2(tstep, u)
     tmp = @. uprev + a41*z₁ + a43*z₃ + ea41*k1 + ea43*k3
@@ -3150,7 +3150,7 @@ end
   tstep = t + c5*dt
 
   if typeof(integrator.f) <: SplitFunction
-    z₅ = z₄
+    z₅ = z₂
     u = @. tmp + γ*z₄
     k4 = dt*f2(tstep, u)
     tmp = @. uprev + a51*z₁ + a53*z₃ + a54*z₄ + ea51*k1 + ea53*k3 + ea54*k4
@@ -3199,7 +3199,7 @@ end
   tstep = t + c6*dt
 
   if typeof(integrator.f) <: SplitFunction
-    z₆ = z₅
+    z₆ = z₃
     u = @. tmp + γ*z₅
     k5 = dt*f2(tstep, u)
     tmp = @. uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + ea61*k1 + ea63*k3 + ea64*k4 + ea65*k5
@@ -3248,7 +3248,7 @@ end
   tstep = t + c7*dt
 
   if typeof(integrator.f) <: SplitFunction
-    z₇ = z₆
+    z₇ = z₂
     u = @. tmp + γ*z₆
     k6 = dt*f2(tstep, u)
     tmp = @. uprev + a71*z₁ +  a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆ + ea71*k1 + ea73*k3 + ea74*k4 + ea75*k5 + ea76*k6
@@ -3292,15 +3292,12 @@ end
 
   ################################## Solve Step 8
 
-  # Prediction from embedding
-  z₈ = @. α81*z₁ + α82*z₂ + α83*z₃ + α84*z₄ + α85*z₅
-
   # initial step of Newton iteration
   iter = 1
   tstep = t + dt
 
   if typeof(integrator.f) <: SplitFunction
-    z₈ = z₇
+    z₈ = z₅
     u = @. tmp + γ*z₇
     k7 = dt*f2(tstep, u)
     tmp = @. uprev + a81*z₁ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇ + ea81*k1 + ea83*k3 + ea84*k4 + ea85*k5 + ea86*k6 + ea87*k7
@@ -3648,7 +3645,7 @@ end
   tstep = t + c5*dt
 
   if typeof(integrator.f) <: SplitFunction
-    z₅ .= z₄
+    z₅ .= z₂
     @. u = tmp + γ*z₄
     f2(tstep, u, k4); k4 .*= dt
     #@. tmp = uprev + a51*z₁ + a53*z₃ + a54*z₄ + ea51*k1 + ea53*k3 + ea54*k4
@@ -3710,7 +3707,7 @@ end
   tstep = t + c6*dt
 
   if typeof(integrator.f) <: SplitFunction
-    z₆ .= z₅
+    z₆ .= z₃
     @. u = tmp + γ*z₅
     f2(tstep, u, k5); k5 .*= dt
     #@. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + ea61*k1 + ea63*k3 + ea64*k4 + ea65*k5
@@ -3775,7 +3772,7 @@ end
   tstep = t + c7*dt
 
   if typeof(integrator.f) <: SplitFunction
-    z₇ .= z₆
+    z₇ .= z₂
     @. u = tmp + γ*z₆
     f2(tstep, u, k6); k6 .*= dt
     #@. tmp = uprev + a71*z₁ +  a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆ + ea71*k1 + ea73*k3 + ea74*k4 + ea75*k5 + ea76*k6
@@ -3843,7 +3840,7 @@ end
   tstep = t + dt
 
   if typeof(integrator.f) <: SplitFunction
-    z₈ .= z₇
+    z₈ .= z₅
     @. u = tmp + γ*z₇
     f2(tstep, u, k7); k7 .*= dt
     #@. tmp = uprev + a81*z₁ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇ + ea81*k1 + ea83*k3 + ea84*k4 + ea85*k5 + ea86*k6 + ea87*k7
