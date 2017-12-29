@@ -219,10 +219,10 @@ Base.@pure function KenCarp3Tableau{T<:CompiledFloats,T2<:CompiledFloats}(::Type
   eb2 = T(-0.595297473576955)
   eb3 = T(0.9717899277217721)
   eb4 = T(0.435866521508459)
-  ebtilde1 = -T(0.027099261876665316)
-  ebtilde2 = -T(0.11013520969201586)
-  ebtilde3 = T(0.10306492520138458)
-  ebtilde4 = T(0.0341695463672966)
+  ebtilde1 = T(0.027099261876665316)
+  ebtilde2 = T(0.11013520969201586)
+  ebtilde3 = -T(0.10306492520138458)
+  ebtilde4 = -T(0.0341695463672966)
 
   KenCarp3Tableau(γ,a31,a32,a41,a42,a43,btilde1,btilde2,btilde3,btilde4,c3,α31,
                   α32,α41,α42,ea21,ea31,ea32,ea41,ea42,ea43,eb1,eb2,eb3,eb4,

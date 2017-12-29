@@ -1638,7 +1638,6 @@ end
   if typeof(integrator.f) <: SplitFunction
     z₅ = z₄
     u = @. tmp + γ*z₄
-    @show tmp,uprev,u
     k4 = dt*f2(tstep, u)
     tmp = @. uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + ea51*k1 + ea52*k2 + ea53*k3 + ea54*k4
   else
@@ -1732,8 +1731,6 @@ end
     k6 = dt*f2(tstep, u)
     u = @. uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + γ*z₆ + eb1*k1 + eb3*k3 + eb4*k4 + eb5*k5 + eb6*k6
   end
-
-  @show k1,k2,k3,k4,k5,k6
 
   ################################### Finalize
 
