@@ -250,7 +250,7 @@ function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uB
   KenCarp4ConstantCache(uf,ηold,κ,tol,10000,tab)
 end
 
-mutable struct KenCarp4Cache{uType,rateType,uNoUnitsType,J,UF,JC,uEltypeNoUnits,Tab,F} <: OrdinaryDiffEqMutableCache
+mutable struct KenCarp4Cache{uType,rateType,uNoUnitsType,J,UF,JC,uEltypeNoUnits,Tab,F,kType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   du1::rateType
@@ -262,6 +262,12 @@ mutable struct KenCarp4Cache{uType,rateType,uNoUnitsType,J,UF,JC,uEltypeNoUnits,
   z₄::uType
   z₅::uType
   z₆::uType
+  k1::kType
+  k2::kType
+  k3::kType
+  k4::kType
+  k5::kType
+  k6::kType
   dz::uType
   b::uType
   tmp::uType
@@ -287,7 +293,7 @@ function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
-  z₁ = similar(u,indices(u)); z₂ = similar(u,indices(u));
+  z₁ = similar(u,indices(u)); z₂ = similar(u,indices(u))
   z₃ = similar(u,indices(u)); z₄ = similar(u,indices(u))
   z₅ = similar(u,indices(u)); z₆ = similar(u,indices(u))
   dz = similar(u,indices(u))
@@ -297,8 +303,14 @@ function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   atmp = similar(u,uEltypeNoUnits,indices(u))
 
   if typeof(f) <: SplitFunction
+    k1 = similar(u,indices(u)); k2 = similar(u,indices(u))
+    k3 = similar(u,indices(u)); k4 = similar(u,indices(u))
+    k5 = similar(u,indices(u)); k6 = similar(u,indices(u))
     uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t)
   else
+    k1 = nothing; k2 = nothing
+    k3 = nothing; k4 = nothing
+    k5 = nothing; k6 = nothing
     uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   end
   linsolve = alg.linsolve(Val{:init},uf,u)
@@ -320,8 +332,9 @@ function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   ηold = one(uEltypeNoUnits)
 
   KenCarp4Cache{typeof(u),typeof(rate_prototype),typeof(atmp),typeof(J),typeof(uf),
-              typeof(jac_config),uEltypeNoUnits,typeof(tab),typeof(linsolve)}(
-              u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,z₆,dz,b,tmp,atmp,J,
+              typeof(jac_config),uEltypeNoUnits,typeof(tab),typeof(linsolve),typeof(k1)}(
+              u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,z₆,k1,k2,k3,k4,k5,k6,
+              dz,b,tmp,atmp,J,
               W,uf,jac_config,linsolve,ηold,κ,tol,10000,tab)
 end
 
@@ -462,7 +475,7 @@ function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uB
   KenCarp5ConstantCache(uf,ηold,κ,tol,10000,tab)
 end
 
-mutable struct KenCarp5Cache{uType,rateType,uNoUnitsType,J,UF,JC,uEltypeNoUnits,Tab,F} <: OrdinaryDiffEqMutableCache
+mutable struct KenCarp5Cache{uType,rateType,uNoUnitsType,J,UF,JC,uEltypeNoUnits,Tab,F,kType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   du1::rateType
@@ -476,6 +489,14 @@ mutable struct KenCarp5Cache{uType,rateType,uNoUnitsType,J,UF,JC,uEltypeNoUnits,
   z₆::uType
   z₇::uType
   z₈::uType
+  k1::kType
+  k2::kType
+  k3::kType
+  k4::kType
+  k5::kType
+  k6::kType
+  k7::kType
+  k8::kType
   dz::uType
   b::uType
   tmp::uType
@@ -512,8 +533,16 @@ function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   atmp = similar(u,uEltypeNoUnits,indices(u))
 
   if typeof(f) <: SplitFunction
+    k1 = similar(u,indices(u)); k2 = similar(u,indices(u))
+    k3 = similar(u,indices(u)); k4 = similar(u,indices(u))
+    k5 = similar(u,indices(u)); k6 = similar(u,indices(u))
+    k7 = similar(u,indices(u)); k8 = similar(u,indices(u))
     uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t)
   else
+    k1 = nothing; k2 = nothing
+    k3 = nothing; k4 = nothing
+    k5 = nothing; k6 = nothing
+    k7 = nothing; k8 = nothing
     uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   end
 
@@ -536,8 +565,9 @@ function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   ηold = one(uEltypeNoUnits)
 
   KenCarp5Cache{typeof(u),typeof(rate_prototype),typeof(atmp),typeof(J),typeof(uf),
-              typeof(jac_config),uEltypeNoUnits,typeof(tab),typeof(linsolve)}(
+              typeof(jac_config),uEltypeNoUnits,typeof(tab),typeof(linsolve),typeof(k1)}(
               u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,
+              k1,k2,k3,k4,k5,k6,k7,k8,
               dz,b,tmp,atmp,J,
               W,uf,jac_config,linsolve,ηold,κ,tol,10000,tab)
 end
