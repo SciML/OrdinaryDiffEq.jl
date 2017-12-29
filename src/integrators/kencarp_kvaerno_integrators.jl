@@ -419,13 +419,6 @@ function initialize!(integrator, cache::KenCarp3ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
-  if typeof(integrator.f) <: SplitFunction
-    f = integrator.f.f1
-    f2 = integrator.f.f2
-  else
-    f = integrator.f
-  end
-
   integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -1439,14 +1432,7 @@ function initialize!(integrator, cache::KenCarp4ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
-  if typeof(integrator.f) <: SplitFunction
-    f = integrator.f.f1
-    f2 = integrator.f.f2
-  else
-    f = integrator.f
-  end
-
-  integrator.fsalfirst = f(integrator.t, integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -1460,6 +1446,9 @@ end
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,c3,c4,c5 = cache.tab
   @unpack α31,α32,α41,α42,α51,α52,α53,α54,α61,α62,α63,α64,α65 = cache.tab
   @unpack btilde1,btilde3,btilde4,btilde5,btilde6 = cache.tab
+  @unpack ea21,ea31,ea32,ea41,ea42,ea43,ea51,ea52,ea53,ea54,ea61,ea62,ea63,ea64,ea65 = cache.tab
+  @unpack eb1,eb3,eb4,eb5,eb6 = cache.tab
+  @unpack ebtilde1,ebtilde3,ebtilde4,ebtilde5,ebtilde6 = cache.tab
 
   if typeof(integrator.f) <: SplitFunction
     f = integrator.f.f1
@@ -1483,9 +1472,14 @@ end
     W = 1 - γdt*J
   end
 
-  ##### Step 1
-
-  z₁ = dt.*integrator.fsalfirst
+  if typeof(integrator.f) <: SplitFunction
+    # Explicit tableau is not FSAL
+    # Make this not compute on repeat
+    z₁ = dt.*f(t, uprev)
+  else
+    # FSAL Step 1
+    z₁ = dt.*integrator.fsalfirst
+  end
 
   ##### Step 2
 
@@ -1496,6 +1490,13 @@ end
   iter = 1
   tstep = t + 2*γdt
   tmp = @. uprev + γ*z₁
+
+  if typeof(integrator.f) <: SplitFunction
+    # This assumes the implicit part is cheaper than the explicit part
+    k1 = dt*integrator.fsalfirst - z₁
+    tmp += ea21*k1
+  end
+
   u = @. tmp + γ*z₂
   b = dt.*f(tstep,u) .- z₂
   dz = W\b
@@ -1531,12 +1532,21 @@ end
 
   ################################## Solve Step 3
 
-  z₃ = @. α31*z₁ + α32*z₂
-
   # initial step of Newton iteration
   iter = 1
   tstep = t + c3*dt
-  tmp = @. uprev + a31*z₁ + a32*z₂
+
+  if typeof(integrator.f) <: SplitFunction
+    z₃ = z₂
+    u = @. tmp + γ*z₂
+    k2 = dt*f2(tstep, u)
+    tmp = @. uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
+  else
+    # Guess is from Hermite derivative on z₁ and z₂
+    z₃ = @. α31*z₁ + α32*z₂
+    tmp = @. uprev + a31*z₁ + a32*z₂
+  end
+
   u = @. tmp + γ*z₃
   b = dt.*f(tstep,u) .- z₃
   dz = W\b
@@ -1572,12 +1582,20 @@ end
 
   ################################## Solve Step 4
 
-  z₄ = @. α41*z₁ + α42*z₂
-
   # initial step of Newton iteration
   iter = 1
   tstep = t + c4*dt
-  tmp = @. uprev + a41*z₁ + a42*z₂ + a43*z₃
+
+  if typeof(integrator.f) <: SplitFunction
+    z₄ = z₃
+    u = @. tmp + γ*z₃
+    k3 = dt*f2(tstep, u)
+    tmp = @. uprev + a41*z₁ + a42*z₂ + a43*z₃ + ea41*k1 + ea42*k2 + ea43*k3
+  else
+    z₄ = @. α41*z₁ + α42*z₂
+    tmp = @. uprev + a41*z₁ + a42*z₂ + a43*z₃
+  end
+
   u = @. tmp + γ*z₄
   b = dt.*f(tstep,u) .- z₄
   dz = W\b
@@ -1613,12 +1631,21 @@ end
 
   ################################## Solve Step 5
 
-  z₅ = @. α51*z₁ + α52*z₂ + α53*z₃ + α54*z₄
-
   # initial step of Newton iteration
   iter = 1
   tstep = t + c5*dt
-  tmp = @. uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
+
+  if typeof(integrator.f) <: SplitFunction
+    z₅ = z₄
+    u = @. tmp + γ*z₄
+    @show tmp,uprev,u
+    k4 = dt*f2(tstep, u)
+    tmp = @. uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + ea51*k1 + ea52*k2 + ea53*k3 + ea54*k4
+  else
+    z₅ = @. α51*z₁ + α52*z₂ + α53*z₃ + α54*z₄
+    tmp = @. uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
+  end
+
   u = @. tmp + γ*z₅
   b = dt.*f(tstep,u) .- z₅
   dz = W\b
@@ -1654,12 +1681,20 @@ end
 
   ################################## Solve Step 5
 
-  z₆ = @. α61*z₁ + α62*z₂ + α63*z₃ + α64*z₄ + α65*z₅
-
   # initial step of Newton iteration
   iter = 1
   tstep = t + dt
-  tmp = @. uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅
+
+  if typeof(integrator.f) <: SplitFunction
+    z₆ = z₅
+    u = @. tmp + γ*z₅
+    k5 = dt*f2(tstep, u)
+    tmp = @. uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + ea61*k1 + ea62*k2 + ea63*k3 + ea64*k4 + ea65*k5
+  else
+    z₆ = @. α61*z₁ + α62*z₂ + α63*z₃ + α64*z₄ + α65*z₅
+    tmp = @. uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅
+  end
+
   u = @. tmp + γ*z₆
   b = dt.*f(tstep,u) .- z₆
   dz = W\b
@@ -1693,6 +1728,12 @@ end
   end
 
   u = @. tmp + γ*z₆
+  if typeof(integrator.f) <: SplitFunction
+    k6 = dt*f2(tstep, u)
+    u = @. uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + γ*z₆ + eb1*k1 + eb3*k3 + eb4*k4 + eb5*k5 + eb6*k6
+  end
+
+  @show k1,k2,k3,k4,k5,k6
 
   ################################### Finalize
 
@@ -1700,7 +1741,11 @@ end
   cache.newton_iters = iter
 
   if integrator.opts.adaptive
-    tmp = @. btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆
+    if typeof(integrator.f) <: SplitFunction
+      tmp = @. btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + ebtilde1*k1 + ebtilde3*k3 + ebtilde4*k4 + ebtilde5*k5 + ebtilde6*k6
+    else
+      tmp = @. btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆
+    end
     if integrator.alg.smooth_est # From Shampine
       est = W\tmp
     else
@@ -1710,9 +1755,15 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 
-  integrator.fsallast = z₆./dt
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
+  if typeof(integrator.f) <: SplitFunction
+    integrator.k[1] = integrator.fsalfirst
+    integrator.fsallast = integrator.f(t+dt,u)
+    integrator.k[2] = integrator.fsallast
+  else
+    integrator.fsallast = z₆./dt
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+  end
   integrator.u = u
 end
 

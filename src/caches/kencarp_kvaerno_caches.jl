@@ -218,7 +218,7 @@ end
 function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
   if typeof(f) <: SplitFunction
-    uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
+    uf = DiffEqDiffTools.UDerivativeWrapper(f.f1,t)
   else
     uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   end

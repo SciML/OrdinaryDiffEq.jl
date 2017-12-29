@@ -51,6 +51,11 @@ dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp3())
 @test abs(sim.𝒪est[:l∞]-3) < testTol
 
+sol = solve(prob,KenCarp4())
+dts = 1.//2.^(8:-1:4)
+sim = test_convergence(dts,prob,KenCarp4())
+@test abs(sim.𝒪est[:l∞]-4) < testTol
+
 # Now test only the second part
 
 f1 = (t,u) -> zero(u)
@@ -66,6 +71,11 @@ dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp3())
 @test abs(sim.𝒪est[:l∞]-3) < testTol
 
+sol = solve(prob,KenCarp4())
+dts = 1.//2.^(8:-1:4)
+sim = test_convergence(dts,prob,KenCarp4())
+@test abs(sim.𝒪est[:l∞]-4) < testTol
+
 # Test together
 
 f1 = (t,u) -> u
@@ -80,3 +90,8 @@ sol = solve(prob,KenCarp3())
 dts = 1.//2.^(12:-1:8)
 sim = test_convergence(dts,prob,KenCarp3())
 @test abs(sim.𝒪est[:l∞]-3) < testTol
+
+sol = solve(prob,KenCarp4())
+dts = 1.//2.^(8:-1:4)
+sim = test_convergence(dts,prob,KenCarp4())
+@test abs(sim.𝒪est[:l∞]-4) < testTol
