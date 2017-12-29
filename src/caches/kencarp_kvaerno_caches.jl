@@ -76,7 +76,7 @@ function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   atmp = similar(u,uEltypeNoUnits,indices(u))
 
   if typeof(f) <: SplitFunction
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t)
+    uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t)
   else
     uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   end
@@ -504,7 +504,7 @@ function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   atmp = similar(u,uEltypeNoUnits,indices(u))
 
   if typeof(f) <: SplitFunction
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t)
+    uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t)
   else
     uf = DiffEqDiffTools.UJacobianWrapper(f,t)
   end
