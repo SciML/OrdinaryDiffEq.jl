@@ -813,7 +813,7 @@ end
   fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
-    u = @. tmp + γ*z₃
+    @. u = tmp + γ*z₃
     f(tstep,u,k)
     @. b = dt*k - z₃
     if has_invW(f)
