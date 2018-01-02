@@ -50,6 +50,14 @@ end
     integrator.sol = solution_new_retcode(integrator.sol,:Unstable)
     return integrator.sol
   end
+  if integrator.last_stepfail # Only false if doubled
+    if integrator.opts.verbose
+      warn("Newton steps could not converge and algorithm is not adaptive. Use a lower dt.")
+    end
+    postamble!(integrator)
+    integrator.sol = solution_new_retcode(integrator.sol,:ConvergenceFailure)
+    return integrator.sol
+  end
 end
 
 function modify_dt_for_tstops!(integrator)
@@ -251,7 +259,7 @@ function loopfooter!(integrator)
       if integrator.opts.adaptive
         integrator.dt = integrator.dt/integrator.opts.failfactor
       elseif integrator.last_stepfail
-        error("Newton steps could not converge and algorithm is not adaptive. Use a lower dt.")
+        return
       end
       integrator.last_stepfail = true
       integrator.accept_step = false
