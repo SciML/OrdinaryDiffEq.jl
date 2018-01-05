@@ -6,7 +6,7 @@ end
 function perform_step!(integrator,cache::DiscreteConstantCache,repeat_step=false)
   if discrete_apply_map(integrator.alg)
     if discrete_scale_by_time(integrator.alg)
-      @muladd integrator.u = integrator.uprev .+ integrator.dt.*integrator.f(integrator.t+integrator.dt,integrator.uprev)
+      @muladd integrator.u = integrator.uprev + integrator.dt*integrator.f(integrator.t+integrator.dt,integrator.uprev)
     else
       integrator.u = integrator.f(integrator.t+integrator.dt,integrator.uprev)
     end
@@ -47,7 +47,7 @@ end
 
 function perform_step!(integrator,cache::EulerConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
-  @muladd u = @. uprev + dt*integrator.fsalfirst
+  @muladd u = uprev + dt*integrator.fsalfirst
   k = f(t+dt,u) # For the interpolation, needs k at the updated point
   integrator.fsallast = k
   integrator.k[1] = integrator.fsalfirst
@@ -93,24 +93,24 @@ function perform_step!(integrator,cache::Union{HeunConstantCache,RalstonConstant
       a = 3dt/4
   end
 
-  @muladd tmp = @. uprev + a*fsalfirst
+  @muladd tmp = uprev + a*fsalfirst
 
   k2 = f(t+a,tmp)
 
   if typeof(cache) <: HeunConstantCache
-      @muladd u = @. uprev + (dt/2)*(fsalfirst + k2)
+      @muladd u = uprev + (dt/2)*(fsalfirst + k2)
   else
-      @muladd u = @. uprev + (dt/3)*fsalfirst + (2dt/3)*k2
+      @muladd u = uprev + (dt/3)*fsalfirst + (2dt/3)*k2
   end
 
   if integrator.opts.adaptive
       if typeof(cache) <: HeunConstantCache
-          @muladd utilde = @. (dt/2)*(k2 - fsalfirst)
+          @muladd utilde = (dt/2)*(k2 - fsalfirst)
       else
-          @muladd utilde = @. (2dt/3)*(k2 - fsalfirst)
+          @muladd utilde = (2dt/3)*(k2 - fsalfirst)
       end
 
-      tmp = @. utilde/(integrator.opts.abstol+max(integrator.opts.internalnorm(uprev),
+      tmp = utilde/(integrator.opts.abstol+max(integrator.opts.internalnorm(uprev),
                         integrator.opts.internalnorm(u))*integrator.opts.reltol)
       integrator.EEst = integrator.opts.internalnorm(tmp)
   end
@@ -180,11 +180,11 @@ end
 @muladd function perform_step!(integrator,cache::MidpointConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
   halfdt = dt/2
-  k = f(t+halfdt, @. uprev + halfdt*integrator.fsalfirst)
-  u = @. uprev + dt*k
+  k = f(t+halfdt, uprev + halfdt*integrator.fsalfirst)
+  u = uprev + dt*k
   integrator.fsallast = f(t+dt,u) # For interpolation, then FSAL'd
   if integrator.opts.adaptive
-      utilde = @. dt*(integrator.fsalfirst - k)
+      utilde = dt*(integrator.fsalfirst - k)
       integrator.EEst = integrator.opts.internalnorm(
           calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
                               integrator.opts.reltol,integrator.opts.internalnorm))
@@ -237,10 +237,10 @@ end
   halfdt = dt/2
   k₁ =integrator.fsalfirst
   ttmp = t+halfdt
-  k₂ = f(ttmp, @. uprev + halfdt*k₁)
-  k₃ = f(ttmp, @. uprev + halfdt*k₂)
-  k₄ = f(t+dt, @. uprev + dt*k₃)
-  u = @. uprev + (dt/6)*(2*(k₂ + k₃) + (k₁+k₄))
+  k₂ = f(ttmp, uprev + halfdt*k₁)
+  k₃ = f(ttmp, uprev + halfdt*k₂)
+  k₄ = f(t+dt, uprev + dt*k₃)
+  u = uprev + (dt/6)*(2*(k₂ + k₃) + (k₁+k₄))
   integrator.fsallast = f(t+dt,u)
   if integrator.opts.adaptive
       # Shampine Solving ODEs and DDEs with Residual Control Estimate
@@ -332,24 +332,24 @@ end
   @unpack A2,A3,A4,A5,B1,B2,B3,B4,B5,c2,c3,c4,c5 = cache
 
   # u1
-  tmp = @. dt*integrator.fsalfirst
-  u   = @. uprev + B1*tmp
+  tmp = dt*integrator.fsalfirst
+  u   = uprev + B1*tmp
   # u2
   k = f(t+c2*dt, u)
-  tmp = @. A2*tmp + dt*k
-  u   = @. u + B2*tmp
+  tmp = A2*tmp + dt*k
+  u   = u + B2*tmp
   # u3
   k = f(t+c3*dt, u)
-  tmp = @. A3*tmp + dt*k
-  u   = @. u + B3*tmp
+  tmp = A3*tmp + dt*k
+  u   = u + B3*tmp
   # u4
   k = f(t+c4*dt, u)
-  tmp = @. A4*tmp + dt*k
-  u   = @. u + B4*tmp
+  tmp = A4*tmp + dt*k
+  u   = u + B4*tmp
   # u5 = u
   k = f(t+c5*dt, u)
-  tmp = @. A5*tmp + dt*k
-  u   = @. u + B5*tmp
+  tmp = A5*tmp + dt*k
+  u   = u + B5*tmp
 
   integrator.fsallast = f(t+dt,u) # For interpolation, then FSAL'd
   integrator.k[1] = integrator.fsalfirst

@@ -7,7 +7,7 @@ mutable struct RHS_IIF_Scalar{F,uType,tType,aType} <: Function
 end
 
 function (p::RHS_IIF_Scalar)(u,resid)
-  resid[1] = first(u) .- p.tmp .- (p.a*p.dt).*first(p.f.f2(p.t+p.dt,first(u)))
+  resid[1] = first(u) - p.tmp - (p.a*p.dt)*first(p.f.f2(p.t+p.dt,first(u)))
 end
 
 function initialize!(integrator,cache::Union{GenericIIF1ConstantCache,GenericIIF2ConstantCache})
@@ -32,7 +32,7 @@ function perform_step!(integrator,cache::Union{GenericIIF1ConstantCache,GenericI
   if typeof(cache) <: GenericIIF1ConstantCache
     rhs.tmp = expm(A*dt)*(uprev)
   elseif typeof(cache) <: GenericIIF2ConstantCache
-    @muladd rhs.tmp = expm(A*dt)*(@. uprev + 0.5dt*uhold[1]) # This uhold only works for non-adaptive
+    @muladd rhs.tmp = expm(A*dt)*(uprev + 0.5dt*uhold[1]) # This uhold only works for non-adaptive
   end
 
   if integrator.success_iter > 0 && !integrator.u_modified
@@ -44,7 +44,7 @@ function perform_step!(integrator,cache::Union{GenericIIF1ConstantCache,GenericI
   nlres = integrator.alg.nlsolve(nl_rhs,uhold)
   uhold[1] = integrator.f.f2(t+dt,nlres[1])
   u = nlres[1]
-  integrator.fsallast = A*u .+ uhold[1]
+  integrator.fsallast = A*u + uhold[1]
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
