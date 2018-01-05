@@ -10,6 +10,9 @@ abstract type OrdinaryDiffEqImplicitAlgorithm{CS,AD} <: OrdinaryDiffEqAlgorithm 
 abstract type OrdinaryDiffEqNewtonAlgorithm{CS,AD} <:  OrdinaryDiffEqImplicitAlgorithm{CS,AD} end
 abstract type OrdinaryDiffEqRosenbrockAlgorithm{CS,AD} <:  OrdinaryDiffEqImplicitAlgorithm{CS,AD} end
 
+abstract type OrdinaryDiffEqExponentialAlgorithm <: OrdinaryDiffEqAlgorithm end
+abstract type OrdinaryDiffEqAdaptiveExponentialAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
+
 struct Discrete{apply_map,scale_by_time} <: OrdinaryDiffEqAlgorithm end
 
 Base.@pure Discrete(;apply_map=false,scale_by_time=false) = Discrete{apply_map,scale_by_time}()
@@ -582,19 +585,19 @@ Base.@pure GeneralRosenbrock(;chunk_size=0,autodiff=true,
 
 ######################################
 
-struct GenericIIF1{F} <: OrdinaryDiffEqAlgorithm
+struct GenericIIF1{F} <: OrdinaryDiffEqExponentialAlgorithm
   nlsolve::F
 end
 Base.@pure GenericIIF1(;nlsolve=NLSOLVEJL_SETUP()) = GenericIIF1{typeof(nlsolve)}(nlsolve)
 
-struct GenericIIF2{F} <: OrdinaryDiffEqAlgorithm
+struct GenericIIF2{F} <: OrdinaryDiffEqExponentialAlgorithm
   nlsolve::F
 end
 Base.@pure GenericIIF2(;nlsolve=NLSOLVEJL_SETUP()) = GenericIIF2{typeof(nlsolve)}(nlsolve)
 
-struct LawsonEuler <: OrdinaryDiffEqAlgorithm end
-struct NorsettEuler <: OrdinaryDiffEqAlgorithm end
-struct SplitEuler <: OrdinaryDiffEqAlgorithm end
+struct LawsonEuler <: OrdinaryDiffEqExponentialAlgorithm end
+struct NorsettEuler <: OrdinaryDiffEqExponentialAlgorithm end
+struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm end
 
 #########################################
 

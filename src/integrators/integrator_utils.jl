@@ -254,6 +254,12 @@ function step_reject_controller!(integrator,
 end
 
 function loopfooter!(integrator)
+
+  # Carry-over from callback
+  # This is set to true if u_modified requires callback FSAL reset
+  # But not set to false when reset so algorithms can check if reset occurred
+  integrator.reeval_fsal = false
+
   ttmp = integrator.t + integrator.dt
   if integrator.force_stepfail
       if integrator.opts.adaptive
@@ -426,7 +432,8 @@ function reset_fsal!(integrator)
   else
     integrator.fsalfirst = integrator.f(integrator.t,integrator.u)
   end
-  integrator.reeval_fsal = false
+  # Do not set false here so it can be checked in the algorithm
+  # integrator.reeval_fsal = false
   integrator.u_modified = false
 end
 

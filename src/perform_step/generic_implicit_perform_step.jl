@@ -43,7 +43,7 @@ end
   @unpack uhold,rhs,nl_rhs = cache
   rhs.tmp = uprev
 
-  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
+  if integrator.success_iter > 0 && !integrator.reeval_fsal && integrator.alg.extrapolant == :interpolant
     uhold[1] = current_extrapolant(t+dt,integrator)
   elseif integrator.alg.extrapolant == :linear
     uhold[1] = uprev + dt*integrator.fsalfirst
@@ -101,7 +101,7 @@ end
   @unpack dual_cache,k,nl_rhs,rhs,tmp,atmp = cache
   copy!(tmp,uprev)
 
-  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
+  if integrator.success_iter > 0 && !integrator.reeval_fsal && integrator.alg.extrapolant == :interpolant
     current_extrapolant!(u,t+dt,integrator)
   elseif integrator.alg.extrapolant == :linear
     @. u = uprev + dt*integrator.fsalfirst
@@ -155,7 +155,7 @@ end
   @unpack uhold,rhs,nl_rhs = cache
   rhs.tmp = first(uprev) + (dt/2)*first(integrator.fsalfirst)
 
-  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
+  if integrator.success_iter > 0 && !integrator.reeval_fsal && integrator.alg.extrapolant == :interpolant
     uhold[1] = current_extrapolant(t+dt,integrator)
   elseif integrator.alg.extrapolant == :linear
     uhold[1] = uprev + dt*integrator.fsalfirst
@@ -229,7 +229,7 @@ end
   @unpack dual_cache,k,rhs,nl_rhs,tmp,atmp = cache
   tmp .= uprev .+ (dt/2).*integrator.fsalfirst
 
-  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
+  if integrator.success_iter > 0 && !integrator.reeval_fsal && integrator.alg.extrapolant == :interpolant
     current_extrapolant!(u,t+dt,integrator)
   elseif integrator.alg.extrapolant == :linear
     @. u = uprev + dt*integrator.fsalfirst

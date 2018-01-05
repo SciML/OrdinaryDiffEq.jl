@@ -178,10 +178,10 @@ using OrdinaryDiffEq, Base.Test, RecursiveArrayTools, DiffEqDevTools
 
 u0 = 0.0
 v0 = 1.0
-f1 = function (t,u,v)
+f12 = function (t,u,v)
   v
 end
-f2 = function (t,u,v)
+f22 = function (t,u,v)
   dv = -u
 end
 function (::typeof(f2))(::Type{Val{:analytic}}, x, y0)

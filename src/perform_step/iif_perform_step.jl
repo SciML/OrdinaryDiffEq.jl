@@ -35,7 +35,7 @@ function perform_step!(integrator,cache::Union{GenericIIF1ConstantCache,GenericI
     @muladd rhs.tmp = expm(A*dt)*(uprev + 0.5dt*uhold[1]) # This uhold only works for non-adaptive
   end
 
-  if integrator.success_iter > 0 && !integrator.u_modified
+  if integrator.success_iter > 0 && !integrator.reeval_fsal
     uhold[1] = current_extrapolant(t+dt,integrator)
   end # else uhold is previous value.
 
@@ -89,7 +89,7 @@ function perform_step!(integrator,cache::Union{GenericIIF1Cache,GenericIIF2Cache
 
   A_mul_B!(tmp,cache.expA,k)
 
-  if integrator.success_iter > 0 && !integrator.u_modified
+  if integrator.success_iter > 0 && !integrator.reeval_fsal
     current_extrapolant!(u,t+dt,integrator)
   end # else uhold is previous value.
 

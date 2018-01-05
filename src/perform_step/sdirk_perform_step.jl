@@ -1072,7 +1072,7 @@ end
   end
 
   # initial guess
-  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
+  if integrator.success_iter > 0 && !integrator.reeval_fsal && integrator.alg.extrapolant == :interpolant
     current_extrapolant!(u,t+dt,integrator)
     z₁ = u - uprev
   elseif integrator.alg.extrapolant == :linear
@@ -1231,7 +1231,7 @@ end
   end
 
   # initial guess
-  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
+  if integrator.success_iter > 0 && !integrator.reeval_fsal && integrator.alg.extrapolant == :interpolant
     current_extrapolant!(u,t+dt,integrator)
     @. z₁ = u - uprev
   elseif integrator.alg.extrapolant == :linear
@@ -1397,7 +1397,7 @@ end
   end
 
   # initial guess
-  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
+  if integrator.success_iter > 0 && !integrator.reeval_fsal && integrator.alg.extrapolant == :interpolant
     current_extrapolant!(u,t+dt,integrator)
     z₁ = u - uprev
   elseif integrator.alg.extrapolant == :linear
@@ -1550,7 +1550,7 @@ end
   end
 
   # initial guess
-  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
+  if integrator.success_iter > 0 && !integrator.reeval_fsal && integrator.alg.extrapolant == :interpolant
     current_extrapolant!(u,t+dt,integrator)
     @. z₁ = u - uprev
   elseif integrator.alg.extrapolant == :linear
@@ -2592,7 +2592,7 @@ end
   end
 
   # initial guess
-  if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
+  if integrator.success_iter > 0 && !integrator.reeval_fsal && integrator.alg.extrapolant == :interpolant
     current_extrapolant!(u,t+dt,integrator)
     @. z₁ = u - uprev
   elseif integrator.alg.extrapolant == :linear
