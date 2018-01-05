@@ -14,13 +14,13 @@ end
   @unpack a21,a32,a41,a42,a43,c1,c2,btilde1,btilde2,btilde3,btilde4 = cache
   k1 = integrator.fsalfirst
   a1 = dt*a21
-  k2 = f(t+c1*dt, @. uprev+a1*k1)
+  k2 = f(t+c1*dt, uprev+a1*k1)
   a2 = dt*a32
-  k3 = f(t+c2*dt, @. uprev+a2*k2)
-  u = @. uprev+dt*(a41*k1+a42*k2+a43*k3)
+  k3 = f(t+c2*dt, uprev+a2*k2)
+  u = uprev+dt*(a41*k1+a42*k2+a43*k3)
   k4 = f(t+dt,u); integrator.fsallast = k4
   if integrator.opts.adaptive
-    utilde = @. dt*(btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4)
+    utilde = dt*(btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4)
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
