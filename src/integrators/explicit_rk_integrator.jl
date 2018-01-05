@@ -21,32 +21,32 @@ end
   for i = 2:stages-1
     utilde = zero(kk[1])
     for j = 1:i-1
-      utilde = @. utilde + A[j,i]*kk[j]
+      utilde = utilde + A[j,i]*kk[j]
     end
-    kk[i] = f(t+c[i]*dt, @. uprev + dt*utilde);
+    kk[i] = f(t+c[i]*dt, uprev + dt*utilde);
   end
 
   #Calc Last
   utilde = zero(kk[1])
   for j = 1:stages-1
-    utilde = @. utilde + A[j,end]*kk[j]
+    utilde = utilde + A[j,end]*kk[j]
   end
-  kk[end] = f(t+c[end]*dt, @. uprev + dt*utilde)
+  kk[end] = f(t+c[end]*dt, uprev + dt*utilde)
   integrator.fsallast = kk[end] # Uses fsallast as temp even if not fsal
 
   # Accumulate Result
   utilde = α[1]*kk[1]
   for i = 2:stages
-    utilde = @. utilde + α[i]*kk[i]
+    utilde = utilde + α[i]*kk[i]
   end
-  u = @. uprev + dt*utilde
+  u = uprev + dt*utilde
 
   if integrator.opts.adaptive
     utilde = (α[1]-αEEst[1]).*kk[1]
     for i = 2:stages
-      utilde = @. utilde + (α[i]-αEEst[i])*kk[i]
+      utilde = utilde + (α[i]-αEEst[i])*kk[i]
     end
-    atmp = calculate_residuals(dt .* utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+    atmp = calculate_residuals(dt * utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 

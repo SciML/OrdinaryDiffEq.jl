@@ -7,7 +7,7 @@ mutable struct ImplicitRHS_Scalar{F,uType,tType} <: Function
 end
 
 function (p::ImplicitRHS_Scalar)(u,resid)
-  resid[1] = first(u) .- p.tmp .- p.a.*first(p.f(p.t+p.dt,first(u)))
+  resid[1] = first(u) - p.tmp - p.a*first(p.f(p.t+p.dt,first(u)))
 end
 
 mutable struct ImplicitRHS{F,uType,tType,DiffCacheType} <: Function
@@ -46,7 +46,7 @@ end
   if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     uhold[1] = current_extrapolant(t+dt,integrator)
   elseif integrator.alg.extrapolant == :linear
-    uhold[1] = @. uprev + dt*integrator.fsalfirst
+    uhold[1] = uprev + dt*integrator.fsalfirst
   else # :constant
     uhold[1] = uprev
   end
@@ -72,7 +72,7 @@ end
     c = 7/12 # default correction factor in SPICE (LTE overestimated by DD)
     r = c*dt^2 # by mean value theorem 2nd DD equals y''(s)/2 for some s
 
-    tmp = @. r*abs((u - uprev)/dt1 - (uprev - uprev2)/dt2)
+    tmp = r*abs((u - uprev)/dt1 - (uprev - uprev2)/dt2)
     atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   else
@@ -153,12 +153,12 @@ end
 @muladd function perform_step!(integrator, cache::GenericTrapezoidConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
   @unpack uhold,rhs,nl_rhs = cache
-  rhs.tmp = first(uprev) .+ (dt/2).*first(integrator.fsalfirst)
+  rhs.tmp = first(uprev) + (dt/2)*first(integrator.fsalfirst)
 
   if integrator.success_iter > 0 && !integrator.u_modified && integrator.alg.extrapolant == :interpolant
     uhold[1] = current_extrapolant(t+dt,integrator)
   elseif integrator.alg.extrapolant == :linear
-    uhold[1] = @. uprev + dt*integrator.fsalfirst
+    uhold[1] = uprev + dt*integrator.fsalfirst
   else # :constant
     uhold[1] = uprev
   end
@@ -190,10 +190,10 @@ end
       c = 7/12 # default correction factor in SPICE (LTE overestimated by DD)
       r = c*dt^3/2 # by mean value theorem 3rd DD equals y'''(s)/6 for some s
 
-      # tmp = @. r*abs(((u - uprev)/dt1 - (uprev - uprev2)/dt2) - ((uprev - uprev2)/dt3 - (uprev2 - uprev3)/dt4)/dt5)
-      DD31 = @. (u - uprev)/dt1 - (uprev - uprev2)/dt2
-      DD30 = @. (uprev - uprev2)/dt3 - (uprev2 - uprev3)/dt4
-      tmp = @. r*abs((DD31 - DD30)/dt5)
+      # tmp = r*abs(((u - uprev)/dt1 - (uprev - uprev2)/dt2) - ((uprev - uprev2)/dt3 - (uprev2 - uprev3)/dt4)/dt5)
+      DD31 = (u - uprev)/dt1 - (uprev - uprev2)/dt2
+      DD30 = (uprev - uprev2)/dt3 - (uprev2 - uprev3)/dt4
+      tmp = r*abs((DD31 - DD30)/dt5)
       atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
       if integrator.EEst <= 1
