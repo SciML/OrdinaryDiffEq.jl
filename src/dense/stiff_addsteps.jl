@@ -31,8 +31,8 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenb
       W = 1 - γ*J
     end
     W = 1-dt*d*J
-    k₁ = W\(f(t,uprev) .+ dt.*d.*dT)
-    f₁ = f(t+dt/2,uprev.+dt.*k₁/2)
+    k₁ = W\(f(t,uprev) + dt*d*dT)
+    f₁ = f(t+dt/2,uprev+dt*k₁/2)
     k₂ = W\(f₁-k₁) + k₁
     copyat_or_push!(k,1,k₁)
     copyat_or_push!(k,2,k₂)
