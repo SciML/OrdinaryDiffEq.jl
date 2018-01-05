@@ -13,7 +13,7 @@ function initialize!(integrator,cache::SymplecticEulerConstantCache)
   uprev,duprev = integrator.uprev.x
   u,du = integrator.u.x
   integrator.k[2].x[2] = integrator.f.f2(integrator.t,uprev,duprev)
-  @muladd du = @. duprev + integrator.dt*integrator.k[2].x[2]
+  @muladd du = duprev + integrator.dt*integrator.k[2].x[2]
   integrator.k[1].x[1] = integrator.f.f1(integrator.t,uprev,du)
 end
 
@@ -24,11 +24,11 @@ end
   kuprev = integrator.k[1].x[1]
   ku  = integrator.k[2].x[1]
   kdu = integrator.k[2].x[2]
-  u = @. uprev + dt*kuprev
+  u = uprev + dt*kuprev
   # Now actually compute the step
   # Do it at the end for interpolations!
   kdu = f.f2(t,uprev,duprev)
-  du = @. duprev + dt*kdu
+  du = duprev + dt*kdu
   ku = f.f1(t,uprev,du)
   integrator.fsallast = ku
 end

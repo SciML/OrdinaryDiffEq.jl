@@ -12,10 +12,10 @@ end
   @unpack t,dt,uprev,u,f = integrator
 
   # u1 -> stored as u
-  u = @. uprev + dt*integrator.fsalfirst
+  u = uprev + dt*integrator.fsalfirst
   k = f(t+dt, u)
   # u
-  u = @. (uprev + u + dt*k) / 2
+  u = (uprev + u + dt*k) / 2
 
   integrator.fsallast = f(t+dt,u) # For interpolation, then FSAL'd
   integrator.k[1] = integrator.fsalfirst
@@ -62,13 +62,13 @@ end
   @unpack t,dt,uprev,u,f = integrator
 
   # u1
-  u = @. uprev + dt*integrator.fsalfirst
+  u = uprev + dt*integrator.fsalfirst
   k = f(t+dt, u)
   # u2
-  u = @. (3*uprev + u + dt*k) / 4
+  u = (3*uprev + u + dt*k) / 4
   k = f(t+dt/2, u)
   # u
-  u = @. (uprev + 2*u + 2*dt*k) / 3
+  u = (uprev + 2*u + 2*dt*k) / 3
 
   integrator.fsallast = f(t+dt,u) # For interpolation, then FSAL'd
   integrator.k[1] = integrator.fsalfirst
@@ -120,19 +120,19 @@ end
   @unpack α30,α32,α40,α43,α52,α54,β10,β21,β32,β43,β54,c1,c2,c3,c4 = cache
 
   # u1
-  tmp = @. uprev + β10 * dt * integrator.fsalfirst
+  tmp = uprev + β10 * dt * integrator.fsalfirst
   k = f(t+c1*dt, tmp)
   # u2 -> stored as u
-  u = @. tmp + β21 * dt * k
+  u = tmp + β21 * dt * k
   k = f(t+c2*dt, u)
   # u3
-  tmp = @. α30 * uprev + α32 * u + β32 * dt * k
+  tmp = α30 * uprev + α32 * u + β32 * dt * k
   k = f(t+c3*dt, tmp)
   # u4
-  tmp = @. α40 * uprev + α43 * tmp + β43 * dt * k
+  tmp = α40 * uprev + α43 * tmp + β43 * dt * k
   k = f(t+c4*dt, tmp)
   # u
-  u = @. α52 * u + α54 * tmp + β54 * dt * k
+  u = α52 * u + α54 * tmp + β54 * dt * k
 
   integrator.fsallast = f(t+dt,u) # For interpolation, then FSAL'd
   integrator.k[1] = integrator.fsalfirst
@@ -192,22 +192,22 @@ end
   @unpack α40,α41,α43,α62,α65,β10,β21,β32,β43,β54,β65,c1,c2,c3,c4,c5 = cache
 
   # u1 -> stored as u
-  u = @. uprev + β10 * dt * integrator.fsalfirst
+  u = uprev + β10 * dt * integrator.fsalfirst
   k = f(t+c1*dt, u)
   # u2
-  u₂ = @. u + β21 * dt * k
+  u₂ = u + β21 * dt * k
   k = f(t+c2*dt, u₂)
   # u3
-  tmp = @. u₂ + β32 * dt * k
+  tmp = u₂ + β32 * dt * k
   k = f(t+c3*dt, tmp)
   # u4
-  tmp = @. α40 * uprev + α41 * u + α43 * tmp + β43 * dt * k
+  tmp = α40 * uprev + α41 * u + α43 * tmp + β43 * dt * k
   k = f(t+c4*dt, tmp)
   # u5
-  tmp = @. tmp + β54 * dt * k
+  tmp = tmp + β54 * dt * k
   k = f(t+c5*dt, tmp)
   # u
-  u = @. α62 * u₂ + α65 * tmp + β65 * dt * k
+  u = α62 * u₂ + α65 * tmp + β65 * dt * k
 
   integrator.fsallast = f(t+dt,u) # For interpolation, then FSAL'd
   integrator.k[1] = integrator.fsalfirst
@@ -271,25 +271,25 @@ end
   @unpack α40,α43,α50,α51,α54,α73,α76,β10,β21,β32,β43,β54,β65,β76,c1,c2,c3,c4,c5,c6 = cache
 
   # u1
-  u₁ = @. uprev + β10 * dt * integrator.fsalfirst
+  u₁ = uprev + β10 * dt * integrator.fsalfirst
   k = f(t+c1*dt, u₁)
   # u2
-  tmp = @. u₁ + β21 * dt * k
+  tmp = u₁ + β21 * dt * k
   k = f(t+c2*dt, tmp)
   # u3 -> stored as u
-  u = @. tmp + β32 * dt * k
+  u = tmp + β32 * dt * k
   k = f(t+c3*dt, u)
   # u4
-  tmp = @. α40 * uprev + α43 * u + β43 * dt * k
+  tmp = α40 * uprev + α43 * u + β43 * dt * k
   k = f(t+c4*dt, tmp)
   # u5
-  tmp = @. α50 * uprev + α51 * u₁ + α54 * tmp + β54 * dt * k
+  tmp = α50 * uprev + α51 * u₁ + α54 * tmp + β54 * dt * k
   k = f(t+c5*dt, tmp)
   # u6
-  tmp = @. tmp + β65 * dt * k
+  tmp = tmp + β65 * dt * k
   k = f(t+c6*dt, tmp)
   # u
-  u = @. α73 * u + α76 * tmp + β76 * dt * k
+  u = α73 * u + α76 * tmp + β76 * dt * k
 
   integrator.fsallast = f(t+dt,u) # For interpolation, then FSAL'd
   integrator.k[1] = integrator.fsalfirst
@@ -357,28 +357,28 @@ end
   @unpack α50,α51,α54,α61,α65,α72,α73,α76,β10,β21,β32,β43,β54,β65,β76,β87,c1,c2,c3,c4,c5,c6,c7 = cache
 
   # u1 -> save as u
-  u = @. uprev + β10 * dt * integrator.fsalfirst
+  u = uprev + β10 * dt * integrator.fsalfirst
   k = f(t+c1*dt, u)
   # u2
-  u₂ = @. u + β21 * dt * k
+  u₂ = u + β21 * dt * k
   k = f(t+c2*dt, u₂)
   # u3
-  u₃ = @. u₂ + β32 * dt * k
+  u₃ = u₂ + β32 * dt * k
   k = f(t+c3*dt, u₃)
   # u4
-  tmp = @. u₃ + β43 * dt * k
+  tmp = u₃ + β43 * dt * k
   k = f(t+c4*dt, tmp)
   # u5
-  tmp = @. α50 * uprev + α51 * u + α54 * tmp + β54 * dt * k
+  tmp = α50 * uprev + α51 * u + α54 * tmp + β54 * dt * k
   k = f(t+c5*dt, tmp)
   # u6
-  tmp = @. α61 * u + α65 * tmp + β65 * dt * k
+  tmp = α61 * u + α65 * tmp + β65 * dt * k
   k = f(t+c6*dt, tmp)
   # u7
-  tmp = @. α72 * u₂ + α73 * u₃ + α76 * tmp + β76 * dt * k
+  tmp = α72 * u₂ + α73 * u₃ + α76 * tmp + β76 * dt * k
   k = f(t+c7*dt, tmp)
   # u
-  u = @. tmp + β87 * dt * k
+  u = tmp + β87 * dt * k
 
   integrator.fsallast = f(t+dt,u) # For interpolation, then FSAL'd
   integrator.k[1] = integrator.fsalfirst
@@ -450,20 +450,20 @@ end
   dt_2 = dt / 2
 
   # u1
-  u = @. uprev + dt_2*integrator.fsalfirst
+  u = uprev + dt_2*integrator.fsalfirst
   k = f(t+dt_2, u)
   # u2
-  u = @. u + dt_2*k
+  u = u + dt_2*k
   k = f(t+dt, u)
-  u = @. u + dt_2*k
+  u = u + dt_2*k
   if integrator.opts.adaptive
-    utilde = @. (uprev + 2*u) / 3
+    utilde = (uprev + 2*u) / 3
   end
   # u3
-  u = @. (2*uprev + u) / 3
+  u = (2*uprev + u) / 3
   k = f(t+dt_2, u)
   # u
-  u = @. u + dt_2*k
+  u = u + dt_2*k
 
   integrator.fsallast = f(t+dt,u)
   if integrator.opts.adaptive
@@ -534,37 +534,37 @@ end
   dt_2 = dt / 2
 
   # u1
-  u = @. uprev + dt_6*integrator.fsalfirst
+  u = uprev + dt_6*integrator.fsalfirst
   k = f(t+dt_6, u)
   # u2
-  u = @. u + dt_6*k
+  u = u + dt_6*k
   k = f(t+dt_3, u)
   # u3
-  u = @. u + dt_6*k
+  u = u + dt_6*k
   k = f(t+dt_2, u)
   # u4
-  u = @. u + dt_6*k
+  u = u + dt_6*k
   k = f(t+2*dt_3, u)
   # u5
-  u = @. u + dt_6*k
+  u = u + dt_6*k
   k = f(t+5*dt_6, u)
   # u6
-  u = @. u + dt_6*k
+  u = u + dt_6*k
   if integrator.opts.adaptive
     k = f(t+dt, u)
-    utilde = @. (uprev + 6*u + 6*dt*k) / 7
+    utilde = (uprev + 6*u + 6*dt*k) / 7
   end
   # u6*
-  u = @. (3*uprev + dt_2*integrator.fsalfirst + 2*u) / 5
+  u = (3*uprev + dt_2*integrator.fsalfirst + 2*u) / 5
   k = f(t+dt_2, u)
   # u7*
-  u = @. u + dt_6*k
+  u = u + dt_6*k
   k = f(t+2*dt_3, u)
   # u8*
-  u = @. u + dt_6*k
+  u = u + dt_6*k
   k = f(t+5*dt_6, u)
   # u
-  u = @. u + dt_6*k
+  u = u + dt_6*k
 
   integrator.fsallast = f(t+dt,u)
   if integrator.opts.adaptive
@@ -659,19 +659,19 @@ end
   @unpack β10,α20,α21,β21,α30,α32,β32,α40,α43,β43,α52,α53,β53,α54,β54,c1,c2,c3,c4 = cache
 
   # u₁
-  u₂ = @. uprev + β10 * dt * integrator.fsalfirst
+  u₂ = uprev + β10 * dt * integrator.fsalfirst
   k = f(t+c1*dt, u₂)
   # u₂
-  u₂ = @. α20 * uprev + α21 * u₂ + β21 * dt * k
+  u₂ = α20 * uprev + α21 * u₂ + β21 * dt * k
   k = f(t+c2*dt, u₂)
   # u₃
-  u₃ = @. α30 * uprev + α32 * u₂ + β32 * dt * k
+  u₃ = α30 * uprev + α32 * u₂ + β32 * dt * k
   k₃ = f(t+c3*dt, u₃)
   # u₄ -> stored as tmp
-  tmp = @. α40 * uprev + α43 * u₃ + β43 * dt * k₃
+  tmp = α40 * uprev + α43 * u₃ + β43 * dt * k₃
   k = f(t+c4*dt, tmp)
   # u
-  u = @. α52 * u₂ + α53 * u₃ + β53 * dt * k₃ + α54 * tmp + β54 * dt * k
+  u = α52 * u₂ + α53 * u₃ + β53 * dt * k₃ + α54 * tmp + β54 * dt * k
 
   integrator.fsallast = f(t+dt,u) # For interpolation, then FSAL'd
   integrator.k[1] = integrator.fsalfirst
@@ -735,25 +735,25 @@ end
   dt_3 = dt/3
   dt_2 = dt/2
 
-  tmp = @. uprev + dt_6 * integrator.fsalfirst # u₁
+  tmp = uprev + dt_6 * integrator.fsalfirst # u₁
   k = f(t+dt_6, tmp)
-  tmp = @. tmp + dt_6 * k # u₂
+  tmp = tmp + dt_6 * k # u₂
   k = f(t+dt_3, tmp)
-  tmp = @. tmp + dt_6 * k # u₃
+  tmp = tmp + dt_6 * k # u₃
   k = f(t+dt_2, tmp)
-  u = @. tmp + dt_6 * k # u₄
+  u = tmp + dt_6 * k # u₄
   k₄ = f(t+2*dt_3, u)
-  tmp = @. (3*uprev + 2*u + dt_3 * k₄) / 5 # u₅
+  tmp = (3*uprev + 2*u + dt_3 * k₄) / 5 # u₅
   k = f(t+dt_3, tmp)
-  tmp = @. tmp + dt_6 * k # u₆
+  tmp = tmp + dt_6 * k # u₆
   k = f(t+dt_2, tmp)
-  tmp = @. tmp + dt_6 * k # u₇
+  tmp = tmp + dt_6 * k # u₇
   k = f(t+2*dt_3, tmp)
-  tmp = @. tmp + dt_6 * k # u₈
+  tmp = tmp + dt_6 * k # u₈
   k = f(t+5*dt_6, tmp)
-  tmp = @. tmp + dt_6 * k # u₉
+  tmp = tmp + dt_6 * k # u₉
   k = f(t+dt, tmp)
-  u = @. (uprev + 9*(u + dt_6*k₄) + 15*(tmp + dt_6*k)) / 25
+  u = (uprev + 9*(u + dt_6*k₄) + 15*(tmp + dt_6*k)) / 25
 
   integrator.fsallast = f(t+dt,u) # For interpolation, then FSAL'd
   integrator.k[1] = integrator.fsalfirst
