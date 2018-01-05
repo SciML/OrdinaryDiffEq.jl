@@ -2,19 +2,15 @@
 
 function initialize!(integrator,cache::SymplecticEulerConstantCache)
   integrator.kshortsize = 2
-  @unpack k,fsalfirst = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
   # Do the calculation pre
   # So that way FSAL interpolation
   uprev,duprev = integrator.uprev.x
   u,du = integrator.u.x
-  integrator.k[2].x[2] = integrator.f.f2(integrator.t,uprev,duprev)
-  @muladd du = duprev + integrator.dt*integrator.k[2].x[2]
-  integrator.k[1].x[1] = integrator.f.f1(integrator.t,uprev,du)
+  kdu = integrator.f.f2(integrator.t,uprev,duprev)
+  @muladd du = duprev + integrator.dt*kdu
+  ku = integrator.f.f1(integrator.t,uprev,du)
+  integrator.fsalfirst = ArrayPartition((ku,kdu))
 end
 
 @muladd function perform_step!(integrator,cache::SymplecticEulerConstantCache,repeat_step=false)
@@ -30,7 +26,11 @@ end
   kdu = f.f2(t,uprev,duprev)
   du = duprev + dt*kdu
   ku = f.f1(t,uprev,du)
-  integrator.fsallast = ku
+
+  integrator.u = ArrayPartition((u,du))
+  integrator.fsallast = ArrayPartition((ku,kdu))
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
 end
 
 function initialize!(integrator,cache::SymplecticEulerCache)

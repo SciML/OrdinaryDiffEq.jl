@@ -184,10 +184,17 @@ end
 f22 = function (t,u,v)
   dv = -u
 end
-function (::typeof(f2))(::Type{Val{:analytic}}, x, y0)
+
+prob = DynamicalODEProblem(f12,f22,u0,v0,(0.0,5.0))
+function (::typeof(prob.f))(::Type{Val{:analytic}}, x, y0)
   u0, v0 = y0
   ArrayPartition(u0*cos(x) + v0*sin(x), -u0*sin(x) + v0*cos(x))
 end
 
-prob = ODEProblem((f1,f2),(u0,v0),(0.0,5.0)) # iip wrong
-@test_broken sol = solve(prob,SymplecticEuler(),dt=1/2)
+sol = solve(prob,SymplecticEuler(),dt=1/2)
+
+dts = 1.//2.^(6:-1:3)
+# Symplectic Euler
+sim = test_convergence(dts,prob,SymplecticEuler(),dense_errors=true)
+@test sim.𝒪est[:l2] ≈ 1 rtol = 1e-1
+@test sim.𝒪est[:L2] ≈ 1 rtol = 1e-1
