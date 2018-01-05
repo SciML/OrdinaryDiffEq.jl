@@ -12,99 +12,24 @@ function initialize!(integrator, cache::Vern6ConstantCache)
   integrator.k[integrator.kshortsize] = integrator.fsallast
 end
 
-#=
 @muladd function perform_step!(integrator, cache::Vern6ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
   @unpack c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,a91,a94,a95,a96,a97,a98,btilde1,btilde4,btilde5,btilde6,btilde7,btilde8,btilde9 = cache
   k1 = integrator.fsalfirst
   a = dt*a21
-  k2 = f(t + c1*dt, @. uprev+a*k1)
-  k3 = f(t + c2*dt, @. uprev+dt*(a31*k1+a32*k2))
-  k4 = f(t + c3*dt, @. uprev+dt*(a41*k1       +a43*k3))
-  k5 = f(t + c4*dt, @. uprev+dt*(a51*k1       +a53*k3+a54*k4))
-  k6 = f(t + c5*dt, @. uprev+dt*(a61*k1       +a63*k3+a64*k4+a65*k5))
-  k7 = f(t + c6*dt, @. uprev+dt*(a71*k1       +a73*k3+a74*k4+a75*k5+a76*k6))
-  k8 = f(t+dt, @. uprev+dt*(a81*k1       +a83*k3+a84*k4+a85*k5+a86*k6+a87*k7))
-  u = @. uprev+dt*(a91*k1              +a94*k4+a95*k5+a96*k6+a97*k7+a98*k8)
+  k2 = f(t + c1*dt, uprev+a*k1)
+  k3 = f(t + c2*dt, uprev+dt*(a31*k1+a32*k2))
+  k4 = f(t + c3*dt, uprev+dt*(a41*k1       +a43*k3))
+  k5 = f(t + c4*dt, uprev+dt*(a51*k1       +a53*k3+a54*k4))
+  k6 = f(t + c5*dt, uprev+dt*(a61*k1       +a63*k3+a64*k4+a65*k5))
+  k7 = f(t + c6*dt, uprev+dt*(a71*k1       +a73*k3+a74*k4+a75*k5+a76*k6))
+  k8 = f(t+dt, uprev+dt*(a81*k1       +a83*k3+a84*k4+a85*k5+a86*k6+a87*k7))
+  u = uprev+dt*(a91*k1              +a94*k4+a95*k5+a96*k6+a97*k7+a98*k8)
   integrator.fsallast = f(t+dt,u); k9 = integrator.fsallast
   if integrator.opts.adaptive
-    utilde = @. dt*(btilde1*k1 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9)
+    utilde = dt*(btilde1*k1 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9)
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
-  end
-  integrator.k[1]=k1; integrator.k[2]=k2;
-  integrator.k[3]=k3; integrator.k[4]=k4;
-  integrator.k[5]=k5; integrator.k[6]=k6;
-  integrator.k[7]=k7; integrator.k[8]=k8;
-  integrator.k[9]=k9
-  integrator.u = u
-end
-=#
-
-@muladd function perform_step!(integrator, cache::Vern6ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
-  @unpack c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,a91,a94,a95,a96,a97,a98,btilde1,btilde4,btilde5,btilde6,btilde7,btilde8,btilde9 = cache
-  k1 = integrator.fsalfirst
-  a = dt*a21
-  if typeof(u) <: AbstractArray && !(typeof(u) <: SArray)
-    uidx = eachindex(uprev)
-    tmp = similar(uprev)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+a*k1[i]
-    end
-    k2 = f(t + c1*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a31*k1[i]+a32*k2[i])
-    end
-    k3 = f(t + c2*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a41*k1[i]+a43*k3[i])
-    end
-    k4 = f(t + c3*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a51*k1[i]+a53*k3[i]+a54*k4[i])
-    end
-    k5 = f(t + c4*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a61*k1[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
-    end
-    k6 = f(t + c5*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a71*k1[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i])
-    end
-    k7 = f(t + c6*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a81*k1[i]+a83*k3[i]+a84*k4[i]+a85*k5[i]+a86*k6[i]+a87*k7[i])
-    end
-    k8 = f(t+dt,tmp)
-    utmp = similar(u)
-    @tight_loop_macros for i in uidx
-      @inbounds utmp[i] = uprev[i]+dt*(a91*k1[i]+a94*k4[i]+a95*k5[i]+a96*k6[i]+a97*k7[i]+a98*k8[i])
-    end
-    u = utmp
-    integrator.fsallast = f(t+dt,u); k9 = integrator.fsallast
-    if integrator.opts.adaptive
-      @tight_loop_macros for i in uidx
-        @inbounds tmp[i] = dt*(btilde1*k1[i] + btilde4*k4[i] + btilde5*k5[i] + btilde6*k6[i] + btilde7*k7[i] + btilde8*k8[i] + btilde9*k9[i])
-      end
-      atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp)
-    end
-  else
-    k2 = f(t + c1*dt, uprev+a*k1)
-    k3 = f(t + c2*dt, uprev+dt*(a31*k1+a32*k2))
-    k4 = f(t + c3*dt, uprev+dt*(a41*k1       +a43*k3))
-    k5 = f(t + c4*dt, uprev+dt*(a51*k1       +a53*k3+a54*k4))
-    k6 = f(t + c5*dt, uprev+dt*(a61*k1       +a63*k3+a64*k4+a65*k5))
-    k7 = f(t + c6*dt, uprev+dt*(a71*k1       +a73*k3+a74*k4+a75*k5+a76*k6))
-    k8 = f(t+dt, uprev+dt*(a81*k1       +a83*k3+a84*k4+a85*k5+a86*k6+a87*k7))
-    u = uprev+dt*(a91*k1              +a94*k4+a95*k5+a96*k6+a97*k7+a98*k8)
-    integrator.fsallast = f(t+dt,u); k9 = integrator.fsallast
-    if integrator.opts.adaptive
-      utilde = dt*(btilde1*k1 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9)
-      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp)
-    end
   end
   integrator.k[1]=k1; integrator.k[2]=k2;
   integrator.k[3]=k3; integrator.k[4]=k4;
@@ -212,108 +137,25 @@ function initialize!(integrator, cache::Vern7ConstantCache)
   end
 end
 
-#=
-@muladd function perform_step!(integrator, cache::Vern7ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
-  @unpack c2,c3,c4,c5,c6,c7,c8,a021,a031,a032,a041,a043,a051,a053,a054,a061,a063,a064,a065,a071,a073,a074,a075,a076,a081,a083,a084,a085,a086,a087,a091,a093,a094,a095,a096,a097,a098,a101,a103,a104,a105,a106,a107,b1,b4,b5,b6,b7,b8,b9,btilde1,btilde4,btilde5,btilde6,btilde7,btilde8,btilde9,btilde10 = cache
-  k1 = f(t,uprev)
-  a = dt*a021
-  k2 = f(t + c2*dt, @. uprev+a*k1)
-  k3 = f(t + c3*dt, @. uprev+dt*(a031*k1+a032*k2))
-  k4 = f(t + c4*dt, @. uprev+dt*(a041*k1       +a043*k3))
-  k5 = f(t + c5*dt, @. uprev+dt*(a051*k1       +a053*k3+a054*k4))
-  k6 = f(t + c6*dt, @. uprev+dt*(a061*k1       +a063*k3+a064*k4+a065*k5))
-  k7 = f(t + c7*dt, @. uprev+dt*(a071*k1       +a073*k3+a074*k4+a075*k5+a076*k6))
-  k8 = f(t + c8*dt, @. uprev+dt*(a081*k1       +a083*k3+a084*k4+a085*k5+a086*k6+a087*k7))
-  k9 = f(t+dt, @. uprev+dt*(a091*k1          +a093*k3+a094*k4+a095*k5+a096*k6+a097*k7+a098*k8))
-  k10= f(t+dt, @. uprev+dt*(a101*k1          +a103*k3+a104*k4+a105*k5+a106*k6+a107*k7))
-  u = @. uprev + dt*(b1*k1 + b4*k4 + b5*k5 + b6*k6 + b7*k7 + b8*k8 + b9*k9)
-  if integrator.opts.adaptive
-    utilde = @. dt*(btilde1*k1 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9 + btilde10*k10)
-    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(atmp)
-  end
-  integrator.k[1]=k1; integrator.k[2]=k2;
-  integrator.k[3]=k3; integrator.k[4]=k4;
-  integrator.k[5]=k5; integrator.k[6]=k6;
-  integrator.k[7]=k7; integrator.k[8]=k8;
-  integrator.k[9]=k9; integrator.k[10]=k10
-  integrator.u = u
-end
-=#
-
 @muladd function perform_step!(integrator, cache::Vern7ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,k,f = integrator
   @unpack c2,c3,c4,c5,c6,c7,c8,a021,a031,a032,a041,a043,a051,a053,a054,a061,a063,a064,a065,a071,a073,a074,a075,a076,a081,a083,a084,a085,a086,a087,a091,a093,a094,a095,a096,a097,a098,a101,a103,a104,a105,a106,a107,b1,b4,b5,b6,b7,b8,b9,btilde1,btilde4,btilde5,btilde6,btilde7,btilde8,btilde9,btilde10 = cache
   k1 = f(t,uprev)
   a = dt*a021
-  if typeof(u) <: AbstractArray && !(typeof(u) <: SArray)
-    uidx = eachindex(uprev)
-    tmp = similar(uprev)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+a*k1[i]
-    end
-    k2 = f(t + c2*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a031*k1[i]+a032*k2[i])
-    end
-    k3 = f(t + c3*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a041*k1[i]+a043*k3[i])
-    end
-    k4 = f(t + c4*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a051*k1[i]+a053*k3[i]+a054*k4[i])
-    end
-    k5 = f(t + c5*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a061*k1[i]+a063*k3[i]+a064*k4[i]+a065*k5[i])
-    end
-    k6 = f(t + c6*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a071*k1[i]+a073*k3[i]+a074*k4[i]+a075*k5[i]+a076*k6[i])
-    end
-    k7 = f(t + c7*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a081*k1[i]+a083*k3[i]+a084*k4[i]+a085*k5[i]+a086*k6[i]+a087*k7[i])
-    end
-    k8 = f(t + c8*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a091*k1[i]+a093*k3[i]+a094*k4[i]+a095*k5[i]+a096*k6[i]+a097*k7[i]+a098*k8[i])
-    end
-    k9 = f(t+dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a101*k1[i]+a103*k3[i]+a104*k4[i]+a105*k5[i]+a106*k6[i]+a107*k7[i])
-    end
-    k10 = f(t+dt,tmp)
-    utmp = similar(u)
-    @tight_loop_macros for i in uidx
-      @inbounds utmp[i] = uprev[i] + dt*(b1*k1[i] + b4*k4[i] + b5*k5[i] + b6*k6[i] + b7*k7[i] + b8*k8[i] + b9*k9[i])
-    end
-    u = utmp
-    if integrator.opts.adaptive
-      @tight_loop_macros for i in uidx
-        @inbounds tmp[i] = dt*(btilde1*k1[i] + btilde4*k4[i] + btilde5*k5[i] + btilde6*k6[i] + btilde7*k7[i] + btilde8*k8[i] + btilde9*k9[i] + btilde10*k10[i])
-      end
-      atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp)
-    end
-  else
-    k2 = f(t + c2*dt, uprev+a*k1)
-    k3 = f(t + c3*dt, uprev+dt*(a031*k1+a032*k2))
-    k4 = f(t + c4*dt, uprev+dt*(a041*k1       +a043*k3))
-    k5 = f(t + c5*dt, uprev+dt*(a051*k1       +a053*k3+a054*k4))
-    k6 = f(t + c6*dt, uprev+dt*(a061*k1       +a063*k3+a064*k4+a065*k5))
-    k7 = f(t + c7*dt, uprev+dt*(a071*k1       +a073*k3+a074*k4+a075*k5+a076*k6))
-    k8 = f(t + c8*dt, uprev+dt*(a081*k1       +a083*k3+a084*k4+a085*k5+a086*k6+a087*k7))
-    k9 = f(t+dt, uprev+dt*(a091*k1          +a093*k3+a094*k4+a095*k5+a096*k6+a097*k7+a098*k8))
-    k10= f(t+dt, uprev+dt*(a101*k1          +a103*k3+a104*k4+a105*k5+a106*k6+a107*k7))
-    u = uprev + dt*(b1*k1 + b4*k4 + b5*k5 + b6*k6 + b7*k7 + b8*k8 + b9*k9)
-    if integrator.opts.adaptive
-      utilde = dt*(btilde1*k1 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9 + btilde10*k10)
-      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp)
-    end
+  k2 = f(t + c2*dt, uprev+a*k1)
+  k3 = f(t + c3*dt, uprev+dt*(a031*k1+a032*k2))
+  k4 = f(t + c4*dt, uprev+dt*(a041*k1       +a043*k3))
+  k5 = f(t + c5*dt, uprev+dt*(a051*k1       +a053*k3+a054*k4))
+  k6 = f(t + c6*dt, uprev+dt*(a061*k1       +a063*k3+a064*k4+a065*k5))
+  k7 = f(t + c7*dt, uprev+dt*(a071*k1       +a073*k3+a074*k4+a075*k5+a076*k6))
+  k8 = f(t + c8*dt, uprev+dt*(a081*k1       +a083*k3+a084*k4+a085*k5+a086*k6+a087*k7))
+  k9 = f(t+dt, uprev+dt*(a091*k1          +a093*k3+a094*k4+a095*k5+a096*k6+a097*k7+a098*k8))
+  k10= f(t+dt, uprev+dt*(a101*k1          +a103*k3+a104*k4+a105*k5+a106*k6+a107*k7))
+  u = uprev + dt*(b1*k1 + b4*k4 + b5*k5 + b6*k6 + b7*k7 + b8*k8 + b9*k9)
+  if integrator.opts.adaptive
+    utilde = dt*(btilde1*k1 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9 + btilde10*k10)
+    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+    integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   integrator.k[1]=k1; integrator.k[2]=k2;
   integrator.k[3]=k3; integrator.k[4]=k4;
@@ -430,128 +272,28 @@ function initialize!(integrator, cache::Vern8ConstantCache)
   end
 end
 
-#=
 @muladd function perform_step!(integrator, cache::Vern8ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
   @unpack c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211,a1301,a1304,a1305,a1306,a1307,a1308,a1309,a1310,b1,b6,b7,b8,b9,b10,b11,b12,btilde1,btilde6,btilde7,btilde8,btilde9,btilde10,btilde11,btilde12,btilde13 = cache
   k1 = f(t,uprev)
   a = dt*a0201
-  k2 = f(t + c2*dt, @. uprev+a*k1)
-  k3 = f(t + c3*dt, @. uprev+dt*(a0301*k1+a0302*k2))
-  k4 = f(t + c4*dt, @. uprev+dt*(a0401*k1       +a0403*k3))
-  k5 = f(t + c5*dt, @. uprev+dt*(a0501*k1       +a0503*k3+a0504*k4))
-  k6 = f(t + c6*dt, @. uprev+dt*(a0601*k1                +a0604*k4+a0605*k5))
-  k7 = f(t + c7*dt, @. uprev+dt*(a0701*k1                +a0704*k4+a0705*k5+a0706*k6))
-  k8 = f(t + c8*dt, @. uprev+dt*(a0801*k1                +a0804*k4+a0805*k5+a0806*k6+a0807*k7))
-  k9 = f(t + c9*dt, @. uprev+dt*(a0901*k1                +a0904*k4+a0905*k5+a0906*k6+a0907*k7+a0908*k8))
-  k10= f(t + c10*dt, @. uprev+dt*(a1001*k1                +a1004*k4+a1005*k5+a1006*k6+a1007*k7+a1008*k8+a1009*k9))
-  k11= f(t + c11*dt, @. uprev+dt*(a1101*k1                +a1104*k4+a1105*k5+a1106*k6+a1107*k7+a1108*k8+a1109*k9+a1110*k10))
-  k12= f(t+    dt, @. uprev+dt*(a1201*k1                +a1204*k4+a1205*k5+a1206*k6+a1207*k7+a1208*k8+a1209*k9+a1210*k10+a1211*k11))
-  k13= f(t+    dt, @. uprev+dt*(a1301*k1                +a1304*k4+a1305*k5+a1306*k6+a1307*k7+a1308*k8+a1309*k9+a1310*k10))
-  u = @. uprev + dt*(b1*k1 + b6*k6 + b7*k7 + b8*k8 + b9*k9 + b10*k10 + b11*k11 + b12*k12)
+  k2 = f(t + c2*dt, uprev+a*k1)
+  k3 = f(t + c3*dt, uprev+dt*(a0301*k1+a0302*k2))
+  k4 = f(t + c4*dt, uprev+dt*(a0401*k1       +a0403*k3))
+  k5 = f(t + c5*dt, uprev+dt*(a0501*k1       +a0503*k3+a0504*k4))
+  k6 = f(t + c6*dt, uprev+dt*(a0601*k1                +a0604*k4+a0605*k5))
+  k7 = f(t + c7*dt, uprev+dt*(a0701*k1                +a0704*k4+a0705*k5+a0706*k6))
+  k8 = f(t + c8*dt, uprev+dt*(a0801*k1                +a0804*k4+a0805*k5+a0806*k6+a0807*k7))
+  k9 = f(t + c9*dt, uprev+dt*(a0901*k1                +a0904*k4+a0905*k5+a0906*k6+a0907*k7+a0908*k8))
+  k10= f(t + c10*dt, uprev+dt*(a1001*k1                +a1004*k4+a1005*k5+a1006*k6+a1007*k7+a1008*k8+a1009*k9))
+  k11= f(t + c11*dt, uprev+dt*(a1101*k1                +a1104*k4+a1105*k5+a1106*k6+a1107*k7+a1108*k8+a1109*k9+a1110*k10))
+  k12= f(t+    dt, uprev+dt*(a1201*k1                +a1204*k4+a1205*k5+a1206*k6+a1207*k7+a1208*k8+a1209*k9+a1210*k10+a1211*k11))
+  k13= f(t+    dt, uprev+dt*(a1301*k1                +a1304*k4+a1305*k5+a1306*k6+a1307*k7+a1308*k8+a1309*k9+a1310*k10))
+  u = uprev + dt*(b1*k1 + b6*k6 + b7*k7 + b8*k8 + b9*k9 + b10*k10 + b11*k11 + b12*k12)
   if integrator.opts.adaptive
-    utilde = @. dt*(btilde1*k1 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9 + btilde10*k10 + btilde11*k11 + btilde12*k12 + btilde13*k13)
+    utilde = dt*(btilde1*k1 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9 + btilde10*k10 + btilde11*k11 + btilde12*k12 + btilde13*k13)
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
-  end
-  integrator.k[1]=k1; integrator.k[2]=k2;
-  integrator.k[3]=k3; integrator.k[4]=k4;
-  integrator.k[5]=k5; integrator.k[6]=k6;
-  integrator.k[7]=k7; integrator.k[8]=k8;
-  integrator.k[9]=k9; integrator.k[10]=k10;
-  integrator.k[11]=k11; integrator.k[12]=k12;
-  integrator.k[13]=k13
-  integrator.u = u
-end
-=#
-
-@muladd function perform_step!(integrator, cache::Vern8ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
-  @unpack c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211,a1301,a1304,a1305,a1306,a1307,a1308,a1309,a1310,b1,b6,b7,b8,b9,b10,b11,b12,btilde1,btilde6,btilde7,btilde8,btilde9,btilde10,btilde11,btilde12,btilde13 = cache
-  k1 = f(t,uprev)
-  a = dt*a0201
-  if typeof(u) <: AbstractArray && !(typeof(u) <: SArray)
-    uidx = eachindex(uprev)
-    tmp = similar(uprev)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+a*k1[i]
-    end
-    k2 = f(t + c2*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a0301*k1[i]+a0302*k2[i])
-    end
-    k3 = f(t + c3*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a0401*k1[i]+a0403*k3[i])
-    end
-    k4 = f(t + c4*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a0501*k1[i]+a0503*k3[i]+a0504*k4[i])
-    end
-    k5 = f(t + c5*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a0601*k1[i]+a0604*k4[i]+a0605*k5[i])
-    end
-    k6 = f(t + c6*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a0701*k1[i]+a0704*k4[i]+a0705*k5[i]+a0706*k6[i])
-    end
-    k7 = f(t + c7*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a0801*k1[i]+a0804*k4[i]+a0805*k5[i]+a0806*k6[i]+a0807*k7[i])
-    end
-    k8 = f(t + c8*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a0901*k1[i]+a0904*k4[i]+a0905*k5[i]+a0906*k6[i]+a0907*k7[i]+a0908*k8[i])
-    end
-    k9 = f(t + c9*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a1001*k1[i]+a1004*k4[i]+a1005*k5[i]+a1006*k6[i]+a1007*k7[i]+a1008*k8[i]+a1009*k9[i])
-    end
-    k10 = f(t + c10*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a1101*k1[i]+a1104*k4[i]+a1105*k5[i]+a1106*k6[i]+a1107*k7[i]+a1108*k8[i]+a1109*k9[i]+a1110*k10[i])
-    end
-    k11 = f(t + c11*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a1201*k1[i]+a1204*k4[i]+a1205*k5[i]+a1206*k6[i]+a1207*k7[i]+a1208*k8[i]+a1209*k9[i]+a1210*k10[i]+a1211*k11[i])
-    end
-    k12 = f(t+dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a1301*k1[i]+a1304*k4[i]+a1305*k5[i]+a1306*k6[i]+a1307*k7[i]+a1308*k8[i]+a1309*k9[i]+a1310*k10[i])
-    end
-    k13 = f(t+dt,tmp)
-    utmp = similar(u)
-    @tight_loop_macros for i in uidx
-      @inbounds utmp[i] = uprev[i] + dt*(b1*k1[i] + b6*k6[i] + b7*k7[i] + b8*k8[i] + b9*k9[i] + b10*k10[i] + b11*k11[i] + b12*k12[i])
-    end
-    u = utmp
-    if integrator.opts.adaptive
-      @tight_loop_macros for i in uidx
-        @inbounds tmp[i] = dt*(btilde1*k1[i] + btilde6*k6[i] + btilde7*k7[i] + btilde8*k8[i] + btilde9*k9[i] + btilde10*k10[i] + btilde11*k11[i] + btilde12*k12[i] + btilde13*k13[i])
-      end
-      atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp)
-    end
-  else
-    k2 = f(t + c2*dt, uprev+a*k1)
-    k3 = f(t + c3*dt, uprev+dt*(a0301*k1+a0302*k2))
-    k4 = f(t + c4*dt, uprev+dt*(a0401*k1       +a0403*k3))
-    k5 = f(t + c5*dt, uprev+dt*(a0501*k1       +a0503*k3+a0504*k4))
-    k6 = f(t + c6*dt, uprev+dt*(a0601*k1                +a0604*k4+a0605*k5))
-    k7 = f(t + c7*dt, uprev+dt*(a0701*k1                +a0704*k4+a0705*k5+a0706*k6))
-    k8 = f(t + c8*dt, uprev+dt*(a0801*k1                +a0804*k4+a0805*k5+a0806*k6+a0807*k7))
-    k9 = f(t + c9*dt, uprev+dt*(a0901*k1                +a0904*k4+a0905*k5+a0906*k6+a0907*k7+a0908*k8))
-    k10= f(t + c10*dt, uprev+dt*(a1001*k1                +a1004*k4+a1005*k5+a1006*k6+a1007*k7+a1008*k8+a1009*k9))
-    k11= f(t + c11*dt, uprev+dt*(a1101*k1                +a1104*k4+a1105*k5+a1106*k6+a1107*k7+a1108*k8+a1109*k9+a1110*k10))
-    k12= f(t+    dt, uprev+dt*(a1201*k1                +a1204*k4+a1205*k5+a1206*k6+a1207*k7+a1208*k8+a1209*k9+a1210*k10+a1211*k11))
-    k13= f(t+    dt, uprev+dt*(a1301*k1                +a1304*k4+a1305*k5+a1306*k6+a1307*k7+a1308*k8+a1309*k9+a1310*k10))
-    u = uprev + dt*(b1*k1 + b6*k6 + b7*k7 + b8*k8 + b9*k9 + b10*k10 + b11*k11 + b12*k12)
-    if integrator.opts.adaptive
-      utilde = dt*(btilde1*k1 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9 + btilde10*k10 + btilde11*k11 + btilde12*k12 + btilde13*k13)
-      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp)
-    end
   end
   integrator.k[1]=k1; integrator.k[2]=k2;
   integrator.k[3]=k3; integrator.k[4]=k4;
@@ -688,147 +430,31 @@ function initialize!(integrator, cache::Vern9ConstantCache)
   end
 end
 
-#=
 @muladd function perform_step!(integrator, cache::Vern9ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f = integrator
   @unpack c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0806,a0807,a0901,a0906,a0907,a0908,a1001,a1006,a1007,a1008,a1009,a1101,a1106,a1107,a1108,a1109,a1110,a1201,a1206,a1207,a1208,a1209,a1210,a1211,a1301,a1306,a1307,a1308,a1309,a1310,a1311,a1312,a1401,a1406,a1407,a1408,a1409,a1410,a1411,a1412,a1413,a1501,a1506,a1507,a1508,a1509,a1510,a1511,a1512,a1513,a1514,a1601,a1606,a1607,a1608,a1609,a1610,a1611,a1612,a1613,b1,b8,b9,b10,b11,b12,b13,b14,b15,btilde1,btilde8,btilde9,btilde10,btilde11,btilde12,btilde13,btilde14,btilde15,btilde16 = cache
   k1 = f(t,uprev)
   a = dt*a0201
-  k2 = f(t + c1*dt, @. uprev+a*k1)
-  k3 = f(t + c2*dt, @. uprev+dt*(a0301*k1+a0302*k2))
-  k4 = f(t + c3*dt, @. uprev+dt*(a0401*k1       +a0403*k3))
-  k5 = f(t + c4*dt, @. uprev+dt*(a0501*k1       +a0503*k3+a0504*k4))
-  k6 = f(t + c5*dt, @. uprev+dt*(a0601*k1                +a0604*k4+a0605*k5))
-  k7 = f(t + c6*dt, @. uprev+dt*(a0701*k1                +a0704*k4+a0705*k5+a0706*k6))
-  k8 = f(t + c7*dt, @. uprev+dt*(a0801*k1                                  +a0806*k6+a0807*k7))
-  k9 = f(t + c8*dt, @. uprev+dt*(a0901*k1                                  +a0906*k6+a0907*k7+a0908*k8))
-  k10 =f(t + c9*dt, @. uprev+dt*(a1001*k1                                  +a1006*k6+a1007*k7+a1008*k8+a1009*k9))
-  k11= f(t + c10*dt, @. uprev+dt*(a1101*k1                                  +a1106*k6+a1107*k7+a1108*k8+a1109*k9+a1110*k10))
-  k12= f(t + c11*dt, @. uprev+dt*(a1201*k1                                  +a1206*k6+a1207*k7+a1208*k8+a1209*k9+a1210*k10+a1211*k11))
-  k13= f(t + c12*dt, @. uprev+dt*(a1301*k1                                  +a1306*k6+a1307*k7+a1308*k8+a1309*k9+a1310*k10+a1311*k11+a1312*k12))
-  k14= f(t + c13*dt, @. uprev+dt*(a1401*k1                                  +a1406*k6+a1407*k7+a1408*k8+a1409*k9+a1410*k10+a1411*k11+a1412*k12+a1413*k13))
-  k15= f(t+dt, @. uprev+dt*(a1501*k1                                  +a1506*k6+a1507*k7+a1508*k8+a1509*k9+a1510*k10+a1511*k11+a1512*k12+a1513*k13+a1514*k14))
-  k16= f(t+dt, @. uprev+dt*(a1601*k1                                  +a1606*k6+a1607*k7+a1608*k8+a1609*k9+a1610*k10+a1611*k11+a1612*k12+a1613*k13))
-  u = @. uprev + dt*(b1*k1+b8*k8+b9*k9+b10*k10+b11*k11+b12*k12+b13*k13+b14*k14+b15*k15)
+  k2 = f(t + c1*dt, uprev+a*k1)
+  k3 = f(t + c2*dt, uprev+dt*(a0301*k1+a0302*k2))
+  k4 = f(t + c3*dt, uprev+dt*(a0401*k1       +a0403*k3))
+  k5 = f(t + c4*dt, uprev+dt*(a0501*k1       +a0503*k3+a0504*k4))
+  k6 = f(t + c5*dt, uprev+dt*(a0601*k1                +a0604*k4+a0605*k5))
+  k7 = f(t + c6*dt, uprev+dt*(a0701*k1                +a0704*k4+a0705*k5+a0706*k6))
+  k8 = f(t + c7*dt, uprev+dt*(a0801*k1                                  +a0806*k6+a0807*k7))
+  k9 = f(t + c8*dt, uprev+dt*(a0901*k1                                  +a0906*k6+a0907*k7+a0908*k8))
+  k10 =f(t + c9*dt, uprev+dt*(a1001*k1                                  +a1006*k6+a1007*k7+a1008*k8+a1009*k9))
+  k11= f(t + c10*dt, uprev+dt*(a1101*k1                                  +a1106*k6+a1107*k7+a1108*k8+a1109*k9+a1110*k10))
+  k12= f(t + c11*dt, uprev+dt*(a1201*k1                                  +a1206*k6+a1207*k7+a1208*k8+a1209*k9+a1210*k10+a1211*k11))
+  k13= f(t + c12*dt, uprev+dt*(a1301*k1                                  +a1306*k6+a1307*k7+a1308*k8+a1309*k9+a1310*k10+a1311*k11+a1312*k12))
+  k14= f(t + c13*dt, uprev+dt*(a1401*k1                                  +a1406*k6+a1407*k7+a1408*k8+a1409*k9+a1410*k10+a1411*k11+a1412*k12+a1413*k13))
+  k15= f(t+dt, uprev+dt*(a1501*k1                                  +a1506*k6+a1507*k7+a1508*k8+a1509*k9+a1510*k10+a1511*k11+a1512*k12+a1513*k13+a1514*k14))
+  k16= f(t+dt, uprev+dt*(a1601*k1                                  +a1606*k6+a1607*k7+a1608*k8+a1609*k9+a1610*k10+a1611*k11+a1612*k12+a1613*k13))
+  u = uprev + dt*(b1*k1+b8*k8+b9*k9+b10*k10+b11*k11+b12*k12+b13*k13+b14*k14+b15*k15)
   if integrator.opts.adaptive
-    utilde = @. dt*(btilde1*k1 + btilde8*k8 + btilde9*k9 + btilde10*k10 + btilde11*k11 + btilde12*k12 + btilde13*k13 + btilde14*k14 + btilde15*k15 + btilde16*k16)
+    utilde = dt*(btilde1*k1 + btilde8*k8 + btilde9*k9 + btilde10*k10 + btilde11*k11 + btilde12*k12 + btilde13*k13 + btilde14*k14 + btilde15*k15 + btilde16*k16)
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
-  end
-  integrator.k[1]=k1; integrator.k[2]=k2;
-  integrator.k[3]=k3; integrator.k[4]=k4;
-  integrator.k[5]=k5; integrator.k[6]=k6;
-  integrator.k[7]=k7; integrator.k[8]=k8;
-  integrator.k[9]=k9; integrator.k[10]=k10;
-  integrator.k[11]=k11; integrator.k[12]=k12;
-  integrator.k[13]=k13; integrator.k[14]=k14;
-  integrator.k[15]=k15; integrator.k[16]=k16
-  integrator.u = u
-end
-=#
-
-@muladd function perform_step!(integrator, cache::Vern9ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
-  @unpack c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0806,a0807,a0901,a0906,a0907,a0908,a1001,a1006,a1007,a1008,a1009,a1101,a1106,a1107,a1108,a1109,a1110,a1201,a1206,a1207,a1208,a1209,a1210,a1211,a1301,a1306,a1307,a1308,a1309,a1310,a1311,a1312,a1401,a1406,a1407,a1408,a1409,a1410,a1411,a1412,a1413,a1501,a1506,a1507,a1508,a1509,a1510,a1511,a1512,a1513,a1514,a1601,a1606,a1607,a1608,a1609,a1610,a1611,a1612,a1613,b1,b8,b9,b10,b11,b12,b13,b14,b15,btilde1,btilde8,btilde9,btilde10,btilde11,btilde12,btilde13,btilde14,btilde15,btilde16 = cache
-  k1 = f(t,uprev)
-  a = dt*a0201
-  if typeof(u) <: AbstractArray && !(typeof(u) <: SArray)
-    uidx = eachindex(uprev)
-    tmp = similar(uprev)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+a*k1[i]
-    end
-    k2 = f(t + c1*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a0301*k1[i]+a0302*k2[i])
-    end
-    k3 = f(t + c2*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a0401*k1[i]+a0403*k3[i])
-    end
-    k4 = f(t + c3*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a0501*k1[i]+a0503*k3[i]+a0504*k4[i])
-    end
-    k5 = f(t + c4*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a0601*k1[i]+a0604*k4[i]+a0605*k5[i])
-    end
-    k6 = f(t + c5*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a0701*k1[i]+a0704*k4[i]+a0705*k5[i]+a0706*k6[i])
-    end
-    k7 = f(t + c6*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a0801*k1[i]+a0806*k6[i]+a0807*k7[i])
-    end
-    k8 = f(t + c7*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a0901*k1[i]+a0906*k6[i]+a0907*k7[i]+a0908*k8[i])
-    end
-    k9 = f(t + c8*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a1001*k1[i]+a1006*k6[i]+a1007*k7[i]+a1008*k8[i]+a1009*k9[i])
-    end
-    k10 = f(t + c9*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a1101*k1[i]+a1106*k6[i]+a1107*k7[i]+a1108*k8[i]+a1109*k9[i]+a1110*k10[i])
-    end
-    k11 = f(t + c10*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a1201*k1[i]+a1206*k6[i]+a1207*k7[i]+a1208*k8[i]+a1209*k9[i]+a1210*k10[i]+a1211*k11[i])
-    end
-    k12 = f(t + c11*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a1301*k1[i]+a1306*k6[i]+a1307*k7[i]+a1308*k8[i]+a1309*k9[i]+a1310*k10[i]+a1311*k11[i]+a1312*k12[i])
-    end
-    k13 = f(t + c12*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a1401*k1[i]+a1406*k6[i]+a1407*k7[i]+a1408*k8[i]+a1409*k9[i]+a1410*k10[i]+a1411*k11[i]+a1412*k12[i]+a1413*k13[i])
-    end
-    k14 = f(t + c13*dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a1501*k1[i]+a1506*k6[i]+a1507*k7[i]+a1508*k8[i]+a1509*k9[i]+a1510*k10[i]+a1511*k11[i]+a1512*k12[i]+a1513*k13[i]+a1514*k14[i])
-    end
-    k15 = f(t+dt,tmp)
-    @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a1601*k1[i]+a1606*k6[i]+a1607*k7[i]+a1608*k8[i]+a1609*k9[i]+a1610*k10[i]+a1611*k11[i]+a1612*k12[i]+a1613*k13[i])
-    end
-    k16 = f(t+dt,tmp)
-    utmp = similar(u)
-    @tight_loop_macros for i in uidx
-      @inbounds utmp[i] = uprev[i] + dt*(b1*k1[i]+b8*k8[i]+b9*k9[i]+b10*k10[i]+b11*k11[i]+b12*k12[i]+b13*k13[i]+b14*k14[i]+b15*k15[i])
-    end
-    u = utmp
-    if integrator.opts.adaptive
-      @tight_loop_macros for i in uidx
-        @inbounds tmp[i] = dt*(btilde1*k1[i] + btilde8*k8[i] + btilde9*k9[i] + btilde10*k10[i] + btilde11*k11[i] + btilde12*k12[i] + btilde13*k13[i] + btilde14*k14[i] + btilde15*k15[i] + btilde16*k16[i])
-      end
-      atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp)
-    end
-  else
-    k2 = f(t + c1*dt, uprev+a*k1)
-    k3 = f(t + c2*dt, uprev+dt*(a0301*k1+a0302*k2))
-    k4 = f(t + c3*dt, uprev+dt*(a0401*k1       +a0403*k3))
-    k5 = f(t + c4*dt, uprev+dt*(a0501*k1       +a0503*k3+a0504*k4))
-    k6 = f(t + c5*dt, uprev+dt*(a0601*k1                +a0604*k4+a0605*k5))
-    k7 = f(t + c6*dt, uprev+dt*(a0701*k1                +a0704*k4+a0705*k5+a0706*k6))
-    k8 = f(t + c7*dt, uprev+dt*(a0801*k1                                  +a0806*k6+a0807*k7))
-    k9 = f(t + c8*dt, uprev+dt*(a0901*k1                                  +a0906*k6+a0907*k7+a0908*k8))
-    k10 =f(t + c9*dt, uprev+dt*(a1001*k1                                  +a1006*k6+a1007*k7+a1008*k8+a1009*k9))
-    k11= f(t + c10*dt, uprev+dt*(a1101*k1                                  +a1106*k6+a1107*k7+a1108*k8+a1109*k9+a1110*k10))
-    k12= f(t + c11*dt, uprev+dt*(a1201*k1                                  +a1206*k6+a1207*k7+a1208*k8+a1209*k9+a1210*k10+a1211*k11))
-    k13= f(t + c12*dt, uprev+dt*(a1301*k1                                  +a1306*k6+a1307*k7+a1308*k8+a1309*k9+a1310*k10+a1311*k11+a1312*k12))
-    k14= f(t + c13*dt, uprev+dt*(a1401*k1                                  +a1406*k6+a1407*k7+a1408*k8+a1409*k9+a1410*k10+a1411*k11+a1412*k12+a1413*k13))
-    k15= f(t+dt, uprev+dt*(a1501*k1                                  +a1506*k6+a1507*k7+a1508*k8+a1509*k9+a1510*k10+a1511*k11+a1512*k12+a1513*k13+a1514*k14))
-    k16= f(t+dt, uprev+dt*(a1601*k1                                  +a1606*k6+a1607*k7+a1608*k8+a1609*k9+a1610*k10+a1611*k11+a1612*k12+a1613*k13))
-    u = uprev + dt*(b1*k1+b8*k8+b9*k9+b10*k10+b11*k11+b12*k12+b13*k13+b14*k14+b15*k15)
-    if integrator.opts.adaptive
-      utilde = dt*(btilde1*k1 + btilde8*k8 + btilde9*k9 + btilde10*k10 + btilde11*k11 + btilde12*k12 + btilde13*k13 + btilde14*k14 + btilde15*k15 + btilde16*k16)
-      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp)
-    end
   end
   integrator.k[1]=k1; integrator.k[2]=k2;
   integrator.k[3]=k3; integrator.k[4]=k4;
