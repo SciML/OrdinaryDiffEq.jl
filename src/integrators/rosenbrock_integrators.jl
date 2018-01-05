@@ -245,18 +245,18 @@ end
     W = 1 - γ*J
   end
 
-  k₁ = W\(@. integrator.fsalfirst + γ*dT)
-  f₁ = f(t+dto2, @. uprev + dto2*k₁)
+  k₁ = W\(integrator.fsalfirst + γ*dT)
+  f₁ = f(t+dto2, uprev  + dto2*k₁)
 
   k₂ = W\(f₁-k₁) + k₁
-  u = @. uprev + dt*k₂
+  u = uprev  + dt*k₂
 
   if integrator.opts.adaptive
     integrator.fsallast = f(t+dt, u)
 
-    k₃ = W\(@. integrator.fsallast - c₃₂*(k₂-f₁) - 2*(k₁-integrator.fsalfirst) + dt*dT)
+    k₃ = W\(integrator.fsallast - c₃₂*(k₂-f₁) - 2*(k₁-integrator.fsalfirst) + dt*dT)
 
-    utilde = @. dto6*(k₁ - 2*k₂ + k₃)
+    utilde =  dto6*(k₁ - 2*k₂ + k₃)
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
                                integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
@@ -303,18 +303,18 @@ end
 
   #f₀ = f(t, uprev)
 
-  k₁ = W\(@. integrator.fsalfirst + γ*dT)
-  f₁ = f(t+dto2, @. uprev + dto2*k₁)
+  k₁ = W\(integrator.fsalfirst + γ*dT)
+  f₁ = f(t+dto2, uprev  + dto2*k₁)
 
   k₂ = W\(f₁-k₁) + k₁
-  tmp = @. uprev + dt*k₂
+  tmp = uprev  + dt*k₂
   integrator.fsallast = f(t+dt, tmp)
 
-  k₃ = W\(@. integrator.fsallast - c₃₂*(k₂-f₁) - 2(k₁-integrator.fsalfirst) + dt*dT)
-  u = @. uprev + dto6*(k₁ + 4k₂ + k₃)
+  k₃ = W\(integrator.fsallast - c₃₂*(k₂-f₁) - 2(k₁-integrator.fsalfirst) + dt*dT)
+  u = uprev  + dto6*(k₁ + 4k₂ + k₃)
 
   if integrator.opts.adaptive
-    utilde = @. dto6*(k₁ - 2k₂ + k₃)
+    utilde =  dto6*(k₁ - 2k₂ + k₃)
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
                                integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
@@ -366,26 +366,26 @@ end
     W = 1/dtgamma - J
   end
 
-  linsolve_tmp = @. integrator.fsalfirst + dtd1*dT
+  linsolve_tmp =  integrator.fsalfirst + dtd1*dT
 
   k1 = W\linsolve_tmp
-  u = @. uprev + a21*k1
+  u = uprev  + a21*k1
   du = f(t+c2*dt, u)
 
-  linsolve_tmp = @. du + dtd2*dT + dtC21*k1
+  linsolve_tmp =  du + dtd2*dT + dtC21*k1
 
   k2 = W\linsolve_tmp
-  u = @. uprev + a31*k1 + a32*k2
+  u = uprev  + a31*k1 + a32*k2
   du = f(t+c3*dt, u)
 
-  linsolve_tmp = @. du + dtd3*dT + dtC31*k1 + dtC32*k2
+  linsolve_tmp =  du + dtd3*dT + dtC31*k1 + dtC32*k2
 
   k3 = W\linsolve_tmp
-  u = @. uprev + b1*k1 + b2*k2 + b3*k3
+  u = uprev  + b1*k1 + b2*k2 + b3*k3
   integrator.fsallast = f(t, u)
 
   if integrator.opts.adaptive
-    utilde = @. btilde1*k1 + btilde2*k2 + btilde3*k3
+    utilde =  btilde1*k1 + btilde2*k2 + btilde3*k3
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
                                integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
@@ -558,29 +558,29 @@ end
     W = 1/dtgamma - J
   end
 
-  linsolve_tmp = @. integrator.fsalfirst + dtd1*dT
+  linsolve_tmp =  integrator.fsalfirst + dtd1*dT
 
   k1 = W\linsolve_tmp
   u = uprev # +a21*k1 a21 == 0
   # du = f(t+c2*dt,u) c2 == 0 and a21 == 0 => du = f(t,uprev) == fsalfirst
 
-  linsolve_tmp = @. integrator.fsalfirst + dtd2*dT + dtC21*k1
+  linsolve_tmp =  integrator.fsalfirst + dtd2*dT + dtC21*k1
 
   k2 = W\linsolve_tmp
-  u = @. uprev + a31*k1 + a32*k2
+  u = uprev  + a31*k1 + a32*k2
   du = f(t+c3*dt, u)
 
-  linsolve_tmp = @. du + dtd3*dT + dtC31*k1 + dtC32*k2
+  linsolve_tmp =  du + dtd3*dT + dtC31*k1 + dtC32*k2
 
   k3 = W\linsolve_tmp
-  linsolve_tmp = @. du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
+  linsolve_tmp =  du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
 
   k4 = W\linsolve_tmp
-  u = @. uprev + b1*k1 + b2*k2 + b3*k3 + b4*k4
+  u = uprev  + b1*k1 + b2*k2 + b3*k3 + b4*k4
   integrator.fsallast = f(t, u)
 
   if integrator.opts.adaptive
-    utilde = @. btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4
+    utilde =  btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
                                integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
@@ -782,30 +782,30 @@ end
     W = 1/dtgamma - J
   end
 
-  linsolve_tmp = @. integrator.fsalfirst + dtd1*dT
+  linsolve_tmp =  integrator.fsalfirst + dtd1*dT
 
   k1 = W\linsolve_tmp
-  u = @. uprev+a21*k1
+  u = uprev +a21*k1
   du = f(t+c2*dt, u)
 
-  linsolve_tmp = @. du + dtd2*dT + dtC21*k1
+  linsolve_tmp =  du + dtd2*dT + dtC21*k1
 
   k2 = W\linsolve_tmp
-  u = @. uprev + a31*k1 + a32*k2
+  u = uprev  + a31*k1 + a32*k2
   du = f(t+c3*dt, u)
 
-  linsolve_tmp = @. du + dtd3*dT + dtC31*k1 + dtC32*k2
+  linsolve_tmp =  du + dtd3*dT + dtC31*k1 + dtC32*k2
 
   k3 = W\linsolve_tmp
 
-  linsolve_tmp = @. du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
+  linsolve_tmp =  du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
 
   k4 = W\linsolve_tmp
-  u = @. uprev + b1*k1 + b2*k2 + b3*k3 + b4*k4
+  u = uprev  + b1*k1 + b2*k2 + b3*k3 + b4*k4
   integrator.fsallast = f(t,u)
 
   if integrator.opts.adaptive
-    utilde = @. btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4
+    utilde =  btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
                                integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
@@ -1008,37 +1008,37 @@ end
 
   du = f(t, uprev)
 
-  linsolve_tmp = @. du + dtd1*dT
+  linsolve_tmp =  du + dtd1*dT
 
   k1 = W\linsolve_tmp
-  u = @. uprev + a21*k1
+  u = uprev  + a21*k1
   du = f(t+c2*dt, u)
 
-  linsolve_tmp = @. du + dtd2*dT + dtC21*k1
+  linsolve_tmp =  du + dtd2*dT + dtC21*k1
 
   k2 = W\linsolve_tmp
-  u = @. uprev + a31*k1 + a32*k2
+  u = uprev  + a31*k1 + a32*k2
   du = f(t+c3*dt, u)
 
-  linsolve_tmp = @. du + dtd3*dT + (dtC31*k1 + dtC32*k2)
+  linsolve_tmp =  du + dtd3*dT + (dtC31*k1 + dtC32*k2)
 
   k3 = W\linsolve_tmp
-  u = @. uprev + a41*k1 + a42*k2 + a43*k3
+  u = uprev  + a41*k1 + a42*k2 + a43*k3
   du = f(t+c4*dt, u)
 
-  linsolve_tmp = @. du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
+  linsolve_tmp =  du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
 
   k4 = W\linsolve_tmp
-  u = @. uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
+  u = uprev  + a51*k1 + a52*k2 + a53*k3 + a54*k4
   du = f(t+dt, u)
 
-  linsolve_tmp = @. du + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
+  linsolve_tmp =  du + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
 
   k5 = W\linsolve_tmp
   u = u + k5
   du = f(t+dt, u)
 
-  linsolve_tmp = @. du + (dtC61*k1 + dtC62*k2 + dtC65*k5 + dtC64*k4 + dtC63*k3)
+  linsolve_tmp =  du + (dtC61*k1 + dtC62*k2 + dtC65*k5 + dtC64*k4 + dtC63*k3)
 
   k6 = W\linsolve_tmp
   u = u + k6
@@ -1051,8 +1051,8 @@ end
 
   if integrator.opts.calck
     @unpack h21,h22,h23,h24,h25,h31,h32,h33,h34,h35 = cache.tab
-    integrator.k[1] = @. h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5
-    integrator.k[2] = @. h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5
+    integrator.k[1] =  h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5
+    integrator.k[2] =  h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5
   end
   integrator.u = u
 end
@@ -1322,76 +1322,49 @@ end
 
   du1 = f(t, uprev)
 
-  linsolve_tmp = @. du1 + dtd1*dT
+  linsolve_tmp =  du1 + dtd1*dT
 
   k1 = W\linsolve_tmp
-  u = @. uprev + a21*k1
+  u = uprev  + a21*k1
   du = f(t+c2*dt, u)
 
-  linsolve_tmp = @. du + dtd2*dT + dtC21*k1
+  linsolve_tmp =  du + dtd2*dT + dtC21*k1
 
   k2 = W\linsolve_tmp
-  u = @. uprev + a31*k1 + a32*k2
+  u = uprev  + a31*k1 + a32*k2
   du = f(t+c3*dt, u)
 
-  linsolve_tmp = @. du + dtd3*dT + (dtC31*k1 + dtC32*k2)
+  linsolve_tmp =  du + dtd3*dT + (dtC31*k1 + dtC32*k2)
 
   k3 = W\linsolve_tmp
-  u = @. uprev + a41*k1 + a42*k2 + a43*k3
+  u = uprev  + a41*k1 + a42*k2 + a43*k3
   du = f(t+c4*dt, u)
 
-  linsolve_tmp = @. du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
+  linsolve_tmp =  du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
 
   k4 = W\linsolve_tmp
-  u = @. uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
+  u = uprev  + a51*k1 + a52*k2 + a53*k3 + a54*k4
   du = f(t+c5*dt, u)
 
-  # linsolve_tmp = @. du + dtd5*dT + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
-  if typeof(u) <: AbstractArray && !(typeof(u) <: SArray)
-    tmp = similar(du)
-    @tight_loop_macros for i in eachindex(tmp)
-      @inbounds tmp[i] = du[i] + dtd5*dT[i] + (dtC52*k2[i] + dtC54*k4[i] + dtC51*k1[i] + dtC53*k3[i])
-    end
-    linsolve_tmp = tmp
-  else
-    linsolve_tmp = du + dtd5*dT + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
-  end
+  linsolve_tmp = du + dtd5*dT + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
 
   k5 = W\linsolve_tmp
-  u = @. uprev + a61*k1 + a62*k2 + a63*k3 + a64*k4 + a65*k5
+  u = uprev  + a61*k1 + a62*k2 + a63*k3 + a64*k4 + a65*k5
   du = f(t+dt, u)
 
-  linsolve_tmp = @. du + (dtC61*k1 + dtC62*k2 + dtC63*k3 + dtC64*k4 + dtC65*k5)
+  linsolve_tmp =  du + (dtC61*k1 + dtC62*k2 + dtC63*k3 + dtC64*k4 + dtC65*k5)
 
   k6 = W\linsolve_tmp
   u = u + k6
   du = f(t+dt, u)
 
-  # linsolve_tmp = @. du + (dtC71*k1 + dtC72*k2 + dtC73*k3 + dtC74*k4 + dtC75*k5 + dtC76*k6)
-  if typeof(u) <: AbstractArray && !(typeof(u) <: SArray)
-    tmp = similar(du)
-    @tight_loop_macros for i in eachindex(tmp)
-      @inbounds tmp[i] = du[i] + (dtC71*k1[i] + dtC72*k2[i] + dtC73*k3[i] + dtC74*k4[i] + dtC75*k5[i] + dtC76*k6[i])
-    end
-    linsolve_tmp = tmp
-  else
-    linsolve_tmp = du + (dtC71*k1 + dtC72*k2 + dtC73*k3 + dtC74*k4 + dtC75*k5 + dtC76*k6)
-  end
+  linsolve_tmp = du + (dtC71*k1 + dtC72*k2 + dtC73*k3 + dtC74*k4 + dtC75*k5 + dtC76*k6)
 
   k7 = W\linsolve_tmp
   u = u + k7
   du = f(t+dt, u)
 
-  # linsolve_tmp = @. du + (dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7)
-  if typeof(u) <: AbstractArray && !(typeof(u) <: SArray)
-    tmp = similar(du)
-    @tight_loop_macros for i in eachindex(tmp)
-      @inbounds tmp[i] = du[i] + (dtC81*k1[i] + dtC82*k2[i] + dtC83*k3[i] + dtC84*k4[i] + dtC85*k5[i] + dtC86*k6[i] + dtC87*k7[i])
-    end
-    linsolve_tmp = tmp
-  else
-    linsolve_tmp = du + (dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7)
-  end
+  linsolve_tmp = du + (dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7)
 
   k8 = W\linsolve_tmp
   u = u + k8
@@ -1406,8 +1379,8 @@ end
   if integrator.opts.calck
     #=
     @unpack h21,h22,h23,h24,h25,h31,h32,h33,h34,h35 = cache.tab
-    integrator.k[1] = @. h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5
-    integrator.k[2] = @. h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5
+    integrator.k[1] =  h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5
+    integrator.k[2] =  h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5
     =#
     integrator.k[1] = du1
     integrator.k[2] = du
