@@ -421,7 +421,7 @@ function initialize!(integrator, cache::DPRKN6Cache)
   integrator.fsallast = k
   integrator.kshortsize = 3
   resize!(integrator.k, integrator.kshortsize)
-  integrator.k[1] = ArrayPartition(cache.integrator.fsalfirst.x[2],cache.k2)
+  integrator.k[1] = ArrayPartition(cache.fsalfirst.x[2],cache.k2)
   integrator.k[2] = ArrayPartition(cache.k3, cache.k4)
   integrator.k[3] = ArrayPartition(cache.k5, cache.k6)
   integrator.f.f1(integrator.t,uprev,duprev,integrator.fsallast.x[1])

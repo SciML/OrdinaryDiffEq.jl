@@ -15,7 +15,7 @@ end
 
 prob = DynamicalODEProblem(f1,f2,u0,v0,(0.0,5.0))
 
-sol = solve(prob,SymplecticEuler(),dt=1/10)
+sol = solve(prob,SymplecticEuler(),dt=1/2)
 sol_verlet = solve(prob,VelocityVerlet(),dt=1/100)
 sol_ruth3 = solve(prob,Ruth3(),dt=1/100)
 
@@ -271,7 +271,7 @@ sim = test_convergence(dts,prob,Nystrom4VelocityIndependent(),dense_errors=true)
 @test_broken sim.𝒪est[:l2] ≈ 3 rtol = 1e-1
 @test_broken sim.𝒪est[:L2] ≈ 3 rtol = 1e-1
 @test_broken sim = test_convergence(dts,prob,IRKN4(),dense_errors=true)
-@test_broken sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
+#@test_broken sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
 #@test_broken sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
 dts = 1.0./2.0.^(5:-1:0)
 sim = test_convergence(dts,prob,Nystrom5VelocityIndependent(),dense_errors=true)
