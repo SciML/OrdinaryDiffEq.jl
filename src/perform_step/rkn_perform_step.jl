@@ -173,7 +173,7 @@ end
   if integrator.iter < 2 && !integrator.u_modified
     perform_step!(integrator,Nystrom4VelocityIndependentConstantCache())
     k = integrator.fsallast
-    k1cache = ArrayParition((k.x[2],f.f2(t+c1*dt,uprev,duprev))
+    k1cache = ArrayParition((k.x[2],f.f2(t+c1*dt,uprev,duprev)))
     kdu = uprev + dt*(c1*duprev + dt*a21*k1cache.x[2])
     f.f2(t+c1*dt,kdu,duprev,k₂.x[2])
   else
