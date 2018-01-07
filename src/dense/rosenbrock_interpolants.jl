@@ -1,7 +1,7 @@
 """
 From MATLAB ODE Suite by Shampine
 """
-@muladd @inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{Rosenbrock23ConstantCache,Rosenbrock32ConstantCache},idxs,T::Type{Val{0}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{Rosenbrock23ConstantCache,Rosenbrock32ConstantCache},idxs,T::Type{Val{0}})
   d = cache.d
   c1 = Θ*(1-Θ)/(1-2d)
   c2 = Θ*(Θ-2d)/(1-2d)
@@ -9,7 +9,7 @@ From MATLAB ODE Suite by Shampine
 end
 
 # First Derivative of the dense output
-@muladd @inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{Rosenbrock23ConstantCache,Rosenbrock32ConstantCache},idxs,T::Type{Val{1}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{Rosenbrock23ConstantCache,Rosenbrock32ConstantCache},idxs,T::Type{Val{1}})
   d = cache.d
   c1diff = (1-2*Θ)/(1-2*d)
   c2diff = (2*Θ-2*d)/(1-2*d)
@@ -19,7 +19,7 @@ end
 """
 From MATLAB ODE Suite by Shampine
 """
-@muladd @inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{Rosenbrock23Cache,Rosenbrock32Cache},idxs,T::Type{Val{0}})
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{Rosenbrock23Cache,Rosenbrock32Cache},idxs,T::Type{Val{0}})
   d = cache.tab.d
   c1 = Θ*(1-Θ)/(1-2d)
   c2 = Θ*(Θ-2d)/(1-2d)
@@ -36,7 +36,7 @@ From MATLAB ODE Suite by Shampine
   end
 end
 
-@muladd @inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{Rosenbrock23Cache,Rosenbrock32Cache},idxs,T::Type{Val{1}})
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{Rosenbrock23Cache,Rosenbrock32Cache},idxs,T::Type{Val{1}})
   d = cache.tab.d
   c1diff = (1-2*Θ)/(1-2*d)
   c2diff = (2*Θ-2*d)/(1-2*d)
@@ -53,7 +53,7 @@ end
   end
 end
 
-@muladd @inline function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Rodas4ConstantCache,idxs,T::Type{Val{0}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Rodas4ConstantCache,idxs,T::Type{Val{0}})
   Θ1 = 1 - Θ
   @. Θ1*y₀ + Θ*(y₁ + Θ1*(k[1] + Θ*k[2]))
 end
@@ -61,7 +61,7 @@ end
 """
 From MATLAB ODE Suite by Shampine
 """
-@muladd @inline function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Rodas4Cache,idxs,T::Type{Val{0}})
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Rodas4Cache,idxs,T::Type{Val{0}})
   Θ1 = 1 - Θ
   if out == nothing
     if idxs == nothing

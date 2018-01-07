@@ -1,32 +1,32 @@
-@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DiscreteConstantCache,idxs,T::Type{Val{0}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DiscreteConstantCache,idxs,T::Type{Val{0}})
   y₀
 end
 
-@inline @muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DiscreteCache,idxs,T::Type{Val{0}})
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DiscreteCache,idxs,T::Type{Val{0}})
   recursivecopy!(out,y₀)
 end
 
 """
 Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Problems Page 192
 """
-@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP5ConstantCache,idxs::Void,T::Type{Val{0}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP5ConstantCache,idxs::Void,T::Type{Val{0}})
   Θ1 = 1-Θ
   #@. y₀ + dt*Θ*(k[1]+Θ1*(k[2]+Θ*(k[3]+Θ1*k[4])))
   y₀ + dt*Θ*(k[1]+Θ1*(k[2]+Θ*(k[3]+Θ1*k[4])))
 end
 
-@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP5ConstantCache,idxs,T::Type{Val{0}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP5ConstantCache,idxs,T::Type{Val{0}})
   Θ1 = 1-Θ
   #@. y₀ + dt*Θ*(k[1]+Θ1*(k[2]+Θ*(k[3]+Θ1*k[4])))
   y₀[idxs] + dt*Θ*(k[1][idxs]+Θ1*(k[2][idxs]+Θ*(k[3][idxs]+Θ1*k[4][idxs])))
 end
 
-@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP5ConstantCache,idxs::Void,T::Type{Val{1}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP5ConstantCache,idxs::Void,T::Type{Val{1}})
   #@. k[1] + k[2]*(1 - 2*Θ) + Θ*(2*k[3] + 2*k[4] + Θ*(-3*k[3] - 6*k[4] + 4*k[4]*Θ))
   k[1] + k[2]*(1 - 2*Θ) + Θ*(2*k[3] + 2*k[4] + Θ*(-3*k[3] - 6*k[4] + 4*k[4]*Θ))
 end
 
-@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP5ConstantCache,idxs,T::Type{Val{1}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP5ConstantCache,idxs,T::Type{Val{1}})
   #@. k[1] + k[2]*(1 - 2*Θ) + Θ*(2*k[3] + 2*k[4] + Θ*(-3*k[3] - 6*k[4] + 4*k[4]*Θ))
   k[1][idxs] + k[2][idxs]*(1 - 2*Θ) + Θ*(2*k[3][idxs] + 2*k[4][idxs] + Θ*(-3*k[3][idxs] - 6*k[4][idxs] + 4*k[4][idxs]*Θ))
 end
@@ -34,7 +34,7 @@ end
 """
 Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Problems Page 192
 """
-@inline @muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{DP5Cache,DP5ThreadedCache},idxs,T::Type{Val{0}})
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{DP5Cache,DP5ThreadedCache},idxs,T::Type{Val{0}})
   Θ1 = 1-Θ
   if out == nothing
     if idxs == nothing
@@ -49,7 +49,7 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
   end
 end
 
-@inline @muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{DP5Cache,DP5ThreadedCache},idxs,T::Type{Val{1}})
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{DP5Cache,DP5ThreadedCache},idxs,T::Type{Val{1}})
   if out == nothing
     if idxs == nothing
       # return @. k[1] + k[2]*(1 - 2*Θ) + Θ*(2*k[3] + 2*k[4] + Θ*(-3*k[3] - 6*k[4] + 4*k[4]*Θ))
@@ -76,27 +76,27 @@ Second order strong stability preserving (SSP) interpolant.
 
 Ketcheson, Lóczi, Jangabylova, Kusmanov: Dense output for SSP RK methods (2017).
 """
-@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{SSPRK22ConstantCache,SSPRK33ConstantCache,SSPRK432ConstantCache},idxs::Void,T::Type{Val{0}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{SSPRK22ConstantCache,SSPRK33ConstantCache,SSPRK432ConstantCache},idxs::Void,T::Type{Val{0}})
   #@. (1-Θ^2)*y₀ + Θ^2*y₁ + Θ*(1-Θ)*dt*k[1]
   (1-Θ^2)*y₀ + Θ^2*y₁ + Θ*(1-Θ)*dt*k[1]
 end
 
-@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{SSPRK22ConstantCache,SSPRK33ConstantCache,SSPRK432ConstantCache},idxs,T::Type{Val{0}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{SSPRK22ConstantCache,SSPRK33ConstantCache,SSPRK432ConstantCache},idxs,T::Type{Val{0}})
   #@. (1-Θ^2)*y₀ + Θ^2*y₁ + Θ*(1-Θ)*dt*k[1]
   (1-Θ^2)*y₀[idxs] + Θ^2*y₁[idxs] + Θ*(1-Θ)*dt*k[1][idxs]
 end
 
-@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{SSPRK22ConstantCache,SSPRK33ConstantCache,SSPRK432ConstantCache},idxs::Void,T::Type{Val{1}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{SSPRK22ConstantCache,SSPRK33ConstantCache,SSPRK432ConstantCache},idxs::Void,T::Type{Val{1}})
   #@. -2Θ*y₀ + 2Θ*y₁ + (1-2Θ)*dt*k[1]
   -2Θ/dt*y₀ + 2Θ/dt*y₁ + (1-2Θ)*k[1]
 end
 
-@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{SSPRK22ConstantCache,SSPRK33ConstantCache,SSPRK432ConstantCache},idxs,T::Type{Val{1}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{SSPRK22ConstantCache,SSPRK33ConstantCache,SSPRK432ConstantCache},idxs,T::Type{Val{1}})
   #@. -2Θ*y₀ + 2Θ*y₁ + (1-2Θ)*dt*k[1]
   -2Θ/dt*y₀[idxs] + 2Θ/dt*y₁[idxs] + (1-2Θ)*k[1][idxs]
 end
 
-@inline @muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{SSPRK22Cache,SSPRK33Cache,SSPRK432Cache},idxs,T::Type{Val{0}})
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{SSPRK22Cache,SSPRK33Cache,SSPRK432Cache},idxs,T::Type{Val{0}})
   Θ1 = 1-Θ
   if out == nothing
     if idxs == nothing
@@ -119,7 +119,7 @@ end
   end
 end
 
-@inline @muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{SSPRK22Cache,SSPRK33Cache,SSPRK432Cache},idxs,T::Type{Val{1}})
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{SSPRK22Cache,SSPRK33Cache,SSPRK432Cache},idxs,T::Type{Val{1}})
   Θ1 = 1-Θ
   if out == nothing
     if idxs == nothing
@@ -148,7 +148,7 @@ simplifying assumption
 
 Ch. Tsitouras
 """
-@inline @muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Tsit5Cache,idxs,T::Type{Val{0}})
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Tsit5Cache,idxs,T::Type{Val{0}})
   @unpack r11,r12,r13,r14,r22,r23,r24,r32,r33,r34,r42,r43,r44,r52,r53,r54,r62,r63,r64,r72,r73,r74 = cache.tab
 
   b1Θ = @evalpoly(Θ, 0, r11, r12, r13, r14)
@@ -180,7 +180,7 @@ Ch. Tsitouras
   end
 end
 
-@inline @muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Tsit5Cache,idxs,T::Type{Val{1}})
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Tsit5Cache,idxs,T::Type{Val{1}})
   @unpack r11,r12,r13,r14,r22,r23,r24,r32,r33,r34,r42,r43,r44,r52,r53,r54,r62,r63,r64,r72,r73,r74 = cache.tab
 
   b1Θdiff = @evalpoly(Θ, r11, 2*r12, 3*r13, 4*r14)
@@ -218,7 +218,7 @@ simplifying assumption
 
 Ch. Tsitouras
 """
-@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Tsit5ConstantCache,idxs,T::Type{Val{0}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Tsit5ConstantCache,idxs,T::Type{Val{0}})
   @unpack r11,r12,r13,r14,r22,r23,r24,r32,r33,r34,r42,r43,r44,r52,r53,r54,r62,r63,r64,r72,r73,r74 = cache
 
   b1Θ = @evalpoly(Θ, 0, r11, r12, r13, r14)
@@ -239,7 +239,7 @@ Ch. Tsitouras
   end
 end
 
-@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Tsit5ConstantCache,idxs,T::Type{Val{1}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Tsit5ConstantCache,idxs,T::Type{Val{1}})
   @unpack r11,r12,r13,r14,r22,r23,r24,r32,r33,r34,r42,r43,r44,r52,r53,r54,r62,r63,r64,r72,r73,r74 = cache
 
   b1Θdiff = @evalpoly(Θ, r11, 2*r12, 3*r13, 4*r14)
@@ -262,7 +262,7 @@ end
   end
 end
 
-@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::OwrenZen3ConstantCache,idxs,T::Type{Val{0}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::OwrenZen3ConstantCache,idxs,T::Type{Val{0}})
   @unpack r13,r12,r23,r22,r33,r32 = cache
 
   b1Θ  = @evalpoly(Θ, 0, 1, r12, r13)
@@ -278,7 +278,7 @@ end
   end
 end
 
-@inline @muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::OwrenZen3Cache,idxs,T::Type{Val{0}})
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::OwrenZen3Cache,idxs,T::Type{Val{0}})
   @unpack r13,r12,r23,r22,r33,r32 = cache.tab
 
   b1Θ  = @evalpoly(Θ, 0, 1, r12, r13)
@@ -300,7 +300,7 @@ end
   end
 end
 
-@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::OwrenZen4ConstantCache,idxs,T::Type{Val{0}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::OwrenZen4ConstantCache,idxs,T::Type{Val{0}})
   @unpack r14,r13,r12,r34,r33,r32,r44,r43,r42,r54,r53,r52,r64,r63,r62 = cache
 
   b1Θ  = @evalpoly(Θ, 0, 1, r12, r13, r14)
@@ -320,7 +320,7 @@ end
   end
 end
 
-@inline @muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::OwrenZen4Cache,idxs,T::Type{Val{0}})
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::OwrenZen4Cache,idxs,T::Type{Val{0}})
   @unpack r14,r13,r12,r34,r33,r32,r44,r43,r42,r54,r53,r52,r64,r63,r62 = cache.tab
 
   b1Θ  = @evalpoly(Θ, 0, 1, r12, r13, r14)
@@ -355,7 +355,7 @@ end
   end
 end
 
-@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::OwrenZen5ConstantCache,idxs,T::Type{Val{0}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::OwrenZen5ConstantCache,idxs,T::Type{Val{0}})
   @unpack r15,r14,r13,r12,r35,r34,r33,r32,r45,r44,r43,r42,r55,r54,r53,r52,r65,r64,r63,r62,r75,r74,r73,r72,r85,r84,r83,r82 = cache
 
   b1Θ  = @evalpoly(Θ, 0, 1, r12, r13, r14, r15)
@@ -381,7 +381,7 @@ end
   end
 end
 
-@inline @muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::OwrenZen5Cache,idxs,T::Type{Val{0}})
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::OwrenZen5Cache,idxs,T::Type{Val{0}})
   @unpack r15,r14,r13,r12,r35,r34,r33,r32,r45,r44,r43,r42,r55,r54,r53,r52,r65,r64,r63,r62,r75,r74,r73,r72,r85,r84,r83,r82 = cache.tab
 
   b1Θ  = @evalpoly(Θ, 0, 1, r12, r13, r14, r15)
@@ -427,7 +427,7 @@ end
 """
 Coefficients taken from RKSuite
 """
-@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::BS5ConstantCache,idxs,T::Type{Val{0}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::BS5ConstantCache,idxs,T::Type{Val{0}})
   @unpack r016,r015,r014,r013,r012,r036,r035,r034,r033,r032,r046,r045,r044,r043,r042,r056,r055,r054,r053,r052,r066,r065,r064,r063,r062,r076,r075,r074,r073,r072,r086,r085,r084,r083,r082,r096,r095,r094,r093,r106,r105,r104,r103,r102,r116,r115,r114,r113,r112 = cache
 
   b1Θ  = @evalpoly(Θ, 0, 0, r012, r013, r014, r015, r016)
@@ -455,7 +455,7 @@ Coefficients taken from RKSuite
   end
 end
 
-@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::BS5ConstantCache,idxs,T::Type{Val{1}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::BS5ConstantCache,idxs,T::Type{Val{1}})
   @unpack r016,r015,r014,r013,r012,r036,r035,r034,r033,r032,r046,r045,r044,r043,r042,r056,r055,r054,r053,r052,r066,r065,r064,r063,r062,r076,r075,r074,r073,r072,r086,r085,r084,r083,r082,r096,r095,r094,r093,r106,r105,r104,r103,r102,r116,r115,r114,r113,r112 = cache
   b1Θdiff  = @evalpoly(Θ, 0, 2*r012, 3*r013, 4*r014, 5*r015, 6*r016)
   b3Θdiff  = @evalpoly(Θ, 0, 2*r032, 3*r033, 4*r034, 5*r035, 6*r036)
@@ -488,7 +488,7 @@ end
 """
 Coefficients taken from RKSuite
 """
-@inline @muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::BS5Cache,idxs,T::Type{Val{0}})
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::BS5Cache,idxs,T::Type{Val{0}})
   @unpack r016,r015,r014,r013,r012,r036,r035,r034,r033,r032,r046,r045,r044,r043,r042,r056,r055,r054,r053,r052,r066,r065,r064,r063,r062,r076,r075,r074,r073,r072,r086,r085,r084,r083,r082,r096,r095,r094,r093,r106,r105,r104,r103,r102,r116,r115,r114,r113,r112 = cache.tab
 
   b1Θ  = @evalpoly(Θ, 0, 0, r012, r013, r014, r015, r016)
@@ -523,7 +523,7 @@ Coefficients taken from RKSuite
   end
 end
 
-@inline @muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::BS5Cache,idxs,T::Type{Val{1}})
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::BS5Cache,idxs,T::Type{Val{1}})
   @unpack r016,r015,r014,r013,r012,r036,r035,r034,r033,r032,r046,r045,r044,r043,r042,r056,r055,r054,r053,r052,r066,r065,r064,r063,r062,r076,r075,r074,r073,r072,r086,r085,r084,r083,r082,r096,r095,r094,r093,r106,r105,r104,r103,r102,r116,r115,r114,r113,r112 = cache.tab
 
   b1Θdiff  = @evalpoly(Θ, 0, 2*r012, 3*r013, 4*r014, 5*r015, 6*r016)
@@ -561,7 +561,7 @@ end
 """
 
 """
-@inline @muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Vern6Cache,idxs,T::Type{Val{0}})
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Vern6Cache,idxs,T::Type{Val{0}})
   @unpack r011,r012,r013,r014,r015,r016,r042,r043,r044,r045,r046,r052,r053,r054,r055,r056,r062,r063,r064,r065,r066,r072,r073,r074,r075,r076,r082,r083,r084,r085,r086,r092,r093,r094,r095,r096,r102,r103,r104,r105,r106,r112,r113,r114,r115,r116,r122,r123,r124,r125,r126 = cache.tab
 
   b1Θ  = @evalpoly(Θ, 0, r011, r012, r013, r014, r015, r016)
@@ -596,7 +596,7 @@ end
   end
 end
 
-@inline @muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Vern6Cache,idxs,T::Type{Val{1}})
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Vern6Cache,idxs,T::Type{Val{1}})
   @unpack r011,r012,r013,r014,r015,r016,r042,r043,r044,r045,r046,r052,r053,r054,r055,r056,r062,r063,r064,r065,r066,r072,r073,r074,r075,r076,r082,r083,r084,r085,r086,r092,r093,r094,r095,r096,r102,r103,r104,r105,r106,r112,r113,r114,r115,r116,r122,r123,r124,r125,r126 = cache.tab
 
   b1Θdiff  = @evalpoly(Θ, r011, 2*r012, 3*r013, 4*r014, 5*r015, 6*r016)
@@ -634,7 +634,7 @@ end
 """
 
 """
-@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern6ConstantCache,idxs,T::Type{Val{0}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern6ConstantCache,idxs,T::Type{Val{0}})
   @unpack r011,r012,r013,r014,r015,r016,r042,r043,r044,r045,r046,r052,r053,r054,r055,r056,r062,r063,r064,r065,r066,r072,r073,r074,r075,r076,r082,r083,r084,r085,r086,r092,r093,r094,r095,r096,r102,r103,r104,r105,r106,r112,r113,r114,r115,r116,r122,r123,r124,r125,r126 = cache
 
   b1Θ  = @evalpoly(Θ, 0, r011, r012, r013, r014, r015, r016)
@@ -659,7 +659,7 @@ end
   end
 end
 
-@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern6ConstantCache,idxs,T::Type{Val{1}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern6ConstantCache,idxs,T::Type{Val{1}})
   @unpack r011,r012,r013,r014,r015,r016,r042,r043,r044,r045,r046,r052,r053,r054,r055,r056,r062,r063,r064,r065,r066,r072,r073,r074,r075,r076,r082,r083,r084,r085,r086,r092,r093,r094,r095,r096,r102,r103,r104,r105,r106,r112,r113,r114,r115,r116,r122,r123,r124,r125,r126 = cache
 
   b1Θdiff  = @evalpoly(Θ, r011, 2*r012, 3*r013, 4*r014, 5*r015, 6*r016)
@@ -689,7 +689,7 @@ end
 """
 
 """
-@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern7ConstantCache,idxs,T::Type{Val{0}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern7ConstantCache,idxs,T::Type{Val{0}})
   @unpack r011,r012,r013,r014,r015,r016,r017,r042,r043,r044,r045,r046,r047,r052,r053,r054,r055,r056,r057,r062,r063,r064,r065,r066,r067,r072,r073,r074,r075,r076,r077,r082,r083,r084,r085,r086,r087,r092,r093,r094,r095,r096,r097,r112,r113,r114,r115,r116,r117,r122,r123,r124,r125,r126,r127,r132,r133,r134,r135,r136,r137,r142,r143,r144,r145,r146,r147,r152,r153,r154,r155,r156,r157,r162,r163,r164,r165,r166,r167 = cache
 
   b1Θ  = @evalpoly(Θ, 0, r011, r012, r013, r014, r015, r016, r017)
@@ -719,7 +719,7 @@ end
   end
 end
 
-@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern7ConstantCache,idxs,T::Type{Val{1}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern7ConstantCache,idxs,T::Type{Val{1}})
   @unpack r011,r012,r013,r014,r015,r016,r017,r042,r043,r044,r045,r046,r047,r052,r053,r054,r055,r056,r057,r062,r063,r064,r065,r066,r067,r072,r073,r074,r075,r076,r077,r082,r083,r084,r085,r086,r087,r092,r093,r094,r095,r096,r097,r112,r113,r114,r115,r116,r117,r122,r123,r124,r125,r126,r127,r132,r133,r134,r135,r136,r137,r142,r143,r144,r145,r146,r147,r152,r153,r154,r155,r156,r157,r162,r163,r164,r165,r166,r167 = cache
 
   b1Θdiff  = @evalpoly(Θ, r011, 2*r012, 3*r013, 4*r014, 5*r015, 6*r016, 7*r017)
@@ -754,7 +754,7 @@ end
 """
 
 """
-@inline @muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Vern7Cache,idxs,T::Type{Val{0}})
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Vern7Cache,idxs,T::Type{Val{0}})
   @unpack r011,r012,r013,r014,r015,r016,r017,r042,r043,r044,r045,r046,r047,r052,r053,r054,r055,r056,r057,r062,r063,r064,r065,r066,r067,r072,r073,r074,r075,r076,r077,r082,r083,r084,r085,r086,r087,r092,r093,r094,r095,r096,r097,r112,r113,r114,r115,r116,r117,r122,r123,r124,r125,r126,r127,r132,r133,r134,r135,r136,r137,r142,r143,r144,r145,r146,r147,r152,r153,r154,r155,r156,r157,r162,r163,r164,r165,r166,r167 = cache.tab
 
   b1Θ  = @evalpoly(Θ, 0, r011, r012, r013, r014, r015, r016, r017)
@@ -792,7 +792,7 @@ end
   end
 end
 
-@inline @muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Vern7Cache,idxs,T::Type{Val{1}})
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Vern7Cache,idxs,T::Type{Val{1}})
   @unpack r011,r012,r013,r014,r015,r016,r017,r042,r043,r044,r045,r046,r047,r052,r053,r054,r055,r056,r057,r062,r063,r064,r065,r066,r067,r072,r073,r074,r075,r076,r077,r082,r083,r084,r085,r086,r087,r092,r093,r094,r095,r096,r097,r112,r113,r114,r115,r116,r117,r122,r123,r124,r125,r126,r127,r132,r133,r134,r135,r136,r137,r142,r143,r144,r145,r146,r147,r152,r153,r154,r155,r156,r157,r162,r163,r164,r165,r166,r167 = cache.tab
 
   b1Θdiff  = @evalpoly(Θ, r011, 2*r012, 3*r013, 4*r014, 5*r015, 6*r016, 7*r017)
@@ -833,7 +833,7 @@ end
 """
 
 """
-@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern8ConstantCache,idxs,T::Type{Val{0}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern8ConstantCache,idxs,T::Type{Val{0}})
   @unpack r011,r012,r013,r014,r015,r016,r017,r018,r062,r063,r064,r065,r066,r067,r068,r072,r073,r074,r075,r076,r077,r078,r082,r083,r084,r085,r086,r087,r088,r092,r093,r094,r095,r096,r097,r098,r102,r103,r104,r105,r106,r107,r108,r112,r113,r114,r115,r116,r117,r118,r122,r123,r124,r125,r126,r127,r128,r142,r143,r144,r145,r146,r147,r148,r152,r153,r154,r155,r156,r157,r158,r162,r163,r164,r165,r166,r167,r168,r172,r173,r174,r175,r176,r177,r178,r182,r183,r184,r185,r186,r187,r188,r192,r193,r194,r195,r196,r197,r198,r202,r203,r204,r205,r206,r207,r208,r212,r213,r214,r215,r216,r217,r218 = cache
 
   b1Θ  = @evalpoly(Θ, 0, r011, r012, r013, r014, r015, r016, r017, r018)
@@ -869,7 +869,7 @@ end
   end
 end
 
-@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern8ConstantCache,idxs,T::Type{Val{1}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern8ConstantCache,idxs,T::Type{Val{1}})
   @unpack r011,r012,r013,r014,r015,r016,r017,r018,r062,r063,r064,r065,r066,r067,r068,r072,r073,r074,r075,r076,r077,r078,r082,r083,r084,r085,r086,r087,r088,r092,r093,r094,r095,r096,r097,r098,r102,r103,r104,r105,r106,r107,r108,r112,r113,r114,r115,r116,r117,r118,r122,r123,r124,r125,r126,r127,r128,r142,r143,r144,r145,r146,r147,r148,r152,r153,r154,r155,r156,r157,r158,r162,r163,r164,r165,r166,r167,r168,r172,r173,r174,r175,r176,r177,r178,r182,r183,r184,r185,r186,r187,r188,r192,r193,r194,r195,r196,r197,r198,r202,r203,r204,r205,r206,r207,r208,r212,r213,r214,r215,r216,r217,r218 = cache
 
   b1Θdiff  = @evalpoly(Θ, r011, 2*r012, 3*r013, 4*r014, 5*r015, 6*r016, 7*r017, 8*r018)
@@ -908,7 +908,7 @@ end
 """
 
 """
-@inline @muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Vern8Cache,idxs,T::Type{Val{0}})
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Vern8Cache,idxs,T::Type{Val{0}})
   @unpack r011,r012,r013,r014,r015,r016,r017,r018,r062,r063,r064,r065,r066,r067,r068,r072,r073,r074,r075,r076,r077,r078,r082,r083,r084,r085,r086,r087,r088,r092,r093,r094,r095,r096,r097,r098,r102,r103,r104,r105,r106,r107,r108,r112,r113,r114,r115,r116,r117,r118,r122,r123,r124,r125,r126,r127,r128,r142,r143,r144,r145,r146,r147,r148,r152,r153,r154,r155,r156,r157,r158,r162,r163,r164,r165,r166,r167,r168,r172,r173,r174,r175,r176,r177,r178,r182,r183,r184,r185,r186,r187,r188,r192,r193,r194,r195,r196,r197,r198,r202,r203,r204,r205,r206,r207,r208,r212,r213,r214,r215,r216,r217,r218 = cache.tab
 
   b1Θ  = @evalpoly(Θ, 0, r011, r012, r013, r014, r015, r016, r017, r018)
@@ -949,7 +949,7 @@ end
   end
 end
 
-@inline @muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Vern8Cache,idxs,T::Type{Val{1}})
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Vern8Cache,idxs,T::Type{Val{1}})
   @unpack r011,r012,r013,r014,r015,r016,r017,r018,r062,r063,r064,r065,r066,r067,r068,r072,r073,r074,r075,r076,r077,r078,r082,r083,r084,r085,r086,r087,r088,r092,r093,r094,r095,r096,r097,r098,r102,r103,r104,r105,r106,r107,r108,r112,r113,r114,r115,r116,r117,r118,r122,r123,r124,r125,r126,r127,r128,r142,r143,r144,r145,r146,r147,r148,r152,r153,r154,r155,r156,r157,r158,r162,r163,r164,r165,r166,r167,r168,r172,r173,r174,r175,r176,r177,r178,r182,r183,r184,r185,r186,r187,r188,r192,r193,r194,r195,r196,r197,r198,r202,r203,r204,r205,r206,r207,r208,r212,r213,r214,r215,r216,r217,r218 = cache.tab
 
   b1Θdiff  = @evalpoly(Θ, r011, 2*r012, 3*r013, 4*r014, 5*r015, 6*r016, 7*r017, 8*r018)
@@ -993,7 +993,7 @@ end
 """
 
 """
-@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern9ConstantCache,idxs,T::Type{Val{0}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern9ConstantCache,idxs,T::Type{Val{0}})
   @unpack r011,r012,r013,r014,r015,r016,r017,r018,r019,r082,r083,r084,r085,r086,r087,r088,r089,r092,r093,r094,r095,r096,r097,r098,r099,r102,r103,r104,r105,r106,r107,r108,r109,r112,r113,r114,r115,r116,r117,r118,r119,r122,r123,r124,r125,r126,r127,r128,r129,r132,r133,r134,r135,r136,r137,r138,r139,r142,r143,r144,r145,r146,r147,r148,r149,r152,r153,r154,r155,r156,r157,r158,r159,r172,r173,r174,r175,r176,r177,r178,r179,r182,r183,r184,r185,r186,r187,r188,r189,r192,r193,r194,r195,r196,r197,r198,r199,r202,r203,r204,r205,r206,r207,r208,r209,r212,r213,r214,r215,r216,r217,r218,r219,r222,r223,r224,r225,r226,r227,r228,r229,r232,r233,r234,r235,r236,r237,r238,r239,r242,r243,r244,r245,r246,r247,r248,r249,r252,r253,r254,r255,r256,r257,r258,r259,r262,r263,r264,r265,r266,r267,r268,r269 = cache
 
   b1Θ  = @evalpoly(Θ, 0, r011, r012, r013, r014, r015, r016, r017, r018, r019)
@@ -1032,7 +1032,7 @@ end
   end
 end
 
-@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern9ConstantCache,idxs,T::Type{Val{1}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Vern9ConstantCache,idxs,T::Type{Val{1}})
   @unpack r011,r012,r013,r014,r015,r016,r017,r018,r019,r082,r083,r084,r085,r086,r087,r088,r089,r092,r093,r094,r095,r096,r097,r098,r099,r102,r103,r104,r105,r106,r107,r108,r109,r112,r113,r114,r115,r116,r117,r118,r119,r122,r123,r124,r125,r126,r127,r128,r129,r132,r133,r134,r135,r136,r137,r138,r139,r142,r143,r144,r145,r146,r147,r148,r149,r152,r153,r154,r155,r156,r157,r158,r159,r172,r173,r174,r175,r176,r177,r178,r179,r182,r183,r184,r185,r186,r187,r188,r189,r192,r193,r194,r195,r196,r197,r198,r199,r202,r203,r204,r205,r206,r207,r208,r209,r212,r213,r214,r215,r216,r217,r218,r219,r222,r223,r224,r225,r226,r227,r228,r229,r232,r233,r234,r235,r236,r237,r238,r239,r242,r243,r244,r245,r246,r247,r248,r249,r252,r253,r254,r255,r256,r257,r258,r259,r262,r263,r264,r265,r266,r267,r268,r269 = cache
 
   b1Θdiff  = @evalpoly(Θ, r011, 2*r012, 3*r013, 4*r014, 5*r015, 6*r016, 7*r017, 8*r018, 9*r019)
@@ -1079,7 +1079,7 @@ end
 """
 
 """
-@inline @muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Vern9Cache,idxs,T::Type{Val{0}})
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Vern9Cache,idxs,T::Type{Val{0}})
   @unpack r011,r012,r013,r014,r015,r016,r017,r018,r019,r082,r083,r084,r085,r086,r087,r088,r089,r092,r093,r094,r095,r096,r097,r098,r099,r102,r103,r104,r105,r106,r107,r108,r109,r112,r113,r114,r115,r116,r117,r118,r119,r122,r123,r124,r125,r126,r127,r128,r129,r132,r133,r134,r135,r136,r137,r138,r139,r142,r143,r144,r145,r146,r147,r148,r149,r152,r153,r154,r155,r156,r157,r158,r159,r172,r173,r174,r175,r176,r177,r178,r179,r182,r183,r184,r185,r186,r187,r188,r189,r192,r193,r194,r195,r196,r197,r198,r199,r202,r203,r204,r205,r206,r207,r208,r209,r212,r213,r214,r215,r216,r217,r218,r219,r222,r223,r224,r225,r226,r227,r228,r229,r232,r233,r234,r235,r236,r237,r238,r239,r242,r243,r244,r245,r246,r247,r248,r249,r252,r253,r254,r255,r256,r257,r258,r259,r262,r263,r264,r265,r266,r267,r268,r269 = cache.tab
 
   b1Θ  = @evalpoly(Θ, 0, r011, r012, r013, r014, r015, r016, r017, r018, r019)
@@ -1123,7 +1123,7 @@ end
   end
 end
 
-@inline @muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Vern9Cache,idxs,T::Type{Val{1}})
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Vern9Cache,idxs,T::Type{Val{1}})
   @unpack r011,r012,r013,r014,r015,r016,r017,r018,r019,r082,r083,r084,r085,r086,r087,r088,r089,r092,r093,r094,r095,r096,r097,r098,r099,r102,r103,r104,r105,r106,r107,r108,r109,r112,r113,r114,r115,r116,r117,r118,r119,r122,r123,r124,r125,r126,r127,r128,r129,r132,r133,r134,r135,r136,r137,r138,r139,r142,r143,r144,r145,r146,r147,r148,r149,r152,r153,r154,r155,r156,r157,r158,r159,r172,r173,r174,r175,r176,r177,r178,r179,r182,r183,r184,r185,r186,r187,r188,r189,r192,r193,r194,r195,r196,r197,r198,r199,r202,r203,r204,r205,r206,r207,r208,r209,r212,r213,r214,r215,r216,r217,r218,r219,r222,r223,r224,r225,r226,r227,r228,r229,r232,r233,r234,r235,r236,r237,r238,r239,r242,r243,r244,r245,r246,r247,r248,r249,r252,r253,r254,r255,r256,r257,r258,r259,r262,r263,r264,r265,r266,r267,r268,r269 = cache.tab
 
   b1Θdiff  = @evalpoly(Θ, r011, 2*r012, 3*r013, 4*r014, 5*r015, 6*r016, 7*r017, 8*r018, 9*r019)
@@ -1170,21 +1170,21 @@ end
 """
 
 """
-@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP8ConstantCache,idxs::Void,T::Type{Val{0}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP8ConstantCache,idxs::Void,T::Type{Val{0}})
   Θ1 = 1-Θ
   conpar = k[4] + Θ*(k[5] + Θ1*(k[6]+Θ*k[7]))
   #@. y₀ + dt*Θ*(k[1] + Θ1*(k[2] + Θ*(k[3]+Θ1*conpar)))
   y₀ + dt*Θ*(k[1] + Θ1*(k[2] + Θ*(k[3]+Θ1*conpar)))
 end
 
-@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP8ConstantCache,idxs,T::Type{Val{0}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP8ConstantCache,idxs,T::Type{Val{0}})
   Θ1 = 1-Θ
   conpar = k[4] + Θ*(k[5] + Θ1*(k[6]+Θ*k[7]))
   #@. y₀ + dt*Θ*(k[1] + Θ1*(k[2] + Θ*(k[3]+Θ1*conpar)))
   y₀[idxs] + dt*Θ*(k[1][idxs] + Θ1*(k[2][idxs] + Θ*(k[3][idxs]+Θ1*conpar)))
 end
 
-@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP8ConstantCache,idxs::Void,T::Type{Val{1}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP8ConstantCache,idxs::Void,T::Type{Val{1}})
   b1diff = k[1] + k[2]
   b2diff = -2*k[2] + 2*k[3] + 2*k[4]
   b3diff = -3*k[3] - 6*k[4] + 3*k[5] + 3*k[6]
@@ -1195,7 +1195,7 @@ end
   b1diff + Θ*(b2diff + Θ*(b3diff + Θ*(b4diff + Θ*(b5diff + Θ*(b6diff - 7*k[7]*Θ)))))
 end
 
-@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP8ConstantCache,idxs,T::Type{Val{1}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP8ConstantCache,idxs,T::Type{Val{1}})
   b1diff = k[1][idxs] + k[2][idxs]
   b2diff = -2*k[2][idxs] + 2*k[3][idxs] + 2*k[4][idxs]
   b3diff = -3*k[3][idxs] - 6*k[4][idxs] + 3*k[5][idxs] + 3*k[6][idxs]
@@ -1209,7 +1209,7 @@ end
 """
 
 """
-@inline @muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DP8Cache,idxs,T::Type{Val{0}})
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DP8Cache,idxs,T::Type{Val{0}})
   Θ1 = 1-Θ
   if out == nothing
     if idxs == nothing
@@ -1232,7 +1232,7 @@ end
   end
 end
 
-@inline @muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DP8Cache,idxs,T::Type{Val{1}})
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DP8Cache,idxs,T::Type{Val{1}})
   if out == nothing
     if idxs == nothing
       b1diff = @. k[1] + k[2]
@@ -1278,7 +1278,7 @@ end
   end
 end
 
-@inline @muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DPRKN6ConstantCache,idxs,T::Type{Val{0}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DPRKN6ConstantCache,idxs,T::Type{Val{0}})
   kk1,kk2,kk3 = k
   k1, k2 = kk1.x
   k3, k4 = kk2.x
@@ -1324,7 +1324,7 @@ end
 
 end
 
-@inline @muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DPRKN6Cache,idxs,T::Type{Val{0}})
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DPRKN6Cache,idxs,T::Type{Val{0}})
   kk1,kk2,kk3 = k
   k1, k2 = kk1.x
   k3, k4 = kk2.x

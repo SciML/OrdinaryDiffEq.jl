@@ -4,7 +4,7 @@
 # get_tmp_arr(integrator.cache) which gives a pointer to some
 # cache array which can be modified.
 
-@inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(integrator,f=integrator.f,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+function ode_addsteps!{calcVal,calcVal2,calcVal3}(integrator,f=integrator.f,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if !(typeof(integrator.cache) <: CompositeCache)
     ode_addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.u,integrator.dt,f,integrator.cache,always_calc_begin,allow_calc_end,force_calc_end)
   else
@@ -12,7 +12,7 @@
   end
 end
 
-@inline function ode_interpolant(Θ,integrator::DEIntegrator,idxs,deriv)
+function ode_interpolant(Θ,integrator::DEIntegrator,idxs,deriv)
   ode_addsteps!(integrator)
   if !(typeof(integrator.cache) <: CompositeCache)
     val = ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache,idxs,deriv)
@@ -22,7 +22,7 @@ end
   val
 end
 
-@inline function ode_interpolant!(val,Θ,integrator::DEIntegrator,idxs,deriv)
+function ode_interpolant!(val,Θ,integrator::DEIntegrator,idxs,deriv)
   ode_addsteps!(integrator)
   if !(typeof(integrator.cache) <: CompositeCache)
     ode_interpolant!(val,Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache,idxs,deriv)
@@ -31,47 +31,47 @@ end
   end
 end
 
-@inline function current_interpolant(t::Number,integrator::DEIntegrator,idxs,deriv)
+function current_interpolant(t::Number,integrator::DEIntegrator,idxs,deriv)
   Θ = (t-integrator.tprev)/integrator.dt
   ode_interpolant(Θ,integrator,idxs,deriv)
 end
 
-@inline function current_interpolant(t,integrator::DEIntegrator,idxs,deriv)
+function current_interpolant(t,integrator::DEIntegrator,idxs,deriv)
   Θ = (t.-integrator.tprev)./integrator.dt
   [ode_interpolant(ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
-@inline function current_interpolant!(val,t::Number,integrator::DEIntegrator,idxs,deriv)
+function current_interpolant!(val,t::Number,integrator::DEIntegrator,idxs,deriv)
   Θ = (t-integrator.tprev)/integrator.dt
   ode_interpolant!(val,Θ,integrator,idxs,deriv)
 end
 
-@inline function current_interpolant!(val,t,integrator::DEIntegrator,idxs,deriv)
+function current_interpolant!(val,t,integrator::DEIntegrator,idxs,deriv)
   Θ = (t.-integrator.tprev)./integrator.dt
   [ode_interpolant!(val,ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
-@inline function current_extrapolant(t::Number,integrator::DEIntegrator,idxs=nothing,deriv=Val{0})
+function current_extrapolant(t::Number,integrator::DEIntegrator,idxs=nothing,deriv=Val{0})
   Θ = (t-integrator.tprev)/(integrator.t-integrator.tprev)
   ode_extrapolant(Θ,integrator,idxs,deriv)
 end
 
-@inline function current_extrapolant!(val,t::Number,integrator::DEIntegrator,idxs=nothing,deriv=Val{0})
+function current_extrapolant!(val,t::Number,integrator::DEIntegrator,idxs=nothing,deriv=Val{0})
   Θ = (t-integrator.tprev)/(integrator.t-integrator.tprev)
   ode_extrapolant!(val,Θ,integrator,idxs,deriv)
 end
 
-@inline function current_extrapolant(t::AbstractArray,integrator::DEIntegrator,idxs=nothing,deriv=Val{0})
+function current_extrapolant(t::AbstractArray,integrator::DEIntegrator,idxs=nothing,deriv=Val{0})
   Θ = (t.-integrator.tprev)./(integrator.t-integrator.tprev)
   [ode_extrapolant(ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
-@inline function current_extrapolant!(val,t,integrator::DEIntegrator,idxs=nothing,deriv=Val{0})
+function current_extrapolant!(val,t,integrator::DEIntegrator,idxs=nothing,deriv=Val{0})
   Θ = (t.-integrator.tprev)./(integrator.t-integrator.tprev)
   [ode_extrapolant!(val,ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
-@inline function ode_extrapolant!(val,Θ,integrator::DEIntegrator,idxs,deriv)
+function ode_extrapolant!(val,Θ,integrator::DEIntegrator,idxs,deriv)
   ode_addsteps!(integrator)
   if !(typeof(integrator.cache) <: CompositeCache)
     ode_interpolant!(val,Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,integrator.cache,idxs,deriv)
@@ -80,7 +80,7 @@ end
   end
 end
 
-@inline function ode_extrapolant(Θ,integrator::DEIntegrator,idxs,deriv)
+function ode_extrapolant(Θ,integrator::DEIntegrator,idxs,deriv)
   ode_addsteps!(integrator)
   if !(typeof(integrator.cache) <: CompositeCache)
     ode_interpolant(Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,integrator.cache,idxs,deriv)
@@ -321,7 +321,7 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache,always_
   nothing
 end
 
-@inline function ode_interpolant{TI}(Θ,dt,y₀,y₁,k,cache::OrdinaryDiffEqMutableCache,idxs,T::Type{Val{TI}})
+function ode_interpolant{TI}(Θ,dt,y₀,y₁,k,cache::OrdinaryDiffEqMutableCache,idxs,T::Type{Val{TI}})
   if typeof(idxs) <: Number || typeof(y₀) <: Number
     return ode_interpolant!(nothing,Θ,dt,y₀,y₁,k,cache,idxs,T)
   else
@@ -360,7 +360,7 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
 
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
-@muladd @inline function hermite_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{0}}) # Default interpolant is Hermite
+@muladd function hermite_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{0}}) # Default interpolant is Hermite
   if typeof(idxs) <: Void
     #out = @. (1-Θ)*y₀+Θ*y₁+Θ*(Θ-1)*((1-2Θ)*(y₁-y₀)+(Θ-1)*dt*k[1] + Θ*dt*k[2])
     out = (1-Θ)*y₀+Θ*y₁+Θ*(Θ-1)*((1-2Θ)*(y₁-y₀)+(Θ-1)*dt*k[1] + Θ*dt*k[2])
@@ -375,7 +375,7 @@ end
 """
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
-@muladd @inline function hermite_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{1}}) # Default interpolant is Hermite
+@muladd function hermite_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{1}}) # Default interpolant is Hermite
   if typeof(idxs) <: Void
     #out = @. k[1] + Θ*(-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(3*dt*k[1] + 3*dt*k[2] + 6*y₀ - 6*y₁) + 6*y₁)/dt
     out = k[1] + Θ*(-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(3*dt*k[1] + 3*dt*k[2] + 6*y₀ - 6*y₁) + 6*y₁)/dt
@@ -390,7 +390,7 @@ end
 """
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
-@muladd @inline function hermite_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{2}}) # Default interpolant is Hermite
+@muladd function hermite_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{2}}) # Default interpolant is Hermite
   if typeof(idxs) <: Void
     #out = @. (-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁) + 6*y₁)/(dt*dt)
     out = (-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁) + 6*y₁)/(dt*dt)
@@ -405,7 +405,7 @@ end
 """
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
-@muladd @inline function hermite_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{3}}) # Default interpolant is Hermite
+@muladd function hermite_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{3}}) # Default interpolant is Hermite
   if typeof(idxs) <: Void
     #out = @. (6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁)/(dt*dt*dt)
     out = (6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁)/(dt*dt*dt)
@@ -422,7 +422,7 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
 
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
-@muladd @inline function hermite_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{0}}) # Default interpolant is Hermite
+@muladd function hermite_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{0}}) # Default interpolant is Hermite
   if out == nothing
     if idxs == nothing
       # return @. (1-Θ)*y₀+Θ*y₁+Θ*(Θ-1)*((1-2Θ)*(y₁-y₀)+(Θ-1)*dt*k[1] + Θ*dt*k[2])
@@ -447,7 +447,7 @@ end
 """
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
-@muladd @inline function hermite_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{1}}) # Default interpolant is Hermite
+@muladd function hermite_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{1}}) # Default interpolant is Hermite
   if out == nothing
     if idxs == nothing
       # return @. k[1] + Θ*(-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(3*dt*k[1] + 3*dt*k[2] + 6*y₀ - 6*y₁) + 6*y₁)/dt
@@ -472,7 +472,7 @@ end
 """
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
-@muladd @inline function hermite_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{2}}) # Default interpolant is Hermite
+@muladd function hermite_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{2}}) # Default interpolant is Hermite
   if out == nothing
     if idxs == nothing
       return (-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁) + 6*y₁)/(dt*dt)
@@ -495,7 +495,7 @@ end
 """
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
-@muladd @inline function hermite_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{3}}) # Default interpolant is Hermite
+@muladd function hermite_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{3}}) # Default interpolant is Hermite
   if out == nothing
     if idxs == nothing
       # return @. (6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁)/(dt*dt*dt)
@@ -519,7 +519,7 @@ end
 
 ######################## Linear Interpolants
 
-@muladd @inline function linear_interpolant(Θ,dt,y₀,y₁,idxs,T::Type{Val{0}})
+@muladd function linear_interpolant(Θ,dt,y₀,y₁,idxs,T::Type{Val{0}})
   Θm1 = (1-Θ)
   if typeof(idxs) <: Void
     out = @. Θm1*y₀ + Θ*y₁
@@ -529,7 +529,7 @@ end
   out
 end
 
-@inline function linear_interpolant(Θ,dt,y₀,y₁,idxs,T::Type{Val{1}})
+function linear_interpolant(Θ,dt,y₀,y₁,idxs,T::Type{Val{1}})
   if typeof(idxs) <: Void
     out = @. (y₁ - y₀)/dt
   else
@@ -541,7 +541,7 @@ end
 """
 Linear Interpolation
 """
-@muladd @inline function linear_interpolant!(out,Θ,dt,y₀,y₁,idxs,T::Type{Val{0}})
+@muladd function linear_interpolant!(out,Θ,dt,y₀,y₁,idxs,T::Type{Val{0}})
   Θm1 = (1-Θ)
   if out == nothing
     if idxs == nothing
@@ -559,7 +559,7 @@ end
 """
 Linear Interpolation
 """
-@inline function linear_interpolant!(out,Θ,dt,y₀,y₁,idxs,T::Type{Val{1}})
+function linear_interpolant!(out,Θ,dt,y₀,y₁,idxs,T::Type{Val{1}})
   if out == nothing
     if idxs == nothing
       return @. (y₁ - y₀)/dt
