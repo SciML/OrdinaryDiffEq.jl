@@ -50,7 +50,7 @@ end
     integrator.sol = solution_new_retcode(integrator.sol,:Unstable)
     return integrator.sol
   end
-  if integrator.last_stepfail # Only false if doubled
+  if integrator.last_stepfail && !integrator.opts.adaptive
     if integrator.opts.verbose
       warn("Newton steps could not converge and algorithm is not adaptive. Use a lower dt.")
     end
