@@ -39,8 +39,8 @@ function initialize!(integrator,cache::NystromDefaultInitialization)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f.f1(integrator.t,uprev,duprev,integrator.k[2].x[1])
-  integrator.f.f2(integrator.t,uprev,duprev,integrator.k[2].x[2])
+  integrator.f.f1(integrator.t,uprev,duprev,integrator.k[1].x[1])
+  integrator.f.f2(integrator.t,uprev,duprev,integrator.k[1].x[2])
 end
 
 @muladd function perform_step!(integrator,cache::Nystrom4ConstantCache,repeat_step=false)
