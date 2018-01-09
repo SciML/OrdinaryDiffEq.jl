@@ -440,9 +440,9 @@ function alg_cache(alg::DP5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   k3 = zeros(rate_prototype)
   k4 = zeros(rate_prototype)
   k5 = zeros(rate_prototype)
-  k6 = zeros(rate_prototype)
+  k6 = k2
   k7 = zeros(rate_prototype)
-  dense_tmp3 = zeros(rate_prototype)
+  dense_tmp3 = k2
   dense_tmp4 = zeros(rate_prototype)
   update = zeros(rate_prototype)
   bspl = zeros(rate_prototype)

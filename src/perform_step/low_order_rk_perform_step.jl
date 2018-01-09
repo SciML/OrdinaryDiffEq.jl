@@ -637,7 +637,10 @@ end
 function initialize!(integrator, cache::DP5Cache)
   integrator.kshortsize = 4
   resize!(integrator.k, integrator.kshortsize)
-  integrator.k .= [cache.update,cache.bspl,cache.dense_tmp3,cache.dense_tmp4]
+  integrator.k[1] = cache.update
+  integrator.k[2] = cache.bspl
+  integrator.k[3] = cache.dense_tmp3
+  integrator.k[4] = cache.dense_tmp4
   integrator.fsalfirst = cache.k1; integrator.fsallast = cache.k7
   integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # Pre-start fsal
 end
@@ -668,8 +671,8 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   @. bspl = k1 - update
-  @. integrator.k[3] = update - k7 - bspl
   @. integrator.k[4] = d1*k1+d3*k3+d4*k4+d5*k5+d6*k6+d7*k7
+  @. integrator.k[3] = update - k7 - bspl
 end
 =#
 
@@ -714,7 +717,8 @@ end
   end
   @tight_loop_macros for i in uidx
     @inbounds bspl[i] = k1[i] - update[i]
-    @inbounds integrator.k[3][i] = update[i] - k7[i] - bspl[i]
     @inbounds integrator.k[4][i] = d1*k1[i]+d3*k3[i]+d4*k4[i]+d5*k5[i]+d6*k6[i]+d7*k7[i]
+    # k6 === integrator.k[3] === k2
+    @inbounds integrator.k[3][i] = update[i] - k7[i] - bspl[i]
   end
 end
