@@ -49,6 +49,8 @@ end
   out .= integrator.fsallast
 end
 
+#TODO: Bigger caches for most algorithms
+@inline DiffEqBase.get_tmp_cache(integrator::ODEIntegrator) = (integrator.cache.tmp,)
 user_cache(integrator::ODEIntegrator) = user_cache(integrator.cache)
 u_cache(integrator::ODEIntegrator) = u_cache(integrator.cache)
 du_cache(integrator::ODEIntegrator)= du_cache(integrator.cache)

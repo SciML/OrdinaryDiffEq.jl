@@ -123,7 +123,7 @@ end
   u₁ = @. u0 + dt₀_tdir*f₀
   f₁ = f(t+dt₀_tdir,u₁)
 
-  d₂ = internalnorm(@. (f₁-f₀)/sk*oneunit_tType)/dt₀*oneunit_tType
+  d₂ = internalnorm((f₁-f₀)./sk*oneunit_tType)/dt₀*oneunit_tType
 
   max_d₁d₂ = max(d₁, d₂)
   if max_d₁d₂ <= 1//Int64(10)^(15)

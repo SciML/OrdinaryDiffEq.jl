@@ -100,10 +100,11 @@ function find_callback_time(integrator,callback)
       end
       if callback.rootfind && !(typeof(integrator.alg) <: Discrete)
         if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache
+          _cache = first(get_tmp_cache(integrator))
           if typeof(callback.idxs) <: Void
-            tmp = integrator.cache.tmp
+            tmp = _cache
           elseif !(typeof(callback.idxs) <: Number)
-            tmp = @view integrator.cache.tmp[callback.idxs]
+            tmp = @view _cache[callback.idxs]
           end
         end
         zero_func = (Θ) -> begin
