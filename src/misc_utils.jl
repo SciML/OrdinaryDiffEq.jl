@@ -79,8 +79,8 @@ in `out`.
 end
 
 @inline @muladd function calculate_residuals!(out::Array{T}, ũ::Array{T}, u₀::Array{T},
-                                              u₁::Array{T}, α::T, ρ::Real,
-                                              internalnorm) where {T<:Number}
+                                              u₁::Array{T}, α::T2, ρ::Real,
+                                              internalnorm) where {T<:Number,T2<:Number}
     @tight_loop_macros for i in eachindex(out)
         @inbounds out[i] = ũ[i] / (α + max(internalnorm(u₀[i]), internalnorm(u₁[i])) * ρ)
     end
@@ -100,8 +100,8 @@ in `out`.
 end
 
 @inline @muladd function calculate_residuals!(out::Array{T}, u₀::Array{T},
-                                              u₁::Array{T}, α::T, ρ::Real,
-                                              internalnorm) where {T<:Number}
+                                              u₁::Array{T}, α::T2, ρ::Real,
+                                              internalnorm) where {T<:Number,T2<:Number}
     @tight_loop_macros for i in eachindex(out)
         @inbounds out[i] = (u₁[i] - u₀[i]) / (α + max(internalnorm(u₀[i]), internalnorm(u₁[i])) * ρ)
     end
@@ -119,8 +119,9 @@ Calculate element-wise residuals
     @. ũ / (α + max(internalnorm(u₀), internalnorm(u₁)) * ρ)
 end
 
-@inline @muladd function calculate_residuals(ũ::Array{T}, u₀::Array{T}, u₁::Array{T}, α::T,
-                                             ρ::Real, internalnorm) where {T<:Number}
+@inline @muladd function calculate_residuals(ũ::Array{T}, u₀::Array{T}, u₁::Array{T}, α::T2,
+                                             ρ::Real, internalnorm) where
+                                             {T<:Number,T2<:Number}
     out = similar(ũ)
     calculate_residuals!(out, ũ, u₀, u₁, α, ρ, internalnorm)
     out
@@ -138,8 +139,9 @@ Calculate element-wise residuals
     @. (u₁ - u₀) / (α + max(internalnorm(u₀), internalnorm(u₁)) * ρ)
 end
 
-@inline @muladd function calculate_residuals(u₀::Array{T}, u₁::Array{T}, α::T,
-                                             ρ::Real, internalnorm) where {T<:Number}
+@inline @muladd function calculate_residuals(u₀::Array{T}, u₁::Array{T}, α::T2,
+                                             ρ::Real, internalnorm) where
+                                             {T<:Number,T2<:Number}
     out = similar(u₀)
     calculate_residuals!(out, u₀, u₁, α, ρ, internalnorm)
     out
