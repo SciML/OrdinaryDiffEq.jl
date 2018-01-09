@@ -3,18 +3,28 @@
   oneunit_tType = oneunit(tType)
   dtmax_tdir = tdir*dtmax
 
-  cache = get_tmp_cache(integrator)
-  tmp = cache[2]
-  sk = first(cache)
-  f₀ = integrator.fsalfirst
+  if eltype(u0) <: Number && !(typeof(integrator.alg) <: CompositeAlgorithm)
+    cache = get_tmp_cache(integrator)
+    sk = first(cache)
+    @. sk = abstol+internalnorm(u0)*reltol
+  else
+    sk = @. abstol+internalnorm(u0)*reltol
+  end
 
-  @. sk = abstol+internalnorm(u0)*reltol
-  @. tmp = u0/sk
+  if isfsal(integrator.alg)
+    f₀ = integrator.fsallast
+    f(t,u0,f₀)
+  else
+    # TODO: use more caches
+    f₀ = u0/t; fill!(f₀,zero(eltype(f₀)))
+    f(t,u0,f₀)
+  end
+
+  # TODO: use more caches
+  #tmp = cache[2]
+  tmp = @. u0/sk
+
   d₀ = internalnorm(tmp)
-
-  f₀ = u0/t; fill!(f₀,zero(eltype(f₀)))
-  f(t,u0,f₀)
-
 
   #=
   Try/catch around the linear solving. This will catch singular matrices defined
