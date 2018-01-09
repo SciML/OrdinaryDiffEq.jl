@@ -12,13 +12,14 @@ sol =solve(prob,Euler();dt=1//2^(4),maxiters=Inf)
 sol =solve(prob,Tsit5();dt=1//2^(4))
 
 
-sol =solve(prob,DP5();dt=1//2^(4))(0.5)
+sol =solve(prob,DP5())(0.5)
 
 
 
 
 
-sol =solve(prob,DP5();dt=1//2^(4))(0.5)
+sol =solve(prob,DP5())(0.5)
+
 
 # plot(sol,plot_analytic=true)
 

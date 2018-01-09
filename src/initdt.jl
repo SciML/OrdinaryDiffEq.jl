@@ -1,10 +1,15 @@
-@muladd function ode_determine_initdt{tType,uType}(u0,t,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,true},order,alg)
+@muladd function ode_determine_initdt{tType,uType}(u0,t,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,true},integrator)
   f = prob.f
   oneunit_tType = oneunit(tType)
   dtmax_tdir = tdir*dtmax
 
-  sk = @. abstol+internalnorm(u0)*reltol
-  tmp = @. u0/sk
+  cache = get_tmp_cache(integrator)
+  tmp = cache[2]
+  sk = first(cache)
+  f₀ = integrator.fsalfirst
+
+  @. sk = abstol+internalnorm(u0)*reltol
+  @. tmp = u0/sk
   d₀ = internalnorm(tmp)
 
   f₀ = u0/t; fill!(f₀,zero(eltype(f₀)))
@@ -45,7 +50,7 @@
   if prob.mass_matrix != I
     ftmp = similar(f₀)
     try
-      alg.linsolve(ftmp, copy(prob.mass_matrix), f₀, true)
+      integrator.alg.linsolve(ftmp, copy(prob.mass_matrix), f₀, true)
       f₀ .= ftmp
     catch
       return tType(1//10^(6))
@@ -80,7 +85,7 @@
   f(t+dt₀_tdir,u₁,f₁)
 
   if prob.mass_matrix != I
-    alg.linsolve(ftmp, prob.mass_matrix, f₁, false)
+    integrator.alg.linsolve(ftmp, prob.mass_matrix, f₁, false)
     f₁ .= ftmp
   end
 
@@ -92,12 +97,12 @@
   if max_d₁d₂ <= 1//Int64(10)^(15)
     dt₁ = max(tType(1//10^(6)),dt₀*1//10^(3))
   else
-    dt₁ = tType(10.0^(-(2+log10(max_d₁d₂))/order))
+    dt₁ = tType(10.0^(-(2+log10(max_d₁d₂))/alg_order(integrator.alg)))
   end
   dt = tdir*min(100dt₀,dt₁,dtmax_tdir)
 end
 
-@muladd function ode_determine_initdt{uType,tType}(u0,t,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,false},order,alg)
+@muladd function ode_determine_initdt{uType,tType}(u0,t,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,false},integrator)
   f = prob.f
   oneunit_tType = oneunit(tType)
   dtmax_tdir = tdir*dtmax
@@ -129,7 +134,7 @@ end
   if max_d₁d₂ <= 1//Int64(10)^(15)
     dt₁ = max(tType(1//10^(6)),dt₀*1//10^(3))
   else
-    dt₁ = tType(10.0^(-(2+log10(max_d₁d₂))/order))
+    dt₁ = tType(10.0^(-(2+log10(max_d₁d₂))/alg_order(integrator.alg)))
   end
   dt = tdir*min(100dt₀,dt₁,dtmax_tdir)
 end

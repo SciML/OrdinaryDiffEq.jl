@@ -443,9 +443,9 @@ function alg_cache(alg::DP5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   k6 = k2
   k7 = zeros(rate_prototype)
   dense_tmp3 = k2
-  dense_tmp4 = zeros(rate_prototype)
+  dense_tmp4 = k5
   update = zeros(rate_prototype)
-  bspl = zeros(rate_prototype)
+  bspl = k3
   utilde = similar(u,indices(u))
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits,indices(u))
   tab = DP5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))

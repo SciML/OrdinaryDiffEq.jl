@@ -50,7 +50,11 @@ end
 end
 
 #TODO: Bigger caches for most algorithms
-@inline DiffEqBase.get_tmp_cache(integrator::ODEIntegrator) = (integrator.cache.tmp,)
+@inline DiffEqBase.get_tmp_cache(integrator::ODEIntegrator) =
+          get_tmp_cache(integrator::ODEIntegrator,integrator.alg)
+@inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqAlgorithm) = (integrator.cache.tmp,)
+@inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqAdaptiveAlgorithm) = (integrator.cache.tmp,integrator.cache.atmp)
+
 user_cache(integrator::ODEIntegrator) = user_cache(integrator.cache)
 u_cache(integrator::ODEIntegrator) = u_cache(integrator.cache)
 du_cache(integrator::ODEIntegrator)= du_cache(integrator.cache)
@@ -226,6 +230,5 @@ end
 function DiffEqBase.auto_dt_reset!(integrator::ODEIntegrator)
   integrator.dt = ode_determine_initdt(integrator.u,integrator.t,
   integrator.tdir,integrator.opts.dtmax,integrator.opts.abstol,integrator.opts.reltol,
-  integrator.opts.internalnorm,integrator.sol.prob,alg_order(integrator.alg),
-  integrator.alg)
+  integrator.opts.internalnorm,integrator.sol.prob,integrator)
 end
