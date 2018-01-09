@@ -244,7 +244,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   dtcache = tType(dt)
   dtpropose = tType(dt)
   iter = 0
-  kshortsize = 1
+  kshortsize = 0
   reeval_fsal = false
   u_modified = false
   EEst = tTypeNoUnits(1)
