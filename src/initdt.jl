@@ -11,7 +11,8 @@
     sk = @. abstol+internalnorm(u0)*reltol
   end
 
-  if isfsal(integrator.alg)
+  if isfsal(integrator.alg) && typeof(integrator) <: ODEIntegrator
+    # Right now DelayDiffEq has issues with fsallast not being initialized
     f₀ = integrator.fsallast
     f(t,u0,f₀)
   else
