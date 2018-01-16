@@ -316,4 +316,4 @@ sol = solve(prob, DPRKN12())
 sol = solve(prob, ERKN4(),reltol=1e-8)
 @test length(sol.u) < 38
 sol = solve(prob, ERKN5(),reltol=1e-8)
-@test length(sol.u) < 29
+@test length(sol.u) < 31
