@@ -118,7 +118,7 @@ end
   oneunit_tType = oneunit(tType)
   dtmax_tdir = tdir*dtmax
 
-  sk = @. abstol+internalnorm(u0)*reltol
+  sk = abstol+internalnorm(u0)*reltol
   d₀ = internalnorm(@. u0/sk)
 
   f₀ = f(t,u0)
@@ -126,7 +126,7 @@ end
     error("First function call produced NaNs. Exiting.")
   end
 
-  d₁ = internalnorm(@. f₀/sk*oneunit_tType)
+  d₁ = internalnorm(f₀/sk*oneunit_tType)
 
   if d₀ < 1//10^(5) || d₁ < 1//10^(5)
     dt₀ = tType(1//10^(6))
@@ -136,7 +136,7 @@ end
   dt₀ = min(dt₀,dtmax_tdir)
   dt₀_tdir = tdir*dt₀
 
-  u₁ = @. u0 + dt₀_tdir*f₀
+  u₁ = u0 + dt₀_tdir*f₀
   f₁ = f(t+dt₀_tdir,u₁)
 
   d₂ = internalnorm((f₁-f₀)./sk*oneunit_tType)/dt₀*oneunit_tType
