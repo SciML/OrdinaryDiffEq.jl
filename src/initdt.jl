@@ -119,7 +119,7 @@ end
   dtmax_tdir = tdir*dtmax
 
   sk = abstol+internalnorm(u0)*reltol
-  d₀ = internalnorm(@. u0/sk)
+  d₀ = internalnorm(u0/sk)
 
   f₀ = f(t,u0)
   if any((isnan(x) for x in f₀))
