@@ -324,7 +324,12 @@ end
 # Helpers
 
 function tstop_saveat_disc_handling(tstops,saveat,d_discontinuities,tdir,tspan,tType)
-  tstops_vec = vec(collect(tType,Iterators.filter(x->tdir*tspan[1]<tdir*x≤tdir*tspan[end],Iterators.flatten((tstops,d_discontinuities,tspan[end])))))
+
+  if isempty(d_discontinuities) && isempty(tstops) # TODO: Specialize more
+    tstops_vec = [tspan[2]]
+  else
+    tstops_vec = vec(collect(tType,Iterators.filter(x->tdir*tspan[1]<tdir*x≤tdir*tspan[end],Iterators.flatten((tstops,d_discontinuities,tspan[end])))))
+  end
 
   if tdir>0
     tstops_internal = binary_minheap(tstops_vec)
@@ -338,6 +343,8 @@ function tstop_saveat_disc_handling(tstops,saveat,d_discontinuities,tdir,tspan,t
     else
       saveat_vec = convert(Vector{tType},collect(tType,tspan[1]+saveat:saveat:(tspan[end]-saveat)))
     end
+  elseif isempty(saveat)
+    saveat_vec = saveat
   else
     saveat_vec = vec(collect(tType,Iterators.filter(x->tdir*tspan[1]<tdir*x<tdir*tspan[end],saveat)))
   end
