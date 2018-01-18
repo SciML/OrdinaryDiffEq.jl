@@ -35,11 +35,11 @@ for i = 1:2
   @test abs(sim11.𝒪est[:final]-1) < testTol
 
   sim12 = test_convergence(dts,prob,
-          GenericImplicitEuler(nlsolve=NLSOLVEJL_SETUP(autodiff=true)))
+          GenericImplicitEuler(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(autodiff=true)))
   @test abs(sim12.𝒪est[:final]-1) < testTol
 
   sim122 = test_convergence(dts,prob,
-           GenericImplicitEuler(nlsolve=NLSOLVEJL_SETUP(autodiff=false)))
+           GenericImplicitEuler(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(autodiff=false)))
 
   sim13 = test_convergence(dts,prob,ImplicitMidpoint())
   @test abs(sim13.𝒪est[:final]-2) < testTol
@@ -48,11 +48,11 @@ for i = 1:2
   @test abs(sim13.𝒪est[:final]-2) < testTol
 
   sim14 = test_convergence(dts,prob,
-          GenericTrapezoid(nlsolve=NLSOLVEJL_SETUP(autodiff=true)))
+          GenericTrapezoid(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(autodiff=true)))
   @test abs(sim14.𝒪est[:final]-2) < testTol
 
   sim142 = test_convergence(dts,prob,
-           GenericTrapezoid(nlsolve=NLSOLVEJL_SETUP(autodiff=false)))
+           GenericTrapezoid(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(autodiff=false)))
   @test abs(sim142.𝒪est[:final]-2) < testTol
 
   sim14 = test_convergence(dts,prob,TRBDF2())
