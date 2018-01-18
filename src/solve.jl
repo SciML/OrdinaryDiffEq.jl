@@ -64,6 +64,11 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     warn("Dense output is incompatible with saveat. Please use the SavingCallback from the Callback Library to mix the two behaviors.")
   end
 
+  if (eltype(prob.u0) <: Dual && !(eltype(prob.tspan)<:Dual) ||
+     !(eltype(prob.u0) <: Dual) && eltype(prob.tspan)<:Dual) && adaptive
+     warn("Autodifferentiation through the solver with adaptive timestepping requires both time and states to be dual numbers. Please see the FAQ.")
+  end
+
   tType = eltype(prob.tspan)
   tspan = prob.tspan
   tdir = sign(tspan[end]-tspan[1])
