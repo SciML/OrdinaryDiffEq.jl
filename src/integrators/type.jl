@@ -55,7 +55,6 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,tTypeN
   uprev2::uType
   tprev::tType
   alg::algType
-  notsaveat_idxs::Vector{Int}
   dtcache::tType
   dtchangeable::Bool
   dtpropose::tType
@@ -87,7 +86,7 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,tTypeN
                 F,ProgressType,CacheType,O,FSALType}}){algType,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,
                 F,ProgressType,CacheType,O,FSALType}(
                 sol,u,k,t,dt,f,uprev,uprev2,tprev,
-      alg,notsaveat_idxs,dtcache,dtchangeable,dtpropose,tdir,
+      alg,dtcache,dtchangeable,dtpropose,tdir,
       EEst,qold,q11,erracc,dtacc,success_iter,
       iter,saveiter,saveiter_dense,prog,cache,
       kshortsize,force_stepfail,last_stepfail,just_hit_tstop,
@@ -96,7 +95,7 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,tTypeN
       new{algType,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,
                   F,ProgressType,CacheType,O,FSALType}(
                   sol,u,k,t,dt,f,uprev,uprev2,tprev,
-      alg,notsaveat_idxs,dtcache,dtchangeable,dtpropose,tdir,
+      alg,dtcache,dtchangeable,dtpropose,tdir,
       EEst,qold,q11,erracc,dtacc,success_iter,
       iter,saveiter,saveiter_dense,prog,cache,
       kshortsize,force_stepfail,last_stepfail,just_hit_tstop,

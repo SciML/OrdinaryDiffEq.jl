@@ -5,7 +5,6 @@ struct InterpolationData{F,uType,tType,kType,cacheType} <: OrdinaryDiffEqInterpo
   timeseries::uType
   ts::tType
   ks::kType
-  notsaveat_idxs::Vector{Int}
   dense::Bool
   cache::cacheType
 end
@@ -16,7 +15,6 @@ struct CompositeInterpolationData{F,uType,tType,kType,cacheType} <: OrdinaryDiff
   ts::tType
   ks::kType
   alg_choice::Vector{Int}
-  notsaveat_idxs::Vector{Int}
   dense::Bool
   cache::cacheType
 end
@@ -78,7 +76,6 @@ function InterpolationData(id::InterpolationData,f)
   InterpolationData(f,id.timeseries,
                       id.ts,
                       id.ks,
-                      id.notsaveat_idxs,
                       id.dense,
                       id.cache)
 end
@@ -88,7 +85,6 @@ function CompositeInterpolationData(id::CompositeInterpolationData,f)
                                id.ts,
                                id.ks,
                                id.alg_choice,
-                               id.notsaveat_idxs,
                                id.dense,
                                id.cache)
 end

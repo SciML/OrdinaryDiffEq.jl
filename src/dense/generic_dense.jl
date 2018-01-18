@@ -99,7 +99,6 @@ times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation(tvals,id,idxs,deriv)
   @unpack ts,timeseries,ks,f,cache = id
-  id.dense ? notsaveat_idxs = id.notsaveat_idxs : notsaveat_idxs = 1:length(timeseries)
   tdir = sign(ts[end]-ts[1])
   idx = sortperm(tvals,rev=tdir<0)
   i = 2 # Start the search thinking it's between ts[1] and ts[2]
@@ -114,34 +113,34 @@ function ode_interpolation(tvals,id,idxs,deriv)
   end
   @inbounds for j in idx
     t = tvals[j]
-    i = searchsortedfirst(@view(ts[@view(notsaveat_idxs[i:end])]),t,rev=tdir<0)+i-1 # It's in the interval ts[i-1] to ts[i]
+    i = searchsortedfirst(@view(ts[i:end]),t,rev=tdir<0)+i-1 # It's in the interval ts[i-1] to ts[i]
     avoid_constant_ends = deriv != Val{0} || typeof(t) <: ForwardDiff.Dual
     avoid_constant_ends && i==1 && (i+=1)
-    if !avoid_constant_ends && ts[notsaveat_idxs[i]] == t
+    if !avoid_constant_ends && ts[i] == t
       if idxs == nothing
-        vals[j] = timeseries[notsaveat_idxs[i]]
+        vals[j] = timeseries[i]
       else
-        vals[j] = timeseries[notsaveat_idxs[i]][idxs]
+        vals[j] = timeseries[i][idxs]
       end
-    elseif !avoid_constant_ends && ts[notsaveat_idxs[i-1]] == t # Can happen if it's the first value!
+    elseif !avoid_constant_ends && ts[i-1] == t # Can happen if it's the first value!
       if idxs == nothing
-        vals[j] = timeseries[notsaveat_idxs[i-1]]
+        vals[j] = timeseries[i-1]
       else
-        vals[j] = timeseries[notsaveat_idxs[i-1]][idxs]
+        vals[j] = timeseries[i-1][idxs]
       end
     else
-      dt = ts[notsaveat_idxs[i]] - ts[notsaveat_idxs[i-1]]
-      Θ = (t-ts[notsaveat_idxs[i-1]])/dt
+      dt = ts[i] - ts[i-1]
+      Θ = (t-ts[i-1])/dt
       if typeof(cache) <: (DiscreteCache) || typeof(cache) <: DiscreteConstantCache
-        vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],0,cache,idxs,deriv)
+        vals[j] = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],0,cache,idxs,deriv)
       elseif !id.dense
-        vals[j] = linear_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],idxs,deriv)
+        vals[j] = linear_interpolant(Θ,dt,timeseries[i-1],timeseries[i],idxs,deriv)
       elseif typeof(cache) <: CompositeCache
-        ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache.caches[id.alg_choice[notsaveat_idxs[i-1]]]) # update the kcurrent
-        vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]],idxs,deriv)
+        ode_addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,cache.caches[id.alg_choice[i-1]]) # update the kcurrent
+        vals[j] = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache.caches[id.alg_choice[i-1]],idxs,deriv)
       else
-        ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache) # update the kcurrent
-        vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache,idxs,deriv)
+        ode_addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,cache) # update the kcurrent
+        vals[j] = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache,idxs,deriv)
       end
     end
   end
@@ -156,7 +155,6 @@ times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation!(vals,tvals,id,idxs,deriv)
   @unpack ts,timeseries,ks,f,cache = id
-  id.dense ? notsaveat_idxs = id.notsaveat_idxs : notsaveat_idxs = 1:length(timeseries)
   tdir = sign(ts[end]-ts[1])
   idx = sortperm(tvals,rev=tdir<0)
   i = 2 # Start the search thinking it's between ts[1] and ts[2]
@@ -164,49 +162,49 @@ function ode_interpolation!(vals,tvals,id,idxs,deriv)
   tdir*tvals[idx[1]] < tdir*ts[1] && error("Solution interpolation cannot extrapolate before the first timepoint. Either start solving earlier or use the local extrapolation from the integrator interface.")
   @inbounds for j in idx
     t = tvals[j]
-    i = searchsortedfirst(@view(ts[@view(notsaveat_idxs[i:end])]),t,rev=tdir<0)+i-1 # It's in the interval ts[i-1] to ts[i]
+    i = searchsortedfirst(@view(ts[i:end]),t,rev=tdir<0)+i-1 # It's in the interval ts[i-1] to ts[i]
     avoid_constant_ends = deriv != Val{0} || typeof(t) <: ForwardDiff.Dual
     avoid_constant_ends && i==1 && (i+=1)
-    if !avoid_constant_ends && ts[notsaveat_idxs[i]] == t
+    if !avoid_constant_ends && ts[i] == t
       if idxs == nothing
-        vals[j] = timeseries[notsaveat_idxs[i]]
+        vals[j] = timeseries[i]
       else
-        vals[j] = timeseries[notsaveat_idxs[i]][idxs]
+        vals[j] = timeseries[i][idxs]
       end
-    elseif !avoid_constant_ends && ts[notsaveat_idxs[i-1]] == t # Can happen if it's the first value!
+    elseif !avoid_constant_ends && ts[i-1] == t # Can happen if it's the first value!
       if idxs == nothing
-        vals[j] = timeseries[notsaveat_idxs[i-1]]
+        vals[j] = timeseries[i-1]
       else
-        vals[j] = timeseries[notsaveat_idxs[i-1]][idxs]
+        vals[j] = timeseries[i-1][idxs]
       end
     else
-      dt = ts[notsaveat_idxs[i]] - ts[notsaveat_idxs[i-1]]
-      Θ = (t-ts[notsaveat_idxs[i-1]])/dt
+      dt = ts[i] - ts[i-1]
+      Θ = (t-ts[i-1])/dt
       if typeof(cache) <: (DiscreteCache) || typeof(cache) <: DiscreteConstantCache
         if eltype(timeseries) <: AbstractArray
-          ode_interpolant!(vals[j],Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],0,cache,idxs,deriv)
+          ode_interpolant!(vals[j],Θ,dt,timeseries[i-1],timeseries[i],0,cache,idxs,deriv)
         else
-          vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],0,cache,idxs,deriv)
+          vals[j] = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],0,cache,idxs,deriv)
         end
       elseif !id.dense
         if eltype(timeseries) <: AbstractArray
-          linear_interpolant!(vals[j],Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],idxs,deriv)
+          linear_interpolant!(vals[j],Θ,dt,timeseries[i-1],timeseries[i],idxs,deriv)
         else
-          vals[j] = linear_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],idxs,deriv)
+          vals[j] = linear_interpolant(Θ,dt,timeseries[i-1],timeseries[i],idxs,deriv)
         end
       elseif typeof(cache) <: CompositeCache
-        ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache.caches[id.alg_choice[notsaveat_idxs[i-1]]]) # update the kcurrent
+        ode_addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,cache.caches[id.alg_choice[i-1]]) # update the kcurrent
         if eltype(timeseries) <: AbstractArray
-          ode_interpolant!(vals[j],Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]],idxs,deriv)
+          ode_interpolant!(vals[j],Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache.caches[id.alg_choice[i-1]],idxs,deriv)
         else
-          vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]],idxs,deriv)
+          vals[j] = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache.caches[id.alg_choice[i-1]],idxs,deriv)
         end
       else
-        ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache) # update the kcurrent
+        ode_addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,cache) # update the kcurrent
         if eltype(vals[j]) <: AbstractArray
-          ode_interpolant!(vals[j],Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache,idxs,deriv)
+          ode_interpolant!(vals[j],Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache,idxs,deriv)
         else
-          vals[j] = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache,idxs,deriv)
+          vals[j] = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache,idxs,deriv)
         end
       end
     end
@@ -221,38 +219,37 @@ times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation(tval::Number,id,idxs,deriv)
   @unpack ts,timeseries,ks,f,cache = id
-  id.dense ? notsaveat_idxs = id.notsaveat_idxs : notsaveat_idxs = 1:length(timeseries)
   tdir = sign(ts[end]-ts[1])
   tdir*tval > tdir*ts[end] && error("Solution interpolation cannot extrapolate past the final timepoint. Either solve on a longer timespan or use the local extrapolation from the integrator interface.")
   tdir*tval < tdir*ts[1] && error("Solution interpolation cannot extrapolate before the first timepoint. Either start solving earlier or use the local extrapolation from the integrator interface.")
-  @inbounds i = searchsortedfirst(@view(ts[notsaveat_idxs]),tval,rev=tdir<0) # It's in the interval ts[i-1] to ts[i]
+  @inbounds i = searchsortedfirst(ts,tval,rev=tdir<0) # It's in the interval ts[i-1] to ts[i]
   avoid_constant_ends = deriv != Val{0} || typeof(tval) <: ForwardDiff.Dual
   avoid_constant_ends && i==1 && (i+=1)
-  @inbounds if !avoid_constant_ends && ts[notsaveat_idxs[i]] == tval
+  @inbounds if !avoid_constant_ends && ts[i] == tval
     if idxs == nothing
-      val = timeseries[notsaveat_idxs[i]]
+      val = timeseries[i]
     else
-      val = timeseries[notsaveat_idxs[i]][idxs]
+      val = timeseries[i][idxs]
     end
-  elseif !avoid_constant_ends && ts[notsaveat_idxs[i-1]] == tval # Can happen if it's the first value!
+  elseif !avoid_constant_ends && ts[i-1] == tval # Can happen if it's the first value!
     if idxs == nothing
-      val = timeseries[notsaveat_idxs[i-1]]
+      val = timeseries[i-1]
     else
-      val = timeseries[notsaveat_idxs[i-1]][idxs]
+      val = timeseries[i-1][idxs]
     end
   else
-    dt = ts[notsaveat_idxs[i]] - ts[notsaveat_idxs[i-1]]
-    Θ = (tval-ts[notsaveat_idxs[i-1]])/dt
+    dt = ts[i] - ts[i-1]
+    Θ = (tval-ts[i-1])/dt
     if typeof(cache) <: (DiscreteCache) || typeof(cache) <: DiscreteConstantCache
-      val = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],0,cache,idxs,deriv)
+      val = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],0,cache,idxs,deriv)
     elseif !id.dense
-      val = linear_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],idxs,deriv)
+      val = linear_interpolant(Θ,dt,timeseries[i-1],timeseries[i],idxs,deriv)
     elseif typeof(cache) <: CompositeCache
-      ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache.caches[id.alg_choice[notsaveat_idxs[i-1]]]) # update the kcurrent
-      val = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]],idxs,deriv)
+      ode_addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,cache.caches[id.alg_choice[i-1]]) # update the kcurrent
+      val = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache.caches[id.alg_choice[i-1]],idxs,deriv)
     else
-      ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache) # update the kcurrent
-      val = ode_interpolant(Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache,idxs,deriv)
+      ode_addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,cache) # update the kcurrent
+      val = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache,idxs,deriv)
     end
   end
   val
@@ -266,38 +263,37 @@ times ts (sorted), with values timeseries and derivatives ks
 """
 function ode_interpolation!(out,tval::Number,id,idxs,deriv)
   @unpack ts,timeseries,ks,f,cache = id
-  id.dense ? notsaveat_idxs = id.notsaveat_idxs : notsaveat_idxs = 1:length(timeseries)
   tdir = sign(ts[end]-ts[1])
   tdir*tval > tdir*ts[end] && error("Solution interpolation cannot extrapolate past the final timepoint. Either solve on a longer timespan or use the local extrapolation from the integrator interface.")
   tdir*tval < tdir*ts[1] && error("Solution interpolation cannot extrapolate before the first timepoint. Either start solving earlier or use the local extrapolation from the integrator interface.")
-  @inbounds i = searchsortedfirst(@view(ts[notsaveat_idxs]),tval,rev=tdir<0) # It's in the interval ts[i-1] to ts[i]
+  @inbounds i = searchsortedfirst(ts,tval,rev=tdir<0) # It's in the interval ts[i-1] to ts[i]
   avoid_constant_ends = deriv != Val{0} || typeof(tval) <: ForwardDiff.Dual
   avoid_constant_ends && i==1 && (i+=1)
-  @inbounds if !avoid_constant_ends && ts[notsaveat_idxs[i]] == tval
+  @inbounds if !avoid_constant_ends && ts[i] == tval
     if idxs == nothing
-      copy!(out,timeseries[notsaveat_idxs[i]])
+      copy!(out,timeseries[i])
     else
-      copy!(out,timeseries[notsaveat_idxs[i]][idxs])
+      copy!(out,timeseries[i][idxs])
     end
-  elseif !avoid_constant_ends && ts[notsaveat_idxs[i-1]] == tval # Can happen if it's the first value!
+  elseif !avoid_constant_ends && ts[i-1] == tval # Can happen if it's the first value!
     if idxs == nothing
-      copy!(out,timeseries[notsaveat_idxs[i-1]])
+      copy!(out,timeseries[i-1])
     else
-      copy!(out,timeseries[notsaveat_idxs[i-1]][idxs])
+      copy!(out,timeseries[i-1][idxs])
     end
   else
-    dt = ts[notsaveat_idxs[i]] - ts[notsaveat_idxs[i-1]]
-    Θ = (tval-ts[notsaveat_idxs[i-1]])/dt
+    dt = ts[i] - ts[i-1]
+    Θ = (tval-ts[i-1])/dt
     if typeof(cache) <: (DiscreteCache) || typeof(cache) <: DiscreteConstantCache
-      ode_interpolant!(out,Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],0,cache,idxs,deriv)
+      ode_interpolant!(out,Θ,dt,timeseries[i-1],timeseries[i],0,cache,idxs,deriv)
     elseif !id.dense
-      linear_interpolant!(out,Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],idxs,deriv)
+      linear_interpolant!(out,Θ,dt,timeseries[i-1],timeseries[i],idxs,deriv)
     elseif typeof(cache) <: CompositeCache
-      ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache.caches[id.alg_choice[notsaveat_idxs[i-1]]]) # update the kcurrent
-      ode_interpolant!(out,Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache.caches[id.alg_choice[notsaveat_idxs[i-1]]],idxs,deriv)
+      ode_addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,cache.caches[id.alg_choice[i-1]]) # update the kcurrent
+      ode_interpolant!(out,Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache.caches[id.alg_choice[i-1]],idxs,deriv)
     else
-      ode_addsteps!(ks[i],ts[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],dt,f,cache) # update the kcurrent
-      ode_interpolant!(out,Θ,dt,timeseries[notsaveat_idxs[i-1]],timeseries[notsaveat_idxs[i]],ks[i],cache,idxs,deriv)
+      ode_addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,cache) # update the kcurrent
+      ode_interpolant!(out,Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache,idxs,deriv)
     end
   end
 end

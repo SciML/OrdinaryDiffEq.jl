@@ -60,6 +60,10 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     error("This solver is not able to use mass matrices.")
   end
 
+  if saveat && dense
+    error("Dense output is incompatible with saveat. Please use the SavingCallback from the Callback Library to mix the two behaviors.")
+  end
+
   tType = eltype(prob.tspan)
   tspan = prob.tspan
   tdir = sign(tspan[end]-tspan[1])
@@ -192,8 +196,6 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
 
   progress ? (prog = Juno.ProgressBar(name=progress_name)) : prog = nothing
 
-  notsaveat_idxs = Int[1]
-
   k = rateType[]
 
   if uType <: Array
@@ -214,9 +216,9 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol_internal,Val{isinplace(prob)})
 
   if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
-    id = CompositeInterpolationData(f,timeseries,ts,ks,alg_choice,notsaveat_idxs,dense,cache)
+    id = CompositeInterpolationData(f,timeseries,ts,ks,alg_choice,dense,cache)
   else
-    id = InterpolationData(f,timeseries,ts,ks,notsaveat_idxs,dense,cache)
+    id = InterpolationData(f,timeseries,ts,ks,dense,cache)
   end
 
   if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
@@ -264,7 +266,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
                              FType,typeof(prog),cacheType,
                              typeof(opts),fsal_typeof(alg,rate_prototype)}(
                              sol,u,k,t,tType(dt),f,uprev,uprev2,tprev,
-                             alg,notsaveat_idxs,dtcache,dtchangeable,
+                             alg,dtcache,dtchangeable,
                              dtpropose,tdir,EEst,tTypeNoUnits(qoldinit),q11,
                              erracc,dtacc,success_iter,
                              iter,saveiter,saveiter_dense,prog,cache,

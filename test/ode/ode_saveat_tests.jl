@@ -23,16 +23,7 @@ sol3=solve(prob,DP5(),dt=1//2^(2),saveat=1/10,tstops=[1/2])
 
 @test sol3.t == collect(0.0:0.1:1.00)
 
-sol =solve(prob,DP5(),dt=1//2^(2),save_everystep=true,dense=true)
-sol2=solve(prob,DP5(),dt=1//2^(2),save_everystep=true,dense=true,saveat=[1/2])
-
-sol2(.49)
-
-interpd = sol2(0:1//2^(4):1)
-
 #plot(0:1//2^(4):1,interpd)
-
-@test symdiff(sol.t,sol2.t) == [1/2]
 
 sol =solve(prob,RK4(),dt=1/2^(2),save_everystep=true,dense=false)
 sol2=solve(prob,RK4(),dt=1/2^(2),save_everystep=true,dense=false,saveat=[.125,.6,.61,.8])
@@ -50,11 +41,6 @@ sol2=solve(prob,GenericTrapezoid(),dt=1/2^(2),save_everystep=true,dense=false,sa
 @test symdiff(sol.t,sol2.t) == [.125,.6,.61,.8]
 
 prob = prob_ode_2Dlinear
-
-sol =solve(prob,DP5(),dt=1//2^(2),save_everystep=false,dense=true)
-sol2=solve(prob,DP5(),dt=1//2^(2),save_everystep=false,dense=true,saveat=[1/2])
-
-@test symdiff(sol.t,sol2.t) == [1/2]
 
 sol =solve(prob,DP5(),dt=1//2^(2),save_everystep=true,dense=false)
 sol2=solve(prob,DP5(),dt=1//2^(2),save_everystep=true,dense=false,saveat=[1/2])
@@ -100,12 +86,7 @@ for u in sol2.u
 end
 
 sol2=solve(prob2,DP5(),dt=1//2^(2),saveat=.1,save_idxs=1:2:5,save_everystep=true)
-sol=solve(prob2,DP5(),dt=1//2^(2))
-sol2(0.35)
-sol(0.35)
-@test sol2(0.35) == sol(0.35)[1:2:5]
 
 sol=solve(prob2,DP5(),dt=1//2^(2),save_start=false)
 
 @test sol.t[1] == 1//2^(2)
-@test sol(0.35)[1:2:5] == sol2(0.35)

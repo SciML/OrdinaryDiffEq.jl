@@ -103,7 +103,6 @@ function savevalues!(integrator::ODEIntegrator,force_save=false,reduce_size=true
       end
       if typeof(integrator.alg) <: Discrete || integrator.opts.dense
         integrator.saveiter_dense +=1
-        copyat_or_push!(integrator.notsaveat_idxs,integrator.saveiter_dense,integrator.saveiter)
         if integrator.opts.dense
           if integrator.opts.save_idxs ==nothing
             copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
@@ -127,7 +126,6 @@ function savevalues!(integrator::ODEIntegrator,force_save=false,reduce_size=true
     copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
     if typeof(integrator.alg) <: Discrete || integrator.opts.dense
       integrator.saveiter_dense +=1
-      copyat_or_push!(integrator.notsaveat_idxs,integrator.saveiter_dense,integrator.saveiter)
       if integrator.opts.dense
         if integrator.opts.save_idxs == nothing
           copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
@@ -162,7 +160,6 @@ function solution_endpoint_match_cur_integrator!(integrator)
     end
     if typeof(integrator.alg) <: Discrete || integrator.opts.dense
       integrator.saveiter_dense +=1
-      copyat_or_push!(integrator.notsaveat_idxs,integrator.saveiter_dense,integrator.saveiter)
       if integrator.opts.dense
         if integrator.opts.save_idxs == nothing
           copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
