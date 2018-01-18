@@ -63,8 +63,6 @@ end
 get_chunksize(x) = 0
 get_chunksize{CS,AD}(x::NLSOLVEJL_SETUP{CS,AD}) = CS
 
-export NLSOLVEJL_SETUP
-
 """
     calculate_residuals!(out, ũ, u₀, u₁, α, ρ)
 
