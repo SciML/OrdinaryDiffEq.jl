@@ -60,8 +60,8 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     error("This solver is not able to use mass matrices.")
   end
 
-  if saveat && dense
-    error("Dense output is incompatible with saveat. Please use the SavingCallback from the Callback Library to mix the two behaviors.")
+  if !isempty(saveat) && dense
+    warn("Dense output is incompatible with saveat. Please use the SavingCallback from the Callback Library to mix the two behaviors.")
   end
 
   tType = eltype(prob.tspan)
