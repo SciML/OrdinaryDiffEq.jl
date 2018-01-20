@@ -99,6 +99,42 @@ function perform_step!(integrator, cache::NorsettEulerCache, repeat_step=false)
   @. k = tmp +  rtmp
 end
 
+function initialize!(integrator, cache::ETDRK4ConstantCache)
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  rtmp = integrator.f.f2(integrator.t, integrator.uprev)
+  integrator.fsalfirst = rtmp # Pre-start fsal
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = zero(integrator.fsalfirst)
+end
+
+function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f = integrator
+  @unpack E,E2,a,b,c,Q = cache
+  rtmp = integrator.fsalfirst
+  A = f.f1
+
+  tmp = E2*uprev
+
+  k1 = integrator.f.f2(t,uprev)
+  s1 = tmp + Q*k1;
+  k2 = integrator.f.f2(t+dt/2,s1)
+  s2 = tmp + Q*k2;
+  k3 = integrator.f.f2(t+dt/2,s2)
+  s3 = E2*s1 + Q*(2*k3-k1);
+  k4 = integrator.f.f2(t+dt,s3)
+  u = E*uprev + a*k1 + 2b*(k2+k3) + c*k4;
+
+
+  integrator.fsallast = integrator.f(t+dt,u)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end
+
 function initialize!(integrator, cache::ETDRK4Cache)
   integrator.kshortsize = 2
   @unpack tmp,fsalfirst,tmp2 = cache
@@ -149,5 +185,5 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
   A_mul_B!(k3,c,k4)
   @. u = s1 + k2 + 2tmp + k3
 
-  integrator.f.f2(t+dt,u,tmp2)
+  integrator.f(t+dt,u,tmp2)
 end

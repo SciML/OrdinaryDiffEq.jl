@@ -8,7 +8,6 @@ prob = SplitODEProblem(f1,f2,1/2,(0.0,1.0),func_cache=1/2)
 
 srand(100)
 dts = 1./2.^(7:-1:4) #14->7 good plot
-println("IIF scalar")
 sim  = test_convergence(dts,prob,GenericIIF1())
 @test abs(sim.𝒪est[:l2]-1) < 0.2
 sim  = test_convergence(dts,prob,GenericIIF2())
@@ -17,6 +16,8 @@ sim  = test_convergence(dts,prob,LawsonEuler())
 @test abs(sim.𝒪est[:l2]-1) < 0.2
 sim  = test_convergence(dts,prob,NorsettEuler())
 @test abs(sim.𝒪est[:l2]-1) < 0.2
+sim  = test_convergence(dts,prob,ETDRK4(),dense_errors=true)
+@test abs(sim.𝒪est[:l2]-4) < 0.2
 
 u0 = rand(2)
 A = Strang(2)
@@ -45,5 +46,6 @@ sim  = test_convergence(dts,prob,LawsonEuler())
 sim  = test_convergence(dts,prob,NorsettEuler())
 @test abs(sim.𝒪est[:l2]-1) < 0.1
 
-sim  = test_convergence(dts,prob,ETDRK4())
+sim  = test_convergence(dts,prob,ETDRK4(),dense_errors=true)
 @test abs(sim.𝒪est[:l2]-4) < 0.1
+@test abs(sim.𝒪est[:L2]-4) < 0.1
