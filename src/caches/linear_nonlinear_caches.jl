@@ -153,10 +153,17 @@ function get_etdrk4_oop_operators(_h,L)
   A = big.(A)
   coeff = h^(-2) * L^(-3)
   A2 = A^2
-  Q = Float64.((E2-I)/L)
-  a = Float64.(coeff * (-4I - A + E*(4I - 3A  + A2)))
-  b = Float64.(coeff * (2I + A + E*(-2I + A)))
-  c = Float64.(coeff * (-4I - 3A - A2 + E*(4I-A)))
+  if typeof(L) <: Number
+    Q = Float64.((E2-1)/L)
+    a = Float64.(coeff * (-4 - A + E*(4 - 3A  + A2)))
+    b = Float64.(coeff * (2 + A + E*(-2 + A)))
+    c = Float64.(coeff * (-4 - 3A - A2 + E*(4-A)))
+  else
+    Q = Float64.((E2-I)/L)
+    a = Float64.(coeff * (-4I - A + E*(4I - 3A  + A2)))
+    b = Float64.(coeff * (2I + A + E*(-2I + A)))
+    c = Float64.(coeff * (-4I - 3A - A2 + E*(4I-A)))
+  end
   Float64.(E),_E2,a,b,c,Q
 end
 
