@@ -20,7 +20,7 @@ sim  = test_convergence(dts,prob,NorsettEuler())
 
 u0 = rand(2)
 A = Strang(2)
-f1 = DiffEqArrayOperator(A)
+f1 = DiffEqArrayOperator(full(A))
 f2 = (t,u,du) -> du .= μ .* u
 prob = SplitODEProblem(f1,f2,u0,(0.0,1.0))
 function (p::typeof(prob.f))(::Type{Val{:analytic}},t,u0)
@@ -44,3 +44,6 @@ sim  = test_convergence(dts,prob,LawsonEuler())
 
 sim  = test_convergence(dts,prob,NorsettEuler())
 @test abs(sim.𝒪est[:l2]-1) < 0.1
+
+sim  = test_convergence(dts,prob,ETDRK4())
+@test abs(sim.𝒪est[:l2]-4) < 0.1

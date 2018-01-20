@@ -128,3 +128,100 @@ du_cache(c::NorsettEulerCache) = (c.k,c.fsalfirst)
 struct NorsettEulerConstantCache <: OrdinaryDiffEqConstantCache end
 
 alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}}) = NorsettEulerConstantCache()
+
+struct ETDRK4Cache{uType,rateType,matType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  s1::uType
+  tmp2::rateType
+  k1::rateType
+  k2::rateType
+  k3::rateType
+  k4::rateType  
+  fsalfirst::rateType
+  E::matType
+  E2::matType
+  a::matType
+  b::matType
+  c::matType
+  Q::matType
+end
+
+function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
+  A = f.f1
+  tmp = similar(u)
+  tmp2 = zeros(rate_prototype); fsalfirst = zeros(rate_prototype)
+  k1 = zeros(rate_prototype); k2 = zeros(rate_prototype)
+  k3 = zeros(rate_prototype); k4 = zeros(rate_prototype)
+  s1 = similar(u)
+  E,E2,a,b,c,Q = get_etdrk4_operators(dt,A.A)
+  ETDRK4Cache(u,uprev,tmp,s1,tmp2,k1,k2,k3,k4,fsalfirst,E,E2,a,b,c,Q)
+end
+
+u_cache(c::ETDRK4Cache) = ()
+du_cache(c::ETDRK4Cache) = (c.k,c.fsalfirst,c.rtmp)
+
+function get_etdrk4_operators(_h,L)
+    L .*= _h/2
+    E2 = big.(expm(L));
+    E = E2*E2
+    L .*= 2/_h
+    h = big(_h)
+    A = h*L
+    coeff = h^(-2) * L^(-3)
+
+    @inbounds for i in 1:size(E2,1)
+        E2[i,i] = E2[i,i] - 1
+    end
+
+    tmp = E2/L
+    Q = Float64.(tmp)
+
+    @inbounds for i in 1:size(E2,1)
+        E2[i,i] = E2[i,i] + 1
+    end
+
+    @inbounds for i in 1:size(A,2), j in 1:size(A,1)
+        tmp[j,i] = -2I[j,i] + A[j,i]
+    end
+
+    tmp2 = E*tmp
+
+    @inbounds for i in 1:size(A,2), j in 1:size(A,1)
+        tmp[j,i] = 2I[j,i] + A[j,i] + tmp2[j,i]
+    end
+
+    A_mul_B!(tmp2,coeff,tmp)
+    b = Float64.(tmp2)
+
+    A2 = A^2
+
+    @inbounds for i in 1:size(A,2), j in 1:size(A,1)
+        tmp[j,i] = 4I[j,i] - 3A[j,i]  + A2[j,i]
+    end
+
+    A_mul_B!(tmp2,E,tmp)
+
+    @inbounds for i in 1:size(A,2), j in 1:size(A,1)
+        tmp[j,i] = -4I[j,i] - A[j,i] + tmp2[j,i]
+    end
+
+    A_mul_B!(tmp2,coeff,tmp)
+    a = Float64.(tmp2)
+
+    @inbounds for i in 1:size(A,2), j in 1:size(A,1)
+        tmp[j,i] = 4I[j,i]-A[j,i]
+    end
+
+    A_mul_B!(tmp2,E,tmp)
+
+    @inbounds for i in 1:size(A,2), j in 1:size(A,1)
+        tmp[j,i] = -4I[j,i] - 3A[j,i] - A2[j,i] + tmp2[j,i]
+    end
+
+    A_mul_B!(tmp2,coeff,tmp)
+    c = Float64.(tmp2)
+
+    Float64.(E),Float64.(E2),a,b,c,Q
+end
