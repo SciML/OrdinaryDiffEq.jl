@@ -163,6 +163,21 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   ks = convert(Vector{ksEltype},ks_init)
   alg_choice = Int[]
 
+  if !adaptive
+    dt == 0 ? steps = length(tstops) : steps = round(Int,float((tspan[2]-tspan[1])/dt),RoundUp)
+    sizehint!(timeseries,steps+1)
+    sizehint!(ts,steps+1)
+    sizehint!(ks,steps+1)
+  elseif save_everystep
+    sizehint!(timeseries,1000)
+    sizehint!(ts,1000)
+    sizehint!(ks,1000)
+  else # saveat
+    sizehint!(timeseries,length(saveat)+1)
+    sizehint!(ts,length(saveat)+1)
+    sizehint!(ks,length(saveat)+1)
+  end
+
   if save_start
     saveiter = 1 # Starts at 1 so first save is at 2
     saveiter_dense = 1
