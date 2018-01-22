@@ -10,9 +10,9 @@ end
 function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,::Type{Val{false}})
   if typeof(f) <: SplitFunction
-    uf = DiffEqDiffTools.UDerivativeWrapper(f.f1,t)
+    uf = DiffEqDiffTools.UDerivativeWrapper(f.f1,t,p)
   else
-    uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
+    uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   end
   ηold = one(uEltypeNoUnits)
 
@@ -82,11 +82,11 @@ function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   if typeof(f) <: SplitFunction
     k1 = similar(u,indices(u)); k2 = similar(u,indices(u))
     k3 = similar(u,indices(u)); k4 = similar(u,indices(u))
-    uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t)
+    uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t,p)
   else
     k1 = nothing; k2 = nothing
     k3 = nothing; k4 = nothing
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t)
+    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   end
   linsolve = alg.linsolve(Val{:init},uf,u)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
@@ -123,7 +123,7 @@ end
 
 function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,::Type{Val{false}})
-  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   ηold = one(uEltypeNoUnits)
   uprev3 = u
   tprev2 = t
@@ -189,7 +189,7 @@ function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   tmp = similar(u); b = similar(u,indices(u));
   atmp = similar(u,uEltypeNoUnits,indices(u))
 
-  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   linsolve = alg.linsolve(Val{:init},uf,u)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
 
@@ -226,9 +226,9 @@ end
 function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,::Type{Val{false}})
   if typeof(f) <: SplitFunction
-    uf = DiffEqDiffTools.UDerivativeWrapper(f.f1,t)
+    uf = DiffEqDiffTools.UDerivativeWrapper(f.f1,t,p)
   else
-    uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
+    uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   end
   ηold = one(uEltypeNoUnits)
   uprev3 = u
@@ -306,12 +306,12 @@ function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
     k1 = similar(u,indices(u)); k2 = similar(u,indices(u))
     k3 = similar(u,indices(u)); k4 = similar(u,indices(u))
     k5 = similar(u,indices(u)); k6 = similar(u,indices(u))
-    uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t)
+    uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t,p)
   else
     k1 = nothing; k2 = nothing
     k3 = nothing; k4 = nothing
     k5 = nothing; k6 = nothing
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t)
+    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   end
   linsolve = alg.linsolve(Val{:init},uf,u)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
@@ -349,7 +349,7 @@ end
 
 function alg_cache(alg::Kvaerno5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,::Type{Val{false}})
-  uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   ηold = one(uEltypeNoUnits)
 
   if alg.κ != nothing
@@ -416,7 +416,7 @@ function alg_cache(alg::Kvaerno5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   tmp = similar(u); b = similar(u,indices(u));
   atmp = similar(u,uEltypeNoUnits,indices(u))
 
-  uf = DiffEqDiffTools.UJacobianWrapper(f,t)
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   linsolve = alg.linsolve(Val{:init},uf,u)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
 
@@ -453,9 +453,9 @@ end
 function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,::Type{Val{false}})
   if typeof(f) <: SplitFunction
-    uf = DiffEqDiffTools.UDerivativeWrapper(f.f1,t)
+    uf = DiffEqDiffTools.UDerivativeWrapper(f.f1,t,p)
   else
-    uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
+    uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   end
   ηold = one(uEltypeNoUnits)
 
@@ -537,13 +537,13 @@ function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
     k3 = similar(u,indices(u)); k4 = similar(u,indices(u))
     k5 = similar(u,indices(u)); k6 = similar(u,indices(u))
     k7 = similar(u,indices(u)); k8 = similar(u,indices(u))
-    uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t)
+    uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t,p)
   else
     k1 = nothing; k2 = nothing
     k3 = nothing; k4 = nothing
     k5 = nothing; k6 = nothing
     k7 = nothing; k8 = nothing
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t)
+    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   end
 
   linsolve = alg.linsolve(Val{:init},uf,u)

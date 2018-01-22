@@ -58,7 +58,7 @@ end
   rhs.a = dt
   nlres = integrator.alg.nlsolve(nl_rhs,uhold)
   uhold[1] = nlres[1]
-  integrator.fsallast = f(t+dt,uhold[1])
+  integrator.fsallast = f(uhold[1],p,t+dt)
   u = uhold[1]
 
   if integrator.opts.adaptive && integrator.success_iter > 0
@@ -170,7 +170,7 @@ end
   rhs.a = dt/2
   nlres = integrator.alg.nlsolve(nl_rhs,uhold)
   uhold[1] = nlres[1]
-  integrator.fsallast = f(t+dt,uhold[1])
+  integrator.fsallast = f(uhold[1],p,t+dt)
   u = uhold[1]
 
   if integrator.opts.adaptive
