@@ -8,7 +8,7 @@ mutable struct KenCarp3ConstantCache{F,uEltypeNoUnits,Tab} <: OrdinaryDiffEqCons
 end
 
 function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,p,::Type{Val{false}})
   if typeof(f) <: SplitFunction
     uf = DiffEqDiffTools.UDerivativeWrapper(f.f1,t)
   else
@@ -66,7 +66,7 @@ u_cache(c::KenCarp3Cache)    = (c.z₁,c.z₂,c.z₃,c.z₄,c.dz)
 du_cache(c::KenCarp3Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
@@ -122,7 +122,7 @@ mutable struct Kvaerno4ConstantCache{F,uEltypeNoUnits,Tab} <: OrdinaryDiffEqCons
 end
 
 function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,p,::Type{Val{false}})
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
   uprev3 = u
@@ -175,7 +175,7 @@ u_cache(c::Kvaerno4Cache)    = (c.z₁,c.z₂,c.z₃,c.z₄,c.z₅,c.dz₁,c.dz�
 du_cache(c::Kvaerno4Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
@@ -224,7 +224,7 @@ mutable struct KenCarp4ConstantCache{F,uEltypeNoUnits,Tab} <: OrdinaryDiffEqCons
 end
 
 function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,p,::Type{Val{false}})
   if typeof(f) <: SplitFunction
     uf = DiffEqDiffTools.UDerivativeWrapper(f.f1,t)
   else
@@ -288,7 +288,7 @@ u_cache(c::KenCarp4Cache)    = (c.z₁,c.z₂,c.z₃,c.z₄,c.z₅,c.z₆,c.dz)
 du_cache(c::KenCarp4Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
@@ -348,7 +348,7 @@ mutable struct Kvaerno5ConstantCache{F,uEltypeNoUnits,Tab} <: OrdinaryDiffEqCons
 end
 
 function alg_cache(alg::Kvaerno5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,p,::Type{Val{false}})
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t)
   ηold = one(uEltypeNoUnits)
 
@@ -401,7 +401,7 @@ u_cache(c::Kvaerno5Cache)    = (c.z₁,c.z₂,c.z₃,c.z₄,c.z₅,c.z₆,c.z₇
 du_cache(c::Kvaerno5Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::Kvaerno5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
@@ -451,7 +451,7 @@ mutable struct KenCarp5ConstantCache{F,uEltypeNoUnits,Tab} <: OrdinaryDiffEqCons
 end
 
 function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,p,::Type{Val{false}})
   if typeof(f) <: SplitFunction
     uf = DiffEqDiffTools.UDerivativeWrapper(f.f1,t)
   else
@@ -517,7 +517,7 @@ u_cache(c::KenCarp5Cache)    = (c.z₁,c.z₂,c.z₃,c.z₄,c.z₅,c.z₆,c.z₇
 du_cache(c::KenCarp5Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?

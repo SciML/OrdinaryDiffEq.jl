@@ -1,27 +1,29 @@
-mutable struct ImplicitRHS_Scalar{F,uType,tType} <: Function
+mutable struct ImplicitRHS_Scalar{F,uType,tType,P} <: Function
   f::F
   tmp::uType
   a::tType
   t::tType
   dt::tType
+  p::P
 end
 
 function (p::ImplicitRHS_Scalar)(u,resid)
-  resid[1] = first(u) - p.tmp - p.a*first(p.f(p.t+p.dt,first(u)))
+  resid[1] = first(u) - p.tmp - p.a*first(p.f(first(u),p.p,p.t+p.dt))
 end
 
-mutable struct ImplicitRHS{F,uType,tType,DiffCacheType} <: Function
+mutable struct ImplicitRHS{F,uType,tType,DiffCacheType,P} <: Function
   f::F
   tmp::uType
   a::tType
   t::tType
   dt::tType
   dual_cache::DiffCacheType
+  p::P
 end
 
 function (p::ImplicitRHS)(u,resid)
   du1 = get_du(p.dual_cache, eltype(u))
-  p.f(p.t+p.dt,u,du1)
+  p.f(du1,u,p.p,p.t+p.dt)
   @. resid = u - p.tmp - p.a*du1
 end
 
