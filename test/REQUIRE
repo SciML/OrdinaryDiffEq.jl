@@ -3,3 +3,4 @@ DiffEqProblemLibrary
 ParameterizedFunctions 0.5.0
 SpecialMatrices
 StaticArrays
+DiffEqCallbacks
