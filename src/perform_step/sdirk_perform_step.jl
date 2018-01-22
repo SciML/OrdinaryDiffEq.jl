@@ -1360,7 +1360,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 
-  f(t,u,integrator.fsallast)
+  f(integrator.fsallast,u,p,t)
 end
 
 function initialize!(integrator, cache::SSPSDIRK2ConstantCache)
@@ -1662,7 +1662,7 @@ end
   cache.ηold = η
   cache.newton_iters = iter
 
-  f(t,u,integrator.fsallast)
+  f(integrator.fsallast,u,p,t)
 end
 
 function initialize!(integrator, cache::Cash4ConstantCache)

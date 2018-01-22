@@ -941,7 +941,7 @@ end
 function initialize!(integrator, cache::Kvaerno4ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
