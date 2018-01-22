@@ -1,7 +1,7 @@
 function initialize!(integrator, cache::ExplicitRKConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -10,7 +10,7 @@ function initialize!(integrator, cache::ExplicitRKConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::ExplicitRKConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack A,c,α,αEEst,stages = cache
   @unpack kk = cache
 
@@ -51,7 +51,7 @@ end
   end
 
   if !isfsal(integrator.alg.tableau)
-    integrator.fsallast = f(t+dt, u)
+    integrator.fsallast = f(u, p, t+dt)
   end
 
   integrator.k[1] = integrator.fsalfirst
@@ -66,11 +66,11 @@ function initialize!(integrator, cache::ExplicitRKCache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # Pre-start fsal
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 end
 
 @muladd function perform_step!(integrator, cache::ExplicitRKCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack A,c,α,αEEst,stages = cache.tab
   @unpack kk,utilde,tmp,atmp = cache
 
@@ -81,7 +81,7 @@ end
       @. utilde = utilde + A[j,i]*kk[j]
     end
     @. tmp = uprev+dt*utilde
-    f(t+c[i]*dt, tmp, kk[i])
+    f(kk[i],tmp,p,t+c[i]*dt)
   end
 
   #Last
@@ -90,7 +90,7 @@ end
     @. utilde = utilde + A[j,end]*kk[j]
   end
   @. u = uprev + dt*utilde
-  f(t+c[end]*dt, u, kk[end]) #fsallast is tmp even if not fsal
+  f(kk[end],u,p,t+c[end]*dt) #fsallast is tmp even if not fsal
 
   #Accumulate
   if !isfsal(integrator.alg.tableau)
@@ -114,6 +114,6 @@ end
   end
 
   if !isfsal(integrator.alg.tableau)
-    f(t+dt, u, integrator.fsallast)
+    f(integrator.fsallast,u,p,t+dt)
   end
 end

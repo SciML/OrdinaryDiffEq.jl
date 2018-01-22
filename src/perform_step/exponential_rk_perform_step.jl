@@ -11,7 +11,7 @@ function initialize!(integrator, cache::LawsonEulerConstantCache)
 end
 
 function perform_step!(integrator, cache::LawsonEulerConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   rtmp = integrator.fsalfirst
   A = f.f1
   @muladd u = expm(dt*A)*(uprev + dt*rtmp)
@@ -37,7 +37,7 @@ function initialize!(integrator, cache::LawsonEulerCache)
 end
 
 function perform_step!(integrator, cache::LawsonEulerCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack k,rtmp,tmp,expA = cache
   A = f.f1
   @muladd @. tmp = uprev + dt*integrator.fsalfirst
@@ -60,7 +60,7 @@ function initialize!(integrator, cache::NorsettEulerConstantCache)
 end
 
 function perform_step!(integrator, cache::NorsettEulerConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   rtmp = integrator.fsalfirst
   A = f.f1
   u = uprev + ((expm(dt*A)-I)/A)*(A*uprev + rtmp)
@@ -86,7 +86,7 @@ function initialize!(integrator, cache::NorsettEulerCache)
 end
 
 function perform_step!(integrator, cache::NorsettEulerCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack k,rtmp,tmp,expA,phi1 = cache
   A = f.f1
 
@@ -112,7 +112,7 @@ function initialize!(integrator, cache::ETDRK4ConstantCache)
 end
 
 function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack E,E2,a,b,c,Q = cache
   rtmp = integrator.fsalfirst
   A = f.f1
@@ -129,7 +129,7 @@ function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step=false
   u = E*uprev + a*k1 + 2b*(k2+k3) + c*k4;
 
 
-  integrator.fsallast = integrator.f(t+dt,u)
+  integrator.fsallast = integrator.f(u, p, t+dt)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
@@ -149,7 +149,7 @@ function initialize!(integrator, cache::ETDRK4Cache)
 end
 
 function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp2,tmp = cache
   @unpack E,E2,a,b,c,Q = cache
   @unpack k1,k2,k3,k4,s1 = cache
@@ -185,5 +185,5 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
   A_mul_B!(k3,c,k4)
   @. u = s1 + k2 + 2tmp + k3
 
-  integrator.f(t+dt,u,tmp2)
+  integrator.f(tmp2, u, p, t+dt)
 end

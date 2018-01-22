@@ -1,7 +1,7 @@
 function initialize!(integrator, cache::LinearImplicitEulerConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -45,7 +45,7 @@ end
     integrator.EEst = 1
   end
 
-  integrator.fsallast = f(t+dt,u)
+  integrator.fsallast = f(u, p, t+dt)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
@@ -58,7 +58,7 @@ function initialize!(integrator, cache::LinearImplicitEulerCache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
 end
 
 @muladd function perform_step!(integrator, cache::LinearImplicitEulerCache, repeat_step=false)
@@ -113,7 +113,7 @@ end
     integrator.EEst = 1
   end
 
-  f(t+dt,u,integrator.fsallast)
+  f(integrator.fsallast,u,p,t+dt)
 end
 
 function initialize!(integrator, cache::MidpointSplittingCache)
@@ -123,7 +123,7 @@ function initialize!(integrator, cache::MidpointSplittingCache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
 end
 
 function perform_step!(integrator, cache::MidpointSplittingCache, repeat_step=false)
@@ -150,5 +150,5 @@ function perform_step!(integrator, cache::MidpointSplittingCache, repeat_step=fa
     @swap!(u,tmp)
   end
 
-  f(t+dt,u,integrator.fsallast)
+  f(integrator.fsallast,u,p,t+dt)
 end

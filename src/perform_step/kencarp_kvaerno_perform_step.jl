@@ -1,7 +1,7 @@
 function initialize!(integrator, cache::Kvaerno3ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -10,7 +10,7 @@ function initialize!(integrator, cache::Kvaerno3ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::Kvaerno3ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
   @unpack γ,a31,a32,a41,a42,a43,btilde1,btilde2,btilde3,btilde4,c3,α31,α32 = cache.tab
 
@@ -41,7 +41,7 @@ end
   tstep = t + 2*γdt
   tmp = uprev + γ*z₁
   u = tmp + γ*z₂
-  b = dt*f(tstep,u) - z₂
+  b = dt*f(u, p, tstep) - z₂
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₂ = z₂ + dz
@@ -53,7 +53,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₂
-    b = dt*f(tstep,u) - z₂
+    b = dt*f(u, p, tstep) - z₂
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -81,7 +81,7 @@ end
   tstep = t + c3*dt
   tmp = uprev + a31*z₁ + a32*z₂
   u = tmp + γ*z₃
-  b = dt*f(tstep,u) - z₃
+  b = dt*f(u, p, tstep) - z₃
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₃ = z₃ + dz
@@ -93,7 +93,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₃
-    b = dt*f(tstep,u) - z₃
+    b = dt*f(u, p, tstep) - z₃
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -120,7 +120,7 @@ end
   tstep = t + dt
   tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   u = tmp + γ*z₄
-  b = dt*f(tstep,u) - z₄
+  b = dt*f(u, p, tstep) - z₄
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₄ = z₄ + dz
@@ -132,7 +132,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₄
-    b = dt*f(tstep,u) - z₄
+    b = dt*f(u, p, tstep) - z₄
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -182,11 +182,11 @@ function initialize!(integrator, cache::Kvaerno3Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
 end
 
 @muladd function perform_step!(integrator, cache::Kvaerno3Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,z₁,z₂,z₃,z₄,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
   @unpack γ,a31,a32,a41,a42,a43,btilde1,btilde2,btilde3,btilde4,c3,α31,α32 = cache.tab
 
@@ -236,7 +236,7 @@ end
   tstep = t + 2*γdt
   @. tmp = uprev + γ*z₁
   @. u = tmp + γ*z₂
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₂
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -254,7 +254,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₂
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₂
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -288,7 +288,7 @@ end
   tstep = t + c3*dt
   @. tmp = uprev + a31*z₁ + a32*z₂
   @. u = tmp + γ*z₃
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₃
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -306,7 +306,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₃
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₃
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -343,7 +343,7 @@ end
   tstep = t + dt
   @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   @. u = tmp + γ*z₄
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₄
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -361,7 +361,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₄
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₄
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -414,7 +414,7 @@ function initialize!(integrator, cache::KenCarp3ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
-  integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -452,7 +452,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     # Explicit tableau is not FSAL
     # Make this not compute on repeat
-    z₁ = dt.*f(t, uprev)
+    z₁ = dt.*f(uprev, p, t)
   else
     # FSAL Step 1
     z₁ = dt*integrator.fsalfirst
@@ -475,7 +475,7 @@ end
   end
 
   u = tmp + γ*z₂
-  b = dt*f(tstep,u) - z₂
+  b = dt*f(u, p, tstep) - z₂
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₂ = z₂ + dz
@@ -487,7 +487,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₂
-    b = dt*f(tstep,u) - z₂
+    b = dt*f(u, p, tstep) - z₂
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -523,7 +523,7 @@ end
   end
 
   u = tmp + γ*z₃
-  b = dt*f(tstep,u) - z₃
+  b = dt*f(u, p, tstep) - z₃
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₃ = z₃ + dz
@@ -535,7 +535,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₃
-    b = dt*f(tstep,u) - z₃
+    b = dt*f(u, p, tstep) - z₃
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -571,7 +571,7 @@ end
   end
 
   u = tmp + γ*z₄
-  b = dt*f(tstep,u) - z₄
+  b = dt*f(u, p, tstep) - z₄
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₄ = z₄ + dz
@@ -583,7 +583,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₄
-    b = dt*f(tstep,u) - z₄
+    b = dt*f(u, p, tstep) - z₄
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -630,7 +630,7 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     integrator.k[1] = integrator.fsalfirst
-    integrator.fsallast = integrator.f(t+dt,u)
+    integrator.fsallast = integrator.f(u, p, t+dt)
     integrator.k[2] = integrator.fsallast
   else
     integrator.fsallast = z₄./dt
@@ -648,7 +648,7 @@ function initialize!(integrator, cache::KenCarp3Cache)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
 
-  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
 end
 
 @muladd function perform_step!(integrator, cache::KenCarp3Cache, repeat_step=false)
@@ -728,7 +728,7 @@ end
   end
 
   @. u = tmp + γ*z₂
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₂
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -746,7 +746,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₂
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₂
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -791,7 +791,7 @@ end
   end
 
   @. u = tmp + γ*z₃
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₃
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -809,7 +809,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₃
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₃
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -853,7 +853,7 @@ end
   end
 
   @. u = tmp + γ*z₄
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₄
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -871,7 +871,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₄
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₄
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -932,7 +932,7 @@ end
   end
 
   if typeof(integrator.f) <: SplitFunction
-    integrator.f(t+dt,u,integrator.fsallast)
+    integrator.f(integrator.fsallast,u,p,t+dt)
   else
     @. integrator.fsallast = z₄/dt
   end
@@ -951,7 +951,7 @@ end
 
 
 @muladd function perform_step!(integrator, cache::Kvaerno4ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,c3,c4 = cache.tab
   @unpack α21,α31,α32,α41,α42 = cache.tab
@@ -986,7 +986,7 @@ end
   tstep = t + 2*γdt
   tmp = uprev + γ*z₁
   u = tmp + γ*z₂
-  b = dt*f(tstep,u) - z₂
+  b = dt*f(u, p, tstep) - z₂
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₂ = z₂ + dz
@@ -999,7 +999,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₂
-    b = dt*f(tstep,u) - z₂
+    b = dt*f(u, p, tstep) - z₂
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -1027,7 +1027,7 @@ end
   tstep = t + c3*dt
   tmp = uprev + a31*z₁ + a32*z₂
   u = tmp + γ*z₃
-  b = dt*f(tstep,u) - z₃
+  b = dt*f(u, p, tstep) - z₃
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₃ = z₃ + dz
@@ -1040,7 +1040,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₃
-    b = dt*f(tstep,u) - z₃
+    b = dt*f(u, p, tstep) - z₃
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -1068,7 +1068,7 @@ end
   tstep = t + c4*dt
   tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   u = tmp + γ*z₄
-  b = dt*f(tstep,u) - z₄
+  b = dt*f(u, p, tstep) - z₄
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₄ = z₄ + dz
@@ -1081,7 +1081,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₄
-    b = dt*f(tstep,u) - z₄
+    b = dt*f(u, p, tstep) - z₄
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -1110,7 +1110,7 @@ end
   tstep = t + dt
   tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   u = tmp + γ*z₅
-  b = dt*f(tstep,u) - z₅
+  b = dt*f(u, p, tstep) - z₅
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₅ = z₅ + dz
@@ -1123,7 +1123,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₅
-    b = dt*f(tstep,u) - z₅
+    b = dt*f(u, p, tstep) - z₅
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -1173,11 +1173,11 @@ function initialize!(integrator, cache::Kvaerno4Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
 end
 
 @muladd function perform_step!(integrator, cache::Kvaerno4Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,z₁,z₂,z₃,z₄,z₅,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,c3,c4 = cache.tab
   @unpack α21,α31,α32,α41,α42 = cache.tab
@@ -1231,7 +1231,7 @@ end
   tstep = t + 2*γdt
   @. tmp = uprev + γ*z₁
   @. u = tmp + γ*z₂
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₂
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -1249,7 +1249,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₂
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₂
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -1282,7 +1282,7 @@ end
   tstep = t + c3*dt
   @. tmp = uprev + a31*z₁ + a32*z₂
   @. u = tmp + γ*z₃
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₃
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -1300,7 +1300,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₃
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₃
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -1334,7 +1334,7 @@ end
   tstep = t + c4*dt
   @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   @. u = tmp + γ*z₄
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₄
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -1352,7 +1352,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₄
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₄
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -1386,7 +1386,7 @@ end
   tstep = t + dt
   @. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   @. u = tmp + γ*z₅
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₅
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -1404,7 +1404,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₅
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₅
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -1457,7 +1457,7 @@ function initialize!(integrator, cache::KenCarp4ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
-  integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -1500,7 +1500,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     # Explicit tableau is not FSAL
     # Make this not compute on repeat
-    z₁ = dt.*f(t, uprev)
+    z₁ = dt.*f(uprev, p, t)
   else
     # FSAL Step 1
     z₁ = dt*integrator.fsalfirst
@@ -1523,7 +1523,7 @@ end
   end
 
   u = tmp + γ*z₂
-  b = dt*f(tstep,u) - z₂
+  b = dt*f(u, p, tstep) - z₂
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₂ = z₂ + dz
@@ -1536,7 +1536,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₂
-    b = dt*f(tstep,u) - z₂
+    b = dt*f(u, p, tstep) - z₂
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -1573,7 +1573,7 @@ end
   end
 
   u = tmp + γ*z₃
-  b = dt*f(tstep,u) - z₃
+  b = dt*f(u, p, tstep) - z₃
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₃ = z₃ + dz
@@ -1586,7 +1586,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₃
-    b = dt*f(tstep,u) - z₃
+    b = dt*f(u, p, tstep) - z₃
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -1622,7 +1622,7 @@ end
   end
 
   u = tmp + γ*z₄
-  b = dt*f(tstep,u) - z₄
+  b = dt*f(u, p, tstep) - z₄
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₄ = z₄ + dz
@@ -1635,7 +1635,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₄
-    b = dt*f(tstep,u) - z₄
+    b = dt*f(u, p, tstep) - z₄
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -1671,7 +1671,7 @@ end
   end
 
   u = tmp + γ*z₅
-  b = dt*f(tstep,u) - z₅
+  b = dt*f(u, p, tstep) - z₅
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₅ = z₅ + dz
@@ -1684,7 +1684,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₅
-    b = dt*f(tstep,u) - z₅
+    b = dt*f(u, p, tstep) - z₅
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -1720,7 +1720,7 @@ end
   end
 
   u = tmp + γ*z₆
-  b = dt*f(tstep,u) - z₆
+  b = dt*f(u, p, tstep) - z₆
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₆ = z₆ + dz
@@ -1732,7 +1732,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₆
-    b = dt*f(tstep,u) - z₆
+    b = dt*f(u, p, tstep) - z₆
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -1779,7 +1779,7 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     integrator.k[1] = integrator.fsalfirst
-    integrator.fsallast = integrator.f(t+dt,u)
+    integrator.fsallast = integrator.f(u, p, t+dt)
     integrator.k[2] = integrator.fsallast
   else
     integrator.fsallast = z₆./dt
@@ -1796,7 +1796,7 @@ function initialize!(integrator, cache::KenCarp4Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
 end
 
 @muladd function perform_step!(integrator, cache::KenCarp4Cache, repeat_step=false)
@@ -1883,7 +1883,7 @@ end
   end
 
   @. u = tmp + γ*z₂
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₂
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -1901,7 +1901,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₂
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₂
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -1946,7 +1946,7 @@ end
   end
 
   @. u = tmp + γ*z₃
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₃
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -1964,7 +1964,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₃
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₃
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2008,7 +2008,7 @@ end
   end
 
   @. u = tmp + γ*z₄
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₄
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2025,7 +2025,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₄
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₄
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2072,7 +2072,7 @@ end
   end
 
   @. u = tmp + γ*z₅
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₅
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2090,7 +2090,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₅
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₅
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2138,7 +2138,7 @@ end
   end
 
   @. u = tmp + γ*z₆
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₆
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2156,7 +2156,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₆
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₆
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2221,7 +2221,7 @@ end
   end
 
   if typeof(integrator.f) <: SplitFunction
-    integrator.f(t+dt,u,integrator.fsallast)
+    integrator.f(integrator.fsallast,u,p,t+dt)
   else
     @. integrator.fsallast = z₆/dt
   end
@@ -2230,7 +2230,7 @@ end
 function initialize!(integrator, cache::Kvaerno5ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -2239,7 +2239,7 @@ function initialize!(integrator, cache::Kvaerno5ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::Kvaerno5ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,c3,c4,c5,c6 = cache.tab
   @unpack btilde1,btilde3,btilde4,btilde5,btilde6,btilde7 = cache.tab
@@ -2274,7 +2274,7 @@ end
   tstep = t + 2*γdt
   tmp = uprev + γ*z₁
   u = tmp + γ*z₂
-  b = dt*f(tstep,u) - z₂
+  b = dt*f(u, p, tstep) - z₂
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₂ = z₂ + dz
@@ -2287,7 +2287,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₂
-    b = dt*f(tstep,u) - z₂
+    b = dt*f(u, p, tstep) - z₂
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -2315,7 +2315,7 @@ end
   tstep = t + c3*dt
   tmp = uprev + a31*z₁ + a32*z₂
   u = tmp + γ*z₃
-  b = dt*f(tstep,u) - z₃
+  b = dt*f(u, p, tstep) - z₃
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₃ = z₃ + dz
@@ -2328,7 +2328,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₃
-    b = dt*f(tstep,u) - z₃
+    b = dt*f(u, p, tstep) - z₃
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -2356,7 +2356,7 @@ end
   tstep = t + c4*dt
   tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   u = tmp + γ*z₄
-  b = dt*f(tstep,u) - z₄
+  b = dt*f(u, p, tstep) - z₄
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₄ = z₄ + dz
@@ -2369,7 +2369,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₄
-    b = dt*f(tstep,u) - z₄
+    b = dt*f(u, p, tstep) - z₄
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -2397,7 +2397,7 @@ end
   tstep = t + c5*dt
   tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   u = tmp + γ*z₅
-  b = dt*f(tstep,u) - z₅
+  b = dt*f(u, p, tstep) - z₅
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₅ = z₅ + dz
@@ -2410,7 +2410,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₅
-    b = dt*f(tstep,u) - z₅
+    b = dt*f(u, p, tstep) - z₅
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -2438,7 +2438,7 @@ end
   tstep = t + c6*dt
   tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅
   u = tmp + γ*z₆
-  b = dt*f(tstep,u) - z₆
+  b = dt*f(u, p, tstep) - z₆
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₆ = z₆ + dz
@@ -2451,7 +2451,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₆
-    b = dt*f(tstep,u) - z₆
+    b = dt*f(u, p, tstep) - z₆
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -2480,7 +2480,7 @@ end
   tstep = t + dt
   tmp = uprev + a71*z₁ + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
   u = tmp + γ*z₇
-  b = dt*f(tstep,u) - z₇
+  b = dt*f(u, p, tstep) - z₇
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₇ = z₇ + dz
@@ -2493,7 +2493,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₇
-    b = dt*f(tstep,u) - z₇
+    b = dt*f(u, p, tstep) - z₇
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -2543,11 +2543,11 @@ function initialize!(integrator, cache::Kvaerno5Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
 end
 
 @muladd function perform_step!(integrator, cache::Kvaerno5Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,z₁,z₂,z₃,z₄,z₅,z₆,z₇,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,c3,c4,c5,c6 = cache.tab
   @unpack btilde1,btilde3,btilde4,btilde5,btilde6,btilde7 = cache.tab
@@ -2601,7 +2601,7 @@ end
   tstep = t + 2*γdt
   @. tmp = uprev + γ*z₁
   @. u = tmp + γ*z₂
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₂
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2619,7 +2619,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₂
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₂
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2652,7 +2652,7 @@ end
   tstep = t + c3*dt
   @. tmp = uprev + a31*z₁ + a32*z₂
   @. u = tmp + γ*z₃
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₃
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2670,7 +2670,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₃
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₃
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2704,7 +2704,7 @@ end
   tstep = t + c4*dt
   @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   @. u = tmp + γ*z₄
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₄
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2722,7 +2722,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₄
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₄
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2755,7 +2755,7 @@ end
   tstep = t + c5*dt
   @. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   @. u = tmp + γ*z₅
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₅
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2773,7 +2773,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₅
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₅
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2806,7 +2806,7 @@ end
   tstep = t + c6*dt
   @. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅
   @. u = tmp + γ*z₆
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₆
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2824,7 +2824,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₆
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₆
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2864,7 +2864,7 @@ end
     @inbounds tmp[i] = uprev[i] + a71*z₁[i] + a73*z₃[i] + a74*z₄[i] + a75*z₅[i] + a76*z₆[i]
   end
   @. u = tmp + γ*z₇
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₇
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2882,7 +2882,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₇
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₇
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2938,7 +2938,7 @@ function initialize!(integrator, cache::KenCarp5ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
-  integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -2984,7 +2984,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     # Explicit tableau is not FSAL
     # Make this not compute on repeat
-    z₁ = dt.*f(t, uprev)
+    z₁ = dt.*f(uprev, p, t)
   else
     # FSAL Step 1
     z₁ = dt*integrator.fsalfirst
@@ -3007,7 +3007,7 @@ end
   end
 
   u = tmp + γ*z₂
-  b = dt*f(tstep,u) - z₂
+  b = dt*f(u, p, tstep) - z₂
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₂ = z₂ + dz
@@ -3020,7 +3020,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₂
-    b = dt*f(tstep,u) - z₂
+    b = dt*f(u, p, tstep) - z₂
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -3057,7 +3057,7 @@ end
   end
 
   u = tmp + γ*z₃
-  b = dt*f(tstep,u) - z₃
+  b = dt*f(u, p, tstep) - z₃
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₃ = z₃ + dz
@@ -3070,7 +3070,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₃
-    b = dt*f(tstep,u) - z₃
+    b = dt*f(u, p, tstep) - z₃
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -3106,7 +3106,7 @@ end
   end
 
   u = tmp + γ*z₄
-  b = dt*f(tstep,u) - z₄
+  b = dt*f(u, p, tstep) - z₄
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₄ = z₄ + dz
@@ -3119,7 +3119,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₄
-    b = dt*f(tstep,u) - z₄
+    b = dt*f(u, p, tstep) - z₄
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -3155,7 +3155,7 @@ end
   end
 
   u = tmp + γ*z₅
-  b = dt*f(tstep,u) - z₅
+  b = dt*f(u, p, tstep) - z₅
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₅ = z₅ + dz
@@ -3168,7 +3168,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₅
-    b = dt*f(tstep,u) - z₅
+    b = dt*f(u, p, tstep) - z₅
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -3204,7 +3204,7 @@ end
   end
 
   u = tmp + γ*z₆
-  b = dt*f(tstep,u) - z₆
+  b = dt*f(u, p, tstep) - z₆
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₆ = z₆ + dz
@@ -3217,7 +3217,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₆
-    b = dt*f(tstep,u) - z₆
+    b = dt*f(u, p, tstep) - z₆
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -3253,7 +3253,7 @@ end
   end
 
   u = tmp + γ*z₇
-  b = dt*f(tstep,u) - z₇
+  b = dt*f(u, p, tstep) - z₇
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₇ = z₇ + dz
@@ -3266,7 +3266,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₇
-    b = dt*f(tstep,u) - z₇
+    b = dt*f(u, p, tstep) - z₇
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -3302,7 +3302,7 @@ end
   end
 
   u = tmp + γ*z₈
-  b = dt*f(tstep,u) - z₈
+  b = dt*f(u, p, tstep) - z₈
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₈ = z₈ + dz
@@ -3315,7 +3315,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₈
-    b = dt*f(tstep,u) - z₈
+    b = dt*f(u, p, tstep) - z₈
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -3362,7 +3362,7 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     integrator.k[1] = integrator.fsalfirst
-    integrator.fsallast = integrator.f(t+dt,u)
+    integrator.fsallast = integrator.f(u, p, t+dt)
     integrator.k[2] = integrator.fsallast
   else
     integrator.fsallast = z₈./dt
@@ -3379,7 +3379,7 @@ function initialize!(integrator, cache::KenCarp5Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
 end
 
 @muladd function perform_step!(integrator, cache::KenCarp5Cache, repeat_step=false)
@@ -3466,7 +3466,7 @@ end
   end
 
   @. u = tmp + γ*z₂
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₂
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -3484,7 +3484,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₂
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₂
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -3529,7 +3529,7 @@ end
   end
 
   @. u = tmp + γ*z₃
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₃
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -3547,7 +3547,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₃
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₃
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -3591,7 +3591,7 @@ end
   end
 
   @. u = tmp + γ*z₄
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₄
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -3609,7 +3609,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₄
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₄
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -3653,7 +3653,7 @@ end
   end
 
   @. u = tmp + γ*z₅
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₅
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -3671,7 +3671,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₅
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₅
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -3718,7 +3718,7 @@ end
   end
 
   @. u = tmp + γ*z₆
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₆
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -3736,7 +3736,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₆
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₆
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -3786,7 +3786,7 @@ end
   end
 
   @. u = tmp + γ*z₇
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₇
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -3804,7 +3804,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₇
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₇
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -3854,7 +3854,7 @@ end
   end
 
   @. u = tmp + γ*z₈
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₈
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -3872,7 +3872,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₈
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₈
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -3939,7 +3939,7 @@ end
   end
 
   if typeof(integrator.f) <: SplitFunction
-    integrator.f(t+dt,u,integrator.fsallast)
+    integrator.f(integrator.fsallast,u,p,t+dt)
   else
     @. integrator.fsallast = z₈/dt
   end

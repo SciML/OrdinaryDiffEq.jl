@@ -1,7 +1,7 @@
 function initialize!(integrator, cache::ImplicitEulerConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -10,7 +10,7 @@ function initialize!(integrator, cache::ImplicitEulerConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::ImplicitEulerConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
 
   # precalculations
@@ -37,7 +37,7 @@ end
   iter = 1
   tstep = t + dt
   u = uprev + z
-  b = dt*f(tstep,u) - z
+  b = dt*f(u, p, tstep) - z
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z = z + dz
@@ -50,7 +50,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = uprev + z
-    b = dt*f(tstep,u) - z
+    b = dt*f(u, p, tstep) - z
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -94,7 +94,7 @@ end
     integrator.EEst = 1
   end
 
-  integrator.fsallast = f(t+dt,u)
+  integrator.fsallast = f(u, p, t+dt)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
@@ -107,11 +107,11 @@ function initialize!(integrator, cache::ImplicitEulerCache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
 end
 
 @muladd function perform_step!(integrator, cache::ImplicitEulerCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,z,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
   mass_matrix = integrator.sol.prob.mass_matrix
 
@@ -157,7 +157,7 @@ end
   iter = 1
   tstep = t + dt
   @. u = uprev + z
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   if mass_matrix == I
     @. b = dt*k - z
   else
@@ -180,7 +180,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = uprev + z
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     if mass_matrix == I
       @. b = dt*k - z
     else
@@ -234,13 +234,13 @@ end
     integrator.EEst = 1
   end
 
-  f(t+dt,u,integrator.fsallast)
+  f(integrator.fsallast,u,p,t+dt)
 end
 
 function initialize!(integrator, cache::ImplicitMidpointConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -249,7 +249,7 @@ function initialize!(integrator, cache::ImplicitMidpointConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::ImplicitMidpointConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
 
   # precalculations
@@ -279,7 +279,7 @@ end
   tstep = t + dto2
   # u = uprev + z then  u = (uprev+u)/2 = (uprev+uprev+z)/2 = uprev + z/2
   u = uprev + z/2
-  b = dt*f(tstep,u) - z
+  b = dt*f(u, p, tstep) - z
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z = z + dz
@@ -293,7 +293,7 @@ end
     iter += 1
     # u = uprev + z then  u = (uprev+u)/2 = (uprev+uprev+z)/2 = uprev + z/2
     u = uprev + z/2
-    b = dt*f(tstep,u) - z
+    b = dt*f(u, p, tstep) - z
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -317,7 +317,7 @@ end
   cache.ηold = η
   cache.newton_iters = iter
 
-  integrator.fsallast = f(t+dt,u)
+  integrator.fsallast = f(u, p, t+dt)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
@@ -330,11 +330,11 @@ function initialize!(integrator, cache::ImplicitMidpointCache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
 end
 
 @muladd function perform_step!(integrator, cache::ImplicitMidpointCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,z,k,b,J,W,jac_config,tmp,κ,tol = cache
   mass_matrix = integrator.sol.prob.mass_matrix
 
@@ -383,7 +383,7 @@ end
   tstep = t + dto2
   # u = uprev + z then  u = (uprev+u)/2 = (uprev+uprev+z)/2 = uprev + z/2
   @. u = uprev + z/2
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   if mass_matrix == I
     @. b = dt*k - z
   else
@@ -407,7 +407,7 @@ end
     iter += 1
     # u = uprev + z then  u = (uprev+u)/2 = (uprev+uprev+z)/2 = uprev + z/2
     @. u = uprev + z/2
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     if mass_matrix == I
       @. b = dt*k - z
     else
@@ -441,13 +441,13 @@ end
   cache.ηold = η
   cache.newton_iters = iter
 
-  f(t+dt,u,integrator.fsallast)
+  f(integrator.fsallast,u,p,t+dt)
 end
 
 function initialize!(integrator, cache::TrapezoidConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -456,7 +456,7 @@ function initialize!(integrator, cache::TrapezoidConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::TrapezoidConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
 
   # precalculations
@@ -483,7 +483,7 @@ end
   tstep = t + dt
   tmp = uprev + dto2*integrator.fsalfirst
   u = tmp + z/2
-  b = dt*f(tstep,u) - z
+  b = dt*f(u, p, tstep) - z
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z = z + dz
@@ -496,7 +496,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + z/2
-    b = dt*f(tstep,u) - z
+    b = dt*f(u, p, tstep) - z
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -558,7 +558,7 @@ end
     end
   end
 
-  integrator.fsallast = f(t+dt,u)
+  integrator.fsallast = f(u, p, t+dt)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
@@ -571,11 +571,11 @@ function initialize!(integrator, cache::TrapezoidCache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
 end
 
 @muladd function perform_step!(integrator, cache::TrapezoidCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,z,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
   mass_matrix = integrator.sol.prob.mass_matrix
 
@@ -620,7 +620,7 @@ end
   tstep = t + dt
   @. tmp = uprev + dto2*integrator.fsalfirst
   @. u = tmp + z/2
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   if mass_matrix == I
     @. b = dt*k - z
   else
@@ -643,7 +643,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + z/2
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     if mass_matrix == I
       @. b = dt*k - z
     else
@@ -717,13 +717,13 @@ end
     end
   end
 
-  f(t+dt,u,integrator.fsallast)
+  f(integrator.fsallast,u,p,t+dt)
 end
 
 function initialize!(integrator, cache::TRBDF2ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -732,7 +732,7 @@ function initialize!(integrator, cache::TRBDF2ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::TRBDF2ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
   @unpack γ,d,ω,btilde1,btilde2,btilde3,α1,α2 = cache.tab
 
@@ -764,7 +764,7 @@ end
   tstep = t + γ*dt
   tmp = uprev + d*zprev
   u = tmp + d*zᵧ
-  b = dt*f(tstep,u) - zᵧ
+  b = dt*f(u, p, tstep) - zᵧ
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   zᵧ = zᵧ + dz
@@ -777,7 +777,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + d*zᵧ
-    b = dt*f(tstep,u) - zᵧ
+    b = dt*f(u, p, tstep) - zᵧ
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -806,7 +806,7 @@ end
   tstep = t + dt
   tmp = uprev + ω*zprev + ω*zᵧ
   u = tmp + d*z
-  b = dt*f(tstep,u) - z
+  b = dt*f(u, p, tstep) - z
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z = z + dz
@@ -819,7 +819,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + d*z
-    b = dt*f(tstep,u) - z
+    b = dt*f(u, p, tstep) - z
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -869,11 +869,11 @@ function initialize!(integrator, cache::TRBDF2Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
 end
 
 @muladd function perform_step!(integrator, cache::TRBDF2Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,zprev,zᵧ,z,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
   @unpack γ,d,ω,btilde1,btilde2,btilde3,α1,α2 = cache.tab
 
@@ -924,7 +924,7 @@ end
   tstep = t + γ*dt
   @. tmp = uprev + d*zprev
   @. u = tmp + d*zᵧ
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - zᵧ
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -942,7 +942,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + d*zᵧ
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - zᵧ
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -976,7 +976,7 @@ end
   tstep = t + dt
   @. tmp = uprev + ω*zprev + ω*zᵧ
   @. u = tmp + d*z
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -994,7 +994,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + d*z
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -1046,7 +1046,7 @@ end
 function initialize!(integrator, cache::SDIRK2ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -1055,7 +1055,7 @@ function initialize!(integrator, cache::SDIRK2ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::SDIRK2ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
 
   # precalculations
@@ -1087,7 +1087,7 @@ end
   iter = 1
   tstep = t + dt
   u = uprev + z₁
-  b = dt*f(tstep,u) - z₁
+  b = dt*f(u, p, tstep) - z₁
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₁ = z₁ + dz
@@ -1100,7 +1100,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = uprev + z₁
-    b = dt*f(tstep,u) - z₁
+    b = dt*f(u, p, tstep) - z₁
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -1128,7 +1128,7 @@ end
   iter = 1
   tmp = uprev - z₁
   u = tmp .+ z₂
-  b = dt*f(t,u) - z₂
+  b = dt*f(u, p, t) - z₂
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₂ = z₂ + dz
@@ -1141,7 +1141,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp .+ z₂
-    b = dt*f(t,u) - z₂
+    b = dt*f(u, p, t) - z₂
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -1178,7 +1178,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 
-  integrator.fsallast = f(t,u)
+  integrator.fsallast = f(u, p, t)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
@@ -1191,11 +1191,11 @@ function initialize!(integrator, cache::SDIRK2Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
 end
 
 @muladd function perform_step!(integrator, cache::SDIRK2Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,z₁,z₂,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
 
   # precalculations
@@ -1246,7 +1246,7 @@ end
   iter = 1
   tstep = t + dt
   @. u = uprev + z₁
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₁
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -1264,7 +1264,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = uprev + z₁
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₁
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -1297,7 +1297,7 @@ end
   iter = 1
   @. tmp = uprev - z₁
   @. u = tmp + z₂
-  f(t,u,k)
+  f(k, u, p, t)
   @. b = dt*k - z₂
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -1314,7 +1314,7 @@ end
   fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     @. u = tmp + z₂
-    f(t,u,k)
+    f(k, u, p, t)
     @. b = dt*k - z₂
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -1366,7 +1366,7 @@ end
 function initialize!(integrator, cache::SSPSDIRK2ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -1375,7 +1375,7 @@ function initialize!(integrator, cache::SSPSDIRK2ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::SSPSDIRK2ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
 
   γ = eltype(u)(1//4)
@@ -1412,7 +1412,7 @@ end
   iter = 1
   tstep = t + dt
   u = uprev + γ*z₁
-  b = dt*f(tstep,u) - z₁
+  b = dt*f(u, p, tstep) - z₁
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₁ = z₁ + dz
@@ -1425,7 +1425,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = uprev + γ*z₁
-    b = dt*f(tstep,u) - z₁
+    b = dt*f(u, p, tstep) - z₁
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -1453,7 +1453,7 @@ end
   iter = 1
   tmp = uprev + z₁/2
   u = tmp + z₂/4
-  b = dt*f(t,u) - z₂
+  b = dt*f(u, p, t) - z₂
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₂ = z₂ + dz
@@ -1466,7 +1466,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + z₂/4
-    b = dt*f(t,u) - z₂
+    b = dt*f(u, p, t) - z₂
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -1492,7 +1492,7 @@ end
   cache.ηold = η
   cache.newton_iters = iter
 
-  integrator.fsallast = f(t,u)
+  integrator.fsallast = f(u, p, t)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
@@ -1505,11 +1505,11 @@ function initialize!(integrator, cache::SSPSDIRK2Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
 end
 
 @muladd function perform_step!(integrator, cache::SSPSDIRK2Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,z₁,z₂,k,b,J,W,jac_config,tmp,κ,tol = cache
 
   γ = eltype(u)(1//4)
@@ -1565,7 +1565,7 @@ end
   iter = 1
   tstep = t + dt
   @. u = uprev + γ*z₁
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₁
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -1583,7 +1583,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = uprev + γ*z₁
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₁
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -1615,7 +1615,7 @@ end
   iter = 1
   @. tmp = uprev + z₁/2
   @. u = tmp + z₂/4
-  f(t,u,k)
+  f(k, u, p, t)
   @. b = dt*k - z₂
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -1631,7 +1631,7 @@ end
   fail_convergence = false
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     @. u = tmp + z₂/4
-    f(t,u,k)
+    f(k, u, p, t)
     @. b = dt*k - z₂
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -1668,7 +1668,7 @@ end
 function initialize!(integrator, cache::Cash4ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -1677,7 +1677,7 @@ function initialize!(integrator, cache::Cash4ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::Cash4ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack b1hat1,b2hat1,b3hat1,b4hat1,b1hat2,b2hat2,b3hat2,b4hat2 = cache.tab
@@ -1706,7 +1706,7 @@ end
   iter = 1
   tstep = t + γdt
   u = uprev + γ*z₁
-  b = dt*f(tstep,u) - z₁
+  b = dt*f(u, p, tstep) - z₁
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₁ = z₁ + dz
@@ -1719,7 +1719,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = uprev + γ*z₁
-    b = dt*f(tstep,u) - z₁
+    b = dt*f(u, p, tstep) - z₁
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -1748,7 +1748,7 @@ end
   tstep = t + c2*dt
   tmp = uprev + a21*z₁
   u = tmp .+ γ*z₂
-  b = dt*f(tstep,u) - z₂
+  b = dt*f(u, p, tstep) - z₂
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₂ = z₂ + dz
@@ -1761,7 +1761,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₂
-    b = dt*f(tstep,u) - z₂
+    b = dt*f(u, p, tstep) - z₂
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -1790,7 +1790,7 @@ end
   tstep = t + c3*dt
   tmp = uprev + a31*z₁ + a32*z₂
   u = tmp + γ*z₃
-  b = dt*f(tstep,u) - z₃
+  b = dt*f(u, p, tstep) - z₃
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₃ = z₃ + dz
@@ -1803,7 +1803,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₃
-    b = dt*f(tstep,u) - z₃
+    b = dt*f(u, p, tstep) - z₃
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -1832,7 +1832,7 @@ end
   tstep = t + c4*dt
   tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   u = tmp + γ*z₄
-  b = dt*f(tstep,u) - z₄
+  b = dt*f(u, p, tstep) - z₄
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₄ = z₄ + dz
@@ -1845,7 +1845,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₄
-    b = dt*f(tstep,u) - z₄
+    b = dt*f(u, p, tstep) - z₄
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -1874,7 +1874,7 @@ end
   tstep = t + dt
   tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   u = tmp + γ*z₅
-  b = dt*f(tstep,u) - z₅
+  b = dt*f(u, p, tstep) - z₅
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₅ = z₅ + dz
@@ -1886,7 +1886,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₅
-    b = dt*f(tstep,u) - z₅
+    b = dt*f(u, p, tstep) - z₅
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -1944,11 +1944,11 @@ function initialize!(integrator, cache::Cash4Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
 end
 
 @muladd function perform_step!(integrator, cache::Cash4Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,z₁,z₂,z₃,z₄,z₅,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack b1hat1,b2hat1,b3hat1,b4hat1,b1hat2,b2hat2,b3hat2,b4hat2 = cache.tab
@@ -1996,7 +1996,7 @@ end
   iter = 1
   tstep = t + γdt
   @. u = uprev + γ*z₁
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₁
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2014,7 +2014,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = uprev + γ*z₁
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₁
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2048,7 +2048,7 @@ end
   tstep = t + c2*dt
   @. tmp = uprev + a21*z₁
   @. u = tmp + γ*z₂
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₂
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2066,7 +2066,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₂
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₂
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2100,7 +2100,7 @@ end
   tstep = t + c3*dt
   @. tmp = uprev + a31*z₁ + a32*z₂
   @. u = tmp + γ*z₃
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₃
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2118,7 +2118,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₃
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₃
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2152,7 +2152,7 @@ end
   tstep = t + c4*dt
   @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   @. u = tmp + γ*z₄
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₄
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2170,7 +2170,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₄
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₄
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2204,7 +2204,7 @@ end
   tstep = t + dt
   tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   @. u = tmp + γ*z₅
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₅
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2222,7 +2222,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₅
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₅
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2282,7 +2282,7 @@ end
 function initialize!(integrator, cache::Hairer4ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -2291,7 +2291,7 @@ function initialize!(integrator, cache::Hairer4ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::Hairer4ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack α21,α31,α32,α41,α43 = cache.tab
@@ -2319,7 +2319,7 @@ end
   iter = 1
   tstep = t + γdt
   u = uprev + γ*z₁
-  b = dt*f(tstep,u) - z₁
+  b = dt*f(u, p, tstep) - z₁
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₁ = z₁ + dz
@@ -2332,7 +2332,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = uprev + γ*z₁
-    b = dt*f(tstep,u) - z₁
+    b = dt*f(u, p, tstep) - z₁
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -2360,7 +2360,7 @@ end
   tstep = t + c2*dt
   tmp = uprev + a21*z₁
   u = tmp + γ*z₂
-  b = dt*f(tstep,u) - z₂
+  b = dt*f(u, p, tstep) - z₂
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₂ = z₂ + dz
@@ -2373,7 +2373,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₂
-    b = dt*f(tstep,u) - z₂
+    b = dt*f(u, p, tstep) - z₂
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -2401,7 +2401,7 @@ end
   tstep = t + c3*dt
   tmp = uprev + a31*z₁ + a32*z₂
   u = tmp + γ*z₃
-  b = dt*f(tstep,u) - z₃
+  b = dt*f(u, p, tstep) - z₃
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₃ = z₃ + dz
@@ -2414,7 +2414,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₃
-    b = dt*f(tstep,u) - z₃
+    b = dt*f(u, p, tstep) - z₃
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -2442,7 +2442,7 @@ end
   tstep = t + c4*dt
   tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   u = tmp + γ*z₄
-  b = dt*f(tstep,u) - z₄
+  b = dt*f(u, p, tstep) - z₄
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₄ = z₄ + dz
@@ -2455,7 +2455,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₄
-    b = dt*f(tstep,u) - z₄
+    b = dt*f(u, p, tstep) - z₄
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -2484,7 +2484,7 @@ end
   tstep = t+dt
   tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   u = tmp + γ*z₅
-  b = dt*f(tstep,u) - z₅
+  b = dt*f(u, p, tstep) - z₅
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z₅ = z₅ + dz
@@ -2497,7 +2497,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₅
-    b = dt*f(tstep,u) - z₅
+    b = dt*f(u, p, tstep) - z₅
     dz = W\b
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
@@ -2547,11 +2547,11 @@ function initialize!(integrator, cache::Hairer4Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
 end
 
 @muladd function perform_step!(integrator, cache::Hairer4Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,z₁,z₂,z₃,z₄,z₅,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack α21,α31,α32,α41,α43 = cache.tab
@@ -2607,7 +2607,7 @@ end
   iter = 1
   tstep = t + γdt
   @. u = uprev + γ*z₁
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₁
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2625,7 +2625,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = uprev + γ*z₁
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₁
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2658,7 +2658,7 @@ end
   tstep = t + c2*dt
   @. tmp = uprev + a21*z₁
   @. u = tmp + γ*z₂
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₂
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2676,7 +2676,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₂
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₂
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2709,7 +2709,7 @@ end
   tstep = t + c3*dt
   @. tmp = uprev + a31*z₁ + a32*z₂
   @. u = tmp + γ*z₃
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₃
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2727,7 +2727,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     u = tmp + γ*z₃
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₃
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2761,7 +2761,7 @@ end
   tstep = t + c4*dt
   @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   @. u = tmp + γ*z₄
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₄
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2779,7 +2779,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₄
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₄
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2813,7 +2813,7 @@ end
   tstep = t + dt
   @. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   @. u = tmp + γ*z₅
-  f(tstep,u,k)
+  f(k, u, p, tstep)
   @. b = dt*k - z₅
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
@@ -2831,7 +2831,7 @@ end
   while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
     iter += 1
     @. u = tmp + γ*z₅
-    f(tstep,u,k)
+    f(k, u, p, tstep)
     @. b = dt*k - z₅
     if has_invW(f)
       A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW

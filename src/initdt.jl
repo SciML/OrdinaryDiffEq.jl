@@ -1,5 +1,6 @@
 @muladd function ode_determine_initdt{tType,uType}(u0,t,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,true},integrator)
   f = prob.f
+  p = integrator.p
   oneunit_tType = oneunit(tType)
   dtmax_tdir = tdir*dtmax
 
@@ -14,11 +15,11 @@
   if isfsal(integrator.alg) && typeof(integrator) <: ODEIntegrator
     # Right now DelayDiffEq has issues with fsallast not being initialized
     f₀ = integrator.fsallast
-    f(t,u0,f₀)
+    f(f₀,u0,p,t)
   else
     # TODO: use more caches
     f₀ = u0/t; fill!(f₀,zero(eltype(f₀)))
-    f(t,u0,f₀)
+    f(f₀,u0,p,t)
   end
 
   # TODO: use more caches
@@ -93,7 +94,7 @@
   u₁ = similar(u0) # required by DEDataArray
   @. u₁ = u0 + dt₀_tdir*f₀
   f₁ = similar(f₀)
-  f(t+dt₀_tdir,u₁,f₁)
+  f(f₁,u₁,p,t+dt₀_tdir)
 
   if prob.mass_matrix != I
     integrator.alg.linsolve(ftmp, prob.mass_matrix, f₁, false)
@@ -121,7 +122,7 @@ end
   sk = abstol+internalnorm(u0)*reltol
   d₀ = internalnorm(u0/sk)
 
-  f₀ = f(t,u0)
+  f₀ = f(u0,p,t)
   if any((isnan(x) for x in f₀))
     error("First function call produced NaNs. Exiting.")
   end
@@ -137,7 +138,7 @@ end
   dt₀_tdir = tdir*dt₀
 
   u₁ = u0 + dt₀_tdir*f₀
-  f₁ = f(t+dt₀_tdir,u₁)
+  f₁ = f(u₁,p,t+dt₀_tdir)
 
   d₂ = internalnorm((f₁-f₀)./sk*oneunit_tType)/dt₀*oneunit_tType
 

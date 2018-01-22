@@ -80,6 +80,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   end
 
   f = prob.f
+  p = prob.p
 
   # Get the control variables
 
@@ -281,11 +282,11 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   erracc = tTypeNoUnits(1)
   dtacc = tType(1)
 
-  integrator = ODEIntegrator{algType,uType,tType,
+  integrator = ODEIntegrator{algType,uType,tType,typeof(p),
                              tTypeNoUnits,typeof(tdir),typeof(k),SolType,
                              FType,typeof(prog),cacheType,
                              typeof(opts),fsal_typeof(alg,rate_prototype)}(
-                             sol,u,k,t,tType(dt),f,uprev,uprev2,tprev,
+                             sol,u,k,t,tType(dt),f,p,uprev,uprev2,tprev,
                              alg,dtcache,dtchangeable,
                              dtpropose,tdir,EEst,tTypeNoUnits(qoldinit),q11,
                              erracc,dtacc,success_iter,

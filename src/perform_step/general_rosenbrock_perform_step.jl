@@ -1,7 +1,7 @@
 function initialize!(integrator, cache::GenRosen4ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -10,7 +10,7 @@ function initialize!(integrator, cache::GenRosen4ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::GenRosen4ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack A,c,α,αEEst,stages = cache
   @unpack kk = cache
 
@@ -52,7 +52,7 @@ end
   end
 
   if !isfsal(integrator.alg.tableau)
-    integrator.fsallast = f(t+dt, u)
+    integrator.fsallast = f(u, p, t+dt)
   end
 
   integrator.k[1] = integrator.fsalfirst

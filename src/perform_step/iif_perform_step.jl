@@ -24,7 +24,7 @@ function initialize!(integrator,cache::Union{GenericIIF1ConstantCache,GenericIIF
 end
 
 function perform_step!(integrator,cache::Union{GenericIIF1ConstantCache,GenericIIF2ConstantCache},repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack uhold,rhs,nl_rhs = cache
 
   # If adaptive, this should be computed after and cached
@@ -80,7 +80,7 @@ end
 function perform_step!(integrator,cache::Union{GenericIIF1Cache,GenericIIF2Cache},repeat_step=false)
   @unpack rtmp1,tmp,k = cache
   @unpack rhs,nl_rhs = cache
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
 
   @. k = uprev
   if typeof(cache) <: GenericIIF2Cache

@@ -425,9 +425,9 @@ end
 function reset_fsal!(integrator)
   # Under these condtions, these algorithms are not FSAL anymore
   if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache
-    integrator.f(integrator.t,integrator.u,integrator.fsalfirst)
+    integrator.f(integrator.fsalfirst,integrator.u,integrator.p,integrator.t)
   else
-    integrator.fsalfirst = integrator.f(integrator.t,integrator.u)
+    integrator.fsalfirst = integrator.f(integrator.u,integrator.p,integrator.t)
   end
   # Do not set false here so it can be checked in the algorithm
   # integrator.reeval_fsal = false

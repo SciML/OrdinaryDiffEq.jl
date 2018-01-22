@@ -44,13 +44,14 @@ mutable struct DEOptions{absType,relType,tTypeNoUnits,tType,F2,F3,F4,F5,F6,tstop
   stop_at_next_tstop::Bool
 end
 
-mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,F,ProgressType,CacheType,O,FSALType} <: AbstractODEIntegrator
+mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,pType,tTypeNoUnits,tdirType,ksEltype,SolType,F,ProgressType,CacheType,O,FSALType} <: AbstractODEIntegrator
   sol::SolType
   u::uType
   k::ksEltype
   t::tType
   dt::tType
   f::F
+  p::pType
   uprev::uType
   uprev2::uType
   tprev::tType
@@ -82,19 +83,19 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,tTypeN
   fsalfirst::FSALType
   fsallast::FSALType
 
-  function (::Type{ODEIntegrator{algType,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,
-                F,ProgressType,CacheType,O,FSALType}}){algType,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,
+  function (::Type{ODEIntegrator{algType,uType,tType,pType,tTypeNoUnits,tdirType,ksEltype,SolType,
+                F,ProgressType,CacheType,O,FSALType}}){algType,uType,tType,pType,tTypeNoUnits,tdirType,ksEltype,SolType,
                 F,ProgressType,CacheType,O,FSALType}(
-                sol,u,k,t,dt,f,uprev,uprev2,tprev,
+                sol,u,k,t,dt,f,p,uprev,uprev2,tprev,
       alg,dtcache,dtchangeable,dtpropose,tdir,
       EEst,qold,q11,erracc,dtacc,success_iter,
       iter,saveiter,saveiter_dense,prog,cache,
       kshortsize,force_stepfail,last_stepfail,just_hit_tstop,
       accept_step,isout,reeval_fsal,u_modified,opts)
 
-      new{algType,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,
+      new{algType,uType,tType,pType,tTypeNoUnits,tdirType,ksEltype,SolType,
                   F,ProgressType,CacheType,O,FSALType}(
-                  sol,u,k,t,dt,f,uprev,uprev2,tprev,
+                  sol,u,k,t,dt,f,p,uprev,uprev2,tprev,
       alg,dtcache,dtchangeable,dtpropose,tdir,
       EEst,qold,q11,erracc,dtacc,success_iter,
       iter,saveiter,saveiter_dense,prog,cache,
