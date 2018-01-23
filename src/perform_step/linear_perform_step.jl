@@ -12,7 +12,7 @@ end
 @muladd function perform_step!(integrator, cache::LinearImplicitEulerConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,k = integrator
 
-  L = update_coefficients(integrator.f,t+dt,u)
+  L = update_coefficients(integrator.f,u,p,t+dt)
 
   if typeof(uprev) <: AbstractArray
     W = I - dt*L
@@ -67,7 +67,7 @@ end
   mass_matrix = integrator.sol.prob.mass_matrix
 
   L = integrator.f
-  update_coefficients!(L,t+dt,u)
+  update_coefficients!(L,u,p,t+dt)
 
   if typeof(L) <: AbstractDiffEqLinearOperator
 
@@ -132,7 +132,7 @@ function perform_step!(integrator, cache::MidpointSplittingCache, repeat_step=fa
   mass_matrix = integrator.sol.prob.mass_matrix
 
   L = integrator.f
-  update_coefficients!(L,t+dt/2,u)
+  update_coefficients!(L,u,p,t+dt/2)
 
   A = L.As[1]
   Bs = L.As[2:end]

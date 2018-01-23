@@ -23,7 +23,7 @@ dual_cache(c::GenericIIF1Cache) = (c.dual_cache,)
 
 function alg_cache(alg::GenericIIF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,::Type{Val{false}})
   uhold = Vector{typeof(u)}(1)
-  rhs = RHS_IIF_Scalar(f,zero(u),t,t,one(uEltypeNoUnits))
+  rhs = RHS_IIF_Scalar(f,zero(u),t,t,one(uEltypeNoUnits),p)
   nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
   GenericIIF1ConstantCache(uhold,rhs,nl_rhs)
 end
@@ -33,7 +33,7 @@ function alg_cache(alg::GenericIIF1,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
   A = f.f1
   expA = expm(A*dt)
-  rhs = RHS_IIF(f,tmp,t,t,uEltypeNoUnits(1//1),dual_cache)
+  rhs = RHS_IIF(f,tmp,t,t,uEltypeNoUnits(1//1),dual_cache,p)
   k = similar(rate_prototype); fsalfirst = similar(rate_prototype)
   nl_rhs = alg.nlsolve(Val{:init},rhs,u)
   GenericIIF1Cache(u,uprev,dual_cache,tmp,rhs,nl_rhs,rtmp1,fsalfirst,expA,k)
@@ -65,7 +65,7 @@ dual_cache(c::GenericIIF2Cache) = (c.dual_cache,)
 function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,::Type{Val{false}})
   uhold = Vector{typeof(u)}(1)
   tmp = zero(u)
-  rhs = RHS_IIF_Scalar(f,tmp,t,t,uEltypeNoUnits(1//2))
+  rhs = RHS_IIF_Scalar(f,tmp,t,t,uEltypeNoUnits(1//2),p)
   nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
   GenericIIF2ConstantCache(uhold,rhs,nl_rhs)
 end
@@ -76,7 +76,7 @@ function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   A = f.f1
   expA = expm(A*dt)
   k = similar(rate_prototype); fsalfirst = similar(rate_prototype)
-  rhs = RHS_IIF(f,tmp,t,t,uEltypeNoUnits(1//2),dual_cache)
+  rhs = RHS_IIF(f,tmp,t,t,uEltypeNoUnits(1//2),dual_cache,p)
   nl_rhs = alg.nlsolve(Val{:init},rhs,u)
   GenericIIF2Cache(u,uprev,dual_cache,tmp,rhs,nl_rhs,rtmp1,fsalfirst,expA,k)
 end
