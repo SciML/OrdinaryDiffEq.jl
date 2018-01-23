@@ -116,6 +116,7 @@ end
 
 @muladd function ode_determine_initdt{uType,tType}(u0,t,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,false},integrator)
   f = prob.f
+  p = prob.p
   oneunit_tType = oneunit(tType)
   dtmax_tdir = tdir*dtmax
 

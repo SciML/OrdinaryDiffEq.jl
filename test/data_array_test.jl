@@ -5,7 +5,7 @@ type SimType{T} <: DEDataVector{T}
     f1::T
 end
 
-f = function (t,u,du)
+f = function (du,u,p,t)
     du[1] = -0.5*u[1] + u.f1
     du[2] = -0.5*u[2]
 end
@@ -145,7 +145,7 @@ cb2 = DiscreteCallback(mat_condition2, mat_affect2!, save_positions=save_positio
 cbs = CallbackSet(cb,cb2)
 
 
-function sigmoid(t,u,du)
+function sigmoid(du,u,p,t)
   du[1,1] = 0.01*u[1,1]*(1-u[1,1]/20)
   du[1,2] = 0.01*u[1,2]*(1-u[1,2]/20)
   du[2,1] = 0.01*u[2,1]*(1-u[2,1]/20)

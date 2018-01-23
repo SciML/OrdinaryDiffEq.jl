@@ -3,7 +3,7 @@ using OrdinaryDiffEq, Base.Test
 jac_called = false
 tgrad_called = false
 
-function Lotka(t,u,du)
+function Lotka(du,u,p,t)
   du[1] = u[1] - u[1] * u[2] # REPL[7], line 3:
   du[2] = -3 * u[2] + 1 * u[1] * u[2]
   nothing
@@ -34,7 +34,7 @@ good_sol = solve(prob,Rosenbrock23())
 @test jac_called == true
 @test tgrad_called == true
 
-function Lotka2(t,u,du)
+function Lotka2(du,u,p,t)
   du[1] = u[1] - u[1] * u[2]
   du[2] = -3 * u[2] + 1 * u[1] * u[2]
   nothing
@@ -53,7 +53,7 @@ sol = solve(prob2,Rosenbrock23(autodiff=false))
 
 invW_called = false
 
-function Lotka3(t,u,du)
+function Lotka3(du,u,p,t)
   du[1] = u[1] - u[1] * u[2] # REPL[7], line 3:
   du[2] = -3 * u[2] + 1 * u[1] * u[2]
   nothing

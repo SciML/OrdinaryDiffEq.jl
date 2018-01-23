@@ -25,18 +25,18 @@ step!(integrator)
 
 integrator = init(prob,Tsit5();dt=1//2^(4),tstops=[0.5],advance_to_tstop=true)
 tupint = tuples(integrator)
-for (t,u) in tuples(integrator)
+for (u,t) in tuples(integrator)
   @test t ∈ [0.5,1.0]
 end
 
 integrator = init(prob,Tsit5();dt=1//2^(4),tstops=[0.5],advance_to_tstop=true,stop_at_next_tstop=true)
-for (t,u) in tuples(integrator)
+for (u,t) in tuples(integrator)
   @test t == 0.5
 end
 integrator([1.0;2.0])
 
 integrator = init(prob,Tsit5();dt=1//2^(4),tstops=[0.5])
-for (tprev,uprev,t,u) in intervals(integrator)
+for (uprev,tprev,u,t) in intervals(integrator)
   @show tprev,t
 end
 integrator([1.0;2.0])
@@ -49,7 +49,7 @@ for i in Compat.Iterators.take(integrator,12) end
 @test integrator.iter == 24
 
 integrator = init(prob_ode_2Dlinear,Tsit5();dt=1//2^(4),tstops=[0.5],advance_to_tstop=true,stop_at_next_tstop=true)
-for (t,u) in tuples(integrator)
+for (u,t) in tuples(integrator)
   @test t == 0.5
 end
 A = integrator([1.0;2.0])

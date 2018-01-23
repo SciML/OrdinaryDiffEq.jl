@@ -122,7 +122,7 @@ end
 function initialize!(integrator, cache::OwrenZen4ConstantCache)
   integrator.kshortsize = 6
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.t,integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -161,7 +161,7 @@ function initialize!(integrator,cache::OwrenZen4Cache,f=integrator.f)
   integrator.k[3]=cache.k3; integrator.k[4]=cache.k4;
   integrator.k[5]=cache.k5; integrator.k[6]=cache.k6;
   integrator.fsalfirst = cache.k1; integrator.fsallast = cache.k6  # setup pointers
-  f(integrator.t,integrator.uprev,integrator.fsalfirst) # Pre-start fsal
+  f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
 end
 
 #=

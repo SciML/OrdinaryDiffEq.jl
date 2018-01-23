@@ -5,29 +5,29 @@ srand(100)
 dts = 1.//2.^(8:-1:4)
 testTol = 0.25
 
-f = (t,u)->cos(t)
-(p::typeof(f))(::Type{Val{:analytic}},t,u0) = sin(t)
+f = (u,p,t)->cos(t)
+(p::typeof(f))(::Type{Val{:analytic}},u0,p,t) = sin(t)
 prob_ode_sin = ODEProblem(f, 0.,(0.0,1.0))
 
-f = (t,u,du)->du[1]=cos(t)
-(p::typeof(f))(::Type{Val{:analytic}},t,u0) = [sin(t)]
+f = (du,u,p,t)->du[1]=cos(t)
+(p::typeof(f))(::Type{Val{:analytic}},u0,p,t) = [sin(t)]
 prob_ode_sin_inplace = ODEProblem(f, [0.], (0.0,1.0))
 
-f = (t,u)->sin(u)
-(p::typeof(f))(::Type{Val{:analytic}},t,u0) = 2*acot(exp(-t)*cot(0.5))
+f = (u,p,t)->sin(u)
+(p::typeof(f))(::Type{Val{:analytic}},u0,p,t) = 2*acot(exp(-t)*cot(0.5))
 prob_ode_nonlinear = ODEProblem(f, 1.,(0.,0.5))
 
-f = (t,u,du)->du[1]=sin(u[1])
-(p::typeof(f))(::Type{Val{:analytic}},t,u0) = [2*acot(exp(-t)*cot(0.5))]
+f = (du,u,p,t)->du[1]=sin(u[1])
+(p::typeof(f))(::Type{Val{:analytic}},u0,p,t) = [2*acot(exp(-t)*cot(0.5))]
 prob_ode_nonlinear_inplace = ODEProblem(f,[1.],(0.,0.5))
 
 const linear_bigα2 = parse(BigFloat,"1.01")
-f_2dlinearbig = (t,u,du) -> begin
+f_2dlinearbig = (du,u,p,t) -> begin
   for i in 1:length(u)
     du[i] = linear_bigα2*u[i]
   end
 end
-(f::typeof(f_2dlinearbig))(::Type{Val{:analytic}},t,u0) = u0*exp.(1.01*t)
+(f::typeof(f_2dlinearbig))(::Type{Val{:analytic}},u0,p,t) = u0*exp.(1.01*t)
 prob_ode_bigfloat2Dlinear = ODEProblem(f_2dlinearbig,map(BigFloat,rand(4,2)).*ones(4,2)/2,(0.0,1.0))
 
 
@@ -35,13 +35,13 @@ test_problems_only_time = [prob_ode_sin, prob_ode_sin_inplace]
 test_problems_linear = [prob_ode_linear, prob_ode_2Dlinear, prob_ode_bigfloat2Dlinear]
 test_problems_nonlinear = [prob_ode_nonlinear, prob_ode_nonlinear_inplace]
 
-f_ssp = (t,u) -> begin
+f_ssp = (u,p,t) -> begin
   sin(10t) * u * (1-u)
 end
 test_problem_ssp = ODEProblem(f_ssp, 0.1, (0., 8.))
 test_problem_ssp_long = ODEProblem(f_ssp, 0.1, (0., 1.e3))
 
-f_ssp_inplace = (t,u,du) -> begin
+f_ssp_inplace = (du,u,p,t) -> begin
   @. du = sin(10t) * u * (1-u)
 end
 test_problem_ssp_inplace = ODEProblem(f_ssp_inplace, rand(3,3), (0., 8.))

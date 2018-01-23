@@ -1,7 +1,7 @@
 using OrdinaryDiffEq, Base.Test, DiffEqDevTools, SpecialMatrices, DiffEqOperators
 u0 = rand(2)
 A = DiffEqArrayOperator(Strang(2))
-function (p::typeof(A))(::Type{Val{:analytic}},t,u0)
+function (p::typeof(A))(::Type{Val{:analytic}},u0,p,t)
     expm(p.A*t)*u0
 end
 
@@ -25,7 +25,7 @@ sol = solve(prob,LinearImplicitEuler())
 
 B = DiffEqArrayOperator(ones(2,2))
 L = AffineDiffEqOperator{Float64}((A,B),(),rand(2))
-function (p::typeof(L))(::Type{Val{:analytic}},t,u0)
+function (p::typeof(L))(::Type{Val{:analytic}},u0,p,t)
     expm((p.As[1].A+p.As[2].A)*t)*u0
 end
 
@@ -64,7 +64,7 @@ B = DiffEqArrayOperator([0 0 0 0
                          0 0 0 0], f)
 
 H = AffineDiffEqOperator{Float64}((A,B),(),rand(4))
-function (p::typeof(H))(::Type{Val{:analytic}},t,u0)
+function (p::typeof(H))(::Type{Val{:analytic}},u0,p,t)
     x0,v0 = u0[1:2]
     ti = u0[end]
     x = x0 + (t-ti)*v0 - (f.(t)-f(ti))/(2pi)^2 - (t-ti)*F(ti)

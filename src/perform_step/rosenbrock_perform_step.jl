@@ -60,7 +60,7 @@ end
 
   recursivecopy!(k₁, reshape(vectmp, size(u)...))
   @. u = uprev + dto2*k₁
-  f(t+dto2, u, f₁)
+  f(f₁,u,p,t+dto2)
 
   if mass_matrix == I
     tmp .= k₁
@@ -166,7 +166,7 @@ end
 
   recursivecopy!(k₁, reshape(vectmp, sizeu...))
   @. u = uprev + dto2*k₁
-  f(t+dto2, u, f₁)
+  f(f₁,u,p,t+dto2)
 
   if mass_matrix == I
     tmp .= k₁
@@ -246,7 +246,7 @@ end
   end
 
   k₁ = W\(integrator.fsalfirst + γ*dT)
-  f₁ = f(t+dto2, uprev  + dto2*k₁)
+  f₁ = f(uprev  + dto2*k₁, p, t+dto2)
 
   k₂ = W\(f₁-k₁) + k₁
   u = uprev  + dt*k₂
@@ -304,7 +304,7 @@ end
   #f₀ = f(uprev, p, t)
 
   k₁ = W\(integrator.fsalfirst + γ*dT)
-  f₁ = f(t+dto2, uprev  + dto2*k₁)
+  f₁ = f(uprev  + dto2*k₁, p, t+dto2)
 
   k₂ = W\(f₁-k₁) + k₁
   tmp = uprev  + dt*k₂

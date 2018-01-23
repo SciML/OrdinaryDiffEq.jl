@@ -1,7 +1,7 @@
 using OrdinaryDiffEq, RecursiveArrayTools, Base.Test, StaticArrays
 
 
-f = function (t,u)
+f = function (u,p,t)
   - u + sin(-t)
 end
 
@@ -20,7 +20,7 @@ callback = ContinuousCallback(condition,affect!)
 
 sol = solve(prob,Tsit5(),callback=callback)
 
-f = function (t,u,du)
+f = function (du,u,p,t)
   du[1] = - u[1] + sin(t)
 end
 
@@ -46,7 +46,7 @@ f = @ode_def BallBounce begin
 end g=9.81
 =#
 
-f = function (t,u,du)
+f = function (du,u,p,t)
   du[1] = u[2]
   du[2] = -9.81
 end
@@ -337,7 +337,7 @@ end
 
 # Test ContinuousCallback hits values on the steps
 t_event = 100.0
-f_simple(t,u) = 1.00001*u
+f_simple(u,p,t) = 1.00001*u
 event_triggered = false
 condition_simple(t,u,integrator) = t_event-t
 function affect_simple!(integrator)

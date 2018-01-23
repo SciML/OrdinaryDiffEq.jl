@@ -4,18 +4,18 @@ const mm_A = [-2.0 1 4
             4 -2 1
             2 1 3]
 const mm_b = mm_A*ones(3)
-function mm_f(t,u,du)
+function mm_f(du,u,p,t)
       A_mul_B!(du,mm_A,u)
       tmp = t*mm_b
       du .+= tmp
 end
-function mm_f(::Type{Val{:analytic}},t,u0)
+function mm_f(::Type{Val{:analytic}},u0,p,t)
       @. 2ones(3)*exp(t) - t - 1
 end
-function mm_g(t,u,du)
+function mm_g(du,u,p,t)
       du .= u + t
 end
-function mm_g(::Type{Val{:analytic}},t,u0)
+function mm_g(::Type{Val{:analytic}},u0,p,t)
       @. 2ones(3)*exp(t) - t - 1
 end
 prob2 = ODEProblem(mm_g,ones(3),(0.0,1.0))

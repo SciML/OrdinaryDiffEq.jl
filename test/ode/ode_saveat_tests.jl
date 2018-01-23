@@ -76,7 +76,7 @@ sol2=solve(prob,DP5(),dt=1//2^(2),save_everystep=false,dense=false,saveat=linspa
 
 @test sol2.t ≈ linspace(0,1,100)
 
-f = (t,u,du) -> prob.f(t,u,du)
+f = (du,u,p,t) -> prob.f(du,u,p,t)
 prob2 = ODEProblem(f,vec(prob.u0),prob.tspan)
 
 sol2=solve(prob2,DP5(),dt=1//2^(2),saveat=.1,save_idxs=1:2:5)

@@ -2,7 +2,7 @@ using OrdinaryDiffEq, DiffEqBase
 
 NON_IMPLICIT_ALGS = filter((x)->isleaftype(x) && !OrdinaryDiffEq.isimplicit(x()),union(subtypes(OrdinaryDiffEq.OrdinaryDiffEqAlgorithm),subtypes(OrdinaryDiffEq.OrdinaryDiffEqAdaptiveAlgorithm)))
 
-f = function (t,u,du)
+f = function (du,u,p,t)
   for i in 1:length(u)
     du[i] = (0.3/length(u))*u[i]
   end

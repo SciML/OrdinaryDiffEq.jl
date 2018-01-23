@@ -1,9 +1,9 @@
 using OrdinaryDiffEq, Base.Test
 
-function time_derivative(t,u,du)
+function time_derivative(du,u,p,t)
   du[1] = -t
 end
-function time_derivative(::Type{Val{:analytic}},t,u0)
+function time_derivative(::Type{Val{:analytic}},u0,p,t)
   u0 - t^2/2
 end
 

@@ -1,8 +1,8 @@
 using OrdinaryDiffEq, Base.Test
 srand(100)
 
-linear = (t,u) -> (1.01*u)
-(p::typeof(linear))(::Type{Val{:analytic}},t,u0) = u0*exp(1.01*t)
+linear = (u,p,t) -> (1.01*u)
+(::typeof(linear))(::Type{Val{:analytic}},u0,p,t) = u0*exp(1.01*t)
 prob = ODEProblem(linear,1/2,(0.0,1.0))
 
 sol =solve(prob,Tsit5(),dt=1//2^(6),tstops=[1/2])
