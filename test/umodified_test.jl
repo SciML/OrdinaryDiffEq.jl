@@ -4,7 +4,7 @@ T = 1000.0; Ttr = 0.0;
 d0=1e-9; threshold=10^4*d0;
 dt = 0.1; diff_eq_kwargs = Dict()
 
-@inline @inbounds function eom_lorenz!(t, u, du)
+@inline @inbounds function eom_lorenz!(du, u, p, t)
   σ = 10.0; ρ = 28.0; β = 8/3
   du[1] = σ*(u[2]-u[1])
   du[2] = u[1]*(ρ-u[3]) - u[2]

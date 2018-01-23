@@ -92,7 +92,7 @@ sol2 = solve(prob2, TRBDF2(),adaptive=false,dt=1/10)
 
 # Singular mass matrices
 
-function f!(t, u, du)
+function f!(du, u, p, t)
     du[1] = u[2]
     du[2] = u[2] - 1.
     return
@@ -112,7 +112,7 @@ M = [0.637947  0.637947
 
 inv(M) # not caught as singular
 
-function f2!(t, u, du)
+function f2!(du, u, p, t)
     du[1] = u[2]
     du[2] = u[1]
     return

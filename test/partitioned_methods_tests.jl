@@ -2,13 +2,13 @@ using OrdinaryDiffEq, Base.Test, RecursiveArrayTools, DiffEqDevTools
 
 u0 = zeros(2)
 v0 = ones(2)
-f1 = function (t,u,v,du)
+f1 = function (du,u,v,p,t)
   du .= v
 end
-f2 = function (t,u,v,dv)
+f2 = function (dv,u,v,p,t)
   dv .= -u
 end
-function (::typeof(f2))(::Type{Val{:analytic}}, x, y0)
+function (::typeof(f2))(::Type{Val{:analytic}}, y0, p, x)
   u0, v0 = y0
   ArrayPartition(u0*cos(x) + v0*sin(x), -u0*sin(x) + v0*cos(x))
 end
@@ -26,7 +26,7 @@ interps = sol(interp_time)
 sol_tsit5 = solve(prob,Tsit5())
 
 prob = SecondOrderODEProblem(f2,u0,v0,(0.0,5.0))
-(::typeof(prob.f))(::Type{Val{:analytic}},u0,p,t) = f2(Val{:analytic},t,u0)
+(::typeof(prob.f))(::Type{Val{:analytic}},u0,p,t) = f2(Val{:analytic},u0,p,t)
 
 sol2 = solve(prob,SymplecticEuler(),dt=1/2)
 sol2_verlet = solve(prob,VelocityVerlet(),dt=1/100)
@@ -132,7 +132,7 @@ sim = test_convergence(dts,prob,SofSpa10(),dense_errors=true)
 # Methods need BigFloat to test convergence rate
 dts = big"1.0"./big"2.0".^(5:-1:1)
 prob_big = SecondOrderODEProblem(f2,[big"0.0", big"0.0"],[big"1.0",big"1.0"],(big"0.",big"70."))
-(::typeof(prob_big.f))(::Type{Val{:analytic}},u0,p,t) = f2(Val{:analytic},t,u0)
+(::typeof(prob_big.f))(::Type{Val{:analytic}},u0,p,t) = f2(Val{:analytic},u0,p,t)
 sim = test_convergence(dts,prob_big,DPRKN6(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 6 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 6 rtol = 1e-1
@@ -180,15 +180,15 @@ using OrdinaryDiffEq, Base.Test, RecursiveArrayTools, DiffEqDevTools
 
 u0 = 0.0
 v0 = 1.0
-f12 = function (t,u,v)
+f12 = function (u,v,p,t)
   v
 end
-f22 = function (t,u,v)
+f22 = function (u,v,p,t)
   -u
 end
 
 prob = DynamicalODEProblem(f12,f22,u0,v0,(0.0,5.0))
-function (::typeof(prob.f))(::Type{Val{:analytic}}, x, y0)
+function (::typeof(prob.f))(::Type{Val{:analytic}}, y0, p, x)
   u0, v0 = y0
   ArrayPartition(u0*cos(x) + v0*sin(x), -u0*sin(x) + v0*cos(x))
 end
@@ -286,7 +286,7 @@ sim = test_convergence(dts,prob,SofSpa10(),dense_errors=true)
 # Methods need BigFloat to test convergence rate
 dts = big"1.0"./big"2.0".^(5:-1:1)
 prob_big = SecondOrderODEProblem(f22,big"0.0",big"1.0",(big"0.",big"70."))
-function (::typeof(prob_big.f))(::Type{Val{:analytic}}, x, y0)
+function (::typeof(prob_big.f))(::Type{Val{:analytic}}, y0, p, x)
   u0, v0 = y0
   ArrayPartition(u0*cos(x) + v0*sin(x), -u0*sin(x) + v0*cos(x))
 end

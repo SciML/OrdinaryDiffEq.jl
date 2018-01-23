@@ -186,7 +186,7 @@ sol6 = solve(prob2,Vern7(),callback=bounce_then_exit)
 
 # More ODE event tests, cf. #201, #199, #198, #197
 function test_callback_inplace(alg)
-    f = (t, u, du) -> @. du = u
+    f = (du, u, p, t) -> @. du = u
     cb = ContinuousCallback((t,u,int) -> u[1] - exp(1), terminate!)
     prob = ODEProblem(f, [1.0], (0.0, 2.0), callback=cb)
     sol = solve(prob, alg)
@@ -194,7 +194,7 @@ function test_callback_inplace(alg)
 end
 
 function test_callback_outofplace(alg)
-    f = (t, u) -> copy(u)
+    f = (u, p, t) -> copy(u)
     cb = ContinuousCallback((t,u,int) -> u[1] - exp(1), terminate!)
     prob = ODEProblem(f, [1.0], (0.0, 2.0), callback=cb)
     sol = solve(prob, alg)
@@ -202,7 +202,7 @@ function test_callback_outofplace(alg)
 end
 
 function test_callback_scalar(alg)
-    f = (t, u) -> u
+    f = (u, p, t) -> u
     cb = ContinuousCallback((t,u,int) -> u - exp(1), terminate!)
     prob = ODEProblem(f, 1.0, (0.0, 2.0), callback=cb)
     sol = solve(prob, alg)
@@ -210,7 +210,7 @@ function test_callback_scalar(alg)
 end
 
 function test_callback_svector(alg)
-    f = (t, u) -> u
+    f = (u, p, t) -> u
     cb = ContinuousCallback((t,u,int) -> u[1] - exp(1), terminate!)
     prob = ODEProblem(f, SVector(1.0), (0.0, 2.0), callback=cb)
     sol = solve(prob, alg)
@@ -218,7 +218,7 @@ function test_callback_svector(alg)
 end
 
 function test_callback_mvector(alg)
-    f = (t, u) -> copy(u)
+    f = (u, p, t) -> copy(u)
     cb = ContinuousCallback((t,u,int) -> u[1] - exp(1), terminate!)
     prob = ODEProblem(f, MVector(1.0), (0.0, 2.0), callback=cb)
     sol = solve(prob, alg)
