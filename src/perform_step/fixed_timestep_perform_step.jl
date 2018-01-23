@@ -26,7 +26,7 @@ function perform_step!(integrator,cache::DiscreteCache,repeat_step=false)
       f(du, uprev, p, t+dt)
       @muladd @. u = uprev + dt*du
     else
-      f(du,u,p,t)
+      f(u,uprev,p,t)
     end
     if typeof(u) <: DEDataArray # Needs to get the fields, since updated uprev
       copy_fields!(u,uprev)

@@ -64,15 +64,15 @@ type SimType2{T} <: DEDataVector{T}
     u::Vector{T}
 end
 
-function mysystem(t,x,dx,u)
-    ucalc = u(t,x)
+function mysystem(t,x,dx,p,u)
+    ucalc = u(x,p,t)
     x.u = ucalc
     x.y = C*x.x
-    dx[:] = A*x.x + B*x.u
+    dx .= A*x.x + B*x.u
 end
 
-input = (t,x)->(1*one(t)≤t≤2*one(t)?[one(t)]:[zero(t)])
-prob = DiscreteProblem((t,x,dx)->mysystem(t,x,dx,input), SimType2(zeros(3), zeros(1), zeros(1)), (0//1,4//1))
+input = (x,p,t)->(1*one(t)≤t≤2*one(t)?[one(t)]:[zero(t)])
+prob = DiscreteProblem((dx,x,p,t)->mysystem(t,x,dx,p,input), SimType2(zeros(3), zeros(1), zeros(1)), (0//1,4//1))
 sln = solve(prob, FunctionMap(scale_by_time=false), dt = 1//10)
 
 u1 = [sln[idx].u for idx in 1:length(sln)]

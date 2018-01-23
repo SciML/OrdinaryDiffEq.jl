@@ -12,8 +12,8 @@ struct ODECompositeSolution{T,N,uType,uType2,EType,tType,rateType,P,A,IType} <: 
   tslocation::Int
   retcode::Symbol
 end
-(sol::ODECompositeSolution)(t,deriv::Type=Val{0};idxs=nothing) = sol.interp(t,idxs,deriv)
-(sol::ODECompositeSolution)(v,t,deriv::Type=Val{0};idxs=nothing) = sol.interp(v,t,idxs,deriv)
+(sol::ODECompositeSolution)(t,deriv::Type=Val{0};idxs=nothing) = sol.interp(t,idxs,deriv,sol.prob.p)
+(sol::ODECompositeSolution)(v,t,deriv::Type=Val{0};idxs=nothing) = sol.interp(v,t,idxs,deriv,sol.prob.p)
 
 function build_solution{uType,tType,isinplace}(
         prob::AbstractODEProblem{uType,tType,isinplace},
