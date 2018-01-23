@@ -67,10 +67,10 @@ function DiffEqBase.interp_summary{cacheType}(interp::OrdinaryDiffEqInterpolatio
   interp.dense ? "3rd order Hermite" : "1st order linear"
 end
 
-(interp::InterpolationData)(tvals,idxs,deriv) = ode_interpolation(tvals,interp,idxs,deriv)
-(interp::CompositeInterpolationData)(tvals,idxs,deriv) = ode_interpolation(tvals,interp,idxs,deriv)
-(interp::InterpolationData)(val,tvals,idxs,deriv) = ode_interpolation!(val,tvals,interp,idxs,deriv)
-(interp::CompositeInterpolationData)(val,tvals,idxs,deriv) = ode_interpolation!(val,tvals,interp,idxs,deriv)
+(interp::InterpolationData)(tvals,idxs,deriv,p) = ode_interpolation(tvals,interp,idxs,deriv,p)
+(interp::CompositeInterpolationData)(tvals,idxs,deriv,p) = ode_interpolation(tvals,interp,idxs,deriv,p)
+(interp::InterpolationData)(val,tvals,idxs,deriv,p) = ode_interpolation!(val,tvals,interp,idxs,deriv,p)
+(interp::CompositeInterpolationData)(val,tvals,idxs,deriv,p) = ode_interpolation!(val,tvals,interp,idxs,deriv,p)
 
 function InterpolationData(id::InterpolationData,f)
   InterpolationData(f,id.timeseries,

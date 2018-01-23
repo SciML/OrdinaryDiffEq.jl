@@ -138,7 +138,7 @@ function initialize!(integrator, cache::Vern7ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::Vern7ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,k,f = integrator
+  @unpack t,dt,uprev,u,k,f,p = integrator
   @unpack c2,c3,c4,c5,c6,c7,c8,a021,a031,a032,a041,a043,a051,a053,a054,a061,a063,a064,a065,a071,a073,a074,a075,a076,a081,a083,a084,a085,a086,a087,a091,a093,a094,a095,a096,a097,a098,a101,a103,a104,a105,a106,a107,b1,b4,b5,b6,b7,b8,b9,btilde1,btilde4,btilde5,btilde6,btilde7,btilde8,btilde9,btilde10 = cache
   k1 = f(uprev, p, t)
   a = dt*a021

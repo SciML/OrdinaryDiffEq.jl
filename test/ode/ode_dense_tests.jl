@@ -16,7 +16,7 @@ for idx in eachindex(interpolation_results_2d)
 end
 
 f_linear_inplace = (du,u,p,t) -> begin @. du = 1.01 * u end
-(::typeof(f_linear_inplace))(::Type{Val{:analytic}}, t, u0) = exp(1.01*t)*u0
+(::typeof(f_linear_inplace))(::Type{Val{:analytic}}, u0, p, t) = exp(1.01*t)*u0
 prob_ode_linear_inplace = ODEProblem(f_linear_inplace, [0.5], (0.,1.))
 const interpolation_results_1d_inplace = Vector{typeof(prob_ode_linear_inplace.u0)}(length(interpolation_points))
 for idx in eachindex(interpolation_results_1d_inplace)

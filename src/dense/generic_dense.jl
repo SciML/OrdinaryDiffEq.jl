@@ -6,9 +6,14 @@
 
 function ode_addsteps!{calcVal,calcVal2,calcVal3}(integrator,f=integrator.f,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if !(typeof(integrator.cache) <: CompositeCache)
-    ode_addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.u,integrator.dt,f,integrator.cache,always_calc_begin,allow_calc_end,force_calc_end)
+    ode_addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.u,
+                  integrator.dt,f,integrator.p,integrator.cache,
+                  always_calc_begin,allow_calc_end,force_calc_end)
   else
-    ode_addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.u,integrator.dt,f,integrator.cache.caches[integrator.cache.current],always_calc_begin,allow_calc_end,force_calc_end)
+    ode_addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.u,
+                  integrator.dt,f,integrator.p,
+                  integrator.cache.caches[integrator.cache.current],
+                  always_calc_begin,allow_calc_end,force_calc_end)
   end
 end
 
@@ -97,7 +102,7 @@ ode_interpolation(tvals,ts,timeseries,ks)
 Get the value at tvals where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-function ode_interpolation(tvals,id,idxs,deriv)
+function ode_interpolation(tvals,id,idxs,deriv,p)
   @unpack ts,timeseries,ks,f,cache = id
   tdir = sign(ts[end]-ts[1])
   idx = sortperm(tvals,rev=tdir<0)
@@ -136,10 +141,10 @@ function ode_interpolation(tvals,id,idxs,deriv)
       elseif !id.dense
         vals[j] = linear_interpolant(Θ,dt,timeseries[i-1],timeseries[i],idxs,deriv)
       elseif typeof(cache) <: CompositeCache
-        ode_addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,cache.caches[id.alg_choice[i-1]]) # update the kcurrent
+        ode_addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,p,cache.caches[id.alg_choice[i-1]]) # update the kcurrent
         vals[j] = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache.caches[id.alg_choice[i-1]],idxs,deriv)
       else
-        ode_addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,cache) # update the kcurrent
+        ode_addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,p,cache) # update the kcurrent
         vals[j] = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache,idxs,deriv)
       end
     end
@@ -153,7 +158,7 @@ ode_interpolation(tvals,ts,timeseries,ks)
 Get the value at tvals where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-function ode_interpolation!(vals,tvals,id,idxs,deriv)
+function ode_interpolation!(vals,tvals,id,idxs,deriv,p)
   @unpack ts,timeseries,ks,f,cache = id
   tdir = sign(ts[end]-ts[1])
   idx = sortperm(tvals,rev=tdir<0)
@@ -193,14 +198,14 @@ function ode_interpolation!(vals,tvals,id,idxs,deriv)
           vals[j] = linear_interpolant(Θ,dt,timeseries[i-1],timeseries[i],idxs,deriv)
         end
       elseif typeof(cache) <: CompositeCache
-        ode_addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,cache.caches[id.alg_choice[i-1]]) # update the kcurrent
+        ode_addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,p,cache.caches[id.alg_choice[i-1]]) # update the kcurrent
         if eltype(timeseries) <: AbstractArray
           ode_interpolant!(vals[j],Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache.caches[id.alg_choice[i-1]],idxs,deriv)
         else
           vals[j] = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache.caches[id.alg_choice[i-1]],idxs,deriv)
         end
       else
-        ode_addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,cache) # update the kcurrent
+        ode_addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,p,cache) # update the kcurrent
         if eltype(vals[j]) <: AbstractArray
           ode_interpolant!(vals[j],Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache,idxs,deriv)
         else
@@ -217,7 +222,7 @@ ode_interpolation(tval::Number,ts,timeseries,ks)
 Get the value at tval where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-function ode_interpolation(tval::Number,id,idxs,deriv)
+function ode_interpolation(tval::Number,id,idxs,deriv,p)
   @unpack ts,timeseries,ks,f,cache = id
   tdir = sign(ts[end]-ts[1])
   tdir*tval > tdir*ts[end] && error("Solution interpolation cannot extrapolate past the final timepoint. Either solve on a longer timespan or use the local extrapolation from the integrator interface.")
@@ -245,10 +250,10 @@ function ode_interpolation(tval::Number,id,idxs,deriv)
     elseif !id.dense
       val = linear_interpolant(Θ,dt,timeseries[i-1],timeseries[i],idxs,deriv)
     elseif typeof(cache) <: CompositeCache
-      ode_addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,cache.caches[id.alg_choice[i-1]]) # update the kcurrent
+      ode_addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,p,cache.caches[id.alg_choice[i-1]]) # update the kcurrent
       val = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache.caches[id.alg_choice[i-1]],idxs,deriv)
     else
-      ode_addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,cache) # update the kcurrent
+      ode_addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,p,cache) # update the kcurrent
       val = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache,idxs,deriv)
     end
   end
@@ -261,7 +266,7 @@ ode_interpolation!(out,tval::Number,ts,timeseries,ks)
 Get the value at tval where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-function ode_interpolation!(out,tval::Number,id,idxs,deriv)
+function ode_interpolation!(out,tval::Number,id,idxs,deriv,p)
   @unpack ts,timeseries,ks,f,cache = id
   @inbounds tdir = sign(ts[end]-ts[1])
   @inbounds tdir*tval > tdir*ts[end] && error("Solution interpolation cannot extrapolate past the final timepoint. Either solve on a longer timespan or use the local extrapolation from the integrator interface.")
@@ -290,10 +295,10 @@ function ode_interpolation!(out,tval::Number,id,idxs,deriv)
       elseif !id.dense
         linear_interpolant!(out,Θ,dt,timeseries[i-1],timeseries[i],idxs,deriv)
       elseif typeof(cache) <: CompositeCache
-        ode_addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,cache.caches[id.alg_choice[i-1]]) # update the kcurrent
+        ode_addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,p,cache.caches[id.alg_choice[i-1]]) # update the kcurrent
         ode_interpolant!(out,Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache.caches[id.alg_choice[i-1]],idxs,deriv)
       else
-        ode_addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,cache) # update the kcurrent
+        ode_addsteps!(ks[i],ts[i-1],timeseries[i-1],timeseries[i],dt,f,p,cache) # update the kcurrent
         ode_interpolant!(out,Θ,dt,timeseries[i-1],timeseries[i],ks[i],cache,idxs,deriv)
       end
     end
@@ -303,17 +308,17 @@ end
 """
 By default, simpledense
 """
-function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,p,cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<2 || calcVal
-    if isinplace(f,3)
+    if typeof(cache) <: OrdinaryDiffEqMutableCache
       rtmp = similar(u, eltype(eltype(k)))
-      f(t,uprev,rtmp)
+      f(rtmp,uprev,p,t)
       copyat_or_push!(k,1,rtmp)
-      f(t+dt,u,rtmp)
+      f(rtmp,u,p,t+dt)
       copyat_or_push!(k,2,rtmp,Val{false})
     else
-      copyat_or_push!(k,1,f(t,uprev))
-      copyat_or_push!(k,2,f(t+dt,u))
+      copyat_or_push!(k,1,f(uprev,p,t))
+      copyat_or_push!(k,2,f(u,p,t+dt))
     end
   end
   nothing

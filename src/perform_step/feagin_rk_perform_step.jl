@@ -112,7 +112,7 @@ end
   @tight_loop_macros for i in uidx
     @inbounds tmp[i] = uprev[i] + a*k1[i]
   end
-  f(@muladd(t + c1*dt),tmp,k2)
+  f(k2,tmp,p,t + c1*dt)
   @tight_loop_macros for i in uidx
     @inbounds tmp[i] = uprev[i] + dt*(a0200*k1[i] + a0201*k2[i])
   end
@@ -431,7 +431,7 @@ end
 end
 
 function initialize!(integrator,cache::Feagin14ConstantCache,f=integrator.f)
-  integrator.fsalfirst = f(integrator.t,integrator.uprev) # Pre-start fsal
+  integrator.fsalfirst = f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
