@@ -6,19 +6,19 @@ dts = 1.//2.^(8:-1:4)
 testTol = 0.25
 
 f = (u,p,t)->cos(t)
-(p::typeof(f))(::Type{Val{:analytic}},u0,p,t) = sin(t)
+(::typeof(f))(::Type{Val{:analytic}},u0,p,t) = sin(t)
 prob_ode_sin = ODEProblem(f, 0.,(0.0,1.0))
 
 f = (du,u,p,t)->du[1]=cos(t)
-(p::typeof(f))(::Type{Val{:analytic}},u0,p,t) = [sin(t)]
+(::typeof(f))(::Type{Val{:analytic}},u0,p,t) = [sin(t)]
 prob_ode_sin_inplace = ODEProblem(f, [0.], (0.0,1.0))
 
 f = (u,p,t)->sin(u)
-(p::typeof(f))(::Type{Val{:analytic}},u0,p,t) = 2*acot(exp(-t)*cot(0.5))
+(::typeof(f))(::Type{Val{:analytic}},u0,p,t) = 2*acot(exp(-t)*cot(0.5))
 prob_ode_nonlinear = ODEProblem(f, 1.,(0.,0.5))
 
 f = (du,u,p,t)->du[1]=sin(u[1])
-(p::typeof(f))(::Type{Val{:analytic}},u0,p,t) = [2*acot(exp(-t)*cot(0.5))]
+(::typeof(f))(::Type{Val{:analytic}},u0,p,t) = [2*acot(exp(-t)*cot(0.5))]
 prob_ode_nonlinear_inplace = ODEProblem(f,[1.],(0.,0.5))
 
 const linear_bigα2 = parse(BigFloat,"1.01")
