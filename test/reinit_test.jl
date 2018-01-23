@@ -58,7 +58,8 @@ solve!(integrator)
 
 u = saved_values.saveval
 t = saved_values.t
-saved_values = SavedValues(Float64, Float64)
+resize!(saved_values.t,0)
+resize!(saved_values.saveval,0)
 reinit!(integrator)
 integrator.dt = dt
 solve!(integrator)
