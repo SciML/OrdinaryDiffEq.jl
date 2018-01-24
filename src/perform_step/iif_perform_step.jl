@@ -61,7 +61,8 @@ mutable struct RHS_IIF{F,uType,tType,aType,DiffCacheType,P} <: Function
   p::P
 end
 function (f::RHS_IIF)(resid,u)
-  du = get_du(f.dual_cache, eltype(u))
+  _du = get_du(f.dual_cache, eltype(u))
+  du = reinterpret(eltype(u),_du)
   f.f.f2(du,u,f.p,f.t+f.dt)
   @. resid = u - f.tmp - (f.a*f.dt)*du
 end

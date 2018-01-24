@@ -22,7 +22,8 @@ mutable struct ImplicitRHS{F,uType,tType,DiffCacheType,P} <: Function
 end
 
 function (p::ImplicitRHS)(resid,u)
-  du1 = get_du(p.dual_cache, eltype(u))
+  _du1 = get_du(p.dual_cache, eltype(u))
+  du1 = reinterpret(eltype(u),_du1)
   p.f(du1,u,p.p,p.t+p.dt)
   @. resid = u - p.tmp - p.a*du1
 end

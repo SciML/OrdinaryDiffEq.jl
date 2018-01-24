@@ -29,12 +29,12 @@ tspan = (0.0,50.0)
 prob = ODEProblem(f,u0,tspan)
 sol = solve(prob,Tsit5(),callback=callback)
 
-# Chunk size must be fixed since otherwise it's dependent on size
-# when the size is less than 10, so errors here
-
+#=
+# https://github.com/JuliaLang/julia/issues/10354
 sol = solve(prob,GenericImplicitEuler(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/2)
 
 sol = solve(prob,GenericTrapezoid(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/2)
+=#
 
 sol = solve(prob,Rosenbrock23(chunk_size=1),callback=callback,dt=1/2)
 
