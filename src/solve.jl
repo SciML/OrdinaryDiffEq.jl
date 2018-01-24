@@ -394,7 +394,7 @@ function initialize_callbacks!(integrator, initialize_save = true)
   callbacks = integrator.opts.callback
   integrator.u_modified = true
 
-  u_modified = initialize!(callbacks,t,u,integrator)
+  u_modified = initialize!(callbacks,u,t,integrator)
 
   # if the user modifies u, we need to fix previous values before initializing
   # FSAL in order for the starting derivatives to be correct
