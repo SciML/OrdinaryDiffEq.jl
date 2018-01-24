@@ -19,7 +19,7 @@ done(integrator::ODEIntegrator) = done(integrator,integrator.iter)
     postamble!(integrator)
     return true
   end
-  if integrator.opts.unstable_check(integrator.dt,integrator.t,integrator.u)
+  if integrator.opts.unstable_check(integrator.dt,integrator.u,integrator.p,integrator.t)
     if integrator.opts.verbose
       warn("Instability detected. Aborting")
     end

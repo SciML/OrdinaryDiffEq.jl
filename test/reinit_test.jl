@@ -46,12 +46,12 @@ solve!(integrator)
 @test t == integrator.sol.t
 
 #callback test
-g(t,u) = 2.0*t-2.0
+g(u,p,t) = 2.0*t-2.0
 u0=0.0
 tspan = (0.0,4.0)
 prob = ODEProblem(g,u0,tspan)
 saved_values = SavedValues(Float64, Float64)
-cb = SavingCallback((t,u,integrator)->u, saved_values)
+cb = SavingCallback((u,t,integrator)->u, saved_values)
 integrator = init(prob,Tsit5();dt=1//2^(4),callback = cb)
 dt = integrator.dt
 solve!(integrator)

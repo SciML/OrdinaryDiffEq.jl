@@ -8,7 +8,7 @@ f = function (du,u,p,t)
   end
 end
 
-condition = function (t,u,integrator)
+condition = function (u,t,integrator)
   1-maximum(u)
 end
 

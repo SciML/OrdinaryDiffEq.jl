@@ -14,7 +14,7 @@ const tstop1 = [5.]
 const tstop2 = [8.]
 const tstop = [5.;8.]
 
-condition = function (t,u,integrator)
+condition = function (u,t,integrator)
   t in tstop1
 end
 
@@ -28,7 +28,7 @@ save_positions = (true,true)
 
 cb = DiscreteCallback(condition, affect!; save_positions=save_positions)
 
-condition2 = function (t,u,integrator)
+condition2 = function (u,t,integrator)
   t in tstop2
 end
 
@@ -117,11 +117,11 @@ end
 const tstop1 = [10.0]
 const tstop2 = [300.]
 
-function mat_condition(t,u,integrator)
+function mat_condition(u,t,integrator)
   t in tstop1
 end
 
-function mat_condition2(t,u,integrator)
+function mat_condition2(u,t,integrator)
   t in tstop2
 end
 
