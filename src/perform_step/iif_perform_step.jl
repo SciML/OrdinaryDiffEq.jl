@@ -7,7 +7,7 @@ mutable struct RHS_IIF_Scalar{F,uType,tType,aType,P} <: Function
   p::P
 end
 
-function (f::RHS_IIF_Scalar)(u,resid)
+function (f::RHS_IIF_Scalar)(resid,u)
   resid[1] = first(u) - f.tmp - (f.a*f.dt)*first(f.f.f2(first(u),f.p,f.t+f.dt,))
 end
 
@@ -60,7 +60,7 @@ mutable struct RHS_IIF{F,uType,tType,aType,DiffCacheType,P} <: Function
   dual_cache::DiffCacheType
   p::P
 end
-function (f::RHS_IIF)(u,resid)
+function (f::RHS_IIF)(resid,u)
   du = get_du(f.dual_cache, eltype(u))
   f.f.f2(du,u,f.p,f.t+f.dt)
   @. resid = u - f.tmp - (f.a*f.dt)*du
