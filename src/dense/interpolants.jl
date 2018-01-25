@@ -1285,7 +1285,7 @@ end
   k5, k6 = kk3.x
   @unpack r14,r13,r12,r11,r10,r34,r33,r32,r31,r44,r43,r42,r41,r54,r53,r52,r51,r64,r63,r62,r61,rp14,rp13,rp12,rp11,rp10,rp34,rp33,rp32,rp31,rp44,rp43,rp42,rp41,rp54,rp53,rp52,rp51,rp64,rp63,rp62,rp61 = cache
 
-  uprev,duprev = y₀.x
+  duprev,uprev = y₀.x
   dtsq = dt^2
 
   b1Θ  = @evalpoly(Θ, r10, r11, r12, r13, r14)
@@ -1301,25 +1301,17 @@ end
   bp6Θ  = @evalpoly(Θ, 0   , rp61, rp62, rp63, rp64)
 
   if idxs == nothing
-    # return @. uprev + dt*Θ*(duprev + dt*Θ*(b1Θ*k1.x[2] + b3Θ*k3.x[2] +
-    #                                     b4Θ*k4.x[2] + b5Θ*k5.x[2] + b6Θ*k6.x[2])),
-    #        @. duprev + dt*Θ*(bp1Θ*k1.x[2] + bp3Θ*k3.x[2] +
-    #                          bp4Θ*k4.x[2] + bp5Θ*k5.x[2] + bp6Θ*k6.x[2])
-    return ArrayPartition(uprev + dt*Θ*(duprev + dt*Θ*(b1Θ*k1 + b3Θ*k3 +
-                                        b4Θ*k4 + b5Θ*k5 + b6Θ*k6)),
-          duprev + dt*Θ*(bp1Θ*k1 + bp3Θ*k3 +
-                          bp4Θ*k4 + bp5Θ*k5 + bp6Θ*k6))
+    return ArrayPartition(duprev + dt*Θ*(bp1Θ*k1 + bp3Θ*k3 +
+                    bp4Θ*k4 + bp5Θ*k5 + bp6Θ*k6),
+                    uprev + dt*Θ*(duprev + dt*Θ*(b1Θ*k1 + b3Θ*k3 +
+                                        b4Θ*k4 + b5Θ*k5 + b6Θ*k6)))
   else
-    # return @. uprev[idxs] + dt*Θ*(duprev[idxs] + dt*Θ*(b1Θ*k1.x[2][idxs] +
-    #                                                    b3Θ*k3.x[2][idxs] +
-    #                                                    b4Θ*k4.x[2][idxs] + b5Θ*k5.x[2][idxs] + b6Θ*k6.x[2][idxs])),
-    #        @. duprev[idxs] + dt*Θ*(bp1Θ*k1.x[2][idxs] + bp3Θ*k3.x[2][idxs] +
-    #                                bp4Θ*k4.x[2][idxs] + bp5Θ*k5.x[2][idxs] + bp6Θ*k6.x[2][idxs])
-    return ArrayPartition(uprev[idxs] + dt*Θ*(duprev[idxs] + dt*Θ*(b1Θ*k1[idxs] +
+    return ArrayPartition(
+        duprev[idxs] + dt*Θ*(bp1Θ*k1[idxs] + bp3Θ*k3[idxs] +
+        bp4Θ*k4[idxs] + bp5Θ*k5[idxs] + bp6Θ*k6[idxs]),
+        uprev[idxs] + dt*Θ*(duprev[idxs] + dt*Θ*(b1Θ*k1[idxs] +
                 b3Θ*k3[idxs] +
-                b4Θ*k4[idxs] + b5Θ*k5[idxs] + b6Θ*k6[idxs])),
-          duprev[idxs] + dt*Θ*(bp1Θ*k1[idxs] + bp3Θ*k3[idxs] +
-              bp4Θ*k4[idxs] + bp5Θ*k5[idxs] + bp6Θ*k6[idxs]))
+                b4Θ*k4[idxs] + b5Θ*k5[idxs] + b6Θ*k6[idxs])))
   end
 
 end
@@ -1331,7 +1323,7 @@ end
   k5, k6 = kk3.x
   @unpack r14,r13,r12,r11,r10,r34,r33,r32,r31,r44,r43,r42,r41,r54,r53,r52,r51,r64,r63,r62,r61,rp14,rp13,rp12,rp11,rp10,rp34,rp33,rp32,rp31,rp44,rp43,rp42,rp41,rp54,rp53,rp52,rp51,rp64,rp63,rp62,rp61 = cache.tab
 
-  uprev,duprev = y₀.x
+  duprev,uprev = y₀.x
   dtsq = dt^2
 
   b1Θ  = @evalpoly(Θ, r10, r11, r12, r13, r14)
@@ -1348,40 +1340,38 @@ end
 
   @inbounds if out == nothing
     if idxs == nothing
-      # return @. uprev + dt*Θ*(duprev + dt*Θ*(b1Θ*k1.x[2] + b3Θ*k3.x[2] +
-      #                                     b4Θ*k4.x[2] + b5Θ*k5.x[2] + b6Θ*k6.x[2])),
-      #        @. duprev + dt*Θ*(bp1Θ*k1.x[2] + bp3Θ*k3.x[2] +
-      #                          bp4Θ*k4.x[2] + bp5Θ*k5.x[2] + bp6Θ*k6.x[2])
-      return uprev + dt*Θ*(duprev + dt*Θ*(b1Θ*k1 + b3Θ*k3 +
-                                          b4Θ*k4 + b5Θ*k5 + b6Θ*k6)),
-            duprev + dt*Θ*(bp1Θ*k1 + bp3Θ*k3 +
-                            bp4Θ*k4 + bp5Θ*k5 + bp6Θ*k6)
+      return duprev + dt*Θ*(bp1Θ*k1 + bp3Θ*k3 +
+                      bp4Θ*k4 + bp5Θ*k5 + bp6Θ*k6),
+             uprev + dt*Θ*(duprev + dt*Θ*(b1Θ*k1 + b3Θ*k3 +
+                                          b4Θ*k4 + b5Θ*k5 + b6Θ*k6))
+
     else
-      # return @. uprev[idxs] + dt*Θ*(duprev[idxs] + dt*Θ*(b1Θ*k1.x[2][idxs] +
-      #                                                    b3Θ*k3.x[2][idxs] +
-      #                                                    b4Θ*k4.x[2][idxs] + b5Θ*k5.x[2][idxs] + b6Θ*k6.x[2][idxs])),
-      #        @. duprev[idxs] + dt*Θ*(bp1Θ*k1.x[2][idxs] + bp3Θ*k3.x[2][idxs] +
-      #                                bp4Θ*k4.x[2][idxs] + bp5Θ*k5.x[2][idxs] + bp6Θ*k6.x[2][idxs])
-      return uprev[idxs] + dt*Θ*(duprev[idxs] + dt*Θ*(b1Θ*k1[idxs] +
-                  b3Θ*k3[idxs] +
-                  b4Θ*k4[idxs] + b5Θ*k5[idxs] + b6Θ*k6[idxs])),
-            duprev[idxs] + dt*Θ*(bp1Θ*k1[idxs] + bp3Θ*k3[idxs] +
-                bp4Θ*k4[idxs] + bp5Θ*k5[idxs] + bp6Θ*k6[idxs])
+      # return @. duprev[idxs] + dt*Θ*(bp1Θ*k1.x[2][idxs] + bp3Θ*k3.x[2][idxs] +
+      #           bp4Θ*k4.x[2][idxs] + bp5Θ*k5.x[2][idxs] + bp6Θ*k6.x[2][idxs]),
+      #        @. uprev[idxs] + dt*Θ*(duprev[idxs] + dt*Θ*(b1Θ*k1.x[2][idxs] +
+      #           b3Θ*k3.x[2][idxs] +
+      #           b4Θ*k4.x[2][idxs] + b5Θ*k5.x[2][idxs] + b6Θ*k6.x[2][idxs]))
+
+      return duprev[idxs] + dt*Θ*(bp1Θ*k1[idxs] + bp3Θ*k3[idxs] +
+             bp4Θ*k4[idxs] + bp5Θ*k5[idxs] + bp6Θ*k6[idxs]),
+             uprev[idxs] + dt*Θ*(duprev[idxs] + dt*Θ*(b1Θ*k1[idxs] +
+                  b3Θ*k3[idxs] + b4Θ*k4[idxs] + b5Θ*k5[idxs] + b6Θ*k6[idxs]))
+
     end
   elseif idxs == nothing
       for i in eachindex(out.x[1])
-      out.x[1][i]  = uprev[i] + dt*Θ*(duprev[i] + dt*Θ*(b1Θ*k1[i] +
+      out.x[2][i]  = uprev[i] + dt*Θ*(duprev[i] + dt*Θ*(b1Θ*k1[i] +
                            b3Θ*k3[i] +
                            b4Θ*k4[i] + b5Θ*k5[i] + b6Θ*k6[i]))
-      out.x[2][i] =  duprev[i] + dt*Θ*(bp1Θ*k1[i] + bp3Θ*k3[i] +
+      out.x[1][i] =  duprev[i] + dt*Θ*(bp1Θ*k1[i] + bp3Θ*k3[i] +
                         bp4Θ*k4[i] + bp5Θ*k5[i] + bp6Θ*k6[i])
     end
   else
     for (j,i) in enumerate(idxs)
-      out.x[1][j]  = uprev[i] + dt*Θ*(duprev[i] + dt*Θ*(b1Θ*k1[i] +
+      out.x[2][j]  = uprev[i] + dt*Θ*(duprev[i] + dt*Θ*(b1Θ*k1[i] +
                            b3Θ*k3[i] +
                            b4Θ*k4[i] + b5Θ*k5[i] + b6Θ*k6[i]))
-      out.x[2][j] = duprev[i] + dt*Θ*(bp1Θ*k1[i] + bp3Θ*k3[i] +
+      out.x[1][j] = duprev[i] + dt*Θ*(bp1Θ*k1[i] + bp3Θ*k3[i] +
                         bp4Θ*k4[i] + bp5Θ*k5[i] + bp6Θ*k6[i])
     end
   end
