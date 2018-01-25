@@ -25,7 +25,7 @@ u_cache(c::ImplicitEulerCache)    = (c.uprev2,c.z,c.dz)
 du_cache(c::ImplicitEulerCache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
@@ -63,7 +63,7 @@ mutable struct ImplicitEulerConstantCache{F,uEltypeNoUnits} <: OrdinaryDiffEqCon
 end
 
 function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,::Type{Val{false}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   ηold = one(uEltypeNoUnits)
 
@@ -89,7 +89,7 @@ mutable struct ImplicitMidpointConstantCache{F,uEltypeNoUnits} <: OrdinaryDiffEq
   newton_iters::Int
 end
 
-function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,::Type{Val{false}})
+function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   ηold = one(uEltypeNoUnits)
 
@@ -132,7 +132,7 @@ u_cache(c::ImplicitMidpointCache)    = (c.z,c.dz)
 du_cache(c::ImplicitMidpointCache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
@@ -174,7 +174,7 @@ mutable struct TrapezoidConstantCache{F,uEltypeNoUnits,uType,tType} <: OrdinaryD
 end
 
 function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   ηold = one(uEltypeNoUnits)
   uprev3 = u
@@ -223,7 +223,7 @@ u_cache(c::TrapezoidCache)    = (c.uprev2,c.z,c.dz)
 du_cache(c::TrapezoidCache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
@@ -268,7 +268,7 @@ mutable struct TRBDF2ConstantCache{F,uEltypeNoUnits,Tab} <: OrdinaryDiffEqConsta
 end
 
 function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   ηold = one(uEltypeNoUnits)
 
@@ -317,7 +317,7 @@ u_cache(c::TRBDF2Cache)    = (c.zprev,c.zᵧ,c.z,c.dz)
 du_cache(c::TRBDF2Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
@@ -364,7 +364,7 @@ mutable struct SDIRK2ConstantCache{F,uEltypeNoUnits} <: OrdinaryDiffEqConstantCa
 end
 
 function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   ηold = one(uEltypeNoUnits)
 
@@ -409,7 +409,7 @@ u_cache(c::SDIRK2Cache)    = (c.z₁,c.z₂,c.dz)
 du_cache(c::SDIRK2Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
@@ -454,7 +454,7 @@ mutable struct SSPSDIRK2ConstantCache{F,uEltypeNoUnits} <: OrdinaryDiffEqConstan
 end
 
 function alg_cache(alg::SSPSDIRK2,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   ηold = one(uEltypeNoUnits)
   uprev3 = u
@@ -500,7 +500,7 @@ u_cache(c::SSPSDIRK2Cache)    = (c.z₁,c.z₂,c.dz)
 du_cache(c::SSPSDIRK2Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::SSPSDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
@@ -546,7 +546,7 @@ mutable struct Kvaerno3ConstantCache{UF,uEltypeNoUnits,Tab} <: OrdinaryDiffEqCon
 end
 
 function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   ηold = one(uEltypeNoUnits)
 
@@ -596,7 +596,7 @@ u_cache(c::Kvaerno3Cache)    = (c.z₁,c.z₂,c.z₃,c.z₄,c.dz)
 du_cache(c::Kvaerno3Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
@@ -644,7 +644,7 @@ mutable struct Cash4ConstantCache{F,uEltypeNoUnits,Tab} <: OrdinaryDiffEqConstan
 end
 
 function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   ηold = one(uEltypeNoUnits)
 
@@ -695,7 +695,7 @@ u_cache(c::Cash4Cache)    = (c.z₁,c.z₂,c.z₃,c.z₄,c.z₅,c.dz)
 du_cache(c::Cash4Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
@@ -744,7 +744,7 @@ mutable struct Hairer4ConstantCache{F,uEltypeNoUnits,Tab} <: OrdinaryDiffEqConst
 end
 
 function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   ηold = one(uEltypeNoUnits)
 
@@ -799,7 +799,7 @@ u_cache(c::Hairer4Cache)    = (c.z₁,c.z₂,c.z₃,c.z₄,c.z₅,c.dz)
 du_cache(c::Hairer4Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?

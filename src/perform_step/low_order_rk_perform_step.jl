@@ -715,12 +715,14 @@ end
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
-  @tight_loop_macros for i in uidx
-    #integrator.k[4] == k5
-    @inbounds integrator.k[4][i] = d1*k1[i]+d3*k3[i]+d4*k4[i]+d5*k5[i]+d6*k6[i]+d7*k7[i]
-    #bspl == k3
-    @inbounds bspl[i] = k1[i] - update[i]
-    # k6 === integrator.k[3] === k2
-    @inbounds integrator.k[3][i] = update[i] - k7[i] - bspl[i]
+  if integrator.opts.calck
+    @tight_loop_macros for i in uidx
+      #integrator.k[4] == k5
+      @inbounds integrator.k[4][i] = d1*k1[i]+d3*k3[i]+d4*k4[i]+d5*k5[i]+d6*k6[i]+d7*k7[i]
+      #bspl == k3
+      @inbounds bspl[i] = k1[i] - update[i]
+      # k6 === integrator.k[3] === k2
+      @inbounds integrator.k[3][i] = update[i] - k7[i] - bspl[i]
+    end
   end
 end
