@@ -285,7 +285,7 @@ function get_etdrk4_operators(_h,_L::Diagonal)
 
     Q = @. Float64((E2-1)/L)
     a = @. Float64(coeff * (-4 - A + E*(4 - 3A  + A2)))
-    b = @. Float64(coeff * (2I + A + E*(-2 + A)))
+    b = @. Float64(coeff * (2 + A + E*(-2 + A)))
     c = @. Float64(coeff * (-4 - 3A - A2 + E*(4-A)))
     Diagonal(Float64.(E)),Diagonal(Float64.(E2)),Diagonal(a),Diagonal(b),Diagonal(c),Diagonal(Q)
 end
