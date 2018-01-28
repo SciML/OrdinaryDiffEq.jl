@@ -201,11 +201,12 @@ u_cache(c::ETDRK4Cache) = ()
 du_cache(c::ETDRK4Cache) = (c.k,c.fsalfirst,c.rtmp)
 
 function get_etdrk4_operators(_h,L)
-    L .*= _h/2
+
+    @. L .*= _h/2
     _E2 = expm(L)
     E2 = big.(_E2);
     E = E2*E2
-    L .*= 2/_h
+    @. L *= 2/_h
     h = big(_h)
     A = h*L
 
@@ -265,4 +266,26 @@ function get_etdrk4_operators(_h,L)
     c = Float64.(tmp2)
 
     Float64.(E),_E2,a,b,c,Q
+end
+
+function get_etdrk4_operators(_h,_L::Diagonal)
+
+    L = _L.diag
+
+    @. L = _h/2*L
+    _E2 = exp.(L)
+    E2 = big.(_E2);
+    E = E2.*E2
+    @. L *= 2/_h
+    h = big(_h)
+    A = h.*L
+
+    coeff = @. h^(-2) * L^(-3)
+    A2 = A.^2
+
+    Q = @. Float64((E2-1)/L)
+    a = @. Float64(coeff * (-4 - A + E*(4 - 3A  + A2)))
+    b = @. Float64(coeff * (2I + A + E*(-2 + A)))
+    c = @. Float64(coeff * (-4 - 3A - A2 + E*(4-A)))
+    Diagonal(Float64.(E)),Diagonal(Float64.(E2)),Diagonal(a),Diagonal(b),Diagonal(c),Diagonal(Q)
 end
