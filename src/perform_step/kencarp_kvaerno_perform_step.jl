@@ -197,7 +197,7 @@ end
 
   if has_invW(f)
     # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW},t,uprev,γdt,W) # W == inverse W
+    !repeat_step && f(Val{:invW},W,uprev,p,γdt,t) # W == inverse W
   else
     # skip calculation of J if step is repeated
     if repeat_step || (!integrator.last_stepfail && cache.newton_iters == 1 && cache.ηold < integrator.alg.new_jac_conv_bound)
@@ -205,7 +205,7 @@ end
     else # Compute a new Jacobian
       new_jac = true
       if has_jac(f)
-        f(Val{:jac},t,uprev,J)
+        f(Val{:jac}, J, uprev, p, t)
       else
         uf.t = t
         jacobian!(J, uf, uprev, du1, integrator, jac_config)
@@ -672,7 +672,7 @@ end
 
   if has_invW(f)
     # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW},t,uprev,γdt,W) # W == inverse W
+    !repeat_step && f(Val{:invW},W,uprev,p,γdt,t) # W == inverse W
   else
     # skip calculation of J if step is repeated
     if repeat_step || (!integrator.last_stepfail && cache.newton_iters == 1 && cache.ηold < integrator.alg.new_jac_conv_bound)
@@ -680,7 +680,7 @@ end
     else # Compute a new Jacobian
       new_jac = true
       if has_jac(f)
-        f(Val{:jac},t,uprev,J)
+        f(Val{:jac}, J, uprev, p, t)
       else
         uf.t = t
         jacobian!(J, uf, uprev, du1, integrator, jac_config)
@@ -1191,7 +1191,7 @@ end
   # calculate W
   if has_invW(f)
     # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW},t,uprev,γdt,W) # W == inverse W
+    !repeat_step && f(Val{:invW},W,uprev,p,γdt,t) # W == inverse W
   else
     # skip calculation of J if step is repeated
     if repeat_step || (!integrator.last_stepfail && cache.newton_iters == 1 && cache.ηold < integrator.alg.new_jac_conv_bound)
@@ -1199,7 +1199,7 @@ end
     else # Compute a new Jacobian
       new_jac = true
       if has_jac(f)
-        f(Val{:jac},t,uprev,J)
+        f(Val{:jac}, J, uprev, p, t)
       else
         uf.t = t
         jacobian!(J, uf, uprev, du1, integrator, jac_config)
@@ -1825,7 +1825,7 @@ end
   # calculate W
   if has_invW(f)
     # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW},t,uprev,γdt,W) # W == inverse W
+    !repeat_step && f(Val{:invW},W,uprev,p,γdt,t) # W == inverse W
   else
     # skip calculation of J if step is repeated
     if repeat_step || (!integrator.last_stepfail && cache.newton_iters == 1 && cache.ηold < integrator.alg.new_jac_conv_bound)
@@ -1833,7 +1833,7 @@ end
     else # Compute a new Jacobian
       new_jac = true
       if has_jac(f)
-        f(Val{:jac},t,uprev,J)
+        f(Val{:jac}, J, uprev, p, t)
       else
         uf.t = t
         jacobian!(J, uf, uprev, du1, integrator, jac_config)
@@ -2561,7 +2561,7 @@ end
   # calculate W
   if has_invW(f)
     # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW},t,uprev,γdt,W) # W == inverse W
+    !repeat_step && f(Val{:invW},W,uprev,p,γdt,t) # W == inverse W
   else
     # skip calculation of J if step is repeated
     if repeat_step || (!integrator.last_stepfail && cache.newton_iters == 1 && cache.ηold < integrator.alg.new_jac_conv_bound)
@@ -2569,7 +2569,7 @@ end
     else # Compute a new Jacobian
       new_jac = true
       if has_jac(f)
-        f(Val{:jac},t,uprev,J)
+        f(Val{:jac}, J, uprev, p, t)
       else
         uf.t = t
         jacobian!(J, uf, uprev, du1, integrator, jac_config)
@@ -3409,7 +3409,7 @@ end
   # calculate W
   if has_invW(f)
     # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW},t,uprev,γdt,W) # W == inverse W
+    !repeat_step && f(Val{:invW},W,uprev,p,γdt,t) # W == inverse W
   else
     # skip calculation of J if step is repeated
     if repeat_step || (!integrator.last_stepfail && cache.newton_iters == 1 && cache.ηold < integrator.alg.new_jac_conv_bound)
@@ -3417,7 +3417,7 @@ end
     else # Compute a new Jacobian
       new_jac = true
       if has_jac(f)
-        f(Val{:jac},t,uprev,J)
+        f(Val{:jac}, J, uprev, p, t)
       else
         uf.t = t
         jacobian!(J, uf, uprev, du1, integrator, jac_config)

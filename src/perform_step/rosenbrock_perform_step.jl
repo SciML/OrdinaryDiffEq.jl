@@ -25,7 +25,7 @@ end
   # Time derivative
   if !repeat_step # skip calculation if step is repeated
     if has_tgrad(f)
-      f(Val{:tgrad}, t, uprev, dT)
+      f(Val{:tgrad}, dT, uprev, p, t)
     else
       tf.uprev = uprev
       derivative!(dT, tf, t, du2, integrator)
@@ -37,13 +37,13 @@ end
   # Jacobian
   if has_invW(f)
     # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW}, t, uprev, γ, W) # W == inverse W
+    !repeat_step && f(Val{:invW}, W, uprev, p, γ, t) # W == inverse W
 
     A_mul_B!(vectmp, W, linsolve_tmp_vec)
   else
     if !repeat_step # skip calculation of J and W if step is repeated
       if has_jac(f)
-        f(Val{:jac}, t, uprev, J)
+        f(Val{:jac}, J, uprev, p, t)
       else
 
         uf.t = t
@@ -133,7 +133,7 @@ end
   # Time derivative
   if !repeat_step # skip calculation if step is repeated
     if has_tgrad(f)
-      f(Val{:tgrad}, t, uprev, dT)
+      f(Val{:tgrad}, dT, uprev, p, t)
     else
 
       tf.uprev = uprev
@@ -145,12 +145,12 @@ end
 
   if has_invW(f)
     # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW}, t, uprev, γ, W) # W == inverse W
+    !repeat_step && f(Val{:invW}, W, uprev, p, γ, t) # W == inverse W
     A_mul_B!(vectmp, W, linsolve_tmp_vec)
   else
     if !repeat_step # skip calculation of J and W if step is repeated
       if has_jac(f)
-        f(Val{:jac}, t, uprev, J)
+        f(Val{:jac}, J, uprev, p, t)
       else
         uf.t = t
         jacobian!(J, uf, uprev, du1, integrator, jac_config)
@@ -430,7 +430,7 @@ end
   # Time derivative
   if !repeat_step # skip calculation if step is repeated
     if has_tgrad(f)
-      f(Val{:tgrad}, t, uprev,dT)
+      f(Val{:tgrad}, dT, uprev, p, t)
     else
 
       tf.uprev = uprev
@@ -443,13 +443,13 @@ end
   # Jacobian
   if has_invW(f)
     # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW_t}, t, uprev, dtgamma, W) # W == inverse W
+    !repeat_step && f(Val{:invW_t}, W, uprev, p, dtgamma, t) # W == inverse W
 
     A_mul_B!(vectmp, W, linsolve_tmp_vec)
   else
     if !repeat_step # skip calculation of J and W if step is repeated
       if has_jac(f)
-        f(Val{:jac}, t, uprev, J)
+        f(Val{:jac}, J, uprev, p, t)
       else
 
         uf.t = t
@@ -630,7 +630,7 @@ end
   # Time derivative
   if !repeat_step # skip calculation if step is repeated
     if has_tgrad(f)
-      f(Val{:tgrad},t,uprev,dT)
+      f(Val{:tgrad}, dT, uprev, p, t)
     else
 
       tf.uprev = uprev
@@ -642,13 +642,13 @@ end
 
   if has_invW(f)
     # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW_t}, t, uprev, dtgamma, W) # W == inverse W
+    !repeat_step && f(Val{:invW_t}, W, uprev, p, dtgamma, t) # W == inverse W
 
     A_mul_B!(vectmp, W, linsolve_tmp_vec)
   else
     if !repeat_step # skip calculation of J and W if step is repeated
       if has_jac(f)
-        f(Val{:jac}, t, uprev,J)
+        f(Val{:jac}, J, uprev, p, t)
       else
 
         uf.t = t
@@ -854,7 +854,7 @@ end
   # Time derivative
   if !repeat_step # skip calculation if step is repeated
     if has_tgrad(f)
-      f(Val{:tgrad}, t, uprev, dT)
+      f(Val{:tgrad}, dT, uprev, p, t)
     else
 
       tf.uprev = uprev
@@ -867,13 +867,13 @@ end
   # Jacobian
   if has_invW(f)
     # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW_t}, t, uprev, dtgamma, W) # W == inverse W
+    !repeat_step && f(Val{:invW_t}, W, uprev, p, dtgamma, t) # W == inverse W
 
     A_mul_B!(vectmp, W, linsolve_tmp_vec)
   else
     if !repeat_step # skip calculation of J and W if step is repeated
       if has_jac(f)
-        f(Val{:jac}, t, uprev, J)
+        f(Val{:jac}, J, uprev, p, t)
       else
 
         uf.t = t
@@ -1102,7 +1102,7 @@ end
   # Time derivative
   if !repeat_step # skip calculation if step is repeated
     if has_tgrad(f)
-      f(Val{:tgrad}, t, uprev, dT)
+      f(Val{:tgrad}, dT, uprev, p, t)
     else
       tf.uprev = uprev
       derivative!(dT, tf, t, du2, integrator)
@@ -1116,13 +1116,13 @@ end
   # Jacobian
   if has_invW(f)
     # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW_t}, t, uprev, dtgamma, W) # W == inverse W
+    !repeat_step && f(Val{:invW_t}, W, uprev, p, dtgamma, t) # W == inverse W
 
     A_mul_B!(vectmp, W, linsolve_tmp_vec)
   else
     if !repeat_step # skip calculation of J and W if step is repeated
       if has_jac(f)
-        f(Val{:jac}, t, uprev, J)
+        f(Val{:jac}, J, uprev, p, t)
       else
 
         uf.t = t
@@ -1451,7 +1451,7 @@ end
   # Time derivative
   if !repeat_step # skip calculation if step is repeated
     if has_tgrad(f)
-      f(Val{:tgrad},t,uprev,dT)
+      f(Val{:tgrad}, dT, uprev, p, t)
     else
       tf.uprev = uprev
       derivative!(dT, tf, t, du2, integrator)
@@ -1465,13 +1465,13 @@ end
   # Jacobian
   if has_invW(f)
     # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW_t}, t, uprev, dtgamma, W) # W == inverse W
+    !repeat_step && f(Val{:invW_t}, W, uprev, p, dtgamma, t) # W == inverse W
 
     A_mul_B!(vectmp, W, linsolve_tmp_vec)
   else
     if !repeat_step # skip calculation of J and W if step is repeated
       if has_jac(f)
-        f(Val{:jac}, t, uprev, J)
+        f(Val{:jac}, J, uprev, p, t)
       else
         uf.t = t
         jacobian!(J, uf, uprev, du1, integrator, jac_config)
