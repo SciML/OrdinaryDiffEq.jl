@@ -382,7 +382,7 @@ end
 
   k3 = W\linsolve_tmp
   u = uprev  + b1*k1 + b2*k2 + b3*k3
-  integrator.fsallast = f(u, p, t)
+  integrator.fsallast = f(u, p, t + dt)
 
   if integrator.opts.adaptive
     utilde =  btilde1*k1 + btilde2*k2 + btilde3*k3
@@ -502,7 +502,7 @@ end
 
   k3 = reshape(vectmp3, sizeu...)
   @. u = uprev + b1*k1 + b2*k2 + b3*k3
-  f( fsallast,  u, p, t)
+  f( fsallast,  u, p, t + dt)
 
   if integrator.opts.adaptive
     @. utilde = btilde1*k1 + btilde2*k2 + btilde3*k3
@@ -577,7 +577,7 @@ end
 
   k4 = W\linsolve_tmp
   u = uprev  + b1*k1 + b2*k2 + b3*k3 + b4*k4
-  integrator.fsallast = f(u, p, t)
+  integrator.fsallast = f(u, p, t + dt)
 
   if integrator.opts.adaptive
     utilde =  btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4
@@ -723,7 +723,7 @@ end
 
   k4 = reshape(vectmp4, sizeu...)
   @. u = uprev + b1*k1 + b2*k2 + b3*k3 + b4*k4
-  f( fsallast,  u, p, t)
+  f( fsallast,  u, p, t + dt)
 
   if integrator.opts.adaptive
     @. utilde = btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4
@@ -802,7 +802,7 @@ end
 
   k4 = W\linsolve_tmp
   u = uprev  + b1*k1 + b2*k2 + b3*k3 + b4*k4
-  integrator.fsallast = f(u, p, t)
+  integrator.fsallast = f(u, p, t + dt)
 
   if integrator.opts.adaptive
     utilde =  btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4
@@ -942,7 +942,7 @@ end
 
   k4 = reshape(vectmp4, sizeu...)
   @. u = uprev + b1*k1 + b2*k2 + b3*k3 + b4*k4
-  f( fsallast,  u, p, t)
+  f( fsallast,  u, p, t + dt)
 
   if integrator.opts.adaptive
     @. utilde = btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4
@@ -1211,7 +1211,7 @@ end
 
   k5 = reshape(vectmp5, sizeu...)
   u .+= k5
-  f( du,  u, p, t)
+  f( du,  u, p, t + dt)
 
   if mass_matrix == I
     # @. linsolve_tmp = du + (dtC61*k1 + dtC62*k2 + dtC65*k5 + dtC64*k4 + dtC63*k3)
