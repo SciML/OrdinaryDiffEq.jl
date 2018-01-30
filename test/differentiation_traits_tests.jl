@@ -9,7 +9,7 @@ function Lotka(du,u,p,t)
   nothing
 end
 
-function Lotka(::Type{Val{:jac}},t,u,J)
+function Lotka(::Type{Val{:jac}},J,u,p,t)
   global jac_called
   jac_called = true
   J[1,1] = 1.0 - u[2]
@@ -19,7 +19,7 @@ function Lotka(::Type{Val{:jac}},t,u,J)
   nothing
 end
 
-function Lotka(::Type{Val{:tgrad}},t,u,grad)
+function Lotka(::Type{Val{:tgrad}},grad,u,p,t)
   global tgrad_called
   tgrad_called = true
   grad[1] = 1 * 0
@@ -59,7 +59,7 @@ function Lotka3(du,u,p,t)
   nothing
 end
 
-function Lotka3(::Type{Val{:invW}},t,u,γ,iW)
+function Lotka3(::Type{Val{:invW}},iW,u,p,γ,t)
   global invW_called
   invW_called = true
   iW[1,1] = (1 - (1 * u[1] * u[2] * γ ^ 2) / (((1 - (-3 + u[1]) * γ) + (1 * u[1] * u[2] * γ ^ 2) / (1 - (1 - 1 * u[2]) * γ)) * (1 - (1 - 1 * u[2]) * γ))) / (1 - (1 - 1 * u[2]) * γ)
@@ -69,7 +69,7 @@ function Lotka3(::Type{Val{:invW}},t,u,γ,iW)
   nothing
 end
 
-function Lotka3(::Type{Val{:tgrad}},t,u,grad)
+function Lotka3(::Type{Val{:tgrad}},grad,u,p,t)
   global tgrad_called
   tgrad_called = true
   grad[1] = 1 * 0
