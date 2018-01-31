@@ -20,8 +20,11 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   save_idxs = nothing,
   save_everystep = isempty(saveat),
   save_timeseries = nothing,save_start = true,save_end = true,
+  callback=nothing,
   dense = save_everystep && !(typeof(alg) <: Discrete),
-  calck = (!isempty(setdiff(saveat,tstops)) || dense),
+  calck = (callback != nothing && callback != CallbackSet()) || # Empty callback
+          (prob.callback != nothing && prob.callback != CallbackSet()) || # Empty prob.callback
+          (!isempty(setdiff(saveat,tstops)) || dense), # and no dense output
   dt = typeof(alg) <: Discrete && isempty(tstops) ? eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
   adaptive = isadaptive(alg),
   gamma=gamma_default(alg),
@@ -46,7 +49,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   initialize_save = true,
   progress=false,progress_steps=1000,progress_name="ODE",
   progress_message = ODE_DEFAULT_PROG_MESSAGE,
-  userdata=nothing,callback=nothing,
+  userdata=nothing,
   allow_extrapolation = alg_extrapolates(alg),
   initialize_integrator=true,kwargs...)
 
