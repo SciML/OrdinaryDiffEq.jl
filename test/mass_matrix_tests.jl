@@ -51,7 +51,7 @@ sol2 = solve(prob2,RosShamp4())
 sol = solve(prob,  Rodas4())
 sol2 = solve(prob2,Rodas4())
 
-@test norm(sol .- sol2) ≈ 0 atol=1e-11
+@test norm(sol .- sol2) ≈ 0 atol=1e-9
 
 sol = solve(prob,  Rodas5())
 sol2 = solve(prob2,Rodas5())
