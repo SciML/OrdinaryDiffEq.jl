@@ -177,9 +177,9 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     sizehint!(ts,1000)
     sizehint!(ks,1000)
   else # saveat
-    sizehint!(timeseries,length(saveat)+1)
-    sizehint!(ts,length(saveat)+1)
-    sizehint!(ks,length(saveat)+1)
+    sizehint!(timeseries,length(saveat_internal)+1)
+    sizehint!(ts,length(saveat_internal)+1)
+    sizehint!(ks,length(saveat_internal)+1)
   end
 
   if save_start
