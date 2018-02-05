@@ -101,7 +101,7 @@ function savevalues!(integrator::ODEIntegrator,force_save=false,reduce_size=true
       else
         copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u[integrator.opts.save_idxs],Val{false})
       end
-      if typeof(integrator.alg) <: Discrete || integrator.opts.dense
+      if typeof(integrator.alg) <: FunctionMap || integrator.opts.dense
         integrator.saveiter_dense +=1
         if integrator.opts.dense
           if integrator.opts.save_idxs ==nothing
@@ -124,7 +124,7 @@ function savevalues!(integrator::ODEIntegrator,force_save=false,reduce_size=true
       copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u[integrator.opts.save_idxs],Val{false})
     end
     copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
-    if typeof(integrator.alg) <: Discrete || integrator.opts.dense
+    if typeof(integrator.alg) <: FunctionMap || integrator.opts.dense
       integrator.saveiter_dense +=1
       if integrator.opts.dense
         if integrator.opts.save_idxs == nothing
@@ -158,7 +158,7 @@ function solution_endpoint_match_cur_integrator!(integrator)
     else
       copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u[integrator.opts.save_idxs],Val{false})
     end
-    if typeof(integrator.alg) <: Discrete || integrator.opts.dense
+    if typeof(integrator.alg) <: FunctionMap || integrator.opts.dense
       integrator.saveiter_dense +=1
       if integrator.opts.dense
         if integrator.opts.save_idxs == nothing

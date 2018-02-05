@@ -17,22 +17,22 @@ end
 
 alg_cache{F}(alg::OrdinaryDiffEqAlgorithm,prob,callback::F) = ODEEmptyCache()
 
-struct DiscreteCache{uType,rateType} <: OrdinaryDiffEqMutableCache
+struct FunctionMapCache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   du::rateType
 end
 
-u_cache(c::DiscreteCache) = ()
-du_cache(c::DiscreteCache) = (c.du)
+u_cache(c::FunctionMapCache) = ()
+du_cache(c::FunctionMapCache) = (c.du)
 
-function alg_cache(alg::Discrete,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  DiscreteCache(u,uprev,discrete_scale_by_time(alg) ? rate_prototype : similar(u))
+function alg_cache(alg::FunctionMap,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  FunctionMapCache(u,uprev,FunctionMap_scale_by_time(alg) ? rate_prototype : similar(u))
 end
 
-struct DiscreteConstantCache <: OrdinaryDiffEqConstantCache end
+struct FunctionMapConstantCache <: OrdinaryDiffEqConstantCache end
 
-alg_cache(alg::Discrete,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = DiscreteConstantCache()
+alg_cache(alg::FunctionMap,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = FunctionMapConstantCache()
 
 struct ExplicitRKCache{uType,rateType,uEltypeNoUnits,ksEltype,TabType} <: OrdinaryDiffEqMutableCache
   u::uType

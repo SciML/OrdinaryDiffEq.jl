@@ -1,8 +1,8 @@
-@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DiscreteConstantCache,idxs,T::Type{Val{0}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::FunctionMapConstantCache,idxs,T::Type{Val{0}})
   y₀
 end
 
-@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DiscreteCache,idxs,T::Type{Val{0}})
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::FunctionMapCache,idxs,T::Type{Val{0}})
   recursivecopy!(out,y₀)
 end
 

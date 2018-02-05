@@ -19,8 +19,8 @@ struct CompositeInterpolationData{F,uType,tType,kType,cacheType} <: OrdinaryDiff
   cache::cacheType
 end
 
-DiffEqBase.interp_summary{cacheType<:DiscreteConstantCache}(interp::OrdinaryDiffEqInterpolation{cacheType}) = "left-endpoint piecewise constant"
-DiffEqBase.interp_summary{cacheType<:DiscreteCache}(interp::OrdinaryDiffEqInterpolation{cacheType}) = "left-endpoint piecewise constant"
+DiffEqBase.interp_summary{cacheType<:FunctionMapConstantCache}(interp::OrdinaryDiffEqInterpolation{cacheType}) = "left-endpoint piecewise constant"
+DiffEqBase.interp_summary{cacheType<:FunctionMapCache}(interp::OrdinaryDiffEqInterpolation{cacheType}) = "left-endpoint piecewise constant"
 function DiffEqBase.interp_summary{cacheType<:Union{DP5ConstantCache,DP5Cache,DP5ThreadedCache}}(interp::OrdinaryDiffEqInterpolation{cacheType})
   interp.dense ? "specialized 4th order \"free\" interpolation" : "1st order linear"
 end

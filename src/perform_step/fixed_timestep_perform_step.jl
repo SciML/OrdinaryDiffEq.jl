@@ -1,11 +1,11 @@
-function initialize!(integrator,cache::DiscreteConstantCache)
+function initialize!(integrator,cache::FunctionMapConstantCache)
   integrator.kshortsize = 0
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
 end
 
-function perform_step!(integrator,cache::DiscreteConstantCache,repeat_step=false)
-  if discrete_apply_map(integrator.alg)
-    if discrete_scale_by_time(integrator.alg)
+function perform_step!(integrator,cache::FunctionMapConstantCache,repeat_step=false)
+  if integrator.f != DiffEqBase.DISCRETE_OUTOFPLACE_DEFAULT
+    if FunctionMap_scale_by_time(integrator.alg)
       @muladd integrator.u = integrator.uprev + integrator.dt*integrator.f(integrator.uprev,integrator.p,integrator.t+integrator.dt)
     else
       integrator.u = integrator.f(integrator.uprev,integrator.p,integrator.t+integrator.dt)
@@ -13,16 +13,16 @@ function perform_step!(integrator,cache::DiscreteConstantCache,repeat_step=false
   end
 end
 
-function initialize!(integrator,cache::DiscreteCache)
+function initialize!(integrator,cache::FunctionMapCache)
   integrator.kshortsize = 0
   resize!(integrator.k, integrator.kshortsize)
 end
 
-function perform_step!(integrator,cache::DiscreteCache,repeat_step=false)
+function perform_step!(integrator,cache::FunctionMapCache,repeat_step=false)
   @unpack u,uprev,dt,t,f,p = integrator
   @unpack du = cache
-  if discrete_apply_map(integrator.alg)
-    if discrete_scale_by_time(integrator.alg)
+  if integrator.f != DiffEqBase.DISCRETE_INPLACE_DEFAULT
+    if FunctionMap_scale_by_time(integrator.alg)
       f(du, uprev, p, t+dt)
       @muladd @. u = uprev + dt*du
     else

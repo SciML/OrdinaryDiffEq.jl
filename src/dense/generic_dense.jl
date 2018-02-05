@@ -136,7 +136,7 @@ function ode_interpolation(tvals,id,idxs,deriv,p)
     else
       dt = ts[i] - ts[i-1]
       Θ = (t-ts[i-1])/dt
-      if typeof(cache) <: (DiscreteCache) || typeof(cache) <: DiscreteConstantCache
+      if typeof(cache) <: (FunctionMapCache) || typeof(cache) <: FunctionMapConstantCache
         vals[j] = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],0,cache,idxs,deriv)
       elseif !id.dense
         vals[j] = linear_interpolant(Θ,dt,timeseries[i-1],timeseries[i],idxs,deriv)
@@ -185,7 +185,7 @@ function ode_interpolation!(vals,tvals,id,idxs,deriv,p)
     else
       dt = ts[i] - ts[i-1]
       Θ = (t-ts[i-1])/dt
-      if typeof(cache) <: (DiscreteCache) || typeof(cache) <: DiscreteConstantCache
+      if typeof(cache) <: (FunctionMapCache) || typeof(cache) <: FunctionMapConstantCache
         if eltype(timeseries) <: AbstractArray
           ode_interpolant!(vals[j],Θ,dt,timeseries[i-1],timeseries[i],0,cache,idxs,deriv)
         else
@@ -245,7 +245,7 @@ function ode_interpolation(tval::Number,id,idxs,deriv,p)
   else
     dt = ts[i] - ts[i-1]
     Θ = (tval-ts[i-1])/dt
-    if typeof(cache) <: (DiscreteCache) || typeof(cache) <: DiscreteConstantCache
+    if typeof(cache) <: (FunctionMapCache) || typeof(cache) <: FunctionMapConstantCache
       val = ode_interpolant(Θ,dt,timeseries[i-1],timeseries[i],0,cache,idxs,deriv)
     elseif !id.dense
       val = linear_interpolant(Θ,dt,timeseries[i-1],timeseries[i],idxs,deriv)
@@ -290,7 +290,7 @@ function ode_interpolation!(out,tval::Number,id,idxs,deriv,p)
     @inbounds begin
       dt = ts[i] - ts[i-1]
       Θ = (tval-ts[i-1])/dt
-      if typeof(cache) <: (DiscreteCache) || typeof(cache) <: DiscreteConstantCache
+      if typeof(cache) <: (FunctionMapCache) || typeof(cache) <: FunctionMapConstantCache
         ode_interpolant!(out,Θ,dt,timeseries[i-1],timeseries[i],0,cache,idxs,deriv)
       elseif !id.dense
         linear_interpolant!(out,Θ,dt,timeseries[i-1],timeseries[i],idxs,deriv)

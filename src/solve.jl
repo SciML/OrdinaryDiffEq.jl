@@ -21,11 +21,11 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   save_everystep = isempty(saveat),
   save_timeseries = nothing,save_start = true,save_end = true,
   callback=nothing,
-  dense = save_everystep && !(typeof(alg) <: Discrete),
+  dense = save_everystep && !(typeof(alg) <: FunctionMap),
   calck = (callback != nothing && callback != CallbackSet()) || # Empty callback
           (prob.callback != nothing && prob.callback != CallbackSet()) || # Empty prob.callback
           (!isempty(setdiff(saveat,tstops)) || dense), # and no dense output
-  dt = typeof(alg) <: Discrete && isempty(tstops) ? eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
+  dt = typeof(alg) <: FunctionMap && isempty(tstops) ? eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
   adaptive = isadaptive(alg),
   gamma=gamma_default(alg),
   abstol=nothing,
@@ -108,7 +108,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   uEltypeNoUnits = recursive_unitless_eltype(u)
   tTypeNoUnits   = typeof(one(tType))
 
-  if typeof(alg) <: Discrete
+  if typeof(alg) <: FunctionMap
     abstol_internal = zero(u)
   elseif abstol == nothing
     if uBottomEltypeNoUnits == uBottomEltype || !(typeof(u) <: ArrayPartition)
@@ -120,7 +120,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     abstol_internal = abstol
   end
 
-  if typeof(alg) <: Discrete
+  if typeof(alg) <: FunctionMap
     reltol_internal = zero(first(u)/t)
   elseif reltol == nothing
     reltol_internal = uBottomEltypeNoUnits(1//10^3)

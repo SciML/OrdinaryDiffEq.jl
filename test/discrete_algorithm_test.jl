@@ -1,12 +1,14 @@
 using OrdinaryDiffEq, DiffEqProblemLibrary, Base.Test
 
-sol =solve(prob_ode_linear,Discrete())
+prob = DiscreteProblem(0.5,(0.0,1.0))
+sol =solve(prob,FunctionMap())
 
 @test sol[1] == sol[end]
 
 @test sol(0.5:0.1:0.7) == [sol[1],sol[1],sol[1]]
 
-sol =solve(prob_ode_2Dlinear,Discrete())
+prob2 = DiscreteProblem(rand(4,2),(0.0,1.0))
+sol =solve(prob2,FunctionMap())
 
 @test sol[1] == sol[end]
 
