@@ -1,16 +1,16 @@
-mutable struct DEOptions{absType,relType,tTypeNoUnits,tType,F2,F3,F4,F5,F6,tstopsType,discType,ECType,SType,MI,tcache,savecache,disccache}
+mutable struct DEOptions{absType,relType,QT,tType,F2,F3,F4,F5,F6,tstopsType,discType,ECType,SType,MI,tcache,savecache,disccache}
   maxiters::MI
   timeseries_steps::Int
   save_everystep::Bool
   adaptive::Bool
   abstol::absType
   reltol::relType
-  gamma::tTypeNoUnits
-  qmax::tTypeNoUnits
-  qmin::tTypeNoUnits
-  qsteady_max::tTypeNoUnits
-  qsteady_min::tTypeNoUnits
-  failfactor::tTypeNoUnits
+  gamma::QT
+  qmax::QT
+  qmin::QT
+  qsteady_max::QT
+  qsteady_min::QT
+  failfactor::QT
   dtmax::tType
   dtmin::tType
   internalnorm::F2
@@ -28,9 +28,9 @@ mutable struct DEOptions{absType,relType,tTypeNoUnits,tType,F2,F3,F4,F5,F6,tstop
   progress_message::F5
   timeseries_errors::Bool
   dense_errors::Bool
-  beta1::tTypeNoUnits
-  beta2::tTypeNoUnits
-  qoldinit::tTypeNoUnits
+  beta1::QT
+  beta2::QT
+  qoldinit::QT
   dense::Bool
   save_start::Bool
   save_end::Bool
@@ -44,7 +44,7 @@ mutable struct DEOptions{absType,relType,tTypeNoUnits,tType,F2,F3,F4,F5,F6,tstop
   stop_at_next_tstop::Bool
 end
 
-mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,pType,tTypeNoUnits,tdirType,ksEltype,SolType,F,ProgressType,CacheType,O,FSALType} <: AbstractODEIntegrator
+mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,pType,QT,tdirType,ksEltype,SolType,F,ProgressType,CacheType,O,FSALType} <: AbstractODEIntegrator
   sol::SolType
   u::uType
   k::ksEltype
@@ -60,10 +60,10 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,pType,
   dtchangeable::Bool
   dtpropose::tType
   tdir::tdirType
-  EEst::tTypeNoUnits
-  qold::tTypeNoUnits
-  q11::tTypeNoUnits
-  erracc::tTypeNoUnits
+  EEst::QT
+  qold::QT
+  q11::QT
+  erracc::QT
   dtacc::tType
   success_iter::Int
   iter::Int

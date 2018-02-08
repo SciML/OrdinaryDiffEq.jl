@@ -37,3 +37,11 @@ sol2 =solve(prob_ode_2Dlinear,Euler(),dt=1/4)
 @test sol[end] == sol2[end]
 
 @test sol(0.35) != sol2(0.53)
+
+function henon_map!(u_next, u, _p, t)
+    u_next[1] = 1 + u[2] - 1.4 * u[1]^2
+    u_next[2] = 0.3 * u[1]
+end
+
+prob = DiscreteProblem(henon_map!, [0.5, 0.5], (0, 100)) # Integer time
+sol = solve(prob, FunctionMap())
