@@ -39,7 +39,9 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   beta1=beta1_default(alg,beta2),
   maxiters = 1000000,
   dtmax=eltype(prob.tspan)((prob.tspan[end]-prob.tspan[1])),
-  dtmin=typeof(one(eltype(prob.tspan))) <: AbstractFloat ? 10*eps(eltype(prob.tspan)) : eltype(prob.tspan)(1//10^(10)),
+  dtmin= typeof(one(eltype(prob.tspan))) <: AbstractFloat ? 10*eps(eltype(prob.tspan)) :
+         typeof(one(eltype(prob.tspan))) <: Integer ? 0 :
+         eltype(prob.tspan)(1//10^(10)),
   internalnorm = ODE_DEFAULT_NORM,
   isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
   unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
@@ -198,22 +200,24 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     saveiter_dense = 0
   end
 
-  opts = DEOptions{typeof(abstol_internal),typeof(reltol_internal),tTypeNoUnits,tType,
+  QT = tTypeNoUnits <: Integer ? typeof(qmin) : tTypeNoUnits
+
+  opts = DEOptions{typeof(abstol_internal),typeof(reltol_internal),QT,tType,
                    typeof(internalnorm),typeof(callbacks_internal),typeof(isoutofdomain),
                    typeof(progress_message),typeof(unstable_check),typeof(tstops_internal),
                    typeof(d_discontinuities_internal),typeof(userdata),typeof(save_idxs),
                    typeof(maxiters),typeof(tstops),typeof(saveat),
                    typeof(d_discontinuities)}(
                        maxiters,timeseries_steps,save_everystep,adaptive,abstol_internal,
-                       reltol_internal,tTypeNoUnits(gamma),tTypeNoUnits(qmax),
-                       tTypeNoUnits(qmin),tTypeNoUnits(qsteady_max),
-                       tTypeNoUnits(qsteady_min),tTypeNoUnits(failfactor),tType(dtmax),
+                       reltol_internal,QT(gamma),QT(qmax),
+                       QT(qmin),QT(qsteady_max),
+                       QT(qsteady_min),QT(failfactor),tType(dtmax),
                        tType(dtmin),internalnorm,save_idxs,tstops_internal,saveat_internal,
                        d_discontinuities_internal,
                        tstops,saveat,d_discontinuities,
                        userdata,progress,progress_steps,
                        progress_name,progress_message,timeseries_errors,dense_errors,
-                       tTypeNoUnits(beta1),tTypeNoUnits(beta2),tTypeNoUnits(qoldinit),dense,
+                       QT(beta1),QT(beta2),QT(qoldinit),dense,
                        save_start,save_end,callbacks_internal,isoutofdomain,
                        unstable_check,verbose,
                        calck,force_dtmin,advance_to_tstop,stop_at_next_tstop)
@@ -286,12 +290,12 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   dtacc = tType(1)
 
   integrator = ODEIntegrator{algType,uType,tType,typeof(p),
-                             tTypeNoUnits,typeof(tdir),typeof(k),SolType,
+                             QT,typeof(tdir),typeof(k),SolType,
                              FType,typeof(prog),cacheType,
                              typeof(opts),fsal_typeof(alg,rate_prototype)}(
                              sol,u,k,t,tType(dt),f,p,uprev,uprev2,tprev,
                              alg,dtcache,dtchangeable,
-                             dtpropose,tdir,EEst,tTypeNoUnits(qoldinit),q11,
+                             dtpropose,tdir,EEst,QT(qoldinit),q11,
                              erracc,dtacc,success_iter,
                              iter,saveiter,saveiter_dense,prog,cache,
                              kshortsize,force_stepfail,last_stepfail,
