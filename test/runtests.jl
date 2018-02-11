@@ -27,11 +27,12 @@ tic()
 @time @testset "Partitioned Methods Tests" begin include("partitioned_methods_tests.jl") end
 @time @testset "Split Methods Tests" begin include("split_methods_tests.jl") end
 #@time @testset "Linear Methods Tests" begin include("linear_method_tests.jl") end
-#@time @testset "Linear-Nonlinear Methods Tests" begin include("linear_nonlinear_convergence_tests.jl") end
+@time @testset "Linear-Nonlinear Methods Tests" begin include("linear_nonlinear_convergence_tests.jl") end
 @time @testset "SSPRK Tests" begin include("ode/ode_ssprk_tests.jl") end
 @time @testset "Dense Tests" begin include("ode/ode_dense_tests.jl") end
 @time @testset "In-Place Tests" begin include("ode/ode_inplace_tests.jl") end
 @time @testset "Time Derivative Tests" begin include("time_derivative_test.jl") end
+@time @testset "Jacobian Tests" begin include("jacobian_tests.jl") end
 @time @testset "Events Tests" begin include("ode/ode_event_tests.jl") end
 @time @testset "Cache Tests" begin include("ode/ode_cache_tests.jl") end
 @time @testset "saveat Tests" begin include("ode/ode_saveat_tests.jl") end

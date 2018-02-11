@@ -5,7 +5,7 @@ type SimType{T} <: DEDataVector{T}
     f1::T
 end
 
-f = function (t,u,du)
+f = function (du,u,p,t)
     du[1] = -0.5*u[1] + u.f1
     du[2] = -0.5*u[2]
 end
@@ -14,7 +14,7 @@ const tstop1 = [5.]
 const tstop2 = [8.]
 const tstop = [5.;8.]
 
-condition = function (t,u,integrator)
+condition = function (u,t,integrator)
   t in tstop1
 end
 
@@ -28,7 +28,7 @@ save_positions = (true,true)
 
 cb = DiscreteCallback(condition, affect!; save_positions=save_positions)
 
-condition2 = function (t,u,integrator)
+condition2 = function (u,t,integrator)
   t in tstop2
 end
 
@@ -64,15 +64,15 @@ type SimType2{T} <: DEDataVector{T}
     u::Vector{T}
 end
 
-function mysystem(t,x,dx,u)
-    ucalc = u(t,x)
+function mysystem(t,x,dx,p,u)
+    ucalc = u(x,p,t)
     x.u = ucalc
     x.y = C*x.x
-    dx[:] = A*x.x + B*x.u
+    dx .= A*x.x + B*x.u
 end
 
-input = (t,x)->(1*one(t)≤t≤2*one(t)?[one(t)]:[zero(t)])
-prob = DiscreteProblem((t,x,dx)->mysystem(t,x,dx,input), SimType2(zeros(3), zeros(1), zeros(1)), (0//1,4//1))
+input = (x,p,t)->(1*one(t)≤t≤2*one(t)?[one(t)]:[zero(t)])
+prob = DiscreteProblem((dx,x,p,t)->mysystem(t,x,dx,p,input), SimType2(zeros(3), zeros(1), zeros(1)), (0//1,4//1))
 sln = solve(prob, FunctionMap(scale_by_time=false), dt = 1//10)
 
 u1 = [sln[idx].u for idx in 1:length(sln)]
@@ -117,11 +117,11 @@ end
 const tstop1 = [10.0]
 const tstop2 = [300.]
 
-function mat_condition(t,u,integrator)
+function mat_condition(u,t,integrator)
   t in tstop1
 end
 
-function mat_condition2(t,u,integrator)
+function mat_condition2(u,t,integrator)
   t in tstop2
 end
 
@@ -145,7 +145,7 @@ cb2 = DiscreteCallback(mat_condition2, mat_affect2!, save_positions=save_positio
 cbs = CallbackSet(cb,cb2)
 
 
-function sigmoid(t,u,du)
+function sigmoid(du,u,p,t)
   du[1,1] = 0.01*u[1,1]*(1-u[1,1]/20)
   du[1,2] = 0.01*u[1,2]*(1-u[1,2]/20)
   du[2,1] = 0.01*u[2,1]*(1-u[2,1]/20)

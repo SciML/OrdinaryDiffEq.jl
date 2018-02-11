@@ -19,8 +19,8 @@ struct CompositeInterpolationData{F,uType,tType,kType,cacheType} <: OrdinaryDiff
   cache::cacheType
 end
 
-DiffEqBase.interp_summary{cacheType<:DiscreteConstantCache}(interp::OrdinaryDiffEqInterpolation{cacheType}) = "left-endpoint piecewise constant"
-DiffEqBase.interp_summary{cacheType<:DiscreteCache}(interp::OrdinaryDiffEqInterpolation{cacheType}) = "left-endpoint piecewise constant"
+DiffEqBase.interp_summary{cacheType<:FunctionMapConstantCache}(interp::OrdinaryDiffEqInterpolation{cacheType}) = "left-endpoint piecewise constant"
+DiffEqBase.interp_summary{cacheType<:FunctionMapCache}(interp::OrdinaryDiffEqInterpolation{cacheType}) = "left-endpoint piecewise constant"
 function DiffEqBase.interp_summary{cacheType<:Union{DP5ConstantCache,DP5Cache,DP5ThreadedCache}}(interp::OrdinaryDiffEqInterpolation{cacheType})
   interp.dense ? "specialized 4th order \"free\" interpolation" : "1st order linear"
 end
@@ -67,10 +67,10 @@ function DiffEqBase.interp_summary{cacheType}(interp::OrdinaryDiffEqInterpolatio
   interp.dense ? "3rd order Hermite" : "1st order linear"
 end
 
-(interp::InterpolationData)(tvals,idxs,deriv) = ode_interpolation(tvals,interp,idxs,deriv)
-(interp::CompositeInterpolationData)(tvals,idxs,deriv) = ode_interpolation(tvals,interp,idxs,deriv)
-(interp::InterpolationData)(val,tvals,idxs,deriv) = ode_interpolation!(val,tvals,interp,idxs,deriv)
-(interp::CompositeInterpolationData)(val,tvals,idxs,deriv) = ode_interpolation!(val,tvals,interp,idxs,deriv)
+(interp::InterpolationData)(tvals,idxs,deriv,p) = ode_interpolation(tvals,interp,idxs,deriv,p)
+(interp::CompositeInterpolationData)(tvals,idxs,deriv,p) = ode_interpolation(tvals,interp,idxs,deriv,p)
+(interp::InterpolationData)(val,tvals,idxs,deriv,p) = ode_interpolation!(val,tvals,interp,idxs,deriv,p)
+(interp::CompositeInterpolationData)(val,tvals,idxs,deriv,p) = ode_interpolation!(val,tvals,interp,idxs,deriv,p)
 
 function InterpolationData(id::InterpolationData,f)
   InterpolationData(f,id.timeseries,

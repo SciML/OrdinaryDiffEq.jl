@@ -42,7 +42,7 @@ end
     integrator.sol = solution_new_retcode(integrator.sol,:DtLessThanMin)
     return integrator.sol
   end
-  if integrator.opts.unstable_check(integrator.dt,integrator.t,integrator.u)
+  if integrator.opts.unstable_check(integrator.dt,integrator.u,integrator.p,integrator.t)
     if integrator.opts.verbose
       warn("Instability detected. Aborting")
     end
@@ -101,7 +101,7 @@ function savevalues!(integrator::ODEIntegrator,force_save=false,reduce_size=true
       else
         copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u[integrator.opts.save_idxs],Val{false})
       end
-      if typeof(integrator.alg) <: Discrete || integrator.opts.dense
+      if typeof(integrator.alg) <: FunctionMap || integrator.opts.dense
         integrator.saveiter_dense +=1
         if integrator.opts.dense
           if integrator.opts.save_idxs ==nothing
@@ -124,7 +124,7 @@ function savevalues!(integrator::ODEIntegrator,force_save=false,reduce_size=true
       copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u[integrator.opts.save_idxs],Val{false})
     end
     copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
-    if typeof(integrator.alg) <: Discrete || integrator.opts.dense
+    if typeof(integrator.alg) <: FunctionMap || integrator.opts.dense
       integrator.saveiter_dense +=1
       if integrator.opts.dense
         if integrator.opts.save_idxs == nothing
@@ -158,7 +158,7 @@ function solution_endpoint_match_cur_integrator!(integrator)
     else
       copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u[integrator.opts.save_idxs],Val{false})
     end
-    if typeof(integrator.alg) <: Discrete || integrator.opts.dense
+    if typeof(integrator.alg) <: FunctionMap || integrator.opts.dense
       integrator.saveiter_dense +=1
       if integrator.opts.dense
         if integrator.opts.save_idxs == nothing
@@ -268,7 +268,7 @@ function loopfooter!(integrator)
       integrator.accept_step = false
   elseif integrator.opts.adaptive
     q = stepsize_controller!(integrator,integrator.alg)
-    integrator.isout = integrator.opts.isoutofdomain(ttmp,integrator.u)
+    integrator.isout = integrator.opts.isoutofdomain(integrator.u,integrator.p,ttmp)
     integrator.accept_step = (!integrator.isout && integrator.EEst <= 1.0) || (integrator.opts.force_dtmin && abs(integrator.dt) <= abs(integrator.opts.dtmin))
     if integrator.accept_step # Accept
       integrator.last_stepfail = false
@@ -299,7 +299,7 @@ function loopfooter!(integrator)
     handle_callbacks!(integrator)
   end
   if !(typeof(integrator.prog)<:Void) && integrator.opts.progress && integrator.iter%integrator.opts.progress_steps==0
-    Juno.msg(integrator.prog,integrator.opts.progress_message(integrator.dt,integrator.t,integrator.u))
+    Juno.msg(integrator.prog,integrator.opts.progress_message(integrator.dt,integrator.u,integrator.p,integrator.t))
     Juno.progress(integrator.prog,integrator.t/integrator.sol.prob.tspan[2])
   end
 end
@@ -425,9 +425,9 @@ end
 function reset_fsal!(integrator)
   # Under these condtions, these algorithms are not FSAL anymore
   if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache
-    integrator.f(integrator.t,integrator.u,integrator.fsalfirst)
+    integrator.f(integrator.fsalfirst,integrator.u,integrator.p,integrator.t)
   else
-    integrator.fsalfirst = integrator.f(integrator.t,integrator.u)
+    integrator.fsalfirst = integrator.f(integrator.u,integrator.p,integrator.t)
   end
   # Do not set false here so it can be checked in the algorithm
   # integrator.reeval_fsal = false

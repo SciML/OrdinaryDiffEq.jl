@@ -1,12 +1,14 @@
 using OrdinaryDiffEq, DiffEqProblemLibrary, Base.Test
 
-sol =solve(prob_ode_linear,Discrete())
+prob = DiscreteProblem(0.5,(0.0,1.0))
+sol =solve(prob,FunctionMap())
 
 @test sol[1] == sol[end]
 
 @test sol(0.5:0.1:0.7) == [sol[1],sol[1],sol[1]]
 
-sol =solve(prob_ode_2Dlinear,Discrete())
+prob2 = DiscreteProblem(rand(4,2),(0.0,1.0))
+sol =solve(prob2,FunctionMap())
 
 @test sol[1] == sol[end]
 
@@ -35,3 +37,11 @@ sol2 =solve(prob_ode_2Dlinear,Euler(),dt=1/4)
 @test sol[end] == sol2[end]
 
 @test sol(0.35) != sol2(0.53)
+
+function henon_map!(u_next, u, _p, t)
+    u_next[1] = 1 + u[2] - 1.4 * u[1]^2
+    u_next[2] = 0.3 * u[1]
+end
+
+prob = DiscreteProblem(henon_map!, [0.5, 0.5], (0, 100)) # Integer time
+sol = solve(prob, FunctionMap())

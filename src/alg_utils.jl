@@ -3,7 +3,7 @@ isautodifferentiable(alg::OrdinaryDiffEqAlgorithm) = true
 isfsal(alg::OrdinaryDiffEqAlgorithm) = true
 isfsal{MType,VType,fsal}(tab::ExplicitRKTableau{MType,VType,fsal}) = fsal
 isfsal(alg::CompositeAlgorithm) = true # Every algorithm is assumed FSAL. Good assumption?
-isfsal(alg::Discrete) = false
+isfsal(alg::FunctionMap) = false
 isfsal(alg::Rodas4) = false
 isfsal(alg::Rodas42) = false
 isfsal(alg::Rodas4P) = false
@@ -70,7 +70,7 @@ alg_extrapolates(alg::IRKN3) = true
 alg_order(alg::OrdinaryDiffEqAlgorithm) = error("Order is not defined for this algorithm")
 alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
 
-alg_order(alg::Discrete) = 0
+alg_order(alg::FunctionMap) = 0
 alg_order(alg::Euler) = 1
 alg_order(alg::Heun) = 2
 alg_order(alg::Ralston) = 2
@@ -202,13 +202,13 @@ alg_adaptive_order(alg::ImplicitMidpoint) = 1
  # to track the real error much better
 
 beta2_default(alg::OrdinaryDiffEqAlgorithm) = 2//(5alg_order(alg))
-beta2_default(alg::Discrete) = 0
+beta2_default(alg::FunctionMap) = 0
 beta2_default(alg::DP8) = 0//1
 beta2_default(alg::DP5) = 4//100
 beta2_default(alg::DP5Threaded) = 4//100
 
 beta1_default(alg::OrdinaryDiffEqAlgorithm,beta2) = 7//(10alg_order(alg))
-beta1_default(alg::Discrete,beta2) = 0
+beta1_default(alg::FunctionMap,beta2) = 0
 beta1_default(alg::DP8,beta2) = typeof(beta2)(1//alg_order(alg)) - beta2/5
 beta1_default(alg::DP5,beta2) = typeof(beta2)(1//alg_order(alg)) - 3beta2/4
 beta1_default(alg::DP5Threaded,beta2) = typeof(beta2)(1//alg_order(alg)) - 3beta2/4
@@ -221,8 +221,7 @@ qsteady_max_default(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = 6//5
 # But don't re-use Jacobian if not adaptive: too risky and cannot pull back
 qsteady_max_default(alg::OrdinaryDiffEqImplicitAlgorithm) = 1//1
 
-discrete_apply_map{apply_map,scale_by_time}(alg::Discrete{apply_map,scale_by_time}) = apply_map
-discrete_scale_by_time{apply_map,scale_by_time}(alg::Discrete{apply_map,scale_by_time}) = scale_by_time
+FunctionMap_scale_by_time{scale_by_time}(alg::FunctionMap{scale_by_time}) = scale_by_time
 
 # SSP coefficients
 """

@@ -1,21 +1,22 @@
-mutable struct RHS_IIF_Scalar{F,uType,tType,aType} <: Function
+mutable struct RHS_IIF_Scalar{F,uType,tType,aType,P} <: Function
   f::F
   tmp::uType
   t::tType
   dt::tType
   a::aType
+  p::P
 end
 
-function (p::RHS_IIF_Scalar)(u,resid)
-  resid[1] = first(u) - p.tmp - (p.a*p.dt)*first(p.f.f2(p.t+p.dt,first(u)))
+function (f::RHS_IIF_Scalar)(resid,u)
+  resid[1] = first(u) - f.tmp - (f.a*f.dt)*first(f.f.f2(first(u),f.p,f.t+f.dt,))
 end
 
 function initialize!(integrator,cache::Union{GenericIIF1ConstantCache,GenericIIF2ConstantCache})
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
   A = integrator.f.f1
-  cache.uhold[1] = integrator.f.f2(integrator.t,integrator.uprev)
-  integrator.fsalfirst = integrator.f.f1(integrator.t,integrator.uprev) .+ cache.uhold[1]
+  cache.uhold[1] = integrator.f.f2(integrator.uprev,integrator.p,integrator.t)
+  integrator.fsalfirst = integrator.f.f1(integrator.uprev,integrator.p,integrator.t) .+ cache.uhold[1]
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -24,7 +25,7 @@ function initialize!(integrator,cache::Union{GenericIIF1ConstantCache,GenericIIF
 end
 
 function perform_step!(integrator,cache::Union{GenericIIF1ConstantCache,GenericIIF2ConstantCache},repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack uhold,rhs,nl_rhs = cache
 
   # If adaptive, this should be computed after and cached
@@ -42,7 +43,7 @@ function perform_step!(integrator,cache::Union{GenericIIF1ConstantCache,GenericI
   rhs.t = t
   rhs.dt = dt
   nlres = integrator.alg.nlsolve(nl_rhs,uhold)
-  uhold[1] = integrator.f.f2(t+dt,nlres[1])
+  uhold[1] = integrator.f.f2(nlres[1],integrator.p,t+dt)
   u = nlres[1]
   integrator.fsallast = A*u + uhold[1]
   integrator.k[1] = integrator.fsalfirst
@@ -50,18 +51,20 @@ function perform_step!(integrator,cache::Union{GenericIIF1ConstantCache,GenericI
   integrator.u = u
 end
 
-mutable struct RHS_IIF{F,uType,tType,aType,DiffCacheType} <: Function
+mutable struct RHS_IIF{F,uType,tType,aType,DiffCacheType,P} <: Function
   f::F
   tmp::uType
   t::tType
   dt::tType
   a::aType
   dual_cache::DiffCacheType
+  p::P
 end
-function (p::RHS_IIF)(u,resid)
-  du = get_du(p.dual_cache, eltype(u))
-  p.f.f2(p.t+p.dt,u,du)
-  @. resid = u - p.tmp - (p.a*p.dt)*du
+function (f::RHS_IIF)(resid,u)
+  _du = get_du(f.dual_cache, eltype(u))
+  du = reinterpret(eltype(u),_du)
+  f.f.f2(du,u,f.p,f.t+f.dt)
+  @. resid = u - f.tmp - (f.a*f.dt)*du
 end
 
 function initialize!(integrator,cache::Union{GenericIIF1Cache,GenericIIF2Cache})
@@ -70,7 +73,7 @@ function initialize!(integrator,cache::Union{GenericIIF1Cache,GenericIIF2Cache})
   integrator.kshortsize = 2
   resize!(integrator.k, integrator.kshortsize)
   A = integrator.f.f1
-  integrator.f.f2(integrator.t,integrator.uprev,cache.rtmp1)
+  integrator.f.f2(cache.rtmp1,integrator.uprev,integrator.p,integrator.t)
   A_mul_B!(cache.k,A,integrator.uprev)
   @. integrator.fsalfirst = cache.k + cache.rtmp1
   integrator.k[1] = integrator.fsalfirst
@@ -80,7 +83,7 @@ end
 function perform_step!(integrator,cache::Union{GenericIIF1Cache,GenericIIF2Cache},repeat_step=false)
   @unpack rtmp1,tmp,k = cache
   @unpack rhs,nl_rhs = cache
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
 
   @. k = uprev
   if typeof(cache) <: GenericIIF2Cache
@@ -98,7 +101,7 @@ function perform_step!(integrator,cache::Union{GenericIIF1Cache,GenericIIF2Cache
   nlres = integrator.alg.nlsolve(nl_rhs,u)
 
   copy!(u,nlres)
-  integrator.f.f2(t+dt,nlres,rtmp1)
+  integrator.f.f2(rtmp1,nlres,integrator.p,t+dt)
   A = f.f1
   integrator.fsallast .= A*u .+ rtmp1
 end

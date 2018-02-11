@@ -2,18 +2,18 @@ using OrdinaryDiffEq, Base.Test, RecursiveArrayTools, DiffEqDevTools
 
 u0 = zeros(2)
 v0 = ones(2)
-f1 = function (t,u,v,du)
-  du .= v
-end
-f2 = function (t,u,v,dv)
+f1 = function (dv,v,u,p,t)
   dv .= -u
 end
-function (::typeof(f2))(::Type{Val{:analytic}}, x, y0)
-  u0, v0 = y0
-  ArrayPartition(u0*cos(x) + v0*sin(x), -u0*sin(x) + v0*cos(x))
+f2 = function (du,v,u,p,t)
+  du .= v
+end
+prob = DynamicalODEProblem(f1,f2,v0,u0,(0.0,5.0))
+function (::typeof(prob.f))(::Type{Val{:analytic}}, y0, p, x)
+  v0, u0 = y0
+  ArrayPartition(-u0*sin(x) + v0*cos(x),u0*cos(x) + v0*sin(x))
 end
 
-prob = DynamicalODEProblem(f1,f2,u0,v0,(0.0,5.0))
 
 sol = solve(prob,SymplecticEuler(),dt=1/2)
 sol_verlet = solve(prob,VelocityVerlet(),dt=1/100)
@@ -25,8 +25,11 @@ interps = sol(interp_time)
 
 sol_tsit5 = solve(prob,Tsit5())
 
-prob = SecondOrderODEProblem(f2,u0,v0,(0.0,5.0))
-(::typeof(prob.f))(::Type{Val{:analytic}},t,u0) = f2(Val{:analytic},t,u0)
+prob = SecondOrderODEProblem(f1,v0,u0,(0.0,5.0))
+function (::typeof(prob.f))(::Type{Val{:analytic}}, y0, p, x)
+  v0, u0 = y0
+  ArrayPartition(-u0*sin(x) + v0*cos(x),u0*cos(x) + v0*sin(x))
+end
 
 sol2 = solve(prob,SymplecticEuler(),dt=1/2)
 sol2_verlet = solve(prob,VelocityVerlet(),dt=1/100)
@@ -52,7 +55,7 @@ sim = test_convergence(dts,prob,VelocityVerlet(),dense_errors=true)
 @test sim.𝒪est[:L2] ≈ 2 rtol = 1e-1
 # Test that position converges faster for Verlet
 position_error = :final => [mean(sim[i].u[2].x[1] - sim[i].u_analytic[2].x[1]) for i in 1:length(sim)]
-@test first(DiffEqDevTools.calc𝒪estimates(position_error).second) ≈ 3.0 rtol=1e-1
+@test first(DiffEqDevTools.calc𝒪estimates(position_error).second) ≈ 4.0 rtol=1e-1
 
 # 2nd Order Tableaus
 sim = test_convergence(dts,prob,VerletLeapfrog(),dense_errors=true)
@@ -105,6 +108,9 @@ sim = test_convergence(dts,prob,KahanLi8(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 8 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
 
+
+sol = solve(prob,Nystrom4(),dt=1/1000)
+
 # Nyström method
 dts = 1.//2.^(9:-1:6)
 sim = test_convergence(dts,prob,Nystrom4(),dense_errors=true)
@@ -131,8 +137,11 @@ sim = test_convergence(dts,prob,SofSpa10(),dense_errors=true)
 
 # Methods need BigFloat to test convergence rate
 dts = big"1.0"./big"2.0".^(5:-1:1)
-prob_big = SecondOrderODEProblem(f2,[big"0.0", big"0.0"],[big"1.0",big"1.0"],(big"0.",big"70."))
-(::typeof(prob_big.f))(::Type{Val{:analytic}},t,u0) = f2(Val{:analytic},t,u0)
+prob_big = SecondOrderODEProblem(f1,[big"1.0",big"1.0"],[big"0.0", big"0.0"],(big"0.",big"70."))
+function (::typeof(prob_big.f))(::Type{Val{:analytic}}, y0, p, x)
+  v0, u0 = y0
+  ArrayPartition(-u0*sin(x) + v0*cos(x),u0*cos(x) + v0*sin(x))
+end
 sim = test_convergence(dts,prob_big,DPRKN6(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 6 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 6 rtol = 1e-1
@@ -163,9 +172,9 @@ sol = solve(prob, ERKN5(),reltol=1e-8)
 
 # Test array partition outside of symplectic
 
-f = function (t,u,du)
-  du.x[1] .= u.x[2]
-  du.x[2] .= -2u.x[1]
+f = function (du,u,p,t)
+  du.x[1] .= -2u.x[2]
+  du.x[2] .= u.x[1]
 end
 
 u = ArrayPartition((u0,v0))
@@ -180,17 +189,17 @@ using OrdinaryDiffEq, Base.Test, RecursiveArrayTools, DiffEqDevTools
 
 u0 = 0.0
 v0 = 1.0
-f12 = function (t,u,v)
-  v
-end
-f22 = function (t,u,v)
+f12 = function (v,u,p,t)
   -u
 end
+f22 = function (v,u,p,t)
+  v
+end
 
-prob = DynamicalODEProblem(f12,f22,u0,v0,(0.0,5.0))
-function (::typeof(prob.f))(::Type{Val{:analytic}}, x, y0)
-  u0, v0 = y0
-  ArrayPartition(u0*cos(x) + v0*sin(x), -u0*sin(x) + v0*cos(x))
+prob = DynamicalODEProblem(f12,f22,v0,u0,(0.0,5.0))
+function (::typeof(prob.f))(::Type{Val{:analytic}}, y0, p, x)
+  v0, u0 = y0
+  ArrayPartition(-u0*sin(x) + v0*cos(x),u0*cos(x) + v0*sin(x))
 end
 
 sol = solve(prob,SymplecticEuler(),dt=1/10)
@@ -206,7 +215,7 @@ sim = test_convergence(dts,prob,VelocityVerlet(),dense_errors=true)
 @test sim.𝒪est[:L2] ≈ 2 rtol = 1e-1
 # Test that position converges faster for Verlet
 position_error = :final => [mean(sim[i].u[2].x[1] - sim[i].u_analytic[2].x[1]) for i in 1:length(sim)]
-@test first(DiffEqDevTools.calc𝒪estimates(position_error).second) ≈ 3.0 rtol=1e-1
+@test first(DiffEqDevTools.calc𝒪estimates(position_error).second) ≈ 4.0 rtol=1e-1
 
 # 2nd Order Tableaus
 sim = test_convergence(dts,prob,VerletLeapfrog(),dense_errors=true)
@@ -285,10 +294,10 @@ sim = test_convergence(dts,prob,SofSpa10(),dense_errors=true)
 
 # Methods need BigFloat to test convergence rate
 dts = big"1.0"./big"2.0".^(5:-1:1)
-prob_big = SecondOrderODEProblem(f22,big"0.0",big"1.0",(big"0.",big"70."))
-function (::typeof(prob_big.f))(::Type{Val{:analytic}}, x, y0)
-  u0, v0 = y0
-  ArrayPartition(u0*cos(x) + v0*sin(x), -u0*sin(x) + v0*cos(x))
+prob_big = SecondOrderODEProblem(f12,big"1.0",big"0.0",(big"0.",big"70."))
+function (::typeof(prob_big.f))(::Type{Val{:analytic}}, y0, p, x)
+  v0, u0 = y0
+  ArrayPartition(-u0*sin(x) + v0*cos(x),u0*cos(x) + v0*sin(x))
 end
 sim = test_convergence(dts,prob_big,DPRKN6(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 6 rtol = 1e-1

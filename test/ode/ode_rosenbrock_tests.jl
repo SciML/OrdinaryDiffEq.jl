@@ -6,12 +6,12 @@ dts = 1.//2.^(6:-1:3)
 testTol = 0.2
 
 const linear_bigα3 = parse(BigFloat,"1.01")
-f_2dlinearbig = (t,u,du) -> begin
+f_2dlinearbig = (du,u,p,t) -> begin
   for i in 1:length(u)
     du[i] = linear_bigα3*u[i]
   end
 end
-(f::typeof(f_2dlinearbig))(::Type{Val{:analytic}},t,u0) = u0*exp.(1.01*t)
+(f::typeof(f_2dlinearbig))(::Type{Val{:analytic}},u0,p,t) = u0*exp.(1.01*t)
 prob_ode_bigfloat2Dlinear = ODEProblem(f_2dlinearbig,map(BigFloat,rand(4,2)).*ones(4,2)/2,(0.0,1.0))
 
 ### Rosenbrock23()

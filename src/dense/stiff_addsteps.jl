@@ -1,4 +1,4 @@
-function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenbrock23ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+@inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,p,cache::Rosenbrock23ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<2 || calcVal
     @unpack tf,uf,d = cache
     dT = ForwardDiff.derivative(tf, t)
@@ -10,8 +10,8 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenb
       W = 1 - γ*J
     end
     W = 1-dt*d*J
-    k₁ = W\(f(t,uprev) + dt*d*dT)
-    f₁ = f(t+dt/2,uprev+dt*k₁/2)
+    k₁ = W\(f(uprev,p,t) + dt*d*dT)
+    f₁ = f(uprev+dt*k₁/2,p,t+dt/2)
     k₂ = W\(f₁-k₁) + k₁
     copyat_or_push!(k,1,k₁)
     copyat_or_push!(k,2,k₂)
@@ -19,7 +19,7 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenb
   nothing
 end
 
-function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenbrock32ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+@inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,p,cache::Rosenbrock32ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<2 || calcVal
     @unpack tf,uf,d = cache
     dT = ForwardDiff.derivative(tf, t)
@@ -31,8 +31,8 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenb
       W = 1 - γ*J
     end
     W = 1-dt*d*J
-    k₁ = W\(f(t,uprev) + dt*d*dT)
-    f₁ = f(t+dt/2,uprev+dt*k₁/2)
+    k₁ = W\(f(uprev,p,t) + dt*d*dT)
+    f₁ = f(uprev+dt*k₁/2,p,t+dt/2)
     k₂ = W\(f₁-k₁) + k₁
     copyat_or_push!(k,1,k₁)
     copyat_or_push!(k,2,k₂)
@@ -40,7 +40,7 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenb
   nothing
 end
 
-function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenbrock23Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+@inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,p,cache::Rosenbrock23Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<2 || calcVal
     @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,linsolve_tmp_vec = cache
     @unpack c₃₂,d = cache.tab
@@ -70,7 +70,7 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenb
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i] + dt*k₁[i]/2
     end
-    f(t+dt/2,tmp,f₁)
+    f(f₁,tmp,p,t+dt/2)
 
     #@. linsolve_tmp = f₁-k₁
     @tight_loop_macros for i in uidx
@@ -92,7 +92,7 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenb
   nothing
 end
 
-function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenbrock32Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+@inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,p,cache::Rosenbrock32Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<2 || calcVal
     @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,linsolve_tmp_vec = cache
     @unpack c₃₂,d = cache.tab
@@ -123,7 +123,7 @@ function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,cache::Rosenb
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i] + dt*k₁[i]/2
     end
-    f(t+dt/2,tmp,f₁)
+    f(f₁,tmp,p,t+dt/2)
 
     #@. linsolve_tmp = f₁-k₁
     @tight_loop_macros for i in uidx

@@ -1,5 +1,7 @@
 DiffEqDevTools 0.6.0
 DiffEqProblemLibrary
-ParameterizedFunctions 0.5.0
+ParameterizedFunctions 3.0.0
 SpecialMatrices
 StaticArrays
+DiffEqCallbacks
+DiffEqOperators

@@ -1,14 +1,14 @@
 using OrdinaryDiffEq, RecursiveArrayTools, Base.Test, StaticArrays
 
 
-f = function (t,u)
+f = function (u,p,t)
   - u + sin(-t)
 end
 
 
 prob = ODEProblem(f,1.0,(0.0,-10.0))
 
-condition= function (t,u,integrator) # Event when event_f(t,u,k) == 0
+condition= function (u,t,integrator) # Event when event_f(u,t,k) == 0
   - t - 2.95
 end
 
@@ -20,14 +20,14 @@ callback = ContinuousCallback(condition,affect!)
 
 sol = solve(prob,Tsit5(),callback=callback)
 
-f = function (t,u,du)
+f = function (du,u,p,t)
   du[1] = - u[1] + sin(t)
 end
 
 
 prob = ODEProblem(f,[1.0],(0.0,10.0))
 
-condtion= function (t,u,integrator) # Event when event_f(t,u,k) == 0
+condtion= function (u,t,integrator) # Event when event_f(u,t,k) == 0
   t - 2.95
 end
 
@@ -46,12 +46,12 @@ f = @ode_def BallBounce begin
 end g=9.81
 =#
 
-f = function (t,u,du)
+f = function (du,u,p,t)
   du[1] = u[2]
   du[2] = -9.81
 end
 
-condtion= function (t,u,integrator) # Event when event_f(t,u,k) == 0
+condtion= function (u,t,integrator) # Event when event_f(u,t,k) == 0
   u[1]
 end
 
@@ -69,7 +69,7 @@ prob = ODEProblem(f,u0,tspan)
 
 sol = solve(prob,Tsit5(),callback=callback,adaptive=false,dt=1/4)
 
-condtion_single = function (t,u,integrator) # Event when event_f(t,u,k) == 0
+condtion_single = function (u,t,integrator) # Event when event_f(u,t,k) == 0
   u
 end
 
@@ -110,7 +110,7 @@ sol3= solve(prob,Vern6(),saveat=[.5])
 
 ## Saving callback
 
-condtion = function (t,u,integrator)
+condtion = function (u,t,integrator)
   true
 end
 affect! = function (integrator) end
@@ -133,7 +133,7 @@ sol4_extra = solve(prob,Tsit5(),callback=cbs)
 
 @test length(sol4_extra) == 2length(sol4) - 1
 
-condtion= function (t,u,integrator)
+condtion= function (u,t,integrator)
   u[1]
 end
 
@@ -166,7 +166,7 @@ sol5 = solve(prob2,Vern7(),callback=terminate_callback2)
 @test sol5[end][1] < 1.3e-10
 @test sol5.t[end] ≈ 3*sqrt(50*2/9.81)
 
-condtion= function (t,u,integrator) # Event when event_f(t,u,k) == 0
+condtion= function (u,t,integrator) # Event when event_f(u,t,k) == 0
   t-4
 end
 
@@ -186,40 +186,40 @@ sol6 = solve(prob2,Vern7(),callback=bounce_then_exit)
 
 # More ODE event tests, cf. #201, #199, #198, #197
 function test_callback_inplace(alg)
-    f = (t, u, du) -> @. du = u
-    cb = ContinuousCallback((t,u,int) -> u[1] - exp(1), terminate!)
+    f = (du, u, p, t) -> @. du = u
+    cb = ContinuousCallback((u,t,int) -> u[1] - exp(1), terminate!)
     prob = ODEProblem(f, [1.0], (0.0, 2.0), callback=cb)
     sol = solve(prob, alg)
     sol.u[end][1] ≈ exp(1)
 end
 
 function test_callback_outofplace(alg)
-    f = (t, u) -> copy(u)
-    cb = ContinuousCallback((t,u,int) -> u[1] - exp(1), terminate!)
+    f = (u, p, t) -> copy(u)
+    cb = ContinuousCallback((u,t,int) -> u[1] - exp(1), terminate!)
     prob = ODEProblem(f, [1.0], (0.0, 2.0), callback=cb)
     sol = solve(prob, alg)
     sol.u[end][1] ≈ exp(1)
 end
 
 function test_callback_scalar(alg)
-    f = (t, u) -> u
-    cb = ContinuousCallback((t,u,int) -> u - exp(1), terminate!)
+    f = (u, p, t) -> u
+    cb = ContinuousCallback((u,t,int) -> u - exp(1), terminate!)
     prob = ODEProblem(f, 1.0, (0.0, 2.0), callback=cb)
     sol = solve(prob, alg)
     sol.u[end] ≈ exp(1)
 end
 
 function test_callback_svector(alg)
-    f = (t, u) -> u
-    cb = ContinuousCallback((t,u,int) -> u[1] - exp(1), terminate!)
+    f = (u, p, t) -> u
+    cb = ContinuousCallback((u,t,int) -> u[1] - exp(1), terminate!)
     prob = ODEProblem(f, SVector(1.0), (0.0, 2.0), callback=cb)
     sol = solve(prob, alg)
     sol.u[end][1] ≈ exp(1)
 end
 
 function test_callback_mvector(alg)
-    f = (t, u) -> copy(u)
-    cb = ContinuousCallback((t,u,int) -> u[1] - exp(1), terminate!)
+    f = (u, p, t) -> copy(u)
+    cb = ContinuousCallback((u,t,int) -> u[1] - exp(1), terminate!)
     prob = ODEProblem(f, MVector(1.0), (0.0, 2.0), callback=cb)
     sol = solve(prob, alg)
     sol.u[end][1] ≈ exp(1)
@@ -337,9 +337,9 @@ end
 
 # Test ContinuousCallback hits values on the steps
 t_event = 100.0
-f_simple(t,u) = 1.00001*u
+f_simple(u,p,t) = 1.00001*u
 event_triggered = false
-condition_simple(t,u,integrator) = t_event-t
+condition_simple(u,t,integrator) = t_event-t
 function affect_simple!(integrator)
   global event_triggered
   event_triggered = true

@@ -1,6 +1,6 @@
 using OrdinaryDiffEq
 
-f = function (t,u,du)
+f = function (du,u,p,t)
   du[1][1] = 0.85u[1][1]
 end
 

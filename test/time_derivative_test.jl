@@ -1,9 +1,9 @@
 using OrdinaryDiffEq, Base.Test
 
-function time_derivative(t,u,du)
+function time_derivative(du,u,p,t)
   du[1] = -t
 end
-function time_derivative(::Type{Val{:analytic}},t,u0)
+function time_derivative(::Type{Val{:analytic}},u0,p,t)
   u0 - t^2/2
 end
 
@@ -14,6 +14,18 @@ sol = solve(prob,Rosenbrock32(),reltol=1e-9,abstol=1e-9)
 @test sol.errors[:final] < 1e-5
 sol = solve(prob,Rosenbrock23())
 @test sol.errors[:final] < 1e-10
+sol = solve(prob,Rodas4())
+@test sol.errors[:final] < 1e-10
+sol = solve(prob,Rodas5())
+@test sol.errors[:final] < 1e-10
+sol = solve(prob,Veldd4())
+@test sol.errors[:final] < 1e-10
+sol = solve(prob,KenCarp4())
+@test sol.errors[:final] < 1e-10
+sol = solve(prob,TRBDF2())
+@test sol.errors[:final] < 1e-10
+
+
 sol = solve(prob,GenericImplicitEuler(),dt=1/10)
 @test sol.errors[:final] < 1e-1
 sol = solve(prob,GenericTrapezoid(),dt=1/10)

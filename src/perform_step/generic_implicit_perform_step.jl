@@ -1,27 +1,30 @@
-mutable struct ImplicitRHS_Scalar{F,uType,tType} <: Function
+mutable struct ImplicitRHS_Scalar{F,uType,tType,P} <: Function
   f::F
   tmp::uType
   a::tType
   t::tType
   dt::tType
+  p::P
 end
 
-function (p::ImplicitRHS_Scalar)(u,resid)
-  resid[1] = first(u) - p.tmp - p.a*first(p.f(p.t+p.dt,first(u)))
+function (p::ImplicitRHS_Scalar)(resid,u)
+  resid[1] = first(u) - p.tmp - p.a*first(p.f(first(u),p.p,p.t+p.dt))
 end
 
-mutable struct ImplicitRHS{F,uType,tType,DiffCacheType} <: Function
+mutable struct ImplicitRHS{F,uType,tType,DiffCacheType,P} <: Function
   f::F
   tmp::uType
   a::tType
   t::tType
   dt::tType
   dual_cache::DiffCacheType
+  p::P
 end
 
-function (p::ImplicitRHS)(u,resid)
-  du1 = get_du(p.dual_cache, eltype(u))
-  p.f(p.t+p.dt,u,du1)
+function (p::ImplicitRHS)(resid,u)
+  _du1 = get_du(p.dual_cache, eltype(u))
+  du1 = reinterpret(eltype(u),_du1)
+  p.f(du1,u,p.p,p.t+p.dt)
   @. resid = u - p.tmp - p.a*du1
 end
 
@@ -30,7 +33,7 @@ function initialize!(integrator,
   cache.uhold[1] = integrator.uprev
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -39,7 +42,7 @@ function initialize!(integrator,
 end
 
 @muladd function perform_step!(integrator, cache::GenericImplicitEulerConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack uhold,rhs,nl_rhs = cache
   rhs.tmp = uprev
 
@@ -56,7 +59,7 @@ end
   rhs.a = dt
   nlres = integrator.alg.nlsolve(nl_rhs,uhold)
   uhold[1] = nlres[1]
-  integrator.fsallast = f(t+dt,uhold[1])
+  integrator.fsallast = f(uhold[1],p,t+dt)
   u = uhold[1]
 
   if integrator.opts.adaptive && integrator.success_iter > 0
@@ -88,7 +91,7 @@ function initialize!(integrator,
                      cache::Union{GenericImplicitEulerCache,GenericTrapezoidCache})
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst)
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
 
   integrator.kshortsize = 2
   resize!(integrator.k, integrator.kshortsize)
@@ -97,7 +100,7 @@ function initialize!(integrator,
 end
 
 @muladd function perform_step!(integrator, cache::GenericImplicitEulerCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack dual_cache,k,nl_rhs,rhs,tmp,atmp = cache
   copy!(tmp,uprev)
 
@@ -135,12 +138,12 @@ end
     integrator.EEst = 1
   end
 
-  f(t+dt,u,k)
+  f(k, u, p, t+dt)
 end
 
 function initialize!(integrator, cache::GenericTrapezoidConstantCache)
   cache.uhold[1] = integrator.uprev
-  integrator.fsalfirst = integrator.f(integrator.t, integrator.uprev)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
@@ -151,7 +154,7 @@ function initialize!(integrator, cache::GenericTrapezoidConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::GenericTrapezoidConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack uhold,rhs,nl_rhs = cache
   rhs.tmp = first(uprev) + (dt/2)*first(integrator.fsalfirst)
 
@@ -168,7 +171,7 @@ end
   rhs.a = dt/2
   nlres = integrator.alg.nlsolve(nl_rhs,uhold)
   uhold[1] = nlres[1]
-  integrator.fsallast = f(t+dt,uhold[1])
+  integrator.fsallast = f(uhold[1],p,t+dt)
   u = uhold[1]
 
   if integrator.opts.adaptive
@@ -217,7 +220,7 @@ end
 function initialize!(integrator, cache::GenericTrapezoidCache)
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.f(integrator.t, integrator.uprev, integrator.fsalfirst)
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
   integrator.kshortsize = 2
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
@@ -225,7 +228,7 @@ function initialize!(integrator, cache::GenericTrapezoidCache)
 end
 
 @muladd function perform_step!(integrator, cache::GenericTrapezoidCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f = integrator
+  @unpack t,dt,uprev,u,f,p = integrator
   @unpack dual_cache,k,rhs,nl_rhs,tmp,atmp = cache
   tmp .= uprev .+ (dt/2).*integrator.fsalfirst
 
@@ -284,5 +287,5 @@ end
     end
   end
 
-  f(t+dt,u,k)
+  f(k, u, p, t+dt)
 end

@@ -1,10 +1,10 @@
 using OrdinaryDiffEq, Base.Test, DiffEqDevTools, SpecialMatrices, DiffEqOperators
 const μ = 1.01
-f2 = (t,u) -> μ * u
+f2 = (u,p,t) -> μ * u
 f1 = DiffEqArrayOperator(μ)
 f = SplitFunction{false}(f1,f2,nothing)
 prob = SplitODEProblem(f1,f2,1/2,(0.0,1.0),func_cache=1/2)
-(p::typeof(prob.f))(::Type{Val{:analytic}},t,u0) = u0.*exp.(2μ*t)
+(::typeof(prob.f))(::Type{Val{:analytic}},u0,p,t) = u0.*exp.(2μ*t)
 
 srand(100)
 dts = 1./2.^(7:-1:4) #14->7 good plot
@@ -22,9 +22,9 @@ sim  = test_convergence(dts,prob,ETDRK4(),dense_errors=true)
 u0 = rand(2)
 A = Strang(2)
 f1 = DiffEqArrayOperator(full(A))
-f2 = (t,u,du) -> du .= μ .* u
+f2 = (du,u,p,t) -> du .= μ .* u
 prob = SplitODEProblem(f1,f2,u0,(0.0,1.0))
-function (p::typeof(prob.f))(::Type{Val{:analytic}},t,u0)
+function (::typeof(prob.f))(::Type{Val{:analytic}},u0,p,t)
  tmp = (A+μ*I)*t
  expm(tmp)*u0
 end

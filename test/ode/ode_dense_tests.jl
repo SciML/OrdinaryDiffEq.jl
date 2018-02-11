@@ -15,8 +15,8 @@ for idx in eachindex(interpolation_results_2d)
   interpolation_results_2d[idx] = zeros(prob_ode_2Dlinear.u0)
 end
 
-f_linear_inplace = (t,u,du) -> begin @. du = 1.01 * u end
-(::typeof(f_linear_inplace))(::Type{Val{:analytic}}, t, u0) = exp(1.01*t)*u0
+f_linear_inplace = (du,u,p,t) -> begin @. du = 1.01 * u end
+(::typeof(f_linear_inplace))(::Type{Val{:analytic}}, u0, p, t) = exp(1.01*t)*u0
 prob_ode_linear_inplace = ODEProblem(f_linear_inplace, [0.5], (0.,1.))
 const interpolation_results_1d_inplace = Vector{typeof(prob_ode_linear_inplace.u0)}(length(interpolation_points))
 for idx in eachindex(interpolation_results_1d_inplace)
@@ -175,7 +175,7 @@ regression_test(Feagin10(), 6e-4, 9e-4)
 regression_test(Vern6(), 7e-8, 7e-8; test_diff1 = true)
 
 const linear_bigα4 = parse(BigFloat, "1.01")
-f = (t,u) -> (linear_bigα4*u)
+f = (u,p,t) -> (linear_bigα4*u)
 prob_ode_bigfloatlinear = ODEProblem(f,parse(BigFloat,"0.5"),(0.0,1.0))
 prob = prob_ode_bigfloatlinear
 

@@ -20,9 +20,12 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   save_idxs = nothing,
   save_everystep = isempty(saveat),
   save_timeseries = nothing,save_start = true,save_end = true,
-  dense = save_everystep && !(typeof(alg) <: Discrete),
-  calck = (!isempty(setdiff(saveat,tstops)) || dense),
-  dt = typeof(alg) <: Discrete && isempty(tstops) ? eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
+  callback=nothing,
+  dense = save_everystep && !(typeof(alg) <: FunctionMap),
+  calck = (callback != nothing && callback != CallbackSet()) || # Empty callback
+          (prob.callback != nothing && prob.callback != CallbackSet()) || # Empty prob.callback
+          (!isempty(setdiff(saveat,tstops)) || dense), # and no dense output
+  dt = typeof(alg) <: FunctionMap && isempty(tstops) ? eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
   adaptive = isadaptive(alg),
   gamma=gamma_default(alg),
   abstol=nothing,
@@ -36,7 +39,9 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   beta1=beta1_default(alg,beta2),
   maxiters = 1000000,
   dtmax=eltype(prob.tspan)((prob.tspan[end]-prob.tspan[1])),
-  dtmin=typeof(one(eltype(prob.tspan))) <: AbstractFloat ? 10*eps(eltype(prob.tspan)) : eltype(prob.tspan)(1//10^(10)),
+  dtmin= typeof(one(eltype(prob.tspan))) <: AbstractFloat ? 10*eps(eltype(prob.tspan)) :
+         typeof(one(eltype(prob.tspan))) <: Integer ? 0 :
+         eltype(prob.tspan)(1//10^(10)),
   internalnorm = ODE_DEFAULT_NORM,
   isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
   unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
@@ -46,7 +51,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   initialize_save = true,
   progress=false,progress_steps=1000,progress_name="ODE",
   progress_message = ODE_DEFAULT_PROG_MESSAGE,
-  userdata=nothing,callback=nothing,
+  userdata=nothing,
   allow_extrapolation = alg_extrapolates(alg),
   initialize_integrator=true,kwargs...)
 
@@ -80,6 +85,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   end
 
   f = prob.f
+  p = prob.p
 
   # Get the control variables
 
@@ -104,7 +110,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   uEltypeNoUnits = recursive_unitless_eltype(u)
   tTypeNoUnits   = typeof(one(tType))
 
-  if typeof(alg) <: Discrete
+  if typeof(alg) <: FunctionMap
     abstol_internal = zero(u)
   elseif abstol == nothing
     if uBottomEltypeNoUnits == uBottomEltype || !(typeof(u) <: ArrayPartition)
@@ -116,7 +122,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     abstol_internal = abstol
   end
 
-  if typeof(alg) <: Discrete
+  if typeof(alg) <: FunctionMap
     reltol_internal = zero(first(u)/t)
   elseif reltol == nothing
     reltol_internal = uBottomEltypeNoUnits(1//10^3)
@@ -173,9 +179,9 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     sizehint!(ts,1000)
     sizehint!(ks,1000)
   else # saveat
-    sizehint!(timeseries,length(saveat)+1)
-    sizehint!(ts,length(saveat)+1)
-    sizehint!(ks,length(saveat)+1)
+    sizehint!(timeseries,length(saveat_internal)+1)
+    sizehint!(ts,length(saveat_internal)+1)
+    sizehint!(ks,length(saveat_internal)+1)
   end
 
   if save_start
@@ -194,22 +200,24 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     saveiter_dense = 0
   end
 
-  opts = DEOptions{typeof(abstol_internal),typeof(reltol_internal),tTypeNoUnits,tType,
+  QT = tTypeNoUnits <: Integer ? typeof(qmin) : tTypeNoUnits
+
+  opts = DEOptions{typeof(abstol_internal),typeof(reltol_internal),QT,tType,
                    typeof(internalnorm),typeof(callbacks_internal),typeof(isoutofdomain),
                    typeof(progress_message),typeof(unstable_check),typeof(tstops_internal),
                    typeof(d_discontinuities_internal),typeof(userdata),typeof(save_idxs),
                    typeof(maxiters),typeof(tstops),typeof(saveat),
                    typeof(d_discontinuities)}(
                        maxiters,timeseries_steps,save_everystep,adaptive,abstol_internal,
-                       reltol_internal,tTypeNoUnits(gamma),tTypeNoUnits(qmax),
-                       tTypeNoUnits(qmin),tTypeNoUnits(qsteady_max),
-                       tTypeNoUnits(qsteady_min),tTypeNoUnits(failfactor),tType(dtmax),
+                       reltol_internal,QT(gamma),QT(qmax),
+                       QT(qmin),QT(qsteady_max),
+                       QT(qsteady_min),QT(failfactor),tType(dtmax),
                        tType(dtmin),internalnorm,save_idxs,tstops_internal,saveat_internal,
                        d_discontinuities_internal,
                        tstops,saveat,d_discontinuities,
                        userdata,progress,progress_steps,
                        progress_name,progress_message,timeseries_errors,dense_errors,
-                       tTypeNoUnits(beta1),tTypeNoUnits(beta2),tTypeNoUnits(qoldinit),dense,
+                       QT(beta1),QT(beta2),QT(qoldinit),dense,
                        save_start,save_end,callbacks_internal,isoutofdomain,
                        unstable_check,verbose,
                        calck,force_dtmin,advance_to_tstop,stop_at_next_tstop)
@@ -233,7 +241,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     uprev2 = uprev
   end
 
-  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol_internal,Val{isinplace(prob)})
+  cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol_internal,p,calck,Val{isinplace(prob)})
 
   if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
     id = CompositeInterpolationData(f,timeseries,ts,ks,alg_choice,dense,cache)
@@ -281,13 +289,13 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   erracc = tTypeNoUnits(1)
   dtacc = tType(1)
 
-  integrator = ODEIntegrator{algType,uType,tType,
-                             tTypeNoUnits,typeof(tdir),typeof(k),SolType,
+  integrator = ODEIntegrator{algType,uType,tType,typeof(p),
+                             QT,typeof(tdir),typeof(k),SolType,
                              FType,typeof(prog),cacheType,
                              typeof(opts),fsal_typeof(alg,rate_prototype)}(
-                             sol,u,k,t,tType(dt),f,uprev,uprev2,tprev,
+                             sol,u,k,t,tType(dt),f,p,uprev,uprev2,tprev,
                              alg,dtcache,dtchangeable,
-                             dtpropose,tdir,EEst,tTypeNoUnits(qoldinit),q11,
+                             dtpropose,tdir,EEst,QT(qoldinit),q11,
                              erracc,dtacc,success_iter,
                              iter,saveiter,saveiter_dense,prog,cache,
                              kshortsize,force_stepfail,last_stepfail,
@@ -393,7 +401,7 @@ function initialize_callbacks!(integrator, initialize_save = true)
   callbacks = integrator.opts.callback
   integrator.u_modified = true
 
-  u_modified = initialize!(callbacks,t,u,integrator)
+  u_modified = initialize!(callbacks,u,t,integrator)
 
   # if the user modifies u, we need to fix previous values before initializing
   # FSAL in order for the starting derivatives to be correct

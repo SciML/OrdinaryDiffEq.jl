@@ -34,11 +34,11 @@ end
   interp_index = 0
   # Check if the event occured
   if typeof(callback.idxs) <: Void
-    previous_condition = callback.condition(integrator.tprev,integrator.uprev,integrator)
+    previous_condition = callback.condition(integrator.uprev,integrator.tprev,integrator)
   elseif typeof(callback.idxs) <: Number
-    previous_condition = callback.condition(integrator.tprev,integrator.uprev[callback.idxs],integrator)
+    previous_condition = callback.condition(integrator.uprev[callback.idxs],integrator.tprev,integrator)
   else
-    previous_condition = callback.condition(integrator.tprev,@view(integrator.uprev[callback.idxs]),integrator)
+    previous_condition = callback.condition(@view(integrator.uprev[callback.idxs]),integrator.tprev,integrator)
   end
   if isapprox(previous_condition,0,rtol=callback.reltol,atol=callback.abstol)
     prev_sign = 0.0
@@ -47,16 +47,16 @@ end
   end
   prev_sign_index = 1
   if typeof(callback.idxs) <: Void
-    next_sign = sign(callback.condition(integrator.t,integrator.u,integrator))
+    next_sign = sign(callback.condition(integrator.u,integrator.t,integrator))
   elseif typeof(callback.idxs) <: Number
-    next_sign = sign(callback.condition(integrator.t,integrator.u[callback.idxs],integrator))
+    next_sign = sign(callback.condition(integrator.u[callback.idxs],integrator.t,integrator))
   else
-    next_sign = sign(callback.condition(integrator.t,@view(integrator.u[callback.idxs]),integrator))
+    next_sign = sign(callback.condition(@view(integrator.u[callback.idxs]),integrator.t,integrator))
   end
   if ((prev_sign<0 && !(typeof(callback.affect!)<:Void)) || (prev_sign>0 && !(typeof(callback.affect_neg!)<:Void))) && prev_sign*next_sign<=0
     event_occurred = true
     interp_index = callback.interp_points
-  elseif callback.interp_points!=0  && !(typeof(integrator.alg) <: Discrete)# Use the interpolants for safety checking
+  elseif callback.interp_points!=0  && !(typeof(integrator.alg) <: FunctionMap)# Use the interpolants for safety checking
     if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache
       if typeof(callback.idxs) <: Void
         tmp = integrator.cache.tmp
@@ -70,7 +70,7 @@ end
       else
         tmp = ode_interpolant(Θs[i],integrator,callback.idxs,Val{0})
       end
-      new_sign = callback.condition(integrator.tprev+integrator.dt*Θs[i],tmp,integrator)
+      new_sign = callback.condition(tmp,integrator.tprev+integrator.dt*Θs[i],integrator)
       if prev_sign == 0
         prev_sign = new_sign
         prev_sign_index = i
@@ -98,7 +98,7 @@ function find_callback_time(integrator,callback)
         top_Θ = typeof(integrator.t)(1)
         bottom_θ = typeof(integrator.t)(0)
       end
-      if callback.rootfind && !(typeof(integrator.alg) <: Discrete)
+      if callback.rootfind && !(typeof(integrator.alg) <: FunctionMap)
         if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache
           _cache = first(get_tmp_cache(integrator))
           if typeof(callback.idxs) <: Void
@@ -113,7 +113,7 @@ function find_callback_time(integrator,callback)
           else
             tmp = ode_interpolant(Θ,integrator,callback.idxs,Val{0})
           end
-          callback.condition(integrator.tprev+Θ*integrator.dt,tmp,integrator)
+          callback.condition(tmp,integrator.tprev+Θ*integrator.dt,integrator)
         end
         Θ = prevfloat(find_zero(zero_func,(bottom_θ,top_Θ),FalsePosition(),abstol = callback.abstol/10))
         #Θ = prevfloat(...)
@@ -125,7 +125,7 @@ function find_callback_time(integrator,callback)
         # a float which is slightly after, making it out of the domain, causing
         # havoc.
         new_t = integrator.dt*Θ
-      elseif interp_index != callback.interp_points && !(typeof(integrator.alg) <: Discrete)
+      elseif interp_index != callback.interp_points && !(typeof(integrator.alg) <: FunctionMap)
         new_t = integrator.dt*Θs[interp_index]
       else
         # If no solve and no interpolants, just use endpoint
@@ -179,7 +179,7 @@ end
 #Base Case: Just one
 @inline function apply_discrete_callback!(integrator,callback::DiscreteCallback)
   saved_in_cb = false
-  if callback.condition(integrator.t,integrator.u,integrator)
+  if callback.condition(integrator.u,integrator.t,integrator)
     @inbounds if callback.save_positions[1]
       savevalues!(integrator,true)
       saved_in_cb = true

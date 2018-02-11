@@ -21,19 +21,19 @@ u_cache(c::GenericIIF1Cache)    = ()
 du_cache(c::GenericIIF1Cache)   = (c.rtmp1,c.fsalfirst,c.k)
 dual_cache(c::GenericIIF1Cache) = (c.dual_cache,)
 
-function alg_cache(alg::GenericIIF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
+function alg_cache(alg::GenericIIF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   uhold = Vector{typeof(u)}(1)
-  rhs = RHS_IIF_Scalar(f,zero(u),t,t,one(uEltypeNoUnits))
+  rhs = RHS_IIF_Scalar(f,zero(u),t,t,one(uEltypeNoUnits),p)
   nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
   GenericIIF1ConstantCache(uhold,rhs,nl_rhs)
 end
 
-function alg_cache(alg::GenericIIF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
+function alg_cache(alg::GenericIIF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u,indices(u)); rtmp1 = zeros(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
   A = f.f1
   expA = expm(A*dt)
-  rhs = RHS_IIF(f,tmp,t,t,uEltypeNoUnits(1//1),dual_cache)
+  rhs = RHS_IIF(f,tmp,t,t,uEltypeNoUnits(1//1),dual_cache,p)
   k = similar(rate_prototype); fsalfirst = similar(rate_prototype)
   nl_rhs = alg.nlsolve(Val{:init},rhs,u)
   GenericIIF1Cache(u,uprev,dual_cache,tmp,rhs,nl_rhs,rtmp1,fsalfirst,expA,k)
@@ -62,21 +62,21 @@ u_cache(c::GenericIIF2Cache)    = ()
 du_cache(c::GenericIIF2Cache)   = (c.rtmp1,c.fsalfirst,c.k)
 dual_cache(c::GenericIIF2Cache) = (c.dual_cache,)
 
-function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
+function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   uhold = Vector{typeof(u)}(1)
   tmp = zero(u)
-  rhs = RHS_IIF_Scalar(f,tmp,t,t,uEltypeNoUnits(1//2))
+  rhs = RHS_IIF_Scalar(f,tmp,t,t,uEltypeNoUnits(1//2),p)
   nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
   GenericIIF2ConstantCache(uhold,rhs,nl_rhs)
 end
 
-function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
+function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u,indices(u)); rtmp1 = zeros(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
   A = f.f1
   expA = expm(A*dt)
   k = similar(rate_prototype); fsalfirst = similar(rate_prototype)
-  rhs = RHS_IIF(f,tmp,t,t,uEltypeNoUnits(1//2),dual_cache)
+  rhs = RHS_IIF(f,tmp,t,t,uEltypeNoUnits(1//2),dual_cache,p)
   nl_rhs = alg.nlsolve(Val{:init},rhs,u)
   GenericIIF2Cache(u,uprev,dual_cache,tmp,rhs,nl_rhs,rtmp1,fsalfirst,expA,k)
 end
@@ -91,7 +91,7 @@ struct LawsonEulerCache{uType,rateType,expType} <: OrdinaryDiffEqMutableCache
   fsalfirst::rateType
 end
 
-function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
+function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   A = f.f1
   expA = expm(A*dt)
   LawsonEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),expA,zeros(rate_prototype))
@@ -102,7 +102,7 @@ du_cache(c::LawsonEulerCache) = (c.k,c.fsalfirst,c.rtmp)
 
 struct LawsonEulerConstantCache <: OrdinaryDiffEqConstantCache end
 
-alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}}) = LawsonEulerConstantCache()
+alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = LawsonEulerConstantCache()
 
 struct NorsettEulerCache{uType,rateType,expType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -115,7 +115,7 @@ struct NorsettEulerCache{uType,rateType,expType} <: OrdinaryDiffEqMutableCache
   fsalfirst::rateType
 end
 
-function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
+function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   A = f.f1
   expA = expm(A*dt)
   phi1 = ((expA-I)/A)
@@ -127,7 +127,7 @@ du_cache(c::NorsettEulerCache) = (c.k,c.fsalfirst)
 
 struct NorsettEulerConstantCache <: OrdinaryDiffEqConstantCache end
 
-alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}}) = NorsettEulerConstantCache()
+alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = NorsettEulerConstantCache()
 
 struct ETDRK4ConstantCache{matType} <: OrdinaryDiffEqMutableCache
   E::matType
@@ -138,7 +138,7 @@ struct ETDRK4ConstantCache{matType} <: OrdinaryDiffEqMutableCache
   Q::matType
 end
 
-function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{false}})
+function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   A = f.f1
   E,E2,a,b,c,Q = get_etdrk4_oop_operators(dt,A.A)
   ETDRK4ConstantCache(E,E2,a,b,c,Q)
@@ -186,7 +186,7 @@ struct ETDRK4Cache{uType,rateType,matType} <: OrdinaryDiffEqMutableCache
   Q::matType
 end
 
-function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,::Type{Val{true}})
+function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   A = f.f1
   tmp = similar(u)
   tmp2 = zeros(rate_prototype); fsalfirst = zeros(rate_prototype)
@@ -201,11 +201,12 @@ u_cache(c::ETDRK4Cache) = ()
 du_cache(c::ETDRK4Cache) = (c.k,c.fsalfirst,c.rtmp)
 
 function get_etdrk4_operators(_h,L)
-    L .*= _h/2
+
+    @. L .*= _h/2
     _E2 = expm(L)
     E2 = big.(_E2);
     E = E2*E2
-    L .*= 2/_h
+    @. L *= 2/_h
     h = big(_h)
     A = h*L
 
@@ -265,4 +266,26 @@ function get_etdrk4_operators(_h,L)
     c = Float64.(tmp2)
 
     Float64.(E),_E2,a,b,c,Q
+end
+
+function get_etdrk4_operators(_h,_L::Diagonal)
+
+    L = _L.diag
+
+    @. L = _h/2*L
+    _E2 = exp.(L)
+    E2 = big.(_E2);
+    E = E2.*E2
+    @. L *= 2/_h
+    h = big(_h)
+    A = h.*L
+
+    coeff = @. h^(-2) * L^(-3)
+    A2 = A.^2
+
+    Q = @. Float64((E2-1)/L)
+    a = @. Float64(coeff * (-4 - A + E*(4 - 3A  + A2)))
+    b = @. Float64(coeff * (2 + A + E*(-2 + A)))
+    c = @. Float64(coeff * (-4 - 3A - A2 + E*(4-A)))
+    Diagonal(Float64.(E)),Diagonal(Float64.(E2)),Diagonal(a),Diagonal(b),Diagonal(c),Diagonal(Q)
 end

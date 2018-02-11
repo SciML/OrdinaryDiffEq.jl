@@ -1,16 +1,16 @@
-mutable struct DEOptions{absType,relType,tTypeNoUnits,tType,F2,F3,F4,F5,F6,tstopsType,discType,ECType,SType,MI,tcache,savecache,disccache}
+mutable struct DEOptions{absType,relType,QT,tType,F2,F3,F4,F5,F6,tstopsType,discType,ECType,SType,MI,tcache,savecache,disccache}
   maxiters::MI
   timeseries_steps::Int
   save_everystep::Bool
   adaptive::Bool
   abstol::absType
   reltol::relType
-  gamma::tTypeNoUnits
-  qmax::tTypeNoUnits
-  qmin::tTypeNoUnits
-  qsteady_max::tTypeNoUnits
-  qsteady_min::tTypeNoUnits
-  failfactor::tTypeNoUnits
+  gamma::QT
+  qmax::QT
+  qmin::QT
+  qsteady_max::QT
+  qsteady_min::QT
+  failfactor::QT
   dtmax::tType
   dtmin::tType
   internalnorm::F2
@@ -28,9 +28,9 @@ mutable struct DEOptions{absType,relType,tTypeNoUnits,tType,F2,F3,F4,F5,F6,tstop
   progress_message::F5
   timeseries_errors::Bool
   dense_errors::Bool
-  beta1::tTypeNoUnits
-  beta2::tTypeNoUnits
-  qoldinit::tTypeNoUnits
+  beta1::QT
+  beta2::QT
+  qoldinit::QT
   dense::Bool
   save_start::Bool
   save_end::Bool
@@ -44,13 +44,43 @@ mutable struct DEOptions{absType,relType,tTypeNoUnits,tType,F2,F3,F4,F5,F6,tstop
   stop_at_next_tstop::Bool
 end
 
-mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,F,ProgressType,CacheType,O,FSALType} <: AbstractODEIntegrator
+"""
+    ODEIntegrator
+Fundamental `struct` allowing interactively stepping through the numerical solving of a differential equation.
+The full documentation is hosted here: [http://docs.juliadiffeq.org/latest/basics/integrator.html](http://docs.juliadiffeq.org/latest/basics/integrator.html). This docstring
+describes basic functionality only!
+
+Initialize using `integrator = init(prob::ODEProblem, alg; kwargs...)`. The keyword args which are accepted are the same 
+[Common Solver Options](http://docs.juliadiffeq.org/latest/basics/common_solver_opts.html#Common-Solver-Options-1)
+used by `solve`.
+ 
+
+For reference, relevant fields of the `ODEIntegrator` are:
+
+* `t` - time of the proposed step
+* `u` - value at the proposed step
+* `opts` - common solver options
+* `alg` - the algorithm associated with the solution
+* `f` - the function being solved
+* `sol` - the current state of the solution
+* `tprev` - the last timepoint
+* `uprev` - the value at the last timepoint
+
+`opts` holds all of the common solver options, and can be mutated to change the solver characteristics.
+For example, to modify the absolute tolerance for the future timesteps, one can do:
+```julia
+integrator.opts.abstol = 1e-9
+```
+For more info see the linked documentation page.
+"""
+mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,pType,QT,tdirType,ksEltype,SolType,F,ProgressType,CacheType,O,FSALType} <: AbstractODEIntegrator
   sol::SolType
   u::uType
   k::ksEltype
   t::tType
   dt::tType
   f::F
+  p::pType
   uprev::uType
   uprev2::uType
   tprev::tType
@@ -59,10 +89,10 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,tTypeN
   dtchangeable::Bool
   dtpropose::tType
   tdir::tdirType
-  EEst::tTypeNoUnits
-  qold::tTypeNoUnits
-  q11::tTypeNoUnits
-  erracc::tTypeNoUnits
+  EEst::QT
+  qold::QT
+  q11::QT
+  erracc::QT
   dtacc::tType
   success_iter::Int
   iter::Int
@@ -82,19 +112,19 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,tTypeN
   fsalfirst::FSALType
   fsallast::FSALType
 
-  function (::Type{ODEIntegrator{algType,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,
-                F,ProgressType,CacheType,O,FSALType}}){algType,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,
+  function (::Type{ODEIntegrator{algType,uType,tType,pType,tTypeNoUnits,tdirType,ksEltype,SolType,
+                F,ProgressType,CacheType,O,FSALType}}){algType,uType,tType,pType,tTypeNoUnits,tdirType,ksEltype,SolType,
                 F,ProgressType,CacheType,O,FSALType}(
-                sol,u,k,t,dt,f,uprev,uprev2,tprev,
+                sol,u,k,t,dt,f,p,uprev,uprev2,tprev,
       alg,dtcache,dtchangeable,dtpropose,tdir,
       EEst,qold,q11,erracc,dtacc,success_iter,
       iter,saveiter,saveiter_dense,prog,cache,
       kshortsize,force_stepfail,last_stepfail,just_hit_tstop,
       accept_step,isout,reeval_fsal,u_modified,opts)
 
-      new{algType,uType,tType,tTypeNoUnits,tdirType,ksEltype,SolType,
+      new{algType,uType,tType,pType,tTypeNoUnits,tdirType,ksEltype,SolType,
                   F,ProgressType,CacheType,O,FSALType}(
-                  sol,u,k,t,dt,f,uprev,uprev2,tprev,
+                  sol,u,k,t,dt,f,p,uprev,uprev2,tprev,
       alg,dtcache,dtchangeable,dtpropose,tdir,
       EEst,qold,q11,erracc,dtacc,success_iter,
       iter,saveiter,saveiter_dense,prog,cache,
