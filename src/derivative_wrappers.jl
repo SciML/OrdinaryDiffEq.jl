@@ -2,8 +2,8 @@ function derivative!(df::AbstractArray{<:Number}, f, x::Union{Number,AbstractArr
     if alg_autodiff(integrator.alg)
         ForwardDiff.derivative!(df, f, fx, x)
     else
-        RealOrComplex = eltype(integrator.u) <: Complex ? Val{:Complex} : Val{:Real}
-        DiffEqDiffTools.finite_difference!(df, f, x, integrator.alg.diff_type, RealOrComplex, fx)
+        returntype = eltype(integrator.u)
+        DiffEqDiffTools.finite_difference_gradient!(df, f, x, integrator.alg.diff_type, returntype, Val{true})
     end
     nothing
 end
@@ -25,7 +25,7 @@ function build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
       if alg.diff_type != Val{:complex}
         jac_config = DiffEqDiffTools.JacobianCache(tmp,du1,du2,alg.diff_type)
       else
-        jac_config = DiffEqDiffTools.JacobianCache(Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing,alg.diff_type)
+        jac_config = DiffEqDiffTools.JacobianCache(Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing,alg.diff_type,eltype(u))
       end
     end
   else
