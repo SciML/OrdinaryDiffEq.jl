@@ -234,6 +234,10 @@ function DiffEqBase.auto_dt_reset!(integrator::ODEIntegrator)
 end
 
 function DiffEqBase.set_t!(integrator::ODEIntegrator, t::Real)
+  if integrator.opts.save_everystep
+    error("Integrator time cannot be reset unless it is initialized",
+          " with save_everystep=false")
+  end
   if alg_extrapolates(integrator.alg) || !isdtchangeable(integrator.alg)
     reinit!(integrator, integrator.u;
             t0 = t,
@@ -246,6 +250,10 @@ function DiffEqBase.set_t!(integrator::ODEIntegrator, t::Real)
 end
 
 function DiffEqBase.set_u!(integrator::ODEIntegrator, u)
+  if integrator.opts.save_everystep
+    error("Integrator state cannot be reset unless it is initialized",
+          " with save_everystep=false")
+  end
   # TODO: define the "fast path"
   # At the moment, fallback to reinit!:
   reinit!(integrator, u;
@@ -256,6 +264,10 @@ function DiffEqBase.set_u!(integrator::ODEIntegrator, u)
 end
 
 function DiffEqBase.set_ut!(integrator::ODEIntegrator, u, t::Real)
+  if integrator.opts.save_everystep
+    error("Integrator state cannot be reset unless it is initialized",
+          " with save_everystep=false")
+  end
   # TODO: define the "fast path"
   # At the moment, fallback to reinit!:
   reinit!(integrator, u;

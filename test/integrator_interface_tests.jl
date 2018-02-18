@@ -8,8 +8,8 @@ using OrdinaryDiffEq
   prob = ODEProblem(f,1/2,(0.0,2.0))
   t_half = 1.0
 
-  integrator1 = init(prob, alg())
-  integrator2 = init(prob, alg())
+  integrator1 = init(prob, alg(); save_everystep=false)
+  integrator2 = init(prob, alg(); save_everystep=false)
 
   step!(integrator1, t_half)  # "inexact" stepping w/o tstops
   if setter === set_t!
@@ -39,8 +39,8 @@ end
 @testset "Resolve with $setter ($alg)" for alg in [RK4, Trapezoid],
                                         setter in [set_t!, set_ut!]
   f = (u,p,t) -> (2u * cos(2π * t))
-  integrator1 = init(ODEProblem(f,1/2,(0.0,1.0)), alg())
-  integrator2 = init(ODEProblem(f,1/2,(0.0,2.0)), alg())
+  integrator1 = init(ODEProblem(f,1/2,(0.0,1.0)), alg(); save_everystep=false)
+  integrator2 = init(ODEProblem(f,1/2,(0.0,2.0)), alg(); save_everystep=false)
 
   solve!(integrator1)
   if setter === set_t!
