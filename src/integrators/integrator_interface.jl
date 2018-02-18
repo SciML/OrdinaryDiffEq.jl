@@ -232,3 +232,35 @@ function DiffEqBase.auto_dt_reset!(integrator::ODEIntegrator)
   integrator.tdir,integrator.opts.dtmax,integrator.opts.abstol,integrator.opts.reltol,
   integrator.opts.internalnorm,integrator.sol.prob,integrator)
 end
+
+function DiffEqBase.set_t!(integrator::ODEIntegrator, t::Real)
+  if alg_extrapolates(integrator.alg) || !isdtchangeable(integrator.alg)
+    reinit!(integrator, integrator.u;
+            t0 = t,
+            reset_dt = false,
+            reinit_callbacks = false,
+            reinit_cache = false)
+  else
+    integrator.t = t
+  end
+end
+
+function DiffEqBase.set_u!(integrator::ODEIntegrator, u)
+  # TODO: define the "fast path"
+  # At the moment, fallback to reinit!:
+  reinit!(integrator, u;
+          t0 = integrator.t,
+          reset_dt = false,
+          reinit_callbacks = false,
+          reinit_cache = false)
+end
+
+function DiffEqBase.set_ut!(integrator::ODEIntegrator, u, t::Real)
+  # TODO: define the "fast path"
+  # At the moment, fallback to reinit!:
+  reinit!(integrator, u;
+          t0 = t,
+          reset_dt = false,
+          reinit_callbacks = false,
+          reinit_cache = false)
+end
