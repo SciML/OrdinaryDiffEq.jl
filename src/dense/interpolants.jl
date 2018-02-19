@@ -1025,10 +1025,10 @@ end
   else
     return y₀[idxs] + dt*(k[1][idxs]*b1Θ + k[8][idxs]*b8Θ + k[9][idxs]*b9Θ +
            k[10][idxs]*b10Θ + k[11][idxs]*b11Θ + k[12][idxs]*b12Θ +
-           k[13][idxs]*b13Θ + k[14]*b14Θ + k[15][idxs]*b15Θ + k[17][idxs]*b17Θ +
-           k[18][idxs]*b18Θ + k[19]*b19Θ + k[20]*b20Θ + k[21][idxs]*b21Θ +
-           k[22][idxs]*b22Θ + k[23][idxs]*b23Θ + k[24]*b24Θ + k[25]*b25Θ +
-           k[26][idxs]*b26Θ)
+           k[13][idxs]*b13Θ + k[14][idxs]*b14Θ + k[15][idxs]*b15Θ + k[17][idxs]*b17Θ +
+           k[18][idxs]*b18Θ + k[19][idxs]*b19Θ + k[20][idxs]*b20Θ + k[21][idxs]*b21Θ +
+           k[22][idxs]*b22Θ + k[23][idxs]*b23Θ + k[24][idxs]*b24Θ +
+           k[25][idxs]*b25Θ + k[26][idxs]*b26Θ)
   end
 end
 
