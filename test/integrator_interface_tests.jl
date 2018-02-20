@@ -24,12 +24,9 @@ using OrdinaryDiffEq
   solve!(integrator2)
 
   @test integrator1.t == integrator2.t
-  if setter in [set_u!, set_ut!] || alg === Trapezoid
-    rtol = integrator1.opts.reltol
+  if alg === Trapezoid
+    rtol = integrator1.opts.reltol * 100
     atol = integrator1.opts.abstol
-    if alg === Trapezoid
-      rtol *= 100
-    end
     @test integrator1.u ≈ integrator2.u  rtol=rtol atol=atol
   else
     @test integrator1.u == integrator2.u
