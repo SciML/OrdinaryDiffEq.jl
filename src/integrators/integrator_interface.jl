@@ -232,3 +232,33 @@ function DiffEqBase.auto_dt_reset!(integrator::ODEIntegrator)
   integrator.tdir,integrator.opts.dtmax,integrator.opts.abstol,integrator.opts.reltol,
   integrator.opts.internalnorm,integrator.sol.prob,integrator)
 end
+
+function DiffEqBase.set_t!(integrator::ODEIntegrator, t::Real)
+  if integrator.opts.save_everystep
+    error("Integrator time cannot be reset unless it is initialized",
+          " with save_everystep=false")
+  end
+  if alg_extrapolates(integrator.alg) || !isdtchangeable(integrator.alg)
+    reinit!(integrator, integrator.u;
+            t0 = t,
+            reset_dt = false,
+            reinit_callbacks = false,
+            reinit_cache = false)
+  else
+    integrator.t = t
+  end
+end
+
+function DiffEqBase.set_u!(integrator::ODEIntegrator, u)
+  if integrator.opts.save_everystep
+    error("Integrator state cannot be reset unless it is initialized",
+          " with save_everystep=false")
+  end
+  integrator.u = u
+  u_modified!(integrator, true)
+end
+
+function DiffEqBase.set_ut!(integrator::ODEIntegrator, u, t::Real)
+  DiffEqBase.set_u!(integrator, u)
+  DiffEqBase.set_t!(integrator, t)
+end

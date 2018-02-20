@@ -45,5 +45,6 @@ tic()
 @time @testset "Iterator Tests" begin include("iterator_tests.jl") end
 @time @testset "u_modifed Tests" begin include("umodified_test.jl") end
 @time @testset "Composite Algorithm Tests" begin include("composite_algorithm_test.jl") end
+@time @testset "Integrator Interface Tests" begin include("integrator_interface_tests.jl") end
 
 toc()
