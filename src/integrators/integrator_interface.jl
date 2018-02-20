@@ -254,25 +254,11 @@ function DiffEqBase.set_u!(integrator::ODEIntegrator, u)
     error("Integrator state cannot be reset unless it is initialized",
           " with save_everystep=false")
   end
-  # TODO: define the "fast path"
-  # At the moment, fallback to reinit!:
-  reinit!(integrator, u;
-          t0 = integrator.t,
-          reset_dt = false,
-          reinit_callbacks = false,
-          reinit_cache = false)
+  integrator.u = u
+  u_modified!(integrator, true)
 end
 
 function DiffEqBase.set_ut!(integrator::ODEIntegrator, u, t::Real)
-  if integrator.opts.save_everystep
-    error("Integrator state cannot be reset unless it is initialized",
-          " with save_everystep=false")
-  end
-  # TODO: define the "fast path"
-  # At the moment, fallback to reinit!:
-  reinit!(integrator, u;
-          t0 = t,
-          reset_dt = false,
-          reinit_callbacks = false,
-          reinit_cache = false)
+  DiffEqBase.set_u!(integrator, u)
+  DiffEqBase.set_t!(integrator, t)
 end
