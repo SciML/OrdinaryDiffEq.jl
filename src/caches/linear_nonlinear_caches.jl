@@ -117,8 +117,20 @@ end
 
 function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   A = f.f1
-  expA = expm(A*dt)
-  phi1 = ((expA-I)/A)
+  if typeof(A.A) <: Diagonal
+      _expA = expm(A*dt)
+      phi1 = Diagonal((_expA-I)/A.A)
+      expA = Diagonal(_expA)
+
+      # Fix zero eigenvalues
+      for i in 1:size(phi1,1)
+          phi1[i,i] = ifelse(A[i,i]==0,dt/2,phi1[i,i])
+      end
+
+  else
+      expA = expm(A*dt)
+      phi1 = ((expA-I)/A)
+  end
   NorsettEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),expA,phi1,zeros(rate_prototype))
 end
 
@@ -287,5 +299,17 @@ function get_etdrk4_operators(_h,_L::Diagonal)
     a = @. Float64(coeff * (-4 - A + E*(4 - 3A  + A2)))
     b = @. Float64(coeff * (2 + A + E*(-2 + A)))
     c = @. Float64(coeff * (-4 - 3A - A2 + E*(4-A)))
+
+    # Fix zero eigenvalues
+    for i in 1:length(Q)
+        if L[i] == 0
+            Q[i] = _h/2
+            tmp = _h/6
+            a[i] = tmp
+            b[i] = tmp
+            c[i] = tmp
+        end
+    end
+
     Diagonal(Float64.(E)),Diagonal(Float64.(E2)),Diagonal(a),Diagonal(b),Diagonal(c),Diagonal(Q)
 end
