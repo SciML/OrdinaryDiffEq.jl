@@ -22,10 +22,10 @@ before_install:
     fi ;
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-  - julia -e 'Pkg.clone(pwd())'
-  - julia -e 'Pkg.build("OrdinaryDiffEq"); Pkg.test("OrdinaryDiffEq"; coverage=true)'
+  - julia --color=yes -e 'Pkg.clone(pwd())'
+  - julia --color=yes -e 'Pkg.build("OrdinaryDiffEq"); Pkg.test("OrdinaryDiffEq"; coverage=true)'
 after_success:
   # push coverage results to Coveralls
-  - julia -e 'cd(Pkg.dir("OrdinaryDiffEq")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
+  - julia --color=yes -e 'cd(Pkg.dir("OrdinaryDiffEq")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
   # push coverage results to Codecov
-  - julia -e 'cd(Pkg.dir("OrdinaryDiffEq")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
+  - julia --color=yes -e 'cd(Pkg.dir("OrdinaryDiffEq")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
