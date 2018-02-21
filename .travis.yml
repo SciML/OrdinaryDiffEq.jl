@@ -20,10 +20,11 @@ before_install:
       brew update;
       brew install gcc;
     fi ;
-script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia --color=yes -e 'Pkg.clone(pwd())'
-  - julia --color=yes -e 'Pkg.build("OrdinaryDiffEq"); Pkg.test("OrdinaryDiffEq"; coverage=true)'
+  - julia --color=yes -e 'Pkg.build("OrdinaryDiffEq")'
+script:
+  - julia --color=yes -e 'Pkg.test("OrdinaryDiffEq"; coverage=true)'
 after_success:
   # push coverage results to Coveralls
   - julia --color=yes -e 'cd(Pkg.dir("OrdinaryDiffEq")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
