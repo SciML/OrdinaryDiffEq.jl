@@ -78,6 +78,18 @@ solve!(integrator)
   @test integrator.sol.interp.timeseries[1] == u0
 end
 
+@testset "set u0 with save_idxs" begin
+  save_idxs = [1]
+  prob = prob_ode_2Dlinear
+  integrator = init(prob,Tsit5(); save_idxs=save_idxs)
+  u0 = prob.u0 .+ 1  # just make it different
+  @test u0 != prob.u0
+  reinit!(integrator, u0)
+  @test integrator.u == u0
+  @test integrator.sol.u[1] == u0[save_idxs]
+  @test integrator.sol.interp.timeseries[1] == u0[save_idxs]
+end
+
 @testset "set t0" begin
   prob = prob_ode_2Dlinear
   integrator = init(prob,Tsit5())
