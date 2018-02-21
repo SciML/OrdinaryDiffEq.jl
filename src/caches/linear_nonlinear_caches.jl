@@ -119,12 +119,12 @@ function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomElty
   A = f.f1
   if typeof(A.A) <: Diagonal
       _expA = expm(A*dt)
-      phi1 = Diagonal((_expA-I)/A.A)
+      phi1 = Diagonal(Float64.((big.(_expA)-I)/A.A))
       expA = Diagonal(_expA)
 
       # Fix zero eigenvalues
       for i in 1:size(phi1,1)
-          phi1[i,i] = ifelse(A[i,i]==0,dt/2,phi1[i,i])
+          phi1[i,i] = ifelse(A[i,i]==0,dt,phi1[i,i])
       end
 
   else
@@ -300,7 +300,7 @@ function get_etdrk4_operators(_h,_L::Diagonal)
     b = @. Float64(coeff * (2 + A + E*(-2 + A)))
     c = @. Float64(coeff * (-4 - 3A - A2 + E*(4-A)))
 
-    # Fix zero eigenvalues
+    # Fix zero eigenvalues, use limit equations
     for i in 1:length(Q)
         if L[i] == 0
             Q[i] = _h/2
