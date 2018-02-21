@@ -23,6 +23,8 @@ before_install:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia --color=yes -e 'Pkg.clone(pwd())'
   - julia --color=yes -e 'Pkg.build("OrdinaryDiffEq")'
+  # Manually resolve test requirements:
+  - julia --color=yes -e 'map(Pkg.add, keys(Pkg.Reqs.parse(Pkg.dir("OrdinaryDiffEq", "test", "REQUIRE"))))'
 script:
   - julia --color=yes -e 'Pkg.test("OrdinaryDiffEq"; coverage=true)'
 after_success:
