@@ -196,6 +196,15 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator,u0 = integrator.sol.prob.u
     resize!(integrator.sol.u,resize_start)
     resize!(integrator.sol.t,resize_start)
     resize!(integrator.sol.k,resize_start)
+    if integrator.opts.save_start
+      copyat_or_push!(integrator.sol.t,1,t0)
+      if integrator.opts.save_idxs == nothing
+        copyat_or_push!(integrator.sol.u,1,u0)
+      else
+        u_initial = u0[integrator.opts.save_idxs]
+        copyat_or_push!(integrator.sol.u,1,u_initial,Val{false})
+      end
+    end
     if integrator.sol.u_analytic != nothing
       resize!(integrator.sol.u_analytic,0)
     end
