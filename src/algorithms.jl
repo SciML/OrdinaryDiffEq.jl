@@ -602,6 +602,8 @@ struct NorsettEuler <: OrdinaryDiffEqExponentialAlgorithm end
 struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm end
 struct ETDRK4 <: OrdinaryDiffEqExponentialAlgorithm end
 
+struct LawsonEulerKrylov <: OrdinaryDiffEqExponentialAlgorithm end
+
 #########################################
 
 struct CompositeAlgorithm{T,F} <: OrdinaryDiffEqCompositeAlgorithm
