@@ -13,7 +13,7 @@ Base.A_mul_B!(Y, op::MatrixOperator, B) = A_mul_B!(Y, op.A, B)
 (op::MatrixOperator)(u,p,t) = op.A * u
 (op::MatrixOperator)(du,u,p,t) = A_mul_B!(du, op.A, u)
 
-N = 100
+N = 20
 b = 0.2
 tspan = (0.0, 1.0)
 dts = 1./2.^(7:-1:4) #14->7 good plot
