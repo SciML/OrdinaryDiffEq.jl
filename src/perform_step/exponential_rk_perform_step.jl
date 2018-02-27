@@ -208,7 +208,7 @@ function perform_step!(integrator, cache::LawsonEulerKrylovConstantCache, repeat
   @unpack t,dt,uprev,u,f,p = integrator
   rtmp = integrator.fsalfirst
   A = f.f1
-  @muladd u = expmv(dt, A, uprev + dt*rtmp; tol=integrator.opts.abstol) # abstol or reltol?
+  @muladd u = expmv(dt, A, uprev + dt*rtmp; tol=abs(integrator.opts.abstol)) # abstol or reltol?
   rtmp = f.f2(u,p,t+dt)
   k = A*u + rtmp # For the interpolation, needs k at the updated point
   integrator.fsallast = rtmp
@@ -235,7 +235,7 @@ function perform_step!(integrator, cache::LawsonEulerKrylovCache, repeat_step=fa
   @unpack k,rtmp,tmp = cache
   A = f.f1
   @muladd @. tmp = uprev + dt*integrator.fsalfirst
-  expmv!(u,dt,A,tmp; tol=integrator.opts.abstol) # abstol or reltol?
+  expmv!(u,dt,A,tmp; tol=abs(integrator.opts.abstol)) # abstol or reltol?
   A_mul_B!(tmp,A,u)
   f.f2(rtmp,u,p,t+dt)
   @. k = tmp + rtmp
@@ -257,7 +257,7 @@ function perform_step!(integrator, cache::ExpEulerKrylovConstantCache, repeat_st
   @unpack t,dt,uprev,u,f,p = integrator
   rtmp = integrator.fsalfirst
   A = f.f1
-  u = phimv(dt, A, rtmp, u; tol=integrator.opts.abstol) # abstol or reltol?
+  u = phimv(dt, A, rtmp, u; tol=abs(integrator.opts.abstol)) # abstol or reltol?
   rtmp = f.f2(u,p,t+dt)
   k = A*u + rtmp # For the interpolation, needs k at the updated point
   integrator.fsallast = rtmp
@@ -283,7 +283,7 @@ function perform_step!(integrator, cache::ExpEulerKrylovCache, repeat_step=false
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k,rtmp,tmp = cache
   A = f.f1
-  phimv!(u,dt,A,integrator.fsalfirst,uprev; tol=integrator.opts.abstol) # abstol or reltol?
+  phimv!(u,dt,A,integrator.fsalfirst,uprev; tol=abs(integrator.opts.abstol)) # abstol or reltol?
   A_mul_B!(tmp,A,u)
   f.f2(rtmp,u,p,t+dt)
   @. k = tmp + rtmp
