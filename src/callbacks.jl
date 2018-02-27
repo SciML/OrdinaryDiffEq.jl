@@ -15,7 +15,7 @@ function find_first_continuous_callback(integrator,tmin::Number,upcrossing::Floa
   tmin2,upcrossing2 = find_callback_time(integrator,callback2)
 
   if (tmin2 < tmin && tmin2 != zero(typeof(tmin))) || tmin == zero(typeof(tmin))
-    return tmin2,upcrossing,counter,counter
+    return tmin2,upcrossing2,counter,counter
   else
     return tmin,upcrossing,idx,counter
   end
