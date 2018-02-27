@@ -196,6 +196,15 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator,u0 = integrator.sol.prob.u
     resize!(integrator.sol.u,resize_start)
     resize!(integrator.sol.t,resize_start)
     resize!(integrator.sol.k,resize_start)
+    if integrator.opts.save_start
+      copyat_or_push!(integrator.sol.t,1,t0)
+      if integrator.opts.save_idxs == nothing
+        copyat_or_push!(integrator.sol.u,1,u0)
+      else
+        u_initial = u0[integrator.opts.save_idxs]
+        copyat_or_push!(integrator.sol.u,1,u_initial,Val{false})
+      end
+    end
     if integrator.sol.u_analytic != nothing
       resize!(integrator.sol.u_analytic,0)
     end
@@ -231,4 +240,34 @@ function DiffEqBase.auto_dt_reset!(integrator::ODEIntegrator)
   integrator.dt = ode_determine_initdt(integrator.u,integrator.t,
   integrator.tdir,integrator.opts.dtmax,integrator.opts.abstol,integrator.opts.reltol,
   integrator.opts.internalnorm,integrator.sol.prob,integrator)
+end
+
+function DiffEqBase.set_t!(integrator::ODEIntegrator, t::Real)
+  if integrator.opts.save_everystep
+    error("Integrator time cannot be reset unless it is initialized",
+          " with save_everystep=false")
+  end
+  if alg_extrapolates(integrator.alg) || !isdtchangeable(integrator.alg)
+    reinit!(integrator, integrator.u;
+            t0 = t,
+            reset_dt = false,
+            reinit_callbacks = false,
+            reinit_cache = false)
+  else
+    integrator.t = t
+  end
+end
+
+function DiffEqBase.set_u!(integrator::ODEIntegrator, u)
+  if integrator.opts.save_everystep
+    error("Integrator state cannot be reset unless it is initialized",
+          " with save_everystep=false")
+  end
+  integrator.u = u
+  u_modified!(integrator, true)
+end
+
+function DiffEqBase.set_ut!(integrator::ODEIntegrator, u, t::Real)
+  DiffEqBase.set_u!(integrator, u)
+  DiffEqBase.set_t!(integrator, t)
 end

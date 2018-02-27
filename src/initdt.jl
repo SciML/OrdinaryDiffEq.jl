@@ -83,7 +83,7 @@
   end
   dt₀ = min(dt₀,dtmax_tdir)
 
-  if typeof(one(tType)) <: AbstractFloat && dt₀ < 10eps(tType)
+  if typeof(one(tType)) <: AbstractFloat && dt₀ < 10eps(tType)*oneunit(tType)
     # This catches Andreas' non-singular example
     # should act like it's singular
     return tType(1//10^(6))

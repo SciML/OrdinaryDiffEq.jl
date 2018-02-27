@@ -80,7 +80,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
 
   t = tspan[1]
 
-  if ((!(typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm) && !(typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm)) || !adaptive) && dt == tType(0) && isempty(tstops)
+  if (((!(typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm) && !(typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm)) || !adaptive) && dt == tType(0) && isempty(tstops)) && !(typeof(alg) <: FunctionMap)
       error("Fixed timestep methods require a choice of dt or choosing the tstops")
   end
 
@@ -169,7 +169,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   ks = convert(Vector{ksEltype},ks_init)
   alg_choice = Int[]
 
-  if !adaptive
+  if !adaptive && save_everystep
     dt == 0 ? steps = length(tstops) : steps = round(Int,float((tspan[2]-tspan[1])/dt),RoundUp)
     sizehint!(timeseries,steps+1)
     sizehint!(ts,steps+1)
@@ -178,10 +178,14 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     sizehint!(timeseries,1000)
     sizehint!(ts,1000)
     sizehint!(ks,1000)
-  else # saveat
+  elseif !isempty(saveat_internal)
     sizehint!(timeseries,length(saveat_internal)+1)
     sizehint!(ts,length(saveat_internal)+1)
     sizehint!(ks,length(saveat_internal)+1)
+  else
+    sizehint!(timeseries,2)
+    sizehint!(ts,2)
+    sizehint!(ks,2)
   end
 
   if save_start
