@@ -163,38 +163,39 @@ function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,uBottom
   ImplicitMidpointCache(u,uprev,du1,fsalfirst,k,z,dz,b,tmp,J,W,uf,jac_config,linsolve,ηold,κ,tol,10000)
 end
 
-mutable struct TrapezoidConstantCache{F,uEltypeNoUnits,uType,tType} <: OrdinaryDiffEqConstantCache
+mutable struct TrapezoidConstantCache{F,uToltype,uType,tType} <: OrdinaryDiffEqConstantCache
   uf::F
-  ηold::uEltypeNoUnits
-  κ::uEltypeNoUnits
-  tol::uEltypeNoUnits
+  ηold::uToltype
+  κ::uToltype
+  tol::uToltype
   newton_iters::Int
   uprev3::uType
   tprev2::tType
 end
 
-function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
+function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  uToltype = toltype(uBottomEltypeNoUnits)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  ηold = one(uEltypeNoUnits)
+  ηold = one(uToltype)
   uprev3 = u
   tprev2 = t
 
   if alg.κ != nothing
     κ = alg.κ
   else
-    κ = uEltypeNoUnits(1//100)
+    κ = uToltype(1//100)
   end
   if alg.tol != nothing
-    tol = alg.tol
+    tol = uToltype(alg.tol)
   else
-    tol = min(0.03,first(reltol)^(0.5))
+    tol = uToltype(min(0.03,first(reltol)^(0.5)))
   end
 
   TrapezoidConstantCache(uf,ηold,κ,tol,10000,uprev3,tprev2)
 end
 
-mutable struct TrapezoidCache{uType,rateType,uNoUnitsType,J,UF,JC,uEltypeNoUnits,tType,F} <: OrdinaryDiffEqMutableCache
+mutable struct TrapezoidCache{uType,rateType,uNoUnitsType,J,UF,JC,uToltype,tType,F} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -211,9 +212,9 @@ mutable struct TrapezoidCache{uType,rateType,uNoUnitsType,J,UF,JC,uEltypeNoUnits
   uf::UF
   jac_config::JC
   linsolve::F
-  ηold::uEltypeNoUnits
-  κ::uEltypeNoUnits
-  tol::uEltypeNoUnits
+  ηold::uToltype
+  κ::uToltype
+  tol::uToltype
   newton_iters::Int
   uprev3::uType
   tprev2::tType
@@ -239,21 +240,22 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   linsolve = alg.linsolve(Val{:init},uf,u)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
 
+  uToltype = toltype(uBottomEltypeNoUnits)
   if alg.κ != nothing
-    κ = alg.κ
+    κ = uToltype(alg.κ)
   else
-    κ = uEltypeNoUnits(1//100)
+    κ = uToltype(1//100)
   end
   if alg.tol != nothing
-    tol = alg.tol
+    tol = uToltype(alg.tol)
   else
-    tol = min(0.03,first(reltol)^(0.5))
+    tol = uToltype(min(0.03,first(reltol)^(0.5)))
   end
 
   uprev3 = similar(u)
   tprev2 = t
 
-  ηold = one(uEltypeNoUnits)
+  ηold = one(uToltype)
 
   TrapezoidCache(u,uprev,uprev2,du1,fsalfirst,k,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,ηold,κ,tol,10000,uprev3,tprev2)
 end
