@@ -12,6 +12,7 @@ end
 @muladd function perform_step!(integrator, cache::CNABConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
+  @unpack a0,a1 = cache
 
   if typeof(integrator.f) <: SplitFunction
     f = integrator.f.f1
@@ -52,7 +53,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     # This assumes the implicit part is cheaper than the explicit part
     y0 = dt*integrator.fsalfirst - z
-    tmp += (-1/2)*y0
+    tmp += a0*y0
   end
 
   u = tmp + z/2
@@ -89,10 +90,10 @@ end
   end
 
   if typeof(integrator.f) <: SplitFunction
-    u = temp + z/2
-    y1 = dt*f2(u,p,t + dt)
-    temp += 3/2*y1 + z/2
-    u = temp
+    u = tmp + z/2
+    y1 = dt*f2(u,p,tstep)
+    tmp += a1*y1 + z/2
+    u = tmp
   else
     u = tmp + z/2
   end
@@ -183,7 +184,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     # This assumes the implicit part is cheaper than the explicit part
     @. y0 = dt*integrator.fsalfirst - z
-    @. tmp += -(1/2)*y0
+    @. tmp += a0*y0
   end
 
   @. u = tmp + z/2
@@ -246,11 +247,11 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     @. u = tmp + z/2
-    f2(y2, u, p, t + dt); y2 .*= dt
+    f2(y2, u, p, tstep); y2 .*= dt
       for i in eachindex(tmp)
-        @inbounds tmp[i] += uprev[i] + 3/2*y2[i] + 1/2*z[i]
+        @inbounds tmp[i] += uprev[i] + a1*y2[i]
       end
-      @. u = temp
+      @. u = tmp
   else
     @. u = tmp + z/2
   end

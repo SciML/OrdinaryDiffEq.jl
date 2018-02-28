@@ -253,3 +253,11 @@ ssp_coefficient(alg::SSPRK104) = 6
 # We shouldn't do this probably.
 #ssp_coefficient(alg::ImplicitEuler) = Inf
 ssp_coefficient(alg::SSPSDIRK2) = 4
+
+
+##############################################
+
+###IMEX
+alg_extrapolates(alg::CNAB) = true
+isadaptive(alg::CNAB) = false
+alg_order(alg::CNAB) = 2
