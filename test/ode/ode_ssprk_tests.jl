@@ -213,7 +213,7 @@ for prob in test_problems_nonlinear
   @test abs(sim.𝒪est[:final]-OrdinaryDiffEq.alg_order(alg)) < testTol
 end
 # test SSP coefficient
-sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg), dense=false)
+sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg), dense=false,maxiters=1e7)
 @test all(sol.u .>= 0)
 
 
