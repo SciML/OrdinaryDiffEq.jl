@@ -10,9 +10,8 @@ function initialize!(integrator, cache::CNABConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::CNABConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f,p,y0,y1 = integrator
   @unpack uf,κ,tol = cache
-  @unpack a0,a1 = cache
 
   if typeof(integrator.f) <: SplitFunction
     f = integrator.f.f1
@@ -37,23 +36,21 @@ end
   end
 
   # initial guess
-  zprev = 0
   if typeof(integrator.f) <: SplitFunction
-    zprev = dt.*f(uprev, p, t)
+    z = dt.*f(uprev, p, t)
   else
-    zprev = dt*integrator.fsalfirst
+    z = dt*integrator.fsalfirst
   end
-  z = zprev # Constant extrapolation
+   # Constant extrapolation
 
   # initial step of Newton iteration
   iter = 1
   tstep = t + dt
   tmp = uprev + dto2*integrator.fsalfirst
-
   if typeof(integrator.f) <: SplitFunction
     # This assumes the implicit part is cheaper than the explicit part
     y0 = dt*integrator.fsalfirst - z
-    tmp += a0*y0
+    tmp += 3/2*y0
   end
 
   u = tmp + z/2
@@ -90,17 +87,11 @@ end
   end
 
   if typeof(integrator.f) <: SplitFunction
-    u = tmp + z/2
-    y1 = dt*f2(u,p,tstep)
-    tmp += a1*y1 + z/2
-    u = tmp
+    u = tmp - 1/2*y1 + z/2 
   else
     u = tmp + z/2
   end
-
-
-
-
+  cache.y1 = y0
   cache.ηold = η
   cache.newton_iters = iter
   integrator.fsallast = f(u, p, t+dt)
@@ -120,7 +111,7 @@ function initialize!(integrator, cache::CNABCache)
 end
 
 @muladd function perform_step!(integrator, cache::CNABCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f,p,y0,y1 = integrator
   @unpack uf,du1,dz,z,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
   mass_matrix = integrator.sol.prob.mass_matrix
 
@@ -184,7 +175,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     # This assumes the implicit part is cheaper than the explicit part
     @. y0 = dt*integrator.fsalfirst - z
-    @. tmp += a0*y0
+    @. tmp += 3/2*y0
   end
 
   @. u = tmp + z/2
@@ -246,15 +237,14 @@ end
   cache.newton_iters = iter
 
   if typeof(integrator.f) <: SplitFunction
-    @. u = tmp + z/2
-    f2(y2, u, p, tstep); y2 .*= dt
+    @ .tmp += z/2
       for i in eachindex(tmp)
-        @inbounds tmp[i] += uprev[i] + a1*y2[i]
+        @inbounds tmp[i] += - 1/2*y1[i]
       end
       @. u = tmp
   else
     @. u = tmp + z/2
   end
-
+  cache.y1 = y0
   f(integrator.fsallast,u,p,t+dt)
 end
