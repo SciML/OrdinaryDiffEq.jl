@@ -117,6 +117,8 @@ regression_test(Euler(), 0.2, 0.2)
 # Midpoint
 regression_test(Midpoint(), 1.5e-2, 2.3e-2)
 
+println("SSPRKs")
+
 # SSPRK22
 regression_test(SSPRK22(), 1.5e-2, 2.5e-2; test_diff1 = true)
 
@@ -146,6 +148,8 @@ regression_test(SSPRK54(), 3.5e-5, 5.5e-5)
 
 # SSPRK104
 regression_test(SSPRK104(), 1.5e-5, 3e-5)
+
+println("RKs")
 
 # RK4
 regression_test(RK4(), 4.5e-5, 1e-4)
@@ -200,6 +204,8 @@ interpd_1d_long = sol(0:1//2^(7):1)
 sol2 = solve(prob, BS5(), dt=1//2^(7), dense=true, adaptive=false)
 print_results( @test maximum(map((x)->maximum(abs.(x)),sol2 - interpd_1d_long)) < 2e-7 )
 
+println("Verns")
+
 # Vern7
 regression_test(Vern7(), 3e-9, 5e-9; test_diff1 = true)
 
@@ -208,6 +214,8 @@ regression_test(Vern8(), 3e-8, 5e-8; test_diff1 = true)
 
 # Vern9
 regression_test(Vern9(), 1e-9, 2e-9; test_diff1 = true)
+
+println("Rosenbrocks")
 
 # Rosenbrock23
 regression_test(Rosenbrock23(), 3e-3, 6e-3; test_diff1 = true)
