@@ -253,7 +253,3 @@ ssp_coefficient(alg::SSPRK104) = 6
 # We shouldn't do this probably.
 #ssp_coefficient(alg::ImplicitEuler) = Inf
 ssp_coefficient(alg::SSPSDIRK2) = 4
-
-# Compute type for tolerance and related values
-toltype(::Type{T}) where {T <: Real} = T
-toltype(::Type{Complex{T}}) where {T <: Real} = T

@@ -175,7 +175,7 @@ end
 
 function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  uToltype = toltype(uBottomEltypeNoUnits)
+  uToltype = real(uBottomEltypeNoUnits)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   ηold = one(uToltype)
   uprev3 = u
@@ -240,7 +240,7 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   linsolve = alg.linsolve(Val{:init},uf,u)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
 
-  uToltype = toltype(uBottomEltypeNoUnits)
+  uToltype = real(uBottomEltypeNoUnits)
   if alg.κ != nothing
     κ = uToltype(alg.κ)
   else
