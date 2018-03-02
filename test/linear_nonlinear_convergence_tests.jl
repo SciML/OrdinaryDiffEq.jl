@@ -1,9 +1,8 @@
 using OrdinaryDiffEq, Base.Test, DiffEqDevTools, SpecialMatrices, DiffEqOperators
 const μ = 1.01
-f2 = (u,p,t) -> μ * u
-f1 = DiffEqArrayOperator(μ)
-f = SplitFunction{false}(f1,f2,nothing)
-prob = SplitODEProblem(f1,f2,1/2,(0.0,1.0),func_cache=1/2)
+linnonlin_f2 = (u,p,t) -> μ * u
+linnonlin_f1 = DiffEqArrayOperator(μ)
+prob = SplitODEProblem(linnonlin_f1,linnonlin_f2,1/2,(0.0,1.0),func_cache=1/2)
 (::typeof(prob.f))(::Type{Val{:analytic}},u0,p,t) = u0.*exp.(2μ*t)
 
 srand(100)
@@ -20,10 +19,10 @@ sim  = test_convergence(dts,prob,ETDRK4(),dense_errors=true)
 @test abs(sim.𝒪est[:l2]-4) < 0.2
 
 u0 = rand(2)
-A = Strang(2)
-f1 = DiffEqArrayOperator(full(A))
-f2 = (du,u,p,t) -> du .= μ .* u
-prob = SplitODEProblem(f1,f2,u0,(0.0,1.0))
+A = full(Strang(2))
+linnonlin_f1 = DiffEqArrayOperator(A)
+linnonlin_f2 = (du,u,p,t) -> du .= μ .* u
+prob = SplitODEProblem(linnonlin_f1,linnonlin_f2,u0,(0.0,1.0))
 function (::typeof(prob.f))(::Type{Val{:analytic}},u0,p,t)
  tmp = (A+μ*I)*t
  expm(tmp)*u0
