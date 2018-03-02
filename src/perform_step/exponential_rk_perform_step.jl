@@ -187,3 +187,104 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
 
   integrator.f(tmp2, u, p, t+dt)
 end
+
+###############################################
+
+# Exponential Krylov methods
+
+function initialize!(integrator, cache::LawsonEulerKrylovConstantCache)
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  rtmp = integrator.f.f2(integrator.uprev,integrator.p,integrator.t)
+  integrator.fsalfirst = rtmp # Pre-start fsal
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = zero(integrator.fsalfirst)
+end
+
+function perform_step!(integrator, cache::LawsonEulerKrylovConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  rtmp = integrator.fsalfirst
+  A = f.f1
+  @muladd u = expmv(dt, A, uprev + dt*rtmp; tol=abs(integrator.opts.abstol)) # abstol or reltol?
+  rtmp = f.f2(u,p,t+dt)
+  k = A*u + rtmp # For the interpolation, needs k at the updated point
+  integrator.fsallast = rtmp
+  integrator.k[1] = integrator.fsalfirst # this is wrong, since it's just rtmp. Should fsal this value though
+  integrator.k[2] = k
+  integrator.u = u
+end
+
+function initialize!(integrator, cache::LawsonEulerKrylovCache)
+  integrator.kshortsize = 2
+  @unpack k,fsalfirst,rtmp = cache
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = rtmp
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = fsalfirst # this is wrong, since it's just rtmp. Should fsal this value though
+  integrator.k[2] = k
+  A = integrator.f.f1(k,integrator.u,integrator.p,integrator.t)
+  integrator.f.f2(rtmp,integrator.uprev,integrator.p,integrator.t) # For the interpolation, needs k at the updated point
+  @. integrator.fsalfirst = k + rtmp
+end
+
+function perform_step!(integrator, cache::LawsonEulerKrylovCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack k,rtmp,tmp = cache
+  A = f.f1
+  @muladd @. tmp = uprev + dt*integrator.fsalfirst
+  expmv!(u,dt,A,tmp; tol=abs(integrator.opts.abstol)) # abstol or reltol?
+  A_mul_B!(tmp,A,u)
+  f.f2(rtmp,u,p,t+dt)
+  @. k = tmp + rtmp
+end
+
+function initialize!(integrator, cache::ExpEulerKrylovConstantCache)
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  rtmp = integrator.f.f2(integrator.uprev,integrator.p,integrator.t)
+  integrator.fsalfirst = rtmp # Pre-start fsal
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = zero(integrator.fsalfirst)
+end
+
+function perform_step!(integrator, cache::ExpEulerKrylovConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  rtmp = integrator.fsalfirst
+  A = f.f1
+  u = phimv(dt, A, rtmp, u; tol=abs(integrator.opts.abstol)) # abstol or reltol?
+  rtmp = f.f2(u,p,t+dt)
+  k = A*u + rtmp # For the interpolation, needs k at the updated point
+  integrator.fsallast = rtmp
+  integrator.k[1] = integrator.fsalfirst # this is wrong, since it's just rtmp. Should fsal this value though
+  integrator.k[2] = k
+  integrator.u = u
+end
+
+function initialize!(integrator, cache::ExpEulerKrylovCache)
+  integrator.kshortsize = 2
+  @unpack k,fsalfirst,rtmp = cache
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = rtmp
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = fsalfirst # this is wrong, since it's just rtmp. Should fsal this value though
+  integrator.k[2] = k
+  A = integrator.f.f1(k,integrator.u,integrator.p,integrator.t)
+  integrator.f.f2(rtmp,integrator.uprev,integrator.p,integrator.t) # For the interpolation, needs k at the updated point
+  @. integrator.fsalfirst = k + rtmp
+end
+
+function perform_step!(integrator, cache::ExpEulerKrylovCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack k,rtmp,tmp = cache
+  A = f.f1
+  phimv!(u,dt,A,integrator.fsalfirst,uprev; tol=abs(integrator.opts.abstol)) # abstol or reltol?
+  A_mul_B!(tmp,A,u)
+  f.f2(rtmp,u,p,t+dt)
+  @. k = tmp + rtmp
+end

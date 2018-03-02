@@ -313,3 +313,43 @@ function get_etdrk4_operators(_h,_L::Diagonal)
 
     Diagonal(Float64.(E)),Diagonal(Float64.(E2)),Diagonal(a),Diagonal(b),Diagonal(c),Diagonal(Q)
 end
+
+struct LawsonEulerKrylovCache{uType,rateType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  k::rateType
+  rtmp::rateType
+  fsalfirst::rateType
+end
+
+function alg_cache(alg::LawsonEulerKrylov,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  LawsonEulerKrylovCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),zeros(rate_prototype))
+end
+
+u_cache(c::LawsonEulerKrylovCache) = ()
+du_cache(c::LawsonEulerKrylovCache) = (c.k,c.fsalfirst,c.rtmp)
+
+struct LawsonEulerKrylovConstantCache <: OrdinaryDiffEqConstantCache end
+
+alg_cache(alg::LawsonEulerKrylov,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = LawsonEulerKrylovConstantCache()
+
+struct ExpEulerKrylovCache{uType,rateType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  k::rateType
+  rtmp::rateType
+  fsalfirst::rateType
+end
+
+function alg_cache(alg::ExpEulerKrylov,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  ExpEulerKrylovCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),zeros(rate_prototype))
+end
+
+u_cache(c::ExpEulerKrylovCache) = ()
+du_cache(c::ExpEulerKrylovCache) = (c.k,c.fsalfirst,c.rtmp)
+
+struct ExpEulerKrylovConstantCache <: OrdinaryDiffEqConstantCache end
+
+alg_cache(alg::ExpEulerKrylov,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = ExpEulerKrylovConstantCache()

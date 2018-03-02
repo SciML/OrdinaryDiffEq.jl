@@ -24,6 +24,8 @@ isdtchangeable(alg::GenericIIF1) = false
 isdtchangeable(alg::GenericIIF2) = false
 isdtchangeable(alg::LawsonEuler) = false
 isdtchangeable(alg::NorsettEuler) = false
+isdtchangeable(alg::LawsonEulerKrylov) = false
+isdtchangeable(alg::ExpEulerKrylov) = false
 
 ismultistep(alg::OrdinaryDiffEqAlgorithm) = false
 
@@ -77,6 +79,8 @@ alg_order(alg::Ralston) = 2
 alg_order(alg::LawsonEuler) = 1
 alg_order(alg::NorsettEuler) = 1
 alg_order(alg::SplitEuler) = 1
+alg_order(alg::LawsonEulerKrylov) = 1
+alg_order(alg::ExpEulerKrylov) = 1
 alg_order(alg::ETDRK4) = 4
 
 alg_order(alg::SymplecticEuler) = 1
