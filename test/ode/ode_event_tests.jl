@@ -225,6 +225,7 @@ function test_callback_mvector(alg)
     sol.u[end][1] ≈ exp(1)
 end
 
+println("inplace")
 @test test_callback_inplace(BS3())
 @test test_callback_inplace(BS5())
 @test test_callback_inplace(SSPRK432())
@@ -247,6 +248,7 @@ end
 @test test_callback_inplace(Rosenbrock23())
 @test test_callback_inplace(Rosenbrock32())
 
+println("outofplace")
 @test test_callback_outofplace(BS3())
 @test test_callback_outofplace(BS5())
 @test test_callback_outofplace(SSPRK432())
@@ -269,6 +271,7 @@ end
 @test test_callback_outofplace(Rosenbrock23())
 @test test_callback_outofplace(Rosenbrock32())
 
+println("scalar")
 @test test_callback_scalar(BS3())
 @test test_callback_scalar(BS5())
 @test test_callback_scalar(SSPRK432())
@@ -291,6 +294,7 @@ end
 @test test_callback_scalar(Rosenbrock23())
 @test test_callback_scalar(Rosenbrock32())
 
+println("svector")
 @test test_callback_svector(BS3())
 @test test_callback_svector(BS5())
 @test test_callback_svector(SSPRK432())
@@ -313,6 +317,7 @@ end
 @test test_callback_svector(Rosenbrock23())
 @test test_callback_svector(Rosenbrock32())
 
+println("mvector")
 @test test_callback_mvector(BS3())
 @test test_callback_mvector(BS5())
 @test test_callback_mvector(SSPRK432())
