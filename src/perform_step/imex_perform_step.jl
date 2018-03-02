@@ -10,8 +10,8 @@ function initialize!(integrator, cache::CNABConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::CNABConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p,y0,y1 = integrator
-  @unpack uf,κ,tol = cache
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack uf,κ,tol,y0,y1 = cache
 
   if typeof(integrator.f) <: SplitFunction
     f = integrator.f.f1
@@ -87,7 +87,7 @@ end
   end
 
   if typeof(integrator.f) <: SplitFunction
-    u = tmp - 1/2*y1 + z/2 
+    u = tmp - 1/2*y1 + z/2
   else
     u = tmp + z/2
   end
@@ -111,8 +111,8 @@ function initialize!(integrator, cache::CNABCache)
 end
 
 @muladd function perform_step!(integrator, cache::CNABCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p,y0,y1 = integrator
-  @unpack uf,du1,dz,z,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack uf,du1,dz,z,k,b,J,W,jac_config,tmp,atmp,κ,tol,y0,y1 = cache
   mass_matrix = integrator.sol.prob.mass_matrix
 
   if typeof(integrator.f) <: SplitFunction
@@ -230,8 +230,6 @@ end
     integrator.force_stepfail = true
     return
   end
-
-  
 
   cache.ηold = η
   cache.newton_iters = iter

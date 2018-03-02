@@ -1,25 +1,27 @@
-mutable struct CNABConstantCache{uType,tType,F,uEltypeNoUnits,Tab} <: OrdinaryDiffEqConstantCache
+mutable struct CNABConstantCache{uType,tType,rateType
+  ,F,uEltypeNoUnits} <: OrdinaryDiffEqConstantCache
   uf::F
   ηold::uEltypeNoUnits
   κ::uEltypeNoUnits
   tol::uEltypeNoUnits
   newton_iters::Int
-  tab::Tab
-  uprev3::uType
-  tprev2::tType
+  #tab::Tab
+  uprev::uType
+  y0::rateType
+  y1::rateType
 end
 
 function alg_cache(alg::CNAB,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+                   uprev,f,t,dt,reltol,p,calck,::Type{Val{false}})
   if typeof(f) <: SplitFunction
     uf = DiffEqDiffTools.UDerivativeWrapper(f.f1,t,p)
   else
     uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   end
   ηold = one(uEltypeNoUnits)
-
-  uprev3 = u
-  tprev2 = t
+  y1 = zeros(rate_prototype)
+  y0 = zeros(rate_prototype)
+  y1 = y0 = f.f2
 
   if alg.κ != nothing
     κ = alg.κ
@@ -41,13 +43,12 @@ mutable struct CNABCache{uType,rateType,uNoUnitsType,J,UF,JC,uEltypeNoUnits,Tab,
   u::uType
   uprev::uType
   uprev2::uType
-  uprev3::uType
   du1::rateType
   fsalfirst::rateType
   k::rateType
   z::uType
-  y1::kType
-  y0::kType
+  y1::rateType
+  y0::rateType
   dz::uType
   b::uType
   tmp::uType
@@ -61,14 +62,14 @@ mutable struct CNABCache{uType,rateType,uNoUnitsType,J,UF,JC,uEltypeNoUnits,Tab,
   κ::uEltypeNoUnits
   tol::uEltypeNoUnits
   newton_iters::Int
-  tab::Tab
+  #tab::Tab
 end
 
 u_cache(c::CNABCache)    = (c.z,c.dz)
 du_cache(c::CNABCache)   = (c.fsalfirst)
 
 function alg_cache(alg::CNAB,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+                   tTypeNoUnits,uprev,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
@@ -81,7 +82,7 @@ function alg_cache(alg::CNAB,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   atmp = similar(u,uEltypeNoUnits,indices(u))
 
   if typeof(f) <: SplitFunction
-    y0 = similar(u,indices(u)); y1 = similar(u,indices(u))
+    y0 = similar(k,indices(k)); y1 = similar(k,indices(k))
     uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t,p)
   else
     y0 = nothing; y1 = nothing
@@ -105,11 +106,8 @@ function alg_cache(alg::CNAB,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
 
   ηold = one(uEltypeNoUnits)
 
-  uprev3 = similar(u)
-  tprev2 = t
-
   CNABCache{typeof(u),typeof(rate_prototype),typeof(atmp),typeof(J),typeof(uf),
-              typeof(jac_config),uEltypeNoUnits,typeof(tab),typeof(linsolve),typeof(k1)}(
-              u,uprev,du1,fsalfirst,k,z,y1,y0,dz,b,tmp,atmp,J,
+              typeof(jac_config),uEltypeNoUnits,typeof(linsolve)}(
+              u,uprev,du1,fsalfirst,k,z,dz,b,tmp,atmp,J,
               W,uf,jac_config,linsolve,ηold,κ,tol,10000)
 end
