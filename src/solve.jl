@@ -111,23 +111,23 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   tTypeNoUnits   = typeof(one(tType))
 
   if typeof(alg) <: FunctionMap
-    abstol_internal = zero(u)
+    abstol_internal = real.(zero(u))
   elseif abstol == nothing
     if uBottomEltypeNoUnits == uBottomEltype || !(typeof(u) <: ArrayPartition)
-      abstol_internal = uBottomEltype(uBottomEltype(1)*1//10^6)
+      abstol_internal = real(uBottomEltype(uBottomEltype(1)*1//10^6))
     else
-      abstol_internal = ones(u).*1//10^6
+      abstol_internal = real.(ones(u).*1//10^6)
     end
   else
-    abstol_internal = abstol
+    abstol_internal = real.(abstol)
   end
 
   if typeof(alg) <: FunctionMap
-    reltol_internal = zero(first(u)/t)
+    reltol_internal = real.(zero(first(u)/t))
   elseif reltol == nothing
-    reltol_internal = uBottomEltypeNoUnits(1//10^3)
+    reltol_internal = real(uBottomEltypeNoUnits(1//10^3))
   else
-    reltol_internal = reltol
+    reltol_internal = real.(reltol)
   end
 
   dtmax > zero(dtmax) && tdir < 0 && (dtmax *= tdir) # Allow positive dtmax, but auto-convert

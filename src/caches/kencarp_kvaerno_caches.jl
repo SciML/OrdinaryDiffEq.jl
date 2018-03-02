@@ -1,38 +1,39 @@
-mutable struct KenCarp3ConstantCache{F,uEltypeNoUnits,Tab} <: OrdinaryDiffEqConstantCache
+mutable struct KenCarp3ConstantCache{F,uToltype,Tab} <: OrdinaryDiffEqConstantCache
   uf::F
-  ηold::uEltypeNoUnits
-  κ::uEltypeNoUnits
-  tol::uEltypeNoUnits
+  ηold::uToltype
+  κ::uToltype
+  tol::uToltype
   newton_iters::Int
   tab::Tab
 end
 
-function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
+function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   if typeof(f) <: SplitFunction
     uf = DiffEqDiffTools.UDerivativeWrapper(f.f1,t,p)
   else
     uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   end
-  ηold = one(uEltypeNoUnits)
+  uToltype = real(uBottomEltypeNoUnits)
+  ηold = one(uToltype)
 
   if alg.κ != nothing
-    κ = alg.κ
+    κ = uToltype(alg.κ)
   else
-    κ = uEltypeNoUnits(1//100)
+    κ = uToltype(1//100)
   end
   if alg.tol != nothing
-    tol = alg.tol
+    tol = uToltype(alg.tol)
   else
-    tol = min(0.03,first(reltol)^(0.5))
+    tol = uToltype(min(0.03,first(reltol)^(0.5)))
   end
 
-  tab = KenCarp3Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = KenCarp3Tableau(uToltype,real(tTypeNoUnits))
 
   KenCarp3ConstantCache(uf,ηold,κ,tol,10000,tab)
 end
 
-mutable struct KenCarp3Cache{uType,rateType,uNoUnitsType,J,UF,JC,uEltypeNoUnits,Tab,F,kType} <: OrdinaryDiffEqMutableCache
+mutable struct KenCarp3Cache{uType,rateType,uNoUnitsType,J,UF,JC,uToltype,Tab,F,kType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   du1::rateType
@@ -55,9 +56,9 @@ mutable struct KenCarp3Cache{uType,rateType,uNoUnitsType,J,UF,JC,uEltypeNoUnits,
   uf::UF
   jac_config::JC
   linsolve::F
-  ηold::uEltypeNoUnits
-  κ::uEltypeNoUnits
-  tol::uEltypeNoUnits
+  ηold::uToltype
+  κ::uToltype
+  tol::uToltype
   newton_iters::Int
   tab::Tab
 end
@@ -91,60 +92,62 @@ function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   linsolve = alg.linsolve(Val{:init},uf,u)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
 
+  uToltype = real(uBottomEltypeNoUnits)
   if alg.κ != nothing
-    κ = alg.κ
+    κ = uToltype(alg.κ)
   else
-    κ = uEltypeNoUnits(1//100)
+    κ = uToltype(1//100)
   end
   if alg.tol != nothing
-    tol = alg.tol
+    tol = uToltype(alg.tol)
   else
-    tol = min(0.03,first(reltol)^(0.5))
+    tol = uToltype(min(0.03,first(reltol)^(0.5)))
   end
 
-  tab = KenCarp3Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = KenCarp3Tableau(uToltype,real(tTypeNoUnits))
 
-  ηold = one(uEltypeNoUnits)
+  ηold = one(uToltype)
 
   KenCarp3Cache{typeof(u),typeof(rate_prototype),typeof(atmp),typeof(J),typeof(uf),
-              typeof(jac_config),uEltypeNoUnits,typeof(tab),typeof(linsolve),typeof(k1)}(
+              typeof(jac_config),uToltype,typeof(tab),typeof(linsolve),typeof(k1)}(
               u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,k1,k2,k3,k4,dz,b,tmp,atmp,J,
               W,uf,jac_config,linsolve,ηold,κ,tol,10000,tab)
 end
 
-mutable struct Kvaerno4ConstantCache{F,uEltypeNoUnits,Tab} <: OrdinaryDiffEqConstantCache
+mutable struct Kvaerno4ConstantCache{F,uToltype,Tab} <: OrdinaryDiffEqConstantCache
   uf::F
-  ηold::uEltypeNoUnits
-  κ::uEltypeNoUnits
-  tol::uEltypeNoUnits
+  ηold::uToltype
+  κ::uToltype
+  tol::uToltype
   newton_iters::Int
   tab::Tab
 end
 
-function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
+function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  ηold = one(uEltypeNoUnits)
+  uToltype = real(uBottomEltypeNoUnits)
+  ηold = one(uToltype)
   uprev3 = u
   tprev2 = t
 
   if alg.κ != nothing
-    κ = alg.κ
+    κ = uToltype(alg.κ)
   else
-    κ = uEltypeNoUnits(1//100)
+    κ = uToltype(1//100)
   end
   if alg.tol != nothing
-    tol = alg.tol
+    tol = uToltype(alg.tol)
   else
-    tol = min(0.03,first(reltol)^(0.5))
+    tol = uToltype(min(0.03,first(reltol)^(0.5)))
   end
 
-  tab = Kvaerno4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = Kvaerno4Tableau(uToltype,real(tTypeNoUnits))
 
   Kvaerno4ConstantCache(uf,ηold,κ,tol,10000,tab)
 end
 
-mutable struct Kvaerno4Cache{uType,rateType,uNoUnitsType,J,UF,JC,uEltypeNoUnits,Tab,F} <: OrdinaryDiffEqMutableCache
+mutable struct Kvaerno4Cache{uType,rateType,uNoUnitsType,J,UF,JC,uToltype,Tab,F} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   du1::rateType
@@ -164,9 +167,9 @@ mutable struct Kvaerno4Cache{uType,rateType,uNoUnitsType,J,UF,JC,uEltypeNoUnits,
   uf::UF
   jac_config::JC
   linsolve::F
-  ηold::uEltypeNoUnits
-  κ::uEltypeNoUnits
-  tol::uEltypeNoUnits
+  ηold::uToltype
+  κ::uToltype
+  tol::uToltype
   newton_iters::Int
   tab::Tab
 end
@@ -193,64 +196,66 @@ function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   linsolve = alg.linsolve(Val{:init},uf,u)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
 
+  uToltype = real(uBottomEltypeNoUnits)
   if alg.κ != nothing
-    κ = alg.κ
+    κ = uToltype(alg.κ)
   else
-    κ = uEltypeNoUnits(1//100)
+    κ = uToltype(1//100)
   end
   if alg.tol != nothing
-    tol = alg.tol
+    tol = uToltype(alg.tol)
   else
-    tol = min(0.03,first(reltol)^(0.5))
+    tol = uToltype(min(0.03,first(reltol)^(0.5)))
   end
 
-  tab = Kvaerno4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = Kvaerno4Tableau(uToltype,real(tTypeNoUnits))
 
-  ηold = one(uEltypeNoUnits)
+  ηold = one(uToltype)
 
   Kvaerno4Cache{typeof(u),typeof(rate_prototype),typeof(atmp),typeof(J),typeof(uf),
-              typeof(jac_config),uEltypeNoUnits,typeof(tab),typeof(linsolve)}(
+              typeof(jac_config),uToltype,typeof(tab),typeof(linsolve)}(
               u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,dz,b,tmp,atmp,J,
               W,uf,jac_config,linsolve,ηold,κ,tol,10000,tab)
 end
 
-mutable struct KenCarp4ConstantCache{F,uEltypeNoUnits,Tab} <: OrdinaryDiffEqConstantCache
+mutable struct KenCarp4ConstantCache{F,uToltype,Tab} <: OrdinaryDiffEqConstantCache
   uf::F
-  ηold::uEltypeNoUnits
-  κ::uEltypeNoUnits
-  tol::uEltypeNoUnits
+  ηold::uToltype
+  κ::uToltype
+  tol::uToltype
   newton_iters::Int
   tab::Tab
 end
 
-function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
+function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   if typeof(f) <: SplitFunction
     uf = DiffEqDiffTools.UDerivativeWrapper(f.f1,t,p)
   else
     uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   end
-  ηold = one(uEltypeNoUnits)
+  uToltype = real(uBottomEltypeNoUnits)
+  ηold = one(uToltype)
   uprev3 = u
   tprev2 = t
 
   if alg.κ != nothing
-    κ = alg.κ
+    κ = uToltype(alg.κ)
   else
-    κ = uEltypeNoUnits(1//100)
+    κ = uToltype(1//100)
   end
   if alg.tol != nothing
-    tol = alg.tol
+    tol = uToltype(alg.tol)
   else
-    tol = min(0.03,first(reltol)^(0.5))
+    tol = uToltype(min(0.03,first(reltol)^(0.5)))
   end
 
-  tab = KenCarp4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = KenCarp4Tableau(uToltype,real(tTypeNoUnits))
 
   KenCarp4ConstantCache(uf,ηold,κ,tol,10000,tab)
 end
 
-mutable struct KenCarp4Cache{uType,rateType,uNoUnitsType,J,UF,JC,uEltypeNoUnits,Tab,F,kType} <: OrdinaryDiffEqMutableCache
+mutable struct KenCarp4Cache{uType,rateType,uNoUnitsType,J,UF,JC,uToltype,Tab,F,kType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   du1::rateType
@@ -277,9 +282,9 @@ mutable struct KenCarp4Cache{uType,rateType,uNoUnitsType,J,UF,JC,uEltypeNoUnits,
   uf::UF
   jac_config::JC
   linsolve::F
-  ηold::uEltypeNoUnits
-  κ::uEltypeNoUnits
-  tol::uEltypeNoUnits
+  ηold::uToltype
+  κ::uToltype
+  tol::uToltype
   newton_iters::Int
   tab::Tab
 end
@@ -316,59 +321,61 @@ function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   linsolve = alg.linsolve(Val{:init},uf,u)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
 
+  uToltype = real(uBottomEltypeNoUnits)
   if alg.κ != nothing
-    κ = alg.κ
+    κ = uToltype(alg.κ)
   else
-    κ = uEltypeNoUnits(1//100)
+    κ = uToltype(1//100)
   end
   if alg.tol != nothing
-    tol = alg.tol
+    tol = uToltype(alg.tol)
   else
-    tol = min(0.03,first(reltol)^(0.5))
+    tol = uToltype(min(0.03,first(reltol)^(0.5)))
   end
 
-  tab = KenCarp4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = KenCarp4Tableau(uToltype,real(tTypeNoUnits))
 
-  ηold = one(uEltypeNoUnits)
+  ηold = one(uToltype)
 
   KenCarp4Cache{typeof(u),typeof(rate_prototype),typeof(atmp),typeof(J),typeof(uf),
-              typeof(jac_config),uEltypeNoUnits,typeof(tab),typeof(linsolve),typeof(k1)}(
+              typeof(jac_config),uToltype,typeof(tab),typeof(linsolve),typeof(k1)}(
               u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,z₆,k1,k2,k3,k4,k5,k6,
               dz,b,tmp,atmp,J,
               W,uf,jac_config,linsolve,ηold,κ,tol,10000,tab)
 end
 
-mutable struct Kvaerno5ConstantCache{F,uEltypeNoUnits,Tab} <: OrdinaryDiffEqConstantCache
+mutable struct Kvaerno5ConstantCache{F,uToltype,Tab} <: OrdinaryDiffEqConstantCache
   uf::F
-  ηold::uEltypeNoUnits
-  κ::uEltypeNoUnits
-  tol::uEltypeNoUnits
+  ηold::uToltype
+  κ::uToltype
+  tol::uToltype
   newton_iters::Int
   tab::Tab
 end
 
-function alg_cache(alg::Kvaerno5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
+function alg_cache(alg::Kvaerno5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  ηold = one(uEltypeNoUnits)
+  uToltype = real(uBottomEltypeNoUnits)
+  ηold = one(uToltype)
 
   if alg.κ != nothing
-    κ = alg.κ
+    κ = uToltype(alg.κ)
   else
-    κ = uEltypeNoUnits(1//100)
+    κ = uToltype(1//100)
   end
   if alg.tol != nothing
-    tol = alg.tol
+    tol = uToltype(alg.tol)
   else
-    tol = min(0.03,first(reltol)^(0.5))
+    tol = uToltype(min(0.03,first(reltol)^(0.5)))
   end
 
-  tab = Kvaerno5Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = Kvaerno5Tableau(uToltype,real(tTypeNoUnits))
 
   Kvaerno5ConstantCache(uf,ηold,κ,tol,10000,tab)
 end
 
-mutable struct Kvaerno5Cache{uType,rateType,uNoUnitsType,J,UF,JC,uEltypeNoUnits,Tab,F} <: OrdinaryDiffEqMutableCache
+mutable struct Kvaerno5Cache{uType,rateType,uNoUnitsType,J,UF,JC,uToltype,Tab,F} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   du1::rateType
@@ -390,9 +397,9 @@ mutable struct Kvaerno5Cache{uType,rateType,uNoUnitsType,J,UF,JC,uEltypeNoUnits,
   uf::UF
   jac_config::JC
   linsolve::F
-  ηold::uEltypeNoUnits
-  κ::uEltypeNoUnits
-  tol::uEltypeNoUnits
+  ηold::uToltype
+  κ::uToltype
+  tol::uToltype
   newton_iters::Int
   tab::Tab
 end
@@ -420,62 +427,64 @@ function alg_cache(alg::Kvaerno5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   linsolve = alg.linsolve(Val{:init},uf,u)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
 
+  uToltype = real(uBottomEltypeNoUnits)
   if alg.κ != nothing
-    κ = alg.κ
+    κ = uToltype(alg.κ)
   else
-    κ = uEltypeNoUnits(1//100)
+    κ = uToltype(1//100)
   end
   if alg.tol != nothing
-    tol = alg.tol
+    tol = uToltype(alg.tol)
   else
-    tol = min(0.03,first(reltol)^(0.5))
+    tol = uToltype(min(0.03,first(reltol)^(0.5)))
   end
 
-  tab = Kvaerno5Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = Kvaerno5Tableau(uToltype,real(tTypeNoUnits))
 
-  ηold = one(uEltypeNoUnits)
+  ηold = one(uToltype)
 
   Kvaerno5Cache{typeof(u),typeof(rate_prototype),typeof(atmp),typeof(J),typeof(uf),
-              typeof(jac_config),uEltypeNoUnits,typeof(tab),typeof(linsolve)}(
+              typeof(jac_config),uToltype,typeof(tab),typeof(linsolve)}(
               u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,z₆,z₇,dz,b,tmp,atmp,J,
               W,uf,jac_config,linsolve,ηold,κ,tol,10000,tab)
 end
 
-mutable struct KenCarp5ConstantCache{F,uEltypeNoUnits,Tab} <: OrdinaryDiffEqConstantCache
+mutable struct KenCarp5ConstantCache{F,uToltype,Tab} <: OrdinaryDiffEqConstantCache
   uf::F
-  ηold::uEltypeNoUnits
-  κ::uEltypeNoUnits
-  tol::uEltypeNoUnits
+  ηold::uToltype
+  κ::uToltype
+  tol::uToltype
   newton_iters::Int
   tab::Tab
 end
 
-function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
+function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   if typeof(f) <: SplitFunction
     uf = DiffEqDiffTools.UDerivativeWrapper(f.f1,t,p)
   else
     uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   end
-  ηold = one(uEltypeNoUnits)
+  uToltype = real(uBottomEltypeNoUnits)
+  ηold = one(uToltype)
 
   if alg.κ != nothing
-    κ = alg.κ
+    κ = uToltype(alg.κ)
   else
-    κ = uEltypeNoUnits(1//100)
+    κ = uToltype(1//100)
   end
   if alg.tol != nothing
-    tol = alg.tol
+    tol = uToltype(alg.tol)
   else
-    tol = min(0.03,first(reltol)^(0.5))
+    tol = uToltype(min(0.03,first(reltol)^(0.5)))
   end
 
-  tab = KenCarp5Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = KenCarp5Tableau(uToltype,real(tTypeNoUnits))
 
   KenCarp5ConstantCache(uf,ηold,κ,tol,10000,tab)
 end
 
-mutable struct KenCarp5Cache{uType,rateType,uNoUnitsType,J,UF,JC,uEltypeNoUnits,Tab,F,kType} <: OrdinaryDiffEqMutableCache
+mutable struct KenCarp5Cache{uType,rateType,uNoUnitsType,J,UF,JC,uToltype,Tab,F,kType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   du1::rateType
@@ -506,9 +515,9 @@ mutable struct KenCarp5Cache{uType,rateType,uNoUnitsType,J,UF,JC,uEltypeNoUnits,
   uf::UF
   jac_config::JC
   linsolve::F
-  ηold::uEltypeNoUnits
-  κ::uEltypeNoUnits
-  tol::uEltypeNoUnits
+  ηold::uToltype
+  κ::uToltype
+  tol::uToltype
   newton_iters::Int
   tab::Tab
 end
@@ -549,23 +558,24 @@ function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   linsolve = alg.linsolve(Val{:init},uf,u)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
 
+  uToltype = real(uBottomEltypeNoUnits)
   if alg.κ != nothing
-    κ = alg.κ
+    κ = uToltype(alg.κ)
   else
-    κ = uEltypeNoUnits(1//100)
+    κ = uToltype(1//100)
   end
   if alg.tol != nothing
-    tol = alg.tol
+    tol = uToltype(alg.tol)
   else
-    tol = min(0.03,first(reltol)^(0.5))
+    tol = uToltype(min(0.03,first(reltol)^(0.5)))
   end
 
   tab = KenCarp5Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
-  ηold = one(uEltypeNoUnits)
+  ηold = one(uToltype)
 
   KenCarp5Cache{typeof(u),typeof(rate_prototype),typeof(atmp),typeof(J),typeof(uf),
-              typeof(jac_config),uEltypeNoUnits,typeof(tab),typeof(linsolve),typeof(k1)}(
+              typeof(jac_config),uToltype,typeof(tab),typeof(linsolve),typeof(k1)}(
               u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,
               k1,k2,k3,k4,k5,k6,k7,k8,
               dz,b,tmp,atmp,J,
