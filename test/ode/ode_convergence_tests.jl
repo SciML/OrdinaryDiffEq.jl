@@ -27,7 +27,7 @@ for i = 1:2
   alg = CarpenterKennedy2N54()
   @test abs(test_convergence(dts,prob,alg).𝒪est[:l∞]-OrdinaryDiffEq.alg_order(alg)) < testTol
 
-  ### Stiff Solvers
+  println("Stiff Solvers")
 
   dts = 1.//2.^(9:-1:5)
 
@@ -74,6 +74,7 @@ for i = 1:2
   @test abs(sim17.𝒪est[:final]-3) < testTol
 
   dts = 1.//2.^(7:-1:4)
+  println("Higher Order")
 
   sim18 = test_convergence(dts,prob,Cash4())
   @test abs(sim18.𝒪est[:final]-4) < testTol
