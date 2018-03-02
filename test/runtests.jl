@@ -18,7 +18,6 @@ end
 #Start Test Script
 
 tic()
-
 if group == "All" || group == "Interface"
     @time @testset "Discrete Tests" begin include("discrete_algorithm_test.jl") end
     @time @testset "Tstops Tests" begin include("ode/ode_tstops_tests.jl") end
@@ -37,6 +36,7 @@ if group == "All" || group == "Interface"
     @time @testset "u_modifed Tests" begin include("umodified_test.jl") end
     @time @testset "Composite Algorithm Tests" begin include("composite_algorithm_test.jl") end
     @time @testset "Integrator Interface Tests" begin include("integrator_interface_tests.jl") end
+    @time @testset "Complex Tests" begin include("complex_tests.jl") end
 end
 
 if group == "All" || group == "Regression"
