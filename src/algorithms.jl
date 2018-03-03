@@ -597,7 +597,10 @@ struct GenericIIF2{F} <: OrdinaryDiffEqExponentialAlgorithm
 end
 Base.@pure GenericIIF2(;nlsolve=NLSOLVEJL_SETUP()) = GenericIIF2{typeof(nlsolve)}(nlsolve)
 
-struct LawsonEuler <: OrdinaryDiffEqExponentialAlgorithm end
+struct LawsonEuler <: OrdinaryDiffEqExponentialAlgorithm 
+  krylov::Bool
+end
+Base.@pure LawsonEuler(;krylov=false) = LawsonEuler(krylov)
 struct NorsettEuler <: OrdinaryDiffEqExponentialAlgorithm end
 struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm end
 struct ETDRK4 <: OrdinaryDiffEqExponentialAlgorithm end

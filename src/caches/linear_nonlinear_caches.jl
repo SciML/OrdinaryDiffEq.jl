@@ -92,8 +92,12 @@ struct LawsonEulerCache{uType,rateType,expType} <: OrdinaryDiffEqMutableCache
 end
 
 function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  A = f.f1
-  expA = expm(A*dt)
+  if alg.krylov
+    expA = nothing # no caching
+  else
+    A = f.f1
+    expA = expm(A*dt)
+  end
   LawsonEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),expA,zeros(rate_prototype))
 end
 

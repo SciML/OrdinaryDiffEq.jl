@@ -14,7 +14,11 @@ function perform_step!(integrator, cache::LawsonEulerConstantCache, repeat_step=
   @unpack t,dt,uprev,u,f,p = integrator
   rtmp = integrator.fsalfirst
   A = f.f1
-  @muladd u = expm(dt*A)*(uprev + dt*rtmp)
+  if integrator.alg.krylov
+    @muladd u = expmv(dt, A, uprev + dt*rtmp; tol=integrator.opts.reltol)
+  else
+    @muladd u = expm(dt*A)*(uprev + dt*rtmp)
+  end
   rtmp = f.f2(u,p,t+dt)
   k = A*u + rtmp # For the interpolation, needs k at the updated point
   integrator.fsallast = rtmp
@@ -31,17 +35,21 @@ function initialize!(integrator, cache::LawsonEulerCache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = fsalfirst # this is wrong, since it's just rtmp. Should fsal this value though
   integrator.k[2] = k
-  A = integrator.f.f1(k,integrator.u,integrator.p,integrator.t)
+  integrator.f.f1(k,integrator.u,integrator.p,integrator.t)
   integrator.f.f2(rtmp,integrator.uprev,integrator.p,integrator.t) # For the interpolation, needs k at the updated point
   @. integrator.fsalfirst = k + rtmp
 end
 
 function perform_step!(integrator, cache::LawsonEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k,rtmp,tmp,expA = cache
+  @unpack k,rtmp,tmp = cache
   A = f.f1
   @muladd @. tmp = uprev + dt*integrator.fsalfirst
-  A_mul_B!(u,expA,tmp)
+  if integrator.alg.krylov
+    expmv!(u,dt,A,tmp; tol=integrator.opts.reltol)
+  else
+    A_mul_B!(u,cache.expA,tmp)
+  end
   A_mul_B!(tmp,A,u)
   f.f2(rtmp,u,p,t+dt)
   @. k = tmp + rtmp
