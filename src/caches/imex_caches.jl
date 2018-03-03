@@ -10,7 +10,7 @@ mutable struct CNABConstantCache{uType,tType,rateType,F,uEltypeNoUnits} <: Ordin
   y1::rateType
 end
 
-function alg_cache(alg::CNAB,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,uprev,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::CNAB,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   if typeof(f) <: SplitFunction
     uf = DiffEqDiffTools.UDerivativeWrapper(f.f1,t,p)
   else
@@ -66,7 +66,7 @@ end
 u_cache(c::CNABCache)    = (c.z,c.dz)
 du_cache(c::CNABCache)   = (c.fsalfirst)
 
-function alg_cache(alg::CNAB,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::CNAB,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
