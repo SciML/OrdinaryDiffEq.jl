@@ -64,8 +64,8 @@ end
     end
   else
     @. u  = uprev + (dt/12)*(23*k1 - 16*k2 + 5*k3)
-    cache.k3 = copy(k2)
-    cache.k2 = copy(k1)
+    cache.k2,cache.k3 = k3,k2
+    cache.k2 .= k1
   end
   f(k, u, p, t+dt)
 end
@@ -127,13 +127,13 @@ end
     @. tmp = uprev + (2/3)*dt*k1
     f(ralk2, tmp, p, ttmp)
     @. u = uprev + (dt/4)*(k1 + 3*ralk2)       #Ralston Method
-    cache.k2 = copy(k1)
+    cache.k2 .= k1
   else
     perform_step!(integrator, AB3Cache(u,uprev,fsalfirst,k2,k3,ralk2,k,tmp))
     k = integrator.fsallast
     @. u = uprev + (dt/12)*(5*k + 8*k1 - k2)
-    cache.k3 = copy(k2)
-    cache.k2 = copy(k1)
+    cache.k2,cache.k3 = k3,k2
+    cache.k2 .= k1
   end
   f(k, u, p, t+dt)
 end
