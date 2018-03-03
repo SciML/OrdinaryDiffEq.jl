@@ -11,6 +11,10 @@ krylov_f2! = (du,u,p,t) -> du .= -0.1*u
 prob = SplitODEProblem(L,krylov_f2,u0,(0.0,1.0))
 prob_inplace = SplitODEProblem(L,krylov_f2!,u0,(0.0,1.0))
 
+# Ad-hoc fix for SplitFunction miscalssified as having analytic solutions
+DiffEqBase.has_analytic(::typeof(prob.f)) = false
+DiffEqBase.has_analytic(::typeof(prob_inplace.f)) = false
+
 sol = solve(prob, LawsonEuler(); dt=dt)
 sol_krylov = solve(prob, LawsonEuler(krylov=true); dt=dt, reltol=reltol)
 @test isapprox(sol.u,sol_krylov.u; rtol=reltol)

@@ -52,8 +52,8 @@ if group == "All" || group == "AlgConvergence"
     @time @testset "Partitioned Methods Tests" begin include("partitioned_methods_tests.jl") end
     @time @testset "Split Methods Tests" begin include("split_methods_tests.jl") end
     #@time @testset "Linear Methods Tests" begin include("linear_method_tests.jl") end
-    @time @testset "Linear-Nonlinear Krylov Methods Tests" begin include("linear_nonlinear_krylov_tests.jl") end
     @time @testset "Linear-Nonlinear Methods Tests" begin include("linear_nonlinear_convergence_tests.jl") end
+    @time @testset "Linear-Nonlinear Krylov Methods Tests" begin include("linear_nonlinear_krylov_tests.jl") end
 end
 
 toc()
