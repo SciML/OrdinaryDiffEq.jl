@@ -61,6 +61,8 @@ dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
 @test abs(sim.𝒪est[:l∞]-5) < testTol
 
+sol = solve(prob,CNAB(),)
+
 # Now test only the second part
 
 f1 = (u,p,t) -> zero(u)
@@ -185,3 +187,18 @@ sol = solve(prob,KenCarp5())
 dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
 @test abs(sim.𝒪est[:l∞]-5) < testTol
+
+##IMEX-TEST##
+
+f1 = (u,p,t) -> 2u
+f2 = (u,p,t) -> zero(u)
+
+prob = SplitODEProblem(f1,f2,1.0,(0.0,1.0))
+function (::typeof(prob.f))(::Type{Val{false}},u0,p,t)
+    exp(2t)*u0
+end
+
+sol = solve(prob,CNAB(),dt=0.1)
+dts = 1.//2.^(8:-1:4)
+sim = test_convergence(dts,prob,CNAB())
+@test abs(sim.𝒪est[:l∞]-3) < testTol
