@@ -71,7 +71,11 @@ function perform_step!(integrator, cache::NorsettEulerConstantCache, repeat_step
   @unpack t,dt,uprev,u,f,p = integrator
   rtmp = integrator.fsalfirst
   A = f.f1
-  u = uprev + ((expm(dt*A)-I)/A)*(A*uprev + rtmp)
+  if integrator.alg.krylov
+    u = phimv(dt,A,rtmp,uprev; tol=integrator.opts.reltol)
+  else
+    u = uprev + ((expm(dt*A)-I)/A)*(A*uprev + rtmp)
+  end
   rtmp = f.f2(u,p,t+dt)
   k = A*u + rtmp # For the interpolation, needs k at the updated point
   integrator.fsallast = rtmp
@@ -95,13 +99,17 @@ end
 
 function perform_step!(integrator, cache::NorsettEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k,rtmp,tmp,expA,phi1 = cache
+  @unpack k,rtmp,tmp = cache
   A = f.f1
 
-  A_mul_B!(tmp,A,uprev)
-  tmp .+= rtmp
-  A_mul_B!(rtmp,phi1,tmp)
-  @. u = uprev + rtmp
+  if integrator.alg.krylov
+    phimv!(u,dt,A,rtmp,uprev; tol=integrator.opts.reltol)
+  else
+    A_mul_B!(tmp,A,uprev)
+    tmp .+= rtmp
+    A_mul_B!(rtmp,cache.phi1,tmp)
+    @. u = uprev + rtmp
+  end
   A_mul_B!(tmp,A,u)
   f.f2(rtmp,u,p,t+dt)
   @. k = tmp +  rtmp

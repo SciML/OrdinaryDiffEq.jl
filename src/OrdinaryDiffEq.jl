@@ -20,7 +20,7 @@ module OrdinaryDiffEq
   using Parameters, GenericSVD, ForwardDiff, RecursiveArrayTools,
         NLsolve, Juno, Roots, DataStructures, DiffEqDiffTools
 
-  using Expokit: expmv, expmv!
+  using Expokit: expmv, expmv!, phimv, phimv!
 
   import Base: linspace
 

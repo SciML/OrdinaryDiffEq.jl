@@ -120,20 +120,25 @@ struct NorsettEulerCache{uType,rateType,expType} <: OrdinaryDiffEqMutableCache
 end
 
 function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  A = f.f1
-  if typeof(A.A) <: Diagonal
-      _expA = expm(A*dt)
-      phi1 = Diagonal(Float64.((big.(_expA)-I)/A.A))
-      expA = Diagonal(_expA)
-
-      # Fix zero eigenvalues
-      for i in 1:size(phi1,1)
-          phi1[i,i] = ifelse(A[i,i]==0,dt,phi1[i,i])
-      end
-
+  if alg.krylov
+    expA = nothing
+    phi1 = nothing
   else
-      expA = expm(A*dt)
-      phi1 = ((expA-I)/A)
+    A = f.f1
+    if typeof(A.A) <: Diagonal
+        _expA = expm(A*dt)
+        phi1 = Diagonal(Float64.((big.(_expA)-I)/A.A))
+        expA = Diagonal(_expA)
+
+        # Fix zero eigenvalues
+        for i in 1:size(phi1,1)
+            phi1[i,i] = ifelse(A[i,i]==0,dt,phi1[i,i])
+        end
+
+    else
+        expA = expm(A*dt)
+        phi1 = ((expA-I)/A)
+    end
   end
   NorsettEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),expA,phi1,zeros(rate_prototype))
 end

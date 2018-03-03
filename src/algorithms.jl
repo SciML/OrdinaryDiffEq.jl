@@ -601,7 +601,10 @@ struct LawsonEuler <: OrdinaryDiffEqExponentialAlgorithm
   krylov::Bool
 end
 Base.@pure LawsonEuler(;krylov=false) = LawsonEuler(krylov)
-struct NorsettEuler <: OrdinaryDiffEqExponentialAlgorithm end
+struct NorsettEuler <: OrdinaryDiffEqExponentialAlgorithm
+  krylov::Bool
+end
+Base.@pure NorsettEuler(;krylov=false) = NorsettEuler(krylov)
 struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm end
 struct ETDRK4 <: OrdinaryDiffEqExponentialAlgorithm end
 

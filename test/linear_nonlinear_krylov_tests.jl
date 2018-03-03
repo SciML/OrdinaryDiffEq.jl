@@ -15,10 +15,13 @@ prob_inplace = SplitODEProblem(L,krylov_f2!,u0,(0.0,1.0))
 DiffEqBase.has_analytic(::typeof(prob.f)) = false
 DiffEqBase.has_analytic(::typeof(prob_inplace.f)) = false
 
-sol = solve(prob, LawsonEuler(); dt=dt)
-sol_krylov = solve(prob, LawsonEuler(krylov=true); dt=dt, reltol=reltol)
-@test isapprox(sol.u,sol_krylov.u; rtol=reltol)
+Algs = [LawsonEuler,NorsettEuler]
+for Alg in Algs
+    sol = solve(prob, Alg(); dt=dt)
+    sol_krylov = solve(prob, Alg(krylov=true); dt=dt, reltol=reltol)
+    @test isapprox(sol.u,sol_krylov.u; rtol=reltol)
 
-sol_ip = solve(prob_inplace, LawsonEuler(); dt=0.01)
-sol_ip_krylov = solve(prob_inplace, LawsonEuler(krylov=true); dt=dt, reltol=reltol)
-@test isapprox(sol_ip.u,sol_ip_krylov.u; rtol=reltol)
+    sol_ip = solve(prob_inplace, Alg(); dt=0.01)
+    sol_ip_krylov = solve(prob_inplace, Alg(krylov=true); dt=dt, reltol=reltol)
+    @test isapprox(sol_ip.u,sol_ip_krylov.u; rtol=reltol)
+end
