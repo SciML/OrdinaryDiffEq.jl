@@ -129,7 +129,7 @@ end
     @. u = uprev + (dt/4)*(k1 + 3*ralk2)       #Ralston Method
     cache.k2 .= k1
   else
-    perform_step!(integrator, AB3Cache(u,uprev,fsalfirst,copy(k2),k3,ralk2,k,tmp))
+    perform_step!(integrator, AB3Cache(u,uprev,fsalfirst,copy(k2),k3,ralk2,k,tmp))  #Here passing copy of k2, otherwise it will change in AB3()
     k = integrator.fsallast
     @. u = uprev + (dt/12)*(5*k + 8*k1 - k2)
     cache.k2,cache.k3 = k3,k2
