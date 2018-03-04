@@ -62,6 +62,7 @@ module OrdinaryDiffEq
   include("caches/symplectic_caches.jl")
   include("caches/rosenbrock_caches.jl")
   include("caches/rkn_caches.jl")
+  include("caches/imex_caches.jl")
 
   include("tableaus/low_order_rk_tableaus.jl")
   include("tableaus/high_order_rk_tableaus.jl")
@@ -71,6 +72,7 @@ module OrdinaryDiffEq
   include("tableaus/rosenbrock_tableaus.jl")
   include("tableaus/sdirk_tableaus.jl")
   include("tableaus/rkn_tableaus.jl")
+  include("tableaus/imex_tableaus.jl")
 
   include("integrators/type.jl")
   include("integrators/integrator_utils.jl")
@@ -95,6 +97,7 @@ module OrdinaryDiffEq
   include("perform_step/rosenbrock_perform_step.jl")
   include("perform_step/threaded_rk_perform_step.jl")
   include("perform_step/composite_perform_step.jl")
+  include("perform_step/imex_perform_step.jl")
 
   include("dense/generic_dense.jl")
   include("dense/interpolants.jl")
@@ -138,6 +141,8 @@ module OrdinaryDiffEq
   export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, Kvaerno3,
          KenCarp3, Cash4, Hairer4, Hairer42, SSPSDIRK2, Kvaerno4, Kvaerno5,
          KenCarp4, KenCarp5
+
+  export CNAB
 
   export GenericImplicitEuler, GenericTrapezoid
 
