@@ -26,6 +26,10 @@ for i = 1:2
   @test abs(sim4.𝒪est[:l2]-3) < testTol
   alg = CarpenterKennedy2N54()
   @test abs(test_convergence(dts,prob,alg).𝒪est[:l∞]-OrdinaryDiffEq.alg_order(alg)) < testTol
+  sim5 = test_convergence(dts, prob, AB3())
+  @test abs(sim5.𝒪est[:l2]-3) < testTol
+  sim6 = test_convergence(dts,prob,ABM32())
+  @test abs(sim6.𝒪est[:l2]-3) < testTol
 
   println("Stiff Solvers")
 

@@ -62,6 +62,7 @@ module OrdinaryDiffEq
   include("caches/symplectic_caches.jl")
   include("caches/rosenbrock_caches.jl")
   include("caches/rkn_caches.jl")
+  include("caches/adams_bashforth_moulton_caches.jl")
 
   include("tableaus/low_order_rk_tableaus.jl")
   include("tableaus/high_order_rk_tableaus.jl")
@@ -95,6 +96,7 @@ module OrdinaryDiffEq
   include("perform_step/rosenbrock_perform_step.jl")
   include("perform_step/threaded_rk_perform_step.jl")
   include("perform_step/composite_perform_step.jl")
+  include("perform_step/adams_bashforth_moulton_perform_step.jl")
 
   include("dense/generic_dense.jl")
   include("dense/interpolants.jl")
@@ -158,4 +160,6 @@ module OrdinaryDiffEq
 
   export Nystrom4, Nystrom4VelocityIndependent, Nystrom5VelocityIndependent,
          IRKN3, IRKN4, DPRKN6, DPRKN8, DPRKN12, ERKN4, ERKN5
+
+  export AB3, ABM32
 end # module
