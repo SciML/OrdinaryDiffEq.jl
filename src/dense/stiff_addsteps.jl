@@ -54,7 +54,7 @@ end
     end
 
     if has_invW(f)
-      f(Val{:invW},t,u,γ,W) # W == inverse W
+      f(Val{:invW},W,u,p,γ,t) # W == inverse W
       A_mul_B!(vectmp,W,linsolve_tmp_vec)
     else
       ### Jacobian does not need to be re-evaluated after an event
@@ -106,7 +106,7 @@ end
     end
 
     if has_invW(f)
-      f(Val{:invW},t,u,γ,W) # W == inverse W
+      f(Val{:invW},W,u,p,γ,t) # W == inverse W
       A_mul_B!(vectmp,W,linsolve_tmp_vec)
     else
       ### Jacobian does not need to be re-evaluated after an event
