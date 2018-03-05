@@ -96,7 +96,7 @@ function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
     expA = nothing # no caching
   else
     A = f.f1
-    expA = expm(A*dt)
+    expA = expm(full(A)*dt)
   end
   LawsonEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),expA,zeros(rate_prototype))
 end
@@ -136,8 +136,9 @@ function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomElty
         end
 
     else
-        expA = expm(A*dt)
-        phi1 = ((expA-I)/A)
+        fullA = full(A)
+        expA = expm(fullA*dt)
+        phi1 = ((expA-I)/fullA)
     end
   end
   NorsettEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),expA,phi1,zeros(rate_prototype))
