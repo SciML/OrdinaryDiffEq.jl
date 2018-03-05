@@ -15,7 +15,7 @@ function perform_step!(integrator, cache::LawsonEulerConstantCache, repeat_step=
   rtmp = integrator.fsalfirst
   A = f.f1
   if integrator.alg.krylov
-    @muladd u = expmv(dt, A, uprev + dt*rtmp; tol=integrator.opts.reltol)
+    @muladd u = expmv(dt, A, uprev + dt*rtmp; tol=integrator.opts.reltol, m=min(integrator.alg.m, size(A,1)), norm=normbound)
   else
     @muladd u = expm(dt*A)*(uprev + dt*rtmp)
   end
@@ -46,7 +46,7 @@ function perform_step!(integrator, cache::LawsonEulerCache, repeat_step=false)
   A = f.f1
   @muladd @. tmp = uprev + dt*integrator.fsalfirst
   if integrator.alg.krylov
-    expmv!(u,dt,A,tmp; tol=integrator.opts.reltol)
+    expmv!(u,dt,A,tmp; tol=integrator.opts.reltol, m=min(integrator.alg.m, size(A,1)), norm=normbound)
   else
     A_mul_B!(u,cache.expA,tmp)
   end
@@ -72,7 +72,7 @@ function perform_step!(integrator, cache::NorsettEulerConstantCache, repeat_step
   rtmp = integrator.fsalfirst
   A = f.f1
   if integrator.alg.krylov
-    u = phimv(dt,A,rtmp,uprev; tol=integrator.opts.reltol)
+    u = phimv(dt,A,rtmp,uprev; tol=integrator.opts.reltol, m=min(integrator.alg.m, size(A,1)), norm=normbound)
   else
     u = uprev + ((expm(dt*A)-I)/A)*(A*uprev + rtmp)
   end
@@ -103,7 +103,7 @@ function perform_step!(integrator, cache::NorsettEulerCache, repeat_step=false)
   A = f.f1
 
   if integrator.alg.krylov
-    phimv!(u,dt,A,rtmp,uprev; tol=integrator.opts.reltol)
+    phimv!(u,dt,A,rtmp,uprev; tol=integrator.opts.reltol, m=min(integrator.alg.m, size(A,1)), norm=normbound)
   else
     A_mul_B!(tmp,A,uprev)
     tmp .+= rtmp

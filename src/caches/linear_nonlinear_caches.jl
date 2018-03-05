@@ -125,7 +125,7 @@ function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomElty
     phi1 = nothing
   else
     A = f.f1
-    if typeof(A.A) <: Diagonal
+    if isa(A, DiffEqArrayOperator) && typeof(A.A) <: Diagonal
         _expA = expm(A*dt)
         phi1 = Diagonal(Float64.((big.(_expA)-I)/A.A))
         expA = Diagonal(_expA)
