@@ -30,6 +30,10 @@ for i = 1:2
   @test abs(sim5.𝒪est[:l2]-3) < testTol
   sim6 = test_convergence(dts,prob,ABM32())
   @test abs(sim6.𝒪est[:l2]-3) < testTol
+  sim7 = test_convergence(dts, prob, AB4())
+  @test abs(sim7.𝒪est[:l2]-3) < testTol
+  sim8 = test_convergence(dts,prob,ABM43())
+  @test abs(sim8.𝒪est[:l2]-3) < testTol
 
   println("Stiff Solvers")
 
