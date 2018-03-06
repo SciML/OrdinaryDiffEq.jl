@@ -127,7 +127,7 @@ function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomElty
     A = f.f1
     if isa(A, DiffEqArrayOperator) && typeof(A.A) <: Diagonal
         _expA = expm(A*dt)
-        phi1 = Diagonal(Float64.((big.(_expA)-I)/A.A))
+        phi1 = Diagonal(Float64.((big.(_expA)-I)/(A.A .* A.α.coeff)))
         expA = Diagonal(_expA)
 
         # Fix zero eigenvalues
@@ -162,7 +162,12 @@ end
 
 function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   A = f.f1
-  E,E2,a,b,c,Q = get_etdrk4_oop_operators(dt,A.A)
+  if isa(A, DiffEqArrayOperator)
+    L = A.A .* A.α.coeff # has specail handling is A.A is Diagonal
+  else
+    L = full(A)
+  end
+  E,E2,a,b,c,Q = get_etdrk4_oop_operators(dt,L)
   ETDRK4ConstantCache(E,E2,a,b,c,Q)
 end
 
@@ -215,7 +220,12 @@ function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   k1 = zeros(rate_prototype); k2 = zeros(rate_prototype)
   k3 = zeros(rate_prototype); k4 = zeros(rate_prototype)
   s1 = similar(u)
-  E,E2,a,b,c,Q = get_etdrk4_operators(dt,A.A)
+  if isa(A, DiffEqArrayOperator)
+    L = A.A .* A.α.coeff # has specail handling is A.A is Diagonal
+  else
+    L = full(A)
+  end
+  E,E2,a,b,c,Q = get_etdrk4_operators(dt,L)
   ETDRK4Cache(u,uprev,tmp,s1,tmp2,k1,k2,k3,k4,fsalfirst,E,E2,a,b,c,Q)
 end
 
