@@ -96,7 +96,7 @@ function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
     expA = nothing # no caching
   else
     A = f.f1
-    expA = expm(A*dt)
+    expA = expm(full(A)*dt)
   end
   LawsonEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),expA,zeros(rate_prototype))
 end
@@ -125,9 +125,9 @@ function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomElty
     phi1 = nothing
   else
     A = f.f1
-    if typeof(A.A) <: Diagonal
+    if isa(A, DiffEqArrayOperator) && typeof(A.A) <: Diagonal
         _expA = expm(A*dt)
-        phi1 = Diagonal(Float64.((big.(_expA)-I)/A.A))
+        phi1 = Diagonal(Float64.((big.(_expA)-I)/(A.A .* A.α.coeff)))
         expA = Diagonal(_expA)
 
         # Fix zero eigenvalues
@@ -136,8 +136,9 @@ function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomElty
         end
 
     else
-        expA = expm(A*dt)
-        phi1 = ((expA-I)/A)
+        fullA = full(A)
+        expA = expm(fullA*dt)
+        phi1 = ((expA-I)/fullA)
     end
   end
   NorsettEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),expA,phi1,zeros(rate_prototype))
@@ -161,7 +162,12 @@ end
 
 function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   A = f.f1
-  E,E2,a,b,c,Q = get_etdrk4_oop_operators(dt,A.A)
+  if isa(A, DiffEqArrayOperator)
+    L = A.A .* A.α.coeff # has special handling is A.A is Diagonal
+  else
+    L = full(A)
+  end
+  E,E2,a,b,c,Q = get_etdrk4_oop_operators(dt,L)
   ETDRK4ConstantCache(E,E2,a,b,c,Q)
 end
 
@@ -214,7 +220,12 @@ function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   k1 = zeros(rate_prototype); k2 = zeros(rate_prototype)
   k3 = zeros(rate_prototype); k4 = zeros(rate_prototype)
   s1 = similar(u)
-  E,E2,a,b,c,Q = get_etdrk4_operators(dt,A.A)
+  if isa(A, DiffEqArrayOperator)
+    L = A.A .* A.α.coeff # has specail handling is A.A is Diagonal
+  else
+    L = full(A)
+  end
+  E,E2,a,b,c,Q = get_etdrk4_operators(dt,L)
   ETDRK4Cache(u,uprev,tmp,s1,tmp2,k1,k2,k3,k4,fsalfirst,E,E2,a,b,c,Q)
 end
 

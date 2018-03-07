@@ -3,9 +3,9 @@ N = 100
 dx = 1.0; dt=0.01
 srand(0); u0 = rand(N)
 reltol = 1e-4
-# L = DerivativeOperator{Float64}(2,2,dx,N,:Dirichlet0,:Dirichlet0) # error for caching version at the moment
-dd = -2.0 * ones(N); du = 1.0 * ones(N-1)
-A = diagm(du,-1) + diagm(dd,0) + diagm(du,1); L = DiffEqArrayOperator(A)
+L1 = DerivativeOperator{Float64}(2,4,dx,N,:Dirichlet0,:Dirichlet0)
+L2 = DerivativeOperator{Float64}(4,4,dx,N,:Dirichlet0,:Dirichlet0)
+L = 1.01*L1 + 2.02*L2
 krylov_f2 = (u,p,t) -> -0.1*u
 krylov_f2! = (du,u,p,t) -> du .= -0.1*u
 prob = SplitODEProblem(L,krylov_f2,u0,(0.0,1.0))

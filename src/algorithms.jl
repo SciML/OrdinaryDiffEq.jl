@@ -606,12 +606,14 @@ Base.@pure GenericIIF2(;nlsolve=NLSOLVEJL_SETUP()) = GenericIIF2{typeof(nlsolve)
 
 struct LawsonEuler <: OrdinaryDiffEqExponentialAlgorithm 
   krylov::Bool
+  m::Int
 end
-Base.@pure LawsonEuler(;krylov=false) = LawsonEuler(krylov)
+Base.@pure LawsonEuler(;krylov=false, m=30) = LawsonEuler(krylov, m)
 struct NorsettEuler <: OrdinaryDiffEqExponentialAlgorithm
   krylov::Bool
+  m::Int
 end
-Base.@pure NorsettEuler(;krylov=false) = NorsettEuler(krylov)
+Base.@pure NorsettEuler(;krylov=false, m=30) = NorsettEuler(krylov, m)
 struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm end
 struct ETDRK4 <: OrdinaryDiffEqExponentialAlgorithm end
 
