@@ -159,25 +159,25 @@ end
   k1 = integrator.fsalfirst
   cnt = integrator.iter
   if cnt == 1 || cnt == 2 || cnt == 3
-    ttmp = t + (2/3)*dt
-    ralk2 = f(uprev + (2/3)*dt*k1, p, ttmp)       #Ralston Method
-    u = uprev + (dt/4)*(k1 + 3*ralk2)
+    halfdt = dt/2
+    ttmp = t+halfdt
+    k2 = f(uprev + halfdt*k1, p, ttmp)
+    k3 = f(uprev + halfdt*k2, p, ttmp)
+    k4 = f(uprev + dt*k3, p, t+dt)
+    u = uprev + (dt/6)*(2*(k2 + k3) + (k1+k4))   #RK4
     if cnt == 1
-      k4 = k1
+      cache.k4 = k1
     elseif cnt == 2
-      k3 = k1
+      cache.k3 = k1
     else
-      k2 = k1
+      cache.k2 = k1
     end
   else
     u  = uprev + (dt/24)*(55*k1 - 59*k2 + 37*k3 - 9*k4)
-    k4 = k3
-    k3 = k2
-    k2 = k1
+    cache.k4 = k3
+    cache.k3 = k2
+    cache.k2 = k1
   end
-  cache.k2 = k2
-  cache.k3 = k3
-  cache.k4 = k4
   integrator.fsallast = f(u, p, t+dt)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -197,14 +197,19 @@ end
 
 @muladd function perform_step!(integrator,cache::AB4Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack tmp,fsalfirst,k2,k3,k4,ralk2,k = cache
+  @unpack tmp,fsalfirst,k2,k3,k4,ralk2,k,t2,t3,t4 = cache
   k1 = integrator.fsalfirst
   cnt = integrator.iter
   if cnt == 1 || cnt == 2 || cnt == 3
-    ttmp = t + (2/3)*dt
-    @. tmp = uprev + (2/3)*dt*k1
-    f(ralk2, tmp, p, ttmp)
-    @. u = uprev + (dt/4)*(k1 + 3*ralk2)        #Ralston Method
+    halfdt = dt/2
+    ttmp = t+halfdt
+    @. tmp = uprev + halfdt*k1
+    f(t2,tmp,p,ttmp)
+    @. tmp = uprev + halfdt*t2
+    f(t3,tmp,p,ttmp)
+    @. tmp = uprev + dt*t3
+    f(t4,tmp,p,t+dt)
+    @. u = uprev + (dt/6)*(2*(t2 + t3) + (k1 + t4))   #RK4
     if cnt == 1
       cache.k4 .= k1
     elseif cnt == 2
@@ -238,25 +243,25 @@ end
   k1 = integrator.fsalfirst
   cnt = integrator.iter
   if cnt == 1 || cnt == 2
-    ttmp = t + (2/3)*dt
-    ralk2 = f(uprev + (2/3)*dt*k1, p, ttmp)     #Ralston Method
-    u = uprev + (dt/4)*(k1 + 3*ralk2)
+    halfdt = dt/2
+    ttmp = t+halfdt
+    k2 = f(uprev + halfdt*k1, p, ttmp)
+    k3 = f(uprev + halfdt*k2, p, ttmp)
+    k4 = f(uprev + dt*k3, p, t+dt)
+    u = uprev + (dt/6)*(2*(k2 + k3) + (k1+k4))   #RK4
     if cnt == 1
-      k3 = k1
+      cache.k3 = k1
     else
-      k2 = k1
+      cache.k2 = k1
     end
   else
     perform_step!(integrator, AB4ConstantCache(k2,k3,k4))
     k = integrator.fsallast
     u = uprev + (dt/24)*(9*k + 19*k1 - 5*k2 + k3)
-    k4 = k3
-    k3 = k2
-    k2 = k1
+    cache.k4 = k3
+    cache.k3 = k2
+    cache.k2 = k1
   end
-  cache.k2 = k2
-  cache.k3 = k3
-  cache.k4 = k4
   integrator.fsallast = f(u, p, t+dt)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -276,14 +281,19 @@ end
 
 @muladd function perform_step!(integrator,cache::ABM43Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack tmp,fsalfirst,k2,k3,k4,ralk2,k,t2,t3,t4 = cache
+  @unpack tmp,fsalfirst,k2,k3,k4,ralk2,k,t2,t3,t4,t5,t6,t7 = cache
   k1 = integrator.fsalfirst
   cnt = integrator.iter
   if cnt == 1 || cnt == 2
-    ttmp = t + (2/3)*dt
-    @. tmp = uprev + (2/3)*dt*k1
-    f(ralk2, tmp, p, ttmp)
-    @. u = uprev + (dt/4)*(k1 + 3*ralk2)       #Ralston Method
+    halfdt = dt/2
+    ttmp = t+halfdt
+    @. tmp = uprev + halfdt*k1
+    f(t2,tmp,p,ttmp)
+    @. tmp = uprev + halfdt*t2
+    f(t3,tmp,p,ttmp)
+    @. tmp = uprev + dt*t3
+    f(t4,tmp,p,t+dt)
+    @. u = uprev + (dt/6)*(2*(t2 + t3) + (k1 + t4))   #RK4
     if cnt == 1
       cache.k3 .= k1
     else
@@ -293,7 +303,7 @@ end
     t2 .= k2
     t3 .= k3
     t4 .= k4
-    perform_step!(integrator, AB4Cache(u,uprev,fsalfirst,t2,t3,t4,ralk2,k,tmp))  #using temp vars t2,t3,t4 to avoid change in k2,k3,k4
+    perform_step!(integrator, AB4Cache(u,uprev,fsalfirst,t2,t3,t4,ralk2,k,tmp,t5,t6,t7))
     k = integrator.fsallast
     @. u = uprev + (dt/24)*(9*k + 19*k1 - 5*k2 + k3)
     cache.k4, cache.k3 = k3, k4
