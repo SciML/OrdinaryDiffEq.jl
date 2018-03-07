@@ -614,6 +614,7 @@ struct NorsettEuler <: OrdinaryDiffEqExponentialAlgorithm
   m::Int
 end
 Base.@pure NorsettEuler(;krylov=false, m=30) = NorsettEuler(krylov, m)
+ETD1 = NorsettEuler # alias
 struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm end
 struct ETDRK4 <: OrdinaryDiffEqExponentialAlgorithm end
 
