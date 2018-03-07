@@ -115,6 +115,43 @@ function perform_step!(integrator, cache::NorsettEulerCache, repeat_step=false)
   @. k = tmp +  rtmp
 end
 
+function initialize!(integrator,cache::ETD2ConstantCache)
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+
+  # Pre-start fsal
+  lin = integrator.f.f1(integrator.uprev,integrator.p,integrator.t)
+  nl = integrator.f.f2(integrator.uprev,integrator.p,integrator.t)
+  nlprev = zero(nl) # to be computed in the first iteration via ETD1
+  integrator.fsalfirst = ETD2Fsal(lin, nl, nlprev)
+    
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = ETD2Fsal(zero(lin), zero(nl), zero(nlprev))
+  integrator.k[1] = lin + nl
+  integrator.k[2] = zero(lin) + zero(nl)
+end
+
+function perform_step!(integrator,cache::ETD2ConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,f,p = integrator
+  @unpack lin,nl,nlprev = integrator.fsalfirst
+  @unpack exphA,phihA,B1,B0 = cache
+  integrator.k[1] = lin + nl
+
+  if integrator.iter == 1 # ETD1 for initial step
+    u = exphA*uprev + dt*(phihA*nl)
+  else
+    u = exphA*uprev + dt*(B1*nl + B0*nlprev)
+  end
+  integrator.u = u
+
+  # Push the fsal at t+dt
+  nlprev = nl
+  lin = f.f1(u,p,t+dt)
+  nl = f.f2(u,p,t+dt)
+  integrator.k[2] = lin + nl
+  @pack integrator.fsallast = lin, nl, nlprev
+end
+
 function initialize!(integrator, cache::ETDRK4ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)

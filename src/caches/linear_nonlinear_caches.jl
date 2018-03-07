@@ -160,6 +160,79 @@ struct ETDRK4ConstantCache{matType} <: OrdinaryDiffEqMutableCache
   Q::matType
 end
 
+#=
+  Fsal separately the linear and nonlinear part, as well as the nonlinear 
+  part in the previous time step.
+=#
+mutable struct ETD2Fsal{rateType}
+  lin::rateType
+  nl::rateType
+  nlprev::rateType
+end
+
+struct ETD2ConstantCache{expType} <: OrdinaryDiffEqConstantCache
+  exphA::expType
+  phihA::expType
+  B1::expType
+  B0::expType
+end
+
+function alg_cache(alg::ETD2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  A = f.f1
+  if isa(A, DiffEqArrayOperator)
+    _A = A.A * A.α.coeff # .* does not return Diagonal for A.A Diagonal
+  else
+    _A = full(A)
+  end
+  exphA, phihA, B1, B0 = get_etd2_operators(dt, _A)
+  ETD2ConstantCache(exphA, phihA, B1, B0)
+end
+
+#=
+  Computes the update coeffiicents for the time stepping
+
+    u_n+2 = exp(hA)*u_n+1 + h(B1*N_n+1 + B0*N_n)
+  
+  Also compute phi(hA) for the initial ETD1 step.
+
+  For scalar or Diagonal A, handles the singularity at A=0.
+  TODO: use expm1 for A close to 0?
+=#
+function get_etd2_operators(h::Real, A::T) where {T <: Number}
+  hA = h * A
+  oneT = one(T)
+  if hA == zero(T)
+    exphA = oneT
+    phihA = oneT
+    B1 = 1.5 * oneT
+    B0 = -0.5 * oneT
+  else
+    hA2 = hA * hA
+    exphA = exp(hA)
+    phihA = (exphA - oneT) / hA # x - I for scalar x is deprecated
+    B1 = ((hA + oneT)*exphA - oneT - 2*hA) / hA2
+    B0 = (oneT + hA - exphA) / hA2
+  end
+  return exphA, phihA, B1, B0
+end
+function get_etd2_operators(h::Real, A::Diagonal)
+  coeffs = get_etd2_operators.(h, A.diag)
+  exphA = Diagonal(map(x -> x[1], coeffs))
+  phihA = Diagonal(map(x -> x[2], coeffs))
+  B1 = Diagonal(map(x -> x[3], coeffs))
+  B0 = Diagonal(map(x -> x[4], coeffs))
+  return exphA, phihA, B1, B0
+end
+function get_etd2_operators(h::Real, A::AbstractMatrix)
+  hA = h * A
+  hA2 = hA * hA
+  exphA = expm(hA)
+  phihA = (exphA - I) / hA
+  B1 = ((hA + I)*exphA - I - 2*hA) / hA2
+  B0 = (I + hA - exphA) / hA2
+  return exphA, phihA, B1, B0
+end
+
 function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   A = f.f1
   if isa(A, DiffEqArrayOperator)
