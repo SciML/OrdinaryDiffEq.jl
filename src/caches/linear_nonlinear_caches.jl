@@ -163,7 +163,7 @@ end
 function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   A = f.f1
   if isa(A, DiffEqArrayOperator)
-    L = A.A .* A.α.coeff # has specail handling is A.A is Diagonal
+    L = A.A .* A.α.coeff # has special handling is A.A is Diagonal
   else
     L = full(A)
   end
