@@ -181,8 +181,10 @@ alg_order(alg::Rodas5) = 5
 
 alg_order(alg::AB3) = 3
 alg_order(alg::AB4) = 4
+alg_order(alg::AB5) = 5
 alg_order(alg::ABM32) = 3
 alg_order(alg::ABM43) = 4
+alg_order(alg::ABM54) = 5
 
 alg_order(alg::CompositeAlgorithm) = alg_order(alg.algs[1])
 
