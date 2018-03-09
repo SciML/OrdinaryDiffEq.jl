@@ -151,15 +151,6 @@ struct NorsettEulerConstantCache <: OrdinaryDiffEqConstantCache end
 
 alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = NorsettEulerConstantCache()
 
-struct ETDRK4ConstantCache{matType} <: OrdinaryDiffEqMutableCache
-  E::matType
-  E2::matType
-  a::matType
-  b::matType
-  c::matType
-  Q::matType
-end
-
 #=
   Fsal separately the linear and nonlinear part, as well as the nonlinear 
   part in the previous time step.
@@ -231,6 +222,15 @@ function get_etd2_operators(h::Real, A::AbstractMatrix)
   B1 = ((hA + I)*exphA - I - 2*hA) / hA2
   B0 = (I + hA - exphA) / hA2
   return exphA, phihA, B1, B0
+end
+
+struct ETDRK4ConstantCache{matType} <: OrdinaryDiffEqMutableCache
+  E::matType
+  E2::matType
+  a::matType
+  b::matType
+  c::matType
+  Q::matType
 end
 
 function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
