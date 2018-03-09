@@ -145,7 +145,9 @@ struct ERKN5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 # Adams Bashforth and Adams moulton methods
 
 struct AB3 <: OrdinaryDiffEqAlgorithm end
+struct AB4 <: OrdinaryDiffEqAlgorithm end
 struct ABM32 <: OrdinaryDiffEqAlgorithm end
+struct ABM43 <: OrdinaryDiffEqAlgorithm end
 
 ################################################################################
 
