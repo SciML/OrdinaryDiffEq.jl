@@ -8,6 +8,7 @@ probArr[2] = prob_ode_2Dlinear
 srand(100)
 ## Convergence Testing
 dts = 1.//2.^(8:-1:4)
+dts1 = 1.//2.^(9:-1:5)
 testTol = 0.2
 
 for i = 1:2
@@ -32,7 +33,7 @@ for i = 1:2
   @test abs(sim6.𝒪est[:l2]-3) < testTol
   sim7 = test_convergence(dts, prob, AB4())
   @test abs(sim7.𝒪est[:l2]-4) < testTol
-  sim8 = test_convergence(dts,prob,ABM43())
+  sim8 = test_convergence(dts1,prob,ABM43())  #using dts1 due to floating point error in convergence test
   @test abs(sim8.𝒪est[:l2]-4) < testTol
 
   println("Stiff Solvers")
