@@ -146,8 +146,10 @@ struct ERKN5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 struct AB3 <: OrdinaryDiffEqAlgorithm end
 struct AB4 <: OrdinaryDiffEqAlgorithm end
+struct AB5 <: OrdinaryDiffEqAlgorithm end
 struct ABM32 <: OrdinaryDiffEqAlgorithm end
 struct ABM43 <: OrdinaryDiffEqAlgorithm end
+struct ABM54 <: OrdinaryDiffEqAlgorithm end
 
 ################################################################################
 

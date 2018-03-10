@@ -163,3 +163,105 @@ function alg_cache(alg::ABM43,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   k4 = rate_prototype
   ABM43ConstantCache(k2,k3,k4)
 end
+
+mutable struct AB5Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  fsalfirst::rateType
+  k2::rateType
+  k3::rateType
+  k4::rateType
+  k5::rateType
+  k::rateType
+  tmp::uType
+  t2::rateType
+  t3::rateType
+  t4::rateType
+end
+
+u_cache(c::AB5Cache) = ()
+du_cache(c::AB5Cache) = (c.fsalfirst,c.k2,c.k3,c.k4,c.k5,c.k)
+
+mutable struct AB5ConstantCache{rateType} <: OrdinaryDiffEqConstantCache
+  k2::rateType
+  k3::rateType
+  k4::rateType
+  k5::rateType
+end
+
+function alg_cache(alg::AB5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  fsalfirst = zeros(rate_prototype)
+  k2 = zeros(rate_prototype)
+  k3 = zeros(rate_prototype)
+  k4 = zeros(rate_prototype)
+  k5 = zeros(rate_prototype)
+  k  = zeros(rate_prototype)
+  tmp = similar(u)
+  t2 = zeros(rate_prototype)
+  t3 = zeros(rate_prototype)
+  t4 = zeros(rate_prototype)
+  AB5Cache(u,uprev,fsalfirst,k2,k3,k4,k5,k,tmp,t2,t3,t4)
+end
+
+function alg_cache(alg::AB5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  k2 = rate_prototype
+  k3 = rate_prototype
+  k4 = rate_prototype
+  k5 = rate_prototype
+  AB5ConstantCache(k2,k3,k4,k5)
+end
+
+mutable struct ABM54Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  fsalfirst::rateType
+  k2::rateType
+  k3::rateType
+  k4::rateType
+  k5::rateType
+  k::rateType
+  tmp::uType
+  t2::rateType
+  t3::rateType
+  t4::rateType
+  t5::rateType
+  t6::rateType
+  t7::rateType
+  t8::rateType
+end
+
+u_cache(c::ABM54Cache) = ()
+du_cache(c::ABM54Cache) = (c.fsalfirst,c.k2,c.k3,c.k4,c.k5,c.k)
+
+mutable struct ABM54ConstantCache{rateType} <: OrdinaryDiffEqConstantCache
+  k2::rateType
+  k3::rateType
+  k4::rateType
+  k5::rateType
+end
+
+function alg_cache(alg::ABM54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  fsalfirst = zeros(rate_prototype)
+  k2 = zeros(rate_prototype)
+  k3 = zeros(rate_prototype)
+  k4 = zeros(rate_prototype)
+  k5 = zeros(rate_prototype)
+  k  = zeros(rate_prototype)
+  tmp = similar(u)
+  t2 = zeros(rate_prototype)
+  t3 = zeros(rate_prototype)
+  t4 = zeros(rate_prototype)
+  t5 = zeros(rate_prototype)
+  t6 = zeros(rate_prototype)
+  t7 = zeros(rate_prototype)
+  t8 = zeros(rate_prototype)
+  ABM54Cache(u,uprev,fsalfirst,k2,k3,k4,k5,k,tmp,t2,t3,t4,t5,t6,t7,t8)
+end
+
+function alg_cache(alg::ABM54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  k2 = rate_prototype
+  k3 = rate_prototype
+  k4 = rate_prototype
+  k5 = rate_prototype
+  ABM54ConstantCache(k2,k3,k4,k5)
+end
