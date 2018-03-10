@@ -153,6 +153,48 @@ function perform_step!(integrator,cache::ETD2ConstantCache,repeat_step=false)
   @pack integrator.fsallast = lin, nl, nlprev
 end
 
+function initialize!(integrator, cache::ETD2Cache)
+  integrator.kshortsize = 2
+  resize!(integrator.k, integrator.kshortsize)
+  rate_prototype = cache.rtmp1
+  
+  # Pre-start fsal
+  integrator.fsalfirst = ETD2Fsal(rate_prototype)
+  @unpack lin,nl = integrator.fsalfirst
+  integrator.f.f1(lin,integrator.uprev,integrator.p,integrator.t)
+  integrator.f.f2(nl,integrator.uprev,integrator.p,integrator.t)
+    
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = ETD2Fsal(rate_prototype)
+  integrator.k[1] = lin + nl
+  integrator.k[2] = zero(rate_prototype)
+end
+
+function perform_step!(integrator, cache::ETD2Cache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack lin,nl,nlprev = integrator.fsalfirst
+  @unpack utmp,rtmp1,rtmp2,exphA,phihA,B1,B0 = cache
+  @. integrator.k[1] = lin + nl
+
+  if integrator.iter == 1 # ETD1 for initial step
+    A_mul_B!(utmp, exphA, uprev)
+    A_mul_B!(rtmp1, phihA, nl)
+    @muladd @. u = utmp + dt*rtmp1
+  else
+    A_mul_B!(utmp, exphA, uprev)
+    A_mul_B!(rtmp1, B1, nl)
+    A_mul_B!(rtmp2, B0, nlprev)
+    @muladd @. u = utmp + dt*(rtmp1 + rtmp2)
+  end
+
+  # Push the fsal at t+dt
+  fsallast = integrator.fsallast
+  fsallast.nlprev .= nl
+  f.f1(fsallast.lin,u,p,t+dt)
+  f.f2(fsallast.nl,u,p,t+dt)
+  @. integrator.k[2] = fsallast.lin + fsallast.nl
+end
+
 function initialize!(integrator, cache::ETDRK4ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)

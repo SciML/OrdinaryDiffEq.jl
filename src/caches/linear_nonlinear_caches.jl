@@ -185,6 +185,33 @@ function alg_cache(alg::ETD2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   ETD2ConstantCache(exphA, phihA, B1, B0)
 end
 
+struct ETD2Cache{uType,rateType,expType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  utmp::uType
+  rtmp1::rateType
+  rtmp2::rateType
+  exphA::expType
+  phihA::expType
+  B1::expType
+  B0::expType
+end
+
+function alg_cache(alg::ETD2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  A = f.f1
+  if isa(A, DiffEqArrayOperator)
+    _A = A.A * A.α.coeff # .* does not return Diagonal for A.A Diagonal
+  else
+    _A = full(A)
+  end
+  exphA, phihA, B1, B0 = get_etd2_operators(dt, _A)
+  ETD2Cache(u,uprev,zero(u),zero(rate_prototype),zero(rate_prototype),exphA,phihA,B1,B0)
+end
+
+# TODO: what should these be?
+u_cache(c::ETD2Cache) = ()
+du_cache(c::ETD2Cache) = (c.k,c.fsalfirst)
+
 #=
   Computes the update coeffiicents for the time stepping
 
