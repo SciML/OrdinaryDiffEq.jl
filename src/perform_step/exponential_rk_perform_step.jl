@@ -126,9 +126,10 @@ function initialize!(integrator,cache::ETD2ConstantCache)
   integrator.fsalfirst = ETD2Fsal(lin, nl, nlprev)
     
   # Avoid undefined entries if k is an array of arrays
-  integrator.fsallast = ETD2Fsal(zero(lin), zero(nl), zero(nlprev))
+  rate_prototype = lin
+  integrator.fsallast = ETD2Fsal(rate_prototype)
   integrator.k[1] = lin + nl
-  integrator.k[2] = zero(lin) + zero(nl)
+  integrator.k[2] = zero(rate_prototype)
 end
 
 function perform_step!(integrator,cache::ETD2ConstantCache,repeat_step=false)

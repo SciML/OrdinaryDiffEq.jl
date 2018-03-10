@@ -17,7 +17,7 @@ module OrdinaryDiffEq
 
   using DiffEqOperators: normbound, DiffEqArrayOperator
 
-  import RecursiveArrayTools: chain
+  import RecursiveArrayTools: chain, recursivecopy!
 
   using Parameters, GenericSVD, ForwardDiff, RecursiveArrayTools,
         NLsolve, Juno, Roots, DataStructures, DiffEqDiffTools

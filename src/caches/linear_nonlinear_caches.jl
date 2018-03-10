@@ -160,6 +160,12 @@ mutable struct ETD2Fsal{rateType}
   nl::rateType
   nlprev::rateType
 end
+ETD2Fsal(rate_prototype) = ETD2Fsal(zero(rate_prototype),zero(rate_prototype),zero(rate_prototype))
+function recursivecopy!(dest::ETD2Fsal, src::ETD2Fsal)
+  recursivecopy!(dest.lin, src.lin)
+  recursivecopy!(dest.nl, src.nl)
+  recursivecopy!(dest.nlprev, src.nlprev)
+end
 
 struct ETD2ConstantCache{expType} <: OrdinaryDiffEqConstantCache
   exphA::expType
