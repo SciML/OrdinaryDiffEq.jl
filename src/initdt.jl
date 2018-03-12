@@ -86,7 +86,7 @@
   if typeof(one(tType)) <: AbstractFloat && dt₀ < 10eps(tType)*oneunit(tType)
     # This catches Andreas' non-singular example
     # should act like it's singular
-    return tType(1//10^(6))
+    return tdir*tType(1//10^(6))
   end
 
   dt₀_tdir = tdir*dt₀
