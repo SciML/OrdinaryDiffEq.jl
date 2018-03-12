@@ -14,6 +14,7 @@ isfsal(alg::Vern9) = false
 fsal_typeof(alg::OrdinaryDiffEqAlgorithm,rate_prototype) = typeof(rate_prototype)
 #fsal_typeof(alg::LawsonEuler,rate_prototype) = Vector{typeof(rate_prototype)}
 #fsal_typeof(alg::NorsettEuler,rate_prototype) = Vector{typeof(rate_prototype)}
+fsal_typeof(alg::ETD2,rate_prototype) = ETD2Fsal{typeof(rate_prototype)}
 
 isimplicit(alg::OrdinaryDiffEqAlgorithm) = false
 isimplicit(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = true
@@ -24,8 +25,10 @@ isdtchangeable(alg::GenericIIF1) = false
 isdtchangeable(alg::GenericIIF2) = false
 isdtchangeable(alg::LawsonEuler) = false
 isdtchangeable(alg::NorsettEuler) = false
+isdtchangeable(alg::ETD2) = false
 
 ismultistep(alg::OrdinaryDiffEqAlgorithm) = false
+ismultistep(alg::ETD2) = true
 
 isadaptive(alg::OrdinaryDiffEqAlgorithm) = false
 isadaptive(alg::OrdinaryDiffEqAdaptiveAlgorithm) = true
@@ -77,6 +80,7 @@ alg_order(alg::Ralston) = 2
 alg_order(alg::LawsonEuler) = 1
 alg_order(alg::NorsettEuler) = 1
 alg_order(alg::SplitEuler) = 1
+alg_order(alg::ETD2) = 2
 alg_order(alg::ETDRK4) = 4
 
 alg_order(alg::SymplecticEuler) = 1
@@ -180,7 +184,11 @@ alg_order(alg::Rodas4P) = 4
 alg_order(alg::Rodas5) = 5
 
 alg_order(alg::AB3) = 3
+alg_order(alg::AB4) = 4
+alg_order(alg::AB5) = 5
 alg_order(alg::ABM32) = 3
+alg_order(alg::ABM43) = 4
+alg_order(alg::ABM54) = 5
 
 alg_order(alg::CompositeAlgorithm) = alg_order(alg.algs[1])
 

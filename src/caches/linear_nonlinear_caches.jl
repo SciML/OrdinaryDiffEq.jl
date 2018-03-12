@@ -96,7 +96,7 @@ function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
     expA = nothing # no caching
   else
     A = f.f1
-    expA = expm(A*dt)
+    expA = expm(full(A)*dt)
   end
   LawsonEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),expA,zeros(rate_prototype))
 end
@@ -125,9 +125,9 @@ function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomElty
     phi1 = nothing
   else
     A = f.f1
-    if typeof(A.A) <: Diagonal
+    if isa(A, DiffEqArrayOperator) && typeof(A.A) <: Diagonal
         _expA = expm(A*dt)
-        phi1 = Diagonal(Float64.((big.(_expA)-I)/A.A))
+        phi1 = Diagonal(Float64.((big.(_expA)-I)/(A.A .* A.α.coeff)))
         expA = Diagonal(_expA)
 
         # Fix zero eigenvalues
@@ -136,8 +136,9 @@ function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomElty
         end
 
     else
-        expA = expm(A*dt)
-        phi1 = ((expA-I)/A)
+        fullA = full(A)
+        expA = expm(fullA*dt)
+        phi1 = ((expA-I)/fullA)
     end
   end
   NorsettEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),expA,phi1,zeros(rate_prototype))
@@ -150,6 +151,112 @@ struct NorsettEulerConstantCache <: OrdinaryDiffEqConstantCache end
 
 alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = NorsettEulerConstantCache()
 
+#=
+  Fsal separately the linear and nonlinear part, as well as the nonlinear 
+  part in the previous time step.
+=#
+mutable struct ETD2Fsal{rateType}
+  lin::rateType
+  nl::rateType
+  nlprev::rateType
+end
+ETD2Fsal(rate_prototype) = ETD2Fsal(zero(rate_prototype),zero(rate_prototype),zero(rate_prototype))
+function recursivecopy!(dest::ETD2Fsal, src::ETD2Fsal)
+  recursivecopy!(dest.lin, src.lin)
+  recursivecopy!(dest.nl, src.nl)
+  recursivecopy!(dest.nlprev, src.nlprev)
+end
+
+struct ETD2ConstantCache{expType} <: OrdinaryDiffEqConstantCache
+  exphA::expType
+  phihA::expType
+  B1::expType
+  B0::expType
+end
+
+function alg_cache(alg::ETD2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  A = f.f1
+  if isa(A, DiffEqArrayOperator)
+    _A = A.A * A.α.coeff # .* does not return Diagonal for A.A Diagonal
+  else
+    _A = full(A)
+  end
+  exphA, phihA, B1, B0 = get_etd2_operators(dt, _A)
+  ETD2ConstantCache(exphA, phihA, B1, B0)
+end
+
+struct ETD2Cache{uType,rateType,expType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  utmp::uType
+  rtmp1::rateType
+  rtmp2::rateType
+  exphA::expType
+  phihA::expType
+  B1::expType
+  B0::expType
+end
+
+function alg_cache(alg::ETD2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  A = f.f1
+  if isa(A, DiffEqArrayOperator)
+    _A = A.A * A.α.coeff # .* does not return Diagonal for A.A Diagonal
+  else
+    _A = full(A)
+  end
+  exphA, phihA, B1, B0 = get_etd2_operators(dt, _A)
+  ETD2Cache(u,uprev,zero(u),zero(rate_prototype),zero(rate_prototype),exphA,phihA,B1,B0)
+end
+
+# TODO: what should these be?
+u_cache(c::ETD2Cache) = ()
+du_cache(c::ETD2Cache) = (c.k,c.fsalfirst)
+
+#=
+  Computes the update coeffiicents for the time stepping
+
+    u_n+2 = exp(hA)*u_n+1 + h(B1*N_n+1 + B0*N_n)
+  
+  Also compute phi(hA) for the initial ETD1 step.
+
+  For scalar or Diagonal A, handles the singularity at A=0.
+  TODO: use expm1 for A close to 0?
+=#
+function get_etd2_operators(h::Real, A::T) where {T <: Number}
+  hA = h * A
+  oneT = one(T)
+  if hA == zero(T)
+    exphA = oneT
+    phihA = oneT
+    B1 = 1.5 * oneT
+    B0 = -0.5 * oneT
+  else
+    hA2 = hA * hA
+    exphA = exp(hA)
+    phihA = (exphA - oneT) / hA # x - I for scalar x is deprecated
+    B1 = ((hA + oneT)*exphA - oneT - 2*hA) / hA2
+    B0 = (oneT + hA - exphA) / hA2
+  end
+  return exphA, phihA, B1, B0
+end
+function get_etd2_operators(h::Real, A::Diagonal)
+  coeffs = get_etd2_operators.(h, A.diag)
+  exphA = Diagonal(map(x -> x[1], coeffs))
+  phihA = Diagonal(map(x -> x[2], coeffs))
+  B1 = Diagonal(map(x -> x[3], coeffs))
+  B0 = Diagonal(map(x -> x[4], coeffs))
+  return exphA, phihA, B1, B0
+end
+function get_etd2_operators(h::Real, A::AbstractMatrix)
+  hA = h * A
+  hA2 = hA * hA
+  exphA = expm(hA)
+  phihA = (exphA - I) / hA
+  B1 = ((hA + I)*exphA - I - 2*hA) / hA2
+  B0 = (I + hA - exphA) / hA2
+  return exphA, phihA, B1, B0
+end
+
 struct ETDRK4ConstantCache{matType} <: OrdinaryDiffEqMutableCache
   E::matType
   E2::matType
@@ -161,7 +268,12 @@ end
 
 function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   A = f.f1
-  E,E2,a,b,c,Q = get_etdrk4_oop_operators(dt,A.A)
+  if isa(A, DiffEqArrayOperator)
+    L = A.A .* A.α.coeff # has special handling is A.A is Diagonal
+  else
+    L = full(A)
+  end
+  E,E2,a,b,c,Q = get_etdrk4_oop_operators(dt,L)
   ETDRK4ConstantCache(E,E2,a,b,c,Q)
 end
 
@@ -214,7 +326,12 @@ function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   k1 = zeros(rate_prototype); k2 = zeros(rate_prototype)
   k3 = zeros(rate_prototype); k4 = zeros(rate_prototype)
   s1 = similar(u)
-  E,E2,a,b,c,Q = get_etdrk4_operators(dt,A.A)
+  if isa(A, DiffEqArrayOperator)
+    L = A.A .* A.α.coeff # has specail handling is A.A is Diagonal
+  else
+    L = full(A)
+  end
+  E,E2,a,b,c,Q = get_etdrk4_operators(dt,L)
   ETDRK4Cache(u,uprev,tmp,s1,tmp2,k1,k2,k3,k4,fsalfirst,E,E2,a,b,c,Q)
 end
 
