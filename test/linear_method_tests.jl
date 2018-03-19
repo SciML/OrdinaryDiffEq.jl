@@ -1,6 +1,6 @@
-using OrdinaryDiffEq, Base.Test, DiffEqDevTools, SpecialMatrices, DiffEqOperators
+using OrdinaryDiffEq, Base.Test, DiffEqDevTools, DiffEqOperators
 u0 = rand(2)
-A = DiffEqArrayOperator(Strang(2))
+A = DiffEqArrayOperator([2.0 -1.0; -1.0 2.0])
 function (p::typeof(A))(::Type{Val{:analytic}},u0,p,t)
     expm(p.A*t)*u0
 end

@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Base.Test, DiffEqDevTools, SpecialMatrices, DiffEqOperators
+using OrdinaryDiffEq, Base.Test, DiffEqDevTools, DiffEqOperators
 const μ = 1.01
 linnonlin_f2 = (u,p,t) -> μ * u
 linnonlin_f1 = DiffEqArrayOperator(μ)
@@ -21,7 +21,7 @@ sim  = test_convergence(dts,prob,ETDRK4(),dense_errors=true)
 @test abs(sim.𝒪est[:l2]-4) < 0.2
 
 u0 = rand(2)
-A = full(Strang(2))
+A = [2.0 -1.0; -1.0 2.0]
 linnonlin_f1 = DiffEqArrayOperator(A)
 linnonlin_f2 = (du,u,p,t) -> du .= μ .* u
 prob = SplitODEProblem(linnonlin_f1,linnonlin_f2,u0,(0.0,1.0))
