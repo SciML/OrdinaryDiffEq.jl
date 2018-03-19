@@ -187,15 +187,17 @@ function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomElty
 end
 
 function get_etd1_operators(h::Real, A::T) where {T <: Number}
-  hA = h * A
+  # Use BigFloat to avoid loss of precision
+  _hA = big(h) * big(A)
   oneT = one(T)
-  if hA == zero(T)
+  _oneT = big(oneT)
+  if iszero(_hA)
     exphA = oneT
     phihA = oneT
   else
-    exphA = exp(hA)
-    # Compute phi using BigFloat to avoid loss of precision
-    phihA = T((big(exphA) - big(oneT)) / hA)
+    _exphA = exp(_hA)
+    exphA = T(_exphA)
+    phihA = T((_exphA - _oneT) / _hA)
   end
   return exphA, phihA
 end
@@ -205,10 +207,13 @@ function get_etd1_operators(h::Real, A::Diagonal)
   phihA = Diagonal(map(x -> x[2]), coeffs)
   return exphA, phihA
 end
-function get_etd1_operators(h::Real, A::AbstractMatrix)
-  hA = h * A
+function get_etd1_operators(h::Real, A::AbstractMatrix{T}) where T
+  # Use BigFloat to avoid loss of precision
+  _hA = big(h) * big.(A)
+  hA = T.(_hA)
   exphA = expm(hA)
-  phihA = (exphA - I) / hA
+  _exphA = big.(exphA)
+  phihA = T.((_exphA - I) / _hA)
   return exphA, phihA
 end
 
@@ -284,19 +289,22 @@ du_cache(c::ETD2Cache) = (c.rtmp1,c.rtmp2)
   TODO: use expm1 for A close to 0?
 =#
 function get_etd2_operators(h::Real, A::T) where {T <: Number}
-  hA = h * A
+  # Use BigFloat to avoid loss of precision
+  _hA = big(h) * big(A)
   oneT = one(T)
-  if hA == zero(T)
+  _oneT = big(oneT)
+  if iszero(_hA)
     exphA = oneT
     phihA = oneT
     B1 = 1.5 * oneT
     B0 = -0.5 * oneT
   else
-    hA2 = hA * hA
-    exphA = exp(hA)
-    phihA = (exphA - oneT) / hA # x - I for scalar x is deprecated
-    B1 = ((hA + oneT)*exphA - oneT - 2*hA) / hA2
-    B0 = (oneT + hA - exphA) / hA2
+    _hA2 = _hA * _hA
+    _exphA = exp(_hA)
+    exphA = T(_exphA)
+    phihA = T((_exphA - _oneT) / _hA) # x - I for scalar x is deprecated
+    B1 = T(((_hA + _oneT)*_exphA - _oneT - 2*_hA) / _hA2)
+    B0 = T((_oneT + _hA - _exphA) / _hA2)
   end
   return exphA, phihA, B1, B0
 end
@@ -308,13 +316,16 @@ function get_etd2_operators(h::Real, A::Diagonal)
   B0 = Diagonal(map(x -> x[4], coeffs))
   return exphA, phihA, B1, B0
 end
-function get_etd2_operators(h::Real, A::AbstractMatrix)
-  hA = h * A
-  hA2 = hA * hA
+function get_etd2_operators(h::Real, A::AbstractMatrix{T}) where T
+  # Use BigFLoat to avoid loss of precision
+  _hA = big(h) * big.(A)
+  hA = T.(_hA)
+  _hA2 = _hA * _hA
   exphA = expm(hA)
-  phihA = (exphA - I) / hA
-  B1 = ((hA + I)*exphA - I - 2*hA) / hA2
-  B0 = (I + hA - exphA) / hA2
+  _exphA = big.(exphA)
+  phihA = T.((_exphA - I) / _hA)
+  B1 = T.(((_hA + I)*_exphA - I - 2*_hA) / _hA2)
+  B0 = T.((I + _hA - _exphA) / _hA2)
   return exphA, phihA, B1, B0
 end
 
