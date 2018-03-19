@@ -81,75 +81,136 @@ function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   GenericIIF2Cache(u,uprev,dual_cache,tmp,rhs,nl_rhs,rtmp1,fsalfirst,expA,k)
 end
 
+# Fsal type for exponential RK algorithms
+mutable struct ExpRKFsal{rateType}
+  lin::rateType
+  nl::rateType
+end
+ExpRKFsal(rate_prototype) = ExpRKFsal(zero(rate_prototype),zero(rate_prototype))
+function recursivecopy!(dest::ExpRKFsal, src::ExpRKFsal)
+  recursivecopy!(dest.lin, src.lin)
+  recursivecopy!(dest.nl, src.nl)
+end
+
 struct LawsonEulerCache{uType,rateType,expType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
-  k::rateType
   rtmp::rateType
-  expA::expType
-  fsalfirst::rateType
+  exphA::expType
 end
 
 function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   if alg.krylov
-    expA = nothing # no caching
+    exphA = nothing # no caching
   else
     A = f.f1
-    expA = expm(full(A)*dt)
+    if isa(A, DiffEqArrayOperator)
+      _A = A.A * A.α.coeff
+    else
+      _A = full(A)
+    end
+    exphA = expm(dt*_A)
   end
-  LawsonEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),expA,zeros(rate_prototype))
+  LawsonEulerCache(u,uprev,similar(u),zeros(rate_prototype),exphA)
 end
 
 u_cache(c::LawsonEulerCache) = ()
-du_cache(c::LawsonEulerCache) = (c.k,c.fsalfirst,c.rtmp)
+du_cache(c::LawsonEulerCache) = (c.rtmp)
 
-struct LawsonEulerConstantCache <: OrdinaryDiffEqConstantCache end
+struct LawsonEulerConstantCache{expType} <: OrdinaryDiffEqConstantCache 
+  exphA::expType
+end
 
-alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = LawsonEulerConstantCache()
+function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  if alg.krylov
+    exphA = nothing # no caching
+  else
+    A = f.f1
+    if isa(A, DiffEqArrayOperator)
+      _A = A.A * A.α.coeff
+    else
+      _A = full(A)
+    end
+    exphA = expm(dt*_A)
+  end
+  LawsonEulerConstantCache(exphA)
+end
 
 struct NorsettEulerCache{uType,rateType,expType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
-  k::rateType
   rtmp::rateType
-  expA::expType
-  phi1::expType
-  fsalfirst::rateType
+  exphA::expType
+  phihA::expType
 end
 
 function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   if alg.krylov
-    expA = nothing
-    phi1 = nothing
+    exphA = nothing # no caching
+    phihA = nothing
   else
     A = f.f1
-    if isa(A, DiffEqArrayOperator) && typeof(A.A) <: Diagonal
-        _expA = expm(A*dt)
-        phi1 = Diagonal(Float64.((big.(_expA)-I)/(A.A .* A.α.coeff)))
-        expA = Diagonal(_expA)
-
-        # Fix zero eigenvalues
-        for i in 1:size(phi1,1)
-            phi1[i,i] = ifelse(A[i,i]==0,dt,phi1[i,i])
-        end
-
+    if isa(A, DiffEqArrayOperator)
+      _A = A.A * A.α.coeff
     else
-        fullA = full(A)
-        expA = expm(fullA*dt)
-        phi1 = ((expA-I)/fullA)
+      _A = full(A)
     end
+    exphA, phihA = get_etd1_operators(dt, _A)
   end
-  NorsettEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),expA,phi1,zeros(rate_prototype))
+  NorsettEulerCache(u,uprev,similar(u),zeros(rate_prototype),exphA,phihA)
 end
 
 u_cache(c::NorsettEulerCache) = ()
-du_cache(c::NorsettEulerCache) = (c.k,c.fsalfirst)
+du_cache(c::NorsettEulerCache) = (c.rtmp)
 
-struct NorsettEulerConstantCache <: OrdinaryDiffEqConstantCache end
+struct NorsettEulerConstantCache{expType} <: OrdinaryDiffEqConstantCache 
+  exphA::expType
+  phihA::expType
+end
 
-alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = NorsettEulerConstantCache()
+function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  if alg.krylov
+    exphA = nothing # no caching
+    phihA = nothing
+  else
+    A = f.f1
+    if isa(A, DiffEqArrayOperator)
+      _A = A.A * A.α.coeff
+    else
+      _A = full(A)
+    end
+    exphA, phihA = get_etd1_operators(dt, _A)
+  end
+  NorsettEulerConstantCache(exphA, phihA)
+end
+
+function get_etd1_operators(h::Real, A::T) where {T <: Number}
+  hA = h * A
+  oneT = one(T)
+  if hA == zero(T)
+    exphA = oneT
+    phihA = oneT
+  else
+    exphA = exp(hA)
+    # Compute phi using BigFloat to avoid loss of precision
+    phihA = T((big(exphA) - big(oneT)) / hA)
+  end
+  return exphA, phihA
+end
+function get_etd1_operators(h::Real, A::Diagonal)
+  coeffs = get_etd1_operators.(h, A.diag)
+  exphA = Diagonal(map(x -> x[1]), coeffs)
+  phihA = Diagonal(map(x -> x[2]), coeffs)
+  return exphA, phihA
+end
+function get_etd1_operators(h::Real, A::AbstractMatrix)
+  hA = h * A
+  exphA = expm(hA)
+  phihA = (exphA - I) / hA
+  return exphA, phihA
+end
 
 #=
   Fsal separately the linear and nonlinear part, as well as the nonlinear 
@@ -210,7 +271,7 @@ end
 
 # TODO: what should these be?
 u_cache(c::ETD2Cache) = ()
-du_cache(c::ETD2Cache) = (c.k,c.fsalfirst)
+du_cache(c::ETD2Cache) = (c.rtmp1,c.rtmp2)
 
 #=
   Computes the update coeffiicents for the time stepping

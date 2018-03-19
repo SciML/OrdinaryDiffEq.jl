@@ -1,118 +1,145 @@
 function initialize!(integrator, cache::LawsonEulerConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  rtmp = integrator.f.f2(integrator.uprev,integrator.p,integrator.t)
-  integrator.fsalfirst = rtmp # Pre-start fsal
+
+  # Pre-start fsal
+  lin = integrator.f.f1(integrator.uprev,integrator.p,integrator.t)
+  nl = integrator.f.f2(integrator.uprev,integrator.p,integrator.t)
+  integrator.fsalfirst = ExpRKFsal(lin, nl)
 
   # Avoid undefined entries if k is an array of arrays
-  integrator.fsallast = zero(integrator.fsalfirst)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = zero(integrator.fsalfirst)
+  rate_prototype = lin
+  integrator.fsallast = ExpRKFsal(rate_prototype)
+  integrator.k[1] = lin + nl
+  integrator.k[2] = zero(rate_prototype)
 end
 
 function perform_step!(integrator, cache::LawsonEulerConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
-  rtmp = integrator.fsalfirst
-  A = f.f1
+  @unpack t,dt,uprev,f,p = integrator
+  @unpack lin,nl = integrator.fsalfirst
+  integrator.k[1] = lin + nl
+
   if integrator.alg.krylov
-    @muladd u = expmv(dt, A, uprev + dt*rtmp; tol=integrator.opts.reltol, m=min(integrator.alg.m, size(A,1)), norm=normbound)
+    @muladd u = expmv(dt, f.f1, uprev + dt*nl; tol=integrator.opts.reltol, m=min(integrator.alg.m, size(f.f1,1)), norm=normbound)
   else
-    @muladd u = expm(dt*A)*(uprev + dt*rtmp)
+    @muladd u = cache.exphA*(uprev + dt*nl)
   end
-  rtmp = f.f2(u,p,t+dt)
-  k = A*u + rtmp # For the interpolation, needs k at the updated point
-  integrator.fsallast = rtmp
-  integrator.k[1] = integrator.fsalfirst # this is wrong, since it's just rtmp. Should fsal this value though
-  integrator.k[2] = k
+  
+  # Push the fsal at t+dt
+  lin = f.f1(u,p,t+dt)
+  nl = f.f2(u,p,t+dt)
+  integrator.k[2] = lin + nl
+  @pack integrator.fsallast = lin, nl
   integrator.u = u
 end
 
 function initialize!(integrator, cache::LawsonEulerCache)
   integrator.kshortsize = 2
-  @unpack k,fsalfirst,rtmp = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = rtmp
   resize!(integrator.k, integrator.kshortsize)
-  integrator.k[1] = fsalfirst # this is wrong, since it's just rtmp. Should fsal this value though
-  integrator.k[2] = k
-  integrator.f.f1(k,integrator.u,integrator.p,integrator.t)
-  integrator.f.f2(rtmp,integrator.uprev,integrator.p,integrator.t) # For the interpolation, needs k at the updated point
-  @. integrator.fsalfirst = k + rtmp
+  rate_prototype = cache.rtmp
+
+  # Pre-start fsal
+  integrator.fsalfirst = ExpRKFsal(rate_prototype)
+  @unpack lin,nl = integrator.fsalfirst
+  integrator.f.f1(lin,integrator.uprev,integrator.p,integrator.t)
+  integrator.f.f2(nl,integrator.uprev,integrator.p,integrator.t)
+
+  integrator.fsallast = ExpRKFsal(rate_prototype)
+  integrator.k[1] = lin + nl
+  integrator.k[2] = zero(rate_prototype)
 end
 
 function perform_step!(integrator, cache::LawsonEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k,rtmp,tmp = cache
-  A = f.f1
-  @muladd @. tmp = uprev + dt*integrator.fsalfirst
+  @unpack lin,nl = integrator.fsalfirst
+  @unpack tmp,exphA = cache
+  @. integrator.k[1] = lin + nl
+  
+  @muladd @. tmp = uprev + dt*nl
   if integrator.alg.krylov
-    expmv!(u,dt,A,tmp; tol=integrator.opts.reltol, m=min(integrator.alg.m, size(A,1)), norm=normbound)
+    expmv!(u,dt,f.f1,tmp; tol=integrator.opts.reltol, m=min(integrator.alg.m, size(f.f1,1)), norm=normbound)
   else
-    A_mul_B!(u,cache.expA,tmp)
+    A_mul_B!(u,exphA,tmp)
   end
-  A_mul_B!(tmp,A,u)
-  f.f2(rtmp,u,p,t+dt)
-  @. k = tmp + rtmp
+  
+  # Push the fsal at t+dt
+  @unpack lin,nl = integrator.fsallast
+  f.f1(lin,u,p,t+dt)
+  f.f2(nl,u,p,t+dt)
+  @. integrator.k[2] = lin + nl
 end
 
 function initialize!(integrator, cache::NorsettEulerConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  rtmp = integrator.f.f2(integrator.uprev,integrator.p,integrator.t)
-  integrator.fsalfirst = rtmp # Pre-start fsal
+
+  # Pre-start fsal
+  lin = integrator.f.f1(integrator.uprev,integrator.p,integrator.t)
+  nl = integrator.f.f2(integrator.uprev,integrator.p,integrator.t)
+  integrator.fsalfirst = ExpRKFsal(lin, nl)
 
   # Avoid undefined entries if k is an array of arrays
-  integrator.fsallast = zero(integrator.fsalfirst)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = zero(integrator.fsalfirst)
+  rate_prototype = lin
+  integrator.fsallast = ExpRKFsal(rate_prototype)
+  integrator.k[1] = lin + nl
+  integrator.k[2] = zero(rate_prototype)
 end
 
 function perform_step!(integrator, cache::NorsettEulerConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
-  rtmp = integrator.fsalfirst
-  A = f.f1
+  @unpack t,dt,uprev,f,p = integrator
+  @unpack lin,nl = integrator.fsalfirst
+  @unpack exphA,phihA = cache
+  integrator.k[1] = lin + nl
+  
   if integrator.alg.krylov
-    u = phimv(dt,A,rtmp,uprev; tol=integrator.opts.reltol, m=min(integrator.alg.m, size(A,1)), norm=normbound)
+    u = phimv(dt,f.f1,nl,uprev; tol=integrator.opts.reltol, m=min(integrator.alg.m, size(f.f1,1)), norm=normbound)
   else
-    u = uprev + ((expm(dt*A)-I)/A)*(A*uprev + rtmp)
+    u = exphA*uprev + dt*(phihA*nl)
   end
-  rtmp = f.f2(u,p,t+dt)
-  k = A*u + rtmp # For the interpolation, needs k at the updated point
-  integrator.fsallast = rtmp
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = k
+
+  # Push the fsal at t+dt
+  lin = f.f1(u,p,t+dt)
+  nl = f.f2(u,p,t+dt)
+  integrator.k[2] = lin + nl
+  @pack integrator.fsallast = lin, nl
   integrator.u = u
 end
 
 function initialize!(integrator, cache::NorsettEulerCache)
   integrator.kshortsize = 2
-  @unpack k,fsalfirst,rtmp = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = rtmp
   resize!(integrator.k, integrator.kshortsize)
-  integrator.k[1] = fsalfirst
-  integrator.k[2] = k
-  integrator.f.f1(k,integrator.u,integrator.p,integrator.t)
-  integrator.f.f2(rtmp,integrator.uprev,integrator.p,integrator.t) # For the interpolation, needs k at the updated point
-  @. integrator.fsalfirst = k + rtmp
+  rate_prototype = cache.rtmp
+
+  # Pre-start fsal
+  integrator.fsalfirst = ExpRKFsal(rate_prototype)
+  @unpack lin,nl = integrator.fsalfirst
+  integrator.f.f1(lin,integrator.uprev,integrator.p,integrator.t)
+  integrator.f.f2(nl,integrator.uprev,integrator.p,integrator.t)
+
+  integrator.fsallast = ExpRKFsal(rate_prototype)
+  integrator.k[1] = lin + nl
+  integrator.k[2] = zero(rate_prototype)
 end
 
 function perform_step!(integrator, cache::NorsettEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k,rtmp,tmp = cache
-  A = f.f1
+  @unpack lin,nl = integrator.fsalfirst
+  @unpack tmp,rtmp,exphA,phihA = cache
+  @. integrator.k[1] = lin + nl
 
   if integrator.alg.krylov
-    phimv!(u,dt,A,rtmp,uprev; tol=integrator.opts.reltol, m=min(integrator.alg.m, size(A,1)), norm=normbound)
+    phimv!(u,dt,f.f1,nl,uprev; tol=integrator.opts.reltol, m=min(integrator.alg.m, size(f.f1,1)), norm=normbound)
   else
-    A_mul_B!(tmp,A,uprev)
-    tmp .+= rtmp
-    A_mul_B!(rtmp,cache.phi1,tmp)
-    @. u = uprev + rtmp
+    A_mul_B!(tmp,exphA,uprev)
+    A_mul_B!(rtmp,phihA,nl)
+    @muladd @. u = tmp + dt*rtmp
   end
-  A_mul_B!(tmp,A,u)
-  f.f2(rtmp,u,p,t+dt)
-  @. k = tmp +  rtmp
+
+  # Push the fsal at t+dt
+  @unpack lin,nl = integrator.fsallast
+  f.f1(lin,u,p,t+dt)
+  f.f2(nl,u,p,t+dt)
+  @. integrator.k[2] = lin + nl
 end
 
 function initialize!(integrator,cache::ETD2ConstantCache)
