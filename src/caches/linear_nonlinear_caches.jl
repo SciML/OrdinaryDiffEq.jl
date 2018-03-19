@@ -318,7 +318,7 @@ function get_etd2_operators(h::Real, A::AbstractMatrix)
   return exphA, phihA, B1, B0
 end
 
-struct ETDRK4ConstantCache{matType} <: OrdinaryDiffEqMutableCache
+struct ETDRK4ConstantCache{matType} <: OrdinaryDiffEqConstantCache
   E::matType
   E2::matType
   a::matType
@@ -330,7 +330,7 @@ end
 function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   A = f.f1
   if isa(A, DiffEqArrayOperator)
-    L = A.A .* A.α.coeff # has special handling is A.A is Diagonal
+    L = A.A .* A.α.coeff # has special handling if A.A is Diagonal
   else
     L = full(A)
   end
@@ -367,11 +367,9 @@ struct ETDRK4Cache{uType,rateType,matType} <: OrdinaryDiffEqMutableCache
   tmp::uType
   s1::uType
   tmp2::rateType
-  k1::rateType
   k2::rateType
   k3::rateType
   k4::rateType
-  fsalfirst::rateType
   E::matType
   E2::matType
   a::matType
@@ -383,17 +381,16 @@ end
 function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   A = f.f1
   tmp = similar(u)
-  tmp2 = zeros(rate_prototype); fsalfirst = zeros(rate_prototype)
-  k1 = zeros(rate_prototype); k2 = zeros(rate_prototype)
-  k3 = zeros(rate_prototype); k4 = zeros(rate_prototype)
+  tmp2 = zeros(rate_prototype)
+  k2 = zeros(rate_prototype); k3 = zeros(rate_prototype); k4 = zeros(rate_prototype)
   s1 = similar(u)
   if isa(A, DiffEqArrayOperator)
-    L = A.A .* A.α.coeff # has specail handling is A.A is Diagonal
+    L = A.A .* A.α.coeff # has special handling if A.A is Diagonal
   else
     L = full(A)
   end
   E,E2,a,b,c,Q = get_etdrk4_operators(dt,L)
-  ETDRK4Cache(u,uprev,tmp,s1,tmp2,k1,k2,k3,k4,fsalfirst,E,E2,a,b,c,Q)
+  ETDRK4Cache(u,uprev,tmp,s1,tmp2,k2,k3,k4,E,E2,a,b,c,Q)
 end
 
 u_cache(c::ETDRK4Cache) = ()

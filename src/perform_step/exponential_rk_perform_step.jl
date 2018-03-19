@@ -225,24 +225,27 @@ end
 function initialize!(integrator, cache::ETDRK4ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  rtmp = integrator.f.f2(integrator.uprev,integrator.p,integrator.t)
-  integrator.fsalfirst = rtmp # Pre-start fsal
 
+  # Pre-start fsal
+  lin = integrator.f.f1(integrator.uprev,integrator.p,integrator.t)
+  nl = integrator.f.f2(integrator.uprev,integrator.p,integrator.t)
+  integrator.fsalfirst = ExpRKFsal(lin, nl)
+    
   # Avoid undefined entries if k is an array of arrays
-  integrator.fsallast = zero(integrator.fsalfirst)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = zero(integrator.fsalfirst)
+  rate_prototype = lin
+  integrator.fsallast = ExpRKFsal(rate_prototype)
+  integrator.k[1] = lin + nl
+  integrator.k[2] = zero(rate_prototype)
 end
 
 function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,f,p = integrator
+  @unpack lin,nl = integrator.fsalfirst
   @unpack E,E2,a,b,c,Q = cache
-  rtmp = integrator.fsalfirst
-  A = f.f1
+  integrator.k[1] = lin + nl
 
   tmp = E2*uprev
-
-  k1 = integrator.f.f2(uprev,p,t)
+  k1 = nl # k1 is fsaled
   s1 = tmp + Q*k1;
   k2 = integrator.f.f2(s1,p,t+dt/2)
   s2 = tmp + Q*k2;
@@ -251,35 +254,41 @@ function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step=false
   k4 = integrator.f.f2(s3,p,t+dt)
   u = E*uprev + a*k1 + 2b*(k2+k3) + c*k4;
 
-
-  integrator.fsallast = integrator.f(u, p, t+dt)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
+  # Push the fsal at t+dt
+  lin = f.f1(u,p,t+dt)
+  nl = f.f2(u,p,t+dt)
+  integrator.k[2] = lin + nl
+  @pack integrator.fsallast = lin, nl
   integrator.u = u
 end
 
 function initialize!(integrator, cache::ETDRK4Cache)
   integrator.kshortsize = 2
-  @unpack tmp,fsalfirst,tmp2 = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = tmp2
   resize!(integrator.k, integrator.kshortsize)
-  integrator.k[1] = fsalfirst
-  integrator.k[2] = tmp2
-  integrator.f.f1(tmp,integrator.u,integrator.p,integrator.t)
-  integrator.f.f2(tmp2,integrator.uprev,integrator.p,integrator.t) # For the interpolation, needs k at the updated point
-  @. integrator.fsalfirst = tmp + tmp2
+  rate_prototype = cache.tmp2
+
+  # Pre-start fsal
+  integrator.fsalfirst = ExpRKFsal(rate_prototype)
+  @unpack lin,nl = integrator.fsalfirst
+  integrator.f.f1(lin,integrator.uprev,integrator.p,integrator.t)
+  integrator.f.f2(nl,integrator.uprev,integrator.p,integrator.t)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = ExpRKFsal(rate_prototype)
+  integrator.k[1] = lin + nl
+  integrator.k[2] = zero(rate_prototype)
 end
 
 function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
+  @unpack lin,nl = integrator.fsalfirst
   @unpack tmp2,tmp = cache
   @unpack E,E2,a,b,c,Q = cache
-  @unpack k1,k2,k3,k4,s1 = cache
-  A = f.f1
+  @unpack k2,k3,k4,s1 = cache
+  @. integrator.k[1] = lin + nl
 
   # Substep 1
-  integrator.f.f2(k1,uprev,p,t) # TODO: Erase for faslfirst
+  k1 = nl # k1 is fsaled
   A_mul_B!(tmp,E2,uprev)
   A_mul_B!(tmp2,Q,k1)
   @. s1 = tmp + tmp2
@@ -308,5 +317,9 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
   A_mul_B!(k3,c,k4)
   @. u = s1 + k2 + 2tmp + k3
 
-  integrator.f(tmp2, u, p, t+dt)
+  # Push the fsal at t+dt
+  @unpack lin,nl = integrator.fsallast
+  f.f1(lin,u,p,t+dt)
+  f.f2(nl,u,p,t+dt)
+  @. integrator.k[2] = lin + nl
 end

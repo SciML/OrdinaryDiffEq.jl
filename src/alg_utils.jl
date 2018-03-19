@@ -12,7 +12,7 @@ isfsal(alg::Vern8) = false
 isfsal(alg::Vern9) = false
 
 fsal_typeof(alg::OrdinaryDiffEqAlgorithm,rate_prototype) = typeof(rate_prototype)
-fsal_typeof(alg::Union{LawsonEuler,NorsettEuler},rate_prototype) = ExpRKFsal{typeof(rate_prototype)}
+fsal_typeof(alg::Union{LawsonEuler,NorsettEuler,ETDRK4},rate_prototype) = ExpRKFsal{typeof(rate_prototype)}
 fsal_typeof(alg::ETD2,rate_prototype) = ETD2Fsal{typeof(rate_prototype)}
 
 isimplicit(alg::OrdinaryDiffEqAlgorithm) = false

@@ -30,10 +30,6 @@ function (::typeof(prob.f))(::Type{Val{:analytic}},u0,p,t)
  expm(tmp)*u0
 end
 
-integrator = init(prob,NorsettEuler(),dt=1/10)
-step!(integrator)
-integrator.cache
-
 dts = 1./2.^(8:-1:4) #14->7 good plot
 sim  = test_convergence(dts,prob,GenericIIF1())
 @test abs(sim.𝒪est[:l2]-1) < 0.2
