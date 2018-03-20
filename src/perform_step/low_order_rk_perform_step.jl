@@ -503,7 +503,7 @@ end
   integrator.fsallast = f(u, p, t+dt); k7 = integrator.fsallast
   g7 = u
   # Hairer II, page 22
-  ϱ = norm(k7 - k6, Inf)/norm(g7 - g6, Inf)
+  ϱ = integrator.opts.internalnorm(k7 - k6)/integrator.opts.internalnorm(g7 - g6)
   # 3.3 is the approximate distance of ∂S to the origin
   stiffness = ϱ*dt/3.3
   if integrator.opts.adaptive
@@ -595,7 +595,7 @@ end
   g7 = u
   g6 = tmp
   # Hairer II, page 22
-  ϱ = norm(k7 - k6, Inf)/norm(g7 - g6, Inf)
+  ϱ = integrator.opts.internalnorm(k7 - k6)/integrator.opts.internalnorm(g7 - g6)
   # 3.3 is the approximate distance of ∂S to the origin
   stiffness = ϱ*dt/3.3
   if integrator.opts.adaptive
@@ -636,7 +636,7 @@ end
   integrator.fsallast = f(u, p, t+dt); k7 = integrator.fsallast
   g7 = u
   # Hairer II, page 22
-  ϱ = norm(k7 - k6, Inf)/norm(g7 - g6, Inf)
+  ϱ = integrator.opts.internalnorm(k7 - k6)/integrator.opts.internalnorm(g7 - g6)
   # 3.3 is the approximate distance of ∂S to the origin
   stiffness = dt*ϱ/3.3
   if integrator.opts.adaptive
@@ -729,7 +729,7 @@ end
   g6 = tmp
   g7 = u
   # Hairer II, page 22
-  ϱ = norm(k7 - k6, Inf)/norm(g7 - g6, Inf)
+  ϱ = integrator.opts.internalnorm(k7 - k6)/integrator.opts.internalnorm(g7 - g6)
   # 3.3 is the approximate distance of ∂S to the origin
   stiffness = ϱ*dt/3.3
   if integrator.opts.adaptive
