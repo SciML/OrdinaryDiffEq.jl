@@ -41,7 +41,7 @@
     @. tmp = uprev+dt*(a1101*k[1]+a1102*k[2]+a1103*k[3]+a1104*k[4]+a1105*k[5]+a1106*k[6]+a1107*k[7]+a1108*k[8]+a1109*k[9]+a1110*k[10])
     f(rtmp,tmp,p,t+c11*dt); copyat_or_push!(k,11,rtmp)
     @. tmp = uprev+dt*(a1201*k[1]+a1202*k[2]+a1203*k[3]+a1204*k[4]+a1205*k[5]+a1206*k[6]+a1207*k[7]+a1208*k[8]+a1209*k[9]+a1210*k[10]+a1211*k[11])
-    f(rtmp,tmp,p,t+c12*dt); copyat_or_push!(k,12,rtmp,Val{false})
+    f(rtmp,tmp,p,t+c12*dt); copyat_or_push!(k,12,rtmp)
   end
   nothing
 end
@@ -98,7 +98,7 @@ end
     @. tmp=  uprev+dt*(a1501*k[1]+a1504*k[4]+a1505*k[5]+a1506*k[6]+a1507*k[7]+a1508*k[8]+a1509*k[9]+a1511*k[11]+a1512*k[12]+a1513*k[13])
     f(rtmp,tmp,p,t+c15*dt); copyat_or_push!(k,15,rtmp)
     @. tmp = uprev+dt*(a1601*k[1]+a1604*k[4]+a1605*k[5]+a1606*k[6]+a1607*k[7]+a1608*k[8]+a1609*k[9]+a1611*k[11]+a1612*k[12]+a1613*k[13])
-    f(rtmp,tmp,p,t+c16*dt); copyat_or_push!(k,16,rtmp,Val{false})
+    f(rtmp,tmp,p,t+c16*dt); copyat_or_push!(k,16,rtmp)
   end
   nothing
 end
@@ -168,7 +168,7 @@ end
     @. tmp = uprev+dt*(a2001*k[1]+a2006*k[6]+a2007*k[7]+a2008*k[8]+a2009*k[9]+a2010*k[10]+a2011*k[11]+a2012*k[12]+a2014*k[14]+a2015*k[15]+a2016*k[16]+a2017*k[17])
     f(rtmp,tmp,p,t+c20*dt); copyat_or_push!(k,20,rtmp)
     @. tmp = uprev+dt*(a2101*k[1]+a2106*k[6]+a2107*k[7]+a2108*k[8]+a2109*k[9]+a2110*k[10]+a2111*k[11]+a2112*k[12]+a2114*k[14]+a2115*k[15]+a2116*k[16]+a2117*k[17])
-    f(rtmp,tmp,p,t+c21*dt); copyat_or_push!(k,21,rtmp,Val{false})
+    f(rtmp,tmp,p,t+c21*dt); copyat_or_push!(k,21,rtmp)
   end
   nothing
 end
@@ -251,7 +251,7 @@ end
     @. tmp = uprev+dt*(a2501*k[1]+a2508*k[8]+a2509*k[9]+a2510*k[10]+a2511*k[11]+a2512*k[12]+a2513*k[13]+a2514*k[14]+a2515*k[15]+a2517*k[17]+a2518*k[18]+a2519*k[19]+a2520*k[20]+a2521*k[21])
     f(rtmp,tmp,p,t+c25*dt); copyat_or_push!(k,25,rtmp)
     @. tmp = uprev+dt*(a2601*k[1]+a2608*k[8]+a2609*k[9]+a2610*k[10]+a2611*k[11]+a2612*k[12]+a2613*k[13]+a2614*k[14]+a2615*k[15]+a2617*k[17]+a2618*k[18]+a2619*k[19]+a2620*k[20]+a2621*k[21])
-    f(rtmp,tmp,p,t+c26*dt); copyat_or_push!(k,26,rtmp,Val{false})
+    f(rtmp,tmp,p,t+c26*dt); copyat_or_push!(k,26,rtmp)
  end
   nothing
 end
@@ -348,7 +348,7 @@ end
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a1201*k[1][i]+a1202*k[2][i]+a1203*k[3][i]+a1204*k[4][i]+a1205*k[5][i]+a1206*k[6][i]+a1207*k[7][i]+a1208*k[8][i]+a1209*k[9][i]+a1210*k[10][i]+a1211*k[11][i])
     end
-    f(rtmp,tmp,p,t+c12*dt); copyat_or_push!(k,12,rtmp,Val{false})
+    f(rtmp,tmp,p,t+c12*dt); copyat_or_push!(k,12,rtmp)
   end
   nothing
 end
@@ -466,7 +466,7 @@ end
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a1601*k[1][i]+a1604*k[4][i]+a1605*k[5][i]+a1606*k[6][i]+a1607*k[7][i]+a1608*k[8][i]+a1609*k[9][i]+a1611*k[11][i]+a1612*k[12][i]+a1613*k[13][i])
     end
-    f(rtmp,tmp,p,t+c16*dt); copyat_or_push!(k,16,rtmp,Val{false})
+    f(rtmp,tmp,p,t+c16*dt); copyat_or_push!(k,16,rtmp)
   end
   nothing
 end
@@ -612,7 +612,7 @@ end
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a2101*k[1][i]+a2106*k[6][i]+a2107*k[7][i]+a2108*k[8][i]+a2109*k[9][i]+a2110*k[10][i]+a2111*k[11][i]+a2112*k[12][i]+a2114*k[14][i]+a2115*k[15][i]+a2116*k[16][i]+a2117*k[17][i])
     end
-    f(rtmp,tmp,p,t+c21*dt); copyat_or_push!(k,21,rtmp,Val{false})
+    f(rtmp,tmp,p,t+c21*dt); copyat_or_push!(k,21,rtmp)
   end
   nothing
 end
@@ -788,7 +788,7 @@ end
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a2601*k[1][i]+a2608*k[8][i]+a2609*k[9][i]+a2610*k[10][i]+a2611*k[11][i]+a2612*k[12][i]+a2613*k[13][i]+a2614*k[14][i]+a2615*k[15][i]+a2617*k[17][i]+a2618*k[18][i]+a2619*k[19][i]+a2620*k[20][i]+a2621*k[21][i])
     end
-    f(rtmp,tmp,p,t+c26*dt); copyat_or_push!(k,26,rtmp,Val{false})
+    f(rtmp,tmp,p,t+c26*dt); copyat_or_push!(k,26,rtmp)
  end
   nothing
 end

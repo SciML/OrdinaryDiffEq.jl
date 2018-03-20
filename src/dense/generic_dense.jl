@@ -315,7 +315,7 @@ By default, simpledense
       f(rtmp,uprev,p,t)
       copyat_or_push!(k,1,rtmp)
       f(rtmp,u,p,t+dt)
-      copyat_or_push!(k,2,rtmp,Val{false})
+      copyat_or_push!(k,2,rtmp)
     else
       copyat_or_push!(k,1,f(uprev,p,t))
       copyat_or_push!(k,2,f(u,p,t+dt))

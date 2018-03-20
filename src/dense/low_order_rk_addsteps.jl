@@ -221,7 +221,7 @@ Called to add the extra k9, k10, k11 steps for the Order 5 interpolation when ne
     @. tmp = uprev+dt*(a101*k[1]+a102*k[2]+a103*k[3]+a104*k[4]+a105*k[5]+a106*k[6]+a107*k[7]+a108*k[8]+a109*k[9])
     f(rtmp,tmp,p,t+c7*dt); copyat_or_push!(k,10,rtmp)
     @. tmp = uprev+dt*(a111*k[1]+a112*k[2]+a113*k[3]+a114*k[4]+a115*k[5]+a116*k[6]+a117*k[7]+a118*k[8]+a119*k[9]+a1110*k[10])
-    f(rtmp,tmp,p,t+c8*dt); copyat_or_push!(k,11,rtmp,Val{false})
+    f(rtmp,tmp,p,t+c8*dt); copyat_or_push!(k,11,rtmp)
   end
   nothing
 end
@@ -655,7 +655,7 @@ Called to add the extra k9, k10, k11 steps for the Order 5 interpolation when ne
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a111*k[1][i]+a112*k[2][i]+a113*k[3][i]+a114*k[4][i]+a115*k[5][i]+a116*k[6][i]+a117*k[7][i]+a118*k[8][i]+a119*k[9][i]+a1110*k[10][i])
     end
-    f(rtmp,tmp,p,t+c8*dt); copyat_or_push!(k,11,rtmp,Val{false})
+    f(rtmp,tmp,p,t+c8*dt); copyat_or_push!(k,11,rtmp)
   end
   nothing
 end
