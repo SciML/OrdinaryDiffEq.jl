@@ -50,10 +50,10 @@ Fundamental `struct` allowing interactively stepping through the numerical solvi
 The full documentation is hosted here: [http://docs.juliadiffeq.org/latest/basics/integrator.html](http://docs.juliadiffeq.org/latest/basics/integrator.html). This docstring
 describes basic functionality only!
 
-Initialize using `integrator = init(prob::ODEProblem, alg; kwargs...)`. The keyword args which are accepted are the same 
+Initialize using `integrator = init(prob::ODEProblem, alg; kwargs...)`. The keyword args which are accepted are the same
 [Common Solver Options](http://docs.juliadiffeq.org/latest/basics/common_solver_opts.html#Common-Solver-Options-1)
 used by `solve`.
- 
+
 
 For reference, relevant fields of the `ODEIntegrator` are:
 
@@ -104,6 +104,7 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,pType,
   force_stepfail::Bool
   last_stepfail::Bool
   just_hit_tstop::Bool
+  event_last_time::Bool
   accept_step::Bool
   isout::Bool
   reeval_fsal::Bool
@@ -120,7 +121,7 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,pType,
       EEst,qold,q11,erracc,dtacc,success_iter,
       iter,saveiter,saveiter_dense,prog,cache,
       kshortsize,force_stepfail,last_stepfail,just_hit_tstop,
-      accept_step,isout,reeval_fsal,u_modified,opts)
+      event_last_time,accept_step,isout,reeval_fsal,u_modified,opts)
 
       new{algType,uType,tType,pType,tTypeNoUnits,tdirType,ksEltype,SolType,
                   F,ProgressType,CacheType,O,FSALType}(
@@ -129,7 +130,7 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,pType,
       EEst,qold,q11,erracc,dtacc,success_iter,
       iter,saveiter,saveiter_dense,prog,cache,
       kshortsize,force_stepfail,last_stepfail,just_hit_tstop,
-      accept_step,isout,reeval_fsal,u_modified,opts) # Leave off fsalfirst and last
+      event_last_time,accept_step,isout,reeval_fsal,u_modified,opts) # Leave off fsalfirst and last
   end
 end
 

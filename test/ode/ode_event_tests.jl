@@ -174,15 +174,15 @@ affect! = function (integrator)
   terminate!(integrator)
 end
 
-terminate_callback3 = ContinuousCallback(condtion,affect!,interp_points=100)
+terminate_callback3 = ContinuousCallback(condtion,affect!,interp_points=1000)
 
 bounce_then_exit = CallbackSet(callback,terminate_callback3)
 
 sol6 = solve(prob2,Vern7(),callback=bounce_then_exit)
 
 @test sol6[end][1] > 0
+@test sol6[end][1] < 100
 @test sol6.t[end] ≈ 4
-
 
 # More ODE event tests, cf. #201, #199, #198, #197
 function test_callback_inplace(alg)

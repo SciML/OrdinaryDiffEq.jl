@@ -287,6 +287,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   accept_step = false
   force_stepfail = false
   last_stepfail = false
+  event_last_time = false
   dtchangeable = isdtchangeable(alg)
   q11 = tTypeNoUnits(1)
   success_iter = 0
@@ -303,7 +304,8 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
                              erracc,dtacc,success_iter,
                              iter,saveiter,saveiter_dense,prog,cache,
                              kshortsize,force_stepfail,last_stepfail,
-                             just_hit_tstop,accept_step,isout,reeval_fsal,
+                             just_hit_tstop,event_last_time,accept_step,
+                             isout,reeval_fsal,
                              u_modified,opts)
   if initialize_integrator
     initialize_callbacks!(integrator, initialize_save)
