@@ -64,7 +64,7 @@ end
         tmp = @view integrator.cache.tmp[callback.idxs]
       end
     end
-    for i in 2:length(Θs)-1
+    for i in 2:length(Θs)
       if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache && !(typeof(callback.idxs) <: Number)
         ode_interpolant!(tmp,Θs[i],integrator,callback.idxs,Val{0})
       else
