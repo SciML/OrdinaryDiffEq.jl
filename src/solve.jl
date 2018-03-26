@@ -281,6 +281,8 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   kshortsize = 0
   reeval_fsal = false
   u_modified = false
+  eigen_prototype = internalnorm(rate_prototype)
+  eigen_est = eigen_prototype/eigen_prototype
   EEst = tTypeNoUnits(1)
   just_hit_tstop = false
   isout = false
@@ -294,13 +296,13 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   erracc = tTypeNoUnits(1)
   dtacc = tType(1)
 
-  integrator = ODEIntegrator{algType,uType,tType,typeof(p),
+  integrator = ODEIntegrator{algType,uType,tType,typeof(p),typeof(eigen_est),
                              QT,typeof(tdir),typeof(k),SolType,
                              FType,typeof(prog),cacheType,
                              typeof(opts),fsal_typeof(alg,rate_prototype)}(
                              sol,u,k,t,tType(dt),f,p,uprev,uprev2,tprev,
                              alg,dtcache,dtchangeable,
-                             dtpropose,tdir,EEst,QT(qoldinit),q11,
+                             dtpropose,tdir,eigen_est,EEst,QT(qoldinit),q11,
                              erracc,dtacc,success_iter,
                              iter,saveiter,saveiter_dense,prog,cache,
                              kshortsize,force_stepfail,last_stepfail,

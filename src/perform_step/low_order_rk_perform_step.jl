@@ -505,7 +505,6 @@ end
   # Hairer II, page 22
   ϱ = integrator.opts.internalnorm(k7 - k6)/integrator.opts.internalnorm(g7 - g6)
   # 3.3 is the approximate distance of ∂S to the origin
-  stiffness = ϱ*dt/3.3
   if integrator.opts.adaptive
     utilde = dt*(btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7)
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
@@ -597,7 +596,6 @@ end
   # Hairer II, page 22
   ϱ = integrator.opts.internalnorm(k7 - k6)/integrator.opts.internalnorm(g7 - g6)
   # 3.3 is the approximate distance of ∂S to the origin
-  stiffness = ϱ*dt/3.3
   if integrator.opts.adaptive
     @tight_loop_macros for i in uidx
       @inbounds utilde[i] = dt*(btilde1*k1[i] + btilde2*k2[i] + btilde3*k3[i] + btilde4*k4[i] + btilde5*k5[i] + btilde6*k6[i] + btilde7*k7[i])
@@ -638,7 +636,6 @@ end
   # Hairer II, page 22
   ϱ = integrator.opts.internalnorm(k7 - k6)/integrator.opts.internalnorm(g7 - g6)
   # 3.3 is the approximate distance of ∂S to the origin
-  stiffness = dt*ϱ/3.3
   if integrator.opts.adaptive
     utilde = dt*(btilde1*k1 + btilde3*k3 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7)
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
@@ -731,7 +728,6 @@ end
   # Hairer II, page 22
   ϱ = integrator.opts.internalnorm(k7 - k6)/integrator.opts.internalnorm(g7 - g6)
   # 3.3 is the approximate distance of ∂S to the origin
-  stiffness = ϱ*dt/3.3
   if integrator.opts.adaptive
     @tight_loop_macros for i in uidx
       @inbounds utilde[i] = dt*(btilde1*k1[i] + btilde3*k3[i] + btilde4*k4[i] + btilde5*k5[i] + btilde6*k6[i] + btilde7*k7[i])
