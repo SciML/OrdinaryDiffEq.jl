@@ -492,15 +492,21 @@ end
     end
     f(k6,tmp,p,t+dt)
     @tight_loop_macros for i in uidx
-      update[i] = a71*k1[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i]
-      @inbounds tmp[i] = uprev[i]+dt*update[i]
+      @inbounds update[i] = a71*k1[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i]
+      @inbounds u[i] = uprev[i]+dt*update[i]
     end
     f(k7,tmp,p,t+dt)
     copyat_or_push!(k,1,update)
     @tight_loop_macros for i in uidx
-      bspl[i] = k1[i] - update[i]
-      dense_tmp3[i] = update[i] - k7[i] - bspl[i]
-      dense_tmp4[i] = (d1*k1[i]+d3*k3[i]+d4*k4[i]+d5*k5[i]+d6*k6[i]+d7*k7[i])
+      @inbounds utilde[i] = dt*(btilde1*k1[i] + btilde3*k3[i] + btilde4*k4[i] + btilde5*k5[i] + btilde6*k6[i] + btilde7*k7[i])
+    end
+    @tight_loop_macros for i in uidx
+      #integrator.k[4] == k5
+      @inbounds integrator.k[4][i] = d1*k1[i]+d3*k3[i]+d4*k4[i]+d5*k5[i]+d6*k6[i]+d7*k7[i]
+      #bspl == k3
+      @inbounds bspl[i] = k1[i] - update[i]
+      # k6 === integrator.k[3] === k2
+      @inbounds integrator.k[3][i] = update[i] - k7[i] - bspl[i]
     end
     copyat_or_push!(k,2,bspl)
     copyat_or_push!(k,3,dense_tmp3)
