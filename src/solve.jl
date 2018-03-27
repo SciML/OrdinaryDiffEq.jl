@@ -281,8 +281,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   kshortsize = 0
   reeval_fsal = false
   u_modified = false
-  eigen_prototype = internalnorm(rate_prototype)
-  eigen_est = eigen_prototype/eigen_prototype
+  eigen_est = 1/oneunit(tType) # rate/state = (state/time)/state = 1/t units
   EEst = tTypeNoUnits(1)
   just_hit_tstop = false
   isout = false
