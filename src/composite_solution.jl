@@ -45,7 +45,7 @@ function build_solution{uType,tType,isinplace}(
     end
     return sol
   else
-    return ODECompositeSolution{T,N,typeof(u),typeof(u_analytic),typeof(errors),typeof(t),typeof(k),
+    return ODECompositeSolution{T,N,typeof(u),typeof(nothing),typeof(nothing),typeof(t),typeof(k),
                        typeof(prob),typeof(alg),typeof(interp)}(u,nothing,nothing,t,k,prob,alg,interp,alg_choice,dense,0,retcode)
   end
 end

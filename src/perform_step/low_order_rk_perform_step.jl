@@ -501,10 +501,11 @@ end
   k6 = f(g6, p, t+dt)
   u = uprev+dt*(a71*k1+a72*k2+a73*k3+a74*k4+a75*k5+a76*k6)
   integrator.fsallast = f(u, p, t+dt); k7 = integrator.fsallast
-  g7 = u
-  # Hairer II, page 22
-  ϱ = integrator.opts.internalnorm(k7 - k6)/integrator.opts.internalnorm(g7 - g6)
-  # 3.3 is the approximate distance of ∂S to the origin
+  if typeof(integrator.alg) <: CompositeAlgorithm
+    g7 = u
+    # Hairer II, page 22
+    integrator.eigen_est = integrator.opts.internalnorm(k7 - k6)/integrator.opts.internalnorm(g7 - g6)
+  end
   if integrator.opts.adaptive
     utilde = dt*(btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7)
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
@@ -591,11 +592,16 @@ end
     @inbounds u[i] = uprev[i]+dt*(a71*k1[i]+a72*k2[i]+a73*k3[i]+a74*k4[i]+a75*k5[i]+a76*k6[i])
   end
   f(k7, u, p, t+dt)
-  g7 = u
-  g6 = tmp
-  # Hairer II, page 22
-  ϱ = integrator.opts.internalnorm(k7 - k6)/integrator.opts.internalnorm(g7 - g6)
-  # 3.3 is the approximate distance of ∂S to the origin
+  if typeof(integrator.alg) <: CompositeAlgorithm
+    g7 = u
+    g6 = tmp
+    # Hairer II, page 22
+    @. utilde = k7 - k6
+    ϱu = integrator.opts.internalnorm(utilde)
+    @. utilde = g7 - g6
+    ϱd = integrator.opts.internalnorm(utilde)
+    integrator.eigen_est = ϱu/ϱd
+  end
   if integrator.opts.adaptive
     @tight_loop_macros for i in uidx
       @inbounds utilde[i] = dt*(btilde1*k1[i] + btilde2*k2[i] + btilde3*k3[i] + btilde4*k4[i] + btilde5*k5[i] + btilde6*k6[i] + btilde7*k7[i])
@@ -632,10 +638,11 @@ end
   update = a71*k1+a73*k3+a74*k4+a75*k5+a76*k6
   u = uprev+dt*update
   integrator.fsallast = f(u, p, t+dt); k7 = integrator.fsallast
-  g7 = u
-  # Hairer II, page 22
-  ϱ = integrator.opts.internalnorm(k7 - k6)/integrator.opts.internalnorm(g7 - g6)
-  # 3.3 is the approximate distance of ∂S to the origin
+  if typeof(integrator.alg) <: CompositeAlgorithm
+    g7 = u
+    # Hairer II, page 22
+    integrator.eigen_est = integrator.opts.internalnorm(k7 - k6)/integrator.opts.internalnorm(g7 - g6)
+  end
   if integrator.opts.adaptive
     utilde = dt*(btilde1*k1 + btilde3*k3 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7)
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
@@ -723,11 +730,16 @@ end
     @inbounds u[i] = uprev[i]+dt*update[i]
   end
   f(k7, u, p, t+dt)
-  g6 = tmp
-  g7 = u
-  # Hairer II, page 22
-  ϱ = integrator.opts.internalnorm(k7 - k6)/integrator.opts.internalnorm(g7 - g6)
-  # 3.3 is the approximate distance of ∂S to the origin
+  if typeof(integrator.alg) <: CompositeAlgorithm
+    g6 = tmp
+    g7 = u
+    # Hairer II, page 22
+    @. utilde = k7 - k6
+    ϱu = integrator.opts.internalnorm(utilde)
+    @. utilde = g7 - g6
+    ϱd = integrator.opts.internalnorm(utilde)
+    integrator.eigen_est = ϱu/ϱd
+  end
   if integrator.opts.adaptive
     @tight_loop_macros for i in uidx
       @inbounds utilde[i] = dt*(btilde1*k1[i] + btilde3*k3[i] + btilde4*k4[i] + btilde5*k5[i] + btilde6*k6[i] + btilde7*k7[i])
