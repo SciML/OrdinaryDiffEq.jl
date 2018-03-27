@@ -421,9 +421,9 @@ end
 
 @muladd @inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,p,cache::DP5Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
   if length(k)<4 || calcVal
-    @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,c1,c2,c3,c4,c5,c6 = cache.tab
+    @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,btilde1,btilde3,btilde4,btilde5,btilde6,btilde7,c1,c2,c3,c4,c5,c6 = cache.tab
+    @unpack k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,utilde,tmp,atmp = cache
     @unpack d1,d3,d4,d5,d6,d7 = cache.tab
-    @unpack k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,tmp = cache
     uidx = eachindex(uprev)
     f(k1,uprev,p,t)
     @tight_loop_macros for i in uidx
@@ -453,14 +453,19 @@ end
     f(k7,tmp,p,t+dt)
     copyat_or_push!(k,1,update)
     @tight_loop_macros for i in uidx
+      @inbounds utilde[i] = dt*(btilde1*k1[i] + btilde3*k3[i] + btilde4*k4[i] + btilde5*k5[i] + btilde6*k6[i] + btilde7*k7[i])
+    end
+    @tight_loop_macros for i in uidx
+      #integrator.k[4] == k5
+      @inbounds k5[i] = d1*k1[i]+d3*k3[i]+d4*k4[i]+d5*k5[i]+d6*k6[i]+d7*k7[i]
+      #bspl == k3
       @inbounds bspl[i] = k1[i] - update[i]
-      @inbounds dense_tmp3[i] = update[i] - k7[i] - bspl[i]
-      @inbounds dense_tmp4[i] = (d1*k1[i]+d3*k3[i]+d4*k4[i]+d5*k5[i]+d6*k6[i]+d7*k7[i])
+      # k6 === integrator.k[3] === k2
+      @inbounds k6[i] = update[i] - k7[i] - bspl[i]
     end
     copyat_or_push!(k,2,bspl)
-    copyat_or_push!(k,3,dense_tmp3)
-    copyat_or_push!(k,4,dense_tmp4)
-  end
+    copyat_or_push!(k,3,k6)
+    copyat_or_push!(k,4,k5)
   nothing
 end
 
@@ -502,15 +507,15 @@ end
     end
     @tight_loop_macros for i in uidx
       #integrator.k[4] == k5
-      @inbounds integrator.k[4][i] = d1*k1[i]+d3*k3[i]+d4*k4[i]+d5*k5[i]+d6*k6[i]+d7*k7[i]
+      @inbounds k5[i] = d1*k1[i]+d3*k3[i]+d4*k4[i]+d5*k5[i]+d6*k6[i]+d7*k7[i]
       #bspl == k3
       @inbounds bspl[i] = k1[i] - update[i]
       # k6 === integrator.k[3] === k2
-      @inbounds integrator.k[3][i] = update[i] - k7[i] - bspl[i]
+      @inbounds k6[i] = update[i] - k7[i] - bspl[i]
     end
     copyat_or_push!(k,2,bspl)
-    copyat_or_push!(k,3,dense_tmp3)
-    copyat_or_push!(k,4,dense_tmp4)
+    copyat_or_push!(k,3,k6)
+    copyat_or_push!(k,4,k5)
   end
   nothing
 end
