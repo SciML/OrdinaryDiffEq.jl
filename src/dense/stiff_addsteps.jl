@@ -50,8 +50,8 @@ end
     end
 
     recursivecopy!(k₁,reshape(vectmp,size(u)...))
-    @. u = uprev + dto2*k₁
-    f(f₁,u,p,t+dto2)
+    @. tmp = uprev + dto2*k₁
+    f(f₁,tmp,p,t+dto2)
 
 
     #if mass_matrix == I

@@ -39,13 +39,6 @@ callback = ContinuousCallback(condtion,affect!)
 
 sol = solve(prob,Tsit5(),callback=callback,abstol=1e-8,reltol=1e-6)
 
-#=
-f = @ode_def BallBounce begin
-  dy =  v
-  dv = -g
-end g=9.81
-=#
-
 f = function (du,u,p,t)
   du[1] = u[2]
   du[2] = -9.81
