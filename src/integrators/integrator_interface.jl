@@ -266,8 +266,3 @@ function DiffEqBase.set_u!(integrator::ODEIntegrator, u)
   integrator.u = u
   u_modified!(integrator, true)
 end
-
-function DiffEqBase.set_ut!(integrator::ODEIntegrator, u, t::Real)
-  DiffEqBase.set_u!(integrator, u)
-  DiffEqBase.set_t!(integrator, t)
-end
