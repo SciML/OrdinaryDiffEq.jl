@@ -1315,9 +1315,15 @@ end
   if typeof(uprev) <: AbstractArray
     J = ForwardDiff.jacobian(uf, uprev)
     W = I/dtgamma - J
+    if typeof(integrator.alg) <: CompositeAlgorithm
+      integrator.eigen_est = norm(J, Inf)
+    end
   else
     J = ForwardDiff.derivative(uf, uprev)
     W = 1/dtgamma - J
+    if typeof(integrator.alg) <: CompositeAlgorithm
+      integrator.eigen_est = J
+    end
   end
 
   du1 = f(uprev, p, t)
@@ -1463,7 +1469,7 @@ end
   @. linsolve_tmp = fsalfirst + dtd1*dT
 
   # Jacobian
-  if has_invW(f)
+  if has_invW(f) && !(typeof(integrator.alg) <: CompositeAlgorithm)
     # skip calculation of inv(W) if step is repeated
     !repeat_step && f(Val{:invW_t}, W, uprev, p, dtgamma, t) # W == inverse W
 
@@ -1475,6 +1481,9 @@ end
       else
         uf.t = t
         jacobian!(J, uf, uprev, du1, integrator, jac_config)
+      end
+      if typeof(integrator.alg) <: CompositeAlgorithm
+        integrator.eigen_est = norm(J, Inf)
       end
       for j in 1:length(u), i in 1:length(u)
           @inbounds W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
