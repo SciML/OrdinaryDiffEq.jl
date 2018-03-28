@@ -38,6 +38,7 @@ if group == "All" || group == "Interface"
     @time @testset "Integrator Interface Tests" begin include("integrator_interface_tests.jl") end
     @time @testset "Complex Tests" begin include("complex_tests.jl") end
     @time @testset "Stiffness Detection Tests" begin include("stiffness_detection_test.jl") end
+    @time @testset "Interpolation Tests" begin include("ode/ode_interpolation_tests.jl") end
 end
 
 if group == "All" || group == "Regression"
