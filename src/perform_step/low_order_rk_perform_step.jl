@@ -734,11 +734,12 @@ end
     g6 = tmp
     g7 = u
     # Hairer II, page 22
-    @. utilde = k7 - k6
-    ϱu = integrator.opts.internalnorm(utilde)
-    @. utilde = g7 - g6
-    ϱd = integrator.opts.internalnorm(utilde)
-    integrator.eigen_est = ϱu/ϱd
+    ϱu, ϱd = zero(eltype(k7)), zero(eltype(k7))
+    @inbounds for i in eachindex(k7)
+      ϱu += (k7[i] - k6[i])^2
+      ϱd += (g7[i] - g6[i])^2
+    end
+    integrator.eigen_est = sqrt(ϱu/ϱd)
   end
   if integrator.opts.adaptive
     @tight_loop_macros for i in uidx
