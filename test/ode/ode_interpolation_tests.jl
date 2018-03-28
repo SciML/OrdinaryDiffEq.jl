@@ -1,5 +1,4 @@
-using OrdinaryDiffEq, Base.Test, DiffEqBase, DiffEqCallbacks
-
+using OrdinaryDiffEq, Base.Test, DiffEqBase
 function test_ode(du, u, p, t)
     du[1] = p[1] - (1 - p[1])*u[1]
     return nothing
