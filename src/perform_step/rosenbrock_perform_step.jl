@@ -1469,9 +1469,18 @@ end
   @. linsolve_tmp = fsalfirst + dtd1*dT
 
   # Jacobian
-  if has_invW(f) && !(typeof(integrator.alg) <: CompositeAlgorithm)
+  if has_invW(f)
     # skip calculation of inv(W) if step is repeated
     !repeat_step && f(Val{:invW_t}, W, uprev, p, dtgamma, t) # W == inverse W
+    if typeof(integrator.alg) <: CompositeAlgorithm
+      if has_jac(f)
+        f(Val{:jac}, J, uprev, p, t)
+      else
+        uf.t = t
+        jacobian!(J, uf, uprev, du1, integrator, jac_config)
+      end
+      integrator.eigen_est = norm(J, Inf)
+    end
 
     A_mul_B!(vectmp, W, linsolve_tmp_vec)
   else
