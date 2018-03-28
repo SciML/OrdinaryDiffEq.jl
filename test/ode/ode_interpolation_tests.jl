@@ -8,9 +8,9 @@ test_solution(t) = t <= 5 ? t : 5. * e^(-(t-5))
 
 tspan = (0.,10.)
 testtimes = linspace(tspan..., 1001)
-condition(u, t, i) = t - 5
-affect!(i) = i.p[1] = abs(1 - i.p[1])
-cb = ContinuousCallback(condition, affect!)
+pullback_condition(u, t, i) = t - 5
+pullback_affect!(i) = i.p[1] = abs(1 - i.p[1])
+cb = ContinuousCallback(pullback_condition, pullback_affect!)
 
 algs = [Tsit5, Rosenbrock23, Rosenbrock32, Rodas5] ## Works for these
 # algs = subtypes(OrdinaryDiffEq.OrdinaryDiffEqAdaptiveAlgorithm)
