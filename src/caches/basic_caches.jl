@@ -87,3 +87,11 @@ alg_cache(alg::ExplicitRK,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,t
 
 get_chunksize(cache::DECache) = error("This cache does not have a chunksize.")
 get_chunksize{CS}(cache::ODEChunkCache{CS}) = CS
+
+mutable struct StiffCount
+    num::UInt8
+end
+
+Base.zero(::Type{StiffCount}) = StiffCount(zero(UInt8))
+zero!(x::StiffCount) = x.num=zero(UInt8)
+inc!(x::StiffCount) = x.num+=one(UInt8)

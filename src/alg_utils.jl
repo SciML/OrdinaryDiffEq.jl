@@ -263,3 +263,7 @@ ssp_coefficient(alg::SSPRK104) = 6
 # We shouldn't do this probably.
 #ssp_coefficient(alg::ImplicitEuler) = Inf
 ssp_coefficient(alg::SSPSDIRK2) = 4
+
+# stability regions
+alg_stability_size(alg::DP5) = 3.3066
+alg_stability_size(alg::Tsit5) = 3.5068

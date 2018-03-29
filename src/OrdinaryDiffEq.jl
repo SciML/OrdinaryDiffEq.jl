@@ -116,6 +116,7 @@ module OrdinaryDiffEq
   include("solve.jl")
   include("initdt.jl")
   include("interp_func.jl")
+  include("composite_algs.jl")
 
   #General Functions
   export solve, solve!, init, step!
