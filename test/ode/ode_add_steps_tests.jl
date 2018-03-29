@@ -31,7 +31,7 @@ cur_itr = 0
 for inplace in [false,true], alg in nonstandard_interp_algs
     prob = ODEProblem{inplace}(test_ode, [0.], tspan, [1.])
     sol = solve(prob, alg(); callback=cb,dt=0.001)
-    pass = all(isapprox(sol(t)[1], test_solution(t); atol=0.05) for t in testtimes)
+    pass = all(isapprox(sol(t)[1], test_solution(t); atol=0.013) for t in testtimes)
     if alg ∉ algs
         @test_broken pass
     else
