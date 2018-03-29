@@ -1,30 +1,34 @@
-struct AutoSwitch{Alg}
-  count::StiffCount
+mutable struct AutoSwitch{Alg}
+  count::UInt8
   alg::Alg
-  argnum::UInt8
+  algnum::UInt8
   is_successive::Bool
 end
-AutoSwitch(alg::Alg) where Alg = AutoSwitch(zero(StiffCount), alg)
+AutoSwitch(alg::Alg) where Alg = AutoSwitch(zero(UInt8), alg,
+                                            one(UInt8), false)
 
 function is_stiff(eigen_est, dt, alg)
   stiffness = eigen_est*dt/alg_stability_size(alg())
   stiffness < oneunit(stiffness)
 end
 
-# Need to fix the logic
 function (AS::AutoSwitch)(integrator)
   eigen_est, dt = integrator.eigen_est, integrator.dt
-  counter = AS.count
-  @show integrator.alg
-  if (counter.num > 15 || isimplicit(integrator.alg))
-    zero!(counter)
+  # Here we assume that the first algorithm is always for non-stiff problems
+  if (AS.count > 15 && AS.is_successive || AS.algnum == 2)
+    AS.count = 0
+    AS.algnum= 2
     return 2
   end
-  is_stiff(eigen_est, dt, AS.alg) && inc!(counter)
+  if is_stiff(eigen_est, dt, AS.alg)
+    AS.count += 1
+    if !(AS.is_successive)
+      AS.is_successive = true
+    end
+  else
+    AS.is_successive = false
+  end
   return 1
 end
 
-const Tsit5Rodas5 = CompositeAlgorithm((Tsit5(), Rodas5()),
-                                       AutoSwitch(Tsit5))
-const DP5Rodas5 = CompositeAlgorithm((DP5(), Rodas5()),
-                                      AutoSwitch(DP5))
+AutoRodas5(;alg=Tsit5) = CompositeAlgorithm((alg(), Rodas5()), AutoSwitch(alg))
