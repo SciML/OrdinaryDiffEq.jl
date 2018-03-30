@@ -1,37 +1,32 @@
-mutable struct AutoSwitch{nAlg,sAlg}
-  # TODO: Is it better to use UInt8?
+mutable struct AutoSwitch{nAlg,sAlg,tolType}
   count::Int
   nonstiffalg::nAlg
   stiffalg::sAlg
   is_stiffalg::Bool
-  is_successive::Bool
   maxstiffstep::Int
   maxnonstiffstep::Int
+  tol::tolType
 end
-AutoSwitch(nonstiffalg::nAlg, stiffalg::sAlg; maxstiffstep=15, maxnonstiffstep=15) where {nAlg,sAlg} = AutoSwitch(0, nonstiffalg, stiffalg, false, false, maxstiffstep, maxnonstiffstep)
+AutoSwitch(nonstiffalg::nAlg, stiffalg::sAlg; maxstiffstep=15, maxnonstiffstep=15, tol::T=11//10) where {nAlg,sAlg,T} = AutoSwitch(0, nonstiffalg, stiffalg, false, maxstiffstep, maxnonstiffstep, tol)
 
-function is_stiff(eigen_est, dt, alg)
+function is_stiff(eigen_est, dt, alg, tol)
   stiffness = eigen_est*dt/alg_stability_size(alg())
-  stiffness < oneunit(stiffness)
+  stiffness < oneunit(stiffness) * tol
 end
 
 function (AS::AutoSwitch)(integrator)
   eigen_est, dt = integrator.eigen_est, integrator.dt
-  # Switching from a stiff solver to a non-stiff solver is not yet implemented
-  if (AS.count > AS.maxstiffstep && AS.is_successive || AS.is_stiffalg)
-    AS.count = 0
+  if (AS.count > AS.maxstiffstep && !AS.is_stiffalg)
     AS.is_stiffalg = true
-    return 2
+  elseif (AS.count < -AS.maxnonstiffstep && AS.is_stiffalg)
+    AS.is_stiffalg = false
   end
-  if is_stiff(eigen_est, dt, AS.nonstiffalg)
+  if is_stiff(eigen_est, dt, AS.nonstiffalg, AS.tol)
     AS.count += 1
-    if !(AS.is_successive)
-      AS.is_successive = true
-    end
   else
-    AS.is_successive = false
+    AS.count = AS.count > 0 ? -1 : AS.count - 1
   end
-  return 1
+  return Int(AS.is_stiffalg) + 1
 end
 
 AutoRodas5(alg=Tsit5(); kwargs...) = CompositeAlgorithm((alg, Rodas5()), AutoSwitch(typeof(alg), Rodas5; kwargs...))
