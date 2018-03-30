@@ -116,6 +116,7 @@ module OrdinaryDiffEq
   include("solve.jl")
   include("initdt.jl")
   include("interp_func.jl")
+  include("composite_algs.jl")
 
   #General Functions
   export solve, solve!, init, step!
@@ -164,4 +165,6 @@ module OrdinaryDiffEq
          IRKN3, IRKN4, DPRKN6, DPRKN8, DPRKN12, ERKN4, ERKN5
 
   export AB3, AB4, AB5, ABM32, ABM43, ABM54
+
+  export AutoSwitch, AutoRodas5
 end # module
