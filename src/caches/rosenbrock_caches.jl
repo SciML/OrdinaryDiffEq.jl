@@ -127,7 +127,7 @@ end
 
 struct Rosenbrock23ConstantCache{T,TF,UF} <: OrdinaryDiffEqConstantCache
   c₃₂::T
-  d::T
+  d1::T
   tf::TF
   uf::UF
 end
@@ -146,7 +146,7 @@ end
 
 struct Rosenbrock32ConstantCache{T,TF,UF} <: OrdinaryDiffEqConstantCache
   c₃₂::T
-  d::T
+  d1::T
   tf::TF
   uf::UF
 end

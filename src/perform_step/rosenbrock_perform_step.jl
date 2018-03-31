@@ -11,52 +11,17 @@ end
 @muladd function perform_step!(integrator, cache::Rosenbrock23Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
-  @unpack c₃₂,d = cache.tab
+  @unpack c₃₂,d1 = cache.tab
 
   # Assignments
   sizeu  = size(u)
   mass_matrix = integrator.sol.prob.mass_matrix
 
   # Precalculations
-  γ = dt*d
   dto2 = dt/2
   dto6 = dt/6
 
-  # Time derivative
-  if !repeat_step # skip calculation if step is repeated
-    if has_tgrad(f)
-      f(Val{:tgrad}, dT, uprev, p, t)
-    else
-      tf.uprev = uprev
-      derivative!(dT, tf, t, du2, integrator)
-    end
-  end
-
-  @. linsolve_tmp = fsalfirst + γ*dT
-
-  # Jacobian
-  if has_invW(f)
-    # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW}, W, uprev, p, γ, t) # W == inverse W
-
-    A_mul_B!(vectmp, W, linsolve_tmp_vec)
-  else
-    if !repeat_step # skip calculation of J and W if step is repeated
-      if has_jac(f)
-        f(Val{:jac}, J, uprev, p, t)
-      else
-
-        uf.t = t
-        jacobian!(J, uf, uprev, du1, integrator, jac_config)
-      end
-      for j in 1:length(u), i in 1:length(u)
-          @inbounds W[i,j] = mass_matrix[i,j] - γ*J[i,j]
-      end
-    end
-
-    # use existing factorization of W if step is repeated
-    cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
-  end
+  calc_differentiation!(integrator, cache, repeat_step)
 
   recursivecopy!(k₁, reshape(vectmp, size(u)...))
   @. u = uprev + dto2*k₁
@@ -119,50 +84,17 @@ end
 @muladd function perform_step!(integrator, cache::Rosenbrock32Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
-  @unpack c₃₂,d = cache.tab
+  @unpack c₃₂,d1 = cache.tab
 
   # Assignments
   sizeu  = size(u)
   mass_matrix = integrator.sol.prob.mass_matrix
 
   # Precalculations
-  γ = dt*d
   dto2 = dt/2
   dto6 = dt/6
 
-  # Time derivative
-  if !repeat_step # skip calculation if step is repeated
-    if has_tgrad(f)
-      f(Val{:tgrad}, dT, uprev, p, t)
-    else
-
-      tf.uprev = uprev
-      derivative!(dT, tf, t, du2, integrator)
-    end
-  end
-
-  @. linsolve_tmp = fsalfirst + γ*dT
-
-  if has_invW(f)
-    # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW}, W, uprev, p, γ, t) # W == inverse W
-    A_mul_B!(vectmp, W, linsolve_tmp_vec)
-  else
-    if !repeat_step # skip calculation of J and W if step is repeated
-      if has_jac(f)
-        f(Val{:jac}, J, uprev, p, t)
-      else
-        uf.t = t
-        jacobian!(J, uf, uprev, du1, integrator, jac_config)
-      end
-      for j in 1:length(u), i in 1:length(u)
-        @inbounds W[i,j] = mass_matrix[i,j] - γ*J[i,j]
-      end
-    end
-
-    # use existing factorization of W if step is repeated
-    cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
-  end
+  calc_differentiation!(integrator, cache, repeat_step)
 
   recursivecopy!(k₁, reshape(vectmp, sizeu...))
   @. u = uprev + dto2*k₁
@@ -225,10 +157,10 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock23ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack c₃₂,d,tf,uf = cache
+  @unpack c₃₂,d1,tf,uf = cache
 
   # Precalculations
-  γ = dt*d
+  γ = dt*d1
   dto2 = dt/2
   dto6 = dt/6
 
@@ -280,10 +212,10 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock32ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack c₃₂,d,tf,uf = cache
+  @unpack c₃₂,d1,tf,uf = cache
 
   # Precalculations
-  γ = dt*d
+  γ = dt*d1
   dto2 = dt/2
   dto6 = dt/6
 
@@ -425,44 +357,8 @@ end
   dtd1 = dt*d1
   dtd2 = dt*d2
   dtd3 = dt*d3
-  dtgamma = dt*gamma
 
-  # Time derivative
-  if !repeat_step # skip calculation if step is repeated
-    if has_tgrad(f)
-      f(Val{:tgrad}, dT, uprev, p, t)
-    else
-
-      tf.uprev = uprev
-      derivative!(dT, tf, t, du2, integrator)
-    end
-  end
-
-  @. linsolve_tmp = fsalfirst + dtd1*dT
-
-  # Jacobian
-  if has_invW(f)
-    # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW_t}, W, uprev, p, dtgamma, t) # W == inverse W
-
-    A_mul_B!(vectmp, W, linsolve_tmp_vec)
-  else
-    if !repeat_step # skip calculation of J and W if step is repeated
-      if has_jac(f)
-        f(Val{:jac}, J, uprev, p, t)
-      else
-
-        uf.t = t
-        jacobian!(J, uf, uprev, du1, integrator, jac_config)
-      end
-      for j in 1:length(u), i in 1:length(u)
-          @inbounds W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
-      end
-    end
-
-    # use existing factorization of W if step is repeated
-    cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
-  end
+  calc_differentiation!(integrator, cache, repeat_step)
 
   k1 = reshape(vectmp, sizeu...)
   @. u = uprev + a21*k1
@@ -625,43 +521,8 @@ end
   dtd2 = dt*d2
   dtd3 = dt*d3
   dtd4 = dt*d4
-  dtgamma = dt*gamma
 
-  # Time derivative
-  if !repeat_step # skip calculation if step is repeated
-    if has_tgrad(f)
-      f(Val{:tgrad}, dT, uprev, p, t)
-    else
-
-      tf.uprev = uprev
-      derivative!(dT, tf, t, du2, integrator)
-    end
-  end
-
-  @. linsolve_tmp = fsalfirst + dtd1*dT
-
-  if has_invW(f)
-    # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW_t}, W, uprev, p, dtgamma, t) # W == inverse W
-
-    A_mul_B!(vectmp, W, linsolve_tmp_vec)
-  else
-    if !repeat_step # skip calculation of J and W if step is repeated
-      if has_jac(f)
-        f(Val{:jac}, J, uprev, p, t)
-      else
-
-        uf.t = t
-        jacobian!(J, uf, uprev, du1, integrator, jac_config)
-      end
-      for j in 1:length(u), i in 1:length(u)
-          @inbounds W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
-      end
-    end
-
-    # use existing factorization of W if step is repeated
-    cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
-  end
+  calc_differentiation!(integrator, cache, repeat_step)
 
   k1 = reshape(vectmp, sizeu...)
 
@@ -849,44 +710,8 @@ end
   dtd2 = dt*d2
   dtd3 = dt*d3
   dtd4 = dt*d4
-  dtgamma = dt*gamma
 
-  # Time derivative
-  if !repeat_step # skip calculation if step is repeated
-    if has_tgrad(f)
-      f(Val{:tgrad}, dT, uprev, p, t)
-    else
-
-      tf.uprev = uprev
-      derivative!(dT, tf, t, du2, integrator)
-    end
-  end
-
-  @. linsolve_tmp = fsalfirst + dtd1*dT
-
-  # Jacobian
-  if has_invW(f)
-    # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW_t}, W, uprev, p, dtgamma, t) # W == inverse W
-
-    A_mul_B!(vectmp, W, linsolve_tmp_vec)
-  else
-    if !repeat_step # skip calculation of J and W if step is repeated
-      if has_jac(f)
-        f(Val{:jac}, J, uprev, p, t)
-      else
-
-        uf.t = t
-        jacobian!(J, uf, uprev, du1, integrator, jac_config)
-      end
-      for j in 1:length(u), i in 1:length(u)
-          @inbounds W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
-      end
-    end
-
-    # use existing factorization of W if step is repeated
-    cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
-  end
+  calc_differentiation!(integrator, cache, repeat_step)
 
   k1 = reshape(vectmp, sizeu...)
   @. u = uprev + a21*k1
@@ -1097,45 +922,8 @@ end
   dtd2 = dt*d2
   dtd3 = dt*d3
   dtd4 = dt*d4
-  dtgamma = dt*gamma
 
-  # Time derivative
-  if !repeat_step # skip calculation if step is repeated
-    if has_tgrad(f)
-      f(Val{:tgrad}, dT, uprev, p, t)
-    else
-      tf.uprev = uprev
-      derivative!(dT, tf, t, du2, integrator)
-    end
-  end
-
-  f( du,  uprev, p, t)
-
-  @. linsolve_tmp = du + dtd1*dT
-
-  # Jacobian
-  if has_invW(f)
-    # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW_t}, W, uprev, p, dtgamma, t) # W == inverse W
-
-    A_mul_B!(vectmp, W, linsolve_tmp_vec)
-  else
-    if !repeat_step # skip calculation of J and W if step is repeated
-      if has_jac(f)
-        f(Val{:jac}, J, uprev, p, t)
-      else
-
-        uf.t = t
-        jacobian!(J, uf, uprev, du1, integrator, jac_config)
-      end
-      for j in 1:length(u), i in 1:length(u)
-          @inbounds W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
-      end
-    end
-
-    # use existing factorization of W if step is repeated
-    cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
-  end
+  calc_differentiation!(integrator, cache, repeat_step)
 
   k1 = reshape(vectmp, sizeu...)
   @. u = uprev + a21*k1
@@ -1452,56 +1240,8 @@ end
   dtd3 = dt*d3
   dtd4 = dt*d4
   dtd5 = dt*d5
-  dtgamma = dt*gamma
 
-  # Time derivative
-  if !repeat_step # skip calculation if step is repeated
-    if has_tgrad(f)
-      f(Val{:tgrad}, dT, uprev, p, t)
-    else
-      tf.uprev = uprev
-      derivative!(dT, tf, t, du2, integrator)
-    end
-  end
-
-  f( fsalfirst,  uprev, p, t)
-
-  @. linsolve_tmp = fsalfirst + dtd1*dT
-
-  # Jacobian
-  if has_invW(f)
-    # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW_t}, W, uprev, p, dtgamma, t) # W == inverse W
-    if typeof(integrator.alg) <: CompositeAlgorithm
-      if has_jac(f)
-        f(Val{:jac}, J, uprev, p, t)
-      else
-        uf.t = t
-        jacobian!(J, uf, uprev, du1, integrator, jac_config)
-      end
-      integrator.eigen_est = norm(J, Inf)
-    end
-
-    A_mul_B!(vectmp, W, linsolve_tmp_vec)
-  else
-    if !repeat_step # skip calculation of J and W if step is repeated
-      if has_jac(f)
-        f(Val{:jac}, J, uprev, p, t)
-      else
-        uf.t = t
-        jacobian!(J, uf, uprev, du1, integrator, jac_config)
-      end
-      if typeof(integrator.alg) <: CompositeAlgorithm
-        integrator.eigen_est = norm(J, Inf)
-      end
-      for j in 1:length(u), i in 1:length(u)
-          @inbounds W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
-      end
-    end
-
-    # use existing factorization of W if step is repeated
-    cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
-  end
+  calc_differentiation!(integrator, cache, repeat_step)
 
   k1 = reshape(vectmp, sizeu...)
   @. u = uprev + a21*k1
