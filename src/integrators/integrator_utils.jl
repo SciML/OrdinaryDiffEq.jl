@@ -168,6 +168,9 @@ function solution_endpoint_match_cur_integrator!(integrator)
         end
       end
     end
+    if typeof(integrator.alg) <: OrdinaryDiffEqCompositeAlgorithm
+      copyat_or_push!(integrator.sol.alg_choice,integrator.saveiter,integrator.cache.current)
+    end
   end
 end
 

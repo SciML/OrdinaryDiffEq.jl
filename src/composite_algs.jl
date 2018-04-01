@@ -1,4 +1,4 @@
-mutable struct AutoSwitch{nAlg,sAlg,tolType}
+mutable struct AutoSwitch{nAlg,sAlg,tolType,T}
   count::Int
   nonstiffalg::nAlg
   stiffalg::sAlg
@@ -6,8 +6,13 @@ mutable struct AutoSwitch{nAlg,sAlg,tolType}
   maxstiffstep::Int
   maxnonstiffstep::Int
   tol::tolType
+  dtfac::T
 end
-AutoSwitch(nonstiffalg::nAlg, stiffalg::sAlg; maxstiffstep=15, maxnonstiffstep=15, tol::T=11//10) where {nAlg,sAlg,T} = AutoSwitch(0, nonstiffalg, stiffalg, false, maxstiffstep, maxnonstiffstep, tol)
+AutoSwitch(nonstiffalg::nAlg, stiffalg::sAlg;
+           maxstiffstep=15, maxnonstiffstep=15, tol::T=11//10,
+           dtfac = 2.0) where {nAlg,sAlg,T} =
+           AutoSwitch(0, nonstiffalg, stiffalg, false,
+                      maxstiffstep, maxnonstiffstep, tol, dtfac)
 
 function is_stiff(eigen_est, dt, alg, tol)
   stiffness = eigen_est*dt/alg_stability_size(alg)
@@ -17,8 +22,10 @@ end
 function (AS::AutoSwitch)(integrator)
   eigen_est, dt = integrator.eigen_est, integrator.dt
   if (AS.count > AS.maxstiffstep && !AS.is_stiffalg)
+    integrator.dt = dt*AS.dtfac
     AS.is_stiffalg = true
   elseif (AS.count < -AS.maxnonstiffstep && AS.is_stiffalg)
+    integrator.dt = dt/AS.dtfac
     AS.is_stiffalg = false
   end
   if is_stiff(eigen_est, dt, AS.nonstiffalg, AS.tol)
