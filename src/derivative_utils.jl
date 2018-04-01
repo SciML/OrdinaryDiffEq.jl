@@ -22,9 +22,8 @@ function calc_tderivative!(integrator, cache, repeat_step)
   end
 end
 
-function calc_jacobian!(integrator, cache, repeat_step)
+function calc_jacobian!(integrator, cache, repeat_step, is_2332=false)
   @inbounds begin
-    is_2332 = typeof(cache) <: Rosenbrock23Cache || typeof(cache) <: Rosenbrock32Cache
     @unpack t,dt,uprev,u,f,p = integrator
     @unpack du1,du2,fsalfirst,dT,J,W,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config,vectmp = cache
     d1 = cache.tab.d1
@@ -38,7 +37,7 @@ function calc_jacobian!(integrator, cache, repeat_step)
     # Jacobian
     if has_invW(f)
       # skip calculation of inv(W) if step is repeated
-      !repeat_step && f(Val{:invW_t}, W, uprev, p, dtgamma, t) # W == inverse W
+      !repeat_step && f(Val{:invW}, W, uprev, p, dtgamma, t) # W == inverse W
       if typeof(integrator.alg) <: CompositeAlgorithm
         if has_jac(f)
           f(Val{:jac}, J, uprev, p, t)
@@ -78,7 +77,7 @@ function calc_jacobian!(integrator, cache, repeat_step)
   end
 end
 
-function calc_differentiation!(integrator, cache, repeat_step)
+function calc_differentiation!(integrator, cache, repeat_step, is_2332=false)
   calc_tderivative!(integrator, cache, repeat_step)
-  calc_jacobian!(integrator, cache, repeat_step)
+  calc_jacobian!(integrator, cache, repeat_step, is_2332)
 end

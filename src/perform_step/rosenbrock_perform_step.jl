@@ -21,7 +21,7 @@ end
   dto2 = dt/2
   dto6 = dt/6
 
-  calc_differentiation!(integrator, cache, repeat_step)
+  calc_differentiation!(integrator, cache, repeat_step, true)
 
   recursivecopy!(k₁, reshape(vectmp, size(u)...))
   @. u = uprev + dto2*k₁
@@ -94,7 +94,7 @@ end
   dto2 = dt/2
   dto6 = dt/6
 
-  calc_differentiation!(integrator, cache, repeat_step)
+  calc_differentiation!(integrator, cache, repeat_step, true)
 
   recursivecopy!(k₁, reshape(vectmp, sizeu...))
   @. u = uprev + dto2*k₁
