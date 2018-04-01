@@ -10,7 +10,7 @@ end
 AutoSwitch(nonstiffalg::nAlg, stiffalg::sAlg; maxstiffstep=15, maxnonstiffstep=15, tol::T=11//10) where {nAlg,sAlg,T} = AutoSwitch(0, nonstiffalg, stiffalg, false, maxstiffstep, maxnonstiffstep, tol)
 
 function is_stiff(eigen_est, dt, alg, tol)
-  stiffness = eigen_est*dt/alg_stability_size(alg())
+  stiffness = eigen_est*dt/alg_stability_size(alg)
   stiffness < oneunit(stiffness) * tol
 end
 
@@ -29,4 +29,4 @@ function (AS::AutoSwitch)(integrator)
   return Int(AS.is_stiffalg) + 1
 end
 
-AutoRodas5(alg=Tsit5(); kwargs...) = CompositeAlgorithm((alg, Rodas5()), AutoSwitch(typeof(alg), Rodas5; kwargs...))
+AutoRodas5(alg=Tsit5(); kwargs...) = CompositeAlgorithm((alg, Rodas5()), AutoSwitch(alg, Rodas5(); kwargs...))
