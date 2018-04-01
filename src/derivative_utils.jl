@@ -22,13 +22,13 @@ function calc_tderivative!(integrator, cache, repeat_step)
   end
 end
 
-function calc_jacobian!(integrator, cache, repeat_step, is_2332=false)
+function calc_jacobian!(integrator, cache, repeat_step, W_transform=false)
   @inbounds begin
     @unpack t,dt,uprev,u,f,p = integrator
     @unpack du1,du2,fsalfirst,dT,J,W,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config,vectmp = cache
     d1 = cache.tab.d1
     dtgamma = dt*d1
-    if !is_2332
+    if !W_transform
       gamma = cache.tab.gamma
       dtgamma = dt*gamma
     end
@@ -60,7 +60,7 @@ function calc_jacobian!(integrator, cache, repeat_step, is_2332=false)
         if typeof(integrator.alg) <: CompositeAlgorithm
           integrator.eigen_est = norm(J, Inf)
         end
-        if !is_2332
+        if !W_transform
           for j in 1:length(u), i in 1:length(u)
               W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
           end
@@ -77,7 +77,7 @@ function calc_jacobian!(integrator, cache, repeat_step, is_2332=false)
   end
 end
 
-function calc_differentiation!(integrator, cache, repeat_step, is_2332=false)
+function calc_differentiation!(integrator, cache, repeat_step, W_transform=false)
   calc_tderivative!(integrator, cache, repeat_step)
-  calc_jacobian!(integrator, cache, repeat_step, is_2332)
+  calc_jacobian!(integrator, cache, repeat_step, W_transform)
 end
