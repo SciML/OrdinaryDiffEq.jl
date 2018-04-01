@@ -195,33 +195,7 @@ end
 
   γdt = γ*dt
 
-  if has_invW(f)
-    # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW},W,uprev,p,γdt,t) # W == inverse W
-  else
-    # skip calculation of J if step is repeated
-    if repeat_step || (!integrator.last_stepfail && cache.newton_iters == 1 && cache.ηold < integrator.alg.new_jac_conv_bound)
-      new_jac = false
-    else # Compute a new Jacobian
-      new_jac = true
-      if has_jac(f)
-        f(Val{:jac}, J, uprev, p, t)
-      else
-        uf.t = t
-        jacobian!(J, uf, uprev, du1, integrator, jac_config)
-      end
-    end
-    # skip calculation of W if step is repeated
-    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t)))
-      new_W = true
-      mass_matrix = integrator.sol.prob.mass_matrix
-      for j in 1:length(u), i in 1:length(u)
-          @inbounds W[i,j] = mass_matrix[i,j]-γdt*J[i,j]
-      end
-    else
-      new_W = false
-    end
-  end
+  new_W = calc_W!(integrator, cache, γdt, repeat_step, true)
 
   # FSAL Step 1
   @. z₁ = dt*integrator.fsalfirst
@@ -670,33 +644,7 @@ end
 
   γdt = γ*dt
 
-  if has_invW(f)
-    # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW},W,uprev,p,γdt,t) # W == inverse W
-  else
-    # skip calculation of J if step is repeated
-    if repeat_step || (!integrator.last_stepfail && cache.newton_iters == 1 && cache.ηold < integrator.alg.new_jac_conv_bound)
-      new_jac = false
-    else # Compute a new Jacobian
-      new_jac = true
-      if has_jac(f)
-        f(Val{:jac}, J, uprev, p, t)
-      else
-        uf.t = t
-        jacobian!(J, uf, uprev, du1, integrator, jac_config)
-      end
-    end
-    # skip calculation of W if step is repeated
-    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t)))
-      new_W = true
-      mass_matrix = integrator.sol.prob.mass_matrix
-      for j in 1:length(u), i in 1:length(u)
-          @inbounds W[i,j] = mass_matrix[i,j]-γdt*J[i,j]
-      end
-    else
-      new_W = false
-    end
-  end
+  new_W = calc_W!(integrator, cache, γdt, repeat_step, true)
 
   if typeof(integrator.f) <: SplitFunction
     # Explicit tableau is not FSAL
@@ -1188,34 +1136,7 @@ end
 
   γdt = γ*dt
 
-  # calculate W
-  if has_invW(f)
-    # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW},W,uprev,p,γdt,t) # W == inverse W
-  else
-    # skip calculation of J if step is repeated
-    if repeat_step || (!integrator.last_stepfail && cache.newton_iters == 1 && cache.ηold < integrator.alg.new_jac_conv_bound)
-      new_jac = false
-    else # Compute a new Jacobian
-      new_jac = true
-      if has_jac(f)
-        f(Val{:jac}, J, uprev, p, t)
-      else
-        uf.t = t
-        jacobian!(J, uf, uprev, du1, integrator, jac_config)
-      end
-    end
-    # skip calculation of W if step is repeated
-    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t)))
-      new_W = true
-      mass_matrix = integrator.sol.prob.mass_matrix
-      for j in 1:length(u), i in 1:length(u)
-          @inbounds W[i,j] = mass_matrix[i,j]-γdt*J[i,j]
-      end
-    else
-      new_W = false
-    end
-  end
+  new_W = calc_W!(integrator, cache, γdt, repeat_step, true)
 
   ##### Step 1
 
@@ -1822,34 +1743,7 @@ end
 
   γdt = γ*dt
 
-  # calculate W
-  if has_invW(f)
-    # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW},W,uprev,p,γdt,t) # W == inverse W
-  else
-    # skip calculation of J if step is repeated
-    if repeat_step || (!integrator.last_stepfail && cache.newton_iters == 1 && cache.ηold < integrator.alg.new_jac_conv_bound)
-      new_jac = false
-    else # Compute a new Jacobian
-      new_jac = true
-      if has_jac(f)
-        f(Val{:jac}, J, uprev, p, t)
-      else
-        uf.t = t
-        jacobian!(J, uf, uprev, du1, integrator, jac_config)
-      end
-    end
-    # skip calculation of W if step is repeated
-    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t)))
-      new_W = true
-      mass_matrix = integrator.sol.prob.mass_matrix
-      for j in 1:length(u), i in 1:length(u)
-          @inbounds W[i,j] = mass_matrix[i,j]-γdt*J[i,j]
-      end
-    else
-      new_W = false
-    end
-  end
+  new_W = calc_W!(integrator, cache, γdt, repeat_step, true)
 
   ##### Step 1
 
@@ -2558,34 +2452,7 @@ end
 
   γdt = γ*dt
 
-  # calculate W
-  if has_invW(f)
-    # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW},W,uprev,p,γdt,t) # W == inverse W
-  else
-    # skip calculation of J if step is repeated
-    if repeat_step || (!integrator.last_stepfail && cache.newton_iters == 1 && cache.ηold < integrator.alg.new_jac_conv_bound)
-      new_jac = false
-    else # Compute a new Jacobian
-      new_jac = true
-      if has_jac(f)
-        f(Val{:jac}, J, uprev, p, t)
-      else
-        uf.t = t
-        jacobian!(J, uf, uprev, du1, integrator, jac_config)
-      end
-    end
-    # skip calculation of W if step is repeated
-    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t)))
-      new_W = true
-      mass_matrix = integrator.sol.prob.mass_matrix
-      for j in 1:length(u), i in 1:length(u)
-          @inbounds W[i,j] = mass_matrix[i,j]-γdt*J[i,j]
-      end
-    else
-      new_W = false
-    end
-  end
+  new_W = calc_W!(integrator, cache, γdt, repeat_step, true)
 
   ##### Step 1
 
@@ -3406,34 +3273,7 @@ end
 
   γdt = γ*dt
 
-  # calculate W
-  if has_invW(f)
-    # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW},W,uprev,p,γdt,t) # W == inverse W
-  else
-    # skip calculation of J if step is repeated
-    if repeat_step || (!integrator.last_stepfail && cache.newton_iters == 1 && cache.ηold < integrator.alg.new_jac_conv_bound)
-      new_jac = false
-    else # Compute a new Jacobian
-      new_jac = true
-      if has_jac(f)
-        f(Val{:jac}, J, uprev, p, t)
-      else
-        uf.t = t
-        jacobian!(J, uf, uprev, du1, integrator, jac_config)
-      end
-    end
-    # skip calculation of W if step is repeated
-    if !repeat_step && (integrator.iter < 1 || new_jac || abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t)))
-      new_W = true
-      mass_matrix = integrator.sol.prob.mass_matrix
-      for j in 1:length(u), i in 1:length(u)
-          @inbounds W[i,j] = mass_matrix[i,j]-γdt*J[i,j]
-      end
-    else
-      new_W = false
-    end
-  end
+  new_W = calc_W!(integrator, cache, γdt, repeat_step, true)
 
   ##### Step 1
 

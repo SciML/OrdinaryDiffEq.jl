@@ -32,11 +32,11 @@ function calc_J(integrator, cache, is_compos)
     end
 end
 
-function calc_W!(integrator, cache, dtgamma, repeat_step, linsol=false, W_transform=false)
+function calc_W!(integrator, cache, dtgamma, repeat_step, check_newW=false, linsol=false, W_transform=false)
   @inbounds begin
-    @unpack t,dt,uprev,u,f,p = integrator
-    @unpack fsalfirst,dT,J,W,jac_config = cache
-    @unpack linsolve_tmp_vec, vectmp = cache
+    @unpack t,dt,uprev,u,f,p,alg = integrator
+    @unpack J,W,jac_config = cache
+    linsol && @unpack linsolve_tmp_vec, vectmp = cache
     mass_matrix = integrator.sol.prob.mass_matrix
     is_compos = typeof(integrator.alg) <: CompositeAlgorithm
 
@@ -49,9 +49,20 @@ function calc_W!(integrator, cache, dtgamma, repeat_step, linsol=false, W_transf
 
       linsol && A_mul_B!(vectmp, W, linsolve_tmp_vec)
     else
-      if !repeat_step # skip calculation of J and W if step is repeated
+      # skip calculation of J if step is repeated
+      if repeat_step || (alg_can_repeat_jac(alg) &&
+                         (!integrator.last_stepfail && cache.newton_iters == 1 &&
+                          cache.ηold < integrator.alg.new_jac_conv_bound))
+        new_jac = false
+      else
+        new_jac = true
         calc_J(integrator, cache, is_compos)
-
+      end
+      # skip calculation of W if step is repeated
+      if !repeat_step && (!alg_can_repeat_jac(alg) ||
+                          (integrator.iter < 1 || new_jac ||
+                           abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t))))
+        new_W = true
         if W_transform
           for j in 1:length(u), i in 1:length(u)
               W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
@@ -61,15 +72,17 @@ function calc_W!(integrator, cache, dtgamma, repeat_step, linsol=false, W_transf
               W[i,j] = mass_matrix[i,j] - dtgamma*J[i,j]
           end
         end
-
+      else
+        new_W = false
       end
       # use existing factorization of W if step is repeated
       linsol && cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
     end
+    return check_newW ? new_W : nothing
   end
 end
 
 function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, W_transform)
   calc_tderivative!(integrator, cache, dtd1, repeat_step)
-  calc_W!(integrator, cache, dtgamma, repeat_step, true, W_transform)
+  calc_W!(integrator, cache, dtgamma, repeat_step, false, true, W_transform)
 end
