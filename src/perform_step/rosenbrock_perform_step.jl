@@ -24,6 +24,12 @@ end
 
   calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
 
+  if has_invW(f)
+    A_mul_B!(vectmp, W, linsolve_tmp_vec)
+  else
+    cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
+  end
+
   recursivecopy!(k₁, reshape(vectmp, size(u)...))
   @. u = uprev + dto2*k₁
   f(f₁,u,p,t+dto2)
@@ -97,6 +103,12 @@ end
   dto6 = dt/6
 
   calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
+
+  if has_invW(f)
+    A_mul_B!(vectmp, W, linsolve_tmp_vec)
+  else
+    cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
+  end
 
   recursivecopy!(k₁, reshape(vectmp, sizeu...))
   @. u = uprev + dto2*k₁
@@ -363,6 +375,12 @@ end
 
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
+  if has_invW(f)
+    A_mul_B!(vectmp, W, linsolve_tmp_vec)
+  else
+    cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
+  end
+
   k1 = reshape(vectmp, sizeu...)
   @. u = uprev + a21*k1
   f( du,  u, p, t+c2*dt)
@@ -527,6 +545,12 @@ end
   dtgamma = dt*gamma
 
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
+
+  if has_invW(f)
+    A_mul_B!(vectmp, W, linsolve_tmp_vec)
+  else
+    cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
+  end
 
   k1 = reshape(vectmp, sizeu...)
 
@@ -717,6 +741,12 @@ end
   dtgamma = dt*gamma
 
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
+
+  if has_invW(f)
+    A_mul_B!(vectmp, W, linsolve_tmp_vec)
+  else
+    cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
+  end
 
   k1 = reshape(vectmp, sizeu...)
   @. u = uprev + a21*k1
@@ -930,6 +960,12 @@ end
   dtgamma = dt*gamma
 
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
+
+  if has_invW(f)
+    A_mul_B!(vectmp, W, linsolve_tmp_vec)
+  else
+    cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
+  end
 
   k1 = reshape(vectmp, sizeu...)
   @. u = uprev + a21*k1
@@ -1249,6 +1285,12 @@ end
   dtgamma = dt*gamma
 
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
+
+  if has_invW(f)
+    A_mul_B!(vectmp, W, linsolve_tmp_vec)
+  else
+    cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
+  end
 
   k1 = reshape(vectmp, sizeu...)
   @. u = uprev + a21*k1

@@ -32,11 +32,10 @@ function calc_J(integrator, cache, is_compos)
     end
 end
 
-function calc_W!(integrator, cache, dtgamma, repeat_step, check_newW=false, linsol=false, W_transform=false)
+function calc_W!(integrator, cache, dtgamma, repeat_step, check_newW=false, W_transform=false)
   @inbounds begin
     @unpack t,dt,uprev,u,f,p,alg = integrator
     @unpack J,W,jac_config = cache
-    linsol && @unpack linsolve_tmp_vec, vectmp = cache
     mass_matrix = integrator.sol.prob.mass_matrix
     is_compos = typeof(integrator.alg) <: CompositeAlgorithm
 
@@ -47,7 +46,6 @@ function calc_W!(integrator, cache, dtgamma, repeat_step, check_newW=false, lins
                                     f(Val{:invW}, W, uprev, p, dtgamma, t) # W == inverse W
       is_compos && calc_J(integrator, cache, true)
 
-      linsol && A_mul_B!(vectmp, W, linsolve_tmp_vec)
     else
       # skip calculation of J if step is repeated
       if repeat_step || (alg_can_repeat_jac(alg) &&
@@ -75,8 +73,6 @@ function calc_W!(integrator, cache, dtgamma, repeat_step, check_newW=false, lins
       else
         new_W = false
       end
-      # use existing factorization of W if step is repeated
-      linsol && cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
     end
     return check_newW ? new_W : nothing
   end
@@ -84,5 +80,5 @@ end
 
 function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, W_transform)
   calc_tderivative!(integrator, cache, dtd1, repeat_step)
-  calc_W!(integrator, cache, dtgamma, repeat_step, false, true, W_transform)
+  calc_W!(integrator, cache, dtgamma, repeat_step, false, W_transform)
 end
