@@ -11,17 +11,18 @@ end
 @muladd function perform_step!(integrator, cache::Rosenbrock23Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
-  @unpack c₃₂,d1 = cache.tab
+  @unpack c₃₂,d = cache.tab
 
   # Assignments
   sizeu  = size(u)
   mass_matrix = integrator.sol.prob.mass_matrix
 
   # Precalculations
+  γ = dt*d
   dto2 = dt/2
   dto6 = dt/6
 
-  calc_differentiation!(integrator, cache, repeat_step, true)
+  calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
 
   recursivecopy!(k₁, reshape(vectmp, size(u)...))
   @. u = uprev + dto2*k₁
@@ -84,17 +85,18 @@ end
 @muladd function perform_step!(integrator, cache::Rosenbrock32Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
-  @unpack c₃₂,d1 = cache.tab
+  @unpack c₃₂,d = cache.tab
 
   # Assignments
   sizeu  = size(u)
   mass_matrix = integrator.sol.prob.mass_matrix
 
   # Precalculations
+  γ = dt*d
   dto2 = dt/2
   dto6 = dt/6
 
-  calc_differentiation!(integrator, cache, repeat_step, true)
+  calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
 
   recursivecopy!(k₁, reshape(vectmp, sizeu...))
   @. u = uprev + dto2*k₁
@@ -157,10 +159,10 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock23ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack c₃₂,d1,tf,uf = cache
+  @unpack c₃₂,d,tf,uf = cache
 
   # Precalculations
-  γ = dt*d1
+  γ = dt*d
   dto2 = dt/2
   dto6 = dt/6
 
@@ -212,10 +214,10 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock32ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack c₃₂,d1,tf,uf = cache
+  @unpack c₃₂,d,tf,uf = cache
 
   # Precalculations
-  γ = dt*d1
+  γ = dt*d
   dto2 = dt/2
   dto6 = dt/6
 
@@ -357,8 +359,9 @@ end
   dtd1 = dt*d1
   dtd2 = dt*d2
   dtd3 = dt*d3
+  dtgamma = dt*gamma
 
-  calc_differentiation!(integrator, cache, repeat_step)
+  calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
   k1 = reshape(vectmp, sizeu...)
   @. u = uprev + a21*k1
@@ -521,8 +524,9 @@ end
   dtd2 = dt*d2
   dtd3 = dt*d3
   dtd4 = dt*d4
+  dtgamma = dt*gamma
 
-  calc_differentiation!(integrator, cache, repeat_step)
+  calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
   k1 = reshape(vectmp, sizeu...)
 
@@ -710,8 +714,9 @@ end
   dtd2 = dt*d2
   dtd3 = dt*d3
   dtd4 = dt*d4
+  dtgamma = dt*gamma
 
-  calc_differentiation!(integrator, cache, repeat_step)
+  calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
   k1 = reshape(vectmp, sizeu...)
   @. u = uprev + a21*k1
@@ -922,8 +927,9 @@ end
   dtd2 = dt*d2
   dtd3 = dt*d3
   dtd4 = dt*d4
+  dtgamma = dt*gamma
 
-  calc_differentiation!(integrator, cache, repeat_step)
+  calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
   k1 = reshape(vectmp, sizeu...)
   @. u = uprev + a21*k1
@@ -1240,8 +1246,9 @@ end
   dtd3 = dt*d3
   dtd4 = dt*d4
   dtd5 = dt*d5
+  dtgamma = dt*gamma
 
-  calc_differentiation!(integrator, cache, repeat_step)
+  calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
   k1 = reshape(vectmp, sizeu...)
   @. u = uprev + a21*k1

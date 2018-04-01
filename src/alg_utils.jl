@@ -267,3 +267,6 @@ ssp_coefficient(alg::SSPSDIRK2) = 4
 # stability regions
 alg_stability_size(alg::DP5) = 3.3066
 alg_stability_size(alg::Tsit5) = 3.5068
+
+alg_can_repeat_jac(alg::OrdinaryDiffEqAlgorithm) = false
+alg_can_repeat_jac(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = true
