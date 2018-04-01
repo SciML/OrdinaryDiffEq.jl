@@ -22,39 +22,11 @@ end
   dto2 = dt/2
   dto6 = dt/6
 
-  # Time derivative
-  if !repeat_step # skip calculation if step is repeated
-    if has_tgrad(f)
-      f(Val{:tgrad}, dT, uprev, p, t)
-    else
-      tf.uprev = uprev
-      derivative!(dT, tf, t, du2, integrator)
-    end
-  end
+  calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
 
-  @. linsolve_tmp = fsalfirst + γ*dT
-
-  # Jacobian
   if has_invW(f)
-    # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW}, W, uprev, p, γ, t) # W == inverse W
-
     A_mul_B!(vectmp, W, linsolve_tmp_vec)
   else
-    if !repeat_step # skip calculation of J and W if step is repeated
-      if has_jac(f)
-        f(Val{:jac}, J, uprev, p, t)
-      else
-
-        uf.t = t
-        jacobian!(J, uf, uprev, du1, integrator, jac_config)
-      end
-      for j in 1:length(u), i in 1:length(u)
-          @inbounds W[i,j] = mass_matrix[i,j] - γ*J[i,j]
-      end
-    end
-
-    # use existing factorization of W if step is repeated
     cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
   end
 
@@ -130,37 +102,11 @@ end
   dto2 = dt/2
   dto6 = dt/6
 
-  # Time derivative
-  if !repeat_step # skip calculation if step is repeated
-    if has_tgrad(f)
-      f(Val{:tgrad}, dT, uprev, p, t)
-    else
-
-      tf.uprev = uprev
-      derivative!(dT, tf, t, du2, integrator)
-    end
-  end
-
-  @. linsolve_tmp = fsalfirst + γ*dT
+  calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
 
   if has_invW(f)
-    # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW}, W, uprev, p, γ, t) # W == inverse W
     A_mul_B!(vectmp, W, linsolve_tmp_vec)
   else
-    if !repeat_step # skip calculation of J and W if step is repeated
-      if has_jac(f)
-        f(Val{:jac}, J, uprev, p, t)
-      else
-        uf.t = t
-        jacobian!(J, uf, uprev, du1, integrator, jac_config)
-      end
-      for j in 1:length(u), i in 1:length(u)
-        @inbounds W[i,j] = mass_matrix[i,j] - γ*J[i,j]
-      end
-    end
-
-    # use existing factorization of W if step is repeated
     cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
   end
 
@@ -427,40 +373,11 @@ end
   dtd3 = dt*d3
   dtgamma = dt*gamma
 
-  # Time derivative
-  if !repeat_step # skip calculation if step is repeated
-    if has_tgrad(f)
-      f(Val{:tgrad}, dT, uprev, p, t)
-    else
+  calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
-      tf.uprev = uprev
-      derivative!(dT, tf, t, du2, integrator)
-    end
-  end
-
-  @. linsolve_tmp = fsalfirst + dtd1*dT
-
-  # Jacobian
   if has_invW(f)
-    # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW_t}, W, uprev, p, dtgamma, t) # W == inverse W
-
     A_mul_B!(vectmp, W, linsolve_tmp_vec)
   else
-    if !repeat_step # skip calculation of J and W if step is repeated
-      if has_jac(f)
-        f(Val{:jac}, J, uprev, p, t)
-      else
-
-        uf.t = t
-        jacobian!(J, uf, uprev, du1, integrator, jac_config)
-      end
-      for j in 1:length(u), i in 1:length(u)
-          @inbounds W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
-      end
-    end
-
-    # use existing factorization of W if step is repeated
     cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
   end
 
@@ -627,39 +544,11 @@ end
   dtd4 = dt*d4
   dtgamma = dt*gamma
 
-  # Time derivative
-  if !repeat_step # skip calculation if step is repeated
-    if has_tgrad(f)
-      f(Val{:tgrad}, dT, uprev, p, t)
-    else
-
-      tf.uprev = uprev
-      derivative!(dT, tf, t, du2, integrator)
-    end
-  end
-
-  @. linsolve_tmp = fsalfirst + dtd1*dT
+  calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
   if has_invW(f)
-    # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW_t}, W, uprev, p, dtgamma, t) # W == inverse W
-
     A_mul_B!(vectmp, W, linsolve_tmp_vec)
   else
-    if !repeat_step # skip calculation of J and W if step is repeated
-      if has_jac(f)
-        f(Val{:jac}, J, uprev, p, t)
-      else
-
-        uf.t = t
-        jacobian!(J, uf, uprev, du1, integrator, jac_config)
-      end
-      for j in 1:length(u), i in 1:length(u)
-          @inbounds W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
-      end
-    end
-
-    # use existing factorization of W if step is repeated
     cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
   end
 
@@ -851,40 +740,11 @@ end
   dtd4 = dt*d4
   dtgamma = dt*gamma
 
-  # Time derivative
-  if !repeat_step # skip calculation if step is repeated
-    if has_tgrad(f)
-      f(Val{:tgrad}, dT, uprev, p, t)
-    else
+  calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
-      tf.uprev = uprev
-      derivative!(dT, tf, t, du2, integrator)
-    end
-  end
-
-  @. linsolve_tmp = fsalfirst + dtd1*dT
-
-  # Jacobian
   if has_invW(f)
-    # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW_t}, W, uprev, p, dtgamma, t) # W == inverse W
-
     A_mul_B!(vectmp, W, linsolve_tmp_vec)
   else
-    if !repeat_step # skip calculation of J and W if step is repeated
-      if has_jac(f)
-        f(Val{:jac}, J, uprev, p, t)
-      else
-
-        uf.t = t
-        jacobian!(J, uf, uprev, du1, integrator, jac_config)
-      end
-      for j in 1:length(u), i in 1:length(u)
-          @inbounds W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
-      end
-    end
-
-    # use existing factorization of W if step is repeated
     cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
   end
 
@@ -1099,41 +959,11 @@ end
   dtd4 = dt*d4
   dtgamma = dt*gamma
 
-  # Time derivative
-  if !repeat_step # skip calculation if step is repeated
-    if has_tgrad(f)
-      f(Val{:tgrad}, dT, uprev, p, t)
-    else
-      tf.uprev = uprev
-      derivative!(dT, tf, t, du2, integrator)
-    end
-  end
+  calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
-  f( du,  uprev, p, t)
-
-  @. linsolve_tmp = du + dtd1*dT
-
-  # Jacobian
   if has_invW(f)
-    # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW_t}, W, uprev, p, dtgamma, t) # W == inverse W
-
     A_mul_B!(vectmp, W, linsolve_tmp_vec)
   else
-    if !repeat_step # skip calculation of J and W if step is repeated
-      if has_jac(f)
-        f(Val{:jac}, J, uprev, p, t)
-      else
-
-        uf.t = t
-        jacobian!(J, uf, uprev, du1, integrator, jac_config)
-      end
-      for j in 1:length(u), i in 1:length(u)
-          @inbounds W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
-      end
-    end
-
-    # use existing factorization of W if step is repeated
     cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
   end
 
@@ -1454,52 +1284,11 @@ end
   dtd5 = dt*d5
   dtgamma = dt*gamma
 
-  # Time derivative
-  if !repeat_step # skip calculation if step is repeated
-    if has_tgrad(f)
-      f(Val{:tgrad}, dT, uprev, p, t)
-    else
-      tf.uprev = uprev
-      derivative!(dT, tf, t, du2, integrator)
-    end
-  end
+  calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
-  f( fsalfirst,  uprev, p, t)
-
-  @. linsolve_tmp = fsalfirst + dtd1*dT
-
-  # Jacobian
   if has_invW(f)
-    # skip calculation of inv(W) if step is repeated
-    !repeat_step && f(Val{:invW_t}, W, uprev, p, dtgamma, t) # W == inverse W
-    if typeof(integrator.alg) <: CompositeAlgorithm
-      if has_jac(f)
-        f(Val{:jac}, J, uprev, p, t)
-      else
-        uf.t = t
-        jacobian!(J, uf, uprev, du1, integrator, jac_config)
-      end
-      integrator.eigen_est = norm(J, Inf)
-    end
-
     A_mul_B!(vectmp, W, linsolve_tmp_vec)
   else
-    if !repeat_step # skip calculation of J and W if step is repeated
-      if has_jac(f)
-        f(Val{:jac}, J, uprev, p, t)
-      else
-        uf.t = t
-        jacobian!(J, uf, uprev, du1, integrator, jac_config)
-      end
-      if typeof(integrator.alg) <: CompositeAlgorithm
-        integrator.eigen_est = norm(J, Inf)
-      end
-      for j in 1:length(u), i in 1:length(u)
-          @inbounds W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
-      end
-    end
-
-    # use existing factorization of W if step is repeated
     cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
   end
 
