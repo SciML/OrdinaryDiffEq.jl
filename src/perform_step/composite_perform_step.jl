@@ -51,6 +51,7 @@ function choose_algorithm!(integrator,cache::CompositeCache)
     reset_alg_dependent_opts!(integrator,integrator.alg.algs[cache.current],integrator.alg.algs[new_current])
     transfer_cache!(integrator,integrator.cache.caches[cache.current],integrator.cache.caches[new_current])
     cache.current = new_current
+    integrator.alg.current_alg = new_current
   end
 end
 
