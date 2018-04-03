@@ -42,10 +42,12 @@ qmax_default(alg::DP8) = 6
 get_chunksize(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have a chunk size defined.")
 get_chunksize{CS,AD}(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) = CS
 get_chunksize{CS,AD}(alg::OrdinaryDiffEqImplicitAlgorithm{CS,AD}) = CS
+get_chunksize(alg::CompositeAlgorithm) = get_chunksize(alg.algs[alg.current_alg])
 
 alg_autodiff(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have an autodifferentiation option defined.")
 alg_autodiff{CS,AD}(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) = AD
 alg_autodiff{CS,AD}(alg::OrdinaryDiffEqImplicitAlgorithm{CS,AD}) = AD
+alg_autodiff(alg::CompositeAlgorithm) = alg_autodiff(alg.algs[alg.current_alg])
 
 alg_extrapolates(alg::OrdinaryDiffEqAlgorithm) = false
 alg_extrapolates(alg::GenericImplicitEuler) = true

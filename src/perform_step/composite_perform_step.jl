@@ -47,6 +47,7 @@ choose_algorithm!(integrator,cache::OrdinaryDiffEqCache) = nothing
 function choose_algorithm!(integrator,cache::CompositeCache)
   new_current = cache.choice_function(integrator)
   if new_current != cache.current
+    integrator.alg.current_alg = new_current
     initialize!(integrator,cache.caches[new_current])
     reset_alg_dependent_opts!(integrator,integrator.alg.algs[cache.current],integrator.alg.algs[new_current])
     transfer_cache!(integrator,integrator.cache.caches[cache.current],integrator.cache.caches[new_current])
