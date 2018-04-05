@@ -167,5 +167,5 @@ module OrdinaryDiffEq
 
   export AB3, AB4, AB5, ABM32, ABM43, ABM54
 
-  export AutoSwitch, AutoRodas5
+  export AutoSwitch, AutoTsit5, AutoDP5
 end # module
