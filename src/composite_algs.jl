@@ -10,7 +10,7 @@ mutable struct AutoSwitch{nAlg,sAlg,tolType,T}
   stiffalgfirst::Bool
 end
 AutoSwitch(nonstiffalg::nAlg, stiffalg::sAlg;
-           maxstiffstep=15, maxnonstiffstep=15, tol::T=11//10,
+           maxstiffstep=15, maxnonstiffstep=15, tol::T=(11//10, 1//10),
            dtfac = 2.0, stiffalgfirst=false) where {nAlg,sAlg,T} =
            AutoSwitch(0, nonstiffalg, stiffalg, stiffalgfirst,
                       maxstiffstep, maxnonstiffstep, tol, dtfac,
@@ -18,7 +18,7 @@ AutoSwitch(nonstiffalg::nAlg, stiffalg::sAlg;
 
 function is_stiff(eigen_est, dt, alg, tol)
   stiffness = eigen_est*dt/alg_stability_size(alg)
-  stiffness < oneunit(stiffness) * tol
+  stiffness > oneunit(stiffness) * tol[1] || stiffness < oneunit(stiffness) * tol[2]
 end
 
 function (AS::AutoSwitch)(integrator)
