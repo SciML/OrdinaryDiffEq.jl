@@ -45,5 +45,5 @@ function AutoAlgSwitch(nonstiffalg, stiffalg; stiffalgfirst=false, kwargs...)
                   CompositeAlgorithm((nonstiffalg, stiffalg), AS)
 end
 
-AutoTsit5(alg) = AutoAlgSwitch(Tsit5(), alg)
-AutoDP5(alg) = AutoAlgSwitch(DP5(), alg)
+AutoTsit5(alg; kwargs...) = AutoAlgSwitch(Tsit5(), alg; kwargs...)
+AutoDP5(alg; kwargs...) = AutoAlgSwitch(DP5(), alg; kwargs...)
