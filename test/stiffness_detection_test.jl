@@ -14,3 +14,16 @@ sol = solve(prob, AutoDP5(Rodas5(); maxstiffstep=2, maxnonstiffstep=2,
                           reltol=1e-5, abstol=1e-5)
 @test length(sol.t) < 610
 @test is_switching_fb(sol)
+
+sol = solve(prob,AutoVern6(Rosenbrock23(); maxstiffstep=4, maxnonstiffstep=4))
+@test length(sol.t) < 600
+@test is_switching_fb(sol)
+sol = solve(prob,AutoVern7(Rosenbrock23(); maxstiffstep=4, maxnonstiffstep=4))
+@test length(sol.t) < 600
+@test is_switching_fb(sol)
+sol = solve(prob,AutoVern8(Rosenbrock23(); maxstiffstep=4, maxnonstiffstep=4))
+@test length(sol.t) < 600
+@test is_switching_fb(sol)
+sol = solve(prob,AutoVern9(Rosenbrock23(); maxstiffstep=4, maxnonstiffstep=4))
+@test length(sol.t) < 600
+@test is_switching_fb(sol)

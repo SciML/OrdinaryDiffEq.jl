@@ -23,9 +23,16 @@ end
   k5 = f(uprev+dt*(a51*k1       +a53*k3+a54*k4), p, t + c4*dt)
   k6 = f(uprev+dt*(a61*k1       +a63*k3+a64*k4+a65*k5), p, t + c5*dt)
   k7 = f(uprev+dt*(a71*k1       +a73*k3+a74*k4+a75*k5+a76*k6), p, t + c6*dt)
-  k8 = f(uprev+dt*(a81*k1       +a83*k3+a84*k4+a85*k5+a86*k6+a87*k7), p, t+dt)
+  g8 =   uprev+dt*(a81*k1       +a83*k3+a84*k4+a85*k5+a86*k6+a87*k7)
+  k8 = f(g8, p, t+dt)
   u = uprev+dt*(a91*k1              +a94*k4+a95*k5+a96*k6+a97*k7+a98*k8)
   integrator.fsallast = f(u, p, t+dt); k9 = integrator.fsallast
+  if typeof(integrator.alg) <: CompositeAlgorithm
+    k9 = u
+    ϱu = integrator.opts.internalnorm(k9 - k8)
+    ϱd = integrator.opts.internalnorm(k9 - g8)
+    integrator.eigen_est = ϱu/ϱd
+  end
   if integrator.opts.adaptive
     utilde = dt*(btilde1*k1 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9)
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
@@ -118,6 +125,15 @@ end
     @inbounds u[i] = uprev[i]+dt*(a91*k1[i]+a94*k4[i]+a95*k5[i]+a96*k6[i]+a97*k7[i]+a98*k8[i])
   end
   f(k9, u, p, t+dt)
+  if typeof(integrator.alg) <: CompositeAlgorithm
+    g9 = u
+    g8 = tmp
+    @. utilde = k9 - k8
+    ϱu = integrator.opts.internalnorm(utilde)
+    @. utilde = g9 - g8
+    ϱd = integrator.opts.internalnorm(utilde)
+    integrator.eigen_est = ϱu/ϱd
+  end
   if integrator.opts.adaptive
     @tight_loop_macros for i in uidx
       @inbounds utilde[i] = dt*(btilde1*k1[i] + btilde4*k4[i] + btilde5*k5[i] + btilde6*k6[i] + btilde7*k7[i] + btilde8*k8[i] + btilde9*k9[i])
@@ -149,9 +165,16 @@ end
   k6 = f(uprev+dt*(a061*k1       +a063*k3+a064*k4+a065*k5), p, t + c6*dt)
   k7 = f(uprev+dt*(a071*k1       +a073*k3+a074*k4+a075*k5+a076*k6), p, t + c7*dt)
   k8 = f(uprev+dt*(a081*k1       +a083*k3+a084*k4+a085*k5+a086*k6+a087*k7), p, t + c8*dt)
-  k9 = f(uprev+dt*(a091*k1          +a093*k3+a094*k4+a095*k5+a096*k6+a097*k7+a098*k8), p, t+dt)
-  k10= f(uprev+dt*(a101*k1          +a103*k3+a104*k4+a105*k5+a106*k6+a107*k7), p, t+dt)
+  g9 =   uprev+dt*(a091*k1          +a093*k3+a094*k4+a095*k5+a096*k6+a097*k7+a098*k8)
+  g10 =  uprev+dt*(a101*k1          +a103*k3+a104*k4+a105*k5+a106*k6+a107*k7)
+  k9 = f(g9, p, t+dt)
+  k10= f(g10, p, t+dt)
   u = uprev + dt*(b1*k1 + b4*k4 + b5*k5 + b6*k6 + b7*k7 + b8*k8 + b9*k9)
+  if typeof(integrator.alg) <: CompositeAlgorithm
+    ϱu = integrator.opts.internalnorm(k10 - k9)
+    ϱd = integrator.opts.internalnorm(g10 - g9)
+    integrator.eigen_est = ϱu/ϱd
+  end
   if integrator.opts.adaptive
     utilde = dt*(btilde1*k1 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9 + btilde10*k10)
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
@@ -253,6 +276,15 @@ end
   @tight_loop_macros for i in uidx
     @inbounds u[i] = uprev[i] + dt*(b1*k1[i] + b4*k4[i] + b5*k5[i] + b6*k6[i] + b7*k7[i] + b8*k8[i] + b9*k9[i])
   end
+  if typeof(integrator.alg) <: CompositeAlgorithm
+    g10 = u
+    g9 = tmp
+    @. utilde = k10 - k9
+    ϱu = integrator.opts.internalnorm(utilde)
+    @. utilde = g10 - g9
+    ϱd = integrator.opts.internalnorm(utilde)
+    integrator.eigen_est = ϱu/ϱd
+  end
   if integrator.opts.adaptive
     @tight_loop_macros for i in uidx
       @inbounds utilde[i] = dt*(btilde1*k1[i] + btilde4*k4[i] + btilde5*k5[i] + btilde6*k6[i] + btilde7*k7[i] + btilde8*k8[i] + btilde9*k9[i] + btilde10*k10[i])
@@ -287,9 +319,16 @@ end
   k9 = f(uprev+dt*(a0901*k1                +a0904*k4+a0905*k5+a0906*k6+a0907*k7+a0908*k8), p, t + c9*dt)
   k10= f(uprev+dt*(a1001*k1                +a1004*k4+a1005*k5+a1006*k6+a1007*k7+a1008*k8+a1009*k9), p, t + c10*dt)
   k11= f(uprev+dt*(a1101*k1                +a1104*k4+a1105*k5+a1106*k6+a1107*k7+a1108*k8+a1109*k9+a1110*k10), p, t + c11*dt)
-  k12= f(uprev+dt*(a1201*k1                +a1204*k4+a1205*k5+a1206*k6+a1207*k7+a1208*k8+a1209*k9+a1210*k10+a1211*k11), p, t+    dt)
-  k13= f(uprev+dt*(a1301*k1                +a1304*k4+a1305*k5+a1306*k6+a1307*k7+a1308*k8+a1309*k9+a1310*k10), p, t+    dt)
+  g12=  uprev+dt*(a1201*k1                +a1204*k4+a1205*k5+a1206*k6+a1207*k7+a1208*k8+a1209*k9+a1210*k10+a1211*k11)
+  g13=  uprev+dt*(a1301*k1                +a1304*k4+a1305*k5+a1306*k6+a1307*k7+a1308*k8+a1309*k9+a1310*k10)
+  k12= f(g12, p, t+dt)
+  k13= f(g13, p, t+dt)
   u = uprev + dt*(b1*k1 + b6*k6 + b7*k7 + b8*k8 + b9*k9 + b10*k10 + b11*k11 + b12*k12)
+  if typeof(integrator.alg) <: CompositeAlgorithm
+    ϱu = integrator.opts.internalnorm(k13 - k12)
+    ϱd = integrator.opts.internalnorm(g13 - g12)
+    integrator.eigen_est = ϱu/ϱd
+  end
   if integrator.opts.adaptive
     utilde = dt*(btilde1*k1 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9 + btilde10*k10 + btilde11*k11 + btilde12*k12 + btilde13*k13)
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
@@ -411,6 +450,15 @@ end
   @tight_loop_macros for i in uidx
     @inbounds u[i] = uprev[i] + dt*(b1*k1[i] + b6*k6[i] + b7*k7[i] + b8*k8[i] + b9*k9[i] + b10*k10[i] + b11*k11[i] + b12*k12[i])
   end
+  if typeof(integrator.alg) <: CompositeAlgorithm
+    g13 = u
+    g12 = tmp
+    @. utilde = k13 - k12
+    ϱu = integrator.opts.internalnorm(utilde)
+    @. utilde = g13 - g12
+    ϱd = integrator.opts.internalnorm(utilde)
+    integrator.eigen_est = ϱu/ϱd
+  end
   if integrator.opts.adaptive
     @tight_loop_macros for i in uidx
       @inbounds utilde[i] = dt*(btilde1*k1[i] + btilde6*k6[i] + btilde7*k7[i] + btilde8*k8[i] + btilde9*k9[i] + btilde10*k10[i] + btilde11*k11[i] + btilde12*k12[i] + btilde13*k13[i])
@@ -448,9 +496,16 @@ end
   k12= f(uprev+dt*(a1201*k1                                  +a1206*k6+a1207*k7+a1208*k8+a1209*k9+a1210*k10+a1211*k11), p, t + c11*dt)
   k13= f(uprev+dt*(a1301*k1                                  +a1306*k6+a1307*k7+a1308*k8+a1309*k9+a1310*k10+a1311*k11+a1312*k12), p, t + c12*dt)
   k14= f(uprev+dt*(a1401*k1                                  +a1406*k6+a1407*k7+a1408*k8+a1409*k9+a1410*k10+a1411*k11+a1412*k12+a1413*k13), p, t + c13*dt)
-  k15= f(uprev+dt*(a1501*k1                                  +a1506*k6+a1507*k7+a1508*k8+a1509*k9+a1510*k10+a1511*k11+a1512*k12+a1513*k13+a1514*k14), p, t+dt)
-  k16= f(uprev+dt*(a1601*k1                                  +a1606*k6+a1607*k7+a1608*k8+a1609*k9+a1610*k10+a1611*k11+a1612*k12+a1613*k13), p, t+dt)
+  g15=   uprev+dt*(a1501*k1                                  +a1506*k6+a1507*k7+a1508*k8+a1509*k9+a1510*k10+a1511*k11+a1512*k12+a1513*k13+a1514*k14)
+  g16=   uprev+dt*(a1601*k1                                  +a1606*k6+a1607*k7+a1608*k8+a1609*k9+a1610*k10+a1611*k11+a1612*k12+a1613*k13)
+  k15= f(g15, p, t+dt)
+  k16= f(g16, p, t+dt)
   u = uprev + dt*(b1*k1+b8*k8+b9*k9+b10*k10+b11*k11+b12*k12+b13*k13+b14*k14+b15*k15)
+  if typeof(integrator.alg) <: CompositeAlgorithm
+    ϱu = integrator.opts.internalnorm(k16 - k15)
+    ϱd = integrator.opts.internalnorm(g16 - g15)
+    integrator.eigen_est = ϱu/ϱd
+  end
   if integrator.opts.adaptive
     utilde = dt*(btilde1*k1 + btilde8*k8 + btilde9*k9 + btilde10*k10 + btilde11*k11 + btilde12*k12 + btilde13*k13 + btilde14*k14 + btilde15*k15 + btilde16*k16)
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
@@ -590,6 +645,15 @@ end
   f(k16, tmp, p, t+dt)
   @tight_loop_macros for i in uidx
     @inbounds u[i] = uprev[i] + dt*(b1*k1[i]+b8*k8[i]+b9*k9[i]+b10*k10[i]+b11*k11[i]+b12*k12[i]+b13*k13[i]+b14*k14[i]+b15*k15[i])
+  end
+  if typeof(integrator.alg) <: CompositeAlgorithm
+    g16 = u
+    g15 = tmp
+    @. utilde = k16 - k15
+    ϱu = integrator.opts.internalnorm(utilde)
+    @. utilde = g16 - g15
+    ϱd = integrator.opts.internalnorm(utilde)
+    integrator.eigen_est = ϱu/ϱd
   end
   if integrator.opts.adaptive
     @tight_loop_macros for i in uidx

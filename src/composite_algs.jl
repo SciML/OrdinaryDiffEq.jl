@@ -51,3 +51,7 @@ end
 
 AutoTsit5(alg; kwargs...) = AutoAlgSwitch(Tsit5(), alg; kwargs...)
 AutoDP5(alg; kwargs...) = AutoAlgSwitch(DP5(), alg; kwargs...)
+AutoVern6(alg; kwargs...) = AutoAlgSwitch(Vern6(), alg; kwargs...)
+AutoVern7(alg; kwargs...) = AutoAlgSwitch(Vern7(), alg; kwargs...)
+AutoVern8(alg; kwargs...) = AutoAlgSwitch(Vern8(), alg; kwargs...)
+AutoVern9(alg; kwargs...) = AutoAlgSwitch(Vern9(), alg; kwargs...)
