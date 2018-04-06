@@ -34,7 +34,7 @@ end
 =#
 
 function initialize!(integrator, cache::CompositeCache)
-  cache.current = cache.choice_function(integrator)
+  cache.current = integrator.alg.current_alg = cache.choice_function(integrator)
   initialize!(integrator, cache.caches[cache.current])
   resize!(integrator.k, integrator.kshortsize)
 end

@@ -314,6 +314,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   if initialize_integrator
     initialize_callbacks!(integrator, initialize_save)
     initialize!(integrator,integrator.cache)
+    save_start && typeof(alg) <: CompositeAlgorithm && copyat_or_push!(alg_choice,1,integrator.alg.current_alg)
   end
 
   if integrator.dt == zero(integrator.dt) && integrator.opts.adaptive
