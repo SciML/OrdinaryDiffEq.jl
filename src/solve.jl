@@ -199,9 +199,6 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
       copyat_or_push!(timeseries,1,u_initial,Val{false})
       copyat_or_push!(ks,1,[ks_prototype])
     end
-    if typeof(alg) <: CompositeAlgorithm
-      copyat_or_push!(alg_choice,1,1)
-    end
   else
     saveiter = 0 # Starts at 0 so first save is at 1
     saveiter_dense = 0
@@ -314,6 +311,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   if initialize_integrator
     initialize_callbacks!(integrator, initialize_save)
     initialize!(integrator,integrator.cache)
+    save_start && typeof(alg) <: CompositeAlgorithm && copyat_or_push!(alg_choice,1,integrator.alg.current_alg)
   end
 
   if integrator.dt == zero(integrator.dt) && integrator.opts.adaptive
