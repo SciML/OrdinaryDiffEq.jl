@@ -19,8 +19,8 @@ cb = ContinuousCallback(pullback_condition, pullback_affect!)
 
 # DPRKN6 is left out because second order ODE
 algs = [Tsit5, Rosenbrock23, DP5, DP8, SSPRK432, OwrenZen3, SSPRK22, SSPRK33,
-        OwrenZen4, OwrenZen5, Rosenbrock32, Rodas5] ## Works for these
-bad_algs = [Rodas4, Rodas42]
+        OwrenZen4, OwrenZen5, Rosenbrock32, Rodas5, Rodas4, Rodas42] ## Works for these
+bad_algs = []
 lazy_alg = [BS5, Vern6, Vern7, Vern8, Vern9]
 
 nonstandard_interp_algs = union(algs,bad_algs,lazy_alg)
