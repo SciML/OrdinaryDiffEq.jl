@@ -2,7 +2,7 @@ isautodifferentiable(alg::OrdinaryDiffEqAlgorithm) = true
 
 isfsal(alg::OrdinaryDiffEqAlgorithm) = true
 isfsal{MType,VType,fsal}(tab::ExplicitRKTableau{MType,VType,fsal}) = fsal
-isfsal(alg::CompositeAlgorithm) = true # Every algorithm is assumed FSAL. Good assumption?
+isfsal(alg::CompositeAlgorithm) = isfsal(alg.algs[alg.current_alg])
 isfsal(alg::FunctionMap) = false
 isfsal(alg::Rodas4) = false
 isfsal(alg::Rodas42) = false
@@ -269,6 +269,10 @@ ssp_coefficient(alg::SSPSDIRK2) = 4
 # stability regions
 alg_stability_size(alg::DP5) = 3.3066
 alg_stability_size(alg::Tsit5) = 3.5068
+alg_stability_size(alg::Vern6) = 4.8553
+alg_stability_size(alg::Vern7) = 4.6400
+alg_stability_size(alg::Vern8) = 5.8641
+alg_stability_size(alg::Vern9) = 4.4762
 
 alg_can_repeat_jac(alg::OrdinaryDiffEqAlgorithm) = false
 alg_can_repeat_jac(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = true
