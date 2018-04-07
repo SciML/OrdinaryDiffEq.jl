@@ -28,9 +28,9 @@ end
   u = uprev+dt*(a91*k1              +a94*k4+a95*k5+a96*k6+a97*k7+a98*k8)
   integrator.fsallast = f(u, p, t+dt); k9 = integrator.fsallast
   if typeof(integrator.alg) <: CompositeAlgorithm
-    k9 = u
+    g9 = u
     ϱu = integrator.opts.internalnorm(k9 - k8)
-    ϱd = integrator.opts.internalnorm(k9 - g8)
+    ϱd = integrator.opts.internalnorm(g9 - g8)
     integrator.eigen_est = ϱu/ϱd
   end
   if integrator.opts.adaptive
@@ -166,7 +166,7 @@ end
   k7 = f(uprev+dt*(a071*k1       +a073*k3+a074*k4+a075*k5+a076*k6), p, t + c7*dt)
   k8 = f(uprev+dt*(a081*k1       +a083*k3+a084*k4+a085*k5+a086*k6+a087*k7), p, t + c8*dt)
   g9 =   uprev+dt*(a091*k1          +a093*k3+a094*k4+a095*k5+a096*k6+a097*k7+a098*k8)
-  g10 =  uprev+dt*(a101*k1          +a103*k3+a104*k4+a105*k5+a106*k6+a107*k7)
+  g10=   uprev+dt*(a101*k1          +a103*k3+a104*k4+a105*k5+a106*k6+a107*k7)
   k9 = f(g9, p, t+dt)
   k10= f(g10, p, t+dt)
   u = uprev + dt*(b1*k1 + b4*k4 + b5*k5 + b6*k6 + b7*k7 + b8*k8 + b9*k9)
@@ -270,12 +270,9 @@ end
   end
   f(k9, tmp, p, t+dt)
   @tight_loop_macros for i in uidx
-    @inbounds tmp[i] = uprev[i]+dt*(a101*k1[i]+a103*k3[i]+a104*k4[i]+a105*k5[i]+a106*k6[i]+a107*k7[i])
+    @inbounds u[i] = uprev[i]+dt*(a101*k1[i]+a103*k3[i]+a104*k4[i]+a105*k5[i]+a106*k6[i]+a107*k7[i])
   end
-  f(k10, tmp, p, t+dt)
-  @tight_loop_macros for i in uidx
-    @inbounds u[i] = uprev[i] + dt*(b1*k1[i] + b4*k4[i] + b5*k5[i] + b6*k6[i] + b7*k7[i] + b8*k8[i] + b9*k9[i])
-  end
+  f(k10, u, p, t+dt)
   if typeof(integrator.alg) <: CompositeAlgorithm
     g10 = u
     g9 = tmp
@@ -284,6 +281,9 @@ end
     @. utilde = g10 - g9
     ϱd = integrator.opts.internalnorm(utilde)
     integrator.eigen_est = ϱu/ϱd
+  end
+  @tight_loop_macros for i in uidx
+    @inbounds u[i] = uprev[i] + dt*(b1*k1[i] + b4*k4[i] + b5*k5[i] + b6*k6[i] + b7*k7[i] + b8*k8[i] + b9*k9[i])
   end
   if integrator.opts.adaptive
     @tight_loop_macros for i in uidx
@@ -444,12 +444,9 @@ end
   end
   f(k12, tmp, p, t+dt)
   @tight_loop_macros for i in uidx
-    @inbounds tmp[i] = uprev[i]+dt*(a1301*k1[i]+a1304*k4[i]+a1305*k5[i]+a1306*k6[i]+a1307*k7[i]+a1308*k8[i]+a1309*k9[i]+a1310*k10[i])
+    @inbounds u[i] = uprev[i]+dt*(a1301*k1[i]+a1304*k4[i]+a1305*k5[i]+a1306*k6[i]+a1307*k7[i]+a1308*k8[i]+a1309*k9[i]+a1310*k10[i])
   end
-  f(k13, tmp, p, t+dt)
-  @tight_loop_macros for i in uidx
-    @inbounds u[i] = uprev[i] + dt*(b1*k1[i] + b6*k6[i] + b7*k7[i] + b8*k8[i] + b9*k9[i] + b10*k10[i] + b11*k11[i] + b12*k12[i])
-  end
+  f(k13, u, p, t+dt)
   if typeof(integrator.alg) <: CompositeAlgorithm
     g13 = u
     g12 = tmp
@@ -458,6 +455,9 @@ end
     @. utilde = g13 - g12
     ϱd = integrator.opts.internalnorm(utilde)
     integrator.eigen_est = ϱu/ϱd
+  end
+  @tight_loop_macros for i in uidx
+    @inbounds u[i] = uprev[i] + dt*(b1*k1[i] + b6*k6[i] + b7*k7[i] + b8*k8[i] + b9*k9[i] + b10*k10[i] + b11*k11[i] + b12*k12[i])
   end
   if integrator.opts.adaptive
     @tight_loop_macros for i in uidx
@@ -640,12 +640,9 @@ end
   end
   f(k15, tmp, p, t+dt)
   @tight_loop_macros for i in uidx
-    @inbounds tmp[i] = uprev[i]+dt*(a1601*k1[i]+a1606*k6[i]+a1607*k7[i]+a1608*k8[i]+a1609*k9[i]+a1610*k10[i]+a1611*k11[i]+a1612*k12[i]+a1613*k13[i])
+    @inbounds u[i] = uprev[i]+dt*(a1601*k1[i]+a1606*k6[i]+a1607*k7[i]+a1608*k8[i]+a1609*k9[i]+a1610*k10[i]+a1611*k11[i]+a1612*k12[i]+a1613*k13[i])
   end
-  f(k16, tmp, p, t+dt)
-  @tight_loop_macros for i in uidx
-    @inbounds u[i] = uprev[i] + dt*(b1*k1[i]+b8*k8[i]+b9*k9[i]+b10*k10[i]+b11*k11[i]+b12*k12[i]+b13*k13[i]+b14*k14[i]+b15*k15[i])
-  end
+  f(k16, u, p, t+dt)
   if typeof(integrator.alg) <: CompositeAlgorithm
     g16 = u
     g15 = tmp
@@ -654,6 +651,9 @@ end
     @. utilde = g16 - g15
     ϱd = integrator.opts.internalnorm(utilde)
     integrator.eigen_est = ϱu/ϱd
+  end
+  @tight_loop_macros for i in uidx
+    @inbounds u[i] = uprev[i] + dt*(b1*k1[i]+b8*k8[i]+b9*k9[i]+b10*k10[i]+b11*k11[i]+b12*k12[i]+b13*k13[i]+b14*k14[i]+b15*k15[i])
   end
   if integrator.opts.adaptive
     @tight_loop_macros for i in uidx

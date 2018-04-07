@@ -2,7 +2,7 @@ isautodifferentiable(alg::OrdinaryDiffEqAlgorithm) = true
 
 isfsal(alg::OrdinaryDiffEqAlgorithm) = true
 isfsal{MType,VType,fsal}(tab::ExplicitRKTableau{MType,VType,fsal}) = fsal
-isfsal(alg::CompositeAlgorithm) = true # Every algorithm is assumed FSAL. Good assumption?
+isfsal(alg::CompositeAlgorithm) = isfsal(alg.algs[alg.current_alg])
 isfsal(alg::FunctionMap) = false
 isfsal(alg::Rodas4) = false
 isfsal(alg::Rodas42) = false
