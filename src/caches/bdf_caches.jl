@@ -1,4 +1,4 @@
-mutable struct ABDF2ConstantCache{F,uToltype,dtType,rate_prototype} <: OrdinaryDiffEqConstantCache
+mutable struct ABDF2ConstantCache{F,uToltype,dtType} <: OrdinaryDiffEqConstantCache
   uf::F
   ηold::uToltype
   κ::uToltype
@@ -6,8 +6,6 @@ mutable struct ABDF2ConstantCache{F,uToltype,dtType,rate_prototype} <: OrdinaryD
   newton_iters::Int
   eulercache::ImplicitEulerConstantCache
   dtₙ₊₁::dtType
-  dtₙ::dtType
-  uₙ₋₁::rate_prototype
 end
 
 function alg_cache(alg::ABDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
@@ -30,11 +28,8 @@ function alg_cache(alg::ABDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   eulercache = ImplicitEulerConstantCache(uf,ηold,κ,tol,100000)
 
   dtₙ₊₁ = one(dt)
-  dtₙ = one(dt)
-  uₙ₋₁ = zero(u)
 
-  ABDF2ConstantCache(uf, ηold, κ, tol, 10000, eulercache,
-                      dtₙ₊₁, dtₙ, uₙ₋₁)
+  ABDF2ConstantCache(uf, ηold, κ, tol, 10000, eulercache, dtₙ₊₁)
 end
 
 #=

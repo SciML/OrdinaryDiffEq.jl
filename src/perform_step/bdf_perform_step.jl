@@ -11,7 +11,7 @@ end
 
 @muladd function perform_step!(integrator, cache::ABDF2ConstantCache, repeat_step=false)
   @unpack t,f,p,uprev,uprev2,dt = integrator
-  @unpack uf,κ,tol,dtₙ₊₁,dtₙ,uₙ₋₁ = cache
+  @unpack uf,κ,tol,dtₙ₊₁ = cache
   uₙ₊₁,uₙ,dtₙ₊₂ = uprev,uprev2,dt
 
   if integrator.iter == 1 && !integrator.u_modified
@@ -39,7 +39,6 @@ end
   end
 
   # initial guess
-  zₙ₊₁ = dtₙ₊₁*integrator.fsalfirst
   if integrator.alg.extrapolant == :linear
     z = dtₙ₊₂*integrator.fsalfirst
   else # :constant
@@ -84,16 +83,21 @@ end
   end
 
   uₙ₊₂ = tmp + d*z
+  integrator.fsallast = z./dtₙ₊₂
+
+  if integrator.opts.adaptive
+    tmp = integrator.fsallast - (1+dtₙ₊₂/dtₙ₊₁)*integrator.fsalfirst + (dtₙ₊₂/dtₙ₊₁)*integrator.k[1]
+    est = (dtₙ₊₁+dtₙ₊₂)/6 * tmp
+    atmp = calculate_residuals(est, uₙ₊₁, uₙ₊₂, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+    integrator.EEst = integrator.opts.internalnorm(atmp)
+  end
 
   ################################### Finalize
 
-  cache.uₙ₋₁ = uₙ
-  cache.dtₙ = dtₙ₊₁
   cache.dtₙ₊₁ = dtₙ₊₂
   cache.ηold = η
   cache.newton_iters = iter
 
-  integrator.fsallast = z./dtₙ₊₂
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = uₙ₊₂

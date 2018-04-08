@@ -90,8 +90,10 @@ for i = 1:2
   # BDF
   #####################################
 
-  sim11 = test_convergence(dts,prob,ABDF2(extrapolant = :linear))
-  @test abs(sim11.𝒪est[:final]-2) < testTol
+  sim = test_convergence(dts,prob,ABDF2(extrapolant = :linear))
+  @test abs(sim.𝒪est[:final]-2) < testTol
+  @test abs(sim.𝒪est[:l2]-2) < testTol
+  @test abs(sim.𝒪est[:l∞]-2) < testTol
 
   dts = 1.//2.^(7:-1:4)
   println("Higher Order")
