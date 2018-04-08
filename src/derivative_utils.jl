@@ -73,7 +73,6 @@ function calc_W!(integrator, cache, dtgamma, repeat_step, check_newW=false, W_tr
         end
       else
         new_W = false
-        check_newW && return new_W
       end
     end
     return check_newW ? new_W : nothing

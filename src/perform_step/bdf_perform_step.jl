@@ -162,10 +162,10 @@ end
   if has_invW(f)
     A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
   else
-    cache.linsolve(vec(dz),W,vec(b),false)
+    cache.linsolve(vec(dz),W,vec(b),new_W)
   end
   ndz = integrator.opts.internalnorm(dz)
-  z += dz
+  @. z += dz
 
   η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = (η*ndz > κtol)
