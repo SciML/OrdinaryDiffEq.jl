@@ -40,6 +40,7 @@ function calc_W!(integrator, cache, dtgamma, repeat_step, check_newW=false, W_tr
     is_compos = typeof(integrator.alg) <: CompositeAlgorithm
 
     # calculate W
+    new_W = true
     if has_invW(f)
       # skip calculation of inv(W) if step is repeated
       !repeat_step && W_transform ? f(Val{:invW_t}, W, uprev, p, dtgamma, t) :
@@ -72,6 +73,7 @@ function calc_W!(integrator, cache, dtgamma, repeat_step, check_newW=false, W_tr
         end
       else
         new_W = false
+        check_newW && return new_W
       end
     end
     return check_newW ? new_W : nothing

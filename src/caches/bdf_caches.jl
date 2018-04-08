@@ -5,7 +5,7 @@ mutable struct ABDF2ConstantCache{F,uToltype,dtType,rate_prototype} <: OrdinaryD
   tol::uToltype
   newton_iters::Int
   eulercache::ImplicitEulerConstantCache
-  dtₙ₊₁::dtType
+  dtₙ₋₁::dtType
   fsalfirstprev::rate_prototype
 end
 
@@ -28,21 +28,22 @@ function alg_cache(alg::ABDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
 
   eulercache = ImplicitEulerConstantCache(uf,ηold,κ,tol,100000)
 
-  dtₙ₊₁ = one(dt)
+  dtₙ₋₁ = one(dt)
   fsalfirstprev = zero(rate_prototype)
 
-  ABDF2ConstantCache(uf, ηold, κ, tol, 10000, eulercache, dtₙ₊₁, fsalfirstprev)
+  ABDF2ConstantCache(uf, ηold, κ, tol, 10000, eulercache, dtₙ₋₁, fsalfirstprev)
 end
 
 mutable struct ABDF2Cache{uType,rateType,uNoUnitsType,J,UF,JC,uToltype,F,dtType} <: OrdinaryDiffEqMutableCache
-  uₙ₊₂::uType
-  uₙ₊₁::uType
   uₙ::uType
+  uₙ₋₁::uType
+  uₙ₋₂::uType
   du1::rateType
   fsalfirst::rateType
   fsalfirstprev::rateType
   k::rateType
   z::uType
+  zₙ₋₁::uType
   dz::uType
   b::uType
   tmp::uType
@@ -57,7 +58,7 @@ mutable struct ABDF2Cache{uType,rateType,uNoUnitsType,J,UF,JC,uToltype,F,dtType}
   tol::uToltype
   newton_iters::Int
   eulercache::ImplicitEulerCache
-  dtₙ₊₁::dtType
+  dtₙ₋₁::dtType
 end
 
 u_cache(c::ABDF2Cache)    = (c.z,c.dz)
@@ -69,7 +70,7 @@ function alg_cache(alg::ABDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
   zprev = similar(u,indices(u))
-  zᵧ = similar(u,indices(u)); z = similar(u,indices(u))
+  zₙ₋₁ = similar(u,indices(u)); z = similar(u,indices(u))
   dz = similar(u,indices(u))
   fsalfirst = zeros(rate_prototype)
   fsalfirstprev = zeros(rate_prototype)
@@ -97,7 +98,7 @@ function alg_cache(alg::ABDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
 
   eulercache = ImplicitEulerCache(u,uprev,uprev2,du1,fsalfirst,k,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,ηold,κ,tol,10000)
 
-  dtₙ₊₁ = one(dt)
-  ABDF2Cache(u,uprev,uprev2,du1,fsalfirst,fsalfirstprev,k,z,dz,b,tmp,atmp,J,
-              W,uf,jac_config,linsolve,ηold,κ,tol,10000,eulercache,dtₙ₊₁)
+  dtₙ₋₁ = one(dt)
+  ABDF2Cache(u,uprev,uprev2,du1,fsalfirst,fsalfirstprev,k,z,zₙ₋₁,dz,b,tmp,atmp,J,
+              W,uf,jac_config,linsolve,ηold,κ,tol,10000,eulercache,dtₙ₋₁)
 end
