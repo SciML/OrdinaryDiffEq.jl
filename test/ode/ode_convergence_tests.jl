@@ -86,6 +86,13 @@ for i = 1:2
   sim17 = test_convergence(dts,prob,KenCarp3())
   @test abs(sim17.𝒪est[:final]-3) < testTol
 
+  #####################################
+  # BDF
+  #####################################
+
+  sim11 = test_convergence(dts,prob,ABDF2(extrapolant = :linear))
+  @test abs(sim11.𝒪est[:final]-2) < testTol
+
   dts = 1.//2.^(7:-1:4)
   println("Higher Order")
 
