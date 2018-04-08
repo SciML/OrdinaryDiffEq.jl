@@ -864,7 +864,7 @@ end
   ################################## Solve BDF2 Step
 
   ### Initial Guess From Shampine
-  z = α1*zprev + α2*zᵧ
+  @. z = α1*zprev + α2*zᵧ
 
   # initial step of Newton iteration
   iter = 1
