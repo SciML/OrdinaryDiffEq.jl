@@ -70,6 +70,7 @@ alg_extrapolates(alg::Hairer4) = true
 alg_extrapolates(alg::Hairer42) = true
 alg_extrapolates(alg::IRKN4) = true
 alg_extrapolates(alg::IRKN3) = true
+alg_extrapolates(alg::ABDF2) = true
 
 alg_order(alg::OrdinaryDiffEqAlgorithm) = error("Order is not defined for this algorithm")
 alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
@@ -190,6 +191,8 @@ alg_order(alg::AB5) = 5
 alg_order(alg::ABM32) = 3
 alg_order(alg::ABM43) = 4
 alg_order(alg::ABM54) = 5
+
+alg_order(alg::ABDF2) = 2
 
 alg_order(alg::CompositeAlgorithm) = alg_order(alg.algs[1])
 
