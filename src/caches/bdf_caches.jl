@@ -29,7 +29,7 @@ function alg_cache(alg::ABDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   eulercache = ImplicitEulerConstantCache(uf,ηold,κ,tol,100000)
 
   dtₙ₋₁ = one(dt)
-  fsalfirstprev = zero(rate_prototype)
+  fsalfirstprev = rate_prototype
 
   ABDF2ConstantCache(uf, ηold, κ, tol, 10000, eulercache, dtₙ₋₁, fsalfirstprev)
 end

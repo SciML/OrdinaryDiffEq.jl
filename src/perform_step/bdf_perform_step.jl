@@ -102,7 +102,9 @@ end
   cache.dtₙ₋₁ = dtₙ
   cache.ηold = η
   cache.newton_iters = iter
-  cache.fsalfirstprev = integrator.fsalfirst
+  if integrator.EEst < one(integrator.EEst)
+    cache.fsalfirstprev = integrator.fsalfirst
+  end
 
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -127,7 +129,7 @@ end
   if integrator.iter == 1 && !integrator.u_modified
     cache.dtₙ₋₁ = dtₙ
     x = perform_step!(integrator, cache.eulercache, repeat_step)
-    cache.fsalfirstprev = integrator.fsalfirst
+    cache.fsalfirstprev .= integrator.fsalfirst
     return x
   end
 
@@ -216,5 +218,7 @@ end
   cache.ηold = η
   cache.newton_iters = iter
   cache.dtₙ₋₁ = dtₙ
-  @. cache.fsalfirstprev = integrator.fsalfirst
+  if integrator.EEst < one(integrator.EEst)
+    @. cache.fsalfirstprev = integrator.fsalfirst
+  end
 end
