@@ -433,7 +433,9 @@ end
 
 function reset_fsal!(integrator)
   # Under these condtions, these algorithms are not FSAL anymore
-  if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache
+  if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache ||
+     (typeof(integrator.cache) <: CompositeCache &&
+      typeof(integrator.cache.caches[1]) <: OrdinaryDiffEqMutableCache)
     integrator.f(integrator.fsalfirst,integrator.u,integrator.p,integrator.t)
   else
     integrator.fsalfirst = integrator.f(integrator.u,integrator.p,integrator.t)
