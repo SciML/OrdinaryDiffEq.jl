@@ -15,8 +15,8 @@ end
 (sol::ODECompositeSolution)(t,deriv::Type=Val{0};idxs=nothing) = sol.interp(t,idxs,deriv,sol.prob.p)
 (sol::ODECompositeSolution)(v,t,deriv::Type=Val{0};idxs=nothing) = sol.interp(v,t,idxs,deriv,sol.prob.p)
 
-function build_solution{uType,tType,isinplace}(
-        prob::AbstractODEProblem{uType,tType,isinplace},
+function build_solution(
+        prob::Union{AbstractODEProblem,AbstractDDEProblem},
         alg::OrdinaryDiffEqCompositeAlgorithm,t,u;dense=false,alg_choice=[1],
         k=[],interp = (tvals) -> nothing,
         timeseries_errors=true,dense_errors=true,
@@ -36,7 +36,7 @@ function build_solution{uType,tType,isinplace}(
   end
 
   if has_analytic(f)
-    u_analytic = Vector{uType}(0)
+    u_analytic = Vector{typeof(u)}(0)
     errors = Dict{Symbol,eltype(u[1])}()
     sol = ODECompositeSolution{T,N,typeof(u),typeof(u_analytic),typeof(errors),typeof(t),typeof(k),
                        typeof(prob),typeof(alg),typeof(interp)}(u,u_analytic,errors,t,k,prob,alg,interp,alg_choice,dense,0,retcode)
