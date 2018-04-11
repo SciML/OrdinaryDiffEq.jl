@@ -338,7 +338,9 @@ function handle_callbacks!(integrator)
   if integrator.u_modified
     handle_callback_modifiers!(integrator)
   end
-  integrator.u_modified = false
+  if !(typeof(integrator.alg) <: MultistepAlgorithms)
+    integrator.u_modified = false
+  end
 end
 
 function handle_callback_modifiers!(integrator::ODEIntegrator)
@@ -442,7 +444,9 @@ function reset_fsal!(integrator)
   end
   # Do not set false here so it can be checked in the algorithm
   # integrator.reeval_fsal = false
-  integrator.u_modified = false
+  if !(typeof(integrator.alg) <: MultistepAlgorithms)
+    integrator.u_modified = false
+  end
 end
 
 function (integrator::ODEIntegrator)(t,deriv::Type=Val{0};idxs=nothing)
