@@ -9,7 +9,8 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
         f(Val{:tgrad}, dT, uprev, p, t)
       else
         tf.uprev = uprev
-        derivative!(dT, tf, t, du2, integrator)
+        tf.p = p
+        derivative!(dT, tf, t, du2, integrator, cache.grad_config)
       end
     end
 
@@ -25,6 +26,7 @@ function calc_J(integrator, cache, is_compos)
       f(Val{:jac}, J, uprev, p, t)
     else
       uf.t = t
+      uf.p = p
       jacobian!(J, uf, uprev, du1, integrator, jac_config)
       if is_compos
         integrator.eigen_est = norm(J, Inf)

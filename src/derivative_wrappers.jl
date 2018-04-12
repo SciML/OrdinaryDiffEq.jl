@@ -1,9 +1,8 @@
-function derivative!(df::AbstractArray{<:Number}, f, x::Union{Number,AbstractArray{<:Number}}, fx::AbstractArray{<:Number}, integrator::DEIntegrator)
+function derivative!(df::AbstractArray{<:Number}, f, x::Union{Number,AbstractArray{<:Number}}, fx::AbstractArray{<:Number}, integrator, grad_config)
     if alg_autodiff(integrator.alg)
-        ForwardDiff.derivative!(df, f, fx, x)
+        ForwardDiff.derivative!(df, f, fx, x, grad_config)
     else
-        returntype = eltype(integrator.u)
-        DiffEqDiffTools.finite_difference_gradient!(df, f, x, integrator.alg.diff_type, returntype, Val{true})
+        DiffEqDiffTools.finite_difference_gradient!(df, f, x, grad_config)
     end
     nothing
 end
@@ -32,4 +31,17 @@ function build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
     jac_config = nothing
   end
   jac_config
+end
+
+function build_grad_config(alg,f,tf,du1,t)
+  if !has_tgrad(f)
+    if alg_autodiff(alg)
+      grad_config = ForwardDiff.DerivativeConfig(tf,du1,t)
+    else
+      grad_config = DiffEqDiffTools.GradientCache(du1,t,alg.diff_type)
+    end
+  else
+    grad_config = nothing
+  end
+  grad_config
 end
