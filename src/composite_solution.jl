@@ -17,10 +17,14 @@ end
 
 function build_solution(
         prob::Union{AbstractODEProblem,AbstractDDEProblem},
-        alg::OrdinaryDiffEqCompositeAlgorithm,t,u;dense=false,alg_choice=[1],
-        k=[],interp = (tvals) -> nothing,
-        timeseries_errors=true,dense_errors=true,
-        calculate_error = true, retcode = :Default, kwargs...)
+        alg::OrdinaryDiffEqCompositeAlgorithm,t,u;
+        timeseries_errors=length(u)>2,
+        dense=false,dense_errors=dense,
+        calculate_error = true,
+        k=[],
+        du=[],
+        interp = !isempty(du) ? HermiteInterpolation(t,u,du) : LinearInterpolation(t,u),
+        alg_choice=[1], retcode = :Default, kwargs...)
 
   T = eltype(eltype(u))
   if typeof(prob.u0) <: Tuple
@@ -36,8 +40,14 @@ function build_solution(
   end
 
   if has_analytic(f)
-    u_analytic = Vector{typeof(u)}(0)
-    errors = Dict{Symbol,eltype(u[1])}()
+    if !(typeof(prob.u0) <: Tuple)
+      u_analytic = Vector{typeof(prob.u0)}(0)
+      errors = Dict{Symbol,real(eltype(prob.u0))}()
+    else
+      u_analytic = Vector{typeof(ArrayPartition(prob.u0))}(0)
+      errors = Dict{Symbol,real(eltype(prob.u0[1]))}()
+    end
+
     sol = ODECompositeSolution{T,N,typeof(u),typeof(u_analytic),typeof(errors),typeof(t),typeof(k),
                        typeof(prob),typeof(alg),typeof(interp)}(u,u_analytic,errors,t,k,prob,alg,interp,alg_choice,dense,0,retcode)
     if calculate_error
