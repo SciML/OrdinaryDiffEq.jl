@@ -259,6 +259,7 @@ function loopfooter!(integrator)
   # This is set to true if u_modified requires callback FSAL reset
   # But not set to false when reset so algorithms can check if reset occurred
   integrator.reeval_fsal = false
+  integrator.u_modified = false
 
   ttmp = integrator.t + integrator.dt
   if integrator.force_stepfail
@@ -337,9 +338,6 @@ function handle_callbacks!(integrator)
   integrator.u_modified = continuous_modified || discrete_modified
   if integrator.u_modified
     handle_callback_modifiers!(integrator)
-  end
-  if !(typeof(integrator.alg) <: MultistepAlgorithms)
-    integrator.u_modified = false
   end
 end
 
@@ -444,9 +442,6 @@ function reset_fsal!(integrator)
   end
   # Do not set false here so it can be checked in the algorithm
   # integrator.reeval_fsal = false
-  if !(typeof(integrator.alg) <: MultistepAlgorithms)
-    integrator.u_modified = false
-  end
 end
 
 function (integrator::ODEIntegrator)(t,deriv::Type=Val{0};idxs=nothing)
