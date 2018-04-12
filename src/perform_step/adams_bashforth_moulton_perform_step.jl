@@ -13,8 +13,12 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k2, k3 = cache
   k1 = integrator.fsalfirst
-  cnt = integrator.iter
-  if cnt == 1 || cnt == 2
+  if integrator.u_modified
+    cache.step = 1
+  end
+  cnt = cache.step
+  if cache.step <= 2
+    cache.step += 1
     ttmp = t + (2/3)*dt
     ralk2 = f(uprev + (2/3)*dt*k1, p, ttmp)       #Ralston Method
     u = uprev + (dt/4)*(k1 + 3*ralk2)
@@ -51,11 +55,15 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,fsalfirst,k2,k3,ralk2,k = cache
   k1 = integrator.fsalfirst
-  cnt = integrator.iter
-  if cnt == 1 || cnt == 2
+  if integrator.u_modified
+    cache.step = 1
+  end
+  cnt = cache.step
+  if cache.step <= 2
+    cache.step += 1
     ttmp = t + (2/3)*dt
     @. tmp = uprev + (2/3)*dt*k1
-    f(ralk2, tmp, p, ttmp)    
+    f(ralk2, tmp, p, ttmp)
     @. u = uprev + (dt/4)*(k1 + 3*ralk2)        #Ralston Method
     if cnt == 1
       cache.k3 .= k1
@@ -85,14 +93,18 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k2,k3 = cache
   k1 = integrator.fsalfirst
-  cnt = integrator.iter
-  if cnt == 1
+  if integrator.u_modified
+    cache.step = 1
+  end
+  cnt = cache.step
+  if cache.step == 1
+    cache.step += 1
     ttmp = t + (2/3)*dt
     ralk2 = f(uprev + (2/3)*dt*k1, p, ttmp)     #Ralston Method
     u = uprev + (dt/4)*(k1 + 3*ralk2)
     k2 = k1
   else
-    perform_step!(integrator, AB3ConstantCache(k2,k3))
+    perform_step!(integrator, AB3ConstantCache(k2,k3,cnt))
     k = integrator.fsallast
     u = uprev + (dt/12)*(5*k + 8*k1 - k2)
     k3 = k2
@@ -121,8 +133,12 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,fsalfirst,k2,k3,ralk2,k = cache
   k1 = integrator.fsalfirst
-  cnt = integrator.iter
-  if cnt == 1
+  if integrator.u_modified
+    cache.step = 1
+  end
+  cnt = cache.step
+  if cache.step == 1
+    cache.step += 1
     ttmp = t + (2/3)*dt
     @. tmp = uprev + (2/3)*dt*k1
     f(ralk2, tmp, p, ttmp)
@@ -130,9 +146,9 @@ end
     cache.k2 .= k1
   else
     if cnt == 2
-      perform_step!(integrator, AB3Cache(u,uprev,fsalfirst,copy(k2),k3,ralk2,k,tmp))  #Here passing copy of k2, otherwise it will change in AB3()
+      perform_step!(integrator, AB3Cache(u,uprev,fsalfirst,copy(k2),k3,ralk2,k,tmp,cnt))  #Here passing copy of k2, otherwise it will change in AB3()
     else
-      perform_step!(integrator, AB3Cache(u,uprev,fsalfirst,k2,k3,ralk2,k,tmp))
+      perform_step!(integrator, AB3Cache(u,uprev,fsalfirst,k2,k3,ralk2,k,tmp,cnt))
     end
     k = integrator.fsallast
     @. u = uprev + (dt/12)*(5*k + 8*k1 - k2)
@@ -157,8 +173,12 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k2,k3,k4 = cache
   k1 = integrator.fsalfirst
-  cnt = integrator.iter
-  if cnt == 1 || cnt == 2 || cnt == 3
+  if integrator.u_modified
+    cache.step = 1
+  end
+  cnt = cache.step
+  if cache.step <= 3
+    cache.step += 1
     halfdt = dt/2
     ttmp = t+halfdt
     k2 = f(uprev + halfdt*k1, p, ttmp)
@@ -199,8 +219,12 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,fsalfirst,k2,k3,k4,ralk2,k,t2,t3,t4 = cache
   k1 = integrator.fsalfirst
-  cnt = integrator.iter
-  if cnt == 1 || cnt == 2 || cnt == 3
+  if integrator.u_modified
+    cache.step = 1
+  end
+  cnt = cache.step
+  if cache.step <= 3
+    cache.step += 1
     halfdt = dt/2
     ttmp = t+halfdt
     @. tmp = uprev + halfdt*k1
@@ -241,8 +265,12 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k2,k3,k4 = cache
   k1 = integrator.fsalfirst
-  cnt = integrator.iter
-  if cnt == 1 || cnt == 2
+  if integrator.u_modified
+    cache.step = 1
+  end
+  cnt = cache.step
+  if cache.step <= 2
+    cache.step += 1
     halfdt = dt/2
     ttmp = t+halfdt
     k2 = f(uprev + halfdt*k1, p, ttmp)
@@ -255,7 +283,7 @@ end
       cache.k2 = k1
     end
   else
-    perform_step!(integrator, AB4ConstantCache(k2,k3,k4))
+    perform_step!(integrator, AB4ConstantCache(k2,k3,k4,cnt))
     k = integrator.fsallast
     u = uprev + (dt/24)*(9*k + 19*k1 - 5*k2 + k3)
     cache.k4 = k3
@@ -283,8 +311,12 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,fsalfirst,k2,k3,k4,ralk2,k,t2,t3,t4,t5,t6,t7 = cache
   k1 = integrator.fsalfirst
-  cnt = integrator.iter
-  if cnt == 1 || cnt == 2
+  if integrator.u_modified
+    cache.step = 1
+  end
+  cnt = cache.step
+  if cache.step <= 2
+    cache.step += 1
     halfdt = dt/2
     ttmp = t+halfdt
     @. tmp = uprev + halfdt*k1
@@ -303,7 +335,7 @@ end
     t2 .= k2
     t3 .= k3
     t4 .= k4
-    perform_step!(integrator, AB4Cache(u,uprev,fsalfirst,t2,t3,t4,ralk2,k,tmp,t5,t6,t7))
+    perform_step!(integrator, AB4Cache(u,uprev,fsalfirst,t2,t3,t4,ralk2,k,tmp,t5,t6,t7,cnt))
     k = integrator.fsallast
     @. u = uprev + (dt/24)*(9*k + 19*k1 - 5*k2 + k3)
     cache.k4, cache.k3 = k3, k4
@@ -328,8 +360,12 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k2,k3,k4,k5 = cache
   k1 = integrator.fsalfirst
-  cnt = integrator.iter
-  if cnt == 1 || cnt == 2 || cnt == 3 || cnt == 4
+  if integrator.u_modified
+    cache.step = 1
+  end
+  if cache.step <= 4
+    cnt = cache.step
+    cache.step += 1
     halfdt = dt/2
     ttmp = t+halfdt
     k2 = f(uprev + halfdt*k1, p, ttmp)
@@ -373,8 +409,12 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,fsalfirst,k2,k3,k4,k5,k,t2,t3,t4 = cache
   k1 = integrator.fsalfirst
-  cnt = integrator.iter
-  if cnt == 1 || cnt == 2 || cnt == 3 || cnt == 4
+  if integrator.u_modified
+    cache.step = 1
+  end
+  cnt = cache.step
+  if cache.step <= 4
+    cache.step += 1
     halfdt = dt/2
     ttmp = t+halfdt
     @. tmp = uprev + halfdt*k1
@@ -418,8 +458,12 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k2,k3,k4,k5 = cache
   k1 = integrator.fsalfirst
-  cnt = integrator.iter
-  if cnt == 1 || cnt == 2 || cnt == 3
+  if integrator.u_modified
+    cache.step = 1
+  end
+  cnt = cache.step
+  if cache.step <= 3
+    cache.step += 1
     halfdt = dt/2
     ttmp = t+halfdt
     k2 = f(uprev + halfdt*k1, p, ttmp)
@@ -434,7 +478,7 @@ end
       cache.k2 = k1
     end
   else
-    perform_step!(integrator, AB5ConstantCache(k2,k3,k4,k5))
+    perform_step!(integrator, AB5ConstantCache(k2,k3,k4,k5,cnt))
     k = integrator.fsallast
     u = uprev + (dt/720)*(251*k + 646*k1 - 264*k2 + 106*k3 - 19*k4)
     cache.k5 = k4
@@ -463,8 +507,12 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,fsalfirst,k2,k3,k4,k5,k,t2,t3,t4,t5,t6,t7,t8 = cache
   k1 = integrator.fsalfirst
-  cnt = integrator.iter
-  if cnt == 1 || cnt == 2 || cnt == 3
+  if integrator.u_modified
+    cache.step = 1
+  end
+  cnt = cache.step
+  if cache.step <= 3
+    cache.step += 1
     halfdt = dt/2
     ttmp = t+halfdt
     @. tmp = uprev + halfdt*k1
@@ -486,7 +534,7 @@ end
     t3 .= k3
     t4 .= k4
     t5 .= k5
-    perform_step!(integrator, AB5Cache(u,uprev,fsalfirst,t2,t3,t4,t5,k,tmp,t6,t7,t8))
+    perform_step!(integrator, AB5Cache(u,uprev,fsalfirst,t2,t3,t4,t5,k,tmp,t6,t7,t8,cnt))
     k = integrator.fsallast
     @. u = uprev + (dt/720)*(251*k + 646*k1 - 264*k2 + 106*k3 - 19*k4)
     cache.k5, cache.k4 = k4, k5

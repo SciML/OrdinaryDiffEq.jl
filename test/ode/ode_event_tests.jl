@@ -178,43 +178,43 @@ sol6 = solve(prob2,Vern7(),callback=bounce_then_exit)
 @test sol6.t[end] ≈ 4
 
 # More ODE event tests, cf. #201, #199, #198, #197
-function test_callback_inplace(alg)
+function test_callback_inplace(alg; kwargs...)
     f = (du, u, p, t) -> @. du = u
     cb = ContinuousCallback((u,t,int) -> u[1] - exp(1), terminate!)
     prob = ODEProblem(f, [1.0], (0.0, 2.0), callback=cb)
-    sol = solve(prob, alg)
+    sol = solve(prob, alg; kwargs...)
     sol.u[end][1] ≈ exp(1)
 end
 
-function test_callback_outofplace(alg)
+function test_callback_outofplace(alg; kwargs...)
     f = (u, p, t) -> copy(u)
     cb = ContinuousCallback((u,t,int) -> u[1] - exp(1), terminate!)
     prob = ODEProblem(f, [1.0], (0.0, 2.0), callback=cb)
-    sol = solve(prob, alg)
+    sol = solve(prob, alg; kwargs...)
     sol.u[end][1] ≈ exp(1)
 end
 
-function test_callback_scalar(alg)
+function test_callback_scalar(alg; kwargs...)
     f = (u, p, t) -> u
     cb = ContinuousCallback((u,t,int) -> u - exp(1), terminate!)
     prob = ODEProblem(f, 1.0, (0.0, 2.0), callback=cb)
-    sol = solve(prob, alg)
+    sol = solve(prob, alg; kwargs...)
     sol.u[end] ≈ exp(1)
 end
 
-function test_callback_svector(alg)
+function test_callback_svector(alg; kwargs...)
     f = (u, p, t) -> u
     cb = ContinuousCallback((u,t,int) -> u[1] - exp(1), terminate!)
     prob = ODEProblem(f, SVector(1.0), (0.0, 2.0), callback=cb)
-    sol = solve(prob, alg)
+    sol = solve(prob, alg; kwargs...)
     sol.u[end][1] ≈ exp(1)
 end
 
-function test_callback_mvector(alg)
+function test_callback_mvector(alg; kwargs...)
     f = (u, p, t) -> copy(u)
     cb = ContinuousCallback((u,t,int) -> u[1] - exp(1), terminate!)
     prob = ODEProblem(f, MVector(1.0), (0.0, 2.0), callback=cb)
-    sol = solve(prob, alg)
+    sol = solve(prob, alg; kwargs...)
     sol.u[end][1] ≈ exp(1)
 end
 
@@ -240,6 +240,12 @@ println("inplace")
 @test test_callback_inplace(Vern9())
 @test test_callback_inplace(Rosenbrock23())
 @test test_callback_inplace(Rosenbrock32())
+@test test_callback_inplace(AB3(); dt=0.1)
+@test test_callback_inplace(ABM32(); dt=0.1)
+@test test_callback_inplace(AB4(); dt=0.1)
+@test test_callback_inplace(ABM43(); dt=0.1)
+@test test_callback_inplace(AB5(); dt=0.1)
+@test test_callback_inplace(ABM54(); dt=0.1)
 
 println("outofplace")
 @test test_callback_outofplace(BS3())
@@ -263,6 +269,12 @@ println("outofplace")
 @test test_callback_outofplace(Vern9())
 @test test_callback_outofplace(Rosenbrock23())
 @test test_callback_outofplace(Rosenbrock32())
+@test test_callback_outofplace(AB3(); dt=0.1)
+@test test_callback_outofplace(ABM32(); dt=0.1)
+@test test_callback_outofplace(AB4(); dt=0.1)
+@test test_callback_outofplace(ABM43(); dt=0.1)
+@test test_callback_outofplace(AB5(); dt=0.1)
+@test test_callback_outofplace(ABM54(); dt=0.1)
 
 println("scalar")
 @test test_callback_scalar(BS3())
@@ -286,6 +298,12 @@ println("scalar")
 @test test_callback_scalar(Vern9())
 @test test_callback_scalar(Rosenbrock23())
 @test test_callback_scalar(Rosenbrock32())
+@test test_callback_scalar(AB3(); dt=0.1)
+@test test_callback_scalar(ABM32(); dt=0.1)
+@test test_callback_scalar(AB4(); dt=0.1)
+@test test_callback_scalar(ABM43(); dt=0.1)
+@test test_callback_scalar(AB5(); dt=0.1)
+@test test_callback_scalar(ABM54(); dt=0.1)
 
 println("svector")
 @test test_callback_svector(BS3())
@@ -309,6 +327,12 @@ println("svector")
 @test test_callback_svector(Vern9())
 @test test_callback_svector(Rosenbrock23())
 @test test_callback_svector(Rosenbrock32())
+@test test_callback_svector(AB3(); dt=0.1)
+@test test_callback_svector(ABM32(); dt=0.1)
+@test test_callback_svector(AB4(); dt=0.1)
+@test test_callback_svector(ABM43(); dt=0.1)
+@test test_callback_svector(AB5(); dt=0.1)
+@test test_callback_svector(ABM54(); dt=0.1)
 
 println("mvector")
 @test test_callback_mvector(BS3())
@@ -332,6 +356,12 @@ println("mvector")
 @test test_callback_mvector(Vern9())
 @test test_callback_mvector(Rosenbrock23())
 @test test_callback_mvector(Rosenbrock32())
+@test test_callback_mvector(AB3(); dt=0.1)
+@test test_callback_mvector(ABM32(); dt=0.1)
+@test test_callback_mvector(AB4(); dt=0.1)
+@test test_callback_mvector(ABM43(); dt=0.1)
+@test test_callback_mvector(AB5(); dt=0.1)
+@test test_callback_mvector(ABM54(); dt=0.1)
 
 # Test ContinuousCallback hits values on the steps
 t_event = 100.0
