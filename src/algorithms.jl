@@ -662,3 +662,7 @@ CompositeAlgorithm(a::T, b::F) where {T,F} = CompositeAlgorithm(a, b, 1)
 const MassMatrixAlgorithms = Union{OrdinaryDiffEqRosenbrockAlgorithm,
                                    OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
                                    ImplicitEuler,ImplicitMidpoint}
+
+const MultistepAlgorithms = Union{IRKN3,IRKN4,
+                                  ABDF2,
+                                  AB3,AB4,AB5,ABM32,ABM43,ABM54}
