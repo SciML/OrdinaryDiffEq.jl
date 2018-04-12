@@ -195,7 +195,7 @@ end
 
   γdt = γ*dt
 
-  new_W = calc_W!(integrator, cache, γdt, repeat_step, true)
+  new_W = calc_W!(integrator, cache, γdt, repeat_step)
 
   # FSAL Step 1
   @. z₁ = dt*integrator.fsalfirst
@@ -644,7 +644,7 @@ end
 
   γdt = γ*dt
 
-  new_W = calc_W!(integrator, cache, γdt, repeat_step, true)
+  new_W = calc_W!(integrator, cache, γdt, repeat_step)
 
   if typeof(integrator.f) <: SplitFunction
     # Explicit tableau is not FSAL
@@ -1136,7 +1136,7 @@ end
 
   γdt = γ*dt
 
-  new_W = calc_W!(integrator, cache, γdt, repeat_step, true)
+  new_W = calc_W!(integrator, cache, γdt, repeat_step)
 
   ##### Step 1
 
@@ -1743,7 +1743,7 @@ end
 
   γdt = γ*dt
 
-  new_W = calc_W!(integrator, cache, γdt, repeat_step, true)
+  new_W = calc_W!(integrator, cache, γdt, repeat_step)
 
   ##### Step 1
 
@@ -2452,7 +2452,7 @@ end
 
   γdt = γ*dt
 
-  new_W = calc_W!(integrator, cache, γdt, repeat_step, true)
+  new_W = calc_W!(integrator, cache, γdt, repeat_step)
 
   ##### Step 1
 
@@ -3273,7 +3273,7 @@ end
 
   γdt = γ*dt
 
-  new_W = calc_W!(integrator, cache, γdt, repeat_step, true)
+  new_W = calc_W!(integrator, cache, γdt, repeat_step)
 
   ##### Step 1
 

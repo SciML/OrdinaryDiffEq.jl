@@ -144,7 +144,7 @@ end
   d2 = -dtmp
   d3 = -(ρ-1)/3
 
-  new_W = calc_W!(integrator, cache, ddt, repeat_step, true)
+  new_W = calc_W!(integrator, cache, ddt, repeat_step)
 
   # initial guess
   @. zₙ₋₁ = dtₙ*fₙ₋₁
