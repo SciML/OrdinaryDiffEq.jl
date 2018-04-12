@@ -34,7 +34,7 @@ function calc_J(integrator, cache, is_compos)
     end
 end
 
-function calc_W!(integrator, cache, dtgamma, repeat_step, check_newW=false, W_transform=false)
+function calc_W!(integrator, cache, dtgamma, repeat_step, W_transform=false)
   @inbounds begin
     @unpack t,dt,uprev,u,f,p,alg = integrator
     @unpack J,W,jac_config = cache
@@ -63,7 +63,6 @@ function calc_W!(integrator, cache, dtgamma, repeat_step, check_newW=false, W_tr
       if !repeat_step && (!alg_can_repeat_jac(alg) ||
                           (integrator.iter < 1 || new_jac ||
                            abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t))))
-        new_W = true
         if W_transform
           for j in 1:length(u), i in 1:length(u)
               W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
@@ -77,11 +76,12 @@ function calc_W!(integrator, cache, dtgamma, repeat_step, check_newW=false, W_tr
         new_W = false
       end
     end
-    return check_newW ? new_W : nothing
+    return new_W
   end
 end
 
 function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, W_transform)
   calc_tderivative!(integrator, cache, dtd1, repeat_step)
-  calc_W!(integrator, cache, dtgamma, repeat_step, false, W_transform)
+  calc_W!(integrator, cache, dtgamma, repeat_step, W_transform)
+  return nothing
 end

@@ -118,7 +118,7 @@ end
   # precalculations
   κtol = κ*tol
 
-  new_W = calc_W!(integrator, cache, dt, repeat_step, true)
+  new_W = calc_W!(integrator, cache, dt, repeat_step)
 
   # initial guess
   if integrator.alg.extrapolant == :linear
@@ -317,7 +317,7 @@ end
 
   dto2 = dt/2
 
-  new_W = calc_W!(integrator, cache, dto2, repeat_step, true)
+  new_W = calc_W!(integrator, cache, dto2, repeat_step)
 
   # initial guess
   if integrator.alg.extrapolant == :linear
@@ -532,7 +532,7 @@ end
 
   dto2 = dt/2
 
-  new_W = calc_W!(integrator, cache, dto2, repeat_step, true)
+  new_W = calc_W!(integrator, cache, dto2, repeat_step)
 
   # initial guess
   @. z = dt*integrator.fsalfirst
@@ -804,7 +804,7 @@ end
 
   ddt = d*dt
 
-  new_W = calc_W!(integrator, cache, ddt, repeat_step, true)
+  new_W = calc_W!(integrator, cache, ddt, repeat_step)
 
   # FSAL
   @. zprev = dt*integrator.fsalfirst
@@ -1096,7 +1096,7 @@ end
   # precalculations
   κtol = κ*tol
 
-  new_W = calc_W!(integrator, cache, dt, repeat_step, true)
+  new_W = calc_W!(integrator, cache, dt, repeat_step)
 
   # initial guess
   if integrator.success_iter > 0 && !integrator.reeval_fsal && integrator.alg.extrapolant == :interpolant
@@ -1388,7 +1388,7 @@ end
 
   γdt = γ*dt
 
-  new_W = calc_W!(integrator, cache, γdt, repeat_step, true)
+  new_W = calc_W!(integrator, cache, γdt, repeat_step)
 
   # initial guess
   if integrator.success_iter > 0 && !integrator.reeval_fsal && integrator.alg.extrapolant == :interpolant
@@ -1799,7 +1799,7 @@ end
 
   γdt = γ*dt
 
-  new_W = calc_W!(integrator, cache, γdt, repeat_step, true)
+  new_W = calc_W!(integrator, cache, γdt, repeat_step)
 
   ##### Step 1
 
@@ -2376,7 +2376,7 @@ end
 
   γdt = γ*dt
 
-  new_W = calc_W!(integrator, cache, γdt, repeat_step, true)
+  new_W = calc_W!(integrator, cache, γdt, repeat_step)
 
   # initial guess
   if integrator.success_iter > 0 && !integrator.reeval_fsal && integrator.alg.extrapolant == :interpolant
