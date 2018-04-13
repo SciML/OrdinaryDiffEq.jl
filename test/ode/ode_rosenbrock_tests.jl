@@ -37,7 +37,7 @@ prob = prob_ode_bigfloat2Dlinear
 sim = test_convergence(dts,prob,Rosenbrock23(linsolve=LinSolveFactorize(qrfact!)))
 @test abs(sim.𝒪est[:final]-2) < testTol
 
-sol = solve(prob,Rosenbrock32())
+sol = solve(prob,Rosenbrock23(linsolve=LinSolveFactorize(qrfact!)))
 @test length(sol) < 20
 
 ### Rosenbrock32()
@@ -93,6 +93,8 @@ sim = test_convergence(dts,prob,Rodas3())
 
 sol = solve(prob,Rodas3())
 @test length(sol) < 20
+
+println("4th order Rosenbrocks")
 
 ### RosShamp4
 
