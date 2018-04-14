@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqProblemLibrary, Base.Test, Compat
+using OrdinaryDiffEq, DiffEqProblemLibrary, Base.Test, Compat, RecursiveArrayTools
 prob = prob_ode_linear
 
 sol = solve(prob,BS3();dt=1//2^(4),tstops=[0.5],saveat=0.01,save_everystep=true)
@@ -63,3 +63,11 @@ integrator(A[1],0.5)
 A = zeros(3)
 integrator(A,0.6,idxs=1:2:5)
 @test A == integrator(0.6;idxs=1:2:5)
+
+integrator = init(prob_ode_2Dlinear,Tsit5();dt=1//2^(4))
+ts = linspace(0,1,11)
+us = Matrix{Float64}[]
+for (u,t) in TimeChoiceIterator(integrator,ts)
+  push!(us,copy(u))
+end
+@test VectorOfArray(us) ≈ integrator.sol(ts)
