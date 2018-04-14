@@ -39,6 +39,7 @@ if group == "All" || group == "Interface"
     @time @testset "Complex Tests" begin include("complex_tests.jl") end
     @time @testset "Stiffness Detection Tests" begin include("stiffness_detection_test.jl") end
     @time @testset "Add Steps Tests" begin include("ode/ode_add_steps_tests.jl") end
+    @time @testset "Error Check Tests" begin include("check_error.jl") end
 end
 
 if group == "All" || group == "Regression"
