@@ -1,9 +1,9 @@
 using OrdinaryDiffEq, Base.Test
 
-f(u,p,t) = exp(u)
+f_ec(u,p,t) = exp(u)
 u0 = 0.0 # explosion time is 1.0
 tspan = (0.0, 10.0)
-prob = ODEProblem(f,u0,tspan)
+prob = ODEProblem(f_ec,u0,tspan)
 options = [:reltol => 1e-8, :abstol => 1e-8, :verbose => false]
 desired_code = :DtLessThanMin
 
