@@ -14,12 +14,19 @@ isfsal(alg::Vern9) = false
 fsal_typeof(alg::OrdinaryDiffEqAlgorithm,rate_prototype) = typeof(rate_prototype)
 fsal_typeof(alg::Union{LawsonEuler,NorsettEuler,ETDRK4},rate_prototype) = ExpRKFsal{typeof(rate_prototype)}
 fsal_typeof(alg::ETD2,rate_prototype) = ETD2Fsal{typeof(rate_prototype)}
+function fsal_typeof(alg::CompositeAlgorithm,rate_prototype)
+  fsal = unique(fsal_typeof.(alg.algs))
+  @assert length(fsal) == 1 "`fsal_typeof` must be consistent"
+  return fsal[1]
+end
 
 isimplicit(alg::OrdinaryDiffEqAlgorithm) = false
 isimplicit(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = true
 isimplicit(alg::OrdinaryDiffEqImplicitAlgorithm) = true
+isimplicit(alg::CompositeAlgorithm) = any(isimplicit.(alg.algs))
 
 isdtchangeable(alg::OrdinaryDiffEqAlgorithm) = true
+isdtchangeable(alg::CompositeAlgorithm) = all(isdtchangeable.(alg.algs))
 isdtchangeable(alg::GenericIIF1) = false
 isdtchangeable(alg::GenericIIF2) = false
 isdtchangeable(alg::LawsonEuler) = false
@@ -27,16 +34,19 @@ isdtchangeable(alg::NorsettEuler) = false
 isdtchangeable(alg::ETD2) = false
 
 ismultistep(alg::OrdinaryDiffEqAlgorithm) = false
+ismultistep(alg::CompositeAlgorithm) = any(ismultistep.(alg.algs))
 ismultistep(alg::ETD2) = true
 
 isadaptive(alg::OrdinaryDiffEqAlgorithm) = false
 isadaptive(alg::OrdinaryDiffEqAdaptiveAlgorithm) = true
-isadaptive(alg::OrdinaryDiffEqCompositeAlgorithm) = isadaptive(alg.algs[1])
+isadaptive(alg::OrdinaryDiffEqCompositeAlgorithm) = all(isadaptive.(alg.algs))
 
 qmin_default(alg::OrdinaryDiffEqAlgorithm) = 1//5
+qmin_default(alg::CompositeAlgorithm) = maximum(qmin_default.(alg.algs))
 qmin_default(alg::DP8) = 1//3
 
 qmax_default(alg::OrdinaryDiffEqAlgorithm) = 10
+qmax_default(alg::CompositeAlgorithm) = minimum(qmax_default.(alg.algs))
 qmax_default(alg::DP8) = 6
 
 get_chunksize(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have a chunk size defined.")
@@ -50,6 +60,7 @@ alg_autodiff{CS,AD}(alg::OrdinaryDiffEqImplicitAlgorithm{CS,AD}) = AD
 alg_autodiff(alg::CompositeAlgorithm) = alg_autodiff(alg.algs[alg.current_alg])
 
 alg_extrapolates(alg::OrdinaryDiffEqAlgorithm) = false
+alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))
 alg_extrapolates(alg::GenericImplicitEuler) = true
 alg_extrapolates(alg::GenericTrapezoid) = true
 alg_extrapolates(alg::ImplicitEuler) = true
@@ -73,7 +84,9 @@ alg_extrapolates(alg::IRKN3) = true
 alg_extrapolates(alg::ABDF2) = true
 
 alg_order(alg::OrdinaryDiffEqAlgorithm) = error("Order is not defined for this algorithm")
+alg_order(alg::CompositeAlgorithm) = (alg_order.(alg.algs)...)
 alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
+alg_adaptive_order(alg::CompositeAlgorithm) = alg_adaptive_order(alg.algs[alg.current_alg])
 
 alg_order(alg::FunctionMap) = 0
 alg_order(alg::Euler) = 1
@@ -193,8 +206,6 @@ alg_order(alg::ABM43) = 4
 alg_order(alg::ABM54) = 5
 
 alg_order(alg::ABDF2) = 2
-
-alg_order(alg::CompositeAlgorithm) = alg_order(alg.algs[1])
 
 alg_adaptive_order(alg::ExplicitRK) = alg.tableau.adaptiveorder
 alg_adaptive_order(alg::OrdinaryDiffEqAlgorithm) = alg_order(alg)-1
