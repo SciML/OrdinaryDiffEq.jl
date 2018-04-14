@@ -15,7 +15,7 @@ fsal_typeof(alg::OrdinaryDiffEqAlgorithm,rate_prototype) = typeof(rate_prototype
 fsal_typeof(alg::Union{LawsonEuler,NorsettEuler,ETDRK4},rate_prototype) = ExpRKFsal{typeof(rate_prototype)}
 fsal_typeof(alg::ETD2,rate_prototype) = ETD2Fsal{typeof(rate_prototype)}
 function fsal_typeof(alg::CompositeAlgorithm,rate_prototype)
-  fsal = unique(fsal_typeof.(alg.algs))
+  fsal = unique(map(x->fsal_typeof(x,rate_prototype), alg.algs))
   @assert length(fsal) == 1 "`fsal_typeof` must be consistent"
   return fsal[1]
 end
@@ -84,9 +84,13 @@ alg_extrapolates(alg::IRKN3) = true
 alg_extrapolates(alg::ABDF2) = true
 
 alg_order(alg::OrdinaryDiffEqAlgorithm) = error("Order is not defined for this algorithm")
-alg_order(alg::CompositeAlgorithm) = (alg_order.(alg.algs)...)
+alg_order(alg::CompositeAlgorithm) = alg_order(alg.algs[alg.current_alg])
+get_current_alg_order(alg::OrdinaryDiffEqAlgorithm,cache) = alg_order(alg)
+get_current_alg_order(alg::CompositeAlgorithm,cache) = alg_order(alg.algs[cache.current])
+
 alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
-alg_adaptive_order(alg::CompositeAlgorithm) = alg_adaptive_order(alg.algs[alg.current_alg])
+get_current_adaptive_order(alg::OrdinaryDiffEqAlgorithm,cache) = alg_adaptive_order(alg)
+get_current_adaptive_order(alg::CompositeAlgorithm,cache) = alg_adaptive_order(alg.algs[cache.current])
 
 alg_order(alg::FunctionMap) = 0
 alg_order(alg::Euler) = 1

@@ -105,8 +105,6 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
 
   ks = Vector{uType}(0)
 
-  order = alg_order(alg)
-
   uEltypeNoUnits = recursive_unitless_eltype(u)
   tTypeNoUnits   = typeof(one(tType))
 
