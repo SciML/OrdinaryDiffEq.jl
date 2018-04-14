@@ -115,7 +115,7 @@ function savevalues!(integrator::ODEIntegrator,force_save=false,reduce_size=true
   reduce_size && resize!(integrator.k,integrator.kshortsize)
 end
 
-function postamble!(integrator)
+function postamble!(integrator::ODEIntegrator)
   solution_endpoint_match_cur_integrator!(integrator)
   resize!(integrator.sol.t,integrator.saveiter)
   resize!(integrator.sol.u,integrator.saveiter)
