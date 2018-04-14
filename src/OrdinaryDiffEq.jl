@@ -26,8 +26,6 @@ module OrdinaryDiffEq
 
   import Base: linspace
 
-  import Base: start, next, done, eltype
-
   import ForwardDiff.Dual
 
   # Required by temporary fix in not in-place methods with 12+ broadcasts
@@ -38,7 +36,9 @@ module OrdinaryDiffEq
                      resize_non_user_cache!,deleteat_non_user_cache!,addat_non_user_cache!,
                      terminate!,get_du, get_dt,get_proposed_dt,set_proposed_dt!,
                      u_modified!,savevalues!,add_tstop!,add_saveat!,set_reltol!,
-                     set_abstol!
+                     set_abstol!, postamble!, last_step_failed
+
+  using DiffEqBase: check_error!
 
   macro tight_loop_macros(ex)
    :($(esc(ex)))
