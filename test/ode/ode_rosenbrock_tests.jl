@@ -250,6 +250,8 @@ sim = test_convergence(dts,prob,Rodas4(),dense_errors=true)
 sol = solve(prob,Rodas4())
 @test length(sol) < 20
 
+println("Rodas4 with finite diff")
+
 sim = test_convergence(dts,prob,Rodas4(autodiff=false),dense_errors=true)
 @test abs(sim.𝒪est[:final]-4) < testTol
 @test abs(sim.𝒪est[:L2]-4) < testTol
