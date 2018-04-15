@@ -174,7 +174,7 @@ const StandardControllerAlgs = Union{GenericImplicitEuler,GenericTrapezoid}
 function stepsize_controller!(integrator,alg::Union{StandardControllerAlgs,
                               OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Standard}})
   # Standard stepsize controller
-  qtmp = integrator.EEst^(1/(alg_adaptive_order(integrator.alg)+1))/integrator.opts.gamma
+  qtmp = integrator.EEst^(1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1))/integrator.opts.gamma
   @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
   integrator.qold = integrator.dt/q
   q
@@ -195,7 +195,7 @@ function stepsize_controller!(integrator,
   gamma = integrator.opts.gamma
   niters = integrator.cache.newton_iters
   fac = min(gamma,(1+2*integrator.alg.max_newton_iter)*gamma/(niters+2*integrator.alg.max_newton_iter))
-  expo = 1/(alg_order(integrator.alg)+1)
+  expo = 1/(get_current_alg_order(integrator.alg,integrator.cache)+1)
   qtmp = (integrator.EEst^expo)/fac
   @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
   if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
@@ -207,7 +207,7 @@ end
 function step_accept_controller!(integrator,
                       alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Predictive},q)
   if integrator.success_iter > 0
-    expo = 1/(alg_adaptive_order(integrator.alg)+1)
+    expo = 1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1)
     qgus=(integrator.dtacc/integrator.dt)*(((integrator.EEst^2)/integrator.erracc)^expo)
     qgus = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qgus/integrator.opts.gamma))
     qacc=max(q,qgus)

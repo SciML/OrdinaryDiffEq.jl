@@ -109,7 +109,7 @@
   if max_d₁d₂ <= 1//Int64(10)^(15)
     dt₁ = max(tType(1//10^(6)),dt₀*1//10^(3))
   else
-    dt₁ = tType(10.0^(-(2+log10(max_d₁d₂))/alg_order(integrator.alg)))
+    dt₁ = tType(10.0^(-(2+log10(max_d₁d₂))/get_current_alg_order(integrator.alg,integrator.cache)))
   end
   dt = tdir*min(100dt₀,dt₁,dtmax_tdir)
 end
@@ -147,7 +147,7 @@ end
   if max_d₁d₂ <= 1//Int64(10)^(15)
     dt₁ = max(tType(1//10^(6)),dt₀*1//10^(3))
   else
-    dt₁ = tType(10.0^(-(2+log10(max_d₁d₂))/alg_order(integrator.alg)))
+    dt₁ = tType(10.0^(-(2+log10(max_d₁d₂))/get_current_alg_order(integrator.alg,integrator.cache)))
   end
   dt = tdir*min(100dt₀,dt₁,dtmax_tdir)
 end
