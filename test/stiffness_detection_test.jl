@@ -23,16 +23,16 @@ for prob in probArr
   @test length(sol.t) < 620
   @test is_switching_fb(sol)
 
-  sol = solve(prob,AutoVern6(Rosenbrock23(); maxstiffstep=4, maxnonstiffstep=4))
+  sol = solve(prob,AutoVern6(Kvaerno3(); maxstiffstep=4, maxnonstiffstep=4))
   @test length(sol.t) < 810
   @test is_switching_fb(sol)
-  sol = solve(prob,AutoVern7(Rosenbrock23(); maxstiffstep=4, maxnonstiffstep=4))
+  sol = solve(prob,AutoVern7(Hairer42(); maxstiffstep=4, maxnonstiffstep=4))
   @test length(sol.t) < 635
   @test is_switching_fb(sol)
   sol = solve(prob,AutoVern8(Rosenbrock23(); maxstiffstep=4, maxnonstiffstep=4))
   @test length(sol.t) < 570
   @test is_switching_fb(sol)
-  sol = solve(prob,AutoVern9(Rosenbrock23(); maxstiffstep=4, maxnonstiffstep=4))
+  sol = solve(prob,AutoVern9(KenCarp3(); maxstiffstep=4, maxnonstiffstep=4))
   @test length(sol.t) < 705
   @test is_switching_fb(sol)
 end

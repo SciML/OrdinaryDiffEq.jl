@@ -44,11 +44,12 @@ end
 @muladd function perform_step!(integrator, cache::GenericImplicitEulerConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uhold,rhs,nl_rhs = cache
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
   rhs.tmp = uprev
 
-  if integrator.success_iter > 0 && !integrator.reeval_fsal && integrator.alg.extrapolant == :interpolant
+  if integrator.success_iter > 0 && !integrator.reeval_fsal && alg.extrapolant == :interpolant
     uhold[1] = current_extrapolant(t+dt,integrator)
-  elseif integrator.alg.extrapolant == :linear
+  elseif alg.extrapolant == :linear
     uhold[1] = uprev + dt*integrator.fsalfirst
   else # :constant
     uhold[1] = uprev
@@ -57,7 +58,7 @@ end
   rhs.t = t
   rhs.dt = dt
   rhs.a = dt
-  nlres = integrator.alg.nlsolve(nl_rhs,uhold)
+  nlres = alg.nlsolve(nl_rhs,uhold)
   uhold[1] = nlres[1]
   integrator.fsallast = f(uhold[1],p,t+dt)
   u = uhold[1]
@@ -102,11 +103,12 @@ end
 @muladd function perform_step!(integrator, cache::GenericImplicitEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack dual_cache,k,nl_rhs,rhs,tmp,atmp = cache
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
   copy!(tmp,uprev)
 
-  if integrator.success_iter > 0 && !integrator.reeval_fsal && integrator.alg.extrapolant == :interpolant
+  if integrator.success_iter > 0 && !integrator.reeval_fsal && alg.extrapolant == :interpolant
     current_extrapolant!(u,t+dt,integrator)
-  elseif integrator.alg.extrapolant == :linear
+  elseif alg.extrapolant == :linear
     @. u = uprev + dt*integrator.fsalfirst
   else
     copy!(u,uprev)
@@ -115,7 +117,7 @@ end
   rhs.t = t
   rhs.dt = dt
   rhs.a = dt
-  nlres = integrator.alg.nlsolve(nl_rhs,u)
+  nlres = alg.nlsolve(nl_rhs,u)
   copy!(u,nlres)
 
   if integrator.opts.adaptive && integrator.success_iter > 0
@@ -156,11 +158,12 @@ end
 @muladd function perform_step!(integrator, cache::GenericTrapezoidConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uhold,rhs,nl_rhs = cache
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
   rhs.tmp = first(uprev) + (dt/2)*first(integrator.fsalfirst)
 
-  if integrator.success_iter > 0 && !integrator.reeval_fsal && integrator.alg.extrapolant == :interpolant
+  if integrator.success_iter > 0 && !integrator.reeval_fsal && alg.extrapolant == :interpolant
     uhold[1] = current_extrapolant(t+dt,integrator)
-  elseif integrator.alg.extrapolant == :linear
+  elseif alg.extrapolant == :linear
     uhold[1] = uprev + dt*integrator.fsalfirst
   else # :constant
     uhold[1] = uprev
@@ -169,7 +172,7 @@ end
   rhs.t = t
   rhs.dt = dt
   rhs.a = dt/2
-  nlres = integrator.alg.nlsolve(nl_rhs,uhold)
+  nlres = alg.nlsolve(nl_rhs,uhold)
   uhold[1] = nlres[1]
   integrator.fsallast = f(uhold[1],p,t+dt)
   u = uhold[1]
@@ -230,11 +233,12 @@ end
 @muladd function perform_step!(integrator, cache::GenericTrapezoidCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack dual_cache,k,rhs,nl_rhs,tmp,atmp = cache
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
   tmp .= uprev .+ (dt/2).*integrator.fsalfirst
 
-  if integrator.success_iter > 0 && !integrator.reeval_fsal && integrator.alg.extrapolant == :interpolant
+  if integrator.success_iter > 0 && !integrator.reeval_fsal && alg.extrapolant == :interpolant
     current_extrapolant!(u,t+dt,integrator)
-  elseif integrator.alg.extrapolant == :linear
+  elseif alg.extrapolant == :linear
     @. u = uprev + dt*integrator.fsalfirst
   else
     copy!(u,uprev)
@@ -244,7 +248,7 @@ end
   rhs.t = t
   rhs.dt = dt
   rhs.a = dt/2
-  nlres = integrator.alg.nlsolve(nl_rhs,u)
+  nlres = alg.nlsolve(nl_rhs,u)
   copy!(u,nlres)
 
   if integrator.opts.adaptive

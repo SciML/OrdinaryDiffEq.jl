@@ -12,6 +12,7 @@ end
 @muladd function perform_step!(integrator, cache::ABDF2ConstantCache, repeat_step=false)
   @unpack t,f,p = integrator
   @unpack uf,κ,tol,dtₙ₋₁ = cache
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
   dtₙ, uₙ, uₙ₋₁, uₙ₋₂ = integrator.dt, integrator.u, integrator.uprev, integrator.uprev2
 
   if integrator.iter == 1 && !integrator.u_modified
@@ -44,7 +45,7 @@ end
 
   zₙ₋₁ = dtₙ*fₙ₋₁
   # initial guess
-  if integrator.alg.extrapolant == :linear
+  if alg.extrapolant == :linear
     z = dtₙ*fₙ₋₁
   else # :constant
     z = zero(uₙ)
@@ -65,7 +66,7 @@ end
 
   # Newton iteration
   fail_convergence = false
-  while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
+  while (do_newton || iter < alg.min_newton_iter) && iter < alg.max_newton_iter
     iter += 1
     uₙ = tmp + d*z
     b = dtₙ*f(uₙ, p, tstep) - z
@@ -73,7 +74,7 @@ end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
     θ = ndz/ndzprev
-    if θ > 1 || ndz*(θ^(integrator.alg.max_newton_iter - iter)/(1-θ)) > κtol
+    if θ > 1 || ndz*(θ^(alg.max_newton_iter - iter)/(1-θ)) > κtol
       fail_convergence = true
       break
     end
@@ -82,7 +83,7 @@ end
     z = z + dz
   end
 
-  if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
+  if (iter >= alg.max_newton_iter && do_newton) || fail_convergence
     integrator.force_stepfail = true
     return
   end
@@ -124,6 +125,7 @@ end
 @muladd function perform_step!(integrator, cache::ABDF2Cache, repeat_step=false)
   @unpack t,dt,f,p = integrator
   @unpack dz,z,k,b,J,W,tmp,atmp,κ,tol,dtₙ₋₁,zₙ₋₁ = cache
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
   uₙ,uₙ₋₁,uₙ₋₂,dtₙ = integrator.u,integrator.uprev,integrator.uprev2,integrator.dt
 
   if integrator.iter == 1 && !integrator.u_modified
@@ -148,7 +150,7 @@ end
 
   # initial guess
   @. zₙ₋₁ = dtₙ*fₙ₋₁
-  if integrator.alg.extrapolant == :linear
+  if alg.extrapolant == :linear
     @. z = dtₙ*fₙ₋₁
   else # :constant
     fill!(z, zero(eltype(z)))
@@ -174,7 +176,7 @@ end
 
   # Newton iteration
   fail_convergence = false
-  while (do_newton || iter < integrator.alg.min_newton_iter) && iter < integrator.alg.max_newton_iter
+  while (do_newton || iter < alg.min_newton_iter) && iter < alg.max_newton_iter
     iter += 1
     @. uₙ = tmp + d*z
     f(k, uₙ, p, tstep)
@@ -187,7 +189,7 @@ end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
     θ = ndz/ndzprev
-    if θ > 1 || ndz*(θ^(integrator.alg.max_newton_iter - iter)/(1-θ)) > κtol
+    if θ > 1 || ndz*(θ^(alg.max_newton_iter - iter)/(1-θ)) > κtol
       fail_convergence = true
       break
     end
@@ -196,7 +198,7 @@ end
     z .+= dz
   end
 
-  if (iter >= integrator.alg.max_newton_iter && do_newton) || fail_convergence
+  if (iter >= alg.max_newton_iter && do_newton) || fail_convergence
     integrator.force_stepfail = true
     return
   end

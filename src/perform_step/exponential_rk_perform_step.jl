@@ -17,14 +17,15 @@ end
 function perform_step!(integrator, cache::LawsonEulerConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
   @unpack lin,nl = integrator.fsalfirst
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
   integrator.k[1] = lin + nl
 
-  if integrator.alg.krylov
-    @muladd u = expmv(dt, f.f1, uprev + dt*nl; tol=integrator.opts.reltol, m=min(integrator.alg.m, size(f.f1,1)), norm=normbound)
+  if alg.krylov
+    @muladd u = expmv(dt, f.f1, uprev + dt*nl; tol=integrator.opts.reltol, m=min(alg.m, size(f.f1,1)), norm=normbound)
   else
     @muladd u = cache.exphA*(uprev + dt*nl)
   end
-  
+
   # Push the fsal at t+dt
   lin = f.f1(u,p,t+dt)
   nl = f.f2(u,p,t+dt)
@@ -53,15 +54,16 @@ function perform_step!(integrator, cache::LawsonEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack lin,nl = integrator.fsalfirst
   @unpack tmp,exphA = cache
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
   @. integrator.k[1] = lin + nl
-  
+
   @muladd @. tmp = uprev + dt*nl
-  if integrator.alg.krylov
-    expmv!(u,dt,f.f1,tmp; tol=integrator.opts.reltol, m=min(integrator.alg.m, size(f.f1,1)), norm=normbound)
+  if alg.krylov
+    expmv!(u,dt,f.f1,tmp; tol=integrator.opts.reltol, m=min(alg.m, size(f.f1,1)), norm=normbound)
   else
     A_mul_B!(u,exphA,tmp)
   end
-  
+
   # Push the fsal at t+dt
   @unpack lin,nl = integrator.fsallast
   f.f1(lin,u,p,t+dt)
@@ -89,10 +91,11 @@ function perform_step!(integrator, cache::NorsettEulerConstantCache, repeat_step
   @unpack t,dt,uprev,f,p = integrator
   @unpack lin,nl = integrator.fsalfirst
   @unpack exphA,phihA = cache
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
   integrator.k[1] = lin + nl
-  
-  if integrator.alg.krylov
-    u = phimv(dt,f.f1,nl,uprev; tol=integrator.opts.reltol, m=min(integrator.alg.m, size(f.f1,1)), norm=normbound)
+
+  if alg.krylov
+    u = phimv(dt,f.f1,nl,uprev; tol=integrator.opts.reltol, m=min(alg.m, size(f.f1,1)), norm=normbound)
   else
     u = exphA*uprev + dt*(phihA*nl)
   end
@@ -125,10 +128,11 @@ function perform_step!(integrator, cache::NorsettEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack lin,nl = integrator.fsalfirst
   @unpack tmp,rtmp,exphA,phihA = cache
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
   @. integrator.k[1] = lin + nl
 
-  if integrator.alg.krylov
-    phimv!(u,dt,f.f1,nl,uprev; tol=integrator.opts.reltol, m=min(integrator.alg.m, size(f.f1,1)), norm=normbound)
+  if alg.krylov
+    phimv!(u,dt,f.f1,nl,uprev; tol=integrator.opts.reltol, m=min(alg.m, size(f.f1,1)), norm=normbound)
   else
     A_mul_B!(tmp,exphA,uprev)
     A_mul_B!(rtmp,phihA,nl)

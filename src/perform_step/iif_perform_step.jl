@@ -27,6 +27,7 @@ end
 function perform_step!(integrator,cache::Union{GenericIIF1ConstantCache,GenericIIF2ConstantCache},repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uhold,rhs,nl_rhs = cache
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
 
   # If adaptive, this should be computed after and cached
   A = integrator.f.f1
@@ -42,7 +43,7 @@ function perform_step!(integrator,cache::Union{GenericIIF1ConstantCache,GenericI
 
   rhs.t = t
   rhs.dt = dt
-  nlres = integrator.alg.nlsolve(nl_rhs,uhold)
+  nlres = alg.nlsolve(nl_rhs,uhold)
   uhold[1] = integrator.f.f2(nlres[1],integrator.p,t+dt)
   u = nlres[1]
   integrator.fsallast = A*u + uhold[1]
@@ -84,6 +85,7 @@ function perform_step!(integrator,cache::Union{GenericIIF1Cache,GenericIIF2Cache
   @unpack rtmp1,tmp,k = cache
   @unpack rhs,nl_rhs = cache
   @unpack t,dt,uprev,u,f,p = integrator
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
 
   @. k = uprev
   if typeof(cache) <: GenericIIF2Cache
@@ -98,7 +100,7 @@ function perform_step!(integrator,cache::Union{GenericIIF1Cache,GenericIIF2Cache
 
   rhs.t = t
   rhs.dt = dt
-  nlres = integrator.alg.nlsolve(nl_rhs,u)
+  nlres = alg.nlsolve(nl_rhs,u)
 
   copy!(u,nlres)
   integrator.f.f2(rtmp1,nlres,integrator.p,t+dt)

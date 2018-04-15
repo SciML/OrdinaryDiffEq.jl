@@ -17,6 +17,7 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, f
 end
 
 function build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
+  alg = typeof(alg) <: CompositeAlgorithm ? alg.algs[alg.current_alg] : alg
   if !has_jac(f)
     if alg_autodiff(alg)
       jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
@@ -34,6 +35,7 @@ function build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
 end
 
 function build_grad_config(alg,f,tf,du1,t)
+  alg = typeof(alg) <: CompositeAlgorithm ? alg.algs[alg.current_alg] : alg
   if !has_tgrad(f)
     if alg_autodiff(alg)
       grad_config = ForwardDiff.DerivativeConfig(tf,du1,t)
