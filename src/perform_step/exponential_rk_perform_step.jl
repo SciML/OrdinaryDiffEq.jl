@@ -17,7 +17,7 @@ end
 function perform_step!(integrator, cache::LawsonEulerConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
   @unpack lin,nl = integrator.fsalfirst
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
   integrator.k[1] = lin + nl
 
   if alg.krylov
@@ -54,7 +54,7 @@ function perform_step!(integrator, cache::LawsonEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack lin,nl = integrator.fsalfirst
   @unpack tmp,exphA = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
   @. integrator.k[1] = lin + nl
 
   @muladd @. tmp = uprev + dt*nl
@@ -91,7 +91,7 @@ function perform_step!(integrator, cache::NorsettEulerConstantCache, repeat_step
   @unpack t,dt,uprev,f,p = integrator
   @unpack lin,nl = integrator.fsalfirst
   @unpack exphA,phihA = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
   integrator.k[1] = lin + nl
 
   if alg.krylov
@@ -128,7 +128,7 @@ function perform_step!(integrator, cache::NorsettEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack lin,nl = integrator.fsalfirst
   @unpack tmp,rtmp,exphA,phihA = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
   @. integrator.k[1] = lin + nl
 
   if alg.krylov

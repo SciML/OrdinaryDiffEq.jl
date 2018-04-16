@@ -12,7 +12,7 @@ end
 @muladd function perform_step!(integrator, cache::ABDF2ConstantCache, repeat_step=false)
   @unpack t,f,p = integrator
   @unpack uf,κ,tol,dtₙ₋₁ = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
   dtₙ, uₙ, uₙ₋₁, uₙ₋₂ = integrator.dt, integrator.u, integrator.uprev, integrator.uprev2
 
   if integrator.iter == 1 && !integrator.u_modified
@@ -125,7 +125,7 @@ end
 @muladd function perform_step!(integrator, cache::ABDF2Cache, repeat_step=false)
   @unpack t,dt,f,p = integrator
   @unpack dz,z,k,b,J,W,tmp,atmp,κ,tol,dtₙ₋₁,zₙ₋₁ = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
   uₙ,uₙ₋₁,uₙ₋₂,dtₙ = integrator.u,integrator.uprev,integrator.uprev2,integrator.dt
 
   if integrator.iter == 1 && !integrator.u_modified

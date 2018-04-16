@@ -44,7 +44,7 @@ end
 @muladd function perform_step!(integrator, cache::GenericImplicitEulerConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uhold,rhs,nl_rhs = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
   rhs.tmp = uprev
 
   if integrator.success_iter > 0 && !integrator.reeval_fsal && alg.extrapolant == :interpolant
@@ -103,7 +103,7 @@ end
 @muladd function perform_step!(integrator, cache::GenericImplicitEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack dual_cache,k,nl_rhs,rhs,tmp,atmp = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
   copy!(tmp,uprev)
 
   if integrator.success_iter > 0 && !integrator.reeval_fsal && alg.extrapolant == :interpolant
@@ -158,7 +158,7 @@ end
 @muladd function perform_step!(integrator, cache::GenericTrapezoidConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uhold,rhs,nl_rhs = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
   rhs.tmp = first(uprev) + (dt/2)*first(integrator.fsalfirst)
 
   if integrator.success_iter > 0 && !integrator.reeval_fsal && alg.extrapolant == :interpolant
@@ -233,7 +233,7 @@ end
 @muladd function perform_step!(integrator, cache::GenericTrapezoidCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack dual_cache,k,rhs,nl_rhs,tmp,atmp = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
   tmp .= uprev .+ (dt/2).*integrator.fsalfirst
 
   if integrator.success_iter > 0 && !integrator.reeval_fsal && alg.extrapolant == :interpolant

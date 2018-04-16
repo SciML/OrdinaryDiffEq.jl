@@ -13,7 +13,7 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
   @unpack γ,a31,a32,a41,a42,a43,btilde1,btilde2,btilde3,btilde4,c3,α31,α32 = cache.tab
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   # precalculations
   κtol = κ*tol
@@ -190,7 +190,7 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,z₁,z₂,z₃,z₄,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
   @unpack γ,a31,a32,a41,a42,a43,btilde1,btilde2,btilde3,btilde4,c3,α31,α32 = cache.tab
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   # precalculations
   κtol = κ*tol
@@ -402,7 +402,7 @@ end
   @unpack t,dt,uprev,u,p = integrator
   @unpack uf,κ,tol = cache
   @unpack γ,a31,a32,a41,a42,a43,btilde1,btilde2,btilde3,btilde4,c3,α31,α32,ea21,ea31,ea32,ea41,ea42,ea43,eb1,eb2,eb3,eb4,ebtilde1,ebtilde2,ebtilde3,ebtilde4 = cache.tab
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   if typeof(integrator.f) <: SplitFunction
     f = integrator.f.f1
@@ -634,7 +634,7 @@ end
   @unpack γ,a31,a32,a41,a42,a43,btilde1,btilde2,btilde3,btilde4,c3,α31,α32 = cache.tab
   @unpack ea21,ea31,ea32,ea41,ea42,ea43,eb1,eb2,eb3,eb4 = cache.tab
   @unpack ebtilde1,ebtilde2,ebtilde3,ebtilde4 = cache.tab
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   if typeof(integrator.f) <: SplitFunction
     f = integrator.f.f1
@@ -908,7 +908,7 @@ end
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,c3,c4 = cache.tab
   @unpack α21,α31,α32,α41,α42 = cache.tab
   @unpack btilde1,btilde2,btilde3,btilde4,btilde5 = cache.tab
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   # precalculations
   κtol = κ*tol
@@ -1135,7 +1135,7 @@ end
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,c3,c4 = cache.tab
   @unpack α21,α31,α32,α41,α42 = cache.tab
   @unpack btilde1,btilde2,btilde3,btilde4,btilde5 = cache.tab
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   # precalculations
   κtol = κ*tol
@@ -1401,7 +1401,7 @@ end
   @unpack ea21,ea31,ea32,ea41,ea42,ea43,ea51,ea52,ea53,ea54,ea61,ea62,ea63,ea64,ea65 = cache.tab
   @unpack eb1,eb3,eb4,eb5,eb6 = cache.tab
   @unpack ebtilde1,ebtilde3,ebtilde4,ebtilde5,ebtilde6 = cache.tab
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   if typeof(integrator.f) <: SplitFunction
     f = integrator.f.f1
@@ -1737,7 +1737,7 @@ end
   @unpack ea21,ea31,ea32,ea41,ea42,ea43,ea51,ea52,ea53,ea54,ea61,ea62,ea63,ea64,ea65 = cache.tab
   @unpack eb1,eb3,eb4,eb5,eb6 = cache.tab
   @unpack ebtilde1,ebtilde3,ebtilde4,ebtilde5,ebtilde6 = cache.tab
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   if typeof(integrator.f) <: SplitFunction
     f = integrator.f.f1
@@ -2146,7 +2146,7 @@ end
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,c3,c4,c5,c6 = cache.tab
   @unpack btilde1,btilde3,btilde4,btilde5,btilde6,btilde7 = cache.tab
   @unpack α31,α32,α41,α42,α43,α51,α52,α53,α61,α62,α63 = cache.tab
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   # precalculations
   κtol = κ*tol
@@ -2455,7 +2455,7 @@ end
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,c3,c4,c5,c6 = cache.tab
   @unpack btilde1,btilde3,btilde4,btilde5,btilde6,btilde7 = cache.tab
   @unpack α31,α32,α41,α42,α43,α51,α52,α53,α61,α62,α63 = cache.tab
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   # precalculations
   κtol = κ*tol
@@ -2833,7 +2833,7 @@ end
   @unpack ea71,ea73,ea74,ea75,ea76,ea81,ea83,ea84,ea85,ea86,ea87 = cache.tab
   @unpack eb1,eb4,eb5,eb6,eb7,eb8 = cache.tab
   @unpack ebtilde1,ebtilde4,ebtilde5,ebtilde6,ebtilde7,ebtilde8 = cache.tab
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   if typeof(integrator.f) <: SplitFunction
     f = integrator.f.f1
@@ -3271,7 +3271,7 @@ end
   @unpack ea71,ea73,ea74,ea75,ea76,ea81,ea83,ea84,ea85,ea86,ea87 = cache.tab
   @unpack eb1,eb4,eb5,eb6,eb7,eb8 = cache.tab
   @unpack ebtilde1,ebtilde4,ebtilde5,ebtilde6,ebtilde7,ebtilde8 = cache.tab
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   if typeof(integrator.f) <: SplitFunction
     f = integrator.f.f1

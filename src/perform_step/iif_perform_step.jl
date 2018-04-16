@@ -27,7 +27,7 @@ end
 function perform_step!(integrator,cache::Union{GenericIIF1ConstantCache,GenericIIF2ConstantCache},repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uhold,rhs,nl_rhs = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   # If adaptive, this should be computed after and cached
   A = integrator.f.f1
@@ -85,7 +85,7 @@ function perform_step!(integrator,cache::Union{GenericIIF1Cache,GenericIIF2Cache
   @unpack rtmp1,tmp,k = cache
   @unpack rhs,nl_rhs = cache
   @unpack t,dt,uprev,u,f,p = integrator
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   @. k = uprev
   if typeof(cache) <: GenericIIF2Cache

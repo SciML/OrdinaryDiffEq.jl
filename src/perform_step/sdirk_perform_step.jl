@@ -12,7 +12,7 @@ end
 @muladd function perform_step!(integrator, cache::ImplicitEulerConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   # precalculations
   κtol = κ*tol
@@ -115,7 +115,7 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,z,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
   mass_matrix = integrator.sol.prob.mass_matrix
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   # precalculations
   κtol = κ*tol
@@ -227,7 +227,7 @@ end
 @muladd function perform_step!(integrator, cache::ImplicitMidpointConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   # precalculations
   κtol = κ*tol
@@ -313,7 +313,7 @@ end
 @muladd function perform_step!(integrator, cache::ImplicitMidpointCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,z,k,b,J,W,jac_config,tmp,κ,tol = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
   mass_matrix = integrator.sol.prob.mass_matrix
 
   # precalculations
@@ -410,7 +410,7 @@ end
 @muladd function perform_step!(integrator, cache::TrapezoidConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   # precalculations
   κtol = κ*tol
@@ -530,7 +530,7 @@ end
 @muladd function perform_step!(integrator, cache::TrapezoidCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,z,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
   mass_matrix = integrator.sol.prob.mass_matrix
 
   # precalculations
@@ -663,7 +663,7 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
   @unpack γ,d,ω,btilde1,btilde2,btilde3,α1,α2 = cache.tab
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   # precalculations
   κtol = κ*tol
@@ -805,7 +805,7 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,zprev,zᵧ,z,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
   @unpack γ,d,ω,btilde1,btilde2,btilde3,α1,α2 = cache.tab
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   # precalculations
   κtol = κ*tol
@@ -960,7 +960,7 @@ end
 @muladd function perform_step!(integrator, cache::SDIRK2ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   # precalculations
   κtol = κ*tol
@@ -1101,7 +1101,7 @@ end
 @muladd function perform_step!(integrator, cache::SDIRK2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,z₁,z₂,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   # precalculations
   κtol = κ*tol
@@ -1255,7 +1255,7 @@ end
 @muladd function perform_step!(integrator, cache::SSPSDIRK2ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   γ = eltype(u)(1//4)
   c2 = typeof(t)(3//4)
@@ -1390,7 +1390,7 @@ end
 @muladd function perform_step!(integrator, cache::SSPSDIRK2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,z₁,z₂,k,b,J,W,jac_config,tmp,κ,tol = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   γ = eltype(u)(1//4)
   c2 = typeof(t)(3//4)
@@ -1534,7 +1534,7 @@ end
   @unpack uf,κ,tol = cache
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack b1hat1,b2hat1,b3hat1,b4hat1,b1hat2,b2hat2,b3hat2,b4hat2 = cache.tab
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   # precalculations
   κtol = κ*tol
@@ -1806,7 +1806,7 @@ end
   @unpack uf,du1,dz,z₁,z₂,z₃,z₄,z₅,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack b1hat1,b2hat1,b3hat1,b4hat1,b1hat2,b2hat2,b3hat2,b4hat2 = cache.tab
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   # precalculations
   κtol = κ*tol
@@ -2124,7 +2124,7 @@ end
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack α21,α31,α32,α41,α43 = cache.tab
   @unpack bhat1,bhat2,bhat3,bhat4,btilde1,btilde2,btilde3,btilde4,btilde5 = cache.tab
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   # precalculations
   κtol = κ*tol
@@ -2385,7 +2385,7 @@ end
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack α21,α31,α32,α41,α43 = cache.tab
   @unpack bhat1,bhat2,bhat3,bhat4,btilde1,btilde2,btilde3,btilde4,btilde5 = cache.tab
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.alg.current_alg] : integrator.alg
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   # precalculations
   κtol = κ*tol
