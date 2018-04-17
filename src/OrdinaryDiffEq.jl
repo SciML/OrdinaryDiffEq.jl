@@ -29,7 +29,8 @@ module OrdinaryDiffEq
   import ForwardDiff.Dual
 
   # Required by temporary fix in not in-place methods with 12+ broadcasts
-  import StaticArrays: SArray
+  # `MVector` is used by Nordsieck forms
+  import StaticArrays: SArray, MVector
 
   # Integrator Interface
   import DiffEqBase: resize!,deleteat!,addat!,full_cache,user_cache,u_cache,du_cache,

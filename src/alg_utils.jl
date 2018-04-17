@@ -209,6 +209,8 @@ alg_order(alg::ABM32) = 3
 alg_order(alg::ABM43) = 4
 alg_order(alg::ABM54) = 5
 
+alg_order(alg::AN5) = 5
+
 alg_order(alg::ABDF2) = 2
 
 alg_adaptive_order(alg::ExplicitRK) = alg.tableau.adaptiveorder
