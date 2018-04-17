@@ -1,5 +1,5 @@
 # This function computes the integral, from -1 to 0, of a polynomial
-# `P(x)` from the coefficients of `P` with a offset `k`.
+# `P(x)` from the coefficients of `P` with an offset `k`.
 function ∫₋₁⁰dx(a, deg, k)
   @inbounds begin
     int = zero(eltype(a))
@@ -13,7 +13,11 @@ function ∫₋₁⁰dx(a, deg, k)
 end
 
 # `l` is the coefficients of the polynomial `Λ` that satisfies conditions
-# Λ(0) = 1, Λ(-1) = 0, and Λ̇(-ξᵢ) = 0, where ξᵢ = (tₙ-tₙ₋₁)/dt
+# Λ(0) = 1, Λ(-1) = 0, and Λ̇(-ξᵢ) = 0, where ξᵢ = (tₙ-tₙ₋₁)/dt.
+# It is described in the paper "A Polyalgorithm for the Numerical Solution
+# of Ordinary Differential Equations" by G. D. Byrne and A. C. Hindmarsh in
+# the page 86.
+# https://dl.acm.org/citation.cfm?id=355636
 function calc_coeff!(cache)
   @inbounds begin
     @unpack m, l, tau = cache
