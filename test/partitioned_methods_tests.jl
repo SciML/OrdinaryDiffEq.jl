@@ -44,6 +44,8 @@ sol2_verlet(0.1)
 @test sol_verlet[end][3] == sol2_verlet[end][3]
 @test sol_ruth3[end][3] == sol2_ruth3[end][3]
 
+println("Convergence tests")
+
 dts = 1.//2.^(6:-1:3)
 # Symplectic Euler
 sim = test_convergence(dts,prob,SymplecticEuler(),dense_errors=true)
@@ -185,7 +187,7 @@ sol = solve(prob,Euler(),dt=1/100)
 
 ################# Out of place symplectic
 
-using OrdinaryDiffEq, Base.Test, RecursiveArrayTools, DiffEqDevTools
+println("Out of Place")
 
 u0 = 0.0
 v0 = 1.0
