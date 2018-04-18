@@ -14,7 +14,6 @@ function (::typeof(prob.f))(::Type{Val{:analytic}}, y0, p, x)
   ArrayPartition(-u0*sin(x) + v0*cos(x),u0*cos(x) + v0*sin(x))
 end
 
-
 sol = solve(prob,SymplecticEuler(),dt=1/2)
 sol_verlet = solve(prob,VelocityVerlet(),dt=1/100)
 sol_ruth3 = solve(prob,Ruth3(),dt=1/100)
