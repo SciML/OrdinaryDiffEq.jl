@@ -23,7 +23,7 @@ function calc_coeff!(cache)
     @unpack m, l, tau = cache
     ZERO, ONE = zero(m[1]), one(m[1])
     dtsum = dt = tau[1]
-    order = length(l) - 1
+    order = cache.step
     m[1] = ONE
     for i in 2:order+1
       m[i] = ZERO
@@ -46,3 +46,32 @@ function calc_coeff!(cache)
     cache.tq = M1 * M0_inv * ξ_inv
   end
 end
+
+# Apply the Pascal linear operator
+function perform_predict!(cache, undo)
+  @inbounds begin
+    @unpack z,step = cache
+    # This can be parallelized
+    if !undo
+      for i in 1:step, j in step:-1:i
+        @. z[j] = z[j] + z[j+1]
+      end
+    else
+      for i in 1:step, j in step:-1:i
+        @. z[j] = z[j] - z[j+1]
+      end
+    end
+  end
+end
+
+# Apply corrections on the Nordsieck vector
+function perform_correct!(cache)
+  @inbounds begin
+    @unpack z,Δ,l,step = cache
+    for i in 1:step+1
+      @. z[i] = muladd(l[i], Δ, z[i])
+    end
+  end
+end
+
+# TODO: Functional iteration solver
