@@ -55,7 +55,7 @@ end
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqAlgorithm,cache) = (cache.tmp,)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm,cache) = (cache.tmp,cache.atmp)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,cache) = (cache.tmp,cache.linsolve_tmp)
-@inline DiffEqBase.get_tmp_cache(integrator,alg::CompositeAlgorithm, cache) = get_tmp_cache(integrator, integrator.alg.algs[cache.current], cache.caches[cache.current])
+@inline DiffEqBase.get_tmp_cache(integrator,alg::CompositeAlgorithm, cache) = get_tmp_cache(integrator, integrator.alg.algs[1], cache.caches[1])
 
 user_cache(integrator::ODEIntegrator) = user_cache(integrator.cache)
 u_cache(integrator::ODEIntegrator) = u_cache(integrator.cache)
