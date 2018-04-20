@@ -48,40 +48,52 @@ function calc_coeff!(cache)
 end
 
 # Apply the Pascal linear operator
-function perform_predict!(cache, undo)
+function perform_predict!(cache::T, undo) where T
   @inbounds begin
     @unpack z,step = cache
+    ± = undo ? (-) : (+)
     # This can be parallelized
-    if !undo
+    if T <: OrdinaryDiffEqConstantCache
       for i in 1:step, j in step:-1:i
-        @. z[j] = z[j] + z[j+1]
+        z[j] = z[j] ± z[j+1]
       end
     else
       for i in 1:step, j in step:-1:i
-        @. z[j] = z[j] - z[j+1]
+        @. z[j] = z[j] ± z[j+1]
       end
-    end
-  end
+    end # endif not const cache
+  end # end @inbounds
 end
 
 # Apply corrections on the Nordsieck vector
 function perform_correct!(cache)
   @inbounds begin
     @unpack z,Δ,l,step = cache
-    for i in 1:step+1
-      @. z[i] = muladd(l[i], Δ, z[i])
-    end
-  end
+    if typeof(cache) <: OrdinaryDiffEqConstantCache
+      for i in 1:step+1
+        z[i] = muladd(l[i], Δ, z[i])
+      end
+    else
+      for i in 1:step+1
+        @. z[i] = muladd(l[i], Δ, z[i])
+      end
+    end # endif not const cache
+  end # end @inbounds
 end
 
-# TODO: Functional iteration solver
-function nlsolve_functional!(integrator, cache)
+function nlsolve_functional!(integrator, cache::T) where T
   @unpack f, dt, u, t, p = integrator
-  @unpack ratetmp, tab = cache
-  @unpack Δ, z, l, tq = tab
-  integrator.f(ratetmp, z[1], p, dt+t)
+  isconstcache = T <: OrdinaryDiffEqConstantCache
+  if isconstcache
+    @unpack Δ, z, l, tq = cache
+    ratetmp = integrator.f(z[1], p, dt+t)
+  else
+    @unpack ratetmp, const_cache = cache
+    @unpack Δ, z, l, tq = const_cache
+    integrator.f(ratetmp, z[1], p, dt+t)
+  end
   # Zero out the difference vector
-  Δ .= zero(eltype(Δ))
+  isconstcache ? ( Δ .= zero(eltype(Δ)) ) : Δ = zero(Δ)
   # `pconv` is used in the convergence test
   pconv = (1//10) / tq
   # `k` is a counter for convergence test
@@ -92,11 +104,17 @@ function nlsolve_functional!(integrator, cache)
   δ_prev = 0
   # Start the functional iteration & store the difference into `Δ`
   while true
-    @. ratetmp = inv(l[2])*muladd(dt, ratetmp, -z[2])
-    @. u = ratetmp + z[1]
-    @. Δ = ratetmp - Δ
+    if isconstcache
+      ratetmp = inv(l[2])*muladd(dt, ratetmp, -z[2])
+      u = ratetmp + z[1]
+      Δ = ratetmp - Δ
+    else
+      @. ratetmp = inv(l[2])*muladd(dt, ratetmp, -z[2])
+      @. u = ratetmp + z[1]
+      @. Δ = ratetmp - Δ
+    end
     δ = integrator.opt.internalnorm(Δ)
-    # It only make sense to calcluate convergence rate in the second iteration
+    # It only makes sense to calcluate convergence rate in the second iteration
     if k >= 1
       conv_rate = max(1//10*conv_rate, δ/δ_prev)
     end
@@ -106,6 +124,7 @@ function nlsolve_functional!(integrator, cache)
     # TODO: Add divergence test & max_iter
     ######################################
     δ_prev = δ
-    integrator.f(ratetmp, u, p, dt+t)
+    isconstcache ? (ratetmp = integrator.f(u, p, dt+t)) :
+                   integrator.f(ratetmp, u, p, dt+t)
   end
 end

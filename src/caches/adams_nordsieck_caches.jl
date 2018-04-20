@@ -38,7 +38,7 @@ function alg_cache(alg::AN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   AN5ConstantCache(u, uprev, rate_prototype, uBottomEltypeNoUnits, tTypeNoUnits, dt, false)
 end
 
-mutable struct AN5Cache{uType,rateType,constType,tsit5Type} <: OrdinaryDiffEqMutableCache
+mutable struct AN5Cache{uType,rateType,uArrayType,uEltypeNoUnits,constType,tsit5Type} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -51,7 +51,7 @@ mutable struct AN5Cache{uType,rateType,constType,tsit5Type} <: OrdinaryDiffEqMut
 end
 
 u_cache(c::AN5Cache) = ()
-du_cache(c::AN5Cache) = (c.fsalfirst,c.hist1,c.hist2)
+du_cache(c::AN5Cache) = (c.fsalfirst,)
 
 function alg_cache(alg::AN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   fsalfirst = zeros(rate_prototype)

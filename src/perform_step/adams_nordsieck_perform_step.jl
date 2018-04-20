@@ -22,6 +22,7 @@ end
     if cache.step == 1
       # Grow the Nordsieck vector to length 2+1
       perform_step!(integrator, tsit5tab, repeat_step)
+      # TODO: handle the dense output from `Tsit5`
       # The first history vector is `h ydot`
       cache.z[2] = integrator.fsalfirst*dt
       cache.step += 1
@@ -62,8 +63,6 @@ end
   return nothing
 end
 
-# Work on the out-of-place version first
-#=
 function initialize!(integrator, cache::AN5Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
@@ -76,7 +75,8 @@ end
 
 @muladd function perform_step!(integrator, cache::AN5Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack hist1,hist2,hist3,hist4,hist5,l,m,tq,tau = cache
+  @unpack const_cache,utilde,tmp,ratetmp,atmp,tsit5cache = cache
+  @unpack z,l,m,tq,tau, = const_cache
   # handle callbacks, rewind back to order one.
   if integrator.u_modified
     cache.step = 1
@@ -85,7 +85,8 @@ end
   if cache.step <= 4
     if cache.step == 1
       # Grow the Nordsieck vector to length 2+1
-      perform_step!(integrator, EulerConstantCache(), repeat_step)
+      perform_step!(integrator, tsit5cache, repeat_step)
+      # TODO: handle the dense output from `Tsit5`
       # The first history vector is `h ydot`
       cache.hist1 = integrator.fsalfirst*dt
       cache.step += 1
@@ -120,4 +121,3 @@ end
   integrator.u = uₙ
   return nothing
 end
-=#
