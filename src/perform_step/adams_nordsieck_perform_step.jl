@@ -34,6 +34,7 @@ end
     elseif cache.step == 4
       # Grow the Nordsieck vector to length 5+1
       cache.step += 1
+    end
   else
   # Perform 5th order Adams method in Nordsieck form
 

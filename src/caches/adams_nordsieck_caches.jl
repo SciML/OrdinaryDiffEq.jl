@@ -14,12 +14,12 @@ mutable struct AN5ConstantCache{zType,lType,dtType,uType} <: OrdinaryDiffEqConst
   step::Int
 end
 
-function AN5ConstantCache(u, rate_prototype, tTypeNoUnits, dt, mut)
+function AN5ConstantCache(u, uprev, rate_prototype, tTypeNoUnits, dt, mut)
   #siz = size(rate_prototype)
   #typ = Base.promote_op(*, eltype(rate_prototype), tTypeNoUnits)
   if mut
     # We don't need to swap pointers for the mutable cache
-    z = SVector(u, [zeros(rate_prototype) for i in 1:5]...)
+    z = SVector(uprev, [zeros(rate_prototype) for i in 1:5]...)
     Δ = zeros(u)
   else
     z = [u, [rate_prototype for i in 1:5]...]
@@ -32,7 +32,7 @@ function AN5ConstantCache(u, rate_prototype, tTypeNoUnits, dt, mut)
 end
 
 function alg_cache(alg::AN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  AN5ConstantCache(u, rate_prototype, tTypeNoUnits, dt, false)
+  AN5ConstantCache(u, uprev, rate_prototype, tTypeNoUnits, dt, false)
 end
 
 mutable struct AN5Cache{uType,rateType,histType,lType} <: OrdinaryDiffEqMutableCache
@@ -49,6 +49,6 @@ du_cache(c::AN5Cache) = (c.fsalfirst,c.hist1,c.hist2)
 function alg_cache(alg::AN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   fsalfirst = zeros(rate_prototype)
   tmp = similar(u)
-  tab = AN5ConstantCache(u, rate_prototype, tTypeNoUnits, dt, true)
+  tab = AN5ConstantCache(u, uprev, rate_prototype, tTypeNoUnits, dt, true)
   AN5Cache(u,uprev,fsalfirst,tmp,tab)
 end

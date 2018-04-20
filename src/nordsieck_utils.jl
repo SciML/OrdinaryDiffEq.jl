@@ -75,3 +75,37 @@ function perform_correct!(cache)
 end
 
 # TODO: Functional iteration solver
+function nlsolve_functional!(integrator, cache)
+  @unpack f, dt, u, t, p = integrator
+  @unpack tmp, tab = cache
+  @unpack Δ, z, l, tq = tab
+  integrator.f(tmp, z[1], p, dt+t)
+  # Zero out the difference vector
+  Δ .= zero(eltype(Δ))
+  # `pconv` is used in the convergence test
+  pconv = (1//10) / tq
+  # `k` is a counter for convergence test
+  k = 0
+  # `conv_rate` is used in convergence rate estimation
+  conv_rate = 1.
+  # initialize `δ_prev`
+  δ_prev = 0
+  # Start the functional iteration & store the difference into `Δ`
+  while true
+    @. tmp = inv(l[2])*muladd(dt, tmp, -z[2])
+    @. u = tmp + z[1]
+    @. Δ = tmp - Δ
+    δ = integrator.opt.internalnorm(Δ)
+    # It only make sense to calcluate convergence rate in the second iteration
+    if k >= 1
+      conv_rate = max(1//10*conv_rate, δ/δ_prev)
+    end
+    test_rate = δ * min(one(conv_rate), conv_rate) / pconv
+    test_rate <= one(test_rate) && return nothing
+    k += 1
+    # TODO: Add divergence test & max_iter
+    ######################################
+    δ_prev = δ
+    integrator.f(tmp, u, p, dt+t)
+  end
+end
