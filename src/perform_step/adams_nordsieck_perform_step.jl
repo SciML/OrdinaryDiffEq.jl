@@ -11,7 +11,7 @@ end
 
 @muladd function perform_step!(integrator, cache::AN5ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack z,l,m,tq,tau = cache
+  @unpack z,l,m,tq,tau,tsit5tab = cache
   z[1] = uprev
   # handle callbacks, rewind back to order one.
   if integrator.u_modified
@@ -21,7 +21,7 @@ end
   if cache.step <= 4
     if cache.step == 1
       # Grow the Nordsieck vector to length 2+1
-      perform_step!(integrator, EulerConstantCache(), repeat_step)
+      perform_step!(integrator, tsit5tab, repeat_step)
       # The first history vector is `h ydot`
       cache.z[2] = integrator.fsalfirst*dt
       cache.step += 1

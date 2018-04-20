@@ -77,9 +77,9 @@ end
 # TODO: Functional iteration solver
 function nlsolve_functional!(integrator, cache)
   @unpack f, dt, u, t, p = integrator
-  @unpack tmp, tab = cache
+  @unpack ratetmp, tab = cache
   @unpack Δ, z, l, tq = tab
-  integrator.f(tmp, z[1], p, dt+t)
+  integrator.f(ratetmp, z[1], p, dt+t)
   # Zero out the difference vector
   Δ .= zero(eltype(Δ))
   # `pconv` is used in the convergence test
@@ -92,9 +92,9 @@ function nlsolve_functional!(integrator, cache)
   δ_prev = 0
   # Start the functional iteration & store the difference into `Δ`
   while true
-    @. tmp = inv(l[2])*muladd(dt, tmp, -z[2])
-    @. u = tmp + z[1]
-    @. Δ = tmp - Δ
+    @. ratetmp = inv(l[2])*muladd(dt, ratetmp, -z[2])
+    @. u = ratetmp + z[1]
+    @. Δ = ratetmp - Δ
     δ = integrator.opt.internalnorm(Δ)
     # It only make sense to calcluate convergence rate in the second iteration
     if k >= 1
@@ -106,6 +106,6 @@ function nlsolve_functional!(integrator, cache)
     # TODO: Add divergence test & max_iter
     ######################################
     δ_prev = δ
-    integrator.f(tmp, u, p, dt+t)
+    integrator.f(ratetmp, u, p, dt+t)
   end
 end
