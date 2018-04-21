@@ -38,7 +38,7 @@ end
 # NOTE: If you want to add new tests (for new algorithms), you have to run the
 #       commands below to get numerical values for `tol_ode_linear` and
 #       `tol_ode_2Dlinear`.
-function regression_test(alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = false, nth_der = 1)
+function regression_test(alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = false, nth_der = 1, dertol=1e-6)
   PRINT_TESTS && println("\n", alg)
 
   sol = solve(prob_ode_linear, alg, dt=1//2^(2), dense=true)
@@ -48,7 +48,7 @@ function regression_test(alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = fal
     if test_diff1
       for t in deriv_test_points
         deriv = sol(t, Val{N})
-        @test deriv ≈ nth_derivative(sol, t, N)
+        @test deriv ≈ nth_derivative(sol, t, N) rtol=dertol
       end
     end
   end
@@ -58,15 +58,17 @@ function regression_test(alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = fal
   sol(interpolation_results_1d_inplace, interpolation_points)
   sol(interpolation_points[1], idxs=1:1)
   sol(interpolation_points[1])
-  if test_diff1
-    sol(interpolation_results_1d_inplace, interpolation_points, Val{1}, idxs=1:1)
-    sol(interpolation_results_1d_inplace, interpolation_points, Val{1})
-    sol(interpolation_points[1], Val{1}, idxs=1:1)
-    der = sol(interpolation_points[1], Val{1})
-    @test interpolation_results_1d_inplace[1] ≈ der
-    for t in deriv_test_points
-      deriv = sol(t, Val{1}, idxs=1)
-      @test deriv ≈ ForwardDiff.derivative(t->sol(t,idxs=1), t)
+  for N in 1:nth_der
+    if test_diff1
+      sol(interpolation_results_1d_inplace, interpolation_points, Val{N}, idxs=1:1)
+      sol(interpolation_results_1d_inplace, interpolation_points, Val{N})
+      sol(interpolation_points[1], Val{N}, idxs=1:1)
+      der = sol(interpolation_points[1], Val{N})
+      @test interpolation_results_1d_inplace[1] ≈ der
+      for t in deriv_test_points
+        deriv = sol(t, Val{N}, idxs=1)
+        @test deriv ≈ nth_derivative(t->sol(t,idxs=1), t, N) rtol=dertol
+      end
     end
   end
 
@@ -175,7 +177,7 @@ regression_test(DP5(), 5e-6, 1e-5; test_diff1 = true)
 regression_test(BS3(), 5e-4, 8e-4)
 
 # Tsit5
-regression_test(Tsit5(), 2e-6, 4e-6; test_diff1 = true, nth_der = 4)
+regression_test(Tsit5(), 2e-6, 4e-6; test_diff1 = true, nth_der = 4, dertol = 1e-6)
 
 # TanYam7
 regression_test(TanYam7(), 4e-4, 6e-4)
