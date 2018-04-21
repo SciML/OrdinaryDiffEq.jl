@@ -25,20 +25,31 @@ end
 
 const deriv_test_points = linspace(0,1,5)
 
+function nth_derivative(fun, t, n)
+  if n == 1
+    return der = ForwardDiff.derivative(fun, t)
+  else
+    dfun = x -> ForwardDiff.derivative(fun, x)
+    nth_derivative(dfun, t, n-1)
+  end
+end
+
 # perform the regression tests
 # NOTE: If you want to add new tests (for new algorithms), you have to run the
 #       commands below to get numerical values for `tol_ode_linear` and
 #       `tol_ode_2Dlinear`.
-function regression_test(alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = false)
+function regression_test(alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = false, nth_der = 1)
   PRINT_TESTS && println("\n", alg)
 
   sol = solve(prob_ode_linear, alg, dt=1//2^(2), dense=true)
   sol(interpolation_results_1d, interpolation_points)
   sol(interpolation_points[1])
-  if test_diff1
-    for t in deriv_test_points
-      deriv = sol(t, Val{1})
-      @test deriv ≈ ForwardDiff.derivative(sol, t)
+  for N in 1:nth_der
+    if test_diff1
+      for t in deriv_test_points
+        deriv = sol(t, Val{N})
+        @test deriv ≈ nth_derivative(sol, t, N)
+      end
     end
   end
 
@@ -164,7 +175,7 @@ regression_test(DP5(), 5e-6, 1e-5; test_diff1 = true)
 regression_test(BS3(), 5e-4, 8e-4)
 
 # Tsit5
-regression_test(Tsit5(), 2e-6, 4e-6; test_diff1 = true)
+regression_test(Tsit5(), 2e-6, 4e-6; test_diff1 = true, nth_der = 4)
 
 # TanYam7
 regression_test(TanYam7(), 4e-4, 6e-4)
