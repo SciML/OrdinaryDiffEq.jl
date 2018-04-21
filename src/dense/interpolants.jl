@@ -212,6 +212,105 @@ end
   end
 end
 
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Tsit5Cache,idxs,T::Type{Val{2}})
+  @unpack r11,r12,r13,r14,r22,r23,r24,r32,r33,r34,r42,r43,r44,r52,r53,r54,r62,r63,r64,r72,r73,r74 = cache.tab
+
+  b1Θdiff2 = @evalpoly(Θ, 2*r12, 6*r13, 12*r14)
+  b2Θdiff2 = @evalpoly(Θ, 2*r22, 6*r23, 12*r24)
+  b3Θdiff2 = @evalpoly(Θ, 2*r32, 6*r33, 12*r34)
+  b4Θdiff2 = @evalpoly(Θ, 2*r42, 6*r43, 12*r44)
+  b5Θdiff2 = @evalpoly(Θ, 2*r52, 6*r53, 12*r54)
+  b6Θdiff2 = @evalpoly(Θ, 2*r62, 6*r63, 12*r64)
+  b7Θdiff2 = @evalpoly(Θ, 2*r72, 6*r73, 12*r74)
+  invdt = inv(dt)
+
+  if out == nothing
+    if idxs == nothing
+      # return @. k[1]*b1Θdiff2 + k[2]*b2Θdiff2 + k[3]*b3Θdiff2 + k[4]*b4Θdiff2 + k[5]*b5Θdiff2 + k[6]*b6Θdiff2 + k[7]*b7Θdiff2
+      return (k[1]*b1Θdiff2 + k[2]*b2Θdiff2 + k[3]*b3Θdiff2 + k[4]*b4Θdiff2 + k[5]*b5Θdiff2 + k[6]*b6Θdiff2 + k[7]*b7Θdiff2)*invdt
+    else
+      # return @. k[1][idxs]*b1Θdiff2 + k[2][idxs]*b2Θdiff2 + k[3][idxs]*b3Θdiff2 + k[4][idxs]*b4Θdiff2 + k[5][idxs]*b5Θdiff2 + k[6][idxs]*b6Θdiff2 + k[7][idxs]*b7Θdiff2
+      return (k[1][idxs]*b1Θdiff2 + k[2][idxs]*b2Θdiff2 + k[3][idxs]*b3Θdiff2 + k[4][idxs]*b4Θdiff2 + k[5][idxs]*b5Θdiff2 + k[6][idxs]*b6Θdiff2 + k[7][idxs]*b7Θdiff2)*invdt
+    end
+  elseif idxs == nothing
+    #@. out = k[1]*b1Θdiff2 + k[2]*b2Θdiff2 + k[3]*b3Θdiff2 + k[4]*b4Θdiff2 + k[5]*b5Θdiff2 + k[6]*b6Θdiff2 + k[7]*b7Θdiff2
+    @inbounds for i in eachindex(out)
+      out[i] = (k[1][i]*b1Θdiff2 + k[2][i]*b2Θdiff2 + k[3][i]*b3Θdiff2 + k[4][i]*b4Θdiff2 + k[5][i]*b5Θdiff2 + k[6][i]*b6Θdiff2 + k[7][i]*b7Θdiff2)*invdt
+    end
+  else
+    #@views @. out = k[1][idxs]*b1Θdiff2 + k[2][idxs]*b2Θdiff2 + k[3][idxs]*b3Θdiff2 + k[4][idxs]*b4Θdiff2 + k[5][idxs]*b5Θdiff2 + k[6][idxs]*b6Θdiff2 + k[7][idxs]*b7Θdiff2
+    @inbounds for (j,i) in enumerate(idxs)
+      out[j] = (k[1][i]*b1Θdiff2 + k[2][i]*b2Θdiff2 + k[3][i]*b3Θdiff2 + k[4][i]*b4Θdiff2 + k[5][i]*b5Θdiff2 + k[6][i]*b6Θdiff2 + k[7][i]*b7Θdiff2)*invdt
+    end
+  end
+end
+
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Tsit5Cache,idxs,T::Type{Val{3}})
+  @unpack r11,r12,r13,r14,r22,r23,r24,r32,r33,r34,r42,r43,r44,r52,r53,r54,r62,r63,r64,r72,r73,r74 = cache.tab
+
+  b1Θdiff3 = @evalpoly(Θ, 6*r13, 24*r14)
+  b2Θdiff3 = @evalpoly(Θ, 6*r23, 24*r24)
+  b3Θdiff3 = @evalpoly(Θ, 6*r33, 24*r34)
+  b4Θdiff3 = @evalpoly(Θ, 6*r43, 24*r44)
+  b5Θdiff3 = @evalpoly(Θ, 6*r53, 24*r54)
+  b6Θdiff3 = @evalpoly(Θ, 6*r63, 24*r64)
+  b7Θdiff3 = @evalpoly(Θ, 6*r73, 24*r74)
+  invdt2 = inv(dt)^2
+
+  if out == nothing
+    if idxs == nothing
+      # return @. k[1]*b1Θdiff3 + k[2]*b2Θdiff3 + k[3]*b3Θdiff3 + k[4]*b4Θdiff3 + k[5]*b5Θdiff3 + k[6]*b6Θdiff3 + k[7]*b7Θdiff3
+      return (k[1]*b1Θdiff3 + k[2]*b2Θdiff3 + k[3]*b3Θdiff3 + k[4]*b4Θdiff3 + k[5]*b5Θdiff3 + k[6]*b6Θdiff3 + k[7]*b7Θdiff3)*invdt2
+    else
+      # return @. k[1][idxs]*b1Θdiff3 + k[2][idxs]*b2Θdiff3 + k[3][idxs]*b3Θdiff3 + k[4][idxs]*b4Θdiff3 + k[5][idxs]*b5Θdiff3 + k[6][idxs]*b6Θdiff3 + k[7][idxs]*b7Θdiff3
+      return (k[1][idxs]*b1Θdiff3 + k[2][idxs]*b2Θdiff3 + k[3][idxs]*b3Θdiff3 + k[4][idxs]*b4Θdiff3 + k[5][idxs]*b5Θdiff3 + k[6][idxs]*b6Θdiff3 + k[7][idxs]*b7Θdiff3)*invdt2
+    end
+  elseif idxs == nothing
+    #@. out = k[1]*b1Θdiff3 + k[2]*b2Θdiff3 + k[3]*b3Θdiff3 + k[4]*b4Θdiff3 + k[5]*b5Θdiff3 + k[6]*b6Θdiff3 + k[7]*b7Θdiff3
+    @inbounds for i in eachindex(out)
+      out[i] = (k[1][i]*b1Θdiff3 + k[2][i]*b2Θdiff3 + k[3][i]*b3Θdiff3 + k[4][i]*b4Θdiff3 + k[5][i]*b5Θdiff3 + k[6][i]*b6Θdiff3 + k[7][i]*b7Θdiff3)*invdt2
+    end
+  else
+    #@views @. out = k[1][idxs]*b1Θdiff3 + k[2][idxs]*b2Θdiff3 + k[3][idxs]*b3Θdiff3 + k[4][idxs]*b4Θdiff3 + k[5][idxs]*b5Θdiff3 + k[6][idxs]*b6Θdiff3 + k[7][idxs]*b7Θdiff3
+    @inbounds for (j,i) in enumerate(idxs)
+      out[j] = (k[1][i]*b1Θdiff3 + k[2][i]*b2Θdiff3 + k[3][i]*b3Θdiff3 + k[4][i]*b4Θdiff3 + k[5][i]*b5Θdiff3 + k[6][i]*b6Θdiff3 + k[7][i]*b7Θdiff3)*invdt2
+    end
+  end
+end
+
+@muladd function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Tsit5Cache,idxs,T::Type{Val{4}})
+  @unpack r11,r12,r13,r14,r22,r23,r24,r32,r33,r34,r42,r43,r44,r52,r53,r54,r62,r63,r64,r72,r73,r74 = cache.tab
+
+  b1Θdiff4 = 24*r14
+  b2Θdiff4 = 24*r24
+  b3Θdiff4 = 24*r34
+  b4Θdiff4 = 24*r44
+  b5Θdiff4 = 24*r54
+  b6Θdiff4 = 24*r64
+  b7Θdiff4 = 24*r74
+  invdt3 = inv(dt)^3
+
+  if out == nothing
+    if idxs == nothing
+      # return @. k[1]*b1Θdiff4 + k[2]*b2Θdiff4 + k[3]*b3Θdiff4 + k[4]*b4Θdiff4 + k[5]*b5Θdiff4 + k[6]*b6Θdiff4 + k[7]*b7Θdiff4
+      return (k[1]*b1Θdiff4 + k[2]*b2Θdiff4 + k[3]*b3Θdiff4 + k[4]*b4Θdiff4 + k[5]*b5Θdiff4 + k[6]*b6Θdiff4 + k[7]*b7Θdiff4)*invdt3
+    else
+      # return @. k[1][idxs]*b1Θdiff4 + k[2][idxs]*b2Θdiff4 + k[3][idxs]*b3Θdiff4 + k[4][idxs]*b4Θdiff4 + k[5][idxs]*b5Θdiff4 + k[6][idxs]*b6Θdiff4 + k[7][idxs]*b7Θdiff4
+      return (k[1][idxs]*b1Θdiff4 + k[2][idxs]*b2Θdiff4 + k[3][idxs]*b3Θdiff4 + k[4][idxs]*b4Θdiff4 + k[5][idxs]*b5Θdiff4 + k[6][idxs]*b6Θdiff4 + k[7][idxs]*b7Θdiff4)*invdt3
+    end
+  elseif idxs == nothing
+    #@. out = k[1]*b1Θdiff4 + k[2]*b2Θdiff4 + k[3]*b3Θdiff4 + k[4]*b4Θdiff4 + k[5]*b5Θdiff4 + k[6]*b6Θdiff4 + k[7]*b7Θdiff4
+    @inbounds for i in eachindex(out)
+      out[i] = (k[1][i]*b1Θdiff4 + k[2][i]*b2Θdiff4 + k[3][i]*b3Θdiff4 + k[4][i]*b4Θdiff4 + k[5][i]*b5Θdiff4 + k[6][i]*b6Θdiff4 + k[7][i]*b7Θdiff4)*invdt3
+    end
+  else
+    #@views @. out = k[1][idxs]*b1Θdiff4 + k[2][idxs]*b2Θdiff4 + k[3][idxs]*b3Θdiff4 + k[4][idxs]*b4Θdiff4 + k[5][idxs]*b5Θdiff4 + k[6][idxs]*b6Θdiff4 + k[7][idxs]*b7Θdiff4
+    @inbounds for (j,i) in enumerate(idxs)
+      out[j] = (k[1][i]*b1Θdiff4 + k[2][i]*b2Θdiff4 + k[3][i]*b3Θdiff4 + k[4][i]*b4Θdiff4 + k[5][i]*b5Θdiff4 + k[6][i]*b6Θdiff4 + k[7][i]*b7Θdiff4)*invdt3
+    end
+  end
+end
+
 """
 Runge–Kutta pairs of order 5(4) satisfying only the first column
 simplifying assumption
@@ -259,6 +358,78 @@ end
     return k[1][idxs]*b1Θdiff + k[2][idxs]*b2Θdiff + k[3][idxs]*b3Θdiff +
            k[4][idxs]*b4Θdiff + k[5][idxs]*b5Θdiff + k[6][idxs]*b6Θdiff +
            k[7][idxs]*b7Θdiff
+  end
+end
+
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Tsit5ConstantCache,idxs,T::Type{Val{2}})
+  @unpack r11,r12,r13,r14,r22,r23,r24,r32,r33,r34,r42,r43,r44,r52,r53,r54,r62,r63,r64,r72,r73,r74 = cache
+
+  b1Θdiff2 = @evalpoly(Θ, 2*r12, 6*r13, 12*r14)
+  b2Θdiff2 = @evalpoly(Θ, 2*r22, 6*r23, 12*r24)
+  b3Θdiff2 = @evalpoly(Θ, 2*r32, 6*r33, 12*r34)
+  b4Θdiff2 = @evalpoly(Θ, 2*r42, 6*r43, 12*r44)
+  b5Θdiff2 = @evalpoly(Θ, 2*r52, 6*r53, 12*r54)
+  b6Θdiff2 = @evalpoly(Θ, 2*r62, 6*r63, 12*r64)
+  b7Θdiff2 = @evalpoly(Θ, 2*r72, 6*r73, 12*r74)
+  invdt = inv(dt)
+
+  if idxs == nothing
+    # return @. k[1]*b1Θdiff2 + k[2]*b2Θdiff2 + k[3]*b3Θdiff2 + k[4]*b4Θdiff2 + k[5]*b5Θdiff2 + k[6]*b6Θdiff2 + k[7]*b7Θdiff2
+    return (k[1]*b1Θdiff2 + k[2]*b2Θdiff2 + k[3]*b3Θdiff2 + k[4]*b4Θdiff2 +
+            k[5]*b5Θdiff2 + k[6]*b6Θdiff2 + k[7]*b7Θdiff2)*invdt
+  else
+    # return @. k[1][idxs]*b1Θdiff2 + k[2][idxs]*b2Θdiff2 + k[3][idxs]*b3Θdiff2 + k[4][idxs]*b4Θdiff2 + k[5][idxs]*b5Θdiff2 + k[6][idxs]*b6Θdiff2 + k[7][idxs]*b7Θdiff2
+    return (k[1][idxs]*b1Θdiff2 + k[2][idxs]*b2Θdiff2 + k[3][idxs]*b3Θdiff2 +
+            k[4][idxs]*b4Θdiff2 + k[5][idxs]*b5Θdiff2 + k[6][idxs]*b6Θdiff2 +
+            k[7][idxs]*b7Θdiff2)*invdt
+  end
+end
+
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Tsit5ConstantCache,idxs,T::Type{Val{3}})
+  @unpack r11,r12,r13,r14,r22,r23,r24,r32,r33,r34,r42,r43,r44,r52,r53,r54,r62,r63,r64,r72,r73,r74 = cache
+
+  b1Θdiff3 = @evalpoly(Θ, 6*r13, 24*r14)
+  b2Θdiff3 = @evalpoly(Θ, 6*r23, 24*r24)
+  b3Θdiff3 = @evalpoly(Θ, 6*r33, 24*r34)
+  b4Θdiff3 = @evalpoly(Θ, 6*r43, 24*r44)
+  b5Θdiff3 = @evalpoly(Θ, 6*r53, 24*r54)
+  b6Θdiff3 = @evalpoly(Θ, 6*r63, 24*r64)
+  b7Θdiff3 = @evalpoly(Θ, 6*r73, 24*r74)
+  invdt2 = inv(dt)^2
+
+  if idxs == nothing
+    # return @. k[1]*b1Θdiff3 + k[2]*b2Θdiff3 + k[3]*b3Θdiff3 + k[4]*b4Θdiff3 + k[5]*b5Θdiff3 + k[6]*b6Θdiff3 + k[7]*b7Θdiff3
+    return (k[1]*b1Θdiff3 + k[2]*b2Θdiff3 + k[3]*b3Θdiff3 + k[4]*b4Θdiff3 +
+            k[5]*b5Θdiff3 + k[6]*b6Θdiff3 + k[7]*b7Θdiff3)*invdt2
+  else
+    # return @. k[1][idxs]*b1Θdiff3 + k[2][idxs]*b2Θdiff3 + k[3][idxs]*b3Θdiff3 + k[4][idxs]*b4Θdiff3 + k[5][idxs]*b5Θdiff3 + k[6][idxs]*b6Θdiff3 + k[7][idxs]*b7Θdiff3
+    return (k[1][idxs]*b1Θdiff3 + k[2][idxs]*b2Θdiff3 + k[3][idxs]*b3Θdiff3 +
+            k[4][idxs]*b4Θdiff3 + k[5][idxs]*b5Θdiff3 + k[6][idxs]*b6Θdiff3 +
+            k[7][idxs]*b7Θdiff3)*invdt2
+  end
+end
+
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Tsit5ConstantCache,idxs,T::Type{Val{4}})
+  @unpack r11,r12,r13,r14,r22,r23,r24,r32,r33,r34,r42,r43,r44,r52,r53,r54,r62,r63,r64,r72,r73,r74 = cache
+
+  b1Θdiff4 = 24*r14
+  b2Θdiff4 = 24*r24
+  b3Θdiff4 = 24*r34
+  b4Θdiff4 = 24*r44
+  b5Θdiff4 = 24*r54
+  b6Θdiff4 = 24*r64
+  b7Θdiff4 = 24*r74
+  invdt3 = inv(dt)^3
+
+  if idxs == nothing
+    # return @. k[1]*b1Θdiff4 + k[2]*b2Θdiff4 + k[3]*b3Θdiff4 + k[4]*b4Θdiff4 + k[5]*b5Θdiff4 + k[6]*b6Θdiff4 + k[7]*b7Θdiff4
+    return (k[1]*b1Θdiff4 + k[2]*b2Θdiff4 + k[3]*b3Θdiff4 + k[4]*b4Θdiff4 +
+            k[5]*b5Θdiff4 + k[6]*b6Θdiff4 + k[7]*b7Θdiff4)*invdt3
+  else
+    # return @. k[1][idxs]*b1Θdiff4 + k[2][idxs]*b2Θdiff4 + k[3][idxs]*b3Θdiff4 + k[4][idxs]*b4Θdiff4 + k[5][idxs]*b5Θdiff4 + k[6][idxs]*b6Θdiff4 + k[7][idxs]*b7Θdiff4
+    return (k[1][idxs]*b1Θdiff4 + k[2][idxs]*b2Θdiff4 + k[3][idxs]*b3Θdiff4 +
+            k[4][idxs]*b4Θdiff4 + k[5][idxs]*b5Θdiff4 + k[6][idxs]*b6Θdiff4 +
+            k[7][idxs]*b7Θdiff4)*invdt3
   end
 end
 
