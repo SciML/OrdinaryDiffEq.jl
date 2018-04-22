@@ -51,10 +51,11 @@ end
 
 #TODO: Bigger caches for most algorithms
 @inline DiffEqBase.get_tmp_cache(integrator::ODEIntegrator) =
-          get_tmp_cache(integrator::ODEIntegrator,integrator.alg)
-@inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqAlgorithm) = (integrator.cache.tmp,)
-@inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = (integrator.cache.tmp,integrator.cache.atmp)
-@inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqRosenbrockAdaptiveAlgorithm) = (integrator.cache.tmp,integrator.cache.linsolve_tmp)
+          get_tmp_cache(integrator::ODEIntegrator,integrator.alg,integrator.cache)
+@inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqAlgorithm,cache) = (cache.tmp,)
+@inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm,cache) = (cache.tmp,cache.atmp)
+@inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,cache) = (cache.tmp,cache.linsolve_tmp)
+@inline DiffEqBase.get_tmp_cache(integrator,alg::CompositeAlgorithm, cache) = get_tmp_cache(integrator, integrator.alg.algs[1], cache.caches[1])
 
 user_cache(integrator::ODEIntegrator) = user_cache(integrator.cache)
 u_cache(integrator::ODEIntegrator) = u_cache(integrator.cache)
