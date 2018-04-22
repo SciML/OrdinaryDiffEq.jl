@@ -1,41 +1,36 @@
 function initialize!(integrator,cache::AN5ConstantCache)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-  integrator.kshortsize = 2
+  integrator.kshortsize = 7
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
   integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
+  @inbounds for i in 2:integrator.kshortsize-1
+    integrator.k[i] = zero(integrator.fsalfirst)
+  end
+  integrator.k[integrator.kshortsize] = integrator.fsallast
 end
 
 @muladd function perform_step!(integrator, cache::AN5ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z,l,m,tq,tau,tsit5tab = cache
-  z[1] = uprev
+  #z[1] = uprev
   # handle callbacks, rewind back to order one.
   if integrator.u_modified
     cache.step = 1
   end
-  # Nordsieck form needs to build the history vector, so one has to start from order one.
-  if cache.step <= 4
-    if cache.step == 1
-      # Grow the Nordsieck vector to length 2+1
+  # Nordsieck form needs to build the history vector
+  if cache.step == 1
+      # Start the Nordsieck vector in one shot!
       perform_step!(integrator, tsit5tab, repeat_step)
-      # TODO: handle the dense output from `Tsit5`
-      # The first history vector is `h ydot`
-      cache.z[2] = integrator.fsalfirst*dt
-      cache.step += 1
-    elseif cache.step == 2
-      # Grow the Nordsieck vector to length 3+1
-      cache.step += 1
-    elseif cache.step == 3
-      # Grow the Nordsieck vector to length 4+1
-      cache.step += 1
-    elseif cache.step == 4
-      # Grow the Nordsieck vector to length 5+1
-      cache.step += 1
-    end
+      cache.step = 5
+      z[1] = integrator.u
+      z[2] = integrator.k[7]*dt/1
+      z[3] = ode_interpolant(t+dt,dt,nothing,nothing,integrator.k,tsit5cache,nothing,T::Type{Val{2}})*dt^2/2
+      z[4] = ode_interpolant(t+dt,dt,nothing,nothing,integrator.k,tsit5cache,nothing,T::Type{Val{3}})*dt^3/6
+      z[5] = ode_interpolant(t+dt,dt,nothing,nothing,integrator.k,tsit5cache,nothing,T::Type{Val{4}})*dt^4/24
+      z[6] = zero(cache.z[6])
   else
   # Perform 5th order Adams method in Nordsieck form
 
@@ -64,13 +59,18 @@ end
 end
 
 function initialize!(integrator, cache::AN5Cache)
-  integrator.kshortsize = 2
-  integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.k
+  integrator.kshortsize = 7
+  integrator.fsalfirst = cache.k1; integrator.fsallast = cache.tsit5cache.k7 # setup pointers
   resize!(integrator.k, integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+  # Setup k pointers
+  integrator.k[1] = cache.tsit5cache.k1
+  integrator.k[2] = cache.tsit5cache.k2
+  integrator.k[3] = cache.tsit5cache.k3
+  integrator.k[4] = cache.tsit5cache.k4
+  integrator.k[5] = cache.tsit5cache.k5
+  integrator.k[6] = cache.tsit5cache.k6
+  integrator.k[7] = cache.tsit5cache.k7
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 end
 
 @muladd function perform_step!(integrator, cache::AN5Cache, repeat_step=false)
@@ -81,32 +81,26 @@ end
   if integrator.u_modified
     cache.step = 1
   end
-  # Nordsieck form needs to build the history vector, so one has to start from order one.
-  if cache.step <= 4
-    if cache.step == 1
-      # Grow the Nordsieck vector to length 2+1
-      perform_step!(integrator, tsit5cache, repeat_step)
-      # TODO: handle the dense output from `Tsit5`
-      # The first history vector is `h ydot`
-      cache.hist1 = integrator.fsalfirst*dt
-      cache.step += 1
-      return nothing
-    elseif cache.step == 2
-      # Grow the Nordsieck vector to length 3+1
-      cache.step += 1
-      return nothing
-    elseif cache.step == 3
-      # Grow the Nordsieck vector to length 4+1
-      cache.step += 1
-      return nothing
-    elseif cache.step == 4
-      # Grow the Nordsieck vector to length 5+1
-      cache.step += 1
-      return nothing
-    end
-  end
+  # Nordsieck form needs to build the history vector
+  if cache.step == 1
+    # Start the Nordsieck vector in one shot!
+    perform_step!(integrator, tsit5tab, repeat_step)
+    const_cache.step = 5
+    # `u` is aliased to `z[1]`
+    # @. z[1] = integrator.u
+    @. z[2] = integrator.k[7]*dt
+    ode_interpolant!(z[3],t+dt,dt,nothing,nothing,integrator.k,tsit5cache,nothing,Val{2})
+    ode_interpolant!(z[4],t+dt,dt,nothing,nothing,integrator.k,tsit5cache,nothing,Val{3})
+    ode_interpolant!(z[5],t+dt,dt,nothing,nothing,integrator.k,tsit5cache,nothing,Val{4})
+    @. z[3] = z[3]*dt^2/2
+    @. z[4] = z[4]*dt^3/6
+    @. z[5] = z[5]*dt^4/24
+    fill!(z[6], zero(eltype(z[6])))
+  else
 
   # WIP
+
+  end
 
   ################################### Finalize
 

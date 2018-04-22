@@ -21,7 +21,7 @@ function AN5ConstantCache(u, uprev, rate_prototype, uBottomEltypeNoUnits, tTypeN
   #typ = Base.promote_op(*, eltype(rate_prototype), tTypeNoUnits)
   if mut
     # We don't need to swap pointers for the mutable cache
-    z = SVector(uprev, [zeros(rate_prototype) for i in 1:5]...)
+    z = SVector(u, [zeros(rate_prototype) for i in 1:5]...)
     Δ = zeros(u)
   else
     z = [u, [rate_prototype for i in 1:5]...]
@@ -59,9 +59,13 @@ function alg_cache(alg::AN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   #################################################
   # Tsit5
   tab = const_cache.tsit5tab
-  k1 = const_cache.z[2]; k2 = const_cache.z[3]
-  k3 = const_cache.z[4]; k4 = const_cache.z[5]
-  k5 = const_cache.z[6]
+  #k1 = const_cache.z[2]; k2 = const_cache.z[3]
+  #k3 = const_cache.z[4]; k4 = const_cache.z[5]
+  #k5 = const_cache.z[6]
+  # Cannot alias pointers, since we have to use `k`s to start the Nordsieck vector
+  k1 = zeros(rate_prototype); k2 = zeros(rate_prototype)
+  k3 = zeros(rate_prototype); k4 = zeros(rate_prototype)
+  k5 = zeros(rate_prototype)
   k6 = zeros(rate_prototype); k7 = zeros(rate_prototype)
   utilde = similar(u,indices(u))
   atmp = similar(u,uEltypeNoUnits,indices(u)); tmp = similar(u)

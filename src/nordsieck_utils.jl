@@ -82,16 +82,18 @@ function perform_correct!(cache)
 end
 
 function nlsolve_functional!(integrator, cache::T) where T
-  @unpack f, dt, u, t, p = integrator
+  @unpack f, dt, u, uprev, t, p = integrator
   isconstcache = T <: OrdinaryDiffEqConstantCache
   if isconstcache
     @unpack Δ, z, l, tq = cache
-    ratetmp = integrator.f(z[1], p, dt+t)
+    ratetmp = integrator.f(uprev, p, dt+t)
   else
     @unpack ratetmp, const_cache = cache
     @unpack Δ, z, l, tq = const_cache
-    integrator.f(ratetmp, z[1], p, dt+t)
+    integrator.f(ratetmp, uprev, p, dt+t)
   end
+  max_iter = 3
+  div_rate = 2
   # Zero out the difference vector
   isconstcache ? ( Δ .= zero(eltype(Δ)) ) : Δ = zero(Δ)
   # `pconv` is used in the convergence test
@@ -106,25 +108,25 @@ function nlsolve_functional!(integrator, cache::T) where T
   while true
     if isconstcache
       ratetmp = inv(l[2])*muladd(dt, ratetmp, -z[2])
-      u = ratetmp + z[1]
+      z[1] = ratetmp + uprev
       Δ = ratetmp - Δ
     else
       @. ratetmp = inv(l[2])*muladd(dt, ratetmp, -z[2])
-      @. u = ratetmp + z[1]
+      @. z[1] = ratetmp + uprev
       @. Δ = ratetmp - Δ
     end
     δ = integrator.opt.internalnorm(Δ)
-    # It only makes sense to calcluate convergence rate in the second iteration
+    # It only makes sense to calculate convergence rate in the second iteration
     if k >= 1
       conv_rate = max(1//10*conv_rate, δ/δ_prev)
     end
     test_rate = δ * min(one(conv_rate), conv_rate) / pconv
-    test_rate <= one(test_rate) && return nothing
+    test_rate <= one(test_rate) && return true
     k += 1
-    # TODO: Add divergence test & max_iter
-    ######################################
+    # Divergence criteria
+    (k == max_iter) || (m >= 2 && δ > div_rate * δ_prev) && return false
     δ_prev = δ
-    isconstcache ? (ratetmp = integrator.f(u, p, dt+t)) :
-                   integrator.f(ratetmp, u, p, dt+t)
+    isconstcache ? (ratetmp = integrator.f(z[1], p, dt+t)) :
+                    integrator.f(ratetmp, z[1], p, dt+t)
   end
 end
