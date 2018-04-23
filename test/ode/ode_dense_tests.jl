@@ -226,7 +226,7 @@ regression_test(Vern7(), 3e-9, 5e-9; test_diff1 = true)
 regression_test(Vern8(), 3e-8, 5e-8; test_diff1 = true)
 
 # Vern9
-regression_test(Vern9(), 1e-9, 2e-9; test_diff1 = true)
+regression_test(Vern9(), 1e-9, 2e-9; test_diff1 = true, nth_der=4, dertol=1e-2)
 
 println("Rosenbrocks")
 
