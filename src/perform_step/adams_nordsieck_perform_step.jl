@@ -15,7 +15,6 @@ end
 @muladd function perform_step!(integrator, cache::AN5ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z,l,m,tq,tau,tsit5tab = cache
-  #z[1] = uprev
   # handle callbacks, rewind back to order one.
   if integrator.u_modified
     cache.step = 1
@@ -26,22 +25,29 @@ end
       perform_step!(integrator, tsit5tab, repeat_step)
       cache.step = 5
       z[1] = integrator.u
-      z[2] = integrator.k[7]*dt/1
-      z[3] = ode_interpolant(t+dt,dt,nothing,nothing,integrator.k,tsit5cache,nothing,T::Type{Val{2}})*dt^2/2
-      z[4] = ode_interpolant(t+dt,dt,nothing,nothing,integrator.k,tsit5cache,nothing,T::Type{Val{3}})*dt^3/6
-      z[5] = ode_interpolant(t+dt,dt,nothing,nothing,integrator.k,tsit5cache,nothing,T::Type{Val{4}})*dt^4/24
+      z[2] = integrator.k[7]*dt
+      z[3] = ode_interpolant(t+dt,dt,nothing,nothing,integrator.k,tsit5tab,nothing,Val{2})*dt^2/2
+      z[4] = ode_interpolant(t+dt,dt,nothing,nothing,integrator.k,tsit5tab,nothing,Val{3})*dt^3/6
+      z[5] = ode_interpolant(t+dt,dt,nothing,nothing,integrator.k,tsit5tab,nothing,Val{4})*dt^4/24
       z[6] = zero(cache.z[6])
+      fill!(tau, dt)
   else
-  # Perform 5th order Adams method in Nordsieck form
+    # Perform 5th order Adams method in Nordsieck form
+    perform_predict!(cache, false)
+    calc_coeff!(cache)
+    isucceed = nlsolve_functional!(integrator, cache)
+    isucceed || return nothing
 
-  end
+    ################################### Error estimation
 
-  ################################### Error estimation
+    if integrator.opts.adaptive
+      utilde = cache.Δ*cache.tq
+      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp)
+    end
 
-  if integrator.opts.adaptive
-    utilde =
-    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(atmp)
+    # Corrector
+    perform_correct!(cache)
   end
 
   ################################### Finalize
@@ -54,13 +60,12 @@ end
 
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.u = uₙ
   return nothing
 end
 
 function initialize!(integrator, cache::AN5Cache)
   integrator.kshortsize = 7
-  integrator.fsalfirst = cache.k1; integrator.fsallast = cache.tsit5cache.k7 # setup pointers
+  integrator.fsalfirst = cache.tsit5cache.k1; integrator.fsallast = cache.tsit5cache.k7 # setup pointers
   resize!(integrator.k, integrator.kshortsize)
   # Setup k pointers
   integrator.k[1] = cache.tsit5cache.k1
@@ -79,27 +84,40 @@ end
   @unpack z,l,m,tq,tau, = const_cache
   # handle callbacks, rewind back to order one.
   if integrator.u_modified
-    cache.step = 1
+    const_cache.step = 1
   end
   # Nordsieck form needs to build the history vector
-  if cache.step == 1
-    # Start the Nordsieck vector in one shot!
-    perform_step!(integrator, tsit5tab, repeat_step)
-    const_cache.step = 5
-    # `u` is aliased to `z[1]`
-    # @. z[1] = integrator.u
-    @. z[2] = integrator.k[7]*dt
-    ode_interpolant!(z[3],t+dt,dt,nothing,nothing,integrator.k,tsit5cache,nothing,Val{2})
-    ode_interpolant!(z[4],t+dt,dt,nothing,nothing,integrator.k,tsit5cache,nothing,Val{3})
-    ode_interpolant!(z[5],t+dt,dt,nothing,nothing,integrator.k,tsit5cache,nothing,Val{4})
-    @. z[3] = z[3]*dt^2/2
-    @. z[4] = z[4]*dt^3/6
-    @. z[5] = z[5]*dt^4/24
-    fill!(z[6], zero(eltype(z[6])))
+  if const_cache.step == 1
+      # Start the Nordsieck vector in one shot!
+      perform_step!(integrator, tsit5cache, repeat_step)
+      const_cache.step = 5
+      @. z[1] = integrator.u
+      @. z[2] = integrator.k[7]*dt
+      ode_interpolant!(z[3],t+dt,dt,nothing,nothing,integrator.k,tsit5cache,nothing,Val{2})
+      ode_interpolant!(z[4],t+dt,dt,nothing,nothing,integrator.k,tsit5cache,nothing,Val{3})
+      ode_interpolant!(z[5],t+dt,dt,nothing,nothing,integrator.k,tsit5cache,nothing,Val{4})
+      @. z[3] = z[3]*dt^2/2
+      @. z[4] = z[4]*dt^3/6
+      @. z[5] = z[5]*dt^4/24
+      fill!(z[6], zero(eltype(z[6])))
+      fill!(tau, dt)
   else
+    # Perform 5th order Adams method in Nordsieck form
+    perform_predict!(cache, false)
+    calc_coeff!(cache)
+    isucceed = nlsolve_functional!(integrator, cache)
+    isucceed || return nothing
 
-  # WIP
+    ################################### Error estimation
 
+    if integrator.opts.adaptive
+      utilde = cache.Δ*cache.tq
+      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp)
+    end
+
+    # Corrector
+    perform_correct!(cache)
   end
 
   ################################### Finalize
@@ -112,6 +130,5 @@ end
 
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.u = uₙ
   return nothing
 end

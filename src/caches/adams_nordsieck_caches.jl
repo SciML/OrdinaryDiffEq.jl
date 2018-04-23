@@ -21,15 +21,15 @@ function AN5ConstantCache(u, uprev, rate_prototype, uBottomEltypeNoUnits, tTypeN
   #typ = Base.promote_op(*, eltype(rate_prototype), tTypeNoUnits)
   if mut
     # We don't need to swap pointers for the mutable cache
-    z = SVector(u, [zeros(rate_prototype) for i in 1:5]...)
+    z = SVector(zeros(u), [zeros(rate_prototype) for i in 1:5]...)
     Δ = zeros(u)
   else
-    z = [u, [rate_prototype for i in 1:5]...]
+    z = [u, [copy(rate_prototype) for i in 1:5]...]
     Δ = u
   end
-  l = zeros(tTypeNoUnits, MVector{6}); m = zeros(l)
+  l = zeros(MVector{6,tTypeNoUnits}); m = zeros(l)
   tq = zero(tTypeNoUnits)
-  tau = zeros(dt, MVector{6})
+  tau = zeros(MVector{6,typeof(dt)})
   tsit5tab = Tsit5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   AN5ConstantCache(z,l,m,tq,tau,Δ,tsit5tab,1)
 end
