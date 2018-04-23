@@ -40,11 +40,11 @@ end
 
     ################################### Error estimation
 
-    if integrator.opts.adaptive
-      utilde = cache.Δ*cache.tq
-      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp)
-    end
+    #if integrator.opts.adaptive
+    #  utilde = cache.Δ*cache.tq
+    #  atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+    #  integrator.EEst = integrator.opts.internalnorm(atmp)
+    #end
 
     # Corrector
     perform_correct!(cache)
@@ -110,11 +110,11 @@ end
 
     ################################### Error estimation
 
-    if integrator.opts.adaptive
-      utilde = cache.Δ*cache.tq
-      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp)
-    end
+    #if integrator.opts.adaptive
+    #  utilde = cache.Δ*cache.tq
+    #  atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+    #  integrator.EEst = integrator.opts.internalnorm(atmp)
+    #end
 
     # Corrector
     perform_correct!(cache)

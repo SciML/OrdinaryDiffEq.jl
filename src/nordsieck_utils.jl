@@ -78,7 +78,7 @@ function perform_correct!(cache::T) where T
     if isconst
       @unpack z,Δ,l,step = cache
       for i in 1:step+1
-        muladd(l[i], Δ, z[i])
+        z[i] = muladd(l[i], Δ, z[i])
       end
     else
       @unpack z,Δ,l,step = cache.const_cache
@@ -93,17 +93,18 @@ function nlsolve_functional!(integrator, cache::T) where T
   @unpack f, dt, uprev, t, p = integrator
   isconstcache = T <: OrdinaryDiffEqConstantCache
   if isconstcache
-    @unpack Δ, z, l, tq = cache
-    ratetmp = integrator.f(uprev, p, dt+t)
+    @unpack z, l, tq = cache
+    ratetmp = integrator.f(z[1], p, dt+t)
   else
     @unpack ratetmp, const_cache = cache
     @unpack Δ, z, l, tq = const_cache
-    integrator.f(ratetmp, uprev, p, dt+t)
+    cache = const_cache
+    integrator.f(ratetmp, z[1], p, dt+t)
   end
   max_iter = 3
   div_rate = 2
   # Zero out the difference vector
-  isconstcache ? Δ = zero(Δ) : ( Δ .= zero(eltype(Δ)) )
+  isconstcache ? ( cache.Δ = zero(cache.Δ) ) : ( Δ .= zero(eltype(Δ)) )
   # `pconv` is used in the convergence test
   pconv = (1//10) / tq
   # `k` is a counter for convergence test
@@ -117,13 +118,13 @@ function nlsolve_functional!(integrator, cache::T) where T
     if isconstcache
       ratetmp = inv(l[2])*muladd(dt, ratetmp, -z[2])
       integrator.u = ratetmp + z[1]
-      Δ = ratetmp - Δ
+      cache.Δ = ratetmp - cache.Δ
     else
       @. ratetmp = inv(l[2])*muladd(dt, ratetmp, -z[2])
       @. integrator.u = ratetmp + z[1]
       @. Δ = ratetmp - Δ
     end
-    δ = integrator.opts.internalnorm(Δ)
+    δ = integrator.opts.internalnorm(cache.Δ)
     # It only makes sense to calculate convergence rate in the second iteration
     if k >= 1
       conv_rate = max(1//10*conv_rate, δ/δ_prev)
