@@ -17,6 +17,7 @@ DiffEqBase.has_analytic(::typeof(prob_inplace.f)) = false
 
 Algs = [LawsonEuler,NorsettEuler]
 for Alg in Algs
+    gc()
     sol = solve(prob, Alg(); dt=dt)
     sol_krylov = solve(prob, Alg(krylov=true); dt=dt, reltol=reltol)
     @test isapprox(sol.u,sol_krylov.u; rtol=reltol)

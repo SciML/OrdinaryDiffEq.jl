@@ -53,6 +53,7 @@ end
 if group == "All" || group == "AlgConvergence"
     @time @testset "Partitioned Methods Tests" begin include("partitioned_methods_tests.jl") end
     @time @testset "Convergence Tests" begin include("ode/ode_convergence_tests.jl") end
+    @time @testset "Nordsieck Tests" begin include("ode/nordsieck_tests.jl") end
     @time @testset "SSPRK Tests" begin include("ode/ode_ssprk_tests.jl") end
     @time @testset "OwrenZen Tests" begin include("owrenzen_tests.jl") end
     @time @testset "Rosenbrock Tests" begin include("ode/ode_rosenbrock_tests.jl") end

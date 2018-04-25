@@ -151,6 +151,10 @@ struct ABM32 <: OrdinaryDiffEqAlgorithm end
 struct ABM43 <: OrdinaryDiffEqAlgorithm end
 struct ABM54 <: OrdinaryDiffEqAlgorithm end
 
+# Adams methods in Nordsieck forms
+
+struct AN5 <: OrdinaryDiffEqAlgorithm end
+
 ################################################################################
 
 # Generic implicit methods

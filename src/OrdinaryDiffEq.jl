@@ -29,7 +29,8 @@ module OrdinaryDiffEq
   import ForwardDiff.Dual
 
   # Required by temporary fix in not in-place methods with 12+ broadcasts
-  import StaticArrays: SArray
+  # `MVector` is used by Nordsieck forms
+  import StaticArrays: SArray, MVector, SVector
 
   # Integrator Interface
   import DiffEqBase: resize!,deleteat!,addat!,full_cache,user_cache,u_cache,du_cache,
@@ -66,6 +67,7 @@ module OrdinaryDiffEq
   include("caches/rosenbrock_caches.jl")
   include("caches/rkn_caches.jl")
   include("caches/adams_bashforth_moulton_caches.jl")
+  include("caches/adams_nordsieck_caches.jl")
   include("caches/bdf_caches.jl")
 
   include("tableaus/low_order_rk_tableaus.jl")
@@ -101,6 +103,7 @@ module OrdinaryDiffEq
   include("perform_step/threaded_rk_perform_step.jl")
   include("perform_step/composite_perform_step.jl")
   include("perform_step/adams_bashforth_moulton_perform_step.jl")
+  include("perform_step/adams_nordsieck_perform_step.jl")
   include("perform_step/bdf_perform_step.jl")
 
   include("dense/generic_dense.jl")
@@ -111,6 +114,7 @@ module OrdinaryDiffEq
   include("dense/verner_addsteps.jl")
   include("dense/high_order_rk_addsteps.jl")
 
+  include("nordsieck_utils.jl")
   include("derivative_wrappers.jl")
   include("iterator_interface.jl")
   include("constants.jl")
@@ -168,6 +172,8 @@ module OrdinaryDiffEq
          IRKN3, IRKN4, DPRKN6, DPRKN8, DPRKN12, ERKN4, ERKN5
 
   export AB3, AB4, AB5, ABM32, ABM43, ABM54
+
+  export AN5
 
   export ABDF2
 
