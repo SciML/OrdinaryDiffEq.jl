@@ -11,7 +11,7 @@ mutable struct AN5ConstantCache{zType,lType,dtType,uType,vern9Type} <: OrdinaryD
   tau::MVector{6, dtType}
   # `Δ` is the difference between the predictor `uₙ₀` and `uₙ`
   Δ::uType
-  # `Tsit5` for the first step
+  # `Vern9` for the first step
   vern9tab::vern9Type
   step::Int
 end

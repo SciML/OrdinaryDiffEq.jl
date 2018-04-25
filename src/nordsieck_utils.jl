@@ -18,6 +18,9 @@ end
 # of Ordinary Differential Equations" by G. D. Byrne and A. C. Hindmarsh in
 # the page 86.
 # https://dl.acm.org/citation.cfm?id=355636
+
+# More implementation details are in the
+# https://github.com/JuliaDiffEq/DiffEqDevMaterials repository
 function calc_coeff!(cache::T) where T
   @inbounds begin
     isconst = T <: OrdinaryDiffEqConstantCache
@@ -32,6 +35,8 @@ function calc_coeff!(cache::T) where T
     end
     # initialize ξ_inv
     ξ_inv = dt / dtsum
+    # compute coefficients from the Newton polynomial
+    # check the `JuliaDiffEq/DiffEqDevMaterials` repository for more details
     for j in 1:order-1
       ξ_inv = dt / dtsum
       for i in j:-1:1
@@ -57,17 +62,28 @@ function perform_predict!(cache::T, undo) where T
     isconst = T <: OrdinaryDiffEqConstantCache
     isconst || (cache = cache.const_cache)
     @unpack z,step = cache
-    ± = undo ? (-) : (+)
     # This can be parallelized
-    if isconst
-      for i in 1:step, j in step:-1:i
-        z[j] = z[j] ± z[j+1]
-      end
+    if !undo
+      if isconst
+        for i in 1:step, j in step:-1:i
+          z[j] = z[j] + z[j+1]
+        end
+      else
+        for i in 1:step, j in step:-1:i
+          @. z[j] = z[j] + z[j+1]
+        end
+      end # endif const cache
     else
-      for i in 1:step, j in step:-1:i
-        @. z[j] = z[j] ± z[j+1]
-      end
-    end # endif not const cache
+      if isconst
+        for i in 1:step, j in step:-1:i
+          z[j] = z[j] - z[j+1]
+        end
+      else
+        for i in 1:step, j in step:-1:i
+          @. z[j] = z[j] - z[j+1]
+        end
+      end # endif const cache
+    end # endif !undo
   end # end @inbounds
 end
 
