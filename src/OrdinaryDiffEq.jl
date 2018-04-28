@@ -114,6 +114,7 @@ module OrdinaryDiffEq
   include("dense/verner_addsteps.jl")
   include("dense/high_order_rk_addsteps.jl")
 
+  include("nlsolve_utils.jl")
   include("nordsieck_utils.jl")
   include("derivative_wrappers.jl")
   include("iterator_interface.jl")

@@ -12,20 +12,7 @@ end
 @muladd function perform_step!(integrator, cache::ImplicitEulerConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
-
-  # precalculations
-  κtol = κ*tol
-
-  # calculate W
-  uf.t = t
-  if typeof(uprev) <: AbstractArray
-    J = ForwardDiff.jacobian(uf,uprev)
-    W = I - dt*J
-  else
-    J = ForwardDiff.derivative(uf,uprev)
-    W = 1 - dt*J
-  end
+  alg = unwrap_alg(integrator, true)
 
   # initial guess
   if alg.extrapolant == :linear
@@ -34,46 +21,8 @@ end
     z = zero(u)
   end
 
-  # initial step of Newton iteration
-  iter = 1
-  tstep = t + dt
-  u = uprev + z
-  b = dt*f(u, p, tstep) - z
-  dz = W\b
-  ndz = integrator.opts.internalnorm(dz)
-  z = z + dz
-
-  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
-  do_newton = integrator.success_iter == 0 || η*ndz > κtol
-
-  # Newton iteration
-  fail_convergence = false
-  while (do_newton || iter < alg.min_newton_iter) && iter < alg.max_newton_iter
-    iter += 1
-    u = uprev + z
-    b = dt*f(u, p, tstep) - z
-    dz = W\b
-    ndzprev = ndz
-    ndz = integrator.opts.internalnorm(dz)
-    θ = ndz/ndzprev
-    if θ > 1 || ndz*(θ^(alg.max_newton_iter - iter)/(1-θ)) > κtol
-      fail_convergence = true
-      break
-    end
-    η = θ/(1-θ)
-    do_newton = (η*ndz > κtol)
-    z = z + dz
-  end
-
-  if (iter >= alg.max_newton_iter && do_newton) || fail_convergence
-    integrator.force_stepfail = true
-    return
-  end
-
-  u = uprev + z
-
-  cache.ηold = η
-  cache.newton_iters = iter
+  u, fail_convergence = diffeq_nlsolve!(integrator, cache, z, dt, Val{:newton})
+  fail_convergence && return
 
   if integrator.opts.adaptive && integrator.success_iter > 0
     # local truncation error (LTE) bound by dt^2/2*max|y''(t)|
@@ -115,12 +64,7 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,z,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
   mass_matrix = integrator.sol.prob.mass_matrix
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
-
-  # precalculations
-  κtol = κ*tol
-
-  new_W = calc_W!(integrator, cache, dt, repeat_step)
+  alg = unwrap_alg(integrator, true)
 
   # initial guess
   if alg.extrapolant == :linear
@@ -129,66 +73,8 @@ end
     z .= zero(u)
   end
 
-  # initial step of Newton iteration
-  iter = 1
-  tstep = t + dt
-  @. u = uprev + z
-  f(k, u, p, tstep)
-  if mass_matrix == I
-    @. b = dt*k - z
-  else
-    A_mul_B!(vec(b),mass_matrix,vec(z))
-    @. b = dt*k - b
-  end
-  if has_invW(f)
-    A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
-  else
-    cache.linsolve(vec(dz),W,vec(b),new_W)
-  end
-  ndz = integrator.opts.internalnorm(dz)
-  z .+= dz
-
-  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
-  do_newton = integrator.success_iter == 0 || η*ndz > κtol
-
-  # Newton iteration
-  fail_convergence = false
-  while (do_newton || iter < alg.min_newton_iter) && iter < alg.max_newton_iter
-    iter += 1
-    @. u = uprev + z
-    f(k, u, p, tstep)
-    if mass_matrix == I
-      @. b = dt*k - z
-    else
-      A_mul_B!(vec(b),mass_matrix,vec(z))
-      @. b = dt*k - b
-    end
-    if has_invW(f)
-      A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
-    else
-      cache.linsolve(vec(dz),W,vec(b),false)
-    end
-    ndzprev = ndz
-    ndz = integrator.opts.internalnorm(dz)
-    θ = ndz/ndzprev
-    if θ > 1 || ndz*(θ^(alg.max_newton_iter - iter)/(1-θ)) > κtol
-      fail_convergence = true
-      break
-    end
-    η = θ/(1-θ)
-    do_newton = (η*ndz > κtol)
-    z .+= dz
-  end
-
-  if (iter >= alg.max_newton_iter && do_newton) || fail_convergence
-    integrator.force_stepfail = true
-    return
-  end
-
-  @. u = uprev + z
-
-  cache.ηold = η
-  cache.newton_iters = iter
+  fail_convergence = diffeq_nlsolve!(integrator, cache, dt, Val{:newton}, repeat_step)
+  fail_convergence && return
 
   if integrator.opts.adaptive && integrator.success_iter > 0
     # local truncation error (LTE) bound by dt^2/2*max|y''(t)|
@@ -227,22 +113,10 @@ end
 @muladd function perform_step!(integrator, cache::ImplicitMidpointConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+  alg = unwrap_alg(integrator, true)
 
   # precalculations
-  κtol = κ*tol
-
   dto2 = dt/2
-
-  # calculate W
-  uf.t = t
-  if typeof(uprev) <: AbstractArray
-    J = ForwardDiff.jacobian(uf,uprev)
-    W = I - dto2*J
-  else
-    J = ForwardDiff.derivative(uf,uprev)
-    W = 1 - dto2*J
-  end
 
   # initial guess
   if alg.extrapolant == :linear
@@ -251,48 +125,8 @@ end
     z = zero(u)
   end
 
-  # initial step of Newton iteration
-  iter = 1
-  tstep = t + dto2
-  # u = uprev + z then  u = (uprev+u)/2 = (uprev+uprev+z)/2 = uprev + z/2
-  u = uprev + z/2
-  b = dt*f(u, p, tstep) - z
-  dz = W\b
-  ndz = integrator.opts.internalnorm(dz)
-  z = z + dz
-
-  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
-  do_newton = integrator.success_iter == 0 || η*ndz > κtol
-
-  # Newton iteration
-  fail_convergence = false
-  while (do_newton || iter < alg.min_newton_iter) && iter < alg.max_newton_iter
-    iter += 1
-    # u = uprev + z then  u = (uprev+u)/2 = (uprev+uprev+z)/2 = uprev + z/2
-    u = uprev + z/2
-    b = dt*f(u, p, tstep) - z
-    dz = W\b
-    ndzprev = ndz
-    ndz = integrator.opts.internalnorm(dz)
-    θ = ndz/ndzprev
-    if θ > 1 || ndz*(θ^(alg.max_newton_iter - iter)/(1-θ)) > κtol
-      fail_convergence = true
-      break
-    end
-    η = θ/(1-θ)
-    do_newton = (η*ndz > κtol)
-    z = z + dz
-  end
-
-  if (iter >= alg.max_newton_iter && do_newton) || fail_convergence
-    integrator.force_stepfail = true
-    return
-  end
-
-  u = uprev + z
-
-  cache.ηold = η
-  cache.newton_iters = iter
+  u, fail_convergence = diffeq_nlsolve!(integrator, cache, z, dto2, Val{:newton})
+  fail_convergence && return
 
   integrator.fsallast = f(u, p, t+dt)
   integrator.k[1] = integrator.fsalfirst
@@ -313,15 +147,11 @@ end
 @muladd function perform_step!(integrator, cache::ImplicitMidpointCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,z,k,b,J,W,jac_config,tmp,κ,tol = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+  alg = unwrap_alg(integrator, true)
   mass_matrix = integrator.sol.prob.mass_matrix
 
   # precalculations
-  κtol = κ*tol
-
   dto2 = dt/2
-
-  new_W = calc_W!(integrator, cache, dto2, repeat_step)
 
   # initial guess
   if alg.extrapolant == :linear
@@ -330,68 +160,8 @@ end
     z .= zero(u)
   end
 
-  # initial step of Newton iteration
-  iter = 1
-  tstep = t + dto2
-  # u = uprev + z then  u = (uprev+u)/2 = (uprev+uprev+z)/2 = uprev + z/2
-  @. u = uprev + z/2
-  f(k, u, p, tstep)
-  if mass_matrix == I
-    @. b = dt*k - z
-  else
-    A_mul_B!(vec(b),mass_matrix,vec(z))
-    @. b = dt*k - b
-  end
-  if has_invW(f)
-    A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
-  else
-    cache.linsolve(vec(dz),W,vec(b),new_W)
-  end
-  ndz = integrator.opts.internalnorm(dz)
-  z .+= dz
-
-  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
-  do_newton = integrator.success_iter == 0 || η*ndz > κtol
-
-  # Newton iteration
-  fail_convergence = false
-  while (do_newton || iter < alg.min_newton_iter) && iter < alg.max_newton_iter
-    iter += 1
-    # u = uprev + z then  u = (uprev+u)/2 = (uprev+uprev+z)/2 = uprev + z/2
-    @. u = uprev + z/2
-    f(k, u, p, tstep)
-    if mass_matrix == I
-      @. b = dt*k - z
-    else
-      A_mul_B!(vec(b),mass_matrix,vec(z))
-      @. b = dt*k - b
-    end
-    if has_invW(f)
-      A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
-    else
-      cache.linsolve(vec(dz),W,vec(b),false)
-    end
-    ndzprev = ndz
-    ndz = integrator.opts.internalnorm(dz)
-    θ = ndz/ndzprev
-    if θ > 1 || ndz*(θ^(alg.max_newton_iter - iter)/(1-θ)) > κtol
-      fail_convergence = true
-      break
-    end
-    η = θ/(1-θ)
-    do_newton = (η*ndz > κtol)
-    z .+= dz
-  end
-
-  if (iter >= alg.max_newton_iter && do_newton) || fail_convergence
-    integrator.force_stepfail = true
-    return
-  end
-
-  @. u = uprev + z
-
-  cache.ηold = η
-  cache.newton_iters = iter
+  fail_convergence = diffeq_nlsolve!(integrator, cache, dto2, Val{:newton}, repeat_step)
+  fail_convergence && return
 
   f(integrator.fsallast,u,p,t+dt)
 end
@@ -410,68 +180,17 @@ end
 @muladd function perform_step!(integrator, cache::TrapezoidConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+  alg = unwrap_alg(integrator, true)
 
   # precalculations
-  κtol = κ*tol
-
   dto2 = dt/2
-
-  # calculate W
-  uf.t = t
-  if typeof(uprev) <: AbstractArray
-    J = ForwardDiff.jacobian(uf,uprev)
-    W = I - dto2*J
-  else
-    J = ForwardDiff.derivative(uf,uprev)
-    W = 1 - dto2*J
-  end
 
   # initial guess
   zprev = dt*integrator.fsalfirst
   z = zprev # Constant extrapolation
 
-  # initial step of Newton iteration
-  iter = 1
-  tstep = t + dt
-  tmp = uprev + dto2*integrator.fsalfirst
-  u = tmp + z/2
-  b = dt*f(u, p, tstep) - z
-  dz = W\b
-  ndz = integrator.opts.internalnorm(dz)
-  z = z + dz
-
-  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
-  do_newton = integrator.success_iter == 0 || η*ndz > κtol
-
-  # Newton iteration
-  fail_convergence = false
-  while (do_newton || iter < alg.min_newton_iter) && iter < alg.max_newton_iter
-    iter += 1
-    u = tmp + z/2
-    b = dt*f(u, p, tstep) - z
-    dz = W\b
-    ndzprev = ndz
-    ndz = integrator.opts.internalnorm(dz)
-    θ = ndz/ndzprev
-    if θ > 1 || ndz*(θ^(alg.max_newton_iter - iter)/(1-θ)) > κtol
-      fail_convergence = true
-      break
-    end
-    η = θ/(1-θ)
-    do_newton = (η*ndz > κtol)
-    z = z + dz
-  end
-
-  if (iter >= alg.max_newton_iter && do_newton) || fail_convergence
-    integrator.force_stepfail = true
-    return
-  end
-
-  u = tmp + z/2
-
-  cache.ηold = η
-  cache.newton_iters = iter
+  u, fail_convergence = diffeq_nlsolve!(integrator, cache, z, dto2, Val{:newton})
+  fail_convergence && return
 
   if integrator.opts.adaptive
     if integrator.iter > 2
@@ -530,7 +249,7 @@ end
 @muladd function perform_step!(integrator, cache::TrapezoidCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,z,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+  alg = unwrap_alg(integrator, true)
   mass_matrix = integrator.sol.prob.mass_matrix
 
   # precalculations
@@ -663,7 +382,7 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
   @unpack γ,d,ω,btilde1,btilde2,btilde3,α1,α2 = cache.tab
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+  alg = unwrap_alg(integrator, true)
 
   # precalculations
   κtol = κ*tol
@@ -805,7 +524,7 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,zprev,zᵧ,z,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
   @unpack γ,d,ω,btilde1,btilde2,btilde3,α1,α2 = cache.tab
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+  alg = unwrap_alg(integrator, true)
 
   # precalculations
   κtol = κ*tol
@@ -960,7 +679,7 @@ end
 @muladd function perform_step!(integrator, cache::SDIRK2ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+  alg = unwrap_alg(integrator, true)
 
   # precalculations
   κtol = κ*tol
@@ -1101,7 +820,7 @@ end
 @muladd function perform_step!(integrator, cache::SDIRK2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,z₁,z₂,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+  alg = unwrap_alg(integrator, true)
 
   # precalculations
   κtol = κ*tol
@@ -1255,7 +974,7 @@ end
 @muladd function perform_step!(integrator, cache::SSPSDIRK2ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+  alg = unwrap_alg(integrator, true)
 
   γ = eltype(u)(1//4)
   c2 = typeof(t)(3//4)
@@ -1390,7 +1109,7 @@ end
 @muladd function perform_step!(integrator, cache::SSPSDIRK2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,z₁,z₂,k,b,J,W,jac_config,tmp,κ,tol = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+  alg = unwrap_alg(integrator, true)
 
   γ = eltype(u)(1//4)
   c2 = typeof(t)(3//4)
@@ -1534,7 +1253,7 @@ end
   @unpack uf,κ,tol = cache
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack b1hat1,b2hat1,b3hat1,b4hat1,b1hat2,b2hat2,b3hat2,b4hat2 = cache.tab
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+  alg = unwrap_alg(integrator, true)
 
   # precalculations
   κtol = κ*tol
@@ -1806,7 +1525,7 @@ end
   @unpack uf,du1,dz,z₁,z₂,z₃,z₄,z₅,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack b1hat1,b2hat1,b3hat1,b4hat1,b1hat2,b2hat2,b3hat2,b4hat2 = cache.tab
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+  alg = unwrap_alg(integrator, true)
 
   # precalculations
   κtol = κ*tol
@@ -2124,7 +1843,7 @@ end
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack α21,α31,α32,α41,α43 = cache.tab
   @unpack bhat1,bhat2,bhat3,bhat4,btilde1,btilde2,btilde3,btilde4,btilde5 = cache.tab
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+  alg = unwrap_alg(integrator, true)
 
   # precalculations
   κtol = κ*tol
@@ -2385,7 +2104,7 @@ end
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack α21,α31,α32,α41,α43 = cache.tab
   @unpack bhat1,bhat2,bhat3,bhat4,btilde1,btilde2,btilde3,btilde4,btilde5 = cache.tab
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+  alg = unwrap_alg(integrator, true)
 
   # precalculations
   κtol = κ*tol

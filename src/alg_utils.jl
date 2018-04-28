@@ -296,3 +296,16 @@ alg_stability_size(alg::Vern9) = 4.4762
 
 alg_can_repeat_jac(alg::OrdinaryDiffEqAlgorithm) = false
 alg_can_repeat_jac(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = true
+
+function unwrap_alg(integrator, is_stiff)
+  alg = integrator.alg
+  iscomp = typeof(alg) <: CompositeAlgorithm
+  if !iscomp
+    return alg
+  elseif typeof(iscomp.choice_function) <: AutoSwitch
+    num = is_stiff ? 2 : 1
+    return alg.algs[num]
+  else
+    return alg.algs[integrator.cache.current]
+  end
+end
