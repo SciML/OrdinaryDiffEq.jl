@@ -135,9 +135,7 @@ module OrdinaryDiffEq
   export ode_addsteps!, ode_interpolant,
         terminate!, savevalues!, copyat_or_push!, isfsal
 
-  export constructDP5, constructVern6, constructDP8,
-         constructDormandPrince, constructFeagin10,
-         constructFeagin12, constructFeagin14
+  export constructDormandPrince
 
   # Reexport the Alg Types
 
