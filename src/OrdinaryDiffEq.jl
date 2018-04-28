@@ -37,7 +37,8 @@ module OrdinaryDiffEq
                      resize_non_user_cache!,deleteat_non_user_cache!,addat_non_user_cache!,
                      terminate!,get_du, get_dt,get_proposed_dt,set_proposed_dt!,
                      u_modified!,savevalues!,add_tstop!,add_saveat!,set_reltol!,
-                     set_abstol!, postamble!, last_step_failed
+                     set_abstol!, postamble!, last_step_failed,
+                     isautodifferentiable
 
   using DiffEqBase: check_error!
 
