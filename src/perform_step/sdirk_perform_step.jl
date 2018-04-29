@@ -282,6 +282,8 @@ end
   γdt = γ*dt
   new_W = calc_W!(integrator, cache, γdt, repeat_step)
 
+  # initial guess
+  @. z = dt*integrator.fsalfirst
   @. tmp = uprev + γdt*integrator.fsalfirst
   z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, tmp, γ, 1, Val{:newton}, new_W)
   fail_convergence && return
