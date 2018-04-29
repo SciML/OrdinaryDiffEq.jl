@@ -71,6 +71,7 @@ end
   @unpack uf,du1,dz,z,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
   mass_matrix = integrator.sol.prob.mass_matrix
   alg = unwrap_alg(integrator, true)
+  new_W = calc_W!(integrator, cache, dt, repeat_step)
 
   # initial guess
   if alg.extrapolant == :linear
@@ -79,7 +80,7 @@ end
     z .= zero(u)
   end
 
-  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, z, uprev, 1, 1, Val{:newton}, repeat_step)
+  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, uprev, 1, 1, Val{:newton}, new_W)
   fail_convergence && return
   @. u = uprev + z
 
@@ -164,6 +165,8 @@ end
   @unpack uf,du1,dz,z,k,b,J,W,jac_config,tmp,κ,tol = cache
   alg = unwrap_alg(integrator, true)
   mass_matrix = integrator.sol.prob.mass_matrix
+  γ = 1//2
+  new_W = calc_W!(integrator, cache, γ*dt, repeat_step)
 
   # initial guess
   if alg.extrapolant == :linear
@@ -172,7 +175,7 @@ end
     z .= zero(u)
   end
 
-  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, z, uprev, 1//2, 1//2, Val{:newton}, repeat_step)
+  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, uprev, γ, 1//2, Val{:newton}, new_W)
   fail_convergence && return
   @. u = uprev + z
 
@@ -277,9 +280,10 @@ end
   # precalculations
   γ = 1//2
   γdt = γ*dt
+  new_W = calc_W!(integrator, cache, γdt, repeat_step)
 
   @. tmp = uprev + γdt*integrator.fsalfirst
-  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, z, tmp, γ, 1, Val{:newton}, repeat_step)
+  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, tmp, γ, 1, Val{:newton}, new_W)
   fail_convergence && return
   @. u = tmp + 1//2*z
 
@@ -410,6 +414,7 @@ end
 
   # FSAL
   zprev = dt*integrator.fsalfirst
+  new_W = calc_W!(integrator, cache, d*dt, repeat_step)
 
   ##### Solve Trapezoid Step
 
@@ -417,7 +422,7 @@ end
   @. zᵧ = zprev
 
   @. tmp = uprev + d*zprev
-  zᵧ,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, zᵧ, tmp, d, γ, Val{:newton}, repeat_step)
+  zᵧ,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, W, zᵧ, tmp, d, γ, Val{:newton}, new_W)
   fail_convergence && return
 
   ################################## Solve BDF2 Step
@@ -426,7 +431,7 @@ end
   @. z = α1*zprev + α2*zᵧ
 
   @. tmp = uprev + ω*zprev + ω*zᵧ
-  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, z, tmp, d, 1, Val{:newton}, true)
+  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, tmp, d, 1, Val{:newton}, false)
   fail_convergence && return
 
   @. u = tmp + d*z
@@ -529,6 +534,7 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,z₁,z₂,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
   alg = unwrap_alg(integrator, true)
+  new_W = calc_W!(integrator, cache, dt, repeat_step)
 
   # initial guess
   if integrator.success_iter > 0 && !integrator.reeval_fsal && alg.extrapolant == :interpolant
@@ -541,7 +547,7 @@ end
   end
 
   ##### Step 1
-  z₁, η, iter, fail_convergence = diffeq_nlsolve!(integrator, cache, z₁, uprev, 1, 1, Val{:newton}, repeat_step)
+  z₁, η, iter, fail_convergence = diffeq_nlsolve!(integrator, cache, W, z₁, uprev, 1, 1, Val{:newton}, new_W)
   fail_convergence && return
 
   ################################## Solve Step 2
@@ -549,7 +555,7 @@ end
   ### Initial Guess Is α₁ = c₂/γ, c₂ = 0 => z₂ = α₁z₁ = 0
   z₂ .= zero(u)
   @. tmp = uprev - z₁
-  z₂, η, iter, fail_convergence = diffeq_nlsolve!(integrator, cache, z₂, tmp, 1, 1, Val{:newton}, true)
+  z₂, η, iter, fail_convergence = diffeq_nlsolve!(integrator, cache, W, z₂, tmp, 1, 1, Val{:newton}, false)
   fail_convergence && return
 
   @. u = uprev + z₁/2 + z₂/2
@@ -655,6 +661,7 @@ end
 
   γ = eltype(u)(1//4)
   c2 = typeof(t)(3//4)
+  new_W = calc_W!(integrator, cache, γ*dt, repeat_step)
 
   # initial guess
   if integrator.success_iter > 0 && !integrator.reeval_fsal && alg.extrapolant == :interpolant
@@ -667,7 +674,7 @@ end
   end
 
   ##### Step 1
-  z₁,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, z₁, uprev, γ, 1, Val{:newton}, repeat_step)
+  z₁,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, W, z₁, uprev, γ, 1, Val{:newton}, new_W)
   fail_convergence && return
 
   ################################## Solve Step 2
@@ -676,7 +683,7 @@ end
   @. z₂ = c2/γ
 
   @. tmp = uprev + z₁/2
-  z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, z₂, tmp, 1//4, 1, Val{:newton}, true)
+  z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, W, z₂, tmp, 1//4, 1, Val{:newton}, false)
   fail_convergence && return
 
   @. u = tmp + z₂/2
@@ -800,6 +807,7 @@ end
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack b1hat1,b2hat1,b3hat1,b4hat1,b1hat2,b2hat2,b3hat2,b4hat2 = cache.tab
   alg = unwrap_alg(integrator, true)
+  new_W = calc_W!(integrator, cache, γ*dt, repeat_step)
 
   ##### Step 1
 
@@ -807,7 +815,7 @@ end
   z₁ .= zero(z₁)
 
   # initial step of Newton iteration
-  z₁, η, iter, fail_convergence = diffeq_nlsolve!(integrator, cache, z₁, uprev, γ, γ, Val{:newton}, repeat_step)
+  z₁, η, iter, fail_convergence = diffeq_nlsolve!(integrator, cache, W, z₁, uprev, γ, γ, Val{:newton}, new_W)
   fail_convergence && return
 
   ##### Step 2
@@ -816,7 +824,7 @@ end
   z₂ .= zero(z₂)
 
   @. tmp = uprev + a21*z₁
-  z₂, η, iter, fail_convergence = diffeq_nlsolve!(integrator, cache, z₂, tmp, γ, c2, Val{:newton}, true)
+  z₂, η, iter, fail_convergence = diffeq_nlsolve!(integrator, cache, W, z₂, tmp, γ, c2, Val{:newton}, false)
   fail_convergence && return
 
   ################################## Solve Step 3
@@ -824,7 +832,7 @@ end
   # Guess starts from z₁
   @. z₃ = z₁
   @. tmp = uprev + a31*z₁ + a32*z₂
-  z₃, η, iter, fail_convergence = diffeq_nlsolve!(integrator, cache, z₃, tmp, γ, c3, Val{:newton}, true)
+  z₃, η, iter, fail_convergence = diffeq_nlsolve!(integrator, cache, W, z₃, tmp, γ, c3, Val{:newton}, false)
   fail_convergence && return
 
   ################################## Solve Step 4
@@ -833,7 +841,7 @@ end
   @. z₄ = z₃
 
   @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
-  z₄, η, iter, fail_convergence = diffeq_nlsolve!(integrator, cache, z₄, tmp, γ, c4, Val{:newton}, true)
+  z₄, η, iter, fail_convergence = diffeq_nlsolve!(integrator, cache, W, z₄, tmp, γ, c4, Val{:newton}, false)
   fail_convergence && return
 
   ################################## Solve Step 5
@@ -841,7 +849,7 @@ end
   # Use constant z prediction
   @. z₅ = b1hat2*z₁ + b2hat2*z₂ + b3hat2*z₃ + b4hat2*z₄
   tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
-  z₅, η, iter, fail_convergence = diffeq_nlsolve!(integrator, cache, z₅, tmp, γ, 1, Val{:newton}, true)
+  z₅, η, iter, fail_convergence = diffeq_nlsolve!(integrator, cache, W, z₅, tmp, γ, 1, Val{:newton}, false)
   fail_convergence && return
 
   @. u = tmp + γ*z₅
@@ -975,6 +983,7 @@ end
   @unpack α21,α31,α32,α41,α43 = cache.tab
   @unpack bhat1,bhat2,bhat3,bhat4,btilde1,btilde2,btilde3,btilde4,btilde5 = cache.tab
   alg = unwrap_alg(integrator, true)
+  new_W = calc_W!(integrator, cache, γ*dt, repeat_step)
 
   # initial guess
   if integrator.success_iter > 0 && !integrator.reeval_fsal && alg.extrapolant == :interpolant
@@ -988,21 +997,21 @@ end
 
   ##### Step 1
 
-  z₁,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, z₁, uprev, γ, γ, Val{:newton}, repeat_step)
+  z₁,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, W, z₁, uprev, γ, γ, Val{:newton}, new_W)
   fail_convergence && return
 
   ##### Step 2
 
   @. z₂ = α21*z₁
   @. tmp = uprev + a21*z₁
-  z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, z₂, tmp, γ, c2, Val{:newton}, true)
+  z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, W, z₂, tmp, γ, c2, Val{:newton}, false)
   fail_convergence && return
 
   ################################## Solve Step 3
 
   @. z₃ = α31*z₁ + α32*z₂
   @. tmp = uprev + a31*z₁ + a32*z₂
-  z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, z₃, tmp, γ, c3, Val{:newton}, true)
+  z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, W, z₃, tmp, γ, c3, Val{:newton}, false)
   fail_convergence && return
 
   ################################## Solve Step 4
@@ -1010,7 +1019,7 @@ end
   # Use constant z prediction
   @. z₄ = α41*z₁ + α43*z₃
   @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
-  z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, z₄, tmp, γ, c4, Val{:newton}, true)
+  z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, W, z₄, tmp, γ, c4, Val{:newton}, false)
   fail_convergence && return
 
   ################################## Solve Step 5
@@ -1018,7 +1027,7 @@ end
   # Use yhat prediction
   @. z₅ = bhat1*z₁ + bhat2*z₂ + bhat3*z₃ + bhat4*z₄
   @. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
-  z₅,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, z₅, tmp, γ, 1, Val{:newton}, true)
+  z₅,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, W, z₅, tmp, γ, 1, Val{:newton}, false)
   fail_convergence && return
 
   @. u = tmp + γ*z₅

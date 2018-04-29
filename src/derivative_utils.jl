@@ -40,7 +40,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     @unpack J,W,jac_config = cache
     mass_matrix = integrator.sol.prob.mass_matrix
     is_compos = typeof(integrator.alg) <: CompositeAlgorithm
-    alg = is_compos ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+    alg = unwrap_alg(integrator, true)
 
     # calculate W
     new_W = true

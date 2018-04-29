@@ -10,7 +10,6 @@ function diffeq_nlsolve!(integrator,
   alg = unwrap_alg(integrator, true)
   # precalculations
   κtol = κ*tol
-  γdt = γ*dt
 
   # initial step of Newton iteration
   iter = 1
@@ -54,17 +53,14 @@ end
 function diffeq_nlsolve!(integrator,
                          cache::OrdinaryDiffEqMutableCache,
                          # `z` is the initial guess
-                         z, tmp, γ, c,
-                         ::Type{Val{:newton}}, repeat_step)
+                         W, z, tmp, γ, c,
+                         ::Type{Val{:newton}}, new_W)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,k,b,J,W,jac_config,κ,tol = cache
   mass_matrix = integrator.sol.prob.mass_matrix
   alg = unwrap_alg(integrator, true)
   # precalculations
   κtol = κ*tol
-  γdt = γ*dt
-  # calculate W
-  new_W = calc_W!(integrator, cache, γdt, repeat_step)
   # initial step of Newton iteration
   iter = 1
   tstep = t + c*dt
