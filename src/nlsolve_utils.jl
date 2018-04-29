@@ -2,7 +2,7 @@
 function diffeq_nlsolve!(integrator,
                          cache::OrdinaryDiffEqConstantCache,
                          # `z` is the initial guess
-                         z, τ,
+                         W, z, tmp, γ, c,
                          ::Type{Val{:newton}})
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
@@ -10,21 +10,12 @@ function diffeq_nlsolve!(integrator,
   alg = unwrap_alg(integrator, true)
   # precalculations
   κtol = κ*tol
-
-  # calculate W
-  uf.t = t
-  if typeof(uprev) <: AbstractArray
-    J = ForwardDiff.jacobian(uf,uprev)
-    W = I - τ*J
-  else
-    J = ForwardDiff.derivative(uf,uprev)
-    W = 1 - τ*J
-  end
+  γdt = γ*dt
 
   # initial step of Newton iteration
   iter = 1
-  tstep = t + τ
-  u = uprev + z
+  tstep = t + c*dt
+  u = tmp + γ*z
   b = dt*f(u, p, tstep) - z
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
@@ -37,7 +28,7 @@ function diffeq_nlsolve!(integrator,
   fail_convergence = false
   while (do_newton || iter < alg.min_newton_iter) && iter < alg.max_newton_iter
     iter += 1
-    u = uprev + z
+    u = tmp + γ*z
     b = dt*f(u, p, tstep) - z
     dz = W\b
     ndzprev = ndz
@@ -54,32 +45,30 @@ function diffeq_nlsolve!(integrator,
 
   if (iter >= alg.max_newton_iter && do_newton) || fail_convergence
     integrator.force_stepfail = true
-    return (u,true)
+    return (z, η, iter, true)
   end
 
-  u = uprev + z
-
-  cache.ηold = η
-  cache.newton_iters = iter
-  return (u,false)
+  return (z, η, iter, false)
 end
 
 function diffeq_nlsolve!(integrator,
                          cache::OrdinaryDiffEqMutableCache,
-                         τ,
-                         ::Type{Val{:newton}}, repeat_step=false)
+                         # `z` is the initial guess
+                         z, tmp, γ, c,
+                         ::Type{Val{:newton}}, repeat_step)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack uf,du1,dz,z,k,b,J,W,jac_config,tmp,κ,tol = cache
+  @unpack uf,du1,dz,k,b,J,W,jac_config,κ,tol = cache
   mass_matrix = integrator.sol.prob.mass_matrix
   alg = unwrap_alg(integrator, true)
   # precalculations
   κtol = κ*tol
+  γdt = γ*dt
   # calculate W
-  new_W = calc_W!(integrator, cache, τ, repeat_step)
+  new_W = calc_W!(integrator, cache, γdt, repeat_step)
   # initial step of Newton iteration
   iter = 1
-  tstep = t + τ
-  @. u = uprev + z
+  tstep = t + c*dt
+  @. u = tmp + γ*z
   f(k, u, p, tstep)
   if mass_matrix == I
     @. b = dt*k - z
@@ -102,7 +91,7 @@ function diffeq_nlsolve!(integrator,
   fail_convergence = false
   while (do_newton || iter < alg.min_newton_iter) && iter < alg.max_newton_iter
     iter += 1
-    @. u = uprev + z
+    @. u = tmp + γ*z
     f(k, u, p, tstep)
     if mass_matrix == I
       @. b = dt*k - z
@@ -129,12 +118,8 @@ function diffeq_nlsolve!(integrator,
 
   if (iter >= alg.max_newton_iter && do_newton) || fail_convergence
     integrator.force_stepfail = true
-    return true
+    return (z, η, iter, true)
   end
 
-  @. u = uprev + z
-
-  cache.ηold = η
-  cache.newton_iters = iter
-  return false
+  return (z, η, iter, false)
 end

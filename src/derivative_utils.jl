@@ -34,7 +34,7 @@ function calc_J(integrator, cache, is_compos)
     end
 end
 
-function calc_W!(integrator, cache, dtgamma, repeat_step, W_transform=false)
+function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_step, W_transform=false)
   @inbounds begin
     @unpack t,dt,uprev,u,f,p = integrator
     @unpack J,W,jac_config = cache
@@ -79,6 +79,31 @@ function calc_W!(integrator, cache, dtgamma, repeat_step, W_transform=false)
     end
     return new_W
   end
+end
+
+function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat_step, W_transform=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack uf,κ,tol = cache
+  # calculate W
+  uf.t = t
+  if !W_transform
+    if typeof(uprev) <: AbstractArray
+      J = ForwardDiff.jacobian(uf,uprev)
+      W = I - dtgamma*J
+    else
+      J = ForwardDiff.derivative(uf,uprev)
+      W = 1 - dtgamma*J
+    end
+  else
+    if typeof(uprev) <: AbstractArray
+      J = ForwardDiff.jacobian(uf,uprev)
+      W = I*inv(dtgamma) - J
+    else
+      J = ForwardDiff.derivative(uf,uprev)
+      W = inv(dtgamma) - J
+    end
+  end
+  W
 end
 
 function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, W_transform)
