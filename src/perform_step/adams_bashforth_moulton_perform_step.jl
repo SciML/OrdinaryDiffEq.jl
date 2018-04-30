@@ -544,3 +544,53 @@ end
   end
   f(k, u, p, t+dt)
 end
+
+# Variable Step Size Multistep Methods
+
+function initialize!(integrator,cache::VSA3ConstantCache)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
+
+@muladd function perform_step!(integrator,cache::VSA3ConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack k2,k3,grid_points,ϕstar_nm1,k = cache
+  k1 = integrator.fsalfirst
+  cnt = integrator.iter
+  idx = cnt % 3
+  if idx == 0
+    idx += 1
+  end
+  cache.grid_points[idx] = t
+  cache.grid_points[idx+1] = t+dt
+  if cnt == 1 || cnt == 2
+    #starting
+    
+  else
+    g = g_coefs!(cache)
+    ϕ_n, ϕstar_n = ϕ_and_ϕstar!(cache,k1)
+    u = uprev
+    for i = 1:k
+      u += dt * g[i] * ϕstar_n[i]
+    end
+    cache.ϕstar_nm1 = copy(ϕstar_n)
+    tmp = f(u, p, t+dt)
+    if integrator.opts.adaptive
+      ϕ_np1 = ϕ_np1!(ϕstar_n, tmp, k)
+      utilde = dt * (g[(k)+1] - g[(k)]) * ϕ_np1[(k)+1]
+      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp)
+    end
+      integrator.fsallast = tmp
+      integrator.k[1] = integrator.fsalfirst
+      integrator.k[2] = integrator.fsallast
+      integrator.u = u
+  end
+end
+

@@ -116,6 +116,7 @@ module OrdinaryDiffEq
   include("derivative_utils.jl")
   include("nlsolve_utils.jl")
   include("nordsieck_utils.jl")
+  include("adams_utils.jl")
   include("derivative_wrappers.jl")
   include("iterator_interface.jl")
   include("constants.jl")
@@ -173,6 +174,8 @@ module OrdinaryDiffEq
          IRKN3, IRKN4, DPRKN6, DPRKN8, DPRKN12, ERKN4, ERKN5
 
   export AB3, AB4, AB5, ABM32, ABM43, ABM54
+
+  export VSA3
 
   export AN5
 

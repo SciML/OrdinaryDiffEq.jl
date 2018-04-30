@@ -277,3 +277,23 @@ function alg_cache(alg::ABM54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   k5 = rate_prototype
   ABM54ConstantCache(k2,k3,k4,k5,1)
 end
+
+###########################
+
+mutable struct VSA3ConstantCache{rateType ,uArrayType} <: OrdinaryDiffEqConstantCache
+  k2::rateType
+  k3::rateType
+  ϕstar_nm1::uArrayType
+  grid_points::uArrayType
+  k::Int
+end
+
+function alg_cache(alg::VSA3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  k2 = rate_prototype
+  k3 = rate_prototype
+  ϕstar_nm1 = zeros(Float64,3)
+  grid_points = zeros(Float64,3)
+  k = 3
+  VSA3ConstantCache(k2,k3,ϕstar_nm1,grid_points,k)
+end
+
