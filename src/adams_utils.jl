@@ -1,17 +1,16 @@
 function ϕ_and_ϕstar!(cache, dy)
 	@unpack grid_points, ϕstar_nm1, k = cache
-	print("grid_points ",grid_points)
 	ϕ_n = zeros(k)
 	ϕstar_n = zeros(k)
 	β = zeros(k)
 	for i = 1:k
-		if k == 1
+		if i == 1
 			β[i] = 1
 			ϕ_n[i] = dy
 			ϕstar_n[i] = dy
 		else
 			β[i] = β[i-1] * (grid_points[end] - grid_points[end-i+1])/(grid_points[end-1] - grid_points[end-i])
-			ϕ_n[i] = ϕ[i-1] - ϕstar_mn1[i-1]
+			ϕ_n[i] = ϕ_n[i-1] - ϕstar_nm1[i-1]
 			ϕstar_n[i] = β[i] * ϕ_n[i]
 		end
 	end
@@ -19,6 +18,7 @@ function ϕ_and_ϕstar!(cache, dy)
 end
 
 function ϕ_np1!(ϕstar_n, dy, k)
+	ϕ_np1 = zeros(Float64,k+1)
     for i = 1:(k)+1
     	if i == 1
     		ϕ_np1[i] = dy

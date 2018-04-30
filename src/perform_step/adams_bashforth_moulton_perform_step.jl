@@ -563,15 +563,14 @@ end
   @unpack k2,k3,grid_points,ϕstar_nm1,k = cache
   k1 = integrator.fsalfirst
   cnt = integrator.iter
-  idx = cnt % 3
+  idx = cnt % 4
   if idx == 0
     idx += 1
   end
   cache.grid_points[idx] = t
   cache.grid_points[idx+1] = t+dt
-  if cnt == 1 || cnt == 2
-    #starting
-    
+  if cnt == 1 || cnt == 2 || cnt == 3
+    perform_step!(integrator, AB3ConstantCache(k2,k3,cnt))
   else
     g = g_coefs!(cache)
     ϕ_n, ϕstar_n = ϕ_and_ϕstar!(cache,k1)
