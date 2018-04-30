@@ -8,6 +8,11 @@ function diffeq_nlsolve!(integrator,
   @unpack uf,κ,tol = cache
   mass_matrix = integrator.sol.prob.mass_matrix
   alg = unwrap_alg(integrator, true)
+  if typeof(integrator.f) <: SplitFunction
+    f = integrator.f.f1
+  else
+    f = integrator.f
+  end
   # precalculations
   κtol = κ*tol
 
@@ -59,6 +64,11 @@ function diffeq_nlsolve!(integrator,
   @unpack uf,du1,dz,k,b,J,W,jac_config,κ,tol = cache
   mass_matrix = integrator.sol.prob.mass_matrix
   alg = unwrap_alg(integrator, true)
+  if typeof(integrator.f) <: SplitFunction
+    f = integrator.f.f1
+  else
+    f = integrator.f
+  end
   # precalculations
   κtol = κ*tol
   # initial step of Newton iteration

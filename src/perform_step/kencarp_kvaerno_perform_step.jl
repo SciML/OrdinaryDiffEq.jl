@@ -211,8 +211,6 @@ end
 
   ################################## Solve Step 3
 
-  tstep = t + c3*dt
-
   if typeof(integrator.f) <: SplitFunction
     z₃ = z₂
     u = tmp + γ*z₂
