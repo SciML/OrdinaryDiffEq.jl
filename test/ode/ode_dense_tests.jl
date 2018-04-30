@@ -45,6 +45,8 @@ function regression_test(alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = fal
   sol(interpolation_results_1d, interpolation_points)
   sol(interpolation_points[1])
   for N in 1:nth_der
+    # prevent CI error
+    nth_der != 1 && @show N
     if test_diff1
       for t in deriv_test_points
         deriv = sol(t, Val{N})
@@ -59,6 +61,8 @@ function regression_test(alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = fal
   sol(interpolation_points[1], idxs=1:1)
   sol(interpolation_points[1])
   for N in 1:nth_der
+    # prevent CI error
+    nth_der != 1 && @show N
     if test_diff1
       sol(interpolation_results_1d_inplace, interpolation_points, Val{N}, idxs=1:1)
       sol(interpolation_results_1d_inplace, interpolation_points, Val{N})
@@ -226,7 +230,6 @@ regression_test(Vern7(), 3e-9, 5e-9; test_diff1 = true)
 regression_test(Vern8(), 3e-8, 5e-8; test_diff1 = true)
 
 # Vern9
-println("Vern9")
 regression_test(Vern9(), 1e-9, 2e-9; test_diff1 = true, nth_der=4, dertol=1e-2)
 
 println("Rosenbrocks")
