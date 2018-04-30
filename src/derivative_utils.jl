@@ -82,12 +82,14 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
 end
 
 function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat_step, W_transform=false)
-  @unpack t,dt,uprev,u,f,p = integrator
-  @unpack uf,κ,tol = cache
+  @unpack t,uprev,f = integrator
+  @unpack uf = cache
   # calculate W
   uf.t = t
+  isarray = typeof(uprev) <: AbstractArray
+  iscompo = typeof(integrator.alg) <: CompositeAlgorithm
   if !W_transform
-    if typeof(uprev) <: AbstractArray
+    if isarray
       J = ForwardDiff.jacobian(uf,uprev)
       W = I - dtgamma*J
     else
@@ -95,7 +97,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
       W = 1 - dtgamma*J
     end
   else
-    if typeof(uprev) <: AbstractArray
+    if isarray
       J = ForwardDiff.jacobian(uf,uprev)
       W = I*inv(dtgamma) - J
     else
@@ -103,6 +105,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
       W = inv(dtgamma) - J
     end
   end
+  iscompo && (integrator.eigen_est = isarray ? norm(J, Inf) : J)
   W
 end
 

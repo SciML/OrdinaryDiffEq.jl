@@ -1,4 +1,5 @@
-function initialize!(integrator, cache::Rosenbrock23Cache)
+function initialize!(integrator, cache::Union{Rosenbrock23Cache,
+                                              Rosenbrock32Cache,})
   integrator.kshortsize = 2
   @unpack k₁,k₂,fsalfirst,fsallast = cache
   integrator.fsalfirst = fsalfirst
@@ -6,6 +7,18 @@ function initialize!(integrator, cache::Rosenbrock23Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k .= [k₁,k₂]
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+end
+
+function initialize!(integrator, cache::Union{Rosenbrock23ConstantCache,
+                                              Rosenbrock32ConstantCache})
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = zero(integrator.fsalfirst)
+  integrator.k[2] = zero(integrator.fsalfirst)
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock23Cache, repeat_step=false)
@@ -78,16 +91,6 @@ end
   end
 end
 
-function initialize!(integrator, cache::Rosenbrock32Cache)
-  integrator.kshortsize = 2
-  @unpack k₁,k₂,fsalfirst,fsallast = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = fsallast
-  resize!(integrator.k, integrator.kshortsize)
-  integrator.k .= [k₁,k₂]
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-end
-
 @muladd function perform_step!(integrator, cache::Rosenbrock32Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
@@ -158,17 +161,6 @@ end
   end
 end
 
-function initialize!(integrator, cache::Rosenbrock23ConstantCache)
-  integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
-
-  # Avoid undefined entries if k is an array of arrays
-  integrator.fsallast = zero(integrator.fsalfirst)
-  integrator.k[1] = zero(integrator.fsalfirst)
-  integrator.k[2] = zero(integrator.fsalfirst)
-end
-
 @muladd function perform_step!(integrator, cache::Rosenbrock23ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack c₃₂,d,tf,uf = cache
@@ -182,14 +174,7 @@ end
   tf.u = uprev
   dT = ForwardDiff.derivative(tf, t)
 
-  # Jacobian
-  if typeof(uprev) <: AbstractArray
-    J = ForwardDiff.jacobian(uf, uprev)
-    W = I - γ*J
-  else
-    J = ForwardDiff.derivative(uf, uprev)
-    W = 1 - γ*J
-  end
+  W = calc_W!(integrator, cache, γ, repeat_step)
 
   k₁ = W\(integrator.fsalfirst + γ*dT)
   f₁ = f(uprev  + dto2*k₁, p, t+dto2)
@@ -213,17 +198,6 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator, cache::Rosenbrock32ConstantCache)
-  integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
-
-  # Avoid undefined entries if k is an array of arrays
-  integrator.fsallast = zero(integrator.fsalfirst)
-  integrator.k[1] = zero(integrator.fsalfirst)
-  integrator.k[2] = zero(integrator.fsalfirst)
-end
-
 @muladd function perform_step!(integrator, cache::Rosenbrock32ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack c₃₂,d,tf,uf = cache
@@ -237,15 +211,7 @@ end
   tf.u = uprev
   dT = ForwardDiff.derivative(tf,t)
 
-  # Jacobian
-  uf.t = t
-  if typeof(uprev) <: AbstractArray
-    J = ForwardDiff.jacobian(uf,uprev)
-    W = I - γ*J
-  else
-    J = ForwardDiff.derivative(uf,uprev)
-    W = 1 - γ*J
-  end
+  W = calc_W!(integrator, cache, γ, repeat_step)
 
   #f₀ = f(uprev, p, t)
 
@@ -271,7 +237,10 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator, cache::Rosenbrock33ConstantCache)
+function initialize!(integrator, cache::Union{Rosenbrock33ConstantCache,
+                                              Rosenbrock34ConstantCache,
+                                              Rosenbrock4ConstantCache,
+                                              Rosenbrock5ConstantCache})
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
@@ -280,6 +249,19 @@ function initialize!(integrator, cache::Rosenbrock33ConstantCache)
   integrator.fsallast = zero(integrator.fsalfirst)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
+end
+
+function initialize!(integrator, cache::Union{Rosenbrock33Cache,
+                                              Rosenbrock34Cache,
+                                              Rosenbrock4Cache,
+                                              Rosenbrock5Cache})
+  integrator.kshortsize = 2
+  @unpack fsalfirst,fsallast = cache
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = fsallast
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k .= [fsalfirst,fsallast]
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock33ConstantCache,
@@ -302,15 +284,7 @@ end
   tf.u = uprev
   dT = ForwardDiff.derivative(tf,t)
 
-  # Jacobian
-  uf.t = t
-  if typeof(uprev) <: AbstractArray
-    J = ForwardDiff.jacobian(uf,uprev)
-    W = I/dtgamma - J
-  else
-    J = ForwardDiff.derivative(uf,uprev)
-    W = 1/dtgamma - J
-  end
+  W = calc_W!(integrator, cache, dtgamma, repeat_step, true)
 
   linsolve_tmp =  integrator.fsalfirst + dtd1*dT
 
@@ -340,16 +314,6 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
-end
-
-function initialize!(integrator, cache::Rosenbrock33Cache)
-  integrator.kshortsize = 2
-  @unpack fsalfirst,fsallast = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = fsallast
-  resize!(integrator.k, integrator.kshortsize)
-  integrator.k .= [fsalfirst,fsallast]
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock33Cache, repeat_step=false)
@@ -431,17 +395,6 @@ end
 
 ################################################################################
 
-function initialize!(integrator, cache::Rosenbrock34ConstantCache)
-  integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
-
-  # Avoid undefined entries if k is an array of arrays
-  integrator.fsallast = zero(integrator.fsalfirst)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-end
-
 @muladd function perform_step!(integrator, cache::Rosenbrock34ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tf,uf = cache
@@ -465,15 +418,7 @@ end
   tf.u = uprev
   dT = ForwardDiff.derivative(tf, t)
 
-  # Jacobian
-  uf.t = t
-  if typeof(uprev) <: AbstractArray
-    J = ForwardDiff.jacobian(uf, uprev)
-    W = I/dtgamma - J
-  else
-    J = ForwardDiff.derivative(uf, uprev)
-    W = 1/dtgamma - J
-  end
+  W = calc_W!(integrator, cache, dtgamma, repeat_step, true)
 
   linsolve_tmp =  integrator.fsalfirst + dtd1*dT
 
@@ -506,16 +451,6 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
-end
-
-function initialize!(integrator, cache::Rosenbrock34Cache)
-  integrator.kshortsize = 2
-  @unpack fsalfirst,fsallast = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = fsallast
-  resize!(integrator.k, integrator.kshortsize)
-  integrator.k .= [fsalfirst,fsallast]
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock34Cache, repeat_step=false)
@@ -627,17 +562,6 @@ end
 
 #### ROS4 type method
 
-function initialize!(integrator, cache::Rosenbrock4ConstantCache)
-  integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
-
-  # Avoid undefined entries if k is an array of arrays
-  integrator.fsallast = zero(integrator.fsalfirst)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-end
-
 @muladd function perform_step!(integrator, cache::Rosenbrock4ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tf,uf = cache
@@ -661,15 +585,7 @@ end
   tf.u = uprev
   dT = ForwardDiff.derivative(tf, t)
 
-  # Jacobian
-  uf.t = t
-  if typeof(uprev) <: AbstractArray
-    J = ForwardDiff.jacobian(uf, uprev)
-    W = I/dtgamma - J
-  else
-    J = ForwardDiff.derivative(uf, uprev)
-    W = 1/dtgamma - J
-  end
+  W = calc_W!(integrator, cache, dtgamma, repeat_step, true)
 
   linsolve_tmp =  integrator.fsalfirst + dtd1*dT
 
@@ -703,16 +619,6 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
-end
-
-function initialize!(integrator, cache::Rosenbrock4Cache)
-  integrator.kshortsize = 2
-  @unpack fsalfirst,fsallast = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = fsallast
-  resize!(integrator.k, integrator.kshortsize)
-  integrator.k .= [fsalfirst,fsallast]
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock4Cache, repeat_step=false)
@@ -856,15 +762,7 @@ end
   tf.u = uprev
   dT = ForwardDiff.derivative(tf, t)
 
-  # Jacobian
-  uf.t = t
-  if typeof(uprev) <: AbstractArray
-    J = ForwardDiff.jacobian(uf, uprev)
-    W = I/dtgamma - J
-  else
-    J = ForwardDiff.derivative(uf, uprev)
-    W = 1/dtgamma - J
-  end
+  W = calc_W!(integrator, cache, dtgamma, repeat_step, true)
 
   du = f(uprev, p, t)
 
@@ -1083,17 +981,6 @@ end
 
 ### Rodas5 Method
 
-function initialize!(integrator, cache::Rosenbrock5ConstantCache)
-  integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
-
-  # Avoid undefined entries if k is an array of arrays
-  integrator.fsallast = zero(integrator.fsalfirst)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-end
-
 @muladd function perform_step!(integrator, cache::Rosenbrock5ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tf,uf = cache
@@ -1140,21 +1027,7 @@ end
   tf.u = uprev
   dT = ForwardDiff.derivative(tf,t)
 
-  # Jacobian
-  uf.t = t
-  if typeof(uprev) <: AbstractArray
-    J = ForwardDiff.jacobian(uf, uprev)
-    W = I/dtgamma - J
-    if typeof(integrator.alg) <: CompositeAlgorithm
-      integrator.eigen_est = norm(J, Inf)
-    end
-  else
-    J = ForwardDiff.derivative(uf, uprev)
-    W = 1/dtgamma - J
-    if typeof(integrator.alg) <: CompositeAlgorithm
-      integrator.eigen_est = J
-    end
-  end
+  W = calc_W!(integrator, cache, dtgamma, repeat_step, true)
 
   du1 = f(uprev, p, t)
 
@@ -1224,16 +1097,6 @@ end
 
   integrator.fsallast = du
   integrator.u = u
-end
-
-function initialize!(integrator, cache::Rosenbrock5Cache)
-  integrator.kshortsize = 2
-  @unpack fsalfirst,fsallast,dense1,dense2 = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = fsallast
-  resize!(integrator.k, integrator.kshortsize)
-  integrator.k .= [fsalfirst,fsallast]
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock5Cache, repeat_step=false)
