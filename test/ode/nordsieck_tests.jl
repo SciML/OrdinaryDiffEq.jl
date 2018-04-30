@@ -1,8 +1,13 @@
-using OrdinaryDiffEq, DiffEqDevTools, DiffEqProblemLibrary, Base.Test
+using OrdinaryDiffEq, DiffEqDevTools, Base.Test
 
-probArr = [prob_ode_bigfloatlinear,
-           prob_ode_bigfloat2Dlinear]
-(f::typeof(DiffEqProblemLibrary.f_2dlinearbig))(::Type{Val{:analytic}},u0,p,t) = u0*exp.(big"1.01"*t)
+srand(100)
+linear_bigαN = big"0.5"
+f_linearbig = (u,p,t) -> (linear_bigαN*u)
+f_2dlinearbig = (du,u,p,t) -> (du.=linear_bigαN*u)
+(f::typeof(f_linearbig))(::Type{Val{:analytic}},u0,p,t) = u0*exp(linear_bigαN*t)
+(f::typeof(f_2dlinearbig))(::Type{Val{:analytic}},u0,p,t) = u0*exp.(linear_bigαN*t)
+probArr = [ODEProblem(f_2dlinearbig, big.(rand(4,2)), (0,1.)),
+           ODEProblem(f_linearbig, big"0.5", (0,1.))]
 testTol = 0.2
 dts = 1.//2.^(10:-1:6)
 
