@@ -1,4 +1,11 @@
-function initialize!(integrator, cache::ImplicitEulerConstantCache)
+function initialize!(integrator, cache::Union{ImplicitEulerConstantCache,
+                                              ImplicitMidpointConstantCache,
+                                              TrapezoidConstantCache,
+                                              TRBDF2ConstantCache,
+                                              SDIRK2ConstantCache,
+                                              SSPSDIRK2ConstantCache,
+                                              Cash4ConstantCache,
+                                              Hairer4ConstantCache})
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -7,6 +14,23 @@ function initialize!(integrator, cache::ImplicitEulerConstantCache)
   integrator.fsallast = zero(integrator.fsalfirst)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
+end
+
+function initialize!(integrator, cache::Union{ImplicitEulerCache,
+                                              ImplicitMidpointCache,
+                                              TrapezoidCache,
+                                              TRBDF2Cache,
+                                              SDIRK2Cache,
+                                              SSPSDIRK2Cache,
+                                              Cash4Cache,
+                                              Hairer4Cache})
+  integrator.kshortsize = 2
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
 end
 
 @muladd function perform_step!(integrator, cache::ImplicitEulerConstantCache, repeat_step=false)
@@ -54,16 +78,6 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
-end#
-
-function initialize!(integrator, cache::ImplicitEulerCache)
-  integrator.kshortsize = 2
-  integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.k
-  resize!(integrator.k, integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
 end
 
 @muladd function perform_step!(integrator, cache::ImplicitEulerCache, repeat_step=false)
@@ -110,17 +124,6 @@ end
   f(integrator.fsallast,u,p,t+dt)
 end
 
-function initialize!(integrator, cache::ImplicitMidpointConstantCache)
-  integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-
-  # Avoid undefined entries if k is an array of arrays
-  integrator.fsallast = zero(integrator.fsalfirst)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-end
-
 @muladd function perform_step!(integrator, cache::ImplicitMidpointConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
@@ -150,16 +153,6 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator, cache::ImplicitMidpointCache)
-  integrator.kshortsize = 2
-  integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.k
-  resize!(integrator.k, integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-end
-
 @muladd function perform_step!(integrator, cache::ImplicitMidpointCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,z,k,b,J,W,jac_config,tmp,κ,tol = cache
@@ -183,17 +176,6 @@ end
   cache.newton_iters = iter
 
   f(integrator.fsallast,u,p,t+dt)
-end
-
-function initialize!(integrator, cache::TrapezoidConstantCache)
-  integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-
-  # Avoid undefined entries if k is an array of arrays
-  integrator.fsallast = zero(integrator.fsalfirst)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
 end
 
 @muladd function perform_step!(integrator, cache::TrapezoidConstantCache, repeat_step=false)
@@ -261,16 +243,6 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator, cache::TrapezoidCache)
-  integrator.kshortsize = 2
-  integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.k
-  resize!(integrator.k, integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-end
-
 @muladd function perform_step!(integrator, cache::TrapezoidCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,z,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
@@ -335,17 +307,6 @@ end
   f(integrator.fsallast,u,p,t+dt)
 end
 
-function initialize!(integrator, cache::TRBDF2ConstantCache)
-  integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-
-  # Avoid undefined entries if k is an array of arrays
-  integrator.fsallast = zero(integrator.fsalfirst)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-end
-
 @muladd function perform_step!(integrator, cache::TRBDF2ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
@@ -396,16 +357,6 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
-end
-
-function initialize!(integrator, cache::TRBDF2Cache)
-  integrator.kshortsize = 2
-  integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.k
-  resize!(integrator.k, integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
 end
 
 @muladd function perform_step!(integrator, cache::TRBDF2Cache, repeat_step=false)
@@ -461,17 +412,6 @@ end
   @. integrator.fsallast = z/dt
 end
 
-function initialize!(integrator, cache::SDIRK2ConstantCache)
-  integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-
-  # Avoid undefined entries if k is an array of arrays
-  integrator.fsallast = zero(integrator.fsalfirst)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-end
-
 @muladd function perform_step!(integrator, cache::SDIRK2ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
@@ -520,16 +460,6 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
-end
-
-function initialize!(integrator, cache::SDIRK2Cache)
-  integrator.kshortsize = 2
-  integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.k
-  resize!(integrator.k, integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
 end
 
 @muladd function perform_step!(integrator, cache::SDIRK2Cache, repeat_step=false)
@@ -585,17 +515,6 @@ end
   f(integrator.fsallast,u,p,t)
 end
 
-function initialize!(integrator, cache::SSPSDIRK2ConstantCache)
-  integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-
-  # Avoid undefined entries if k is an array of arrays
-  integrator.fsallast = zero(integrator.fsalfirst)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-end
-
 @muladd function perform_step!(integrator, cache::SSPSDIRK2ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
@@ -646,16 +565,6 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator, cache::SSPSDIRK2Cache)
-  integrator.kshortsize = 2
-  integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.k
-  resize!(integrator.k, integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-end
-
 @muladd function perform_step!(integrator, cache::SSPSDIRK2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,z₁,z₂,k,b,J,W,jac_config,tmp,κ,tol = cache
@@ -696,17 +605,6 @@ end
   cache.newton_iters = iter
 
   f(integrator.fsallast,u,p,t)
-end
-
-function initialize!(integrator, cache::Cash4ConstantCache)
-  integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-
-  # Avoid undefined entries if k is an array of arrays
-  integrator.fsallast = zero(integrator.fsalfirst)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
 end
 
 @muladd function perform_step!(integrator, cache::Cash4ConstantCache, repeat_step=false)
@@ -793,16 +691,6 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator, cache::Cash4Cache)
-  integrator.kshortsize = 2
-  integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.k
-  resize!(integrator.k, integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
-end
-
 @muladd function perform_step!(integrator, cache::Cash4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,z₁,z₂,z₃,z₄,z₅,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
@@ -887,17 +775,6 @@ end
   @. integrator.fsallast = z₅/dt
 end
 
-function initialize!(integrator, cache::Hairer4ConstantCache)
-  integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-
-  # Avoid undefined entries if k is an array of arrays
-  integrator.fsallast = zero(integrator.fsalfirst)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-end
-
 @muladd function perform_step!(integrator, cache::Hairer4ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
@@ -966,16 +843,6 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
-end
-
-function initialize!(integrator, cache::Hairer4Cache)
-  integrator.kshortsize = 2
-  integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.k
-  resize!(integrator.k, integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
 end
 
 @muladd function perform_step!(integrator, cache::Hairer4Cache, repeat_step=false)
