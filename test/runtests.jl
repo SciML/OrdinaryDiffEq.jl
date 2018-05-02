@@ -33,6 +33,7 @@ if group == "All" || group == "Interface"
     @time @testset "Composite Algorithm Tests" begin include("composite_algorithm_test.jl") end
     @time @testset "Complex Tests" begin include("complex_tests.jl") end
     @time @testset "Stiffness Detection Tests" begin include("stiffness_detection_test.jl") end
+    @time @testset "Export tests" begin include("export_tests.jl") end
 end
 
 if group == "All" || group == "Integrators"
