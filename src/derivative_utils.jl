@@ -19,7 +19,7 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
   end
 end
 
-function calc_J(integrator, cache, is_compos)
+function calc_J!(integrator, cache, is_compos)
     @unpack t,dt,uprev,u,f,p = integrator
     @unpack du1,uf,J,jac_config = cache
     if has_jac(f)
@@ -28,10 +28,8 @@ function calc_J(integrator, cache, is_compos)
       uf.t = t
       uf.p = p
       jacobian!(J, uf, uprev, du1, integrator, jac_config)
-      if is_compos
-        integrator.eigen_est = norm(J, Inf)
-      end
     end
+    is_compos && (integrator.eigen_est = norm(J, Inf))
 end
 
 function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_step, W_transform=false)
@@ -48,7 +46,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
       # skip calculation of inv(W) if step is repeated
       !repeat_step && W_transform ? f(Val{:invW_t}, W, uprev, p, dtgamma, t) :
                                     f(Val{:invW}, W, uprev, p, dtgamma, t) # W == inverse W
-      is_compos && calc_J(integrator, cache, true)
+      is_compos && calc_J!(integrator, cache, true)
 
     else
       # skip calculation of J if step is repeated
@@ -58,7 +56,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
         new_jac = false
       else
         new_jac = true
-        calc_J(integrator, cache, is_compos)
+        calc_J!(integrator, cache, is_compos)
       end
       # skip calculation of W if step is repeated
       if !repeat_step && (!alg_can_repeat_jac(alg) ||
@@ -82,12 +80,14 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
 end
 
 function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat_step, W_transform=false)
-  @unpack t,dt,uprev,u,f,p = integrator
-  @unpack uf,κ,tol = cache
+  @unpack t,uprev,f = integrator
+  @unpack uf = cache
   # calculate W
   uf.t = t
+  isarray = typeof(uprev) <: AbstractArray
+  iscompo = typeof(integrator.alg) <: CompositeAlgorithm
   if !W_transform
-    if typeof(uprev) <: AbstractArray
+    if isarray
       J = ForwardDiff.jacobian(uf,uprev)
       W = I - dtgamma*J
     else
@@ -95,7 +95,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
       W = 1 - dtgamma*J
     end
   else
-    if typeof(uprev) <: AbstractArray
+    if isarray
       J = ForwardDiff.jacobian(uf,uprev)
       W = I*inv(dtgamma) - J
     else
@@ -103,6 +103,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
       W = inv(dtgamma) - J
     end
   end
+  iscompo && (integrator.eigen_est = isarray ? norm(J, Inf) : J)
   W
 end
 
