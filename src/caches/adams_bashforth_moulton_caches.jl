@@ -280,20 +280,28 @@ end
 
 ###########################
 
-mutable struct VSA3ConstantCache{rateType ,uArrayType} <: OrdinaryDiffEqConstantCache
+mutable struct VSA3ConstantCache{rateType ,uArrayType, TabType, bool} <: OrdinaryDiffEqConstantCache
   k2::rateType
   k3::rateType
   ϕstar_nm1::uArrayType
   grid_points::uArrayType
   k::Int
+  idx::Int
+  order::Int
+  success::bool
+  tab::TabType
 end
 
 function alg_cache(alg::VSA3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   k2 = rate_prototype
   k3 = rate_prototype
-  ϕstar_nm1 = zeros(Float64,4)
-  grid_points = zeros(Float64,4)
-  k = 3
-  VSA3ConstantCache(k2,k3,ϕstar_nm1,grid_points,k)
+  ϕstar_nm1 = zeros(Float64,3)
+  grid_points = zeros(Float64,3)
+  k = 1
+  idx = 1
+  order = 3
+  success = true
+  tab = BS3ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  VSA3ConstantCache(k2,k3,ϕstar_nm1,grid_points,k,idx,order,success,tab)
 end
 

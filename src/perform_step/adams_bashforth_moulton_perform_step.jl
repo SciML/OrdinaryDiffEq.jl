@@ -560,36 +560,58 @@ end
 
 @muladd function perform_step!(integrator,cache::VSA3ConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k2,k3,grid_points,ϕstar_nm1,k = cache
+  @unpack k2,k3,grid_points,ϕstar_nm1,k,order,idx,success,tab = cache
+  
   k1 = integrator.fsalfirst
   cnt = integrator.iter
-  idx = cnt % 4
-  if idx == 0
-    idx += 1
+
+  if cnt <= 3
+    idx = cnt
+    grid_points[idx] = t
+   elseif success
+    grid_points[1] = grid_points[2]
+    grid_points[2] = grid_points[3]
+    grid_points[3] = t
   end
-  cache.grid_points[idx] = t
-  cache.grid_points[idx+1] = t+dt
-  if cnt == 1 || cnt == 2 || cnt == 3
-    perform_step!(integrator, AB3ConstantCache(k2,k3,cnt))
-  else
-    g = g_coefs!(cache)
-    ϕ_n, ϕstar_n = ϕ_and_ϕstar!(cache,k1)
-    u = uprev
-    for i = 1:k
-      u += dt * g[i] * ϕstar_n[i]
+
+  cache.grid_points = copy(grid_points)
+
+  last_idx = k
+  next_point = t+dt
+  
+  g = g_coefs!(cache, dt, next_point, last_idx)
+  ϕ_n, ϕstar_n = ϕ_and_ϕstar!(cache, k1, next_point, last_idx)
+  cache.ϕstar_nm1 = copy(ϕstar_n)
+
+  if cnt == 1 || cnt == 2
+    perform_step!(integrator, tab)
+    cache.k = min(k+1, order)
+    if cnt == 1
+        cache.k3 = k1
+    else
+        cache.k2 = k1
     end
-    cache.ϕstar_nm1 = copy(ϕstar_n)
-    tmp = f(u, p, t+dt)
+  else
+    u = uprev
+    for i = 0:k-1
+        u += dt * g[(i)+1] * ϕstar_n[(i)+1]
+    end
+
     if integrator.opts.adaptive
-      ϕ_np1 = ϕ_np1!(ϕstar_n, tmp, k)
-      utilde = dt * (g[(k)+1] - g[(k)]) * ϕ_np1[(k)+1]
+      utilde = uprev + (dt/12)*(23*k1 - 16*k2 + 5*k3) - u
       atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
+      if integrator.EEst >= 1
+        cache.success = false
+      end
     end
-      integrator.fsallast = tmp
-      integrator.k[1] = integrator.fsalfirst
-      integrator.k[2] = integrator.fsallast
-      integrator.u = u
+    cache.k = min(k+1, order)
+    cache.k3 = k2
+    cache.k2 = k1
+    integrator.fsallast = f(u, p, t+dt)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.u = u
   end
 end
 
