@@ -615,3 +615,71 @@ end
   end
 end
 
+# in place 
+
+function initialize!(integrator,cache::VSA3Cache)
+  @unpack fsalfirst,k4 = cache
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = k4
+  integrator.kshortsize = 2
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # pre-start FSAL
+end
+
+@muladd function perform_step!(integrator,cache::VSA3Cache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack k2,k3,k4,grid_points,ϕstar_nm1,k,order,atmp,idx,utilde,success,bs3cache = cache
+  
+  k1 = integrator.fsalfirst
+  cnt = integrator.iter
+
+  if cnt <= 3
+    idx = cnt
+    grid_points[idx] = t
+   elseif success
+    grid_points[1] = grid_points[2]
+    grid_points[2] = grid_points[3]
+    grid_points[3] = t
+  end
+
+  cache.grid_points = copy(grid_points)
+
+  last_idx = k
+  next_point = t+dt
+  
+  g = g_coefs!(cache, dt, next_point, last_idx)
+  ϕ_n, ϕstar_n = ϕ_and_ϕstar!(cache, k1, next_point, last_idx)
+  cache.ϕstar_nm1 = copy(ϕstar_n)
+
+  if cnt == 1 || cnt == 2
+    perform_step!(integrator, bs3cache)
+    @unpack k4 = bs3cache
+    integrator.fsallast .= k4
+    cache.k = min(k+1, order)
+    if cnt == 1
+        cache.k3 = copy(k1)
+    else
+        cache.k2 = copy(k1)
+    end
+  else
+    @. u = uprev
+    for i = 0:k-1
+    @. u += dt * g[(i)+1] * ϕstar_n[(i)+1]
+    end
+    f(k4,u,p,t+dt)
+    if integrator.opts.adaptive
+      @. utilde = uprev + (dt/12)*(23*k1 - 16*k2 + 5*k3) - u
+      calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp)
+      if integrator.EEst >= 1
+        cache.success = false
+      end
+    end
+    cache.k = min(k+1, order)
+    cache.k3 = copy(k2)
+    cache.k2 = copy(k1)
+  end
+end
+

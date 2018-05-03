@@ -292,6 +292,29 @@ mutable struct VSA3ConstantCache{rateType ,uArrayType, TabType, bool} <: Ordinar
   tab::TabType
 end
 
+mutable struct VSA3Cache{uType,rateType,bool,TabType,uArrayType,bs3Type,uEltypeNoUnits,coefType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  fsalfirst::rateType
+  bs3cache::bs3Type
+  k2::rateType
+  k3::rateType
+  k4::rateType
+  ϕstar_nm1::coefType
+  grid_points::uArrayType
+  k::Int
+  idx::Int
+  order::Int
+  atmp::uEltypeNoUnits
+  tmp::uType
+  utilde::uArrayType
+  success::bool
+  tab::TabType
+end
+
+u_cache(c::VSA3Cache) = ()
+du_cache(c::VSA3Cache) = ()
+
 function alg_cache(alg::VSA3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   k2 = rate_prototype
   k3 = rate_prototype
@@ -305,3 +328,29 @@ function alg_cache(alg::VSA3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   VSA3ConstantCache(k2,k3,ϕstar_nm1,grid_points,k,idx,order,success,tab)
 end
 
+function alg_cache(alg::VSA3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tab = BS3ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  bk1 = zeros(rate_prototype)
+  bk2 = zeros(rate_prototype)
+  bk3 = zeros(rate_prototype)
+  bk4 = zeros(rate_prototype)
+  butilde = similar(u,indices(u))
+  batmp = similar(u,uEltypeNoUnits)
+  btmp = similar(u)
+  bs3cache = BS3Cache(u,uprev,bk1,bk2,bk3,bk4,butilde,btmp,batmp,tab)
+
+  fsalfirst = zeros(rate_prototype)
+  k2 = zeros(rate_prototype)
+  k3 = zeros(rate_prototype)
+  k4 = zeros(rate_prototype)
+  ϕstar_nm1 = Array{Array{Float64}}(1,3)
+  grid_points = zeros(Float64,3)
+  k = 1
+  idx = 1
+  order = 3
+  atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u)
+  utilde = similar(u,indices(u))
+  success = true
+  VSA3Cache(u,uprev,fsalfirst,bs3cache,k2,k3,k4,ϕstar_nm1,grid_points,k,idx,order,atmp,tmp,utilde,success,tab)
+end

@@ -1,13 +1,20 @@
 function ϕ_and_ϕstar!(cache, dy, next_point, last_idx)
 	@unpack grid_points, ϕstar_nm1, k = cache
-	ϕ_n = zeros(k)
-	ϕstar_n = zeros(k)
+	ϕ_n = []
+	ϕstar_n = []
+	if typeof(dy) <: Array
+		ϕ_n = Array{Array{Float64}}(1,k)
+		ϕstar_n = Array{Array{Float64}}(1,k)
+	else
+		ϕ_n = zeros(k)
+		ϕstar_n = zeros(k)
+	end
 	β = zeros(k)
 	for i = 0:(k)-1
 		if i == 0
 			β[(i)+1] = 1
-			ϕ_n[(i)+1] = dy
-			ϕstar_n[(i)+1] = dy
+			ϕ_n[(i)+1] = copy(dy)
+			ϕstar_n[(i)+1] = copy(dy)
 		else
 			β[(i)+1] = β[i] * (next_point - grid_points[last_idx-i+1])/(grid_points[last_idx] - grid_points[last_idx-i])
 			ϕ_n[(i)+1] = ϕ_n[i] - ϕstar_nm1[i]
