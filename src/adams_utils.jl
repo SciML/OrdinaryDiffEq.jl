@@ -1,15 +1,15 @@
 function ϕ_and_ϕstar!(cache, dy, next_point, last_idx)
-	@unpack grid_points, ϕstar_nm1, k = cache
-	ϕ_n = []
-	ϕstar_n = []
-	if typeof(dy) <: Array
-		ϕ_n = Array{Array{Float64}}(1,k)
-		ϕstar_n = Array{Array{Float64}}(1,k)
-	else
-		ϕ_n = zeros(k)
-		ϕstar_n = zeros(k)
+	@unpack grid_points, ϕstar_nm1, ϕ_n, ϕstar_n,β,k = cache
+	if k < 3
+		if typeof(dy) <: Array
+			ϕ_n = Array{Array{Float64}}(1,k)
+			ϕstar_n = Array{Array{Float64}}(1,k)
+		else
+			ϕ_n = zeros(k)
+			ϕstar_n = zeros(k)
+		end
+		β = zeros(k)
 	end
-	β = zeros(k)
 	for i = 0:(k)-1
 		if i == 0
 			β[(i)+1] = 1
@@ -24,22 +24,8 @@ function ϕ_and_ϕstar!(cache, dy, next_point, last_idx)
 	return ϕ_n, ϕstar_n 
 end
 
-function ϕ_np1!(ϕstar_n, dy, k)
-	ϕ_np1 = zeros(Float64,k+1)
-    for i = 1:(k)+1
-    	if i == 1
-    		ϕ_np1[i] = dy
-    	else
-    		ϕ_np1[i] = ϕ_np1[i-1] - ϕstar_n[i-1]
-    	end
-    end
-    return ϕ_np1
-end
-
 function g_coefs!(cache, dt, next_point, last_idx)
-	@unpack grid_points, k = cache
-	c = zeros(Float64, k, k)
-	g = zeros(Float64, k)
+	@unpack grid_points,c,g,k = cache
 	for i = 1:k
 		for q = 1:(k-(i-1))
 			if i == 1

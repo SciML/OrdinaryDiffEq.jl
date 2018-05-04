@@ -574,14 +574,18 @@ end
     grid_points[3] = t
   end
 
-  cache.grid_points = copy(grid_points)
+  cache.grid_points .= grid_points
 
   last_idx = k
   next_point = t+dt
-  
-  g = g_coefs!(cache, dt, next_point, last_idx)
+
   ϕ_n, ϕstar_n = ϕ_and_ϕstar!(cache, k1, next_point, last_idx)
-  cache.ϕstar_nm1 = copy(ϕstar_n)
+
+  if cnt < 4
+    cache.ϕstar_nm1 = copy(ϕstar_n)
+  else
+    cache.ϕstar_nm1 .= ϕstar_n
+  end
 
   if cnt == 1 || cnt == 2
     perform_step!(integrator, tab)
@@ -592,6 +596,7 @@ end
         cache.k2 = k1
     end
   else
+    g = g_coefs!(cache, dt, next_point, last_idx)
     u = uprev
     for i = 0:k-1
         u += dt * g[(i)+1] * ϕstar_n[(i)+1]
@@ -614,8 +619,6 @@ end
     integrator.u = u
   end
 end
-
-# in place 
 
 function initialize!(integrator,cache::VSA3Cache)
   @unpack fsalfirst,k4 = cache
@@ -644,14 +647,18 @@ end
     grid_points[3] = t
   end
 
-  cache.grid_points = copy(grid_points)
+  cache.grid_points .= grid_points
 
   last_idx = k
   next_point = t+dt
   
-  g = g_coefs!(cache, dt, next_point, last_idx)
   ϕ_n, ϕstar_n = ϕ_and_ϕstar!(cache, k1, next_point, last_idx)
-  cache.ϕstar_nm1 = copy(ϕstar_n)
+  
+  if cnt < 4
+    cache.ϕstar_nm1 = copy(ϕstar_n)
+  else
+    cache.ϕstar_nm1 .= ϕstar_n
+  end
 
   if cnt == 1 || cnt == 2
     perform_step!(integrator, bs3cache)
@@ -659,11 +666,12 @@ end
     integrator.fsallast .= k4
     cache.k = min(k+1, order)
     if cnt == 1
-        cache.k3 = copy(k1)
+        cache.k3 .= k1
     else
-        cache.k2 = copy(k1)
+        cache.k2 .= k1
     end
   else
+    g = g_coefs!(cache, dt, next_point, last_idx)
     @. u = uprev
     for i = 0:k-1
     @. u += dt * g[(i)+1] * ϕstar_n[(i)+1]
@@ -678,8 +686,8 @@ end
       end
     end
     cache.k = min(k+1, order)
-    cache.k3 = copy(k2)
-    cache.k2 = copy(k1)
+    cache.k3 .= k2
+    cache.k2 .= k1
   end
 end
 
