@@ -560,20 +560,18 @@ end
 
 @muladd function perform_step!(integrator,cache::VCAB3ConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k2,k3,grid_points,ϕstar_nm1,k,order,idx,success,tab = cache
+  @unpack k2,k3,grid_points,ϕstar_nm1,k,order,tab = cache
   k1 = integrator.fsalfirst
   cnt = integrator.iter
   if cnt <= 3
-    idx = cnt
-    grid_points[idx] = t
-  elseif success
+    grid_points[cnt] = t
+  else
     grid_points[1] = grid_points[2]
     grid_points[2] = grid_points[3]
     grid_points[3] = t
   end
-  last_idx = k
   next_point = t+dt
-  ϕ_n, ϕstar_n = ϕ_and_ϕstar!(cache, k1, next_point, last_idx)
+  ϕ_n, ϕstar_n = ϕ_and_ϕstar!(cache, k1, next_point, k)
   if cnt < 4
     cache.ϕstar_nm1 = copy(ϕstar_n)
   else
@@ -588,7 +586,7 @@ end
         cache.k2 = k1
     end
   else
-    g = g_coefs!(cache, dt, next_point, last_idx)
+    g = g_coefs!(cache, dt, next_point, k)
     u = uprev
     for i = 0:k-1
         u += dt * g[(i)+1] * ϕstar_n[(i)+1]
@@ -597,9 +595,6 @@ end
       utilde = uprev + (dt/12)*(23*k1 - 16*k2 + 5*k3) - u
       atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
-      if integrator.EEst >= 1
-        cache.success = false
-      end
     end
     cache.k = min(k+1, order)
     cache.k3 = k2
@@ -624,20 +619,18 @@ end
 
 @muladd function perform_step!(integrator,cache::VCAB3Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k2,k3,k4,grid_points,ϕstar_nm1,k,order,atmp,idx,utilde,success,bs3cache = cache
+  @unpack k2,k3,k4,grid_points,ϕstar_nm1,k,order,atmp,utilde,bs3cache = cache
   k1 = integrator.fsalfirst
   cnt = integrator.iter
   if cnt <= 3
-    idx = cnt
-    grid_points[idx] = t
-  elseif success
+    grid_points[cnt] = t
+  else
     grid_points[1] = grid_points[2]
     grid_points[2] = grid_points[3]
     grid_points[3] = t
   end
-  last_idx = k
   next_point = t+dt
-  ϕ_n, ϕstar_n = ϕ_and_ϕstar!(cache, k1, next_point, last_idx)
+  ϕ_n, ϕstar_n = ϕ_and_ϕstar!(cache, k1, next_point, k)
   if cnt < 4
     cache.ϕstar_nm1 = copy(ϕstar_n)
   else
@@ -654,7 +647,7 @@ end
         cache.k2 .= k1
     end
   else
-    g = g_coefs!(cache, dt, next_point, last_idx)
+    g = g_coefs!(cache, dt, next_point, k)
     @. u = uprev
     for i = 0:k-1
     @. u += dt * g[(i)+1] * ϕstar_n[(i)+1]
@@ -664,9 +657,6 @@ end
       @. utilde = uprev + (dt/12)*(23*k1 - 16*k2 + 5*k3) - u
       calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
-      if integrator.EEst >= 1
-        cache.success = false
-      end
     end
     cache.k = min(k+1, order)
     cache.k3 .= k2

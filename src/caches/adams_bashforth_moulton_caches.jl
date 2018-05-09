@@ -278,7 +278,7 @@ function alg_cache(alg::ABM54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   ABM54ConstantCache(k2,k3,k4,k5,1)
 end
 
-mutable struct VCAB3ConstantCache{rateType,TabType,bool,tArrayType,rArrayType,cArrayType} <: OrdinaryDiffEqConstantCache
+mutable struct VCAB3ConstantCache{rateType,TabType,tArrayType,rArrayType,cArrayType} <: OrdinaryDiffEqConstantCache
   k2::rateType
   k3::rateType
   ϕstar_nm1::rArrayType
@@ -289,13 +289,11 @@ mutable struct VCAB3ConstantCache{rateType,TabType,bool,tArrayType,rArrayType,cA
   ϕstar_n::rArrayType
   β::tArrayType
   k::Int
-  idx::Int
   order::Int
-  success::bool
   tab::TabType
 end
 
-mutable struct VCAB3Cache{uType,rateType,bool,TabType,uArrayType,bs3Type,tArrayType,cArrayType,uEltypeNoUnits,coefType} <: OrdinaryDiffEqMutableCache
+mutable struct VCAB3Cache{uType,rateType,TabType,uArrayType,bs3Type,tArrayType,cArrayType,uEltypeNoUnits,coefType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -311,12 +309,10 @@ mutable struct VCAB3Cache{uType,rateType,bool,TabType,uArrayType,bs3Type,tArrayT
   ϕstar_n::coefType
   β::tArrayType
   k::Int
-  idx::Int
   order::Int
   atmp::uEltypeNoUnits
   tmp::uType
   utilde::uArrayType
-  success::bool
   tab::TabType
 end
 
@@ -334,11 +330,9 @@ function alg_cache(alg::VCAB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   ϕstar_n = zeros(typeof(rate_prototype),3)
   β = zeros(typeof(t),3)
   k = 1
-  idx = 1
   order = 3
-  success = true
   tab = BS3ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
-  VCAB3ConstantCache(k2,k3,ϕstar_nm1,grid_points,c,g,ϕ_n,ϕstar_n,β,k,idx,order,success,tab)
+  VCAB3ConstantCache(k2,k3,ϕstar_nm1,grid_points,c,g,ϕ_n,ϕstar_n,β,k,order,tab)
 end
 
 function alg_cache(alg::VCAB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -363,11 +357,9 @@ function alg_cache(alg::VCAB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   ϕstar_n = Array{typeof(rate_prototype)}(1,3)
   β = zeros(typeof(t),3)
   k = 1
-  idx = 1
   order = 3
   atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
   utilde = similar(u,indices(u))
-  success = true
-  VCAB3Cache(u,uprev,fsalfirst,bs3cache,k2,k3,k4,ϕstar_nm1,grid_points,c,g,ϕ_n,ϕstar_n,β,k,idx,order,atmp,tmp,utilde,success,tab)
+  VCAB3Cache(u,uprev,fsalfirst,bs3cache,k2,k3,k4,ϕstar_nm1,grid_points,c,g,ϕ_n,ϕstar_n,β,k,order,atmp,tmp,utilde,tab)
 end
