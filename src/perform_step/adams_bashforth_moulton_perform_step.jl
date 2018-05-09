@@ -547,7 +547,7 @@ end
 
 # Variable Step Size Multistep Methods
 
-function initialize!(integrator,cache::VSA3ConstantCache)
+function initialize!(integrator,cache::VCAB3ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
@@ -558,35 +558,27 @@ function initialize!(integrator,cache::VSA3ConstantCache)
   integrator.k[2] = integrator.fsallast
 end
 
-@muladd function perform_step!(integrator,cache::VSA3ConstantCache,repeat_step=false)
+@muladd function perform_step!(integrator,cache::VCAB3ConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k2,k3,grid_points,ϕstar_nm1,k,order,idx,success,tab = cache
-  
   k1 = integrator.fsalfirst
   cnt = integrator.iter
-
   if cnt <= 3
     idx = cnt
     grid_points[idx] = t
-   elseif success
+  elseif success
     grid_points[1] = grid_points[2]
     grid_points[2] = grid_points[3]
     grid_points[3] = t
   end
-
-  cache.grid_points .= grid_points
-
   last_idx = k
   next_point = t+dt
-
   ϕ_n, ϕstar_n = ϕ_and_ϕstar!(cache, k1, next_point, last_idx)
-
   if cnt < 4
     cache.ϕstar_nm1 = copy(ϕstar_n)
   else
     cache.ϕstar_nm1 .= ϕstar_n
   end
-
   if cnt == 1 || cnt == 2
     perform_step!(integrator, tab)
     cache.k = min(k+1, order)
@@ -601,7 +593,6 @@ end
     for i = 0:k-1
         u += dt * g[(i)+1] * ϕstar_n[(i)+1]
     end
-
     if integrator.opts.adaptive
       utilde = uprev + (dt/12)*(23*k1 - 16*k2 + 5*k3) - u
       atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
@@ -620,7 +611,7 @@ end
   end
 end
 
-function initialize!(integrator,cache::VSA3Cache)
+function initialize!(integrator,cache::VCAB3Cache)
   @unpack fsalfirst,k4 = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k4
@@ -631,35 +622,27 @@ function initialize!(integrator,cache::VSA3Cache)
   integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # pre-start FSAL
 end
 
-@muladd function perform_step!(integrator,cache::VSA3Cache,repeat_step=false)
+@muladd function perform_step!(integrator,cache::VCAB3Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k2,k3,k4,grid_points,ϕstar_nm1,k,order,atmp,idx,utilde,success,bs3cache = cache
-  
   k1 = integrator.fsalfirst
   cnt = integrator.iter
-
   if cnt <= 3
     idx = cnt
     grid_points[idx] = t
-   elseif success
+  elseif success
     grid_points[1] = grid_points[2]
     grid_points[2] = grid_points[3]
     grid_points[3] = t
   end
-
-  cache.grid_points .= grid_points
-
   last_idx = k
   next_point = t+dt
-  
   ϕ_n, ϕstar_n = ϕ_and_ϕstar!(cache, k1, next_point, last_idx)
-  
   if cnt < 4
     cache.ϕstar_nm1 = copy(ϕstar_n)
   else
     cache.ϕstar_nm1 .= ϕstar_n
   end
-
   if cnt == 1 || cnt == 2
     perform_step!(integrator, bs3cache)
     @unpack k4 = bs3cache

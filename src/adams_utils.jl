@@ -2,13 +2,13 @@ function ϕ_and_ϕstar!(cache, dy, next_point, last_idx)
 	@unpack grid_points, ϕstar_nm1, ϕ_n, ϕstar_n,β,k = cache
 	if k < 3
 		if typeof(dy) <: Array
-			ϕ_n = Array{Array{Float64}}(1,k)
-			ϕstar_n = Array{Array{Float64}}(1,k)
+			ϕ_n = Array{Array{eltype(dy)}}(1,k)
+			ϕstar_n = Array{Array{eltype(dy)}}(1,k)
 		else
-			ϕ_n = zeros(k)
-			ϕstar_n = zeros(k)
+			ϕ_n = zeros(typeof(dy),k)
+			ϕstar_n = zeros(typeof(dy),k)
 		end
-		β = zeros(k)
+		β = zeros(eltype(grid_points),k)
 	end
 	for i = 0:(k)-1
 		if i == 0

@@ -154,7 +154,7 @@ struct ABM54 <: OrdinaryDiffEqAlgorithm end
 
 # Variable Step Size Adams methods
 
-struct VSA3 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct VCAB3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 # Adams methods in Nordsieck forms
 

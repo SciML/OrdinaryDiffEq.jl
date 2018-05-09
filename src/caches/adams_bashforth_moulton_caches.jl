@@ -278,18 +278,16 @@ function alg_cache(alg::ABM54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   ABM54ConstantCache(k2,k3,k4,k5,1)
 end
 
-###########################
-
-mutable struct VSA3ConstantCache{rateType ,uArrayType, TabType, bool} <: OrdinaryDiffEqConstantCache
+mutable struct VCAB3ConstantCache{rateType,TabType,bool,tArrayType,rArrayType,cArrayType} <: OrdinaryDiffEqConstantCache
   k2::rateType
   k3::rateType
-  ϕstar_nm1::Array{Float64}
-  grid_points::uArrayType
-  c::Array{Float64}
-  g::Array{Float64}
-  ϕ_n::Array{Float64}
-  ϕstar_n::Array{Float64}
-  β::Array{Float64}
+  ϕstar_nm1::rArrayType
+  grid_points::tArrayType
+  c::cArrayType
+  g::tArrayType
+  ϕ_n::rArrayType
+  ϕstar_n::rArrayType
+  β::tArrayType
   k::Int
   idx::Int
   order::Int
@@ -297,7 +295,7 @@ mutable struct VSA3ConstantCache{rateType ,uArrayType, TabType, bool} <: Ordinar
   tab::TabType
 end
 
-mutable struct VSA3Cache{uType,rateType,bool,TabType,uArrayType,bs3Type,uEltypeNoUnits,coefType} <: OrdinaryDiffEqMutableCache
+mutable struct VCAB3Cache{uType,rateType,bool,TabType,uArrayType,bs3Type,tArrayType,cArrayType,uEltypeNoUnits,coefType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -306,12 +304,12 @@ mutable struct VSA3Cache{uType,rateType,bool,TabType,uArrayType,bs3Type,uEltypeN
   k3::rateType
   k4::rateType
   ϕstar_nm1::coefType
-  grid_points::Array{Float64}
-  c::Array{Float64}
-  g::Array{Float64}
-  ϕ_n::Array{Array{Float64}}
-  ϕstar_n::Array{Array{Float64}}
-  β::Array{Float64}
+  grid_points::tArrayType
+  c::cArrayType
+  g::tArrayType
+  ϕ_n::coefType
+  ϕstar_n::coefType
+  β::tArrayType
   k::Int
   idx::Int
   order::Int
@@ -322,28 +320,28 @@ mutable struct VSA3Cache{uType,rateType,bool,TabType,uArrayType,bs3Type,uEltypeN
   tab::TabType
 end
 
-u_cache(c::VSA3Cache) = ()
-du_cache(c::VSA3Cache) = ()
+u_cache(c::VCAB3Cache) = ()
+du_cache(c::VCAB3Cache) = ()
 
-function alg_cache(alg::VSA3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::VCAB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   k2 = rate_prototype
   k3 = rate_prototype
-  ϕstar_nm1 = zeros(Float64,3)
-  grid_points = zeros(Float64,3)
-  c = zeros(Float64, 3, 3)
-  g = zeros(Float64, 3)
-  ϕ_n = zeros(Float64,3)
-  ϕstar_n = zeros(Float64,3)
-  β = zeros(Float64,3)
+  ϕstar_nm1 = zeros(typeof(rate_prototype),3)
+  grid_points = zeros(typeof(t),3)
+  c = zeros(typeof(t), 3, 3)
+  g = zeros(typeof(t), 3)
+  ϕ_n = zeros(typeof(rate_prototype),3)
+  ϕstar_n = zeros(typeof(rate_prototype),3)
+  β = zeros(typeof(t),3)
   k = 1
   idx = 1
   order = 3
   success = true
   tab = BS3ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
-  VSA3ConstantCache(k2,k3,ϕstar_nm1,grid_points,c,g,ϕ_n,ϕstar_n,β,k,idx,order,success,tab)
+  VCAB3ConstantCache(k2,k3,ϕstar_nm1,grid_points,c,g,ϕ_n,ϕstar_n,β,k,idx,order,success,tab)
 end
 
-function alg_cache(alg::VSA3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::VCAB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tab = BS3ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   bk1 = zeros(rate_prototype)
   bk2 = zeros(rate_prototype)
@@ -357,13 +355,13 @@ function alg_cache(alg::VSA3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   k2 = zeros(rate_prototype)
   k3 = zeros(rate_prototype)
   k4 = zeros(rate_prototype)
-  ϕstar_nm1 = Array{Array{Float64}}(1,3)
-  grid_points = zeros(Float64,3)
-  c = zeros(Float64,3,3)
-  g = zeros(Float64,3)
-  ϕ_n = Array{Array{Float64}}(1,3)
-  ϕstar_n = Array{Array{Float64}}(1,3)
-  β = zeros(3)
+  ϕstar_nm1 = Array{typeof(rate_prototype)}(1,3)
+  grid_points = zeros(typeof(t),3)
+  c = zeros(typeof(t),3,3)
+  g = zeros(typeof(t),3)
+  ϕ_n = Array{typeof(rate_prototype)}(1,3)
+  ϕstar_n = Array{typeof(rate_prototype)}(1,3)
+  β = zeros(typeof(t),3)
   k = 1
   idx = 1
   order = 3
@@ -371,5 +369,5 @@ function alg_cache(alg::VSA3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   tmp = similar(u)
   utilde = similar(u,indices(u))
   success = true
-  VSA3Cache(u,uprev,fsalfirst,bs3cache,k2,k3,k4,ϕstar_nm1,grid_points,c,g,ϕ_n,ϕstar_n,β,k,idx,order,atmp,tmp,utilde,success,tab)
+  VCAB3Cache(u,uprev,fsalfirst,bs3cache,k2,k3,k4,ϕstar_nm1,grid_points,c,g,ϕ_n,ϕstar_n,β,k,idx,order,atmp,tmp,utilde,success,tab)
 end
