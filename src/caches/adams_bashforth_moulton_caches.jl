@@ -277,3 +277,89 @@ function alg_cache(alg::ABM54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   k5 = rate_prototype
   ABM54ConstantCache(k2,k3,k4,k5,1)
 end
+
+mutable struct VCAB3ConstantCache{rateType,TabType,tArrayType,rArrayType,cArrayType} <: OrdinaryDiffEqConstantCache
+  k2::rateType
+  k3::rateType
+  ϕstar_nm1::rArrayType
+  grid_points::tArrayType
+  c::cArrayType
+  g::tArrayType
+  ϕ_n::rArrayType
+  ϕstar_n::rArrayType
+  β::tArrayType
+  k::Int
+  order::Int
+  tab::TabType
+end
+
+mutable struct VCAB3Cache{uType,rateType,TabType,uArrayType,bs3Type,tArrayType,cArrayType,uEltypeNoUnits,coefType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  fsalfirst::rateType
+  bs3cache::bs3Type
+  k2::rateType
+  k3::rateType
+  k4::rateType
+  ϕstar_nm1::coefType
+  grid_points::tArrayType
+  c::cArrayType
+  g::tArrayType
+  ϕ_n::coefType
+  ϕstar_n::coefType
+  β::tArrayType
+  k::Int
+  order::Int
+  atmp::uEltypeNoUnits
+  tmp::uType
+  utilde::uArrayType
+  tab::TabType
+end
+
+u_cache(c::VCAB3Cache) = ()
+du_cache(c::VCAB3Cache) = ()
+
+function alg_cache(alg::VCAB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  k2 = rate_prototype
+  k3 = rate_prototype
+  ϕstar_nm1 = zeros(typeof(rate_prototype),3)
+  grid_points = zeros(typeof(t),3)
+  c = zeros(typeof(t), 3, 3)
+  g = zeros(typeof(t), 3)
+  ϕ_n = zeros(typeof(rate_prototype),3)
+  ϕstar_n = zeros(typeof(rate_prototype),3)
+  β = zeros(typeof(t),3)
+  k = 1
+  order = 3
+  tab = BS3ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  VCAB3ConstantCache(k2,k3,ϕstar_nm1,grid_points,c,g,ϕ_n,ϕstar_n,β,k,order,tab)
+end
+
+function alg_cache(alg::VCAB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tab = BS3ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  bk1 = zeros(rate_prototype)
+  bk2 = zeros(rate_prototype)
+  bk3 = zeros(rate_prototype)
+  bk4 = zeros(rate_prototype)
+  butilde = similar(u,indices(u))
+  batmp = similar(u,uEltypeNoUnits)
+  btmp = similar(u)
+  bs3cache = BS3Cache(u,uprev,bk1,bk2,bk3,bk4,butilde,btmp,batmp,tab)
+  fsalfirst = zeros(rate_prototype)
+  k2 = zeros(rate_prototype)
+  k3 = zeros(rate_prototype)
+  k4 = zeros(rate_prototype)
+  ϕstar_nm1 = Array{typeof(rate_prototype)}(1,3)
+  grid_points = zeros(typeof(t),3)
+  c = zeros(typeof(t),3,3)
+  g = zeros(typeof(t),3)
+  ϕ_n = Array{typeof(rate_prototype)}(1,3)
+  ϕstar_n = Array{typeof(rate_prototype)}(1,3)
+  β = zeros(typeof(t),3)
+  k = 1
+  order = 3
+  atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u)
+  utilde = similar(u,indices(u))
+  VCAB3Cache(u,uprev,fsalfirst,bs3cache,k2,k3,k4,ϕstar_nm1,grid_points,c,g,ϕ_n,ϕstar_n,β,k,order,atmp,tmp,utilde,tab)
+end
