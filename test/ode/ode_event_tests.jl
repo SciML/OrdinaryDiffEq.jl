@@ -124,7 +124,7 @@ sol4 = solve(prob,Tsit5(),callback=saving_callback2)
 cbs = CallbackSet(saving_callback,saving_callback2)
 sol4_extra = solve(prob,Tsit5(),callback=cbs)
 
-@test length(sol4_extra) == 2length(sol4) - 1
+@test length(sol4_extra) == length(sol4)
 
 condtion= function (u,t,integrator)
   u[1]
