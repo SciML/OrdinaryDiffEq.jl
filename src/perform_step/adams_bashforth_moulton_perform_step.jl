@@ -572,11 +572,7 @@ end
   end
   next_point = t+dt
   ϕ_n, ϕstar_n = ϕ_and_ϕstar!(cache, k1, next_point, k)
-  if cnt < 4
-    cache.ϕstar_nm1 = copy(ϕstar_n)
-  else
-    cache.ϕstar_nm1 .= ϕstar_n
-  end
+  cache.ϕstar_nm1 .= ϕstar_n
   if cnt == 1 || cnt == 2
     perform_step!(integrator, tab)
     cache.k = min(k+1, order)
@@ -631,11 +627,7 @@ end
   end
   next_point = t+dt
   ϕ_n, ϕstar_n = ϕ_and_ϕstar!(cache, k1, next_point, k)
-  if cnt < 4
-    cache.ϕstar_nm1 = copy(ϕstar_n)
-  else
-    cache.ϕstar_nm1 .= ϕstar_n
-  end
+  cache.ϕstar_nm1 .= ϕstar_n
   if cnt == 1 || cnt == 2
     perform_step!(integrator, bs3cache)
     @unpack k4 = bs3cache
