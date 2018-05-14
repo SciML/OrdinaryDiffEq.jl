@@ -560,18 +560,18 @@ end
 
 @muladd function perform_step!(integrator,cache::VCAB3ConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k2,k3,grid_points,ϕstar_nm1,k,order,tab = cache
+  @unpack k2,k3,dts,ϕstar_nm1,k,order,tab = cache
   k1 = integrator.fsalfirst
   cnt = integrator.iter
   if cnt <= 3
-    grid_points[cnt] = t
+    dts[cnt] = dt
   else
-    grid_points[1] = grid_points[2]
-    grid_points[2] = grid_points[3]
-    grid_points[3] = t
+    dts[3] = dts[2]
+    dts[2] = dts[1]
+    dts[1] = dt
   end
   next_point = t+dt
-  ϕ_n, ϕstar_n = ϕ_and_ϕstar!(cache, k1, next_point, k)
+  ϕ_n, ϕstar_n = ϕ_and_ϕstar!(cache, k1)
   cache.ϕstar_nm1 .= ϕstar_n
   if cnt == 1 || cnt == 2
     perform_step!(integrator, tab)
@@ -582,7 +582,7 @@ end
         cache.k2 = k1
     end
   else
-    g = g_coefs!(cache, dt, next_point, k)
+    g = g_coefs!(cache)
     u = uprev
     for i = 0:k-1
         u += dt * g[i+1] * ϕstar_n[i+1]
@@ -615,15 +615,15 @@ end
 
 @muladd function perform_step!(integrator,cache::VCAB3Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k2,k3,k4,grid_points,ϕstar_n,ϕstar_nm1,k,order,atmp,utilde,bs3cache = cache
+  @unpack k2,k3,k4,dts,ϕstar_n,ϕstar_nm1,k,order,atmp,utilde,bs3cache = cache
   k1 = integrator.fsalfirst
   cnt = integrator.iter
   if cnt <= 3
-    grid_points[cnt] = t
+    dts[cnt] = dt
   else
-    grid_points[1] = grid_points[2]
-    grid_points[2] = grid_points[3]
-    grid_points[3] = t
+    dts[3] = dts[2]
+    dts[2] = dts[1]
+    dts[1] = dt
   end
   next_point = t+dt
   ϕ_and_ϕstar!(cache, k1, next_point, k)
@@ -641,7 +641,7 @@ end
         cache.k2 .= k1
     end
   else
-    g = g_coefs!(cache, dt, next_point, k)
+    g = g_coefs!(cache)
     @. u = uprev
     for i = 1:k
       @. u += dt * g[i] * ϕstar_n[i]
