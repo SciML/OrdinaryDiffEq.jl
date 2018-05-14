@@ -626,7 +626,7 @@ end
     dts[1] = dt
   end
   next_point = t+dt
-  ϕ_and_ϕstar!(cache, k1, next_point, k)
+  ϕ_and_ϕstar!(cache, k1)
   for i in eachindex(ϕstar_n)
     cache.ϕstar_nm1[i] .= ϕstar_n[i]
   end
