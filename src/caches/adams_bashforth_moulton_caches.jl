@@ -352,9 +352,9 @@ function alg_cache(alg::VCAB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   grid_points = zeros(typeof(t),3)
   c = zeros(typeof(t),3,3)
   g = zeros(typeof(t),3)
-  ϕ_n = Array{typeof(rate_prototype)}(1,3)
-  ϕstar_nm1 = Array{typeof(rate_prototype)}(1,3)
-  ϕstar_n = Array{typeof(rate_prototype)}(1,3)
+  ϕ_n = Vector{typeof(rate_prototype)}(3)
+  ϕstar_nm1 = Vector{typeof(rate_prototype)}(3)
+  ϕstar_n = Vector{typeof(rate_prototype)}(3)
   for i in 1:3
     ϕ_n[i] = zeros(rate_prototype)
     ϕstar_nm1[i] = zeros(rate_prototype)

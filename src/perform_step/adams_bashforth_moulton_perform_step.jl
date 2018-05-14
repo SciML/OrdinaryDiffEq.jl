@@ -585,7 +585,7 @@ end
     g = g_coefs!(cache, dt, next_point, k)
     u = uprev
     for i = 0:k-1
-        u += dt * g[(i)+1] * ϕstar_n[(i)+1]
+        u += dt * g[i+1] * ϕstar_n[i+1]
     end
     if integrator.opts.adaptive
       utilde = uprev + (dt/12)*(23*k1 - 16*k2 + 5*k3) - u
@@ -615,7 +615,7 @@ end
 
 @muladd function perform_step!(integrator,cache::VCAB3Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k2,k3,k4,grid_points,ϕstar_nm1,k,order,atmp,utilde,bs3cache = cache
+  @unpack k2,k3,k4,grid_points,ϕstar_n,ϕstar_nm1,k,order,atmp,utilde,bs3cache = cache
   k1 = integrator.fsalfirst
   cnt = integrator.iter
   if cnt <= 3
@@ -626,8 +626,10 @@ end
     grid_points[3] = t
   end
   next_point = t+dt
-  ϕ_n, ϕstar_n = ϕ_and_ϕstar!(cache, k1, next_point, k)
-  cache.ϕstar_nm1 .= ϕstar_n
+  ϕ_and_ϕstar!(cache, k1, next_point, k)
+  for i in eachindex(ϕstar_n)
+    cache.ϕstar_nm1[i] .= ϕstar_n[i]
+  end
   if cnt == 1 || cnt == 2
     perform_step!(integrator, bs3cache)
     @unpack k4 = bs3cache
@@ -642,7 +644,7 @@ end
     g = g_coefs!(cache, dt, next_point, k)
     @. u = uprev
     for i = 0:k-1
-    @. u += dt * g[(i)+1] * ϕstar_n[(i)+1]
+      @. u += dt * g[i+1] * ϕstar_n[i+1]
     end
     f(k4,u,p,t+dt)
     if integrator.opts.adaptive
@@ -655,4 +657,3 @@ end
     cache.k2 .= k1
   end
 end
-
