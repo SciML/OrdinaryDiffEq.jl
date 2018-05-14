@@ -1,7 +1,7 @@
 function ϕ_and_ϕstar!(cache, dy, next_point, last_idx)
   @unpack grid_points, ϕstar_nm1, ϕ_n, ϕstar_n,β,k = cache
-  for i = 0:k-1
-    if i == 0
+  for i = 1:k
+    if i == 1
       β[1] = 1
       if typeof(cache) <: OrdinaryDiffEqMutableCache
         ϕ_n[1] .= dy
@@ -11,13 +11,13 @@ function ϕ_and_ϕstar!(cache, dy, next_point, last_idx)
         ϕstar_n[1] = dy
       end
     else
-      β[i+1] = β[i] * (next_point - grid_points[last_idx-i+1])/(grid_points[last_idx] - grid_points[last_idx-i])
+      β[i] = β[i-1] * (next_point - grid_points[last_idx-i+2])/(grid_points[last_idx] - grid_points[last_idx-i+1])
       if typeof(cache) <: OrdinaryDiffEqMutableCache
-        @. ϕ_n[i+1] = ϕ_n[i] - ϕstar_nm1[i]
-        @. ϕstar_n[i+1] = β[i+1] * ϕ_n[i+1]
+        @. ϕ_n[i] = ϕ_n[i-1] - ϕstar_nm1[i-1]
+        @. ϕstar_n[i] = β[i] * ϕ_n[i]
       else
-        ϕ_n[i+1] = ϕ_n[i] - ϕstar_nm1[i]
-        ϕstar_n[i+1] = β[i+1] * ϕ_n[i+1]
+        ϕ_n[i] = ϕ_n[i-1] - ϕstar_nm1[i-1]
+        ϕstar_n[i] = β[i] * ϕ_n[i]
       end
     end
   end

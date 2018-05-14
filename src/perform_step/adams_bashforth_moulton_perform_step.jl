@@ -643,8 +643,8 @@ end
   else
     g = g_coefs!(cache, dt, next_point, k)
     @. u = uprev
-    for i = 0:k-1
-      @. u += dt * g[i+1] * ϕstar_n[i+1]
+    for i = 1:k
+      @. u += dt * g[i] * ϕstar_n[i]
     end
     f(k4,u,p,t+dt)
     if integrator.opts.adaptive
