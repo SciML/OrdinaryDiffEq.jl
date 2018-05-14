@@ -1,5 +1,8 @@
+# Solving Ordinary Differential Equations I: Nonstiff Problems
+# by Ernst Hairer, Gerhard Wanner, and Syvert P Norsett.
+# III.5 Variable Step Size Multistep Methods: Formulae 5.9
 function ϕ_and_ϕstar!(cache, du)
-  begin
+  @inbounds begin
     @unpack dts, ϕstar_nm1, ϕ_n, ϕstar_n,β,k = cache
     ξ = dt = dts[1]
     ξ0 = zero(dt)
@@ -27,8 +30,11 @@ function ϕ_and_ϕstar!(cache, du)
   end # inbounds
 end
 
+# Solving Ordinary Differential Equations I: Nonstiff Problems
+# by Ernst Hairer, Gerhard Wanner, and Syvert P Norsett.
+# III.5 Variable Step Size Multistep Methods: Formulae 5.9 & 5.10
 function g_coefs!(cache)
-  begin
+  @inbounds begin
     @unpack dts,c,g,k = cache
     ξ = dt = dts[1]
     for i = 1:k

@@ -584,8 +584,8 @@ end
   else
     g = g_coefs!(cache)
     u = uprev
-    for i = 0:k-1
-        u += dt * g[i+1] * ϕstar_n[i+1]
+    for i = 1:k
+        u += dt * g[i] * ϕstar_n[i]
     end
     if integrator.opts.adaptive
       utilde = uprev + (dt/12)*(23*k1 - 16*k2 + 5*k3) - u
