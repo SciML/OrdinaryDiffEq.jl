@@ -562,9 +562,13 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k2,k3,dts,ϕstar_nm1,k,order,tab = cache
   k1 = integrator.fsalfirst
-  cnt = integrator.iter
-  if cnt <= 3
+  if integrator.u_modified
+    cache.step = 1
+  end
+  cnt = cache.step
+  if cache.step <= 3
     dts[cnt] = dt
+    cache.step += 1
   else
     dts[3] = dts[2]
     dts[2] = dts[1]
@@ -617,9 +621,13 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k2,k3,k4,dts,ϕstar_n,ϕstar_nm1,k,order,atmp,utilde,bs3cache = cache
   k1 = integrator.fsalfirst
-  cnt = integrator.iter
-  if cnt <= 3
+  if integrator.u_modified
+    cache.step = 1
+  end
+  cnt = cache.step
+  if cache.step <= 3
     dts[cnt] = dt
+    cache.step += 1
   else
     dts[3] = dts[2]
     dts[2] = dts[1]

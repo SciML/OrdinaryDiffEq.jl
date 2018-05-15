@@ -291,6 +291,7 @@ mutable struct VCAB3ConstantCache{rateType,TabType,tArrayType,rArrayType,cArrayT
   k::Int
   order::Int
   tab::TabType
+  step::Int
 end
 
 mutable struct VCAB3Cache{uType,rateType,TabType,uArrayType,bs3Type,tArrayType,cArrayType,uEltypeNoUnits,coefType,dtArrayType} <: OrdinaryDiffEqMutableCache
@@ -314,6 +315,7 @@ mutable struct VCAB3Cache{uType,rateType,TabType,uArrayType,bs3Type,tArrayType,c
   tmp::uType
   utilde::uArrayType
   tab::TabType
+  step::Int
 end
 
 u_cache(c::VCAB3Cache) = ()
@@ -322,17 +324,22 @@ du_cache(c::VCAB3Cache) = ()
 function alg_cache(alg::VCAB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   k2 = rate_prototype
   k3 = rate_prototype
-  ϕstar_nm1 = zeros(typeof(rate_prototype),3)
   dts = zeros(typeof(dt),3)
   c = zeros(typeof(t), 3, 3)
   g = zeros(typeof(t), 3)
-  ϕ_n = zeros(typeof(rate_prototype),3)
-  ϕstar_n = zeros(typeof(rate_prototype),3)
+  ϕ_n = Vector{typeof(rate_prototype)}(3)
+  ϕstar_nm1 = Vector{typeof(rate_prototype)}(3)
+  ϕstar_n = Vector{typeof(rate_prototype)}(3)
+  for i in 1:3
+    ϕ_n[i] = rate_prototype
+    ϕstar_nm1[i] = rate_prototype
+    ϕstar_n[i] = rate_prototype
+  end
   β = zeros(typeof(t),3)
   k = 1
   order = 3
   tab = BS3ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
-  VCAB3ConstantCache(k2,k3,ϕstar_nm1,dts,c,g,ϕ_n,ϕstar_n,β,k,order,tab)
+  VCAB3ConstantCache(k2,k3,ϕstar_nm1,dts,c,g,ϕ_n,ϕstar_n,β,k,order,tab,1)
 end
 
 function alg_cache(alg::VCAB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -366,5 +373,5 @@ function alg_cache(alg::VCAB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
   utilde = similar(u,indices(u))
-  VCAB3Cache(u,uprev,fsalfirst,bs3cache,k2,k3,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕstar_n,β,k,order,atmp,tmp,utilde,tab)
+  VCAB3Cache(u,uprev,fsalfirst,bs3cache,k2,k3,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕstar_n,β,k,order,atmp,tmp,utilde,tab,1)
 end
