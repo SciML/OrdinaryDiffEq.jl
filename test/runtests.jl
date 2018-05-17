@@ -44,6 +44,7 @@ if group == "All" || group == "Integrators"
     @time @testset "Integrator Interface Tests" begin include("integrator_interface_tests.jl") end
     @time @testset "Add Steps Tests" begin include("ode/ode_add_steps_tests.jl") end
     @time @testset "Error Check Tests" begin include("check_error.jl") end
+    @time @testset "adams variable coefficients Tests" begin include("ode/adams_tests.jl") end
 end
 
 if group == "All" || group == "Regression"
