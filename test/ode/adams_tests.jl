@@ -1,10 +1,18 @@
 using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase,
       DiffEqProblemLibrary, Base.Test
 probArr = Vector{ODEProblem}(2)
-probArr[1] = prob_ode_linear
 
+probArr[1] = prob_ode_linear
 probArr[2] = prob_ode_2Dlinear
-srand(100)
+
+function fixed_step_ϕstar(k)
+  ∇ = Vector{typeof(k[end][1])}(3)
+  ∇[1] = k[end][1]
+  ∇[2] = ∇[1] - k[end-1][1]
+  ∇[3] = ∇[2] - k[end-1][1] + k[end-2][1]
+  return ∇
+end
+
 
 for i = 1:2
   prob = probArr[i]
@@ -18,4 +26,18 @@ for i = 1:2
   @test g == [1,1/2,5/12]
   step!(integrator)
   @test g == [1,1/2,5/12]
+end
+
+for i = 1:2
+  prob = probArr[i]
+  integrator = init(prob,VCAB3(),dt=1//256,adaptive=false)
+  for i = 1:3
+    step!(integrator)
+  end
+  ϕstar_n = integrator.cache.ϕstar_n
+  @test ϕstar_n == fixed_step_ϕstar(integrator.sol.k)
+  step!(integrator)
+  @test ϕstar_n == fixed_step_ϕstar(integrator.sol.k)
+  step!(integrator)
+  @test ϕstar_n == fixed_step_ϕstar(integrator.sol.k)
 end
