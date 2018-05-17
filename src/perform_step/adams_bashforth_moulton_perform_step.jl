@@ -579,7 +579,7 @@ end
   cache.ϕstar_nm1 .= ϕstar_n
   if cnt == 1 || cnt == 2
     perform_step!(integrator, tab)
-    cache.k = min(k+1, order)
+    cache.k = min(cache.step, order)
     if cnt == 1
         cache.k3 = k1
     else
@@ -596,7 +596,7 @@ end
       atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
     end
-    cache.k = min(k+1, order)
+    cache.k = min(cache.step, order)
     cache.k3 = k2
     cache.k2 = k1
     integrator.fsallast = f(u, p, t+dt)
@@ -642,7 +642,7 @@ end
     perform_step!(integrator, bs3cache)
     @unpack k4 = bs3cache
     integrator.fsallast .= k4
-    cache.k = min(k+1, order)
+    cache.k = min(cache.step, order)
     if cnt == 1
         cache.k3 .= k1
     else
@@ -660,7 +660,7 @@ end
       calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
     end
-    cache.k = min(k+1, order)
+    cache.k = min(cache.step, order)
     cache.k3 .= k2
     cache.k2 .= k1
   end

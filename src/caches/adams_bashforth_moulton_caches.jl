@@ -331,9 +331,9 @@ function alg_cache(alg::VCAB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   ϕstar_nm1 = Vector{typeof(rate_prototype)}(3)
   ϕstar_n = Vector{typeof(rate_prototype)}(3)
   for i in 1:3
-    ϕ_n[i] = rate_prototype
-    ϕstar_nm1[i] = rate_prototype
-    ϕstar_n[i] = rate_prototype
+    ϕ_n[i] = copy(rate_prototype)
+    ϕstar_nm1[i] = copy(rate_prototype)
+    ϕstar_n[i] = copy(rate_prototype)
   end
   β = zeros(typeof(t),3)
   k = 1
