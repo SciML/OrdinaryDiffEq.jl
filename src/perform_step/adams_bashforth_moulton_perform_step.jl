@@ -700,7 +700,7 @@ end
   if cnt == 1 || cnt == 2 || cnt == 3
     perform_step!(integrator, rk4constcache)
     cache.k = min(k+1, order)
-     if cnt == 1
+    if cnt == 1
       cache.k4 = k1
     elseif cnt == 2
       cache.k3 = k1
@@ -726,5 +726,69 @@ end
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
+  end
+end
+
+function initialize!(integrator,cache::VCAB4Cache)
+  @unpack fsalfirst,k4 = cache
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = k4
+  integrator.kshortsize = 2
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # pre-start FSAL
+end
+
+@muladd function perform_step!(integrator,cache::VCAB4Cache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack k2,k3,ak4,k4,dts,ϕstar_n,ϕstar_nm1,k,order,atmp,utilde,rk4cache = cache
+  k1 = integrator.fsalfirst
+  if integrator.u_modified
+    cache.step = 1
+  end
+  cnt = cache.step
+  if cache.step <= 4
+    dts[cnt] = dt
+    cache.step += 1
+  else
+    dts[4] = dts[3]
+    dts[3] = dts[2]
+    dts[2] = dts[1]
+    dts[1] = dt
+  end
+  next_point = t+dt
+  ϕ_and_ϕstar!(cache, k1)
+  for i in eachindex(ϕstar_n)
+    cache.ϕstar_nm1[i] .= ϕstar_n[i]
+  end
+  if cnt == 1 || cnt == 2 || cnt == 3
+    rk4cache.fsalfirst .= k1
+    perform_step!(integrator, rk4cache)
+    integrator.fsallast .= rk4cache.k
+    cache.k = min(k+1, order)
+    if cnt == 1
+      cache.ak4 .= k1
+    elseif cnt == 2
+      cache.k3 .= k1
+    else
+      cache.k2 .= k1
+    end
+  else
+    g = g_coefs!(cache)
+    @. u = uprev
+    for i = 1:k
+      @. u += dt * g[i] * ϕstar_n[i]
+    end
+    f(k4,u,p,t+dt)
+    if integrator.opts.adaptive
+      @. utilde = uprev + (dt/24)*(55*k1 - 59*k2 + 37*k3 - 9*ak4) - u
+      calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp)
+    end
+    cache.k = min(k+1, order)
+    cache.ak4 .= k3
+    cache.k3 .= k2
+    cache.k2 .= k1
   end
 end
