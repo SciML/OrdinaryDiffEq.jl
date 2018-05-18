@@ -38,13 +38,15 @@ function g_coefs!(cache)
     @unpack dts,c,g,k = cache
     ξ = dt = dts[1]
     for i = 1:k
+      if i > 2
+        ξ += dts[i-1]
+      end
       for q = 1:k-(i-1)
         if i == 1
           c[i,q] = inv(q)
         elseif i == 2
           c[i,q] = inv(q*(q+1))
         else
-          ξ += dts[i-1]
           c[i,q] = c[i-1,q] - c[i-1,q+1] * dt/ξ
         end
       end # q

@@ -375,3 +375,42 @@ function alg_cache(alg::VCAB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   utilde = similar(u,indices(u))
   VCAB3Cache(u,uprev,fsalfirst,bs3cache,k2,k3,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕstar_n,β,k,order,atmp,tmp,utilde,tab,1)
 end
+
+mutable struct VCAB4ConstantCache{rateType,rk4constcache,tArrayType,rArrayType,cArrayType,dtArrayType} <: OrdinaryDiffEqConstantCache
+  k2::rateType
+  k3::rateType
+  k4::rateType
+  ϕstar_nm1::rArrayType
+  dts::dtArrayType
+  c::cArrayType
+  g::tArrayType
+  ϕ_n::rArrayType
+  ϕstar_n::rArrayType
+  β::tArrayType
+  k::Int
+  order::Int
+  rk4constcache::rk4constcache
+  step::Int
+end
+
+function alg_cache(alg::VCAB4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  k2 = rate_prototype
+  k3 = rate_prototype
+  k4 = rate_prototype
+  dts = zeros(typeof(dt),4)
+  c = zeros(typeof(t), 4, 4)
+  g = zeros(typeof(t), 4)
+  ϕ_n = Vector{typeof(rate_prototype)}(4)
+  ϕstar_nm1 = Vector{typeof(rate_prototype)}(4)
+  ϕstar_n = Vector{typeof(rate_prototype)}(4)
+  for i in 1:4
+    ϕ_n[i] = rate_prototype
+    ϕstar_nm1[i] = rate_prototype
+    ϕstar_n[i] = rate_prototype
+  end
+  β = zeros(typeof(t),4)
+  k = 1
+  order = 4
+  rk4constcache = RK4ConstantCache()
+  VCAB4ConstantCache(k2,k3,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕstar_n,β,k,order,rk4constcache,1)
+end
