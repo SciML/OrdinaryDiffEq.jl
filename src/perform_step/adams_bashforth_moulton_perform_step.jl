@@ -560,16 +560,16 @@ end
 
 @muladd function perform_step!(integrator,cache::VCAB3ConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack dts,ϕstar_nm1,k,order,tab = cache
+  @unpack dts,g,ϕ_n,ϕstar_n,ϕstar_nm1,ϕ_np1,order,tab = cache
   k1 = integrator.fsalfirst
   if integrator.u_modified
     cache.step = 1
   end
-  cnt = cache.step
-  if cnt == 1
+  k = cache.step
+  if k == 1
     dts[1] = dt
     cache.step += 1
-  elseif cnt == 2
+  elseif k == 2
     dts[2] = dts[1]
     dts[1] = dt
     cache.step += 1
@@ -578,26 +578,24 @@ end
     dts[2] = dts[1]
     dts[1] = dt
   end
-  ϕ_n, ϕstar_n = ϕ_and_ϕstar!(cache, k1)
+  ϕ_and_ϕstar!(cache,k1,k)
   cache.ϕstar_nm1 .= ϕstar_n
-  if cnt == 1 || cnt == 2
+  if k == 1 || k == 2
     perform_step!(integrator, tab)
-    cache.k = min(cache.step, order)
   else
-    g = g_coefs!(cache)
+    g_coefs!(cache,k+1)
     u = uprev
     for i = 1:(k-1)
         u += dt * g[i] * ϕstar_n[i]
     end
     du_np1 = f(u,p,t+dt)
-    ϕ_np1 = ϕ_np1!(cache,du_np1)
-    u = u + dt * g[end-1] * ϕ_np1[end-1]
+    ϕ_np1!(cache,du_np1,k+1)
+    u += dt * g[end-1] * ϕ_np1[end-1]
     if integrator.opts.adaptive
       utilde = (g[end] - g[end-1]) * ϕ_np1[end]
       atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
     end
-    cache.k = min(cache.step, order)
     integrator.fsallast = f(u, p, t+dt)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -618,16 +616,16 @@ end
 
 @muladd function perform_step!(integrator,cache::VCAB3Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k4,dts,ϕstar_n,ϕstar_nm1,k,order,atmp,utilde,bs3cache = cache
+  @unpack k4,dts,g,ϕstar_n,ϕstar_nm1,ϕ_np1,order,atmp,utilde,bs3cache = cache
   k1 = integrator.fsalfirst
   if integrator.u_modified
     cache.step = 1
   end
-  cnt = cache.step
-  if cnt == 1
+  k = cache.step
+  if k == 1
     dts[1] = dt
     cache.step += 1
-  elseif cnt == 2
+  elseif k == 2
     dts[2] = dts[1]
     dts[1] = dt
     cache.step += 1
@@ -636,23 +634,22 @@ end
     dts[2] = dts[1]
     dts[1] = dt
   end
-  ϕ_and_ϕstar!(cache, k1)
+  ϕ_and_ϕstar!(cache, k1, k)
   for i in eachindex(ϕstar_n)
     cache.ϕstar_nm1[i] .= ϕstar_n[i]
   end
-  if cnt == 1 || cnt == 2
+  if k == 1 || k == 2
     perform_step!(integrator, bs3cache)
     @unpack k4 = bs3cache
     integrator.fsallast .= k4
-    cache.k = min(cache.step, order)
   else
-    g = g_coefs!(cache)
+    g_coefs!(cache, k+1)
     @. u = uprev
     for i = 1:(k-1)
       @. u += dt * g[i] * ϕstar_n[i]
     end
     f(k4,u,p,t+dt)
-    ϕ_np1 = ϕ_np1!(cache,k4)
+    ϕ_np1!(cache, k4, k+1)
     @. u = u + dt * g[end-1] * ϕ_np1[end-1]
     f(k4,u,p,t+dt)
     if integrator.opts.adaptive
@@ -660,6 +657,5 @@ end
       calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
     end
-    cache.k = min(cache.step, order)
   end
 end

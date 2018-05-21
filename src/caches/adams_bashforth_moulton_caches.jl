@@ -287,7 +287,6 @@ mutable struct VCAB3ConstantCache{TabType,tArrayType,rArrayType,cArrayType,dtArr
   ϕstar_n::rArrayType
   ϕ_np1::rArrayType
   β::tArrayType
-  k::Int
   order::Int
   tab::TabType
   step::Int
@@ -307,7 +306,6 @@ mutable struct VCAB3Cache{uType,rateType,TabType,uArrayType,bs3Type,tArrayType,c
   ϕstar_n::coefType
   ϕ_np1::coefType
   β::tArrayType
-  k::Int
   order::Int
   atmp::uEltypeNoUnits
   tmp::uType
@@ -333,10 +331,9 @@ function alg_cache(alg::VCAB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
     ϕstar_n[i] = copy(rate_prototype)
   end
   β = zeros(typeof(t),3)
-  k = 1
   order = 3
   tab = BS3ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
-  VCAB3ConstantCache(dts,c,g,ϕ_n,ϕstar_nm1,ϕstar_n,ϕ_np1,β,k,order,tab,1)
+  VCAB3ConstantCache(dts,c,g,ϕ_n,ϕstar_nm1,ϕstar_n,ϕ_np1,β,order,tab,1)
 end
 
 function alg_cache(alg::VCAB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -364,10 +361,9 @@ function alg_cache(alg::VCAB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
     ϕstar_n[i] = zeros(rate_prototype)
   end
   β = zeros(typeof(t),3)
-  k = 1
   order = 3
   atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
   utilde = similar(u,indices(u))
-  VCAB3Cache(u,uprev,fsalfirst,bs3cache,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕstar_n,ϕ_np1,β,k,order,atmp,tmp,utilde,tab,1)
+  VCAB3Cache(u,uprev,fsalfirst,bs3cache,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕstar_n,ϕ_np1,β,order,atmp,tmp,utilde,tab,1)
 end
