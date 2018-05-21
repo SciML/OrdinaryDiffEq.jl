@@ -153,7 +153,7 @@ struct ABM54 <: OrdinaryDiffEqAlgorithm end
 
 # Adams methods in Nordsieck forms
 
-struct AN5 <: OrdinaryDiffEqAlgorithm end
+struct AN5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 ################################################################################
 

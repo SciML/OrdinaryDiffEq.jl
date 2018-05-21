@@ -44,6 +44,7 @@ function calc_coeff!(cache::T) where T
       end
       dtsum += tau[j+1]
     end
+    ξ_inv = dt / dtsum
 
     M0 = ∫₋₁⁰dx(m, order, 0)
     M1 = ∫₋₁⁰dx(m, order, 1)
@@ -52,7 +53,7 @@ function calc_coeff!(cache::T) where T
     for i in 1:order
       l[i+1] = M0_inv * m[i] / i
     end
-    cache.tq = M1 * M0_inv * ξ_inv
+    cache.tq = 11*order * l[order] * M1 * ξ_inv
   end
 end
 
@@ -138,10 +139,11 @@ function nlsolve_functional!(integrator, cache::T) where T
     else
       @. ratetmp = inv(l[2])*muladd(dt, ratetmp, -z[2])
       @. integrator.u = ratetmp + z[1]
-      @. Δ = ratetmp - Δ
+      @. cache.Δ = ratetmp - cache.Δ
     end
-    δ = integrator.opts.internalnorm(cache.Δ)
+    k == 0 || isconstcache ? ( cache.Δ = copy(ratetmp) ) : copy!(cache.Δ, ratetmp)
     # It only makes sense to calculate convergence rate in the second iteration
+    δ = integrator.opts.internalnorm(cache.Δ)
     if k >= 1
       conv_rate = max(1//10*conv_rate, δ/δ_prev)
     end
@@ -154,4 +156,21 @@ function nlsolve_functional!(integrator, cache::T) where T
     isconstcache ? (ratetmp = integrator.f(integrator.u, p, dt+t)) :
                     integrator.f(ratetmp, integrator.u, p, dt+t)
   end
+end
+
+function nordsieck_rescale!(cache::T) where T
+  isconstcache = T <: OrdinaryDiffEqConstantCache
+  isconstcache && ( cache = cache.const_cache )
+  @unpack z, tau, order = cache
+  eta = tau[1]/tau[2]
+  factor = eta
+  for i in 2:order+1
+    if isconstcache
+      z[i] = z[i]*factor
+    else
+      scale!(z[i], factor)
+    end
+    factor *= eta
+  end
+  return nothing
 end
