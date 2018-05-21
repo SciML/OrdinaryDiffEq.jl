@@ -12,14 +12,14 @@ end
 @muladd function perform_step!(integrator, cache::ABDF2ConstantCache, repeat_step=false)
   @unpack t,f,p = integrator
   @unpack uf,κ,tol,dtₙ₋₁ = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+  alg = unwrap_alg(integrator, true)
   dtₙ, uₙ, uₙ₋₁, uₙ₋₂ = integrator.dt, integrator.u, integrator.uprev, integrator.uprev2
 
   if integrator.iter == 1 && !integrator.u_modified
     cache.dtₙ₋₁ = dtₙ
-    x = perform_step!(integrator, cache.eulercache, repeat_step)
+    perform_step!(integrator, cache.eulercache, repeat_step)
     cache.fsalfirstprev = integrator.fsalfirst
-    return x
+    return
   end
 
   # precalculations
@@ -34,14 +34,7 @@ end
   d3 = -(ρ-1)/3
 
   # calculate W
-  uf.t = t
-  if typeof(uₙ₋₁) <: AbstractArray
-    J = ForwardDiff.jacobian(uf,uₙ₋₁)
-    W = I - ddt*J
-  else
-    J = ForwardDiff.derivative(uf,uₙ₋₁)
-    W = 1 - ddt*J
-  end
+  W = calc_W!(integrator, cache, ddt, repeat_step)
 
   zₙ₋₁ = dtₙ*fₙ₋₁
   # initial guess
@@ -51,45 +44,12 @@ end
     z = zero(uₙ)
   end
 
-  # initial step of Newton iteration
-  iter = 1
-  tstep = t + dtₙ
   tmp = d1*uₙ₋₁ + d2*uₙ₋₂ + d3*zₙ₋₁
-  uₙ = tmp + d*z
-  b = dtₙ*f(uₙ, p, tstep) - z
-  dz = W\b
-  ndz = integrator.opts.internalnorm(dz)
-  z = z + dz
-
-  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
-  do_newton = (η*ndz > κtol)
-
-  # Newton iteration
-  fail_convergence = false
-  while (do_newton || iter < alg.min_newton_iter) && iter < alg.max_newton_iter
-    iter += 1
-    uₙ = tmp + d*z
-    b = dtₙ*f(uₙ, p, tstep) - z
-    dz = W\b
-    ndzprev = ndz
-    ndz = integrator.opts.internalnorm(dz)
-    θ = ndz/ndzprev
-    if θ > 1 || ndz*(θ^(alg.max_newton_iter - iter)/(1-θ)) > κtol
-      fail_convergence = true
-      break
-    end
-    η = θ/(1-θ)
-    do_newton = (η*ndz > κtol)
-    z = z + dz
-  end
-
-  if (iter >= alg.max_newton_iter && do_newton) || fail_convergence
-    integrator.force_stepfail = true
-    return
-  end
+  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, tmp, d, 1, Val{:newton})
+  fail_convergence && return
 
   uₙ = tmp + d*z
-  integrator.fsallast = f(uₙ,p,tstep)
+  integrator.fsallast = f(uₙ,p,t+dtₙ)
 
   if integrator.opts.adaptive
     tmp = integrator.fsallast - (1+dtₙ/dtₙ₋₁)*integrator.fsalfirst + (dtₙ/dtₙ₋₁)*cache.fsalfirstprev
@@ -110,6 +70,7 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = uₙ
+  return
 end
 
 function initialize!(integrator, cache::ABDF2Cache)
@@ -125,14 +86,14 @@ end
 @muladd function perform_step!(integrator, cache::ABDF2Cache, repeat_step=false)
   @unpack t,dt,f,p = integrator
   @unpack dz,z,k,b,J,W,tmp,atmp,κ,tol,dtₙ₋₁,zₙ₋₁ = cache
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+  alg = unwrap_alg(integrator, true)
   uₙ,uₙ₋₁,uₙ₋₂,dtₙ = integrator.u,integrator.uprev,integrator.uprev2,integrator.dt
 
   if integrator.iter == 1 && !integrator.u_modified
     cache.dtₙ₋₁ = dtₙ
-    x = perform_step!(integrator, cache.eulercache, repeat_step)
+    perform_step!(integrator, cache.eulercache, repeat_step)
     cache.fsalfirstprev .= integrator.fsalfirst
-    return x
+    return
   end
 
   # precalculations
@@ -156,56 +117,13 @@ end
     fill!(z, zero(eltype(z)))
   end
 
-  # initial step of Newton iteration
-  iter = 1
-  tstep = t + dtₙ
   @. tmp = d1*uₙ₋₁ + d2*uₙ₋₂ + d3*zₙ₋₁
-  @. uₙ = tmp + d*z
-  f(k, uₙ, p, tstep)
-  @. b = dtₙ*k - z
-  if has_invW(f)
-    A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
-  else
-    cache.linsolve(vec(dz),W,vec(b),new_W)
-  end
-  ndz = integrator.opts.internalnorm(dz)
-  @. z += dz
-
-  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
-  do_newton = (η*ndz > κtol)
-
-  # Newton iteration
-  fail_convergence = false
-  while (do_newton || iter < alg.min_newton_iter) && iter < alg.max_newton_iter
-    iter += 1
-    @. uₙ = tmp + d*z
-    f(k, uₙ, p, tstep)
-    @. b = dtₙ*k - z
-    if has_invW(f)
-      A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
-    else
-      cache.linsolve(vec(dz),W,vec(b),false)
-    end
-    ndzprev = ndz
-    ndz = integrator.opts.internalnorm(dz)
-    θ = ndz/ndzprev
-    if θ > 1 || ndz*(θ^(alg.max_newton_iter - iter)/(1-θ)) > κtol
-      fail_convergence = true
-      break
-    end
-    η = θ/(1-θ)
-    do_newton = (η*ndz > κtol)
-    z .+= dz
-  end
-
-  if (iter >= alg.max_newton_iter && do_newton) || fail_convergence
-    integrator.force_stepfail = true
-    return
-  end
+  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, tmp, d, 1, Val{:newton}, new_W)
+  fail_convergence && return
 
   @. uₙ = tmp + d*z
 
-  f(integrator.fsallast, uₙ, p, t)
+  f(integrator.fsallast, uₙ, p, t+dtₙ)
   if integrator.opts.adaptive
     btilde0 = (dtₙ₋₁+dtₙ)/6
     btilde1 = 1+dtₙ/dtₙ₋₁
@@ -223,4 +141,5 @@ end
   if integrator.EEst < one(integrator.EEst)
     @. cache.fsalfirstprev = integrator.fsalfirst
   end
+  return
 end
