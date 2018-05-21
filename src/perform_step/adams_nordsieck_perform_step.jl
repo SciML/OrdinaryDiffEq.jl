@@ -53,6 +53,7 @@ end
     atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
     if integrator.EEst >= one(integrator.EEst)
+      # rewind Nordsieck vector
       perform_predict!(cache, true)
       nordsieck_rescale!(cache, true)
       return nothing
@@ -124,7 +125,8 @@ end
   end
   tau[1] = dt
   # Rescale
-  dt != tau[2] && nordsieck_rescale!(cache)
+  dt != tau[2] && nordsieck_rescale!(cache, false)
+  @. integrator.k[1] = z[2]/dt
   # Perform 5th order Adams method in Nordsieck form
   perform_predict!(cache, false)
   calc_coeff!(cache)
@@ -138,6 +140,7 @@ end
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
     if integrator.EEst >= one(integrator.EEst)
+      # rewind Nordsieck vector
       perform_predict!(cache, true)
       nordsieck_rescale!(cache, true)
       return nothing
@@ -149,7 +152,6 @@ end
 
   ################################### Finalize
 
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = const_cache.z[2]/dt
+  @. integrator.k[2] = const_cache.z[2]/dt
   return nothing
 end
