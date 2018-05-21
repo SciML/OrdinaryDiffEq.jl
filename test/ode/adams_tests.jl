@@ -1,5 +1,7 @@
 using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase,
       DiffEqProblemLibrary, Base.Test
+gc()
+
 probArr = Vector{ODEProblem}(2)
 
 probArr[1] = prob_ode_linear
@@ -20,11 +22,11 @@ for i = 1:2
   for i = 1:3
     step!(integrator)
   end
-  @test integrator.cache.g == [1,1/2,5/12]
+  @test integrator.cache.g == [1,1/2,5/12,3/8]
   step!(integrator)
-  @test integrator.cache.g == [1,1/2,5/12]
+  @test integrator.cache.g == [1,1/2,5/12,3/8]
   step!(integrator)
-  @test integrator.cache.g == [1,1/2,5/12]
+  @test integrator.cache.g == [1,1/2,5/12,3/8]
 end
 
 for i = 1:2
