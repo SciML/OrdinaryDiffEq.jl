@@ -83,8 +83,10 @@ function phimv_dense!(w::AbstractMatrix{T}, A::AbstractMatrix{T},
   P = Base.LinAlg.expm!(cache)
   # Extract results
   @views A_mul_B!(w[:, 1], P[1:m, 1:m], v)
-  for i = 1:k
-    w[:, i+1] = P[1:m, m+i]
+  @inbounds for i = 1:k
+    @inbounds for j = 1:m
+      w[j, i+1] = P[j, m+i]
+    end
   end
   return w
 end
@@ -102,19 +104,34 @@ The phi functions are defined as
 
 Calls `phimv_dense` on each of the basis vectors to obtain the answer.
 """
-function phim(A::AbstractMatrix{T}, k::Integer; cache=nothing) where {T <: Number}
+function phim(A, k; caches=nothing)
   m = size(A, 1)
-  out = [Matrix{T}(m, m) for i = 1:k+1]
-  E = eye(A)
-  w = Matrix{T}(m, k+1)
-  if cache == nothing
-    cache = Matrix{T}(m+k, m+k)
+  out = [Matrix{eltype(A)}(m, m) for i = 1:k+1]
+  phim!(out, A, k; caches=caches)
+end
+"""
+    phim!(out,A,k[;caches]) -> out
+
+Non-allocating version of `phim`.
+"""
+function phim!(out::Vector{Matrix{T}}, A::AbstractMatrix{T}, k::Integer; caches=nothing) where {T <: Number}
+  m = size(A, 1)
+  @assert length(out) == k + 1 && all(P -> size(P) == (m,m), out) "Dimension mismatch"
+  if caches == nothing
+    e = Vector{T}(m)
+    W = Matrix{T}(m, k+1)
+    C = Matrix{T}(m+k, m+k)
+  else
+    e, W, C = caches
+    @assert size(e) == (m,) && size(W) == (m, k+1) && size(C) == (m+k, m+k) "Dimension mismatch"
   end
-  for i = 1:m
-    e = E[:, i]
-    phimv_dense!(w, A, e, k; cache=cache) # w = [phi_0(A)*e phi_1(A)*e ... phi_k(A)*e]
-    for j = 1:k+1
-      out[j][:, i] = w[:, j]
+  @inbounds for i = 1:m
+    fill!(e, zero(T)); e[i] = one(T) # e is the ith basis vector
+    phimv_dense!(W, A, e, k; cache=C) # W = [phi_0(A)*e phi_1(A)*e ... phi_k(A)*e]
+    @inbounds for j = 1:k+1
+      @inbounds for s = 1:m
+        out[j][s, i] = W[s, j]
+      end
     end
   end
   return out
@@ -147,31 +164,34 @@ Non-allocating version of `arnoldi`.
 """
 function arnoldi!(V::Matrix{T}, H::Matrix{T}, A, b::AbstractVector{T}, 
   m::Integer; cache=nothing) where {T <: Number}
-  @assert size(V,1) == size(A,1) == size(A,2) == length(b) "Dimension mismatch"
+  n = length(b)
+  @assert size(V,1) == size(A,1) == size(A,2) == n "Dimension mismatch"
   @assert size(V,2) == size(H,1) == size(H,2) == m "Dimension mismatch"
   if cache == nothing
     cache = similar(b)
   else
-    @assert size(cache) == (length(b),)
+    @assert size(cache) == (n,)
   end
   V[:, 1] = normalize(b)
-  for j = 1:m-1
-    A_mul_B!(cache, A, V[:, j])
-    for i = 1:j
-      alpha = dot(V[:, i], cache)
+  @inbounds for j = 1:m-1
+    A_mul_B!(cache, A, @view(V[:, j]))
+    @inbounds for i = 1:j
+      alpha = dot(@view(V[:, i]), cache)
       H[i, j] = alpha
-      Base.axpy!(-alpha, V[:, i], cache)
+      Base.axpy!(-alpha, @view(V[:, i]), cache)
     end
     beta = norm(cache)
     H[j+1, j] = beta
-    V[:, j+1] = cache / beta
+    @inbounds for i = 1:n
+      V[i, j+1] = cache[i] / beta
+    end
   end
   # Last iteration (j = m)
-  A_mul_B!(cache, A, V[:, m-1])
-  for i = 1:m
-    alpha = dot(V[:, i], cache)
+  A_mul_B!(cache, A, @view(V[:, m-1]))
+  @inbounds for i = 1:m
+    alpha = dot(@view(V[:, i]), cache)
     H[i, m] = alpha
-    Base.axpy!(-alpha, V[:, i], cache) # is this still needed?
+    Base.axpy!(-alpha, @view(V[:, i]), cache)
   end
   return V, H
 end
