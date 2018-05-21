@@ -38,7 +38,7 @@ end
     tau[i] = tau[i-1]
   end
   tau[1] = dt
-  dt != tau[2] && nordsieck_rescale!(z, tau, cache.step)
+  dt != tau[2] && nordsieck_rescale!(cache, false)
   integrator.k[1] = z[2]/dt
   # Perform 5th order Adams method in Nordsieck form
   perform_predict!(cache, false)
@@ -49,10 +49,14 @@ end
   ################################### Error estimation
 
   if integrator.opts.adaptive
-    #@show atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-    #integrator.EEst = integrator.opts.internalnorm(atmp)
-    integrator.EEst = 0.2
-    integrator.EEst > one(integrator.EEst) && ( perform_predict!(cache, true); return nothing )
+    tmp = cache.Δ*cache.tq
+    atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+    integrator.EEst = integrator.opts.internalnorm(atmp)
+    if integrator.EEst >= one(integrator.EEst)
+      perform_predict!(cache, true)
+      nordsieck_rescale!(cache, true)
+      return nothing
+    end
   end
 
   # Corrector
@@ -120,7 +124,7 @@ end
   end
   tau[1] = dt
   # Rescale
-  dt != tau[2] && nordsieck_rescale!(z, tau, const_cache.step)
+  dt != tau[2] && nordsieck_rescale!(cache)
   # Perform 5th order Adams method in Nordsieck form
   perform_predict!(cache, false)
   calc_coeff!(cache)
@@ -130,8 +134,14 @@ end
   ################################### Error estimation
 
   if integrator.opts.adaptive
-    #integrator.EEst > one(integrator.EEst) && ( perform_predict!(cache, true); return nothing )
-    integrator.EEst = 0.2
+    @. tmp = const_cache.Δ*const_cache.tq
+    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+    integrator.EEst = integrator.opts.internalnorm(atmp)
+    if integrator.EEst >= one(integrator.EEst)
+      perform_predict!(cache, true)
+      nordsieck_rescale!(cache, true)
+      return nothing
+    end
   end
 
   # Corrector

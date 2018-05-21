@@ -53,7 +53,7 @@ function calc_coeff!(cache::T) where T
     for i in 1:order
       l[i+1] = M0_inv * m[i] / i
     end
-    cache.tq = 11*order * l[order] * M1 * ξ_inv
+    cache.tq = M1 * M0_inv * ξ_inv
   end
 end
 
@@ -158,11 +158,12 @@ function nlsolve_functional!(integrator, cache::T) where T
   end
 end
 
-function nordsieck_rescale!(cache::T) where T
+function nordsieck_rescale!(cache::T, rewind) where T
   isconstcache = T <: OrdinaryDiffEqConstantCache
-  isconstcache && ( cache = cache.const_cache )
-  @unpack z, tau, order = cache
-  eta = tau[1]/tau[2]
+  isconstcache || ( cache = cache.const_cache )
+  @unpack z, tau, step = cache
+  order = step
+  eta = rewind ? tau[1]/tau[2] : tau[1]/tau[2]
   factor = eta
   for i in 2:order+1
     if isconstcache
