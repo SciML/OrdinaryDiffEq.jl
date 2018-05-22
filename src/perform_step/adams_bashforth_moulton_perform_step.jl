@@ -560,7 +560,7 @@ end
 
 @muladd function perform_step!(integrator,cache::VCAB3ConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack dts,g,ϕ_n,ϕstar_n,ϕstar_nm1,ϕ_np1,order,tab = cache
+  @unpack dts,g,ϕ_n,ϕstar_n,ϕstar_nm1,order,tab = cache
   k1 = integrator.fsalfirst
   if integrator.u_modified
     cache.step = 1
@@ -583,16 +583,13 @@ end
   if k == 1 || k == 2
     perform_step!(integrator, tab)
   else
-    g_coefs!(cache,k+1)
+    g_coefs!(cache,k)
     u = uprev
-    for i = 1:(k-1)
+    for i = 1:k
         u += dt * g[i] * ϕstar_n[i]
     end
-    du_np1 = f(u,p,t+dt)
-    ϕ_np1!(cache,du_np1,k+1)
-    u += dt * g[end-1] * ϕ_np1[end-1]
     if integrator.opts.adaptive
-      utilde = (g[end] - g[end-1]) * ϕ_np1[end]
+      utilde = dt * g[k] * ϕstar_n[k]      # Using lower order AB from subset of coefficients
       atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
     end
@@ -616,7 +613,7 @@ end
 
 @muladd function perform_step!(integrator,cache::VCAB3Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k4,dts,g,ϕstar_n,ϕstar_nm1,ϕ_np1,order,atmp,utilde,bs3cache = cache
+  @unpack k4,dts,g,ϕstar_n,ϕstar_nm1,order,atmp,utilde,bs3cache = cache
   k1 = integrator.fsalfirst
   if integrator.u_modified
     cache.step = 1
@@ -643,17 +640,14 @@ end
     @unpack k4 = bs3cache
     integrator.fsallast .= k4
   else
-    g_coefs!(cache, k+1)
+    g_coefs!(cache, k)
     @. u = uprev
-    for i = 1:(k-1)
+    for i = 1:k
       @. u += dt * g[i] * ϕstar_n[i]
     end
     f(k4,u,p,t+dt)
-    ϕ_np1!(cache, k4, k+1)
-    @. u = u + dt * g[end-1] * ϕ_np1[end-1]
-    f(k4,u,p,t+dt)
     if integrator.opts.adaptive
-      @. utilde = (g[end] - g[end-1]) * ϕ_np1[end]
+      @. utilde = dt * g[k] * ϕstar_n[k]    # Using lower order AB from subset of coefficients
       calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
     end

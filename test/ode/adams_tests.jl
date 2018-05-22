@@ -22,11 +22,11 @@ for i = 1:2
   for i = 1:3
     step!(integrator)
   end
-  @test integrator.cache.g == [1,1/2,5/12,3/8]
+  @test integrator.cache.g == [1,1/2,5/12]
   step!(integrator)
-  @test integrator.cache.g == [1,1/2,5/12,3/8]
+  @test integrator.cache.g == [1,1/2,5/12]
   step!(integrator)
-  @test integrator.cache.g == [1,1/2,5/12,3/8]
+  @test integrator.cache.g == [1,1/2,5/12]
 end
 
 for i = 1:2
