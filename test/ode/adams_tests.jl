@@ -1,5 +1,7 @@
 using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase,
       DiffEqProblemLibrary, Base.Test
+gc()
+
 probArr = Vector{ODEProblem}(2)
 
 probArr[1] = prob_ode_linear
