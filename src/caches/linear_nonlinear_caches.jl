@@ -157,7 +157,7 @@ function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomElty
     else
       _A = full(A)
     end
-    exphA, phihA = get_etd1_operators(dt, _A)
+    exphA, phihA = phim(dt*_A, 1)
   end
   NorsettEulerCache(u,uprev,similar(u),zeros(rate_prototype),exphA,phihA)
 end
@@ -181,40 +181,9 @@ function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomElty
     else
       _A = full(A)
     end
-    exphA, phihA = get_etd1_operators(dt, _A)
+    exphA, phihA = phim(dt*_A, 1)
   end
   NorsettEulerConstantCache(exphA, phihA)
-end
-
-function get_etd1_operators(h::Real, A::T) where {T <: Number}
-  # Use BigFloat to avoid loss of precision
-  _hA = big(h) * big(A)
-  oneT = one(T)
-  _oneT = big(oneT)
-  if iszero(_hA)
-    exphA = oneT
-    phihA = oneT
-  else
-    _exphA = exp(_hA)
-    exphA = T(_exphA)
-    phihA = T((_exphA - _oneT) / _hA)
-  end
-  return exphA, phihA
-end
-function get_etd1_operators(h::Real, A::Diagonal)
-  coeffs = get_etd1_operators.(h, A.diag)
-  exphA = Diagonal(map(x -> x[1]), coeffs)
-  phihA = Diagonal(map(x -> x[2]), coeffs)
-  return exphA, phihA
-end
-function get_etd1_operators(h::Real, A::AbstractMatrix{T}) where T
-  # Use BigFloat to avoid loss of precision
-  _hA = big(h) * big.(A)
-  hA = T.(_hA)
-  exphA = expm(hA)
-  _exphA = big.(exphA)
-  phihA = T.((_exphA - I) / _hA)
-  return exphA, phihA
 end
 
 #=
@@ -236,8 +205,8 @@ end
 struct ETD2ConstantCache{expType} <: OrdinaryDiffEqConstantCache
   exphA::expType
   phihA::expType
-  B1::expType
-  B0::expType
+  B1::expType # ϕ1(hA) + ϕ2(hA)
+  B0::expType # -ϕ2(hA)
 end
 
 function alg_cache(alg::ETD2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
@@ -247,8 +216,8 @@ function alg_cache(alg::ETD2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   else
     _A = full(A)
   end
-  exphA, phihA, B1, B0 = get_etd2_operators(dt, _A)
-  ETD2ConstantCache(exphA, phihA, B1, B0)
+  Phi = phim(dt*_A, 2)
+  ETD2ConstantCache(Phi[1], Phi[2], Phi[2] + Phi[3], -Phi[3])
 end
 
 struct ETD2Cache{uType,rateType,expType} <: OrdinaryDiffEqMutableCache
@@ -259,8 +228,8 @@ struct ETD2Cache{uType,rateType,expType} <: OrdinaryDiffEqMutableCache
   rtmp2::rateType
   exphA::expType
   phihA::expType
-  B1::expType
-  B0::expType
+  B1::expType # ϕ1(hA) + ϕ2(hA)
+  B0::expType # -ϕ2(hA)
 end
 
 function alg_cache(alg::ETD2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -270,72 +239,21 @@ function alg_cache(alg::ETD2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   else
     _A = full(A)
   end
-  exphA, phihA, B1, B0 = get_etd2_operators(dt, _A)
-  ETD2Cache(u,uprev,zero(u),zero(rate_prototype),zero(rate_prototype),exphA,phihA,B1,B0)
+  Phi = phim(dt*_A, 2)
+  ETD2Cache(u,uprev,zero(u),zero(rate_prototype),zero(rate_prototype),Phi[1],Phi[2],Phi[2]+Phi[3],-Phi[3])
 end
 
 # TODO: what should these be?
 u_cache(c::ETD2Cache) = ()
 du_cache(c::ETD2Cache) = (c.rtmp1,c.rtmp2)
 
-#=
-  Computes the update coeffiicents for the time stepping
-
-    u_n+2 = exp(hA)*u_n+1 + h(B1*N_n+1 + B0*N_n)
-  
-  Also compute phi(hA) for the initial ETD1 step.
-
-  For scalar or Diagonal A, handles the singularity at A=0.
-  TODO: use expm1 for A close to 0?
-=#
-function get_etd2_operators(h::Real, A::T) where {T <: Number}
-  # Use BigFloat to avoid loss of precision
-  _hA = big(h) * big(A)
-  oneT = one(T)
-  _oneT = big(oneT)
-  if iszero(_hA)
-    exphA = oneT
-    phihA = oneT
-    B1 = 1.5 * oneT
-    B0 = -0.5 * oneT
-  else
-    _hA2 = _hA * _hA
-    _exphA = exp(_hA)
-    exphA = T(_exphA)
-    phihA = T((_exphA - _oneT) / _hA) # x - I for scalar x is deprecated
-    B1 = T(((_hA + _oneT)*_exphA - _oneT - 2*_hA) / _hA2)
-    B0 = T((_oneT + _hA - _exphA) / _hA2)
-  end
-  return exphA, phihA, B1, B0
-end
-function get_etd2_operators(h::Real, A::Diagonal)
-  coeffs = get_etd2_operators.(h, A.diag)
-  exphA = Diagonal(map(x -> x[1], coeffs))
-  phihA = Diagonal(map(x -> x[2], coeffs))
-  B1 = Diagonal(map(x -> x[3], coeffs))
-  B0 = Diagonal(map(x -> x[4], coeffs))
-  return exphA, phihA, B1, B0
-end
-function get_etd2_operators(h::Real, A::AbstractMatrix{T}) where T
-  # Use BigFLoat to avoid loss of precision
-  _hA = big(h) * big.(A)
-  hA = T.(_hA)
-  _hA2 = _hA * _hA
-  exphA = expm(hA)
-  _exphA = big.(exphA)
-  phihA = T.((_exphA - I) / _hA)
-  B1 = T.(((_hA + I)*_exphA - I - 2*_hA) / _hA2)
-  B0 = T.((I + _hA - _exphA) / _hA2)
-  return exphA, phihA, B1, B0
-end
-
 struct ETDRK4ConstantCache{matType} <: OrdinaryDiffEqConstantCache
-  E::matType
-  E2::matType
-  a::matType
-  b::matType
-  c::matType
-  Q::matType
+  E::matType # exp(hA)
+  E2::matType # exp(hA/2)
+  a::matType # h(ϕ1(hA) - 3ϕ2(hA) + 4ϕ3(hA))
+  b::matType # h(ϕ2(hA) - 2ϕ3(hA))
+  c::matType # h(-ϕ2(hA) + 4ϕ3(hA))
+  Q::matType # h/2 * ϕ1(hA/2)
 end
 
 function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
@@ -345,31 +263,15 @@ function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   else
     L = full(A)
   end
-  E,E2,a,b,c,Q = get_etdrk4_oop_operators(dt,L)
+  P = phim(dt * L, 3)
+  Phalf = phim(dt/2 * L, 1)
+  E = P[1]
+  E2 = Phalf[1]
+  a = dt * (P[2] - 3*P[3] + 4*P[4])
+  b = dt * (P[3] - 2*P[4])
+  c = dt * (-P[3] + 4*P[4])
+  Q = dt/2 * Phalf[2]
   ETDRK4ConstantCache(E,E2,a,b,c,Q)
-end
-
-function get_etdrk4_oop_operators(_h,L)
-  h = big(_h)
-  A = h*L
-  _E2 = expm(Float64.(A/2))
-  E2 = big.(_E2);
-  E = E2*E2
-  A = big.(A)
-  coeff = h^(-2) * L^(-3)
-  A2 = A^2
-  if typeof(L) <: Number
-    Q = Float64.((E2-1)/L)
-    a = Float64.(coeff * (-4 - A + E*(4 - 3A  + A2)))
-    b = Float64.(coeff * (2 + A + E*(-2 + A)))
-    c = Float64.(coeff * (-4 - 3A - A2 + E*(4-A)))
-  else
-    Q = Float64.((E2-I)/L)
-    a = Float64.(coeff * (-4I - A + E*(4I - 3A  + A2)))
-    b = Float64.(coeff * (2I + A + E*(-2I + A)))
-    c = Float64.(coeff * (-4I - 3A - A2 + E*(4I-A)))
-  end
-  Float64.(E),_E2,a,b,c,Q
 end
 
 struct ETDRK4Cache{uType,rateType,matType} <: OrdinaryDiffEqMutableCache
@@ -381,12 +283,12 @@ struct ETDRK4Cache{uType,rateType,matType} <: OrdinaryDiffEqMutableCache
   k2::rateType
   k3::rateType
   k4::rateType
-  E::matType
-  E2::matType
-  a::matType
-  b::matType
-  c::matType
-  Q::matType
+  E::matType # exp(hA)
+  E2::matType # exp(hA/2)
+  a::matType # h(ϕ1(hA) - 3ϕ2(hA) + 4ϕ3(hA))
+  b::matType # h(ϕ2(hA) - 2ϕ3(hA))
+  c::matType # h(-ϕ2(hA) + 4ϕ3(hA))
+  Q::matType # h/2 * ϕ1(hA/2)
 end
 
 function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -400,111 +302,16 @@ function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   else
     L = full(A)
   end
-  E,E2,a,b,c,Q = get_etdrk4_operators(dt,L)
+  P = phim(dt * L, 3)
+  Phalf = phim(dt/2 * L, 1)
+  E = P[1]
+  E2 = Phalf[1]
+  a = dt * (P[2] - 3*P[3] + 4*P[4])
+  b = dt * (P[3] - 2*P[4])
+  c = dt * (-P[3] + 4*P[4])
+  Q = dt/2 * Phalf[2]
   ETDRK4Cache(u,uprev,tmp,s1,tmp2,k2,k3,k4,E,E2,a,b,c,Q)
 end
 
 u_cache(c::ETDRK4Cache) = ()
 du_cache(c::ETDRK4Cache) = (c.k,c.fsalfirst,c.rtmp)
-
-function get_etdrk4_operators(_h,L)
-
-    @. L .*= _h/2
-    _E2 = expm(L)
-    E2 = big.(_E2);
-    E = E2*E2
-    @. L *= 2/_h
-    h = big(_h)
-    A = h*L
-
-    # TODO: Check if we should big L
-    coeff = h^(-2) * L^(-3)
-
-    @inbounds for i in 1:size(E2,1)
-        E2[i,i] = E2[i,i] - 1
-    end
-
-    tmp = E2/L
-    Q = Float64.(tmp)
-
-    @inbounds for i in 1:size(E2,1)
-        E2[i,i] = E2[i,i] + 1
-    end
-
-    @inbounds for i in 1:size(A,2), j in 1:size(A,1)
-        tmp[j,i] = -2I[j,i] + A[j,i]
-    end
-
-    tmp2 = E*tmp
-
-    @inbounds for i in 1:size(A,2), j in 1:size(A,1)
-        tmp[j,i] = 2I[j,i] + A[j,i] + tmp2[j,i]
-    end
-
-    A_mul_B!(tmp2,coeff,tmp)
-    b = Float64.(tmp2)
-
-    A2 = A^2
-
-    @inbounds for i in 1:size(A,2), j in 1:size(A,1)
-        tmp[j,i] = 4I[j,i] - 3A[j,i]  + A2[j,i]
-    end
-
-    A_mul_B!(tmp2,E,tmp)
-
-    @inbounds for i in 1:size(A,2), j in 1:size(A,1)
-        tmp[j,i] = -4I[j,i] - A[j,i] + tmp2[j,i]
-    end
-
-    A_mul_B!(tmp2,coeff,tmp)
-    a = Float64.(tmp2)
-
-    @inbounds for i in 1:size(A,2), j in 1:size(A,1)
-        tmp[j,i] = 4I[j,i]-A[j,i]
-    end
-
-    A_mul_B!(tmp2,E,tmp)
-
-    @inbounds for i in 1:size(A,2), j in 1:size(A,1)
-        tmp[j,i] = -4I[j,i] - 3A[j,i] - A2[j,i] + tmp2[j,i]
-    end
-
-    A_mul_B!(tmp2,coeff,tmp)
-    c = Float64.(tmp2)
-
-    Float64.(E),_E2,a,b,c,Q
-end
-
-function get_etdrk4_operators(_h,_L::Diagonal)
-
-    L = _L.diag
-
-    @. L = _h/2*L
-    _E2 = exp.(L)
-    E2 = big.(_E2);
-    E = E2.*E2
-    @. L *= 2/_h
-    h = big(_h)
-    A = h.*L
-
-    coeff = @. h^(-2) * L^(-3)
-    A2 = A.^2
-
-    Q = @. Float64((E2-1)/L)
-    a = @. Float64(coeff * (-4 - A + E*(4 - 3A  + A2)))
-    b = @. Float64(coeff * (2 + A + E*(-2 + A)))
-    c = @. Float64(coeff * (-4 - 3A - A2 + E*(4-A)))
-
-    # Fix zero eigenvalues, use limit equations
-    for i in 1:length(Q)
-        if L[i] == 0
-            Q[i] = _h/2
-            tmp = _h/6
-            a[i] = tmp
-            b[i] = tmp
-            c[i] = tmp
-        end
-    end
-
-    Diagonal(Float64.(E)),Diagonal(Float64.(E2)),Diagonal(a),Diagonal(b),Diagonal(c),Diagonal(Q)
-end

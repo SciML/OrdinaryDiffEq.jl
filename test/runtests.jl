@@ -51,16 +51,30 @@ if group == "All" || group == "Regression"
     @time @testset "Dense Tests" begin include("ode/ode_dense_tests.jl") end
 end
 
-if group == "All" || group == "AlgConvergence"
+if group == "All" || group == "AlgConvergence_I"
+    # ~ 250 s
     @time @testset "Partitioned Methods Tests" begin include("partitioned_methods_tests.jl") end
+    # ~ 400 s
     @time @testset "Convergence Tests" begin include("ode/ode_convergence_tests.jl") end
+    # ~ 2 s
+    @time @testset "Adams Variable Coefficients Tests" begin include("ode/adams_tests.jl") end
+    # ~ 50 s
     @time @testset "Nordsieck Tests" begin include("ode/nordsieck_tests.jl") end
-    @time @testset "SSPRK Tests" begin include("ode/ode_ssprk_tests.jl") end
-    @time @testset "OwrenZen Tests" begin include("owrenzen_tests.jl") end
-    @time @testset "Rosenbrock Tests" begin include("ode/ode_rosenbrock_tests.jl") end
-    @time @testset "Split Methods Tests" begin include("split_methods_tests.jl") end
     #@time @testset "Linear Methods Tests" begin include("linear_method_tests.jl") end
+    # ~ 170 s
+    @time @testset "SSPRK Tests" begin include("ode/ode_ssprk_tests.jl") end
+    # ~ 25 s
+    @time @testset "OwrenZen Tests" begin include("owrenzen_tests.jl") end
+end
+
+if group == "All" || group == "AlgConvergence_II"
+    # ~ 110 s
+    @time @testset "Split Methods Tests" begin include("split_methods_tests.jl") end
+    # ~ 550 s
+    @time @testset "Rosenbrock Tests" begin include("ode/ode_rosenbrock_tests.jl") end
+    # ~ 40 s
     @time @testset "Linear-Nonlinear Methods Tests" begin include("linear_nonlinear_convergence_tests.jl") end
+    # ~ 140 s
     @time @testset "Linear-Nonlinear Krylov Methods Tests" begin include("linear_nonlinear_krylov_tests.jl") end
 end
 

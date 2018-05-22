@@ -10,10 +10,12 @@ env:
   - GROUP=Regression
   - GROUP=Integrators
   - GROUP=Interface
-  - GROUP=AlgConvergence
+  - GROUP=AlgConvergence_I
+  - GROUP=AlgConvergence_II
 matrix:
   allow_failures:
     - julia: nightly
+  fast_finish: true
 notifications:
   email: false
 after_success:
