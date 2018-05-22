@@ -667,14 +667,23 @@ end
 
 @muladd function perform_step!(integrator,cache::VCAB4ConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k2,k3,k4,dts,ϕstar_nm1,k,order,rk4constcache = cache
+  @unpack dts,g,ϕ_n,ϕstar_n,ϕstar_nm1,order,rk4constcache = cache
   k1 = integrator.fsalfirst
   if integrator.u_modified
     cache.step = 1
   end
-  cnt = cache.step
-  if cache.step <= 4
-    dts[cnt] = dt
+  k = cache.step
+  if k == 1
+    dts[1] = dt
+    cache.step += 1
+  elseif k == 2
+    dts[2] = dts[1]
+    dts[1] = dt
+    cache.step += 1
+  elseif k == 3
+    dts[3] = dts[2]
+    dts[2] = dts[1]
+    dts[1] = dt
     cache.step += 1
   else
     dts[4] = dts[3]
@@ -682,34 +691,21 @@ end
     dts[2] = dts[1]
     dts[1] = dt
   end
-  next_point = t+dt
-  ϕ_n, ϕstar_n = ϕ_and_ϕstar!(cache, k1)
+  ϕ_and_ϕstar!(cache,k1,k)
   cache.ϕstar_nm1 .= ϕstar_n
-  if cnt == 1 || cnt == 2 || cnt == 3
+  if k == 1 || k == 2 || k == 3
     perform_step!(integrator, rk4constcache)
-    cache.k = min(k+1, order)
-    if cnt == 1
-      cache.k4 = k1
-    elseif cnt == 2
-      cache.k3 = k1
-    else
-      cache.k2 = k1
-    end
   else
-    g = g_coefs!(cache)
+    g_coefs!(cache,k)
     u = uprev
     for i = 1:k
         u += dt * g[i] * ϕstar_n[i]
     end
     if integrator.opts.adaptive
-      utilde = uprev + (dt/24)*(55*k1 - 59*k2 + 37*k3 - 9*k4) - u
+      utilde = dt * g[k] * ϕstar_n[k]
       atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
     end
-    cache.k = min(k+1, order)
-    cache.k4 = k3
-    cache.k3 = k2
-    cache.k2 = k1
     integrator.fsallast = f(u, p, t+dt)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -730,14 +726,23 @@ end
 
 @muladd function perform_step!(integrator,cache::VCAB4Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k2,k3,ak4,k4,dts,ϕstar_n,ϕstar_nm1,k,order,atmp,utilde,rk4cache = cache
+  @unpack k4,dts,g,ϕ_n,ϕstar_n,ϕstar_nm1,order,atmp,utilde,rk4cache = cache
   k1 = integrator.fsalfirst
   if integrator.u_modified
     cache.step = 1
   end
-  cnt = cache.step
-  if cache.step <= 4
-    dts[cnt] = dt
+  k = cache.step
+  if k == 1
+    dts[1] = dt
+    cache.step += 1
+  elseif k == 2
+    dts[2] = dts[1]
+    dts[1] = dt
+    cache.step += 1
+  elseif k == 3
+    dts[3] = dts[2]
+    dts[2] = dts[1]
+    dts[1] = dt
     cache.step += 1
   else
     dts[4] = dts[3]
@@ -745,38 +750,25 @@ end
     dts[2] = dts[1]
     dts[1] = dt
   end
-  next_point = t+dt
-  ϕ_and_ϕstar!(cache, k1)
+  ϕ_and_ϕstar!(cache,k1,k)
   for i in eachindex(ϕstar_n)
     cache.ϕstar_nm1[i] .= ϕstar_n[i]
   end
-  if cnt == 1 || cnt == 2 || cnt == 3
+  if k == 1 || k == 2 || k == 3
     rk4cache.fsalfirst .= k1
     perform_step!(integrator, rk4cache)
     integrator.fsallast .= rk4cache.k
-    cache.k = min(k+1, order)
-    if cnt == 1
-      cache.ak4 .= k1
-    elseif cnt == 2
-      cache.k3 .= k1
-    else
-      cache.k2 .= k1
-    end
   else
-    g = g_coefs!(cache)
+    g_coefs!(cache,k)
     @. u = uprev
     for i = 1:k
       @. u += dt * g[i] * ϕstar_n[i]
     end
     f(k4,u,p,t+dt)
     if integrator.opts.adaptive
-      @. utilde = uprev + (dt/24)*(55*k1 - 59*k2 + 37*k3 - 9*ak4) - u
+      @. utilde = dt * g[k] * ϕstar_n[k]
       calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
     end
-    cache.k = min(k+1, order)
-    cache.ak4 .= k3
-    cache.k3 .= k2
-    cache.k2 .= k1
   end
 end
