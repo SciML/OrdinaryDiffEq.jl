@@ -5,6 +5,8 @@ linnonlin_f1 = DiffEqArrayOperator(μ)
 prob = SplitODEProblem(linnonlin_f1,linnonlin_f2,1/2,(0.0,1.0),func_cache=1/2)
 (::typeof(prob.f))(::Type{Val{:analytic}},u0,p,t) = u0.*exp.(2μ*t)
 
+println("Out-of-place")
+gc()
 srand(100)
 dts = 1./2.^(7:-1:4) #14->7 good plot
 sim  = test_convergence(dts,prob,GenericIIF1())
@@ -20,6 +22,8 @@ sim  = test_convergence(dts,prob,ETD2())
 sim  = test_convergence(dts,prob,ETDRK4(),dense_errors=true)
 @test abs(sim.𝒪est[:l2]-4) < 0.2
 
+println("Inplace")
+gc()
 u0 = rand(2)
 A = [2.0 -1.0; -1.0 2.0]
 linnonlin_f1 = DiffEqArrayOperator(A)
