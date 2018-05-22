@@ -104,6 +104,7 @@ The phi functions are defined as
 
 Calls `phimv_dense` on each of the basis vectors to obtain the answer.
 """
+phim(x::Number, k) = phi(x, k) # fallback
 function phim(A, k; caches=nothing)
   m = size(A, 1)
   out = [Matrix{eltype(A)}(m, m) for i = 1:k+1]
