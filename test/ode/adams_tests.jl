@@ -1,5 +1,7 @@
 using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase,
       DiffEqProblemLibrary, Base.Test
+gc()
+
 probArr = Vector{ODEProblem}(2)
 
 probArr[1] = prob_ode_linear
@@ -13,19 +15,17 @@ function fixed_step_ϕstar(k)
   return ∇
 end
 
-
 for i = 1:2
   prob = probArr[i]
   integrator = init(prob,VCAB3(),dt=1//256,adaptive=false)
   for i = 1:3
     step!(integrator)
   end
-  g = integrator.cache.g
-  @test g == [1,1/2,5/12]
+  @test integrator.cache.g == [1,1/2,5/12]
   step!(integrator)
-  @test g == [1,1/2,5/12]
+  @test integrator.cache.g == [1,1/2,5/12]
   step!(integrator)
-  @test g == [1,1/2,5/12]
+  @test integrator.cache.g == [1,1/2,5/12]
 end
 
 for i = 1:2
@@ -34,10 +34,9 @@ for i = 1:2
   for i = 1:3
     step!(integrator)
   end
-  ϕstar_n = integrator.cache.ϕstar_n
-  @test ϕstar_n == fixed_step_ϕstar(integrator.sol.k)
+  @test integrator.cache.ϕstar_n == fixed_step_ϕstar(integrator.sol.k)
   step!(integrator)
-  @test ϕstar_n == fixed_step_ϕstar(integrator.sol.k)
+  @test integrator.cache.ϕstar_n == fixed_step_ϕstar(integrator.sol.k)
   step!(integrator)
-  @test ϕstar_n == fixed_step_ϕstar(integrator.sol.k)
+  @test integrator.cache.ϕstar_n == fixed_step_ϕstar(integrator.sol.k)
 end
