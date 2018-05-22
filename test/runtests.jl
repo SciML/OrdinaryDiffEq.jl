@@ -68,10 +68,10 @@ if group == "All" || group == "AlgConvergence_I"
 end
 
 if group == "All" || group == "AlgConvergence_II"
-    # ~ 550 s
-    @time @testset "Rosenbrock Tests" begin include("ode/ode_rosenbrock_tests.jl") end
     # ~ 110 s
     @time @testset "Split Methods Tests" begin include("split_methods_tests.jl") end
+    # ~ 550 s
+    @time @testset "Rosenbrock Tests" begin include("ode/ode_rosenbrock_tests.jl") end
     # ~ 40 s
     @time @testset "Linear-Nonlinear Methods Tests" begin include("linear_nonlinear_convergence_tests.jl") end
     # ~ 140 s
