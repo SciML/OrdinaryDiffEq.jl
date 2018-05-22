@@ -15,7 +15,6 @@ function fixed_step_ϕstar(k)
   return ∇
 end
 
-
 for i = 1:2
   prob = probArr[i]
   integrator = init(prob,VCAB3(),dt=1//256,adaptive=false)
@@ -31,6 +30,7 @@ end
 
 for i = 1:2
   prob = probArr[i]
+  # VCAB3
   integrator = init(prob,VCAB3(),dt=1//256,adaptive=false)
   for i = 1:3
     step!(integrator)
@@ -40,4 +40,9 @@ for i = 1:2
   @test integrator.cache.ϕstar_n == fixed_step_ϕstar(integrator.sol.k)
   step!(integrator)
   @test integrator.cache.ϕstar_n == fixed_step_ϕstar(integrator.sol.k)
+
+  # VCAB4
+  sol1 = solve(prob,VCAB4(),dt=1//256,adaptive=false)
+  sol2 = solve(prob,AB4(),dt=1//256)
+  @test sol1.u ≈ sol2.u
 end

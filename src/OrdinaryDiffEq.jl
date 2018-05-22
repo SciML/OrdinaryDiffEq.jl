@@ -174,7 +174,7 @@ module OrdinaryDiffEq
 
   export AB3, AB4, AB5, ABM32, ABM43, ABM54
 
-  export VCAB3
+  export VCAB3, VCAB4
 
   export AN5
 
