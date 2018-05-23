@@ -211,6 +211,7 @@ alg_order(alg::ABM54) = 5
 
 alg_order(alg::VCAB3) = 3
 alg_order(alg::VCAB4) = 4
+alg_order(alg::VCAB5) = 5
 
 alg_order(alg::AN5) = 5
 
