@@ -2,7 +2,7 @@ isautodifferentiable(alg::OrdinaryDiffEqAlgorithm) = true
 
 isfsal(alg::OrdinaryDiffEqAlgorithm) = true
 isfsal{MType,VType,fsal}(tab::ExplicitRKTableau{MType,VType,fsal}) = fsal
-isfsal(alg::CompositeAlgorithm) = isfsal(alg.algs[alg.current_alg])
+# isfsal(alg::CompositeAlgorithm) = isfsal(alg.algs[alg.current])
 isfsal(alg::FunctionMap) = false
 isfsal(alg::Rodas4) = false
 isfsal(alg::Rodas42) = false
@@ -10,6 +10,8 @@ isfsal(alg::Rodas4P) = false
 isfsal(alg::Vern7) = false
 isfsal(alg::Vern8) = false
 isfsal(alg::Vern9) = false
+get_current_isfsal(alg, cache) = isfsal(alg)
+get_current_isfsal(alg::CompositeAlgorithm, cache) = isfsal(alg.algs[cache.current])
 
 fsal_typeof(alg::OrdinaryDiffEqAlgorithm,rate_prototype) = typeof(rate_prototype)
 fsal_typeof(alg::Union{LawsonEuler,NorsettEuler,ETDRK4},rate_prototype) = ExpRKFsal{typeof(rate_prototype)}
@@ -52,12 +54,14 @@ qmax_default(alg::DP8) = 6
 get_chunksize(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have a chunk size defined.")
 get_chunksize{CS,AD}(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) = CS
 get_chunksize{CS,AD}(alg::OrdinaryDiffEqImplicitAlgorithm{CS,AD}) = CS
-get_chunksize(alg::CompositeAlgorithm) = get_chunksize(alg.algs[alg.current_alg])
+# get_chunksize(alg::CompositeAlgorithm) = get_chunksize(alg.algs[alg.current_alg])
 
 alg_autodiff(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have an autodifferentiation option defined.")
 alg_autodiff{CS,AD}(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) = AD
 alg_autodiff{CS,AD}(alg::OrdinaryDiffEqImplicitAlgorithm{CS,AD}) = AD
-alg_autodiff(alg::CompositeAlgorithm) = alg_autodiff(alg.algs[alg.current_alg])
+# alg_autodiff(alg::CompositeAlgorithm) = alg_autodiff(alg.algs[alg.current_alg])
+get_current_alg_autodiff(alg, cache) = alg_autodiff(alg)
+get_current_alg_autodiff(alg::CompositeAlgorithm, cache) = alg_autodiff(alg.algs[cache.current])
 
 alg_extrapolates(alg::OrdinaryDiffEqAlgorithm) = false
 alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))
@@ -84,7 +88,7 @@ alg_extrapolates(alg::IRKN3) = true
 alg_extrapolates(alg::ABDF2) = true
 
 alg_order(alg::OrdinaryDiffEqAlgorithm) = error("Order is not defined for this algorithm")
-alg_order(alg::CompositeAlgorithm) = alg_order(alg.algs[alg.current_alg])
+# alg_order(alg::CompositeAlgorithm) = alg_order(alg.algs[alg.current_alg])
 get_current_alg_order(alg::OrdinaryDiffEqAlgorithm,cache) = alg_order(alg)
 get_current_alg_order(alg::CompositeAlgorithm,cache) = alg_order(alg.algs[cache.current])
 

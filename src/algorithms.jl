@@ -660,12 +660,10 @@ ABDF2{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),
 
 #########################################
 
-mutable struct CompositeAlgorithm{T,F} <: OrdinaryDiffEqCompositeAlgorithm
+struct CompositeAlgorithm{T,F} <: OrdinaryDiffEqCompositeAlgorithm
   algs::T
   choice_function::F
-  current_alg::Int
 end
-CompositeAlgorithm(a::T, b::F) where {T,F} = CompositeAlgorithm(a, b, 1)
 
 ################################################################################
 
