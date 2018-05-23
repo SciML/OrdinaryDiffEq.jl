@@ -8,26 +8,16 @@ julia:
   - nightly
 env:
   - GROUP=Regression
+  - GROUP=Integrators
   - GROUP=Interface
-  - GROUP=AlgConvergence
+  - GROUP=AlgConvergence_I
+  - GROUP=AlgConvergence_II
 matrix:
   allow_failures:
     - julia: nightly
+  fast_finish: true
 notifications:
   email: false
-addons:
-  apt:
-    packages:
-      - gfortran
-before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-      brew update;
-      brew install gcc;
-    fi ;
-script:
-  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-  - julia -e 'Pkg.clone(pwd())'
-  - julia -e 'Pkg.build("OrdinaryDiffEq"); Pkg.test("OrdinaryDiffEq"; coverage=true)'
 after_success:
   # push coverage results to Coveralls
   - julia -e 'cd(Pkg.dir("OrdinaryDiffEq")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'

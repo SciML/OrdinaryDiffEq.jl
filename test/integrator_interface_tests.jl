@@ -1,6 +1,8 @@
 using DiffEqBase: set_t!, set_u!, set_ut!
 using OrdinaryDiffEq
 
+gc()
+println("First")
 # set_X!(integrator, integrator.X) should not change the result.
 @testset "Trivial $setter ($alg, inplace=$iip)" for alg in [RK4, Trapezoid],
     setter in [set_t!, set_u!, set_ut!],
@@ -38,6 +40,8 @@ using OrdinaryDiffEq
     @test integrator1.u == integrator2.u
   end
 end
+
+println("Second")
 
 @testset "Resolve with $setter ($alg, inplace=$iip)" for alg in [RK4, Trapezoid],
     setter in [set_t!, set_ut!],

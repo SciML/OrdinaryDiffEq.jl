@@ -209,6 +209,11 @@ alg_order(alg::ABM32) = 3
 alg_order(alg::ABM43) = 4
 alg_order(alg::ABM54) = 5
 
+alg_order(alg::VCAB3) = 3
+alg_order(alg::VCAB4) = 4
+
+alg_order(alg::AN5) = 5
+
 alg_order(alg::ABDF2) = 2
 
 alg_adaptive_order(alg::ExplicitRK) = alg.tableau.adaptiveorder
@@ -294,3 +299,16 @@ alg_stability_size(alg::Vern9) = 4.4762
 
 alg_can_repeat_jac(alg::OrdinaryDiffEqAlgorithm) = false
 alg_can_repeat_jac(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = true
+
+function unwrap_alg(integrator, is_stiff)
+  alg = integrator.alg
+  iscomp = typeof(alg) <: CompositeAlgorithm
+  if !iscomp
+    return alg
+  elseif typeof(alg.choice_function) <: AutoSwitch
+    num = is_stiff ? 2 : 1
+    return alg.algs[num]
+  else
+    return alg.algs[integrator.cache.current]
+  end
+end

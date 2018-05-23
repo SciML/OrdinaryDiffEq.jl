@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqProblemLibrary, DiffEqDevTools
+using OrdinaryDiffEq
 using Base.Test
 
 const CPU_FLOPS = peakflops()
@@ -19,25 +19,29 @@ end
 
 tic()
 if group == "All" || group == "Interface"
-    @time @testset "Discrete Tests" begin include("discrete_algorithm_test.jl") end
-    @time @testset "Tstops Tests" begin include("ode/ode_tstops_tests.jl") end
-    @time @testset "Backwards Tests" begin include("ode/ode_backwards_test.jl") end
+  @time include("discrete_algorithm_test.jl")
+  @time include("ode/ode_tstops_tests.jl")
+  @time include("ode/ode_backwards_test.jl")
+  @time include("ode/ode_initdt_tests.jl")
+  @time include("mass_matrix_tests.jl")
+  @time include("differentiation_traits_tests.jl")
+  @time include("ode/ode_saveat_tests.jl")
+  @time include("ode/ode_saveidxs_tests.jl")
+  @time include("static_array_tests.jl")
+  @time include("data_array_test.jl")
+  @time include("umodified_test.jl")
+  @time include("composite_algorithm_test.jl")
+  @time include("complex_tests.jl")
+  @time include("stiffness_detection_test.jl")
+  @time include("export_tests.jl")
+end
+
+if group == "All" || group == "Integrators"
     @time @testset "Reinit Tests" begin include("reinit_test.jl") end
-    @time @testset "Initial Dt Tests" begin include("ode/ode_initdt_tests.jl") end
-    @time @testset "Mass Matrix Tests" begin include("mass_matrix_tests.jl") end
-    @time @testset "Differentiation Trait Tests" begin include("differentiation_traits_tests.jl") end
     @time @testset "Events Tests" begin include("ode/ode_event_tests.jl") end
     @time @testset "Cache Tests" begin include("ode/ode_cache_tests.jl") end
-    @time @testset "saveat Tests" begin include("ode/ode_saveat_tests.jl") end
-    @time @testset "save_idxs Tests" begin include("ode/ode_saveidxs_tests.jl") end
-    @time @testset "Static Array Tests" begin include("static_array_tests.jl") end
-    @time @testset "Data Array Tests" begin include("data_array_test.jl") end
     @time @testset "Iterator Tests" begin include("iterator_tests.jl") end
-    @time @testset "u_modifed Tests" begin include("umodified_test.jl") end
-    @time @testset "Composite Algorithm Tests" begin include("composite_algorithm_test.jl") end
     @time @testset "Integrator Interface Tests" begin include("integrator_interface_tests.jl") end
-    @time @testset "Complex Tests" begin include("complex_tests.jl") end
-    @time @testset "Stiffness Detection Tests" begin include("stiffness_detection_test.jl") end
     @time @testset "Add Steps Tests" begin include("ode/ode_add_steps_tests.jl") end
     @time @testset "Error Check Tests" begin include("check_error.jl") end
 end
@@ -47,15 +51,30 @@ if group == "All" || group == "Regression"
     @time @testset "Dense Tests" begin include("ode/ode_dense_tests.jl") end
 end
 
-if group == "All" || group == "AlgConvergence"
-    @time @testset "Convergence Tests" begin include("ode/ode_convergence_tests.jl") end
-    @time @testset "SSPRK Tests" begin include("ode/ode_ssprk_tests.jl") end
-    @time @testset "OwrenZen Tests" begin include("owrenzen_tests.jl") end
-    @time @testset "Rosenbrock Tests" begin include("ode/ode_rosenbrock_tests.jl") end
+if group == "All" || group == "AlgConvergence_I"
+    # ~ 250 s
     @time @testset "Partitioned Methods Tests" begin include("partitioned_methods_tests.jl") end
-    @time @testset "Split Methods Tests" begin include("split_methods_tests.jl") end
+    # ~ 400 s
+    @time @testset "Convergence Tests" begin include("ode/ode_convergence_tests.jl") end
+    # ~ 2 s
+    @time @testset "Adams Variable Coefficients Tests" begin include("ode/adams_tests.jl") end
+    # ~ 50 s
+    @time @testset "Nordsieck Tests" begin include("ode/nordsieck_tests.jl") end
     #@time @testset "Linear Methods Tests" begin include("linear_method_tests.jl") end
+    # ~ 170 s
+    @time @testset "SSPRK Tests" begin include("ode/ode_ssprk_tests.jl") end
+    # ~ 25 s
+    @time @testset "OwrenZen Tests" begin include("owrenzen_tests.jl") end
+end
+
+if group == "All" || group == "AlgConvergence_II"
+    # ~ 110 s
+    @time @testset "Split Methods Tests" begin include("split_methods_tests.jl") end
+    # ~ 550 s
+    @time @testset "Rosenbrock Tests" begin include("ode/ode_rosenbrock_tests.jl") end
+    # ~ 40 s
     @time @testset "Linear-Nonlinear Methods Tests" begin include("linear_nonlinear_convergence_tests.jl") end
+    # ~ 140 s
     @time @testset "Linear-Nonlinear Krylov Methods Tests" begin include("linear_nonlinear_krylov_tests.jl") end
 end
 

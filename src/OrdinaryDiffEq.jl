@@ -29,14 +29,16 @@ module OrdinaryDiffEq
   import ForwardDiff.Dual
 
   # Required by temporary fix in not in-place methods with 12+ broadcasts
-  import StaticArrays: SArray
+  # `MVector` is used by Nordsieck forms
+  import StaticArrays: SArray, MVector, SVector
 
   # Integrator Interface
   import DiffEqBase: resize!,deleteat!,addat!,full_cache,user_cache,u_cache,du_cache,
                      resize_non_user_cache!,deleteat_non_user_cache!,addat_non_user_cache!,
                      terminate!,get_du, get_dt,get_proposed_dt,set_proposed_dt!,
                      u_modified!,savevalues!,add_tstop!,add_saveat!,set_reltol!,
-                     set_abstol!, postamble!, last_step_failed
+                     set_abstol!, postamble!, last_step_failed,
+                     isautodifferentiable
 
   using DiffEqBase: check_error!
 
@@ -49,7 +51,6 @@ module OrdinaryDiffEq
   include("misc_utils.jl")
   include("algorithms.jl")
   include("alg_utils.jl")
-  include("derivative_utils.jl")
 
   include("caches/basic_caches.jl")
   include("caches/low_order_rk_caches.jl")
@@ -66,6 +67,7 @@ module OrdinaryDiffEq
   include("caches/rosenbrock_caches.jl")
   include("caches/rkn_caches.jl")
   include("caches/adams_bashforth_moulton_caches.jl")
+  include("caches/adams_nordsieck_caches.jl")
   include("caches/bdf_caches.jl")
 
   include("tableaus/low_order_rk_tableaus.jl")
@@ -101,6 +103,7 @@ module OrdinaryDiffEq
   include("perform_step/threaded_rk_perform_step.jl")
   include("perform_step/composite_perform_step.jl")
   include("perform_step/adams_bashforth_moulton_perform_step.jl")
+  include("perform_step/adams_nordsieck_perform_step.jl")
   include("perform_step/bdf_perform_step.jl")
 
   include("dense/generic_dense.jl")
@@ -111,6 +114,11 @@ module OrdinaryDiffEq
   include("dense/verner_addsteps.jl")
   include("dense/high_order_rk_addsteps.jl")
 
+  include("derivative_utils.jl")
+  include("nlsolve_utils.jl")
+  include("nordsieck_utils.jl")
+  include("adams_utils.jl")
+  include("exponential_utils.jl")
   include("derivative_wrappers.jl")
   include("iterator_interface.jl")
   include("constants.jl")
@@ -130,9 +138,7 @@ module OrdinaryDiffEq
   export ode_addsteps!, ode_interpolant,
         terminate!, savevalues!, copyat_or_push!, isfsal
 
-  export constructDP5, constructVern6, constructDP8,
-         constructDormandPrince, constructFeagin10,
-         constructFeagin12, constructFeagin14
+  export constructDormandPrince
 
   # Reexport the Alg Types
 
@@ -168,6 +174,10 @@ module OrdinaryDiffEq
          IRKN3, IRKN4, DPRKN6, DPRKN8, DPRKN12, ERKN4, ERKN5
 
   export AB3, AB4, AB5, ABM32, ABM43, ABM54
+
+  export VCAB3, VCAB4
+
+  export AN5
 
   export ABDF2
 

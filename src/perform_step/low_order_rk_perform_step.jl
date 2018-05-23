@@ -43,7 +43,8 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k2,k3,k4,utilde,tmp,atmp = cache
   @unpack a21,a32,a41,a42,a43,c1,c2,btilde1,btilde2,btilde3,btilde4 = cache.tab
-  k1 = cache.fsalfirst
+  # k1 = cache.fsalfirst
+  k1 = integrator.fsalfirst
   a1 = dt*a21
   @. tmp = uprev+a1*k1
   f(k2, tmp, p, t+c1*dt)

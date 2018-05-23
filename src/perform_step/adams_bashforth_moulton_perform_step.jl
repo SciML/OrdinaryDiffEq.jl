@@ -544,3 +544,231 @@ end
   end
   f(k, u, p, t+dt)
 end
+
+# Variable Step Size Multistep Methods
+
+function initialize!(integrator,cache::VCAB3ConstantCache)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
+
+@muladd function perform_step!(integrator,cache::VCAB3ConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack dts,g,ϕ_n,ϕstar_n,ϕstar_nm1,order,tab = cache
+  k1 = integrator.fsalfirst
+  if integrator.u_modified
+    cache.step = 1
+  end
+  k = cache.step
+  if k == 1
+    dts[1] = dt
+    cache.step += 1
+  elseif k == 2
+    dts[2] = dts[1]
+    dts[1] = dt
+    cache.step += 1
+  else
+    dts[3] = dts[2]
+    dts[2] = dts[1]
+    dts[1] = dt
+  end
+  ϕ_and_ϕstar!(cache,k1,k)
+  cache.ϕstar_nm1 .= ϕstar_n
+  if k == 1 || k == 2
+    perform_step!(integrator, tab)
+  else
+    g_coefs!(cache,k)
+    u = uprev
+    for i = 1:k
+        u += dt * g[i] * ϕstar_n[i]
+    end
+    if integrator.opts.adaptive
+      utilde = dt * g[k] * ϕstar_n[k]      # Using lower order AB from subset of coefficients
+      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp)
+    end
+    integrator.fsallast = f(u, p, t+dt)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.u = u
+  end
+end
+
+function initialize!(integrator,cache::VCAB3Cache)
+  @unpack fsalfirst,k4 = cache
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = k4
+  integrator.kshortsize = 2
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # pre-start FSAL
+end
+
+@muladd function perform_step!(integrator,cache::VCAB3Cache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack k4,dts,g,ϕstar_n,ϕstar_nm1,order,atmp,utilde,bs3cache = cache
+  k1 = integrator.fsalfirst
+  if integrator.u_modified
+    cache.step = 1
+  end
+  k = cache.step
+  if k == 1
+    dts[1] = dt
+    cache.step += 1
+  elseif k == 2
+    dts[2] = dts[1]
+    dts[1] = dt
+    cache.step += 1
+  else
+    dts[3] = dts[2]
+    dts[2] = dts[1]
+    dts[1] = dt
+  end
+  ϕ_and_ϕstar!(cache, k1, k)
+  for i in eachindex(ϕstar_n)
+    cache.ϕstar_nm1[i] .= ϕstar_n[i]
+  end
+  if k == 1 || k == 2
+    perform_step!(integrator, bs3cache)
+    @unpack k4 = bs3cache
+    integrator.fsallast .= k4
+  else
+    g_coefs!(cache, k)
+    @. u = uprev
+    for i = 1:k
+      @. u += dt * g[i] * ϕstar_n[i]
+    end
+    f(k4,u,p,t+dt)
+    if integrator.opts.adaptive
+      @. utilde = dt * g[k] * ϕstar_n[k]    # Using lower order AB from subset of coefficients
+      calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp)
+    end
+  end
+end
+
+function initialize!(integrator,cache::VCAB4ConstantCache)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
+
+@muladd function perform_step!(integrator,cache::VCAB4ConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack dts,g,ϕ_n,ϕstar_n,ϕstar_nm1,order,rk4constcache = cache
+  k1 = integrator.fsalfirst
+  if integrator.u_modified
+    cache.step = 1
+  end
+  k = cache.step
+  if k == 1
+    dts[1] = dt
+    cache.step += 1
+  elseif k == 2
+    dts[2] = dts[1]
+    dts[1] = dt
+    cache.step += 1
+  elseif k == 3
+    dts[3] = dts[2]
+    dts[2] = dts[1]
+    dts[1] = dt
+    cache.step += 1
+  else
+    dts[4] = dts[3]
+    dts[3] = dts[2]
+    dts[2] = dts[1]
+    dts[1] = dt
+  end
+  ϕ_and_ϕstar!(cache,k1,k)
+  cache.ϕstar_nm1 .= ϕstar_n
+  if k == 1 || k == 2 || k == 3
+    perform_step!(integrator, rk4constcache)
+  else
+    g_coefs!(cache,k)
+    u = uprev
+    for i = 1:k
+        u += dt * g[i] * ϕstar_n[i]
+    end
+    if integrator.opts.adaptive
+      utilde = dt * g[k] * ϕstar_n[k]
+      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp)
+    end
+    integrator.fsallast = f(u, p, t+dt)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+    integrator.u = u
+  end
+end
+
+function initialize!(integrator,cache::VCAB4Cache)
+  @unpack fsalfirst,k4 = cache
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = k4
+  integrator.kshortsize = 2
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # pre-start FSAL
+end
+
+@muladd function perform_step!(integrator,cache::VCAB4Cache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack k4,dts,g,ϕ_n,ϕstar_n,ϕstar_nm1,order,atmp,utilde,rk4cache = cache
+  k1 = integrator.fsalfirst
+  if integrator.u_modified
+    cache.step = 1
+  end
+  k = cache.step
+  if k == 1
+    dts[1] = dt
+    cache.step += 1
+  elseif k == 2
+    dts[2] = dts[1]
+    dts[1] = dt
+    cache.step += 1
+  elseif k == 3
+    dts[3] = dts[2]
+    dts[2] = dts[1]
+    dts[1] = dt
+    cache.step += 1
+  else
+    dts[4] = dts[3]
+    dts[3] = dts[2]
+    dts[2] = dts[1]
+    dts[1] = dt
+  end
+  ϕ_and_ϕstar!(cache,k1,k)
+  for i in eachindex(ϕstar_n)
+    cache.ϕstar_nm1[i] .= ϕstar_n[i]
+  end
+  if k == 1 || k == 2 || k == 3
+    rk4cache.fsalfirst .= k1
+    perform_step!(integrator, rk4cache)
+    integrator.fsallast .= rk4cache.k
+  else
+    g_coefs!(cache,k)
+    @. u = uprev
+    for i = 1:k
+      @. u += dt * g[i] * ϕstar_n[i]
+    end
+    f(k4,u,p,t+dt)
+    if integrator.opts.adaptive
+      @. utilde = dt * g[k] * ϕstar_n[k]
+      calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp)
+    end
+  end
+end
