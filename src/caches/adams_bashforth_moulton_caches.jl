@@ -531,3 +531,95 @@ function alg_cache(alg::VCAB5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   utilde = similar(u,indices(u))
   VCAB5Cache(u,uprev,fsalfirst,rk4cache,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕstar_n,β,order,atmp,tmp,utilde,1)
 end
+
+# VCABM3
+
+mutable struct VCABM3ConstantCache{TabType,tArrayType,rArrayType,cArrayType,dtArrayType} <: OrdinaryDiffEqConstantCache
+  dts::dtArrayType
+  c::cArrayType
+  g::tArrayType
+  ϕ_n::rArrayType
+  ϕ_np1::rArrayType
+  ϕstar_nm1::rArrayType
+  ϕstar_n::rArrayType
+  β::tArrayType
+  order::Int
+  tab::TabType
+  step::Int
+end
+
+mutable struct VCABM3Cache{uType,rateType,TabType,uArrayType,bs3Type,tArrayType,cArrayType,uEltypeNoUnits,coefType,dtArrayType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  fsalfirst::rateType
+  bs3cache::bs3Type
+  k4::rateType
+  ϕstar_nm1::coefType
+  dts::dtArrayType
+  c::cArrayType
+  g::tArrayType
+  ϕ_n::coefType
+  ϕ_np1::coefType
+  ϕstar_n::coefType
+  β::tArrayType
+  order::Int
+  atmp::uEltypeNoUnits
+  tmp::uType
+  utilde::uArrayType
+  tab::TabType
+  step::Int
+end
+
+u_cache(c::VCABM3Cache) = ()
+du_cache(c::VCABM3Cache) = ()
+
+function alg_cache(alg::VCABM3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  dts = zeros(typeof(dt),3)
+  c = zeros(typeof(t), 4, 4)
+  g = zeros(typeof(t), 4)
+  ϕ_n = Vector{typeof(rate_prototype)}(3)
+  ϕstar_nm1 = Vector{typeof(rate_prototype)}(3)
+  ϕstar_n = Vector{typeof(rate_prototype)}(3)
+  ϕ_np1 = Vector{typeof(rate_prototype)}(4)
+  for i in 1:3
+    ϕ_n[i] = copy(rate_prototype)
+    ϕstar_nm1[i] = copy(rate_prototype)
+    ϕstar_n[i] = copy(rate_prototype)
+  end
+  β = zeros(typeof(t),3)
+  order = 3
+  tab = BS3ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  VCABM3ConstantCache(dts,c,g,ϕ_n,ϕ_np1,ϕstar_nm1,ϕstar_n,β,order,tab,1)
+end
+
+function alg_cache(alg::VCABM3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tab = BS3ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  bk1 = zeros(rate_prototype)
+  bk2 = zeros(rate_prototype)
+  bk3 = zeros(rate_prototype)
+  bk4 = zeros(rate_prototype)
+  butilde = similar(u,indices(u))
+  batmp = similar(u,uEltypeNoUnits)
+  btmp = similar(u)
+  bs3cache = BS3Cache(u,uprev,bk1,bk2,bk3,bk4,butilde,btmp,batmp,tab)
+  fsalfirst = zeros(rate_prototype)
+  k4 = zeros(rate_prototype)
+  dts = zeros(typeof(dt),3)
+  c = zeros(typeof(t),4,4)
+  g = zeros(typeof(t),4)
+  ϕ_n = Vector{typeof(rate_prototype)}(3)
+  ϕstar_nm1 = Vector{typeof(rate_prototype)}(3)
+  ϕstar_n = Vector{typeof(rate_prototype)}(3)
+  ϕ_np1 = Vector{typeof(rate_prototype)}(4)
+  for i in 1:3
+    ϕ_n[i] = zeros(rate_prototype)
+    ϕstar_nm1[i] = zeros(rate_prototype)
+    ϕstar_n[i] = zeros(rate_prototype)
+  end
+  β = zeros(typeof(t),3)
+  order = 3
+  atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u)
+  utilde = similar(u,indices(u))
+  VCABM3Cache(u,uprev,fsalfirst,bs3cache,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕ_np1,ϕstar_n,β,order,atmp,tmp,utilde,tab,1)
+end
