@@ -1,6 +1,7 @@
 using OrdinaryDiffEq, DiffEqDevTools, Base.Test
 testTol = 0.2
 
+srand(100)
 # Test that the infrustructure works
 
 f1 = (u,p,t) -> 2u
