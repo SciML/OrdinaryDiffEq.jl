@@ -140,6 +140,64 @@ end
 
 ##############################################
 # Krylov algorithms
+"""
+    KrylovSubspace{T}(n,[maxiter=30]) -> Ks
+
+Constructs an uninitialized Krylov subspace, which can be filled by `arnoldi!`.
+
+The dimension of the subspace, `Ks.m`, can be dynamically altered. `Ks[:V]` and 
+`Ks[:H]` provides a view into the larger arrays `Ks.V` and `Ks.H` compatible 
+with the subspace dimension. `Ks.m` should be smaller than `maxiter`, the 
+maximum allowed arnoldi iterations.
+
+    resize!(Ks, maxiter) -> Ks
+
+Resize `Ks` to a different `maxiter`, keeping its contents.
+
+This is an expensive operation and should be used scarsely.
+"""
+mutable struct KrylovSubspace{B, T}
+  m::Int        # subspace dimension
+  beta::B       # norm(b,2)
+  V::Matrix{T}  # orthonormal bases
+  H::Matrix{T}  # Gram-Schmidt coefficients
+  KrylovSubspace{T}(n::Integer, maxiter::Integer=30) where {T} = new{real(T), T}(
+    0, zero(real(T)), Matrix{T}(n, maxiter), Matrix{T}(maxiter, maxiter))
+end
+maxiter(Ks::KrylovSubspace) = size(Ks.V, 2)
+function Base.getindex(Ks::KrylovSubspace, which::Symbol)
+  if which == :V
+    return @view(Ks.V[:, 1:Ks.m])
+  elseif which == :H
+    return @view(Ks.H[1:Ks.m, 1:Ks.m])
+  else
+    throw(ArgumentError(repr(which)))
+  end
+end
+function Base.resize!(Ks::KrylovSubspace{B,T}, maxiter::Integer) where {B,T}
+  prevsize = maxiter(Ks)
+  if prevsize <= maxiter
+    V = Matrix{T}(size(Ks.V, 1), maxiter)
+    H = Matrix{T}(maxiter, maxiter)
+    V[:, 1:prevsize] = Ks.V
+    H[1:prevsize, 1:prevsize] = Ks.H
+  else
+    # Resizing to a smaller size is not necessary, this is just for the sake 
+    # of completeness.
+    V = Ks.V[:, 1:maxiter]
+    H = Ks.H[1:maxiter, 1:maxiter]
+  end
+  Ks.V = V; Ks.H = H
+  return Ks
+end
+function Base.show(io::IO, Ks::KrylovSubspace)
+  println(io, "$(Ks.m)-dimensional Krylov subspace with fields")
+  println(io, "beta: $(Ks.beta)")
+  print(io, "V: ")
+  println(IOContext(io, limit=true), Ks[:V])
+  print(io, "H: ")
+  println(IOContext(io, limit=true), Ks[:H])
+end
 
 """
     arnoldi(A,b,m) -> V,H
