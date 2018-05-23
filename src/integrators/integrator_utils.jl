@@ -19,10 +19,10 @@ function loopheader!(integrator)
   end
 
   integrator.iter += 1
+  choose_algorithm!(integrator,integrator.cache)
   fix_dt_at_bounds!(integrator)
   modify_dt_for_tstops!(integrator)
   integrator.force_stepfail = false
-  choose_algorithm!(integrator,integrator.cache)
 end
 
 last_step_failed(integrator::ODEIntegrator) =
