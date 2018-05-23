@@ -34,6 +34,7 @@ if group == "All" || group == "Interface"
   @time include("complex_tests.jl")
   @time include("stiffness_detection_test.jl")
   @time include("export_tests.jl")
+  @time include("utility_tests.jl")
 end
 
 if group == "All" || group == "Integrators"
