@@ -35,8 +35,8 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   qsteady_max = qsteady_min_default(alg),
   qoldinit=1//10^4, fullnormalize=true,
   failfactor = 2,
-  beta2=beta2_default(alg),
-  beta1=beta1_default(alg,beta2),
+  beta2=nothing,
+  beta1=nothing,
   maxiters = 1000000,
   dtmax=eltype(prob.tspan)((prob.tspan[end]-prob.tspan[1])),
   dtmin= typeof(one(eltype(prob.tspan))) <: AbstractFloat ? 10*eps(eltype(prob.tspan)) :
@@ -204,26 +204,6 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
 
   QT = tTypeNoUnits <: Integer ? typeof(qmin) : tTypeNoUnits
 
-  opts = DEOptions{typeof(abstol_internal),typeof(reltol_internal),QT,tType,
-                   typeof(internalnorm),typeof(callbacks_internal),typeof(isoutofdomain),
-                   typeof(progress_message),typeof(unstable_check),typeof(tstops_internal),
-                   typeof(d_discontinuities_internal),typeof(userdata),typeof(save_idxs),
-                   typeof(maxiters),typeof(tstops),typeof(saveat),
-                   typeof(d_discontinuities)}(
-                       maxiters,timeseries_steps,save_everystep,adaptive,abstol_internal,
-                       reltol_internal,QT(gamma),QT(qmax),
-                       QT(qmin),QT(qsteady_max),
-                       QT(qsteady_min),QT(failfactor),tType(dtmax),
-                       tType(dtmin),internalnorm,save_idxs,tstops_internal,saveat_internal,
-                       d_discontinuities_internal,
-                       tstops,saveat,d_discontinuities,
-                       userdata,progress,progress_steps,
-                       progress_name,progress_message,timeseries_errors,dense_errors,
-                       QT(beta1),QT(beta2),QT(qoldinit),dense,
-                       save_start,save_end,callbacks_internal,isoutofdomain,
-                       unstable_check,verbose,
-                       calck,force_dtmin,advance_to_tstop,stop_at_next_tstop)
-
   progress ? (prog = Juno.ProgressBar(name=progress_name)) : prog = nothing
 
   k = rateType[]
@@ -247,9 +227,33 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
 
   if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
     id = CompositeInterpolationData(f,timeseries,ts,ks,alg_choice,dense,cache)
+    beta2 == nothing && ( beta2=beta2_default(alg.algs[cache.current]) )
+    beta1 == nothing && ( beta1=beta1_default(alg.algs[cache.current],beta2) )
   else
     id = InterpolationData(f,timeseries,ts,ks,dense,cache)
+    beta2 == nothing && ( beta2=beta2_default(alg) )
+    beta1 == nothing && ( beta1=beta1_default(alg,beta2) )
   end
+
+  opts = DEOptions{typeof(abstol_internal),typeof(reltol_internal),QT,tType,
+                   typeof(internalnorm),typeof(callbacks_internal),typeof(isoutofdomain),
+                   typeof(progress_message),typeof(unstable_check),typeof(tstops_internal),
+                   typeof(d_discontinuities_internal),typeof(userdata),typeof(save_idxs),
+                   typeof(maxiters),typeof(tstops),typeof(saveat),
+                   typeof(d_discontinuities)}(
+                       maxiters,timeseries_steps,save_everystep,adaptive,abstol_internal,
+                       reltol_internal,QT(gamma),QT(qmax),
+                       QT(qmin),QT(qsteady_max),
+                       QT(qsteady_min),QT(failfactor),tType(dtmax),
+                       tType(dtmin),internalnorm,save_idxs,tstops_internal,saveat_internal,
+                       d_discontinuities_internal,
+                       tstops,saveat,d_discontinuities,
+                       userdata,progress,progress_steps,
+                       progress_name,progress_message,timeseries_errors,dense_errors,
+                       QT(beta1),QT(beta2),QT(qoldinit),dense,
+                       save_start,save_end,callbacks_internal,isoutofdomain,
+                       unstable_check,verbose,
+                       calck,force_dtmin,advance_to_tstop,stop_at_next_tstop)
 
   if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
     sol = build_solution(prob,alg,ts,timeseries,
