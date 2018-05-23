@@ -200,38 +200,47 @@ function Base.show(io::IO, Ks::KrylovSubspace)
 end
 
 """
-    arnoldi(A,b,m) -> V,H
+    arnoldi(A,b,m) -> Ks
 
 Performs `m` anoldi iterations to obtain the Krylov subspace K_m(A,b).
 
-The output is the n x m unitary basis vectors `V` and the m x m upper 
-Heisenberg matrix `H`. They are related by the recurrence formula
+The n x m unitary basis vectors `Ks[:V]` and the m x m upper Heisenberg 
+matrix `Ks[:H]` are related by the recurrence formula
 
 ```
 v_1=b,\\quad Av_j = \\sum_{i=1}^{j+1}h_{ij}v_i\\quad(j = 1,2,\\ldots,m)
 ```
+
+Refer to `KrylovSubspace` for more information regarding the output.
 """
 function arnoldi(A, b, m; cache=nothing)
-  V = Matrix{eltype(b)}(length(b), m)
-  H = Matrix{eltype(b)}(m, m)
-  arnoldi!(V, H, A, b, m; cache=cache)
+  Ks = KrylovSubspace{eltype(b)}(length(b), m)
+  arnoldi!(Ks, A, b, m; cache=cache)
 end
 """
-    arnoldi!(V,H,A,b,m) -> V,H
+    arnoldi!(Ks,A,b,m) -> Ks
 
 Non-allocating version of `arnoldi`.
 """
-function arnoldi!(V::Matrix{T}, H::Matrix{T}, A, b::AbstractVector{T}, 
-  m::Integer; cache=nothing) where {T <: Number}
-  n = length(b)
-  @assert size(V,1) == size(A,1) == size(A,2) == n "Dimension mismatch"
-  @assert size(V,2) == size(H,1) == size(H,2) == m "Dimension mismatch"
+function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}, 
+  m::Integer; cache=nothing) where {B, T <: Number}
+  # Set dimension of the Krylov subspace
+  if m > maxiter(Ks)
+    resize!(Ks, m)
+  end
+  Ks.m = m
+  V, H = Ks[:V], Ks[:H]
+  # Safe checks
+  n = size(V, 1)
+  @assert length(b) == size(A,1) == size(A,2) == n "Dimension mismatch"
   if cache == nothing
     cache = similar(b)
   else
-    @assert size(cache) == (n,)
+    @assert size(cache) == (n,) "Dimension mismatch"
   end
-  V[:, 1] = normalize(b)
+  # Arnoldi iterations
+  Ks.beta = norm(b)
+  V[:, 1] = b / Ks.beta
   @inbounds for j = 1:m-1
     A_mul_B!(cache, A, @view(V[:, j]))
     @inbounds for i = 1:j
@@ -252,7 +261,7 @@ function arnoldi!(V::Matrix{T}, H::Matrix{T}, A, b::AbstractVector{T},
     H[i, m] = alpha
     Base.axpy!(-alpha, @view(V[:, i]), cache)
   end
-  return V, H
+  return Ks
 end
 
 """
@@ -269,27 +278,30 @@ The phi functions are defined as
 A size-`m` Krylov subspace is constructed using `arnoldi` and `phimv_dense` is 
 called on the Heisenberg matrix.
 """
-_phimv(A, b, k, m; caches=nothing) = _phimv!(Matrix{eltype(b)}(length(b), k+1), 
-  A, b, k, m; caches=caches)
+function _phimv(A, b, k, m; caches=nothing)
+  Ks = arnoldi(A, b, m)
+  w = Matrix{eltype(b)}(length(b), k+1)
+  _phimv!(w, Ks, k; caches=caches)
+end
 """
-    phimv!(w,A,b,k,m[;caches]) -> w
+    phimv!(w,Ks,k[;caches]) -> w
 
-Non-allocating version of 'phimv'
+Non-allocating version of 'phimv' that uses precomputed Krylov subspace `Ks`.
 """
-function _phimv!(w::Matrix{T}, A, b::AbstractVector{T}, k::Integer, m::Integer; 
-  caches=nothing) where {T <: Number}
+function _phimv!(w::Matrix{T}, Ks::KrylovSubspace{B, T}, k::Integer; 
+  caches=nothing) where {B, T <: Number}
+  m, beta, V, H = Ks.m, Ks.beta, Ks[:V], Ks[:H]
+  @assert size(w, 1) == size(V, 1) "Dimension mismatch"
   @assert size(w, 2) == k + 1 "Dimension mismatch"
   if caches == nothing
-    c1 = similar(b)
-    c2 = Vector{T}(m)
-    C3 = Matrix{T}(m + k, m + k)
-    C4 = Matrix{T}(m, k + 1)
-    V, H = arnoldi(A, b, m; cache=c1)
+    e = Vector{T}(m)
+    C1 = Matrix{T}(m + k, m + k)
+    C2 = Matrix{T}(m, k + 1)
   else
-    V, H, c1, c2, C3, C4 = caches
-    arnoldi!(V, H, A, b, m; cache=c1)
+    e, C1, C2 = caches
+    @assert size(e) == (m,) && size(C1) == (m+k,m+k) && size(C2) == (m,k+1) "Dimension mismatch"
   end
-  fill!(c2, zero(T)); c2[1] = one(T) # c1 == e1
-  phimv_dense!(C4, H, c2, k; cache=C3)
-  scale!(norm(b), A_mul_B!(w, V, C4))
+  fill!(e, zero(T)); e[1] = one(T) # e is the [1,0,...,0] basis vector
+  phimv_dense!(C2, H, e, k; cache=C1) # C2 = [ϕ0(H)e ϕ1(H)e ... ϕk(H)e]
+  scale!(beta, A_mul_B!(w, V, C2)) # f(A) ≈ norm(b) * V * f(H)e
 end
