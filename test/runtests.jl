@@ -15,6 +15,8 @@ else
     group = "All"
 end
 
+is_APPVEYOR = ( is_windows() && haskey(ENV,"APPVEYOR") )
+
 #Start Test Script
 
 tic()
@@ -46,12 +48,12 @@ if group == "All" || group == "Integrators"
     @time @testset "Error Check Tests" begin include("check_error.jl") end
 end
 
-if group == "All" || group == "Regression"
+if !is_APPVEYOR && ( group == "All" || group == "Regression" )
     @time @testset "Linear Tests" begin include("ode/ode_twodimlinear_tests.jl") end
     @time @testset "Dense Tests" begin include("ode/ode_dense_tests.jl") end
 end
 
-if group == "All" || group == "AlgConvergence_I"
+if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_I" )
     # ~ 250 s
     @time @testset "Partitioned Methods Tests" begin include("partitioned_methods_tests.jl") end
     # ~ 400 s
@@ -67,7 +69,7 @@ if group == "All" || group == "AlgConvergence_I"
     @time @testset "OwrenZen Tests" begin include("owrenzen_tests.jl") end
 end
 
-if group == "All" || group == "AlgConvergence_II"
+if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_II" )
     # ~ 110 s
     @time @testset "Split Methods Tests" begin include("split_methods_tests.jl") end
     # ~ 550 s
