@@ -19,22 +19,21 @@ end
 
 tic()
 if group == "All" || group == "Interface"
-    @time @testset "Discrete Tests" begin include("discrete_algorithm_test.jl") end
-    @time @testset "Tstops Tests" begin include("ode/ode_tstops_tests.jl") end
-    @time @testset "Backwards Tests" begin include("ode/ode_backwards_test.jl") end
-    @time @testset "Initial Dt Tests" begin include("ode/ode_initdt_tests.jl") end
-    @time @testset "Mass Matrix Tests" begin include("mass_matrix_tests.jl") end
-    @time @testset "Differentiation Trait Tests" begin include("differentiation_traits_tests.jl") end
-    @time @testset "saveat Tests" begin include("ode/ode_saveat_tests.jl") end
-    @time @testset "save_idxs Tests" begin include("ode/ode_saveidxs_tests.jl") end
-    @time @testset "Static Array Tests" begin include("static_array_tests.jl") end
-    @time @testset "Data Array Tests" begin include("data_array_test.jl") end
-    @time @testset "u_modifed Tests" begin include("umodified_test.jl") end
-    @time @testset "Composite Algorithm Tests" begin include("composite_algorithm_test.jl") end
-    @time @testset "Complex Tests" begin include("complex_tests.jl") end
-    @time @testset "Stiffness Detection Tests" begin include("stiffness_detection_test.jl") end
-    @time @testset "Export tests" begin include("export_tests.jl") end
-    @time @testset "Utility tests" begin include("utility_tests.jl") end
+  @time include("discrete_algorithm_test.jl")
+  @time include("ode/ode_tstops_tests.jl")
+  @time include("ode/ode_backwards_test.jl")
+  @time include("ode/ode_initdt_tests.jl")
+  @time include("mass_matrix_tests.jl")
+  @time include("differentiation_traits_tests.jl")
+  @time include("ode/ode_saveat_tests.jl")
+  @time include("ode/ode_saveidxs_tests.jl")
+  @time include("static_array_tests.jl")
+  @time include("data_array_test.jl")
+  @time include("umodified_test.jl")
+  @time include("composite_algorithm_test.jl")
+  @time include("complex_tests.jl")
+  @time include("stiffness_detection_test.jl")
+  @time include("export_tests.jl")
 end
 
 if group == "All" || group == "Integrators"
