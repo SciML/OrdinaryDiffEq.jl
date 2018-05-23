@@ -45,4 +45,9 @@ for i = 1:2
   sol1 = solve(prob,VCAB4(),dt=1//256,adaptive=false)
   sol2 = solve(prob,AB4(),dt=1//256)
   @test sol1.u ≈ sol2.u
+
+  # VCAB5
+  sol1 = solve(prob,VCAB5(),dt=1//256,adaptive=false)
+  sol2 = solve(prob,AB5(),dt=1//256)
+  @test sol1.u ≈ sol2.u
 end

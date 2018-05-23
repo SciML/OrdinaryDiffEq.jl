@@ -33,6 +33,13 @@ end
     z[6] = zero(cache.z[6])
     fill!(tau, dt)
   end
+  # Reset time
+  for i in endof(tau):-1:2
+    tau[i] = tau[i-1]
+  end
+  tau[1] = dt
+  dt != tau[2] && nordsieck_rescale!(cache, false)
+  integrator.k[1] = z[2]/dt
   # Perform 5th order Adams method in Nordsieck form
   perform_predict!(cache, false)
   calc_coeff!(cache)
@@ -41,25 +48,24 @@ end
 
   ################################### Error estimation
 
-  #if integrator.opts.adaptive
-  #  utilde = cache.Δ*cache.tq
-  #  atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-  #  integrator.EEst = integrator.opts.internalnorm(atmp)
-  #end
+  if integrator.opts.adaptive
+    tmp = cache.Δ*cache.tq
+    atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+    integrator.EEst = integrator.opts.internalnorm(atmp)
+    if integrator.EEst >= one(integrator.EEst)
+      # rewind Nordsieck vector
+      perform_predict!(cache, true)
+      nordsieck_rescale!(cache, true)
+      return nothing
+    end
+  end
 
   # Corrector
   perform_correct!(cache)
 
   ################################### Finalize
 
-  # Reset time
-  for i in endof(tau):-1:2
-    tau[i] = tau[i-1]
-  end
-  tau[1] = dt
-
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
+  integrator.k[2] = cache.z[2]/dt
   return nothing
 end
 
@@ -112,6 +118,15 @@ end
     fill!(z[6], zero(eltype(z[6])))
     fill!(tau, dt)
   end
+
+  # Reset time
+  for i in endof(tau):-1:2
+    tau[i] = tau[i-1]
+  end
+  tau[1] = dt
+  # Rescale
+  dt != tau[2] && nordsieck_rescale!(cache, false)
+  @. integrator.k[1] = z[2]/dt
   # Perform 5th order Adams method in Nordsieck form
   perform_predict!(cache, false)
   calc_coeff!(cache)
@@ -120,24 +135,23 @@ end
 
   ################################### Error estimation
 
-  #if integrator.opts.adaptive
-  #  utilde = cache.Δ*cache.tq
-  #  atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-  #  integrator.EEst = integrator.opts.internalnorm(atmp)
-  #end
+  if integrator.opts.adaptive
+    @. tmp = const_cache.Δ*const_cache.tq
+    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+    integrator.EEst = integrator.opts.internalnorm(atmp)
+    if integrator.EEst >= one(integrator.EEst)
+      # rewind Nordsieck vector
+      perform_predict!(cache, true)
+      nordsieck_rescale!(cache, true)
+      return nothing
+    end
+  end
 
   # Corrector
   perform_correct!(cache)
 
   ################################### Finalize
 
-  # Reset time
-  for i in endof(tau):-1:2
-    tau[i] = tau[i-1]
-  end
-  tau[1] = dt
-
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
+  @. integrator.k[2] = const_cache.z[2]/dt
   return nothing
 end
