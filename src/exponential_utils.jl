@@ -273,17 +273,17 @@ A Krylov subspace is constructed using `arnoldi` and `expm!` is called
 on the Heisenberg matrix. Consult `arnoldi` for the values of the keyword 
 arguments.
 """
-function _expmv(t, A, b; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, cache=nothing)
+function expmv(t, A, b; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, cache=nothing)
   Ks = arnoldi(A, b; m=m, tol=tol, norm=norm)
   w = similar(b)
-  _expmv!(w, t, Ks; cache=cache)
+  expmv!(w, t, Ks; cache=cache)
 end
 """
     expmv!(w,t,Ks[;cache]) -> w
 
 Non-allocating version of `expmv` that uses precomputed Krylov subspace `Ks`.
 """
-function _expmv!(w::Vector{T}, t::Number, Ks::KrylovSubspace{B, T}; 
+function expmv!(w::Vector{T}, t::Number, Ks::KrylovSubspace{B, T}; 
   cache=nothing) where {B, T <: Number}
   m, beta, V, H = Ks.m, Ks.beta, Ks[:V], Ks[:H]
   @assert length(w) == size(V, 1) "Dimension mismatch"
@@ -314,18 +314,18 @@ A Krylov subspace is constructed using `arnoldi` and `phimv_dense` is called
 on the Heisenberg matrix. Consult `arnoldi` for the values of the keyword 
 arguments.
 """
-function _phimv(t, A, b, k; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, 
+function phimv(t, A, b, k; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, 
   caches=nothing)
   Ks = arnoldi(A, b; m=m, tol=tol, norm=norm)
   w = Matrix{eltype(b)}(length(b), k+1)
-  _phimv!(w, t, Ks, k; caches=caches)
+  phimv!(w, t, Ks, k; caches=caches)
 end
 """
     phimv!(w,t,Ks,k[;caches]) -> w
 
 Non-allocating version of 'phimv' that uses precomputed Krylov subspace `Ks`.
 """
-function _phimv!(w::Matrix{T}, t::Number, Ks::KrylovSubspace{B, T}, k::Integer; 
+function phimv!(w::Matrix{T}, t::Number, Ks::KrylovSubspace{B, T}, k::Integer; 
   caches=nothing) where {B, T <: Number}
   m, beta, V, H = Ks.m, Ks.beta, Ks[:V], Ks[:H]
   @assert size(w, 1) == size(V, 1) "Dimension mismatch"
