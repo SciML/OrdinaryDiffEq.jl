@@ -96,7 +96,8 @@ function perform_step!(integrator, cache::NorsettEulerConstantCache, repeat_step
   integrator.k[1] = lin + nl
 
   if alg.krylov
-    u = phimv(dt,f.f1,nl,uprev; tol=integrator.opts.reltol, m=min(alg.m, size(f.f1,1)), norm=normbound)
+    w = _phimv(dt, f.f1, f.f1 * uprev + nl, 1; m=min(alg.m, size(f.f1,1)), norm=normbound)
+    u = uprev + dt * w[:,2]
   else
     u = exphA*uprev + dt*(phihA*nl)
   end
@@ -128,12 +129,16 @@ end
 function perform_step!(integrator, cache::NorsettEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack lin,nl = integrator.fsalfirst
-  @unpack tmp,rtmp,exphA,phihA = cache
+  @unpack tmp,rtmp,exphA,phihA,Ks,KsCache = cache
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
   @. integrator.k[1] = lin + nl
 
   if alg.krylov
-    phimv!(u,dt,f.f1,nl,uprev; tol=integrator.opts.reltol, m=min(alg.m, size(f.f1,1)), norm=normbound)
+    w = KsCache[1]
+    A_mul_B!(tmp, f.f1, uprev); tmp .+= nl
+    arnoldi!(Ks, f.f1, tmp; m=min(alg.m, size(f.f1,1)), norm=normbound, cache=u)
+    _phimv!(w, dt, Ks, 1; caches=KsCache[2:end])
+    @muladd @. u = uprev + dt * @view(w[:, 2])
   else
     A_mul_B!(tmp,exphA,uprev)
     A_mul_B!(rtmp,phihA,nl)

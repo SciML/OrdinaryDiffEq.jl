@@ -22,7 +22,7 @@ for Alg in Algs
     sol_krylov = solve(prob, Alg(krylov=true); dt=dt, reltol=reltol)
     @test isapprox(sol.u,sol_krylov.u; rtol=reltol)
 
-    sol_ip = solve(prob_inplace, Alg(); dt=0.01)
+    sol_ip = solve(prob_inplace, Alg(); dt=dt)
     sol_ip_krylov = solve(prob_inplace, Alg(krylov=true); dt=dt, reltol=reltol)
     @test isapprox(sol_ip.u,sol_ip_krylov.u; rtol=reltol)
 end

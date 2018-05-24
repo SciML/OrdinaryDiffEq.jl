@@ -144,20 +144,30 @@ function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   LawsonEulerConstantCache(exphA)
 end
 
-struct NorsettEulerCache{uType,rateType,expType} <: OrdinaryDiffEqMutableCache
+struct NorsettEulerCache{uType,rateType,expType,KsType,KsCacheType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
   rtmp::rateType
   exphA::expType
   phihA::expType
+  Ks::KsType
+  KsCache::KsCacheType
 end
 
 function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   if alg.krylov
     exphA = nothing # no caching
     phihA = nothing
+    n = length(u)
+    m = min(alg.m, length(u))
+    T = eltype(u)
+    Ks = KrylovSubspace{T}(n, m)
+    KsCache = (Matrix{T}(n, 2), Vector{T}(m), Matrix{T}(m, m), Matrix{T}(m + 1, m + 1), 
+      Matrix{T}(m, 2))
   else
+    Ks = nothing
+    KsCache = nothing
     A = f.f1
     if isa(A, DiffEqArrayOperator)
       _A = A.A * A.α.coeff
@@ -166,7 +176,7 @@ function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomElty
     end
     exphA, phihA = phim(dt*_A, 1)
   end
-  NorsettEulerCache(u,uprev,similar(u),zeros(rate_prototype),exphA,phihA)
+  NorsettEulerCache(u,uprev,similar(u),zeros(rate_prototype),exphA,phihA,Ks,KsCache)
 end
 
 u_cache(c::NorsettEulerCache) = ()
