@@ -21,7 +21,7 @@ function perform_step!(integrator, cache::LawsonEulerConstantCache, repeat_step=
   integrator.k[1] = lin + nl
 
   if alg.krylov
-    @muladd u = expmv(dt, f.f1, uprev + dt*nl; tol=integrator.opts.reltol, m=min(alg.m, size(f.f1,1)), norm=normbound)
+    @muladd u = _expmv(dt, f.f1, uprev + dt*nl; m=min(alg.m, size(f.f1,1)), norm=normbound)
   else
     @muladd u = cache.exphA*(uprev + dt*nl)
   end
@@ -53,13 +53,14 @@ end
 function perform_step!(integrator, cache::LawsonEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack lin,nl = integrator.fsalfirst
-  @unpack tmp,exphA = cache
+  @unpack tmp,exphA,Ks,KsCache = cache
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
   @. integrator.k[1] = lin + nl
 
   @muladd @. tmp = uprev + dt*nl
   if alg.krylov
-    expmv!(u,dt,f.f1,tmp; tol=integrator.opts.reltol, m=min(alg.m, size(f.f1,1)), norm=normbound)
+    arnoldi!(Ks,f.f1,tmp; m=min(alg.m, size(f.f1,1)), norm=normbound, cache=u)
+    _expmv!(u,dt,Ks; cache=KsCache)
   else
     A_mul_B!(u,exphA,tmp)
   end
