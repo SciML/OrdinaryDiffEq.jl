@@ -1,4 +1,4 @@
-using OrdinaryDiffEq: phi, phim, _phimv
+using OrdinaryDiffEq: phi, phim, _phimv, arnoldi
 
 @testset "Phi functions" begin
   # Scalar phi
@@ -29,5 +29,11 @@ using OrdinaryDiffEq: phi, phim, _phimv
     W[:,i] = P[i] * b
   end
   W_approx = _phimv(A, b, K; m=m)
-  @test W ≈ W_approx  
+  @test W ≈ W_approx
+
+  # Happy-breakdown in Krylov
+  v = normalize(randn(n))
+  A = v * v' # A is Idempotent
+  Ks = arnoldi(A, b)
+  @test Ks.m == 2
 end
