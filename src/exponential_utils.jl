@@ -162,7 +162,7 @@ mutable struct KrylovSubspace{B, T}
   V::Matrix{T}  # orthonormal bases
   H::Matrix{T}  # Gram-Schmidt coefficients
   KrylovSubspace{T}(n::Integer, maxiter::Integer=30) where {T} = new{real(T), T}(
-    0, zero(real(T)), Matrix{T}(n, maxiter), Matrix{T}(maxiter, maxiter))
+    0, zero(real(T)), Matrix{T}(n, maxiter), zeros(T, maxiter, maxiter))
 end
 maxiter(Ks::KrylovSubspace) = size(Ks.V, 2)
 function Base.getindex(Ks::KrylovSubspace, which::Symbol)
@@ -178,7 +178,7 @@ function Base.resize!(Ks::KrylovSubspace{B,T}, maxiter::Integer) where {B,T}
   prevsize = maxiter(Ks)
   if prevsize <= maxiter
     V = Matrix{T}(size(Ks.V, 1), maxiter)
-    H = Matrix{T}(maxiter, maxiter)
+    H = zeros(T, maxiter, maxiter)
     V[:, 1:prevsize] = Ks.V
     H[1:prevsize, 1:prevsize] = Ks.H
   else
