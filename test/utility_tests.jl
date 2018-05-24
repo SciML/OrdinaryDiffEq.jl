@@ -21,14 +21,15 @@ using OrdinaryDiffEq: phi, phim, _phimv, arnoldi
   # Krylov
   n = 20; m = 5
   srand(0)
-  A = 1e-2 * randn(n, n)
+  A = randn(n, n)
+  t = 1e-2
   b = randn(n)
-  P = phim(A, K)
+  P = phim(t * A, K)
   W = zeros(n, K+1)
   for i = 1:K+1
     W[:,i] = P[i] * b
   end
-  W_approx = _phimv(A, b, K; m=m)
+  W_approx = _phimv(t, A, b, K; m=m)
   @test W ≈ W_approx
 
   # Happy-breakdown in Krylov

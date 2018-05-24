@@ -265,7 +265,7 @@ function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol=1e-7,
 end
 
 """
-    phimv(A,b,k; kwargs) -> [phi_0(A)*b phi_1(A)*b ... phi_k(A)*b]
+    phimv(t,A,b,k; kwargs) -> [phi_0(tA)b phi_1(tA)b ... phi_k(tA)b]
 
 Compute the matrix-phi-vector products using Krylov.
 
@@ -279,35 +279,38 @@ A Krylov subspace is constructed using `arnoldi` and `phimv_dense` is called
 on the Heisenberg matrix. Consult `arnoldi` for the values of the keyword 
 arguments.
 """
-function _phimv(A, b, k; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, 
+function _phimv(t, A, b, k; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, 
   caches=nothing)
   Ks = arnoldi(A, b; m=m, tol=tol, norm=norm)
   w = Matrix{eltype(b)}(length(b), k+1)
-  _phimv!(w, Ks, k; caches=caches)
+  _phimv!(w, t, Ks, k; caches=caches)
 end
 """
-    phimv!(w,Ks,k[;caches]) -> w
+    phimv!(w,t,Ks,k[;caches]) -> w
 
 Non-allocating version of 'phimv' that uses precomputed Krylov subspace `Ks`.
 """
-function _phimv!(w::Matrix{T}, Ks::KrylovSubspace{B, T}, k::Integer; 
+function _phimv!(w::Matrix{T}, t::Number, Ks::KrylovSubspace{B, T}, k::Integer; 
   caches=nothing) where {B, T <: Number}
   m, beta, V, H = Ks.m, Ks.beta, Ks[:V], Ks[:H]
   @assert size(w, 1) == size(V, 1) "Dimension mismatch"
   @assert size(w, 2) == k + 1 "Dimension mismatch"
   if caches == nothing
     e = Vector{T}(m)
+    Hcopy = Matrix{T}(m, m)
     C1 = Matrix{T}(m + k, m + k)
     C2 = Matrix{T}(m, k + 1)
   else
-    e, C1, C2 = caches
+    e, Hcopy, C1, C2 = caches
     # The caches may have a bigger size to handle different values of m.
     # Here we only need a portion of them.
     e = @view(e[1:m])
+    Hcopy = @view(Hcopy[1:m, 1:m])
     C1 = @view(C1[1:m + k, 1:m + k])
     C2 = @view(C2[1:m, 1:k + 1])
   end
+  @. Hcopy = t * H
   fill!(e, zero(T)); e[1] = one(T) # e is the [1,0,...,0] basis vector
-  phimv_dense!(C2, H, e, k; cache=C1) # C2 = [ϕ0(H)e ϕ1(H)e ... ϕk(H)e]
+  phimv_dense!(C2, Hcopy, e, k; cache=C1) # C2 = [ϕ0(H)e ϕ1(H)e ... ϕk(H)e]
   scale!(beta, A_mul_B!(w, V, C2)) # f(A) ≈ norm(b) * V * f(H)e
 end
