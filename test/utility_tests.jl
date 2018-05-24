@@ -28,6 +28,6 @@ using OrdinaryDiffEq: phi, phim, _phimv
   for i = 1:K+1
     W[:,i] = P[i] * b
   end
-  W_approx = _phimv(A, b, K, m)
+  W_approx = _phimv(A, b, K; m=m)
   @test W ≈ W_approx  
 end
