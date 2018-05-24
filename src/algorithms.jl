@@ -159,7 +159,7 @@ struct VCAB4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct VCAB5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct VCABM3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct VCABM4 <: OrdinaryDiffEqAdaptiveAlgorithm end
-
+struct VCABM5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 # Adams methods in Nordsieck forms
 
