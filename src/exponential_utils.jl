@@ -41,7 +41,7 @@ end
 """
     phimv_dense(A,v,k[;cache]) -> [phi_0(A)v phi_1(A)v ... phi_k(A)v]
 
-Compute the matrix-phi-vector products for small, dense `A`.
+Compute the matrix-phi-vector products for small, dense `A`. `k`` >= 1.
 
 The phi functions are defined as
 
@@ -94,7 +94,7 @@ end
 """
     phim(A,k[;cache]) -> [phi_0(A),phi_1(A),...,phi_k(A)]
 
-Compute the matrix phi functions for all orders up to k.
+Compute the matrix phi functions for all orders up to k. `k` >= 1.
 
 The phi functions are defined as
   
@@ -265,9 +265,44 @@ function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol=1e-7,
 end
 
 """
+    expmv(t,A,b; kwargs) -> exp(tA)b
+
+Compute the matrix-exponential-vector product using Krylov.
+
+A Krylov subspace is constructed using `arnoldi` and `expm!` is called 
+on the Heisenberg matrix. Consult `arnoldi` for the values of the keyword 
+arguments.
+"""
+function _expmv(t, A, b; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, cache=nothing)
+  Ks = arnoldi(A, b; m=m, tol=tol, norm=norm)
+  w = similar(b)
+  _expmv!(w, t, Ks; cache=cache)
+end
+"""
+    expmv!(w,t,Ks[;cache]) -> w
+
+Non-allocating version of `expmv` that uses precomputed Krylov subspace `Ks`.
+"""
+function _expmv!(w::Vector{T}, t::Number, Ks::KrylovSubspace{B, T}; 
+  cache=nothing) where {B, T <: Number}
+  m, beta, V, H = Ks.m, Ks.beta, Ks[:V], Ks[:H]
+  @assert length(w) == size(V, 1) "Dimension mismatch"
+  if cache == nothing
+    cache = Matrix{T}(m, m)
+  else
+    # The cache may have a bigger size to handle different values of m.
+    # Here we only need a portion.
+    cache = @view(cache[1:m, 1:m])
+  end
+  @. cache = t * H
+  expH = Base.LinAlg.expm!(cache)
+  scale!(beta, A_mul_B!(w, V, @view(expH[:,1]))) # exp(A) ≈ norm(b) * V * exp(H)e
+end
+
+"""
     phimv(t,A,b,k; kwargs) -> [phi_0(tA)b phi_1(tA)b ... phi_k(tA)b]
 
-Compute the matrix-phi-vector products using Krylov.
+Compute the matrix-phi-vector products using Krylov. `k` >= 1.
 
 The phi functions are defined as
 

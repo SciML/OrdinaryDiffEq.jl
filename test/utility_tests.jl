@@ -1,4 +1,4 @@
-using OrdinaryDiffEq: phi, phim, _phimv, arnoldi
+using OrdinaryDiffEq: phi, phim, _phimv, _expmv, arnoldi
 
 @testset "Phi functions" begin
   # Scalar phi
@@ -24,6 +24,7 @@ using OrdinaryDiffEq: phi, phim, _phimv, arnoldi
   A = randn(n, n)
   t = 1e-2
   b = randn(n)
+  @test expm(t * A) * b ≈ _expmv(t, A, b; m=m)
   P = phim(t * A, K)
   W = zeros(n, K+1)
   for i = 1:K+1
