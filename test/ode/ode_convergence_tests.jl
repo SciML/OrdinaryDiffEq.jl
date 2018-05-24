@@ -47,6 +47,8 @@ for i = 1:2
   @test abs(sim103.𝒪est[:l2]-5) < testTol
   sim104 = test_convergence(dts,prob,VCABM3())
   @test abs(sim104.𝒪est[:l2]-3) < testTol
+  sim105 = test_convergence(dts,prob,VCABM4())
+  @test abs(sim105.𝒪est[:l2]-4) < testTol
 
   println("Stiff Solvers")
 
