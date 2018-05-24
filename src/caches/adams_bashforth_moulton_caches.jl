@@ -712,3 +712,92 @@ function alg_cache(alg::VCABM4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   utilde = similar(u,indices(u))
   VCABM4Cache(u,uprev,fsalfirst,rk4cache,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕ_np1,ϕstar_n,β,order,atmp,tmp,utilde,1)
 end
+
+# VCABM5
+
+mutable struct VCABM5ConstantCache{rk4constcache,tArrayType,rArrayType,cArrayType,dtArrayType} <: OrdinaryDiffEqConstantCache
+  ϕstar_nm1::rArrayType
+  dts::dtArrayType
+  c::cArrayType
+  g::tArrayType
+  ϕ_n::rArrayType
+  ϕ_np1::rArrayType
+  ϕstar_n::rArrayType
+  β::tArrayType
+  order::Int
+  rk4constcache::rk4constcache
+  step::Int
+end
+
+mutable struct VCABM5Cache{uType,rateType,uArrayType,rk4cacheType,tArrayType,cArrayType,uEltypeNoUnits,coefType,dtArrayType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  fsalfirst::rateType
+  rk4cache::rk4cacheType
+  k4::rateType
+  ϕstar_nm1::coefType
+  dts::dtArrayType
+  c::cArrayType
+  g::tArrayType
+  ϕ_n::coefType
+  ϕ_np1::coefType
+  ϕstar_n::coefType
+  β::tArrayType
+  order::Int
+  atmp::uEltypeNoUnits
+  tmp::uType
+  utilde::uArrayType
+  step::Int
+end
+
+u_cache(c::VCABM5Cache) = ()
+du_cache(c::VCABM5Cache) = ()
+
+function alg_cache(alg::VCABM5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  dts = zeros(typeof(dt),5)
+  c = zeros(typeof(t), 6, 6)
+  g = zeros(typeof(t), 6)
+  ϕ_n = Vector{typeof(rate_prototype)}(5)
+  ϕstar_nm1 = Vector{typeof(rate_prototype)}(5)
+  ϕstar_n = Vector{typeof(rate_prototype)}(5)
+  ϕ_np1 = Vector{typeof(rate_prototype)}(6)
+  for i in 1:5
+    ϕ_n[i] = copy(rate_prototype)
+    ϕstar_nm1[i] = copy(rate_prototype)
+    ϕstar_n[i] = copy(rate_prototype)
+  end
+  β = zeros(typeof(t),5)
+  order = 5
+  rk4constcache = RK4ConstantCache()
+  VCABM5ConstantCache(ϕstar_nm1,dts,c,g,ϕ_n,ϕ_np1,ϕstar_n,β,order,rk4constcache,1)
+end
+
+function alg_cache(alg::VCABM5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  rk1 = zeros(rate_prototype)
+  rk2 = zeros(rate_prototype)
+  rk3 = zeros(rate_prototype)
+  rk4 = zeros(rate_prototype)
+  rk  = zeros(rate_prototype)
+  rtmp = similar(u); ratmp = similar(u, uEltypeNoUnits)
+  rk4cache = RK4Cache(u,uprev,rk1,rk2,rk3,rk4,rk,rtmp,ratmp)
+  fsalfirst = zeros(rate_prototype)
+  k4 = zeros(rate_prototype)
+  dts = zeros(typeof(dt),5)
+  c = zeros(typeof(t),6,6)
+  g = zeros(typeof(t),6)
+  ϕ_n = Vector{typeof(rate_prototype)}(5)
+  ϕstar_nm1 = Vector{typeof(rate_prototype)}(5)
+  ϕstar_n = Vector{typeof(rate_prototype)}(5)
+  ϕ_np1 = Vector{typeof(rate_prototype)}(6)
+  for i in 1:5
+    ϕ_n[i] = zeros(rate_prototype)
+    ϕstar_nm1[i] = zeros(rate_prototype)
+    ϕstar_n[i] = zeros(rate_prototype)
+  end
+  β = zeros(typeof(t),5)
+  order = 5
+  atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u)
+  utilde = similar(u,indices(u))
+  VCABM5Cache(u,uprev,fsalfirst,rk4cache,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕ_np1,ϕstar_n,β,order,atmp,tmp,utilde,1)
+end
