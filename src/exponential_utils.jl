@@ -41,7 +41,7 @@ end
 """
     phimv_dense(A,v,k[;cache]) -> [phi_0(A)v phi_1(A)v ... phi_k(A)v]
 
-Compute the matrix-phi-vector products for small, dense `A`.
+Compute the matrix-phi-vector products for small, dense `A`. `k`` >= 1.
 
 The phi functions are defined as
 
@@ -94,7 +94,7 @@ end
 """
     phim(A,k[;cache]) -> [phi_0(A),phi_1(A),...,phi_k(A)]
 
-Compute the matrix phi functions for all orders up to k.
+Compute the matrix phi functions for all orders up to k. `k` >= 1.
 
 The phi functions are defined as
   
@@ -162,7 +162,7 @@ mutable struct KrylovSubspace{B, T}
   V::Matrix{T}  # orthonormal bases
   H::Matrix{T}  # Gram-Schmidt coefficients
   KrylovSubspace{T}(n::Integer, maxiter::Integer=30) where {T} = new{real(T), T}(
-    0, zero(real(T)), Matrix{T}(n, maxiter), Matrix{T}(maxiter, maxiter))
+    0, zero(real(T)), Matrix{T}(n, maxiter), zeros(T, maxiter, maxiter))
 end
 maxiter(Ks::KrylovSubspace) = size(Ks.V, 2)
 function Base.getindex(Ks::KrylovSubspace, which::Symbol)
@@ -178,7 +178,7 @@ function Base.resize!(Ks::KrylovSubspace{B,T}, maxiter::Integer) where {B,T}
   prevsize = maxiter(Ks)
   if prevsize <= maxiter
     V = Matrix{T}(size(Ks.V, 1), maxiter)
-    H = Matrix{T}(maxiter, maxiter)
+    H = zeros(T, maxiter, maxiter)
     V[:, 1:prevsize] = Ks.V
     H[1:prevsize, 1:prevsize] = Ks.H
   else
@@ -200,7 +200,7 @@ function Base.show(io::IO, Ks::KrylovSubspace)
 end
 
 """
-    arnoldi(A,b,m) -> Ks
+    arnoldi(A,b[;m,tol,norm,cache]) -> Ks
 
 Performs `m` anoldi iterations to obtain the Krylov subspace K_m(A,b).
 
@@ -212,24 +212,27 @@ v_1=b,\\quad Av_j = \\sum_{i=1}^{j+1}h_{ij}v_i\\quad(j = 1,2,\\ldots,m)
 ```
 
 Refer to `KrylovSubspace` for more information regarding the output.
+
+Happy-breakdown occurs whenver `norm(v_j) < tol * norm(A, Inf)`, in this case 
+the dimension of `Ks` is smaller than `m`.
 """
-function arnoldi(A, b, m; cache=nothing)
+function arnoldi(A, b; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, 
+  cache=nothing)
   Ks = KrylovSubspace{eltype(b)}(length(b), m)
-  arnoldi!(Ks, A, b, m; cache=cache)
+  arnoldi!(Ks, A, b; m=m, tol=tol, norm=norm, cache=cache)
 end
 """
-    arnoldi!(Ks,A,b,m) -> Ks
+    arnoldi!(Ks,A,b[;tol,m,norm,cache]) -> Ks
 
 Non-allocating version of `arnoldi`.
 """
-function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}, 
-  m::Integer; cache=nothing) where {B, T <: Number}
-  # Set dimension of the Krylov subspace
+function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol=1e-7, 
+  m=min(maxiter(Ks), size(A, 1)), norm=Base.norm, cache=nothing) where {B, T <: Number}
   if m > maxiter(Ks)
     resize!(Ks, m)
   end
-  Ks.m = m
-  V, H = Ks[:V], Ks[:H]
+  V, H = Ks.V, Ks.H
+  vtol = tol * norm(A, Inf)
   # Safe checks
   n = size(V, 1)
   @assert length(b) == size(A,1) == size(A,2) == n "Dimension mismatch"
@@ -241,7 +244,7 @@ function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T},
   # Arnoldi iterations
   Ks.beta = norm(b)
   V[:, 1] = b / Ks.beta
-  @inbounds for j = 1:m-1
+  @inbounds for j = 1:m
     A_mul_B!(cache, A, @view(V[:, j]))
     @inbounds for i = 1:j
       alpha = dot(@view(V[:, i]), cache)
@@ -249,25 +252,57 @@ function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T},
       Base.axpy!(-alpha, @view(V[:, i]), cache)
     end
     beta = norm(cache)
+    if beta < vtol || j == m
+      # happy-breakdown or maximum iteration is reached
+      Ks.m = j
+      return Ks
+    end
     H[j+1, j] = beta
     @inbounds for i = 1:n
       V[i, j+1] = cache[i] / beta
     end
   end
-  # Last iteration (j = m)
-  A_mul_B!(cache, A, @view(V[:, m-1]))
-  @inbounds for i = 1:m
-    alpha = dot(@view(V[:, i]), cache)
-    H[i, m] = alpha
-    Base.axpy!(-alpha, @view(V[:, i]), cache)
-  end
-  return Ks
 end
 
 """
-    phimv(A,b,k,m) -> [phi_0(A)*b phi_1(A)*b ... phi_k(A)*b]
+    expmv(t,A,b; kwargs) -> exp(tA)b
 
-Compute the matrix-phi-vector products using Krylov.
+Compute the matrix-exponential-vector product using Krylov.
+
+A Krylov subspace is constructed using `arnoldi` and `expm!` is called 
+on the Heisenberg matrix. Consult `arnoldi` for the values of the keyword 
+arguments.
+"""
+function expmv(t, A, b; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, cache=nothing)
+  Ks = arnoldi(A, b; m=m, tol=tol, norm=norm)
+  w = similar(b)
+  expmv!(w, t, Ks; cache=cache)
+end
+"""
+    expmv!(w,t,Ks[;cache]) -> w
+
+Non-allocating version of `expmv` that uses precomputed Krylov subspace `Ks`.
+"""
+function expmv!(w::Vector{T}, t::Number, Ks::KrylovSubspace{B, T}; 
+  cache=nothing) where {B, T <: Number}
+  m, beta, V, H = Ks.m, Ks.beta, Ks[:V], Ks[:H]
+  @assert length(w) == size(V, 1) "Dimension mismatch"
+  if cache == nothing
+    cache = Matrix{T}(m, m)
+  else
+    # The cache may have a bigger size to handle different values of m.
+    # Here we only need a portion.
+    cache = @view(cache[1:m, 1:m])
+  end
+  @. cache = t * H
+  expH = Base.LinAlg.expm!(cache)
+  scale!(beta, A_mul_B!(w, V, @view(expH[:,1]))) # exp(A) ≈ norm(b) * V * exp(H)e
+end
+
+"""
+    phimv(t,A,b,k; kwargs) -> [phi_0(tA)b phi_1(tA)b ... phi_k(tA)b]
+
+Compute the matrix-phi-vector products using Krylov. `k` >= 1.
 
 The phi functions are defined as
 
@@ -275,33 +310,42 @@ The phi functions are defined as
 \\varphi_0(z) = \\exp(z),\\quad \\varphi_k(z+1) = \\frac{\\varphi_k(z) - 1}{z} 
 ```
 
-A size-`m` Krylov subspace is constructed using `arnoldi` and `phimv_dense` is 
-called on the Heisenberg matrix.
+A Krylov subspace is constructed using `arnoldi` and `phimv_dense` is called 
+on the Heisenberg matrix. Consult `arnoldi` for the values of the keyword 
+arguments.
 """
-function _phimv(A, b, k, m; caches=nothing)
-  Ks = arnoldi(A, b, m)
+function phimv(t, A, b, k; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, 
+  caches=nothing)
+  Ks = arnoldi(A, b; m=m, tol=tol, norm=norm)
   w = Matrix{eltype(b)}(length(b), k+1)
-  _phimv!(w, Ks, k; caches=caches)
+  phimv!(w, t, Ks, k; caches=caches)
 end
 """
-    phimv!(w,Ks,k[;caches]) -> w
+    phimv!(w,t,Ks,k[;caches]) -> w
 
 Non-allocating version of 'phimv' that uses precomputed Krylov subspace `Ks`.
 """
-function _phimv!(w::Matrix{T}, Ks::KrylovSubspace{B, T}, k::Integer; 
+function phimv!(w::Matrix{T}, t::Number, Ks::KrylovSubspace{B, T}, k::Integer; 
   caches=nothing) where {B, T <: Number}
   m, beta, V, H = Ks.m, Ks.beta, Ks[:V], Ks[:H]
   @assert size(w, 1) == size(V, 1) "Dimension mismatch"
   @assert size(w, 2) == k + 1 "Dimension mismatch"
   if caches == nothing
     e = Vector{T}(m)
+    Hcopy = Matrix{T}(m, m)
     C1 = Matrix{T}(m + k, m + k)
     C2 = Matrix{T}(m, k + 1)
   else
-    e, C1, C2 = caches
-    @assert size(e) == (m,) && size(C1) == (m+k,m+k) && size(C2) == (m,k+1) "Dimension mismatch"
+    e, Hcopy, C1, C2 = caches
+    # The caches may have a bigger size to handle different values of m.
+    # Here we only need a portion of them.
+    e = @view(e[1:m])
+    Hcopy = @view(Hcopy[1:m, 1:m])
+    C1 = @view(C1[1:m + k, 1:m + k])
+    C2 = @view(C2[1:m, 1:k + 1])
   end
+  @. Hcopy = t * H
   fill!(e, zero(T)); e[1] = one(T) # e is the [1,0,...,0] basis vector
-  phimv_dense!(C2, H, e, k; cache=C1) # C2 = [ϕ0(H)e ϕ1(H)e ... ϕk(H)e]
+  phimv_dense!(C2, Hcopy, e, k; cache=C1) # C2 = [ϕ0(H)e ϕ1(H)e ... ϕk(H)e]
   scale!(beta, A_mul_B!(w, V, C2)) # f(A) ≈ norm(b) * V * f(H)e
 end
