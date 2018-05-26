@@ -53,7 +53,7 @@ function calc_coeff!(cache::T) where T
     for i in 1:order
       l[i+1] = M0_inv * m[i] / i
     end
-    cache.tq = order * l[order] * M1 * M0_inv * ξ_inv
+    cache.tq = order * l[order+1] * M1 * ξ_inv
   end
 end
 
@@ -152,7 +152,7 @@ function nlsolve_functional!(integrator, cache::T) where T
     test_rate <= one(test_rate) && return true
     k += 1
     # Divergence criteria
-    (k == max_iter) || (k >= 2 && δ > div_rate * δ_prev) && return false
+    ( (k == max_iter) || (k >= 2 && δ > div_rate * δ_prev) ) && return false
     δ_prev = δ
     isconstcache ? (ratetmp = integrator.f(integrator.u, p, dt+t)) :
                     integrator.f(ratetmp, integrator.u, p, dt+t)

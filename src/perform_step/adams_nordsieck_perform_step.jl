@@ -14,7 +14,7 @@ end
 
 @muladd function perform_step!(integrator, cache::AN5ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack z,l,m,tq,tau,vern9tab = cache
+  @unpack z,l,m,tq,tau,tsit5tab = cache
   # handle callbacks, rewind back to order one.
   if integrator.u_modified
     cache.step = 1
@@ -22,14 +22,14 @@ end
   # Nordsieck form needs to build the history vector
   if cache.step == 1
     # Start the Nordsieck vector in one shot!
-    perform_step!(integrator, vern9tab, repeat_step)
+    perform_step!(integrator, tsit5tab, repeat_step)
     cache.step = 5
     z[1] = integrator.uprev
     z[2] = integrator.k[1]*dt
-    ode_addsteps!(integrator.k,t,integrator.uprev,integrator.u,dt,f,p,vern9tab)
-    z[3] = ode_interpolant(t,dt,nothing,nothing,integrator.k,vern9tab,nothing,Val{2})*dt^2/2
-    z[4] = ode_interpolant(t,dt,nothing,nothing,integrator.k,vern9tab,nothing,Val{3})*dt^3/6
-    z[5] = ode_interpolant(t,dt,nothing,nothing,integrator.k,vern9tab,nothing,Val{4})*dt^4/24
+    ode_addsteps!(integrator.k,t,integrator.uprev,integrator.u,dt,f,p,tsit5tab)
+    z[3] = ode_interpolant(t,dt,nothing,nothing,integrator.k,tsit5tab,nothing,Val{2})*dt^2/2
+    z[4] = ode_interpolant(t,dt,nothing,nothing,integrator.k,tsit5tab,nothing,Val{3})*dt^3/6
+    z[5] = ode_interpolant(t,dt,nothing,nothing,integrator.k,tsit5tab,nothing,Val{4})*dt^4/24
     z[6] = zero(cache.z[6])
     fill!(tau, dt)
   end
@@ -45,6 +45,8 @@ end
   calc_coeff!(cache)
   isucceed = nlsolve_functional!(integrator, cache)
   if !isucceed
+    # rewind Nordsieck vector
+    integrator.force_stepfail = true
     nordsieck_rewind!(cache)
     return nothing
   end
@@ -72,32 +74,23 @@ end
 end
 
 function initialize!(integrator, cache::AN5Cache)
-  integrator.kshortsize = 16
-  integrator.fsalfirst = cache.vern9cache.k1; integrator.fsallast = cache.vern9cache.k7 # setup pointers
+  integrator.kshortsize = 7
+  integrator.fsalfirst = cache.tsit5cache.k1; integrator.fsallast = cache.tsit5cache.k7 # setup pointers
   resize!(integrator.k, integrator.kshortsize)
   # Setup k pointers
-  integrator.k[1] = cache.vern9cache.k1
-  integrator.k[2] = cache.vern9cache.k2
-  integrator.k[3] = cache.vern9cache.k3
-  integrator.k[4] = cache.vern9cache.k4
-  integrator.k[5] = cache.vern9cache.k5
-  integrator.k[6] = cache.vern9cache.k6
-  integrator.k[7] = cache.vern9cache.k7
-  integrator.k[8] = cache.vern9cache.k8
-  integrator.k[9] = cache.vern9cache.k9
-  integrator.k[10] = cache.vern9cache.k10
-  integrator.k[11] = cache.vern9cache.k11
-  integrator.k[12] = cache.vern9cache.k12
-  integrator.k[13] = cache.vern9cache.k13
-  integrator.k[14] = cache.vern9cache.k14
-  integrator.k[15] = cache.vern9cache.k15
-  integrator.k[16] = cache.vern9cache.k16
+  integrator.k[1] = cache.tsit5cache.k1
+  integrator.k[2] = cache.tsit5cache.k2
+  integrator.k[3] = cache.tsit5cache.k3
+  integrator.k[4] = cache.tsit5cache.k4
+  integrator.k[5] = cache.tsit5cache.k5
+  integrator.k[6] = cache.tsit5cache.k6
+  integrator.k[7] = cache.tsit5cache.k7
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 end
 
 @muladd function perform_step!(integrator, cache::AN5Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p,uprev2 = integrator
-  @unpack const_cache,utilde,tmp,ratetmp,atmp,vern9cache = cache
+  @unpack const_cache,utilde,tmp,ratetmp,atmp,tsit5cache = cache
   @unpack z,l,m,tq,tau, = const_cache
   # handle callbacks, rewind back to order one.
   if integrator.u_modified
@@ -106,17 +99,19 @@ end
   # Nordsieck form needs to build the history vector
   if const_cache.step == 1
     ## Start the Nordsieck vector in two shots!
-    perform_step!(integrator, vern9cache, repeat_step)
-    const_cache.step = 5
+    perform_step!(integrator, tsit5cache, repeat_step)
+    const_cache.step = 3
     @. z[1] = integrator.uprev
     @. z[2] = integrator.k[1]*dt
-    ode_addsteps!(integrator.k, t, uprev, u, dt, f, p, vern9cache)
-    ode_interpolant!(z[3],t,dt,nothing,nothing,integrator.k,vern9cache,nothing,Val{2})
-    ode_interpolant!(z[4],t,dt,nothing,nothing,integrator.k,vern9cache,nothing,Val{3})
-    ode_interpolant!(z[5],t,dt,nothing,nothing,integrator.k,vern9cache,nothing,Val{4})
+    ode_addsteps!(integrator.k, t, uprev, u, dt, f, p, tsit5cache)
+    ode_interpolant!(z[3],t,dt,nothing,nothing,integrator.k,tsit5cache,nothing,Val{2})
+    ode_interpolant!(z[4],t,dt,nothing,nothing,integrator.k,tsit5cache,nothing,Val{3})
+    ode_interpolant!(z[5],t,dt,nothing,nothing,integrator.k,tsit5cache,nothing,Val{4})
     @. z[3] = z[3]*dt^2/2
     @. z[4] = z[4]*dt^3/6
-    @. z[5] = z[5]*dt^4/24
+    #@. z[5] = z[5]*dt^4/24
+    #fill!(z[4], 0)
+    fill!(z[5], 0)
     fill!(z[6], zero(eltype(z[6])))
     fill!(tau, dt)
   end
@@ -134,6 +129,7 @@ end
   calc_coeff!(cache)
   isucceed = nlsolve_functional!(integrator, cache)
   if !isucceed
+    integrator.force_stepfail = true
     # rewind Nordsieck vector
     nordsieck_rewind!(cache)
     return nothing
@@ -142,8 +138,8 @@ end
   ################################### Error estimation
 
   if integrator.opts.adaptive
-    @. tmp = const_cache.Δ*const_cache.tq
-    calculate_residuals!(atmp, tmp, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+    @. tmp = const_cache.Δ# * const_cache.tq
+    calculate_residuals!(atmp, const_cache.Δ, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
     if integrator.EEst >= one(integrator.EEst)
       # rewind Nordsieck vector
