@@ -144,7 +144,7 @@ end
 
     if integrator.opts.adaptive
       @. tmp = const_cache.Δ * const_cache.tq
-      calculate_residuals!(atmp, const_cache.Δ, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      calculate_residuals!(atmp, tmp, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
       if integrator.EEst >= one(integrator.EEst)
         # rewind Nordsieck vector
