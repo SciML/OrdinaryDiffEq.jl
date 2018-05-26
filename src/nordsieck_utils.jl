@@ -53,7 +53,8 @@ function calc_coeff!(cache::T) where T
     for i in 1:order
       l[i+1] = M0_inv * m[i] / i
     end
-    cache.tq = order * l[order+1] * M1 * ξ_inv
+    #cache.tq = order * l[order+1] * M1 * ξ_inv
+    cache.tq = M1 * M0_inv * ξ_inv
   end
 end
 
