@@ -1,11 +1,11 @@
 # This function computes the integral, from -1 to 0, of a polynomial
 # `P(x)` from the coefficients of `P` with an offset `k`.
-@muladd function ∫₋₁⁰dx(a, deg, k)
+function ∫₋₁⁰dx(a, deg, k)
   @inbounds begin
     int = zero(eltype(a))
-    sign = one(eltype(a))
+    sign = 1
     for i in 1:deg
-      int += sign * a[i]/(i+k)
+      int += flipsign(a[i]/(i+k), sign)
       sign = -sign
     end
     return int
@@ -21,7 +21,7 @@ end
 
 # More implementation details are in the
 # https://github.com/JuliaDiffEq/DiffEqDevMaterials repository
-@muladd function calc_coeff!(cache::T) where T
+function calc_coeff!(cache::T) where T
   @inbounds begin
     isconst = T <: OrdinaryDiffEqConstantCache
     isconst || (cache = cache.const_cache)
@@ -40,7 +40,7 @@ end
     for j in 1:order-1
       ξ_inv = dt / dtsum
       for i in j:-1:1
-        m[i+1] += m[i] * ξ_inv
+        m[i+1] = muladd(m[i], ξ_inv, m[i+1])
       end
       dtsum += tau[j+1]
     end
@@ -53,18 +53,18 @@ end
     for i in 1:order
       l[i+1] = M0_inv * m[i] / i
     end
-    cache.tq = M1 * M0_inv * ξ_inv
+    cache.tq = order * l[order] * M1 * M0_inv * ξ_inv
   end
 end
 
 # Apply the Pascal linear operator
-function perform_predict!(cache::T, undo) where T
+function perform_predict!(cache::T, rewind=false) where T
   @inbounds begin
     isconst = T <: OrdinaryDiffEqConstantCache
     isconst || (cache = cache.const_cache)
     @unpack z,step = cache
     # This can be parallelized
-    if !undo
+    if !rewind
       if isconst
         for i in 1:step, j in step:-1:i
           z[j] = z[j] + z[j+1]
@@ -84,29 +84,29 @@ function perform_predict!(cache::T, undo) where T
           @. z[j] = z[j] - z[j+1]
         end
       end # endif const cache
-    end # endif !undo
+    end # endif !rewind
   end # end @inbounds
 end
 
 # Apply corrections on the Nordsieck vector
-@muladd function perform_correct!(cache::T) where T
+function perform_correct!(cache::T) where T
   @inbounds begin
     isconst = T <: OrdinaryDiffEqConstantCache
     if isconst
       @unpack z,Δ,l,step = cache
       for i in 1:step+1
-        z[i] += l[i] * Δ
+        z[i] = muladd.(l[i], Δ, z[i])
       end
     else
       @unpack z,Δ,l,step = cache.const_cache
       for i in 1:step+1
-        @. z[i] += l[i] * Δ
+        @. z[i] = muladd(l[i], Δ, z[i])
       end
     end # endif not const cache
   end # end @inbounds
 end
 
-@muladd function nlsolve_functional!(integrator, cache::T) where T
+function nlsolve_functional!(integrator, cache::T) where T
   @unpack f, dt, uprev, t, p = integrator
   isconstcache = T <: OrdinaryDiffEqConstantCache
   if isconstcache
@@ -133,11 +133,12 @@ end
   # Start the functional iteration & store the difference into `Δ`
   while true
     if isconstcache
-      ratetmp = inv(l[2])*dt*ratetmp - z[2]
+      ratetmp = inv(l[2])*muladd.(dt, ratetmp, -z[2])
       integrator.u = ratetmp + z[1]
       cache.Δ = ratetmp - cache.Δ
     else
-      @. ratetmp = inv(l[2])*dt*ratetmp - z[2]
+      @. integrator.u = -z[2]
+      @. ratetmp = inv(l[2])*muladd(dt, ratetmp, integrator.u)
       @. integrator.u = ratetmp + z[1]
       @. cache.Δ = ratetmp - cache.Δ
     end
@@ -158,7 +159,7 @@ end
   end
 end
 
-function nordsieck_rescale!(cache::T, rewind) where T
+function nordsieck_rescale!(cache::T, rewind=false) where T
   isconstcache = T <: OrdinaryDiffEqConstantCache
   isconstcache || ( cache = cache.const_cache )
   @unpack z, tau, step = cache
@@ -174,4 +175,9 @@ function nordsieck_rescale!(cache::T, rewind) where T
     factor *= eta
   end
   return nothing
+end
+
+function nordsieck_rewind!(cache)
+  perform_predict!(cache, true)
+  nordsieck_rescale!(cache, true)
 end

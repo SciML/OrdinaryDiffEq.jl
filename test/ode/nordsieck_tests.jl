@@ -28,5 +28,5 @@ for i in eachindex(probArr)
   sol = solve(prob, AN5(), reltol=1e-6, reltol=1e-6)
   @test length(sol.t) < 13
   exact = prob.f(Val{:analytic}, prob.u0, prob.p, prob.tspan[end])
-  @test norm(exact-sol[end]) < 1.5e-6
+  @test norm(exact-sol[end]) < 1e-6
 end

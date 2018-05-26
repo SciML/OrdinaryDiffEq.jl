@@ -38,15 +38,14 @@ end
     tau[i] = tau[i-1]
   end
   tau[1] = dt
-  dt != tau[2] && nordsieck_rescale!(cache, false)
+  dt != tau[2] && nordsieck_rescale!(cache)
   integrator.k[1] = z[2]/dt
   # Perform 5th order Adams method in Nordsieck form
-  perform_predict!(cache, false)
+  perform_predict!(cache)
   calc_coeff!(cache)
   isucceed = nlsolve_functional!(integrator, cache)
   if !isucceed
-    perform_predict!(cache, true)
-    nordsieck_rescale!(cache, true)
+    nordsieck_rewind!(cache)
     return nothing
   end
 
@@ -54,12 +53,11 @@ end
 
   if integrator.opts.adaptive
     tmp = cache.Δ*cache.tq
-    atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+    atmp = calculate_residuals(tmp, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
     if integrator.EEst >= one(integrator.EEst)
       # rewind Nordsieck vector
-      perform_predict!(cache, true)
-      nordsieck_rescale!(cache, true)
+      nordsieck_rewind!(cache)
       return nothing
     end
   end
@@ -129,15 +127,15 @@ end
   end
   tau[1] = dt
   # Rescale
-  dt != tau[2] && nordsieck_rescale!(cache, false)
+  dt != tau[2] && nordsieck_rescale!(cache)
   @. integrator.k[1] = z[2]/dt
   # Perform 5th order Adams method in Nordsieck form
-  perform_predict!(cache, false)
+  perform_predict!(cache)
   calc_coeff!(cache)
   isucceed = nlsolve_functional!(integrator, cache)
   if !isucceed
-    perform_predict!(cache, true)
-    nordsieck_rescale!(cache, true)
+    # rewind Nordsieck vector
+    nordsieck_rewind!(cache)
     return nothing
   end
 
@@ -145,12 +143,11 @@ end
 
   if integrator.opts.adaptive
     @. tmp = const_cache.Δ*const_cache.tq
-    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+    calculate_residuals!(atmp, tmp, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
     if integrator.EEst >= one(integrator.EEst)
       # rewind Nordsieck vector
-      perform_predict!(cache, true)
-      nordsieck_rescale!(cache, true)
+      nordsieck_rewind!(cache)
       return nothing
     end
   end
