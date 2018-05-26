@@ -224,6 +224,9 @@ alg_order(alg::AN5) = 5
 
 alg_order(alg::ABDF2) = 2
 
+alg_maximum_order(alg) = alg_order(alg)
+alg_maximum_order(alg::CompositeAlgorithm) = maximum(alg_order(x) for x in alg.algs)
+
 alg_adaptive_order(alg::ExplicitRK) = alg.tableau.adaptiveorder
 alg_adaptive_order(alg::OrdinaryDiffEqAlgorithm) = alg_order(alg)-1
 alg_adaptive_order(alg::DP8) = 6
