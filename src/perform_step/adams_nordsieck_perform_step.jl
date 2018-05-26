@@ -44,7 +44,11 @@ end
   perform_predict!(cache, false)
   calc_coeff!(cache)
   isucceed = nlsolve_functional!(integrator, cache)
-  isucceed || return nothing
+  if !isucceed
+    perform_predict!(cache, true)
+    nordsieck_rescale!(cache, true)
+    return nothing
+  end
 
   ################################### Error estimation
 
@@ -131,7 +135,11 @@ end
   perform_predict!(cache, false)
   calc_coeff!(cache)
   isucceed = nlsolve_functional!(integrator, cache)
-  isucceed || return nothing
+  if !isucceed
+    perform_predict!(cache, true)
+    nordsieck_rescale!(cache, true)
+    return nothing
+  end
 
   ################################### Error estimation
 

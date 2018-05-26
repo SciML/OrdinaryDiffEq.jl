@@ -1,6 +1,6 @@
 # This function computes the integral, from -1 to 0, of a polynomial
 # `P(x)` from the coefficients of `P` with an offset `k`.
-function ∫₋₁⁰dx(a, deg, k)
+@muladd function ∫₋₁⁰dx(a, deg, k)
   @inbounds begin
     int = zero(eltype(a))
     sign = one(eltype(a))
@@ -21,7 +21,7 @@ end
 
 # More implementation details are in the
 # https://github.com/JuliaDiffEq/DiffEqDevMaterials repository
-function calc_coeff!(cache::T) where T
+@muladd function calc_coeff!(cache::T) where T
   @inbounds begin
     isconst = T <: OrdinaryDiffEqConstantCache
     isconst || (cache = cache.const_cache)
@@ -89,24 +89,24 @@ function perform_predict!(cache::T, undo) where T
 end
 
 # Apply corrections on the Nordsieck vector
-function perform_correct!(cache::T) where T
+@muladd function perform_correct!(cache::T) where T
   @inbounds begin
     isconst = T <: OrdinaryDiffEqConstantCache
     if isconst
       @unpack z,Δ,l,step = cache
       for i in 1:step+1
-        z[i] = muladd(l[i], Δ, z[i])
+        z[i] += l[i] * Δ
       end
     else
       @unpack z,Δ,l,step = cache.const_cache
       for i in 1:step+1
-        @. z[i] = muladd(l[i], Δ, z[i])
+        @. z[i] += l[i] * Δ
       end
     end # endif not const cache
   end # end @inbounds
 end
 
-function nlsolve_functional!(integrator, cache::T) where T
+@muladd function nlsolve_functional!(integrator, cache::T) where T
   @unpack f, dt, uprev, t, p = integrator
   isconstcache = T <: OrdinaryDiffEqConstantCache
   if isconstcache
@@ -133,11 +133,11 @@ function nlsolve_functional!(integrator, cache::T) where T
   # Start the functional iteration & store the difference into `Δ`
   while true
     if isconstcache
-      ratetmp = inv(l[2])*muladd(dt, ratetmp, -z[2])
+      ratetmp = inv(l[2])*dt*ratetmp - z[2]
       integrator.u = ratetmp + z[1]
       cache.Δ = ratetmp - cache.Δ
     else
-      @. ratetmp = inv(l[2])*muladd(dt, ratetmp, -z[2])
+      @. ratetmp = inv(l[2])*dt*ratetmp - z[2]
       @. integrator.u = ratetmp + z[1]
       @. cache.Δ = ratetmp - cache.Δ
     end
