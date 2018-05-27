@@ -27,7 +27,7 @@ for i in eachindex(probArr)
   println("Nordsieck adaptivity test: $(["Out-of-place","Inplace"][i])")
   prob = probArr[i]
   sol = solve(prob, AN5(), reltol=1e-7, abstol=1e-7)
-  @test length(sol.t) < [15, 20][i]
+  @test length(sol.t) < 15
   exact = prob.f(Val{:analytic}, prob.u0, prob.p, prob.tspan[end])
   @test Float64(norm(exact-sol[end])) < 1e-6
 end

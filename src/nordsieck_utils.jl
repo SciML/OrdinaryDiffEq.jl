@@ -53,8 +53,12 @@ function calc_coeff!(cache::T) where T
     for i in 1:order
       l[i+1] = M0_inv * m[i] / i
     end
-    #cache.tq = order * l[order+1] * M1 * ξ_inv
-    cache.tq = M1 * M0_inv * ξ_inv
+    # TODO: simplify LTE calculation
+    # This is the error estimation coefficient for the current order `q`
+    # ||Δ||⋅c_LTE yields the difference between a `q` degree interpolating
+    # polynomial and a `q+1` degree interpolating polynomial at time `t`.
+    # It is the same with `tq[2]` in SUNDIALS cvode.c
+    cache.c_LTE = M1 * M0_inv * ξ_inv
   end
 end
 
@@ -111,11 +115,11 @@ function nlsolve_functional!(integrator, cache::T) where T
   @unpack f, dt, uprev, t, p = integrator
   isconstcache = T <: OrdinaryDiffEqConstantCache
   if isconstcache
-    @unpack z, l, tq = cache
+    @unpack z, l, c_LTE = cache
     ratetmp = integrator.f(z[1], p, dt+t)
   else
     @unpack ratetmp, const_cache = cache
-    @unpack Δ, z, l, tq = const_cache
+    @unpack Δ, z, l, c_LTE = const_cache
     cache = const_cache
     integrator.f(ratetmp, z[1], p, dt+t)
   end
@@ -124,7 +128,7 @@ function nlsolve_functional!(integrator, cache::T) where T
   # Zero out the difference vector
   isconstcache ? ( cache.Δ = zero(cache.Δ) ) : ( Δ .= zero(eltype(Δ)) )
   # `pconv` is used in the convergence test
-  pconv = (1//10) / tq
+  pconv = (1//10) / c_LTE
   # `k` is a counter for convergence test
   k = 0
   # `conv_rate` is used in convergence rate estimation

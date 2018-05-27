@@ -14,7 +14,7 @@ end
 
 @muladd function perform_step!(integrator, cache::AN5ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack z,l,m,tq,tau,tsit5tab = cache
+  @unpack z,l,m,c_LTE,tau,tsit5tab = cache
   # handle callbacks, rewind back to order one.
   if integrator.u_modified
     cache.step = 1
@@ -57,9 +57,8 @@ end
     ################################### Error estimation
 
     if integrator.opts.adaptive
-      tmp = cache.Δ * cache.tq
-      atmp = calculate_residuals(tmp, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp)
+      atmp = calculate_residuals(cache.Δ, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp) * cache.c_LTE
       if integrator.EEst >= one(integrator.EEst)
         # rewind Nordsieck vector
         nordsieck_rewind!(cache)
@@ -96,7 +95,7 @@ end
 @muladd function perform_step!(integrator, cache::AN5Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p,uprev2 = integrator
   @unpack const_cache,utilde,tmp,ratetmp,atmp,tsit5cache = cache
-  @unpack z,l,m,tq,tau, = const_cache
+  @unpack z,l,m,c_LTE,tau, = const_cache
   # handle callbacks, rewind back to order one.
   if integrator.u_modified
     const_cache.step = 1
@@ -143,9 +142,8 @@ end
     ################################### Error estimation
 
     if integrator.opts.adaptive
-      @. tmp = const_cache.Δ * const_cache.tq
-      calculate_residuals!(atmp, tmp, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp)
+      calculate_residuals!(atmp, const_cache.Δ, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp) * const_cache.c_LTE
       if integrator.EEst >= one(integrator.EEst)
         # rewind Nordsieck vector
         nordsieck_rewind!(cache)
