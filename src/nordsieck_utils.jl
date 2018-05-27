@@ -94,7 +94,7 @@ function perform_predict!(cache::T, rewind=false) where T
 end
 
 # Apply corrections on the Nordsieck vector
-function perform_correct!(cache::T) where T
+function update_nordsieck_vector!(cache::T) where T
   @inbounds begin
     isconst = T <: OrdinaryDiffEqConstantCache
     if isconst

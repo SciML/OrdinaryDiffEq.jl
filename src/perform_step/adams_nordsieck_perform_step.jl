@@ -34,7 +34,7 @@ end
     fill!(tau, dt)
     perform_predict!(cache)
     cache.Δ = integrator.u - integrator.uprev
-    perform_correct!(cache)
+    update_nordsieck_vector!(cache)
   else
     # Reset time
     for i in endof(tau):-1:2
@@ -66,9 +66,9 @@ end
       end
     end
 
-    # Corrector
+    # Correct Nordsieck vector
     cache.step = min(cache.step+1, 5)
-    perform_correct!(cache)
+    update_nordsieck_vector!(cache)
 
     ################################### Finalize
 
@@ -118,7 +118,7 @@ end
     fill!(tau, dt)
     perform_predict!(cache)
     @. const_cache.Δ = integrator.u - integrator.uprev
-    perform_correct!(cache)
+    update_nordsieck_vector!(cache)
   else
     # Reset time
     for i in endof(tau):-1:2
@@ -151,9 +151,9 @@ end
       end
     end
 
-    # Corrector
+    # Correct Nordsieck vector
     const_cache.step = min(const_cache.step+1, 5)
-    perform_correct!(cache)
+    update_nordsieck_vector!(cache)
 
     ################################### Finalize
 
