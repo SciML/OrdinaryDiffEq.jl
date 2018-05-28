@@ -16,26 +16,19 @@ mutable struct AN5ConstantCache{zType,lType,dtType,uType,tsit5Type} <: OrdinaryD
   step::Int
 end
 
-function AN5ConstantCache(u, uprev, rate_prototype, uBottomEltypeNoUnits, tTypeNoUnits, dt, mut)
-  #siz = size(rate_prototype)
-  #typ = Base.promote_op(*, eltype(rate_prototype), tTypeNoUnits)
-  if mut
-    # We don't need to swap pointers for the mutable cache
-    z = SVector(zeros(u), [zeros(rate_prototype) for i in 1:5]...)
-    Δ = zeros(u)
-  else
-    z = [u, [copy(rate_prototype) for i in 1:5]...]
-    Δ = u
-  end
-  l = zeros(MVector{6,tTypeNoUnits}); m = zeros(l)
+function AN5ConstantCache(u, uprev, rate_prototype, uBottomEltypeNoUnits, tTypeNoUnits, dt)
+  N = 5
+  z = [zero(rate_prototype) for i in 1:N+1]
+  Δ = u
+  l = zeros(MVector{N+1,tTypeNoUnits}); m = zeros(l)
   c_LTE = zero(tTypeNoUnits)
-  tau = zeros(MVector{6,typeof(dt)})
+  tau = zeros(MVector{N+1,typeof(dt)})
   tsit5tab = Tsit5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   AN5ConstantCache(z,l,m,c_LTE,tau,Δ,tsit5tab,1)
 end
 
 function alg_cache(alg::AN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  AN5ConstantCache(u, uprev, rate_prototype, uBottomEltypeNoUnits, tTypeNoUnits, dt, false)
+  AN5ConstantCache(u, uprev, rate_prototype, uBottomEltypeNoUnits, tTypeNoUnits, dt)
 end
 
 mutable struct AN5Cache{uType,rateType,uArrayType,uEltypeNoUnits,constType,tsit5Type} <: OrdinaryDiffEqMutableCache
@@ -55,13 +48,10 @@ du_cache(c::AN5Cache) = (c.fsalfirst,)
 
 function alg_cache(alg::AN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   fsalfirst = zeros(rate_prototype)
-  const_cache = AN5ConstantCache(u, uprev, rate_prototype, uBottomEltypeNoUnits, tTypeNoUnits, dt, true)
+  const_cache = AN5ConstantCache(u, uprev, rate_prototype, uBottomEltypeNoUnits, tTypeNoUnits, dt)
   #################################################
   # Tsit5
   tab = const_cache.tsit5tab
-  #k1 = const_cache.z[2]; k2 = const_cache.z[3]
-  #k3 = const_cache.z[4]; k4 = const_cache.z[5]
-  #k5 = const_cache.z[6]
   # Cannot alias pointers, since we have to use `k`s to start the Nordsieck vector
   k1 = zeros(rate_prototype); k2 = zeros(rate_prototype)
   k3 = zeros(rate_prototype); k4 = zeros(rate_prototype)
@@ -71,7 +61,11 @@ function alg_cache(alg::AN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   atmp = similar(u,uEltypeNoUnits,indices(u)); tmp = similar(u)
   tsit5cache = Tsit5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp,tab)
   #################################################
+  for i in 1:6
+    const_cache.z[i] = zeros(rate_prototype)
+  end
   ratetmp = k6
+  const_cache.Δ = k7
   AN5Cache(u,uprev,fsalfirst,utilde,tmp,ratetmp,atmp,const_cache,tsit5cache)
 end
 
@@ -95,12 +89,12 @@ mutable struct JVODEConstantCache{zType,lType,dtType,uType,tsit5Type} <: Ordinar
   # `Tsit5` for the first step
   tsit5tab::tsit5Type
   step::Int
-  nextstep::Int
+  nextorder::Int
 end
 
 function JVODEConstantCache(u, uprev, rate_prototype, uBottomEltypeNoUnits, tTypeNoUnits, dt)
   N = 12
-  z = [u, [rate_prototype for i in 1:N]...]
+  z = [rate_prototype for i in 1:N+1]
   Δ = u
   l = zeros(MVector{N+1,tTypeNoUnits}); m = zeros(l)
   c_LTE₊₁ = zero(tTypeNoUnits)
@@ -153,6 +147,6 @@ function alg_cache(alg::JVODE,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   z[12] = zeros(rate_prototype); z[13] = zeros(rate_prototype);
   ratetmp = zeros(rate_prototype)
   #################################################
-  const_cache.Δ = zeros(u)
+  const_cache.Δ = utilde
   JVODECache(u,uprev,fsalfirst,utilde,tmp,ratetmp,atmp,const_cache,tsit5cache)
 end
