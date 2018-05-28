@@ -90,6 +90,8 @@ mutable struct JVODEConstantCache{zType,lType,dtType,uType,tsit5Type} <: Ordinar
   tsit5tab::tsit5Type
   step::Int
   nextorder::Int
+  # number of steps to take before considering to change order
+  n_wait::Int
 end
 
 function JVODEConstantCache(u, uprev, rate_prototype, uBottomEltypeNoUnits, tTypeNoUnits, dt)
@@ -102,7 +104,7 @@ function JVODEConstantCache(u, uprev, rate_prototype, uBottomEltypeNoUnits, tTyp
   c_LTE₋₁ = zero(tTypeNoUnits)
   tau = zeros(MVector{N+1,typeof(dt)})
   tsit5tab = Tsit5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
-  JVODEConstantCache(z,l,m,c_LTE₊₁,c_LTE,c_LTE₋₁,tau,Δ,tsit5tab,1,1)
+  JVODEConstantCache(z,l,m,c_LTE₊₁,c_LTE,c_LTE₋₁,tau,Δ,tsit5tab,4,4,4)
 end
 
 function alg_cache(alg::JVODE,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})

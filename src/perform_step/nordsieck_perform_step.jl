@@ -238,6 +238,7 @@ end
 
     integrator.k[2] = cache.z[2]/dt
   end
+  cache.n_wait -= 1
   return nothing
 end
 
@@ -323,5 +324,6 @@ end
 
     @. integrator.k[2] = const_cache.z[2]/dt
   end
+  const_cache.n_wait -= 1
   return nothing
 end

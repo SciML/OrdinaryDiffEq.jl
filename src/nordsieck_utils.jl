@@ -25,19 +25,24 @@ function calc_coeff!(cache::T) where T
   @inbounds begin
     isconst = T <: OrdinaryDiffEqConstantCache
     isconst || (cache = cache.const_cache)
+    isvarorder = ( T <: JVODECache || T <: JVODEConstantCache ) && cache.n_wait == 0
     @unpack m, l, tau = cache
-    ZERO, ONE = zero(m[1]), one(m[1])
     dtsum = dt = tau[1]
     order = cache.step
-    m[1] = ONE
+    m[1] = 1
     for i in 2:order+1
-      m[i] = ZERO
+      m[i] = 0
     end
     # initialize ξ_inv
     ξ_inv = dt / dtsum
     # compute coefficients from the Newton polynomial
     # check the `JuliaDiffEq/DiffEqDevMaterials` repository for more details
     for j in 1:order-1
+      if isvarorder && j == order-1
+        M₋₁ = ∫₋₁⁰dx(m, order-1, 1)
+        # It is the same with `tq[1]` in SUNDIALS cvode.c
+        cache.c_LTE₋₁ = order * M₋₁ / m[order-1]
+      end
       ξ_inv = dt / dtsum
       for i in j:-1:1
         m[i+1] = muladd(m[i], ξ_inv, m[i+1])
@@ -49,7 +54,7 @@ function calc_coeff!(cache::T) where T
     M0 = ∫₋₁⁰dx(m, order, 0)
     M1 = ∫₋₁⁰dx(m, order, 1)
     M0_inv = inv(M0)
-    l[1] = ONE
+    l[1] = 1
     for i in 1:order
       l[i+1] = M0_inv * m[i] / i
     end
@@ -59,7 +64,15 @@ function calc_coeff!(cache::T) where T
     # polynomial and a `q+1` degree interpolating polynomial at time `t`.
     # It is the same with `tq[2]` in SUNDIALS cvode.c
     cache.c_LTE = M1 * M0_inv * ξ_inv
-  end
+    if isvarorder
+      for i in order-1:-1:1
+        m[i+1] = muladd(ξ_inv, m[i], m[i+1])
+      end
+      M2 = ∫₋₁⁰dx(m, order, 1)
+      # It is the same with `tq[3]` in SUNDIALS cvode.c
+      cache.c_LTE₊₁ = M2 * M0_inv / (order+1)
+    end # endif isvarorder
+  end # end @inbounds
 end
 
 # Apply the Pascal linear operator
