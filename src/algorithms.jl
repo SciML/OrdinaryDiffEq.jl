@@ -1,5 +1,6 @@
 abstract type OrdinaryDiffEqAlgorithm <: AbstractODEAlgorithm end
 abstract type OrdinaryDiffEqAdaptiveAlgorithm <: OrdinaryDiffEqAlgorithm end
+abstract type OrdinaryDiffEqVariableOrderAlgorithm <: OrdinaryDiffEqAlgorithm end
 abstract type OrdinaryDiffEqCompositeAlgorithm <: OrdinaryDiffEqAlgorithm end
 
 abstract type OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD} <: OrdinaryDiffEqAdaptiveAlgorithm end
@@ -161,9 +162,13 @@ struct VCABM3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct VCABM4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct VCABM5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
-# Adams methods in Nordsieck forms
+# Adams/BDF methods in Nordsieck forms
 
-struct AN5 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct AN5   <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct JVODE <: OrdinaryDiffEqVariableOrderAlgorithm
+  algorithm::Symbol
+end
+Base.@pure JVODE(;algorithm=:adams) = JVODE(algorithm)
 
 ################################################################################
 
