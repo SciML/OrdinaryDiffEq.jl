@@ -245,6 +245,7 @@ function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol=1e-7,
     @assert size(cache) == (n,) "Dimension mismatch"
   end
   # Arnoldi iterations
+  fill!(H, zero(T))
   Ks.beta = norm(b)
   V[:, 1] = b / Ks.beta
   @inbounds for j = 1:m
@@ -287,6 +288,7 @@ function lanczos!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol=1e-7,
     @assert size(cache) == (n,) "Dimension mismatch"
   end
   # Lanczos iterations
+  fill!(H, zero(T))
   Ks.beta = norm(b)
   V[:, 1] = b / Ks.beta
   @inbounds for j = 1:m
