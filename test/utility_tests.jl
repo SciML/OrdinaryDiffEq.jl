@@ -44,6 +44,6 @@ using OrdinaryDiffEq: phi, phim, phimv, expmv, arnoldi
   Aperm = A + 1e-10 * randn(n, n) # no longer Hermitian
   Ks = arnoldi(A, b; m=m) # uses lanczos!
   Ksperm = arnoldi(Aperm, b; m=m)
-  @test Ks[:H] ≈ Ksperm[:H]
-  @test Ks[:V] ≈ Ksperm[:V]
+  @test Ks.H[1:m, 1:m] ≈ Ksperm.H[1:m, 1:m]
+  @test Ks.V[:, 1:m] ≈ Ksperm.V[:, 1:m]
 end

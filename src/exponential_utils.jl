@@ -145,10 +145,11 @@ end
 
 Constructs an uninitialized Krylov subspace, which can be filled by `arnoldi!`.
 
-The dimension of the subspace, `Ks.m`, can be dynamically altered. `Ks[:V]` and 
-`Ks[:H]` provides a view into the larger arrays `Ks.V` and `Ks.H` compatible 
-with the subspace dimension. `Ks.m` should be smaller than `maxiter`, the 
-maximum allowed arnoldi iterations.
+The dimension of the subspace, `Ks.m`, can be dynamically altered but should 
+be smaller than `maxiter`, the maximum allowed arnoldi iterations.
+
+`Ks.V[:,1:Ks.m]` gives the orthonormal basis while `Ks.H[1:Ks.m,1:Ks.m]` 
+is the corresponding upper Heisenberg coefficient matrix.
 
     resize!(Ks, maxiter) -> Ks
 
@@ -165,15 +166,6 @@ mutable struct KrylovSubspace{B, T}
     0, zero(real(T)), Matrix{T}(n, maxiter), zeros(T, maxiter, maxiter))
 end
 maxiter(Ks::KrylovSubspace) = size(Ks.V, 2)
-function Base.getindex(Ks::KrylovSubspace, which::Symbol)
-  if which == :V
-    return @view(Ks.V[:, 1:Ks.m])
-  elseif which == :H
-    return @view(Ks.H[1:Ks.m, 1:Ks.m])
-  else
-    throw(ArgumentError(repr(which)))
-  end
-end
 function Base.resize!(Ks::KrylovSubspace{B,T}, maxiter::Integer) where {B,T}
   prevsize = maxiter(Ks)
   if prevsize <= maxiter
@@ -194,9 +186,9 @@ function Base.show(io::IO, Ks::KrylovSubspace)
   println(io, "$(Ks.m)-dimensional Krylov subspace with fields")
   println(io, "beta: $(Ks.beta)")
   print(io, "V: ")
-  println(IOContext(io, limit=true), Ks[:V])
+  println(IOContext(io, limit=true), Ks.V[:, 1:Ks.m])
   print(io, "H: ")
-  println(IOContext(io, limit=true), Ks[:H])
+  println(IOContext(io, limit=true), Ks.H[1:Ks.m, 1:Ks.m])
 end
 
 """
@@ -204,8 +196,8 @@ end
 
 Performs `m` anoldi iterations to obtain the Krylov subspace K_m(A,b).
 
-The n x m unitary basis vectors `Ks[:V]` and the m x m upper Heisenberg 
-matrix `Ks[:H]` are related by the recurrence formula
+The n x m unitary basis vectors `Ks.V[:,1:Ks.m]` and the m x m upper Heisenberg 
+matrix `Ks.H[1:Ks.m,1:Ks.m]` are related by the recurrence formula
 
 ```
 v_1=b,\\quad Av_j = \\sum_{i=1}^{j+1}h_{ij}v_i\\quad(j = 1,2,\\ldots,m)
@@ -334,7 +326,9 @@ Non-allocating version of `expmv` that uses precomputed Krylov subspace `Ks`.
 """
 function expmv!(w::Vector{T}, t::Number, Ks::KrylovSubspace{B, T}; 
   cache=nothing) where {B, T <: Number}
-  m, beta, V, H = Ks.m, Ks.beta, Ks[:V], Ks[:H]
+  m, beta, = Ks.m, Ks.beta
+  V = @view(Ks.V[:, 1:m])
+  H = @view(Ks.H[1:m, 1:m])
   @assert length(w) == size(V, 1) "Dimension mismatch"
   if cache == nothing
     cache = Matrix{T}(m, m)
@@ -376,7 +370,9 @@ Non-allocating version of 'phimv' that uses precomputed Krylov subspace `Ks`.
 """
 function phimv!(w::Matrix{T}, t::Number, Ks::KrylovSubspace{B, T}, k::Integer; 
   caches=nothing) where {B, T <: Number}
-  m, beta, V, H = Ks.m, Ks.beta, Ks[:V], Ks[:H]
+  m, beta = Ks.m, Ks.beta
+  V = @view(Ks.V[:, 1:m])
+  H = @view(Ks.H[1:m, 1:m])
   @assert size(w, 1) == size(V, 1) "Dimension mismatch"
   @assert size(w, 2) == k + 1 "Dimension mismatch"
   if caches == nothing
