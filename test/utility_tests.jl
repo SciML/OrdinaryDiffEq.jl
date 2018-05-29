@@ -1,4 +1,4 @@
-using OrdinaryDiffEq: phi, phi, phiv, expv, arnoldi
+using OrdinaryDiffEq: phi, phi, phiv, expv, arnoldi, getH, getV
 
 @testset "Exponential Utilities" begin
   # Scalar phi
@@ -44,6 +44,6 @@ using OrdinaryDiffEq: phi, phi, phiv, expv, arnoldi
   Aperm = A + 1e-10 * randn(n, n) # no longer Hermitian
   Ks = arnoldi(A, b; m=m) # uses lanczos!
   Ksperm = arnoldi(Aperm, b; m=m)
-  @test Ks.H[1:m, 1:m] ≈ Ksperm.H[1:m, 1:m]
-  @test Ks.V[:, 1:m] ≈ Ksperm.V[:, 1:m]
+  @test getH(Ks) ≈ getH(Ksperm)
+  @test getV(Ks) ≈ getV(Ksperm)
 end

@@ -148,47 +148,45 @@ Constructs an uninitialized Krylov subspace, which can be filled by `arnoldi!`.
 The dimension of the subspace, `Ks.m`, can be dynamically altered but should 
 be smaller than `maxiter`, the maximum allowed arnoldi iterations.
 
-`Ks.V[:,1:Ks.m]` gives the orthonormal basis while `Ks.H[1:Ks.m,1:Ks.m]` 
-is the corresponding upper Heisenberg coefficient matrix.
+    getV(Ks) -> V
+    getH(Ks) -> H
+
+Access methods for orthonormal basis `V` and the Gram-Schmidt coefficients `H`. 
+Both methods return a view into the storage arrays and has the correct 
+dimensions as indicated by `Ks.m`.
 
     resize!(Ks, maxiter) -> Ks
 
-Resize `Ks` to a different `maxiter`, keeping its contents.
+Resize `Ks` to a different `maxiter`, destroying its contents.
 
 This is an expensive operation and should be used scarsely.
 """
 mutable struct KrylovSubspace{B, T}
   m::Int        # subspace dimension
+  maxiter::Int  # maximum allowed subspace size
   beta::B       # norm(b,2)
   V::Matrix{T}  # orthonormal bases
   H::Matrix{T}  # Gram-Schmidt coefficients
   KrylovSubspace{T}(n::Integer, maxiter::Integer=30) where {T} = new{real(T), T}(
-    0, zero(real(T)), Matrix{T}(n, maxiter), zeros(T, maxiter, maxiter))
+    maxiter, maxiter, zero(real(T)), Matrix{T}(n, maxiter), zeros(T, maxiter, maxiter))
 end
-maxiter(Ks::KrylovSubspace) = size(Ks.V, 2)
+# TODO: switch to overload `getproperty` in v0.7
+getH(Ks::KrylovSubspace) = @view(Ks.H[1:Ks.m, 1:Ks.m])
+getV(Ks::KrylovSubspace) = @view(Ks.V[:, 1:Ks.m])
 function Base.resize!(Ks::KrylovSubspace{B,T}, maxiter::Integer) where {B,T}
-  prevsize = maxiter(Ks)
-  if prevsize <= maxiter
-    V = Matrix{T}(size(Ks.V, 1), maxiter)
-    H = zeros(T, maxiter, maxiter)
-    V[:, 1:prevsize] = Ks.V
-    H[1:prevsize, 1:prevsize] = Ks.H
-  else
-    # Resizing to a smaller size is not necessary, this is just for the sake 
-    # of completeness.
-    V = Ks.V[:, 1:maxiter]
-    H = Ks.H[1:maxiter, 1:maxiter]
-  end
+  V = Matrix{T}(size(Ks.V, 1), maxiter)
+  H = zeros(T, maxiter, maxiter)
   Ks.V = V; Ks.H = H
+  Ks.m = Ks.maxiter = maxiter
   return Ks
 end
 function Base.show(io::IO, Ks::KrylovSubspace)
   println(io, "$(Ks.m)-dimensional Krylov subspace with fields")
   println(io, "beta: $(Ks.beta)")
   print(io, "V: ")
-  println(IOContext(io, limit=true), Ks.V[:, 1:Ks.m])
+  println(IOContext(io, limit=true), getV(Ks))
   print(io, "H: ")
-  println(IOContext(io, limit=true), Ks.H[1:Ks.m, 1:Ks.m])
+  println(IOContext(io, limit=true), getH(Ks))
 end
 
 """
@@ -196,8 +194,8 @@ end
 
 Performs `m` anoldi iterations to obtain the Krylov subspace K_m(A,b).
 
-The n x m unitary basis vectors `Ks.V[:,1:Ks.m]` and the m x m upper Heisenberg 
-matrix `Ks.H[1:Ks.m,1:Ks.m]` are related by the recurrence formula
+The n x m unitary basis vectors `getV(Ks)` and the m x m upper Heisenberg 
+matrix `getH(Ks)` are related by the recurrence formula
 
 ```
 v_1=b,\\quad Av_j = \\sum_{i=1}^{j+1}h_{ij}v_i\\quad(j = 1,2,\\ldots,m)
@@ -219,14 +217,16 @@ end
 Non-allocating version of `arnoldi`.
 """
 function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol=1e-7, 
-  m=min(maxiter(Ks), size(A, 1)), norm=Base.norm, cache=nothing) where {B, T <: Number}
+  m=min(Ks.maxiter, size(A, 1)), norm=Base.norm, cache=nothing) where {B, T <: Number}
   if ishermitian(A)
     return lanczos!(Ks, A, b; tol=tol, m=m, norm=norm, cache=cache)
   end
-  if m > maxiter(Ks)
+  if m > Ks.maxiter
     resize!(Ks, m)
+  else
+    Ks.m = m # might change if happy-breakdown occurs
   end
-  V, H = Ks.V, Ks.H
+  V, H = getV(Ks), getH(Ks)
   vtol = tol * norm(A, Inf)
   # Safe checks
   n = size(V, 1)
@@ -265,11 +265,13 @@ end
 A variation of `arnoldi!` that uses the Lanczos algorithm for Hermitian matrices.
 """
 function lanczos!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol=1e-7,
-  m=min(maxiter(Ks), size(A, 1)), norm=Base.norm, cache=nothing) where {B, T <: Number}
-  if m > maxiter(Ks)
+  m=min(Ks.maxiter, size(A, 1)), norm=Base.norm, cache=nothing) where {B, T <: Number}
+  if m > Ks.maxiter
     resize!(Ks, m)
+  else
+    Ks.m = m # might change if happy-breakdown occurs
   end
-  V, H = Ks.V, Ks.H
+  V, H = getV(Ks), getH(Ks)
   vtol = tol * norm(A, Inf)
   # Safe checks
   n = size(V, 1)
@@ -326,9 +328,7 @@ Non-allocating version of `expv` that uses precomputed Krylov subspace `Ks`.
 """
 function expv!(w::Vector{T}, t::Number, Ks::KrylovSubspace{B, T}; 
   cache=nothing) where {B, T <: Number}
-  m, beta, = Ks.m, Ks.beta
-  V = @view(Ks.V[:, 1:m])
-  H = @view(Ks.H[1:m, 1:m])
+  m, beta, V, H = Ks.m, Ks.beta, getV(Ks), getH(Ks)
   @assert length(w) == size(V, 1) "Dimension mismatch"
   if cache == nothing
     cache = Matrix{T}(m, m)
@@ -370,9 +370,7 @@ Non-allocating version of 'phiv' that uses precomputed Krylov subspace `Ks`.
 """
 function phiv!(w::Matrix{T}, t::Number, Ks::KrylovSubspace{B, T}, k::Integer; 
   caches=nothing) where {B, T <: Number}
-  m, beta = Ks.m, Ks.beta
-  V = @view(Ks.V[:, 1:m])
-  H = @view(Ks.H[1:m, 1:m])
+  m, beta, V, H = Ks.m, Ks.beta, getV(Ks), getH(Ks)
   @assert size(w, 1) == size(V, 1) "Dimension mismatch"
   @assert size(w, 2) == k + 1 "Dimension mismatch"
   if caches == nothing
