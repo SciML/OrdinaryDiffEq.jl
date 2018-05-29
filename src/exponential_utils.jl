@@ -228,6 +228,9 @@ Non-allocating version of `arnoldi`.
 """
 function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol=1e-7, 
   m=min(maxiter(Ks), size(A, 1)), norm=Base.norm, cache=nothing) where {B, T <: Number}
+  if ishermitian(A)
+    return lanczos!(Ks, A, b; tol=tol, m=m, norm=norm, cache=cache)
+  end
   if m > maxiter(Ks)
     resize!(Ks, m)
   end
@@ -258,6 +261,50 @@ function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol=1e-7,
       return Ks
     end
     H[j+1, j] = beta
+    @inbounds for i = 1:n
+      V[i, j+1] = cache[i] / beta
+    end
+  end
+end
+"""
+    lanczos!(Ks,A,b[;tol,m,norm,cache]) -> Ks
+
+A variation of `arnoldi!` that uses the Lanczos algorithm for Hermitian matrices.
+"""
+function lanczos!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol=1e-7,
+  m=min(maxiter(Ks), size(A, 1)), norm=Base.norm, cache=nothing) where {B, T <: Number}
+  if m > maxiter(Ks)
+    resize!(Ks, m)
+  end
+  V, H = Ks.V, Ks.H
+  vtol = tol * norm(A, Inf)
+  # Safe checks
+  n = size(V, 1)
+  @assert length(b) == size(A,1) == size(A,2) == n "Dimension mismatch"
+  if cache == nothing
+    cache = similar(b)
+  else
+    @assert size(cache) == (n,) "Dimension mismatch"
+  end
+  # Lanczos iterations
+  Ks.beta = norm(b)
+  V[:, 1] = b / Ks.beta
+  @inbounds for j = 1:m
+    vj = @view(V[:, j])
+    A_mul_B!(cache, A, vj)
+    alpha = dot(vj, cache)
+    H[j, j] = alpha
+    Base.axpy!(-alpha, vj, cache)
+    if j > 1
+      Base.axpy!(-H[j-1, j], @view(V[:, j-1]), cache)
+    end
+    beta = norm(cache)
+    if beta < vtol || j == m
+      # happy-breakdown or maximum iteration is reached
+      Ks.m = j
+      return Ks
+    end
+    H[j+1, j] = H[j, j+1] = beta
     @inbounds for i = 1:n
       V[i, j+1] = cache[i] / beta
     end

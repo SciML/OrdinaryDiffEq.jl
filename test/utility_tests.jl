@@ -1,6 +1,6 @@
 using OrdinaryDiffEq: phi, phim, phimv, expmv, arnoldi
 
-@testset "Phi functions" begin
+@testset "Exponential Utilities" begin
   # Scalar phi
   K = 4
   z = 0.1
@@ -38,4 +38,12 @@ using OrdinaryDiffEq: phi, phim, phimv, expmv, arnoldi
   A = v * v' # A is Idempotent
   Ks = arnoldi(A, b)
   @test Ks.m == 2
+
+  # Arnoldi vs Lanczos
+  A = Hermitian(randn(n, n))
+  Aperm = A + 1e-10 * randn(n, n) # no longer Hermitian
+  Ks = arnoldi(A, b; m=m) # uses lanczos!
+  Ksperm = arnoldi(Aperm, b; m=m)
+  @test Ks[:H] ≈ Ksperm[:H]
+  @test Ks[:V] ≈ Ksperm[:V]
 end
