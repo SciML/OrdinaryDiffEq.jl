@@ -6,6 +6,7 @@
 
 ###################################################
 # Dense algorithms
+const exp! = Base.LinAlg.expm! # v0.7 style
 
 """
     phi(z,k[;cache]) -> [phi_0(z),phi_1(z),...,phi_k(z)]
@@ -34,12 +35,12 @@ function phi(z::T, k::Integer; cache=nothing) where {T <: Number}
   for i = 1:k
     cache[i,i+1] = one(T)
   end
-  P = Base.LinAlg.expm!(cache)
+  P = exp!(cache)
   return P[1,:]
 end
 
 """
-    phimv_dense(A,v,k[;cache]) -> [phi_0(A)v phi_1(A)v ... phi_k(A)v]
+    phiv_dense(A,v,k[;cache]) -> [phi_0(A)v phi_1(A)v ... phi_k(A)v]
 
 Compute the matrix-phi-vector products for small, dense `A`. `k`` >= 1.
 
@@ -54,16 +55,16 @@ formula given by Sidje is used (Sidje, R. B. (1998). Expokit: a software
 package for computing matrix exponentials. ACM Transactions on Mathematical 
 Software (TOMS), 24(1), 130-156. Theorem 1).
 """
-function phimv_dense(A, v, k; cache=nothing)
+function phiv_dense(A, v, k; cache=nothing)
   w = Matrix{eltype(A)}(length(v), k+1)
-  phimv_dense!(w, A, v, k; cache=cache)
+  phiv_dense!(w, A, v, k; cache=cache)
 end
 """
-    phimv_dense!(w,A,v,k[;cache]) -> w
+    phiv_dense!(w,A,v,k[;cache]) -> w
 
-Non-allocating version of `phimv_dense`.
+Non-allocating version of `phiv_dense`.
 """
-function phimv_dense!(w::AbstractMatrix{T}, A::AbstractMatrix{T}, 
+function phiv_dense!(w::AbstractMatrix{T}, A::AbstractMatrix{T}, 
   v::AbstractVector{T}, k::Integer; cache=nothing) where {T <: Number}
   @assert size(w, 1) == size(A, 1) == size(A, 2) == length(v) "Dimension mismatch"
   @assert size(w, 2) == k+1 "Dimension mismatch"
@@ -80,7 +81,7 @@ function phimv_dense!(w::AbstractMatrix{T}, A::AbstractMatrix{T},
   for i = m+1:m+k-1
     cache[i, i+1] = one(T)
   end
-  P = Base.LinAlg.expm!(cache)
+  P = exp!(cache)
   # Extract results
   @views A_mul_B!(w[:, 1], P[1:m, 1:m], v)
   @inbounds for i = 1:k
@@ -92,7 +93,7 @@ function phimv_dense!(w::AbstractMatrix{T}, A::AbstractMatrix{T},
 end
 
 """
-    phim(A,k[;cache]) -> [phi_0(A),phi_1(A),...,phi_k(A)]
+    phi(A,k[;cache]) -> [phi_0(A),phi_1(A),...,phi_k(A)]
 
 Compute the matrix phi functions for all orders up to k. `k` >= 1.
 
@@ -102,20 +103,19 @@ The phi functions are defined as
 \\varphi_0(z) = \\exp(z),\\quad \\varphi_k(z+1) = \\frac{\\varphi_k(z) - 1}{z} 
 ```
 
-Calls `phimv_dense` on each of the basis vectors to obtain the answer.
+Calls `phiv_dense` on each of the basis vectors to obtain the answer.
 """
-phim(x::Number, k) = phi(x, k) # fallback
-function phim(A, k; caches=nothing)
+function phi(A::AbstractMatrix{T}, k; caches=nothing) where {T <: Number}
   m = size(A, 1)
-  out = [Matrix{eltype(A)}(m, m) for i = 1:k+1]
-  phim!(out, A, k; caches=caches)
+  out = [Matrix{T}(m, m) for i = 1:k+1]
+  phi!(out, A, k; caches=caches)
 end
 """
-    phim!(out,A,k[;caches]) -> out
+    phi!(out,A,k[;caches]) -> out
 
-Non-allocating version of `phim`.
+Non-allocating version of `phi` for matrix inputs.
 """
-function phim!(out::Vector{Matrix{T}}, A::AbstractMatrix{T}, k::Integer; caches=nothing) where {T <: Number}
+function phi!(out::Vector{Matrix{T}}, A::AbstractMatrix{T}, k::Integer; caches=nothing) where {T <: Number}
   m = size(A, 1)
   @assert length(out) == k + 1 && all(P -> size(P) == (m,m), out) "Dimension mismatch"
   if caches == nothing
@@ -128,7 +128,7 @@ function phim!(out::Vector{Matrix{T}}, A::AbstractMatrix{T}, k::Integer; caches=
   end
   @inbounds for i = 1:m
     fill!(e, zero(T)); e[i] = one(T) # e is the ith basis vector
-    phimv_dense!(W, A, e, k; cache=C) # W = [phi_0(A)*e phi_1(A)*e ... phi_k(A)*e]
+    phiv_dense!(W, A, e, k; cache=C) # W = [phi_0(A)*e phi_1(A)*e ... phi_k(A)*e]
     @inbounds for j = 1:k+1
       @inbounds for s = 1:m
         out[j][s, i] = W[s, j]
@@ -306,7 +306,7 @@ function lanczos!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol=1e-7,
 end
 
 """
-    expmv(t,A,b; kwargs) -> exp(tA)b
+    expv(t,A,b; kwargs) -> exp(tA)b
 
 Compute the matrix-exponential-vector product using Krylov.
 
@@ -314,17 +314,17 @@ A Krylov subspace is constructed using `arnoldi` and `expm!` is called
 on the Heisenberg matrix. Consult `arnoldi` for the values of the keyword 
 arguments.
 """
-function expmv(t, A, b; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, cache=nothing)
+function expv(t, A, b; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, cache=nothing)
   Ks = arnoldi(A, b; m=m, tol=tol, norm=norm)
   w = similar(b)
-  expmv!(w, t, Ks; cache=cache)
+  expv!(w, t, Ks; cache=cache)
 end
 """
-    expmv!(w,t,Ks[;cache]) -> w
+    expv!(w,t,Ks[;cache]) -> w
 
-Non-allocating version of `expmv` that uses precomputed Krylov subspace `Ks`.
+Non-allocating version of `expv` that uses precomputed Krylov subspace `Ks`.
 """
-function expmv!(w::Vector{T}, t::Number, Ks::KrylovSubspace{B, T}; 
+function expv!(w::Vector{T}, t::Number, Ks::KrylovSubspace{B, T}; 
   cache=nothing) where {B, T <: Number}
   m, beta, = Ks.m, Ks.beta
   V = @view(Ks.V[:, 1:m])
@@ -338,12 +338,12 @@ function expmv!(w::Vector{T}, t::Number, Ks::KrylovSubspace{B, T};
     cache = @view(cache[1:m, 1:m])
   end
   @. cache = t * H
-  expH = Base.LinAlg.expm!(cache)
+  expH = exp!(cache)
   scale!(beta, A_mul_B!(w, V, @view(expH[:,1]))) # exp(A) ≈ norm(b) * V * exp(H)e
 end
 
 """
-    phimv(t,A,b,k; kwargs) -> [phi_0(tA)b phi_1(tA)b ... phi_k(tA)b]
+    phiv(t,A,b,k; kwargs) -> [phi_0(tA)b phi_1(tA)b ... phi_k(tA)b]
 
 Compute the matrix-phi-vector products using Krylov. `k` >= 1.
 
@@ -353,22 +353,22 @@ The phi functions are defined as
 \\varphi_0(z) = \\exp(z),\\quad \\varphi_k(z+1) = \\frac{\\varphi_k(z) - 1}{z} 
 ```
 
-A Krylov subspace is constructed using `arnoldi` and `phimv_dense` is called 
+A Krylov subspace is constructed using `arnoldi` and `phiv_dense` is called 
 on the Heisenberg matrix. Consult `arnoldi` for the values of the keyword 
 arguments.
 """
-function phimv(t, A, b, k; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, 
+function phiv(t, A, b, k; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, 
   caches=nothing)
   Ks = arnoldi(A, b; m=m, tol=tol, norm=norm)
   w = Matrix{eltype(b)}(length(b), k+1)
-  phimv!(w, t, Ks, k; caches=caches)
+  phiv!(w, t, Ks, k; caches=caches)
 end
 """
-    phimv!(w,t,Ks,k[;caches]) -> w
+    phiv!(w,t,Ks,k[;caches]) -> w
 
-Non-allocating version of 'phimv' that uses precomputed Krylov subspace `Ks`.
+Non-allocating version of 'phiv' that uses precomputed Krylov subspace `Ks`.
 """
-function phimv!(w::Matrix{T}, t::Number, Ks::KrylovSubspace{B, T}, k::Integer; 
+function phiv!(w::Matrix{T}, t::Number, Ks::KrylovSubspace{B, T}, k::Integer; 
   caches=nothing) where {B, T <: Number}
   m, beta = Ks.m, Ks.beta
   V = @view(Ks.V[:, 1:m])
@@ -391,6 +391,6 @@ function phimv!(w::Matrix{T}, t::Number, Ks::KrylovSubspace{B, T}, k::Integer;
   end
   @. Hcopy = t * H
   fill!(e, zero(T)); e[1] = one(T) # e is the [1,0,...,0] basis vector
-  phimv_dense!(C2, Hcopy, e, k; cache=C1) # C2 = [ϕ0(H)e ϕ1(H)e ... ϕk(H)e]
+  phiv_dense!(C2, Hcopy, e, k; cache=C1) # C2 = [ϕ0(H)e ϕ1(H)e ... ϕk(H)e]
   scale!(beta, A_mul_B!(w, V, C2)) # f(A) ≈ norm(b) * V * f(H)e
 end
