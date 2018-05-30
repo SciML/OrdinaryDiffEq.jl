@@ -161,6 +161,10 @@ struct VCABM3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct VCABM4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct VCABM5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
+# Variable Order and Variable Step Size Adams methods
+
+struct VCABM <: OrdinaryDiffEqAdaptiveAlgorithm end
+
 # Adams methods in Nordsieck forms
 
 struct AN5 <: OrdinaryDiffEqAdaptiveAlgorithm end

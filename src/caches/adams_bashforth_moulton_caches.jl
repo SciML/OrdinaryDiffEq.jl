@@ -801,3 +801,38 @@ function alg_cache(alg::VCABM5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   utilde = similar(u,indices(u))
   VCABM5Cache(u,uprev,fsalfirst,rk4cache,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕ_np1,ϕstar_n,β,order,atmp,tmp,utilde,1)
 end
+
+# VCABM
+
+mutable struct VCABMConstantCache{tArrayType,rArrayType,cArrayType,dtArrayType} <: OrdinaryDiffEqConstantCache
+  ϕstar_nm1::rArrayType
+  dts::dtArrayType
+  c::cArrayType
+  g::tArrayType
+  ϕ_n::rArrayType
+  ϕ_np1::rArrayType
+  ϕstar_n::rArrayType
+  β::tArrayType
+  order::Int
+  max_order::Int
+  step::Int
+end
+
+function alg_cache(alg::VCABM,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  dts = zeros(typeof(dt),9)
+  c = zeros(typeof(t), 10, 10)
+  g = zeros(typeof(t), 10)
+  ϕ_n = Vector{typeof(rate_prototype)}(9)
+  ϕstar_nm1 = Vector{typeof(rate_prototype)}(9)
+  ϕstar_n = Vector{typeof(rate_prototype)}(9)
+  ϕ_np1 = Vector{typeof(rate_prototype)}(10)
+  for i in 1:9
+    ϕ_n[i] = copy(rate_prototype)
+    ϕstar_nm1[i] = copy(rate_prototype)
+    ϕstar_n[i] = copy(rate_prototype)
+  end
+  β = zeros(typeof(t),9)
+  order = 1
+  max_order = 7
+  VCABMConstantCache(ϕstar_nm1,dts,c,g,ϕ_n,ϕ_np1,ϕstar_n,β,order,max_order,1)
+end

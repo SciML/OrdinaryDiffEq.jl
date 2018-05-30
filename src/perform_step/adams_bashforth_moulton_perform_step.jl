@@ -1326,3 +1326,69 @@ end
     f(k4,u,p,t+dt)
   end
 end
+
+# VCABM
+
+function initialize!(integrator,cache::VCABMConstantCache)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
+
+@muladd function perform_step!(integrator,cache::VCABMConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack dts,g,ϕ_n,ϕ_np1,ϕstar_n,ϕstar_nm1,order,max_order = cache
+  k1 = integrator.fsalfirst
+  step = integrator.iter
+  k = order
+  for i = k:-1:2
+    dts[i] = dts[i-1]
+  end
+  dts[1] = dt
+  ϕ_and_ϕstar!(cache,k1,k)
+  cache.ϕstar_nm1 .= ϕstar_n
+  g_coefs!(cache,k+1)
+  u = uprev
+  for i = 1:(k-1)
+      u += dt * g[i] * ϕstar_n[i]
+  end
+  du_np1 = f(u,p,t+dt)
+  ϕ_np1!(cache, du_np1, k+1)
+  u += dt * g[k] * ϕ_np1[k]
+  du_np1 = f(u, p, t+dt)
+  if integrator.opts.adaptive
+    utilde = dt * γstar(k) * ϕ_np1[k+1]
+    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+    integrator.EEst = integrator.opts.internalnorm(atmp)
+    if k <= 3
+      cache.order = order + 1
+    else
+      if integrator.EEst < one(integrator.EEst)
+        ũ2 = dt * γstar(k-2) * ϕ_np1[k-1]
+        ũ1 = dt * γstar(k-1) * ϕ_np1[k]
+        ϕ_np1!(cache, du_np1, k+2)
+        ũ = dt * γstar(k+1) * ϕ_np1[k+2]
+        atmp2 = calculate_residuals(ũ2, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+        atmp1 = calculate_residuals(ũ1, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+        atmp = calculate_residuals(ũ, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+        err2 = integrator.opts.internalnorm(atmp2)
+        err1 = integrator.opts.internalnorm(atmp1)
+        err = integrator.opts.internalnorm(atmp)
+        if max(err2,err1) <= integrator.EEst
+          cache.order = min(order+1,max_order)
+        elseif err < integrator.EEst
+          cache.order = min(order+1,max_order)
+        end
+      end
+    end
+  end
+  integrator.fsallast = du_np1
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end

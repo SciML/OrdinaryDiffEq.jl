@@ -220,6 +220,8 @@ alg_order(alg::VCABM3) = 3
 alg_order(alg::VCABM4) = 4
 alg_order(alg::VCABM5) = 5
 
+alg_order(alg::VCABM) = 7
+
 alg_order(alg::AN5) = 5
 
 alg_order(alg::ABDF2) = 2

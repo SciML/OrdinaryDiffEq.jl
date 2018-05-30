@@ -2,7 +2,7 @@
 # by Ernst Hairer, Gerhard Wanner, and Syvert P Norsett.
 # III.5 Variable Step Size Multistep Methods: Formulae 5.9
 function ϕ_and_ϕstar!(cache, du, k)
-  @inbounds begin
+  # @inbounds begin
     @unpack dts, ϕstar_nm1, ϕ_n, ϕstar_n,β = cache
     ξ = dt = dts[1]
     ξ0 = zero(dt)
@@ -26,7 +26,7 @@ function ϕ_and_ϕstar!(cache, du, k)
         ϕstar_n[i] = β[i] * ϕ_n[i]
       end
     end
-  end # inbounds
+  # end # inbounds
 end
 
 function ϕ_np1!(cache, du_np1, k)
@@ -46,7 +46,7 @@ end
 # by Ernst Hairer, Gerhard Wanner, and Syvert P Norsett.
 # III.5 Variable Step Size Multistep Methods: Formulae 5.9 & 5.10
 function g_coefs!(cache, k)
-  @inbounds begin
+  # @inbounds begin
     @unpack dts,c,g = cache
     ξ = dt = dts[1]
     for i = 1:k
@@ -64,5 +64,10 @@ function g_coefs!(cache, k)
       end # q
       g[i] = c[i,1]
     end # i
-  end # inbounds
+  # end # inbounds
+end
+
+function γstar(k)
+  γ_star = [1,-1/2,-1/12,-1/24,-19/720,-3/160,-863/60480,-275/24192,-33953/3628800]
+  return γ_star[k+1]
 end
