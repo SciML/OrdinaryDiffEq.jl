@@ -151,9 +151,9 @@ be smaller than `maxiter`, the maximum allowed arnoldi iterations.
     getV(Ks) -> V
     getH(Ks) -> H
 
-Access methods for orthonormal basis `V` and the Gram-Schmidt coefficients `H`. 
-Both methods return a view into the storage arrays and has the correct 
-dimensions as indicated by `Ks.m`.
+Access methods for the (extended) orthonormal basis `V` and the (extended) 
+Gram-Schmidt coefficients `H`. Both methods return a view into the storage 
+arrays and has the correct dimensions as indicated by `Ks.m`.
 
     resize!(Ks, maxiter) -> Ks
 
@@ -168,14 +168,15 @@ mutable struct KrylovSubspace{B, T}
   V::Matrix{T}  # orthonormal bases
   H::Matrix{T}  # Gram-Schmidt coefficients
   KrylovSubspace{T}(n::Integer, maxiter::Integer=30) where {T} = new{real(T), T}(
-    maxiter, maxiter, zero(real(T)), Matrix{T}(n, maxiter), zeros(T, maxiter, maxiter))
+    maxiter, maxiter, zero(real(T)), Matrix{T}(n, maxiter + 1), 
+    zeros(T, maxiter + 1, maxiter))
 end
 # TODO: switch to overload `getproperty` in v0.7
-getH(Ks::KrylovSubspace) = @view(Ks.H[1:Ks.m, 1:Ks.m])
-getV(Ks::KrylovSubspace) = @view(Ks.V[:, 1:Ks.m])
+getH(Ks::KrylovSubspace) = @view(Ks.H[1:Ks.m + 1, 1:Ks.m])
+getV(Ks::KrylovSubspace) = @view(Ks.V[:, 1:Ks.m + 1])
 function Base.resize!(Ks::KrylovSubspace{B,T}, maxiter::Integer) where {B,T}
-  V = Matrix{T}(size(Ks.V, 1), maxiter)
-  H = zeros(T, maxiter, maxiter)
+  V = Matrix{T}(size(Ks.V, 1), maxiter + 1)
+  H = zeros(T, maxiter + 1, maxiter)
   Ks.V = V; Ks.H = H
   Ks.m = Ks.maxiter = maxiter
   return Ks
@@ -194,8 +195,8 @@ end
 
 Performs `m` anoldi iterations to obtain the Krylov subspace K_m(A,b).
 
-The n x m unitary basis vectors `getV(Ks)` and the m x m upper Heisenberg 
-matrix `getH(Ks)` are related by the recurrence formula
+The n x (m + 1) unitary basis vectors `getV(Ks)` and the (m + 1) x m upper 
+Heisenberg matrix `getH(Ks)` are related by the recurrence formula
 
 ```
 v_1=b,\\quad Av_j = \\sum_{i=1}^{j+1}h_{ij}v_i\\quad(j = 1,2,\\ldots,m)
@@ -248,16 +249,16 @@ function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol=1e-7,
       Base.axpy!(-alpha, @view(V[:, i]), cache)
     end
     beta = norm(cache)
-    if beta < vtol || j == m
-      # happy-breakdown or maximum iteration is reached
-      Ks.m = j
-      return Ks
-    end
     H[j+1, j] = beta
     @inbounds for i = 1:n
       V[i, j+1] = cache[i] / beta
     end
+    if beta < vtol # happy-breakdown
+      Ks.m = j
+      break
+    end
   end
+  return Ks
 end
 """
     lanczos!(Ks,A,b[;tol,m,norm,cache]) -> Ks
@@ -295,16 +296,19 @@ function lanczos!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol=1e-7,
       Base.axpy!(-H[j-1, j], @view(V[:, j-1]), cache)
     end
     beta = norm(cache)
-    if beta < vtol || j == m
-      # happy-breakdown or maximum iteration is reached
-      Ks.m = j
-      return Ks
+    H[j+1, j] = beta
+    if j < m
+      H[j, j+1] = beta
     end
-    H[j+1, j] = H[j, j+1] = beta
     @inbounds for i = 1:n
       V[i, j+1] = cache[i] / beta
     end
+    if beta < vtol # happy-breakdown
+      Ks.m = j
+      break
+    end
   end
+  return Ks
 end
 
 """
@@ -337,7 +341,7 @@ function expv!(w::Vector{T}, t::Number, Ks::KrylovSubspace{B, T};
     # Here we only need a portion.
     cache = @view(cache[1:m, 1:m])
   end
-  @. cache = t * H
+  scale!(t, copy!(cache, @view(H[1:m, :])))
   if ishermitian(cache)
     # Optimize the case for symtridiagonal H
     F = eigfact!(SymTridiagonal(cache)) # Note: eigfact! -> eigen! in v0.7
@@ -346,7 +350,7 @@ function expv!(w::Vector{T}, t::Number, Ks::KrylovSubspace{B, T};
     expH = exp!(cache)
     expHe = @view(expH[:, 1])
   end
-  scale!(beta, A_mul_B!(w, V, expHe)) # exp(A) ≈ norm(b) * V * exp(H)e
+  scale!(beta, A_mul_B!(w, @view(V[:, 1:m]), expHe)) # exp(A) ≈ norm(b) * V * exp(H)e
 end
 
 """
@@ -394,8 +398,8 @@ function phiv!(w::Matrix{T}, t::Number, Ks::KrylovSubspace{B, T}, k::Integer;
     C1 = @view(C1[1:m + k, 1:m + k])
     C2 = @view(C2[1:m, 1:k + 1])
   end
-  @. Hcopy = t * H
+  scale!(t, copy!(Hcopy, @view(H[1:m, :])))
   fill!(e, zero(T)); e[1] = one(T) # e is the [1,0,...,0] basis vector
   phiv_dense!(C2, Hcopy, e, k; cache=C1) # C2 = [ϕ0(H)e ϕ1(H)e ... ϕk(H)e]
-  scale!(beta, A_mul_B!(w, V, C2)) # f(A) ≈ norm(b) * V * f(H)e
+  scale!(beta, A_mul_B!(w, @view(V[:, 1:m]), C2)) # f(A) ≈ norm(b) * V * f(H)e
 end
