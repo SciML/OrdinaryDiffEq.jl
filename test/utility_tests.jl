@@ -42,8 +42,7 @@ using OrdinaryDiffEq: phi, phi, phiv, expv, arnoldi, getH, getV
   # Arnoldi vs Lanczos
   A = Hermitian(randn(n, n))
   Aperm = A + 1e-10 * randn(n, n) # no longer Hermitian
-  Ks = arnoldi(A, b; m=m) # uses lanczos!
-  Ksperm = arnoldi(Aperm, b; m=m)
-  @test getH(Ks) ≈ getH(Ksperm)
-  @test getV(Ks) ≈ getV(Ksperm)
+  w = expv(t, A, b; m=m)
+  wperm = expv(t, Aperm, b; m=m)
+  @test w ≈ wperm
 end

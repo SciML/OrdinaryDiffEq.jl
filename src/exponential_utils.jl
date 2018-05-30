@@ -338,8 +338,15 @@ function expv!(w::Vector{T}, t::Number, Ks::KrylovSubspace{B, T};
     cache = @view(cache[1:m, 1:m])
   end
   @. cache = t * H
-  expH = exp!(cache)
-  scale!(beta, A_mul_B!(w, V, @view(expH[:,1]))) # exp(A) ≈ norm(b) * V * exp(H)e
+  if ishermitian(cache)
+    # Optimize the case for symtridiagonal H
+    F = eigfact!(SymTridiagonal(cache)) # Note: eigfact! -> eigen! in v0.7
+    expHe = F.vectors * (exp.(F.values) .* @view(F.vectors[1, :]))
+  else
+    expH = exp!(cache)
+    expHe = @view(expH[:, 1])
+  end
+  scale!(beta, A_mul_B!(w, V, expHe)) # exp(A) ≈ norm(b) * V * exp(H)e
 end
 
 """
