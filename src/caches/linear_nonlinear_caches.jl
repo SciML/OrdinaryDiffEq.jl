@@ -174,7 +174,7 @@ function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomElty
     else
       _A = full(A)
     end
-    exphA, phihA = phim(dt*_A, 1)
+    exphA, phihA = phi(dt*_A, 1)
   end
   NorsettEulerCache(u,uprev,similar(u),zeros(rate_prototype),exphA,phihA,Ks,KsCache)
 end
@@ -198,7 +198,7 @@ function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomElty
     else
       _A = full(A)
     end
-    exphA, phihA = phim(dt*_A, 1)
+    exphA, phihA = phi(dt*_A, 1)
   end
   NorsettEulerConstantCache(exphA, phihA)
 end
@@ -233,7 +233,7 @@ function alg_cache(alg::ETD2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   else
     _A = full(A)
   end
-  Phi = phim(dt*_A, 2)
+  Phi = phi(dt*_A, 2)
   ETD2ConstantCache(Phi[1], Phi[2], Phi[2] + Phi[3], -Phi[3])
 end
 
@@ -256,7 +256,7 @@ function alg_cache(alg::ETD2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   else
     _A = full(A)
   end
-  Phi = phim(dt*_A, 2)
+  Phi = phi(dt*_A, 2)
   ETD2Cache(u,uprev,zero(u),zero(rate_prototype),zero(rate_prototype),Phi[1],Phi[2],Phi[2]+Phi[3],-Phi[3])
 end
 
@@ -280,8 +280,8 @@ function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   else
     L = full(A)
   end
-  P = phim(dt * L, 3)
-  Phalf = phim(dt/2 * L, 1)
+  P = phi(dt * L, 3)
+  Phalf = phi(dt/2 * L, 1)
   E = P[1]
   E2 = Phalf[1]
   a = dt * (P[2] - 3*P[3] + 4*P[4])
@@ -319,8 +319,8 @@ function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   else
     L = full(A)
   end
-  P = phim(dt * L, 3)
-  Phalf = phim(dt/2 * L, 1)
+  P = phi(dt * L, 3)
+  Phalf = phi(dt/2 * L, 1)
   E = P[1]
   E2 = Phalf[1]
   a = dt * (P[2] - 3*P[3] + 4*P[4])

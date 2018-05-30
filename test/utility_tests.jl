@@ -1,6 +1,6 @@
-using OrdinaryDiffEq: phi, phim, phimv, expmv, arnoldi
+using OrdinaryDiffEq: phi, phi, phiv, expv, arnoldi, getH, getV
 
-@testset "Phi functions" begin
+@testset "Exponential Utilities" begin
   # Scalar phi
   K = 4
   z = 0.1
@@ -16,7 +16,7 @@ using OrdinaryDiffEq: phi, phim, phimv, expmv, arnoldi
   for i = 1:K
     P[i+1] = (P[i] - 1/factorial(i-1)*I) / A
   end
-  @test phim(A, K) ≈ P
+  @test phi(A, K) ≈ P
 
   # Krylov
   n = 20; m = 5
@@ -24,13 +24,13 @@ using OrdinaryDiffEq: phi, phim, phimv, expmv, arnoldi
   A = randn(n, n)
   t = 1e-2
   b = randn(n)
-  @test expm(t * A) * b ≈ expmv(t, A, b; m=m)
-  P = phim(t * A, K)
+  @test expm(t * A) * b ≈ expv(t, A, b; m=m)
+  P = phi(t * A, K)
   W = zeros(n, K+1)
   for i = 1:K+1
     W[:,i] = P[i] * b
   end
-  W_approx = phimv(t, A, b, K; m=m)
+  W_approx = phiv(t, A, b, K; m=m)
   @test W ≈ W_approx
 
   # Happy-breakdown in Krylov
@@ -38,4 +38,11 @@ using OrdinaryDiffEq: phi, phim, phimv, expmv, arnoldi
   A = v * v' # A is Idempotent
   Ks = arnoldi(A, b)
   @test Ks.m == 2
+
+  # Arnoldi vs Lanczos
+  A = Hermitian(randn(n, n))
+  Aperm = A + 1e-10 * randn(n, n) # no longer Hermitian
+  w = expv(t, A, b; m=m)
+  wperm = expv(t, Aperm, b; m=m)
+  @test w ≈ wperm
 end

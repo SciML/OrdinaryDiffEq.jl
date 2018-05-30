@@ -21,7 +21,7 @@ function perform_step!(integrator, cache::LawsonEulerConstantCache, repeat_step=
   integrator.k[1] = lin + nl
 
   if alg.krylov
-    @muladd u = expmv(dt, f.f1, uprev + dt*nl; m=min(alg.m, size(f.f1,1)), norm=normbound)
+    @muladd u = expv(dt, f.f1, uprev + dt*nl; m=min(alg.m, size(f.f1,1)), norm=normbound)
   else
     @muladd u = cache.exphA*(uprev + dt*nl)
   end
@@ -60,7 +60,7 @@ function perform_step!(integrator, cache::LawsonEulerCache, repeat_step=false)
   @muladd @. tmp = uprev + dt*nl
   if alg.krylov
     arnoldi!(Ks,f.f1,tmp; m=min(alg.m, size(f.f1,1)), norm=normbound, cache=u)
-    expmv!(u,dt,Ks; cache=KsCache)
+    expv!(u,dt,Ks; cache=KsCache)
   else
     A_mul_B!(u,exphA,tmp)
   end
@@ -96,7 +96,7 @@ function perform_step!(integrator, cache::NorsettEulerConstantCache, repeat_step
   integrator.k[1] = lin + nl
 
   if alg.krylov
-    w = phimv(dt, f.f1, f.f1 * uprev + nl, 1; m=min(alg.m, size(f.f1,1)), norm=normbound)
+    w = phiv(dt, f.f1, f.f1 * uprev + nl, 1; m=min(alg.m, size(f.f1,1)), norm=normbound)
     u = uprev + dt * w[:,2]
   else
     u = exphA*uprev + dt*(phihA*nl)
@@ -137,7 +137,7 @@ function perform_step!(integrator, cache::NorsettEulerCache, repeat_step=false)
     w = KsCache[1]
     A_mul_B!(tmp, f.f1, uprev); tmp .+= nl
     arnoldi!(Ks, f.f1, tmp; m=min(alg.m, size(f.f1,1)), norm=normbound, cache=u)
-    phimv!(w, dt, Ks, 1; caches=KsCache[2:end])
+    phiv!(w, dt, Ks, 1; caches=KsCache[2:end])
     @muladd @. u = uprev + dt * @view(w[:, 2])
   else
     A_mul_B!(tmp,exphA,uprev)
