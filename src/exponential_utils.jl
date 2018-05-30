@@ -354,7 +354,7 @@ function expv!(w::Vector{T}, t::Number, Ks::KrylovSubspace{B, T};
 end
 
 """
-    phiv(t,A,b,k; kwargs) -> [phi_0(tA)b phi_1(tA)b ... phi_k(tA)b]
+    phiv(t,A,b,k;correct,kwargs) -> [phi_0(tA)b phi_1(tA)b ... phi_k(tA)b]
 
 Compute the matrix-phi-vector products using Krylov. `k` >= 1.
 
@@ -365,14 +365,19 @@ The phi functions are defined as
 ```
 
 A Krylov subspace is constructed using `arnoldi` and `phiv_dense` is called 
-on the Heisenberg matrix. Consult `arnoldi` for the values of the keyword 
-arguments.
+on the Heisenberg matrix. If `correct=true`, then phi_0 through phi_k-1 are 
+updated using the last Arnoldi vector v_m+1 [^1]. For the additional keyword 
+arguments, consult `arnoldi`.
+
+[^1]: Niesen, J., & Wright, W. (2009). A Krylov subspace algorithm for evaluating 
+the φ-functions in exponential integrators. arXiv preprint arXiv:0907.4631. 
+Formula (10).
 """
 function phiv(t, A, b, k; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, 
-  caches=nothing)
+  caches=nothing, correct=false)
   Ks = arnoldi(A, b; m=m, tol=tol, norm=norm)
   w = Matrix{eltype(b)}(length(b), k+1)
-  phiv!(w, t, Ks, k; caches=caches)
+  phiv!(w, t, Ks, k; caches=caches, correct=correct)
 end
 """
     phiv!(w,t,Ks,k[;caches]) -> w
@@ -380,7 +385,7 @@ end
 Non-allocating version of 'phiv' that uses precomputed Krylov subspace `Ks`.
 """
 function phiv!(w::Matrix{T}, t::Number, Ks::KrylovSubspace{B, T}, k::Integer; 
-  caches=nothing) where {B, T <: Number}
+  caches=nothing, correct=false) where {B, T <: Number}
   m, beta, V, H = Ks.m, Ks.beta, getV(Ks), getH(Ks)
   @assert size(w, 1) == size(V, 1) "Dimension mismatch"
   @assert size(w, 2) == k + 1 "Dimension mismatch"
@@ -402,4 +407,14 @@ function phiv!(w::Matrix{T}, t::Number, Ks::KrylovSubspace{B, T}, k::Integer;
   fill!(e, zero(T)); e[1] = one(T) # e is the [1,0,...,0] basis vector
   phiv_dense!(C2, Hcopy, e, k; cache=C1) # C2 = [ϕ0(H)e ϕ1(H)e ... ϕk(H)e]
   scale!(beta, A_mul_B!(w, @view(V[:, 1:m]), C2)) # f(A) ≈ norm(b) * V * f(H)e
+  if correct
+    # Use the last Arnoldi vector for correction with little additional cost
+    # correct_p = beta * h_{m+1,m} * (em^T phi_p+1(H) e1) * v_m+1
+    betah = beta * H[end,end] * t
+    vlast = @view(V[:,end])
+    @inbounds for i = 1:k
+      Base.axpy!(betah * C2[end, i+1], vlast, @view(w[:, i]))
+    end
+  end
+  return w
 end
