@@ -214,6 +214,7 @@ function η(cache::T) where T
   isconstcache || ( cache = cache.const_cache )
   dsm = cache.η
   cache.η = inv( inv(BIAS2*dsm)^inv(L) + ADDON )
+  return nothing
 end
 
 function η₊₁(cache::T) where T

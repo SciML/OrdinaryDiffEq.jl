@@ -7,6 +7,7 @@ mutable struct AN5ConstantCache{zType,lType,dtType,uType,tsit5Type} <: OrdinaryD
   m::MVector{6,lType}
   # `c_LTE` is used for the error estimation for the current order
   c_LTE::lType
+  c_conv::lType
   # `tau` stores `dt`s
   tau::MVector{6, dtType}
   # `Δ` is the difference between the predictor `uₙ₀` and `uₙ`
@@ -26,7 +27,7 @@ function AN5ConstantCache(u, uprev, rate_prototype, uBottomEltypeNoUnits, tTypeN
   c_LTE = zero(tTypeNoUnits)
   tau = zeros(MVector{N+1,typeof(dt)})
   tsit5tab = Tsit5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
-  AN5ConstantCache(z,l,m,c_LTE,tau,Δ,tsit5tab,l[1],1)
+  AN5ConstantCache(z,l,m,c_LTE,c_LTE,tau,Δ,tsit5tab,l[1],1)
 end
 
 function alg_cache(alg::AN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
