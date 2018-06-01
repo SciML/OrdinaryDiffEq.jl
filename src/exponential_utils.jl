@@ -195,30 +195,39 @@ end
 
 Performs `m` anoldi iterations to obtain the Krylov subspace K_m(A,b).
 
-The n x (m + 1) unitary basis vectors `getV(Ks)` and the (m + 1) x m upper 
-Heisenberg matrix `getH(Ks)` are related by the recurrence formula
+The n x (m + 1) basis vectors `getV(Ks)` and the (m + 1) x m upper Heisenberg 
+matrix `getH(Ks)` are related by the recurrence formula
 
 ```
 v_1=b,\\quad Av_j = \\sum_{i=1}^{j+1}h_{ij}v_i\\quad(j = 1,2,\\ldots,m)
 ```
 
+`iop` determines the length of the incomplete orthogonalization procedure [^1]. 
+The default value of 0 indicates full Arnoldi. For symmetric/Hermitian `A`, 
+`iop` will be ignored and the Lanczos algorithm will be used instead.
+
 Refer to `KrylovSubspace` for more information regarding the output.
 
 Happy-breakdown occurs whenver `norm(v_j) < tol * norm(A, Inf)`, in this case 
 the dimension of `Ks` is smaller than `m`.
+
+[^1]: Koskela, A. (2015). Approximating the matrix exponential of an 
+advection-diffusion operator using the incomplete orthogonalization method. In 
+Numerical Mathematics and Advanced Applications-ENUMATH 2013 (pp. 345-353). 
+Springer, Cham.
 """
 function arnoldi(A, b; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, 
-  cache=nothing)
+  iop=0, cache=nothing)
   Ks = KrylovSubspace{eltype(b)}(length(b), m)
-  arnoldi!(Ks, A, b; m=m, tol=tol, norm=norm, cache=cache)
+  arnoldi!(Ks, A, b; m=m, tol=tol, norm=norm, cache=cache, iop=iop)
 end
 """
     arnoldi!(Ks,A,b[;tol,m,norm,cache]) -> Ks
 
 Non-allocating version of `arnoldi`.
 """
-function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol=1e-7, 
-  m=min(Ks.maxiter, size(A, 1)), norm=Base.norm, cache=nothing) where {B, T <: Number}
+function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol::Real=1e-7, 
+  m::Int=min(Ks.maxiter, size(A, 1)), norm=Base.norm, iop::Int=0, cache=nothing) where {B, T <: Number}
   if ishermitian(A)
     return lanczos!(Ks, A, b; tol=tol, m=m, norm=norm, cache=cache)
   end
@@ -229,6 +238,9 @@ function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol=1e-7,
   end
   V, H = getV(Ks), getH(Ks)
   vtol = tol * norm(A, Inf)
+  if iop == 0
+    iop = m
+  end
   # Safe checks
   n = size(V, 1)
   @assert length(b) == size(A,1) == size(A,2) == n "Dimension mismatch"
@@ -237,13 +249,13 @@ function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol=1e-7,
   else
     @assert size(cache) == (n,) "Dimension mismatch"
   end
-  # Arnoldi iterations
+  # Arnoldi iterations (with IOP)
   fill!(H, zero(T))
   Ks.beta = norm(b)
   V[:, 1] = b / Ks.beta
   @inbounds for j = 1:m
     A_mul_B!(cache, A, @view(V[:, j]))
-    @inbounds for i = 1:j
+    @inbounds for i = max(1, j - iop + 1):j
       alpha = dot(@view(V[:, i]), cache)
       H[i, j] = alpha
       Base.axpy!(-alpha, @view(V[:, i]), cache)
