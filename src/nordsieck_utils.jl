@@ -1,3 +1,8 @@
+const BIAS1 = 6
+const BIAS2 = 6
+const BIAS3 = 10
+const ADDON = 1e-6
+
 # This function computes the integral, from -1 to 0, of a polynomial
 # `P(x)` from the coefficients of `P` with an offset `k`.
 function ∫₋₁⁰dx(a, deg, k)
@@ -25,7 +30,8 @@ function calc_coeff!(cache::T) where T
   @inbounds begin
     isconst = T <: OrdinaryDiffEqConstantCache
     isconst || (cache = cache.const_cache)
-    isvarorder = ( T <: JVODECache || T <: JVODEConstantCache ) && cache.n_wait == 0
+    isvode = ( T <: JVODECache || T <: JVODEConstantCache )
+    isvarorder = isvode && cache.n_wait == 0
     @unpack m, l, tau = cache
     dtsum = dt = tau[1]
     order = cache.step
@@ -64,6 +70,8 @@ function calc_coeff!(cache::T) where T
     # polynomial and a `q+1` degree interpolating polynomial at time `t`.
     # It is the same with `tq[2]` in SUNDIALS cvode.c
     cache.c_LTE = M1 * M0_inv * ξ_inv
+    # It is the same with `tq[5]` in SUNDIALS cvode.c
+    isvode && (cache.𝒟 = inv(ξ_inv) / l[order+1])
     if isvarorder
       for i in order-1:-1:1
         m[i+1] = muladd(ξ_inv, m[i], m[i+1])
@@ -72,6 +80,8 @@ function calc_coeff!(cache::T) where T
       # It is the same with `tq[3]` in SUNDIALS cvode.c
       cache.c_LTE₊₁ = M2 * M0_inv / (order+1)
     end # endif isvarorder
+    # It is the same with `tq[4]` in SUNDIALS cvode.c
+    cache.c_conv = 1//10 / cache.c_LTE
   end # end @inbounds
 end
 
@@ -128,11 +138,11 @@ function nlsolve_functional!(integrator, cache::T) where T
   @unpack f, dt, uprev, t, p = integrator
   isconstcache = T <: OrdinaryDiffEqConstantCache
   if isconstcache
-    @unpack z, l, c_LTE = cache
+    @unpack z, l, c_conv = cache
     ratetmp = integrator.f(z[1], p, dt+t)
   else
     @unpack ratetmp, const_cache = cache
-    @unpack Δ, z, l, c_LTE = const_cache
+    @unpack Δ, z, l, c_conv = const_cache
     cache = const_cache
     integrator.f(ratetmp, z[1], p, dt+t)
   end
@@ -140,14 +150,12 @@ function nlsolve_functional!(integrator, cache::T) where T
   div_rate = 2
   # Zero out the difference vector
   isconstcache ? ( cache.Δ = zero(cache.Δ) ) : ( Δ .= zero(eltype(Δ)) )
-  # `pconv` is used in the convergence test
-  pconv = (1//10) / c_LTE
   # `k` is a counter for convergence test
   k = 0
   # `conv_rate` is used in convergence rate estimation
   conv_rate = 1.
-  # initialize `δ_prev`
-  δ_prev = 0
+  # initialize `η_prev`
+  η_prev = 0
   # Start the functional iteration & store the difference into `Δ`
   while true
     if isconstcache
@@ -162,16 +170,16 @@ function nlsolve_functional!(integrator, cache::T) where T
     end
     k == 0 || isconstcache ? ( cache.Δ = copy(ratetmp) ) : copy!(cache.Δ, ratetmp)
     # It only makes sense to calculate convergence rate in the second iteration
-    δ = integrator.opts.internalnorm(cache.Δ)
+    cache.η = integrator.opts.internalnorm(cache.Δ)
     if k >= 1
-      conv_rate = max(1//10*conv_rate, δ/δ_prev)
+      conv_rate = max(1//10*conv_rate, cache.η/η_prev)
     end
-    test_rate = δ * min(one(conv_rate), conv_rate) / pconv
+    test_rate = cache.η * min(one(conv_rate), conv_rate) / c_conv
     test_rate <= one(test_rate) && return true
     k += 1
     # Divergence criteria
-    ( (k == max_iter) || (k >= 2 && δ > div_rate * δ_prev) ) && return false
-    δ_prev = δ
+    ( (k == max_iter) || (k >= 2 && cache.η > div_rate * η_prev) ) && return false
+    η_prev = cache.η
     isconstcache ? (ratetmp = integrator.f(integrator.u, p, dt+t)) :
                     integrator.f(ratetmp, integrator.u, p, dt+t)
   end
@@ -198,4 +206,46 @@ end
 function nordsieck_rewind!(cache)
   perform_predict!(cache, true)
   nordsieck_rescale!(cache, true)
+end
+
+# `η` is `dtₙ₊₁/dtₙ`
+function η(cache::T) where T
+  isconstcache = T <: OrdinaryDiffEqConstantCache
+  isconstcache || ( cache = cache.const_cache )
+  dsm = cache.η
+  cache.η = inv( inv(BIAS2*dsm)^inv(L) + ADDON )
+end
+
+function η₊₁(cache::T) where T
+  isconstcache = T <: OrdinaryDiffEqConstantCache
+  isconstcache || ( ratetmp = cache.ratetmp; cache = cache.const_cache )
+  @unpack z, c_LTE₊₁, tau = cache
+  q = cache.step
+  cache.η₊₁ = 0
+  qmax = length(z)-1
+  L = q+1
+  if q != qmax
+    prev_𝒟 == 0 && return nothing
+    cquot = -(c_𝒟 / prev_𝒟) * (tau[1]/tau[3])^L
+    if isconstcache
+      ratetmp = muladd.(cquot, z[end], cache.Δ)
+    else
+      @. ratetmp = muladd(cquot, z[end], cache.Δ)
+    end
+    dup = integrator.opts.internalnorm(ratetmp) * c_LTE₊₁
+    cache.η₊₁ = inv( (BIAS3)*dup^inv(L+1) + ADDON )
+  end
+  return nothing
+end
+
+function η₋₁(cache::T) where T
+  isconstcache = T <: OrdinaryDiffEqConstantCache
+  isconstcache || ( cache = cache.const_cache )
+  @unpack z, c_LTE₋₁ = cache
+  q = cache.step
+  if q <= 2
+    approx = integrator.opts.internalnorm(integratorz[q+1]) * c_LTE₋₁
+    cache.η₋₁ = inv( (BIAS1*approx)^inv(q) + ADDON )
+  end
+  return nothing
 end

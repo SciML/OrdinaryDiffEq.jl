@@ -13,6 +13,8 @@ mutable struct AN5ConstantCache{zType,lType,dtType,uType,tsit5Type} <: OrdinaryD
   Δ::uType
   # `Tsit5` for the first step
   tsit5tab::tsit5Type
+  # `η` stores the norm of `Δ`
+  η::lType
   step::Int
 end
 
@@ -24,7 +26,7 @@ function AN5ConstantCache(u, uprev, rate_prototype, uBottomEltypeNoUnits, tTypeN
   c_LTE = zero(tTypeNoUnits)
   tau = zeros(MVector{N+1,typeof(dt)})
   tsit5tab = Tsit5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
-  AN5ConstantCache(z,l,m,c_LTE,tau,Δ,tsit5tab,1)
+  AN5ConstantCache(z,l,m,c_LTE,tau,Δ,tsit5tab,l[1],1)
 end
 
 function alg_cache(alg::AN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
@@ -69,7 +71,7 @@ function alg_cache(alg::AN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   AN5Cache(u,uprev,fsalfirst,utilde,tmp,ratetmp,atmp,const_cache,tsit5cache)
 end
 
-mutable struct JVODEConstantCache{zType,lType,dtType,uType,tsit5Type} <: OrdinaryDiffEqConstantCache
+mutable struct JVODEConstantCache{zType,lType,dtType,uType,tsit5Type,etaType} <: OrdinaryDiffEqConstantCache
   # `z` is the Nordsieck vector
   z::zType
   # `l` is used for the corrector iteration
@@ -82,16 +84,26 @@ mutable struct JVODEConstantCache{zType,lType,dtType,uType,tsit5Type} <: Ordinar
   c_LTE::lType
   # `c_LTE` is used for the error estimation for the current order - 1
   c_LTE₋₁::lType
+  # `c_conv` is used in convergence test
+  c_conv::lType
+  # `c_𝒟` is used to get the order q+2 derivative vector
+  c_𝒟::lType
+  prev_𝒟::lType
   # `tau` stores `dt`s
   tau::MVector{13, dtType}
   # `Δ` is the difference between the predictor `uₙ₀` and `uₙ`
   Δ::uType
   # `Tsit5` for the first step
   tsit5tab::tsit5Type
+  # same with `order` or `q`
   step::Int
   nextorder::Int
   # number of steps to take before considering to change order
   n_wait::Int
+  # `η` is `dtₙ₊₁/dtₙ`
+  η  ::etaType
+  η₊₁::etaType
+  η₋₁::etaType
 end
 
 function JVODEConstantCache(u, uprev, rate_prototype, uBottomEltypeNoUnits, tTypeNoUnits, dt)
@@ -99,12 +111,13 @@ function JVODEConstantCache(u, uprev, rate_prototype, uBottomEltypeNoUnits, tTyp
   z = [rate_prototype for i in 1:N+1]
   Δ = u
   l = zeros(MVector{N+1,tTypeNoUnits}); m = zeros(l)
-  c_LTE₊₁ = zero(tTypeNoUnits)
-  c_LTE = zero(tTypeNoUnits)
-  c_LTE₋₁ = zero(tTypeNoUnits)
+  constant = zero(tTypeNoUnits)
   tau = zeros(MVector{N+1,typeof(dt)})
   tsit5tab = Tsit5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
-  JVODEConstantCache(z,l,m,c_LTE₊₁,c_LTE,c_LTE₋₁,tau,Δ,tsit5tab,4,4,4)
+  η = dt/dt
+  JVODEConstantCache(z,l,m,
+                     constant,constant,constant,constant,constant,constant,
+                     tau,Δ,tsit5tab,4,4,4,η,η,η)
 end
 
 function alg_cache(alg::JVODE,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
