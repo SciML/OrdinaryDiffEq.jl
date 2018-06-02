@@ -170,6 +170,13 @@ function step_reject_controller!(integrator,alg)
 end
 
 const StandardControllerAlgs = Union{GenericImplicitEuler,GenericTrapezoid}
+const NordArgs = Union{AN5, JVODE}
+
+function stepsize_controller!(integrator, alg::NordArgs)
+  η = max(stepsize_η!(integrator.cache), 0.1)
+  integrator.qold = integrator.dt/η
+  return η
+end
 
 function stepsize_controller!(integrator,alg::Union{StandardControllerAlgs,
                               OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Standard}})
@@ -180,11 +187,13 @@ function stepsize_controller!(integrator,alg::Union{StandardControllerAlgs,
   q
 end
 function step_accept_controller!(integrator,alg::Union{StandardControllerAlgs,
-                              OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Standard}},q)
+                              OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Standard},
+                              NordArgs},q)
   integrator.dt/q # dtnew
 end
 function step_reject_controller!(integrator,alg::Union{StandardControllerAlgs,
-                              OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Standard}})
+                              OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Standard},
+                              NordArgs})
   integrator.dt = integrator.qold
 end
 

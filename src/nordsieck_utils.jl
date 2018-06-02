@@ -209,15 +209,21 @@ function nordsieck_rewind!(cache)
 end
 
 # `η` is `dtₙ₊₁/dtₙ`
-function η(cache::T) where T
+function stepsize_η!(cache::T) where T
   isconstcache = T <: OrdinaryDiffEqConstantCache
   isconstcache || ( cache = cache.const_cache )
+  isvode = ( T <: JVODECache || T <: JVODEConstantCache )
+  isvarorder = isvode && cache.n_wait == 0
   dsm = cache.η
+  L = cache.step+1
   cache.η = inv( inv(BIAS2*dsm)^inv(L) + ADDON )
-  return nothing
+  if isvarorder
+    cache.η = max(stepsize_η₋₁!(cache), stepsize_η₊₁!(cache), cache.η)
+  end
+  return cache.η
 end
 
-function η₊₁(cache::T) where T
+function stepsize_η₊₁!(cache::T) where T
   isconstcache = T <: OrdinaryDiffEqConstantCache
   isconstcache || ( ratetmp = cache.ratetmp; cache = cache.const_cache )
   @unpack z, c_LTE₊₁, tau = cache
@@ -236,10 +242,10 @@ function η₊₁(cache::T) where T
     dup = integrator.opts.internalnorm(ratetmp) * c_LTE₊₁
     cache.η₊₁ = inv( (BIAS3)*dup^inv(L+1) + ADDON )
   end
-  return nothing
+  return cache.η₊₁
 end
 
-function η₋₁(cache::T) where T
+function stepsize_η₋₁!(cache::T) where T
   isconstcache = T <: OrdinaryDiffEqConstantCache
   isconstcache || ( cache = cache.const_cache )
   @unpack z, c_LTE₋₁ = cache
@@ -248,5 +254,5 @@ function η₋₁(cache::T) where T
     approx = integrator.opts.internalnorm(integratorz[q+1]) * c_LTE₋₁
     cache.η₋₁ = inv( (BIAS1*approx)^inv(q) + ADDON )
   end
-  return nothing
+  return cache.η₋₁
 end
