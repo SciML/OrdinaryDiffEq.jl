@@ -162,21 +162,6 @@ function stepsize_controller!(integrator,alg)
   q
 end
 
-function stepsize_controller!(integrator,alg::OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm)
-  # PI-controller
-  cache,EEst,q11,qold = integrator.cache, integrator.EEst, integrator.q11, integrator.qold
-  beta2 = 2//(5get_current_alg_order(alg,cache))
-  beta1 = 7//(10get_current_alg_order(alg,cache))
-  @fastmath q11 = EEst^beta1
-  @fastmath q = q11/(qold^beta2)
-  integrator.q11 = q11
-  @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),q/integrator.opts.gamma))
-  if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
-    q = one(q)
-  end
-  q
-end
-
 function step_accept_controller!(integrator,alg,q)
   integrator.qold = max(integrator.EEst,integrator.opts.qoldinit)
   integrator.dt/q #dtnew
@@ -185,7 +170,7 @@ function step_reject_controller!(integrator,alg)
   integrator.dt = integrator.dt/min(inv(integrator.opts.qmin),integrator.q11/integrator.opts.gamma)
 end
 
-const StandardControllerAlgs = Union{GenericImplicitEuler,GenericTrapezoid}
+const StandardControllerAlgs = Union{GenericImplicitEuler,GenericTrapezoid,VCABM}
 
 function stepsize_controller!(integrator,alg::Union{StandardControllerAlgs,
                               OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Standard}})

@@ -1346,7 +1346,7 @@ end
   k1 = integrator.fsalfirst
   step = integrator.iter
   k = order
-  for i = k:-1:2
+  for i = 13:-1:2
     dts[i] = dts[i-1]
   end
   dts[1] = dt
@@ -1360,34 +1360,35 @@ end
   du_np1 = f(u,p,t+dt)
   ϕ_np1!(cache, du_np1, k+1)
   u += dt * g[k] * ϕ_np1[k]
-  du_np1 = f(u, p, t+dt)
   if integrator.opts.adaptive
-    utilde = dt * γstar(k) * ϕ_np1[k+1]
+    utilde = dt * (g[k+1]-g[k]) * ϕ_np1[k+1]
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
-    if k <= 3
-      cache.order = order + 1
+    if step < 4
+      cache.order = min(order+1,3)
     else
       if integrator.EEst < one(integrator.EEst)
-        ũ2 = dt * γstar(k-2) * ϕ_np1[k-1]
-        ũ1 = dt * γstar(k-1) * ϕ_np1[k]
-        ϕ_np1!(cache, du_np1, k+2)
-        ũ = dt * γstar(k+1) * ϕ_np1[k+2]
-        atmp2 = calculate_residuals(ũ2, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-        atmp1 = calculate_residuals(ũ1, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-        atmp = calculate_residuals(ũ, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-        err2 = integrator.opts.internalnorm(atmp2)
-        err1 = integrator.opts.internalnorm(atmp1)
-        err = integrator.opts.internalnorm(atmp)
-        if max(err2,err1) <= integrator.EEst
-          cache.order = min(order+1,max_order)
-        elseif err < integrator.EEst
+        utildem2 = dt * γstar[(k-2)+1] * ϕ_np1[k-1]
+        utildem1 = dt * γstar[(k-1)+1] * ϕ_np1[k]
+        ϕ_and_ϕstar!(cache,k1,k+1)
+        fsallast = f(u, p, t+dt)
+        ϕ_np1!(cache, fsallast, k+2)
+        integrator.fsallast = fsallast
+        utildep1 = dt * γstar[(k+1)+1] * ϕ_np1[k+2]
+        atmpm2 = calculate_residuals(utildem2, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+        atmpm1 = calculate_residuals(utildem1, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+        atmpp1 = calculate_residuals(utildep1, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+        errm2 = integrator.opts.internalnorm(atmpm2)
+        errm1 = integrator.opts.internalnorm(atmpm1)
+        errp1 = integrator.opts.internalnorm(atmpp1)
+        if max(errm2,errm1) <= integrator.EEst
+          cache.order = min(order-1,max_order)
+        elseif errp1 < integrator.EEst
           cache.order = min(order+1,max_order)
         end
       end
     end
   end
-  integrator.fsallast = du_np1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
