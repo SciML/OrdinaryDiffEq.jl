@@ -173,9 +173,9 @@ const StandardControllerAlgs = Union{GenericImplicitEuler,GenericTrapezoid}
 const NordArgs = Union{AN5, JVODE}
 
 function stepsize_controller!(integrator, alg::NordArgs)
-  η = max(stepsize_η!(integrator.cache), 0.1)
-  integrator.qold = integrator.dt/η
-  return η
+  q = stepsize_η!(integrator.cache, integrator.EEst)
+  integrator.qold = integrator.dt/q
+  return q
 end
 
 function stepsize_controller!(integrator,alg::Union{StandardControllerAlgs,

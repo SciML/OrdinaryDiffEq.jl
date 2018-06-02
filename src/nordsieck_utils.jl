@@ -2,6 +2,7 @@ const BIAS1 = 6
 const BIAS2 = 6
 const BIAS3 = 10
 const ADDON = 1e-6
+const THRESH = 1.5
 
 # This function computes the integral, from -1 to 0, of a polynomial
 # `P(x)` from the coefficients of `P` with an offset `k`.
@@ -154,8 +155,8 @@ function nlsolve_functional!(integrator, cache::T) where T
   k = 0
   # `conv_rate` is used in convergence rate estimation
   conv_rate = 1.
-  # initialize `η_prev`
-  η_prev = 0
+  # initialize `δ_prev`
+  δ_prev = 0
   # Start the functional iteration & store the difference into `Δ`
   while true
     if isconstcache
@@ -170,16 +171,16 @@ function nlsolve_functional!(integrator, cache::T) where T
     end
     k == 0 || isconstcache ? ( cache.Δ = copy(ratetmp) ) : copy!(cache.Δ, ratetmp)
     # It only makes sense to calculate convergence rate in the second iteration
-    cache.η = integrator.opts.internalnorm(cache.Δ)
+    δ = integrator.opts.internalnorm(cache.Δ)
     if k >= 1
-      conv_rate = max(1//10*conv_rate, cache.η/η_prev)
+      conv_rate = max(1//10*conv_rate, δ/δ_prev)
     end
-    test_rate = cache.η * min(one(conv_rate), conv_rate) / c_conv
+    test_rate = δ * min(one(conv_rate), conv_rate) / c_conv
     test_rate <= one(test_rate) && return true
     k += 1
     # Divergence criteria
-    ( (k == max_iter) || (k >= 2 && cache.η > div_rate * η_prev) ) && return false
-    η_prev = cache.η
+    ( (k == max_iter) || (k >= 2 && δ > div_rate * δ_prev) ) && return false
+    δ_prev = δ
     isconstcache ? (ratetmp = integrator.f(integrator.u, p, dt+t)) :
                     integrator.f(ratetmp, integrator.u, p, dt+t)
   end
@@ -190,7 +191,7 @@ function nordsieck_rescale!(cache::T, rewind=false) where T
   isconstcache || ( cache = cache.const_cache )
   @unpack z, tau, step = cache
   order = step
-  eta = rewind ? tau[1]/tau[2] : tau[1]/tau[2]
+  eta = rewind ? tau[2]/tau[1] : tau[1]/tau[2]
   factor = eta
   for i in 2:order+1
     if isconstcache
@@ -209,16 +210,18 @@ function nordsieck_rewind!(cache)
 end
 
 # `η` is `dtₙ₊₁/dtₙ`
-function stepsize_η!(cache::T) where T
+function stepsize_η!(cache::T, EEst) where T
   isconstcache = T <: OrdinaryDiffEqConstantCache
   isconstcache || ( cache = cache.const_cache )
   isvode = ( T <: JVODECache || T <: JVODEConstantCache )
   isvarorder = isvode && cache.n_wait == 0
-  dsm = cache.η
   L = cache.step+1
-  cache.η = inv( inv(BIAS2*dsm)^inv(L) + ADDON )
+  cache.η = inv( inv(BIAS2*EEst)^inv(L) + ADDON )
   if isvarorder
     cache.η = max(stepsize_η₋₁!(cache), stepsize_η₊₁!(cache), cache.η)
+  end
+  if cache.η < THRESH && cache.η > inv(THRESH)
+    cache.η = 1
   end
   return cache.η
 end
