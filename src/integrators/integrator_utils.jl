@@ -173,10 +173,16 @@ const StandardControllerAlgs = Union{GenericImplicitEuler,GenericTrapezoid}
 const NordArgs = Union{AN5, JVODE}
 
 function stepsize_controller!(integrator, alg::NordArgs)
-  q = stepsize_η!(integrator.cache, integrator.EEst)
-  integrator.qold = integrator.dt/q
-  return q
+  order = get_current_adaptive_order(integrator.alg, integrator.cache)
+  η = stepsize_η!(integrator.cache, order, integrator.EEst) * integrator.opts.gamma
+  integrator.qold = integrator.dt
+  η <= integrator.opts.qsteady_max && return one(η)
+  η = min(integrator.opts.qmax, max(integrator.opts.qmin, η))
+  integrator.qold *= η
+  η
 end
+step_accept_controller!(integrator,alg::NordArgs,η) = integrator.dt*η  # dtnew
+step_reject_controller!(integrator,alg::NordArgs) = ( integrator.dt = integrator.qold/2 ) # WIP
 
 function stepsize_controller!(integrator,alg::Union{StandardControllerAlgs,
                               OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Standard}})

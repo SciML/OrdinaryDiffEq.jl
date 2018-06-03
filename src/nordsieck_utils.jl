@@ -2,7 +2,6 @@ const BIAS1 = 6
 const BIAS2 = 6
 const BIAS3 = 10
 const ADDON = 1e-6
-const THRESH = 1.5
 
 # This function computes the integral, from -1 to 0, of a polynomial
 # `P(x)` from the coefficients of `P` with an offset `k`.
@@ -210,27 +209,24 @@ function nordsieck_rewind!(cache)
 end
 
 # `η` is `dtₙ₊₁/dtₙ`
-function stepsize_η!(cache::T, EEst) where T
+function stepsize_η!(cache::T, order, EEst) where T
   isconstcache = T <: OrdinaryDiffEqConstantCache
   isconstcache || ( cache = cache.const_cache )
   isvode = ( T <: JVODECache || T <: JVODEConstantCache )
   isvarorder = isvode && cache.n_wait == 0
-  L = cache.step+1
-  cache.η = inv( inv(BIAS2*EEst)^inv(L) + ADDON )
+  L = order+1
+  cache.η = inv( (BIAS2*EEst)^inv(L) + ADDON )
   if isvarorder
-    cache.η = max(stepsize_η₋₁!(cache), stepsize_η₊₁!(cache), cache.η)
-  end
-  if cache.η < THRESH && cache.η > inv(THRESH)
-    cache.η = 1
+    cache.η = max(stepsize_η₋₁!(cache, order), stepsize_η₊₁!(cache, order), cache.η)
   end
   return cache.η
 end
 
-function stepsize_η₊₁!(cache::T) where T
+function stepsize_η₊₁!(cache::T, order) where T
   isconstcache = T <: OrdinaryDiffEqConstantCache
   isconstcache || ( ratetmp = cache.ratetmp; cache = cache.const_cache )
   @unpack z, c_LTE₊₁, tau = cache
-  q = cache.step
+  q = order
   cache.η₊₁ = 0
   qmax = length(z)-1
   L = q+1
@@ -243,16 +239,16 @@ function stepsize_η₊₁!(cache::T) where T
       @. ratetmp = muladd(cquot, z[end], cache.Δ)
     end
     dup = integrator.opts.internalnorm(ratetmp) * c_LTE₊₁
-    cache.η₊₁ = inv( (BIAS3)*dup^inv(L+1) + ADDON )
+    cache.η₊₁ = inv( (BIAS3*dup)^inv(L+1) + ADDON )
   end
   return cache.η₊₁
 end
 
-function stepsize_η₋₁!(cache::T) where T
+function stepsize_η₋₁!(cache::T, order) where T
   isconstcache = T <: OrdinaryDiffEqConstantCache
   isconstcache || ( cache = cache.const_cache )
   @unpack z, c_LTE₋₁ = cache
-  q = cache.step
+  q = order
   if q <= 2
     approx = integrator.opts.internalnorm(integratorz[q+1]) * c_LTE₋₁
     cache.η₋₁ = inv( (BIAS1*approx)^inv(q) + ADDON )
