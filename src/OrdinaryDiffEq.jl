@@ -67,6 +67,7 @@ module OrdinaryDiffEq
   include("caches/adams_bashforth_moulton_caches.jl")
   include("caches/adams_nordsieck_caches.jl")
   include("caches/bdf_caches.jl")
+  include("caches/rkc_caches.jl")
 
   include("tableaus/low_order_rk_tableaus.jl")
   include("tableaus/high_order_rk_tableaus.jl")
@@ -76,6 +77,7 @@ module OrdinaryDiffEq
   include("tableaus/rosenbrock_tableaus.jl")
   include("tableaus/sdirk_tableaus.jl")
   include("tableaus/rkn_tableaus.jl")
+  include("tableaus/rkc_tableaus.jl")
 
   include("integrators/type.jl")
   include("integrators/integrator_utils.jl")
@@ -103,6 +105,7 @@ module OrdinaryDiffEq
   include("perform_step/adams_bashforth_moulton_perform_step.jl")
   include("perform_step/adams_nordsieck_perform_step.jl")
   include("perform_step/bdf_perform_step.jl")
+  include("perform_step/rkc_perform_step.jl")
 
   include("dense/generic_dense.jl")
   include("dense/interpolants.jl")
@@ -170,6 +173,8 @@ module OrdinaryDiffEq
 
   export Nystrom4, Nystrom4VelocityIndependent, Nystrom5VelocityIndependent,
          IRKN3, IRKN4, DPRKN6, DPRKN8, DPRKN12, ERKN4, ERKN5
+
+  export ROCK2
 
   export AB3, AB4, AB5, ABM32, ABM43, ABM54
 

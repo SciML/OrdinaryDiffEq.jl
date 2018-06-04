@@ -165,6 +165,9 @@ struct VCABM5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 struct AN5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
+# ROCK methods
+struct ROCK2 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
 ################################################################################
 
 # Generic implicit methods
