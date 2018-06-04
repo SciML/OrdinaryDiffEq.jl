@@ -478,22 +478,20 @@ function phiv_timestep(t::Number, A, B::Matrix{T}; tau=nothing,
     end
     # Compute w0...wp using the recurrence relation (16)
     copy!(@view(W[:, 1]), u) # w0 = u(tk)
+    coeffs = [1.0; cumprod(tk ./ (1:p - 1))] # cl = tk^l/l!
     @views @inbounds for j = 1:p
       A_mul_B!(W[:, j+1], A, W[:, j])
-      coeff = 1.0
       for l = 0:p-j
-        Base.axpy!(coeff, B[:, j+l+1], W[:, j+1])
-        coeff *= (tk / (l + 1))
+        Base.axpy!(coeffs[l+1], B[:, j+l+1], W[:, j+1])
       end
     end
     # Compute ϕp(tau*A)wp using Krylov
     # TODO: make this part non-allocating
     u = tau^p * phiv(tau, A, @view(W[:, end]), p; m=m, tol=tol, norm=norm)[:, end]
     # Update u using (15)
-    coeff = 1.0
+    coeffs = [1.0; cumprod(tau ./ (1:p - 1))] # cl = tau^l/l!
     @views @inbounds for j = 0:p-1
-      Base.axpy!(coeff, W[:, j+1], u)
-      coeff *= (tau / (j + 1))
+      Base.axpy!(coeffs[j+1], W[:, j+1], u)
     end
 
     tk += tau
