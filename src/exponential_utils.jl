@@ -436,3 +436,68 @@ function phiv!(w::Matrix{T}, t::Number, Ks::KrylovSubspace{B, T}, k::Integer;
     return w
   end
 end
+
+###########################################
+# Krylov phiv with internal time-stepping
+"""
+    phiv_timestep(t,A,B[;tau,m,tol,norm]) -> u
+
+Evaluates the linear combination of phi-vector products using time stepping
+
+```math
+u = \\varphi_0(tA)b_0 + t\\varphi_1(tA)b_1 + \\cdots + t^p\\varphi_p(tA)b_p 
+```
+
+The time stepping formula of Niesen & Wright is used [^1]. If the time step 
+`tau` is not specified, it is chosen according to (17) of Neisen & Wright.
+
+[^1]: Niesen, J., & Wright, W. (2009). A Krylov subspace algorithm for 
+evaluating the φ-functions in exponential integrators. arXiv preprint 
+arXiv:0907.4631.
+"""
+function phiv_timestep(t::Number, A, B::Matrix{T}; tau=nothing, 
+  m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm) where {T <: Number}
+  # Choose initial timestep
+  if tau == nothing
+    Anorm = norm(A, Inf)
+    b0norm = norm(@view(B[:, 1]), Inf)
+    tau = 10/Anorm * (tol * ((m+1)/e)^(m+1) * sqrt(2*pi*(m+1)) / 
+      (4*Anorm*b0norm))^(1/m)
+  end
+  # Initialization
+  n = size(A, 1)
+  p = size(B, 2) - 1
+  W = Matrix{T}(n, p+1)
+  u = Vector{T}(n)
+  copy!(u, @view(B[:, 1])) # u(0) = b0
+
+  tk = 0.0 # current time
+  while tk < t # time stepping loopx
+    if tk + tau > t # last step
+      tau = t - tk
+    end
+    # Compute w0...wp using the recurrence relation (16)
+    copy!(@view(W[:, 1]), u) # w0 = u(tk)
+    @views @inbounds for j = 1:p
+      A_mul_B!(W[:, j+1], A, W[:, j])
+      coeff = 1.0
+      for l = 0:p-j
+        Base.axpy!(coeff, B[:, j+l+1], W[:, j+1])
+        coeff *= (tk / (l + 1))
+      end
+    end
+    # Compute ϕp(tau*A)wp using Krylov
+    # TODO: make this part non-allocating
+    u = tau^p * phiv(tau, A, @view(W[:, end]), p; m=m, tol=tol, norm=norm)[:, end]
+    # Update u using (15)
+    coeff = 1.0
+    @views @inbounds for j = 0:p-1
+      Base.axpy!(coeff, W[:, j+1], u)
+      coeff *= (tau / (j + 1))
+    end
+
+    tk += tau
+  end
+
+  return u
+end
