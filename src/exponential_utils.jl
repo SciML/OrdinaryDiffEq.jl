@@ -151,9 +151,9 @@ be smaller than `maxiter`, the maximum allowed arnoldi iterations.
     getV(Ks) -> V
     getH(Ks) -> H
 
-Access methods for orthonormal basis `V` and the Gram-Schmidt coefficients `H`. 
-Both methods return a view into the storage arrays and has the correct 
-dimensions as indicated by `Ks.m`.
+Access methods for the (extended) orthonormal basis `V` and the (extended) 
+Gram-Schmidt coefficients `H`. Both methods return a view into the storage 
+arrays and has the correct dimensions as indicated by `Ks.m`.
 
     resize!(Ks, maxiter) -> Ks
 
@@ -168,14 +168,15 @@ mutable struct KrylovSubspace{B, T}
   V::Matrix{T}  # orthonormal bases
   H::Matrix{T}  # Gram-Schmidt coefficients
   KrylovSubspace{T}(n::Integer, maxiter::Integer=30) where {T} = new{real(T), T}(
-    maxiter, maxiter, zero(real(T)), Matrix{T}(n, maxiter), zeros(T, maxiter, maxiter))
+    maxiter, maxiter, zero(real(T)), Matrix{T}(n, maxiter + 1), 
+    zeros(T, maxiter + 1, maxiter))
 end
 # TODO: switch to overload `getproperty` in v0.7
-getH(Ks::KrylovSubspace) = @view(Ks.H[1:Ks.m, 1:Ks.m])
-getV(Ks::KrylovSubspace) = @view(Ks.V[:, 1:Ks.m])
+getH(Ks::KrylovSubspace) = @view(Ks.H[1:Ks.m + 1, 1:Ks.m])
+getV(Ks::KrylovSubspace) = @view(Ks.V[:, 1:Ks.m + 1])
 function Base.resize!(Ks::KrylovSubspace{B,T}, maxiter::Integer) where {B,T}
-  V = Matrix{T}(size(Ks.V, 1), maxiter)
-  H = zeros(T, maxiter, maxiter)
+  V = Matrix{T}(size(Ks.V, 1), maxiter + 1)
+  H = zeros(T, maxiter + 1, maxiter)
   Ks.V = V; Ks.H = H
   Ks.m = Ks.maxiter = maxiter
   return Ks
@@ -194,30 +195,39 @@ end
 
 Performs `m` anoldi iterations to obtain the Krylov subspace K_m(A,b).
 
-The n x m unitary basis vectors `getV(Ks)` and the m x m upper Heisenberg 
+The n x (m + 1) basis vectors `getV(Ks)` and the (m + 1) x m upper Heisenberg 
 matrix `getH(Ks)` are related by the recurrence formula
 
 ```
 v_1=b,\\quad Av_j = \\sum_{i=1}^{j+1}h_{ij}v_i\\quad(j = 1,2,\\ldots,m)
 ```
 
+`iop` determines the length of the incomplete orthogonalization procedure [^1]. 
+The default value of 0 indicates full Arnoldi. For symmetric/Hermitian `A`, 
+`iop` will be ignored and the Lanczos algorithm will be used instead.
+
 Refer to `KrylovSubspace` for more information regarding the output.
 
 Happy-breakdown occurs whenver `norm(v_j) < tol * norm(A, Inf)`, in this case 
 the dimension of `Ks` is smaller than `m`.
+
+[^1]: Koskela, A. (2015). Approximating the matrix exponential of an 
+advection-diffusion operator using the incomplete orthogonalization method. In 
+Numerical Mathematics and Advanced Applications-ENUMATH 2013 (pp. 345-353). 
+Springer, Cham.
 """
 function arnoldi(A, b; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, 
-  cache=nothing)
+  iop=0, cache=nothing)
   Ks = KrylovSubspace{eltype(b)}(length(b), m)
-  arnoldi!(Ks, A, b; m=m, tol=tol, norm=norm, cache=cache)
+  arnoldi!(Ks, A, b; m=m, tol=tol, norm=norm, cache=cache, iop=iop)
 end
 """
     arnoldi!(Ks,A,b[;tol,m,norm,cache]) -> Ks
 
 Non-allocating version of `arnoldi`.
 """
-function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol=1e-7, 
-  m=min(Ks.maxiter, size(A, 1)), norm=Base.norm, cache=nothing) where {B, T <: Number}
+function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol::Real=1e-7, 
+  m::Int=min(Ks.maxiter, size(A, 1)), norm=Base.norm, iop::Int=0, cache=nothing) where {B, T <: Number}
   if ishermitian(A)
     return lanczos!(Ks, A, b; tol=tol, m=m, norm=norm, cache=cache)
   end
@@ -228,6 +238,9 @@ function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol=1e-7,
   end
   V, H = getV(Ks), getH(Ks)
   vtol = tol * norm(A, Inf)
+  if iop == 0
+    iop = m
+  end
   # Safe checks
   n = size(V, 1)
   @assert length(b) == size(A,1) == size(A,2) == n "Dimension mismatch"
@@ -236,28 +249,28 @@ function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol=1e-7,
   else
     @assert size(cache) == (n,) "Dimension mismatch"
   end
-  # Arnoldi iterations
+  # Arnoldi iterations (with IOP)
   fill!(H, zero(T))
   Ks.beta = norm(b)
   V[:, 1] = b / Ks.beta
   @inbounds for j = 1:m
     A_mul_B!(cache, A, @view(V[:, j]))
-    @inbounds for i = 1:j
+    @inbounds for i = max(1, j - iop + 1):j
       alpha = dot(@view(V[:, i]), cache)
       H[i, j] = alpha
       Base.axpy!(-alpha, @view(V[:, i]), cache)
     end
     beta = norm(cache)
-    if beta < vtol || j == m
-      # happy-breakdown or maximum iteration is reached
-      Ks.m = j
-      return Ks
-    end
     H[j+1, j] = beta
     @inbounds for i = 1:n
       V[i, j+1] = cache[i] / beta
     end
+    if beta < vtol # happy-breakdown
+      Ks.m = j
+      break
+    end
   end
+  return Ks
 end
 """
     lanczos!(Ks,A,b[;tol,m,norm,cache]) -> Ks
@@ -295,16 +308,19 @@ function lanczos!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol=1e-7,
       Base.axpy!(-H[j-1, j], @view(V[:, j-1]), cache)
     end
     beta = norm(cache)
-    if beta < vtol || j == m
-      # happy-breakdown or maximum iteration is reached
-      Ks.m = j
-      return Ks
+    H[j+1, j] = beta
+    if j < m
+      H[j, j+1] = beta
     end
-    H[j+1, j] = H[j, j+1] = beta
     @inbounds for i = 1:n
       V[i, j+1] = cache[i] / beta
     end
+    if beta < vtol # happy-breakdown
+      Ks.m = j
+      break
+    end
   end
+  return Ks
 end
 
 """
@@ -337,7 +353,7 @@ function expv!(w::Vector{T}, t::Number, Ks::KrylovSubspace{B, T};
     # Here we only need a portion.
     cache = @view(cache[1:m, 1:m])
   end
-  @. cache = t * H
+  scale!(t, copy!(cache, @view(H[1:m, :])))
   if ishermitian(cache)
     # Optimize the case for symtridiagonal H
     F = eigfact!(SymTridiagonal(cache)) # Note: eigfact! -> eigen! in v0.7
@@ -346,11 +362,11 @@ function expv!(w::Vector{T}, t::Number, Ks::KrylovSubspace{B, T};
     expH = exp!(cache)
     expHe = @view(expH[:, 1])
   end
-  scale!(beta, A_mul_B!(w, V, expHe)) # exp(A) ≈ norm(b) * V * exp(H)e
+  scale!(beta, A_mul_B!(w, @view(V[:, 1:m]), expHe)) # exp(A) ≈ norm(b) * V * exp(H)e
 end
 
 """
-    phiv(t,A,b,k; kwargs) -> [phi_0(tA)b phi_1(tA)b ... phi_k(tA)b]
+    phiv(t,A,b,k;correct,kwargs) -> [phi_0(tA)b phi_1(tA)b ... phi_k(tA)b][, errest]
 
 Compute the matrix-phi-vector products using Krylov. `k` >= 1.
 
@@ -361,22 +377,28 @@ The phi functions are defined as
 ```
 
 A Krylov subspace is constructed using `arnoldi` and `phiv_dense` is called 
-on the Heisenberg matrix. Consult `arnoldi` for the values of the keyword 
-arguments.
+on the Heisenberg matrix. If `correct=true`, then phi_0 through phi_k-1 are 
+updated using the last Arnoldi vector v_m+1 [^1]. If `errest=true` then an 
+additional error estimate for the second-to-last phi is also returned. For 
+the additional keyword arguments, consult `arnoldi`.
+
+[^1]: Niesen, J., & Wright, W. (2009). A Krylov subspace algorithm for evaluating 
+the φ-functions in exponential integrators. arXiv preprint arXiv:0907.4631. 
+Formula (10).
 """
 function phiv(t, A, b, k; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, 
-  caches=nothing)
+  caches=nothing, correct=false, errest=false)
   Ks = arnoldi(A, b; m=m, tol=tol, norm=norm)
   w = Matrix{eltype(b)}(length(b), k+1)
-  phiv!(w, t, Ks, k; caches=caches)
+  phiv!(w, t, Ks, k; caches=caches, correct=correct, errest=errest)
 end
 """
-    phiv!(w,t,Ks,k[;caches]) -> w
+    phiv!(w,t,Ks,k[;caches,correct,errest]) -> w[,errest]
 
 Non-allocating version of 'phiv' that uses precomputed Krylov subspace `Ks`.
 """
 function phiv!(w::Matrix{T}, t::Number, Ks::KrylovSubspace{B, T}, k::Integer; 
-  caches=nothing) where {B, T <: Number}
+  caches=nothing, correct=false, errest=false) where {B, T <: Number}
   m, beta, V, H = Ks.m, Ks.beta, getV(Ks), getH(Ks)
   @assert size(w, 1) == size(V, 1) "Dimension mismatch"
   @assert size(w, 2) == k + 1 "Dimension mismatch"
@@ -394,8 +416,23 @@ function phiv!(w::Matrix{T}, t::Number, Ks::KrylovSubspace{B, T}, k::Integer;
     C1 = @view(C1[1:m + k, 1:m + k])
     C2 = @view(C2[1:m, 1:k + 1])
   end
-  @. Hcopy = t * H
+  scale!(t, copy!(Hcopy, @view(H[1:m, :])))
   fill!(e, zero(T)); e[1] = one(T) # e is the [1,0,...,0] basis vector
   phiv_dense!(C2, Hcopy, e, k; cache=C1) # C2 = [ϕ0(H)e ϕ1(H)e ... ϕk(H)e]
-  scale!(beta, A_mul_B!(w, V, C2)) # f(A) ≈ norm(b) * V * f(H)e
+  scale!(beta, A_mul_B!(w, @view(V[:, 1:m]), C2)) # f(A) ≈ norm(b) * V * f(H)e
+  if correct
+    # Use the last Arnoldi vector for correction with little additional cost
+    # correct_p = beta * h_{m+1,m} * (em^T phi_p+1(H) e1) * v_m+1
+    betah = beta * H[end,end] * t
+    vlast = @view(V[:,end])
+    @inbounds for i = 1:k
+      Base.axpy!(betah * C2[end, i+1], vlast, @view(w[:, i]))
+    end
+  end
+  if errest
+    err = abs(beta * H[end, end] * t * C2[end, end])
+    return w, err
+  else
+    return w
+  end
 end
