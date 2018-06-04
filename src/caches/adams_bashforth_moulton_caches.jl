@@ -818,6 +818,36 @@ mutable struct VCABMConstantCache{tArrayType,rArrayType,cArrayType,dtArrayType} 
   step::Int
 end
 
+mutable struct VCABMCache{uType,rateType,uArrayType,tArrayType,cArrayType,uEltypeNoUnits,coefType,dtArrayType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  fsalfirst::rateType
+  k4::rateType
+  ϕstar_nm1::coefType
+  dts::dtArrayType
+  c::cArrayType
+  g::tArrayType
+  ϕ_n::coefType
+  ϕ_np1::coefType
+  ϕstar_n::coefType
+  β::tArrayType
+  order::Int
+  max_order::Int
+  atmp::uEltypeNoUnits
+  tmp::uType
+  utilde::uArrayType
+  utildem1::uArrayType
+  utildem2::uArrayType
+  utildep1::uArrayType
+  atmpm1::uEltypeNoUnits
+  atmpm2::uEltypeNoUnits
+  atmpp1::uEltypeNoUnits
+  step::Int
+end
+
+u_cache(c::VCABMCache) = ()
+du_cache(c::VCABMCache) = ()
+
 function alg_cache(alg::VCABM,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   dts = zeros(typeof(dt),13)
   c = zeros(typeof(t), 13, 13)
@@ -836,3 +866,35 @@ function alg_cache(alg::VCABM,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   max_order = 12
   VCABMConstantCache(ϕstar_nm1,dts,c,g,ϕ_n,ϕ_np1,ϕstar_n,β,order,max_order,1)
 end
+
+function alg_cache(alg::VCABM,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  fsalfirst = zeros(rate_prototype)
+  k4 = zeros(rate_prototype)
+  dts = zeros(typeof(dt),13)
+  c = zeros(typeof(t),13,13)
+  g = zeros(typeof(t),13)
+  ϕ_n = Vector{typeof(rate_prototype)}(13)
+  ϕstar_nm1 = Vector{typeof(rate_prototype)}(13)
+  ϕstar_n = Vector{typeof(rate_prototype)}(13)
+  ϕ_np1 = Vector{typeof(rate_prototype)}(13)
+  for i in 1:13
+    ϕ_n[i] = zeros(rate_prototype)
+    ϕstar_nm1[i] = zeros(rate_prototype)
+    ϕstar_n[i] = zeros(rate_prototype)
+  end
+  β = zeros(typeof(t),13)
+  order = 1
+  max_order = 12
+  atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u)
+  utilde = similar(u,indices(u))
+  utildem2 = similar(u,indices(u))
+  utildem1 = similar(u,indices(u))
+  utildep1 = similar(u,indices(u))
+  atmp = similar(u,uEltypeNoUnits)
+  atmpm1 = similar(u,uEltypeNoUnits)
+  atmpm2 = similar(u,uEltypeNoUnits)
+  atmpp1 = similar(u,uEltypeNoUnits)
+  VCABMCache(u,uprev,fsalfirst,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕ_np1,ϕstar_n,β,order,max_order,atmp,tmp,utilde,utildem1,utildem2,utildep1,atmpm1,atmpm2,atmpp1,1)
+end
+
