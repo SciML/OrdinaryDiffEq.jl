@@ -120,6 +120,7 @@ module OrdinaryDiffEq
   include("nordsieck_utils.jl")
   include("adams_utils.jl")
   include("exponential_utils.jl")
+  include("rkc_utils.jl")
   include("derivative_wrappers.jl")
   include("iterator_interface.jl")
   include("constants.jl")
