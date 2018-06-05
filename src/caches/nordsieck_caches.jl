@@ -2,14 +2,14 @@ mutable struct AN5ConstantCache{zType,lType,dtType,uType,tsit5Type} <: OrdinaryD
   # `z` is the Nordsieck vector
   z::zType
   # `l` is used for the corrector iteration
-  l::MVector{6,lType}
+  l::Vector{lType}
   # `m` is a tmp vector that is used for calculating `l`
-  m::MVector{6,lType}
+  m::Vector{lType}
   # `c_LTE` is used for the error estimation for the current order
   c_LTE::lType
   c_conv::lType
   # `tau` stores `dt`s
-  tau::MVector{6, dtType}
+  tau::Vector{dtType}
   # `Δ` is the difference between the predictor `uₙ₀` and `uₙ`
   Δ::uType
   # `Tsit5` for the first step
@@ -23,9 +23,9 @@ function AN5ConstantCache(u, uprev, rate_prototype, uBottomEltypeNoUnits, tTypeN
   N = 5
   z = [zero(rate_prototype) for i in 1:N+1]
   Δ = u
-  l = zeros(MVector{N+1,tTypeNoUnits}); m = zeros(l)
+  l = zeros(tTypeNoUnits,N+1); m = zeros(l)
   c_LTE = zero(tTypeNoUnits)
-  tau = zeros(MVector{N+1,typeof(dt)})
+  tau = zeros(typeof(dt), 6)
   tsit5tab = Tsit5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   AN5ConstantCache(z,l,m,c_LTE,c_LTE,tau,Δ,tsit5tab,l[1],1)
 end
@@ -76,9 +76,9 @@ mutable struct JVODEConstantCache{zType,lType,dtType,uType,tsit5Type,etaType} <:
   # `z` is the Nordsieck vector
   z::zType
   # `l` is used for the corrector iteration
-  l::MVector{13,lType}
+  l::Vector{lType}
   # `m` is a tmp vector that is used for calculating `l`
-  m::MVector{13,lType}
+  m::Vector{lType}
   # `c_LTE` is used for the error estimation for the current order + 1
   c_LTE₊₁::lType
   # `c_LTE` is used for the error estimation for the current order
@@ -91,7 +91,7 @@ mutable struct JVODEConstantCache{zType,lType,dtType,uType,tsit5Type,etaType} <:
   c_𝒟::lType
   prev_𝒟::lType
   # `tau` stores `dt`s
-  tau::MVector{13, dtType}
+  tau::Vector{dtType}
   # `Δ` is the difference between the predictor `uₙ₀` and `uₙ`
   Δ::uType
   # `Tsit5` for the first step
@@ -111,9 +111,9 @@ function JVODEConstantCache(u, uprev, rate_prototype, uBottomEltypeNoUnits, tTyp
   N = 12
   z = [rate_prototype for i in 1:N+1]
   Δ = u
-  l = zeros(MVector{N+1,tTypeNoUnits}); m = zeros(l)
+  l = zeros(tTypeNoUnits, N+1); m = zeros(l)
   constant = zero(tTypeNoUnits)
-  tau = zeros(MVector{N+1,typeof(dt)})
+  tau = zeros(typeof(dt),N+1)
   tsit5tab = Tsit5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   η = dt/dt
   JVODEConstantCache(z,l,m,
