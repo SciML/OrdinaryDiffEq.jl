@@ -1,4 +1,4 @@
-using OrdinaryDiffEq: phi, phi, phiv, expv, arnoldi, getH, getV
+using OrdinaryDiffEq: phi, phi, phiv, phiv_timestep, expv, arnoldi, getH, getV
 
 @testset "Exponential Utilities" begin
   # Scalar phi
@@ -45,4 +45,15 @@ using OrdinaryDiffEq: phi, phi, phiv, expv, arnoldi, getH, getV
   w = expv(t, A, b; m=m)
   wperm = expv(t, Aperm, b; m=m)
   @test w ≈ wperm
+
+  # Internal time-stepping for Krylov
+  n = 100; m = 20
+  K = 4
+  A = diagm(-2*ones(n)) + diagm(ones(n-1), -1) + diagm(ones(n-1), 1)
+  B = randn(n, K+1)
+  t = 5.0; tau = 1.0
+  Phi = phi(t * A, K)
+  u_exact = sum(t^i * Phi[i+1] * B[:,i+1] for i = 0:K)
+  u = phiv_timestep(t, A, B; m=m, tau=tau) # effectively only a single step
+  @test u_exact ≈ u
 end

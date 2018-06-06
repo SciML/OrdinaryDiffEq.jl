@@ -436,3 +436,88 @@ function phiv!(w::Matrix{T}, t::Number, Ks::KrylovSubspace{B, T}, k::Integer;
     return w
   end
 end
+
+###########################################
+# Krylov phiv with internal time-stepping
+"""
+    phiv_timestep(t,A,B[;tau,m,tol,norm,iop,correct]) -> u
+
+Evaluates the linear combination of phi-vector products using time stepping
+
+```math
+u = \\varphi_0(tA)b_0 + t\\varphi_1(tA)b_1 + \\cdots + t^p\\varphi_p(tA)b_p 
+```
+
+The time stepping formula of Niesen & Wright is used [^1]. If the time step 
+`tau` is not specified, it is chosen according to (17) of Neisen & Wright. 
+For the other keyword arguments, consult `arnoldi` and `phiv`, which are used 
+internally.
+
+[^1]: Niesen, J., & Wright, W. (2009). A Krylov subspace algorithm for 
+evaluating the φ-functions in exponential integrators. arXiv preprint 
+arXiv:0907.4631.
+"""
+function phiv_timestep(t, A, B; tau=0.0, m=min(30, size(A, 1)), tol=1e-7, 
+  norm=Base.norm, iop=0, correct=false)
+  u = Vector{eltype(A)}(size(A, 1))
+  phiv_timestep!(u, t, A, B; tau=tau, m=m, tol=tol, norm=norm, iop=iop, correct=correct)
+end
+"""
+    phiv_timestep!(u,t,A,B[;kwargs]) -> u
+
+Non-allocating version of `phiv_timestep`.
+"""
+function phiv_timestep!(u::Vector{T}, t::Float64, A, B::Matrix{T}; tau::Float64=0.0, 
+  m::Int=min(30, size(A, 1)), tol::Real=1e-7, norm=Base.norm, iop::Int=0, 
+  correct::Bool=false, caches=nothing) where {T <: Number}
+  # Choose initial timestep
+  if iszero(tau)
+    Anorm = norm(A, Inf)
+    b0norm = norm(@view(B[:, 1]), Inf)
+    tau = 10/Anorm * (tol * ((m+1)/e)^(m+1) * sqrt(2*pi*(m+1)) / 
+      (4*Anorm*b0norm))^(1/m)
+  end
+  # Initialization
+  n = length(u)
+  p = size(B, 2) - 1
+  @assert n == size(A, 1) == size(A, 2) == size(B, 1) "Dimension mismatch"
+  if caches == nothing
+    W = Matrix{T}(n, p+1)         # stores the w vectors
+    P = similar(W)                # stores output from phiv!
+    Ks = KrylovSubspace{T}(n, m)  # stores output from arnoldi!
+    phiv_caches = nothing         # caches used by phiv!
+  else
+    W, P, Ks, phiv_caches = caches
+    @assert size(W) == size(P) == (n, p+1) "Dimension mismatch"
+  end
+  copy!(u, @view(B[:, 1])) # u(0) = b0
+
+  tk = 0.0 # current time
+  while tk < t # time stepping loopx
+    if tk + tau > t # last step
+      tau = t - tk
+    end
+    # Compute w0...wp using the recurrence relation (16)
+    copy!(@view(W[:, 1]), u) # w0 = u(tk)
+    coeffs = [1.0; cumprod(tk ./ (1:p - 1))] # cl = tk^l/l!
+    @views @inbounds for j = 1:p
+      A_mul_B!(W[:, j+1], A, W[:, j])
+      for l = 0:p-j
+        Base.axpy!(coeffs[l+1], B[:, j+l+1], W[:, j+1])
+      end
+    end
+    # Compute ϕp(tau*A)wp using Krylov
+    arnoldi!(Ks, A, @view(W[:, end]); tol=tol, m=m, norm=norm, iop=iop, cache=u)
+    phiv!(P, tau, Ks, p; caches=phiv_caches, correct=correct)
+    scale!(tau^p, copy!(u, @view(P[:, end])))
+    # Update u using (15)
+    coeffs = [1.0; cumprod(tau ./ (1:p - 1))] # cl = tau^l/l!
+    @views @inbounds for j = 0:p-1
+      Base.axpy!(coeffs[j+1], W[:, j+1], u)
+    end
+
+    tk += tau
+  end
+
+  return u
+end
