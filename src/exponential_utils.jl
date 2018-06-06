@@ -457,10 +457,9 @@ internally.
 evaluating the φ-functions in exponential integrators. arXiv preprint 
 arXiv:0907.4631.
 """
-function phiv_timestep(t, A, B; tau=0.0, m=min(30, size(A, 1)), tol=1e-7, 
-  norm=Base.norm, iop=0, correct=false)
+function phiv_timestep(t, A, B; kwargs...)
   u = Vector{eltype(A)}(size(A, 1))
-  phiv_timestep!(u, t, A, B; tau=tau, m=m, tol=tol, norm=norm, iop=iop, correct=correct)
+  phiv_timestep!(u, t, A, B; kwargs...)
 end
 """
     phiv_timestep!(u,t,A,B[;kwargs]) -> u
@@ -468,8 +467,8 @@ end
 Non-allocating version of `phiv_timestep`.
 """
 function phiv_timestep!(u::Vector{T}, t::Float64, A, B::Matrix{T}; tau::Float64=0.0, 
-  m::Int=min(30, size(A, 1)), tol::Real=1e-7, norm=Base.norm, iop::Int=0, 
-  correct::Bool=false, caches=nothing) where {T <: Number}
+  m::Int=min(10, size(A, 1)), tol::Real=1e-7, norm=Base.norm, iop::Int=0, 
+  correct::Bool=false, caches=nothing, adapt=false, delta=1.2, gamma=0.8) where {T <: Number}
   # Choose initial timestep
   if iszero(tau)
     Anorm = norm(A, Inf)
@@ -491,13 +490,14 @@ function phiv_timestep!(u::Vector{T}, t::Float64, A, B::Matrix{T}; tau::Float64=
     @assert size(W) == size(P) == (n, p+1) "Dimension mismatch"
   end
   copy!(u, @view(B[:, 1])) # u(0) = b0
+  abstol = tol * norm(A, Inf)
 
   tk = 0.0 # current time
   while tk < t # time stepping loop
     if tk + tau > t # last step
       tau = t - tk
     end
-    # Compute w0...wp using the recurrence relation (16)
+    # Part 1: compute w0...wp using the recurrence relation (16)
     copy!(@view(W[:, 1]), u) # w0 = u(tk)
     coeffs = [1.0; cumprod(tk ./ (1:p - 1))] # cl = tk^l/l!
     @views @inbounds for j = 1:p
@@ -506,11 +506,27 @@ function phiv_timestep!(u::Vector{T}, t::Float64, A, B::Matrix{T}; tau::Float64=
         Base.axpy!(coeffs[l+1], B[:, j+l+1], W[:, j+1])
       end
     end
-    # Compute ϕp(tau*A)wp using Krylov
+    # Part 2: compute ϕp(tau*A)wp using Krylov, possibly with adaptation
     arnoldi!(Ks, A, @view(W[:, end]); tol=tol, m=m, norm=norm, iop=iop, cache=u)
     _, epsilon = phiv!(P, tau, Ks, p + 1; caches=phiv_caches, correct=correct, errest=true)
+    if adapt
+      omega = (t / tau) * (epsilon / abstol)
+      epsilon_old = epsilon; m_old = m; tau_old = tau
+      q = m/4; kappa = 2.0
+      while omega > delta # inner loop of Algorithm 3
+        m_new, tau_new, q, kappa = _phiv_timestep_adapt(
+          m, tau, epsilon, m_old, tau_old, epsilon_old, q, kappa, gamma, omega)
+        m, m_old = m_new, m
+        tau, tau_old = tau_new, tau
+        # Compute ϕp(tau*A)wp using the new parameters
+        arnoldi!(Ks, A, @view(W[:, end]); tol=tol, m=m, norm=norm, iop=iop, cache=u)
+        _, epsilon_new = phiv!(P, tau, Ks, p + 1; caches=phiv_caches, correct=correct, errest=true)
+        epsilon, epsilon_old = epsilon_new, epsilon
+        omega = (t / tau) * (epsilon / abstol)
+      end
+    end
+    # Part 3: update u using (15)
     scale!(tau^p, copy!(u, @view(P[:, end - 1])))
-    # Update u using (15)
     coeffs = [1.0; cumprod(tau ./ (1:p - 1))] # cl = tau^l/l!
     @views @inbounds for j = 0:p-1
       Base.axpy!(coeffs[j+1], W[:, j+1], u)
@@ -520,4 +536,26 @@ function phiv_timestep!(u::Vector{T}, t::Float64, A, B::Matrix{T}; tau::Float64=
   end
 
   return u
+end
+function _phiv_timestep_adapt(m, tau, epsilon, m_old, tau_old, epsilon_old, q, kappa, gamma, omega)
+  # Compute new m and tau (Algorithm 4)
+  if tau_old > tau
+    q = log(tau/tau_old) / log(epsilon/epsilon_old) - 1
+  end # else keep q the same
+  tau_new = tau * (gamma / omega)^(1/(q + 1))
+  if m_old < m
+    kappa = (epsilon/epsilon_old)^(1/(m_old - m))
+  end # else keep kappa the same
+  m_new = m + log(omega / gamma) / log(kappa)
+  # Compare costs of using new m vs new tau
+  cost_tau = 0 # TODO
+  cost_m = 0 # TODO
+  if cost_tau < cost_m
+    m_new = m
+    tau_new = min(max(tau_new, tau/5), 2*tau, t-tk)
+  else
+    m_new = min(max(m_new, div(3*m, 4), 1), Int(ceil(4*m / 3)))
+    tau_new = tau
+  end
+  return m_new, tau_new, q, kappa
 end
