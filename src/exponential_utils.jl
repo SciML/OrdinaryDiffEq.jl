@@ -483,7 +483,7 @@ function phiv_timestep!(u::Vector{T}, t::Float64, A, B::Matrix{T}; tau::Float64=
   @assert n == size(A, 1) == size(A, 2) == size(B, 1) "Dimension mismatch"
   if caches == nothing
     W = Matrix{T}(n, p+1)         # stores the w vectors
-    P = similar(W)                # stores output from phiv!
+    P = Matrix{T}(n, p+2)         # stores output from phiv!
     Ks = KrylovSubspace{T}(n, m)  # stores output from arnoldi!
     phiv_caches = nothing         # caches used by phiv!
   else
@@ -493,7 +493,7 @@ function phiv_timestep!(u::Vector{T}, t::Float64, A, B::Matrix{T}; tau::Float64=
   copy!(u, @view(B[:, 1])) # u(0) = b0
 
   tk = 0.0 # current time
-  while tk < t # time stepping loopx
+  while tk < t # time stepping loop
     if tk + tau > t # last step
       tau = t - tk
     end
@@ -508,8 +508,8 @@ function phiv_timestep!(u::Vector{T}, t::Float64, A, B::Matrix{T}; tau::Float64=
     end
     # Compute ϕp(tau*A)wp using Krylov
     arnoldi!(Ks, A, @view(W[:, end]); tol=tol, m=m, norm=norm, iop=iop, cache=u)
-    phiv!(P, tau, Ks, p; caches=phiv_caches, correct=correct)
-    scale!(tau^p, copy!(u, @view(P[:, end])))
+    _, epsilon = phiv!(P, tau, Ks, p + 1; caches=phiv_caches, correct=correct, errest=true)
+    scale!(tau^p, copy!(u, @view(P[:, end - 1])))
     # Update u using (15)
     coeffs = [1.0; cumprod(tau ./ (1:p - 1))] # cl = tau^l/l!
     @views @inbounds for j = 0:p-1
