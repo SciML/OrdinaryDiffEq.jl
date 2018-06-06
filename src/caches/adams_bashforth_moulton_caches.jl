@@ -855,7 +855,7 @@ function alg_cache(alg::VCABM,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   ϕ_n = Vector{typeof(rate_prototype)}(13)
   ϕstar_nm1 = Vector{typeof(rate_prototype)}(13)
   ϕstar_n = Vector{typeof(rate_prototype)}(13)
-  ϕ_np1 = Vector{typeof(rate_prototype)}(13)
+  ϕ_np1 = Vector{typeof(rate_prototype)}(14)
   for i in 1:13
     ϕ_n[i] = copy(rate_prototype)
     ϕstar_nm1[i] = copy(rate_prototype)
@@ -876,7 +876,7 @@ function alg_cache(alg::VCABM,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   ϕ_n = Vector{typeof(rate_prototype)}(13)
   ϕstar_nm1 = Vector{typeof(rate_prototype)}(13)
   ϕstar_n = Vector{typeof(rate_prototype)}(13)
-  ϕ_np1 = Vector{typeof(rate_prototype)}(13)
+  ϕ_np1 = Vector{typeof(rate_prototype)}(14)
   for i in 1:13
     ϕ_n[i] = zeros(rate_prototype)
     ϕstar_nm1[i] = zeros(rate_prototype)

@@ -1351,7 +1351,6 @@ end
   end
   dts[1] = dt
   ϕ_and_ϕstar!(cache,k1,k)
-  cache.ϕstar_nm1 .= ϕstar_n
   g_coefs!(cache,k+1)
   u = uprev
   for i = 1:(k-1)
@@ -1368,7 +1367,7 @@ end
       return nothing
     end
     integrator.fsallast = f(u, p, t+dt)
-    if step < 4
+    if step <= 4
       cache.order = min(order+1,3)
     else
       utildem2 = dt * γstar[(k-2)+1] * ϕ_np1[k-1]
@@ -1383,12 +1382,13 @@ end
       errm1 = integrator.opts.internalnorm(atmpm1)
       errp1 = integrator.opts.internalnorm(atmpp1)
       if max(errm2,errm1) <= integrator.EEst
-        cache.order = min(order-1,max_order)
+        cache.order = order - 1
       elseif errp1 < integrator.EEst
         cache.order = min(order+1,max_order)
       end
     end
   end
+  cache.ϕstar_nm1 .= ϕstar_n
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
@@ -1416,9 +1416,6 @@ end
   end
   dts[1] = dt
   ϕ_and_ϕstar!(cache,k1,k)
-  for i in eachindex(ϕstar_n)
-    cache.ϕstar_nm1[i] .= ϕstar_n[i]
-  end
   g_coefs!(cache,k+1)
   @. u = uprev
   for i = 1:(k-1)
@@ -1436,7 +1433,7 @@ end
       return nothing
     end
     f(k4, u, p, t+dt)
-    if step < 4
+    if step <= 4
       cache.order = min(order+1,3)
     else
       @. utildem2 = dt * γstar[(k-2)+1] * ϕ_np1[k-1]
@@ -1451,10 +1448,13 @@ end
       errm1 = integrator.opts.internalnorm(atmpm1)
       errp1 = integrator.opts.internalnorm(atmpp1)
       if max(errm2,errm1) <= integrator.EEst
-        cache.order = min(order-1,max_order)
+        cache.order = order - 1
       elseif errp1 < integrator.EEst
         cache.order = min(order+1,max_order)
       end
     end
+  end
+  for i in eachindex(ϕstar_n)
+    cache.ϕstar_nm1[i] .= ϕstar_n[i]
   end
 end

@@ -2,7 +2,7 @@
 # by Ernst Hairer, Gerhard Wanner, and Syvert P Norsett.
 # III.5 Variable Step Size Multistep Methods: Formulae 5.9
 function ϕ_and_ϕstar!(cache, du, k)
-  @inbounds begin
+  # @inbounds begin
     @unpack dts, ϕstar_nm1, ϕ_n, ϕstar_n,β = cache
     ξ = dt = dts[1]
     ξ0 = zero(dt)
@@ -26,11 +26,11 @@ function ϕ_and_ϕstar!(cache, du, k)
         ϕstar_n[i] = β[i] * ϕ_n[i]
       end
     end
-  end # inbounds
+  # end # inbounds
 end
 
 function ϕ_np1!(cache, du_np1, k)
-  @inbounds begin
+  # @inbounds begin
     @unpack ϕ_np1, ϕstar_n = cache
     for i = 1:k
       if i == 1
@@ -39,14 +39,14 @@ function ϕ_np1!(cache, du_np1, k)
         ϕ_np1[i] = ϕ_np1[i-1] - ϕstar_n[i-1]
       end
     end
-  end #inbounds
+  # end #inbounds
 end
 
 # Solving Ordinary Differential Equations I: Nonstiff Problems
 # by Ernst Hairer, Gerhard Wanner, and Syvert P Norsett.
 # III.5 Variable Step Size Multistep Methods: Formulae 5.9 & 5.10
 function g_coefs!(cache, k)
-  @inbounds begin
+  # @inbounds begin
     @unpack dts,c,g = cache
     ξ = dt = dts[1]
     for i = 1:k
@@ -64,8 +64,8 @@ function g_coefs!(cache, k)
       end # q
       g[i] = c[i,1]
     end # i
-  end # inbounds
+  # end # inbounds
 end
 
 # Coefficients for the implicit Adams methods
-global const γstar = [1,-1/2,-1/12,-1/24,-19/720,-3/160,-863/60480,-275/24192,-33953/3628800]
+global const γstar = [1,-1/2,-1/12,-1/24,-19/720,-3/160,-863/60480,-275/24192,-33953/3628800,-0.00789255,-0.00678585,-0.00592406,-0.00523669,-0.0046775,-0.00421495,-0.0038269]
