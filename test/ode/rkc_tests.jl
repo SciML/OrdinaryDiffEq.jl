@@ -8,7 +8,9 @@ srand(123)
     f(u,p,t) = A*u
     prob = ODEProblem(f, rand(200), (0,1.))
     integrator = init(prob, ROCK2())
+    eigm = maximum(abs.(eigvals(A)))
     maxeig!(integrator, integrator.cache)
-    @test eigest ≈ eigm atol=0.3eigm
+    eigest = integrator.eigen_est
+    @test eigest ≈ eigm atol=0.22eigm
   end
 end

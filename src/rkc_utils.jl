@@ -8,8 +8,8 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
   safe = 1.2
   # Initial guess for eigenvector `z`
   if isfirst
-    z = fsalfirst
-    f(z, p, t)
+    fz = fsalfirst
+    z = f(fz, p, t)
   else
     z = cache.zprev
   end
@@ -24,10 +24,10 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
   if ( !is_u_zero && !is_z_zero )
     dz_u = u_norm * sqrt_pert
     quot = dz_u/z_norm
-    z = u + quot*z
+    z = uprev + quot*z
   elseif !is_u_zero
     dz_u = u_norm * sqrt_pert
-    z = u + u*dz_u
+    z = uprev + uprev*dz_u
   elseif !is_z_zero
     dz_u = pert
     quot = dz_u/z_norm
@@ -53,12 +53,12 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
     # Next `z`
     if Δ != zero(Δ)
       quot = dz_u/Δ
-      z = u + quot*tmp
+      z = uprev + quot*tmp
     else
       # An arbitrary change on `z`
-      nind = length(u)
+      nind = length(uprev)
       ind = 1 + iter % nind
-      z[ind] = fsalfirst[ind] - (z[ind] - fsalfirst[ind])
+      z[ind] = uprev[ind] - (z[ind] - uprev[ind])
     end
   end
   return false
