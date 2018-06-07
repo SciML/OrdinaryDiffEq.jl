@@ -468,7 +468,8 @@ Non-allocating version of `phiv_timestep`.
 """
 function phiv_timestep!(u::Vector{T}, t::Float64, A, B::Matrix{T}; tau::Float64=0.0, 
   m::Int=min(10, size(A, 1)), tol::Real=1e-7, norm=Base.norm, iop::Int=0, 
-  correct::Bool=false, caches=nothing, adapt=false, delta=1.2, gamma=0.8) where {T <: Number}
+  correct::Bool=false, caches=nothing, adaptive=false, delta::Real=1.2, 
+  gamma::Real=0.8, NA::Int=countnz(A)) where {T <: Number}
   # Choose initial timestep
   if iszero(tau)
     Anorm = norm(A, Inf)
@@ -487,7 +488,7 @@ function phiv_timestep!(u::Vector{T}, t::Float64, A, B::Matrix{T}; tau::Float64=
     phiv_caches = nothing         # caches used by phiv!
   else
     W, P, Ks, phiv_caches = caches
-    @assert size(W) == size(P) == (n, p+1) "Dimension mismatch"
+    @assert size(W) == (n, p+1) && size(P) == (n, p+2) "Dimension mismatch"
   end
   copy!(u, @view(B[:, 1])) # u(0) = b0
   abstol = tol * norm(A, Inf)
@@ -509,13 +510,14 @@ function phiv_timestep!(u::Vector{T}, t::Float64, A, B::Matrix{T}; tau::Float64=
     # Part 2: compute ϕp(tau*A)wp using Krylov, possibly with adaptation
     arnoldi!(Ks, A, @view(W[:, end]); tol=tol, m=m, norm=norm, iop=iop, cache=u)
     _, epsilon = phiv!(P, tau, Ks, p + 1; caches=phiv_caches, correct=correct, errest=true)
-    if adapt
+    if adaptive
       omega = (t / tau) * (epsilon / abstol)
       epsilon_old = epsilon; m_old = m; tau_old = tau
-      q = m/4; kappa = 2.0
+      q = m/4; kappa = 2.0; maxtau = t - tk
       while omega > delta # inner loop of Algorithm 3
         m_new, tau_new, q, kappa = _phiv_timestep_adapt(
-          m, tau, epsilon, m_old, tau_old, epsilon_old, q, kappa, gamma, omega)
+          m, tau, epsilon, m_old, tau_old, epsilon_old, q, kappa, 
+          gamma, omega, maxtau, n, p, NA, iop, norm(getH(Ks), 1))
         m, m_old = m_new, m
         tau, tau_old = tau_new, tau
         # Compute ϕp(tau*A)wp using the new parameters
@@ -537,7 +539,9 @@ function phiv_timestep!(u::Vector{T}, t::Float64, A, B::Matrix{T}; tau::Float64=
 
   return u
 end
-function _phiv_timestep_adapt(m, tau, epsilon, m_old, tau_old, epsilon_old, q, kappa, gamma, omega)
+# Helper functions for phiv_timestep!
+function _phiv_timestep_adapt(m, tau, epsilon, m_old, tau_old, epsilon_old, q, kappa, 
+  gamma, omega, maxtau, n, p, NA, iop, Hnorm)
   # Compute new m and tau (Algorithm 4)
   if tau_old > tau
     q = log(tau/tau_old) / log(epsilon/epsilon_old) - 1
@@ -547,15 +551,34 @@ function _phiv_timestep_adapt(m, tau, epsilon, m_old, tau_old, epsilon_old, q, k
     kappa = (epsilon/epsilon_old)^(1/(m_old - m))
   end # else keep kappa the same
   m_new = m + log(omega / gamma) / log(kappa)
-  # Compare costs of using new m vs new tau
-  cost_tau = 0 # TODO
-  cost_m = 0 # TODO
+  # Compare costs of using new m vs new tau (23)
+  cost_tau = _phiv_timestep_estimate_flops(m, tau_new, n, p, NA, iop, Hnorm)
+  cost_m = _phiv_timestep_estimate_flops(m_new, tau, n, p, NA, iop, Hnorm)
   if cost_tau < cost_m
     m_new = m
-    tau_new = min(max(tau_new, tau/5), 2*tau, t-tk)
+    tau_new = min(max(tau_new, tau/5), 2*tau, maxtau)
   else
     m_new = min(max(m_new, div(3*m, 4), 1), Int(ceil(4*m / 3)))
     tau_new = tau
   end
   return m_new, tau_new, q, kappa
+end
+function _phiv_timestep_estimate_flops(m, tau, n, p, NA, iop, Hnorm)
+  # Estimate flops for the update of W and u
+  flops_W = 2 * (p - 1) * (NA + n)
+  flops_u = (2 * p + 1) * n
+  # Estimate flops for arnoldi!
+  if iop == 0
+    iop = m
+  end
+  flops_matvec = 2 * m * NA
+  flops_vecvec = 0
+  for i = 1:m
+    flops_vecvec += 3 * min(i, iop)
+  end
+  # Estimate flops for phiv! (7)
+  MH = 44/3 + 2 * ceil(max(0.0, log2(Hnorm / 5.37)))
+  flops_phiv = round(Int, MH * (m + p)^3)
+
+  return flops_W + flops_u + flops_matvec + flops_vecvec + flops_phiv
 end
