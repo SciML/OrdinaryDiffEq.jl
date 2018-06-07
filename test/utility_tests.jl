@@ -46,14 +46,15 @@ using OrdinaryDiffEq: phi, phi, phiv, phiv_timestep, expv, arnoldi, getH, getV
   wperm = expv(t, Aperm, b; m=m)
   @test w ≈ wperm
 
-  # Internal time-stepping for Krylov
-  n = 100; m = 20
+  # Internal time-stepping for Krylov (with adaptation)
+  n = 100
   K = 4
-  A = diagm(-2*ones(n)) + diagm(ones(n-1), -1) + diagm(ones(n-1), 1)
+  t = 5.0
+  tol = 1e-7
+  A = spdiagm((ones(n-1), -2*ones(n), ones(n-1)), (-1, 0, 1))
   B = randn(n, K+1)
-  t = 5.0; tau = 1.0
   Phi = phi(t * A, K)
   u_exact = sum(t^i * Phi[i+1] * B[:,i+1] for i = 0:K)
-  u = phiv_timestep(t, A, B; m=m, tau=tau) # effectively only a single step
-  @test u_exact ≈ u
+  u = phiv_timestep(t, A, B; adaptive=true, tol=tol)
+  @test norm(u - u_exact) / norm(u_exact) < tol
 end
