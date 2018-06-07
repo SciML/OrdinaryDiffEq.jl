@@ -538,7 +538,7 @@ function phiv_timestep!(u::Vector{T}, t::Real, A, B::Matrix{T}; tau::Real=0.0,
       while omega > delta # inner loop of Algorithm 3
         m_new, tau_new, q, kappa = _phiv_timestep_adapt(
           m, tau, epsilon, m_old, tau_old, epsilon_old, q, kappa, 
-          gamma, omega, maxtau, n, p, NA, iop, norm(getH(Ks), 1))
+          gamma, omega, maxtau, n, p, NA, iop, norm(getH(Ks), 1), verbose)
         m, m_old = m_new, m
         tau, tau_old = tau_new, tau
         # Compute ϕp(tau*A)wp using the new parameters
@@ -563,7 +563,7 @@ function phiv_timestep!(u::Vector{T}, t::Real, A, B::Matrix{T}; tau::Real=0.0,
 end
 # Helper functions for phiv_timestep!
 function _phiv_timestep_adapt(m, tau, epsilon, m_old, tau_old, epsilon_old, q, kappa, 
-  gamma, omega, maxtau, n, p, NA, iop, Hnorm)
+  gamma, omega, maxtau, n, p, NA, iop, Hnorm, verbose)
   # Compute new m and tau (Algorithm 4)
   if tau_old > tau
     q = log(tau/tau_old) / log(epsilon/epsilon_old) - 1
@@ -572,10 +572,12 @@ function _phiv_timestep_adapt(m, tau, epsilon, m_old, tau_old, epsilon_old, q, k
   if m_old < m
     kappa = (epsilon/epsilon_old)^(1/(m_old - m))
   end # else keep kappa the same
-  m_new = m + log(omega / gamma) / log(kappa)
+  m_new = m + ceil(Int, log(omega / gamma) / log(kappa))
+  verbose && println("  - Proposed new m: $m_new, new tau: $tau_new")
   # Compare costs of using new m vs new tau (23)
-  cost_tau = _phiv_timestep_estimate_flops(m, tau_new, n, p, NA, iop, Hnorm)
-  cost_m = _phiv_timestep_estimate_flops(m_new, tau, n, p, NA, iop, Hnorm)
+  cost_tau = _phiv_timestep_estimate_flops(m, tau_new, n, p, NA, iop, Hnorm, maxtau)
+  cost_m = _phiv_timestep_estimate_flops(m_new, tau, n, p, NA, iop, Hnorm, maxtau)
+  verbose && println("  - Cost to use new m: $cost_m flops, new tau: $cost_tau flops")
   if cost_tau < cost_m
     m_new = m
     tau_new = min(max(tau_new, tau/5), 2*tau, maxtau)
@@ -585,7 +587,7 @@ function _phiv_timestep_adapt(m, tau, epsilon, m_old, tau_old, epsilon_old, q, k
   end
   return m_new, tau_new, q, kappa
 end
-function _phiv_timestep_estimate_flops(m, tau, n, p, NA, iop, Hnorm)
+function _phiv_timestep_estimate_flops(m, tau, n, p, NA, iop, Hnorm, maxtau)
   # Estimate flops for the update of W and u
   flops_W = 2 * (p - 1) * (NA + n)
   flops_u = (2 * p + 1) * n
@@ -602,5 +604,6 @@ function _phiv_timestep_estimate_flops(m, tau, n, p, NA, iop, Hnorm)
   MH = 44/3 + 2 * ceil(max(0.0, log2(Hnorm / 5.37)))
   flops_phiv = round(Int, MH * (m + p)^3)
 
-  return flops_W + flops_u + flops_matvec + flops_vecvec + flops_phiv
+  flops_onestep = flops_W + flops_u + flops_matvec + flops_vecvec + flops_phiv
+  return flops_onestep * Int(ceil(maxtau / tau))
 end
