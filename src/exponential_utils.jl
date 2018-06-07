@@ -455,7 +455,8 @@ Niesen & Wright is used, the relative tolerance of which can be set using the
 keyword parameter `tol`. The delta and gamma parameter of the adaptation 
 scheme can also be adjusted.
 
-For the other keyword arguments, consult `arnoldi` and `phiv`, which are used 
+Set `verbose=true` to print out the internal steps (for debugging). For the 
+other keyword arguments, consult `arnoldi` and `phiv`, which are used 
 internally.
 
 [^1]: Niesen, J., & Wright, W. (2009). A Krylov subspace algorithm for 
@@ -474,13 +475,14 @@ Non-allocating version of `phiv_timestep`.
 function phiv_timestep!(u::Vector{T}, t::Real, A, B::Matrix{T}; tau::Real=0.0, 
   m::Int=min(10, size(A, 1)), tol::Real=1e-7, norm=Base.norm, iop::Int=0, 
   correct::Bool=false, caches=nothing, adaptive=false, delta::Real=1.2, 
-  gamma::Real=0.8, NA::Int=0) where {T <: Number}
+  gamma::Real=0.8, NA::Int=0, verbose=false) where {T <: Number}
   # Choose initial timestep
   if iszero(tau)
     Anorm = norm(A, Inf)
     b0norm = norm(@view(B[:, 1]), Inf)
     tau = 10/Anorm * (tol * ((m+1)/e)^(m+1) * sqrt(2*pi*(m+1)) / 
       (4*Anorm*b0norm))^(1/m)
+    verbose && println("Initial time step unspecified, chosen to be $tau")
   end
   # Initialization
   n = length(u)
@@ -498,6 +500,7 @@ function phiv_timestep!(u::Vector{T}, t::Real, A, B::Matrix{T}; tau::Real=0.0,
   copy!(u, @view(B[:, 1])) # u(0) = b0
   if adaptive # initialization step for the adaptive scheme
     abstol = tol * norm(A, Inf)
+    verbose && println("Absolute tolerance: $abstol")
     if ishermitian(A)
       iop = 2 # does not have an effect on arnoldi!, just for flops estimation
     end
@@ -527,6 +530,7 @@ function phiv_timestep!(u::Vector{T}, t::Real, A, B::Matrix{T}; tau::Real=0.0,
     # Part 2: compute ϕp(tau*A)wp using Krylov, possibly with adaptation
     arnoldi!(Ks, A, @view(W[:, end]); tol=tol, m=m, norm=norm, iop=iop, cache=u)
     _, epsilon = phiv!(P, tau, Ks, p + 1; caches=phiv_caches, correct=correct, errest=true)
+    verbose && println("tk = $tk, m = $m, tau = $tau, error estimate = $epsilon")
     if adaptive
       omega = (t / tau) * (epsilon / abstol)
       epsilon_old = epsilon; m_old = m; tau_old = tau
@@ -542,6 +546,7 @@ function phiv_timestep!(u::Vector{T}, t::Real, A, B::Matrix{T}; tau::Real=0.0,
         _, epsilon_new = phiv!(P, tau, Ks, p + 1; caches=phiv_caches, correct=correct, errest=true)
         epsilon, epsilon_old = epsilon_new, epsilon
         omega = (t / tau) * (epsilon / abstol)
+        verbose && println("  * m = $m, tau = $tau, error estimate = $epsilon")
       end
     end
     # Part 3: update u using (15)
