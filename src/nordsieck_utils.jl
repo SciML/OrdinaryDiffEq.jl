@@ -71,7 +71,7 @@ function calc_coeff!(cache::T) where T
     # It is the same with `tq[2]` in SUNDIALS cvode.c
     cache.c_LTE = M1 * M0_inv * ξ_inv
     # It is the same with `tq[5]` in SUNDIALS cvode.c
-    isvode && (cache.𝒟 = inv(ξ_inv) / l[order+1])
+    isvode && (cache.c_𝒟 = inv(ξ_inv) / l[order+1])
     if isvarorder
       for i in order-1:-1:1
         m[i+1] = muladd(ξ_inv, m[i], m[i+1])
@@ -157,7 +157,7 @@ function nlsolve_functional!(integrator, cache::T) where T
   # initialize `δ_prev`
   δ_prev = 0
   # Start the functional iteration & store the difference into `Δ`
-  while true
+  for k in 1:max_iter
     if isconstcache
       ratetmp = inv(l[2])*muladd.(dt, ratetmp, -z[2])
       integrator.u = ratetmp + z[1]
@@ -168,17 +168,22 @@ function nlsolve_functional!(integrator, cache::T) where T
       @. integrator.u = ratetmp + z[1]
       @. cache.Δ = ratetmp - cache.Δ
     end
-    k == 0 || isconstcache ? ( cache.Δ = copy(ratetmp) ) : copy!(cache.Δ, ratetmp)
+    # @show norm(dt*ratetmp - ( z[2] + (integrator.u - z[1])*l[2] ))
+    # @show norm(cache.Δ - (integrator.u - z[1]))
     # It only makes sense to calculate convergence rate in the second iteration
     δ = integrator.opts.internalnorm(cache.Δ)
+    isconstcache ? ( cache.Δ = copy(ratetmp) ) : copy!(cache.Δ, ratetmp)
     if k >= 1
       conv_rate = max(1//10*conv_rate, δ/δ_prev)
     end
     test_rate = δ * min(one(conv_rate), conv_rate) / c_conv
-    test_rate <= one(test_rate) && return true
-    k += 1
+    if test_rate <= one(test_rate)
+      return true
+    end
     # Divergence criteria
-    ( (k == max_iter) || (k >= 2 && δ > div_rate * δ_prev) ) && return false
+    if ( (k == max_iter) || (k >= 2 && δ > div_rate * δ_prev) )
+      return false
+    end
     δ_prev = δ
     isconstcache ? (ratetmp = integrator.f(integrator.u, p, dt+t)) :
                     integrator.f(ratetmp, integrator.u, p, dt+t)
@@ -209,16 +214,20 @@ function nordsieck_rewind!(cache)
 end
 
 # `η` is `dtₙ₊₁/dtₙ`
-function stepsize_η!(cache::T, order, EEst) where T
+function stepsize_η!(integrator, cache::T) where T
   isconstcache = T <: OrdinaryDiffEqConstantCache
   isconstcache || ( cache = cache.const_cache )
   isvode = ( T <: JVODECache || T <: JVODEConstantCache )
   isvarorder = isvode && cache.n_wait == 0
+  order = get_current_adaptive_order(integrator.alg, integrator.cache)
   L = order+1
-  cache.η = inv( (BIAS2*EEst)^inv(L) + ADDON )
+  cache.η = inv( (BIAS2*integrator.EEst)^inv(L) + ADDON )
   if isvarorder
     cache.η = max(stepsize_η₋₁!(cache, order), stepsize_η₊₁!(cache, order), cache.η)
   end
+  cache.η *= integrator.opts.gamma
+  ( cache.η <= integrator.opts.qsteady_max ) && ( cache.η = 1 ; return cache.η )
+  cache.η = min(integrator.opts.qmax, max(integrator.opts.qmin, cache.η))
   return cache.η
 end
 
@@ -231,7 +240,7 @@ function stepsize_η₊₁!(cache::T, order) where T
   qmax = length(z)-1
   L = q+1
   if q != qmax
-    prev_𝒟 == 0 && return nothing
+    prev_𝒟 == 0 && return cache.η₊₁
     cquot = -(c_𝒟 / prev_𝒟) * (tau[1]/tau[3])^L
     if isconstcache
       ratetmp = muladd.(cquot, z[end], cache.Δ)

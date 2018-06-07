@@ -88,7 +88,7 @@ alg_extrapolates(alg::IRKN3) = true
 alg_extrapolates(alg::ABDF2) = true
 
 alg_order(alg::OrdinaryDiffEqAlgorithm) = error("Order is not defined for this algorithm")
-alg_order(alg::OrdinaryDiffEqVariableOrderAlgorithm) = nothing
+alg_order(alg::OrdinaryDiffEqVariableOrderAlgorithm) = 1 # dammy value
 get_current_alg_order(alg::OrdinaryDiffEqAlgorithm,cache) = alg_order(alg)
 get_current_alg_order(alg::CompositeAlgorithm,cache) = alg_order(alg.algs[cache.current])
 

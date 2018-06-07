@@ -1,6 +1,6 @@
 abstract type OrdinaryDiffEqAlgorithm <: AbstractODEAlgorithm end
 abstract type OrdinaryDiffEqAdaptiveAlgorithm <: OrdinaryDiffEqAlgorithm end
-abstract type OrdinaryDiffEqVariableOrderAlgorithm <: OrdinaryDiffEqAlgorithm end
+abstract type OrdinaryDiffEqVariableOrderAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
 abstract type OrdinaryDiffEqCompositeAlgorithm <: OrdinaryDiffEqAlgorithm end
 
 abstract type OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD} <: OrdinaryDiffEqAdaptiveAlgorithm end
@@ -168,7 +168,7 @@ struct AN5   <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct JVODE <: OrdinaryDiffEqVariableOrderAlgorithm
   algorithm::Symbol
 end
-Base.@pure JVODE(;algorithm=:adams) = JVODE(algorithm)
+Base.@pure JVODE(;algorithm=:Adams) = JVODE(algorithm)
 
 ################################################################################
 

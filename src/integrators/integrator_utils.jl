@@ -170,19 +170,17 @@ function step_reject_controller!(integrator,alg)
 end
 
 const StandardControllerAlgs = Union{GenericImplicitEuler,GenericTrapezoid}
-const NordArgs = Union{AN5, JVODE}
+const NordAlgs = Union{AN5, JVODE}
 
-function stepsize_controller!(integrator, alg::NordArgs)
-  order = get_current_adaptive_order(integrator.alg, integrator.cache)
-  η = stepsize_η!(integrator.cache, order, integrator.EEst) * integrator.opts.gamma
-  integrator.qold = integrator.dt
-  ( η <= integrator.opts.qsteady_max && η >= integrator.opts.qsteady_min ) && return one(η)
-  η = min(integrator.opts.qmax, max(integrator.opts.qmin, η))
-  integrator.qold *= η
+function stepsize_controller!(integrator, alg::NordAlgs)
+  η = stepsize_η!(integrator, integrator.cache)
+  integrator.qold = integrator.dt * η
   η
 end
-step_accept_controller!(integrator,alg::NordArgs,η) = integrator.qold  # dtnew
-step_reject_controller!(integrator,alg::NordArgs) = ( integrator.dt /= integrator.qold ) # WIP
+step_accept_controller!(integrator,alg::NordAlgs,η) = integrator.qold  # dtnew
+function step_reject_controller!(integrator,alg::NordAlgs)
+  integrator.dt *= 0.5 # WIP, will revise later
+end
 
 function stepsize_controller!(integrator,alg::Union{StandardControllerAlgs,
                               OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Standard}})
@@ -193,13 +191,11 @@ function stepsize_controller!(integrator,alg::Union{StandardControllerAlgs,
   q
 end
 function step_accept_controller!(integrator,alg::Union{StandardControllerAlgs,
-                              OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Standard},
-                              NordArgs},q)
+                              OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Standard}},q)
   integrator.dt/q # dtnew
 end
 function step_reject_controller!(integrator,alg::Union{StandardControllerAlgs,
-                              OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Standard},
-                              NordArgs})
+                              OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Standard}})
   integrator.dt = integrator.qold
 end
 
