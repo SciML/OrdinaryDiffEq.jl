@@ -440,7 +440,7 @@ end
 ###########################################
 # Krylov phiv with internal time-stepping
 """
-    phiv_timestep(t,A,B[;tau,m,tol,norm,iop,correct]) -> u
+    phiv_timestep(t,A,B[;adaptive,tol,kwargs...]) -> u
 
 Evaluates the linear combination of phi-vector products using time stepping
 
@@ -449,7 +449,12 @@ u = \\varphi_0(tA)b_0 + t\\varphi_1(tA)b_1 + \\cdots + t^p\\varphi_p(tA)b_p
 ```
 
 The time stepping formula of Niesen & Wright is used [^1]. If the time step 
-`tau` is not specified, it is chosen according to (17) of Neisen & Wright. 
+`tau` is not specified, it is chosen according to (17) of Neisen & Wright. If 
+`adaptive==true`, the time step and Krylov subsapce size adaptation scheme of 
+Niesen & Wright is used, the relative tolerance of which can be set using the 
+keyword parameter `tol`. The delta and gamma parameter of the adaptation 
+scheme can also be adjusted.
+
 For the other keyword arguments, consult `arnoldi` and `phiv`, which are used 
 internally.
 
@@ -466,10 +471,10 @@ end
 
 Non-allocating version of `phiv_timestep`.
 """
-function phiv_timestep!(u::Vector{T}, t::Float64, A, B::Matrix{T}; tau::Float64=0.0, 
+function phiv_timestep!(u::Vector{T}, t::Real, A, B::Matrix{T}; tau::Real=0.0, 
   m::Int=min(10, size(A, 1)), tol::Real=1e-7, norm=Base.norm, iop::Int=0, 
   correct::Bool=false, caches=nothing, adaptive=false, delta::Real=1.2, 
-  gamma::Real=0.8, NA::Int=countnz(A)) where {T <: Number}
+  gamma::Real=0.8, NA::Int=0) where {T <: Number}
   # Choose initial timestep
   if iszero(tau)
     Anorm = norm(A, Inf)
@@ -491,7 +496,19 @@ function phiv_timestep!(u::Vector{T}, t::Float64, A, B::Matrix{T}; tau::Float64=
     @assert size(W) == (n, p+1) && size(P) == (n, p+2) "Dimension mismatch"
   end
   copy!(u, @view(B[:, 1])) # u(0) = b0
-  abstol = tol * norm(A, Inf)
+  if adaptive # initialization step for the adaptive scheme
+    abstol = tol * norm(A, Inf)
+    if ishermitian(A)
+      iop = 2 # does not have an effect on arnoldi!, just for flops estimation
+    end
+    if iszero(NA)
+      if isa(A, SparseMatrixCSC)
+        NA = nnz(A)
+      else
+        NA = countnz(A) # not constant operation, should be best avoided
+      end
+    end
+  end
 
   tk = 0.0 # current time
   while tk < t # time stepping loop
