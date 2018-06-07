@@ -477,10 +477,12 @@ function phiv_timestep!(u::Vector{T}, t::Real, A, B::Matrix{T}; tau::Real=0.0,
   correct::Bool=false, caches=nothing, adaptive=false, delta::Real=1.2, 
   gamma::Real=0.8, NA::Int=0, verbose=false) where {T <: Number}
   # Choose initial timestep
+  abstol = tol * norm(A, Inf)
+  verbose && println("Absolute tolerance: $abstol")
   if iszero(tau)
     Anorm = norm(A, Inf)
     b0norm = norm(@view(B[:, 1]), Inf)
-    tau = 10/Anorm * (tol * ((m+1)/e)^(m+1) * sqrt(2*pi*(m+1)) / 
+    tau = 10/Anorm * (abstol * ((m+1)/e)^(m+1) * sqrt(2*pi*(m+1)) / 
       (4*Anorm*b0norm))^(1/m)
     verbose && println("Initial time step unspecified, chosen to be $tau")
   end
@@ -499,8 +501,6 @@ function phiv_timestep!(u::Vector{T}, t::Real, A, B::Matrix{T}; tau::Real=0.0,
   end
   copy!(u, @view(B[:, 1])) # u(0) = b0
   if adaptive # initialization step for the adaptive scheme
-    abstol = tol * norm(A, Inf)
-    verbose && println("Absolute tolerance: $abstol")
     if ishermitian(A)
       iop = 2 # does not have an effect on arnoldi!, just for flops estimation
     end
