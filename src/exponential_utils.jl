@@ -500,6 +500,7 @@ function phiv_timestep!(u::Vector{T}, t::Real, A, B::Matrix{T}; tau::Real=0.0,
     @assert size(W) == (n, p+1) && size(P) == (n, p+2) "Dimension mismatch"
   end
   copy!(u, @view(B[:, 1])) # u(0) = b0
+  coeffs = ones(typeof(t), p);
   if adaptive # initialization step for the adaptive scheme
     if ishermitian(A)
       iop = 2 # does not have an effect on arnoldi!, just for flops estimation
@@ -520,7 +521,9 @@ function phiv_timestep!(u::Vector{T}, t::Real, A, B::Matrix{T}; tau::Real=0.0,
     end
     # Part 1: compute w0...wp using the recurrence relation (16)
     copy!(@view(W[:, 1]), u) # w0 = u(tk)
-    coeffs = [1.0; cumprod(tk ./ (1:p - 1))] # cl = tk^l/l!
+    @inbounds for l = 1:p-1 # compute cl = tk^l/l!
+      coeffs[l+1] = coeffs[l] * tk / l
+    end
     @views @inbounds for j = 1:p
       A_mul_B!(W[:, j+1], A, W[:, j])
       for l = 0:p-j
@@ -551,7 +554,9 @@ function phiv_timestep!(u::Vector{T}, t::Real, A, B::Matrix{T}; tau::Real=0.0,
     end
     # Part 3: update u using (15)
     scale!(tau^p, copy!(u, @view(P[:, end - 1])))
-    coeffs = [1.0; cumprod(tau ./ (1:p - 1))] # cl = tau^l/l!
+    @inbounds for l = 1:p-1 # compute cl = tau^l/l!
+      coeffs[l+1] = coeffs[l] * tau / l
+    end
     @views @inbounds for j = 0:p-1
       Base.axpy!(coeffs[j+1], W[:, j+1], u)
     end
