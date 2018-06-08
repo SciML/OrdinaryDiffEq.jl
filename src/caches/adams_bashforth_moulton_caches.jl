@@ -616,6 +616,9 @@ function alg_cache(alg::VCABM3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     ϕstar_nm1[i] = zeros(rate_prototype)
     ϕstar_n[i] = zeros(rate_prototype)
   end
+  for i in 1:4
+    ϕ_np1[i] = zeros(rate_prototype)
+  end
   β = zeros(typeof(t),3)
   order = 3
   atmp = similar(u,uEltypeNoUnits)
@@ -704,6 +707,9 @@ function alg_cache(alg::VCABM4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     ϕ_n[i] = zeros(rate_prototype)
     ϕstar_nm1[i] = zeros(rate_prototype)
     ϕstar_n[i] = zeros(rate_prototype)
+  end
+  for i in 1:5
+    ϕ_np1[i] = zeros(rate_prototype)
   end
   β = zeros(typeof(t),4)
   order = 4
@@ -794,6 +800,9 @@ function alg_cache(alg::VCABM5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     ϕstar_nm1[i] = zeros(rate_prototype)
     ϕstar_n[i] = zeros(rate_prototype)
   end
+  for i in 1:6
+    ϕ_np1[i] = zeros(rate_prototype)
+  end
   β = zeros(typeof(t),5)
   order = 5
   atmp = similar(u,uEltypeNoUnits)
@@ -881,6 +890,9 @@ function alg_cache(alg::VCABM,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
     ϕ_n[i] = zeros(rate_prototype)
     ϕstar_nm1[i] = zeros(rate_prototype)
     ϕstar_n[i] = zeros(rate_prototype)
+  end
+  for i in 1:14
+    ϕ_np1[i] = zeros(rate_prototype)
   end
   β = zeros(typeof(t),13)
   order = 1

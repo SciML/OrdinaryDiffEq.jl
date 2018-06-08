@@ -34,9 +34,17 @@ function ϕ_np1!(cache, du_np1, k)
     @unpack ϕ_np1, ϕstar_n = cache
     for i = 1:k
       if i == 1
-        ϕ_np1[i] = du_np1
+        if typeof(cache) <: OrdinaryDiffEqMutableCache
+          ϕ_np1[i] .= du_np1
+        else
+          ϕ_np1[i] = du_np1
+        end
       else
-        ϕ_np1[i] = ϕ_np1[i-1] - ϕstar_n[i-1]
+        if typeof(cache) <: OrdinaryDiffEqMutableCache
+          @. ϕ_np1[i] = ϕ_np1[i-1] - ϕstar_n[i-1]
+        else
+          ϕ_np1[i] = ϕ_np1[i-1] - ϕstar_n[i-1]
+        end
       end
     end
   # end #inbounds

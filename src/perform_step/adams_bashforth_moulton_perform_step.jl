@@ -1370,8 +1370,10 @@ end
     if step <= 4
       cache.order = min(order+1,3)
     else
-      utildem2 = dt * γstar[(k-2)+1] * ϕ_np1[k-1]
-      utildem1 = dt * γstar[(k-1)+1] * ϕ_np1[k]
+      # utildem2 = dt * γstar[(k-2)+1] * ϕ_np1[k-1]
+      utildem2 = dt * (g[k-1]-g[k-2]) * ϕ_np1[k-1]
+      # utildem1 = dt * γstar[(k-1)+1] * ϕ_np1[k]
+      utildem1 = dt * (g[k]-g[k-1]) * ϕ_np1[k]
       ϕ_and_ϕstar!(cache,k1,k+1)
       ϕ_np1!(cache, integrator.fsallast, k+2)
       utildep1 = dt * γstar[(k+1)+1] * ϕ_np1[k+2]
@@ -1424,7 +1426,6 @@ end
   f(k4,u,p,t+dt)
   ϕ_np1!(cache, k4, k+1)
   @. u += dt * g[k] * ϕ_np1[k]
-  f(k4,u,p,t+dt)
   if integrator.opts.adaptive
     @. utilde = dt * (g[k+1]-g[k]) * ϕ_np1[k+1]
     calculate_residuals!(atmp,utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
@@ -1432,12 +1433,14 @@ end
     if integrator.EEst >= one(integrator.EEst)
       return nothing
     end
-    f(k4, u, p, t+dt)
+    f(k4,u,p,t+dt)
     if step <= 4
       cache.order = min(order+1,3)
     else
-      @. utildem2 = dt * γstar[(k-2)+1] * ϕ_np1[k-1]
-      @. utildem1 = dt * γstar[(k-1)+1] * ϕ_np1[k]
+      # @. utildem2 = dt * γstar[(k-2)+1] * ϕ_np1[k-1]
+      @. utildem2 = dt * (g[k-1]-g[k-2]) * ϕ_np1[k-1]
+      # @. utildem1 = dt * γstar[(k-1)+1] * ϕ_np1[k]
+      @. utildem1 = dt * (g[k]-g[k-1]) * ϕ_np1[k]
       ϕ_and_ϕstar!(cache,k1,k+1)
       ϕ_np1!(cache, k4, k+2)
       @. utildep1 = dt * γstar[(k+1)+1] * ϕ_np1[k+2]
