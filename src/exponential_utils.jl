@@ -569,10 +569,12 @@ function _phiv_timestep_adapt(m, tau, epsilon, m_old, tau_old, epsilon_old, q, k
     q = log(tau/tau_old) / log(epsilon/epsilon_old) - 1
   end # else keep q the same
   tau_new = tau * (gamma / omega)^(1/(q + 1))
+  tau_new = min(max(tau_new, tau/5), 2*tau, maxtau)
   if m_old < m
     kappa = (epsilon/epsilon_old)^(1/(m_old - m))
   end # else keep kappa the same
   m_new = m + ceil(Int, log(omega / gamma) / log(kappa))
+  m_new = min(max(m_new, div(3*m, 4), 1), Int(ceil(4*m / 3)))
   verbose && println("  - Proposed new m: $m_new, new tau: $tau_new")
   # Compare costs of using new m vs new tau (23)
   cost_tau = _phiv_timestep_estimate_flops(m, tau_new, n, p, NA, iop, Hnorm, maxtau)
@@ -580,9 +582,7 @@ function _phiv_timestep_adapt(m, tau, epsilon, m_old, tau_old, epsilon_old, q, k
   verbose && println("  - Cost to use new m: $cost_m flops, new tau: $cost_tau flops")
   if cost_tau < cost_m
     m_new = m
-    tau_new = min(max(tau_new, tau/5), 2*tau, maxtau)
   else
-    m_new = min(max(m_new, div(3*m, 4), 1), Int(ceil(4*m / 3)))
     tau_new = tau
   end
   return m_new, tau_new, q, kappa
