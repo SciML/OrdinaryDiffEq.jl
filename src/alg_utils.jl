@@ -91,10 +91,13 @@ alg_order(alg::OrdinaryDiffEqAlgorithm) = error("Order is not defined for this a
 alg_order(alg::OrdinaryDiffEqVariableOrderAlgorithm) = 1 # dammy value
 get_current_alg_order(alg::OrdinaryDiffEqAlgorithm,cache) = alg_order(alg)
 get_current_alg_order(alg::CompositeAlgorithm,cache) = alg_order(alg.algs[cache.current])
+get_current_alg_order(alg::JVODE,cache::JVODEConstantCache) = cache.step
+get_current_alg_order(alg::JVODE,cache::JVODECache) = cache.const_cache.step
 
 alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
 get_current_adaptive_order(alg::OrdinaryDiffEqAlgorithm,cache) = alg_adaptive_order(alg)
 get_current_adaptive_order(alg::CompositeAlgorithm,cache) = alg_adaptive_order(alg.algs[cache.current])
+get_current_adaptive_order(alg::JVODE,cache) = get_current_alg_order(alg, cache)
 
 alg_order(alg::FunctionMap) = 0
 alg_order(alg::Euler) = 1
@@ -269,6 +272,7 @@ qsteady_max_default(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = 6//5
 # But don't re-use Jacobian if not adaptive: too risky and cannot pull back
 qsteady_max_default(alg::OrdinaryDiffEqImplicitAlgorithm) = 1//1
 qsteady_max_default(alg::AN5) = 3//2
+qsteady_max_default(alg::JVODE) = 3//2
 
 FunctionMap_scale_by_time{scale_by_time}(alg::FunctionMap{scale_by_time}) = scale_by_time
 

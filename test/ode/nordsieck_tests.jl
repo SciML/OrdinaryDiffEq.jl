@@ -31,4 +31,6 @@ for i in eachindex(probArr)
   exact = prob.f(Val{:analytic}, prob.u0, prob.p, prob.tspan[end])
   @test Float64(norm(exact-sol[end])) < 1e-6
   sol2 = solve(prob, JVODE())
+  @test Float64(norm(exact-sol[end])) < 1e-5
+  @test_broken length(sol.t) < 30
 end

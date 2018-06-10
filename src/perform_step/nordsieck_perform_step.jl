@@ -188,44 +188,58 @@ end
   if integrator.u_modified
     cache.step = 1
   end
-  # Nordsieck form needs to build the history vector
-  # Reset time
-  for i in endof(tau):-1:2
-    tau[i] = tau[i-1]
-  end
-  tau[1] = dt
-  dt != tau[2] && nordsieck_rescale!(cache)
-  integrator.k[1] = z[2]/dt
-  # Perform 5th order Adams method in Nordsieck form
-  perform_predict!(cache)
-  calc_coeff!(cache)
-  isucceed = nlsolve_functional!(integrator, cache)
-  if !isucceed
-    # rewind Nordsieck vector
-    integrator.force_stepfail = true
-    nordsieck_rewind!(cache)
-    return nothing
-  end
-
-  ################################### Error estimation
-
-  if integrator.opts.adaptive
-    atmp = calculate_residuals(cache.Δ, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(atmp) * cache.c_LTE
-    if integrator.EEst >= one(integrator.EEst)
+  if cache.step == 1
+    perform_step!(integrator, EulerConstantCache(), repeat_step)
+    z[1] = integrator.uprev
+    z[2] = integrator.k[1]*dt
+    z[3] = zero(cache.z[3])
+    fill!(tau, dt)
+    perform_predict!(cache)
+    cache.Δ = integrator.u - integrator.uprev
+    update_nordsieck_vector!(cache)
+    if integrator.opts.adaptive && integrator.EEst >= one(integrator.EEst)
+      cache.step = 1
+    end
+  else
+    # Nordsieck form needs to build the history vector
+    # Reset time
+    for i in endof(tau):-1:2
+      tau[i] = tau[i-1]
+    end
+    tau[1] = dt
+    dt != tau[2] && nordsieck_rescale!(cache)
+    integrator.k[1] = z[2]/dt
+    # Perform 5th order Adams method in Nordsieck form
+    perform_predict!(cache)
+    calc_coeff!(cache)
+    isucceed = nlsolve_functional!(integrator, cache)
+    if !isucceed
       # rewind Nordsieck vector
+      integrator.force_stepfail = true
       nordsieck_rewind!(cache)
       return nothing
     end
+
+    ################################### Error estimation
+
+    if integrator.opts.adaptive
+      atmp = calculate_residuals(cache.Δ, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp) * cache.c_LTE
+      if integrator.EEst >= one(integrator.EEst)
+        # rewind Nordsieck vector
+        nordsieck_rewind!(cache)
+        return nothing
+      end
+    end
+
+    # Correct Nordsieck vector
+    cache.step = min(cache.step+1, 12)
+    update_nordsieck_vector!(cache)
+
+    ################################### Finalize
+
+    integrator.k[2] = cache.z[2]/dt
   end
-
-  # Correct Nordsieck vector
-  cache.step = min(cache.step+1, 12)
-  update_nordsieck_vector!(cache)
-
-  ################################### Finalize
-
-  integrator.k[2] = cache.z[2]/dt
   cache.n_wait -= 1
   return nothing
 end
@@ -253,44 +267,58 @@ end
   if integrator.u_modified
     const_cache.step = 1
   end
-  # Reset time
-  for i in endof(tau):-1:2
-    tau[i] = tau[i-1]
-  end
-  tau[1] = dt
-  # Rescale
-  dt != tau[2] && nordsieck_rescale!(cache)
-  @. integrator.k[1] = z[2]/dt
-  # Perform 5th order Adams method in Nordsieck form
-  perform_predict!(cache)
-  calc_coeff!(cache)
-  isucceed = nlsolve_functional!(integrator, cache)
-  if !isucceed
-    integrator.force_stepfail = true
-    # rewind Nordsieck vector
-    nordsieck_rewind!(cache)
-    return nothing
-  end
-
-  ################################### Error estimation
-
-  if integrator.opts.adaptive
-    calculate_residuals!(atmp, const_cache.Δ, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(atmp) * const_cache.c_LTE
-    if integrator.EEst >= one(integrator.EEst)
+  if const_cache.step == 1
+    perform_step!(integrator, EulerCache(u, uprev, tmp, z[2], integrator.fsalfirst), repeat_step)
+    @. z[1] = integrator.uprev
+    @. z[2] = integrator.k[1]*dt
+    @. z[3] = 0
+    fill!(tau, dt)
+    perform_predict!(cache)
+    const_cache.Δ = integrator.u - integrator.uprev
+    update_nordsieck_vector!(cache)
+    if integrator.opts.adaptive && integrator.EEst >= one(integrator.EEst)
+      const_cache.step = 1
+    end
+  else
+    # Reset time
+    for i in endof(tau):-1:2
+      tau[i] = tau[i-1]
+    end
+    tau[1] = dt
+    # Rescale
+    dt != tau[2] && nordsieck_rescale!(cache)
+    @. integrator.k[1] = z[2]/dt
+    # Perform 5th order Adams method in Nordsieck form
+    perform_predict!(cache)
+    calc_coeff!(cache)
+    isucceed = nlsolve_functional!(integrator, cache)
+    if !isucceed
+      integrator.force_stepfail = true
       # rewind Nordsieck vector
       nordsieck_rewind!(cache)
       return nothing
     end
+
+    ################################### Error estimation
+
+    if integrator.opts.adaptive
+      calculate_residuals!(atmp, const_cache.Δ, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp) * const_cache.c_LTE
+      if integrator.EEst >= one(integrator.EEst)
+        # rewind Nordsieck vector
+        nordsieck_rewind!(cache)
+        return nothing
+      end
+    end
+
+    # Correct Nordsieck vector
+    const_cache.step = min(const_cache.step+1, 12)
+    update_nordsieck_vector!(cache)
+
+    ################################### Finalize
+
+    @. integrator.k[2] = const_cache.z[2]/dt
   end
-
-  # Correct Nordsieck vector
-  const_cache.step = min(const_cache.step+1, 12)
-  update_nordsieck_vector!(cache)
-
-  ################################### Finalize
-
-  @. integrator.k[2] = const_cache.z[2]/dt
   const_cache.n_wait -= 1
   return nothing
 end

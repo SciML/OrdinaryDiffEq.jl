@@ -223,7 +223,7 @@ function stepsize_η!(integrator, cache::T) where T
   L = order+1
   cache.η = inv( (BIAS2*integrator.EEst)^inv(L) + ADDON )
   if isvarorder
-    cache.η = max(stepsize_η₋₁!(cache, order), stepsize_η₊₁!(cache, order), cache.η)
+    cache.η = max(stepsize_η₋₁!(integrator, cache, order), stepsize_η₊₁!(integrator, cache, order), cache.η)
   end
   cache.η *= integrator.opts.gamma
   ( cache.η <= integrator.opts.qsteady_max ) && ( cache.η = 1 ; return cache.η )
@@ -231,17 +231,17 @@ function stepsize_η!(integrator, cache::T) where T
   return cache.η
 end
 
-function stepsize_η₊₁!(cache::T, order) where T
+function stepsize_η₊₁!(integrator, cache::T, order) where T
   isconstcache = T <: OrdinaryDiffEqConstantCache
   isconstcache || ( ratetmp = cache.ratetmp; cache = cache.const_cache )
-  @unpack z, c_LTE₊₁, tau = cache
+  @unpack z, c_LTE₊₁, tau, c_𝒟  = cache
   q = order
   cache.η₊₁ = 0
   qmax = length(z)-1
   L = q+1
   if q != qmax
-    prev_𝒟 == 0 && return cache.η₊₁
-    cquot = -(c_𝒟 / prev_𝒟) * (tau[1]/tau[3])^L
+    cache.prev_𝒟 == 0 && return cache.η₊₁
+    cquot = -(c_𝒟 / cache.prev_𝒟) * (tau[1]/tau[3])^L
     if isconstcache
       ratetmp = muladd.(cquot, z[end], cache.Δ)
     else
@@ -253,13 +253,13 @@ function stepsize_η₊₁!(cache::T, order) where T
   return cache.η₊₁
 end
 
-function stepsize_η₋₁!(cache::T, order) where T
+function stepsize_η₋₁!(integrator, cache::T, order) where T
   isconstcache = T <: OrdinaryDiffEqConstantCache
   isconstcache || ( cache = cache.const_cache )
   @unpack z, c_LTE₋₁ = cache
   q = order
   if q <= 2
-    approx = integrator.opts.internalnorm(integratorz[q+1]) * c_LTE₋₁
+    approx = integrator.opts.internalnorm(cache.z[q+1]) * c_LTE₋₁
     cache.η₋₁ = inv( (BIAS1*approx)^inv(q) + ADDON )
   end
   return cache.η₋₁
