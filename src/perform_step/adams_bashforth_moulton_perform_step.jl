@@ -1363,7 +1363,7 @@ end
     utilde = dt * (g[k+1]-g[k]) * ϕ_np1[k+1]
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
-    if integrator.EEst >= one(integrator.EEst)
+    if integrator.EEst > one(integrator.EEst)
       return nothing
     end
     integrator.fsallast = f(u, p, t+dt)
@@ -1387,6 +1387,7 @@ end
         cache.order = order - 1
       elseif errp1 < integrator.EEst
         cache.order = min(order+1,max_order)
+        integrator.EEst = one(integrator.EEst)   # for keeping the stepsize constant in the next step
       end
     end
   end
@@ -1430,7 +1431,7 @@ end
     @. utilde = dt * (g[k+1]-g[k]) * ϕ_np1[k+1]
     calculate_residuals!(atmp,utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
-    if integrator.EEst >= one(integrator.EEst)
+    if integrator.EEst > one(integrator.EEst)
       return nothing
     end
     f(k4,u,p,t+dt)
@@ -1454,6 +1455,7 @@ end
         cache.order = order - 1
       elseif errp1 < integrator.EEst
         cache.order = min(order+1,max_order)
+        integrator.EEst = one(integrator.EEst)    # for keeping the stepsize constant in the next step
       end
     end
   end
