@@ -13,6 +13,8 @@ abstract type OrdinaryDiffEqRosenbrockAlgorithm{CS,AD} <:  OrdinaryDiffEqImplici
 abstract type OrdinaryDiffEqExponentialAlgorithm <: OrdinaryDiffEqAlgorithm end
 abstract type OrdinaryDiffEqAdaptiveExponentialAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
 
+abstract type OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
+
 struct FunctionMap{scale_by_time} <: OrdinaryDiffEqAlgorithm end
 Base.@pure function Discrete(;apply_map=false,scale_by_time=false)
     warn("Discrete is deprecated. Use FunctionMap instead.")
@@ -160,6 +162,10 @@ struct VCAB5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct VCABM3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct VCABM4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct VCABM5 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+# Variable Order and Variable Step Size Adams methods
+
+struct VCABM <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm end
 
 # Adams methods in Nordsieck forms
 
