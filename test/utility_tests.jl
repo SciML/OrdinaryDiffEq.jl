@@ -1,4 +1,4 @@
-using OrdinaryDiffEq: phi, phi, phiv, phiv_timestep, expv, arnoldi, getH, getV
+using OrdinaryDiffEq: phi, phi, phiv, phiv_timestep, expv, expv_timestep, arnoldi, getH, getV
 
 @testset "Exponential Utilities" begin
   # Scalar phi
@@ -56,5 +56,9 @@ using OrdinaryDiffEq: phi, phi, phiv, phiv_timestep, expv, arnoldi, getH, getV
   Phi = phi(t * A, K)
   u_exact = sum(t^i * Phi[i+1] * B[:,i+1] for i = 0:K)
   u = phiv_timestep(t, A, B; adaptive=true, tol=tol)
+  @test norm(u - u_exact) / norm(u_exact) < tol
+  # p = 0 special case (expv_timestep)
+  u_exact = Phi[1] * B[:, 1]
+  u = expv_timestep(t, A, B[:, 1]; adaptive=true, tol=tol)
   @test norm(u - u_exact) / norm(u_exact) < tol
 end
