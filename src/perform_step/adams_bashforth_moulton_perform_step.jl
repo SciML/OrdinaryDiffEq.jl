@@ -600,12 +600,12 @@ end
         return nothing
       end
     end
-    cache.ϕstar_nm1 .= ϕstar_n
     integrator.fsallast = f(u, p, t+dt)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
   end
+  cache.ϕstar_nm1 .= ϕstar_n
 end
 
 function initialize!(integrator,cache::VCAB3Cache)
@@ -663,10 +663,10 @@ end
         return nothing
       end
     end
-    for i in eachindex(ϕstar_n)
-      cache.ϕstar_nm1[i] .= ϕstar_n[i]
-    end
     f(k4,u,p,t+dt)
+  end
+  for i in eachindex(ϕstar_n)
+    cache.ϕstar_nm1[i] .= ϕstar_n[i]
   end
 end
 
@@ -729,12 +729,12 @@ end
         return nothing
       end
     end
-    cache.ϕstar_nm1 .= ϕstar_n
     integrator.fsallast = f(u, p, t+dt)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
   end
+  cache.ϕstar_nm1 .= ϕstar_n
 end
 
 function initialize!(integrator,cache::VCAB4Cache)
@@ -798,10 +798,10 @@ end
         return nothing
       end
     end
-    for i in eachindex(ϕstar_n)
-      cache.ϕstar_nm1[i] .= ϕstar_n[i]
-    end
     f(k4,u,p,t+dt)
+  end
+  for i in eachindex(ϕstar_n)
+    cache.ϕstar_nm1[i] .= ϕstar_n[i]
   end
 end
 
@@ -873,12 +873,12 @@ end
         return nothing
       end
     end
-    cache.ϕstar_nm1 .= ϕstar_n
     integrator.fsallast = f(u, p, t+dt)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
   end
+  cache.ϕstar_nm1 .= ϕstar_n
 end
 
 function initialize!(integrator,cache::VCAB5Cache)
@@ -949,10 +949,10 @@ end
         return nothing
       end
     end
-    for i in eachindex(ϕstar_n)
-      cache.ϕstar_nm1[i] .= ϕstar_n[i]
-    end
     f(k4,u,p,t+dt)
+  end
+  for i in eachindex(ϕstar_n)
+    cache.ϕstar_nm1[i] .= ϕstar_n[i]
   end
 end
 
@@ -1014,12 +1014,12 @@ end
         return nothing
       end
     end
-    cache.ϕstar_nm1 .= ϕstar_n
     integrator.fsallast = f(u, p, t+dt)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
   end
+  cache.ϕstar_nm1 .= ϕstar_n
 end
 
 function initialize!(integrator,cache::VCABM3Cache)
@@ -1080,10 +1080,10 @@ end
         return nothing
       end
     end
-    for i in eachindex(ϕstar_n)
-      cache.ϕstar_nm1[i] .= ϕstar_n[i]
-    end
     f(k4,u,p,t+dt)
+  end
+  for i in eachindex(ϕstar_n)
+    cache.ϕstar_nm1[i] .= ϕstar_n[i]
   end
 end
 
@@ -1151,12 +1151,12 @@ end
         return nothing
       end
     end
-    cache.ϕstar_nm1 .= ϕstar_n
     integrator.fsallast = f(u, p, t+dt)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
   end
+  cache.ϕstar_nm1 .= ϕstar_n
 end
 
 function initialize!(integrator,cache::VCABM4Cache)
@@ -1223,10 +1223,10 @@ end
         return nothing
       end
     end
-    for i in eachindex(ϕstar_n)
-      cache.ϕstar_nm1[i] .= ϕstar_n[i]
-    end
     f(k4,u,p,t+dt)
+  end
+  for i in eachindex(ϕstar_n)
+    cache.ϕstar_nm1[i] .= ϕstar_n[i]
   end
 end
 
@@ -1301,12 +1301,12 @@ end
         return nothing
       end
     end
-    cache.ϕstar_nm1 .= ϕstar_n
     integrator.fsallast = f(u, p, t+dt)
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
     integrator.u = u
   end
+  cache.ϕstar_nm1 .= ϕstar_n
 end
 
 function initialize!(integrator,cache::VCABM5Cache)
@@ -1385,6 +1385,9 @@ end
     end
     f(k4,u,p,t+dt)
   end
+  for i in eachindex(ϕstar_n)
+    cache.ϕstar_nm1[i] .= ϕstar_n[i]
+  end
 end
 
 # VCABM
@@ -1439,7 +1442,7 @@ end
       utildem2 = dt * (g[k-1]-g[k-2]) * ϕ_np1[k-1]
       # utildem1 = dt * γstar[(k-1)+1] * ϕ_np1[k]
       utildem1 = dt * (g[k]-g[k-1]) * ϕ_np1[k]
-      ϕ_and_ϕstar!(cache,k1,k+1)
+      exp_ϕ_and_ϕstar!(cache, k+1)
       ϕ_np1!(cache, integrator.fsallast, k+2)
       utildep1 = dt * γstar[(k+1)+1] * ϕ_np1[k+2]
       atmpm2 = calculate_residuals(utildem2, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
@@ -1512,7 +1515,7 @@ end
       @. utildem2 = dt * (g[k-1]-g[k-2]) * ϕ_np1[k-1]
       # @. utildem1 = dt * γstar[(k-1)+1] * ϕ_np1[k]
       @. utildem1 = dt * (g[k]-g[k-1]) * ϕ_np1[k]
-      ϕ_and_ϕstar!(cache,k1,k+1)
+      exp_ϕ_and_ϕstar!(cache, k+1)
       ϕ_np1!(cache, k4, k+2)
       @. utildep1 = dt * γstar[(k+1)+1] * ϕ_np1[k+2]
       calculate_residuals!(atmpm2,utildem2, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)

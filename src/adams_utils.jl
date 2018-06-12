@@ -3,7 +3,7 @@
 # III.5 Variable Step Size Multistep Methods: Formulae 5.9
 function ϕ_and_ϕstar!(cache, du, k)
   # @inbounds begin
-    @unpack dts, ϕstar_nm1, ϕ_n, ϕstar_n,β = cache
+    @unpack dts, ϕstar_nm1, ϕ_n, ϕstar_n, β = cache
     ξ = dt = dts[1]
     ξ0 = zero(dt)
     β[1] = one(dt)
@@ -27,6 +27,49 @@ function ϕ_and_ϕstar!(cache, du, k)
       end
     end
   # end # inbounds
+end
+
+function ϕ_and_ϕstar!(cache::Union{VCABMConstantCache,VCABMCache}, du, k)
+  # @inbounds begin
+    @unpack dts, ϕstar_nm1, ϕ_n, ϕstar_n, β = cache
+    ξ = dt = dts[1]
+    ξ0 = zero(dt)
+    β[1] = one(dt)
+    if typeof(cache) <: OrdinaryDiffEqMutableCache
+      ϕ_n[1] .= du
+      ϕstar_n[1] .= du
+    else
+      ϕ_n[1] = du
+      ϕstar_n[1] = du
+    end
+    for i = 2:k
+      ξ0 += dts[i]
+      β[i] = β[i-1] * ξ/ξ0
+      ξ += dts[i]
+      if typeof(cache) <: OrdinaryDiffEqMutableCache
+        @. ϕ_n[i] = ϕ_n[i-1] - ϕstar_nm1[i-1]
+        @. ϕstar_n[i] = β[i] * ϕ_n[i]
+      else
+        ϕ_n[i] = ϕ_n[i-1] - ϕstar_nm1[i-1]
+        ϕstar_n[i] = β[i] * ϕ_n[i]
+      end
+    end
+    cache.ξ = ξ
+    cache.ξ0 = ξ0
+  # end # inbounds
+end
+
+function exp_ϕ_and_ϕstar!(cache, i)
+  @unpack ξ, ξ0, β, dts, ϕstar_nm1, ϕ_n, ϕstar_n = cache
+  ξ0 += dts[i]
+  β[i] = β[i-1] * ξ/ξ0
+  if typeof(cache) <: OrdinaryDiffEqMutableCache
+    @. ϕ_n[i] = ϕ_n[i-1] - ϕstar_nm1[i-1]
+    @. ϕstar_n[i] = β[i] * ϕ_n[i]
+  else
+    ϕ_n[i] = ϕ_n[i-1] - ϕstar_nm1[i-1]
+    ϕstar_n[i] = β[i] * ϕ_n[i]
+  end
 end
 
 function ϕ_np1!(cache, du_np1, k)
