@@ -933,6 +933,37 @@ mutable struct ABCN2ConstantCache{rateType,F,uToltype,uType,tType} <: OrdinaryDi
   tprev2::tType
 end
 
+mutable struct ABCN2Cache{uType,rateType,uNoUnitsType,J,UF,JC,uToltype,tType,F} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  uprev2::uType
+  du1::rateType
+  fsalfirst::rateType
+  k::rateType
+  k1::rateType
+  k2::rateType
+  du₁::rateType
+  z::uType
+  dz::uType
+  b::uType
+  tmp::uType
+  atmp::uNoUnitsType
+  J::J
+  W::J
+  uf::UF
+  jac_config::JC
+  linsolve::F
+  ηold::uToltype
+  κ::uToltype
+  tol::uToltype
+  newton_iters::Int
+  uprev3::uType
+  tprev2::tType
+end
+
+u_cache(c::ABCN2Cache)    = ()
+du_cache(c::ABCN2Cache)   = ()
+
 function alg_cache(alg::ABCN2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   k2 = rate_prototype
   uToltype = real(uBottomEltypeNoUnits)
@@ -953,4 +984,42 @@ function alg_cache(alg::ABCN2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   end
 
   ABCN2ConstantCache(k2,uf,ηold,κ,tol,10000,uprev3,tprev2)
+end
+
+function alg_cache(alg::ABCN2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  du1 = zeros(rate_prototype)
+  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  W = similar(J)
+  z = similar(u,indices(u))
+  dz = similar(u,indices(u))
+  tmp = similar(u); b = similar(u,indices(u));
+  atmp = similar(u,uEltypeNoUnits,indices(u))
+  fsalfirst = zeros(rate_prototype)
+  k = zeros(rate_prototype)
+  k1 = zeros(rate_prototype)
+  k2 = zeros(rate_prototype)
+  du₁ = zeros(rate_prototype)
+
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+  linsolve = alg.linsolve(Val{:init},uf,u)
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
+
+  uToltype = real(uBottomEltypeNoUnits)
+  if alg.κ != nothing
+    κ = uToltype(alg.κ)
+  else
+    κ = uToltype(1//100)
+  end
+  if alg.tol != nothing
+    tol = uToltype(alg.tol)
+  else
+    tol = uToltype(min(0.03,first(reltol)^(0.5)))
+  end
+
+  uprev3 = similar(u)
+  tprev2 = t
+
+  ηold = one(uToltype)
+
+  ABCN2Cache(u,uprev,uprev2,du1,fsalfirst,k,k1,k2,du₁,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,ηold,κ,tol,10000,uprev3,tprev2)
 end
