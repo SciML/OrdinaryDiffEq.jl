@@ -1000,7 +1000,12 @@ function alg_cache(alg::ABCN2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   k2 = zeros(rate_prototype)
   du₁ = zeros(rate_prototype)
 
-  uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+  if typeof(f) <: SplitFunction
+    uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t,p)
+  else
+    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+  end
+
   linsolve = alg.linsolve(Val{:init},uf,u)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
 
