@@ -813,7 +813,7 @@ end
 
 # VCABM
 
-mutable struct VCABMConstantCache{tArrayType,rArrayType,cArrayType,dtArrayType} <: OrdinaryDiffEqConstantCache
+mutable struct VCABMConstantCache{tArrayType,rArrayType,cArrayType,dtType,dtArrayType} <: OrdinaryDiffEqConstantCache
   ϕstar_nm1::rArrayType
   dts::dtArrayType
   c::cArrayType
@@ -822,12 +822,14 @@ mutable struct VCABMConstantCache{tArrayType,rArrayType,cArrayType,dtArrayType} 
   ϕ_np1::rArrayType
   ϕstar_n::rArrayType
   β::tArrayType
+  ξ::dtType
+  ξ0::dtType
   order::Int
   max_order::Int
   step::Int
 end
 
-mutable struct VCABMCache{uType,rateType,uArrayType,tArrayType,cArrayType,uEltypeNoUnits,coefType,dtArrayType} <: OrdinaryDiffEqMutableCache
+mutable struct VCABMCache{uType,rateType,uArrayType,dtType,tArrayType,cArrayType,uEltypeNoUnits,coefType,dtArrayType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -844,6 +846,8 @@ mutable struct VCABMCache{uType,rateType,uArrayType,tArrayType,cArrayType,uEltyp
   max_order::Int
   atmp::uEltypeNoUnits
   tmp::uType
+  ξ::dtType
+  ξ0::dtType
   utilde::uArrayType
   utildem1::uArrayType
   utildem2::uArrayType
@@ -871,9 +875,11 @@ function alg_cache(alg::VCABM,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
     ϕstar_n[i] = copy(rate_prototype)
   end
   β = zeros(typeof(t), 13)
+  ξ = zero(dt)
+  ξ0 = zero(dt)
   order = 1
   max_order = 12
-  VCABMConstantCache(ϕstar_nm1,dts,c,g,ϕ_n,ϕ_np1,ϕstar_n,β,order,max_order,1)
+  VCABMConstantCache(ϕstar_nm1,dts,c,g,ϕ_n,ϕ_np1,ϕstar_n,β,ξ,ξ0,order,max_order,1)
 end
 
 function alg_cache(alg::VCABM,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -899,6 +905,8 @@ function alg_cache(alg::VCABM,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   max_order = 12
   atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
+  ξ = zero(dt)
+  ξ0 = zero(dt)
   utilde = similar(u,indices(u))
   utildem2 = similar(u,indices(u))
   utildem1 = similar(u,indices(u))
@@ -907,6 +915,6 @@ function alg_cache(alg::VCABM,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   atmpm1 = similar(u,uEltypeNoUnits)
   atmpm2 = similar(u,uEltypeNoUnits)
   atmpp1 = similar(u,uEltypeNoUnits)
-  VCABMCache(u,uprev,fsalfirst,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕ_np1,ϕstar_n,β,order,max_order,atmp,tmp,utilde,utildem1,utildem2,utildep1,atmpm1,atmpm2,atmpp1,1)
+  VCABMCache(u,uprev,fsalfirst,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕ_np1,ϕstar_n,β,order,max_order,atmp,tmp,ξ,ξ0,utilde,utildem1,utildem2,utildep1,atmpm1,atmpm2,atmpp1,1)
 end
 
