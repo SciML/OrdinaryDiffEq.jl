@@ -1442,7 +1442,7 @@ end
       utildem2 = dt * (g[k-1]-g[k-2]) * ϕ_np1[k-1]
       # utildem1 = dt * γstar[(k-1)+1] * ϕ_np1[k]
       utildem1 = dt * (g[k]-g[k-1]) * ϕ_np1[k]
-      exp_ϕ_and_ϕstar!(cache, k+1)
+      expand_ϕ_and_ϕstar!(cache, k+1)
       ϕ_np1!(cache, integrator.fsallast, k+2)
       utildep1 = dt * γstar[(k+1)+1] * ϕ_np1[k+2]
       atmpm2 = calculate_residuals(utildem2, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
@@ -1515,7 +1515,7 @@ end
       @. utildem2 = dt * (g[k-1]-g[k-2]) * ϕ_np1[k-1]
       # @. utildem1 = dt * γstar[(k-1)+1] * ϕ_np1[k]
       @. utildem1 = dt * (g[k]-g[k-1]) * ϕ_np1[k]
-      exp_ϕ_and_ϕstar!(cache, k+1)
+      expand_ϕ_and_ϕstar!(cache, k+1)
       ϕ_np1!(cache, k4, k+2)
       @. utildep1 = dt * γstar[(k+1)+1] * ϕ_np1[k+2]
       calculate_residuals!(atmpm2,utildem2, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)

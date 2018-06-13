@@ -59,7 +59,7 @@ function ϕ_and_ϕstar!(cache::Union{VCABMConstantCache,VCABMCache}, du, k)
   # end # inbounds
 end
 
-function exp_ϕ_and_ϕstar!(cache, i)
+function expand_ϕ_and_ϕstar!(cache, i)
   @unpack ξ, ξ0, β, dts, ϕstar_nm1, ϕ_n, ϕstar_n = cache
   ξ0 += dts[i]
   β[i] = β[i-1] * ξ/ξ0
