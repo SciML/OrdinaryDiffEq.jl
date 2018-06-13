@@ -3,8 +3,14 @@ function initialize!(integrator, cache::LawsonEulerConstantCache)
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
   # Pre-start fsal
-  lin = integrator.f.f1(integrator.uprev,integrator.p,integrator.t)
-  nl = integrator.f.f2(integrator.uprev,integrator.p,integrator.t)
+  if isa(integrator.f, SplitFunction)
+    lin = integrator.f.f1(integrator.uprev,integrator.p,integrator.t)
+    nl = integrator.f.f2(integrator.uprev,integrator.p,integrator.t)
+  else
+    J = integrator.f.jac(integrator.uprev, integrator.p, integrator.t)
+    lin = J * integrator.uprev
+    nl = integrator.f(integrator.uprev, integrator.p, integrator.t) - lin
+  end
   integrator.fsalfirst = ExpRKFsal(lin, nl)
 
   # Avoid undefined entries if k is an array of arrays
@@ -17,19 +23,25 @@ end
 function perform_step!(integrator, cache::LawsonEulerConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
   @unpack lin,nl = integrator.fsalfirst
+  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t)
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
   integrator.k[1] = lin + nl
 
   if alg.krylov
-    @muladd u = expv(dt, f.f1, uprev + dt*nl; m=min(alg.m, size(f.f1,1)), 
+    @muladd u = expv(dt, A, uprev + dt*nl; m=min(alg.m, size(A,1)), 
       norm=integrator.opts.internalnorm, iop=alg.iop)
   else
     @muladd u = cache.exphA*(uprev + dt*nl)
   end
 
   # Push the fsal at t+dt
-  lin = f.f1(u,p,t+dt)
-  nl = f.f2(u,p,t+dt)
+  if isa(f, SplitFunction)
+    lin = f.f1(u,p,t+dt)
+    nl = f.f2(u,p,t+dt)
+  else
+    lin = A * u
+    nl = f(u, p, t+dt) - lin
+  end
   integrator.k[2] = lin + nl
   @pack integrator.fsallast = lin, nl
   integrator.u = u
@@ -79,8 +91,14 @@ function initialize!(integrator, cache::NorsettEulerConstantCache)
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
   # Pre-start fsal
-  lin = integrator.f.f1(integrator.uprev,integrator.p,integrator.t)
-  nl = integrator.f.f2(integrator.uprev,integrator.p,integrator.t)
+  if isa(integrator.f, SplitFunction)
+    lin = integrator.f.f1(integrator.uprev,integrator.p,integrator.t)
+    nl = integrator.f.f2(integrator.uprev,integrator.p,integrator.t)
+  else
+    J = integrator.f.jac(integrator.uprev, integrator.p, integrator.t)
+    lin = J * integrator.uprev
+    nl = integrator.f(integrator.uprev, integrator.p, integrator.t) - lin
+  end
   integrator.fsalfirst = ExpRKFsal(lin, nl)
 
   # Avoid undefined entries if k is an array of arrays
@@ -94,11 +112,12 @@ function perform_step!(integrator, cache::NorsettEulerConstantCache, repeat_step
   @unpack t,dt,uprev,f,p = integrator
   @unpack lin,nl = integrator.fsalfirst
   @unpack exphA,phihA = cache
+  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t)
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
   integrator.k[1] = lin + nl
 
   if alg.krylov
-    w = phiv(dt, f.f1, f.f1 * uprev + nl, 1; m=min(alg.m, size(f.f1,1)), 
+    w = phiv(dt, A, A * uprev + nl, 1; m=min(alg.m, size(A,1)), 
       norm=integrator.opts.internalnorm, iop=alg.iop)
     u = uprev + dt * w[:,2]
   else
@@ -106,8 +125,13 @@ function perform_step!(integrator, cache::NorsettEulerConstantCache, repeat_step
   end
 
   # Push the fsal at t+dt
-  lin = f.f1(u,p,t+dt)
-  nl = f.f2(u,p,t+dt)
+  if isa(f, SplitFunction)
+    lin = f.f1(u,p,t+dt)
+    nl = f.f2(u,p,t+dt)
+  else
+    lin = A * u
+    nl = f(u, p, t+dt) - lin
+  end
   integrator.k[2] = lin + nl
   @pack integrator.fsallast = lin, nl
   integrator.u = u
