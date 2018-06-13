@@ -18,11 +18,11 @@ DiffEqBase.has_analytic(::typeof(prob_inplace.f)) = false
 Algs = [LawsonEuler,NorsettEuler]
 for Alg in Algs
     gc()
-    sol = solve(prob, Alg(); dt=dt)
-    sol_krylov = solve(prob, Alg(krylov=true); dt=dt, reltol=reltol)
+    sol = solve(prob, Alg(); dt=dt, internalnorm=Base.norm)
+    sol_krylov = solve(prob, Alg(krylov=true); dt=dt, reltol=reltol, internalnorm=Base.norm)
     @test isapprox(sol.u,sol_krylov.u; rtol=reltol)
 
-    sol_ip = solve(prob_inplace, Alg(); dt=dt)
-    sol_ip_krylov = solve(prob_inplace, Alg(krylov=true); dt=dt, reltol=reltol)
+    sol_ip = solve(prob_inplace, Alg(); dt=dt, internalnorm=Base.norm)
+    sol_ip_krylov = solve(prob_inplace, Alg(krylov=true); dt=dt, reltol=reltol, internalnorm=Base.norm)
     @test isapprox(sol_ip.u,sol_ip_krylov.u; rtol=reltol)
 end

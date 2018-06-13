@@ -15,7 +15,7 @@ module OrdinaryDiffEq
   # Internal utils
   import DiffEqBase: ODE_DEFAULT_NORM, ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE, ODE_DEFAULT_UNSTABLE_CHECK
 
-  using DiffEqOperators: normbound, DiffEqArrayOperator
+  using DiffEqOperators: DiffEqArrayOperator
 
   import RecursiveArrayTools: chain, recursivecopy!
 
