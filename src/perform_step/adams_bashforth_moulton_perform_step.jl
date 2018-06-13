@@ -1560,13 +1560,12 @@ function perform_step!(integrator,cache::ABCN2ConstantCache,repeat_step=false)
   f1 = integrator.f.f1
   f2 = integrator.f.f2
   if cnt == 1
-    halfdt = dt/2
-    k = f1(uprev + halfdt*integrator.fsalfirst, p, t+halfdt) + f2(uprev + halfdt*integrator.fsalfirst, p, t+halfdt)
-    u = uprev + dt*k  # Midpoint
+    u = uprev + dt*integrator.fsalfirst
     cache.k2 = f2(uprev, p ,t)
   else
+    du₁ = f1(uprev, p, t)
     # Explicit part
-    k1 = f2(uprev, p, t)
+    k1 = integrator.fsalfirst - du₁
     tmp = uprev + dt * (1.5*k1 - 0.5*k2)
     cache.k2 = k1
     # Implicit part
@@ -1576,7 +1575,7 @@ function perform_step!(integrator,cache::ABCN2ConstantCache,repeat_step=false)
     W = calc_W!(integrator, cache, γdt, repeat_step)
 
     # initial guess
-    zprev = dt*f1(uprev, p, t)
+    zprev = dt*du₁
     z = zprev # Constant extrapolation
 
     tmp += γ*zprev

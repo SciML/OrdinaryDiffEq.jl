@@ -169,7 +169,7 @@ struct VCABM <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm end
 
 # IMEX Multistep methods
 
-struct ABCN2{CS,AD,F,FDT,K,T,T2} <: OrdinaryDiffEqAlgorithm
+struct ABCN2{CS,AD,F,FDT,K,T,T2} <: OrdinaryDiffEqImplicitAlgorithm{CS,AD}
   linsolve::F
   diff_type::FDT
   κ::K
