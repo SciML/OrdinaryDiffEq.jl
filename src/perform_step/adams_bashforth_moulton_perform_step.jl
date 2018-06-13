@@ -1543,7 +1543,7 @@ end
 function initialize!(integrator,cache::ABCN2ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
-  integrator.fsalfirst =
+  integrator.fsalfirst = 
   integrator.f.f1(integrator.uprev,integrator.p,integrator.t) +
   integrator.f.f2(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
 
@@ -1567,11 +1567,9 @@ function perform_step!(integrator,cache::ABCN2ConstantCache,repeat_step=false)
   else
     # Explicit part
     k1 = f2(uprev, p, t)
-    u = uprev + dt * (1.5*k1 - 0.5*k2)
+    tmp = uprev + dt * (1.5*k1 - 0.5*k2)
     cache.k2 = k1
-
     # Implicit part
-    alg = unwrap_alg(integrator, true)
     # precalculations
     γ = 1//2
     γdt = γ*dt
@@ -1581,15 +1579,13 @@ function perform_step!(integrator,cache::ABCN2ConstantCache,repeat_step=false)
     zprev = dt*f1(uprev, p, t)
     z = zprev # Constant extrapolation
 
-    tmp = u + γdt*zprev
+    tmp += γ*zprev
     z, η, iter, fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, tmp, γ, 1, Val{:newton})
     fail_convergence && return
     u = tmp + 1//2*z
 
     cache.ηold = η
     cache.newton_iters = iter
-
-    
   end
   integrator.fsallast = f1(u, p, t+dt) + f2(u, p, t+dt)
   integrator.k[1] = integrator.fsalfirst
