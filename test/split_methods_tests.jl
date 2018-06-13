@@ -152,6 +152,11 @@ dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
 @test abs(sim.𝒪est[:l∞]-5) < testTol
 
+# ABCN2
+dts = 1.//2.^(8:-1:4)
+sim4 = test_convergence(dts,prob,ABCN2())
+@test abs(sim4.𝒪est[:l∞]-2) < testTol
+
 # Now test only the second part
 
 f1 = (du,u,p,t) -> du.= 0.0
@@ -177,6 +182,11 @@ dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
 @test abs(sim.𝒪est[:l∞]-5) < testTol
 
+# ABCN2
+dts = 1.//2.^(8:-1:4)
+sim5 = test_convergence(dts,prob,ABCN2())
+@test abs(sim5.𝒪est[:l∞]-2) < testTol
+
 # Test together
 
 f1 = (du,u,p,t) -> du .= u
@@ -201,3 +211,8 @@ sol = solve(prob,KenCarp5())
 dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
 @test abs(sim.𝒪est[:l∞]-5) < testTol
+
+# ABCN2
+dts = 1.//2.^(8:-1:4)
+sim6 = test_convergence(dts,prob,ABCN2())
+@test abs(sim6.𝒪est[:l∞]-2) < testTol
