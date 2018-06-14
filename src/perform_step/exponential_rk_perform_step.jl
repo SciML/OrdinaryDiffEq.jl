@@ -8,69 +8,51 @@
   G .-= Au_cache
 end
 
-function initialize!(integrator, cache::LawsonEulerConstantCache)
+##########################################
+# Common initializers for ExpRK integrators
+function initialize!(integrator, cache::Union{LawsonEulerConstantCache, NorsettEulerConstantCache})
+  # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+  integrator.fsallast = zero(integrator.fsalfirst)
+
+  # Initialize interpolation derivatives
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
-
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
+function initialize!(integrator, cache::Union{LawsonEulerCache, NorsettEulerCache})
   # Pre-start fsal
-  if isa(integrator.f, SplitFunction)
-    lin = integrator.f.f1(integrator.uprev,integrator.p,integrator.t)
-    nl = integrator.f.f2(integrator.uprev,integrator.p,integrator.t)
-  else
-    J = integrator.f.jac(integrator.uprev, integrator.p, integrator.t)
-    lin = J * integrator.uprev
-    nl = integrator.f(integrator.uprev, integrator.p, integrator.t) - lin
-  end
-  integrator.fsalfirst = ExpRKFsal(lin, nl)
+  integrator.fsalfirst = zero(cache.rtmp)
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+  integrator.fsallast = zero(integrator.fsalfirst)
 
-  # Avoid undefined entries if k is an array of arrays
-  rate_prototype = lin
-  integrator.fsallast = ExpRKFsal(rate_prototype)
-  integrator.k[1] = lin + nl
-  integrator.k[2] = zero(rate_prototype)
-end
-
-function perform_step!(integrator, cache::LawsonEulerConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,f,p = integrator
-  @unpack lin,nl = integrator.fsalfirst
-  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t)
-  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
-  integrator.k[1] = lin + nl
-
-  if alg.krylov
-    @muladd u = expv(dt, A, uprev + dt*nl; m=min(alg.m, size(A,1)), 
-      norm=integrator.opts.internalnorm, iop=alg.iop)
-  else
-    @muladd u = cache.exphA*(uprev + dt*nl)
-  end
-
-  # Push the fsal at t+dt
-  if isa(f, SplitFunction)
-    lin = f.f1(u,p,t+dt)
-    nl = f.f2(u,p,t+dt)
-  else
-    lin = A * u
-    nl = f(u, p, t+dt) - lin
-  end
-  integrator.k[2] = lin + nl
-  @pack integrator.fsallast = lin, nl
-  integrator.u = u
-end
-
-function initialize!(integrator, cache::LawsonEulerCache)
+  # Initialize interpolation derivatives
   integrator.kshortsize = 2
   resize!(integrator.k, integrator.kshortsize)
-  rate_prototype = cache.rtmp
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
 
-  # Pre-start fsal
-  integrator.fsalfirst = ExpRKFsal(rate_prototype)
-  @unpack lin,nl = integrator.fsalfirst
-  integrator.f.f1(lin,integrator.uprev,integrator.p,integrator.t)
-  integrator.f.f2(nl,integrator.uprev,integrator.p,integrator.t)
+###########################################
+function perform_step!(integrator, cache::LawsonEulerConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,f,p = integrator
+  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
-  integrator.fsallast = ExpRKFsal(rate_prototype)
-  integrator.k[1] = lin + nl
-  integrator.k[2] = zero(rate_prototype)
+  nl = _compute_nl(f, uprev, p, t, A)
+  @muladd v = uprev + dt * nl
+  if alg.krylov
+    u = expv(dt, A, v; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
+  else
+    u = cache.exphA * v
+  end
+
+  # Update integrator state
+  integrator.fsallast = f(u, p, t + dt)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
 end
 
 function perform_step!(integrator, cache::LawsonEulerCache, repeat_step=false)
@@ -96,36 +78,13 @@ function perform_step!(integrator, cache::LawsonEulerCache, repeat_step=false)
   @. integrator.k[2] = lin + nl
 end
 
-function initialize!(integrator, cache::NorsettEulerConstantCache)
-  integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
-
-  # Pre-start fsal
-  if isa(integrator.f, SplitFunction)
-    lin = integrator.f.f1(integrator.uprev,integrator.p,integrator.t)
-    nl = integrator.f.f2(integrator.uprev,integrator.p,integrator.t)
-  else
-    J = integrator.f.jac(integrator.uprev, integrator.p, integrator.t)
-    lin = J * integrator.uprev
-    nl = integrator.f(integrator.uprev, integrator.p, integrator.t) - lin
-  end
-  integrator.fsalfirst = ExpRKFsal(lin, nl)
-
-  # Avoid undefined entries if k is an array of arrays
-  rate_prototype = lin
-  integrator.fsallast = ExpRKFsal(rate_prototype)
-  integrator.k[1] = lin + nl
-  integrator.k[2] = zero(rate_prototype)
-end
-
 function perform_step!(integrator, cache::NorsettEulerConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
-  @unpack lin,nl = integrator.fsalfirst
   @unpack exphA,phihA = cache
-  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t)
+  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
-  integrator.k[1] = lin + nl
 
+  nl = _compute_nl(f, uprev, p, t, A)
   if alg.krylov
     w = phiv(dt, A, A * uprev + nl, 1; m=min(alg.m, size(A,1)), 
       norm=integrator.opts.internalnorm, iop=alg.iop)
@@ -134,16 +93,10 @@ function perform_step!(integrator, cache::NorsettEulerConstantCache, repeat_step
     u = exphA*uprev + dt*(phihA*nl)
   end
 
-  # Push the fsal at t+dt
-  if isa(f, SplitFunction)
-    lin = f.f1(u,p,t+dt)
-    nl = f.f2(u,p,t+dt)
-  else
-    lin = A * u
-    nl = f(u, p, t+dt) - lin
-  end
-  integrator.k[2] = lin + nl
-  @pack integrator.fsallast = lin, nl
+  # Update integrator state
+  integrator.fsallast = f(u, p, t + dt)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
   integrator.u = u
 end
 
