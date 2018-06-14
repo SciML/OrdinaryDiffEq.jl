@@ -1,3 +1,13 @@
+# Helper function to compute the G_nj factors for the classical ExpRK methods
+@inline _compute_nl(f::SplitFunction, u, p, t, A) = f.f2(u, p, t)
+@inline _compute_nl(f::DiffEqFunction, u, p, t, A) = f(u, p, t) - A * u
+@inline _compute_nl!(G, f::SplitFunction, u, p, t, A, tmp) = f.f2(G, u, p, t)
+@inline function _compute_nl!(G, f::DiffEqFunction, u, p, t, A, Au_cache)
+  f(G, u, p, t)
+  A_mul_B!(Au_cache, A, u)
+  G .-= Au_cache
+end
+
 function initialize!(integrator, cache::LawsonEulerConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)

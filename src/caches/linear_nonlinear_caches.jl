@@ -134,7 +134,7 @@ function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
     exphA = nothing # no caching
   else
     if !isa(f, SplitFunction)
-      throw(ArgumentError("Can only use caching with SplitFunction."))
+      throw(ArgumentError("Caching can only be used with SplitFunction"))
     end
     A = f.f1
     if isa(A, DiffEqArrayOperator)
@@ -196,7 +196,7 @@ function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomElty
     phihA = nothing
   else
     if !isa(f, SplitFunction)
-      throw(ArgumentError("Can only use caching with SplitFunction input."))
+      throw(ArgumentError("Caching can only be used with SplitFunction"))
     end
     A = f.f1
     if isa(A, DiffEqArrayOperator)
