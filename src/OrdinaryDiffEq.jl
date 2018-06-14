@@ -177,6 +177,8 @@ module OrdinaryDiffEq
 
   export VCABM
 
+  export ABCN2
+
   export AN5
 
   export ABDF2

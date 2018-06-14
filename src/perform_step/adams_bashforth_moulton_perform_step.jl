@@ -1536,3 +1536,104 @@ end
     cache.ϕstar_nm1[i] .= ϕstar_n[i]
   end
 end
+
+
+# ABCN2
+
+function initialize!(integrator,cache::ABCN2ConstantCache)
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.fsalfirst = 
+  integrator.f.f1(integrator.uprev,integrator.p,integrator.t) +
+  integrator.f.f2(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
+
+function perform_step!(integrator,cache::ABCN2ConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack k2,uf,κ,tol = cache
+  cnt = integrator.iter
+  f1 = integrator.f.f1
+  f2 = integrator.f.f2
+  if cnt == 1
+    u = uprev + dt*integrator.fsalfirst
+    cache.k2 = f2(uprev, p ,t)
+  else
+    du₁ = f1(uprev, p, t)
+    # Explicit part
+    k1 = integrator.fsalfirst - du₁
+    tmp = uprev + dt * (1.5*k1 - 0.5*k2)
+    cache.k2 = k1
+    # Implicit part
+    # precalculations
+    γ = 1//2
+    γdt = γ*dt
+    W = calc_W!(integrator, cache, γdt, repeat_step)
+
+    # initial guess
+    zprev = dt*du₁
+    z = zprev # Constant extrapolation
+
+    tmp += γ*zprev
+    z, η, iter, fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, tmp, γ, 1, Val{:newton})
+    fail_convergence && return
+    u = tmp + 1//2*z
+
+    cache.ηold = η
+    cache.newton_iters = iter
+  end
+  integrator.fsallast = f1(u, p, t+dt) + f2(u, p, t+dt)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end
+
+function initialize!(integrator, cache::ABCN2Cache)
+  integrator.kshortsize = 2
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+end
+
+function perform_step!(integrator, cache::ABCN2Cache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack uf,du1,dz,z,k,k1,k2,du₁,b,J,W,jac_config,tmp,atmp,κ,tol = cache
+  cnt = integrator.iter
+  f1 = integrator.f.f1
+  f2 = integrator.f.f2
+  if cnt == 1
+    @. u = uprev + dt*integrator.fsalfirst
+    f2(k2, uprev, p, t)
+  else
+    f1(du₁, uprev, p, t)
+    # Explicit part
+    @. k1 = integrator.fsalfirst - du₁
+    @. tmp = uprev + dt * (1.5*k1 - 0.5*k2)
+    cache.k2 .= k1
+    # Implicit part
+    # mass_matrix = integrator.sol.prob.mass_matrix
+
+    # precalculations
+    γ = 1//2
+    γdt = γ*dt
+    new_W = calc_W!(integrator, cache, γdt, repeat_step)
+
+    # initial guess
+    @. z = dt*du₁
+    @. tmp += γ*z
+    z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, tmp, γ, 1, Val{:newton}, new_W)
+    fail_convergence && return
+    @. u = tmp + 1//2*z
+
+    cache.ηold = η
+    cache.newton_iters = iter
+  end
+  integrator.f(k,u,p,t+dt)
+end
