@@ -92,17 +92,25 @@ function recursivecopy!(dest::ExpRKFsal, src::ExpRKFsal)
   recursivecopy!(dest.nl, src.nl)
 end
 
-struct LawsonEulerCache{uType,rateType,expType,KsType,KsCacheType} <: OrdinaryDiffEqMutableCache
+struct LawsonEulerCache{uType,rateType,JType,expType,KsType,KsCacheType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
   rtmp::rateType
+  G::rateType
+  Jcache::JType
   exphA::expType
   Ks::KsType
   KsCache::KsCacheType
 end
 
 function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  if isa(f, SplitFunction)
+    Jcache = nothing
+  else
+    # TODO: sparse Jacobian support
+    Jcache = Matrix{eltype(u)}(length(u), length(u))
+  end
   if alg.krylov
     exphA = nothing # no caching
     m = min(alg.m, length(u))
@@ -119,7 +127,7 @@ function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
     end
     exphA = expm(dt*_A)
   end
-  LawsonEulerCache(u,uprev,similar(u),zeros(rate_prototype),exphA,Ks,KsCache)
+  LawsonEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),Jcache,exphA,Ks,KsCache)
 end
 
 u_cache(c::LawsonEulerCache) = ()
@@ -147,11 +155,13 @@ function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   LawsonEulerConstantCache(exphA)
 end
 
-struct NorsettEulerCache{uType,rateType,expType,KsType,KsCacheType} <: OrdinaryDiffEqMutableCache
+struct NorsettEulerCache{uType,rateType,JType,expType,KsType,KsCacheType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
   rtmp::rateType
+  G::rateType
+  Jcache::JType
   exphA::expType
   phihA::expType
   Ks::KsType
@@ -159,6 +169,12 @@ struct NorsettEulerCache{uType,rateType,expType,KsType,KsCacheType} <: OrdinaryD
 end
 
 function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  if isa(f, SplitFunction)
+    Jcache = nothing
+  else
+    # TODO: sparse Jacobian support
+    Jcache = Matrix{eltype(u)}(length(u), length(u))
+  end
   if alg.krylov
     exphA = nothing # no caching
     phihA = nothing
@@ -179,7 +195,7 @@ function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomElty
     end
     exphA, phihA = phi(dt*_A, 1)
   end
-  NorsettEulerCache(u,uprev,similar(u),zeros(rate_prototype),exphA,phihA,Ks,KsCache)
+  NorsettEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),Jcache,exphA,phihA,Ks,KsCache)
 end
 
 u_cache(c::NorsettEulerCache) = ()

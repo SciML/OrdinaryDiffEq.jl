@@ -1,7 +1,7 @@
 # Helper function to compute the G_nj factors for the classical ExpRK methods
 @inline _compute_nl(f::SplitFunction, u, p, t, A) = f.f2(u, p, t)
 @inline _compute_nl(f::DiffEqFunction, u, p, t, A) = f(u, p, t) - A * u
-@inline _compute_nl!(G, f::SplitFunction, u, p, t, A, tmp) = f.f2(G, u, p, t)
+@inline _compute_nl!(G, f::SplitFunction, u, p, t, A, Au_cache) = f.f2(G, u, p, t)
 @inline function _compute_nl!(G, f::DiffEqFunction, u, p, t, A, Au_cache)
   f(G, u, p, t)
   A_mul_B!(Au_cache, A, u)
@@ -57,12 +57,17 @@ end
 
 function perform_step!(integrator, cache::LawsonEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack lin,nl = integrator.fsalfirst
-  @unpack tmp,exphA,Ks,KsCache = cache
+  @unpack tmp,rtmp,G,Jcache,exphA,Ks,KsCache = cache
+  if isa(f, SplitFunction)
+    A = f.f1
+  else
+    f.jac(Jcache, uprev, p, t)
+    A = Jcache
+  end
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
-  @. integrator.k[1] = lin + nl
 
-  @muladd @. tmp = uprev + dt*nl
+  _compute_nl!(G, f, uprev, p, t, A, rtmp)
+  @muladd @. tmp = uprev + dt*G
   if alg.krylov
     arnoldi!(Ks, f.f1, tmp; m=min(alg.m, size(f.f1,1)), norm=integrator.opts.internalnorm, 
       cache=u, iop=alg.iop)
@@ -71,11 +76,9 @@ function perform_step!(integrator, cache::LawsonEulerCache, repeat_step=false)
     A_mul_B!(u,exphA,tmp)
   end
 
-  # Push the fsal at t+dt
-  @unpack lin,nl = integrator.fsallast
-  f.f1(lin,u,p,t+dt)
-  f.f2(nl,u,p,t+dt)
-  @. integrator.k[2] = lin + nl
+  # Update integrator state
+  f(integrator.fsallast, u, p, t + dt)
+  # integrator.k is automatically set due to aliasing
 end
 
 function perform_step!(integrator, cache::NorsettEulerConstantCache, repeat_step=false)
@@ -100,47 +103,33 @@ function perform_step!(integrator, cache::NorsettEulerConstantCache, repeat_step
   integrator.u = u
 end
 
-function initialize!(integrator, cache::NorsettEulerCache)
-  integrator.kshortsize = 2
-  resize!(integrator.k, integrator.kshortsize)
-  rate_prototype = cache.rtmp
-
-  # Pre-start fsal
-  integrator.fsalfirst = ExpRKFsal(rate_prototype)
-  @unpack lin,nl = integrator.fsalfirst
-  integrator.f.f1(lin,integrator.uprev,integrator.p,integrator.t)
-  integrator.f.f2(nl,integrator.uprev,integrator.p,integrator.t)
-
-  integrator.fsallast = ExpRKFsal(rate_prototype)
-  integrator.k[1] = lin + nl
-  integrator.k[2] = zero(rate_prototype)
-end
-
 function perform_step!(integrator, cache::NorsettEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack lin,nl = integrator.fsalfirst
-  @unpack tmp,rtmp,exphA,phihA,Ks,KsCache = cache
+  @unpack tmp,rtmp,G,Jcache,exphA,phihA,Ks,KsCache = cache
+  if isa(f, SplitFunction)
+    A = f.f1
+  else
+    f.jac(Jcache, uprev, p, t)
+    A = Jcache
+  end
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
-  @. integrator.k[1] = lin + nl
 
   if alg.krylov
     w = KsCache[1]
-    A_mul_B!(tmp, f.f1, uprev); tmp .+= nl
-    arnoldi!(Ks, f.f1, tmp; m=min(alg.m, size(f.f1,1)), norm=integrator.opts.internalnorm, 
+    arnoldi!(Ks, A, integrator.fsalfirst; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, 
       cache=u, iop=alg.iop)
     phiv!(w, dt, Ks, 1; caches=KsCache[2:end])
     @muladd @. u = uprev + dt * @view(w[:, 2])
   else
+    _compute_nl!(G, f, uprev, p, t, A, rtmp)
     A_mul_B!(tmp,exphA,uprev)
-    A_mul_B!(rtmp,phihA,nl)
+    A_mul_B!(rtmp,phihA,G)
     @muladd @. u = tmp + dt*rtmp
   end
 
-  # Push the fsal at t+dt
-  @unpack lin,nl = integrator.fsallast
-  f.f1(lin,u,p,t+dt)
-  f.f2(nl,u,p,t+dt)
-  @. integrator.k[2] = lin + nl
+  # Update integrator state
+  f(integrator.fsallast, u, p, t + dt)
+  # integrator.k is automatically set due to aliasing
 end
 
 function initialize!(integrator,cache::ETD2ConstantCache)
