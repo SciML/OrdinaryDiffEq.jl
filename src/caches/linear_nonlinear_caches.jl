@@ -89,6 +89,42 @@ end
 abstract type ExpRKCache <: OrdinaryDiffEqMutableCache end
 abstract type ExpRKConstantCache <: OrdinaryDiffEqConstantCache end
 
+# Precomputation of exponential-like operators
+expRK_operators(::LawsonEuler, dt, A) = expm(dt * A)
+expRK_operators(::NorsettEuler, dt, A) = phi(dt * A, 1)[2]
+function expRK_operators(::ETDRK4, dt, A)
+  P = phi(dt * A, 3)
+  Phalf = phi(dt/2 * A, 1)
+  E = P[1]
+  E2 = Phalf[1]
+  a = dt * (P[2] - 3*P[3] + 4*P[4])
+  b = dt * (P[3] - 2*P[4])
+  c = dt * (-P[3] + 4*P[4])
+  Q = dt/2 * Phalf[2]
+  return E, E2, a, b, c, Q
+end
+
+# Unified constructor for constant caches
+for (Alg, Cache) in [(:LawsonEuler, :LawsonEulerConstantCache), 
+                     (:NorsettEuler, :NorsettEulerConstantCache),
+                     (:ETDRK4, :ETDRK4ConstantCache)]
+  @eval struct $Cache{opType} <: ExpRKConstantCache
+    ops::opType # precomputed operators
+  end
+
+  @eval function alg_cache(alg::$Alg,u,rate_prototype,uEltypeNoUnits,
+    uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+    if alg.krylov
+      ops = nothing # no caching
+    else
+      isa(f, SplitFunction) || throw(ArgumentError("Caching can only be used with SplitFunction"))
+      A = isa(f.f1, DiffEqArrayOperator) ? f.f1.A * f.f1.α.coeff : full(f.f1)
+      ops = expRK_operators(alg, dt, A)
+    end
+    return $Cache(ops)
+  end
+end
+
 struct LawsonEulerCache{uType,rateType,JType,expType,KsType,KsCacheType} <: ExpRKCache
   u::uType
   uprev::uType
@@ -129,28 +165,6 @@ end
 
 u_cache(c::LawsonEulerCache) = ()
 du_cache(c::LawsonEulerCache) = (c.rtmp)
-
-struct LawsonEulerConstantCache{expType} <: ExpRKConstantCache 
-  exphA::expType
-end
-
-function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  if alg.krylov
-    exphA = nothing # no caching
-  else
-    if !isa(f, SplitFunction)
-      throw(ArgumentError("Caching can only be used with SplitFunction"))
-    end
-    A = f.f1
-    if isa(A, DiffEqArrayOperator)
-      _A = A.A * A.α.coeff
-    else
-      _A = full(A)
-    end
-    exphA = expm(dt*_A)
-  end
-  LawsonEulerConstantCache(exphA)
-end
 
 struct NorsettEulerCache{uType,rateType,JType,expType,KsType,KsCacheType} <: ExpRKCache
   u::uType
@@ -195,55 +209,6 @@ end
 
 u_cache(c::NorsettEulerCache) = ()
 du_cache(c::NorsettEulerCache) = (c.rtmp)
-
-struct NorsettEulerConstantCache{expType} <: ExpRKConstantCache 
-  phihA::expType
-end
-
-function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  if alg.krylov
-    phihA = nothing # no caching
-  else
-    if !isa(f, SplitFunction)
-      throw(ArgumentError("Caching can only be used with SplitFunction"))
-    end
-    A = f.f1
-    if isa(A, DiffEqArrayOperator)
-      _A = A.A * A.α.coeff
-    else
-      _A = full(A)
-    end
-    phihA = phi(dt*_A, 1)[2]
-  end
-  NorsettEulerConstantCache(phihA)
-end
-
-struct ETDRK4ConstantCache{matType} <: ExpRKConstantCache
-  E::matType # exp(hA)
-  E2::matType # exp(hA/2)
-  a::matType # h(ϕ1(hA) - 3ϕ2(hA) + 4ϕ3(hA))
-  b::matType # h(ϕ2(hA) - 2ϕ3(hA))
-  c::matType # h(-ϕ2(hA) + 4ϕ3(hA))
-  Q::matType # h/2 * ϕ1(hA/2)
-end
-
-function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  A = f.f1
-  if isa(A, DiffEqArrayOperator)
-    L = A.A .* A.α.coeff # has special handling if A.A is Diagonal
-  else
-    L = full(A)
-  end
-  P = phi(dt * L, 3)
-  Phalf = phi(dt/2 * L, 1)
-  E = P[1]
-  E2 = Phalf[1]
-  a = dt * (P[2] - 3*P[3] + 4*P[4])
-  b = dt * (P[3] - 2*P[4])
-  c = dt * (-P[3] + 4*P[4])
-  Q = dt/2 * Phalf[2]
-  ETDRK4ConstantCache(E,E2,a,b,c,Q)
-end
 
 struct ETDRK4Cache{uType,rateType,JType,matType} <: ExpRKCache
   u::uType

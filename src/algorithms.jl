@@ -649,22 +649,17 @@ struct GenericIIF2{F} <: OrdinaryDiffEqExponentialAlgorithm
 end
 Base.@pure GenericIIF2(;nlsolve=NLSOLVEJL_SETUP()) = GenericIIF2{typeof(nlsolve)}(nlsolve)
 
-struct LawsonEuler <: OrdinaryDiffEqExponentialAlgorithm 
-  krylov::Bool
-  m::Int
-  iop::Int
+for Alg in [:LawsonEuler, :NorsettEuler, :ETDRK4]
+  @eval struct $Alg <: OrdinaryDiffEqExponentialAlgorithm
+    krylov::Bool
+    m::Int
+    iop::Int
+  end
+  @eval Base.@pure $Alg(;krylov=false, m=30, iop=0) = $Alg(krylov, m, iop)
 end
-Base.@pure LawsonEuler(;krylov=false, m=30, iop=0) = LawsonEuler(krylov, m, iop)
-struct NorsettEuler <: OrdinaryDiffEqExponentialAlgorithm
-  krylov::Bool
-  m::Int
-  iop::Int
-end
-Base.@pure NorsettEuler(;krylov=false, m=30, iop=0) = NorsettEuler(krylov, m, iop)
 ETD1 = NorsettEuler # alias
 struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm end
 struct ETD2 <: OrdinaryDiffEqExponentialAlgorithm end
-struct ETDRK4 <: OrdinaryDiffEqExponentialAlgorithm end
 
 #########################################
 

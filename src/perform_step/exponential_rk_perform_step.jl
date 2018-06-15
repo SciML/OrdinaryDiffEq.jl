@@ -45,7 +45,8 @@ function perform_step!(integrator, cache::LawsonEulerConstantCache, repeat_step=
   if alg.krylov
     u = expv(dt, A, v; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
   else
-    u = cache.exphA * v
+    exphA = cache.ops
+    u = exphA * v
   end
 
   # Update integrator state
@@ -91,7 +92,8 @@ function perform_step!(integrator, cache::NorsettEulerConstantCache, repeat_step
       norm=integrator.opts.internalnorm, iop=alg.iop)
     u = uprev + dt * w[:,2]
   else
-    u = uprev + dt * (cache.phihA * integrator.fsalfirst)
+    phihA = cache.ops
+    u = uprev + dt * (phihA * integrator.fsalfirst)
   end
 
   # Update integrator state
@@ -210,18 +212,23 @@ end
 
 function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
-  @unpack E,E2,a,b,c,Q = cache
   A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
-  tmp = E2*uprev
-  k1 = _compute_nl(f, uprev, p, t, A)
-  s1 = tmp + Q*k1;
-  k2 = _compute_nl(f, s1, p, t + dt/2, A)
-  s2 = tmp + Q*k2;
-  k3 = _compute_nl(f, s2, p, t + dt/2, A)
-  s3 = E2*s1 + Q*(2*k3-k1);
-  k4 = _compute_nl(f, s3, p, t + dt, A)
-  u = E*uprev + a*k1 + 2b*(k2+k3) + c*k4;
+  if alg.krylov
+    throw(ErrorException("Krylov not yet supported for ETDRK4"))
+  else
+    E,E2,a,b,c,Q = cache.ops
+    tmp = E2*uprev
+    k1 = _compute_nl(f, uprev, p, t, A)
+    s1 = tmp + Q*k1;
+    k2 = _compute_nl(f, s1, p, t + dt/2, A)
+    s2 = tmp + Q*k2;
+    k3 = _compute_nl(f, s2, p, t + dt/2, A)
+    s3 = E2*s1 + Q*(2*k3-k1);
+    k4 = _compute_nl(f, s3, p, t + dt, A)
+    u = E*uprev + a*k1 + 2b*(k2+k3) + c*k4
+  end
 
   # Update integrator state
   integrator.fsallast = f(u, p, t + dt)
