@@ -81,17 +81,6 @@ function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   GenericIIF2Cache(u,uprev,dual_cache,tmp,rhs,nl_rhs,rtmp1,fsalfirst,expA,k)
 end
 
-# Fsal type for exponential RK algorithms
-mutable struct ExpRKFsal{rateType}
-  lin::rateType
-  nl::rateType
-end
-ExpRKFsal(rate_prototype) = ExpRKFsal(zero(rate_prototype),zero(rate_prototype))
-function recursivecopy!(dest::ExpRKFsal, src::ExpRKFsal)
-  recursivecopy!(dest.lin, src.lin)
-  recursivecopy!(dest.nl, src.nl)
-end
-
 struct LawsonEulerCache{uType,rateType,JType,expType,KsType,KsCacheType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
@@ -309,15 +298,18 @@ function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   ETDRK4ConstantCache(E,E2,a,b,c,Q)
 end
 
-struct ETDRK4Cache{uType,rateType,matType} <: OrdinaryDiffEqMutableCache
+struct ETDRK4Cache{uType,rateType,JType,matType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
   s1::uType
   tmp2::rateType
+  rtmp::rateType
+  k1::rateType
   k2::rateType
   k3::rateType
   k4::rateType
+  Jcache::JType
   E::matType # exp(hA)
   E2::matType # exp(hA/2)
   a::matType # h(ϕ1(hA) - 3ϕ2(hA) + 4ϕ3(hA))
@@ -327,10 +319,16 @@ struct ETDRK4Cache{uType,rateType,matType} <: OrdinaryDiffEqMutableCache
 end
 
 function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  if isa(f, SplitFunction)
+    Jcache = nothing
+  else
+    # TODO: sparse Jacobian support
+    Jcache = Matrix{eltype(u)}(length(u), length(u))
+  end
   A = f.f1
   tmp = similar(u)
-  tmp2 = zeros(rate_prototype)
-  k2 = zeros(rate_prototype); k3 = zeros(rate_prototype); k4 = zeros(rate_prototype)
+  rtmp = zeros(rate_prototype); tmp2 = zeros(rate_prototype)
+  k1 = zeros(rate_prototype); k2 = zeros(rate_prototype); k3 = zeros(rate_prototype); k4 = zeros(rate_prototype)
   s1 = similar(u)
   if isa(A, DiffEqArrayOperator)
     L = A.A .* A.α.coeff # has special handling if A.A is Diagonal
@@ -345,7 +343,7 @@ function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   b = dt * (P[3] - 2*P[4])
   c = dt * (-P[3] + 4*P[4])
   Q = dt/2 * Phalf[2]
-  ETDRK4Cache(u,uprev,tmp,s1,tmp2,k2,k3,k4,E,E2,a,b,c,Q)
+  ETDRK4Cache(u,uprev,tmp,s1,tmp2,rtmp,k1,k2,k3,k4,Jcache,E,E2,a,b,c,Q)
 end
 
 u_cache(c::ETDRK4Cache) = ()
