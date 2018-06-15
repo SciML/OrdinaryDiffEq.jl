@@ -92,6 +92,13 @@ abstract type ExpRKConstantCache <: OrdinaryDiffEqConstantCache end
 # Precomputation of exponential-like operators
 expRK_operators(::LawsonEuler, dt, A) = expm(dt * A)
 expRK_operators(::NorsettEuler, dt, A) = phi(dt * A, 1)[2]
+function expRK_operators(::ExpTrapezoid, dt, A)
+  P = phi(dt * A, 2)
+  A21 = P[2]        # ϕ1(hA)
+  B1 = P[2] - P[3]  # ϕ1(hA) - ϕ2(hA)
+  B2 = P[3]         # ϕ2(hA)
+  return A21, B1, B2
+end
 function expRK_operators(::ETDRK4, dt, A)
   P = phi(dt * A, 3)
   Phalf = phi(dt/2 * A, 1)
@@ -107,6 +114,7 @@ end
 # Unified constructor for constant caches
 for (Alg, Cache) in [(:LawsonEuler, :LawsonEulerConstantCache), 
                      (:NorsettEuler, :NorsettEulerConstantCache),
+                     (:ExpTrapezoid, :ExpTrapezoidConstantCache),
                      (:ETDRK4, :ETDRK4ConstantCache)]
   @eval struct $Cache{opType} <: ExpRKConstantCache
     ops::opType # precomputed operators

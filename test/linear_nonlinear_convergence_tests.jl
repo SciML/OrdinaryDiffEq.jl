@@ -17,6 +17,8 @@ sim  = test_convergence(dts,prob,LawsonEuler())
 @test abs(sim.𝒪est[:l2]-1) < 0.2
 sim  = test_convergence(dts,prob,NorsettEuler())
 @test abs(sim.𝒪est[:l2]-1) < 0.2
+sim  = test_convergence(dts,prob,ExpTrapezoid())
+@test abs(sim.𝒪est[:l2]-2) < 0.2
 sim  = test_convergence(dts,prob,ETD2())
 @test abs(sim.𝒪est[:l2]-2) < 0.2
 sim  = test_convergence(dts,prob,ETDRK4(),dense_errors=true)

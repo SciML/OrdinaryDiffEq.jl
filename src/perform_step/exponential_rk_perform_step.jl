@@ -131,6 +131,33 @@ function perform_step!(integrator, cache::NorsettEulerCache, repeat_step=false)
   # integrator.k is automatically set due to aliasing
 end
 
+function perform_step!(integrator, cache::ExpTrapezoidConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,f,p = integrator
+  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+
+  if alg.krylov
+    F1 = integrator.fsalfirst
+    w1 = phiv(dt, A, F1, 2; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
+    U2 = uprev + dt * w1[:, 2]
+    F2 = _compute_nl(f, U2, p, t + dt, A) + A * uprev
+    w2 = phiv(dt, A, F2, 2; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
+    u = uprev + dt * (w1[:, 2] - w1[:, 3] + w2[:, 3])
+  else
+    A21, B1, B2 = cache.ops
+    F1 = integrator.fsalfirst
+    U2 = uprev + dt * (A21 * F1)
+    F2 = _compute_nl(f, U2, p, t + dt, A) + A * uprev
+    u = uprev + dt * (B1 * F1 + B2 * F2)
+  end
+
+  # Update integrator state
+  integrator.fsallast = f(u, p, t + dt)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end
+
 function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
   A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
