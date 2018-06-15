@@ -1615,7 +1615,6 @@ function perform_step!(integrator, cache::ABCN2Cache, repeat_step=false)
     @. tmp = uprev + dt * (1.5*k1 - 0.5*k2)
     cache.k2 .= k1
     # Implicit part
-    # mass_matrix = integrator.sol.prob.mass_matrix
 
     # precalculations
     γ = 1//2
@@ -1633,4 +1632,59 @@ function perform_step!(integrator, cache::ABCN2Cache, repeat_step=false)
     cache.newton_iters = iter
   end
   integrator.f(k,u,p,t+dt)
+end
+
+# CNLF2
+
+function initialize!(integrator,cache::CNLF2ConstantCache)
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.fsalfirst =
+  integrator.f.f1(integrator.uprev,integrator.p,integrator.t) +
+  integrator.f.f2(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
+
+function perform_step!(integrator,cache::CNLF2ConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack k2,uprev2,uf,κ,tol = cache
+  cnt = integrator.iter
+  f1 = integrator.f.f1
+  f2 = integrator.f.f2
+  if cnt == 1
+    u = uprev + dt*integrator.fsalfirst
+    cache.k2 = f1(uprev, p ,t)
+    cache.uprev2 = uprev
+  else
+    du₁ = f1(uprev, p, t)
+    # Explicit part
+    tmp = uprev2 + 2 * dt * (integrator.fsalfirst - du₁)
+    # Implicit part
+    # precalculations
+    γ = 1//2
+    γdt = γ*dt
+    W = calc_W!(integrator, cache, γdt, repeat_step)
+
+    # initial guess
+    zprev = dt*du₁
+    z = zprev # Constant extrapolation
+
+    tmp += γdt*k2
+    z, η, iter, fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, tmp, γ, 1, Val{:newton})
+    fail_convergence && return
+    u = tmp + 1//2*z
+
+    cache.k2 = du₁
+    cache.uprev2 = uprev
+    cache.ηold = η
+    cache.newton_iters = iter
+  end
+  integrator.fsallast = f1(u, p, t+dt) + f2(u, p, t+dt)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
 end
