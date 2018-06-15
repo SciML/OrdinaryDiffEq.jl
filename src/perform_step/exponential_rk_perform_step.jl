@@ -83,17 +83,15 @@ end
 
 function perform_step!(integrator, cache::NorsettEulerConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
-  @unpack exphA,phihA = cache
   A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
-  nl = _compute_nl(f, uprev, p, t, A)
   if alg.krylov
-    w = phiv(dt, A, A * uprev + nl, 1; m=min(alg.m, size(A,1)), 
+    w = phiv(dt, A, integrator.fsalfirst, 1; m=min(alg.m, size(A,1)), 
       norm=integrator.opts.internalnorm, iop=alg.iop)
     u = uprev + dt * w[:,2]
   else
-    u = exphA*uprev + dt*(phihA*nl)
+    u = uprev + dt * (cache.phihA * integrator.fsalfirst)
   end
 
   # Update integrator state
@@ -105,7 +103,7 @@ end
 
 function perform_step!(integrator, cache::NorsettEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack tmp,rtmp,G,Jcache,exphA,phihA,Ks,KsCache = cache
+  @unpack rtmp,Jcache,Ks,KsCache = cache
   if isa(f, SplitFunction)
     A = f.f1
   else
@@ -121,10 +119,8 @@ function perform_step!(integrator, cache::NorsettEulerCache, repeat_step=false)
     phiv!(w, dt, Ks, 1; caches=KsCache[2:end])
     @muladd @. u = uprev + dt * @view(w[:, 2])
   else
-    _compute_nl!(G, f, uprev, p, t, A, rtmp)
-    A_mul_B!(tmp,exphA,uprev)
-    A_mul_B!(rtmp,phihA,G)
-    @muladd @. u = tmp + dt*rtmp
+    A_mul_B!(rtmp, cache.phihA, integrator.fsalfirst)
+    @muladd @. u = uprev + dt*rtmp
   end
 
   # Update integrator state

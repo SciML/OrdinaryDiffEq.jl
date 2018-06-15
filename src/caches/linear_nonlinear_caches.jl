@@ -162,7 +162,6 @@ struct NorsettEulerCache{uType,rateType,JType,expType,KsType,KsCacheType} <: Ord
   rtmp::rateType
   G::rateType
   Jcache::JType
-  exphA::expType
   phihA::expType
   Ks::KsType
   KsCache::KsCacheType
@@ -176,8 +175,7 @@ function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomElty
     Jcache = Matrix{eltype(u)}(length(u), length(u))
   end
   if alg.krylov
-    exphA = nothing # no caching
-    phihA = nothing
+    phihA = nothing # no caching
     n = length(u)
     m = min(alg.m, length(u))
     T = eltype(u)
@@ -193,23 +191,21 @@ function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomElty
     else
       _A = full(A)
     end
-    exphA, phihA = phi(dt*_A, 1)
+    phihA = phi(dt*_A, 1)[2]
   end
-  NorsettEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),Jcache,exphA,phihA,Ks,KsCache)
+  NorsettEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),Jcache,phihA,Ks,KsCache)
 end
 
 u_cache(c::NorsettEulerCache) = ()
 du_cache(c::NorsettEulerCache) = (c.rtmp)
 
 struct NorsettEulerConstantCache{expType} <: OrdinaryDiffEqConstantCache 
-  exphA::expType
   phihA::expType
 end
 
 function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   if alg.krylov
-    exphA = nothing # no caching
-    phihA = nothing
+    phihA = nothing # no caching
   else
     if !isa(f, SplitFunction)
       throw(ArgumentError("Caching can only be used with SplitFunction"))
@@ -220,9 +216,9 @@ function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomElty
     else
       _A = full(A)
     end
-    exphA, phihA = phi(dt*_A, 1)
+    phihA = phi(dt*_A, 1)[2]
   end
-  NorsettEulerConstantCache(exphA, phihA)
+  NorsettEulerConstantCache(phihA)
 end
 
 #=
