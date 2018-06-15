@@ -81,7 +81,12 @@ function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   GenericIIF2Cache(u,uprev,dual_cache,tmp,rhs,nl_rhs,rtmp1,fsalfirst,expA,k)
 end
 
-struct LawsonEulerCache{uType,rateType,JType,expType,KsType,KsCacheType} <: OrdinaryDiffEqMutableCache
+#################################################
+# Classical ExpRK method caches
+abstract type ExpRKCache <: OrdinaryDiffEqMutableCache end
+abstract type ExpRKConstantCache <: OrdinaryDiffEqConstantCache end
+
+struct LawsonEulerCache{uType,rateType,JType,expType,KsType,KsCacheType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
@@ -122,7 +127,7 @@ end
 u_cache(c::LawsonEulerCache) = ()
 du_cache(c::LawsonEulerCache) = (c.rtmp)
 
-struct LawsonEulerConstantCache{expType} <: OrdinaryDiffEqConstantCache 
+struct LawsonEulerConstantCache{expType} <: ExpRKConstantCache 
   exphA::expType
 end
 
@@ -144,7 +149,7 @@ function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   LawsonEulerConstantCache(exphA)
 end
 
-struct NorsettEulerCache{uType,rateType,JType,expType,KsType,KsCacheType} <: OrdinaryDiffEqMutableCache
+struct NorsettEulerCache{uType,rateType,JType,expType,KsType,KsCacheType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
@@ -188,7 +193,7 @@ end
 u_cache(c::NorsettEulerCache) = ()
 du_cache(c::NorsettEulerCache) = (c.rtmp)
 
-struct NorsettEulerConstantCache{expType} <: OrdinaryDiffEqConstantCache 
+struct NorsettEulerConstantCache{expType} <: ExpRKConstantCache 
   phihA::expType
 end
 
@@ -271,7 +276,7 @@ end
 u_cache(c::ETD2Cache) = ()
 du_cache(c::ETD2Cache) = (c.rtmp1,c.rtmp2)
 
-struct ETDRK4ConstantCache{matType} <: OrdinaryDiffEqConstantCache
+struct ETDRK4ConstantCache{matType} <: ExpRKConstantCache
   E::matType # exp(hA)
   E2::matType # exp(hA/2)
   a::matType # h(ϕ1(hA) - 3ϕ2(hA) + 4ϕ3(hA))
@@ -298,7 +303,7 @@ function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   ETDRK4ConstantCache(E,E2,a,b,c,Q)
 end
 
-struct ETDRK4Cache{uType,rateType,JType,matType} <: OrdinaryDiffEqMutableCache
+struct ETDRK4Cache{uType,rateType,JType,matType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType

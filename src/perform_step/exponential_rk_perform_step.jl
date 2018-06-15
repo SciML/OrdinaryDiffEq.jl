@@ -10,7 +10,7 @@ end
 
 ##########################################
 # Common initializers for ExpRK integrators
-function initialize!(integrator, cache::Union{LawsonEulerConstantCache, NorsettEulerConstantCache, ETDRK4ConstantCache})
+function initialize!(integrator, cache::ExpRKConstantCache)
   # Pre-start fsal
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -21,7 +21,7 @@ function initialize!(integrator, cache::Union{LawsonEulerConstantCache, NorsettE
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
 end
-function initialize!(integrator, cache::Union{LawsonEulerCache, NorsettEulerCache, ETDRK4Cache})
+function initialize!(integrator, cache::ExpRKCache)
   # Pre-start fsal
   integrator.fsalfirst = zero(cache.rtmp)
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
