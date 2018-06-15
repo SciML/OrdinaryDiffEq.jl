@@ -158,7 +158,7 @@ function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
     else
       _A = full(A)
     end
-    exphA = expm(dt*_A)
+    exphA = expRK_operators(alg, dt, _A)
   end
   LawsonEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),Jcache,exphA,Ks,KsCache)
 end
@@ -202,7 +202,7 @@ function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomElty
     else
       _A = full(A)
     end
-    phihA = phi(dt*_A, 1)[2]
+    phihA = expRK_operators(alg, dt, _A)
   end
   NorsettEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),Jcache,phihA,Ks,KsCache)
 end
@@ -210,7 +210,7 @@ end
 u_cache(c::NorsettEulerCache) = ()
 du_cache(c::NorsettEulerCache) = (c.rtmp)
 
-struct ETDRK4Cache{uType,rateType,JType,matType} <: ExpRKCache
+struct ETDRK4Cache{uType,rateType,JType,opType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
@@ -222,12 +222,7 @@ struct ETDRK4Cache{uType,rateType,JType,matType} <: ExpRKCache
   k3::rateType
   k4::rateType
   Jcache::JType
-  E::matType # exp(hA)
-  E2::matType # exp(hA/2)
-  a::matType # h(ϕ1(hA) - 3ϕ2(hA) + 4ϕ3(hA))
-  b::matType # h(ϕ2(hA) - 2ϕ3(hA))
-  c::matType # h(-ϕ2(hA) + 4ϕ3(hA))
-  Q::matType # h/2 * ϕ1(hA/2)
+  ops::opType
 end
 
 function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -247,15 +242,8 @@ function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   else
     L = full(A)
   end
-  P = phi(dt * L, 3)
-  Phalf = phi(dt/2 * L, 1)
-  E = P[1]
-  E2 = Phalf[1]
-  a = dt * (P[2] - 3*P[3] + 4*P[4])
-  b = dt * (P[3] - 2*P[4])
-  c = dt * (-P[3] + 4*P[4])
-  Q = dt/2 * Phalf[2]
-  ETDRK4Cache(u,uprev,tmp,s1,tmp2,rtmp,k1,k2,k3,k4,Jcache,E,E2,a,b,c,Q)
+  ops = expRK_operators(alg, dt, L)
+  ETDRK4Cache(u,uprev,tmp,s1,tmp2,rtmp,k1,k2,k3,k4,Jcache,ops)
 end
 
 u_cache(c::ETDRK4Cache) = ()

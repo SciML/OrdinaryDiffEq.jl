@@ -161,7 +161,6 @@ end
 function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp2,tmp,rtmp,Jcache = cache
-  @unpack E,E2,a,b,c,Q = cache
   @unpack k1,k2,k3,k4,s1 = cache
   if isa(f, SplitFunction)
     A = f.f1
@@ -170,35 +169,41 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
     A = Jcache
   end
 
-  # Substep 1
-  _compute_nl!(k1, f, uprev, p, t, A, rtmp)
-  A_mul_B!(tmp,E2,uprev)
-  A_mul_B!(tmp2,Q,k1)
-  @. s1 = tmp + tmp2
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+  if alg.krylov
+    throw(ErrorException("Krylov not yet supported for ETDRK4"))
+  else
+    E,E2,a,b,c,Q = cache.ops
+    # Substep 1
+    _compute_nl!(k1, f, uprev, p, t, A, rtmp)
+    A_mul_B!(tmp,E2,uprev)
+    A_mul_B!(tmp2,Q,k1)
+    @. s1 = tmp + tmp2
 
-  # Substep 2
-  _compute_nl!(k2, f, s1, p, t + dt/2, A, rtmp)
-  A_mul_B!(tmp2,Q,k2)
-  # tmp is still E2*uprev
-  @. tmp2 = tmp + tmp2
+    # Substep 2
+    _compute_nl!(k2, f, s1, p, t + dt/2, A, rtmp)
+    A_mul_B!(tmp2,Q,k2)
+    # tmp is still E2*uprev
+    @. tmp2 = tmp + tmp2
 
-  # Substep 3
-  _compute_nl!(k3, f, tmp2, p, t + dt/2, A, rtmp)
-  @. tmp = 2.0*k3 - k1
-  A_mul_B!(tmp2,Q,tmp)
-  A_mul_B!(tmp,E2,s1)
-  @. tmp2 = tmp + tmp2
+    # Substep 3
+    _compute_nl!(k3, f, tmp2, p, t + dt/2, A, rtmp)
+    @. tmp = 2.0*k3 - k1
+    A_mul_B!(tmp2,Q,tmp)
+    A_mul_B!(tmp,E2,s1)
+    @. tmp2 = tmp + tmp2
 
-  # Substep 4
-  _compute_nl!(k4, f, tmp2, p, t + dt, A, rtmp)
+    # Substep 4
+    _compute_nl!(k4, f, tmp2, p, t + dt, A, rtmp)
 
-  # Update
-  @. tmp2 = k2+k3
-  A_mul_B!(tmp,b,tmp2)
-  A_mul_B!(s1,E,uprev)
-  A_mul_B!(k2,a,k1)
-  A_mul_B!(k3,c,k4)
-  @. u = s1 + k2 + 2tmp + k3
+    # Update
+    @. tmp2 = k2+k3
+    A_mul_B!(tmp,b,tmp2)
+    A_mul_B!(s1,E,uprev)
+    A_mul_B!(k2,a,k1)
+    A_mul_B!(k3,c,k4)
+    @. u = s1 + k2 + 2tmp + k3
+  end
 
   # Update integrator state
   f(integrator.fsallast, u, p, t + dt)
