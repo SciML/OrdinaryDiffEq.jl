@@ -61,11 +61,6 @@ end
     if integrator.opts.adaptive
       atmp = calculate_residuals(cache.Δ, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp) * cache.c_LTE
-      if integrator.EEst >= one(integrator.EEst)
-        # rewind Nordsieck vector
-        nordsieck_rewind!(cache)
-        return nothing
-      end
     end
 
     # Correct Nordsieck vector
@@ -149,11 +144,6 @@ end
     if integrator.opts.adaptive
       calculate_residuals!(atmp, const_cache.Δ, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp) * const_cache.c_LTE
-      if integrator.EEst >= one(integrator.EEst)
-        # rewind Nordsieck vector
-        nordsieck_rewind!(cache)
-        return nothing
-      end
     end
 
     # Correct Nordsieck vector
@@ -197,9 +187,7 @@ end
     perform_predict!(cache)
     cache.Δ = integrator.u - integrator.uprev
     update_nordsieck_vector!(cache)
-    if integrator.opts.adaptive && integrator.EEst >= one(integrator.EEst)
-      cache.step = 1
-    end
+    cache.step += 1
   else
     # Nordsieck form needs to build the history vector
     # Reset time
@@ -225,11 +213,6 @@ end
     if integrator.opts.adaptive
       atmp = calculate_residuals(cache.Δ, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp) * cache.c_LTE
-      if integrator.EEst >= one(integrator.EEst)
-        # rewind Nordsieck vector
-        nordsieck_rewind!(cache)
-        return nothing
-      end
     end
 
     # Correct Nordsieck vector
@@ -276,9 +259,6 @@ end
     perform_predict!(cache)
     const_cache.Δ = integrator.u - integrator.uprev
     update_nordsieck_vector!(cache)
-    if integrator.opts.adaptive && integrator.EEst >= one(integrator.EEst)
-      const_cache.step = 1
-    end
   else
     # Reset time
     for i in endof(tau):-1:2
@@ -304,11 +284,6 @@ end
     if integrator.opts.adaptive
       calculate_residuals!(atmp, const_cache.Δ, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp) * const_cache.c_LTE
-      if integrator.EEst >= one(integrator.EEst)
-        # rewind Nordsieck vector
-        nordsieck_rewind!(cache)
-        return nothing
-      end
     end
 
     # Correct Nordsieck vector

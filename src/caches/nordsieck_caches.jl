@@ -166,3 +166,5 @@ function alg_cache(alg::JVODE,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   const_cache.Δ = utilde
   JVODECache(u,uprev,fsalfirst,utilde,tmp,ratetmp,atmp,const_cache,tsit5cache)
 end
+get_current_alg_order(alg::JVODE,cache::JVODEConstantCache) = cache.step
+get_current_alg_order(alg::JVODE,cache::JVODECache) = cache.const_cache.step

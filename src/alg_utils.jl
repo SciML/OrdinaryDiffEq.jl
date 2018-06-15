@@ -91,8 +91,6 @@ alg_order(alg::OrdinaryDiffEqAlgorithm) = error("Order is not defined for this a
 alg_order(alg::OrdinaryDiffEqVariableOrderAlgorithm) = 1 # dammy value
 get_current_alg_order(alg::OrdinaryDiffEqAlgorithm,cache) = alg_order(alg)
 get_current_alg_order(alg::CompositeAlgorithm,cache) = alg_order(alg.algs[cache.current])
-get_current_alg_order(alg::JVODE,cache::JVODEConstantCache) = cache.step
-get_current_alg_order(alg::JVODE,cache::JVODECache) = cache.const_cache.step
 
 alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
 get_current_adaptive_order(alg::OrdinaryDiffEqAlgorithm,cache) = alg_adaptive_order(alg)
@@ -247,8 +245,8 @@ alg_adaptive_order(alg::Trapezoid) = 1
 # this is actually incorrect and is purposefully decreased as this tends
 # to track the real error much better
 alg_adaptive_order(alg::ImplicitMidpoint) = 1
- # this is actually incorrect and is purposefully decreased as this tends
- # to track the real error much better
+# this is actually incorrect and is purposefully decreased as this tends
+# to track the real error much better
 
 alg_adaptive_order(alg::AN5) = 5
 

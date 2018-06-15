@@ -174,12 +174,13 @@ const NordAlgs = Union{AN5, JVODE}
 
 function stepsize_controller!(integrator, alg::NordAlgs)
   η = stepsize_η!(integrator, integrator.cache)
-  integrator.qold = integrator.dt * η
+  integrator.qold = η
   η
 end
-step_accept_controller!(integrator,alg::NordAlgs,η) = integrator.qold  # dtnew
+step_accept_controller!(integrator,alg::NordAlgs,η) = η * integrator.dt  # dtnew
 function step_reject_controller!(integrator,alg::NordAlgs)
-  integrator.dt *= 0.5 # WIP, will revise later
+  nordsieck_rewind!(integrator.cache)
+  integrator.dt /= min(inv(integrator.opts.qmin), integrator.qold/integrator.opts.gamma) # WIP, will revise later
 end
 
 function stepsize_controller!(integrator,alg::Union{StandardControllerAlgs,
