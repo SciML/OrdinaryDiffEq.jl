@@ -158,6 +158,48 @@ function perform_step!(integrator, cache::ExpTrapezoidConstantCache, repeat_step
   integrator.u = u
 end
 
+function perform_step!(integrator, cache::ExpTrapezoidCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack tmp,rtmp,F2,Jcache,Ks,KsCache = cache
+  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+
+  if alg.krylov
+    F1 = integrator.fsalfirst
+    w1, w2, phiv_caches = KsCache
+    # Krylov for F1
+    arnoldi!(Ks, A, F1; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, cache=tmp, iop=alg.iop)
+    phiv!(w1, dt, Ks, 2; caches=phiv_caches)
+    # Krylov for F2
+    @muladd @. tmp = uprev + dt * @view(w1[:, 2])
+    _compute_nl!(F2, f, tmp, p, t + dt, A, rtmp)
+    F2 .+= A_mul_B!(rtmp, A, uprev)
+    arnoldi!(Ks, A, F2; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, cache=tmp, iop=alg.iop)
+    phiv!(w2, dt, Ks, 2; caches=phiv_caches)
+    # Update u
+    u .= uprev
+    Base.axpy!( dt, @view(w1[:, 2]), u)
+    Base.axpy!(-dt, @view(w1[:, 3]), u)
+    Base.axpy!( dt, @view(w2[:, 3]), u)
+  else
+    A21, B1, B2 = cache.ops
+    F1 = integrator.fsalfirst
+    # Compute F2
+    A_mul_B!(rtmp, A21, F1)
+    @muladd @. tmp = uprev + dt * rtmp
+    _compute_nl!(F2, f, tmp, p, t + dt, A, rtmp)
+    F2 .+= A_mul_B!(rtmp, A, uprev)
+    # Update u
+    u .= uprev
+    Base.axpy!(dt, A_mul_B!(rtmp, B1, F1), u)
+    Base.axpy!(dt, A_mul_B!(rtmp, B2, F2), u)
+  end
+
+  # Update integrator state
+  f(integrator.fsallast, u, p, t + dt)
+  # integrator.k is automatically set due to aliasing
+end
+
 function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
   A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator

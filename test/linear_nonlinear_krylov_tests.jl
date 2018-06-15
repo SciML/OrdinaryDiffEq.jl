@@ -22,10 +22,6 @@ for Alg in Algs
     sol_krylov = solve(prob, Alg(krylov=true); dt=dt, reltol=reltol, internalnorm=Base.norm)
     @test isapprox(sol.u,sol_krylov.u; rtol=reltol)
 
-    if Alg == ExpTrapezoid
-        println("In place version of ExpTrapezoid not yet available.")
-        continue;
-    end
     sol_ip = solve(prob_inplace, Alg(); dt=dt, internalnorm=Base.norm)
     sol_ip_krylov = solve(prob_inplace, Alg(krylov=true); dt=dt, reltol=reltol, internalnorm=Base.norm)
     @test isapprox(sol_ip.u,sol_ip_krylov.u; rtol=reltol)
