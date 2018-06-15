@@ -1459,7 +1459,7 @@ end
       end
     end
   end
-  cache.ϕstar_nm1 .= ϕstar_n
+  cache.ϕstar_nm1, cache.ϕstar_n = ϕstar_n, ϕstar_nm1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
@@ -1533,7 +1533,7 @@ end
     end
   end
   for i in eachindex(ϕstar_n)
-    cache.ϕstar_nm1[i] .= ϕstar_n[i]
+    ϕstar_nm1[i], ϕstar_n[i] = ϕstar_n[i], ϕstar_nm1[i]
   end
 end
 
