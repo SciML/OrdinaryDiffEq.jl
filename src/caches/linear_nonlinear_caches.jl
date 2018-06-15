@@ -1,3 +1,6 @@
+######################################
+# IIF Caches
+
 struct GenericIIF1ConstantCache{vecuType,rhsType,nl_rhsType} <: OrdinaryDiffEqConstantCache
   uhold::vecuType
   rhs::rhsType
@@ -215,67 +218,6 @@ function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomElty
   NorsettEulerConstantCache(phihA)
 end
 
-#=
-  Fsal separately the linear and nonlinear part, as well as the nonlinear 
-  part in the previous time step.
-=#
-mutable struct ETD2Fsal{rateType}
-  lin::rateType
-  nl::rateType
-  nlprev::rateType
-end
-ETD2Fsal(rate_prototype) = ETD2Fsal(zero(rate_prototype),zero(rate_prototype),zero(rate_prototype))
-function recursivecopy!(dest::ETD2Fsal, src::ETD2Fsal)
-  recursivecopy!(dest.lin, src.lin)
-  recursivecopy!(dest.nl, src.nl)
-  recursivecopy!(dest.nlprev, src.nlprev)
-end
-
-struct ETD2ConstantCache{expType} <: OrdinaryDiffEqConstantCache
-  exphA::expType
-  phihA::expType
-  B1::expType # ϕ1(hA) + ϕ2(hA)
-  B0::expType # -ϕ2(hA)
-end
-
-function alg_cache(alg::ETD2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  A = f.f1
-  if isa(A, DiffEqArrayOperator)
-    _A = A.A * A.α.coeff # .* does not return Diagonal for A.A Diagonal
-  else
-    _A = full(A)
-  end
-  Phi = phi(dt*_A, 2)
-  ETD2ConstantCache(Phi[1], Phi[2], Phi[2] + Phi[3], -Phi[3])
-end
-
-struct ETD2Cache{uType,rateType,expType} <: OrdinaryDiffEqMutableCache
-  u::uType
-  uprev::uType
-  utmp::uType
-  rtmp1::rateType
-  rtmp2::rateType
-  exphA::expType
-  phihA::expType
-  B1::expType # ϕ1(hA) + ϕ2(hA)
-  B0::expType # -ϕ2(hA)
-end
-
-function alg_cache(alg::ETD2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  A = f.f1
-  if isa(A, DiffEqArrayOperator)
-    _A = A.A * A.α.coeff # .* does not return Diagonal for A.A Diagonal
-  else
-    _A = full(A)
-  end
-  Phi = phi(dt*_A, 2)
-  ETD2Cache(u,uprev,zero(u),zero(rate_prototype),zero(rate_prototype),Phi[1],Phi[2],Phi[2]+Phi[3],-Phi[3])
-end
-
-# TODO: what should these be?
-u_cache(c::ETD2Cache) = ()
-du_cache(c::ETD2Cache) = (c.rtmp1,c.rtmp2)
-
 struct ETDRK4ConstantCache{matType} <: ExpRKConstantCache
   E::matType # exp(hA)
   E2::matType # exp(hA/2)
@@ -353,3 +295,67 @@ end
 
 u_cache(c::ETDRK4Cache) = ()
 du_cache(c::ETDRK4Cache) = (c.k,c.fsalfirst,c.rtmp)
+
+####################################
+# Multistep exponential method caches
+
+#=
+  Fsal separately the linear and nonlinear part, as well as the nonlinear 
+  part in the previous time step.
+=#
+mutable struct ETD2Fsal{rateType}
+  lin::rateType
+  nl::rateType
+  nlprev::rateType
+end
+ETD2Fsal(rate_prototype) = ETD2Fsal(zero(rate_prototype),zero(rate_prototype),zero(rate_prototype))
+function recursivecopy!(dest::ETD2Fsal, src::ETD2Fsal)
+  recursivecopy!(dest.lin, src.lin)
+  recursivecopy!(dest.nl, src.nl)
+  recursivecopy!(dest.nlprev, src.nlprev)
+end
+
+struct ETD2ConstantCache{expType} <: OrdinaryDiffEqConstantCache
+  exphA::expType
+  phihA::expType
+  B1::expType # ϕ1(hA) + ϕ2(hA)
+  B0::expType # -ϕ2(hA)
+end
+
+function alg_cache(alg::ETD2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  A = f.f1
+  if isa(A, DiffEqArrayOperator)
+    _A = A.A * A.α.coeff # .* does not return Diagonal for A.A Diagonal
+  else
+    _A = full(A)
+  end
+  Phi = phi(dt*_A, 2)
+  ETD2ConstantCache(Phi[1], Phi[2], Phi[2] + Phi[3], -Phi[3])
+end
+
+struct ETD2Cache{uType,rateType,expType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  utmp::uType
+  rtmp1::rateType
+  rtmp2::rateType
+  exphA::expType
+  phihA::expType
+  B1::expType # ϕ1(hA) + ϕ2(hA)
+  B0::expType # -ϕ2(hA)
+end
+
+function alg_cache(alg::ETD2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  A = f.f1
+  if isa(A, DiffEqArrayOperator)
+    _A = A.A * A.α.coeff # .* does not return Diagonal for A.A Diagonal
+  else
+    _A = full(A)
+  end
+  Phi = phi(dt*_A, 2)
+  ETD2Cache(u,uprev,zero(u),zero(rate_prototype),zero(rate_prototype),Phi[1],Phi[2],Phi[2]+Phi[3],-Phi[3])
+end
+
+# TODO: what should these be?
+u_cache(c::ETD2Cache) = ()
+du_cache(c::ETD2Cache) = (c.rtmp1,c.rtmp2)
