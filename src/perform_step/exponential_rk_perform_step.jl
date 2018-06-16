@@ -131,7 +131,7 @@ function perform_step!(integrator, cache::NorsettEulerCache, repeat_step=false)
   # integrator.k is automatically set due to aliasing
 end
 
-function perform_step!(integrator, cache::ExpTrapezoidConstantCache, repeat_step=false)
+function perform_step!(integrator, cache::ETDRK2ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
   A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
@@ -158,7 +158,7 @@ function perform_step!(integrator, cache::ExpTrapezoidConstantCache, repeat_step
   integrator.u = u
 end
 
-function perform_step!(integrator, cache::ExpTrapezoidCache, repeat_step=false)
+function perform_step!(integrator, cache::ETDRK2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,rtmp,F2,Jcache,Ks,KsCache = cache
   A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator

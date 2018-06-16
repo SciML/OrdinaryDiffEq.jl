@@ -92,7 +92,7 @@ abstract type ExpRKConstantCache <: OrdinaryDiffEqConstantCache end
 # Precomputation of exponential-like operators
 expRK_operators(::LawsonEuler, dt, A) = expm(dt * A)
 expRK_operators(::NorsettEuler, dt, A) = phi(dt * A, 1)[2]
-function expRK_operators(::ExpTrapezoid, dt, A)
+function expRK_operators(::ETDRK2, dt, A)
   P = phi(dt * A, 2)
   A21 = P[2]        # ϕ1(hA)
   B1 = P[2] - P[3]  # ϕ1(hA) - ϕ2(hA)
@@ -114,7 +114,7 @@ end
 # Unified constructor for constant caches
 for (Alg, Cache) in [(:LawsonEuler, :LawsonEulerConstantCache), 
                      (:NorsettEuler, :NorsettEulerConstantCache),
-                     (:ExpTrapezoid, :ExpTrapezoidConstantCache),
+                     (:ETDRK2, :ETDRK2ConstantCache),
                      (:ETDRK4, :ETDRK4ConstantCache)]
   @eval struct $Cache{opType} <: ExpRKConstantCache
     ops::opType # precomputed operators
@@ -218,7 +218,7 @@ end
 u_cache(c::NorsettEulerCache) = ()
 du_cache(c::NorsettEulerCache) = (c.rtmp)
 
-struct ExpTrapezoidCache{uType,rateType,JType,opType,KsType,KsCacheType} <: ExpRKCache
+struct ETDRK2Cache{uType,rateType,JType,opType,KsType,KsCacheType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
@@ -230,7 +230,7 @@ struct ExpTrapezoidCache{uType,rateType,JType,opType,KsType,KsCacheType} <: ExpR
   KsCache::KsCacheType
 end
 
-function alg_cache(alg::ExpTrapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::ETDRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   if isa(f, SplitFunction)
     Jcache = nothing
   else
@@ -258,7 +258,7 @@ function alg_cache(alg::ExpTrapezoid,u,rate_prototype,uEltypeNoUnits,uBottomElty
     end
     ops = expRK_operators(alg, dt, _A)
   end
-  ExpTrapezoidCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),Jcache,ops,Ks,KsCache)
+  ETDRK2Cache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),Jcache,ops,Ks,KsCache)
 end
 
 struct ETDRK4Cache{uType,rateType,JType,opType} <: ExpRKCache

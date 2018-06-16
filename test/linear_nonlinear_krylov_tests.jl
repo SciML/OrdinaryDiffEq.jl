@@ -15,7 +15,7 @@ prob_inplace = SplitODEProblem(L,krylov_f2!,u0,(0.0,1.0))
 DiffEqBase.has_analytic(::typeof(prob.f)) = false
 DiffEqBase.has_analytic(::typeof(prob_inplace.f)) = false
 
-Algs = [LawsonEuler,NorsettEuler,ExpTrapezoid]
+Algs = [LawsonEuler,NorsettEuler,ETDRK2]
 for Alg in Algs
     gc()
     sol = solve(prob, Alg(); dt=dt, internalnorm=Base.norm)
