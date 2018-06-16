@@ -270,6 +270,51 @@ function alg_cache(alg::ETDRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   ETDRK2Cache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),Jcache,ops,Ks,KsCache)
 end
 
+struct ETDRK3Cache{uType,rateType,JType,opType,KsType,KsCacheType} <: ExpRKCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  rtmp::rateType
+  Au::rateType
+  F2::rateType
+  F3::rateType
+  Jcache::JType
+  ops::opType
+  Ks::KsType
+  KsCache::KsCacheType
+end
+
+function alg_cache(alg::ETDRK3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  if isa(f, SplitFunction)
+    Jcache = nothing
+  else
+    # TODO: sparse Jacobian support
+    Jcache = Matrix{eltype(u)}(length(u), length(u))
+  end
+  if alg.krylov
+    ops = nothing # no caching
+    n = length(u)
+    m = min(alg.m, length(u))
+    T = eltype(u)
+    Ks = KrylovSubspace{T}(n, m)
+    w1_half = Matrix{T}(n, 2); w1 = Matrix{T}(n, 4); w2 = Matrix{T}(n, 4); w3 = Matrix{T}(n, 4)
+    phiv_caches = (Vector{T}(m), Matrix{T}(m, m), Matrix{T}(m + 3, m + 3), Matrix{T}(m, 4))
+    KsCache = (w1_half, w1, w2, w3, phiv_caches)
+  else
+    Ks = nothing
+    KsCache = nothing
+    A = f.f1
+    if isa(A, DiffEqArrayOperator)
+      _A = A.A * A.α.coeff
+    else
+      _A = full(A)
+    end
+    ops = expRK_operators(alg, dt, _A)
+  end
+  ETDRK3Cache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),
+    zeros(rate_prototype),zeros(rate_prototype),Jcache,ops,Ks,KsCache)
+end
+
 struct ETDRK4Cache{uType,rateType,JType,opType} <: ExpRKCache
   u::uType
   uprev::uType

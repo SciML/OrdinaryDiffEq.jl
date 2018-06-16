@@ -247,6 +247,58 @@ function perform_step!(integrator, cache::ETDRK3ConstantCache, repeat_step=false
   integrator.u = u
 end
 
+function perform_step!(integrator, cache::ETDRK3Cache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack tmp,rtmp,Au,F2,F3,Jcache,Ks,KsCache = cache
+  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+
+  F1 = integrator.fsalfirst
+  A_mul_B!(Au, A, uprev)
+  halfdt = dt/2
+  if alg.krylov
+    w1_half, w1, w2, w3, phiv_caches = KsCache
+    # Krylov for F1 (first column)
+    arnoldi!(Ks, A, F1; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, cache=tmp, iop=alg.iop)
+    phiv!(w1_half, halfdt, Ks, 1; caches=phiv_caches)
+    phiv!(w1, dt, Ks, 3; caches=phiv_caches)
+    @muladd @. @views tmp = uprev + halfdt * w1_half[:, 2] # tmp is U2
+    _compute_nl!(F2, f, tmp, p, t + halfdt, A, rtmp); F2 .+= Au
+    # Krylov for F2 (second column)
+    arnoldi!(Ks, A, F2; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, cache=tmp, iop=alg.iop)
+    phiv!(w2, dt, Ks, 3; caches=phiv_caches)
+    @muladd @. @views tmp = uprev + dt * (2*w2[:, 2] - w1[:, 2]) # tmp is U3
+    _compute_nl!(F3, f, tmp, p, t + dt, A, rtmp); F3 .+= Au
+    # Krylov for F3 (third column)
+    arnoldi!(Ks, A, F3; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, cache=tmp, iop=alg.iop)
+    phiv!(w3, dt, Ks, 3; caches=phiv_caches)
+    # Update u
+    @views @. rtmp = 4w1[:,4] - 3w1[:,3] + w1[:,2] - 8w2[:,4] + 4w2[:,3] + 4w3[:,4] - w3[:,3]
+    @muladd @. u = uprev + dt * rtmp
+  else
+    A21, A3, B1, B2, B3 = cache.ops
+    # stage 1 (fsaled)
+    # stage 2
+    A_mul_B!(rtmp, A21, F1)
+    @muladd @. tmp = uprev + dt * rtmp # tmp is U2
+    f.f2(F2, tmp, p, t + halfdt); F2 .+= Au
+    # stage 3
+    @muladd @. F3 = 2 * F2 - F1 # use F3 temporarily as cache
+    A_mul_B!(rtmp, A3, F3)
+    @muladd @. tmp = uprev + dt * rtmp # tmp is U3
+    f.f2(F3, tmp, p, t + dt); F3 .+= Au
+    # update u
+    u .= uprev
+    Base.axpy!(dt, A_mul_B!(rtmp, B1, F1), u)
+    Base.axpy!(dt, A_mul_B!(rtmp, B2, F2), u)
+    Base.axpy!(dt, A_mul_B!(rtmp, B3, F3), u)
+  end
+
+  # Update integrator state
+  f(integrator.fsallast, u, p, t + dt)
+  # integrator.k is automatically set due to aliasing
+end
+
 function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
   A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
