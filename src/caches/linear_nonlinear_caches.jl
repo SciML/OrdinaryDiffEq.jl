@@ -94,10 +94,7 @@ expRK_operators(::LawsonEuler, dt, A) = expm(dt * A)
 expRK_operators(::NorsettEuler, dt, A) = phi(dt * A, 1)[2]
 function expRK_operators(::ETDRK2, dt, A)
   P = phi(dt * A, 2)
-  A21 = P[2]        # ϕ1(hA)
-  B1 = P[2] - P[3]  # ϕ1(hA) - ϕ2(hA)
-  B2 = P[3]         # ϕ2(hA)
-  return A21, B1, B2
+  return P[2], P[3] # ϕ1(hA), ϕ2(hA)
 end
 function expRK_operators(::ETDRK4, dt, A)
   P = phi(dt * A, 3)

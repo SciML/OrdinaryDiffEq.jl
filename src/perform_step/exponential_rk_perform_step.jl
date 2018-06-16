@@ -144,11 +144,13 @@ function perform_step!(integrator, cache::ETDRK2ConstantCache, repeat_step=false
     w2 = phiv(dt, A, F2, 2; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
     u = uprev + dt * (w1[:, 2] - w1[:, 3] + w2[:, 3])
   else
-    A21, B1, B2 = cache.ops
+    phi1, phi2 = cache.ops
+    # The caching version uses a special formula to save computation
+    G1 = f.f2(uprev, p, t)
     F1 = integrator.fsalfirst
-    U2 = uprev + dt * (A21 * F1)
-    F2 = _compute_nl(f, U2, p, t + dt, A) + A * uprev
-    u = uprev + dt * (B1 * F1 + B2 * F2)
+    U2 = uprev + dt * (phi1 * F1)
+    G2 = f.f2(U2, p, t + dt)
+    u = U2 + dt * (phi2 * (G2 - G1))
   end
 
   # Update integrator state
@@ -182,17 +184,19 @@ function perform_step!(integrator, cache::ETDRK2Cache, repeat_step=false)
     Base.axpy!(-dt, @view(w1[:, 3]), u)
     Base.axpy!( dt, @view(w2[:, 3]), u)
   else
-    A21, B1, B2 = cache.ops
+    phi1, phi2 = cache.ops
     F1 = integrator.fsalfirst
-    # Compute F2
-    A_mul_B!(rtmp, A21, F1)
-    @muladd @. tmp = uprev + dt * rtmp
-    _compute_nl!(F2, f, tmp, p, t + dt, A, rtmp)
-    F2 .+= A_mul_B!(rtmp, A, uprev)
+    # The caching version uses a special formula to save computation
+    # Compute U2
+    A_mul_B!(rtmp, phi1, F1)
+    @muladd @. tmp = uprev + dt * rtmp # tmp is U2
+    # Compute G2 - G1, storing result in the cache F2
+    f.f2(rtmp, uprev, p, t)
+    f.f2(F2, tmp, p, t + dt)
+    F2 .-= rtmp # "F2" is G2 - G1
     # Update u
-    u .= uprev
-    Base.axpy!(dt, A_mul_B!(rtmp, B1, F1), u)
-    Base.axpy!(dt, A_mul_B!(rtmp, B2, F2), u)
+    u .= tmp
+    Base.axpy!(dt, A_mul_B!(rtmp, phi2, F2), u)
   end
 
   # Update integrator state
