@@ -616,6 +616,9 @@ function alg_cache(alg::VCABM3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     ϕstar_nm1[i] = zeros(rate_prototype)
     ϕstar_n[i] = zeros(rate_prototype)
   end
+  for i in 1:4
+    ϕ_np1[i] = zeros(rate_prototype)
+  end
   β = zeros(typeof(t),3)
   order = 3
   atmp = similar(u,uEltypeNoUnits)
@@ -704,6 +707,9 @@ function alg_cache(alg::VCABM4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     ϕ_n[i] = zeros(rate_prototype)
     ϕstar_nm1[i] = zeros(rate_prototype)
     ϕstar_n[i] = zeros(rate_prototype)
+  end
+  for i in 1:5
+    ϕ_np1[i] = zeros(rate_prototype)
   end
   β = zeros(typeof(t),4)
   order = 4
@@ -794,10 +800,231 @@ function alg_cache(alg::VCABM5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     ϕstar_nm1[i] = zeros(rate_prototype)
     ϕstar_n[i] = zeros(rate_prototype)
   end
+  for i in 1:6
+    ϕ_np1[i] = zeros(rate_prototype)
+  end
   β = zeros(typeof(t),5)
   order = 5
   atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
   utilde = similar(u,indices(u))
   VCABM5Cache(u,uprev,fsalfirst,rk4cache,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕ_np1,ϕstar_n,β,order,atmp,tmp,utilde,1)
+end
+
+# VCABM
+
+mutable struct VCABMConstantCache{tArrayType,rArrayType,cArrayType,dtType,dtArrayType} <: OrdinaryDiffEqConstantCache
+  ϕstar_nm1::rArrayType
+  dts::dtArrayType
+  c::cArrayType
+  g::tArrayType
+  ϕ_n::rArrayType
+  ϕ_np1::rArrayType
+  ϕstar_n::rArrayType
+  β::tArrayType
+  ξ::dtType
+  ξ0::dtType
+  order::Int
+  max_order::Int
+  step::Int
+end
+
+mutable struct VCABMCache{uType,rateType,uArrayType,dtType,tArrayType,cArrayType,uEltypeNoUnits,coefType,dtArrayType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  fsalfirst::rateType
+  k4::rateType
+  ϕstar_nm1::coefType
+  dts::dtArrayType
+  c::cArrayType
+  g::tArrayType
+  ϕ_n::coefType
+  ϕ_np1::coefType
+  ϕstar_n::coefType
+  β::tArrayType
+  order::Int
+  max_order::Int
+  atmp::uEltypeNoUnits
+  tmp::uType
+  ξ::dtType
+  ξ0::dtType
+  utilde::uArrayType
+  utildem1::uArrayType
+  utildem2::uArrayType
+  utildep1::uArrayType
+  atmpm1::uEltypeNoUnits
+  atmpm2::uEltypeNoUnits
+  atmpp1::uEltypeNoUnits
+  step::Int
+end
+
+u_cache(c::VCABMCache) = ()
+du_cache(c::VCABMCache) = ()
+
+function alg_cache(alg::VCABM,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  dts = zeros(typeof(dt), 13)
+  c = zeros(typeof(t), 13, 13)
+  g = zeros(typeof(t), 13)
+  ϕ_n = Vector{typeof(rate_prototype)}(13)
+  ϕstar_nm1 = Vector{typeof(rate_prototype)}(13)
+  ϕstar_n = Vector{typeof(rate_prototype)}(13)
+  ϕ_np1 = Vector{typeof(rate_prototype)}(14)
+  for i in 1:13
+    ϕ_n[i] = copy(rate_prototype)
+    ϕstar_nm1[i] = copy(rate_prototype)
+    ϕstar_n[i] = copy(rate_prototype)
+  end
+  β = zeros(typeof(t), 13)
+  ξ = zero(dt)
+  ξ0 = zero(dt)
+  order = 1
+  max_order = 12
+  VCABMConstantCache(ϕstar_nm1,dts,c,g,ϕ_n,ϕ_np1,ϕstar_n,β,ξ,ξ0,order,max_order,1)
+end
+
+function alg_cache(alg::VCABM,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  fsalfirst = zeros(rate_prototype)
+  k4 = zeros(rate_prototype)
+  dts = zeros(typeof(dt), 13)
+  c = zeros(typeof(t), 13, 13)
+  g = zeros(typeof(t), 13)
+  ϕ_n = Vector{typeof(rate_prototype)}(13)
+  ϕstar_nm1 = Vector{typeof(rate_prototype)}(13)
+  ϕstar_n = Vector{typeof(rate_prototype)}(13)
+  ϕ_np1 = Vector{typeof(rate_prototype)}(14)
+  for i in 1:13
+    ϕ_n[i] = zeros(rate_prototype)
+    ϕstar_nm1[i] = zeros(rate_prototype)
+    ϕstar_n[i] = zeros(rate_prototype)
+  end
+  for i in 1:14
+    ϕ_np1[i] = zeros(rate_prototype)
+  end
+  β = zeros(typeof(t), 13)
+  order = 1
+  max_order = 12
+  atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u)
+  ξ = zero(dt)
+  ξ0 = zero(dt)
+  utilde = similar(u,indices(u))
+  utildem2 = similar(u,indices(u))
+  utildem1 = similar(u,indices(u))
+  utildep1 = similar(u,indices(u))
+  atmp = similar(u,uEltypeNoUnits)
+  atmpm1 = similar(u,uEltypeNoUnits)
+  atmpm2 = similar(u,uEltypeNoUnits)
+  atmpp1 = similar(u,uEltypeNoUnits)
+  VCABMCache(u,uprev,fsalfirst,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕ_np1,ϕstar_n,β,order,max_order,atmp,tmp,ξ,ξ0,utilde,utildem1,utildem2,utildep1,atmpm1,atmpm2,atmpp1,1)
+end
+
+# IMEX Multistep methods
+
+# ABCN2
+
+mutable struct ABCN2ConstantCache{rateType,F,uToltype,uType,tType} <: OrdinaryDiffEqConstantCache
+  k2::rateType
+  uf::F
+  ηold::uToltype
+  κ::uToltype
+  tol::uToltype
+  newton_iters::Int
+  uprev3::uType
+  tprev2::tType
+end
+
+mutable struct ABCN2Cache{uType,rateType,uNoUnitsType,J,UF,JC,uToltype,tType,F} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  uprev2::uType
+  du1::rateType
+  fsalfirst::rateType
+  k::rateType
+  k1::rateType
+  k2::rateType
+  du₁::rateType
+  z::uType
+  dz::uType
+  b::uType
+  tmp::uType
+  atmp::uNoUnitsType
+  J::J
+  W::J
+  uf::UF
+  jac_config::JC
+  linsolve::F
+  ηold::uToltype
+  κ::uToltype
+  tol::uToltype
+  newton_iters::Int
+  uprev3::uType
+  tprev2::tType
+end
+
+u_cache(c::ABCN2Cache)    = ()
+du_cache(c::ABCN2Cache)   = ()
+
+function alg_cache(alg::ABCN2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  k2 = rate_prototype
+  uToltype = real(uBottomEltypeNoUnits)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+  ηold = one(uToltype)
+  uprev3 = u
+  tprev2 = t
+
+  if alg.κ != nothing
+    κ = uToltype(alg.κ)
+  else
+    κ = uToltype(1//100)
+  end
+  if alg.tol != nothing
+    tol = uToltype(alg.tol)
+  else
+    tol = uToltype(min(0.03,first(reltol)^(0.5)))
+  end
+
+  ABCN2ConstantCache(k2,uf,ηold,κ,tol,10000,uprev3,tprev2)
+end
+
+function alg_cache(alg::ABCN2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  du1 = zeros(rate_prototype)
+  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  W = similar(J)
+  z = similar(u,indices(u))
+  dz = similar(u,indices(u))
+  tmp = similar(u); b = similar(u,indices(u));
+  atmp = similar(u,uEltypeNoUnits,indices(u))
+  fsalfirst = zeros(rate_prototype)
+  k = zeros(rate_prototype)
+  k1 = zeros(rate_prototype)
+  k2 = zeros(rate_prototype)
+  du₁ = zeros(rate_prototype)
+
+  if typeof(f) <: SplitFunction
+    uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t,p)
+  else
+    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+  end
+
+  linsolve = alg.linsolve(Val{:init},uf,u)
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
+
+  uToltype = real(uBottomEltypeNoUnits)
+  if alg.κ != nothing
+    κ = uToltype(alg.κ)
+  else
+    κ = uToltype(1//100)
+  end
+  if alg.tol != nothing
+    tol = uToltype(alg.tol)
+  else
+    tol = uToltype(min(0.03,first(reltol)^(0.5)))
+  end
+
+  uprev3 = similar(u)
+  tprev2 = t
+
+  ηold = one(uToltype)
+
+  ABCN2Cache(u,uprev,uprev2,du1,fsalfirst,k,k1,k2,du₁,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,ηold,κ,tol,10000,uprev3,tprev2)
 end

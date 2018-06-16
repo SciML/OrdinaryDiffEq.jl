@@ -44,7 +44,7 @@ get_chunksize{CS,AD}(x::NLSOLVEJL_SETUP{CS,AD}) = CS
 
 Save element-wise residuals
 ```math
-\frac{ũ}{α+\max{|u₀|,|u₁|}*ρ}
+\\frac{ũ}{α+\\max{|u₀|,|u₁|}*ρ}
 ```
 in `out`.
 """
@@ -65,7 +65,7 @@ end
 
 Save element-wise residuals
 ```math
-\frac{u₁-u₀}{α+\max{|u₀|,|u₁|}*ρ}
+\\frac{ũ}{α+\\max{|u₀|,|u₁|}*ρ}
 ```
 in `out`.
 """
@@ -86,7 +86,7 @@ end
 
 Calculate element-wise residuals
 ```math
-\frac{ũ}{α+\max{|u₀|,|u₁|}*ρ}.
+\\frac{ũ}{α+\\max{|u₀|,|u₁|}*ρ}
 ```
 """
 @inline @muladd function calculate_residuals(ũ, u₀, u₁, α, ρ, internalnorm)
@@ -106,7 +106,7 @@ end
 
 Calculate element-wise residuals
 ```math
-\frac{u₁-u₀}{α+\max{|u₀|,|u₁|}*ρ}.
+\\frac{ũ}{α+\\max{|u₀|,|u₁|}*ρ}
 ```
 """
 @inline @muladd function calculate_residuals(u₀, u₁, α, ρ, internalnorm)

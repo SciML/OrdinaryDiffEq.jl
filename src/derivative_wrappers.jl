@@ -1,5 +1,5 @@
 function derivative!(df::AbstractArray{<:Number}, f, x::Union{Number,AbstractArray{<:Number}}, fx::AbstractArray{<:Number}, integrator, grad_config)
-    if alg_autodiff(integrator.alg)
+    if get_current_alg_autodiff(integrator.alg, integrator.cache)
         ForwardDiff.derivative!(df, f, fx, x, grad_config)
     else
         DiffEqDiffTools.finite_difference_gradient!(df, f, x, grad_config)
@@ -8,7 +8,7 @@ function derivative!(df::AbstractArray{<:Number}, f, x::Union{Number,AbstractArr
 end
 
 function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, fx::AbstractArray{<:Number}, integrator::DEIntegrator, jac_config)
-    if alg_autodiff(integrator.alg)
+    if get_current_alg_autodiff(integrator.alg, integrator.cache)
       ForwardDiff.jacobian!(J, f, fx, x, jac_config)
     else
       DiffEqDiffTools.finite_difference_jacobian!(J, f, x, jac_config)

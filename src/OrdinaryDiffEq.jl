@@ -175,6 +175,10 @@ module OrdinaryDiffEq
 
   export VCAB3, VCAB4, VCAB5, VCABM3, VCABM4, VCABM5
 
+  export VCABM
+
+  export ABCN2
+
   export AN5, JVODE
 
   export ABDF2
