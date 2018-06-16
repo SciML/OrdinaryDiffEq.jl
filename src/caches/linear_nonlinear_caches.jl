@@ -96,6 +96,17 @@ function expRK_operators(::ETDRK2, dt, A)
   P = phi(dt * A, 2)
   return P[2], P[3] # ϕ1(hA), ϕ2(hA)
 end
+function expRK_operators(::ETDRK3, dt, A)
+  Phalf = phi(dt/2 * A, 1)
+  A21 = 0.5Phalf[2]
+  P = phi(dt * A, 3)
+  phi1, phi2, phi3 = P[2], P[3], P[4]
+  A3 = phi1
+  B1 = 4phi3 - 3phi2 + phi1
+  B2 = -8phi3 + 4phi2
+  B3 = 4phi3 - phi2
+  return A21, A3, B1, B2, B3
+end
 function expRK_operators(::ETDRK4, dt, A)
   P = phi(dt * A, 3)
   Phalf = phi(dt/2 * A, 1)
@@ -112,6 +123,7 @@ end
 for (Alg, Cache) in [(:LawsonEuler, :LawsonEulerConstantCache), 
                      (:NorsettEuler, :NorsettEulerConstantCache),
                      (:ETDRK2, :ETDRK2ConstantCache),
+                     (:ETDRK3, :ETDRK3ConstantCache),
                      (:ETDRK4, :ETDRK4ConstantCache)]
   @eval struct $Cache{opType} <: ExpRKConstantCache
     ops::opType # precomputed operators
