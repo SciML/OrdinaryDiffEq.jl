@@ -204,6 +204,49 @@ function perform_step!(integrator, cache::ETDRK2Cache, repeat_step=false)
   # integrator.k is automatically set due to aliasing
 end
 
+function perform_step!(integrator, cache::ETDRK3ConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,f,p = integrator
+  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+
+  Au = A * uprev
+  F1 = integrator.fsalfirst
+  if alg.krylov
+    # Krylov on F1 (first column)
+    # TODO: reuse Krylov subspace for w1_half
+    w1_half = phiv(dt/2, A, F1, 1; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
+    w1 = phiv(dt, A, F1, 3; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
+    U2 = uprev + dt/2 * w1_half[:, 2]
+    F2 = _compute_nl(f, U2, p, t + dt/2, A) + Au
+    # Krylov on F2 (second column)
+    w2 = phiv(dt, A, F2, 3; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
+    U3 = uprev + dt * (2w2[:, 2] - w1[:, 2])
+    F3 = _compute_nl(f, U3, p, t + dt, A) + Au
+    # Krylov on F3 (third column)
+    w3 = phiv(dt, A, F3, 3; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
+    u = uprev + dt * (4w1[:,4] - 3w1[:,3] + w1[:,2]
+                      -8w2[:,4] + 4w2[:,3]
+                      +4w3[:,4] - w3[:,3])
+  else
+    A21, A3, B1, B2, B3 = cache.ops
+    # stage 1 (fsaled)
+    # stage 2
+    U2 = uprev + dt * (A21 * F1)
+    F2 = f.f2(U2, p, t + dt/2) + Au
+    # stage 3
+    U3 = uprev + dt * (A3 * (2F2 - F1))
+    F3 = f.f2(U3, p, t + dt) + Au
+    # update u
+    u = uprev + dt * (B1 * F1 + B2 * F2 + B3 * F3)
+  end
+
+  # Update integrator state
+  integrator.fsallast = f(u, p, t + dt)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end
+
 function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
   A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
