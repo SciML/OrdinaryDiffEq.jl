@@ -605,7 +605,7 @@ end
     integrator.k[2] = integrator.fsallast
     integrator.u = u
   end
-  cache.ϕstar_nm1 .= ϕstar_n
+  cache.ϕstar_nm1, cache.ϕstar_n = ϕstar_n, ϕstar_nm1
 end
 
 function initialize!(integrator,cache::VCAB3Cache)
@@ -665,9 +665,7 @@ end
     end
     f(k4,u,p,t+dt)
   end
-  for i in eachindex(ϕstar_n)
-    cache.ϕstar_nm1[i] .= ϕstar_n[i]
-  end
+  cache.ϕstar_nm1, cache.ϕstar_n = ϕstar_n, ϕstar_nm1
 end
 
 function initialize!(integrator,cache::VCAB4ConstantCache)
@@ -734,7 +732,7 @@ end
     integrator.k[2] = integrator.fsallast
     integrator.u = u
   end
-  cache.ϕstar_nm1 .= ϕstar_n
+  cache.ϕstar_nm1, cache.ϕstar_n = ϕstar_n, ϕstar_nm1
 end
 
 function initialize!(integrator,cache::VCAB4Cache)
@@ -800,9 +798,7 @@ end
     end
     f(k4,u,p,t+dt)
   end
-  for i in eachindex(ϕstar_n)
-    cache.ϕstar_nm1[i] .= ϕstar_n[i]
-  end
+  cache.ϕstar_nm1, cache.ϕstar_n = ϕstar_n, ϕstar_nm1
 end
 
 # VCAB5
@@ -878,7 +874,7 @@ end
     integrator.k[2] = integrator.fsallast
     integrator.u = u
   end
-  cache.ϕstar_nm1 .= ϕstar_n
+  cache.ϕstar_nm1, cache.ϕstar_n = ϕstar_n, ϕstar_nm1
 end
 
 function initialize!(integrator,cache::VCAB5Cache)
@@ -951,9 +947,7 @@ end
     end
     f(k4,u,p,t+dt)
   end
-  for i in eachindex(ϕstar_n)
-    cache.ϕstar_nm1[i] .= ϕstar_n[i]
-  end
+  cache.ϕstar_nm1, cache.ϕstar_n = ϕstar_n, ϕstar_nm1
 end
 
 # VCABM3
@@ -1019,7 +1013,7 @@ end
     integrator.k[2] = integrator.fsallast
     integrator.u = u
   end
-  cache.ϕstar_nm1 .= ϕstar_n
+  cache.ϕstar_nm1, cache.ϕstar_n = ϕstar_n, ϕstar_nm1
 end
 
 function initialize!(integrator,cache::VCABM3Cache)
@@ -1082,9 +1076,7 @@ end
     end
     f(k4,u,p,t+dt)
   end
-  for i in eachindex(ϕstar_n)
-    cache.ϕstar_nm1[i] .= ϕstar_n[i]
-  end
+  cache.ϕstar_nm1, cache.ϕstar_n = ϕstar_n, ϕstar_nm1
 end
 
 # VCABM4
@@ -1156,7 +1148,7 @@ end
     integrator.k[2] = integrator.fsallast
     integrator.u = u
   end
-  cache.ϕstar_nm1 .= ϕstar_n
+  cache.ϕstar_nm1, cache.ϕstar_n = ϕstar_n, ϕstar_nm1
 end
 
 function initialize!(integrator,cache::VCABM4Cache)
@@ -1225,9 +1217,7 @@ end
     end
     f(k4,u,p,t+dt)
   end
-  for i in eachindex(ϕstar_n)
-    cache.ϕstar_nm1[i] .= ϕstar_n[i]
-  end
+  cache.ϕstar_nm1, cache.ϕstar_n = ϕstar_n, ϕstar_nm1
 end
 
 # VCABM5
@@ -1306,7 +1296,7 @@ end
     integrator.k[2] = integrator.fsallast
     integrator.u = u
   end
-  cache.ϕstar_nm1 .= ϕstar_n
+  cache.ϕstar_nm1, cache.ϕstar_n = ϕstar_n, ϕstar_nm1
 end
 
 function initialize!(integrator,cache::VCABM5Cache)
@@ -1385,9 +1375,7 @@ end
     end
     f(k4,u,p,t+dt)
   end
-  for i in eachindex(ϕstar_n)
-    cache.ϕstar_nm1[i] .= ϕstar_n[i]
-  end
+  cache.ϕstar_nm1, cache.ϕstar_n = ϕstar_n, ϕstar_nm1
 end
 
 # VCABM
@@ -1532,9 +1520,7 @@ end
       end
     end
   end
-  for i in eachindex(ϕstar_n)
-    ϕstar_nm1[i], ϕstar_n[i] = ϕstar_n[i], ϕstar_nm1[i]
-  end
+  cache.ϕstar_nm1, cache.ϕstar_n = ϕstar_n, ϕstar_nm1
 end
 
 
