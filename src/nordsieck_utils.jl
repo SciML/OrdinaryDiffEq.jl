@@ -226,20 +226,18 @@ function stepsize_η!(integrator, cache::T) where T
   isconstcache = T <: OrdinaryDiffEqConstantCache
   isconstcache || ( cache = cache.const_cache )
   isvode = ( T <: JVODECache || T <: JVODEConstantCache )
-  isvarorder = isvode && cache.n_wait == 0
+  isvarorder = isvode && cache.n_wait == 1
   order = get_current_adaptive_order(integrator.alg, integrator.cache)
   L = order+1
-  @show η_next = cache.η = inv( (BIAS2*integrator.EEst)^inv(L) + ADDON )
+  η_next = cache.η = inv( (BIAS2*integrator.EEst)^inv(L) + ADDON ) * integrator.opts.gamma
   if isvarorder
-    @show ηqm1 = stepsize_η₋₁!(integrator, cache, order)
-    @show ηqp1 = stepsize_η₊₁!(integrator, cache, order)
+    ηqm1 = stepsize_η₋₁!(integrator, cache, order)
+    ηqp1 = stepsize_η₊₁!(integrator, cache, order)
     η_next = max(ηqm1, ηqp1, cache.η)
   end
-  η_next *= integrator.opts.gamma
-  ( η_next <= integrator.opts.qsteady_max ) && ( cache.η = 1 ; return @show cache.η )
+  ( η_next <= integrator.opts.qsteady_max ) && ( cache.η = 1 ; return cache.η )
   if isvarorder
     if η_next == cache.η
-      # cache.η = η_next
       cache.nextorder = order
     elseif η_next == cache.η₋₁
       cache.η = cache.η₋₁
@@ -253,8 +251,9 @@ function stepsize_η!(integrator, cache::T) where T
   else
     cache.η = η_next
   end
-  order == 1 && return ( cache.η = min(1e5, cache.η) )
-  @show cache.η = min(integrator.opts.qmax, max(integrator.opts.qmin, cache.η))
+  info("integrator.EEst = $(integrator.EEst), cache.η= $(cache.η), cache.η₋₁=$(cache.η₋₁), cache.η₊₁=$(cache.η₊₁)")
+  ( integrator.iter==1 || integrator.u_modified ) && return ( cache.η = min(1e5, cache.η) )
+  cache.η = min(integrator.opts.qmax, max(integrator.opts.qmin, cache.η))
   return cache.η
 end
 
@@ -268,7 +267,7 @@ function stepsize_η₊₁!(integrator, cache::T, order) where T
   qmax = length(z)-1
   L = q+1
   if q != qmax
-    @show cache.prev_𝒟 == 0 && return cache.η₊₁
+    cache.prev_𝒟 == 0 && return cache.η₊₁
     cquot = -(c_𝒟 / cache.prev_𝒟) * (tau[1]/tau[3])^L
     if isconstcache
       atmp = muladd.(cquot, z[end], cache.Δ)
@@ -278,7 +277,7 @@ function stepsize_η₊₁!(integrator, cache::T, order) where T
       calculate_residuals!(atmp, const_cache.Δ, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
     end
     dup = integrator.opts.internalnorm(atmp) * c_LTE₊₁
-    cache.η₊₁ = inv( (BIAS3*dup)^inv(L+1) + ADDON )
+    cache.η₊₁ = inv( (BIAS3*dup)^inv(L+1) + ADDON ) * integrator.opts.gamma
   end
   return cache.η₊₁
 end
@@ -297,7 +296,7 @@ function stepsize_η₋₁!(integrator, cache::T, order) where T
       calculate_residuals!(atmp, const_cache.Δ, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
     end
     approx = integrator.opts.internalnorm(atmp) * c_LTE₋₁
-    cache.η₋₁ = inv( (BIAS1*approx)^inv(q) + ADDON )
+    cache.η₋₁ = inv( (BIAS1*approx)^inv(q) + ADDON ) * integrator.opts.gamma
   end
   return cache.η₋₁
 end
