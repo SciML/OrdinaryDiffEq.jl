@@ -35,6 +35,13 @@ function calc_coeff!(cache::T) where T
     @unpack m, l, tau = cache
     dtsum = dt = tau[1]
     order = cache.step
+    if order == 1
+      l[1] = l[2] = cache.c_LTE₋₁ = cache.c_𝒟 = 1
+      cache.c_LTE = 1//2
+      cache.c_LTE₊₁ = 1//12
+      cache.c_conv = 1//10 / cache.c_LTE
+      return nothing
+    end
     m[1] = 1
     for i in 2:order+1
       m[i] = 0
@@ -82,6 +89,7 @@ function calc_coeff!(cache::T) where T
     end # endif isvarorder
     # It is the same with `tq[4]` in SUNDIALS cvode.c
     cache.c_conv = 1//10 / cache.c_LTE
+    return nothing
   end # end @inbounds
 end
 
@@ -221,13 +229,14 @@ function stepsize_η!(integrator, cache::T) where T
   isvarorder = isvode && cache.n_wait == 0
   order = get_current_adaptive_order(integrator.alg, integrator.cache)
   L = order+1
-  η_next = cache.η = inv( (BIAS2*integrator.EEst)^inv(L) + ADDON )
+  @show η_next = cache.η = inv( (BIAS2*integrator.EEst)^inv(L) + ADDON )
   if isvarorder
-    η_next = max(stepsize_η₋₁!(integrator, cache, order), stepsize_η₊₁!(integrator, cache, order), cache.η)
+    @show ηqm1 = stepsize_η₋₁!(integrator, cache, order)
+    @show ηqp1 = stepsize_η₊₁!(integrator, cache, order)
+    η_next = max(ηqm1, ηqp1, cache.η)
   end
-  # There is no `gamma` in SUNDIALS
   η_next *= integrator.opts.gamma
-  ( η_next <= integrator.opts.qsteady_max ) && ( cache.η = 1 ; return cache.η )
+  ( η_next <= integrator.opts.qsteady_max ) && ( cache.η = 1 ; return @show cache.η )
   if isvarorder
     if η_next == cache.η
       # cache.η = η_next
@@ -240,10 +249,12 @@ function stepsize_η!(integrator, cache::T) where T
       cache.nextorder = order + 1
       # TODO: BDF needs a different handler
     end
+    cache.n_wait = L
   else
     cache.η = η_next
   end
-  cache.η = min(integrator.opts.qmax, max(integrator.opts.qmin, cache.η))
+  order == 1 && return ( cache.η = min(1e5, cache.η) )
+  @show cache.η = min(integrator.opts.qmax, max(integrator.opts.qmin, cache.η))
   return cache.η
 end
 
@@ -257,7 +268,7 @@ function stepsize_η₊₁!(integrator, cache::T, order) where T
   qmax = length(z)-1
   L = q+1
   if q != qmax
-    cache.prev_𝒟 == 0 && return cache.η₊₁
+    @show cache.prev_𝒟 == 0 && return cache.η₊₁
     cquot = -(c_𝒟 / cache.prev_𝒟) * (tau[1]/tau[3])^L
     if isconstcache
       atmp = muladd.(cquot, z[end], cache.Δ)
@@ -278,7 +289,8 @@ function stepsize_η₋₁!(integrator, cache::T, order) where T
   @unpack uprev, u = integrator
   @unpack z, c_LTE₋₁ = cache
   q = order
-  if q <= 2
+  cache.η₋₁ = 0
+  if q > 1
     if isconstcache
       atmp = calculate_residuals(cache.z[q+1], uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
     else

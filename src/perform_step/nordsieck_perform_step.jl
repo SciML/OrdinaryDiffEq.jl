@@ -179,15 +179,20 @@ end
     cache.step = 1
   end
   if cache.step == 1
-    perform_step!(integrator, EulerConstantCache(), repeat_step)
     z[1] = integrator.uprev
-    z[2] = integrator.k[1]*dt
+    z[2] = f(uprev, p, t)*dt
     z[3] = zero(cache.z[3])
     fill!(tau, dt)
     perform_predict!(cache)
-    cache.Δ = integrator.u - integrator.uprev
+    calc_coeff!(cache)
+    isucceed = nlsolve_functional!(integrator, cache)
+    if !isucceed
+      # rewind Nordsieck vector
+      integrator.force_stepfail = true
+      nordsieck_rewind!(cache)
+      return nothing
+    end
     update_nordsieck_vector!(cache)
-    cache.step += 1
   else
     # Nordsieck form needs to build the history vector
     # Reset time
@@ -208,22 +213,21 @@ end
       return nothing
     end
 
-    ################################### Error estimation
-
-    if integrator.opts.adaptive
-      atmp = calculate_residuals(cache.Δ, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp) * cache.c_LTE
-    end
-
     # Correct Nordsieck vector
-    cache.step = min(cache.step+1, 12)
+    cache.step = min(cache.nextorder, 12)
     update_nordsieck_vector!(cache)
 
     ################################### Finalize
 
     integrator.k[2] = cache.z[2]/dt
   end
+  ################################### Error estimation
+  if integrator.opts.adaptive
+    atmp = calculate_residuals(cache.Δ, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+    integrator.EEst = integrator.opts.internalnorm(atmp) * cache.c_LTE
+  end
   cache.n_wait -= 1
+  cache.prev_𝒟 = cache.c_𝒟
   return nothing
 end
 

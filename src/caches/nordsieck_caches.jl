@@ -118,7 +118,7 @@ function JVODEConstantCache(u, uprev, rate_prototype, uBottomEltypeNoUnits, tTyp
   η = dt/dt
   JVODEConstantCache(z,l,m,
                      constant,constant,constant,constant,constant,constant,
-                     tau,Δ,tsit5tab,1,2,1,η,η,η)
+                     tau,Δ,tsit5tab,1,1,2,η,η,η)
 end
 
 function alg_cache(alg::JVODE,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})

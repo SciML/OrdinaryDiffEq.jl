@@ -25,7 +25,7 @@ probArr = [prob_ode_linear,
 @testset "Nordsieck Adaptivity Tests: $solver" for solver in [JVODE(), AN5()]
   for i in eachindex(probArr)
     prob = probArr[i]
-    sol = solve(prob, solver, reltol=1e-7, abstol=1e-7)
+    sol = solve(prob, solver, reltol=1e-7, abstol=1e-7, maxiters=100)
     @test length(sol.t) < 15
     exact = prob.f(Val{:analytic}, prob.u0, prob.p, prob.tspan[end])
     @test Float64(norm(exact-sol[end])) < 1e-6
