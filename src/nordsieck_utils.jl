@@ -27,11 +27,11 @@ end
 # More implementation details are in the
 # https://github.com/JuliaDiffEq/DiffEqDevMaterials repository
 function calc_coeff!(cache::T) where T
+  isvode = ( T <: JVODECache || T <: JVODEConstantCache )
   @inbounds begin
     isconst = T <: OrdinaryDiffEqConstantCache
     isconst || (cache = cache.const_cache)
-    isvode = ( T <: JVODECache || T <: JVODEConstantCache )
-    isvarorder = isvode && cache.n_wait == 0
+    isvarorder = nordsieck_change_order(cache, 1)
     @unpack m, l, tau = cache
     dtsum = dt = tau[1]
     order = cache.step
@@ -230,13 +230,58 @@ function nordsieck_change_order(cache::T, n=0) where T
   isconstcache || ( cache = cache.const_cache )
   isvode = ( T <: JVODECache || T <: JVODEConstantCache )
   isvode || return false
-  cache.n_wait == 1+n
+  cache.n_wait == 0+n
 end
 
 function nordsieck_decrement_wait!(cache::T) where T
   isconstcache = T <: OrdinaryDiffEqConstantCache
   isconstcache || ( cache = cache.const_cache )
   cache.n_wait -= 1
+end
+
+function nordsieck_order_change(cache::T, dorder) where T
+  isconstcache = T <: OrdinaryDiffEqConstantCache
+  isconstcache || ( cache = cache.const_cache )
+  order = cache.step
+  # WIP: uncomment when finished
+  #@inbound begin
+  begin
+    # Adams order increase
+    if dorder == 1
+      if isconstcache
+        cache.z[order+2] = zero(cache.z[order+2])
+      else
+        cache.z[order+2] .= 0
+      end
+    else
+      # Adams order decrease
+      # One needs to rescale the Nordsieck vector on an order decrease
+      cache.l .= 0
+      cache.l[2] = 1
+      dt = tau[1]
+      hsum = zero(eltype(cache.tau))
+      for j in 2:order-1
+        hsum += cache.tau[j]
+        # TODO: `hscale`?
+        ξ = hsum / dt
+        for i in j:-1:1
+          cache.l[i+1] = cache.l[i+1] * ξ + cache.l[i]
+        end # for i
+      end # for j
+
+      for j in 2:q-1
+        cache.l[j+1] = order * cache.l[j] / j
+      end
+      for j in 3:order
+        # cache.z[j] = -cache.l[j] * cache.z[order+1] + cache.z[j]
+        if isconstcache
+          cache.z[j] = muladd.(-cache.l[j], cache.z[order+1], cache.z[j])
+        else
+          @. cache.z[j] = muladd(-cache.l[j], cache.z[order+1], cache.z[j])
+        end
+      end # for j
+    end # else
+  end # @inbound
 end
 
 # `η` is `dtₙ₊₁/dtₙ`
@@ -263,11 +308,13 @@ function choose_η!(integrator, cache::T) where T
       cache.η = cache.η₋₁
       cache.nextorder = order - 1
       cache.n_wait = L
+      nordsieck_order_change(cache, -1)
     else
       cache.η = cache.η₊₁
       cache.nextorder = order + 1
       # TODO: BDF needs a different handler
       cache.n_wait = L
+      nordsieck_order_change(cache, 1)
     end
   end
   ( integrator.iter == 1 || integrator.u_modified ) && return ( cache.η = min(1e5, cache.η) )
