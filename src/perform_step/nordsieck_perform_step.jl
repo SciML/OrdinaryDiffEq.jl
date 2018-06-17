@@ -217,7 +217,6 @@ end
           t, dt, integrator.EEst, cache.η, cache.η₋₁, cache.η₊₁)
   @printf(" | q = %2d\n", cache.step)
   ex = f(Val{:analytic}, 0.5, p, t)
-  cache.n_wait -= 1
   cache.prev_𝒟 = cache.c_𝒟
   return nothing
 end

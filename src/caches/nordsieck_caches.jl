@@ -115,7 +115,7 @@ function JVODEConstantCache(u, uprev, rate_prototype, uBottomEltypeNoUnits, tTyp
   constant = zero(tTypeNoUnits)
   tau = zeros(typeof(dt),N+1)
   tsit5tab = Tsit5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
-  η = dt/dt
+  η = zero(dt/dt)
   JVODEConstantCache(z,l,m,
                      constant,constant,constant,constant,constant,constant,
                      tau,Δ,tsit5tab,1,1,2,η,η,η)
