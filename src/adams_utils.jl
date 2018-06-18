@@ -96,6 +96,8 @@ end
 # Solving Ordinary Differential Equations I: Nonstiff Problems
 # by Ernst Hairer, Gerhard Wanner, and Syvert P Norsett.
 # III.5 Variable Step Size Multistep Methods: Formulae 5.9 & 5.10
+# ------------------------------------------------------------
+# Note that `g` is scaled by `dt` in here
 function g_coefs!(cache, k)
   @inbounds begin
     @unpack dts,c,g = cache

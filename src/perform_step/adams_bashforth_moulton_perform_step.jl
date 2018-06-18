@@ -586,10 +586,10 @@ end
     g_coefs!(cache,k)
     u = uprev
     for i = 1:k
-        u += dt * g[i] * ϕstar_n[i]
+        u += g[i] * ϕstar_n[i]
     end
     if integrator.opts.adaptive
-      utilde = dt * g[k] * ϕstar_n[k]      # Using lower order AB from subset of coefficients
+      utilde = g[k] * ϕstar_n[k]      # Using lower order AB from subset of coefficients
       atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
       if integrator.EEst > one(integrator.EEst)
@@ -649,10 +649,10 @@ end
     g_coefs!(cache, k)
     @. u = uprev
     for i = 1:k
-      @. u += dt * g[i] * ϕstar_n[i]
+      @. u += g[i] * ϕstar_n[i]
     end
     if integrator.opts.adaptive
-      @. utilde = dt * g[k] * ϕstar_n[k]    # Using lower order AB from subset of coefficients
+      @. utilde = g[k] * ϕstar_n[k]    # Using lower order AB from subset of coefficients
       calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
       if integrator.EEst > one(integrator.EEst)
@@ -713,10 +713,10 @@ end
     g_coefs!(cache,k)
     u = uprev
     for i = 1:k
-        u += dt * g[i] * ϕstar_n[i]
+        u += g[i] * ϕstar_n[i]
     end
     if integrator.opts.adaptive
-      utilde = dt * g[k] * ϕstar_n[k]
+      utilde = g[k] * ϕstar_n[k]
       atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
       if integrator.EEst > one(integrator.EEst)
@@ -782,10 +782,10 @@ end
     g_coefs!(cache,k)
     @. u = uprev
     for i = 1:k
-      @. u += dt * g[i] * ϕstar_n[i]
+      @. u += g[i] * ϕstar_n[i]
     end
     if integrator.opts.adaptive
-      @. utilde = dt * g[k] * ϕstar_n[k]
+      @. utilde = g[k] * ϕstar_n[k]
       calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
       if integrator.EEst > one(integrator.EEst)
@@ -855,10 +855,10 @@ end
     g_coefs!(cache,k)
     u = uprev
     for i = 1:k
-        u += dt * g[i] * ϕstar_n[i]
+        u += g[i] * ϕstar_n[i]
     end
     if integrator.opts.adaptive
-      utilde = dt * g[k] * ϕstar_n[k]
+      utilde = g[k] * ϕstar_n[k]
       atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
       if integrator.EEst > one(integrator.EEst)
@@ -931,10 +931,10 @@ end
     g_coefs!(cache,k)
     @. u = uprev
     for i = 1:k
-      @. u += dt * g[i] * ϕstar_n[i]
+      @. u += g[i] * ϕstar_n[i]
     end
     if integrator.opts.adaptive
-      @. utilde = dt * g[k] * ϕstar_n[k]
+      @. utilde = g[k] * ϕstar_n[k]
       calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
       if integrator.EEst > one(integrator.EEst)
@@ -991,13 +991,13 @@ end
     g_coefs!(cache,k+1)
     u = uprev
     for i = 1:(k-1)
-        u += dt * g[i] * ϕstar_n[i]
+        u += g[i] * ϕstar_n[i]
     end
     du_np1 = f(u,p,t+dt)
     ϕ_np1!(cache, du_np1, k+1)
-    u += dt * g[end-1] * ϕ_np1[end-1]
+    u += g[end-1] * ϕ_np1[end-1]
     if integrator.opts.adaptive
-      utilde = dt * (g[end] - g[end-1]) * ϕ_np1[end]
+      utilde = (g[end] - g[end-1]) * ϕ_np1[end]
       atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
       if integrator.EEst > one(integrator.EEst)
@@ -1057,13 +1057,13 @@ end
     g_coefs!(cache, k+1)
     @. u = uprev
     for i = 1:(k-1)
-      @. u += dt * g[i] * ϕstar_n[i]
+      @. u += g[i] * ϕstar_n[i]
     end
     f(k4,u,p,t+dt)
     ϕ_np1!(cache, k4, k+1)
     @. u += dt * g[end-1] * ϕ_np1[end-1]
     if integrator.opts.adaptive
-      @. utilde = dt * (g[end] - g[end-1]) * ϕ_np1[end]
+      @. utilde = (g[end] - g[end-1]) * ϕ_np1[end]
       calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
       if integrator.EEst > one(integrator.EEst)
@@ -1126,13 +1126,13 @@ end
     g_coefs!(cache,k+1)
     u = uprev
     for i = 1:(k-1)
-        u += dt * g[i] * ϕstar_n[i]
+        u += g[i] * ϕstar_n[i]
     end
     du_np1 = f(u,p,t+dt)
     ϕ_np1!(cache, du_np1, k+1)
-    u += dt * g[end-1] * ϕ_np1[end-1]
+    u += g[end-1] * ϕ_np1[end-1]
     if integrator.opts.adaptive
-      utilde = dt * (g[end] - g[end-1]) * ϕ_np1[end]
+      utilde = (g[end] - g[end-1]) * ϕ_np1[end]
       atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
       if integrator.EEst > one(integrator.EEst)
@@ -1198,11 +1198,11 @@ end
     g_coefs!(cache, k+1)
     @. u = uprev
     for i = 1:(k-1)
-      @. u += dt * g[i] * ϕstar_n[i]
+      @. u += g[i] * ϕstar_n[i]
     end
     f(k4,u,p,t+dt)
     ϕ_np1!(cache, k4, k+1)
-    @. u += dt * g[end-1] * ϕ_np1[end-1]
+    @. u += g[end-1] * ϕ_np1[end-1]
     if integrator.opts.adaptive
       @. utilde = dt * (g[end] - g[end-1]) * ϕ_np1[end]
       calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
