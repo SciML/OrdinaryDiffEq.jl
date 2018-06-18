@@ -1652,34 +1652,36 @@ function perform_step!(integrator,cache::CNLF2ConstantCache,repeat_step=false)
   cnt = integrator.iter
   f1 = integrator.f.f1
   f2 = integrator.f.f2
+  du₁ = f1(uprev, p, t)
+  # Explicit part
   if cnt == 1
-    u = uprev + dt*integrator.fsalfirst
-    cache.k2 = f1(uprev, p ,t)
-    cache.uprev2 = uprev
+    tmp = uprev + dt * (integrator.fsalfirst - du₁)
   else
-    du₁ = f1(uprev, p, t)
-    # Explicit part
     tmp = uprev2 + 2 * dt * (integrator.fsalfirst - du₁)
-    # Implicit part
-    # precalculations
-    γ = 1//2
-    γdt = γ*dt
-    W = calc_W!(integrator, cache, γdt, repeat_step)
-
-    # initial guess
-    zprev = dt*du₁
-    z = zprev # Constant extrapolation
-
-    tmp += γdt*k2
-    z, η, iter, fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, tmp, γ, 1, Val{:newton})
-    fail_convergence && return
-    u = tmp + 1//2*z
-
-    cache.k2 = du₁
-    cache.uprev2 = uprev
-    cache.ηold = η
-    cache.newton_iters = iter
   end
+  # Implicit part
+  # precalculations
+  if cnt == 1
+    γ = 1
+  else
+    γ = 1//2
+    tmp += γ*dt*k2
+  end
+  γdt = γ*dt
+  W = calc_W!(integrator, cache, γdt, repeat_step)
+
+  # initial guess
+  zprev = dt*du₁
+  z = zprev # Constant extrapolation
+
+  z, η, iter, fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, tmp, γ, 1, Val{:newton})
+  fail_convergence && return
+  u = tmp + γ*z
+
+  cache.uprev2 = uprev
+  cache.k2 = du₁
+  cache.ηold = η
+  cache.newton_iters = iter
   integrator.fsallast = f1(u, p, t+dt) + f2(u, p, t+dt)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
