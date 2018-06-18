@@ -304,19 +304,25 @@ function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step=false
   A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
+  Au = A * uprev
+  F1 = integrator.fsalfirst
+  halfdt = dt/2
   if alg.krylov
     throw(ErrorException("Krylov not yet supported for ETDRK4"))
   else
-    E,E2,a,b,c,Q = cache.ops
-    tmp = E2*uprev
-    k1 = _compute_nl(f, uprev, p, t, A)
-    s1 = tmp + Q*k1;
-    k2 = _compute_nl(f, s1, p, t + dt/2, A)
-    s2 = tmp + Q*k2;
-    k3 = _compute_nl(f, s2, p, t + dt/2, A)
-    s3 = E2*s1 + Q*(2*k3-k1);
-    k4 = _compute_nl(f, s3, p, t + dt, A)
-    u = E*uprev + a*k1 + 2b*(k2+k3) + c*k4
+    A21, A41, A43, B1, B2, B4 = cache.ops
+    # stage 1 (fsaled)
+    # stage 2
+    U2 = uprev + dt * (A21 * F1)
+    F2 = f.f2(U2, p, t + halfdt) + Au
+    # stage 3
+    U3 = uprev + dt * (A21 * F2) # A32 = A21
+    F3 = f.f2(U3, p, t + halfdt) + Au
+    # stage 4
+    U4 = uprev + dt * (A41 * F1 + A43 * F3)
+    F4 = f.f2(U4, p, t) + Au
+    # update u
+    u = uprev + dt * (B1 * F1 + B2 * (F2 + F3) + B4 * F4) # B3 = B2
   end
 
   # Update integrator state
@@ -328,49 +334,36 @@ end
 
 function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack tmp2,tmp,rtmp,Jcache = cache
-  @unpack k1,k2,k3,k4,s1 = cache
-  if isa(f, SplitFunction)
-    A = f.f1
-  else
-    f.jac(Jcache, uprev, p, t)
-    A = Jcache
-  end
-
+  @unpack tmp,rtmp,Au,F2,F3,F4,Jcache = cache
+  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+
+  F1 = integrator.fsalfirst
+  A_mul_B!(Au, A, uprev)
+  halfdt = dt/2
   if alg.krylov
     throw(ErrorException("Krylov not yet supported for ETDRK4"))
   else
-    E,E2,a,b,c,Q = cache.ops
-    # Substep 1
-    _compute_nl!(k1, f, uprev, p, t, A, rtmp)
-    A_mul_B!(tmp,E2,uprev)
-    A_mul_B!(tmp2,Q,k1)
-    @. s1 = tmp + tmp2
-
-    # Substep 2
-    _compute_nl!(k2, f, s1, p, t + dt/2, A, rtmp)
-    A_mul_B!(tmp2,Q,k2)
-    # tmp is still E2*uprev
-    @. tmp2 = tmp + tmp2
-
-    # Substep 3
-    _compute_nl!(k3, f, tmp2, p, t + dt/2, A, rtmp)
-    @. tmp = 2.0*k3 - k1
-    A_mul_B!(tmp2,Q,tmp)
-    A_mul_B!(tmp,E2,s1)
-    @. tmp2 = tmp + tmp2
-
-    # Substep 4
-    _compute_nl!(k4, f, tmp2, p, t + dt, A, rtmp)
-
-    # Update
-    @. tmp2 = k2+k3
-    A_mul_B!(tmp,b,tmp2)
-    A_mul_B!(s1,E,uprev)
-    A_mul_B!(k2,a,k1)
-    A_mul_B!(k3,c,k4)
-    @. u = s1 + k2 + 2tmp + k3
+    A21, A41, A43, B1, B2, B4 = cache.ops
+    # stage 1 (fsaled)
+    # stage 2
+    A_mul_B!(rtmp, A21, F1)
+    @muladd @. tmp = uprev + dt * rtmp # tmp is U2
+    f.f2(F2, tmp, p, t + halfdt); F2 .+= Au
+    # stage 3
+    A_mul_B!(rtmp, A21, F2) # A32 = A21
+    @muladd @. tmp = uprev + dt * rtmp # tmp is U3
+    f.f2(F3, tmp, p, t + halfdt); F3 .+= Au
+    # stage 4
+    @. tmp = uprev
+    Base.axpy!(dt, A_mul_B!(rtmp, A41, F1), tmp)
+    Base.axpy!(dt, A_mul_B!(rtmp, A43, F3), tmp) # tmp is U4
+    f.f2(F4, tmp, p, t); F4 .+= Au
+    # update u
+    u .= uprev
+    Base.axpy!(dt, A_mul_B!(rtmp, B1, F1), u)
+    F2 .+= F3; Base.axpy!(dt, A_mul_B!(rtmp, B2, F2), u) # B3 = B2
+    Base.axpy!(dt, A_mul_B!(rtmp, B4, F4), u)
   end
 
   # Update integrator state

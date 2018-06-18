@@ -110,13 +110,13 @@ end
 function expRK_operators(::ETDRK4, dt, A)
   P = phi(dt * A, 3)
   Phalf = phi(dt/2 * A, 1)
-  E = P[1]
-  E2 = Phalf[1]
-  a = dt * (P[2] - 3*P[3] + 4*P[4])
-  b = dt * (P[3] - 2*P[4])
-  c = dt * (-P[3] + 4*P[4])
-  Q = dt/2 * Phalf[2]
-  return E, E2, a, b, c, Q
+  A21 = 0.5Phalf[2] # A32 = A21
+  A41 = isa(A, AbstractMatrix) ? A21 * (Phalf[1] - eye(A)) : A21 * (Phalf[1] - one(A))
+  A43 = Phalf[2]
+  B1 = P[2] - 3P[3] + 4P[4]
+  B2 = 2P[3] - 4P[4] # B3 = B2
+  B4 = -P[3] + 4P[4]
+  return A21, A41, A43, B1, B2, B4
 end
 
 # Unified constructor for constant caches
@@ -319,13 +319,11 @@ struct ETDRK4Cache{uType,rateType,JType,opType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
-  s1::uType
-  tmp2::rateType
   rtmp::rateType
-  k1::rateType
-  k2::rateType
-  k3::rateType
-  k4::rateType
+  Au::rateType
+  F2::rateType
+  F3::rateType
+  F4::rateType
   Jcache::JType
   ops::opType
 end
@@ -339,16 +337,15 @@ function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   end
   A = f.f1
   tmp = similar(u)
-  rtmp = zeros(rate_prototype); tmp2 = zeros(rate_prototype)
-  k1 = zeros(rate_prototype); k2 = zeros(rate_prototype); k3 = zeros(rate_prototype); k4 = zeros(rate_prototype)
-  s1 = similar(u)
+  rtmp = zeros(rate_prototype); Au = zeros(rate_prototype)
+  F2 = zeros(rate_prototype); F3 = zeros(rate_prototype); F4 = zeros(rate_prototype)
   if isa(A, DiffEqArrayOperator)
     L = A.A .* A.α.coeff # has special handling if A.A is Diagonal
   else
     L = full(A)
   end
   ops = expRK_operators(alg, dt, L)
-  ETDRK4Cache(u,uprev,tmp,s1,tmp2,rtmp,k1,k2,k3,k4,Jcache,ops)
+  ETDRK4Cache(u,uprev,tmp,rtmp,Au,F2,F3,F4,Jcache,ops)
 end
 
 u_cache(c::ETDRK4Cache) = ()
