@@ -1500,7 +1500,7 @@ end
       return nothing
     end
     f(k4,u,p,t+dt)
-    if step <= 4
+    if step <= 4 || order < 3
       cache.order = min(order+1,3)
     else
       # @. utildem2 = dt * γstar[(k-2)+1] * ϕ_np1[k-1]
