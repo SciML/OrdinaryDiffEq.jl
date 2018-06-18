@@ -2,7 +2,7 @@
 # by Ernst Hairer, Gerhard Wanner, and Syvert P Norsett.
 # III.5 Variable Step Size Multistep Methods: Formulae 5.9
 function ϕ_and_ϕstar!(cache, du, k)
-  # @inbounds begin
+  @inbounds begin
     @unpack dts, ϕstar_nm1, ϕ_n, ϕstar_n, β = cache
     ξ = dt = dts[1]
     ξ0 = zero(dt)
@@ -26,11 +26,11 @@ function ϕ_and_ϕstar!(cache, du, k)
         ϕstar_n[i] = β[i] * ϕ_n[i]
       end
     end
-  # end # inbounds
+  end # inbounds
 end
 
 function ϕ_and_ϕstar!(cache::Union{VCABMConstantCache,VCABMCache}, du, k)
-  # @inbounds begin
+  @inbounds begin
     @unpack dts, ϕstar_nm1, ϕ_n, ϕstar_n, β = cache
     ξ = dt = dts[1]
     ξ0 = zero(dt)
@@ -56,7 +56,7 @@ function ϕ_and_ϕstar!(cache::Union{VCABMConstantCache,VCABMCache}, du, k)
     end
     cache.ξ = ξ
     cache.ξ0 = ξ0
-  # end # inbounds
+  end # inbounds
 end
 
 function expand_ϕ_and_ϕstar!(cache, i)
@@ -73,7 +73,7 @@ function expand_ϕ_and_ϕstar!(cache, i)
 end
 
 function ϕ_np1!(cache, du_np1, k)
-  # @inbounds begin
+  @inbounds begin
     @unpack ϕ_np1, ϕstar_n = cache
     for i = 1:k
       if i == 1
@@ -90,14 +90,14 @@ function ϕ_np1!(cache, du_np1, k)
         end
       end
     end
-  # end #inbounds
+  end #inbounds
 end
 
 # Solving Ordinary Differential Equations I: Nonstiff Problems
 # by Ernst Hairer, Gerhard Wanner, and Syvert P Norsett.
 # III.5 Variable Step Size Multistep Methods: Formulae 5.9 & 5.10
 function g_coefs!(cache, k)
-  # @inbounds begin
+  @inbounds begin
     @unpack dts,c,g = cache
     ξ = dt = dts[1]
     for i = 1:k
@@ -105,17 +105,17 @@ function g_coefs!(cache, k)
         ξ += dts[i-1]
       end
       for q = 1:k-(i-1)
-        if i == 1
+        if i > 2
+          c[i,q] = c[i-1,q] - c[i-1,q+1] * dt/ξ
+        elseif i == 1
           c[i,q] = inv(q)
         elseif i == 2
           c[i,q] = inv(q*(q+1))
-        else
-          c[i,q] = c[i-1,q] - c[i-1,q+1] * dt/ξ
         end
       end # q
-      g[i] = c[i,1]
+      g[i] = c[i,1] * dt
     end # i
-  # end # inbounds
+  end # inbounds
 end
 
 # Coefficients for the implicit Adams methods

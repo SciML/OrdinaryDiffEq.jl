@@ -1274,13 +1274,13 @@ end
     g_coefs!(cache,k+1)
     u = uprev
     for i = 1:(k-1)
-        u += dt * g[i] * ϕstar_n[i]
+        u += g[i] * ϕstar_n[i]
     end
     du_np1 = f(u,p,t+dt)
     ϕ_np1!(cache, du_np1, k+1)
-    u += dt * g[end-1] * ϕ_np1[end-1]
+    u += g[end-1] * ϕ_np1[end-1]
     if integrator.opts.adaptive
-      utilde = dt * (g[end] - g[end-1]) * ϕ_np1[end]
+      utilde = (g[end] - g[end-1]) * ϕ_np1[end]
       atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
       if integrator.EEst > one(integrator.EEst)
@@ -1311,71 +1311,75 @@ function initialize!(integrator,cache::VCABM5Cache)
 end
 
 @muladd function perform_step!(integrator,cache::VCABM5Cache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k4,dts,g,ϕ_n,ϕ_np1,ϕstar_n,ϕstar_nm1,order,atmp,utilde,rk4cache = cache
-  k1 = integrator.fsalfirst
-  if integrator.u_modified
-    cache.step = 1
-  end
-  k = cache.step
-  tmp = dts[5]
-  if k == 1
-    dts[1] = dt
-    cache.step += 1
-  elseif k == 2
-    dts[2] = dts[1]
-    dts[1] = dt
-    cache.step += 1
-  elseif k == 3
-    dts[3] = dts[2]
-    dts[2] = dts[1]
-    dts[1] = dt
-    cache.step += 1
-  elseif k == 4
-    dts[4] = dts[3]
-    dts[3] = dts[2]
-    dts[2] = dts[1]
-    dts[1] = dt
-    cache.step += 1
-  else
-    dts[5] = dts[4]
-    dts[4] = dts[3]
-    dts[3] = dts[2]
-    dts[2] = dts[1]
-    dts[1] = dt
-  end
-  ϕ_and_ϕstar!(cache,k1,k)
-  if k == 1 || k == 2 || k == 3 || k == 4
-    rk4cache.fsalfirst .= k1
-    perform_step!(integrator, rk4cache)
-    integrator.fsallast .= rk4cache.k
-  else
-    g_coefs!(cache,k+1)
-    @. u = uprev
-    for i = 1:(k-1)
-      @. u += dt * g[i] * ϕstar_n[i]
+  @inbounds begin
+    @unpack t,dt,uprev,u,f,p = integrator
+    @unpack k4,dts,g,ϕ_n,ϕ_np1,ϕstar_n,ϕstar_nm1,order,atmp,utilde,rk4cache = cache
+    k1 = integrator.fsalfirst
+    if integrator.u_modified
+      cache.step = 1
     end
-    f(k4,u,p,t+dt)
-    ϕ_np1!(cache, k4, k+1)
-    @. u += dt * g[end-1] * ϕ_np1[end-1]
-    if integrator.opts.adaptive
-      @. utilde = dt * (g[end] - g[end-1]) * ϕ_np1[end]
-      calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp)
-      if integrator.EEst > one(integrator.EEst)
-        for i = 1:4
-          dts[i] = dts[i+1]
+    k = cache.step
+    tmp = dts[5]
+    if k == 5
+      dts[5] = dts[4]
+      dts[4] = dts[3]
+      dts[3] = dts[2]
+      dts[2] = dts[1]
+      dts[1] = dt
+    elseif k == 1
+      dts[1] = dt
+      cache.step += 1
+    elseif k == 2
+      dts[2] = dts[1]
+      dts[1] = dt
+      cache.step += 1
+    elseif k == 3
+      dts[3] = dts[2]
+      dts[2] = dts[1]
+      dts[1] = dt
+      cache.step += 1
+    elseif k == 4
+      dts[4] = dts[3]
+      dts[3] = dts[2]
+      dts[2] = dts[1]
+      dts[1] = dt
+      cache.step += 1
+    end
+    ϕ_and_ϕstar!(cache, k1, 5)
+    if k <= 4
+      rk4cache.fsalfirst .= k1
+      perform_step!(integrator, rk4cache)
+      integrator.fsallast .= rk4cache.k
+    else
+      g_coefs!(cache, 6)
+      @. u = muladd(g[1], ϕstar_n[1], uprev)
+      @. u = muladd(g[2], ϕstar_n[2], u)
+      @. u = muladd(g[3], ϕstar_n[3], u)
+      @. u = muladd(g[4], ϕstar_n[4], u)
+      f(k4,u,p,t+dt)
+      ϕ_np1!(cache, k4, 6)
+      @. u = muladd(g[6-1], ϕ_np1[6-1], u)
+      if integrator.opts.adaptive
+        @. utilde = (g[6] - g[6-1]) * ϕ_np1[end]
+        calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+        integrator.EEst = integrator.opts.internalnorm(atmp)
+        if integrator.EEst > one(integrator.EEst)
+          dts[1] = dts[2]
+          dts[2] = dts[3]
+          dts[4] = dts[5]
+          dts[5] = tmp
+          return nothing
         end
-        dts[5] = tmp
-        return nothing
       end
+      cache.ϕstar_nm1[1] .= ϕstar_n[1]
+      cache.ϕstar_nm1[2] .= ϕstar_n[2]
+      cache.ϕstar_nm1[3] .= ϕstar_n[3]
+      cache.ϕstar_nm1[4] .= ϕstar_n[4]
+      f(k4,u,p,t+dt)
     end
-    for i in eachindex(ϕstar_n)
-      cache.ϕstar_nm1[i] .= ϕstar_n[i]
-    end
-    f(k4,u,p,t+dt)
-  end
-  cache.ϕstar_nm1, cache.ϕstar_n = ϕstar_n, ϕstar_nm1
+    cache.ϕstar_nm1, cache.ϕstar_n = ϕstar_n, ϕstar_nm1
+    return nothing
+  end # inbounds
 end
 
 # VCABM
