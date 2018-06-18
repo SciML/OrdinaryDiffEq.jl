@@ -15,14 +15,22 @@ prob_inplace = SplitODEProblem(L,krylov_f2!,u0,(0.0,1.0))
 DiffEqBase.has_analytic(::typeof(prob.f)) = false
 DiffEqBase.has_analytic(::typeof(prob_inplace.f)) = false
 
-Algs = [LawsonEuler,NorsettEuler,ETDRK2,ETDRK3]
+Algs = [LawsonEuler,NorsettEuler,ETDRK2,ETDRK3,ETDRK4]
 for Alg in Algs
     gc()
     sol = solve(prob, Alg(); dt=dt, internalnorm=Base.norm)
     sol_krylov = solve(prob, Alg(krylov=true); dt=dt, reltol=reltol, internalnorm=Base.norm)
-    @test isapprox(sol.u,sol_krylov.u; rtol=reltol)
+    if Alg == ETDRK4
+        @test_broken isapprox(sol.u,sol_krylov.u; rtol=reltol)
+    else
+        @test isapprox(sol.u,sol_krylov.u; rtol=reltol)
+    end
 
     sol_ip = solve(prob_inplace, Alg(); dt=dt, internalnorm=Base.norm)
     sol_ip_krylov = solve(prob_inplace, Alg(krylov=true); dt=dt, reltol=reltol, internalnorm=Base.norm)
-    @test isapprox(sol_ip.u,sol_ip_krylov.u; rtol=reltol)
+    if Alg == ETDRK4
+        @test_broken isapprox(sol.u,sol_krylov.u; rtol=reltol)
+    else
+        @test isapprox(sol.u,sol_krylov.u; rtol=reltol)
+    end
 end

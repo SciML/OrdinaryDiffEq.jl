@@ -307,8 +307,30 @@ function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step=false
   Au = A * uprev
   F1 = integrator.fsalfirst
   halfdt = dt/2
-  if alg.krylov
-    throw(ErrorException("Krylov not yet supported for ETDRK4"))
+  if alg.krylov # TODO: reuse Krylov subspace for halfdt
+    # Krylov on F1 (first column)
+    w1_half = phiv(halfdt, A, F1, 1; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
+    w1 = phiv(dt, A, F1, 3; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
+    U2 = uprev + halfdt * w1_half[:, 2]
+    F2 = _compute_nl(f, U2, p, t + halfdt, A) + Au
+    # Krylov on F2 (second column)
+    w2_half = phiv(halfdt, A, F2, 1; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
+    w2 = phiv(dt, A, F2, 3; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
+    U3 = uprev + halfdt * w2_half[:, 2]
+    F3 = _compute_nl(f, U3, p, t + halfdt, A) + Au
+    # Krylov on F3 (third column)
+    w3_half = phiv(halfdt, A, F3, 1; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
+    w3 = phiv(dt, A, F3, 3; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
+    # Extra Krylov for computing F4
+    rtmp = w1_half[:, 1] - F1 # (exp(hA/2) - I)F1
+    wtmp = phiv(halfdt, A, rtmp, 1; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
+    U4 = uprev + halfdt * wtmp[:, 2] + dt * w3_half[:, 2]
+    F4 = _compute_nl(f, U4, p, t + dt, A) + Au
+    # Krylov on F4 (fourth column)
+    w4 = phiv(dt, A, F4, 3; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
+    # update u
+    u = uprev + dt * (w1[:,2] - 3w1[:,3] + 4w1[:,4] + 2w2[:,3] - 4w2[:4] + 
+                      2w3[:,3] - 4w3[:,4] + 4w4[:,4] - w4[:,3])
   else
     A21, A41, A43, B1, B2, B4 = cache.ops
     # stage 1 (fsaled)
@@ -334,7 +356,7 @@ end
 
 function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack tmp,rtmp,Au,F2,F3,F4,Jcache = cache
+  @unpack tmp,rtmp,Au,F2,F3,F4,Jcache,Ks,KsCache = cache
   A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
@@ -342,7 +364,38 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
   A_mul_B!(Au, A, uprev)
   halfdt = dt/2
   if alg.krylov
-    throw(ErrorException("Krylov not yet supported for ETDRK4"))
+    w1_half, w2_half, w1, w2, w3, w4, phiv_caches = KsCache
+    # Krylov for F1 (first column)
+    arnoldi!(Ks, A, F1; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, cache=tmp, iop=alg.iop)
+    phiv!(w1_half, halfdt, Ks, 1; caches=phiv_caches)
+    phiv!(w1, dt, Ks, 3; caches=phiv_caches)
+    @muladd @. @views tmp = uprev + halfdt * w1_half[:, 2] # tmp is U2
+    _compute_nl!(F2, f, tmp, p, t + halfdt, A, rtmp); F2 .+= Au
+    # Krylov for F2 (second column)
+    arnoldi!(Ks, A, F2; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, cache=tmp, iop=alg.iop)
+    phiv!(w2_half, halfdt, Ks, 1; caches=phiv_caches)
+    phiv!(w2, dt, Ks, 3; caches=phiv_caches)
+    @muladd @. @views tmp = uprev + halfdt * w2_half[:, 2] # tmp is U3
+    _compute_nl!(F3, f, tmp, p, t + halfdt, A, rtmp); F3 .+= Au
+    # Krylov for F3 (third column)
+    w3_half = w2_half # w2_half is no longer used
+    arnoldi!(Ks, A, F3; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, cache=tmp, iop=alg.iop)
+    phiv!(w3_half, halfdt, Ks, 1; caches=phiv_caches)
+    phiv!(w3, dt, Ks, 3; caches=phiv_caches)
+    # Extra Krylov for computing F4
+    @. @views rtmp = w1_half[:, 1] - F1 # rtmp is (exp(hA/2) - I)F1
+    arnoldi!(Ks, A, rtmp; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, cache=tmp, iop=alg.iop)
+    phiv!(w1_half, dt, Ks, 1; caches=phiv_caches)
+    @views @. rtmp = 0.5w1_half[:, 2] + w3_half[:, 2]
+    @muladd @. tmp = uprev + dt * rtmp # tmp is U4
+    _compute_nl!(F4, f, tmp, p, t + dt, A, rtmp); F4 .+= Au
+    # Krylov for F4 (fourth column)
+    arnoldi!(Ks, A, F4; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, cache=tmp, iop=alg.iop)
+    phiv!(w4, dt, Ks, 3; caches=phiv_caches)
+    # update u
+    @views @. rtmp = w1[:,2] - 3w1[:,3] + 4w1[:,4] + 2w2[:,3] - 4w2[:4] + 
+                     2w3[:,3] - 4w3[:,4] + 4w4[:,4] - w4[:,3]
+    @muladd @. u = uprev + dt * rtmp
   else
     A21, A41, A43, B1, B2, B4 = cache.ops
     # stage 1 (fsaled)

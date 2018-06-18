@@ -315,7 +315,7 @@ function alg_cache(alg::ETDRK3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     zeros(rate_prototype),zeros(rate_prototype),Jcache,ops,Ks,KsCache)
 end
 
-struct ETDRK4Cache{uType,rateType,JType,opType} <: ExpRKCache
+struct ETDRK4Cache{uType,rateType,JType,opType,KsType,KsCacheType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
@@ -326,6 +326,8 @@ struct ETDRK4Cache{uType,rateType,JType,opType} <: ExpRKCache
   F4::rateType
   Jcache::JType
   ops::opType
+  Ks::KsType
+  KsCache::KsCacheType
 end
 
 function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -335,17 +337,30 @@ function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     # TODO: sparse Jacobian support
     Jcache = Matrix{eltype(u)}(length(u), length(u))
   end
-  A = f.f1
   tmp = similar(u)
   rtmp = zeros(rate_prototype); Au = zeros(rate_prototype)
   F2 = zeros(rate_prototype); F3 = zeros(rate_prototype); F4 = zeros(rate_prototype)
-  if isa(A, DiffEqArrayOperator)
-    L = A.A .* A.α.coeff # has special handling if A.A is Diagonal
+  if alg.krylov
+    ops = nothing # no caching
+    n = length(u)
+    m = min(alg.m, length(u))
+    T = eltype(u)
+    Ks = KrylovSubspace{T}(n, m)
+    w1_half = Matrix{T}(n, 2); w2_half = Matrix{T}(n, 2)
+    w1 = Matrix{T}(n, 4); w2 = Matrix{T}(n, 4); w3 = Matrix{T}(n, 4); w4 = Matrix{T}(n, 4)
+    phiv_caches = (Vector{T}(m), Matrix{T}(m, m), Matrix{T}(m + 3, m + 3), Matrix{T}(m, 4))
+    KsCache = (w1_half, w2_half, w1, w2, w3, w4, phiv_caches)
   else
-    L = full(A)
+    Ks = KsCache = nothing
+    A = f.f1
+    if isa(A, DiffEqArrayOperator)
+      L = A.A .* A.α.coeff # has special handling if A.A is Diagonal
+    else
+      L = full(A)
+    end
+    ops = expRK_operators(alg, dt, L)
   end
-  ops = expRK_operators(alg, dt, L)
-  ETDRK4Cache(u,uprev,tmp,rtmp,Au,F2,F3,F4,Jcache,ops)
+  ETDRK4Cache(u,uprev,tmp,rtmp,Au,F2,F3,F4,Jcache,ops,Ks,KsCache)
 end
 
 u_cache(c::ETDRK4Cache) = ()
