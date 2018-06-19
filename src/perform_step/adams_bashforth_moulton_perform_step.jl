@@ -1600,7 +1600,7 @@ end
 
 function perform_step!(integrator, cache::ABCN2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack uf,du1,dz,z,k,k1,k2,du₁,b,J,W,jac_config,tmp,atmp,κ,tol = cache
+  @unpack uf,dz,z,k,k1,k2,du₁,b,J,W,jac_config,tmp,atmp,κ,tol = cache
   cnt = integrator.iter
   f1 = integrator.f.f1
   f2 = integrator.f.f2
@@ -1684,4 +1684,49 @@ function perform_step!(integrator,cache::CNLF2ConstantCache,repeat_step=false)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
+end
+
+function initialize!(integrator, cache::CNLF2Cache)
+  integrator.kshortsize = 2
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+end
+
+function perform_step!(integrator, cache::CNLF2Cache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack uprev2,uf,dz,z,k,k2,du₁,b,J,W,jac_config,tmp,atmp,κ,tol = cache
+  cnt = integrator.iter
+  f1 = integrator.f.f1
+  f2 = integrator.f.f2
+  f1(du₁, uprev, p, t)
+  # Explicit part
+  if cnt == 1
+    @. tmp = uprev + dt * (integrator.fsalfirst - du₁)
+  else
+    @. tmp = uprev2 + 2//1 * dt * (integrator.fsalfirst - du₁)
+  end
+  # Implicit part
+  # precalculations
+  γ = 1//1
+  if cnt != 1
+    @. tmp += γ*dt*k2
+  end
+  γdt = γ*dt
+  new_W = calc_W!(integrator, cache, γdt, repeat_step)
+
+  # initial guess
+  @. z = dt*du₁
+  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, tmp, γ, 1, Val{:newton}, new_W)
+  fail_convergence && return
+  @. u = tmp + γ*z
+
+  cache.uprev2 .= uprev
+  cache.k2 .= du₁
+  cache.ηold = η
+  cache.newton_iters = iter
+  integrator.f(k,u,p,t+dt)
 end
