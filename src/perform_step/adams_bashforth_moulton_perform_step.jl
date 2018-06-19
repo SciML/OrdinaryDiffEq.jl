@@ -1562,7 +1562,7 @@ function perform_step!(integrator,cache::ABCN2ConstantCache,repeat_step=false)
   if cnt == 1
     tmp = uprev + dt * k1
   else
-    tmp = uprev + dt * (1.5*k1 - 0.5*k2)
+    tmp = uprev + dt * (3//2*k1 - 1//2*k2)
   end
   # Implicit part
   # precalculations
@@ -1610,7 +1610,7 @@ function perform_step!(integrator, cache::ABCN2Cache, repeat_step=false)
   if cnt == 1
     @. tmp = uprev + dt * k1
   else
-    @. tmp = uprev + dt * (1.5*k1 - 0.5*k2)
+    @. tmp = uprev + dt * (3//2*k1 - 1//2*k2)
   end
   # Implicit part
   # precalculations
@@ -1657,12 +1657,12 @@ function perform_step!(integrator,cache::CNLF2ConstantCache,repeat_step=false)
   if cnt == 1
     tmp = uprev + dt * (integrator.fsalfirst - du₁)
   else
-    tmp = uprev2 + 2 * dt * (integrator.fsalfirst - du₁)
+    tmp = uprev2 + 2//1 * dt * (integrator.fsalfirst - du₁)
   end
   # Implicit part
   # precalculations
   if cnt == 1
-    γ = 1
+    γ = 1//1
   else
     γ = 1//2
     tmp += γ*dt*k2

@@ -967,7 +967,7 @@ du_cache(c::ABCN2Cache)   = ()
 function alg_cache(alg::ABCN2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   k2 = rate_prototype
   uToltype = real(uBottomEltypeNoUnits)
-  uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f.f1,t,p)
   ηold = one(uToltype)
   uprev3 = u
   tprev2 = t
@@ -1046,7 +1046,7 @@ end
 function alg_cache(alg::CNLF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   k2 = rate_prototype
   uToltype = real(uBottomEltypeNoUnits)
-  uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f.f1,t,p)
   ηold = one(uToltype)
   uprev2 = u
   uprev3 = u
