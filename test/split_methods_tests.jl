@@ -169,8 +169,13 @@ sim = test_convergence(dts,prob,KenCarp5())
 
 # ABCN2
 dts = 1.//2.^(8:-1:4)
-sim4 = test_convergence(dts,prob,ABCN2())
-@test abs(sim4.𝒪est[:l∞]-2) < testTol
+sim = test_convergence(dts,prob,ABCN2())
+@test abs(sim.𝒪est[:l∞]-2) < testTol
+
+# CNLF2
+dts = 1.//2.^(8:-1:4)
+sim = test_convergence(dts,prob,CNLF2())
+@test abs(sim.𝒪est[:l∞]-2) < testTol
 
 # Now test only the second part
 
@@ -199,8 +204,13 @@ sim = test_convergence(dts,prob,KenCarp5())
 
 # ABCN2
 dts = 1.//2.^(8:-1:4)
-sim5 = test_convergence(dts,prob,ABCN2())
-@test abs(sim5.𝒪est[:l∞]-2) < testTol
+sim = test_convergence(dts,prob,ABCN2())
+@test abs(sim.𝒪est[:l∞]-2) < testTol
+
+# CNLF2
+dts = 1.//2.^(8:-1:4)
+sim = test_convergence(dts,prob,CNLF2())
+@test abs(sim.𝒪est[:l∞]-2) < testTol
 
 # Test together
 
@@ -229,5 +239,10 @@ sim = test_convergence(dts,prob,KenCarp5())
 
 # ABCN2
 dts = 1.//2.^(8:-1:4)
-sim6 = test_convergence(dts,prob,ABCN2())
-@test abs(sim6.𝒪est[:l∞]-2) < testTol
+sim = test_convergence(dts,prob,ABCN2())
+@test abs(sim.𝒪est[:l∞]-2) < testTol
+
+# CNLF2
+dts = 1.//2.^(8:-1:4)
+sim = test_convergence(dts,prob,CNLF2())
+@test abs(sim.𝒪est[:l∞]-2) < testTol
