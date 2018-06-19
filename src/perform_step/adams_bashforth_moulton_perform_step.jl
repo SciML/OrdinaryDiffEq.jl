@@ -1661,10 +1661,8 @@ function perform_step!(integrator,cache::CNLF2ConstantCache,repeat_step=false)
   end
   # Implicit part
   # precalculations
-  if cnt == 1
-    γ = 1//1
-  else
-    γ = 1//2
+  γ = 1//1
+  if cnt != 1
     tmp += γ*dt*k2
   end
   γdt = γ*dt
