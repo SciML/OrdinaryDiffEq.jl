@@ -319,17 +319,16 @@ function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step=false
     U3 = uprev + halfdt * w2_half[:, 2]
     F3 = _compute_nl(f, U3, p, t + halfdt, A) + Au
     # Krylov on F3 (third column)
-    w3_half = phiv(halfdt, A, F3, 1; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
     w3 = phiv(dt, A, F3, 3; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
     # Extra Krylov for computing F4
-    rtmp = w1_half[:, 1] - F1 # (exp(hA/2) - I)F1
+    rtmp = 2F3 - F1 - Au + A*U2
     wtmp = phiv(halfdt, A, rtmp, 1; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
-    U4 = uprev + halfdt * wtmp[:, 2] + dt * w3_half[:, 2]
+    U4 = U2 + halfdt * wtmp[:, 2]
     F4 = _compute_nl(f, U4, p, t + dt, A) + Au
     # Krylov on F4 (fourth column)
     w4 = phiv(dt, A, F4, 3; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
     # update u
-    u = uprev + dt * (w1[:,2] - 3w1[:,3] + 4w1[:,4] + 2w2[:,3] - 4w2[:4] + 
+    u = uprev + dt * (w1[:,2] - 3w1[:,3] + 4w1[:,4] + 2w2[:,3] - 4w2[:,4] + 
                       2w3[:,3] - 4w3[:,4] + 4w4[:,4] - w4[:,3])
   else
     A21, A41, A43, B1, B2, B4 = cache.ops
@@ -342,7 +341,7 @@ function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step=false
     F3 = f.f2(U3, p, t + halfdt) + Au
     # stage 4
     U4 = uprev + dt * (A41 * F1 + A43 * F3)
-    F4 = f.f2(U4, p, t) + Au
+    F4 = f.f2(U4, p, t + dt) + Au
     # update u
     u = uprev + dt * (B1 * F1 + B2 * (F2 + F3) + B4 * F4) # B3 = B2
   end
@@ -369,8 +368,9 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
     arnoldi!(Ks, A, F1; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, cache=tmp, iop=alg.iop)
     phiv!(w1_half, halfdt, Ks, 1; caches=phiv_caches)
     phiv!(w1, dt, Ks, 3; caches=phiv_caches)
-    @muladd @. @views tmp = uprev + halfdt * w1_half[:, 2] # tmp is U2
-    _compute_nl!(F2, f, tmp, p, t + halfdt, A, rtmp); F2 .+= Au
+    U2 = u # temporarily use u to store U2 (used in the extra Krylov step)
+    @muladd @. @views U2 = uprev + halfdt * w1_half[:, 2]
+    _compute_nl!(F2, f, U2, p, t + halfdt, A, rtmp); F2 .+= Au
     # Krylov for F2 (second column)
     arnoldi!(Ks, A, F2; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, cache=tmp, iop=alg.iop)
     phiv!(w2_half, halfdt, Ks, 1; caches=phiv_caches)
@@ -378,22 +378,20 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
     @muladd @. @views tmp = uprev + halfdt * w2_half[:, 2] # tmp is U3
     _compute_nl!(F3, f, tmp, p, t + halfdt, A, rtmp); F3 .+= Au
     # Krylov for F3 (third column)
-    w3_half = w2_half # w2_half is no longer used
     arnoldi!(Ks, A, F3; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, cache=tmp, iop=alg.iop)
-    phiv!(w3_half, halfdt, Ks, 1; caches=phiv_caches)
     phiv!(w3, dt, Ks, 3; caches=phiv_caches)
     # Extra Krylov for computing F4
-    @. @views rtmp = w1_half[:, 1] - F1 # rtmp is (exp(hA/2) - I)F1
+    # Compute rtmp = 2F3 - F1 - Au + A*U2
+    A_mul_B!(rtmp, A, U2); @. rtmp += 2F3 - F1 - Au
     arnoldi!(Ks, A, rtmp; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, cache=tmp, iop=alg.iop)
-    phiv!(w1_half, dt, Ks, 1; caches=phiv_caches)
-    @views @. rtmp = 0.5w1_half[:, 2] + w3_half[:, 2]
-    @muladd @. tmp = uprev + dt * rtmp # tmp is U4
+    phiv!(w1_half, halfdt, Ks, 1; caches=phiv_caches) # original w1_half is no longer needed
+    @muladd @. @views tmp = U2 + halfdt * w1_half[:, 2] # tmp is U4
     _compute_nl!(F4, f, tmp, p, t + dt, A, rtmp); F4 .+= Au
     # Krylov for F4 (fourth column)
     arnoldi!(Ks, A, F4; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, cache=tmp, iop=alg.iop)
     phiv!(w4, dt, Ks, 3; caches=phiv_caches)
     # update u
-    @views @. rtmp = w1[:,2] - 3w1[:,3] + 4w1[:,4] + 2w2[:,3] - 4w2[:4] + 
+    @views @. rtmp = w1[:,2] - 3w1[:,3] + 4w1[:,4] + 2w2[:,3] - 4w2[:,4] + 
                      2w3[:,3] - 4w3[:,4] + 4w4[:,4] - w4[:,3]
     @muladd @. u = uprev + dt * rtmp
   else
@@ -411,7 +409,7 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
     @. tmp = uprev
     Base.axpy!(dt, A_mul_B!(rtmp, A41, F1), tmp)
     Base.axpy!(dt, A_mul_B!(rtmp, A43, F3), tmp) # tmp is U4
-    f.f2(F4, tmp, p, t); F4 .+= Au
+    f.f2(F4, tmp, p, t + dt); F4 .+= Au
     # update u
     u .= uprev
     Base.axpy!(dt, A_mul_B!(rtmp, B1, F1), u)

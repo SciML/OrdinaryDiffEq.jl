@@ -111,7 +111,7 @@ function expRK_operators(::ETDRK4, dt, A)
   P = phi(dt * A, 3)
   Phalf = phi(dt/2 * A, 1)
   A21 = 0.5Phalf[2] # A32 = A21
-  A41 = isa(A, AbstractMatrix) ? A21 * (Phalf[1] - eye(A)) : A21 * (Phalf[1] - one(A))
+  A41 = (dt/4 * A) * Phalf[2]^2
   A43 = Phalf[2]
   B1 = P[2] - 3P[3] + 4P[4]
   B2 = 2P[3] - 4P[4] # B3 = B2
