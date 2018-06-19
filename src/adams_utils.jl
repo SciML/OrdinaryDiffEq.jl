@@ -76,17 +76,17 @@ function ϕ_np1!(cache, du_np1, k)
   @inbounds begin
     @unpack ϕ_np1, ϕstar_n = cache
     for i = 1:k
-      if i == 1
-        if typeof(cache) <: OrdinaryDiffEqMutableCache
-          ϕ_np1[i] .= du_np1
-        else
-          ϕ_np1[i] = du_np1
-        end
-      else
+      if i != 1
         if typeof(cache) <: OrdinaryDiffEqMutableCache
           @. ϕ_np1[i] = ϕ_np1[i-1] - ϕstar_n[i-1]
         else
           ϕ_np1[i] = ϕ_np1[i-1] - ϕstar_n[i-1]
+        end
+      else
+        if typeof(cache) <: OrdinaryDiffEqMutableCache
+          ϕ_np1[i] .= du_np1
+        else
+          ϕ_np1[i] = du_np1
         end
       end
     end
@@ -108,7 +108,7 @@ function g_coefs!(cache, k)
       end
       for q = 1:k-(i-1)
         if i > 2
-          c[i,q] = c[i-1,q] - c[i-1,q+1] * dt/ξ
+          c[i,q] =  muladd(-dt/ξ, c[i-1,q+1], c[i-1,q])
         elseif i == 1
           c[i,q] = inv(q)
         elseif i == 2
