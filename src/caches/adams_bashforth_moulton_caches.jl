@@ -967,7 +967,7 @@ du_cache(c::ABCN2Cache)   = ()
 function alg_cache(alg::ABCN2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   k2 = rate_prototype
   uToltype = real(uBottomEltypeNoUnits)
-  uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f.f1,t,p)
   ηold = one(uToltype)
   uprev3 = u
   tprev2 = t
@@ -1027,4 +1027,41 @@ function alg_cache(alg::ABCN2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   ηold = one(uToltype)
 
   ABCN2Cache(u,uprev,uprev2,du1,fsalfirst,k,k1,k2,du₁,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,ηold,κ,tol,10000,uprev3,tprev2)
+end
+
+# CNLF
+
+mutable struct CNLF2ConstantCache{rateType,F,uToltype,uType,tType} <: OrdinaryDiffEqConstantCache
+  k2::rateType
+  uf::F
+  ηold::uToltype
+  κ::uToltype
+  tol::uToltype
+  newton_iters::Int
+  uprev2::uType
+  uprev3::uType
+  tprev2::tType
+end
+
+function alg_cache(alg::CNLF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  k2 = rate_prototype
+  uToltype = real(uBottomEltypeNoUnits)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f.f1,t,p)
+  ηold = one(uToltype)
+  uprev2 = u
+  uprev3 = u
+  tprev2 = t
+
+  if alg.κ != nothing
+    κ = uToltype(alg.κ)
+  else
+    κ = uToltype(1//100)
+  end
+  if alg.tol != nothing
+    tol = uToltype(alg.tol)
+  else
+    tol = uToltype(min(0.03,first(reltol)^(0.5)))
+  end
+
+  CNLF2ConstantCache(k2,uf,ηold,κ,tol,10000,uprev2,uprev3,tprev2)
 end
