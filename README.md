@@ -48,7 +48,7 @@ using Plots; plot(sol,vars=(1,2,3))
 For "refined ODEs" like dynamical equations and `SecondOrderODEProblem`s, refer to the [DiffEqDocs](http://docs.juliadiffeq.org/latest/types/ode_types.html). For example, in [DiffEqTutorials.jl](https://github.com/JuliaDiffEq/DiffEqTutorials.jl) we show how to solve equations of motion using symplectic methods:
 
 ```julia
-function HH_acceleration(dv,v,u,t)
+function HH_acceleration(dv,v,u,p,t)
     x,y  = u
     dx,dy = dv
     dv[1] = -x - 2x*y
