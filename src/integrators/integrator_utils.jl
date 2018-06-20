@@ -182,8 +182,7 @@ function step_accept_controller!(integrator,alg::JVODE,η)
   return η * integrator.dt  # dtnew
 end
 function step_reject_controller!(integrator,alg::JVODE)
-  nordsieck_rewind!(integrator.cache)
-  integrator.dt /= min(inv(integrator.opts.qmin), integrator.qold/integrator.opts.gamma) # WIP, will revise later
+  integrator.dt *= integrator.qold
 end
 
 function stepsize_controller!(integrator,alg::Union{StandardControllerAlgs,

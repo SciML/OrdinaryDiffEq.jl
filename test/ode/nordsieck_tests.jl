@@ -26,17 +26,17 @@ probArr = [prob_ode_linear,
   for i in eachindex(probArr)
     prob = probArr[i]
     sol = solve(prob, AN5(), reltol=1e-6)
-    @test length(sol.t) < 10
+    @test length(sol.t) < 11
     exact = prob.f(Val{:analytic}, prob.u0, prob.p, prob.tspan[end])
-    @test Float64(norm(exact-sol[end])) < 2e-5
+    @test Float64(norm(exact-sol[end])) < 1e-5
   end
 end
 
 @testset "Nordsieck Adaptivity Tests: JVODE" begin
   for i in eachindex(probArr)
     prob = probArr[i]
-    sol = solve(prob, JVODE(), reltol=1e-6, maxiters=20)
-    @test length(sol.t) < 15
+    sol = solve(prob, JVODE(), reltol=1e-6)
+    @test length(sol.t) < 45
     exact = prob.f(Val{:analytic}, prob.u0, prob.p, prob.tspan[end])
     @test Float64(norm(exact-sol[end])) < 2e-5
   end

@@ -296,6 +296,13 @@ function choose_η!(integrator, cache::T) where T
   order = get_current_adaptive_order(integrator.alg, integrator.cache)
   L = order + 1
   ηq = stepsize_η!(integrator, cache, order)
+  # If the error test fails
+  if integrator.EEst >= 1
+    nordsieck_rewind!(integrator.cache)
+    cache.η = max(integrator.opts.qmin, cache.η, integrator.opts.dtmin/abs(integrator.dt))
+    return cache.η
+  end
+  # Consider change the order
   if isvarorder
     cache.n_wait = 2
     ηqm1 = stepsize_η₋₁!(integrator, cache, order)
@@ -346,13 +353,13 @@ function stepsize_η₊₁!(integrator, cache::T, order) where T
     cache.prev_𝒟 == 0 && return cache.η₊₁
     cquot = (c_𝒟 / cache.prev_𝒟) * (tau[1]/tau[3])^L
     if isconstcache
-      @show atmp = muladd.(-cquot, z[end], cache.Δ)
-      @show atmp = calculate_residuals(atmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      atmp = muladd.(-cquot, z[end], cache.Δ)
+      atmp = calculate_residuals(atmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
     else
       @. atmp = muladd(-cquot, z[end], cache.Δ)
       calculate_residuals!(atmp, const_cache.Δ, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
     end
-    @show dup = abs(integrator.opts.internalnorm(atmp) * c_LTE₊₁)
+    dup = abs(integrator.opts.internalnorm(atmp) * c_LTE₊₁)
     cache.η₊₁ = inv( (BIAS3*dup)^inv(L+1) + ADDON )
   end
   return cache.η₊₁

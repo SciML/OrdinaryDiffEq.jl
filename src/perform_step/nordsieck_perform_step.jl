@@ -181,7 +181,6 @@ end
     z[2] = f(uprev, p, t)*dt
     tau[1] = dt
   end
-  @show cache.step = min(cache.nextorder, 12)
   # Nordsieck form needs to build the history vector
   # Reset time
   for i in endof(tau):-1:2
@@ -189,17 +188,10 @@ end
   end
   tau[1] = dt
   dt != tau[2] && nordsieck_rescale!(cache)
-  ex = 0.5*exp(1.01t)
-  ex1 = 1.01*0.5*exp(1.01t) * dt
-  ex2 = 1.01^2*0.5*exp(1.01t) * dt^2/2
-  ex3 = 1.01^3*0.5*exp(1.01t) * dt^3/6
-  @show z[1]-ex
-  @show z[2]-ex1
-  @show z[3]-ex2
-  @show z[4]-ex3
   integrator.k[1] = z[2]/dt
   # Perform 5th order Adams method in Nordsieck form
   perform_predict!(cache)
+  cache.step = min(cache.nextorder, 12)
   calc_coeff!(cache)
   isucceed = nlsolve_functional!(integrator, cache)
   if !isucceed
