@@ -15,7 +15,7 @@ module OrdinaryDiffEq
   # Internal utils
   import DiffEqBase: ODE_DEFAULT_NORM, ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE, ODE_DEFAULT_UNSTABLE_CHECK
 
-  using DiffEqOperators: normbound, DiffEqArrayOperator
+  using DiffEqOperators: DiffEqArrayOperator
 
   import RecursiveArrayTools: chain, recursivecopy!
 
@@ -160,7 +160,7 @@ module OrdinaryDiffEq
 
   export GenericIIF1, GenericIIF2
 
-  export LawsonEuler, NorsettEuler, ETD1, ETD2, ETDRK4
+  export LawsonEuler, NorsettEuler, ETD1, ETDRK2, ETDRK3, ETDRK4, ETD2
 
   export SymplecticEuler, VelocityVerlet, VerletLeapfrog, PseudoVerletLeapfrog,
          McAte2, Ruth3, McAte3, CandyRoz4, McAte4, McAte42, McAte5,
