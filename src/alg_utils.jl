@@ -227,6 +227,7 @@ alg_order(alg::VCABM5) = 5
 alg_order(alg::VCABM) = 1  #dummy value
 
 alg_order(alg::ABCN2) = 2
+alg_order(alg::CNLF2) = 2
 
 alg_order(alg::AN5) = 5
 
