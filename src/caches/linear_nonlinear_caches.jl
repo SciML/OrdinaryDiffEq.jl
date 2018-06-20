@@ -416,10 +416,10 @@ function alg_cache(alg::HochOst4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
     m = min(alg.m, length(u))
     T = eltype(u)
     Ks = KrylovSubspace{T}(n, m)
-    w1_half = Matrix{T}(n, 4); w2_half = Matrix{T}(n, 4)
-    w1 = Matrix{T}(n, 4); w2 = Matrix{T}(n, 4); w3 = Matrix{T}(n, 4); w4 = Matrix{T}(n, 4)
+    w1_half = Matrix{T}(n, 4); w2_half = Matrix{T}(n, 4); w3_half = Matrix{T}(n, 4); w4_half = Matrix{T}(n, 4)
+    w1 = Matrix{T}(n, 4); w2 = Matrix{T}(n, 4); w3 = Matrix{T}(n, 4); w4 = Matrix{T}(n, 4); w5 = Matrix{T}(n, 4)
     phiv_caches = (Vector{T}(m), Matrix{T}(m, m), Matrix{T}(m + 3, m + 3), Matrix{T}(m, 4))
-    KsCache = (w1_half, w2_half, w1, w2, w3, w4, phiv_caches)
+    KsCache = (w1_half, w2_half, w3_half, w4_half, w1, w2, w3, w4, w5, phiv_caches)
   else
     Ks = KsCache = nothing
     A = f.f1
