@@ -118,13 +118,30 @@ function expRK_operators(::ETDRK4, dt, A)
   B4 = -P[3] + 4P[4]
   return A21, A41, A43, B1, B2, B4
 end
+function expRK_operators(::HochOst4, dt, A)
+  P = phi(dt * A, 3)
+  Phalf = phi(dt/2 * A, 3)
+  A21 = 0.5Phalf[2]
+  A31 = A21 - Phalf[3]
+  A32 = Phalf[3]
+  A41 = P[2] - 2P[3]
+  A42 = P[3]
+  A52 = 0.5Phalf[3] - P[4] + 0.25P[3] - 0.5Phalf[4]
+  A54 = 0.25Phalf[3] - A52
+  A51 = 0.5Phalf[2] - 2A52 - A54
+  B1 = P[2] - 3P[3] + 4P[4]
+  B4 = -P[3] + 4P[4]
+  B5 = 4P[3] - 8P[4]
+  return A21, A31, A32, A41, A42, A51, A52, A54, B1, B4, B5
+end
 
 # Unified constructor for constant caches
 for (Alg, Cache) in [(:LawsonEuler, :LawsonEulerConstantCache), 
                      (:NorsettEuler, :NorsettEulerConstantCache),
                      (:ETDRK2, :ETDRK2ConstantCache),
                      (:ETDRK3, :ETDRK3ConstantCache),
-                     (:ETDRK4, :ETDRK4ConstantCache)]
+                     (:ETDRK4, :ETDRK4ConstantCache),
+                     (:HochOst4, :HochOst4ConstantCache)]
   @eval struct $Cache{opType} <: ExpRKConstantCache
     ops::opType # precomputed operators
   end
@@ -365,6 +382,56 @@ end
 
 u_cache(c::ETDRK4Cache) = ()
 du_cache(c::ETDRK4Cache) = (c.k,c.fsalfirst,c.rtmp)
+
+struct HochOst4Cache{uType,rateType,JType,opType,KsType,KsCacheType} <: ExpRKCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  rtmp::rateType
+  rtmp2::rateType
+  Au::rateType
+  F2::rateType
+  F3::rateType
+  F4::rateType
+  F5::rateType
+  Jcache::JType
+  ops::opType
+  Ks::KsType
+  KsCache::KsCacheType
+end
+
+function alg_cache(alg::HochOst4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  if isa(f, SplitFunction)
+    Jcache = nothing
+  else
+    # TODO: sparse Jacobian support
+    Jcache = Matrix{eltype(u)}(length(u), length(u))
+  end
+  tmp = similar(u)
+  rtmp = zeros(rate_prototype); rtmp2 = zeros(rate_prototype); Au = zeros(rate_prototype)
+  F2 = zeros(rate_prototype); F3 = zeros(rate_prototype); F4 = zeros(rate_prototype); F5 = zeros(rate_prototype)
+  if alg.krylov
+    ops = nothing # no caching
+    n = length(u)
+    m = min(alg.m, length(u))
+    T = eltype(u)
+    Ks = KrylovSubspace{T}(n, m)
+    w1_half = Matrix{T}(n, 4); w2_half = Matrix{T}(n, 4)
+    w1 = Matrix{T}(n, 4); w2 = Matrix{T}(n, 4); w3 = Matrix{T}(n, 4); w4 = Matrix{T}(n, 4)
+    phiv_caches = (Vector{T}(m), Matrix{T}(m, m), Matrix{T}(m + 3, m + 3), Matrix{T}(m, 4))
+    KsCache = (w1_half, w2_half, w1, w2, w3, w4, phiv_caches)
+  else
+    Ks = KsCache = nothing
+    A = f.f1
+    if isa(A, DiffEqArrayOperator)
+      L = A.A .* A.α.coeff # has special handling if A.A is Diagonal
+    else
+      L = full(A)
+    end
+    ops = expRK_operators(alg, dt, L)
+  end
+  HochOst4Cache(u,uprev,tmp,rtmp,rtmp2,Au,F2,F3,F4,F5,Jcache,ops,Ks,KsCache)
+end
 
 ####################################
 # Multistep exponential method caches

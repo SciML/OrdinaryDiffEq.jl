@@ -422,6 +422,87 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
   # integrator.k is automatically set due to aliasing
 end
 
+function perform_step!(integrator, cache::HochOst4ConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,f,p = integrator
+  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+
+  Au = A * uprev
+  F1 = integrator.fsalfirst
+  halfdt = dt/2
+  if alg.krylov
+    # TODO
+  else
+    A21, A31, A32, A41, A42, A51, A52, A54, B1, B4, B5 = cache.ops
+    # stage 1 (fsaled)
+    # stage 2
+    U2 = uprev + dt * (A21 * F1)
+    F2 = f.f2(U2, p, t + halfdt) + Au
+    # stage 3
+    U3 = uprev + dt * (A31 * F1 + A32 * F2)
+    F3 = f.f2(U3, p, t + halfdt) + Au
+    # stage 4
+    U4 = uprev + dt * (A41 * F1 + A42 * (F2 + F3))
+    F4 = f.f2(U4, p, t + dt) + Au
+    # stage 5
+    U5 = uprev + dt * (A51 * F1 + A52 * (F2 + F3) + A54 * F4)
+    F5 = f.f2(U5, p, t + halfdt) + Au
+    # update u
+    u = uprev + dt * (B1 * F1 + B4 * F4 + B5 * F5)
+  end
+
+  # Update integrator state
+  integrator.fsallast = f(u, p, t + dt)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end
+
+function perform_step!(integrator, cache::HochOst4Cache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack tmp,rtmp,rtmp2,Au,F2,F3,F4,F5,Jcache,Ks,KsCache = cache
+  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+
+  F1 = integrator.fsalfirst
+  A_mul_B!(Au, A, uprev)
+  halfdt = dt/2
+  if alg.krylov
+    # TODO
+  else
+    A21, A31, A32, A41, A42, A51, A52, A54, B1, B4, B5 = cache.ops
+    # stage 1 (fsaled)
+    # stage 2
+    A_mul_B!(rtmp, A21, F1)
+    @muladd @. tmp = uprev + dt * rtmp # tmp is U2
+    f.f2(F2, tmp, p, t + halfdt); F2 .+= Au
+    # stage 3
+    A_mul_B!(rtmp, A31, F1); A_mul_B!(rtmp2, A32, F2); rtmp .+= rtmp2
+    @muladd @. tmp = uprev + dt * rtmp # tmp is U3
+    f.f2(F3, tmp, p, t + halfdt); F3 .+= Au
+    # stage 4
+    F2 .+= F3 # F2 now stores F2 + F3
+    A_mul_B!(rtmp, A41, F1); A_mul_B!(rtmp2, A42, F2); rtmp .+= rtmp2
+    @muladd @. tmp = uprev + dt * rtmp # tmp is U4
+    f.f2(F4, tmp, p, t + dt); F4 .+= Au
+    # stage 5
+    A_mul_B!(rtmp, A51, F1)
+    A_mul_B!(rtmp2, A52, F2); rtmp .+= rtmp2
+    A_mul_B!(rtmp2, A54, F4); rtmp .+= rtmp2
+    @muladd @. tmp = uprev + dt * rtmp # tmp is U5
+    f.f2(F5, tmp, p, t + halfdt); F5 .+= Au
+    # update u
+    A_mul_B!(rtmp, B1, F1)
+    A_mul_B!(rtmp2, B4, F4); rtmp .+= rtmp2
+    A_mul_B!(rtmp2, B5, F5); rtmp .+= rtmp2
+    @muladd @. u = uprev + dt * rtmp
+  end
+
+  # Update integrator state
+  f(integrator.fsallast, u, p, t + dt)
+  # integrator.k is automatically set due to aliasing
+end
+
 ######################################################
 # Multistep exponential integrators
 function initialize!(integrator,cache::ETD2ConstantCache)
