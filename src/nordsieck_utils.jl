@@ -234,15 +234,19 @@ function nordsieck_change_order(cache::T, n=0) where T
 end
 
 function nordsieck_decrement_wait!(cache::T) where T
+  isvode = ( T <: JVODECache || T <: JVODEConstantCache )
+  isvode || return nothing
   isconstcache = T <: OrdinaryDiffEqConstantCache
   isconstcache || ( cache = cache.const_cache )
-  cache.n_wait -= 1
+  cache.n_wait = max(0, cache.n_wait-1)
+  return nothing
 end
 
 function nordsieck_order_change(cache::T, dorder) where T
   isconstcache = T <: OrdinaryDiffEqConstantCache
   isconstcache || ( cache = cache.const_cache )
-  order = cache.step
+  @unpack step, tau = cache
+  order = step
   # WIP: uncomment when finished
   #@inbound begin
   begin
@@ -269,7 +273,7 @@ function nordsieck_order_change(cache::T, dorder) where T
         end # for i
       end # for j
 
-      for j in 2:q-1
+      for j in 2:order-1
         cache.l[j+1] = order * cache.l[j] / j
       end
       for j in 3:order
@@ -293,6 +297,7 @@ function choose_η!(integrator, cache::T) where T
   L = order + 1
   ηq = stepsize_η!(integrator, cache, order)
   if isvarorder
+    cache.n_wait = 2
     ηqm1 = stepsize_η₋₁!(integrator, cache, order)
     ηqp1 = stepsize_η₊₁!(integrator, cache, order)
     η = max(ηqm1, ηqp1, cache.η)
@@ -336,20 +341,18 @@ function stepsize_η₊₁!(integrator, cache::T, order) where T
   q = order
   cache.η₊₁ = 0
   qmax = length(z)-1
-  cv_mem->cv_etaqp1 = ZERO;
-  @show integrator.iter
   L = q+1
   if q != qmax
     cache.prev_𝒟 == 0 && return cache.η₊₁
     cquot = (c_𝒟 / cache.prev_𝒟) * (tau[1]/tau[3])^L
     if isconstcache
-      atmp = muladd.(-cquot, z[end], cache.Δ)
-      atmp = calculate_residuals(atmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      @show atmp = muladd.(-cquot, z[end], cache.Δ)
+      @show atmp = calculate_residuals(atmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
     else
       @. atmp = muladd(-cquot, z[end], cache.Δ)
       calculate_residuals!(atmp, const_cache.Δ, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
     end
-    dup = integrator.opts.internalnorm(atmp) * c_LTE₊₁
+    @show dup = abs(integrator.opts.internalnorm(atmp) * c_LTE₊₁)
     cache.η₊₁ = inv( (BIAS3*dup)^inv(L+1) + ADDON )
   end
   return cache.η₊₁

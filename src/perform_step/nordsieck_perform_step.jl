@@ -179,9 +179,9 @@ end
     cache.step = 1
     z[1] = integrator.uprev
     z[2] = f(uprev, p, t)*dt
-    z[3] = zero(cache.z[3])
     tau[1] = dt
   end
+  @show cache.step = min(cache.nextorder, 12)
   # Nordsieck form needs to build the history vector
   # Reset time
   for i in endof(tau):-1:2
@@ -189,6 +189,14 @@ end
   end
   tau[1] = dt
   dt != tau[2] && nordsieck_rescale!(cache)
+  ex = 0.5*exp(1.01t)
+  ex1 = 1.01*0.5*exp(1.01t) * dt
+  ex2 = 1.01^2*0.5*exp(1.01t) * dt^2/2
+  ex3 = 1.01^3*0.5*exp(1.01t) * dt^3/6
+  @show z[1]-ex
+  @show z[2]-ex1
+  @show z[3]-ex2
+  @show z[4]-ex3
   integrator.k[1] = z[2]/dt
   # Perform 5th order Adams method in Nordsieck form
   perform_predict!(cache)
@@ -202,10 +210,17 @@ end
   end
 
   # Correct Nordsieck vector
-  cache.step = min(cache.nextorder, 12)
   update_nordsieck_vector!(cache)
 
   ################################### Finalize
+  cache.n_wait -= 1
+  if nordsieck_change_order(cache, 1) && cache.step != 12
+    #N_VScale(ONE, cv_mem->cv_acor, cv_mem->cv_zn[cv_mem->cv_qmax]);
+    cache.z[end] = cache.Δ
+    #cv_mem->cv_saved_tq5 = cv_mem->cv_tq[5];
+    cache.prev_𝒟 = cache.c_𝒟
+    #cv_mem->cv_indx_acor = cv_mem->cv_qmax;
+  end
 
   integrator.k[2] = cache.z[2]/dt
   ################################### Error estimation
@@ -216,8 +231,6 @@ end
   @printf("t = %2.6lf | dt = %2.6lf | dsm = %2.4lf | etaq = %2.6lf | etaqm1 = %2.6lf | etaqp1 = %2.6lf",
           t, dt, integrator.EEst, cache.η, cache.η₋₁, cache.η₊₁)
   @printf(" | q = %2d\n", cache.step)
-  ex = f(Val{:analytic}, 0.5, p, t)
-  cache.prev_𝒟 = cache.c_𝒟
   return nothing
 end
 

@@ -179,7 +179,6 @@ function stepsize_controller!(integrator, alg::NordAlgs)
   η
 end
 function step_accept_controller!(integrator,alg::NordAlgs,η)
-  nordsieck_decrement_wait!(integrator.cache)
   return η * integrator.dt  # dtnew
 end
 function step_reject_controller!(integrator,alg::NordAlgs)
