@@ -36,8 +36,8 @@ end
   for i in eachindex(probArr)
     prob = probArr[i]
     sol = solve(prob, JVODE(), reltol=1e-6)
-    @test length(sol.t) < 45
+    @test length(sol.t) < 82
     exact = prob.f(Val{:analytic}, prob.u0, prob.p, prob.tspan[end])
-    @test Float64(norm(exact-sol[end])) < 2e-5
+    @test exact ≈ sol[end] rtol=2e-5
   end
 end
