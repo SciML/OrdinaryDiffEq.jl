@@ -171,17 +171,17 @@ function step_reject_controller!(integrator,alg)
 end
 
 const StandardControllerAlgs = Union{GenericImplicitEuler,GenericTrapezoid,VCABM}
-const NordAlgs = Union{AN5, JVODE}
+#const NordAlgs = Union{AN5, JVODE}
 
-function stepsize_controller!(integrator, alg::NordAlgs)
+function stepsize_controller!(integrator, alg::JVODE)
   η = choose_η!(integrator, integrator.cache)
   integrator.qold = η
   η
 end
-function step_accept_controller!(integrator,alg::NordAlgs,η)
+function step_accept_controller!(integrator,alg::JVODE,η)
   return η * integrator.dt  # dtnew
 end
-function step_reject_controller!(integrator,alg::NordAlgs)
+function step_reject_controller!(integrator,alg::JVODE)
   nordsieck_rewind!(integrator.cache)
   integrator.dt /= min(inv(integrator.opts.qmin), integrator.qold/integrator.opts.gamma) # WIP, will revise later
 end

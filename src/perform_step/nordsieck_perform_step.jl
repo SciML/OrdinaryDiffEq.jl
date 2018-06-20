@@ -215,11 +215,8 @@ end
   ################################### Finalize
   cache.n_wait -= 1
   if nordsieck_change_order(cache, 1) && cache.step != 12
-    #N_VScale(ONE, cv_mem->cv_acor, cv_mem->cv_zn[cv_mem->cv_qmax]);
     cache.z[end] = cache.Δ
-    #cv_mem->cv_saved_tq5 = cv_mem->cv_tq[5];
     cache.prev_𝒟 = cache.c_𝒟
-    #cv_mem->cv_indx_acor = cv_mem->cv_qmax;
   end
 
   integrator.k[2] = cache.z[2]/dt
@@ -228,9 +225,6 @@ end
     atmp = calculate_residuals(cache.Δ, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp) * cache.c_LTE
   end
-  @printf("t = %2.6lf | dt = %2.6lf | dsm = %2.4lf | etaq = %2.6lf | etaqm1 = %2.6lf | etaqp1 = %2.6lf",
-          t, dt, integrator.EEst, cache.η, cache.η₋₁, cache.η₊₁)
-  @printf(" | q = %2d\n", cache.step)
   return nothing
 end
 
