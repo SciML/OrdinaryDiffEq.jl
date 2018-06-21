@@ -39,8 +39,9 @@ end
     end
   else
     # Reset time
-    for i in endof(tau):-1:2
-      tau[i] = tau[i-1]
+    tmp = tau[6]
+    for i in 5:-1:1
+      tau[i+1] = tau[i]
     end
     tau[1] = dt
     dt != tau[2] && nordsieck_rescale!(cache)
@@ -61,6 +62,12 @@ end
     if integrator.opts.adaptive
       atmp = calculate_residuals(cache.Δ, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp) * cache.c_LTE
+      if integrator.EEst > one(integrator.EEst)
+        for i in 1:5
+          dts[i] = dts[i-1]
+        end
+        dts[6] = tmp
+      end
     end
 
     # Correct Nordsieck vector
@@ -121,8 +128,9 @@ end
     end
   else
     # Reset time
-    for i in endof(tau):-1:2
-      tau[i] = tau[i-1]
+    tmp = tau[6]
+    for i in 5:-1:1
+      tau[i+1] = tau[i]
     end
     tau[1] = dt
     # Rescale
@@ -144,6 +152,12 @@ end
     if integrator.opts.adaptive
       calculate_residuals!(atmp, const_cache.Δ, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp) * const_cache.c_LTE
+      if integrator.EEst > one(integrator.EEst)
+        for i in 1:5
+          dts[i] = dts[i-1]
+        end
+        dts[6] = tmp
+      end
     end
 
     # Correct Nordsieck vector
