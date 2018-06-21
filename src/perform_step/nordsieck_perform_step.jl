@@ -290,9 +290,9 @@ end
 
   # Correct Nordsieck vector
   update_nordsieck_vector!(cache)
+  const_cache.n_wait -= 1
 
   ################################### Finalize
-  const_cache.n_wait -= 1
   if nordsieck_change_order(cache, 1) && const_cache.order != 12
     const_cache.z[end] = const_cache.Δ
     const_cache.prev_𝒟 = const_cache.c_𝒟

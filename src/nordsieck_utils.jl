@@ -4,8 +4,8 @@ function ∫₋₁⁰dx(a, deg, k)
   @inbounds begin
     int = zero(eltype(a))
     sign = 1
-    for i in 1:deg
-      int += flipsign(a[i]/(i+k), sign)
+    for i in 0:deg
+      int += flipsign(a[i+1]/(i+k), sign)
       sign = -sign
     end
     return int
@@ -46,7 +46,7 @@ function calc_coeff!(cache::T) where T
     # check the `JuliaDiffEq/DiffEqDevMaterials` repository for more details
     for j in 1:order-1
       if isvarorder && j == order-1
-        M₋₁ = ∫₋₁⁰dx(m, order-1, 1)
+        M₋₁ = ∫₋₁⁰dx(m, order-2, 2)
         # It is the same with `tq[1]` in SUNDIALS cvode.c
         cache.c_LTE₋₁ = order * M₋₁ / m[order-1]
       end
@@ -58,8 +58,8 @@ function calc_coeff!(cache::T) where T
     end
     ξ_inv = dt / dtsum
 
-    M0 = ∫₋₁⁰dx(m, order, 0)
-    M1 = ∫₋₁⁰dx(m, order, 1)
+    M0 = ∫₋₁⁰dx(m, order-1, 1)
+    M1 = ∫₋₁⁰dx(m, order-1, 2)
     M0_inv = inv(M0)
     l[1] = 1
     for i in 1:order
@@ -74,10 +74,10 @@ function calc_coeff!(cache::T) where T
     # It is the same with `tq[5]` in SUNDIALS cvode.c
     isvode && (cache.c_𝒟 = inv(ξ_inv) / l[order+1])
     if isvarorder
-      for i in order-1:-1:1
+      for i in order:-1:1
         m[i+1] = muladd(ξ_inv, m[i], m[i+1])
       end
-      M2 = ∫₋₁⁰dx(m, order, 1)
+      M2 = ∫₋₁⁰dx(m, order, 2)
       # It is the same with `tq[3]` in SUNDIALS cvode.c
       cache.c_LTE₊₁ = M2 * M0_inv / (order+1)
     end # endif isvarorder
@@ -355,7 +355,7 @@ function stepsize_η₊₁!(integrator, cache::T, order) where T
       @. atmp = muladd(-cquot, z[end], cache.Δ)
       calculate_residuals!(atmp, const_cache.Δ, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
     end
-    dup = abs(integrator.opts.internalnorm(atmp) * c_LTE₊₁)
+    dup = integrator.opts.internalnorm(atmp) * c_LTE₊₁
     cache.η₊₁ = inv( (bias3*dup)^inv(L+1) + addon )
   end
   return cache.η₊₁
@@ -366,7 +366,7 @@ function stepsize_η₋₁!(integrator, cache::T, order) where T
   isconstcache || ( atmp = cache.atmp; cache = cache.const_cache )
   @unpack uprev, u = integrator
   @unpack z, c_LTE₋₁ = cache
-  bias1 = integrator.alg.bias2
+  bias1 = integrator.alg.bias1
   addon = integrator.alg.addon
   q = order
   cache.η₋₁ = 0
