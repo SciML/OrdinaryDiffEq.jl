@@ -64,9 +64,9 @@ end
       integrator.EEst = integrator.opts.internalnorm(atmp) * cache.c_LTE
       if integrator.EEst > one(integrator.EEst)
         for i in 1:5
-          dts[i] = dts[i-1]
+          tau[i] = tau[i+1]
         end
-        dts[6] = tmp
+        tau[6] = tmp
       end
     end
 
@@ -154,9 +154,9 @@ end
       integrator.EEst = integrator.opts.internalnorm(atmp) * const_cache.c_LTE
       if integrator.EEst > one(integrator.EEst)
         for i in 1:5
-          dts[i] = dts[i-1]
+          tau[i] = tau[i+1]
         end
-        dts[6] = tmp
+        tau[6] = tmp
       end
     end
 
