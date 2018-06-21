@@ -48,7 +48,6 @@ module OrdinaryDiffEq
 
   include("misc_utils.jl")
   include("algorithms.jl")
-  include("alg_utils.jl")
 
   include("caches/basic_caches.jl")
   include("caches/low_order_rk_caches.jl")
@@ -65,8 +64,10 @@ module OrdinaryDiffEq
   include("caches/rosenbrock_caches.jl")
   include("caches/rkn_caches.jl")
   include("caches/adams_bashforth_moulton_caches.jl")
-  include("caches/adams_nordsieck_caches.jl")
+  include("caches/nordsieck_caches.jl")
   include("caches/bdf_caches.jl")
+
+  include("alg_utils.jl")
 
   include("tableaus/low_order_rk_tableaus.jl")
   include("tableaus/high_order_rk_tableaus.jl")
@@ -101,7 +102,7 @@ module OrdinaryDiffEq
   include("perform_step/threaded_rk_perform_step.jl")
   include("perform_step/composite_perform_step.jl")
   include("perform_step/adams_bashforth_moulton_perform_step.jl")
-  include("perform_step/adams_nordsieck_perform_step.jl")
+  include("perform_step/nordsieck_perform_step.jl")
   include("perform_step/bdf_perform_step.jl")
 
   include("dense/generic_dense.jl")
@@ -179,7 +180,7 @@ module OrdinaryDiffEq
 
   export ABCN2, CNLF2
 
-  export AN5
+  export AN5, JVODE, JVODE_Adams
 
   export ABDF2
 
