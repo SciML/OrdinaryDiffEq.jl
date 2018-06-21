@@ -4,6 +4,9 @@ mutable struct ROCK2ConstantCache{T,T2,zType} <: OrdinaryDiffEqConstantCache
   fp2::SVector{46, T}
   recfi::Vector{T2}
   zprev::zType
+  mdegprev::Int
+  mdeg::Int
+  recind::Int
 end
 
 Base.@pure function ROCK2ConstantCache(::Type{T}, ::Type{T2}, zprev) where {T, T2}
@@ -1589,5 +1592,5 @@ Base.@pure function ROCK2ConstantCache(::Type{T}, ::Type{T2}, zprev) where {T, T
      .9624041210149244e+00,.1211682179036361e-03,.9628860485040654e+00,
      .1211987755701019e-03,.9633747238043349e+00,.1212297589117476e-03,
      .9638702662671197e+00,]
-  ROCK2ConstantCache{T,T2,typeof(zprev)}(ms, fp1, fp2, recfi, zprev)
+  ROCK2ConstantCache{T,T2,typeof(zprev)}(ms, fp1, fp2, recfi, zprev, 0, 0, 0)
 end
