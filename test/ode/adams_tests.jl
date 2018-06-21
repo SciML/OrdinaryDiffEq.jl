@@ -17,15 +17,16 @@ end
 
 for i = 1:2
   prob = probArr[i]
-  integrator = init(prob,VCAB3(),dt=1//256,adaptive=false)
+  dt = 1//256
+  integrator = init(prob,VCAB3(),dt=dt,adaptive=false)
   for i = 1:3
     step!(integrator)
   end
-  @test integrator.cache.g == [1,1/2,5/12]
+  @test integrator.cache.g == [1,1/2,5/12]*dt
   step!(integrator)
-  @test integrator.cache.g == [1,1/2,5/12]
+  @test integrator.cache.g == [1,1/2,5/12]*dt
   step!(integrator)
-  @test integrator.cache.g == [1,1/2,5/12]
+  @test integrator.cache.g == [1,1/2,5/12]*dt
 end
 
 for i = 1:2
@@ -35,11 +36,12 @@ for i = 1:2
   for i = 1:3
     step!(integrator)
   end
-  @test integrator.cache.ϕstar_n == fixed_step_ϕstar(integrator.sol.k)
+  # in perform_step, after swaping array using pointer, ϕstar_nm1 points to ϕstar_n
+  @test integrator.cache.ϕstar_nm1 == fixed_step_ϕstar(integrator.sol.k)
   step!(integrator)
-  @test integrator.cache.ϕstar_n == fixed_step_ϕstar(integrator.sol.k)
+  @test integrator.cache.ϕstar_nm1 == fixed_step_ϕstar(integrator.sol.k)
   step!(integrator)
-  @test integrator.cache.ϕstar_n == fixed_step_ϕstar(integrator.sol.k)
+  @test integrator.cache.ϕstar_nm1 == fixed_step_ϕstar(integrator.sol.k)
 
   # VCAB4
   sol1 = solve(prob,VCAB4(),dt=1//256,adaptive=false)

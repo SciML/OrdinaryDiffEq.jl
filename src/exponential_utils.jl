@@ -332,8 +332,8 @@ A Krylov subspace is constructed using `arnoldi` and `expm!` is called
 on the Heisenberg matrix. Consult `arnoldi` for the values of the keyword 
 arguments.
 """
-function expv(t, A, b; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, cache=nothing)
-  Ks = arnoldi(A, b; m=m, tol=tol, norm=norm)
+function expv(t, A, b; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, cache=nothing, iop=0)
+  Ks = arnoldi(A, b; m=m, tol=tol, norm=norm, iop=iop)
   w = similar(b)
   expv!(w, t, Ks; cache=cache)
 end
@@ -386,9 +386,9 @@ the additional keyword arguments, consult `arnoldi`.
 the φ-functions in exponential integrators. arXiv preprint arXiv:0907.4631. 
 Formula (10).
 """
-function phiv(t, A, b, k; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, 
+function phiv(t, A, b, k; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, iop=0, 
   caches=nothing, correct=false, errest=false)
-  Ks = arnoldi(A, b; m=m, tol=tol, norm=norm)
+  Ks = arnoldi(A, b; m=m, tol=tol, norm=norm, iop=iop)
   w = Matrix{eltype(b)}(length(b), k+1)
   phiv!(w, t, Ks, k; caches=caches, correct=correct, errest=errest)
 end

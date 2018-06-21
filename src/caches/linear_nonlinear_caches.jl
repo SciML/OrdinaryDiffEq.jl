@@ -1,3 +1,6 @@
+######################################
+# IIF Caches
+
 struct GenericIIF1ConstantCache{vecuType,rhsType,nl_rhsType} <: OrdinaryDiffEqConstantCache
   uhold::vecuType
   rhs::rhsType
@@ -81,28 +84,83 @@ function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   GenericIIF2Cache(u,uprev,dual_cache,tmp,rhs,nl_rhs,rtmp1,fsalfirst,expA,k)
 end
 
-# Fsal type for exponential RK algorithms
-mutable struct ExpRKFsal{rateType}
-  lin::rateType
-  nl::rateType
+#################################################
+# Classical ExpRK method caches
+abstract type ExpRKCache <: OrdinaryDiffEqMutableCache end
+abstract type ExpRKConstantCache <: OrdinaryDiffEqConstantCache end
+
+# Precomputation of exponential-like operators
+expRK_operators(::LawsonEuler, dt, A) = expm(dt * A)
+expRK_operators(::NorsettEuler, dt, A) = phi(dt * A, 1)[2]
+function expRK_operators(::ETDRK2, dt, A)
+  P = phi(dt * A, 2)
+  return P[2], P[3] # ϕ1(hA), ϕ2(hA)
 end
-ExpRKFsal(rate_prototype) = ExpRKFsal(zero(rate_prototype),zero(rate_prototype))
-function recursivecopy!(dest::ExpRKFsal, src::ExpRKFsal)
-  recursivecopy!(dest.lin, src.lin)
-  recursivecopy!(dest.nl, src.nl)
+function expRK_operators(::ETDRK3, dt, A)
+  Phalf = phi(dt/2 * A, 1)
+  A21 = 0.5Phalf[2]
+  P = phi(dt * A, 3)
+  phi1, phi2, phi3 = P[2], P[3], P[4]
+  A3 = phi1
+  B1 = 4phi3 - 3phi2 + phi1
+  B2 = -8phi3 + 4phi2
+  B3 = 4phi3 - phi2
+  return A21, A3, B1, B2, B3
+end
+function expRK_operators(::ETDRK4, dt, A)
+  P = phi(dt * A, 3)
+  Phalf = phi(dt/2 * A, 1)
+  A21 = 0.5Phalf[2] # A32 = A21
+  A41 = (dt/4 * A) * Phalf[2]^2
+  A43 = Phalf[2]
+  B1 = P[2] - 3P[3] + 4P[4]
+  B2 = 2P[3] - 4P[4] # B3 = B2
+  B4 = -P[3] + 4P[4]
+  return A21, A41, A43, B1, B2, B4
 end
 
-struct LawsonEulerCache{uType,rateType,expType,KsType,KsCacheType} <: OrdinaryDiffEqMutableCache
+# Unified constructor for constant caches
+for (Alg, Cache) in [(:LawsonEuler, :LawsonEulerConstantCache), 
+                     (:NorsettEuler, :NorsettEulerConstantCache),
+                     (:ETDRK2, :ETDRK2ConstantCache),
+                     (:ETDRK3, :ETDRK3ConstantCache),
+                     (:ETDRK4, :ETDRK4ConstantCache)]
+  @eval struct $Cache{opType} <: ExpRKConstantCache
+    ops::opType # precomputed operators
+  end
+
+  @eval function alg_cache(alg::$Alg,u,rate_prototype,uEltypeNoUnits,
+    uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+    if alg.krylov
+      ops = nothing # no caching
+    else
+      isa(f, SplitFunction) || throw(ArgumentError("Caching can only be used with SplitFunction"))
+      A = isa(f.f1, DiffEqArrayOperator) ? f.f1.A * f.f1.α.coeff : full(f.f1)
+      ops = expRK_operators(alg, dt, A)
+    end
+    return $Cache(ops)
+  end
+end
+
+struct LawsonEulerCache{uType,rateType,JType,expType,KsType,KsCacheType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
   rtmp::rateType
+  G::rateType
+  Jcache::JType
   exphA::expType
   Ks::KsType
   KsCache::KsCacheType
 end
 
 function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  if isa(f, SplitFunction)
+    Jcache = nothing
+  else
+    # TODO: sparse Jacobian support
+    Jcache = Matrix{eltype(u)}(length(u), length(u))
+  end
   if alg.krylov
     exphA = nothing # no caching
     m = min(alg.m, length(u))
@@ -117,48 +175,35 @@ function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
     else
       _A = full(A)
     end
-    exphA = expm(dt*_A)
+    exphA = expRK_operators(alg, dt, _A)
   end
-  LawsonEulerCache(u,uprev,similar(u),zeros(rate_prototype),exphA,Ks,KsCache)
+  LawsonEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),Jcache,exphA,Ks,KsCache)
 end
 
 u_cache(c::LawsonEulerCache) = ()
 du_cache(c::LawsonEulerCache) = (c.rtmp)
 
-struct LawsonEulerConstantCache{expType} <: OrdinaryDiffEqConstantCache 
-  exphA::expType
-end
-
-function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  if alg.krylov
-    exphA = nothing # no caching
-  else
-    A = f.f1
-    if isa(A, DiffEqArrayOperator)
-      _A = A.A * A.α.coeff
-    else
-      _A = full(A)
-    end
-    exphA = expm(dt*_A)
-  end
-  LawsonEulerConstantCache(exphA)
-end
-
-struct NorsettEulerCache{uType,rateType,expType,KsType,KsCacheType} <: OrdinaryDiffEqMutableCache
+struct NorsettEulerCache{uType,rateType,JType,expType,KsType,KsCacheType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
   rtmp::rateType
-  exphA::expType
+  G::rateType
+  Jcache::JType
   phihA::expType
   Ks::KsType
   KsCache::KsCacheType
 end
 
 function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  if isa(f, SplitFunction)
+    Jcache = nothing
+  else
+    # TODO: sparse Jacobian support
+    Jcache = Matrix{eltype(u)}(length(u), length(u))
+  end
   if alg.krylov
-    exphA = nothing # no caching
-    phihA = nothing
+    phihA = nothing # no caching
     n = length(u)
     m = min(alg.m, length(u))
     T = eltype(u)
@@ -174,34 +219,155 @@ function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomElty
     else
       _A = full(A)
     end
-    exphA, phihA = phi(dt*_A, 1)
+    phihA = expRK_operators(alg, dt, _A)
   end
-  NorsettEulerCache(u,uprev,similar(u),zeros(rate_prototype),exphA,phihA,Ks,KsCache)
+  NorsettEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),Jcache,phihA,Ks,KsCache)
 end
 
 u_cache(c::NorsettEulerCache) = ()
 du_cache(c::NorsettEulerCache) = (c.rtmp)
 
-struct NorsettEulerConstantCache{expType} <: OrdinaryDiffEqConstantCache 
-  exphA::expType
-  phihA::expType
+struct ETDRK2Cache{uType,rateType,JType,opType,KsType,KsCacheType} <: ExpRKCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  rtmp::rateType
+  F2::rateType
+  Jcache::JType
+  ops::opType
+  Ks::KsType
+  KsCache::KsCacheType
 end
 
-function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  if alg.krylov
-    exphA = nothing # no caching
-    phihA = nothing
+function alg_cache(alg::ETDRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  if isa(f, SplitFunction)
+    Jcache = nothing
   else
+    # TODO: sparse Jacobian support
+    Jcache = Matrix{eltype(u)}(length(u), length(u))
+  end
+  if alg.krylov
+    ops = nothing # no caching
+    n = length(u)
+    m = min(alg.m, length(u))
+    T = eltype(u)
+    Ks = KrylovSubspace{T}(n, m)
+    w1 = Matrix{T}(n, 3)
+    w2 = Matrix{T}(n, 3)
+    phiv_caches = (Vector{T}(m), Matrix{T}(m, m), Matrix{T}(m + 2, m + 2), Matrix{T}(m, 3))
+    KsCache = (w1, w2, phiv_caches)
+  else
+    Ks = nothing
+    KsCache = nothing
     A = f.f1
     if isa(A, DiffEqArrayOperator)
       _A = A.A * A.α.coeff
     else
       _A = full(A)
     end
-    exphA, phihA = phi(dt*_A, 1)
+    ops = expRK_operators(alg, dt, _A)
   end
-  NorsettEulerConstantCache(exphA, phihA)
+  ETDRK2Cache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),Jcache,ops,Ks,KsCache)
 end
+
+struct ETDRK3Cache{uType,rateType,JType,opType,KsType,KsCacheType} <: ExpRKCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  rtmp::rateType
+  Au::rateType
+  F2::rateType
+  F3::rateType
+  Jcache::JType
+  ops::opType
+  Ks::KsType
+  KsCache::KsCacheType
+end
+
+function alg_cache(alg::ETDRK3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  if isa(f, SplitFunction)
+    Jcache = nothing
+  else
+    # TODO: sparse Jacobian support
+    Jcache = Matrix{eltype(u)}(length(u), length(u))
+  end
+  if alg.krylov
+    ops = nothing # no caching
+    n = length(u)
+    m = min(alg.m, length(u))
+    T = eltype(u)
+    Ks = KrylovSubspace{T}(n, m)
+    w1_half = Matrix{T}(n, 2); w1 = Matrix{T}(n, 4); w2 = Matrix{T}(n, 4); w3 = Matrix{T}(n, 4)
+    phiv_caches = (Vector{T}(m), Matrix{T}(m, m), Matrix{T}(m + 3, m + 3), Matrix{T}(m, 4))
+    KsCache = (w1_half, w1, w2, w3, phiv_caches)
+  else
+    Ks = nothing
+    KsCache = nothing
+    A = f.f1
+    if isa(A, DiffEqArrayOperator)
+      _A = A.A * A.α.coeff
+    else
+      _A = full(A)
+    end
+    ops = expRK_operators(alg, dt, _A)
+  end
+  ETDRK3Cache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),
+    zeros(rate_prototype),zeros(rate_prototype),Jcache,ops,Ks,KsCache)
+end
+
+struct ETDRK4Cache{uType,rateType,JType,opType,KsType,KsCacheType} <: ExpRKCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  rtmp::rateType
+  Au::rateType
+  F2::rateType
+  F3::rateType
+  F4::rateType
+  Jcache::JType
+  ops::opType
+  Ks::KsType
+  KsCache::KsCacheType
+end
+
+function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  if isa(f, SplitFunction)
+    Jcache = nothing
+  else
+    # TODO: sparse Jacobian support
+    Jcache = Matrix{eltype(u)}(length(u), length(u))
+  end
+  tmp = similar(u)
+  rtmp = zeros(rate_prototype); Au = zeros(rate_prototype)
+  F2 = zeros(rate_prototype); F3 = zeros(rate_prototype); F4 = zeros(rate_prototype)
+  if alg.krylov
+    ops = nothing # no caching
+    n = length(u)
+    m = min(alg.m, length(u))
+    T = eltype(u)
+    Ks = KrylovSubspace{T}(n, m)
+    w1_half = Matrix{T}(n, 2); w2_half = Matrix{T}(n, 2)
+    w1 = Matrix{T}(n, 4); w2 = Matrix{T}(n, 4); w3 = Matrix{T}(n, 4); w4 = Matrix{T}(n, 4)
+    phiv_caches = (Vector{T}(m), Matrix{T}(m, m), Matrix{T}(m + 3, m + 3), Matrix{T}(m, 4))
+    KsCache = (w1_half, w2_half, w1, w2, w3, w4, phiv_caches)
+  else
+    Ks = KsCache = nothing
+    A = f.f1
+    if isa(A, DiffEqArrayOperator)
+      L = A.A .* A.α.coeff # has special handling if A.A is Diagonal
+    else
+      L = full(A)
+    end
+    ops = expRK_operators(alg, dt, L)
+  end
+  ETDRK4Cache(u,uprev,tmp,rtmp,Au,F2,F3,F4,Jcache,ops,Ks,KsCache)
+end
+
+u_cache(c::ETDRK4Cache) = ()
+du_cache(c::ETDRK4Cache) = (c.k,c.fsalfirst,c.rtmp)
+
+####################################
+# Multistep exponential method caches
 
 #=
   Fsal separately the linear and nonlinear part, as well as the nonlinear 
@@ -263,72 +429,3 @@ end
 # TODO: what should these be?
 u_cache(c::ETD2Cache) = ()
 du_cache(c::ETD2Cache) = (c.rtmp1,c.rtmp2)
-
-struct ETDRK4ConstantCache{matType} <: OrdinaryDiffEqConstantCache
-  E::matType # exp(hA)
-  E2::matType # exp(hA/2)
-  a::matType # h(ϕ1(hA) - 3ϕ2(hA) + 4ϕ3(hA))
-  b::matType # h(ϕ2(hA) - 2ϕ3(hA))
-  c::matType # h(-ϕ2(hA) + 4ϕ3(hA))
-  Q::matType # h/2 * ϕ1(hA/2)
-end
-
-function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  A = f.f1
-  if isa(A, DiffEqArrayOperator)
-    L = A.A .* A.α.coeff # has special handling if A.A is Diagonal
-  else
-    L = full(A)
-  end
-  P = phi(dt * L, 3)
-  Phalf = phi(dt/2 * L, 1)
-  E = P[1]
-  E2 = Phalf[1]
-  a = dt * (P[2] - 3*P[3] + 4*P[4])
-  b = dt * (P[3] - 2*P[4])
-  c = dt * (-P[3] + 4*P[4])
-  Q = dt/2 * Phalf[2]
-  ETDRK4ConstantCache(E,E2,a,b,c,Q)
-end
-
-struct ETDRK4Cache{uType,rateType,matType} <: OrdinaryDiffEqMutableCache
-  u::uType
-  uprev::uType
-  tmp::uType
-  s1::uType
-  tmp2::rateType
-  k2::rateType
-  k3::rateType
-  k4::rateType
-  E::matType # exp(hA)
-  E2::matType # exp(hA/2)
-  a::matType # h(ϕ1(hA) - 3ϕ2(hA) + 4ϕ3(hA))
-  b::matType # h(ϕ2(hA) - 2ϕ3(hA))
-  c::matType # h(-ϕ2(hA) + 4ϕ3(hA))
-  Q::matType # h/2 * ϕ1(hA/2)
-end
-
-function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  A = f.f1
-  tmp = similar(u)
-  tmp2 = zeros(rate_prototype)
-  k2 = zeros(rate_prototype); k3 = zeros(rate_prototype); k4 = zeros(rate_prototype)
-  s1 = similar(u)
-  if isa(A, DiffEqArrayOperator)
-    L = A.A .* A.α.coeff # has special handling if A.A is Diagonal
-  else
-    L = full(A)
-  end
-  P = phi(dt * L, 3)
-  Phalf = phi(dt/2 * L, 1)
-  E = P[1]
-  E2 = Phalf[1]
-  a = dt * (P[2] - 3*P[3] + 4*P[4])
-  b = dt * (P[3] - 2*P[4])
-  c = dt * (-P[3] + 4*P[4])
-  Q = dt/2 * Phalf[2]
-  ETDRK4Cache(u,uprev,tmp,s1,tmp2,k2,k3,k4,E,E2,a,b,c,Q)
-end
-
-u_cache(c::ETDRK4Cache) = ()
-du_cache(c::ETDRK4Cache) = (c.k,c.fsalfirst,c.rtmp)

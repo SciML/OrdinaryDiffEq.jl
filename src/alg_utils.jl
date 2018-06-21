@@ -14,7 +14,6 @@ get_current_isfsal(alg, cache) = isfsal(alg)
 get_current_isfsal(alg::CompositeAlgorithm, cache) = isfsal(alg.algs[cache.current])
 
 fsal_typeof(alg::OrdinaryDiffEqAlgorithm,rate_prototype) = typeof(rate_prototype)
-fsal_typeof(alg::Union{LawsonEuler,NorsettEuler,ETDRK4},rate_prototype) = ExpRKFsal{typeof(rate_prototype)}
 fsal_typeof(alg::ETD2,rate_prototype) = ETD2Fsal{typeof(rate_prototype)}
 function fsal_typeof(alg::CompositeAlgorithm,rate_prototype)
   fsal = unique(map(x->fsal_typeof(x,rate_prototype), alg.algs))
@@ -106,6 +105,8 @@ alg_order(alg::Heun) = 2
 alg_order(alg::Ralston) = 2
 alg_order(alg::LawsonEuler) = 1
 alg_order(alg::NorsettEuler) = 1
+alg_order(alg::ETDRK2) = 2
+alg_order(alg::ETDRK3) = 3
 alg_order(alg::SplitEuler) = 1
 alg_order(alg::ETD2) = 2
 alg_order(alg::ETDRK4) = 4
@@ -227,6 +228,7 @@ alg_order(alg::VCABM5) = 5
 alg_order(alg::VCABM) = 1  #dummy value
 
 alg_order(alg::ABCN2) = 2
+alg_order(alg::CNLF2) = 2
 
 alg_order(alg::AN5) = 5
 
