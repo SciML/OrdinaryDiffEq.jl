@@ -87,17 +87,18 @@ alg_extrapolates(alg::IRKN3) = true
 alg_extrapolates(alg::ABDF2) = true
 
 alg_order(alg::OrdinaryDiffEqAlgorithm) = error("Order is not defined for this algorithm")
-alg_order(alg::OrdinaryDiffEqVariableOrderAlgorithm) = 1 # dammy value
 get_current_alg_order(alg::OrdinaryDiffEqAlgorithm,cache) = alg_order(alg)
 get_current_alg_order(alg::CompositeAlgorithm,cache) = alg_order(alg.algs[cache.current])
 
 get_current_alg_order(alg::OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm,cache) = cache.order
 get_current_adaptive_order(alg::OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm,cache) = cache.order
+get_current_alg_order(alg::JVODE,cache) = get_current_adaptive_order(alg,cache)
+get_current_adaptive_order(alg::JVODE,cache::OrdinaryDiffEqConstantCache) = cache.order
+get_current_adaptive_order(alg::JVODE,cache::OrdinaryDiffEqMutableCache) = cache.const_cache.order
 
 alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
 get_current_adaptive_order(alg::OrdinaryDiffEqAlgorithm,cache) = alg_adaptive_order(alg)
 get_current_adaptive_order(alg::CompositeAlgorithm,cache) = alg_adaptive_order(alg.algs[cache.current])
-get_current_adaptive_order(alg::JVODE,cache) = get_current_alg_order(alg, cache)
 
 alg_order(alg::FunctionMap) = 0
 alg_order(alg::Euler) = 1
@@ -231,6 +232,7 @@ alg_order(alg::ABCN2) = 2
 alg_order(alg::CNLF2) = 2
 
 alg_order(alg::AN5) = 5
+alg_order(alg::JVODE) = 1  #dummy value
 
 alg_order(alg::ABDF2) = 2
 

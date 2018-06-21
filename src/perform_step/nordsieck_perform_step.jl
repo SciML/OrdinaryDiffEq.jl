@@ -17,13 +17,13 @@ end
   @unpack z,l,m,c_LTE,tau,tsit5tab = cache
   # handle callbacks, rewind back to order one.
   if integrator.u_modified
-    cache.step = 1
+    cache.order = 1
   end
   # Nordsieck form needs to build the history vector
-  if cache.step == 1
+  if cache.order == 1
     # Start the Nordsieck vector in one shot!
     perform_step!(integrator, tsit5tab, repeat_step)
-    cache.step = 4
+    cache.order = 4
     z[1] = integrator.uprev
     z[2] = integrator.k[1]*dt
     z[3] = ode_interpolant(t,dt,nothing,nothing,integrator.k,tsit5tab,nothing,Val{2})*dt^2/2
@@ -35,7 +35,7 @@ end
     cache.Δ = integrator.u - integrator.uprev
     update_nordsieck_vector!(cache)
     if integrator.opts.adaptive && integrator.EEst >= one(integrator.EEst)
-      cache.step = 1
+      cache.order = 1
     end
   else
     # Reset time
@@ -71,7 +71,7 @@ end
     end
 
     # Correct Nordsieck vector
-    cache.step = min(cache.step+1, 5)
+    cache.order = 5
     update_nordsieck_vector!(cache)
 
     ################################### Finalize
@@ -102,14 +102,14 @@ end
   @unpack z,l,m,c_LTE,tau, = const_cache
   # handle callbacks, rewind back to order one.
   if integrator.u_modified
-    const_cache.step = 1
+    const_cache.order = 1
   end
   # Nordsieck form needs to build the history vector
-  if const_cache.step == 1
+  if const_cache.order == 1
     ## Start the Nordsieck vector in two shots!
     perform_step!(integrator, tsit5cache, repeat_step)
     copy!(tmp, integrator.u)
-    const_cache.step = 4
+    const_cache.order = 4
     @. z[1] = integrator.uprev
     @. z[2] = integrator.k[1]*dt
     ode_interpolant!(z[3],t,dt,nothing,nothing,integrator.k,tsit5cache,nothing,Val{2})
@@ -124,7 +124,7 @@ end
     @. const_cache.Δ = integrator.u - integrator.uprev
     update_nordsieck_vector!(cache)
     if integrator.opts.adaptive && integrator.EEst >= one(integrator.EEst)
-      const_cache.step = 1
+      const_cache.order = 1
     end
   else
     # Reset time
@@ -161,7 +161,7 @@ end
     end
 
     # Correct Nordsieck vector
-    const_cache.step = min(const_cache.step+1, 5)
+    const_cache.order = 5
     update_nordsieck_vector!(cache)
 
     ################################### Finalize
@@ -190,7 +190,7 @@ end
   @unpack z,l,m,c_LTE,tau,tsit5tab = cache
   # handle callbacks, rewind back to order one.
   if integrator.u_modified || integrator.iter == 1
-    cache.step = 1
+    cache.order = 1
     z[1] = integrator.uprev
     z[2] = f(uprev, p, t)*dt
     tau[1] = dt
@@ -205,7 +205,7 @@ end
   integrator.k[1] = z[2]/dt
   # Perform 5th order Adams method in Nordsieck form
   perform_predict!(cache)
-  cache.step = min(cache.nextorder, 12)
+  cache.order = min(cache.nextorder, 12)
   calc_coeff!(cache)
   isucceed = nlsolve_functional!(integrator, cache)
   if !isucceed
@@ -220,7 +220,7 @@ end
 
   ################################### Finalize
   cache.n_wait -= 1
-  if nordsieck_change_order(cache, 1) && cache.step != 12
+  if nordsieck_change_order(cache, 1) && cache.order != 12
     cache.z[end] = cache.Δ
     cache.prev_𝒟 = cache.c_𝒟
   end
@@ -261,7 +261,7 @@ end
   @unpack z,l,m,c_LTE,tau, = const_cache
   # handle callbacks, rewind back to order one.
   if integrator.u_modified || integrator.iter == 1
-    const_cache.step = 1
+    const_cache.order = 1
     @. z[1] = integrator.uprev
     f(z[2], uprev, p, t)
     @. z[2] = z[2]*dt
@@ -278,7 +278,7 @@ end
   @. integrator.k[1] = z[2]/dt
   # Perform 5th order Adams method in Nordsieck form
   perform_predict!(cache)
-  const_cache.step = min(const_cache.nextorder, 12)
+  const_cache.order = min(const_cache.nextorder, 12)
   calc_coeff!(cache)
   isucceed = nlsolve_functional!(integrator, cache)
   if !isucceed
@@ -293,7 +293,7 @@ end
 
   ################################### Finalize
   const_cache.n_wait -= 1
-  if nordsieck_change_order(cache, 1) && const_cache.step != 12
+  if nordsieck_change_order(cache, 1) && const_cache.order != 12
     const_cache.z[end] = const_cache.Δ
     const_cache.prev_𝒟 = const_cache.c_𝒟
   end

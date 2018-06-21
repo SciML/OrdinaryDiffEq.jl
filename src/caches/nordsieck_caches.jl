@@ -16,7 +16,7 @@ mutable struct AN5ConstantCache{zType,lType,dtType,uType,tsit5Type} <: OrdinaryD
   tsit5tab::tsit5Type
   # `η` stores the norm of `Δ`
   η::lType
-  step::Int
+  order::Int
 end
 
 function AN5ConstantCache(u, uprev, rate_prototype, uBottomEltypeNoUnits, tTypeNoUnits, dt)
@@ -97,7 +97,7 @@ mutable struct JVODEConstantCache{zType,lType,dtType,uType,tsit5Type,etaType} <:
   # `Tsit5` for the first step
   tsit5tab::tsit5Type
   # same with `order` or `q`
-  step::Int
+  order::Int
   nextorder::Int
   # number of steps to take before considering to change order
   n_wait::Int
@@ -166,5 +166,3 @@ function alg_cache(alg::JVODE,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   const_cache.Δ = utilde
   JVODECache(u,uprev,fsalfirst,utilde,tmp,ratetmp,atmp,const_cache,tsit5cache)
 end
-get_current_alg_order(alg::JVODE,cache::JVODEConstantCache) = cache.step
-get_current_alg_order(alg::JVODE,cache::JVODECache) = cache.const_cache.step

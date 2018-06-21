@@ -48,7 +48,6 @@ module OrdinaryDiffEq
 
   include("misc_utils.jl")
   include("algorithms.jl")
-  include("alg_utils.jl")
 
   include("caches/basic_caches.jl")
   include("caches/low_order_rk_caches.jl")
@@ -67,6 +66,8 @@ module OrdinaryDiffEq
   include("caches/adams_bashforth_moulton_caches.jl")
   include("caches/nordsieck_caches.jl")
   include("caches/bdf_caches.jl")
+
+  include("alg_utils.jl")
 
   include("tableaus/low_order_rk_tableaus.jl")
   include("tableaus/high_order_rk_tableaus.jl")

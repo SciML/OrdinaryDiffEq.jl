@@ -32,9 +32,8 @@ function calc_coeff!(cache::T) where T
     isconst = T <: OrdinaryDiffEqConstantCache
     isconst || (cache = cache.const_cache)
     isvarorder = nordsieck_change_order(cache, 1)
-    @unpack m, l, tau = cache
+    @unpack m, l, tau, order = cache
     dtsum = dt = tau[1]
-    order = cache.step
     if order == 1
       l[1] = l[2] = cache.c_LTE₋₁ = cache.c_𝒟 = 1
       cache.c_LTE = 1//2
@@ -98,25 +97,25 @@ function perform_predict!(cache::T, rewind=false) where T
   @inbounds begin
     isconst = T <: OrdinaryDiffEqConstantCache
     isconst || (cache = cache.const_cache)
-    @unpack z,step = cache
+    @unpack z, order = cache
     # This can be parallelized
     if !rewind
       if isconst
-        for i in 1:step, j in step:-1:i
+        for i in 1:order, j in order:-1:i
           z[j] = z[j] + z[j+1]
         end
       else
-        for i in 1:step, j in step:-1:i
+        for i in 1:order, j in order:-1:i
           @. z[j] = z[j] + z[j+1]
         end
       end # endif const cache
     else
       if isconst
-        for i in 1:step, j in step:-1:i
+        for i in 1:order, j in order:-1:i
           z[j] = z[j] - z[j+1]
         end
       else
-        for i in 1:step, j in step:-1:i
+        for i in 1:order, j in order:-1:i
           @. z[j] = z[j] - z[j+1]
         end
       end # endif const cache
@@ -131,14 +130,14 @@ function update_nordsieck_vector!(cache::T) where T
   @inbounds begin
     isconst = T <: OrdinaryDiffEqConstantCache
     if isconst
-      @unpack z,Δ,l,step = cache
-      for i in 1:step+1
+      @unpack z,Δ,l,order = cache
+      for i in 1:order+1
         z[i] = muladd.(l[i], Δ, z[i])
       end
       ispreparevarorder && ( z[end] = Δ )
     else
-      @unpack z,Δ,l,step = cache.const_cache
-      for i in 1:step+1
+      @unpack z,Δ,l,order = cache.const_cache
+      for i in 1:order+1
         @. z[i] = muladd(l[i], Δ, z[i])
       end
       ispreparevarorder && ( z[end] .= Δ )
@@ -205,8 +204,7 @@ end
 function nordsieck_rescale!(cache::T, rewind=false) where T
   isconstcache = T <: OrdinaryDiffEqConstantCache
   isconstcache || ( cache = cache.const_cache )
-  @unpack z, tau, step = cache
-  order = step
+  @unpack z, tau, order = cache
   eta = rewind ? tau[2]/tau[1] : tau[1]/tau[2]
   factor = eta
   for i in 2:order+1
@@ -245,8 +243,7 @@ end
 function nordsieck_order_change(cache::T, dorder) where T
   isconstcache = T <: OrdinaryDiffEqConstantCache
   isconstcache || ( cache = cache.const_cache )
-  @unpack step, tau = cache
-  order = step
+  @unpack order, tau = cache
   # WIP: uncomment when finished
   #@inbound begin
   begin

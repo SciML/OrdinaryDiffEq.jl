@@ -1,6 +1,5 @@
 abstract type OrdinaryDiffEqAlgorithm <: AbstractODEAlgorithm end
 abstract type OrdinaryDiffEqAdaptiveAlgorithm <: OrdinaryDiffEqAlgorithm end
-abstract type OrdinaryDiffEqVariableOrderAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
 abstract type OrdinaryDiffEqCompositeAlgorithm <: OrdinaryDiffEqAlgorithm end
 
 abstract type OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD} <: OrdinaryDiffEqAdaptiveAlgorithm end
@@ -210,7 +209,7 @@ Base.@pure CNLF2(;chunk_size=0,autodiff=true,diff_type=Val{:central},
 
 # Adams/BDF methods in Nordsieck forms
 struct AN5   <: OrdinaryDiffEqAdaptiveAlgorithm end
-struct JVODE <: OrdinaryDiffEqVariableOrderAlgorithm
+struct JVODE <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm
   algorithm::Symbol
 end
 Base.@pure JVODE(;algorithm=:Adams) = JVODE(algorithm)
