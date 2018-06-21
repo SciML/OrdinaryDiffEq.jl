@@ -1,8 +1,3 @@
-const BIAS1 = 6
-const BIAS2 = 6
-const BIAS3 = 10
-const ADDON = 1e-6
-
 # This function computes the integral, from -1 to 0, of a polynomial
 # `P(x)` from the coefficients of `P` with an offset `k`.
 function ∫₋₁⁰dx(a, deg, k)
@@ -332,8 +327,10 @@ function choose_η!(integrator, cache::T) where T
 end
 
 function stepsize_η!(integrator, cache::T, order) where T
+  bias2 = integrator.alg.bias2
+  addon = integrator.alg.addon
   L = order+1
-  cache.η = inv( (BIAS2*integrator.EEst)^inv(L) + ADDON )
+  cache.η = inv( (bias2*integrator.EEst)^inv(L) + addon )
   return cache.η
 end
 
@@ -342,6 +339,8 @@ function stepsize_η₊₁!(integrator, cache::T, order) where T
   isconstcache || ( atmp = cache.atmp; cache = cache.const_cache )
   @unpack uprev, u = integrator
   @unpack z, c_LTE₊₁, tau, c_𝒟  = cache
+  bias3 = integrator.alg.bias3
+  addon = integrator.alg.addon
   q = order
   cache.η₊₁ = 0
   qmax = length(z)-1
@@ -357,7 +356,7 @@ function stepsize_η₊₁!(integrator, cache::T, order) where T
       calculate_residuals!(atmp, const_cache.Δ, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
     end
     dup = abs(integrator.opts.internalnorm(atmp) * c_LTE₊₁)
-    cache.η₊₁ = inv( (BIAS3*dup)^inv(L+1) + ADDON )
+    cache.η₊₁ = inv( (bias3*dup)^inv(L+1) + addon )
   end
   return cache.η₊₁
 end
@@ -367,6 +366,8 @@ function stepsize_η₋₁!(integrator, cache::T, order) where T
   isconstcache || ( atmp = cache.atmp; cache = cache.const_cache )
   @unpack uprev, u = integrator
   @unpack z, c_LTE₋₁ = cache
+  bias1 = integrator.alg.bias2
+  addon = integrator.alg.addon
   q = order
   cache.η₋₁ = 0
   if q > 1
@@ -376,7 +377,7 @@ function stepsize_η₋₁!(integrator, cache::T, order) where T
       calculate_residuals!(atmp, const_cache.Δ, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
     end
     approx = integrator.opts.internalnorm(atmp) * c_LTE₋₁
-    cache.η₋₁ = inv( (BIAS1*approx)^inv(q) + ADDON )
+    cache.η₋₁ = inv( (bias1*approx)^inv(q) + addon )
   end
   return cache.η₋₁
 end

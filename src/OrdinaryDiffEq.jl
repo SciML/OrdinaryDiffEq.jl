@@ -180,7 +180,7 @@ module OrdinaryDiffEq
 
   export ABCN2, CNLF2
 
-  export AN5, JVODE
+  export AN5, JVODE, JVODE_Adams
 
   export ABDF2
 
