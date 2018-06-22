@@ -111,6 +111,7 @@ mutable struct JVODEConstantCache{zType,lType,dtsType,dType,tsit5Type,etaType} <
   Δ::dType
   # `Tsit5` for the first step
   tsit5tab::tsit5Type
+  L::Int
   # same with `order` or `q`
   order::Int
   nextorder::Int
@@ -118,6 +119,7 @@ mutable struct JVODEConstantCache{zType,lType,dtsType,dType,tsit5Type,etaType} <
   n_wait::Int
   # `η` is `dtₙ₊₁/dtₙ`
   η  ::etaType
+  ηq ::etaType
   η₊₁::etaType
   η₋₁::etaType
   maxη::etaType
@@ -134,7 +136,7 @@ function alg_cache(alg::JVODE,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   η = zero(dt/dt)
   JVODEConstantCache(z,l,m,
                      constant,constant,constant,constant,constant,constant,
-                     dts,Δ,tsit5tab,1,1,2,η,η,η,η)
+                     dts,Δ,tsit5tab,2,1,1,2,η,η,η,η,η)
 end
 
 mutable struct JVODECache{uType,rateType,zType,lType,dtsType,dType,etaType,tsit5Type} <: OrdinaryDiffEqMutableCache
@@ -168,6 +170,7 @@ mutable struct JVODECache{uType,rateType,zType,lType,dtsType,dType,etaType,tsit5
   atmp::dType
   # `Tsit5` for the first step
   tsit5cache::tsit5Type
+  L::Int
   # same with `order` or `q`
   order::Int
   nextorder::Int
@@ -175,6 +178,7 @@ mutable struct JVODECache{uType,rateType,zType,lType,dtsType,dType,etaType,tsit5
   n_wait::Int
   # `η` is `dtₙ₊₁/dtₙ`
   η  ::etaType
+  ηq ::etaType
   η₊₁::etaType
   η₋₁::etaType
   maxη::etaType
@@ -214,5 +218,5 @@ function alg_cache(alg::JVODE,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   JVODECache(u,uprev,tmp,fsalfirst,ratetmp,
              z, l, m,
              constant,constant,constant,constant,constant,constant,
-             dts, Δ, atmp, tsit5cache, 1, 1, 2, η, η, η, η)
+             dts, Δ, atmp, tsit5cache, 2, 1, 1, 2, η, η, η, η, η)
 end

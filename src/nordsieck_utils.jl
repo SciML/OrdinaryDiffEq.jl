@@ -1,3 +1,70 @@
+function nordsieck_adjust!(integrator, cache::T) where T
+  @unpack nextorder, order = cache
+  if nextorder != order
+    # TODO: optimize?
+    nordsieck_adjust_order!(cache, nextorder-order)
+    cache.order = cache.nextorder
+    cache.L = cache.order + 1
+    cache.n_wait = cache.L
+  end
+  nordsieck_rescale!(cache)
+  return nothing
+end
+
+# TODO: SUNDIALS NLsolve handling
+
+function nordsieck_finalize!(integrator, cache::T) where T
+  isconst = T <: OrdinaryDiffEqConstantCache
+  @unpack order, dts = cache
+  update_nordsieck_vector!(cache)
+  cache.n_wait -= 1
+  if is_nordsieck_change_order(cache, 1) && cache.order != 12
+    if isconst
+      cache.z[end] = cache.Δ
+    else
+      @. cache.z[end] = cache.Δ
+    end
+    cache.prev_𝒟 = cache.c_𝒟
+  end
+end
+
+function nordsieck_prepare_next!(integrator, cache::T) where T
+  isconst = T <: OrdinaryDiffEqConstantCache
+  @unpack maxη, order, L = cache
+  # TODO: further clean up
+  @unpack bias1, bias2, bias3, addon = integrator.alg
+  if integrator.EEst > one(integrator.EEst)
+    cache.n_wait = max(2, cache.n_wait)
+    cache.nextorder = order
+    cache.η = 1
+    return nothing
+  end
+  cache.ηq = inv( (bias2*integrator.EEst)^inv(L) + addon )
+  stepsize_η!(integrator, cache, cache.order)
+  if cache.n_wait != 0
+    cache.η = cache.ηq
+    cache.nextorder = order
+    setη!(integrator, cache)
+  end
+  # On an order change (cache.n_wait == 0), we are going to compute the η for
+  # order q+1 and q-1, where η = dt_next/dt
+  cache.n_wait = 2
+  stepsize_η₊₁!(integrator, cache, order)
+  stepsize_η₋₁!(integrator, cache, order)
+  chooseη!(integrator, cache)
+  setη!(integrator, cache)
+  if isconst
+    cache.Δ = cache.c_LTE * cache.Δ
+  else
+    @. cache.Δ = cache.c_LTE * cache.Δ
+  end
+  return nothing
+end
+
+##############################################################
+# Lower level functions
+##############################################################
+
 # This function computes the integral, from -1 to 0, of a polynomial
 # `P(x)` from the coefficients of `P` with an offset `k`.
 function ∫₋₁⁰dx(a, deg, k)
@@ -25,7 +92,7 @@ function calc_coeff!(cache::T) where T
   isvode = ( T <: JVODECache || T <: JVODEConstantCache )
   @inbounds begin
     isconst = T <: OrdinaryDiffEqConstantCache
-    isvarorder = nordsieck_change_order(cache, 1)
+    isvarorder = is_nordsieck_change_order(cache, 1)
     @unpack m, l, dts, order = cache
     dtsum = dt = dts[1]
     if order == 1
@@ -135,7 +202,7 @@ function update_nordsieck_vector!(cache::T) where T
 end
 
 function nlsolve_functional!(integrator, cache::T) where T
-  @unpack f, dt, uprev, t, p = integrator
+  @unpack f, dt, t, p = integrator
   isconstcache = T <: OrdinaryDiffEqConstantCache
   @unpack z, l, c_conv, Δ = cache
   if isconstcache
@@ -209,7 +276,7 @@ function nordsieck_rewind!(cache)
   nordsieck_rescale!(cache, true)
 end
 
-function nordsieck_change_order(cache::T, n=0) where T
+function is_nordsieck_change_order(cache::T, n=0) where T
   isconstcache = T <: OrdinaryDiffEqConstantCache
   isvode = ( T <: JVODECache || T <: JVODEConstantCache )
   isvode || return false
@@ -224,7 +291,7 @@ function nordsieck_decrement_wait!(cache::T) where T
   return nothing
 end
 
-function nordsieck_order_change(cache::T, dorder) where T
+function nordsieck_adjust_order!(cache::T, dorder) where T
   isconstcache = T <: OrdinaryDiffEqConstantCache
   @unpack order, dts = cache
   # WIP: uncomment when finished
@@ -268,62 +335,56 @@ function nordsieck_order_change(cache::T, dorder) where T
 end
 
 # `η` is `dtₙ₊₁/dtₙ`
-function choose_η!(integrator, cache::T) where T
-  isconstcache = T <: OrdinaryDiffEqConstantCache
-  isvarorder = nordsieck_change_order(cache)
-  order = get_current_adaptive_order(integrator.alg, integrator.cache)
-  L = order + 1
-  ηq = stepsize_η!(integrator, cache, order)
-  # If the error test fails
-  if integrator.EEst > 1
-    cache.n_wait = max(2, cache.n_wait)
-    nordsieck_rewind!(integrator.cache)
-    cache.η = max(integrator.opts.qmin, cache.η, integrator.opts.dtmin/abs(integrator.dt))
-    return cache.η
-  end
-  if !isvarorder
-    cache.η = ηq
-  end
-  # Consider change the order
-  if isvarorder
-    cache.n_wait = 2
-    ηqm1 = stepsize_η₋₁!(integrator, cache, order)
-    ηqp1 = stepsize_η₊₁!(integrator, cache, order)
-    η = max(ηqm1, ηqp1, ηq)
+function setη!(integrator, cache::T) where T
+  if cache.η < integrator.opts.qsteady_max
+    cache.η = 1
   else
-    η = ηq
-    cache.η = η
+    # TODO: Not the same with SUNDIALS
+    ( integrator.iter == 1 || integrator.u_modified ) && ( cache.η = min(1e5, cache.η); return nothing )
+    cache.η = min(integrator.opts.qmax, max(integrator.opts.qmin, cache.η))
   end
-  ( η <= integrator.opts.qsteady_max ) && ( cache.η = 1 ; return cache.η )
-  if isvarorder
-    if η == cache.η
-      cache.nextorder = order
-    elseif η == cache.η₋₁
-      cache.η = cache.η₋₁
-      cache.nextorder = order - 1
-      cache.n_wait = L
-      nordsieck_order_change(cache, -1)
-    else
-      cache.η = cache.η₊₁
-      cache.nextorder = order + 1
-      # TODO: BDF needs a different handler
-      cache.n_wait = L
-      nordsieck_order_change(cache, 1)
-    end
+  return nothing
+end
+
+function chooseη!(integrator, cache::T) where T
+  isconst = T <: OrdinaryDiffEqConstantCache
+  @unpack ηq, η₋₁, η₊₁, order, z, Δ = cache
+  η = max(ηq, η₋₁, η₊₁)
+  if η < integrator.opts.qsteady_max
+    cache.η = 1
+    cache.nextorder = order
   end
-  ( integrator.iter == 1 || integrator.u_modified ) && return ( cache.η = min(1e5, cache.η) )
-  cache.η = min(integrator.opts.qmax, max(integrator.opts.qmin, cache.η))
-  return cache.η
+
+  if η == ηq
+    cache.η = cache.ηq
+    cache.nextorder = order
+  elseif η == η₋₁
+    cache.η = cache.η₋₁
+    cache.nextorder = order - 1
+  else
+    cache.η = cache.η₊₁
+    cache.nextorder = order + 1
+    # TODO: BDF
+    if integrator.alg.algorithm == :BDF
+      if isconst
+        z[end] = Δ
+      else
+        @. z[end] = Δ
+      end
+    end #endif BDF
+  end # endif η == ηq
+  return nothing
 end
 
 function stepsize_η!(integrator, cache, order)
   bias2 = integrator.alg.bias2
   addon = integrator.alg.addon
   L = order+1
-  cache.η = inv( (bias2*integrator.EEst)^inv(L) + addon )
-  return cache.η
+  cache.ηq = inv( (bias2*integrator.EEst)^inv(L) + addon )
+  return cache.ηq
 end
 
+# TODO: Check them
 function stepsize_η₊₁!(integrator, cache::T, order) where T
   isconstcache = T <: OrdinaryDiffEqConstantCache
   isconstcache || ( atmp = cache.atmp )

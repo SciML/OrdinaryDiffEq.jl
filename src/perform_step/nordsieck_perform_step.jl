@@ -236,6 +236,10 @@ end
       dts[13] = tmp
     end
   end
+
+  ################################### Finalize
+  nordsieck_finalize!(integrator, cache)
+  nordsieck_prepare_next!(integrator, cache)
   return nothing
 end
 
@@ -272,21 +276,19 @@ end
   end
   dts[1] = dt
   # Rescale
-  dt != dts[2] && nordsieck_rescale!(cache)
+  dt != dts[2] && nordsieck_adjust!(integrator, cache)
   @. integrator.k[1] = z[2]/dt
   perform_predict!(cache)
   cache.order = min(cache.nextorder, 12)
   calc_coeff!(cache)
   isucceed = nlsolve_functional!(integrator, cache)
+  # TODO: Handle NLsolve better
   if !isucceed
     integrator.force_stepfail = true
     # rewind Nordsieck vector
     nordsieck_rewind!(cache)
     return nothing
   end
-
-  # Correct Nordsieck vector
-  update_nordsieck_vector!(cache)
 
   ################################### Error estimation
 
@@ -298,15 +300,11 @@ end
         dts[i] = dts[i+1]
       end
       dts[13] = tmp
-    else
-      cache.n_wait -= 1
     end
   end
 
   ################################### Finalize
-  if nordsieck_change_order(cache, 1) && cache.order != 12
-    cache.z[end] = cache.Δ
-    cache.prev_𝒟 = cache.c_𝒟
-  end
+  nordsieck_finalize!(integrator, cache)
+  nordsieck_prepare_next!(integrator, cache)
   return nothing
 end
