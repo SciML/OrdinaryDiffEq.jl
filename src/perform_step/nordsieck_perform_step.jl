@@ -196,15 +196,14 @@ end
   end
   # Reset time
   tmp = dts[13]
-  for i in 12:-1:1
+  for i = 12:-1:1
     dts[i+1] = dts[i]
   end
   dts[1] = dt
-  dt != dts[2] && nordsieck_rescale!(cache)
+  dt != dts[2] && nordsieck_adjust!(integrator, cache)
   integrator.k[1] = z[2]/dt
-  # Perform 5th order Adams method in Nordsieck form
+
   perform_predict!(cache)
-  cache.order = min(cache.nextorder, 12)
   calc_coeff!(cache)
   isucceed = nlsolve_functional!(integrator, cache)
   if !isucceed
@@ -214,17 +213,6 @@ end
     return nothing
   end
 
-  # Correct Nordsieck vector
-  update_nordsieck_vector!(cache)
-
-  ################################### Finalize
-  cache.n_wait -= 1
-  if nordsieck_change_order(cache, 1) && cache.order != 12
-    cache.z[end] = cache.Δ
-    cache.prev_𝒟 = cache.c_𝒟
-  end
-
-  integrator.k[2] = cache.z[2]/dt
   ################################### Error estimation
   if integrator.opts.adaptive
     atmp = calculate_residuals(cache.Δ, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
@@ -240,6 +228,7 @@ end
   ################################### Finalize
   nordsieck_finalize!(integrator, cache)
   nordsieck_prepare_next!(integrator, cache)
+  integrator.k[2] = cache.z[2]/dt
   return nothing
 end
 
@@ -269,17 +258,17 @@ end
     @. z[2] = z[2]*dt
     dts[1] = dt
   end
-  tmp = dts[13]
   # Reset time
-  for i in endof(dts):-1:2
-    dts[i] = dts[i-1]
+  tmp = dts[13]
+  for i = 12:-1:1
+    dts[i+1] = dts[i]
   end
   dts[1] = dt
   # Rescale
   dt != dts[2] && nordsieck_adjust!(integrator, cache)
   @. integrator.k[1] = z[2]/dt
+
   perform_predict!(cache)
-  cache.order = min(cache.nextorder, 12)
   calc_coeff!(cache)
   isucceed = nlsolve_functional!(integrator, cache)
   # TODO: Handle NLsolve better
@@ -304,7 +293,9 @@ end
   end
 
   ################################### Finalize
+
   nordsieck_finalize!(integrator, cache)
   nordsieck_prepare_next!(integrator, cache)
+  @. integrator.k[2] = cache.z[2]/dt
   return nothing
 end

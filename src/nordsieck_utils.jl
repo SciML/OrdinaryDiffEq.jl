@@ -34,17 +34,19 @@ function nordsieck_prepare_next!(integrator, cache::T) where T
   # TODO: further clean up
   @unpack bias1, bias2, bias3, addon = integrator.alg
   if integrator.EEst > one(integrator.EEst)
+    nordsieck_rewind!(cache)
     cache.n_wait = max(2, cache.n_wait)
     cache.nextorder = order
-    cache.η = 1
+    cache.η = inv( (bias2*integrator.EEst)^inv(L) + addon )
     return nothing
   end
   cache.ηq = inv( (bias2*integrator.EEst)^inv(L) + addon )
   stepsize_η!(integrator, cache, cache.order)
-  if cache.n_wait != 0
+  if !is_nordsieck_change_order(cache)
     cache.η = cache.ηq
     cache.nextorder = order
     setη!(integrator, cache)
+    return nothing
   end
   # On an order change (cache.n_wait == 0), we are going to compute the η for
   # order q+1 and q-1, where η = dt_next/dt
@@ -53,6 +55,7 @@ function nordsieck_prepare_next!(integrator, cache::T) where T
   stepsize_η₋₁!(integrator, cache, order)
   chooseη!(integrator, cache)
   setη!(integrator, cache)
+  # TODO: Maybe not here
   if isconst
     cache.Δ = cache.c_LTE * cache.Δ
   else
@@ -387,7 +390,7 @@ end
 # TODO: Check them
 function stepsize_η₊₁!(integrator, cache::T, order) where T
   isconstcache = T <: OrdinaryDiffEqConstantCache
-  isconstcache || ( atmp = cache.atmp )
+  isconstcache || ( @unpack atmp, ratetmp = cache )
   @unpack uprev, u = integrator
   @unpack z, c_LTE₊₁, dts, c_𝒟  = cache
   bias3 = integrator.alg.bias3
@@ -398,13 +401,13 @@ function stepsize_η₊₁!(integrator, cache::T, order) where T
   L = q+1
   if q != qmax
     cache.prev_𝒟 == 0 && return cache.η₊₁
-    cquot = (c_𝒟 / cache.prev_𝒟) * (dts[1]/dts[3])^L
+    cquot = (c_𝒟 / cache.prev_𝒟) * (dts[1]/dts[2])^L
     if isconstcache
       atmp = muladd.(-cquot, z[end], cache.Δ)
       atmp = calculate_residuals(atmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
     else
-      @. atmp = muladd(-cquot, z[end], cache.Δ)
-      calculate_residuals!(atmp, cache.Δ, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      @. ratetmp = muladd(-cquot, z[end], cache.Δ)
+      calculate_residuals!(atmp, ratetmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
     end
     dup = integrator.opts.internalnorm(atmp) * c_LTE₊₁
     cache.η₊₁ = inv( (bias3*dup)^inv(L+1) + addon )
