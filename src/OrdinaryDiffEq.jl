@@ -161,7 +161,7 @@ module OrdinaryDiffEq
 
   export GenericIIF1, GenericIIF2
 
-  export LawsonEuler, NorsettEuler, ETD1, ETDRK2, ETDRK3, ETDRK4, ETD2
+  export LawsonEuler, NorsettEuler, ETD1, ETDRK2, ETDRK3, ETDRK4, HochOst4, ETD2
 
   export SymplecticEuler, VelocityVerlet, VerletLeapfrog, PseudoVerletLeapfrog,
          McAte2, Ruth3, McAte3, CandyRoz4, McAte4, McAte42, McAte5,

@@ -678,7 +678,7 @@ struct GenericIIF2{F} <: OrdinaryDiffEqExponentialAlgorithm
 end
 Base.@pure GenericIIF2(;nlsolve=NLSOLVEJL_SETUP()) = GenericIIF2{typeof(nlsolve)}(nlsolve)
 
-for Alg in [:LawsonEuler, :NorsettEuler, :ETDRK2, :ETDRK3, :ETDRK4]
+for Alg in [:LawsonEuler, :NorsettEuler, :ETDRK2, :ETDRK3, :ETDRK4, :HochOst4]
   @eval struct $Alg <: OrdinaryDiffEqExponentialAlgorithm
     krylov::Bool
     m::Int

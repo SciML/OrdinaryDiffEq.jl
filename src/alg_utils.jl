@@ -108,9 +108,10 @@ alg_order(alg::LawsonEuler) = 1
 alg_order(alg::NorsettEuler) = 1
 alg_order(alg::ETDRK2) = 2
 alg_order(alg::ETDRK3) = 3
+alg_order(alg::ETDRK4) = 4
+alg_order(alg::HochOst4) = 4
 alg_order(alg::SplitEuler) = 1
 alg_order(alg::ETD2) = 2
-alg_order(alg::ETDRK4) = 4
 
 alg_order(alg::SymplecticEuler) = 1
 alg_order(alg::VelocityVerlet) = 2

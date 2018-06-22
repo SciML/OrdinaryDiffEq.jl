@@ -422,6 +422,149 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
   # integrator.k is automatically set due to aliasing
 end
 
+function perform_step!(integrator, cache::HochOst4ConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,f,p = integrator
+  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+
+  Au = A * uprev
+  F1 = integrator.fsalfirst
+  halfdt = dt/2
+  if alg.krylov
+    kwargs = [(:m, min(alg.m, size(A,1))), (:norm, integrator.opts.internalnorm), (:iop, alg.iop)]
+    # Krylov on F1 (first column)
+    w1_half = phiv(halfdt, A, F1, 3; kwargs...)
+    w1 =      phiv(dt,     A, F1, 3; kwargs...)
+    U2 = uprev + halfdt * w1_half[:, 2]
+    F2 = _compute_nl(f, U2, p, t + halfdt, A) + Au
+    # Krylov on F2 (second column)
+    w2_half = phiv(halfdt, A, F2, 3; kwargs...)
+    w2 =      phiv(dt,     A, F2, 3; kwargs...)
+    U3 = uprev + dt * (0.5w1_half[:,2] - w1_half[:,3] + w2_half[:,3])
+    F3 = _compute_nl(f, U3, p, t + halfdt, A) + Au
+    # Krylov on F3 (third column)
+    w3_half = phiv(halfdt, A, F3, 3; kwargs...)
+    w3 =      phiv(dt,     A, F3, 3; kwargs...)
+    U4 = uprev + dt * (w1[:,2] - 2w1[:,3] + w2[:,3] + w3[:,3])
+    F4 = _compute_nl(f, U4, p, t + dt, A) + Au
+    # Krylov on F4 (fourth column)
+    w4_half = phiv(halfdt, A, F4, 3; kwargs...)
+    w4 =      phiv(dt,     A, F4, 3; kwargs...)
+    U5 = uprev + dt * (0.5w1_half[:,2] - 0.75w1_half[:,3] + 0.5w1_half[:,4] + w1[:,4] - 0.25w1[:,3] + 
+                       0.5w2_half[:,3] - w2[:,4] + 0.25w2[:,3] - 0.5w2_half[:,4] + 
+                       0.5w3_half[:,3] - w2[:,4] + 0.25w3[:,3] - 0.5w3_half[:,4] + 
+                       w4[:,4] - 0.25w4[:,3] - 0.25w4_half[:,3] + 0.5w4_half[:,4])
+    F5 = _compute_nl(f, U5, p, t + halfdt, A) + Au
+    # Krylov on F5 (fifth column)
+    w5 =      phiv(dt,     A, F5, 3; kwargs...)
+    # update u
+    u = uprev + dt * (w1[:,2] - 3w1[:,3] + 4w1[:,4] - w4[:,3] + 4w4[:,4] + 4w5[:,3] - 8w5[:,4])
+  else
+    A21, A31, A32, A41, A42, A51, A52, A54, B1, B4, B5 = cache.ops
+    # stage 1 (fsaled)
+    # stage 2
+    U2 = uprev + dt * (A21 * F1)
+    F2 = f.f2(U2, p, t + halfdt) + Au
+    # stage 3
+    U3 = uprev + dt * (A31 * F1 + A32 * F2)
+    F3 = f.f2(U3, p, t + halfdt) + Au
+    # stage 4
+    U4 = uprev + dt * (A41 * F1 + A42 * (F2 + F3))
+    F4 = f.f2(U4, p, t + dt) + Au
+    # stage 5
+    U5 = uprev + dt * (A51 * F1 + A52 * (F2 + F3) + A54 * F4)
+    F5 = f.f2(U5, p, t + halfdt) + Au
+    # update u
+    u = uprev + dt * (B1 * F1 + B4 * F4 + B5 * F5)
+  end
+
+  # Update integrator state
+  integrator.fsallast = f(u, p, t + dt)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end
+
+function perform_step!(integrator, cache::HochOst4Cache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack tmp,rtmp,rtmp2,Au,F2,F3,F4,F5,Jcache,Ks,KsCache = cache
+  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+
+  F1 = integrator.fsalfirst
+  A_mul_B!(Au, A, uprev)
+  halfdt = dt/2
+  if alg.krylov
+    w1_half, w2_half, w3_half, w4_half, w1, w2, w3, w4, w5, phiv_caches = KsCache
+    kwargs = [(:m, min(alg.m, size(A,1))), (:norm, integrator.opts.internalnorm), (:iop, alg.iop)]
+    # Krylov on F1 (first column)
+    arnoldi!(Ks, A, F1; kwargs...)
+    phiv!(w1_half, halfdt, Ks, 3; caches=phiv_caches)
+    phiv!(w1,          dt, Ks, 3; caches=phiv_caches)
+    @muladd @. @views tmp = uprev + halfdt * w1_half[:, 2] # tmp is U2
+    _compute_nl!(F2, f, tmp, p, t + halfdt, A, rtmp); F2 .+= Au
+    # Krylov on F2 (second column)
+    arnoldi!(Ks, A, F2; kwargs...)
+    phiv!(w2_half, halfdt, Ks, 3; caches=phiv_caches)
+    phiv!(w2,          dt, Ks, 3; caches=phiv_caches)
+    @muladd @. @views tmp = uprev + dt * (0.5w1_half[:,2] - w1_half[:,3] + w2_half[:,3]) # tmp is U3
+    _compute_nl!(F3, f, tmp, p, t + halfdt, A, rtmp); F3 .+= Au
+    # Krylov on F3 (third column)
+    arnoldi!(Ks, A, F3; kwargs...)
+    phiv!(w3_half, halfdt, Ks, 3; caches=phiv_caches)
+    phiv!(w3,          dt, Ks, 3; caches=phiv_caches)
+    @muladd @. @views tmp = uprev + dt * (w1[:,2] - 2w1[:,3] + w2[:,3] + w3[:,3]) # tmp is U4
+    _compute_nl!(F4, f, tmp, p, t + dt, A, rtmp); F4 .+= Au
+    # Krylov on F4 (fourth column)
+    arnoldi!(Ks, A, F4; kwargs...)
+    phiv!(w4_half, halfdt, Ks, 3; caches=phiv_caches)
+    phiv!(w4,          dt, Ks, 3; caches=phiv_caches)
+    @muladd @. @views tmp = uprev + dt * (
+      0.5w1_half[:,2] - 0.75w1_half[:,3] + 0.5w1_half[:,4] + w1[:,4] - 0.25w1[:,3] + 
+      0.5w2_half[:,3] - w2[:,4] + 0.25w2[:,3] - 0.5w2_half[:,4] + 
+      0.5w3_half[:,3] - w2[:,4] + 0.25w3[:,3] - 0.5w3_half[:,4] + 
+      w4[:,4] - 0.25w4[:,3] - 0.25w4_half[:,3] + 0.5w4_half[:,4]) # tmp is U5
+    _compute_nl!(F5, f, tmp, p, t + dt, A, rtmp); F5 .+= Au
+    # Krylov on F5 (fifth column)
+    arnoldi!(Ks, A, F5; kwargs...)
+    phiv!(w5, dt, Ks, 3; caches=phiv_caches)
+    # update u
+    @muladd @. @views rtmp = w1[:,2] - 3w1[:,3] + 4w1[:,4] - w4[:,3] + 4w4[:,4] + 4w5[:,3] - 8w5[:,4]
+    @muladd @. u = uprev + dt * rtmp
+  else
+    A21, A31, A32, A41, A42, A51, A52, A54, B1, B4, B5 = cache.ops
+    # stage 1 (fsaled)
+    # stage 2
+    A_mul_B!(rtmp, A21, F1)
+    @muladd @. tmp = uprev + dt * rtmp # tmp is U2
+    f.f2(F2, tmp, p, t + halfdt); F2 .+= Au
+    # stage 3
+    A_mul_B!(rtmp, A31, F1); A_mul_B!(rtmp2, A32, F2); rtmp .+= rtmp2
+    @muladd @. tmp = uprev + dt * rtmp # tmp is U3
+    f.f2(F3, tmp, p, t + halfdt); F3 .+= Au
+    # stage 4
+    F2 .+= F3 # F2 now stores F2 + F3
+    A_mul_B!(rtmp, A41, F1); A_mul_B!(rtmp2, A42, F2); rtmp .+= rtmp2
+    @muladd @. tmp = uprev + dt * rtmp # tmp is U4
+    f.f2(F4, tmp, p, t + dt); F4 .+= Au
+    # stage 5
+    A_mul_B!(rtmp, A51, F1)
+    A_mul_B!(rtmp2, A52, F2); rtmp .+= rtmp2
+    A_mul_B!(rtmp2, A54, F4); rtmp .+= rtmp2
+    @muladd @. tmp = uprev + dt * rtmp # tmp is U5
+    f.f2(F5, tmp, p, t + halfdt); F5 .+= Au
+    # update u
+    A_mul_B!(rtmp, B1, F1)
+    A_mul_B!(rtmp2, B4, F4); rtmp .+= rtmp2
+    A_mul_B!(rtmp2, B5, F5); rtmp .+= rtmp2
+    @muladd @. u = uprev + dt * rtmp
+  end
+
+  # Update integrator state
+  f(integrator.fsallast, u, p, t + dt)
+  # integrator.k is automatically set due to aliasing
+end
+
 ######################################################
 # Multistep exponential integrators
 function initialize!(integrator,cache::ETD2ConstantCache)
