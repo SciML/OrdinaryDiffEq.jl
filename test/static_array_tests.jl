@@ -1,4 +1,4 @@
-using StaticArrays, Base.Test
+using StaticArrays, Test
 using OrdinaryDiffEq
 
 @testset "Static Array Tests" begin

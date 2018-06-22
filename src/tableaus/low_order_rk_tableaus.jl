@@ -17,7 +17,7 @@ constructBogakiShampine3()
 
 Constructs the tableau object for the Bogakai-Shampine Order 2/3 method.
 """
-Base.@pure function BS3ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function BS3ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   a21 = T(0.5)
   a32 = T(0.75)
   a41 = T(0.2222222222222222)
@@ -80,7 +80,7 @@ struct OwrenZen3ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   r32::T
 end
 
-Base.@pure function OwrenZen3ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function OwrenZen3ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   a21 = T(0.5217391304347826)
   a31 = T(-0.18133333333333335)
   a32 = T(0.9813333333333333)
@@ -104,7 +104,7 @@ Base.@pure function OwrenZen3ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}
                          r13,r12,r23,r22,r33,r32)
 end
 
-Base.@pure function OwrenZen3ConstantCache{T,T2}(::Type{T},::Type{T2})
+Base.@pure function OwrenZen3ConstantCache(::Type{T},::Type{T2}) where {T,T2}
   a21 = T(12//23)
   a31 = T(-68//375)
   a32 = T(368//375)
@@ -168,7 +168,7 @@ struct OwrenZen4ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   r62::T
 end
 
-Base.@pure function OwrenZen4ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function OwrenZen4ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
     a21 = T(0.16666666666666666)
     a31 = T(0.03214024835646457)
     a32 = T(0.26515704894083275)
@@ -215,7 +215,7 @@ Base.@pure function OwrenZen4ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}
                            r54,r53,r52,r64,r63,r62)
 end
 
-Base.@pure function OwrenZen4ConstantCache{T,T2}(::Type{T},::Type{T2})
+Base.@pure function OwrenZen4ConstantCache(::Type{T},::Type{T2}) where {T,T2}
   a21 = T(1//6)
   a31 = T(44//1369)
   a32 = T(363//1369)
@@ -331,7 +331,7 @@ struct OwrenZen5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   r82::T
 end
 
-Base.@pure function OwrenZen5ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function OwrenZen5ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
     a21 = T(0.16666666666666666)
     a31 = T(0.0625)
     a32 = T(0.1875)
@@ -412,7 +412,7 @@ Base.@pure function OwrenZen5ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}
                            r62,r75,r74,r73,r72,r85,r84,r83,r82)
 end
 
-Base.@pure function OwrenZen5ConstantCache{T,T2}(::Type{T},::Type{T2})
+Base.@pure function OwrenZen5ConstantCache(::Type{T},::Type{T2}) where {T,T2}
   a21 = T(1//6)
   a31 = T(1//16)
   a32 = T(3//16)
@@ -553,7 +553,7 @@ struct Tsit5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   r74::T
 end
 
-Base.@pure function Tsit5ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function Tsit5ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   c1 =       T2(0.161)
   c2 =       T2(0.327)
   c3 =       T2(0.9)
@@ -866,7 +866,7 @@ end
 An Efficient Runge-Kutta (4,5) Pair by P.Bogacki and L.F.Shampine
  Computers and Mathematics with Applications, Vol. 32, No. 6, 1996, pages 15 to 28
 """
-Base.@pure function BS5ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function BS5ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   c1     =T2(0.16666666666666666)
   c2     =T2(0.2222222222222222)
   c3     =T2(0.42857142857142855)
@@ -999,7 +999,7 @@ Used in the lazy construction of the dense output
 
 k9, k10, k11 are not computed until called in the dense routine
 """
-Base.@pure function BS5Interp{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function BS5Interp(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
 
   c6    = T2(0.5)
   c7    = T2(0.8333333333333334)
@@ -1092,7 +1092,7 @@ Note that RKSuite has an error: r081 should be 0
 and r011 should be 1. This is pretty easy to spot
 since the first order interpolation is linear from y₀.
 """
-function BS5Interp_polyweights{T<:CompiledFloats}(::Type{T})
+function BS5Interp_polyweights(::Type{T}) where T<:CompiledFloats
   r016   = T(-11.547607240534195)
   r015   = T(36.89579791207878)
   r014   = T(-45.470343197183475)
@@ -1269,7 +1269,7 @@ struct DP5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   d7::T
 end
 
-Base.@pure function DP5ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function DP5ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   a21 = T(0.2)
   a31 = T(0.075)
   a32 = T(0.225)
@@ -1312,7 +1312,7 @@ Base.@pure function DP5ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Typ
   DP5ConstantCache(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,btilde1,btilde3,btilde4,btilde5,btilde6,btilde7,c1,c2,c3,c4,c5,c6,d1,d3,d4,d5,d6,d7)
 end
 
-Base.@pure function DP5_dense_ds{T<:CompiledFloats}(::Type{T})
+Base.@pure function DP5_dense_ds(::Type{T}) where T<:CompiledFloats
   d1  = T(-1.1270175653862835)
   d3  = T(2.675424484351598)
   d4  = T(-5.685526961588504)

@@ -1,5 +1,5 @@
 using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase,
-      DiffEqProblemLibrary, Base.Test
+      DiffEqProblemLibrary, Test
 srand(100)
 ## Convergence Testing
 dts = 1.//2.^(7:-1:4)

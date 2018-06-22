@@ -10,12 +10,12 @@ mutable struct CompositeCache{T,F} <: OrdinaryDiffEqCache
   current::Int
 end
 
-function alg_cache{T}(alg::CompositeAlgorithm,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{T}})
+function alg_cache(alg::CompositeAlgorithm,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{T}}) where T
   caches = map((x)->alg_cache(x,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val{T}),alg.algs)
   CompositeCache(caches,alg.choice_function,1)
 end
 
-alg_cache{F}(alg::OrdinaryDiffEqAlgorithm,prob,callback::F) = ODEEmptyCache()
+alg_cache(alg::OrdinaryDiffEqAlgorithm,prob,callback::F) where {F} = ODEEmptyCache()
 
 struct FunctionMapCache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -47,7 +47,7 @@ struct ExplicitRKCache{uType,rateType,uEltypeNoUnits,ksEltype,TabType} <: Ordina
 end
 
 u_cache(c::ExplicitRKCache) = (c.utilde,c.atmp,c.update)
-du_cache(c::ExplicitRKCache) = (c.kk...)
+du_cache(c::ExplicitRKCache) = (c.kk...,)
 
 function alg_cache(alg::ExplicitRK,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   kk = Vector{typeof(rate_prototype)}(0)
@@ -86,4 +86,4 @@ end
 alg_cache(alg::ExplicitRK,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = ExplicitRKConstantCache(alg.tableau,rate_prototype)
 
 get_chunksize(cache::DECache) = error("This cache does not have a chunksize.")
-get_chunksize{CS}(cache::ODEChunkCache{CS}) = CS
+get_chunksize(cache::ODEChunkCache{CS}) where {CS} = CS

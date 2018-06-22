@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqProblemLibrary, Base.Test, DiffEqBase
+using OrdinaryDiffEq, DiffEqProblemLibrary, Test, DiffEqBase
 using ForwardDiff
 
 
@@ -23,7 +23,7 @@ for idx in eachindex(interpolation_results_1d_inplace)
   interpolation_results_1d_inplace[idx] = zeros(prob_ode_linear_inplace.u0)
 end
 
-const deriv_test_points = linspace(0,1,5)
+const deriv_test_points = range(0, stop=1, length=5)
 
 function nth_derivative(fun, t, n)
   if n == 1

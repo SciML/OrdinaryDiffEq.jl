@@ -1,5 +1,5 @@
 using OrdinaryDiffEq
-using Base.Test
+using Test
 
 const CPU_FLOPS = peakflops()
 const LONGER_TESTS = false
@@ -15,7 +15,7 @@ else
     group = "All"
 end
 
-is_APPVEYOR = ( is_windows() && haskey(ENV,"APPVEYOR") )
+is_APPVEYOR = ( Sys.iswindows() && haskey(ENV,"APPVEYOR") )
 
 #Start Test Script
 

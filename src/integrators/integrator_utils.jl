@@ -1,4 +1,4 @@
-save_idxsinitialize{uType}(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) =
+save_idxsinitialize(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) where {uType} =
                 error("This algorithm does not have an initialization function")
 
 function loopheader!(integrator)
@@ -120,7 +120,7 @@ function postamble!(integrator::ODEIntegrator)
   resize!(integrator.sol.t,integrator.saveiter)
   resize!(integrator.sol.u,integrator.saveiter)
   resize!(integrator.sol.k,integrator.saveiter_dense)
-  !(typeof(integrator.prog)<:Void) && Juno.done(integrator.prog)
+  !(typeof(integrator.prog)<:Nothing) && Juno.done(integrator.prog)
 end
 
 function solution_endpoint_match_cur_integrator!(integrator)
@@ -279,7 +279,7 @@ function loopfooter!(integrator)
     integrator.dtpropose = integrator.dt
     handle_callbacks!(integrator)
   end
-  if !(typeof(integrator.prog)<:Void) && integrator.opts.progress && integrator.iter%integrator.opts.progress_steps==0
+  if !(typeof(integrator.prog)<:Nothing) && integrator.opts.progress && integrator.iter%integrator.opts.progress_steps==0
     Juno.msg(integrator.prog,integrator.opts.progress_message(integrator.dt,integrator.u,integrator.p,integrator.t))
     Juno.progress(integrator.prog,integrator.t/integrator.sol.prob.tspan[2])
   end

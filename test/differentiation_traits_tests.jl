@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Base.Test, DiffEqProblemLibrary
+using OrdinaryDiffEq, Test, DiffEqProblemLibrary
 
 @testset "Differentiation Trait Tests" begin
   jac_called = Ref(false)

@@ -1,6 +1,6 @@
 ## Breakout these since no other test of their adaptivity
 
-using OrdinaryDiffEq, DiffEqProblemLibrary, DiffEqDevTools, Base.Test
+using OrdinaryDiffEq, DiffEqProblemLibrary, DiffEqDevTools, Test
 
 dts = 1.//2.^(6:-1:3)
 testTol = 0.2

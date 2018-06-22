@@ -1,4 +1,4 @@
-using OrdinaryDiffEq,DiffEqProblemLibrary, DiffEqDevTools, Base.Test
+using OrdinaryDiffEq,DiffEqProblemLibrary, DiffEqDevTools, Test
 
 @testset "Initial Dt Tests" begin
   prob = prob_ode_linear

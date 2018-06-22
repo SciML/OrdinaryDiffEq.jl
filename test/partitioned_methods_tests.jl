@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Base.Test, RecursiveArrayTools, DiffEqDevTools
+using OrdinaryDiffEq, Test, RecursiveArrayTools, DiffEqDevTools
 
 gc()
 

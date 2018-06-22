@@ -32,7 +32,7 @@ function alg_cache(alg::GenericIIF1,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   tmp = similar(u,indices(u)); rtmp1 = zeros(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
   A = f.f1
-  expA = expm(A*dt)
+  expA = exp(A*dt)
   rhs = RHS_IIF(f,tmp,t,t,uEltypeNoUnits(1//1),dual_cache,p)
   k = similar(rate_prototype); fsalfirst = similar(rate_prototype)
   nl_rhs = alg.nlsolve(Val{:init},rhs,u)
@@ -74,7 +74,7 @@ function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   tmp = similar(u,indices(u)); rtmp1 = zeros(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
   A = f.f1
-  expA = expm(A*dt)
+  expA = exp(A*dt)
   k = similar(rate_prototype); fsalfirst = similar(rate_prototype)
   rhs = RHS_IIF(f,tmp,t,t,uEltypeNoUnits(1//2),dual_cache,p)
   nl_rhs = alg.nlsolve(Val{:init},rhs,u)
@@ -117,7 +117,7 @@ function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
     else
       _A = full(A)
     end
-    exphA = expm(dt*_A)
+    exphA = exp(dt*_A)
   end
   LawsonEulerCache(u,uprev,similar(u),zeros(rate_prototype),exphA,Ks,KsCache)
 end
@@ -139,7 +139,7 @@ function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
     else
       _A = full(A)
     end
-    exphA = expm(dt*_A)
+    exphA = exp(dt*_A)
   end
   LawsonEulerConstantCache(exphA)
 end

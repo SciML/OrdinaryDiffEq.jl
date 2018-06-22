@@ -1,14 +1,14 @@
-function solve{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
+function solve(
   prob::AbstractODEProblem,
   alg::algType,timeseries=[],ts=[],ks=[],recompile::Type{Val{recompile_flag}}=Val{true};
-  kwargs...)
+  kwargs...) where {algType<:OrdinaryDiffEqAlgorithm,recompile_flag}
 
   integrator = init(prob,alg,timeseries,ts,ks,recompile;kwargs...)
   solve!(integrator)
   integrator.sol
 end
 
-function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
+function init(
   prob::AbstractODEProblem,
   alg::algType,timeseries_init=typeof(prob.u0)[],
   ts_init=eltype(prob.tspan)[],ks_init=[],
@@ -53,7 +53,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   progress_message = ODE_DEFAULT_PROG_MESSAGE,
   userdata=nothing,
   allow_extrapolation = alg_extrapolates(alg),
-  initialize_integrator=true,kwargs...)
+  initialize_integrator=true,kwargs...) where {algType<:OrdinaryDiffEqAlgorithm,recompile_flag}
 
   if typeof(prob.f)<:Tuple
     if min((mm != I for mm in prob.mass_matrix)...)

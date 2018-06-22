@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqProblemLibrary, Base.Test
+using OrdinaryDiffEq, DiffEqProblemLibrary, Test
 
 @testset "save_idxs Tests" begin
   # scalar, not in-place

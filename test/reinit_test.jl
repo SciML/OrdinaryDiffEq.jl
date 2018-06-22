@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqProblemLibrary, DiffEqCallbacks, Base.Test
+using OrdinaryDiffEq, DiffEqProblemLibrary, DiffEqCallbacks, Test
 
 prob = prob_ode_2Dlinear
 

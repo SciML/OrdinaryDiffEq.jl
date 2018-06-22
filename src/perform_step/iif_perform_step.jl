@@ -32,7 +32,7 @@ function perform_step!(integrator,cache::Union{GenericIIF1ConstantCache,GenericI
   # If adaptive, this should be computed after and cached
   A = integrator.f.f1
   if typeof(cache) <: GenericIIF1ConstantCache
-    rhs.tmp = expm(A*dt)*(uprev)
+    rhs.tmp = exp(A*dt)*(uprev)
   elseif typeof(cache) <: GenericIIF2ConstantCache
     @muladd rhs.tmp = expm(A*dt)*(uprev + 0.5dt*uhold[1]) # This uhold only works for non-adaptive
   end

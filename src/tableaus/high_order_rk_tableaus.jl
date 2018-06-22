@@ -64,7 +64,7 @@ end
 On the Optimization of Some Nine-Stage Seventh-order Runge-Kutta Method, by M. Tanaka, S. Muramatsu and S. Yamashita,
 Information Processing Society of Japan, Vol. 33, No. 12 (1992) pages 1512-1526.
 """
-Base.@pure function TanYam7ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function TanYam7ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   c1    =T2(0.07816646510113846)
   c2    =T2(0.1172496976517077)
   c3    =T2(0.17587454647756157)
@@ -302,7 +302,7 @@ end
 Cheap Error Estimation for Runge-Kutta methods, by Ch. Tsitouras and S.N. Papakostas,
  Siam Journal on Scientific Computing, Vol. 20, Issue 6, Nov 1999.
 """
-Base.@pure function TsitPap8ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function TsitPap8ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
 
   c1    =T2(0.06338028169014084)
   c2    =T2(0.1027879458763643)
@@ -664,7 +664,7 @@ struct DP8ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   d716::T
 end
 
-Base.@pure function DP8ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function DP8ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   c7     = T2(0.25)
   c8     = T2(0.3076923076923077)
   c9     = T2(0.6512820512820513)
@@ -850,7 +850,7 @@ function DP8ConstantCache(T::Type,T2::Type)
   DP8ConstantCache(c7,c8,c9,c10,c11,c6,c5,c4,c3,c2,b1,b6,b7,b8,b9,b10,b11,b12,btilde1,btilde6,btilde7,btilde8,btilde9,btilde10,btilde11,btilde12,er1,er6,er7,er8,er9,er10,er11,er12,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211,c14,c15,c16,a1401,a1407,a1408,a1409,a1410,a1411,a1412,a1413,a1501,a1506,a1507,a1508,a1511,a1512,a1513,a1514,a1601,a1606,a1607,a1608,a1609,a1613,a1614,a1615,d401,d406,d407,d408,d409,d410,d411,d412,d413,d414,d415,d416,d501,d506,d507,d508,d509,d510,d511,d512,d513,d514,d515,d516,d601,d606,d607,d608,d609,d610,d611,d612,d613,d614,d615,d616,d701,d706,d707,d708,d709,d710,d711,d712,d713,d714,d715,d716)
 end
 
-Base.@pure function DP8Interp{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function DP8Interp(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   c14    = T2(0.1)
   c15    = T2(0.2)
   c16    = T2(0.7777777777777778)
@@ -914,7 +914,7 @@ function DP8Interp(T::Type,T2::Type)
   return c14,c15,c16,a1401,a1407,a1408,a1409,a1410,a1411,a1412,a1413,a1501,a1506,a1507,a1508,a1511,a1512,a1513,a1514,a1601,a1606,a1607,a1608,a1609,a1613,a1614,a1615
 end
 
-Base.@pure function DP8Interp_polyweights{T<:CompiledFloats}(::Type{T})
+Base.@pure function DP8Interp_polyweights(::Type{T}) where T<:CompiledFloats
   d401 = T(-8.428938276109013)
   d406 = T(0.5667149535193777)
   d407 = T(-3.0689499459498917)

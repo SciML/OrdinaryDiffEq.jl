@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Base.Test
+using OrdinaryDiffEq, Test
 
 # TODO: clean up
 @testset "Mass Matrix Accuracy Tests" begin

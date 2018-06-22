@@ -94,5 +94,5 @@ function alg_cache(alg::GenericTrapezoid,u,rate_prototype,uEltypeNoUnits,uBottom
   GenericTrapezoidConstantCache(uhold,rhs,nl_rhs,uprev3,tprev2)
 end
 
-get_chunksize{uType,DiffCacheType,rateType,CS}(cache::GenericImplicitEulerCache{uType,DiffCacheType,rateType,CS}) = CS
-get_chunksize{uType,DiffCacheType,rateType,CS}(cache::GenericTrapezoidCache{uType,DiffCacheType,rateType,CS}) = CS
+get_chunksize(cache::GenericImplicitEulerCache{uType,DiffCacheType,rateType,CS}) where {uType,DiffCacheType,rateType,CS} = CS
+get_chunksize(cache::GenericTrapezoidCache{uType,DiffCacheType,rateType,CS}) where {uType,DiffCacheType,rateType,CS} = CS

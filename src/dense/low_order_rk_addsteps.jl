@@ -1,19 +1,19 @@
-@inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,p,cache::FunctionMapCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+@inline function ode_addsteps!(k,t,uprev,u,dt,f,p,cache::FunctionMapCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false}) where {calcVal,calcVal2,calcVal3}
   nothing
 end
 
-@inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,p,cache::FunctionMapConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+@inline function ode_addsteps!(k,t,uprev,u,dt,f,p,cache::FunctionMapConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false}) where {calcVal,calcVal2,calcVal3}
   nothing
 end
 
-@inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,p,cache::Union{SSPRK22ConstantCache,SSPRK33ConstantCache,SSPRK432ConstantCache},always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+@inline function ode_addsteps!(k,t,uprev,u,dt,f,p,cache::Union{SSPRK22ConstantCache,SSPRK33ConstantCache,SSPRK432ConstantCache},always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false}) where {calcVal,calcVal2,calcVal3}
   if length(k)<1 || calcVal
     copyat_or_push!(k,1,f(uprev,p,t))
   end
   nothing
 end
 
-@inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,p,cache::Union{SSPRK22Cache,SSPRK33Cache,SSPRK432Cache},always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+@inline function ode_addsteps!(k,t,uprev,u,dt,f,p,cache::Union{SSPRK22Cache,SSPRK33Cache,SSPRK432Cache},always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false}) where {calcVal,calcVal2,calcVal3}
   if length(k)<1 || calcVal
     rtmp = similar(u, eltype(eltype(k)))
     f(rtmp,uprev,p,t)
@@ -227,7 +227,7 @@ Called to add the extra k9, k10, k11 steps for the Order 5 interpolation when ne
 end
 =#
 
-@muladd @inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,p,cache::OwrenZen3ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+@muladd @inline function ode_addsteps!(k,t,uprev,u,dt,f,p,cache::OwrenZen3ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false}) where {calcVal,calcVal2,calcVal3}
   if length(k)<4 || calcVal
     @unpack a21,a31,a32,a41,a42,a43,c1,c2 = cache
     k1 = f(uprev,p,t)
@@ -245,7 +245,7 @@ end
   nothing
 end
 
-@muladd @inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,p,cache::OwrenZen3Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+@muladd @inline function ode_addsteps!(k,t,uprev,u,dt,f,p,cache::OwrenZen3Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false}) where {calcVal,calcVal2,calcVal3}
   if length(k)<4 || calcVal
     @unpack k1,k2,k3,k4,tmp = cache
     @unpack a21,a31,a32,a41,a42,a43,c1,c2 = cache.tab
@@ -266,7 +266,7 @@ end
   nothing
 end
 
-@muladd @inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,p,cache::OwrenZen4ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+@muladd @inline function ode_addsteps!(k,t,uprev,u,dt,f,p,cache::OwrenZen4ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false}) where {calcVal,calcVal2,calcVal3}
   if length(k)<6 || calcVal
     @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,c1,c2,c3,c4 = cache
     k1 = f(uprev,p,t)
@@ -287,7 +287,7 @@ end
   nothing
 end
 
-@muladd @inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,p,cache::OwrenZen4Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+@muladd @inline function ode_addsteps!(k,t,uprev,u,dt,f,p,cache::OwrenZen4Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false}) where {calcVal,calcVal2,calcVal3}
   if length(k)<6 || calcVal
     uidx = eachindex(uprev)
     @unpack k1,k2,k3,k4,k5,k6,tmp = cache
@@ -325,7 +325,7 @@ end
   nothing
 end
 
-@muladd @inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,p,cache::OwrenZen5ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+@muladd @inline function ode_addsteps!(k,t,uprev,u,dt,f,p,cache::OwrenZen5ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false}) where {calcVal,calcVal2,calcVal3}
   if length(k)<8 || calcVal
     @unpack a21,a31,a32,a41,a42,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,c1,c2,c3,c4,c5,c6 = cache
     k1 = f(uprev,p,t)
@@ -350,7 +350,7 @@ end
   nothing
 end
 
-@muladd @inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,p,cache::OwrenZen5Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+@muladd @inline function ode_addsteps!(k,t,uprev,u,dt,f,p,cache::OwrenZen5Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false}) where {calcVal,calcVal2,calcVal3}
   if length(k)<8 || calcVal
     uidx = eachindex(uprev)
     @unpack k1,k2,k3,k4,k5,k6,k7,k8,tmp = cache
@@ -398,7 +398,7 @@ end
   nothing
 end
 
-@muladd @inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,p,cache::DP5ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+@muladd @inline function ode_addsteps!(k,t,uprev,u,dt,f,p,cache::DP5ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false}) where {calcVal,calcVal2,calcVal3}
   if length(k)<4 || calcVal
     @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,c1,c2,c3,c4,c5,c6 = cache
     @unpack d1,d3,d4,d5,d6,d7 = cache
@@ -419,7 +419,7 @@ end
   nothing
 end
 
-@muladd @inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,p,cache::DP5Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+@muladd @inline function ode_addsteps!(k,t,uprev,u,dt,f,p,cache::DP5Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false}) where {calcVal,calcVal2,calcVal3}
   if length(k)<4 || calcVal
     @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,btilde1,btilde3,btilde4,btilde5,btilde6,btilde7,c1,c2,c3,c4,c5,c6 = cache.tab
     @unpack k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,utilde,tmp,atmp = cache
@@ -470,7 +470,7 @@ end
   nothing
 end
 
-@muladd @inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,p,cache::DP5ThreadedCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+@muladd @inline function ode_addsteps!(k,t,uprev,u,dt,f,p,cache::DP5ThreadedCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false}) where {calcVal,calcVal2,calcVal3}
   if length(k)<4 || calcVal
     @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,btilde1,btilde3,btilde4,btilde5,btilde6,btilde7,c1,c2,c3,c4,c5,c6 = cache.tab
     @unpack k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,utilde,tmp,atmp = cache
@@ -521,7 +521,7 @@ end
   nothing
 end
 
-@muladd @inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,p,cache::Tsit5ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+@muladd @inline function ode_addsteps!(k,t,uprev,u,dt,f,p,cache::Tsit5ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false}) where {calcVal,calcVal2,calcVal3}
   if length(k)<7 || calcVal
     @unpack c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76 = cache
     copyat_or_push!(k,1,f(uprev,p,t))
@@ -536,7 +536,7 @@ end
   nothing
 end
 
-@muladd @inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,p,cache::Tsit5Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+@muladd @inline function ode_addsteps!(k,t,uprev,u,dt,f,p,cache::Tsit5Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false}) where {calcVal,calcVal2,calcVal3}
   if length(k)<7 || calcVal
     @unpack c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76 = cache.tab
     @unpack k1,k2,k3,k4,k5,k6,k7,tmp = cache
@@ -582,7 +582,7 @@ An Efficient Runge-Kutta (4,5) Pair by P.Bogacki and L.F.Shampine
 
 Called to add the extra k9, k10, k11 steps for the Order 5 interpolation when needed
 """
-@muladd @inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,p,cache::BS5ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+@muladd @inline function ode_addsteps!(k,t,uprev,u,dt,f,p,cache::BS5ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false}) where {calcVal,calcVal2,calcVal3}
   if length(k) < 8 || calcVal
     @unpack c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87 = cache
     copyat_or_push!(k,1,f(uprev,p,t))
@@ -609,7 +609,7 @@ An Efficient Runge-Kutta (4,5) Pair by P.Bogacki and L.F.Shampine
 
 Called to add the extra k9, k10, k11 steps for the Order 5 interpolation when needed
 """
-@muladd @inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,p,cache::BS5Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+@muladd @inline function ode_addsteps!(k,t,uprev,u,dt,f,p,cache::BS5Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false}) where {calcVal,calcVal2,calcVal3}
   if length(k) < 8 || calcVal
     uidx = eachindex(uprev)
     @unpack k1,k2,k3,k4,k5,k6,k7,k8,tmp = cache

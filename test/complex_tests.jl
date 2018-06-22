@@ -1,6 +1,6 @@
 # Solve the Landau-Zener problem i ψ' = H(t) ψ, with H(t) = [t 1;1 -t]
 
-using Base.Test
+using Test
 using StaticArrays
 using OrdinaryDiffEq, DiffEqBase
 

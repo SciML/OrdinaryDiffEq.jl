@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Base.Test, DiffEqProblemLibrary
+using OrdinaryDiffEq, Test, DiffEqProblemLibrary
 srand(100)
 
 @testset "Tstops Tests on the Interval [0, 1]" begin

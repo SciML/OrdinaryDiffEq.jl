@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Base.Test, DiffEqDevTools, DiffEqOperators
+using OrdinaryDiffEq, Test, DiffEqDevTools, DiffEqOperators
 const μ = 1.01
 linnonlin_f2 = (u,p,t) -> μ * u
 linnonlin_f1 = DiffEqArrayOperator(μ)
@@ -31,7 +31,7 @@ linnonlin_f2 = (du,u,p,t) -> du .= μ .* u
 prob = SplitODEProblem(linnonlin_f1,linnonlin_f2,u0,(0.0,1.0))
 function (::typeof(prob.f))(::Type{Val{:analytic}},u0,p,t)
  tmp = (A+μ*I)*t
- expm(tmp)*u0
+ exp(tmp)*u0
 end
 
 dts = 1./2.^(8:-1:4) #14->7 good plot

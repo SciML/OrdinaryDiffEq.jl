@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqDevTools, Base.Test
+using OrdinaryDiffEq, DiffEqDevTools, Test
 testTol = 0.2
 
 srand(100)

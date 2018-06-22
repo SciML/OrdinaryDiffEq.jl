@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqDevTools, DiffEqProblemLibrary, Base.Test
+using OrdinaryDiffEq, DiffEqDevTools, DiffEqProblemLibrary, Test
 
 srand(100)
 linear_bigαN = big"0.5"

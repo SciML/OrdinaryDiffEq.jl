@@ -1,6 +1,6 @@
-using OrdinaryDiffEq, DiffEqBase, DiffEqCallbacks, Base.Test
+using OrdinaryDiffEq, DiffEqBase, DiffEqCallbacks, Test
 
-NON_IMPLICIT_ALGS = filter((x)->isleaftype(x) && !OrdinaryDiffEq.isimplicit(x()),union(subtypes(OrdinaryDiffEq.OrdinaryDiffEqAlgorithm),subtypes(OrdinaryDiffEq.OrdinaryDiffEqAdaptiveAlgorithm)))
+NON_IMPLICIT_ALGS = filter((x)->isconcretetype(x) && !OrdinaryDiffEq.isimplicit(x()),union(subtypes(OrdinaryDiffEq.OrdinaryDiffEqAlgorithm),subtypes(OrdinaryDiffEq.OrdinaryDiffEqAdaptiveAlgorithm)))
 
 f = function (du,u,p,t)
   for i in 1:length(u)

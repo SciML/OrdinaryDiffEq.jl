@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqProblemLibrary, Base.Test
+using OrdinaryDiffEq, DiffEqProblemLibrary, Test
 
 @testset "Stiffness Detection Tests" begin
   prob1 = ODEProblem(DiffEqProblemLibrary.van,[0,2.],(0.0,6),inv(0.003))

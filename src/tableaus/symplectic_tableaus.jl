@@ -81,7 +81,7 @@ Base.@pure function CandyRoz4ConstantCache(T,T2)
   Symplectic4ConstantCache{T,T2}(a1,a2,a3,a4,b1,b2,b3,b4)
 end
 
-Base.@pure function McAte4ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function McAte4ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   a1 =T( 0.515352837431122936)
   a2 =T(-0.085782019412973646)
   a3 =T( 0.441583023616466524)
@@ -135,7 +135,7 @@ end
 # Broken
 # http://epubs.siam.org/doi/pdf/10.1137/0916010
 # On the numerical integration of ordinary differential equations by symmetric composition methods
-Base.@pure function McAte42ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function McAte42ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   a1 =T(0.40518861839525227722)
   a2 =T(-0.28714404081652408900)
   a3 = 1 - 2a1 - 2a2
@@ -178,7 +178,7 @@ struct Symplectic5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   b6::T
 end
 
-Base.@pure function McAte5ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function McAte5ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   a1=T(0.339839625839110000)
   a2=T(-0.088601336903027329)
   a3=T(0.5858564768259621188)
@@ -272,7 +272,7 @@ struct Symplectic62ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   b10::T
 end
 
-Base.@pure function KahanLi6ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function KahanLi6ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   a1=T(0.39216144400731413927925056)
   a2=T(0.33259913678935943859974864)
   a3=T(-0.70624617255763935980996482)
@@ -355,7 +355,7 @@ struct McAte8ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   b16::T
 end
 
-Base.@pure function McAte8ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function McAte8ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   a1=T(0.74167036435061295344822780)
   a2=T(-0.40910082580003159399730010)
   a3=T(0.19075471029623837995387626)
@@ -468,7 +468,7 @@ struct KahanLi8ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   b18::T
 end
 
-Base.@pure function KahanLi8ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function KahanLi8ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   a1=T(0.13020248308889008087881763)
   a2=T(0.56116298177510838456196441)
   a3=T(-0.38947496264484728640807860)
@@ -625,7 +625,7 @@ struct SofSpa10ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   b36::T
 end
 
-Base.@pure function SofSpa10ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function SofSpa10ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   a1=T(0.07879572252168641926390768)
   a2=T(0.31309610341510852776481247)
   a3=T(0.02791838323507806610952027)

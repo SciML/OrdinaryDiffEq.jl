@@ -129,7 +129,7 @@ end
 
 From Verner's Website
 """
-Base.@pure function Vern6ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function Vern6ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   c1   =T2(0.06)
   c2   =T2(0.09593333333333333)
   c3   =T2(0.1439)
@@ -243,7 +243,7 @@ function Vern6ConstantCache(T::Type,T2::Type)
   Vern6ConstantCache(c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,a91,a94,a95,a96,a97,a98,btilde1,btilde4,btilde5,btilde6,btilde7,btilde8,btilde9,c10,a1001,a1004,a1005,a1006,a1007,a1008,a1009,c11,a1101,a1102,a1103,a1104,a1105,a1106,a1107,a1108,a1109,a1110,c12,a1201,a1202,a1203,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211,r011,r012,r013,r014,r015,r016,r042,r043,r044,r045,r046,r052,r053,r054,r055,r056,r062,r063,r064,r065,r066,r072,r073,r074,r075,r076,r082,r083,r084,r085,r086,r092,r093,r094,r095,r096,r102,r103,r104,r105,r106,r112,r113,r114,r115,r116,r122,r123,r124,r125,r126)
 end
 
-Base.@pure function Vern6Interp{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function Vern6Interp(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   # Extra stages for Order 5
   c10   = T2(0.5)
   a1001 = T(0.016524159013572806)
@@ -321,7 +321,7 @@ end
 Coefficients for the polynomial
 bᵢΘ = ri1*Θ + ri2*Θ^2 + ri3*Θ^3 + ...
 """
-Base.@pure function Vern6Interp_polyweights{T<:CompiledFloats}(::Type{T})
+Base.@pure function Vern6Interp_polyweights(::Type{T}) where T<:CompiledFloats
   r011 = T(1)
   r012 = T(-7.778593856495576)
   r013 = T(27.0524385722671)
@@ -635,7 +635,7 @@ struct Vern7ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   r167::T
 end
 
-Base.@pure function Vern7ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function Vern7ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   c2        =  T2(0.005)
   c3        =  T2(0.10888888888888888)
   c4        =  T2(0.16333333333333333)
@@ -775,7 +775,7 @@ function Vern7ConstantCache(T::Type,T2::Type)
   Vern7ConstantCache(c2,c3,c4,c5,c6,c7,c8,a021,a031,a032,a041,a043,a051,a053,a054,a061,a063,a064,a065,a071,a073,a074,a075,a076,a081,a083,a084,a085,a086,a087,a091,a093,a094,a095,a096,a097,a098,a101,a103,a104,a105,a106,a107,b1,b4,b5,b6,b7,b8,b9,btilde1,btilde4,btilde5,btilde6,btilde7,btilde8,btilde9,btilde10,c11,a1101,a1104,a1105,a1106,a1107,a1108,a1109,c12,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1211,c13,a1301,a1304,a1305,a1306,a1307,a1308,a1309,a1311,a1312,c14,a1401,a1404,a1405,a1406,a1407,a1408,a1409,a1411,a1412,a1413,c15,a1501,a1504,a1505,a1506,a1507,a1508,a1509,a1511,a1512,a1513,c16,a1601,a1604,a1605,a1606,a1607,a1608,a1609,a1611,a1612,a1613,r011,r012,r013,r014,r015,r016,r017,r042,r043,r044,r045,r046,r047,r052,r053,r054,r055,r056,r057,r062,r063,r064,r065,r066,r067,r072,r073,r074,r075,r076,r077,r082,r083,r084,r085,r086,r087,r092,r093,r094,r095,r096,r097,r112,r113,r114,r115,r116,r117,r122,r123,r124,r125,r126,r127,r132,r133,r134,r135,r136,r137,r142,r143,r144,r145,r146,r147,r152,r153,r154,r155,r156,r157,r162,r163,r164,r165,r166,r167)
 end
 
-Base.@pure function Vern7Interp{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function Vern7Interp(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   c11     = T2(1)
   a1101   = T(0.04715561848627222)
   a1104   = T(0.25750564298434153)
@@ -903,7 +903,7 @@ function Vern7Interp(T::Type,T2::Type)
   return c11,a1101,a1104,a1105,a1106,a1107,a1108,a1109,c12,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1211,c13,a1301,a1304,a1305,a1306,a1307,a1308,a1309,a1311,a1312,c14,a1401,a1404,a1405,a1406,a1407,a1408,a1409,a1411,a1412,a1413,c15,a1501,a1504,a1505,a1506,a1507,a1508,a1509,a1511,a1512,a1513,c16,a1601,a1604,a1605,a1606,a1607,a1608,a1609,a1611,a1612,a1613
 end
 
-Base.@pure function Vern7Interp_polyweights{T<:CompiledFloats}(::Type{T})
+Base.@pure function Vern7Interp_polyweights(::Type{T}) where T<:CompiledFloats
   r011 = T(1)
   r012 = T(-8.413387198332767)
   r013 = T(33.675508884490895)
@@ -1364,7 +1364,7 @@ struct Vern8ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   r218::T
 end
 
-Base.@pure function Vern8ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function Vern8ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   c2 = T2(0.05)
   c3 = T2(0.1065625)
   c4 = T2(0.15984375)
@@ -1564,7 +1564,7 @@ function Vern8ConstantCache(T::Type,T2::Type)
   Vern8ConstantCache(c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211,a1301,a1304,a1305,a1306,a1307,a1308,a1309,a1310,b1,b6,b7,b8,b9,b10,b11,b12,btilde1,btilde6,btilde7,btilde8,btilde9,btilde10,btilde11,btilde12,btilde13,c14,a1401,a1406,a1407,a1408,a1409,a1410,a1411,a1412,c15,a1501,a1506,a1507,a1508,a1509,a1510,a1511,a1512,a1514,c16,a1601,a1606,a1607,a1608,a1609,a1610,a1611,a1612,a1614,a1615,c17,a1701,a1706,a1707,a1708,a1709,a1710,a1711,a1712,a1714,a1715,a1716,c18,a1801,a1806,a1807,a1808,a1809,a1810,a1811,a1812,a1814,a1815,a1816,a1817,c19,a1901,a1906,a1907,a1908,a1909,a1910,a1911,a1912,a1914,a1915,a1916,a1917,c20,a2001,a2006,a2007,a2008,a2009,a2010,a2011,a2012,a2014,a2015,a2016,a2017,c21,a2101,a2106,a2107,a2108,a2109,a2110,a2111,a2112,a2114,a2115,a2116,a2117,r011,r012,r013,r014,r015,r016,r017,r018,r062,r063,r064,r065,r066,r067,r068,r072,r073,r074,r075,r076,r077,r078,r082,r083,r084,r085,r086,r087,r088,r092,r093,r094,r095,r096,r097,r098,r102,r103,r104,r105,r106,r107,r108,r112,r113,r114,r115,r116,r117,r118,r122,r123,r124,r125,r126,r127,r128,r142,r143,r144,r145,r146,r147,r148,r152,r153,r154,r155,r156,r157,r158,r162,r163,r164,r165,r166,r167,r168,r172,r173,r174,r175,r176,r177,r178,r182,r183,r184,r185,r186,r187,r188,r192,r193,r194,r195,r196,r197,r198,r202,r203,r204,r205,r206,r207,r208,r212,r213,r214,r215,r216,r217,r218)
 end
 
-function Vern8Interp{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+function Vern8Interp(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   c14    = T2(1)
   a1401  = T(0.04427989419007951)
   a1406  = T(0.3541049391724449)
@@ -1760,7 +1760,7 @@ function Vern8Interp(T::Type,T2::Type)
   return c14,a1401,a1406,a1407,a1408,a1409,a1410,a1411,a1412,c15,a1501,a1506,a1507,a1508,a1509,a1510,a1511,a1512,a1514,c16,a1601,a1606,a1607,a1608,a1609,a1610,a1611,a1612,a1614,a1615,c17,a1701,a1706,a1707,a1708,a1709,a1710,a1711,a1712,a1714,a1715,a1716,c18,a1801,a1806,a1807,a1808,a1809,a1810,a1811,a1812,a1814,a1815,a1816,a1817,c19,a1901,a1906,a1907,a1908,a1909,a1910,a1911,a1912,a1914,a1915,a1916,a1917,c20,a2001,a2006,a2007,a2008,a2009,a2010,a2011,a2012,a2014,a2015,a2016,a2017,c21,a2101,a2106,a2107,a2108,a2109,a2110,a2111,a2112,a2114,a2115,a2116,a2117
 end
 
-Base.@pure function Vern8Interp_polyweights{T<:CompiledFloats}(::Type{T})
+Base.@pure function Vern8Interp_polyweights(::Type{T}) where T<:CompiledFloats
   r011   = T(1)
   r012   = T(-10.039154650554519)
   r013   = T(53.79210495862331)
@@ -2396,7 +2396,7 @@ end
 """
 From Verner's Webiste
 """
-Base.@pure function Vern9ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function Vern9ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   c1     =T2(0.03462)
   c2     =T2(0.09702435063878045)
   c3     =T2(0.14553652595817068)
@@ -2644,7 +2644,7 @@ function Vern9ConstantCache(T::Type,T2::Type)
   Vern9ConstantCache(c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0806,a0807,a0901,a0906,a0907,a0908,a1001,a1006,a1007,a1008,a1009,a1101,a1106,a1107,a1108,a1109,a1110,a1201,a1206,a1207,a1208,a1209,a1210,a1211,a1301,a1306,a1307,a1308,a1309,a1310,a1311,a1312,a1401,a1406,a1407,a1408,a1409,a1410,a1411,a1412,a1413,a1501,a1506,a1507,a1508,a1509,a1510,a1511,a1512,a1513,a1514,a1601,a1606,a1607,a1608,a1609,a1610,a1611,a1612,a1613,b1,b8,b9,b10,b11,b12,b13,b14,b15,btilde1,btilde8,btilde9,btilde10,btilde11,btilde12,btilde13,btilde14,btilde15,btilde16,c17,a1701,a1708,a1709,a1710,a1711,a1712,a1713,a1714,a1715,c18,a1801,a1808,a1809,a1810,a1811,a1812,a1813,a1814,a1815,a1817,c19,a1901,a1908,a1909,a1910,a1911,a1912,a1913,a1914,a1915,a1917,a1918,c20,a2001,a2008,a2009,a2010,a2011,a2012,a2013,a2014,a2015,a2017,a2018,a2019,c21,a2101,a2108,a2109,a2110,a2111,a2112,a2113,a2114,a2115,a2117,a2118,a2119,a2120,c22,a2201,a2208,a2209,a2210,a2211,a2212,a2213,a2214,a2215,a2217,a2218,a2219,a2220,a2221,c23,a2301,a2308,a2309,a2310,a2311,a2312,a2313,a2314,a2315,a2317,a2318,a2319,a2320,a2321,c24,a2401,a2408,a2409,a2410,a2411,a2412,a2413,a2414,a2415,a2417,a2418,a2419,a2420,a2421,c25,a2501,a2508,a2509,a2510,a2511,a2512,a2513,a2514,a2515,a2517,a2518,a2519,a2520,a2521,c26,a2601,a2608,a2609,a2610,a2611,a2612,a2613,a2614,a2615,a2617,a2618,a2619,a2620,a2621,r011,r012,r013,r014,r015,r016,r017,r018,r019,r082,r083,r084,r085,r086,r087,r088,r089,r092,r093,r094,r095,r096,r097,r098,r099,r102,r103,r104,r105,r106,r107,r108,r109,r112,r113,r114,r115,r116,r117,r118,r119,r122,r123,r124,r125,r126,r127,r128,r129,r132,r133,r134,r135,r136,r137,r138,r139,r142,r143,r144,r145,r146,r147,r148,r149,r152,r153,r154,r155,r156,r157,r158,r159,r172,r173,r174,r175,r176,r177,r178,r179,r182,r183,r184,r185,r186,r187,r188,r189,r192,r193,r194,r195,r196,r197,r198,r199,r202,r203,r204,r205,r206,r207,r208,r209,r212,r213,r214,r215,r216,r217,r218,r219,r222,r223,r224,r225,r226,r227,r228,r229,r232,r233,r234,r235,r236,r237,r238,r239,r242,r243,r244,r245,r246,r247,r248,r249,r252,r253,r254,r255,r256,r257,r258,r259,r262,r263,r264,r265,r266,r267,r268,r269)
 end
 
-Base.@pure function Vern9Interp{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function Vern9Interp(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   #  FIVE ADDITIONAL STAGES FOR INTERPOLANT OF ORDER  8
   c17    = T2(1)
   a1701  = T(0.014611976858423152)
@@ -2928,7 +2928,7 @@ function Vern9Interp(T::Type,T2::Type)
   return c17,a1701,a1708,a1709,a1710,a1711,a1712,a1713,a1714,a1715,c18,a1801,a1808,a1809,a1810,a1811,a1812,a1813,a1814,a1815,a1817,c19,a1901,a1908,a1909,a1910,a1911,a1912,a1913,a1914,a1915,a1917,a1918,c20,a2001,a2008,a2009,a2010,a2011,a2012,a2013,a2014,a2015,a2017,a2018,a2019,c21,a2101,a2108,a2109,a2110,a2111,a2112,a2113,a2114,a2115,a2117,a2118,a2119,a2120,c22,a2201,a2208,a2209,a2210,a2211,a2212,a2213,a2214,a2215,a2217,a2218,a2219,a2220,a2221,c23,a2301,a2308,a2309,a2310,a2311,a2312,a2313,a2314,a2315,a2317,a2318,a2319,a2320,a2321,c24,a2401,a2408,a2409,a2410,a2411,a2412,a2413,a2414,a2415,a2417,a2418,a2419,a2420,a2421,c25,a2501,a2508,a2509,a2510,a2511,a2512,a2513,a2514,a2515,a2517,a2518,a2519,a2520,a2521,c26,a2601,a2608,a2609,a2610,a2611,a2612,a2613,a2614,a2615,a2617,a2618,a2619,a2620,a2621
 end
 
-Base.@pure function Vern9Interp_polyweights{T<:CompiledFloats}(::Type{T})
+Base.@pure function Vern9Interp_polyweights(::Type{T}) where T<:CompiledFloats
   r011 = T(1)
   r012 = T(-28.330488700617398)
   r013 = T(257.6535452078578)

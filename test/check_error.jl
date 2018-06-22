@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Base.Test
+using OrdinaryDiffEq, Test
 
 f_ec(u,p,t) = exp(u)
 u0 = 0.0 # explosion time is 1.0

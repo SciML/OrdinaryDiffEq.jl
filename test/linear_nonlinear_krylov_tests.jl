@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Base.Test, DiffEqOperators
+using OrdinaryDiffEq, Test, DiffEqOperators
 N = 100
 dx = 1.0; dt=0.01
 srand(0); u0 = rand(N)

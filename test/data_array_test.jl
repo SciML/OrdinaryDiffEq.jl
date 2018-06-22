@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Base.Test
+using OrdinaryDiffEq, Test
 
 mutable struct SimType{T} <: DEDataVector{T}
   x::Array{T,1}
@@ -70,7 +70,7 @@ end
       dx .= A*x.x + B*x.u
   end
 
-  input = (x,p,t)->(1*one(t)≤t≤2*one(t)?[one(t)]:[zero(t)])
+  input = (x,p,t)->(1*one(t)≤t≤2*one(t) ? [one(t)] : [zero(t)])
   prob = DiscreteProblem((dx,x,p,t)->mysystem(t,x,dx,p,input), SimType2(zeros(3), zeros(1), zeros(1)), (0//1,4//1))
   sln = solve(prob, FunctionMap(scale_by_time=false), dt = 1//10)
 

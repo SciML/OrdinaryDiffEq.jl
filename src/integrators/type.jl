@@ -114,15 +114,15 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,pType,
   fsalfirst::FSALType
   fsallast::FSALType
 
-  function (::Type{ODEIntegrator{algType,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
-                F,ProgressType,CacheType,O,FSALType}}){algType,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
+  function ODEIntegrator{algType,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
                 F,ProgressType,CacheType,O,FSALType}(
                 sol,u,k,t,dt,f,p,uprev,uprev2,tprev,
       alg,dtcache,dtchangeable,dtpropose,tdir,
       eigen_est,EEst,qold,q11,erracc,dtacc,success_iter,
       iter,saveiter,saveiter_dense,prog,cache,
       kshortsize,force_stepfail,last_stepfail,just_hit_tstop,
-      event_last_time,accept_step,isout,reeval_fsal,u_modified,opts)
+      event_last_time,accept_step,isout,reeval_fsal,u_modified,opts) where {algType,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
+                                     F,ProgressType,CacheType,O,FSALType}
 
       new{algType,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
                   F,ProgressType,CacheType,O,FSALType}(

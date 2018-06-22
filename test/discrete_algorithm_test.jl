@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqProblemLibrary, Base.Test
+using OrdinaryDiffEq, DiffEqProblemLibrary, Test
 
 @testset "Scalar Discrete Problem" begin
   prob = DiscreteProblem(0.5,(0.0,1.0))
