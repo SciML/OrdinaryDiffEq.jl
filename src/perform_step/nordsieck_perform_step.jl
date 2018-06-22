@@ -276,7 +276,6 @@ end
   # Rescale
   dt != tau[2] && nordsieck_rescale!(cache)
   @. integrator.k[1] = z[2]/dt
-  # Perform 5th order Adams method in Nordsieck form
   perform_predict!(cache)
   const_cache.order = min(const_cache.nextorder, 12)
   calc_coeff!(cache)
@@ -290,13 +289,6 @@ end
 
   # Correct Nordsieck vector
   update_nordsieck_vector!(cache)
-  const_cache.n_wait -= 1
-
-  ################################### Finalize
-  if nordsieck_change_order(cache, 1) && const_cache.order != 12
-    const_cache.z[end] = const_cache.Δ
-    const_cache.prev_𝒟 = const_cache.c_𝒟
-  end
 
   ################################### Error estimation
 
@@ -308,7 +300,15 @@ end
         tau[i] = tau[i+1]
       end
       tau[13] = tmp
+    else
+      const_cache.n_wait -= 1
     end
+  end
+
+  ################################### Finalize
+  if nordsieck_change_order(cache, 1) && const_cache.order != 12
+    const_cache.z[end] = const_cache.Δ
+    const_cache.prev_𝒟 = const_cache.c_𝒟
   end
   return nothing
 end

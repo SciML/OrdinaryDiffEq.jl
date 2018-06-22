@@ -35,9 +35,10 @@ end
 @testset "Nordsieck Adaptivity Tests: JVODE" begin
   for i in eachindex(probArr)
     prob = probArr[i]
-    sol = solve(prob, JVODE_Adams(), reltol=1e-3)
+    sol = solve(prob, JVODE_Adams(), reltol=1e-5, abstol=1e-7)
     @test length(sol.t) < 82
     exact = prob.f(Val{:analytic}, prob.u0, prob.p, prob.tspan[end])
+    @show exact - sol[end]
     @test exact ≈ sol[end] rtol=5e-3
   end
 end

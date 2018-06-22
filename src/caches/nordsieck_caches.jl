@@ -157,12 +157,12 @@ function alg_cache(alg::JVODE,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   z = const_cache.z
   # One-shot start
   z[1] = zeros(rate_prototype); z[2] = zeros(rate_prototype); z[3] = zeros(rate_prototype);
-  z[4] = zeros(rate_prototype); z[5] = zeros(rate_prototype);
-  # Order increase
-  z[5] = k1; z[6] = k2; z[7] = k3; z[8] = k4; z[9] = k5; z[10] = k6; z[11] = k7;
-  z[12] = zeros(rate_prototype); z[13] = zeros(rate_prototype);
+  z[4] = zeros(rate_prototype); z[5] = zeros(rate_prototype); z[6] = zeros(rate_prototype);
+  z[7] = zeros(rate_prototype); z[8] = zeros(rate_prototype); z[9] = zeros(rate_prototype);
+  z[10] = zeros(rate_prototype); z[11] = zeros(rate_prototype); z[12] = zeros(rate_prototype);
+  z[13] = zeros(rate_prototype)
   ratetmp = zeros(rate_prototype)
   #################################################
-  const_cache.Δ = utilde
+  const_cache.Δ = zeros(rate_prototype)
   JVODECache(u,uprev,fsalfirst,utilde,tmp,ratetmp,atmp,const_cache,tsit5cache)
 end
