@@ -4,8 +4,7 @@ os:
   - linux
 #  - osx
 julia:
-  - 0.6
-  - nightly
+  - 0.7
 env:
   - GROUP=Regression
   - GROUP=Integrators
@@ -15,7 +14,6 @@ env:
 matrix:
   allow_failures:
     - julia: nightly
-  fast_finish: true
 notifications:
   email: false
 after_success:
