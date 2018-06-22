@@ -23,10 +23,10 @@ function alg_cache(alg::AN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   z = [zero(rate_prototype) for i in 1:N+1]
   Δ = u
   l = zeros(tTypeNoUnits,N+1); m = zeros(l)
-  constant = zero(tTypeNoUnits)
+  c_LTE = c_conv = zero(tTypeNoUnits)
   dts = zeros(typeof(dt), 6)
   tsit5tab = Tsit5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
-  AN5ConstantCache(z,l,m,constant,constant,dts,Δ,tsit5tab,1)
+  AN5ConstantCache(z,l,m,c_LTE,c_conv,dts,Δ,tsit5tab,1)
 end
 
 mutable struct AN5Cache{uType,dType,rateType,zType,lType,dtsType,tsit5Type} <: OrdinaryDiffEqMutableCache
@@ -73,7 +73,7 @@ function alg_cache(alg::AN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   N = 5
   Δ = similar(atmp)
   l = zeros(tTypeNoUnits,N+1); m = zeros(l)
-  constant = zero(tTypeNoUnits)
+  c_LTE = c_conv = zero(tTypeNoUnits)
   dts = zeros(typeof(dt), 6)
   fsalfirst = zeros(rate_prototype)
   z = [zeros(rate_prototype) for i in 1:N+1]
@@ -83,7 +83,7 @@ function alg_cache(alg::AN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   ratetmp = zeros(rate_prototype)
 
   AN5Cache(u,uprev,tmp,Δ,atmp,fsalfirst,ratetmp,
-           z,l,m,constant,constant,dts,
+           z,l,m,c_LTE,c_conv,dts,
            tsit5cache, 1)
 end
 
@@ -130,12 +130,12 @@ function alg_cache(alg::JVODE,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   z = [rate_prototype for i in 1:N+1]
   Δ = u
   l = zeros(tTypeNoUnits, N+1); m = zeros(l)
-  constant = zero(tTypeNoUnits)
+  c_LTE₊₁ = c_LTE = c_LTE₋₁ = c_conv = c_𝒟 = prev_𝒟 = zero(tTypeNoUnits)
   dts = zeros(typeof(dt),N+1)
   tsit5tab = Tsit5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   η = zero(dt/dt)
   JVODEConstantCache(z,l,m,
-                     constant,constant,constant,constant,constant,constant,
+                     c_LTE₊₁,c_LTE,c_LTE₋₁,c_conv,c_𝒟 ,prev_𝒟,
                      dts,Δ,tsit5tab,2,1,1,2,η,η,η,η,η)
 end
 
@@ -203,7 +203,7 @@ function alg_cache(alg::JVODE,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   z = [zeros(rate_prototype) for i in 1:N+1]
   Δ = similar(u,uEltypeNoUnits,indices(u))
   l = zeros(tTypeNoUnits, N+1); m = zeros(l)
-  constant = zero(tTypeNoUnits)
+  c_LTE₊₁ = c_LTE = c_LTE₋₁ = c_conv = c_𝒟 = prev_𝒟 = zero(tTypeNoUnits)
   dts = zeros(typeof(dt),N+1)
   η = zero(dt/dt)
   #################################################
@@ -217,6 +217,6 @@ function alg_cache(alg::JVODE,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   #################################################
   JVODECache(u,uprev,tmp,fsalfirst,ratetmp,
              z, l, m,
-             constant,constant,constant,constant,constant,constant,
+             c_LTE₊₁, c_LTE, c_LTE₋₁, c_conv, c_𝒟 , prev_𝒟,
              dts, Δ, atmp, tsit5cache, 2, 1, 1, 2, η, η, η, η, η)
 end
