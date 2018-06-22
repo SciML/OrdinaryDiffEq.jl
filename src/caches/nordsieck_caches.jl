@@ -1,4 +1,5 @@
-mutable struct AN5ConstantCache{zType,lType,dtType,uType,tsit5Type} <: OrdinaryDiffEqConstantCache
+# TODO: Optimize cache size
+mutable struct AN5ConstantCache{zType,lType,dtsType,dType,tsit5Type} <: OrdinaryDiffEqConstantCache
   # `z` is the Nordsieck vector
   z::zType
   # `l` is used for the corrector iteration
@@ -8,53 +9,58 @@ mutable struct AN5ConstantCache{zType,lType,dtType,uType,tsit5Type} <: OrdinaryD
   # `c_LTE` is used for the error estimation for the current order
   c_LTE::lType
   c_conv::lType
-  # `tau` stores `dt`s
-  tau::Vector{dtType}
+  # `dts` stores `dt`s
+  dts::dtsType
   # `Δ` is the difference between the predictor `uₙ₀` and `uₙ`
-  Δ::uType
+  Δ::dType
   # `Tsit5` for the first step
   tsit5tab::tsit5Type
-  # `η` stores the norm of `Δ`
-  η::lType
   order::Int
 end
 
-function AN5ConstantCache(u, uprev, rate_prototype, uBottomEltypeNoUnits, tTypeNoUnits, dt)
+function alg_cache(alg::AN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   N = 5
   z = [zero(rate_prototype) for i in 1:N+1]
   Δ = u
   l = zeros(tTypeNoUnits,N+1); m = zeros(l)
-  c_LTE = zero(tTypeNoUnits)
-  tau = zeros(typeof(dt), 6)
+  constant = zero(tTypeNoUnits)
+  dts = zeros(typeof(dt), 6)
   tsit5tab = Tsit5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
-  AN5ConstantCache(z,l,m,c_LTE,c_LTE,tau,Δ,tsit5tab,l[1],1)
+  AN5ConstantCache(z,l,m,constant,constant,dts,Δ,tsit5tab,1)
 end
 
-function alg_cache(alg::AN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  AN5ConstantCache(u, uprev, rate_prototype, uBottomEltypeNoUnits, tTypeNoUnits, dt)
-end
-
-mutable struct AN5Cache{uType,rateType,uArrayType,uEltypeNoUnits,constType,tsit5Type} <: OrdinaryDiffEqMutableCache
+mutable struct AN5Cache{uType,dType,rateType,zType,lType,dtsType,tsit5Type} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
-  fsalfirst::rateType
-  utilde::uArrayType
   tmp::uType
+  Δ::dType
+  # Error estimation
+  atmp::dType
+  fsalfirst::rateType
   ratetmp::rateType
-  atmp::uEltypeNoUnits
-  const_cache::constType
+  # `z` is the Nordsieck vector
+  z::zType
+  # `l` is used for the corrector iteration
+  l::Vector{lType}
+  # `m` is a tmp vector that is used for calculating `l`
+  m::Vector{lType}
+  # `c_LTE` is used for the error estimation for the current order
+  c_LTE::lType
+  c_conv::lType
+  # `dts` stores `dt`s
+  dts::dtsType
+  # `Tsit5` for the first step
   tsit5cache::tsit5Type
+  order::Int
 end
 
 u_cache(c::AN5Cache) = ()
 du_cache(c::AN5Cache) = (c.fsalfirst,)
 
 function alg_cache(alg::AN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  fsalfirst = zeros(rate_prototype)
-  const_cache = AN5ConstantCache(u, uprev, rate_prototype, uBottomEltypeNoUnits, tTypeNoUnits, dt)
   #################################################
   # Tsit5
-  tab = const_cache.tsit5tab
+  tab = Tsit5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   # Cannot alias pointers, since we have to use `k`s to start the Nordsieck vector
   k1 = zeros(rate_prototype); k2 = zeros(rate_prototype)
   k3 = zeros(rate_prototype); k4 = zeros(rate_prototype)
@@ -64,36 +70,45 @@ function alg_cache(alg::AN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   atmp = similar(u,uEltypeNoUnits,indices(u)); tmp = similar(u)
   tsit5cache = Tsit5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp,tab)
   #################################################
-  for i in 1:6
-    const_cache.z[i] = zeros(rate_prototype)
+  N = 5
+  Δ = similar(atmp)
+  l = zeros(tTypeNoUnits,N+1); m = zeros(l)
+  constant = zero(tTypeNoUnits)
+  dts = zeros(typeof(dt), 6)
+  fsalfirst = zeros(rate_prototype)
+  z = [zeros(rate_prototype) for i in 1:N+1]
+  for i in 1:N+1
+    z[i] = zeros(rate_prototype)
   end
-  ratetmp = k6
-  const_cache.Δ = k7
-  AN5Cache(u,uprev,fsalfirst,utilde,tmp,ratetmp,atmp,const_cache,tsit5cache)
+  ratetmp = zeros(rate_prototype)
+
+  AN5Cache(u,uprev,tmp,Δ,atmp,fsalfirst,ratetmp,
+           z,l,m,constant,constant,dts,
+           tsit5cache, 1)
 end
 
-mutable struct JVODEConstantCache{zType,lType,dtType,uType,tsit5Type,etaType} <: OrdinaryDiffEqConstantCache
+mutable struct JVODEConstantCache{zType,lType,dtsType,dType,tsit5Type,etaType} <: OrdinaryDiffEqConstantCache
   # `z` is the Nordsieck vector
   z::zType
   # `l` is used for the corrector iteration
   l::Vector{lType}
   # `m` is a tmp vector that is used for calculating `l`
   m::Vector{lType}
-  # `c_LTE` is used for the error estimation for the current order + 1
+  # `c_LTE₊₁` is used for the error estimation for the current order + 1
   c_LTE₊₁::lType
   # `c_LTE` is used for the error estimation for the current order
   c_LTE::lType
-  # `c_LTE` is used for the error estimation for the current order - 1
+  # `c_LTE₋₁` is used for the error estimation for the current order - 1
   c_LTE₋₁::lType
   # `c_conv` is used in convergence test
   c_conv::lType
   # `c_𝒟` is used to get the order q+2 derivative vector
   c_𝒟::lType
   prev_𝒟::lType
-  # `tau` stores `dt`s
-  tau::Vector{dtType}
+  # `dts` stores `dt`s
+  dts::dtsType
   # `Δ` is the difference between the predictor `uₙ₀` and `uₙ`
-  Δ::uType
+  Δ::dType
   # `Tsit5` for the first step
   tsit5tab::tsit5Type
   # same with `order` or `q`
@@ -105,57 +120,90 @@ mutable struct JVODEConstantCache{zType,lType,dtType,uType,tsit5Type,etaType} <:
   η  ::etaType
   η₊₁::etaType
   η₋₁::etaType
+  maxη::etaType
 end
 
-function JVODEConstantCache(u, uprev, rate_prototype, uBottomEltypeNoUnits, tTypeNoUnits, dt)
+function alg_cache(alg::JVODE,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   N = 12
   z = [rate_prototype for i in 1:N+1]
   Δ = u
   l = zeros(tTypeNoUnits, N+1); m = zeros(l)
   constant = zero(tTypeNoUnits)
-  tau = zeros(typeof(dt),N+1)
+  dts = zeros(typeof(dt),N+1)
   tsit5tab = Tsit5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   η = zero(dt/dt)
   JVODEConstantCache(z,l,m,
                      constant,constant,constant,constant,constant,constant,
-                     tau,Δ,tsit5tab,1,1,2,η,η,η)
+                     dts,Δ,tsit5tab,1,1,2,η,η,η,η)
 end
 
-function alg_cache(alg::JVODE,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  JVODEConstantCache(u, uprev, rate_prototype, uBottomEltypeNoUnits, tTypeNoUnits, dt)
-end
-
-mutable struct JVODECache{uType,rateType,uArrayType,uEltypeNoUnits,constType,tsit5Type} <: OrdinaryDiffEqMutableCache
+mutable struct JVODECache{uType,rateType,zType,lType,dtsType,dType,etaType,tsit5Type} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
-  fsalfirst::rateType
-  utilde::uArrayType
   tmp::uType
+  fsalfirst::rateType
   ratetmp::rateType
-  atmp::uEltypeNoUnits
-  const_cache::constType
+  # `z` is the Nordsieck vector
+  z::zType
+  # `l` is used for the corrector iteration
+  l::Vector{lType}
+  # `m` is a tmp vector that is used for calculating `l`
+  m::Vector{lType}
+  # `c_LTE₊₁` is used for the error estimation for the current order + 1
+  c_LTE₊₁::lType
+  # `c_LTE` is used for the error estimation for the current order
+  c_LTE::lType
+  # `c_LTE₋₁` is used for the error estimation for the current order - 1
+  c_LTE₋₁::lType
+  # `c_conv` is used in convergence test
+  c_conv::lType
+  # `c_𝒟` is used to get the order q+2 derivative vector
+  c_𝒟::lType
+  prev_𝒟::lType
+  # `dts` stores `dt`s
+  dts::dtsType
+  # `Δ` is the difference between the predictor `uₙ₀` and `uₙ`
+  Δ::dType
+  # Error estimation
+  atmp::dType
+  # `Tsit5` for the first step
   tsit5cache::tsit5Type
+  # same with `order` or `q`
+  order::Int
+  nextorder::Int
+  # number of steps to take before considering to change order
+  n_wait::Int
+  # `η` is `dtₙ₊₁/dtₙ`
+  η  ::etaType
+  η₊₁::etaType
+  η₋₁::etaType
+  maxη::etaType
 end
 
 u_cache(c::JVODECache) = ()
 du_cache(c::JVODECache) = (c.fsalfirst,)
 
 function alg_cache(alg::JVODE,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  fsalfirst = zeros(rate_prototype)
-  const_cache = JVODEConstantCache(u, uprev, rate_prototype, uBottomEltypeNoUnits, tTypeNoUnits, dt)
   #################################################
   # Tsit5
-  tab = const_cache.tsit5tab
   # Cannot alias pointers, since we have to use `k`s to start the Nordsieck vector
+  tab = Tsit5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   k1 = zeros(rate_prototype); k2 = zeros(rate_prototype); k3 = zeros(rate_prototype); k4 = zeros(rate_prototype)
   k5 = zeros(rate_prototype); k6 = zeros(rate_prototype); k7 = zeros(rate_prototype)
   utilde = similar(u,indices(u))
   atmp = similar(u,uEltypeNoUnits,indices(u)); tmp = similar(u)
   tsit5cache = Tsit5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp,tab)
   #################################################
+  fsalfirst = zeros(rate_prototype)
+  N = 12
+  z = [zeros(rate_prototype) for i in 1:N+1]
+  Δ = similar(u,uEltypeNoUnits,indices(u))
+  l = zeros(tTypeNoUnits, N+1); m = zeros(l)
+  constant = zero(tTypeNoUnits)
+  dts = zeros(typeof(dt),N+1)
+  η = zero(dt/dt)
+  #################################################
   # Nordsieck Vector
-  z = const_cache.z
-  # One-shot start
   z[1] = zeros(rate_prototype); z[2] = zeros(rate_prototype); z[3] = zeros(rate_prototype);
   z[4] = zeros(rate_prototype); z[5] = zeros(rate_prototype); z[6] = zeros(rate_prototype);
   z[7] = zeros(rate_prototype); z[8] = zeros(rate_prototype); z[9] = zeros(rate_prototype);
@@ -163,6 +211,8 @@ function alg_cache(alg::JVODE,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   z[13] = zeros(rate_prototype)
   ratetmp = zeros(rate_prototype)
   #################################################
-  const_cache.Δ = zeros(rate_prototype)
-  JVODECache(u,uprev,fsalfirst,utilde,tmp,ratetmp,atmp,const_cache,tsit5cache)
+  JVODECache(u,uprev,tmp,fsalfirst,ratetmp,
+             z, l, m,
+             constant,constant,constant,constant,constant,constant,
+             dts, Δ, atmp, tsit5cache, 1, 1, 2, η, η, η, η)
 end

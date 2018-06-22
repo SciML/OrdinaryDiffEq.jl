@@ -93,8 +93,6 @@ get_current_alg_order(alg::CompositeAlgorithm,cache) = alg_order(alg.algs[cache.
 get_current_alg_order(alg::OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm,cache) = cache.order
 get_current_adaptive_order(alg::OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm,cache) = cache.order
 get_current_alg_order(alg::JVODE,cache) = get_current_adaptive_order(alg,cache)
-get_current_adaptive_order(alg::JVODE,cache::OrdinaryDiffEqConstantCache) = cache.order
-get_current_adaptive_order(alg::JVODE,cache::OrdinaryDiffEqMutableCache) = cache.const_cache.order
 
 alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
 get_current_adaptive_order(alg::OrdinaryDiffEqAlgorithm,cache) = alg_adaptive_order(alg)
