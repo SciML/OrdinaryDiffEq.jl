@@ -117,6 +117,7 @@ module OrdinaryDiffEq
   include("nlsolve_utils.jl")
   include("nordsieck_utils.jl")
   include("adams_utils.jl")
+  include("bdf_utils.jl")
   include("exponential_utils.jl")
   include("derivative_wrappers.jl")
   include("iterator_interface.jl")
@@ -182,7 +183,7 @@ module OrdinaryDiffEq
 
   export AN5, JVODE, JVODE_Adams
 
-  export ABDF2
+  export ABDF2, QNDF1
 
   export AutoSwitch, AutoTsit5, AutoDP5,
          AutoVern6, AutoVern7, AutoVern8, AutoVern9

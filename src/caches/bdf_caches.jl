@@ -102,3 +102,54 @@ function alg_cache(alg::ABDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   ABDF2Cache(u,uprev,uprev2,du1,fsalfirst,fsalfirstprev,k,z,zₙ₋₁,dz,b,tmp,atmp,J,
               W,uf,jac_config,linsolve,ηold,κ,tol,10000,eulercache,dtₙ₋₁)
 end
+
+# QNDF1
+
+mutable struct QNDF1ConstantCache{F,uToltype,coefType,coefType1,dtType,uType,tType} <: OrdinaryDiffEqConstantCache
+  uf::F
+  ηold::uToltype
+  κ::uToltype
+  tol::uToltype
+  newton_iters::Int
+  eulercache::ImplicitEulerConstantCache
+  D::coefType
+  temp_D::coefType
+  D2::coefType1
+  R::coefType
+  U::coefType
+  uprev2::uType
+  uprev3::uType
+  tprev2::tType
+  dtₙ₋₁::dtType
+end
+
+function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  uToltype = real(uBottomEltypeNoUnits)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+  ηold = one(uToltype)
+  uprev2 = u
+  uprev3 = u
+  tprev2 = t
+  dtₙ₋₁ = t
+
+  D = zeros(typeof(t), 1, 1)
+  temp_D = zeros(typeof(t), 1, 1)
+  D2 = zeros(typeof(t), 2, 2)
+  R = zeros(typeof(t), 1, 1)
+  U = zeros(typeof(t), 1, 1)
+
+  if alg.κ != nothing
+    κ = uToltype(alg.κ)
+  else
+    κ = uToltype(1//100)
+  end
+  if alg.tol != nothing
+    tol = uToltype(alg.tol)
+  else
+    tol = uToltype(min(0.03,first(reltol)^(0.5)))
+  end
+
+  eulercache = ImplicitEulerConstantCache(uf,ηold,κ,tol,100000)
+
+  QNDF1ConstantCache(uf,ηold,κ,tol,10000,eulercache,D,temp_D,D2,R,U,uprev2,uprev3,tprev2,dtₙ₋₁)
+end

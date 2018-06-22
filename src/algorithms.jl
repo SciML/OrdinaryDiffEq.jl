@@ -207,6 +207,26 @@ Base.@pure CNLF2(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                       linsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
                       max_newton_iter,new_jac_conv_bound)
 
+struct QNDF1{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
+  linsolve::F
+  diff_type::FDT
+  κ::K
+  tol::T
+  extrapolant::Symbol
+  min_newton_iter::Int
+  max_newton_iter::Int
+  new_jac_conv_bound::T2
+end
+Base.@pure QNDF1(;chunk_size=0,autodiff=true,diff_type=Val{:central},
+                      linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
+                      extrapolant=:linear,min_newton_iter=1,
+                      max_newton_iter=7,new_jac_conv_bound = 1e-3,
+                      controller = :Predictive) =
+                      QNDF1{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),
+                      typeof(κ),typeof(tol),typeof(new_jac_conv_bound),controller}(
+                      linsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
+                      max_newton_iter,new_jac_conv_bound)
+
 # Adams/BDF methods in Nordsieck forms
 struct AN5   <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct JVODE{bType,aType} <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm
