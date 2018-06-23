@@ -1,11 +1,81 @@
+function nordsieck_adjust!(integrator, cache::T) where T
+  @unpack nextorder, order = cache
+  if nextorder != order
+    # TODO: optimize?
+    nordsieck_adjust_order!(cache, nextorder-order)
+    cache.order = cache.nextorder
+    cache.L = cache.order + 1
+    cache.n_wait = cache.L
+  end
+  nordsieck_rescale!(cache)
+  return nothing
+end
+
+# TODO: SUNDIALS NLsolve handling
+
+function nordsieck_finalize!(integrator, cache::T) where T
+  isconst = T <: OrdinaryDiffEqConstantCache
+  @unpack order, dts = cache
+  update_nordsieck_vector!(cache)
+  cache.n_wait -= 1
+  if is_nordsieck_change_order(cache, 1) && cache.order != 12
+    if isconst
+      cache.z[end] = cache.Δ
+    else
+      @. cache.z[end] = cache.Δ
+    end
+    cache.prev_𝒟 = cache.c_𝒟
+  end
+end
+
+function nordsieck_prepare_next!(integrator, cache::T) where T
+  isconst = T <: OrdinaryDiffEqConstantCache
+  @unpack maxη, order, L = cache
+  # TODO: further clean up
+  @unpack bias1, bias2, bias3, addon = integrator.alg
+  if integrator.EEst > one(integrator.EEst)
+    nordsieck_rewind!(cache)
+    cache.n_wait = max(2, cache.n_wait)
+    cache.nextorder = order
+    cache.η = inv( (bias2*integrator.EEst)^inv(L) + addon )
+    return nothing
+  end
+  cache.ηq = inv( (bias2*integrator.EEst)^inv(L) + addon )
+  stepsize_η!(integrator, cache, cache.order)
+  if !is_nordsieck_change_order(cache)
+    cache.η = cache.ηq
+    cache.nextorder = order
+    setη!(integrator, cache)
+    return nothing
+  end
+  # On an order change (cache.n_wait == 0), we are going to compute the η for
+  # order q+1 and q-1, where η = dt_next/dt
+  cache.n_wait = 2
+  stepsize_η₊₁!(integrator, cache, order)
+  stepsize_η₋₁!(integrator, cache, order)
+  chooseη!(integrator, cache)
+  setη!(integrator, cache)
+  # TODO: Maybe not here
+  if isconst
+    cache.Δ = cache.c_LTE * cache.Δ
+  else
+    @. cache.Δ = cache.c_LTE * cache.Δ
+  end
+  return nothing
+end
+
+##############################################################
+# Lower level functions
+##############################################################
+
 # This function computes the integral, from -1 to 0, of a polynomial
 # `P(x)` from the coefficients of `P` with an offset `k`.
 function ∫₋₁⁰dx(a, deg, k)
   @inbounds begin
     int = zero(eltype(a))
     sign = 1
-    for i in 1:deg
-      int += flipsign(a[i]/(i+k), sign)
+    for i in 0:deg
+      int += flipsign(a[i+1]/(i+k), sign)
       sign = -sign
     end
     return int
@@ -25,10 +95,9 @@ function calc_coeff!(cache::T) where T
   isvode = ( T <: JVODECache || T <: JVODEConstantCache )
   @inbounds begin
     isconst = T <: OrdinaryDiffEqConstantCache
-    isconst || (cache = cache.const_cache)
-    isvarorder = nordsieck_change_order(cache, 1)
-    @unpack m, l, tau, order = cache
-    dtsum = dt = tau[1]
+    isvarorder = is_nordsieck_change_order(cache, 1)
+    @unpack m, l, dts, order = cache
+    dtsum = dt = dts[1]
     if order == 1
       l[1] = l[2] = cache.c_LTE₋₁ = cache.c_𝒟 = 1
       cache.c_LTE = 1//2
@@ -46,7 +115,7 @@ function calc_coeff!(cache::T) where T
     # check the `JuliaDiffEq/DiffEqDevMaterials` repository for more details
     for j in 1:order-1
       if isvarorder && j == order-1
-        M₋₁ = ∫₋₁⁰dx(m, order-1, 1)
+        M₋₁ = ∫₋₁⁰dx(m, order-2, 2)
         # It is the same with `tq[1]` in SUNDIALS cvode.c
         cache.c_LTE₋₁ = order * M₋₁ / m[order-1]
       end
@@ -54,12 +123,12 @@ function calc_coeff!(cache::T) where T
       for i in j:-1:1
         m[i+1] = muladd(m[i], ξ_inv, m[i+1])
       end
-      dtsum += tau[j+1]
+      dtsum += dts[j+1]
     end
     ξ_inv = dt / dtsum
 
-    M0 = ∫₋₁⁰dx(m, order, 0)
-    M1 = ∫₋₁⁰dx(m, order, 1)
+    M0 = ∫₋₁⁰dx(m, order-1, 1)
+    M1 = ∫₋₁⁰dx(m, order-1, 2)
     M0_inv = inv(M0)
     l[1] = 1
     for i in 1:order
@@ -74,10 +143,10 @@ function calc_coeff!(cache::T) where T
     # It is the same with `tq[5]` in SUNDIALS cvode.c
     isvode && (cache.c_𝒟 = inv(ξ_inv) / l[order+1])
     if isvarorder
-      for i in order-1:-1:1
+      for i in order:-1:1
         m[i+1] = muladd(ξ_inv, m[i], m[i+1])
       end
-      M2 = ∫₋₁⁰dx(m, order, 1)
+      M2 = ∫₋₁⁰dx(m, order, 2)
       # It is the same with `tq[3]` in SUNDIALS cvode.c
       cache.c_LTE₊₁ = M2 * M0_inv / (order+1)
     end # endif isvarorder
@@ -91,7 +160,6 @@ end
 function perform_predict!(cache::T, rewind=false) where T
   @inbounds begin
     isconst = T <: OrdinaryDiffEqConstantCache
-    isconst || (cache = cache.const_cache)
     @unpack z, order = cache
     # This can be parallelized
     if !rewind
@@ -121,35 +189,29 @@ end
 # Apply corrections on the Nordsieck vector
 function update_nordsieck_vector!(cache::T) where T
   isvode = ( T <: JVODECache || T <: JVODEConstantCache )
-  ispreparevarorder = nordsieck_change_order(cache, 1)
   @inbounds begin
     isconst = T <: OrdinaryDiffEqConstantCache
+    @unpack z,Δ,l,order = cache
     if isconst
-      @unpack z,Δ,l,order = cache
       for i in 1:order+1
         z[i] = muladd.(l[i], Δ, z[i])
       end
-      ispreparevarorder && ( z[end] = Δ )
     else
-      @unpack z,Δ,l,order = cache.const_cache
       for i in 1:order+1
         @. z[i] = muladd(l[i], Δ, z[i])
       end
-      ispreparevarorder && ( z[end] .= Δ )
     end # endif not const cache
   end # end @inbounds
 end
 
 function nlsolve_functional!(integrator, cache::T) where T
-  @unpack f, dt, uprev, t, p = integrator
+  @unpack f, dt, t, p = integrator
   isconstcache = T <: OrdinaryDiffEqConstantCache
+  @unpack z, l, c_conv, Δ = cache
   if isconstcache
-    @unpack z, l, c_conv = cache
     ratetmp = integrator.f(z[1], p, dt+t)
   else
-    @unpack ratetmp, const_cache = cache
-    @unpack Δ, z, l, c_conv = const_cache
-    cache = const_cache
+    @unpack ratetmp = cache
     integrator.f(ratetmp, z[1], p, dt+t)
   end
   max_iter = 3
@@ -198,9 +260,8 @@ end
 
 function nordsieck_rescale!(cache::T, rewind=false) where T
   isconstcache = T <: OrdinaryDiffEqConstantCache
-  isconstcache || ( cache = cache.const_cache )
-  @unpack z, tau, order = cache
-  eta = rewind ? tau[2]/tau[1] : tau[1]/tau[2]
+  @unpack z, dts, order = cache
+  eta = rewind ? dts[2]/dts[1] : dts[1]/dts[2]
   factor = eta
   for i in 2:order+1
     if isconstcache
@@ -218,9 +279,8 @@ function nordsieck_rewind!(cache)
   nordsieck_rescale!(cache, true)
 end
 
-function nordsieck_change_order(cache::T, n=0) where T
+function is_nordsieck_change_order(cache::T, n=0) where T
   isconstcache = T <: OrdinaryDiffEqConstantCache
-  isconstcache || ( cache = cache.const_cache )
   isvode = ( T <: JVODECache || T <: JVODEConstantCache )
   isvode || return false
   cache.n_wait == 0+n
@@ -230,15 +290,13 @@ function nordsieck_decrement_wait!(cache::T) where T
   isvode = ( T <: JVODECache || T <: JVODEConstantCache )
   isvode || return nothing
   isconstcache = T <: OrdinaryDiffEqConstantCache
-  isconstcache || ( cache = cache.const_cache )
   cache.n_wait = max(0, cache.n_wait-1)
   return nothing
 end
 
-function nordsieck_order_change(cache::T, dorder) where T
+function nordsieck_adjust_order!(cache::T, dorder) where T
   isconstcache = T <: OrdinaryDiffEqConstantCache
-  isconstcache || ( cache = cache.const_cache )
-  @unpack order, tau = cache
+  @unpack order, dts = cache
   # WIP: uncomment when finished
   #@inbound begin
   begin
@@ -254,13 +312,13 @@ function nordsieck_order_change(cache::T, dorder) where T
       # One needs to rescale the Nordsieck vector on an order decrease
       cache.l .= 0
       cache.l[2] = 1
-      dt = tau[1]
-      hsum = zero(eltype(cache.tau))
-      for j in 2:order-1
-        hsum += cache.tau[j]
+      dt = dts[1]
+      hsum = zero(eltype(cache.dts))
+      for j in 1:order-2
+        hsum += cache.dts[j+1]
         # TODO: `hscale`?
         ξ = hsum / dt
-        for i in j:-1:1
+        for i in j+1:-1:1
           cache.l[i+1] = cache.l[i+1] * ξ + cache.l[i]
         end # for i
       end # for j
@@ -269,7 +327,6 @@ function nordsieck_order_change(cache::T, dorder) where T
         cache.l[j+1] = order * cache.l[j] / j
       end
       for j in 3:order
-        # cache.z[j] = -cache.l[j] * cache.z[order+1] + cache.z[j]
         if isconstcache
           cache.z[j] = muladd.(-cache.l[j], cache.z[order+1], cache.z[j])
         else
@@ -281,64 +338,61 @@ function nordsieck_order_change(cache::T, dorder) where T
 end
 
 # `η` is `dtₙ₊₁/dtₙ`
-function choose_η!(integrator, cache::T) where T
-  isconstcache = T <: OrdinaryDiffEqConstantCache
-  isconstcache || ( cache = cache.const_cache )
-  isvarorder = nordsieck_change_order(cache)
-  order = get_current_adaptive_order(integrator.alg, integrator.cache)
-  L = order + 1
-  ηq = stepsize_η!(integrator, cache, order)
-  # If the error test fails
-  if integrator.EEst >= 1
-    nordsieck_rewind!(integrator.cache)
-    cache.η = max(integrator.opts.qmin, cache.η, integrator.opts.dtmin/abs(integrator.dt))
-    return cache.η
-  end
-  # Consider change the order
-  if isvarorder
-    cache.n_wait = 2
-    ηqm1 = stepsize_η₋₁!(integrator, cache, order)
-    ηqp1 = stepsize_η₊₁!(integrator, cache, order)
-    η = max(ηqm1, ηqp1, cache.η)
+function setη!(integrator, cache::T) where T
+  if cache.η < integrator.opts.qsteady_max
+    cache.η = 1
   else
-    η = ηq
-    cache.η = η
+    # TODO: Not the same with SUNDIALS
+    ( integrator.iter == 1 || integrator.u_modified ) && ( cache.η = min(1e5, cache.η); return nothing )
+    cache.η = min(integrator.opts.qmax, max(integrator.opts.qmin, cache.η))
   end
-  ( η <= integrator.opts.qsteady_max ) && ( cache.η = 1 ; return cache.η )
-  if isvarorder
-    if η == cache.η
-      cache.nextorder = order
-    elseif η == cache.η₋₁
-      cache.η = cache.η₋₁
-      cache.nextorder = order - 1
-      cache.n_wait = L
-      nordsieck_order_change(cache, -1)
-    else
-      cache.η = cache.η₊₁
-      cache.nextorder = order + 1
-      # TODO: BDF needs a different handler
-      cache.n_wait = L
-      nordsieck_order_change(cache, 1)
-    end
-  end
-  ( integrator.iter == 1 || integrator.u_modified ) && return ( cache.η = min(1e5, cache.η) )
-  cache.η = min(integrator.opts.qmax, max(integrator.opts.qmin, cache.η))
-  return cache.η
+  return nothing
 end
 
-function stepsize_η!(integrator, cache::T, order) where T
+function chooseη!(integrator, cache::T) where T
+  isconst = T <: OrdinaryDiffEqConstantCache
+  @unpack ηq, η₋₁, η₊₁, order, z, Δ = cache
+  η = max(ηq, η₋₁, η₊₁)
+  if η < integrator.opts.qsteady_max
+    cache.η = 1
+    cache.nextorder = order
+  end
+
+  if η == ηq
+    cache.η = cache.ηq
+    cache.nextorder = order
+  elseif η == η₋₁
+    cache.η = cache.η₋₁
+    cache.nextorder = order - 1
+  else
+    cache.η = cache.η₊₁
+    cache.nextorder = order + 1
+    # TODO: BDF
+    if integrator.alg.algorithm == :BDF
+      if isconst
+        z[end] = Δ
+      else
+        @. z[end] = Δ
+      end
+    end #endif BDF
+  end # endif η == ηq
+  return nothing
+end
+
+function stepsize_η!(integrator, cache, order)
   bias2 = integrator.alg.bias2
   addon = integrator.alg.addon
   L = order+1
-  cache.η = inv( (bias2*integrator.EEst)^inv(L) + addon )
-  return cache.η
+  cache.ηq = inv( (bias2*integrator.EEst)^inv(L) + addon )
+  return cache.ηq
 end
 
+# TODO: Check them
 function stepsize_η₊₁!(integrator, cache::T, order) where T
   isconstcache = T <: OrdinaryDiffEqConstantCache
-  isconstcache || ( atmp = cache.atmp; cache = cache.const_cache )
+  isconstcache || ( @unpack atmp, ratetmp = cache )
   @unpack uprev, u = integrator
-  @unpack z, c_LTE₊₁, tau, c_𝒟  = cache
+  @unpack z, c_LTE₊₁, dts, c_𝒟  = cache
   bias3 = integrator.alg.bias3
   addon = integrator.alg.addon
   q = order
@@ -347,15 +401,15 @@ function stepsize_η₊₁!(integrator, cache::T, order) where T
   L = q+1
   if q != qmax
     cache.prev_𝒟 == 0 && return cache.η₊₁
-    cquot = (c_𝒟 / cache.prev_𝒟) * (tau[1]/tau[3])^L
+    cquot = (c_𝒟 / cache.prev_𝒟) * (dts[1]/dts[2])^L
     if isconstcache
       atmp = muladd.(-cquot, z[end], cache.Δ)
       atmp = calculate_residuals(atmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
     else
-      @. atmp = muladd(-cquot, z[end], cache.Δ)
-      calculate_residuals!(atmp, const_cache.Δ, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      @. ratetmp = muladd(-cquot, z[end], cache.Δ)
+      calculate_residuals!(atmp, ratetmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
     end
-    dup = abs(integrator.opts.internalnorm(atmp) * c_LTE₊₁)
+    dup = integrator.opts.internalnorm(atmp) * c_LTE₊₁
     cache.η₊₁ = inv( (bias3*dup)^inv(L+1) + addon )
   end
   return cache.η₊₁
@@ -363,21 +417,20 @@ end
 
 function stepsize_η₋₁!(integrator, cache::T, order) where T
   isconstcache = T <: OrdinaryDiffEqConstantCache
-  isconstcache || ( atmp = cache.atmp; cache = cache.const_cache )
+  isconstcache || ( atmp = cache.atmp )
   @unpack uprev, u = integrator
   @unpack z, c_LTE₋₁ = cache
-  bias1 = integrator.alg.bias2
+  bias1 = integrator.alg.bias1
   addon = integrator.alg.addon
-  q = order
   cache.η₋₁ = 0
-  if q > 1
+  if order > 1
     if isconstcache
-      atmp = calculate_residuals(cache.z[q+1], uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      atmp = calculate_residuals(z[order+1], uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
     else
-      calculate_residuals!(atmp, const_cache.Δ, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      calculate_residuals!(atmp, z[order+1], uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
     end
     approx = integrator.opts.internalnorm(atmp) * c_LTE₋₁
-    cache.η₋₁ = inv( (bias1*approx)^inv(q) + addon )
+    cache.η₋₁ = inv( (bias1*approx)^inv(order) + addon )
   end
   return cache.η₋₁
 end

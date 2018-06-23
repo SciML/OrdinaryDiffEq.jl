@@ -174,7 +174,8 @@ const StandardControllerAlgs = Union{GenericImplicitEuler,GenericTrapezoid,VCABM
 #const NordAlgs = Union{AN5, JVODE}
 
 function stepsize_controller!(integrator, alg::JVODE)
-  η = choose_η!(integrator, integrator.cache)
+  #η = choose_η!(integrator, integrator.cache)
+  η = integrator.cache.η
   integrator.qold = η
   η
 end
