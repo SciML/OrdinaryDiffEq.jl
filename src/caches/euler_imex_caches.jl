@@ -8,13 +8,14 @@ mutable struct IMEXEulerConstantCache{F,uToltype} <: OrdinaryDiffEqConstantCache
   newton_iters::Int
 end
 
-mutable struct IMEXEulerCache{uType,rateType,uNoUnitsType,J,UF,JC,uToltype,tType,F} <: OrdinaryDiffEqMutableCache
+mutable struct IMEXEulerCache{uType,rateType,uNoUnitsType,J,UF,JC,uToltype,F} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
   du1::rateType
   fsalfirst::rateType
   k::rateType
+  du₁::rateType
   z::uType
   dz::uType
   b::uType
@@ -57,26 +58,19 @@ function alg_cache(alg::IMEXEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   J = zeros(uEltypeNoUnits,length(u),length(u))
   W = similar(J)
   z = similar(u,indices(u))
-  dz = similar(u,indices(u))
-  tmp = similar(u); b = similar(u,indices(u));
-  atmp = similar(u,uEltypeNoUnits,indices(u))
+  dz = similar(u,indices(u)); tmp = similar(u,indices(u)); b = similar(u,indices(u))
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
-  k1 = zeros(rate_prototype)
-  k2 = zeros(rate_prototype)
-  du1 = zeros(rate_prototype)
   du₁ = zeros(rate_prototype)
+  du1 = zeros(rate_prototype)
+  atmp = similar(u,uEltypeNoUnits,indices(u))
 
-  if typeof(f) <: SplitFunction
-    uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t,p)
-  else
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
-  end
-
+  uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t,p)
   linsolve = alg.linsolve(Val{:init},uf,u)
-  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
-
+  jac_config = build_jac_config(alg,f.f1,uf,du1,uprev,u,tmp,dz)
   uToltype = real(uBottomEltypeNoUnits)
+  ηold = one(uToltype)
+
   if alg.κ != nothing
     κ = uToltype(alg.κ)
   else
@@ -87,11 +81,5 @@ function alg_cache(alg::IMEXEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   else
     tol = uToltype(min(0.03,first(reltol)^(0.5)))
   end
-
-  uprev3 = similar(u)
-  tprev2 = t
-
-  ηold = one(uToltype)
-
-  IMEXEulerCache(u,uprev,uprev2,fsalfirst,k,k1,k2,du₁,du1,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,ηold,κ,tol,10000,uprev3,tprev2)
+  IMEXEulerCache(u,uprev,uprev2,du1,fsalfirst,k,du₁,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,ηold,κ,tol,10000)
 end
