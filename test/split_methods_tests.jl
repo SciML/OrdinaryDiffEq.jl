@@ -62,6 +62,11 @@ dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
 @test abs(sim.𝒪est[:l∞]-5) < testTol
 
+# IMEXEuler
+dts = 1.//2.^(8:-1:4)
+sim1 = test_convergence(dts,prob,IMEXEuler())
+@test abs(sim1.𝒪est[:l∞]-1) < testTol
+
 # CNAB2
 dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,CNAB2())
@@ -96,6 +101,11 @@ sol = solve(prob,KenCarp5())
 dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
 @test abs(sim.𝒪est[:l∞]-5) < testTol
+
+# IMEXEuler
+dts = 1.//2.^(8:-1:4)
+sim2 = test_convergence(dts,prob,IMEXEuler())
+@test abs(sim2.𝒪est[:l∞]-1) < testTol
 
 # CNAB2
 dts = 1.//2.^(8:-1:4)
@@ -132,6 +142,11 @@ dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
 @test abs(sim.𝒪est[:l∞]-5) < testTol
 
+# IMEXEuler
+dts = 1.//2.^(8:-1:4)
+sim3 = test_convergence(dts,prob,IMEXEuler())
+@test abs(sim3.𝒪est[:l∞]-1) < testTol
+
 # CNAB2
 dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,CNAB2())
@@ -166,6 +181,11 @@ sol = solve(prob,KenCarp5())
 dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
 @test abs(sim.𝒪est[:l∞]-5) < testTol
+
+# IMEXEuler
+dts = 1.//2.^(8:-1:4)
+sim1 = test_convergence(dts,prob,IMEXEuler())
+@test abs(sim1.𝒪est[:l∞]-1) < testTol
 
 # CNAB2
 dts = 1.//2.^(8:-1:4)
@@ -202,6 +222,11 @@ dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
 @test abs(sim.𝒪est[:l∞]-5) < testTol
 
+# IMEXEuler
+dts = 1.//2.^(8:-1:4)
+sim2 = test_convergence(dts,prob,IMEXEuler())
+@test abs(sim2.𝒪est[:l∞]-1) < testTol
+
 # CNAB2
 dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,CNAB2())
@@ -236,6 +261,11 @@ sol = solve(prob,KenCarp5())
 dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
 @test abs(sim.𝒪est[:l∞]-5) < testTol
+
+# IMEXEuler
+dts = 1.//2.^(8:-1:4)
+sim3 = test_convergence(dts,prob,IMEXEuler())
+@test abs(sim3.𝒪est[:l∞]-1) < testTol
 
 # CNAB2
 dts = 1.//2.^(8:-1:4)
