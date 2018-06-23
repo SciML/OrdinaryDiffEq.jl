@@ -169,7 +169,7 @@ struct VCABM <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm end
 
 # IMEX Multistep methods
 
-struct ABCN2{CS,AD,F,FDT,K,T,T2} <: OrdinaryDiffEqImplicitAlgorithm{CS,AD}
+struct CNAB2{CS,AD,F,FDT,K,T,T2} <: OrdinaryDiffEqImplicitAlgorithm{CS,AD}
   linsolve::F
   diff_type::FDT
   κ::K
@@ -179,11 +179,11 @@ struct ABCN2{CS,AD,F,FDT,K,T,T2} <: OrdinaryDiffEqImplicitAlgorithm{CS,AD}
   max_newton_iter::Int
   new_jac_conv_bound::T2
 end
-Base.@pure ABCN2(;chunk_size=0,autodiff=true,diff_type=Val{:central},
+Base.@pure CNAB2(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                       linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
                       extrapolant=:linear,min_newton_iter=1,
                       max_newton_iter=7,new_jac_conv_bound = 1e-3) =
-                      ABCN2{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),
+                      CNAB2{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),
                       typeof(κ),typeof(tol),typeof(new_jac_conv_bound)}(
                       linsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
                       max_newton_iter,new_jac_conv_bound)

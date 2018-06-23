@@ -62,9 +62,9 @@ dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
 @test abs(sim.𝒪est[:l∞]-5) < testTol
 
-# ABCN2
+# CNAB2
 dts = 1.//2.^(8:-1:4)
-sim = test_convergence(dts,prob,ABCN2())
+sim = test_convergence(dts,prob,CNAB2())
 @test abs(sim.𝒪est[:l∞]-2) < testTol
 
 # CNLF2
@@ -97,9 +97,9 @@ dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
 @test abs(sim.𝒪est[:l∞]-5) < testTol
 
-# ABCN2
+# CNAB2
 dts = 1.//2.^(8:-1:4)
-sim = test_convergence(dts,prob,ABCN2())
+sim = test_convergence(dts,prob,CNAB2())
 @test abs(sim.𝒪est[:l∞]-2) < testTol
 
 # CNLF2
@@ -132,9 +132,9 @@ dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
 @test abs(sim.𝒪est[:l∞]-5) < testTol
 
-# ABCN2
+# CNAB2
 dts = 1.//2.^(8:-1:4)
-sim = test_convergence(dts,prob,ABCN2())
+sim = test_convergence(dts,prob,CNAB2())
 @test abs(sim.𝒪est[:l∞]-2) < testTol
 
 # CNLF2
@@ -167,9 +167,9 @@ dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
 @test abs(sim.𝒪est[:l∞]-5) < testTol
 
-# ABCN2
+# CNAB2
 dts = 1.//2.^(8:-1:4)
-sim = test_convergence(dts,prob,ABCN2())
+sim = test_convergence(dts,prob,CNAB2())
 @test abs(sim.𝒪est[:l∞]-2) < testTol
 
 # CNLF2
@@ -202,9 +202,9 @@ dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
 @test abs(sim.𝒪est[:l∞]-5) < testTol
 
-# ABCN2
+# CNAB2
 dts = 1.//2.^(8:-1:4)
-sim = test_convergence(dts,prob,ABCN2())
+sim = test_convergence(dts,prob,CNAB2())
 @test abs(sim.𝒪est[:l∞]-2) < testTol
 
 # CNLF2
@@ -237,9 +237,9 @@ dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
 @test abs(sim.𝒪est[:l∞]-5) < testTol
 
-# ABCN2
+# CNAB2
 dts = 1.//2.^(8:-1:4)
-sim = test_convergence(dts,prob,ABCN2())
+sim = test_convergence(dts,prob,CNAB2())
 @test abs(sim.𝒪est[:l∞]-2) < testTol
 
 # CNLF2

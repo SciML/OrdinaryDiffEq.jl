@@ -178,7 +178,7 @@ module OrdinaryDiffEq
 
   export VCABM
 
-  export ABCN2, CNLF2
+  export CNAB2, CNLF2
 
   export AN5, JVODE, JVODE_Adams
 
