@@ -19,9 +19,7 @@ function perform_step!(integrator, cache::IMEXEulerConstantCache, repeat_step=fa
   tmp = uprev + dt*du₂
   # Implicit part
   # Precalculations
-  γ = 1//1
-  γdt = γ*dt
-  W = calc_W!(integrator, cache, γdt, repeat_step)
+  W = calc_W!(integrator, cache, dt, repeat_step)
 
   # initial guess
   alg = unwrap_alg(integrator, true)
@@ -41,4 +39,42 @@ function perform_step!(integrator, cache::IMEXEulerConstantCache, repeat_step=fa
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
+end
+
+function initialize!(integrator, cache::IMEXEulerCache)
+  integrator.kshortsize = 2
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+end
+
+function perform_step!(integrator, cache::IMEXEulerCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack du₁,z,W,tmp = cache
+  f1 = integrator.f.f1
+  f1(du₁,uprev,p,t)
+  # Explicit part
+  @. tmp = uprev + dt*(integrator.fsalfirst - du₁)
+  # Implicit part
+  # Precalculations
+  new_W = calc_W!(integrator, cache, dt, repeat_step)
+
+  # initial guess
+  alg = unwrap_alg(integrator, true)
+  if alg.extrapolant == :linear
+    @. z = dt*integrator.fsalfirst
+  else # :constant
+    z .= zero(u)
+  end
+
+  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, tmp, 1, 1, Val{:newton}, new_W)
+  fail_convergence && return
+  @. u = tmp + z
+
+  cache.ηold = η
+  cache.newton_iters = iter
+  f(integrator.fsallast,u,p,t+dt)
 end
