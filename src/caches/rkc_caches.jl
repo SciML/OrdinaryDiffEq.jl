@@ -1,3 +1,13 @@
+mutable struct ROCK2ConstantCache{T,T2,zType} <: OrdinaryDiffEqConstantCache
+  ms::SVector{46, Int}
+  fp1::SVector{46, T}
+  fp2::SVector{46, T}
+  recf::Vector{T2}
+  zprev::zType
+  mdegprev::Int
+  mdeg::Int
+  recind::Int
+end
 struct ROCK2Cache{} <: OrdinaryDiffEqMutableCache # WIP
   constantcache::ROCK2ConstantCache
 end

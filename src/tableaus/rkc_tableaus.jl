@@ -1,14 +1,3 @@
-mutable struct ROCK2ConstantCache{T,T2,zType} <: OrdinaryDiffEqConstantCache
-  ms::SVector{46, Int}
-  fp1::SVector{46, T}
-  fp2::SVector{46, T}
-  recfi::Vector{T2}
-  zprev::zType
-  mdegprev::Int
-  mdeg::Int
-  recind::Int
-end
-
 Base.@pure function ROCK2ConstantCache(::Type{T}, ::Type{T2}, zprev) where {T, T2}
   ms = SVector{46, Int}(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,
      22,24,26,28,30,33,36,39,43,47,51,56,61,66,72,78,85,93,

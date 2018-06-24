@@ -64,9 +64,9 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
   return false
 end
 
-function choosedeg(cache::T) where T
+function choosedeg!(cache::T) where T
   isconst = T <: OrdinaryDiffEqConstantCache
-  isconst && ( cache = cache.constantcache )
+  isconst || ( cache = cache.constantcache )
   @unpack ms, fp1, fp2, recf, zprev = cache
   recind = 0
   @inbounds for i in 1:46

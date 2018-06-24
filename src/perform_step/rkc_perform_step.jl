@@ -16,7 +16,7 @@ end
   # The number of stage.
   mdeg = Int(floor(sqrt((1.5 + dt * integrator.eigen_est)/0.811) + 1))
   if mdeg >= 200
-    h = 0.8 * (200 ^ 2 * 0.811 - 1.5)/integrator.eigen_est
+    dt = 0.8 * (200 ^ 2 * 0.811 - 1.5)/integrator.eigen_est
     mdeg = 200
   end
   cache.mdeg = max(mdeg, 3) - 2
@@ -24,43 +24,36 @@ end
   err = 0
   # recurrence
   # for the first stage
-  temp1 = h * recf[cache.recind]
+  temp1 = dt * recf[cache.recind]
   ci1 = t + temp1
   ci2 = t + temp1
   ci3 = t
   gprev2 = uprev
   gprev = uprev + temp1 * fsalfirst
-  ms[cache.mdeg] < 2 && u = gprev
+  ms[cache.mdeg] < 2 && ( u = gprev )
   # for the second to the ms[cache.mdeg] th stages
   for i in 2:ms[cache.mdeg]
-    temp1 = h * recf[cache.recind + 2 * (i - 2) + 1]
+    temp1 = dt * recf[cache.recind + 2 * (i - 2) + 1]
     temp3 = -recf[cache.recind + 2 * (i - 2) + 2]
     temp2 = 1 - temp3
     ci1 = temp1 + temp2 * ci2 + temp3 * ci3
     u = temp1 * u + temp2 * gprev + temp3 * gprev2
-    i < ms[cache.mdeg] && (gprev2 = gprev, gprev = u)
+    i < ms[cache.mdeg] && (gprev2 = gprev; gprev = u)
     ci3 = ci2
     ci2 = ci1
   end # end if
   # two-stage finishing procedure.
-  temp1 = h * fp1[cache.mdeg]
-  temp2 = h * fp2[cache.mdeg]
+  temp1 = dt * fp1[cache.mdeg]
+  temp2 = dt * fp2[cache.mdeg]
   gprev = u + temp1 * gprev2
   ci1 += temp1
   # error estimate
-  if ntol = 0 # what is ntol?
-    temp3 = temp2 * ( u - gprev2)
-    u = gprev + temp1 * u + temp3
-    ci1 = max(abs(u), abs(uprev)) * rto
-    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(atmp)
-  else
+  if integrator.opts.adaptive
     temp3 = temp2 * (u - gprev2)
     u = gprev + temp1 * u + temp3
-    ci1 = abs(u) * rtol
-    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+    calculate_residuals(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
-  end # end if
+  end
   #
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
