@@ -107,12 +107,7 @@ end
 function perform_step!(integrator, cache::NorsettEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack rtmp,Jcache,Ks,KsCache = cache
-  if isa(f, SplitFunction)
-    A = f.f1
-  else
-    f.jac(Jcache, uprev, p, t)
-    A = Jcache
-  end
+  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   if alg.krylov
