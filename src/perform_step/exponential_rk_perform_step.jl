@@ -111,10 +111,10 @@ function perform_step!(integrator, cache::NorsettEulerCache, repeat_step=false)
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   if alg.krylov
-    w = KsCache[1]
+    w, phiv_caches = KsCache
     arnoldi!(Ks, A, integrator.fsalfirst; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, 
       cache=u, iop=alg.iop)
-    phiv!(w, dt, Ks, 1; caches=KsCache[2:end])
+    phiv!(w, dt, Ks, 1; caches=phiv_caches)
     @muladd @. u = uprev + dt * @view(w[:, 2])
   else
     A_mul_B!(rtmp, cache.phihA, integrator.fsalfirst)

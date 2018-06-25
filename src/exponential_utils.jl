@@ -422,19 +422,15 @@ function phiv!(w::Matrix{T}, t::Number, Ks::KrylovSubspace{B, T}, k::Integer;
   @assert size(w, 1) == size(V, 1) "Dimension mismatch"
   @assert size(w, 2) == k + 1 "Dimension mismatch"
   if caches == nothing
-    e = Vector{T}(m)
-    Hcopy = Matrix{T}(m, m)
-    C1 = Matrix{T}(m + k, m + k)
-    C2 = Matrix{T}(m, k + 1)
-  else
-    e, Hcopy, C1, C2 = caches
-    # The caches may have a bigger size to handle different values of m.
-    # Here we only need a portion of them.
-    e = @view(e[1:m])
-    Hcopy = @view(Hcopy[1:m, 1:m])
-    C1 = @view(C1[1:m + k, 1:m + k])
-    C2 = @view(C2[1:m, 1:k + 1])
+    caches = construct_phiv_caches(Ks, k)
   end
+  e, Hcopy, C1, C2 = caches
+  # The caches may have a bigger size to handle different values of m.
+  # Here we only need a portion of them.
+  e = @view(e[1:m])
+  Hcopy = @view(Hcopy[1:m, 1:m])
+  C1 = @view(C1[1:m + k, 1:m + k])
+  C2 = @view(C2[1:m, 1:k + 1])
   scale!(t, copy!(Hcopy, @view(H[1:m, :])))
   fill!(e, zero(T)); e[1] = one(T) # e is the [1,0,...,0] basis vector
   phiv_dense!(C2, Hcopy, e, k; cache=C1) # C2 = [ϕ0(H)e ϕ1(H)e ... ϕk(H)e]
@@ -454,6 +450,15 @@ function phiv!(w::Matrix{T}, t::Number, Ks::KrylovSubspace{B, T}, k::Integer;
   else
     return w
   end
+end
+# Helper method to allocate caches for phiv
+function construct_phiv_caches(Ks::KrylovSubspace{B, T}, p::Int) where {B, T}
+  m = Ks.maxiter
+  e = Vector{T}(m)
+  Hcopy = Matrix{T}(m, m)
+  C1 = Matrix{T}(m + p, m + p)
+  C2 = Matrix{T}(m, p + 1)
+  return e, Hcopy, C1, C2
 end
 
 ###########################################

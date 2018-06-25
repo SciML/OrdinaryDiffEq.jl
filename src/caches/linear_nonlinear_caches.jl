@@ -225,8 +225,9 @@ function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomElty
     m = min(alg.m, length(u))
     T = eltype(u)
     Ks = KrylovSubspace{T}(n, m)
-    KsCache = (Matrix{T}(n, 2), Vector{T}(m), Matrix{T}(m, m), Matrix{T}(m + 1, m + 1), 
-      Matrix{T}(m, 2))
+    w = Matrix{T}(n, 2)
+    phiv_caches = construct_phiv_caches(Ks, 1)
+    KsCache = (w, phiv_caches)
   else
     Ks = nothing
     KsCache = nothing
@@ -271,7 +272,7 @@ function alg_cache(alg::ETDRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     Ks = KrylovSubspace{T}(n, m)
     w1 = Matrix{T}(n, 3)
     w2 = Matrix{T}(n, 3)
-    phiv_caches = (Vector{T}(m), Matrix{T}(m, m), Matrix{T}(m + 2, m + 2), Matrix{T}(m, 3))
+    phiv_caches = construct_phiv_caches(Ks, 2)
     KsCache = (w1, w2, phiv_caches)
   else
     Ks = nothing
@@ -315,7 +316,7 @@ function alg_cache(alg::ETDRK3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     T = eltype(u)
     Ks = KrylovSubspace{T}(n, m)
     w1_half = Matrix{T}(n, 2); w1 = Matrix{T}(n, 4); w2 = Matrix{T}(n, 4); w3 = Matrix{T}(n, 4)
-    phiv_caches = (Vector{T}(m), Matrix{T}(m, m), Matrix{T}(m + 3, m + 3), Matrix{T}(m, 4))
+    phiv_caches = construct_phiv_caches(Ks, 3)
     KsCache = (w1_half, w1, w2, w3, phiv_caches)
   else
     Ks = nothing
@@ -365,7 +366,7 @@ function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     Ks = KrylovSubspace{T}(n, m)
     w1_half = Matrix{T}(n, 2); w2_half = Matrix{T}(n, 2)
     w1 = Matrix{T}(n, 4); w2 = Matrix{T}(n, 4); w3 = Matrix{T}(n, 4); w4 = Matrix{T}(n, 4)
-    phiv_caches = (Vector{T}(m), Matrix{T}(m, m), Matrix{T}(m + 3, m + 3), Matrix{T}(m, 4))
+    phiv_caches = construct_phiv_caches(Ks, 3)
     KsCache = (w1_half, w2_half, w1, w2, w3, w4, phiv_caches)
   else
     Ks = KsCache = nothing
@@ -418,7 +419,7 @@ function alg_cache(alg::HochOst4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
     Ks = KrylovSubspace{T}(n, m)
     w1_half = Matrix{T}(n, 4); w2_half = Matrix{T}(n, 4); w3_half = Matrix{T}(n, 4); w4_half = Matrix{T}(n, 4)
     w1 = Matrix{T}(n, 4); w2 = Matrix{T}(n, 4); w3 = Matrix{T}(n, 4); w4 = Matrix{T}(n, 4); w5 = Matrix{T}(n, 4)
-    phiv_caches = (Vector{T}(m), Matrix{T}(m, m), Matrix{T}(m + 3, m + 3), Matrix{T}(m, 4))
+    phiv_caches = construct_phiv_caches(Ks, 3)
     KsCache = (w1_half, w2_half, w3_half, w4_half, w1, w2, w3, w4, w5, phiv_caches)
   else
     Ks = KsCache = nothing
