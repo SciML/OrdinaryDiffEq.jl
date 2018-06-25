@@ -186,13 +186,8 @@ function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   else
     Ks = nothing
     KsCache = nothing
-    A = f.f1
-    if isa(A, DiffEqArrayOperator)
-      _A = A.A * A.α.coeff
-    else
-      _A = full(A)
-    end
-    exphA = expRK_operators(alg, dt, _A)
+    A = isa(f.f1, DiffEqArrayOperator) ? f.f1.A * f.f1.α.coeff : full(f.f1)
+    exphA = expRK_operators(alg, dt, A)
   end
   LawsonEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),Jcache,exphA,Ks,KsCache)
 end
@@ -231,13 +226,8 @@ function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomElty
   else
     Ks = nothing
     KsCache = nothing
-    A = f.f1
-    if isa(A, DiffEqArrayOperator)
-      _A = A.A * A.α.coeff
-    else
-      _A = full(A)
-    end
-    phihA = expRK_operators(alg, dt, _A)
+    A = isa(f.f1, DiffEqArrayOperator) ? f.f1.A * f.f1.α.coeff : full(f.f1)
+    phihA = expRK_operators(alg, dt, A)
   end
   NorsettEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),Jcache,phihA,Ks,KsCache)
 end
@@ -278,12 +268,8 @@ function alg_cache(alg::ETDRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     Ks = nothing
     KsCache = nothing
     A = f.f1
-    if isa(A, DiffEqArrayOperator)
-      _A = A.A * A.α.coeff
-    else
-      _A = full(A)
-    end
-    ops = expRK_operators(alg, dt, _A)
+    A = isa(f.f1, DiffEqArrayOperator) ? f.f1.A * f.f1.α.coeff : full(f.f1)
+    ops = expRK_operators(alg, dt, A)
   end
   ETDRK2Cache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),Jcache,ops,Ks,KsCache)
 end
@@ -322,12 +308,8 @@ function alg_cache(alg::ETDRK3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     Ks = nothing
     KsCache = nothing
     A = f.f1
-    if isa(A, DiffEqArrayOperator)
-      _A = A.A * A.α.coeff
-    else
-      _A = full(A)
-    end
-    ops = expRK_operators(alg, dt, _A)
+    A = isa(f.f1, DiffEqArrayOperator) ? f.f1.A * f.f1.α.coeff : full(f.f1)
+    ops = expRK_operators(alg, dt, A)
   end
   ETDRK3Cache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),
     zeros(rate_prototype),zeros(rate_prototype),Jcache,ops,Ks,KsCache)
@@ -370,13 +352,8 @@ function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     KsCache = (w1_half, w2_half, w1, w2, w3, w4, phiv_caches)
   else
     Ks = KsCache = nothing
-    A = f.f1
-    if isa(A, DiffEqArrayOperator)
-      L = A.A .* A.α.coeff # has special handling if A.A is Diagonal
-    else
-      L = full(A)
-    end
-    ops = expRK_operators(alg, dt, L)
+    A = isa(f.f1, DiffEqArrayOperator) ? f.f1.A * f.f1.α.coeff : full(f.f1)
+    ops = expRK_operators(alg, dt, A)
   end
   ETDRK4Cache(u,uprev,tmp,rtmp,Au,F2,F3,F4,Jcache,ops,Ks,KsCache)
 end
@@ -423,13 +400,8 @@ function alg_cache(alg::HochOst4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
     KsCache = (w1_half, w2_half, w3_half, w4_half, w1, w2, w3, w4, w5, phiv_caches)
   else
     Ks = KsCache = nothing
-    A = f.f1
-    if isa(A, DiffEqArrayOperator)
-      L = A.A .* A.α.coeff # has special handling if A.A is Diagonal
-    else
-      L = full(A)
-    end
-    ops = expRK_operators(alg, dt, L)
+    A = isa(f.f1, DiffEqArrayOperator) ? f.f1.A * f.f1.α.coeff : full(f.f1)
+    ops = expRK_operators(alg, dt, A)
   end
   HochOst4Cache(u,uprev,tmp,rtmp,rtmp2,Au,F2,F3,F4,F5,Jcache,ops,Ks,KsCache)
 end
