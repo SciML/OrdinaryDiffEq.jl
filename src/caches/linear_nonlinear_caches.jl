@@ -159,7 +159,36 @@ for (Alg, Cache) in [(:LawsonEuler, :LawsonEulerConstantCache),
   end
 end
 
-struct LawsonEulerCache{uType,rateType,JType,expType,KsType,KsCacheType} <: ExpRKCache
+"""
+    alg_cache_expRK(alg,u,f,dt,plist)
+
+Construct the non-standard caches (not uType or rateType) for ExpRK integrators.
+
+`plist` is a list of integers each corresponding to the order of a `phiv(!)` 
+call in `perform_step!`.
+"""
+function alg_cache_expRK(alg::OrdinaryDiffEqExponentialAlgorithm, u, f, dt, plist)
+  n = length(u); T = eltype(u)
+  # Allocate cache for the Jacobian
+  # TODO: sparse Jacobian support
+  Jcache = isa(f, SplitFunction) ? nothing : Matrix{T}(n, n)
+  if alg.krylov
+    ops = nothing # no caching
+    # Build up caches used by Krylov phiv
+    Ks = KrylovSubspace{T}(n, min(alg.m, n))
+    phiv_caches = construct_phiv_caches(Ks, maximum(plist))
+    ws = [Matrix{T}(n, plist[i] + 1) for i = 1:length(plist)]
+    KsCache = (Ks, phiv_caches, ws) # should use named tuple in v0.6
+  else
+    KsCache = nothing
+    # Precompute the operators
+    A = isa(f.f1, DiffEqArrayOperator) ? f.f1.A * f.f1.α.coeff : full(f.f1)
+    ops = expRK_operators(alg, dt, A)
+  end
+  return Jcache, ops, KsCache
+end
+
+struct LawsonEulerCache{uType,rateType,JType,expType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
@@ -167,35 +196,35 @@ struct LawsonEulerCache{uType,rateType,JType,expType,KsType,KsCacheType} <: ExpR
   G::rateType
   Jcache::JType
   exphA::expType
-  Ks::KsType
-  KsCache::KsCacheType
+  KsCache::KsType
 end
 
 function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  if isa(f, SplitFunction)
-    Jcache = nothing
-  else
-    # TODO: sparse Jacobian support
-    Jcache = Matrix{eltype(u)}(length(u), length(u))
-  end
+  tmp = similar(u)                                              # uType caches
+  rtmp, G = (zeros(rate_prototype) for i = 1:2)                 # rateType caches
+  # other caches
+  # This is different from other ExpRK integrators because LawsonEuler only 
+  # needs expv.
+  n = length(u); T = eltype(u)
+  Jcache = isa(f, SplitFunction) ? nothing : Matrix{T}(n, n) # TODO: sparse Jacobian support
   if alg.krylov
     exphA = nothing # no caching
-    m = min(alg.m, length(u))
-    Ks = KrylovSubspace{eltype(u)}(length(u), m)
-    KsCache = Matrix{eltype(u)}(m, m)
+    m = min(alg.m, n)
+    Ks = KrylovSubspace{T}(n, m)
+    expv_cache = Matrix{T}(m, m)
+    KsCache = (Ks, expv_cache)
   else
-    Ks = nothing
     KsCache = nothing
     A = isa(f.f1, DiffEqArrayOperator) ? f.f1.A * f.f1.α.coeff : full(f.f1)
     exphA = expRK_operators(alg, dt, A)
   end
-  LawsonEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),Jcache,exphA,Ks,KsCache)
+  LawsonEulerCache(u,uprev,tmp,rtmp,G,Jcache,exphA,KsCache)
 end
 
 u_cache(c::LawsonEulerCache) = ()
 du_cache(c::LawsonEulerCache) = (c.rtmp)
 
-struct NorsettEulerCache{uType,rateType,JType,expType,KsType,KsCacheType} <: ExpRKCache
+struct NorsettEulerCache{uType,rateType,JType,expType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
@@ -203,39 +232,20 @@ struct NorsettEulerCache{uType,rateType,JType,expType,KsType,KsCacheType} <: Exp
   G::rateType
   Jcache::JType
   phihA::expType
-  Ks::KsType
-  KsCache::KsCacheType
+  KsCache::KsType
 end
 
 function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  if isa(f, SplitFunction)
-    Jcache = nothing
-  else
-    # TODO: sparse Jacobian support
-    Jcache = Matrix{eltype(u)}(length(u), length(u))
-  end
-  if alg.krylov
-    phihA = nothing # no caching
-    n = length(u)
-    m = min(alg.m, length(u))
-    T = eltype(u)
-    Ks = KrylovSubspace{T}(n, m)
-    w = Matrix{T}(n, 2)
-    phiv_caches = construct_phiv_caches(Ks, 1)
-    KsCache = (w, phiv_caches)
-  else
-    Ks = nothing
-    KsCache = nothing
-    A = isa(f.f1, DiffEqArrayOperator) ? f.f1.A * f.f1.α.coeff : full(f.f1)
-    phihA = expRK_operators(alg, dt, A)
-  end
-  NorsettEulerCache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),Jcache,phihA,Ks,KsCache)
+  tmp = similar(u)                                              # uType caches
+  rtmp, G = (zeros(rate_prototype) for i = 1:2)                 # rateType caches
+  Jcache, phihA, KsCache = alg_cache_expRK(alg, u, f, dt, (1,)) # other caches
+  NorsettEulerCache(u,uprev,tmp,rtmp,G,Jcache,phihA,KsCache)
 end
 
 u_cache(c::NorsettEulerCache) = ()
 du_cache(c::NorsettEulerCache) = (c.rtmp)
 
-struct ETDRK2Cache{uType,rateType,JType,opType,KsType,KsCacheType} <: ExpRKCache
+struct ETDRK2Cache{uType,rateType,JType,opType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
@@ -243,38 +253,17 @@ struct ETDRK2Cache{uType,rateType,JType,opType,KsType,KsCacheType} <: ExpRKCache
   F2::rateType
   Jcache::JType
   ops::opType
-  Ks::KsType
-  KsCache::KsCacheType
+  KsCache::KsType
 end
 
 function alg_cache(alg::ETDRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  if isa(f, SplitFunction)
-    Jcache = nothing
-  else
-    # TODO: sparse Jacobian support
-    Jcache = Matrix{eltype(u)}(length(u), length(u))
-  end
-  if alg.krylov
-    ops = nothing # no caching
-    n = length(u)
-    m = min(alg.m, length(u))
-    T = eltype(u)
-    Ks = KrylovSubspace{T}(n, m)
-    w1 = Matrix{T}(n, 3)
-    w2 = Matrix{T}(n, 3)
-    phiv_caches = construct_phiv_caches(Ks, 2)
-    KsCache = (w1, w2, phiv_caches)
-  else
-    Ks = nothing
-    KsCache = nothing
-    A = f.f1
-    A = isa(f.f1, DiffEqArrayOperator) ? f.f1.A * f.f1.α.coeff : full(f.f1)
-    ops = expRK_operators(alg, dt, A)
-  end
-  ETDRK2Cache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),Jcache,ops,Ks,KsCache)
+  tmp = similar(u)                                                  # uType caches
+  rtmp, F2 = (zeros(rate_prototype) for i = 1:2)                    # rateType caches
+  Jcache, ops, KsCache = alg_cache_expRK(alg, u, f, dt, (2, 2))   # other caches
+  ETDRK2Cache(u,uprev,tmp,rtmp,F2,Jcache,ops,KsCache)
 end
 
-struct ETDRK3Cache{uType,rateType,JType,opType,KsType,KsCacheType} <: ExpRKCache
+struct ETDRK3Cache{uType,rateType,JType,opType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
@@ -284,38 +273,17 @@ struct ETDRK3Cache{uType,rateType,JType,opType,KsType,KsCacheType} <: ExpRKCache
   F3::rateType
   Jcache::JType
   ops::opType
-  Ks::KsType
-  KsCache::KsCacheType
+  KsCache::KsType
 end
 
 function alg_cache(alg::ETDRK3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  if isa(f, SplitFunction)
-    Jcache = nothing
-  else
-    # TODO: sparse Jacobian support
-    Jcache = Matrix{eltype(u)}(length(u), length(u))
-  end
-  if alg.krylov
-    ops = nothing # no caching
-    n = length(u)
-    m = min(alg.m, length(u))
-    T = eltype(u)
-    Ks = KrylovSubspace{T}(n, m)
-    w1_half = Matrix{T}(n, 2); w1 = Matrix{T}(n, 4); w2 = Matrix{T}(n, 4); w3 = Matrix{T}(n, 4)
-    phiv_caches = construct_phiv_caches(Ks, 3)
-    KsCache = (w1_half, w1, w2, w3, phiv_caches)
-  else
-    Ks = nothing
-    KsCache = nothing
-    A = f.f1
-    A = isa(f.f1, DiffEqArrayOperator) ? f.f1.A * f.f1.α.coeff : full(f.f1)
-    ops = expRK_operators(alg, dt, A)
-  end
-  ETDRK3Cache(u,uprev,similar(u),zeros(rate_prototype),zeros(rate_prototype),
-    zeros(rate_prototype),zeros(rate_prototype),Jcache,ops,Ks,KsCache)
+  tmp = similar(u)                                                      # uType caches
+  rtmp, Au, F2, F3 = (zeros(rate_prototype) for i = 1:4)                # rateType caches
+  Jcache, ops, KsCache = alg_cache_expRK(alg, u, f, dt, (1,3,3,3))    # other caches
+  ETDRK3Cache(u,uprev,tmp,rtmp,Au,F2,F3,Jcache,ops,KsCache)
 end
 
-struct ETDRK4Cache{uType,rateType,JType,opType,KsType,KsCacheType} <: ExpRKCache
+struct ETDRK4Cache{uType,rateType,JType,opType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
@@ -326,42 +294,20 @@ struct ETDRK4Cache{uType,rateType,JType,opType,KsType,KsCacheType} <: ExpRKCache
   F4::rateType
   Jcache::JType
   ops::opType
-  Ks::KsType
-  KsCache::KsCacheType
+  KsCache::KsType
 end
 
 function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  if isa(f, SplitFunction)
-    Jcache = nothing
-  else
-    # TODO: sparse Jacobian support
-    Jcache = Matrix{eltype(u)}(length(u), length(u))
-  end
-  tmp = similar(u)
-  rtmp = zeros(rate_prototype); Au = zeros(rate_prototype)
-  F2 = zeros(rate_prototype); F3 = zeros(rate_prototype); F4 = zeros(rate_prototype)
-  if alg.krylov
-    ops = nothing # no caching
-    n = length(u)
-    m = min(alg.m, length(u))
-    T = eltype(u)
-    Ks = KrylovSubspace{T}(n, m)
-    w1_half = Matrix{T}(n, 2); w2_half = Matrix{T}(n, 2)
-    w1 = Matrix{T}(n, 4); w2 = Matrix{T}(n, 4); w3 = Matrix{T}(n, 4); w4 = Matrix{T}(n, 4)
-    phiv_caches = construct_phiv_caches(Ks, 3)
-    KsCache = (w1_half, w2_half, w1, w2, w3, w4, phiv_caches)
-  else
-    Ks = KsCache = nothing
-    A = isa(f.f1, DiffEqArrayOperator) ? f.f1.A * f.f1.α.coeff : full(f.f1)
-    ops = expRK_operators(alg, dt, A)
-  end
-  ETDRK4Cache(u,uprev,tmp,rtmp,Au,F2,F3,F4,Jcache,ops,Ks,KsCache)
+  tmp = similar(u)                                                        # uType caches
+  rtmp, Au, F2, F3, F4 = (zeros(rate_prototype) for i = 1:5)              # rateType caches
+  Jcache, ops, KsCache = alg_cache_expRK(alg, u, f, dt, (1,1,3,3,3,3))  # other caches
+  ETDRK4Cache(u,uprev,tmp,rtmp,Au,F2,F3,F4,Jcache,ops,KsCache)
 end
 
 u_cache(c::ETDRK4Cache) = ()
 du_cache(c::ETDRK4Cache) = (c.k,c.fsalfirst,c.rtmp)
 
-struct HochOst4Cache{uType,rateType,JType,opType,KsType,KsCacheType} <: ExpRKCache
+struct HochOst4Cache{uType,rateType,JType,opType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
@@ -374,36 +320,14 @@ struct HochOst4Cache{uType,rateType,JType,opType,KsType,KsCacheType} <: ExpRKCac
   F5::rateType
   Jcache::JType
   ops::opType
-  Ks::KsType
-  KsCache::KsCacheType
+  KsCache::KsType
 end
 
 function alg_cache(alg::HochOst4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  if isa(f, SplitFunction)
-    Jcache = nothing
-  else
-    # TODO: sparse Jacobian support
-    Jcache = Matrix{eltype(u)}(length(u), length(u))
-  end
-  tmp = similar(u)
-  rtmp = zeros(rate_prototype); rtmp2 = zeros(rate_prototype); Au = zeros(rate_prototype)
-  F2 = zeros(rate_prototype); F3 = zeros(rate_prototype); F4 = zeros(rate_prototype); F5 = zeros(rate_prototype)
-  if alg.krylov
-    ops = nothing # no caching
-    n = length(u)
-    m = min(alg.m, length(u))
-    T = eltype(u)
-    Ks = KrylovSubspace{T}(n, m)
-    w1_half = Matrix{T}(n, 4); w2_half = Matrix{T}(n, 4); w3_half = Matrix{T}(n, 4); w4_half = Matrix{T}(n, 4)
-    w1 = Matrix{T}(n, 4); w2 = Matrix{T}(n, 4); w3 = Matrix{T}(n, 4); w4 = Matrix{T}(n, 4); w5 = Matrix{T}(n, 4)
-    phiv_caches = construct_phiv_caches(Ks, 3)
-    KsCache = (w1_half, w2_half, w3_half, w4_half, w1, w2, w3, w4, w5, phiv_caches)
-  else
-    Ks = KsCache = nothing
-    A = isa(f.f1, DiffEqArrayOperator) ? f.f1.A * f.f1.α.coeff : full(f.f1)
-    ops = expRK_operators(alg, dt, A)
-  end
-  HochOst4Cache(u,uprev,tmp,rtmp,rtmp2,Au,F2,F3,F4,F5,Jcache,ops,Ks,KsCache)
+  tmp = similar(u)                                                              # uType caches
+  rtmp, rtmp2, Au, F2, F3, F4, F5 = (zeros(rate_prototype) for i = 1:7)         # rateType caches
+  Jcache, ops, KsCache = alg_cache_expRK(alg, u, f, dt, (3,3,3,3,3,3,3,3,3))  # other caches
+  HochOst4Cache(u,uprev,tmp,rtmp,rtmp2,Au,F2,F3,F4,F5,Jcache,ops,KsCache)
 end
 
 ####################################

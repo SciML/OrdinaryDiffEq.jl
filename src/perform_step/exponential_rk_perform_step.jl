@@ -59,21 +59,17 @@ end
 
 function perform_step!(integrator, cache::LawsonEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack tmp,rtmp,G,Jcache,exphA,Ks,KsCache = cache
-  if isa(f, SplitFunction)
-    A = f.f1
-  else
-    f.jac(Jcache, uprev, p, t)
-    A = Jcache
-  end
+  @unpack tmp,rtmp,G,Jcache,exphA,KsCache = cache
+  A = isa(f, SplitFunction) ? f.f1 : (f.jac(Jcache, uprev, p, t); Jcache) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   _compute_nl!(G, f, uprev, p, t, A, rtmp)
   @muladd @. tmp = uprev + dt*G
   if alg.krylov
+    Ks, expv_cache = KsCache
     arnoldi!(Ks, f.f1, tmp; m=min(alg.m, size(f.f1,1)), norm=integrator.opts.internalnorm, 
       cache=u, iop=alg.iop)
-    expv!(u,dt,Ks; cache=KsCache)
+    expv!(u,dt,Ks; cache=expv_cache)
   else
     A_mul_B!(u,exphA,tmp)
   end
@@ -106,12 +102,12 @@ end
 
 function perform_step!(integrator, cache::NorsettEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack rtmp,Jcache,Ks,KsCache = cache
-  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
+  @unpack rtmp,Jcache,KsCache = cache
+  A = isa(f, SplitFunction) ? f.f1 : (f.jac(Jcache, uprev, p, t); Jcache) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   if alg.krylov
-    w, phiv_caches = KsCache
+    Ks, phiv_caches, ws = KsCache; w = ws[1]
     arnoldi!(Ks, A, integrator.fsalfirst; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, 
       cache=u, iop=alg.iop)
     phiv!(w, dt, Ks, 1; caches=phiv_caches)
@@ -157,13 +153,14 @@ end
 
 function perform_step!(integrator, cache::ETDRK2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack tmp,rtmp,F2,Jcache,Ks,KsCache = cache
-  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
+  @unpack tmp,rtmp,F2,Jcache,KsCache = cache
+  A = isa(f, SplitFunction) ? f.f1 : (f.jac(Jcache, uprev, p, t); Jcache) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   if alg.krylov
     F1 = integrator.fsalfirst
-    w1, w2, phiv_caches = KsCache
+    Ks, phiv_caches, ws = KsCache
+    w1, w2 = ws
     # Krylov for F1
     arnoldi!(Ks, A, F1; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, cache=tmp, iop=alg.iop)
     phiv!(w1, dt, Ks, 2; caches=phiv_caches)
@@ -246,15 +243,16 @@ end
 
 function perform_step!(integrator, cache::ETDRK3Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack tmp,rtmp,Au,F2,F3,Jcache,Ks,KsCache = cache
-  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
+  @unpack tmp,rtmp,Au,F2,F3,Jcache,KsCache = cache
+  A = isa(f, SplitFunction) ? f.f1 : (f.jac(Jcache, uprev, p, t); Jcache) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   F1 = integrator.fsalfirst
   A_mul_B!(Au, A, uprev)
   halfdt = dt/2
   if alg.krylov
-    w1_half, w1, w2, w3, phiv_caches = KsCache
+    Ks, phiv_caches, ws = KsCache
+    w1_half, w1, w2, w3 = ws
     # TODO: change to named tuple in v0.7
     kwargs = [(:m, min(alg.m, size(A,1))), (:norm, integrator.opts.internalnorm), (:iop, alg.iop), (:cache, tmp)]
     # Krylov for F1 (first column)
@@ -358,15 +356,16 @@ end
 
 function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack tmp,rtmp,Au,F2,F3,F4,Jcache,Ks,KsCache = cache
-  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
+  @unpack tmp,rtmp,Au,F2,F3,F4,Jcache,KsCache = cache
+  A = isa(f, SplitFunction) ? f.f1 : (f.jac(Jcache, uprev, p, t); Jcache) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   F1 = integrator.fsalfirst
   A_mul_B!(Au, A, uprev)
   halfdt = dt/2
   if alg.krylov
-    w1_half, w2_half, w1, w2, w3, w4, phiv_caches = KsCache
+    Ks, phiv_caches, ws = KsCache
+    w1_half, w2_half, w1, w2, w3, w4 = ws
     # TODO: change to named tuple in v0.7
     kwargs = [(:m, min(alg.m, size(A,1))), (:norm, integrator.opts.internalnorm), (:iop, alg.iop), (:cache, tmp)]
     # Krylov for F1 (first column)
@@ -497,15 +496,16 @@ end
 
 function perform_step!(integrator, cache::HochOst4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack tmp,rtmp,rtmp2,Au,F2,F3,F4,F5,Jcache,Ks,KsCache = cache
-  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
+  @unpack tmp,rtmp,rtmp2,Au,F2,F3,F4,F5,Jcache,KsCache = cache
+  A = isa(f, SplitFunction) ? f.f1 : (f.jac(Jcache, uprev, p, t); Jcache) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   F1 = integrator.fsalfirst
   A_mul_B!(Au, A, uprev)
   halfdt = dt/2
   if alg.krylov
-    w1_half, w2_half, w3_half, w4_half, w1, w2, w3, w4, w5, phiv_caches = KsCache
+    Ks, phiv_caches, ws = KsCache
+    w1_half, w2_half, w3_half, w4_half, w1, w2, w3, w4, w5 = ws
     # TODO: change to named tuple in v0.7
     kwargs = [(:m, min(alg.m, size(A,1))), (:norm, integrator.opts.internalnorm), (:iop, alg.iop), (:cache, tmp)]
     # Krylov on F1 (first column)
