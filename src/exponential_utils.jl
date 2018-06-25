@@ -297,7 +297,7 @@ function lanczos!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol=1e-7,
   # Lanczos iterations
   fill!(H, zero(T))
   Ks.beta = norm(b)
-  V[:, 1] = b / Ks.beta
+  @. V[:, 1] = b / Ks.beta
   @inbounds for j = 1:m
     vj = @view(V[:, j])
     A_mul_B!(cache, A, vj)
