@@ -252,7 +252,7 @@ function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol::Real=1
   # Arnoldi iterations (with IOP)
   fill!(H, zero(T))
   Ks.beta = norm(b)
-  V[:, 1] = b / Ks.beta
+  @. V[:, 1] = b / Ks.beta
   @inbounds for j = 1:m
     A_mul_B!(cache, A, @view(V[:, j]))
     @inbounds for i = max(1, j - iop + 1):j
@@ -263,7 +263,7 @@ function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol::Real=1
     beta = norm(cache)
     H[j+1, j] = beta
     @inbounds for i = 1:n
-      V[i, j+1] = cache[i] / beta
+      @. V[i, j+1] = cache[i] / beta
     end
     if beta < vtol # happy-breakdown
       Ks.m = j
