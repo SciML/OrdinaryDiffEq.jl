@@ -30,7 +30,8 @@ using OrdinaryDiffEq: phi, phi, phiv, phiv_timestep, expv, expv_timestep, arnold
   for i = 1:K+1
     W[:,i] = P[i] * b
   end
-  W_approx = phiv(t, A, b, K; m=m)
+  Ks = arnoldi(A, b; m=m)
+  W_approx = phiv(t, Ks, K)
   @test W ≈ W_approx
 
   # Happy-breakdown in Krylov

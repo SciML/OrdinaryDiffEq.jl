@@ -59,21 +59,17 @@ end
 
 function perform_step!(integrator, cache::LawsonEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack tmp,rtmp,G,Jcache,exphA,Ks,KsCache = cache
-  if isa(f, SplitFunction)
-    A = f.f1
-  else
-    f.jac(Jcache, uprev, p, t)
-    A = Jcache
-  end
+  @unpack tmp,rtmp,G,Jcache,exphA,KsCache = cache
+  A = isa(f, SplitFunction) ? f.f1 : (f.jac(Jcache, uprev, p, t); Jcache) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   _compute_nl!(G, f, uprev, p, t, A, rtmp)
   @muladd @. tmp = uprev + dt*G
   if alg.krylov
+    Ks, expv_cache = KsCache
     arnoldi!(Ks, f.f1, tmp; m=min(alg.m, size(f.f1,1)), norm=integrator.opts.internalnorm, 
       cache=u, iop=alg.iop)
-    expv!(u,dt,Ks; cache=KsCache)
+    expv!(u,dt,Ks; cache=expv_cache)
   else
     A_mul_B!(u,exphA,tmp)
   end
@@ -106,20 +102,15 @@ end
 
 function perform_step!(integrator, cache::NorsettEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack rtmp,Jcache,Ks,KsCache = cache
-  if isa(f, SplitFunction)
-    A = f.f1
-  else
-    f.jac(Jcache, uprev, p, t)
-    A = Jcache
-  end
+  @unpack rtmp,Jcache,KsCache = cache
+  A = isa(f, SplitFunction) ? f.f1 : (f.jac(Jcache, uprev, p, t); Jcache) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   if alg.krylov
-    w = KsCache[1]
+    Ks, phiv_caches, ws = KsCache; w = ws[1]
     arnoldi!(Ks, A, integrator.fsalfirst; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, 
       cache=u, iop=alg.iop)
-    phiv!(w, dt, Ks, 1; caches=KsCache[2:end])
+    phiv!(w, dt, Ks, 1; caches=phiv_caches)
     @muladd @. u = uprev + dt * @view(w[:, 2])
   else
     A_mul_B!(rtmp, cache.phihA, integrator.fsalfirst)
@@ -162,13 +153,14 @@ end
 
 function perform_step!(integrator, cache::ETDRK2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack tmp,rtmp,F2,Jcache,Ks,KsCache = cache
-  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
+  @unpack tmp,rtmp,F2,Jcache,KsCache = cache
+  A = isa(f, SplitFunction) ? f.f1 : (f.jac(Jcache, uprev, p, t); Jcache) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   if alg.krylov
     F1 = integrator.fsalfirst
-    w1, w2, phiv_caches = KsCache
+    Ks, phiv_caches, ws = KsCache
+    w1, w2 = ws
     # Krylov for F1
     arnoldi!(Ks, A, F1; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, cache=tmp, iop=alg.iop)
     phiv!(w1, dt, Ks, 2; caches=phiv_caches)
@@ -212,18 +204,20 @@ function perform_step!(integrator, cache::ETDRK3ConstantCache, repeat_step=false
   Au = A * uprev
   F1 = integrator.fsalfirst
   if alg.krylov
+    # TODO: change to named tuple in v0.7
+    kwargs = [(:m, min(alg.m, size(A,1))), (:norm, integrator.opts.internalnorm), (:iop, alg.iop)]
     # Krylov on F1 (first column)
-    # TODO: reuse Krylov subspace for w1_half
-    w1_half = phiv(dt/2, A, F1, 1; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
-    w1 = phiv(dt, A, F1, 3; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
+    Ks = arnoldi(A, F1; kwargs...)
+    w1_half = phiv(dt/2, Ks, 1)
+    w1 = phiv(dt, Ks, 3)
     U2 = uprev + dt/2 * w1_half[:, 2]
     F2 = _compute_nl(f, U2, p, t + dt/2, A) + Au
     # Krylov on F2 (second column)
-    w2 = phiv(dt, A, F2, 3; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
+    w2 = phiv(dt, A, F2, 3; kwargs...)
     U3 = uprev + dt * (2w2[:, 2] - w1[:, 2])
     F3 = _compute_nl(f, U3, p, t + dt, A) + Au
     # Krylov on F3 (third column)
-    w3 = phiv(dt, A, F3, 3; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
+    w3 = phiv(dt, A, F3, 3; kwargs...)
     u = uprev + dt * (4w1[:,4] - 3w1[:,3] + w1[:,2]
                       -8w2[:,4] + 4w2[:,3]
                       +4w3[:,4] - w3[:,3])
@@ -249,28 +243,31 @@ end
 
 function perform_step!(integrator, cache::ETDRK3Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack tmp,rtmp,Au,F2,F3,Jcache,Ks,KsCache = cache
-  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
+  @unpack tmp,rtmp,Au,F2,F3,Jcache,KsCache = cache
+  A = isa(f, SplitFunction) ? f.f1 : (f.jac(Jcache, uprev, p, t); Jcache) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   F1 = integrator.fsalfirst
   A_mul_B!(Au, A, uprev)
   halfdt = dt/2
   if alg.krylov
-    w1_half, w1, w2, w3, phiv_caches = KsCache
+    Ks, phiv_caches, ws = KsCache
+    w1_half, w1, w2, w3 = ws
+    # TODO: change to named tuple in v0.7
+    kwargs = [(:m, min(alg.m, size(A,1))), (:norm, integrator.opts.internalnorm), (:iop, alg.iop), (:cache, tmp)]
     # Krylov for F1 (first column)
-    arnoldi!(Ks, A, F1; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, cache=tmp, iop=alg.iop)
+    arnoldi!(Ks, A, F1; kwargs...)
     phiv!(w1_half, halfdt, Ks, 1; caches=phiv_caches)
     phiv!(w1, dt, Ks, 3; caches=phiv_caches)
     @muladd @. @views tmp = uprev + halfdt * w1_half[:, 2] # tmp is U2
     _compute_nl!(F2, f, tmp, p, t + halfdt, A, rtmp); F2 .+= Au
     # Krylov for F2 (second column)
-    arnoldi!(Ks, A, F2; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, cache=tmp, iop=alg.iop)
+    arnoldi!(Ks, A, F2; kwargs...)
     phiv!(w2, dt, Ks, 3; caches=phiv_caches)
     @muladd @. @views tmp = uprev + dt * (2*w2[:, 2] - w1[:, 2]) # tmp is U3
     _compute_nl!(F3, f, tmp, p, t + dt, A, rtmp); F3 .+= Au
     # Krylov for F3 (third column)
-    arnoldi!(Ks, A, F3; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, cache=tmp, iop=alg.iop)
+    arnoldi!(Ks, A, F3; kwargs...)
     phiv!(w3, dt, Ks, 3; caches=phiv_caches)
     # Update u
     @views @. rtmp = 4w1[:,4] - 3w1[:,3] + w1[:,2] - 8w2[:,4] + 4w2[:,3] + 4w3[:,4] - w3[:,3]
@@ -307,26 +304,30 @@ function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step=false
   Au = A * uprev
   F1 = integrator.fsalfirst
   halfdt = dt/2
-  if alg.krylov # TODO: reuse Krylov subspace for halfdt
+  if alg.krylov
+    # TODO: change to named tuple in v0.7
+    kwargs = [(:m, min(alg.m, size(A,1))), (:norm, integrator.opts.internalnorm), (:iop, alg.iop)]
     # Krylov on F1 (first column)
-    w1_half = phiv(halfdt, A, F1, 1; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
-    w1 = phiv(dt, A, F1, 3; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
+    Ks = arnoldi(A, F1; kwargs...)
+    w1_half = phiv(halfdt, Ks, 1)
+    w1 = phiv(dt, Ks, 3)
     U2 = uprev + halfdt * w1_half[:, 2]
     F2 = _compute_nl(f, U2, p, t + halfdt, A) + Au
     # Krylov on F2 (second column)
-    w2_half = phiv(halfdt, A, F2, 1; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
-    w2 = phiv(dt, A, F2, 3; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
+    Ks = arnoldi(A, F2; kwargs...)
+    w2_half = phiv(halfdt, Ks, 1)
+    w2 = phiv(dt, Ks, 3)
     U3 = uprev + halfdt * w2_half[:, 2]
     F3 = _compute_nl(f, U3, p, t + halfdt, A) + Au
     # Krylov on F3 (third column)
-    w3 = phiv(dt, A, F3, 3; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
+    w3 = phiv(dt, A, F3, 3; kwargs...)
     # Extra Krylov for computing F4
     rtmp = 2F3 - F1 - Au + A*U2
-    wtmp = phiv(halfdt, A, rtmp, 1; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
+    wtmp = phiv(halfdt, A, rtmp, 1; kwargs...)
     U4 = U2 + halfdt * wtmp[:, 2]
     F4 = _compute_nl(f, U4, p, t + dt, A) + Au
     # Krylov on F4 (fourth column)
-    w4 = phiv(dt, A, F4, 3; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, iop=alg.iop)
+    w4 = phiv(dt, A, F4, 3; kwargs...)
     # update u
     u = uprev + dt * (w1[:,2] - 3w1[:,3] + 4w1[:,4] + 2w2[:,3] - 4w2[:,4] + 
                       2w3[:,3] - 4w3[:,4] + 4w4[:,4] - w4[:,3])
@@ -355,40 +356,43 @@ end
 
 function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack tmp,rtmp,Au,F2,F3,F4,Jcache,Ks,KsCache = cache
-  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
+  @unpack tmp,rtmp,Au,F2,F3,F4,Jcache,KsCache = cache
+  A = isa(f, SplitFunction) ? f.f1 : (f.jac(Jcache, uprev, p, t); Jcache) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   F1 = integrator.fsalfirst
   A_mul_B!(Au, A, uprev)
   halfdt = dt/2
   if alg.krylov
-    w1_half, w2_half, w1, w2, w3, w4, phiv_caches = KsCache
+    Ks, phiv_caches, ws = KsCache
+    w1_half, w2_half, w1, w2, w3, w4 = ws
+    # TODO: change to named tuple in v0.7
+    kwargs = [(:m, min(alg.m, size(A,1))), (:norm, integrator.opts.internalnorm), (:iop, alg.iop), (:cache, tmp)]
     # Krylov for F1 (first column)
-    arnoldi!(Ks, A, F1; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, cache=tmp, iop=alg.iop)
+    arnoldi!(Ks, A, F1; kwargs...)
     phiv!(w1_half, halfdt, Ks, 1; caches=phiv_caches)
     phiv!(w1, dt, Ks, 3; caches=phiv_caches)
     U2 = u # temporarily use u to store U2 (used in the extra Krylov step)
     @muladd @. @views U2 = uprev + halfdt * w1_half[:, 2]
     _compute_nl!(F2, f, U2, p, t + halfdt, A, rtmp); F2 .+= Au
     # Krylov for F2 (second column)
-    arnoldi!(Ks, A, F2; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, cache=tmp, iop=alg.iop)
+    arnoldi!(Ks, A, F2; kwargs...)
     phiv!(w2_half, halfdt, Ks, 1; caches=phiv_caches)
     phiv!(w2, dt, Ks, 3; caches=phiv_caches)
     @muladd @. @views tmp = uprev + halfdt * w2_half[:, 2] # tmp is U3
     _compute_nl!(F3, f, tmp, p, t + halfdt, A, rtmp); F3 .+= Au
     # Krylov for F3 (third column)
-    arnoldi!(Ks, A, F3; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, cache=tmp, iop=alg.iop)
+    arnoldi!(Ks, A, F3; kwargs...)
     phiv!(w3, dt, Ks, 3; caches=phiv_caches)
     # Extra Krylov for computing F4
     # Compute rtmp = 2F3 - F1 - Au + A*U2
     A_mul_B!(rtmp, A, U2); @. rtmp += 2F3 - F1 - Au
-    arnoldi!(Ks, A, rtmp; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, cache=tmp, iop=alg.iop)
+    arnoldi!(Ks, A, rtmp; kwargs...)
     phiv!(w1_half, halfdt, Ks, 1; caches=phiv_caches) # original w1_half is no longer needed
     @muladd @. @views tmp = U2 + halfdt * w1_half[:, 2] # tmp is U4
     _compute_nl!(F4, f, tmp, p, t + dt, A, rtmp); F4 .+= Au
     # Krylov for F4 (fourth column)
-    arnoldi!(Ks, A, F4; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, cache=tmp, iop=alg.iop)
+    arnoldi!(Ks, A, F4; kwargs...)
     phiv!(w4, dt, Ks, 3; caches=phiv_caches)
     # update u
     @views @. rtmp = w1[:,2] - 3w1[:,3] + 4w1[:,4] + 2w2[:,3] - 4w2[:,4] + 
@@ -431,32 +435,37 @@ function perform_step!(integrator, cache::HochOst4ConstantCache, repeat_step=fal
   F1 = integrator.fsalfirst
   halfdt = dt/2
   if alg.krylov
+    # TODO: change to named tuple in v0.7
     kwargs = [(:m, min(alg.m, size(A,1))), (:norm, integrator.opts.internalnorm), (:iop, alg.iop)]
     # Krylov on F1 (first column)
-    w1_half = phiv(halfdt, A, F1, 3; kwargs...)
-    w1 =      phiv(dt,     A, F1, 3; kwargs...)
+    Ks = arnoldi(A, F1; kwargs...)
+    w1_half = phiv(halfdt, Ks, 3)
+    w1 =      phiv(dt,     Ks, 3)
     U2 = uprev + halfdt * w1_half[:, 2]
     F2 = _compute_nl(f, U2, p, t + halfdt, A) + Au
     # Krylov on F2 (second column)
-    w2_half = phiv(halfdt, A, F2, 3; kwargs...)
-    w2 =      phiv(dt,     A, F2, 3; kwargs...)
+    Ks = arnoldi(A, F2; kwargs...)
+    w2_half = phiv(halfdt, Ks, 3)
+    w2 =      phiv(dt,     Ks, 3)
     U3 = uprev + dt * (0.5w1_half[:,2] - w1_half[:,3] + w2_half[:,3])
     F3 = _compute_nl(f, U3, p, t + halfdt, A) + Au
     # Krylov on F3 (third column)
-    w3_half = phiv(halfdt, A, F3, 3; kwargs...)
-    w3 =      phiv(dt,     A, F3, 3; kwargs...)
+    Ks = arnoldi(A, F3; kwargs...)
+    w3_half = phiv(halfdt, Ks, 3)
+    w3 =      phiv(dt,     Ks, 3)
     U4 = uprev + dt * (w1[:,2] - 2w1[:,3] + w2[:,3] + w3[:,3])
     F4 = _compute_nl(f, U4, p, t + dt, A) + Au
     # Krylov on F4 (fourth column)
-    w4_half = phiv(halfdt, A, F4, 3; kwargs...)
-    w4 =      phiv(dt,     A, F4, 3; kwargs...)
+    Ks = arnoldi(A, F4; kwargs...)
+    w4_half = phiv(halfdt, Ks, 3)
+    w4 =      phiv(dt,     Ks, 3)
     U5 = uprev + dt * (0.5w1_half[:,2] - 0.75w1_half[:,3] + 0.5w1_half[:,4] + w1[:,4] - 0.25w1[:,3] + 
                        0.5w2_half[:,3] - w2[:,4] + 0.25w2[:,3] - 0.5w2_half[:,4] + 
                        0.5w3_half[:,3] - w2[:,4] + 0.25w3[:,3] - 0.5w3_half[:,4] + 
                        w4[:,4] - 0.25w4[:,3] - 0.25w4_half[:,3] + 0.5w4_half[:,4])
     F5 = _compute_nl(f, U5, p, t + halfdt, A) + Au
     # Krylov on F5 (fifth column)
-    w5 =      phiv(dt,     A, F5, 3; kwargs...)
+    w5 = phiv(dt, A, F5, 3; kwargs...)
     # update u
     u = uprev + dt * (w1[:,2] - 3w1[:,3] + 4w1[:,4] - w4[:,3] + 4w4[:,4] + 4w5[:,3] - 8w5[:,4])
   else
@@ -487,16 +496,18 @@ end
 
 function perform_step!(integrator, cache::HochOst4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack tmp,rtmp,rtmp2,Au,F2,F3,F4,F5,Jcache,Ks,KsCache = cache
-  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
+  @unpack tmp,rtmp,rtmp2,Au,F2,F3,F4,F5,Jcache,KsCache = cache
+  A = isa(f, SplitFunction) ? f.f1 : (f.jac(Jcache, uprev, p, t); Jcache) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   F1 = integrator.fsalfirst
   A_mul_B!(Au, A, uprev)
   halfdt = dt/2
   if alg.krylov
-    w1_half, w2_half, w3_half, w4_half, w1, w2, w3, w4, w5, phiv_caches = KsCache
-    kwargs = [(:m, min(alg.m, size(A,1))), (:norm, integrator.opts.internalnorm), (:iop, alg.iop)]
+    Ks, phiv_caches, ws = KsCache
+    w1_half, w2_half, w3_half, w4_half, w1, w2, w3, w4, w5 = ws
+    # TODO: change to named tuple in v0.7
+    kwargs = [(:m, min(alg.m, size(A,1))), (:norm, integrator.opts.internalnorm), (:iop, alg.iop), (:cache, tmp)]
     # Krylov on F1 (first column)
     arnoldi!(Ks, A, F1; kwargs...)
     phiv!(w1_half, halfdt, Ks, 3; caches=phiv_caches)

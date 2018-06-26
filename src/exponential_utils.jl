@@ -252,7 +252,7 @@ function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol::Real=1
   # Arnoldi iterations (with IOP)
   fill!(H, zero(T))
   Ks.beta = norm(b)
-  V[:, 1] = b / Ks.beta
+  @. V[:, 1] = b / Ks.beta
   @inbounds for j = 1:m
     A_mul_B!(cache, A, @view(V[:, j]))
     @inbounds for i = max(1, j - iop + 1):j
@@ -263,7 +263,7 @@ function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol::Real=1
     beta = norm(cache)
     H[j+1, j] = beta
     @inbounds for i = 1:n
-      V[i, j+1] = cache[i] / beta
+      @. V[i, j+1] = cache[i] / beta
     end
     if beta < vtol # happy-breakdown
       Ks.m = j
@@ -297,7 +297,7 @@ function lanczos!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol=1e-7,
   # Lanczos iterations
   fill!(H, zero(T))
   Ks.beta = norm(b)
-  V[:, 1] = b / Ks.beta
+  @. V[:, 1] = b / Ks.beta
   @inbounds for j = 1:m
     vj = @view(V[:, j])
     A_mul_B!(cache, A, vj)
@@ -331,10 +331,19 @@ Compute the matrix-exponential-vector product using Krylov.
 A Krylov subspace is constructed using `arnoldi` and `expm!` is called 
 on the Heisenberg matrix. Consult `arnoldi` for the values of the keyword 
 arguments.
+
+    expv(t,Ks; cache) -> exp(tA)b
+
+Compute the expv product using a pre-constructed Krylov subspace.
 """
 function expv(t, A, b; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, cache=nothing, iop=0)
   Ks = arnoldi(A, b; m=m, tol=tol, norm=norm, iop=iop)
   w = similar(b)
+  expv!(w, t, Ks; cache=cache)
+end
+function expv(t, Ks::KrylovSubspace{B, T}; cache=nothing) where {B, T}
+  n = size(getV(Ks), 1)
+  w = Vector{T}(n)
   expv!(w, t, Ks; cache=cache)
 end
 """
@@ -382,6 +391,10 @@ updated using the last Arnoldi vector v_m+1 [^1]. If `errest=true` then an
 additional error estimate for the second-to-last phi is also returned. For 
 the additional keyword arguments, consult `arnoldi`.
 
+  phiv(t,Ks,k;correct,kwargs) -> [phi_0(tA)b phi_1(tA)b ... phi_k(tA)b][, errest]
+
+Compute the matrix-phi-vector products using a pre-constructed Krylov subspace.
+
 [^1]: Niesen, J., & Wright, W. (2009). A Krylov subspace algorithm for evaluating 
 the φ-functions in exponential integrators. arXiv preprint arXiv:0907.4631. 
 Formula (10).
@@ -390,6 +403,12 @@ function phiv(t, A, b, k; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, iop=0
   caches=nothing, correct=false, errest=false)
   Ks = arnoldi(A, b; m=m, tol=tol, norm=norm, iop=iop)
   w = Matrix{eltype(b)}(length(b), k+1)
+  phiv!(w, t, Ks, k; caches=caches, correct=correct, errest=errest)
+end
+function phiv(t, Ks::KrylovSubspace{B, T}, k; caches=nothing, correct=false, 
+  errest=false) where {B, T}
+  n = size(getV(Ks), 1)
+  w = Matrix{T}(n, k+1)
   phiv!(w, t, Ks, k; caches=caches, correct=correct, errest=errest)
 end
 """
@@ -403,19 +422,15 @@ function phiv!(w::Matrix{T}, t::Number, Ks::KrylovSubspace{B, T}, k::Integer;
   @assert size(w, 1) == size(V, 1) "Dimension mismatch"
   @assert size(w, 2) == k + 1 "Dimension mismatch"
   if caches == nothing
-    e = Vector{T}(m)
-    Hcopy = Matrix{T}(m, m)
-    C1 = Matrix{T}(m + k, m + k)
-    C2 = Matrix{T}(m, k + 1)
-  else
-    e, Hcopy, C1, C2 = caches
-    # The caches may have a bigger size to handle different values of m.
-    # Here we only need a portion of them.
-    e = @view(e[1:m])
-    Hcopy = @view(Hcopy[1:m, 1:m])
-    C1 = @view(C1[1:m + k, 1:m + k])
-    C2 = @view(C2[1:m, 1:k + 1])
+    caches = construct_phiv_caches(Ks, k)
   end
+  e, Hcopy, C1, C2 = caches
+  # The caches may have a bigger size to handle different values of m.
+  # Here we only need a portion of them.
+  e = @view(e[1:m])
+  Hcopy = @view(Hcopy[1:m, 1:m])
+  C1 = @view(C1[1:m + k, 1:m + k])
+  C2 = @view(C2[1:m, 1:k + 1])
   scale!(t, copy!(Hcopy, @view(H[1:m, :])))
   fill!(e, zero(T)); e[1] = one(T) # e is the [1,0,...,0] basis vector
   phiv_dense!(C2, Hcopy, e, k; cache=C1) # C2 = [ϕ0(H)e ϕ1(H)e ... ϕk(H)e]
@@ -435,6 +450,15 @@ function phiv!(w::Matrix{T}, t::Number, Ks::KrylovSubspace{B, T}, k::Integer;
   else
     return w
   end
+end
+# Helper method to allocate caches for phiv
+function construct_phiv_caches(Ks::KrylovSubspace{B, T}, p::Int) where {B, T}
+  m = Ks.maxiter
+  e = Vector{T}(m)
+  Hcopy = Matrix{T}(m, m)
+  C1 = Matrix{T}(m + p, m + p)
+  C2 = Matrix{T}(m, p + 1)
+  return e, Hcopy, C1, C2
 end
 
 ###########################################
