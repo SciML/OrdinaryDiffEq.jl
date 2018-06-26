@@ -677,3 +677,11 @@ function _phiv_timestep_estimate_flops(m, tau, n, p, NA, iop, Hnorm, maxtau)
   flops_onestep = flops_W + flops_u + flops_matvec + flops_vecvec + flops_phiv
   return flops_onestep * Int(ceil(maxtau / tau))
 end
+function _phiv_timestep_caches(u, maxiter::Int, p::Int)
+  n = length(u); T = eltype(u)
+  W = Matrix{T}(n, p+1)                       # stores the w vectors
+  P = Matrix{T}(n, p+2)                       # stores output from phiv!
+  Ks = KrylovSubspace{T}(n, maxiter)          # stores output from arnoldi!
+  phiv_caches = construct_phiv_caches(Ks, p)  # caches used by phiv!
+  return W, P, Ks, phiv_caches
+end

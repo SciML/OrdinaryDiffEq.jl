@@ -576,6 +576,36 @@ function perform_step!(integrator, cache::HochOst4Cache, repeat_step=false)
   # integrator.k is automatically set due to aliasing
 end
 
+#############################################
+# EPIRK integrators
+function perform_step!(integrator, cache::Exp4ConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,f,p = integrator
+  A = f.jac(uprev, p, t)
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+  f0 = integrator.fsalfirst # f(u0) is fsaled
+
+  # TODO
+
+  # Update integrator state
+  integrator.fsallast = f(u, p, t + dt)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end
+
+function perform_step!(integrator, cache::Exp4Cache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack tmp,rtmp,k1,k2,k3,d,A,KsCache = cache
+  f.jac(A, uprev, p, t)
+  f0 = integrator.fsalfirst # f(u0) is fsaled
+
+  # TODO
+
+  # Update integrator state
+  f(integrator.fsallast, u, p, t + dt)
+  # integrator.k is automatically set due to aliasing
+end
+
 ######################################################
 # Multistep exponential integrators
 function initialize!(integrator,cache::ETD2ConstantCache)

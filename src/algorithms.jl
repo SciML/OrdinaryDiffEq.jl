@@ -687,6 +687,11 @@ for Alg in [:LawsonEuler, :NorsettEuler, :ETDRK2, :ETDRK3, :ETDRK4, :HochOst4]
   @eval Base.@pure $Alg(;krylov=false, m=30, iop=0) = $Alg(krylov, m, iop)
 end
 ETD1 = NorsettEuler # alias
+struct Exp4 <: OrdinaryDiffEqExponentialAlgorithm
+  m::Int
+  iop::Int
+end
+Base.@pure Exp4(;m=30, iop=0)  = Exp4(m, iop)
 struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm end
 struct ETD2 <: OrdinaryDiffEqExponentialAlgorithm end
 
