@@ -392,3 +392,75 @@ end
 
   f( k,  u, p, t+dt)
 end
+
+function initialize!(integrator, cache::Anas5ConstantCache)
+  integrator.kshortsize = 6
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  @inbounds for i in 2:integrator.kshortsize-1
+    integrator.k[i] = zero(integrator.fsalfirst)
+  end
+  integrator.k[integrator.kshortsize] = integrator.fsallast
+end
+
+@muladd function perform_step!(integrator, cache::Anas5ConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack a21,a31,a32,a41,a42,a51,a52,a53,a54,a61,a62,a63,a64,a65,c1,c2,c3,c4,c5,c6,b1,b2,b3,b4,b5,b6 = cache
+  k1 = integrator.fsalfirst
+  k2 = f(uprev+dt*a21*k1, p, t+c2*dt)
+  k3 = f(uprev+dt*(a31*k1+a32*k2), p, t+c3*dt)
+  k4 = f(uprev+dt*(a41*k1+a42*k2+k3), p, t+c4*dt)
+  k5 = f(uprev+dt*(a51*k1+a52*k2+a53*k3+a54*k4), p, t+c5*dt)
+  k6 = f(uprev+dt*(a61*k1+a62*k2+a63*k3+a64*k4+a65*k5), p, t+c6*dt)
+  u = uprev+dt*(b1*k1+b2*k2+b3*k3+b4*k4+b5*k5+b6*k6)
+  k7 = f(u, p, t+dt); integrator.fsallast = k7
+  integrator.k[1]=k1; integrator.k[2]=k2; integrator.k[3]=k3; integrator.k[4]=k4
+  integrator.k[5]=k5; integrator.k[6]=k6; integrator.k[7]=k7;
+  integrator.u = u
+end
+
+function initialize!(integrator, cache::Anas5Cache)
+  integrator.kshortsize = 6
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1]=cache.k1; integrator.k[2]=cache.k2;
+  integrator.k[3]=cache.k3; integrator.k[4]=cache.k4;
+  integrator.k[5]=cache.k5; integrator.k[6]=cache.k6;
+  integrator.k[7]=cache.k7;
+  integrator.fsalfirst = cache.k1; integrator.fsallast = cache.k7  # setup pointers
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+end
+
+@muladd function perform_step!(integrator, cache::Anas5Cache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  uidx = eachindex(integrator.uprev)
+  @unpack k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp = cache
+  @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,c1,c2,c3,c4,c5,c6,b1,b2,b3,b4,b5,b6,b7 = cache.tab
+  @tight_loop_macros for i in uidx
+    @inbounds tmp[i] = uprev[i]+a21*k1[i]
+  end
+  f(k2, tmp, p, t+c2*dt)
+  @tight_loop_macros for i in uidx
+    @inbounds tmp[i] = uprev[i]+dt*(a31*k1[i]+a32*k2[i])
+  end
+  f(k3, tmp, p, t+c3*dt)
+  @tight_loop_macros for i in uidx
+    @inbounds tmp[i] = uprev[i]+dt*(a41*k1[i]+a42*k2[i]+k3[i])
+  end
+  f(k4, tmp, p, t+c4*dt)
+  @tight_loop_macros for i in uidx
+    @inbounds tmp[i] = uprev[i]+dt*(a51*k1[i]+a52*k2[i]+a53*k3[i]+a54*k4[i])
+  end
+  f(k5, tmp, p, t+c5*dt)
+  @tight_loop_macros for i in uidx
+    @inbounds tmp[i] = uprev[i]+dt*(a61*k1[i]+a62*k2[i]+a63*k3[i]+a64*k4[i]+a65*k5[i])
+  end
+  f(k6, tmp, p, t+c6*dt)
+  @tight_loop_macros for i in uidx
+    @inbounds u[i] = uprev[i]+dt*(b1*k1[i]+b2*k2[i]+b3*k3[i]+b4*k4[i]+b5*k5[i]+b6*k6[i])
+  end
+  f(k7, u, p, t+dt)
+end

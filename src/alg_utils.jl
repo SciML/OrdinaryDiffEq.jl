@@ -110,6 +110,7 @@ alg_order(alg::ETDRK4) = 4
 alg_order(alg::HochOst4) = 4
 alg_order(alg::SplitEuler) = 1
 alg_order(alg::ETD2) = 2
+alg_order(alg::Anas5) = 5
 
 alg_order(alg::SymplecticEuler) = 1
 alg_order(alg::VelocityVerlet) = 2
