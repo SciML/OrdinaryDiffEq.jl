@@ -464,13 +464,17 @@ end
 ###########################################
 # Krylov phiv with internal time-stepping
 """
-    exp_timestep(t,A,b[;adaptive,tol,kwargs...]) -> u
+    exp_timestep(ts,A,b[;adaptive,tol,kwargs...]) -> U
 
 Evaluates the matrix exponentiation-vector product using time stepping
 
 ```math
 u = \\exp(tA)b 
 ```
+
+`ts`` is an array of time snapshots for u, with `U[:,j] ≈ u(ts[j])`. `ts` can 
+also be just one value, in which case only the end result is returned and `U` 
+is a vector.
 
 The time stepping formula of Niesen & Wright is used [^1]. If the time step 
 `tau` is not specified, it is chosen according to (17) of Neisen & Wright. If 
@@ -490,28 +494,36 @@ intuitive interface (vector `b` instead of a n-by-1 matrix `B`).
 evaluating the φ-functions in exponential integrators. arXiv preprint 
 arXiv:0907.4631.
 """
-function expv_timestep(t, A, b; kwargs...)
+function expv_timestep(ts::Vector{tType}, A, b; kwargs...) where {tType <: Real}
+  U = Matrix{eltype(A)}(size(A, 1), length(ts))
+  expv_timestep!(U, ts, A, b; kwargs...)
+end
+function expv_timestep(t::tType, A, b; kwargs...) where {tType <: Real}
   u = Vector{eltype(A)}(size(A, 1))
-  expv_timestep!(u, t, A, b; kwargs...)
+  expv_timestep!(reshape(u, length(u), 1), [t], A, b; kwargs...)
 end
 """
     expv_timestep!(u,t,A,b[;kwargs]) -> u
 
 Non-allocating version of `expv_timestep`.
 """
-function expv_timestep!(u::Vector{T}, t::Real, A, b::Vector{T}; 
-  kwargs...) where {T <: Number}
+function expv_timestep!(U::Matrix{T}, ts::Vector{tType}, A, b::Vector{T}; 
+  kwargs...) where {T <: Number, tType <: Real}
   B = reshape(b, length(b), 1)
-  phiv_timestep!(u, t, A, B; kwargs...)
+  phiv_timestep!(U, ts, A, B; kwargs...)
 end
 """
-    phiv_timestep(t,A,B[;adaptive,tol,kwargs...]) -> u
+    phiv_timestep(ts,A,B[;adaptive,tol,kwargs...]) -> U
 
 Evaluates the linear combination of phi-vector products using time stepping
 
 ```math
 u = \\varphi_0(tA)b_0 + t\\varphi_1(tA)b_1 + \\cdots + t^p\\varphi_p(tA)b_p 
 ```
+
+`ts`` is an array of time snapshots for u, with `U[:,j] ≈ u(ts[j])`. `ts` can 
+also be just one value, in which case only the end result is returned and `U` 
+is a vector.
 
 The time stepping formula of Niesen & Wright is used [^1]. If the time step 
 `tau` is not specified, it is chosen according to (17) of Neisen & Wright. If 
@@ -528,19 +540,24 @@ internally.
 evaluating the φ-functions in exponential integrators. arXiv preprint 
 arXiv:0907.4631.
 """
-function phiv_timestep(t, A, B; kwargs...)
+function phiv_timestep(ts::Vector{tType}, A, B; kwargs...) where {tType <: Real}
+  U = Matrix{eltype(A)}(size(A, 1), length(ts))
+  phiv_timestep!(U, ts, A, B; kwargs...)
+end
+function phiv_timestep(t::tType, A, B; kwargs...) where {tType <: Real}
   u = Vector{eltype(A)}(size(A, 1))
-  phiv_timestep!(u, t, A, B; kwargs...)
+  phiv_timestep!(reshape(u, length(u), 1), [t], A, B; kwargs...)
+  return u
 end
 """
-    phiv_timestep!(u,t,A,B[;kwargs]) -> u
+    phiv_timestep!(U,ts,A,B[;kwargs]) -> U
 
 Non-allocating version of `phiv_timestep`.
 """
-function phiv_timestep!(u::Vector{T}, t::Real, A, B::Matrix{T}; tau::Real=0.0, 
+function phiv_timestep!(U::Matrix{T}, ts::Vector{tType}, A, B::Matrix{T}; tau::Real=0.0, 
   m::Int=min(10, size(A, 1)), tol::Real=1e-7, norm=Base.norm, iop::Int=0, 
   correct::Bool=false, caches=nothing, adaptive=false, delta::Real=1.2, 
-  gamma::Real=0.8, NA::Int=0, verbose=false) where {T <: Number}
+  gamma::Real=0.8, NA::Int=0, verbose=false) where {T <: Number, tType <: Real}
   # Choose initial timestep
   abstol = tol * norm(A, Inf)
   verbose && println("Absolute tolerance: $abstol")
@@ -552,20 +569,23 @@ function phiv_timestep!(u::Vector{T}, t::Real, A, B::Matrix{T}; tau::Real=0.0,
     verbose && println("Initial time step unspecified, chosen to be $tau")
   end
   # Initialization
-  n = length(u)
+  n = size(U, 1)
+  sort!(ts); tend = ts[end]
   p = size(B, 2) - 1
+  @assert length(ts) == size(U, 2) "Dimension mismatch"
   @assert n == size(A, 1) == size(A, 2) == size(B, 1) "Dimension mismatch"
   if caches == nothing
+    u = Vector{T}(n)              # stores the current state
     W = Matrix{T}(n, p+1)         # stores the w vectors
     P = Matrix{T}(n, p+2)         # stores output from phiv!
     Ks = KrylovSubspace{T}(n, m)  # stores output from arnoldi!
     phiv_caches = nothing         # caches used by phiv!
   else
-    W, P, Ks, phiv_caches = caches
-    @assert size(W) == (n, p+1) && size(P) == (n, p+2) "Dimension mismatch"
+    u, W, P, Ks, phiv_caches = caches
+    @assert length(u) == n && size(W) == (n, p+1) && size(P) == (n, p+2) "Dimension mismatch"
   end
   copy!(u, @view(B[:, 1])) # u(0) = b0
-  coeffs = ones(typeof(t), p);
+  coeffs = ones(tType, p);
   if adaptive # initialization step for the adaptive scheme
     if ishermitian(A)
       iop = 2 # does not have an effect on arnoldi!, just for flops estimation
@@ -579,15 +599,16 @@ function phiv_timestep!(u::Vector{T}, t::Real, A, B::Matrix{T}; tau::Real=0.0,
     end
   end
 
-  tk = 0.0 # current time
-  while tk < t # time stepping loop
-    if tk + tau > t # last step
-      tau = t - tk
+  t = 0.0       # current time
+  snapshot = 1  # which snapshot to compute next
+  while t < tend # time stepping loop
+    if t + tau > tend # last step
+      tau = tend - t
     end
     # Part 1: compute w0...wp using the recurrence relation (16)
-    copy!(@view(W[:, 1]), u) # w0 = u(tk)
-    @inbounds for l = 1:p-1 # compute cl = tk^l/l!
-      coeffs[l+1] = coeffs[l] * tk / l
+    copy!(@view(W[:, 1]), u) # w0 = u(t)
+    @inbounds for l = 1:p-1 # compute cl = t^l/l!
+      coeffs[l+1] = coeffs[l] * t / l
     end
     @views @inbounds for j = 1:p
       A_mul_B!(W[:, j+1], A, W[:, j])
@@ -598,11 +619,11 @@ function phiv_timestep!(u::Vector{T}, t::Real, A, B::Matrix{T}; tau::Real=0.0,
     # Part 2: compute ϕp(tau*A)wp using Krylov, possibly with adaptation
     arnoldi!(Ks, A, @view(W[:, end]); tol=tol, m=m, norm=norm, iop=iop, cache=u)
     _, epsilon = phiv!(P, tau, Ks, p + 1; caches=phiv_caches, correct=correct, errest=true)
-    verbose && println("tk = $tk, m = $m, tau = $tau, error estimate = $epsilon")
+    verbose && println("t = $t, m = $m, tau = $tau, error estimate = $epsilon")
     if adaptive
-      omega = (t / tau) * (epsilon / abstol)
+      omega = (tend / tau) * (epsilon / abstol)
       epsilon_old = epsilon; m_old = m; tau_old = tau
-      q = m/4; kappa = 2.0; maxtau = t - tk
+      q = m/4; kappa = 2.0; maxtau = tend - t
       while omega > delta # inner loop of Algorithm 3
         m_new, tau_new, q, kappa = _phiv_timestep_adapt(
           m, tau, epsilon, m_old, tau_old, epsilon_old, q, kappa, 
@@ -613,7 +634,7 @@ function phiv_timestep!(u::Vector{T}, t::Real, A, B::Matrix{T}; tau::Real=0.0,
         arnoldi!(Ks, A, @view(W[:, end]); tol=tol, m=m, norm=norm, iop=iop, cache=u)
         _, epsilon_new = phiv!(P, tau, Ks, p + 1; caches=phiv_caches, correct=correct, errest=true)
         epsilon, epsilon_old = epsilon_new, epsilon
-        omega = (t / tau) * (epsilon / abstol)
+        omega = (tend / tau) * (epsilon / abstol)
         verbose && println("  * m = $m, tau = $tau, error estimate = $epsilon")
       end
     end
@@ -625,11 +646,25 @@ function phiv_timestep!(u::Vector{T}, t::Real, A, B::Matrix{T}; tau::Real=0.0,
     @views @inbounds for j = 0:p-1
       Base.axpy!(coeffs[j+1], W[:, j+1], u)
     end
+    # Fill out all snapshots in between the current step
+    while snapshot <= length(ts) && t + tau >= ts[snapshot]
+      tau_snapshot = ts[snapshot] - t
+      u_snapshot = @view(U[:, snapshot])
+      phiv!(P, tau_snapshot, Ks, p + 1; caches=phiv_caches, correct=correct)
+      scale!(tau_snapshot^p, copy!(u_snapshot, @view(P[:, end - 1])))
+      @inbounds for l = 1:p-1 # compute cl = tau^l/l!
+        coeffs[l+1] = coeffs[l] * tau_snapshot / l
+      end
+      @views @inbounds for j = 0:p-1
+        Base.axpy!(coeffs[j+1], W[:, j+1], u_snapshot)
+      end
+      snapshot += 1
+    end
 
-    tk += tau
+    t += tau
   end
 
-  return u
+  return U
 end
 # Helper functions for phiv_timestep!
 function _phiv_timestep_adapt(m, tau, epsilon, m_old, tau_old, epsilon_old, q, kappa, 
@@ -677,11 +712,12 @@ function _phiv_timestep_estimate_flops(m, tau, n, p, NA, iop, Hnorm, maxtau)
   flops_onestep = flops_W + flops_u + flops_matvec + flops_vecvec + flops_phiv
   return flops_onestep * Int(ceil(maxtau / tau))
 end
-function _phiv_timestep_caches(u, maxiter::Int, p::Int)
-  n = length(u); T = eltype(u)
+function _phiv_timestep_caches(u_prototype, maxiter::Int, p::Int)
+  n = length(u_prototype); T = eltype(u_prototype)
+  u = similar(u_prototype)                    # stores the current state
   W = Matrix{T}(n, p+1)                       # stores the w vectors
   P = Matrix{T}(n, p+2)                       # stores output from phiv!
   Ks = KrylovSubspace{T}(n, maxiter)          # stores output from arnoldi!
   phiv_caches = construct_phiv_caches(Ks, p)  # caches used by phiv!
-  return W, P, Ks, phiv_caches
+  return u, W, P, Ks, phiv_caches
 end
