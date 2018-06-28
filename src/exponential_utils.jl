@@ -500,13 +500,18 @@ function expv_timestep(ts::Vector{tType}, A, b; kwargs...) where {tType <: Real}
 end
 function expv_timestep(t::tType, A, b; kwargs...) where {tType <: Real}
   u = Vector{eltype(A)}(size(A, 1))
-  expv_timestep!(reshape(u, length(u), 1), [t], A, b; kwargs...)
+  expv_timestep!(u, t, A, b; kwargs...)
 end
 """
     expv_timestep!(u,t,A,b[;kwargs]) -> u
 
 Non-allocating version of `expv_timestep`.
 """
+function expv_timestep!(u::Vector{T}, t::tType, A, b::Vector{T}; 
+  kwargs...) where {T <: Number, tType <: Real}
+  expv_timestep!(reshape(u, length(u), 1), [t], A, b; kwargs...)
+  return u
+end
 function expv_timestep!(U::Matrix{T}, ts::Vector{tType}, A, b::Vector{T}; 
   kwargs...) where {T <: Number, tType <: Real}
   B = reshape(b, length(b), 1)
@@ -546,14 +551,18 @@ function phiv_timestep(ts::Vector{tType}, A, B; kwargs...) where {tType <: Real}
 end
 function phiv_timestep(t::tType, A, B; kwargs...) where {tType <: Real}
   u = Vector{eltype(A)}(size(A, 1))
-  phiv_timestep!(reshape(u, length(u), 1), [t], A, B; kwargs...)
-  return u
+  phiv_timestep!(u, t, A, B; kwargs...)
 end
 """
     phiv_timestep!(U,ts,A,B[;kwargs]) -> U
 
 Non-allocating version of `phiv_timestep`.
 """
+function phiv_timestep!(u::Vector{T}, t::tType, A, B::Matrix{T}; 
+  kwargs...) where {T <: Number, tType <: Real}
+  phiv_timestep!(reshape(u, length(u), 1), [t], A, B; kwargs...)
+  return u
+end
 function phiv_timestep!(U::Matrix{T}, ts::Vector{tType}, A, B::Matrix{T}; tau::Real=0.0, 
   m::Int=min(10, size(A, 1)), tol::Real=1e-7, norm=Base.norm, iop::Int=0, 
   correct::Bool=false, caches=nothing, adaptive=false, delta::Real=1.2, 
