@@ -582,9 +582,34 @@ function perform_step!(integrator, cache::Exp4ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
   A = f.jac(uprev, p, t)
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
-  f0 = integrator.fsalfirst # f(u0) is fsaled
+  f0 = integrator.fsalfirst # f(uprev) is fsaled
+  ts = [dt/3, 2dt/3, dt]
+  kwargs = [(:tol, integrator.opts.reltol), (:iop, alg.iop), (:norm, integrator.opts.internalnorm), (:adaptive, true)]
 
-  # TODO
+  # Krylov for f(uprev)
+  B1 = [zeros(f0) f0]
+  K1 = phiv_timestep(ts, A, B1; kwargs...) # tϕ(tA)f0
+  @inbounds for i = 1:3
+    K1[:,i] ./= ts[i]
+  end
+  w4 = K1 * [-7/300, 97/150, -37/300]
+  u4 = uprev + dt * w4
+  d4 = f(u4, p, t+dt) - f0 - dt * (A*w4) # TODO: what should be the time?
+  # Krylov for the first remainder d4
+  B2 = [zeros(d4) d4]
+  K2 = phiv_timestep(ts, A, B2; kwargs...)
+  @inbounds for i = 1:3
+    K2[:,i] ./= ts[i]
+  end
+  w7 = K1 * [59/300, -7/75, 269/300] + K2 * [2/3, 2/3, 2/3]
+  u7 = uprev + dt * w7
+  d7 = f(u7, p, t+dt) - f0 - dt * (A*w7)
+  # Krylov for the second remainder d7
+  B3 = [zeros(d7) d7]
+  k7 = phiv_timestep(ts[1], A, B3; kwargs...)
+  k7 ./= ts[1]
+  # Update u
+  u = uprev + dt * (K1[:,3] + K2[:,1] - 4/3*K2[:,2] + K2[:,3] + k7/6)
 
   # Update integrator state
   integrator.fsallast = f(u, p, t + dt)
