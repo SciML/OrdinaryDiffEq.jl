@@ -620,11 +620,45 @@ end
 
 function perform_step!(integrator, cache::Exp4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack tmp,rtmp,k1,k2,k3,d,A,KsCache = cache
+  @unpack tmp,rtmp,rtmp2,k7,K,A,B,KsCache = cache
   f.jac(A, uprev, p, t)
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
   f0 = integrator.fsalfirst # f(u0) is fsaled
+  ts = [dt/3, 2dt/3, dt]
+  kwargs = [(:tol, integrator.opts.reltol), (:iop, alg.iop), (:norm, integrator.opts.internalnorm), 
+    (:adaptive, true), (:caches, KsCache)]
 
-  # TODO
+  # Krylov for f(uprev)
+  B[:, 2] .= f0
+  phiv_timestep!(K, ts, A, B; kwargs...)
+  @inbounds for i = 1:3
+    K[:,i] ./= ts[i]
+  end
+  A_mul_B!(rtmp, K, [-7/300, 97/150, -37/300]) # rtmp is now w4
+  @muladd @. tmp = uprev + dt * rtmp # tmp is now u4
+  A_mul_B!(rtmp2, A, rtmp)
+  f(rtmp, tmp, p, t+dt) # TODO: what should be the time?
+  @muladd @. @view(B[:,2]) = rtmp - f0 - dt * rtmp2 # B[:,2] is now d4
+  # Partially update entities that use k1, k2, k3
+  A_mul_B!(rtmp, K, [59/300, -7/75, 269/300]) # rtmp is now w7
+  @muladd @. u = uprev + dt * @view(K[:,3])
+  # Krylov for the first remainder d4
+  phiv_timestep!(K, ts, A, B; kwargs...)
+  @inbounds for i = 1:3
+    K[:,i] ./= ts[i]
+  end
+  A_mul_B!(rtmp2, K, [2/3, 2/3, 2/3]); rtmp .+= rtmp2 # w7 fully updated
+  @muladd @. tmp = uprev + dt * rtmp # tmp is now u7
+  A_mul_B!(rtmp2, A, rtmp)
+  f(rtmp, tmp, p, t+dt) # TODO: what should be the time?
+  @muladd @. @view(B[:,2]) = rtmp - f0 - dt * rtmp2 # B[:,2] is now d7
+  # Partially update entities that use k4, k5, k6
+  A_mul_B!(rtmp, K, [1.0, -4/3, 1.0])
+  Base.axpy!(dt, rtmp, u)
+  # Krylov for the second remainder d7
+  phiv_timestep!(k7, ts[1], A, B; kwargs...)
+  k7 ./= ts[1]
+  Base.axpy!(dt/6, k7, u)
 
   # Update integrator state
   f(integrator.fsallast, u, p, t + dt)

@@ -336,29 +336,32 @@ struct Exp4ConstantCache <: ExpRKConstantCache end
 alg_cache(alg::Exp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = Exp4ConstantCache()
 
-struct Exp4Cache{uType,rateType,JType,KsType} <: ExpRKCache
+struct Exp4Cache{uType,rateType,matType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
   rtmp::rateType
-  k1::rateType
-  k2::rateType
-  k3::rateType
-  d::rateType
-  A::JType
+  rtmp2::rateType
+  k7::rateType
+  K::matType
+  A::matType
+  B::matType
   KsCache::KsType
 end
 function alg_cache(alg::Exp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)                                              # uType caches
-  rtmp, k1, k2, k3, d = (zeros(rate_prototype) for i = 1:5)     # rateType caches
-  # Allocate Jacobian
+  rtmp, rtmp2, k7 = (zeros(rate_prototype) for i = 1:3)         # rateType caches
+  # Allocate matrices
+  # TODO: units
   n = length(u); T = eltype(u)
+  K = Matrix{T}(n, 3)
   A = Matrix{T}(n, n) # TODO: sparse Jacobian support
+  B = zeros(T, n, 2)
   # Allocate caches for phiv_timestep
   maxiter = min(alg.m, n)
   KsCache = _phiv_timestep_caches(u, maxiter, 1)
-  Exp4Cache(u,uprev,tmp,rtmp,k1,k2,k3,d,A,KsCache)
+  Exp4Cache(u,uprev,tmp,rtmp,rtmp2,k7,K,A,B,KsCache)
 end
 
 ####################################

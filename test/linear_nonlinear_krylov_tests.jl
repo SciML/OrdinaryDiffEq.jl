@@ -36,9 +36,18 @@ end
     dd = -2 * ones(N); du = ones(N-1)
     A = diagm(du, -1) + diagm(dd) + diagm(du, 1)
     _f = (u,p,t) -> A*u - u.^3
+    _f_ip = (du,u,p,t) -> (A_mul_B!(du, A, u); du .-= u.^3)
     _jac = (u,p,t) -> A - 3 * diagm(u.^2)
+    _jac_ip = (J,u,p,t) -> begin
+        copy!(J, A)
+        @inbounds for i = 1:N
+            J[i, i] -= 3 * u[i]^2
+        end
+    end
     f = DiffEqFunction{false}(_f; jac=_jac)
+    f_ip = DiffEqFunction{true}(_f_ip; jac=_jac_ip)
     prob = ODEProblem(f, u0, (0.0, 1.0))
+    prob_ip = ODEProblem{true}(f_ip, u0, (0.0, 1.0))
 
     dt = 0.1; tol=1e-5
     Algs = [Exp4]
@@ -46,6 +55,10 @@ end
         gc()
         sol = solve(prob, Alg(); dt=dt, internalnorm=Base.norm, reltol=tol)
         sol_ref = solve(prob, Tsit5(); reltol=tol)
+        @test isapprox(sol(1.0), sol_ref(1.0); rtol=tol)
+
+        sol = solve(prob_ip, Alg(); dt=dt, internalnorm=Base.norm, reltol=tol)
+        sol_ref = solve(prob_ip, Tsit5(); reltol=tol)
         @test isapprox(sol(1.0), sol_ref(1.0); rtol=tol)
         println(Alg) # prevent Travis hanging
     end

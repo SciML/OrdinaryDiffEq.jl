@@ -723,10 +723,10 @@ function _phiv_timestep_estimate_flops(m, tau, n, p, NA, iop, Hnorm, maxtau)
 end
 function _phiv_timestep_caches(u_prototype, maxiter::Int, p::Int)
   n = length(u_prototype); T = eltype(u_prototype)
-  u = similar(u_prototype)                    # stores the current state
-  W = Matrix{T}(n, p+1)                       # stores the w vectors
-  P = Matrix{T}(n, p+2)                       # stores output from phiv!
-  Ks = KrylovSubspace{T}(n, maxiter)          # stores output from arnoldi!
-  phiv_caches = construct_phiv_caches(Ks, p)  # caches used by phiv!
+  u = similar(u_prototype)                      # stores the current state
+  W = Matrix{T}(n, p+1)                         # stores the w vectors
+  P = Matrix{T}(n, p+2)                         # stores output from phiv!
+  Ks = KrylovSubspace{T}(n, maxiter)            # stores output from arnoldi!
+  phiv_caches = construct_phiv_caches(Ks, p+1)  # caches used by phiv! (need +1 for error estimation)
   return u, W, P, Ks, phiv_caches
 end
