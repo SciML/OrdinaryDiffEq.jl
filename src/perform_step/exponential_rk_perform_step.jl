@@ -576,6 +576,95 @@ function perform_step!(integrator, cache::HochOst4Cache, repeat_step=false)
   # integrator.k is automatically set due to aliasing
 end
 
+#############################################
+# EPIRK integrators
+function perform_step!(integrator, cache::Exp4ConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,f,p = integrator
+  A = f.jac(uprev, p, t)
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+  f0 = integrator.fsalfirst # f(uprev) is fsaled
+  ts = [dt/3, 2dt/3, dt]
+  kwargs = [(:tol, integrator.opts.reltol), (:iop, alg.iop), (:norm, integrator.opts.internalnorm), (:adaptive, true)]
+
+  # Krylov for f(uprev)
+  B1 = [zeros(f0) f0]
+  K1 = phiv_timestep(ts, A, B1; kwargs...) # tϕ(tA)f0
+  @inbounds for i = 1:3
+    K1[:,i] ./= ts[i]
+  end
+  w4 = K1 * [-7/300, 97/150, -37/300]
+  u4 = uprev + dt * w4
+  d4 = f(u4, p, t+dt) - f0 - dt * (A*w4) # TODO: what should be the time?
+  # Krylov for the first remainder d4
+  B2 = [zeros(d4) d4]
+  K2 = phiv_timestep(ts, A, B2; kwargs...)
+  @inbounds for i = 1:3
+    K2[:,i] ./= ts[i]
+  end
+  w7 = K1 * [59/300, -7/75, 269/300] + K2 * [2/3, 2/3, 2/3]
+  u7 = uprev + dt * w7
+  d7 = f(u7, p, t+dt) - f0 - dt * (A*w7)
+  # Krylov for the second remainder d7
+  B3 = [zeros(d7) d7]
+  k7 = phiv_timestep(ts[1], A, B3; kwargs...)
+  k7 ./= ts[1]
+  # Update u
+  u = uprev + dt * (K1[:,3] + K2[:,1] - 4/3*K2[:,2] + K2[:,3] + k7/6)
+
+  # Update integrator state
+  integrator.fsallast = f(u, p, t + dt)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end
+
+function perform_step!(integrator, cache::Exp4Cache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack tmp,rtmp,rtmp2,k7,K,A,B,KsCache = cache
+  f.jac(A, uprev, p, t)
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+  f0 = integrator.fsalfirst # f(u0) is fsaled
+  ts = [dt/3, 2dt/3, dt]
+  kwargs = [(:tol, integrator.opts.reltol), (:iop, alg.iop), (:norm, integrator.opts.internalnorm), 
+    (:adaptive, true), (:caches, KsCache)]
+
+  # Krylov for f(uprev)
+  B[:, 2] .= f0
+  phiv_timestep!(K, ts, A, B; kwargs...)
+  @inbounds for i = 1:3
+    K[:,i] ./= ts[i]
+  end
+  A_mul_B!(rtmp, K, [-7/300, 97/150, -37/300]) # rtmp is now w4
+  @muladd @. tmp = uprev + dt * rtmp # tmp is now u4
+  A_mul_B!(rtmp2, A, rtmp)
+  f(rtmp, tmp, p, t+dt) # TODO: what should be the time?
+  @muladd @. @view(B[:,2]) = rtmp - f0 - dt * rtmp2 # B[:,2] is now d4
+  # Partially update entities that use k1, k2, k3
+  A_mul_B!(rtmp, K, [59/300, -7/75, 269/300]) # rtmp is now w7
+  @muladd @. u = uprev + dt * @view(K[:,3])
+  # Krylov for the first remainder d4
+  phiv_timestep!(K, ts, A, B; kwargs...)
+  @inbounds for i = 1:3
+    K[:,i] ./= ts[i]
+  end
+  A_mul_B!(rtmp2, K, [2/3, 2/3, 2/3]); rtmp .+= rtmp2 # w7 fully updated
+  @muladd @. tmp = uprev + dt * rtmp # tmp is now u7
+  A_mul_B!(rtmp2, A, rtmp)
+  f(rtmp, tmp, p, t+dt) # TODO: what should be the time?
+  @muladd @. @view(B[:,2]) = rtmp - f0 - dt * rtmp2 # B[:,2] is now d7
+  # Partially update entities that use k4, k5, k6
+  A_mul_B!(rtmp, K, [1.0, -4/3, 1.0])
+  Base.axpy!(dt, rtmp, u)
+  # Krylov for the second remainder d7
+  phiv_timestep!(k7, ts[1], A, B; kwargs...)
+  k7 ./= ts[1]
+  Base.axpy!(dt/6, k7, u)
+
+  # Update integrator state
+  f(integrator.fsallast, u, p, t + dt)
+  # integrator.k is automatically set due to aliasing
+end
+
 ######################################################
 # Multistep exponential integrators
 function initialize!(integrator,cache::ETD2ConstantCache)

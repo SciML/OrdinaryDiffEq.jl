@@ -54,10 +54,13 @@ using OrdinaryDiffEq: phi, phi, phiv, phiv_timestep, expv, expv_timestep, arnold
   tol = 1e-7
   A = spdiagm((ones(n-1), -2*ones(n), ones(n-1)), (-1, 0, 1))
   B = randn(n, K+1)
+  Phi_half = phi(t/2 * A, K)
   Phi = phi(t * A, K)
+  uhalf_exact = sum((t/2)^i * Phi_half[i+1] * B[:,i+1] for i = 0:K)
   u_exact = sum(t^i * Phi[i+1] * B[:,i+1] for i = 0:K)
-  u = phiv_timestep(t, A, B; adaptive=true, tol=tol)
-  @test norm(u - u_exact) / norm(u_exact) < tol
+  U = phiv_timestep([t/2, t], A, B; adaptive=true, tol=tol)
+  @test norm(U[:,1] - uhalf_exact) / norm(uhalf_exact) < tol
+  @test norm(U[:,2] - u_exact) / norm(u_exact) < tol
   # p = 0 special case (expv_timestep)
   u_exact = Phi[1] * B[:, 1]
   u = expv_timestep(t, A, B[:, 1]; adaptive=true, tol=tol)
