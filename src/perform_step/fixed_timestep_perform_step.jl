@@ -394,7 +394,7 @@ end
 end
 
 function initialize!(integrator, cache::Anas5ConstantCache)
-  integrator.kshortsize = 6
+  integrator.kshortsize = 7
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 
@@ -409,12 +409,12 @@ end
 
 @muladd function perform_step!(integrator, cache::Anas5ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack a21,a31,a32,a41,a42,a51,a52,a53,a54,a61,a62,a63,a64,c2,c3,c4,c5,c6,b1,b3,b4,b5,b6 = cache
+  @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,c2,c3,c4,c5,c6,b1,b3,b4,b5,b6 = cache
   ## Note that c1 and b2 were 0.
   w = integrator.alg.w
   v = w*dt
   ## Formula by Z.A. Anastassi, see the Anas5 caches in tableaus/low_order_rk_tableaus.jl for the full citation.
-  a65 = (-8000/1071)*(-a43*v^5 + 6*tan(v)*v^4 + 24*v^3 - 72*tan(v)*v^2 - 144*v + 144*tan(v))/(v^5*(a43*tan(v)*v + 12 - 10*a43))
+  a65 = (-8000//1071)*(-a43*v^5 + 6*tan(v)*v^4 + 24*v^3 - 72*tan(v)*v^2 - 144*v + 144*tan(v))/(v^5*(a43*tan(v)*v + 12 - 10*a43))
   k1 = integrator.fsalfirst
   k2 = f(uprev+dt*a21*k1, p, t+c2*dt)
   k3 = f(uprev+dt*(a31*k1+a32*k2), p, t+c3*dt)
@@ -429,7 +429,7 @@ end
 end
 
 function initialize!(integrator, cache::Anas5Cache)
-  integrator.kshortsize = 6
+  integrator.kshortsize = 7
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1]=cache.k1; integrator.k[2]=cache.k2;
   integrator.k[3]=cache.k3; integrator.k[4]=cache.k4;
@@ -443,7 +443,11 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   uidx = eachindex(integrator.uprev)
   @unpack k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp = cache
-  @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,c1,c2,c3,c4,c5,c6,b1,b2,b3,b4,b5,b6,b7 = cache.tab
+  @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,c2,c3,c4,c5,c6,b1,b3,b4,b5,b6 = cache.tab
+  w = integrator.alg.w
+  v = w*dt
+  ## Formula by Z.A. Anastassi, see the Anas5 caches in tableaus/low_order_rk_tableaus.jl for the full citation.
+  a65 = (-8000//1071)*(-a43*v^5 + 6*tan(v)*v^4 + 24*v^3 - 72*tan(v)*v^2 - 144*v + 144*tan(v))/(v^5*(a43*tan(v)*v + 12 - 10*a43))
   @tight_loop_macros for i in uidx
     @inbounds tmp[i] = uprev[i]+a21*k1[i]
   end
@@ -465,7 +469,7 @@ end
   end
   f(k6, tmp, p, t+c6*dt)
   @tight_loop_macros for i in uidx
-    @inbounds u[i] = uprev[i]+dt*(b1*k1[i]+b2*k2[i]+b3*k3[i]+b4*k4[i]+b5*k5[i]+b6*k6[i])
+    @inbounds u[i] = uprev[i]+dt*(b1*k1[i]+b3*k3[i]+b4*k4[i]+b5*k5[i]+b6*k6[i])
   end
   f(k7, u, p, t+dt)
 end
