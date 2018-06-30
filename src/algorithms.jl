@@ -188,9 +188,38 @@ Base.@pure ABCN2(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                       linsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
                       max_newton_iter,new_jac_conv_bound)
 
-# Adams methods in Nordsieck forms
+struct CNLF2{CS,AD,F,FDT,K,T,T2} <: OrdinaryDiffEqImplicitAlgorithm{CS,AD}
+  linsolve::F
+  diff_type::FDT
+  κ::K
+  tol::T
+  extrapolant::Symbol
+  min_newton_iter::Int
+  max_newton_iter::Int
+  new_jac_conv_bound::T2
+end
+Base.@pure CNLF2(;chunk_size=0,autodiff=true,diff_type=Val{:central},
+                      linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
+                      extrapolant=:linear,min_newton_iter=1,
+                      max_newton_iter=7,new_jac_conv_bound = 1e-3) =
+                      CNLF2{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),
+                      typeof(κ),typeof(tol),typeof(new_jac_conv_bound)}(
+                      linsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
+                      max_newton_iter,new_jac_conv_bound)
 
-struct AN5 <: OrdinaryDiffEqAdaptiveAlgorithm end
+# Adams/BDF methods in Nordsieck forms
+struct AN5   <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct JVODE{bType,aType} <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm
+  algorithm::Symbol
+  bias1::bType
+  bias2::bType
+  bias3::bType
+  addon::aType
+end
+
+Base.@pure JVODE(algorithm=:Adams;bias1=6, bias2=6,bias3=10,
+                 addon=1//10^6) = JVODE(algorithm,bias1,bias2,bias3,addon)
+Base.@pure JVODE_Adams(;kwargs...) = JVODE(:Adams;kwargs...)
 
 ################################################################################
 
@@ -649,20 +678,22 @@ struct GenericIIF2{F} <: OrdinaryDiffEqExponentialAlgorithm
 end
 Base.@pure GenericIIF2(;nlsolve=NLSOLVEJL_SETUP()) = GenericIIF2{typeof(nlsolve)}(nlsolve)
 
-struct LawsonEuler <: OrdinaryDiffEqExponentialAlgorithm 
-  krylov::Bool
-  m::Int
+for Alg in [:LawsonEuler, :NorsettEuler, :ETDRK2, :ETDRK3, :ETDRK4, :HochOst4]
+  @eval struct $Alg <: OrdinaryDiffEqExponentialAlgorithm
+    krylov::Bool
+    m::Int
+    iop::Int
+  end
+  @eval Base.@pure $Alg(;krylov=false, m=30, iop=0) = $Alg(krylov, m, iop)
 end
-Base.@pure LawsonEuler(;krylov=false, m=30) = LawsonEuler(krylov, m)
-struct NorsettEuler <: OrdinaryDiffEqExponentialAlgorithm
-  krylov::Bool
-  m::Int
-end
-Base.@pure NorsettEuler(;krylov=false, m=30) = NorsettEuler(krylov, m)
 ETD1 = NorsettEuler # alias
+struct Exp4 <: OrdinaryDiffEqExponentialAlgorithm
+  m::Int
+  iop::Int
+end
+Base.@pure Exp4(;m=30, iop=0)  = Exp4(m, iop)
 struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm end
 struct ETD2 <: OrdinaryDiffEqExponentialAlgorithm end
-struct ETDRK4 <: OrdinaryDiffEqExponentialAlgorithm end
 
 #########################################
 

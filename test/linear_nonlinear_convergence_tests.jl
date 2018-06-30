@@ -17,10 +17,16 @@ sim  = test_convergence(dts,prob,LawsonEuler())
 @test abs(sim.𝒪est[:l2]-1) < 0.2
 sim  = test_convergence(dts,prob,NorsettEuler())
 @test abs(sim.𝒪est[:l2]-1) < 0.2
-sim  = test_convergence(dts,prob,ETD2())
+sim  = test_convergence(dts,prob,ETDRK2())
 @test abs(sim.𝒪est[:l2]-2) < 0.2
+sim  = test_convergence(dts,prob,ETDRK3())
+@test abs(sim.𝒪est[:l2]-3) < 0.2
 sim  = test_convergence(dts,prob,ETDRK4(),dense_errors=true)
 @test abs(sim.𝒪est[:l2]-4) < 0.2
+sim  = test_convergence(dts,prob,HochOst4())
+@test abs(sim.𝒪est[:l2]-4) < 0.2
+sim  = test_convergence(dts,prob,ETD2())
+@test abs(sim.𝒪est[:l2]-2) < 0.2
 
 println("Inplace")
 gc()
@@ -47,9 +53,18 @@ sim  = test_convergence(dts,prob,LawsonEuler())
 sim  = test_convergence(dts,prob,NorsettEuler())
 @test abs(sim.𝒪est[:l2]-1) < 0.1
 
-sim  = test_convergence(dts,prob,ETD2())
+sim  = test_convergence(dts,prob,ETDRK2())
 @test abs(sim.𝒪est[:l2]-2) < 0.1
+
+sim  = test_convergence(dts,prob,ETDRK3())
+@test abs(sim.𝒪est[:l2]-3) < 0.1
 
 sim  = test_convergence(dts,prob,ETDRK4(),dense_errors=true)
 @test abs(sim.𝒪est[:l2]-4) < 0.1
 @test abs(sim.𝒪est[:L2]-4) < 0.1
+
+sim  = test_convergence(dts,prob,HochOst4())
+@test abs(sim.𝒪est[:l2]-4) < 0.1
+
+sim  = test_convergence(dts,prob,ETD2())
+@test abs(sim.𝒪est[:l2]-2) < 0.1

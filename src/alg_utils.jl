@@ -14,7 +14,6 @@ get_current_isfsal(alg, cache) = isfsal(alg)
 get_current_isfsal(alg::CompositeAlgorithm, cache) = isfsal(alg.algs[cache.current])
 
 fsal_typeof(alg::OrdinaryDiffEqAlgorithm,rate_prototype) = typeof(rate_prototype)
-fsal_typeof(alg::Union{LawsonEuler,NorsettEuler,ETDRK4},rate_prototype) = ExpRKFsal{typeof(rate_prototype)}
 fsal_typeof(alg::ETD2,rate_prototype) = ETD2Fsal{typeof(rate_prototype)}
 function fsal_typeof(alg::CompositeAlgorithm,rate_prototype)
   fsal = unique(map(x->fsal_typeof(x,rate_prototype), alg.algs))
@@ -88,12 +87,12 @@ alg_extrapolates(alg::IRKN3) = true
 alg_extrapolates(alg::ABDF2) = true
 
 alg_order(alg::OrdinaryDiffEqAlgorithm) = error("Order is not defined for this algorithm")
-# alg_order(alg::CompositeAlgorithm) = alg_order(alg.algs[alg.current_alg])
 get_current_alg_order(alg::OrdinaryDiffEqAlgorithm,cache) = alg_order(alg)
 get_current_alg_order(alg::CompositeAlgorithm,cache) = alg_order(alg.algs[cache.current])
 
 get_current_alg_order(alg::OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm,cache) = cache.order
 get_current_adaptive_order(alg::OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm,cache) = cache.order
+get_current_alg_order(alg::JVODE,cache) = get_current_adaptive_order(alg,cache)
 
 alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
 get_current_adaptive_order(alg::OrdinaryDiffEqAlgorithm,cache) = alg_adaptive_order(alg)
@@ -105,9 +104,13 @@ alg_order(alg::Heun) = 2
 alg_order(alg::Ralston) = 2
 alg_order(alg::LawsonEuler) = 1
 alg_order(alg::NorsettEuler) = 1
+alg_order(alg::ETDRK2) = 2
+alg_order(alg::ETDRK3) = 3
+alg_order(alg::ETDRK4) = 4
+alg_order(alg::HochOst4) = 4
+alg_order(alg::Exp4) = 4
 alg_order(alg::SplitEuler) = 1
 alg_order(alg::ETD2) = 2
-alg_order(alg::ETDRK4) = 4
 
 alg_order(alg::SymplecticEuler) = 1
 alg_order(alg::VelocityVerlet) = 2
@@ -226,8 +229,10 @@ alg_order(alg::VCABM5) = 5
 alg_order(alg::VCABM) = 1  #dummy value
 
 alg_order(alg::ABCN2) = 2
+alg_order(alg::CNLF2) = 2
 
 alg_order(alg::AN5) = 5
+alg_order(alg::JVODE) = 1  #dummy value
 
 alg_order(alg::ABDF2) = 2
 
@@ -251,8 +256,10 @@ alg_adaptive_order(alg::Trapezoid) = 1
 # this is actually incorrect and is purposefully decreased as this tends
 # to track the real error much better
 alg_adaptive_order(alg::ImplicitMidpoint) = 1
- # this is actually incorrect and is purposefully decreased as this tends
- # to track the real error much better
+# this is actually incorrect and is purposefully decreased as this tends
+# to track the real error much better
+
+alg_adaptive_order(alg::AN5) = 5
 
 beta2_default(alg::OrdinaryDiffEqAlgorithm) = 2//(5alg_order(alg))
 beta2_default(alg::FunctionMap) = 0
@@ -273,6 +280,8 @@ qsteady_max_default(alg::OrdinaryDiffEqAlgorithm) = 1
 qsteady_max_default(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = 6//5
 # But don't re-use Jacobian if not adaptive: too risky and cannot pull back
 qsteady_max_default(alg::OrdinaryDiffEqImplicitAlgorithm) = 1//1
+qsteady_max_default(alg::AN5) = 3//2
+qsteady_max_default(alg::JVODE) = 3//2
 
 FunctionMap_scale_by_time(alg::FunctionMap{scale_by_time}) where {scale_by_time} = scale_by_time
 

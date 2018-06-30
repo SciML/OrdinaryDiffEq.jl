@@ -32,7 +32,7 @@ function init(
   reltol=nothing,
   qmax=qmax_default(alg),qmin=qmin_default(alg),
   qsteady_min = qsteady_min_default(alg),
-  qsteady_max = qsteady_min_default(alg),
+  qsteady_max = qsteady_max_default(alg),
   qoldinit=1//10^4, fullnormalize=true,
   failfactor = 2,
   beta2=nothing,
