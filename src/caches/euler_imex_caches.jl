@@ -67,7 +67,7 @@ function alg_cache(alg::IMEXEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
 
   uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t,p)
   linsolve = alg.linsolve(Val{:init},uf,u)
-  jac_config = build_jac_config(alg,f.f1,uf,du1,uprev,u,tmp,dz)
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   uToltype = real(uBottomEltypeNoUnits)
   ηold = one(uToltype)
 
