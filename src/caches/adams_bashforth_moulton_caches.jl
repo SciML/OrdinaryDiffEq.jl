@@ -920,9 +920,9 @@ end
 
 # IMEX Multistep methods
 
-# ABCN2
+# CNAB2
 
-mutable struct ABCN2ConstantCache{rateType,F,uToltype,uType,tType} <: OrdinaryDiffEqConstantCache
+mutable struct CNAB2ConstantCache{rateType,F,uToltype,uType,tType} <: OrdinaryDiffEqConstantCache
   k2::rateType
   uf::F
   ηold::uToltype
@@ -933,7 +933,7 @@ mutable struct ABCN2ConstantCache{rateType,F,uToltype,uType,tType} <: OrdinaryDi
   tprev2::tType
 end
 
-mutable struct ABCN2Cache{uType,rateType,uNoUnitsType,J,UF,JC,uToltype,tType,F} <: OrdinaryDiffEqMutableCache
+mutable struct CNAB2Cache{uType,rateType,uNoUnitsType,J,UF,JC,uToltype,tType,F} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -961,10 +961,10 @@ mutable struct ABCN2Cache{uType,rateType,uNoUnitsType,J,UF,JC,uToltype,tType,F} 
   tprev2::tType
 end
 
-u_cache(c::ABCN2Cache)    = ()
-du_cache(c::ABCN2Cache)   = ()
+u_cache(c::CNAB2Cache)    = ()
+du_cache(c::CNAB2Cache)   = ()
 
-function alg_cache(alg::ABCN2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::CNAB2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   k2 = rate_prototype
   uToltype = real(uBottomEltypeNoUnits)
   uf = DiffEqDiffTools.UDerivativeWrapper(f.f1,t,p)
@@ -983,10 +983,10 @@ function alg_cache(alg::ABCN2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
     tol = uToltype(min(0.03,first(reltol)^(0.5)))
   end
 
-  ABCN2ConstantCache(k2,uf,ηold,κ,tol,10000,uprev3,tprev2)
+  CNAB2ConstantCache(k2,uf,ηold,κ,tol,10000,uprev3,tprev2)
 end
 
-function alg_cache(alg::ABCN2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::CNAB2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
   z = similar(u,indices(u))
@@ -1026,7 +1026,7 @@ function alg_cache(alg::ABCN2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
 
   ηold = one(uToltype)
 
-  ABCN2Cache(u,uprev,uprev2,fsalfirst,k,k1,k2,du₁,du1,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,ηold,κ,tol,10000,uprev3,tprev2)
+  CNAB2Cache(u,uprev,uprev2,fsalfirst,k,k1,k2,du₁,du1,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,ηold,κ,tol,10000,uprev3,tprev2)
 end
 
 # CNLF2
