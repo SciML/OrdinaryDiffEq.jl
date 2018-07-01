@@ -145,7 +145,7 @@ sim = test_convergence(dts,prob,KenCarp5())
 # IMEXEuler
 dts = 1.//2.^(8:-1:4)
 sim3 = test_convergence(dts,prob,IMEXEuler())
-@test abs(sim3.𝒪est[:l∞]-1) < testTol
+@test abs(sim3.𝒪est[:l∞]-2) < testTol # Super-convergence
 
 # CNAB2
 dts = 1.//2.^(8:-1:4)
@@ -265,7 +265,7 @@ sim = test_convergence(dts,prob,KenCarp5())
 # IMEXEuler
 dts = 1.//2.^(8:-1:4)
 sim3 = test_convergence(dts,prob,IMEXEuler())
-@test abs(sim3.𝒪est[:l∞]-1) < testTol
+@test abs(sim3.𝒪est[:l∞]-2) < testTol # Super-convergence
 
 # CNAB2
 dts = 1.//2.^(8:-1:4)
