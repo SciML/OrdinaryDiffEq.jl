@@ -228,6 +228,8 @@ Base.@pure QNDF1(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                       linsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
                       max_newton_iter,new_jac_conv_bound,kappa)
 
+Base.@pure QBDF1(;kwargs...) = QNDF1(;kappa=0,kwargs...)
+
 # Adams/BDF methods in Nordsieck forms
 struct AN5   <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct JVODE{bType,aType} <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm

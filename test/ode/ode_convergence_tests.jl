@@ -107,8 +107,13 @@ for i = 1:2
   @test abs(sim.𝒪est[:l2]-2) < testTol
   @test abs(sim.𝒪est[:l∞]-2) < testTol
 
+  # QBDF
+  sim = test_convergence(dts,prob,QBDF1())
+  @test abs(sim.𝒪est[:final]-1) < testTol
+  @test abs(sim.𝒪est[:l2]-1) < testTol
+  @test abs(sim.𝒪est[:l∞]-1) < testTol
 
-  # NDF
+  # QNDF
   sim = test_convergence(dts,prob,QNDF1())
   @test abs(sim.𝒪est[:final]-1) < testTol
   @test abs(sim.𝒪est[:l2]-1) < testTol
