@@ -323,6 +323,19 @@ function lanczos!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol=1e-7,
   return Ks
 end
 
+# Cache type for expv
+mutable struct ExpvCache{T}
+  mem::Vector{T}
+  ExpvCache{T}(maxiter::Int) where {T} = new{T}(Vector{T}(maxiter^2))
+end
+function Base.resize!(C::ExpvCache{T}, maxiter::Int) where {T}
+  C.mem = Vector{T}(maxiter^2)
+  return C
+end
+function get_cache(C::ExpvCache, m::Int)
+  m^2 > length(C.mem) && resize!(C, m) # resize the cache if needed
+  reshape(@view(C.mem[1:m^2]), m, m)
+end
 """
     expv(t,A,b; kwargs) -> exp(tA)b
 
@@ -357,10 +370,10 @@ function expv!(w::Vector{T}, t::Number, Ks::KrylovSubspace{B, T};
   @assert length(w) == size(V, 1) "Dimension mismatch"
   if cache == nothing
     cache = Matrix{T}(m, m)
+  elseif isa(cache, ExpvCache)
+    cache = get_cache(cache, m)
   else
-    # The cache may have a bigger size to handle different values of m.
-    # Here we only need a portion.
-    cache = @view(cache[1:m, 1:m])
+    throw(ArgumentError("Cache must be an ExpvCache"))
   end
   scale!(t, copy!(cache, @view(H[1:m, :])))
   if ishermitian(cache)
