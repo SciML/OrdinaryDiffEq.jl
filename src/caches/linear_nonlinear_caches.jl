@@ -175,10 +175,11 @@ function alg_cache_expRK(alg::OrdinaryDiffEqExponentialAlgorithm, u, f, dt, plis
   if alg.krylov
     ops = nothing # no caching
     # Build up caches used by Krylov phiv
-    Ks = KrylovSubspace{T}(n, min(alg.m, n))
-    phiv_caches = construct_phiv_caches(Ks, maximum(plist))
+    m = min(alg.m, n)
+    Ks = KrylovSubspace{T}(n, m)
+    phiv_cache = PhivCache{T}(m, maximum(plist))
     ws = [Matrix{T}(n, plist[i] + 1) for i = 1:length(plist)]
-    KsCache = (Ks, phiv_caches, ws) # should use named tuple in v0.6
+    KsCache = (Ks, phiv_cache, ws) # should use named tuple in v0.6
   else
     KsCache = nothing
     # Precompute the operators
@@ -211,7 +212,7 @@ function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
     exphA = nothing # no caching
     m = min(alg.m, n)
     Ks = KrylovSubspace{T}(n, m)
-    expv_cache = Matrix{T}(m, m)
+    expv_cache = ExpvCache{T}(m)
     KsCache = (Ks, expv_cache)
   else
     KsCache = nothing
