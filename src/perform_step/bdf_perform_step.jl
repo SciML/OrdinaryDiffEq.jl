@@ -167,7 +167,7 @@ function perform_step!(integrator,cache::QNDF1ConstantCache,repeat_step=false)
     cache.dtₙ₋₁ = dt
     return
   end
-  κ = -0.1850
+  κ = integrator.alg.kappa
   γₖ = 1//1
   k = 1
   ρ = dt/dtₙ₋₁
@@ -234,7 +234,7 @@ function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
     cache.dtₙ₋₁ = dt
     return
   end
-  κ = -0.1850
+  κ = integrator.alg.kappa
   γₖ = 1//1
   k = 1
   ρ = dt/dtₙ₋₁
