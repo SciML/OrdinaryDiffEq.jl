@@ -177,7 +177,7 @@ function perform_step!(integrator,cache::QNDF1ConstantCache,repeat_step=false)
     U!(k,cache)
     R!(k,ρ,cache)
     D[1,1] = D[1,1] * (R[1,1] * U[1,1])
-    uprev2 = prev_u(uprev,k,t,dt,cache)
+    uprev2 = prev_u!(uprev,k,t,dt,cache)
   end
   c1 = (1-2κ)/(1-κ)
   c2 = (κ)/(1-κ)
@@ -226,7 +226,7 @@ end
 
 function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack uprev2,D,temp_D,D2,R,U,tmp,z,k,W,dtₙ₋₁,uf,κ,tol,utilde,atmp = cache
+  @unpack uprev2,D,temp_D,temp_u,D2,R,U,tmp,z,W,dtₙ₋₁,uf,κ,tol,utilde,atmp = cache
   cnt = integrator.iter
   if cnt == 1
     perform_step!(integrator, cache.eulercache, repeat_step)
@@ -240,11 +240,12 @@ function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
   ρ = dt/dtₙ₋₁
   @. D[1,1] = uprev - uprev2 # backward diff
   temp_D .= D
+  temp_u .= uprev2
   if ρ != 1
     U!(k,cache)
     R!(k,ρ,cache)
     @. D[1,1] = D[1,1] * (R[1,1] * U[1,1])
-    uprev2 = prev_u(uprev,k,t,dt,cache)
+    prev_u!(uprev,k,t,dt,cache)
   end
   c1 = (1-2κ)/(1-κ)
   c2 = (κ)/(1-κ)
@@ -268,6 +269,7 @@ function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
     integrator.EEst = integrator.opts.internalnorm(atmp)
     if integrator.EEst > one(integrator.EEst)
       cache.D .= temp_D
+      cache.uprev2 .= temp_u
       return
     end
   end

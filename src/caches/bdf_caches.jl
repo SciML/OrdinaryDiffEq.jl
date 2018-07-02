@@ -135,6 +135,7 @@ mutable struct QNDF1Cache{uType,rateType,coefType,uNoUnitsType,J,UF,JC,uToltype,
   b::uType
   D::coefType
   temp_D::coefType
+  temp_u::uType
   D2::coefType
   R::coefType
   U::coefType
@@ -199,17 +200,18 @@ function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   fsalfirstprev = zeros(rate_prototype)
   k = zeros(rate_prototype)
 
-  D = Vector{typeof(rate_prototype)}(1)
-  temp_D = Vector{typeof(rate_prototype)}(1)
-  R = Vector{typeof(rate_prototype)}(1)
-  U = Vector{typeof(rate_prototype)}(1)
-  D2 = Vector{typeof(rate_prototype)}(1)
+  D = Vector{typeof(u)}(1)
+  R = Vector{typeof(u)}(1)
+  U = Vector{typeof(u)}(1)
+  D2 = Vector{typeof(u)}(1)
+  temp_D = Vector{typeof(u)}(1)
 
-  D[1,1] = zeros(rate_prototype)
-  temp_D[1,1] = zeros(rate_prototype)
-  R[1,1] = zeros(rate_prototype)
-  U[1,1] = zeros(rate_prototype)
-  D2[1,1] = zeros(rate_prototype)
+  D[1,1] = similar(u)
+  R[1,1] = similar(u)
+  U[1,1] = similar(u)
+  D2[1,1] = similar(u)
+  temp_D[1,1] = similar(u)
+  temp_u = similar(u)
 
   tmp = similar(u); b = similar(u,indices(u))
   atmp = similar(u,uEltypeNoUnits,indices(u))
@@ -219,6 +221,8 @@ function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   uToltype = real(uBottomEltypeNoUnits)
   utilde = similar(u,indices(u))
+
+  uprev2 = similar(u)
 
   if alg.κ != nothing
     κ = uToltype(alg.κ)
@@ -236,6 +240,6 @@ function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   eulercache = ImplicitEulerCache(u,uprev,uprev2,du1,fsalfirst,k,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,ηold,κ,tol,10000)
 
   dtₙ₋₁ = one(dt)
-  QNDF1Cache(uprev2,du1,fsalfirst,fsalfirstprev,k,z,zₙ₋₁,dz,b,D,temp_D,D2,R,U,tmp,atmp,utilde,J,
+  QNDF1Cache(uprev2,du1,fsalfirst,fsalfirstprev,k,z,zₙ₋₁,dz,b,D,temp_D,temp_u,D2,R,U,tmp,atmp,utilde,J,
               W,uf,jac_config,linsolve,ηold,κ,tol,10000,eulercache,dtₙ₋₁)
 end

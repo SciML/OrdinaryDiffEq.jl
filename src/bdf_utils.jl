@@ -26,14 +26,14 @@ function R!(k, ρ, cache)
   end
 end
 
-function prev_u(uprev, k, t, dt, cache)
+function prev_u!(uprev, k, t, dt, cache)
   @unpack D, uprev2 = cache
   if typeof(cache) <: OrdinaryDiffEqMutableCache
     @. uprev2 = uprev + (D[1,1]) * -1
   else
-    uprev2 = uprev + (D[1,1]) * -1 
+    uprev2 = uprev + (D[1,1]) * -1
+    return uprev2
   end
-  uprev2
 end
 
 function D2!(u, uprev, k, cache)
