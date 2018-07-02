@@ -329,7 +329,7 @@ mutable struct ExpvCache{T}
   ExpvCache{T}(maxiter::Int) where {T} = new{T}(Vector{T}(maxiter^2))
 end
 function Base.resize!(C::ExpvCache{T}, maxiter::Int) where {T}
-  C.mem = Vector{T}(maxiter^2)
+  C.mem = Vector{T}(maxiter^2 * 2)
   return C
 end
 function get_cache(C::ExpvCache, m::Int)
@@ -397,7 +397,7 @@ mutable struct PhivCache{T}
 end
 function Base.resize!(C::PhivCache{T}, maxiter::Int, p::Int) where {T}
   numelems = maxiter + maxiter^2 + (maxiter + p)^2 + maxiter*(p + 1)
-  C.mem = Vector{T}(numelems)
+  C.mem = Vector{T}(numelems * 2)
   return C
 end
 function get_caches(C::PhivCache, m::Int, p::Int)
