@@ -620,7 +620,7 @@ end
 
 function perform_step!(integrator, cache::Exp4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack tmp,rtmp,rtmp2,k7,K,A,B,KsCache = cache
+  @unpack tmp,rtmp,rtmp2,K,A,B,KsCache = cache
   f.jac(A, uprev, p, t)
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
   f0 = integrator.fsalfirst # f(u0) is fsaled
@@ -656,6 +656,7 @@ function perform_step!(integrator, cache::Exp4Cache, repeat_step=false)
   A_mul_B!(rtmp, K, [1.0, -4/3, 1.0])
   Base.axpy!(dt, rtmp, u)
   # Krylov for the second remainder d7
+  k7 = @view(K[:, 1])
   phiv_timestep!(k7, ts[1], A, B; kwargs...)
   k7 ./= ts[1]
   Base.axpy!(dt/6, k7, u)

@@ -343,7 +343,6 @@ struct Exp4Cache{uType,rateType,matType,KsType} <: ExpRKCache
   tmp::uType
   rtmp::rateType
   rtmp2::rateType
-  k7::rateType
   K::matType
   A::matType
   B::matType
@@ -352,7 +351,7 @@ end
 function alg_cache(alg::Exp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)                                              # uType caches
-  rtmp, rtmp2, k7 = (zeros(rate_prototype) for i = 1:3)         # rateType caches
+  rtmp, rtmp2 = (zeros(rate_prototype) for i = 1:2)             # rateType caches
   # Allocate matrices
   # TODO: units
   n = length(u); T = eltype(u)
@@ -362,7 +361,7 @@ function alg_cache(alg::Exp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   # Allocate caches for phiv_timestep
   maxiter = min(alg.m, n)
   KsCache = _phiv_timestep_caches(u, maxiter, 1)
-  Exp4Cache(u,uprev,tmp,rtmp,rtmp2,k7,K,A,B,KsCache)
+  Exp4Cache(u,uprev,tmp,rtmp,rtmp2,K,A,B,KsCache)
 end
 
 struct EPIRK4s3AConstantCache <: ExpRKConstantCache end
