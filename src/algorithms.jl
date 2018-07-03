@@ -737,6 +737,11 @@ struct Exp4 <: OrdinaryDiffEqExponentialAlgorithm
   iop::Int
 end
 Base.@pure Exp4(;m=30, iop=0)  = Exp4(m, iop)
+struct EPIRK4s3A <: OrdinaryDiffEqExponentialAlgorithm
+  m::Int
+  iop::Int
+end
+Base.@pure EPIRK4s3A(;m=30, iop=0) = EPIRK4s3A(m, iop)
 struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm end
 struct ETD2 <: OrdinaryDiffEqExponentialAlgorithm end
 

@@ -665,6 +665,34 @@ function perform_step!(integrator, cache::Exp4Cache, repeat_step=false)
   # integrator.k is automatically set due to aliasing
 end
 
+function perform_step!(integrator, cache::EPIRK4s3AConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,f,p = integrator
+  A = f.jac(uprev, p, t)
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+  f0 = integrator.fsalfirst # f(uprev) is fsaled
+  kwargs = [(:tol, integrator.opts.reltol), (:iop, alg.iop), (:norm, integrator.opts.internalnorm), (:adaptive, true)]
+
+  # Compute U2 and U3 vertically
+  K1 = phiv_timestep([dt/2, 2dt/3], A, [zeros(f0) f0]; kwargs...)
+  U2 = uprev + K1[:, 1]
+  U3 = uprev + K1[:, 2]
+  R2 = f(U2, p, t + dt/2)  - f0 - A*(U2 - uprev) # remainder of U2
+  R3 = f(U3, p, t + 2dt/3) - f0 - A*(U3 - uprev) # remainder of U3
+  
+  # Update u (horizontally)
+  B = zeros(eltype(f0), length(f0), 5)
+  B[:, 2] = f0
+  B[:, 4] = (32R2 - 13.5R3) / dt^2
+  B[:, 5] = (-144R2 + 81R3) / dt^3
+  u = uprev + phiv_timestep(dt, A, B; kwargs...)
+
+  # Update integrator state
+  integrator.fsallast = f(u, p, t + dt)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end
+
 ######################################################
 # Multistep exponential integrators
 function initialize!(integrator,cache::ETD2ConstantCache)

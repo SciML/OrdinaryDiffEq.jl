@@ -110,6 +110,7 @@ alg_order(alg::ETDRK3) = 3
 alg_order(alg::ETDRK4) = 4
 alg_order(alg::HochOst4) = 4
 alg_order(alg::Exp4) = 4
+alg_order(alg::EPIRK4s3A) = 4
 alg_order(alg::SplitEuler) = 1
 alg_order(alg::ETD2) = 2
 
