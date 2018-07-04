@@ -364,6 +364,10 @@ function alg_cache(alg::Exp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   Exp4Cache(u,uprev,tmp,rtmp,rtmp2,K,A,B,KsCache)
 end
 
+struct EPIRK4s3AConstantCache <: ExpRKConstantCache end
+alg_cache(alg::EPIRK4s3A,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
+  uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = EPIRK4s3AConstantCache()
+
 struct EPIRK4s3ACache{uType,rateType,matType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
@@ -390,9 +394,9 @@ function alg_cache(alg::EPIRK4s3A,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   EPIRK4s3ACache(u,uprev,tmp,rtmp,rtmp2,K,A,B,KsCache)
 end
 
-struct EPIRK4s3AConstantCache <: ExpRKConstantCache end
-alg_cache(alg::EPIRK4s3A,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-  uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = EPIRK4s3AConstantCache()
+struct EPIRK4s3BConstantCache <: ExpRKConstantCache end
+alg_cache(alg::EPIRK4s3B,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
+  uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = EPIRK4s3BConstantCache()
 
 ####################################
 # Multistep exponential method caches
