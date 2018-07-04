@@ -1,10 +1,9 @@
 # bdf_utils
 
-function U!(k, cache)
-  @unpack U = cache
+function U!(k, U, inplace)
   for j = 1:k
     for r = 1:k
-      if typeof(cache) <: OrdinaryDiffEqMutableCache
+      if inplace
         @. U[j,r] = inv(factorial(j)) * prod([m-r for m in 0:(j-1)])
       else
         U[j,r] = inv(factorial(j)) * prod([m-r for m in 0:(j-1)]) 

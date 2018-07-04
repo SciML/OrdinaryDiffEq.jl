@@ -238,6 +238,7 @@ alg_order(alg::JVODE) = 1  #dummy value
 
 alg_order(alg::ABDF2) = 2
 alg_order(alg::QNDF1) = 1
+alg_order(alg::QNDF2) = 2
 
 alg_maximum_order(alg) = alg_order(alg)
 alg_maximum_order(alg::CompositeAlgorithm) = maximum(alg_order(x) for x in alg.algs)
@@ -286,6 +287,7 @@ qsteady_max_default(alg::OrdinaryDiffEqImplicitAlgorithm) = 1//1
 qsteady_max_default(alg::AN5) = 3//2
 qsteady_max_default(alg::JVODE) = 3//2
 qsteady_max_default(alg::QNDF1) = 2//1
+qsteady_max_default(alg::QNDF2) = 2//1
 
 FunctionMap_scale_by_time{scale_by_time}(alg::FunctionMap{scale_by_time}) = scale_by_time
 
