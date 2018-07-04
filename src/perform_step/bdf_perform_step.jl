@@ -289,7 +289,7 @@ end
 
 function perform_step!(integrator,cache::QNDF2ConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack uprev2,uprev3,dtₙ₋₁,dtₙ₋₂,D,D2,R,U,flag = cache
+  @unpack uprev2,uprev3,dtₙ₋₁,dtₙ₋₂,D,D2,R,U = cache
   cnt = integrator.iter
   if cnt == 1 || cnt == 2
     perform_step!(integrator, cache.eulercache, repeat_step)
