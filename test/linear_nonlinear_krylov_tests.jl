@@ -50,7 +50,7 @@ end
     prob_ip = ODEProblem{true}(f_ip, u0, (0.0, 1.0))
 
     dt = 0.05; tol=1e-5
-    Algs = [Exp4, EPIRK4s3A]
+    Algs = [Exp4, EPIRK4s3A, EPIRK4s3B]
     for Alg in Algs
         gc()
         sol = solve(prob, Alg(); dt=dt, internalnorm=Base.norm, reltol=tol)
