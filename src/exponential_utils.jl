@@ -364,7 +364,7 @@ end
 
 Non-allocating version of `expv` that uses precomputed Krylov subspace `Ks`.
 """
-function expv!(w::Vector{T}, t::Number, Ks::KrylovSubspace{B, T}; 
+function expv!(w::AbstractVector{T}, t::Number, Ks::KrylovSubspace{B, T}; 
   cache=nothing) where {B, T <: Number}
   m, beta, V, H = Ks.m, Ks.beta, getV(Ks), getH(Ks)
   @assert length(w) == size(V, 1) "Dimension mismatch"
@@ -451,7 +451,7 @@ end
 
 Non-allocating version of 'phiv' that uses precomputed Krylov subspace `Ks`.
 """
-function phiv!(w::Matrix{T}, t::Number, Ks::KrylovSubspace{B, T}, k::Integer; 
+function phiv!(w::AbstractMatrix{T}, t::Number, Ks::KrylovSubspace{B, T}, k::Integer; 
   cache=nothing, correct=false, errest=false) where {B, T <: Number}
   m, beta, V, H = Ks.m, Ks.beta, getV(Ks), getH(Ks)
   @assert size(w, 1) == size(V, 1) "Dimension mismatch"
@@ -529,12 +529,12 @@ end
 
 Non-allocating version of `expv_timestep`.
 """
-function expv_timestep!(u::Vector{T}, t::tType, A, b::Vector{T}; 
+function expv_timestep!(u::AbstractVector{T}, t::tType, A, b::AbstractVector{T}; 
   kwargs...) where {T <: Number, tType <: Real}
   expv_timestep!(reshape(u, length(u), 1), [t], A, b; kwargs...)
   return u
 end
-function expv_timestep!(U::Matrix{T}, ts::Vector{tType}, A, b::Vector{T}; 
+function expv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, b::AbstractVector{T}; 
   kwargs...) where {T <: Number, tType <: Real}
   B = reshape(b, length(b), 1)
   phiv_timestep!(U, ts, A, B; kwargs...)
@@ -580,12 +580,12 @@ end
 
 Non-allocating version of `phiv_timestep`.
 """
-function phiv_timestep!(u::Vector{T}, t::tType, A, B::Matrix{T}; 
+function phiv_timestep!(u::AbstractVector{T}, t::tType, A, B::AbstractMatrix{T}; 
   kwargs...) where {T <: Number, tType <: Real}
   phiv_timestep!(reshape(u, length(u), 1), [t], A, B; kwargs...)
   return u
 end
-function phiv_timestep!(U::Matrix{T}, ts::Vector{tType}, A, B::Matrix{T}; tau::Real=0.0, 
+function phiv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, B::AbstractMatrix{T}; tau::Real=0.0, 
   m::Int=min(10, size(A, 1)), tol::Real=1e-7, norm=Base.norm, iop::Int=0, 
   correct::Bool=false, caches=nothing, adaptive=false, delta::Real=1.2, 
   gamma::Real=0.8, NA::Int=0, verbose=false) where {T <: Number, tType <: Real}
@@ -613,7 +613,10 @@ function phiv_timestep!(U::Matrix{T}, ts::Vector{tType}, A, B::Matrix{T}; tau::R
     phiv_cache = nothing         # cache used by phiv!
   else
     u, W, P, Ks, phiv_cache = caches
-    @assert length(u) == n && size(W) == (n, p+1) && size(P) == (n, p+2) "Dimension mismatch"
+    @assert length(u) == n && size(W, 1) == n && size(P, 1) == n "Dimension mismatch"
+    # W and P may be bigger than actually needed
+    W = @view(W[:, 1:p+1])
+    P = @view(P[:, 1:p+2])
   end
   copy!(u, @view(B[:, 1])) # u(0) = b0
   coeffs = ones(tType, p);
