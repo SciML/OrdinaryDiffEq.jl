@@ -881,6 +881,85 @@ function perform_step!(integrator, cache::EPIRK5s3Cache, repeat_step=false)
   # integrator.k is automatically set due to aliasing
 end
 
+function perform_step!(integrator, cache::EXPRB53s3ConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,f,p = integrator
+  A = f.jac(uprev, p, t)
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+  f0 = integrator.fsalfirst # f(uprev) is fsaled
+  kwargs = [(:tol, integrator.opts.reltol), (:iop, alg.iop), (:norm, integrator.opts.internalnorm), (:adaptive, true)]
+
+  # Compute the first group for U2 and U3
+  B = [zeros(f0) f0]
+  K = phiv_timestep([dt/2, 9dt/10], A, B; kwargs...)
+  U2 = uprev + K[:, 1]
+  R2 = f(U2, p, t + dt/2)  - f0 - A*K[:, 1] # remainder of U2
+  U3 = uprev + K[:, 2] # partially
+
+  # Compute the second group for U3
+  B = [zeros(R2) zeros(R2) zeros(R2) R2]
+  K = phiv_timestep([dt/2, 9dt/10], A, B; kwargs...)
+  U3 .+= 216/(25*dt^2) .* K[:, 1] + 8/dt^2 .* K[:, 2]
+  R3 = f(U3, p, t + 9dt/10)  - f0 - A*(U3 - uprev) # remainder of U3
+  
+  # Compute the third group for u
+  B = zeros(eltype(f0), length(f0), 5)
+  B[:, 2] = f0
+  B[:, 4] = (18 / dt^2) * R2 - (250 / (81 * dt^2)) * R3
+  B[:, 5] = (-60 / dt^3) * R2 + (500 / (27 * dt^3)) * R3
+  u = uprev + phiv_timestep(dt, A, B; kwargs...)
+
+  # Update integrator state
+  integrator.fsallast = f(u, p, t + dt)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end
+
+function perform_step!(integrator, cache::EXPRB53s3Cache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack tmp,rtmp,rtmp2,K,A,B,KsCache = cache
+  f.jac(A, uprev, p, t)
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+  f0 = integrator.fsalfirst # f(u0) is fsaled
+  kwargs = [(:tol, integrator.opts.reltol), (:iop, alg.iop), (:norm, integrator.opts.internalnorm), 
+    (:adaptive, true), (:caches, KsCache)]
+
+  # Compute the first group for U2 and U3
+  B[:, 2] .= f0
+  phiv_timestep!(K, [dt/2, 9dt/10], A, @view(B[:, 1:2]); kwargs...)
+  ## U2 and R2
+  @. tmp = uprev + @view(K[:, 1]) # tmp is now U2
+  f(rtmp, tmp, p, t + dt/2); A_mul_B!(rtmp2, A, @view(K[:, 1]))
+  @. rtmp = rtmp - f0 - rtmp2 # rtmp is now R2
+  @. tmp = uprev + @view(K[:, 2]) # tmp is now U3 (partially)
+
+  # Compute the second group for U3
+  fill!(@view(B[:, 2]), zero(eltype(B)))
+  B[:, 4] .= rtmp
+  phiv_timestep!(K, [dt/2, 9dt/10], A, @view(B[:, 1:4]); kwargs...)
+  ## Update B using R2
+  B[:, 2] .= f0
+  B[:, 4] .= (18 / dt^2) .* rtmp
+  B[:, 5] .= (-60 / dt^3) .* rtmp
+  ## U3 and R3
+  @views tmp .+= 216/(25*dt^2) .* K[:, 1] + 8/dt^2 .* K[:, 2] # tmp is now U3
+  f(rtmp, tmp, p, t + 9dt/10)
+  tmp .-= uprev; A_mul_B!(rtmp2, A, tmp)
+  @. rtmp = rtmp - f0 - rtmp2 # rtmp is now R3
+  ## Update B using R3
+  B[:, 4] .-= (250 / (81 * dt^2)) * rtmp
+  B[:, 5] .+= (500 / (27 * dt^3)) * rtmp
+  
+  # Update u
+  du = @view(K[:, 1])
+  phiv_timestep!(du, dt, A, B; kwargs...)
+  @. u = uprev + du
+
+  # Update integrator state
+  f(integrator.fsallast, u, p, t + dt)
+  # integrator.k is automatically set due to aliasing
+end
+
 ######################################################
 # Multistep exponential integrators
 function initialize!(integrator,cache::ETD2ConstantCache)
