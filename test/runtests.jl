@@ -1,5 +1,5 @@
 using OrdinaryDiffEq
-using Test
+using Test, LinearAlgebra, Statistics
 
 const CPU_FLOPS = peakflops()
 const LONGER_TESTS = false

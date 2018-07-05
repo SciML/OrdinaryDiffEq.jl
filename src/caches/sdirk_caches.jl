@@ -30,11 +30,11 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomElt
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
-  z = similar(u,indices(u))
-  dz = similar(u,indices(u)); tmp = similar(u,indices(u)); b = similar(u,indices(u))
+  z = similar(u,axes(u))
+  dz = similar(u,axes(u)); tmp = similar(u,axes(u)); b = similar(u,axes(u))
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
-  atmp = similar(u,uEltypeNoUnits,indices(u))
+  atmp = similar(u,uEltypeNoUnits,axes(u))
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   linsolve = alg.linsolve(Val{:init},uf,u)
@@ -140,9 +140,9 @@ function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,uBottom
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
-  z = similar(u,indices(u))
-  dz = similar(u,indices(u))
-  tmp = similar(u); b = similar(u,indices(u))
+  z = similar(u,axes(u))
+  dz = similar(u,axes(u))
+  tmp = similar(u); b = similar(u,axes(u))
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
 
@@ -233,10 +233,10 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
-  z = similar(u,indices(u))
-  dz = similar(u,indices(u))
-  tmp = similar(u); b = similar(u,indices(u));
-  atmp = similar(u,uEltypeNoUnits,indices(u))
+  z = similar(u,axes(u))
+  dz = similar(u,axes(u))
+  tmp = similar(u); b = similar(u,axes(u));
+  atmp = similar(u,uEltypeNoUnits,axes(u))
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
 
@@ -329,13 +329,13 @@ function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
-  zprev = similar(u,indices(u));
-  zᵧ = similar(u,indices(u)); z = similar(u,indices(u))
-  dz = similar(u,indices(u))
+  zprev = similar(u,axes(u));
+  zᵧ = similar(u,axes(u)); z = similar(u,axes(u))
+  dz = similar(u,axes(u))
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
-  tmp = similar(u); b = similar(u,indices(u));
-  atmp = similar(u,uEltypeNoUnits,indices(u))
+  tmp = similar(u); b = similar(u,axes(u));
+  atmp = similar(u,uEltypeNoUnits,axes(u))
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   linsolve = alg.linsolve(Val{:init},uf,u)
@@ -423,13 +423,13 @@ function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
-  z₁ = similar(u,indices(u));
-  z₂ = similar(u,indices(u))
-  dz = similar(u,indices(u))
+  z₁ = similar(u,axes(u));
+  z₂ = similar(u,axes(u))
+  dz = similar(u,axes(u))
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
-  tmp = similar(u); b = similar(u,indices(u));
-  atmp = similar(u,uEltypeNoUnits,indices(u))
+  tmp = similar(u); b = similar(u,axes(u));
+  atmp = similar(u,uEltypeNoUnits,axes(u))
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   linsolve = alg.linsolve(Val{:init},uf,u)
@@ -516,13 +516,13 @@ function alg_cache(alg::SSPSDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
-  z₁ = similar(u,indices(u));
-  z₂ = similar(u,indices(u))
-  dz = similar(u,indices(u))
+  z₁ = similar(u,axes(u));
+  z₂ = similar(u,axes(u))
+  dz = similar(u,axes(u))
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
-  tmp = similar(u); b = similar(u,indices(u));
-  atmp = similar(u,uEltypeNoUnits,indices(u))
+  tmp = similar(u); b = similar(u,axes(u));
+  atmp = similar(u,uEltypeNoUnits,axes(u))
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   linsolve = alg.linsolve(Val{:init},uf,u)
@@ -614,13 +614,13 @@ function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
-  z₁ = similar(u,indices(u)); z₂ = similar(u,indices(u));
-  z₃ = similar(u,indices(u)); z₄ = similar(u,indices(u))
-  dz = similar(u,indices(u))
+  z₁ = similar(u,axes(u)); z₂ = similar(u,axes(u));
+  z₃ = similar(u,axes(u)); z₄ = similar(u,axes(u))
+  dz = similar(u,axes(u))
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
-  tmp = similar(u); b = similar(u,indices(u));
-  atmp = similar(u,uEltypeNoUnits,indices(u))
+  tmp = similar(u); b = similar(u,axes(u));
+  atmp = similar(u,uEltypeNoUnits,axes(u))
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   linsolve = alg.linsolve(Val{:init},uf,u)
@@ -715,14 +715,14 @@ function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
-  z₁ = similar(u,indices(u)); z₂ = similar(u,indices(u));
-  z₃ = similar(u,indices(u)); z₄ = similar(u,indices(u))
-  z₅ = similar(u,indices(u))
-  dz = similar(u,indices(u))
+  z₁ = similar(u,axes(u)); z₂ = similar(u,axes(u));
+  z₃ = similar(u,axes(u)); z₄ = similar(u,axes(u))
+  z₅ = similar(u,axes(u))
+  dz = similar(u,axes(u))
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
-  tmp = similar(u); b = similar(u,indices(u));
-  atmp = similar(u,uEltypeNoUnits,indices(u))
+  tmp = similar(u); b = similar(u,axes(u));
+  atmp = similar(u,uEltypeNoUnits,axes(u))
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   linsolve = alg.linsolve(Val{:init},uf,u)
@@ -821,14 +821,14 @@ function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,
   du1 = zeros(rate_prototype)
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
-  z₁ = similar(u,indices(u)); z₂ = similar(u,indices(u));
-  z₃ = similar(u,indices(u)); z₄ = similar(u,indices(u))
-  z₅ = similar(u,indices(u))
-  dz = similar(u,indices(u))
+  z₁ = similar(u,axes(u)); z₂ = similar(u,axes(u));
+  z₃ = similar(u,axes(u)); z₄ = similar(u,axes(u))
+  z₅ = similar(u,axes(u))
+  dz = similar(u,axes(u))
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
-  tmp = similar(u); b = similar(u,indices(u));
-  atmp = similar(u,uEltypeNoUnits,indices(u))
+  tmp = similar(u); b = similar(u,axes(u));
+  atmp = similar(u,uEltypeNoUnits,axes(u))
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   linsolve = alg.linsolve(Val{:init},uf,u)

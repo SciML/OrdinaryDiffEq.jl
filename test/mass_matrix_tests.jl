@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Test
+using OrdinaryDiffEq, Test, LinearAlgebra
 
 # TODO: clean up
 @testset "Mass Matrix Accuracy Tests" begin

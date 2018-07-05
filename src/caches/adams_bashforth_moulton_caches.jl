@@ -339,7 +339,7 @@ function alg_cache(alg::VCAB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   bk2 = zeros(rate_prototype)
   bk3 = zeros(rate_prototype)
   bk4 = zeros(rate_prototype)
-  butilde = similar(u,indices(u))
+  butilde = similar(u,axes(u))
   batmp = similar(u,uEltypeNoUnits)
   btmp = similar(u)
   bs3cache = BS3Cache(u,uprev,bk1,bk2,bk3,bk4,butilde,btmp,batmp,tab)
@@ -360,7 +360,7 @@ function alg_cache(alg::VCAB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   order = 3
   atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
-  utilde = similar(u,indices(u))
+  utilde = similar(u,axes(u))
   VCAB3Cache(u,uprev,fsalfirst,bs3cache,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕstar_n,β,order,atmp,tmp,utilde,tab,1)
 end
 
@@ -443,7 +443,7 @@ function alg_cache(alg::VCAB4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   order = 4
   atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
-  utilde = similar(u,indices(u))
+  utilde = similar(u,axes(u))
   VCAB4Cache(u,uprev,fsalfirst,rk4cache,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕstar_n,β,order,atmp,tmp,utilde,1)
 end
 
@@ -528,7 +528,7 @@ function alg_cache(alg::VCAB5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   order = 5
   atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
-  utilde = similar(u,indices(u))
+  utilde = similar(u,axes(u))
   VCAB5Cache(u,uprev,fsalfirst,rk4cache,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕstar_n,β,order,atmp,tmp,utilde,1)
 end
 
@@ -598,7 +598,7 @@ function alg_cache(alg::VCABM3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   bk2 = zeros(rate_prototype)
   bk3 = zeros(rate_prototype)
   bk4 = zeros(rate_prototype)
-  butilde = similar(u,indices(u))
+  butilde = similar(u,axes(u))
   batmp = similar(u,uEltypeNoUnits)
   btmp = similar(u)
   bs3cache = BS3Cache(u,uprev,bk1,bk2,bk3,bk4,butilde,btmp,batmp,tab)
@@ -623,7 +623,7 @@ function alg_cache(alg::VCABM3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   order = 3
   atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
-  utilde = similar(u,indices(u))
+  utilde = similar(u,axes(u))
   VCABM3Cache(u,uprev,fsalfirst,bs3cache,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕ_np1,ϕstar_n,β,order,atmp,tmp,utilde,tab,1)
 end
 
@@ -715,7 +715,7 @@ function alg_cache(alg::VCABM4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   order = 4
   atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
-  utilde = similar(u,indices(u))
+  utilde = similar(u,axes(u))
   VCABM4Cache(u,uprev,fsalfirst,rk4cache,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕ_np1,ϕstar_n,β,order,atmp,tmp,utilde,1)
 end
 
@@ -807,7 +807,7 @@ function alg_cache(alg::VCABM5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   order = 5
   atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
-  utilde = similar(u,indices(u))
+  utilde = similar(u,axes(u))
   VCABM5Cache(u,uprev,fsalfirst,rk4cache,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕ_np1,ϕstar_n,β,order,atmp,tmp,utilde,1)
 end
 
@@ -907,10 +907,10 @@ function alg_cache(alg::VCABM,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   tmp = similar(u)
   ξ = zero(dt)
   ξ0 = zero(dt)
-  utilde = similar(u,indices(u))
-  utildem2 = similar(u,indices(u))
-  utildem1 = similar(u,indices(u))
-  utildep1 = similar(u,indices(u))
+  utilde = similar(u,axes(u))
+  utildem2 = similar(u,axes(u))
+  utildem1 = similar(u,axes(u))
+  utildep1 = similar(u,axes(u))
   atmp = similar(u,uEltypeNoUnits)
   atmpm1 = similar(u,uEltypeNoUnits)
   atmpm2 = similar(u,uEltypeNoUnits)
@@ -989,10 +989,10 @@ end
 function alg_cache(alg::ABCN2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
-  z = similar(u,indices(u))
-  dz = similar(u,indices(u))
-  tmp = similar(u); b = similar(u,indices(u));
-  atmp = similar(u,uEltypeNoUnits,indices(u))
+  z = similar(u,axes(u))
+  dz = similar(u,axes(u))
+  tmp = similar(u); b = similar(u,axes(u));
+  atmp = similar(u,uEltypeNoUnits,axes(u))
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
   k1 = zeros(rate_prototype)
@@ -1100,10 +1100,10 @@ end
 function alg_cache(alg::CNLF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
   W = similar(J)
-  z = similar(u,indices(u))
-  dz = similar(u,indices(u))
-  tmp = similar(u); b = similar(u,indices(u));
-  atmp = similar(u,uEltypeNoUnits,indices(u))
+  z = similar(u,axes(u))
+  dz = similar(u,axes(u))
+  tmp = similar(u); b = similar(u,axes(u));
+  atmp = similar(u,uEltypeNoUnits,axes(u))
   fsalfirst = zeros(rate_prototype)
   k = zeros(rate_prototype)
   k1 = zeros(rate_prototype)

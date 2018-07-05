@@ -6,7 +6,7 @@
 
 ###################################################
 # Dense algorithms
-const exp! = Base.LinAlg.expm! # v0.7 style
+#const exp! = Base.LinAlg.expm! # v0.7 style
 
 """
     phi(z,k[;cache]) -> [phi_0(z),phi_1(z),...,phi_k(z)]
@@ -328,8 +328,8 @@ end
 
 Compute the matrix-exponential-vector product using Krylov.
 
-A Krylov subspace is constructed using `arnoldi` and `expm!` is called 
-on the Heisenberg matrix. Consult `arnoldi` for the values of the keyword 
+A Krylov subspace is constructed using `arnoldi` and `exp!` is called
+on the Heisenberg matrix. Consult `arnoldi` for the values of the keyword
 arguments.
 
     expv(t,Ks; cache) -> exp(tA)b

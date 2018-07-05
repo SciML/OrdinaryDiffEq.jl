@@ -227,7 +227,7 @@ function alg_cache(alg::BS3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   k2 = zeros(rate_prototype)
   k3 = zeros(rate_prototype)
   k4 = zeros(rate_prototype)
-  utilde = similar(u,indices(u))
+  utilde = similar(u,axes(u))
   atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
   BS3Cache(u,uprev,k1,k2,k3,k4,utilde,tmp,atmp,tab)
@@ -257,7 +257,7 @@ function alg_cache(alg::OwrenZen3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   k2 = zeros(rate_prototype)
   k3 = zeros(rate_prototype)
   k4 = zeros(rate_prototype)
-  utilde = similar(u,indices(u))
+  utilde = similar(u,axes(u))
   atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
   OwrenZen3Cache(u,uprev,k1,k2,k3,k4,utilde,tmp,atmp,tab)
@@ -291,7 +291,7 @@ function alg_cache(alg::OwrenZen4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   k4 = zeros(rate_prototype)
   k5 = zeros(rate_prototype)
   k6 = zeros(rate_prototype)
-  utilde = similar(u,indices(u))
+  utilde = similar(u,axes(u))
   atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
   OwrenZen4Cache(u,uprev,k1,k2,k3,k4,k5,k6,utilde,tmp,atmp,tab)
@@ -329,7 +329,7 @@ function alg_cache(alg::OwrenZen5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   k6 = zeros(rate_prototype)
   k7 = zeros(rate_prototype)
   k8 = zeros(rate_prototype)
-  utilde = similar(u,indices(u))
+  utilde = similar(u,axes(u))
   atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
   OwrenZen5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,utilde,tmp,atmp,tab)
@@ -367,8 +367,8 @@ function alg_cache(alg::BS5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   k6 = zeros(rate_prototype)
   k7 = zeros(rate_prototype)
   k8 = zeros(rate_prototype)
-  utilde = similar(u,indices(u))
-  atmp = similar(u,uEltypeNoUnits,indices(u))
+  utilde = similar(u,axes(u))
+  atmp = similar(u,uEltypeNoUnits,axes(u))
   tmp = similar(u)
   BS5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,utilde,tmp,atmp,tab)
 end
@@ -403,8 +403,8 @@ function alg_cache(alg::Tsit5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   k5 = zeros(rate_prototype)
   k6 = zeros(rate_prototype)
   k7 = zeros(rate_prototype)
-  utilde = similar(u,indices(u))
-  atmp = similar(u,uEltypeNoUnits,indices(u))
+  utilde = similar(u,axes(u))
+  atmp = similar(u,uEltypeNoUnits,axes(u))
   tmp = similar(u)
   Tsit5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp,tab)
 end
@@ -451,7 +451,7 @@ function alg_cache(alg::DP5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
 
   if eltype(u) != uEltypeNoUnits || calck
     update = zeros(rate_prototype)
-    atmp = similar(u,uEltypeNoUnits,indices(u))
+    atmp = similar(u,uEltypeNoUnits,axes(u))
   else
     update = k7
     atmp = k3
@@ -499,8 +499,8 @@ function alg_cache(alg::DP5Threaded,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   dense_tmp4 = zeros(rate_prototype)
   update = zeros(rate_prototype)
   bspl = zeros(rate_prototype)
-  utilde = similar(u,indices(u))
-  tmp = similar(u); atmp = similar(u,uEltypeNoUnits,indices(u))
+  utilde = similar(u,axes(u))
+  tmp = similar(u); atmp = similar(u,uEltypeNoUnits,axes(u))
   tab = DP5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   DP5ThreadedCache(u,uprev,k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,utilde,tmp,atmp,tab)
 end

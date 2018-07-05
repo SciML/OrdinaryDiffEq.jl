@@ -39,7 +39,7 @@ function DiffEqBase.build_solution(
     f = prob.f
   end
 
-  if has_analytic(f)
+  if DiffEqBase.has_analytic(f)
     if !(typeof(prob.u0) <: Tuple)
       u_analytic = Vector{typeof(prob.u0)}(0)
       errors = Dict{Symbol,real(eltype(prob.u0))}()
@@ -51,7 +51,7 @@ function DiffEqBase.build_solution(
     sol = ODECompositeSolution{T,N,typeof(u),typeof(u_analytic),typeof(errors),typeof(t),typeof(k),
                        typeof(prob),typeof(alg),typeof(interp)}(u,u_analytic,errors,t,k,prob,alg,interp,alg_choice,dense,0,retcode)
     if calculate_error
-      calculate_solution_errors!(sol;timeseries_errors=timeseries_errors,dense_errors=dense_errors)
+      DiffEqBase.calculate_solution_errors!(sol;timeseries_errors=timeseries_errors,dense_errors=dense_errors)
     end
     return sol
   else

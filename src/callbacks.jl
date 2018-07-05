@@ -59,7 +59,7 @@ end
     end
 
     if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache
-      if typeof(callback.idxs) <: Void
+      if typeof(callback.idxs) <: Nothing
         tmp = integrator.cache.tmp
       else !(typeof(callback.idxs) <: Number)
         tmp = @view integrator.cache.tmp[callback.idxs]

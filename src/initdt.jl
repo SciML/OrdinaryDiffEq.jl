@@ -1,7 +1,8 @@
 @muladd function ode_determine_initdt(u0,t,tdir,dtmax,abstol,reltol,internalnorm,prob::DiffEqBase.AbstractODEProblem{uType,tType,true},integrator) where {tType,uType}
+  _tType = eltype(tType)
   f = prob.f
   p = integrator.p
-  oneunit_tType = oneunit(tType)
+  oneunit_tType = oneunit(_tType)
   dtmax_tdir = tdir*dtmax
 
   if eltype(u0) <: Number && !(typeof(integrator.alg) <: CompositeAlgorithm)
@@ -30,7 +31,7 @@
 
   #=
   Try/catch around the linear solving. This will catch singular matrices defined
-  by DAEs and thus we use the tType(1//10^(6)) default from Hairer. Note that
+  by DAEs and thus we use the _tType(1//10^(6)) default from Hairer. Note that
   this will not always catch singular matrices, an example from Andreas:
 
   julia> A = fill(rand(), 2, 2)
@@ -53,7 +54,7 @@
   large like shown there, but that later gets caught in the quick estimates
   below which then makes it spit out the default
 
-  dt₀ = tType(1//10^(6))
+  dt₀ = _tType(1//10^(6))
 
   so that is a a cheaper way to get to the same place than an svdfact and
   still works for matrix-free definitions of the mass matrix.
@@ -65,7 +66,7 @@
       integrator.alg.linsolve(ftmp, copy(prob.mass_matrix), f₀, true)
       f₀ .= ftmp
     catch
-      return tType(1//10^(6))
+      return _tType(1//10^(6))
     end
   end
 
@@ -77,16 +78,16 @@
   d₁ = internalnorm(tmp)
 
   if d₀ < 1//10^(5) || d₁ < 1//10^(5)
-    dt₀ = tType(1//10^(6))
+    dt₀ = _tType(1//10^(6))
   else
-    dt₀ = tType((d₀/d₁)/100)
+    dt₀ = _tType((d₀/d₁)/100)
   end
   dt₀ = min(dt₀,dtmax_tdir)
 
-  if typeof(one(tType)) <: AbstractFloat && dt₀ < 10eps(tType)*oneunit(tType)
+  if typeof(one(_tType)) <: AbstractFloat && dt₀ < 10eps(_tType)*oneunit(_tType)
     # This catches Andreas' non-singular example
     # should act like it's singular
-    return tdir*tType(1//10^(6))
+    return tdir*_tType(1//10^(6))
   end
 
   dt₀_tdir = tdir*dt₀
@@ -107,17 +108,18 @@
 
   max_d₁d₂ = max(d₁,d₂)
   if max_d₁d₂ <= 1//Int64(10)^(15)
-    dt₁ = max(tType(1//10^(6)),dt₀*1//10^(3))
+    dt₁ = max(_tType(1//10^(6)),dt₀*1//10^(3))
   else
-    dt₁ = tType(10.0^(-(2+log10(max_d₁d₂))/get_current_alg_order(integrator.alg,integrator.cache)))
+    dt₁ = _tType(10.0^(-(2+log10(max_d₁d₂))/get_current_alg_order(integrator.alg,integrator.cache)))
   end
   dt = tdir*min(100dt₀,dt₁,dtmax_tdir)
 end
 
 @muladd function ode_determine_initdt(u0,t,tdir,dtmax,abstol,reltol,internalnorm,prob::DiffEqBase.AbstractODEProblem{uType,tType,false},integrator) where {uType,tType}
+  _tType = eltype(tType)
   f = prob.f
   p = prob.p
-  oneunit_tType = oneunit(tType)
+  oneunit_tType = oneunit(_tType)
   dtmax_tdir = tdir*dtmax
 
   sk = abstol+internalnorm(u0)*reltol
@@ -131,9 +133,9 @@ end
   d₁ = internalnorm(f₀/sk*oneunit_tType)
 
   if d₀ < 1//10^(5) || d₁ < 1//10^(5)
-    dt₀ = tType(1//10^(6))
+    dt₀ = _tType(1//10^(6))
   else
-    dt₀ = tType((d₀/d₁)/100)
+    dt₀ = _tType((d₀/d₁)/100)
   end
   dt₀ = min(dt₀,dtmax_tdir)
   dt₀_tdir = tdir*dt₀
@@ -145,9 +147,9 @@ end
 
   max_d₁d₂ = max(d₁, d₂)
   if max_d₁d₂ <= 1//Int64(10)^(15)
-    dt₁ = max(tType(1//10^(6)),dt₀*1//10^(3))
+    dt₁ = max(_tType(1//10^(6)),dt₀*1//10^(3))
   else
-    dt₁ = tType(10.0^(-(2+log10(max_d₁d₂))/get_current_alg_order(integrator.alg,integrator.cache)))
+    dt₁ = _tType(10.0^(-(2+log10(max_d₁d₂))/get_current_alg_order(integrator.alg,integrator.cache)))
   end
   dt = tdir*min(100dt₀,dt₁,dtmax_tdir)
 end

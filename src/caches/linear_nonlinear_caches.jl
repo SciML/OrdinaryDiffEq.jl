@@ -32,7 +32,7 @@ function alg_cache(alg::GenericIIF1,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
 end
 
 function alg_cache(alg::GenericIIF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tmp = similar(u,indices(u)); rtmp1 = zeros(rate_prototype)
+  tmp = similar(u,axes(u)); rtmp1 = zeros(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
   A = f.f1
   expA = exp(A*dt)
@@ -74,7 +74,7 @@ function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
 end
 
 function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tmp = similar(u,indices(u)); rtmp1 = zeros(rate_prototype)
+  tmp = similar(u,axes(u)); rtmp1 = zeros(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
   A = f.f1
   expA = exp(A*dt)
@@ -90,7 +90,7 @@ abstract type ExpRKCache <: OrdinaryDiffEqMutableCache end
 abstract type ExpRKConstantCache <: OrdinaryDiffEqConstantCache end
 
 # Precomputation of exponential-like operators
-expRK_operators(::LawsonEuler, dt, A) = expm(dt * A)
+expRK_operators(::LawsonEuler, dt, A) = exp(dt * A)
 expRK_operators(::NorsettEuler, dt, A) = phi(dt * A, 1)[2]
 function expRK_operators(::ETDRK2, dt, A)
   P = phi(dt * A, 2)

@@ -27,7 +27,7 @@ function alg_cache(alg::TanYam7,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   k1 = zeros(rate_prototype); k2 = zeros(rate_prototype) ; k3 = zeros(rate_prototype); k4 = zeros(rate_prototype)
   k5 = zeros(rate_prototype); k6 = zeros(rate_prototype) ; k7 = zeros(rate_prototype); k8 = zeros(rate_prototype)
   k9 = zeros(rate_prototype); k10= zeros(rate_prototype) ;
-  utilde = similar(u,indices(u)); tmp = similar(u); atmp = similar(u,uEltypeNoUnits,indices(u)); k = zeros(rate_prototype)
+  utilde = similar(u,axes(u)); tmp = similar(u); atmp = similar(u,uEltypeNoUnits,axes(u)); k = zeros(rate_prototype)
   TanYam7Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,utilde,tmp,atmp,k,tab)
 end
 
@@ -73,8 +73,8 @@ function alg_cache(alg::DP8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   k1 = zeros(rate_prototype); k2  = zeros(rate_prototype); k3  = zeros(rate_prototype);  k4 = zeros(rate_prototype)
   k5 = zeros(rate_prototype); k6  = zeros(rate_prototype); k7  = zeros(rate_prototype);  k8 = zeros(rate_prototype)
   k9 = zeros(rate_prototype); k10 = zeros(rate_prototype); k11 = zeros(rate_prototype); k12 = zeros(rate_prototype)
-  kupdate = zeros(rate_prototype); utilde = similar(u,indices(u));
-  tmp = similar(u); atmp = similar(u,uEltypeNoUnits,indices(u))
+  kupdate = zeros(rate_prototype); utilde = similar(u,axes(u));
+  tmp = similar(u); atmp = similar(u,uEltypeNoUnits,axes(u))
   k13 = zeros(rate_prototype)
   k14 = zeros(rate_prototype)
   k15 = zeros(rate_prototype)
@@ -127,8 +127,8 @@ function alg_cache(alg::TsitPap8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   k1 = zeros(rate_prototype); k2 = zeros(rate_prototype); k3 = zeros(rate_prototype); k4 = zeros(rate_prototype)
   k5 = zeros(rate_prototype); k6 = zeros(rate_prototype); k7 = zeros(rate_prototype); k8 = zeros(rate_prototype)
   k9 = zeros(rate_prototype); k10 = zeros(rate_prototype); k11 = zeros(rate_prototype); k12 = zeros(rate_prototype)
-  k13 = zeros(rate_prototype); utilde = similar(u,indices(u)); k = zeros(rate_prototype)
-  tmp = similar(u); atmp = similar(u,uEltypeNoUnits,indices(u));
+  k13 = zeros(rate_prototype); utilde = similar(u,axes(u)); k = zeros(rate_prototype)
+  tmp = similar(u); atmp = similar(u,uEltypeNoUnits,axes(u));
   TsitPap8Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,utilde,tmp,atmp,k,tab)
 end
 

@@ -103,7 +103,7 @@ function DiffEqBase.__init(
   uBottomEltype = recursive_bottom_eltype(u)
   uBottomEltypeNoUnits = recursive_unitless_bottom_eltype(u)
 
-  ks = Vector{uType}(0)
+  ks = Vector{uType}(undef, 0)
 
   uEltypeNoUnits = recursive_unitless_eltype(u)
   tTypeNoUnits   = typeof(one(tType))
@@ -133,7 +133,7 @@ function DiffEqBase.__init(
 
   if isinplace(prob) && typeof(u) <: AbstractArray && eltype(u) <: Number # Could this be more efficient for other arrays?
     if !(typeof(u) <: ArrayPartition)
-      rate_prototype = similar(u,typeof(oneunit(uBottomEltype)/oneunit(tType)),indices(u))
+      rate_prototype = similar(u,typeof(oneunit(uBottomEltype)/oneunit(tType)),axes(u))
     else
       rate_prototype = similar(u, typeof.(oneunit.(recursive_bottom_eltype.(u.x))./oneunit(tType))...)
     end
@@ -354,10 +354,10 @@ function DiffEqBase.solve!(integrator::ODEIntegrator)
     f = integrator.sol.prob.f
   end
 
-  if has_analytic(f)
-    calculate_solution_errors!(integrator.sol;timeseries_errors=integrator.opts.timeseries_errors,dense_errors=integrator.opts.dense_errors)
+  if DiffEqBase.has_analytic(f)
+    DiffEqBase.calculate_solution_errors!(integrator.sol;timeseries_errors=integrator.opts.timeseries_errors,dense_errors=integrator.opts.dense_errors)
   end
-  integrator.sol = solution_new_retcode(integrator.sol,:Success)
+  integrator.sol = DiffEqBase.solution_new_retcode(integrator.sol,:Success)
   nothing
 end
 

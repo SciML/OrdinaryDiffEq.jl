@@ -66,8 +66,8 @@ function alg_cache(alg::AN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   k3 = zeros(rate_prototype); k4 = zeros(rate_prototype)
   k5 = zeros(rate_prototype)
   k6 = zeros(rate_prototype); k7 = zeros(rate_prototype)
-  utilde = similar(u,indices(u))
-  atmp = similar(u,uEltypeNoUnits,indices(u)); tmp = similar(u)
+  utilde = similar(u,axes(u))
+  atmp = similar(u,uEltypeNoUnits,axes(u)); tmp = similar(u)
   tsit5cache = Tsit5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp,tab)
   #################################################
   N = 5
@@ -194,14 +194,14 @@ function alg_cache(alg::JVODE,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   tab = Tsit5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   k1 = zeros(rate_prototype); k2 = zeros(rate_prototype); k3 = zeros(rate_prototype); k4 = zeros(rate_prototype)
   k5 = zeros(rate_prototype); k6 = zeros(rate_prototype); k7 = zeros(rate_prototype)
-  utilde = similar(u,indices(u))
-  atmp = similar(u,uEltypeNoUnits,indices(u)); tmp = similar(u)
+  utilde = similar(u,axes(u))
+  atmp = similar(u,uEltypeNoUnits,axes(u)); tmp = similar(u)
   tsit5cache = Tsit5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp,tab)
   #################################################
   fsalfirst = zeros(rate_prototype)
   N = 12
   z = [zeros(rate_prototype) for i in 1:N+1]
-  Δ = similar(u,uEltypeNoUnits,indices(u))
+  Δ = similar(u,uEltypeNoUnits,axes(u))
   l = zeros(tTypeNoUnits, N+1); m = zeros(l)
   c_LTE₊₁ = c_LTE = c_LTE₋₁ = c_conv = c_𝒟 = prev_𝒟 = zero(tTypeNoUnits)
   dts = zeros(typeof(dt),N+1)
