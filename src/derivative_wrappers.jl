@@ -7,7 +7,7 @@ function derivative!(df::AbstractArray{<:Number}, f, x::Union{Number,AbstractArr
     nothing
 end
 
-function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, fx::AbstractArray{<:Number}, integrator::DEIntegrator, jac_config)
+function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, fx::AbstractArray{<:Number}, integrator::DiffEqBase.DEIntegrator, jac_config)
     if get_current_alg_autodiff(integrator.alg, integrator.cache)
       ForwardDiff.jacobian!(J, f, fx, x, jac_config)
     else

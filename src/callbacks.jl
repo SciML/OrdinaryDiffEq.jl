@@ -1,12 +1,12 @@
 # Use Recursion to find the first callback for type-stability
 
 # Base Case: Only one callback
-function find_first_continuous_callback(integrator, callback::AbstractContinuousCallback)
+function find_first_continuous_callback(integrator, callback::DiffEqBase.AbstractContinuousCallback)
   (find_callback_time(integrator,callback)...,1,1)
 end
 
 # Starting Case: Compute on the first callback
-function find_first_continuous_callback(integrator, callback::AbstractContinuousCallback, args...)
+function find_first_continuous_callback(integrator, callback::DiffEqBase.AbstractContinuousCallback, args...)
   find_first_continuous_callback(integrator,find_callback_time(integrator,callback)...,1,1,args...)
 end
 

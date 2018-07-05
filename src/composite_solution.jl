@@ -1,4 +1,4 @@
-struct ODECompositeSolution{T,N,uType,uType2,EType,tType,rateType,P,A,IType} <: AbstractODESolution{T,N}
+struct ODECompositeSolution{T,N,uType,uType2,EType,tType,rateType,P,A,IType} <: DiffEqBase.AbstractODESolution{T,N}
   u::uType
   u_analytic::uType2
   errors::EType
@@ -15,8 +15,8 @@ end
 (sol::ODECompositeSolution)(t,deriv::Type=Val{0};idxs=nothing) = sol.interp(t,idxs,deriv,sol.prob.p)
 (sol::ODECompositeSolution)(v,t,deriv::Type=Val{0};idxs=nothing) = sol.interp(v,t,idxs,deriv,sol.prob.p)
 
-function build_solution(
-        prob::Union{AbstractODEProblem,AbstractDDEProblem},
+function DiffEqBase.build_solution(
+        prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.AbstractDDEProblem},
         alg::OrdinaryDiffEqCompositeAlgorithm,t,u;
         timeseries_errors=length(u)>2,
         dense=false,dense_errors=dense,

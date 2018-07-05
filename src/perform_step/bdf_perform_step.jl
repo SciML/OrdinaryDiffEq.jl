@@ -1,4 +1,4 @@
-function initialize!(integrator, cache::ABDF2ConstantCache)
+function DiffEqBase.initialize!(integrator, cache::ABDF2ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -73,7 +73,7 @@ end
   return
 end
 
-function initialize!(integrator, cache::ABDF2Cache)
+function DiffEqBase.initialize!(integrator, cache::ABDF2Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k

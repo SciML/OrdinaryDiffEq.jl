@@ -1,4 +1,4 @@
-function initialize!(integrator, cache::Vern6ConstantCache)
+function DiffEqBase.initialize!(integrator, cache::Vern6ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
   integrator.kshortsize = 9
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
@@ -46,7 +46,7 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator, cache::Vern6Cache)
+function DiffEqBase.initialize!(integrator, cache::Vern6Cache)
   integrator.kshortsize = 9
   integrator.fsalfirst = cache.k1 ; integrator.fsallast = cache.k9
   @unpack k = integrator
@@ -143,7 +143,7 @@ end
   end
 end
 
-function initialize!(integrator, cache::Vern7ConstantCache)
+function DiffEqBase.initialize!(integrator, cache::Vern7ConstantCache)
   integrator.kshortsize = 10
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
@@ -188,7 +188,7 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator, cache::Vern7Cache)
+function DiffEqBase.initialize!(integrator, cache::Vern7Cache)
   @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10 = cache
   @unpack k = integrator
   integrator.kshortsize = 10
@@ -294,7 +294,7 @@ end
   end
 end
 
-function initialize!(integrator, cache::Vern8ConstantCache)
+function DiffEqBase.initialize!(integrator, cache::Vern8ConstantCache)
   integrator.kshortsize = 13
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
@@ -344,7 +344,7 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator, cache::Vern8Cache)
+function DiffEqBase.initialize!(integrator, cache::Vern8Cache)
   @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13 = cache
   @unpack k = integrator
   integrator.kshortsize = 13
@@ -468,7 +468,7 @@ end
   end
 end
 
-function initialize!(integrator, cache::Vern9ConstantCache)
+function DiffEqBase.initialize!(integrator, cache::Vern9ConstantCache)
   integrator.kshortsize = 16
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
@@ -522,7 +522,7 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator, cache::Vern9Cache)
+function DiffEqBase.initialize!(integrator, cache::Vern9Cache)
   @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16 = cache
   @unpack k = integrator
   integrator.kshortsize = 16

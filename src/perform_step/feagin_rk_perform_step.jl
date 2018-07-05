@@ -1,4 +1,4 @@
-function initialize!(integrator, cache::Feagin10ConstantCache)
+function DiffEqBase.initialize!(integrator, cache::Feagin10ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
@@ -43,7 +43,7 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator, cache::Feagin10Cache)
+function DiffEqBase.initialize!(integrator, cache::Feagin10Cache)
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.kshortsize = 2
@@ -186,7 +186,7 @@ end
   f(integrator.fsallast,u,p,t+dt) # For the interpolation, needs k at the updated point
 end
 
-function initialize!(integrator, cache::Feagin12ConstantCache)
+function DiffEqBase.initialize!(integrator, cache::Feagin12ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
@@ -239,7 +239,7 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator, cache::Feagin12Cache)
+function DiffEqBase.initialize!(integrator, cache::Feagin12Cache)
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.kshortsize = 2
@@ -430,7 +430,7 @@ end
   f(k, u, p, t+dt)
 end
 
-function initialize!(integrator,cache::Feagin14ConstantCache,f=integrator.f)
+function DiffEqBase.initialize!(integrator,cache::Feagin14ConstantCache,f=integrator.f)
   integrator.fsalfirst = f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
@@ -493,7 +493,7 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator, cache::Feagin14Cache)
+function DiffEqBase.initialize!(integrator, cache::Feagin14Cache)
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.kshortsize = 2

@@ -1,15 +1,15 @@
-function solve(
-  prob::AbstractODEProblem,
+function DiffEqBase.__solve(
+  prob::DiffEqBase.AbstractODEProblem,
   alg::algType,timeseries=[],ts=[],ks=[],recompile::Type{Val{recompile_flag}}=Val{true};
   kwargs...) where {algType<:OrdinaryDiffEqAlgorithm,recompile_flag}
 
-  integrator = init(prob,alg,timeseries,ts,ks,recompile;kwargs...)
+  integrator = DiffEqBase.__init(prob,alg,timeseries,ts,ks,recompile;kwargs...)
   solve!(integrator)
   integrator.sol
 end
 
-function init(
-  prob::AbstractODEProblem,
+function DiffEqBase.__init(
+  prob::DiffEqBase.AbstractODEProblem,
   alg::algType,timeseries_init=typeof(prob.u0)[],
   ts_init=eltype(prob.tspan)[],ks_init=[],
   recompile::Type{Val{recompile_flag}}=Val{true};
@@ -256,12 +256,12 @@ function init(
                        calck,force_dtmin,advance_to_tstop,stop_at_next_tstop)
 
   if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
-    sol = build_solution(prob,alg,ts,timeseries,
+    sol = DiffEqBase.build_solution(prob,alg,ts,timeseries,
                       dense=dense,k=ks,interp=id,
                       alg_choice=alg_choice,
                       calculate_error = false)
   else
-    sol = build_solution(prob,alg,ts,timeseries,
+    sol = DiffEqBase.build_solution(prob,alg,ts,timeseries,
                       dense=dense,k=ks,interp=id,
                       calculate_error = false)
   end
@@ -272,7 +272,7 @@ function init(
     cacheType = typeof(cache)
   else
     FType = Function
-    SolType = AbstractODESolution
+    SolType = DiffEqBase.AbstractODESolution
     cacheType =  OrdinaryDiffEqCache
   end
 
@@ -312,7 +312,7 @@ function init(
                              u_modified,opts)
   if initialize_integrator
     initialize_callbacks!(integrator, initialize_save)
-    initialize!(integrator,integrator.cache)
+    DiffEqBase.initialize!(integrator,integrator.cache)
     save_start && typeof(alg) <: CompositeAlgorithm && copyat_or_push!(alg_choice,1,integrator.cache.current)
   end
 
@@ -333,7 +333,7 @@ function init(
   integrator
 end
 
-function solve!(integrator::ODEIntegrator)
+function DiffEqBase.solve!(integrator::ODEIntegrator)
   @inbounds while !isempty(integrator.opts.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.opts.tstops)
       loopheader!(integrator)
@@ -411,7 +411,7 @@ function initialize_callbacks!(integrator, initialize_save = true)
   callbacks = integrator.opts.callback
   integrator.u_modified = true
 
-  u_modified = initialize!(callbacks,u,t,integrator)
+  u_modified = DiffEqBase.initialize!(callbacks,u,t,integrator)
 
   # if the user modifies u, we need to fix previous values before initializing
   # FSAL in order for the starting derivatives to be correct

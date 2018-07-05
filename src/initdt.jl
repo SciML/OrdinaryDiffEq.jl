@@ -1,4 +1,4 @@
-@muladd function ode_determine_initdt(u0,t,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,true},integrator) where {tType,uType}
+@muladd function ode_determine_initdt(u0,t,tdir,dtmax,abstol,reltol,internalnorm,prob::DiffEqBase.AbstractODEProblem{uType,tType,true},integrator) where {tType,uType}
   f = prob.f
   p = integrator.p
   oneunit_tType = oneunit(tType)
@@ -114,7 +114,7 @@
   dt = tdir*min(100dt₀,dt₁,dtmax_tdir)
 end
 
-@muladd function ode_determine_initdt(u0,t,tdir,dtmax,abstol,reltol,internalnorm,prob::AbstractODEProblem{uType,tType,false},integrator) where {uType,tType}
+@muladd function ode_determine_initdt(u0,t,tdir,dtmax,abstol,reltol,internalnorm,prob::DiffEqBase.AbstractODEProblem{uType,tType,false},integrator) where {uType,tType}
   f = prob.f
   p = prob.p
   oneunit_tType = oneunit(tType)

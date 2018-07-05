@@ -1,4 +1,4 @@
-function initialize!(integrator,cache::AN5ConstantCache)
+function DiffEqBase.initialize!(integrator,cache::AN5ConstantCache)
   integrator.kshortsize = 7
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -81,7 +81,7 @@ end
   return nothing
 end
 
-function initialize!(integrator, cache::AN5Cache)
+function DiffEqBase.initialize!(integrator, cache::AN5Cache)
   integrator.kshortsize = 7
   integrator.fsalfirst = cache.tsit5cache.k1; integrator.fsallast = cache.tsit5cache.k7 # setup pointers
   resize!(integrator.k, integrator.kshortsize)
@@ -170,7 +170,7 @@ end
   return nothing
 end
 
-function initialize!(integrator,cache::JVODEConstantCache)
+function DiffEqBase.initialize!(integrator,cache::JVODEConstantCache)
   integrator.kshortsize = 7
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -232,7 +232,7 @@ end
   return nothing
 end
 
-function initialize!(integrator, cache::JVODECache)
+function DiffEqBase.initialize!(integrator, cache::JVODECache)
   integrator.kshortsize = 7
   integrator.fsalfirst = cache.tsit5cache.k1; integrator.fsallast = cache.tsit5cache.k7 # setup pointers
   resize!(integrator.k, integrator.kshortsize)

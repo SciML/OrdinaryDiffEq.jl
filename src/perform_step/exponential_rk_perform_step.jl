@@ -1,8 +1,8 @@
 # Helper function to compute the G_nj factors for the classical ExpRK methods
 @inline _compute_nl(f::SplitFunction, u, p, t, A) = f.f2(u, p, t)
-@inline _compute_nl(f::DiffEqFunction, u, p, t, A) = f(u, p, t) - A * u
+@inline _compute_nl(f::ODEFunction, u, p, t, A) = f(u, p, t) - A * u
 @inline _compute_nl!(G, f::SplitFunction, u, p, t, A, Au_cache) = f.f2(G, u, p, t)
-@inline function _compute_nl!(G, f::DiffEqFunction, u, p, t, A, Au_cache)
+@inline function _compute_nl!(G, f::ODEFunction, u, p, t, A, Au_cache)
   f(G, u, p, t)
   A_mul_B!(Au_cache, A, u)
   G .-= Au_cache
@@ -10,7 +10,7 @@ end
 
 ##########################################
 # Common initializers for ExpRK integrators
-function initialize!(integrator, cache::ExpRKConstantCache)
+function DiffEqBase.initialize!(integrator, cache::ExpRKConstantCache)
   # Pre-start fsal
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -21,7 +21,7 @@ function initialize!(integrator, cache::ExpRKConstantCache)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
 end
-function initialize!(integrator, cache::ExpRKCache)
+function DiffEqBase.initialize!(integrator, cache::ExpRKCache)
   # Pre-start fsal
   integrator.fsalfirst = zero(cache.rtmp)
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
@@ -667,7 +667,7 @@ end
 
 ######################################################
 # Multistep exponential integrators
-function initialize!(integrator,cache::ETD2ConstantCache)
+function DiffEqBase.initialize!(integrator,cache::ETD2ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
@@ -705,7 +705,7 @@ function perform_step!(integrator,cache::ETD2ConstantCache,repeat_step=false)
   @pack integrator.fsallast = lin, nl, nlprev
 end
 
-function initialize!(integrator, cache::ETD2Cache)
+function DiffEqBase.initialize!(integrator, cache::ETD2Cache)
   integrator.kshortsize = 2
   resize!(integrator.k, integrator.kshortsize)
   rate_prototype = cache.rtmp1

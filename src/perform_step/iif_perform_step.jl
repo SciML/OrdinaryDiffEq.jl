@@ -11,7 +11,7 @@ function (f::RHS_IIF_Scalar)(resid,u)
   resid[1] = first(u) - f.tmp - (f.a*f.dt)*first(f.f.f2(first(u),f.p,f.t+f.dt,))
 end
 
-function initialize!(integrator,cache::Union{GenericIIF1ConstantCache,GenericIIF2ConstantCache})
+function DiffEqBase.initialize!(integrator,cache::Union{GenericIIF1ConstantCache,GenericIIF2ConstantCache})
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
   A = integrator.f.f1
@@ -68,7 +68,7 @@ function (f::RHS_IIF)(resid,u)
   @. resid = u - f.tmp - (f.a*f.dt)*du
 end
 
-function initialize!(integrator,cache::Union{GenericIIF1Cache,GenericIIF2Cache})
+function DiffEqBase.initialize!(integrator,cache::Union{GenericIIF1Cache,GenericIIF2Cache})
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.kshortsize = 2

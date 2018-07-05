@@ -44,8 +44,8 @@ end
             J[i, i] -= 3 * u[i]^2
         end
     end
-    f = DiffEqFunction{false}(_f; jac=_jac)
-    f_ip = DiffEqFunction{true}(_f_ip; jac=_jac_ip)
+    f = ODEFunction{false}(_f; jac=_jac)
+    f_ip = ODEFunction{true}(_f_ip; jac=_jac_ip)
     prob = ODEProblem(f, u0, (0.0, 1.0))
     prob_ip = ODEProblem{true}(f_ip, u0, (0.0, 1.0))
 

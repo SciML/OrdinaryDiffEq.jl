@@ -12,7 +12,7 @@ const NystromCCDefaultInitialization = Union{Nystrom4ConstantCache,
                                            ERKN4ConstantCache,  ERKN5ConstantCache}
 
 
-function initialize!(integrator,cache::NystromCCDefaultInitialization)
+function DiffEqBase.initialize!(integrator,cache::NystromCCDefaultInitialization)
  integrator.kshortsize = 2
  integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
@@ -29,7 +29,7 @@ const NystromDefaultInitialization = Union{Nystrom4Cache,
                                            DPRKN8Cache, DPRKN12Cache,
                                            ERKN4Cache,  ERKN5Cache}
 
-function initialize!(integrator,cache::NystromDefaultInitialization)
+function DiffEqBase.initialize!(integrator,cache::NystromDefaultInitialization)
   @unpack fsalfirst,k = cache
   duprev,uprev = integrator.uprev.x
 
@@ -349,7 +349,7 @@ end
   f.f2(k.x[2],du,u,p,t+dt)
 end
 
-function initialize!(integrator, cache::DPRKN6ConstantCache)
+function DiffEqBase.initialize!(integrator, cache::DPRKN6ConstantCache)
   duprev,uprev = integrator.uprev.x
   integrator.kshortsize = 3
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
@@ -414,7 +414,7 @@ end
   end
 end
 
-function initialize!(integrator, cache::DPRKN6Cache)
+function DiffEqBase.initialize!(integrator, cache::DPRKN6Cache)
   @unpack fsalfirst,k = cache
   duprev,uprev = integrator.uprev.x
 

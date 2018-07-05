@@ -1,4 +1,4 @@
-function initialize!(integrator,cache::TanYam7ConstantCache)
+function DiffEqBase.initialize!(integrator,cache::TanYam7ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
@@ -35,7 +35,7 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator, cache::TanYam7Cache)
+function DiffEqBase.initialize!(integrator, cache::TanYam7Cache)
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.kshortsize = 2
@@ -138,7 +138,7 @@ end
   f(k, u, p, t+dt)
 end
 
-function initialize!(integrator, cache::DP8ConstantCache)
+function DiffEqBase.initialize!(integrator, cache::DP8ConstantCache)
   integrator.kshortsize = 7
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -203,7 +203,7 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator, cache::DP8Cache)
+function DiffEqBase.initialize!(integrator, cache::DP8Cache)
   integrator.kshortsize = 7
   resize!(integrator.k, integrator.kshortsize)
   integrator.k .= [cache.udiff,cache.bspl,cache.dense_tmp3,cache.dense_tmp4,cache.dense_tmp5,cache.dense_tmp6,cache.dense_tmp7]
@@ -379,7 +379,7 @@ end
   end
 end
 
-function initialize!(integrator, cache::TsitPap8ConstantCache)
+function DiffEqBase.initialize!(integrator, cache::TsitPap8ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
@@ -451,7 +451,7 @@ end
 end
 
 
-function initialize!(integrator, cache::TsitPap8Cache)
+function DiffEqBase.initialize!(integrator, cache::TsitPap8Cache)
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.kshortsize = 2

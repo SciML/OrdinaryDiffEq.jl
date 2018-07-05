@@ -9,8 +9,10 @@ module OrdinaryDiffEq
 
   using MuladdMacro
 
+  using LinearAlgebra
+
   # Interfaces
-  import DiffEqBase: solve, solve!, init, step!, build_solution, initialize!
+  import DiffEqBase: solve!, step!
 
   # Internal utils
   import DiffEqBase: ODE_DEFAULT_NORM, ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE, ODE_DEFAULT_UNSTABLE_CHECK

@@ -1,7 +1,7 @@
 isautodifferentiable(alg::OrdinaryDiffEqAlgorithm) = true
 
 isfsal(alg::OrdinaryDiffEqAlgorithm) = true
-isfsal(tab::ExplicitRKTableau{MType,VType,fsal}) where {MType,VType,fsal} = fsal
+isfsal(tab::DiffEqBase.ExplicitRKTableau{MType,VType,fsal}) where {MType,VType,fsal} = fsal
 # isfsal(alg::CompositeAlgorithm) = isfsal(alg.algs[alg.current])
 isfsal(alg::FunctionMap) = false
 isfsal(alg::Rodas4) = false

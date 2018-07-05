@@ -17,7 +17,7 @@
   end
 end
 
-@inline function ode_interpolant(Θ,integrator::DEIntegrator,idxs,deriv)
+@inline function ode_interpolant(Θ,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   ode_addsteps!(integrator)
   if !(typeof(integrator.cache) <: CompositeCache)
     val = ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache,idxs,deriv)
@@ -27,7 +27,7 @@ end
   val
 end
 
-@inline function ode_interpolant!(val,Θ,integrator::DEIntegrator,idxs,deriv)
+@inline function ode_interpolant!(val,Θ,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   ode_addsteps!(integrator)
   if !(typeof(integrator.cache) <: CompositeCache)
     ode_interpolant!(val,Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache,idxs,deriv)
@@ -36,47 +36,47 @@ end
   end
 end
 
-@inline function current_interpolant(t::Number,integrator::DEIntegrator,idxs,deriv)
+@inline function current_interpolant(t::Number,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   Θ = (t-integrator.tprev)/integrator.dt
   ode_interpolant(Θ,integrator,idxs,deriv)
 end
 
-@inline function current_interpolant(t,integrator::DEIntegrator,idxs,deriv)
+@inline function current_interpolant(t,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   Θ = (t.-integrator.tprev)./integrator.dt
   [ode_interpolant(ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
-@inline function current_interpolant!(val,t::Number,integrator::DEIntegrator,idxs,deriv)
+@inline function current_interpolant!(val,t::Number,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   Θ = (t-integrator.tprev)/integrator.dt
   ode_interpolant!(val,Θ,integrator,idxs,deriv)
 end
 
-@inline function current_interpolant!(val,t,integrator::DEIntegrator,idxs,deriv)
+@inline function current_interpolant!(val,t,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   Θ = (t.-integrator.tprev)./integrator.dt
   [ode_interpolant!(val,ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
-@inline function current_extrapolant(t::Number,integrator::DEIntegrator,idxs=nothing,deriv=Val{0})
+@inline function current_extrapolant(t::Number,integrator::DiffEqBase.DEIntegrator,idxs=nothing,deriv=Val{0})
   Θ = (t-integrator.tprev)/(integrator.t-integrator.tprev)
   ode_extrapolant(Θ,integrator,idxs,deriv)
 end
 
-@inline function current_extrapolant!(val,t::Number,integrator::DEIntegrator,idxs=nothing,deriv=Val{0})
+@inline function current_extrapolant!(val,t::Number,integrator::DiffEqBase.DEIntegrator,idxs=nothing,deriv=Val{0})
   Θ = (t-integrator.tprev)/(integrator.t-integrator.tprev)
   ode_extrapolant!(val,Θ,integrator,idxs,deriv)
 end
 
-@inline function current_extrapolant(t::AbstractArray,integrator::DEIntegrator,idxs=nothing,deriv=Val{0})
+@inline function current_extrapolant(t::AbstractArray,integrator::DiffEqBase.DEIntegrator,idxs=nothing,deriv=Val{0})
   Θ = (t.-integrator.tprev)./(integrator.t-integrator.tprev)
   [ode_extrapolant(ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
-@inline function current_extrapolant!(val,t,integrator::DEIntegrator,idxs=nothing,deriv=Val{0})
+@inline function current_extrapolant!(val,t,integrator::DiffEqBase.DEIntegrator,idxs=nothing,deriv=Val{0})
   Θ = (t.-integrator.tprev)./(integrator.t-integrator.tprev)
   [ode_extrapolant!(val,ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
-@inline function ode_extrapolant!(val,Θ,integrator::DEIntegrator,idxs,deriv)
+@inline function ode_extrapolant!(val,Θ,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   ode_addsteps!(integrator)
   if !(typeof(integrator.cache) <: CompositeCache)
     ode_interpolant!(val,Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,integrator.cache,idxs,deriv)
@@ -85,7 +85,7 @@ end
   end
 end
 
-@inline function ode_extrapolant(Θ,integrator::DEIntegrator,idxs,deriv)
+@inline function ode_extrapolant(Θ,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   ode_addsteps!(integrator)
   if !(typeof(integrator.cache) <: CompositeCache)
     ode_interpolant(Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,integrator.cache,idxs,deriv)

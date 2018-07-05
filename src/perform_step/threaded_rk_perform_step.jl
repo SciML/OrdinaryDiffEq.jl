@@ -1,4 +1,4 @@
-function initialize!(integrator, cache::DP5ThreadedCache)
+function DiffEqBase.initialize!(integrator, cache::DP5ThreadedCache)
   integrator.kshortsize = 4
   resize!(integrator.k, integrator.kshortsize)
   integrator.k .= [cache.update,cache.bspl,cache.dense_tmp3,cache.dense_tmp4]

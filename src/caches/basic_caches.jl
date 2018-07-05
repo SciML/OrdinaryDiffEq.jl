@@ -1,4 +1,4 @@
-abstract type OrdinaryDiffEqCache <: DECache end
+abstract type OrdinaryDiffEqCache <: DiffEqBase.DECache end
 abstract type OrdinaryDiffEqConstantCache <: OrdinaryDiffEqCache end
 abstract type OrdinaryDiffEqMutableCache <: OrdinaryDiffEqCache end
 struct ODEEmptyCache <: OrdinaryDiffEqConstantCache end
@@ -85,5 +85,5 @@ end
 
 alg_cache(alg::ExplicitRK,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = ExplicitRKConstantCache(alg.tableau,rate_prototype)
 
-get_chunksize(cache::DECache) = error("This cache does not have a chunksize.")
+get_chunksize(cache::DiffEqBase.DECache) = error("This cache does not have a chunksize.")
 get_chunksize(cache::ODEChunkCache{CS}) where {CS} = CS

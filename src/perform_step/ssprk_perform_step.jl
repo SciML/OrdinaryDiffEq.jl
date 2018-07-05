@@ -1,4 +1,4 @@
-function initialize!(integrator,cache::SSPRK22ConstantCache)
+function DiffEqBase.initialize!(integrator,cache::SSPRK22ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
@@ -22,7 +22,7 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::SSPRK22Cache)
+function DiffEqBase.initialize!(integrator,cache::SSPRK22Cache)
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
@@ -48,7 +48,7 @@ end
 end
 
 
-function initialize!(integrator,cache::SSPRK33ConstantCache)
+function DiffEqBase.initialize!(integrator,cache::SSPRK33ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
@@ -75,7 +75,7 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::SSPRK33Cache)
+function DiffEqBase.initialize!(integrator,cache::SSPRK33Cache)
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
@@ -105,7 +105,7 @@ end
 end
 
 
-function initialize!(integrator,cache::SSPRK53ConstantCache)
+function DiffEqBase.initialize!(integrator,cache::SSPRK53ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
@@ -139,7 +139,7 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::SSPRK53Cache)
+function DiffEqBase.initialize!(integrator,cache::SSPRK53Cache)
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
@@ -177,7 +177,7 @@ end
 end
 
 
-function initialize!(integrator,cache::SSPRK63ConstantCache)
+function DiffEqBase.initialize!(integrator,cache::SSPRK63ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
@@ -214,7 +214,7 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::SSPRK63Cache)
+function DiffEqBase.initialize!(integrator,cache::SSPRK63Cache)
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
@@ -256,7 +256,7 @@ end
 end
 
 
-function initialize!(integrator,cache::SSPRK73ConstantCache)
+function DiffEqBase.initialize!(integrator,cache::SSPRK73ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
@@ -296,7 +296,7 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::SSPRK73Cache)
+function DiffEqBase.initialize!(integrator,cache::SSPRK73Cache)
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
@@ -342,7 +342,7 @@ end
 end
 
 
-function initialize!(integrator,cache::SSPRK83ConstantCache)
+function DiffEqBase.initialize!(integrator,cache::SSPRK83ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
@@ -385,7 +385,7 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::SSPRK83Cache)
+function DiffEqBase.initialize!(integrator,cache::SSPRK83Cache)
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
@@ -435,7 +435,7 @@ end
 end
 
 
-function initialize!(integrator,cache::SSPRK432ConstantCache)
+function DiffEqBase.initialize!(integrator,cache::SSPRK432ConstantCache)
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
@@ -473,7 +473,7 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::SSPRK432Cache)
+function DiffEqBase.initialize!(integrator,cache::SSPRK432Cache)
   integrator.kshortsize = 1
   resize!(integrator.k, integrator.kshortsize)
   integrator.fsalfirst = cache.fsalfirst  # done by pointers, no copying
@@ -517,7 +517,7 @@ end
 end
 
 
-function initialize!(integrator,cache::SSPRK932ConstantCache)
+function DiffEqBase.initialize!(integrator,cache::SSPRK932ConstantCache)
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
@@ -574,7 +574,7 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::SSPRK932Cache)
+function DiffEqBase.initialize!(integrator,cache::SSPRK932Cache)
   integrator.kshortsize = 1
   resize!(integrator.k, integrator.kshortsize)
   integrator.fsalfirst = cache.fsalfirst  # done by pointers, no copying
@@ -643,7 +643,7 @@ end
 end
 
 
-function initialize!(integrator,cache::SSPRK54ConstantCache)
+function DiffEqBase.initialize!(integrator,cache::SSPRK54ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
@@ -679,7 +679,7 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::SSPRK54Cache)
+function DiffEqBase.initialize!(integrator,cache::SSPRK54Cache)
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
@@ -718,7 +718,7 @@ end
 end
 
 
-function initialize!(integrator,cache::SSPRK104ConstantCache)
+function DiffEqBase.initialize!(integrator,cache::SSPRK104ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
@@ -761,7 +761,7 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::SSPRK104Cache)
+function DiffEqBase.initialize!(integrator,cache::SSPRK104Cache)
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k

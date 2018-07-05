@@ -1,4 +1,4 @@
-abstract type OrdinaryDiffEqInterpolation{cacheType} <: AbstractDiffEqInterpolation end
+abstract type OrdinaryDiffEqInterpolation{cacheType} <: DiffEqBase.AbstractDiffEqInterpolation end
 
 struct InterpolationData{F,uType,tType,kType,cacheType} <: OrdinaryDiffEqInterpolation{cacheType}
   f::F

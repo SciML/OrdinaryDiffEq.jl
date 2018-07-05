@@ -73,7 +73,7 @@ integrator.opts.abstol = 1e-9
 ```
 For more info see the linked documentation page.
 """
-mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,pType,eigenType,QT,tdirType,ksEltype,SolType,F,ProgressType,CacheType,O,FSALType} <: AbstractODEIntegrator
+mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,pType,eigenType,QT,tdirType,ksEltype,SolType,F,ProgressType,CacheType,O,FSALType} <: DiffEqBase.AbstractODEIntegrator
   sol::SolType
   u::uType
   k::ksEltype

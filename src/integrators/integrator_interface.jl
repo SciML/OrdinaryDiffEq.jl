@@ -236,7 +236,7 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator,u0 = integrator.sol.prob.u
   end
 
   if reinit_cache
-    initialize!(integrator,integrator.cache)
+    DiffEqBase.initialize!(integrator,integrator.cache)
   end
 end
 
