@@ -826,7 +826,7 @@ function perform_step!(integrator, cache::EPIRK5s3ConstantCache, repeat_step=fal
   B = zeros(eltype(f0), length(f0), 5)
   B[:, 2] = f0
   B[:, 4] = (-166375 / (61056 * dt^2)) * R2 + (2187 / (106 * dt^2)) * R3
-  B[:, 5] = (499125 / (27136 * dt^3)) * R2 - (2187 / 106 * dt^3) * R3
+  B[:, 5] = (499125 / (27136 * dt^3)) * R2 - (2187 / (106 * dt^3)) * R3
   u = uprev + phiv_timestep(dt, A, B; kwargs...)
 
   # Update integrator state
@@ -834,6 +834,51 @@ function perform_step!(integrator, cache::EPIRK5s3ConstantCache, repeat_step=fal
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
+end
+
+function perform_step!(integrator, cache::EPIRK5s3Cache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack tmp,k,rtmp,rtmp2,A,B,KsCache = cache
+  f.jac(A, uprev, p, t)
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+  f0 = integrator.fsalfirst # f(u0) is fsaled
+  kwargs = [(:tol, integrator.opts.reltol), (:iop, alg.iop), (:norm, integrator.opts.internalnorm), 
+    (:adaptive, true), (:caches, KsCache)]
+
+  # Compute U2 horizontally
+  fill!(@view(B[:, 2]), zero(eltype(B)))
+  B[:, 3] .= (55 / (8 * dt)) .* f0
+  B[:, 4] .= (-3025 / (192 * dt^2)) .* f0
+  phiv_timestep!(k, 48dt/55, A, @view(B[:, 1:4]); kwargs...)
+  ## Compute R2
+  @. tmp = uprev + k # tmp is now U2
+  f(rtmp, tmp, p, t + 48dt/55); A_mul_B!(rtmp2, A, k)
+  @. rtmp = rtmp - f0 - rtmp2 # rtmp is now R2
+
+  # Compute U3 horizontally
+  B[:, 2] .= (53/5) .* f0
+  B[:, 3] .= (-648 / (5 * dt)) .* f0
+  B[:, 4] .= (2916 / (5 * dt^2)) .* f0 + (32065 / (1152 * dt^2)) .* rtmp
+  phiv_timestep!(k, 4dt/9, A, @view(B[:, 1:4]); kwargs...)
+  ## Update B matrix using R2
+  B[:, 2] .= f0
+  fill!(@view(B[:, 3]), zero(eltype(B)))
+  B[:, 4] .= (-166375 / (61056 * dt^2)) .* rtmp
+  B[:, 5] .= (499125 / (27136 * dt^3)) .* rtmp
+  ## Compute R3 and update B
+  @. tmp = uprev + k # tmp is now U3
+  f(rtmp, tmp, p, t + 4dt/9); A_mul_B!(rtmp2, A, k)
+  @. rtmp = rtmp - f0 - rtmp2 # rtmp is now R3
+  B[:, 4] .+= (2187 / (106 * dt^2)) .* rtmp
+  B[:, 5] .-= (2187 / (106 * dt^3)) .* rtmp
+  
+  # Update u
+  phiv_timestep!(k, dt, A, B; kwargs...)
+  @. u = uprev + k
+
+  # Update integrator state
+  f(integrator.fsallast, u, p, t + dt)
+  # integrator.k is automatically set due to aliasing
 end
 
 ######################################################
