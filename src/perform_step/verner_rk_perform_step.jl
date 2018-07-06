@@ -1,15 +1,20 @@
 function initialize!(integrator, cache::Vern6ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-  integrator.kshortsize = 9
+  integrator.alg.lazy ? (integrator.kshortsize = 9) : (integrator.kshortsize = 12)
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
   integrator.k[1] = integrator.fsalfirst
-  @inbounds for i in 2:integrator.kshortsize-1
+  @inbounds for i in 2:8
     integrator.k[i] = zero(integrator.fsalfirst)
   end
   integrator.k[integrator.kshortsize] = integrator.fsallast
+  if !integrator.alg.lazy
+    @inbounds for i in 10:12
+      integrator.k[i] = zero(integrator.fsalfirst)
+    end
+  end
 end
 
 @muladd function perform_step!(integrator, cache::Vern6ConstantCache, repeat_step=false)
@@ -44,24 +49,32 @@ end
   integrator.k[7]=k7; integrator.k[8]=k8;
   integrator.k[9]=k9
 
-  if !alg.lazy
+  if !integrator.alg.lazy
+    k = integrator.k
     @unpack c10,a1001,a1004,a1005,a1006,a1007,a1008,a1009,c11,a1101,a1102,a1103,a1104,a1105,a1106,a1107,a1108,a1109,a1110,c12,a1201,a1202,a1203,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211 = cache
-    copyat_or_push!(k,10,f(uprev+dt*(a1001*k[1]+a1004*k[4]+a1005*k[5]+a1006*k[6]+a1007*k[7]+a1008*k[8]+a1009*k[9]),p,t+c10*dt))
-    copyat_or_push!(k,11,f(uprev+dt*(a1101*k[1]+a1102*k[2]+a1103*k[3]+a1104*k[4]+a1105*k[5]+a1106*k[6]+a1107*k[7]+a1108*k[8]+a1109*k[9]+a1110*k[10]),p,t+c11*dt))
-    copyat_or_push!(k,12,f(uprev+dt*(a1201*k[1]+a1202*k[2]+a1203*k[3]+a1204*k[4]+a1205*k[5]+a1206*k[6]+a1207*k[7]+a1208*k[8]+a1209*k[9]+a1210*k[10]+a1211*k[11]),p,t+c12*dt))
+    k[10] = f(uprev+dt*(a1001*k[1]+a1004*k[4]+a1005*k[5]+a1006*k[6]+a1007*k[7]+a1008*k[8]+a1009*k[9]),p,t+c10*dt)
+    k[11] = f(uprev+dt*(a1101*k[1]+a1102*k[2]+a1103*k[3]+a1104*k[4]+a1105*k[5]+a1106*k[6]+a1107*k[7]+a1108*k[8]+a1109*k[9]+a1110*k[10]),p,t+c11*dt)
+    k[12] = f(uprev+dt*(a1201*k[1]+a1202*k[2]+a1203*k[3]+a1204*k[4]+a1205*k[5]+a1206*k[6]+a1207*k[7]+a1208*k[8]+a1209*k[9]+a1210*k[10]+a1211*k[11]),p,t+c12*dt)
   end
 
   integrator.u = u
 end
 
 function initialize!(integrator, cache::Vern6Cache)
-  integrator.kshortsize = 9
+  integrator.alg.lazy ? (integrator.kshortsize = 9) : (integrator.kshortsize = 12)
   integrator.fsalfirst = cache.k1 ; integrator.fsallast = cache.k9
   @unpack k = integrator
   resize!(k, integrator.kshortsize)
   k[1]=cache.k1; k[2]=cache.k2; k[3]=cache.k3;
   k[4]=cache.k4; k[5]=cache.k5; k[6]=cache.k6;
   k[7]=cache.k7; k[8]=cache.k8; k[9]=cache.k9 # Set the pointers
+
+  if !integrator.alg.lazy
+    k[10] = similar(cache.k1)
+    k[11] = similar(cache.k1)
+    k[12] = similar(cache.k1)
+  end
+
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 end
 
@@ -150,28 +163,27 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 
-  if !alg.lazy
+  if !integrator.alg.lazy
+    k = integrator.k
     @unpack c10,a1001,a1004,a1005,a1006,a1007,a1008,a1009,c11,a1101,a1102,a1103,a1104,a1105,a1106,a1107,a1108,a1109,a1110,c12,a1201,a1202,a1203,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211 = cache.tab
     @unpack tmp = cache
-    rtmp = similar(cache.k1)
-    uidx = eachindex(uprev)
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a1001*k[1][i]+a1004*k[4][i]+a1005*k[5][i]+a1006*k[6][i]+a1007*k[7][i]+a1008*k[8][i]+a1009*k[9][i])
     end
-    f(rtmp,tmp,p,t+c10*dt); copyat_or_push!(k,10,rtmp)
+    f(k[10],tmp,p,t+c10*dt)
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a1101*k[1][i]+a1102*k[2][i]+a1103*k[3][i]+a1104*k[4][i]+a1105*k[5][i]+a1106*k[6][i]+a1107*k[7][i]+a1108*k[8][i]+a1109*k[9][i]+a1110*k[10][i])
     end
-    f(rtmp,tmp,p,t+c11*dt); copyat_or_push!(k,11,rtmp)
+    f(k[11],tmp,p,t+c11*dt)
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a1201*k[1][i]+a1202*k[2][i]+a1203*k[3][i]+a1204*k[4][i]+a1205*k[5][i]+a1206*k[6][i]+a1207*k[7][i]+a1208*k[8][i]+a1209*k[9][i]+a1210*k[10][i]+a1211*k[11][i])
     end
-    f(rtmp,tmp,p,t+c12*dt); copyat_or_push!(k,12,rtmp)
+    f(k[12],tmp,p,t+c12*dt)
   end
 end
 
 function initialize!(integrator, cache::Vern7ConstantCache)
-  integrator.kshortsize = 10
+  integrator.alg.lazy ? (integrator.kshortsize = 10) : (integrator.kshortsize = 16)
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
@@ -214,14 +226,15 @@ end
   integrator.k[9]=k9; integrator.k[10]=k10
   integrator.u = u
 
-  if !alg.lazy
+  if !integrator.alg.lazy
+    k = integrator.k
     @unpack c11,a1101,a1104,a1105,a1106,a1107,a1108,a1109,c12,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1211,c13,a1301,a1304,a1305,a1306,a1307,a1308,a1309,a1311,a1312,c14,a1401,a1404,a1405,a1406,a1407,a1408,a1409,a1411,a1412,a1413,c15,a1501,a1504,a1505,a1506,a1507,a1508,a1509,a1511,a1512,a1513,c16,a1601,a1604,a1605,a1606,a1607,a1608,a1609,a1611,a1612,a1613 = cache
-    copyat_or_push!(k,11,f(uprev+dt*(a1101*k[1]+a1104*k[4]+a1105*k[5]+a1106*k[6]+a1107*k[7]+a1108*k[8]+a1109*k[9]),p,t+c11*dt))
-    copyat_or_push!(k,12,f(uprev+dt*(a1201*k[1]+a1204*k[4]+a1205*k[5]+a1206*k[6]+a1207*k[7]+a1208*k[8]+a1209*k[9]+a1211*k[11]),p,t+c12*dt))
-    copyat_or_push!(k,13,f(uprev+dt*(a1301*k[1]+a1304*k[4]+a1305*k[5]+a1306*k[6]+a1307*k[7]+a1308*k[8]+a1309*k[9]+a1311*k[11]+a1312*k[12]),p,t+c13*dt))
-    copyat_or_push!(k,14,f(uprev+dt*(a1401*k[1]+a1404*k[4]+a1405*k[5]+a1406*k[6]+a1407*k[7]+a1408*k[8]+a1409*k[9]+a1411*k[11]+a1412*k[12]+a1413*k[13]),p,t+c14*dt))
-    copyat_or_push!(k,15,f(uprev+dt*(a1501*k[1]+a1504*k[4]+a1505*k[5]+a1506*k[6]+a1507*k[7]+a1508*k[8]+a1509*k[9]+a1511*k[11]+a1512*k[12]+a1513*k[13]),p,t+c15*dt))
-    copyat_or_push!(k,16,f(uprev+dt*(a1601*k[1]+a1604*k[4]+a1605*k[5]+a1606*k[6]+a1607*k[7]+a1608*k[8]+a1609*k[9]+a1611*k[11]+a1612*k[12]+a1613*k[13]),p,t+c16*dt))
+    k[11] = f(uprev+dt*(a1101*k[1]+a1104*k[4]+a1105*k[5]+a1106*k[6]+a1107*k[7]+a1108*k[8]+a1109*k[9]),p,t+c11*dt)
+    k[12] = f(uprev+dt*(a1201*k[1]+a1204*k[4]+a1205*k[5]+a1206*k[6]+a1207*k[7]+a1208*k[8]+a1209*k[9]+a1211*k[11]),p,t+c12*dt)
+    k[13] = f(uprev+dt*(a1301*k[1]+a1304*k[4]+a1305*k[5]+a1306*k[6]+a1307*k[7]+a1308*k[8]+a1309*k[9]+a1311*k[11]+a1312*k[12]),p,t+c13*dt)
+    k[14] = f(uprev+dt*(a1401*k[1]+a1404*k[4]+a1405*k[5]+a1406*k[6]+a1407*k[7]+a1408*k[8]+a1409*k[9]+a1411*k[11]+a1412*k[12]+a1413*k[13]),p,t+c14*dt)
+    k[15] = f(uprev+dt*(a1501*k[1]+a1504*k[4]+a1505*k[5]+a1506*k[6]+a1507*k[7]+a1508*k[8]+a1509*k[9]+a1511*k[11]+a1512*k[12]+a1513*k[13]),p,t+c15*dt)
+    k[16] = f(uprev+dt*(a1601*k[1]+a1604*k[4]+a1605*k[5]+a1606*k[6]+a1607*k[7]+a1608*k[8]+a1609*k[9]+a1611*k[11]+a1612*k[12]+a1613*k[13]),p,t+c16*dt)
   end
 
 end
@@ -229,9 +242,18 @@ end
 function initialize!(integrator, cache::Vern7Cache)
   @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10 = cache
   @unpack k = integrator
-  integrator.kshortsize = 10
+  integrator.alg.lazy ? (integrator.kshortsize = 10) : (integrator.kshortsize = 16)
   resize!(k, integrator.kshortsize)
   k[1]=k1;k[2]=k2;k[3]=k3;k[4]=k4;k[5]=k5;k[6]=k6;k[7]=k7;k[8]=k8;k[9]=k9;k[10]=k10 # Setup pointers
+
+  if !integrator.alg.lazy
+    k[11] = similar(cache.k1)
+    k[12] = similar(cache.k1)
+    k[13] = similar(cache.k1)
+    k[14] = similar(cache.k1)
+    k[15] = similar(cache.k1)
+    k[16] = similar(cache.k1)
+  end
 end
 
 #=
@@ -331,41 +353,40 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 
-  if !alg.lazy
+  if !integrator.alg.lazy
+    k = integrator.k
     @unpack tmp = cache
-    rtmp = similar(cache.k1)
     @unpack c11,a1101,a1104,a1105,a1106,a1107,a1108,a1109,c12,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1211,c13,a1301,a1304,a1305,a1306,a1307,a1308,a1309,a1311,a1312,c14,a1401,a1404,a1405,a1406,a1407,a1408,a1409,a1411,a1412,a1413,c15,a1501,a1504,a1505,a1506,a1507,a1508,a1509,a1511,a1512,a1513,c16,a1601,a1604,a1605,a1606,a1607,a1608,a1609,a1611,a1612,a1613 = cache.tab
-    uidx = eachindex(uprev)
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a1101*k[1][i]+a1104*k[4][i]+a1105*k[5][i]+a1106*k[6][i]+a1107*k[7][i]+a1108*k[8][i]+a1109*k[9][i])
     end
-    f(rtmp,tmp,p,t+c11*dt); copyat_or_push!(k,11,rtmp)
+    f(k[11],tmp,p,t+c11*dt)
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a1201*k[1][i]+a1204*k[4][i]+a1205*k[5][i]+a1206*k[6][i]+a1207*k[7][i]+a1208*k[8][i]+a1209*k[9][i]+a1211*k[11][i])
     end
-    f(rtmp,tmp,p,t+c12*dt); copyat_or_push!(k,12,rtmp)
+    f(k[12],tmp,p,t+c12*dt)
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a1301*k[1][i]+a1304*k[4][i]+a1305*k[5][i]+a1306*k[6][i]+a1307*k[7][i]+a1308*k[8][i]+a1309*k[9][i]+a1311*k[11][i]+a1312*k[12][i])
     end
-    f(rtmp,tmp,p,t+c13*dt); copyat_or_push!(k,13,rtmp)
+    f(k[13],tmp,p,t+c13*dt)
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a1401*k[1][i]+a1404*k[4][i]+a1405*k[5][i]+a1406*k[6][i]+a1407*k[7][i]+a1408*k[8][i]+a1409*k[9][i]+a1411*k[11][i]+a1412*k[12][i]+a1413*k[13][i])
     end
-    f(rtmp,tmp,p,t+c14*dt); copyat_or_push!(k,14,rtmp)
+    f(k[14],tmp,p,t+c14*dt)
     @tight_loop_macros for i in uidx
       tmp[i]=  uprev[i]+dt*(a1501*k[1][i]+a1504*k[4][i]+a1505*k[5][i]+a1506*k[6][i]+a1507*k[7][i]+a1508*k[8][i]+a1509*k[9][i]+a1511*k[11][i]+a1512*k[12][i]+a1513*k[13][i])
     end
-    f(rtmp,tmp,p,t+c15*dt); copyat_or_push!(k,15,rtmp)
+    f(k[15],tmp,p,t+c15*dt)
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a1601*k[1][i]+a1604*k[4][i]+a1605*k[5][i]+a1606*k[6][i]+a1607*k[7][i]+a1608*k[8][i]+a1609*k[9][i]+a1611*k[11][i]+a1612*k[12][i]+a1613*k[13][i])
     end
-    f(rtmp,tmp,p,t+c16*dt); copyat_or_push!(k,16,rtmp)
+    f(k[16],tmp,p,t+c16*dt)
   end
 
 end
 
 function initialize!(integrator, cache::Vern8ConstantCache)
-  integrator.kshortsize = 13
+  integrator.alg.lazy ? (integrator.kshortsize = 13) : (integrator.kshortsize = 21)
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
@@ -413,16 +434,17 @@ end
   integrator.k[13]=k13
   integrator.u = u
 
-  if !alg.lazy
+  if !integrator.alg.lazy
+    k = integrator.k
     @unpack c14,a1401,a1406,a1407,a1408,a1409,a1410,a1411,a1412,c15,a1501,a1506,a1507,a1508,a1509,a1510,a1511,a1512,a1514,c16,a1601,a1606,a1607,a1608,a1609,a1610,a1611,a1612,a1614,a1615,c17,a1701,a1706,a1707,a1708,a1709,a1710,a1711,a1712,a1714,a1715,a1716,c18,a1801,a1806,a1807,a1808,a1809,a1810,a1811,a1812,a1814,a1815,a1816,a1817,c19,a1901,a1906,a1907,a1908,a1909,a1910,a1911,a1912,a1914,a1915,a1916,a1917,c20,a2001,a2006,a2007,a2008,a2009,a2010,a2011,a2012,a2014,a2015,a2016,a2017,c21,a2101,a2106,a2107,a2108,a2109,a2110,a2111,a2112,a2114,a2115,a2116,a2117 = cache
-    copyat_or_push!(k,14,f(uprev+dt*(a1401*k[1]+a1406*k[6]+a1407*k[7]+a1408*k[8]+a1409*k[9]+a1410*k[10]+a1411*k[11]+a1412*k[12]),p,t+c14*dt))
-    copyat_or_push!(k,15,f(uprev+dt*(a1501*k[1]+a1506*k[6]+a1507*k[7]+a1508*k[8]+a1509*k[9]+a1510*k[10]+a1511*k[11]+a1512*k[12]+a1514*k[14]),p,t+c15*dt))
-    copyat_or_push!(k,16,f(uprev+dt*(a1601*k[1]+a1606*k[6]+a1607*k[7]+a1608*k[8]+a1609*k[9]+a1610*k[10]+a1611*k[11]+a1612*k[12]+a1614*k[14]+a1615*k[15]),p,t+c16*dt))
-    copyat_or_push!(k,17,f(uprev+dt*(a1701*k[1]+a1706*k[6]+a1707*k[7]+a1708*k[8]+a1709*k[9]+a1710*k[10]+a1711*k[11]+a1712*k[12]+a1714*k[14]+a1715*k[15]+a1716*k[16]),p,t+c17*dt))
-    copyat_or_push!(k,18,f(uprev+dt*(a1801*k[1]+a1806*k[6]+a1807*k[7]+a1808*k[8]+a1809*k[9]+a1810*k[10]+a1811*k[11]+a1812*k[12]+a1814*k[14]+a1815*k[15]+a1816*k[16]+a1817*k[17]),p,t+c18*dt))
-    copyat_or_push!(k,19,f(uprev+dt*(a1901*k[1]+a1906*k[6]+a1907*k[7]+a1908*k[8]+a1909*k[9]+a1910*k[10]+a1911*k[11]+a1912*k[12]+a1914*k[14]+a1915*k[15]+a1916*k[16]+a1917*k[17]),p,t+c19*dt))
-    copyat_or_push!(k,20,f(uprev+dt*(a2001*k[1]+a2006*k[6]+a2007*k[7]+a2008*k[8]+a2009*k[9]+a2010*k[10]+a2011*k[11]+a2012*k[12]+a2014*k[14]+a2015*k[15]+a2016*k[16]+a2017*k[17]),p,t+c20*dt))
-    copyat_or_push!(k,21,f(uprev+dt*(a2101*k[1]+a2106*k[6]+a2107*k[7]+a2108*k[8]+a2109*k[9]+a2110*k[10]+a2111*k[11]+a2112*k[12]+a2114*k[14]+a2115*k[15]+a2116*k[16]+a2117*k[17]),p,t+c21*dt))
+    k[14] = f(uprev+dt*(a1401*k[1]+a1406*k[6]+a1407*k[7]+a1408*k[8]+a1409*k[9]+a1410*k[10]+a1411*k[11]+a1412*k[12]),p,t+c14*dt)
+    k[15] = f(uprev+dt*(a1501*k[1]+a1506*k[6]+a1507*k[7]+a1508*k[8]+a1509*k[9]+a1510*k[10]+a1511*k[11]+a1512*k[12]+a1514*k[14]),p,t+c15*dt)
+    k[16] = f(uprev+dt*(a1601*k[1]+a1606*k[6]+a1607*k[7]+a1608*k[8]+a1609*k[9]+a1610*k[10]+a1611*k[11]+a1612*k[12]+a1614*k[14]+a1615*k[15]),p,t+c16*dt)
+    k[17] = f(uprev+dt*(a1701*k[1]+a1706*k[6]+a1707*k[7]+a1708*k[8]+a1709*k[9]+a1710*k[10]+a1711*k[11]+a1712*k[12]+a1714*k[14]+a1715*k[15]+a1716*k[16]),p,t+c17*dt)
+    k[18] = f(uprev+dt*(a1801*k[1]+a1806*k[6]+a1807*k[7]+a1808*k[8]+a1809*k[9]+a1810*k[10]+a1811*k[11]+a1812*k[12]+a1814*k[14]+a1815*k[15]+a1816*k[16]+a1817*k[17]),p,t+c18*dt)
+    k[19] = f(uprev+dt*(a1901*k[1]+a1906*k[6]+a1907*k[7]+a1908*k[8]+a1909*k[9]+a1910*k[10]+a1911*k[11]+a1912*k[12]+a1914*k[14]+a1915*k[15]+a1916*k[16]+a1917*k[17]),p,t+c19*dt)
+    k[20] = f(uprev+dt*(a2001*k[1]+a2006*k[6]+a2007*k[7]+a2008*k[8]+a2009*k[9]+a2010*k[10]+a2011*k[11]+a2012*k[12]+a2014*k[14]+a2015*k[15]+a2016*k[16]+a2017*k[17]),p,t+c20*dt)
+    k[21] = f(uprev+dt*(a2101*k[1]+a2106*k[6]+a2107*k[7]+a2108*k[8]+a2109*k[9]+a2110*k[10]+a2111*k[11]+a2112*k[12]+a2114*k[14]+a2115*k[15]+a2116*k[16]+a2117*k[17]),p,t+c21*dt)
   end
 
 end
@@ -430,9 +452,15 @@ end
 function initialize!(integrator, cache::Vern8Cache)
   @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13 = cache
   @unpack k = integrator
-  integrator.kshortsize = 13
+  integrator.alg.lazy ? (integrator.kshortsize = 13) : (integrator.kshortsize = 21)
   resize!(k, integrator.kshortsize)
   k[1]=k1;k[2]=k2;k[3]=k3;k[4]=k4;k[5]=k5;k[6]=k6;k[7]=k7;k[8]=k8;k[9]=k9;k[10]=k10;k[11]=k11;k[12]=k12;k[13]=k13 # Setup pointers
+
+  if !integrator.alg.lazy
+    for i in 14:21
+      k[i] = similar(cache.k1)
+    end
+  end
 end
 
 #=
@@ -550,49 +578,48 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 
-  if !alg.lazy
-    rtmp = similar(cache.k1)
-    uidx = eachindex(uprev)
+  if !integrator.alg.lazy
+    k = integrator.k
     @unpack c14,a1401,a1406,a1407,a1408,a1409,a1410,a1411,a1412,c15,a1501,a1506,a1507,a1508,a1509,a1510,a1511,a1512,a1514,c16,a1601,a1606,a1607,a1608,a1609,a1610,a1611,a1612,a1614,a1615,c17,a1701,a1706,a1707,a1708,a1709,a1710,a1711,a1712,a1714,a1715,a1716,c18,a1801,a1806,a1807,a1808,a1809,a1810,a1811,a1812,a1814,a1815,a1816,a1817,c19,a1901,a1906,a1907,a1908,a1909,a1910,a1911,a1912,a1914,a1915,a1916,a1917,c20,a2001,a2006,a2007,a2008,a2009,a2010,a2011,a2012,a2014,a2015,a2016,a2017,c21,a2101,a2106,a2107,a2108,a2109,a2110,a2111,a2112,a2114,a2115,a2116,a2117 = cache.tab
     @unpack tmp = cache
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a1401*k[1][i]+a1406*k[6][i]+a1407*k[7][i]+a1408*k[8][i]+a1409*k[9][i]+a1410*k[10][i]+a1411*k[11][i]+a1412*k[12][i])
     end
-    f(rtmp,tmp,p,t+c14*dt); copyat_or_push!(k,14,rtmp)
+    f(k[14],tmp,p,t+c14*dt)
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a1501*k[1][i]+a1506*k[6][i]+a1507*k[7][i]+a1508*k[8][i]+a1509*k[9][i]+a1510*k[10][i]+a1511*k[11][i]+a1512*k[12][i]+a1514*k[14][i])
     end
-    f(rtmp,tmp,p,t+c15*dt); copyat_or_push!(k,15,rtmp)
+    f(k[15],tmp,p,t+c15*dt)
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a1601*k[1][i]+a1606*k[6][i]+a1607*k[7][i]+a1608*k[8][i]+a1609*k[9][i]+a1610*k[10][i]+a1611*k[11][i]+a1612*k[12][i]+a1614*k[14][i]+a1615*k[15][i])
     end
-    f(rtmp,tmp,p,t+c16*dt); copyat_or_push!(k,16,rtmp)
+    f(k[16],tmp,p,t+c16*dt)
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a1701*k[1][i]+a1706*k[6][i]+a1707*k[7][i]+a1708*k[8][i]+a1709*k[9][i]+a1710*k[10][i]+a1711*k[11][i]+a1712*k[12][i]+a1714*k[14][i]+a1715*k[15][i]+a1716*k[16][i])
     end
-    f(rtmp,tmp,p,t+c17*dt); copyat_or_push!(k,17,rtmp)
+    f(k[17],tmp,p,t+c17*dt)
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a1801*k[1][i]+a1806*k[6][i]+a1807*k[7][i]+a1808*k[8][i]+a1809*k[9][i]+a1810*k[10][i]+a1811*k[11][i]+a1812*k[12][i]+a1814*k[14][i]+a1815*k[15][i]+a1816*k[16][i]+a1817*k[17][i])
     end
-    f(rtmp,tmp,p,t+c18*dt); copyat_or_push!(k,18,rtmp)
+    f(k[18],tmp,p,t+c18*dt)
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a1901*k[1][i]+a1906*k[6][i]+a1907*k[7][i]+a1908*k[8][i]+a1909*k[9][i]+a1910*k[10][i]+a1911*k[11][i]+a1912*k[12][i]+a1914*k[14][i]+a1915*k[15][i]+a1916*k[16][i]+a1917*k[17][i])
     end
-    f(rtmp,tmp,p,t+c19*dt); copyat_or_push!(k,19,rtmp)
+    f(k[19],tmp,p,t+c19*dt)
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a2001*k[1][i]+a2006*k[6][i]+a2007*k[7][i]+a2008*k[8][i]+a2009*k[9][i]+a2010*k[10][i]+a2011*k[11][i]+a2012*k[12][i]+a2014*k[14][i]+a2015*k[15][i]+a2016*k[16][i]+a2017*k[17][i])
     end
-    f(rtmp,tmp,p,t+c20*dt); copyat_or_push!(k,20,rtmp)
+    f(k[20],tmp,p,t+c20*dt)
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a2101*k[1][i]+a2106*k[6][i]+a2107*k[7][i]+a2108*k[8][i]+a2109*k[9][i]+a2110*k[10][i]+a2111*k[11][i]+a2112*k[12][i]+a2114*k[14][i]+a2115*k[15][i]+a2116*k[16][i]+a2117*k[17][i])
     end
-    f(rtmp,tmp,p,t+c21*dt); copyat_or_push!(k,21,rtmp)
+    f(k[21],tmp,p,t+c21*dt)
   end
 
 end
 
 function initialize!(integrator, cache::Vern9ConstantCache)
-  integrator.kshortsize = 16
+  integrator.alg.lazy ? (integrator.kshortsize = 16) : (integrator.kshortsize = 26)
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
@@ -644,27 +671,34 @@ end
   integrator.k[15]=k15; integrator.k[16]=k16
   integrator.u = u
 
-  if !alg.lazy
+  if !integrator.alg.lazy
+    k = integrator.k
     @unpack c17,a1701,a1708,a1709,a1710,a1711,a1712,a1713,a1714,a1715,c18,a1801,a1808,a1809,a1810,a1811,a1812,a1813,a1814,a1815,a1817,c19,a1901,a1908,a1909,a1910,a1911,a1912,a1913,a1914,a1915,a1917,a1918,c20,a2001,a2008,a2009,a2010,a2011,a2012,a2013,a2014,a2015,a2017,a2018,a2019,c21,a2101,a2108,a2109,a2110,a2111,a2112,a2113,a2114,a2115,a2117,a2118,a2119,a2120,c22,a2201,a2208,a2209,a2210,a2211,a2212,a2213,a2214,a2215,a2217,a2218,a2219,a2220,a2221,c23,a2301,a2308,a2309,a2310,a2311,a2312,a2313,a2314,a2315,a2317,a2318,a2319,a2320,a2321,c24,a2401,a2408,a2409,a2410,a2411,a2412,a2413,a2414,a2415,a2417,a2418,a2419,a2420,a2421,c25,a2501,a2508,a2509,a2510,a2511,a2512,a2513,a2514,a2515,a2517,a2518,a2519,a2520,a2521,c26,a2601,a2608,a2609,a2610,a2611,a2612,a2613,a2614,a2615,a2617,a2618,a2619,a2620,a2621 = cache
-    copyat_or_push!(k,17,f(uprev+dt*(a1701*k[1]+a1708*k[8]+a1709*k[9]+a1710*k[10]+a1711*k[11]+a1712*k[12]+a1713*k[13]+a1714*k[14]+a1715*k[15]),p,t+c17*dt))
-    copyat_or_push!(k,18,f(uprev+dt*(a1801*k[1]+a1808*k[8]+a1809*k[9]+a1810*k[10]+a1811*k[11]+a1812*k[12]+a1813*k[13]+a1814*k[14]+a1815*k[15]+a1817*k[17]),p,t+c18*dt))
-    copyat_or_push!(k,19,f(uprev+dt*(a1901*k[1]+a1908*k[8]+a1909*k[9]+a1910*k[10]+a1911*k[11]+a1912*k[12]+a1913*k[13]+a1914*k[14]+a1915*k[15]+a1917*k[17]+a1918*k[18]),p,t+c19*dt))
-    copyat_or_push!(k,20,f(uprev+dt*(a2001*k[1]+a2008*k[8]+a2009*k[9]+a2010*k[10]+a2011*k[11]+a2012*k[12]+a2013*k[13]+a2014*k[14]+a2015*k[15]+a2017*k[17]+a2018*k[18]+a2019*k[19]),p,t+c20*dt))
-    copyat_or_push!(k,21,f(uprev+dt*(a2101*k[1]+a2108*k[8]+a2109*k[9]+a2110*k[10]+a2111*k[11]+a2112*k[12]+a2113*k[13]+a2114*k[14]+a2115*k[15]+a2117*k[17]+a2118*k[18]+a2119*k[19]+a2120*k[20]),p,t+c21*dt))
-    copyat_or_push!(k,22,f(uprev+dt*(a2201*k[1]+a2208*k[8]+a2209*k[9]+a2210*k[10]+a2211*k[11]+a2212*k[12]+a2213*k[13]+a2214*k[14]+a2215*k[15]+a2217*k[17]+a2218*k[18]+a2219*k[19]+a2220*k[20]+a2221*k[21]),p,t+c22*dt))
-    copyat_or_push!(k,23,f(uprev+dt*(a2301*k[1]+a2308*k[8]+a2309*k[9]+a2310*k[10]+a2311*k[11]+a2312*k[12]+a2313*k[13]+a2314*k[14]+a2315*k[15]+a2317*k[17]+a2318*k[18]+a2319*k[19]+a2320*k[20]+a2321*k[21]),p,t+c23*dt))
-    copyat_or_push!(k,24,f(uprev+dt*(a2401*k[1]+a2408*k[8]+a2409*k[9]+a2410*k[10]+a2411*k[11]+a2412*k[12]+a2413*k[13]+a2414*k[14]+a2415*k[15]+a2417*k[17]+a2418*k[18]+a2419*k[19]+a2420*k[20]+a2421*k[21]),p,t+c24*dt))
-    copyat_or_push!(k,25,f(uprev+dt*(a2501*k[1]+a2508*k[8]+a2509*k[9]+a2510*k[10]+a2511*k[11]+a2512*k[12]+a2513*k[13]+a2514*k[14]+a2515*k[15]+a2517*k[17]+a2518*k[18]+a2519*k[19]+a2520*k[20]+a2521*k[21]),p,t+c25*dt))
-    copyat_or_push!(k,26,f(uprev+dt*(a2601*k[1]+a2608*k[8]+a2609*k[9]+a2610*k[10]+a2611*k[11]+a2612*k[12]+a2613*k[13]+a2614*k[14]+a2615*k[15]+a2617*k[17]+a2618*k[18]+a2619*k[19]+a2620*k[20]+a2621*k[21]),p,t+c26*dt))
+    k[17] = f(uprev+dt*(a1701*k[1]+a1708*k[8]+a1709*k[9]+a1710*k[10]+a1711*k[11]+a1712*k[12]+a1713*k[13]+a1714*k[14]+a1715*k[15]),p,t+c17*dt)
+    k[18] = f(uprev+dt*(a1801*k[1]+a1808*k[8]+a1809*k[9]+a1810*k[10]+a1811*k[11]+a1812*k[12]+a1813*k[13]+a1814*k[14]+a1815*k[15]+a1817*k[17]),p,t+c18*dt)
+    k[19] = f(uprev+dt*(a1901*k[1]+a1908*k[8]+a1909*k[9]+a1910*k[10]+a1911*k[11]+a1912*k[12]+a1913*k[13]+a1914*k[14]+a1915*k[15]+a1917*k[17]+a1918*k[18]),p,t+c19*dt)
+    k[20] = f(uprev+dt*(a2001*k[1]+a2008*k[8]+a2009*k[9]+a2010*k[10]+a2011*k[11]+a2012*k[12]+a2013*k[13]+a2014*k[14]+a2015*k[15]+a2017*k[17]+a2018*k[18]+a2019*k[19]),p,t+c20*dt)
+    k[21] = f(uprev+dt*(a2101*k[1]+a2108*k[8]+a2109*k[9]+a2110*k[10]+a2111*k[11]+a2112*k[12]+a2113*k[13]+a2114*k[14]+a2115*k[15]+a2117*k[17]+a2118*k[18]+a2119*k[19]+a2120*k[20]),p,t+c21*dt)
+    k[22] = f(uprev+dt*(a2201*k[1]+a2208*k[8]+a2209*k[9]+a2210*k[10]+a2211*k[11]+a2212*k[12]+a2213*k[13]+a2214*k[14]+a2215*k[15]+a2217*k[17]+a2218*k[18]+a2219*k[19]+a2220*k[20]+a2221*k[21]),p,t+c22*dt)
+    k[23] = f(uprev+dt*(a2301*k[1]+a2308*k[8]+a2309*k[9]+a2310*k[10]+a2311*k[11]+a2312*k[12]+a2313*k[13]+a2314*k[14]+a2315*k[15]+a2317*k[17]+a2318*k[18]+a2319*k[19]+a2320*k[20]+a2321*k[21]),p,t+c23*dt)
+    k[24] = f(uprev+dt*(a2401*k[1]+a2408*k[8]+a2409*k[9]+a2410*k[10]+a2411*k[11]+a2412*k[12]+a2413*k[13]+a2414*k[14]+a2415*k[15]+a2417*k[17]+a2418*k[18]+a2419*k[19]+a2420*k[20]+a2421*k[21]),p,t+c24*dt)
+    k[25] = f(uprev+dt*(a2501*k[1]+a2508*k[8]+a2509*k[9]+a2510*k[10]+a2511*k[11]+a2512*k[12]+a2513*k[13]+a2514*k[14]+a2515*k[15]+a2517*k[17]+a2518*k[18]+a2519*k[19]+a2520*k[20]+a2521*k[21]),p,t+c25*dt)
+    k[26] = f(uprev+dt*(a2601*k[1]+a2608*k[8]+a2609*k[9]+a2610*k[10]+a2611*k[11]+a2612*k[12]+a2613*k[13]+a2614*k[14]+a2615*k[15]+a2617*k[17]+a2618*k[18]+a2619*k[19]+a2620*k[20]+a2621*k[21]),p,t+c26*dt)
   end
 end
 
 function initialize!(integrator, cache::Vern9Cache)
   @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16 = cache
   @unpack k = integrator
-  integrator.kshortsize = 16
+  integrator.alg.lazy ? (integrator.kshortsize = 16) : (integrator.kshortsize = 26)
   resize!(k, integrator.kshortsize)
   k[1]=k1;k[2]=k2;k[3]=k3;k[4]=k4;k[5]=k5;k[6]=k6;k[7]=k7;k[8]=k8;k[9]=k9;k[10]=k10;k[11]=k11;k[12]=k12;k[13]=k13;k[14]=k14;k[15]=k15;k[16]=k16 # Setup pointers
+
+  if !integrator.alg.lazy
+    for i in 17:26
+      k[i] = similar(cache.k1)
+    end
+  end
 end
 
 #=
@@ -800,50 +834,49 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 
-  if !alg.lazy
-    rtmp = similar(cache.k1)
-    uidx = eachindex(uprev)
+  if !integrator.alg.lazy
+    k = integrator.k
     @unpack tmp = cache
     @unpack c17,a1701,a1708,a1709,a1710,a1711,a1712,a1713,a1714,a1715,c18,a1801,a1808,a1809,a1810,a1811,a1812,a1813,a1814,a1815,a1817,c19,a1901,a1908,a1909,a1910,a1911,a1912,a1913,a1914,a1915,a1917,a1918,c20,a2001,a2008,a2009,a2010,a2011,a2012,a2013,a2014,a2015,a2017,a2018,a2019,c21,a2101,a2108,a2109,a2110,a2111,a2112,a2113,a2114,a2115,a2117,a2118,a2119,a2120,c22,a2201,a2208,a2209,a2210,a2211,a2212,a2213,a2214,a2215,a2217,a2218,a2219,a2220,a2221,c23,a2301,a2308,a2309,a2310,a2311,a2312,a2313,a2314,a2315,a2317,a2318,a2319,a2320,a2321,c24,a2401,a2408,a2409,a2410,a2411,a2412,a2413,a2414,a2415,a2417,a2418,a2419,a2420,a2421,c25,a2501,a2508,a2509,a2510,a2511,a2512,a2513,a2514,a2515,a2517,a2518,a2519,a2520,a2521,c26,a2601,a2608,a2609,a2610,a2611,a2612,a2613,a2614,a2615,a2617,a2618,a2619,a2620,a2621 = cache.tab
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a1701*k[1][i]+a1708*k[8][i]+a1709*k[9][i]+a1710*k[10][i]+a1711*k[11][i]+a1712*k[12][i]+a1713*k[13][i]+a1714*k[14][i]+a1715*k[15][i])
     end
-    f(rtmp,tmp,p,t+c17*dt); copyat_or_push!(k,17,rtmp)
+    f(k[17],tmp,p,t+c17*dt)
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a1801*k[1][i]+a1808*k[8][i]+a1809*k[9][i]+a1810*k[10][i]+a1811*k[11][i]+a1812*k[12][i]+a1813*k[13][i]+a1814*k[14][i]+a1815*k[15][i]+a1817*k[17][i])
     end
-    f(rtmp,tmp,p,t+c18*dt); copyat_or_push!(k,18,rtmp)
+    f(k[18],tmp,p,t+c18*dt)
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a1901*k[1][i]+a1908*k[8][i]+a1909*k[9][i]+a1910*k[10][i]+a1911*k[11][i]+a1912*k[12][i]+a1913*k[13][i]+a1914*k[14][i]+a1915*k[15][i]+a1917*k[17][i]+a1918*k[18][i])
     end
-    f(rtmp,tmp,p,t+c19*dt); copyat_or_push!(k,19,rtmp)
+    f(k[19],tmp,p,t+c19*dt)
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a2001*k[1][i]+a2008*k[8][i]+a2009*k[9][i]+a2010*k[10][i]+a2011*k[11][i]+a2012*k[12][i]+a2013*k[13][i]+a2014*k[14][i]+a2015*k[15][i]+a2017*k[17][i]+a2018*k[18][i]+a2019*k[19][i])
     end
-    f(rtmp,tmp,p,t+c20*dt); copyat_or_push!(k,20,rtmp)
+    f(k[20],tmp,p,t+c20*dt)
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a2101*k[1][i]+a2108*k[8][i]+a2109*k[9][i]+a2110*k[10][i]+a2111*k[11][i]+a2112*k[12][i]+a2113*k[13][i]+a2114*k[14][i]+a2115*k[15][i]+a2117*k[17][i]+a2118*k[18][i]+a2119*k[19][i]+a2120*k[20][i])
     end
-    f(rtmp,tmp,p,t+c21*dt); copyat_or_push!(k,21,rtmp)
+    f(k[21],tmp,p,t+c21*dt)
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a2201*k[1][i]+a2208*k[8][i]+a2209*k[9][i]+a2210*k[10][i]+a2211*k[11][i]+a2212*k[12][i]+a2213*k[13][i]+a2214*k[14][i]+a2215*k[15][i]+a2217*k[17][i]+a2218*k[18][i]+a2219*k[19][i]+a2220*k[20][i]+a2221*k[21][i])
     end
-    f(rtmp,tmp,p,t+c22*dt); copyat_or_push!(k,22,rtmp)
+    f(k[22],tmp,p,t+c22*dt)
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a2301*k[1][i]+a2308*k[8][i]+a2309*k[9][i]+a2310*k[10][i]+a2311*k[11][i]+a2312*k[12][i]+a2313*k[13][i]+a2314*k[14][i]+a2315*k[15][i]+a2317*k[17][i]+a2318*k[18][i]+a2319*k[19][i]+a2320*k[20][i]+a2321*k[21][i])
     end
-    f(rtmp,tmp,p,t+c23*dt); copyat_or_push!(k,23,rtmp)
+    f(k[23],tmp,p,t+c23*dt)
     @tight_loop_macros for i in uidx
       tmp[i]  = uprev[i]+dt*(a2401*k[1][i]+a2408*k[8][i]+a2409*k[9][i]+a2410*k[10][i]+a2411*k[11][i]+a2412*k[12][i]+a2413*k[13][i]+a2414*k[14][i]+a2415*k[15][i]+a2417*k[17][i]+a2418*k[18][i]+a2419*k[19][i]+a2420*k[20][i]+a2421*k[21][i])
     end
-    f(rtmp,tmp,p,t+c24*dt); copyat_or_push!(k,24,rtmp)
+    f(k[24],tmp,p,t+c24*dt)
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a2501*k[1][i]+a2508*k[8][i]+a2509*k[9][i]+a2510*k[10][i]+a2511*k[11][i]+a2512*k[12][i]+a2513*k[13][i]+a2514*k[14][i]+a2515*k[15][i]+a2517*k[17][i]+a2518*k[18][i]+a2519*k[19][i]+a2520*k[20][i]+a2521*k[21][i])
     end
-    f(rtmp,tmp,p,t+c25*dt); copyat_or_push!(k,25,rtmp)
+    f(k[25],tmp,p,t+c25*dt)
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a2601*k[1][i]+a2608*k[8][i]+a2609*k[9][i]+a2610*k[10][i]+a2611*k[11][i]+a2612*k[12][i]+a2613*k[13][i]+a2614*k[14][i]+a2615*k[15][i]+a2617*k[17][i]+a2618*k[18][i]+a2619*k[19][i]+a2620*k[20][i]+a2621*k[21][i])
     end
-    f(rtmp,tmp,p,t+c26*dt); copyat_or_push!(k,26,rtmp)
+    f(k[26],tmp,p,t+c26*dt)
   end
 end
