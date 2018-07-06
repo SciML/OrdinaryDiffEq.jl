@@ -639,9 +639,9 @@ Called to add the extra k9, k10, k11 steps for the Order 5 interpolation when ne
     end
     f(k7,tmp,p,t+dt)
     @tight_loop_macros for i in uidx
-      @inbounds u[i] = uprev[i]+dt*(a81*k1[i]+a83*k3[i]+a84*k4[i]+a85*k5[i]+a86*k6[i]+a87*k7[i])
+      @inbounds tmp[i] = uprev[i]+dt*(a81*k1[i]+a83*k3[i]+a84*k4[i]+a85*k5[i]+a86*k6[i]+a87*k7[i])
     end
-    f(k8,u,p,t+dt)
+    f(k8,tmp,p,t+dt)
     copyat_or_push!(k,1,k1)
     copyat_or_push!(k,2,k2)
     copyat_or_push!(k,3,k3)

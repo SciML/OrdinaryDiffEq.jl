@@ -391,7 +391,7 @@ end
   integrator.u = u
 
   alg = unwrap_alg(integrator, false)
-  if !alg.lazy && (integrator.opts.adaptive = false || integrator.EEst <= 1.0)
+  if !alg.lazy && (integrator.opts.adaptive == false || integrator.EEst <= 1.0)
     @unpack c6,c7,c8,a91,a92,a93,a94,a95,a96,a97,a98,a101,a102,a103,a104,a105,a106,a107,a108,a109,a111,a112,a113,a114,a115,a116,a117,a118,a119,a1110 = cache
     k = integrator.k
     k[9] = f(uprev+dt*(a91*k[1]+a92*k[2]+a93*k[3]+a94*k[4]+a95*k[5]+a96*k[6]+a97*k[7]+a98*k[8]),p,t+c6*dt)
@@ -500,7 +500,7 @@ end
   end
 
   alg = unwrap_alg(integrator, false)
-  if !alg.lazy && (integrator.opts.adaptive = false || integrator.EEst <= 1.0)
+  if !alg.lazy && (integrator.opts.adaptive == false || integrator.EEst <= 1.0)
     k = integrator.k
     @unpack c6,c7,c8,a91,a92,a93,a94,a95,a96,a97,a98,a101,a102,a103,a104,a105,a106,a107,a108,a109,a111,a112,a113,a114,a115,a116,a117,a118,a119,a1110 = cache.tab
     @tight_loop_macros for i in uidx

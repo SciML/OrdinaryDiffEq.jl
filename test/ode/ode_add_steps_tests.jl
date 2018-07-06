@@ -25,7 +25,7 @@ lazy_alg = [BS5, Vern6, Vern7, Vern8, Vern9]
 
 nonstandard_interp_algs = union(algs,bad_algs,lazy_alg)
 
-passed = fill(false, 2length(algs))
+passed = fill(false, 2length(nonstandard_interp_algs))
 
 cur_itr = 0
 for inplace in [false,true], alg in algs
@@ -33,7 +33,6 @@ for inplace in [false,true], alg in algs
     sol = solve(prob, alg(); callback=cb,dt=0.0013)
     pass = all(isapprox(sol(t)[1], test_solution(t); atol=0.05) for t in testtimes)
     cur_itr += 1
-    @test pass
     passed[cur_itr] = pass
 end
 
@@ -42,12 +41,13 @@ for inplace in [false,true], alg in lazy_alg
     sol = solve(prob, alg(); callback=cb,dt=0.0013)
     fail = all(isapprox(sol(t)[1], test_solution(t); atol=0.05) for t in testtimes)
 
+    prob = ODEProblem{inplace}(test_ode, [0.], tspan, [1.])
     sol = solve(prob, alg(lazy=false); callback=cb,dt=0.0013)
     pass = all(isapprox(sol(t)[1], test_solution(t); atol=0.05) for t in testtimes)
 
     cur_itr += 1
-    @test pass && !fail
-    passed[cur_itr] = pass
+    passed[cur_itr] = pass && !fail
 end
 
-any(.!(passed)) && warn("The following algorithms failed the continuous callback test: $(union(algs,algs)[.!(passed)])")
+any(.!(passed)) && warn("The following algorithms failed the continuous callback test: $(vcat(algs,algs,lazy_alg,lazy_alg)[.!(passed)])")
+@test all(passed)
