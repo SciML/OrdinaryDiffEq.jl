@@ -22,9 +22,10 @@ end
 function reeval_internals_due_to_modification!(integrator)
   if integrator.opts.calck
     resize!(integrator.k,integrator.kshortsize) # Reset k for next step!
+    alg = integrator.alg
     if typeof(alg) == BS5 || typeof(alg) == Vern6 || typeof(alg) == Vern7 ||
        typeof(alg) == Vern8 || typeof(alg) == Vern9
-       ode_addsteps!(integrator,integrator.f,true,false,!integrator.alg.lazy)
+       ode_addsteps!(integrator,integrator.f,true,false,!alg.lazy)
     else
       ode_addsteps!(integrator,integrator.f,true,false)
     end
