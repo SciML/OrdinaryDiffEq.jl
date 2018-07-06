@@ -381,6 +381,13 @@ end
   end
   integrator.k[1]=k1; integrator.k[2]=k2; integrator.k[3]=k3;integrator.k[4]=k4;integrator.k[5]=k5;integrator.k[6]=k6;integrator.k[7]=k7;integrator.k[8]=k8
   integrator.u = u
+
+  if !alg.lazy
+    @unpack c6,c7,c8,a91,a92,a93,a94,a95,a96,a97,a98,a101,a102,a103,a104,a105,a106,a107,a108,a109,a111,a112,a113,a114,a115,a116,a117,a118,a119,a1110 = cache
+    copyat_or_push!(k,9,f(uprev+dt*(a91*k[1]+a92*k[2]+a93*k[3]+a94*k[4]+a95*k[5]+a96*k[6]+a97*k[7]+a98*k[8]),p,t+c6*dt))
+    copyat_or_push!(k,10,f(uprev+dt*(a101*k[1]+a102*k[2]+a103*k[3]+a104*k[4]+a105*k[5]+a106*k[6]+a107*k[7]+a108*k[8]+a109*k[9]),p,t+c7*dt))
+    copyat_or_push!(k,11,f(uprev+dt*(a111*k[1]+a112*k[2]+a113*k[3]+a114*k[4]+a115*k[5]+a116*k[6]+a117*k[7]+a118*k[8]+a119*k[9]+a1110*k[10]),p,t+c8*dt))
+  end
 end
 
 function initialize!(integrator, cache::BS5Cache)
@@ -472,6 +479,25 @@ end
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     EEst2 = integrator.opts.internalnorm(atmp)
     integrator.EEst = max(EEst1,EEst2)
+  end
+
+  if !alg.lazy
+    uidx = eachindex(uprev)
+    rtmp = similar(cache.k1)
+    @unpack tmp = cache
+    @unpack c6,c7,c8,a91,a92,a93,a94,a95,a96,a97,a98,a101,a102,a103,a104,a105,a106,a107,a108,a109,a111,a112,a113,a114,a115,a116,a117,a118,a119,a1110 = cache.tab
+    @tight_loop_macros for i in uidx
+      @inbounds tmp[i] = uprev[i]+dt*(a91*k[1][i]+a92*k[2][i]+a93*k[3][i]+a94*k[4][i]+a95*k[5][i]+a96*k[6][i]+a97*k[7][i]+a98*k[8][i])
+    end
+    f(rtmp,tmp,p,t+c6*dt); copyat_or_push!(k,9,rtmp)
+    @tight_loop_macros for i in uidx
+      @inbounds tmp[i] = uprev[i]+dt*(a101*k[1][i]+a102*k[2][i]+a103*k[3][i]+a104*k[4][i]+a105*k[5][i]+a106*k[6][i]+a107*k[7][i]+a108*k[8][i]+a109*k[9][i])
+    end
+    f(rtmp,tmp,p,t+c7*dt); copyat_or_push!(k,10,rtmp)
+    @tight_loop_macros for i in uidx
+      @inbounds tmp[i] = uprev[i]+dt*(a111*k[1][i]+a112*k[2][i]+a113*k[3][i]+a114*k[4][i]+a115*k[5][i]+a116*k[6][i]+a117*k[7][i]+a118*k[8][i]+a119*k[9][i]+a1110*k[10][i])
+    end
+    f(rtmp,tmp,p,t+c8*dt); copyat_or_push!(k,11,rtmp)
   end
 end
 

@@ -92,20 +92,36 @@ struct SSPRK104{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
 end
 SSPRK104(stage_limiter! = trivial_limiter!) = SSPRK104(stage_limiter!, trivial_limiter!)
 struct BS3 <: OrdinaryDiffEqAdaptiveAlgorithm end
-struct BS5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct DP5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct DP5Threaded <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Tsit5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct DP8 <: OrdinaryDiffEqAdaptiveAlgorithm end
-struct Vern6 <: OrdinaryDiffEqAdaptiveAlgorithm end
-struct Vern7 <: OrdinaryDiffEqAdaptiveAlgorithm end
-struct Vern8 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct TanYam7 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct TsitPap8 <: OrdinaryDiffEqAdaptiveAlgorithm end
-struct Vern9 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Feagin10 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Feagin12 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Feagin14 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+struct BS5 <: OrdinaryDiffEqAdaptiveAlgorithm
+  lazy::Bool
+  BS5(;lazy=true) = new(lazy)
+end
+struct Vern6 <: OrdinaryDiffEqAdaptiveAlgorithm
+  lazy::Bool
+  Vern6(;lazy=true) = new(lazy)
+end
+struct Vern7 <: OrdinaryDiffEqAdaptiveAlgorithm
+  lazy::Bool
+  Vern7(;lazy=true) = new(lazy)
+end
+struct Vern8 <: OrdinaryDiffEqAdaptiveAlgorithm
+  lazy::Bool
+  Vern8(;lazy=true) = new(lazy)
+end
+struct Vern9 <: OrdinaryDiffEqAdaptiveAlgorithm
+  lazy::Bool
+  Vern9(;lazy=true) = new(lazy)
+end
 
 ################################################################################
 
