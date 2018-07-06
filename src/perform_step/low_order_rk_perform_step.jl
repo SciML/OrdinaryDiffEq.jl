@@ -344,7 +344,8 @@ end
 end
 
 function initialize!(integrator, cache::BS5ConstantCache)
-  integrator.alg.lazy ? (integrator.kshortsize = 8) : (integrator.kshortsize = 11)
+  alg = unwrap_alg(integrator, false)
+  alg.lazy ? (integrator.kshortsize = 8) : (integrator.kshortsize = 11)
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 
@@ -356,7 +357,7 @@ function initialize!(integrator, cache::BS5ConstantCache)
   end
   integrator.k[integrator.kshortsize] = integrator.fsallast
 
-  alg = unwrap_alg(integrator, false)
+
   if !alg.lazy
     @inbounds for i in 9:11
       integrator.k[i] = zero(integrator.fsalfirst)
@@ -400,14 +401,14 @@ end
 end
 
 function initialize!(integrator, cache::BS5Cache)
-  integrator.alg.lazy ? (integrator.kshortsize = 8) : (integrator.kshortsize = 11)
+  alg = unwrap_alg(integrator, false)
+  alg.lazy ? (integrator.kshortsize = 8) : (integrator.kshortsize = 11)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1]=cache.k1; integrator.k[2]=cache.k2;
   integrator.k[3]=cache.k3; integrator.k[4]=cache.k4;
   integrator.k[5]=cache.k5; integrator.k[6]=cache.k6;
   integrator.k[7]=cache.k7; integrator.k[8]=cache.k8
 
-  alg = unwrap_alg(integrator, false)
   if !alg.lazy
     integrator.k[9]= similar(cache.k1)
     integrator.k[10]= similar(cache.k1)

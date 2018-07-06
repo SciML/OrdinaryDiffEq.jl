@@ -1,6 +1,7 @@
 function initialize!(integrator, cache::Vern6ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-  integrator.alg.lazy ? (integrator.kshortsize = 9) : (integrator.kshortsize = 12)
+  alg = unwrap_alg(integrator, false)
+  alg.lazy ? (integrator.kshortsize = 9) : (integrator.kshortsize = 12)
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
@@ -11,7 +12,6 @@ function initialize!(integrator, cache::Vern6ConstantCache)
   end
   integrator.k[integrator.kshortsize] = integrator.fsallast
 
-  alg = unwrap_alg(integrator, false)
   if !alg.lazy
     @inbounds for i in 10:12
       integrator.k[i] = zero(integrator.fsalfirst)
@@ -52,7 +52,7 @@ end
   integrator.k[9]=k9
 
   alg = unwrap_alg(integrator, false)
-  if !alg.lazy
+  if !alg.lazy && (integrator.opts.adaptive = false || integrator.EEst <= 1.0)
     k = integrator.k
     @unpack c10,a1001,a1004,a1005,a1006,a1007,a1008,a1009,c11,a1101,a1102,a1103,a1104,a1105,a1106,a1107,a1108,a1109,a1110,c12,a1201,a1202,a1203,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211 = cache
     k[10] = f(uprev+dt*(a1001*k[1]+a1004*k[4]+a1005*k[5]+a1006*k[6]+a1007*k[7]+a1008*k[8]+a1009*k[9]),p,t+c10*dt)
@@ -168,7 +168,7 @@ end
   end
 
   alg = unwrap_alg(integrator, false)
-  if !alg.lazy
+  if !alg.lazy && (integrator.opts.adaptive = false || integrator.EEst <= 1.0)
     k = integrator.k
     @unpack c10,a1001,a1004,a1005,a1006,a1007,a1008,a1009,c11,a1101,a1102,a1103,a1104,a1105,a1106,a1107,a1108,a1109,a1110,c12,a1201,a1202,a1203,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211 = cache.tab
     @unpack tmp = cache
@@ -188,7 +188,8 @@ end
 end
 
 function initialize!(integrator, cache::Vern7ConstantCache)
-  integrator.alg.lazy ? (integrator.kshortsize = 10) : (integrator.kshortsize = 16)
+  alg = unwrap_alg(integrator, false)
+  alg.lazy ? (integrator.kshortsize = 10) : (integrator.kshortsize = 16)
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
@@ -248,11 +249,11 @@ end
 function initialize!(integrator, cache::Vern7Cache)
   @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10 = cache
   @unpack k = integrator
-  integrator.alg.lazy ? (integrator.kshortsize = 10) : (integrator.kshortsize = 16)
+  alg = unwrap_alg(integrator, false)
+  alg.lazy ? (integrator.kshortsize = 10) : (integrator.kshortsize = 16)
   resize!(k, integrator.kshortsize)
   k[1]=k1;k[2]=k2;k[3]=k3;k[4]=k4;k[5]=k5;k[6]=k6;k[7]=k7;k[8]=k8;k[9]=k9;k[10]=k10 # Setup pointers
 
-  alg = unwrap_alg(integrator, false)
   if !alg.lazy
     k[11] = similar(cache.k1)
     k[12] = similar(cache.k1)
@@ -394,7 +395,8 @@ end
 end
 
 function initialize!(integrator, cache::Vern8ConstantCache)
-  integrator.alg.lazy ? (integrator.kshortsize = 13) : (integrator.kshortsize = 21)
+  alg = unwrap_alg(integrator, false)
+  alg.lazy ? (integrator.kshortsize = 13) : (integrator.kshortsize = 21)
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
@@ -461,11 +463,11 @@ end
 function initialize!(integrator, cache::Vern8Cache)
   @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13 = cache
   @unpack k = integrator
-  integrator.alg.lazy ? (integrator.kshortsize = 13) : (integrator.kshortsize = 21)
+  alg = unwrap_alg(integrator, false)
+  alg.lazy ? (integrator.kshortsize = 13) : (integrator.kshortsize = 21)
   resize!(k, integrator.kshortsize)
   k[1]=k1;k[2]=k2;k[3]=k3;k[4]=k4;k[5]=k5;k[6]=k6;k[7]=k7;k[8]=k8;k[9]=k9;k[10]=k10;k[11]=k11;k[12]=k12;k[13]=k13 # Setup pointers
 
-  alg = unwrap_alg(integrator, false)
   if !alg.lazy
     for i in 14:21
       k[i] = similar(cache.k1)
@@ -630,7 +632,8 @@ end
 end
 
 function initialize!(integrator, cache::Vern9ConstantCache)
-  integrator.alg.lazy ? (integrator.kshortsize = 16) : (integrator.kshortsize = 26)
+  alg = unwrap_alg(integrator, false)
+  alg.lazy ? (integrator.kshortsize = 16) : (integrator.kshortsize = 26)
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
@@ -702,11 +705,11 @@ end
 function initialize!(integrator, cache::Vern9Cache)
   @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16 = cache
   @unpack k = integrator
+  alg = unwrap_alg(integrator, false)
   integrator.alg.lazy ? (integrator.kshortsize = 16) : (integrator.kshortsize = 26)
   resize!(k, integrator.kshortsize)
   k[1]=k1;k[2]=k2;k[3]=k3;k[4]=k4;k[5]=k5;k[6]=k6;k[7]=k7;k[8]=k8;k[9]=k9;k[10]=k10;k[11]=k11;k[12]=k12;k[13]=k13;k[14]=k14;k[15]=k15;k[16]=k16 # Setup pointers
 
-  alg = unwrap_alg(integrator, false)
   if !alg.lazy
     for i in 17:26
       k[i] = similar(cache.k1)
