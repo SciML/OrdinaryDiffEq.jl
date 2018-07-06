@@ -356,7 +356,8 @@ function initialize!(integrator, cache::BS5ConstantCache)
   end
   integrator.k[integrator.kshortsize] = integrator.fsallast
 
-  if !integrator.alg.lazy
+  alg = unwrap_alg(integrator, false)
+  if !alg.lazy
     @inbounds for i in 9:11
       integrator.k[i] = zero(integrator.fsalfirst)
     end
@@ -388,7 +389,8 @@ end
   integrator.k[1]=k1; integrator.k[2]=k2; integrator.k[3]=k3;integrator.k[4]=k4;integrator.k[5]=k5;integrator.k[6]=k6;integrator.k[7]=k7;integrator.k[8]=k8
   integrator.u = u
 
-  if !integrator.alg.lazy
+  alg = unwrap_alg(integrator, false)
+  if !alg.lazy
     @unpack c6,c7,c8,a91,a92,a93,a94,a95,a96,a97,a98,a101,a102,a103,a104,a105,a106,a107,a108,a109,a111,a112,a113,a114,a115,a116,a117,a118,a119,a1110 = cache
     k = integrator.k
     k[9] = f(uprev+dt*(a91*k[1]+a92*k[2]+a93*k[3]+a94*k[4]+a95*k[5]+a96*k[6]+a97*k[7]+a98*k[8]),p,t+c6*dt)
@@ -405,7 +407,8 @@ function initialize!(integrator, cache::BS5Cache)
   integrator.k[5]=cache.k5; integrator.k[6]=cache.k6;
   integrator.k[7]=cache.k7; integrator.k[8]=cache.k8
 
-  if !integrator.alg.lazy
+  alg = unwrap_alg(integrator, false)
+  if !alg.lazy
     integrator.k[9]= similar(cache.k1)
     integrator.k[10]= similar(cache.k1)
     integrator.k[11]= similar(cache.k1)
@@ -495,7 +498,8 @@ end
     integrator.EEst = max(EEst1,EEst2)
   end
 
-  if !integrator.alg.lazy
+  alg = unwrap_alg(integrator, false)
+  if !alg.lazy
     k = integrator.k
     @unpack c6,c7,c8,a91,a92,a93,a94,a95,a96,a97,a98,a101,a102,a103,a104,a105,a106,a107,a108,a109,a111,a112,a113,a114,a115,a116,a117,a118,a119,a1110 = cache.tab
     @tight_loop_macros for i in uidx
