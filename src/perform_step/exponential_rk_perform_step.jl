@@ -4,7 +4,7 @@
 @inline _compute_nl!(G, f::SplitFunction, u, p, t, A, Au_cache) = f.f2(G, u, p, t)
 @inline function _compute_nl!(G, f::ODEFunction, u, p, t, A, Au_cache)
   f(G, u, p, t)
-  A_mul_B!(Au_cache, A, u)
+  mul!(Au_cache, A, u)
   G .-= Au_cache
 end
 
@@ -71,7 +71,7 @@ function perform_step!(integrator, cache::LawsonEulerCache, repeat_step=false)
       cache=u, iop=alg.iop)
     expv!(u,dt,Ks; cache=expv_cache)
   else
-    A_mul_B!(u,exphA,tmp)
+    mul!(u,exphA,tmp)
   end
 
   # Update integrator state
@@ -113,7 +113,7 @@ function perform_step!(integrator, cache::NorsettEulerCache, repeat_step=false)
     phiv!(w, dt, Ks, 1; cache=phiv_cache)
     @muladd @. u = uprev + dt * @view(w[:, 2])
   else
-    A_mul_B!(rtmp, cache.phihA, integrator.fsalfirst)
+    mul!(rtmp, cache.phihA, integrator.fsalfirst)
     @muladd @. u = uprev + dt*rtmp
   end
 
@@ -167,7 +167,7 @@ function perform_step!(integrator, cache::ETDRK2Cache, repeat_step=false)
     # Krylov for F2
     @muladd @. tmp = uprev + dt * @view(w1[:, 2])
     _compute_nl!(F2, f, tmp, p, t + dt, A, rtmp)
-    F2 .+= A_mul_B!(rtmp, A, uprev)
+    F2 .+= mul!(rtmp, A, uprev)
     arnoldi!(Ks, A, F2; m=min(alg.m, size(A,1)), norm=integrator.opts.internalnorm, cache=tmp, iop=alg.iop)
     phiv!(w2, dt, Ks, 2; cache=phiv_cache)
     # Update u
@@ -180,7 +180,7 @@ function perform_step!(integrator, cache::ETDRK2Cache, repeat_step=false)
     F1 = integrator.fsalfirst
     # The caching version uses a special formula to save computation
     # Compute U2
-    A_mul_B!(rtmp, phi1, F1)
+    mul!(rtmp, phi1, F1)
     @muladd @. tmp = uprev + dt * rtmp # tmp is U2
     # Compute G2 - G1, storing result in the cache F2
     f.f2(rtmp, uprev, p, t)
@@ -188,7 +188,7 @@ function perform_step!(integrator, cache::ETDRK2Cache, repeat_step=false)
     F2 .-= rtmp # "F2" is G2 - G1
     # Update u
     u .= tmp
-    Base.axpy!(dt, A_mul_B!(rtmp, phi2, F2), u)
+    Base.axpy!(dt, mul!(rtmp, phi2, F2), u)
   end
 
   # Update integrator state
@@ -248,7 +248,7 @@ function perform_step!(integrator, cache::ETDRK3Cache, repeat_step=false)
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   F1 = integrator.fsalfirst
-  A_mul_B!(Au, A, uprev)
+  mul!(Au, A, uprev)
   halfdt = dt/2
   if alg.krylov
     Ks, phiv_cache, ws = KsCache
@@ -276,19 +276,19 @@ function perform_step!(integrator, cache::ETDRK3Cache, repeat_step=false)
     A21, A3, B1, B2, B3 = cache.ops
     # stage 1 (fsaled)
     # stage 2
-    A_mul_B!(rtmp, A21, F1)
+    mul!(rtmp, A21, F1)
     @muladd @. tmp = uprev + dt * rtmp # tmp is U2
     f.f2(F2, tmp, p, t + halfdt); F2 .+= Au
     # stage 3
     @muladd @. F3 = 2 * F2 - F1 # use F3 temporarily as cache
-    A_mul_B!(rtmp, A3, F3)
+    mul!(rtmp, A3, F3)
     @muladd @. tmp = uprev + dt * rtmp # tmp is U3
     f.f2(F3, tmp, p, t + dt); F3 .+= Au
     # update u
     u .= uprev
-    Base.axpy!(dt, A_mul_B!(rtmp, B1, F1), u)
-    Base.axpy!(dt, A_mul_B!(rtmp, B2, F2), u)
-    Base.axpy!(dt, A_mul_B!(rtmp, B3, F3), u)
+    Base.axpy!(dt, mul!(rtmp, B1, F1), u)
+    Base.axpy!(dt, mul!(rtmp, B2, F2), u)
+    Base.axpy!(dt, mul!(rtmp, B3, F3), u)
   end
 
   # Update integrator state
@@ -361,7 +361,7 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   F1 = integrator.fsalfirst
-  A_mul_B!(Au, A, uprev)
+  mul!(Au, A, uprev)
   halfdt = dt/2
   if alg.krylov
     Ks, phiv_cache, ws = KsCache
@@ -386,7 +386,7 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
     phiv!(w3, dt, Ks, 3; cache=phiv_cache)
     # Extra Krylov for computing F4
     # Compute rtmp = 2F3 - F1 - Au + A*U2
-    A_mul_B!(rtmp, A, U2); @. rtmp += 2F3 - F1 - Au
+    mul!(rtmp, A, U2); @. rtmp += 2F3 - F1 - Au
     arnoldi!(Ks, A, rtmp; kwargs...)
     phiv!(w1_half, halfdt, Ks, 1; cache=phiv_cache) # original w1_half is no longer needed
     @muladd @. @views tmp = U2 + halfdt * w1_half[:, 2] # tmp is U4
@@ -402,23 +402,23 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
     A21, A41, A43, B1, B2, B4 = cache.ops
     # stage 1 (fsaled)
     # stage 2
-    A_mul_B!(rtmp, A21, F1)
+    mul!(rtmp, A21, F1)
     @muladd @. tmp = uprev + dt * rtmp # tmp is U2
     f.f2(F2, tmp, p, t + halfdt); F2 .+= Au
     # stage 3
-    A_mul_B!(rtmp, A21, F2) # A32 = A21
+    mul!(rtmp, A21, F2) # A32 = A21
     @muladd @. tmp = uprev + dt * rtmp # tmp is U3
     f.f2(F3, tmp, p, t + halfdt); F3 .+= Au
     # stage 4
     @. tmp = uprev
-    Base.axpy!(dt, A_mul_B!(rtmp, A41, F1), tmp)
-    Base.axpy!(dt, A_mul_B!(rtmp, A43, F3), tmp) # tmp is U4
+    Base.axpy!(dt, mul!(rtmp, A41, F1), tmp)
+    Base.axpy!(dt, mul!(rtmp, A43, F3), tmp) # tmp is U4
     f.f2(F4, tmp, p, t + dt); F4 .+= Au
     # update u
     u .= uprev
-    Base.axpy!(dt, A_mul_B!(rtmp, B1, F1), u)
-    F2 .+= F3; Base.axpy!(dt, A_mul_B!(rtmp, B2, F2), u) # B3 = B2
-    Base.axpy!(dt, A_mul_B!(rtmp, B4, F4), u)
+    Base.axpy!(dt, mul!(rtmp, B1, F1), u)
+    F2 .+= F3; Base.axpy!(dt, mul!(rtmp, B2, F2), u) # B3 = B2
+    Base.axpy!(dt, mul!(rtmp, B4, F4), u)
   end
 
   # Update integrator state
@@ -501,7 +501,7 @@ function perform_step!(integrator, cache::HochOst4Cache, repeat_step=false)
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   F1 = integrator.fsalfirst
-  A_mul_B!(Au, A, uprev)
+  mul!(Au, A, uprev)
   halfdt = dt/2
   if alg.krylov
     Ks, phiv_cache, ws = KsCache
@@ -546,28 +546,28 @@ function perform_step!(integrator, cache::HochOst4Cache, repeat_step=false)
     A21, A31, A32, A41, A42, A51, A52, A54, B1, B4, B5 = cache.ops
     # stage 1 (fsaled)
     # stage 2
-    A_mul_B!(rtmp, A21, F1)
+    mul!(rtmp, A21, F1)
     @muladd @. tmp = uprev + dt * rtmp # tmp is U2
     f.f2(F2, tmp, p, t + halfdt); F2 .+= Au
     # stage 3
-    A_mul_B!(rtmp, A31, F1); A_mul_B!(rtmp2, A32, F2); rtmp .+= rtmp2
+    mul!(rtmp, A31, F1); mul!(rtmp2, A32, F2); rtmp .+= rtmp2
     @muladd @. tmp = uprev + dt * rtmp # tmp is U3
     f.f2(F3, tmp, p, t + halfdt); F3 .+= Au
     # stage 4
     F2 .+= F3 # F2 now stores F2 + F3
-    A_mul_B!(rtmp, A41, F1); A_mul_B!(rtmp2, A42, F2); rtmp .+= rtmp2
+    mul!(rtmp, A41, F1); mul!(rtmp2, A42, F2); rtmp .+= rtmp2
     @muladd @. tmp = uprev + dt * rtmp # tmp is U4
     f.f2(F4, tmp, p, t + dt); F4 .+= Au
     # stage 5
-    A_mul_B!(rtmp, A51, F1)
-    A_mul_B!(rtmp2, A52, F2); rtmp .+= rtmp2
-    A_mul_B!(rtmp2, A54, F4); rtmp .+= rtmp2
+    mul!(rtmp, A51, F1)
+    mul!(rtmp2, A52, F2); rtmp .+= rtmp2
+    mul!(rtmp2, A54, F4); rtmp .+= rtmp2
     @muladd @. tmp = uprev + dt * rtmp # tmp is U5
     f.f2(F5, tmp, p, t + halfdt); F5 .+= Au
     # update u
-    A_mul_B!(rtmp, B1, F1)
-    A_mul_B!(rtmp2, B4, F4); rtmp .+= rtmp2
-    A_mul_B!(rtmp2, B5, F5); rtmp .+= rtmp2
+    mul!(rtmp, B1, F1)
+    mul!(rtmp2, B4, F4); rtmp .+= rtmp2
+    mul!(rtmp2, B5, F5); rtmp .+= rtmp2
     @muladd @. u = uprev + dt * rtmp
   end
 
@@ -634,26 +634,26 @@ function perform_step!(integrator, cache::Exp4Cache, repeat_step=false)
   @inbounds for i = 1:3
     K[:,i] ./= ts[i]
   end
-  A_mul_B!(rtmp, K, [-7/300, 97/150, -37/300]) # rtmp is now w4
+  mul!(rtmp, K, [-7/300, 97/150, -37/300]) # rtmp is now w4
   @muladd @. tmp = uprev + dt * rtmp # tmp is now u4
-  A_mul_B!(rtmp2, A, rtmp)
+  mul!(rtmp2, A, rtmp)
   f(rtmp, tmp, p, t+dt) # TODO: what should be the time?
   @muladd @. @view(B[:,2]) = rtmp - f0 - dt * rtmp2 # B[:,2] is now d4
   # Partially update entities that use k1, k2, k3
-  A_mul_B!(rtmp, K, [59/300, -7/75, 269/300]) # rtmp is now w7
+  mul!(rtmp, K, [59/300, -7/75, 269/300]) # rtmp is now w7
   @muladd @. u = uprev + dt * @view(K[:,3])
   # Krylov for the first remainder d4
   phiv_timestep!(K, ts, A, B; kwargs...)
   @inbounds for i = 1:3
     K[:,i] ./= ts[i]
   end
-  A_mul_B!(rtmp2, K, [2/3, 2/3, 2/3]); rtmp .+= rtmp2 # w7 fully updated
+  mul!(rtmp2, K, [2/3, 2/3, 2/3]); rtmp .+= rtmp2 # w7 fully updated
   @muladd @. tmp = uprev + dt * rtmp # tmp is now u7
-  A_mul_B!(rtmp2, A, rtmp)
+  mul!(rtmp2, A, rtmp)
   f(rtmp, tmp, p, t+dt) # TODO: what should be the time?
   @muladd @. @view(B[:,2]) = rtmp - f0 - dt * rtmp2 # B[:,2] is now d7
   # Partially update entities that use k4, k5, k6
-  A_mul_B!(rtmp, K, [1.0, -4/3, 1.0])
+  mul!(rtmp, K, [1.0, -4/3, 1.0])
   Base.axpy!(dt, rtmp, u)
   # Krylov for the second remainder d7
   k7 = @view(K[:, 1])
@@ -708,13 +708,13 @@ function perform_step!(integrator, cache::EPIRK4s3ACache, repeat_step=false)
   phiv_timestep!(K, [dt/2, 2dt/3], A, @view(B[:, 1:2]); kwargs...)
   ## U2 and R2
   @. tmp = uprev + @view(K[:, 1]) # tmp is now U2
-  f(rtmp, tmp, p, t + dt/2); A_mul_B!(rtmp2, A, @view(K[:, 1]))
+  f(rtmp, tmp, p, t + dt/2); mul!(rtmp2, A, @view(K[:, 1]))
   @. rtmp = rtmp - f0 - rtmp2 # rtmp is now R2
   B[:, 4] .= (32/dt^2) * rtmp
   B[:, 5] .= (-144/dt^3) * rtmp
   ## U3 and R3
   @. tmp = uprev + @view(K[:, 2]) # tmp is now U3
-  f(rtmp, tmp, p, t + 2dt/3); A_mul_B!(rtmp2, A, @view(K[:, 2]))
+  f(rtmp, tmp, p, t + 2dt/3); mul!(rtmp2, A, @view(K[:, 2]))
   @. rtmp = rtmp - f0 - rtmp2 # rtmp is now R3
   B[:, 4] .-= (13.5/dt^2) * rtmp
   B[:, 5] .+= (81/dt^3) * rtmp
@@ -776,13 +776,13 @@ function perform_step!(integrator, cache::EPIRK4s3BCache, repeat_step=false)
   K[:, 2] .*= 16 / (9*dt)
   ## U2 and R2
   @. tmp = uprev + @view(K[:, 1]) # tmp is now U2
-  f(rtmp, tmp, p, t + dt/2); A_mul_B!(rtmp2, A, @view(K[:, 1]))
+  f(rtmp, tmp, p, t + dt/2); mul!(rtmp2, A, @view(K[:, 1]))
   @. rtmp = rtmp - f0 - rtmp2 # rtmp is now R2
   B[:, 4] .= (54/dt^2) * rtmp
   B[:, 5] .= (-324/dt^3) * rtmp
   ## U3 and R3
   @. tmp = uprev + @view(K[:, 2]) # tmp is now U3
-  f(rtmp, tmp, p, t + 3dt/4); A_mul_B!(rtmp2, A, @view(K[:, 2]))
+  f(rtmp, tmp, p, t + 3dt/4); mul!(rtmp2, A, @view(K[:, 2]))
   @. rtmp = rtmp - f0 - rtmp2 # rtmp is now R3
   B[:, 4] .-= (16/dt^2) * rtmp
   B[:, 5] .+= (144/dt^3) * rtmp
@@ -863,13 +863,13 @@ function perform_step!(integrator, cache::ETD2Cache, repeat_step=false)
   @. integrator.k[1] = lin + nl
 
   if integrator.iter == 1 # ETD1 for initial step
-    A_mul_B!(utmp, exphA, uprev)
-    A_mul_B!(rtmp1, phihA, nl)
+    mul!(utmp, exphA, uprev)
+    mul!(rtmp1, phihA, nl)
     @muladd @. u = utmp + dt*rtmp1
   else
-    A_mul_B!(utmp, exphA, uprev)
-    A_mul_B!(rtmp1, B1, nl)
-    A_mul_B!(rtmp2, B0, nlprev)
+    mul!(utmp, exphA, uprev)
+    mul!(rtmp1, B1, nl)
+    mul!(rtmp2, B0, nlprev)
     @muladd @. u = utmp + dt*(rtmp1 + rtmp2)
   end
 

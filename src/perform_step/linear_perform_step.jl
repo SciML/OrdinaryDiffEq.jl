@@ -137,7 +137,7 @@ function perform_step!(integrator, cache::MidpointSplittingCache, repeat_step=fa
   A = L.As[1]
   Bs = L.As[2:end]
 
-  copy!(tmp, uprev)
+  copyto!(tmp, uprev)
   for B in reverse(Bs)
     u .= exp((dt/2)*B)*tmp
     @swap!(tmp,u)

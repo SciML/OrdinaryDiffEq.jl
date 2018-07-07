@@ -79,11 +79,11 @@ function diffeq_nlsolve!(integrator,
   if mass_matrix == I
     @. b = dt*k - z
   else
-    A_mul_B!(vec(b),mass_matrix,vec(z))
+    mul!(vec(b),mass_matrix,vec(z))
     @. b = dt*k - b
   end
   if has_invW(f)
-    A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
+    mul!(vec(dz),W,vec(b)) # Here W is actually invW
   else
     cache.linsolve(vec(dz),W,vec(b),new_W)
   end
@@ -102,11 +102,11 @@ function diffeq_nlsolve!(integrator,
     if mass_matrix == I
       @. b = dt*k - z
     else
-      A_mul_B!(vec(b),mass_matrix,vec(z))
+      mul!(vec(b),mass_matrix,vec(z))
       @. b = dt*k - b
     end
     if has_invW(f)
-      A_mul_B!(vec(dz),W,vec(b)) # Here W is actually invW
+      mul!(vec(dz),W,vec(b)) # Here W is actually invW
     else
       cache.linsolve(vec(dz),W,vec(b),false)
     end

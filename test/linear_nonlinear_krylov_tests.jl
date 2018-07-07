@@ -36,10 +36,10 @@ end
     dd = -2 * ones(N); du = ones(N-1)
     A = diagm(du, -1) + diagm(dd) + diagm(du, 1)
     _f = (u,p,t) -> A*u - u.^3
-    _f_ip = (du,u,p,t) -> (A_mul_B!(du, A, u); du .-= u.^3)
+    _f_ip = (du,u,p,t) -> (mul!(du, A, u); du .-= u.^3)
     _jac = (u,p,t) -> A - 3 * diagm(u.^2)
     _jac_ip = (J,u,p,t) -> begin
-        copy!(J, A)
+        copyto!(J, A)
         @inbounds for i = 1:N
             J[i, i] -= 3 * u[i]^2
         end

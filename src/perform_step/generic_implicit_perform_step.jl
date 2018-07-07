@@ -104,21 +104,21 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack dual_cache,k,nl_rhs,rhs,tmp,atmp = cache
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
-  copy!(tmp,uprev)
+  copyto!(tmp,uprev)
 
   if integrator.success_iter > 0 && !integrator.reeval_fsal && alg.extrapolant == :interpolant
     current_extrapolant!(u,t+dt,integrator)
   elseif alg.extrapolant == :linear
     @. u = uprev + dt*integrator.fsalfirst
   else
-    copy!(u,uprev)
+    copyto!(u,uprev)
   end
 
   rhs.t = t
   rhs.dt = dt
   rhs.a = dt
   nlres = alg.nlsolve(nl_rhs,u)
-  copy!(u,nlres)
+  copyto!(u,nlres)
 
   if integrator.opts.adaptive && integrator.success_iter > 0
     # local truncation error (LTE) bound by dt^2/2*max|y''(t)|
@@ -241,15 +241,15 @@ end
   elseif alg.extrapolant == :linear
     @. u = uprev + dt*integrator.fsalfirst
   else
-    copy!(u,uprev)
+    copyto!(u,uprev)
   end
 
-  # copy!(rhs.fsalfirst,fsalfirst) Implicitly done by pointers: fsalfirst === fsalfirst == rhs.fsalfirst
+  # copyto!(rhs.fsalfirst,fsalfirst) Implicitly done by pointers: fsalfirst === fsalfirst == rhs.fsalfirst
   rhs.t = t
   rhs.dt = dt
   rhs.a = dt/2
   nlres = alg.nlsolve(nl_rhs,u)
-  copy!(u,nlres)
+  copyto!(u,nlres)
 
   if integrator.opts.adaptive
     if integrator.iter > 2
@@ -279,12 +279,12 @@ end
       calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
       if integrator.EEst <= 1
-        copy!(cache.uprev3,uprev2)
+        copyto!(cache.uprev3,uprev2)
         cache.tprev2 = tprev
       end
     elseif integrator.success_iter > 0
       integrator.EEst = 1
-      copy!(cache.uprev3,integrator.uprev2)
+      copyto!(cache.uprev3,integrator.uprev2)
       cache.tprev2 = integrator.tprev
     else
       integrator.EEst = 1

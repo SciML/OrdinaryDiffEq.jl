@@ -368,7 +368,7 @@ function apply_step!(integrator)
   elseif get_current_isfsal(integrator.alg, integrator.cache)
     if integrator.reeval_fsal || integrator.u_modified || (typeof(integrator.alg)<:DP8 && !integrator.opts.calck) || (typeof(integrator.alg)<:Union{Rosenbrock23,Rosenbrock32} && !integrator.opts.adaptive)
         reset_fsal!(integrator)
-    else # Do not reeval_fsal, instead copy! over
+    else # Do not reeval_fsal, instead copyto! over
       if isinplace(integrator.sol.prob)
         recursivecopy!(integrator.fsalfirst,integrator.fsallast)
       else

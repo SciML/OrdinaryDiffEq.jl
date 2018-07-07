@@ -38,7 +38,7 @@ end
   calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
 
   if has_invW(f)
-    A_mul_B!(vectmp, W, linsolve_tmp_vec)
+    mul!(vectmp, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
   end
@@ -50,12 +50,12 @@ end
   if mass_matrix == I
     tmp .= k₁
   else
-    A_mul_B!(tmp,mass_matrix,k₁)
+    mul!(tmp,mass_matrix,k₁)
   end
 
   @. linsolve_tmp = f₁ - tmp
   if has_invW(f)
-    A_mul_B!(vectmp2, W, linsolve_tmp_vec)
+    mul!(vectmp2, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp2, W, linsolve_tmp_vec)
   end
@@ -71,13 +71,13 @@ end
       @. linsolve_tmp = fsallast - c₃₂*(k₂-f₁) - 2(k₁-fsalfirst) + dt*dT
     else
       @. du2 = c₃₂*k₂ + 2k₁
-      A_mul_B!(du1,mass_matrix,du2)
+      mul!(du1,mass_matrix,du2)
       @. linsolve_tmp = fsallast - du1 + c₃₂*f₁ + 2fsalfirst + dt*dT
     end
 
 
     if has_invW(f)
-      A_mul_B!(vectmp3, W, linsolve_tmp_vec)
+      mul!(vectmp3, W, linsolve_tmp_vec)
     else
       cache.linsolve(vectmp3, W, linsolve_tmp_vec)
     end
@@ -108,7 +108,7 @@ end
   calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
 
   if has_invW(f)
-    A_mul_B!(vectmp, W, linsolve_tmp_vec)
+    mul!(vectmp, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
   end
@@ -120,13 +120,13 @@ end
   if mass_matrix == I
     tmp .= k₁
   else
-    A_mul_B!(tmp,mass_matrix,k₁)
+    mul!(tmp,mass_matrix,k₁)
   end
 
   @. linsolve_tmp = f₁ - tmp
 
   if has_invW(f)
-    A_mul_B!(vectmp2, W, linsolve_tmp_vec)
+    mul!(vectmp2, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp2, W, linsolve_tmp_vec)
   end
@@ -140,12 +140,12 @@ end
     @. linsolve_tmp = fsallast - c₃₂*(k₂-f₁) - 2(k₁-fsalfirst) + dt*dT
   else
     @. du2 = c₃₂*k₂ + 2k₁
-    A_mul_B!(du1,mass_matrix,du2)
+    mul!(du1,mass_matrix,du2)
     @. linsolve_tmp = fsallast - du1 + c₃₂*f₁ + 2fsalfirst + dt*dT
   end
 
   if has_invW(f)
-    A_mul_B!(vectmp3, W, linsolve_tmp_vec)
+    mul!(vectmp3, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp3, W, linsolve_tmp_vec)
   end
@@ -340,7 +340,7 @@ end
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
   if has_invW(f)
-    A_mul_B!(vectmp, W, linsolve_tmp_vec)
+    mul!(vectmp, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
   end
@@ -353,12 +353,12 @@ end
     @. linsolve_tmp = du + dtd2*dT + dtC21*k1
   else
     @. du1 = dtC21*k1
-    A_mul_B!(du2,mass_matrix,du1)
+    mul!(du2,mass_matrix,du1)
     @. linsolve_tmp = du + dtd2*dT + du2
   end
 
   if has_invW(f)
-    A_mul_B!(vectmp2, W, linsolve_tmp_vec)
+    mul!(vectmp2, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp2, W, linsolve_tmp_vec)
   end
@@ -371,12 +371,12 @@ end
     @. linsolve_tmp = du + dtd3*dT + dtC31*k1 + dtC32*k2
   else
     @. du1 = dtC31*k1 + dtC32*k2
-    A_mul_B!(du2,mass_matrix,du1)
+    mul!(du2,mass_matrix,du1)
     @. linsolve_tmp = du + dtd3*dT + du2
   end
 
   if has_invW(f)
-    A_mul_B!(vectmp3, W, linsolve_tmp_vec)
+    mul!(vectmp3, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp3, W, linsolve_tmp_vec)
   end
@@ -482,7 +482,7 @@ end
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
   if has_invW(f)
-    A_mul_B!(vectmp, W, linsolve_tmp_vec)
+    mul!(vectmp, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
   end
@@ -501,12 +501,12 @@ end
     @. linsolve_tmp = fsalfirst + dtd2*dT + dtC21*k1
   else
     @. du1 = dtC21*k1
-    A_mul_B!(du2,mass_matrix,du1)
+    mul!(du2,mass_matrix,du1)
     @. linsolve_tmp = fsalfirst + dtd2*dT + du2
   end
 
   if has_invW(f)
-    A_mul_B!(vectmp2, W, linsolve_tmp_vec)
+    mul!(vectmp2, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp2, W, linsolve_tmp_vec)
   end
@@ -519,12 +519,12 @@ end
     @. linsolve_tmp = du + dtd3*dT + dtC31*k1 + dtC32*k2
   else
     @. du1 = dtC31*k1 + dtC32*k2
-    A_mul_B!(du2,mass_matrix,du1)
+    mul!(du2,mass_matrix,du1)
     @. linsolve_tmp = du + dtd3*dT + du2
   end
 
   if has_invW(f)
-    A_mul_B!(vectmp3, W, linsolve_tmp_vec)
+    mul!(vectmp3, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp3, W, linsolve_tmp_vec)
   end
@@ -535,12 +535,12 @@ end
     @. linsolve_tmp = du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
   else
     @. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
-    A_mul_B!(du2,mass_matrix,du1)
+    mul!(du2,mass_matrix,du1)
     @. linsolve_tmp = du + dtd4*dT + du2
   end
 
   if has_invW(f)
-    A_mul_B!(vectmp4, W, linsolve_tmp_vec)
+    mul!(vectmp4, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp4, W, linsolve_tmp_vec)
   end
@@ -649,7 +649,7 @@ end
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
   if has_invW(f)
-    A_mul_B!(vectmp, W, linsolve_tmp_vec)
+    mul!(vectmp, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
   end
@@ -662,12 +662,12 @@ end
     @. linsolve_tmp = du + dtd2*dT + dtC21*k1
   else
     @. du1 = dtC21*k1
-    A_mul_B!(du2,mass_matrix,du1)
+    mul!(du2,mass_matrix,du1)
     @. linsolve_tmp = du + dtd2*dT + du2
   end
 
   if has_invW(f)
-    A_mul_B!(vectmp2, W, linsolve_tmp_vec)
+    mul!(vectmp2, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp2, W, linsolve_tmp_vec)
   end
@@ -680,12 +680,12 @@ end
     @. linsolve_tmp = du + dtd3*dT + dtC31*k1 + dtC32*k2
   else
     @. du1 = dtC31*k1 + dtC32*k2
-    A_mul_B!(du2,mass_matrix,du1)
+    mul!(du2,mass_matrix,du1)
     @. linsolve_tmp = du + dtd3*dT + du2
   end
 
   if has_invW(f)
-    A_mul_B!(vectmp3, W, linsolve_tmp_vec)
+    mul!(vectmp3, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp3, W, linsolve_tmp_vec)
   end
@@ -696,12 +696,12 @@ end
     @. linsolve_tmp = du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
   else
     @. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
-    A_mul_B!(du2,mass_matrix,du1)
+    mul!(du2,mass_matrix,du1)
     @. linsolve_tmp = du + dtd4*dT + du2
   end
 
   if has_invW(f)
-    A_mul_B!(vectmp4, W, linsolve_tmp_vec)
+    mul!(vectmp4, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp4, W, linsolve_tmp_vec)
   end
@@ -860,7 +860,7 @@ end
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
   if has_invW(f)
-    A_mul_B!(vectmp, W, linsolve_tmp_vec)
+    mul!(vectmp, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
   end
@@ -873,12 +873,12 @@ end
     @. linsolve_tmp = du + dtd2*dT + dtC21*k1
   else
     @. du1 = dtC21*k1
-    A_mul_B!(du2,mass_matrix,du1)
+    mul!(du2,mass_matrix,du1)
     @. linsolve_tmp = du + dtd2*dT + du2
   end
 
   if has_invW(f)
-    A_mul_B!(vectmp2, W, linsolve_tmp_vec)
+    mul!(vectmp2, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp2, W, linsolve_tmp_vec)
   end
@@ -891,12 +891,12 @@ end
     @. linsolve_tmp = du + dtd3*dT + (dtC31*k1 + dtC32*k2)
   else
     @. du1 = dtC31*k1 + dtC32*k2
-    A_mul_B!(du2,mass_matrix,du1)
+    mul!(du2,mass_matrix,du1)
     @. linsolve_tmp = du + dtd3*dT + du2
   end
 
   if has_invW(f)
-    A_mul_B!(vectmp3, W, linsolve_tmp_vec)
+    mul!(vectmp3, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp3, W, linsolve_tmp_vec)
   end
@@ -909,12 +909,12 @@ end
     @. linsolve_tmp = du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
   else
     @. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
-    A_mul_B!(du2,mass_matrix,du1)
+    mul!(du2,mass_matrix,du1)
     @. linsolve_tmp = du + dtd4*dT + du2
   end
 
   if has_invW(f)
-    A_mul_B!(vectmp4, W, linsolve_tmp_vec)
+    mul!(vectmp4, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp4, W, linsolve_tmp_vec)
   end
@@ -927,12 +927,12 @@ end
     @. linsolve_tmp = du + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
   else
     @. du1 = dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3
-    A_mul_B!(du2,mass_matrix,du1)
+    mul!(du2,mass_matrix,du1)
     @. linsolve_tmp = du + du2
   end
 
   if has_invW(f)
-    A_mul_B!(vectmp5, W, linsolve_tmp_vec)
+    mul!(vectmp5, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp5, W, linsolve_tmp_vec)
   end
@@ -951,12 +951,12 @@ end
     @tight_loop_macros for i in uidx
       @inbounds du1[i] = dtC61*k1[i] + dtC62*k2[i] + dtC65*k5[i] + dtC64*k4[i] + dtC63*k3[i]
     end
-    A_mul_B!(du2,mass_matrix,du1)
+    mul!(du2,mass_matrix,du1)
     @. linsolve_tmp = du + du2
   end
 
   if has_invW(f)
-    A_mul_B!(vectmp6, W, linsolve_tmp_vec)
+    mul!(vectmp6, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp6, W, linsolve_tmp_vec)
   end
@@ -1150,7 +1150,7 @@ end
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
   if has_invW(f)
-    A_mul_B!(vectmp, W, linsolve_tmp_vec)
+    mul!(vectmp, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
   end
@@ -1165,12 +1165,12 @@ end
     @. linsolve_tmp = du + dtd2*dT + dtC21*k1
   else
     @. du1 = dtC21*k1
-    A_mul_B!(du2,mass_matrix,du1)
+    mul!(du2,mass_matrix,du1)
     @. linsolve_tmp = du + dtd2*dT + du2
   end
 
   if has_invW(f)
-    A_mul_B!(vectmp2, W, linsolve_tmp_vec)
+    mul!(vectmp2, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp2, W, linsolve_tmp_vec)
   end
@@ -1183,12 +1183,12 @@ end
     @. linsolve_tmp = du + dtd3*dT + (dtC31*k1 + dtC32*k2)
   else
     @. du1 = dtC31*k1 + dtC32*k2
-    A_mul_B!(du2,mass_matrix,du1)
+    mul!(du2,mass_matrix,du1)
     @. linsolve_tmp = du + dtd3*dT + du2
   end
 
   if has_invW(f)
-    A_mul_B!(vectmp3, W, linsolve_tmp_vec)
+    mul!(vectmp3, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp3, W, linsolve_tmp_vec)
   end
@@ -1201,12 +1201,12 @@ end
     @. linsolve_tmp = du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
   else
     @. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
-    A_mul_B!(du2,mass_matrix,du1)
+    mul!(du2,mass_matrix,du1)
     @. linsolve_tmp = du + dtd4*dT + du2
   end
 
   if has_invW(f)
-    A_mul_B!(vectmp4, W, linsolve_tmp_vec)
+    mul!(vectmp4, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp4, W, linsolve_tmp_vec)
   end
@@ -1222,12 +1222,12 @@ end
       end
   else
     @. du1 = dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3
-    A_mul_B!(du2,mass_matrix,du1)
+    mul!(du2,mass_matrix,du1)
     @. linsolve_tmp = du + dtd5*dT + du2
   end
 
   if has_invW(f)
-    A_mul_B!(vectmp5, W, linsolve_tmp_vec)
+    mul!(vectmp5, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp5, W, linsolve_tmp_vec)
   end
@@ -1249,12 +1249,12 @@ end
     @tight_loop_macros for i in uidx
       @inbounds du1[i] = dtC61*k1[i] + dtC62*k2[i] + dtC63*k3[i] + dtC64*k4[i] + dtC65*k5[i]
     end
-    A_mul_B!(du2,mass_matrix,du1)
+    mul!(du2,mass_matrix,du1)
     @. linsolve_tmp = du + du2
   end
 
   if has_invW(f)
-    A_mul_B!(vectmp6, W, linsolve_tmp_vec)
+    mul!(vectmp6, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp6, W, linsolve_tmp_vec)
   end
@@ -1273,12 +1273,12 @@ end
     @tight_loop_macros for i in uidx
       @inbounds du1[i] = dtC71*k1[i] + dtC72*k2[i] + dtC73*k3[i] + dtC74*k4[i] + dtC75*k5[i] + dtC76*k6[i]
     end
-    A_mul_B!(du2,mass_matrix,du1)
+    mul!(du2,mass_matrix,du1)
     @. linsolve_tmp = du + du2
   end
 
   if has_invW(f)
-    A_mul_B!(vectmp7, W, linsolve_tmp_vec)
+    mul!(vectmp7, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp7, W, linsolve_tmp_vec)
   end
@@ -1297,12 +1297,12 @@ end
     @tight_loop_macros for i in uidx
       @inbounds du1[i] = dtC81*k1[i] + dtC82*k2[i] + dtC83*k3[i] + dtC84*k4[i] + dtC85*k5[i] + dtC86*k6[i] + dtC87*k7[i]
     end
-    A_mul_B!(du2,mass_matrix,du1)
+    mul!(du2,mass_matrix,du1)
     @. linsolve_tmp = du + du2
   end
 
   if has_invW(f)
-    A_mul_B!(vectmp8, W, linsolve_tmp_vec)
+    mul!(vectmp8, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp8, W, linsolve_tmp_vec)
   end

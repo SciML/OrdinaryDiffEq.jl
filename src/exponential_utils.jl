@@ -2,11 +2,11 @@
 # Contains functions related to the evaluation of scalar/matrix phi functions
 # that are used by the exponential integrators.
 #
-# TODO: write a version of `expm!` that is non-allocating.
+# TODO: write a version of `exp!` that is non-allocating.
 
 ###################################################
 # Dense algorithms
-#const expm! = Base.LinAlg.expm! # v0.7 style
+using LinearAlgebra: exp!
 
 """
     phi(z,k[;cache]) -> [phi_0(z),phi_1(z),...,phi_k(z)]
@@ -35,7 +35,7 @@ function phi(z::T, k::Integer; cache=nothing) where {T <: Number}
   for i = 1:k
     cache[i,i+1] = one(T)
   end
-  P = expm!(cache)
+  P = exp!(cache)
   return P[1,:]
 end
 
@@ -81,9 +81,9 @@ function phiv_dense!(w::AbstractMatrix{T}, A::AbstractMatrix{T},
   for i = m+1:m+k-1
     cache[i, i+1] = one(T)
   end
-  P = expm!(cache)
+  P = exp!(cache)
   # Extract results
-  @views A_mul_B!(w[:, 1], P[1:m, 1:m], v)
+  @views mul!(w[:, 1], P[1:m, 1:m], v)
   @inbounds for i = 1:k
     @inbounds for j = 1:m
       w[j, i+1] = P[j, m+i]
@@ -119,9 +119,9 @@ function phi!(out::Vector{Matrix{T}}, A::AbstractMatrix{T}, k::Integer; caches=n
   m = size(A, 1)
   @assert length(out) == k + 1 && all(P -> size(P) == (m,m), out) "Dimension mismatch"
   if caches == nothing
-    e = Vector{T}(m)
-    W = Matrix{T}(m, k+1)
-    C = Matrix{T}(m+k, m+k)
+    e = Vector{T}(undef, m)
+    W = Matrix{T}(undef, m, k+1)
+    C = Matrix{T}(undef, m+k, m+k)
   else
     e, W, C = caches
     @assert size(e) == (m,) && size(W) == (m, k+1) && size(C) == (m+k, m+k) "Dimension mismatch"
@@ -168,7 +168,7 @@ mutable struct KrylovSubspace{B, T}
   V::Matrix{T}  # orthonormal bases
   H::Matrix{T}  # Gram-Schmidt coefficients
   KrylovSubspace{T}(n::Integer, maxiter::Integer=30) where {T} = new{real(T), T}(
-    maxiter, maxiter, zero(real(T)), Matrix{T}(n, maxiter + 1),
+    maxiter, maxiter, zero(real(T)), Matrix{T}(undef, n, maxiter + 1),
     fill(zero(T), maxiter + 1, maxiter))
 end
 # TODO: switch to overload `getproperty` in v0.7
@@ -254,7 +254,7 @@ function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol::Real=1
   Ks.beta = norm(b)
   @. V[:, 1] = b / Ks.beta
   @inbounds for j = 1:m
-    A_mul_B!(cache, A, @view(V[:, j]))
+    mul!(cache, A, @view(V[:, j]))
     @inbounds for i = max(1, j - iop + 1):j
       alpha = dot(@view(V[:, i]), cache)
       H[i, j] = alpha
@@ -300,7 +300,7 @@ function lanczos!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol=1e-7,
   @. V[:, 1] = b / Ks.beta
   @inbounds for j = 1:m
     vj = @view(V[:, j])
-    A_mul_B!(cache, A, vj)
+    mul!(cache, A, vj)
     alpha = dot(vj, cache)
     H[j, j] = alpha
     Base.axpy!(-alpha, vj, cache)
@@ -341,7 +341,7 @@ end
 
 Compute the matrix-exponential-vector product using Krylov.
 
-A Krylov subspace is constructed using `arnoldi` and `expm!` is called
+A Krylov subspace is constructed using `arnoldi` and `exp!` is called
 on the Heisenberg matrix. Consult `arnoldi` for the values of the keyword
 arguments.
 
@@ -369,22 +369,22 @@ function expv!(w::AbstractVector{T}, t::Number, Ks::KrylovSubspace{B, T};
   m, beta, V, H = Ks.m, Ks.beta, getV(Ks), getH(Ks)
   @assert length(w) == size(V, 1) "Dimension mismatch"
   if cache == nothing
-    cache = Matrix{T}(m, m)
+    cache = Matrix{T}(undef, m, m)
   elseif isa(cache, ExpvCache)
     cache = get_cache(cache, m)
   else
     throw(ArgumentError("Cache must be an ExpvCache"))
   end
-  scale!(t, copy!(cache, @view(H[1:m, :])))
+  lmul!(t, copyto!(cache, @view(H[1:m, :])))
   if ishermitian(cache)
     # Optimize the case for symtridiagonal H
     F = eigfact!(SymTridiagonal(cache)) # Note: eigfact! -> eigen! in v0.7
     expHe = F.vectors * (exp.(F.values) .* @view(F.vectors[1, :]))
   else
-    expH = expm!(cache)
+    expH = exp!(cache)
     expHe = @view(expH[:, 1])
   end
-  scale!(beta, A_mul_B!(w, @view(V[:, 1:m]), expHe)) # exp(A) ≈ norm(b) * V * exp(H)e
+  lmul!(beta, mul!(w, @view(V[:, 1:m]), expHe)) # exp(A) ≈ norm(b) * V * exp(H)e
 end
 
 # Cache type for phiv
@@ -392,12 +392,12 @@ mutable struct PhivCache{T}
   mem::Vector{T}
   function PhivCache{T}(maxiter::Int, p::Int) where {T}
     numelems = maxiter + maxiter^2 + (maxiter + p)^2 + maxiter*(p + 1)
-    new{T}(Vector{T}(numelems))
+    new{T}(Vector{T}(undef, numelems))
   end
 end
 function Base.resize!(C::PhivCache{T}, maxiter::Int, p::Int) where {T}
   numelems = maxiter + maxiter^2 + (maxiter + p)^2 + maxiter*(p + 1)
-  C.mem = Vector{T}(numelems * 2)
+  C.mem = Vector{T}(undef, numelems * 2)
   return C
 end
 function get_caches(C::PhivCache, m::Int, p::Int)
@@ -462,10 +462,10 @@ function phiv!(w::AbstractMatrix{T}, t::Number, Ks::KrylovSubspace{B, T}, k::Int
     throw(ArgumentError("Cache must be a PhivCache"))
   end
   e, Hcopy, C1, C2 = get_caches(cache, m, k)
-  scale!(t, copy!(Hcopy, @view(H[1:m, :])))
+  lmul!(t, copyto!(Hcopy, @view(H[1:m, :])))
   fill!(e, zero(T)); e[1] = one(T) # e is the [1,0,...,0] basis vector
   phiv_dense!(C2, Hcopy, e, k; cache=C1) # C2 = [ϕ0(H)e ϕ1(H)e ... ϕk(H)e]
-  scale!(beta, A_mul_B!(w, @view(V[:, 1:m]), C2)) # f(A) ≈ norm(b) * V * f(H)e
+  lmul!(beta, mul!(w, @view(V[:, 1:m]), C2)) # f(A) ≈ norm(b) * V * f(H)e
   if correct
     # Use the last Arnoldi vector for correction with little additional cost
     # correct_p = beta * h_{m+1,m} * (em^T phi_p+1(H) e1) * v_m+1
@@ -521,7 +521,7 @@ function expv_timestep(ts::Vector{tType}, A, b; kwargs...) where {tType <: Real}
   expv_timestep!(U, ts, A, b; kwargs...)
 end
 function expv_timestep(t::tType, A, b; kwargs...) where {tType <: Real}
-  u = Vector{eltype(A)}(size(A, 1))
+  u = Vector{eltype(A)}(undef, size(A, 1))
   expv_timestep!(u, t, A, b; kwargs...)
 end
 """
@@ -618,7 +618,7 @@ function phiv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, B::AbstractM
     W = @view(W[:, 1:p+1])
     P = @view(P[:, 1:p+2])
   end
-  copy!(u, @view(B[:, 1])) # u(0) = b0
+  copyto!(u, @view(B[:, 1])) # u(0) = b0
   coeffs = ones(tType, p);
   if adaptive # initialization step for the adaptive scheme
     if ishermitian(A)
@@ -640,12 +640,12 @@ function phiv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, B::AbstractM
       tau = tend - t
     end
     # Part 1: compute w0...wp using the recurrence relation (16)
-    copy!(@view(W[:, 1]), u) # w0 = u(t)
+    copyto!(@view(W[:, 1]), u) # w0 = u(t)
     @inbounds for l = 1:p-1 # compute cl = t^l/l!
       coeffs[l+1] = coeffs[l] * t / l
     end
     @views @inbounds for j = 1:p
-      A_mul_B!(W[:, j+1], A, W[:, j])
+      mul!(W[:, j+1], A, W[:, j])
       for l = 0:p-j
         Base.axpy!(coeffs[l+1], B[:, j+l+1], W[:, j+1])
       end
@@ -673,7 +673,7 @@ function phiv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, B::AbstractM
       end
     end
     # Part 3: update u using (15)
-    scale!(tau^p, copy!(u, @view(P[:, end - 1])))
+    lmul!(tau^p, copyto!(u, @view(P[:, end - 1])))
     @inbounds for l = 1:p-1 # compute cl = tau^l/l!
       coeffs[l+1] = coeffs[l] * tau / l
     end
@@ -685,7 +685,7 @@ function phiv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, B::AbstractM
       tau_snapshot = ts[snapshot] - t
       u_snapshot = @view(U[:, snapshot])
       phiv!(P, tau_snapshot, Ks, p + 1; cache=phiv_cache, correct=correct)
-      scale!(tau_snapshot^p, copy!(u_snapshot, @view(P[:, end - 1])))
+      lmul!(tau_snapshot^p, copyto!(u_snapshot, @view(P[:, end - 1])))
       @inbounds for l = 1:p-1 # compute cl = tau^l/l!
         coeffs[l+1] = coeffs[l] * tau_snapshot / l
       end

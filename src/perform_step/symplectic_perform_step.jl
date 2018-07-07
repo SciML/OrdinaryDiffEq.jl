@@ -130,10 +130,10 @@ end
   f.f1(kdu,duprev,u,p,t+dt)
   # v(t+Δt) = v(t) + 1/2*(a(t)+a(t+Δt))*Δt
   @. du = duprev + dt*(half*ku + half*kdu)
-  copy!(integrator.k[1].x[1],integrator.k[2].x[1])
-  copy!(integrator.k[1].x[2],integrator.k[2].x[2])
-  copy!(integrator.k[2].x[1],kdu)
-  copy!(integrator.k[2].x[2],du)
+  copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
+  copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
+  copyto!(integrator.k[2].x[1],kdu)
+  copyto!(integrator.k[2].x[2],du)
 end
 
 @muladd function perform_step!(integrator,cache::Symplectic2ConstantCache,repeat_step=false)
@@ -177,10 +177,10 @@ end
 
   f.f1(kdu,du,u,p,tnew)
   @. du = du + dt*a2*kdu
-  copy!(integrator.k[1].x[1],integrator.k[2].x[1])
-  copy!(integrator.k[1].x[2],integrator.k[2].x[2])
-  copy!(integrator.k[2].x[2],du)
-  copy!(integrator.k[2].x[1],kdu)
+  copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
+  copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
+  copyto!(integrator.k[2].x[2],du)
+  copyto!(integrator.k[2].x[1],kdu)
 end
 
 @muladd function perform_step!(integrator,cache::Symplectic3ConstantCache,repeat_step=false)
@@ -239,10 +239,10 @@ end
 
   f.f1(kdu,du,u,p,tnew)
   @. du = du + dt*a3*kdu
-  copy!(integrator.k[1].x[1],integrator.k[2].x[1])
-  copy!(integrator.k[1].x[2],integrator.k[2].x[2])
-  copy!(integrator.k[2].x[2],du)
-  copy!(integrator.k[2].x[1],kdu)
+  copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
+  copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
+  copyto!(integrator.k[2].x[2],du)
+  copyto!(integrator.k[2].x[1],kdu)
 end
 
 @muladd function perform_step!(integrator,cache::Symplectic4ConstantCache,repeat_step=false)
@@ -317,10 +317,10 @@ end
 
   f.f1(kdu,du,u,p,tnew)
   @. du = du + dt*a4*kdu
-  copy!(integrator.k[1].x[1],integrator.k[2].x[1])
-  copy!(integrator.k[1].x[2],integrator.k[2].x[2])
-  copy!(integrator.k[2].x[2],du)
-  copy!(integrator.k[2].x[1],kdu)
+  copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
+  copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
+  copyto!(integrator.k[2].x[2],du)
+  copyto!(integrator.k[2].x[1],kdu)
 end
 
 @muladd function perform_step!(integrator,cache::Symplectic45ConstantCache,repeat_step=false)
@@ -415,10 +415,10 @@ end
   if typeof(integrator.alg) <: McAte42
     @. du = du + dt*a5*kdu
   end
-  copy!(integrator.k[1].x[1],integrator.k[2].x[1])
-  copy!(integrator.k[1].x[2],integrator.k[2].x[2])
-  copy!(integrator.k[2].x[2],du)
-  copy!(integrator.k[2].x[1],kdu)
+  copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
+  copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
+  copyto!(integrator.k[2].x[2],du)
+  copyto!(integrator.k[2].x[1],kdu)
 end
 
 @muladd function perform_step!(integrator,cache::Symplectic5ConstantCache,repeat_step=false)
@@ -523,10 +523,10 @@ end
 
   f.f1(kdu,du,u,p,tnew)
   @. du = du + dt*a6*kdu
-  copy!(integrator.k[1].x[1],integrator.k[2].x[1])
-  copy!(integrator.k[1].x[2],integrator.k[2].x[2])
-  copy!(integrator.k[2].x[2],du)
-  copy!(integrator.k[2].x[1],kdu)
+  copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
+  copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
+  copyto!(integrator.k[2].x[2],du)
+  copyto!(integrator.k[2].x[1],kdu)
 end
 
 @muladd function perform_step!(integrator,cache::Symplectic6ConstantCache,repeat_step=false)
@@ -659,10 +659,10 @@ end
 
   f.f1(kdu,du,u,p,tnew)
   # @. du = du + dt*a8*kdu
-  copy!(integrator.k[1].x[1],integrator.k[2].x[1])
-  copy!(integrator.k[1].x[2],integrator.k[2].x[2])
-  copy!(integrator.k[2].x[2],du)
-  copy!(integrator.k[2].x[1],kdu)
+  copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
+  copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
+  copyto!(integrator.k[2].x[2],du)
+  copyto!(integrator.k[2].x[1],kdu)
 end
 
 @muladd function perform_step!(integrator,cache::Symplectic62ConstantCache,repeat_step=false)
@@ -823,10 +823,10 @@ end
 
   f.f1(kdu,du,u,p,tnew)
   # @. du = du + dt*a10*kdu
-  copy!(integrator.k[1].x[1],integrator.k[2].x[1])
-  copy!(integrator.k[1].x[2],integrator.k[2].x[2])
-  copy!(integrator.k[2].x[2],du)
-  copy!(integrator.k[2].x[1],kdu)
+  copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
+  copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
+  copyto!(integrator.k[2].x[2],du)
+  copyto!(integrator.k[2].x[1],kdu)
 end
 
 @muladd function perform_step!(integrator,cache::McAte8ConstantCache,repeat_step=false)
@@ -1073,10 +1073,10 @@ end
 
   f.f1(kdu,du,u,p,tnew)
   # @. du = du + dt*a16*kdu
-  copy!(integrator.k[1].x[1],integrator.k[2].x[1])
-  copy!(integrator.k[1].x[2],integrator.k[2].x[2])
-  copy!(integrator.k[2].x[2],du)
-  copy!(integrator.k[2].x[1],kdu)
+  copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
+  copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
+  copyto!(integrator.k[2].x[2],du)
+  copyto!(integrator.k[2].x[1],kdu)
 end
 
 @muladd function perform_step!(integrator,cache::KahanLi8ConstantCache,repeat_step=false)
@@ -1351,10 +1351,10 @@ end
 
   f.f1(kdu,du,u,p,tnew)
   # @. du = du + dt*a18*kdu
-  copy!(integrator.k[1].x[1],integrator.k[2].x[1])
-  copy!(integrator.k[1].x[2],integrator.k[2].x[2])
-  copy!(integrator.k[2].x[2],du)
-  copy!(integrator.k[2].x[1],kdu)
+  copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
+  copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
+  copyto!(integrator.k[2].x[2],du)
+  copyto!(integrator.k[2].x[1],kdu)
 end
 
 @muladd function perform_step!(integrator,cache::SofSpa10ConstantCache,repeat_step=false)
@@ -1889,8 +1889,8 @@ end
 
   f.f1(kdu,du,u,p,tnew)
   # @. du = du + dt*a30*kdu
-  copy!(integrator.k[1].x[1],integrator.k[2].x[1])
-  copy!(integrator.k[1].x[2],integrator.k[2].x[2])
-  copy!(integrator.k[2].x[2],du)
-  copy!(integrator.k[2].x[1],kdu)
+  copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
+  copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
+  copyto!(integrator.k[2].x[2],du)
+  copyto!(integrator.k[2].x[1],kdu)
 end

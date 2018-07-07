@@ -1,5 +1,5 @@
 using OrdinaryDiffEq: phi, phi, phiv, phiv_timestep, expv, expv_timestep, arnoldi, getH, getV
-using LinearAlgebra, SparseArrays
+using LinearAlgebra, SparseArrays, Random
 
 @testset "Exponential Utilities" begin
   # Scalar phi

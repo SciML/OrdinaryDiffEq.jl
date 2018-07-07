@@ -7,7 +7,7 @@ using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
            2 1 3]
   mm_b = mm_A*ones(3)
   function mm_f(du,u,p,t)
-    A_mul_B!(du,mm_A,u)
+    mul!(du,mm_A,u)
     tmp = t*mm_b
     du .+= tmp
   end

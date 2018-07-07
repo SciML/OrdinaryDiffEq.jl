@@ -186,7 +186,7 @@ end
     u  = uprev + bconst1*dt*duprev + dt*(bconst2*duprev2 + dt*bbar2*(k₂x1-k₂.x[1]))
 
     integrator.fsallast = ArrayPartition((f.f1(du,u,p,t+dt),f.f2(du,u,p,t+dt)))
-    copy!(k₂.x[1],k₂.x[2])
+    copyto!(k₂.x[1],k₂.x[2])
     k1cache = ArrayPartition((k1cache.x[1],k.x[2]))
   end # end if
 end
@@ -205,7 +205,7 @@ end
   # if there's a discontinuity or the solver is in the first step
   if integrator.iter < 2 && !integrator.u_modified
     perform_step!(integrator,integrator.cache.onestep_cache)
-    copy!(k1cache.x[1], k.x[1])
+    copyto!(k1cache.x[1], k.x[1])
     f.f1(k1cache.x[2],duprev,uprev,p,t+c1*dt)
     @. kdu= uprev + dt*(c1*duprev + dt*a21*k1cache.x[2])
     f.f1(k₂.x[1],duprev,kdu,p,t+c1*dt)
@@ -220,9 +220,9 @@ end
     end
     f.f1(k.x[1],du,u,p,t+dt)
     f.f2(k.x[2],du,u,p,t+dt)
-    copy!(k₂.x[1],k₂.x[2])
-    copy!(k1cache.x[2],k1cache.x[1])
-    copy!(k1cache.x[1],k.x[1])
+    copyto!(k₂.x[1],k₂.x[2])
+    copyto!(k1cache.x[2],k1cache.x[1])
+    copyto!(k1cache.x[1],k.x[1])
   end # end if
 end
 
@@ -240,7 +240,7 @@ end
   # if there's a discontinuity or the solver is in the first step
   if integrator.iter < 2 && !integrator.u_modified
     perform_step!(integrator,integrator.cache.onestep_cache)
-    copy!(k1cache.x[1], k.x[1])
+    copyto!(k1cache.x[1], k.x[1])
     f.f1(k1cache.x[2],duprev,uprev,p,t+c1*dt)
     @. kdu= uprev + dt*(c1*duprev + dt*a21*k1cache.x[1])
     f.f1(k₂.x[1],duprev,kdu,p,t+c1*dt)
@@ -261,10 +261,10 @@ end
     end
     f.f1(k.x[1],du,u,p,t+dt)
     f.f2(k.x[2],du,u,p,t+dt)
-    copy!(k₂.x[1],k₂.x[2])
-    copy!(k₃.x[1],k₃.x[2])
-    copy!(k1cache.x[2],k1cache.x[1])
-    copy!(k1cache.x[1],k.x[1])
+    copyto!(k₂.x[1],k₂.x[2])
+    copyto!(k₃.x[1],k₃.x[2])
+    copyto!(k1cache.x[2],k1cache.x[1])
+    copyto!(k1cache.x[1],k.x[1])
   end # end if
 end
 

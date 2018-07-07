@@ -75,7 +75,7 @@ function DiffEqBase.initialize!(integrator,cache::Union{GenericIIF1Cache,Generic
   resize!(integrator.k, integrator.kshortsize)
   A = integrator.f.f1
   integrator.f.f2(cache.rtmp1,integrator.uprev,integrator.p,integrator.t)
-  A_mul_B!(cache.k,A,integrator.uprev)
+  mul!(cache.k,A,integrator.uprev)
   @. integrator.fsalfirst = cache.k + cache.rtmp1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -92,7 +92,7 @@ function perform_step!(integrator,cache::Union{GenericIIF1Cache,GenericIIF2Cache
     @muladd @. k = k + 0.5dt*rtmp1
   end
 
-  A_mul_B!(tmp,cache.expA,k)
+  mul!(tmp,cache.expA,k)
 
   if integrator.success_iter > 0 && !integrator.reeval_fsal
     current_extrapolant!(u,t+dt,integrator)
@@ -102,7 +102,7 @@ function perform_step!(integrator,cache::Union{GenericIIF1Cache,GenericIIF2Cache
   rhs.dt = dt
   nlres = alg.nlsolve(nl_rhs,u)
 
-  copy!(u,nlres)
+  copyto!(u,nlres)
   integrator.f.f2(rtmp1,nlres,integrator.p,t+dt)
   A = f.f1
   integrator.fsallast .= A*u .+ rtmp1

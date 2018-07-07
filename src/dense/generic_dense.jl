@@ -276,15 +276,15 @@ function ode_interpolation!(out,tval::Number,id,idxs,deriv,p)
   avoid_constant_ends && i==1 && (i+=1)
   if !avoid_constant_ends && ts[i] == tval
     if idxs == nothing
-      @inbounds copy!(out,timeseries[i])
+      @inbounds copyto!(out,timeseries[i])
     else
-      @inbounds copy!(out,timeseries[i][idxs])
+      @inbounds copyto!(out,timeseries[i][idxs])
     end
   elseif !avoid_constant_ends && ts[i-1] == tval # Can happen if it's the first value!
     if idxs == nothing
-      @inbounds copy!(out,timeseries[i-1])
+      @inbounds copyto!(out,timeseries[i-1])
     else
-      @inbounds copy!(out,timeseries[i-1][idxs])
+      @inbounds copyto!(out,timeseries[i-1][idxs])
     end
   else
     @inbounds begin

@@ -39,7 +39,7 @@ end
 
     if has_invW(f)
       f(Val{:invW},W,u,p,γ,t) # W == inverse W
-      A_mul_B!(vectmp,W,linsolve_tmp_vec)
+      mul!(vectmp,W,linsolve_tmp_vec)
     else
       ### Jacobian does not need to be re-evaluated after an event
       ### Since it's unchanged
@@ -57,12 +57,12 @@ end
     #if mass_matrix == I
       tmp .= k₁
     #else
-    #  A_mul_B!(tmp,mass_matrix,k₁)
+    #  mul!(tmp,mass_matrix,k₁)
     #end
 
     @. linsolve_tmp = f₁ - tmp
     if has_invW(f)
-      A_mul_B!(vectmp2, W, linsolve_tmp_vec)
+      mul!(vectmp2, W, linsolve_tmp_vec)
     else
       cache.linsolve(vectmp2, W, linsolve_tmp_vec)
     end
@@ -208,7 +208,7 @@ end
     end
 
     if has_invW(f)
-      A_mul_B!(vectmp, W, linsolve_tmp_vec)
+      mul!(vectmp, W, linsolve_tmp_vec)
     else
       cache.linsolve(vectmp, W, linsolve_tmp_vec, true)
     end
@@ -221,12 +221,12 @@ end
       @. linsolve_tmp = du + dtd2*dT + dtC21*k1
     else
       @. du1 = dtC21*k1
-      A_mul_B!(du2,mass_matrix,du1)
+      mul!(du2,mass_matrix,du1)
       @. linsolve_tmp = du + dtd2*dT + du2
     end
 
     if has_invW(f)
-      A_mul_B!(vectmp2, W, linsolve_tmp_vec)
+      mul!(vectmp2, W, linsolve_tmp_vec)
     else
       cache.linsolve(vectmp2, W, linsolve_tmp_vec)
     end
@@ -239,12 +239,12 @@ end
       @. linsolve_tmp = du + dtd3*dT + (dtC31*k1 + dtC32*k2)
     else
       @. du1 = dtC31*k1 + dtC32*k2
-      A_mul_B!(du2,mass_matrix,du1)
+      mul!(du2,mass_matrix,du1)
       @. linsolve_tmp = du + dtd3*dT + du2
     end
 
     if has_invW(f)
-      A_mul_B!(vectmp3, W, linsolve_tmp_vec)
+      mul!(vectmp3, W, linsolve_tmp_vec)
     else
       cache.linsolve(vectmp3, W, linsolve_tmp_vec)
     end
@@ -257,12 +257,12 @@ end
       @. linsolve_tmp = du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
     else
       @. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
-      A_mul_B!(du2,mass_matrix,du1)
+      mul!(du2,mass_matrix,du1)
       @. linsolve_tmp = du + dtd4*dT + du2
     end
 
     if has_invW(f)
-      A_mul_B!(vectmp4, W, linsolve_tmp_vec)
+      mul!(vectmp4, W, linsolve_tmp_vec)
     else
       cache.linsolve(vectmp4, W, linsolve_tmp_vec)
     end
@@ -275,12 +275,12 @@ end
       @. linsolve_tmp = du + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
     else
       @. du1 = dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3
-      A_mul_B!(du2,mass_matrix,du1)
+      mul!(du2,mass_matrix,du1)
       @. linsolve_tmp = du + du2
     end
 
     if has_invW(f)
-      A_mul_B!(vectmp5, W, linsolve_tmp_vec)
+      mul!(vectmp5, W, linsolve_tmp_vec)
     else
       cache.linsolve(vectmp5, W, linsolve_tmp_vec)
     end

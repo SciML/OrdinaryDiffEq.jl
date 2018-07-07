@@ -292,12 +292,12 @@ end
       calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
       if integrator.EEst <= 1
-        copy!(cache.uprev3,uprev2)
+        copyto!(cache.uprev3,uprev2)
         cache.tprev2 = tprev
       end
     elseif integrator.success_iter > 0
       integrator.EEst = 1
-      copy!(cache.uprev3,integrator.uprev2)
+      copyto!(cache.uprev3,integrator.uprev2)
       cache.tprev2 = integrator.tprev
     else
       integrator.EEst = 1
@@ -398,7 +398,7 @@ end
     @. dz = btilde1*zprev + btilde2*zᵧ + btilde3*z
     if alg.smooth_est # From Shampine
       if has_invW(f)
-        A_mul_B!(vec(tmp),W,vec(dz))
+        mul!(vec(tmp),W,vec(dz))
       else
         cache.linsolve(vec(tmp),W,vec(dz),false)
       end
@@ -501,7 +501,7 @@ end
     @. dz = z₁/2 - z₂/2
     if alg.smooth_est # From Shampine
       if has_invW(f)
-        A_mul_B!(vec(tmp),W,vec(dz))
+        mul!(vec(tmp),W,vec(dz))
       else
         cache.linsolve(vec(tmp),W,vec(dz),false)
       end
@@ -761,7 +761,7 @@ end
     @. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
     if alg.smooth_est # From Shampine
       if has_invW(f)
-        A_mul_B!(vec(tmp),W,vec(dz))
+        mul!(vec(tmp),W,vec(dz))
       else
         cache.linsolve(vec(tmp),W,vec(dz),false)
       end
@@ -913,7 +913,7 @@ end
     end
     if alg.smooth_est # From Shampine
       if has_invW(f)
-        A_mul_B!(vec(tmp),W,vec(dz))
+        mul!(vec(tmp),W,vec(dz))
       else
         cache.linsolve(vec(tmp),W,vec(dz),false)
       end

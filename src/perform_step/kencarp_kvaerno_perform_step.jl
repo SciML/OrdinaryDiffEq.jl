@@ -149,7 +149,7 @@ end
     @. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄
     if alg.smooth_est # From Shampine
       if has_invW(f)
-        A_mul_B!(vec(tmp),W,vec(dz))
+        mul!(vec(tmp),W,vec(dz))
       else
         cache.linsolve(vec(tmp),W,vec(dz),false)
       end
@@ -392,7 +392,7 @@ end
     end
     if alg.smooth_est # From Shampine
       if has_invW(f)
-        A_mul_B!(vec(tmp),W,vec(dz))
+        mul!(vec(tmp),W,vec(dz))
       else
         cache.linsolve(vec(tmp),W,vec(dz),false)
       end
@@ -553,7 +553,7 @@ end
     @. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
     if alg.smooth_est # From Shampine
       if has_invW(f)
-        A_mul_B!(vec(tmp),W,vec(dz))
+        mul!(vec(tmp),W,vec(dz))
       else
         cache.linsolve(vec(tmp),W,vec(dz),false)
       end
@@ -887,7 +887,7 @@ end
 
     if alg.smooth_est # From Shampine
       if has_invW(f)
-        A_mul_B!(vec(tmp),W,vec(dz))
+        mul!(vec(tmp),W,vec(dz))
       else
         cache.linsolve(vec(tmp),W,vec(dz),false)
       end
@@ -1089,7 +1089,7 @@ end
     end
     if alg.smooth_est # From Shampine
       if has_invW(f)
-        A_mul_B!(vec(tmp),W,vec(dz))
+        mul!(vec(tmp),W,vec(dz))
       else
         cache.linsolve(vec(tmp),W,vec(dz),false)
       end
@@ -1503,7 +1503,7 @@ end
 
     if alg.smooth_est # From Shampine
       if has_invW(f)
-        A_mul_B!(vec(tmp),W,vec(dz))
+        mul!(vec(tmp),W,vec(dz))
       else
         cache.linsolve(vec(tmp),W,vec(dz),false)
       end
