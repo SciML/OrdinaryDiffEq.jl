@@ -192,9 +192,6 @@ regression_test(TsitPap8(), 1e-3, 3e-3)
 # Feagin10
 regression_test(Feagin10(), 6e-4, 9e-4)
 
-# Vern6
-regression_test(Vern6(), 7e-8, 7e-8; test_diff1 = true)
-
 const linear_bigα4 = parse(BigFloat, "1.01")
 f = (u,p,t) -> (linear_bigα4*u)
 prob_ode_bigfloatlinear = ODEProblem(f,parse(BigFloat,"0.5"),(0.0,1.0))
@@ -214,6 +211,7 @@ print_results( @test maximum(map((x)->maximum(abs.(x)),sol2 - interpd_big)) < 5e
 
 # BS5
 regression_test(BS5(), 4e-8, 6e-8; test_diff1 = true)
+regression_test(BS5(lazy=false), 4e-8, 6e-8; test_diff1 = true)
 
 prob = prob_ode_linear
 sol  = solve(prob, BS5(), dt=1//2^(1), dense=true, adaptive=false)
@@ -223,14 +221,21 @@ print_results( @test maximum(map((x)->maximum(abs.(x)),sol2 - interpd_1d_long)) 
 
 println("Verns")
 
+# Vern6
+regression_test(Vern6(), 7e-8, 7e-8; test_diff1 = true)
+regression_test(Vern6(lazy=false), 7e-8, 7e-8; test_diff1 = true)
+
 # Vern7
 regression_test(Vern7(), 3e-9, 5e-9; test_diff1 = true)
+regression_test(Vern7(lazy=false), 3e-9, 5e-9; test_diff1 = true)
 
 # Vern8
 regression_test(Vern8(), 3e-8, 5e-8; test_diff1 = true)
+regression_test(Vern8(lazy=false), 3e-8, 5e-8; test_diff1 = true)
 
 # Vern9
 regression_test(Vern9(), 1e-9, 2e-9; test_diff1 = true, nth_der=4, dertol=1e-2)
+regression_test(Vern9(lazy=false), 1e-9, 2e-9; test_diff1 = true, nth_der=4, dertol=1e-2)
 
 println("Rosenbrocks")
 

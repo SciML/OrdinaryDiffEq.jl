@@ -344,17 +344,25 @@ end
 end
 
 function initialize!(integrator, cache::BS5ConstantCache)
-  integrator.kshortsize = 8
+  alg = unwrap_alg(integrator, false)
+  alg.lazy ? (integrator.kshortsize = 8) : (integrator.kshortsize = 11)
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
   integrator.k[1] = integrator.fsalfirst
-  @inbounds for i in 2:integrator.kshortsize-1
+  @inbounds for i in 2:7
     integrator.k[i] = zero(integrator.fsalfirst)
   end
   integrator.k[integrator.kshortsize] = integrator.fsallast
+
+
+  if !alg.lazy
+    @inbounds for i in 9:11
+      integrator.k[i] = zero(integrator.fsalfirst)
+    end
+  end
 end
 
 @muladd function perform_step!(integrator, cache::BS5ConstantCache, repeat_step=false)
@@ -381,15 +389,32 @@ end
   end
   integrator.k[1]=k1; integrator.k[2]=k2; integrator.k[3]=k3;integrator.k[4]=k4;integrator.k[5]=k5;integrator.k[6]=k6;integrator.k[7]=k7;integrator.k[8]=k8
   integrator.u = u
+
+  alg = unwrap_alg(integrator, false)
+  if !alg.lazy && (integrator.opts.adaptive == false || integrator.EEst <= 1.0)
+    @unpack c6,c7,c8,a91,a92,a93,a94,a95,a96,a97,a98,a101,a102,a103,a104,a105,a106,a107,a108,a109,a111,a112,a113,a114,a115,a116,a117,a118,a119,a1110 = cache
+    k = integrator.k
+    k[9] = f(uprev+dt*(a91*k[1]+a92*k[2]+a93*k[3]+a94*k[4]+a95*k[5]+a96*k[6]+a97*k[7]+a98*k[8]),p,t+c6*dt)
+    k[10] = f(uprev+dt*(a101*k[1]+a102*k[2]+a103*k[3]+a104*k[4]+a105*k[5]+a106*k[6]+a107*k[7]+a108*k[8]+a109*k[9]),p,t+c7*dt)
+    k[11] = f(uprev+dt*(a111*k[1]+a112*k[2]+a113*k[3]+a114*k[4]+a115*k[5]+a116*k[6]+a117*k[7]+a118*k[8]+a119*k[9]+a1110*k[10]),p,t+c8*dt)
+  end
 end
 
 function initialize!(integrator, cache::BS5Cache)
-  integrator.kshortsize = 8
+  alg = unwrap_alg(integrator, false)
+  alg.lazy ? (integrator.kshortsize = 8) : (integrator.kshortsize = 11)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1]=cache.k1; integrator.k[2]=cache.k2;
   integrator.k[3]=cache.k3; integrator.k[4]=cache.k4;
   integrator.k[5]=cache.k5; integrator.k[6]=cache.k6;
   integrator.k[7]=cache.k7; integrator.k[8]=cache.k8
+
+  if !alg.lazy
+    integrator.k[9]= similar(cache.k1)
+    integrator.k[10]= similar(cache.k1)
+    integrator.k[11]= similar(cache.k1)
+  end
+
   integrator.fsalfirst = cache.k1; integrator.fsallast = cache.k8  # setup pointers
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 end
@@ -472,6 +497,24 @@ end
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     EEst2 = integrator.opts.internalnorm(atmp)
     integrator.EEst = max(EEst1,EEst2)
+  end
+
+  alg = unwrap_alg(integrator, false)
+  if !alg.lazy && (integrator.opts.adaptive == false || integrator.EEst <= 1.0)
+    k = integrator.k
+    @unpack c6,c7,c8,a91,a92,a93,a94,a95,a96,a97,a98,a101,a102,a103,a104,a105,a106,a107,a108,a109,a111,a112,a113,a114,a115,a116,a117,a118,a119,a1110 = cache.tab
+    @tight_loop_macros for i in uidx
+      @inbounds tmp[i] = uprev[i]+dt*(a91*k[1][i]+a92*k[2][i]+a93*k[3][i]+a94*k[4][i]+a95*k[5][i]+a96*k[6][i]+a97*k[7][i]+a98*k[8][i])
+    end
+    f(k[9],tmp,p,t+c6*dt)
+    @tight_loop_macros for i in uidx
+      @inbounds tmp[i] = uprev[i]+dt*(a101*k[1][i]+a102*k[2][i]+a103*k[3][i]+a104*k[4][i]+a105*k[5][i]+a106*k[6][i]+a107*k[7][i]+a108*k[8][i]+a109*k[9][i])
+    end
+    f(k[10],tmp,p,t+c7*dt)
+    @tight_loop_macros for i in uidx
+      @inbounds tmp[i] = uprev[i]+dt*(a111*k[1][i]+a112*k[2][i]+a113*k[3][i]+a114*k[4][i]+a115*k[5][i]+a116*k[6][i]+a117*k[7][i]+a118*k[8][i]+a119*k[9][i]+a1110*k[10][i])
+    end
+    f(k[11],tmp,p,t+c8*dt)
   end
 end
 
