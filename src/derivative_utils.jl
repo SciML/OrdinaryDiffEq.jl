@@ -5,7 +5,7 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
 
     # Time derivative
     if !repeat_step # skip calculation if step is repeated
-      if has_tgrad(f)
+      if DiffEqBase.has_tgrad(f)
         f(Val{:tgrad}, dT, uprev, p, t)
       else
         tf.uprev = uprev
@@ -22,7 +22,7 @@ end
 function calc_J!(integrator, cache, is_compos)
     @unpack t,dt,uprev,u,f,p = integrator
     @unpack du1,uf,J,jac_config = cache
-    if has_jac(f)
+    if DiffEqBase.has_jac(f)
       f(Val{:jac}, J, uprev, p, t)
     else
       uf.t = t
@@ -42,7 +42,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
 
     # calculate W
     new_W = true
-    if has_invW(f)
+    if DiffEqBase.has_invW(f)
       # skip calculation of inv(W) if step is repeated
       !repeat_step && W_transform ? f(Val{:invW_t}, W, uprev, p, dtgamma, t) :
                                     f(Val{:invW}, W, uprev, p, dtgamma, t) # W == inverse W

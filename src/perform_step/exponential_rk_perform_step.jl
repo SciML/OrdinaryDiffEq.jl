@@ -587,7 +587,7 @@ function perform_step!(integrator, cache::Exp4ConstantCache, repeat_step=false)
   kwargs = [(:tol, integrator.opts.reltol), (:iop, alg.iop), (:norm, integrator.opts.internalnorm), (:adaptive, true)]
 
   # Krylov for f(uprev)
-  B1 = [zeros(f0) f0]
+  B1 = [zero(f0) f0]
   K1 = phiv_timestep(ts, A, B1; kwargs...) # tϕ(tA)f0
   @inbounds for i = 1:3
     K1[:,i] ./= ts[i]
@@ -596,7 +596,7 @@ function perform_step!(integrator, cache::Exp4ConstantCache, repeat_step=false)
   u4 = uprev + dt * w4
   d4 = f(u4, p, t+dt) - f0 - dt * (A*w4) # TODO: what should be the time?
   # Krylov for the first remainder d4
-  B2 = [zeros(d4) d4]
+  B2 = [zero(d4) d4]
   K2 = phiv_timestep(ts, A, B2; kwargs...)
   @inbounds for i = 1:3
     K2[:,i] ./= ts[i]
@@ -605,7 +605,7 @@ function perform_step!(integrator, cache::Exp4ConstantCache, repeat_step=false)
   u7 = uprev + dt * w7
   d7 = f(u7, p, t+dt) - f0 - dt * (A*w7)
   # Krylov for the second remainder d7
-  B3 = [zeros(d7) d7]
+  B3 = [zero(d7) d7]
   k7 = phiv_timestep(ts[1], A, B3; kwargs...)
   k7 ./= ts[1]
   # Update u
@@ -674,14 +674,14 @@ function perform_step!(integrator, cache::EPIRK4s3AConstantCache, repeat_step=fa
   kwargs = [(:tol, integrator.opts.reltol), (:iop, alg.iop), (:norm, integrator.opts.internalnorm), (:adaptive, true)]
 
   # Compute U2 and U3 vertically
-  K = phiv_timestep([dt/2, 2dt/3], A, [zeros(f0) f0]; kwargs...)
+  K = phiv_timestep([dt/2, 2dt/3], A, [zero(f0) f0]; kwargs...)
   U2 = uprev + K[:, 1] 
   U3 = uprev + K[:, 2]
   R2 = f(U2, p, t + dt/2)  - f0 - A*K[:, 1] # remainder of U2
   R3 = f(U3, p, t + 2dt/3) - f0 - A*K[:, 2] # remainder of U3
   
   # Update u (horizontally)
-  B = zeros(eltype(f0), length(f0), 5)
+  B = zero(eltype(f0), length(f0), 5)
   B[:, 2] = f0
   B[:, 4] = (32R2 - 13.5R3) / dt^2
   B[:, 5] = (-144R2 + 81R3) / dt^3
@@ -737,7 +737,7 @@ function perform_step!(integrator, cache::EPIRK4s3BConstantCache, repeat_step=fa
   kwargs = [(:tol, integrator.opts.reltol), (:iop, alg.iop), (:norm, integrator.opts.internalnorm), (:adaptive, true)]
 
   # Compute U2 and U3 vertically
-  K = phiv_timestep([dt/2, 3dt/4], A, [zeros(f0) zeros(f0) f0]; kwargs...)
+  K = phiv_timestep([dt/2, 3dt/4], A, [zero(f0) zero(f0) f0]; kwargs...)
   K[:, 1] .*= 8 / (3*dt)
   K[:, 2] .*= 16 / (9*dt)
   U2 = uprev + K[:, 1]
@@ -746,7 +746,7 @@ function perform_step!(integrator, cache::EPIRK4s3BConstantCache, repeat_step=fa
   R3 = f(U3, p, t + 3dt/4) - f0 - A*K[:, 2] # remainder of U3
   
   # Update u (horizontally)
-  B = zeros(eltype(f0), length(f0), 5)
+  B = zero(eltype(f0), length(f0), 5)
   B[:, 2] = f0
   B[:, 4] = (54R2 - 16R3) / dt^2
   B[:, 5] = (-324R2 + 144R3) / dt^3

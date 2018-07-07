@@ -22,9 +22,9 @@ function alg_cache(alg::AN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   N = 5
   z = [zero(rate_prototype) for i in 1:N+1]
   Δ = u
-  l = zeros(tTypeNoUnits,N+1); m = zeros(l)
+  l = fill(zero(tTypeNoUnits),N+1); m = zero(l)
   c_LTE = c_conv = zero(tTypeNoUnits)
-  dts = zeros(typeof(dt), 6)
+  dts = fill(zero(typeof(dt)), 6)
   tsit5tab = Tsit5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   AN5ConstantCache(z,l,m,c_LTE,c_conv,dts,Δ,tsit5tab,1)
 end
@@ -62,25 +62,25 @@ function alg_cache(alg::AN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   # Tsit5
   tab = Tsit5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   # Cannot alias pointers, since we have to use `k`s to start the Nordsieck vector
-  k1 = zeros(rate_prototype); k2 = zeros(rate_prototype)
-  k3 = zeros(rate_prototype); k4 = zeros(rate_prototype)
-  k5 = zeros(rate_prototype)
-  k6 = zeros(rate_prototype); k7 = zeros(rate_prototype)
+  k1 = zero(rate_prototype); k2 = zero(rate_prototype)
+  k3 = zero(rate_prototype); k4 = zero(rate_prototype)
+  k5 = zero(rate_prototype)
+  k6 = zero(rate_prototype); k7 = zero(rate_prototype)
   utilde = similar(u,axes(u))
   atmp = similar(u,uEltypeNoUnits,axes(u)); tmp = similar(u)
   tsit5cache = Tsit5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp,tab)
   #################################################
   N = 5
   Δ = similar(atmp)
-  l = zeros(tTypeNoUnits,N+1); m = zeros(l)
+  l = fill(zero(tTypeNoUnits),N+1); m = zero(l)
   c_LTE = c_conv = zero(tTypeNoUnits)
-  dts = zeros(typeof(dt), 6)
-  fsalfirst = zeros(rate_prototype)
-  z = [zeros(rate_prototype) for i in 1:N+1]
+  dts = fill(zero(typeof(dt)), 6)
+  fsalfirst = zero(rate_prototype)
+  z = [zero(rate_prototype) for i in 1:N+1]
   for i in 1:N+1
-    z[i] = zeros(rate_prototype)
+    z[i] = zero(rate_prototype)
   end
-  ratetmp = zeros(rate_prototype)
+  ratetmp = zero(rate_prototype)
 
   AN5Cache(u,uprev,tmp,Δ,atmp,fsalfirst,ratetmp,
            z,l,m,c_LTE,c_conv,dts,
@@ -129,9 +129,9 @@ function alg_cache(alg::JVODE,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   N = 12
   z = [rate_prototype for i in 1:N+1]
   Δ = u
-  l = zeros(tTypeNoUnits, N+1); m = zeros(l)
+  l = fill(zero(tTypeNoUnits), N+1); m = zero(l)
   c_LTE₊₁ = c_LTE = c_LTE₋₁ = c_conv = c_𝒟 = prev_𝒟 = zero(tTypeNoUnits)
-  dts = zeros(typeof(dt),N+1)
+  dts = fill(zero(typeof(dt)),N+1)
   tsit5tab = Tsit5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   η = zero(dt/dt)
   JVODEConstantCache(z,l,m,
@@ -192,28 +192,28 @@ function alg_cache(alg::JVODE,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   # Tsit5
   # Cannot alias pointers, since we have to use `k`s to start the Nordsieck vector
   tab = Tsit5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
-  k1 = zeros(rate_prototype); k2 = zeros(rate_prototype); k3 = zeros(rate_prototype); k4 = zeros(rate_prototype)
-  k5 = zeros(rate_prototype); k6 = zeros(rate_prototype); k7 = zeros(rate_prototype)
+  k1 = zero(rate_prototype); k2 = zero(rate_prototype); k3 = zero(rate_prototype); k4 = zero(rate_prototype)
+  k5 = zero(rate_prototype); k6 = zero(rate_prototype); k7 = zero(rate_prototype)
   utilde = similar(u,axes(u))
   atmp = similar(u,uEltypeNoUnits,axes(u)); tmp = similar(u)
   tsit5cache = Tsit5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp,tab)
   #################################################
-  fsalfirst = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
   N = 12
-  z = [zeros(rate_prototype) for i in 1:N+1]
+  z = [zero(rate_prototype) for i in 1:N+1]
   Δ = similar(u,uEltypeNoUnits,axes(u))
-  l = zeros(tTypeNoUnits, N+1); m = zeros(l)
+  l = fill(zero(tTypeNoUnits), N+1); m = zero(l)
   c_LTE₊₁ = c_LTE = c_LTE₋₁ = c_conv = c_𝒟 = prev_𝒟 = zero(tTypeNoUnits)
-  dts = zeros(typeof(dt),N+1)
+  dts = fill(zero(typeof(dt)),N+1)
   η = zero(dt/dt)
   #################################################
   # Nordsieck Vector
-  z[1] = zeros(rate_prototype); z[2] = zeros(rate_prototype); z[3] = zeros(rate_prototype);
-  z[4] = zeros(rate_prototype); z[5] = zeros(rate_prototype); z[6] = zeros(rate_prototype);
-  z[7] = zeros(rate_prototype); z[8] = zeros(rate_prototype); z[9] = zeros(rate_prototype);
-  z[10] = zeros(rate_prototype); z[11] = zeros(rate_prototype); z[12] = zeros(rate_prototype);
-  z[13] = zeros(rate_prototype)
-  ratetmp = zeros(rate_prototype)
+  z[1] = zero(rate_prototype); z[2] = zero(rate_prototype); z[3] = zero(rate_prototype);
+  z[4] = zero(rate_prototype); z[5] = zero(rate_prototype); z[6] = zero(rate_prototype);
+  z[7] = zero(rate_prototype); z[8] = zero(rate_prototype); z[9] = zero(rate_prototype);
+  z[10] = zero(rate_prototype); z[11] = zero(rate_prototype); z[12] = zero(rate_prototype);
+  z[13] = zero(rate_prototype)
+  ratetmp = zero(rate_prototype)
   #################################################
   JVODECache(u,uprev,tmp,fsalfirst,ratetmp,
              z, l, m,

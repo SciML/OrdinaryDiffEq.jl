@@ -29,11 +29,11 @@ du_cache(c::Feagin10Cache) = (c.fsalfirst,c.k2,c.k3,c.k4,c.k5,c.k6,c.k7,c.k8,c.k
 
 function alg_cache(alg::Feagin10,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tab = Feagin10ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
-  k1 = zeros(rate_prototype); k2 = zeros(rate_prototype); k3 = zeros(rate_prototype); k4 = zeros(rate_prototype); k5 = zeros(rate_prototype)
-  k6 = zeros(rate_prototype); k7 = zeros(rate_prototype); k8 = zeros(rate_prototype); k9 = zeros(rate_prototype); k10 = zeros(rate_prototype)
-  k11 = zeros(rate_prototype); k12 = zeros(rate_prototype); k13 = zeros(rate_prototype); k14 = zeros(rate_prototype)
-  k15 = zeros(rate_prototype); k16 = zeros(rate_prototype); k17 = zeros(rate_prototype)
-  tmp = similar(u); atmp = similar(u,uEltypeNoUnits,axes(u)); k = zeros(rate_prototype)
+  k1 = zero(rate_prototype); k2 = zero(rate_prototype); k3 = zero(rate_prototype); k4 = zero(rate_prototype); k5 = zero(rate_prototype)
+  k6 = zero(rate_prototype); k7 = zero(rate_prototype); k8 = zero(rate_prototype); k9 = zero(rate_prototype); k10 = zero(rate_prototype)
+  k11 = zero(rate_prototype); k12 = zero(rate_prototype); k13 = zero(rate_prototype); k14 = zero(rate_prototype)
+  k15 = zero(rate_prototype); k16 = zero(rate_prototype); k17 = zero(rate_prototype)
+  tmp = similar(u); atmp = similar(u,uEltypeNoUnits,axes(u)); k = zero(rate_prototype)
 
   Feagin10Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,k17,tmp,atmp,k,tab)
 end
@@ -79,13 +79,13 @@ du_cache(c::Feagin12Cache) = (c.fsalfirst,c.k2,c.k3,c.k4,c.k5,c.k6,c.k7,c.k8,c.k
 
 function alg_cache(alg::Feagin12,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tab = Feagin12ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
-  k1 = zeros(rate_prototype); k2 = zeros(rate_prototype); k3 = zeros(rate_prototype); k4 = zeros(rate_prototype); k5 = zeros(rate_prototype)
-  k6 = zeros(rate_prototype); k7 = zeros(rate_prototype); k8 = zeros(rate_prototype); k9 = zeros(rate_prototype); k10 = zeros(rate_prototype)
-  k11 = zeros(rate_prototype); k12 = zeros(rate_prototype); k13 = zeros(rate_prototype); k14 = zeros(rate_prototype)
-  k15 = zeros(rate_prototype); k16 = zeros(rate_prototype); k17 = zeros(rate_prototype); k18 = zeros(rate_prototype)
-  k19 = zeros(rate_prototype); k20 = zeros(rate_prototype); k21 = zeros(rate_prototype); k22 = zeros(rate_prototype)
-  k23 = zeros(rate_prototype); k24 = zeros(rate_prototype); k25 = zeros(rate_prototype)
-  tmp = similar(u); atmp = similar(u,uEltypeNoUnits,axes(u)); k = zeros(rate_prototype)
+  k1 = zero(rate_prototype); k2 = zero(rate_prototype); k3 = zero(rate_prototype); k4 = zero(rate_prototype); k5 = zero(rate_prototype)
+  k6 = zero(rate_prototype); k7 = zero(rate_prototype); k8 = zero(rate_prototype); k9 = zero(rate_prototype); k10 = zero(rate_prototype)
+  k11 = zero(rate_prototype); k12 = zero(rate_prototype); k13 = zero(rate_prototype); k14 = zero(rate_prototype)
+  k15 = zero(rate_prototype); k16 = zero(rate_prototype); k17 = zero(rate_prototype); k18 = zero(rate_prototype)
+  k19 = zero(rate_prototype); k20 = zero(rate_prototype); k21 = zero(rate_prototype); k22 = zero(rate_prototype)
+  k23 = zero(rate_prototype); k24 = zero(rate_prototype); k25 = zero(rate_prototype)
+  tmp = similar(u); atmp = similar(u,uEltypeNoUnits,axes(u)); k = zero(rate_prototype)
 
   Feagin12Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,k17,k18,k19,k20,k21,k22,k23,k24,k25,tmp,atmp,k,tab)
 end
@@ -143,16 +143,16 @@ du_cache(c::Feagin14Cache) = (c.fsalfirst,c.k2,c.k3,c.k4,c.k5,c.k6,c.k7,c.k8,c.k
 
 function alg_cache(alg::Feagin14,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tab = Feagin14ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
-  k1 = zeros(rate_prototype); k2 = zeros(rate_prototype); k3 = zeros(rate_prototype); k4 = zeros(rate_prototype); k5 = zeros(rate_prototype)
-  k6 = zeros(rate_prototype); k7 = zeros(rate_prototype); k8 = zeros(rate_prototype); k9 = zeros(rate_prototype); k10 = zeros(rate_prototype)
-  k11 = zeros(rate_prototype); k12 = zeros(rate_prototype); k13 = zeros(rate_prototype); k14 = zeros(rate_prototype)
-  k15 = zeros(rate_prototype); k16 = zeros(rate_prototype); k17 = zeros(rate_prototype); k18 = zeros(rate_prototype)
-  k19 = zeros(rate_prototype); k20 = zeros(rate_prototype); k21 = zeros(rate_prototype); k22 = zeros(rate_prototype)
-  k23 = zeros(rate_prototype); k24 = zeros(rate_prototype); k25 = zeros(rate_prototype)
-  k26 = zeros(rate_prototype); k27 = zeros(rate_prototype); k28 = zeros(rate_prototype)
-  k29 = zeros(rate_prototype); k30 = zeros(rate_prototype); k31 = zeros(rate_prototype); k32 = zeros(rate_prototype)
-  k33 = zeros(rate_prototype); k34 = zeros(rate_prototype); k35 = zeros(rate_prototype)
-  tmp = similar(u); atmp = similar(u,uEltypeNoUnits,axes(u)); k = zeros(rate_prototype)
+  k1 = zero(rate_prototype); k2 = zero(rate_prototype); k3 = zero(rate_prototype); k4 = zero(rate_prototype); k5 = zero(rate_prototype)
+  k6 = zero(rate_prototype); k7 = zero(rate_prototype); k8 = zero(rate_prototype); k9 = zero(rate_prototype); k10 = zero(rate_prototype)
+  k11 = zero(rate_prototype); k12 = zero(rate_prototype); k13 = zero(rate_prototype); k14 = zero(rate_prototype)
+  k15 = zero(rate_prototype); k16 = zero(rate_prototype); k17 = zero(rate_prototype); k18 = zero(rate_prototype)
+  k19 = zero(rate_prototype); k20 = zero(rate_prototype); k21 = zero(rate_prototype); k22 = zero(rate_prototype)
+  k23 = zero(rate_prototype); k24 = zero(rate_prototype); k25 = zero(rate_prototype)
+  k26 = zero(rate_prototype); k27 = zero(rate_prototype); k28 = zero(rate_prototype)
+  k29 = zero(rate_prototype); k30 = zero(rate_prototype); k31 = zero(rate_prototype); k32 = zero(rate_prototype)
+  k33 = zero(rate_prototype); k34 = zero(rate_prototype); k35 = zero(rate_prototype)
+  tmp = similar(u); atmp = similar(u,uEltypeNoUnits,axes(u)); k = zero(rate_prototype)
 
   Feagin14Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,
                 k17,k18,k19,k20,k21,k22,k23,k24,k25,k26,k27,k28,k29,k30,

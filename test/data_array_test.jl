@@ -57,7 +57,7 @@ end
 
   sol(1.5:0.5:2.5)
 
-  @test [sol[i].f1 for i in eachindex(sol)] == [zeros(9);1.5*ones(5);-1.5*ones(4)]
+  @test [sol[i].f1 for i in eachindex(sol)] == [fill(0., 9);1.5*ones(5);-1.5*ones(4)]
 
   A = diagm([0.3,0.6,0.9])
   B = [1 2 3].'
@@ -71,7 +71,7 @@ end
   end
 
   input = (x,p,t)->(1*one(t)≤t≤2*one(t) ? [one(t)] : [zero(t)])
-  prob = DiscreteProblem((dx,x,p,t)->mysystem(t,x,dx,p,input), SimType2(zeros(3), zeros(1), zeros(1)), (0//1,4//1))
+  prob = DiscreteProblem((dx,x,p,t)->mysystem(t,x,dx,p,input), SimType2(fill(0., 3), fill(0., 1), fill(0., 1)), (0//1,4//1))
   sln = solve(prob, FunctionMap(scale_by_time=false), dt = 1//10)
 
   u1 = [sln[idx].u for idx in 1:length(sln)]

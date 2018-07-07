@@ -9,10 +9,10 @@ print_results(x) = if PRINT_TESTS; @printf("%s \n", x) end
 
 # points and storage arrays used in the interpolation tests
 const interpolation_points = 0:1//2^(4):1
-const interpolation_results_1d = zeros(typeof(prob_ode_linear.u0), length(interpolation_points))
+const interpolation_results_1d = fill(zero(typeof(prob_ode_linear.u0)), length(interpolation_points))
 const interpolation_results_2d = Vector{typeof(prob_ode_2Dlinear.u0)}(length(interpolation_points))
 for idx in eachindex(interpolation_results_2d)
-  interpolation_results_2d[idx] = zeros(prob_ode_2Dlinear.u0)
+  interpolation_results_2d[idx] = zero(prob_ode_2Dlinear.u0)
 end
 
 f_linear_inplace = (du,u,p,t) -> begin @. du = 1.01 * u end
@@ -20,7 +20,7 @@ f_linear_inplace = (du,u,p,t) -> begin @. du = 1.01 * u end
 prob_ode_linear_inplace = ODEProblem(f_linear_inplace, [0.5], (0.,1.))
 const interpolation_results_1d_inplace = Vector{typeof(prob_ode_linear_inplace.u0)}(length(interpolation_points))
 for idx in eachindex(interpolation_results_1d_inplace)
-  interpolation_results_1d_inplace[idx] = zeros(prob_ode_linear_inplace.u0)
+  interpolation_results_1d_inplace[idx] = zero(prob_ode_linear_inplace.u0)
 end
 
 const deriv_test_points = range(0, stop=1, length=5)

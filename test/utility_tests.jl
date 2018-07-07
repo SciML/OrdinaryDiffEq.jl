@@ -1,11 +1,11 @@
 using OrdinaryDiffEq: phi, phi, phiv, phiv_timestep, expv, expv_timestep, arnoldi, getH, getV
-using LinearAlgebra
+using LinearAlgebra, SparseArrays
 
 @testset "Exponential Utilities" begin
   # Scalar phi
   K = 4
   z = 0.1
-  P = zeros(K+1); P[1] = exp(z)
+  P = fill(0., K+1); P[1] = exp(z)
   for i = 1:K
     P[i+1] = (P[i] - 1/factorial(i-1))/z
   end
@@ -27,7 +27,7 @@ using LinearAlgebra
   b = randn(n)
   @test exp(t * A) * b ≈ expv(t, A, b; m=m)
   P = phi(t * A, K)
-  W = zeros(n, K+1)
+  W = fill(0., n, K+1)
   for i = 1:K+1
     W[:,i] = P[i] * b
   end

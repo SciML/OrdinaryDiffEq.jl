@@ -5,6 +5,7 @@ os:
 #  - osx
 julia:
   - 0.7
+  - nightly
 env:
   - GROUP=Regression
   - GROUP=Integrators

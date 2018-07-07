@@ -27,13 +27,13 @@ du_cache(c::ImplicitEulerCache)   = (c.k,c.fsalfirst)
 function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
-  du1 = zeros(rate_prototype)
-  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  du1 = zero(rate_prototype)
+  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
   W = similar(J)
   z = similar(u,axes(u))
   dz = similar(u,axes(u)); tmp = similar(u,axes(u)); b = similar(u,axes(u))
-  fsalfirst = zeros(rate_prototype)
-  k = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  k = zero(rate_prototype)
   atmp = similar(u,uEltypeNoUnits,axes(u))
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
@@ -137,14 +137,14 @@ du_cache(c::ImplicitMidpointCache)   = (c.k,c.fsalfirst)
 function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
-  du1 = zeros(rate_prototype)
-  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  du1 = zero(rate_prototype)
+  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
   W = similar(J)
   z = similar(u,axes(u))
   dz = similar(u,axes(u))
   tmp = similar(u); b = similar(u,axes(u))
-  fsalfirst = zeros(rate_prototype)
-  k = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  k = zero(rate_prototype)
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   linsolve = alg.linsolve(Val{:init},uf,u)
@@ -230,15 +230,15 @@ du_cache(c::TrapezoidCache)   = (c.k,c.fsalfirst)
 function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
-  du1 = zeros(rate_prototype)
-  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  du1 = zero(rate_prototype)
+  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
   W = similar(J)
   z = similar(u,axes(u))
   dz = similar(u,axes(u))
   tmp = similar(u); b = similar(u,axes(u));
   atmp = similar(u,uEltypeNoUnits,axes(u))
-  fsalfirst = zeros(rate_prototype)
-  k = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  k = zero(rate_prototype)
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   linsolve = alg.linsolve(Val{:init},uf,u)
@@ -326,14 +326,14 @@ du_cache(c::TRBDF2Cache)   = (c.k,c.fsalfirst)
 function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
-  du1 = zeros(rate_prototype)
-  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  du1 = zero(rate_prototype)
+  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
   W = similar(J)
   zprev = similar(u,axes(u));
   zᵧ = similar(u,axes(u)); z = similar(u,axes(u))
   dz = similar(u,axes(u))
-  fsalfirst = zeros(rate_prototype)
-  k = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  k = zero(rate_prototype)
   tmp = similar(u); b = similar(u,axes(u));
   atmp = similar(u,uEltypeNoUnits,axes(u))
 
@@ -420,14 +420,14 @@ du_cache(c::SDIRK2Cache)   = (c.k,c.fsalfirst)
 function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
-  du1 = zeros(rate_prototype)
-  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  du1 = zero(rate_prototype)
+  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
   W = similar(J)
   z₁ = similar(u,axes(u));
   z₂ = similar(u,axes(u))
   dz = similar(u,axes(u))
-  fsalfirst = zeros(rate_prototype)
-  k = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  k = zero(rate_prototype)
   tmp = similar(u); b = similar(u,axes(u));
   atmp = similar(u,uEltypeNoUnits,axes(u))
 
@@ -513,14 +513,14 @@ du_cache(c::SSPSDIRK2Cache)   = (c.k,c.fsalfirst)
 function alg_cache(alg::SSPSDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
-  du1 = zeros(rate_prototype)
-  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  du1 = zero(rate_prototype)
+  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
   W = similar(J)
   z₁ = similar(u,axes(u));
   z₂ = similar(u,axes(u))
   dz = similar(u,axes(u))
-  fsalfirst = zeros(rate_prototype)
-  k = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  k = zero(rate_prototype)
   tmp = similar(u); b = similar(u,axes(u));
   atmp = similar(u,uEltypeNoUnits,axes(u))
 
@@ -611,14 +611,14 @@ du_cache(c::Kvaerno3Cache)   = (c.k,c.fsalfirst)
 function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
-  du1 = zeros(rate_prototype)
-  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  du1 = zero(rate_prototype)
+  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
   W = similar(J)
   z₁ = similar(u,axes(u)); z₂ = similar(u,axes(u));
   z₃ = similar(u,axes(u)); z₄ = similar(u,axes(u))
   dz = similar(u,axes(u))
-  fsalfirst = zeros(rate_prototype)
-  k = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  k = zero(rate_prototype)
   tmp = similar(u); b = similar(u,axes(u));
   atmp = similar(u,uEltypeNoUnits,axes(u))
 
@@ -712,15 +712,15 @@ du_cache(c::Cash4Cache)   = (c.k,c.fsalfirst)
 function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
-  du1 = zeros(rate_prototype)
-  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  du1 = zero(rate_prototype)
+  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
   W = similar(J)
   z₁ = similar(u,axes(u)); z₂ = similar(u,axes(u));
   z₃ = similar(u,axes(u)); z₄ = similar(u,axes(u))
   z₅ = similar(u,axes(u))
   dz = similar(u,axes(u))
-  fsalfirst = zeros(rate_prototype)
-  k = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  k = zero(rate_prototype)
   tmp = similar(u); b = similar(u,axes(u));
   atmp = similar(u,uEltypeNoUnits,axes(u))
 
@@ -818,15 +818,15 @@ du_cache(c::Hairer4Cache)   = (c.k,c.fsalfirst)
 function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
-  du1 = zeros(rate_prototype)
-  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  du1 = zero(rate_prototype)
+  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
   W = similar(J)
   z₁ = similar(u,axes(u)); z₂ = similar(u,axes(u));
   z₃ = similar(u,axes(u)); z₄ = similar(u,axes(u))
   z₅ = similar(u,axes(u))
   dz = similar(u,axes(u))
-  fsalfirst = zeros(rate_prototype)
-  k = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  k = zero(rate_prototype)
   tmp = similar(u); b = similar(u,axes(u));
   atmp = similar(u,uEltypeNoUnits,axes(u))
 

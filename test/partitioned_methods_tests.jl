@@ -2,7 +2,7 @@ using OrdinaryDiffEq, Test, RecursiveArrayTools, DiffEqDevTools
 
 gc()
 
-u0 = zeros(2)
+u0 = fill(0., 2)
 v0 = ones(2)
 f1 = function (dv,v,u,p,t)
   dv .= -u

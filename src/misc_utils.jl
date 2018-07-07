@@ -6,7 +6,7 @@ struct DiffCache{T<:AbstractArray, S<:AbstractArray}
 end
 
 Base.@pure function DiffCache(T, size, ::Type{Val{chunk_size}}) where chunk_size
-    DiffCache(zeros(T, size...), zeros(Dual{typeof(ForwardDiff.Tag(DiffEqNLSolveTag(),T)),T,chunk_size}, size...))
+  DiffCache(fill(zero(T), size...), fill(zero(Dual{typeof(ForwardDiff.Tag(DiffEqNLSolveTag(),T)),T,chunk_size}), size...))
 end
 
 Base.@pure DiffCache(u::AbstractArray) = DiffCache(eltype(u),size(u),Val{ForwardDiff.pickchunksize(length(u))})

@@ -14,8 +14,8 @@ du_cache(c::LinearImplicitEulerCache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::LinearImplicitEuler,u,rate_prototype,uEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  W = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
-  k = zeros(rate_prototype); fsalfirst = zeros(rate_prototype)
+  W = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+  k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits,axes(u))
   LinearImplicitEulerCache(u,uprev,uprev2,fsalfirst,W,k,tmp,atmp)
 end
@@ -43,8 +43,8 @@ du_cache(c::MidpointSplittingCache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::MidpointSplitting,u,rate_prototype,uEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  W = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
-  k = zeros(rate_prototype); fsalfirst = zeros(rate_prototype)
+  W = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+  k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
   MidpointSplittingCache(u,uprev,uprev2,similar(u),fsalfirst,W,k)
 end
 

@@ -52,15 +52,15 @@ du_cache(c::ExplicitRKCache) = (c.kk...,)
 function alg_cache(alg::ExplicitRK,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   kk = Vector{typeof(rate_prototype)}(0)
   for i = 1:alg.tableau.stages
-    push!(kk,zeros(rate_prototype))
+    push!(kk,zero(rate_prototype))
   end
   fsalfirst = kk[1]
   if isfsal(alg.tableau)
     fsallast = kk[end]
   else
-    fsallast = zeros(rate_prototype)
+    fsallast = zero(rate_prototype)
   end
-  utilde = zeros(rate_prototype)
+  utilde = zero(rate_prototype)
   tmp = similar(u)
   atmp = similar(u,uEltypeNoUnits,axes(u))
   tab = ExplicitRKConstantCache(alg.tableau,rate_prototype)

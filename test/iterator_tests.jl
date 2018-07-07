@@ -60,7 +60,7 @@ B = integrator([1.0;2.0],idxs=1:2:5)
 integrator(A[1],0.5)
 @test A[1] == integrator(0.5)
 
-A = zeros(3)
+A = fill(0., 3)
 integrator(A,0.6,idxs=1:2:5)
 @test A == integrator(0.6;idxs=1:2:5)
 

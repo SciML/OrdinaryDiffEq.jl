@@ -70,20 +70,20 @@ jac_cache(c::Rosenbrock32Cache) = (c.J,c.W)
 vecu_cache(c::Rosenbrock32Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
 
 function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  k₁ = zeros(rate_prototype)
-  k₂ = zeros(rate_prototype)
-  k₃ = zeros(rate_prototype)
-  du1 = zeros(rate_prototype)
-  du2 = zeros(rate_prototype)
+  k₁ = zero(rate_prototype)
+  k₂ = zero(rate_prototype)
+  k₃ = zero(rate_prototype)
+  du1 = zero(rate_prototype)
+  du2 = zero(rate_prototype)
   # f₀ = similar(u) fsalfirst
-  f₁ = zeros(rate_prototype)
+  f₁ = zero(rate_prototype)
   vectmp = vec(similar(u,axes(u)))
   vectmp2 = vec(similar(u,axes(u)))
   vectmp3 = vec(similar(u,axes(u)))
-  fsalfirst = zeros(rate_prototype)
-  fsallast = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
   W = similar(J);
   tmp = similar(u,axes(u))
   tab = Rosenbrock23ConstantCache(uEltypeNoUnits,identity,identity)
@@ -102,20 +102,20 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,uBottomElty
 end
 
 function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  k₁ = zeros(rate_prototype)
-  k₂ = zeros(rate_prototype)
-  k₃ = zeros(rate_prototype)
-  du1 = zeros(rate_prototype)
-  du2 = zeros(rate_prototype)
+  k₁ = zero(rate_prototype)
+  k₂ = zero(rate_prototype)
+  k₃ = zero(rate_prototype)
+  du1 = zero(rate_prototype)
+  du2 = zero(rate_prototype)
   # f₀ = similar(u) fsalfirst
-  f₁ = zeros(rate_prototype)
+  f₁ = zero(rate_prototype)
   vectmp = vec(similar(u,axes(u)))
   vectmp2 = vec(similar(u,axes(u)))
   vectmp3 = vec(similar(u,axes(u)))
-  fsalfirst = zeros(rate_prototype)
-  fsallast = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
   W = similar(J); tmp = similar(u,axes(u))
   tab = Rosenbrock32ConstantCache(uEltypeNoUnits,identity,identity)
 
@@ -209,17 +209,17 @@ jac_cache(c::Rosenbrock33Cache) = (c.J,c.W)
 vecu_cache(c::Rosenbrock33Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
 
 function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  du = zeros(rate_prototype)
-  du1 = zeros(rate_prototype)
-  du2 = zeros(rate_prototype)
+  du = zero(rate_prototype)
+  du1 = zero(rate_prototype)
+  du2 = zero(rate_prototype)
   vectmp = vec(similar(u,axes(u)))
   vectmp2 = vec(similar(u,axes(u)))
   vectmp3 = vec(similar(u,axes(u)))
   vectmp4 = vec(similar(u,axes(u)))
-  fsalfirst = zeros(rate_prototype)
-  fsallast = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
   W = similar(J);
   tmp = similar(u,axes(u))
   tab = ROS3PConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
@@ -273,17 +273,17 @@ jac_cache(c::Rosenbrock34Cache) = (c.J,c.W)
 vecu_cache(c::Rosenbrock34Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
 
 function alg_cache(alg::Rodas3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  du = zeros(rate_prototype)
-  du1 = zeros(rate_prototype)
-  du2 = zeros(rate_prototype)
+  du = zero(rate_prototype)
+  du1 = zero(rate_prototype)
+  du2 = zero(rate_prototype)
   vectmp = vec(similar(u,axes(u)))
   vectmp2 = vec(similar(u,axes(u)))
   vectmp3 = vec(similar(u,axes(u)))
   vectmp4 = vec(similar(u,axes(u)))
-  fsalfirst = zeros(rate_prototype)
-  fsallast = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
   W = similar(J);
   tmp = similar(u,axes(u))
   tab = Rodas3ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
@@ -353,17 +353,17 @@ jac_cache(c::Rosenbrock4Cache) = (c.J,c.W)
 vecu_cache(c::Rosenbrock4Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
 
 function alg_cache(alg::RosShamp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  du = zeros(rate_prototype)
-  du1 = zeros(rate_prototype)
-  du2 = zeros(rate_prototype)
+  du = zero(rate_prototype)
+  du1 = zero(rate_prototype)
+  du2 = zero(rate_prototype)
   vectmp = vec(similar(u,axes(u)))
   vectmp2 = vec(similar(u,axes(u)))
   vectmp3 = vec(similar(u,axes(u)))
   vectmp4 = vec(similar(u,axes(u)))
-  fsalfirst = zeros(rate_prototype)
-  fsallast = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
   W = similar(J);
   tmp = similar(u,axes(u))
   tab = RosShamp4ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
@@ -387,17 +387,17 @@ function alg_cache(alg::RosShamp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
 end
 
 function alg_cache(alg::Veldd4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  du = zeros(rate_prototype)
-  du1 = zeros(rate_prototype)
-  du2 = zeros(rate_prototype)
+  du = zero(rate_prototype)
+  du1 = zero(rate_prototype)
+  du2 = zero(rate_prototype)
   vectmp = vec(similar(u,axes(u)))
   vectmp2 = vec(similar(u,axes(u)))
   vectmp3 = vec(similar(u,axes(u)))
   vectmp4 = vec(similar(u,axes(u)))
-  fsalfirst = zeros(rate_prototype)
-  fsallast = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
   W = similar(J);
   tmp = similar(u,axes(u))
   tab = Veldd4ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
@@ -421,17 +421,17 @@ function alg_cache(alg::Veldd4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
 end
 
 function alg_cache(alg::Velds4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  du = zeros(rate_prototype)
-  du1 = zeros(rate_prototype)
-  du2 = zeros(rate_prototype)
+  du = zero(rate_prototype)
+  du1 = zero(rate_prototype)
+  du2 = zero(rate_prototype)
   vectmp = vec(similar(u,axes(u)))
   vectmp2 = vec(similar(u,axes(u)))
   vectmp3 = vec(similar(u,axes(u)))
   vectmp4 = vec(similar(u,axes(u)))
-  fsalfirst = zeros(rate_prototype)
-  fsallast = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
   W = similar(J);
   tmp = similar(u,axes(u))
   tab = Velds4ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
@@ -455,17 +455,17 @@ function alg_cache(alg::Velds4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
 end
 
 function alg_cache(alg::GRK4T,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  du = zeros(rate_prototype)
-  du1 = zeros(rate_prototype)
-  du2 = zeros(rate_prototype)
+  du = zero(rate_prototype)
+  du1 = zero(rate_prototype)
+  du2 = zero(rate_prototype)
   vectmp = vec(similar(u,axes(u)))
   vectmp2 = vec(similar(u,axes(u)))
   vectmp3 = vec(similar(u,axes(u)))
   vectmp4 = vec(similar(u,axes(u)))
-  fsalfirst = zeros(rate_prototype)
-  fsallast = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
   W = similar(J);
   tmp = similar(u,axes(u))
   tab = GRK4TConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
@@ -489,17 +489,17 @@ function alg_cache(alg::GRK4T,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
 end
 
 function alg_cache(alg::GRK4A,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  du = zeros(rate_prototype)
-  du1 = zeros(rate_prototype)
-  du2 = zeros(rate_prototype)
+  du = zero(rate_prototype)
+  du1 = zero(rate_prototype)
+  du2 = zero(rate_prototype)
   vectmp = vec(similar(u,axes(u)))
   vectmp2 = vec(similar(u,axes(u)))
   vectmp3 = vec(similar(u,axes(u)))
   vectmp4 = vec(similar(u,axes(u)))
-  fsalfirst = zeros(rate_prototype)
-  fsallast = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
   W = similar(J);
   tmp = similar(u,axes(u))
   tab = GRK4AConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
@@ -523,17 +523,17 @@ function alg_cache(alg::GRK4A,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
 end
 
 function alg_cache(alg::Ros4LStab,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  du = zeros(rate_prototype)
-  du1 = zeros(rate_prototype)
-  du2 = zeros(rate_prototype)
+  du = zero(rate_prototype)
+  du1 = zero(rate_prototype)
+  du2 = zero(rate_prototype)
   vectmp = vec(similar(u,axes(u)))
   vectmp2 = vec(similar(u,axes(u)))
   vectmp3 = vec(similar(u,axes(u)))
   vectmp4 = vec(similar(u,axes(u)))
-  fsalfirst = zeros(rate_prototype)
-  fsallast = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
   W = similar(J);
   tmp = similar(u,axes(u))
   tab = Ros4LStabConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
@@ -602,21 +602,21 @@ jac_cache(c::Rodas4Cache) = (c.J,c.W)
 vecu_cache(c::Rodas4Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
 
 function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  dense1 = zeros(rate_prototype)
-  dense2 = zeros(rate_prototype)
-  du = zeros(rate_prototype)
-  du1 = zeros(rate_prototype)
-  du2 = zeros(rate_prototype)
+  dense1 = zero(rate_prototype)
+  dense2 = zero(rate_prototype)
+  du = zero(rate_prototype)
+  du1 = zero(rate_prototype)
+  du2 = zero(rate_prototype)
   vectmp = vec(similar(u,axes(u)))
   vectmp2 = vec(similar(u,axes(u)))
   vectmp3 = vec(similar(u,axes(u)))
   vectmp4 = vec(similar(u,axes(u)))
   vectmp5 = vec(similar(u,axes(u)))
   vectmp6 = vec(similar(u,axes(u)))
-  fsalfirst = zeros(rate_prototype)
-  fsallast = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
   W = similar(J);
   tmp = similar(u,axes(u))
   tab = Rodas4ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
@@ -641,21 +641,21 @@ function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
 end
 
 function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  dense1 = zeros(rate_prototype)
-  dense2 = zeros(rate_prototype)
-  du = zeros(rate_prototype)
-  du1 = zeros(rate_prototype)
-  du2 = zeros(rate_prototype)
+  dense1 = zero(rate_prototype)
+  dense2 = zero(rate_prototype)
+  du = zero(rate_prototype)
+  du1 = zero(rate_prototype)
+  du2 = zero(rate_prototype)
   vectmp = vec(similar(u,axes(u)))
   vectmp2 = vec(similar(u,axes(u)))
   vectmp3 = vec(similar(u,axes(u)))
   vectmp4 = vec(similar(u,axes(u)))
   vectmp5 = vec(similar(u,axes(u)))
   vectmp6 = vec(similar(u,axes(u)))
-  fsalfirst = zeros(rate_prototype)
-  fsallast = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
   W = similar(J);
   tmp = similar(u,axes(u))
   tab = Rodas42ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
@@ -680,21 +680,21 @@ function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
 end
 
 function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  dense1 = zeros(rate_prototype)
-  dense2 = zeros(rate_prototype)
-  du = zeros(rate_prototype)
-  du1 = zeros(rate_prototype)
-  du2 = zeros(rate_prototype)
+  dense1 = zero(rate_prototype)
+  dense2 = zero(rate_prototype)
+  du = zero(rate_prototype)
+  du1 = zero(rate_prototype)
+  du2 = zero(rate_prototype)
   vectmp = vec(similar(u,axes(u)))
   vectmp2 = vec(similar(u,axes(u)))
   vectmp3 = vec(similar(u,axes(u)))
   vectmp4 = vec(similar(u,axes(u)))
   vectmp5 = vec(similar(u,axes(u)))
   vectmp6 = vec(similar(u,axes(u)))
-  fsalfirst = zeros(rate_prototype)
-  fsallast = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
   W = similar(J);
   tmp = similar(u,axes(u))
   tab = Rodas4PConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
@@ -766,11 +766,11 @@ jac_cache(c::Rosenbrock5Cache) = (c.J,c.W)
 vecu_cache(c::Rosenbrock5Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
 
 function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  dense1 = zeros(rate_prototype)
-  dense2 = zeros(rate_prototype)
-  du = zeros(rate_prototype)
-  du1 = zeros(rate_prototype)
-  du2 = zeros(rate_prototype)
+  dense1 = zero(rate_prototype)
+  dense2 = zero(rate_prototype)
+  du = zero(rate_prototype)
+  du1 = zero(rate_prototype)
+  du2 = zero(rate_prototype)
   vectmp = vec(similar(u,axes(u)))
   vectmp2 = vec(similar(u,axes(u)))
   vectmp3 = vec(similar(u,axes(u)))
@@ -779,10 +779,10 @@ function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   vectmp6 = vec(similar(u,axes(u)))
   vectmp7 = vec(similar(u,axes(u)))
   vectmp8 = vec(similar(u,axes(u)))
-  fsalfirst = zeros(rate_prototype)
-  fsallast = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
   W = similar(J);
   tmp = similar(u,axes(u))
   tab = Rodas5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))

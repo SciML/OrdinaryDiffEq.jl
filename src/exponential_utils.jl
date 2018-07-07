@@ -1,12 +1,12 @@
 # exponential_utils.jl
-# Contains functions related to the evaluation of scalar/matrix phi functions 
+# Contains functions related to the evaluation of scalar/matrix phi functions
 # that are used by the exponential integrators.
 #
 # TODO: write a version of `expm!` that is non-allocating.
 
 ###################################################
 # Dense algorithms
-#const exp! = Base.LinAlg.expm! # v0.7 style
+#const expm! = Base.LinAlg.expm! # v0.7 style
 
 """
     phi(z,k[;cache]) -> [phi_0(z),phi_1(z),...,phi_k(z)]
@@ -16,18 +16,18 @@ Compute the scalar phi functions for all orders up to k.
 The phi functions are defined as
 
 ```math
-\\varphi_0(z) = \\exp(z),\\quad \\varphi_k(z+1) = \\frac{\\varphi_k(z) - 1}{z} 
+\\varphi_0(z) = \\exp(z),\\quad \\varphi_k(z+1) = \\frac{\\varphi_k(z) - 1}{z}
 ```
 
-Instead of using the recurrence relation, which is numerically unstable, a 
-formula given by Sidje is used (Sidje, R. B. (1998). Expokit: a software 
-package for computing matrix exponentials. ACM Transactions on Mathematical 
+Instead of using the recurrence relation, which is numerically unstable, a
+formula given by Sidje is used (Sidje, R. B. (1998). Expokit: a software
+package for computing matrix exponentials. ACM Transactions on Mathematical
 Software (TOMS), 24(1), 130-156. Theorem 1).
 """
 function phi(z::T, k::Integer; cache=nothing) where {T <: Number}
   # Construct the matrix
   if cache == nothing
-    cache = zeros(T, k+1, k+1)
+    cache = fill(zero(T), k+1, k+1)
   else
     fill!(cache, zero(T))
   end
@@ -35,7 +35,7 @@ function phi(z::T, k::Integer; cache=nothing) where {T <: Number}
   for i = 1:k
     cache[i,i+1] = one(T)
   end
-  P = exp!(cache)
+  P = expm!(cache)
   return P[1,:]
 end
 
@@ -47,12 +47,12 @@ Compute the matrix-phi-vector products for small, dense `A`. `k`` >= 1.
 The phi functions are defined as
 
 ```math
-\\varphi_0(z) = \\exp(z),\\quad \\varphi_k(z+1) = \\frac{\\varphi_k(z) - 1}{z} 
+\\varphi_0(z) = \\exp(z),\\quad \\varphi_k(z+1) = \\frac{\\varphi_k(z) - 1}{z}
 ```
 
-Instead of using the recurrence relation, which is numerically unstable, a 
-formula given by Sidje is used (Sidje, R. B. (1998). Expokit: a software 
-package for computing matrix exponentials. ACM Transactions on Mathematical 
+Instead of using the recurrence relation, which is numerically unstable, a
+formula given by Sidje is used (Sidje, R. B. (1998). Expokit: a software
+package for computing matrix exponentials. ACM Transactions on Mathematical
 Software (TOMS), 24(1), 130-156. Theorem 1).
 """
 function phiv_dense(A, v, k; cache=nothing)
@@ -64,14 +64,14 @@ end
 
 Non-allocating version of `phiv_dense`.
 """
-function phiv_dense!(w::AbstractMatrix{T}, A::AbstractMatrix{T}, 
+function phiv_dense!(w::AbstractMatrix{T}, A::AbstractMatrix{T},
   v::AbstractVector{T}, k::Integer; cache=nothing) where {T <: Number}
   @assert size(w, 1) == size(A, 1) == size(A, 2) == length(v) "Dimension mismatch"
   @assert size(w, 2) == k+1 "Dimension mismatch"
   m = length(v)
   # Construct the extended matrix
   if cache == nothing
-    cache = zeros(T, m+k, m+k)
+    cache = fill(zero(T), m+k, m+k)
   else
     @assert size(cache) == (m+k, m+k) "Dimension mismatch"
     fill!(cache, zero(T))
@@ -81,7 +81,7 @@ function phiv_dense!(w::AbstractMatrix{T}, A::AbstractMatrix{T},
   for i = m+1:m+k-1
     cache[i, i+1] = one(T)
   end
-  P = exp!(cache)
+  P = expm!(cache)
   # Extract results
   @views A_mul_B!(w[:, 1], P[1:m, 1:m], v)
   @inbounds for i = 1:k
@@ -98,9 +98,9 @@ end
 Compute the matrix phi functions for all orders up to k. `k` >= 1.
 
 The phi functions are defined as
-  
+
 ```math
-\\varphi_0(z) = \\exp(z),\\quad \\varphi_k(z+1) = \\frac{\\varphi_k(z) - 1}{z} 
+\\varphi_0(z) = \\exp(z),\\quad \\varphi_k(z+1) = \\frac{\\varphi_k(z) - 1}{z}
 ```
 
 Calls `phiv_dense` on each of the basis vectors to obtain the answer.
@@ -145,14 +145,14 @@ end
 
 Constructs an uninitialized Krylov subspace, which can be filled by `arnoldi!`.
 
-The dimension of the subspace, `Ks.m`, can be dynamically altered but should 
+The dimension of the subspace, `Ks.m`, can be dynamically altered but should
 be smaller than `maxiter`, the maximum allowed arnoldi iterations.
 
     getV(Ks) -> V
     getH(Ks) -> H
 
-Access methods for the (extended) orthonormal basis `V` and the (extended) 
-Gram-Schmidt coefficients `H`. Both methods return a view into the storage 
+Access methods for the (extended) orthonormal basis `V` and the (extended)
+Gram-Schmidt coefficients `H`. Both methods return a view into the storage
 arrays and has the correct dimensions as indicated by `Ks.m`.
 
     resize!(Ks, maxiter) -> Ks
@@ -168,15 +168,15 @@ mutable struct KrylovSubspace{B, T}
   V::Matrix{T}  # orthonormal bases
   H::Matrix{T}  # Gram-Schmidt coefficients
   KrylovSubspace{T}(n::Integer, maxiter::Integer=30) where {T} = new{real(T), T}(
-    maxiter, maxiter, zero(real(T)), Matrix{T}(n, maxiter + 1), 
-    zeros(T, maxiter + 1, maxiter))
+    maxiter, maxiter, zero(real(T)), Matrix{T}(n, maxiter + 1),
+    fill(zero(T), maxiter + 1, maxiter))
 end
 # TODO: switch to overload `getproperty` in v0.7
 getH(Ks::KrylovSubspace) = @view(Ks.H[1:Ks.m + 1, 1:Ks.m])
 getV(Ks::KrylovSubspace) = @view(Ks.V[:, 1:Ks.m + 1])
 function Base.resize!(Ks::KrylovSubspace{B,T}, maxiter::Integer) where {B,T}
   V = Matrix{T}(size(Ks.V, 1), maxiter + 1)
-  H = zeros(T, maxiter + 1, maxiter)
+  H = fill(zero(T), maxiter + 1, maxiter)
   Ks.V = V; Ks.H = H
   Ks.m = Ks.maxiter = maxiter
   return Ks
@@ -195,28 +195,28 @@ end
 
 Performs `m` anoldi iterations to obtain the Krylov subspace K_m(A,b).
 
-The n x (m + 1) basis vectors `getV(Ks)` and the (m + 1) x m upper Heisenberg 
+The n x (m + 1) basis vectors `getV(Ks)` and the (m + 1) x m upper Heisenberg
 matrix `getH(Ks)` are related by the recurrence formula
 
 ```
 v_1=b,\\quad Av_j = \\sum_{i=1}^{j+1}h_{ij}v_i\\quad(j = 1,2,\\ldots,m)
 ```
 
-`iop` determines the length of the incomplete orthogonalization procedure [^1]. 
-The default value of 0 indicates full Arnoldi. For symmetric/Hermitian `A`, 
+`iop` determines the length of the incomplete orthogonalization procedure [^1].
+The default value of 0 indicates full Arnoldi. For symmetric/Hermitian `A`,
 `iop` will be ignored and the Lanczos algorithm will be used instead.
 
 Refer to `KrylovSubspace` for more information regarding the output.
 
-Happy-breakdown occurs whenver `norm(v_j) < tol * norm(A, Inf)`, in this case 
+Happy-breakdown occurs whenver `norm(v_j) < tol * norm(A, Inf)`, in this case
 the dimension of `Ks` is smaller than `m`.
 
-[^1]: Koskela, A. (2015). Approximating the matrix exponential of an 
-advection-diffusion operator using the incomplete orthogonalization method. In 
-Numerical Mathematics and Advanced Applications-ENUMATH 2013 (pp. 345-353). 
+[^1]: Koskela, A. (2015). Approximating the matrix exponential of an
+advection-diffusion operator using the incomplete orthogonalization method. In
+Numerical Mathematics and Advanced Applications-ENUMATH 2013 (pp. 345-353).
 Springer, Cham.
 """
-function arnoldi(A, b; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, 
+function arnoldi(A, b; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm,
   iop=0, cache=nothing)
   Ks = KrylovSubspace{eltype(b)}(length(b), m)
   arnoldi!(Ks, A, b; m=m, tol=tol, norm=norm, cache=cache, iop=iop)
@@ -226,7 +226,7 @@ end
 
 Non-allocating version of `arnoldi`.
 """
-function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol::Real=1e-7, 
+function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol::Real=1e-7,
   m::Int=min(Ks.maxiter, size(A, 1)), norm=Base.norm, iop::Int=0, cache=nothing) where {B, T <: Number}
   if ishermitian(A)
     return lanczos!(Ks, A, b; tol=tol, m=m, norm=norm, cache=cache)
@@ -341,7 +341,7 @@ end
 
 Compute the matrix-exponential-vector product using Krylov.
 
-A Krylov subspace is constructed using `arnoldi` and `exp!` is called
+A Krylov subspace is constructed using `arnoldi` and `expm!` is called
 on the Heisenberg matrix. Consult `arnoldi` for the values of the keyword
 arguments.
 
@@ -364,7 +364,7 @@ end
 
 Non-allocating version of `expv` that uses precomputed Krylov subspace `Ks`.
 """
-function expv!(w::AbstractVector{T}, t::Number, Ks::KrylovSubspace{B, T}; 
+function expv!(w::AbstractVector{T}, t::Number, Ks::KrylovSubspace{B, T};
   cache=nothing) where {B, T <: Number}
   m, beta, V, H = Ks.m, Ks.beta, getV(Ks), getH(Ks)
   @assert length(w) == size(V, 1) "Dimension mismatch"
@@ -381,7 +381,7 @@ function expv!(w::AbstractVector{T}, t::Number, Ks::KrylovSubspace{B, T};
     F = eigfact!(SymTridiagonal(cache)) # Note: eigfact! -> eigen! in v0.7
     expHe = F.vectors * (exp.(F.values) .* @view(F.vectors[1, :]))
   else
-    expH = exp!(cache)
+    expH = expm!(cache)
     expHe = @view(expH[:, 1])
   end
   scale!(beta, A_mul_B!(w, @view(V[:, 1:m]), expHe)) # exp(A) ≈ norm(b) * V * exp(H)e
@@ -417,30 +417,30 @@ Compute the matrix-phi-vector products using Krylov. `k` >= 1.
 The phi functions are defined as
 
 ```math
-\\varphi_0(z) = \\exp(z),\\quad \\varphi_k(z+1) = \\frac{\\varphi_k(z) - 1}{z} 
+\\varphi_0(z) = \\exp(z),\\quad \\varphi_k(z+1) = \\frac{\\varphi_k(z) - 1}{z}
 ```
 
-A Krylov subspace is constructed using `arnoldi` and `phiv_dense` is called 
-on the Heisenberg matrix. If `correct=true`, then phi_0 through phi_k-1 are 
-updated using the last Arnoldi vector v_m+1 [^1]. If `errest=true` then an 
-additional error estimate for the second-to-last phi is also returned. For 
+A Krylov subspace is constructed using `arnoldi` and `phiv_dense` is called
+on the Heisenberg matrix. If `correct=true`, then phi_0 through phi_k-1 are
+updated using the last Arnoldi vector v_m+1 [^1]. If `errest=true` then an
+additional error estimate for the second-to-last phi is also returned. For
 the additional keyword arguments, consult `arnoldi`.
 
   phiv(t,Ks,k;correct,kwargs) -> [phi_0(tA)b phi_1(tA)b ... phi_k(tA)b][, errest]
 
 Compute the matrix-phi-vector products using a pre-constructed Krylov subspace.
 
-[^1]: Niesen, J., & Wright, W. (2009). A Krylov subspace algorithm for evaluating 
-the φ-functions in exponential integrators. arXiv preprint arXiv:0907.4631. 
+[^1]: Niesen, J., & Wright, W. (2009). A Krylov subspace algorithm for evaluating
+the φ-functions in exponential integrators. arXiv preprint arXiv:0907.4631.
 Formula (10).
 """
-function phiv(t, A, b, k; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, iop=0, 
+function phiv(t, A, b, k; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, iop=0,
   cache=nothing, correct=false, errest=false)
   Ks = arnoldi(A, b; m=m, tol=tol, norm=norm, iop=iop)
   w = Matrix{eltype(b)}(length(b), k+1)
   phiv!(w, t, Ks, k; cache=cache, correct=correct, errest=errest)
 end
-function phiv(t, Ks::KrylovSubspace{B, T}, k; cache=nothing, correct=false, 
+function phiv(t, Ks::KrylovSubspace{B, T}, k; cache=nothing, correct=false,
   errest=false) where {B, T}
   n = size(getV(Ks), 1)
   w = Matrix{T}(n, k+1)
@@ -451,7 +451,7 @@ end
 
 Non-allocating version of 'phiv' that uses precomputed Krylov subspace `Ks`.
 """
-function phiv!(w::AbstractMatrix{T}, t::Number, Ks::KrylovSubspace{B, T}, k::Integer; 
+function phiv!(w::AbstractMatrix{T}, t::Number, Ks::KrylovSubspace{B, T}, k::Integer;
   cache=nothing, correct=false, errest=false) where {B, T <: Number}
   m, beta, V, H = Ks.m, Ks.beta, getV(Ks), getH(Ks)
   @assert size(w, 1) == size(V, 1) "Dimension mismatch"
@@ -491,29 +491,29 @@ end
 Evaluates the matrix exponentiation-vector product using time stepping
 
 ```math
-u = \\exp(tA)b 
+u = \\exp(tA)b
 ```
 
-`ts`` is an array of time snapshots for u, with `U[:,j] ≈ u(ts[j])`. `ts` can 
-also be just one value, in which case only the end result is returned and `U` 
+`ts`` is an array of time snapshots for u, with `U[:,j] ≈ u(ts[j])`. `ts` can
+also be just one value, in which case only the end result is returned and `U`
 is a vector.
 
-The time stepping formula of Niesen & Wright is used [^1]. If the time step 
-`tau` is not specified, it is chosen according to (17) of Neisen & Wright. If 
-`adaptive==true`, the time step and Krylov subsapce size adaptation scheme of 
-Niesen & Wright is used, the relative tolerance of which can be set using the 
-keyword parameter `tol`. The delta and gamma parameter of the adaptation 
+The time stepping formula of Niesen & Wright is used [^1]. If the time step
+`tau` is not specified, it is chosen according to (17) of Neisen & Wright. If
+`adaptive==true`, the time step and Krylov subsapce size adaptation scheme of
+Niesen & Wright is used, the relative tolerance of which can be set using the
+keyword parameter `tol`. The delta and gamma parameter of the adaptation
 scheme can also be adjusted.
 
-Set `verbose=true` to print out the internal steps (for debugging). For the 
-other keyword arguments, consult `arnoldi` and `phiv`, which are used 
+Set `verbose=true` to print out the internal steps (for debugging). For the
+other keyword arguments, consult `arnoldi` and `phiv`, which are used
 internally.
 
-Note that this function is just a special case of `phiv_timestep` with a more 
+Note that this function is just a special case of `phiv_timestep` with a more
 intuitive interface (vector `b` instead of a n-by-1 matrix `B`).
 
-[^1]: Niesen, J., & Wright, W. (2009). A Krylov subspace algorithm for 
-evaluating the φ-functions in exponential integrators. arXiv preprint 
+[^1]: Niesen, J., & Wright, W. (2009). A Krylov subspace algorithm for
+evaluating the φ-functions in exponential integrators. arXiv preprint
 arXiv:0907.4631.
 """
 function expv_timestep(ts::Vector{tType}, A, b; kwargs...) where {tType <: Real}
@@ -529,12 +529,12 @@ end
 
 Non-allocating version of `expv_timestep`.
 """
-function expv_timestep!(u::AbstractVector{T}, t::tType, A, b::AbstractVector{T}; 
+function expv_timestep!(u::AbstractVector{T}, t::tType, A, b::AbstractVector{T};
   kwargs...) where {T <: Number, tType <: Real}
   expv_timestep!(reshape(u, length(u), 1), [t], A, b; kwargs...)
   return u
 end
-function expv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, b::AbstractVector{T}; 
+function expv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, b::AbstractVector{T};
   kwargs...) where {T <: Number, tType <: Real}
   B = reshape(b, length(b), 1)
   phiv_timestep!(U, ts, A, B; kwargs...)
@@ -545,26 +545,26 @@ end
 Evaluates the linear combination of phi-vector products using time stepping
 
 ```math
-u = \\varphi_0(tA)b_0 + t\\varphi_1(tA)b_1 + \\cdots + t^p\\varphi_p(tA)b_p 
+u = \\varphi_0(tA)b_0 + t\\varphi_1(tA)b_1 + \\cdots + t^p\\varphi_p(tA)b_p
 ```
 
-`ts`` is an array of time snapshots for u, with `U[:,j] ≈ u(ts[j])`. `ts` can 
-also be just one value, in which case only the end result is returned and `U` 
+`ts`` is an array of time snapshots for u, with `U[:,j] ≈ u(ts[j])`. `ts` can
+also be just one value, in which case only the end result is returned and `U`
 is a vector.
 
-The time stepping formula of Niesen & Wright is used [^1]. If the time step 
-`tau` is not specified, it is chosen according to (17) of Neisen & Wright. If 
-`adaptive==true`, the time step and Krylov subsapce size adaptation scheme of 
-Niesen & Wright is used, the relative tolerance of which can be set using the 
-keyword parameter `tol`. The delta and gamma parameter of the adaptation 
+The time stepping formula of Niesen & Wright is used [^1]. If the time step
+`tau` is not specified, it is chosen according to (17) of Neisen & Wright. If
+`adaptive==true`, the time step and Krylov subsapce size adaptation scheme of
+Niesen & Wright is used, the relative tolerance of which can be set using the
+keyword parameter `tol`. The delta and gamma parameter of the adaptation
 scheme can also be adjusted.
 
-Set `verbose=true` to print out the internal steps (for debugging). For the 
-other keyword arguments, consult `arnoldi` and `phiv`, which are used 
+Set `verbose=true` to print out the internal steps (for debugging). For the
+other keyword arguments, consult `arnoldi` and `phiv`, which are used
 internally.
 
-[^1]: Niesen, J., & Wright, W. (2009). A Krylov subspace algorithm for 
-evaluating the φ-functions in exponential integrators. arXiv preprint 
+[^1]: Niesen, J., & Wright, W. (2009). A Krylov subspace algorithm for
+evaluating the φ-functions in exponential integrators. arXiv preprint
 arXiv:0907.4631.
 """
 function phiv_timestep(ts::Vector{tType}, A, B; kwargs...) where {tType <: Real}
@@ -580,14 +580,14 @@ end
 
 Non-allocating version of `phiv_timestep`.
 """
-function phiv_timestep!(u::AbstractVector{T}, t::tType, A, B::AbstractMatrix{T}; 
+function phiv_timestep!(u::AbstractVector{T}, t::tType, A, B::AbstractMatrix{T};
   kwargs...) where {T <: Number, tType <: Real}
   phiv_timestep!(reshape(u, length(u), 1), [t], A, B; kwargs...)
   return u
 end
-function phiv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, B::AbstractMatrix{T}; tau::Real=0.0, 
-  m::Int=min(10, size(A, 1)), tol::Real=1e-7, norm=Base.norm, iop::Int=0, 
-  correct::Bool=false, caches=nothing, adaptive=false, delta::Real=1.2, 
+function phiv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, B::AbstractMatrix{T}; tau::Real=0.0,
+  m::Int=min(10, size(A, 1)), tol::Real=1e-7, norm=Base.norm, iop::Int=0,
+  correct::Bool=false, caches=nothing, adaptive=false, delta::Real=1.2,
   gamma::Real=0.8, NA::Int=0, verbose=false) where {T <: Number, tType <: Real}
   # Choose initial timestep
   abstol = tol * norm(A, Inf)
@@ -595,7 +595,7 @@ function phiv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, B::AbstractM
   if iszero(tau)
     Anorm = norm(A, Inf)
     b0norm = norm(@view(B[:, 1]), Inf)
-    tau = 10/Anorm * (abstol * ((m+1)/e)^(m+1) * sqrt(2*pi*(m+1)) / 
+    tau = 10/Anorm * (abstol * ((m+1)/e)^(m+1) * sqrt(2*pi*(m+1)) /
       (4*Anorm*b0norm))^(1/m)
     verbose && println("Initial time step unspecified, chosen to be $tau")
   end
@@ -660,7 +660,7 @@ function phiv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, B::AbstractM
       q = m/4; kappa = 2.0; maxtau = tend - t
       while omega > delta # inner loop of Algorithm 3
         m_new, tau_new, q, kappa = _phiv_timestep_adapt(
-          m, tau, epsilon, m_old, tau_old, epsilon_old, q, kappa, 
+          m, tau, epsilon, m_old, tau_old, epsilon_old, q, kappa,
           gamma, omega, maxtau, n, p, NA, iop, norm(getH(Ks), 1), verbose)
         m, m_old = m_new, m
         tau, tau_old = tau_new, tau
@@ -701,7 +701,7 @@ function phiv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, B::AbstractM
   return U
 end
 # Helper functions for phiv_timestep!
-function _phiv_timestep_adapt(m, tau, epsilon, m_old, tau_old, epsilon_old, q, kappa, 
+function _phiv_timestep_adapt(m, tau, epsilon, m_old, tau_old, epsilon_old, q, kappa,
   gamma, omega, maxtau, n, p, NA, iop, Hnorm, verbose)
   # Compute new m and tau (Algorithm 4)
   if tau_old > tau

@@ -69,14 +69,14 @@ du_cache(c::KenCarp3Cache)   = (c.k,c.fsalfirst)
 function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
-  du1 = zeros(rate_prototype)
-  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  du1 = zero(rate_prototype)
+  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
   W = similar(J)
   z₁ = similar(u,axes(u)); z₂ = similar(u,axes(u))
   z₃ = similar(u,axes(u)); z₄ = similar(u,axes(u))
   dz = similar(u,axes(u))
-  fsalfirst = zeros(rate_prototype)
-  k = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  k = zero(rate_prototype)
   tmp = similar(u); b = similar(u,axes(u));
   atmp = similar(u,uEltypeNoUnits,axes(u))
 
@@ -180,15 +180,15 @@ du_cache(c::Kvaerno4Cache)   = (c.k,c.fsalfirst)
 function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
-  du1 = zeros(rate_prototype)
-  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  du1 = zero(rate_prototype)
+  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
   W = similar(J)
   z₁ = similar(u,axes(u)); z₂ = similar(u,axes(u));
   z₃ = similar(u,axes(u)); z₄ = similar(u,axes(u))
   z₅ = similar(u,axes(u))
   dz = similar(u,axes(u))
-  fsalfirst = zeros(rate_prototype)
-  k = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  k = zero(rate_prototype)
   tmp = similar(u); b = similar(u,axes(u));
   atmp = similar(u,uEltypeNoUnits,axes(u))
 
@@ -295,15 +295,15 @@ du_cache(c::KenCarp4Cache)   = (c.k,c.fsalfirst)
 function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
-  du1 = zeros(rate_prototype)
-  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  du1 = zero(rate_prototype)
+  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
   W = similar(J)
   z₁ = similar(u,axes(u)); z₂ = similar(u,axes(u))
   z₃ = similar(u,axes(u)); z₄ = similar(u,axes(u))
   z₅ = similar(u,axes(u)); z₆ = similar(u,axes(u))
   dz = similar(u,axes(u))
-  fsalfirst = zeros(rate_prototype)
-  k = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  k = zero(rate_prototype)
   tmp = similar(u); b = similar(u,axes(u));
   atmp = similar(u,uEltypeNoUnits,axes(u))
 
@@ -410,16 +410,16 @@ du_cache(c::Kvaerno5Cache)   = (c.k,c.fsalfirst)
 function alg_cache(alg::Kvaerno5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
-  du1 = zeros(rate_prototype)
-  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  du1 = zero(rate_prototype)
+  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
   W = similar(J)
   z₁ = similar(u,axes(u)); z₂ = similar(u,axes(u));
   z₃ = similar(u,axes(u)); z₄ = similar(u,axes(u))
   z₅ = similar(u,axes(u)); z₆ = similar(u,axes(u));
   z₇ = similar(u,axes(u))
   dz = similar(u,axes(u))
-  fsalfirst = zeros(rate_prototype)
-  k = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  k = zero(rate_prototype)
   tmp = similar(u); b = similar(u,axes(u));
   atmp = similar(u,uEltypeNoUnits,axes(u))
 
@@ -528,16 +528,16 @@ du_cache(c::KenCarp5Cache)   = (c.k,c.fsalfirst)
 function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
-  du1 = zeros(rate_prototype)
-  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  du1 = zero(rate_prototype)
+  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
   W = similar(J)
   z₁ = similar(u,axes(u)); z₂ = similar(u,axes(u));
   z₃ = similar(u,axes(u)); z₄ = similar(u,axes(u))
   z₅ = similar(u,axes(u)); z₆ = similar(u,axes(u));
   z₇ = similar(u,axes(u)); z₈ = similar(u,axes(u))
   dz = similar(u,axes(u))
-  fsalfirst = zeros(rate_prototype)
-  k = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  k = zero(rate_prototype)
   tmp = similar(u); b = similar(u,axes(u));
   atmp = similar(u,uEltypeNoUnits,axes(u))
 

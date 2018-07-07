@@ -17,10 +17,10 @@ dual_cache(c::GenericImplicitEulerCache) = (c.dual_cache,)
 
 function alg_cache(alg::GenericImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits,axes(u))
-  k = zeros(rate_prototype)
+  k = zero(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
   rhs = ImplicitRHS(f,tmp,t,t,t,dual_cache,p)
-  fsalfirst = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
   nl_rhs = alg.nlsolve(Val{:init},rhs,u)
 
   GenericImplicitEulerCache{typeof(u),typeof(dual_cache),
@@ -63,8 +63,8 @@ dual_cache(c::GenericTrapezoidCache) = (c.dual_cache,)
 
 function alg_cache(alg::GenericTrapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits,axes(u))
-  k = zeros(rate_prototype)
-  fsalfirst = zeros(rate_prototype)
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
   rhs = ImplicitRHS(f,tmp,t,t,t,dual_cache,p)
   nl_rhs = alg.nlsolve(Val{:init},rhs,u)

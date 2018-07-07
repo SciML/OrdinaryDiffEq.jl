@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Test, LinearAlgebra
+using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
 
 # TODO: clean up
 @testset "Mass Matrix Accuracy Tests" begin
@@ -99,7 +99,7 @@ sol2 = solve(prob2, TRBDF2(),adaptive=false,dt=1/10)
   u0 = [0.,1.]
   tspan = (0.0, 1.0)
 
-  M = zeros(2,2)
+  M = fill(0., 2,2)
   M[1,1] = 1.
 
   m_ode_prob = ODEProblem(f!, u0, tspan, mass_matrix=M)
@@ -115,7 +115,7 @@ sol2 = solve(prob2, TRBDF2(),adaptive=false,dt=1/10)
       du[2] = u[1]
       return
   end
-  u0 = zeros(2)
+  u0 = fill(0., 2)
 
   m_ode_prob = ODEProblem(f2!, u0, tspan, mass_matrix=M)
   @test_nowarn sol = solve(m_ode_prob, Rosenbrock23())
