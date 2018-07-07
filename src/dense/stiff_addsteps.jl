@@ -37,7 +37,7 @@ end
       @inbounds linsolve_tmp[i] = @muladd fsalfirst[i] + γ*dT[i]
     end
 
-    if has_invW(f)
+    if DiffEqBase.has_invW(f)
       f(Val{:invW},W,u,p,γ,t) # W == inverse W
       mul!(vectmp,W,linsolve_tmp_vec)
     else
@@ -61,7 +61,7 @@ end
     #end
 
     @. linsolve_tmp = f₁ - tmp
-    if has_invW(f)
+    if DiffEqBase.has_invW(f)
       mul!(vectmp2, W, linsolve_tmp_vec)
     else
       cache.linsolve(vectmp2, W, linsolve_tmp_vec)
@@ -197,7 +197,7 @@ end
       @inbounds linsolve_tmp[i] = @muladd fsalfirst[i] + dtgamma*dT[i]
     end
 
-    if has_invW(f)
+    if DiffEqBase.has_invW(f)
       f(Val{:invW_t},W,u,p,dtgamma,t) # W == inverse W
     else
       ### Jacobian does not need to be re-evaluated after an event
@@ -207,7 +207,7 @@ end
       end
     end
 
-    if has_invW(f)
+    if DiffEqBase.has_invW(f)
       mul!(vectmp, W, linsolve_tmp_vec)
     else
       cache.linsolve(vectmp, W, linsolve_tmp_vec, true)
@@ -225,7 +225,7 @@ end
       @. linsolve_tmp = du + dtd2*dT + du2
     end
 
-    if has_invW(f)
+    if DiffEqBase.has_invW(f)
       mul!(vectmp2, W, linsolve_tmp_vec)
     else
       cache.linsolve(vectmp2, W, linsolve_tmp_vec)
@@ -243,7 +243,7 @@ end
       @. linsolve_tmp = du + dtd3*dT + du2
     end
 
-    if has_invW(f)
+    if DiffEqBase.has_invW(f)
       mul!(vectmp3, W, linsolve_tmp_vec)
     else
       cache.linsolve(vectmp3, W, linsolve_tmp_vec)
@@ -261,7 +261,7 @@ end
       @. linsolve_tmp = du + dtd4*dT + du2
     end
 
-    if has_invW(f)
+    if DiffEqBase.has_invW(f)
       mul!(vectmp4, W, linsolve_tmp_vec)
     else
       cache.linsolve(vectmp4, W, linsolve_tmp_vec)
@@ -279,7 +279,7 @@ end
       @. linsolve_tmp = du + du2
     end
 
-    if has_invW(f)
+    if DiffEqBase.has_invW(f)
       mul!(vectmp5, W, linsolve_tmp_vec)
     else
       cache.linsolve(vectmp5, W, linsolve_tmp_vec)

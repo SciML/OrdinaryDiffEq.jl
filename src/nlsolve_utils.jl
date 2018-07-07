@@ -82,7 +82,7 @@ function diffeq_nlsolve!(integrator,
     mul!(vec(b),mass_matrix,vec(z))
     @. b = dt*k - b
   end
-  if has_invW(f)
+  if DiffEqBase.DiffEqBase.has_invW(f)
     mul!(vec(dz),W,vec(b)) # Here W is actually invW
   else
     cache.linsolve(vec(dz),W,vec(b),new_W)
@@ -105,7 +105,7 @@ function diffeq_nlsolve!(integrator,
       mul!(vec(b),mass_matrix,vec(z))
       @. b = dt*k - b
     end
-    if has_invW(f)
+    if DiffEqBase.DiffEqBase.has_invW(f)
       mul!(vec(dz),W,vec(b)) # Here W is actually invW
     else
       cache.linsolve(vec(dz),W,vec(b),false)

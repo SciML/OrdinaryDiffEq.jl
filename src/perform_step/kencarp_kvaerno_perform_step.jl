@@ -148,7 +148,7 @@ end
   if integrator.opts.adaptive
     @. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄
     if alg.smooth_est # From Shampine
-      if has_invW(f)
+      if DiffEqBase.has_invW(f)
         mul!(vec(tmp),W,vec(dz))
       else
         cache.linsolve(vec(tmp),W,vec(dz),false)
@@ -391,7 +391,7 @@ end
       @. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄
     end
     if alg.smooth_est # From Shampine
-      if has_invW(f)
+      if DiffEqBase.has_invW(f)
         mul!(vec(tmp),W,vec(dz))
       else
         cache.linsolve(vec(tmp),W,vec(dz),false)
@@ -552,7 +552,7 @@ end
   if integrator.opts.adaptive
     @. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
     if alg.smooth_est # From Shampine
-      if has_invW(f)
+      if DiffEqBase.has_invW(f)
         mul!(vec(tmp),W,vec(dz))
       else
         cache.linsolve(vec(tmp),W,vec(dz),false)
@@ -886,7 +886,7 @@ end
     end
 
     if alg.smooth_est # From Shampine
-      if has_invW(f)
+      if DiffEqBase.has_invW(f)
         mul!(vec(tmp),W,vec(dz))
       else
         cache.linsolve(vec(tmp),W,vec(dz),false)
@@ -1088,7 +1088,7 @@ end
       @inbounds dz[i] = btilde1*z₁[i] + btilde3*z₃[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i] + btilde7*z₇[i]
     end
     if alg.smooth_est # From Shampine
-      if has_invW(f)
+      if DiffEqBase.has_invW(f)
         mul!(vec(tmp),W,vec(dz))
       else
         cache.linsolve(vec(tmp),W,vec(dz),false)
@@ -1502,7 +1502,7 @@ end
     end
 
     if alg.smooth_est # From Shampine
-      if has_invW(f)
+      if DiffEqBase.has_invW(f)
         mul!(vec(tmp),W,vec(dz))
       else
         cache.linsolve(vec(tmp),W,vec(dz),false)

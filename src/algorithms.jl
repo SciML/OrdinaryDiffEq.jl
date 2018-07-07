@@ -724,7 +724,7 @@ struct GeneralRosenbrock{CS,AD,F,TabType} <: OrdinaryDiffEqRosenbrockAdaptiveAlg
 end
 
 Base.@pure GeneralRosenbrock(;chunk_size=0,autodiff=true,
-                    factorization=lufact!,tableau=ROSENBROCK_DEFAULT_TABLEAU) =
+                    factorization=lu!,tableau=ROSENBROCK_DEFAULT_TABLEAU) =
                     GeneralRosenbrock{chunk_size,autodiff,typeof(factorization),typeof(tableau)}(tableau,factorization)
 
 ######################################

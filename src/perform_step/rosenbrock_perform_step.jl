@@ -37,7 +37,7 @@ end
 
   calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
 
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
@@ -54,7 +54,7 @@ end
   end
 
   @. linsolve_tmp = f₁ - tmp
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp2, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp2, W, linsolve_tmp_vec)
@@ -76,7 +76,7 @@ end
     end
 
 
-    if has_invW(f)
+    if DiffEqBase.has_invW(f)
       mul!(vectmp3, W, linsolve_tmp_vec)
     else
       cache.linsolve(vectmp3, W, linsolve_tmp_vec)
@@ -107,7 +107,7 @@ end
 
   calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
 
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
@@ -125,7 +125,7 @@ end
 
   @. linsolve_tmp = f₁ - tmp
 
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp2, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp2, W, linsolve_tmp_vec)
@@ -144,7 +144,7 @@ end
     @. linsolve_tmp = fsallast - du1 + c₃₂*f₁ + 2fsalfirst + dt*dT
   end
 
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp3, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp3, W, linsolve_tmp_vec)
@@ -339,7 +339,7 @@ end
 
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
@@ -357,7 +357,7 @@ end
     @. linsolve_tmp = du + dtd2*dT + du2
   end
 
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp2, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp2, W, linsolve_tmp_vec)
@@ -375,7 +375,7 @@ end
     @. linsolve_tmp = du + dtd3*dT + du2
   end
 
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp3, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp3, W, linsolve_tmp_vec)
@@ -481,7 +481,7 @@ end
 
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
@@ -505,7 +505,7 @@ end
     @. linsolve_tmp = fsalfirst + dtd2*dT + du2
   end
 
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp2, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp2, W, linsolve_tmp_vec)
@@ -523,7 +523,7 @@ end
     @. linsolve_tmp = du + dtd3*dT + du2
   end
 
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp3, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp3, W, linsolve_tmp_vec)
@@ -539,7 +539,7 @@ end
     @. linsolve_tmp = du + dtd4*dT + du2
   end
 
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp4, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp4, W, linsolve_tmp_vec)
@@ -648,7 +648,7 @@ end
 
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
@@ -666,7 +666,7 @@ end
     @. linsolve_tmp = du + dtd2*dT + du2
   end
 
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp2, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp2, W, linsolve_tmp_vec)
@@ -684,7 +684,7 @@ end
     @. linsolve_tmp = du + dtd3*dT + du2
   end
 
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp3, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp3, W, linsolve_tmp_vec)
@@ -700,7 +700,7 @@ end
     @. linsolve_tmp = du + dtd4*dT + du2
   end
 
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp4, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp4, W, linsolve_tmp_vec)
@@ -859,7 +859,7 @@ end
 
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
@@ -877,7 +877,7 @@ end
     @. linsolve_tmp = du + dtd2*dT + du2
   end
 
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp2, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp2, W, linsolve_tmp_vec)
@@ -895,7 +895,7 @@ end
     @. linsolve_tmp = du + dtd3*dT + du2
   end
 
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp3, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp3, W, linsolve_tmp_vec)
@@ -913,7 +913,7 @@ end
     @. linsolve_tmp = du + dtd4*dT + du2
   end
 
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp4, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp4, W, linsolve_tmp_vec)
@@ -931,7 +931,7 @@ end
     @. linsolve_tmp = du + du2
   end
 
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp5, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp5, W, linsolve_tmp_vec)
@@ -955,7 +955,7 @@ end
     @. linsolve_tmp = du + du2
   end
 
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp6, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp6, W, linsolve_tmp_vec)
@@ -1149,7 +1149,7 @@ end
 
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
@@ -1169,7 +1169,7 @@ end
     @. linsolve_tmp = du + dtd2*dT + du2
   end
 
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp2, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp2, W, linsolve_tmp_vec)
@@ -1187,7 +1187,7 @@ end
     @. linsolve_tmp = du + dtd3*dT + du2
   end
 
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp3, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp3, W, linsolve_tmp_vec)
@@ -1205,7 +1205,7 @@ end
     @. linsolve_tmp = du + dtd4*dT + du2
   end
 
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp4, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp4, W, linsolve_tmp_vec)
@@ -1226,7 +1226,7 @@ end
     @. linsolve_tmp = du + dtd5*dT + du2
   end
 
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp5, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp5, W, linsolve_tmp_vec)
@@ -1253,7 +1253,7 @@ end
     @. linsolve_tmp = du + du2
   end
 
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp6, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp6, W, linsolve_tmp_vec)
@@ -1277,7 +1277,7 @@ end
     @. linsolve_tmp = du + du2
   end
 
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp7, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp7, W, linsolve_tmp_vec)
@@ -1301,7 +1301,7 @@ end
     @. linsolve_tmp = du + du2
   end
 
-  if has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vectmp8, W, linsolve_tmp_vec)
   else
     cache.linsolve(vectmp8, W, linsolve_tmp_vec)
