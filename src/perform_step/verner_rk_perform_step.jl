@@ -1,4 +1,4 @@
-function DiffEqBase.initialize!(integrator, cache::Vern6ConstantCache)
+function initialize!(integrator, cache::Vern6ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
   alg = unwrap_alg(integrator, false)
   alg.lazy ? (integrator.kshortsize = 9) : (integrator.kshortsize = 12)
@@ -246,7 +246,7 @@ end
 
 end
 
-function DiffEqBase.initialize!(integrator, cache::Vern7Cache)
+function initialize!(integrator, cache::Vern7Cache)
   @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10 = cache
   @unpack k = integrator
   alg = unwrap_alg(integrator, false)
@@ -460,7 +460,7 @@ end
 
 end
 
-function DiffEqBase.initialize!(integrator, cache::Vern8Cache)
+function initialize!(integrator, cache::Vern8Cache)
   @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13 = cache
   @unpack k = integrator
   alg = unwrap_alg(integrator, false)
@@ -702,7 +702,7 @@ end
   end
 end
 
-function DiffEqBase.initialize!(integrator, cache::Vern9Cache)
+function initialize!(integrator, cache::Vern9Cache)
   @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16 = cache
   @unpack k = integrator
   alg = unwrap_alg(integrator, false)

@@ -312,7 +312,7 @@ function DiffEqBase.__init(
                              u_modified,opts)
   if initialize_integrator
     initialize_callbacks!(integrator, initialize_save)
-    DiffEqBase.initialize!(integrator,integrator.cache)
+    initialize!(integrator,integrator.cache)
     save_start && typeof(alg) <: CompositeAlgorithm && copyat_or_push!(alg_choice,1,integrator.cache.current)
   end
 
@@ -411,7 +411,7 @@ function initialize_callbacks!(integrator, initialize_save = true)
   callbacks = integrator.opts.callback
   integrator.u_modified = true
 
-  u_modified = DiffEqBase.initialize!(callbacks,u,t,integrator)
+  u_modified = initialize!(callbacks,u,t,integrator)
 
   # if the user modifies u, we need to fix previous values before initializing
   # FSAL in order for the starting derivatives to be correct

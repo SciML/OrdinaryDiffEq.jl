@@ -1,4 +1,4 @@
-function DiffEqBase.initialize!(integrator,cache::FunctionMapConstantCache)
+function initialize!(integrator,cache::FunctionMapConstantCache)
   integrator.kshortsize = 0
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
 end
@@ -13,7 +13,7 @@ function perform_step!(integrator,cache::FunctionMapConstantCache,repeat_step=fa
   end
 end
 
-function DiffEqBase.initialize!(integrator,cache::FunctionMapCache)
+function initialize!(integrator,cache::FunctionMapCache)
   integrator.kshortsize = 0
   resize!(integrator.k, integrator.kshortsize)
 end
@@ -34,7 +34,7 @@ function perform_step!(integrator,cache::FunctionMapCache,repeat_step=false)
   end
 end
 
-function DiffEqBase.initialize!(integrator,cache::EulerConstantCache)
+function initialize!(integrator,cache::EulerConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -55,7 +55,7 @@ function perform_step!(integrator,cache::EulerConstantCache,repeat_step=false)
   integrator.u = u
 end
 
-function DiffEqBase.initialize!(integrator,cache::EulerCache)
+function initialize!(integrator,cache::EulerCache)
   integrator.kshortsize = 2
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
@@ -72,7 +72,7 @@ function perform_step!(integrator,cache::EulerCache,repeat_step=false)
   f(integrator.fsallast,u,p,t+dt) # For the interpolation, needs k at the updated point
 end
 
-function DiffEqBase.initialize!(integrator,cache::Union{HeunConstantCache,RalstonConstantCache})
+function initialize!(integrator,cache::Union{HeunConstantCache,RalstonConstantCache})
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -121,7 +121,7 @@ function perform_step!(integrator,cache::Union{HeunConstantCache,RalstonConstant
   integrator.u = u
 end
 
-function DiffEqBase.initialize!(integrator,cache::Union{HeunCache,RalstonCache})
+function initialize!(integrator,cache::Union{HeunCache,RalstonCache})
   integrator.kshortsize = 2
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
@@ -166,7 +166,7 @@ function perform_step!(integrator,cache::Union{HeunCache,RalstonCache},repeat_st
   f(integrator.fsallast,u,p,t+dt) # For the interpolation, needs k at the updated point
 end
 
-function DiffEqBase.initialize!(integrator,cache::MidpointConstantCache)
+function initialize!(integrator,cache::MidpointConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
@@ -194,7 +194,7 @@ end
   integrator.u = u
 end
 
-function DiffEqBase.initialize!(integrator,cache::MidpointCache)
+function initialize!(integrator,cache::MidpointCache)
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
@@ -221,7 +221,7 @@ end
   f(k, u, p, t+dt)
 end
 
-function DiffEqBase.initialize!(integrator,cache::RK4ConstantCache)
+function initialize!(integrator,cache::RK4ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
@@ -264,7 +264,7 @@ end
   integrator.u = u
 end
 
-function DiffEqBase.initialize!(integrator,cache::RK4Cache)
+function initialize!(integrator,cache::RK4Cache)
   @unpack tmp,fsalfirst,k₂,k₃,k₄,k = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
@@ -317,7 +317,7 @@ end
 end
 
 
-function DiffEqBase.initialize!(integrator,cache::CarpenterKennedy2N54ConstantCache)
+function initialize!(integrator,cache::CarpenterKennedy2N54ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
@@ -356,7 +356,7 @@ end
   integrator.u = u
 end
 
-function DiffEqBase.initialize!(integrator,cache::CarpenterKennedy2N54Cache)
+function initialize!(integrator,cache::CarpenterKennedy2N54Cache)
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k

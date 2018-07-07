@@ -1,4 +1,4 @@
-function DiffEqBase.initialize!(integrator, cache::Union{Rosenbrock23Cache,
+function initialize!(integrator, cache::Union{Rosenbrock23Cache,
                                               Rosenbrock32Cache,})
   integrator.kshortsize = 2
   @unpack k₁,k₂,fsalfirst,fsallast = cache
@@ -9,7 +9,7 @@ function DiffEqBase.initialize!(integrator, cache::Union{Rosenbrock23Cache,
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
 end
 
-function DiffEqBase.initialize!(integrator, cache::Union{Rosenbrock23ConstantCache,
+function initialize!(integrator, cache::Union{Rosenbrock23ConstantCache,
                                               Rosenbrock32ConstantCache})
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
@@ -237,7 +237,7 @@ end
   integrator.u = u
 end
 
-function DiffEqBase.initialize!(integrator, cache::Union{Rosenbrock33ConstantCache,
+function initialize!(integrator, cache::Union{Rosenbrock33ConstantCache,
                                               Rosenbrock34ConstantCache,
                                               Rosenbrock4ConstantCache,
                                               Rosenbrock5ConstantCache})
@@ -251,7 +251,7 @@ function DiffEqBase.initialize!(integrator, cache::Union{Rosenbrock33ConstantCac
   integrator.k[2] = integrator.fsallast
 end
 
-function DiffEqBase.initialize!(integrator, cache::Union{Rosenbrock33Cache,
+function initialize!(integrator, cache::Union{Rosenbrock33Cache,
                                               Rosenbrock34Cache,
                                               Rosenbrock4Cache,
                                               Rosenbrock5Cache})
@@ -722,7 +722,7 @@ end
 
 #### Rodas4 type method
 
-function DiffEqBase.initialize!(integrator, cache::Rodas4ConstantCache)
+function initialize!(integrator, cache::Rodas4ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
   # Avoid undefined entries if k is an array of arrays
@@ -816,7 +816,7 @@ end
 end
 
 
-function DiffEqBase.initialize!(integrator, cache::Rodas4Cache)
+function initialize!(integrator, cache::Rodas4Cache)
   integrator.kshortsize = 2
   @unpack dense1,dense2 = cache
   resize!(integrator.k, integrator.kshortsize)

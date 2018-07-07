@@ -1,4 +1,4 @@
-function DiffEqBase.initialize!(integrator, cache::Union{ImplicitEulerConstantCache,
+function initialize!(integrator, cache::Union{ImplicitEulerConstantCache,
                                               ImplicitMidpointConstantCache,
                                               TrapezoidConstantCache,
                                               TRBDF2ConstantCache,
@@ -16,7 +16,7 @@ function DiffEqBase.initialize!(integrator, cache::Union{ImplicitEulerConstantCa
   integrator.k[2] = integrator.fsallast
 end
 
-function DiffEqBase.initialize!(integrator, cache::Union{ImplicitEulerCache,
+function initialize!(integrator, cache::Union{ImplicitEulerCache,
                                               ImplicitMidpointCache,
                                               TrapezoidCache,
                                               TRBDF2Cache,

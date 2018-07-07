@@ -1,4 +1,4 @@
-function DiffEqBase.initialize!(integrator, cache::Union{Kvaerno3ConstantCache,
+function initialize!(integrator, cache::Union{Kvaerno3ConstantCache,
                                               KenCarp3ConstantCache,
                                               Kvaerno4ConstantCache,
                                               KenCarp4ConstantCache,
@@ -14,7 +14,7 @@ function DiffEqBase.initialize!(integrator, cache::Union{Kvaerno3ConstantCache,
   integrator.k[2] = integrator.fsallast
 end
 
-function DiffEqBase.initialize!(integrator, cache::Union{Kvaerno3Cache,
+function initialize!(integrator, cache::Union{Kvaerno3Cache,
                                               KenCarp3Cache,
                                               Kvaerno4Cache,
                                               KenCarp4Cache,

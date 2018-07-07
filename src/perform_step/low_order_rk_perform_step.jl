@@ -1,4 +1,4 @@
-function DiffEqBase.initialize!(integrator, cache::BS3ConstantCache)
+function initialize!(integrator, cache::BS3ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -29,7 +29,7 @@ end
   integrator.u = u
 end
 
-function DiffEqBase.initialize!(integrator, cache::BS3Cache)
+function initialize!(integrator, cache::BS3Cache)
   integrator.kshortsize = 2
   resize!(integrator.k, integrator.kshortsize)
   integrator.fsalfirst = cache.fsalfirst  # done by pointers, no copying
@@ -60,7 +60,7 @@ end
   end
 end
 
-function DiffEqBase.initialize!(integrator, cache::OwrenZen3ConstantCache)
+function initialize!(integrator, cache::OwrenZen3ConstantCache)
     integrator.kshortsize = 4
     integrator.k = typeof(integrator.k)(integrator.kshortsize)
     integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -93,7 +93,7 @@ end
   integrator.u = u
 end
 
-function DiffEqBase.initialize!(integrator, cache::OwrenZen3Cache)
+function initialize!(integrator, cache::OwrenZen3Cache)
     integrator.kshortsize = 4
     resize!(integrator.k, integrator.kshortsize)
     integrator.k[1]=cache.k1; integrator.k[2]=cache.k2;
@@ -120,7 +120,7 @@ end
   end
 end
 
-function DiffEqBase.initialize!(integrator, cache::OwrenZen4ConstantCache)
+function initialize!(integrator, cache::OwrenZen4ConstantCache)
   integrator.kshortsize = 6
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
@@ -155,7 +155,7 @@ end
   integrator.u = u
 end
 
-function DiffEqBase.initialize!(integrator,cache::OwrenZen4Cache,f=integrator.f)
+function initialize!(integrator,cache::OwrenZen4Cache,f=integrator.f)
   integrator.kshortsize = 6
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1]=cache.k1; integrator.k[2]=cache.k2;
@@ -224,7 +224,7 @@ end
   end
 end
 
-function DiffEqBase.initialize!(integrator, cache::OwrenZen5ConstantCache)
+function initialize!(integrator, cache::OwrenZen5ConstantCache)
   integrator.kshortsize = 8
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -261,7 +261,7 @@ end
   integrator.u = u
 end
 
-function DiffEqBase.initialize!(integrator, cache::OwrenZen5Cache)
+function initialize!(integrator, cache::OwrenZen5Cache)
   integrator.kshortsize = 8
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1]=cache.k1; integrator.k[2]=cache.k2;
@@ -518,7 +518,7 @@ end
   end
 end
 
-function DiffEqBase.initialize!(integrator, cache::Tsit5ConstantCache)
+function initialize!(integrator, cache::Tsit5ConstantCache)
   integrator.kshortsize = 7
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -565,7 +565,7 @@ end
   integrator.u = u
 end
 
-function DiffEqBase.initialize!(integrator, cache::Tsit5Cache)
+function initialize!(integrator, cache::Tsit5Cache)
   integrator.kshortsize = 7
   integrator.fsalfirst = cache.k1; integrator.fsallast = cache.k7 # setup pointers
   resize!(integrator.k, integrator.kshortsize)
@@ -655,7 +655,7 @@ end
   end
 end
 
-function DiffEqBase.initialize!(integrator, cache::DP5ConstantCache)
+function initialize!(integrator, cache::DP5ConstantCache)
   integrator.kshortsize = 4
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -700,7 +700,7 @@ end
   integrator.u = u
 end
 
-function DiffEqBase.initialize!(integrator, cache::DP5Cache)
+function initialize!(integrator, cache::DP5Cache)
   integrator.kshortsize = 4
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = cache.update

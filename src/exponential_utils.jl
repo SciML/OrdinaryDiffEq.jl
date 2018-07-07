@@ -1,3 +1,5 @@
+using LinearAlgebra: axpy!
+
 # exponential_utils.jl
 # Contains functions related to the evaluation of scalar/matrix phi functions
 # that are used by the exponential integrators.
@@ -258,7 +260,7 @@ function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol::Real=1
     @inbounds for i = max(1, j - iop + 1):j
       alpha = dot(@view(V[:, i]), cache)
       H[i, j] = alpha
-      Base.axpy!(-alpha, @view(V[:, i]), cache)
+      axpy!(-alpha, @view(V[:, i]), cache)
     end
     beta = norm(cache)
     H[j+1, j] = beta
@@ -303,9 +305,9 @@ function lanczos!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol=1e-7,
     mul!(cache, A, vj)
     alpha = dot(vj, cache)
     H[j, j] = alpha
-    Base.axpy!(-alpha, vj, cache)
+    axpy!(-alpha, vj, cache)
     if j > 1
-      Base.axpy!(-H[j-1, j], @view(V[:, j-1]), cache)
+      axpy!(-H[j-1, j], @view(V[:, j-1]), cache)
     end
     beta = norm(cache)
     H[j+1, j] = beta
@@ -472,7 +474,7 @@ function phiv!(w::AbstractMatrix{T}, t::Number, Ks::KrylovSubspace{B, T}, k::Int
     betah = beta * H[end,end] * t
     vlast = @view(V[:,end])
     @inbounds for i = 1:k
-      Base.axpy!(betah * C2[end, i+1], vlast, @view(w[:, i]))
+      axpy!(betah * C2[end, i+1], vlast, @view(w[:, i]))
     end
   end
   if errest
@@ -647,7 +649,7 @@ function phiv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, B::AbstractM
     @views @inbounds for j = 1:p
       mul!(W[:, j+1], A, W[:, j])
       for l = 0:p-j
-        Base.axpy!(coeffs[l+1], B[:, j+l+1], W[:, j+1])
+        axpy!(coeffs[l+1], B[:, j+l+1], W[:, j+1])
       end
     end
     # Part 2: compute ϕp(tau*A)wp using Krylov, possibly with adaptation
@@ -678,7 +680,7 @@ function phiv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, B::AbstractM
       coeffs[l+1] = coeffs[l] * tau / l
     end
     @views @inbounds for j = 0:p-1
-      Base.axpy!(coeffs[j+1], W[:, j+1], u)
+      axpy!(coeffs[j+1], W[:, j+1], u)
     end
     # Fill out all snapshots in between the current step
     while snapshot <= length(ts) && t + tau >= ts[snapshot]
@@ -690,7 +692,7 @@ function phiv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, B::AbstractM
         coeffs[l+1] = coeffs[l] * tau_snapshot / l
       end
       @views @inbounds for j = 0:p-1
-        Base.axpy!(coeffs[j+1], W[:, j+1], u_snapshot)
+        axpy!(coeffs[j+1], W[:, j+1], u_snapshot)
       end
       snapshot += 1
     end

@@ -1,4 +1,4 @@
-function DiffEqBase.initialize!(integrator,cache::SplitEulerConstantCache)
+function initialize!(integrator,cache::SplitEulerConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst =
@@ -20,7 +20,7 @@ end
   integrator.u = u
 end
 
-function DiffEqBase.initialize!(integrator,cache::SplitEulerCache)
+function initialize!(integrator,cache::SplitEulerCache)
   integrator.kshortsize = 2
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst

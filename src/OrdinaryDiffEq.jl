@@ -12,7 +12,7 @@ module OrdinaryDiffEq
   using LinearAlgebra
 
   # Interfaces
-  import DiffEqBase: solve!, step!
+  import DiffEqBase: solve!, step!, initialize!
 
   # Internal utils
   import DiffEqBase: ODE_DEFAULT_NORM, ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE, ODE_DEFAULT_UNSTABLE_CHECK

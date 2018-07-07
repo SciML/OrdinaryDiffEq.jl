@@ -1,4 +1,4 @@
-function DiffEqBase.initialize!(integrator, cache::GenRosen4ConstantCache)
+function initialize!(integrator, cache::GenRosen4ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)

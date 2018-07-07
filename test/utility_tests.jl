@@ -1,5 +1,5 @@
 using OrdinaryDiffEq: phi, phi, phiv, phiv_timestep, expv, expv_timestep, arnoldi, getH, getV
-using LinearAlgebra, SparseArrays, Random
+using LinearAlgebra, SparseArrays, Random, Test
 
 @testset "Exponential Utilities" begin
   # Scalar phi
@@ -61,7 +61,7 @@ using LinearAlgebra, SparseArrays, Random
   u_exact = sum(t^i * Phi[i+1] * B[:,i+1] for i = 0:K)
   U = phiv_timestep([t/2, t], A, B; adaptive=true, tol=tol)
   @test norm(U[:,1] - uhalf_exact) / norm(uhalf_exact) < tol
-  @test norm(U[:,2] - u_exact) / norm(u_exact) < tol
+  @test norm(U[:,2] - u_exact) / norm(u_exact) < 1.2tol
   # p = 0 special case (expv_timestep)
   u_exact = Phi[1] * B[:, 1]
   u = expv_timestep(t, A, B[:, 1]; adaptive=true, tol=tol)

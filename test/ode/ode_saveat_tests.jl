@@ -73,9 +73,9 @@ using OrdinaryDiffEq, DiffEqProblemLibrary, Test
 
   @test sol2.t ≈ collect(0:1//100:1)
 
-  sol2=solve(prob,DP5(),dt=1//2^(2),save_everystep=false,dense=false,saveat=linspace(0,1,100))
+  sol2=solve(prob,DP5(),dt=1//2^(2),save_everystep=false,dense=false,saveat=range(0,stop=1,length=100))
 
-  @test sol2.t ≈ linspace(0,1,100)
+  @test sol2.t ≈ range(0,stop=1,length=100)
 
   f = (du,u,p,t) -> prob.f(du,u,p,t)
   prob2 = ODEProblem(f,vec(prob.u0),prob.tspan)

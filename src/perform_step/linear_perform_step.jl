@@ -1,4 +1,4 @@
-function DiffEqBase.initialize!(integrator, cache::LinearImplicitEulerConstantCache)
+function initialize!(integrator, cache::LinearImplicitEulerConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -51,7 +51,7 @@ end
   integrator.u = u
 end
 
-function DiffEqBase.initialize!(integrator, cache::LinearImplicitEulerCache)
+function initialize!(integrator, cache::LinearImplicitEulerCache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
@@ -116,7 +116,7 @@ end
   f(integrator.fsallast,u,p,t+dt)
 end
 
-function DiffEqBase.initialize!(integrator, cache::MidpointSplittingCache)
+function initialize!(integrator, cache::MidpointSplittingCache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k

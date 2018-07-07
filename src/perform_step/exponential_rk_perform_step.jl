@@ -1,3 +1,5 @@
+using LinearAlgebra: axpy!
+
 # Helper function to compute the G_nj factors for the classical ExpRK methods
 @inline _compute_nl(f::SplitFunction, u, p, t, A) = f.f2(u, p, t)
 @inline _compute_nl(f::ODEFunction, u, p, t, A) = f(u, p, t) - A * u
@@ -10,7 +12,7 @@ end
 
 ##########################################
 # Common initializers for ExpRK integrators
-function DiffEqBase.initialize!(integrator, cache::ExpRKConstantCache)
+function initialize!(integrator, cache::ExpRKConstantCache)
   # Pre-start fsal
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -21,7 +23,7 @@ function DiffEqBase.initialize!(integrator, cache::ExpRKConstantCache)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
 end
-function DiffEqBase.initialize!(integrator, cache::ExpRKCache)
+function initialize!(integrator, cache::ExpRKCache)
   # Pre-start fsal
   integrator.fsalfirst = zero(cache.rtmp)
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
@@ -172,9 +174,9 @@ function perform_step!(integrator, cache::ETDRK2Cache, repeat_step=false)
     phiv!(w2, dt, Ks, 2; cache=phiv_cache)
     # Update u
     u .= uprev
-    Base.axpy!( dt, @view(w1[:, 2]), u)
-    Base.axpy!(-dt, @view(w1[:, 3]), u)
-    Base.axpy!( dt, @view(w2[:, 3]), u)
+    axpy!( dt, @view(w1[:, 2]), u)
+    axpy!(-dt, @view(w1[:, 3]), u)
+    axpy!( dt, @view(w2[:, 3]), u)
   else
     phi1, phi2 = cache.ops
     F1 = integrator.fsalfirst
@@ -188,7 +190,7 @@ function perform_step!(integrator, cache::ETDRK2Cache, repeat_step=false)
     F2 .-= rtmp # "F2" is G2 - G1
     # Update u
     u .= tmp
-    Base.axpy!(dt, mul!(rtmp, phi2, F2), u)
+    axpy!(dt, mul!(rtmp, phi2, F2), u)
   end
 
   # Update integrator state
@@ -286,9 +288,9 @@ function perform_step!(integrator, cache::ETDRK3Cache, repeat_step=false)
     f.f2(F3, tmp, p, t + dt); F3 .+= Au
     # update u
     u .= uprev
-    Base.axpy!(dt, mul!(rtmp, B1, F1), u)
-    Base.axpy!(dt, mul!(rtmp, B2, F2), u)
-    Base.axpy!(dt, mul!(rtmp, B3, F3), u)
+    axpy!(dt, mul!(rtmp, B1, F1), u)
+    axpy!(dt, mul!(rtmp, B2, F2), u)
+    axpy!(dt, mul!(rtmp, B3, F3), u)
   end
 
   # Update integrator state
@@ -411,14 +413,14 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
     f.f2(F3, tmp, p, t + halfdt); F3 .+= Au
     # stage 4
     @. tmp = uprev
-    Base.axpy!(dt, mul!(rtmp, A41, F1), tmp)
-    Base.axpy!(dt, mul!(rtmp, A43, F3), tmp) # tmp is U4
+    axpy!(dt, mul!(rtmp, A41, F1), tmp)
+    axpy!(dt, mul!(rtmp, A43, F3), tmp) # tmp is U4
     f.f2(F4, tmp, p, t + dt); F4 .+= Au
     # update u
     u .= uprev
-    Base.axpy!(dt, mul!(rtmp, B1, F1), u)
-    F2 .+= F3; Base.axpy!(dt, mul!(rtmp, B2, F2), u) # B3 = B2
-    Base.axpy!(dt, mul!(rtmp, B4, F4), u)
+    axpy!(dt, mul!(rtmp, B1, F1), u)
+    F2 .+= F3; axpy!(dt, mul!(rtmp, B2, F2), u) # B3 = B2
+    axpy!(dt, mul!(rtmp, B4, F4), u)
   end
 
   # Update integrator state
@@ -654,12 +656,12 @@ function perform_step!(integrator, cache::Exp4Cache, repeat_step=false)
   @muladd @. @view(B[:,2]) = rtmp - f0 - dt * rtmp2 # B[:,2] is now d7
   # Partially update entities that use k4, k5, k6
   mul!(rtmp, K, [1.0, -4/3, 1.0])
-  Base.axpy!(dt, rtmp, u)
+  axpy!(dt, rtmp, u)
   # Krylov for the second remainder d7
   k7 = @view(K[:, 1])
   phiv_timestep!(k7, ts[1], A, B; kwargs...)
   k7 ./= ts[1]
-  Base.axpy!(dt/6, k7, u)
+  axpy!(dt/6, k7, u)
 
   # Update integrator state
   f(integrator.fsallast, u, p, t + dt)
@@ -801,7 +803,7 @@ end
 
 ######################################################
 # Multistep exponential integrators
-function DiffEqBase.initialize!(integrator,cache::ETD2ConstantCache)
+function initialize!(integrator,cache::ETD2ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
 
@@ -839,7 +841,7 @@ function perform_step!(integrator,cache::ETD2ConstantCache,repeat_step=false)
   @pack integrator.fsallast = lin, nl, nlprev
 end
 
-function DiffEqBase.initialize!(integrator, cache::ETD2Cache)
+function initialize!(integrator, cache::ETD2Cache)
   integrator.kshortsize = 2
   resize!(integrator.k, integrator.kshortsize)
   rate_prototype = cache.rtmp1

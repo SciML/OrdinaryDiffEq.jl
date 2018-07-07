@@ -21,19 +21,24 @@ is_APPVEYOR = ( Sys.iswindows() && haskey(ENV,"APPVEYOR") )
 
 tic()
 if group == "All" || group == "Interface"
+  # Fail
   @time include("discrete_algorithm_test.jl")
   @time include("ode/ode_tstops_tests.jl")
   @time include("ode/ode_backwards_test.jl")
+  # Fail DevTool
   @time include("ode/ode_initdt_tests.jl")
   @time include("mass_matrix_tests.jl")
   @time include("differentiation_traits_tests.jl")
   @time include("ode/ode_saveat_tests.jl")
+  # Fail
   @time include("ode/ode_saveidxs_tests.jl")
   @time include("static_array_tests.jl")
+  # Fail
   @time include("data_array_test.jl")
   @time include("umodified_test.jl")
   @time include("composite_algorithm_test.jl")
   @time include("complex_tests.jl")
+  # Fail ???
   @time include("stiffness_detection_test.jl")
   @time include("export_tests.jl")
   @time include("utility_tests.jl")
@@ -41,10 +46,13 @@ end
 
 if group == "All" || group == "Integrators"
     @time @testset "Reinit Tests" begin include("reinit_test.jl") end
+    # Fail
     @time @testset "Events Tests" begin include("ode/ode_event_tests.jl") end
     @time @testset "Cache Tests" begin include("ode/ode_cache_tests.jl") end
+    # TODO
     @time @testset "Iterator Tests" begin include("iterator_tests.jl") end
     @time @testset "Integrator Interface Tests" begin include("integrator_interface_tests.jl") end
+    # Fail
     @time @testset "Add Steps Tests" begin include("ode/ode_add_steps_tests.jl") end
     @time @testset "Error Check Tests" begin include("check_error.jl") end
 end

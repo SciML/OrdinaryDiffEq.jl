@@ -1,6 +1,6 @@
 # http://www.chimica.unipd.it/antonino.polimeno/pubblica/downloads/JChemPhys_101_4062.pdf
 
-function DiffEqBase.initialize!(integrator,cache::SymplecticEulerConstantCache)
+function initialize!(integrator,cache::SymplecticEulerConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
   # Do the calculation pre
@@ -32,7 +32,7 @@ end
   integrator.k[2] = integrator.fsallast
 end
 
-function DiffEqBase.initialize!(integrator,cache::SymplecticEulerCache)
+function initialize!(integrator,cache::SymplecticEulerCache)
   integrator.kshortsize = 2
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
@@ -67,7 +67,7 @@ end
   f.f2(ku,du,uprev,p,t)
 end
 
-function DiffEqBase.initialize!(integrator,cache::C) where
+function initialize!(integrator,cache::C) where
     {C<:Union{VelocityVerletCache,Symplectic2Cache,Symplectic3Cache,Symplectic4Cache,
               Symplectic45Cache,Symplectic5Cache,Symplectic6Cache,Symplectic62Cache,
               McAte8Cache,KahanLi8Cache,SofSpa10Cache}}
@@ -84,7 +84,7 @@ function DiffEqBase.initialize!(integrator,cache::C) where
   integrator.f.f2(integrator.k[2].x[2],duprev,uprev,integrator.p,integrator.t)
 end
 
-function DiffEqBase.initialize!(integrator,cache::C) where
+function initialize!(integrator,cache::C) where
     {C<:Union{VelocityVerletConstantCache,Symplectic2ConstantCache,
               Symplectic3ConstantCache,Symplectic4ConstantCache,
               Symplectic45ConstantCache,Symplectic5ConstantCache,

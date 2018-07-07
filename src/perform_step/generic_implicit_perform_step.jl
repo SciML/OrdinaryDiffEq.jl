@@ -28,7 +28,7 @@ function (p::ImplicitRHS)(resid,u)
   @. resid = u - p.tmp - p.a*du1
 end
 
-function DiffEqBase.initialize!(integrator,
+function initialize!(integrator,
                      cache::Union{GenericImplicitEulerConstantCache,GenericTrapezoidConstantCache})
   cache.uhold[1] = integrator.uprev
   integrator.kshortsize = 2
@@ -88,7 +88,7 @@ end
   integrator.u = u
 end
 
-function DiffEqBase.initialize!(integrator,
+function initialize!(integrator,
                      cache::Union{GenericImplicitEulerCache,GenericTrapezoidCache})
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
@@ -143,7 +143,7 @@ end
   f(k, u, p, t+dt)
 end
 
-function DiffEqBase.initialize!(integrator, cache::GenericTrapezoidConstantCache)
+function initialize!(integrator, cache::GenericTrapezoidConstantCache)
   cache.uhold[1] = integrator.uprev
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
   integrator.kshortsize = 2
@@ -220,7 +220,7 @@ end
   integrator.u = u
 end
 
-function DiffEqBase.initialize!(integrator, cache::GenericTrapezoidCache)
+function initialize!(integrator, cache::GenericTrapezoidCache)
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)

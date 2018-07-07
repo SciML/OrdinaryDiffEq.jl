@@ -1,4 +1,4 @@
-function DiffEqBase.initialize!(integrator, cache::ExplicitRKConstantCache)
+function initialize!(integrator, cache::ExplicitRKConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
@@ -59,7 +59,7 @@ end
   integrator.u = u
 end
 
-function DiffEqBase.initialize!(integrator, cache::ExplicitRKCache)
+function initialize!(integrator, cache::ExplicitRKCache)
   integrator.kshortsize = 2
   integrator.fsallast = cache.fsallast
   integrator.fsalfirst = cache.kk[1]
