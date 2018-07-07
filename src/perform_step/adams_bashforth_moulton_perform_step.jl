@@ -1535,9 +1535,9 @@ end
 end
 
 
-# ABCN2
+# CNAB2
 
-function DiffEqBase.initialize!(integrator,cache::ABCN2ConstantCache)
+function initialize!(integrator,cache::CNAB2ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(integrator.kshortsize)
   integrator.fsalfirst =
@@ -1550,7 +1550,7 @@ function DiffEqBase.initialize!(integrator,cache::ABCN2ConstantCache)
   integrator.k[2] = integrator.fsallast
 end
 
-function perform_step!(integrator,cache::ABCN2ConstantCache,repeat_step=false)
+function perform_step!(integrator,cache::CNAB2ConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k2,uf,κ,tol = cache
   cnt = integrator.iter
@@ -1588,7 +1588,7 @@ function perform_step!(integrator,cache::ABCN2ConstantCache,repeat_step=false)
   integrator.u = u
 end
 
-function DiffEqBase.initialize!(integrator, cache::ABCN2Cache)
+function initialize!(integrator, cache::CNAB2Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
@@ -1598,7 +1598,7 @@ function DiffEqBase.initialize!(integrator, cache::ABCN2Cache)
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
 end
 
-function perform_step!(integrator, cache::ABCN2Cache, repeat_step=false)
+function perform_step!(integrator, cache::CNAB2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,dz,z,k,k1,k2,du₁,b,J,W,jac_config,tmp,atmp,κ,tol = cache
   cnt = integrator.iter

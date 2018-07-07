@@ -175,10 +175,11 @@ function alg_cache_expRK(alg::OrdinaryDiffEqExponentialAlgorithm, u, f, dt, plis
   if alg.krylov
     ops = nothing # no caching
     # Build up caches used by Krylov phiv
-    Ks = KrylovSubspace{T}(n, min(alg.m, n))
-    phiv_caches = construct_phiv_caches(Ks, maximum(plist))
+    m = min(alg.m, n)
+    Ks = KrylovSubspace{T}(n, m)
+    phiv_cache = PhivCache{T}(m, maximum(plist))
     ws = [Matrix{T}(n, plist[i] + 1) for i = 1:length(plist)]
-    KsCache = (Ks, phiv_caches, ws) # should use named tuple in v0.6
+    KsCache = (Ks, phiv_cache, ws) # should use named tuple in v0.6
   else
     KsCache = nothing
     # Precompute the operators
@@ -211,7 +212,7 @@ function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
     exphA = nothing # no caching
     m = min(alg.m, n)
     Ks = KrylovSubspace{T}(n, m)
-    expv_cache = Matrix{T}(m, m)
+    expv_cache = ExpvCache{T}(m)
     KsCache = (Ks, expv_cache)
   else
     KsCache = nothing
@@ -342,7 +343,6 @@ struct Exp4Cache{uType,rateType,matType,KsType} <: ExpRKCache
   tmp::uType
   rtmp::rateType
   rtmp2::rateType
-  k7::rateType
   K::matType
   A::matType
   B::matType
@@ -351,7 +351,7 @@ end
 function alg_cache(alg::Exp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)                                              # uType caches
-  rtmp, rtmp2, k7 = (zeros(rate_prototype) for i = 1:3)         # rateType caches
+  rtmp, rtmp2 = (zeros(rate_prototype) for i = 1:2)             # rateType caches
   # Allocate matrices
   # TODO: units
   n = length(u); T = eltype(u)
@@ -361,7 +361,67 @@ function alg_cache(alg::Exp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   # Allocate caches for phiv_timestep
   maxiter = min(alg.m, n)
   KsCache = _phiv_timestep_caches(u, maxiter, 1)
-  Exp4Cache(u,uprev,tmp,rtmp,rtmp2,k7,K,A,B,KsCache)
+  Exp4Cache(u,uprev,tmp,rtmp,rtmp2,K,A,B,KsCache)
+end
+
+struct EPIRK4s3AConstantCache <: ExpRKConstantCache end
+alg_cache(alg::EPIRK4s3A,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
+  uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = EPIRK4s3AConstantCache()
+
+struct EPIRK4s3ACache{uType,rateType,matType,KsType} <: ExpRKCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  rtmp::rateType
+  rtmp2::rateType
+  K::matType
+  A::matType
+  B::matType
+  KsCache::KsType
+end
+function alg_cache(alg::EPIRK4s3A,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)                                    # uType caches
+  rtmp, rtmp2 = (zeros(rate_prototype) for i = 1:2)   # rateType caches
+  # Allocate matrices
+  n = length(u); T = eltype(u)
+  K = Matrix{T}(n, 2)
+  A = Matrix{T}(n, n) # TODO: sparse Jacobian support
+  B = zeros(T, n, 5)
+  # Allocate caches for phiv_timestep
+  maxiter = min(alg.m, n)
+  KsCache = _phiv_timestep_caches(u, maxiter, 4)
+  EPIRK4s3ACache(u,uprev,tmp,rtmp,rtmp2,K,A,B,KsCache)
+end
+
+struct EPIRK4s3BConstantCache <: ExpRKConstantCache end
+alg_cache(alg::EPIRK4s3B,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
+  uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = EPIRK4s3BConstantCache()
+
+struct EPIRK4s3BCache{uType,rateType,matType,KsType} <: ExpRKCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  rtmp::rateType
+  rtmp2::rateType
+  K::matType
+  A::matType
+  B::matType
+  KsCache::KsType
+end
+function alg_cache(alg::EPIRK4s3B,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)                                    # uType caches
+  rtmp, rtmp2 = (zeros(rate_prototype) for i = 1:2)   # rateType caches
+  # Allocate matrices
+  n = length(u); T = eltype(u)
+  K = Matrix{T}(n, 2)
+  A = Matrix{T}(n, n) # TODO: sparse Jacobian support
+  B = zeros(T, n, 5)
+  # Allocate caches for phiv_timestep
+  maxiter = min(alg.m, n)
+  KsCache = _phiv_timestep_caches(u, maxiter, 4)
+  EPIRK4s3BCache(u,uprev,tmp,rtmp,rtmp2,K,A,B,KsCache)
 end
 
 ####################################

@@ -92,20 +92,36 @@ struct SSPRK104{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
 end
 SSPRK104(stage_limiter! = trivial_limiter!) = SSPRK104(stage_limiter!, trivial_limiter!)
 struct BS3 <: OrdinaryDiffEqAdaptiveAlgorithm end
-struct BS5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct DP5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct DP5Threaded <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Tsit5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct DP8 <: OrdinaryDiffEqAdaptiveAlgorithm end
-struct Vern6 <: OrdinaryDiffEqAdaptiveAlgorithm end
-struct Vern7 <: OrdinaryDiffEqAdaptiveAlgorithm end
-struct Vern8 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct TanYam7 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct TsitPap8 <: OrdinaryDiffEqAdaptiveAlgorithm end
-struct Vern9 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Feagin10 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Feagin12 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Feagin14 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+struct BS5 <: OrdinaryDiffEqAdaptiveAlgorithm
+  lazy::Bool
+  BS5(;lazy=true) = new(lazy)
+end
+struct Vern6 <: OrdinaryDiffEqAdaptiveAlgorithm
+  lazy::Bool
+  Vern6(;lazy=true) = new(lazy)
+end
+struct Vern7 <: OrdinaryDiffEqAdaptiveAlgorithm
+  lazy::Bool
+  Vern7(;lazy=true) = new(lazy)
+end
+struct Vern8 <: OrdinaryDiffEqAdaptiveAlgorithm
+  lazy::Bool
+  Vern8(;lazy=true) = new(lazy)
+end
+struct Vern9 <: OrdinaryDiffEqAdaptiveAlgorithm
+  lazy::Bool
+  Vern9(;lazy=true) = new(lazy)
+end
 
 ################################################################################
 
@@ -167,9 +183,9 @@ struct VCABM5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 struct VCABM <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm end
 
-# IMEX Multistep methods
+# IMEXEuler
 
-struct ABCN2{CS,AD,F,FDT,K,T,T2} <: OrdinaryDiffEqImplicitAlgorithm{CS,AD}
+struct IMEXEuler{CS,AD,F,FDT,K,T,T2} <: OrdinaryDiffEqImplicitAlgorithm{CS,AD}
   linsolve::F
   diff_type::FDT
   κ::K
@@ -179,11 +195,33 @@ struct ABCN2{CS,AD,F,FDT,K,T,T2} <: OrdinaryDiffEqImplicitAlgorithm{CS,AD}
   max_newton_iter::Int
   new_jac_conv_bound::T2
 end
-Base.@pure ABCN2(;chunk_size=0,autodiff=true,diff_type=Val{:central},
+Base.@pure IMEXEuler(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                       linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
                       extrapolant=:linear,min_newton_iter=1,
                       max_newton_iter=7,new_jac_conv_bound = 1e-3) =
-                      ABCN2{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),
+                      IMEXEuler{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),
+                      typeof(κ),typeof(tol),typeof(new_jac_conv_bound)}(
+                      linsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
+                      max_newton_iter,new_jac_conv_bound)
+
+
+# IMEX Multistep methods
+
+struct CNAB2{CS,AD,F,FDT,K,T,T2} <: OrdinaryDiffEqImplicitAlgorithm{CS,AD}
+  linsolve::F
+  diff_type::FDT
+  κ::K
+  tol::T
+  extrapolant::Symbol
+  min_newton_iter::Int
+  max_newton_iter::Int
+  new_jac_conv_bound::T2
+end
+Base.@pure CNAB2(;chunk_size=0,autodiff=true,diff_type=Val{:central},
+                      linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
+                      extrapolant=:linear,min_newton_iter=1,
+                      max_newton_iter=7,new_jac_conv_bound = 1e-3) =
+                      CNAB2{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),
                       typeof(κ),typeof(tol),typeof(new_jac_conv_bound)}(
                       linsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
                       max_newton_iter,new_jac_conv_bound)
@@ -206,6 +244,29 @@ Base.@pure CNLF2(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                       typeof(κ),typeof(tol),typeof(new_jac_conv_bound)}(
                       linsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
                       max_newton_iter,new_jac_conv_bound)
+
+struct QNDF1{CS,AD,F,FDT,K,T,T2,κType,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
+  linsolve::F
+  diff_type::FDT
+  κ::K
+  tol::T
+  extrapolant::Symbol
+  min_newton_iter::Int
+  max_newton_iter::Int
+  new_jac_conv_bound::T2
+  kappa::κType
+end
+Base.@pure QNDF1(;chunk_size=0,autodiff=true,diff_type=Val{:central},
+                      linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
+                      extrapolant=:linear,min_newton_iter=1,
+                      max_newton_iter=7,new_jac_conv_bound = 1e-3, kappa = -0.1850,
+                      controller = :Predictive) =
+                      QNDF1{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),
+                      typeof(κ),typeof(tol),typeof(new_jac_conv_bound),typeof(kappa),controller}(
+                      linsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
+                      max_newton_iter,new_jac_conv_bound,kappa)
+
+Base.@pure QBDF1(;kwargs...) = QNDF1(;kappa=0,kwargs...)
 
 # Adams/BDF methods in Nordsieck forms
 struct AN5   <: OrdinaryDiffEqAdaptiveAlgorithm end
@@ -687,11 +748,13 @@ for Alg in [:LawsonEuler, :NorsettEuler, :ETDRK2, :ETDRK3, :ETDRK4, :HochOst4]
   @eval Base.@pure $Alg(;krylov=false, m=30, iop=0) = $Alg(krylov, m, iop)
 end
 ETD1 = NorsettEuler # alias
-struct Exp4 <: OrdinaryDiffEqExponentialAlgorithm
-  m::Int
-  iop::Int
+for Alg in [:Exp4, :EPIRK4s3A, :EPIRK4s3B]
+  @eval struct $Alg <: OrdinaryDiffEqExponentialAlgorithm
+    m::Int
+    iop::Int
+  end
+  @eval Base.@pure $Alg(;m=30, iop=0) = $Alg(m, iop)
 end
-Base.@pure Exp4(;m=30, iop=0)  = Exp4(m, iop)
 struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm end
 struct ETD2 <: OrdinaryDiffEqExponentialAlgorithm end
 

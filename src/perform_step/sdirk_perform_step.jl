@@ -37,7 +37,7 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,κ,tol = cache
   alg = unwrap_alg(integrator, true)
-  W = calc_W!(integrator, cache, γ*dt, repeat_step)
+  W = calc_W!(integrator, cache, dt, repeat_step)
 
   # initial guess
   if alg.extrapolant == :linear

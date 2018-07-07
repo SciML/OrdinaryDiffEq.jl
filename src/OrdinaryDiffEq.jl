@@ -68,6 +68,7 @@ module OrdinaryDiffEq
   include("caches/adams_bashforth_moulton_caches.jl")
   include("caches/nordsieck_caches.jl")
   include("caches/bdf_caches.jl")
+  include("caches/euler_imex_caches.jl")
 
   include("alg_utils.jl")
 
@@ -106,6 +107,7 @@ module OrdinaryDiffEq
   include("perform_step/adams_bashforth_moulton_perform_step.jl")
   include("perform_step/nordsieck_perform_step.jl")
   include("perform_step/bdf_perform_step.jl")
+  include("perform_step/euler_imex_perform_step.jl")
 
   include("dense/generic_dense.jl")
   include("dense/interpolants.jl")
@@ -119,6 +121,7 @@ module OrdinaryDiffEq
   include("nlsolve_utils.jl")
   include("nordsieck_utils.jl")
   include("adams_utils.jl")
+  include("bdf_utils.jl")
   include("exponential_utils.jl")
   include("derivative_wrappers.jl")
   include("iterator_interface.jl")
@@ -163,7 +166,7 @@ module OrdinaryDiffEq
 
   export GenericIIF1, GenericIIF2
 
-  export LawsonEuler, NorsettEuler, ETD1, ETDRK2, ETDRK3, ETDRK4, HochOst4, Exp4, ETD2
+  export LawsonEuler, NorsettEuler, ETD1, ETDRK2, ETDRK3, ETDRK4, HochOst4, Exp4, EPIRK4s3A, EPIRK4s3B, ETD2
 
   export SymplecticEuler, VelocityVerlet, VerletLeapfrog, PseudoVerletLeapfrog,
          McAte2, Ruth3, McAte3, CandyRoz4, McAte4, McAte42, McAte5,
@@ -180,11 +183,11 @@ module OrdinaryDiffEq
 
   export VCABM
 
-  export ABCN2, CNLF2
+  export IMEXEuler, CNAB2, CNLF2
 
   export AN5, JVODE, JVODE_Adams
 
-  export ABDF2
+  export ABDF2, QNDF1, QBDF1
 
   export AutoSwitch, AutoTsit5, AutoDP5,
          AutoVern6, AutoVern7, AutoVern8, AutoVern9

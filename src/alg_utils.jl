@@ -67,6 +67,7 @@ alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))
 alg_extrapolates(alg::GenericImplicitEuler) = true
 alg_extrapolates(alg::GenericTrapezoid) = true
 alg_extrapolates(alg::ImplicitEuler) = true
+alg_extrapolates(alg::IMEXEuler) = true
 alg_extrapolates(alg::LinearImplicitEuler) = true
 alg_extrapolates(alg::Trapezoid) = true
 alg_extrapolates(alg::ImplicitMidpoint) = true
@@ -109,6 +110,8 @@ alg_order(alg::ETDRK3) = 3
 alg_order(alg::ETDRK4) = 4
 alg_order(alg::HochOst4) = 4
 alg_order(alg::Exp4) = 4
+alg_order(alg::EPIRK4s3A) = 4
+alg_order(alg::EPIRK4s3B) = 4
 alg_order(alg::SplitEuler) = 1
 alg_order(alg::ETD2) = 2
 
@@ -228,13 +231,15 @@ alg_order(alg::VCABM5) = 5
 
 alg_order(alg::VCABM) = 1  #dummy value
 
-alg_order(alg::ABCN2) = 2
+alg_order(alg::IMEXEuler) = 1
+alg_order(alg::CNAB2) = 2
 alg_order(alg::CNLF2) = 2
 
 alg_order(alg::AN5) = 5
 alg_order(alg::JVODE) = 1  #dummy value
 
 alg_order(alg::ABDF2) = 2
+alg_order(alg::QNDF1) = 1
 
 alg_maximum_order(alg) = alg_order(alg)
 alg_maximum_order(alg::CompositeAlgorithm) = maximum(alg_order(x) for x in alg.algs)
@@ -282,6 +287,7 @@ qsteady_max_default(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = 6//5
 qsteady_max_default(alg::OrdinaryDiffEqImplicitAlgorithm) = 1//1
 qsteady_max_default(alg::AN5) = 3//2
 qsteady_max_default(alg::JVODE) = 3//2
+qsteady_max_default(alg::QNDF1) = 2//1
 
 FunctionMap_scale_by_time(alg::FunctionMap{scale_by_time}) where {scale_by_time} = scale_by_time
 

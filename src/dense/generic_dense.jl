@@ -4,7 +4,7 @@
 # get_tmp_arr(integrator.cache) which gives a pointer to some
 # cache array which can be modified.
 
-@inline function ode_addsteps!(integrator,f=integrator.f,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false}) where {calcVal,calcVal2,calcVal3}
+@inline function ode_addsteps!(integrator,f=integrator.f,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if !(typeof(integrator.cache) <: CompositeCache)
     ode_addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.u,
                   integrator.dt,f,integrator.p,integrator.cache,
@@ -308,8 +308,8 @@ end
 """
 By default, simpledense
 """
-@inline function ode_addsteps!(k,t,uprev,u,dt,f,p,cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false}) where {calcVal,calcVal2,calcVal3}
-  if length(k)<2 || calcVal
+@inline function ode_addsteps!(k,t,uprev,u,dt,f,p,cache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
+  if length(k)<2 || always_calc_begin
     if typeof(cache) <: OrdinaryDiffEqMutableCache
       rtmp = similar(u, eltype(eltype(k)))
       f(rtmp,uprev,p,t)

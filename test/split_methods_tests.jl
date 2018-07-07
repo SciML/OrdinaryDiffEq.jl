@@ -62,9 +62,14 @@ dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
 @test abs(sim.𝒪est[:l∞]-5) < testTol
 
-# ABCN2
+# IMEXEuler
 dts = 1.//2.^(8:-1:4)
-sim = test_convergence(dts,prob,ABCN2())
+sim1 = test_convergence(dts,prob,IMEXEuler())
+@test abs(sim1.𝒪est[:l∞]-1) < testTol
+
+# CNAB2
+dts = 1.//2.^(8:-1:4)
+sim = test_convergence(dts,prob,CNAB2())
 @test abs(sim.𝒪est[:l∞]-2) < testTol
 
 # CNLF2
@@ -97,9 +102,14 @@ dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
 @test abs(sim.𝒪est[:l∞]-5) < testTol
 
-# ABCN2
+# IMEXEuler
 dts = 1.//2.^(8:-1:4)
-sim = test_convergence(dts,prob,ABCN2())
+sim2 = test_convergence(dts,prob,IMEXEuler())
+@test abs(sim2.𝒪est[:l∞]-1) < testTol
+
+# CNAB2
+dts = 1.//2.^(8:-1:4)
+sim = test_convergence(dts,prob,CNAB2())
 @test abs(sim.𝒪est[:l∞]-2) < testTol
 
 # CNLF2
@@ -132,9 +142,14 @@ dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
 @test abs(sim.𝒪est[:l∞]-5) < testTol
 
-# ABCN2
+# IMEXEuler
 dts = 1.//2.^(8:-1:4)
-sim = test_convergence(dts,prob,ABCN2())
+sim3 = test_convergence(dts,prob,IMEXEuler())
+@test abs(sim3.𝒪est[:l∞]-2) < testTol # Super-convergence
+
+# CNAB2
+dts = 1.//2.^(8:-1:4)
+sim = test_convergence(dts,prob,CNAB2())
 @test abs(sim.𝒪est[:l∞]-2) < testTol
 
 # CNLF2
@@ -167,9 +182,14 @@ dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
 @test abs(sim.𝒪est[:l∞]-5) < testTol
 
-# ABCN2
+# IMEXEuler
 dts = 1.//2.^(8:-1:4)
-sim = test_convergence(dts,prob,ABCN2())
+sim1 = test_convergence(dts,prob,IMEXEuler())
+@test abs(sim1.𝒪est[:l∞]-1) < testTol
+
+# CNAB2
+dts = 1.//2.^(8:-1:4)
+sim = test_convergence(dts,prob,CNAB2())
 @test abs(sim.𝒪est[:l∞]-2) < testTol
 
 # CNLF2
@@ -202,9 +222,14 @@ dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
 @test abs(sim.𝒪est[:l∞]-5) < testTol
 
-# ABCN2
+# IMEXEuler
 dts = 1.//2.^(8:-1:4)
-sim = test_convergence(dts,prob,ABCN2())
+sim2 = test_convergence(dts,prob,IMEXEuler())
+@test abs(sim2.𝒪est[:l∞]-1) < testTol
+
+# CNAB2
+dts = 1.//2.^(8:-1:4)
+sim = test_convergence(dts,prob,CNAB2())
 @test abs(sim.𝒪est[:l∞]-2) < testTol
 
 # CNLF2
@@ -237,9 +262,14 @@ dts = 1.//2.^(8:-1:4)
 sim = test_convergence(dts,prob,KenCarp5())
 @test abs(sim.𝒪est[:l∞]-5) < testTol
 
-# ABCN2
+# IMEXEuler
 dts = 1.//2.^(8:-1:4)
-sim = test_convergence(dts,prob,ABCN2())
+sim3 = test_convergence(dts,prob,IMEXEuler())
+@test abs(sim3.𝒪est[:l∞]-2) < testTol # Super-convergence
+
+# CNAB2
+dts = 1.//2.^(8:-1:4)
+sim = test_convergence(dts,prob,CNAB2())
 @test abs(sim.𝒪est[:l∞]-2) < testTol
 
 # CNLF2

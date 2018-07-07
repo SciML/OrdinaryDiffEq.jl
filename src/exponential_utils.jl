@@ -323,6 +323,19 @@ function lanczos!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol=1e-7,
   return Ks
 end
 
+# Cache type for expv
+mutable struct ExpvCache{T}
+  mem::Vector{T}
+  ExpvCache{T}(maxiter::Int) where {T} = new{T}(Vector{T}(maxiter^2))
+end
+function Base.resize!(C::ExpvCache{T}, maxiter::Int) where {T}
+  C.mem = Vector{T}(maxiter^2 * 2)
+  return C
+end
+function get_cache(C::ExpvCache, m::Int)
+  m^2 > length(C.mem) && resize!(C, m) # resize the cache if needed
+  reshape(@view(C.mem[1:m^2]), m, m)
+end
 """
     expv(t,A,b; kwargs) -> exp(tA)b
 
@@ -351,16 +364,16 @@ end
 
 Non-allocating version of `expv` that uses precomputed Krylov subspace `Ks`.
 """
-function expv!(w::Vector{T}, t::Number, Ks::KrylovSubspace{B, T}; 
+function expv!(w::AbstractVector{T}, t::Number, Ks::KrylovSubspace{B, T}; 
   cache=nothing) where {B, T <: Number}
   m, beta, V, H = Ks.m, Ks.beta, getV(Ks), getH(Ks)
   @assert length(w) == size(V, 1) "Dimension mismatch"
   if cache == nothing
     cache = Matrix{T}(m, m)
+  elseif isa(cache, ExpvCache)
+    cache = get_cache(cache, m)
   else
-    # The cache may have a bigger size to handle different values of m.
-    # Here we only need a portion.
-    cache = @view(cache[1:m, 1:m])
+    throw(ArgumentError("Cache must be an ExpvCache"))
   end
   scale!(t, copy!(cache, @view(H[1:m, :])))
   if ishermitian(cache)
@@ -374,6 +387,28 @@ function expv!(w::Vector{T}, t::Number, Ks::KrylovSubspace{B, T};
   scale!(beta, A_mul_B!(w, @view(V[:, 1:m]), expHe)) # exp(A) ≈ norm(b) * V * exp(H)e
 end
 
+# Cache type for phiv
+mutable struct PhivCache{T}
+  mem::Vector{T}
+  function PhivCache{T}(maxiter::Int, p::Int) where {T}
+    numelems = maxiter + maxiter^2 + (maxiter + p)^2 + maxiter*(p + 1)
+    new{T}(Vector{T}(numelems))
+  end
+end
+function Base.resize!(C::PhivCache{T}, maxiter::Int, p::Int) where {T}
+  numelems = maxiter + maxiter^2 + (maxiter + p)^2 + maxiter*(p + 1)
+  C.mem = Vector{T}(numelems * 2)
+  return C
+end
+function get_caches(C::PhivCache, m::Int, p::Int)
+  numelems = m + m^2 + (m + p)^2 + m*(p + 1)
+  numelems^2 > length(C.mem) && resize!(C, m, p) # resize the cache if needed
+  e = @view(C.mem[1:m]); offset = m
+  Hcopy = reshape(@view(C.mem[offset + 1:offset + m^2]), m, m); offset += m^2
+  C1 = reshape(@view(C.mem[offset + 1:offset + (m+p)^2]), m+p, m+p); offset += (m+p)^2
+  C2 = reshape(@view(C.mem[offset + 1:offset + m*(p+1)]), m, p+1)
+  return e, Hcopy, C1, C2
+end
 """
     phiv(t,A,b,k;correct,kwargs) -> [phi_0(tA)b phi_1(tA)b ... phi_k(tA)b][, errest]
 
@@ -400,37 +435,33 @@ the φ-functions in exponential integrators. arXiv preprint arXiv:0907.4631.
 Formula (10).
 """
 function phiv(t, A, b, k; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, iop=0, 
-  caches=nothing, correct=false, errest=false)
+  cache=nothing, correct=false, errest=false)
   Ks = arnoldi(A, b; m=m, tol=tol, norm=norm, iop=iop)
   w = Matrix{eltype(b)}(length(b), k+1)
-  phiv!(w, t, Ks, k; caches=caches, correct=correct, errest=errest)
+  phiv!(w, t, Ks, k; cache=cache, correct=correct, errest=errest)
 end
-function phiv(t, Ks::KrylovSubspace{B, T}, k; caches=nothing, correct=false, 
+function phiv(t, Ks::KrylovSubspace{B, T}, k; cache=nothing, correct=false, 
   errest=false) where {B, T}
   n = size(getV(Ks), 1)
   w = Matrix{T}(n, k+1)
-  phiv!(w, t, Ks, k; caches=caches, correct=correct, errest=errest)
+  phiv!(w, t, Ks, k; cache=cache, correct=correct, errest=errest)
 end
 """
-    phiv!(w,t,Ks,k[;caches,correct,errest]) -> w[,errest]
+    phiv!(w,t,Ks,k[;cache,correct,errest]) -> w[,errest]
 
 Non-allocating version of 'phiv' that uses precomputed Krylov subspace `Ks`.
 """
-function phiv!(w::Matrix{T}, t::Number, Ks::KrylovSubspace{B, T}, k::Integer; 
-  caches=nothing, correct=false, errest=false) where {B, T <: Number}
+function phiv!(w::AbstractMatrix{T}, t::Number, Ks::KrylovSubspace{B, T}, k::Integer; 
+  cache=nothing, correct=false, errest=false) where {B, T <: Number}
   m, beta, V, H = Ks.m, Ks.beta, getV(Ks), getH(Ks)
   @assert size(w, 1) == size(V, 1) "Dimension mismatch"
   @assert size(w, 2) == k + 1 "Dimension mismatch"
-  if caches == nothing
-    caches = construct_phiv_caches(Ks, k)
+  if cache == nothing
+    cache = PhivCache{T}(m, k)
+  elseif !isa(cache, PhivCache)
+    throw(ArgumentError("Cache must be a PhivCache"))
   end
-  e, Hcopy, C1, C2 = caches
-  # The caches may have a bigger size to handle different values of m.
-  # Here we only need a portion of them.
-  e = @view(e[1:m])
-  Hcopy = @view(Hcopy[1:m, 1:m])
-  C1 = @view(C1[1:m + k, 1:m + k])
-  C2 = @view(C2[1:m, 1:k + 1])
+  e, Hcopy, C1, C2 = get_caches(cache, m, k)
   scale!(t, copy!(Hcopy, @view(H[1:m, :])))
   fill!(e, zero(T)); e[1] = one(T) # e is the [1,0,...,0] basis vector
   phiv_dense!(C2, Hcopy, e, k; cache=C1) # C2 = [ϕ0(H)e ϕ1(H)e ... ϕk(H)e]
@@ -450,15 +481,6 @@ function phiv!(w::Matrix{T}, t::Number, Ks::KrylovSubspace{B, T}, k::Integer;
   else
     return w
   end
-end
-# Helper method to allocate caches for phiv
-function construct_phiv_caches(Ks::KrylovSubspace{B, T}, p::Int) where {B, T}
-  m = Ks.maxiter
-  e = Vector{T}(m)
-  Hcopy = Matrix{T}(m, m)
-  C1 = Matrix{T}(m + p, m + p)
-  C2 = Matrix{T}(m, p + 1)
-  return e, Hcopy, C1, C2
 end
 
 ###########################################
@@ -507,12 +529,12 @@ end
 
 Non-allocating version of `expv_timestep`.
 """
-function expv_timestep!(u::Vector{T}, t::tType, A, b::Vector{T}; 
+function expv_timestep!(u::AbstractVector{T}, t::tType, A, b::AbstractVector{T}; 
   kwargs...) where {T <: Number, tType <: Real}
   expv_timestep!(reshape(u, length(u), 1), [t], A, b; kwargs...)
   return u
 end
-function expv_timestep!(U::Matrix{T}, ts::Vector{tType}, A, b::Vector{T}; 
+function expv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, b::AbstractVector{T}; 
   kwargs...) where {T <: Number, tType <: Real}
   B = reshape(b, length(b), 1)
   phiv_timestep!(U, ts, A, B; kwargs...)
@@ -558,12 +580,12 @@ end
 
 Non-allocating version of `phiv_timestep`.
 """
-function phiv_timestep!(u::Vector{T}, t::tType, A, B::Matrix{T}; 
+function phiv_timestep!(u::AbstractVector{T}, t::tType, A, B::AbstractMatrix{T}; 
   kwargs...) where {T <: Number, tType <: Real}
   phiv_timestep!(reshape(u, length(u), 1), [t], A, B; kwargs...)
   return u
 end
-function phiv_timestep!(U::Matrix{T}, ts::Vector{tType}, A, B::Matrix{T}; tau::Real=0.0, 
+function phiv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, B::AbstractMatrix{T}; tau::Real=0.0, 
   m::Int=min(10, size(A, 1)), tol::Real=1e-7, norm=Base.norm, iop::Int=0, 
   correct::Bool=false, caches=nothing, adaptive=false, delta::Real=1.2, 
   gamma::Real=0.8, NA::Int=0, verbose=false) where {T <: Number, tType <: Real}
@@ -588,10 +610,13 @@ function phiv_timestep!(U::Matrix{T}, ts::Vector{tType}, A, B::Matrix{T}; tau::R
     W = Matrix{T}(n, p+1)         # stores the w vectors
     P = Matrix{T}(n, p+2)         # stores output from phiv!
     Ks = KrylovSubspace{T}(n, m)  # stores output from arnoldi!
-    phiv_caches = nothing         # caches used by phiv!
+    phiv_cache = nothing         # cache used by phiv!
   else
-    u, W, P, Ks, phiv_caches = caches
-    @assert length(u) == n && size(W) == (n, p+1) && size(P) == (n, p+2) "Dimension mismatch"
+    u, W, P, Ks, phiv_cache = caches
+    @assert length(u) == n && size(W, 1) == n && size(P, 1) == n "Dimension mismatch"
+    # W and P may be bigger than actually needed
+    W = @view(W[:, 1:p+1])
+    P = @view(P[:, 1:p+2])
   end
   copy!(u, @view(B[:, 1])) # u(0) = b0
   coeffs = ones(tType, p);
@@ -627,7 +652,7 @@ function phiv_timestep!(U::Matrix{T}, ts::Vector{tType}, A, B::Matrix{T}; tau::R
     end
     # Part 2: compute ϕp(tau*A)wp using Krylov, possibly with adaptation
     arnoldi!(Ks, A, @view(W[:, end]); tol=tol, m=m, norm=norm, iop=iop, cache=u)
-    _, epsilon = phiv!(P, tau, Ks, p + 1; caches=phiv_caches, correct=correct, errest=true)
+    _, epsilon = phiv!(P, tau, Ks, p + 1; cache=phiv_cache, correct=correct, errest=true)
     verbose && println("t = $t, m = $m, tau = $tau, error estimate = $epsilon")
     if adaptive
       omega = (tend / tau) * (epsilon / abstol)
@@ -641,7 +666,7 @@ function phiv_timestep!(U::Matrix{T}, ts::Vector{tType}, A, B::Matrix{T}; tau::R
         tau, tau_old = tau_new, tau
         # Compute ϕp(tau*A)wp using the new parameters
         arnoldi!(Ks, A, @view(W[:, end]); tol=tol, m=m, norm=norm, iop=iop, cache=u)
-        _, epsilon_new = phiv!(P, tau, Ks, p + 1; caches=phiv_caches, correct=correct, errest=true)
+        _, epsilon_new = phiv!(P, tau, Ks, p + 1; cache=phiv_cache, correct=correct, errest=true)
         epsilon, epsilon_old = epsilon_new, epsilon
         omega = (tend / tau) * (epsilon / abstol)
         verbose && println("  * m = $m, tau = $tau, error estimate = $epsilon")
@@ -659,7 +684,7 @@ function phiv_timestep!(U::Matrix{T}, ts::Vector{tType}, A, B::Matrix{T}; tau::R
     while snapshot <= length(ts) && t + tau >= ts[snapshot]
       tau_snapshot = ts[snapshot] - t
       u_snapshot = @view(U[:, snapshot])
-      phiv!(P, tau_snapshot, Ks, p + 1; caches=phiv_caches, correct=correct)
+      phiv!(P, tau_snapshot, Ks, p + 1; cache=phiv_cache, correct=correct)
       scale!(tau_snapshot^p, copy!(u_snapshot, @view(P[:, end - 1])))
       @inbounds for l = 1:p-1 # compute cl = tau^l/l!
         coeffs[l+1] = coeffs[l] * tau_snapshot / l
@@ -727,6 +752,6 @@ function _phiv_timestep_caches(u_prototype, maxiter::Int, p::Int)
   W = Matrix{T}(n, p+1)                         # stores the w vectors
   P = Matrix{T}(n, p+2)                         # stores output from phiv!
   Ks = KrylovSubspace{T}(n, maxiter)            # stores output from arnoldi!
-  phiv_caches = construct_phiv_caches(Ks, p+1)  # caches used by phiv! (need +1 for error estimation)
-  return u, W, P, Ks, phiv_caches
+  phiv_cache = PhivCache{T}(maxiter, p+1)       # cache used by phiv! (need +1 for error estimation)
+  return u, W, P, Ks, phiv_cache
 end
