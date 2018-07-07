@@ -147,7 +147,6 @@ function DiffEqBase.__init(
 
   callbacks_internal = CallbackSet(callback,prob.callback)
 
-
   ### Algorithm-specific defaults ###
   if save_idxs == nothing
     ksEltype = Vector{rateType}
@@ -354,7 +353,7 @@ function DiffEqBase.solve!(integrator::ODEIntegrator)
     f = integrator.sol.prob.f
   end
 
-  if DiffEqBase.has_analytic(f)
+  if !(typeof(integrator.sol.prob)<:DiscreteProblem) && DiffEqBase.has_analytic(f)
     DiffEqBase.calculate_solution_errors!(integrator.sol;timeseries_errors=integrator.opts.timeseries_errors,dense_errors=integrator.opts.dense_errors)
   end
   integrator.sol = DiffEqBase.solution_new_retcode(integrator.sol,:Success)

@@ -21,7 +21,6 @@ is_APPVEYOR = ( Sys.iswindows() && haskey(ENV,"APPVEYOR") )
 
 tic()
 if group == "All" || group == "Interface"
-  # Fail
   @time include("discrete_algorithm_test.jl")
   @time include("ode/ode_tstops_tests.jl")
   @time include("ode/ode_backwards_test.jl")
