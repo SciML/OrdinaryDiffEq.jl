@@ -13,7 +13,7 @@ end
 
 function initialize!(integrator,cache::Union{GenericIIF1ConstantCache,GenericIIF2ConstantCache})
   integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   A = integrator.f.f1
   cache.uhold[1] = integrator.f.f2(integrator.uprev,integrator.p,integrator.t)
   integrator.fsalfirst = integrator.f.f1(integrator.uprev,integrator.p,integrator.t) .+ cache.uhold[1]

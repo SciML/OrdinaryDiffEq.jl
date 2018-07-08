@@ -19,7 +19,7 @@ function initialize!(integrator, cache::ExpRKConstantCache)
 
   # Initialize interpolation derivatives
   integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
 end
@@ -805,7 +805,7 @@ end
 # Multistep exponential integrators
 function initialize!(integrator,cache::ETD2ConstantCache)
   integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
   # Pre-start fsal
   lin = integrator.f.f1(integrator.uprev,integrator.p,integrator.t)

@@ -12,7 +12,7 @@ end
 function initialize!(integrator, cache::Union{Rosenbrock23ConstantCache,
                                               Rosenbrock32ConstantCache})
   integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
 
   # Avoid undefined entries if k is an array of arrays
@@ -242,7 +242,7 @@ function initialize!(integrator, cache::Union{Rosenbrock33ConstantCache,
                                               Rosenbrock4ConstantCache,
                                               Rosenbrock5ConstantCache})
   integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
 
   # Avoid undefined entries if k is an array of arrays
@@ -724,7 +724,7 @@ end
 
 function initialize!(integrator, cache::Rodas4ConstantCache)
   integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   # Avoid undefined entries if k is an array of arrays
   integrator.k[1] = zero(integrator.u)
   integrator.k[2] = zero(integrator.u)

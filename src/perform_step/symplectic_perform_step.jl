@@ -2,7 +2,7 @@
 
 function initialize!(integrator,cache::SymplecticEulerConstantCache)
   integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   # Do the calculation pre
   # So that way FSAL interpolation
   duprev,uprev = integrator.uprev.x
@@ -91,7 +91,7 @@ function initialize!(integrator,cache::C) where
               Symplectic6ConstantCache,Symplectic62ConstantCache,
               McAte8ConstantCache,KahanLi8ConstantCache,SofSpa10ConstantCache}}
   integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
   duprev,uprev = integrator.uprev.x
   kdu  = integrator.f.f1(duprev,uprev,integrator.p,integrator.t)

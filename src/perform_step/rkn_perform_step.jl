@@ -14,7 +14,7 @@ const NystromCCDefaultInitialization = Union{Nystrom4ConstantCache,
 
 function initialize!(integrator,cache::NystromCCDefaultInitialization)
  integrator.kshortsize = 2
- integrator.k = typeof(integrator.k)(integrator.kshortsize)
+ integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
  duprev,uprev = integrator.uprev.x
  kdu = integrator.f.f1(duprev,uprev,integrator.p,integrator.t)
@@ -352,7 +352,7 @@ end
 function initialize!(integrator, cache::DPRKN6ConstantCache)
   duprev,uprev = integrator.uprev.x
   integrator.kshortsize = 3
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
   kdu  = integrator.f.f1(duprev,uprev,integrator.p,integrator.t)
   ku = integrator.f.f2(duprev,uprev,integrator.p,integrator.t)

@@ -32,7 +32,7 @@ function initialize!(integrator,
                      cache::Union{GenericImplicitEulerConstantCache,GenericTrapezoidConstantCache})
   cache.uhold[1] = integrator.uprev
   integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
 
   # Avoid undefined entries if k is an array of arrays
@@ -147,7 +147,7 @@ function initialize!(integrator, cache::GenericTrapezoidConstantCache)
   cache.uhold[1] = integrator.uprev
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
   integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)

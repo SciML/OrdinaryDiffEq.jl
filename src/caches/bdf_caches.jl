@@ -200,11 +200,11 @@ function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   fsalfirstprev = zero(rate_prototype)
   k = zero(rate_prototype)
 
-  D = Vector{typeof(u)}(1)
-  R = Vector{typeof(u)}(1)
-  U = Vector{typeof(u)}(1)
-  D2 = Vector{typeof(u)}(1)
-  temp_D = Vector{typeof(u)}(1)
+  D = Vector{typeof(u)}(undef, 1)
+  R = Vector{typeof(u)}(undef, 1)
+  U = Vector{typeof(u)}(undef, 1)
+  D2 = Vector{typeof(u)}(undef, 1)
+  temp_D = Vector{typeof(u)}(undef, 1)
 
   D[1,1] = similar(u)
   R[1,1] = similar(u)

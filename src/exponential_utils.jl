@@ -58,7 +58,7 @@ package for computing matrix exponentials. ACM Transactions on Mathematical
 Software (TOMS), 24(1), 130-156. Theorem 1).
 """
 function phiv_dense(A, v, k; cache=nothing)
-  w = Matrix{eltype(A)}(length(v), k+1)
+  w = Matrix{eltype(A)}(undef, length(v), k+1)
   phiv_dense!(w, A, v, k; cache=cache)
 end
 """
@@ -109,7 +109,7 @@ Calls `phiv_dense` on each of the basis vectors to obtain the answer.
 """
 function phi(A::AbstractMatrix{T}, k; caches=nothing) where {T <: Number}
   m = size(A, 1)
-  out = [Matrix{T}(m, m) for i = 1:k+1]
+  out = [Matrix{T}(undef, m, m) for i = 1:k+1]
   phi!(out, A, k; caches=caches)
 end
 """
@@ -177,7 +177,7 @@ end
 getH(Ks::KrylovSubspace) = @view(Ks.H[1:Ks.m + 1, 1:Ks.m])
 getV(Ks::KrylovSubspace) = @view(Ks.V[:, 1:Ks.m + 1])
 function Base.resize!(Ks::KrylovSubspace{B,T}, maxiter::Integer) where {B,T}
-  V = Matrix{T}(size(Ks.V, 1), maxiter + 1)
+  V = Matrix{T}(undef, size(Ks.V, 1), maxiter + 1)
   H = fill(zero(T), maxiter + 1, maxiter)
   Ks.V = V; Ks.H = H
   Ks.m = Ks.maxiter = maxiter
@@ -328,10 +328,10 @@ end
 # Cache type for expv
 mutable struct ExpvCache{T}
   mem::Vector{T}
-  ExpvCache{T}(maxiter::Int) where {T} = new{T}(Vector{T}(maxiter^2))
+  ExpvCache{T}(maxiter::Int) where {T} = new{T}(Vector{T}(undef, maxiter^2))
 end
 function Base.resize!(C::ExpvCache{T}, maxiter::Int) where {T}
-  C.mem = Vector{T}(maxiter^2 * 2)
+  C.mem = Vector{T}(undef, maxiter^2 * 2)
   return C
 end
 function get_cache(C::ExpvCache, m::Int)
@@ -358,7 +358,7 @@ function expv(t, A, b; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, cache=no
 end
 function expv(t, Ks::KrylovSubspace{B, T}; cache=nothing) where {B, T}
   n = size(getV(Ks), 1)
-  w = Vector{T}(n)
+  w = Vector{T}(undef, n)
   expv!(w, t, Ks; cache=cache)
 end
 """
@@ -439,13 +439,13 @@ Formula (10).
 function phiv(t, A, b, k; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, iop=0,
   cache=nothing, correct=false, errest=false)
   Ks = arnoldi(A, b; m=m, tol=tol, norm=norm, iop=iop)
-  w = Matrix{eltype(b)}(length(b), k+1)
+  w = Matrix{eltype(b)}(undef, length(b), k+1)
   phiv!(w, t, Ks, k; cache=cache, correct=correct, errest=errest)
 end
 function phiv(t, Ks::KrylovSubspace{B, T}, k; cache=nothing, correct=false,
   errest=false) where {B, T}
   n = size(getV(Ks), 1)
-  w = Matrix{T}(n, k+1)
+  w = Matrix{T}(undef, n, k+1)
   phiv!(w, t, Ks, k; cache=cache, correct=correct, errest=errest)
 end
 """
@@ -519,7 +519,7 @@ evaluating the φ-functions in exponential integrators. arXiv preprint
 arXiv:0907.4631.
 """
 function expv_timestep(ts::Vector{tType}, A, b; kwargs...) where {tType <: Real}
-  U = Matrix{eltype(A)}(size(A, 1), length(ts))
+  U = Matrix{eltype(A)}(undef, size(A, 1), length(ts))
   expv_timestep!(U, ts, A, b; kwargs...)
 end
 function expv_timestep(t::tType, A, b; kwargs...) where {tType <: Real}
@@ -574,7 +574,7 @@ function phiv_timestep(ts::Vector{tType}, A, B; kwargs...) where {tType <: Real}
   phiv_timestep!(U, ts, A, B; kwargs...)
 end
 function phiv_timestep(t::tType, A, B; kwargs...) where {tType <: Real}
-  u = Vector{eltype(A)}(size(A, 1))
+  u = Vector{eltype(A)}(undef, size(A, 1))
   phiv_timestep!(u, t, A, B; kwargs...)
 end
 """
@@ -608,9 +608,9 @@ function phiv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, B::AbstractM
   @assert length(ts) == size(U, 2) "Dimension mismatch"
   @assert n == size(A, 1) == size(A, 2) == size(B, 1) "Dimension mismatch"
   if caches == nothing
-    u = Vector{T}(n)              # stores the current state
-    W = Matrix{T}(n, p+1)         # stores the w vectors
-    P = Matrix{T}(n, p+2)         # stores output from phiv!
+    u = Vector{T}(undef, n)              # stores the current state
+    W = Matrix{T}(undef, n, p+1)         # stores the w vectors
+    P = Matrix{T}(undef, n, p+2)         # stores output from phiv!
     Ks = KrylovSubspace{T}(n, m)  # stores output from arnoldi!
     phiv_cache = nothing         # cache used by phiv!
   else
@@ -751,8 +751,8 @@ end
 function _phiv_timestep_caches(u_prototype, maxiter::Int, p::Int)
   n = length(u_prototype); T = eltype(u_prototype)
   u = similar(u_prototype)                      # stores the current state
-  W = Matrix{T}(n, p+1)                         # stores the w vectors
-  P = Matrix{T}(n, p+2)                         # stores output from phiv!
+  W = Matrix{T}(undef, n, p+1)                         # stores the w vectors
+  P = Matrix{T}(undef, n, p+2)                         # stores output from phiv!
   Ks = KrylovSubspace{T}(n, maxiter)            # stores output from arnoldi!
   phiv_cache = PhivCache{T}(maxiter, p+1)       # cache used by phiv! (need +1 for error estimation)
   return u, W, P, Ks, phiv_cache

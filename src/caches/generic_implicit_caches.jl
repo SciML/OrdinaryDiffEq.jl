@@ -36,7 +36,7 @@ end
 
 function alg_cache(alg::GenericImplicitEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  uhold = Vector{typeof(u)}(1)
+  uhold = Vector{typeof(u)}(undef, 1)
   rhs = ImplicitRHS_Scalar(f,zero(u),t,t,t,p)
   nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
   GenericImplicitEulerConstantCache{typeof(uhold),typeof(rhs),typeof(nl_rhs)}(uhold,rhs,nl_rhs)
@@ -86,7 +86,7 @@ mutable struct GenericTrapezoidConstantCache{vecuType,rhsType,nl_rhsType,uType,t
 end
 
 function alg_cache(alg::GenericTrapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  uhold = Vector{typeof(u)}(1)
+  uhold = Vector{typeof(u)}(undef, 1)
   rhs = ImplicitRHS_Scalar(f,zero(u),t,t,t,p)
   nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
   uprev3 = u

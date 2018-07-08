@@ -1,7 +1,7 @@
 # This definitely needs cleaning
 using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase,
       DiffEqProblemLibrary, Test
-probArr = Vector{ODEProblem}(2)
+probArr = Vector{ODEProblem}(undef, 2)
 probArr[1] = prob_ode_linear
 
 probArr[2] = prob_ode_2Dlinear

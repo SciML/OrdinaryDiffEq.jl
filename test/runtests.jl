@@ -42,7 +42,6 @@ end
 
 if group == "All" || group == "Integrators"
     @time @testset "Reinit Tests" begin include("reinit_test.jl") end
-    # Fail Roots.jl
     @time @testset "Events Tests" begin include("ode/ode_event_tests.jl") end
     @time @testset "Cache Tests" begin include("ode/ode_cache_tests.jl") end
     @time @testset "Iterator Tests" begin include("iterator_tests.jl") end

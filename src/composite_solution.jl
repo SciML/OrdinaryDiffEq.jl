@@ -41,10 +41,10 @@ function DiffEqBase.build_solution(
 
   if DiffEqBase.has_analytic(f)
     if !(typeof(prob.u0) <: Tuple)
-      u_analytic = Vector{typeof(prob.u0)}(0)
+      u_analytic = Vector{typeof(prob.u0)}(undef, 0)
       errors = Dict{Symbol,real(eltype(prob.u0))}()
     else
-      u_analytic = Vector{typeof(ArrayPartition(prob.u0))}(0)
+      u_analytic = Vector{typeof(ArrayPartition(prob.u0))}(undef, 0)
       errors = Dict{Symbol,real(eltype(prob.u0[1]))}()
     end
 

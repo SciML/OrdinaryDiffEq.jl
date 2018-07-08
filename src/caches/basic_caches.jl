@@ -50,7 +50,7 @@ u_cache(c::ExplicitRKCache) = (c.utilde,c.atmp,c.update)
 du_cache(c::ExplicitRKCache) = (c.kk...,)
 
 function alg_cache(alg::ExplicitRK,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  kk = Vector{typeof(rate_prototype)}(0)
+  kk = Vector{typeof(rate_prototype)}(undef, 0)
   for i = 1:alg.tableau.stages
     push!(kk,zero(rate_prototype))
   end

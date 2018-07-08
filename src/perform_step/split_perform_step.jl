@@ -1,6 +1,6 @@
 function initialize!(integrator,cache::SplitEulerConstantCache)
   integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst =
   integrator.f.f1(integrator.uprev,integrator.p,integrator.t) +
   integrator.f.f2(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
