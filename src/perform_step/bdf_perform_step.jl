@@ -162,7 +162,7 @@ function perform_step!(integrator,cache::QNDF1ConstantCache,repeat_step=false)
   @unpack uprev2,D,D2,R,U,dtₙ₋₁ = cache
   cnt = integrator.iter
   if cnt == 1
-    perform_step!(integrator, cache.eulercache, repeat_step)
+    perform_step!(integrator, cache.eulercache, repeat_step)  # ImplicitEuler(BDF1)
     if integrator.EEst <= one(integrator.EEst)
       cache.uprev2 = integrator.uprev
       cache.dtₙ₋₁ = dt
@@ -229,7 +229,7 @@ function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
   @unpack uprev2,D,D2,R,U,dtₙ₋₁,tmp,z,W,utilde,atmp = cache
   cnt = integrator.iter
   if cnt == 1
-    perform_step!(integrator, cache.eulercache, repeat_step)
+    perform_step!(integrator, cache.eulercache, repeat_step)  # ImplicitEuler(BDF1)
     if integrator.EEst <= one(integrator.EEst)
       cache.uprev2 .= integrator.uprev
       cache.dtₙ₋₁ = dt
@@ -292,12 +292,14 @@ function perform_step!(integrator,cache::QNDF2ConstantCache,repeat_step=false)
   @unpack uprev2,uprev3,dtₙ₋₁,dtₙ₋₂,D,D2,R,U = cache
   cnt = integrator.iter
   if cnt == 1 || cnt == 2
-    perform_step!(integrator, cache.eulercache, repeat_step)
+    if cnt == 2
+      integrator.dt = dtₙ₋₂
+    end
+    perform_step!(integrator, cache.eulercache, repeat_step)  # ImplicitEuler(BDF1)
     if integrator.EEst <= one(integrator.EEst)
       if cnt == 1
         cache.uprev3 = integrator.uprev
         cache.dtₙ₋₂ = dt
-        # const step condition
       else
         cache.uprev2 = integrator.uprev
         cache.dtₙ₋₁ = dt
@@ -305,6 +307,21 @@ function perform_step!(integrator,cache::QNDF2ConstantCache,repeat_step=false)
     end
     return
   end
+
+  if dtₙ₋₁ != dtₙ₋₂
+    integrator.dt = dtₙ₋₁
+    perform_step!(integrator, cache.eulercache, repeat_step)  # ImplicitEuler(BDF1)
+    if integrator.EEst > one(integrator.EEst)
+      integrator.dt = dt
+      perform_step!(integrator, cache.eulercache, repeat_step)  # ImplicitEuler(BDF1)
+      cache.dtₙ₋₁ = dt
+    end
+    cache.uprev3 = uprev2
+    cache.uprev2 = uprev
+    cache.dtₙ₋₂ = dtₙ₋₁
+    return
+  end
+
   κ = integrator.alg.kappa
   γ₁ = 1//1
   γ₂ = 1//1 + 1//2
@@ -345,7 +362,6 @@ function perform_step!(integrator,cache::QNDF2ConstantCache,repeat_step=false)
     if integrator.EEst > one(integrator.EEst)
       return
     end
-    # const step condition
   end
   cache.dtₙ₋₂ = dtₙ₋₁
   cache.dtₙ₋₁ = dt

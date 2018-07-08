@@ -67,6 +67,7 @@ alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))
 alg_extrapolates(alg::GenericImplicitEuler) = true
 alg_extrapolates(alg::GenericTrapezoid) = true
 alg_extrapolates(alg::ImplicitEuler) = true
+alg_extrapolates(alg::QNDF2) = true
 alg_extrapolates(alg::IMEXEuler) = true
 alg_extrapolates(alg::LinearImplicitEuler) = true
 alg_extrapolates(alg::Trapezoid) = true
