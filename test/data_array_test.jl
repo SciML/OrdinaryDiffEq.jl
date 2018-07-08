@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Test
+using OrdinaryDiffEq, Test, LinearAlgebra
 
 mutable struct SimType{T} <: DEDataVector{T}
   x::Array{T,1}

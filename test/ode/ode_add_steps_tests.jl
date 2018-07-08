@@ -12,7 +12,7 @@ end
 test_solution(t) = t <= 5 ? t : 5. * e^(-(t-5))
 
 tspan = (0.,10.)
-testtimes = range(tspan..., stop=1001, length=50)
+testtimes = range(tspan[1], stop=tspan[2], length=1001)
 pullback_condition(u, t, i) = t - 5
 pullback_affect!(i) = i.p[1] = abs(1 - i.p[1])
 cb = ContinuousCallback(pullback_condition, pullback_affect!)
