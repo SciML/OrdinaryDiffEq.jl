@@ -171,14 +171,14 @@ function alg_cache_expRK(alg::OrdinaryDiffEqExponentialAlgorithm, u, f, dt, plis
   n = length(u); T = eltype(u)
   # Allocate cache for the Jacobian
   # TODO: sparse Jacobian support
-  Jcache = isa(f, SplitFunction) ? nothing : Matrix{T}(n, n)
+  Jcache = isa(f, SplitFunction) ? nothing : Matrix{T}(undef, n, n)
   if alg.krylov
     ops = nothing # no caching
     # Build up caches used by Krylov phiv
     m = min(alg.m, n)
     Ks = KrylovSubspace{T}(n, m)
     phiv_cache = PhivCache{T}(m, maximum(plist))
-    ws = [Matrix{T}(n, plist[i] + 1) for i = 1:length(plist)]
+    ws = [Matrix{T}(undef, n, plist[i] + 1) for i = 1:length(plist)]
     KsCache = (Ks, phiv_cache, ws) # should use named tuple in v0.6
   else
     KsCache = nothing
@@ -207,7 +207,7 @@ function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   # This is different from other ExpRK integrators because LawsonEuler only 
   # needs expv.
   n = length(u); T = eltype(u)
-  Jcache = isa(f, SplitFunction) ? nothing : Matrix{T}(n, n) # TODO: sparse Jacobian support
+  Jcache = isa(f, SplitFunction) ? nothing : Matrix{T}(undef, n, n) # TODO: sparse Jacobian support
   if alg.krylov
     exphA = nothing # no caching
     m = min(alg.m, n)
@@ -355,8 +355,8 @@ function alg_cache(alg::Exp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   # Allocate matrices
   # TODO: units
   n = length(u); T = eltype(u)
-  K = Matrix{T}(n, 3)
-  A = Matrix{T}(n, n) # TODO: sparse Jacobian support
+  K = Matrix{T}(undef, n, 3)
+  A = Matrix{T}(undef, n, n) # TODO: sparse Jacobian support
   B = fill(zero(T), n, 2)
   # Allocate caches for phiv_timestep
   maxiter = min(alg.m, n)
@@ -385,8 +385,8 @@ function alg_cache(alg::EPIRK4s3A,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   rtmp, rtmp2 = (zero(rate_prototype) for i = 1:2)   # rateType caches
   # Allocate matrices
   n = length(u); T = eltype(u)
-  K = Matrix{T}(n, 2)
-  A = Matrix{T}(n, n) # TODO: sparse Jacobian support
+  K = Matrix{T}(undef, n, 2)
+  A = Matrix{T}(undef, n, n) # TODO: sparse Jacobian support
   B = fill(zero(T), n, 5)
   # Allocate caches for phiv_timestep
   maxiter = min(alg.m, n)
@@ -415,8 +415,8 @@ function alg_cache(alg::EPIRK4s3B,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   rtmp, rtmp2 = (zero(rate_prototype) for i = 1:2)   # rateType caches
   # Allocate matrices
   n = length(u); T = eltype(u)
-  K = Matrix{T}(n, 2)
-  A = Matrix{T}(n, n) # TODO: sparse Jacobian support
+  K = Matrix{T}(undef, n, 2)
+  A = Matrix{T}(undef, n, n) # TODO: sparse Jacobian support
   B = fill(zero(T), n, 5)
   # Allocate caches for phiv_timestep
   maxiter = min(alg.m, n)
