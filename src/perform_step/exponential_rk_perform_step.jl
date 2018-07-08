@@ -1001,6 +1001,54 @@ function perform_step!(integrator, cache::EPIRK5P1ConstantCache, repeat_step=fal
   integrator.u = u
 end
 
+function perform_step!(integrator, cache::EPIRK5P1Cache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack tmp,rtmp,rtmp2,K,A,B,KsCache = cache
+  f.jac(A, uprev, p, t)
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+  f0 = integrator.fsalfirst # f(u0) is fsaled
+  kwargs = [(:tol, integrator.opts.reltol), (:iop, alg.iop), (:norm, integrator.opts.internalnorm), 
+    (:adaptive, true), (:caches, KsCache)]
+
+  # Coefficients (scaling factors absorbed)
+  g11 = 0.35129592695058193092 * dt
+  g21 = 0.84405472011657126298 * dt # g22 = g32
+  g31 = dt; g32 = 0.71111095364366870359 * dt; g33 = 0.62378111953371494809 * dt
+  a22 = 2.00293786725511284140; b2 = 1.50785571290913060448; b3 = 9.35854650579261718128 / dt^2
+
+  # Compute the first column (f0)
+  B[:, 2] .= f0
+  phiv_timestep!(K, [g11, g21, g31], A, @view(B[:, 1:2]); kwargs...)
+  ## U1 and R1
+  @. tmp = uprev + @view(K[:, 1]) # tmp is now U1
+  f(rtmp, tmp, p, t + g11); A_mul_B!(rtmp2, A, @view(K[:, 1]))
+  @. rtmp = rtmp - f0 - rtmp2 # rtmp is now R1
+  @. tmp = uprev + @view(K[:, 2]) # partially update U2 (tmp)
+  @. u = uprev + @view(K[:, 3]) # partially update u
+  B[:, 2] .= rtmp
+  @. B[:, 4] = (-2) * rtmp
+
+  # Compute the second column (R1)
+  k = @view(K[:, 1])
+  phiv_timestep!(k, g32, A, @view(B[:, 1:2]); kwargs...)
+  ## U2 and R2
+  @. tmp += a22 * k # tmp is now U2
+  f(rtmp, tmp, p, t + g21)
+  tmp .-= uprev; A_mul_B!(rtmp2, A, tmp)
+  @. rtmp = rtmp - f0 - rtmp2 # rtmp is now R2
+  @. u += b2 * k # partially update u
+  B[:, 4] .+= rtmp
+  
+  # Compute the third column (R2)
+  fill!(@view(B[:, 2]), zero(eltype(B)))
+  phiv_timestep!(k, g33, A, B; kwargs...)
+  u .+= b3 * k
+
+  # Update integrator state
+  f(integrator.fsallast, u, p, t + dt)
+  # integrator.k is automatically set due to aliasing
+end
+
 ######################################################
 # Multistep exponential integrators
 function initialize!(integrator,cache::ETD2ConstantCache)
