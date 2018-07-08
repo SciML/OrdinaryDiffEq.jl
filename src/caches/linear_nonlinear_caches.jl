@@ -513,6 +513,10 @@ function alg_cache(alg::EPIRK5P1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   EPIRK5P1Cache(u,uprev,tmp,rtmp,rtmp2,K,A,B,KsCache)
 end
 
+struct EPIRK5P2ConstantCache <: ExpRKConstantCache end
+alg_cache(alg::EPIRK5P2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
+  uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = EPIRK5P2ConstantCache()
+
 ####################################
 # Multistep exponential method caches
 

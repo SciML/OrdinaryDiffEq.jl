@@ -1049,6 +1049,48 @@ function perform_step!(integrator, cache::EPIRK5P1Cache, repeat_step=false)
   # integrator.k is automatically set due to aliasing
 end
 
+function perform_step!(integrator, cache::EPIRK5P2ConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,f,p = integrator
+  A = f.jac(uprev, p, t)
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+  f0 = integrator.fsalfirst # f(uprev) is fsaled
+  kwargs = [(:tol, integrator.opts.reltol), (:iop, alg.iop), (:norm, integrator.opts.internalnorm), (:adaptive, true)]
+
+  # Coefficients (scaling factors absorbed)
+  g11 = 0.46629408528088195806 * dt
+  g21 = 0.88217912653363865140 * dt # g22 = g32
+  g31 = dt; g32 = 0.92074916488140031449 * dt; g33 = 0.79791561832664517267 * dt
+  a22 = 2.80620373289331259751 / dt; b2 = 2.52806310256246280783 / dt
+  b31 = -0.128486782657005566142; b32 = -0.161028033172809183351 / dt; b33 = 5.26726331616909606251 / dt^2
+
+  # Compute the first column (f0)
+  B = [zeros(f0) f0]
+  K1 = phiv_timestep([g11, g21, g31], A, B; kwargs...)
+  ## U1 and R1
+  U1 = uprev + K1[:, 1]
+  R1 = f(U1, p, t + g11) - f0 - A*K1[:, 1] # remainder of U1
+
+  # Compute the second column (R1)
+  B = [zeros(R1) zeros(R1) R1]
+  k2 = phiv_timestep(g32, A, B; kwargs...)
+  ## U2 and R2
+  U2 = uprev + K1[:, 2] + a22 * k2
+  R2 = f(U2, p, t + g21) - f0 - A*(U2 - uprev) # remainder of U2
+  
+  # Compute the third column (dR = R2 - 2R1)
+  dR = R2 - 2R1
+  B = [zeros(dR) b31*dR b32*dR b33*dR]
+  k3 = phiv_timestep(g33, A, B; kwargs...)
+  ## Update state
+  u = uprev + K1[:, 3] + b2 * k2 + k3
+
+  # Update integrator state
+  integrator.fsallast = f(u, p, t + dt)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end
+
 ######################################################
 # Multistep exponential integrators
 function initialize!(integrator,cache::ETD2ConstantCache)
