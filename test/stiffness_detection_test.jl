@@ -28,7 +28,7 @@ using OrdinaryDiffEq, DiffEqProblemLibrary, Test
     @test length(sol.t) < 690
     @test is_switching_fb(sol)
     sol = solve(prob,AutoVern7(Hairer42(); maxstiffstep=4, maxnonstiffstep=4))
-    @test length(sol.t) < 535
+    @test length(sol.t) < 540
     @test is_switching_fb(sol)
     sol = solve(prob,AutoVern8(Rosenbrock23(); maxstiffstep=4, maxnonstiffstep=4))
     @test length(sol.t) < 910
