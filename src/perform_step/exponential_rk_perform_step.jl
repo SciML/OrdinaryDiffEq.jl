@@ -676,7 +676,7 @@ function perform_step!(integrator, cache::EPIRK4s3AConstantCache, repeat_step=fa
   R3 = f(U3, p, t + 2dt/3) - f0 - A*K[:, 2] # remainder of U3
 
   # Update u (horizontally)
-  B = zero(eltype(f0), length(f0), 5)
+  B = zeros(eltype(f0), length(f0), 5)
   B[:, 2] = f0
   B[:, 4] = (32R2 - 13.5R3) / dt^2
   B[:, 5] = (-144R2 + 81R3) / dt^3
@@ -740,7 +740,7 @@ function perform_step!(integrator, cache::EPIRK4s3BConstantCache, repeat_step=fa
   R3 = f(U3, p, t + 3dt/4) - f0 - A*K[:, 2] # remainder of U3
 
   # Update u (horizontally)
-  B = zero(eltype(f0), length(f0), 5)
+  B = zeros(eltype(f0), length(f0), 5)
   B[:, 2] = f0
   B[:, 4] = (54R2 - 16R3) / dt^2
   B[:, 5] = (-324R2 + 144R3) / dt^3

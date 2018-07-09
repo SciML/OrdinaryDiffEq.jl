@@ -44,10 +44,10 @@ end
             J[i, i] -= 3 * u[i]^2
         end
     end
-    f = ODEFunction{false}(_f; jac=_jac)
-    f_ip = ODEFunction{true}(_f_ip; jac=_jac_ip)
+    f = ODEFunction(_f; jac=_jac)
+    f_ip = ODEFunction(_f_ip; jac=_jac_ip)
     prob = ODEProblem(f, u0, (0.0, 1.0))
-    prob_ip = ODEProblem{true}(f_ip, u0, (0.0, 1.0))
+    prob_ip = ODEProblem(f_ip, u0, (0.0, 1.0))
 
     dt = 0.05; tol=1e-5
     Algs = [Exp4, EPIRK4s3A, EPIRK4s3B, EXPRB53s3, EPIRK5P1, EPIRK5P2]
