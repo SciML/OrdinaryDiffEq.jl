@@ -4,12 +4,12 @@ import DiffEqProblemLibrary.ODEProblemLibrary: van
 @testset "Stiffness Detection Tests" begin
   prob1 = ODEProblem(van,[0,2.],(0.0,6),inv(0.003))
   # out-of-place test
-  function van(u, p, t)
+  function _van(u, p, t)
     μ = p[1]
     [μ*((1-u[2]^2)*u[1] - u[2]),
      1*u[1]]
   end
-  prob2 = ODEProblem(van,[0,2.],(0.0,6),inv(0.003))
+  prob2 = ODEProblem(_van,[0,2.],(0.0,6),inv(0.003))
   probArr = [prob1, prob2]
   # Test if switching back and forth
   is_switching_fb(sol) = maximum(diff(findall(x->x==2, sol.alg_choice))) > 5
