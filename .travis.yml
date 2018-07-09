@@ -14,7 +14,8 @@ env:
   - GROUP=AlgConvergence_II
 matrix:
   allow_failures:
-    - julia: nightly
+    - julia: 0.7
+    #- julia: nightly
 notifications:
   email: false
 after_success:

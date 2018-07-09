@@ -24,7 +24,6 @@ if group == "All" || group == "Interface"
   @time include("discrete_algorithm_test.jl")
   @time include("ode/ode_tstops_tests.jl")
   @time include("ode/ode_backwards_test.jl")
-  # Fail DevTool
   @time include("ode/ode_initdt_tests.jl")
   @time include("mass_matrix_tests.jl")
   @time include("differentiation_traits_tests.jl")
