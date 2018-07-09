@@ -161,25 +161,23 @@ function perform_step!(integrator,cache::QNDF1ConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uprev2,D,D2,R,U,dtₙ₋₁ = cache
   cnt = integrator.iter
-  if cnt == 1
-    perform_step!(integrator, cache.eulercache, repeat_step)  # ImplicitEuler(BDF1)
-    if integrator.EEst <= one(integrator.EEst)
-      cache.uprev2 = integrator.uprev
-      cache.dtₙ₋₁ = dt
-    end
-    return
-  end
-  κ = integrator.alg.kappa
-  γ₁ = 1//1
   k = 1
-  ρ = dt/dtₙ₋₁
-  D[1] = uprev - uprev2 # backward diff
-  if ρ != 1
-    R!(k,ρ,cache)
-    D[1] = D[1] * (R[1] * U[1])
+  if cnt == 1
+    κ = zero(integrator.alg.kappa)
+  else
+    κ = integrator.alg.kappa
+    ρ = dt/dtₙ₋₁
+    D[1] = uprev - uprev2   # backward diff
+    if ρ != 1
+      R!(k,ρ,cache)
+      D[1] = D[1] * (R[1] * U[1])
+    end
   end
+
   # precalculations
+  γ₁ = 1//1
   γ = inv((1-κ)*γ₁)
+
   u₀ = uprev + D[1]
   ϕ = γ * (γ₁*D[1])
   tmp = u₀ - ϕ
@@ -194,7 +192,7 @@ function perform_step!(integrator,cache::QNDF1ConstantCache,repeat_step=false)
   fail_convergence && return
   u = tmp + γ*z
 
-  if integrator.opts.adaptive
+  if integrator.opts.adaptive && integrator.success_iter > 0
     D2[1] = u - uprev
     D2[2] = D2[1] - D[1]
     utilde = (κ*γ₁ + inv(k+1)) * D2[2]
@@ -203,6 +201,8 @@ function perform_step!(integrator,cache::QNDF1ConstantCache,repeat_step=false)
     if integrator.EEst > one(integrator.EEst)
       return
     end
+  else
+    integrator.EEst = one(integrator.EEst)
   end
   cache.dtₙ₋₁ = dt
   cache.uprev2 = uprev
@@ -228,24 +228,21 @@ function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uprev2,D,D2,R,U,dtₙ₋₁,tmp,z,W,utilde,atmp = cache
   cnt = integrator.iter
-  if cnt == 1
-    perform_step!(integrator, cache.eulercache, repeat_step)  # ImplicitEuler(BDF1)
-    if integrator.EEst <= one(integrator.EEst)
-      cache.uprev2 .= integrator.uprev
-      cache.dtₙ₋₁ = dt
-    end
-    return
-  end
-  κ = integrator.alg.kappa
-  γ₁ = 1//1
   k = 1
-  ρ = dt/dtₙ₋₁
-  @. D[1] = uprev - uprev2 # backward diff
-  if ρ != 1
-    R!(k,ρ,cache)
-    @. D[1] = D[1] * (R[1] * U[1])
+  if cnt == 1
+    κ = zero(integrator.alg.kappa)
+  else
+    κ = integrator.alg.kappa
+    ρ = dt/dtₙ₋₁
+    @. D[1] = uprev - uprev2 # backward diff
+    if ρ != 1
+      R!(k,ρ,cache)
+      @. D[1] = D[1] * (R[1] * U[1])
+    end
   end
+
   # precalculations
+  γ₁ = 1//1
   γ = inv((1-κ)*γ₁)
   @. tmp = uprev + D[1] - γ * (γ₁*D[1])
 
@@ -259,7 +256,7 @@ function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
   fail_convergence && return
   @. u = tmp + γ*z
 
-  if integrator.opts.adaptive
+  if integrator.opts.adaptive && integrator.success_iter > 0
     @. D2[1] = u - uprev
     @. D2[2] = D2[1] - D[1]
     @. utilde = (κ*γ₁ + inv(k+1)) * D2[2]
@@ -268,6 +265,8 @@ function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
     if integrator.EEst > one(integrator.EEst)
       return
     end
+  else
+    integrator.EEst = one(integrator.EEst)
   end
   cache.dtₙ₋₁ = dt
   cache.uprev2 .= uprev

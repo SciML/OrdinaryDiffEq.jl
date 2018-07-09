@@ -111,7 +111,6 @@ mutable struct QNDF1ConstantCache{F,uToltype,coefType,coefType1,dtType,uType} <:
   κ::uToltype
   tol::uToltype
   newton_iters::Int
-  eulercache::ImplicitEulerConstantCache
   D::coefType
   D2::coefType1
   R::coefType
@@ -144,7 +143,6 @@ mutable struct QNDF1Cache{uType,rateType,coefType,uNoUnitsType,J,UF,JC,uToltype,
   κ::uToltype
   tol::uToltype
   newton_iters::Int
-  eulercache::ImplicitEulerCache
   dtₙ₋₁::dtType
 end
 
@@ -176,9 +174,7 @@ function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
     tol = uToltype(min(0.03,first(reltol)^(0.5)))
   end
 
-  eulercache = ImplicitEulerConstantCache(uf,ηold,κ,tol,100000)
-
-  QNDF1ConstantCache(uf,ηold,κ,tol,10000,eulercache,D,D2,R,U,uprev2,dtₙ₋₁)
+  QNDF1ConstantCache(uf,ηold,κ,tol,10000,D,D2,R,U,uprev2,dtₙ₋₁)
 end
 
 function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -226,12 +222,10 @@ function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   end
 
   ηold = one(uToltype)
-
-  eulercache = ImplicitEulerCache(u,uprev,uprev2,du1,fsalfirst,k,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,ηold,κ,tol,10000)
-
   dtₙ₋₁ = one(dt)
+
   QNDF1Cache(uprev2,du1,fsalfirst,k,z,dz,b,D,D2,R,U,tmp,atmp,utilde,J,
-              W,uf,jac_config,linsolve,ηold,κ,tol,10000,eulercache,dtₙ₋₁)
+              W,uf,jac_config,linsolve,ηold,κ,tol,10000,dtₙ₋₁)
 end
 
 # QNDF2
