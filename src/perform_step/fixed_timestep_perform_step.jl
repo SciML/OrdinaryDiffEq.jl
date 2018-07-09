@@ -421,7 +421,7 @@ end
   k1 = integrator.fsalfirst
   k2 = f(uprev+dt*a21*k1, p, t+c2*dt)
   k3 = f(uprev+dt*(a31*k1+a32*k2), p, t+c3*dt)
-  k4 = f(uprev+dt*(a41*k1+a42*k2+k3), p, t+c4*dt)
+  k4 = f(uprev+dt*(a41*k1+a42*k2+2*k3), p, t+c4*dt)
   k5 = f(uprev+dt*(a51*k1+a52*k2+a53*k3+a54*k4), p, t+c5*dt)
   k6 = f(uprev+dt*(a61*k1+a62*k2+a63*k3+a64*k4+a65*k5), p, t+c6*dt)
   u = uprev+dt*(b1*k1+b3*k3+b4*k4+b5*k5+b6*k6)
@@ -447,13 +447,13 @@ end
   uidx = eachindex(integrator.uprev)
   @unpack k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp = cache
   @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,c2,c3,c4,c5,c6,b1,b3,b4,b5,b6 = cache.tab
-  a61 += (-119//200)*a65
-  a63 += (189//100)*a65
-  a64 += (-459//200)*a65
   w = integrator.alg.w
   v = w*dt
   ## Formula by Z.A. Anastassi, see the Anas5 caches in tableaus/low_order_rk_tableaus.jl for the full citation.
   a65 = (-8000//1071)*(-a43*(v^5) + 6*tan(v)*(v^4) + 24*(v^3) - 72*tan(v)*(v^2) - 144*v + 144*tan(v))/((v^5)*(a43*tan(v)*v + 12 - 10*a43))
+  a61 += (-119//200)*a65
+  a63 += (189//100)*a65
+  a64 += (-459//200)*a65
   @tight_loop_macros for i in uidx
     @inbounds tmp[i] = uprev[i]+a21*k1[i]
   end
@@ -463,7 +463,7 @@ end
   end
   f(k3, tmp, p, t+c3*dt)
   @tight_loop_macros for i in uidx
-    @inbounds tmp[i] = uprev[i]+dt*(a41*k1[i]+a42*k2[i]+k3[i])
+    @inbounds tmp[i] = uprev[i]+dt*(a41*k1[i]+a42*k2[i]+2*k3[i])
   end
   f(k4, tmp, p, t+c4*dt)
   @tight_loop_macros for i in uidx
