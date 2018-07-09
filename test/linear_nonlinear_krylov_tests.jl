@@ -1,10 +1,11 @@
-using OrdinaryDiffEq, Test, DiffEqOperators
+using OrdinaryDiffEq, Test, DiffEqOperators, LinearAlgebra
 @testset "Classical ExpRK" begin
     N = 20
-    dx = 1.0; dt=0.1
+    dt=0.1
     srand(0); u0 = rand(N)
     reltol = 1e-4
-    L = DerivativeOperator{Float64}(2,2,dx,N,:Dirichlet0,:Dirichlet0)
+    dd = -2 * ones(N); du = ones(N-1)
+    L = DiffEqArrayOperator(diagm(-1 => du, 0 => dd, 1 => du))
     krylov_f2 = (u,p,t) -> -0.1*u
     krylov_f2! = (du,u,p,t) -> du .= -0.1*u
     prob = SplitODEProblem(L,krylov_f2,u0,(0.0,1.0))
@@ -16,12 +17,12 @@ using OrdinaryDiffEq, Test, DiffEqOperators
 
     Algs = [LawsonEuler,NorsettEuler,ETDRK2,ETDRK3,ETDRK4,HochOst4]
     for Alg in Algs
-        sol = solve(prob, Alg(); dt=dt, internalnorm=Base.norm)
-        sol_krylov = solve(prob, Alg(krylov=true, m=10); dt=dt, reltol=reltol, internalnorm=Base.norm)
+        sol = solve(prob, Alg(); dt=dt)
+        sol_krylov = solve(prob, Alg(krylov=true, m=10); dt=dt, reltol=reltol)
         @test isapprox(sol.u,sol_krylov.u; rtol=reltol)
 
-        sol_ip = solve(prob_inplace, Alg(); dt=dt, internalnorm=Base.norm)
-        sol_ip_krylov = solve(prob_inplace, Alg(krylov=true, m=10); dt=dt, reltol=reltol, internalnorm=Base.norm)
+        sol_ip = solve(prob_inplace, Alg(); dt=dt)
+        sol_ip_krylov = solve(prob_inplace, Alg(krylov=true, m=10); dt=dt, reltol=reltol)
         @test isapprox(sol.u,sol_krylov.u; rtol=reltol)
 
         println(Alg) # prevent Travis hanging
@@ -51,22 +52,22 @@ end
     dt = 0.05; tol=1e-5
     Algs = [Exp4, EPIRK4s3A, EPIRK4s3B, EXPRB53s3, EPIRK5P1, EPIRK5P2]
     for Alg in Algs
-        sol = solve(prob, Alg(); dt=dt, internalnorm=Base.norm, reltol=tol)
+        sol = solve(prob, Alg(); dt=dt, reltol=tol)
         sol_ref = solve(prob, Tsit5(); reltol=tol)
         @test isapprox(sol(1.0), sol_ref(1.0); rtol=tol)
 
-        sol = solve(prob_ip, Alg(); dt=dt, internalnorm=Base.norm, reltol=tol)
+        sol = solve(prob_ip, Alg(); dt=dt, reltol=tol)
         sol_ref = solve(prob_ip, Tsit5(); reltol=tol)
         @test isapprox(sol(1.0), sol_ref(1.0); rtol=tol)
         println(Alg) # prevent Travis hanging
     end
 
     gc()
-    sol = solve(prob, EPIRK5s3(); dt=dt, internalnorm=Base.norm, reltol=tol)
+    sol = solve(prob, EPIRK5s3(); dt=dt, reltol=tol)
     sol_ref = solve(prob, Tsit5(); reltol=tol)
     @test_broken isapprox(sol(1.0), sol_ref(1.0); rtol=tol)
 
-    sol = solve(prob_ip, EPIRK5s3(); dt=dt, internalnorm=Base.norm, reltol=tol)
+    sol = solve(prob_ip, EPIRK5s3(); dt=dt, reltol=tol)
     sol_ref = solve(prob_ip, Tsit5(); reltol=tol)
     @test_broken isapprox(sol(1.0), sol_ref(1.0); rtol=tol)
     println(EPIRK5s3) # prevent Travis hanging

@@ -276,7 +276,7 @@ function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol::Real=1
   return Ks
 end
 """
-    lanczos!(Ks,A,b[;tol,m,norm,cache]) -> Ks
+    lanczos!(Ks,A,b[;tol,m,opnorm,cache]) -> Ks
 
 A variation of `arnoldi!` that uses the Lanczos algorithm for Hermitian matrices.
 """
@@ -597,7 +597,7 @@ function phiv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, B::AbstractM
   verbose && println("Absolute tolerance: $abstol")
   if iszero(tau)
     Anorm = opnorm(A, Inf)
-    b0norm = norm(@view(B[:, 1]), Inf)
+    b0norm = maximum(abs.(@view(B[:, 1])))
     tau = 10/Anorm * (abstol * ((m+1)/e)^(m+1) * sqrt(2*pi*(m+1)) /
       (4*Anorm*b0norm))^(1/m)
     verbose && println("Initial time step unspecified, chosen to be $tau")
