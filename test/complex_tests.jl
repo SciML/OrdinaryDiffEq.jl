@@ -4,7 +4,6 @@ using Test
 using StaticArrays
 using OrdinaryDiffEq, DiffEqBase
 
-gc()
 H(t) = -im*(@SMatrix [t 1;1 -t])
 
 fun(ψ,p,t) = H(t)*ψ

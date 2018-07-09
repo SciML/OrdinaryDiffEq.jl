@@ -11,7 +11,7 @@ using OrdinaryDiffEq, DiffEqProblemLibrary, Test
   prob2 = ODEProblem(van,[0,2.],(0.0,6),inv(0.003))
   probArr = [prob1, prob2]
   # Test if switching back and forth
-  is_switching_fb(sol) = maximum(diff(find(x->x==2, sol.alg_choice))) > 5
+  is_switching_fb(sol) = maximum(diff(findall(x->x==2, sol.alg_choice))) > 5
   for prob in probArr
     alg = AutoTsit5(Rodas5(); maxstiffstep=5, maxnonstiffstep=5, stiffalgfirst=true)
     sol = solve(prob, alg)

@@ -24,8 +24,6 @@ module OrdinaryDiffEq
   using Parameters, GenericSVD, ForwardDiff, RecursiveArrayTools,
         NLsolve, Juno, Roots, DataStructures, DiffEqDiffTools
 
-  import Base: linspace
-
   import ForwardDiff.Dual
 
   # Required by temporary fix in not in-place methods with 12+ broadcasts

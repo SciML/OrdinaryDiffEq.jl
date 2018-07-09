@@ -75,14 +75,14 @@ end
   sln = solve(prob, FunctionMap(scale_by_time=false), dt = 1//10)
 
   u1 = [sln[idx].u for idx in 1:length(sln)]
-  u2 = [sln(t).u for t in linspace(0,4,41)]
+  u2 = [sln(t).u for t in range(0,stop=4,length=41)]
   @test any(x->x[1]>0, u1)
   @test any(x->x[1]>0, u2)
 
   sln = solve(prob, FunctionMap(scale_by_time=true), dt = 1//10)
 
   u1 = [sln[idx].u for idx in 1:length(sln)]
-  u2 = [sln(t).u for t in linspace(0,4,41)]
+  u2 = [sln(t).u for t in range(0,stop=4,length=41)]
   @test any(x->x[1]>0, u1)
   @test any(x->x[1]>0, u2)
 
@@ -90,14 +90,14 @@ end
 
   @test u1 == [sln[idx].u for idx in 1:length(sln)] # Show that discrete is the same
   u1 = [sln[idx].u for idx in 1:length(sln)]
-  u2 = [sln(t).u for t in linspace(0,4,41)]
+  u2 = [sln(t).u for t in range(0,stop=4,length=41)]
   @test any(x->x[1]>0, u1)
   @test any(x->x[1]>0, u2)
 
   sln = solve(prob, DP5(), dt = 1//10, adaptive=false)
 
   u1 = [sln[idx].u for idx in 1:length(sln)]
-  u2 = [sln(t).u for t in linspace(0,4,41)]
+  u2 = [sln(t).u for t in range(0,stop=4,length=41)]
   @test any(x->x[1]>0, u1)
   @test any(x->x[1]>0, u2)
 end

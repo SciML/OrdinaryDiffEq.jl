@@ -16,7 +16,6 @@ using OrdinaryDiffEq, Test, DiffEqOperators
 
     Algs = [LawsonEuler,NorsettEuler,ETDRK2,ETDRK3,ETDRK4,HochOst4]
     for Alg in Algs
-        gc()
         sol = solve(prob, Alg(); dt=dt, internalnorm=Base.norm)
         sol_krylov = solve(prob, Alg(krylov=true, m=10); dt=dt, reltol=reltol, internalnorm=Base.norm)
         @test isapprox(sol.u,sol_krylov.u; rtol=reltol)
@@ -52,7 +51,6 @@ end
     dt = 0.05; tol=1e-5
     Algs = [Exp4, EPIRK4s3A, EPIRK4s3B]
     for Alg in Algs
-        gc()
         sol = solve(prob, Alg(); dt=dt, internalnorm=Base.norm, reltol=tol)
         sol_ref = solve(prob, Tsit5(); reltol=tol)
         @test isapprox(sol(1.0), sol_ref(1.0); rtol=tol)

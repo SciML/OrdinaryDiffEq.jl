@@ -1,6 +1,5 @@
 using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase,
       DiffEqProblemLibrary, Test
-gc()
 
 probArr = Vector{ODEProblem}(undef, 2)
 
