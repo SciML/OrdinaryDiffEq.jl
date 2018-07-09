@@ -1,4 +1,5 @@
-using OrdinaryDiffEq, DiffEqDevTools, DiffEqProblemLibrary, Test
+using OrdinaryDiffEq, DiffEqDevTools, Test
+import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 
 srand(100)
 linear_bigαN = big"0.5"

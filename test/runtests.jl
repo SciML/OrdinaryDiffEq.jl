@@ -1,6 +1,10 @@
 using OrdinaryDiffEq
 using Test, LinearAlgebra, Statistics
 
+using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
+import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear,
+       prob_ode_bigfloatveclinear, prob_ode_linear_inplace
+
 const CPU_FLOPS = peakflops()
 const LONGER_TESTS = false
 

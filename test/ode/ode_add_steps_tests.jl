@@ -49,5 +49,5 @@ for inplace in [false,true], alg in lazy_alg
     passed[cur_itr] = pass && !fail
 end
 
-any(.!(passed)) && warn("The following algorithms failed the continuous callback test: $(vcat(algs,algs,lazy_alg,lazy_alg)[.!(passed)])")
+any(.!(passed)) && @warn("The following algorithms failed the continuous callback test: $(vcat(algs,algs,lazy_alg,lazy_alg)[.!(passed)])")
 @test all(passed)

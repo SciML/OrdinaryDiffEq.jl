@@ -1,5 +1,5 @@
-using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase,
-      DiffEqProblemLibrary, Test
+using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase, Test
+import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 
 probArr = Vector{ODEProblem}(undef, 2)
 

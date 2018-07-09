@@ -17,7 +17,7 @@ abstract type OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm <: OrdinaryDiffEqAdapt
 
 struct FunctionMap{scale_by_time} <: OrdinaryDiffEqAlgorithm end
 Base.@pure function Discrete(;apply_map=false,scale_by_time=false)
-    warn("Discrete is deprecated. Use FunctionMap instead.")
+    @warn("Discrete is deprecated. Use FunctionMap instead.")
     FunctionMap{scale_by_time}()
 end
 Base.@pure FunctionMap(;scale_by_time=false) = FunctionMap{scale_by_time}()

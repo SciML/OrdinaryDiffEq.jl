@@ -66,12 +66,12 @@ function DiffEqBase.__init(
   end
 
   if !isempty(saveat) && dense
-    warn("Dense output is incompatible with saveat. Please use the SavingCallback from the Callback Library to mix the two behaviors.")
+    @warn("Dense output is incompatible with saveat. Please use the SavingCallback from the Callback Library to mix the two behaviors.")
   end
 
   if (eltype(prob.u0) <: Dual && !(eltype(prob.tspan)<:Dual) ||
      !(eltype(prob.u0) <: Dual) && eltype(prob.tspan)<:Dual) && adaptive
-     warn("Autodifferentiation through the solver with adaptive timestepping requires both time and states to be dual numbers. Please see the FAQ.")
+     @warn("Autodifferentiation through the solver with adaptive timestepping requires both time and states to be dual numbers. Please see the FAQ.")
   end
 
   tType = eltype(prob.tspan)
@@ -322,7 +322,7 @@ function DiffEqBase.__init(
     end
     if isnan(integrator.dt)
       if verbose
-        warn("Automatic dt set the starting dt as NaN, causing instability.")
+        @warn("Automatic dt set the starting dt as NaN, causing instability.")
       end
     end
   elseif integrator.opts.adaptive && integrator.dt > zero(integrator.dt) && integrator.tdir < 0

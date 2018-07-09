@@ -71,7 +71,7 @@
   end
 
   if any(isnan,f₀)
-    warn("First function call produced NaNs. Exiting.")
+    @warn("First function call produced NaNs. Exiting.")
   end
 
   @. tmp = f₀/sk*oneunit_tType

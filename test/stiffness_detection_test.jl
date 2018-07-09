@@ -1,7 +1,8 @@
-using OrdinaryDiffEq, DiffEqProblemLibrary, Test
+using OrdinaryDiffEq, Test
+import DiffEqProblemLibrary.ODEProblemLibrary: van
 
 @testset "Stiffness Detection Tests" begin
-  prob1 = ODEProblem(DiffEqProblemLibrary.van,[0,2.],(0.0,6),inv(0.003))
+  prob1 = ODEProblem(van,[0,2.],(0.0,6),inv(0.003))
   # out-of-place test
   function van(u, p, t)
     μ = p[1]
