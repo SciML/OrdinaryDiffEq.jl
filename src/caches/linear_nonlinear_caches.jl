@@ -517,6 +517,33 @@ struct EPIRK5P2ConstantCache <: ExpRKConstantCache end
 alg_cache(alg::EPIRK5P2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = EPIRK5P2ConstantCache()
 
+struct EPIRK5P2Cache{uType,rateType,matType,KsType} <: ExpRKCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  rtmp::rateType
+  rtmp2::rateType
+  dR::rateType
+  K::matType
+  A::matType
+  B::matType
+  KsCache::KsType
+end
+function alg_cache(alg::EPIRK5P2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)                                        # uType caches
+  rtmp, rtmp2, dR = (zeros(rate_prototype) for i = 1:3)   # rateType caches
+  # Allocate matrices
+  n = length(u); T = eltype(u)
+  K = Matrix{T}(n, 3)
+  A = Matrix{T}(n, n) # TODO: sparse Jacobian support
+  B = zeros(T, n, 4)
+  # Allocate caches for phiv_timestep
+  maxiter = min(alg.m, n)
+  KsCache = _phiv_timestep_caches(u, maxiter, 3)
+  EPIRK5P2Cache(u,uprev,tmp,rtmp,rtmp2,dR,K,A,B,KsCache)
+end
+
 ####################################
 # Multistep exponential method caches
 

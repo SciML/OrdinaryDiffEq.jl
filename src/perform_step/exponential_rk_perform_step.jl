@@ -1091,6 +1091,58 @@ function perform_step!(integrator, cache::EPIRK5P2ConstantCache, repeat_step=fal
   integrator.u = u
 end
 
+function perform_step!(integrator, cache::EPIRK5P2Cache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack tmp,rtmp,rtmp2,dR,K,A,B,KsCache = cache
+  f.jac(A, uprev, p, t)
+  alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
+  f0 = integrator.fsalfirst # f(u0) is fsaled
+  kwargs = [(:tol, integrator.opts.reltol), (:iop, alg.iop), (:norm, integrator.opts.internalnorm), 
+    (:adaptive, true), (:caches, KsCache)]
+
+  # Coefficients (scaling factors absorbed)
+  g11 = 0.46629408528088195806 * dt
+  g21 = 0.88217912653363865140 * dt # g22 = g32
+  g31 = dt; g32 = 0.92074916488140031449 * dt; g33 = 0.79791561832664517267 * dt
+  a22 = 2.80620373289331259751 / dt; b2 = 2.52806310256246280783 / dt
+  b31 = -0.128486782657005566142; b32 = -0.161028033172809183351 / dt; b33 = 5.26726331616909606251 / dt^2
+
+  # Compute the first column (f0)
+  B[:, 2] .= f0
+  phiv_timestep!(K, [g11, g21, g31], A, @view(B[:, 1:2]); kwargs...)
+  ## U1 and R1
+  @. tmp = uprev + @view(K[:, 1]) # tmp is now U1
+  f(rtmp, tmp, p, t + g11); A_mul_B!(rtmp2, A, @view(K[:, 1]))
+  @. rtmp = rtmp - f0 - rtmp2 # rtmp is now R1
+  @. tmp = uprev + @view(K[:, 2]) # partially update U2 (stored in tmp)
+  @. u = uprev + @view(K[:, 3]) # partially update u
+  @. dR = -2rtmp # partially update dR
+
+  # Compute the second column (R1)
+  fill!(@view(B[:, 2]), zero(eltype(B)))
+  B[:, 3] .= rtmp
+  k = @view(K[:, 1])
+  phiv_timestep!(k, g32, A, @view(B[:, 1:3]); kwargs...)
+  ## U2 and R2
+  Base.axpy!(a22, k, tmp) # tmp is now U2
+  f(rtmp, tmp, p, t + g21)
+  tmp .-= uprev; A_mul_B!(rtmp2, A, tmp)
+  @. rtmp = rtmp - f0 - rtmp2 # rtmp is now R2
+  dR .+= rtmp # dR is now R2 - 2R1
+  Base.axpy!(b2, k, u) # partially update u
+  
+  # Compute the third column (dR = R2 - 2R1)
+  @. B[:, 2] = b31 * dR
+  @. B[:, 3] = b32 * dR
+  @. B[:, 4] = b33 * dR
+  phiv_timestep!(k, g33, A, B; kwargs...)
+  u .+= k
+
+  # Update integrator state
+  f(integrator.fsallast, u, p, t + dt)
+  # integrator.k is automatically set due to aliasing
+end
+
 ######################################################
 # Multistep exponential integrators
 function initialize!(integrator,cache::ETD2ConstantCache)
