@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, Test, DiffEqOperators, LinearAlgebra
+using Random: srand
 @testset "Classical ExpRK" begin
     N = 20
     dt=0.1
@@ -34,10 +35,10 @@ end
     srand(0); u0 = normalize(randn(N))
     # For the moment, use dense Jacobian
     dd = -2 * ones(N); du = ones(N-1)
-    A = diagm(du, -1) + diagm(dd) + diagm(du, 1)
+    A = diagm(-1 => du, 0 => dd, 1 => du)
     _f = (u,p,t) -> A*u - u.^3
     _f_ip = (du,u,p,t) -> (mul!(du, A, u); du .-= u.^3)
-    _jac = (u,p,t) -> A - 3 * diagm(u.^2)
+    _jac = (u,p,t) -> A - 3 * diagm(0 => u.^2)
     _jac_ip = (J,u,p,t) -> begin
         copyto!(J, A)
         @inbounds for i = 1:N
@@ -62,7 +63,6 @@ end
         println(Alg) # prevent Travis hanging
     end
 
-    gc()
     sol = solve(prob, EPIRK5s3(); dt=dt, reltol=tol)
     sol_ref = solve(prob, Tsit5(); reltol=tol)
     @test_broken isapprox(sol(1.0), sol_ref(1.0); rtol=tol)

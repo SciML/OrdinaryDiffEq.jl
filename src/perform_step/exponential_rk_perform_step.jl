@@ -1022,17 +1022,17 @@ function perform_step!(integrator, cache::EPIRK5P1Cache, repeat_step=false)
   k = @view(K[:, 1])
   phiv_timestep!(k, g32, A, @view(B[:, 1:2]); kwargs...)
   ## U2 and R2
-  Base.axpy!(a22, k, tmp) # tmp is now U2
+  axpy!(a22, k, tmp) # tmp is now U2
   f(rtmp, tmp, p, t + g21)
   tmp .-= uprev; mul!(rtmp2, A, tmp)
   @. rtmp = rtmp - f0 - rtmp2 # rtmp is now R2
-  Base.axpy!(b2, k, u) # partially update u
+  axpy!(b2, k, u) # partially update u
   B[:, 4] .+= rtmp # is now dR
 
   # Compute the third column (dR = R2 - 2R1)
   fill!(@view(B[:, 2]), zero(eltype(B)))
   phiv_timestep!(k, g33, A, B; kwargs...)
-  Base.axpy!(b3, k, u)
+  axpy!(b3, k, u)
 
   # Update integrator state
   f(integrator.fsallast, u, p, t + dt)
@@ -1113,12 +1113,12 @@ function perform_step!(integrator, cache::EPIRK5P2Cache, repeat_step=false)
   k = @view(K[:, 1])
   phiv_timestep!(k, g32, A, @view(B[:, 1:3]); kwargs...)
   ## U2 and R2
-  Base.axpy!(a22, k, tmp) # tmp is now U2
+  axpy!(a22, k, tmp) # tmp is now U2
   f(rtmp, tmp, p, t + g21)
   tmp .-= uprev; mul!(rtmp2, A, tmp)
   @. rtmp = rtmp - f0 - rtmp2 # rtmp is now R2
   dR .+= rtmp # dR is now R2 - 2R1
-  Base.axpy!(b2, k, u) # partially update u
+  axpy!(b2, k, u) # partially update u
 
   # Compute the third column (dR = R2 - 2R1)
   @. B[:, 2] = b31 * dR

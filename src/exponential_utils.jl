@@ -598,7 +598,7 @@ function phiv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, B::AbstractM
   if iszero(tau)
     Anorm = opnorm(A, Inf)
     b0norm = maximum(abs.(@view(B[:, 1])))
-    tau = 10/Anorm * (abstol * ((m+1)/e)^(m+1) * sqrt(2*pi*(m+1)) /
+    tau = 10/Anorm * (abstol * ((m+1)/ℯ)^(m+1) * sqrt(2*pi*(m+1)) /
       (4*Anorm*b0norm))^(1/m)
     verbose && println("Initial time step unspecified, chosen to be $tau")
   end
@@ -631,7 +631,7 @@ function phiv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, B::AbstractM
       if isa(A, SparseMatrixCSC)
         NA = nnz(A)
       else
-        NA = countnz(A) # not constant operation, should be best avoided
+        NA = count(!iszero, A) # not constant operation, should be best avoided
       end
     end
   end
