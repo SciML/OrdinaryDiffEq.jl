@@ -245,6 +245,8 @@ mutable struct QNDF2ConstantCache{F,uToltype,coefType,coefType1,uType,dtType} <:
   uprev3::uType
   dtₙ₋₁::dtType
   dtₙ₋₂::dtType
+  pass::Bool
+  pdt::dtType
 end
 
 function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
@@ -255,6 +257,7 @@ function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   uprev3 = u
   dtₙ₋₁ = t
   dtₙ₋₂ = t
+  pdt = t
 
   D = zeros(typeof(u),1,2)
   D2 = zeros(typeof(u),1,3)
@@ -276,5 +279,5 @@ function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
 
   eulercache = ImplicitEulerConstantCache(uf,ηold,κ,tol,100000)
 
-  QNDF2ConstantCache(uf,ηold,κ,tol,10000,eulercache,D,D2,R,U,uprev2,uprev3,dtₙ₋₁,dtₙ₋₂)
+  QNDF2ConstantCache(uf,ηold,κ,tol,10000,eulercache,D,D2,R,U,uprev2,uprev3,dtₙ₋₁,dtₙ₋₂,true,pdt)
 end

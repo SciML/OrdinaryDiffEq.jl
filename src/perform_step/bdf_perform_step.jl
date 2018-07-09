@@ -287,54 +287,42 @@ function initialize!(integrator, cache::QNDF2ConstantCache)
 end
 
 function perform_step!(integrator,cache::QNDF2ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
-  @unpack uprev2,uprev3,dtₙ₋₁,dtₙ₋₂,D,D2,R,U = cache
+  @unpack t,uprev,u,f,p = integrator
+  @unpack pass,pdt,uprev2,uprev3,dtₙ₋₁,dtₙ₋₂,D,D2,R,U = cache
   cnt = integrator.iter
-  if cnt == 1 || cnt == 2
-    if cnt == 2
-      integrator.dt = dtₙ₋₂
-    end
-    perform_step!(integrator, cache.eulercache, repeat_step)  # ImplicitEuler(BDF1)
-    if integrator.EEst <= one(integrator.EEst)
-      if cnt == 1
-        cache.uprev3 = integrator.uprev
-        cache.dtₙ₋₂ = dt
-      else
-        cache.uprev2 = integrator.uprev
-        cache.dtₙ₋₁ = dt
-      end
-    end
-    return
-  end
-
-  if dtₙ₋₁ != dtₙ₋₂
-    integrator.dt = dtₙ₋₁
-    perform_step!(integrator, cache.eulercache, repeat_step)  # ImplicitEuler(BDF1)
-    if integrator.EEst > one(integrator.EEst)
-      integrator.dt = dt
-      perform_step!(integrator, cache.eulercache, repeat_step)  # ImplicitEuler(BDF1)
-      cache.dtₙ₋₁ = dt
-    end
-    cache.uprev3 = uprev2
-    cache.uprev2 = uprev
-    cache.dtₙ₋₂ = dtₙ₋₁
-    return
-  end
-
-  κ = integrator.alg.kappa
-  γ₁ = 1//1
-  γ₂ = 1//1 + 1//2
   k = 2
-  ρ = dt/dtₙ₋₁
-
-  # backward diff
-  D[1] = uprev - uprev2
-  D[2] = D[1] - (uprev2 - uprev3)
-
-  if ρ != 1
-    R!(k,ρ,cache)
-    cache.D .= D * (R * U)
+  flag = dtₙ₋₁ != dtₙ₋₂
+  cache.pdt = integrator.dt
+  if cnt == 2
+    integrator.dt = dtₙ₋₁
+  elseif flag && cnt != 1
+    if pass
+      integrator.dt = dtₙ₋₁
+    else
+      integrator.dt = pdt
+    end
   end
+
+  @unpack dt = integrator
+
+  if cnt == 1 || cnt == 2 || flag
+    κ = zero(integrator.alg.kappa)
+    γ₁ = 1//1
+    γ₂ = 1//1
+  else
+    κ = integrator.alg.kappa
+    γ₁ = 1//1
+    γ₂ = 1//1 + 1//2
+    ρ = dt/dtₙ₋₁
+    # backward diff
+    D[1] = uprev - uprev2
+    D[2] = D[1] - (uprev2 - uprev3)
+    if ρ != 1
+      R!(k,ρ,cache)
+      cache.D .= D * (R * U)
+    end
+  end
+
   # precalculations
   γ = inv((1-κ)*γ₂)
   u₀ = uprev + D[1] + D[2]
@@ -351,7 +339,30 @@ function perform_step!(integrator,cache::QNDF2ConstantCache,repeat_step=false)
   fail_convergence && return
   u = tmp + γ*z
 
-  if integrator.opts.adaptive
+  if integrator.opts.adaptive && integrator.success_iter < 2
+  end
+
+  if integrator.opts.adaptive && integrator.success_iter > 1 && flag
+    # write ImplicitEuler EEst
+    uprev2 = integrator.uprev2
+    tprev = integrator.tprev
+
+    dt1 = dt*(t+dt-tprev)
+    dt2 = (t-tprev)*(t+dt-tprev)
+    c = 7/12 # default correction factor in SPICE (LTE overestimated by DD)
+    r = c*dt^2 # by mean value theorem 2nd DD equals y''(s)/2 for some s
+
+    tmp = r*abs((u - uprev)/dt1 - (uprev - uprev2)/dt2)
+    atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+    integrator.EEst = integrator.opts.internalnorm(atmp)
+
+    if integrator.EEst > one(integrator.EEst)
+      cache.pass = false
+      return
+    end
+  end
+
+  if integrator.opts.adaptive && integrator.success_iter > 1 && !flag
     D2[1] = u - uprev
     D2[2] = D2[1] - D[1]
     D2[3] = D2[2] - D[2]
@@ -362,10 +373,11 @@ function perform_step!(integrator,cache::QNDF2ConstantCache,repeat_step=false)
       return
     end
   end
-  cache.dtₙ₋₂ = dtₙ₋₁
-  cache.dtₙ₋₁ = dt
+
   cache.uprev3 = uprev2
   cache.uprev2 = uprev
+  cache.dtₙ₋₂ = dtₙ₋₁
+  cache.dtₙ₋₁ = dt
   cache.ηold = η
   cache.newton_iters = iter
   integrator.fsallast = f(u, p, t+dt)
