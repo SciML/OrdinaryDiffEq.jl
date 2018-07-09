@@ -194,7 +194,7 @@ function Base.show(io::IO, Ks::KrylovSubspace)
 end
 
 """
-    arnoldi(A,b[;m,tol,norm,cache]) -> Ks
+    arnoldi(A,b[;m,tol,opnorm,cache]) -> Ks
 
 Performs `m` anoldi iterations to obtain the Krylov subspace K_m(A,b).
 
@@ -219,20 +219,20 @@ advection-diffusion operator using the incomplete orthogonalization method. In
 Numerical Mathematics and Advanced Applications-ENUMATH 2013 (pp. 345-353).
 Springer, Cham.
 """
-function arnoldi(A, b; m=min(30, size(A, 1)), tol=1e-7, norm=LinearAlgebra.norm,
+function arnoldi(A, b; m=min(30, size(A, 1)), tol=1e-7, opnorm=LinearAlgebra.opnorm,
   iop=0, cache=nothing)
   Ks = KrylovSubspace{eltype(b)}(length(b), m)
-  arnoldi!(Ks, A, b; m=m, tol=tol, norm=norm, cache=cache, iop=iop)
+  arnoldi!(Ks, A, b; m=m, tol=tol, opnorm=opnorm, cache=cache, iop=iop)
 end
 """
-    arnoldi!(Ks,A,b[;tol,m,norm,cache]) -> Ks
+    arnoldi!(Ks,A,b[;tol,m,opnorm,cache]) -> Ks
 
 Non-allocating version of `arnoldi`.
 """
 function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol::Real=1e-7,
-  m::Int=min(Ks.maxiter, size(A, 1)), norm=LinearAlgebra.norm, iop::Int=0, cache=nothing) where {B, T <: Number}
+  m::Int=min(Ks.maxiter, size(A, 1)), opnorm=LinearAlgebra.opnorm, iop::Int=0, cache=nothing) where {B, T <: Number}
   if ishermitian(A)
-    return lanczos!(Ks, A, b; tol=tol, m=m, norm=norm, cache=cache)
+    return lanczos!(Ks, A, b; tol=tol, m=m, opnorm=opnorm, cache=cache)
   end
   if m > Ks.maxiter
     resize!(Ks, m)
@@ -281,7 +281,7 @@ end
 A variation of `arnoldi!` that uses the Lanczos algorithm for Hermitian matrices.
 """
 function lanczos!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol=1e-7,
-  m=min(Ks.maxiter, size(A, 1)), norm=LinearAlgebra.norm, cache=nothing) where {B, T <: Number}
+  m=min(Ks.maxiter, size(A, 1)), opnorm=LinearAlgebra.opnorm, cache=nothing) where {B, T <: Number}
   if m > Ks.maxiter
     resize!(Ks, m)
   else
@@ -352,8 +352,8 @@ arguments.
 
 Compute the expv product using a pre-constructed Krylov subspace.
 """
-function expv(t, A, b; m=min(30, size(A, 1)), tol=1e-7, norm=LinearAlgebra.norm, cache=nothing, iop=0)
-  Ks = arnoldi(A, b; m=m, tol=tol, norm=norm, iop=iop)
+function expv(t, A, b; m=min(30, size(A, 1)), tol=1e-7, opnorm=LinearAlgebra.opnorm, cache=nothing, iop=0)
+  Ks = arnoldi(A, b; m=m, tol=tol, opnorm=opnorm, iop=iop)
   w = similar(b)
   expv!(w, t, Ks; cache=cache)
 end
@@ -437,9 +437,9 @@ Compute the matrix-phi-vector products using a pre-constructed Krylov subspace.
 the φ-functions in exponential integrators. arXiv preprint arXiv:0907.4631.
 Formula (10).
 """
-function phiv(t, A, b, k; m=min(30, size(A, 1)), tol=1e-7, norm=LinearAlgebra.norm, iop=0,
+function phiv(t, A, b, k; m=min(30, size(A, 1)), tol=1e-7, opnorm=LinearAlgebra.opnorm, iop=0,
   cache=nothing, correct=false, errest=false)
-  Ks = arnoldi(A, b; m=m, tol=tol, norm=norm, iop=iop)
+  Ks = arnoldi(A, b; m=m, tol=tol, opnorm=opnorm, iop=iop)
   w = Matrix{eltype(b)}(undef, length(b), k+1)
   phiv!(w, t, Ks, k; cache=cache, correct=correct, errest=errest)
 end
@@ -589,7 +589,7 @@ function phiv_timestep!(u::AbstractVector{T}, t::tType, A, B::AbstractMatrix{T};
   return u
 end
 function phiv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, B::AbstractMatrix{T}; tau::Real=0.0,
-  m::Int=min(10, size(A, 1)), tol::Real=1e-7, norm=LinearAlgebra.norm, iop::Int=0,
+  m::Int=min(10, size(A, 1)), tol::Real=1e-7, opnorm=LinearAlgebra.opnorm, iop::Int=0,
   correct::Bool=false, caches=nothing, adaptive=false, delta::Real=1.2,
   gamma::Real=0.8, NA::Int=0, verbose=false) where {T <: Number, tType <: Real}
   # Choose initial timestep
@@ -654,7 +654,7 @@ function phiv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, B::AbstractM
       end
     end
     # Part 2: compute ϕp(tau*A)wp using Krylov, possibly with adaptation
-    arnoldi!(Ks, A, @view(W[:, end]); tol=tol, m=m, norm=norm, iop=iop, cache=u)
+    arnoldi!(Ks, A, @view(W[:, end]); tol=tol, m=m, opnorm=opnorm, iop=iop, cache=u)
     _, epsilon = phiv!(P, tau, Ks, p + 1; cache=phiv_cache, correct=correct, errest=true)
     verbose && println("t = $t, m = $m, tau = $tau, error estimate = $epsilon")
     if adaptive
@@ -668,7 +668,7 @@ function phiv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, B::AbstractM
         m, m_old = m_new, m
         tau, tau_old = tau_new, tau
         # Compute ϕp(tau*A)wp using the new parameters
-        arnoldi!(Ks, A, @view(W[:, end]); tol=tol, m=m, norm=norm, iop=iop, cache=u)
+        arnoldi!(Ks, A, @view(W[:, end]); tol=tol, m=m, opnorm=opnorm, iop=iop, cache=u)
         _, epsilon_new = phiv!(P, tau, Ks, p + 1; cache=phiv_cache, correct=correct, errest=true)
         epsilon, epsilon_old = epsilon_new, epsilon
         omega = (tend / tau) * (epsilon / abstol)
