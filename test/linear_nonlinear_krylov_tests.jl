@@ -50,7 +50,7 @@ end
     prob_ip = ODEProblem{true}(f_ip, u0, (0.0, 1.0))
 
     dt = 0.05; tol=1e-5
-    Algs = [Exp4, EPIRK4s3A, EPIRK4s3B]
+    Algs = [Exp4, EPIRK4s3A, EPIRK4s3B, EXPRB53s3, EPIRK5P1, EPIRK5P2]
     for Alg in Algs
         gc()
         sol = solve(prob, Alg(); dt=dt, internalnorm=Base.norm, reltol=tol)
@@ -62,4 +62,14 @@ end
         @test isapprox(sol(1.0), sol_ref(1.0); rtol=tol)
         println(Alg) # prevent Travis hanging
     end
+
+    gc()
+    sol = solve(prob, EPIRK5s3(); dt=dt, internalnorm=Base.norm, reltol=tol)
+    sol_ref = solve(prob, Tsit5(); reltol=tol)
+    @test_broken isapprox(sol(1.0), sol_ref(1.0); rtol=tol)
+
+    sol = solve(prob_ip, EPIRK5s3(); dt=dt, internalnorm=Base.norm, reltol=tol)
+    sol_ref = solve(prob_ip, Tsit5(); reltol=tol)
+    @test_broken isapprox(sol(1.0), sol_ref(1.0); rtol=tol)
+    println(EPIRK5s3) # prevent Travis hanging
 end

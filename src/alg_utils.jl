@@ -112,6 +112,10 @@ alg_order(alg::HochOst4) = 4
 alg_order(alg::Exp4) = 4
 alg_order(alg::EPIRK4s3A) = 4
 alg_order(alg::EPIRK4s3B) = 4
+alg_order(alg::EPIRK5s3) = 5
+alg_order(alg::EPIRK5P1) = 5
+alg_order(alg::EPIRK5P2) = 5
+alg_order(alg::EXPRB53s3) = 5
 alg_order(alg::SplitEuler) = 1
 alg_order(alg::ETD2) = 2
 
