@@ -1,4 +1,5 @@
-using OrdinaryDiffEq, DiffEqProblemLibrary, Test, Statistics
+using OrdinaryDiffEq, Test, Statistics
+import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_2Dlinear, prob_ode_linear
 
 @testset "Scalar Discrete Problem" begin
   prob = DiscreteProblem(0.5,(0.0,1.0))

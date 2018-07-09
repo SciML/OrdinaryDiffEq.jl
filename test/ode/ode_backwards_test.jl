@@ -1,4 +1,5 @@
-using OrdinaryDiffEq, DiffEqProblemLibrary, Test, Statistics
+using OrdinaryDiffEq, Test, Statistics
+import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_2Dlinear,
 @testset "Backwards Tests" begin
   prob = deepcopy(prob_ode_2Dlinear)
   prob2 = ODEProblem(prob.f,prob.u0,(1.0,0.0))

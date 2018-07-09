@@ -1,4 +1,5 @@
-using OrdinaryDiffEq, DiffEqProblemLibrary, Test
+using OrdinaryDiffEq, Test
+import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear
 
 @testset "save_idxs Tests" begin
   # scalar, not in-place

@@ -1,4 +1,5 @@
-using OrdinaryDiffEq, DiffEqProblemLibrary, Test
+using OrdinaryDiffEq, Test
+import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 
 @testset "saveat Tests" begin
   prob = prob_ode_linear

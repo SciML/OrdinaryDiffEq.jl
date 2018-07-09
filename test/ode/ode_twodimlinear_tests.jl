@@ -1,4 +1,5 @@
-using OrdinaryDiffEq, DiffEqProblemLibrary
+using OrdinaryDiffEq
+import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_2Dlinear
 prob = prob_ode_2Dlinear
 
 integrator = init(prob,Euler();dt=1//2^(4))
