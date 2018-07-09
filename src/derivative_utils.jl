@@ -29,7 +29,7 @@ function calc_J!(integrator, cache, is_compos)
       uf.p = p
       jacobian!(J, uf, uprev, du1, integrator, jac_config)
     end
-    is_compos && (integrator.eigen_est = norm(J, Inf))
+    is_compos && (integrator.eigen_est = opnorm(J, Inf))
 end
 
 function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_step, W_transform=false)
@@ -103,7 +103,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
       W = inv(dtgamma) - J
     end
   end
-  iscompo && (integrator.eigen_est = isarray ? norm(J, Inf) : J)
+  iscompo && (integrator.eigen_est = isarray ? opnorm(J, Inf) : J)
   W
 end
 

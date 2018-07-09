@@ -1,4 +1,5 @@
 using LinearAlgebra: axpy!
+using SparseArrays
 
 # exponential_utils.jl
 # Contains functions related to the evaluation of scalar/matrix phi functions
@@ -210,7 +211,7 @@ The default value of 0 indicates full Arnoldi. For symmetric/Hermitian `A`,
 
 Refer to `KrylovSubspace` for more information regarding the output.
 
-Happy-breakdown occurs whenver `norm(v_j) < tol * norm(A, Inf)`, in this case
+Happy-breakdown occurs whenver `norm(v_j) < tol * opnorm(A, Inf)`, in this case
 the dimension of `Ks` is smaller than `m`.
 
 [^1]: Koskela, A. (2015). Approximating the matrix exponential of an
@@ -218,7 +219,7 @@ advection-diffusion operator using the incomplete orthogonalization method. In
 Numerical Mathematics and Advanced Applications-ENUMATH 2013 (pp. 345-353).
 Springer, Cham.
 """
-function arnoldi(A, b; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm,
+function arnoldi(A, b; m=min(30, size(A, 1)), tol=1e-7, norm=LinearAlgebra.norm,
   iop=0, cache=nothing)
   Ks = KrylovSubspace{eltype(b)}(length(b), m)
   arnoldi!(Ks, A, b; m=m, tol=tol, norm=norm, cache=cache, iop=iop)
@@ -229,7 +230,7 @@ end
 Non-allocating version of `arnoldi`.
 """
 function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol::Real=1e-7,
-  m::Int=min(Ks.maxiter, size(A, 1)), norm=Base.norm, iop::Int=0, cache=nothing) where {B, T <: Number}
+  m::Int=min(Ks.maxiter, size(A, 1)), norm=LinearAlgebra.norm, iop::Int=0, cache=nothing) where {B, T <: Number}
   if ishermitian(A)
     return lanczos!(Ks, A, b; tol=tol, m=m, norm=norm, cache=cache)
   end
@@ -239,7 +240,7 @@ function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol::Real=1
     Ks.m = m # might change if happy-breakdown occurs
   end
   V, H = getV(Ks), getH(Ks)
-  vtol = tol * norm(A, Inf)
+  vtol = tol * opnorm(A, Inf)
   if iop == 0
     iop = m
   end
@@ -280,14 +281,14 @@ end
 A variation of `arnoldi!` that uses the Lanczos algorithm for Hermitian matrices.
 """
 function lanczos!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol=1e-7,
-  m=min(Ks.maxiter, size(A, 1)), norm=Base.norm, cache=nothing) where {B, T <: Number}
+  m=min(Ks.maxiter, size(A, 1)), norm=LinearAlgebra.norm, cache=nothing) where {B, T <: Number}
   if m > Ks.maxiter
     resize!(Ks, m)
   else
     Ks.m = m # might change if happy-breakdown occurs
   end
   V, H = getV(Ks), getH(Ks)
-  vtol = tol * norm(A, Inf)
+  vtol = tol * opnorm(A, Inf)
   # Safe checks
   n = size(V, 1)
   @assert length(b) == size(A,1) == size(A,2) == n "Dimension mismatch"
@@ -351,7 +352,7 @@ arguments.
 
 Compute the expv product using a pre-constructed Krylov subspace.
 """
-function expv(t, A, b; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, cache=nothing, iop=0)
+function expv(t, A, b; m=min(30, size(A, 1)), tol=1e-7, norm=LinearAlgebra.norm, cache=nothing, iop=0)
   Ks = arnoldi(A, b; m=m, tol=tol, norm=norm, iop=iop)
   w = similar(b)
   expv!(w, t, Ks; cache=cache)
@@ -380,7 +381,7 @@ function expv!(w::AbstractVector{T}, t::Number, Ks::KrylovSubspace{B, T};
   lmul!(t, copyto!(cache, @view(H[1:m, :])))
   if ishermitian(cache)
     # Optimize the case for symtridiagonal H
-    F = eigfact!(SymTridiagonal(cache)) # Note: eigfact! -> eigen! in v0.7
+    F = eigen!(SymTridiagonal(cache))
     expHe = F.vectors * (exp.(F.values) .* @view(F.vectors[1, :]))
   else
     expH = exp!(cache)
@@ -436,7 +437,7 @@ Compute the matrix-phi-vector products using a pre-constructed Krylov subspace.
 the φ-functions in exponential integrators. arXiv preprint arXiv:0907.4631.
 Formula (10).
 """
-function phiv(t, A, b, k; m=min(30, size(A, 1)), tol=1e-7, norm=Base.norm, iop=0,
+function phiv(t, A, b, k; m=min(30, size(A, 1)), tol=1e-7, norm=LinearAlgebra.norm, iop=0,
   cache=nothing, correct=false, errest=false)
   Ks = arnoldi(A, b; m=m, tol=tol, norm=norm, iop=iop)
   w = Matrix{eltype(b)}(undef, length(b), k+1)
@@ -570,7 +571,7 @@ evaluating the φ-functions in exponential integrators. arXiv preprint
 arXiv:0907.4631.
 """
 function phiv_timestep(ts::Vector{tType}, A, B; kwargs...) where {tType <: Real}
-  U = Matrix{eltype(A)}(size(A, 1), length(ts))
+  U = Matrix{eltype(A)}(undef, size(A, 1), length(ts))
   phiv_timestep!(U, ts, A, B; kwargs...)
 end
 function phiv_timestep(t::tType, A, B; kwargs...) where {tType <: Real}
@@ -588,14 +589,14 @@ function phiv_timestep!(u::AbstractVector{T}, t::tType, A, B::AbstractMatrix{T};
   return u
 end
 function phiv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, B::AbstractMatrix{T}; tau::Real=0.0,
-  m::Int=min(10, size(A, 1)), tol::Real=1e-7, norm=Base.norm, iop::Int=0,
+  m::Int=min(10, size(A, 1)), tol::Real=1e-7, norm=LinearAlgebra.norm, iop::Int=0,
   correct::Bool=false, caches=nothing, adaptive=false, delta::Real=1.2,
   gamma::Real=0.8, NA::Int=0, verbose=false) where {T <: Number, tType <: Real}
   # Choose initial timestep
-  abstol = tol * norm(A, Inf)
+  abstol = tol * opnorm(A, Inf)
   verbose && println("Absolute tolerance: $abstol")
   if iszero(tau)
-    Anorm = norm(A, Inf)
+    Anorm = opnorm(A, Inf)
     b0norm = norm(@view(B[:, 1]), Inf)
     tau = 10/Anorm * (abstol * ((m+1)/e)^(m+1) * sqrt(2*pi*(m+1)) /
       (4*Anorm*b0norm))^(1/m)
@@ -663,7 +664,7 @@ function phiv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, B::AbstractM
       while omega > delta # inner loop of Algorithm 3
         m_new, tau_new, q, kappa = _phiv_timestep_adapt(
           m, tau, epsilon, m_old, tau_old, epsilon_old, q, kappa,
-          gamma, omega, maxtau, n, p, NA, iop, norm(getH(Ks), 1), verbose)
+          gamma, omega, maxtau, n, p, NA, iop, opnorm(getH(Ks), 1), verbose)
         m, m_old = m_new, m
         tau, tau_old = tau_new, tau
         # Compute ϕp(tau*A)wp using the new parameters

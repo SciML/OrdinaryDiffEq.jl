@@ -15,20 +15,20 @@ using OrdinaryDiffEq, DiffEqProblemLibrary, Test
   for prob in probArr
     alg = AutoTsit5(Rodas5(); maxstiffstep=5, maxnonstiffstep=5, stiffalgfirst=true)
     sol = solve(prob, alg)
-    @test length(sol.t) < 320
+    @test length(sol.t) < 280
     @test typeof(alg.algs[sol.alg_choice[1]]) <: Rodas5
     @test is_switching_fb(sol)
     sol = solve(prob, AutoDP5(Rodas5(); maxstiffstep=2, maxnonstiffstep=2,
                               stifftol=11//10, nonstifftol=9//10),
                               reltol=1e-5, abstol=1e-5)
-    @test length(sol.t) < 540
+    @test length(sol.t) < 625
     @test is_switching_fb(sol)
 
     sol = solve(prob,AutoVern6(Kvaerno3(); maxstiffstep=4, maxnonstiffstep=4))
     @test length(sol.t) < 690
     @test is_switching_fb(sol)
     sol = solve(prob,AutoVern7(Hairer42(); maxstiffstep=4, maxnonstiffstep=4))
-    @test length(sol.t) < 530
+    @test length(sol.t) < 535
     @test is_switching_fb(sol)
     sol = solve(prob,AutoVern8(Rosenbrock23(); maxstiffstep=4, maxnonstiffstep=4))
     @test length(sol.t) < 910
