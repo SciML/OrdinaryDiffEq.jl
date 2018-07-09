@@ -136,7 +136,7 @@ function expRK_operators(::HochOst4, dt, A)
 end
 
 # Unified constructor for constant caches
-for (Alg, Cache) in [(:LawsonEuler, :LawsonEulerConstantCache), 
+for (Alg, Cache) in [(:LawsonEuler, :LawsonEulerConstantCache),
                      (:NorsettEuler, :NorsettEulerConstantCache),
                      (:ETDRK2, :ETDRK2ConstantCache),
                      (:ETDRK3, :ETDRK3ConstantCache),
@@ -164,7 +164,7 @@ end
 
 Construct the non-standard caches (not uType or rateType) for ExpRK integrators.
 
-`plist` is a list of integers each corresponding to the order of a `phiv(!)` 
+`plist` is a list of integers each corresponding to the order of a `phiv(!)`
 call in `perform_step!`.
 """
 function alg_cache_expRK(alg::OrdinaryDiffEqExponentialAlgorithm, u, f, dt, plist)
@@ -204,7 +204,7 @@ function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   tmp = similar(u)                                              # uType caches
   rtmp, G = (zero(rate_prototype) for i = 1:2)                 # rateType caches
   # other caches
-  # This is different from other ExpRK integrators because LawsonEuler only 
+  # This is different from other ExpRK integrators because LawsonEuler only
   # needs expv.
   n = length(u); T = eltype(u)
   Jcache = isa(f, SplitFunction) ? nothing : Matrix{T}(undef, n, n) # TODO: sparse Jacobian support
@@ -442,11 +442,11 @@ end
 function alg_cache(alg::EPIRK5s3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp, k = (similar(u) for i = 1:2)                   # uType caches
-  rtmp, rtmp2 = (zeros(rate_prototype) for i = 1:2)   # rateType caches
+  rtmp, rtmp2 = (zero(rate_prototype) for i = 1:2)   # rateType caches
   # Allocate matrices
   n = length(u); T = eltype(u)
   A = Matrix{T}(n, n) # TODO: sparse Jacobian support
-  B = zeros(T, n, 5)
+  B = fill(zero(T), n, 5)
   # Allocate caches for phiv_timestep
   maxiter = min(alg.m, n)
   KsCache = _phiv_timestep_caches(u, maxiter, 4)
@@ -471,12 +471,12 @@ end
 function alg_cache(alg::EXPRB53s3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)                                    # uType caches
-  rtmp, rtmp2 = (zeros(rate_prototype) for i = 1:2)   # rateType caches
+  rtmp, rtmp2 = (zero(rate_prototype) for i = 1:2)   # rateType caches
   # Allocate matrices
   n = length(u); T = eltype(u)
   K = Matrix{T}(n, 2)
   A = Matrix{T}(n, n) # TODO: sparse Jacobian support
-  B = zeros(T, n, 5)
+  B = fill(zero(T), n, 5)
   # Allocate caches for phiv_timestep
   maxiter = min(alg.m, n)
   KsCache = _phiv_timestep_caches(u, maxiter, 4)
@@ -501,12 +501,12 @@ end
 function alg_cache(alg::EPIRK5P1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)                                    # uType caches
-  rtmp, rtmp2 = (zeros(rate_prototype) for i = 1:2)   # rateType caches
+  rtmp, rtmp2 = (zero(rate_prototype) for i = 1:2)   # rateType caches
   # Allocate matrices
   n = length(u); T = eltype(u)
   K = Matrix{T}(n, 3)
   A = Matrix{T}(n, n) # TODO: sparse Jacobian support
-  B = zeros(T, n, 4)
+  B = fill(zero(T), n, 4)
   # Allocate caches for phiv_timestep
   maxiter = min(alg.m, n)
   KsCache = _phiv_timestep_caches(u, maxiter, 3)
@@ -532,12 +532,12 @@ end
 function alg_cache(alg::EPIRK5P2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)                                        # uType caches
-  rtmp, rtmp2, dR = (zeros(rate_prototype) for i = 1:3)   # rateType caches
+  rtmp, rtmp2, dR = (zero(rate_prototype) for i = 1:3)   # rateType caches
   # Allocate matrices
   n = length(u); T = eltype(u)
   K = Matrix{T}(n, 3)
   A = Matrix{T}(n, n) # TODO: sparse Jacobian support
-  B = zeros(T, n, 4)
+  B = fill(zero(T), n, 4)
   # Allocate caches for phiv_timestep
   maxiter = min(alg.m, n)
   KsCache = _phiv_timestep_caches(u, maxiter, 3)
@@ -548,7 +548,7 @@ end
 # Multistep exponential method caches
 
 #=
-  Fsal separately the linear and nonlinear part, as well as the nonlinear 
+  Fsal separately the linear and nonlinear part, as well as the nonlinear
   part in the previous time step.
 =#
 mutable struct ETD2Fsal{rateType}

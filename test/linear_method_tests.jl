@@ -37,7 +37,7 @@ sol = solve(prob,MidpointSplitting(),dt=1/10)
 
 
 ## Midpoint splitting convergence
-## 
+##
 ## We use the inhomogeneous Lorentz equation for an electron in a
 ## time-dependent field. To write this on matrix form and simplify
 ## comparison with the analytic solution, we introduce two dummy
