@@ -1,4 +1,5 @@
-using OrdinaryDiffEq, Test, DiffEqProblemLibrary, Random
+using OrdinaryDiffEq, Test, Random
+import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear
 srand(100)
 
 @testset "Tstops Tests on the Interval [0, 1]" begin

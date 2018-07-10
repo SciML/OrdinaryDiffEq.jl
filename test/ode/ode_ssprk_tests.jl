@@ -1,4 +1,5 @@
-using OrdinaryDiffEq, DiffEqProblemLibrary, DiffEqDevTools, Test
+using OrdinaryDiffEq, DiffEqDevTools, Test, Random
+import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 
 srand(100)
 

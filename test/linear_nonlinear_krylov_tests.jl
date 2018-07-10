@@ -1,5 +1,4 @@
-using OrdinaryDiffEq, Test, DiffEqOperators, LinearAlgebra
-using Random: srand
+using OrdinaryDiffEq, Test, DiffEqOperators, Random
 @testset "Classical ExpRK" begin
     N = 20
     dt=0.1

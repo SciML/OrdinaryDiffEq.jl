@@ -2,8 +2,6 @@ using OrdinaryDiffEq
 using Test, LinearAlgebra, Statistics
 
 using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
-import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear,
-       prob_ode_bigfloatveclinear, prob_ode_linear_inplace
 
 const CPU_FLOPS = peakflops()
 const LONGER_TESTS = false
@@ -66,6 +64,7 @@ if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_I" )
     # ~ 2 s
     @time @testset "Adams Variable Coefficients Tests" begin include("ode/adams_tests.jl") end
     # ~ 50 s
+    # broken
     @time @testset "Nordsieck Tests" begin include("ode/nordsieck_tests.jl") end
     #@time @testset "Linear Methods Tests" begin include("linear_method_tests.jl") end
     # ~ 170 s

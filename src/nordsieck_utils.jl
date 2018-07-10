@@ -267,7 +267,7 @@ function nordsieck_rescale!(cache::T, rewind=false) where T
     if isconstcache
       z[i] = z[i]*factor
     else
-      lmul!(z[i], factor)
+      rmul!(z[i], factor)
     end
     factor *= eta
   end
