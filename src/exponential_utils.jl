@@ -174,7 +174,6 @@ mutable struct KrylovSubspace{B, T}
     maxiter, maxiter, zero(real(T)), Matrix{T}(undef, n, maxiter + 1),
     fill(zero(T), maxiter + 1, maxiter))
 end
-# TODO: switch to overload `getproperty` in v0.7
 getH(Ks::KrylovSubspace) = @view(Ks.H[1:Ks.m + 1, 1:Ks.m])
 getV(Ks::KrylovSubspace) = @view(Ks.V[:, 1:Ks.m + 1])
 function Base.resize!(Ks::KrylovSubspace{B,T}, maxiter::Integer) where {B,T}
