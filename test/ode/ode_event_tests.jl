@@ -81,7 +81,7 @@ sol = solve(prob,Tsit5(),callback=callback_single,adaptive=false,dt=1/4)
 
 #plot(sol,denseplot=true)
 
-#sol = solve(prob,Vern6(),callback=callback)
+sol = solve(prob,Vern6(),callback=callback)
 #plot(sol,denseplot=true)
 sol = solve(prob,BS3(),callback=callback)
 

@@ -1,6 +1,5 @@
-using OrdinaryDiffEq, DiffEqDevTools, Test
-import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear,
-       prob_ode_bigfloat2Dlinear, prob_ode_nonlinear, prob_ode_nonlinear_inplace
+using OrdinaryDiffEq, DiffEqDevTools, Test, Random
+import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 
 srand(100)
 

@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Test, DiffEqOperators
+using OrdinaryDiffEq, Test, DiffEqOperators, Random
 @testset "Classical ExpRK" begin
     N = 20
     dx = 1.0; dt=0.1

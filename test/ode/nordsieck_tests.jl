@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqDevTools, Test
+using OrdinaryDiffEq, DiffEqDevTools, Test, Random
 import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 
 srand(100)
@@ -10,7 +10,7 @@ f_2dlinearbig = (du,u,p,t) -> (du.=linear_bigαN*u)
 probArr = [ODEProblem(f_linearbig, big"0.5", (0,1.)),
            ODEProblem(f_2dlinearbig, big.(rand(4,2)), (0,1.)),]
 testTol = 0.2
-dts = 1.//2.^(10:-1:4)
+dts = 1 .//(2 .^(10:-1:4))
 
 @testset "Nordsieck Convergence Tests" begin
   for i in eachindex(probArr)

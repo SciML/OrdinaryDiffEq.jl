@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Test, DiffEqDevTools, DiffEqOperators
+using OrdinaryDiffEq, Test, DiffEqDevTools, DiffEqOperators, Random
 const μ = 1.01
 linnonlin_f2 = (u,p,t) -> μ * u
 linnonlin_f1 = DiffEqArrayOperator(μ)
