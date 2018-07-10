@@ -597,7 +597,7 @@ function phiv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, B::AbstractM
   verbose && println("Absolute tolerance: $abstol")
   if iszero(tau)
     Anorm = opnorm(A, Inf)
-    b0norm = maximum(abs.(@view(B[:, 1])))
+    b0norm = norm(@view(B[:, 1]), Inf)
     tau = 10/Anorm * (abstol * ((m+1)/ℯ)^(m+1) * sqrt(2*pi*(m+1)) /
       (4*Anorm*b0norm))^(1/m)
     verbose && println("Initial time step unspecified, chosen to be $tau")
