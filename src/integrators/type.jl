@@ -1,4 +1,4 @@
-mutable struct DEOptions{absType,relType,QT,tType,F2,F3,F4,F5,F6,tstopsType,discType,ECType,SType,MI,tcache,savecache,disccache}
+mutable struct DEOptions{absType,relType,QT,tType,F1,F2,F3,F4,F5,F6,tstopsType,discType,ECType,SType,MI,tcache,savecache,disccache}
   maxiters::MI
   timeseries_steps::Int
   save_everystep::Bool
@@ -13,7 +13,8 @@ mutable struct DEOptions{absType,relType,QT,tType,F2,F3,F4,F5,F6,tstopsType,disc
   failfactor::QT
   dtmax::tType
   dtmin::tType
-  internalnorm::F2
+  internalnorm::F1
+  internalopnorm::F2
   save_idxs::SType
   tstops::tstopsType
   saveat::tstopsType

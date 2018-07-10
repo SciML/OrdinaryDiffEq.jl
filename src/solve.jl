@@ -43,6 +43,7 @@ function DiffEqBase.__init(
          typeof(one(eltype(prob.tspan))) <: Integer ? 0 :
          eltype(prob.tspan)(1//10^(10)),
   internalnorm = ODE_DEFAULT_NORM,
+  internalopnorm = LinearAlgebra.opnorm,
   isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
   unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
   verbose = true, force_dtmin = false,
@@ -235,7 +236,7 @@ function DiffEqBase.__init(
   end
 
   opts = DEOptions{typeof(abstol_internal),typeof(reltol_internal),QT,tType,
-                   typeof(internalnorm),typeof(callbacks_internal),typeof(isoutofdomain),
+                   typeof(internalnorm),typeof(internalopnorm),typeof(callbacks_internal),typeof(isoutofdomain),
                    typeof(progress_message),typeof(unstable_check),typeof(tstops_internal),
                    typeof(d_discontinuities_internal),typeof(userdata),typeof(save_idxs),
                    typeof(maxiters),typeof(tstops),typeof(saveat),
@@ -244,7 +245,7 @@ function DiffEqBase.__init(
                        reltol_internal,QT(gamma),QT(qmax),
                        QT(qmin),QT(qsteady_max),
                        QT(qsteady_min),QT(failfactor),tType(dtmax),
-                       tType(dtmin),internalnorm,save_idxs,tstops_internal,saveat_internal,
+                       tType(dtmin),internalnorm,internalopnorm,save_idxs,tstops_internal,saveat_internal,
                        d_discontinuities_internal,
                        tstops,saveat,d_discontinuities,
                        userdata,progress,progress_steps,

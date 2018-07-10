@@ -174,7 +174,6 @@ mutable struct KrylovSubspace{B, T}
     maxiter, maxiter, zero(real(T)), Matrix{T}(undef, n, maxiter + 1),
     fill(zero(T), maxiter + 1, maxiter))
 end
-# TODO: switch to overload `getproperty` in v0.7
 getH(Ks::KrylovSubspace) = @view(Ks.H[1:Ks.m + 1, 1:Ks.m])
 getV(Ks::KrylovSubspace) = @view(Ks.V[:, 1:Ks.m + 1])
 function Base.resize!(Ks::KrylovSubspace{B,T}, maxiter::Integer) where {B,T}
@@ -276,7 +275,7 @@ function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol::Real=1
   return Ks
 end
 """
-    lanczos!(Ks,A,b[;tol,m,norm,cache]) -> Ks
+    lanczos!(Ks,A,b[;tol,m,opnorm,cache]) -> Ks
 
 A variation of `arnoldi!` that uses the Lanczos algorithm for Hermitian matrices.
 """
@@ -598,7 +597,7 @@ function phiv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, B::AbstractM
   if iszero(tau)
     Anorm = opnorm(A, Inf)
     b0norm = norm(@view(B[:, 1]), Inf)
-    tau = 10/Anorm * (abstol * ((m+1)/e)^(m+1) * sqrt(2*pi*(m+1)) /
+    tau = 10/Anorm * (abstol * ((m+1)/ℯ)^(m+1) * sqrt(2*pi*(m+1)) /
       (4*Anorm*b0norm))^(1/m)
     verbose && println("Initial time step unspecified, chosen to be $tau")
   end
@@ -631,7 +630,7 @@ function phiv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, B::AbstractM
       if isa(A, SparseMatrixCSC)
         NA = nnz(A)
       else
-        NA = countnz(A) # not constant operation, should be best avoided
+        NA = count(!iszero, A) # not constant operation, should be best avoided
       end
     end
   end

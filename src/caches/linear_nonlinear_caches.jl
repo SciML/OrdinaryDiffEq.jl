@@ -445,7 +445,7 @@ function alg_cache(alg::EPIRK5s3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   rtmp, rtmp2 = (zero(rate_prototype) for i = 1:2)   # rateType caches
   # Allocate matrices
   n = length(u); T = eltype(u)
-  A = Matrix{T}(n, n) # TODO: sparse Jacobian support
+  A = Matrix{T}(undef, n, n) # TODO: sparse Jacobian support
   B = fill(zero(T), n, 5)
   # Allocate caches for phiv_timestep
   maxiter = min(alg.m, n)
@@ -474,8 +474,8 @@ function alg_cache(alg::EXPRB53s3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   rtmp, rtmp2 = (zero(rate_prototype) for i = 1:2)   # rateType caches
   # Allocate matrices
   n = length(u); T = eltype(u)
-  K = Matrix{T}(n, 2)
-  A = Matrix{T}(n, n) # TODO: sparse Jacobian support
+  K = Matrix{T}(undef, n, 2)
+  A = Matrix{T}(undef, n, n) # TODO: sparse Jacobian support
   B = fill(zero(T), n, 5)
   # Allocate caches for phiv_timestep
   maxiter = min(alg.m, n)
@@ -504,8 +504,8 @@ function alg_cache(alg::EPIRK5P1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   rtmp, rtmp2 = (zero(rate_prototype) for i = 1:2)   # rateType caches
   # Allocate matrices
   n = length(u); T = eltype(u)
-  K = Matrix{T}(n, 3)
-  A = Matrix{T}(n, n) # TODO: sparse Jacobian support
+  K = Matrix{T}(undef, n, 3)
+  A = Matrix{T}(undef, n, n) # TODO: sparse Jacobian support
   B = fill(zero(T), n, 4)
   # Allocate caches for phiv_timestep
   maxiter = min(alg.m, n)
@@ -535,8 +535,8 @@ function alg_cache(alg::EPIRK5P2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   rtmp, rtmp2, dR = (zero(rate_prototype) for i = 1:3)   # rateType caches
   # Allocate matrices
   n = length(u); T = eltype(u)
-  K = Matrix{T}(n, 3)
-  A = Matrix{T}(n, n) # TODO: sparse Jacobian support
+  K = Matrix{T}(undef, n, 3)
+  A = Matrix{T}(undef, n, n) # TODO: sparse Jacobian support
   B = fill(zero(T), n, 4)
   # Allocate caches for phiv_timestep
   maxiter = min(alg.m, n)
