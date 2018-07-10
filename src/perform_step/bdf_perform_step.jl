@@ -290,7 +290,7 @@ function perform_step!(integrator,cache::QNDF2ConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack pass1,pass2,pdt,uprev2,uprev3,dtₙ₋₁,dtₙ₋₂,D,D2,R,U = cache
   cnt = integrator.iter
-  tmpdt = dt
+  pdt = dt
   k = 2
   flag = dtₙ₋₁ != dtₙ₋₂
 
@@ -302,7 +302,7 @@ function perform_step!(integrator,cache::QNDF2ConstantCache,repeat_step=false)
     end
   end
 
-  @unpack dt = integrator
+  dt = integrator.dt
 
   if cnt == 1 || cnt == 2 || flag
     κ = zero(integrator.alg.kappa)
@@ -339,11 +339,18 @@ function perform_step!(integrator,cache::QNDF2ConstantCache,repeat_step=false)
   u = tmp + γ*z
 
   if integrator.opts.adaptive && integrator.success_iter > 0 && flag
-    ndf_EEst!(integrator,u,uprev,cache)
+    # bdf1_EEst!(integrator, u, uprev, cache)
+    D[1] = uprev - uprev2
+    if dt == dtₙ₋₁
+      integrator.EEst = (u - uprev - D[1])/2
+    else
+      D[1] = D[1] * (-dt/dtₙ₋₁ * -1)
+      integrator.EEst = (u - uprev - D[1])/2
+    end
     if integrator.EEst > one(integrator.EEst)
       if pass1
         cache.pass1 = false
-        cache.pdt = tmpdt
+        cache.pdt = pdt
       else
         cache.pass2 = false
       end

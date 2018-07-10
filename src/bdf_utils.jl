@@ -25,14 +25,14 @@ function R!(k, ρ, cache)
   end
 end
 
-function ndf_EEst!(integrator, u, uprev, cache)
+function bdf1_EEst!(integrator, u, uprev, cache)
   @unpack t, dt = integrator
   uprev2 = integrator.uprev2
   tprev = integrator.tprev
   dt1 = dt*(t+dt-tprev)
   dt2 = (t-tprev)*(t+dt-tprev)
-  c = 7/12 # default correction factor in SPICE (LTE overestimated by DD)
-  r = c*dt^2 # by mean value theorem 2nd DD equals y''(s)/2 for some s
+  c = 7/12
+  r = c*dt^2
   tmp = r*abs((u - uprev)/dt1 - (uprev - uprev2)/dt2)
   atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
   integrator.EEst = integrator.opts.internalnorm(atmp)
