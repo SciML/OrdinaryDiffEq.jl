@@ -14,7 +14,7 @@ end
 function initialize!(integrator,cache::Union{GenericIIF1ConstantCache,GenericIIF2ConstantCache})
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  A = integrator.f.f1
+  A = integrator.f.f1.f
   cache.uhold[1] = integrator.f.f2(integrator.uprev,integrator.p,integrator.t)
   integrator.fsalfirst = integrator.f.f1(integrator.uprev,integrator.p,integrator.t) .+ cache.uhold[1]
 
@@ -30,7 +30,7 @@ function perform_step!(integrator,cache::Union{GenericIIF1ConstantCache,GenericI
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   # If adaptive, this should be computed after and cached
-  A = integrator.f.f1
+  A = integrator.f.f1.f
   if typeof(cache) <: GenericIIF1ConstantCache
     rhs.tmp = exp(A*dt)*(uprev)
   elseif typeof(cache) <: GenericIIF2ConstantCache
@@ -73,7 +73,7 @@ function initialize!(integrator,cache::Union{GenericIIF1Cache,GenericIIF2Cache})
   integrator.fsallast = cache.k
   integrator.kshortsize = 2
   resize!(integrator.k, integrator.kshortsize)
-  A = integrator.f.f1
+  A = integrator.f.f1.f
   integrator.f.f2(cache.rtmp1,integrator.uprev,integrator.p,integrator.t)
   mul!(cache.k,A,integrator.uprev)
   @. integrator.fsalfirst = cache.k + cache.rtmp1
@@ -104,6 +104,6 @@ function perform_step!(integrator,cache::Union{GenericIIF1Cache,GenericIIF2Cache
 
   copyto!(u,nlres)
   integrator.f.f2(rtmp1,nlres,integrator.p,t+dt)
-  A = f.f1
+  A = f.f1.f
   integrator.fsallast .= A*u .+ rtmp1
 end
