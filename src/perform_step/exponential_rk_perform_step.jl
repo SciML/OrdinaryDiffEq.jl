@@ -40,7 +40,7 @@ end
 # Classical ExpRK integrators
 function perform_step!(integrator, cache::LawsonEulerConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
-  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : f.jac(uprev, p, t) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   nl = _compute_nl(f, uprev, p, t, A)
@@ -62,14 +62,14 @@ end
 function perform_step!(integrator, cache::LawsonEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,rtmp,G,Jcache,exphA,KsCache = cache
-  A = isa(f, SplitFunction) ? f.f1 : (f.jac(Jcache, uprev, p, t); Jcache) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : (f.jac(Jcache, uprev, p, t); Jcache) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   _compute_nl!(G, f, uprev, p, t, A, rtmp)
   @muladd @. tmp = uprev + dt*G
   if alg.krylov
     Ks, expv_cache = KsCache
-    arnoldi!(Ks, f.f1, tmp; m=min(alg.m, size(f.f1,1)), opnorm=integrator.opts.internalopnorm,
+    arnoldi!(Ks, f.f1.f, tmp; m=min(alg.m, size(f.f1.f,1)), opnorm=integrator.opts.internalopnorm,
       cache=u, iop=alg.iop)
     expv!(u,dt,Ks; cache=expv_cache)
   else
@@ -83,7 +83,7 @@ end
 
 function perform_step!(integrator, cache::NorsettEulerConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
-  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : f.jac(uprev, p, t) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   if alg.krylov
@@ -105,7 +105,7 @@ end
 function perform_step!(integrator, cache::NorsettEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack rtmp,Jcache,KsCache = cache
-  A = isa(f, SplitFunction) ? f.f1 : (f.jac(Jcache, uprev, p, t); Jcache) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : (f.jac(Jcache, uprev, p, t); Jcache) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   if alg.krylov
@@ -126,7 +126,7 @@ end
 
 function perform_step!(integrator, cache::ETDRK2ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
-  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : f.jac(uprev, p, t) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   if alg.krylov
@@ -156,7 +156,7 @@ end
 function perform_step!(integrator, cache::ETDRK2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,rtmp,F2,Jcache,KsCache = cache
-  A = isa(f, SplitFunction) ? f.f1 : (f.jac(Jcache, uprev, p, t); Jcache) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : (f.jac(Jcache, uprev, p, t); Jcache) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   if alg.krylov
@@ -200,7 +200,7 @@ end
 
 function perform_step!(integrator, cache::ETDRK3ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
-  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : f.jac(uprev, p, t) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   Au = A * uprev
@@ -245,7 +245,7 @@ end
 function perform_step!(integrator, cache::ETDRK3Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,rtmp,Au,F2,F3,Jcache,KsCache = cache
-  A = isa(f, SplitFunction) ? f.f1 : (f.jac(Jcache, uprev, p, t); Jcache) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : (f.jac(Jcache, uprev, p, t); Jcache) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   F1 = integrator.fsalfirst
@@ -298,7 +298,7 @@ end
 
 function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
-  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : f.jac(uprev, p, t) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   Au = A * uprev
@@ -356,7 +356,7 @@ end
 function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,rtmp,Au,F2,F3,F4,Jcache,KsCache = cache
-  A = isa(f, SplitFunction) ? f.f1 : (f.jac(Jcache, uprev, p, t); Jcache) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : (f.jac(Jcache, uprev, p, t); Jcache) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   F1 = integrator.fsalfirst
@@ -426,7 +426,7 @@ end
 
 function perform_step!(integrator, cache::HochOst4ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
-  A = isa(f, SplitFunction) ? f.f1 : f.jac(uprev, p, t) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : f.jac(uprev, p, t) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   Au = A * uprev
@@ -494,7 +494,7 @@ end
 function perform_step!(integrator, cache::HochOst4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,rtmp,rtmp2,Au,F2,F3,F4,F5,Jcache,KsCache = cache
-  A = isa(f, SplitFunction) ? f.f1 : (f.jac(Jcache, uprev, p, t); Jcache) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : (f.jac(Jcache, uprev, p, t); Jcache) # get linear operator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   F1 = integrator.fsalfirst

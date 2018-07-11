@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Test, DiffEqOperators, Random
+using OrdinaryDiffEq, Test, DiffEqOperators, Random, LinearAlgebra
 @testset "Classical ExpRK" begin
     N = 20
     dt=0.1
@@ -10,10 +10,6 @@ using OrdinaryDiffEq, Test, DiffEqOperators, Random
     krylov_f2! = (du,u,p,t) -> du .= -0.1*u
     prob = SplitODEProblem(L,krylov_f2,u0,(0.0,1.0))
     prob_inplace = SplitODEProblem(L,krylov_f2!,u0,(0.0,1.0))
-
-    # Ad-hoc fix for SplitFunction miscalssified as having analytic solutions
-    DiffEqBase.has_analytic(::typeof(prob.f)) = false
-    DiffEqBase.has_analytic(::typeof(prob_inplace.f)) = false
 
     Algs = [LawsonEuler,NorsettEuler,ETDRK2,ETDRK3,ETDRK4,HochOst4]
     for Alg in Algs

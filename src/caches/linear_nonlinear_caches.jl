@@ -34,7 +34,7 @@ end
 function alg_cache(alg::GenericIIF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u,axes(u)); rtmp1 = zero(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
-  A = f.f1
+  A = f.f1.f
   expA = exp(A*dt)
   rhs = RHS_IIF(f,tmp,t,t,uEltypeNoUnits(1//1),dual_cache,p)
   k = similar(rate_prototype); fsalfirst = similar(rate_prototype)
@@ -76,7 +76,7 @@ end
 function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u,axes(u)); rtmp1 = zero(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
-  A = f.f1
+  A = f.f1.f
   expA = exp(A*dt)
   k = similar(rate_prototype); fsalfirst = similar(rate_prototype)
   rhs = RHS_IIF(f,tmp,t,t,uEltypeNoUnits(1//2),dual_cache,p)
@@ -152,7 +152,7 @@ for (Alg, Cache) in [(:LawsonEuler, :LawsonEulerConstantCache),
       ops = nothing # no caching
     else
       isa(f, SplitFunction) || throw(ArgumentError("Caching can only be used with SplitFunction"))
-      A = isa(f.f1, DiffEqArrayOperator) ? f.f1.A * f.f1.α.coeff : full(f.f1)
+      A = isa(f.f1.f, DiffEqArrayOperator) ? f.f1.f.A * f.f1.f.α.coeff : full(f.f1.f)
       ops = expRK_operators(alg, dt, A)
     end
     return $Cache(ops)
@@ -183,7 +183,7 @@ function alg_cache_expRK(alg::OrdinaryDiffEqExponentialAlgorithm, u, f, dt, plis
   else
     KsCache = nothing
     # Precompute the operators
-    A = isa(f.f1, DiffEqArrayOperator) ? f.f1.A * f.f1.α.coeff : full(f.f1)
+    A = isa(f.f1.f, DiffEqArrayOperator) ? f.f1.f.A * f.f1.f.α.coeff : full(f.f1.f)
     ops = expRK_operators(alg, dt, A)
   end
   return Jcache, ops, KsCache
@@ -216,7 +216,7 @@ function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
     KsCache = (Ks, expv_cache)
   else
     KsCache = nothing
-    A = isa(f.f1, DiffEqArrayOperator) ? f.f1.A * f.f1.α.coeff : full(f.f1)
+    A = isa(f.f1.f, DiffEqArrayOperator) ? f.f1.f.A * f.f1.f.α.coeff : full(f.f1.f)
     exphA = expRK_operators(alg, dt, A)
   end
   LawsonEulerCache(u,uprev,tmp,rtmp,G,Jcache,exphA,KsCache)
@@ -571,7 +571,7 @@ struct ETD2ConstantCache{expType} <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::ETD2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  A = f.f1
+  A = f.f1.f
   if isa(A, DiffEqArrayOperator)
     _A = A.A * A.α.coeff # .* does not return Diagonal for A.A Diagonal
   else
@@ -594,7 +594,7 @@ struct ETD2Cache{uType,rateType,expType} <: OrdinaryDiffEqMutableCache
 end
 
 function alg_cache(alg::ETD2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  A = f.f1
+  A = f.f1.f
   if isa(A, DiffEqArrayOperator)
     _A = A.A * A.α.coeff # .* does not return Diagonal for A.A Diagonal
   else
