@@ -1386,3 +1386,94 @@ function DP5_dense_bs(T)
   return b1,b3,b4,b5,b6,b7
 end
 =#
+
+"""
+An Optimized Runge-Kutta method for the solution of Orbital Problems
+by Z.A. Anastassi and T.E. Simos
+Journal of Computational and Applied Mathematics, Volume 175, Issue 1, 1 March 2005, Pages 1 to 9.
+"""
+struct Anas5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+  a21::T
+  a31::T
+  a32::T
+  a41::T
+  a42::T
+  a43::T
+  a51::T
+  a52::T
+  a53::T
+  a54::T
+  a61::T
+  a62::T
+  a63::T
+  a64::T
+  a65::T
+  c2::T2
+  c3::T2
+  c4::T2
+  c5::T2
+  c6::T2
+  b1::T
+  b3::T
+  b4::T
+  b5::T
+  b6::T
+end
+
+Base.@pure function Anas5ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+    a21 = T(0.1)
+    a31 = T(-0.2222222222222222)
+    a32 = T(0.5555555555555556)
+    a41 = T(3.111111111111111)
+    a42 = T(-4.444444444444444)
+    a43 = T(2.0)
+    a51 = T(-1.409625)
+    a52 = T(2.1375)
+    a53 = T(-0.2295)
+    a54 = T(0.401625)
+    a61 = T(-4.0)
+    a62 = T(5.0)
+    a63 = T(0.0)
+    a64 = T(0.0)
+    a65 = T(0.0)
+    c2 = T2(0.1)
+    c3 = T2(0.3333333333333333)
+    c4 = T2(0.6666666666666667)
+    c5 = T2(0.9)
+    c6 = T2(1)
+    b1 = T(0.1064814814814815)
+    b3 = T(0.4632352941176471)
+    b4 = T(0.1607142857142857)
+    b5 = T(0.3112356053532524)
+    b6 = T(-.04166666666666667)
+    Anas5ConstantCache(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,c2,c3,c4,c5,c6,b1,b3,b4,b5,b6)
+end
+
+Base.@pure function Anas5ConstantCache{T,T2}(::Type{T},::Type{T2})
+    a21 = T(1//10)
+    a31 = T(-2//9)
+    a32 = T(5//9)
+    a41 = T(28//9)
+    a42 = T(-40//9)
+    a43 = T(2//1)
+    a51 = T(-11277//8000)
+    a52 = T(171//80)
+    a53 = T(-459//2000)
+    a54 = T(3213//8000)
+    a61 = T(-4//1)
+    a62 = T(5//1)
+    a63 = T(0//1)
+    a64 = T(0//1)
+    a65 = T(0//1)
+    c2 = T2(1//10)
+    c3 = T2(1//3)
+    c4 = T2(2//3)
+    c5 = T2(9//10)
+    c6 = T2(1//1)
+    b1 = T(23//216)
+    b3 = T(63//136)
+    b4 = T(9//56)
+    b5 = T(1000//3213)
+    b6 = T(-1//24)
+    Anas5ConstantCache(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,c2,c3,c4,c5,c6,b1,b3,b4,b5,b6)
+end

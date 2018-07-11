@@ -37,6 +37,11 @@ struct Heun <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Ralston <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Midpoint <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct RK4 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct Anas5{T} <: OrdinaryDiffEqAlgorithm
+  w::T		
+end
+Base.@pure Anas5(; w=1) = Anas5(w)
+
 struct OwrenZen3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct OwrenZen4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct OwrenZen5 <: OrdinaryDiffEqAdaptiveAlgorithm end
