@@ -34,11 +34,11 @@ sol = solve(prob,Tsit5(),callback=callback)
 sol = solve(prob,GenericImplicitEuler(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/2)
 
 sol = solve(prob,GenericTrapezoid(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/2)
-=#
 
 sol = solve(prob,Rosenbrock23(chunk_size=1),callback=callback,dt=1/2)
 
 sol = solve(prob,Rosenbrock32(chunk_size=1),callback=callback,dt=1/2)
+=#
 
 for alg in CACHE_TEST_ALGS
   sol = solve(prob,alg,callback=callback,dt=1/2)
