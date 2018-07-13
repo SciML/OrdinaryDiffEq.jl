@@ -19,9 +19,11 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   d_discontinuities= eltype(prob.tspan)[],
   save_idxs = nothing,
   save_everystep = isempty(saveat),
-  save_timeseries = nothing,save_start = true,save_end = true,
+  save_timeseries = nothing,
+  save_start = save_everystep || isempty(saveat) || typeof(saveat) <: Number ? true : prob.tspan[1] in saveat,
+  save_end = save_everystep || isempty(saveat) || typeof(saveat) <: Number ? true : prob.tspan[2] in saveat,
   callback=nothing,
-  dense = save_everystep && !(typeof(alg) <: FunctionMap),
+  dense = save_everystep && !(typeof(alg) <: FunctionMap) && isempty(saveat),
   calck = (callback != nothing && callback != CallbackSet()) || # Empty callback
           (prob.callback != nothing && prob.callback != CallbackSet()) || # Empty prob.callback
           (!isempty(setdiff(saveat,tstops)) || dense), # and no dense output
