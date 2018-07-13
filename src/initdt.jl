@@ -70,15 +70,7 @@
     end
   end
 
-  # FIXME
-  _any = (f,itr) -> begin
-    for x in itr
-      f(x) && return true
-    end
-    return false
-  end
-
-  if _any(isnan,f₀)
+  if any(isnan,f₀)
     @warn("First function call produced NaNs. Exiting.")
   end
 

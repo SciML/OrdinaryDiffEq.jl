@@ -863,8 +863,8 @@ end
   integrator.k[2] = integrator.fsallast
   if integrator.opts.adaptive
     dtsq = dt^2
-    uhat  = dtsq*(btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4)
-    atmp = calculate_residuals(uhat, integrator.uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+    uhat = dtsq*(btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4)
+    atmp = calculate_residuals(uhat, integrator.uprev.x[2], integrator.u.x[2], integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 end
@@ -901,7 +901,7 @@ end
     @tight_loop_macros for i in uidx
       @inbounds uhat[i]  = dtsq*(btilde1*k1[i] + btilde2*k2[i] + btilde3*k3[i] + btilde4*k4[i])
     end
-    calculate_residuals!(atmp, uhat, integrator.uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(atmp)
+    calculate_residuals!(atmp.x[2], uhat, integrator.uprev.x[2], integrator.u.x[2], integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+    integrator.EEst = integrator.opts.internalnorm(atmp.x[2])
   end
 end
