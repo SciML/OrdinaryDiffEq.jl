@@ -21,7 +21,7 @@ is_APPVEYOR = ( Sys.iswindows() && haskey(ENV,"APPVEYOR") )
 
 #Start Test Script
 
-tic()
+@time begin
 if group == "All" || group == "Interface"
   @time include("discrete_algorithm_test.jl")
   @time include("ode/ode_tstops_tests.jl")
@@ -64,7 +64,6 @@ if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_I" )
     # ~ 2 s
     @time @testset "Adams Variable Coefficients Tests" begin include("ode/adams_tests.jl") end
     # ~ 50 s
-    # broken
     @time @testset "Nordsieck Tests" begin include("ode/nordsieck_tests.jl") end
     #@time @testset "Linear Methods Tests" begin include("linear_method_tests.jl") end
     # ~ 170 s
@@ -83,5 +82,4 @@ if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_II" )
     # ~ 140 s
     @time @testset "Linear-Nonlinear Krylov Methods Tests" begin include("linear_nonlinear_krylov_tests.jl") end
 end
-
-toc()
+end # @time

@@ -3,7 +3,7 @@ import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinea
 
 srand(100)
 
-dts = 1.//2.^(8:-1:4)
+dts = 1 .//2 .^(8:-1:4)
 testTol = 0.25
 
 f = (u,p,t)->cos(t)
