@@ -1,4 +1,4 @@
-abstract type OrdinaryDiffEqAlgorithm <: AbstractODEAlgorithm end
+abstract type OrdinaryDiffEqAlgorithm <: DiffEqBase.AbstractODEAlgorithm end
 abstract type OrdinaryDiffEqAdaptiveAlgorithm <: OrdinaryDiffEqAlgorithm end
 abstract type OrdinaryDiffEqCompositeAlgorithm <: OrdinaryDiffEqAlgorithm end
 
@@ -17,7 +17,7 @@ abstract type OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm <: OrdinaryDiffEqAdapt
 
 struct FunctionMap{scale_by_time} <: OrdinaryDiffEqAlgorithm end
 Base.@pure function Discrete(;apply_map=false,scale_by_time=false)
-    warn("Discrete is deprecated. Use FunctionMap instead.")
+    @warn("Discrete is deprecated. Use FunctionMap instead.")
     FunctionMap{scale_by_time}()
 end
 Base.@pure FunctionMap(;scale_by_time=false) = FunctionMap{scale_by_time}()
@@ -37,6 +37,11 @@ struct Heun <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Ralston <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Midpoint <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct RK4 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct Anas5{T} <: OrdinaryDiffEqAlgorithm
+  w::T		
+end
+Base.@pure Anas5(; w=1) = Anas5(w)
+
 struct OwrenZen3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct OwrenZen4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct OwrenZen5 <: OrdinaryDiffEqAdaptiveAlgorithm end
@@ -92,20 +97,36 @@ struct SSPRK104{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
 end
 SSPRK104(stage_limiter! = trivial_limiter!) = SSPRK104(stage_limiter!, trivial_limiter!)
 struct BS3 <: OrdinaryDiffEqAdaptiveAlgorithm end
-struct BS5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct DP5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct DP5Threaded <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Tsit5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct DP8 <: OrdinaryDiffEqAdaptiveAlgorithm end
-struct Vern6 <: OrdinaryDiffEqAdaptiveAlgorithm end
-struct Vern7 <: OrdinaryDiffEqAdaptiveAlgorithm end
-struct Vern8 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct TanYam7 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct TsitPap8 <: OrdinaryDiffEqAdaptiveAlgorithm end
-struct Vern9 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Feagin10 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Feagin12 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Feagin14 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+struct BS5 <: OrdinaryDiffEqAdaptiveAlgorithm
+  lazy::Bool
+  BS5(;lazy=true) = new(lazy)
+end
+struct Vern6 <: OrdinaryDiffEqAdaptiveAlgorithm
+  lazy::Bool
+  Vern6(;lazy=true) = new(lazy)
+end
+struct Vern7 <: OrdinaryDiffEqAdaptiveAlgorithm
+  lazy::Bool
+  Vern7(;lazy=true) = new(lazy)
+end
+struct Vern8 <: OrdinaryDiffEqAdaptiveAlgorithm
+  lazy::Bool
+  Vern8(;lazy=true) = new(lazy)
+end
+struct Vern9 <: OrdinaryDiffEqAdaptiveAlgorithm
+  lazy::Bool
+  Vern9(;lazy=true) = new(lazy)
+end
 
 ################################################################################
 
@@ -731,7 +752,7 @@ struct GeneralRosenbrock{CS,AD,F,TabType} <: OrdinaryDiffEqRosenbrockAdaptiveAlg
 end
 
 Base.@pure GeneralRosenbrock(;chunk_size=0,autodiff=true,
-                    factorization=lufact!,tableau=ROSENBROCK_DEFAULT_TABLEAU) =
+                    factorization=lu!,tableau=ROSENBROCK_DEFAULT_TABLEAU) =
                     GeneralRosenbrock{chunk_size,autodiff,typeof(factorization),typeof(tableau)}(tableau,factorization)
 
 ######################################
@@ -755,11 +776,13 @@ for Alg in [:LawsonEuler, :NorsettEuler, :ETDRK2, :ETDRK3, :ETDRK4, :HochOst4]
   @eval Base.@pure $Alg(;krylov=false, m=30, iop=0) = $Alg(krylov, m, iop)
 end
 ETD1 = NorsettEuler # alias
-struct Exp4 <: OrdinaryDiffEqExponentialAlgorithm
-  m::Int
-  iop::Int
+for Alg in [:Exp4, :EPIRK4s3A, :EPIRK4s3B, :EPIRK5s3, :EXPRB53s3, :EPIRK5P1, :EPIRK5P2]
+  @eval struct $Alg <: OrdinaryDiffEqExponentialAlgorithm
+    m::Int
+    iop::Int
+  end
+  @eval Base.@pure $Alg(;m=30, iop=0) = $Alg(m, iop)
 end
-Base.@pure Exp4(;m=30, iop=0)  = Exp4(m, iop)
 struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm end
 struct ETD2 <: OrdinaryDiffEqExponentialAlgorithm end
 

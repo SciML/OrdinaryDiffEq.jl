@@ -9,8 +9,10 @@ module OrdinaryDiffEq
 
   using MuladdMacro
 
+  using LinearAlgebra
+
   # Interfaces
-  import DiffEqBase: solve, solve!, init, step!, build_solution, initialize!
+  import DiffEqBase: solve!, step!, initialize!
 
   # Internal utils
   import DiffEqBase: ODE_DEFAULT_NORM, ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE, ODE_DEFAULT_UNSTABLE_CHECK
@@ -21,8 +23,6 @@ module OrdinaryDiffEq
 
   using Parameters, GenericSVD, ForwardDiff, RecursiveArrayTools,
         NLsolve, Juno, Roots, DataStructures, DiffEqDiffTools
-
-  import Base: linspace
 
   import ForwardDiff.Dual
 
@@ -149,7 +149,7 @@ module OrdinaryDiffEq
          SSPRK54, SSPRK104, RK4, ExplicitRK, OwrenZen3, OwrenZen4, OwrenZen5,
          BS3, BS5, CarpenterKennedy2N54,
          DP5, DP5Threaded, Tsit5, DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8,
-         Vern9,Feagin10, Feagin12, Feagin14, CompositeAlgorithm
+         Vern9,Feagin10, Feagin12, Feagin14, CompositeAlgorithm, Anas5
 
   export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, Kvaerno3,
          KenCarp3, Cash4, Hairer4, Hairer42, SSPSDIRK2, Kvaerno4, Kvaerno5,
@@ -164,7 +164,8 @@ module OrdinaryDiffEq
 
   export GenericIIF1, GenericIIF2
 
-  export LawsonEuler, NorsettEuler, ETD1, ETDRK2, ETDRK3, ETDRK4, HochOst4, Exp4, ETD2
+  export LawsonEuler, NorsettEuler, ETD1, ETDRK2, ETDRK3, ETDRK4, HochOst4, Exp4, EPIRK4s3A, EPIRK4s3B,
+         EPIRK5s3, EXPRB53s3, EPIRK5P1, EPIRK5P2, ETD2
 
   export SymplecticEuler, VelocityVerlet, VerletLeapfrog, PseudoVerletLeapfrog,
          McAte2, Ruth3, McAte3, CandyRoz4, McAte4, McAte42, McAte5,

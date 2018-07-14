@@ -1,4 +1,4 @@
-mutable struct DEOptions{absType,relType,QT,tType,F2,F3,F4,F5,F6,tstopsType,discType,ECType,SType,MI,tcache,savecache,disccache}
+mutable struct DEOptions{absType,relType,QT,tType,F1,F2,F3,F4,F5,F6,tstopsType,discType,ECType,SType,MI,tcache,savecache,disccache}
   maxiters::MI
   timeseries_steps::Int
   save_everystep::Bool
@@ -13,7 +13,8 @@ mutable struct DEOptions{absType,relType,QT,tType,F2,F3,F4,F5,F6,tstopsType,disc
   failfactor::QT
   dtmax::tType
   dtmin::tType
-  internalnorm::F2
+  internalnorm::F1
+  internalopnorm::F2
   save_idxs::SType
   tstops::tstopsType
   saveat::tstopsType
@@ -73,7 +74,7 @@ integrator.opts.abstol = 1e-9
 ```
 For more info see the linked documentation page.
 """
-mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,pType,eigenType,QT,tdirType,ksEltype,SolType,F,ProgressType,CacheType,O,FSALType} <: AbstractODEIntegrator
+mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,pType,eigenType,QT,tdirType,ksEltype,SolType,F,ProgressType,CacheType,O,FSALType} <: DiffEqBase.AbstractODEIntegrator
   sol::SolType
   u::uType
   k::ksEltype
@@ -114,15 +115,15 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,pType,
   fsalfirst::FSALType
   fsallast::FSALType
 
-  function (::Type{ODEIntegrator{algType,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
-                F,ProgressType,CacheType,O,FSALType}}){algType,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
+  function ODEIntegrator{algType,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
                 F,ProgressType,CacheType,O,FSALType}(
                 sol,u,k,t,dt,f,p,uprev,uprev2,tprev,
       alg,dtcache,dtchangeable,dtpropose,tdir,
       eigen_est,EEst,qold,q11,erracc,dtacc,success_iter,
       iter,saveiter,saveiter_dense,prog,cache,
       kshortsize,force_stepfail,last_stepfail,just_hit_tstop,
-      event_last_time,accept_step,isout,reeval_fsal,u_modified,opts)
+      event_last_time,accept_step,isout,reeval_fsal,u_modified,opts) where {algType,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
+                                     F,ProgressType,CacheType,O,FSALType}
 
       new{algType,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
                   F,ProgressType,CacheType,O,FSALType}(

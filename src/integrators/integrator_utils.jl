@@ -1,4 +1,4 @@
-save_idxsinitialize{uType}(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) =
+save_idxsinitialize(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) where {uType} =
                 error("This algorithm does not have an initialization function")
 
 function loopheader!(integrator)
@@ -28,7 +28,7 @@ end
 last_step_failed(integrator::ODEIntegrator) =
   integrator.last_stepfail && !integrator.opts.adaptive
 
-@def ode_exit_conditions begin
+DiffEqBase.@def ode_exit_conditions begin
   if check_error!(integrator) != :Success
     return integrator.sol
   end
@@ -120,7 +120,7 @@ function postamble!(integrator::ODEIntegrator)
   resize!(integrator.sol.t,integrator.saveiter)
   resize!(integrator.sol.u,integrator.saveiter)
   resize!(integrator.sol.k,integrator.saveiter_dense)
-  !(typeof(integrator.prog)<:Void) && Juno.done(integrator.prog)
+  !(typeof(integrator.prog)<:Nothing) && Juno.done(integrator.prog)
 end
 
 function solution_endpoint_match_cur_integrator!(integrator)
@@ -270,7 +270,7 @@ function loopfooter!(integrator)
       # integrator.EEst has unitless type of integrator.t
       if typeof(integrator.EEst)<: AbstractFloat && !isempty(integrator.opts.tstops)
         tstop = top(integrator.opts.tstops)
-        abs(ttmp - tstop) < 10eps(typeof(integrator.t))*oneunit(integrator.t) ?
+        abs(ttmp - tstop) < 10eps(integrator.t/oneunit(integrator.t))*oneunit(integrator.t) ?
                                   (integrator.t = tstop) : (integrator.t = ttmp)
       else
         integrator.t = ttmp
@@ -283,7 +283,7 @@ function loopfooter!(integrator)
     # integrator.EEst has unitless type of integrator.t
     if typeof(integrator.EEst)<: AbstractFloat && !isempty(integrator.opts.tstops)
       tstop = top(integrator.opts.tstops)
-      abs(ttmp - tstop) < 10eps(typeof(integrator.t))*oneunit(integrator.t) ?
+      abs(ttmp - tstop) < 10eps(integrator.t/oneunit(integrator.t))*oneunit(integrator.t) ?
                                   (integrator.t = tstop) : (integrator.t = ttmp)
     else
       integrator.t = ttmp
@@ -293,7 +293,7 @@ function loopfooter!(integrator)
     integrator.dtpropose = integrator.dt
     handle_callbacks!(integrator)
   end
-  if !(typeof(integrator.prog)<:Void) && integrator.opts.progress && integrator.iter%integrator.opts.progress_steps==0
+  if !(typeof(integrator.prog)<:Nothing) && integrator.opts.progress && integrator.iter%integrator.opts.progress_steps==0
     Juno.msg(integrator.prog,integrator.opts.progress_message(integrator.dt,integrator.u,integrator.p,integrator.t))
     Juno.progress(integrator.prog,integrator.t/integrator.sol.prob.tspan[2])
   end
@@ -368,7 +368,7 @@ function apply_step!(integrator)
   elseif get_current_isfsal(integrator.alg, integrator.cache)
     if integrator.reeval_fsal || integrator.u_modified || (typeof(integrator.alg)<:DP8 && !integrator.opts.calck) || (typeof(integrator.alg)<:Union{Rosenbrock23,Rosenbrock32} && !integrator.opts.adaptive)
         reset_fsal!(integrator)
-    else # Do not reeval_fsal, instead copy! over
+    else # Do not reeval_fsal, instead copyto! over
       if isinplace(integrator.sol.prob)
         recursivecopy!(integrator.fsalfirst,integrator.fsallast)
       else

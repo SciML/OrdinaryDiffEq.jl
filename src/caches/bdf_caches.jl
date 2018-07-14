@@ -66,17 +66,17 @@ du_cache(c::ABDF2Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::ABDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  du1 = zeros(rate_prototype)
-  J = zeros(uEltypeNoUnits,length(u),length(u)) # uEltype?
+  du1 = zero(rate_prototype)
+  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
   W = similar(J)
-  zprev = similar(u,indices(u))
-  zₙ₋₁ = similar(u,indices(u)); z = similar(u,indices(u))
-  dz = similar(u,indices(u))
-  fsalfirst = zeros(rate_prototype)
-  fsalfirstprev = zeros(rate_prototype)
-  k = zeros(rate_prototype)
-  tmp = similar(u); b = similar(u,indices(u))
-  atmp = similar(u,uEltypeNoUnits,indices(u))
+  zprev = similar(u,axes(u))
+  zₙ₋₁ = similar(u,axes(u)); z = similar(u,axes(u))
+  dz = similar(u,axes(u))
+  fsalfirst = zero(rate_prototype)
+  fsalfirstprev = zero(rate_prototype)
+  k = zero(rate_prototype)
+  tmp = similar(u); b = similar(u,axes(u))
+  atmp = similar(u,uEltypeNoUnits,axes(u))
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   linsolve = alg.linsolve(Val{:init},uf,u)
@@ -156,10 +156,10 @@ function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   uprev2 = u
   dtₙ₋₁ = t
 
-  D = zeros(typeof(u), 1, 1)
-  D2 = zeros(typeof(u), 1, 2)
-  R = zeros(typeof(t), 1, 1)
-  U = zeros(typeof(t), 1, 1)
+  D = fill(zero(typeof(u)), 1, 1)
+  D2 = fill(zero(typeof(u)), 1, 2)
+  R = fill(zero(typeof(t)), 1, 1)
+  U = fill(zero(typeof(t)), 1, 1)
 
   U!(1,U)
 
@@ -178,18 +178,18 @@ function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
 end
 
 function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  du1 = zeros(rate_prototype)
-  J = zeros(uEltypeNoUnits,length(u),length(u))
+  du1 = zero(rate_prototype)
+  J = fill(zero(uEltypeNoUnits),length(u),length(u))
   W = similar(J)
   z = similar(u,indices(u))
   dz = similar(u,indices(u))
-  fsalfirst = zeros(rate_prototype)
-  k = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  k = zero(rate_prototype)
 
   D = Array{typeof(u)}(1, 1)
   D2 = Array{typeof(u)}(1, 2)
-  R = zeros(typeof(t), 1, 1)
-  U = zeros(typeof(t), 1, 1)
+  R = fill(zero(typeof(t)), 1, 1)
+  U = fill(zero(typeof(t)), 1, 1)
  
   D[1] = similar(u)
   D2[1] = similar(u); D2[2] = similar(u)
@@ -284,10 +284,10 @@ function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   dtₙ₋₁ = zero(t)
   dtₙ₋₂ = zero(t)
 
-  D = zeros(typeof(u), 1, 2)
-  D2 = zeros(typeof(u), 1, 3)
-  R = zeros(typeof(u), 2, 2)
-  U = zeros(typeof(u), 2, 2)
+  D = fill(zero(typeof(u)), 1, 2)
+  D2 = fill(zero(typeof(u)), 1, 3)
+  R = fill(zero(typeof(t)), 2, 2)
+  U = fill(zero(typeof(t)), 2, 2)
 
   U!(2,U)
 
@@ -306,18 +306,18 @@ function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
 end
 
 function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  du1 = zeros(rate_prototype)
-  J = zeros(uEltypeNoUnits,length(u),length(u))
+  du1 = zero(rate_prototype)
+  J = fill(zero(uEltypeNoUnits),length(u),length(u))
   W = similar(J)
   z = similar(u,indices(u))
   dz = similar(u,indices(u))
-  fsalfirst = zeros(rate_prototype)
-  k = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  k = zero(rate_prototype)
 
   D = Array{typeof(u)}(1, 2)
   D2 = Array{typeof(u)}(1, 3)
-  R = zeros(typeof(t), 2, 2)
-  U = zeros(typeof(t), 2, 2)
+  R = fill(zero(typeof(t)), 2, 2)
+  U = fill(zero(typeof(t)), 2, 2)
   
   D[1] = similar(u); D[2] = similar(u)
   D2[1] = similar(u);  D2[2] = similar(u); D2[3] = similar(u)

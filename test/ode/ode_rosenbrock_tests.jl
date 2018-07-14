@@ -1,6 +1,8 @@
 ## Breakout these since no other test of their adaptivity
 
-using OrdinaryDiffEq, DiffEqProblemLibrary, DiffEqDevTools, Base.Test
+using OrdinaryDiffEq, DiffEqDevTools, Test
+using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
+import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 
 dts = 1.//2.^(6:-1:3)
 testTol = 0.2

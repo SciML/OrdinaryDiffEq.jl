@@ -1,4 +1,6 @@
-using OrdinaryDiffEq, DiffEqProblemLibrary
+using OrdinaryDiffEq
+using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
+import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_2Dlinear
 prob = deepcopy(prob_ode_2Dlinear)
 prob.tspan = (0.0,100.0)
 ## Solve and plot

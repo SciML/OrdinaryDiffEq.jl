@@ -1,14 +1,15 @@
 # This definitely needs cleaning
-using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase,
-      DiffEqProblemLibrary, Base.Test
-probArr = Vector{ODEProblem}(2)
+using OrdinaryDiffEq, Test, Random
+using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
+import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
+probArr = Vector{ODEProblem}(undef, 2)
 probArr[1] = prob_ode_linear
 
 probArr[2] = prob_ode_2Dlinear
 srand(100)
 ## Convergence Testing
-dts = 1.//2.^(8:-1:4)
-dts1 = 1.//2.^(9:-1:5)
+dts = 1 .//2 .^(8:-1:4)
+dts1 = 1 .//2 .^(9:-1:5)
 testTol = 0.2
 
 for i = 1:2
@@ -51,6 +52,8 @@ for i = 1:2
   @test abs(sim105.𝒪est[:l2]-4) < testTol
   sim106 = test_convergence(dts,prob,VCABM5())
   @test abs(sim106.𝒪est[:l2]-5) < testTol
+  sim160 = test_convergence(dts,prob,Anas5(w=2))
+  @test abs(sim160.𝒪est[:l2]-4) < 2*testTol
 
   println("Stiff Solvers")
 

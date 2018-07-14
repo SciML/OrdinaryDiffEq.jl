@@ -1,5 +1,4 @@
 # bdf_utils
-
 function U!(k, U)
   for j = 1:k
     for r = 1:k
@@ -9,7 +8,7 @@ function U!(k, U)
         U[j,r] = U[j-1,r] * ((j-1) - r)/j
       end
     end
-  end  
+  end
 end
 
 function R!(k, ρ, cache)

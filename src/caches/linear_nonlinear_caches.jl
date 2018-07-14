@@ -25,17 +25,17 @@ du_cache(c::GenericIIF1Cache)   = (c.rtmp1,c.fsalfirst,c.k)
 dual_cache(c::GenericIIF1Cache) = (c.dual_cache,)
 
 function alg_cache(alg::GenericIIF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  uhold = Vector{typeof(u)}(1)
+  uhold = Vector{typeof(u)}(undef, 1)
   rhs = RHS_IIF_Scalar(f,zero(u),t,t,one(uEltypeNoUnits),p)
   nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
   GenericIIF1ConstantCache(uhold,rhs,nl_rhs)
 end
 
 function alg_cache(alg::GenericIIF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tmp = similar(u,indices(u)); rtmp1 = zeros(rate_prototype)
+  tmp = similar(u,axes(u)); rtmp1 = zero(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
   A = f.f1
-  expA = expm(A*dt)
+  expA = exp(A*dt)
   rhs = RHS_IIF(f,tmp,t,t,uEltypeNoUnits(1//1),dual_cache,p)
   k = similar(rate_prototype); fsalfirst = similar(rate_prototype)
   nl_rhs = alg.nlsolve(Val{:init},rhs,u)
@@ -66,7 +66,7 @@ du_cache(c::GenericIIF2Cache)   = (c.rtmp1,c.fsalfirst,c.k)
 dual_cache(c::GenericIIF2Cache) = (c.dual_cache,)
 
 function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  uhold = Vector{typeof(u)}(1)
+  uhold = Vector{typeof(u)}(undef, 1)
   tmp = zero(u)
   rhs = RHS_IIF_Scalar(f,tmp,t,t,uEltypeNoUnits(1//2),p)
   nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
@@ -74,10 +74,10 @@ function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
 end
 
 function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tmp = similar(u,indices(u)); rtmp1 = zeros(rate_prototype)
+  tmp = similar(u,axes(u)); rtmp1 = zero(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
   A = f.f1
-  expA = expm(A*dt)
+  expA = exp(A*dt)
   k = similar(rate_prototype); fsalfirst = similar(rate_prototype)
   rhs = RHS_IIF(f,tmp,t,t,uEltypeNoUnits(1//2),dual_cache,p)
   nl_rhs = alg.nlsolve(Val{:init},rhs,u)
@@ -90,7 +90,7 @@ abstract type ExpRKCache <: OrdinaryDiffEqMutableCache end
 abstract type ExpRKConstantCache <: OrdinaryDiffEqConstantCache end
 
 # Precomputation of exponential-like operators
-expRK_operators(::LawsonEuler, dt, A) = expm(dt * A)
+expRK_operators(::LawsonEuler, dt, A) = exp(dt * A)
 expRK_operators(::NorsettEuler, dt, A) = phi(dt * A, 1)[2]
 function expRK_operators(::ETDRK2, dt, A)
   P = phi(dt * A, 2)
@@ -136,7 +136,7 @@ function expRK_operators(::HochOst4, dt, A)
 end
 
 # Unified constructor for constant caches
-for (Alg, Cache) in [(:LawsonEuler, :LawsonEulerConstantCache), 
+for (Alg, Cache) in [(:LawsonEuler, :LawsonEulerConstantCache),
                      (:NorsettEuler, :NorsettEulerConstantCache),
                      (:ETDRK2, :ETDRK2ConstantCache),
                      (:ETDRK3, :ETDRK3ConstantCache),
@@ -164,21 +164,21 @@ end
 
 Construct the non-standard caches (not uType or rateType) for ExpRK integrators.
 
-`plist` is a list of integers each corresponding to the order of a `phiv(!)` 
+`plist` is a list of integers each corresponding to the order of a `phiv(!)`
 call in `perform_step!`.
 """
 function alg_cache_expRK(alg::OrdinaryDiffEqExponentialAlgorithm, u, f, dt, plist)
   n = length(u); T = eltype(u)
   # Allocate cache for the Jacobian
   # TODO: sparse Jacobian support
-  Jcache = isa(f, SplitFunction) ? nothing : Matrix{T}(n, n)
+  Jcache = isa(f, SplitFunction) ? nothing : Matrix{T}(undef, n, n)
   if alg.krylov
     ops = nothing # no caching
     # Build up caches used by Krylov phiv
     m = min(alg.m, n)
     Ks = KrylovSubspace{T}(n, m)
     phiv_cache = PhivCache{T}(m, maximum(plist))
-    ws = [Matrix{T}(n, plist[i] + 1) for i = 1:length(plist)]
+    ws = [Matrix{T}(undef, n, plist[i] + 1) for i = 1:length(plist)]
     KsCache = (Ks, phiv_cache, ws) # should use named tuple in v0.6
   else
     KsCache = nothing
@@ -202,12 +202,12 @@ end
 
 function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)                                              # uType caches
-  rtmp, G = (zeros(rate_prototype) for i = 1:2)                 # rateType caches
+  rtmp, G = (zero(rate_prototype) for i = 1:2)                 # rateType caches
   # other caches
-  # This is different from other ExpRK integrators because LawsonEuler only 
+  # This is different from other ExpRK integrators because LawsonEuler only
   # needs expv.
   n = length(u); T = eltype(u)
-  Jcache = isa(f, SplitFunction) ? nothing : Matrix{T}(n, n) # TODO: sparse Jacobian support
+  Jcache = isa(f, SplitFunction) ? nothing : Matrix{T}(undef, n, n) # TODO: sparse Jacobian support
   if alg.krylov
     exphA = nothing # no caching
     m = min(alg.m, n)
@@ -238,7 +238,7 @@ end
 
 function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)                                              # uType caches
-  rtmp, G = (zeros(rate_prototype) for i = 1:2)                 # rateType caches
+  rtmp, G = (zero(rate_prototype) for i = 1:2)                 # rateType caches
   Jcache, phihA, KsCache = alg_cache_expRK(alg, u, f, dt, (1,)) # other caches
   NorsettEulerCache(u,uprev,tmp,rtmp,G,Jcache,phihA,KsCache)
 end
@@ -259,7 +259,7 @@ end
 
 function alg_cache(alg::ETDRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)                                                  # uType caches
-  rtmp, F2 = (zeros(rate_prototype) for i = 1:2)                    # rateType caches
+  rtmp, F2 = (zero(rate_prototype) for i = 1:2)                    # rateType caches
   Jcache, ops, KsCache = alg_cache_expRK(alg, u, f, dt, (2, 2))   # other caches
   ETDRK2Cache(u,uprev,tmp,rtmp,F2,Jcache,ops,KsCache)
 end
@@ -279,7 +279,7 @@ end
 
 function alg_cache(alg::ETDRK3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)                                                      # uType caches
-  rtmp, Au, F2, F3 = (zeros(rate_prototype) for i = 1:4)                # rateType caches
+  rtmp, Au, F2, F3 = (zero(rate_prototype) for i = 1:4)                # rateType caches
   Jcache, ops, KsCache = alg_cache_expRK(alg, u, f, dt, (1,3,3,3))    # other caches
   ETDRK3Cache(u,uprev,tmp,rtmp,Au,F2,F3,Jcache,ops,KsCache)
 end
@@ -300,7 +300,7 @@ end
 
 function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)                                                        # uType caches
-  rtmp, Au, F2, F3, F4 = (zeros(rate_prototype) for i = 1:5)              # rateType caches
+  rtmp, Au, F2, F3, F4 = (zero(rate_prototype) for i = 1:5)              # rateType caches
   Jcache, ops, KsCache = alg_cache_expRK(alg, u, f, dt, (1,1,3,3,3,3))  # other caches
   ETDRK4Cache(u,uprev,tmp,rtmp,Au,F2,F3,F4,Jcache,ops,KsCache)
 end
@@ -326,7 +326,7 @@ end
 
 function alg_cache(alg::HochOst4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)                                                              # uType caches
-  rtmp, rtmp2, Au, F2, F3, F4, F5 = (zeros(rate_prototype) for i = 1:7)         # rateType caches
+  rtmp, rtmp2, Au, F2, F3, F4, F5 = (zero(rate_prototype) for i = 1:7)         # rateType caches
   Jcache, ops, KsCache = alg_cache_expRK(alg, u, f, dt, (3,3,3,3,3,3,3,3,3))  # other caches
   HochOst4Cache(u,uprev,tmp,rtmp,rtmp2,Au,F2,F3,F4,F5,Jcache,ops,KsCache)
 end
@@ -343,7 +343,6 @@ struct Exp4Cache{uType,rateType,matType,KsType} <: ExpRKCache
   tmp::uType
   rtmp::rateType
   rtmp2::rateType
-  k7::rateType
   K::matType
   A::matType
   B::matType
@@ -352,24 +351,204 @@ end
 function alg_cache(alg::Exp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)                                              # uType caches
-  rtmp, rtmp2, k7 = (zeros(rate_prototype) for i = 1:3)         # rateType caches
+  rtmp, rtmp2 = (zero(rate_prototype) for i = 1:2)             # rateType caches
   # Allocate matrices
   # TODO: units
   n = length(u); T = eltype(u)
-  K = Matrix{T}(n, 3)
-  A = Matrix{T}(n, n) # TODO: sparse Jacobian support
-  B = zeros(T, n, 2)
+  K = Matrix{T}(undef, n, 3)
+  A = Matrix{T}(undef, n, n) # TODO: sparse Jacobian support
+  B = fill(zero(T), n, 2)
   # Allocate caches for phiv_timestep
   maxiter = min(alg.m, n)
   KsCache = _phiv_timestep_caches(u, maxiter, 1)
-  Exp4Cache(u,uprev,tmp,rtmp,rtmp2,k7,K,A,B,KsCache)
+  Exp4Cache(u,uprev,tmp,rtmp,rtmp2,K,A,B,KsCache)
+end
+
+struct EPIRK4s3AConstantCache <: ExpRKConstantCache end
+alg_cache(alg::EPIRK4s3A,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
+  uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = EPIRK4s3AConstantCache()
+
+struct EPIRK4s3ACache{uType,rateType,matType,KsType} <: ExpRKCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  rtmp::rateType
+  rtmp2::rateType
+  K::matType
+  A::matType
+  B::matType
+  KsCache::KsType
+end
+function alg_cache(alg::EPIRK4s3A,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)                                    # uType caches
+  rtmp, rtmp2 = (zero(rate_prototype) for i = 1:2)   # rateType caches
+  # Allocate matrices
+  n = length(u); T = eltype(u)
+  K = Matrix{T}(undef, n, 2)
+  A = Matrix{T}(undef, n, n) # TODO: sparse Jacobian support
+  B = fill(zero(T), n, 5)
+  # Allocate caches for phiv_timestep
+  maxiter = min(alg.m, n)
+  KsCache = _phiv_timestep_caches(u, maxiter, 4)
+  EPIRK4s3ACache(u,uprev,tmp,rtmp,rtmp2,K,A,B,KsCache)
+end
+
+struct EPIRK4s3BConstantCache <: ExpRKConstantCache end
+alg_cache(alg::EPIRK4s3B,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
+  uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = EPIRK4s3BConstantCache()
+
+struct EPIRK4s3BCache{uType,rateType,matType,KsType} <: ExpRKCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  rtmp::rateType
+  rtmp2::rateType
+  K::matType
+  A::matType
+  B::matType
+  KsCache::KsType
+end
+function alg_cache(alg::EPIRK4s3B,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)                                    # uType caches
+  rtmp, rtmp2 = (zero(rate_prototype) for i = 1:2)   # rateType caches
+  # Allocate matrices
+  n = length(u); T = eltype(u)
+  K = Matrix{T}(undef, n, 2)
+  A = Matrix{T}(undef, n, n) # TODO: sparse Jacobian support
+  B = fill(zero(T), n, 5)
+  # Allocate caches for phiv_timestep
+  maxiter = min(alg.m, n)
+  KsCache = _phiv_timestep_caches(u, maxiter, 4)
+  EPIRK4s3BCache(u,uprev,tmp,rtmp,rtmp2,K,A,B,KsCache)
+end
+
+struct EPIRK5s3ConstantCache <: ExpRKConstantCache end
+alg_cache(alg::EPIRK5s3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
+  uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = EPIRK5s3ConstantCache()
+
+struct EPIRK5s3Cache{uType,rateType,matType,KsType} <: ExpRKCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  k::uType
+  rtmp::rateType
+  rtmp2::rateType
+  A::matType
+  B::matType
+  KsCache::KsType
+end
+function alg_cache(alg::EPIRK5s3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp, k = (similar(u) for i = 1:2)                   # uType caches
+  rtmp, rtmp2 = (zero(rate_prototype) for i = 1:2)   # rateType caches
+  # Allocate matrices
+  n = length(u); T = eltype(u)
+  A = Matrix{T}(undef, n, n) # TODO: sparse Jacobian support
+  B = fill(zero(T), n, 5)
+  # Allocate caches for phiv_timestep
+  maxiter = min(alg.m, n)
+  KsCache = _phiv_timestep_caches(u, maxiter, 4)
+  EPIRK5s3Cache(u,uprev,tmp,k,rtmp,rtmp2,A,B,KsCache)
+end
+
+struct EXPRB53s3ConstantCache <: ExpRKConstantCache end
+alg_cache(alg::EXPRB53s3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
+  uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = EXPRB53s3ConstantCache()
+
+struct EXPRB53s3Cache{uType,rateType,matType,KsType} <: ExpRKCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  rtmp::rateType
+  rtmp2::rateType
+  K::matType
+  A::matType
+  B::matType
+  KsCache::KsType
+end
+function alg_cache(alg::EXPRB53s3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)                                    # uType caches
+  rtmp, rtmp2 = (zero(rate_prototype) for i = 1:2)   # rateType caches
+  # Allocate matrices
+  n = length(u); T = eltype(u)
+  K = Matrix{T}(undef, n, 2)
+  A = Matrix{T}(undef, n, n) # TODO: sparse Jacobian support
+  B = fill(zero(T), n, 5)
+  # Allocate caches for phiv_timestep
+  maxiter = min(alg.m, n)
+  KsCache = _phiv_timestep_caches(u, maxiter, 4)
+  EXPRB53s3Cache(u,uprev,tmp,rtmp,rtmp2,K,A,B,KsCache)
+end
+
+struct EPIRK5P1ConstantCache <: ExpRKConstantCache end
+alg_cache(alg::EPIRK5P1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
+  uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = EPIRK5P1ConstantCache()
+
+struct EPIRK5P1Cache{uType,rateType,matType,KsType} <: ExpRKCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  rtmp::rateType
+  rtmp2::rateType
+  K::matType
+  A::matType
+  B::matType
+  KsCache::KsType
+end
+function alg_cache(alg::EPIRK5P1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)                                    # uType caches
+  rtmp, rtmp2 = (zero(rate_prototype) for i = 1:2)   # rateType caches
+  # Allocate matrices
+  n = length(u); T = eltype(u)
+  K = Matrix{T}(undef, n, 3)
+  A = Matrix{T}(undef, n, n) # TODO: sparse Jacobian support
+  B = fill(zero(T), n, 4)
+  # Allocate caches for phiv_timestep
+  maxiter = min(alg.m, n)
+  KsCache = _phiv_timestep_caches(u, maxiter, 3)
+  EPIRK5P1Cache(u,uprev,tmp,rtmp,rtmp2,K,A,B,KsCache)
+end
+
+struct EPIRK5P2ConstantCache <: ExpRKConstantCache end
+alg_cache(alg::EPIRK5P2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
+  uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = EPIRK5P2ConstantCache()
+
+struct EPIRK5P2Cache{uType,rateType,matType,KsType} <: ExpRKCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  rtmp::rateType
+  rtmp2::rateType
+  dR::rateType
+  K::matType
+  A::matType
+  B::matType
+  KsCache::KsType
+end
+function alg_cache(alg::EPIRK5P2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)                                        # uType caches
+  rtmp, rtmp2, dR = (zero(rate_prototype) for i = 1:3)   # rateType caches
+  # Allocate matrices
+  n = length(u); T = eltype(u)
+  K = Matrix{T}(undef, n, 3)
+  A = Matrix{T}(undef, n, n) # TODO: sparse Jacobian support
+  B = fill(zero(T), n, 4)
+  # Allocate caches for phiv_timestep
+  maxiter = min(alg.m, n)
+  KsCache = _phiv_timestep_caches(u, maxiter, 3)
+  EPIRK5P2Cache(u,uprev,tmp,rtmp,rtmp2,dR,K,A,B,KsCache)
 end
 
 ####################################
 # Multistep exponential method caches
 
 #=
-  Fsal separately the linear and nonlinear part, as well as the nonlinear 
+  Fsal separately the linear and nonlinear part, as well as the nonlinear
   part in the previous time step.
 =#
 mutable struct ETD2Fsal{rateType}

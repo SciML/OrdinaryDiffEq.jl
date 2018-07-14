@@ -1,4 +1,6 @@
-using OrdinaryDiffEq, Base.Test, DiffEqProblemLibrary
+using OrdinaryDiffEq, Test, Random
+using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
+import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear
 srand(100)
 
 @testset "Tstops Tests on the Interval [0, 1]" begin
@@ -25,8 +27,8 @@ srand(100)
   sol = solve(prob,RK4(),tstops=0:1//16:1, adaptive=false)
   @test sol.t == collect(0:1//16:1)
 
-  sol = solve(prob,RK4(),tstops=linspace(0,1,100), adaptive=false)
-  @test sol.t == collect(linspace(0,1,100))
+  sol = solve(prob,RK4(),tstops=range(0,stop=1,length=100), adaptive=false)
+  @test sol.t == collect(range(0,stop=1,length=100))
 end
 
 @testset "Integrator Tstops Tests on the Interval $(["[-1, 0]", "[0, 1]"][i])" for (i, tdir) in enumerate([-1.; 1.])
