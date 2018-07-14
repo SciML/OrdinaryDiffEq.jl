@@ -1420,7 +1420,7 @@ struct Anas5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   b6::T
 end
 
-Base.@pure function Anas5ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function Anas5ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
     a21 = T(0.1)
     a31 = T(-0.2222222222222222)
     a32 = T(0.5555555555555556)
@@ -1449,7 +1449,7 @@ Base.@pure function Anas5ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::T
     Anas5ConstantCache(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,c2,c3,c4,c5,c6,b1,b3,b4,b5,b6)
 end
 
-Base.@pure function Anas5ConstantCache{T,T2}(::Type{T},::Type{T2})
+Base.@pure function Anas5ConstantCache(::Type{T},::Type{T2}) where {T,T2}
     a21 = T(1//10)
     a31 = T(-2//9)
     a32 = T(5//9)
