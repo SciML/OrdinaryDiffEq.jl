@@ -51,6 +51,8 @@ for i = 1:2
   @test abs(sim105.𝒪est[:l2]-4) < testTol
   sim106 = test_convergence(dts,prob,VCABM5())
   @test abs(sim106.𝒪est[:l2]-5) < testTol
+  sim160 = test_convergence(dts,prob,Anas5(w=2))
+  @test abs(sim160.𝒪est[:l2]-4) < 2*testTol
 
   println("Stiff Solvers")
 
