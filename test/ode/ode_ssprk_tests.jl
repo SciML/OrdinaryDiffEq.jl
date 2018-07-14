@@ -1,8 +1,9 @@
-using OrdinaryDiffEq, DiffEqProblemLibrary, DiffEqDevTools, Base.Test
+using OrdinaryDiffEq, DiffEqDevTools, Test, Random
+import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 
 srand(100)
 
-dts = 1.//2.^(8:-1:4)
+dts = 1 .//2 .^(8:-1:4)
 testTol = 0.25
 
 f = (u,p,t)->cos(t)
@@ -73,9 +74,9 @@ sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg), 
 @test all(sol.u .>= 0)
 # test SSP property of dense output
 sol = solve(test_problem_ssp, alg, dt=1.)
-@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, true, linspace(0,8))
+@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, true, range(0, stop=8, length=50))
 sol = solve(test_problem_ssp_inplace, alg, dt=1.)
-@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, true, linspace(0,8))
+@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, true, range(0, stop=8, length=50))
 
 
 alg = SSPRK33()
@@ -98,9 +99,9 @@ sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg), 
 @test all(sol.u .>= 0)
 # test SSP property of dense output
 sol = solve(test_problem_ssp, alg, dt=1.)
-@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, true, linspace(0,8))
+@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, true, range(0, stop=8, length=50))
 sol = solve(test_problem_ssp_inplace, alg, dt=1.)
-@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, true, linspace(0,8))
+@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, true, range(0, stop=8, length=50))
 
 
 alg = SSPRK53()
@@ -194,9 +195,9 @@ sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg), 
 @test all(sol.u .>= 0)
 # test SSP property of dense output
 sol = solve(test_problem_ssp, alg, dt=8/5, adaptive=false)
-@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, true, linspace(0,8))
+@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, true, range(0, stop=8, length=50))
 sol = solve(test_problem_ssp_inplace, alg, dt=8/5, adaptive=false)
-@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, true, linspace(0,8))
+@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, true, range(0, stop=8, length=50))
 
 
 alg = SSPRK932()

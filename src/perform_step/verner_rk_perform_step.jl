@@ -2,7 +2,7 @@ function initialize!(integrator, cache::Vern6ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
   alg = unwrap_alg(integrator, false)
   alg.lazy ? (integrator.kshortsize = 9) : (integrator.kshortsize = 12)
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -190,7 +190,7 @@ end
 function initialize!(integrator, cache::Vern7ConstantCache)
   alg = unwrap_alg(integrator, false)
   alg.lazy ? (integrator.kshortsize = 10) : (integrator.kshortsize = 16)
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
   @inbounds for i in eachindex(integrator.k)
@@ -397,7 +397,7 @@ end
 function initialize!(integrator, cache::Vern8ConstantCache)
   alg = unwrap_alg(integrator, false)
   alg.lazy ? (integrator.kshortsize = 13) : (integrator.kshortsize = 21)
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
   @inbounds for i in eachindex(integrator.k)
@@ -634,7 +634,7 @@ end
 function initialize!(integrator, cache::Vern9ConstantCache)
   alg = unwrap_alg(integrator, false)
   alg.lazy ? (integrator.kshortsize = 16) : (integrator.kshortsize = 26)
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
   @inbounds for i in eachindex(integrator.k)

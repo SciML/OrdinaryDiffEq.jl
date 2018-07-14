@@ -14,7 +14,7 @@ const NystromCCDefaultInitialization = Union{Nystrom4ConstantCache,
 
 function initialize!(integrator,cache::NystromCCDefaultInitialization)
  integrator.kshortsize = 2
- integrator.k = typeof(integrator.k)(integrator.kshortsize)
+ integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
  duprev,uprev = integrator.uprev.x
  kdu = integrator.f.f1(duprev,uprev,integrator.p,integrator.t)
@@ -186,7 +186,7 @@ end
     u  = uprev + bconst1*dt*duprev + dt*(bconst2*duprev2 + dt*bbar2*(k₂x1-k₂.x[1]))
 
     integrator.fsallast = ArrayPartition((f.f1(du,u,p,t+dt),f.f2(du,u,p,t+dt)))
-    copy!(k₂.x[1],k₂.x[2])
+    copyto!(k₂.x[1],k₂.x[2])
     k1cache = ArrayPartition((k1cache.x[1],k.x[2]))
   end # end if
 end
@@ -205,7 +205,7 @@ end
   # if there's a discontinuity or the solver is in the first step
   if integrator.iter < 2 && !integrator.u_modified
     perform_step!(integrator,integrator.cache.onestep_cache)
-    copy!(k1cache.x[1], k.x[1])
+    copyto!(k1cache.x[1], k.x[1])
     f.f1(k1cache.x[2],duprev,uprev,p,t+c1*dt)
     @. kdu= uprev + dt*(c1*duprev + dt*a21*k1cache.x[2])
     f.f1(k₂.x[1],duprev,kdu,p,t+c1*dt)
@@ -220,9 +220,9 @@ end
     end
     f.f1(k.x[1],du,u,p,t+dt)
     f.f2(k.x[2],du,u,p,t+dt)
-    copy!(k₂.x[1],k₂.x[2])
-    copy!(k1cache.x[2],k1cache.x[1])
-    copy!(k1cache.x[1],k.x[1])
+    copyto!(k₂.x[1],k₂.x[2])
+    copyto!(k1cache.x[2],k1cache.x[1])
+    copyto!(k1cache.x[1],k.x[1])
   end # end if
 end
 
@@ -240,7 +240,7 @@ end
   # if there's a discontinuity or the solver is in the first step
   if integrator.iter < 2 && !integrator.u_modified
     perform_step!(integrator,integrator.cache.onestep_cache)
-    copy!(k1cache.x[1], k.x[1])
+    copyto!(k1cache.x[1], k.x[1])
     f.f1(k1cache.x[2],duprev,uprev,p,t+c1*dt)
     @. kdu= uprev + dt*(c1*duprev + dt*a21*k1cache.x[1])
     f.f1(k₂.x[1],duprev,kdu,p,t+c1*dt)
@@ -261,10 +261,10 @@ end
     end
     f.f1(k.x[1],du,u,p,t+dt)
     f.f2(k.x[2],du,u,p,t+dt)
-    copy!(k₂.x[1],k₂.x[2])
-    copy!(k₃.x[1],k₃.x[2])
-    copy!(k1cache.x[2],k1cache.x[1])
-    copy!(k1cache.x[1],k.x[1])
+    copyto!(k₂.x[1],k₂.x[2])
+    copyto!(k₃.x[1],k₃.x[2])
+    copyto!(k1cache.x[2],k1cache.x[1])
+    copyto!(k1cache.x[1],k.x[1])
   end # end if
 end
 
@@ -352,7 +352,7 @@ end
 function initialize!(integrator, cache::DPRKN6ConstantCache)
   duprev,uprev = integrator.uprev.x
   integrator.kshortsize = 3
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
   kdu  = integrator.f.f1(duprev,uprev,integrator.p,integrator.t)
   ku = integrator.f.f2(duprev,uprev,integrator.p,integrator.t)
@@ -863,8 +863,8 @@ end
   integrator.k[2] = integrator.fsallast
   if integrator.opts.adaptive
     dtsq = dt^2
-    uhat  = dtsq*(btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4)
-    atmp = calculate_residuals(uhat, integrator.uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+    uhat = dtsq*(btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4)
+    atmp = calculate_residuals(uhat, integrator.uprev.x[2], integrator.u.x[2], integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 end
@@ -901,7 +901,7 @@ end
     @tight_loop_macros for i in uidx
       @inbounds uhat[i]  = dtsq*(btilde1*k1[i] + btilde2*k2[i] + btilde3*k3[i] + btilde4*k4[i])
     end
-    calculate_residuals!(atmp, uhat, integrator.uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(atmp)
+    calculate_residuals!(atmp.x[2], uhat, integrator.uprev.x[2], integrator.u.x[2], integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+    integrator.EEst = integrator.opts.internalnorm(atmp.x[2])
   end
 end

@@ -18,7 +18,7 @@ function constructDormandPrince(T::Type = Float64)
   α = map(T,α)
   αEEst = map(T,αEEst)
   c = map(T,c)
-  return(ExplicitRKTableau(A,c,α,5,αEEst=αEEst,adaptiveorder=4,fsal=true))
+  return(DiffEqBase.ExplicitRKTableau(A,c,α,5,αEEst=αEEst,adaptiveorder=4,fsal=true))
 end
 
 """

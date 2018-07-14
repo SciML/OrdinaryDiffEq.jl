@@ -9,7 +9,7 @@ struct IRKN3ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   bbar2::T
 end
 
-Base.@pure function IRKN3ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function IRKN3ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   bconst1 = T(1.5)
   bconst2 = T(-0.5)
   c1 = T2(0.5)
@@ -49,7 +49,7 @@ struct IRKN4ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   bbar3::T
 end
 
-Base.@pure function IRKN4ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function IRKN4ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   bconst1 = T(1.5)
   bconst2 = T(-0.5)
   c1      = T2(0.25)
@@ -101,7 +101,7 @@ struct Nystrom5VelocityIndependentConstantCache{T,T2} <: OrdinaryDiffEqConstantC
   b4::T
 end
 
-function Nystrom5VelocityIndependentConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+function Nystrom5VelocityIndependentConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   c1    = T2(0.2)
   c2    = T2(0.6666666666666666)
   # c3    = T2(1)
@@ -198,7 +198,7 @@ function ERKN4ConstantCache(T::Type,T2::Type)
   ERKN4ConstantCache(c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3, b4, bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4, bptilde1, bptilde2, bptilde3, bptilde4)
 end
 
-Base.@pure function ERKN4ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function ERKN4ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
 ERKN4ConstantCache(
                   T2(0.25),
                   T2(0.7),
@@ -284,7 +284,7 @@ function ERKN5ConstantCache(T::Type,T2::Type)
   ERKN5ConstantCache(c1, c2, c3, a21, a31, a32, a41, a42, a43, b1, b2, b3, b4, bp1, bp2, bp3, bp4, btilde1, btilde2, btilde3, btilde4)
 end
 
-Base.@pure function ERKN5ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function ERKN5ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   ERKN5ConstantCache(
                      T2(0.5),
                      T2(0.2714285714285714),
@@ -398,7 +398,7 @@ struct DPRKN6ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   rp61::T
 end
 
-Base.@pure function DPRKN6ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function DPRKN6ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   c1 = T2(0.12929590313670442)
   c2 = T2(0.25859180627340883)
   c3 = T2(0.67029708261548)
@@ -754,7 +754,7 @@ function DPRKN8ConstantCache(T::Type,T2::Type)
   DPRKN8ConstantCache(c1, c2, c3, c4, c5, c6, c7, c8, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a82, a83, a84, a85, a86, a87, a91, a93, a94, a95, a96, a97, b1, b3, b4, b5, b6, b7, bp1, bp3, bp4, bp5, bp6, bp7, bp8, btilde1, btilde3, btilde4, btilde5, btilde6, btilde7, bptilde1, bptilde3, bptilde4, bptilde5, bptilde6, bptilde7, bptilde8, bptilde9)
 end
 
-Base.@pure function DPRKN8ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function DPRKN8ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   DPRKN8ConstantCache(
   T2(0.05),
   T2(0.1),
@@ -1292,7 +1292,7 @@ function DPRKN12ConstantCache(T::Type,T2::Type)
   DPRKN12ConstantCache(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c16, a21, a31, a32, a41, a42, a43, a51, a53, a54, a61, a63, a64, a65, a71, a73, a74, a75, a76, a81, a84, a85, a86, a87, a91, a93, a94, a95, a96, a97, a98, a101, a103, a104, a105, a106, a107, a108, a109, a111, a113, a114, a115, a116, a117, a118, a119, a1110, a121, a123, a124, a125, a126, a127, a128, a129, a1210, a1211, a131, a133, a134, a135, a136, a137, a138, a139, a1310, a1311, a1312, a141, a143, a144, a145, a146, a147, a148, a149, a1410, a1411, a1412, a1413, a151, a153, a154, a155, a156, a157, a158, a159, a1510, a1511, a1512, a1513, a1514, a161, a163, a164, a165, a166, a167, a168, a169, a1610, a1611, a1612, a1613, a1614, a1615, a171, a173, a174, a175, a176, a177, a178, a179, a1710, a1711, a1712, a1713, a1714, a1715, b1, b7, b8, b9, b10, b11, b12, b13, b14, b15, bp1, bp7, bp8, bp9, bp10, bp11, bp12, bp13, bp14, bp15, bp16, bp17, btilde1, btilde7, btilde8, btilde9, btilde10, btilde11, btilde12, btilde13, btilde14, btilde15, bptilde1, bptilde7, bptilde8, bptilde9, bptilde10, bptilde11, bptilde12, bptilde13, bptilde14, bptilde15, bptilde16, bptilde17)
 end
 
-Base.@pure function DPRKN12ConstantCache{T<:CompiledFloats,T2<:CompiledFloats}(::Type{T},::Type{T2})
+Base.@pure function DPRKN12ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats,T2<:CompiledFloats}
   DPRKN12ConstantCache(
   T2(2.0e-2),
   T2(4.0e-2),

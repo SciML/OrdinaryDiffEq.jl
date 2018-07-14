@@ -1,4 +1,5 @@
-using OrdinaryDiffEq, DiffEqProblemLibrary, Base.Test
+using OrdinaryDiffEq, Test
+import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 @testset "Composite Algorithm Tests" begin
   prob = prob_ode_2Dlinear
   choice_function(integrator) = (Int(integrator.t<0.5) + 1)

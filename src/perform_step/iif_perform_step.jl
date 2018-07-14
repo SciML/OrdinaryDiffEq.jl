@@ -13,7 +13,7 @@ end
 
 function initialize!(integrator,cache::Union{GenericIIF1ConstantCache,GenericIIF2ConstantCache})
   integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   A = integrator.f.f1
   cache.uhold[1] = integrator.f.f2(integrator.uprev,integrator.p,integrator.t)
   integrator.fsalfirst = integrator.f.f1(integrator.uprev,integrator.p,integrator.t) .+ cache.uhold[1]
@@ -32,9 +32,9 @@ function perform_step!(integrator,cache::Union{GenericIIF1ConstantCache,GenericI
   # If adaptive, this should be computed after and cached
   A = integrator.f.f1
   if typeof(cache) <: GenericIIF1ConstantCache
-    rhs.tmp = expm(A*dt)*(uprev)
+    rhs.tmp = exp(A*dt)*(uprev)
   elseif typeof(cache) <: GenericIIF2ConstantCache
-    @muladd rhs.tmp = expm(A*dt)*(uprev + 0.5dt*uhold[1]) # This uhold only works for non-adaptive
+    @muladd rhs.tmp = exp(A*dt)*(uprev + 0.5dt*uhold[1]) # This uhold only works for non-adaptive
   end
 
   if integrator.success_iter > 0 && !integrator.reeval_fsal
@@ -75,7 +75,7 @@ function initialize!(integrator,cache::Union{GenericIIF1Cache,GenericIIF2Cache})
   resize!(integrator.k, integrator.kshortsize)
   A = integrator.f.f1
   integrator.f.f2(cache.rtmp1,integrator.uprev,integrator.p,integrator.t)
-  A_mul_B!(cache.k,A,integrator.uprev)
+  mul!(cache.k,A,integrator.uprev)
   @. integrator.fsalfirst = cache.k + cache.rtmp1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -92,7 +92,7 @@ function perform_step!(integrator,cache::Union{GenericIIF1Cache,GenericIIF2Cache
     @muladd @. k = k + 0.5dt*rtmp1
   end
 
-  A_mul_B!(tmp,cache.expA,k)
+  mul!(tmp,cache.expA,k)
 
   if integrator.success_iter > 0 && !integrator.reeval_fsal
     current_extrapolant!(u,t+dt,integrator)
@@ -102,7 +102,7 @@ function perform_step!(integrator,cache::Union{GenericIIF1Cache,GenericIIF2Cache
   rhs.dt = dt
   nlres = alg.nlsolve(nl_rhs,u)
 
-  copy!(u,nlres)
+  copyto!(u,nlres)
   integrator.f.f2(rtmp1,nlres,integrator.p,t+dt)
   A = f.f1
   integrator.fsallast .= A*u .+ rtmp1

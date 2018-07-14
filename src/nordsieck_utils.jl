@@ -240,7 +240,7 @@ function nlsolve_functional!(integrator, cache::T) where T
     # @show norm(cache.Δ - (integrator.u - z[1]))
     # It only makes sense to calculate convergence rate in the second iteration
     δ = integrator.opts.internalnorm(cache.Δ)
-    isconstcache ? ( cache.Δ = copy(ratetmp) ) : copy!(cache.Δ, ratetmp)
+    isconstcache ? ( cache.Δ = copy(ratetmp) ) : copyto!(cache.Δ, ratetmp)
     if k >= 1
       conv_rate = max(1//10*conv_rate, δ/δ_prev)
     end
@@ -267,7 +267,7 @@ function nordsieck_rescale!(cache::T, rewind=false) where T
     if isconstcache
       z[i] = z[i]*factor
     else
-      scale!(z[i], factor)
+      rmul!(z[i], factor)
     end
     factor *= eta
   end

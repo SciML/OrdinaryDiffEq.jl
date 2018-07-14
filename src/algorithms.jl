@@ -1,4 +1,4 @@
-abstract type OrdinaryDiffEqAlgorithm <: AbstractODEAlgorithm end
+abstract type OrdinaryDiffEqAlgorithm <: DiffEqBase.AbstractODEAlgorithm end
 abstract type OrdinaryDiffEqAdaptiveAlgorithm <: OrdinaryDiffEqAlgorithm end
 abstract type OrdinaryDiffEqCompositeAlgorithm <: OrdinaryDiffEqAlgorithm end
 
@@ -17,7 +17,7 @@ abstract type OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm <: OrdinaryDiffEqAdapt
 
 struct FunctionMap{scale_by_time} <: OrdinaryDiffEqAlgorithm end
 Base.@pure function Discrete(;apply_map=false,scale_by_time=false)
-    warn("Discrete is deprecated. Use FunctionMap instead.")
+    @warn("Discrete is deprecated. Use FunctionMap instead.")
     FunctionMap{scale_by_time}()
 end
 Base.@pure FunctionMap(;scale_by_time=false) = FunctionMap{scale_by_time}()
@@ -729,7 +729,7 @@ struct GeneralRosenbrock{CS,AD,F,TabType} <: OrdinaryDiffEqRosenbrockAdaptiveAlg
 end
 
 Base.@pure GeneralRosenbrock(;chunk_size=0,autodiff=true,
-                    factorization=lufact!,tableau=ROSENBROCK_DEFAULT_TABLEAU) =
+                    factorization=lu!,tableau=ROSENBROCK_DEFAULT_TABLEAU) =
                     GeneralRosenbrock{chunk_size,autodiff,typeof(factorization),typeof(tableau)}(tableau,factorization)
 
 ######################################

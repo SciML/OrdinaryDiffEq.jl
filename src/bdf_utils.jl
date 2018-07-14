@@ -7,10 +7,10 @@ function U!(k, cache)
       if typeof(cache) <: OrdinaryDiffEqMutableCache
         @. U[j,r] = inv(factorial(j)) * prod([m-r for m in 0:(j-1)])
       else
-        U[j,r] = inv(factorial(j)) * prod([m-r for m in 0:(j-1)]) 
+        U[j,r] = inv(factorial(j)) * prod([m-r for m in 0:(j-1)])
       end
     end
-  end  
+  end
 end
 
 function R!(k, ρ, cache)
@@ -39,8 +39,8 @@ end
 function D2!(u, uprev, k, cache)
   @unpack D, D2 = cache
   if typeof(cache) <: OrdinaryDiffEqMutableCache
-    @. D2[1,1] = (u - uprev) - D[1,1] 
+    @. D2[1,1] = (u - uprev) - D[1,1]
   else
-    D2[1,1] = (u - uprev) - D[1,1] 
+    D2[1,1] = (u - uprev) - D[1,1]
   end
 end

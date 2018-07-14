@@ -15,8 +15,8 @@ struct SSPRK22ConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::SSPRK22,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
-  k = zeros(rate_prototype)
-  fsalfirst = zeros(rate_prototype)
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
   SSPRK22Cache(u,uprev,k,tmp,fsalfirst,alg.stage_limiter!,alg.step_limiter!)
 end
 
@@ -40,8 +40,8 @@ struct SSPRK33ConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::SSPRK33,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
-  k = zeros(rate_prototype)
-  fsalfirst = zeros(rate_prototype)
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
   SSPRK33Cache(u,uprev,k,tmp,fsalfirst,alg.stage_limiter!,alg.step_limiter!)
 end
 
@@ -96,8 +96,8 @@ end
 
 function alg_cache(alg::SSPRK53,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
-  k = zeros(rate_prototype)
-  fsalfirst = zeros(rate_prototype)
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
   α30 = 0.355909775063327
   α32 = 0.644090224936674
   α40 = 0.367933791638137
@@ -189,8 +189,8 @@ end
 function alg_cache(alg::SSPRK63,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
   u₂ = similar(u)
-  k = zeros(rate_prototype)
-  fsalfirst = zeros(rate_prototype)
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
   α40 = 0.476769811285196
   α41 = 0.098511733286064
   α43 = 0.424718455428740
@@ -292,8 +292,8 @@ end
 function alg_cache(alg::SSPRK73,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
   u₁ = similar(u)
-  k = zeros(rate_prototype)
-  fsalfirst = zeros(rate_prototype)
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
   α40 = 0.184962588071072
   α43 = 0.815037411928928
   α50 = 0.180718656570380
@@ -411,8 +411,8 @@ function alg_cache(alg::SSPRK83,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   tmp = similar(u)
   u₂ = similar(u)
   u₃ = similar(u)
-  k = zeros(rate_prototype)
-  fsalfirst = zeros(rate_prototype)
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
   α50 = 0.421366967085359
   α51 = 0.005949401107575
   α54 = 0.572683631807067
@@ -487,10 +487,10 @@ struct SSPRK432ConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::SSPRK432,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
-  k = zeros(rate_prototype)
-  fsalfirst = zeros(rate_prototype)
-  utilde = similar(u,indices(u))
-  atmp = similar(u,uEltypeNoUnits,indices(u))
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  utilde = similar(u,axes(u))
+  atmp = similar(u,uEltypeNoUnits,axes(u))
   SSPRK432Cache(u,uprev,k,tmp,fsalfirst,utilde,atmp,alg.stage_limiter!,alg.step_limiter!)
 end
 
@@ -516,10 +516,10 @@ struct SSPRK932ConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::SSPRK932,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
-  k = zeros(rate_prototype)
-  fsalfirst = zeros(rate_prototype)
-  utilde = similar(u,indices(u))
-  atmp = similar(u,uEltypeNoUnits,indices(u))
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  utilde = similar(u,axes(u))
+  atmp = similar(u,uEltypeNoUnits,axes(u))
   SSPRK932Cache(u,uprev,k,tmp,fsalfirst,utilde,atmp,alg.stage_limiter!,alg.step_limiter!)
 end
 
@@ -587,9 +587,9 @@ function alg_cache(alg::SSPRK54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   u₂ = similar(u)
   u₃ = similar(u)
   tmp = similar(u)
-  k = zeros(rate_prototype)
-  k₃ = zeros(rate_prototype)
-  fsalfirst = zeros(rate_prototype)
+  k = zero(rate_prototype)
+  k₃ = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
   β10 = 0.391752226571890
   α20 = 0.444370493651235
   α21 = 0.555629506348765
@@ -655,9 +655,9 @@ struct SSPRK104ConstantCache <: OrdinaryDiffEqConstantCache end
 
 function alg_cache(alg::SSPRK104,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
-  k = zeros(rate_prototype)
-  k₄ = zeros(rate_prototype)
-  fsalfirst = zeros(rate_prototype)
+  k = zero(rate_prototype)
+  k₄ = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
   SSPRK104Cache(u,uprev,k,k₄,tmp,fsalfirst,alg.stage_limiter!,alg.step_limiter!)
 end
 

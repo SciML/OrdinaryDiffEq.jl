@@ -1,7 +1,7 @@
 isautodifferentiable(alg::OrdinaryDiffEqAlgorithm) = true
 
 isfsal(alg::OrdinaryDiffEqAlgorithm) = true
-isfsal{MType,VType,fsal}(tab::ExplicitRKTableau{MType,VType,fsal}) = fsal
+isfsal(tab::DiffEqBase.ExplicitRKTableau{MType,VType,fsal}) where {MType,VType,fsal} = fsal
 # isfsal(alg::CompositeAlgorithm) = isfsal(alg.algs[alg.current])
 isfsal(alg::FunctionMap) = false
 isfsal(alg::Rodas4) = false
@@ -51,13 +51,13 @@ qmax_default(alg::CompositeAlgorithm) = minimum(qmax_default.(alg.algs))
 qmax_default(alg::DP8) = 6
 
 get_chunksize(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have a chunk size defined.")
-get_chunksize{CS,AD}(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) = CS
-get_chunksize{CS,AD}(alg::OrdinaryDiffEqImplicitAlgorithm{CS,AD}) = CS
+get_chunksize(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) where {CS,AD} = CS
+get_chunksize(alg::OrdinaryDiffEqImplicitAlgorithm{CS,AD}) where {CS,AD} = CS
 # get_chunksize(alg::CompositeAlgorithm) = get_chunksize(alg.algs[alg.current_alg])
 
 alg_autodiff(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have an autodifferentiation option defined.")
-alg_autodiff{CS,AD}(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) = AD
-alg_autodiff{CS,AD}(alg::OrdinaryDiffEqImplicitAlgorithm{CS,AD}) = AD
+alg_autodiff(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) where {CS,AD} = AD
+alg_autodiff(alg::OrdinaryDiffEqImplicitAlgorithm{CS,AD}) where {CS,AD} = AD
 # alg_autodiff(alg::CompositeAlgorithm) = alg_autodiff(alg.algs[alg.current_alg])
 get_current_alg_autodiff(alg, cache) = alg_autodiff(alg)
 get_current_alg_autodiff(alg::CompositeAlgorithm, cache) = alg_autodiff(alg.algs[cache.current])
@@ -294,7 +294,7 @@ qsteady_max_default(alg::AN5) = 3//2
 qsteady_max_default(alg::JVODE) = 3//2
 qsteady_max_default(alg::QNDF1) = 2//1
 
-FunctionMap_scale_by_time{scale_by_time}(alg::FunctionMap{scale_by_time}) = scale_by_time
+FunctionMap_scale_by_time(alg::FunctionMap{scale_by_time}) where {scale_by_time} = scale_by_time
 
 # SSP coefficients
 """

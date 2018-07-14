@@ -1,10 +1,9 @@
 # Solve the Landau-Zener problem i ψ' = H(t) ψ, with H(t) = [t 1;1 -t]
 
-using Base.Test
+using Test
 using StaticArrays
 using OrdinaryDiffEq, DiffEqBase
 
-gc()
 H(t) = -im*(@SMatrix [t 1;1 -t])
 
 fun(ψ,p,t) = H(t)*ψ

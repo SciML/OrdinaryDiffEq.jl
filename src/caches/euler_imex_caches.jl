@@ -55,14 +55,14 @@ function alg_cache(alg::IMEXEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
 end
 
 function alg_cache(alg::IMEXEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  J = zeros(uEltypeNoUnits,length(u),length(u))
+  J = fill(zero(uEltypeNoUnits),length(u),length(u))
   W = similar(J)
   z = similar(u,indices(u))
   dz = similar(u,indices(u)); tmp = similar(u,indices(u)); b = similar(u,indices(u))
-  fsalfirst = zeros(rate_prototype)
-  k = zeros(rate_prototype)
-  du₁ = zeros(rate_prototype)
-  du1 = zeros(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  k = zero(rate_prototype)
+  du₁ = zero(rate_prototype)
+  du1 = zero(rate_prototype)
   atmp = similar(u,uEltypeNoUnits,indices(u))
 
   uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t,p)

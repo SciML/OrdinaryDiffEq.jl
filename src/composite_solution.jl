@@ -1,4 +1,4 @@
-struct ODECompositeSolution{T,N,uType,uType2,EType,tType,rateType,P,A,IType} <: AbstractODESolution{T,N}
+struct ODECompositeSolution{T,N,uType,uType2,EType,tType,rateType,P,A,IType} <: DiffEqBase.AbstractODESolution{T,N}
   u::uType
   u_analytic::uType2
   errors::EType
@@ -15,8 +15,8 @@ end
 (sol::ODECompositeSolution)(t,deriv::Type=Val{0};idxs=nothing) = sol.interp(t,idxs,deriv,sol.prob.p)
 (sol::ODECompositeSolution)(v,t,deriv::Type=Val{0};idxs=nothing) = sol.interp(v,t,idxs,deriv,sol.prob.p)
 
-function build_solution(
-        prob::Union{AbstractODEProblem,AbstractDDEProblem},
+function DiffEqBase.build_solution(
+        prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.AbstractDDEProblem},
         alg::OrdinaryDiffEqCompositeAlgorithm,t,u;
         timeseries_errors=length(u)>2,
         dense=false,dense_errors=dense,
@@ -39,19 +39,19 @@ function build_solution(
     f = prob.f
   end
 
-  if has_analytic(f)
+  if DiffEqBase.has_analytic(f)
     if !(typeof(prob.u0) <: Tuple)
-      u_analytic = Vector{typeof(prob.u0)}(0)
+      u_analytic = Vector{typeof(prob.u0)}(undef, 0)
       errors = Dict{Symbol,real(eltype(prob.u0))}()
     else
-      u_analytic = Vector{typeof(ArrayPartition(prob.u0))}(0)
+      u_analytic = Vector{typeof(ArrayPartition(prob.u0))}(undef, 0)
       errors = Dict{Symbol,real(eltype(prob.u0[1]))}()
     end
 
     sol = ODECompositeSolution{T,N,typeof(u),typeof(u_analytic),typeof(errors),typeof(t),typeof(k),
                        typeof(prob),typeof(alg),typeof(interp)}(u,u_analytic,errors,t,k,prob,alg,interp,alg_choice,dense,0,retcode)
     if calculate_error
-      calculate_solution_errors!(sol;timeseries_errors=timeseries_errors,dense_errors=dense_errors)
+      DiffEqBase.calculate_solution_errors!(sol;timeseries_errors=timeseries_errors,dense_errors=dense_errors)
     end
     return sol
   else

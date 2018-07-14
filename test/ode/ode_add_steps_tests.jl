@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Base.Test
+using OrdinaryDiffEq, Test
 
 function test_ode(u, p, t)
     [p[1] - (1 - p[1])*u[1]]
@@ -12,7 +12,7 @@ end
 test_solution(t) = t <= 5 ? t : 5. * e^(-(t-5))
 
 tspan = (0.,10.)
-testtimes = linspace(tspan..., 1001)
+testtimes = range(tspan[1], stop=tspan[2], length=1001)
 pullback_condition(u, t, i) = t - 5
 pullback_affect!(i) = i.p[1] = abs(1 - i.p[1])
 cb = ContinuousCallback(pullback_condition, pullback_affect!)
@@ -49,5 +49,5 @@ for inplace in [false,true], alg in lazy_alg
     passed[cur_itr] = pass && !fail
 end
 
-any(.!(passed)) && warn("The following algorithms failed the continuous callback test: $(vcat(algs,algs,lazy_alg,lazy_alg)[.!(passed)])")
+any(.!(passed)) && @warn("The following algorithms failed the continuous callback test: $(vcat(algs,algs,lazy_alg,lazy_alg)[.!(passed)])")
 @test all(passed)

@@ -1,14 +1,13 @@
-using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase,
-      DiffEqProblemLibrary, Base.Test
-gc()
+using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase, Test
+import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 
-probArr = Vector{ODEProblem}(2)
+probArr = Vector{ODEProblem}(undef, 2)
 
 probArr[1] = prob_ode_linear
 probArr[2] = prob_ode_2Dlinear
 
 function fixed_step_ϕstar(k)
-  ∇ = Vector{typeof(k[end][1])}(3)
+  ∇ = Vector{typeof(k[end][1])}(undef, 3)
   ∇[1] = k[end][1]
   ∇[2] = ∇[1] - k[end-1][1]
   ∇[3] = ∇[2] - k[end-1][1] + k[end-2][1]

@@ -1,17 +1,18 @@
-using OrdinaryDiffEq, DiffEqProblemLibrary, Base.Test
+using OrdinaryDiffEq, Test
+import DiffEqProblemLibrary.ODEProblemLibrary: van
 
 @testset "Stiffness Detection Tests" begin
-  prob1 = ODEProblem(DiffEqProblemLibrary.van,[0,2.],(0.0,6),inv(0.003))
+  prob1 = ODEProblem(van,[0,2.],(0.0,6),inv(0.003))
   # out-of-place test
-  function van(u, p, t)
+  function _van(u, p, t)
     μ = p[1]
     [μ*((1-u[2]^2)*u[1] - u[2]),
      1*u[1]]
   end
-  prob2 = ODEProblem(van,[0,2.],(0.0,6),inv(0.003))
+  prob2 = ODEProblem(_van,[0,2.],(0.0,6),inv(0.003))
   probArr = [prob1, prob2]
   # Test if switching back and forth
-  is_switching_fb(sol) = maximum(diff(find(x->x==2, sol.alg_choice))) > 5
+  is_switching_fb(sol) = maximum(diff(findall(x->x==2, sol.alg_choice))) > 5
   for prob in probArr
     alg = AutoTsit5(Rodas5(); maxstiffstep=5, maxnonstiffstep=5, stiffalgfirst=true)
     sol = solve(prob, alg)
@@ -28,7 +29,7 @@ using OrdinaryDiffEq, DiffEqProblemLibrary, Base.Test
     @test length(sol.t) < 690
     @test is_switching_fb(sol)
     sol = solve(prob,AutoVern7(Hairer42(); maxstiffstep=4, maxnonstiffstep=4))
-    @test length(sol.t) < 535
+    @test length(sol.t) < 540
     @test is_switching_fb(sol)
     sol = solve(prob,AutoVern8(Rosenbrock23(); maxstiffstep=4, maxnonstiffstep=4))
     @test length(sol.t) < 910

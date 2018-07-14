@@ -1,10 +1,11 @@
 using OrdinaryDiffEq: phi, phi, phiv, phiv_timestep, expv, expv_timestep, arnoldi, getH, getV
+using LinearAlgebra, SparseArrays, Random, Test
 
 @testset "Exponential Utilities" begin
   # Scalar phi
   K = 4
   z = 0.1
-  P = zeros(K+1); P[1] = exp(z)
+  P = fill(0., K+1); P[1] = exp(z)
   for i = 1:K
     P[i+1] = (P[i] - 1/factorial(i-1))/z
   end
@@ -12,7 +13,7 @@ using OrdinaryDiffEq: phi, phi, phiv, phiv_timestep, expv, expv_timestep, arnold
 
   # Matrix phi
   A = [0.1 0.2; 0.3 0.4]
-  P = Vector{Matrix{Float64}}(K+1); P[1] = expm(A)
+  P = Vector{Matrix{Float64}}(undef, K+1); P[1] = exp(A)
   for i = 1:K
     P[i+1] = (P[i] - 1/factorial(i-1)*I) / A
   end
@@ -24,9 +25,9 @@ using OrdinaryDiffEq: phi, phi, phiv, phiv_timestep, expv, expv_timestep, arnold
   A = randn(n, n)
   t = 1e-2
   b = randn(n)
-  @test expm(t * A) * b ≈ expv(t, A, b; m=m)
+  @test exp(t * A) * b ≈ expv(t, A, b; m=m)
   P = phi(t * A, K)
-  W = zeros(n, K+1)
+  W = fill(0., n, K+1)
   for i = 1:K+1
     W[:,i] = P[i] * b
   end
@@ -52,7 +53,7 @@ using OrdinaryDiffEq: phi, phi, phiv, phiv_timestep, expv, expv_timestep, arnold
   K = 4
   t = 5.0
   tol = 1e-7
-  A = spdiagm((ones(n-1), -2*ones(n), ones(n-1)), (-1, 0, 1))
+  A = spdiagm(-1=>ones(n-1), 0=>-2*ones(n), 1=>ones(n-1))
   B = randn(n, K+1)
   Phi_half = phi(t/2 * A, K)
   Phi = phi(t * A, K)

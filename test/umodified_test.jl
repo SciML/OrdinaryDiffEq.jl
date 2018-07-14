@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Base.Test
+using OrdinaryDiffEq, Test
 
 @testset "u_modifed Tests" begin
   T = 1000.0; Ttr = 0.0;

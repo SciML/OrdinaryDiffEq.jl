@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Base.Test
+using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
 
 # TODO: clean up
 @testset "Mass Matrix Accuracy Tests" begin
@@ -7,12 +7,12 @@ using OrdinaryDiffEq, Base.Test
            2 1 3]
   mm_b = mm_A*ones(3)
   function mm_f(du,u,p,t)
-    A_mul_B!(du,mm_A,u)
+    mul!(du,mm_A,u)
     tmp = t*mm_b
     du .+= tmp
   end
   mm_f(::Type{Val{:analytic}},u0,p,t) = @. 2ones(3)*exp(t) - t - 1
-  mm_g(du,u,p,t) = du .= u + t
+  mm_g(du,u,p,t) = du .= u .+ t
   mm_g(::Type{Val{:analytic}},u0,p,t) = @. 2ones(3)*exp(t) - t - 1
   prob2 = ODEProblem(mm_g,ones(3),(0.0,1.0))
   prob = ODEProblem(mm_f,ones(3),(0.0,1.0),mass_matrix=mm_A)
@@ -99,7 +99,7 @@ sol2 = solve(prob2, TRBDF2(),adaptive=false,dt=1/10)
   u0 = [0.,1.]
   tspan = (0.0, 1.0)
 
-  M = zeros(2,2)
+  M = fill(0., 2,2)
   M[1,1] = 1.
 
   m_ode_prob = ODEProblem(f!, u0, tspan, mass_matrix=M)
@@ -115,7 +115,7 @@ sol2 = solve(prob2, TRBDF2(),adaptive=false,dt=1/10)
       du[2] = u[1]
       return
   end
-  u0 = zeros(2)
+  u0 = fill(0., 2)
 
   m_ode_prob = ODEProblem(f2!, u0, tspan, mass_matrix=M)
   @test_nowarn sol = solve(m_ode_prob, Rosenbrock23())

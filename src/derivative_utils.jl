@@ -5,7 +5,7 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
 
     # Time derivative
     if !repeat_step # skip calculation if step is repeated
-      if has_tgrad(f)
+      if DiffEqBase.has_tgrad(f)
         f(Val{:tgrad}, dT, uprev, p, t)
       else
         tf.uprev = uprev
@@ -22,14 +22,14 @@ end
 function calc_J!(integrator, cache, is_compos)
     @unpack t,dt,uprev,u,f,p = integrator
     @unpack du1,uf,J,jac_config = cache
-    if has_jac(f)
+    if DiffEqBase.has_jac(f)
       f(Val{:jac}, J, uprev, p, t)
     else
       uf.t = t
       uf.p = p
       jacobian!(J, uf, uprev, du1, integrator, jac_config)
     end
-    is_compos && (integrator.eigen_est = norm(J, Inf))
+    is_compos && (integrator.eigen_est = opnorm(J, Inf))
 end
 
 function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_step, W_transform=false)
@@ -42,7 +42,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
 
     # calculate W
     new_W = true
-    if has_invW(f)
+    if DiffEqBase.has_invW(f)
       # skip calculation of inv(W) if step is repeated
       !repeat_step && W_transform ? f(Val{:invW_t}, W, uprev, p, dtgamma, t) :
                                     f(Val{:invW}, W, uprev, p, dtgamma, t) # W == inverse W
@@ -52,7 +52,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
       # skip calculation of J if step is repeated
       if repeat_step || (alg_can_repeat_jac(alg) &&
                          (!integrator.last_stepfail && cache.newton_iters == 1 &&
-                          cache.ηold < integrator.alg.new_jac_conv_bound))
+                          cache.ηold < alg.new_jac_conv_bound))
         new_jac = false
       else
         new_jac = true
@@ -103,7 +103,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
       W = inv(dtgamma) - J
     end
   end
-  iscompo && (integrator.eigen_est = isarray ? norm(J, Inf) : J)
+  iscompo && (integrator.eigen_est = isarray ? opnorm(J, Inf) : J)
   W
 end
 

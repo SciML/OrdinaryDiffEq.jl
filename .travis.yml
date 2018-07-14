@@ -4,7 +4,7 @@ os:
   - linux
 #  - osx
 julia:
-  - 0.6
+  - 0.7
   - nightly
 env:
   - GROUP=Regression
@@ -15,7 +15,6 @@ env:
 matrix:
   allow_failures:
     - julia: nightly
-  fast_finish: true
 notifications:
   email: false
 after_success:

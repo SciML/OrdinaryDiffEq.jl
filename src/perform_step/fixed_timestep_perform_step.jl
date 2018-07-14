@@ -1,6 +1,6 @@
 function initialize!(integrator,cache::FunctionMapConstantCache)
   integrator.kshortsize = 0
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 end
 
 function perform_step!(integrator,cache::FunctionMapConstantCache,repeat_step=false)
@@ -29,14 +29,14 @@ function perform_step!(integrator,cache::FunctionMapCache,repeat_step=false)
       f(u,uprev,p,t)
     end
     if typeof(u) <: DEDataArray # Needs to get the fields, since updated uprev
-      copy_fields!(u,uprev)
+      DiffEqBase.copy_fields!(u,uprev)
     end
   end
 end
 
 function initialize!(integrator,cache::EulerConstantCache)
   integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -74,7 +74,7 @@ end
 
 function initialize!(integrator,cache::Union{HeunConstantCache,RalstonConstantCache})
   integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -169,7 +169,7 @@ end
 function initialize!(integrator,cache::MidpointConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
   integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -224,7 +224,7 @@ end
 function initialize!(integrator,cache::RK4ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
   integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -320,7 +320,7 @@ end
 function initialize!(integrator,cache::CarpenterKennedy2N54ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
   integrator.kshortsize = 1
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)

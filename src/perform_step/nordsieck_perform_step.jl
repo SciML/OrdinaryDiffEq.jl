@@ -1,6 +1,6 @@
 function initialize!(integrator,cache::AN5ConstantCache)
   integrator.kshortsize = 7
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -107,7 +107,7 @@ end
   if cache.order == 1
     ## Start the Nordsieck vector in two shots!
     perform_step!(integrator, tsit5cache, repeat_step)
-    copy!(tmp, integrator.u)
+    copyto!(tmp, integrator.u)
     cache.order = 4
     @. z[1] = integrator.uprev
     @. z[2] = integrator.k[1]*dt
@@ -172,7 +172,7 @@ end
 
 function initialize!(integrator,cache::JVODEConstantCache)
   integrator.kshortsize = 7
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
