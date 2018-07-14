@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, Test
+using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
 import DiffEqProblemLibrary.ODEProblemLibrary: van
 
 @testset "Stiffness Detection Tests" begin

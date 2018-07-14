@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, Test, Statistics
+using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
 import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_2Dlinear, prob_ode_linear
 
 @testset "Scalar Discrete Problem" begin
