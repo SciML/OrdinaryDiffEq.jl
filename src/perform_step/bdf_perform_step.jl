@@ -288,26 +288,22 @@ end
 
 function perform_step!(integrator,cache::QNDF2ConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack pass1,pass2,pdt,uprev2,uprev3,dtₙ₋₁,dtₙ₋₂,D,D2,R,U = cache
+  @unpack uprev2,uprev3,dtₙ₋₁,dtₙ₋₂,D,D2,R,U = cache
   cnt = integrator.iter
-  pdt = dt
   k = 2
-  flag = dtₙ₋₁ != dtₙ₋₂
-
-  if flag && cnt != 1
-    if pass1
-      integrator.dt = dtₙ₋₁
-    elseif pass2
-      integrator.dt = pdt
-    end
-  end
-
-  dt = integrator.dt
-
-  if cnt == 1 || cnt == 2 || flag
+  if cnt == 1 || cnt == 2
     κ = zero(integrator.alg.kappa)
     γ₁ = 1//1
     γ₂ = 1//1
+  elseif dtₙ₋₁ != dtₙ₋₂
+    κ = integrator.alg.kappa
+    γ₁ = 1//1
+    γ₂ = 1//1 + 1//2
+    ρ₁ = dt/dtₙ₋₁
+    ρ₂ = dt/dtₙ₋₂
+    D[1] = uprev - uprev2
+    D[1] = D[1] * ρ₁
+    D[2] = D[1] - ((uprev2 - uprev3) * ρ₂)
   else
     κ = integrator.alg.kappa
     γ₁ = 1//1
@@ -338,37 +334,22 @@ function perform_step!(integrator,cache::QNDF2ConstantCache,repeat_step=false)
   fail_convergence && return
   u = tmp + γ*z
 
-  if integrator.opts.adaptive && integrator.success_iter > 0 && flag
-    # bdf1_EEst!(integrator, u, uprev, cache)
-    D[1] = uprev - uprev2
-    if dt == dtₙ₋₁
-      integrator.EEst = (u - uprev - D[1])/2
+  if integrator.opts.adaptive
+    if integrator.success_iter == 0
+      integrator.EEst = one(integrator.EEst)
+    elseif integrator.success_iter == 1
+      integrator.EEst = (u - uprev) - ((uprev - uprev2) * dt/dtₙ₋₁)
     else
-      D[1] = D[1] * (-dt/dtₙ₋₁ * -1)
-      integrator.EEst = (u - uprev - D[1])/2
+      D2[1] = u - uprev
+      D2[2] = D2[1] - D[1]
+      D2[3] = D2[2] - D[2]
+      utilde = (κ*γ₂ + inv(k+1)) * D2[3]
+      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp)
     end
-    if integrator.EEst > one(integrator.EEst)
-      if pass1
-        cache.pass1 = false
-        cache.pdt = pdt
-      else
-        cache.pass2 = false
-      end
-      return
-    end
-    cache.pass2 = cache.pass1 = true
   end
-
-  if integrator.opts.adaptive && integrator.success_iter > 1 && !flag
-    D2[1] = u - uprev
-    D2[2] = D2[1] - D[1]
-    D2[3] = D2[2] - D[2]
-    utilde = (κ*γ₂ + inv(k+1)) * D2[3]
-    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(atmp)
-    if integrator.EEst > one(integrator.EEst)
-      return
-    end
+  if integrator.EEst > one(integrator.EEst)
+    return
   end
 
   cache.uprev3 = uprev2
