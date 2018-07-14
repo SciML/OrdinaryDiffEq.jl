@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, DiffEqDevTools, Test
+using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
 import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
 
 probArr = [prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear]

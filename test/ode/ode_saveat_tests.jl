@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, Test
+using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
 import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 
 @testset "saveat Tests" begin

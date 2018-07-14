@@ -1,8 +1,6 @@
 using OrdinaryDiffEq
 using Test, LinearAlgebra, Statistics
 
-using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
-
 const CPU_FLOPS = peakflops()
 const LONGER_TESTS = false
 
