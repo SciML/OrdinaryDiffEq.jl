@@ -22,8 +22,6 @@ for i = 1:2
   @test abs(sim2.𝒪est[:l∞]-2) < testTol
   sim2 = test_convergence(dts,prob,Midpoint())
   @test abs(sim2.𝒪est[:l∞]-2) < testTol
-  sim2 = test_convergence(dts,prob,ROCK2())
-  @test abs(sim2.𝒪est[:l∞]-2) < testTol
   sim3 = test_convergence(dts,prob,RK4())
   @test abs(sim3.𝒪est[:l∞]-4) < testTol
   sim4 = test_convergence(dts,prob,BS3())
