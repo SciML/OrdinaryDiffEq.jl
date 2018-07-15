@@ -9,20 +9,20 @@ module OrdinaryDiffEq
 
   using MuladdMacro
 
+  using LinearAlgebra
+
   # Interfaces
-  import DiffEqBase: solve, solve!, init, step!, build_solution, initialize!
+  import DiffEqBase: solve!, step!, initialize!
 
   # Internal utils
   import DiffEqBase: ODE_DEFAULT_NORM, ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE, ODE_DEFAULT_UNSTABLE_CHECK
 
-  using DiffEqOperators: normbound, DiffEqArrayOperator
+  using DiffEqOperators: DiffEqArrayOperator
 
   import RecursiveArrayTools: chain, recursivecopy!
 
   using Parameters, GenericSVD, ForwardDiff, RecursiveArrayTools,
         NLsolve, Juno, Roots, DataStructures, DiffEqDiffTools
-
-  import Base: linspace
 
   import ForwardDiff.Dual
 
@@ -48,7 +48,6 @@ module OrdinaryDiffEq
 
   include("misc_utils.jl")
   include("algorithms.jl")
-  include("alg_utils.jl")
 
   include("caches/basic_caches.jl")
   include("caches/low_order_rk_caches.jl")
@@ -65,9 +64,12 @@ module OrdinaryDiffEq
   include("caches/rosenbrock_caches.jl")
   include("caches/rkn_caches.jl")
   include("caches/adams_bashforth_moulton_caches.jl")
-  include("caches/adams_nordsieck_caches.jl")
+  include("caches/nordsieck_caches.jl")
   include("caches/bdf_caches.jl")
   include("caches/rkc_caches.jl")
+  include("caches/euler_imex_caches.jl")
+
+  include("alg_utils.jl")
 
   include("tableaus/low_order_rk_tableaus.jl")
   include("tableaus/high_order_rk_tableaus.jl")
@@ -103,9 +105,10 @@ module OrdinaryDiffEq
   include("perform_step/threaded_rk_perform_step.jl")
   include("perform_step/composite_perform_step.jl")
   include("perform_step/adams_bashforth_moulton_perform_step.jl")
-  include("perform_step/adams_nordsieck_perform_step.jl")
+  include("perform_step/nordsieck_perform_step.jl")
   include("perform_step/bdf_perform_step.jl")
   include("perform_step/rkc_perform_step.jl")
+  include("perform_step/euler_imex_perform_step.jl")
 
   include("dense/generic_dense.jl")
   include("dense/interpolants.jl")
@@ -119,6 +122,7 @@ module OrdinaryDiffEq
   include("nlsolve_utils.jl")
   include("nordsieck_utils.jl")
   include("adams_utils.jl")
+  include("bdf_utils.jl")
   include("exponential_utils.jl")
   include("rkc_utils.jl")
   include("derivative_wrappers.jl")
@@ -149,7 +153,7 @@ module OrdinaryDiffEq
          SSPRK54, SSPRK104, RK4, ExplicitRK, OwrenZen3, OwrenZen4, OwrenZen5,
          BS3, BS5, CarpenterKennedy2N54,
          DP5, DP5Threaded, Tsit5, DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8,
-         Vern9,Feagin10, Feagin12, Feagin14, CompositeAlgorithm
+         Vern9,Feagin10, Feagin12, Feagin14, CompositeAlgorithm, Anas5
 
   export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, Kvaerno3,
          KenCarp3, Cash4, Hairer4, Hairer42, SSPSDIRK2, Kvaerno4, Kvaerno5,
@@ -164,7 +168,8 @@ module OrdinaryDiffEq
 
   export GenericIIF1, GenericIIF2
 
-  export LawsonEuler, NorsettEuler, ETD1, ETD2, ETDRK4
+  export LawsonEuler, NorsettEuler, ETD1, ETDRK2, ETDRK3, ETDRK4, HochOst4, Exp4, EPIRK4s3A, EPIRK4s3B,
+         EPIRK5s3, EXPRB53s3, EPIRK5P1, EPIRK5P2, ETD2
 
   export SymplecticEuler, VelocityVerlet, VerletLeapfrog, PseudoVerletLeapfrog,
          McAte2, Ruth3, McAte3, CandyRoz4, McAte4, McAte42, McAte5,
@@ -181,9 +186,13 @@ module OrdinaryDiffEq
 
   export VCAB3, VCAB4, VCAB5, VCABM3, VCABM4, VCABM5
 
-  export AN5
+  export VCABM
 
-  export ABDF2
+  export IMEXEuler, CNAB2, CNLF2
+
+  export AN5, JVODE, JVODE_Adams
+
+  export ABDF2, QNDF1, QBDF1
 
   export AutoSwitch, AutoTsit5, AutoDP5,
          AutoVern6, AutoVern7, AutoVern8, AutoVern9

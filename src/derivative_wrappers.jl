@@ -1,5 +1,5 @@
 function derivative!(df::AbstractArray{<:Number}, f, x::Union{Number,AbstractArray{<:Number}}, fx::AbstractArray{<:Number}, integrator, grad_config)
-    if alg_autodiff(integrator.alg)
+    if get_current_alg_autodiff(integrator.alg, integrator.cache)
         ForwardDiff.derivative!(df, f, fx, x, grad_config)
     else
         DiffEqDiffTools.finite_difference_gradient!(df, f, x, grad_config)
@@ -7,8 +7,8 @@ function derivative!(df::AbstractArray{<:Number}, f, x::Union{Number,AbstractArr
     nothing
 end
 
-function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, fx::AbstractArray{<:Number}, integrator::DEIntegrator, jac_config)
-    if alg_autodiff(integrator.alg)
+function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, fx::AbstractArray{<:Number}, integrator::DiffEqBase.DEIntegrator, jac_config)
+    if get_current_alg_autodiff(integrator.alg, integrator.cache)
       ForwardDiff.jacobian!(J, f, fx, x, jac_config)
     else
       DiffEqDiffTools.finite_difference_jacobian!(J, f, x, jac_config)
@@ -17,7 +17,7 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, f
 end
 
 function build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
-  if !has_jac(f)
+  if !DiffEqBase.has_jac(f)
     if alg_autodiff(alg)
       jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
     else
@@ -34,7 +34,7 @@ function build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
 end
 
 function build_grad_config(alg,f,tf,du1,t)
-  if !has_tgrad(f)
+  if !DiffEqBase.has_tgrad(f)
     if alg_autodiff(alg)
       grad_config = ForwardDiff.DerivativeConfig(tf,du1,t)
     else

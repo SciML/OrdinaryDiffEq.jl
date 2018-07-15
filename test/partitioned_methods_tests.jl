@@ -1,8 +1,6 @@
-using OrdinaryDiffEq, Base.Test, RecursiveArrayTools, DiffEqDevTools
+using OrdinaryDiffEq, Test, RecursiveArrayTools, DiffEqDevTools
 
-gc()
-
-u0 = zeros(2)
+u0 = fill(0., 2)
 v0 = ones(2)
 f1 = function (dv,v,u,p,t)
   dv .= -u
@@ -10,11 +8,12 @@ end
 f2 = function (du,v,u,p,t)
   du .= v
 end
-prob = DynamicalODEProblem(f1,f2,v0,u0,(0.0,5.0))
-function (::typeof(prob.f))(::Type{Val{:analytic}}, y0, p, x)
+function analytic_sol(y0, p, x)
   v0, u0 = y0
   ArrayPartition(-u0*sin(x) + v0*cos(x),u0*cos(x) + v0*sin(x))
 end
+fun = DynamicalODEFunction(f1,f2;analytic=analytic_sol)
+prob = DynamicalODEProblem(fun,v0,u0,(0.0,5.0))
 
 sol = solve(prob,SymplecticEuler(),dt=1/2)
 sol_verlet = solve(prob,VelocityVerlet(),dt=1/100)
@@ -26,11 +25,8 @@ interps = sol(interp_time)
 
 sol_tsit5 = solve(prob,Tsit5())
 
-prob = SecondOrderODEProblem(f1,v0,u0,(0.0,5.0))
-function (::typeof(prob.f))(::Type{Val{:analytic}}, y0, p, x)
-  v0, u0 = y0
-  ArrayPartition(-u0*sin(x) + v0*cos(x),u0*cos(x) + v0*sin(x))
-end
+fun = DynamicalODEFunction(f1;analytic=analytic_sol)
+prob = SecondOrderODEProblem(fun,v0,u0,(0.0,5.0))
 
 sol2 = solve(prob,SymplecticEuler(),dt=1/2)
 sol2_verlet = solve(prob,VelocityVerlet(),dt=1/100)
@@ -47,7 +43,7 @@ sol2_verlet(0.1)
 
 println("Convergence tests")
 
-dts = 1.//2.^(6:-1:3)
+dts = 1 .//2 .^(6:-1:3)
 # Symplectic Euler
 sim = test_convergence(dts,prob,SymplecticEuler(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 1 rtol = 1e-1
@@ -91,7 +87,7 @@ sim = test_convergence(dts,prob,CalvoSanz4(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
 
-dts = 1.//2.^(4:-1:0)
+dts = 1 .//2 .^(4:-1:0)
 sim = test_convergence(dts,prob,McAte5(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 5 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
@@ -115,7 +111,7 @@ sim = test_convergence(dts,prob,KahanLi8(),dense_errors=true)
 sol = solve(prob,Nystrom4(),dt=1/1000)
 
 # Nyström method
-dts = 1.//2.^(9:-1:6)
+dts = 1 .//2 .^(9:-1:6)
 sim = test_convergence(dts,prob,Nystrom4(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
@@ -128,23 +124,19 @@ sim = test_convergence(dts,prob,IRKN3(),dense_errors=true)
 sim = test_convergence(dts,prob,IRKN4(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
-dts = 1.0./2.0.^(5:-1:0)
+dts = 1.0 ./2.0 .^(5:-1:0)
 sim = test_convergence(dts,prob,Nystrom5VelocityIndependent(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 5 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
 
-dts = 1.0./2.0.^(2:-1:-2)
+dts = 1.0 ./2.0 .^(2:-1:-2)
 sim = test_convergence(dts,prob,SofSpa10(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 10 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
 
 # Methods need BigFloat to test convergence rate
 dts = big"1.0"./big"2.0".^(5:-1:1)
-prob_big = SecondOrderODEProblem(f1,[big"1.0",big"1.0"],[big"0.0", big"0.0"],(big"0.",big"70."))
-function (::typeof(prob_big.f))(::Type{Val{:analytic}}, y0, p, x)
-  v0, u0 = y0
-  ArrayPartition(-u0*sin(x) + v0*cos(x),u0*cos(x) + v0*sin(x))
-end
+prob_big = SecondOrderODEProblem(fun,[big"1.0",big"1.0"],[big"0.0", big"0.0"],(big"0.",big"70."))
 sim = test_convergence(dts,prob_big,DPRKN6(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 6 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 6 rtol = 1e-1
@@ -171,7 +163,7 @@ sol = solve(prob, DPRKN12())
 sol = solve(prob, ERKN4(),reltol=1e-8)
 @test length(sol.u) < 38
 sol = solve(prob, ERKN5(),reltol=1e-8)
-@test length(sol.u) < 29
+@test length(sol.u) < 31
 
 # Test array partition outside of symplectic
 
@@ -199,15 +191,12 @@ f22 = function (v,u,p,t)
   v
 end
 
-prob = DynamicalODEProblem(f12,f22,v0,u0,(0.0,5.0))
-function (::typeof(prob.f))(::Type{Val{:analytic}}, y0, p, x)
-  v0, u0 = y0
-  ArrayPartition(-u0*sin(x) + v0*cos(x),u0*cos(x) + v0*sin(x))
-end
+fun = DynamicalODEFunction(f12,f22;analytic=analytic_sol)
+prob = DynamicalODEProblem(fun,v0,u0,(0.0,5.0))
 
 sol = solve(prob,SymplecticEuler(),dt=1/10)
 
-dts = 1.//2.^(6:-1:3)
+dts = 1 .//2 .^(6:-1:3)
 # Symplectic Euler
 sim = test_convergence(dts,prob,SymplecticEuler(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 1 rtol = 1e-1
@@ -251,7 +240,7 @@ sim = test_convergence(dts,prob,CalvoSanz4(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
 
-dts = 1.//2.^(4:-1:0)
+dts = 1 .//2 .^(4:-1:0)
 sim = test_convergence(dts,prob,McAte5(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 5 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
@@ -272,7 +261,7 @@ sim = test_convergence(dts,prob,KahanLi8(),dense_errors=true)
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
 
 # Nyström method
-dts = 1.//2.^(9:-1:6)
+dts = 1 .//2 .^(9:-1:6)
 sim = test_convergence(dts,prob,Nystrom4(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
@@ -285,23 +274,19 @@ sim = test_convergence(dts,prob,Nystrom4VelocityIndependent(),dense_errors=true)
 @test_broken sim = test_convergence(dts,prob,IRKN4(),dense_errors=true)
 #@test_broken sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
 #@test_broken sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
-dts = 1.0./2.0.^(5:-1:0)
+dts = 1.0 ./2.0 .^(5:-1:0)
 sim = test_convergence(dts,prob,Nystrom5VelocityIndependent(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 5 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
 
-dts = 1.0./2.0.^(2:-1:-2)
+dts = 1.0 ./2.0 .^(2:-1:-2)
 sim = test_convergence(dts,prob,SofSpa10(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 10 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
 
 # Methods need BigFloat to test convergence rate
 dts = big"1.0"./big"2.0".^(5:-1:1)
-prob_big = SecondOrderODEProblem(f12,big"1.0",big"0.0",(big"0.",big"70."))
-function (::typeof(prob_big.f))(::Type{Val{:analytic}}, y0, p, x)
-  v0, u0 = y0
-  ArrayPartition(-u0*sin(x) + v0*cos(x),u0*cos(x) + v0*sin(x))
-end
+prob_big = SecondOrderODEProblem(fun,big"1.0",big"0.0",(big"0.",big"70."))
 sim = test_convergence(dts,prob_big,DPRKN6(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 6 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 6 rtol = 1e-1

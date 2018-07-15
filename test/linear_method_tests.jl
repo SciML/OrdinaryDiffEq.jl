@@ -1,8 +1,8 @@
-using OrdinaryDiffEq, Base.Test, DiffEqDevTools, DiffEqOperators
+using OrdinaryDiffEq, Test, DiffEqDevTools, DiffEqOperators
 u0 = rand(2)
 A = DiffEqArrayOperator([2.0 -1.0; -1.0 2.0])
 function (p::typeof(A))(::Type{Val{:analytic}},u0,p,t)
-    expm(p.A*t)*u0
+    exp(p.A*t)*u0
 end
 
 prob = ODEProblem(A,u0,(0.0,1.0))
@@ -26,7 +26,7 @@ sol = solve(prob,LinearImplicitEuler())
 B = DiffEqArrayOperator(ones(2,2))
 L = AffineDiffEqOperator{Float64}((A,B),(),rand(2))
 function (p::typeof(L))(::Type{Val{:analytic}},u0,p,t)
-    expm((p.As[1].A+p.As[2].A)*t)*u0
+    exp((p.As[1].A+p.As[2].A)*t)*u0
 end
 
 # Midpoint splitting
@@ -37,7 +37,7 @@ sol = solve(prob,MidpointSplitting(),dt=1/10)
 
 
 ## Midpoint splitting convergence
-## 
+##
 ## We use the inhomogeneous Lorentz equation for an electron in a
 ## time-dependent field. To write this on matrix form and simplify
 ## comparison with the analytic solution, we introduce two dummy

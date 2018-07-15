@@ -1,12 +1,12 @@
 # Use Recursion to find the first callback for type-stability
 
 # Base Case: Only one callback
-function find_first_continuous_callback(integrator, callback::AbstractContinuousCallback)
+function find_first_continuous_callback(integrator, callback::DiffEqBase.AbstractContinuousCallback)
   (find_callback_time(integrator,callback)...,1,1)
 end
 
 # Starting Case: Compute on the first callback
-function find_first_continuous_callback(integrator, callback::AbstractContinuousCallback, args...)
+function find_first_continuous_callback(integrator, callback::DiffEqBase.AbstractContinuousCallback, args...)
   find_first_continuous_callback(integrator,find_callback_time(integrator,callback)...,1,1,args...)
 end
 
@@ -32,10 +32,10 @@ end
   if callback.interp_points!=0
     ode_addsteps!(integrator)
   end
-  Θs = linspace(typeof(integrator.t)(0),typeof(integrator.t)(1),callback.interp_points)
+  Θs = range(typeof(integrator.t)(0), stop=typeof(integrator.t)(1), length=callback.interp_points)
   interp_index = 0
   # Check if the event occured
-  if typeof(callback.idxs) <: Void
+  if typeof(callback.idxs) <: Nothing
     previous_condition = callback.condition(integrator.uprev,integrator.tprev,integrator)
   elseif typeof(callback.idxs) <: Number
     previous_condition = callback.condition(integrator.uprev[callback.idxs],integrator.tprev,integrator)
@@ -43,14 +43,49 @@ end
     previous_condition = callback.condition(@view(integrator.uprev[callback.idxs]),integrator.tprev,integrator)
   end
 
-  if integrator.event_last_time
-    prev_sign = 0.0
+  if integrator.event_last_time && abs(previous_condition) < callback.abstol
+
+    # abs(previous_condition) < callback.abstol is for multiple events: only
+    # condition this on the correct event
+
+    # If there was a previous event, utilize the derivative at the start to
+    # chose the previous sign. If the derivative is positive at tprev, then
+    # we treat the value as positive, and derivative is negative then we
+    # treat the value as negative, reguardless of the postiivity/negativity
+    # of the true value due to it being =0 sans floating point issues.
+
+    if callback.interp_points==0
+      ode_addsteps!(integrator)
+    end
+
+    if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache
+      if typeof(callback.idxs) <: Nothing
+        tmp = integrator.cache.tmp
+      else !(typeof(callback.idxs) <: Number)
+        tmp = @view integrator.cache.tmp[callback.idxs]
+      end
+    end
+
+    if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache && !(typeof(callback.idxs) <: Number)
+      ode_interpolant!(tmp,100eps(typeof(integrator.tprev)),
+                       integrator,callback.idxs,Val{0})
+    else
+
+      tmp = ode_interpolant(100eps(typeof(integrator.tprev)),
+                            integrator,callback.idxs,Val{0})
+    end
+
+    tmp_condition = callback.condition(tmp,integrator.tprev +
+                                       100eps(typeof(integrator.tprev)),
+                                       integrator)
+
+    prev_sign = sign((tmp_condition-previous_condition)/integrator.dt)
   else
     prev_sign = sign(previous_condition)
   end
 
   prev_sign_index = 1
-  if typeof(callback.idxs) <: Void
+  if typeof(callback.idxs) <: Nothing
     next_sign = sign(callback.condition(integrator.u,integrator.t,integrator))
   elseif typeof(callback.idxs) <: Number
     next_sign = sign(callback.condition(integrator.u[callback.idxs],integrator.t,integrator))
@@ -58,12 +93,12 @@ end
     next_sign = sign(callback.condition(@view(integrator.u[callback.idxs]),integrator.t,integrator))
   end
 
-  if ((prev_sign<0 && !(typeof(callback.affect!)<:Void)) || (prev_sign>0 && !(typeof(callback.affect_neg!)<:Void))) && prev_sign*next_sign<=0
+  if ((prev_sign<0 && !(typeof(callback.affect!)<:Nothing)) || (prev_sign>0 && !(typeof(callback.affect_neg!)<:Nothing))) && prev_sign*next_sign<=0
     event_occurred = true
     interp_index = callback.interp_points
   elseif callback.interp_points!=0  && !(typeof(integrator.alg) <: FunctionMap)# Use the interpolants for safety checking
     if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache
-      if typeof(callback.idxs) <: Void
+      if typeof(callback.idxs) <: Nothing
         tmp = integrator.cache.tmp
       else !(typeof(callback.idxs) <: Number)
         tmp = @view integrator.cache.tmp[callback.idxs]
@@ -76,14 +111,12 @@ end
         tmp = ode_interpolant(Θs[i],integrator,callback.idxs,Val{0})
       end
       new_sign = callback.condition(tmp,integrator.tprev+integrator.dt*Θs[i],integrator)
-      if prev_sign == 0
-        prev_sign = sign(new_sign)
-        prev_sign_index = i
-      end
-      if ((prev_sign<0 && !(typeof(callback.affect!)<:Void)) || (prev_sign>0 && !(typeof(callback.affect_neg!)<:Void))) && prev_sign*new_sign<0
+if ((prev_sign<0 && !(typeof(callback.affect!)<:Nothing)) || (prev_sign>0 && !(typeof(callback.affect_neg!)<:Nothing))) && prev_sign*new_sign<0
         event_occurred = true
         interp_index = i
         break
+      else
+        prev_sign_index = i
       end
     end
   end
@@ -94,7 +127,7 @@ end
 function find_callback_time(integrator,callback)
   event_occurred,interp_index,Θs,prev_sign,prev_sign_index = determine_event_occurance(integrator,callback)
   if event_occurred
-    if typeof(callback.condition) <: Void
+    if typeof(callback.condition) <: Nothing
       new_t = zero(typeof(integrator.t))
     else
       if callback.interp_points!=0
@@ -107,7 +140,7 @@ function find_callback_time(integrator,callback)
       if callback.rootfind && !(typeof(integrator.alg) <: FunctionMap)
         if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache
           _cache = first(get_tmp_cache(integrator))
-          if typeof(callback.idxs) <: Void
+          if typeof(callback.idxs) <: Nothing
             tmp = _cache
           elseif !(typeof(callback.idxs) <: Number)
             tmp = @view _cache[callback.idxs]
@@ -159,13 +192,13 @@ function apply_callback!(integrator,callback::ContinuousCallback,cb_time,prev_si
   integrator.u_modified = true
 
   if prev_sign < 0
-    if typeof(callback.affect!) <: Void
+    if typeof(callback.affect!) <: Nothing
       integrator.u_modified = false
     else
       callback.affect!(integrator)
     end
   elseif prev_sign > 0
-    if typeof(callback.affect_neg!) <: Void
+    if typeof(callback.affect_neg!) <: Nothing
       integrator.u_modified = false
     else
       callback.affect_neg!(integrator)

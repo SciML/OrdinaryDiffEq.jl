@@ -1,8 +1,10 @@
-using OrdinaryDiffEq, DiffEqProblemLibrary, DiffEqDevTools, Base.Test
+using OrdinaryDiffEq, DiffEqDevTools, Test, Random
+using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
+import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, prob_ode_bigfloat2Dlinear
 
 srand(100)
 
-dts = 1.//2.^(8:-1:4)
+dts = 1 .//2 .^(8:-1:4)
 testTol = 0.25
 
 f = (u,p,t)->cos(t)
@@ -20,16 +22,6 @@ prob_ode_nonlinear = ODEProblem(f, 1.,(0.,0.5))
 f = (du,u,p,t)->du[1]=sin(u[1])
 (::typeof(f))(::Type{Val{:analytic}},u0,p,t) = [2*acot(exp(-t)*cot(0.5))]
 prob_ode_nonlinear_inplace = ODEProblem(f,[1.],(0.,0.5))
-
-const linear_bigα2 = parse(BigFloat,"1.01")
-f_2dlinearbig = (du,u,p,t) -> begin
-  for i in 1:length(u)
-    du[i] = linear_bigα2*u[i]
-  end
-end
-(f::typeof(f_2dlinearbig))(::Type{Val{:analytic}},u0,p,t) = u0*exp.(1.01*t)
-prob_ode_bigfloat2Dlinear = ODEProblem(f_2dlinearbig,map(BigFloat,rand(4,2)).*ones(4,2)/2,(0.0,1.0))
-
 
 test_problems_only_time = [prob_ode_sin, prob_ode_sin_inplace]
 test_problems_linear = [prob_ode_linear, prob_ode_2Dlinear, prob_ode_bigfloat2Dlinear]
@@ -73,9 +65,9 @@ sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg), 
 @test all(sol.u .>= 0)
 # test SSP property of dense output
 sol = solve(test_problem_ssp, alg, dt=1.)
-@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, true, linspace(0,8))
+@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, true, range(0, stop=8, length=50))
 sol = solve(test_problem_ssp_inplace, alg, dt=1.)
-@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, true, linspace(0,8))
+@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, true, range(0, stop=8, length=50))
 
 
 alg = SSPRK33()
@@ -98,9 +90,9 @@ sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg), 
 @test all(sol.u .>= 0)
 # test SSP property of dense output
 sol = solve(test_problem_ssp, alg, dt=1.)
-@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, true, linspace(0,8))
+@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, true, range(0, stop=8, length=50))
 sol = solve(test_problem_ssp_inplace, alg, dt=1.)
-@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, true, linspace(0,8))
+@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, true, range(0, stop=8, length=50))
 
 
 alg = SSPRK53()
@@ -194,9 +186,9 @@ sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg), 
 @test all(sol.u .>= 0)
 # test SSP property of dense output
 sol = solve(test_problem_ssp, alg, dt=8/5, adaptive=false)
-@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, true, linspace(0,8))
+@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, true, range(0, stop=8, length=50))
 sol = solve(test_problem_ssp_inplace, alg, dt=8/5, adaptive=false)
-@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, true, linspace(0,8))
+@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, true, range(0, stop=8, length=50))
 
 
 alg = SSPRK932()

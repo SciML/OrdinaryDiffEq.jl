@@ -1,15 +1,15 @@
-function solve{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
-  prob::AbstractODEProblem,
+function DiffEqBase.__solve(
+  prob::DiffEqBase.AbstractODEProblem,
   alg::algType,timeseries=[],ts=[],ks=[],recompile::Type{Val{recompile_flag}}=Val{true};
-  kwargs...)
+  kwargs...) where {algType<:OrdinaryDiffEqAlgorithm,recompile_flag}
 
-  integrator = init(prob,alg,timeseries,ts,ks,recompile;kwargs...)
+  integrator = DiffEqBase.__init(prob,alg,timeseries,ts,ks,recompile;kwargs...)
   solve!(integrator)
   integrator.sol
 end
 
-function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
-  prob::AbstractODEProblem,
+function DiffEqBase.__init(
+  prob::DiffEqBase.AbstractODEProblem,
   alg::algType,timeseries_init=typeof(prob.u0)[],
   ts_init=eltype(prob.tspan)[],ks_init=[],
   recompile::Type{Val{recompile_flag}}=Val{true};
@@ -19,9 +19,11 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   d_discontinuities= eltype(prob.tspan)[],
   save_idxs = nothing,
   save_everystep = isempty(saveat),
-  save_timeseries = nothing,save_start = true,save_end = true,
+  save_timeseries = nothing,
+  save_start = save_everystep || isempty(saveat) || typeof(saveat) <: Number ? true : prob.tspan[1] in saveat,
+  save_end = save_everystep || isempty(saveat) || typeof(saveat) <: Number ? true : prob.tspan[2] in saveat,
   callback=nothing,
-  dense = save_everystep && !(typeof(alg) <: FunctionMap),
+  dense = save_everystep && !(typeof(alg) <: FunctionMap) && isempty(saveat),
   calck = (callback != nothing && callback != CallbackSet()) || # Empty callback
           (prob.callback != nothing && prob.callback != CallbackSet()) || # Empty prob.callback
           (!isempty(setdiff(saveat,tstops)) || dense), # and no dense output
@@ -32,7 +34,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   reltol=nothing,
   qmax=qmax_default(alg),qmin=qmin_default(alg),
   qsteady_min = qsteady_min_default(alg),
-  qsteady_max = qsteady_min_default(alg),
+  qsteady_max = qsteady_max_default(alg),
   qoldinit=1//10^4, fullnormalize=true,
   failfactor = 2,
   beta2=nothing,
@@ -43,6 +45,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
          typeof(one(eltype(prob.tspan))) <: Integer ? 0 :
          eltype(prob.tspan)(1//10^(10)),
   internalnorm = ODE_DEFAULT_NORM,
+  internalopnorm = LinearAlgebra.opnorm,
   isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
   unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
   verbose = true, force_dtmin = false,
@@ -53,7 +56,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   progress_message = ODE_DEFAULT_PROG_MESSAGE,
   userdata=nothing,
   allow_extrapolation = alg_extrapolates(alg),
-  initialize_integrator=true,kwargs...)
+  initialize_integrator=true,kwargs...) where {algType<:OrdinaryDiffEqAlgorithm,recompile_flag}
 
   if typeof(prob.f)<:Tuple
     if min((mm != I for mm in prob.mass_matrix)...)
@@ -66,12 +69,12 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   end
 
   if !isempty(saveat) && dense
-    warn("Dense output is incompatible with saveat. Please use the SavingCallback from the Callback Library to mix the two behaviors.")
+    @warn("Dense output is incompatible with saveat. Please use the SavingCallback from the Callback Library to mix the two behaviors.")
   end
 
   if (eltype(prob.u0) <: Dual && !(eltype(prob.tspan)<:Dual) ||
      !(eltype(prob.u0) <: Dual) && eltype(prob.tspan)<:Dual) && adaptive
-     warn("Autodifferentiation through the solver with adaptive timestepping requires both time and states to be dual numbers. Please see the FAQ.")
+     @warn("Autodifferentiation through the solver with adaptive timestepping requires both time and states to be dual numbers. Please see the FAQ.")
   end
 
   tType = eltype(prob.tspan)
@@ -103,7 +106,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   uBottomEltype = recursive_bottom_eltype(u)
   uBottomEltypeNoUnits = recursive_unitless_bottom_eltype(u)
 
-  ks = Vector{uType}(0)
+  ks = Vector{uType}(undef, 0)
 
   uEltypeNoUnits = recursive_unitless_eltype(u)
   tTypeNoUnits   = typeof(one(tType))
@@ -133,7 +136,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
 
   if isinplace(prob) && typeof(u) <: AbstractArray && eltype(u) <: Number # Could this be more efficient for other arrays?
     if !(typeof(u) <: ArrayPartition)
-      rate_prototype = similar(u,typeof(oneunit(uBottomEltype)/oneunit(tType)),indices(u))
+      rate_prototype = similar(u,typeof(oneunit(uBottomEltype)/oneunit(tType)),axes(u))
     else
       rate_prototype = similar(u, typeof.(oneunit.(recursive_bottom_eltype.(u.x))./oneunit(tType))...)
     end
@@ -146,7 +149,6 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     tstop_saveat_disc_handling(tstops,saveat,d_discontinuities,tdir,tspan,tType)
 
   callbacks_internal = CallbackSet(callback,prob.callback)
-
 
   ### Algorithm-specific defaults ###
   if save_idxs == nothing
@@ -236,7 +238,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   end
 
   opts = DEOptions{typeof(abstol_internal),typeof(reltol_internal),QT,tType,
-                   typeof(internalnorm),typeof(callbacks_internal),typeof(isoutofdomain),
+                   typeof(internalnorm),typeof(internalopnorm),typeof(callbacks_internal),typeof(isoutofdomain),
                    typeof(progress_message),typeof(unstable_check),typeof(tstops_internal),
                    typeof(d_discontinuities_internal),typeof(userdata),typeof(save_idxs),
                    typeof(maxiters),typeof(tstops),typeof(saveat),
@@ -245,7 +247,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
                        reltol_internal,QT(gamma),QT(qmax),
                        QT(qmin),QT(qsteady_max),
                        QT(qsteady_min),QT(failfactor),tType(dtmax),
-                       tType(dtmin),internalnorm,save_idxs,tstops_internal,saveat_internal,
+                       tType(dtmin),internalnorm,internalopnorm,save_idxs,tstops_internal,saveat_internal,
                        d_discontinuities_internal,
                        tstops,saveat,d_discontinuities,
                        userdata,progress,progress_steps,
@@ -256,12 +258,12 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
                        calck,force_dtmin,advance_to_tstop,stop_at_next_tstop)
 
   if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
-    sol = build_solution(prob,alg,ts,timeseries,
+    sol = DiffEqBase.build_solution(prob,alg,ts,timeseries,
                       dense=dense,k=ks,interp=id,
                       alg_choice=alg_choice,
                       calculate_error = false)
   else
-    sol = build_solution(prob,alg,ts,timeseries,
+    sol = DiffEqBase.build_solution(prob,alg,ts,timeseries,
                       dense=dense,k=ks,interp=id,
                       calculate_error = false)
   end
@@ -272,7 +274,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     cacheType = typeof(cache)
   else
     FType = Function
-    SolType = AbstractODESolution
+    SolType = DiffEqBase.AbstractODESolution
     cacheType =  OrdinaryDiffEqCache
   end
 
@@ -323,7 +325,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
     end
     if isnan(integrator.dt)
       if verbose
-        warn("Automatic dt set the starting dt as NaN, causing instability.")
+        @warn("Automatic dt set the starting dt as NaN, causing instability.")
       end
     end
   elseif integrator.opts.adaptive && integrator.dt > zero(integrator.dt) && integrator.tdir < 0
@@ -333,7 +335,7 @@ function init{algType<:OrdinaryDiffEqAlgorithm,recompile_flag}(
   integrator
 end
 
-function solve!(integrator::ODEIntegrator)
+function DiffEqBase.solve!(integrator::ODEIntegrator)
   @inbounds while !isempty(integrator.opts.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.opts.tstops)
       loopheader!(integrator)
@@ -354,10 +356,10 @@ function solve!(integrator::ODEIntegrator)
     f = integrator.sol.prob.f
   end
 
-  if has_analytic(f)
-    calculate_solution_errors!(integrator.sol;timeseries_errors=integrator.opts.timeseries_errors,dense_errors=integrator.opts.dense_errors)
+  if !(typeof(integrator.sol.prob)<:DiscreteProblem) && DiffEqBase.has_analytic(f)
+    DiffEqBase.calculate_solution_errors!(integrator.sol;timeseries_errors=integrator.opts.timeseries_errors,dense_errors=integrator.opts.dense_errors)
   end
-  integrator.sol = solution_new_retcode(integrator.sol,:Success)
+  integrator.sol = DiffEqBase.solution_new_retcode(integrator.sol,:Success)
   nothing
 end
 

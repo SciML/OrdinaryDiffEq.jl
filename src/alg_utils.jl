@@ -1,7 +1,7 @@
 isautodifferentiable(alg::OrdinaryDiffEqAlgorithm) = true
 
 isfsal(alg::OrdinaryDiffEqAlgorithm) = true
-isfsal{MType,VType,fsal}(tab::ExplicitRKTableau{MType,VType,fsal}) = fsal
+isfsal(tab::DiffEqBase.ExplicitRKTableau{MType,VType,fsal}) where {MType,VType,fsal} = fsal
 # isfsal(alg::CompositeAlgorithm) = isfsal(alg.algs[alg.current])
 isfsal(alg::FunctionMap) = false
 isfsal(alg::Rodas4) = false
@@ -14,7 +14,6 @@ get_current_isfsal(alg, cache) = isfsal(alg)
 get_current_isfsal(alg::CompositeAlgorithm, cache) = isfsal(alg.algs[cache.current])
 
 fsal_typeof(alg::OrdinaryDiffEqAlgorithm,rate_prototype) = typeof(rate_prototype)
-fsal_typeof(alg::Union{LawsonEuler,NorsettEuler,ETDRK4},rate_prototype) = ExpRKFsal{typeof(rate_prototype)}
 fsal_typeof(alg::ETD2,rate_prototype) = ETD2Fsal{typeof(rate_prototype)}
 function fsal_typeof(alg::CompositeAlgorithm,rate_prototype)
   fsal = unique(map(x->fsal_typeof(x,rate_prototype), alg.algs))
@@ -52,13 +51,13 @@ qmax_default(alg::CompositeAlgorithm) = minimum(qmax_default.(alg.algs))
 qmax_default(alg::DP8) = 6
 
 get_chunksize(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have a chunk size defined.")
-get_chunksize{CS,AD}(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) = CS
-get_chunksize{CS,AD}(alg::OrdinaryDiffEqImplicitAlgorithm{CS,AD}) = CS
+get_chunksize(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) where {CS,AD} = CS
+get_chunksize(alg::OrdinaryDiffEqImplicitAlgorithm{CS,AD}) where {CS,AD} = CS
 # get_chunksize(alg::CompositeAlgorithm) = get_chunksize(alg.algs[alg.current_alg])
 
 alg_autodiff(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have an autodifferentiation option defined.")
-alg_autodiff{CS,AD}(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) = AD
-alg_autodiff{CS,AD}(alg::OrdinaryDiffEqImplicitAlgorithm{CS,AD}) = AD
+alg_autodiff(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) where {CS,AD} = AD
+alg_autodiff(alg::OrdinaryDiffEqImplicitAlgorithm{CS,AD}) where {CS,AD} = AD
 # alg_autodiff(alg::CompositeAlgorithm) = alg_autodiff(alg.algs[alg.current_alg])
 get_current_alg_autodiff(alg, cache) = alg_autodiff(alg)
 get_current_alg_autodiff(alg::CompositeAlgorithm, cache) = alg_autodiff(alg.algs[cache.current])
@@ -68,6 +67,7 @@ alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))
 alg_extrapolates(alg::GenericImplicitEuler) = true
 alg_extrapolates(alg::GenericTrapezoid) = true
 alg_extrapolates(alg::ImplicitEuler) = true
+alg_extrapolates(alg::IMEXEuler) = true
 alg_extrapolates(alg::LinearImplicitEuler) = true
 alg_extrapolates(alg::Trapezoid) = true
 alg_extrapolates(alg::ImplicitMidpoint) = true
@@ -88,9 +88,12 @@ alg_extrapolates(alg::IRKN3) = true
 alg_extrapolates(alg::ABDF2) = true
 
 alg_order(alg::OrdinaryDiffEqAlgorithm) = error("Order is not defined for this algorithm")
-# alg_order(alg::CompositeAlgorithm) = alg_order(alg.algs[alg.current_alg])
 get_current_alg_order(alg::OrdinaryDiffEqAlgorithm,cache) = alg_order(alg)
 get_current_alg_order(alg::CompositeAlgorithm,cache) = alg_order(alg.algs[cache.current])
+
+get_current_alg_order(alg::OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm,cache) = cache.order
+get_current_adaptive_order(alg::OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm,cache) = cache.order
+get_current_alg_order(alg::JVODE,cache) = get_current_adaptive_order(alg,cache)
 
 alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
 get_current_adaptive_order(alg::OrdinaryDiffEqAlgorithm,cache) = alg_adaptive_order(alg)
@@ -102,9 +105,20 @@ alg_order(alg::Heun) = 2
 alg_order(alg::Ralston) = 2
 alg_order(alg::LawsonEuler) = 1
 alg_order(alg::NorsettEuler) = 1
+alg_order(alg::ETDRK2) = 2
+alg_order(alg::ETDRK3) = 3
+alg_order(alg::ETDRK4) = 4
+alg_order(alg::HochOst4) = 4
+alg_order(alg::Exp4) = 4
+alg_order(alg::EPIRK4s3A) = 4
+alg_order(alg::EPIRK4s3B) = 4
+alg_order(alg::EPIRK5s3) = 5
+alg_order(alg::EPIRK5P1) = 5
+alg_order(alg::EPIRK5P2) = 5
+alg_order(alg::EXPRB53s3) = 5
 alg_order(alg::SplitEuler) = 1
 alg_order(alg::ETD2) = 2
-alg_order(alg::ETDRK4) = 4
+alg_order(alg::Anas5) = 5
 
 alg_order(alg::SymplecticEuler) = 1
 alg_order(alg::VelocityVerlet) = 2
@@ -220,9 +234,17 @@ alg_order(alg::VCABM3) = 3
 alg_order(alg::VCABM4) = 4
 alg_order(alg::VCABM5) = 5
 
+alg_order(alg::VCABM) = 1  #dummy value
+
+alg_order(alg::IMEXEuler) = 1
+alg_order(alg::CNAB2) = 2
+alg_order(alg::CNLF2) = 2
+
 alg_order(alg::AN5) = 5
+alg_order(alg::JVODE) = 1  #dummy value
 
 alg_order(alg::ABDF2) = 2
+alg_order(alg::QNDF1) = 1
 
 alg_order(alg::ROCK2) = 2
 
@@ -246,8 +268,10 @@ alg_adaptive_order(alg::Trapezoid) = 1
 # this is actually incorrect and is purposefully decreased as this tends
 # to track the real error much better
 alg_adaptive_order(alg::ImplicitMidpoint) = 1
- # this is actually incorrect and is purposefully decreased as this tends
- # to track the real error much better
+# this is actually incorrect and is purposefully decreased as this tends
+# to track the real error much better
+
+alg_adaptive_order(alg::AN5) = 5
 
 beta2_default(alg::OrdinaryDiffEqAlgorithm) = 2//(5alg_order(alg))
 beta2_default(alg::FunctionMap) = 0
@@ -268,8 +292,11 @@ qsteady_max_default(alg::OrdinaryDiffEqAlgorithm) = 1
 qsteady_max_default(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = 6//5
 # But don't re-use Jacobian if not adaptive: too risky and cannot pull back
 qsteady_max_default(alg::OrdinaryDiffEqImplicitAlgorithm) = 1//1
+qsteady_max_default(alg::AN5) = 3//2
+qsteady_max_default(alg::JVODE) = 3//2
+qsteady_max_default(alg::QNDF1) = 2//1
 
-FunctionMap_scale_by_time{scale_by_time}(alg::FunctionMap{scale_by_time}) = scale_by_time
+FunctionMap_scale_by_time(alg::FunctionMap{scale_by_time}) where {scale_by_time} = scale_by_time
 
 # SSP coefficients
 """

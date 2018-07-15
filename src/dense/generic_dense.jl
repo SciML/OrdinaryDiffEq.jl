@@ -4,7 +4,7 @@
 # get_tmp_arr(integrator.cache) which gives a pointer to some
 # cache array which can be modified.
 
-@inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(integrator,f=integrator.f,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
+@inline function ode_addsteps!(integrator,f=integrator.f,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if !(typeof(integrator.cache) <: CompositeCache)
     ode_addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.u,
                   integrator.dt,f,integrator.p,integrator.cache,
@@ -17,7 +17,7 @@
   end
 end
 
-@inline function ode_interpolant(Θ,integrator::DEIntegrator,idxs,deriv)
+@inline function ode_interpolant(Θ,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   ode_addsteps!(integrator)
   if !(typeof(integrator.cache) <: CompositeCache)
     val = ode_interpolant(Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache,idxs,deriv)
@@ -27,7 +27,7 @@ end
   val
 end
 
-@inline function ode_interpolant!(val,Θ,integrator::DEIntegrator,idxs,deriv)
+@inline function ode_interpolant!(val,Θ,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   ode_addsteps!(integrator)
   if !(typeof(integrator.cache) <: CompositeCache)
     ode_interpolant!(val,Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache,idxs,deriv)
@@ -36,47 +36,47 @@ end
   end
 end
 
-@inline function current_interpolant(t::Number,integrator::DEIntegrator,idxs,deriv)
+@inline function current_interpolant(t::Number,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   Θ = (t-integrator.tprev)/integrator.dt
   ode_interpolant(Θ,integrator,idxs,deriv)
 end
 
-@inline function current_interpolant(t,integrator::DEIntegrator,idxs,deriv)
+@inline function current_interpolant(t,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   Θ = (t.-integrator.tprev)./integrator.dt
   [ode_interpolant(ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
-@inline function current_interpolant!(val,t::Number,integrator::DEIntegrator,idxs,deriv)
+@inline function current_interpolant!(val,t::Number,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   Θ = (t-integrator.tprev)/integrator.dt
   ode_interpolant!(val,Θ,integrator,idxs,deriv)
 end
 
-@inline function current_interpolant!(val,t,integrator::DEIntegrator,idxs,deriv)
+@inline function current_interpolant!(val,t,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   Θ = (t.-integrator.tprev)./integrator.dt
   [ode_interpolant!(val,ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
-@inline function current_extrapolant(t::Number,integrator::DEIntegrator,idxs=nothing,deriv=Val{0})
+@inline function current_extrapolant(t::Number,integrator::DiffEqBase.DEIntegrator,idxs=nothing,deriv=Val{0})
   Θ = (t-integrator.tprev)/(integrator.t-integrator.tprev)
   ode_extrapolant(Θ,integrator,idxs,deriv)
 end
 
-@inline function current_extrapolant!(val,t::Number,integrator::DEIntegrator,idxs=nothing,deriv=Val{0})
+@inline function current_extrapolant!(val,t::Number,integrator::DiffEqBase.DEIntegrator,idxs=nothing,deriv=Val{0})
   Θ = (t-integrator.tprev)/(integrator.t-integrator.tprev)
   ode_extrapolant!(val,Θ,integrator,idxs,deriv)
 end
 
-@inline function current_extrapolant(t::AbstractArray,integrator::DEIntegrator,idxs=nothing,deriv=Val{0})
+@inline function current_extrapolant(t::AbstractArray,integrator::DiffEqBase.DEIntegrator,idxs=nothing,deriv=Val{0})
   Θ = (t.-integrator.tprev)./(integrator.t-integrator.tprev)
   [ode_extrapolant(ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
-@inline function current_extrapolant!(val,t,integrator::DEIntegrator,idxs=nothing,deriv=Val{0})
+@inline function current_extrapolant!(val,t,integrator::DiffEqBase.DEIntegrator,idxs=nothing,deriv=Val{0})
   Θ = (t.-integrator.tprev)./(integrator.t-integrator.tprev)
   [ode_extrapolant!(val,ϕ,integrator,idxs,deriv) for ϕ in Θ]
 end
 
-@inline function ode_extrapolant!(val,Θ,integrator::DEIntegrator,idxs,deriv)
+@inline function ode_extrapolant!(val,Θ,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   ode_addsteps!(integrator)
   if !(typeof(integrator.cache) <: CompositeCache)
     ode_interpolant!(val,Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,integrator.cache,idxs,deriv)
@@ -85,7 +85,7 @@ end
   end
 end
 
-@inline function ode_extrapolant(Θ,integrator::DEIntegrator,idxs,deriv)
+@inline function ode_extrapolant(Θ,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   ode_addsteps!(integrator)
   if !(typeof(integrator.cache) <: CompositeCache)
     ode_interpolant(Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,integrator.cache,idxs,deriv)
@@ -110,11 +110,11 @@ function ode_interpolation(tvals,id,idxs,deriv,p)
   tdir*tvals[idx[end]] > tdir*ts[end] && error("Solution interpolation cannot extrapolate past the final timepoint. Either solve on a longer timespan or use the local extrapolation from the integrator interface.")
   tdir*tvals[idx[1]] < tdir*ts[1] && error("Solution interpolation cannot extrapolate before the first timepoint. Either start solving earlier or use the local extrapolation from the integrator interface.")
   if typeof(idxs) <: Number
-    vals = Vector{eltype(first(timeseries))}(length(tvals))
+    vals = Vector{eltype(first(timeseries))}(undef, length(tvals))
   elseif typeof(idxs) <: AbstractArray
-    vals = Vector{Array{eltype(first(timeseries)),ndims(idxs)}}(length(tvals))
+    vals = Vector{Array{eltype(first(timeseries)),ndims(idxs)}}(undef, length(tvals))
   else
-    vals = Vector{eltype(timeseries)}(length(tvals))
+    vals = Vector{eltype(timeseries)}(undef, length(tvals))
   end
   @inbounds for j in idx
     t = tvals[j]
@@ -276,15 +276,15 @@ function ode_interpolation!(out,tval::Number,id,idxs,deriv,p)
   avoid_constant_ends && i==1 && (i+=1)
   if !avoid_constant_ends && ts[i] == tval
     if idxs == nothing
-      @inbounds copy!(out,timeseries[i])
+      @inbounds copyto!(out,timeseries[i])
     else
-      @inbounds copy!(out,timeseries[i][idxs])
+      @inbounds copyto!(out,timeseries[i][idxs])
     end
   elseif !avoid_constant_ends && ts[i-1] == tval # Can happen if it's the first value!
     if idxs == nothing
-      @inbounds copy!(out,timeseries[i-1])
+      @inbounds copyto!(out,timeseries[i-1])
     else
-      @inbounds copy!(out,timeseries[i-1][idxs])
+      @inbounds copyto!(out,timeseries[i-1][idxs])
     end
   else
     @inbounds begin
@@ -308,8 +308,8 @@ end
 """
 By default, simpledense
 """
-@inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,p,cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
-  if length(k)<2 || calcVal
+@inline function ode_addsteps!(k,t,uprev,u,dt,f,p,cache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
+  if length(k)<2 || always_calc_begin
     if typeof(cache) <: OrdinaryDiffEqMutableCache
       rtmp = similar(u, eltype(eltype(k)))
       f(rtmp,uprev,p,t)
@@ -324,7 +324,7 @@ By default, simpledense
   nothing
 end
 
-function ode_interpolant{TI}(Θ,dt,y₀,y₁,k,cache::OrdinaryDiffEqMutableCache,idxs,T::Type{Val{TI}})
+function ode_interpolant(Θ,dt,y₀,y₁,k,cache::OrdinaryDiffEqMutableCache,idxs,T::Type{Val{TI}}) where TI
   if typeof(idxs) <: Number || typeof(y₀) <: Number
     return ode_interpolant!(nothing,Θ,dt,y₀,y₁,k,cache,idxs,T)
   else
@@ -337,10 +337,10 @@ function ode_interpolant{TI}(Θ,dt,y₀,y₁,k,cache::OrdinaryDiffEqMutableCache
       S = promote_type(typeof(oneunit_Θ * oneunit(eltype(y₀))), # Θ*y₀
                      typeof(oneunit_Θ * oneunit(dt) * oneunit(eltype(k[1])))) # Θ*dt*k
     end
-    if typeof(idxs) <: Void
+    if typeof(idxs) <: Nothing
       out = similar(y₀, S)
     else
-      out = similar(y₀, S, indices(idxs))
+      out = similar(y₀, S, axes(idxs))
     end
     ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T)
     return out
@@ -350,11 +350,11 @@ end
 ##################### Hermite Interpolants
 
 # If no dispatch found, assume Hermite
-function ode_interpolant{TI}(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{TI}})
+function ode_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{TI}}) where TI
   hermite_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T)
 end
 
-function ode_interpolant!{TI}(out,Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{TI}})
+function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{TI}}) where TI
   hermite_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T)
 end
 
@@ -364,11 +364,11 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
 @muladd function hermite_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{0}}) # Default interpolant is Hermite
-  if typeof(idxs) <: Void
+  if typeof(idxs) <: Nothing
     #out = @. (1-Θ)*y₀+Θ*y₁+Θ*(Θ-1)*((1-2Θ)*(y₁-y₀)+(Θ-1)*dt*k[1] + Θ*dt*k[2])
     out = (1-Θ)*y₀+Θ*y₁+Θ*(Θ-1)*((1-2Θ)*(y₁-y₀)+(Θ-1)*dt*k[1] + Θ*dt*k[2])
   else
-    #out = similar(y₀,indices(idxs))
+    #out = similar(y₀,axes(idxs))
     #@views @. out = (1-Θ)*y₀[idxs]+Θ*y₁[idxs]+Θ*(Θ-1)*((1-2Θ)*(y₁[idxs]-y₀[idxs])+(Θ-1)*dt*k[1][idxs] + Θ*dt*k[2][idxs])
     @views out = (1-Θ)*y₀[idxs]+Θ*y₁[idxs]+Θ*(Θ-1)*((1-2Θ)*(y₁[idxs]-y₀[idxs])+(Θ-1)*dt*k[1][idxs] + Θ*dt*k[2][idxs])
   end
@@ -379,11 +379,11 @@ end
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
 @muladd function hermite_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{1}}) # Default interpolant is Hermite
-  if typeof(idxs) <: Void
+  if typeof(idxs) <: Nothing
     #out = @. k[1] + Θ*(-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(3*dt*k[1] + 3*dt*k[2] + 6*y₀ - 6*y₁) + 6*y₁)/dt
     out = k[1] + Θ*(-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(3*dt*k[1] + 3*dt*k[2] + 6*y₀ - 6*y₁) + 6*y₁)/dt
   else
-    #out = similar(y₀,indices(idxs))
+    #out = similar(y₀,axes(idxs))
     #@views @. out = k[1][idxs] + Θ*(-4*dt*k[1][idxs] - 2*dt*k[2][idxs] - 6*y₀[idxs] + Θ*(3*dt*k[1][idxs] + 3*dt*k[2][idxs] + 6*y₀[idxs] - 6*y₁[idxs]) + 6*y₁[idxs])/dt
     @views out = k[1][idxs] + Θ*(-4*dt*k[1][idxs] - 2*dt*k[2][idxs] - 6*y₀[idxs] + Θ*(3*dt*k[1][idxs] + 3*dt*k[2][idxs] + 6*y₀[idxs] - 6*y₁[idxs]) + 6*y₁[idxs])/dt
   end
@@ -394,11 +394,11 @@ end
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
 @muladd function hermite_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{2}}) # Default interpolant is Hermite
-  if typeof(idxs) <: Void
+  if typeof(idxs) <: Nothing
     #out = @. (-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁) + 6*y₁)/(dt*dt)
     out = (-4*dt*k[1] - 2*dt*k[2] - 6*y₀ + Θ*(6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁) + 6*y₁)/(dt*dt)
   else
-    #out = similar(y₀,indices(idxs))
+    #out = similar(y₀,axes(idxs))
     #@views @. out = (-4*dt*k[1][idxs] - 2*dt*k[2][idxs] - 6*y₀[idxs] + Θ*(6*dt*k[1][idxs] + 6*dt*k[2][idxs] + 12*y₀[idxs] - 12*y₁[idxs]) + 6*y₁[idxs])/(dt*dt)
     @views out = (-4*dt*k[1][idxs] - 2*dt*k[2][idxs] - 6*y₀[idxs] + Θ*(6*dt*k[1][idxs] + 6*dt*k[2][idxs] + 12*y₀[idxs] - 12*y₁[idxs]) + 6*y₁[idxs])/(dt*dt)
   end
@@ -409,11 +409,11 @@ end
 Herimte Interpolation, chosen if no other dispatch for ode_interpolant
 """
 @muladd function hermite_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{3}}) # Default interpolant is Hermite
-  if typeof(idxs) <: Void
+  if typeof(idxs) <: Nothing
     #out = @. (6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁)/(dt*dt*dt)
     out = (6*dt*k[1] + 6*dt*k[2] + 12*y₀ - 12*y₁)/(dt*dt*dt)
   else
-    #out = similar(y₀,indices(idxs))
+    #out = similar(y₀,axes(idxs))
     #@views @. out = (6*dt*k[1][idxs] + 6*dt*k[2][idxs] + 12*y₀[idxs] - 12*y₁[idxs])/(dt*dt*dt)
     @views out = (6*dt*k[1][idxs] + 6*dt*k[2][idxs] + 12*y₀[idxs] - 12*y₁[idxs])/(dt*dt*dt)
   end
@@ -524,7 +524,7 @@ end
 
 @muladd function linear_interpolant(Θ,dt,y₀,y₁,idxs,T::Type{Val{0}})
   Θm1 = (1-Θ)
-  if typeof(idxs) <: Void
+  if typeof(idxs) <: Nothing
     out = @. Θm1*y₀ + Θ*y₁
   else
     out = @. Θm1*y₀[idxs] + Θ*y₁[idxs]
@@ -533,7 +533,7 @@ end
 end
 
 function linear_interpolant(Θ,dt,y₀,y₁,idxs,T::Type{Val{1}})
-  if typeof(idxs) <: Void
+  if typeof(idxs) <: Nothing
     out = @. (y₁ - y₀)/dt
   else
     out = @. (y₁[idxs] - y₀[idxs])/dt

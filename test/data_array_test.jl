@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Base.Test
+using OrdinaryDiffEq, Test, LinearAlgebra
 
 mutable struct SimType{T} <: DEDataVector{T}
   x::Array{T,1}
@@ -57,7 +57,7 @@ end
 
   sol(1.5:0.5:2.5)
 
-  @test [sol[i].f1 for i in eachindex(sol)] == [zeros(9);1.5*ones(5);-1.5*ones(4)]
+  @test [sol[i].f1 for i in eachindex(sol)] == [fill(0., 9);1.5*ones(5);-1.5*ones(4)]
 
   A = diagm([0.3,0.6,0.9])
   B = [1 2 3].'
@@ -70,19 +70,19 @@ end
       dx .= A*x.x + B*x.u
   end
 
-  input = (x,p,t)->(1*one(t)≤t≤2*one(t)?[one(t)]:[zero(t)])
-  prob = DiscreteProblem((dx,x,p,t)->mysystem(t,x,dx,p,input), SimType2(zeros(3), zeros(1), zeros(1)), (0//1,4//1))
+  input = (x,p,t)->(1*one(t)≤t≤2*one(t) ? [one(t)] : [zero(t)])
+  prob = DiscreteProblem((dx,x,p,t)->mysystem(t,x,dx,p,input), SimType2(fill(0., 3), fill(0., 1), fill(0., 1)), (0//1,4//1))
   sln = solve(prob, FunctionMap(scale_by_time=false), dt = 1//10)
 
   u1 = [sln[idx].u for idx in 1:length(sln)]
-  u2 = [sln(t).u for t in linspace(0,4,41)]
+  u2 = [sln(t).u for t in range(0,stop=4,length=41)]
   @test any(x->x[1]>0, u1)
   @test any(x->x[1]>0, u2)
 
   sln = solve(prob, FunctionMap(scale_by_time=true), dt = 1//10)
 
   u1 = [sln[idx].u for idx in 1:length(sln)]
-  u2 = [sln(t).u for t in linspace(0,4,41)]
+  u2 = [sln(t).u for t in range(0,stop=4,length=41)]
   @test any(x->x[1]>0, u1)
   @test any(x->x[1]>0, u2)
 
@@ -90,14 +90,14 @@ end
 
   @test u1 == [sln[idx].u for idx in 1:length(sln)] # Show that discrete is the same
   u1 = [sln[idx].u for idx in 1:length(sln)]
-  u2 = [sln(t).u for t in linspace(0,4,41)]
+  u2 = [sln(t).u for t in range(0,stop=4,length=41)]
   @test any(x->x[1]>0, u1)
   @test any(x->x[1]>0, u2)
 
   sln = solve(prob, DP5(), dt = 1//10, adaptive=false)
 
   u1 = [sln[idx].u for idx in 1:length(sln)]
-  u2 = [sln(t).u for t in linspace(0,4,41)]
+  u2 = [sln(t).u for t in range(0,stop=4,length=41)]
   @test any(x->x[1]>0, u1)
   @test any(x->x[1]>0, u2)
 end

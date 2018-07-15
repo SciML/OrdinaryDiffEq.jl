@@ -1,5 +1,5 @@
-@inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23ConstantCache,Rosenbrock32ConstantCache},always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
-  if length(k)<2 || calcVal
+@inline function ode_addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23ConstantCache,Rosenbrock32ConstantCache},always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
+  if length(k)<2 || always_calc_begin
     @unpack tf,uf,d = cache
     dT = ForwardDiff.derivative(tf, t)
     if typeof(uprev) <: AbstractArray
@@ -19,8 +19,8 @@
   nothing
 end
 
-@inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Cache,Rosenbrock32Cache},always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
-  if length(k)<2 || calcVal
+@inline function ode_addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Cache,Rosenbrock32Cache},always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
+  if length(k)<2 || always_calc_begin
     @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,linsolve_tmp_vec = cache
     @unpack c₃₂,d = cache.tab
     uidx = eachindex(uprev)
@@ -37,9 +37,9 @@ end
       @inbounds linsolve_tmp[i] = @muladd fsalfirst[i] + γ*dT[i]
     end
 
-    if has_invW(f)
+    if DiffEqBase.has_invW(f)
       f(Val{:invW},W,u,p,γ,t) # W == inverse W
-      A_mul_B!(vectmp,W,linsolve_tmp_vec)
+      mul!(vectmp,W,linsolve_tmp_vec)
     else
       ### Jacobian does not need to be re-evaluated after an event
       ### Since it's unchanged
@@ -57,12 +57,12 @@ end
     #if mass_matrix == I
       tmp .= k₁
     #else
-    #  A_mul_B!(tmp,mass_matrix,k₁)
+    #  mul!(tmp,mass_matrix,k₁)
     #end
 
     @. linsolve_tmp = f₁ - tmp
-    if has_invW(f)
-      A_mul_B!(vectmp2, W, linsolve_tmp_vec)
+    if DiffEqBase.has_invW(f)
+      mul!(vectmp2, W, linsolve_tmp_vec)
     else
       cache.linsolve(vectmp2, W, linsolve_tmp_vec)
     end
@@ -76,8 +76,8 @@ end
   nothing
 end
 
-@inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,p,cache::Rodas4ConstantCache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
-  if length(k)<2 || calcVal
+@inline function ode_addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4ConstantCache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
+  if length(k)<2 || always_calc_begin
     @unpack tf,uf = cache
     @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,gamma,c2,c3,c4,d1,d2,d3,d4 = cache.tab
 
@@ -157,8 +157,8 @@ end
   nothing
 end
 
-@inline function ode_addsteps!{calcVal,calcVal2,calcVal3}(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_begin::Type{Val{calcVal}} = Val{false},allow_calc_end::Type{Val{calcVal2}} = Val{true},force_calc_end::Type{Val{calcVal3}} = Val{false})
-  if length(k)<2 || calcVal
+@inline function ode_addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
+  if length(k)<2 || always_calc_begin
 
     @unpack du,du1,du2,tmp,vectmp,vectmp2,vectmp3,vectmp4,vectmp5,vectmp6,dT,J,W,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config,fsalfirst = cache
     @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,gamma,c2,c3,c4,d1,d2,d3,d4 = cache.tab
@@ -197,7 +197,7 @@ end
       @inbounds linsolve_tmp[i] = @muladd fsalfirst[i] + dtgamma*dT[i]
     end
 
-    if has_invW(f)
+    if DiffEqBase.has_invW(f)
       f(Val{:invW_t},W,u,p,dtgamma,t) # W == inverse W
     else
       ### Jacobian does not need to be re-evaluated after an event
@@ -207,8 +207,8 @@ end
       end
     end
 
-    if has_invW(f)
-      A_mul_B!(vectmp, W, linsolve_tmp_vec)
+    if DiffEqBase.has_invW(f)
+      mul!(vectmp, W, linsolve_tmp_vec)
     else
       cache.linsolve(vectmp, W, linsolve_tmp_vec, true)
     end
@@ -221,12 +221,12 @@ end
       @. linsolve_tmp = du + dtd2*dT + dtC21*k1
     else
       @. du1 = dtC21*k1
-      A_mul_B!(du2,mass_matrix,du1)
+      mul!(du2,mass_matrix,du1)
       @. linsolve_tmp = du + dtd2*dT + du2
     end
 
-    if has_invW(f)
-      A_mul_B!(vectmp2, W, linsolve_tmp_vec)
+    if DiffEqBase.has_invW(f)
+      mul!(vectmp2, W, linsolve_tmp_vec)
     else
       cache.linsolve(vectmp2, W, linsolve_tmp_vec)
     end
@@ -239,12 +239,12 @@ end
       @. linsolve_tmp = du + dtd3*dT + (dtC31*k1 + dtC32*k2)
     else
       @. du1 = dtC31*k1 + dtC32*k2
-      A_mul_B!(du2,mass_matrix,du1)
+      mul!(du2,mass_matrix,du1)
       @. linsolve_tmp = du + dtd3*dT + du2
     end
 
-    if has_invW(f)
-      A_mul_B!(vectmp3, W, linsolve_tmp_vec)
+    if DiffEqBase.has_invW(f)
+      mul!(vectmp3, W, linsolve_tmp_vec)
     else
       cache.linsolve(vectmp3, W, linsolve_tmp_vec)
     end
@@ -257,12 +257,12 @@ end
       @. linsolve_tmp = du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
     else
       @. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
-      A_mul_B!(du2,mass_matrix,du1)
+      mul!(du2,mass_matrix,du1)
       @. linsolve_tmp = du + dtd4*dT + du2
     end
 
-    if has_invW(f)
-      A_mul_B!(vectmp4, W, linsolve_tmp_vec)
+    if DiffEqBase.has_invW(f)
+      mul!(vectmp4, W, linsolve_tmp_vec)
     else
       cache.linsolve(vectmp4, W, linsolve_tmp_vec)
     end
@@ -275,12 +275,12 @@ end
       @. linsolve_tmp = du + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
     else
       @. du1 = dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3
-      A_mul_B!(du2,mass_matrix,du1)
+      mul!(du2,mass_matrix,du1)
       @. linsolve_tmp = du + du2
     end
 
-    if has_invW(f)
-      A_mul_B!(vectmp5, W, linsolve_tmp_vec)
+    if DiffEqBase.has_invW(f)
+      mul!(vectmp5, W, linsolve_tmp_vec)
     else
       cache.linsolve(vectmp5, W, linsolve_tmp_vec)
     end

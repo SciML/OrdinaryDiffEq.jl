@@ -1,5 +1,5 @@
 using OrdinaryDiffEq
-using Base.Test
+using Test, LinearAlgebra, Statistics
 
 const CPU_FLOPS = peakflops()
 const LONGER_TESTS = false
@@ -15,11 +15,11 @@ else
     group = "All"
 end
 
-is_APPVEYOR = ( is_windows() && haskey(ENV,"APPVEYOR") )
+is_APPVEYOR = ( Sys.iswindows() && haskey(ENV,"APPVEYOR") )
 
 #Start Test Script
 
-tic()
+@time begin
 if group == "All" || group == "Interface"
   @time include("discrete_algorithm_test.jl")
   @time include("ode/ode_tstops_tests.jl")
@@ -81,5 +81,4 @@ if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_II" )
     # ~ 140 s
     @time @testset "Linear-Nonlinear Krylov Methods Tests" begin include("linear_nonlinear_krylov_tests.jl") end
 end
-
-toc()
+end # @time

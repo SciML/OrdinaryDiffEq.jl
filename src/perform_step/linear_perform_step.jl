@@ -1,6 +1,6 @@
 function initialize!(integrator, cache::LinearImplicitEulerConstantCache)
   integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -137,16 +137,16 @@ function perform_step!(integrator, cache::MidpointSplittingCache, repeat_step=fa
   A = L.As[1]
   Bs = L.As[2:end]
 
-  copy!(tmp, uprev)
+  copyto!(tmp, uprev)
   for B in reverse(Bs)
-    u .= expm((dt/2)*B)*tmp
+    u .= exp((dt/2)*B)*tmp
     @swap!(tmp,u)
   end
 
-  u .= expm(dt*A)*tmp
+  u .= exp(dt*A)*tmp
 
   for B in Bs
-    tmp .= expm((dt/2)*B)*u
+    tmp .= exp((dt/2)*B)*u
     @swap!(u,tmp)
   end
 

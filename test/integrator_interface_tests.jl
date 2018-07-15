@@ -1,7 +1,6 @@
 using DiffEqBase: set_t!, set_u!, set_ut!
 using OrdinaryDiffEq
 
-gc()
 println("First")
 # set_X!(integrator, integrator.X) should not change the result.
 @testset "Trivial $setter ($alg, inplace=$iip)" for alg in [RK4, Trapezoid],

@@ -9,7 +9,7 @@ end
 """
 Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Problems Page 192
 """
-@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP5ConstantCache,idxs::Void,T::Type{Val{0}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP5ConstantCache,idxs::Nothing,T::Type{Val{0}})
   Θ1 = 1-Θ
   #@. y₀ + dt*Θ*(k[1]+Θ1*(k[2]+Θ*(k[3]+Θ1*k[4])))
   y₀ + dt*Θ*(k[1]+Θ1*(k[2]+Θ*(k[3]+Θ1*k[4])))
@@ -21,7 +21,7 @@ end
   y₀[idxs] + dt*Θ*(k[1][idxs]+Θ1*(k[2][idxs]+Θ*(k[3][idxs]+Θ1*k[4][idxs])))
 end
 
-@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP5ConstantCache,idxs::Void,T::Type{Val{1}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP5ConstantCache,idxs::Nothing,T::Type{Val{1}})
   #@. k[1] + k[2]*(1 - 2*Θ) + Θ*(2*k[3] + 2*k[4] + Θ*(-3*k[3] - 6*k[4] + 4*k[4]*Θ))
   k[1] + k[2]*(1 - 2*Θ) + Θ*(2*k[3] + 2*k[4] + Θ*(-3*k[3] - 6*k[4] + 4*k[4]*Θ))
 end
@@ -76,7 +76,7 @@ Second order strong stability preserving (SSP) interpolant.
 
 Ketcheson, Lóczi, Jangabylova, Kusmanov: Dense output for SSP RK methods (2017).
 """
-@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{SSPRK22ConstantCache,SSPRK33ConstantCache,SSPRK432ConstantCache},idxs::Void,T::Type{Val{0}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{SSPRK22ConstantCache,SSPRK33ConstantCache,SSPRK432ConstantCache},idxs::Nothing,T::Type{Val{0}})
   #@. (1-Θ^2)*y₀ + Θ^2*y₁ + Θ*(1-Θ)*dt*k[1]
   (1-Θ^2)*y₀ + Θ^2*y₁ + Θ*(1-Θ)*dt*k[1]
 end
@@ -86,7 +86,7 @@ end
   (1-Θ^2)*y₀[idxs] + Θ^2*y₁[idxs] + Θ*(1-Θ)*dt*k[1][idxs]
 end
 
-@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{SSPRK22ConstantCache,SSPRK33ConstantCache,SSPRK432ConstantCache},idxs::Void,T::Type{Val{1}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{SSPRK22ConstantCache,SSPRK33ConstantCache,SSPRK432ConstantCache},idxs::Nothing,T::Type{Val{1}})
   #@. -2Θ*y₀ + 2Θ*y₁ + (1-2Θ)*dt*k[1]
   -2Θ/dt*y₀ + 2Θ/dt*y₁ + (1-2Θ)*k[1]
 end
@@ -1607,7 +1607,7 @@ end
 """
 
 """
-@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP8ConstantCache,idxs::Void,T::Type{Val{0}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP8ConstantCache,idxs::Nothing,T::Type{Val{0}})
   Θ1 = 1-Θ
   conpar = k[4] + Θ*(k[5] + Θ1*(k[6]+Θ*k[7]))
   #@. y₀ + dt*Θ*(k[1] + Θ1*(k[2] + Θ*(k[3]+Θ1*conpar)))
@@ -1621,7 +1621,7 @@ end
   y₀[idxs] + dt*Θ*(k[1][idxs] + Θ1*(k[2][idxs] + Θ*(k[3][idxs]+Θ1*conpar)))
 end
 
-@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP8ConstantCache,idxs::Void,T::Type{Val{1}})
+@muladd function ode_interpolant(Θ,dt,y₀,y₁,k,cache::DP8ConstantCache,idxs::Nothing,T::Type{Val{1}})
   b1diff = k[1] + k[2]
   b2diff = -2*k[2] + 2*k[3] + 2*k[4]
   b3diff = -3*k[3] - 6*k[4] + 3*k[5] + 3*k[6]
