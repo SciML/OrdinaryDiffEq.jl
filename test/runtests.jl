@@ -68,6 +68,7 @@ if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_I" )
     @time @testset "SSPRK Tests" begin include("ode/ode_ssprk_tests.jl") end
     # ~ 25 s
     @time @testset "OwrenZen Tests" begin include("owrenzen_tests.jl") end
+    @time @testset "Runge-Kutta-Chebyshev Tests" begin include("ode/rkc_tests.jl") end
 end
 
 if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_II" )

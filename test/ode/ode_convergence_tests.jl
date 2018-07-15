@@ -1,5 +1,5 @@
 # This definitely needs cleaning
-using OrdinaryDiffEq, Test, Random
+using OrdinaryDiffEq, DiffEqDevTools, Test, Random
 using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
 import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 probArr = Vector{ODEProblem}(undef, 2)
