@@ -70,7 +70,7 @@ end
 
 @muladd function perform_step!(integrator, cache::ROCK2Cache, repeat_step=false)
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
-  @unpack k, tmp, gprev2, gprev, atmp = cache
+  @unpack k, k2, tmp, gprev2, gprev, atmp = cache
   @unpack ms, fp1, fp2, recf = cache.constantcache
   ccache = cache.constantcache
   # The number of stage.
@@ -103,12 +103,12 @@ end
   # two-stage finishing procedure.
   temp1 = dt * fp1[ccache.mdeg]
   temp2 = dt * fp2[ccache.mdeg]
-  f(gprev2, u, p, ci1)
-  @. gprev = u + temp1 * gprev2
+  f(k, u, p, ci1)
+  @. gprev = u + temp1 * k
   ci1 += temp1
-  f(u, gprev, p, ci1)
-  @. tmp = temp2 * (u - gprev2)
-  @. u = gprev + temp1 * u + tmp
+  f(k2, gprev, p, ci1)
+  @. tmp = temp2 * (k2 - k)
+  @. u = gprev + temp1 * k2 + tmp
   # error estimate
   if integrator.opts.adaptive
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
