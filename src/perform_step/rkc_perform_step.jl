@@ -16,7 +16,6 @@ end
   # The number of stage.
   mdeg = Int(floor(sqrt((1.5 + dt * integrator.eigen_est)/0.811) + 1))
   if mdeg >= 200
-    dt = 0.8 * (200 ^ 2 * 0.811 - 1.5)/integrator.eigen_est
     mdeg = 200
   end
   cache.mdeg = max(mdeg, 3) - 2
@@ -47,11 +46,11 @@ end
   temp2 = dt * fp2[cache.mdeg]
   gprev = u + temp1 * gprev2
   ci1 += temp1
+  temp3 = temp2 * (u - gprev2)
+  u = gprev + temp1 * u + temp3
   # error estimate
   if integrator.opts.adaptive
-    temp3 = temp2 * (u - gprev2)
-    u = gprev + temp1 * u + temp3
-    calculate_residuals(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+    atmp = calculate_residuals(temp3, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   #
