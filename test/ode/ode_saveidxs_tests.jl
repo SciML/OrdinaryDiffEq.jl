@@ -10,7 +10,7 @@ import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear,
   sol(0.5) # test interpolation
 
   # vector, not in-place
-  prob2 = ODEProblem(linear, [0.5], (0., 1.))
+  prob2 = ODEProblem(linear, [0.5], (0., 1.), 1.01)
   sol2 = solve(prob2, DP5(); save_idxs=1)
   @test sol.t ≈ sol2.t && sol.u ≈ sol2.u
   sol2(0.5)
@@ -20,7 +20,7 @@ import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear,
   sol2b(0.5)
 
   # vector, in-place
-  prob3 = ODEProblem(f_2dlinear, [0.5], (0., 1.))
+  prob3 = ODEProblem(f_2dlinear, [0.5], (0., 1.), 1.01)
   sol3 = solve(prob3, DP5(); save_idxs=1)
   @test sol.t ≈ sol3.t && sol.u ≈ sol3.u
   sol3(0.5)
