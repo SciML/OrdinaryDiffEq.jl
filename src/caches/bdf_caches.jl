@@ -186,8 +186,8 @@ function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   fsalfirst = zero(rate_prototype)
   k = zero(rate_prototype)
 
-  D = Array{typeof(u)}(1, 1)
-  D2 = Array{typeof(u)}(1, 2)
+  D = Array{typeof(u)}(undef, 1, 1)
+  D2 = Array{typeof(u)}(undef, 1, 2)
   R = fill(zero(typeof(t)), 1, 1)
   U = fill(zero(typeof(t)), 1, 1)
  
@@ -314,8 +314,8 @@ function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   fsalfirst = zero(rate_prototype)
   k = zero(rate_prototype)
 
-  D = Array{typeof(u)}(1, 2)
-  D2 = Array{typeof(u)}(1, 3)
+  D = Array{typeof(u)}(undef, 1, 2)
+  D2 = Array{typeof(u)}(undef, 1, 3)
   R = fill(zero(typeof(t)), 2, 2)
   U = fill(zero(typeof(t)), 2, 2)
   
