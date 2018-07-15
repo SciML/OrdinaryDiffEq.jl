@@ -159,31 +159,29 @@ end
 
 function perform_step!(integrator,cache::QNDF1ConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack uprev2,D,temp_D,D2,R,U,dtₙ₋₁,uf,κ,tol = cache
+  @unpack uprev2,D,D2,R,U,dtₙ₋₁ = cache
   cnt = integrator.iter
-  if cnt == 1
-    perform_step!(integrator, cache.eulercache, repeat_step)
-    cache.uprev2 = integrator.uprev
-    cache.dtₙ₋₁ = dt
-    return
-  end
-  κ = integrator.alg.kappa
-  γₖ = 1//1
   k = 1
-  ρ = dt/dtₙ₋₁
-  D[1,1] = uprev - uprev2 # backward diff
-  temp_D .= D
-  if ρ != 1
-    U!(k,cache)
-    R!(k,ρ,cache)
-    D[1,1] = D[1,1] * (R[1,1] * U[1,1])
-    uprev2 = prev_u!(uprev,k,t,dt,cache)
+  if cnt == 1
+    κ = zero(integrator.alg.kappa)
+  else
+    κ = integrator.alg.kappa
+    ρ = dt/dtₙ₋₁
+    D[1] = uprev - uprev2   # backward diff
+    if ρ != 1
+      R!(k,ρ,cache)
+      D[1] = D[1] * (R[1] * U[1])
+    end
   end
-  c1 = (1-2κ)/(1-κ)
-  c2 = (κ)/(1-κ)
-  tmp = c1*uprev + c2*uprev2
+
   # precalculations
-  γ = inv(1-κ)
+  γ₁ = 1//1
+  γ = inv((1-κ)*γ₁)
+
+  u₀ = uprev + D[1]
+  ϕ = γ * (γ₁*D[1])
+  tmp = u₀ - ϕ
+
   γdt = γ*dt
   W = calc_W!(integrator, cache, γdt, repeat_step)
 
@@ -194,15 +192,17 @@ function perform_step!(integrator,cache::QNDF1ConstantCache,repeat_step=false)
   fail_convergence && return
   u = tmp + γ*z
 
-  if integrator.opts.adaptive
-    D2!(u,uprev,k,cache)
-    utilde = (κ*γₖ + inv(k+1)) * D2[1,1]
+  if integrator.opts.adaptive && integrator.success_iter > 0
+    D2[1] = u - uprev
+    D2[2] = D2[1] - D[1]
+    utilde = (κ*γ₁ + inv(k+1)) * D2[2]
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
     if integrator.EEst > one(integrator.EEst)
-      cache.D .= temp_D
       return
     end
+  else
+    integrator.EEst = one(integrator.EEst)
   end
   cache.dtₙ₋₁ = dt
   cache.uprev2 = uprev
@@ -226,32 +226,196 @@ end
 
 function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack uprev2,D,temp_D,temp_u,D2,R,U,tmp,z,W,dtₙ₋₁,uf,κ,tol,utilde,atmp = cache
+  @unpack uprev2,D,D2,R,U,dtₙ₋₁,tmp,z,W,utilde,atmp = cache
   cnt = integrator.iter
+  k = 1
   if cnt == 1
-    perform_step!(integrator, cache.eulercache, repeat_step)
-    cache.uprev2 .= integrator.uprev
-    cache.dtₙ₋₁ = dt
+    κ = zero(integrator.alg.kappa)
+  else
+    κ = integrator.alg.kappa
+    ρ = dt/dtₙ₋₁
+    @. D[1] = uprev - uprev2 # backward diff
+    if ρ != 1
+      R!(k,ρ,cache)
+      @. D[1] = D[1] * (R[1] * U[1])
+    end
+  end
+
+  # precalculations
+  γ₁ = 1//1
+  γ = inv((1-κ)*γ₁)
+  @. tmp = uprev + D[1] - γ * (γ₁*D[1])
+
+  γdt = γ*dt
+  new_W = calc_W!(integrator, cache, γdt, repeat_step)
+
+  # initial guess
+  @. z = dt*integrator.fsalfirst
+
+  z, η, iter, fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, tmp, γ, 1, Val{:newton}, new_W)
+  fail_convergence && return
+  @. u = tmp + γ*z
+
+  if integrator.opts.adaptive && integrator.success_iter > 0
+    @. D2[1] = u - uprev
+    @. D2[2] = D2[1] - D[1]
+    @. utilde = (κ*γ₁ + inv(k+1)) * D2[2]
+    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+    integrator.EEst = integrator.opts.internalnorm(atmp)
+    if integrator.EEst > one(integrator.EEst)
+      return
+    end
+  else
+    integrator.EEst = one(integrator.EEst)
+  end
+  cache.dtₙ₋₁ = dt
+  cache.uprev2 .= uprev
+  cache.ηold = η
+  cache.newton_iters = iter
+  f(integrator.fsallast, u, p, t+dt)
+end
+
+function initialize!(integrator, cache::QNDF2ConstantCache)
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
+
+function perform_step!(integrator,cache::QNDF2ConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack uprev2,uprev3,dtₙ₋₁,dtₙ₋₂,D,D2,R,U = cache
+  cnt = integrator.iter
+  k = 2
+  if cnt == 1 || cnt == 2
+    κ = zero(integrator.alg.kappa)
+    γ₁ = 1//1
+    γ₂ = 1//1
+  elseif dtₙ₋₁ != dtₙ₋₂
+    κ = integrator.alg.kappa
+    γ₁ = 1//1
+    γ₂ = 1//1 + 1//2
+    ρ₁ = dt/dtₙ₋₁
+    ρ₂ = dt/dtₙ₋₂
+    D[1] = uprev - uprev2
+    D[1] = D[1] * ρ₁
+    D[2] = D[1] - ((uprev2 - uprev3) * ρ₂)
+  else
+    κ = integrator.alg.kappa
+    γ₁ = 1//1
+    γ₂ = 1//1 + 1//2
+    ρ = dt/dtₙ₋₁
+    # backward diff
+    D[1] = uprev - uprev2
+    D[2] = D[1] - (uprev2 - uprev3)
+    if ρ != 1
+      R!(k,ρ,cache)
+      R .= R * U
+      D[1] = D[1] * R[1,1] + D[2] * R[2,1]
+      D[2] = D[1] * R[1,2] + D[2] * R[2,2]
+    end
+  end
+
+  # precalculations
+  γ = inv((1-κ)*γ₂)
+  u₀ = uprev + D[1] + D[2]
+  ϕ = γ * (γ₁*D[1] + γ₂*D[2])
+  tmp = u₀ - ϕ
+
+  γdt = γ*dt
+  W = calc_W!(integrator, cache, γdt, repeat_step)
+
+  # initial guess
+  z = dt*integrator.fsalfirst
+
+  z, η, iter, fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, tmp, γ, 1, Val{:newton})
+  fail_convergence && return
+  u = tmp + γ*z
+
+  if integrator.opts.adaptive
+    if integrator.success_iter == 0
+      integrator.EEst = one(integrator.EEst)
+    elseif integrator.success_iter == 1
+      utilde = (u - uprev) - ((uprev - uprev2) * dt/dtₙ₋₁)
+      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp)
+    else
+      D2[1] = u - uprev
+      D2[2] = D2[1] - D[1]
+      D2[3] = D2[2] - D[2]
+      utilde = (κ*γ₂ + inv(k+1)) * D2[3]
+      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp)
+    end
+  end
+  if integrator.EEst > one(integrator.EEst)
     return
   end
-  κ = integrator.alg.kappa
-  γₖ = 1//1
-  k = 1
-  ρ = dt/dtₙ₋₁
-  @. D[1,1] = uprev - uprev2 # backward diff
-  temp_D .= D
-  temp_u .= uprev2
-  if ρ != 1
-    U!(k,cache)
-    R!(k,ρ,cache)
-    @. D[1,1] = D[1,1] * (R[1,1] * U[1,1])
-    prev_u!(uprev,k,t,dt,cache)
+
+  cache.uprev3 = uprev2
+  cache.uprev2 = uprev
+  cache.dtₙ₋₂ = dtₙ₋₁
+  cache.dtₙ₋₁ = dt
+  cache.ηold = η
+  cache.newton_iters = iter
+  integrator.fsallast = f(u, p, t+dt)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end
+
+function initialize!(integrator, cache::QNDF2Cache)
+  integrator.kshortsize = 2
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+end
+
+function perform_step!(integrator,cache::QNDF2Cache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack uprev2,uprev3,dtₙ₋₁,dtₙ₋₂,D,D2,R,U,tmp,utilde,atmp,W,z = cache
+  cnt = integrator.iter
+  k = 2
+  if cnt == 1 || cnt == 2
+    κ = zero(integrator.alg.kappa)
+    γ₁ = 1//1
+    γ₂ = 1//1
+  elseif dtₙ₋₁ != dtₙ₋₂
+    κ = integrator.alg.kappa
+    γ₁ = 1//1
+    γ₂ = 1//1 + 1//2
+    ρ₁ = dt/dtₙ₋₁
+    ρ₂ = dt/dtₙ₋₂
+    @. D[1] = uprev - uprev2
+    @. D[1] = D[1] * ρ₁
+    @. D[2] = D[1] - ((uprev2 - uprev3) * ρ₂)
+  else
+    κ = integrator.alg.kappa
+    γ₁ = 1//1
+    γ₂ = 1//1 + 1//2
+    ρ = dt/dtₙ₋₁
+    # backward diff
+    @. D[1] = uprev - uprev2
+    @. D[2] = D[1] - (uprev2 - uprev3)
+    if ρ != 1
+      R!(k,ρ,cache)
+      R .= R * U
+      @. D[1] = D[1] * R[1,1] + D[2] * R[2,1]
+      @. D[2] = D[1] * R[1,2] + D[2] * R[2,2]
+    end
   end
-  c1 = (1-2κ)/(1-κ)
-  c2 = (κ)/(1-κ)
-  @. tmp = c1*uprev + c2*uprev2
+
   # precalculations
-  γ = inv(1-κ)
+  γ = inv((1-κ)*γ₂)
+  @. tmp = uprev + D[1] + D[2] - γ * (γ₁*D[1] + γ₂*D[2])
+
   γdt = γ*dt
   new_W = calc_W!(integrator, cache, γdt, repeat_step)
 
@@ -263,18 +427,29 @@ function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
   @. u = tmp + γ*z
 
   if integrator.opts.adaptive
-    D2!(u,uprev,k,cache)
-    @. utilde = (κ*γₖ + inv(k+1)) * D2[1,1]
-    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(atmp)
-    if integrator.EEst > one(integrator.EEst)
-      cache.D .= temp_D
-      cache.uprev2 .= temp_u
-      return
+    if integrator.success_iter == 0
+      integrator.EEst = one(integrator.EEst)
+    elseif integrator.success_iter == 1
+      @. utilde = (u - uprev) - ((uprev - uprev2) * dt/dtₙ₋₁)
+      calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp)
+    else
+      @. D2[1] = u - uprev
+      @. D2[2] = D2[1] - D[1]
+      @. D2[3] = D2[2] - D[2]
+      @. utilde = (κ*γ₂ + inv(k+1)) * D2[3]
+      calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp)
     end
   end
-  cache.dtₙ₋₁ = dt
+  if integrator.EEst > one(integrator.EEst)
+    return
+  end
+
+  cache.uprev3 .= uprev2
   cache.uprev2 .= uprev
+  cache.dtₙ₋₂ = dtₙ₋₁
+  cache.dtₙ₋₁ = dt
   cache.ηold = η
   cache.newton_iters = iter
   f(integrator.fsallast, u, p, t+dt)
