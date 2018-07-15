@@ -3,7 +3,7 @@ using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproble
 import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_2Dlinear
 @testset "Backwards Tests" begin
   prob = deepcopy(prob_ode_2Dlinear)
-  prob2 = ODEProblem(prob.f,prob.u0,(1.0,0.0))
+  prob2 = ODEProblem(prob.f,prob.u0,(1.0,0.0),1.01)
 
   sol = solve(prob2,DP5(),dt=-1/4,tstops=[0.5])
   @test sol.t == [1.0,.75,.5,0]
