@@ -82,7 +82,7 @@ import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinea
   @test sol2.t ≈ range(0,stop=1,length=100)
 
   f = (du,u,p,t) -> prob.f(du,u,p,t)
-  prob2 = ODEProblem(f,vec(prob.u0),prob.tspan)
+  prob2 = ODEProblem(f,vec(prob.u0),prob.tspan,1.01)
 
   sol2=solve(prob2,DP5(),dt=1//2^(2),saveat=.1,save_idxs=1:2:5)
 
