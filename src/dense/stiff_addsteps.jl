@@ -38,7 +38,7 @@ end
     end
 
     if DiffEqBase.has_invW(f)
-      f(Val{:invW},W,u,p,γ,t) # W == inverse W
+      f.invW(W,u,p,γ,t) # W == inverse W
       mul!(vectmp,W,linsolve_tmp_vec)
     else
       ### Jacobian does not need to be re-evaluated after an event
@@ -198,7 +198,7 @@ end
     end
 
     if DiffEqBase.has_invW(f)
-      f(Val{:invW_t},W,u,p,dtgamma,t) # W == inverse W
+      f.invW_t(W,u,p,dtgamma,t) # W == inverse W
     else
       ### Jacobian does not need to be re-evaluated after an event
       ### Since it's unchanged
