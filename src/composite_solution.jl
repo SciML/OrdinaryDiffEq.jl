@@ -33,11 +33,7 @@ function DiffEqBase.build_solution(
     N = length((size(prob.u0)..., length(u)))
   end
 
-  if typeof(prob.f) <: Tuple
-    f = prob.f[1]
-  else
-    f = prob.f
-  end
+  f = prob.f
 
   if DiffEqBase.has_analytic(f)
     if !(typeof(prob.u0) <: Tuple)

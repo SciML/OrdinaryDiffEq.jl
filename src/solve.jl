@@ -58,7 +58,7 @@ function DiffEqBase.__init(
   allow_extrapolation = alg_extrapolates(alg),
   initialize_integrator=true,kwargs...) where {algType<:OrdinaryDiffEqAlgorithm,recompile_flag}
 
-  if typeof(prob.f)<:Tuple
+  if typeof(prob.f)<:DynamicalODEFunction || typeof(prob.f)<:SplitFunction
     if min((mm != I for mm in prob.mass_matrix)...)
       error("This solver is not able to use mass matrices.")
     end
@@ -350,17 +350,12 @@ function DiffEqBase.solve!(integrator::ODEIntegrator)
   end
   postamble!(integrator)
 
-  if typeof(integrator.sol.prob.f) <: Tuple
-    f = integrator.sol.prob.f[1]
-  else
-    f = integrator.sol.prob.f
-  end
+  f = integrator.sol.prob.f
 
-  if !(typeof(integrator.sol.prob)<:DiscreteProblem) && DiffEqBase.has_analytic(f)
+  if DiffEqBase.has_analytic(f)
     DiffEqBase.calculate_solution_errors!(integrator.sol;timeseries_errors=integrator.opts.timeseries_errors,dense_errors=integrator.opts.dense_errors)
   end
   integrator.sol = DiffEqBase.solution_new_retcode(integrator.sol,:Success)
-  nothing
 end
 
 # Helpers
