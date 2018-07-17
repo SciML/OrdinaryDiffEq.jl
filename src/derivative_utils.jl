@@ -22,12 +22,24 @@ end
 """
     calc_J!(integrator,cache,is_compos)
 
-Interface for updating the jacobian field `J` in a mutable cache.
+Interface for calculating the jacobian.
 
-If `integrator.f` has a custom jacobian update function, then it will be
-called for the update. Otherwise, either ForwardDiff or finite difference
-will be used depending on the `jac_config` of the cache.
+For constant caches, a new jacobian object is returned whereas for mutable
+caches `cache.J` is updated. In both cases, if `integrator.f` has a custom
+jacobian update function, then it will be called for the update. Otherwise,
+either ForwardDiff or finite difference will be used depending on the
+`jac_config` of the cache.
 """
+function calc_J!(integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
+  @unpack t,dt,uprev,u,f,p = integrator
+  if DiffEqBase.has_jac(f)
+    J = f.jac(uprev, p, t)
+  else
+    error("Jacobian wrapper for constant caches not yet implemented") #TODO
+  end
+  is_compos && (integrator.eigen_est = opnorm(J, Inf))
+  return J
+end
 function calc_J!(integrator, cache::OrdinaryDiffEqMutableCache, is_compos)
   @unpack t,dt,uprev,u,f,p = integrator
   J = cache.J
