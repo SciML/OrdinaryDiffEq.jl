@@ -1,7 +1,7 @@
 using OrdinaryDiffEq, Test, DiffEqDevTools, DiffEqOperators, Random
 const μ = 1.01
 linnonlin_f2 = (u,p,t) -> μ * u
-linnonlin_f1 = DiffEqArrayOperator(μ)
+linnonlin_f1 = DiffEqScalar(μ)
 fun = SplitFunction(linnonlin_f1, linnonlin_f2; analytic=(u0,p,t)->u0.*exp.(2μ*t))
 prob = SplitODEProblem(fun,1/2,(0.0,1.0))
 
