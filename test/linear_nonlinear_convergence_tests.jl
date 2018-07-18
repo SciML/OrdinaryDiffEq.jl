@@ -1,5 +1,7 @@
 using OrdinaryDiffEq, Test, DiffEqDevTools, DiffEqOperators, Random
-const μ = 1.01
+
+@testset "Out-of-place" begin
+μ = 1.01
 linnonlin_f2 = (u,p,t) -> μ * u
 linnonlin_f1 = DiffEqScalar(μ)
 fun = SplitFunction(linnonlin_f1, linnonlin_f2; analytic=(u0,p,t)->u0.*exp.(2μ*t))
@@ -26,8 +28,11 @@ sim  = test_convergence(dts,prob,HochOst4())
 @test abs(sim.𝒪est[:l2]-4) < 0.2
 sim  = test_convergence(dts,prob,ETD2())
 @test abs(sim.𝒪est[:l2]-2) < 0.2
+end
 
+@testset "Inplace" begin
 println("Inplace")
+μ = 1.01
 u0 = rand(2)
 A = [2.0 -1.0; -1.0 2.0]
 linnonlin_f1 = DiffEqArrayOperator(A)
@@ -63,3 +68,4 @@ sim  = test_convergence(dts,prob,HochOst4())
 
 sim  = test_convergence(dts,prob,ETD2())
 @test abs(sim.𝒪est[:l2]-2) < 0.1
+end
