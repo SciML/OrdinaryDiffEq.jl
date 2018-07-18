@@ -627,10 +627,11 @@ function phiv_timestep!(U::AbstractMatrix{T}, ts::Vector{tType}, A, B::AbstractM
       iop = 2 # does not have an effect on arnoldi!, just for flops estimation
     end
     if iszero(NA)
-      if isa(A, SparseMatrixCSC)
-        NA = nnz(A)
+      _A = convert(AbstractMatrix, A)
+      if isa(_A, SparseMatrixCSC)
+        NA = nnz(_A)
       else
-        NA = count(!iszero, A) # not constant operation, should be best avoided
+        NA = count(!iszero, _A) # not constant operation, should be best avoided
       end
     end
   end
