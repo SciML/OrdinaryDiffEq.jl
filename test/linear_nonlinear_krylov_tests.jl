@@ -1,34 +1,7 @@
 using OrdinaryDiffEq, Test, DiffEqOperators, Random, LinearAlgebra
-@testset "Classical ExpRK" begin
-    N = 20
-    dt=0.1
-    srand(0); u0 = rand(N)
-    reltol = 1e-4
-    dd = -2 * ones(N); du = ones(N-1)
-    L = DiffEqArrayOperator(diagm(-1 => du, 0 => dd, 1 => du))
-    krylov_f2 = (u,p,t) -> -0.1*u
-    krylov_f2! = (du,u,p,t) -> du .= -0.1*u
-    prob = SplitODEProblem(L,krylov_f2,u0,(0.0,1.0))
-    prob_inplace = SplitODEProblem(L,krylov_f2!,u0,(0.0,1.0))
 
-    Algs = [LawsonEuler,NorsettEuler,ETDRK2,ETDRK3,ETDRK4,HochOst4]
-    for Alg in Algs
-        sol = solve(prob, Alg(); dt=dt)
-        sol_krylov = solve(prob, Alg(krylov=true, m=10); dt=dt, reltol=reltol)
-        @test isapprox(sol.u,sol_krylov.u; rtol=reltol)
-
-        sol_ip = solve(prob_inplace, Alg(); dt=dt)
-        sol_ip_krylov = solve(prob_inplace, Alg(krylov=true, m=10); dt=dt, reltol=reltol)
-        @test isapprox(sol.u,sol_krylov.u; rtol=reltol)
-
-        println(Alg) # prevent Travis hanging
-    end
-end
-
-@testset "EPIRK" begin
-    N = 20
+function _construct_test_prob(N)
     srand(0); u0 = normalize(randn(N))
-    # For the moment, use dense Jacobian
     dd = -2 * ones(N); du = ones(N-1)
     A = diagm(-1 => du, 0 => dd, 1 => du)
     _f = (u,p,t) -> A*u - u.^3
@@ -44,7 +17,45 @@ end
     f_ip = ODEFunction(_f_ip; jac=_jac_ip, jac_prototype=zeros(N,N))
     prob = ODEProblem(f, u0, (0.0, 1.0))
     prob_ip = ODEProblem(f_ip, u0, (0.0, 1.0))
+    return prob, prob_ip
+end
 
+@testset "Classical ExpRK - Low Order" begin
+    prob, prob_ip = _construct_test_prob(20)
+    dt = 0.01; tol=1e-3
+    Algs = [LawsonEuler,NorsettEuler,ETDRK2]
+    for Alg in Algs
+        sol = solve(prob, Alg(krylov=true, m=20); dt=dt, reltol=tol)
+        sol_ref = solve(prob, Tsit5(); reltol=tol)
+        @test isapprox(sol(1.0), sol_ref(1.0); rtol=tol)
+
+        sol = solve(prob_ip, Alg(krylov=true, m=20); dt=dt, reltol=tol)
+        sol_ref = solve(prob_ip, Tsit5(); reltol=tol)
+        @test isapprox(sol(1.0), sol_ref(1.0); rtol=tol)
+
+        println(Alg) # prevent Travis hanging
+    end
+end
+
+@testset "Classical ExpRK - High Order" begin
+    prob, prob_ip = _construct_test_prob(20)
+    dt = 0.05; tol=1e-5
+    Algs = [ETDRK3,ETDRK4,HochOst4]
+    for Alg in Algs
+        sol = solve(prob, Alg(krylov=true, m=20); dt=dt, reltol=tol)
+        sol_ref = solve(prob, Tsit5(); reltol=tol)
+        @test isapprox(sol(1.0), sol_ref(1.0); rtol=tol)
+
+        sol = solve(prob_ip, Alg(krylov=true, m=20); dt=dt, reltol=tol)
+        sol_ref = solve(prob_ip, Tsit5(); reltol=tol)
+        @test isapprox(sol(1.0), sol_ref(1.0); rtol=tol)
+
+        println(Alg) # prevent Travis hanging
+    end
+end
+
+@testset "EPIRK" begin
+    prob, prob_ip = _construct_test_prob(20)
     dt = 0.05; tol=1e-5
     Algs = [Exp4, EPIRK4s3A, EPIRK4s3B, EXPRB53s3, EPIRK5P1, EPIRK5P2]
     for Alg in Algs
