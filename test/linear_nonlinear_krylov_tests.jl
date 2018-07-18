@@ -41,7 +41,7 @@ end
         end
     end
     f = ODEFunction(_f; jac=_jac)
-    f_ip = ODEFunction(_f_ip; jac=_jac_ip)
+    f_ip = ODEFunction(_f_ip; jac=_jac_ip, jac_prototype=zeros(N,N))
     prob = ODEProblem(f, u0, (0.0, 1.0))
     prob_ip = ODEProblem(f_ip, u0, (0.0, 1.0))
 
