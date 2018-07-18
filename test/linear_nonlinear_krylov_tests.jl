@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Test, DiffEqOperators, Random, LinearAlgebra
+using OrdinaryDiffEq, Test, DiffEqOperators, Random, LinearAlgebra, SparseArrays
 let N = 20
 srand(0); u0 = normalize(randn(N))
 dd = -2 * ones(N); du = ones(N-1)
@@ -74,5 +74,31 @@ end
   sol_ref = solve(prob_ip, Tsit5(); reltol=tol)
   @test_broken isapprox(sol(1.0), sol_ref(1.0); rtol=tol)
   println(EPIRK5s3) # prevent Travis hanging
+end
+
+@testset "ExpRK with custom jacobian" begin
+  N = 10
+  # Sparse Jacobian
+  srand(0); u0 = normalize(randn(N))
+  dd = -2 * ones(N); du = ones(N-1)
+  A = spdiagm(-1 => du, 0 => dd, 1 => du)
+  f = (u,p,t) -> A*u
+  fun = ODEFunction(f;
+                    jac=(u,p,t) -> A,
+                    analytic=(u,p,t) -> exp(t*Matrix(A)) * u)
+  prob = ODEProblem(fun, u0, (0.0,1.0))
+  sol = solve(prob, LawsonEuler(krylov=true, m=N); dt=0.1)
+  @test sol(1.0) ≈ fun.analytic(u0,nothing,1.0)
+  # Matrix-free Jacobian
+  # Need to implement the missing interface for DerivativeOperator first
+  @test_broken begin
+    L = DerivativeOperator{Float64}(2,2,1.0,N,:Dirichlet0,:Dirichlet0)
+    fun = ODEFunction(L;
+                      jac_prototype=L,
+                      analytic=(u,p,t) -> exp(t*full(L)) * u)
+    prob = ODEProblem(fun, u0, (0.0,1.0))
+    sol = solve(prob, LawsonEuler(krylov=true, m=N); dt=0.1)
+    @test sol(1.0) ≈ fun.analytic(u0,nothing,1.0)
+  end
 end
 end
