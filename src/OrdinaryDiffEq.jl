@@ -188,7 +188,7 @@ module OrdinaryDiffEq
 
   export IMEXEuler, CNAB2, CNLF2
 
-  export AN5, JVODE, JVODE_Adams
+  export AN5, JVODE, JVODE_Adams, JVODE_BDF
 
   export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2
 

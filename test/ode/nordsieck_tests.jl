@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, DiffEqDevTools, Test
+using OrdinaryDiffEq, DiffEqDevTools, Test, LinearAlgebra
 using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
 import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
 
@@ -28,9 +28,9 @@ probArr = [prob_ode_linear,
 end
 
 @testset "Nordsieck Adaptivity Tests: JVODE" begin
-  for i in eachindex(probArr)
+  for i in eachindex(probArr), sol = [JVODE_Adams(), JVODE_BDF()]
     prob = probArr[i]
-    sol = solve(prob, JVODE_Adams(), reltol=1e-4, abstol=1e-7)
+    sol = solve(prob, sol, reltol=1e-4, abstol=1e-7)
     @test length(sol.t) < 22
     exact = prob.f(Val{:analytic}, prob.u0, prob.p, prob.tspan[end])
     @test norm(exact - sol[end], Inf) < 3e-3
