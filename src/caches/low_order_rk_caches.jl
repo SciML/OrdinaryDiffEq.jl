@@ -533,7 +533,7 @@ function alg_cache(alg::Anas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   k5 = zeros(rate_prototype)
   k6 = zeros(rate_prototype)
   k7 = zeros(rate_prototype)
-  utilde = similar(u,indices(u))
+  utilde = similar(u,axes(u))
   atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
   Anas5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp,tab)
