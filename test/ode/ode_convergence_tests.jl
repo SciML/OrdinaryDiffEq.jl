@@ -57,7 +57,7 @@ for i = 1:2
 
   println("Stiff Solvers")
 
-  dts = 1.//2.^(9:-1:5)
+  dts = 1 .//2 .^(9:-1:5)
 
   sim11 = test_convergence(dts,prob,ImplicitEuler(extrapolant = :linear))
   @test abs(sim11.𝒪est[:final]-1) < testTol
@@ -132,7 +132,7 @@ for i = 1:2
   @test abs(sim.𝒪est[:l2]-2) < testTol
   @test abs(sim.𝒪est[:l∞]-2) < testTol
 
-  dts = 1.//2.^(7:-1:4)
+  dts = 1 .//2 .^(7:-1:4)
   println("Higher Order")
 
   sim18 = test_convergence(dts,prob,Cash4())
