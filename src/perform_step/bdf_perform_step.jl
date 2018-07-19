@@ -119,7 +119,8 @@ end
   end
 
   @. tmp = d1*uₙ₋₁ + d2*uₙ₋₂ + d3*zₙ₋₁
-  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, tmp, d, 1, Val{:newton}, new_W)
+  nlcache = nlsolve_cache(integrator.alg, cache, z, tmp, d, 1, new_W)
+  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
   @. uₙ = tmp + d*z
@@ -254,7 +255,8 @@ function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
   # initial guess
   @. z = dt*integrator.fsalfirst
 
-  z, η, iter, fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, tmp, γ, 1, Val{:newton}, new_W)
+  nlcache = nlsolve_cache(integrator.alg, cache, z, tmp, γ, 1, new_W)
+  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
   @. u = tmp + γ*z
 
@@ -425,7 +427,8 @@ function perform_step!(integrator,cache::QNDF2Cache,repeat_step=false)
   # initial guess
   @. z = dt*integrator.fsalfirst
 
-  z, η, iter, fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, tmp, γ, 1, Val{:newton}, new_W)
+  nlcache = nlsolve_cache(integrator.alg, cache, z, tmp, γ, 1, new_W)
+  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
   @. u = tmp + γ*z
 

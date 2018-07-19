@@ -71,7 +71,8 @@ function perform_step!(integrator, cache::IMEXEulerCache, repeat_step=false)
     z .= zero(u)
   end
 
-  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, tmp, 1, 1, Val{:newton}, new_W)
+  nlcache = nlsolve_cache(integrator.alg, cache, z, tmp, 1, 1, new_W)
+  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
   @. u = tmp + z
 

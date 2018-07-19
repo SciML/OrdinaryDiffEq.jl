@@ -1622,7 +1622,8 @@ function perform_step!(integrator, cache::CNAB2Cache, repeat_step=false)
   # initial guess
   @. z = dt*du₁
   @. tmp += γ*z
-  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, tmp, γ, 1, Val{:newton}, new_W)
+  nlcache = nlsolve_cache(integrator.alg, cache, z, tmp, γ, 1, new_W)
+  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
   @. u = tmp + 1//2*z
 
@@ -1722,7 +1723,8 @@ function perform_step!(integrator, cache::CNLF2Cache, repeat_step=false)
 
   # initial guess
   @. z = dt*du₁
-  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, tmp, γ, 1, Val{:newton}, new_W)
+  nlcache = nlsolve_cache(integrator.alg, cache, z, tmp, γ, 1, new_W)
+  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
   @. u = tmp + γ*z
 

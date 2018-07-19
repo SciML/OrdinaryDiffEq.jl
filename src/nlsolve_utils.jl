@@ -96,7 +96,7 @@ function diffeq_nlsolve!(integrator,
                          cache::OrdinaryDiffEqMutableCache,
                          ::Type{Val{:newton}})
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack z,dz,tmp,b,W,κ,tol,k,new_W = nlcache
+  @unpack z,dz,tmp,b,W,κ,tol,k,new_W,c,γ = nlcache
   mass_matrix = integrator.sol.prob.mass_matrix
   alg = unwrap_alg(integrator, true)
   if typeof(integrator.f) <: SplitFunction
