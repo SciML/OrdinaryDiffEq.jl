@@ -101,6 +101,67 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
   end
 end
 
+"""
+    WOperator(mass_matrix,gamma,J[;cache])
+
+A linear operator that represents the W matrix of an ODEProblem, defined as
+
+```math
+W = MM - \\gamma J
+```
+
+where `MM` is the mass matrix (a regular `AbstractMatrix` or a `UniformScaling`),
+`γ` is a real number proportional to the time step, and `J` is the Jacobian
+operator (must be a `AbstractDiffEqLinearOperator`).
+
+`WOperator` supports lazy `*` and `mul!` operations, the latter utilizing an
+internal cache (can be specified in the constructor; default to regular `Vector`).
+It supports all of `AbstractDiffEqLinearOperator`'s interface.
+"""
+mutable struct WOperator{T,
+  MType <: Union{AbstractMatrix,UniformScaling},
+  GType <: Real,
+  JType <: DiffEqBase.AbstractDiffEqLinearOperator{T},
+  CType <: AbstractVector
+  } <: DiffEqBase.AbstractDiffEqLinearOperator{T}
+  mass_matrix::MType
+  gamma::GType
+  J::JType
+  cache::CType
+  function WOperator(mass_matrix, gamma, J; cache=nothing)
+    T = eltype(J)
+    # Convert mass_matrix, if needed
+    if !isa(mass_matrix, Union{AbstractMatrix,UniformScaling})
+      mass_matrix = convert(AbstractMatrix, mass_matrix)
+    end
+    # Construct the cache, default to regular vector
+    if cache == nothing
+      cache = Vector{T}(undef, size(J, 1))
+    end
+    new{T,typeof(mass_matrix),typeof(gamma),typeof(J),typeof(cache)}(mass_matrix,gamma,J,cache)
+  end
+end
+set_gamma!(W::WOperator, gamma) = (W.gamma = gamma; W)
+DiffEqBase.update_coefficients!(W::WOperator,u,p,t) = (update_coefficients!(W.J,u,p,t); W)
+Base.convert(::Type{AbstractMatrix}, W::WOperator) = W.mass_matrix - W.gamma * convert(AbstractMatrix,W.J)
+Base.size(W::WOperator, args...) = size(W.J, args...)
+Base.getindex(W::WOperator, i::Int) = W.mass_matrix[i] - W.gamma * W.J[i]
+Base.getindex(W::WOperator, I::Vararg{Int,N}) where {N} =
+  W.mass_matrix[I...] - W.gamma * W.J[I...]
+Base.:*(W::WOperator, x::Union{AbstractVecOrMat,Number}) = W.mass_matrix*x - W.gamma * (W.J*x)
+function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrMat)
+  # Compute mass_matrix * B
+  if isa(W.mass_matrix, UniformScaling)
+    @. Y = W.mass_matrix.λ * B
+  else
+    mul!(Y, W.mass_matrix, B)
+  end
+  # Compute J * B
+  mul!(W.cache, W.J, B)
+  # Subtract result
+  axpy!(-W.gamma, W.cache, Y)
+end
+
 function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat_step, W_transform=false)
   @unpack t,uprev,f = integrator
   @unpack uf = cache

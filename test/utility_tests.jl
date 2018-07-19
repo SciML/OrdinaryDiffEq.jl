@@ -1,5 +1,5 @@
 using OrdinaryDiffEq: phi, phi, phiv, phiv_timestep, expv, expv_timestep, arnoldi, getH, getV
-using LinearAlgebra, SparseArrays, Random, Test
+using LinearAlgebra, SparseArrays, Random, Test, DiffEqOperators
 
 @testset "Exponential Utilities" begin
   # Scalar phi
@@ -66,4 +66,17 @@ using LinearAlgebra, SparseArrays, Random, Test
   u_exact = Phi[1] * B[:, 1]
   u = expv_timestep(t, A, B[:, 1]; adaptive=true, tol=tol)
   @test norm(u - u_exact) / norm(u_exact) < tol
+end
+
+@testset "Derivative Utilities" begin
+  @testset "WOperator" begin
+    srand(0); y = zeros(2); b = rand(2)
+    mm = I; _J = rand(2,2)
+    W = OrdinaryDiffEq.WOperator(mm, 1.0, DiffEqArrayOperator(_J))
+    OrdinaryDiffEq.set_gamma!(W, 2.0)
+    _W = mm - 2.0 * _J
+    @test convert(AbstractMatrix,W) ≈ _W
+    @test W * b ≈ _W * b
+    mul!(y, W, b); @test y ≈ _W * b
+  end
 end
