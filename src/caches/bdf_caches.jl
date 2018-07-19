@@ -354,3 +354,47 @@ function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   QNDF2Cache(uprev2,uprev3,du1,fsalfirst,k,z,dz,b,D,D2,R,U,tmp,atmp,utilde,J,
               W,uf,jac_config,linsolve,ηold,κ,tol,10000,dtₙ₋₁,dtₙ₋₂)
 end
+
+mutable struct QNDFConstantCache{F,uToltype,coefType,coefType1,uType,dtType} <: OrdinaryDiffEqConstantCache
+  uf::F
+  ηold::uToltype
+  κ::uToltype
+  tol::uToltype
+  newton_iters::Int
+  D::coefType
+  D2::coefType2
+  R::coefType1
+  U::coefType1
+  k::Int64
+  udiff::uType
+  dts::dtType
+end
+
+
+function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  uToltype = real(uBottomEltypeNoUnits)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+  ηold = one(uToltype)
+  udiff = fill(zero(typeof(u)), 1, 5)
+  dts = fill(zero(typeof(u)), 1, 5)
+
+  D = fill(zero(typeof(u)), 1, 5)
+  D2 = fill(zero(typeof(u)), 5, 5)
+  R = fill(zero(typeof(t)), 5, 5)
+  U = fill(zero(typeof(t)), 5, 5)
+
+  U!(k,U)
+
+  if alg.κ != nothing
+    κ = uToltype(alg.κ)
+  else
+    κ = uToltype(1//100)
+  end
+  if alg.tol != nothing
+    tol = uToltype(alg.tol)
+  else
+    tol = uToltype(min(0.03,first(reltol)^(0.5)))
+  end
+
+  QNDFConstantCache(uf,ηold,κ,tol,10000,D,D2,R,U,1,udiff,dts)
+end

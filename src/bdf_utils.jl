@@ -23,3 +23,16 @@ function R!(k, ρ, cache)
     end
   end
 end
+
+function backward_diff(udiff, D, D2, k)
+  for i = 1:k
+    D2[1,i] = udiff[i]
+  end
+  D[1] = D2[1,1]
+  for i = 2:k
+    for j = 1:(k-i-1)
+      D2[i,j] = D2[i-1,j] - D2[i-1,j+1]
+    end
+    D[i] = D2[i,1]
+  end
+end
