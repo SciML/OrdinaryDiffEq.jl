@@ -70,11 +70,12 @@ function choosedeg!(cache::T) where T
   @unpack ms, fp1, fp2, recf, zprev = cache
   recind = 0
   @inbounds for i in 1:46
-    recind += ms[i]*2
+    recind += ms[i]
     if ms[i] > cache.mdeg
       cache.mdeg = i
       cache.recind = recind
-      return nothing
+      break
     end # end if
   end # end for
+  return nothing
 end

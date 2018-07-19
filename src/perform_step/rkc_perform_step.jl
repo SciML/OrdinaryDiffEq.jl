@@ -31,11 +31,11 @@ end
   ms[cache.mdeg] < 2 && ( u = gprev )
   # for the second to the ms[cache.mdeg] th stages
   for i in 2:ms[cache.mdeg]
-    temp1 = dt * recf[cache.recind + 2 * (i - 2) + 1]
-    temp3 = -recf[cache.recind + 2 * (i - 2) + 2]
-    temp2 = 1 - temp3
-    ci1 = temp1 + temp2 * ci2 + temp3 * ci3
-    u = temp1 * u + temp2 * gprev + temp3 * gprev2
+    μ, κ = recf[cache.recind + (i - 2)]
+    ν = -1 - κ
+    dtμ = dt*μ
+    ci1 = dtμ - ν * ci2 - κ * ci3
+    u = dtμ * u - ν * gprev - κ * gprev2
     i < ms[cache.mdeg] && (gprev2 = gprev; gprev = u)
     ci3 = ci2
     ci2 = ci1
@@ -93,9 +93,11 @@ end
   ms[ccache.mdeg] < 2 && ( @. u = gprev )
   # for the second to the ms[ccache.mdeg] th stages
   for i in 2:ms[ccache.mdeg]
-    temp1 = dt * recf[ccache.recind + 2 * (i - 2) + 1]
-    temp3 = -recf[ccache.recind + 2 * (i - 2) + 2]
-    temp2 = 1 - temp3
+    μ, κ = recf[cache.recind + (i - 2)]
+    ν = κ - 1
+    temp1 = dt * μ
+    temp2 = 1 + κ
+    temp3 = -κ
     ci1 = temp1 + temp2 * ci2 + temp3 * ci3
     @. u = temp1 * u + temp2 * gprev + temp3 * gprev2
     i < ms[ccache.mdeg] && (gprev2 .= gprev; gprev .= u)
