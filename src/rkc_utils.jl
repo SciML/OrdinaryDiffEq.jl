@@ -127,6 +127,14 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
   return false
 end
 
+"""
+    choosedeg!(cache) -> nothing
+
+Calculate `ms[mdeg]` (the degree of the Chebyshev polynomial)
+and `cache.recind` (the index of recurrence parameters for that
+degree), where `recf[recind:(recind+ms[mdeg]-2)]` are the `μ,κ` pairs
+for the `mdeg` degree method.
+"""
 function choosedeg!(cache::T) where T
   isconst = T <: OrdinaryDiffEqConstantCache
   isconst || ( cache = cache.constantcache )
