@@ -12,7 +12,7 @@ end
 @muladd function perform_step!(integrator, cache::ROCK2ConstantCache, repeat_step=false)
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
   @unpack ms, fp1, fp2, recf = cache
-  #maxeig!(integrator, cache)
+  maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
   mdeg = Int(floor(sqrt((1.5 + dt * integrator.eigen_est)/0.811) + 1))
   if mdeg >= 200
@@ -74,7 +74,7 @@ end
   @unpack k, k2, tmp, gprev2, gprev, atmp = cache
   @unpack ms, fp1, fp2, recf = cache.constantcache
   ccache = cache.constantcache
-  #maxeig!(integrator, cache)
+  maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
   mdeg = Int(floor(sqrt((1.5 + dt * integrator.eigen_est)/0.811) + 1))
   if mdeg >= 200
