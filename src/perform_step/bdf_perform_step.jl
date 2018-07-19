@@ -45,7 +45,8 @@ end
   end
 
   tmp = d1*uₙ₋₁ + d2*uₙ₋₂ + d3*zₙ₋₁
-  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, tmp, d, 1, Val{:newton})
+  nlcache = nlsolve_cache(integrator.alg, cache, z, tmp, W, d, 1, true)
+  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
   uₙ = tmp + d*z
@@ -188,7 +189,8 @@ function perform_step!(integrator,cache::QNDF1ConstantCache,repeat_step=false)
   # initial guess
   z = dt*integrator.fsalfirst
 
-  z, η, iter, fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, tmp, γ, 1, Val{:newton})
+  nlcache = nlsolve_cache(integrator.alg, cache, z, tmp, W, γ, 1, true)
+  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
   u = tmp + γ*z
 
@@ -277,7 +279,7 @@ end
 
 function initialize!(integrator, cache::QNDF2ConstantCache)
   integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
@@ -332,7 +334,8 @@ function perform_step!(integrator,cache::QNDF2ConstantCache,repeat_step=false)
   # initial guess
   z = dt*integrator.fsalfirst
 
-  z, η, iter, fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, tmp, γ, 1, Val{:newton})
+  nlcache = nlsolve_cache(integrator.alg, cache, z, tmp, W, γ, 1, true)
+  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
   u = tmp + γ*z
 

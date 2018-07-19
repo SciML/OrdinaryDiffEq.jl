@@ -1575,7 +1575,8 @@ function perform_step!(integrator,cache::CNAB2ConstantCache,repeat_step=false)
   z = zprev # Constant extrapolation
 
   tmp += γ*zprev
-  z, η, iter, fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, tmp, γ, 1, Val{:newton})
+  nlcache = nlsolve_cache(integrator.alg, cache, z, tmp, W, γ, 1, true)
+  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
   u = tmp + 1//2*z
 
@@ -1672,7 +1673,8 @@ function perform_step!(integrator,cache::CNLF2ConstantCache,repeat_step=false)
   zprev = dt*du₁
   z = zprev # Constant extrapolation
 
-  z, η, iter, fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, tmp, γ, 1, Val{:newton})
+  nlcache = nlsolve_cache(integrator.alg, cache, z, tmp, W, γ, 1, true)
+  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
   u = tmp + γ*z
 
