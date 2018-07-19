@@ -22,7 +22,7 @@ end
   cache.mdeg != cache.mdegprev && choosedeg!(cache)
   # recurrence
   # for the first stage
-  temp1 = dt * recf[cache.recind]
+  temp1 = dt * recf[cache.recind][1]
   ci1 = t + temp1
   ci2 = t + temp1
   ci3 = t
@@ -84,7 +84,7 @@ end
   ccache.mdeg != ccache.mdegprev && choosedeg!(cache)
   # recurrence
   # for the first stage
-  temp1 = dt * recf[ccache.recind]
+  temp1 = dt * recf[ccache.recind][1]
   ci1 = t + temp1
   ci2 = t + temp1
   ci3 = t
