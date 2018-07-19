@@ -47,9 +47,8 @@ end
   end
 
   tmp = uprev
-  #z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, tmp, 1, 1, Val{:newton})
   nlcache = nlsolve_cache(integrator.alg, cache, z, tmp, W, 1, 1, true)
-  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, Val{:newton})
+  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
   u = tmp + z
 
@@ -96,9 +95,8 @@ end
     z .= zero(u)
   end
 
-  #z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, uprev, 1, 1, Val{:newton}, new_W)
   nlcache = nlsolve_cache(integrator.alg, cache, 1, 1, new_W)
-  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, Val{:newton})
+  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
   @. u = uprev + z
 

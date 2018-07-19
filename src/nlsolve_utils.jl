@@ -7,8 +7,8 @@ struct NLsolveConstantCache{uType,J,uToltype,cType,gType} <: AbstractNLsolveCach
   W::J
   κ::uToltype
   tol::uToltype
-  c::cType
   γ::gType
+  c::cType
 end
 struct NLsolveMutableCache{rateType,uType,J,uToltype,cType,gType} <: AbstractNLsolveCache
   z::uType
@@ -18,26 +18,27 @@ struct NLsolveMutableCache{rateType,uType,J,uToltype,cType,gType} <: AbstractNLs
   W::J
   κ::uToltype
   tol::uToltype
-  c::cType
   γ::gType
+  c::cType
   k::rateType
   new_W::Bool
 end
 function nlsolve_cache(alg::Union{OrdinaryDiffEqNewtonAdaptiveAlgorithm,
                                   OrdinaryDiffEqNewtonAlgorithm},
-                       cache::OrdinaryDiffEqConstantCache, z, tmp, W, c, γ, new_W)
-  NLsolveMutableCache(z, tmp, W, cache.κ, cache.tol, c, γ)
+                       cache::OrdinaryDiffEqConstantCache, z, tmp, W, γ, c, new_W)
+  NLsolveConstantCache(z, tmp, W, cache.κ, cache.tol, γ, c)
 end
 function nlsolve_cache(alg::Union{OrdinaryDiffEqNewtonAdaptiveAlgorithm,
                                   OrdinaryDiffEqNewtonAlgorithm},
-                       cache::OrdinaryDiffEqMutableCache, c, γ, new_W)
-  NLsolveMutableCache(cache.z, cache.dz, cache.tmp, cache.b,
-                      cache.W, cache.κ,  cache.tol, c, γ, cache.k, new_W)
+                       cache::OrdinaryDiffEqMutableCache, z, tmp, γ, c, new_W)
+  NLsolveMutableCache(z, cache.dz, tmp, cache.b,
+                      cache.W, cache.κ, cache.tol, γ, c, cache.k, new_W)
 end
 
 # return `fail_convergence`
 function diffeq_nlsolve!(integrator,
                          nlcache::NLsolveConstantCache,
+                         cache::OrdinaryDiffEqConstantCache,
                          ::Type{Val{:newton}})
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z,tmp,W,κ,tol,c,γ = nlcache
@@ -92,9 +93,10 @@ end
 
 function diffeq_nlsolve!(integrator,
                          nlcache::NLsolveMutableCache,
+                         cache::OrdinaryDiffEqMutableCache,
                          ::Type{Val{:newton}})
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack z,dz,tmp,b,W,κ,tol,k,new_W = cache
+  @unpack z,dz,tmp,b,W,κ,tol,k,new_W = nlcache
   mass_matrix = integrator.sol.prob.mass_matrix
   alg = unwrap_alg(integrator, true)
   if typeof(integrator.f) <: SplitFunction
