@@ -47,7 +47,7 @@ end
   end
 
   tmp = uprev
-  nlcache = nlsolve_cache(integrator.alg, cache, z, tmp, W, 1, 1, true)
+  nlcache = nlsolve_cache(alg, cache, z, tmp, W, 1, 1, true)
   z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
   u = tmp + z
@@ -95,7 +95,7 @@ end
     z .= zero(u)
   end
 
-  nlcache = nlsolve_cache(integrator.alg, cache, z, uprev, 1, 1, new_W)
+  nlcache = nlsolve_cache(alg, cache, z, uprev, 1, 1, new_W)
   z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
   @. u = uprev + z
@@ -142,7 +142,7 @@ end
   end
 
   tmp = uprev
-  nlcache = nlsolve_cache(integrator.alg, cache, z, tmp, W, γ, 1//2, true)
+  nlcache = nlsolve_cache(alg, cache, z, tmp, W, γ, 1//2, true)
   z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
   u = tmp + z
@@ -171,7 +171,7 @@ end
     z .= zero(u)
   end
 
-  nlcache = nlsolve_cache(integrator.alg, cache, z, uprev, γ, 1//2, new_W)
+  nlcache = nlsolve_cache(alg, cache, z, uprev, γ, 1//2, new_W)
   z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
   @. u = uprev + z
@@ -196,7 +196,7 @@ end
   z = zprev # Constant extrapolation
 
   tmp = uprev + γdt*integrator.fsalfirst
-  nlcache = nlsolve_cache(integrator.alg, cache, z, tmp, W, γ, 1, true)
+  nlcache = nlsolve_cache(alg, cache, z, tmp, W, γ, 1, true)
   z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
   u = tmp + 1//2*z
@@ -262,7 +262,7 @@ end
   # initial guess
   @. z = dt*integrator.fsalfirst
   @. tmp = uprev + γdt*integrator.fsalfirst
-  nlcache = nlsolve_cache(integrator.alg, cache, z, tmp, γ, 1, new_W)
+  nlcache = nlsolve_cache(alg, cache, z, tmp, γ, 1, new_W)
   z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
   @. u = tmp + 1//2*z
@@ -329,7 +329,7 @@ end
   zᵧ = zprev
 
   tmp = uprev + d*zprev
-  nlcache = nlsolve_cache(integrator.alg, cache, zᵧ, tmp, W, d, γ, true)
+  nlcache = nlsolve_cache(alg, cache, zᵧ, tmp, W, d, γ, true)
   zᵧ,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -339,7 +339,7 @@ end
   z = α1*zprev + α2*zᵧ
 
   tmp = uprev + ω*zprev + ω*zᵧ
-  nlcache = nlsolve_cache(integrator.alg, cache, z, tmp, W, d, 1, true)
+  nlcache = nlsolve_cache(alg, cache, z, tmp, W, d, 1, true)
   z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -383,7 +383,7 @@ end
   @. zᵧ = zprev
 
   @. tmp = uprev + d*zprev
-  nlcache = nlsolve_cache(integrator.alg, cache, zᵧ, tmp, d, γ, new_W)
+  nlcache = nlsolve_cache(alg, cache, zᵧ, tmp, d, γ, new_W)
   zᵧ,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -393,7 +393,7 @@ end
   @. z = α1*zprev + α2*zᵧ
 
   @. tmp = uprev + ω*zprev + ω*zᵧ
-  nlcache = nlsolve_cache(integrator.alg, cache, z, tmp, d, 1, false)
+  nlcache = nlsolve_cache(alg, cache, z, tmp, d, 1, false)
   z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -439,14 +439,14 @@ end
   end
 
   tmp = uprev
-  nlcache = nlsolve_cache(integrator.alg, cache, z₁, tmp, W, 1, 1, true)
+  nlcache = nlsolve_cache(alg, cache, z₁, tmp, W, 1, 1, true)
   z₁,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
   ### Initial Guess Is α₁ = c₂/γ, c₂ = 0 => z₂ = α₁z₁ = 0
   z₂ = zero(u)
   tmp = uprev - z₁
-  nlcache = nlsolve_cache(integrator.alg, cache, z₂, tmp, W, 1, 1, true)
+  nlcache = nlsolve_cache(alg, cache, z₂, tmp, W, 1, 1, true)
   z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -491,7 +491,7 @@ end
   end
 
   ##### Step 1
-  nlcache = nlsolve_cache(integrator.alg, cache, z₁, uprev, 1, 1, new_W)
+  nlcache = nlsolve_cache(alg, cache, z₁, uprev, 1, 1, new_W)
   z₁,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -500,7 +500,7 @@ end
   ### Initial Guess Is α₁ = c₂/γ, c₂ = 0 => z₂ = α₁z₁ = 0
   z₂ .= zero(u)
   @. tmp = uprev - z₁
-  nlcache = nlsolve_cache(integrator.alg, cache, z₂, tmp, 1, 1, false)
+  nlcache = nlsolve_cache(alg, cache, z₂, tmp, 1, 1, false)
   z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -554,7 +554,7 @@ end
   tstep = t + dt
   u = uprev + γ*z₁
 
-  nlcache = nlsolve_cache(integrator.alg, cache, z₁, uprev, W, γ, 1, true)
+  nlcache = nlsolve_cache(alg, cache, z₁, uprev, W, γ, 1, true)
   z₁,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -564,7 +564,7 @@ end
   z₂ = c2/γ
 
   tmp = uprev + z₁/2
-  nlcache = nlsolve_cache(integrator.alg, cache, z₂, tmp, W, 1//4, 1, true)
+  nlcache = nlsolve_cache(alg, cache, z₂, tmp, W, 1//4, 1, true)
   z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -601,7 +601,7 @@ end
   end
 
   ##### Step 1
-  nlcache = nlsolve_cache(integrator.alg, cache, z₁, uprev, γ, 1, new_W)
+  nlcache = nlsolve_cache(alg, cache, z₁, uprev, γ, 1, new_W)
   z₁,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -611,7 +611,7 @@ end
   @. z₂ = c2/γ
 
   @. tmp = uprev + z₁/2
-  nlcache = nlsolve_cache(integrator.alg, cache, z₂, tmp, 1//4, 1, false)
+  nlcache = nlsolve_cache(alg, cache, z₂, tmp, 1//4, 1, false)
   z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -638,7 +638,7 @@ end
   # TODO: Add extrapolation for guess
   z₁ = zero(u)
 
-  nlcache = nlsolve_cache(integrator.alg, cache, z₁, uprev, W, γ, γ, true)
+  nlcache = nlsolve_cache(alg, cache, z₁, uprev, W, γ, γ, true)
   z₁,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -648,7 +648,7 @@ end
   z₂ = zero(u)
 
   tmp = uprev + a21*z₁
-  nlcache = nlsolve_cache(integrator.alg, cache, z₂, tmp, W, γ, c2, true)
+  nlcache = nlsolve_cache(alg, cache, z₂, tmp, W, γ, c2, true)
   z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -658,7 +658,7 @@ end
   z₃ = z₁
 
   tmp = uprev + a31*z₁ + a32*z₂
-  nlcache = nlsolve_cache(integrator.alg, cache, z₃, tmp, W, γ, c3, true)
+  nlcache = nlsolve_cache(alg, cache, z₃, tmp, W, γ, c3, true)
   z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -668,7 +668,7 @@ end
   z₄ = z₃
 
   tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
-  nlcache = nlsolve_cache(integrator.alg, cache, z₄, tmp, W, γ, c4, true)
+  nlcache = nlsolve_cache(alg, cache, z₄, tmp, W, γ, c4, true)
   z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -678,7 +678,7 @@ end
   z₅ = b1hat2*z₁ + b2hat2*z₂ + b3hat2*z₃ + b4hat2*z₄
 
   tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
-  nlcache = nlsolve_cache(integrator.alg, cache, z₅, tmp, W, γ, 1, true)
+  nlcache = nlsolve_cache(alg, cache, z₅, tmp, W, γ, 1, true)
   z₅,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -728,7 +728,7 @@ end
   z₁ .= zero(z₁)
 
   # initial step of Newton iteration
-  nlcache = nlsolve_cache(integrator.alg, cache, z₁, uprev, γ, γ, new_W)
+  nlcache = nlsolve_cache(alg, cache, z₁, uprev, γ, γ, new_W)
   z₁,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -738,7 +738,7 @@ end
   z₂ .= zero(z₂)
 
   @. tmp = uprev + a21*z₁
-  nlcache = nlsolve_cache(integrator.alg, cache, z₂, tmp, γ, c2, false)
+  nlcache = nlsolve_cache(alg, cache, z₂, tmp, γ, c2, false)
   z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -747,7 +747,7 @@ end
   # Guess starts from z₁
   @. z₃ = z₁
   @. tmp = uprev + a31*z₁ + a32*z₂
-  nlcache = nlsolve_cache(integrator.alg, cache, z₃, tmp, γ, c3, false)
+  nlcache = nlsolve_cache(alg, cache, z₃, tmp, γ, c3, false)
   z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -757,7 +757,7 @@ end
   @. z₄ = z₃
 
   @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
-  nlcache = nlsolve_cache(integrator.alg, cache, z₄, tmp, γ, c4, false)
+  nlcache = nlsolve_cache(alg, cache, z₄, tmp, γ, c4, false)
   z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -766,7 +766,7 @@ end
   # Use constant z prediction
   @. z₅ = b1hat2*z₁ + b2hat2*z₂ + b3hat2*z₃ + b4hat2*z₄
   tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
-  nlcache = nlsolve_cache(integrator.alg, cache, z₅, tmp, γ, 1, false)
+  nlcache = nlsolve_cache(alg, cache, z₅, tmp, γ, 1, false)
   z₅,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -817,7 +817,7 @@ end
 
   # TODO: Add extrapolation for guess
   z₁ = zero(u)
-  nlcache = nlsolve_cache(integrator.alg, cache, z₁, uprev, W, γ, γ, true)
+  nlcache = nlsolve_cache(alg, cache, z₁, uprev, W, γ, γ, true)
   z₁,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -825,7 +825,7 @@ end
 
   z₂ = α21*z₁
   tmp = uprev + a21*z₁
-  nlcache = nlsolve_cache(integrator.alg, cache, z₂, tmp, W, γ, c2, true)
+  nlcache = nlsolve_cache(alg, cache, z₂, tmp, W, γ, c2, true)
   z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -833,7 +833,7 @@ end
 
   z₃ = α31*z₁ + α32*z₂
   tmp = uprev + a31*z₁ + a32*z₂
-  nlcache = nlsolve_cache(integrator.alg, cache, z₃, tmp, W, γ, c3, true)
+  nlcache = nlsolve_cache(alg, cache, z₃, tmp, W, γ, c3, true)
   z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -841,7 +841,7 @@ end
 
   z₄ = α41*z₁ + α43*z₃
   tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
-  nlcache = nlsolve_cache(integrator.alg, cache, z₄, tmp, W, γ, c4, true)
+  nlcache = nlsolve_cache(alg, cache, z₄, tmp, W, γ, c4, true)
   z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -850,7 +850,7 @@ end
   # Use yhat2 for prediction
   z₅ = bhat1*z₁ + bhat2*z₂ + bhat3*z₃ + bhat4*z₄
   tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
-  nlcache = nlsolve_cache(integrator.alg, cache, z₅, tmp, W, γ, 1, true)
+  nlcache = nlsolve_cache(alg, cache, z₅, tmp, W, γ, 1, true)
   z₅,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -899,7 +899,7 @@ end
 
   ##### Step 1
 
-  nlcache = nlsolve_cache(integrator.alg, cache, z₁, uprev, γ, γ, new_W)
+  nlcache = nlsolve_cache(alg, cache, z₁, uprev, γ, γ, new_W)
   z₁,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -907,7 +907,7 @@ end
 
   @. z₂ = α21*z₁
   @. tmp = uprev + a21*z₁
-  nlcache = nlsolve_cache(integrator.alg, cache, z₂, tmp, γ, c2, false)
+  nlcache = nlsolve_cache(alg, cache, z₂, tmp, γ, c2, false)
   z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -915,7 +915,7 @@ end
 
   @. z₃ = α31*z₁ + α32*z₂
   @. tmp = uprev + a31*z₁ + a32*z₂
-  nlcache = nlsolve_cache(integrator.alg, cache, z₃, tmp, γ, c3, false)
+  nlcache = nlsolve_cache(alg, cache, z₃, tmp, γ, c3, false)
   z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -924,7 +924,7 @@ end
   # Use constant z prediction
   @. z₄ = α41*z₁ + α43*z₃
   @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
-  nlcache = nlsolve_cache(integrator.alg, cache, z₄, tmp, γ, c4, false)
+  nlcache = nlsolve_cache(alg, cache, z₄, tmp, γ, c4, false)
   z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -933,7 +933,7 @@ end
   # Use yhat prediction
   @. z₅ = bhat1*z₁ + bhat2*z₂ + bhat3*z₃ + bhat4*z₄
   @. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
-  nlcache = nlsolve_cache(integrator.alg, cache, z₅, tmp, γ, 1, false)
+  nlcache = nlsolve_cache(alg, cache, z₅, tmp, γ, 1, false)
   z₅,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 

@@ -45,7 +45,7 @@ end
   end
 
   tmp = d1*uₙ₋₁ + d2*uₙ₋₂ + d3*zₙ₋₁
-  nlcache = nlsolve_cache(integrator.alg, cache, z, tmp, W, d, 1, true)
+  nlcache = nlsolve_cache(alg, cache, z, tmp, W, d, 1, true)
   z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -119,7 +119,7 @@ end
   end
 
   @. tmp = d1*uₙ₋₁ + d2*uₙ₋₂ + d3*zₙ₋₁
-  nlcache = nlsolve_cache(integrator.alg, cache, z, tmp, d, 1, new_W)
+  nlcache = nlsolve_cache(alg, cache, z, tmp, d, 1, new_W)
   z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
 
@@ -162,12 +162,13 @@ end
 function perform_step!(integrator,cache::QNDF1ConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uprev2,D,D2,R,U,dtₙ₋₁ = cache
+  alg = unwrap_alg(integrator, true)
   cnt = integrator.iter
   k = 1
   if cnt == 1
-    κ = zero(integrator.alg.kappa)
+    κ = zero(alg.kappa)
   else
-    κ = integrator.alg.kappa
+    κ = alg.kappa
     ρ = dt/dtₙ₋₁
     D[1] = uprev - uprev2   # backward diff
     if ρ != 1
@@ -190,7 +191,7 @@ function perform_step!(integrator,cache::QNDF1ConstantCache,repeat_step=false)
   # initial guess
   z = dt*integrator.fsalfirst
 
-  nlcache = nlsolve_cache(integrator.alg, cache, z, tmp, W, γ, 1, true)
+  nlcache = nlsolve_cache(alg, cache, z, tmp, W, γ, 1, true)
   z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
   u = tmp + γ*z
@@ -230,12 +231,13 @@ end
 function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uprev2,D,D2,R,U,dtₙ₋₁,tmp,z,W,utilde,atmp = cache
+  alg = unwrap_alg(integrator, true)
   cnt = integrator.iter
   k = 1
   if cnt == 1
-    κ = zero(integrator.alg.kappa)
+    κ = zero(alg.kappa)
   else
-    κ = integrator.alg.kappa
+    κ = alg.kappa
     ρ = dt/dtₙ₋₁
     @. D[1] = uprev - uprev2 # backward diff
     if ρ != 1
@@ -255,7 +257,7 @@ function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
   # initial guess
   @. z = dt*integrator.fsalfirst
 
-  nlcache = nlsolve_cache(integrator.alg, cache, z, tmp, γ, 1, new_W)
+  nlcache = nlsolve_cache(alg, cache, z, tmp, γ, 1, new_W)
   z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
   @. u = tmp + γ*z
@@ -293,14 +295,15 @@ end
 function perform_step!(integrator,cache::QNDF2ConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uprev2,uprev3,dtₙ₋₁,dtₙ₋₂,D,D2,R,U = cache
+  alg = unwrap_alg(integrator, true)
   cnt = integrator.iter
   k = 2
   if cnt == 1 || cnt == 2
-    κ = zero(integrator.alg.kappa)
+    κ = zero(alg.kappa)
     γ₁ = 1//1
     γ₂ = 1//1
   elseif dtₙ₋₁ != dtₙ₋₂
-    κ = integrator.alg.kappa
+    κ = alg.kappa
     γ₁ = 1//1
     γ₂ = 1//1 + 1//2
     ρ₁ = dt/dtₙ₋₁
@@ -309,7 +312,7 @@ function perform_step!(integrator,cache::QNDF2ConstantCache,repeat_step=false)
     D[1] = D[1] * ρ₁
     D[2] = D[1] - ((uprev2 - uprev3) * ρ₂)
   else
-    κ = integrator.alg.kappa
+    κ = alg.kappa
     γ₁ = 1//1
     γ₂ = 1//1 + 1//2
     ρ = dt/dtₙ₋₁
@@ -336,7 +339,7 @@ function perform_step!(integrator,cache::QNDF2ConstantCache,repeat_step=false)
   # initial guess
   z = dt*integrator.fsalfirst
 
-  nlcache = nlsolve_cache(integrator.alg, cache, z, tmp, W, γ, 1, true)
+  nlcache = nlsolve_cache(alg, cache, z, tmp, W, γ, 1, true)
   z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
   u = tmp + γ*z
@@ -386,14 +389,15 @@ end
 function perform_step!(integrator,cache::QNDF2Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uprev2,uprev3,dtₙ₋₁,dtₙ₋₂,D,D2,R,U,tmp,utilde,atmp,W,z = cache
+  alg = unwrap_alg(integrator, true)
   cnt = integrator.iter
   k = 2
   if cnt == 1 || cnt == 2
-    κ = zero(integrator.alg.kappa)
+    κ = zero(alg.kappa)
     γ₁ = 1//1
     γ₂ = 1//1
   elseif dtₙ₋₁ != dtₙ₋₂
-    κ = integrator.alg.kappa
+    κ = alg.kappa
     γ₁ = 1//1
     γ₂ = 1//1 + 1//2
     ρ₁ = dt/dtₙ₋₁
@@ -402,7 +406,7 @@ function perform_step!(integrator,cache::QNDF2Cache,repeat_step=false)
     @. D[1] = D[1] * ρ₁
     @. D[2] = D[1] - ((uprev2 - uprev3) * ρ₂)
   else
-    κ = integrator.alg.kappa
+    κ = alg.kappa
     γ₁ = 1//1
     γ₂ = 1//1 + 1//2
     ρ = dt/dtₙ₋₁
@@ -427,7 +431,7 @@ function perform_step!(integrator,cache::QNDF2Cache,repeat_step=false)
   # initial guess
   @. z = dt*integrator.fsalfirst
 
-  nlcache = nlsolve_cache(integrator.alg, cache, z, tmp, γ, 1, new_W)
+  nlcache = nlsolve_cache(alg, cache, z, tmp, γ, 1, new_W)
   z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
   fail_convergence && return
   @. u = tmp + γ*z
