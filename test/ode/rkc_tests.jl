@@ -8,15 +8,16 @@ probArr[2] = prob_ode_2Dlinear
 
 srand(123)
 @testset "Power Iteration of Runge-Kutta-Chebyshev Tests" begin
-  for i in 1:10
-    A = rand(200,200)
+  for i in 1:10, iip in [true, false]
+    A = randn(20,20)
     test_f(u,p,t) = A*u
-    prob = ODEProblem(test_f, rand(200), (0,1.))
+    test_f(du,u,p,t) = mul!(du, A, u)
+    prob = ODEProblem{iip}(test_f, randn(20), (0,1.))
     integrator = init(prob, ROCK2())
     eigm = maximum(abs.(eigvals(A)))
     maxeig!(integrator, integrator.cache)
     eigest = integrator.eigen_est
-    @test eigest ≈ eigm atol=0.22eigm
+    @test eigest ≈ eigm rtol=0.1eigm
   end
 end
 
