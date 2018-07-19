@@ -1,11 +1,46 @@
+abstract type AbstractNLsolveCache end
+#abstract type NLsolveConstantCache <: AbstractNLsolveCache end
+#abstract type NLsolveMutableCache <: AbstractNLsolveCache end
+struct NLsolveConstantCache{uType,J,uToltype,cType,gType} <: AbstractNLsolveCache
+  z::uType
+  tmp::uType
+  W::J
+  κ::uToltype
+  tol::uToltype
+  c::cType
+  γ::gType
+end
+struct NLsolveMutableCache{rateType,uType,J,uToltype,cType,gType} <: AbstractNLsolveCache
+  z::uType
+  dz::uType
+  tmp::uType
+  b::uType
+  W::J
+  κ::uToltype
+  tol::uToltype
+  c::cType
+  γ::gType
+  k::rateType
+  new_W::Bool
+end
+function nlsolve_cache(alg::Union{OrdinaryDiffEqNewtonAdaptiveAlgorithm,
+                                  OrdinaryDiffEqNewtonAlgorithm},
+                       cache::OrdinaryDiffEqConstantCache, z, tmp, W, c, γ, new_W)
+  NLsolveMutableCache(z, tmp, W, cache.κ, cache.tol, c, γ)
+end
+function nlsolve_cache(alg::Union{OrdinaryDiffEqNewtonAdaptiveAlgorithm,
+                                  OrdinaryDiffEqNewtonAlgorithm},
+                       cache::OrdinaryDiffEqMutableCache, c, γ, new_W)
+  NLsolveMutableCache(cache.z, cache.dz, cache.tmp, cache.b,
+                      cache.W, cache.κ,  cache.tol, c, γ, cache.k, new_W)
+end
+
 # return `fail_convergence`
 function diffeq_nlsolve!(integrator,
-                         cache::OrdinaryDiffEqConstantCache,
-                         # `z` is the initial guess
-                         W, z, tmp, γ, c,
+                         nlcache::NLsolveConstantCache,
                          ::Type{Val{:newton}})
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack uf,κ,tol = cache
+  @unpack z,tmp,W,κ,tol,c,γ = nlcache
   mass_matrix = integrator.sol.prob.mass_matrix
   alg = unwrap_alg(integrator, true)
   if typeof(integrator.f) <: SplitFunction
@@ -56,12 +91,10 @@ function diffeq_nlsolve!(integrator,
 end
 
 function diffeq_nlsolve!(integrator,
-                         cache::OrdinaryDiffEqMutableCache,
-                         # `z` is the initial guess
-                         W, z, tmp, γ, c,
-                         ::Type{Val{:newton}}, new_W)
+                         nlcache::NLsolveMutableCache,
+                         ::Type{Val{:newton}})
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack uf,du1,dz,k,b,J,W,jac_config,κ,tol = cache
+  @unpack z,dz,tmp,b,W,κ,tol,k,new_W = cache
   mass_matrix = integrator.sol.prob.mass_matrix
   alg = unwrap_alg(integrator, true)
   if typeof(integrator.f) <: SplitFunction
