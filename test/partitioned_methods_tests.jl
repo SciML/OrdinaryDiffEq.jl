@@ -40,6 +40,7 @@ sol2_verlet(0.1)
 @test sol_verlet[end][3] == sol2_verlet[end][3]
 @test sol_ruth3[end][3] == sol2_ruth3[end][3]
 
+prob = DynamicalODEProblem(ff_harmonic,v0,u0,(0.0,5.0))
 println("Convergence tests")
 
 dts = 1 .//2 .^(6:-1:3)
@@ -163,7 +164,7 @@ sol = solve(prob, DPRKN12())
 sol = solve(prob, ERKN4(),reltol=1e-8)
 @test length(sol.u) < 38
 sol = solve(prob, ERKN5(),reltol=1e-8)
-@test length(sol.u) < 31
+@test length(sol.u) < 34
 
 # Test array partition outside of symplectic
 
@@ -314,4 +315,4 @@ sol = solve(prob, DPRKN12())
 sol = solve(prob, ERKN4(),reltol=1e-8)
 @test length(sol.u) < 38
 sol = solve(prob, ERKN5(),reltol=1e-8)
-@test length(sol.u) < 31
+@test length(sol.u) < 34
