@@ -2,18 +2,18 @@ using OrdinaryDiffEq, Test, RecursiveArrayTools, DiffEqDevTools
 
 u0 = fill(0., 2)
 v0 = ones(2)
-f1 = function (dv,v,u,p,t)
+function f1_harmonic(dv,v,u,p,t)
   dv .= -u
 end
-f2 = function (du,v,u,p,t)
+function f2_harmonic(du,v,u,p,t)
   du .= v
 end
-function analytic_sol(y0, p, x)
+function harmonic_analytic(y0, p, x)
   v0, u0 = y0
   ArrayPartition(-u0*sin(x) + v0*cos(x),u0*cos(x) + v0*sin(x))
 end
-fun = DynamicalODEFunction(f1,f2;analytic=analytic_sol)
-prob = DynamicalODEProblem(fun,v0,u0,(0.0,5.0))
+ff_harmonic = DynamicalODEFunction(f1_harmonic,f2_harmonic;analytic=harmonic_analytic)
+prob = DynamicalODEProblem(ff_harmonic,v0,u0,(0.0,5.0))
 
 sol = solve(prob,SymplecticEuler(),dt=1/2)
 sol_verlet = solve(prob,VelocityVerlet(),dt=1/100)
@@ -25,7 +25,7 @@ interps = sol(interp_time)
 
 sol_tsit5 = solve(prob,Tsit5())
 
-fun = DynamicalODEFunction(f1;analytic=analytic_sol)
+ff_harmonic = DynamicalODEFunction(f1_harmonic;analytic=harmonic_analytic)
 prob = SecondOrderODEProblem(fun,v0,u0,(0.0,5.0))
 
 sol2 = solve(prob,SymplecticEuler(),dt=1/2)
@@ -167,15 +167,14 @@ sol = solve(prob, ERKN5(),reltol=1e-8)
 
 # Test array partition outside of symplectic
 
-f = function (du,u,p,t)
+function f_ap(du,u,p,t)
   du.x[1] .= -2u.x[2]
   du.x[2] .= u.x[1]
 end
 
 u = ArrayPartition((u0,v0))
 
-prob = ODEProblem(f,u,(0.0,5.0))
-
+prob = ODEProblem(f_ap,u,(0.0,5.0))
 sol = solve(prob,Euler(),dt=1/100)
 
 ################# Out of place symplectic
@@ -184,14 +183,14 @@ println("Out of Place")
 
 u0 = 0.0
 v0 = 1.0
-f12 = function (v,u,p,t)
+function f1_harmonic_nip(v,u,p,t)
   -u
 end
-f22 = function (v,u,p,t)
+function f2_harmonic_nip(v,u,p,t)
   v
 end
 
-fun = DynamicalODEFunction(f12,f22;analytic=analytic_sol)
+fun = DynamicalODEFunction(f1_harmonic_nip,f2_harmonic_nip;analytic=harmonic_analytic)
 prob = DynamicalODEProblem(fun,v0,u0,(0.0,5.0))
 
 sol = solve(prob,SymplecticEuler(),dt=1/10)

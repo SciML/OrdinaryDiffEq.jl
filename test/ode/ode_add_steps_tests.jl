@@ -9,7 +9,7 @@ function test_ode(du, u, p, t)
     return nothing
 end
 
-test_solution(t) = t <= 5 ? t : 5. * e^(-(t-5))
+test_solution(t) = t <= 5 ? t : 5. * exp(-(t-5))
 
 tspan = (0.,10.)
 testtimes = range(tspan[1], stop=tspan[2], length=1001)

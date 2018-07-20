@@ -33,7 +33,7 @@ ok = false
 for i in 1:integrator.opts.maxiters
   step!(integrator)
   if check_error(integrator) == desired_code
-    ok = true
+    global ok = true
     # @show i
     break
   end
