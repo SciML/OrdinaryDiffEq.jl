@@ -79,7 +79,7 @@ end
 function ExplicitRKConstantCache(tableau,rate_prototype)
   @unpack A,c,α,αEEst,stages = tableau
   A = A' # Transpose A to column major looping
-  kk = Array{typeof(rate_prototype)}(stages) # Not ks since that's for integrator.opts.dense
+  kk = Array{typeof(rate_prototype)}(undef, stages) # Not ks since that's for integrator.opts.dense
   ExplicitRKConstantCache(A,c,α,αEEst,stages,kk)
 end
 
