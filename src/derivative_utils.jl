@@ -165,25 +165,34 @@ end
 function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat_step, W_transform=false)
   @unpack t,uprev,f = integrator
   @unpack uf = cache
+  mass_matrix = integrator.sol.prob.mass_matrix
   # calculate W
   uf.t = t
   isarray = typeof(uprev) <: AbstractArray
   iscompo = typeof(integrator.alg) <: CompositeAlgorithm
   if !W_transform
-    if isarray
-      J = ForwardDiff.jacobian(uf,uprev)
-      W = I - dtgamma*J
+    if isa(f.jac_prototype, DiffEqBase.AbstractDiffEqLinearOperator)
+      W = WOperator(mass_matrix, dtgamma, deepcopy(f.jac_prototype))
     else
-      J = ForwardDiff.derivative(uf,uprev)
-      W = 1 - dtgamma*J
+      if isarray
+        J = ForwardDiff.jacobian(uf,uprev)
+        W = I - dtgamma*J
+      else
+        J = ForwardDiff.derivative(uf,uprev)
+        W = 1 - dtgamma*J
+      end
     end
   else
-    if isarray
-      J = ForwardDiff.jacobian(uf,uprev)
-      W = I*inv(dtgamma) - J
+    if isa(f.jac_prototype, DiffEqBase.AbstractDiffEqLinearOperator)
+      error("Lazy W_transform not yet supported")
     else
-      J = ForwardDiff.derivative(uf,uprev)
-      W = inv(dtgamma) - J
+      if isarray
+        J = ForwardDiff.jacobian(uf,uprev)
+        W = I*inv(dtgamma) - J
+      else
+        J = ForwardDiff.derivative(uf,uprev)
+        W = inv(dtgamma) - J
+      end
     end
   end
   iscompo && (integrator.eigen_est = isarray ? opnorm(J, Inf) : J)
