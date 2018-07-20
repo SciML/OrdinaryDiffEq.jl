@@ -265,7 +265,7 @@ function arnoldi!(Ks::KrylovSubspace{B, T}, A, b::AbstractVector{T}; tol::Real=1
     beta = norm(cache)
     H[j+1, j] = beta
     @inbounds for i = 1:n
-      @. V[i, j+1] = cache[i] / beta
+      V[i, j+1] = cache[i] / beta
     end
     if beta < vtol # happy-breakdown
       Ks.m = j
