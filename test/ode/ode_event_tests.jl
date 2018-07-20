@@ -32,7 +32,7 @@ condtion= function (u,t,integrator) # Event when event_f(u,t,k) == 0
 end
 
 affect! = function (integrator)
-  integrator.u = integrator.u + 2
+  integrator.u = integrator.u .+ 2
 end
 
 callback = ContinuousCallback(condtion,affect!)

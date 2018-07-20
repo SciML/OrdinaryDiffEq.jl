@@ -59,8 +59,8 @@ end
 
   @test [sol[i].f1 for i in eachindex(sol)] == [fill(0., 9);1.5*ones(5);-1.5*ones(4)]
 
-  A = diagm([0.3,0.6,0.9])
-  B = [1 2 3].'
+  A = Matrix(Diagonal([0.3,0.6,0.9]))
+  B = transpose([1 2 3])
   C = [1/3 1/3 1/3]
 
   function mysystem(t,x,dx,p,u)
@@ -157,7 +157,7 @@ end
   tspan = (0.0,3000.0)
   prob = ODEProblem(sigmoid,u0,tspan)
 
-  const tstop =[tstop1;tstop2]
+  tstop =[tstop1;tstop2]
   sol = solve(prob,Tsit5(),callback = cbs, tstops=tstop)
   sol = solve(prob,Rodas4(),callback = cbs, tstops=tstop)
   sol = solve(prob,Kvaerno3(),callback = cbs, tstops=tstop)

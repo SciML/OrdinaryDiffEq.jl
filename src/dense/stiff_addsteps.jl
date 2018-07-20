@@ -1,6 +1,7 @@
 @inline function ode_addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23ConstantCache,Rosenbrock32ConstantCache},always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<2 || always_calc_begin
     @unpack tf,uf,d = cache
+    γ = dt*d
     dT = ForwardDiff.derivative(tf, t)
     if typeof(uprev) <: AbstractArray
       J = ForwardDiff.jacobian(uf, uprev)
@@ -9,7 +10,6 @@
       J = ForwardDiff.derivative(uf, uprev)
       W = 1 - γ*J
     end
-    W = 1-dt*d*J
     k₁ = W\(f(uprev,p,t) + dt*d*dT)
     f₁ = f(uprev+dt*k₁/2,p,t+dt/2)
     k₂ = W\(f₁-k₁) + k₁

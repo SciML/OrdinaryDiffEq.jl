@@ -1,5 +1,7 @@
 using OrdinaryDiffEq, DiffEqBase, DiffEqCallbacks, Test
 
+using InteractiveUtils
+
 NON_IMPLICIT_ALGS = filter((x)->isconcretetype(x) && !OrdinaryDiffEq.isimplicit(x()),union(subtypes(OrdinaryDiffEq.OrdinaryDiffEqAlgorithm),subtypes(OrdinaryDiffEq.OrdinaryDiffEqAdaptiveAlgorithm)))
 
 f = function (du,u,p,t)
