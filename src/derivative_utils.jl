@@ -97,11 +97,19 @@ end
 set_gamma!(W::WOperator, gamma) = (W.gamma = gamma; W)
 DiffEqBase.update_coefficients!(W::WOperator,u,p,t) = (update_coefficients!(W.J,u,p,t); W)
 Base.convert(::Type{AbstractMatrix}, W::WOperator) = W.mass_matrix - W.gamma * convert(AbstractMatrix,W.J)
+Base.convert(::Type{Number}, W::WOperator) = W.mass_matrix - W.gamma * convert(Number,W.J)
 Base.size(W::WOperator, args...) = size(W.J, args...)
 Base.getindex(W::WOperator, i::Int) = W.mass_matrix[i] - W.gamma * W.J[i]
 Base.getindex(W::WOperator, I::Vararg{Int,N}) where {N} =
   W.mass_matrix[I...] - W.gamma * W.J[I...]
 Base.:*(W::WOperator, x::Union{AbstractVecOrMat,Number}) = W.mass_matrix*x - W.gamma * (W.J*x)
+function Base.:\(W::WOperator, x::Union{AbstractVecOrMat,Number})
+  if size(W) == () # scalar operator
+    convert(Number,W) \ x
+  else
+    convert(AbstractMatrix,W) \ x
+  end
+end
 function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrMat)
   # Compute mass_matrix * B
   if isa(W.mass_matrix, UniformScaling)
