@@ -55,12 +55,18 @@ function calc_J!(integrator, cache::OrdinaryDiffEqMutableCache, is_compos)
 end
 
 """
-    WOperator(mass_matrix,gamma,J[;cache])
+    WOperator(mass_matrix,gamma,J[;cache=nothing,transform=false])
 
 A linear operator that represents the W matrix of an ODEProblem, defined as
 
 ```math
 W = MM - \\gamma J
+```
+
+or, if `transform=true`:
+
+```math
+W = \\frac{1}{\\gamma}MM - J
 ```
 
 where `MM` is the mass matrix (a regular `AbstractMatrix` or a `UniformScaling`),
@@ -81,7 +87,8 @@ mutable struct WOperator{T,
   gamma::GType
   J::JType
   cache::CType
-  function WOperator(mass_matrix, gamma, J; cache=nothing)
+  transform::Bool
+  function WOperator(mass_matrix, gamma, J; cache=nothing, tansform=false)
     T = eltype(J)
     # Convert mass_matrix, if needed
     if !isa(mass_matrix, Union{AbstractMatrix,UniformScaling})
@@ -91,18 +98,47 @@ mutable struct WOperator{T,
     if cache == nothing
       cache = Vector{T}(undef, size(J, 1))
     end
-    new{T,typeof(mass_matrix),typeof(gamma),typeof(J),typeof(cache)}(mass_matrix,gamma,J,cache)
+    new{T,typeof(mass_matrix),typeof(gamma),typeof(J),typeof(cache)}(mass_matrix,gamma,J,cache,transform)
   end
 end
 set_gamma!(W::WOperator, gamma) = (W.gamma = gamma; W)
 DiffEqBase.update_coefficients!(W::WOperator,u,p,t) = (update_coefficients!(W.J,u,p,t); W)
-Base.convert(::Type{AbstractMatrix}, W::WOperator) = W.mass_matrix - W.gamma * convert(AbstractMatrix,W.J)
-Base.convert(::Type{Number}, W::WOperator) = W.mass_matrix - W.gamma * convert(Number,W.J)
+function Base.convert(::Type{AbstractMatrix}, W::WOperator)
+  if W.transform
+    W.mass_matrix / W.gamma - convert(AbstractMatrix,W.J)
+  else
+    W.mass_matrix - W.gamma * convert(AbstractMatrix,W.J)
+  end
+end
+function Base.convert(::Type{Number}, W::WOperator)
+  if W.transform
+    W.mass_matrix / W.gamma - convert(Number,W.J)
+  else
+    W.mass_matrix - W.gamma * convert(Number,W.J)
+  end
+end
 Base.size(W::WOperator, args...) = size(W.J, args...)
-Base.getindex(W::WOperator, i::Int) = W.mass_matrix[i] - W.gamma * W.J[i]
-Base.getindex(W::WOperator, I::Vararg{Int,N}) where {N} =
-  W.mass_matrix[I...] - W.gamma * W.J[I...]
-Base.:*(W::WOperator, x::Union{AbstractVecOrMat,Number}) = W.mass_matrix*x - W.gamma * (W.J*x)
+function Base.getindex(W::WOperator, i::Int)
+  if W.transform
+    W.mass_matrix[i] / W.gamma - W.J[i]
+  else
+    W.mass_matrix[i] - W.gamma * W.J[i]
+  end
+end
+function Base.getindex(W::WOperator, I::Vararg{Int,N}) where {N}
+  if W.transform
+    W.mass_matrix[I...] / W.gamma - W.J[I...]
+  else
+    W.mass_matrix[I...] - W.gamma * W.J[I...]
+  end
+end
+function Base.:*(W::WOperator, x::Union{AbstractVecOrMat,Number})
+  if W.transform
+    (W.mass_matrix*x) / W.gamma - W.J*x
+  else
+    W.mass_matrix*x - W.gamma * (W.J*x)
+  end
+end
 function Base.:\(W::WOperator, x::Union{AbstractVecOrMat,Number})
   if size(W) == () # scalar operator
     convert(Number,W) \ x
@@ -111,16 +147,30 @@ function Base.:\(W::WOperator, x::Union{AbstractVecOrMat,Number})
   end
 end
 function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrMat)
-  # Compute mass_matrix * B
-  if isa(W.mass_matrix, UniformScaling)
-    @. Y = W.mass_matrix.λ * B
+  if W.transform
+    # Compute mass_matrix * B
+    if isa(W.mass_matrix, UniformScaling)
+      a = W.mass_matrix.λ / W.gamma
+      @. Y = a * B
+    else
+      mul!(Y, W.mass_matrix, B)
+      lmul!(1/W.gamma, Y)
+    end
+    # Compute J * B and subtract
+    mul!(W.cache, W.J, B)
+    Y .-= W.cache
   else
-    mul!(Y, W.mass_matrix, B)
+    # Compute mass_matrix * B
+    if isa(W.mass_matrix, UniformScaling)
+      @. Y = W.mass_matrix.λ * B
+    else
+      mul!(Y, W.mass_matrix, B)
+    end
+    # Compute J * B
+    mul!(W.cache, W.J, B)
+    # Subtract result
+    axpy!(-W.gamma, W.cache, Y)
   end
-  # Compute J * B
-  mul!(W.cache, W.J, B)
-  # Subtract result
-  axpy!(-W.gamma, W.cache, Y)
 end
 
 function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_step, W_transform=false)
@@ -180,7 +230,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
   iscompo = typeof(integrator.alg) <: CompositeAlgorithm
   if !W_transform
     if isa(f.jac_prototype, DiffEqBase.AbstractDiffEqLinearOperator)
-      W = WOperator(mass_matrix, dtgamma, deepcopy(f.jac_prototype))
+      W = WOperator(mass_matrix, dtgamma, deepcopy(f.jac_prototype); transform=false)
     else
       if isarray
         J = ForwardDiff.jacobian(uf,uprev)
@@ -191,7 +241,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
     end
   else
     if isa(f.jac_prototype, DiffEqBase.AbstractDiffEqLinearOperator)
-      error("Lazy W_transform not yet supported")
+      W = WOperator(mass_matrix, dtgamma, deepcopy(f.jac_prototype); transform=true)
     else
       if isarray
         J = ForwardDiff.jacobian(uf,uprev)
