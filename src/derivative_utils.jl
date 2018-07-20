@@ -184,11 +184,10 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
     else
       if isarray
         J = ForwardDiff.jacobian(uf,uprev)
-        W = I - dtgamma*J
       else
         J = ForwardDiff.derivative(uf,uprev)
-        W = 1 - dtgamma*J
       end
+      W = mass_matrix - dtgamma*J
     end
   else
     if isa(f.jac_prototype, DiffEqBase.AbstractDiffEqLinearOperator)
@@ -196,11 +195,10 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
     else
       if isarray
         J = ForwardDiff.jacobian(uf,uprev)
-        W = I*inv(dtgamma) - J
       else
         J = ForwardDiff.derivative(uf,uprev)
-        W = inv(dtgamma) - J
       end
+      W = mass_matrix*inv(dtgamma) - J
     end
   end
   iscompo && (integrator.eigen_est = isarray ? opnorm(J, Inf) : J)
