@@ -11,11 +11,11 @@ using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
     tmp = t*mm_b
     du .+= tmp
   end
-  mm_f(::Type{Val{:analytic}},u0,p,t) = @. 2ones(3)*exp(t) - t - 1
-  mm_g(du,u,p,t) = du .= u .+ t
-  mm_g(::Type{Val{:analytic}},u0,p,t) = @. 2ones(3)*exp(t) - t - 1
-  prob2 = ODEProblem(mm_g,ones(3),(0.0,1.0))
-  prob = ODEProblem(mm_f,ones(3),(0.0,1.0),mass_matrix=mm_A)
+  mm_g(du,u,p,t) = @. du = u + t
+  mm_analytic(u0,p,t) = @. 2u0*exp(t) - t - 1
+  prob2 = ODEProblem(ODEFunction(mm_g,analytic=mm_analytic),ones(3),(0.0,1.0))
+  prob = ODEProblem(ODEFunction(mm_f,analytic=mm_analytic),ones(3),
+                                   (0.0,1.0),mass_matrix=mm_A)
 
   ######################################### Test each method for exactness
 

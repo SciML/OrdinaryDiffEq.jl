@@ -26,9 +26,10 @@ Base.@pure FunctionMap(;scale_by_time=false) = FunctionMap{scale_by_time}()
 
 # RK methods
 
-@with_kw struct ExplicitRK{TabType} <: OrdinaryDiffEqAdaptiveAlgorithm
-  tableau::TabType=ODE_DEFAULT_TABLEAU
+struct ExplicitRK{TabType} <: OrdinaryDiffEqAdaptiveAlgorithm
+  tableau::TabType
 end
+ExplicitRK() = ExplicitRK(ODE_DEFAULT_TABLEAU)
 
 @inline trivial_limiter!(u, f, t) = nothing
 
@@ -38,9 +39,9 @@ struct Ralston <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Midpoint <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct RK4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Anas5{T} <: OrdinaryDiffEqAlgorithm
-  w::T		
+  w::T
 end
-Base.@pure Anas5(; w=1) = Anas5(w)
+Anas5(; w=1) = Anas5(w)
 
 struct OwrenZen3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct OwrenZen4 <: OrdinaryDiffEqAdaptiveAlgorithm end
