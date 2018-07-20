@@ -8,7 +8,7 @@ mutable struct ROCK2ConstantCache{T,T2,zType} <: OrdinaryDiffEqConstantCache
   mdeg::Int
   recind::Int
 end
-struct ROCK2Cache{uType,rateType,uEltypeNoUnits} <: OrdinaryDiffEqMutableCache # WIP
+struct ROCK2Cache{uType,rateType,uEltypeNoUnits} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   gprev::uType

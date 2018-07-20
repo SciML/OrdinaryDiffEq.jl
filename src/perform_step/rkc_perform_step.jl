@@ -12,7 +12,8 @@ end
 @muladd function perform_step!(integrator, cache::ROCK2ConstantCache, repeat_step=false)
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
   @unpack ms, fp1, fp2, recf = cache
-  # The number of stage.
+  maxeig!(integrator, cache)
+  # The the number of degree for Chebyshev polynomial
   mdeg = Int(floor(sqrt((1.5 + dt * integrator.eigen_est)/0.811) + 1))
   if mdeg >= 200
     mdeg = 200
@@ -21,7 +22,7 @@ end
   cache.mdeg != cache.mdegprev && choosedeg!(cache)
   # recurrence
   # for the first stage
-  temp1 = dt * recf[cache.recind]
+  temp1 = dt * recf[cache.recind][1]
   ci1 = t + temp1
   ci2 = t + temp1
   ci3 = t
@@ -30,11 +31,11 @@ end
   ms[cache.mdeg] < 2 && ( u = gprev )
   # for the second to the ms[cache.mdeg] th stages
   for i in 2:ms[cache.mdeg]
-    temp1 = dt * recf[cache.recind + 2 * (i - 2) + 1]
-    temp3 = -recf[cache.recind + 2 * (i - 2) + 2]
-    temp2 = 1 - temp3
-    ci1 = temp1 + temp2 * ci2 + temp3 * ci3
-    u = temp1 * u + temp2 * gprev + temp3 * gprev2
+    μ, κ = recf[cache.recind + (i - 2)]
+    ν = -1 - κ
+    dtμ = dt*μ
+    ci1 = dtμ - ν * ci2 - κ * ci3
+    u = dtμ * u - ν * gprev - κ * gprev2
     i < ms[cache.mdeg] && (gprev2 = gprev; gprev = u)
     ci3 = ci2
     ci2 = ci1
@@ -73,7 +74,8 @@ end
   @unpack k, k2, tmp, gprev2, gprev, atmp = cache
   @unpack ms, fp1, fp2, recf = cache.constantcache
   ccache = cache.constantcache
-  # The number of stage.
+  maxeig!(integrator, cache)
+  # The the number of degree for Chebyshev polynomial
   mdeg = Int(floor(sqrt((1.5 + dt * integrator.eigen_est)/0.811) + 1))
   if mdeg >= 200
     mdeg = 200
@@ -82,7 +84,7 @@ end
   ccache.mdeg != ccache.mdegprev && choosedeg!(cache)
   # recurrence
   # for the first stage
-  temp1 = dt * recf[ccache.recind]
+  temp1 = dt * recf[ccache.recind][1]
   ci1 = t + temp1
   ci2 = t + temp1
   ci3 = t
@@ -91,9 +93,11 @@ end
   ms[ccache.mdeg] < 2 && ( @. u = gprev )
   # for the second to the ms[ccache.mdeg] th stages
   for i in 2:ms[ccache.mdeg]
-    temp1 = dt * recf[ccache.recind + 2 * (i - 2) + 1]
-    temp3 = -recf[ccache.recind + 2 * (i - 2) + 2]
-    temp2 = 1 - temp3
+    μ, κ = recf[cache.recind + (i - 2)]
+    ν = κ - 1
+    temp1 = dt * μ
+    temp2 = 1 + κ
+    temp3 = -κ
     ci1 = temp1 + temp2 * ci2 + temp3 * ci3
     @. u = temp1 * u + temp2 * gprev + temp3 * gprev2
     i < ms[ccache.mdeg] && (gprev2 .= gprev; gprev .= u)

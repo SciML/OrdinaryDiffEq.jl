@@ -1,7 +1,6 @@
 using OrdinaryDiffEq
 using Test, LinearAlgebra, Statistics
 
-const CPU_FLOPS = peakflops()
 const LONGER_TESTS = false
 
 const CACHE_TEST_ALGS = [Euler(),Midpoint(),RK4(),SSPRK22(),SSPRK33(),SSPRK53(),
