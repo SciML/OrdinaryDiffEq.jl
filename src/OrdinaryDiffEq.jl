@@ -17,8 +17,6 @@ module OrdinaryDiffEq
   # Internal utils
   import DiffEqBase: ODE_DEFAULT_NORM, ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE, ODE_DEFAULT_UNSTABLE_CHECK
 
-  using DiffEqOperators: DiffEqArrayOperator
-
   import RecursiveArrayTools: chain, recursivecopy!
 
   using Parameters, GenericSVD, ForwardDiff, RecursiveArrayTools,
@@ -190,7 +188,7 @@ module OrdinaryDiffEq
 
   export IMEXEuler, CNAB2, CNLF2
 
-  export AN5, JVODE, JVODE_Adams
+  export AN5, JVODE, JVODE_Adams, JVODE_BDF
 
   export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2
 

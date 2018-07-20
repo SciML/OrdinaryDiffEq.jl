@@ -310,6 +310,7 @@ end
 Base.@pure JVODE(algorithm=:Adams;bias1=6, bias2=6,bias3=10,
                  addon=1//10^6) = JVODE(algorithm,bias1,bias2,bias3,addon)
 Base.@pure JVODE_Adams(;kwargs...) = JVODE(:Adams;kwargs...)
+Base.@pure JVODE_BDF(;kwargs...) = JVODE(:BDF;kwargs...)
 
 # ROCK methods
 struct ROCK2 <: OrdinaryDiffEqAdaptiveAlgorithm end

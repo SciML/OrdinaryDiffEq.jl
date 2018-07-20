@@ -395,7 +395,7 @@ end
 
 function initialize!(integrator, cache::Anas5ConstantCache)
   integrator.kshortsize = 7
-  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays

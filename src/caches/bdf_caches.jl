@@ -181,8 +181,8 @@ function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   du1 = zero(rate_prototype)
   J = fill(zero(uEltypeNoUnits),length(u),length(u))
   W = similar(J)
-  z = similar(u,indices(u))
-  dz = similar(u,indices(u))
+  z = similar(u,axes(u))
+  dz = similar(u,axes(u))
   fsalfirst = zero(rate_prototype)
   k = zero(rate_prototype)
 
@@ -196,14 +196,14 @@ function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
 
   U!(1,U)
 
-  tmp = similar(u); b = similar(u,indices(u))
-  atmp = similar(u,uEltypeNoUnits,indices(u))
+  tmp = similar(u); b = similar(u,axes(u))
+  atmp = similar(u,uEltypeNoUnits,axes(u))
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   linsolve = alg.linsolve(Val{:init},uf,u)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   uToltype = real(uBottomEltypeNoUnits)
-  utilde = similar(u,indices(u))
+  utilde = similar(u,axes(u))
 
   uprev2 = similar(u)
 
@@ -309,8 +309,8 @@ function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   du1 = zero(rate_prototype)
   J = fill(zero(uEltypeNoUnits),length(u),length(u))
   W = similar(J)
-  z = similar(u,indices(u))
-  dz = similar(u,indices(u))
+  z = similar(u,axes(u))
+  dz = similar(u,axes(u))
   fsalfirst = zero(rate_prototype)
   k = zero(rate_prototype)
 
@@ -324,14 +324,14 @@ function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
 
   U!(2,U)
 
-  tmp = similar(u); b = similar(u,indices(u))
-  atmp = similar(u,uEltypeNoUnits,indices(u))
+  tmp = similar(u); b = similar(u,axes(u))
+  atmp = similar(u,uEltypeNoUnits,axes(u))
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   linsolve = alg.linsolve(Val{:init},uf,u)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   uToltype = real(uBottomEltypeNoUnits)
-  utilde = similar(u,indices(u))
+  utilde = similar(u,axes(u))
 
   uprev2 = similar(u)
   uprev3 = similar(u)
