@@ -4,8 +4,8 @@ using OrdinaryDiffEq, Test, DiffEqDevTools, DiffEqOperators, Random
 μ = 1.01
 linnonlin_f2 = (u,p,t) -> μ * u
 linnonlin_f1 = DiffEqScalar(μ)
-fun = SplitFunction(linnonlin_f1, linnonlin_f2; analytic=(u0,p,t)->u0.*exp.(2μ*t))
-prob = SplitODEProblem(fun,1/2,(0.0,1.0))
+linnonlin_fun = SplitFunction(linnonlin_f1, linnonlin_f2; analytic=(u0,p,t)->u0.*exp.(2μ*t))
+prob = SplitODEProblem(linnonlin_fun,1/2,(0.0,1.0))
 
 println("Out-of-place")
 srand(100)
@@ -37,8 +37,8 @@ u0 = rand(2)
 A = [2.0 -1.0; -1.0 2.0]
 linnonlin_f1 = DiffEqArrayOperator(A)
 linnonlin_f2 = (du,u,p,t) -> du .= μ .* u
-fun = SplitFunction(linnonlin_f1,linnonlin_f2;analytic=(u0,p,t)->exp((A+μ*I)*t)*u0)
-prob = SplitODEProblem(fun,u0,(0.0,1.0))
+linnonlin_fun_iip = SplitFunction(linnonlin_f1,linnonlin_f2;analytic=(u0,p,t)->exp((A+μ*I)*t)*u0)
+prob = SplitODEProblem(linnonlin_fun_iip,u0,(0.0,1.0))
 
 dts = 1 ./2 .^(8:-1:4) #14->7 good plot
 sim  = test_convergence(dts,prob,GenericIIF1())
