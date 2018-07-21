@@ -72,7 +72,7 @@ end
 
 if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_II" )
     # ~ 110 s
-    #@time @testset "Split Methods Tests" begin include("split_methods_tests.jl") end
+    @time @testset "Split Methods Tests" begin include("split_methods_tests.jl") end
     # ~ 550 s
     @time @testset "Rosenbrock Tests" begin include("ode/ode_rosenbrock_tests.jl") end
     # ~ 40 s
