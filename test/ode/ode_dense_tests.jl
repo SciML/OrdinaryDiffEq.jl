@@ -1,8 +1,8 @@
 using OrdinaryDiffEq, Test, DiffEqBase
 using ForwardDiff, Printf
 using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
-import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
-
+import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear,
+                            prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
 # use `PRINT_TESTS = true` to print the tests, including results
 const PRINT_TESTS = false
 print_results(x) = if PRINT_TESTS; @printf("%s \n", x) end
@@ -193,17 +193,14 @@ regression_test(TsitPap8(), 1e-3, 3e-3)
 # Feagin10
 regression_test(Feagin10(), 6e-4, 9e-4)
 
-const linear_bigα4 = parse(BigFloat, "1.01")
-f = (u,p,t) -> (linear_bigα4*u)
-prob_ode_bigfloatlinear = ODEProblem(f,parse(BigFloat,"0.5"),(0.0,1.0))
-prob = prob_ode_bigfloatlinear
+prob = remake(prob_ode_bigfloatlinear;u0=big(0.5))
 
 sol  = solve(prob, Vern6(), dt=1//2^(2), dense=true)
 interpd_1d_big = sol(0:1//2^(7):1)
 sol2 = solve(prob, Vern6(), dt=1//2^(7), dense=true, adaptive=false)
 print_results( @test maximum(map((x)->maximum(abs.(x)),sol2[:] - interpd_1d_big)) < 5e-8 )
 
-prob_ode_bigfloatveclinear = ODEProblem(f,[parse(BigFloat,"0.5")],(0.0,1.0))
+prob_ode_bigfloatveclinear = ODEProblem((u,p,t)->p*u,[big(0.5)],(0.0,1.0),big(1.01))
 prob = prob_ode_bigfloatveclinear
 sol  = solve(prob, Vern6(), dt=1//2^(2), dense=true)
 interpd_big = sol(0:1//2^(4):1)
