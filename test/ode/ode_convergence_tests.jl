@@ -76,7 +76,7 @@ for i = 1:2
   @test abs(sim13.𝒪est[:final]-2) < testTol
 
   sim132 = test_convergence(dts,prob,ImplicitMidpoint(nonlinsolve = Val{:functional}))
-  @test_broken abs(sim132.𝒪est[:final]-2) < testTol
+  @test abs(sim132.𝒪est[:final]-2) < testTol
 
   sim13 = test_convergence(dts,prob,Trapezoid())
   @test abs(sim13.𝒪est[:final]-2) < testTol
@@ -107,8 +107,10 @@ for i = 1:2
   sim16 = test_convergence(dts,prob,Kvaerno3())
   @test abs(sim16.𝒪est[:final]-3) < testTol
 
+  dts = 1 .//2 .^(8:-1:4)
   sim162 = test_convergence(dts,prob,Kvaerno3(nonlinsolve = Val{:functional}))
-  @test_broken abs(sim162.𝒪est[:final]-3) < testTol
+  @test abs(sim162.𝒪est[:final]-3) < testTol
+  dts = 1 .//2 .^(9:-1:5)
 
   sim17 = test_convergence(dts,prob,KenCarp3())
   @test abs(sim17.𝒪est[:final]-3) < testTol
