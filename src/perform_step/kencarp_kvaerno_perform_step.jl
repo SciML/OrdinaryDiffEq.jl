@@ -48,7 +48,7 @@ end
 
   tmp = uprev + γ*z₁
   nlcache = nlsolve_cache(alg, cache, z₂, tmp, W, γ, 2γ, true)
-  z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 3
@@ -58,7 +58,7 @@ end
 
   tmp = uprev + a31*z₁ + a32*z₂
   nlcache = nlsolve_cache(alg, cache, z₃, tmp, W, γ, c3, true)
-  z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 4
@@ -67,7 +67,7 @@ end
 
   tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlcache = nlsolve_cache(alg, cache, z₄, tmp, W, γ, 1, true)
-  z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   u = tmp + γ*z₄
@@ -117,7 +117,7 @@ end
 
   @. tmp = uprev + γ*z₁
   nlcache = nlsolve_cache(alg, cache, z₂, tmp, γ, 2γ, new_W)
-  z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 3
@@ -127,7 +127,7 @@ end
 
   @. tmp = uprev + a31*z₁ + a32*z₂
   nlcache = nlsolve_cache(alg, cache, z₃, tmp, γ, c3, false)
-  z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 4
@@ -141,7 +141,7 @@ end
 
   @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlcache = nlsolve_cache(alg, cache, z₄, tmp, γ, 1, false)
-  z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   @. u = tmp + γ*z₄
@@ -213,7 +213,7 @@ end
   end
 
   nlcache = nlsolve_cache(alg, cache, z₂, tmp, W, γ, 2γ, true)
-  z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 3
@@ -230,7 +230,7 @@ end
   end
 
   nlcache = nlsolve_cache(alg, cache, z₃, tmp, W, γ, c3, true)
-  z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 4
@@ -247,7 +247,7 @@ end
   end
 
   nlcache = nlsolve_cache(alg, cache, z₄, tmp, W, γ, 1, true)
-  z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   u = tmp + γ*z₄
@@ -336,7 +336,7 @@ end
   end
 
   nlcache = nlsolve_cache(alg, cache, z₂, tmp, γ, 2γ, new_W)
-  z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 3
@@ -356,7 +356,7 @@ end
   end
 
   nlcache = nlsolve_cache(alg, cache, z₃, tmp, γ, c3, false)
-  z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 4
@@ -376,7 +376,7 @@ end
   end
 
   nlcache = nlsolve_cache(alg, cache, z₄, tmp, γ, 1, false)
-  z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   @. u = tmp + γ*z₄
@@ -449,7 +449,7 @@ end
 
   tmp = uprev + γ*z₁
   nlcache = nlsolve_cache(alg, cache, z₂, tmp, W, γ, 2γ, true)
-  z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 3
@@ -458,7 +458,7 @@ end
 
   tmp = uprev + a31*z₁ + a32*z₂
   nlcache = nlsolve_cache(alg, cache, z₃, tmp, W, γ, c3, true)
-  z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 4
@@ -467,7 +467,7 @@ end
 
   tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlcache = nlsolve_cache(alg, cache, z₄, tmp, W, γ, c4, true)
-  z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 5
@@ -477,7 +477,7 @@ end
 
   tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   nlcache = nlsolve_cache(alg, cache, z₅, tmp, W, γ, 1, true)
-  z₅,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₅,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   u = tmp + γ*z₅
@@ -530,7 +530,7 @@ end
 
   @. tmp = uprev + γ*z₁
   nlcache = nlsolve_cache(alg, cache, z₂, tmp, γ, 2γ, new_W)
-  z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 3
@@ -539,7 +539,7 @@ end
 
   @. tmp = uprev + a31*z₁ + a32*z₂
   nlcache = nlsolve_cache(alg, cache, z₃, tmp, γ, c3, false)
-  z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 4
@@ -549,7 +549,7 @@ end
 
   @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlcache = nlsolve_cache(alg, cache, z₄, tmp, γ, c4, false)
-  z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 5
@@ -559,7 +559,7 @@ end
 
   @. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   nlcache = nlsolve_cache(alg, cache, z₅, tmp, γ, 1, false)
-  z₅,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₅,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   @. u = tmp + γ*z₅
@@ -636,7 +636,7 @@ end
   end
 
   nlcache = nlsolve_cache(alg, cache, z₂, tmp, W, γ, 2γ, true)
-  z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 3
@@ -653,7 +653,7 @@ end
   end
 
   nlcache = nlsolve_cache(alg, cache, z₃, tmp, W, γ, c3, true)
-  z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 4
@@ -669,7 +669,7 @@ end
   end
 
   nlcache = nlsolve_cache(alg, cache, z₄, tmp, W, γ, c4, true)
-  z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 5
@@ -686,7 +686,7 @@ end
 
   u = tmp + γ*z₅
   nlcache = nlsolve_cache(alg, cache, z₅, tmp, W, γ, c5, true)
-  z₅,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₅,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 6
@@ -702,7 +702,7 @@ end
   end
 
   nlcache = nlsolve_cache(alg, cache, z₆, tmp, W, γ, 1, true)
-  z₆,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₆,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   u = tmp + γ*z₆
@@ -797,7 +797,7 @@ end
   end
 
   nlcache = nlsolve_cache(alg, cache, z₂, tmp, γ, 2γ, new_W)
-  z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 3
@@ -819,7 +819,7 @@ end
   end
 
   nlcache = nlsolve_cache(alg, cache, z₃, tmp, γ, c3, false)
-  z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 4
@@ -838,7 +838,7 @@ end
   end
 
   nlcache = nlsolve_cache(alg, cache, z₄, tmp, γ, c4, false)
-  z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 5
@@ -862,7 +862,7 @@ end
   end
 
   nlcache = nlsolve_cache(alg, cache, z₅, tmp, γ, c5, false)
-  z₅,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₅,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 6
@@ -885,7 +885,7 @@ end
   end
 
   nlcache = nlsolve_cache(alg, cache, z₆, tmp, γ, 1, false)
-  z₆,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₆,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   @. u = tmp + γ*z₆
@@ -962,7 +962,7 @@ end
 
   tmp = uprev + γ*z₁
   nlcache = nlsolve_cache(alg, cache, z₂, tmp, W, γ, 2γ, true)
-  z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 3
@@ -971,7 +971,7 @@ end
 
   tmp = uprev + a31*z₁ + a32*z₂
   nlcache = nlsolve_cache(alg, cache, z₃, tmp, W, γ, c3, true)
-  z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 4
@@ -980,7 +980,7 @@ end
 
   tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlcache = nlsolve_cache(alg, cache, z₄, tmp, W, γ, c4, true)
-  z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 5
@@ -989,7 +989,7 @@ end
 
   tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   nlcache = nlsolve_cache(alg, cache, z₅, tmp, W, γ, c5, true)
-  z₅,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₅,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 6
@@ -998,7 +998,7 @@ end
 
   tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅
   nlcache = nlsolve_cache(alg, cache, z₆, tmp, W, γ, c6, true)
-  z₆,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₆,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 7
@@ -1008,7 +1008,7 @@ end
 
   tmp = uprev + a71*z₁ + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
   nlcache = nlsolve_cache(alg, cache, z₇, tmp, W, γ, 1, true)
-  z₇,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₇,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   u = tmp + γ*z₇
@@ -1061,7 +1061,7 @@ end
 
   @. tmp = uprev + γ*z₁
   nlcache = nlsolve_cache(alg, cache, z₂, tmp, γ, 2γ, new_W)
-  z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 3
@@ -1070,7 +1070,7 @@ end
 
   @. tmp = uprev + a31*z₁ + a32*z₂
   nlcache = nlsolve_cache(alg, cache, z₃, tmp, γ, c3, false)
-  z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 4
@@ -1080,7 +1080,7 @@ end
 
   @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlcache = nlsolve_cache(alg, cache, z₄, tmp, γ, c4, false)
-  z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 5
@@ -1089,7 +1089,7 @@ end
 
   @. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   nlcache = nlsolve_cache(alg, cache, z₅, tmp, γ, c5, false)
-  z₅,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₅,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 6
@@ -1098,7 +1098,7 @@ end
 
   @. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅
   nlcache = nlsolve_cache(alg, cache, z₆, tmp, γ, c6, false)
-  z₆,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₆,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 7
@@ -1114,7 +1114,7 @@ end
     @inbounds tmp[i] = uprev[i] + a71*z₁[i] + a73*z₃[i] + a74*z₄[i] + a75*z₅[i] + a76*z₆[i]
   end
   nlcache = nlsolve_cache(alg, cache, z₇, tmp, γ, 1, false)
-  z₇,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₇,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   @. u = tmp + γ*z₇
@@ -1197,7 +1197,7 @@ end
   end
 
   nlcache = nlsolve_cache(alg, cache, z₂, tmp, W, γ, 2γ, true)
-  z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 3
@@ -1216,7 +1216,7 @@ end
   end
 
   nlcache = nlsolve_cache(alg, cache, z₃, tmp, W, γ, c3, true)
-  z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 4
@@ -1232,7 +1232,7 @@ end
   end
 
   nlcache = nlsolve_cache(alg, cache, z₄, tmp, W, γ, c4, true)
-  z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 5
@@ -1248,7 +1248,7 @@ end
   end
 
   nlcache = nlsolve_cache(alg, cache, z₅, tmp, W, γ, c5, true)
-  z₅,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₅,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 6
@@ -1264,7 +1264,7 @@ end
   end
 
   nlcache = nlsolve_cache(alg, cache, z₆, tmp, W, γ, c6, true)
-  z₆,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₆,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 7
@@ -1280,7 +1280,7 @@ end
   end
 
   nlcache = nlsolve_cache(alg, cache, z₇, tmp, W, γ, c7, true)
-  z₇,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₇,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 8
@@ -1296,7 +1296,7 @@ end
   end
 
   nlcache = nlsolve_cache(alg, cache, z₈, tmp, W, γ, 1, true)
-  z₈,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₈,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   u = tmp + γ*z₈
@@ -1393,7 +1393,7 @@ end
   end
 
   nlcache = nlsolve_cache(alg, cache, z₂, tmp, γ, 2γ, new_W)
-  z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₂,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 3
@@ -1415,7 +1415,7 @@ end
   end
 
   nlcache = nlsolve_cache(alg, cache, z₃, tmp, γ, c3, false)
-  z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₃,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 4
@@ -1434,7 +1434,7 @@ end
   end
 
   nlcache = nlsolve_cache(alg, cache, z₄, tmp, γ, c4, false)
-  z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₄,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 5
@@ -1453,7 +1453,7 @@ end
   end
 
   nlcache = nlsolve_cache(alg, cache, z₅, tmp, γ, c5, false)
-  z₅,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₅,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 6
@@ -1475,7 +1475,7 @@ end
   end
 
   nlcache = nlsolve_cache(alg, cache, z₆, tmp, γ, c6, false)
-  z₆,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₆,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 7
@@ -1500,7 +1500,7 @@ end
   end
 
   nlcache = nlsolve_cache(alg, cache, z₇, tmp, γ, c7, false)
-  z₇,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₇,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   ################################## Solve Step 8
@@ -1525,7 +1525,7 @@ end
   end
 
   nlcache = nlsolve_cache(alg, cache, z₈, tmp, γ, 1, false)
-  z₈,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, Val{:newton})
+  z₈,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
 
   @. u = tmp + γ*z₈
