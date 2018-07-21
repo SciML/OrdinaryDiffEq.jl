@@ -523,7 +523,7 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
     if integrator.success_iter == 0
       integrator.EEst = one(integrator.EEst)
     elseif integrator.success_iter == 1
-      utilde = (u - uprev) - (udiff[1] * dt/dtₙ₋₁)
+      utilde = (u - uprev) - (udiff[1] * dt/dt[1])
       atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
     else
@@ -547,10 +547,10 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
     else
       utildem1 = (κ*γₖ[k-1] + inv(k)) * D[k]
       utildem2 = (κ*γₖ[k-2] + inv(k-1)) * D[k-1]
-      backward_diff(udiff,D,D2,k+1)
+      backward_diff(udiff,D,D2,k+1,false)
       δ = u - uprev
       for i = 1:(k+1)
-        δ -= δ - D[i]
+        δ -= δ - D2[i,1]
       end
       utildep1 = (κ*γₖ[k+1] + inv(k+2)) * δ
       atmpm2 = calculate_residuals(utildem2, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)

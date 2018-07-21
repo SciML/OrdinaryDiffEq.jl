@@ -170,7 +170,7 @@ function step_reject_controller!(integrator,alg)
   integrator.dt = integrator.dt/min(inv(integrator.opts.qmin),integrator.q11/integrator.opts.gamma)
 end
 
-const StandardControllerAlgs = Union{GenericImplicitEuler,GenericTrapezoid,VCABM}
+const StandardControllerAlgs = Union{GenericImplicitEuler,GenericTrapezoid,VCABM,QNDF}
 #const NordAlgs = Union{AN5, JVODE}
 
 function stepsize_controller!(integrator, alg::JVODE)

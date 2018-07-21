@@ -355,13 +355,13 @@ function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
               W,uf,jac_config,linsolve,ηold,κ,tol,10000,dtₙ₋₁,dtₙ₋₂)
 end
 
-mutable struct QNDFConstantCache{F,uToltype,coefType,coefType1,uType,dtType} <: OrdinaryDiffEqConstantCache
+mutable struct QNDFConstantCache{F,uToltype,coefType1,coefType2,coefType3,uType,dtType} <: OrdinaryDiffEqConstantCache
   uf::F
   ηold::uToltype
   κ::uToltype
   tol::uToltype
   newton_iters::Int
-  D::coefType
+  D::coefType3
   D2::coefType2
   R::coefType1
   U::coefType1
@@ -379,7 +379,7 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   udiff = fill(zero(typeof(u)), 1, 6)
   dts = fill(zero(typeof(u)), 1, 6)
 
-  D = fill(zero(typeof(u)), 1, 6)
+  D = fill(zero(typeof(u)), 1, 5)
   D2 = fill(zero(typeof(u)), 6, 6)
   R = fill(zero(typeof(t)), 5, 5)
   U = fill(zero(typeof(t)), 5, 5)
