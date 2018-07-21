@@ -192,7 +192,7 @@ module OrdinaryDiffEq
 
   export AN5, JVODE, JVODE_Adams
 
-  export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2
+  export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF
 
   export AutoSwitch, AutoTsit5, AutoDP5,
          AutoVern6, AutoVern7, AutoVern8, AutoVern9

@@ -366,6 +366,7 @@ mutable struct QNDFConstantCache{F,uToltype,coefType,coefType1,uType,dtType} <: 
   R::coefType1
   U::coefType1
   k::Int64
+  max_order::Int64
   udiff::uType
   dts::dtType
 end
@@ -375,15 +376,15 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   uToltype = real(uBottomEltypeNoUnits)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   ηold = one(uToltype)
-  udiff = fill(zero(typeof(u)), 1, 5)
-  dts = fill(zero(typeof(u)), 1, 5)
+  udiff = fill(zero(typeof(u)), 1, 6)
+  dts = fill(zero(typeof(u)), 1, 6)
 
-  D = fill(zero(typeof(u)), 1, 5)
-  D2 = fill(zero(typeof(u)), 5, 5)
+  D = fill(zero(typeof(u)), 1, 6)
+  D2 = fill(zero(typeof(u)), 6, 6)
   R = fill(zero(typeof(t)), 5, 5)
   U = fill(zero(typeof(t)), 5, 5)
 
-  U!(k,U)
+  max_order = 5
 
   if alg.κ != nothing
     κ = uToltype(alg.κ)
@@ -396,5 +397,5 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
     tol = uToltype(min(0.03,first(reltol)^(0.5)))
   end
 
-  QNDFConstantCache(uf,ηold,κ,tol,10000,D,D2,R,U,1,udiff,dts)
+  QNDFConstantCache(uf,ηold,κ,tol,10000,D,D2,R,U,1,max_order,udiff,dts)
 end
