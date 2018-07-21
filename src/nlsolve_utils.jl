@@ -53,12 +53,13 @@ end
 
 """
   diffeq_nlsolve!(integrator, nlcache, cache, ::Type{Val{:newton}}) -> (z, η,
-  iter, retcode)
+  iter, fail_convergence)
 
 Perform numerically stable modified Newton iteration that is specialized for
 implicit methods (see [^HS96] and [^HW96]), where `z` is the solution, `η` is
 used to measure the iteration error (see [^HW96]), `iter` is the number of
-iteration, and `retcode` reports whether the algorithm succeed. It solves
+iteration, and `fail_convergence` reports whether the algorithm succeed. It
+solves
 
 ```math
 G(z) = dt⋅f(tmp + γ⋅z, p, t+c⋅h) - z = 0⃗
@@ -215,12 +216,12 @@ end
 
 """
   diffeq_nlsolve!(integrator, nlcache, cache, ::Type{Val{:functional}}) -> (z,
-  η, iter, retcode)
+  η, iter, fail_convergence)
 
 Perform functional iteration that is used by implicit methods, where `z` is the
 solution, `η` is used to measure the iteration error (see [^HW96]), `iter` is
-the number of iteration, and `retcode` reports whether the algorithm succeed.
-It solves
+the number of iteration, and `fail_convergence` reports whether the algorithm
+succeed.  It solves
 
 ```math
 G(z) = dt⋅f(tmp + γ⋅z, p, t+c⋅h)

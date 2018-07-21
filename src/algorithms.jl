@@ -465,6 +465,7 @@ Base.@pure SDIRK2(;chunk_size=0,autodiff=true,diff_type=Val{:central},
 
 struct SSPSDIRK2{CS,AD,F,F2,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD} # Not adaptive
   linsolve::F
+  nonlinsolve::F2
   diff_type::FDT
   κ::K
   tol::T
