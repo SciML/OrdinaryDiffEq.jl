@@ -253,7 +253,6 @@ function diffeq_nlsolve!(integrator,
     f = integrator.f
   end
   # precalculations
-  tol *= 1//(alg_order(alg)*1000)
   κtol = κ*tol
 
   # initial step of functional iteration
@@ -265,8 +264,8 @@ function diffeq_nlsolve!(integrator,
   ndz = integrator.opts.internalnorm(dz)
   z = z₊
 
-  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
-  do_functional = integrator.success_iter == 0 || η*sqrt(ndz) > κtol
+  η = cache.ηold
+  do_functional = true
 
   # functional iteration
   fail_convergence = false
@@ -283,7 +282,7 @@ function diffeq_nlsolve!(integrator,
       break
     end
     η = θ/(1-θ)
-    do_functional = (η*sqrt(ndz) > κtol)
+    do_functional = (η*ndz > κtol)
     z = z₊
   end
 
@@ -327,8 +326,8 @@ function diffeq_nlsolve!(integrator,
   @. z = z₊
   ndz = integrator.opts.internalnorm(dz)
 
-  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
-  do_functional = integrator.success_iter == 0 || η*sqrt(ndz) > κtol
+  η = cache.ηold
+  do_functional = true
 
   # Functional iteration
   fail_convergence = false
@@ -351,7 +350,7 @@ function diffeq_nlsolve!(integrator,
       break
     end
     η = θ/(1-θ)
-    do_functional = (η*sqrt(ndz) > κtol)
+    do_functional = (η*ndz > κtol)
     @. z = z₊
   end
 
