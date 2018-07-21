@@ -4,14 +4,12 @@ import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_2Dlinear
 prob = prob_ode_2Dlinear
 
 integrator = init(prob,Euler();dt=1//2^(4))
-
 integrator = init(prob,Tsit5();dt=1//2^(4))
 
 solve!(integrator)
 
 sol =solve(prob,Euler();dt=1//2^(4),maxiters=Inf)
-
-sol =solve(prob,Tsit5();dt=1//2^(4))
+sol =solve(prob,Tsit5();dt=1//2^(20),progress=true,adaptive=false,maxiters=Inf)
 
 # plot(sol,plot_analytic=true)
 
