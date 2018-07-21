@@ -5,7 +5,7 @@ module OrdinaryDiffEq
   using Reexport
   @reexport using DiffEqBase
 
-  using Compat
+  using Logging
 
   using MuladdMacro
 
