@@ -479,7 +479,6 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
       break
     end
   end
-
   if cnt > 2
     if flag
       ρ = dt/dts[1]
@@ -488,8 +487,7 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
       if ρ != 1
         U!(k,U)
         R!(k,ρ,cache)
-        R .= R * U
-        D .= D * R
+        D .= D * (R * U)
       end
     else
       for i = 1:k
@@ -503,15 +501,13 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
   # precalculations
   u₀ = uprev + sum(D)
   ϕ = zero(γ)
-  for i in 1:k
-    ϕ += γₖ[k]*D[i]
+  for i = 1:k
+    ϕ += γₖ[i]*D[i]
   end
   ϕ *= γ
   tmp = u₀ - ϕ
-
   γdt = γ*dt
   W = calc_W!(integrator, cache, γdt, repeat_step)
-
   # initial guess
   z = dt*integrator.fsalfirst
 
@@ -523,13 +519,13 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
     if integrator.success_iter == 0
       integrator.EEst = one(integrator.EEst)
     elseif integrator.success_iter == 1
-      utilde = (u - uprev) - (udiff[1] * dt/dt[1])
+      utilde = (u - uprev) - (udiff[1] * dt/dts[1])
       atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
     else
       δ = u - uprev
       for i = 1:k
-        δ -= δ - D[i]
+        δ -= D[i]
       end
       utilde = (κ*γₖ[k] + inv(k+1)) * δ
       atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
@@ -538,7 +534,6 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
     if integrator.EEst > one(integrator.EEst)
       return
     end
-
     if cnt <=  4 || k < 3
       cache.k = min(k+1,3)
       if cnt == 1
@@ -550,7 +545,7 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
       backward_diff(udiff,D,D2,k+1,false)
       δ = u - uprev
       for i = 1:(k+1)
-        δ -= δ - D2[i,1]
+        δ -= D2[i,1]
       end
       utildep1 = (κ*γₖ[k+1] + inv(k+2)) * δ
       atmpm2 = calculate_residuals(utildem2, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
@@ -563,17 +558,17 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
         cache.k = k - 1
       elseif errp1 < integrator.EEst
         cache.k = min(k+1,max_order)
-        integrator.EEst = one(integrator.EEst)   # for keeping the stepsize constant in the next step
       end # if
     end # step <= 4
   end # integrator.opts.adaptive
-
-  for i = 2:5
+  for i = 6:-1:2
     dts[i] = dts[i-1]
     udiff[i] = udiff[i-1]
   end
   dts[1] = dt
   udiff[1] = u - uprev
+  fill!(D, zero(u)); fill!(D2, zero(u))
+  fill!(R, zero(t)); fill!(U, zero(t))
 
   cache.ηold = η
   cache.newton_iters = iter
