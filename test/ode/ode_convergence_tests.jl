@@ -62,6 +62,9 @@ for i = 1:2
   sim11 = test_convergence(dts,prob,ImplicitEuler(extrapolant = :linear))
   @test abs(sim11.𝒪est[:final]-1) < testTol
 
+  sim11 = test_convergence(dts,prob,ImplicitEuler(nonlinsolve = Val{:functional}))
+  @test abs(sim11.𝒪est[:final]-1) < testTol
+
   sim12 = test_convergence(dts,prob,
           GenericImplicitEuler(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(autodiff=true)))
   @test abs(sim12.𝒪est[:final]-1) < testTol
@@ -98,6 +101,9 @@ for i = 1:2
   sim16 = test_convergence(dts,prob,Kvaerno3())
   @test abs(sim16.𝒪est[:final]-3) < testTol
 
+  sim16 = test_convergence(dts,prob,Kvaerno3(nonlinsolve = Val{:functional}))
+  @test abs(sim16.𝒪est[:final]-3) < testTol
+
   sim17 = test_convergence(dts,prob,KenCarp3())
   @test abs(sim17.𝒪est[:final]-3) < testTol
 
@@ -106,6 +112,11 @@ for i = 1:2
   #####################################
 
   sim = test_convergence(dts,prob,ABDF2(extrapolant = :linear))
+  @test abs(sim.𝒪est[:final]-2) < testTol
+  @test abs(sim.𝒪est[:l2]-2) < testTol
+  @test abs(sim.𝒪est[:l∞]-2) < testTol
+
+  sim = test_convergence(dts,prob,ABDF2(nonlinsolve = Val{:functional}))
   @test abs(sim.𝒪est[:final]-2) < testTol
   @test abs(sim.𝒪est[:l2]-2) < testTol
   @test abs(sim.𝒪est[:l∞]-2) < testTol
@@ -132,6 +143,11 @@ for i = 1:2
   @test abs(sim.𝒪est[:l2]-2) < testTol
   @test abs(sim.𝒪est[:l∞]-2) < testTol
 
+  sim = test_convergence(dts,prob,QNDF2(nonlinsolve = Val{:functional}))
+  @test abs(sim.𝒪est[:final]-2) < testTol
+  @test abs(sim.𝒪est[:l2]-2) < testTol
+  @test abs(sim.𝒪est[:l∞]-2) < testTol
+
   dts = 1 .//2 .^(7:-1:4)
   println("Higher Order")
 
@@ -154,5 +170,8 @@ for i = 1:2
   @test abs(sim113.𝒪est[:final]-5) < testTol
 
   sim114 = test_convergence(dts,prob,KenCarp5())
+  @test abs(sim114.𝒪est[:final]-5) < testTol
+
+  sim114 = test_convergence(dts,prob,KenCarp5(nonlinsolve = Val{:functional}))
   @test abs(sim114.𝒪est[:final]-5) < testTol
 end
