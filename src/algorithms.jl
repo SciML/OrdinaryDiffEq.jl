@@ -251,8 +251,9 @@ Base.@pure CNLF2(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                       linsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
                       max_newton_iter,new_jac_conv_bound)
 
-struct QNDF1{CS,AD,F,FDT,K,T,T2,κType,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
+struct QNDF1{CS,AD,F,F2,FDT,K,T,T2,κType,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
+  nonlinsolve::F2
   diff_type::FDT
   κ::K
   tol::T
@@ -263,19 +264,21 @@ struct QNDF1{CS,AD,F,FDT,K,T,T2,κType,Controller} <: OrdinaryDiffEqNewtonAdapti
   kappa::κType
 end
 Base.@pure QNDF1(;chunk_size=0,autodiff=true,diff_type=Val{:central},
-                      linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
-                      extrapolant=:linear,min_newton_iter=1,
-                      max_newton_iter=7,new_jac_conv_bound = 1e-3,kappa = -0.1850,
-                      controller = :Predictive) =
-                      QNDF1{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),
-                      typeof(κ),typeof(tol),typeof(new_jac_conv_bound),typeof(kappa),controller}(
-                      linsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
-                      max_newton_iter,new_jac_conv_bound,kappa)
+                 linsolve=DEFAULT_LINSOLVE,nonlinsolve=Val{:newton},
+                 κ=nothing,tol=nothing,
+                 extrapolant=:linear,min_newton_iter=1,
+                 max_newton_iter=7,new_jac_conv_bound = 1e-3,kappa = -0.1850,
+                 controller = :Predictive) =
+                 QNDF1{chunk_size,autodiff,typeof(linsolve),typeof(nonlinsolve),typeof(diff_type),
+                 typeof(κ),typeof(tol),typeof(new_jac_conv_bound),typeof(kappa),controller}(
+                 linsolve,nonlinsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
+                 max_newton_iter,new_jac_conv_bound,kappa)
 
 Base.@pure QBDF1(;kwargs...) = QNDF1(;kappa=0,kwargs...)
 
-struct QNDF2{CS,AD,F,FDT,K,T,T2,κType,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
+struct QNDF2{CS,AD,F,F2,FDT,K,T,T2,κType,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
+  nonlinsolve::F2
   diff_type::FDT
   κ::K
   tol::T
@@ -286,14 +289,15 @@ struct QNDF2{CS,AD,F,FDT,K,T,T2,κType,Controller} <: OrdinaryDiffEqNewtonAdapti
   kappa::κType
 end
 Base.@pure QNDF2(;chunk_size=0,autodiff=true,diff_type=Val{:central},
-                      linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
-                      extrapolant=:linear,min_newton_iter=1,
-                      max_newton_iter=7,new_jac_conv_bound = 1e-3,kappa = -1//9,
-                      controller = :Predictive) =
-                      QNDF2{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),
-                      typeof(κ),typeof(tol),typeof(new_jac_conv_bound),typeof(kappa),controller}(
-                      linsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
-                      max_newton_iter,new_jac_conv_bound,kappa)
+                 linsolve=DEFAULT_LINSOLVE,nonlinsolve=Val{:newton},
+                 κ=nothing,tol=nothing,
+                 extrapolant=:linear,min_newton_iter=1,
+                 max_newton_iter=7,new_jac_conv_bound = 1e-3,kappa = -1//9,
+                 controller = :Predictive) =
+                 QNDF2{chunk_size,autodiff,typeof(linsolve),typeof(nonlinsolve),typeof(diff_type),
+                 typeof(κ),typeof(tol),typeof(new_jac_conv_bound),typeof(kappa),controller}(
+                 linsolve,nonlinsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
+                 max_newton_iter,new_jac_conv_bound,kappa)
 
 Base.@pure QBDF2(;kwargs...) = QNDF2(;kappa=0,kwargs...)
 
@@ -350,8 +354,9 @@ struct MidpointSplitting <: OrdinaryDiffEqAlgorithm end
 
 # SDIRK Methods
 
-struct ImplicitEuler{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
+struct ImplicitEuler{CS,AD,F,F2,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
+  nonlinsolve::F2
   diff_type::FDT
   κ::K
   tol::T
@@ -361,17 +366,19 @@ struct ImplicitEuler{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdapt
   new_jac_conv_bound::T2
 end
 Base.@pure ImplicitEuler(;chunk_size=0,autodiff=true,diff_type=Val{:central},
-                          linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
+                          linsolve=DEFAULT_LINSOLVE,nonlinsolve=Val{:newton},
+                          κ=nothing,tol=nothing,
                           extrapolant=:constant,min_newton_iter=1,
                           max_newton_iter=7,new_jac_conv_bound = 1e-3,
                           controller = :Predictive) =
-                          ImplicitEuler{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),
+                          ImplicitEuler{chunk_size,autodiff,typeof(linsolve),typeof(nonlinsolve),typeof(diff_type),
                           typeof(κ),typeof(tol),typeof(new_jac_conv_bound),controller}(
-                          linsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
+                          linsolve,nonlinsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
                           max_newton_iter,new_jac_conv_bound)
 
-struct ImplicitMidpoint{CS,AD,F,FDT,K,T,T2} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
+struct ImplicitMidpoint{CS,AD,F,F2,FDT,K,T,T2} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
   linsolve::F
+  nonlinsolve::F2
   diff_type::FDT
   κ::K
   tol::T
@@ -381,16 +388,18 @@ struct ImplicitMidpoint{CS,AD,F,FDT,K,T,T2} <: OrdinaryDiffEqNewtonAlgorithm{CS,
   new_jac_conv_bound::T2
 end
 Base.@pure ImplicitMidpoint(;chunk_size=0,autodiff=true,diff_type=Val{:central},
-                      linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
+                      linsolve=DEFAULT_LINSOLVE,nonlinsolve=Val{:newton},
+                      κ=nothing,tol=nothing,
                       extrapolant=:constant,min_newton_iter=1,
                       max_newton_iter=7,new_jac_conv_bound = 1e-3) =
-                      ImplicitMidpoint{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),
+                      ImplicitMidpoint{chunk_size,autodiff,typeof(linsolve),typeof(nonlinsolve),typeof(diff_type),
                       typeof(κ),typeof(tol),typeof(new_jac_conv_bound)}(
-                      linsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
+                      linsolve,nonlinsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
                       max_newton_iter,new_jac_conv_bound)
 
-struct Trapezoid{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
+struct Trapezoid{CS,AD,F,F2,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
+  nonlinsolve::F2
   diff_type::FDT
   κ::K
   tol::T
@@ -400,17 +409,19 @@ struct Trapezoid{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveA
   new_jac_conv_bound::T2
 end
 Base.@pure Trapezoid(;chunk_size=0,autodiff=true,diff_type=Val{:central},
-                      linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
+                      linsolve=DEFAULT_LINSOLVE,nonlinsolve=Val{:newton},
+                      κ=nothing,tol=nothing,
                       extrapolant=:linear,min_newton_iter=1,
                       max_newton_iter=7,new_jac_conv_bound = 1e-3,
                       controller = :PI) =
-                      Trapezoid{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),
+                      Trapezoid{chunk_size,autodiff,typeof(linsolve),typeof(nonlinsolve),typeof(diff_type),
                       typeof(κ),typeof(tol),typeof(new_jac_conv_bound),controller}(
-                      linsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
+                      linsolve,nonlinsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
                       max_newton_iter,new_jac_conv_bound)
 
-struct TRBDF2{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
+struct TRBDF2{CS,AD,F,F2,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
+  nonlinsolve::F2
   diff_type::FDT
   κ::K
   tol::T
@@ -421,17 +432,18 @@ struct TRBDF2{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgo
   new_jac_conv_bound::T2
 end
 Base.@pure TRBDF2(;chunk_size=0,autodiff=true,diff_type=Val{:central},
-                 linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
+                 linsolve=DEFAULT_LINSOLVE,nonlinsolve=Val{:newton},κ=nothing,tol=nothing,
                  smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                  max_newton_iter=7,new_jac_conv_bound = 1e-3,
                  controller = :Predictive) =
-TRBDF2{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),
+TRBDF2{chunk_size,autodiff,typeof(linsolve),typeof(nonlinsolve),typeof(diff_type),
       typeof(κ),typeof(tol),typeof(new_jac_conv_bound),controller}(
-      linsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
+      linsolve,nonlinsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
       max_newton_iter,new_jac_conv_bound)
 
-struct SDIRK2{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
+struct SDIRK2{CS,AD,F,F2,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
+  nonlinsolve::F2
   diff_type::FDT
   κ::K
   tol::T
@@ -442,16 +454,16 @@ struct SDIRK2{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgo
   new_jac_conv_bound::T2
 end
 Base.@pure SDIRK2(;chunk_size=0,autodiff=true,diff_type=Val{:central},
-                   linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
+                   linsolve=DEFAULT_LINSOLVE,nonlinsolve=Val{:newton},κ=nothing,tol=nothing,
                    smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
                    controller = :Predictive) =
- SDIRK2{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),
+ SDIRK2{chunk_size,autodiff,typeof(linsolve),typeof(nonlinsolve),typeof(diff_type),
         typeof(κ),typeof(tol),typeof(new_jac_conv_bound),controller}(
-        linsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
+        linsolve,nonlinsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
         max_newton_iter,new_jac_conv_bound)
 
-struct SSPSDIRK2{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD} # Not adaptive
+struct SSPSDIRK2{CS,AD,F,F2,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD} # Not adaptive
   linsolve::F
   diff_type::FDT
   κ::K
@@ -463,17 +475,18 @@ struct SSPSDIRK2{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAlgorithm
   new_jac_conv_bound::T2
 end
 Base.@pure SSPSDIRK2(;chunk_size=0,autodiff=true,diff_type=Val{:central},
-                   linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
+                   linsolve=DEFAULT_LINSOLVE,nonlinsolve=Val{:newton},κ=nothing,tol=nothing,
                    smooth_est=true,extrapolant=:constant,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
                    controller = :Predictive) =
- SSPSDIRK2{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),
+ SSPSDIRK2{chunk_size,autodiff,typeof(linsolve),typeof(nonlinsolve),typeof(diff_type),
         typeof(κ),typeof(tol),typeof(new_jac_conv_bound),controller}(
-        linsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
+        linsolve,nonlinsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
         max_newton_iter,new_jac_conv_bound)
 
-struct Kvaerno3{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
+struct Kvaerno3{CS,AD,F,F2,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
+  nonlinsolve::F2
   diff_type::FDT
   κ::K
   tol::T
@@ -484,17 +497,18 @@ struct Kvaerno3{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAl
   new_jac_conv_bound::T2
 end
 Base.@pure Kvaerno3(;chunk_size=0,autodiff=true,diff_type=Val{:central},
-                   linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
+                   linsolve=DEFAULT_LINSOLVE,nonlinsolve=Val{:newton},κ=nothing,tol=nothing,
                    smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
                    controller = :Predictive) =
- Kvaerno3{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),
+ Kvaerno3{chunk_size,autodiff,typeof(linsolve),typeof(nonlinsolve),typeof(diff_type),
         typeof(κ),typeof(tol),typeof(new_jac_conv_bound),controller}(
-        linsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
+        linsolve,nonlinsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
         max_newton_iter,new_jac_conv_bound)
 
-struct KenCarp3{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
+struct KenCarp3{CS,AD,F,F2,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
+  nonlinsolve::F2
   diff_type::FDT
   κ::K
   tol::T
@@ -505,18 +519,19 @@ struct KenCarp3{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAl
   new_jac_conv_bound::T2
 end
 Base.@pure KenCarp3(;chunk_size=0,autodiff=true,diff_type=Val{:central},
-                   linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
+                   linsolve=DEFAULT_LINSOLVE,nonlinsolve=Val{:newton},κ=nothing,tol=nothing,
                    smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
                    controller = :Predictive) =
- KenCarp3{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),
+ KenCarp3{chunk_size,autodiff,typeof(linsolve),typeof(nonlinsolve),typeof(diff_type),
         typeof(κ),typeof(tol),typeof(new_jac_conv_bound),controller}(
-        linsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
+        linsolve,nonlinsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
         max_newton_iter,new_jac_conv_bound)
 
 
-struct Cash4{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
+struct Cash4{CS,AD,F,F2,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
+  nonlinsolve::F2
   diff_type::FDT
   κ::K
   tol::T
@@ -528,17 +543,18 @@ struct Cash4{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgor
   embedding::Int
 end
 Base.@pure Cash4(;chunk_size=0,autodiff=true,diff_type=Val{:central},
-                   linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
+                   linsolve=DEFAULT_LINSOLVE,nonlinsolve=Val{:newton},κ=nothing,tol=nothing,
                    smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
                    controller = :Predictive,embedding=3) =
- Cash4{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),
+ Cash4{chunk_size,autodiff,typeof(linsolve),typeof(nonlinsolve),typeof(diff_type),
         typeof(κ),typeof(tol),typeof(new_jac_conv_bound),controller}(
-        linsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
+        linsolve,nonlinsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
         max_newton_iter,new_jac_conv_bound,embedding)
 
-struct Hairer4{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
+struct Hairer4{CS,AD,F,F2,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
+  nonlinsolve::F2
   diff_type::FDT
   κ::K
   tol::T
@@ -549,17 +565,18 @@ struct Hairer4{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlg
   new_jac_conv_bound::T2
 end
 Base.@pure Hairer4(;chunk_size=0,autodiff=true,diff_type=Val{:central},
-                   linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
+                   linsolve=DEFAULT_LINSOLVE,nonlinsolve=Val{:newton},κ=nothing,tol=nothing,
                    smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
                    controller = :Predictive) =
- Hairer4{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),
+ Hairer4{chunk_size,autodiff,typeof(linsolve),typeof(nonlinsolve),typeof(diff_type),
         typeof(κ),typeof(tol),typeof(new_jac_conv_bound),controller}(
-        linsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
+        linsolve,nonlinsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
         max_newton_iter,new_jac_conv_bound)
 
-struct Hairer42{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
+struct Hairer42{CS,AD,F,F2,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
+  nonlinsolve::F2
   diff_type::FDT
   κ::K
   tol::T
@@ -570,17 +587,18 @@ struct Hairer42{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAl
   new_jac_conv_bound::T2
 end
 Base.@pure Hairer42(;chunk_size=0,autodiff=true,diff_type=Val{:central},
-                   linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
+                   linsolve=DEFAULT_LINSOLVE,nonlinsolve=Val{:newton},κ=nothing,tol=nothing,
                    smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
                    controller = :Predictive) =
- Hairer42{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),
+ Hairer42{chunk_size,autodiff,typeof(linsolve),typeof(nonlinsolve),typeof(diff_type),
         typeof(κ),typeof(tol),typeof(new_jac_conv_bound),controller}(
-        linsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
+        linsolve,nonlinsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
         max_newton_iter,new_jac_conv_bound)
 
-struct Kvaerno4{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
+struct Kvaerno4{CS,AD,F,F2,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
+  nonlinsolve::F2
   diff_type::FDT
   κ::K
   tol::T
@@ -591,17 +609,18 @@ struct Kvaerno4{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAl
   new_jac_conv_bound::T2
 end
 Base.@pure Kvaerno4(;chunk_size=0,autodiff=true,diff_type=Val{:central},
-                   linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
+                   linsolve=DEFAULT_LINSOLVE,nonlinsolve=Val{:newton},κ=nothing,tol=nothing,
                    smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
                    controller = :Predictive) =
- Kvaerno4{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),
+ Kvaerno4{chunk_size,autodiff,typeof(linsolve),typeof(nonlinsolve),typeof(diff_type),
         typeof(κ),typeof(tol),typeof(new_jac_conv_bound),controller}(
-        linsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
+        linsolve,nonlinsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
         max_newton_iter,new_jac_conv_bound)
 
-struct Kvaerno5{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
+struct Kvaerno5{CS,AD,F,F2,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
+  nonlinsolve::F2
   diff_type::FDT
   κ::K
   tol::T
@@ -612,17 +631,18 @@ struct Kvaerno5{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAl
   new_jac_conv_bound::T2
 end
 Base.@pure Kvaerno5(;chunk_size=0,autodiff=true,diff_type=Val{:central},
-                   linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
+                   linsolve=DEFAULT_LINSOLVE,nonlinsolve=Val{:newton},κ=nothing,tol=nothing,
                    smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
                    controller = :Predictive) =
- Kvaerno5{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),
+ Kvaerno5{chunk_size,autodiff,typeof(linsolve),typeof(nonlinsolve),typeof(diff_type),
         typeof(κ),typeof(tol),typeof(new_jac_conv_bound),controller}(
-        linsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
+        linsolve,nonlinsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
         max_newton_iter,new_jac_conv_bound)
 
-struct KenCarp4{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
+struct KenCarp4{CS,AD,F,F2,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
+  nonlinsolve::F2
   diff_type::FDT
   κ::K
   tol::T
@@ -633,17 +653,18 @@ struct KenCarp4{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAl
   new_jac_conv_bound::T2
 end
 Base.@pure KenCarp4(;chunk_size=0,autodiff=true,diff_type=Val{:central},
-                   linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
+                   linsolve=DEFAULT_LINSOLVE,nonlinsolve=Val{:newton},κ=nothing,tol=nothing,
                    smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
                    controller = :Predictive) =
- KenCarp4{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),
+ KenCarp4{chunk_size,autodiff,typeof(linsolve),typeof(nonlinsolve),typeof(diff_type),
         typeof(κ),typeof(tol),typeof(new_jac_conv_bound),controller}(
-        linsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
+        linsolve,nonlinsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
         max_newton_iter,new_jac_conv_bound)
 
-struct KenCarp5{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
+struct KenCarp5{CS,AD,F,F2,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
+  nonlinsolve::F2
   diff_type::FDT
   κ::K
   tol::T
@@ -654,13 +675,13 @@ struct KenCarp5{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAl
   new_jac_conv_bound::T2
 end
 Base.@pure KenCarp5(;chunk_size=0,autodiff=true,diff_type=Val{:central},
-                   linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
+                   linsolve=DEFAULT_LINSOLVE,nonlinsolve=Val{:newton},κ=nothing,tol=nothing,
                    smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                    max_newton_iter=7,new_jac_conv_bound = 1e-3,
                    controller = :Predictive) =
- KenCarp5{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),
+ KenCarp5{chunk_size,autodiff,typeof(linsolve),typeof(nonlinsolve),typeof(diff_type),
         typeof(κ),typeof(tol),typeof(new_jac_conv_bound),controller}(
-        linsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
+        linsolve,nonlinsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
         max_newton_iter,new_jac_conv_bound)
 
 ################################################################################
@@ -793,8 +814,9 @@ struct ETD2 <: OrdinaryDiffEqExponentialAlgorithm end
 
 #########################################
 
-struct ABDF2{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
+struct ABDF2{CS,AD,F,F2,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
+  nonlinsolve::F2
   diff_type::FDT
   κ::K
   tol::T
@@ -805,13 +827,14 @@ struct ABDF2{CS,AD,F,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgor
   new_jac_conv_bound::T2
 end
 Base.@pure ABDF2(;chunk_size=0,autodiff=true,diff_type=Val{:central},
-                 linsolve=DEFAULT_LINSOLVE,κ=nothing,tol=nothing,
+                 linsolve=DEFAULT_LINSOLVE,nonlinsolve=Val{:newton},
+                 κ=nothing,tol=nothing,
                  smooth_est=true,extrapolant=:linear,min_newton_iter=1,
                  max_newton_iter=7,new_jac_conv_bound = 1e-3,
                  controller = :Predictive) =
-ABDF2{chunk_size,autodiff,typeof(linsolve),typeof(diff_type),
+ABDF2{chunk_size,autodiff,typeof(linsolve),typeof(nonlinsolve),typeof(diff_type),
       typeof(κ),typeof(tol),typeof(new_jac_conv_bound),controller}(
-      linsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
+      linsolve,nonlinsolve,diff_type,κ,tol,smooth_est,extrapolant,min_newton_iter,
       max_newton_iter,new_jac_conv_bound)
 
 #########################################
