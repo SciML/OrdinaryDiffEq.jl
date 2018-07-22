@@ -120,7 +120,6 @@ module OrdinaryDiffEq
   include("dense/high_order_rk_addsteps.jl")
 
   include("derivative_utils.jl")
-  include("nlsolve_utils.jl")
   include("nordsieck_utils.jl")
   include("adams_utils.jl")
   include("bdf_utils.jl")
