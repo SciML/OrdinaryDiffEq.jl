@@ -24,10 +24,7 @@ function R!(k, ρ, cache)
   end
 end
 
-function backward_diff(udiff, D, D2, k, flag=true)
-  for i = 1:k
-    D2[1,i] = udiff[i]
-  end
+function backward_diff(D, D2, k, flag=true)
   if flag
     D[1] = D2[1,1]
   end

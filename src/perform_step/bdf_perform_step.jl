@@ -483,7 +483,10 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
     if flag
       ρ = dt/dts[1]
       # backward diff
-      backward_diff(udiff,D,D2,k)
+      for i = 1:k
+        D2[1,i] = udiff[i]
+      end
+      backward_diff(D,D2,k)
       if ρ != 1
         U!(k,U)
         R!(k,ρ,cache)
@@ -491,9 +494,9 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
       end
     else
       for i = 1:k
-        udiff[i] *= dt/dts[i]
+        D2[1,i] = udiff[i] * dt/dts[i]
       end
-      backward_diff(udiff,D,D2,k)
+      backward_diff(D,D2,k)
     end
   else
     γ = 1//1
@@ -542,7 +545,7 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
     else
       utildem1 = (κ*γₖ[k-1] + inv(k)) * D[k]
       utildem2 = (κ*γₖ[k-2] + inv(k-1)) * D[k-1]
-      backward_diff(udiff,D,D2,k+1,false)
+      backward_diff(D,D2,k+1,false)
       δ = u - uprev
       for i = 1:(k+1)
         δ -= D2[i,1]
