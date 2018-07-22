@@ -185,7 +185,7 @@ end
 function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_step, W_transform=false)
   @inbounds begin
     @unpack t,dt,uprev,u,f,p = integrator
-    @unpack J,W,jac_config = cache
+    @unpack J,W = cache
     mass_matrix = integrator.sol.prob.mass_matrix
     is_compos = typeof(integrator.alg) <: CompositeAlgorithm
     alg = unwrap_alg(integrator, true)
@@ -212,13 +212,21 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
       if !repeat_step && (!alg_can_repeat_jac(alg) ||
                           (integrator.iter < 1 || new_jac ||
                            abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t))))
-        if W_transform
-          for j in 1:length(u), i in 1:length(u)
-              W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
-          end
-        else
-          for j in 1:length(u), i in 1:length(u)
-              W[i,j] = mass_matrix[i,j] - dtgamma*J[i,j]
+        if DiffEqBase.has_jac(f) && isa(f.jac_prototype, DiffEqBase.AbstractDiffEqLinearOperator)
+          set_gamma!(W, dtgamma)
+          ## Reset mass matrix and W_transform
+          ## This is a temporary hack, and should not be required after the *DEFunction update
+          W.mass_matrix = mass_matrix
+          W.transform = W_transform
+        else # compute W as a dense matrix
+          if W_transform
+            for j in 1:length(u), i in 1:length(u)
+                W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
+            end
+          else
+            for j in 1:length(u), i in 1:length(u)
+                W[i,j] = mass_matrix[i,j] - dtgamma*J[i,j]
+            end
           end
         end
       else
@@ -238,7 +246,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
   isarray = typeof(uprev) <: AbstractArray
   iscompo = typeof(integrator.alg) <: CompositeAlgorithm
   if !W_transform
-    if isa(f.jac_prototype, DiffEqBase.AbstractDiffEqLinearOperator)
+    if DiffEqBase.has_jac(f) && isa(f.jac_prototype, DiffEqBase.AbstractDiffEqLinearOperator)
       W = WOperator(mass_matrix, dtgamma, deepcopy(f.jac_prototype); transform=false)
     else
       if isarray
@@ -249,7 +257,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
       W = mass_matrix - dtgamma*J
     end
   else
-    if isa(f.jac_prototype, DiffEqBase.AbstractDiffEqLinearOperator)
+    if DiffEqBase.has_jac(f) && isa(f.jac_prototype, DiffEqBase.AbstractDiffEqLinearOperator)
       W = WOperator(mass_matrix, dtgamma, deepcopy(f.jac_prototype); transform=true)
     else
       if isarray
