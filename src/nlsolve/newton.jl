@@ -1,33 +1,32 @@
-"""
-  nlsolve_cache(alg, cache::OrdinaryDiffEqConstantCache, z, tmp, W, γ, c, new_W)
-  -> NLsolveConstantCache
+#"""
+#  nlsolve_cache(alg, cache::OrdinaryDiffEqConstantCache, z, tmp, W, γ, c, new_W)
+#  -> NLsolveConstantCache
+#
+#Return a wrapper `NLsolveConstantCache` for `cache::OrdinaryDiffEqConstantCache`,
+#so that `diffeq_nlsolve!` does not need to assume fieldnames of `cache`.
+#"""
+#function nlsolve_cache(alg::Union{OrdinaryDiffEqNewtonAdaptiveAlgorithm,
+#                                  OrdinaryDiffEqNewtonAlgorithm},
+#                       cache::OrdinaryDiffEqConstantCache, z, tmp, W, γ, c, new_W)
+#  NLsolveConstantCache(z, tmp, W, cache.κ, cache.tol, γ, c)
+#end
 
-Return a wrapper `NLsolveConstantCache` for `cache::OrdinaryDiffEqConstantCache`,
-so that `diffeq_nlsolve!` does not need to assume fieldnames of `cache`.
-"""
-function nlsolve_cache(alg::Union{OrdinaryDiffEqNewtonAdaptiveAlgorithm,
-                                  OrdinaryDiffEqNewtonAlgorithm},
-                       cache::OrdinaryDiffEqConstantCache, z, tmp, W, γ, c, new_W)
-  NLsolveConstantCache(z, tmp, W, cache.κ, cache.tol, γ, c)
-end
+#"""
+#  nlsolve_cache(alg, cache::OrdinaryDiffEqMutableCache, z, tmp, W, γ, c, new_W)
+#  -> NLsolveMutableCache
+#
+#Return a wrapper `NLsolveMutableCache` for `cache::OrdinaryDiffEqMutableCache`,
+#so that `diffeq_nlsolve!` does not need to assume fieldnames of `cache`.
+#"""
+#function nlsolve_cache(alg::Union{OrdinaryDiffEqNewtonAdaptiveAlgorithm,
+#                                  OrdinaryDiffEqNewtonAlgorithm},
+#                       cache::OrdinaryDiffEqMutableCache, z, tmp, γ, c, new_W)
+#  NLsolveMutableCache(z, cache.dz, tmp, cache.b,
+#                      cache.W, cache.κ, cache.tol, γ, c, cache.k, new_W)
+#end
 
 """
-  nlsolve_cache(alg, cache::OrdinaryDiffEqMutableCache, z, tmp, W, γ, c, new_W)
-  -> NLsolveMutableCache
-
-Return a wrapper `NLsolveMutableCache` for `cache::OrdinaryDiffEqMutableCache`,
-so that `diffeq_nlsolve!` does not need to assume fieldnames of `cache`.
-"""
-function nlsolve_cache(alg::Union{OrdinaryDiffEqNewtonAdaptiveAlgorithm,
-                                  OrdinaryDiffEqNewtonAlgorithm},
-                       cache::OrdinaryDiffEqMutableCache, z, tmp, γ, c, new_W)
-  NLsolveMutableCache(z, cache.dz, tmp, cache.b,
-                      cache.W, cache.κ, cache.tol, γ, c, cache.k, new_W)
-end
-
-"""
-  diffeq_nlsolve!(integrator, nlcache, cache, ::Type{Val{:newton}}) -> (z, η,
-  iter, fail_convergence)
+  (S::Newton)(integrator) -> (z, η, iter, fail_convergence)
 
 Perform numerically stable modified Newton iteration that is specialized for
 implicit methods (see [^HS96] and [^HW96]), where `z` is the solution, `η` is
@@ -59,14 +58,12 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 978-3-642-05221-7. Section IV.8.
 [doi:10.1007/978-3-642-05221-7](https://doi.org/10.1007/978-3-642-05221-7)
 """
-function diffeq_nlsolve!(integrator,
-                         nlcache::NLsolveConstantCache,
-                         cache::OrdinaryDiffEqConstantCache,
-                         ::Type{Val{:newton}})
+function (S::Newton{false})(integrator)
+  nlcache = S.cache
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack z,tmp,W,κ,tol,c,γ = nlcache
+  @unpack z,tmp,W,κ,tol,c,γ,max_iter,min_iter = nlcache
   mass_matrix = integrator.sol.prob.mass_matrix
-  alg = unwrap_alg(integrator, true)
+  #alg = unwrap_alg(integrator, true)
   if typeof(integrator.f) <: SplitFunction
     f = integrator.f.f1
   else
@@ -84,12 +81,12 @@ function diffeq_nlsolve!(integrator,
   ndz = integrator.opts.internalnorm(dz)
   z = z + dz
 
-  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
+  η = max(nlcache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
   fail_convergence = false
-  while (do_newton || iter < alg.min_newton_iter) && iter < alg.max_newton_iter
+  while (do_newton || iter < min_iter) && iter < max_iter
     iter += 1
     u = tmp + γ*z
     b = dt*f(u, p, tstep) - z
@@ -97,7 +94,7 @@ function diffeq_nlsolve!(integrator,
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
     θ = ndz/ndzprev
-    if θ > 1 || ndz*(θ^(alg.max_newton_iter - iter)/(1-θ)) > κtol
+    if θ > 1 || ndz*(θ^(max_iter - iter)/(1-θ)) > κtol
       fail_convergence = true
       break
     end
@@ -106,7 +103,7 @@ function diffeq_nlsolve!(integrator,
     z = z + dz
   end
 
-  if (iter >= alg.max_newton_iter && do_newton) || fail_convergence
+  if (iter >= max_iter && do_newton) || fail_convergence
     integrator.force_stepfail = true
     return (z, η, iter, true)
   end
@@ -114,14 +111,12 @@ function diffeq_nlsolve!(integrator,
   return (z, η, iter, false)
 end
 
-function diffeq_nlsolve!(integrator,
-                         nlcache::NLsolveMutableCache,
-                         cache::OrdinaryDiffEqMutableCache,
-                         ::Type{Val{:newton}})
+function (S::Newton{true})(integrator)
+  nlcache = S.cache
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack z,dz,tmp,b,W,κ,tol,k,new_W,c,γ = nlcache
+  @unpack z,dz,tmp,b,W,κ,tol,k,new_W,c,γ,max_iter,min_iter = nlcache
   mass_matrix = integrator.sol.prob.mass_matrix
-  alg = unwrap_alg(integrator, true)
+  #alg = unwrap_alg(integrator, true)
   if typeof(integrator.f) <: SplitFunction
     f = integrator.f.f1
   else
@@ -148,12 +143,12 @@ function diffeq_nlsolve!(integrator,
   ndz = integrator.opts.internalnorm(dz)
   z .+= dz
 
-  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
+  η = max(nlcache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # Newton iteration
   fail_convergence = false
-  while (do_newton || iter < alg.min_newton_iter) && iter < alg.max_newton_iter
+  while (do_newton || iter < min_iter) && iter < max_iter
     iter += 1
     @. u = tmp + γ*z
     f(k, u, p, tstep)
@@ -171,7 +166,7 @@ function diffeq_nlsolve!(integrator,
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
     θ = ndz/ndzprev
-    if θ > 1 || ndz*(θ^(alg.max_newton_iter - iter)/(1-θ)) > κtol
+    if θ > 1 || ndz*(θ^(max_iter - iter)/(1-θ)) > κtol
       fail_convergence = true
       break
     end
@@ -180,7 +175,7 @@ function diffeq_nlsolve!(integrator,
     z .+= dz
   end
 
-  if (iter >= alg.max_newton_iter && do_newton) || fail_convergence
+  if (iter >= max_iter && do_newton) || fail_convergence
     integrator.force_stepfail = true
     return (z, η, iter, true)
   end

@@ -1,6 +1,5 @@
 """
-  diffeq_nlsolve!(integrator, nlcache, cache, ::Type{Val{:functional}}) -> (z,
-  η, iter, fail_convergence)
+  (S::Anderson{1})(integrator) -> (z, η, iter, fail_convergence)
 
 Perform functional iteration that is used by implicit methods, where `z` is the
 solution, `η` is used to measure the iteration error (see [^HW96]), `iter` is
@@ -23,14 +22,12 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 978-3-642-05221-7. Section IV.8.
 [doi:10.1007/978-3-642-05221-7](https://doi.org/10.1007/978-3-642-05221-7)
 """
-function diffeq_nlsolve!(integrator,
-                         nlcache::NLsolveConstantCache,
-                         cache::OrdinaryDiffEqConstantCache,
-                         ::Type{Val{:functional}})
+function (S::Anderson{1,false})(integrator)
+  nlcache = S.cache
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack z,tmp,κ,tol,c,γ = nlcache
+  @unpack z,tmp,κ,tol,c,γ,min_iter,max_iter = nlcache
   mass_matrix = integrator.sol.prob.mass_matrix
-  alg = unwrap_alg(integrator, true)
+  #alg = unwrap_alg(integrator, true)
   if typeof(integrator.f) <: SplitFunction
     f = integrator.f.f1
   else
@@ -48,12 +45,12 @@ function diffeq_nlsolve!(integrator,
   ndz = integrator.opts.internalnorm(dz)
   z = z₊
 
-  η = cache.ηold
+  η = nlcache.ηold
   do_functional = true
 
   # functional iteration
   fail_convergence = false
-  while (do_functional || iter < alg.min_newton_iter) && iter < alg.max_newton_iter # TODO: rename
+  while (do_functional || iter < min_iter) && iter < max_iter
     iter += 1
     u = tmp + γ*z
     z₊ = dt*f(u, p, tstep)
@@ -61,7 +58,7 @@ function diffeq_nlsolve!(integrator,
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
     θ = ndz/ndzprev
-    if θ > 1 || ndz*(θ^(alg.max_newton_iter - iter)/(1-θ)) > κtol
+    if θ > 1 || ndz*(θ^(max_iter - iter)/(1-θ)) > κtol
       fail_convergence = true
       break
     end
@@ -70,7 +67,7 @@ function diffeq_nlsolve!(integrator,
     z = z₊
   end
 
-  if (iter >= alg.max_newton_iter && do_functional) || fail_convergence
+  if (iter >= max_iter && do_functional) || fail_convergence
     integrator.force_stepfail = true
     return (z, η, iter, true)
   end
@@ -78,12 +75,10 @@ function diffeq_nlsolve!(integrator,
   return (z, η, iter, false)
 end
 
-function diffeq_nlsolve!(integrator,
-                         nlcache::NLsolveMutableCache,
-                         cache::OrdinaryDiffEqMutableCache,
-                         ::Type{Val{:functional}})
+function (S::Anderson{1,true})(integrator)
+  nlcache = S.cache
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack z,dz,tmp,κ,tol,b,k,c,γ = nlcache
+  @unpack z,dz,tmp,κ,tol,b,k,c,γ,min_iter,max_iter = nlcache
   z₊ = b
   mass_matrix = integrator.sol.prob.mass_matrix
   alg = unwrap_alg(integrator, true)
@@ -115,7 +110,7 @@ function diffeq_nlsolve!(integrator,
 
   # Functional iteration
   fail_convergence = false
-  while (do_functional || iter < alg.min_newton_iter) && iter < alg.max_newton_iter
+  while (do_functional || iter < min_iter) && iter < max_iter
     iter += 1
     @. u = tmp + γ*z
     f(k, u, p, tstep)
@@ -129,7 +124,7 @@ function diffeq_nlsolve!(integrator,
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
     θ = ndz/ndzprev
-    if θ > 1 || ndz*(θ^(alg.max_newton_iter - iter)/(1-θ)) > κtol
+    if θ > 1 || ndz*(θ^(max_iter - iter)/(1-θ)) > κtol
       fail_convergence = true
       break
     end
@@ -138,7 +133,7 @@ function diffeq_nlsolve!(integrator,
     @. z = z₊
   end
 
-  if (iter >= alg.max_newton_iter && do_functional) || fail_convergence
+  if (iter >= max_iter && do_functional) || fail_convergence
     integrator.force_stepfail = true
     return (z, η, iter, true)
   end
