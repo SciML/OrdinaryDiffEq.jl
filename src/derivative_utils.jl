@@ -78,7 +78,7 @@ internal cache (can be specified in the constructor; default to regular `Vector`
 It supports all of `AbstractDiffEqLinearOperator`'s interface.
 """
 mutable struct WOperator{T,
-  MType <: Union{AbstractMatrix,UniformScaling},
+  MType,
   GType <: Real,
   JType <: DiffEqBase.AbstractDiffEqLinearOperator{T},
   CType <: AbstractVector
@@ -99,6 +99,15 @@ mutable struct WOperator{T,
       cache = Vector{T}(undef, size(J, 1))
     end
     new{T,typeof(mass_matrix),typeof(gamma),typeof(J),typeof(cache)}(mass_matrix,gamma,J,cache,transform)
+  end
+  # Partial constructor with unitialized mass matrix
+  function WOperator(gamma, J; cache=nothing, transform=false)
+    T = eltype(J)
+    # Construct the cache, default to regular vector
+    if cache == nothing
+      cache = Vector{T}(undef, size(J, 1))
+    end
+    new{T,Any,typeof(gamma),typeof(J),typeof(cache)}(nothing,gamma,J,cache,transform)
   end
 end
 set_gamma!(W::WOperator, gamma) = (W.gamma = gamma; W)
