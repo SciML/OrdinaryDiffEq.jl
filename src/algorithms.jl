@@ -29,7 +29,7 @@ Base.@pure FunctionMap(;scale_by_time=false) = FunctionMap{scale_by_time}()
 struct ExplicitRK{TabType} <: OrdinaryDiffEqAdaptiveAlgorithm
   tableau::TabType
 end
-ExplicitRK() = ExplicitRK(ODE_DEFAULT_TABLEAU)
+ExplicitRK(;tableau=ODE_DEFAULT_TABLEAU) = ExplicitRK(ODE_DEFAULT_TABLEAU)
 
 @inline trivial_limiter!(u, f, t) = nothing
 
