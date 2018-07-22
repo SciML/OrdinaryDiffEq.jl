@@ -88,7 +88,7 @@ mutable struct WOperator{T,
   J::JType
   cache::CType
   transform::Bool
-  function WOperator(mass_matrix, gamma, J; cache=nothing, tansform=false)
+  function WOperator(mass_matrix, gamma, J; cache=nothing, transform=false)
     T = eltype(J)
     # Convert mass_matrix, if needed
     if !isa(mass_matrix, Union{AbstractMatrix,UniformScaling})

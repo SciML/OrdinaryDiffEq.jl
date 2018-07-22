@@ -1,4 +1,4 @@
-mutable struct ImplicitEulerCache{uType,rateType,uNoUnitsType,J,UF,JC,uToltype,F} <: OrdinaryDiffEqMutableCache
+mutable struct ImplicitEulerCache{uType,rateType,uNoUnitsType,J,W,UF,JC,uToltype,F} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -11,7 +11,7 @@ mutable struct ImplicitEulerCache{uType,rateType,uNoUnitsType,J,UF,JC,uToltype,F
   tmp::uType
   atmp::uNoUnitsType
   J::J
-  W::J
+  W::W
   uf::UF
   jac_config::JC
   linsolve::F
@@ -28,8 +28,17 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomElt
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
   du1 = zero(rate_prototype)
-  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-  W = similar(J)
+  if DiffEqBase.has_jac(f)
+    J = deepcopy(f.jac_prototype)
+    if isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
+      W = WOperator(dt, J)
+    else
+      W = similar(J)
+    end
+  else
+    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    W = similar(J)
+  end
   z = similar(u,axes(u))
   dz = similar(u,axes(u)); tmp = similar(u,axes(u)); b = similar(u,axes(u))
   fsalfirst = zero(rate_prototype)
