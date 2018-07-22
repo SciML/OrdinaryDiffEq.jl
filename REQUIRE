@@ -5,11 +5,9 @@ ForwardDiff 0.7.0
 GenericSVD 0.0.2
 NLsolve 0.14.1
 RecursiveArrayTools 0.13.0
-Juno 0.2.5
 DiffEqDiffTools 0.4.0
 Roots 0.2.1
 DataStructures 0.4.6
-Compat 0.18.0
 Reexport
 MuladdMacro 0.0.2
 StaticArrays

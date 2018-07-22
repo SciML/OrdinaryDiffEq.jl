@@ -74,7 +74,7 @@ integrator.opts.abstol = 1e-9
 ```
 For more info see the linked documentation page.
 """
-mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,pType,eigenType,QT,tdirType,ksEltype,SolType,F,ProgressType,CacheType,O,FSALType} <: DiffEqBase.AbstractODEIntegrator
+mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,pType,eigenType,QT,tdirType,ksEltype,SolType,F,CacheType,O,FSALType} <: DiffEqBase.AbstractODEIntegrator
   sol::SolType
   u::uType
   k::ksEltype
@@ -100,7 +100,6 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,pType,
   iter::Int
   saveiter::Int
   saveiter_dense::Int
-  prog::ProgressType
   cache::CacheType
   kshortsize::Int
   force_stepfail::Bool
@@ -116,21 +115,21 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,pType,
   fsallast::FSALType
 
   function ODEIntegrator{algType,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
-                F,ProgressType,CacheType,O,FSALType}(
+                F,CacheType,O,FSALType}(
                 sol,u,k,t,dt,f,p,uprev,uprev2,tprev,
       alg,dtcache,dtchangeable,dtpropose,tdir,
       eigen_est,EEst,qold,q11,erracc,dtacc,success_iter,
-      iter,saveiter,saveiter_dense,prog,cache,
+      iter,saveiter,saveiter_dense,cache,
       kshortsize,force_stepfail,last_stepfail,just_hit_tstop,
       event_last_time,accept_step,isout,reeval_fsal,u_modified,opts) where {algType,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
-                                     F,ProgressType,CacheType,O,FSALType}
+                                     F,CacheType,O,FSALType}
 
       new{algType,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
-                  F,ProgressType,CacheType,O,FSALType}(
+                  F,CacheType,O,FSALType}(
                   sol,u,k,t,dt,f,p,uprev,uprev2,tprev,
       alg,dtcache,dtchangeable,dtpropose,tdir,
       eigen_est,EEst,qold,q11,erracc,dtacc,success_iter,
-      iter,saveiter,saveiter_dense,prog,cache,
+      iter,saveiter,saveiter_dense,cache,
       kshortsize,force_stepfail,last_stepfail,just_hit_tstop,
       event_last_time,accept_step,isout,reeval_fsal,u_modified,opts) # Leave off fsalfirst and last
   end

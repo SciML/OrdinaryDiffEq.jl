@@ -4,7 +4,7 @@ import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_2Dlinear, prob_ode_linea
 
 srand(100)
 ## Convergence Testing
-dts = 1.//2.^(7:-1:4)
+dts = (1/2) .^ (7:-1:4)
 testTol = 0.2
 
 

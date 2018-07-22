@@ -5,7 +5,7 @@ module OrdinaryDiffEq
   using Reexport
   @reexport using DiffEqBase
 
-  using Compat
+  using Logging
 
   using MuladdMacro
 
@@ -20,7 +20,7 @@ module OrdinaryDiffEq
   import RecursiveArrayTools: chain, recursivecopy!
 
   using Parameters, GenericSVD, ForwardDiff, RecursiveArrayTools,
-        NLsolve, Juno, Roots, DataStructures, DiffEqDiffTools
+        NLsolve, Roots, DataStructures, DiffEqDiffTools
 
   import ForwardDiff.Dual
 

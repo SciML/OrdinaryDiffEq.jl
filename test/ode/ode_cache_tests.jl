@@ -31,16 +31,14 @@ tspan = (0.0,50.0)
 prob = ODEProblem(f,u0,tspan)
 sol = solve(prob,Tsit5(),callback=callback)
 
-#=
 # https://github.com/JuliaLang/julia/issues/10354
-sol = solve(prob,GenericImplicitEuler(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/2)
+@test_broken sol = solve(prob,GenericImplicitEuler(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/2)
 
-sol = solve(prob,GenericTrapezoid(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/2)
+@test_broken sol = solve(prob,GenericTrapezoid(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/2)
 
-sol = solve(prob,Rosenbrock23(chunk_size=1),callback=callback,dt=1/2)
+@test_broken sol = solve(prob,Rosenbrock23(chunk_size=1),callback=callback,dt=1/2)
 
-sol = solve(prob,Rosenbrock32(chunk_size=1),callback=callback,dt=1/2)
-=#
+@test_broken sol = solve(prob,Rosenbrock32(chunk_size=1),callback=callback,dt=1/2)
 
 for alg in CACHE_TEST_ALGS
   sol = solve(prob,alg,callback=callback,dt=1/2)

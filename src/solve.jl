@@ -77,6 +77,8 @@ function DiffEqBase.__init(
      @warn("Autodifferentiation through the solver with adaptive timestepping requires both time and states to be dual numbers. Please see the FAQ.")
   end
 
+  progress && @logmsg(-1,progress_name,_id=_id = :OrdinaryDiffEq,progress=0)
+
   tType = eltype(prob.tspan)
   tspan = prob.tspan
   tdir = sign(tspan[end]-tspan[1])
@@ -206,8 +208,6 @@ function DiffEqBase.__init(
 
   QT = tTypeNoUnits <: Integer ? typeof(qmin) : tTypeNoUnits
 
-  progress ? (prog = Juno.ProgressBar(name=progress_name)) : prog = nothing
-
   k = rateType[]
 
   if uType <: Array
@@ -301,13 +301,13 @@ function DiffEqBase.__init(
 
   integrator = ODEIntegrator{algType,uType,tType,typeof(p),typeof(eigen_est),
                              QT,typeof(tdir),typeof(k),SolType,
-                             FType,typeof(prog),cacheType,
+                             FType,cacheType,
                              typeof(opts),fsal_typeof(alg,rate_prototype)}(
                              sol,u,k,t,tType(dt),f,p,uprev,uprev2,tprev,
                              alg,dtcache,dtchangeable,
                              dtpropose,tdir,eigen_est,EEst,QT(qoldinit),q11,
                              erracc,dtacc,success_iter,
-                             iter,saveiter,saveiter_dense,prog,cache,
+                             iter,saveiter,saveiter_dense,cache,
                              kshortsize,force_stepfail,last_stepfail,
                              just_hit_tstop,event_last_time,accept_step,
                              isout,reeval_fsal,
