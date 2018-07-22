@@ -46,6 +46,9 @@ module OrdinaryDiffEq
 
   include("misc_utils.jl")
   include("algorithms.jl")
+  include("nlsolve/type.jl")
+  include("nlsolve/newton.jl")
+  include("nlsolve/anderson.jl")
 
   include("caches/basic_caches.jl")
   include("caches/low_order_rk_caches.jl")
@@ -195,5 +198,5 @@ module OrdinaryDiffEq
   export AutoSwitch, AutoTsit5, AutoDP5,
          AutoVern6, AutoVern7, AutoVern8, AutoVern9
 
-  export Newton, Functional
+  export Newton, Anderson, Functional
 end # module
