@@ -1,5 +1,5 @@
 """
-  (S::Anderson{1})(integrator) -> (z, η, iter, fail_convergence)
+  (S::Functional)(integrator) -> (z, η, iter, fail_convergence)
 
 Perform functional iteration that is used by implicit methods, where `z` is the
 solution, `η` is used to measure the iteration error (see [^HW96]), `iter` is
@@ -22,7 +22,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 978-3-642-05221-7. Section IV.8.
 [doi:10.1007/978-3-642-05221-7](https://doi.org/10.1007/978-3-642-05221-7)
 """
-function (S::Anderson{1,false})(integrator)
+function (S::Functional{false})(integrator)
   nlcache = S.cache
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z,tmp,κ,tol,c,γ,min_iter,max_iter = nlcache
@@ -46,7 +46,7 @@ function (S::Anderson{1,false})(integrator)
   z = z₊
 
   η = nlcache.ηold
-  do_functional = true
+  do_functional = true # TODO: this makes `min_iter` ≥ 2
 
   # functional iteration
   fail_convergence = false
@@ -75,11 +75,11 @@ function (S::Anderson{1,false})(integrator)
   return (z, η, iter, false)
 end
 
-function (S::Anderson{1,true})(integrator)
+function (S::Functional{true})(integrator)
   nlcache = S.cache
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack z,dz,tmp,κ,tol,b,k,c,γ,min_iter,max_iter = nlcache
-  z₊ = b
+  @unpack z,z₊,b,dz,tmp,κ,tol,k,c,γ,min_iter,max_iter = nlcache
+  ztmp = b
   mass_matrix = integrator.sol.prob.mass_matrix
   alg = unwrap_alg(integrator, true)
   if typeof(integrator.f) <: SplitFunction
@@ -98,15 +98,15 @@ function (S::Anderson{1,true})(integrator)
   if mass_matrix == I
     @. z₊ = dt*k
   else
-    lmul!(dt, k) # TODO: check unit
-    mul!(z₊, mass_matrix, k)
+    @. ztmp = dt*k
+    mul!(z₊, mass_matrix, ztmp)
   end
   @. dz = z₊ - z
   @. z = z₊
   ndz = integrator.opts.internalnorm(dz)
 
-  η = cache.ηold
-  do_functional = true
+  η = nlcache.ηold
+  do_functional = true # TODO: this makes `min_iter` ≥ 2
 
   # Functional iteration
   fail_convergence = false
@@ -117,8 +117,8 @@ function (S::Anderson{1,true})(integrator)
     if mass_matrix == I
       @. z₊ = dt*k
     else
-      lmul!(dt, k) # TODO: check unit
-      mul!(z₊, mass_matrix, k)
+      @. ztmp = dt*k
+      mul!(z₊, mass_matrix, ztmp)
     end
     @. dz = z₊ - z
     ndzprev = ndz
