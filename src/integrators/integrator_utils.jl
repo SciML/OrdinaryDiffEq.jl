@@ -170,7 +170,7 @@ function step_reject_controller!(integrator,alg)
   integrator.dt = integrator.dt/min(inv(integrator.opts.qmin),integrator.q11/integrator.opts.gamma)
 end
 
-const StandardControllerAlgs = Union{GenericImplicitEuler,GenericTrapezoid,VCABM,QNDF}
+const StandardControllerAlgs = Union{GenericImplicitEuler,GenericTrapezoid,VCABM}
 #const NordAlgs = Union{AN5, JVODE}
 
 function stepsize_controller!(integrator, alg::JVODE)
@@ -185,6 +185,28 @@ end
 function step_reject_controller!(integrator,alg::JVODE)
   integrator.dt *= integrator.qold
 end
+
+function stepsize_controller!(integrator, alg::QNDF)
+  cnt = integrator.iter
+  if cnt <= 3
+    # call std controller
+    qtmp = integrator.EEst^(1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1))/integrator.opts.gamma
+    @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
+    integrator.qold = integrator.dt/q
+    return q
+  else
+    q = integrator.dt/integrator.cache.h
+    integrator.qold = integrator.dt/q
+    return q
+  end
+end
+function step_accept_controller!(integrator,alg::QNDF,q)
+  return integrator.dt/q  # dtnew
+end
+function step_reject_controller!(integrator,alg::QNDF)
+  integrator.dt = integrator.qold
+end
+
 
 function stepsize_controller!(integrator,alg::Union{StandardControllerAlgs,
                               OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Standard}})

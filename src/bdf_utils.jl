@@ -41,3 +41,98 @@ function backward_diff!(D, D2, k, flag=true)
 end
 
 global const γₖ = [1//1, 3//2, 11//6, 25//12, 137//60, 49//20]
+
+function stepsize_and_order!(cache, est, estₖ₋₁, estₖ₊₁, h, k)
+  zₛ = 1.2
+  zᵤ = 0.1
+  Fᵤ = 10
+
+  expo = 1/(k+1)
+  z = zₛ * ((est)^expo)
+  F = inv(z)
+
+  hₖ₋₁ = 0.0
+  hₖ₊₁ = 0.0
+
+  if z <= zₛ
+    # step is successful
+    # precalculations
+    if z <= zᵤ
+      hₖ = Fᵤ * h
+    elseif zᵤ < z <= zₛ
+      hₖ = F * h
+    end
+
+    if k > 1
+      expo = 1/k
+      zₖ₋₁ = 1.3 * ((estₖ₋₁)^expo)
+      Fₖ₋₁ = inv(zₖ₋₁)
+      if zₖ₋₁ <= 0.1
+        hₖ₋₁ = 10 * h
+      elseif 0.1 < zₖ₋₁ <= 1.3
+        hₖ₋₁ = Fₖ₋₁ * h
+      end
+    end
+
+    expo = 1/(k+2)
+    zₖ₊₁ = 1.4 * ((estₖ₊₁)^expo)
+    Fₖ₊₁ = inv(zₖ₊₁)
+
+    if zₖ₊₁<= 0.1
+      hₖ₊₁ = 10 * h
+    elseif 0.1 < zₖ₊₁ <= 1.4 
+      hₖ₊₁ = Fₖ₊₁ * h
+    end
+    # adp order and step conditions
+    if hₖ₋₁ > hₖ
+      hₙ = hₖ₋₁
+      kₙ = max(k-1,1)
+    else
+      hₙ = hₖ
+      kₙ = k
+    end
+    if hₖ₊₁ > hₙ
+      hₙ = hₖ₊₁
+      kₙ = min(k+1,5)
+    end
+    if hₙ < h
+      hₙ = h
+      kₙ = k
+    end
+    cache.h = hₙ
+    cache.k = kₙ
+    return true
+  else
+    # step is not successful
+    if cache.c >= 1  # postfail
+      cache.h = h/2
+      cache.k = k
+      return
+    end
+    if 1.2 < z <= 10
+      hₖ = F * h
+    elseif z > 10
+      hₖ = 0.1 * h
+    end
+    hₙ = hₖ
+    kₙ = k
+    if k > 1
+      expo = 1/k
+      zₖ₋₁ = 1.3 * ((estₖ₋₁)^expo)
+      Fₖ₋₁ = inv(zₖ₋₁)
+      if 1.3 < zₖ₋₁ <= 10
+        hₖ₋₁ = Fₖ₋₁ * h
+      elseif zₖ₋₁ > 10
+        hₖ₋₁ = 0.1 * h
+      end
+      
+      if hₖ₋₁ > hₖ
+        hₙ = min(h,hₖ₋₁)
+        kₙ = max(k-1,1)
+      end
+    end
+    cache.h = hₙ
+    cache.k = kₙ
+    return false
+  end
+end

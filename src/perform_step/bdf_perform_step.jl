@@ -534,35 +534,33 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
       atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
     end
-    if integrator.EEst > one(integrator.EEst)
-      return
-    end
-    if cnt <=  4 || k < 3
-      cache.k = min(k+1,3)
-      if cnt == 1
-        cache.k = 1
-      end
+    
+    if cnt == 1
+      cache.k = 1
+    elseif cnt == 2 || cnt == 3
+      cache.k = 2
     else
-      utildem1 = (κ*γₖ[k-1] + inv(k)) * D[k]
-      utildem2 = (κ*γₖ[k-2] + inv(k-1)) * D[k-1]
+      errm1 = 0
+      if k > 1
+        utildem1 = (κ*γₖ[k-1] + inv(k)) * D[k]
+        atmpm1 = calculate_residuals(utildem1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+        errm1 = integrator.opts.internalnorm(atmpm1)
+      end
       backward_diff!(D,D2,k+1,false)
       δ = u - uprev
       for i = 1:(k+1)
         δ -= D2[i,1]
       end
       utildep1 = (κ*γₖ[k+1] + inv(k+2)) * δ
-      atmpm2 = calculate_residuals(utildem2, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-      atmpm1 = calculate_residuals(utildem1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
       atmpp1 = calculate_residuals(utildep1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-      errm2 = integrator.opts.internalnorm(atmpm2)
-      errm1 = integrator.opts.internalnorm(atmpm1)
       errp1 = integrator.opts.internalnorm(atmpp1)
-      if max(errm2,errm1) <= integrator.EEst
-        cache.k = k - 1
-      elseif errp1 < integrator.EEst
-        cache.k = min(k+1,max_order)
-      end # if
-    end # step <= 4
+      pass = stepsize_and_order!(cache, integrator.EEst, errm1, errp1, dt, k)
+      if pass == false
+        cache.c = cache.c + 1
+        return
+      end
+      cache.c = 0
+    end # cnt == 1
   end # integrator.opts.adaptive
   for i = 6:-1:2
     dts[i] = dts[i-1]
