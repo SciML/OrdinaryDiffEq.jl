@@ -9,6 +9,6 @@ DiffEqDiffTools 0.4.0
 Roots 0.2.1
 DataStructures 0.4.6
 Reexport
-MuladdMacro 0.0.2
+MuladdMacro 0.2.1
 StaticArrays
 DataStructures
