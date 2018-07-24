@@ -78,7 +78,7 @@ internal cache (can be specified in the constructor; default to regular `Vector`
 It supports all of `AbstractDiffEqLinearOperator`'s interface.
 """
 mutable struct WOperator{T,
-  MType,
+  MType <: Union{UniformScaling,AbstractMatrix},
   GType <: Real,
   JType <: DiffEqBase.AbstractDiffEqLinearOperator{T},
   CType <: AbstractVector
@@ -99,15 +99,6 @@ mutable struct WOperator{T,
       cache = Vector{T}(undef, size(J, 1))
     end
     new{T,typeof(mass_matrix),typeof(gamma),typeof(J),typeof(cache)}(mass_matrix,gamma,J,cache,transform)
-  end
-  # Partial constructor with unitialized mass matrix
-  function WOperator(gamma, J; cache=nothing, transform=false)
-    T = eltype(J)
-    # Construct the cache, default to regular vector
-    if cache == nothing
-      cache = Vector{T}(undef, size(J, 1))
-    end
-    new{T,Any,typeof(gamma),typeof(J),typeof(cache)}(nothing,gamma,J,cache,transform)
   end
 end
 set_gamma!(W::WOperator, gamma) = (W.gamma = gamma; W)
@@ -214,10 +205,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
                            abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t))))
         if DiffEqBase.has_jac(f) && isa(f.jac_prototype, DiffEqBase.AbstractDiffEqLinearOperator)
           set_gamma!(W, dtgamma)
-          ## Reset mass matrix and W_transform
-          ## This is a temporary hack, and should not be required after the *DEFunction update
-          W.mass_matrix = mass_matrix
-          W.transform = W_transform
+          # W.transform = W_transform # necessary?
         else # compute W as a dense matrix
           if W_transform
             for j in 1:length(u), i in 1:length(u)
