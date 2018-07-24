@@ -27,7 +27,7 @@ end
 
     # Assignments
     sizeu  = size(u)
-    #mass_matrix = integrator.sol.prob.mass_matrix
+    #mass_matrix = integrator.f.mass_matrix
     γ = dt*d
     dto2 = dt/2
     dto6 = dt/6
@@ -166,7 +166,7 @@ end
     # Assignments
     sizeu  = size(u)
     uidx = eachindex(uprev)
-    #mass_matrix = integrator.sol.prob.mass_matrix
+    #mass_matrix = integrator.f.mass_matrix
     mass_matrix = I
     atmp = du # does not work with units - additional unitless array required!
 
