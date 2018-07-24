@@ -486,7 +486,7 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
       for i = 1:k
         D2[1,i] = udiff[i]
       end
-      backward_diff(D,D2,k)
+      backward_diff!(D,D2,k)
       if ρ != 1
         U!(k,U)
         R!(k,ρ,cache)
@@ -496,13 +496,13 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
       for i = 1:k
         D2[1,i] = udiff[i] * dt/dts[i]
       end
-      backward_diff(D,D2,k)
+      backward_diff!(D,D2,k)
     end
   else
     γ = 1//1
   end
   # precalculations
-  u₀ = uprev + sum(D)
+  u₀ = uprev + sum(D)  # u₀ is predicted value
   ϕ = zero(γ)
   for i = 1:k
     ϕ += γₖ[i]*D[i]
@@ -519,9 +519,9 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
   u = tmp + γ*z
 
   if integrator.opts.adaptive
-    if integrator.success_iter == 0
+    if cnt == 1
       integrator.EEst = one(integrator.EEst)
-    elseif integrator.success_iter == 1
+    elseif cnt == 2
       utilde = (u - uprev) - (udiff[1] * dt/dts[1])
       atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
@@ -545,7 +545,7 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
     else
       utildem1 = (κ*γₖ[k-1] + inv(k)) * D[k]
       utildem2 = (κ*γₖ[k-2] + inv(k-1)) * D[k-1]
-      backward_diff(D,D2,k+1,false)
+      backward_diff!(D,D2,k+1,false)
       δ = u - uprev
       for i = 1:(k+1)
         δ -= D2[i,1]

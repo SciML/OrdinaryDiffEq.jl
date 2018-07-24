@@ -24,7 +24,9 @@ function R!(k, ρ, cache)
   end
 end
 
-function backward_diff(D, D2, k, flag=true)
+# This functions takes help of D2 array to create backward differences array D
+# Ith row of D2 keeps Ith order backward differences (∇ⁱyₙ)
+function backward_diff!(D, D2, k, flag=true)
   if flag
     D[1] = D2[1,1]
   end
