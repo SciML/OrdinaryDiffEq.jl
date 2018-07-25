@@ -5,7 +5,7 @@ using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproble
 import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear,
                               prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear
 
-dts = 1.//2.^(6:-1:3)
+dts = (1/2) .^ (6:-1:3)
 testTol = 0.2
 
 ### Rosenbrock23()
@@ -28,10 +28,10 @@ sol = solve(prob,Rosenbrock23())
 
 prob = prob_ode_bigfloat2Dlinear
 
-sim = test_convergence(dts,prob,Rosenbrock23(linsolve=LinSolveFactorize(qrfact!)))
+sim = test_convergence(dts,prob,Rosenbrock23(linsolve=LinSolveFactorize(qr!)))
 @test abs(sim.𝒪est[:final]-2) < testTol
 
-sol = solve(prob,Rosenbrock23(linsolve=LinSolveFactorize(qrfact!)))
+sol = solve(prob,Rosenbrock23(linsolve=LinSolveFactorize(qr!)))
 @test length(sol) < 20
 
 ### Rosenbrock32()
@@ -163,7 +163,7 @@ sol = solve(prob,GRK4T())
 @test length(sol) < 20
 
 ### GRK4A
-dts = 1.//2.^(7:-1:4)
+dts = (1/2) .^ (7:-1:4)
 
 prob = prob_ode_linear
 
@@ -203,7 +203,7 @@ sol = solve(prob,Ros4LStab())
 
 println("RODAS")
 
-dts = 1.//2.^(7:-1:4)
+dts = (1/2) .^ (7:-1:4)
 
 prob = prob_ode_linear
 
@@ -288,7 +288,7 @@ println("Rodas5")
 
 prob = prob_ode_linear
 
-dts = 1.//2.^(7:-1:3)
+dts = (1/2) .^ (7:-1:3)
 sim = test_convergence(dts,prob,Rodas5(),dense_errors=true)
 @test abs(sim.𝒪est[:final]-5) < testTol
 @test abs(sim.𝒪est[:L2]-4) < testTol

@@ -62,7 +62,7 @@ function (S::Newton{false})(integrator)
   nlcache = S.cache
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z,tmp,W,κ,tol,c,γ,max_iter,min_iter = nlcache
-  mass_matrix = integrator.sol.prob.mass_matrix
+  mass_matrix = integrator.f.mass_matrix
   #alg = unwrap_alg(integrator, true)
   if typeof(integrator.f) <: SplitFunction
     f = integrator.f.f1
@@ -115,7 +115,7 @@ function (S::Newton{true})(integrator)
   nlcache = S.cache
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z,dz,tmp,b,W,κ,tol,k,new_W,c,γ,max_iter,min_iter = nlcache
-  mass_matrix = integrator.sol.prob.mass_matrix
+  mass_matrix = integrator.f.mass_matrix
   #alg = unwrap_alg(integrator, true)
   if typeof(integrator.f) <: SplitFunction
     f = integrator.f.f1

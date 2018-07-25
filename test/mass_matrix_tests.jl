@@ -14,8 +14,8 @@ using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
   mm_g(du,u,p,t) = @. du = u + t
   mm_analytic(u0,p,t) = @. 2u0*exp(t) - t - 1
   prob2 = ODEProblem(ODEFunction(mm_g,analytic=mm_analytic),ones(3),(0.0,1.0))
-  prob = ODEProblem(ODEFunction(mm_f,analytic=mm_analytic),ones(3),
-                                   (0.0,1.0),mass_matrix=mm_A)
+  prob = ODEProblem(ODEFunction(mm_f,analytic=mm_analytic,mass_matrix=mm_A),ones(3),
+                                   (0.0,1.0))
 
   ######################################### Test each method for exactness
 
@@ -102,7 +102,7 @@ sol2 = solve(prob2, TRBDF2(),adaptive=false,dt=1/10)
   M = fill(0., 2,2)
   M[1,1] = 1.
 
-  m_ode_prob = ODEProblem(f!, u0, tspan, mass_matrix=M)
+  m_ode_prob = ODEProblem(ODEFunction(f!;mass_matrix=M), u0, tspan)
   @test_nowarn sol = solve(m_ode_prob, Rosenbrock23())
 
   M = [0.637947  0.637947
@@ -117,6 +117,6 @@ sol2 = solve(prob2, TRBDF2(),adaptive=false,dt=1/10)
   end
   u0 = fill(0., 2)
 
-  m_ode_prob = ODEProblem(f2!, u0, tspan, mass_matrix=M)
+  m_ode_prob = ODEProblem(ODEFunction(f2!;mass_matrix=M), u0, tspan)
   @test_nowarn sol = solve(m_ode_prob, Rosenbrock23())
 end

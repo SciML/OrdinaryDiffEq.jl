@@ -124,7 +124,7 @@ function postamble!(integrator::ODEIntegrator)
     @logmsg(-1,
     integrator.opts.progress_name,
     _id = :OrdinaryDiffEq,
-    #message=integrator.opts.progress_message(integrator.dt,integrator.u,integrator.p,integrator.t),
+    message=integrator.opts.progress_message(integrator.dt,integrator.u,integrator.p,integrator.t),
     progress="done")
   end
 end
@@ -303,7 +303,7 @@ function loopfooter!(integrator)
     @logmsg(-1,
     integrator.opts.progress_name,
     _id = :OrdinaryDiffEq,
-    #message=integrator.opts.progress_message(integrator.dt,integrator.u,integrator.p,integrator.t),
+    message=integrator.opts.progress_message(integrator.dt,integrator.u,integrator.p,integrator.t),
     progress=integrator.t/integrator.sol.prob.tspan[2])
   end
 end

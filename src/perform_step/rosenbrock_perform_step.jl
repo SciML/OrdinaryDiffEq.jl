@@ -28,7 +28,7 @@ end
 
   # Assignments
   sizeu  = size(u)
-  mass_matrix = integrator.sol.prob.mass_matrix
+  mass_matrix = integrator.f.mass_matrix
 
   # Precalculations
   γ = dt*d
@@ -98,7 +98,7 @@ end
 
   # Assignments
   sizeu  = size(u)
-  mass_matrix = integrator.sol.prob.mass_matrix
+  mass_matrix = integrator.f.mass_matrix
 
   # Precalculations
   γ = dt*d
@@ -322,7 +322,7 @@ end
   @unpack a21,a31,a32,C21,C31,C32,b1,b2,b3,btilde1,btilde2,btilde3,gamma,c2,c3,d1,d2,d3 = cache.tab
 
   # Assignments
-  mass_matrix = integrator.sol.prob.mass_matrix
+  mass_matrix = integrator.f.mass_matrix
   sizeu  = size(u)
   utilde = du
   atmp = du # does not work with units - additional unitless array required!
@@ -461,7 +461,7 @@ end
   # Assignments
   uidx = eachindex(integrator.uprev)
   sizeu  = size(u)
-  mass_matrix = integrator.sol.prob.mass_matrix
+  mass_matrix = integrator.f.mass_matrix
   utilde = du
   atmp = du # does not work with units - additional unitless array required!
 
@@ -629,7 +629,7 @@ end
   # Assignments
   sizeu  = size(u)
   uidx = eachindex(integrator.uprev)
-  mass_matrix = integrator.sol.prob.mass_matrix
+  mass_matrix = integrator.f.mass_matrix
   utilde = du
   atmp = du # does not work with units - additional unitless array required!
 
@@ -831,7 +831,7 @@ end
   # Assignments
   sizeu  = size(u)
   uidx = eachindex(integrator.uprev)
-  mass_matrix = integrator.sol.prob.mass_matrix
+  mass_matrix = integrator.f.mass_matrix
   atmp = du # does not work with units - additional unitless array required!
 
   # Precalculations
@@ -1107,7 +1107,7 @@ end
   # Assignments
   sizeu  = size(u)
   uidx = eachindex(integrator.uprev)
-  mass_matrix = integrator.sol.prob.mass_matrix
+  mass_matrix = integrator.f.mass_matrix
   atmp = du # does not work with units - additional unitless array required!
 
   # Precalculations
