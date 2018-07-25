@@ -58,13 +58,13 @@ function DiffEqBase.__init(
   allow_extrapolation = alg_extrapolates(alg),
   initialize_integrator=true,kwargs...) where {algType<:OrdinaryDiffEqAlgorithm,recompile_flag}
 
-  if typeof(prob.f)<:DynamicalODEFunction && typeof(prob.mass_matrix)<:Tuple
-    if any(mm != I for mm in prob.mass_matrix)
+  if typeof(prob.f)<:DynamicalODEFunction && typeof(prob.f.mass_matrix)<:Tuple
+    if any(mm != I for mm in prob.f.mass_matrix)
       error("This solver is not able to use mass matrices.")
     end
   elseif !(typeof(prob)<:DiscreteProblem) &&
          !(typeof(alg) <:MassMatrixAlgorithms) &&
-         prob.mass_matrix != I
+         prob.f.mass_matrix != I
     error("This solver is not able to use mass matrices.")
   end
 
