@@ -173,6 +173,16 @@ function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrM
   end
 end
 
+"""
+    lazy_W(f) -> t/f
+
+Predicate for determining what kind of function supports the use of lazy W.
+Also used in cache construction.
+"""
+lazy_W(f) = false # default
+lazy_W(f::ODEFunction) = DiffEqBase.has_jac(f) && isa(f.jac_prototype, DiffEqBase.AbstractDiffEqLinearOperator)
+# More to come as support for other *DEFunction is added
+
 function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_step, W_transform=false)
   @inbounds begin
     @unpack t,dt,uprev,u,f,p = integrator
@@ -203,7 +213,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
       if !repeat_step && (!alg_can_repeat_jac(alg) ||
                           (integrator.iter < 1 || new_jac ||
                            abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t))))
-        if DiffEqBase.has_jac(f) && isa(f.jac_prototype, DiffEqBase.AbstractDiffEqLinearOperator)
+        if lazy_W(f)
           set_gamma!(W, dtgamma)
           # W.transform = W_transform # necessary?
         else # compute W as a dense matrix
@@ -234,7 +244,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
   isarray = typeof(uprev) <: AbstractArray
   iscompo = typeof(integrator.alg) <: CompositeAlgorithm
   if !W_transform
-    if DiffEqBase.has_jac(f) && isa(f.jac_prototype, DiffEqBase.AbstractDiffEqLinearOperator)
+    if lazy_W(f)
       W = WOperator(mass_matrix, dtgamma, deepcopy(f.jac_prototype); transform=false)
     else
       if isarray
@@ -245,7 +255,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
       W = mass_matrix - dtgamma*J
     end
   else
-    if DiffEqBase.has_jac(f) && isa(f.jac_prototype, DiffEqBase.AbstractDiffEqLinearOperator)
+    if lazy_W(f)
       W = WOperator(mass_matrix, dtgamma, deepcopy(f.jac_prototype); transform=true)
     else
       if isarray
