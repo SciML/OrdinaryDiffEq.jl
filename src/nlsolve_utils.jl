@@ -91,7 +91,7 @@ function diffeq_nlsolve!(integrator,
                          ::Type{Val{:newton}})
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z,tmp,W,κ,tol,c,γ = nlcache
-  mass_matrix = integrator.sol.prob.mass_matrix
+  mass_matrix = integrator.f.mass_matrix
   alg = unwrap_alg(integrator, true)
   if typeof(integrator.f) <: SplitFunction
     f = integrator.f.f1
@@ -146,7 +146,7 @@ function diffeq_nlsolve!(integrator,
                          ::Type{Val{:newton}})
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z,dz,tmp,b,W,κ,tol,k,new_W,c,γ = nlcache
-  mass_matrix = integrator.sol.prob.mass_matrix
+  mass_matrix = integrator.f.mass_matrix
   alg = unwrap_alg(integrator, true)
   if typeof(integrator.f) <: SplitFunction
     f = integrator.f.f1
@@ -245,7 +245,7 @@ function diffeq_nlsolve!(integrator,
                          ::Type{Val{:functional}})
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z,tmp,κ,tol,c,γ = nlcache
-  mass_matrix = integrator.sol.prob.mass_matrix
+  mass_matrix = integrator.f.mass_matrix
   alg = unwrap_alg(integrator, true)
   if typeof(integrator.f) <: SplitFunction
     f = integrator.f.f1
@@ -301,7 +301,7 @@ function diffeq_nlsolve!(integrator,
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z,dz,tmp,κ,tol,b,k,c,γ = nlcache
   z₊ = b
-  mass_matrix = integrator.sol.prob.mass_matrix
+  mass_matrix = integrator.f.mass_matrix
   alg = unwrap_alg(integrator, true)
   if typeof(integrator.f) <: SplitFunction
     f = integrator.f.f1

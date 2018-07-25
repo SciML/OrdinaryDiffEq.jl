@@ -64,7 +64,7 @@ end
 @muladd function perform_step!(integrator, cache::LinearImplicitEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u = integrator
   @unpack W,k,tmp,atmp = cache
-  mass_matrix = integrator.sol.prob.mass_matrix
+  mass_matrix = integrator.f.mass_matrix
 
   L = integrator.f
   update_coefficients!(L,u,p,t+dt)
@@ -129,7 +129,7 @@ end
 function perform_step!(integrator, cache::MidpointSplittingCache, repeat_step=false)
   @unpack t,dt,uprev,u = integrator
   @unpack W,k,tmp = cache
-  mass_matrix = integrator.sol.prob.mass_matrix
+  mass_matrix = integrator.f.mass_matrix
 
   L = integrator.f
   update_coefficients!(L,u,p,t+dt/2)
