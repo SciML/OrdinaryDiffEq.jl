@@ -86,8 +86,9 @@ mutable struct WOperator{T,
   mass_matrix::MType
   gamma::GType
   J::JType
-  cache::CType
-  transform::Bool
+  cache::CType          # cache used in `mul!`
+  transform::Bool       # true => W = mm/gamma - J; false => W = mm - gamma*J
+  _nonlazy_form         # non-lazy form (matrix/number) of the operator
   function WOperator(mass_matrix, gamma, J; cache=nothing, transform=false)
     T = eltype(J)
     # Convert mass_matrix, if needed
@@ -98,24 +99,38 @@ mutable struct WOperator{T,
     if cache == nothing
       cache = Vector{T}(undef, size(J, 1))
     end
-    new{T,typeof(mass_matrix),typeof(gamma),typeof(J),typeof(cache)}(mass_matrix,gamma,J,cache,transform)
+    new{T,typeof(mass_matrix),typeof(gamma),typeof(J),typeof(cache)}(mass_matrix,gamma,J,cache,transform,nothing)
   end
 end
 set_gamma!(W::WOperator, gamma) = (W.gamma = gamma; W)
 DiffEqBase.update_coefficients!(W::WOperator,u,p,t) = (update_coefficients!(W.J,u,p,t); W)
 function Base.convert(::Type{AbstractMatrix}, W::WOperator)
-  if W.transform
-    W.mass_matrix / W.gamma - convert(AbstractMatrix,W.J)
+  if W._nonlazy_form == nothing
+    # Allocating
+    if W.transform
+      W._nonlazy_form = W.mass_matrix / W.gamma - convert(AbstractMatrix,W.J)
+    else
+      W._nonlazy_form = W.mass_matrix - W.gamma * convert(AbstractMatrix,W.J)
+    end
   else
-    W.mass_matrix - W.gamma * convert(AbstractMatrix,W.J)
+    # Non-allocating
+    if W.transform
+      rmul!(copyto!(W._nonlazy_form, W.mass_matrix), 1/W.gamma)
+      axpy!(-1, convert(AbstractMatrix,W.J), W._nonlazy_form)
+    else
+      copyto!(W._nonlazy_form, W.mass_matrix)
+      axpy!(-W.gamma, convert(AbstractMatrix,W.J), W._nonlazy_form)
+    end
   end
+  W._nonlazy_form
 end
 function Base.convert(::Type{Number}, W::WOperator)
   if W.transform
-    W.mass_matrix / W.gamma - convert(Number,W.J)
+    W._nonlazy_form = W.mass_matrix / W.gamma - convert(Number,W.J)
   else
-    W.mass_matrix - W.gamma * convert(Number,W.J)
+    W._nonlazy_form = W.mass_matrix - W.gamma * convert(Number,W.J)
   end
+  W._nonlazy_form
 end
 Base.size(W::WOperator, args...) = size(W.J, args...)
 function Base.getindex(W::WOperator, i::Int)
