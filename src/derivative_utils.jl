@@ -80,26 +80,21 @@ It supports all of `AbstractDiffEqLinearOperator`'s interface.
 mutable struct WOperator{T,
   MType <: Union{UniformScaling,AbstractMatrix},
   GType <: Real,
-  JType <: DiffEqBase.AbstractDiffEqLinearOperator{T},
-  CType <: AbstractVector
+  JType <: DiffEqBase.AbstractDiffEqLinearOperator{T}
   } <: DiffEqBase.AbstractDiffEqLinearOperator{T}
   mass_matrix::MType
   gamma::GType
   J::JType
-  cache::CType          # cache used in `mul!`
   transform::Bool       # true => W = mm/gamma - J; false => W = mm - gamma*J
+  _func_cache           # cache used in `mul!`
   _nonlazy_form         # non-lazy form (matrix/number) of the operator
-  function WOperator(mass_matrix, gamma, J; cache=nothing, transform=false)
+  function WOperator(mass_matrix, gamma, J; transform=false)
     T = eltype(J)
     # Convert mass_matrix, if needed
     if !isa(mass_matrix, Union{AbstractMatrix,UniformScaling})
       mass_matrix = convert(AbstractMatrix, mass_matrix)
     end
-    # Construct the cache, default to regular vector
-    if cache == nothing
-      cache = Vector{T}(undef, size(J, 1))
-    end
-    new{T,typeof(mass_matrix),typeof(gamma),typeof(J),typeof(cache)}(mass_matrix,gamma,J,cache,transform,nothing)
+    new{T,typeof(mass_matrix),typeof(gamma),typeof(J)}(mass_matrix,gamma,J,transform,nothing,nothing)
   end
 end
 set_gamma!(W::WOperator, gamma) = (W.gamma = gamma; W)
@@ -162,6 +157,10 @@ function Base.:\(W::WOperator, x::Union{AbstractVecOrMat,Number})
   end
 end
 function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrMat)
+  if W._func_cache == nothing
+    # Allocate cache only if needed
+    W._func_cache = Vector{eltype(W)}(undef, size(Y, 1))
+  end
   if W.transform
     # Compute mass_matrix * B
     if isa(W.mass_matrix, UniformScaling)
@@ -172,8 +171,8 @@ function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrM
       lmul!(1/W.gamma, Y)
     end
     # Compute J * B and subtract
-    mul!(W.cache, W.J, B)
-    Y .-= W.cache
+    mul!(W._func_cache, W.J, B)
+    Y .-= W._func_cache
   else
     # Compute mass_matrix * B
     if isa(W.mass_matrix, UniformScaling)
@@ -182,9 +181,9 @@ function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrM
       mul!(Y, W.mass_matrix, B)
     end
     # Compute J * B
-    mul!(W.cache, W.J, B)
+    mul!(W._func_cache, W.J, B)
     # Subtract result
-    axpy!(-W.gamma, W.cache, Y)
+    axpy!(-W.gamma, W._func_cache, Y)
   end
 end
 
