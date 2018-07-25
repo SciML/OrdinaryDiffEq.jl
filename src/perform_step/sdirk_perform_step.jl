@@ -84,7 +84,7 @@ end
 @muladd function perform_step!(integrator, cache::ImplicitEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,z,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
-  mass_matrix = integrator.sol.prob.mass_matrix
+  mass_matrix = integrator.f.mass_matrix
   alg = unwrap_alg(integrator, true)
   new_W = calc_W!(integrator, cache, dt, repeat_step)
 
@@ -160,7 +160,7 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,z,k,b,J,W,jac_config,tmp,κ,tol = cache
   alg = unwrap_alg(integrator, true)
-  mass_matrix = integrator.sol.prob.mass_matrix
+  mass_matrix = integrator.f.mass_matrix
   γ = 1//2
   new_W = calc_W!(integrator, cache, γ*dt, repeat_step)
 
@@ -252,7 +252,7 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack uf,du1,dz,z,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
   alg = unwrap_alg(integrator, true)
-  mass_matrix = integrator.sol.prob.mass_matrix
+  mass_matrix = integrator.f.mass_matrix
 
   # precalculations
   γ = 1//2

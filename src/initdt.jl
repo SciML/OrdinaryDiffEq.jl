@@ -60,10 +60,10 @@
   still works for matrix-free definitions of the mass matrix.
   =#
 
-  if prob.mass_matrix != I
+  if prob.f.mass_matrix != I
     ftmp = similar(f₀)
     try
-      integrator.alg.linsolve(ftmp, copy(prob.mass_matrix), f₀, true)
+      integrator.alg.linsolve(ftmp, copy(prob.f.mass_matrix), f₀, true)
       f₀ .= ftmp
     catch
       return _tType(1//10^(6))
@@ -97,8 +97,8 @@
   f₁ = similar(f₀)
   f(f₁,u₁,p,t+dt₀_tdir)
 
-  if prob.mass_matrix != I
-    integrator.alg.linsolve(ftmp, prob.mass_matrix, f₁, false)
+  if prob.f.mass_matrix != I
+    integrator.alg.linsolve(ftmp, prob.f.mass_matrix, f₁, false)
     f₁ .= ftmp
   end
 

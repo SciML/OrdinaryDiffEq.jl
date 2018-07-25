@@ -177,7 +177,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
   @inbounds begin
     @unpack t,dt,uprev,u,f,p = integrator
     @unpack J,W = cache
-    mass_matrix = integrator.sol.prob.mass_matrix
+    mass_matrix = integrator.f.mass_matrix
     is_compos = typeof(integrator.alg) <: CompositeAlgorithm
     alg = unwrap_alg(integrator, true)
 
