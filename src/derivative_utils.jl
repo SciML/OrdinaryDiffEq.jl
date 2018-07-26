@@ -55,7 +55,7 @@ function calc_J!(integrator, cache::OrdinaryDiffEqMutableCache, is_compos)
 end
 
 """
-    WOperator(mass_matrix,gamma,J[;cache=nothing,transform=false])
+    WOperator(mass_matrix,gamma,J[;transform=false])
 
 A linear operator that represents the W matrix of an ODEProblem, defined as
 
@@ -71,7 +71,13 @@ W = \\frac{1}{\\gamma}MM - J
 
 where `MM` is the mass matrix (a regular `AbstractMatrix` or a `UniformScaling`),
 `γ` is a real number proportional to the time step, and `J` is the Jacobian
-operator (must be a `AbstractDiffEqLinearOperator`).
+operator (must be a `AbstractDiffEqLinearOperator`). A `WOperator` can also be
+constructed using a `*DEFunction` directly as
+
+    WOperator(f,gamma[;transform=false])
+
+`f` needs to have a jacobian and `jac_prototype`, but the prototype does not need
+to be a diffeq operator --- it will automatically be converted to one.
 
 `WOperator` supports lazy `*` and `mul!` operations, the latter utilizing an
 internal cache (can be specified in the constructor; default to regular `Vector`).
@@ -88,15 +94,27 @@ mutable struct WOperator{T,
   transform::Bool       # true => W = mm/gamma - J; false => W = mm - gamma*J
   _func_cache           # cache used in `mul!`
   _concrete_form         # non-lazy form (matrix/number) of the operator
-  function WOperator(mass_matrix, gamma, J; transform=false)
-    T = eltype(J)
-    # Convert mass_matrix, if needed
-    if !isa(mass_matrix, Union{AbstractMatrix,UniformScaling})
-      mass_matrix = convert(AbstractMatrix, mass_matrix)
-    end
-    new{T,typeof(mass_matrix),typeof(gamma),typeof(J)}(mass_matrix,gamma,J,transform,nothing,nothing)
-  end
+  WOperator(mass_matrix, gamma, J; transform=false) = new{eltype(J),typeof(mass_matrix),
+    typeof(gamma),typeof(J)}(mass_matrix,gamma,J,transform,nothing,nothing)
 end
+function WOperator(f::DiffEqBase.AbstractODEFunction, gamma; transform=false)
+  @assert DiffEqBase.has_jac(f) "f needs to have an associated jacobian"
+  if isa(f, Union{SplitFunction, DynamicalODEFunction})
+    error("WOperator does not support $(typeof(f)) yet")
+  end
+  # Convert mass matrix, if needed
+  mass_matrix = f.mass_matrix
+  if !isa(mass_matrix, Union{AbstractMatrix,UniformScaling})
+    mass_matrix = convert(AbstractMatrix, mass_matrix)
+  end
+  # Convert jacobian, if needed
+  J = deepcopy(f.jac_prototype)
+  if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
+    J = DiffEqArrayOperator(J; update_func=f.jac)
+  end
+  return WOperator(mass_matrix, gamma, J; transform=transform)
+end
+
 set_gamma!(W::WOperator, gamma) = (W.gamma = gamma; W)
 DiffEqBase.update_coefficients!(W::WOperator,u,p,t) = (update_coefficients!(W.J,u,p,t); W)
 function Base.convert(::Type{AbstractMatrix}, W::WOperator)
@@ -211,7 +229,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
         new_jac = false
       else
         new_jac = true
-        calc_J!(integrator, cache, is_compos)
+        DiffEqBase.update_coefficients!(W,uprev,p,t)
       end
       # skip calculation of W if step is repeated
       if !repeat_step && (!alg_can_repeat_jac(alg) ||
@@ -236,7 +254,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
   iscompo = typeof(integrator.alg) <: CompositeAlgorithm
   if !W_transform
     if DiffEqBase.has_jac(f)
-      W = WOperator(mass_matrix, dtgamma, deepcopy(f.jac_prototype); transform=false)
+      W = WOperator(f, dtgamma; transform=false)
     else
       if isarray
         J = ForwardDiff.jacobian(uf,uprev)
@@ -247,7 +265,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
     end
   else
     if DiffEqBase.has_jac(f)
-      W = WOperator(mass_matrix, dtgamma, deepcopy(f.jac_prototype); transform=true)
+      W = WOperator(f, dtgamma; transform=true)
     else
       if isarray
         J = ForwardDiff.jacobian(uf,uprev)

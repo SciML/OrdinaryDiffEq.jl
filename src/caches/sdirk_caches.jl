@@ -29,8 +29,8 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomElt
 
   du1 = zero(rate_prototype)
   if DiffEqBase.has_jac(f)
-    J = deepcopy(f.jac_prototype)
-    W = WOperator(f.mass_matrix, dt, J)
+    W = WOperator(f, dt)
+    J = nothing # is J = W.J better?
   else
     J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
     W = similar(J)
