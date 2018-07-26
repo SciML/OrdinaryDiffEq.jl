@@ -252,7 +252,7 @@ end
 function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat_step, W_transform=false)
   @unpack t,uprev,f = integrator
   @unpack uf = cache
-  mass_matrix = integrator.sol.prob.mass_matrix
+  mass_matrix = integrator.f.mass_matrix
   # calculate W
   uf.t = t
   isarray = typeof(uprev) <: AbstractArray
