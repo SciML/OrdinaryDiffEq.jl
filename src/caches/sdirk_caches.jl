@@ -38,7 +38,7 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomElt
   elseif typeof(alg.nonlinsolve) <: Functional
     J = nothing
     W = nothing
-    du1 = nothing
+    du1 = rate_prototype
     uf = nothing
     jac_config = nothing
     linsolve = nothing
@@ -66,32 +66,42 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomElt
   ImplicitEulerCache(u,uprev,uprev2,du1,fsalfirst,k,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolve)
 end
 
-mutable struct ImplicitEulerConstantCache{F,uToltype} <: OrdinaryDiffEqConstantCache
+mutable struct ImplicitEulerConstantCache{F} <: OrdinaryDiffEqConstantCache
   uf::F
-  ηold::uToltype
-  κ::uToltype
-  tol::uToltype
-  newton_iters::Int
+  nlsolve::AbstractNLsolveSolver
 end
 
 function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+  @unpack κ,tol,max_iter,min_iter,new_W = alg.nonlinsolve.cache
+  z = uprev
+  if typeof(alg.nonlinsolve) <: Newton
+    uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+  elseif typeof(alg.nonlinsolve) <: Functional
+    uf = nothing
+  end
   uToltype = real(uBottomEltypeNoUnits)
   ηold = one(uToltype)
 
-  if alg.κ != nothing
+  if κ != nothing
     κ = uToltype(alg.κ)
   else
     κ = uToltype(1//100)
   end
-  if alg.tol != nothing
+  if tol != nothing
     tol = uToltype(alg.tol)
   else
     tol = uToltype(min(0.03,first(reltol)^(0.5)))
   end
+  W = typeof(u) <: Number ? u : Matrix{uEltypeNoUnits}(undef, 0, 0) # uEltype?
+  z₊ = z
+  dz = z
+  tmp = z
+  b = z
+  k = rate_prototype
+  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,100000,new_W,z,W,1,1,ηold,z₊,dz,tmp,b,k))
 
-  ImplicitEulerConstantCache(uf,ηold,κ,tol,100000)
+  ImplicitEulerConstantCache(uf,oop_nlsolver(nlsolve))
 end
 
 mutable struct ImplicitMidpointConstantCache{F,uToltype} <: OrdinaryDiffEqConstantCache
@@ -103,21 +113,27 @@ mutable struct ImplicitMidpointConstantCache{F,uToltype} <: OrdinaryDiffEqConsta
 end
 
 function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+  @unpack κ,tol,max_iter,min_iter,new_W = alg.nonlinsolve.cache
+  if typeof(alg.nonlinsolve) <: Newton
+    uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+  else
+    uf = nothing
+  end
   uToltype = real(uBottomEltypeNoUnits)
   ηold = one(uToltype)
 
-  if alg.κ != nothing
+  if κ != nothing
     κ = uToltype(alg.κ)
   else
     κ = uToltype(1//100)
   end
-  if alg.tol != nothing
+  if tol != nothing
     tol = uToltype(alg.tol)
   else
     tol = uToltype(min(0.03,first(reltol)^(0.5)))
   end
 
+  nlsolve = (typeof(alg.nonlinsolve).name){false}(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1,1,ηold,z₊,dz,tmp,b,k))
   ImplicitMidpointConstantCache(uf,ηold,κ,tol,10000)
 end
 

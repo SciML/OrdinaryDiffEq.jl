@@ -1,6 +1,6 @@
 abstract type AbstractNLsolveSolver end
 abstract type AbstractNLsolveCache end
-mutable struct NLSolverCache{rateType,uType,J,uToltype,cType,gType} <: AbstractNLsolveCache
+mutable struct NLSolverCache{rateType,uType,W,uToltype,cType,gType} <: AbstractNLsolveCache
   κ::uToltype
   tol::uToltype
   min_iter::Int
@@ -8,7 +8,7 @@ mutable struct NLSolverCache{rateType,uType,J,uToltype,cType,gType} <: AbstractN
   nl_iters::Int
   new_W::Bool
   z::uType
-  W::J # Newton -> `W` operator; Anderson -> Vectors; Functional -> Nothing
+  W::W # Newton -> `W` operator; Anderson -> Vectors; Functional -> Nothing
   γ::gType
   c::cType
   ηold::uToltype
@@ -39,3 +39,7 @@ NLSolverCache(κ, tol, min_iter, max_iter, 0, true,
 Functional(;kwargs...) = Functional{true}(NLSolverCache(kwargs...))
 Anderson(n=5; kwargs...) = Anderson{true}(NLSolverCache(kwargs...), n)
 Newton(;kwargs...) = Newton{true}(NLSolverCache(kwargs...))
+
+oop_nlsolver(s::Functional{true}) = Functional{false}(s.cache)
+oop_nlsolver(s::Anderson{true}) = Anderson{false}(s.cache, s.n)
+oop_nlsolver(s::Newton{true}) = Newton{false}(s.cache)

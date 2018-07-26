@@ -35,26 +35,25 @@ end
 
 @muladd function perform_step!(integrator, cache::ImplicitEulerConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  nlcache = cache.nonlinsolve
+  nlcache = cache.nlsolve.cache
+  nlsolve! = cache.nlsolve
   alg = unwrap_alg(integrator, true)
-  W = calc_W!(integrator, cache, dt, repeat_step)
+  typeof(nlsolve!) <: Newton && ( nlcache.W = calc_W!(integrator, cache, dt, repeat_step) )
 
   # initial guess
   if alg.extrapolant == :linear
-    z = dt*integrator.fsalfirst
+    nlcache.z = dt*integrator.fsalfirst
   else # :constant
-    z = zero(u)
+    nlcache.z = zero(u)
   end
 
   nlcache.tmp = uprev
-  # TODO
-  nlcache = nlsolve_cache(alg, cache, z, tmp, W, 1, 1, true)
-  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
+  z,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
-  u = tmp + z
+  u = nlcache.tmp + z
 
-  cache.ηold = η
-  cache.newton_iters = iter
+  nlcache.ηold = η
+  nlcache.nl_iters = iter
 
   if integrator.opts.adaptive && integrator.success_iter > 0
     # local truncation error (LTE) bound by dt^2/2*max|y''(t)|
@@ -88,7 +87,7 @@ end
   nlsolve!, nlcache = nlsolve, nlsolve.cache
   mass_matrix = integrator.f.mass_matrix
   alg = unwrap_alg(integrator, true)
-  new_W = calc_W!(integrator, cache, dt, repeat_step)
+  typeof(nlsolve)<:Newton && calc_W!(integrator, cache, dt, repeat_step)
 
   # initial guess
   if alg.extrapolant == :linear

@@ -27,7 +27,6 @@ function (S::Functional{false})(integrator)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z,tmp,κ,tol,c,γ,min_iter,max_iter = nlcache
   mass_matrix = integrator.f.mass_matrix
-  #alg = unwrap_alg(integrator, true)
   if typeof(integrator.f) <: SplitFunction
     f = integrator.f.f1
   else
@@ -81,14 +80,12 @@ function (S::Functional{true})(integrator)
   @unpack z,z₊,b,dz,tmp,κ,tol,k,c,γ,min_iter,max_iter = nlcache
   ztmp = b
   mass_matrix = integrator.f.mass_matrix
-  alg = unwrap_alg(integrator, true)
   if typeof(integrator.f) <: SplitFunction
     f = integrator.f.f1
   else
     f = integrator.f
   end
   # precalculations
-  tol *= 1//(alg_order(alg)*1000)
   κtol = κ*tol
   # initial step of functional iteration
   iter = 1

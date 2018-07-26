@@ -62,7 +62,7 @@ for i = 1:2
   sim11 = test_convergence(dts,prob,ImplicitEuler(extrapolant = :linear))
   @test abs(sim11.𝒪est[:final]-1) < testTol
 
-  sim112 = test_convergence(dts,prob,ImplicitEuler(nonlinsolve = Val{:functional}))
+  sim112 = test_convergence(dts,prob,ImplicitEuler(nonlinsolve = Functional()))
   @test abs(sim112.𝒪est[:final]-1) < testTol
 
   sim12 = test_convergence(dts,prob,
