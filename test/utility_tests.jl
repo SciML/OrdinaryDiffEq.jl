@@ -1,5 +1,6 @@
 using OrdinaryDiffEq: phi, phi, phiv, phiv_timestep, expv, expv_timestep, arnoldi, getH, getV
-using LinearAlgebra, SparseArrays, Random, Test, DiffEqOperators
+using OrdinaryDiffEq: WOperator, set_gamma!, calc_W!
+using OrdinaryDiffEq, LinearAlgebra, SparseArrays, Random, Test, DiffEqOperators
 
 @testset "Exponential Utilities" begin
   # Scalar phi
@@ -72,11 +73,37 @@ end
   @testset "WOperator" begin
     srand(0); y = zeros(2); b = rand(2)
     mm = I; _J = rand(2,2)
-    W = OrdinaryDiffEq.WOperator(mm, 1.0, DiffEqArrayOperator(_J))
-    OrdinaryDiffEq.set_gamma!(W, 2.0)
+    W = WOperator(mm, 1.0, DiffEqArrayOperator(_J))
+    set_gamma!(W, 2.0)
     _W = mm - 2.0 * _J
     @test convert(AbstractMatrix,W) ≈ _W
     @test W * b ≈ _W * b
     mul!(y, W, b); @test y ≈ _W * b
+  end
+
+  @testset "calc_W!" begin
+    A = [-1.0 0.0; 0.0 -0.5]; mm = [2.0 0.0; 0.0 1.0]
+    u0 = [1.0, 1.0]; tmp = zeros(2)
+    tspan = (0.0,1.0); dt = 0.01; dtgamma = 0.5dt
+    concrete_W = mm - dtgamma * A
+    concrete_Wt = mm/dtgamma - A
+
+    # Out-of-place
+    fun = ODEFunction((u,p,t) -> A*u;
+                      mass_matrix=mm,
+                      jac_prototype=DiffEqArrayOperator(A))
+    integrator = init(ODEProblem(fun,u0,tspan), ImplicitEuler(); adaptive=false, dt=dt)
+    W = calc_W!(integrator, integrator.cache, dtgamma, false)
+    @test convert(AbstractMatrix, W) ≈ concrete_W
+    @test W \ u0 ≈ concrete_W \ u0
+
+    # In-place
+    fun = ODEFunction((du,u,p,t) -> mul!(du,A,u);
+                      mass_matrix=mm,
+                      jac_prototype=DiffEqArrayOperator(A))
+    integrator = init(ODEProblem(fun,u0,tspan), ImplicitEuler(); adaptive=false, dt=dt)
+    calc_W!(integrator, integrator.cache, dtgamma, false)
+    @test convert(AbstractMatrix, integrator.cache.W) ≈ concrete_W
+    ldiv!(tmp, lu!(W), u0); @test tmp ≈ concrete_W \ u0
   end
 end
