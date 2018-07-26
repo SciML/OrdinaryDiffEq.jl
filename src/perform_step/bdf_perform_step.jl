@@ -495,7 +495,8 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
       if ρ != 1
         U!(k,U)
         R!(k,ρ,cache)
-        D .= D * (R * U)
+        R .= R * U
+        mul!(cache,D,R,k)
       end
     else
       n = k+1
@@ -630,8 +631,8 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
       if ρ != 1
         U!(k,U)
         R!(k,ρ,cache)
-        # major work here
-        D .= D * (R * U)
+        R .= R * U
+        mul!(cache,D,R,k)
       end
     else
       n = k+1
@@ -676,19 +677,14 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
       calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
     else
-      δ = copy(u - uprev)
+      @. tmp = u - uprev
       for i = 1:k
-        @. δ -= D[i]
+        @. tmp -= D[i]
       end
-      @. utilde = (κ*γₖ[k] + inv(k+1)) * δ
+      @. utilde = (κ*γₖ[k] + inv(k+1)) * tmp
       calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
     end
-
-    utildem1 = copy(utilde)
-    utildep1 = copy(utilde)
-    atmpm1 = copy(atmp)
-    atmpp1 = copy(atmp)
 
     if cnt == 1
       cache.order = 1
@@ -697,18 +693,18 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
     else
       errm1 = 0
       if k > 1
-        @. utildem1 = (κ*γₖ[k-1] + inv(k)) * D[k]
-        calculate_residuals!(atmpm1, utildem1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-        errm1 = integrator.opts.internalnorm(atmpm1)
+        @. utilde = (κ*γₖ[k-1] + inv(k)) * D[k]
+        calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+        errm1 = integrator.opts.internalnorm(atmp)
       end
       backward_diff!(cache,D,D2,k+1,false)
-      δ = copy(u - uprev)
+      @. tmp = u - uprev
       for i = 1:(k+1)
-        @. δ -= D2[i,1]
+        @. tmp -= D2[i,1]
       end
-      @. utildep1 = (κ*γₖ[k+1] + inv(k+2)) * δ
-      calculate_residuals!(atmpp1, utildep1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-      errp1 = integrator.opts.internalnorm(atmpp1)
+      @. utilde = (κ*γₖ[k+1] + inv(k+2)) * tmp
+      calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      errp1 = integrator.opts.internalnorm(atmp)
       pass = stepsize_and_order!(cache, integrator.EEst, errm1, errp1, dt, k)
       if pass == false
         for i = 1:5

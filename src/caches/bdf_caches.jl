@@ -355,7 +355,7 @@ function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
               W,uf,jac_config,linsolve,ηold,κ,tol,10000,dtₙ₋₁,dtₙ₋₂)
 end
 
-mutable struct QNDFConstantCache{F,uToltype,coefType1,coefType2,coefType3,uType,dtType} <: OrdinaryDiffEqConstantCache
+mutable struct QNDFConstantCache{F,uToltype,coefType1,coefType2,coefType3,uType,uArrayType,dtType,dtsType} <: OrdinaryDiffEqConstantCache
   uf::F
   ηold::uToltype
   κ::uToltype
@@ -367,13 +367,14 @@ mutable struct QNDFConstantCache{F,uToltype,coefType1,coefType2,coefType3,uType,
   U::coefType1
   order::Int64
   max_order::Int64
-  udiff::uType
-  dts::dtType
-  h::Float64
+  udiff::uArrayType
+  dts::dtsType
+  tmp::uType
+  h::dtType
   c::Int64
 end
 
-mutable struct QNDFCache{uType,rateType,coefType1,coefType,coefType2,coefType3,dtType,uNoUnitsType,J,UF,JC,uToltype,F} <: OrdinaryDiffEqMutableCache
+mutable struct QNDFCache{uType,rateType,coefType1,coefType,coefType2,coefType3,dtType,dtsType,uNoUnitsType,J,UF,JC,uToltype,F} <: OrdinaryDiffEqMutableCache
   du1::rateType
   fsalfirst::rateType
   k::rateType
@@ -387,7 +388,7 @@ mutable struct QNDFCache{uType,rateType,coefType1,coefType,coefType2,coefType3,d
   order::Int64
   max_order::Int64
   udiff::coefType
-  dts::dtType
+  dts::dtsType
   tmp::uType
   atmp::uNoUnitsType
   utilde::uType
@@ -400,7 +401,7 @@ mutable struct QNDFCache{uType,rateType,coefType1,coefType,coefType2,coefType3,d
   κ::uToltype
   tol::uToltype
   newton_iters::Int
-  h::Float64
+  h::dtType
   c::Int64
 end
 
@@ -413,7 +414,8 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   ηold = one(uToltype)
   udiff = fill(zero(typeof(u)), 1, 6)
   dts = fill(zero(typeof(dt)), 1, 6)
-  h = zero(Float64)
+  h = zero(dt)
+  tmp = zero(u)
 
   D = fill(zero(typeof(u)), 1, 5)
   D2 = fill(zero(typeof(u)), 6, 6)
@@ -433,7 +435,7 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
     tol = uToltype(min(0.03,first(reltol)^(0.5)))
   end
 
-  QNDFConstantCache(uf,ηold,κ,tol,10000,D,D2,R,U,1,max_order,udiff,dts,h,0)
+  QNDFConstantCache(uf,ηold,κ,tol,10000,D,D2,R,U,1,max_order,udiff,dts,tmp,h,0)
 end
 
 function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -446,7 +448,7 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   k = zero(rate_prototype)
   udiff = Array{typeof(u)}(undef, 1, 6)
   dts = fill(zero(typeof(dt)), 1, 6)
-  h = zero(Float64)
+  h = zero(dt)
 
   D = Array{typeof(u)}(undef, 1, 5)
   D2 = Array{typeof(u)}(undef, 6, 6)

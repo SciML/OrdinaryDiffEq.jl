@@ -52,6 +52,33 @@ function backward_diff!(cache, D, D2, k, flag=true)
   end
 end
 
+function mul!(cache, D, R, k)
+  @unpack tmp = cache
+  if typeof(cache) <: OrdinaryDiffEqMutableCache
+    fill!(tmp,zero(eltype(D[1])))
+  else
+    tmp = zero(eltype(D))
+  end
+  for i = 1:1
+    for j = 1:k
+      for k = 1:k
+        if typeof(cache) <: OrdinaryDiffEqMutableCache
+          @. tmp += D[i,k] * R[k,j]
+        else
+          tmp += D[i,k] * R[k,j]
+        end
+      end
+      if typeof(cache) <: OrdinaryDiffEqMutableCache
+        D[i,j] .= tmp
+        fill!(tmp,zero(eltype(D[1])))
+      else
+        D[i,j] = tmp
+        tmp = zero(eltype(D))
+      end
+    end
+  end
+end
+
 global const γₖ = [1//1, 3//2, 11//6, 25//12, 137//60, 49//20]
 
 # this stepsize and order controller is taken from
