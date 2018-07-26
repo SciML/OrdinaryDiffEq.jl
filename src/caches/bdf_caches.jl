@@ -373,6 +373,39 @@ mutable struct QNDFConstantCache{F,uToltype,coefType1,coefType2,coefType3,uType,
   c::Int64
 end
 
+mutable struct QNDFCache{uType,rateType,coefType1,coefType2,coefType3,dtType,uNoUnitsType,J,UF,JC,uToltype,F} <: OrdinaryDiffEqMutableCache
+  du1::rateType
+  fsalfirst::rateType
+  k1::rateType
+  z::uType
+  dz::uType
+  b::uType
+  D::coefType3
+  D2::coefType2
+  R::coefType1
+  U::coefType1
+  k::Int64
+  max_order::Int64
+  udiff::uType
+  dts::dtType
+  tmp::uType
+  atmp::uNoUnitsType
+  utilde::uType
+  J::J
+  W::J
+  uf::UF
+  jac_config::JC
+  linsolve::F
+  ηold::uToltype
+  κ::uToltype
+  tol::uToltype
+  newton_iters::Int
+  h::Float64
+  c::Int64
+end
+
+u_cache(c::QNDFCache)  = ()
+du_cache(c::QNDFCache) = ()
 
 function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   uToltype = real(uBottomEltypeNoUnits)
@@ -401,4 +434,52 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   end
 
   QNDFConstantCache(uf,ηold,κ,tol,10000,D,D2,R,U,1,max_order,udiff,dts,h,0)
+end
+
+function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  du1 = zero(rate_prototype)
+  J = fill(zero(uEltypeNoUnits),length(u),length(u))
+  W = similar(J)
+  z = similar(u,indices(u))
+  dz = similar(u,indices(u))
+  fsalfirst = zero(rate_prototype)
+  k1 = zero(rate_prototype)
+  udiff = similar(u)
+  dts = fill(zero(typeof(dt)), 1, 6)
+  h = zero(Float64)
+
+  D = Array{typeof(u)}(undef, 1, 5)
+  D2 = Array{typeof(u)}(undef, 1, 6)
+  R = fill(zero(typeof(t)), 5, 5)
+  U = fill(zero(typeof(t)), 5, 5)
+
+  D[1] = similar(u); D[2] = similar(u)
+  D2[1] = similar(u);  D2[2] = similar(u); D2[3] = similar(u)
+
+  max_order = 5
+
+  tmp = similar(u); b = similar(u,indices(u))
+  atmp = similar(u,uEltypeNoUnits,indices(u))
+
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+  linsolve = alg.linsolve(Val{:init},uf,u)
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
+  uToltype = real(uBottomEltypeNoUnits)
+  utilde = similar(u,indices(u))
+
+  if alg.κ != nothing
+    κ = uToltype(alg.κ)
+  else
+    κ = uToltype(1//100)
+  end
+  if alg.tol != nothing
+    tol = uToltype(alg.tol)
+  else
+    tol = uToltype(min(0.03,first(reltol)^(0.5)))
+  end
+
+  ηold = one(uToltype)
+
+  QNDFCache(du1,fsalfirst,k1,z,dz,b,D,D2,R,U,1,max_order,udiff,dts,tmp,atmp,utilde,J,
+              W,uf,jac_config,linsolve,ηold,κ,tol,10000,h,0)
 end

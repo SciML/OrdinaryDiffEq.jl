@@ -483,7 +483,11 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
     if flag
       ρ = dt/dts[1]
       # backward diff
-      for i = 1:k
+      n = k+1
+      if cnt == 3
+        n = k
+      end
+      for i = 1:n
         D2[1,i] = udiff[i]
       end
       backward_diff!(D,D2,k)
@@ -493,7 +497,11 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
         D .= D * (R * U)
       end
     else
-      for i = 1:k
+      n = k+1
+      if cnt == 3
+        n = k
+      end
+      for i = 1:n
         D2[1,i] = udiff[i] * dt/dts[i]
       end
       backward_diff!(D,D2,k)
@@ -501,6 +509,7 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
   else
     γ = 1//1
   end
+
   # precalculations
   u₀ = uprev + sum(D)  # u₀ is predicted value
   ϕ = zero(γ)
@@ -537,7 +546,7 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
     
     if cnt == 1
       cache.k = 1
-    elseif cnt == 2 || cnt == 3
+    elseif cnt <= 3
       cache.k = 2
     else
       errm1 = 0
