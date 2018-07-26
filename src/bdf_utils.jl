@@ -26,22 +26,37 @@ end
 
 # This functions takes help of D2 array to create backward differences array D
 # Ith row of D2 keeps Ith order backward differences (∇ⁱyₙ)
-function backward_diff!(D, D2, k, flag=true)
+function backward_diff!(cache, D, D2, k, flag=true)
   if flag
-    D[1] = D2[1,1]
+    if typeof(cache) <: OrdinaryDiffEqMutableCache
+      D[1] .= D2[1,1]
+    else
+      D[1] = D2[1,1]
+    end
   end
   for i = 2:k
     for j = 1:(k-i+1)
-      D2[i,j] = D2[i-1,j] - D2[i-1,j+1]
+      if typeof(cache) <: OrdinaryDiffEqMutableCache
+        @. D2[i,j] = D2[i-1,j] - D2[i-1,j+1]
+      else
+        D2[i,j] = D2[i-1,j] - D2[i-1,j+1]
+      end
     end
     if flag
-      D[i] = D2[i,1]
+      if typeof(cache) <: OrdinaryDiffEqMutableCache
+        D[i] .= D2[i,1]
+      else
+        D[i] = D2[i,1]
+      end
     end
   end
 end
 
 global const γₖ = [1//1, 3//2, 11//6, 25//12, 137//60, 49//20]
 
+# this stepsize and order controller is taken from
+# Implementation of an Adaptive BDF2 Formula and Comparison with the MATLAB Ode15s paper
+# E. Alberdi Celaya, J. J. Anza Aguirrezabala, and P. Chatzipantelidis
 function stepsize_and_order!(cache, est, estₖ₋₁, estₖ₊₁, h, k)
   zₛ = 1.2
   zᵤ = 0.1
@@ -100,13 +115,13 @@ function stepsize_and_order!(cache, est, estₖ₋₁, estₖ₊₁, h, k)
       kₙ = k
     end
     cache.h = hₙ
-    cache.k = kₙ
+    cache.order = kₙ
     return true
   else
     # step is not successful
     if cache.c >= 1  # postfail
       cache.h = h/2
-      cache.k = k
+      cache.order = k
       return
     end
     if 1.2 < z <= 10
@@ -132,7 +147,7 @@ function stepsize_and_order!(cache, est, estₖ₋₁, estₖ₊₁, h, k)
       end
     end
     cache.h = hₙ
-    cache.k = kₙ
+    cache.order = kₙ
     return false
   end
 end

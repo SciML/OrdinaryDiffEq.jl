@@ -181,8 +181,8 @@ function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   du1 = zero(rate_prototype)
   J = fill(zero(uEltypeNoUnits),length(u),length(u))
   W = similar(J)
-  z = similar(u,indices(u))
-  dz = similar(u,indices(u))
+  z = similar(u,axes(u))
+  dz = similar(u,axes(u))
   fsalfirst = zero(rate_prototype)
   k = zero(rate_prototype)
 
@@ -196,14 +196,14 @@ function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
 
   U!(1,U)
 
-  tmp = similar(u); b = similar(u,indices(u))
-  atmp = similar(u,uEltypeNoUnits,indices(u))
+  tmp = similar(u); b = similar(u,axes(u))
+  atmp = similar(u,uEltypeNoUnits,axes(u))
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   linsolve = alg.linsolve(Val{:init},uf,u)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   uToltype = real(uBottomEltypeNoUnits)
-  utilde = similar(u,indices(u))
+  utilde = similar(u,axes(u))
 
   uprev2 = similar(u)
 
@@ -309,8 +309,8 @@ function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   du1 = zero(rate_prototype)
   J = fill(zero(uEltypeNoUnits),length(u),length(u))
   W = similar(J)
-  z = similar(u,indices(u))
-  dz = similar(u,indices(u))
+  z = similar(u,axes(u))
+  dz = similar(u,axes(u))
   fsalfirst = zero(rate_prototype)
   k = zero(rate_prototype)
 
@@ -324,14 +324,14 @@ function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
 
   U!(2,U)
 
-  tmp = similar(u); b = similar(u,indices(u))
-  atmp = similar(u,uEltypeNoUnits,indices(u))
+  tmp = similar(u); b = similar(u,axes(u))
+  atmp = similar(u,uEltypeNoUnits,axes(u))
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   linsolve = alg.linsolve(Val{:init},uf,u)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   uToltype = real(uBottomEltypeNoUnits)
-  utilde = similar(u,indices(u))
+  utilde = similar(u,axes(u))
 
   uprev2 = similar(u)
   uprev3 = similar(u)
@@ -365,7 +365,7 @@ mutable struct QNDFConstantCache{F,uToltype,coefType1,coefType2,coefType3,uType,
   D2::coefType2
   R::coefType1
   U::coefType1
-  k::Int64
+  order::Int64
   max_order::Int64
   udiff::uType
   dts::dtType
@@ -373,10 +373,10 @@ mutable struct QNDFConstantCache{F,uToltype,coefType1,coefType2,coefType3,uType,
   c::Int64
 end
 
-mutable struct QNDFCache{uType,rateType,coefType1,coefType2,coefType3,dtType,uNoUnitsType,J,UF,JC,uToltype,F} <: OrdinaryDiffEqMutableCache
+mutable struct QNDFCache{uType,rateType,coefType1,coefType,coefType2,coefType3,dtType,uNoUnitsType,J,UF,JC,uToltype,F} <: OrdinaryDiffEqMutableCache
   du1::rateType
   fsalfirst::rateType
-  k1::rateType
+  k::rateType
   z::uType
   dz::uType
   b::uType
@@ -384,9 +384,9 @@ mutable struct QNDFCache{uType,rateType,coefType1,coefType2,coefType3,dtType,uNo
   D2::coefType2
   R::coefType1
   U::coefType1
-  k::Int64
+  order::Int64
   max_order::Int64
-  udiff::uType
+  udiff::coefType
   dts::dtType
   tmp::uType
   atmp::uNoUnitsType
@@ -440,32 +440,41 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   du1 = zero(rate_prototype)
   J = fill(zero(uEltypeNoUnits),length(u),length(u))
   W = similar(J)
-  z = similar(u,indices(u))
-  dz = similar(u,indices(u))
+  z = similar(u,axes(u))
+  dz = similar(u,axes(u))
   fsalfirst = zero(rate_prototype)
-  k1 = zero(rate_prototype)
-  udiff = similar(u)
+  k = zero(rate_prototype)
+  udiff = Array{typeof(u)}(undef, 1, 6)
   dts = fill(zero(typeof(dt)), 1, 6)
   h = zero(Float64)
 
   D = Array{typeof(u)}(undef, 1, 5)
-  D2 = Array{typeof(u)}(undef, 1, 6)
+  D2 = Array{typeof(u)}(undef, 6, 6)
   R = fill(zero(typeof(t)), 5, 5)
   U = fill(zero(typeof(t)), 5, 5)
 
-  D[1] = similar(u); D[2] = similar(u)
-  D2[1] = similar(u);  D2[2] = similar(u); D2[3] = similar(u)
+  for i = 1:5
+    D[i] = zero(u)
+    udiff[i] = zero(u)
+  end
+  udiff[6] = zero(u)
+
+  for i = 1:6
+    for j = 1:6
+      D2[i,j] = zero(u)
+    end
+  end
 
   max_order = 5
 
-  tmp = similar(u); b = similar(u,indices(u))
-  atmp = similar(u,uEltypeNoUnits,indices(u))
+  tmp = similar(u); b = similar(u,axes(u))
+  atmp = similar(u,uEltypeNoUnits,axes(u))
 
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   linsolve = alg.linsolve(Val{:init},uf,u)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   uToltype = real(uBottomEltypeNoUnits)
-  utilde = similar(u,indices(u))
+  utilde = similar(u,axes(u))
 
   if alg.κ != nothing
     κ = uToltype(alg.κ)
@@ -480,6 +489,6 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
 
   ηold = one(uToltype)
 
-  QNDFCache(du1,fsalfirst,k1,z,dz,b,D,D2,R,U,1,max_order,udiff,dts,tmp,atmp,utilde,J,
+  QNDFCache(du1,fsalfirst,k,z,dz,b,D,D2,R,U,1,max_order,udiff,dts,tmp,atmp,utilde,J,
               W,uf,jac_config,linsolve,ηold,κ,tol,10000,h,0)
 end
