@@ -367,7 +367,7 @@ struct ImplicitEuler{CS,AD,F,F2,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAd
   new_jac_conv_bound::T2
 end
 ImplicitEuler(;chunk_size=0,autodiff=true,diff_type=Val{:central},
-                          linsolve=DEFAULT_LINSOLVE,nonlinsolve=Val{:newton},
+                          linsolve=DEFAULT_LINSOLVE,nonlinsolve=Newton(),
                           κ=nothing,tol=nothing,
                           extrapolant=:constant,min_newton_iter=1,
                           max_newton_iter=7,new_jac_conv_bound = 1e-3,

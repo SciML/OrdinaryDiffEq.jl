@@ -113,6 +113,7 @@ end
 
 function (S::Newton{true})(integrator)
   nlcache = S.cache
+  cache = integrator.cache
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z,dz,tmp,b,W,κ,tol,k,new_W,c,γ,max_iter,min_iter = nlcache
   mass_matrix = integrator.f.mass_matrix

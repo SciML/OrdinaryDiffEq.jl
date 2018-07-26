@@ -58,12 +58,14 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
   @inbounds begin
     @unpack t,dt,uprev,u,f,p = integrator
     @unpack J,W,jac_config = cache
+    @unpack ηold,nl_iters = cache.nlsolve.cache
+    nlcache = cache.nlsolve.cache
     mass_matrix = integrator.f.mass_matrix
     is_compos = typeof(integrator.alg) <: CompositeAlgorithm
     alg = unwrap_alg(integrator, true)
 
     # calculate W
-    new_W = true
+    nlcache.new_W = true
     if DiffEqBase.has_invW(f)
       # skip calculation of inv(W) if step is repeated
       !repeat_step && W_transform ? f.invW_t(W, uprev, p, dtgamma, t) :
@@ -73,8 +75,8 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     else
       # skip calculation of J if step is repeated
       if repeat_step || (alg_can_repeat_jac(alg) &&
-                         (!integrator.last_stepfail && cache.newton_iters == 1 &&
-                          cache.ηold < alg.new_jac_conv_bound))
+                         (!integrator.last_stepfail && nl_iters == 1 &&
+                          ηold < alg.new_jac_conv_bound))
         new_jac = false
       else
         new_jac = true
@@ -94,11 +96,11 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
           end
         end
       else
-        new_W = false
+        nlcache.new_W = false
       end
     end
-    return new_W
   end
+  return nothing
 end
 
 function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat_step, W_transform=false)

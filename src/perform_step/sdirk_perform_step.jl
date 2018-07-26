@@ -35,7 +35,7 @@ end
 
 @muladd function perform_step!(integrator, cache::ImplicitEulerConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack uf,κ,tol = cache
+  nlcache = cache.nonlinsolve
   alg = unwrap_alg(integrator, true)
   W = calc_W!(integrator, cache, dt, repeat_step)
 
@@ -46,7 +46,8 @@ end
     z = zero(u)
   end
 
-  tmp = uprev
+  nlcache.tmp = uprev
+  # TODO
   nlcache = nlsolve_cache(alg, cache, z, tmp, W, 1, 1, true)
   z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return
@@ -83,7 +84,8 @@ end
 
 @muladd function perform_step!(integrator, cache::ImplicitEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack uf,du1,dz,z,k,b,J,W,jac_config,tmp,atmp,κ,tol = cache
+  @unpack z,tmp,atmp,nlsolve = cache
+  nlsolve!, nlcache = nlsolve, nlsolve.cache
   mass_matrix = integrator.f.mass_matrix
   alg = unwrap_alg(integrator, true)
   new_W = calc_W!(integrator, cache, dt, repeat_step)
@@ -95,13 +97,13 @@ end
     z .= zero(u)
   end
 
-  nlcache = nlsolve_cache(alg, cache, z, uprev, 1, 1, new_W)
-  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
+  nlcache.tmp = uprev
+  z,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
   @. u = uprev + z
 
-  cache.ηold = η
-  cache.newton_iters = iter
+  nlcache.ηold = η
+  nlcache.nl_iters = iter
 
   if integrator.opts.adaptive && integrator.success_iter > 0
     # local truncation error (LTE) bound by dt^2/2*max|y''(t)|
