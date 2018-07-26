@@ -87,7 +87,7 @@ mutable struct WOperator{T,
   J::JType
   transform::Bool       # true => W = mm/gamma - J; false => W = mm - gamma*J
   _func_cache           # cache used in `mul!`
-  _nonlazy_form         # non-lazy form (matrix/number) of the operator
+  _concrete_form         # non-lazy form (matrix/number) of the operator
   function WOperator(mass_matrix, gamma, J; transform=false)
     T = eltype(J)
     # Convert mass_matrix, if needed
@@ -100,32 +100,32 @@ end
 set_gamma!(W::WOperator, gamma) = (W.gamma = gamma; W)
 DiffEqBase.update_coefficients!(W::WOperator,u,p,t) = (update_coefficients!(W.J,u,p,t); W)
 function Base.convert(::Type{AbstractMatrix}, W::WOperator)
-  if W._nonlazy_form == nothing
+  if W._concrete_form == nothing
     # Allocating
     if W.transform
-      W._nonlazy_form = W.mass_matrix / W.gamma - convert(AbstractMatrix,W.J)
+      W._concrete_form = W.mass_matrix / W.gamma - convert(AbstractMatrix,W.J)
     else
-      W._nonlazy_form = W.mass_matrix - W.gamma * convert(AbstractMatrix,W.J)
+      W._concrete_form = W.mass_matrix - W.gamma * convert(AbstractMatrix,W.J)
     end
   else
     # Non-allocating
     if W.transform
-      rmul!(copyto!(W._nonlazy_form, W.mass_matrix), 1/W.gamma)
-      axpy!(-1, convert(AbstractMatrix,W.J), W._nonlazy_form)
+      rmul!(copyto!(W._concrete_form, W.mass_matrix), 1/W.gamma)
+      axpy!(-1, convert(AbstractMatrix,W.J), W._concrete_form)
     else
-      copyto!(W._nonlazy_form, W.mass_matrix)
-      axpy!(-W.gamma, convert(AbstractMatrix,W.J), W._nonlazy_form)
+      copyto!(W._concrete_form, W.mass_matrix)
+      axpy!(-W.gamma, convert(AbstractMatrix,W.J), W._concrete_form)
     end
   end
-  W._nonlazy_form
+  W._concrete_form
 end
 function Base.convert(::Type{Number}, W::WOperator)
   if W.transform
-    W._nonlazy_form = W.mass_matrix / W.gamma - convert(Number,W.J)
+    W._concrete_form = W.mass_matrix / W.gamma - convert(Number,W.J)
   else
-    W._nonlazy_form = W.mass_matrix - W.gamma * convert(Number,W.J)
+    W._concrete_form = W.mass_matrix - W.gamma * convert(Number,W.J)
   end
-  W._nonlazy_form
+  W._concrete_form
 end
 Base.size(W::WOperator, args...) = size(W.J, args...)
 function Base.getindex(W::WOperator, i::Int)
@@ -187,16 +187,6 @@ function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrM
   end
 end
 
-"""
-    lazy_W(f) -> t/f
-
-Predicate for determining what kind of function supports the use of lazy W.
-Also used in cache construction.
-"""
-lazy_W(f) = false # default
-lazy_W(f::ODEFunction) = DiffEqBase.has_jac(f) && isa(f.jac_prototype, DiffEqBase.AbstractDiffEqLinearOperator)
-# More to come as support for other *DEFunction is added
-
 function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_step, W_transform=false)
   @inbounds begin
     @unpack t,dt,uprev,u,f,p = integrator
@@ -227,20 +217,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
       if !repeat_step && (!alg_can_repeat_jac(alg) ||
                           (integrator.iter < 1 || new_jac ||
                            abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t))))
-        if lazy_W(f)
-          set_gamma!(W, dtgamma)
-          # W.transform = W_transform # necessary?
-        else # compute W as a dense matrix
-          if W_transform
-            for j in 1:length(u), i in 1:length(u)
-                W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
-            end
-          else
-            for j in 1:length(u), i in 1:length(u)
-                W[i,j] = mass_matrix[i,j] - dtgamma*J[i,j]
-            end
-          end
-        end
+        set_gamma!(W, dtgamma)
       else
         new_W = false
       end
@@ -258,7 +235,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
   isarray = typeof(uprev) <: AbstractArray
   iscompo = typeof(integrator.alg) <: CompositeAlgorithm
   if !W_transform
-    if lazy_W(f)
+    if DiffEqBase.has_jac(f)
       W = WOperator(mass_matrix, dtgamma, deepcopy(f.jac_prototype); transform=false)
     else
       if isarray
@@ -269,7 +246,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
       W = mass_matrix - dtgamma*J
     end
   else
-    if lazy_W(f)
+    if DiffEqBase.has_jac(f)
       W = WOperator(mass_matrix, dtgamma, deepcopy(f.jac_prototype); transform=true)
     else
       if isarray
