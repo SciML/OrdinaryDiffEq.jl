@@ -1,5 +1,5 @@
 """
-  (S::Functional)(integrator) -> (z, η, iter, fail_convergence)
+  (S::NLFunctional)(integrator) -> (z, η, iter, fail_convergence)
 
 Perform functional iteration that is used by implicit methods, where `z` is the
 solution, `η` is used to measure the iteration error (see [^HW96]), `iter` is
@@ -22,7 +22,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 978-3-642-05221-7. Section IV.8.
 [doi:10.1007/978-3-642-05221-7](https://doi.org/10.1007/978-3-642-05221-7)
 """
-function (S::Functional{false})(integrator)
+function (S::NLFunctional{false})(integrator)
   nlcache = S.cache
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z,tmp,κ,tol,c,γ,min_iter,max_iter = nlcache
@@ -74,7 +74,7 @@ function (S::Functional{false})(integrator)
   return (z, η, iter, false)
 end
 
-function (S::Functional{true})(integrator)
+function (S::NLFunctional{true})(integrator)
   nlcache = S.cache
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z,z₊,b,dz,tmp,κ,tol,k,c,γ,min_iter,max_iter = nlcache
@@ -105,7 +105,7 @@ function (S::Functional{true})(integrator)
   η = nlcache.ηold
   do_functional = true # TODO: this makes `min_iter` ≥ 2
 
-  # Functional iteration
+  # NLFunctional iteration
   fail_convergence = false
   while (do_functional || iter < min_iter) && iter < max_iter
     iter += 1

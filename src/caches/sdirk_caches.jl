@@ -1,4 +1,4 @@
-mutable struct ImplicitEulerCache{uType,rateType,uNoUnitsType,J,UF,JC,F} <: OrdinaryDiffEqMutableCache
+mutable struct ImplicitEulerCache{uType,rateType,uNoUnitsType,J,UF,JC,F,N} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -15,7 +15,7 @@ mutable struct ImplicitEulerCache{uType,rateType,uNoUnitsType,J,UF,JC,F} <: Ordi
   uf::UF
   jac_config::JC
   linsolve::F
-  nlsolve::AbstractNLsolveSolver
+  nlsolve::N
 end
 
 u_cache(c::ImplicitEulerCache)    = (c.uprev2,c.z,c.dz)
@@ -27,7 +27,7 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomElt
   @unpack κ,tol,max_iter,min_iter,new_W = alg.nonlinsolve.cache
   z = similar(u,axes(u))
   dz = similar(u,axes(u)); tmp = similar(u,axes(u)); b = similar(u,axes(u))
-  if typeof(alg.nonlinsolve) <: Newton
+  if typeof(alg.nonlinsolve) <: NLNewton
     J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
     W = similar(J)
     du1 = zero(rate_prototype)
@@ -35,7 +35,7 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomElt
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
     linsolve = alg.linsolve(Val{:init},uf,u)
     z₊ = z
-  elseif typeof(alg.nonlinsolve) <: Functional
+  elseif typeof(alg.nonlinsolve) <: NLFunctional
     J = nothing
     W = nothing
     du1 = rate_prototype
@@ -66,18 +66,18 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomElt
   ImplicitEulerCache(u,uprev,uprev2,du1,fsalfirst,k,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolve)
 end
 
-mutable struct ImplicitEulerConstantCache{F} <: OrdinaryDiffEqConstantCache
+mutable struct ImplicitEulerConstantCache{F,N} <: OrdinaryDiffEqConstantCache
   uf::F
-  nlsolve::AbstractNLsolveSolver
+  nlsolve::N
 end
 
 function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   @unpack κ,tol,max_iter,min_iter,new_W = alg.nonlinsolve.cache
   z = uprev
-  if typeof(alg.nonlinsolve) <: Newton
+  if typeof(alg.nonlinsolve) <: NLNewton
     uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  elseif typeof(alg.nonlinsolve) <: Functional
+  elseif typeof(alg.nonlinsolve) <: NLFunctional
     uf = nothing
   end
   uToltype = real(uBottomEltypeNoUnits)
@@ -114,7 +114,7 @@ end
 
 function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   @unpack κ,tol,max_iter,min_iter,new_W = alg.nonlinsolve.cache
-  if typeof(alg.nonlinsolve) <: Newton
+  if typeof(alg.nonlinsolve) <: NLNewton
     uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   else
     uf = nothing

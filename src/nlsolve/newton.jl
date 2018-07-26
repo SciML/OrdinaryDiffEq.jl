@@ -5,8 +5,8 @@
 #Return a wrapper `NLsolveConstantCache` for `cache::OrdinaryDiffEqConstantCache`,
 #so that `diffeq_nlsolve!` does not need to assume fieldnames of `cache`.
 #"""
-#function nlsolve_cache(alg::Union{OrdinaryDiffEqNewtonAdaptiveAlgorithm,
-#                                  OrdinaryDiffEqNewtonAlgorithm},
+#function nlsolve_cache(alg::Union{OrdinaryDiffEqNLNewtonAdaptiveAlgorithm,
+#                                  OrdinaryDiffEqNLNewtonAlgorithm},
 #                       cache::OrdinaryDiffEqConstantCache, z, tmp, W, γ, c, new_W)
 #  NLsolveConstantCache(z, tmp, W, cache.κ, cache.tol, γ, c)
 #end
@@ -18,17 +18,17 @@
 #Return a wrapper `NLsolveMutableCache` for `cache::OrdinaryDiffEqMutableCache`,
 #so that `diffeq_nlsolve!` does not need to assume fieldnames of `cache`.
 #"""
-#function nlsolve_cache(alg::Union{OrdinaryDiffEqNewtonAdaptiveAlgorithm,
-#                                  OrdinaryDiffEqNewtonAlgorithm},
+#function nlsolve_cache(alg::Union{OrdinaryDiffEqNLNewtonAdaptiveAlgorithm,
+#                                  OrdinaryDiffEqNLNewtonAlgorithm},
 #                       cache::OrdinaryDiffEqMutableCache, z, tmp, γ, c, new_W)
 #  NLsolveMutableCache(z, cache.dz, tmp, cache.b,
 #                      cache.W, cache.κ, cache.tol, γ, c, cache.k, new_W)
 #end
 
 """
-  (S::Newton)(integrator) -> (z, η, iter, fail_convergence)
+  (S::NLNewton)(integrator) -> (z, η, iter, fail_convergence)
 
-Perform numerically stable modified Newton iteration that is specialized for
+Perform numerically stable modified NLNewton iteration that is specialized for
 implicit methods (see [^HS96] and [^HW96]), where `z` is the solution, `η` is
 used to measure the iteration error (see [^HW96]), `iter` is the number of
 iteration, and `fail_convergence` reports whether the algorithm succeed. It
@@ -58,7 +58,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 978-3-642-05221-7. Section IV.8.
 [doi:10.1007/978-3-642-05221-7](https://doi.org/10.1007/978-3-642-05221-7)
 """
-function (S::Newton{false})(integrator)
+function (S::NLNewton{false})(integrator)
   nlcache = S.cache
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z,tmp,W,κ,tol,c,γ,max_iter,min_iter = nlcache
@@ -72,7 +72,7 @@ function (S::Newton{false})(integrator)
   # precalculations
   κtol = κ*tol
 
-  # initial step of Newton iteration
+  # initial step of NLNewton iteration
   iter = 1
   tstep = t + c*dt
   u = tmp + γ*z
@@ -84,7 +84,7 @@ function (S::Newton{false})(integrator)
   η = max(nlcache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
-  # Newton iteration
+  # NLNewton iteration
   fail_convergence = false
   while (do_newton || iter < min_iter) && iter < max_iter
     iter += 1
@@ -111,7 +111,7 @@ function (S::Newton{false})(integrator)
   return (z, η, iter, false)
 end
 
-function (S::Newton{true})(integrator)
+function (S::NLNewton{true})(integrator)
   nlcache = S.cache
   cache = integrator.cache
   @unpack t,dt,uprev,u,f,p = integrator
@@ -125,7 +125,7 @@ function (S::Newton{true})(integrator)
   end
   # precalculations
   κtol = κ*tol
-  # initial step of Newton iteration
+  # initial step of NLNewton iteration
   iter = 1
   tstep = t + c*dt
   @. u = tmp + γ*z
@@ -147,7 +147,7 @@ function (S::Newton{true})(integrator)
   η = max(nlcache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
-  # Newton iteration
+  # NLNewton iteration
   fail_convergence = false
   while (do_newton || iter < min_iter) && iter < max_iter
     iter += 1

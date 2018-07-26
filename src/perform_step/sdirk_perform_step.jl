@@ -38,7 +38,7 @@ end
   nlcache = cache.nlsolve.cache
   nlsolve! = cache.nlsolve
   alg = unwrap_alg(integrator, true)
-  typeof(nlsolve!) <: Newton && ( nlcache.W = calc_W!(integrator, cache, dt, repeat_step) )
+  typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, dt, repeat_step) )
 
   # initial guess
   if alg.extrapolant == :linear
@@ -87,7 +87,7 @@ end
   nlsolve!, nlcache = nlsolve, nlsolve.cache
   mass_matrix = integrator.f.mass_matrix
   alg = unwrap_alg(integrator, true)
-  typeof(nlsolve)<:Newton && calc_W!(integrator, cache, dt, repeat_step)
+  typeof(nlsolve)<:NLNewton && calc_W!(integrator, cache, dt, repeat_step)
 
   # initial guess
   if alg.extrapolant == :linear
@@ -728,7 +728,7 @@ end
   # TODO: Add extrapolation for guess
   z₁ .= zero(z₁)
 
-  # initial step of Newton iteration
+  # initial step of NLNewton iteration
   nlcache = nlsolve_cache(alg, cache, z₁, uprev, γ, γ, new_W)
   z₁,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
   fail_convergence && return

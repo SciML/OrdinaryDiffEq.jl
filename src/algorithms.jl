@@ -355,27 +355,21 @@ struct MidpointSplitting <: OrdinaryDiffEqAlgorithm end
 
 # SDIRK Methods
 
-struct ImplicitEuler{CS,AD,F,F2,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
+struct ImplicitEuler{CS,AD,F,F2,FDT,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
   nonlinsolve::F2
   diff_type::FDT
-  κ::K
-  tol::T
   extrapolant::Symbol
-  min_newton_iter::Int
-  max_newton_iter::Int
   new_jac_conv_bound::T2
 end
 ImplicitEuler(;chunk_size=0,autodiff=true,diff_type=Val{:central},
-                          linsolve=DEFAULT_LINSOLVE,nonlinsolve=Newton(),
-                          κ=nothing,tol=nothing,
-                          extrapolant=:constant,min_newton_iter=1,
-                          max_newton_iter=7,new_jac_conv_bound = 1e-3,
-                          controller = :Predictive) =
-                          ImplicitEuler{chunk_size,autodiff,typeof(linsolve),typeof(nonlinsolve),typeof(diff_type),
-                          typeof(κ),typeof(tol),typeof(new_jac_conv_bound),controller}(
-                          linsolve,nonlinsolve,diff_type,κ,tol,extrapolant,min_newton_iter,
-                          max_newton_iter,new_jac_conv_bound)
+                          linsolve=DEFAULT_LINSOLVE,nonlinsolve=NLNewton(),
+                          extrapolant=:constant,new_jac_conv_bound=1e-3,
+                          controller=:Predictive) =
+                          ImplicitEuler{chunk_size,autodiff,typeof(linsolve),
+                          typeof(nonlinsolve),typeof(diff_type),
+                          typeof(new_jac_conv_bound),controller}(linsolve,
+                          nonlinsolve,diff_type,extrapolant,new_jac_conv_bound)
 
 struct ImplicitMidpoint{CS,AD,F,F2,FDT,K,T,T2} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
   linsolve::F
