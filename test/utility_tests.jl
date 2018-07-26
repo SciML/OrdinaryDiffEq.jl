@@ -91,7 +91,7 @@ end
     # Out-of-place
     fun = ODEFunction((u,p,t) -> A*u;
                       mass_matrix=mm,
-                      jac_prototype=DiffEqArrayOperator(A))
+                      jac=(u,p,t) -> A)
     integrator = init(ODEProblem(fun,u0,tspan), ImplicitEuler(); adaptive=false, dt=dt)
     W = calc_W!(integrator, integrator.cache, dtgamma, false)
     @test convert(AbstractMatrix, W) ≈ concrete_W

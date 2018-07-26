@@ -246,7 +246,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
 end
 
 function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat_step, W_transform=false)
-  @unpack t,uprev,f = integrator
+  @unpack t,uprev,p,f = integrator
   @unpack uf = cache
   mass_matrix = integrator.f.mass_matrix
   # calculate W
@@ -255,7 +255,11 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
   iscompo = typeof(integrator.alg) <: CompositeAlgorithm
   if !W_transform
     if DiffEqBase.has_jac(f)
-      W = WOperator(f, dtgamma; transform=false)
+      J = f.jac(uprev, p, t)
+      if !isa(f, DiffEqBase.AbstractDiffEqLinearOperator)
+        J = DiffEqArrayOperator(J)
+      end
+      W = WOperator(mass_matrix, dtgamma, J; transform=false)
     else
       if isarray
         J = ForwardDiff.jacobian(uf,uprev)
@@ -266,7 +270,11 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
     end
   else
     if DiffEqBase.has_jac(f)
-      W = WOperator(f, dtgamma; transform=true)
+      J = f.jac(uprev, p, t)
+      if !isa(f, DiffEqBase.AbstractDiffEqLinearOperator)
+        J = DiffEqArrayOperator(J)
+      end
+      W = WOperator(mass_matrix, dtgamma, J; transform=true)
     else
       if isarray
         J = ForwardDiff.jacobian(uf,uprev)
