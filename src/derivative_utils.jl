@@ -235,6 +235,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
       if !repeat_step && (!alg_can_repeat_jac(alg) ||
                           (integrator.iter < 1 || new_jac ||
                            abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t))))
+        W.transform = W_transform
         set_gamma!(W, dtgamma)
       else
         new_W = false
