@@ -464,3 +464,291 @@ function perform_step!(integrator,cache::QNDF2Cache,repeat_step=false)
   cache.newton_iters = iter
   f(integrator.fsallast, u, p, t+dt)
 end
+
+function initialize!(integrator, cache::QNDFConstantCache)
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(integrator.kshortsize)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
+
+function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack udiff,dts,order,max_order,D,D2,R,U = cache
+  k = order
+  cnt = integrator.iter
+  κ = integrator.alg.kappa[k]
+  γ = inv((1-κ)*γₖ[k])
+  flag = true
+  for i in 2:k
+    if dts[i] != dts[1]
+      flag = false
+      break
+    end
+  end
+  if cnt > 2
+    if flag
+      ρ = dt/dts[1]
+      # backward diff
+      n = k+1
+      if cnt == 3
+        n = k
+      end
+      for i = 1:n
+        D2[1,i] = udiff[i]
+      end
+      backward_diff!(cache,D,D2,k)
+      if ρ != 1
+        U!(k,U)
+        R!(k,ρ,cache)
+        R .= R * U
+        reinterpolate_history!(cache,D,R,k)
+      end
+    else
+      n = k+1
+      if cnt == 3
+        n = k
+      end
+      for i = 1:n
+        D2[1,i] = udiff[i] * dt/dts[i]
+      end
+      backward_diff!(cache,D,D2,k)
+    end
+  else
+    γ = 1//1
+  end
+
+  # precalculations
+  u₀ = uprev + sum(D)  # u₀ is predicted value
+  ϕ = zero(γ)
+  for i = 1:k
+    ϕ += γₖ[i]*D[i]
+  end
+  ϕ *= γ
+  tmp = u₀ - ϕ
+  γdt = γ*dt
+  W = calc_W!(integrator, cache, γdt, repeat_step)
+  # initial guess
+  z = dt*integrator.fsalfirst
+
+  z, η, iter, fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, tmp, γ, 1, Val{:newton})
+  fail_convergence && return
+  u = tmp + γ*z
+
+  if integrator.opts.adaptive
+    if cnt == 1
+      integrator.EEst = one(integrator.EEst)
+    elseif cnt == 2
+      utilde = (u - uprev) - (udiff[1] * dt/dts[1])
+      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp)
+    else
+      δ = u - uprev
+      for i = 1:k
+        δ -= D[i]
+      end
+      utilde = (κ*γₖ[k] + inv(k+1)) * δ
+      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp)
+    end
+    
+    if cnt == 1
+      cache.order = 1
+    elseif cnt <= 3
+      cache.order = 2
+    else
+      errm1 = 0
+      if k > 1
+        utildem1 = (κ*γₖ[k-1] + inv(k)) * D[k]
+        atmpm1 = calculate_residuals(utildem1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+        errm1 = integrator.opts.internalnorm(atmpm1)
+      end
+      backward_diff!(cache,D,D2,k+1,false)
+      δ = u - uprev
+      for i = 1:(k+1)
+        δ -= D2[i,1]
+      end
+      utildep1 = (κ*γₖ[k+1] + inv(k+2)) * δ
+      atmpp1 = calculate_residuals(utildep1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      errp1 = integrator.opts.internalnorm(atmpp1)
+      pass = stepsize_and_order!(cache, integrator.EEst, errm1, errp1, dt, k)
+      if pass == false
+        cache.c = cache.c + 1
+        fill!(D, zero(u)); fill!(D2, zero(u))
+        fill!(R, zero(t)); fill!(U, zero(t))
+        return
+      end
+      cache.c = 0
+    end # cnt == 1
+  end # integrator.opts.adaptive
+  for i = 6:-1:2
+    dts[i] = dts[i-1]
+    udiff[i] = udiff[i-1]
+  end
+  dts[1] = dt
+  udiff[1] = u - uprev
+  fill!(D, zero(u)); fill!(D2, zero(u))
+  fill!(R, zero(t)); fill!(U, zero(t))
+
+  cache.ηold = η
+  cache.newton_iters = iter
+  integrator.fsallast = f(u, p, t+dt)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end
+
+function initialize!(integrator, cache::QNDFCache)
+  integrator.kshortsize = 2
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+end
+
+function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack udiff,dts,order,max_order,D,D2,R,U,tmp,utilde,atmp,W,z = cache
+  cnt = integrator.iter
+  k = order
+  κ = integrator.alg.kappa[k]
+  γ = inv((1-κ)*γₖ[k])
+  flag = true
+  for i in 2:k
+    if dts[i] != dts[1]
+      flag = false
+      break
+    end
+  end
+  if cnt > 2
+    if flag
+      ρ = dt/dts[1]
+      # backward diff
+      n = k+1
+      if cnt == 3
+        n = k
+      end
+      for i = 1:n
+        D2[1,i] .= udiff[i]
+      end
+      backward_diff!(cache,D,D2,k)
+      if ρ != 1
+        U!(k,U)
+        R!(k,ρ,cache)
+        R .= R * U
+        reinterpolate_history!(cache,D,R,k)
+      end
+    else
+      n = k+1
+      if cnt == 3
+        n = k
+      end
+      for i = 1:n
+        @. D2[1,i] = udiff[i] * dt/dts[i]
+      end
+      backward_diff!(cache,D,D2,k)
+    end
+  else
+    γ = 1//1
+  end
+  # precalculations
+  ϕ = zero(u)
+  for i = 1:k
+    @. ϕ += γₖ[i]*D[i]
+  end
+  @. ϕ *= γ
+  tm = zero(u)
+  for i = 1:k
+    @. tm += D[i]
+  end
+  @. tmp = uprev + tm - ϕ
+
+  γdt = γ*dt
+  new_W = calc_W!(integrator, cache, γdt, repeat_step)
+  # initial guess
+  @. z = dt*integrator.fsalfirst
+
+  z, η, iter, fail_convergence = diffeq_nlsolve!(integrator, cache, W, z, tmp, γ, 1, Val{:newton}, new_W)
+  fail_convergence && return
+  @. u = tmp + γ*z
+
+
+  if integrator.opts.adaptive
+    if cnt == 1
+      integrator.EEst = one(integrator.EEst)
+    elseif cnt == 2
+      @. utilde = (u - uprev) - (udiff[1] * dt/dts[1])
+      calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp)
+    else
+      @. tmp = u - uprev
+      for i = 1:k
+        @. tmp -= D[i]
+      end
+      @. utilde = (κ*γₖ[k] + inv(k+1)) * tmp
+      calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp)
+    end
+
+    if cnt == 1
+      cache.order = 1
+    elseif cnt <= 3
+      cache.order = 2
+    else
+      errm1 = 0
+      if k > 1
+        @. utilde = (κ*γₖ[k-1] + inv(k)) * D[k]
+        calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+        errm1 = integrator.opts.internalnorm(atmp)
+      end
+      backward_diff!(cache,D,D2,k+1,false)
+      @. tmp = u - uprev
+      for i = 1:(k+1)
+        @. tmp -= D2[i,1]
+      end
+      @. utilde = (κ*γₖ[k+1] + inv(k+2)) * tmp
+      calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      errp1 = integrator.opts.internalnorm(atmp)
+      pass = stepsize_and_order!(cache, integrator.EEst, errm1, errp1, dt, k)
+      if pass == false
+        for i = 1:5
+          D[i] = zero(u)
+        end
+        for i = 1:6
+          for j = 1:6
+            D2[i,j] = zero(u)
+          end
+        end
+        fill!(R, zero(t)); fill!(U, zero(t))
+        cache.c = cache.c + 1
+        return
+      end
+      cache.c = 0
+    end # cnt == 1
+  end # integrator.opts.adaptive
+  for i = 6:-1:2
+    dts[i] = dts[i-1]
+    udiff[i] .= udiff[i-1]
+  end
+  dts[1] = dt
+  @. udiff[1] = u - uprev
+  for i = 1:5
+    D[i] = zero(u)
+  end
+  for i = 1:6
+    for j = 1:6
+      D2[i,j] = zero(u)
+    end
+  end
+  fill!(R, zero(t)); fill!(U, zero(t))
+
+  cache.ηold = η
+  cache.newton_iters = iter
+  f(integrator.fsallast, u, p, t+dt)
+end
