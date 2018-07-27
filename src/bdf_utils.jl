@@ -52,6 +52,11 @@ function backward_diff!(cache, D, D2, k, flag=true)
   end
 end
 
+# this function updates backward difference array D when stepsize gets change
+# Formula -> D = D * (R * U)
+# and it is taken from the paper -
+# Implementation of an Adaptive BDF2 Formula and Comparison with the MATLAB Ode15s paper
+# E. Alberdi Celaya, J. J. Anza Aguirrezabala, and P. Chatzipantelidis
 function mul!(cache, D, R, k)
   @unpack tmp = cache
   if typeof(cache) <: OrdinaryDiffEqMutableCache
@@ -59,22 +64,20 @@ function mul!(cache, D, R, k)
   else
     tmp = zero(eltype(D))
   end
-  for i = 1:1
-    for j = 1:k
-      for k = 1:k
-        if typeof(cache) <: OrdinaryDiffEqMutableCache
-          @. tmp += D[i,k] * R[k,j]
-        else
-          tmp += D[i,k] * R[k,j]
-        end
-      end
+  for i = 1:1, j = 1:k
+    for k = 1:k
       if typeof(cache) <: OrdinaryDiffEqMutableCache
-        D[i,j] .= tmp
-        fill!(tmp,zero(eltype(D[1])))
+        @. tmp += D[i,k] * R[k,j]
       else
-        D[i,j] = tmp
-        tmp = zero(eltype(D))
+        tmp += D[i,k] * R[k,j]
       end
+    end
+    if typeof(cache) <: OrdinaryDiffEqMutableCache
+      D[i,j] .= tmp
+      fill!(tmp,zero(eltype(D[1])))
+    else
+      D[i,j] = tmp
+      tmp = zero(eltype(D))
     end
   end
 end
