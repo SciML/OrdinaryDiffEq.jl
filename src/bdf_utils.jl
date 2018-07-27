@@ -67,16 +67,16 @@ function mul!(cache, D, R, k)
   for i = 1:1, j = 1:k
     for k = 1:k
       if typeof(cache) <: OrdinaryDiffEqMutableCache
-        @. tmp += D[i,k] * R[k,j]
+        @. tmp += D[k] * R[k,j]
       else
-        tmp += D[i,k] * R[k,j]
+        tmp += D[k] * R[k,j]
       end
     end
     if typeof(cache) <: OrdinaryDiffEqMutableCache
-      D[i,j] .= tmp
+      D[j] .= tmp
       fill!(tmp,zero(eltype(D[1])))
     else
-      D[i,j] = tmp
+      D[j] = tmp
       tmp = zero(eltype(D))
     end
   end

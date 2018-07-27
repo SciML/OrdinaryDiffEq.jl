@@ -446,11 +446,11 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   dz = similar(u,axes(u))
   fsalfirst = zero(rate_prototype)
   k = zero(rate_prototype)
-  udiff = Array{typeof(u)}(undef, 1, 6)
+  udiff = Vector{typeof(u)}(undef, 6)
   dts = fill(zero(typeof(dt)), 1, 6)
   h = zero(dt)
 
-  D = Array{typeof(u)}(undef, 1, 5)
+  D = Vector{typeof(u)}(undef, 5)
   D2 = Array{typeof(u)}(undef, 6, 6)
   R = fill(zero(typeof(t)), 5, 5)
   U = fill(zero(typeof(t)), 5, 5)

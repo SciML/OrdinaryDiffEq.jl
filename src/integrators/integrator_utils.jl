@@ -189,7 +189,7 @@ end
 function stepsize_controller!(integrator, alg::QNDF)
   cnt = integrator.iter
   if cnt <= 3
-    # call std controller
+    # std controller
     qtmp = integrator.EEst^(1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1))/integrator.opts.gamma
     @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
     integrator.qold = integrator.dt/q
