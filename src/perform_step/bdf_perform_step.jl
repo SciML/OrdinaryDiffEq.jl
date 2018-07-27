@@ -496,7 +496,7 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
         U!(k,U)
         R!(k,ρ,cache)
         R .= R * U
-        mul!(cache,D,R,k)
+        reinterpolate_history!(cache,D,R,k)
       end
     else
       n = k+1
@@ -632,7 +632,7 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
         U!(k,U)
         R!(k,ρ,cache)
         R .= R * U
-        mul!(cache,D,R,k)
+        reinterpolate_history!(cache,D,R,k)
       end
     else
       n = k+1

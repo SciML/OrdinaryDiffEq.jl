@@ -57,14 +57,14 @@ end
 # and it is taken from the paper -
 # Implementation of an Adaptive BDF2 Formula and Comparison with the MATLAB Ode15s paper
 # E. Alberdi Celaya, J. J. Anza Aguirrezabala, and P. Chatzipantelidis
-function mul!(cache, D, R, k)
+function reinterpolate_history!(cache, D, R, k)
   @unpack tmp = cache
   if typeof(cache) <: OrdinaryDiffEqMutableCache
     fill!(tmp,zero(eltype(D[1])))
   else
     tmp = zero(eltype(D))
   end
-  for i = 1:1, j = 1:k
+  for j = 1:k
     for k = 1:k
       if typeof(cache) <: OrdinaryDiffEqMutableCache
         @. tmp += D[k] * R[k,j]
