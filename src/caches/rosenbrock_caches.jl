@@ -3,7 +3,7 @@ abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
 
 # Shampine's Low-order Rosenbrocks
 
-mutable struct Rosenbrock23Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+mutable struct Rosenbrock23Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   k₁::rateType
@@ -19,7 +19,7 @@ mutable struct Rosenbrock23Cache{uType,uArrayType,rateType,du2Type,LinuType,vecu
   fsallast::rateType
   dT::uArrayType
   J::JType
-  W::JType
+  W::WType
   tmp::uArrayType
   tab::TabType
   tf::TFType
@@ -36,7 +36,7 @@ du_cache(c::Rosenbrock23Cache) = (c.k₁,c.k₂,c.k₃,c.du1,c.du2,c.f₁,c.fsal
 jac_cache(c::Rosenbrock23Cache) = (c.J,c.W)
 vecu_cache(c::Rosenbrock23Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
 
-mutable struct Rosenbrock32Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+mutable struct Rosenbrock32Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   k₁::rateType
@@ -52,7 +52,7 @@ mutable struct Rosenbrock32Cache{uType,uArrayType,rateType,du2Type,LinuType,vecu
   fsallast::rateType
   dT::uArrayType
   J::JType
-  W::JType
+  W::WType
   tmp::uArrayType
   tab::TabType
   tf::TFType
@@ -83,8 +83,13 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,uBottomElty
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-  W = similar(J);
+  if DiffEqBase.has_jac(f)
+    W = WOperator(f, dt)
+    J = nothing # is J = W.J better?
+  else
+    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    W = similar(J)
+  end
   tmp = similar(u,axes(u))
   tab = Rosenbrock23ConstantCache(uEltypeNoUnits,identity,identity)
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
@@ -115,8 +120,14 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,uBottomElty
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-  W = similar(J); tmp = similar(u,axes(u))
+  if DiffEqBase.has_jac(f)
+    W = WOperator(f, dt)
+    J = nothing # is J = W.J better?
+  else
+    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    W = similar(J)
+  end
+  tmp = similar(u,axes(u))
   tab = Rosenbrock32ConstantCache(uEltypeNoUnits,identity,identity)
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
@@ -177,7 +188,7 @@ struct Rosenbrock33ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
   tab::Tab
 end
 
-mutable struct Rosenbrock33Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+mutable struct Rosenbrock33Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   du::rateType
@@ -191,7 +202,7 @@ mutable struct Rosenbrock33Cache{uType,uArrayType,rateType,du2Type,LinuType,vecu
   fsallast::rateType
   dT::uArrayType
   J::JType
-  W::JType
+  W::WType
   tmp::uArrayType
   tab::TabType
   tf::TFType
@@ -219,8 +230,13 @@ function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-  W = similar(J);
+  if DiffEqBase.has_jac(f)
+    W = WOperator(f, dt)
+    J = nothing # is J = W.J better?
+  else
+    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    W = similar(J)
+  end
   tmp = similar(u,axes(u))
   tab = ROS3PConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
@@ -241,7 +257,7 @@ function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   Rosenbrock33ConstantCache(tf,uf,ROS3PConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits)))
 end
 
-mutable struct Rosenbrock34Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+mutable struct Rosenbrock34Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   du::rateType
@@ -255,7 +271,7 @@ mutable struct Rosenbrock34Cache{uType,uArrayType,rateType,du2Type,LinuType,vecu
   fsallast::rateType
   dT::uArrayType
   J::JType
-  W::JType
+  W::WType
   tmp::uArrayType
   tab::TabType
   tf::TFType
@@ -283,8 +299,13 @@ function alg_cache(alg::Rodas3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-  W = similar(J);
+  if DiffEqBase.has_jac(f)
+    W = WOperator(f, dt)
+    J = nothing # is J = W.J better?
+  else
+    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    W = similar(J)
+  end
   tmp = similar(u,axes(u))
   tab = Rodas3ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
@@ -321,7 +342,7 @@ struct Rosenbrock4ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
   tab::Tab
 end
 
-mutable struct Rosenbrock4Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+mutable struct Rosenbrock4Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   du::rateType
@@ -335,7 +356,7 @@ mutable struct Rosenbrock4Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuT
   fsallast::rateType
   dT::uArrayType
   J::JType
-  W::JType
+  W::WType
   tmp::uArrayType
   tab::TabType
   tf::TFType
@@ -363,8 +384,13 @@ function alg_cache(alg::RosShamp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-  W = similar(J);
+  if DiffEqBase.has_jac(f)
+    W = WOperator(f, dt)
+    J = nothing # is J = W.J better?
+  else
+    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    W = similar(J)
+  end
   tmp = similar(u,axes(u))
   tab = RosShamp4ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
@@ -397,8 +423,13 @@ function alg_cache(alg::Veldd4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-  W = similar(J);
+  if DiffEqBase.has_jac(f)
+    W = WOperator(f, dt)
+    J = nothing # is J = W.J better?
+  else
+    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    W = similar(J)
+  end
   tmp = similar(u,axes(u))
   tab = Veldd4ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
@@ -431,8 +462,13 @@ function alg_cache(alg::Velds4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-  W = similar(J);
+  if DiffEqBase.has_jac(f)
+    W = WOperator(f, dt)
+    J = nothing # is J = W.J better?
+  else
+    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    W = similar(J)
+  end
   tmp = similar(u,axes(u))
   tab = Velds4ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
@@ -465,8 +501,13 @@ function alg_cache(alg::GRK4T,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-  W = similar(J);
+  if DiffEqBase.has_jac(f)
+    W = WOperator(f, dt)
+    J = nothing # is J = W.J better?
+  else
+    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    W = similar(J)
+  end
   tmp = similar(u,axes(u))
   tab = GRK4TConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
@@ -499,8 +540,13 @@ function alg_cache(alg::GRK4A,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-  W = similar(J);
+  if DiffEqBase.has_jac(f)
+    W = WOperator(f, dt)
+    J = nothing # is J = W.J better?
+  else
+    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    W = similar(J)
+  end
   tmp = similar(u,axes(u))
   tab = GRK4AConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
@@ -533,8 +579,13 @@ function alg_cache(alg::Ros4LStab,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-  W = similar(J);
+  if DiffEqBase.has_jac(f)
+    W = WOperator(f, dt)
+    J = nothing # is J = W.J better?
+  else
+    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    W = similar(J)
+  end
   tmp = similar(u,axes(u))
   tab = Ros4LStabConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
@@ -566,7 +617,7 @@ struct Rodas4ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
   tab::Tab
 end
 
-mutable struct Rodas4Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+mutable struct Rodas4Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   dense1::rateType
@@ -584,7 +635,7 @@ mutable struct Rodas4Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,J
   fsallast::rateType
   dT::uArrayType
   J::JType
-  W::JType
+  W::WType
   tmp::uArrayType
   tab::TabType
   tf::TFType
@@ -616,8 +667,13 @@ function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-  W = similar(J);
+  if DiffEqBase.has_jac(f)
+    W = WOperator(f, dt)
+    J = nothing # is J = W.J better?
+  else
+    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    W = similar(J)
+  end
   tmp = similar(u,axes(u))
   tab = Rodas4ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
@@ -655,8 +711,13 @@ function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-  W = similar(J);
+  if DiffEqBase.has_jac(f)
+    W = WOperator(f, dt)
+    J = nothing # is J = W.J better?
+  else
+    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    W = similar(J)
+  end
   tmp = similar(u,axes(u))
   tab = Rodas42ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
@@ -694,8 +755,13 @@ function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-  W = similar(J);
+  if DiffEqBase.has_jac(f)
+    W = WOperator(f, dt)
+    J = nothing # is J = W.J better?
+  else
+    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    W = similar(J)
+  end
   tmp = similar(u,axes(u))
   tab = Rodas4PConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
@@ -728,7 +794,7 @@ struct Rosenbrock5ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
   tab::Tab
 end
 
-mutable struct Rosenbrock5Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+mutable struct Rosenbrock5Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   dense1::rateType
@@ -748,7 +814,7 @@ mutable struct Rosenbrock5Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuT
   fsallast::rateType
   dT::uArrayType
   J::JType
-  W::JType
+  W::WType
   tmp::uArrayType
   tab::TabType
   tf::TFType
@@ -782,8 +848,13 @@ function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-  W = similar(J);
+  if DiffEqBase.has_jac(f)
+    W = WOperator(f, dt)
+    J = nothing # is J = W.J better?
+  else
+    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    W = similar(J)
+  end
   tmp = similar(u,axes(u))
   tab = Rodas5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
