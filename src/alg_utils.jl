@@ -67,7 +67,6 @@ alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))
 alg_extrapolates(alg::GenericImplicitEuler) = true
 alg_extrapolates(alg::GenericTrapezoid) = true
 alg_extrapolates(alg::ImplicitEuler) = true
-alg_extrapolates(alg::QNDF2) = true
 alg_extrapolates(alg::IMEXEuler) = true
 alg_extrapolates(alg::LinearImplicitEuler) = true
 alg_extrapolates(alg::Trapezoid) = true
@@ -95,6 +94,8 @@ get_current_alg_order(alg::CompositeAlgorithm,cache) = alg_order(alg.algs[cache.
 get_current_alg_order(alg::OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm,cache) = cache.order
 get_current_adaptive_order(alg::OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm,cache) = cache.order
 get_current_alg_order(alg::JVODE,cache) = get_current_adaptive_order(alg,cache)
+get_current_alg_order(alg::QNDF,cache) = cache.order
+get_current_adaptive_order(alg::QNDF,cache) = cache.order
 
 alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
 get_current_adaptive_order(alg::OrdinaryDiffEqAlgorithm,cache) = alg_adaptive_order(alg)
@@ -248,6 +249,8 @@ alg_order(alg::ABDF2) = 2
 alg_order(alg::QNDF1) = 1
 alg_order(alg::QNDF2) = 2
 
+alg_order(alg::QNDF) = 1 #dummy value
+
 alg_order(alg::ROCK2) = 2
 
 alg_maximum_order(alg) = alg_order(alg)
@@ -298,6 +301,7 @@ qsteady_max_default(alg::AN5) = 3//2
 qsteady_max_default(alg::JVODE) = 3//2
 qsteady_max_default(alg::QNDF1) = 2//1
 qsteady_max_default(alg::QNDF2) = 2//1
+qsteady_max_default(alg::QNDF) = 2//1
 
 FunctionMap_scale_by_time(alg::FunctionMap{scale_by_time}) where {scale_by_time} = scale_by_time
 
