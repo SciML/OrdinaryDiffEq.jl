@@ -1,35 +1,10 @@
-mutable struct ImplicitEulerCache{uType,rateType,uNoUnitsType,J,UF,JC,F,N} <: OrdinaryDiffEqMutableCache
-  u::uType
-  uprev::uType
-  uprev2::uType
-  du1::rateType
-  fsalfirst::rateType
-  k::rateType
-  z::uType
-  dz::uType
-  b::uType
-  tmp::uType
-  atmp::uNoUnitsType
-  J::J
-  W::J
-  uf::UF
-  jac_config::JC
-  linsolve::F
-  nlsolve::N
-end
-
-u_cache(c::ImplicitEulerCache)    = (c.uprev2,c.z,c.dz)
-du_cache(c::ImplicitEulerCache)   = (c.k,c.fsalfirst)
-
-function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+DiffEqBase.@def iipnlcachefields begin
   nlcache = alg.nonlinsolve.cache
   @unpack κ,tol,max_iter,min_iter,new_W = nlcache
   z = similar(u,axes(u))
   dz = similar(u,axes(u)); tmp = similar(u,axes(u)); b = similar(u,axes(u))
   fsalfirst = zero(rate_prototype)
   k = zero(rate_prototype)
-  atmp = similar(u,uEltypeNoUnits,axes(u))
   uToltype = real(uBottomEltypeNoUnits)
   ηold = one(uToltype)
 
@@ -61,8 +36,60 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomElt
   else
     tol = uToltype(min(0.03,first(reltol)^(0.5)))
   end
-  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1,1,ηold,z₊,dz,tmp,b,k))
+end
+DiffEqBase.@def oopnlcachefields begin
+  nlcache = alg.nonlinsolve.cache
+  @unpack κ,tol,max_iter,min_iter,new_W = nlcache
+  z = uprev
+  if typeof(alg.nonlinsolve) <: NLNewton
+    uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+  else
+    uf = nothing
+  end
+  W = typeof(u) <: Number ? u : Matrix{uEltypeNoUnits}(undef, 0, 0) # uEltype?
+  uToltype = real(uBottomEltypeNoUnits)
+  ηold = one(uToltype)
 
+  if κ != nothing
+    κ = uToltype(nlcache.κ)
+  else
+    κ = uToltype(1//100)
+  end
+  if tol != nothing
+    tol = uToltype(nlcache.tol)
+  else
+    tol = uToltype(min(0.03,first(reltol)^(0.5)))
+  end
+end
+
+mutable struct ImplicitEulerCache{uType,rateType,uNoUnitsType,J,UF,JC,F,N} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  uprev2::uType
+  du1::rateType
+  fsalfirst::rateType
+  k::rateType
+  z::uType
+  dz::uType
+  b::uType
+  tmp::uType
+  atmp::uNoUnitsType
+  J::J
+  W::J
+  uf::UF
+  jac_config::JC
+  linsolve::F
+  nlsolve::N
+end
+
+u_cache(c::ImplicitEulerCache)    = (c.uprev2,c.z,c.dz)
+du_cache(c::ImplicitEulerCache)   = (c.k,c.fsalfirst)
+
+function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  @iipnlcachefields
+  atmp = similar(u,uEltypeNoUnits,axes(u))
+  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1,1,ηold,z₊,dz,tmp,b,k))
   ImplicitEulerCache(u,uprev,uprev2,du1,fsalfirst,k,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolve)
 end
 
@@ -73,30 +100,8 @@ end
 
 function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  nlcache = alg.nonlinsolve.cache
-  @unpack κ,tol,max_iter,min_iter,new_W = nlcache
-  z = uprev
-  if typeof(alg.nonlinsolve) <: NLNewton
-    uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  elseif typeof(alg.nonlinsolve) <: NLFunctional
-    uf = nothing
-  end
-  uToltype = real(uBottomEltypeNoUnits)
-  ηold = one(uToltype)
-
-  if κ != nothing
-    κ = uToltype(nlcache.κ)
-  else
-    κ = uToltype(1//100)
-  end
-  if tol != nothing
-    tol = uToltype(nlcache.tol)
-  else
-    tol = uToltype(min(0.03,first(reltol)^(0.5)))
-  end
-  W = typeof(u) <: Number ? u : Matrix{uEltypeNoUnits}(undef, 0, 0) # uEltype?
+  @oopnlcachefields
   nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,100000,new_W,z,W,1,1,ηold,z,z,z,z,rate_prototype))
-
   ImplicitEulerConstantCache(uf,oop_nlsolver(nlsolve))
 end
 
@@ -106,29 +111,7 @@ mutable struct ImplicitMidpointConstantCache{F,N} <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  nlcache = alg.nonlinsolve.cache
-  @unpack κ,tol,max_iter,min_iter,new_W = nlcache
-  z = uprev
-  if typeof(alg.nonlinsolve) <: NLNewton
-    uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  else
-    uf = nothing
-  end
-  W = typeof(u) <: Number ? u : Matrix{uEltypeNoUnits}(undef, 0, 0) # uEltype?
-  uToltype = real(uBottomEltypeNoUnits)
-  ηold = one(uToltype)
-
-  if κ != nothing
-    κ = uToltype(nlcache.κ)
-  else
-    κ = uToltype(1//100)
-  end
-  if tol != nothing
-    tol = uToltype(nlcache.tol)
-  else
-    tol = uToltype(min(0.03,first(reltol)^(0.5)))
-  end
-
+  @oopnlcachefields
   nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,100000,new_W,z,W,1//2,1//2,ηold,z,z,z,z,rate_prototype))
   ImplicitMidpointConstantCache(uf,oop_nlsolver(nlsolve))
 end
@@ -156,45 +139,7 @@ du_cache(c::ImplicitMidpointCache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  nlcache = alg.nonlinsolve.cache
-  @unpack κ,tol,max_iter,min_iter,new_W = nlcache
-  z = similar(u,axes(u))
-  dz = similar(u,axes(u)); tmp = similar(u,axes(u)); b = similar(u,axes(u))
-  fsalfirst = zero(rate_prototype)
-  k = zero(rate_prototype)
-  uToltype = real(uBottomEltypeNoUnits)
-  ηold = one(uToltype)
-
-  if typeof(alg.nonlinsolve) <: NLNewton
-    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-    W = similar(J)
-    du1 = zero(rate_prototype)
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
-    jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
-    linsolve = alg.linsolve(Val{:init},uf,u)
-    z₊ = z
-  elseif typeof(alg.nonlinsolve) <: NLFunctional
-    J = nothing
-    W = nothing
-    du1 = rate_prototype
-    uf = nothing
-    jac_config = nothing
-    linsolve = nothing
-    z₊ = similar(z)
-  end
-
-  uToltype = real(uBottomEltypeNoUnits)
-  if κ != nothing
-    κ = uToltype(nlcache.κ)
-  else
-    κ = uToltype(1//100)
-  end
-  if tol != nothing
-    tol = uToltype(nlcache.tol)
-  else
-    tol = uToltype(min(0.03,first(reltol)^(0.5)))
-  end
-
+  @iipnlcachefields
   nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//2,1//2,ηold,z₊,dz,tmp,b,k))
   ImplicitMidpointCache(u,uprev,du1,fsalfirst,k,z,dz,b,tmp,J,W,uf,jac_config,linsolve,nlsolve)
 end
