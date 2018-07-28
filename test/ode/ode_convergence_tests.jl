@@ -75,8 +75,8 @@ for i = 1:2
   sim13 = test_convergence(dts,prob,ImplicitMidpoint())
   @test abs(sim13.𝒪est[:final]-2) < testTol
 
-  sim132 = test_convergence(dts,prob,ImplicitMidpoint(nonlinsolve = Val{:functional}))
-  @test abs(sim132.𝒪est[:final]-2) < testTol+0.1
+  sim132 = test_convergence(dts,prob,ImplicitMidpoint(nonlinsolve = NLFunctional()))
+  @test abs(sim132.𝒪est[:final]-2) < testTol
 
   sim13 = test_convergence(dts,prob,Trapezoid())
   @test abs(sim13.𝒪est[:final]-2) < testTol

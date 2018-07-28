@@ -93,7 +93,7 @@ end
   if alg.extrapolant == :linear
     @. z = dt*integrator.fsalfirst
   else # :constant
-    z .= zero(u)
+    z .= zero(eltype(u))
   end
 
   nlcache.tmp = uprev
@@ -129,27 +129,25 @@ end
 
 @muladd function perform_step!(integrator, cache::ImplicitMidpointConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack uf,κ,tol = cache
+  nlcache = cache.nlsolve.cache
+  nlsolve! = cache.nlsolve
   alg = unwrap_alg(integrator, true)
-
-  γ = 1//2
-  W = calc_W!(integrator, cache, γ*dt, repeat_step)
+  typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, γ*dt, repeat_step) )
 
   # initial guess
   if alg.extrapolant == :linear
-    z = dt*integrator.fsalfirst
+    nlcache.z = dt*integrator.fsalfirst
   else # :constant
-    z = zero(u)
+    nlcache.z = zero(u)
   end
 
-  tmp = uprev
-  nlcache = nlsolve_cache(alg, cache, z, tmp, W, γ, 1//2, true)
-  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
+  nlcache.tmp = uprev
+  z,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
-  u = tmp + z
+  u = nlcache.tmp + z
 
-  cache.ηold = η
-  cache.newton_iters = iter
+  nlcache.ηold = η
+  nlcache.nl_iters = iter
 
   integrator.fsallast = f(u, p, t+dt)
   integrator.k[1] = integrator.fsalfirst
@@ -159,26 +157,26 @@ end
 
 @muladd function perform_step!(integrator, cache::ImplicitMidpointCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack uf,du1,dz,z,k,b,J,W,jac_config,tmp,κ,tol = cache
-  alg = unwrap_alg(integrator, true)
+  @unpack z,tmp,nlsolve = cache
+  nlsolve!, nlcache = nlsolve, nlsolve.cache
   mass_matrix = integrator.f.mass_matrix
-  γ = 1//2
-  new_W = calc_W!(integrator, cache, γ*dt, repeat_step)
+  alg = unwrap_alg(integrator, true)
+  typeof(nlsolve)<:NLNewton && calc_W!(integrator, cache, dt, repeat_step)
 
   # initial guess
   if alg.extrapolant == :linear
     @. z = dt*integrator.fsalfirst
   else # :constant
-    z .= zero(u)
+    z .= zero(eltype(u))
   end
 
-  nlcache = nlsolve_cache(alg, cache, z, uprev, γ, 1//2, new_W)
-  z,η,iter,fail_convergence = diffeq_nlsolve!(integrator, nlcache, cache, alg.nonlinsolve)
+  nlcache.tmp = uprev
+  z,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
-  @. u = uprev + z
+  @. u = nlcache.tmp + z
 
-  cache.ηold = η
-  cache.newton_iters = iter
+  nlcache.ηold = η
+  nlcache.nl_iters = iter
 
   f(integrator.fsallast,u,p,t+dt)
 end
