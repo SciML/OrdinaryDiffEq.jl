@@ -117,7 +117,7 @@ end
     fun2 = ODEFunction(_f; mass_matrix=mm, jac=(u,p,t) -> t*A)
     fun1_ip = ODEFunction(_f_ip; mass_matrix=mm)
     fun2_ip = ODEFunction(_f_ip; mass_matrix=mm,
-      jac_prototype=DiffEqArrayOperator(similar(A); update_func=(J,u,p,t) -> (J .= t .* A; J)))
+    jac_prototype=DiffEqArrayOperator(similar(A); update_func=(J,u,p,t) -> (J .= t .* A; J)))
 
     for Alg in [ImplicitEuler, CNAB2, ABDF2, IMEXEuler, KenCarp3, Rosenbrock23]
       sol1 = solve(ODEProblem(fun1,u0,tspan), ImplicitEuler(); adaptive=false, dt=0.01)
