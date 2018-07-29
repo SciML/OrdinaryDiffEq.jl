@@ -83,7 +83,7 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,uBottomElty
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
   else
@@ -120,7 +120,7 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,uBottomElty
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
   else
@@ -230,7 +230,7 @@ function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
   else
@@ -299,7 +299,7 @@ function alg_cache(alg::Rodas3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
   else
@@ -384,7 +384,7 @@ function alg_cache(alg::RosShamp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
   else
@@ -423,7 +423,7 @@ function alg_cache(alg::Veldd4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
   else
@@ -462,7 +462,7 @@ function alg_cache(alg::Velds4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
   else
@@ -501,7 +501,7 @@ function alg_cache(alg::GRK4T,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
   else
@@ -540,7 +540,7 @@ function alg_cache(alg::GRK4A,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
   else
@@ -579,7 +579,7 @@ function alg_cache(alg::Ros4LStab,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
   else
@@ -667,7 +667,7 @@ function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
   else
@@ -711,7 +711,7 @@ function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
   else
@@ -755,7 +755,7 @@ function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
   else
@@ -848,7 +848,7 @@ function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = similar(u,axes(u))
-  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
   else
