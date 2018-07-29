@@ -4,4 +4,3 @@ ParameterizedFunctions 3.0.0
 StaticArrays
 DiffEqCallbacks
 DiffEqOperators
-Compat
