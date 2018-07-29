@@ -474,7 +474,7 @@ function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
 
   ηold = one(uToltype)
 
-  SDIRK2Cache{typeof(u),typeof(rate_prototype),typeof(atmp),typeof(J),typeof(uf),
+  SDIRK2Cache{typeof(u),typeof(rate_prototype),typeof(atmp),typeof(J),typeof(W),typeof(uf),
               typeof(jac_config),uToltype,typeof(linsolve)}(
               u,uprev,du1,fsalfirst,k,z₁,z₂,dz,b,tmp,atmp,J,
               W,uf,jac_config,linsolve,ηold,κ,tol,10000)
