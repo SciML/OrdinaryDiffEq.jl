@@ -4,6 +4,7 @@ using Test
 using StaticArrays
 using OrdinaryDiffEq, DiffEqBase
 
+@testset "Complex Tests" begin
 H(t) = -im*(@SMatrix [t 1;1 -t])
 
 fun(ψ,p,t) = H(t)*ψ
@@ -64,4 +65,5 @@ end
       @test abs(norm(sol(T)) - 1.0) < 1e-2
     end
   end
+end
 end
