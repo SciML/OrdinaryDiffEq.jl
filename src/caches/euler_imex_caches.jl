@@ -55,7 +55,7 @@ function alg_cache(alg::IMEXEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
 end
 
 function alg_cache(alg::IMEXEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  if DiffEqBase.has_jac(f)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f)
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
   else

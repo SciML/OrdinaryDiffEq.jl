@@ -28,7 +28,7 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomElt
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
   du1 = zero(rate_prototype)
-  if DiffEqBase.has_jac(f)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f)
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
   else
@@ -143,7 +143,7 @@ function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,uBottom
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
   du1 = zero(rate_prototype)
-  if DiffEqBase.has_jac(f)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f)
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
   else
@@ -241,7 +241,7 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
   du1 = zero(rate_prototype)
-  if DiffEqBase.has_jac(f)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f)
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
   else
@@ -342,7 +342,7 @@ function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
   du1 = zero(rate_prototype)
-  if DiffEqBase.has_jac(f)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f)
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
   else
@@ -441,7 +441,7 @@ function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
   du1 = zero(rate_prototype)
-  if DiffEqBase.has_jac(f)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f)
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
   else
@@ -539,7 +539,7 @@ function alg_cache(alg::SSPSDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
   du1 = zero(rate_prototype)
-  if DiffEqBase.has_jac(f)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f)
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
   else
@@ -642,7 +642,7 @@ function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
   du1 = zero(rate_prototype)
-  if DiffEqBase.has_jac(f)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f)
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
   else
@@ -748,7 +748,7 @@ function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
   du1 = zero(rate_prototype)
-  if DiffEqBase.has_jac(f)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f)
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
   else
@@ -859,7 +859,7 @@ function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
   du1 = zero(rate_prototype)
-  if DiffEqBase.has_jac(f)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f)
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
   else
