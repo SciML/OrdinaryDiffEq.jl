@@ -26,7 +26,7 @@ using OrdinaryDiffEq, Test
     nothing
   end
 
-  Lotka_f = ODEFunction(Lotka,jac=Lotka_jac,tgrad=Lotka_tgrad)
+  Lotka_f = ODEFunction(Lotka,jac=Lotka_jac,jac_prototype=zeros(2,2),tgrad=Lotka_tgrad)
   prob = ODEProblem(Lotka_f,ones(2),(0.0,10.0))
 
   good_sol = solve(prob,Rosenbrock23())
@@ -56,7 +56,7 @@ using OrdinaryDiffEq, Test
     nothing
   end
 
-  Lotka_f2 = ODEFunction(Lotka,jac=Lotka_jac,tgrad=Lotka_tgrad,invW = Lotka_invW)
+  Lotka_f2 = ODEFunction(Lotka,jac=Lotka_jac,jac_prototype=zeros(2,2),tgrad=Lotka_tgrad,invW = Lotka_invW)
   prob3 = ODEProblem(Lotka_f2,ones(2),(0.0,10.0))
   inv_sol = solve(prob3,Rosenbrock23())
 
