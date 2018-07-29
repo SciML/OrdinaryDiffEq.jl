@@ -221,7 +221,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
                                     f.invW(W, uprev, p, dtgamma, t) # W == inverse W
       is_compos && calc_J!(integrator, cache, true)
 
-    else
+    elseif DiffEqBase.has_jac(f)
       # skip calculation of J if step is repeated
       if repeat_step || (alg_can_repeat_jac(alg) &&
                          (!integrator.last_stepfail && cache.newton_iters == 1 &&
@@ -237,6 +237,32 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
                            abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t))))
         W.transform = W_transform
         set_gamma!(W, dtgamma)
+      else
+        new_W = false
+      end
+    else # concrete W using jacobian from `calc_J!`
+      # skip calculation of J if step is repeated
+      if repeat_step || (alg_can_repeat_jac(alg) &&
+                         (!integrator.last_stepfail && cache.newton_iters == 1 &&
+                          cache.ηold < alg.new_jac_conv_bound))
+        new_jac = false
+      else
+        new_jac = true
+        calc_J!(integrator, cache, is_compos)
+      end
+      # skip calculation of W if step is repeated
+      if !repeat_step && (!alg_can_repeat_jac(alg) ||
+                          (integrator.iter < 1 || new_jac ||
+                           abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t))))
+        if W_transform
+          for j in 1:length(u), i in 1:length(u)
+              W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
+          end
+        else
+          for j in 1:length(u), i in 1:length(u)
+              W[i,j] = mass_matrix[i,j] - dtgamma*J[i,j]
+          end
+        end
       else
         new_W = false
       end
