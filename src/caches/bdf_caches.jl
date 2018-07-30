@@ -34,7 +34,7 @@ function alg_cache(alg::ABDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   ABDF2ConstantCache(uf, ηold, κ, tol, 10000, eulercache, dtₙ₋₁, fsalfirstprev)
 end
 
-mutable struct ABDF2Cache{uType,rateType,uNoUnitsType,J,UF,JC,uToltype,F,dtType} <: OrdinaryDiffEqMutableCache
+mutable struct ABDF2Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,uToltype,F,dtType} <: OrdinaryDiffEqMutableCache
   uₙ::uType
   uₙ₋₁::uType
   uₙ₋₂::uType
@@ -49,7 +49,7 @@ mutable struct ABDF2Cache{uType,rateType,uNoUnitsType,J,UF,JC,uToltype,F,dtType}
   tmp::uType
   atmp::uNoUnitsType
   J::J
-  W::J
+  W::W
   uf::UF
   jac_config::JC
   linsolve::F
@@ -67,8 +67,13 @@ du_cache(c::ABDF2Cache)   = (c.k,c.fsalfirst)
 function alg_cache(alg::ABDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   du1 = zero(rate_prototype)
-  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-  W = similar(J)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
+    W = WOperator(f, dt)
+    J = nothing # is J = W.J better?
+  else
+    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    W = similar(J)
+  end
   zprev = similar(u,axes(u))
   zₙ₋₁ = similar(u,axes(u)); z = similar(u,axes(u))
   dz = similar(u,axes(u))
@@ -119,7 +124,7 @@ mutable struct QNDF1ConstantCache{F,uToltype,coefType,coefType1,dtType,uType} <:
   dtₙ₋₁::dtType
 end
 
-mutable struct QNDF1Cache{uType,rateType,coefType,coefType1,coefType2,uNoUnitsType,J,UF,JC,uToltype,F,dtType} <: OrdinaryDiffEqMutableCache
+mutable struct QNDF1Cache{uType,rateType,coefType,coefType1,coefType2,uNoUnitsType,J,W,UF,JC,uToltype,F,dtType} <: OrdinaryDiffEqMutableCache
   uprev2::uType
   du1::rateType
   fsalfirst::rateType
@@ -135,7 +140,7 @@ mutable struct QNDF1Cache{uType,rateType,coefType,coefType1,coefType2,uNoUnitsTy
   atmp::uNoUnitsType
   utilde::uType
   J::J
-  W::J
+  W::W
   uf::UF
   jac_config::JC
   linsolve::F
@@ -179,8 +184,13 @@ end
 
 function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   du1 = zero(rate_prototype)
-  J = fill(zero(uEltypeNoUnits),length(u),length(u))
-  W = similar(J)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
+    W = WOperator(f, dt)
+    J = nothing # is J = W.J better?
+  else
+    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    W = similar(J)
+  end
   z = similar(u,axes(u))
   dz = similar(u,axes(u))
   fsalfirst = zero(rate_prototype)
@@ -243,7 +253,7 @@ mutable struct QNDF2ConstantCache{F,uToltype,coefType,coefType1,uType,dtType} <:
   dtₙ₋₂::dtType
 end
 
-mutable struct QNDF2Cache{uType,rateType,coefType,coefType1,coefType2,uNoUnitsType,J,UF,JC,uToltype,F,dtType} <: OrdinaryDiffEqMutableCache
+mutable struct QNDF2Cache{uType,rateType,coefType,coefType1,coefType2,uNoUnitsType,J,W,UF,JC,uToltype,F,dtType} <: OrdinaryDiffEqMutableCache
   uprev2::uType
   uprev3::uType
   du1::rateType
@@ -260,7 +270,7 @@ mutable struct QNDF2Cache{uType,rateType,coefType,coefType1,coefType2,uNoUnitsTy
   atmp::uNoUnitsType
   utilde::uType
   J::J
-  W::J
+  W::W
   uf::UF
   jac_config::JC
   linsolve::F
@@ -307,8 +317,13 @@ end
 
 function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   du1 = zero(rate_prototype)
-  J = fill(zero(uEltypeNoUnits),length(u),length(u))
-  W = similar(J)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
+    W = WOperator(f, dt)
+    J = nothing # is J = W.J better?
+  else
+    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    W = similar(J)
+  end
   z = similar(u,axes(u))
   dz = similar(u,axes(u))
   fsalfirst = zero(rate_prototype)
@@ -374,7 +389,7 @@ mutable struct QNDFConstantCache{F,uToltype,coefType1,coefType2,coefType3,uType,
   c::Int64
 end
 
-mutable struct QNDFCache{uType,rateType,coefType1,coefType,coefType2,coefType3,dtType,dtsType,uNoUnitsType,J,UF,JC,uToltype,F} <: OrdinaryDiffEqMutableCache
+mutable struct QNDFCache{uType,rateType,coefType1,coefType,coefType2,coefType3,dtType,dtsType,uNoUnitsType,J,W,UF,JC,uToltype,F} <: OrdinaryDiffEqMutableCache
   du1::rateType
   fsalfirst::rateType
   k::rateType
@@ -393,7 +408,7 @@ mutable struct QNDFCache{uType,rateType,coefType1,coefType,coefType2,coefType3,d
   atmp::uNoUnitsType
   utilde::uType
   J::J
-  W::J
+  W::W
   uf::UF
   jac_config::JC
   linsolve::F
@@ -440,8 +455,13 @@ end
 
 function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   du1 = zero(rate_prototype)
-  J = fill(zero(uEltypeNoUnits),length(u),length(u))
-  W = similar(J)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
+    W = WOperator(f, dt)
+    J = nothing # is J = W.J better?
+  else
+    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    W = similar(J)
+  end
   z = similar(u,axes(u))
   dz = similar(u,axes(u))
   fsalfirst = zero(rate_prototype)

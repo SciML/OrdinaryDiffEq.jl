@@ -9,8 +9,13 @@ DiffEqBase.@def iipnlcachefields begin
   ηold = one(uToltype)
 
   if typeof(alg.nonlinsolve) <: NLNewton
-    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-    W = similar(J)
+    if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
+      W = WOperator(f, dt)
+      J = nothing # is J = W.J better?
+    else
+      J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+      W = similar(J)
+    end
     du1 = zero(rate_prototype)
     uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
@@ -62,7 +67,7 @@ DiffEqBase.@def oopnlcachefields begin
   end
 end
 
-mutable struct ImplicitEulerCache{uType,rateType,uNoUnitsType,J,UF,JC,F,N} <: OrdinaryDiffEqMutableCache
+mutable struct ImplicitEulerCache{uType,rateType,uNoUnitsType,J,W,UF,JC,F,N} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -75,7 +80,7 @@ mutable struct ImplicitEulerCache{uType,rateType,uNoUnitsType,J,UF,JC,F,N} <: Or
   tmp::uType
   atmp::uNoUnitsType
   J::J
-  W::J
+  W::W
   uf::UF
   jac_config::JC
   linsolve::F
@@ -116,7 +121,7 @@ function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,uBottom
   ImplicitMidpointConstantCache(uf,oop_nlsolver(nlsolve))
 end
 
-mutable struct ImplicitMidpointCache{uType,rateType,J,UF,JC,F,N} <: OrdinaryDiffEqMutableCache
+mutable struct ImplicitMidpointCache{uType,rateType,J,W,UF,JC,F,N} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   du1::rateType
@@ -127,7 +132,7 @@ mutable struct ImplicitMidpointCache{uType,rateType,J,UF,JC,F,N} <: OrdinaryDiff
   b::uType
   tmp::uType
   J::J
-  W::J
+  W::W
   uf::UF
   jac_config::JC
   linsolve::F
@@ -173,7 +178,7 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   TrapezoidConstantCache(uf,ηold,κ,tol,10000,uprev3,tprev2)
 end
 
-mutable struct TrapezoidCache{uType,rateType,uNoUnitsType,J,UF,JC,tType,F,N} <: OrdinaryDiffEqMutableCache
+mutable struct TrapezoidCache{uType,rateType,uNoUnitsType,J,W,UF,JC,tType,F,N} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -186,7 +191,7 @@ mutable struct TrapezoidCache{uType,rateType,uNoUnitsType,J,UF,JC,tType,F,N} <: 
   tmp::uType
   atmp::uNoUnitsType
   J::J
-  W::J
+  W::W
   uf::UF
   jac_config::JC
   linsolve::F
@@ -202,8 +207,13 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
   du1 = zero(rate_prototype)
-  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-  W = similar(J)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
+    W = WOperator(f, dt)
+    J = nothing # is J = W.J better?
+  else
+    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    W = similar(J)
+  end
   z = similar(u,axes(u))
   dz = similar(u,axes(u))
   tmp = similar(u); b = similar(u,axes(u));
@@ -263,7 +273,7 @@ function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   TRBDF2ConstantCache(uf,ηold,κ,tol,10000,tab)
 end
 
-mutable struct TRBDF2Cache{uType,rateType,uNoUnitsType,J,UF,JC,Tab,F,N} <: OrdinaryDiffEqMutableCache
+mutable struct TRBDF2Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,Tab,F,N} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   du1::rateType
@@ -277,7 +287,7 @@ mutable struct TRBDF2Cache{uType,rateType,uNoUnitsType,J,UF,JC,Tab,F,N} <: Ordin
   tmp::uType
   atmp::uNoUnitsType
   J::J
-  W::J
+  W::W
   uf::UF
   jac_config::JC
   linsolve::F
@@ -292,8 +302,13 @@ function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
   du1 = zero(rate_prototype)
-  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-  W = similar(J)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
+    W = WOperator(f, dt)
+    J = nothing # is J = W.J better?
+  else
+    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    W = similar(J)
+  end
   zprev = similar(u,axes(u));
   zᵧ = similar(u,axes(u)); z = similar(u,axes(u))
   dz = similar(u,axes(u))
@@ -322,7 +337,7 @@ function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
 
   ηold = one(uToltype)
 
-  TRBDF2Cache{typeof(u),typeof(rate_prototype),typeof(atmp),typeof(J),typeof(uf),
+  TRBDF2Cache{typeof(u),typeof(rate_prototype),typeof(atmp),typeof(J),typeof(W),typeof(uf),
               typeof(jac_config),uToltype,typeof(tab),typeof(linsolve)}(
               u,uprev,du1,fsalfirst,k,zprev,zᵧ,z,dz,b,tmp,atmp,J,
               W,uf,jac_config,linsolve,ηold,κ,tol,10000,tab)
@@ -353,7 +368,7 @@ function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   SDIRK2ConstantCache(uf,ηold,κ,tol,10000)
 end
 
-mutable struct SDIRK2Cache{uType,rateType,uNoUnitsType,J,UF,JC,F,N} <: OrdinaryDiffEqMutableCache
+mutable struct SDIRK2Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,F,N} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   du1::rateType
@@ -366,7 +381,7 @@ mutable struct SDIRK2Cache{uType,rateType,uNoUnitsType,J,UF,JC,F,N} <: OrdinaryD
   tmp::uType
   atmp::uNoUnitsType
   J::J
-  W::J
+  W::W
   uf::UF
   jac_config::JC
   linsolve::F
@@ -380,8 +395,13 @@ function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
   du1 = zero(rate_prototype)
-  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-  W = similar(J)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
+    W = WOperator(f, dt)
+    J = nothing # is J = W.J better?
+  else
+    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    W = similar(J)
+  end
   z₁ = similar(u,axes(u));
   z₂ = similar(u,axes(u))
   dz = similar(u,axes(u))
@@ -408,7 +428,7 @@ function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
 
   ηold = one(uToltype)
 
-  SDIRK2Cache{typeof(u),typeof(rate_prototype),typeof(atmp),typeof(J),typeof(uf),
+  SDIRK2Cache{typeof(u),typeof(rate_prototype),typeof(atmp),typeof(J),typeof(W),typeof(uf),
               typeof(jac_config),uToltype,typeof(linsolve)}(
               u,uprev,du1,fsalfirst,k,z₁,z₂,dz,b,tmp,atmp,J,
               W,uf,jac_config,linsolve,ηold,κ,tol,10000)
@@ -441,7 +461,7 @@ function alg_cache(alg::SSPSDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   SSPSDIRK2ConstantCache(uf,ηold,κ,tol,10000)
 end
 
-mutable struct SSPSDIRK2Cache{uType,rateType,J,UF,JC,F,N} <: OrdinaryDiffEqMutableCache
+mutable struct SSPSDIRK2Cache{uType,rateType,J,W,UF,JC,F,N} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   du1::rateType
@@ -453,7 +473,7 @@ mutable struct SSPSDIRK2Cache{uType,rateType,J,UF,JC,F,N} <: OrdinaryDiffEqMutab
   b::uType
   tmp::uType
   J::J
-  W::J
+  W::W
   uf::UF
   jac_config::JC
   linsolve::F
@@ -467,8 +487,13 @@ function alg_cache(alg::SSPSDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
   du1 = zero(rate_prototype)
-  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-  W = similar(J)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
+    W = WOperator(f, dt)
+    J = nothing # is J = W.J better?
+  else
+    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    W = similar(J)
+  end
   z₁ = similar(u,axes(u));
   z₂ = similar(u,axes(u))
   dz = similar(u,axes(u))
@@ -495,7 +520,7 @@ function alg_cache(alg::SSPSDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
 
   ηold = one(uToltype)
 
-  SSPSDIRK2Cache{typeof(u),typeof(rate_prototype),typeof(J),typeof(uf),
+  SSPSDIRK2Cache{typeof(u),typeof(rate_prototype),typeof(J),typeof(W),typeof(uf),
               typeof(jac_config),uToltype,typeof(linsolve)}(
               u,uprev,du1,fsalfirst,k,z₁,z₂,dz,b,tmp,J,
               W,uf,jac_config,linsolve,ηold,κ,tol,10000)
@@ -529,7 +554,7 @@ function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   Kvaerno3ConstantCache(uf,ηold,κ,tol,10000,tab)
 end
 
-mutable struct Kvaerno3Cache{uType,rateType,uNoUnitsType,J,UF,JC,Tab,F,N} <: OrdinaryDiffEqMutableCache
+mutable struct Kvaerno3Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,Tab,F,N} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   du1::rateType
@@ -544,7 +569,7 @@ mutable struct Kvaerno3Cache{uType,rateType,uNoUnitsType,J,UF,JC,Tab,F,N} <: Ord
   tmp::uType
   atmp::uNoUnitsType
   J::J
-  W::J
+  W::W
   uf::UF
   jac_config::JC
   linsolve::F
@@ -559,8 +584,13 @@ function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
   du1 = zero(rate_prototype)
-  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-  W = similar(J)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
+    W = WOperator(f, dt)
+    J = nothing # is J = W.J better?
+  else
+    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    W = similar(J)
+  end
   z₁ = similar(u,axes(u)); z₂ = similar(u,axes(u));
   z₃ = similar(u,axes(u)); z₄ = similar(u,axes(u))
   dz = similar(u,axes(u))
@@ -589,7 +619,7 @@ function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
 
   ηold = one(uToltype)
 
-  Kvaerno3Cache{typeof(u),typeof(rate_prototype),typeof(atmp),typeof(J),typeof(uf),
+  Kvaerno3Cache{typeof(u),typeof(rate_prototype),typeof(atmp),typeof(J),typeof(W),typeof(uf),
               typeof(jac_config),uToltype,typeof(tab),typeof(linsolve)}(
               u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,dz,b,tmp,atmp,J,
               W,uf,jac_config,linsolve,ηold,κ,tol,10000,tab)
@@ -623,7 +653,7 @@ function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   Cash4ConstantCache(uf,ηold,κ,tol,10000,tab)
 end
 
-mutable struct Cash4Cache{uType,rateType,uNoUnitsType,J,UF,JC,N,Tab,F} <: OrdinaryDiffEqMutableCache
+mutable struct Cash4Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,Tab,F} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   du1::rateType
@@ -639,7 +669,7 @@ mutable struct Cash4Cache{uType,rateType,uNoUnitsType,J,UF,JC,N,Tab,F} <: Ordina
   tmp::uType
   atmp::uNoUnitsType
   J::J
-  W::J
+  W::W
   uf::UF
   jac_config::JC
   linsolve::F
@@ -654,8 +684,13 @@ function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
   du1 = zero(rate_prototype)
-  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-  W = similar(J)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
+    W = WOperator(f, dt)
+    J = nothing # is J = W.J better?
+  else
+    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    W = similar(J)
+  end
   z₁ = similar(u,axes(u)); z₂ = similar(u,axes(u));
   z₃ = similar(u,axes(u)); z₄ = similar(u,axes(u))
   z₅ = similar(u,axes(u))
@@ -685,7 +720,7 @@ function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
 
   ηold = one(uToltype)
 
-  Cash4Cache{typeof(u),typeof(rate_prototype),typeof(atmp),typeof(J),typeof(uf),
+  Cash4Cache{typeof(u),typeof(rate_prototype),typeof(atmp),typeof(J),typeof(W),typeof(uf),
               typeof(jac_config),uToltype,typeof(tab),typeof(linsolve)}(
               u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,dz,b,tmp,atmp,J,
               W,uf,jac_config,linsolve,ηold,κ,tol,10000,tab)
@@ -723,7 +758,7 @@ function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,
   Hairer4ConstantCache(uf,ηold,κ,tol,10000,tab)
 end
 
-mutable struct Hairer4Cache{uType,rateType,uNoUnitsType,J,UF,JC,Tab,F,N} <: OrdinaryDiffEqMutableCache
+mutable struct Hairer4Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,Tab,F,N} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   du1::rateType
@@ -739,7 +774,7 @@ mutable struct Hairer4Cache{uType,rateType,uNoUnitsType,J,UF,JC,Tab,F,N} <: Ordi
   tmp::uType
   atmp::uNoUnitsType
   J::J
-  W::J
+  W::W
   uf::UF
   jac_config::JC
   linsolve::F
@@ -754,8 +789,13 @@ function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
   du1 = zero(rate_prototype)
-  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-  W = similar(J)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
+    W = WOperator(f, dt)
+    J = nothing # is J = W.J better?
+  else
+    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    W = similar(J)
+  end
   z₁ = similar(u,axes(u)); z₂ = similar(u,axes(u));
   z₃ = similar(u,axes(u)); z₄ = similar(u,axes(u))
   z₅ = similar(u,axes(u))
@@ -789,7 +829,7 @@ function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,
 
   ηold = one(uToltype)
 
-  Hairer4Cache{typeof(u),typeof(rate_prototype),typeof(atmp),typeof(J),typeof(uf),
+  Hairer4Cache{typeof(u),typeof(rate_prototype),typeof(atmp),typeof(J),typeof(W),typeof(uf),
               typeof(jac_config),uToltype,typeof(tab),typeof(linsolve)}(
               u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,dz,b,tmp,atmp,J,
               W,uf,jac_config,linsolve,ηold,κ,tol,10000,tab)

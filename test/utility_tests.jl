@@ -1,5 +1,6 @@
 using OrdinaryDiffEq: phi, phi, phiv, phiv_timestep, expv, expv_timestep, arnoldi, getH, getV
-using LinearAlgebra, SparseArrays, Random, Test
+using OrdinaryDiffEq: WOperator, set_gamma!, calc_W!
+using OrdinaryDiffEq, LinearAlgebra, SparseArrays, Random, Test, DiffEqOperators
 
 @testset "Exponential Utilities" begin
   # Scalar phi
@@ -66,4 +67,66 @@ using LinearAlgebra, SparseArrays, Random, Test
   u_exact = Phi[1] * B[:, 1]
   u = expv_timestep(t, A, B[:, 1]; adaptive=true, tol=tol)
   @test norm(u - u_exact) / norm(u_exact) < tol
+end
+
+@testset "Derivative Utilities" begin
+  @testset "WOperator" begin
+    srand(0); y = zeros(2); b = rand(2)
+    mm = I; _J = rand(2,2)
+    W = WOperator(mm, 1.0, DiffEqArrayOperator(_J))
+    set_gamma!(W, 2.0)
+    _W = mm - 2.0 * _J
+    @test convert(AbstractMatrix,W) ≈ _W
+    @test W * b ≈ _W * b
+    mul!(y, W, b); @test y ≈ _W * b
+  end
+
+  @testset "calc_W!" begin
+    A = [-1.0 0.0; 0.0 -0.5]; mm = [2.0 0.0; 0.0 1.0]
+    u0 = [1.0, 1.0]; tmp = zeros(2)
+    tspan = (0.0,1.0); dt = 0.01; dtgamma = 0.5dt
+    concrete_W = mm - dtgamma * A
+    concrete_Wt = mm/dtgamma - A
+
+    # Out-of-place
+    fun = ODEFunction((u,p,t) -> A*u;
+                      mass_matrix=mm,
+                      jac=(u,p,t) -> A)
+    integrator = init(ODEProblem(fun,u0,tspan), ImplicitEuler(); adaptive=false, dt=dt)
+    W = calc_W!(integrator, integrator.cache, dtgamma, false)
+    @test convert(AbstractMatrix, W) ≈ concrete_W
+    @test W \ u0 ≈ concrete_W \ u0
+
+    # In-place
+    fun = ODEFunction((du,u,p,t) -> mul!(du,A,u);
+                      mass_matrix=mm,
+                      jac_prototype=DiffEqArrayOperator(A))
+    integrator = init(ODEProblem(fun,u0,tspan), ImplicitEuler(); adaptive=false, dt=dt)
+    calc_W!(integrator, integrator.cache, dtgamma, false)
+    @test convert(AbstractMatrix, integrator.cache.W) ≈ concrete_W
+    ldiv!(tmp, lu!(W), u0); @test tmp ≈ concrete_W \ u0
+  end
+
+  @testset "Implicit solver with lazy W" begin
+    A = sparse([-1.0 0.0; 0.0 -0.5])
+    mm = sparse([2.0 0.0; 0.0 1.0])
+    u0 = [1.0, 1.0]; tspan = (0.0,1.0)
+
+    _f = (u,p,t) -> t*(A*u); _f_ip = (du,u,p,t) -> lmul!(t,mul!(du,A,u))
+    fun1 = ODEFunction(_f; mass_matrix=mm)
+    fun2 = ODEFunction(_f; mass_matrix=mm, jac=(u,p,t) -> t*A)
+    fun1_ip = ODEFunction(_f_ip; mass_matrix=mm)
+    fun2_ip = ODEFunction(_f_ip; mass_matrix=mm,
+    jac_prototype=DiffEqArrayOperator(similar(A); update_func=(J,u,p,t) -> (J .= t .* A; J)))
+
+    for Alg in [ImplicitEuler, CNAB2, ABDF2, IMEXEuler, KenCarp3, Rosenbrock23]
+      sol1 = solve(ODEProblem(fun1,u0,tspan), ImplicitEuler(); adaptive=false, dt=0.01)
+      sol2 = solve(ODEProblem(fun2,u0,tspan), ImplicitEuler(); adaptive=false, dt=0.01)
+      @test sol1(1.0) ≈ sol2(1.0)
+      
+      sol1_ip = solve(ODEProblem(fun1_ip,u0,tspan), ImplicitEuler(); adaptive=false, dt=0.01)
+      sol2_ip = solve(ODEProblem(fun2_ip,u0,tspan), ImplicitEuler(linsolve=LinSolveFactorize(lu)); adaptive=false, dt=0.01)
+      @test sol1_ip(1.0) ≈ sol2_ip(1.0)
+    end
+  end
 end

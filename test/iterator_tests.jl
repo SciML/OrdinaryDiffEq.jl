@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Test, Compat, RecursiveArrayTools
+using OrdinaryDiffEq, Test, RecursiveArrayTools
 using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
 import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
 
@@ -46,9 +46,9 @@ integrator([1.0;2.0])
 
 
 integrator = init(prob,RK4();dt=1//2^(9), adaptive=false)
-for i in Compat.Iterators.take(integrator,12) end
+for i in Base.Iterators.take(integrator,12) end
 @test integrator.iter == 12
-for i in Compat.Iterators.take(integrator,12) end
+for i in Base.Iterators.take(integrator,12) end
 @test integrator.iter == 24
 
 integrator = init(prob_ode_2Dlinear,Tsit5();dt=1//2^(4),tstops=[0.5],advance_to_tstop=true,stop_at_next_tstop=true)

@@ -933,7 +933,7 @@ mutable struct CNAB2ConstantCache{rateType,F,uToltype,uType,tType} <: OrdinaryDi
   tprev2::tType
 end
 
-mutable struct CNAB2Cache{uType,rateType,uNoUnitsType,J,UF,JC,uToltype,tType,F} <: OrdinaryDiffEqMutableCache
+mutable struct CNAB2Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,uToltype,tType,F} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -949,7 +949,7 @@ mutable struct CNAB2Cache{uType,rateType,uNoUnitsType,J,UF,JC,uToltype,tType,F} 
   tmp::uType
   atmp::uNoUnitsType
   J::J
-  W::J
+  W::W
   uf::UF
   jac_config::JC
   linsolve::F
@@ -987,8 +987,13 @@ function alg_cache(alg::CNAB2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
 end
 
 function alg_cache(alg::CNAB2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-  W = similar(J)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
+    W = WOperator(f, dt)
+    J = nothing # is J = W.J better?
+  else
+    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    W = similar(J)
+  end
   z = similar(u,axes(u))
   dz = similar(u,axes(u))
   tmp = similar(u); b = similar(u,axes(u));
@@ -1043,7 +1048,7 @@ mutable struct CNLF2ConstantCache{rateType,F,uToltype,uType,tType} <: OrdinaryDi
   tprev2::tType
 end
 
-mutable struct CNLF2Cache{uType,rateType,uNoUnitsType,J,UF,JC,uToltype,tType,F} <: OrdinaryDiffEqMutableCache
+mutable struct CNLF2Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,uToltype,tType,F} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -1059,7 +1064,7 @@ mutable struct CNLF2Cache{uType,rateType,uNoUnitsType,J,UF,JC,uToltype,tType,F} 
   tmp::uType
   atmp::uNoUnitsType
   J::J
-  W::J
+  W::W
   uf::UF
   jac_config::JC
   linsolve::F
@@ -1098,8 +1103,13 @@ function alg_cache(alg::CNLF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
 end
 
 function alg_cache(alg::CNLF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-  W = similar(J)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
+    W = WOperator(f, dt)
+    J = nothing # is J = W.J better?
+  else
+    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    W = similar(J)
+  end
   z = similar(u,axes(u))
   dz = similar(u,axes(u))
   tmp = similar(u); b = similar(u,axes(u));
