@@ -104,7 +104,7 @@ end
     integrator = init(ODEProblem(fun,u0,tspan), ImplicitEuler(); adaptive=false, dt=dt)
     calc_W!(integrator, integrator.cache, dtgamma, false)
     @test convert(AbstractMatrix, integrator.cache.W) ≈ concrete_W
-    ldiv!(tmp, lu!(W), u0); @test tmp ≈ concrete_W \ u0
+    ldiv!(tmp, lu!(integrator.cache.W), u0); @test tmp ≈ concrete_W \ u0
   end
 
   @testset "Implicit solver with lazy W" begin
@@ -119,13 +119,14 @@ end
     fun2_ip = ODEFunction(_f_ip; mass_matrix=mm,
     jac_prototype=DiffEqArrayOperator(similar(A); update_func=(J,u,p,t) -> (J .= t .* A; J)))
 
-    for Alg in [ImplicitEuler, CNAB2, ABDF2, IMEXEuler, KenCarp3, Rosenbrock23]
-      sol1 = solve(ODEProblem(fun1,u0,tspan), ImplicitEuler(); adaptive=false, dt=0.01)
-      sol2 = solve(ODEProblem(fun2,u0,tspan), ImplicitEuler(); adaptive=false, dt=0.01)
+    for Alg in [ImplicitEuler, Rosenbrock23]
+      println(Alg)
+      sol1 = solve(ODEProblem(fun1,u0,tspan), Alg(); adaptive=false, dt=0.01)
+      sol2 = solve(ODEProblem(fun2,u0,tspan), Alg(); adaptive=false, dt=0.01)
       @test sol1(1.0) ≈ sol2(1.0)
       
-      sol1_ip = solve(ODEProblem(fun1_ip,u0,tspan), ImplicitEuler(); adaptive=false, dt=0.01)
-      sol2_ip = solve(ODEProblem(fun2_ip,u0,tspan), ImplicitEuler(linsolve=LinSolveFactorize(lu)); adaptive=false, dt=0.01)
+      sol1_ip = solve(ODEProblem(fun1_ip,u0,tspan), Alg(); adaptive=false, dt=0.01)
+      sol2_ip = solve(ODEProblem(fun2_ip,u0,tspan), Alg(linsolve=LinSolveFactorize(lu)); adaptive=false, dt=0.01)
       @test sol1_ip(1.0) ≈ sol2_ip(1.0)
     end
   end
