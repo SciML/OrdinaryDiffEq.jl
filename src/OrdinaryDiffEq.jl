@@ -108,7 +108,7 @@ module OrdinaryDiffEq
   include("perform_step/adams_bashforth_moulton_perform_step.jl")
   include("perform_step/nordsieck_perform_step.jl")
   include("perform_step/bdf_perform_step.jl")
-  include("perform_step/sbdf.jl")
+  include("perform_step/sbdf_perform_step.jl")
   include("perform_step/rkc_perform_step.jl")
   include("perform_step/euler_imex_perform_step.jl")
 

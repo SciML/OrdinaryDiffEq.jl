@@ -12,7 +12,7 @@ mutable struct SBDF2ConstantCache{rateType,F,uToltype,uType} <: OrdinaryDiffEqCo
   k₂::rateType
 end
 
-mutable struct SBDF2Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,uToltype,tType,F} <: OrdinaryDiffEqMutableCache
+mutable struct SBDF2Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,uToltype,F} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType

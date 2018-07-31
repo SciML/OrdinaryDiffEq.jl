@@ -20,9 +20,9 @@ function perform_step!(integrator,cache::SBDF2ConstantCache,repeat_step=false)
   du₁ = f1(uprev,p,t)
   du₂ = integrator.fsalfirst - du₁
   if cnt == 1
-  	tmp = uprev + dt*du₂
+    tmp = uprev + dt*du₂
   else
-  	tmp = (4*uprev - uprev2)/3 + (dt/3)*(4*du₂ - 2*k₂)
+    tmp = (4*uprev - uprev2)/3 + (dt/3)*(4*du₂ - 2*k₂)
   end
   # Implicit part
   # precalculations
@@ -65,7 +65,7 @@ end
 
 function perform_step!(integrator, cache::SBDF2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p,alg = integrator
-  @unpack uprev2,k₁,k₂,du₁,z = cache
+  @unpack tmp,uprev2,k,k₁,k₂,du₁,z = cache
   cnt = integrator.iter
   f1 = integrator.f.f1
   f2 = integrator.f.f2
@@ -74,7 +74,7 @@ function perform_step!(integrator, cache::SBDF2Cache, repeat_step=false)
   if cnt == 1
     @. tmp = uprev + dt * (integrator.fsalfirst - du₁)
   else
-    @. tmp = (4*uprev - uprev2)/3 + (dt/3)*(4*du₂ - 2*k₂)
+    @. tmp = (4*uprev - uprev2)/3 + (dt/3)*(4*(integrator.fsalfirst - du₁) - 2*k₂)
   end
   # Implicit part
   # precalculations
