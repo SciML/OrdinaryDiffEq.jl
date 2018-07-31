@@ -75,6 +75,11 @@ dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,CNLF2())
 @test abs(sim.𝒪est[:l∞]-2) < testTol
 
+# SBDF2
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,SBDF2())
+@test abs(sim.𝒪est[:l∞]-2) < testTol
+
 # Now test only the second part
 
 f1 = (u,p,t) -> zero(u)
@@ -111,6 +116,11 @@ sim = test_convergence(dts,prob,CNAB2())
 # CNLF2
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,CNLF2())
+@test abs(sim.𝒪est[:l∞]-2) < testTol
+
+# SBDF2
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,SBDF2())
 @test abs(sim.𝒪est[:l∞]-2) < testTol
 
 # Test together
@@ -151,6 +161,11 @@ dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,CNLF2())
 @test abs(sim.𝒪est[:l∞]-2) < testTol
 
+# SBDF2
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,SBDF2())
+@test abs(sim.𝒪est[:l∞]-2) < testTol
+
 # Now test only the first part
 
 f1 = (du,u,p,t) -> du .= 2u
@@ -187,6 +202,11 @@ sim = test_convergence(dts,prob,CNAB2())
 # CNLF2
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,CNLF2())
+@test abs(sim.𝒪est[:l∞]-2) < testTol
+
+# SBDF2
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,SBDF2())
 @test abs(sim.𝒪est[:l∞]-2) < testTol
 
 # Now test only the second part
@@ -227,6 +247,11 @@ dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,CNLF2())
 @test abs(sim.𝒪est[:l∞]-2) < testTol
 
+# SBDF2
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,SBDF2())
+@test abs(sim.𝒪est[:l∞]-2) < testTol
+
 # Test together
 
 f1 = (du,u,p,t) -> du .= u
@@ -263,4 +288,9 @@ sim = test_convergence(dts,prob,CNAB2())
 # CNLF2
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,CNLF2())
+@test abs(sim.𝒪est[:l∞]-2) < testTol
+
+# SBDF2
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,SBDF2())
 @test abs(sim.𝒪est[:l∞]-2) < testTol
