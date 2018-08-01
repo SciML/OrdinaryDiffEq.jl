@@ -2,6 +2,7 @@ using OrdinaryDiffEq, DiffEqDevTools, Test, Random
 testTol = 0.2
 
 srand(100)
+
 # Test that the infrustructure works
 
 f1 = (u,p,t) -> 2u
@@ -85,6 +86,11 @@ dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,SBDF3())
 @test abs(sim.𝒪est[:l∞]-3) < testTol
 
+# SBDF4
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,SBDF4())
+@test abs(sim.𝒪est[:l∞]-4) < testTol
+
 # Now test only the second part
 
 f1 = (u,p,t) -> zero(u)
@@ -132,6 +138,11 @@ sim = test_convergence(dts,prob,SBDF2())
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,SBDF3())
 @test abs(sim.𝒪est[:l∞]-3) < testTol
+
+# SBDF4
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,SBDF4())
+@test abs(sim.𝒪est[:l∞]-4) < testTol
 
 # Test together
 
@@ -181,6 +192,11 @@ dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,SBDF3())
 @test abs(sim.𝒪est[:l∞]-3) < testTol
 
+# SBDF4
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,SBDF4())
+@test abs(sim.𝒪est[:l∞]-4) < testTol
+
 # Now test only the first part
 
 f1 = (du,u,p,t) -> du .= 2u
@@ -228,6 +244,11 @@ sim = test_convergence(dts,prob,SBDF2())
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,SBDF3())
 @test abs(sim.𝒪est[:l∞]-3) < testTol
+
+# SBDF4
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,SBDF4())
+@test abs(sim.𝒪est[:l∞]-4) < testTol
 
 # Now test only the second part
 
@@ -277,6 +298,11 @@ dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,SBDF3())
 @test abs(sim.𝒪est[:l∞]-3) < testTol
 
+# SBDF4
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,SBDF4())
+@test abs(sim.𝒪est[:l∞]-4) < testTol
+
 # Test together
 
 f1 = (du,u,p,t) -> du .= u
@@ -324,3 +350,8 @@ sim = test_convergence(dts,prob,SBDF2())
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,SBDF3())
 @test abs(sim.𝒪est[:l∞]-3) < testTol
+
+# SBDF4
+dts = 1 .//2 .^(8:-1:4)
+sim = test_convergence(dts,prob,SBDF4())
+@test abs(sim.𝒪est[:l∞]-4) < testTol

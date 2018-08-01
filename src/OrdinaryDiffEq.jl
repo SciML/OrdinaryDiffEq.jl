@@ -196,7 +196,7 @@ module OrdinaryDiffEq
 
   export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF
 
-  export SBDF2, SBDF3
+  export SBDF2, SBDF3, SBDF4
 
   export AutoSwitch, AutoTsit5, AutoDP5,
          AutoVern6, AutoVern7, AutoVern8, AutoVern9
