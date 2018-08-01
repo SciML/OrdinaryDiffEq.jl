@@ -65,6 +65,7 @@ DiffEqBase.@def oopnlcachefields begin
   else
     tol = uToltype(min(0.03,first(reltol)^(0.5)))
   end
+  z₊,dz,tmp,b,k = z,z,z,z,rate_prototype
 end
 
 mutable struct ImplicitEulerCache{uType,rateType,uNoUnitsType,J,W,UF,JC,F,N} <: OrdinaryDiffEqMutableCache
@@ -106,7 +107,7 @@ end
 function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   @oopnlcachefields
-  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,100000,new_W,z,W,1,1,ηold,z,z,z,z,rate_prototype))
+  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1,1,ηold,z₊,dz,tmp,b,k))
   ImplicitEulerConstantCache(uf,oop_nlsolver(nlsolve))
 end
 
@@ -117,7 +118,7 @@ end
 
 function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   @oopnlcachefields
-  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,100000,new_W,z,W,1//2,1//2,ηold,z,z,z,z,rate_prototype))
+  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//2,1//2,ηold,z₊,dz,tmp,b,k))
   ImplicitMidpointConstantCache(uf,oop_nlsolver(nlsolve))
 end
 
@@ -158,24 +159,11 @@ end
 
 function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  uToltype = real(uBottomEltypeNoUnits)
-  uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  ηold = one(uToltype)
+  @oopnlcachefields
   uprev3 = u
   tprev2 = t
-
-  if alg.κ != nothing
-    κ = uToltype(alg.κ)
-  else
-    κ = uToltype(1//100)
-  end
-  if alg.tol != nothing
-    tol = uToltype(alg.tol)
-  else
-    tol = uToltype(min(0.03,first(reltol)^(0.5)))
-  end
-
-  TrapezoidConstantCache(uf,ηold,κ,tol,10000,uprev3,tprev2)
+  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//2,1,ηold,z₊,dz,tmp,b,k))
+  TrapezoidConstantCache(uf,uprev3,tprev2,oop_nlsolver(nlsolve))
 end
 
 mutable struct TrapezoidCache{uType,rateType,uNoUnitsType,J,W,UF,JC,tType,F,N} <: OrdinaryDiffEqMutableCache
@@ -205,44 +193,12 @@ du_cache(c::TrapezoidCache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-
-  du1 = zero(rate_prototype)
-  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
-    W = WOperator(f, dt)
-    J = nothing # is J = W.J better?
-  else
-    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-    W = similar(J)
-  end
-  z = similar(u,axes(u))
-  dz = similar(u,axes(u))
-  tmp = similar(u); b = similar(u,axes(u));
+  @iipnlcachefields
   atmp = similar(u,uEltypeNoUnits,axes(u))
-  fsalfirst = zero(rate_prototype)
-  k = zero(rate_prototype)
-
-  uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
-  linsolve = alg.linsolve(Val{:init},uf,u)
-  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
-
-  uToltype = real(uBottomEltypeNoUnits)
-  if alg.κ != nothing
-    κ = uToltype(alg.κ)
-  else
-    κ = uToltype(1//100)
-  end
-  if alg.tol != nothing
-    tol = uToltype(alg.tol)
-  else
-    tol = uToltype(min(0.03,first(reltol)^(0.5)))
-  end
-
   uprev3 = similar(u)
   tprev2 = t
-
-  ηold = one(uToltype)
-
-  TrapezoidCache(u,uprev,uprev2,du1,fsalfirst,k,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,ηold,κ,tol,10000,uprev3,tprev2)
+  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//2,1,ηold,z₊,dz,tmp,b,k))
+  TrapezoidCache(u,uprev,uprev2,du1,fsalfirst,k,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,uprev3,tprev2,nlsolve)
 end
 
 mutable struct TRBDF2ConstantCache{F,Tab,N} <: OrdinaryDiffEqConstantCache
@@ -253,24 +209,10 @@ end
 
 function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  uToltype = real(uBottomEltypeNoUnits)
-  ηold = one(uToltype)
-
-  if alg.κ != nothing
-    κ = uToltype(alg.κ)
-  else
-    κ = uToltype(1//100)
-  end
-  if alg.tol != nothing
-    tol = uToltype(alg.tol)
-  else
-    tol = uToltype(min(0.03,first(reltol)^(0.5)))
-  end
-
+  @oopnlcachefields
   tab = TRBDF2Tableau(uToltype,real(tTypeNoUnits))
-
-  TRBDF2ConstantCache(uf,ηold,κ,tol,10000,tab)
+  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.d,tab.γ,ηold,z₊,dz,tmp,b,k))
+  TRBDF2ConstantCache(uf,oop_nlsolver(nlsolve),tab)
 end
 
 mutable struct TRBDF2Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,Tab,F,N} <: OrdinaryDiffEqMutableCache
@@ -300,47 +242,12 @@ du_cache(c::TRBDF2Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-
-  du1 = zero(rate_prototype)
-  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
-    W = WOperator(f, dt)
-    J = nothing # is J = W.J better?
-  else
-    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-    W = similar(J)
-  end
-  zprev = similar(u,axes(u));
-  zᵧ = similar(u,axes(u)); z = similar(u,axes(u))
-  dz = similar(u,axes(u))
-  fsalfirst = zero(rate_prototype)
-  k = zero(rate_prototype)
-  tmp = similar(u); b = similar(u,axes(u));
+  @iipnlcachefields
   atmp = similar(u,uEltypeNoUnits,axes(u))
-
-  uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
-  linsolve = alg.linsolve(Val{:init},uf,u)
-  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
-
-  uToltype = real(uBottomEltypeNoUnits)
-  if alg.κ != nothing
-    κ = uToltype(alg.κ)
-  else
-    κ = uToltype(1//100)
-  end
-  if alg.tol != nothing
-    tol = uToltype(alg.tol)
-  else
-    tol = uToltype(min(0.03,first(reltol)^(0.5)))
-  end
-
   tab = TRBDF2Tableau(uToltype,real(tTypeNoUnits))
-
-  ηold = one(uToltype)
-
-  TRBDF2Cache{typeof(u),typeof(rate_prototype),typeof(atmp),typeof(J),typeof(W),typeof(uf),
-              typeof(jac_config),uToltype,typeof(tab),typeof(linsolve)}(
-              u,uprev,du1,fsalfirst,k,zprev,zᵧ,z,dz,b,tmp,atmp,J,
-              W,uf,jac_config,linsolve,ηold,κ,tol,10000,tab)
+  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.d,tab.γ,ηold,z₊,dz,tmp,b,k))
+  TRBDF2Cache(u,uprev,du1,fsalfirst,k,zprev,zᵧ,z,dz,b,tmp,atmp,J,
+              W,uf,jac_config,linsolve,nlsolve,tab)
 end
 
 mutable struct SDIRK2ConstantCache{F,N} <: OrdinaryDiffEqConstantCache
@@ -350,22 +257,10 @@ end
 
 function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  uToltype = real(uBottomEltypeNoUnits)
-  ηold = one(uToltype)
+  @oopnlcachefields
+  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1,1,ηold,z₊,dz,tmp,b,k))
 
-  if alg.κ != nothing
-    κ = uToltype(alg.κ)
-  else
-    κ = uToltype(1//100)
-  end
-  if alg.tol != nothing
-    tol = uToltype(alg.tol)
-  else
-    tol = uToltype(min(0.03,first(reltol)^(0.5)))
-  end
-
-  SDIRK2ConstantCache(uf,ηold,κ,tol,10000)
+  SDIRK2ConstantCache(uf,oop_nlsolver(nlsolve))
 end
 
 mutable struct SDIRK2Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,F,N} <: OrdinaryDiffEqMutableCache
@@ -393,45 +288,13 @@ du_cache(c::SDIRK2Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-
-  du1 = zero(rate_prototype)
-  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
-    W = WOperator(f, dt)
-    J = nothing # is J = W.J better?
-  else
-    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-    W = similar(J)
-  end
-  z₁ = similar(u,axes(u));
-  z₂ = similar(u,axes(u))
-  dz = similar(u,axes(u))
-  fsalfirst = zero(rate_prototype)
-  k = zero(rate_prototype)
-  tmp = similar(u); b = similar(u,axes(u));
+  @iipnlcachefields
+  z₁ = similar(u,axes(u)); z₂ = z;
   atmp = similar(u,uEltypeNoUnits,axes(u))
+  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1,1,ηold,z₊,dz,tmp,b,k))
 
-  uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
-  linsolve = alg.linsolve(Val{:init},uf,u)
-  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
-
-  uToltype = real(uBottomEltypeNoUnits)
-  if alg.κ != nothing
-    κ = uToltype(alg.κ)
-  else
-    κ = uToltype(1//100)
-  end
-  if alg.tol != nothing
-    tol = uToltype(alg.tol)
-  else
-    tol = uToltype(min(0.03,first(reltol)^(0.5)))
-  end
-
-  ηold = one(uToltype)
-
-  SDIRK2Cache{typeof(u),typeof(rate_prototype),typeof(atmp),typeof(J),typeof(W),typeof(uf),
-              typeof(jac_config),uToltype,typeof(linsolve)}(
-              u,uprev,du1,fsalfirst,k,z₁,z₂,dz,b,tmp,atmp,J,
-              W,uf,jac_config,linsolve,ηold,κ,tol,10000)
+  SDIRK2Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,dz,b,tmp,atmp,J,
+              W,uf,jac_config,linsolve,nlsolve)
 end
 
 mutable struct SSPSDIRK2ConstantCache{F,N} <: OrdinaryDiffEqConstantCache
@@ -441,24 +304,10 @@ end
 
 function alg_cache(alg::SSPSDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  uToltype = real(uBottomEltypeNoUnits)
-  ηold = one(uToltype)
-  uprev3 = u
-  tprev2 = t
+  @oopnlcachefields
+  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//4,1//1,ηold,z₊,dz,tmp,b,k))
 
-  if alg.κ != nothing
-    κ = uToltype(alg.κ)
-  else
-    κ = uToltype(1//100)
-  end
-  if alg.tol != nothing
-    tol = uToltype(alg.tol)
-  else
-    tol = uToltype(min(0.03,first(reltol)^(0.5)))
-  end
-
-  SSPSDIRK2ConstantCache(uf,ηold,κ,tol,10000)
+  SSPSDIRK2ConstantCache(uf,oop_nlsolver(nlsolve))
 end
 
 mutable struct SSPSDIRK2Cache{uType,rateType,J,W,UF,JC,F,N} <: OrdinaryDiffEqMutableCache
@@ -485,45 +334,13 @@ du_cache(c::SSPSDIRK2Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::SSPSDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-
-  du1 = zero(rate_prototype)
-  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
-    W = WOperator(f, dt)
-    J = nothing # is J = W.J better?
-  else
-    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-    W = similar(J)
-  end
-  z₁ = similar(u,axes(u));
-  z₂ = similar(u,axes(u))
-  dz = similar(u,axes(u))
-  fsalfirst = zero(rate_prototype)
-  k = zero(rate_prototype)
-  tmp = similar(u); b = similar(u,axes(u));
+  @iipnlcachefields
+  z₁ = similar(u,axes(u)); z₂ = z;
   atmp = similar(u,uEltypeNoUnits,axes(u))
+  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//4,1//1,ηold,z₊,dz,tmp,b,k))
 
-  uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
-  linsolve = alg.linsolve(Val{:init},uf,u)
-  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
-
-  uToltype = real(uBottomEltypeNoUnits)
-  if alg.κ != nothing
-    κ = uToltype(alg.κ)
-  else
-    κ = uToltype(1//100)
-  end
-  if alg.tol != nothing
-    tol = uToltype(alg.tol)
-  else
-    tol = uToltype(min(0.03,first(reltol)^(0.5)))
-  end
-
-  ηold = one(uToltype)
-
-  SSPSDIRK2Cache{typeof(u),typeof(rate_prototype),typeof(J),typeof(W),typeof(uf),
-              typeof(jac_config),uToltype,typeof(linsolve)}(
-              u,uprev,du1,fsalfirst,k,z₁,z₂,dz,b,tmp,J,
-              W,uf,jac_config,linsolve,ηold,κ,tol,10000)
+  SSPSDIRK2Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,dz,b,tmp,J,
+                W,uf,jac_config,linsolve,nlsolve)
 end
 
 mutable struct Kvaerno3ConstantCache{UF,Tab,N} <: OrdinaryDiffEqConstantCache
@@ -534,24 +351,11 @@ end
 
 function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  uToltype = real(uBottomEltypeNoUnits)
-  ηold = one(uToltype)
-
-  if alg.κ != nothing
-    κ = uToltype(alg.κ)
-  else
-    κ = uToltype(1//100)
-  end
-  if alg.tol != nothing
-    tol = uToltype(alg.tol)
-  else
-    tol = uToltype(min(0.03,first(reltol)^(0.5)))
-  end
-
+  @oopnlcachefields
   tab = Kvaerno3Tableau(uToltype,real(tTypeNoUnits))
+  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,2tab.γ,ηold,z₊,dz,tmp,b,k))
 
-  Kvaerno3ConstantCache(uf,ηold,κ,tol,10000,tab)
+  Kvaerno3ConstantCache(uf,oop_nlsolver(nlsolve),tab)
 end
 
 mutable struct Kvaerno3Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,Tab,F,N} <: OrdinaryDiffEqMutableCache
@@ -582,47 +386,15 @@ du_cache(c::Kvaerno3Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-
-  du1 = zero(rate_prototype)
-  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
-    W = WOperator(f, dt)
-    J = nothing # is J = W.J better?
-  else
-    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-    W = similar(J)
-  end
+  @iipnlcachefields
   z₁ = similar(u,axes(u)); z₂ = similar(u,axes(u));
-  z₃ = similar(u,axes(u)); z₄ = similar(u,axes(u))
-  dz = similar(u,axes(u))
-  fsalfirst = zero(rate_prototype)
-  k = zero(rate_prototype)
-  tmp = similar(u); b = similar(u,axes(u));
+  z₃ = similar(u,axes(u)); z₄ = z;
   atmp = similar(u,uEltypeNoUnits,axes(u))
-
-  uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
-  linsolve = alg.linsolve(Val{:init},uf,u)
-  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
-
-  uToltype = real(uBottomEltypeNoUnits)
-  if alg.κ != nothing
-    κ = uToltype(alg.κ)
-  else
-    κ = uToltype(1//100)
-  end
-  if alg.tol != nothing
-    tol = uToltype(alg.tol)
-  else
-    tol = uToltype(min(0.03,first(reltol)^(0.5)))
-  end
-
   tab = Kvaerno3Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,2tab.γ,ηold,z₊,dz,tmp,b,k))
 
-  ηold = one(uToltype)
-
-  Kvaerno3Cache{typeof(u),typeof(rate_prototype),typeof(atmp),typeof(J),typeof(W),typeof(uf),
-              typeof(jac_config),uToltype,typeof(tab),typeof(linsolve)}(
-              u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,dz,b,tmp,atmp,J,
-              W,uf,jac_config,linsolve,ηold,κ,tol,10000,tab)
+  Kvaerno3Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,dz,b,tmp,atmp,J,
+                W,uf,jac_config,linsolve,nlsolve,tab)
 end
 
 mutable struct Cash4ConstantCache{F,N,Tab} <: OrdinaryDiffEqConstantCache
@@ -633,24 +405,11 @@ end
 
 function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  uToltype = real(uBottomEltypeNoUnits)
-  ηold = one(uToltype)
-
-  if alg.κ != nothing
-    κ = uToltype(alg.κ)
-  else
-    κ = uToltype(1//100)
-  end
-  if alg.tol != nothing
-    tol = uToltype(alg.tol)
-  else
-    tol = uToltype(min(0.03,first(reltol)^(0.5)))
-  end
-
+  @oopnlcachefields
   tab = Cash4Tableau(uToltype,real(tTypeNoUnits))
+  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,tab.γ,ηold,z₊,dz,tmp,b,k))
 
-  Cash4ConstantCache(uf,ηold,κ,tol,10000,tab)
+  Cash4ConstantCache(uf,oop_nlsolver(nlsolve),tab)
 end
 
 mutable struct Cash4Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,Tab,F} <: OrdinaryDiffEqMutableCache
@@ -682,48 +441,16 @@ du_cache(c::Cash4Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-
-  du1 = zero(rate_prototype)
-  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
-    W = WOperator(f, dt)
-    J = nothing # is J = W.J better?
-  else
-    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-    W = similar(J)
-  end
+  @iipnlcachefields
   z₁ = similar(u,axes(u)); z₂ = similar(u,axes(u));
   z₃ = similar(u,axes(u)); z₄ = similar(u,axes(u))
-  z₅ = similar(u,axes(u))
-  dz = similar(u,axes(u))
-  fsalfirst = zero(rate_prototype)
-  k = zero(rate_prototype)
-  tmp = similar(u); b = similar(u,axes(u));
+  z₅ = z
   atmp = similar(u,uEltypeNoUnits,axes(u))
-
-  uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
-  linsolve = alg.linsolve(Val{:init},uf,u)
-  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
-
-  uToltype = real(uBottomEltypeNoUnits)
-  if alg.κ != nothing
-    κ = uToltype(alg.κ)
-  else
-    κ = uToltype(1//100)
-  end
-  if alg.tol != nothing
-    tol = uToltype(alg.tol)
-  else
-    tol = uToltype(min(0.03,first(reltol)^(0.5)))
-  end
-
   tab = Cash4Tableau(uToltype,real(tTypeNoUnits))
+  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,tab.γ,ηold,z₊,dz,tmp,b,k))
 
-  ηold = one(uToltype)
-
-  Cash4Cache{typeof(u),typeof(rate_prototype),typeof(atmp),typeof(J),typeof(W),typeof(uf),
-              typeof(jac_config),uToltype,typeof(tab),typeof(linsolve)}(
-              u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,dz,b,tmp,atmp,J,
-              W,uf,jac_config,linsolve,ηold,κ,tol,10000,tab)
+  Cash4Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,dz,b,tmp,atmp,J,
+              W,uf,jac_config,linsolve,nlsolve,tab)
 end
 
 mutable struct Hairer4ConstantCache{F,N,Tab} <: OrdinaryDiffEqConstantCache
@@ -734,28 +461,15 @@ end
 
 function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  uToltype = real(uBottomEltypeNoUnits)
-  ηold = one(uToltype)
-
-  if alg.κ != nothing
-    κ = uToltype(alg.κ)
-  else
-    κ = uToltype(1//100)
-  end
-  if alg.tol != nothing
-    tol = uToltype(alg.tol)
-  else
-    tol = uToltype(min(0.03,first(reltol)^(0.5)))
-  end
-
+  @oopnlcachefields
   if typeof(alg) <: Hairer4
     tab = Hairer4Tableau(uToltype,real(tTypeNoUnits))
   else
     tab = Hairer42Tableau(uToltype,real(tTypeNoUnits))
   end
+  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,tab.γ,ηold,z₊,dz,tmp,b,k))
 
-  Hairer4ConstantCache(uf,ηold,κ,tol,10000,tab)
+  Hairer4ConstantCache(uf,oop_nlsolver(nlsolve),tab)
 end
 
 mutable struct Hairer4Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,Tab,F,N} <: OrdinaryDiffEqMutableCache
@@ -787,50 +501,20 @@ du_cache(c::Hairer4Cache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-
-  du1 = zero(rate_prototype)
-  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
-    W = WOperator(f, dt)
-    J = nothing # is J = W.J better?
-  else
-    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
-    W = similar(J)
-  end
+  @iipnlcachefields
   z₁ = similar(u,axes(u)); z₂ = similar(u,axes(u));
   z₃ = similar(u,axes(u)); z₄ = similar(u,axes(u))
-  z₅ = similar(u,axes(u))
+  z₅ = z
   dz = similar(u,axes(u))
-  fsalfirst = zero(rate_prototype)
-  k = zero(rate_prototype)
-  tmp = similar(u); b = similar(u,axes(u));
   atmp = similar(u,uEltypeNoUnits,axes(u))
-
-  uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
-  linsolve = alg.linsolve(Val{:init},uf,u)
-  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
-
-  uToltype = real(uBottomEltypeNoUnits)
-  if alg.κ != nothing
-    κ = uToltype(alg.κ)
-  else
-    κ = uToltype(1//100)
-  end
-  if alg.tol != nothing
-    tol = uToltype(alg.tol)
-  else
-    tol = uToltype(min(0.03,first(reltol)^(0.5)))
-  end
 
   if typeof(alg) <: Hairer4
     tab = Hairer4Tableau(uToltype,real(tTypeNoUnits))
   else # Hairer42
     tab = Hairer42Tableau(uToltype,real(tTypeNoUnits))
   end
+  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,tab.γ,ηold,z₊,dz,tmp,b,k))
 
-  ηold = one(uToltype)
-
-  Hairer4Cache{typeof(u),typeof(rate_prototype),typeof(atmp),typeof(J),typeof(W),typeof(uf),
-              typeof(jac_config),uToltype,typeof(tab),typeof(linsolve)}(
-              u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,dz,b,tmp,atmp,J,
-              W,uf,jac_config,linsolve,ηold,κ,tol,10000,tab)
+  Hairer4Cache(uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,dz,b,tmp,atmp,J,
+               W,uf,jac_config,linsolve,nlsolve,tab)
 end
