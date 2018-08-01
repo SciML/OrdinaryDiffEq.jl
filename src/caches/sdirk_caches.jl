@@ -243,7 +243,8 @@ du_cache(c::TRBDF2Cache)   = (c.k,c.fsalfirst)
 function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   @iipnlcachefields
-  atmp = similar(u,uEltypeNoUnits,axes(u))
+  atmp = similar(u,uEltypeNoUnits,axes(u)); zprev = similar(u,axes(u));
+  zᵧ = similar(u,axes(u))
   tab = TRBDF2Tableau(uToltype,real(tTypeNoUnits))
   nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.d,tab.γ,ηold,z₊,dz,tmp,b,k))
   TRBDF2Cache(u,uprev,du1,fsalfirst,k,zprev,zᵧ,z,dz,b,tmp,atmp,J,
@@ -515,6 +516,6 @@ function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,
   end
   nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,tab.γ,ηold,z₊,dz,tmp,b,k))
 
-  Hairer4Cache(uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,dz,b,tmp,atmp,J,
+  Hairer4Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,dz,b,tmp,atmp,J,
                W,uf,jac_config,linsolve,nlsolve,tab)
 end
