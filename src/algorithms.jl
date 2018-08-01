@@ -837,6 +837,11 @@ for Alg in [:Exp4, :EPIRK4s3A, :EPIRK4s3B, :EPIRK5s3, :EXPRB53s3, :EPIRK5P1, :EP
 end
 struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm end
 struct ETD2 <: OrdinaryDiffEqExponentialAlgorithm end
+struct Exprb32 <: OrdinaryDiffEqAdaptiveExponentialAlgorithm
+  m::Int
+  iop::Int
+end
+Exprb32(;m=30, iop=0) = Exprb32(m, iop)
 
 #########################################
 

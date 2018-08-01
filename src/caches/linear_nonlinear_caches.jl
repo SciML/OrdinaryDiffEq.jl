@@ -544,6 +544,12 @@ function alg_cache(alg::EPIRK5P2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
 end
 
 ####################################
+# Adaptive exponential Rosenbrock method caches
+struct Exprb32ConstantCache <: OrdinaryDiffEqConstantCache end
+alg_cache(alg::Exprb32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = Exprb32ConstantCache()
+
+####################################
 # Multistep exponential method caches
 
 #=

@@ -1159,6 +1159,43 @@ function perform_step!(integrator, cache::EPIRK5P2Cache, repeat_step=false)
 end
 
 ######################################################
+# Adaptive exponential Rosenbrock integrators
+function initialize!(integrator, cache::Exprb32ConstantCache)
+  # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+  integrator.fsallast = zero(integrator.fsalfirst)
+
+  # Initialize interpolation derivatives
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
+
+function perform_step!(integrator, cache::Exprb32ConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,f,p = integrator
+  is_compos = isa(integrator.alg, CompositeAlgorithm)
+  A = isa(f, SplitFunction) ? f.f1 : calc_J!(integrator,cache,is_compos) # get linear operator
+  alg = unwrap_alg(integrator, true)
+
+  F1 = integrator.fsalfirst
+  w1 = phiv(dt, A, F1, 3; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
+  U2 = uprev + dt * w1[:, 2]
+  F2 = _compute_nl(f, U2, p, t + dt, A) + A * uprev
+  w2 = phiv(dt, A, F2, 3; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
+  u = uprev + dt * (w1[:,2] - 2w1[:,4] + 2w2[:,4])
+  if integrator.opts.adaptive
+    # TODO
+  end
+
+  # Update integrator state
+  integrator.fsallast = f(u, p, t + dt)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end
+
+######################################################
 # Multistep exponential integrators
 function initialize!(integrator,cache::ETD2ConstantCache)
   integrator.kshortsize = 2
