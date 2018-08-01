@@ -101,4 +101,15 @@ end
     @test sol(1.0) ≈ exp_fun2.analytic(u0,nothing,1.0)
   end
 end
+
+@testset "Adaptive exponential Rosenbrock" begin
+  dt = 0.05
+  abstol=1e-4; reltol=1e-3
+  sol_ref = solve(prob, Tsit5(); abstol=abstol, reltol=reltol)
+
+  sol = solve(prob, Exprb32(m=20); adaptive=true, abstol=abstol, reltol=reltol)
+  @test isapprox(sol(1.0), sol_ref(1.0); rtol=reltol)
+  sol = solve(prob_ip, Exprb32(m=20); adaptive=true, abstol=abstol, reltol=reltol)
+  @test isapprox(sol(1.0), sol_ref(1.0); rtol=reltol)
+end
 end
