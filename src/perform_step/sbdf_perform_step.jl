@@ -28,7 +28,7 @@ function perform_step!(integrator,cache::SBDF2ConstantCache,repeat_step=false)
   # precalculations
   γ = 1//1
   if cnt != 1
-   γ = 1//3
+   γ = 2//3
   end
   γdt = γ*dt
   W = calc_W!(integrator, cache, γdt, repeat_step)
@@ -80,7 +80,7 @@ function perform_step!(integrator, cache::SBDF2Cache, repeat_step=false)
   # precalculations
   γ = 1//1
   if cnt != 1
-   γ = 1//3
+   γ = 2//3
   end
   γdt = γ*dt
   new_W = calc_W!(integrator, cache, γdt, repeat_step)
