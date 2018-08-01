@@ -1185,7 +1185,9 @@ function perform_step!(integrator, cache::Exprb32ConstantCache, repeat_step=fals
   w2 = phiv(dt, A, F2, 3; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
   u = uprev + dt * (w1[:,2] - 2w1[:,4] + 2w2[:,4])
   if integrator.opts.adaptive
-    # TODO
+    utilde = dt * w1[:,2] # embedded method
+    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+    integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 
   # Update integrator state
