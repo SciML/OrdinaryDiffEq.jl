@@ -549,6 +549,30 @@ struct Exprb32ConstantCache <: OrdinaryDiffEqConstantCache end
 alg_cache(alg::Exprb32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
 tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = Exprb32ConstantCache()
 
+struct Exprb32Cache{uType,rateType,JType,KsType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  utilde::uType
+  tmp::uType
+  rtmp::rateType
+  F2::rateType
+  J::JType
+  KsCache::KsType
+end
+function alg_cache(alg::Exprb32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  utilde, tmp = (similar(u) for i = 1:2)                     # uType caches
+  rtmp, F2 = (zero(rate_prototype) for i = 1:2)              # rateType caches
+  # Jacobian and Krylov-related caches
+  n = length(u); T = eltype(u)
+  m = min(alg.m, n)
+  J = isa(f, SplitFunction) ? nothing : deepcopy(f.jac_prototype)
+  Ks = KrylovSubspace{T}(n, m)
+  phiv_cache = PhivCache{T}(m, 3)
+  w1 = Matrix{T}(undef, n, 4); w2 = Matrix{T}(undef, n, 4); ws = [w1, w2]
+  KsCache = (Ks, phiv_cache, ws)
+  Exprb32Cache(u,uprev,utilde,tmp,rtmp,F2,J,KsCache)
+end
+
 ####################################
 # Multistep exponential method caches
 

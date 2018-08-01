@@ -1171,6 +1171,18 @@ function initialize!(integrator, cache::Exprb32ConstantCache)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
 end
+function initialize!(integrator, cache::Exprb32Cache)
+  # Pre-start fsal
+  integrator.fsalfirst = zero(cache.rtmp)
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+  integrator.fsallast = zero(integrator.fsalfirst)
+
+  # Initialize interpolation derivatives
+  integrator.kshortsize = 2
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
 
 function perform_step!(integrator, cache::Exprb32ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
@@ -1195,6 +1207,41 @@ function perform_step!(integrator, cache::Exprb32ConstantCache, repeat_step=fals
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
+end
+
+function perform_step!(integrator, cache::Exprb32Cache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack utilde,tmp,rtmp,F2,J,KsCache = cache
+  is_compos = isa(integrator.alg, CompositeAlgorithm)
+  A = isa(f, SplitFunction) ? f.f1 : (calc_J!(integrator,cache,is_compos); J) # get linear operator
+  alg = unwrap_alg(integrator, true)
+
+  F1 = integrator.fsalfirst
+  Ks, phiv_cache, ws = KsCache
+  w1, w2 = ws
+  # Krylov for F1
+  arnoldi!(Ks, A, F1; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, cache=tmp, iop=alg.iop)
+  phiv!(w1, dt, Ks, 3; cache=phiv_cache)
+  # Krylov for F2
+  @muladd @. tmp = uprev + dt * @view(w1[:, 2])
+  _compute_nl!(F2, f, tmp, p, t + dt, A, rtmp)
+  F2 .+= mul!(rtmp, A, uprev)
+  arnoldi!(Ks, A, F2; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, cache=tmp, iop=alg.iop)
+  phiv!(w2, dt, Ks, 3; cache=phiv_cache)
+  # Update u
+  u .= uprev
+  axpy!(dt, @view(w1[:,2]), u)
+  axpy!(-2dt, @view(w1[:,4]), u)
+  axpy!(2dt, @view(w2[:,4]), u)
+  if integrator.opts.adaptive
+    @views @. utilde = dt * w1[:,2]
+    calculate_residuals!(tmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+    integrator.EEst = integrator.opts.internalnorm(tmp)
+  end
+
+  # Update integrator state
+  f(integrator.fsallast, u, p, t + dt)
+  # integrator.k is automatically set due to aliasing
 end
 
 ######################################################
