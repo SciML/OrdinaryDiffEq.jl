@@ -122,16 +122,21 @@ function perform_step!(integrator,cache::SBDF3ConstantCache,repeat_step=false)
   f2 = integrator.f.f2
   du₁ = f1(uprev,p,t)
   du₂ = integrator.fsalfirst - du₁
-  if cnt <= 2
+  if cnt == 1
     tmp = uprev + dt*du₂
+  elseif cnt == 2
+    tmp = (4*uprev - uprev2)/3 + (dt/3)*(4*du₂ - 2*k₁)
   else
     tmp = (6//11) * (3*uprev - 3//2*uprev2 + 1//3*uprev3 + dt*(3*(du₂ - k₁) + k₂))
   end
   # Implicit part
   # precalculations
-  γ = 1//1
-  if cnt > 2
-   γ = 6//11
+  if cnt == 1
+    γ = 1//1
+  elseif cnt == 2
+    γ = 2//3
+  else
+    γ = 6//11
   end
   γdt = γ*dt
   W = calc_W!(integrator, cache, γdt, repeat_step)
@@ -175,16 +180,21 @@ function perform_step!(integrator, cache::SBDF3Cache, repeat_step=false)
   f2 = integrator.f.f2
   f1(du₁, uprev, p, t)
   # Explicit part
-  if cnt <= 2
-    @. tmp = uprev + dt * (integrator.fsalfirst - du₁)
+  if cnt == 1
+    @. tmp = uprev + dt*du₂
+  elseif cnt == 2
+    @. tmp = (4*uprev - uprev2)/3 + (dt/3)*(4*du₂ - 2*k₁)
   else
     @. tmp = (6//11) * (3*uprev - 3//2*uprev2 + 1//3*uprev3 + dt*(3*((integrator.fsalfirst - du₁) - k₁) + k₂))
   end
   # Implicit part
   # precalculations
-  γ = 1//1
-  if cnt > 2
-   γ = 6//11
+  if cnt == 1
+    γ = 1//1
+  elseif cnt == 2
+    γ = 2//3
+  else
+    γ = 6//11
   end
   γdt = γ*dt
   new_W = calc_W!(integrator, cache, γdt, repeat_step)
