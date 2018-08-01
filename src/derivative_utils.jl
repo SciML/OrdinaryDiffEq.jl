@@ -284,7 +284,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
   if !W_transform
     if DiffEqBase.has_jac(f)
       J = f.jac(uprev, p, t)
-      if !isa(f, DiffEqBase.AbstractDiffEqLinearOperator)
+      if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
         J = DiffEqArrayOperator(J)
       end
       W = WOperator(mass_matrix, dtgamma, J; transform=false)
@@ -299,7 +299,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
   else
     if DiffEqBase.has_jac(f)
       J = f.jac(uprev, p, t)
-      if !isa(f, DiffEqBase.AbstractDiffEqLinearOperator)
+      if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
         J = DiffEqArrayOperator(J)
       end
       W = WOperator(mass_matrix, dtgamma, J; transform=true)

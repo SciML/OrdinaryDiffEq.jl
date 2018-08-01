@@ -138,7 +138,7 @@ function DiffEqBase.__init(
 
   if isinplace(prob) && typeof(u) <: AbstractArray && eltype(u) <: Number # Could this be more efficient for other arrays?
     if !(typeof(u) <: ArrayPartition)
-      rate_prototype = similar(u,typeof(oneunit(uBottomEltype)/oneunit(tType)),axes(u))
+      rate_prototype = similar(u,typeof(oneunit(uBottomEltype)/oneunit(tType)))
     else
       rate_prototype = similar(u, typeof.(oneunit.(recursive_bottom_eltype.(u.x))./oneunit(tType))...)
     end
