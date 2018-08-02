@@ -842,6 +842,11 @@ struct Exprb32 <: OrdinaryDiffEqAdaptiveExponentialAlgorithm
   iop::Int
 end
 Exprb32(;m=30, iop=0) = Exprb32(m, iop)
+struct Exprb43 <: OrdinaryDiffEqAdaptiveExponentialAlgorithm
+  m::Int
+  iop::Int
+end
+Exprb43(;m=30, iop=0) = Exprb43(m, iop)
 
 #########################################
 

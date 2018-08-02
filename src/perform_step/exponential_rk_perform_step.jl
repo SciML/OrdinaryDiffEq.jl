@@ -1160,7 +1160,7 @@ end
 
 ######################################################
 # Adaptive exponential Rosenbrock integrators
-function initialize!(integrator, cache::Exprb32ConstantCache)
+function initialize!(integrator, cache::Union{Exprb32ConstantCache,Exprb43ConstantCache})
   # Pre-start fsal
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -1242,6 +1242,41 @@ function perform_step!(integrator, cache::Exprb32Cache, repeat_step=false)
   # Update integrator state
   f(integrator.fsallast, u, p, t + dt)
   # integrator.k is automatically set due to aliasing
+end
+
+function perform_step!(integrator, cache::Exprb43ConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,f,p = integrator
+  is_compos = isa(integrator.alg, CompositeAlgorithm)
+  A = isa(f, SplitFunction) ? f.f1 : calc_J!(integrator,cache,is_compos) # get linear operator
+  alg = unwrap_alg(integrator, true)
+  kwargs = (m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
+
+  Au = A * uprev
+  F1 = integrator.fsalfirst
+  # Krylov on F1 (first column)
+  Ks = arnoldi(A, F1; kwargs...)
+  w1_half = phiv(dt/2, Ks, 1)
+  w1 = phiv(dt, Ks, 4)
+  U2 = uprev + dt/2 * w1_half[:, 2]
+  F2 = _compute_nl(f, U2, p, t + dt/2, A) + Au
+  # Krylov on F2 (second column)
+  w2 = phiv(dt, A, F2, 4; kwargs...)
+  U3 = uprev + dt * w2[:, 2]
+  F3 = _compute_nl(f, U3, p, t + dt, A) + Au
+  # Krylov on F3 (third column)
+  w3 = phiv(dt, A, F3, 4; kwargs...)
+  u = uprev + dt * (w1[:,2] - 14w1[:,4] + 36w1[:,5] + 16w2[:,4] - 48w2[:,5] - 2w3[:,4] + 12w3[:,5])
+  if integrator.opts.adaptive
+    utilde = dt * (w1[:,2] - 14w1[:,4] + 16w2[:,4] - 2w3[:,4]) # embedded method
+    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+    integrator.EEst = integrator.opts.internalnorm(atmp)
+  end
+
+  # Update integrator state
+  integrator.fsallast = f(u, p, t + dt)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
 end
 
 ######################################################

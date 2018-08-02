@@ -573,6 +573,10 @@ function alg_cache(alg::Exprb32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   Exprb32Cache(u,uprev,utilde,tmp,rtmp,F2,J,KsCache)
 end
 
+struct Exprb43ConstantCache <: OrdinaryDiffEqConstantCache end
+alg_cache(alg::Exprb43,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = Exprb43ConstantCache()
+
 ####################################
 # Multistep exponential method caches
 
