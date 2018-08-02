@@ -1197,7 +1197,8 @@ function perform_step!(integrator, cache::Exprb32ConstantCache, repeat_step=fals
   w2 = phiv(dt, A, F2, 3; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
   u = uprev + dt * (w1[:,2] - 2w1[:,4] + 2w2[:,4])
   if integrator.opts.adaptive
-    utilde = dt * w1[:,2] # embedded method
+    # error estimator for the imbedded method
+    utilde = 2dt * (-w1[:,4] + w2[:,4])
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
@@ -1234,7 +1235,8 @@ function perform_step!(integrator, cache::Exprb32Cache, repeat_step=false)
   axpy!(-2dt, @view(w1[:,4]), u)
   axpy!(2dt, @view(w2[:,4]), u)
   if integrator.opts.adaptive
-    @views @. utilde = dt * w1[:,2]
+    # error estimator for the imbedded method
+    @views @. utilde = (2*dt) * (-w1[:,4] + w2[:,4])
     calculate_residuals!(tmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(tmp)
   end
@@ -1267,7 +1269,8 @@ function perform_step!(integrator, cache::Exprb43ConstantCache, repeat_step=fals
   w3 = phiv(dt, A, F3, 4; kwargs...)
   u = uprev + dt * (w1[:,2] - 14w1[:,4] + 36w1[:,5] + 16w2[:,4] - 48w2[:,5] - 2w3[:,4] + 12w3[:,5])
   if integrator.opts.adaptive
-    utilde = dt * (w1[:,2] - 14w1[:,4] + 16w2[:,4] - 2w3[:,4]) # embedded method
+    # error estimator for the imbedded method
+    utilde = dt * (36w1[:,5] - 48w2[:,5] + 12w3[:,5])
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
@@ -1310,7 +1313,7 @@ function perform_step!(integrator, cache::Exprb43Cache, repeat_step=false)
   @views @. rtmp = w1[:,2] - 14w1[:,4] + 36w1[:,5] + 16w2[:,4] - 48w2[:,5] - 2w3[:,4] + 12w3[:,5]
   @muladd @. u = uprev + dt * rtmp
   if integrator.opts.adaptive
-    @views @. rtmp = w1[:,2] - 14w1[:,4] + 16w2[:,4] - 2w3[:,4]
+    @views @. rtmp = 36w1[:,5] - 48w2[:,5] + 12w3[:,5]
     @. utilde = dt * rtmp
     calculate_residuals!(tmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(tmp)
