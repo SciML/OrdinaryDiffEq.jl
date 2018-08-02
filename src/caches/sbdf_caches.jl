@@ -316,7 +316,7 @@ function alg_cache(alg::SBDF4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   uprev4 = similar(u)
   k₁ = zero(rate_prototype)
   k₂ = zero(rate_prototype)
-  k₃ = zer(rate_prototype)
+  k₃ = zero(rate_prototype)
   du₁ = zero(rate_prototype)
 
   uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t,p)

@@ -181,9 +181,9 @@ function perform_step!(integrator, cache::SBDF3Cache, repeat_step=false)
   f1(du₁, uprev, p, t)
   # Explicit part
   if cnt == 1
-    @. tmp = uprev + dt*du₂
+    @. tmp = uprev + dt*(integrator.fsalfirst - du₁)
   elseif cnt == 2
-    @. tmp = (4*uprev - uprev2)/3 + (dt/3)*(4*du₂ - 2*k₁)
+    @. tmp = (4*uprev - uprev2)/3 + (dt/3)*(4*(integrator.fsalfirst - du₁) - 2*k₁)
   else
     @. tmp = (6//11) * (3*uprev - 3//2*uprev2 + 1//3*uprev3 + dt*(3*((integrator.fsalfirst - du₁) - k₁) + k₂))
   end
@@ -302,9 +302,9 @@ function perform_step!(integrator, cache::SBDF4Cache, repeat_step=false)
   f1(du₁, uprev, p, t)
   # Explicit part
   if cnt == 1
-    @. tmp = uprev + dt*du₂
+    @. tmp = uprev + dt*(integrator.fsalfirst - du₁)
   elseif cnt == 2
-    @. tmp = (4*uprev - uprev2)/3 + (dt/3)*(4*du₂ - 2*k₁)
+    @. tmp = (4*uprev - uprev2)/3 + (dt/3)*(4*(integrator.fsalfirst - du₁) - 2*k₁)
   elseif cnt == 3
     @. tmp = (6//11) * (3*uprev - 3//2*uprev2 + 1//3*uprev3 + dt*(3*((integrator.fsalfirst - du₁) - k₁) + k₂))
   else
