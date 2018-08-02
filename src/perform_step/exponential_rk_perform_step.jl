@@ -1191,16 +1191,32 @@ function perform_step!(integrator, cache::Exprb32ConstantCache, repeat_step=fals
   alg = unwrap_alg(integrator, true)
 
   F1 = integrator.fsalfirst
-  w1 = phiv(dt, A, F1, 3; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
-  U2 = uprev + dt * w1[:, 2]
-  F2 = _compute_nl(f, U2, p, t + dt, A) + A * uprev
-  w2 = phiv(dt, A, F2, 3; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
-  u = uprev + dt * (w1[:,2] - 2w1[:,4] + 2w2[:,4])
-  if integrator.opts.adaptive
-    # error estimator for the imbedded method
-    utilde = 2dt * (-w1[:,4] + w2[:,4])
-    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(atmp)
+  if alg.krylov
+    w1 = phiv(dt, A, F1, 3; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
+    U2 = uprev + dt * w1[:, 2]
+    F2 = _compute_nl(f, U2, p, t + dt, A) + A * uprev
+    w2 = phiv(dt, A, F2, 3; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
+    u = uprev + dt * (w1[:,2] - 2w1[:,4] + 2w2[:,4])
+    if integrator.opts.adaptive
+      # error estimator for the imbedded method
+      utilde = 2dt * (-w1[:,4] + w2[:,4])
+      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp)
+    end
+  else
+    A21, B1, B1tilde, B2 = cache.ops
+    # stage 1 (fsaled)
+    # stage 2
+    U2 = uprev + dt * (A21*F1)
+    F2 = f.f2(U2, p, t) + A*uprev
+    # update u
+    u = uprev + dt * (B1*F1 + B2*F2)
+    if integrator.opts.adaptive
+      # error estimator for the imbedded method
+      utilde = dt * (B1tilde*F1 + B2*F2)
+      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp)
+    end
   end
 
   # Update integrator state
@@ -1218,27 +1234,47 @@ function perform_step!(integrator, cache::Exprb32Cache, repeat_step=false)
   alg = unwrap_alg(integrator, true)
 
   F1 = integrator.fsalfirst
-  Ks, phiv_cache, ws = KsCache
-  w1, w2 = ws
-  # Krylov for F1
-  arnoldi!(Ks, A, F1; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, cache=tmp, iop=alg.iop)
-  phiv!(w1, dt, Ks, 3; cache=phiv_cache)
-  # Krylov for F2
-  @muladd @. tmp = uprev + dt * @view(w1[:, 2])
-  _compute_nl!(F2, f, tmp, p, t + dt, A, rtmp)
-  F2 .+= mul!(rtmp, A, uprev)
-  arnoldi!(Ks, A, F2; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, cache=tmp, iop=alg.iop)
-  phiv!(w2, dt, Ks, 3; cache=phiv_cache)
-  # Update u
-  u .= uprev
-  axpy!(dt, @view(w1[:,2]), u)
-  axpy!(-2dt, @view(w1[:,4]), u)
-  axpy!(2dt, @view(w2[:,4]), u)
-  if integrator.opts.adaptive
-    # error estimator for the imbedded method
-    @views @. utilde = (2*dt) * (-w1[:,4] + w2[:,4])
-    calculate_residuals!(tmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(tmp)
+  if alg.krylov
+    Ks, phiv_cache, ws = KsCache
+    w1, w2 = ws
+    # Krylov for F1
+    arnoldi!(Ks, A, F1; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, cache=tmp, iop=alg.iop)
+    phiv!(w1, dt, Ks, 3; cache=phiv_cache)
+    # Krylov for F2
+    @muladd @. tmp = uprev + dt * @view(w1[:, 2])
+    _compute_nl!(F2, f, tmp, p, t + dt, A, rtmp)
+    F2 .+= mul!(rtmp, A, uprev)
+    arnoldi!(Ks, A, F2; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, cache=tmp, iop=alg.iop)
+    phiv!(w2, dt, Ks, 3; cache=phiv_cache)
+    # Update u
+    u .= uprev
+    axpy!(dt, @view(w1[:,2]), u)
+    axpy!(-2dt, @view(w1[:,4]), u)
+    axpy!(2dt, @view(w2[:,4]), u)
+    if integrator.opts.adaptive
+      # error estimator for the imbedded method
+      @views @. utilde = (2*dt) * (-w1[:,4] + w2[:,4])
+      calculate_residuals!(tmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(tmp)
+    end
+  else
+    A21, B1, B1tilde, B2 = cache.ops
+    # stage 1 (fsaled)
+    # stage 2
+    mul!(rtmp, A21, F1)
+    @muladd @. tmp = uprev + dt * rtmp # tmp is U2
+    f.f2(F2, tmp, p, t + dt); mul!(rtmp, A, uprev); F2 .+= rtmp
+    # update u
+    u .= uprev
+    axpy!(dt, mul!(rtmp, B1, F1), u)
+    axpy!(dt, mul!(rtmp, B2, F2), u)
+    if integrator.opts.adaptive
+      # error estimator for the imbedded method
+      mul!(rtmp, B1tilde, F1); @. utilde = dt * rtmp
+      axpy!(dt, mul!(rtmp, B2, F2), utilde)
+      calculate_residuals!(tmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(tmp)
+    end
   end
 
   # Update integrator state
@@ -1251,28 +1287,47 @@ function perform_step!(integrator, cache::Exprb43ConstantCache, repeat_step=fals
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   A = isa(f, SplitFunction) ? f.f1 : calc_J!(integrator,cache,is_compos) # get linear operator
   alg = unwrap_alg(integrator, true)
-  kwargs = (m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
 
   Au = A * uprev
   F1 = integrator.fsalfirst
-  # Krylov on F1 (first column)
-  Ks = arnoldi(A, F1; kwargs...)
-  w1_half = phiv(dt/2, Ks, 1)
-  w1 = phiv(dt, Ks, 4)
-  U2 = uprev + dt/2 * w1_half[:, 2]
-  F2 = _compute_nl(f, U2, p, t + dt/2, A) + Au
-  # Krylov on F2 (second column)
-  w2 = phiv(dt, A, F2, 4; kwargs...)
-  U3 = uprev + dt * w2[:, 2]
-  F3 = _compute_nl(f, U3, p, t + dt, A) + Au
-  # Krylov on F3 (third column)
-  w3 = phiv(dt, A, F3, 4; kwargs...)
-  u = uprev + dt * (w1[:,2] - 14w1[:,4] + 36w1[:,5] + 16w2[:,4] - 48w2[:,5] - 2w3[:,4] + 12w3[:,5])
-  if integrator.opts.adaptive
-    # error estimator for the imbedded method
-    utilde = dt * (36w1[:,5] - 48w2[:,5] + 12w3[:,5])
-    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(atmp)
+  if alg.krylov
+    kwargs = (m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
+    # Krylov on F1 (first column)
+    Ks = arnoldi(A, F1; kwargs...)
+    w1_half = phiv(dt/2, Ks, 1)
+    w1 = phiv(dt, Ks, 4)
+    U2 = uprev + dt/2 * w1_half[:, 2]
+    F2 = _compute_nl(f, U2, p, t + dt/2, A) + Au
+    # Krylov on F2 (second column)
+    w2 = phiv(dt, A, F2, 4; kwargs...)
+    U3 = uprev + dt * w2[:, 2]
+    F3 = _compute_nl(f, U3, p, t + dt, A) + Au
+    # Krylov on F3 (third column)
+    w3 = phiv(dt, A, F3, 4; kwargs...)
+    u = uprev + dt * (w1[:,2] - 14w1[:,4] + 36w1[:,5] + 16w2[:,4] - 48w2[:,5] - 2w3[:,4] + 12w3[:,5])
+    if integrator.opts.adaptive
+      # error estimator for the imbedded method
+      utilde = dt * (36w1[:,5] - 48w2[:,5] + 12w3[:,5])
+      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp)
+    end
+  else
+    A21, A32, B1, B1tilde, B2, B2tilde, B3, B3tilde = cache.ops
+    # stage 1 (fsaled)
+    # stage 2
+    U2 = uprev + dt * (A21 * F1)
+    F2 = f.f2(U2, p, t + dt/2) + Au
+    # stage 3
+    U3 = uprev + dt * (A32 * F2)
+    F3 = f.f2(U3, p, t + dt) + Au
+    # update u
+    u = uprev + dt * (B1*F1 + B2*F2 + B3*F3)
+    if integrator.opts.adaptive
+      # error estimator for the imbedded method
+      utilde = dt * (B1tilde*F1 + B2tilde*F2 + B3tilde*F3)
+      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp)
+    end
   end
 
   # Update integrator state
@@ -1292,31 +1347,56 @@ function perform_step!(integrator, cache::Exprb43Cache, repeat_step=false)
   F1 = integrator.fsalfirst
   mul!(Au, A, uprev)
   halfdt = dt/2
-  Ks, phiv_cache, ws = KsCache
-  w1_half, w1, w2, w3 = ws
-  kwargs = (m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop, cache=tmp)
-  # Krylov for F1
-  arnoldi!(Ks, A, F1; kwargs...)
-  phiv!(w1_half, halfdt, Ks, 1; cache=phiv_cache)
-  phiv!(w1, dt, Ks, 4; cache=phiv_cache)
-  @muladd @. @views tmp = uprev + halfdt * w1_half[:, 2] # tmp is U2
-  _compute_nl!(F2, f, tmp, p, t + halfdt, A, rtmp); F2 .+= Au
-  # Krylov for F2
-  arnoldi!(Ks, A, F2; kwargs...)
-  phiv!(w2, dt, Ks, 4; cache=phiv_cache)
-  @muladd @. @views tmp = uprev + dt * w2[:, 2] # tmp is U3
-  _compute_nl!(F3, f, tmp, p, t + dt, A, rtmp); F3 .+= Au
-  # Krylov for F3 (third column)
-  arnoldi!(Ks, A, F3; kwargs...)
-  phiv!(w3, dt, Ks, 4; cache=phiv_cache)
-  # Update u
-  @views @. rtmp = w1[:,2] - 14w1[:,4] + 36w1[:,5] + 16w2[:,4] - 48w2[:,5] - 2w3[:,4] + 12w3[:,5]
-  @muladd @. u = uprev + dt * rtmp
-  if integrator.opts.adaptive
-    @views @. rtmp = 36w1[:,5] - 48w2[:,5] + 12w3[:,5]
-    @. utilde = dt * rtmp
-    calculate_residuals!(tmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(tmp)
+  if alg.krylov
+    Ks, phiv_cache, ws = KsCache
+    w1_half, w1, w2, w3 = ws
+    kwargs = (m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop, cache=tmp)
+    # Krylov for F1
+    arnoldi!(Ks, A, F1; kwargs...)
+    phiv!(w1_half, halfdt, Ks, 1; cache=phiv_cache)
+    phiv!(w1, dt, Ks, 4; cache=phiv_cache)
+    @muladd @. @views tmp = uprev + halfdt * w1_half[:, 2] # tmp is U2
+    _compute_nl!(F2, f, tmp, p, t + halfdt, A, rtmp); F2 .+= Au
+    # Krylov for F2
+    arnoldi!(Ks, A, F2; kwargs...)
+    phiv!(w2, dt, Ks, 4; cache=phiv_cache)
+    @muladd @. @views tmp = uprev + dt * w2[:, 2] # tmp is U3
+    _compute_nl!(F3, f, tmp, p, t + dt, A, rtmp); F3 .+= Au
+    # Krylov for F3 (third column)
+    arnoldi!(Ks, A, F3; kwargs...)
+    phiv!(w3, dt, Ks, 4; cache=phiv_cache)
+    # Update u
+    @views @. rtmp = w1[:,2] - 14w1[:,4] + 36w1[:,5] + 16w2[:,4] - 48w2[:,5] - 2w3[:,4] + 12w3[:,5]
+    @muladd @. u = uprev + dt * rtmp
+    if integrator.opts.adaptive
+      @views @. rtmp = 36w1[:,5] - 48w2[:,5] + 12w3[:,5]
+      @. utilde = dt * rtmp
+      calculate_residuals!(tmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(tmp)
+    end
+  else
+    A21, A32, B1, B1tilde, B2, B2tilde, B3, B3tilde = cache.ops
+    # stage 1 (fsaled)
+    # stage 2
+    mul!(rtmp, A21, F1)
+    @muladd @. tmp = uprev + dt * rtmp # tmp is U2
+    f.f2(F2, tmp, p, t + halfdt); F2 .+= Au
+    # stage 3
+    mul!(rtmp, A32, F2)
+    @muladd @. tmp = uprev + dt * rtmp # tmp is U3
+    f.f2(F3, tmp, p, t + dt); F3 .+= Au
+    # update u
+    u .= uprev
+    axpy!(dt, mul!(rtmp, B1, F1), u)
+    axpy!(dt, mul!(rtmp, B2, F2), u)
+    axpy!(dt, mul!(rtmp, B3, F3), u)
+    if integrator.opts.adaptive
+      mul!(rtmp, B1tilde, F1); @. utilde = dt * rtmp
+      axpy!(dt, mul!(rtmp, B2tilde, F2), utilde)
+      axpy!(dt, mul!(rtmp, B3tilde, F3), utilde)
+      calculate_residuals!(tmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(tmp)
+    end
   end
 
   # Update integrator state
