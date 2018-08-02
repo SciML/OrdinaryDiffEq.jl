@@ -134,6 +134,27 @@ function expRK_operators(::HochOst4, dt, A)
   B5 = 4P[3] - 8P[4]
   return A21, A31, A32, A41, A42, A51, A52, A54, B1, B4, B5
 end
+function expRK_operators(::Exprb32, dt, A)
+  P = phi(dt * A, 3)
+  A21 = P[2]
+  B1 = P[2] - 2P[4]
+  B1tilde = -2P[4]
+  B2 = 2P[4] # = B2hat
+  return A21, B1, B1tilde, B2
+end
+function expRK_operators(::Exprb43, dt, A)
+  P = phi(dt * A, 4)
+  Phalf = phi(dt/2 * A, 1)
+  A21 = 0.5Phalf[2]
+  A32 = P[2]
+  B1 = P[2] - 14P[4] + 36P[5]
+  B1tilde = 36P[5]
+  B2 = 16P[4] - 48P[5]
+  B2tilde = -48P[5]
+  B3 = -2P[4] + 12P[5]
+  B3tilde = 12P[5]
+  return A21, A32, B1, B1tilde, B2, B2tilde, B3, B3tilde
+end
 
 # Unified constructor for constant caches
 for (Alg, Cache) in [(:LawsonEuler, :LawsonEulerConstantCache),
@@ -167,7 +188,8 @@ Construct the non-standard caches (not uType or rateType) for ExpRK integrators.
 `plist` is a list of integers each corresponding to the order of a `phiv(!)`
 call in `perform_step!`.
 """
-function alg_cache_expRK(alg::OrdinaryDiffEqExponentialAlgorithm, u, f, dt, plist)
+function alg_cache_expRK(alg::Union{OrdinaryDiffEqExponentialAlgorithm,
+  OrdinaryDiffEqAdaptiveExponentialAlgorithm}, u, f, dt, plist)
   n = length(u); T = eltype(u)
   # Allocate cache for the Jacobian
   J = isa(f, SplitFunction) ? nothing : deepcopy(f.jac_prototype)
@@ -545,11 +567,22 @@ end
 
 ####################################
 # Adaptive exponential Rosenbrock method caches
-struct Exprb32ConstantCache <: OrdinaryDiffEqConstantCache end
-alg_cache(alg::Exprb32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = Exprb32ConstantCache()
+struct Exprb32ConstantCache{opType} <: OrdinaryDiffEqConstantCache 
+  ops::opType
+end
+function alg_cache(alg::Exprb32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  if alg.krylov
+    ops = nothing # no caching
+  else
+    isa(f, SplitFunction) || throw(ArgumentError("Caching can only be used with SplitFunction"))
+    A = size(f.f1) == () ? convert(Number, f.f1) : convert(AbstractMatrix, f.f1)
+    ops = expRK_operators(alg, dt, A)
+  end
+  return Exprb32ConstantCache(ops)
+end
 
-struct Exprb32Cache{uType,rateType,JType,KsType} <: OrdinaryDiffEqMutableCache
+struct Exprb32Cache{uType,rateType,JType,opType,KsType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   utilde::uType
@@ -557,27 +590,32 @@ struct Exprb32Cache{uType,rateType,JType,KsType} <: OrdinaryDiffEqMutableCache
   rtmp::rateType
   F2::rateType
   J::JType
+  ops::opType
   KsCache::KsType
 end
 function alg_cache(alg::Exprb32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   utilde, tmp = (similar(u) for i = 1:2)                     # uType caches
   rtmp, F2 = (zero(rate_prototype) for i = 1:2)              # rateType caches
-  # Jacobian and Krylov-related caches
-  n = length(u); T = eltype(u)
-  m = min(alg.m, n)
-  J = isa(f, SplitFunction) ? nothing : deepcopy(f.jac_prototype)
-  Ks = KrylovSubspace{T}(n, m)
-  phiv_cache = PhivCache{T}(m, 3)
-  w1 = Matrix{T}(undef, n, 4); w2 = Matrix{T}(undef, n, 4); ws = [w1, w2]
-  KsCache = (Ks, phiv_cache, ws)
-  Exprb32Cache(u,uprev,utilde,tmp,rtmp,F2,J,KsCache)
+  J, ops, KsCache = alg_cache_expRK(alg, u, f, dt, (3, 3))   # other caches
+  Exprb32Cache(u,uprev,utilde,tmp,rtmp,F2,J,ops,KsCache)
 end
 
-struct Exprb43ConstantCache <: OrdinaryDiffEqConstantCache end
-alg_cache(alg::Exprb43,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = Exprb43ConstantCache()
+struct Exprb43ConstantCache{opType} <: OrdinaryDiffEqConstantCache 
+  ops::opType
+end
+function alg_cache(alg::Exprb43,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  if alg.krylov
+    ops = nothing # no caching
+  else
+    isa(f, SplitFunction) || throw(ArgumentError("Caching can only be used with SplitFunction"))
+    A = size(f.f1) == () ? convert(Number, f.f1) : convert(AbstractMatrix, f.f1)
+    ops = expRK_operators(alg, dt, A)
+  end
+  return Exprb43ConstantCache(ops)
+end
 
-struct Exprb43Cache{uType,rateType,JType,KsType} <: OrdinaryDiffEqMutableCache
+struct Exprb43Cache{uType,rateType,JType,opType,KsType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   utilde::uType
@@ -587,23 +625,14 @@ struct Exprb43Cache{uType,rateType,JType,KsType} <: OrdinaryDiffEqMutableCache
   F2::rateType
   F3::rateType
   J::JType
+  ops::opType
   KsCache::KsType
 end
 function alg_cache(alg::Exprb43,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   utilde, tmp = (similar(u) for i = 1:2)                     # uType caches
   rtmp, Au, F2, F3 = (zero(rate_prototype) for i = 1:4)      # rateType caches
-  # Jacobian and Krylov-related caches
-  n = length(u); T = eltype(u)
-  m = min(alg.m, n)
-  J = isa(f, SplitFunction) ? nothing : deepcopy(f.jac_prototype)
-  Ks = KrylovSubspace{T}(n, m)
-  phiv_cache = PhivCache{T}(m, 4)
-  w1_half = Matrix{T}(undef, n, 2)
-  w1 = Matrix{T}(undef, n, 5)
-  w2 = Matrix{T}(undef, n, 5)
-  w3 = Matrix{T}(undef, n, 5)
-  KsCache = (Ks, phiv_cache, [w1_half,w1,w2,w3])
-  Exprb43Cache(u,uprev,utilde,tmp,rtmp,Au,F2,F3,J,KsCache)
+  J, ops, KsCache = alg_cache_expRK(alg,u,f,dt,(1,4,4,4))    # other caches
+  Exprb43Cache(u,uprev,utilde,tmp,rtmp,Au,F2,F3,J,ops,KsCache)
 end
 
 ####################################

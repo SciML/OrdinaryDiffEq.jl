@@ -898,15 +898,17 @@ end
 struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm end
 struct ETD2 <: OrdinaryDiffEqExponentialAlgorithm end
 struct Exprb32 <: OrdinaryDiffEqAdaptiveExponentialAlgorithm
+  krylov::Bool
   m::Int
   iop::Int
 end
-Exprb32(;m=30, iop=0) = Exprb32(m, iop)
+Exprb32(;krylov=false, m=30, iop=0) = Exprb32(krylov, m, iop)
 struct Exprb43 <: OrdinaryDiffEqAdaptiveExponentialAlgorithm
+  krylov::Bool
   m::Int
   iop::Int
 end
-Exprb43(;m=30, iop=0) = Exprb43(m, iop)
+Exprb43(;krylov=false, m=30, iop=0) = Exprb43(krylov, m, iop)
 
 #########################################
 
