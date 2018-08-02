@@ -327,9 +327,10 @@ end
 
   # TODO: Add extrapolation
   zᵧ = zprev
+  nlcache.z = zᵧ
+  nlcache.c = γ
 
-  tmp = uprev + d*zprev
-  nlcache = nlsolve_cache(alg, cache, zᵧ, tmp, W, d, γ, true)
+  nlcache.tmp = uprev + d*zprev
   zᵧ,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
 
@@ -337,13 +338,14 @@ end
 
   ### Initial Guess From Shampine
   z = α1*zprev + α2*zᵧ
+  nlcache.z = z
+  nlcache.c = 1
 
-  tmp = uprev + ω*zprev + ω*zᵧ
-  nlcache = nlsolve_cache(alg, cache, z, tmp, W, d, 1, true)
+  nlcache.tmp = uprev + ω*zprev + ω*zᵧ
   z,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
 
-  u = tmp + d*z
+  u = nlcache.tmp + d*z
 
   ################################### Finalize
 
