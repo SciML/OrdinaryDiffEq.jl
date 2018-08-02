@@ -26,6 +26,10 @@ sim  = test_convergence(dts,prob,ETDRK4(),dense_errors=true)
 @test abs(sim.𝒪est[:l2]-4) < 0.2
 sim  = test_convergence(dts,prob,HochOst4())
 @test abs(sim.𝒪est[:l2]-4) < 0.2
+sim  = test_convergence(dts,prob,Exprb32())
+@test_broken abs(sim.𝒪est[:l2]-3) < 0.2 # order = 1?
+sim  = test_convergence(dts,prob,Exprb43())
+@test_broken abs(sim.𝒪est[:l2]-4) < 0.2 # order = 2?
 sim  = test_convergence(dts,prob,ETD2())
 @test abs(sim.𝒪est[:l2]-2) < 0.2
 end
