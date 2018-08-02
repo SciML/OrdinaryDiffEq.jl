@@ -41,6 +41,7 @@ DiffEqBase.@def iipnlcachefields begin
   else
     tol = uToltype(min(0.03,first(reltol)^(0.5)))
   end
+  _nlsolve = alg.nonlinsolve
 end
 DiffEqBase.@def oopnlcachefields begin
   nlcache = alg.nonlinsolve.cache
@@ -66,6 +67,7 @@ DiffEqBase.@def oopnlcachefields begin
     tol = uToltype(min(0.03,first(reltol)^(0.5)))
   end
   z₊,dz,tmp,b,k = z,z,z,z,rate_prototype
+  _nlsolve = oop_nlsolver(alg.nonlinsolve)
 end
 
 mutable struct ImplicitEulerCache{uType,rateType,uNoUnitsType,J,W,UF,JC,F,N} <: OrdinaryDiffEqMutableCache
@@ -95,7 +97,7 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomElt
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   @iipnlcachefields
   atmp = similar(u,uEltypeNoUnits,axes(u))
-  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1,1,ηold,z₊,dz,tmp,b,k))
+  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1,1,ηold,z₊,dz,tmp,b,k))
   ImplicitEulerCache(u,uprev,uprev2,du1,fsalfirst,k,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolve)
 end
 
@@ -107,8 +109,8 @@ end
 function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   @oopnlcachefields
-  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1,1,ηold,z₊,dz,tmp,b,k))
-  ImplicitEulerConstantCache(uf,oop_nlsolver(nlsolve))
+  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1,1,ηold,z₊,dz,tmp,b,k))
+  ImplicitEulerConstantCache(uf,nlsolve)
 end
 
 mutable struct ImplicitMidpointConstantCache{F,N} <: OrdinaryDiffEqConstantCache
@@ -118,8 +120,8 @@ end
 
 function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   @oopnlcachefields
-  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//2,1//2,ηold,z₊,dz,tmp,b,k))
-  ImplicitMidpointConstantCache(uf,oop_nlsolver(nlsolve))
+  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//2,1//2,ηold,z₊,dz,tmp,b,k))
+  ImplicitMidpointConstantCache(uf,nlsolve)
 end
 
 mutable struct ImplicitMidpointCache{uType,rateType,J,W,UF,JC,F,N} <: OrdinaryDiffEqMutableCache
@@ -146,7 +148,7 @@ du_cache(c::ImplicitMidpointCache)   = (c.k,c.fsalfirst)
 function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   @iipnlcachefields
-  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//2,1//2,ηold,z₊,dz,tmp,b,k))
+  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//2,1//2,ηold,z₊,dz,tmp,b,k))
   ImplicitMidpointCache(u,uprev,du1,fsalfirst,k,z,dz,b,tmp,J,W,uf,jac_config,linsolve,nlsolve)
 end
 
@@ -162,8 +164,8 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   @oopnlcachefields
   uprev3 = u
   tprev2 = t
-  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//2,1,ηold,z₊,dz,tmp,b,k))
-  TrapezoidConstantCache(uf,uprev3,tprev2,oop_nlsolver(nlsolve))
+  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//2,1,ηold,z₊,dz,tmp,b,k))
+  TrapezoidConstantCache(uf,uprev3,tprev2,nlsolve)
 end
 
 mutable struct TrapezoidCache{uType,rateType,uNoUnitsType,J,W,UF,JC,tType,F,N} <: OrdinaryDiffEqMutableCache
@@ -197,7 +199,7 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   atmp = similar(u,uEltypeNoUnits,axes(u))
   uprev3 = similar(u)
   tprev2 = t
-  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//2,1,ηold,z₊,dz,tmp,b,k))
+  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//2,1,ηold,z₊,dz,tmp,b,k))
   TrapezoidCache(u,uprev,uprev2,du1,fsalfirst,k,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,uprev3,tprev2,nlsolve)
 end
 
@@ -211,8 +213,8 @@ function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   @oopnlcachefields
   tab = TRBDF2Tableau(uToltype,real(tTypeNoUnits))
-  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.d,tab.γ,ηold,z₊,dz,tmp,b,k))
-  TRBDF2ConstantCache(uf,oop_nlsolver(nlsolve),tab)
+  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.d,tab.γ,ηold,z₊,dz,tmp,b,k))
+  TRBDF2ConstantCache(uf,nlsolve,tab)
 end
 
 mutable struct TRBDF2Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,Tab,F,N} <: OrdinaryDiffEqMutableCache
@@ -246,7 +248,7 @@ function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   atmp = similar(u,uEltypeNoUnits,axes(u)); zprev = similar(u,axes(u));
   zᵧ = similar(u,axes(u))
   tab = TRBDF2Tableau(uToltype,real(tTypeNoUnits))
-  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.d,tab.γ,ηold,z₊,dz,tmp,b,k))
+  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.d,tab.γ,ηold,z₊,dz,tmp,b,k))
   TRBDF2Cache(u,uprev,du1,fsalfirst,k,zprev,zᵧ,z,dz,b,tmp,atmp,J,
               W,uf,jac_config,linsolve,nlsolve,tab)
 end
@@ -259,9 +261,9 @@ end
 function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   @oopnlcachefields
-  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1,1,ηold,z₊,dz,tmp,b,k))
+  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1,1,ηold,z₊,dz,tmp,b,k))
 
-  SDIRK2ConstantCache(uf,oop_nlsolver(nlsolve))
+  SDIRK2ConstantCache(uf,nlsolve)
 end
 
 mutable struct SDIRK2Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,F,N} <: OrdinaryDiffEqMutableCache
@@ -292,7 +294,7 @@ function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   @iipnlcachefields
   z₁ = similar(u,axes(u)); z₂ = z;
   atmp = similar(u,uEltypeNoUnits,axes(u))
-  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1,1,ηold,z₊,dz,tmp,b,k))
+  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1,1,ηold,z₊,dz,tmp,b,k))
 
   SDIRK2Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,dz,b,tmp,atmp,J,
               W,uf,jac_config,linsolve,nlsolve)
@@ -306,9 +308,9 @@ end
 function alg_cache(alg::SSPSDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   @oopnlcachefields
-  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//4,1//1,ηold,z₊,dz,tmp,b,k))
+  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//4,1//1,ηold,z₊,dz,tmp,b,k))
 
-  SSPSDIRK2ConstantCache(uf,oop_nlsolver(nlsolve))
+  SSPSDIRK2ConstantCache(uf,nlsolve)
 end
 
 mutable struct SSPSDIRK2Cache{uType,rateType,J,W,UF,JC,F,N} <: OrdinaryDiffEqMutableCache
@@ -338,7 +340,7 @@ function alg_cache(alg::SSPSDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   @iipnlcachefields
   z₁ = similar(u,axes(u)); z₂ = z;
   atmp = similar(u,uEltypeNoUnits,axes(u))
-  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//4,1//1,ηold,z₊,dz,tmp,b,k))
+  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//4,1//1,ηold,z₊,dz,tmp,b,k))
 
   SSPSDIRK2Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,dz,b,tmp,J,
                 W,uf,jac_config,linsolve,nlsolve)
@@ -354,9 +356,9 @@ function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   @oopnlcachefields
   tab = Kvaerno3Tableau(uToltype,real(tTypeNoUnits))
-  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,2tab.γ,ηold,z₊,dz,tmp,b,k))
+  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,2tab.γ,ηold,z₊,dz,tmp,b,k))
 
-  Kvaerno3ConstantCache(uf,oop_nlsolver(nlsolve),tab)
+  Kvaerno3ConstantCache(uf,nlsolve,tab)
 end
 
 mutable struct Kvaerno3Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,Tab,F,N} <: OrdinaryDiffEqMutableCache
@@ -392,7 +394,7 @@ function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   z₃ = similar(u,axes(u)); z₄ = z;
   atmp = similar(u,uEltypeNoUnits,axes(u))
   tab = Kvaerno3Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
-  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,2tab.γ,ηold,z₊,dz,tmp,b,k))
+  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,2tab.γ,ηold,z₊,dz,tmp,b,k))
 
   Kvaerno3Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,dz,b,tmp,atmp,J,
                 W,uf,jac_config,linsolve,nlsolve,tab)
@@ -408,9 +410,9 @@ function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   @oopnlcachefields
   tab = Cash4Tableau(uToltype,real(tTypeNoUnits))
-  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,tab.γ,ηold,z₊,dz,tmp,b,k))
+  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,tab.γ,ηold,z₊,dz,tmp,b,k))
 
-  Cash4ConstantCache(uf,oop_nlsolver(nlsolve),tab)
+  Cash4ConstantCache(uf,nlsolve,tab)
 end
 
 mutable struct Cash4Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,Tab,F} <: OrdinaryDiffEqMutableCache
@@ -448,7 +450,7 @@ function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   z₅ = z
   atmp = similar(u,uEltypeNoUnits,axes(u))
   tab = Cash4Tableau(uToltype,real(tTypeNoUnits))
-  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,tab.γ,ηold,z₊,dz,tmp,b,k))
+  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,tab.γ,ηold,z₊,dz,tmp,b,k))
 
   Cash4Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,dz,b,tmp,atmp,J,
               W,uf,jac_config,linsolve,nlsolve,tab)
@@ -468,9 +470,9 @@ function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,
   else
     tab = Hairer42Tableau(uToltype,real(tTypeNoUnits))
   end
-  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,tab.γ,ηold,z₊,dz,tmp,b,k))
+  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,tab.γ,ηold,z₊,dz,tmp,b,k))
 
-  Hairer4ConstantCache(uf,oop_nlsolver(nlsolve),tab)
+  Hairer4ConstantCache(uf,nlsolve,tab)
 end
 
 mutable struct Hairer4Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,Tab,F,N} <: OrdinaryDiffEqMutableCache
@@ -514,7 +516,7 @@ function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,
   else # Hairer42
     tab = Hairer42Tableau(uToltype,real(tTypeNoUnits))
   end
-  nlsolve = typeof(alg.nonlinsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,tab.γ,ηold,z₊,dz,tmp,b,k))
+  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,tab.γ,ηold,z₊,dz,tmp,b,k))
 
   Hairer4Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,dz,b,tmp,atmp,J,
                W,uf,jac_config,linsolve,nlsolve,tab)
