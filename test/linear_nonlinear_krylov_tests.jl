@@ -111,5 +111,10 @@ end
   @test isapprox(sol(1.0), sol_ref(1.0); rtol=reltol)
   sol = solve(prob_ip, Exprb32(m=20); adaptive=true, abstol=abstol, reltol=reltol)
   @test isapprox(sol(1.0), sol_ref(1.0); rtol=reltol)
+
+  sol = solve(prob, Exprb43(m=20); adaptive=true, abstol=abstol, reltol=reltol)
+  @test isapprox(sol(1.0), sol_ref(1.0); rtol=reltol)
+  sol = solve(prob_ip, Exprb43(m=20); adaptive=true, abstol=abstol, reltol=reltol)
+  @test isapprox(sol(1.0), sol_ref(1.0); rtol=reltol)
 end
 end

@@ -1171,7 +1171,7 @@ function initialize!(integrator, cache::Union{Exprb32ConstantCache,Exprb43Consta
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
 end
-function initialize!(integrator, cache::Exprb32Cache)
+function initialize!(integrator, cache::Union{Exprb32Cache,Exprb43Cache})
   # Pre-start fsal
   integrator.fsalfirst = zero(cache.rtmp)
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
@@ -1277,6 +1277,48 @@ function perform_step!(integrator, cache::Exprb43ConstantCache, repeat_step=fals
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
+end
+
+function perform_step!(integrator, cache::Exprb43Cache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack utilde,tmp,rtmp,Au,F2,F3,J,KsCache = cache
+  is_compos = isa(integrator.alg, CompositeAlgorithm)
+  A = isa(f, SplitFunction) ? f.f1 : (calc_J!(integrator,cache,is_compos); J) # get linear operator
+  alg = unwrap_alg(integrator, true)
+
+  F1 = integrator.fsalfirst
+  mul!(Au, A, uprev)
+  halfdt = dt/2
+  Ks, phiv_cache, ws = KsCache
+  w1_half, w1, w2, w3 = ws
+  kwargs = (m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop, cache=tmp)
+  # Krylov for F1
+  arnoldi!(Ks, A, F1; kwargs...)
+  phiv!(w1_half, halfdt, Ks, 1; cache=phiv_cache)
+  phiv!(w1, dt, Ks, 4; cache=phiv_cache)
+  @muladd @. @views tmp = uprev + halfdt * w1_half[:, 2] # tmp is U2
+  _compute_nl!(F2, f, tmp, p, t + halfdt, A, rtmp); F2 .+= Au
+  # Krylov for F2
+  arnoldi!(Ks, A, F2; kwargs...)
+  phiv!(w2, dt, Ks, 4; cache=phiv_cache)
+  @muladd @. @views tmp = uprev + dt * w2[:, 2] # tmp is U3
+  _compute_nl!(F3, f, tmp, p, t + dt, A, rtmp); F3 .+= Au
+  # Krylov for F3 (third column)
+  arnoldi!(Ks, A, F3; kwargs...)
+  phiv!(w3, dt, Ks, 4; cache=phiv_cache)
+  # Update u
+  @views @. rtmp = w1[:,2] - 14w1[:,4] + 36w1[:,5] + 16w2[:,4] - 48w2[:,5] - 2w3[:,4] + 12w3[:,5]
+  @muladd @. u = uprev + dt * rtmp
+  if integrator.opts.adaptive
+    @views @. rtmp = w1[:,2] - 14w1[:,4] + 16w2[:,4] - 2w3[:,4]
+    @. utilde = dt * rtmp
+    calculate_residuals!(tmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+    integrator.EEst = integrator.opts.internalnorm(tmp)
+  end
+
+  # Update integrator state
+  f(integrator.fsallast, u, p, t + dt)
+  # integrator.k is automatically set due to aliasing
 end
 
 ######################################################
