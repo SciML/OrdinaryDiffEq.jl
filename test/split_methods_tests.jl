@@ -149,7 +149,7 @@ sim = test_convergence(dts,prob,SBDF4())
 f1 = (u,p,t) -> u
 f2 = (u,p,t) -> 2u
 
-ff_split3 = SplitFunction(f1, f2; analytic=(u0,p,t)->exp(2t)*u0)
+ff_split3 = SplitFunction(f1, f2; analytic=(u0,p,t)->exp(3t)*u0)
 prob = SplitODEProblem(ff_split3,1.0,(0.0,1.0))
 
 sol = solve(prob,KenCarp3())
@@ -306,9 +306,9 @@ sim = test_convergence(dts,prob,SBDF4())
 # Test together
 
 f1 = (du,u,p,t) -> du .= u
-f2 = (du,u,p,t) -> du .= u
+f2 = (du,u,p,t) -> du .= 2u
 
-ff_split6 = SplitFunction(f1, f2; analytic=(u0,p,t)->exp(2t)*u0)
+ff_split6 = SplitFunction(f1, f2; analytic=(u0,p,t)->exp(3t)*u0)
 prob = SplitODEProblem(ff_split6,rand(4,2),(0.0,1.0))
 
 sol = solve(prob,KenCarp3())
