@@ -311,6 +311,7 @@ end
 end
 
 @def tsit5pre4 begin
+  @tsit5unpack
   b1Θdiff4 = 24*r14
   b2Θdiff4 = 24*r24
   b3Θdiff4 = 24*r34
