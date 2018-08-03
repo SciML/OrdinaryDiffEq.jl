@@ -107,10 +107,8 @@ for i = 1:2
   sim16 = test_convergence(dts,prob,Kvaerno3())
   @test abs(sim16.𝒪est[:final]-3) < testTol
 
-  dts = 1 .//2 .^(10:-1:6)
   sim162 = test_convergence(dts,prob,Kvaerno3(nonlinsolve = NLFunctional()))
   @test abs(sim162.𝒪est[:final]-3) < testTol
-  dts = 1 .//2 .^(9:-1:5)
 
   sim17 = test_convergence(dts,prob,KenCarp3())
   @test abs(sim17.𝒪est[:final]-3) < testTol

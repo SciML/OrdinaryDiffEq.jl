@@ -1,30 +1,3 @@
-#"""
-#  nlsolve_cache(alg, cache::OrdinaryDiffEqConstantCache, z, tmp, W, γ, c, new_W)
-#  -> NLsolveConstantCache
-#
-#Return a wrapper `NLsolveConstantCache` for `cache::OrdinaryDiffEqConstantCache`,
-#so that `diffeq_nlsolve!` does not need to assume fieldnames of `cache`.
-#"""
-#function nlsolve_cache(alg::Union{OrdinaryDiffEqNLNewtonAdaptiveAlgorithm,
-#                                  OrdinaryDiffEqNLNewtonAlgorithm},
-#                       cache::OrdinaryDiffEqConstantCache, z, tmp, W, γ, c, new_W)
-#  NLsolveConstantCache(z, tmp, W, cache.κ, cache.tol, γ, c)
-#end
-
-#"""
-#  nlsolve_cache(alg, cache::OrdinaryDiffEqMutableCache, z, tmp, W, γ, c, new_W)
-#  -> NLsolveMutableCache
-#
-#Return a wrapper `NLsolveMutableCache` for `cache::OrdinaryDiffEqMutableCache`,
-#so that `diffeq_nlsolve!` does not need to assume fieldnames of `cache`.
-#"""
-#function nlsolve_cache(alg::Union{OrdinaryDiffEqNLNewtonAdaptiveAlgorithm,
-#                                  OrdinaryDiffEqNLNewtonAlgorithm},
-#                       cache::OrdinaryDiffEqMutableCache, z, tmp, γ, c, new_W)
-#  NLsolveMutableCache(z, cache.dz, tmp, cache.b,
-#                      cache.W, cache.κ, cache.tol, γ, c, cache.k, new_W)
-#end
-
 """
   (S::NLNewton)(integrator) -> (z, η, iter, fail_convergence)
 

@@ -105,7 +105,7 @@ end
   # precalculations
   γdt = γ*dt
 
-  new_W = calc_W!(integrator, cache, γdt, repeat_step)
+  typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, γdt, repeat_step)
 
   # FSAL Step 1
   @. z₁ = dt*integrator.fsalfirst
@@ -114,19 +114,22 @@ end
 
   # TODO: Add extrapolation for guess
   @. z₂ = z₁
+  nlcache.z = z₂
 
   @. tmp = uprev + γ*z₁
-  nlcache = nlsolve_cache(alg, cache, z₂, tmp, γ, 2γ, new_W)
+  nlcache.c = 2γ
   z₂,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
+  nlcache.new_W = false
 
   ################################## Solve Step 3
 
   # Guess is from Hermite derivative on z₁ and z₂
   @. z₃ = α31*z₁ + α32*z₂
+  nlcache.z = z₃
 
   @. tmp = uprev + a31*z₁ + a32*z₂
-  nlcache = nlsolve_cache(alg, cache, z₃, tmp, γ, c3, false)
+  nlcache.c = c3
   z₃,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
 
@@ -138,9 +141,10 @@ end
     @unpack α41,α42 = cache.tab
     @. z₄ = α41*z₁ + α42*z₂
   end
+  nlcache.z = z₄
 
   @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
-  nlcache = nlsolve_cache(alg, cache, z₄, tmp, γ, 1, false)
+  nlcache.c = 1
   z₄,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
 
@@ -310,7 +314,7 @@ end
   # precalculations
   γdt = γ*dt
 
-  new_W = calc_W!(integrator, cache, γdt, repeat_step)
+  typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, γdt, repeat_step)
 
   if typeof(integrator.f) <: SplitFunction
     # Explicit tableau is not FSAL
@@ -328,6 +332,7 @@ end
 
   # TODO: Add extrapolation for guess
   @. z₂ = z₁
+  nlcache.z = z₂
 
   @. tmp = uprev + γ*z₁
 
@@ -337,9 +342,10 @@ end
     @. tmp += ea21*k1
   end
 
-  nlcache = nlsolve_cache(alg, cache, z₂, tmp, γ, 2γ, new_W)
+  nlcache.c = 2γ
   z₂,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
+  nlcache.new_W = false
 
   ################################## Solve Step 3
 
@@ -356,8 +362,9 @@ end
     @. z₃ = α31*z₁ + α32*z₂
     @. tmp = uprev + a31*z₁ + a32*z₂
   end
+  nlcache.z = z₃
 
-  nlcache = nlsolve_cache(alg, cache, z₃, tmp, γ, c3, false)
+  nlcache.c = c3
   z₃,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
 
@@ -376,8 +383,9 @@ end
     @. z₄ = α41*z₁ + α42*z₂
     @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   end
+  nlcache.z = z₄
 
-  nlcache = nlsolve_cache(alg, cache, z₄, tmp, γ, 1, false)
+  nlcache.c = 1
   z₄,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
 
@@ -517,7 +525,7 @@ end
   # precalculations
   γdt = γ*dt
 
-  new_W = calc_W!(integrator, cache, γdt, repeat_step)
+  typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, γdt, repeat_step)
 
   ##### Step 1
 
@@ -526,19 +534,22 @@ end
   ##### Step 2
 
   # TODO: Allow other choices here
-  z₂ .= zero.(u)
+  z₂ .= zero(eltype(u))
+  nlcache.z = z₂
 
   @. tmp = uprev + γ*z₁
-  nlcache = nlsolve_cache(alg, cache, z₂, tmp, γ, 2γ, new_W)
+  nlcache.c = 2γ
   z₂,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
+  nlcache.new_W = false
 
   ################################## Solve Step 3
 
   @. z₃ = α31*z₁ + α32*z₂
+  nlcache.z = z₃
 
   @. tmp = uprev + a31*z₁ + a32*z₂
-  nlcache = nlsolve_cache(alg, cache, z₃, tmp, γ, c3, false)
+  nlcache.c = c3
   z₃,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
 
@@ -546,9 +557,10 @@ end
 
   # Use constant z prediction
   @. z₄ = α41*z₁ + α42*z₂
+  nlcache.z = z₄
 
   @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
-  nlcache = nlsolve_cache(alg, cache, z₄, tmp, γ, c4, false)
+  nlcache.c = c4
   z₄,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
 
@@ -556,9 +568,10 @@ end
 
   # Use yhat prediction
   @. z₅ = a41*z₁ + a42*z₂ + a43*z₃ + γ*z₄
+  nlcache.z = z₅
 
   @. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
-  nlcache = nlsolve_cache(alg, cache, z₅, tmp, γ, 1, false)
+  nlcache.c = 1
   z₅,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
 
@@ -774,7 +787,7 @@ end
   # precalculations
   γdt = γ*dt
 
-  new_W = calc_W!(integrator, cache, γdt, repeat_step)
+  typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, γdt, repeat_step)
 
   ##### Step 1
 
@@ -793,7 +806,8 @@ end
   ##### Step 2
 
   # TODO: Allow other choices here
-  z₂ .= zero.(u)
+  z₂ .= zero(eltype(u))
+  nlcache.z = z₂
 
   @. tmp = uprev + γ*z₁
 
@@ -803,9 +817,10 @@ end
     @. tmp += ea21*k1
   end
 
-  nlcache = nlsolve_cache(alg, cache, z₂, tmp, γ, 2γ, new_W)
+  nlcache.c = 2γ
   z₂,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
+  nlcache.new_W = false
 
   ################################## Solve Step 3
 
@@ -824,8 +839,9 @@ end
     @. z₃ = α31*z₁ + α32*z₂
     @. tmp = uprev + a31*z₁ + a32*z₂
   end
+  nlcache.z = z₃
 
-  nlcache = nlsolve_cache(alg, cache, z₃, tmp, γ, c3, false)
+  nlcache.c = c3
   z₃,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
 
@@ -843,8 +859,9 @@ end
     @. z₄ = α41*z₁ + α42*z₂
     @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   end
+  nlcache.z = z₄
 
-  nlcache = nlsolve_cache(alg, cache, z₄, tmp, γ, c4, false)
+  nlcache.c = c4
   z₄,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
 
@@ -867,8 +884,9 @@ end
       @inbounds tmp[i] = uprev[i] + a51*z₁[i] + a52*z₂[i] + a53*z₃[i] + a54*z₄[i]
     end
   end
+  nlcache.z = z₅
 
-  nlcache = nlsolve_cache(alg, cache, z₅, tmp, γ, c5, false)
+  nlcache.c = c5
   z₅,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
 
@@ -890,8 +908,9 @@ end
       @inbounds tmp[i] = uprev[i] + a61*z₁[i] + a63*z₃[i] + a64*z₄[i] + a65*z₅[i]
     end
   end
+  nlcache.z = z₆
 
-  nlcache = nlsolve_cache(alg, cache, z₆, tmp, γ, 1, false)
+  nlcache.c = 1
   z₆,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
 
@@ -1053,7 +1072,7 @@ end
   # precalculations
   γdt = γ*dt
 
-  new_W = calc_W!(integrator, cache, γdt, repeat_step)
+  typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, γdt, repeat_step)
 
   ##### Step 1
 
@@ -1062,19 +1081,22 @@ end
   ##### Step 2
 
   # TODO: Allow other choices here
-  z₂ .= zero.(u)
+  z₂ .= zero(eltype(u))
+  nlcache.z = z₂
 
   @. tmp = uprev + γ*z₁
-  nlcache = nlsolve_cache(alg, cache, z₂, tmp, γ, 2γ, new_W)
+  nlcache.c = 2γ
   z₂,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
+  nlcache.new_W = false
 
   ################################## Solve Step 3
 
   @. z₃ = α31*z₁ + α32*z₂
+  nlcache.z = z₃
 
   @. tmp = uprev + a31*z₁ + a32*z₂
-  nlcache = nlsolve_cache(alg, cache, z₃, tmp, γ, c3, false)
+  nlcache.c = c3
   z₃,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
 
@@ -1082,27 +1104,30 @@ end
 
   # Use constant z prediction
   @. z₄ = α41*z₁ + α42*z₂ + α43*z₃
+  nlcache.z = z₄
 
   @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
-  nlcache = nlsolve_cache(alg, cache, z₄, tmp, γ, c4, false)
+  nlcache.c = c4
   z₄,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
 
   ################################## Solve Step 5
 
   @. z₅ = α51*z₁ + α52*z₂ + α53*z₃
+  nlcache.z = z₅
 
   @. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
-  nlcache = nlsolve_cache(alg, cache, z₅, tmp, γ, c5, false)
+  nlcache.c = c5
   z₅,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
 
   ################################## Solve Step 6
 
   @. z₆ = α61*z₁ + α62*z₂ + α63*z₃
+  nlcache.z = z₆
 
   @. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅
-  nlcache = nlsolve_cache(alg, cache, z₆, tmp, γ, c6, false)
+  nlcache.c = c6
   z₆,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
 
@@ -1113,12 +1138,13 @@ end
   @tight_loop_macros for i in eachindex(u)
     @inbounds z₇[i] = a61*z₁[i] + a63*z₃[i] + a64*z₄[i] + a65*z₅[i] + γ*z₆[i]
   end
+  nlcache.z = z₇
 
   # @. tmp = uprev + a71*z₁ + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
   @tight_loop_macros for i in eachindex(u)
     @inbounds tmp[i] = uprev[i] + a71*z₁[i] + a73*z₃[i] + a74*z₄[i] + a75*z₅[i] + a76*z₆[i]
   end
-  nlcache = nlsolve_cache(alg, cache, z₇, tmp, γ, 1, false)
+  nlcache.c = 1
   z₇,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
 
@@ -1378,7 +1404,7 @@ end
   # precalculations
   γdt = γ*dt
 
-  new_W = calc_W!(integrator, cache, γdt, repeat_step)
+  typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, γdt, repeat_step)
 
   ##### Step 1
 
@@ -1397,7 +1423,8 @@ end
   ##### Step 2
 
   # TODO: Allow other choices here
-  z₂ .= zero.(u)
+  z₂ .= zero(eltype(u))
+  nlcache.z = z₂
 
   tstep = t + 2*γdt
   @. tmp = uprev + γ*z₁
@@ -1408,9 +1435,10 @@ end
     @. tmp += ea21*k1
   end
 
-  nlcache = nlsolve_cache(alg, cache, z₂, tmp, γ, 2γ, new_W)
+  nlcache.c = 2γ
   z₂,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
+  nlcache.new_W = false
 
   ################################## Solve Step 3
 
@@ -1429,8 +1457,9 @@ end
     @. z₃ = a31*z₁ + α32*z₂
     @. tmp = uprev + a31*z₁ + a32*z₂
   end
+  nlcache.z = z₃
 
-  nlcache = nlsolve_cache(alg, cache, z₃, tmp, γ, c3, false)
+  nlcache.c = c3
   z₃,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
 
@@ -1448,8 +1477,9 @@ end
     @. z₄ = α41*z₁ + α42*z₂
     @. tmp = uprev + a41*z₁ + a43*z₃
   end
+  nlcache.z = z₄
 
-  nlcache = nlsolve_cache(alg, cache, z₄, tmp, γ, c4, false)
+  nlcache.c = c4
   z₄,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
 
@@ -1467,8 +1497,9 @@ end
     @. z₅ = α51*z₁ + α52*z₂
     @. tmp = uprev + a51*z₁ + a53*z₃ + a54*z₄
   end
+  nlcache.z = z₅
 
-  nlcache = nlsolve_cache(alg, cache, z₅, tmp, γ, c5, false)
+  nlcache.c = c5
   z₅,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
 
@@ -1489,8 +1520,9 @@ end
       @inbounds tmp[i] = uprev[i] + a61*z₁[i] + a63*z₃[i] + a64*z₄[i] + a65*z₅[i]
     end
   end
+  nlcache.z = z₆
 
-  nlcache = nlsolve_cache(alg, cache, z₆, tmp, γ, c6, false)
+  nlcache.c = c6
   z₆,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
 
@@ -1514,8 +1546,9 @@ end
       @inbounds tmp[i] = uprev[i] + a71*z₁[i] + a73*z₃[i] + a74*z₄[i] + a75*z₅[i] + a76*z₆[i]
     end
   end
+  nlcache.z = z₇
 
-  nlcache = nlsolve_cache(alg, cache, z₇, tmp, γ, c7, false)
+  nlcache.c = c7
   z₇,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
 
@@ -1539,8 +1572,9 @@ end
       @inbounds tmp[i] = uprev[i] + a81*z₁[i] + a84*z₄[i] + a85*z₅[i] + a86*z₆[i] + a87*z₇[i]
     end
   end
+  nlcache.z = z₈
 
-  nlcache = nlsolve_cache(alg, cache, z₈, tmp, γ, 1, false)
+  nlcache.c = 1
   z₈,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
 
