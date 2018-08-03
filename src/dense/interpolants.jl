@@ -1270,7 +1270,7 @@ end
           k[24]*b24Θdiff + k[25]*b25Θdiff + k[26]*b26Θdiff)*invdt3
 end
 
-@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{Vern9ConstantCache,Vern9Cache},idxs::Nothing,T::Type{Val{4}})
+@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{Vern9ConstantCache,Vern9Cache},idxs,T::Type{Val{4}})
   @vern9pre4
   return (k[1][idxs]*b1Θdiff + k[8][idxs]*b8Θdiff + k[9][idxs]*b9Θdiff +
           k[10][idxs]*b10Θdiff + k[11][idxs]*b11Θdiff +
