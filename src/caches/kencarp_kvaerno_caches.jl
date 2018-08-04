@@ -53,10 +53,14 @@ function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   z₃ = similar(u,axes(u)); z₄ = z
   atmp = similar(u,uEltypeNoUnits,axes(u))
 
-  if typeof(f) <: SplitFunction && uf != nothing
+  if typeof(f) <: SplitFunction
     k1 = similar(u,axes(u)); k2 = similar(u,axes(u))
     k3 = similar(u,axes(u)); k4 = similar(u,axes(u))
-    uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t,p)
+    if uf != nothing
+      uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t,p)
+      linsolve = alg.linsolve(Val{:init},uf,u)
+      jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
+    end
   else
     k1 = nothing; k2 = nothing
     k3 = nothing; k4 = nothing
@@ -190,11 +194,15 @@ function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   z₅ = similar(u,axes(u)); z₆ = z
   atmp = similar(u,uEltypeNoUnits,axes(u))
 
-  if typeof(f) <: SplitFunction && uf != nothing
+  if typeof(f) <: SplitFunction
     k1 = similar(u,axes(u)); k2 = similar(u,axes(u))
     k3 = similar(u,axes(u)); k4 = similar(u,axes(u))
     k5 = similar(u,axes(u)); k6 = similar(u,axes(u))
-    uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t,p)
+    if uf != nothing
+      uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t,p)
+      linsolve = alg.linsolve(Val{:init},uf,u)
+      jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
+    end
   else
     k1 = nothing; k2 = nothing
     k3 = nothing; k4 = nothing
@@ -334,12 +342,16 @@ function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   z₇ = similar(u,axes(u)); z₈ = z
   atmp = similar(u,uEltypeNoUnits,axes(u))
 
-  if typeof(f) <: SplitFunction && uf != nothing
+  if typeof(f) <: SplitFunction
     k1 = similar(u,axes(u)); k2 = similar(u,axes(u))
     k3 = similar(u,axes(u)); k4 = similar(u,axes(u))
     k5 = similar(u,axes(u)); k6 = similar(u,axes(u))
     k7 = similar(u,axes(u)); k8 = similar(u,axes(u))
-    uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t,p)
+    if uf != nothing
+      uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t,p)
+      linsolve = alg.linsolve(Val{:init},uf,u)
+      jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
+    end
   else
     k1 = nothing; k2 = nothing
     k3 = nothing; k4 = nothing

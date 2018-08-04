@@ -223,7 +223,7 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     z₃ = z₂
-    u = tmp + γ*z₂
+    u = nlcache.tmp + γ*z₂
     k2 = dt*f2(u,p,t + 2γ*dt)
     tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
   else
@@ -242,7 +242,7 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     z₄ = z₂
-    u = tmp + γ*z₃
+    u = nlcache.tmp + γ*z₃
     k3 = dt*f2( u,p,t+c3*dt)
     tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃ + ea41*k1 + ea42*k2 + ea43*k3
   else
@@ -656,7 +656,7 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     z₃ = z₂
-    u = tmp + γ*z₂
+    u = nlcache.tmp + γ*z₂
     k2 = dt*f2(u,p,t+2γ*dt)
     tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
   else
@@ -675,7 +675,7 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     z₄ = z₂
-    u = tmp + γ*z₃
+    u = nlcache.tmp + γ*z₃
     k3 = dt*f2( u,p,t+c3*dt)
     tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃ + ea41*k1 + ea42*k2 + ea43*k3
   else
@@ -693,7 +693,7 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     z₅ = z₄
-    u = tmp + γ*z₄
+    u = nlcache.tmp + γ*z₄
     k4 = dt*f2( u,p,t+c4*dt)
     tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + ea51*k1 + ea52*k2 + ea53*k3 + ea54*k4
   else
@@ -712,7 +712,7 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     z₆ = z₅
-    u = tmp + γ*z₅
+    u = nlcache.tmp + γ*z₅
     k5 = dt*f2( u,p,t+c5*dt)
     tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + ea61*k1 + ea62*k2 + ea63*k3 + ea64*k4 + ea65*k5
   else
@@ -1237,7 +1237,7 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     z₃ = z₂
-    u = tmp + γ*z₂
+    u = nlcache.tmp + γ*z₂
     k2 = dt*f2(u,p,t+2γ*dt)
     tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
   else
@@ -1256,7 +1256,7 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     z₄ = z₂
-    u = tmp + γ*z₃
+    u = nlcache.tmp + γ*z₃
     k3 = dt*f2( u,p,t+c3*dt)
     tmp = uprev + a41*z₁ + a43*z₃ + ea41*k1 + ea43*k3
   else
@@ -1274,7 +1274,7 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     z₅ = z₂
-    u = tmp + γ*z₄
+    u = nlcache.tmp + γ*z₄
     k4 = dt*f2( u,p,t+c4*dt)
     tmp = uprev + a51*z₁ + a53*z₃ + a54*z₄ + ea51*k1 + ea53*k3 + ea54*k4
   else
@@ -1292,7 +1292,7 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     z₆ = z₃
-    u = tmp + γ*z₅
+    u = nlcache.tmp + γ*z₅
     k5 = dt*f2( u,p,t+c5*dt)
     tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + ea61*k1 + ea63*k3 + ea64*k4 + ea65*k5
   else
@@ -1310,7 +1310,7 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     z₇ = z₂
-    u = tmp + γ*z₆
+    u = nlcache.tmp + γ*z₆
     k6 = dt*f2( u,p,t+c6*dt)
     tmp = uprev + a71*z₁ +  a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆ + ea71*k1 + ea73*k3 + ea74*k4 + ea75*k5 + ea76*k6
   else
@@ -1328,7 +1328,7 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     z₈ = z₅
-    u = tmp + γ*z₇
+    u = nlcache.tmp + γ*z₇
     k7 = dt*f2( u,p,t+c7*dt)
     tmp = uprev + a81*z₁ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇ + ea81*k1 + ea83*k3 + ea84*k4 + ea85*k5 + ea86*k6 + ea87*k7
   else
