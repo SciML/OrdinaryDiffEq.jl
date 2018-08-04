@@ -306,9 +306,9 @@ function ode_interpolation!(out,tval::Number,id,idxs,deriv,p)
 end
 
 """
-By default, simpledense
+By default, Hermite interpolant so update the derivative at the two ends
 """
-@inline function ode_addsteps!(k,t,uprev,u,dt,f,p,cache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
+function ode_addsteps!(k,t,uprev,u,dt,f,p,cache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<2 || always_calc_begin
     if typeof(cache) <: OrdinaryDiffEqMutableCache
       rtmp = similar(u, eltype(eltype(k)))
