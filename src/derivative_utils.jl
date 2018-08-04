@@ -209,14 +209,15 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
   @inbounds begin
     @unpack t,dt,uprev,u,f,p = integrator
     @unpack J,W = cache
-    @unpack ηold,nl_iters = cache.nlsolve.cache
-    nlcache = cache.nlsolve.cache
     mass_matrix = integrator.f.mass_matrix
     is_compos = typeof(integrator.alg) <: CompositeAlgorithm
     alg = unwrap_alg(integrator, true)
+    isnewton = !(typeof(alg) <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm ||
+                 typeof(alg) <: OrdinaryDiffEqRosenbrockAlgorithm)
+    isnewton && ( nlcache = cache.nlsolve.cache; @unpack ηold,nl_iters = cache.nlsolve.cache )
 
     # calculate W
-    nlcache.new_W = true
+    new_W = true
     if DiffEqBase.has_invW(f)
       # skip calculation of inv(W) if step is repeated
       !repeat_step && W_transform ? f.invW_t(W, uprev, p, dtgamma, t) :
@@ -226,8 +227,8 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     elseif DiffEqBase.has_jac(f) && f.jac_prototype != nothing
       # skip calculation of J if step is repeated
       if repeat_step || (alg_can_repeat_jac(alg) &&
-                         (!integrator.last_stepfail && cache.newton_iters == 1 &&
-                          cache.ηold < alg.new_jac_conv_bound))
+                         (!integrator.last_stepfail && nl_iters == 1 &&
+                          ηold < alg.new_jac_conv_bound))
         new_jac = false
       else
         new_jac = true
@@ -266,9 +267,10 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
           end
         end
       else
-        nlcache.new_W = false
+        new_W = false
       end
     end
+    isnewton && ( nlcache.new_W = new_W )
   end
   return nothing
 end
