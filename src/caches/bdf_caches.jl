@@ -326,7 +326,7 @@ function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   U = fill(zero(typeof(t)), 1, 1)
 
   U!(1,U)
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,zero(alg.kappa),1,ηold,z₊,dz,tmp,b,k))
+  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,zero(inv((1-alg.kappa))),1,ηold,z₊,dz,tmp,b,k))
 
   QNDF1ConstantCache(uf,nlsolve,D,D2,R,U,uprev2,dtₙ₋₁)
 end
@@ -347,7 +347,7 @@ function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   utilde = similar(u,axes(u))
   uprev2 = similar(u)
   dtₙ₋₁ = one(dt)
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,zero(alg.kappa),1,ηold,z₊,dz,tmp,b,k))
+  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,zero(inv((1-alg.kappa))),1,ηold,z₊,dz,tmp,b,k))
 
   QNDF1Cache(uprev2,du1,fsalfirst,k,z,dz,b,D,D2,R,U,tmp,atmp,utilde,J,
               W,uf,jac_config,linsolve,nlsolve,dtₙ₋₁)
@@ -411,7 +411,7 @@ function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
 
   U!(2,U)
 
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,zero(alg.kappa),1,ηold,z₊,dz,tmp,b,k))
+  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,zero(inv((1-alg.kappa))),1,ηold,z₊,dz,tmp,b,k))
   QNDF2ConstantCache(uf,nlsolve,D,D2,R,U,uprev2,uprev3,dtₙ₋₁,dtₙ₋₂)
 end
 
@@ -434,7 +434,7 @@ function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   dtₙ₋₁ = zero(dt)
   dtₙ₋₂ = zero(dt)
 
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,zero(alg.kappa),1,ηold,z₊,dz,tmp,b,k))
+  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,zero(inv((1-alg.kappa))),1,ηold,z₊,dz,tmp,b,k))
   QNDF2Cache(uprev2,uprev3,du1,fsalfirst,k,z,dz,b,D,D2,R,U,tmp,atmp,utilde,J,
              W,uf,jac_config,linsolve,nlsolve,dtₙ₋₁,dtₙ₋₂)
 end

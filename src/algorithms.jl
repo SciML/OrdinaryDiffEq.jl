@@ -433,7 +433,7 @@ struct ImplicitMidpoint{CS,AD,F,F2,FDT,T2} <: OrdinaryDiffEqNewtonAlgorithm{CS,A
 end
 ImplicitMidpoint(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                       linsolve=DEFAULT_LINSOLVE,nonlinsolve=NLNewton(),
-                                            extrapolant=:linear,new_jac_conv_bound = 1e-3) =
+                      extrapolant=:linear,new_jac_conv_bound=1e-3) =
                       ImplicitMidpoint{chunk_size,autodiff,typeof(linsolve),typeof(nonlinsolve),typeof(diff_type),
                       typeof(new_jac_conv_bound)}(
                       linsolve,nonlinsolve,diff_type,extrapolant,new_jac_conv_bound)

@@ -62,7 +62,7 @@ end
   ################################### Finalize
 
   cache.dtₙ₋₁ = dtₙ
-  nlnlcache.ηold = η
+  nlcache.ηold = η
   nlcache.nl_iters = iter
   if integrator.EEst < one(integrator.EEst)
     cache.fsalfirstprev = integrator.fsalfirst
@@ -137,7 +137,7 @@ end
 
   ################################### Finalize
 
-  nlnlcache.ηold = η
+  nlcache.ηold = η
   nlcache.nl_iters = iter
   cache.dtₙ₋₁ = dtₙ
   if integrator.EEst < one(integrator.EEst)
@@ -566,7 +566,7 @@ function perform_step!(integrator,cache::QNDF1ConstantCache,repeat_step=false)
   end
   cache.dtₙ₋₁ = dt
   cache.uprev2 = uprev
-  nlnlcache.ηold = η
+  nlcache.ηold = η
   nlcache.nl_iters = iter
   integrator.fsallast = f(u, p, t+dt)
   integrator.k[1] = integrator.fsalfirst
@@ -632,7 +632,7 @@ function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
   end
   cache.dtₙ₋₁ = dt
   cache.uprev2 .= uprev
-  nlnlcache.ηold = η
+  nlcache.ηold = η
   nlcache.nl_iters = iter
   f(integrator.fsallast, u, p, t+dt)
 end
@@ -724,7 +724,7 @@ function perform_step!(integrator,cache::QNDF2ConstantCache,repeat_step=false)
   cache.uprev2 = uprev
   cache.dtₙ₋₂ = dtₙ₋₁
   cache.dtₙ₋₁ = dt
-  nlnlcache.ηold = η
+  nlcache.ηold = η
   nlcache.nl_iters = iter
   integrator.fsallast = f(u, p, t+dt)
   integrator.k[1] = integrator.fsalfirst
@@ -817,7 +817,7 @@ function perform_step!(integrator,cache::QNDF2Cache,repeat_step=false)
   cache.uprev2 .= uprev
   cache.dtₙ₋₂ = dtₙ₋₁
   cache.dtₙ₋₁ = dt
-  nlnlcache.ηold = η
+  nlcache.ηold = η
   nlcache.nl_iters = iter
   f(integrator.fsallast, u, p, t+dt)
   return
@@ -953,7 +953,7 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
   fill!(D, zero(u)); fill!(D2, zero(u))
   fill!(R, zero(t)); fill!(U, zero(t))
 
-  nlnlcache.ηold = η
+  nlcache.ηold = η
   nlcache.nl_iters = iter
   integrator.fsallast = f(u, p, t+dt)
   integrator.k[1] = integrator.fsalfirst
@@ -1109,7 +1109,7 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
   end
   fill!(R, zero(t)); fill!(U, zero(t))
 
-  nlnlcache.ηold = η
+  nlcache.ηold = η
   nlcache.nl_iters = iter
   f(integrator.fsallast, u, p, t+dt)
 end
