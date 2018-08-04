@@ -212,6 +212,9 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     mass_matrix = integrator.f.mass_matrix
     is_compos = typeof(integrator.alg) <: CompositeAlgorithm
     alg = unwrap_alg(integrator, true)
+    isnewton = !(typeof(alg) <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm ||
+                 typeof(alg) <: OrdinaryDiffEqRosenbrockAlgorithm)
+    isnewton && ( nlcache = cache.nlsolve.cache; @unpack ηold,nl_iters = cache.nlsolve.cache )
 
     # calculate W
     new_W = true
@@ -224,8 +227,8 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     elseif DiffEqBase.has_jac(f) && f.jac_prototype != nothing
       # skip calculation of J if step is repeated
       if repeat_step || (alg_can_repeat_jac(alg) &&
-                         (!integrator.last_stepfail && cache.newton_iters == 1 &&
-                          cache.ηold < alg.new_jac_conv_bound))
+                         (!integrator.last_stepfail && nl_iters == 1 &&
+                          ηold < alg.new_jac_conv_bound))
         new_jac = false
       else
         new_jac = true
@@ -243,8 +246,8 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     else # concrete W using jacobian from `calc_J!`
       # skip calculation of J if step is repeated
       if repeat_step || (alg_can_repeat_jac(alg) &&
-                         (!integrator.last_stepfail && cache.newton_iters == 1 &&
-                          cache.ηold < alg.new_jac_conv_bound))
+                         (!integrator.last_stepfail && nl_iters == 1 &&
+                          ηold < alg.new_jac_conv_bound))
         new_jac = false
       else
         new_jac = true
@@ -267,8 +270,9 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
         new_W = false
       end
     end
-    return new_W
+    isnewton && ( nlcache.new_W = new_W )
   end
+  return nothing
 end
 
 function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat_step, W_transform=false)
