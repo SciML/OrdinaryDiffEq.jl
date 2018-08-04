@@ -87,7 +87,7 @@ end
   nlsolve!, nlcache = nlsolve, nlsolve.cache
   mass_matrix = integrator.f.mass_matrix
   alg = unwrap_alg(integrator, true)
-  typeof(nlsolve)<:NLNewton && calc_W!(integrator, cache, dt, repeat_step)
+  typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, dt, repeat_step)
 
   # initial guess
   if alg.extrapolant == :linear

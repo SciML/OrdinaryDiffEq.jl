@@ -1,18 +1,15 @@
 # SBDF2
 
-mutable struct SBDF2ConstantCache{rateType,F,uToltype,uType} <: OrdinaryDiffEqConstantCache
+mutable struct SBDF2ConstantCache{rateType,F,N,uType} <: OrdinaryDiffEqConstantCache
   k2::rateType
   uf::F
-  ηold::uToltype
-  κ::uToltype
-  tol::uToltype
-  newton_iters::Int
+  nlsolve::N
   uprev2::uType
   k₁::rateType
   k₂::rateType
 end
 
-mutable struct SBDF2Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,uToltype,F} <: OrdinaryDiffEqMutableCache
+mutable struct SBDF2Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,F} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -28,10 +25,7 @@ mutable struct SBDF2Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,uToltype,F} <: O
   uf::UF
   jac_config::JC
   linsolve::F
-  ηold::uToltype
-  κ::uToltype
-  tol::uToltype
-  newton_iters::Int
+  nlsolve::N
   uprev2::uType
   k₁::rateType
   k₂::rateType
@@ -109,20 +103,17 @@ end
 
 # SBDF3
 
-mutable struct SBDF3ConstantCache{rateType,F,uToltype,uType} <: OrdinaryDiffEqConstantCache
+mutable struct SBDF3ConstantCache{rateType,F,N,uType} <: OrdinaryDiffEqConstantCache
   k2::rateType
   uf::F
-  ηold::uToltype
-  κ::uToltype
-  tol::uToltype
-  newton_iters::Int
+  nlsolve::N
   uprev2::uType
   uprev3::uType
   k₁::rateType
   k₂::rateType
 end
 
-mutable struct SBDF3Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,uToltype,F} <: OrdinaryDiffEqMutableCache
+mutable struct SBDF3Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,F} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -138,10 +129,7 @@ mutable struct SBDF3Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,uToltype,F} <: O
   uf::UF
   jac_config::JC
   linsolve::F
-  ηold::uToltype
-  κ::uToltype
-  tol::uToltype
-  newton_iters::Int
+  nlsolve::N
   uprev2::uType
   uprev3::uType
   k₁::rateType
@@ -222,13 +210,10 @@ end
 
 # SBDF4
 
-mutable struct SBDF4ConstantCache{rateType,F,uToltype,uType} <: OrdinaryDiffEqConstantCache
+mutable struct SBDF4ConstantCache{rateType,F,N,uType} <: OrdinaryDiffEqConstantCache
   k2::rateType
   uf::F
-  ηold::uToltype
-  κ::uToltype
-  tol::uToltype
-  newton_iters::Int
+  nlsolve::N
   uprev2::uType
   uprev4::uType
   uprev3::uType
@@ -237,7 +222,7 @@ mutable struct SBDF4ConstantCache{rateType,F,uToltype,uType} <: OrdinaryDiffEqCo
   k₃::rateType
 end
 
-mutable struct SBDF4Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,uToltype,F} <: OrdinaryDiffEqMutableCache
+mutable struct SBDF4Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,F} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -253,10 +238,7 @@ mutable struct SBDF4Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,uToltype,F} <: O
   uf::UF
   jac_config::JC
   linsolve::F
-  ηold::uToltype
-  κ::uToltype
-  tol::uToltype
-  newton_iters::Int
+  nlsolve::N
   uprev2::uType
   uprev3::uType
   uprev4::uType
