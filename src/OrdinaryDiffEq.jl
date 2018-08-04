@@ -69,7 +69,6 @@ module OrdinaryDiffEq
   include("caches/adams_bashforth_moulton_caches.jl")
   include("caches/nordsieck_caches.jl")
   include("caches/bdf_caches.jl")
-  include("caches/sbdf_caches.jl")
   include("caches/rkc_caches.jl")
   include("caches/euler_imex_caches.jl")
 
@@ -111,7 +110,6 @@ module OrdinaryDiffEq
   include("perform_step/adams_bashforth_moulton_perform_step.jl")
   include("perform_step/nordsieck_perform_step.jl")
   include("perform_step/bdf_perform_step.jl")
-  include("perform_step/sbdf_perform_step.jl")
   include("perform_step/rkc_perform_step.jl")
   include("perform_step/euler_imex_perform_step.jl")
 
