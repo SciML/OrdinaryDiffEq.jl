@@ -49,17 +49,17 @@ DiffEqBase.@def oopnlcachefields begin
   z = uprev
   if typeof(alg.nonlinsolve) <: NLNewton
     uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-    if DiffEqBase.has_jac(f)
-      J = f.jac(uprev, p, t)
-      if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
-        J = DiffEqArrayOperator(J)
-      end
-      W = WOperator(f.mass_matrix, dt, J)
-    else
-      W = typeof(u) <: Number ? u : Matrix{uEltypeNoUnits}(undef, 0, 0) # uEltype?
-    end
   else
     uf = nothing
+  end
+  if DiffEqBase.has_jac(f) && typeof(alg.nonlinsolve) <: NLNewton
+    J = f.jac(uprev, p, t)
+    if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
+      J = DiffEqArrayOperator(J)
+    end
+    W = WOperator(f.mass_matrix, dt, J)
+  else
+    W = typeof(u) <: Number ? u : Matrix{uEltypeNoUnits}(undef, 0, 0) # uEltype?
   end
   uToltype = real(uBottomEltypeNoUnits)
   ηold = one(uToltype)
