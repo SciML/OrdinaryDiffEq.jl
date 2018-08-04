@@ -123,7 +123,7 @@ function (S::NLNewton{true})(integrator)
   # NLNewton iteration
   fail_convergence = false
   while (do_newton || iter < min_iter) && iter < max_iter
-    iter += 1
+    @show iter += 1
     @. u = tmp + γ*z
     f(k, u, p, tstep)
     if mass_matrix == I

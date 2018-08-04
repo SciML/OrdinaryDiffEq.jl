@@ -36,9 +36,9 @@ NLSolverCache(κ, tol, min_iter, max_iter, 0, true,
               (nothing for i in 1:10)...)
 
 # Default `iip` to `true`, but the whole type will be reinitialized in `alg_cache`
-NLFunctional(;kwargs...) = NLFunctional{true}(NLSolverCache(kwargs...))
-NLAnderson(n=5; kwargs...) = NLAnderson{true}(NLSolverCache(kwargs...), n)
-NLNewton(;kwargs...) = NLNewton{true}(NLSolverCache(kwargs...))
+NLFunctional(;kwargs...) = NLFunctional{true}(NLSolverCache(;kwargs...))
+NLAnderson(n=5; kwargs...) = NLAnderson{true}(NLSolverCache(;kwargs...), n)
+NLNewton(;kwargs...) = NLNewton{true}(NLSolverCache(;kwargs...))
 
 oop_nlsolver(s::NLFunctional{true}) = NLFunctional{false}(s.cache)
 oop_nlsolver(s::NLAnderson{true}) = NLAnderson{false}(s.cache, s.n)
