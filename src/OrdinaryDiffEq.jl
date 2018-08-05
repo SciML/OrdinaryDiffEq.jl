@@ -28,7 +28,7 @@ module OrdinaryDiffEq
 
   # Required by temporary fix in not in-place methods with 12+ broadcasts
   # `MVector` is used by Nordsieck forms
-  import StaticArrays: SArray, MVector, SVector
+  import StaticArrays: SArray, MVector, SVector, @SVector
 
   # Integrator Interface
   import DiffEqBase: resize!,deleteat!,addat!,full_cache,user_cache,u_cache,du_cache,

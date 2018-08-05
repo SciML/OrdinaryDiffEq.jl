@@ -251,9 +251,7 @@ alg_order(alg::QNDF2) = 2
 
 alg_order(alg::QNDF) = 1 #dummy value
 
-alg_order(alg::SBDF2) = 2
-alg_order(alg::SBDF3) = 3
-alg_order(alg::SBDF4) = 4
+alg_order(alg::SBDF) = alg.order
 
 alg_order(alg::ROCK2) = 2
 

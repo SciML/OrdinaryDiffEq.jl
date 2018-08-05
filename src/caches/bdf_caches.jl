@@ -61,145 +61,10 @@ function alg_cache(alg::ABDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
               W,uf,jac_config,linsolve,nlsolve,eulercache,dtₙ₋₁)
 end
 
-# SBDF2
+# SBDF
 
-mutable struct SBDF2ConstantCache{rateType,F,N,uType} <: OrdinaryDiffEqConstantCache
-  k2::rateType
-  uf::F
-  nlsolve::N
-  uprev2::uType
-  k₁::rateType
-  k₂::rateType
-end
-
-mutable struct SBDF2Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,F} <: OrdinaryDiffEqMutableCache
-  u::uType
-  uprev::uType
-  fsalfirst::rateType
-  k::rateType
-  du1::rateType
-  z::uType
-  dz::uType
-  b::uType
-  tmp::uType
-  atmp::uNoUnitsType
-  J::J
-  W::W
-  uf::UF
-  jac_config::JC
-  linsolve::F
-  nlsolve::N
-  uprev2::uType
-  k₁::rateType
-  k₂::rateType
-  du₁::rateType
-end
-
-u_cache(c::SBDF2Cache)    = ()
-du_cache(c::SBDF2Cache)   = ()
-
-function alg_cache(alg::SBDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
-  uf != nothing && ( uf = DiffEqDiffTools.UDerivativeWrapper(f.f1,t,p) )
-  k2 = rate_prototype
-  uprev2 = u
-  k₁ = rate_prototype
-  k₂ = rate_prototype
-
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//1,1,ηold,z₊,dz,tmp,b,k))
-  SBDF2ConstantCache(k2,uf,nlsolve,uprev2,k₁,k₂)
-end
-
-function alg_cache(alg::SBDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
-  atmp = similar(u,uEltypeNoUnits,axes(u))
-  uprev2 = similar(u)
-  k₁ = zero(rate_prototype)
-  k₂ = zero(rate_prototype)
-  du₁ = zero(rate_prototype)
-  if uf != nothing
-    uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t,p)
-    linsolve = alg.linsolve(Val{:init},uf,u)
-    jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
-  end
-
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//1,1,ηold,z₊,dz,tmp,b,k))
-  SBDF2Cache(u,uprev,fsalfirst,k,du1,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolve,uprev2,k₁,k₂,du₁)
-end
-
-# SBDF3
-
-mutable struct SBDF3ConstantCache{rateType,F,N,uType} <: OrdinaryDiffEqConstantCache
-  k2::rateType
-  uf::F
-  nlsolve::N
-  uprev2::uType
-  uprev3::uType
-  k₁::rateType
-  k₂::rateType
-end
-
-mutable struct SBDF3Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,F} <: OrdinaryDiffEqMutableCache
-  u::uType
-  uprev::uType
-  fsalfirst::rateType
-  k::rateType
-  du1::rateType
-  z::uType
-  dz::uType
-  b::uType
-  tmp::uType
-  atmp::uNoUnitsType
-  J::J
-  W::W
-  uf::UF
-  jac_config::JC
-  linsolve::F
-  nlsolve::N
-  uprev2::uType
-  uprev3::uType
-  k₁::rateType
-  k₂::rateType
-  du₁::rateType
-end
-
-u_cache(c::SBDF3Cache)    = ()
-du_cache(c::SBDF3Cache)   = ()
-
-function alg_cache(alg::SBDF3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
-  k2 = rate_prototype
-  uf != nothing && ( uf = DiffEqDiffTools.UDerivativeWrapper(f.f1,t,p) )
-  uprev2 = u
-  uprev3 = u
-  k₁ = rate_prototype
-  k₂ = rate_prototype
-
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//1,1,ηold,z₊,dz,tmp,b,k))
-  SBDF3ConstantCache(k2,uf,nlsolve,uprev2,uprev3,k₁,k₂)
-end
-
-function alg_cache(alg::SBDF3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
-  atmp = similar(u,uEltypeNoUnits,axes(u))
-  uprev2 = similar(u)
-  uprev3 = similar(u)
-  k₁ = zero(rate_prototype)
-  k₂ = zero(rate_prototype)
-  du₁ = zero(rate_prototype)
-  if uf != nothing
-    uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t,p)
-    linsolve = alg.linsolve(Val{:init},uf,u)
-    jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
-  end
-
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//1,1,ηold,z₊,dz,tmp,b,k))
-  SBDF3Cache(u,uprev,fsalfirst,k,du1,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolve,uprev2,uprev3,k₁,k₂,du₁)
-end
-
-# SBDF4
-
-mutable struct SBDF4ConstantCache{rateType,F,N,uType} <: OrdinaryDiffEqConstantCache
+mutable struct SBDFConstantCache{rateType,F,N,uType} <: OrdinaryDiffEqConstantCache
+  cnt::Int
   k2::rateType
   uf::F
   nlsolve::N
@@ -209,9 +74,12 @@ mutable struct SBDF4ConstantCache{rateType,F,N,uType} <: OrdinaryDiffEqConstantC
   k₁::rateType
   k₂::rateType
   k₃::rateType
+  du₁::rateType
+  du₂::rateType
 end
 
-mutable struct SBDF4Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,F} <: OrdinaryDiffEqMutableCache
+mutable struct SBDFCache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,F} <: OrdinaryDiffEqMutableCache
+  cnt::Int
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -235,12 +103,13 @@ mutable struct SBDF4Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,F} <: Ordinary
   k₂::rateType
   k₃::rateType
   du₁::rateType
+  du₂::rateType
 end
 
-u_cache(c::SBDF4Cache)    = ()
-du_cache(c::SBDF4Cache)   = ()
+u_cache(c::SBDFCache)    = ()
+du_cache(c::SBDFCache)   = ()
 
-function alg_cache(alg::SBDF4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::SBDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   @oopnlcachefields
   k2 = rate_prototype
   uf != nothing && ( uf = DiffEqDiffTools.UDerivativeWrapper(f.f1,t,p) )
@@ -250,21 +119,25 @@ function alg_cache(alg::SBDF4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   k₁ = rate_prototype
   k₂ = rate_prototype
   k₃ = rate_prototype
+  du₁ = rate_prototype
+  du₂ = rate_prototype
 
   nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//1,1,ηold,z₊,dz,tmp,b,k))
-  SBDF4ConstantCache(k2,uf,nlsolve,uprev2,uprev3,uprev4,k₁,k₂,k₃)
+  SBDFConstantCache(1,k2,uf,nlsolve,uprev2,uprev3,uprev4,k₁,k₂,k₃,du₁,du₂)
 end
 
-function alg_cache(alg::SBDF4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::SBDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   @iipnlcachefields
   atmp = similar(u,uEltypeNoUnits,axes(u))
+  order = alg.order
   uprev2 = similar(u)
-  uprev3 = similar(u)
-  uprev4 = similar(u)
-  k₁ = zero(rate_prototype)
-  k₂ = zero(rate_prototype)
-  k₃ = zero(rate_prototype)
+  uprev3 = order >= 3 ? similar(u) : uprev2
+  uprev4 = order == 4 ? similar(u) : uprev2
+  k₁ = k
+  k₂ = order >= 3 ? zero(rate_prototype) : k₁
+  k₃ = order == 4 ? zero(rate_prototype) : k₁
   du₁ = zero(rate_prototype)
+  du₂ = zero(rate_prototype)
   if uf != nothing
     uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t,p)
     linsolve = alg.linsolve(Val{:init},uf,u)
@@ -272,7 +145,7 @@ function alg_cache(alg::SBDF4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   end
 
   nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//1,1,ηold,z₊,dz,tmp,b,k))
-  SBDF4Cache(u,uprev,fsalfirst,k,du1,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolve,uprev2,uprev3,uprev4,k₁,k₂,k₃,du₁)
+  SBDFCache(1,u,uprev,fsalfirst,k,du1,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolve,uprev2,uprev3,uprev4,k₁,k₂,k₃,du₁,du₂)
 end
 
 # QNDF1
