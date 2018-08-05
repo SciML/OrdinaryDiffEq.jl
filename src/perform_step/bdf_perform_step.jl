@@ -154,7 +154,7 @@ function initialize!(integrator, cache::SBDFConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   cache.du₁ = f1(uprev,p,t)
-  cache.du₂ = f1(uprev,p,t)
+  cache.du₂ = f2(uprev,p,t)
   integrator.fsalfirst = cache.du₁ + cache.du₂
 
   # Avoid undefined entries if k is an array of arrays
@@ -165,25 +165,25 @@ end
 
 function perform_step!(integrator,cache::SBDFConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p,alg = integrator
-  @unpack uprev2,uprev3,uprev4,k₁,k₂,k₃,nlsolve = cache
+  @unpack uprev2,uprev3,uprev4,du₁,du₂,k₁,k₂,k₃,nlsolve = cache
   @unpack f1, f2 = integrator.f
   nlsolve!, nlcache = nlsolve, nlsolve.cache
-  cnt = cache.cnt = max(alg.order, integrator.iter+1)
+  cnt = cache.cnt = min(alg.order, integrator.iter+1)
   integrator.iter == 1 && !integrator.u_modified && ( cnt = cache.cnt = 1 )
+  nlcache.γ = γ = inv(γₖ[cnt])
   if cnt == 1
-    @muladd tmp = uprev + dt*du₂
+    tmp = uprev + dt*du₂
   elseif cnt == 2
-    @muladd tmp = (1//3) * (4*uprev - uprev2 + dt*(4*du₂ - 2*k₁))
+    tmp = γ * (2*uprev - 1//2*uprev2 + dt*(2*du₂ - k₁))
   elseif cnt == 3
-    @muladd tmp = (6//11) * (3*uprev - 3//2*uprev2 + 1//3*uprev3 + dt*(3*(du₂ - k₁) + k₂))
+    tmp = γ * (3*uprev - 3//2*uprev2 + 1//3*uprev3 + dt*(3*(du₂ - k₁) + k₂))
   else
-    @muladd tmp = (12//25) * (4*uprev - 3*uprev2 + 4//3*uprev3 - 1//4*uprev4 + dt*(4*du₂ - 6*k₁ + 4*k₂ - k₃))
+    tmp = γ * (4*uprev - 3*uprev2 + 4//3*uprev3 - 1//4*uprev4 + dt*(4*du₂ - 6*k₁ + 4*k₂ - k₃))
   end
   nlcache.tmp = tmp
 
   # Implicit part
   # precalculations
-  nlcache.γ = γ = γₖ[cnt]
   γdt = γ*dt
   typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, γdt, repeat_step) )
 
@@ -227,20 +227,21 @@ function perform_step!(integrator, cache::SBDFCache, repeat_step=false)
   @unpack tmp,uprev2,uprev3,uprev4,k,k₁,k₂,k₃,du₁,du₂,z,nlsolve = cache
   @unpack f1, f2 = integrator.f
   nlsolve!, nlcache = nlsolve, nlsolve.cache
-  cnt = integrator.iter
+  cnt = cache.cnt = min(alg.order, integrator.iter+1)
+  integrator.iter == 1 && !integrator.u_modified && ( cnt = cache.cnt = 1 )
+  nlcache.γ = γ = inv(γₖ[cnt])
   # Explicit part
   if cnt == 1
-    @. tmp = uprev + dt*(integrator.fsalfirst - du₁)
+    @. tmp = uprev + dt*du₂
   elseif cnt == 2
-    @. tmp = (1//3) * (4*uprev - uprev2 + dt*(4*du₂ - 2*k₁))
+    @. tmp = γ * (2*uprev - 1//2*uprev2 + dt*(2*du₂ - k₁))
   elseif cnt == 3
-    @. tmp = (6//11) * (3*uprev - 3//2*uprev2 + 1//3*uprev3 + dt*(3*(du₂ - k₁) + k₂))
+    @. tmp = γ * (3*uprev - 3//2*uprev2 + 1//3*uprev3 + dt*(3*(du₂ - k₁) + k₂))
   else
-    @. tmp = (12//25) * (4*uprev - 3*uprev2 + 4//3*uprev3 - 1//4*uprev4 + dt*(4*du₂ - 6*k₁ + 4*k₂ - k₃))
+    @. tmp = γ * (4*uprev - 3*uprev2 + 4//3*uprev3 - 1//4*uprev4 + dt*(4*du₂ - 6*k₁ + 4*k₂ - k₃))
   end
   # Implicit part
   # precalculations
-  nlcache.γ = γ = γₖ[cnt]
   γdt = γ*dt
   typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, γdt, repeat_step)
 
@@ -256,8 +257,8 @@ function perform_step!(integrator, cache::SBDFCache, repeat_step=false)
   cnt == 4 && ( cache.uprev4 .= uprev3; cache.k₃ .= k₂ )
   cnt >= 3 && ( cache.uprev3 .= uprev2; cache.k₂ .= k₁ )
               ( cache.uprev2 .= uprev;  cache.k₁ .= du₂ )
-  f1(du₁, uprev, p, t)
-  f2(du₂, uprev, p, t)
+  f1(du₁, u, p, t+dt)
+  f2(du₂, u, p, t+dt)
   @. k = du₁ + du₂
 end
 

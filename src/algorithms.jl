@@ -304,12 +304,12 @@ end
 SBDF(order;chunk_size=0,autodiff=true,diff_type=Val{:central},
      linsolve=DEFAULT_LINSOLVE,nonlinsolve=NLNewton(),κ=nothing,tol=nothing,
      extrapolant=:linear,new_jac_conv_bound = 1e-3) =
-     SBDF4{chunk_size,autodiff,typeof(linsolve),typeof(nonlinsolve),typeof(diff_type),
+     SBDF{chunk_size,autodiff,typeof(linsolve),typeof(nonlinsolve),typeof(diff_type),
      typeof(κ),typeof(tol),typeof(new_jac_conv_bound)}(
      linsolve,nonlinsolve,diff_type,κ,tol,extrapolant,new_jac_conv_bound,order)
-SBDF2(kwargs...) = SBDF(2;kwargs...)
-SBDF3(kwargs...) = SBDF(3;kwargs...)
-SBDF4(kwargs...) = SBDF(4;kwargs...)
+SBDF2(;kwargs...) = SBDF(2;kwargs...)
+SBDF3(;kwargs...) = SBDF(3;kwargs...)
+SBDF4(;kwargs...) = SBDF(4;kwargs...)
 
 # Adams/BDF methods in Nordsieck forms
 struct AN5   <: OrdinaryDiffEqAdaptiveAlgorithm end

@@ -133,7 +133,7 @@ function alg_cache(alg::SBDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   uprev2 = similar(u)
   uprev3 = order >= 3 ? similar(u) : uprev2
   uprev4 = order == 4 ? similar(u) : uprev2
-  k₁ = k
+  k₁ = similar(rate_prototype)
   k₂ = order >= 3 ? zero(rate_prototype) : k₁
   k₃ = order == 4 ? zero(rate_prototype) : k₁
   du₁ = zero(rate_prototype)
