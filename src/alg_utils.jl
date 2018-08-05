@@ -67,7 +67,6 @@ alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))
 alg_extrapolates(alg::GenericImplicitEuler) = true
 alg_extrapolates(alg::GenericTrapezoid) = true
 alg_extrapolates(alg::ImplicitEuler) = true
-alg_extrapolates(alg::IMEXEuler) = true
 alg_extrapolates(alg::LinearImplicitEuler) = true
 alg_extrapolates(alg::Trapezoid) = true
 alg_extrapolates(alg::ImplicitMidpoint) = true
@@ -86,6 +85,7 @@ alg_extrapolates(alg::Hairer42) = true
 alg_extrapolates(alg::IRKN4) = true
 alg_extrapolates(alg::IRKN3) = true
 alg_extrapolates(alg::ABDF2) = true
+alg_extrapolates(alg::SBDF) = true
 
 alg_order(alg::OrdinaryDiffEqAlgorithm) = error("Order is not defined for this algorithm")
 get_current_alg_order(alg::OrdinaryDiffEqAlgorithm,cache) = alg_order(alg)
@@ -238,7 +238,6 @@ alg_order(alg::VCABM5) = 5
 
 alg_order(alg::VCABM) = 1  #dummy value
 
-alg_order(alg::IMEXEuler) = 1
 alg_order(alg::CNAB2) = 2
 alg_order(alg::CNLF2) = 2
 
@@ -251,9 +250,7 @@ alg_order(alg::QNDF2) = 2
 
 alg_order(alg::QNDF) = 1 #dummy value
 
-alg_order(alg::SBDF2) = 2
-alg_order(alg::SBDF3) = 3
-alg_order(alg::SBDF4) = 4
+alg_order(alg::SBDF) = alg.order
 
 alg_order(alg::ROCK2) = 2
 
