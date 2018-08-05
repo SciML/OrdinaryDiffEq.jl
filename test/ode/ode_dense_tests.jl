@@ -138,10 +138,10 @@ regression_test(Midpoint(), 1.5e-2, 2.3e-2)
 println("SSPRKs")
 
 # SSPRK22
-regression_test(SSPRK22(), 1.5e-2, 2.5e-2; test_diff1 = true)
+regression_test(SSPRK22(), 1.5e-2, 2.5e-2; test_diff1 = true, nth_der = 2, dertol = 0)
 
 # SSPRK33
-regression_test(SSPRK33(), 7.5e-4, 1.5e-3; test_diff1 = true)
+regression_test(SSPRK33(), 7.5e-4, 1.5e-3; test_diff1 = true, nth_der = 2, dertol = 0)
 
 # SSPRK53
 regression_test(SSPRK53(), 2.5e-4, 4.0e-4; test_diff1 = true)
@@ -156,7 +156,7 @@ regression_test(SSPRK73(), 9.0e-5, 2.0e-4; test_diff1 = true)
 regression_test(SSPRK83(), 6.5e-5, 1.5e-4; test_diff1 = true)
 
 # SSPRK432
-regression_test(SSPRK432(), 4.0e-4, 8.0e-4; test_diff1 = true)
+regression_test(SSPRK432(), 4.0e-4, 8.0e-4; test_diff1 = true, nth_der = 2, dertol = 1e-12)
 
 # SSPRK932
 regression_test(SSPRK932(), 6.0e-5, 1.0e-4; test_diff1 = true)
@@ -176,10 +176,19 @@ regression_test(RK4(), 4.5e-5, 1e-4)
 regression_test(CarpenterKennedy2N54(), 3.0e-5, 5.0e-5)
 
 # DP5
-regression_test(DP5(), 5e-6, 1e-5; test_diff1 = true)
+regression_test(DP5(), 5e-6, 1e-5; test_diff1 = true, nth_der = 4, dertol = 1e-14)
 
 # BS3
 regression_test(BS3(), 5e-4, 8e-4)
+
+# OwrenZen3
+regression_test(OwrenZen3(), 1.5e-4, 2.5e-4; test_diff1 = true, nth_der = 3, dertol = 1e-10)
+
+# OwrenZen4
+regression_test(OwrenZen4(), 6.5e-6, 1.5e-5; test_diff1 = true, nth_der = 4, dertol = 1e-10)
+
+# OwrenZen5
+regression_test(OwrenZen5(), 1.5e-6, 2.5e-6; test_diff1 = true, nth_der = 5, dertol = 1e-10)
 
 # Tsit5
 regression_test(Tsit5(), 2e-6, 4e-6; test_diff1 = true, nth_der = 4, dertol = 1e-6)
