@@ -185,25 +185,6 @@ struct VCABM5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 struct VCABM <: OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm end
 
-# IMEXEuler
-
-struct IMEXEuler{CS,AD,F,F2,FDT,T2} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
-  linsolve::F
-  nonlinsolve::F2
-  diff_type::FDT
-  extrapolant::Symbol
-  new_jac_conv_bound::T2
-end
-IMEXEuler(;chunk_size=0,autodiff=true,diff_type=Val{:central},
-                      linsolve=DEFAULT_LINSOLVE,nonlinsolve=NLNewton(),
-                                            extrapolant=:linear,
-                                            new_jac_conv_bound=1e-3) =
-                      IMEXEuler{chunk_size,autodiff,typeof(linsolve),
-                      typeof(nonlinsolve),typeof(diff_type),
-                      typeof(new_jac_conv_bound)}(
-                      linsolve,nonlinsolve,diff_type,
-                      extrapolant,new_jac_conv_bound)
-
 # IMEX Multistep methods
 
 struct CNAB2{CS,AD,F,F2,FDT,T2} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
@@ -307,6 +288,7 @@ SBDF(order;chunk_size=0,autodiff=true,diff_type=Val{:central},
      SBDF{chunk_size,autodiff,typeof(linsolve),typeof(nonlinsolve),typeof(diff_type),
      typeof(κ),typeof(tol),typeof(new_jac_conv_bound)}(
      linsolve,nonlinsolve,diff_type,κ,tol,extrapolant,new_jac_conv_bound,order)
+IMEXEuler(;kwargs...) = SBDF(1;kwargs...)
 SBDF2(;kwargs...) = SBDF(2;kwargs...)
 SBDF3(;kwargs...) = SBDF(3;kwargs...)
 SBDF4(;kwargs...) = SBDF(4;kwargs...)

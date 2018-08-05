@@ -188,8 +188,12 @@ function perform_step!(integrator,cache::SBDFConstantCache,repeat_step=false)
   typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, γdt, repeat_step) )
 
   # initial guess
-  zprev = dt*du₁
-  nlcache.z = z = zprev # Constant extrapolation
+  if alg.extrapolant == :linear
+    z = dt*du₁
+  else # :constant
+    z = zero(u)
+  end
+  nlcache.z = z
 
   z,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
@@ -246,7 +250,11 @@ function perform_step!(integrator, cache::SBDFCache, repeat_step=false)
   typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, γdt, repeat_step)
 
   # initial guess
-  @. z = dt*du₁
+  if alg.extrapolant == :linear
+    @. z = dt*du₁
+  else # :constant
+    @. z = zero(eltype(u))
+  end
 
   z,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return

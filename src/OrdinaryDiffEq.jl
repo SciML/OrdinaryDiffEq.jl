@@ -70,7 +70,6 @@ module OrdinaryDiffEq
   include("caches/nordsieck_caches.jl")
   include("caches/bdf_caches.jl")
   include("caches/rkc_caches.jl")
-  include("caches/euler_imex_caches.jl")
 
   include("alg_utils.jl")
 
@@ -111,7 +110,6 @@ module OrdinaryDiffEq
   include("perform_step/nordsieck_perform_step.jl")
   include("perform_step/bdf_perform_step.jl")
   include("perform_step/rkc_perform_step.jl")
-  include("perform_step/euler_imex_perform_step.jl")
 
   include("dense/generic_dense.jl")
   include("dense/interpolants.jl")
