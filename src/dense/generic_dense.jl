@@ -332,7 +332,8 @@ function ode_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{TI}}) where TI
 end
 
 function ode_interpolant(Θ,dt,y₀,y₁,k,cache::OrdinaryDiffEqMutableCache,idxs,T::Type{Val{TI}}) where TI
-  if typeof(idxs) <: Number
+  if typeof(idxs) <: Number || typeof(y₀) <: Union{Number,SArray}
+    # typeof(y₀) can be these if saveidxs gives a single value
     _ode_interpolant(Θ,dt,y₀,y₁,k,cache,idxs,T)
   else
     # determine output type
