@@ -342,10 +342,10 @@ function handle_callbacks!(integrator)
     time,upcrossing,event_occurred,idx,counter =
               find_first_continuous_callback(integrator,continuous_callbacks...)
     if event_occurred
-      integrator.event_last_time = true
+      integrator.event_last_time = upcrossing ? 1 : -1
       continuous_modified,saved_in_cb = apply_callback!(integrator,continuous_callbacks[idx],time,upcrossing)
     else
-      integrator.event_last_time = false
+      integrator.event_last_time = 0
     end
   end
   if !integrator.force_stepfail && !(typeof(discrete_callbacks)<:Tuple{})
