@@ -131,10 +131,10 @@ regression_test(Midpoint(), 1.5e-2, 2.3e-2)
 println("SSPRKs")
 
 # SSPRK22
-regression_test(SSPRK22(), 1.5e-2, 2.5e-2; test_diff1 = true, nth_der = 2, dertol = 0)
+regression_test(SSPRK22(), 1.5e-2, 2.5e-2; test_diff1 = true, nth_der = 2, dertol = 1e-15)
 
 # SSPRK33
-regression_test(SSPRK33(), 7.5e-4, 1.5e-3; test_diff1 = true, nth_der = 2, dertol = 0)
+regression_test(SSPRK33(), 7.5e-4, 1.5e-3; test_diff1 = true, nth_der = 2, dertol = 1e-15)
 
 # SSPRK53
 regression_test(SSPRK53(), 2.5e-4, 4.0e-4; test_diff1 = true)
@@ -206,7 +206,7 @@ sol2 = solve(prob, BS5(), dt=1//2^(7), dense=true, adaptive=false)
 print_results( @test maximum(map((x)->maximum(abs.(x)),sol2 - interpd_1d_long)) < 2e-7 )
 
 # DP8
-regression_test(DP8(), 2e-7, 3e-7; test_diff1 = true, nth_der = 1, dertol = 0)
+regression_test(DP8(), 2e-7, 3e-7; test_diff1 = true, nth_der = 1, dertol = 1e-15)
 
 prob = prob_ode_linear
 sol  = solve(prob, DP8(), dt=1//2^(2), dense=true)
