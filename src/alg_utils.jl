@@ -120,6 +120,8 @@ alg_order(alg::EPIRK5P2) = 5
 alg_order(alg::EXPRB53s3) = 5
 alg_order(alg::SplitEuler) = 1
 alg_order(alg::ETD2) = 2
+alg_order(alg::Exprb32) = 3
+alg_order(alg::Exprb43) = 4
 alg_order(alg::Anas5) = 5
 
 alg_order(alg::SymplecticEuler) = 1
@@ -277,6 +279,8 @@ alg_adaptive_order(alg::ImplicitMidpoint) = 1
 # this is actually incorrect and is purposefully decreased as this tends
 # to track the real error much better
 
+alg_adaptive_order(alg::Exprb32) = 2
+alg_adaptive_order(alg::Exprb43) = 4
 alg_adaptive_order(alg::AN5) = 5
 
 beta2_default(alg::OrdinaryDiffEqAlgorithm) = 2//(5alg_order(alg))

@@ -90,6 +90,16 @@ abstract type ExpRKCache <: OrdinaryDiffEqMutableCache end
 abstract type ExpRKConstantCache <: OrdinaryDiffEqConstantCache end
 
 # Precomputation of exponential-like operators
+"""
+    expRK_operators(alg,dt,A) -> ops
+
+Compute operator(s) for an ExpRK algorithm. `dt` is the time step and `A` is
+the matrix form of the linear operator (from either a linear problem or a
+SplitODEProblem). All ExpRK methods that use caching operators should implement
+this method.
+"""
+expRK_operators(alg::ExponentialAlgorithm, dt, A) =
+  error("$alg does not support caching operators at the moment.")
 expRK_operators(::LawsonEuler, dt, A) = exp(dt * A)
 expRK_operators(::NorsettEuler, dt, A) = phi(dt * A, 1)[2]
 function expRK_operators(::ETDRK2, dt, A)
@@ -134,6 +144,27 @@ function expRK_operators(::HochOst4, dt, A)
   B5 = 4P[3] - 8P[4]
   return A21, A31, A32, A41, A42, A51, A52, A54, B1, B4, B5
 end
+function expRK_operators(::Exprb32, dt, A)
+  P = phi(dt * A, 3)
+  A21 = P[2]
+  B1 = P[2] - 2P[4]
+  B1tilde = -2P[4]
+  B2 = 2P[4] # = B2hat
+  return A21, B1, B1tilde, B2
+end
+function expRK_operators(::Exprb43, dt, A)
+  P = phi(dt * A, 4)
+  Phalf = phi(dt/2 * A, 1)
+  A21 = 0.5Phalf[2]
+  A32 = P[2]
+  B1 = P[2] - 14P[4] + 36P[5]
+  B1tilde = 36P[5]
+  B2 = 16P[4] - 48P[5]
+  B2tilde = -48P[5]
+  B3 = -2P[4] + 12P[5]
+  B3tilde = 12P[5]
+  return A21, A32, B1, B1tilde, B2, B2tilde, B3, B3tilde
+end
 
 # Unified constructor for constant caches
 for (Alg, Cache) in [(:LawsonEuler, :LawsonEulerConstantCache),
@@ -141,7 +172,9 @@ for (Alg, Cache) in [(:LawsonEuler, :LawsonEulerConstantCache),
                      (:ETDRK2, :ETDRK2ConstantCache),
                      (:ETDRK3, :ETDRK3ConstantCache),
                      (:ETDRK4, :ETDRK4ConstantCache),
-                     (:HochOst4, :HochOst4ConstantCache)]
+                     (:HochOst4, :HochOst4ConstantCache),
+                     (:Exprb32, :Exprb32ConstantCache),
+                     (:Exprb43, :Exprb43ConstantCache)]
   @eval struct $Cache{opType} <: ExpRKConstantCache
     ops::opType # precomputed operators
   end
@@ -167,7 +200,7 @@ Construct the non-standard caches (not uType or rateType) for ExpRK integrators.
 `plist` is a list of integers each corresponding to the order of a `phiv(!)`
 call in `perform_step!`.
 """
-function alg_cache_expRK(alg::OrdinaryDiffEqExponentialAlgorithm, u, f, dt, plist)
+function alg_cache_expRK(alg::ExponentialAlgorithm, u, f, dt, plist)
   n = length(u); T = eltype(u)
   # Allocate cache for the Jacobian
   J = isa(f, SplitFunction) ? nothing : deepcopy(f.jac_prototype)
@@ -541,6 +574,46 @@ function alg_cache(alg::EPIRK5P2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   maxiter = min(alg.m, n)
   KsCache = _phiv_timestep_caches(u, maxiter, 3)
   EPIRK5P2Cache(u,uprev,tmp,rtmp,rtmp2,dR,K,J,B,KsCache)
+end
+
+####################################
+# Adaptive exponential Rosenbrock method caches
+struct Exprb32Cache{uType,rateType,JType,opType,KsType} <: ExpRKCache
+  u::uType
+  uprev::uType
+  utilde::uType
+  tmp::uType
+  rtmp::rateType
+  F2::rateType
+  J::JType
+  ops::opType
+  KsCache::KsType
+end
+function alg_cache(alg::Exprb32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  utilde, tmp = (similar(u) for i = 1:2)                     # uType caches
+  rtmp, F2 = (zero(rate_prototype) for i = 1:2)              # rateType caches
+  J, ops, KsCache = alg_cache_expRK(alg, u, f, dt, (3, 3))   # other caches
+  Exprb32Cache(u,uprev,utilde,tmp,rtmp,F2,J,ops,KsCache)
+end
+
+struct Exprb43Cache{uType,rateType,JType,opType,KsType} <: ExpRKCache
+  u::uType
+  uprev::uType
+  utilde::uType
+  tmp::uType
+  rtmp::rateType
+  Au::rateType
+  F2::rateType
+  F3::rateType
+  J::JType
+  ops::opType
+  KsCache::KsType
+end
+function alg_cache(alg::Exprb43,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  utilde, tmp = (similar(u) for i = 1:2)                     # uType caches
+  rtmp, Au, F2, F3 = (zero(rate_prototype) for i = 1:4)      # rateType caches
+  J, ops, KsCache = alg_cache_expRK(alg,u,f,dt,(1,4,4,4))    # other caches
+  Exprb43Cache(u,uprev,utilde,tmp,rtmp,Au,F2,F3,J,ops,KsCache)
 end
 
 ####################################
