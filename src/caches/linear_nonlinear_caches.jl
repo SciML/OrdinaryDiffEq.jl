@@ -90,6 +90,16 @@ abstract type ExpRKCache <: OrdinaryDiffEqMutableCache end
 abstract type ExpRKConstantCache <: OrdinaryDiffEqConstantCache end
 
 # Precomputation of exponential-like operators
+"""
+    expRK_operators(alg,dt,A) -> ops
+
+Compute operator(s) for an ExpRK algorithm. `dt` is the time step and `A` is
+the matrix form of the linear operator (from either a linear problem or a
+SplitODEProblem). All ExpRK methods that use caching operators should implement
+this method.
+"""
+expRK_operators(alg::ExponentialAlgorithm, dt, A) =
+  error("$alg does not support caching operators at the moment.")
 expRK_operators(::LawsonEuler, dt, A) = exp(dt * A)
 expRK_operators(::NorsettEuler, dt, A) = phi(dt * A, 1)[2]
 function expRK_operators(::ETDRK2, dt, A)
@@ -162,7 +172,9 @@ for (Alg, Cache) in [(:LawsonEuler, :LawsonEulerConstantCache),
                      (:ETDRK2, :ETDRK2ConstantCache),
                      (:ETDRK3, :ETDRK3ConstantCache),
                      (:ETDRK4, :ETDRK4ConstantCache),
-                     (:HochOst4, :HochOst4ConstantCache)]
+                     (:HochOst4, :HochOst4ConstantCache),
+                     (:Exprb32, :Exprb32ConstantCache),
+                     (:Exprb43, :Exprb43ConstantCache)]
   @eval struct $Cache{opType} <: ExpRKConstantCache
     ops::opType # precomputed operators
   end
@@ -188,8 +200,7 @@ Construct the non-standard caches (not uType or rateType) for ExpRK integrators.
 `plist` is a list of integers each corresponding to the order of a `phiv(!)`
 call in `perform_step!`.
 """
-function alg_cache_expRK(alg::Union{OrdinaryDiffEqExponentialAlgorithm,
-  OrdinaryDiffEqAdaptiveExponentialAlgorithm}, u, f, dt, plist)
+function alg_cache_expRK(alg::ExponentialAlgorithm, u, f, dt, plist)
   n = length(u); T = eltype(u)
   # Allocate cache for the Jacobian
   J = isa(f, SplitFunction) ? nothing : deepcopy(f.jac_prototype)
@@ -567,22 +578,7 @@ end
 
 ####################################
 # Adaptive exponential Rosenbrock method caches
-struct Exprb32ConstantCache{opType} <: OrdinaryDiffEqConstantCache 
-  ops::opType
-end
-function alg_cache(alg::Exprb32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  if alg.krylov
-    ops = nothing # no caching
-  else
-    isa(f, SplitFunction) || throw(ArgumentError("Caching can only be used with SplitFunction"))
-    A = size(f.f1) == () ? convert(Number, f.f1) : convert(AbstractMatrix, f.f1)
-    ops = expRK_operators(alg, dt, A)
-  end
-  return Exprb32ConstantCache(ops)
-end
-
-struct Exprb32Cache{uType,rateType,JType,opType,KsType} <: OrdinaryDiffEqMutableCache
+struct Exprb32Cache{uType,rateType,JType,opType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   utilde::uType
@@ -600,22 +596,7 @@ function alg_cache(alg::Exprb32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   Exprb32Cache(u,uprev,utilde,tmp,rtmp,F2,J,ops,KsCache)
 end
 
-struct Exprb43ConstantCache{opType} <: OrdinaryDiffEqConstantCache 
-  ops::opType
-end
-function alg_cache(alg::Exprb43,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  if alg.krylov
-    ops = nothing # no caching
-  else
-    isa(f, SplitFunction) || throw(ArgumentError("Caching can only be used with SplitFunction"))
-    A = size(f.f1) == () ? convert(Number, f.f1) : convert(AbstractMatrix, f.f1)
-    ops = expRK_operators(alg, dt, A)
-  end
-  return Exprb43ConstantCache(ops)
-end
-
-struct Exprb43Cache{uType,rateType,JType,opType,KsType} <: OrdinaryDiffEqMutableCache
+struct Exprb43Cache{uType,rateType,JType,opType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   utilde::uType

@@ -12,6 +12,7 @@ abstract type OrdinaryDiffEqRosenbrockAlgorithm{CS,AD} <:  OrdinaryDiffEqImplici
 
 abstract type OrdinaryDiffEqExponentialAlgorithm <: OrdinaryDiffEqAlgorithm end
 abstract type OrdinaryDiffEqAdaptiveExponentialAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
+const ExponentialAlgorithm = Union{OrdinaryDiffEqExponentialAlgorithm,OrdinaryDiffEqAdaptiveExponentialAlgorithm}
 
 abstract type OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
 
@@ -703,6 +704,14 @@ for Alg in [:LawsonEuler, :NorsettEuler, :ETDRK2, :ETDRK3, :ETDRK4, :HochOst4]
   @eval $Alg(;krylov=false, m=30, iop=0) = $Alg(krylov, m, iop)
 end
 ETD1 = NorsettEuler # alias
+for Alg in [:Exprb32, :Exprb43]
+  @eval struct $Alg <: OrdinaryDiffEqAdaptiveExponentialAlgorithm
+    krylov::Bool
+    m::Int
+    iop::Int
+  end
+  @eval $Alg(;krylov=false, m=30, iop=0) = $Alg(krylov, m, iop)
+end
 for Alg in [:Exp4, :EPIRK4s3A, :EPIRK4s3B, :EPIRK5s3, :EXPRB53s3, :EPIRK5P1, :EPIRK5P2]
   @eval struct $Alg <: OrdinaryDiffEqExponentialAlgorithm
     m::Int
@@ -712,18 +721,6 @@ for Alg in [:Exp4, :EPIRK4s3A, :EPIRK4s3B, :EPIRK5s3, :EXPRB53s3, :EPIRK5P1, :EP
 end
 struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm end
 struct ETD2 <: OrdinaryDiffEqExponentialAlgorithm end
-struct Exprb32 <: OrdinaryDiffEqAdaptiveExponentialAlgorithm
-  krylov::Bool
-  m::Int
-  iop::Int
-end
-Exprb32(;krylov=false, m=30, iop=0) = Exprb32(krylov, m, iop)
-struct Exprb43 <: OrdinaryDiffEqAdaptiveExponentialAlgorithm
-  krylov::Bool
-  m::Int
-  iop::Int
-end
-Exprb43(;krylov=false, m=30, iop=0) = Exprb43(krylov, m, iop)
 
 #########################################
 

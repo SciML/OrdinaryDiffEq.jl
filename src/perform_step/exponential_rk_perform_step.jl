@@ -1160,30 +1160,6 @@ end
 
 ######################################################
 # Adaptive exponential Rosenbrock integrators
-function initialize!(integrator, cache::Union{Exprb32ConstantCache,Exprb43ConstantCache})
-  # Pre-start fsal
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
-  integrator.fsallast = zero(integrator.fsalfirst)
-
-  # Initialize interpolation derivatives
-  integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-end
-function initialize!(integrator, cache::Union{Exprb32Cache,Exprb43Cache})
-  # Pre-start fsal
-  integrator.fsalfirst = zero(cache.rtmp)
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-  integrator.fsallast = zero(integrator.fsalfirst)
-
-  # Initialize interpolation derivatives
-  integrator.kshortsize = 2
-  resize!(integrator.k, integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-end
-
 function perform_step!(integrator, cache::Exprb32ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
   is_compos = isa(integrator.alg, CompositeAlgorithm)
