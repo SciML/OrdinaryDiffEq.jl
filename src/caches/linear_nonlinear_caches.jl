@@ -365,6 +365,16 @@ end
 
 ####################################
 # EPIRK method caches
+function _phiv_timestep_caches(u_prototype, maxiter::Int, p::Int)
+  n = length(u_prototype); T = eltype(u_prototype)
+  u = similar(u_prototype)                      # stores the current state
+  W = Matrix{T}(undef, n, p+1)                  # stores the w vectors
+  P = Matrix{T}(undef, n, p+2)                  # stores output from phiv!
+  Ks = KrylovSubspace{T}(n, maxiter)            # stores output from arnoldi!
+  phiv_cache = PhivCache{T}(maxiter, p+1)       # cache used by phiv! (need +1 for error estimation)
+  return u, W, P, Ks, phiv_cache
+end
+
 struct Exp4ConstantCache <: ExpRKConstantCache end
 alg_cache(alg::Exp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = Exp4ConstantCache()

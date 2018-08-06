@@ -24,6 +24,8 @@ module OrdinaryDiffEq
 
   import ForwardDiff.Dual
 
+  using ExponentialUtilities
+
   # Required by temporary fix in not in-place methods with 12+ broadcasts
   # `MVector` is used by Nordsieck forms
   import StaticArrays: SArray, MVector, SVector, @SVector
@@ -123,7 +125,6 @@ module OrdinaryDiffEq
   include("nordsieck_utils.jl")
   include("adams_utils.jl")
   include("bdf_utils.jl")
-  include("exponential_utils.jl")
   include("rkc_utils.jl")
   include("derivative_wrappers.jl")
   include("iterator_interface.jl")
