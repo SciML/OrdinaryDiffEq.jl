@@ -82,7 +82,7 @@ function reinterpolate_history!(cache, D, R, k)
   end
 end
 
-global const γₖ = [1//1, 3//2, 11//6, 25//12, 137//60, 49//20]
+global const γₖ = @SVector[sum(1//j for j in 1:k) for k in 1:6]
 
 # this stepsize and order controller is taken from
 # Implementation of an Adaptive BDF2 Formula and Comparison with the MATLAB Ode15s paper
@@ -125,7 +125,7 @@ function stepsize_and_order!(cache, est, estₖ₋₁, estₖ₊₁, h, k)
 
     if zₖ₊₁<= 0.1
       hₖ₊₁ = 10 * h
-    elseif 0.1 < zₖ₊₁ <= 1.4 
+    elseif 0.1 < zₖ₊₁ <= 1.4
       hₖ₊₁ = Fₖ₊₁ * h
     end
     # adp order and step conditions
@@ -170,7 +170,7 @@ function stepsize_and_order!(cache, est, estₖ₋₁, estₖ₊₁, h, k)
       elseif zₖ₋₁ > 10
         hₖ₋₁ = 0.1 * h
       end
-      
+
       if hₖ₋₁ > hₖ
         hₙ = min(h,hₖ₋₁)
         kₙ = max(k-1,1)

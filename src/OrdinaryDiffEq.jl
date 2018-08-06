@@ -28,7 +28,7 @@ module OrdinaryDiffEq
 
   # Required by temporary fix in not in-place methods with 12+ broadcasts
   # `MVector` is used by Nordsieck forms
-  import StaticArrays: SArray, MVector, SVector
+  import StaticArrays: SArray, MVector, SVector, @SVector
 
   # Integrator Interface
   import DiffEqBase: resize!,deleteat!,addat!,full_cache,user_cache,u_cache,du_cache,
@@ -38,7 +38,7 @@ module OrdinaryDiffEq
                      set_abstol!, postamble!, last_step_failed,
                      isautodifferentiable
 
-  using DiffEqBase: check_error!
+  using DiffEqBase: check_error!, @def
 
   macro tight_loop_macros(ex)
    :($(esc(ex)))
@@ -48,6 +48,9 @@ module OrdinaryDiffEq
 
   include("misc_utils.jl")
   include("algorithms.jl")
+  include("nlsolve/type.jl")
+  include("nlsolve/newton.jl")
+  include("nlsolve/functional.jl")
 
   include("caches/basic_caches.jl")
   include("caches/low_order_rk_caches.jl")
@@ -66,9 +69,7 @@ module OrdinaryDiffEq
   include("caches/adams_bashforth_moulton_caches.jl")
   include("caches/nordsieck_caches.jl")
   include("caches/bdf_caches.jl")
-  include("caches/sbdf_caches.jl")
   include("caches/rkc_caches.jl")
-  include("caches/euler_imex_caches.jl")
 
   include("alg_utils.jl")
 
@@ -108,9 +109,7 @@ module OrdinaryDiffEq
   include("perform_step/adams_bashforth_moulton_perform_step.jl")
   include("perform_step/nordsieck_perform_step.jl")
   include("perform_step/bdf_perform_step.jl")
-  include("perform_step/sbdf_perform_step.jl")
   include("perform_step/rkc_perform_step.jl")
-  include("perform_step/euler_imex_perform_step.jl")
 
   include("dense/generic_dense.jl")
   include("dense/interpolants.jl")
@@ -121,7 +120,6 @@ module OrdinaryDiffEq
   include("dense/high_order_rk_addsteps.jl")
 
   include("derivative_utils.jl")
-  include("nlsolve_utils.jl")
   include("nordsieck_utils.jl")
   include("adams_utils.jl")
   include("bdf_utils.jl")
@@ -200,4 +198,6 @@ module OrdinaryDiffEq
 
   export AutoSwitch, AutoTsit5, AutoDP5,
          AutoVern6, AutoVern7, AutoVern8, AutoVern9
+
+  export NLNewton, NLAnderson, NLFunctional
 end # module

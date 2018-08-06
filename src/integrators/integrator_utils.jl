@@ -28,7 +28,7 @@ end
 last_step_failed(integrator::ODEIntegrator) =
   integrator.last_stepfail && !integrator.opts.adaptive
 
-DiffEqBase.@def ode_exit_conditions begin
+@def ode_exit_conditions begin
   if check_error!(integrator) != :Success
     return integrator.sol
   end

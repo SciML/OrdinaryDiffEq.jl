@@ -59,8 +59,8 @@ using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
 
   @test norm(sol .- sol2) ≈ 0 atol=1e-7
 
-  sol = solve(prob,  ImplicitMidpoint(),dt=1/10)
-  sol2 = solve(prob2,ImplicitMidpoint(),dt=1/10)
+  sol = solve(prob,  ImplicitMidpoint(extrapolant = :constant),dt=1/10)
+  sol2 = solve(prob2,ImplicitMidpoint(extrapolant = :constant),dt=1/10)
 
   @test norm(sol .- sol2) ≈ 0 atol=1e-7
 end
