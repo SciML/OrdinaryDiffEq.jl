@@ -714,10 +714,11 @@ for Alg in [:Exprb32, :Exprb43]
 end
 for Alg in [:Exp4, :EPIRK4s3A, :EPIRK4s3B, :EPIRK5s3, :EXPRB53s3, :EPIRK5P1, :EPIRK5P2]
   @eval struct $Alg <: OrdinaryDiffEqExponentialAlgorithm
+    adaptive_krylov::Bool
     m::Int
     iop::Int
   end
-  @eval $Alg(;m=30, iop=0) = $Alg(m, iop)
+  @eval $Alg(;adaptive_krylov=true, m=30, iop=0) = $Alg(adaptive_krylov, m, iop)
 end
 struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm end
 struct ETD2 <: OrdinaryDiffEqExponentialAlgorithm end

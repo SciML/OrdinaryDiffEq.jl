@@ -30,9 +30,7 @@ isdtchangeable(alg::OrdinaryDiffEqAlgorithm) = true
 isdtchangeable(alg::CompositeAlgorithm) = all(isdtchangeable.(alg.algs))
 isdtchangeable(alg::GenericIIF1) = false
 isdtchangeable(alg::GenericIIF2) = false
-isdtchangeable(alg::LawsonEuler) = false
-isdtchangeable(alg::NorsettEuler) = false
-isdtchangeable(alg::ETD2) = false
+isdtchangeable(alg::Union{LawsonEuler,NorsettEuler,ETDRK2,ETDRK3,ETDRK4,HochOst4,ETD2}) = false # due to caching
 
 ismultistep(alg::OrdinaryDiffEqAlgorithm) = false
 ismultistep(alg::CompositeAlgorithm) = any(ismultistep.(alg.algs))
