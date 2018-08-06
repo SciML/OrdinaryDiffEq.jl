@@ -76,6 +76,23 @@ end
   println(EPIRK5s3) # prevent Travis hanging
 end
 
+@testset "Adaptive exponential Rosenbrock" begin
+  dt = 0.05
+  abstol=1e-4; reltol=1e-3
+  sol_ref = solve(prob, Tsit5(); abstol=abstol, reltol=reltol)
+
+  sol = solve(prob, Exprb32(krylov=true,m=20); adaptive=true, abstol=abstol, reltol=reltol)
+  @test isapprox(sol(1.0), sol_ref(1.0); rtol=reltol)
+  sol = solve(prob_ip, Exprb32(krylov=true,m=20); adaptive=true, abstol=abstol, reltol=reltol)
+  @test isapprox(sol(1.0), sol_ref(1.0); rtol=reltol)
+
+  sol = solve(prob, Exprb43(krylov=true,m=20); adaptive=true, abstol=abstol, reltol=reltol)
+  @test isapprox(sol(1.0), sol_ref(1.0); rtol=reltol)
+  sol = solve(prob_ip, Exprb43(krylov=true,m=20); adaptive=true, abstol=abstol, reltol=reltol)
+  @test isapprox(sol(1.0), sol_ref(1.0); rtol=reltol)
+end
+end
+
 @testset "ExpRK with custom jacobian" begin
   N = 10
   # Sparse Jacobian
@@ -100,21 +117,4 @@ end
     sol = solve(prob, LawsonEuler(krylov=true, m=N); dt=0.1)
     @test sol(1.0) ≈ exp_fun2.analytic(u0,nothing,1.0)
   end
-end
-
-@testset "Adaptive exponential Rosenbrock" begin
-  dt = 0.05
-  abstol=1e-4; reltol=1e-3
-  sol_ref = solve(prob, Tsit5(); abstol=abstol, reltol=reltol)
-
-  sol = solve(prob, Exprb32(krylov=true,m=20); adaptive=true, abstol=abstol, reltol=reltol)
-  @test isapprox(sol(1.0), sol_ref(1.0); rtol=reltol)
-  sol = solve(prob_ip, Exprb32(krylov=true,m=20); adaptive=true, abstol=abstol, reltol=reltol)
-  @test isapprox(sol(1.0), sol_ref(1.0); rtol=reltol)
-
-  sol = solve(prob, Exprb43(krylov=true,m=20); adaptive=true, abstol=abstol, reltol=reltol)
-  @test isapprox(sol(1.0), sol_ref(1.0); rtol=reltol)
-  sol = solve(prob_ip, Exprb43(krylov=true,m=20); adaptive=true, abstol=abstol, reltol=reltol)
-  @test isapprox(sol(1.0), sol_ref(1.0); rtol=reltol)
-end
 end
