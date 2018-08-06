@@ -26,15 +26,6 @@ end
 
 const deriv_test_points = range(0, stop=1, length=5)
 
-function nth_derivative(fun, t, n)
-  if n == 1
-    return der = ForwardDiff.derivative(fun, t)
-  else
-    dfun = x -> ForwardDiff.derivative(fun, x)
-    nth_derivative(dfun, t, n-1)
-  end
-end
-
 # perform the regression tests
 # NOTE: If you want to add new tests (for new algorithms), you have to run the
 #       commands below to get numerical values for `tol_ode_linear` and
@@ -45,13 +36,20 @@ function regression_test(alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = fal
   sol = solve(prob_ode_linear, alg, dt=1//2^(2), dense=true)
   sol(interpolation_results_1d, interpolation_points)
   sol(interpolation_points[1])
+  sol2 = solve(prob_ode_linear, alg, dt=1//2^(4), dense=true, adaptive=false)
+  for i in eachindex(sol2)
+    print_results( @test maximum(abs.(sol2[i] - interpolation_results_1d[i])) < tol_ode_linear )
+  end
   for N in 1:nth_der
     # prevent CI error
     nth_der != 1 && @show N
     if test_diff1
+      sol(interpolation_results_1d, interpolation_points, Val{N})
+      der = sol(interpolation_points[1], Val{N})
+      @test interpolation_results_1d[1] ≈ der
       for t in deriv_test_points
         deriv = sol(t, Val{N})
-        @test deriv ≈ nth_derivative(sol, t, N) rtol=dertol
+        @test deriv ≈ ForwardDiff.derivative(t -> sol(t, Val{N-1}), t) rtol=dertol
       end
     end
   end
@@ -72,14 +70,9 @@ function regression_test(alg, tol_ode_linear, tol_ode_2Dlinear; test_diff1 = fal
       @test interpolation_results_1d_inplace[1] ≈ der
       for t in deriv_test_points
         deriv = sol(t, Val{N}, idxs=1)
-        @test deriv ≈ nth_derivative(t->sol(t,idxs=1), t, N) rtol=dertol
+        @test deriv ≈ ForwardDiff.derivative(t -> sol(t, Val{N-1}; idxs=1), t) rtol=dertol
       end
     end
-  end
-
-  sol2 = solve(prob_ode_linear, alg, dt=1//2^(4), dense=true, adaptive=false)
-  for i in eachindex(sol2)
-    print_results( @test maximum(abs.(sol2[i] - interpolation_results_1d[i])) < tol_ode_linear )
   end
 
   sol  = solve(prob_ode_2Dlinear, alg, dt=1//2^(2), dense=true)
@@ -138,10 +131,10 @@ regression_test(Midpoint(), 1.5e-2, 2.3e-2)
 println("SSPRKs")
 
 # SSPRK22
-regression_test(SSPRK22(), 1.5e-2, 2.5e-2; test_diff1 = true)
+regression_test(SSPRK22(), 1.5e-2, 2.5e-2; test_diff1 = true, nth_der = 2, dertol = 1e-15)
 
 # SSPRK33
-regression_test(SSPRK33(), 7.5e-4, 1.5e-3; test_diff1 = true)
+regression_test(SSPRK33(), 7.5e-4, 1.5e-3; test_diff1 = true, nth_der = 2, dertol = 1e-15)
 
 # SSPRK53
 regression_test(SSPRK53(), 2.5e-4, 4.0e-4; test_diff1 = true)
@@ -156,7 +149,7 @@ regression_test(SSPRK73(), 9.0e-5, 2.0e-4; test_diff1 = true)
 regression_test(SSPRK83(), 6.5e-5, 1.5e-4; test_diff1 = true)
 
 # SSPRK432
-regression_test(SSPRK432(), 4.0e-4, 8.0e-4; test_diff1 = true)
+regression_test(SSPRK432(), 4.0e-4, 8.0e-4; test_diff1 = true, nth_der = 2, dertol = 1e-13)
 
 # SSPRK932
 regression_test(SSPRK932(), 6.0e-5, 1.0e-4; test_diff1 = true)
@@ -176,10 +169,19 @@ regression_test(RK4(), 4.5e-5, 1e-4)
 regression_test(CarpenterKennedy2N54(), 3.0e-5, 5.0e-5)
 
 # DP5
-regression_test(DP5(), 5e-6, 1e-5; test_diff1 = true)
+regression_test(DP5(), 5e-6, 1e-5; test_diff1 = true, nth_der = 4, dertol = 1e-14)
 
 # BS3
 regression_test(BS3(), 5e-4, 8e-4)
+
+# OwrenZen3
+regression_test(OwrenZen3(), 1.5e-4, 2.5e-4; test_diff1 = true, nth_der = 3, dertol = 1e-9)
+
+# OwrenZen4
+regression_test(OwrenZen4(), 6.5e-6, 1.5e-5; test_diff1 = true, nth_der = 4, dertol = 1e-10)
+
+# OwrenZen5
+regression_test(OwrenZen5(), 1.5e-6, 2.5e-6; test_diff1 = true, nth_der = 5, dertol = 1e-8)
 
 # Tsit5
 regression_test(Tsit5(), 2e-6, 4e-6; test_diff1 = true, nth_der = 4, dertol = 1e-6)
@@ -192,6 +194,31 @@ regression_test(TsitPap8(), 1e-3, 3e-3)
 
 # Feagin10
 regression_test(Feagin10(), 6e-4, 9e-4)
+
+# BS5
+regression_test(BS5(), 4e-8, 6e-8; test_diff1 = true, nth_der = 1, dertol = 1e-12)
+regression_test(BS5(lazy=false), 4e-8, 6e-8; test_diff1 = true, nth_der = 1, dertol = 1e-12)
+
+prob = prob_ode_linear
+sol  = solve(prob, BS5(), dt=1//2^(1), dense=true, adaptive=false)
+interpd_1d_long = sol(0:1//2^(7):1)
+sol2 = solve(prob, BS5(), dt=1//2^(7), dense=true, adaptive=false)
+print_results( @test maximum(map((x)->maximum(abs.(x)),sol2 - interpd_1d_long)) < 2e-7 )
+
+# DP8
+regression_test(DP8(), 2e-7, 3e-7; test_diff1 = true, nth_der = 1, dertol = 1e-15)
+
+prob = prob_ode_linear
+sol  = solve(prob, DP8(), dt=1//2^(2), dense=true)
+sol(interpd_1d_long, 0:1//2^(7):1) # inplace update
+sol2 = solve(prob, DP8(), dt=1//2^(7), dense=true, adaptive=false)
+print_results( @test maximum(map((x)->maximum(abs.(x)),sol2 - interpd_1d_long)) < 2e-7 )
+
+println("Verns")
+
+# Vern6
+regression_test(Vern6(), 7e-8, 7e-8; test_diff1 = true, nth_der = 1, dertol = 1e-9)
+regression_test(Vern6(lazy=false), 7e-8, 7e-8; test_diff1 = true, nth_der = 1, dertol = 1e-9)
 
 prob = remake(prob_ode_bigfloatlinear;u0=big(0.5))
 
@@ -207,56 +234,34 @@ interpd_big = sol(0:1//2^(4):1)
 sol2 = solve(prob, Vern6(), dt=1//2^(4), dense=true, adaptive=false)
 print_results( @test maximum(map((x)->maximum(abs.(x)),sol2 - interpd_big)) < 5e-8 )
 
-# BS5
-regression_test(BS5(), 4e-8, 6e-8; test_diff1 = true)
-regression_test(BS5(lazy=false), 4e-8, 6e-8; test_diff1 = true)
-
-prob = prob_ode_linear
-sol  = solve(prob, BS5(), dt=1//2^(1), dense=true, adaptive=false)
-interpd_1d_long = sol(0:1//2^(7):1)
-sol2 = solve(prob, BS5(), dt=1//2^(7), dense=true, adaptive=false)
-print_results( @test maximum(map((x)->maximum(abs.(x)),sol2 - interpd_1d_long)) < 2e-7 )
-
-println("Verns")
-
-# Vern6
-regression_test(Vern6(), 7e-8, 7e-8; test_diff1 = true)
-regression_test(Vern6(lazy=false), 7e-8, 7e-8; test_diff1 = true)
-
 # Vern7
-regression_test(Vern7(), 3e-9, 5e-9; test_diff1 = true)
-regression_test(Vern7(lazy=false), 3e-9, 5e-9; test_diff1 = true)
+regression_test(Vern7(), 3e-9, 5e-9; test_diff1 = true, nth_der = 1, dertol = 1e-10)
+regression_test(Vern7(lazy=false), 3e-9, 5e-9; test_diff1 = true, nth_der = 1, dertol = 1e-10)
 
 # Vern8
-regression_test(Vern8(), 3e-8, 5e-8; test_diff1 = true)
-regression_test(Vern8(lazy=false), 3e-8, 5e-8; test_diff1 = true)
+regression_test(Vern8(), 3e-8, 5e-8; test_diff1 = true, nth_der = 1, dertol = 1e-7)
+regression_test(Vern8(lazy=false), 3e-8, 5e-8; test_diff1 = true, nth_der = 1, dertol = 1e-7)
 
 # Vern9
-regression_test(Vern9(), 1e-9, 2e-9; test_diff1 = true, nth_der=2, dertol=1e-2)
-regression_test(Vern9(lazy=false), 1e-9, 2e-9; test_diff1 = true, dertol=1e-2)
+regression_test(Vern9(), 1e-9, 2e-9; test_diff1 = true, nth_der = 4, dertol = 2e-2)
+regression_test(Vern9(lazy=false), 1e-9, 2e-9; test_diff1 = true, nth_der = 4, dertol = 2e-2)
 
 println("Rosenbrocks")
 
 # Rosenbrock23
-regression_test(Rosenbrock23(), 3e-3, 6e-3; test_diff1 = true)
+regression_test(Rosenbrock23(), 3e-3, 6e-3; test_diff1 = true, nth_der = 1, dertol = 1e-14)
 
 # Rosenbrock32
-regression_test(Rosenbrock32(), 4e-4, 6e-4)
+regression_test(Rosenbrock32(), 4e-4, 6e-4; test_diff1 = true, nth_der = 1, dertol = 1e-14)
+
+# Rodas4
+regression_test(Rodas4(), 8.5e-6, 2e-5)
 
 # GenericImplicitEuler
 regression_test(GenericImplicitEuler(), 0.2, 0.354)
 
 # GenericTrapezoid
 regression_test(GenericTrapezoid(), 7e-3, 1.4e-2)
-
-# DP8
-regression_test(DP8(), 2e-7, 3e-7; test_diff1 = true)
-
-prob = prob_ode_linear
-sol  = solve(prob, DP8(), dt=1//2^(2), dense=true)
-sol(interpd_1d_long, 0:1//2^(7):1) # inplace update
-sol2 = solve(prob, DP8(), dt=1//2^(7), dense=true, adaptive=false)
-print_results( @test maximum(map((x)->maximum(abs.(x)),sol2 - interpd_1d_long)) < 2e-7 )
 
 # ExplicitRK
 regression_test(ExplicitRK(), 7e-5, 2e-4)
