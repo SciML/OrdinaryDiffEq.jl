@@ -22,7 +22,7 @@ using OrdinaryDiffEq, LinearAlgebra, SparseArrays, Random, Test, DiffEqOperators
 
   # Krylov
   n = 20; m = 5
-  srand(0)
+  Random.seed!(0)
   A = randn(n, n)
   t = 1e-2
   b = randn(n)
@@ -71,7 +71,7 @@ end
 
 @testset "Derivative Utilities" begin
   @testset "WOperator" begin
-    srand(0); y = zeros(2); b = rand(2)
+    Random.seed!(0); y = zeros(2); b = rand(2)
     mm = I; _J = rand(2,2)
     W = WOperator(mm, 1.0, DiffEqArrayOperator(_J))
     set_gamma!(W, 2.0)

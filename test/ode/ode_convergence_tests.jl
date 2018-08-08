@@ -6,7 +6,7 @@ probArr = Vector{ODEProblem}(undef, 2)
 probArr[1] = prob_ode_linear
 
 probArr[2] = prob_ode_2Dlinear
-srand(100)
+Random.seed!(100)
 ## Convergence Testing
 dts = 1 .//2 .^(8:-1:4)
 dts1 = 1 .//2 .^(9:-1:5)

@@ -1,6 +1,6 @@
 using OrdinaryDiffEq, Test, DiffEqOperators, Random, LinearAlgebra, SparseArrays
 let N = 20
-srand(0); u0 = normalize(randn(N))
+Random.seed!(0); u0 = normalize(randn(N))
 dd = -2 * ones(N); du = ones(N-1)
 A = diagm(-1 => du, 0 => dd, 1 => du)
 _f = (u,p,t) -> A*u - u.^3
@@ -96,7 +96,7 @@ end
 @testset "ExpRK with custom jacobian" begin
   N = 10
   # Sparse Jacobian
-  srand(0); u0 = normalize(randn(N))
+  Random.seed!(0); u0 = normalize(randn(N))
   dd = -2 * ones(N); du = ones(N-1)
   A = spdiagm(-1 => du, 0 => dd, 1 => du)
   f = (u,p,t) -> A*u
