@@ -2,7 +2,7 @@ using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase, Test, Random
 using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
 import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_2Dlinear, prob_ode_linear
 
-srand(100)
+Random.seed!(100)
 ## Convergence Testing
 dts = (1/2) .^ (7:-1:4)
 testTol = 0.2

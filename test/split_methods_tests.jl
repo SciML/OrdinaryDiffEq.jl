@@ -1,7 +1,7 @@
 using OrdinaryDiffEq, DiffEqDevTools, Test, Random
 testTol = 0.2
 
-srand(100)
+Random.seed!(100)
 
 # Test that the infrustructure works
 

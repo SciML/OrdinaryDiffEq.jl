@@ -8,7 +8,7 @@ linnonlin_fun = SplitFunction(linnonlin_f1, linnonlin_f2; analytic=(u0,p,t)->u0.
 prob = SplitODEProblem(linnonlin_fun,1/2,(0.0,1.0))
 
 println("Out-of-place")
-srand(100)
+Random.seed!(100)
 dts = 1 ./2 .^(7:-1:4) #14->7 good plot
 sim  = test_convergence(dts,prob,GenericIIF1())
 @test abs(sim.𝒪est[:l2]-1) < 0.2
