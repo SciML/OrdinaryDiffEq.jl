@@ -696,7 +696,8 @@ end
 
 @muladd function perform_step!(integrator,cache::SSPRK54Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k,k₃,u₂,u₃,tmp,fsalfirst,stage_limiter!,step_limiter!,β10,α20,α21,β21,α30,α32,β32,α40,α43,β43,α52,α53,β53,α54,β54,c1,c2,c3,c4 = cache
+  @unpack k,k₃,u₂,u₃,tmp,fsalfirst,stage_limiter!,step_limiter! = cache
+  @unpack β10,α20,α21,β21,α30,α32,β32,α40,α43,β43,α52,α53,β53,α54,β54,c1,c2,c3,c4 = cache.tab
 
   # u₁
   @. u₂ = uprev + β10 * dt * integrator.fsalfirst
