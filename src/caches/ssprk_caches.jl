@@ -182,7 +182,7 @@ function alg_cache(alg::SSPRK63,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
 end
 
 
-struct SSPRK73Cache{uType,rateType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMutableCache
+struct SSPRK73Cache{uType,rateType,StageLimiter,StepLimiter,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k::rateType
@@ -191,52 +191,58 @@ struct SSPRK73Cache{uType,rateType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMu
   fsalfirst::rateType
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
-  α40::Float64
-  α43::Float64
-  α50::Float64
-  α51::Float64
-  α54::Float64
-  α73::Float64
-  α76::Float64
-  β10::Float64
-  β21::Float64
-  β32::Float64
-  β43::Float64
-  β54::Float64
-  β65::Float64
-  β76::Float64
-  c1::Float64
-  c2::Float64
-  c3::Float64
-  c4::Float64
-  c5::Float64
-  c6::Float64
+  tab::TabType
 end
 
 u_cache(c::SSPRK73Cache) = (c.tmp,c.u₁)
 du_cache(c::SSPRK73Cache) = (c.k,c.fsalfirst)
 
-struct SSPRK73ConstantCache <: OrdinaryDiffEqConstantCache
-  α40::Float64
-  α43::Float64
-  α50::Float64
-  α51::Float64
-  α54::Float64
-  α73::Float64
-  α76::Float64
-  β10::Float64
-  β21::Float64
-  β32::Float64
-  β43::Float64
-  β54::Float64
-  β65::Float64
-  β76::Float64
-  c1::Float64
-  c2::Float64
-  c3::Float64
-  c4::Float64
-  c5::Float64
-  c6::Float64
+struct SSPRK73ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+  α40::T
+  α43::T
+  α50::T
+  α51::T
+  α54::T
+  α73::T
+  α76::T
+  β10::T
+  β21::T
+  β32::T
+  β43::T
+  β54::T
+  β65::T
+  β76::T
+  c1::T2
+  c2::T2
+  c3::T2
+  c4::T2
+  c5::T2
+  c6::T2
+
+  function SSPRK73ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+    α40 = T(0.184962588071072)
+    α43 = T(0.815037411928928)
+    α50 = T(0.180718656570380)
+    α51 = T(0.314831034403793)
+    α54 = T(0.504450309025826)
+    α73 = T(0.120199000000000)
+    α76 = T(0.879801000000000)
+    β10 = T(0.233213863663009)
+    β21 = T(0.233213863663009)
+    β32 = T(0.233213863663009)
+    β43 = T(0.190078023865845)
+    β54 = T(0.117644805593912)
+    β65 = T(0.233213863663009)
+    β76 = T(0.205181790464579)
+    c1 = T2(0.233213863663009)
+    c2 = T2(0.466427727326018)
+    c3 = T2(0.699641590989027)
+    c4 = T2(0.760312095463379)
+    c5 = T2(0.574607439040817)
+    c6 = T2(0.807821302703826)
+
+    new{T,T2}(α40, α43, α50, α51, α54, α73, α76, β10, β21, β32, β43, β54, β65, β76, c1, c2, c3, c4, c5, c6)
+  end
 end
 
 function alg_cache(alg::SSPRK73,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -244,52 +250,12 @@ function alg_cache(alg::SSPRK73,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   u₁ = similar(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
-  α40 = 0.184962588071072
-  α43 = 0.815037411928928
-  α50 = 0.180718656570380
-  α51 = 0.314831034403793
-  α54 = 0.504450309025826
-  α73 = 0.120199000000000
-  α76 = 0.879801000000000
-  β10 = 0.233213863663009
-  β21 = 0.233213863663009
-  β32 = 0.233213863663009
-  β43 = 0.190078023865845
-  β54 = 0.117644805593912
-  β65 = 0.233213863663009
-  β76 = 0.205181790464579
-  c1 = 0.233213863663009
-  c2 = 0.466427727326018
-  c3 = 0.699641590989027
-  c4 = 0.760312095463379
-  c5 = 0.574607439040817
-  c6 = 0.807821302703826
-  SSPRK73Cache(u,uprev,k,tmp,u₁,fsalfirst,alg.stage_limiter!,alg.step_limiter!,
-                α40,α43,α50,α51,α54,α73,α76,β10,β21,β32,β43,β54,β65,β76,c1,c2,c3,c4,c5,c6)
+  tab = SSPRK73ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  SSPRK73Cache(u,uprev,k,tmp,u₁,fsalfirst,alg.stage_limiter!,alg.step_limiter!,tab)
 end
 
 function alg_cache(alg::SSPRK73,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  α40 = 0.184962588071072
-  α43 = 0.815037411928928
-  α50 = 0.180718656570380
-  α51 = 0.314831034403793
-  α54 = 0.504450309025826
-  α73 = 0.120199000000000
-  α76 = 0.879801000000000
-  β10 = 0.233213863663009
-  β21 = 0.233213863663009
-  β32 = 0.233213863663009
-  β43 = 0.190078023865845
-  β54 = 0.117644805593912
-  β65 = 0.233213863663009
-  β76 = 0.205181790464579
-  c1 = 0.233213863663009
-  c2 = 0.466427727326018
-  c3 = 0.699641590989027
-  c4 = 0.760312095463379
-  c5 = 0.574607439040817
-  c6 = 0.807821302703826
-  SSPRK73ConstantCache(α40,α43,α50,α51,α54,α73,α76,β10,β21,β32,β43,β54,β65,β76,c1,c2,c3,c4,c5,c6)
+  SSPRK73ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
 
