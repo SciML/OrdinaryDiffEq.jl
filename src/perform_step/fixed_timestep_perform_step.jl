@@ -368,7 +368,8 @@ end
 
 @muladd function perform_step!(integrator,cache::CarpenterKennedy2N54Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k,fsalfirst,tmp,A2,A3,A4,A5,B1,B2,B3,B4,B5,c2,c3,c4,c5 = cache
+  @unpack k,fsalfirst,tmp = cache
+  @unpack A2,A3,A4,A5,B1,B2,B3,B4,B5,c2,c3,c4,c5 = cache.tab
 
   # u1
   @. tmp = dt*fsalfirst
