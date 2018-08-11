@@ -154,7 +154,7 @@ function find_callback_time(integrator,callback)
           end
           callback.condition(tmp,integrator.tprev+Θ*integrator.dt,integrator)
         end
-        Θ = prevfloat(find_zero(zero_func,(bottom_θ,top_Θ),FalsePosition(),abstol = callback.abstol/10))
+        Θ = prevfloat(find_zero(zero_func,(bottom_θ,top_Θ),FalsePosition(),atol = callback.abstol/10))
         #Θ = prevfloat(...)
         # prevfloat guerentees that the new time is either 1 floating point
         # numbers just before the event or directly at zero, but not after.
