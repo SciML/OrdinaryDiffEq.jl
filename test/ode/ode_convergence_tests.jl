@@ -13,6 +13,7 @@ dts1 = 1 .//2 .^(9:-1:5)
 testTol = 0.2
 
 for i = 1:2
+  global dts
   prob = probArr[i]
   sim = test_convergence(dts,prob,Euler())
   @test abs(sim.𝒪est[:final]-1) < testTol
