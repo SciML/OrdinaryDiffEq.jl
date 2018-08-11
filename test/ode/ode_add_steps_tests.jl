@@ -29,6 +29,7 @@ passed = fill(false, 2length(nonstandard_interp_algs))
 
 cur_itr = 0
 for inplace in [false,true], alg in algs
+    global cur_itr
     prob = ODEProblem{inplace}(test_ode, [0.], tspan, [1.])
     sol = solve(prob, alg(); callback=cb,dt=0.0013)
     pass = all(isapprox(sol(t)[1], test_solution(t); atol=0.05) for t in testtimes)
@@ -37,6 +38,7 @@ for inplace in [false,true], alg in algs
 end
 
 for inplace in [false,true], alg in lazy_alg
+    global cur_itr
     prob = ODEProblem{inplace}(test_ode, [0.], tspan, [1.])
     sol = solve(prob, alg(); callback=cb,dt=0.0013)
     fail = all(isapprox(sol(t)[1], test_solution(t); atol=0.05) for t in testtimes)
