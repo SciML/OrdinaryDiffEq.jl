@@ -1,5 +1,5 @@
 DiffEqBase.@def iipnlcachefields begin
-  nlcache = alg.nonlinsolve.cache
+  nlcache = alg.nlsolve.cache
   @unpack κ,tol,max_iter,min_iter,new_W = nlcache
   z = similar(u,axes(u))
   dz = similar(u,axes(u)); tmp = similar(u,axes(u)); b = similar(u,axes(u))
@@ -8,7 +8,7 @@ DiffEqBase.@def iipnlcachefields begin
   uToltype = real(uBottomEltypeNoUnits)
   ηold = one(uToltype)
 
-  if typeof(alg.nonlinsolve) <: NLNewton
+  if typeof(alg.nlsolve) <: NLNewton
     if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
       W = WOperator(f, dt)
       J = nothing # is J = W.J better?
@@ -21,7 +21,7 @@ DiffEqBase.@def iipnlcachefields begin
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
     linsolve = alg.linsolve(Val{:init},uf,u)
     z₊ = z
-  elseif typeof(alg.nonlinsolve) <: NLFunctional
+  elseif typeof(alg.nlsolve) <: NLFunctional
     J = nothing
     W = nothing
     du1 = rate_prototype
@@ -41,18 +41,18 @@ DiffEqBase.@def iipnlcachefields begin
   else
     tol = uToltype(min(0.03,first(reltol)^(0.5)))
   end
-  _nlsolve = alg.nonlinsolve
+  _nlsolve = alg.nlsolve
 end
 DiffEqBase.@def oopnlcachefields begin
-  nlcache = alg.nonlinsolve.cache
+  nlcache = alg.nlsolve.cache
   @unpack κ,tol,max_iter,min_iter,new_W = nlcache
   z = uprev
-  if typeof(alg.nonlinsolve) <: NLNewton
+  if typeof(alg.nlsolve) <: NLNewton
     uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   else
     uf = nothing
   end
-  if DiffEqBase.has_jac(f) && typeof(alg.nonlinsolve) <: NLNewton
+  if DiffEqBase.has_jac(f) && typeof(alg.nlsolve) <: NLNewton
     J = f.jac(uprev, p, t)
     if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
       J = DiffEqArrayOperator(J)
@@ -75,7 +75,7 @@ DiffEqBase.@def oopnlcachefields begin
     tol = uToltype(min(0.03,first(reltol)^(0.5)))
   end
   z₊,dz,tmp,b,k = z,z,z,z,rate_prototype
-  _nlsolve = oop_nlsolver(alg.nonlinsolve)
+  _nlsolve = oop_nlsolver(alg.nlsolve)
 end
 
 mutable struct ImplicitEulerCache{uType,rateType,uNoUnitsType,J,W,UF,JC,F,N} <: OrdinaryDiffEqMutableCache

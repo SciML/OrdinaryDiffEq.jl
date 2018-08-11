@@ -63,7 +63,7 @@ for i = 1:2
   sim11 = test_convergence(dts,prob,ImplicitEuler(extrapolant = :linear))
   @test abs(sim11.𝒪est[:final]-1) < testTol
 
-  sim112 = test_convergence(dts,prob,ImplicitEuler(nonlinsolve = NLFunctional()))
+  sim112 = test_convergence(dts,prob,ImplicitEuler(nlsolve = NLFunctional()))
   @test abs(sim112.𝒪est[:final]-1) < testTol
 
   sim12 = test_convergence(dts,prob,
@@ -76,13 +76,13 @@ for i = 1:2
   sim13 = test_convergence(dts,prob,ImplicitMidpoint())
   @test abs(sim13.𝒪est[:final]-2) < testTol
 
-  sim132 = test_convergence(dts,prob,ImplicitMidpoint(nonlinsolve = NLFunctional()))
+  sim132 = test_convergence(dts,prob,ImplicitMidpoint(nlsolve = NLFunctional()))
   @test abs(sim132.𝒪est[:final]-2) < testTol
 
   sim13 = test_convergence(dts,prob,Trapezoid())
   @test abs(sim13.𝒪est[:final]-2) < testTol
 
-  sim133 = test_convergence(dts,prob,Trapezoid(nonlinsolve = NLFunctional()))
+  sim133 = test_convergence(dts,prob,Trapezoid(nlsolve = NLFunctional()))
   @test abs(sim133.𝒪est[:final]-2) < testTol
 
   sim14 = test_convergence(dts,prob,
@@ -108,7 +108,7 @@ for i = 1:2
   sim16 = test_convergence(dts,prob,Kvaerno3())
   @test abs(sim16.𝒪est[:final]-3) < testTol
 
-  sim162 = test_convergence(dts,prob,Kvaerno3(nonlinsolve = NLFunctional()))
+  sim162 = test_convergence(dts,prob,Kvaerno3(nlsolve = NLFunctional()))
   @test abs(sim162.𝒪est[:final]-3) < testTol
 
   sim17 = test_convergence(dts,prob,KenCarp3())
@@ -123,7 +123,7 @@ for i = 1:2
   @test abs(sim.𝒪est[:l2]-2) < testTol
   @test abs(sim.𝒪est[:l∞]-2) < testTol
 
-  sim = test_convergence(dts,prob,ABDF2(nonlinsolve = NLFunctional()))
+  sim = test_convergence(dts,prob,ABDF2(nlsolve = NLFunctional()))
   @test abs(sim.𝒪est[:final]-2) < testTol
   @test abs(sim.𝒪est[:l2]-2) < testTol
   @test abs(sim.𝒪est[:l∞]-2) < testTol
@@ -150,7 +150,7 @@ for i = 1:2
   @test abs(sim.𝒪est[:l2]-2) < testTol
   @test abs(sim.𝒪est[:l∞]-2) < testTol
 
-  sim = test_convergence(dts,prob,QNDF2(nonlinsolve = NLFunctional()))
+  sim = test_convergence(dts,prob,QNDF2(nlsolve = NLFunctional()))
   @test abs(sim.𝒪est[:final]-2) < testTol
   @test abs(sim.𝒪est[:l2]-2) < testTol
   @test abs(sim.𝒪est[:l∞]-2) < testTol
@@ -179,6 +179,6 @@ for i = 1:2
   sim114 = test_convergence(dts,prob,KenCarp5())
   @test abs(sim114.𝒪est[:final]-5) < testTol
 
-  sim115 = test_convergence(dts,prob,KenCarp5(nonlinsolve = NLFunctional()))
+  sim115 = test_convergence(dts,prob,KenCarp5(nlsolve = NLFunctional()))
   @test_broken abs(sim115.𝒪est[:final]-5) < testTol
 end
