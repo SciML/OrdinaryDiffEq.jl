@@ -206,10 +206,24 @@ Construct the non-standard caches (not uType or rateType) for ExpRK integrators.
 `plist` is a list of integers each corresponding to the order of a `phiv(!)`
 call in `perform_step!`.
 """
-function alg_cache_expRK(alg::ExponentialAlgorithm, u, f, dt, plist)
+function alg_cache_expRK(alg::ExponentialAlgorithm,u,uEltypeNoUnits,uprev,f,t,dt,p,du1,tmp,dz,plist)
   n = length(u); T = eltype(u)
+  # Allocate cache for ForwardDiff
+  if isa(f, SplitFunction) || DiffEqBase.has_jac(f)
+    uf = nothing
+    jac_config = nothing
+  else
+    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+    jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
+  end
   # Allocate cache for the Jacobian
-  J = isa(f, SplitFunction) ? nothing : deepcopy(f.jac_prototype)
+  if isa(f, SplitFunction)
+    J = nothing
+  elseif DiffEqBase.has_jac(f)
+    J = deepcopy(f.jac_prototype)
+  else
+    J = fill(zero(uEltypeNoUnits), n, n)
+  end
   if alg.krylov
     ops = nothing # no caching
     # Build up caches used by Krylov phiv
@@ -224,28 +238,47 @@ function alg_cache_expRK(alg::ExponentialAlgorithm, u, f, dt, plist)
     A = size(f.f1) == () ? convert(Number, f.f1) : convert(AbstractMatrix, f.f1)
     ops = expRK_operators(alg, dt, A)
   end
-  return J, ops, KsCache
+  return uf, jac_config, J, ops, KsCache
 end
 
-struct LawsonEulerCache{uType,rateType,JType,expType,KsType} <: ExpRKCache
+struct LawsonEulerCache{uType,rateType,JCType,FType,JType,expType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
+  dz::uType
   rtmp::rateType
   G::rateType
+  du1::rateType
+  jac_config::JCType
+  uf::FType
   J::JType
   exphA::expType
   KsCache::KsType
 end
 
 function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tmp = similar(u)                                              # uType caches
-  rtmp, G = (zero(rate_prototype) for i = 1:2)                 # rateType caches
+  tmp, dz = (similar(u) for i = 1:2)                            # uType caches
+  rtmp, G, du1 = (zero(rate_prototype) for i = 1:3)             # rateType caches
   # other caches
   # This is different from other ExpRK integrators because LawsonEuler only
   # needs expv.
   n = length(u); T = eltype(u)
-  J = isa(f, SplitFunction) ? nothing : deepcopy(f.jac_prototype)
+  # Allocate caches for ForwardDiff
+  if isa(f, SplitFunction) || DiffEqBase.has_jac(f)
+    uf = nothing
+    jac_config = nothing
+  else
+    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+    jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
+  end
+  # Allocate cache for the Jacobian
+  if isa(f, SplitFunction)
+    J = nothing
+  elseif DiffEqBase.has_jac(f)
+    J = deepcopy(f.jac_prototype)
+  else
+    J = fill(zero(uEltypeNoUnits), n, n)
+  end
   if alg.krylov
     exphA = nothing # no caching
     m = min(alg.m, n)
@@ -257,99 +290,120 @@ function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
     A = size(f.f1) == () ? convert(Number, f.f1) : convert(AbstractMatrix, f.f1)
     exphA = expRK_operators(alg, dt, A)
   end
-  LawsonEulerCache(u,uprev,tmp,rtmp,G,J,exphA,KsCache)
+  LawsonEulerCache(u,uprev,tmp,dz,rtmp,G,du1,jac_config,uf,J,exphA,KsCache)
 end
 
 u_cache(c::LawsonEulerCache) = ()
 du_cache(c::LawsonEulerCache) = (c.rtmp)
 
-struct NorsettEulerCache{uType,rateType,JType,expType,KsType} <: ExpRKCache
+struct NorsettEulerCache{uType,rateType,JCType,FType,JType,expType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
+  dz::uType
   rtmp::rateType
   G::rateType
+  du1::rateType
+  jac_config::JCType
+  uf::FType
   J::JType
   phihA::expType
   KsCache::KsType
 end
 
 function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tmp = similar(u)                                              # uType caches
-  rtmp, G = (zero(rate_prototype) for i = 1:2)                 # rateType caches
-  J, phihA, KsCache = alg_cache_expRK(alg, u, f, dt, (1,)) # other caches
-  NorsettEulerCache(u,uprev,tmp,rtmp,G,J,phihA,KsCache)
+  tmp, dz = (similar(u) for i = 1:2)                # uType caches
+  rtmp, G, du1 = (zero(rate_prototype) for i = 1:3) # rateType caches
+  plist = (1,)
+  uf,jac_config,J,phihA,KsCache = alg_cache_expRK(alg,u,uEltypeNoUnits,uprev,f,t,dt,p,du1,tmp,dz,plist) # other caches
+  NorsettEulerCache(u,uprev,tmp,dz,rtmp,G,du1,jac_config,uf,J,phihA,KsCache)
 end
 
 u_cache(c::NorsettEulerCache) = ()
 du_cache(c::NorsettEulerCache) = (c.rtmp)
 
-struct ETDRK2Cache{uType,rateType,JType,opType,KsType} <: ExpRKCache
+struct ETDRK2Cache{uType,rateType,JCType,FType,JType,opType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
+  dz::uType
   rtmp::rateType
   F2::rateType
+  du1::rateType
+  jac_config::JCType
+  uf::FType
   J::JType
   ops::opType
   KsCache::KsType
 end
 
 function alg_cache(alg::ETDRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tmp = similar(u)                                                  # uType caches
-  rtmp, F2 = (zero(rate_prototype) for i = 1:2)                    # rateType caches
-  J, ops, KsCache = alg_cache_expRK(alg, u, f, dt, (2, 2))   # other caches
-  ETDRK2Cache(u,uprev,tmp,rtmp,F2,J,ops,KsCache)
+  tmp, dz = (similar(u) for i = 1:2)                 # uType caches
+  rtmp, F2, du1 = (zero(rate_prototype) for i = 1:3) # rateType caches
+  plist = (2,2)
+  uf,jac_config,J,ops,KsCache = alg_cache_expRK(alg,u,uEltypeNoUnits,uprev,f,t,dt,p,du1,tmp,dz,plist) # other caches
+  ETDRK2Cache(u,uprev,tmp,dz,rtmp,F2,du1,jac_config,uf,J,ops,KsCache)
 end
 
-struct ETDRK3Cache{uType,rateType,JType,opType,KsType} <: ExpRKCache
+struct ETDRK3Cache{uType,rateType,JCType,FType,JType,opType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
+  dz::uType
   rtmp::rateType
   Au::rateType
   F2::rateType
   F3::rateType
+  du1::rateType
+  jac_config::JCType
+  uf::FType
   J::JType
   ops::opType
   KsCache::KsType
 end
 
 function alg_cache(alg::ETDRK3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tmp = similar(u)                                                      # uType caches
-  rtmp, Au, F2, F3 = (zero(rate_prototype) for i = 1:4)                # rateType caches
-  J, ops, KsCache = alg_cache_expRK(alg, u, f, dt, (1,3,3,3))    # other caches
-  ETDRK3Cache(u,uprev,tmp,rtmp,Au,F2,F3,J,ops,KsCache)
+  tmp, dz = (similar(u) for i = 1:2)                         # uType caches
+  rtmp, Au, F2, F3, du1 = (zero(rate_prototype) for i = 1:5) # rateType caches
+  plist = (1,3,3,3)
+  uf,jac_config,J,ops,KsCache = alg_cache_expRK(alg,u,uEltypeNoUnits,uprev,f,t,dt,p,du1,tmp,dz,plist) # other caches
+  ETDRK3Cache(u,uprev,tmp,dz,rtmp,Au,F2,F3,du1,jac_config,uf,J,ops,KsCache)
 end
 
-struct ETDRK4Cache{uType,rateType,JType,opType,KsType} <: ExpRKCache
+struct ETDRK4Cache{uType,rateType,JCType,FType,JType,opType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
+  dz::uType
   rtmp::rateType
   Au::rateType
   F2::rateType
   F3::rateType
   F4::rateType
+  du1::rateType
+  jac_config::JCType
+  uf::FType
   J::JType
   ops::opType
   KsCache::KsType
 end
 
 function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tmp = similar(u)                                                        # uType caches
-  rtmp, Au, F2, F3, F4 = (zero(rate_prototype) for i = 1:5)              # rateType caches
-  J, ops, KsCache = alg_cache_expRK(alg, u, f, dt, (1,1,3,3,3,3))  # other caches
-  ETDRK4Cache(u,uprev,tmp,rtmp,Au,F2,F3,F4,J,ops,KsCache)
+  tmp, dz = (similar(u) for i = 1:2)                             # uType caches
+  rtmp, Au, F2, F3, F4, du1 = (zero(rate_prototype) for i = 1:6) # rateType caches
+  plist = (1,1,3,3,3,3)
+  uf,jac_config,J,ops,KsCache = alg_cache_expRK(alg,u,uEltypeNoUnits,uprev,f,t,dt,p,du1,tmp,dz,plist) # other caches
+  ETDRK4Cache(u,uprev,tmp,dz,rtmp,Au,F2,F3,F4,du1,jac_config,uf,J,ops,KsCache)
 end
 
 u_cache(c::ETDRK4Cache) = ()
 du_cache(c::ETDRK4Cache) = (c.k,c.fsalfirst,c.rtmp)
 
-struct HochOst4Cache{uType,rateType,JType,opType,KsType} <: ExpRKCache
+struct HochOst4Cache{uType,rateType,JCType,FType,JType,opType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
+  dz::uType
   rtmp::rateType
   rtmp2::rateType
   Au::rateType
@@ -357,16 +411,20 @@ struct HochOst4Cache{uType,rateType,JType,opType,KsType} <: ExpRKCache
   F3::rateType
   F4::rateType
   F5::rateType
+  du1::rateType
+  jac_config::JCType
+  uf::FType
   J::JType
   ops::opType
   KsCache::KsType
 end
 
 function alg_cache(alg::HochOst4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tmp = similar(u)                                                              # uType caches
-  rtmp, rtmp2, Au, F2, F3, F4, F5 = (zero(rate_prototype) for i = 1:7)         # rateType caches
-  J, ops, KsCache = alg_cache_expRK(alg, u, f, dt, (3,3,3,3,3,3,3,3,3))  # other caches
-  HochOst4Cache(u,uprev,tmp,rtmp,rtmp2,Au,F2,F3,F4,F5,J,ops,KsCache)
+  tmp, dz = (similar(u) for i = 1:2)                                        # uType caches
+  rtmp, rtmp2, Au, F2, F3, F4, F5, du1 = (zero(rate_prototype) for i = 1:8) # rateType caches
+  plist = (3,3,3,3,3,3,3,3,3)
+  uf,jac_config,J,ops,KsCache = alg_cache_expRK(alg,u,uEltypeNoUnits,uprev,f,t,dt,p,du1,tmp,dz,plist) # other caches
+  HochOst4Cache(u,uprev,tmp,dz,rtmp,rtmp2,Au,F2,F3,F4,F5,du1,jac_config,uf,J,ops,KsCache)
 end
 
 ####################################
@@ -602,7 +660,7 @@ end
 function alg_cache(alg::Exprb32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   utilde, tmp = (similar(u) for i = 1:2)                     # uType caches
   rtmp, F2 = (zero(rate_prototype) for i = 1:2)              # rateType caches
-  J, ops, KsCache = alg_cache_expRK(alg, u, f, dt, (3, 3))   # other caches
+  J, ops, KsCache = alg_cache_expRK(alg, u, uEltypeNoUnits, f, dt, (3, 3))   # other caches
   Exprb32Cache(u,uprev,utilde,tmp,rtmp,F2,J,ops,KsCache)
 end
 
@@ -622,7 +680,7 @@ end
 function alg_cache(alg::Exprb43,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   utilde, tmp = (similar(u) for i = 1:2)                     # uType caches
   rtmp, Au, F2, F3 = (zero(rate_prototype) for i = 1:4)      # rateType caches
-  J, ops, KsCache = alg_cache_expRK(alg,u,f,dt,(1,4,4,4))    # other caches
+  J, ops, KsCache = alg_cache_expRK(alg,u,uEltypeNoUnits,f,dt,(1,4,4,4))    # other caches
   Exprb43Cache(u,uprev,utilde,tmp,rtmp,Au,F2,F3,J,ops,KsCache)
 end
 
