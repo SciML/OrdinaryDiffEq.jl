@@ -112,16 +112,12 @@ end
   test_setup = Dict(:alg=>Vern9(), :reltol=>1e-16, :abstol=>1e-16)
   # Convergence simulation
   dts = 1 ./2 .^(7:-1:4)
-  println("HochOst4, Out-of-place")
   sim = analyticless_test_convergence(dts, prob, HochOst4(krylov=true), test_setup)
   @test abs(sim.𝒪est[:l2] - 4) < 0.1
-  println("HochOst4, In-place")
   sim = analyticless_test_convergence(dts, prob_ip, HochOst4(krylov=true), test_setup)
   @test abs(sim.𝒪est[:l2] - 4) < 0.1
-  println("EPIRK5P1, Out-of-place")
   sim = analyticless_test_convergence(dts, prob, EPIRK5P1(adaptive_krylov=false), test_setup)
   @test abs(sim.𝒪est[:l2] - 5) < 0.1
-  println("EPIRK5P1, In-place")
   sim = analyticless_test_convergence(dts, prob_ip, EPIRK5P1(adaptive_krylov=false), test_setup)
   @test abs(sim.𝒪est[:l2] - 5) < 0.1
 end
