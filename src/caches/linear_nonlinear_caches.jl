@@ -175,8 +175,9 @@ for (Alg, Cache) in [(:LawsonEuler, :LawsonEulerConstantCache),
                      (:HochOst4, :HochOst4ConstantCache),
                      (:Exprb32, :Exprb32ConstantCache),
                      (:Exprb43, :Exprb43ConstantCache)]
-  @eval struct $Cache{opType} <: ExpRKConstantCache
+  @eval struct $Cache{opType,FType} <: ExpRKConstantCache
     ops::opType # precomputed operators
+    uf::FType   # derivative wrapper
   end
 
   @eval function alg_cache(alg::$Alg,u,rate_prototype,uEltypeNoUnits,
@@ -188,7 +189,12 @@ for (Alg, Cache) in [(:LawsonEuler, :LawsonEulerConstantCache),
       A = size(f.f1) == () ? convert(Number, f.f1) : convert(AbstractMatrix, f.f1)
       ops = expRK_operators(alg, dt, A)
     end
-    return $Cache(ops)
+    if isa(f, SplitFunction) || DiffEqBase.has_jac(f)
+      uf = nothing
+    else
+      uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+    end
+    return $Cache(ops,uf)
   end
 end
 
@@ -375,9 +381,27 @@ function _phiv_timestep_caches(u_prototype, maxiter::Int, p::Int)
   return u, W, P, Ks, phiv_cache
 end
 
-struct Exp4ConstantCache <: ExpRKConstantCache end
-alg_cache(alg::Exp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-  uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = Exp4ConstantCache()
+# Unified constructor for constant caches
+for (Alg, Cache) in [(:Exp4, :Exp4ConstantCache),
+                     (:EPIRK4s3A, :EPIRK4s3AConstantCache),
+                     (:EPIRK4s3B, :EPIRK4s3BConstantCache),
+                     (:EPIRK5s3, :EPIRK5s3ConstantCache),
+                     (:EXPRB53s3, :EXPRB53s3ConstantCache),
+                     (:EPIRK5P1, :EPIRK5P1ConstantCache),
+                     (:EPIRK5P2, :EPIRK5P2ConstantCache)]
+  @eval struct $Cache{FType} <: ExpRKConstantCache
+    uf::FType   # derivative wrapper
+  end
+  @eval function alg_cache(alg::$Alg,u,rate_prototype,uEltypeNoUnits,
+    uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+    if DiffEqBase.has_jac(f)
+      uf = nothing
+    else
+      uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+    end
+    return $Cache(uf)
+  end
+end
 
 struct Exp4Cache{uType,rateType,matType,JType,KsType} <: ExpRKCache
   u::uType
@@ -406,10 +430,6 @@ function alg_cache(alg::Exp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   Exp4Cache(u,uprev,tmp,rtmp,rtmp2,K,J,B,KsCache)
 end
 
-struct EPIRK4s3AConstantCache <: ExpRKConstantCache end
-alg_cache(alg::EPIRK4s3A,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-  uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = EPIRK4s3AConstantCache()
-
 struct EPIRK4s3ACache{uType,rateType,matType,JType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
@@ -435,10 +455,6 @@ function alg_cache(alg::EPIRK4s3A,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   KsCache = _phiv_timestep_caches(u, maxiter, 4)
   EPIRK4s3ACache(u,uprev,tmp,rtmp,rtmp2,K,J,B,KsCache)
 end
-
-struct EPIRK4s3BConstantCache <: ExpRKConstantCache end
-alg_cache(alg::EPIRK4s3B,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-  uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = EPIRK4s3BConstantCache()
 
 struct EPIRK4s3BCache{uType,rateType,matType,JType,KsType} <: ExpRKCache
   u::uType
@@ -466,10 +482,6 @@ function alg_cache(alg::EPIRK4s3B,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   EPIRK4s3BCache(u,uprev,tmp,rtmp,rtmp2,K,J,B,KsCache)
 end
 
-struct EPIRK5s3ConstantCache <: ExpRKConstantCache end
-alg_cache(alg::EPIRK5s3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-  uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = EPIRK5s3ConstantCache()
-
 struct EPIRK5s3Cache{uType,rateType,matType,JType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
@@ -494,10 +506,6 @@ function alg_cache(alg::EPIRK5s3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   KsCache = _phiv_timestep_caches(u, maxiter, 4)
   EPIRK5s3Cache(u,uprev,tmp,k,rtmp,rtmp2,J,B,KsCache)
 end
-
-struct EXPRB53s3ConstantCache <: ExpRKConstantCache end
-alg_cache(alg::EXPRB53s3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-  uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = EXPRB53s3ConstantCache()
 
 struct EXPRB53s3Cache{uType,rateType,matType,JType,KsType} <: ExpRKCache
   u::uType
@@ -525,10 +533,6 @@ function alg_cache(alg::EXPRB53s3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   EXPRB53s3Cache(u,uprev,tmp,rtmp,rtmp2,K,J,B,KsCache)
 end
 
-struct EPIRK5P1ConstantCache <: ExpRKConstantCache end
-alg_cache(alg::EPIRK5P1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-  uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = EPIRK5P1ConstantCache()
-
 struct EPIRK5P1Cache{uType,rateType,matType,JType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
@@ -554,10 +558,6 @@ function alg_cache(alg::EPIRK5P1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   KsCache = _phiv_timestep_caches(u, maxiter, 3)
   EPIRK5P1Cache(u,uprev,tmp,rtmp,rtmp2,K,J,B,KsCache)
 end
-
-struct EPIRK5P2ConstantCache <: ExpRKConstantCache end
-alg_cache(alg::EPIRK5P2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-  uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = EPIRK5P2ConstantCache()
 
 struct EPIRK5P2Cache{uType,rateType,matType,JType,KsType} <: ExpRKCache
   u::uType
