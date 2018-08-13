@@ -96,3 +96,32 @@ end
     end
   end
 end
+
+@testset "ExpRK Autodiff" begin
+  println("ExpRK Autodiff")
+  # Setup nonlinear problem (without explicit jacobian)
+  A = [-2.0 1.0; 1.0 -2.0]
+  f = (u,p,t) -> A*u - u.^3
+  f_ip = (du,u,p,t) -> (mul!(du, A, u); du .-= u.^3)
+  fun = ODEFunction(f)
+  fun_ip = ODEFunction(f_ip)
+  Random.seed!(0); u0 = rand(2); tspan = (0.0, 1.0)
+  prob = ODEProblem(fun, u0, tspan)
+  prob_ip = ODEProblem(fun_ip, u0, tspan)
+  # Setup approximate solution
+  test_setup = Dict(:alg=>Vern9(), :reltol=>1e-16, :abstol=>1e-16)
+  # Convergence simulation
+  dts = 1 ./2 .^(7:-1:4)
+  println("HochOst4, Out-of-place")
+  sim = analyticless_test_convergence(dts, prob, HochOst4(krylov=true), test_setup)
+  @test abs(sim.𝒪est[:l2] - 4) < 0.1
+  println("HochOst4, In-place")
+  sim = analyticless_test_convergence(dts, prob_ip, HochOst4(krylov=true), test_setup)
+  @test abs(sim.𝒪est[:l2] - 4) < 0.1
+  println("EPIRK5P1, Out-of-place")
+  sim = analyticless_test_convergence(dts, prob, EPIRK5P1(adaptive_krylov=false), test_setup)
+  @test abs(sim.𝒪est[:l2] - 5) < 0.1
+  println("EPIRK5P1, In-place")
+  sim = analyticless_test_convergence(dts, prob_ip, EPIRK5P1(adaptive_krylov=false), test_setup)
+  @test abs(sim.𝒪est[:l2] - 5) < 0.1
+end
