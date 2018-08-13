@@ -80,7 +80,7 @@ end
   jac_update = (J,u,p,t) -> (copyto!(J,A); J[1,1] -= 3u[1]^2; J[2,2] -= 3u[2]^2)
   jac_prototype = DiffEqArrayOperator(zeros(2,2); update_func=jac_update)
   fun = ODEFunction(f; jac_prototype=jac_prototype)
-  srand(0); u0 = rand(2); tspan = (0.0, 1.0)
+  Random.seed!(0); u0 = rand(2); tspan = (0.0, 1.0)
   prob = ODEProblem(fun, u0, tspan)
   # Setup approximate solution
   test_setup = Dict(:alg=>Vern9(), :reltol=>1e-16, :abstol=>1e-16)
