@@ -646,42 +646,52 @@ end
 
 ####################################
 # Adaptive exponential Rosenbrock method caches
-struct Exprb32Cache{uType,rateType,JType,opType,KsType} <: ExpRKCache
+struct Exprb32Cache{uType,rateType,JCType,FType,JType,opType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   utilde::uType
   tmp::uType
+  dz::uType
   rtmp::rateType
   F2::rateType
+  du1::rateType
+  jac_config::JCType
+  uf::FType
   J::JType
   ops::opType
   KsCache::KsType
 end
 function alg_cache(alg::Exprb32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  utilde, tmp = (similar(u) for i = 1:2)                     # uType caches
-  rtmp, F2 = (zero(rate_prototype) for i = 1:2)              # rateType caches
-  J, ops, KsCache = alg_cache_expRK(alg, u, uEltypeNoUnits, f, dt, (3, 3))   # other caches
-  Exprb32Cache(u,uprev,utilde,tmp,rtmp,F2,J,ops,KsCache)
+  utilde, tmp, dz = (similar(u) for i = 1:3)         # uType caches
+  rtmp, F2, du1 = (zero(rate_prototype) for i = 1:3) # rateType caches
+  plist = (3, 3)
+  uf,jac_config,J,ops,KsCache = alg_cache_expRK(alg,u,uEltypeNoUnits,uprev,f,t,dt,p,du1,tmp,dz,plist) # other caches
+  Exprb32Cache(u,uprev,utilde,tmp,dz,rtmp,F2,du1,jac_config,uf,J,ops,KsCache)
 end
 
-struct Exprb43Cache{uType,rateType,JType,opType,KsType} <: ExpRKCache
+struct Exprb43Cache{uType,rateType,JCType,FType,JType,opType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   utilde::uType
   tmp::uType
+  dz::uType
   rtmp::rateType
   Au::rateType
   F2::rateType
   F3::rateType
+  du1::rateType
+  jac_config::JCType
+  uf::FType
   J::JType
   ops::opType
   KsCache::KsType
 end
 function alg_cache(alg::Exprb43,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  utilde, tmp = (similar(u) for i = 1:2)                     # uType caches
-  rtmp, Au, F2, F3 = (zero(rate_prototype) for i = 1:4)      # rateType caches
-  J, ops, KsCache = alg_cache_expRK(alg,u,uEltypeNoUnits,f,dt,(1,4,4,4))    # other caches
-  Exprb43Cache(u,uprev,utilde,tmp,rtmp,Au,F2,F3,J,ops,KsCache)
+  utilde, tmp, dz = (similar(u) for i = 1:3)                 # uType caches
+  rtmp, Au, F2, F3, du1 = (zero(rate_prototype) for i = 1:5) # rateType caches
+  plist = (1,4,4,4)
+  uf,jac_config,J,ops,KsCache = alg_cache_expRK(alg,u,uEltypeNoUnits,uprev,f,t,dt,p,du1,tmp,dz,plist) # other caches
+  Exprb43Cache(u,uprev,utilde,tmp,dz,rtmp,Au,F2,F3,du1,jac_config,uf,J,ops,KsCache)
 end
 
 ####################################
