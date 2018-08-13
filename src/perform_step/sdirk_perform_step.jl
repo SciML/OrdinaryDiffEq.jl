@@ -132,6 +132,7 @@ end
   nlcache = cache.nlsolve.cache
   nlsolve! = cache.nlsolve
   alg = unwrap_alg(integrator, true)
+  γ = 1//2
   typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, γ*dt, repeat_step) )
 
   # initial guess
@@ -161,7 +162,8 @@ end
   nlsolve!, nlcache = nlsolve, nlsolve.cache
   mass_matrix = integrator.f.mass_matrix
   alg = unwrap_alg(integrator, true)
-  typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, dt, repeat_step)
+  γ = 1//2
+  typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, γ*dt, repeat_step)
 
   # initial guess
   if alg.extrapolant == :linear
