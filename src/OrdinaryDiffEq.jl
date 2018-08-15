@@ -69,6 +69,8 @@ module OrdinaryDiffEq
   include("caches/bdf_caches.jl")
   include("caches/rkc_caches.jl")
 
+  include("cache_utils.jl")
+
   include("alg_utils.jl")
 
   include("tableaus/low_order_rk_tableaus.jl")

@@ -5,7 +5,7 @@ function change_t_via_interpolation!(integrator,t,modify_save_endpoint::Type{Val
   if integrator.tdir*t < integrator.tdir*integrator.tprev
     error("Current interpolant only works between tprev and t")
   elseif t != integrator.t
-    if typeof(integrator.cache) <: OrdinaryDiffEqConstantCache
+    if is_constant_cache(integrator.cache)
       integrator.u = integrator(t)
     else
       integrator(integrator.u,t)
