@@ -2,19 +2,19 @@
 
 # Base Case: Only one callback
 function find_first_continuous_callback(integrator, callback::DiffEqBase.AbstractContinuousCallback)
-  (find_callback_time(integrator,callback)...,1,1)
+  (find_callback_time(integrator,callback,1)...,1,1)
 end
 
 # Starting Case: Compute on the first callback
 function find_first_continuous_callback(integrator, callback::DiffEqBase.AbstractContinuousCallback, args...)
-  find_first_continuous_callback(integrator,find_callback_time(integrator,callback)...,1,1,args...)
+  find_first_continuous_callback(integrator,find_callback_time(integrator,callback,1)...,1,1,args...)
 end
 
 function find_first_continuous_callback(integrator,tmin::Number,upcrossing::Float64,
                                         event_occured::Bool,idx::Int,counter::Int,
                                         callback2)
   counter += 1 # counter is idx for callback2.
-  tmin2,upcrossing2,event_occurred2 = find_callback_time(integrator,callback2)
+  tmin2,upcrossing2,event_occurred2 = find_callback_time(integrator,callback2,counter)
 
   if event_occurred2 && (tmin2 < tmin || !event_occured)
     return tmin2,upcrossing2,true,counter,counter
@@ -27,7 +27,7 @@ function find_first_continuous_callback(integrator,tmin::Number,upcrossing::Floa
   find_first_continuous_callback(integrator,find_first_continuous_callback(integrator,tmin,upcrossing,event_occured,idx,counter,callback2)...,args...)
 end
 
-@inline function determine_event_occurance(integrator,callback)
+@inline function determine_event_occurance(integrator,callback,counter)
   event_occurred = false
   if callback.interp_points!=0
     ode_addsteps!(integrator)
@@ -43,10 +43,7 @@ end
     previous_condition = callback.condition(@view(integrator.uprev[callback.idxs]),integrator.tprev,integrator)
   end
 
-  if integrator.event_last_time && abs(previous_condition) < callback.abstol
-
-    # abs(previous_condition) < callback.abstol is for multiple events: only
-    # condition this on the correct event
+  if integrator.event_last_time == counter
 
     # If there was a previous event, utilize the derivative at the start to
     # chose the previous sign. If the derivative is positive at tprev, then
@@ -67,16 +64,16 @@ end
     end
 
     if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache && !(typeof(callback.idxs) <: Number)
-      ode_interpolant!(tmp,100eps(typeof(integrator.tprev)),
+      ode_interpolant!(tmp,100eps(integrator.tprev),
                        integrator,callback.idxs,Val{0})
     else
 
-      tmp = ode_interpolant(100eps(typeof(integrator.tprev)),
+      tmp = ode_interpolant(100eps(integrator.tprev),
                             integrator,callback.idxs,Val{0})
     end
 
     tmp_condition = callback.condition(tmp,integrator.tprev +
-                                       100eps(typeof(integrator.tprev)),
+                                       100eps(integrator.tprev),
                                        integrator)
 
     prev_sign = sign((tmp_condition-previous_condition)/integrator.dt)
@@ -111,7 +108,7 @@ end
         tmp = ode_interpolant(Θs[i],integrator,callback.idxs,Val{0})
       end
       new_sign = callback.condition(tmp,integrator.tprev+integrator.dt*Θs[i],integrator)
-if ((prev_sign<0 && !(typeof(callback.affect!)<:Nothing)) || (prev_sign>0 && !(typeof(callback.affect_neg!)<:Nothing))) && prev_sign*new_sign<0
+      if ((prev_sign<0 && !(typeof(callback.affect!)<:Nothing)) || (prev_sign>0 && !(typeof(callback.affect_neg!)<:Nothing))) && prev_sign*new_sign<0
         event_occurred = true
         interp_index = i
         break
@@ -124,8 +121,8 @@ if ((prev_sign<0 && !(typeof(callback.affect!)<:Nothing)) || (prev_sign>0 && !(t
   event_occurred,interp_index,Θs,prev_sign,prev_sign_index
 end
 
-function find_callback_time(integrator,callback)
-  event_occurred,interp_index,Θs,prev_sign,prev_sign_index = determine_event_occurance(integrator,callback)
+function find_callback_time(integrator,callback,counter)
+  event_occurred,interp_index,Θs,prev_sign,prev_sign_index = determine_event_occurance(integrator,callback,counter)
   if event_occurred
     if typeof(callback.condition) <: Nothing
       new_t = zero(typeof(integrator.t))
@@ -157,7 +154,19 @@ function find_callback_time(integrator,callback)
         if zero_func(top_Θ) == 0
           Θ = top_Θ
         else
-          Θ = prevfloat(find_zero(zero_func,(bottom_θ,top_Θ),Roots.AlefeldPotraShi(),atol = callback.abstol/10))
+          if integrator.event_last_time == counter && prev_sign_index == 1
+            # Determined that there is an event by derivative
+            # But floating point error may make the end point negative
+            sign_top = sign(zero_func(top_Θ))
+            bottom_θ += 2eps(typeof(bottom_θ))
+            iter = 1
+            while sign(zero_func(bottom_θ)) == sign_top && iter < 10
+              bottom_θ *= 5
+              iter += 1
+            end
+            iter == 8 && error("Double callback crossing floating pointer reducer errored. Report this issue.")
+          end
+          Θ = prevfloat(find_zero(zero_func,(bottom_θ,top_Θ),Roots.AlefeldPotraShi(),atol = callback.abstol/100))
         end
         #Θ = prevfloat(...)
         # prevfloat guerentees that the new time is either 1 floating point

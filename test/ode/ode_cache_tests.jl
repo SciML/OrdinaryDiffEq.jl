@@ -43,9 +43,3 @@ sol = solve(prob,Tsit5(),callback=callback)
 for alg in CACHE_TEST_ALGS
   sol = solve(prob,alg,callback=callback,dt=1/2)
 end
-
-# https://github.com/JuliaDiffEq/OrdinaryDiffEq.jl/issues/328
-ode = ODEProblem((du, u, p, t) -> (@. du .= -u), ones(5), (0.0, 100.0))
-sol = solve(ode, AutoTsit5(Rosenbrock23()), callback=TerminateSteadyState())
-sol1 = solve(ode, Tsit5(), callback=TerminateSteadyState())
-@test sol.u == sol1.u

@@ -406,3 +406,9 @@ cb = ContinuousCallback(condition_simple, nothing, affect_simple!)
 prob = ODEProblem(f_simple, [1.0], (0.0, 2.0*t_event))
 sol = solve(prob,Tsit5(),callback=cb, adaptive = false, dt = 10.0)
 @test event_triggered
+
+# https://github.com/JuliaDiffEq/OrdinaryDiffEq.jl/issues/328
+ode = ODEProblem((du, u, p, t) -> (@. du .= -u), ones(5), (0.0, 100.0))
+sol = solve(ode, AutoTsit5(Rosenbrock23()), callback=TerminateSteadyState())
+sol1 = solve(ode, Tsit5(), callback=TerminateSteadyState())
+@test sol.u == sol1.u
