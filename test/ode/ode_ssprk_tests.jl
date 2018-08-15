@@ -65,9 +65,9 @@ sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg), 
 @test all(sol.u .>= 0)
 # test SSP property of dense output
 sol = solve(test_problem_ssp, alg, dt=1.)
-@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, range(0, stop=8, length=50))
+@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, range(0, stop=8, length=50), init=true)
 sol = solve(test_problem_ssp_inplace, alg, dt=1.)
-@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, range(0, stop=8, length=50))
+@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, range(0, stop=8, length=50), init=true)
 
 
 alg = SSPRK33()
@@ -90,9 +90,9 @@ sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg), 
 @test all(sol.u .>= 0)
 # test SSP property of dense output
 sol = solve(test_problem_ssp, alg, dt=1.)
-@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, range(0, stop=8, length=50))
+@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, range(0, stop=8, length=50), init=true)
 sol = solve(test_problem_ssp_inplace, alg, dt=1.)
-@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, range(0, stop=8, length=50))
+@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, range(0, stop=8, length=50), init=true)
 
 
 alg = SSPRK53()
@@ -186,9 +186,9 @@ sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg), 
 @test all(sol.u .>= 0)
 # test SSP property of dense output
 sol = solve(test_problem_ssp, alg, dt=8/5, adaptive=false)
-@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, range(0, stop=8, length=50))
+@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, range(0, stop=8, length=50), init=true)
 sol = solve(test_problem_ssp_inplace, alg, dt=8/5, adaptive=false)
-@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, range(0, stop=8, length=50))
+@test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, range(0, stop=8, length=50), init=true)
 
 
 alg = SSPRK932()
