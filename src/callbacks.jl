@@ -43,13 +43,16 @@ end
     previous_condition = callback.condition(@view(integrator.uprev[callback.idxs]),integrator.tprev,integrator)
   end
 
-  if integrator.event_last_time == counter
+  if integrator.event_last_time == counter && abs(previous_condition) < 100callback.abstol
 
     # If there was a previous event, utilize the derivative at the start to
     # chose the previous sign. If the derivative is positive at tprev, then
     # we treat the value as positive, and derivative is negative then we
     # treat the value as negative, reguardless of the postiivity/negativity
     # of the true value due to it being =0 sans floating point issues.
+
+    # Only due this if the discontinuity did not move it far away from an event
+    # Since near even we use direction instead of location to reset
 
     if callback.interp_points==0
       ode_addsteps!(integrator)
@@ -64,16 +67,16 @@ end
     end
 
     if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache && !(typeof(callback.idxs) <: Number)
-      ode_interpolant!(tmp,100eps(integrator.tprev),
+      ode_interpolant!(tmp,100*eps(integrator.tprev),
                        integrator,callback.idxs,Val{0})
     else
 
-      tmp = ode_interpolant(100eps(integrator.tprev),
+      tmp = ode_interpolant(100*eps(integrator.tprev),
                             integrator,callback.idxs,Val{0})
     end
 
     tmp_condition = callback.condition(tmp,integrator.tprev +
-                                       100eps(integrator.tprev),
+                                       100*eps(integrator.tprev),
                                        integrator)
 
     prev_sign = sign((tmp_condition-previous_condition)/integrator.dt)
@@ -154,17 +157,21 @@ function find_callback_time(integrator,callback,counter)
         if zero_func(top_Θ) == 0
           Θ = top_Θ
         else
-          if integrator.event_last_time == counter && prev_sign_index == 1
+          if integrator.event_last_time == counter &&
+            abs(zero_func(bottom_θ)) < 100callback.abstol &&
+            prev_sign_index == 1
+
             # Determined that there is an event by derivative
             # But floating point error may make the end point negative
+
             sign_top = sign(zero_func(top_Θ))
             bottom_θ += 2eps(typeof(bottom_θ))
             iter = 1
-            while sign(zero_func(bottom_θ)) == sign_top && iter < 10
+            while sign(zero_func(bottom_θ)) == sign_top && iter < 12
               bottom_θ *= 5
               iter += 1
             end
-            iter == 8 && error("Double callback crossing floating pointer reducer errored. Report this issue.")
+            iter == 12 && error("Double callback crossing floating pointer reducer errored. Report this issue.")
           end
           Θ = prevfloat(find_zero(zero_func,(bottom_θ,top_Θ),Roots.AlefeldPotraShi(),atol = callback.abstol/100))
         end

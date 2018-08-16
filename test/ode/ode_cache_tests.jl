@@ -29,7 +29,11 @@ callback = ContinuousCallback(condition,affect!)
 u0 = [0.2]
 tspan = (0.0,50.0)
 prob = ODEProblem(f,u0,tspan)
-sol = solve(prob,Tsit5(),callback=callback)
+
+# Check if stochastic errors
+for i in 1:50
+    sol = solve(prob,Tsit5(),callback=callback)
+end
 
 # https://github.com/JuliaLang/julia/issues/10354
 @test_broken sol = solve(prob,GenericImplicitEuler(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/2)
