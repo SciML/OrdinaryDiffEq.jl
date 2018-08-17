@@ -1,4 +1,4 @@
-julia 0.7
+julia 1.0
 DiffEqBase 3.8.0
 DiffEqOperators 3.2.0
 Parameters 0.5.0
