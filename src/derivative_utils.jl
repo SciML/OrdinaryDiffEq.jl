@@ -30,17 +30,12 @@ jacobian update function, then it will be called for the update. Otherwise,
 either ForwardDiff or finite difference will be used depending on the
 `jac_config` of the cache.
 """
-function calc_J!(integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
+function calc_J(integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
   @unpack t,dt,uprev,u,f,p = integrator
   if DiffEqBase.has_jac(f)
     J = f.jac(uprev, p, t)
   else
-    uf = cache.uf
-    if isa(uprev, AbstractArray)
-      J = ForwardDiff.jacobian(uf,uprev)
-    else
-      J = ForwardDiff.derivative(uf,uprev)
-    end
+    jacobian(uf,uprev,integrator)
   end
   is_compos && (integrator.eigen_est = opnorm(J, Inf))
   return J
@@ -286,8 +281,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
   mass_matrix = integrator.f.mass_matrix
   # calculate W
   uf.t = t
-  isarray = typeof(uprev) <: AbstractArray
-  iscompo = typeof(integrator.alg) <: CompositeAlgorithm
+  is_compos = typeof(integrator.alg) <: CompositeAlgorithm
   if !W_transform
     if DiffEqBase.has_jac(f)
       J = f.jac(uprev, p, t)
@@ -296,11 +290,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
       end
       W = WOperator(mass_matrix, dtgamma, J; transform=false)
     else
-      if isarray
-        J = ForwardDiff.jacobian(uf,uprev)
-      else
-        J = ForwardDiff.derivative(uf,uprev)
-      end
+      J = calc_J(integrator, cache, is_compos)
       W = mass_matrix - dtgamma*J
     end
   else
@@ -311,15 +301,11 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
       end
       W = WOperator(mass_matrix, dtgamma, J; transform=true)
     else
-      if isarray
-        J = ForwardDiff.jacobian(uf,uprev)
-      else
-        J = ForwardDiff.derivative(uf,uprev)
-      end
+      J = calc_J(integrator, cache, is_compos)
       W = mass_matrix*inv(dtgamma) - J
     end
   end
-  iscompo && (integrator.eigen_est = isarray ? opnorm(J, Inf) : J)
+  is_compos && (integrator.eigen_est = isarray ? opnorm(J, Inf) : J)
   W
 end
 

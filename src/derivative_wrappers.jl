@@ -7,6 +7,35 @@ function derivative!(df::AbstractArray{<:Number}, f, x::Union{Number,AbstractArr
     nothing
 end
 
+function derivative(f, x::Union{Number,AbstractArray{<:Number}},
+                    integrator)
+    if get_current_alg_autodiff(integrator.alg, integrator.cache)
+      d = ForwardDiff.derivative(f, x)
+    else
+      d = DiffEqDiffTools.finite_difference_gradient(f, x)
+    end
+    nothing
+end
+
+function jacobian(f, x::AbstractArray{<:Number},
+                  integrator::DiffEqBase.DEIntegrator)
+    isarray = typeof(x) <: AbstractArray
+    if get_current_alg_autodiff(integrator.alg, integrator.cache)
+      if isarray
+        J = ForwardDiff.jacobian(f,x)
+      else
+        J = ForwardDiff.derivative(f,x)
+      end
+    else
+      if isarray
+        J = DiffEqDiffTools.finite_difference_jacobian(f, x)
+      else
+        J = DiffEqDiffTools.finite_difference_derivative(f, x)
+      end
+    end
+    J
+end
+
 function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, fx::AbstractArray{<:Number}, integrator::DiffEqBase.DEIntegrator, jac_config)
     if get_current_alg_autodiff(integrator.alg, integrator.cache)
       ForwardDiff.jacobian!(J, f, fx, x, jac_config)
