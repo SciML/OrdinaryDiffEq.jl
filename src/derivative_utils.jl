@@ -29,6 +29,7 @@ function calc_tderivative(integrator, cache)
       if DiffEqBase.has_tgrad(f)
         dT = f.tgrad(uprev, p, t)
       else
+        tf = cache.tf
         tf.u = uprev
         tf.p = p
         dT = derivative(tf, t, integrator)
@@ -54,11 +55,12 @@ function calc_J(integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
   if DiffEqBase.has_jac(f)
     J = f.jac(uprev, p, t)
   else
-    jacobian(uf,uprev,integrator)
+    jacobian(cache.uf,uprev,integrator)
   end
   is_compos && (integrator.eigen_est = opnorm(J, Inf))
   return J
 end
+
 function calc_J!(integrator, cache::OrdinaryDiffEqMutableCache, is_compos)
   @unpack t,dt,uprev,u,f,p = integrator
   J = cache.J
