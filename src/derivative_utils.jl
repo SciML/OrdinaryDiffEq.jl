@@ -19,6 +19,25 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
   end
 end
 
+function calc_tderivative(integrator, cache)
+  @inbounds begin
+    @unpack t,dt,uprev,u,f,p = integrator
+    @unpack du2,fsalfirst,dT,tf,linsolve_tmp = cache
+
+    # Time derivative
+    if !repeat_step # skip calculation if step is repeated
+      if DiffEqBase.has_tgrad(f)
+        dT = f.tgrad(uprev, p, t)
+      else
+        tf.u = uprev
+        tf.p = p
+        dT = derivative(tf, t, integrator)
+      end
+    end
+  end
+  dT
+end
+
 """
     calc_J!(integrator,cache,is_compos)
 
