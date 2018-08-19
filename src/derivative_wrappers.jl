@@ -9,16 +9,18 @@ end
 
 function derivative(f, x::Union{Number,AbstractArray{<:Number}},
                     integrator)
+    local d
     if get_current_alg_autodiff(integrator.alg, integrator.cache)
       d = ForwardDiff.derivative(f, x)
     else
       d = DiffEqDiffTools.finite_difference_gradient(f, x)
     end
-    nothing
+    d
 end
 
-function jacobian(f, x::AbstractArray{<:Number},
+function jacobian(f, x,
                   integrator::DiffEqBase.DEIntegrator)
+    local J
     isarray = typeof(x) <: AbstractArray
     if get_current_alg_autodiff(integrator.alg, integrator.cache)
       if isarray

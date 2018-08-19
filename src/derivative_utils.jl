@@ -20,21 +20,16 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
 end
 
 function calc_tderivative(integrator, cache)
-  @inbounds begin
-    @unpack t,dt,uprev,u,f,p = integrator
-    @unpack du2,fsalfirst,dT,tf,linsolve_tmp = cache
+  @unpack t,dt,uprev,u,f,p = integrator
 
-    # Time derivative
-    if !repeat_step # skip calculation if step is repeated
-      if DiffEqBase.has_tgrad(f)
-        dT = f.tgrad(uprev, p, t)
-      else
-        tf = cache.tf
-        tf.u = uprev
-        tf.p = p
-        dT = derivative(tf, t, integrator)
-      end
-    end
+  # Time derivative
+  if DiffEqBase.has_tgrad(f)
+    dT = f.tgrad(uprev, p, t)
+  else
+    tf = cache.tf
+    tf.u = uprev
+    tf.p = p
+    dT = derivative(tf, t, integrator)
   end
   dT
 end
@@ -55,7 +50,7 @@ function calc_J(integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
   if DiffEqBase.has_jac(f)
     J = f.jac(uprev, p, t)
   else
-    jacobian(cache.uf,uprev,integrator)
+    J = jacobian(cache.uf,uprev,integrator)
   end
   is_compos && (integrator.eigen_est = opnorm(J, Inf))
   return J
@@ -300,6 +295,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
   @unpack t,uprev,p,f = integrator
   @unpack uf = cache
   mass_matrix = integrator.f.mass_matrix
+  isarray = typeof(uprev) <: AbstractArray
   # calculate W
   uf.t = t
   is_compos = typeof(integrator.alg) <: CompositeAlgorithm
