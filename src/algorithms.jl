@@ -700,8 +700,10 @@ for Alg in [:LawsonEuler, :NorsettEuler, :ETDRK2, :ETDRK3, :ETDRK4, :HochOst4]
     krylov::Bool
     m::Int
     iop::Int
+    autodiff::Bool
+    chunksize::Int
   end
-  @eval $Alg(;krylov=false, m=30, iop=0) = $Alg(krylov, m, iop)
+  @eval $Alg(;krylov=false, m=30, iop=0, autodiff=true, chunksize=0) = $Alg(krylov, m, iop, autodiff, chunksize)
 end
 ETD1 = NorsettEuler # alias
 for Alg in [:Exprb32, :Exprb43]
@@ -709,15 +711,20 @@ for Alg in [:Exprb32, :Exprb43]
     krylov::Bool
     m::Int
     iop::Int
+    autodiff::Bool
+    chunksize::Int
   end
-  @eval $Alg(;krylov=false, m=30, iop=0) = $Alg(krylov, m, iop)
+  @eval $Alg(;krylov=false, m=30, iop=0, autodiff=true, chunksize=0) = $Alg(krylov, m, iop, autodiff, chunksize)
 end
 for Alg in [:Exp4, :EPIRK4s3A, :EPIRK4s3B, :EPIRK5s3, :EXPRB53s3, :EPIRK5P1, :EPIRK5P2]
   @eval struct $Alg <: OrdinaryDiffEqExponentialAlgorithm
+    adaptive_krylov::Bool
     m::Int
     iop::Int
+    autodiff::Bool
+    chunksize::Int
   end
-  @eval $Alg(;m=30, iop=0) = $Alg(m, iop)
+  @eval $Alg(;adaptive_krylov=true, m=30, iop=0, autodiff=true, chunksize=0) = $Alg(adaptive_krylov, m, iop, autodiff, chunksize)
 end
 struct SplitEuler <: OrdinaryDiffEqExponentialAlgorithm end
 struct ETD2 <: OrdinaryDiffEqExponentialAlgorithm end

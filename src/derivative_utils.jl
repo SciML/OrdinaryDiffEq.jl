@@ -35,7 +35,12 @@ function calc_J!(integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
   if DiffEqBase.has_jac(f)
     J = f.jac(uprev, p, t)
   else
-    error("Jacobian wrapper for constant caches not yet implemented") #TODO
+    uf = cache.uf
+    if isa(uprev, AbstractArray)
+      J = ForwardDiff.jacobian(uf,uprev)
+    else
+      J = ForwardDiff.derivative(uf,uprev)
+    end
   end
   is_compos && (integrator.eigen_est = opnorm(J, Inf))
   return J

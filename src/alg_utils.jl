@@ -30,9 +30,7 @@ isdtchangeable(alg::OrdinaryDiffEqAlgorithm) = true
 isdtchangeable(alg::CompositeAlgorithm) = all(isdtchangeable.(alg.algs))
 isdtchangeable(alg::GenericIIF1) = false
 isdtchangeable(alg::GenericIIF2) = false
-isdtchangeable(alg::LawsonEuler) = false
-isdtchangeable(alg::NorsettEuler) = false
-isdtchangeable(alg::ETD2) = false
+isdtchangeable(alg::Union{LawsonEuler,NorsettEuler,ETDRK2,ETDRK3,ETDRK4,HochOst4,ETD2}) = false # due to caching
 
 ismultistep(alg::OrdinaryDiffEqAlgorithm) = false
 ismultistep(alg::CompositeAlgorithm) = any(ismultistep.(alg.algs))
@@ -53,11 +51,13 @@ qmax_default(alg::DP8) = 6
 get_chunksize(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have a chunk size defined.")
 get_chunksize(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) where {CS,AD} = CS
 get_chunksize(alg::OrdinaryDiffEqImplicitAlgorithm{CS,AD}) where {CS,AD} = CS
+get_chunksize(alg::ExponentialAlgorithm) = alg.chunksize
 # get_chunksize(alg::CompositeAlgorithm) = get_chunksize(alg.algs[alg.current_alg])
 
 alg_autodiff(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have an autodifferentiation option defined.")
 alg_autodiff(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) where {CS,AD} = AD
 alg_autodiff(alg::OrdinaryDiffEqImplicitAlgorithm{CS,AD}) where {CS,AD} = AD
+alg_autodiff(alg::ExponentialAlgorithm) = alg.autodiff
 # alg_autodiff(alg::CompositeAlgorithm) = alg_autodiff(alg.algs[alg.current_alg])
 get_current_alg_autodiff(alg, cache) = alg_autodiff(alg)
 get_current_alg_autodiff(alg::CompositeAlgorithm, cache) = alg_autodiff(alg.algs[cache.current])

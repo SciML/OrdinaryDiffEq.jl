@@ -10,7 +10,7 @@ module OrdinaryDiffEq
   using LinearAlgebra
 
   # Interfaces
-  import DiffEqBase: solve!, step!, initialize!
+  import DiffEqBase: solve!, step!, initialize!, isadaptive
 
   # Internal utils
   import DiffEqBase: ODE_DEFAULT_NORM, ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE, ODE_DEFAULT_UNSTABLE_CHECK
@@ -23,6 +23,8 @@ module OrdinaryDiffEq
         NLsolve, Roots, DataStructures, DiffEqDiffTools
 
   import ForwardDiff.Dual
+
+  using ExponentialUtilities
 
   # Required by temporary fix in not in-place methods with 12+ broadcasts
   # `MVector` is used by Nordsieck forms
@@ -123,7 +125,6 @@ module OrdinaryDiffEq
   include("nordsieck_utils.jl")
   include("adams_utils.jl")
   include("bdf_utils.jl")
-  include("exponential_utils.jl")
   include("rkc_utils.jl")
   include("derivative_wrappers.jl")
   include("iterator_interface.jl")

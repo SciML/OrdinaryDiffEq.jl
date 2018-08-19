@@ -593,7 +593,8 @@ function perform_step!(integrator, cache::Exp4ConstantCache, repeat_step=false)
   alg = unwrap_alg(integrator, true)
   f0 = integrator.fsalfirst # f(uprev) is fsaled
   ts = [dt/3, 2dt/3, dt]
-  kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm, adaptive=true)
+  kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm,
+  adaptive=alg.adaptive_krylov, tau=(alg.adaptive_krylov ? 0.0 : dt), m=min(alg.m, size(J,1)))
 
   # Krylov for f(uprev)
   B1 = [zero(f0) f0]
@@ -635,7 +636,8 @@ function perform_step!(integrator, cache::Exp4Cache, repeat_step=false)
   alg = unwrap_alg(integrator, true)
   f0 = integrator.fsalfirst # f(u0) is fsaled
   ts = [dt/3, 2dt/3, dt]
-  kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm, adaptive=true, caches=KsCache)
+  kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm,
+  adaptive=alg.adaptive_krylov, tau=(alg.adaptive_krylov ? 0.0 : dt), m=min(alg.m, size(J,1)), caches=KsCache)
 
   # Krylov for f(uprev)
   B[:, 2] .= f0
@@ -681,7 +683,8 @@ function perform_step!(integrator, cache::EPIRK4s3AConstantCache, repeat_step=fa
   J = calc_J!(integrator,cache,is_compos)
   alg = unwrap_alg(integrator, true)
   f0 = integrator.fsalfirst # f(uprev) is fsaled
-  kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm, adaptive=true)
+  kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm,
+  adaptive=alg.adaptive_krylov, tau=(alg.adaptive_krylov ? 0.0 : dt), m=min(alg.m, size(J,1)))
 
   # Compute U2 and U3 vertically
   K = phiv_timestep([dt/2, 2dt/3], J, [zero(f0) f0]; kwargs...)
@@ -711,7 +714,8 @@ function perform_step!(integrator, cache::EPIRK4s3ACache, repeat_step=false)
   calc_J!(integrator,cache,is_compos)
   alg = unwrap_alg(integrator, true)
   f0 = integrator.fsalfirst # f(u0) is fsaled
-  kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm, adaptive=true, caches=KsCache)
+  kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm,
+  adaptive=alg.adaptive_krylov, tau=(alg.adaptive_krylov ? 0.0 : dt), m=min(alg.m, size(J,1)), caches=KsCache)
 
   # Compute U2 and U3 vertically
   B[:, 2] .= f0
@@ -745,7 +749,8 @@ function perform_step!(integrator, cache::EPIRK4s3BConstantCache, repeat_step=fa
   J = calc_J!(integrator,cache,is_compos)
   alg = unwrap_alg(integrator, true)
   f0 = integrator.fsalfirst # f(uprev) is fsaled
-  kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm, adaptive=true)
+  kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm,
+  adaptive=alg.adaptive_krylov, tau=(alg.adaptive_krylov ? 0.0 : dt), m=min(alg.m, size(J,1)))
 
   # Compute U2 and U3 vertically
   K = phiv_timestep([dt/2, 3dt/4], J, [zero(f0) zero(f0) f0]; kwargs...)
@@ -777,7 +782,8 @@ function perform_step!(integrator, cache::EPIRK4s3BCache, repeat_step=false)
   calc_J!(integrator,cache,is_compos)
   alg = unwrap_alg(integrator, true)
   f0 = integrator.fsalfirst # f(u0) is fsaled
-  kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm, adaptive=true, caches=KsCache)
+  kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm,
+  adaptive=alg.adaptive_krylov, tau=(alg.adaptive_krylov ? 0.0 : dt), m=min(alg.m, size(J,1)), caches=KsCache)
 
   # Compute U2 and U3 vertically
   fill!(@view(B[:, 2]), zero(eltype(B)))
@@ -816,7 +822,8 @@ function perform_step!(integrator, cache::EPIRK5s3ConstantCache, repeat_step=fal
   J = calc_J!(integrator,cache,is_compos)
   alg = unwrap_alg(integrator, true)
   f0 = integrator.fsalfirst # f(uprev) is fsaled
-  kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm, adaptive=true)
+  kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm,
+  adaptive=alg.adaptive_krylov, tau=(alg.adaptive_krylov ? 0.0 : dt), m=min(alg.m, size(J,1)))
 
   # Compute U2 horizontally
   B = fill(zero(eltype(f0)), length(f0), 4)
@@ -855,7 +862,8 @@ function perform_step!(integrator, cache::EPIRK5s3Cache, repeat_step=false)
   calc_J!(integrator,cache,is_compos)
   alg = unwrap_alg(integrator, true)
   f0 = integrator.fsalfirst # f(u0) is fsaled
-  kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm, adaptive=true, caches=KsCache)
+  kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm,
+  adaptive=alg.adaptive_krylov, tau=(alg.adaptive_krylov ? 0.0 : dt), m=min(alg.m, size(J,1)), caches=KsCache)
 
   # Compute U2 horizontally
   fill!(@view(B[:, 2]), zero(eltype(B)))
@@ -899,7 +907,8 @@ function perform_step!(integrator, cache::EXPRB53s3ConstantCache, repeat_step=fa
   J = calc_J!(integrator,cache,is_compos)
   alg = unwrap_alg(integrator, true)
   f0 = integrator.fsalfirst # f(uprev) is fsaled
-  kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm, adaptive=true)
+  kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm,
+  adaptive=alg.adaptive_krylov, tau=(alg.adaptive_krylov ? 0.0 : dt), m=min(alg.m, size(J,1)))
 
   # Compute the first group for U2 and U3
   B = [zero(f0) f0]
@@ -935,7 +944,8 @@ function perform_step!(integrator, cache::EXPRB53s3Cache, repeat_step=false)
   calc_J!(integrator,cache,is_compos)
   alg = unwrap_alg(integrator, true)
   f0 = integrator.fsalfirst # f(u0) is fsaled
-  kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm, adaptive=true, caches=KsCache)
+  kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm,
+  adaptive=alg.adaptive_krylov, tau=(alg.adaptive_krylov ? 0.0 : dt), m=min(alg.m, size(J,1)), caches=KsCache)
 
   # Compute the first group for U2 and U3
   B[:, 2] .= f0
@@ -979,7 +989,8 @@ function perform_step!(integrator, cache::EPIRK5P1ConstantCache, repeat_step=fal
   J = calc_J!(integrator,cache,is_compos)
   alg = unwrap_alg(integrator, true)
   f0 = integrator.fsalfirst # f(uprev) is fsaled
-  kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm, adaptive=true)
+  kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm,
+  adaptive=alg.adaptive_krylov, tau=(alg.adaptive_krylov ? 0.0 : dt), m=min(alg.m, size(J,1)))
 
   # Coefficients (scaling factors absorbed)
   g11 = 0.35129592695058193092 * dt
@@ -1022,7 +1033,8 @@ function perform_step!(integrator, cache::EPIRK5P1Cache, repeat_step=false)
   calc_J!(integrator,cache,is_compos)
   alg = unwrap_alg(integrator, true)
   f0 = integrator.fsalfirst # f(u0) is fsaled
-  kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm, adaptive=true, caches=KsCache)
+  kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm,
+  adaptive=alg.adaptive_krylov, tau=(alg.adaptive_krylov ? 0.0 : dt), m=min(alg.m, size(J,1)), caches=KsCache)
 
   # Coefficients (scaling factors absorbed)
   g11 = 0.35129592695058193092 * dt
@@ -1069,7 +1081,8 @@ function perform_step!(integrator, cache::EPIRK5P2ConstantCache, repeat_step=fal
   J = calc_J!(integrator,cache,is_compos)
   alg = unwrap_alg(integrator, true)
   f0 = integrator.fsalfirst # f(uprev) is fsaled
-  kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm, adaptive=true)
+  kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm,
+  adaptive=alg.adaptive_krylov, tau=(alg.adaptive_krylov ? 0.0 : dt), m=min(alg.m, size(J,1)))
 
   # Coefficients (scaling factors absorbed)
   g11 = 0.46629408528088195806 * dt
@@ -1113,7 +1126,8 @@ function perform_step!(integrator, cache::EPIRK5P2Cache, repeat_step=false)
   calc_J!(integrator,cache,is_compos)
   alg = unwrap_alg(integrator, true)
   f0 = integrator.fsalfirst # f(u0) is fsaled
-  kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm, adaptive=true, caches=KsCache)
+  kwargs = (tol=integrator.opts.reltol, iop=alg.iop, opnorm=integrator.opts.internalopnorm,
+  adaptive=alg.adaptive_krylov, tau=(alg.adaptive_krylov ? 0.0 : dt), m=min(alg.m, size(J,1)), caches=KsCache)
 
   # Coefficients (scaling factors absorbed)
   g11 = 0.46629408528088195806 * dt
