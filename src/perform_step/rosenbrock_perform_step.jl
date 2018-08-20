@@ -171,8 +171,7 @@ end
   dto6 = dt/6
 
   # Time derivative
-  tf.u = uprev
-  dT = ForwardDiff.derivative(tf, t)
+  dT = calc_tderivative(integrator, cache)
 
   W = calc_W!(integrator, cache, γ, repeat_step)
 
@@ -208,8 +207,7 @@ end
   dto6 = dt/6
 
   # Time derivative
-  tf.u = uprev
-  dT = ForwardDiff.derivative(tf,t)
+  dT = calc_tderivative(integrator, cache)
 
   W = calc_W!(integrator, cache, γ, repeat_step)
 
@@ -281,8 +279,7 @@ end
   dtgamma = dt*gamma
 
   # Time derivative
-  tf.u = uprev
-  dT = ForwardDiff.derivative(tf,t)
+  dT = calc_tderivative(integrator, cache)
 
   W = calc_W!(integrator, cache, dtgamma, repeat_step, true)
 
@@ -1024,8 +1021,7 @@ end
   dtgamma = dt*gamma
 
   # Time derivative
-  tf.u = uprev
-  dT = ForwardDiff.derivative(tf,t)
+  dT = calc_tderivative(integrator, cache)
 
   W = calc_W!(integrator, cache, dtgamma, repeat_step, true)
 
