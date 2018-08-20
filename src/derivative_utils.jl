@@ -35,7 +35,7 @@ function calc_tderivative(integrator, cache)
 end
 
 """
-    calc_J!(integrator,cache,is_compos)
+    calc_J(integrator,cache,is_compos)
 
 Interface for calculating the jacobian.
 
@@ -56,6 +56,17 @@ function calc_J(integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
   return J
 end
 
+"""
+    calc_J!(integrator,cache,is_compos)
+
+Interface for calculating the jacobian.
+
+For constant caches, a new jacobian object is returned whereas for mutable
+caches `cache.J` is updated. In both cases, if `integrator.f` has a custom
+jacobian update function, then it will be called for the update. Otherwise,
+either ForwardDiff or finite difference will be used depending on the
+`jac_config` of the cache.
+"""
 function calc_J!(integrator, cache::OrdinaryDiffEqMutableCache, is_compos)
   @unpack t,dt,uprev,u,f,p = integrator
   J = cache.J
