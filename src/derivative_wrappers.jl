@@ -34,7 +34,7 @@ function jacobian(f, x,
       if isarray
         J = DiffEqDiffTools.finite_difference_jacobian(f, x, alg.diff_type, eltype(x), Val{false})
       else
-        J = DiffEqDiffTools.finite_difference_derivative(f, x, alg.diff_type, eltype(x), Val{false})
+        J = DiffEqDiffTools.finite_difference_derivative(f, x, alg.diff_type, eltype(x))
       end
     end
     J
