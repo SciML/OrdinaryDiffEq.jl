@@ -1,7 +1,7 @@
 # Solve the Landau-Zener problem i ψ' = H(t) ψ, with H(t) = [t 1;1 -t]
 
 using Test
-using StaticArrays
+using StaticArrays, LinearAlgebra
 using OrdinaryDiffEq, DiffEqBase
 
 @testset "Complex Tests" begin
@@ -30,7 +30,7 @@ implicit_noautodiff = [ImplicitEuler(autodiff=false),Trapezoid(autodiff=false),K
 end
 
 @testset "Complex Tests on Implicit Autodiff Methods ($alg)" for alg in implicit_autodiff
-  @test_broken begin
+  @test begin
     for f in (fun, fun_inplace)
       ψ0 = [1.0+0.0im; 0.0]
       prob = ODEProblem(f,ψ0,(-T,T))
@@ -51,14 +51,18 @@ end
     @test abs(norm(sol(T)) - 1.0) < 1e-2
 end
 
-@testset "Complex Tests on Implicit Finite Diff Out-of-place Methods ($alg)" for alg in implicit_noautodiff
+@testset "Complex Tests on Implicit Finite Diff Out-of-place Methods" begin
+  for alg in implicit_noautodiff
+    ψ0 = [1.0+0.0im; 0.0]
+    prob = ODEProblem(fun,ψ0,(-T,T))
+    sol = solve(prob,alg)
+    @test abs(norm(sol(T)) - 1.0) < 1e-2
+  end
+end
+
+@testset "Complex Tests on Implicit Finite Diff Out-of-place Methods SArray ($alg)" for alg in implicit_noautodiff
   @test_broken begin
     for alg in implicit_noautodiff
-      ψ0 = [1.0+0.0im; 0.0]
-      prob = ODEProblem(fun,ψ0,(-T,T))
-      sol = solve(prob,alg)
-      @test abs(norm(sol(T)) - 1.0) < 1e-2
-
       ψ0 = @SArray [1.0+0.0im; 0.0]
       prob = ODEProblem(fun,ψ0,(-T,T))
       sol = solve(prob,alg)
