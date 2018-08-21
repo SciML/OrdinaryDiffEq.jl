@@ -271,7 +271,7 @@ Base.@pure QNDF(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                 typeof(κ),typeof(tol),typeof(new_jac_conv_bound),typeof(kappa),controller}(
                 linsolve,nlsolve,diff_type,κ,tol,extrapolant,new_jac_conv_bound,kappa)
 
-Base.@pure QBDF(;kwargs...) = QNDF(;kappa=tuple(0,0,0,0,0),kwargs...)
+Base.@pure QBDF(;kwargs...) = QNDF(;kappa=tuple(0//1,0//1,0//1,0//1,0//1),kwargs...)
 
 struct SBDF{CS,AD,F,F2,FDT,K,T,T2} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
   linsolve::F
