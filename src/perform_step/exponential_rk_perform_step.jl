@@ -1431,7 +1431,7 @@ function perform_step!(integrator,cache::ETD2ConstantCache,repeat_step=false)
   lin = f.f1(u,p,t+dt)
   nl = f.f2(u,p,t+dt)
   integrator.k[2] = lin + nl
-  @pack integrator.fsallast = lin, nl, nlprev
+  @pack! integrator.fsallast = lin, nl, nlprev
 end
 
 function initialize!(integrator, cache::ETD2Cache)

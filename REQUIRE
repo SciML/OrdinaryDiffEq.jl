@@ -1,7 +1,7 @@
 julia 0.7
 DiffEqBase 3.8.0
 DiffEqOperators 3.2.0
-Parameters 0.5.0
+Parameters 0.10.0
 ForwardDiff 0.7.0
 GenericSVD 0.0.2
 NLsolve 0.14.1
