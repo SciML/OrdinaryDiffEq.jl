@@ -102,7 +102,7 @@ ode_interpolation(tvals,ts,timeseries,ks)
 Get the value at tvals where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-function ode_interpolation(tvals,id,idxs,deriv,p)
+function ode_interpolation(tvals,id,idxs,deriv,p,continuity)
   @unpack ts,timeseries,ks,f,cache = id
   tdir = sign(ts[end]-ts[1])
   idx = sortperm(tvals,rev=tdir<0)
@@ -122,10 +122,11 @@ function ode_interpolation(tvals,id,idxs,deriv,p)
     avoid_constant_ends = deriv != Val{0} || typeof(t) <: ForwardDiff.Dual
     avoid_constant_ends && i==1 && (i+=1)
     if !avoid_constant_ends && ts[i] == t
+      k = continuity == :right && ts[i+1] == t ? i+1 : i
       if idxs == nothing
-        vals[j] = timeseries[i]
+        vals[j] = timeseries[k]
       else
-        vals[j] = timeseries[i][idxs]
+        vals[j] = timeseries[k][idxs]
       end
     elseif !avoid_constant_ends && ts[i-1] == t # Can happen if it's the first value!
       if idxs == nothing
@@ -158,7 +159,7 @@ ode_interpolation(tvals,ts,timeseries,ks)
 Get the value at tvals where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-function ode_interpolation!(vals,tvals,id,idxs,deriv,p)
+function ode_interpolation!(vals,tvals,id,idxs,deriv,p,continuity)
   @unpack ts,timeseries,ks,f,cache = id
   tdir = sign(ts[end]-ts[1])
   idx = sortperm(tvals,rev=tdir<0)
@@ -171,10 +172,11 @@ function ode_interpolation!(vals,tvals,id,idxs,deriv,p)
     avoid_constant_ends = deriv != Val{0} || typeof(t) <: ForwardDiff.Dual
     avoid_constant_ends && i==1 && (i+=1)
     if !avoid_constant_ends && ts[i] == t
+      k = continuity == :right && ts[i+1] == t ? i+1 : i
       if idxs == nothing
-        vals[j] = timeseries[i]
+        vals[j] = timeseries[k]
       else
-        vals[j] = timeseries[i][idxs]
+        vals[j] = timeseries[k][idxs]
       end
     elseif !avoid_constant_ends && ts[i-1] == t # Can happen if it's the first value!
       if idxs == nothing
@@ -222,7 +224,7 @@ ode_interpolation(tval::Number,ts,timeseries,ks)
 Get the value at tval where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-function ode_interpolation(tval::Number,id,idxs,deriv,p)
+function ode_interpolation(tval::Number,id,idxs,deriv,p,continuity)
   @unpack ts,timeseries,ks,f,cache = id
   tdir = sign(ts[end]-ts[1])
   tdir*tval > tdir*ts[end] && error("Solution interpolation cannot extrapolate past the final timepoint. Either solve on a longer timespan or use the local extrapolation from the integrator interface.")
@@ -231,10 +233,11 @@ function ode_interpolation(tval::Number,id,idxs,deriv,p)
   avoid_constant_ends = deriv != Val{0} || typeof(tval) <: ForwardDiff.Dual
   avoid_constant_ends && i==1 && (i+=1)
   @inbounds if !avoid_constant_ends && ts[i] == tval
+    k = continuity == :right && ts[i+1] == tval ? i+1 : i
     if idxs == nothing
-      val = timeseries[i]
+      val = timeseries[k]
     else
-      val = timeseries[i][idxs]
+      val = timeseries[k][idxs]
     end
   elseif !avoid_constant_ends && ts[i-1] == tval # Can happen if it's the first value!
     if idxs == nothing
@@ -266,7 +269,7 @@ ode_interpolation!(out,tval::Number,ts,timeseries,ks)
 Get the value at tval where the solution is known at the
 times ts (sorted), with values timeseries and derivatives ks
 """
-function ode_interpolation!(out,tval::Number,id,idxs,deriv,p)
+function ode_interpolation!(out,tval::Number,id,idxs,deriv,p,continuity)
   @unpack ts,timeseries,ks,f,cache = id
   @inbounds tdir = sign(ts[end]-ts[1])
   @inbounds tdir*tval > tdir*ts[end] && error("Solution interpolation cannot extrapolate past the final timepoint. Either solve on a longer timespan or use the local extrapolation from the integrator interface.")
@@ -275,10 +278,11 @@ function ode_interpolation!(out,tval::Number,id,idxs,deriv,p)
   avoid_constant_ends = deriv != Val{0} || typeof(tval) <: ForwardDiff.Dual
   avoid_constant_ends && i==1 && (i+=1)
   if !avoid_constant_ends && ts[i] == tval
+    k = continuity == :right && ts[i+1] == tval ? i+1 : i
     if idxs == nothing
-      @inbounds copyto!(out,timeseries[i])
+      @inbounds copyto!(out,timeseries[k])
     else
-      @inbounds copyto!(out,timeseries[i][idxs])
+      @inbounds copyto!(out,timeseries[k][idxs])
     end
   elseif !avoid_constant_ends && ts[i-1] == tval # Can happen if it's the first value!
     if idxs == nothing
