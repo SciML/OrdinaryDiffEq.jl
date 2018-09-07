@@ -1,4 +1,3 @@
-@testset "Mass Matrix Tests" begin
 using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
 
 # TODO: clean up
@@ -120,5 +119,4 @@ sol2 = solve(prob2, TRBDF2(),adaptive=false,dt=1/10)
 
   m_ode_prob = ODEProblem(ODEFunction(f2!;mass_matrix=M), u0, tspan)
   @test_nowarn sol = solve(m_ode_prob, Rosenbrock23())
-end
 end

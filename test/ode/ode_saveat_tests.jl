@@ -1,4 +1,3 @@
-@testset "saveat Tests" begin
 using OrdinaryDiffEq, Test
 using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
 import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
@@ -95,4 +94,3 @@ sol2=solve(prob2,DP5(),dt=1//2^(2),saveat=.1,save_idxs=1:2:5,save_everystep=true
 sol=solve(prob2,DP5(),dt=1//2^(2),save_start=false)
 
 @test sol.t[1] == 1//2^(2)
-end

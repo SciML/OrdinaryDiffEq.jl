@@ -1,4 +1,3 @@
-@testset "Derivative Utilities" begin
 using OrdinaryDiffEq: WOperator, set_gamma!, calc_W!
 using OrdinaryDiffEq, LinearAlgebra, SparseArrays, Random, Test, DiffEqOperators
 
@@ -61,5 +60,4 @@ end
     sol2_ip = solve(ODEProblem(fun2_ip,u0,tspan), Alg(linsolve=LinSolveFactorize(lu)); adaptive=false, dt=0.01)
     @test sol1_ip(1.0) ≈ sol2_ip(1.0)
   end
-end
 end

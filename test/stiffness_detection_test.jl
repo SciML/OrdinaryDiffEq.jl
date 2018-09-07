@@ -1,4 +1,3 @@
-@testset "Stiffness Detection Tests" begin
 using OrdinaryDiffEq, Test
 using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
 import DiffEqProblemLibrary.ODEProblemLibrary: van
@@ -38,5 +37,4 @@ for prob in probArr
   sol = solve(prob,AutoVern9(KenCarp3(); maxstiffstep=4, maxnonstiffstep=4))
   @test length(sol.t) < 470
   @test is_switching_fb(sol)
-end
 end

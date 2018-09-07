@@ -1,4 +1,3 @@
-@testset "Linear-Nonlinear Methods Tests" begin
 using OrdinaryDiffEq, Test, DiffEqDevTools, DiffEqOperators, Random
 using OrdinaryDiffEq: alg_order
 
@@ -121,5 +120,4 @@ end
   @test abs(sim.𝒪est[:l2] - 5) < 0.1
   sim = analyticless_test_convergence(dts, prob_ip, EPIRK5P1(adaptive_krylov=false), test_setup)
   @test abs(sim.𝒪est[:l2] - 5) < 0.1
-end
 end

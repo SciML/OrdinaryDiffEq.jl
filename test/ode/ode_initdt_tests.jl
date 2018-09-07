@@ -1,4 +1,3 @@
-@testset "Initdt Tests" begin
 using OrdinaryDiffEq, DiffEqDevTools, Test
 using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
 import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
@@ -19,4 +18,3 @@ sol3 =solve(prob,ExplicitRK(tableau=constructDormandPrince8_64bit()))
 dt₀ = sol3.t[2]
 
 @test 1e-7 < dt₀ < .3
-end

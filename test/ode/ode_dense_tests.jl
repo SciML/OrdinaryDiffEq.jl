@@ -1,4 +1,3 @@
-@testset "Dense Tests" begin
 using OrdinaryDiffEq, Test, DiffEqBase
 using ForwardDiff, Printf
 using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
@@ -279,4 +278,3 @@ sol  = solve(prob, ExplicitRK(), dt=1//2^(2), dense=true)
 sol(interpd, 0:1//2^(4):1)
 sol2 = solve(prob, ExplicitRK(), dt=1//2^(4), dense=true, adaptive=false)
 print_results( @test maximum(map((x)->maximum(abs.(x)),sol2 - interpd)) < 2e-4 )
-end

@@ -1,4 +1,3 @@
-@testset "Composite Algorithm Tests" begin
 using OrdinaryDiffEq, Test
 using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
 import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
@@ -21,4 +20,3 @@ solve!(integrator2)
 @test integrator1.sol.t == integrator2.sol.t
 
 sol = solve(prob,alg_switch)
-end

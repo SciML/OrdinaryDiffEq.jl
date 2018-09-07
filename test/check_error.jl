@@ -1,4 +1,3 @@
-@testset "Error Check Tests" begin
 using OrdinaryDiffEq, Test
 
 f_ec(u,p,t) = exp(u)
@@ -40,4 +39,3 @@ for i in 1:integrator.opts.maxiters
   end
 end
 @test ok
-end

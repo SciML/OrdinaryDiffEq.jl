@@ -1,4 +1,3 @@
-@testset "save_idxs Tests" begin
 using OrdinaryDiffEq, Test
 using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
 import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear,
@@ -28,4 +27,3 @@ sol3(0.5)
 sol3b = solve(prob3, DP5(); save_idxs=[1])
 @test sol.t ≈ sol3b.t && sol2b.u ≈ sol3b.u
 sol3b(0.5)
-end

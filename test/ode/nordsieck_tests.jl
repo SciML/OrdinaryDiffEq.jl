@@ -1,4 +1,3 @@
-@testset "Nordsieck Tests" begin
 using OrdinaryDiffEq, DiffEqDevTools, Test, LinearAlgebra
 using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
 import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_bigfloatlinear, prob_ode_bigfloat2Dlinear, prob_ode_linear, prob_ode_2Dlinear
@@ -36,5 +35,4 @@ end
     exact = prob.f(Val{:analytic}, prob.u0, prob.p, prob.tspan[end])
     @test norm(exact - sol[end], Inf) < 3e-3
   end
-end
 end

@@ -1,4 +1,3 @@
-@testset "Linear Tests" begin
 using OrdinaryDiffEq
 using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
 import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_2Dlinear
@@ -15,4 +14,3 @@ sol =solve(prob,Tsit5();dt=1//2^(20),progress=true,adaptive=false,maxiters=Inf)
 # plot(sol,plot_analytic=true)
 
 sol =solve(prob,ExplicitRK();dt=1//2^(4))
-end

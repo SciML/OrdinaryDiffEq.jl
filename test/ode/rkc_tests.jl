@@ -1,4 +1,3 @@
-@testset "Runge-Kutta-Chebyshev Tests" begin
 using OrdinaryDiffEq, DiffEqDevTools, Test, LinearAlgebra, Random
 using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
 using OrdinaryDiffEq: maxeig!
@@ -29,5 +28,4 @@ end
     sim2 = test_convergence(dts,prob,ROCK2())
     @test abs(sim2.𝒪est[:l∞]-2) < testTol
   end
-end
 end

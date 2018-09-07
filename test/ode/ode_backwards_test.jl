@@ -1,4 +1,3 @@
-@testset "Backwards Tests" begin
 using OrdinaryDiffEq, Test, Statistics
 using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
 import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_2Dlinear
@@ -13,4 +12,3 @@ sol = solve(prob2,RK4(),dt=-1/4, adaptive=false)
 
 sol = solve(prob2,RK4(),dt=-1/4,tstops=[0.5,0.33], adaptive=false)
 @test sol.t ≈ [1.00,.75,.5,.33,0.08,0]
-end

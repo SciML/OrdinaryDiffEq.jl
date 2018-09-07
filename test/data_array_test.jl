@@ -1,4 +1,3 @@
-@testset "Data Array Tests" begin
 using OrdinaryDiffEq, Test, LinearAlgebra
 
 mutable struct SimType{T} <: DEDataVector{T}
@@ -163,5 +162,4 @@ end
   sol = solve(prob,Kvaerno3(),callback = cbs, tstops=tstop)
   @test_broken sol = solve(prob,Rodas4(autodiff=false),callback = cbs, tstops=tstop)
   @test_broken sol = solve(prob,Kvaerno3(autodiff=false),callback = cbs, tstops=tstop)
-end
 end

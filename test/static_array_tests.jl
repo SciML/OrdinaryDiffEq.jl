@@ -1,4 +1,3 @@
-@testset "Static Array Tests" begin
 using StaticArrays, Test
 using OrdinaryDiffEq
 
@@ -29,4 +28,3 @@ f = (u,p,t) -> u
 ode = ODEProblem(f, u0, (0.,1.))
 sol = solve(ode, Euler(), dt=1.e-2)
 sol = solve(ode, Tsit5(), dt=1.e-2)
-end

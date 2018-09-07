@@ -1,4 +1,3 @@
-@testset "Differentiation Trait Tests" begin
 using OrdinaryDiffEq, Test
 
 jac_called = Ref(false)
@@ -62,4 +61,3 @@ inv_sol = solve(prob3,Rosenbrock23())
 
 @test invW_called[]
 @test ≈(good_sol[end],inv_sol[end],rtol=1e-2)
-end
