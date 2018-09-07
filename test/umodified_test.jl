@@ -1,5 +1,5 @@
 @testset "u_modifed Tests" begin
-using OrdinaryDiffEq, Test
+using OrdinaryDiffEq, Test, LinearAlgebra
 
 T = 1000.0; Ttr = 0.0;
 d0=1e-9; threshold=10^4*d0;
