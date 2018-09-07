@@ -12,8 +12,8 @@ struct ODECompositeSolution{T,N,uType,uType2,EType,tType,rateType,P,A,IType} <: 
   tslocation::Int
   retcode::Symbol
 end
-(sol::ODECompositeSolution)(t,deriv::Type=Val{0};idxs=nothing) = sol.interp(t,idxs,deriv,sol.prob.p)
-(sol::ODECompositeSolution)(v,t,deriv::Type=Val{0};idxs=nothing) = sol.interp(v,t,idxs,deriv,sol.prob.p)
+(sol::ODECompositeSolution)(t,deriv::Type=Val{0};idxs=nothing,continuity=:left) = sol.interp(t,idxs,deriv,sol.prob.p,continuity)
+(sol::ODECompositeSolution)(v,t,deriv::Type=Val{0};idxs=nothing,continuity=:left) = sol.interp(v,t,idxs,deriv,sol.prob.p,continuity)
 
 function DiffEqBase.build_solution(
         prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.AbstractDDEProblem},
