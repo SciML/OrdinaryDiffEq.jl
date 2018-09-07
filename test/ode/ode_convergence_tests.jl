@@ -1,3 +1,4 @@
+@testset "Convergence Tests" begin
 # This definitely needs cleaning
 using OrdinaryDiffEq, DiffEqDevTools, Test, Random
 using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
@@ -181,4 +182,5 @@ for i = 1:2
 
   sim115 = test_convergence(dts,prob,KenCarp5(nlsolve = NLFunctional()))
   @test_broken abs(sim115.𝒪est[:final]-5) < testTol
+end
 end

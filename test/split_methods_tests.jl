@@ -1,3 +1,4 @@
+@testset "Split Methods Tests" begin
 using OrdinaryDiffEq, DiffEqDevTools, Test, Random
 testTol = 0.2
 
@@ -360,3 +361,4 @@ sim = test_convergence(dts,prob,SBDF3())
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,SBDF4())
 @test_broken abs(sim.𝒪est[:l∞]-4) < testTol
+end

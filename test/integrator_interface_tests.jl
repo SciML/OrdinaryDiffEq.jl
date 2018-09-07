@@ -1,3 +1,4 @@
+@testset "Integrator Interface Tests" begin
 using DiffEqBase: set_t!, set_u!, set_ut!
 using OrdinaryDiffEq
 
@@ -72,4 +73,5 @@ println("Second")
     rtol *= 100
   end
   @test integrator1.u ≈ integrator2.u  rtol=rtol atol=atol
+end
 end

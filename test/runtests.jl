@@ -39,45 +39,45 @@ if group == "All" || group == "Interface"
 end
 
 if group == "All" || group == "Integrators"
-    @time @testset "Reinit Tests" begin include("reinit_test.jl") end
-    @time @testset "Events Tests" begin include("ode/ode_event_tests.jl") end
-    @time @testset "Cache Tests" begin include("ode/ode_cache_tests.jl") end
-    @time @testset "Iterator Tests" begin include("iterator_tests.jl") end
-    @time @testset "Integrator Interface Tests" begin include("integrator_interface_tests.jl") end
-    @time @testset "Add Steps Tests" begin include("ode/ode_add_steps_tests.jl") end
-    @time @testset "Error Check Tests" begin include("check_error.jl") end
+  @time include("reinit_test.jl")
+  @time include("ode/ode_event_tests.jl")
+  @time include("ode/ode_cache_tests.jl")
+  @time include("iterator_tests.jl")
+  @time include("integrator_interface_tests.jl")
+  @time include("ode/ode_add_steps_tests.jl")
+  @time include("check_error.jl")
 end
 
 if !is_APPVEYOR && ( group == "All" || group == "Regression" )
-    @time @testset "Linear Tests" begin include("ode/ode_twodimlinear_tests.jl") end
-    @time @testset "Dense Tests" begin include("ode/ode_dense_tests.jl") end
+  @time include("ode/ode_twodimlinear_tests.jl")
+  @time include("ode/ode_dense_tests.jl")
 end
 
 if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_I" )
-    # ~ 250 s
-    @time @testset "Partitioned Methods Tests" begin include("partitioned_methods_tests.jl") end
-    # ~ 400 s
-    @time @testset "Convergence Tests" begin include("ode/ode_convergence_tests.jl") end
-    # ~ 2 s
-    @time @testset "Adams Variable Coefficients Tests" begin include("ode/adams_tests.jl") end
-    # ~ 50 s
-    @time @testset "Nordsieck Tests" begin include("ode/nordsieck_tests.jl") end
-    #@time @testset "Linear Methods Tests" begin include("linear_method_tests.jl") end
-    # ~ 170 s
-    @time @testset "SSPRK Tests" begin include("ode/ode_ssprk_tests.jl") end
-    # ~ 25 s
-    @time @testset "OwrenZen Tests" begin include("owrenzen_tests.jl") end
-    @time @testset "Runge-Kutta-Chebyshev Tests" begin include("ode/rkc_tests.jl") end
+  # ~ 250 s
+  @time include("partitioned_methods_tests.jl")
+  # ~ 400 s
+  @time include("ode/ode_convergence_tests.jl")
+  # ~ 2 s
+  @time include("ode/adams_tests.jl")
+  # ~ 50 s
+  @time include("ode/nordsieck_tests.jl")
+  #@time @testset "Linear Methods Tests" begin include("linear_method_tests.jl") end
+  # ~ 170 s
+  @time include("ode/ode_ssprk_tests.jl")
+  # ~ 25 s
+  @time include("owrenzen_tests.jl")
+  @time include("ode/rkc_tests.jl")
 end
 
 if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_II" )
-    # ~ 110 s
-    @time @testset "Split Methods Tests" begin include("split_methods_tests.jl") end
-    # ~ 550 s
-    @time @testset "Rosenbrock Tests" begin include("ode/ode_rosenbrock_tests.jl") end
-    # ~ 40 s
-    @time @testset "Linear-Nonlinear Methods Tests" begin include("linear_nonlinear_convergence_tests.jl") end
-    # ~ 140 s
-    @time @testset "Linear-Nonlinear Krylov Methods Tests" begin include("linear_nonlinear_krylov_tests.jl") end
+  # ~ 110 s
+  @time include("split_methods_tests.jl")
+  # ~ 550 s
+  @time include("ode/ode_rosenbrock_tests.jl")
+  # ~ 40 s
+  @time include("linear_nonlinear_convergence_tests.jl")
+  # ~ 140 s
+  @time include("linear_nonlinear_krylov_tests.jl")
 end
 end # @time

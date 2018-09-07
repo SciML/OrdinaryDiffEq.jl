@@ -1,3 +1,4 @@
+@testset "OwrenZen Tests" begin
 using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase, Test, Random
 using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
 import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_2Dlinear, prob_ode_linear
@@ -44,3 +45,4 @@ sim = test_convergence(dts,prob,OwrenZen4(),dense_errors=true)
 sim = test_convergence(dts,prob,OwrenZen5(),dense_errors=true)
 @test abs(sim.𝒪est[:final]-5) < testTol
 @test abs(sim.𝒪est[:L2]-5) < testTol
+end

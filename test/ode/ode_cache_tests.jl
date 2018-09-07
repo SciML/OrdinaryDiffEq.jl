@@ -1,3 +1,4 @@
+@testset "Cache Tests" begin
 using OrdinaryDiffEq, DiffEqBase, DiffEqCallbacks, Test
 
 using InteractiveUtils
@@ -46,4 +47,5 @@ end
 
 for alg in CACHE_TEST_ALGS
   sol = solve(prob,alg,callback=callback,dt=1/2)
+end
 end

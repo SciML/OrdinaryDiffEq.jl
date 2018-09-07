@@ -1,3 +1,4 @@
+@testset "Tstops Tests" begin
 using OrdinaryDiffEq, Test, Random
 using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
 import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear
@@ -43,4 +44,5 @@ end
   for tstop in tstops
     @test tstop ∈ integrator.sol.t
   end
+end
 end

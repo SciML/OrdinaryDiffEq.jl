@@ -1,3 +1,4 @@
+@testset "Iterator Tests" begin
 using OrdinaryDiffEq, Test, RecursiveArrayTools
 using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
 import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
@@ -74,3 +75,4 @@ for (u,t) in TimeChoiceIterator(integrator,ts)
   push!(us,copy(u))
 end
 @test VectorOfArray(us) ≈ integrator.sol(ts)
+end

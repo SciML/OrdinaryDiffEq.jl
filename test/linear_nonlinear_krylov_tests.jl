@@ -1,3 +1,4 @@
+@testset "Linear-Nonlinear Krylov Methods Tests" begin
 using OrdinaryDiffEq, Test, DiffEqOperators, Random, LinearAlgebra, SparseArrays
 let N = 20
 Random.seed!(0); u0 = normalize(randn(N))
@@ -117,4 +118,5 @@ end
     sol = solve(prob, LawsonEuler(krylov=true, m=N); dt=0.1)
     @test sol(1.0) ≈ exp_fun2.analytic(u0,nothing,1.0)
   end
+end
 end

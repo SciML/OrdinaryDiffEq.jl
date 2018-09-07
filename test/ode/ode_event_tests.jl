@@ -1,3 +1,4 @@
+@testset "Events Tests" begin
 using OrdinaryDiffEq, RecursiveArrayTools, Test, StaticArrays
 
 
@@ -196,3 +197,4 @@ ode = ODEProblem((du, u, p, t) -> (@. du .= -u), ones(5), (0.0, 100.0))
 sol = solve(ode, AutoTsit5(Rosenbrock23()), callback=TerminateSteadyState())
 sol1 = solve(ode, Tsit5(), callback=TerminateSteadyState())
 @test sol.u == sol1.u
+end

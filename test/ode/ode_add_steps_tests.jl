@@ -1,3 +1,4 @@
+@testset "Add Steps Tests" begin
 using OrdinaryDiffEq, Test
 
 function test_ode(u, p, t)
@@ -53,3 +54,4 @@ end
 
 any(.!(passed)) && @warn("The following algorithms failed the continuous callback test: $(vcat(algs,algs,lazy_alg,lazy_alg)[.!(passed)])")
 @test all(passed)
+end

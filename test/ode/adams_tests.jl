@@ -1,3 +1,4 @@
+@testset "Adams Variable Coefficients Tests" begin
 using OrdinaryDiffEq, DiffEqDevTools, DiffEqBase, Test
 using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
 import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
@@ -52,4 +53,5 @@ for i = 1:2
   sol1 = solve(prob,VCAB5(),dt=1//256,adaptive=false)
   sol2 = solve(prob,AB5(),dt=1//256)
   @test sol1.u ≈ sol2.u
+end
 end

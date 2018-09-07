@@ -1,3 +1,4 @@
+@testset "Rosenbrock Tests" begin
 ## Breakout these since no other test of their adaptivity
 
 using OrdinaryDiffEq, DiffEqDevTools, Test, LinearAlgebra
@@ -304,3 +305,4 @@ sim = test_convergence(dts,prob,Rodas5(),dense_errors=true)
 
 sol = solve(prob,Rodas5())
 @test length(sol) < 20
+end

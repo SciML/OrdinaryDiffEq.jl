@@ -1,3 +1,4 @@
+@testset "Reinit Tests" begin
 using OrdinaryDiffEq, DiffEqCallbacks, Test
 using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
 import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_2Dlinear
@@ -101,4 +102,5 @@ end
   @test integrator.t == t0
   @test integrator.sol.t[1] == t0
   @test integrator.sol.interp.ts[1] == t0
+end
 end

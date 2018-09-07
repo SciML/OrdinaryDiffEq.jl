@@ -1,3 +1,4 @@
+@testset "Discrete Algorithm Tests" begin
 using OrdinaryDiffEq, Test, Statistics
 using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
 import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_2Dlinear, prob_ode_linear
@@ -39,4 +40,5 @@ end
   prob = DiscreteProblem(henon_map!, [0.5, 0.5], (0, 100)) # Integer time
   sol = solve(prob, FunctionMap())
   @test eltype(sol.t) <: Integer
+end
 end

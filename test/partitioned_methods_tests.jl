@@ -1,3 +1,4 @@
+@testset "Partitioned Methods Tests" begin
 using OrdinaryDiffEq, Test, RecursiveArrayTools, DiffEqDevTools
 
 u0 = fill(0., 2)
@@ -316,3 +317,4 @@ sol = solve(prob, ERKN4(),reltol=1e-8)
 @test length(sol.u) < 38
 sol = solve(prob, ERKN5(),reltol=1e-8)
 @test length(sol.u) < 34
+end
