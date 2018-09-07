@@ -11,7 +11,7 @@ mutable struct SimType2{T} <: DEDataVector{T}
   u::Vector{T}
 end
 
-@testset "Data Array Tests (DEDataVector)" begin
+@testset "DEDataVector" begin
   f = function (du,u,p,t)
     du[1] = -0.5*u[1] + u.f1
     du[2] = -0.5*u[2]
@@ -113,8 +113,7 @@ mutable struct SimTypeg{T,T2} <: DEDataMatrix{T}
   f1::T2
 end
 
-@testset "Data Array Tests (DEDataMatrix)" begin
-
+@testset "DEDataMatrix" begin
   tstop1 = [10.0]
   tstop2 = [300.]
 

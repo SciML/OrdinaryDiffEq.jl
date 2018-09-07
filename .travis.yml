@@ -7,9 +7,9 @@ julia:
   - 1.0
   - nightly
 env:
-  - GROUP=Regression
-  - GROUP=Integrators
   - GROUP=Interface
+  - GROUP=Integrators
+  - GROUP=Regression
   - GROUP=AlgConvergence_I
   - GROUP=AlgConvergence_II
 matrix:
