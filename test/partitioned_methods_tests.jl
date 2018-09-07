@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, Test, RecursiveArrayTools, DiffEqDevTools
+using OrdinaryDiffEq, Test, RecursiveArrayTools, DiffEqDevTools, Statistics
 
 u0 = fill(0., 2)
 v0 = ones(2)

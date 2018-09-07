@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, RecursiveArrayTools, Test, StaticArrays
+using OrdinaryDiffEq, RecursiveArrayTools, Test, StaticArrays, DiffEqCallbacks
 
 
 f = function (u,p,t)
