@@ -67,24 +67,26 @@ function DiffEqBase.interp_summary(interp::OrdinaryDiffEqInterpolation{cacheType
   interp.dense ? "3rd order Hermite" : "1st order linear"
 end
 
-(interp::InterpolationData)(tvals,idxs,deriv,p) = ode_interpolation(tvals,interp,idxs,deriv,p)
-(interp::CompositeInterpolationData)(tvals,idxs,deriv,p) = ode_interpolation(tvals,interp,idxs,deriv,p)
-(interp::InterpolationData)(val,tvals,idxs,deriv,p) = ode_interpolation!(val,tvals,interp,idxs,deriv,p)
-(interp::CompositeInterpolationData)(val,tvals,idxs,deriv,p) = ode_interpolation!(val,tvals,interp,idxs,deriv,p)
+(interp::InterpolationData)(tvals,idxs,deriv,p,continuity::Symbol=:left) = ode_interpolation(tvals,interp,idxs,deriv,p,continuity)
+(interp::CompositeInterpolationData)(tvals,idxs,deriv,p,continuity::Symbol=:left) = ode_interpolation(tvals,interp,idxs,deriv,p,continuity)
+(interp::InterpolationData)(val,tvals,idxs,deriv,p,continuity::Symbol=:left) = ode_interpolation!(val,tvals,interp,idxs,deriv,p,continuity)
+(interp::CompositeInterpolationData)(val,tvals,idxs,deriv,p,continuity::Symbol=:left) = ode_interpolation!(val,tvals,interp,idxs,deriv,p,continuity)
 
-function InterpolationData(id::InterpolationData,f)
+function InterpolationData(id::InterpolationData,f,continuity)
   InterpolationData(f,id.timeseries,
                       id.ts,
                       id.ks,
                       id.dense,
-                      id.cache)
+                      id.cache,
+                      continuity)
 end
 
-function CompositeInterpolationData(id::CompositeInterpolationData,f)
+function CompositeInterpolationData(id::CompositeInterpolationData,f,continuity)
   CompositeInterpolationData(f,id.timeseries,
                                id.ts,
                                id.ks,
                                id.alg_choice,
                                id.dense,
-                               id.cache)
+                               id.cache,
+                               continuity)
 end
