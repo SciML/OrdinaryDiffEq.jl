@@ -72,21 +72,19 @@ end
 (interp::InterpolationData)(val,tvals,idxs,deriv,p,continuity::Symbol=:left) = ode_interpolation!(val,tvals,interp,idxs,deriv,p,continuity)
 (interp::CompositeInterpolationData)(val,tvals,idxs,deriv,p,continuity::Symbol=:left) = ode_interpolation!(val,tvals,interp,idxs,deriv,p,continuity)
 
-function InterpolationData(id::InterpolationData,f,continuity)
+function InterpolationData(id::InterpolationData,f)
   InterpolationData(f,id.timeseries,
                       id.ts,
                       id.ks,
                       id.dense,
-                      id.cache,
-                      continuity)
+                      id.cache)
 end
 
-function CompositeInterpolationData(id::CompositeInterpolationData,f,continuity)
+function CompositeInterpolationData(id::CompositeInterpolationData,f)
   CompositeInterpolationData(f,id.timeseries,
                                id.ts,
                                id.ks,
                                id.alg_choice,
                                id.dense,
-                               id.cache,
-                               continuity)
+                               id.cache)
 end
