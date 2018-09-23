@@ -11,9 +11,9 @@ using OrdinaryDiffEq: alg_order
 
   Random.seed!(100)
   dts = 1 ./2 .^(7:-1:4) #14->7 good plot
-  for Alg in [GenericIIF1,GenericIIF2,LawsonEuler,NorsettEuler,ETDRK2,ETDRK3,ETDRK4,HochOst4,Exprb32,Exprb43,ETD2]
+  for Alg in [GenericIIF1,GenericIIF2,LawsonEuler,NorsettEuler,ETDRK2,ETDRK3,ETDRK4,HochOst4,Exprb32,Exprb43,ETD2,KenCarp3]
     sim  = test_convergence(dts,prob,Alg())
-    if Alg in [Exprb32, Exprb43, KenCarp3, Kvaerno3]
+    if Alg in [Exprb32, Exprb43]
       @test_broken abs(sim.𝒪est[:l2] - alg_order(Alg())) < 0.2
     else
       @test abs(sim.𝒪est[:l2] - alg_order(Alg())) < 0.2
@@ -35,7 +35,7 @@ end
   prob = SplitODEProblem(linnonlin_fun_iip,u0,(0.0,1.0))
 
   dts = 1 ./2 .^(8:-1:4) #14->7 good plot
-  for Alg in [GenericIIF1,GenericIIF2,LawsonEuler,NorsettEuler,ETDRK2,ETDRK3,ETDRK4,HochOst4,Exprb32,Exprb43,ETD2]
+  for Alg in [GenericIIF1,GenericIIF2,LawsonEuler,NorsettEuler,ETDRK2,ETDRK3,ETDRK4,HochOst4,Exprb32,Exprb43,ETD2,KenCarp3]
     sim  = test_convergence(dts,prob,Alg())
     if Alg in [Exprb32, Exprb43]
       @test_broken abs(sim.𝒪est[:l2] - alg_order(Alg())) < 0.1
