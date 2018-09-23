@@ -47,7 +47,7 @@ either ForwardDiff or finite difference will be used depending on the
 """
 function calc_J(integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
   @unpack t,dt,uprev,u,f,p = integrator
-  if DiffEqBase.has_jac(f)
+  if !isa(f, SplitFunction) && DiffEqBase.has_jac(f)
     J = f.jac(uprev, p, t)
   else
     J = jacobian(cache.uf,uprev,integrator)
@@ -70,7 +70,7 @@ either ForwardDiff or finite difference will be used depending on the
 function calc_J!(integrator, cache::OrdinaryDiffEqMutableCache, is_compos)
   @unpack t,dt,uprev,u,f,p = integrator
   J = cache.J
-  if DiffEqBase.has_jac(f)
+  if !isa(f, SplitFunction) && DiffEqBase.has_jac(f)
     f.jac(J, uprev, p, t)
   else
     @unpack du1,uf,jac_config = cache
@@ -243,16 +243,17 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     isnewton = !(typeof(alg) <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm ||
                  typeof(alg) <: OrdinaryDiffEqRosenbrockAlgorithm)
     isnewton && ( nlcache = cache.nlsolve.cache; @unpack ηold,nl_iters = cache.nlsolve.cache)
+    issplit = f isa SplitFunction
 
     # calculate W
     new_W = true
-    if DiffEqBase.has_invW(f)
+    if !issplit && DiffEqBase.has_invW(f)
       # skip calculation of inv(W) if step is repeated
       !repeat_step && W_transform ? f.invW_t(W, uprev, p, dtgamma, t) :
                                     f.invW(W, uprev, p, dtgamma, t) # W == inverse W
       is_compos && calc_J!(integrator, cache, true)
 
-    elseif DiffEqBase.has_jac(f) && f.jac_prototype != nothing
+    elseif !issplit && DiffEqBase.has_jac(f) && f.jac_prototype != nothing
       # skip calculation of J if step is repeated
       if repeat_step || (alg_can_repeat_jac(alg) &&
                          (!integrator.last_stepfail && nl_iters == 1 &&
@@ -309,11 +310,12 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
   @unpack uf = cache
   mass_matrix = integrator.f.mass_matrix
   isarray = typeof(uprev) <: AbstractArray
+  issplit = f isa SplitFunction
   # calculate W
   uf.t = t
   is_compos = typeof(integrator.alg) <: CompositeAlgorithm
   if !W_transform
-    if DiffEqBase.has_jac(f)
+    if !issplit && DiffEqBase.has_jac(f)
       J = f.jac(uprev, p, t)
       if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
         J = DiffEqArrayOperator(J)
@@ -324,7 +326,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
       W = mass_matrix - dtgamma*J
     end
   else
-    if DiffEqBase.has_jac(f)
+    if !issplit && DiffEqBase.has_jac(f)
       J = f.jac(uprev, p, t)
       if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
         J = DiffEqArrayOperator(J)

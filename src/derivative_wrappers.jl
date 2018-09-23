@@ -50,7 +50,7 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, f
 end
 
 function build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
-  if !DiffEqBase.has_jac(f)
+  if f isa DiffEqBase.AbstractDiffEqLinearOperator || !DiffEqBase.has_jac(f)
     if alg_autodiff(alg)
       jac_config = ForwardDiff.JacobianConfig(uf,du1,uprev,ForwardDiff.Chunk{determine_chunksize(u,alg)}())
     else

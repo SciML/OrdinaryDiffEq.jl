@@ -93,13 +93,13 @@ function (S::NLNewton{true})(integrator)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z,dz,tmp,b,W,κ,tol,k,new_W,c,γ,max_iter,min_iter = nlcache
   mass_matrix = integrator.f.mass_matrix
-  islinear = f isa DiffEqBase.AbstractDiffEqLinearOperator
   #alg = unwrap_alg(integrator, true)
   if typeof(integrator.f) <: SplitFunction
     f = integrator.f.f1
   else
     f = integrator.f
   end
+  islinear = f isa DiffEqBase.AbstractDiffEqLinearOperator
   # precalculations
   κtol = κ*tol
   # initial step of NLNewton iteration
@@ -113,7 +113,7 @@ function (S::NLNewton{true})(integrator)
     mul!(vec(b),mass_matrix,vec(z))
     @. b = dt*k - b
   end
-  if DiffEqBase.DiffEqBase.has_invW(f)
+  if !islinear && DiffEqBase.DiffEqBase.has_invW(f)
     mul!(vec(dz),W,vec(b)) # Here W is actually invW
   else
     cache.linsolve(vec(dz),W,vec(b),new_W)
@@ -138,7 +138,7 @@ function (S::NLNewton{true})(integrator)
       mul!(vec(b),mass_matrix,vec(z))
       @. b = dt*k - b
     end
-    if DiffEqBase.DiffEqBase.has_invW(f)
+    if !islinear && DiffEqBase.DiffEqBase.has_invW(f)
       mul!(vec(dz),W,vec(b)) # Here W is actually invW
     else
       cache.linsolve(vec(dz),W,vec(b),false)

@@ -8,9 +8,10 @@ DiffEqBase.@def iipnlcachefields begin
   uToltype = real(uBottomEltypeNoUnits)
   ηold = one(uToltype)
 
-  nf = f isa SplitFunction ? f.f1 : f
-  _nf = alg isa SplitAlgorithms ? nf : f
   islinear = f isa DiffEqBase.AbstractDiffEqLinearOperator
+  issplit = f isa SplitFunction
+  nf = issplit ? f.f1 : f
+  _nf = alg isa SplitAlgorithms ? nf : f  
   if islinear && alg.nlsolve isa NLNewton
     J = f
     W = WOperator(f.mass_matrix, dt, J)
@@ -22,7 +23,7 @@ DiffEqBase.@def iipnlcachefields begin
     linsolve = nothing
     z₊ = z
   elseif typeof(alg.nlsolve) <: NLNewton
-    if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
+    if !issplit && DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
       W = WOperator(f, dt)
       J = nothing # is J = W.J better?
     else
@@ -60,7 +61,9 @@ DiffEqBase.@def oopnlcachefields begin
   nlcache = alg.nlsolve.cache
   @unpack κ,tol,max_iter,min_iter,new_W = nlcache
   z = uprev
-  nf = f isa SplitFunction ? f.f1 : f
+  islinear = f isa DiffEqBase.AbstractDiffEqLinearOperator
+  issplit = f isa SplitFunction
+  nf = issplit ? f.f1 : f
   _nf = alg isa SplitAlgorithms ? nf : f
   if typeof(alg.nlsolve) <: NLNewton
     # only use `nf` if the algorithm specializes on split eqs
@@ -68,8 +71,7 @@ DiffEqBase.@def oopnlcachefields begin
   else
     uf = nothing
   end
-  islinear = f isa DiffEqBase.AbstractDiffEqLinearOperator
-  if (islinear || DiffEqBase.has_jac(f)) && typeof(alg.nlsolve) <: NLNewton
+  if (islinear || (!issplit && DiffEqBase.has_jac(f))) && typeof(alg.nlsolve) <: NLNewton
     J = islinear ? f : f.jac(uprev, p, t)
     if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
       J = DiffEqArrayOperator(J)
