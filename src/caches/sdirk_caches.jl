@@ -48,14 +48,17 @@ DiffEqBase.@def oopnlcachefields begin
   nlcache = alg.nlsolve.cache
   @unpack κ,tol,max_iter,min_iter,new_W = nlcache
   z = uprev
+  nf = f isa SplitFunction ? f.f1 : f
   if typeof(alg.nlsolve) <: NLNewton
-    nf = alg isa SplitAlgorithms && f isa SplitFunction ? f.f1 : f
-    uf = DiffEqDiffTools.UDerivativeWrapper(nf,t,p)
+    # only use `nf` if the algorithm specializes on split eqs
+    uf = alg isa SplitAlgorithms ? DiffEqDiffTools.UDerivativeWrapper(nf,t,p) :
+                                   DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   else
     uf = nothing
   end
-  if DiffEqBase.has_jac(f) && typeof(alg.nlsolve) <: NLNewton
-    J = f.jac(uprev, p, t)
+  islinear = nf isa DiffEqBase.AbstractDiffEqLinearOperator
+  if (islinear || DiffEqBase.has_jac(f)) && typeof(alg.nlsolve) <: NLNewton
+    J = islinear ? nf : f.jac(uprev, p, t)
     if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
       J = DiffEqArrayOperator(J)
     end

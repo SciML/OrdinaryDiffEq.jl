@@ -305,6 +305,7 @@ end
 function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat_step, W_transform=false)
   @unpack t,uprev,p,f = integrator
   @unpack uf = cache
+  cache.nlsolve.cache.W isa DiffEqBase.AbstractDiffEqLinearOperator && return cache.nlsolve.cache.W
   mass_matrix = integrator.f.mass_matrix
   isarray = typeof(uprev) <: AbstractArray
   # calculate W

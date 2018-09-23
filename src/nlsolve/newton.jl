@@ -53,6 +53,8 @@ function (S::NLNewton{false})(integrator)
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z = z + dz
+  # fast pass when `f` is linear
+  f isa DiffEqBase.AbstractDiffEqLinearOperator && return (z, nlcache.ηold, iter, false)
 
   η = max(nlcache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol

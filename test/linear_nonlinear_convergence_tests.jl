@@ -13,7 +13,7 @@ using OrdinaryDiffEq: alg_order
   dts = 1 ./2 .^(7:-1:4) #14->7 good plot
   for Alg in [GenericIIF1,GenericIIF2,LawsonEuler,NorsettEuler,ETDRK2,ETDRK3,ETDRK4,HochOst4,Exprb32,Exprb43,ETD2]
     sim  = test_convergence(dts,prob,Alg())
-    if Alg in [Exprb32, Exprb43]
+    if Alg in [Exprb32, Exprb43, KenCarp3, Kvaerno3]
       @test_broken abs(sim.𝒪est[:l2] - alg_order(Alg())) < 0.2
     else
       @test abs(sim.𝒪est[:l2] - alg_order(Alg())) < 0.2
