@@ -17,8 +17,9 @@ DiffEqBase.@def iipnlcachefields begin
       W = similar(J)
     end
     du1 = zero(rate_prototype)
-    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
-    jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
+    nf = alg isa SplitAlgorithms ? f.f1 : f
+    uf = DiffEqDiffTools.UJacobianWrapper(nf,t,p)
+    jac_config = build_jac_config(alg,nf,uf,du1,uprev,u,tmp,dz)
     linsolve = alg.linsolve(Val{:init},uf,u)
     z₊ = z
   elseif typeof(alg.nlsolve) <: NLFunctional
@@ -48,7 +49,8 @@ DiffEqBase.@def oopnlcachefields begin
   @unpack κ,tol,max_iter,min_iter,new_W = nlcache
   z = uprev
   if typeof(alg.nlsolve) <: NLNewton
-    uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+    nf = alg isa SplitAlgorithms ? f.f1 : f
+    uf = DiffEqDiffTools.UDerivativeWrapper(nf,t,p)
   else
     uf = nothing
   end

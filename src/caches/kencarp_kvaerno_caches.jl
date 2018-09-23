@@ -7,9 +7,6 @@ end
 function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   @oopnlcachefields
-  if typeof(f) <: SplitFunction && uf != nothing
-    uf = DiffEqDiffTools.UDerivativeWrapper(f.f1,t,p)
-  end
   tab = KenCarp3Tableau(uToltype,real(tTypeNoUnits))
   nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,tab.c3,ηold,z₊,dz,tmp,b,k))
 
@@ -56,11 +53,6 @@ function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   if typeof(f) <: SplitFunction
     k1 = similar(u,axes(u)); k2 = similar(u,axes(u))
     k3 = similar(u,axes(u)); k4 = similar(u,axes(u))
-    if uf != nothing
-      uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t,p)
-      linsolve = alg.linsolve(Val{:init},uf,u)
-      jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
-    end
   else
     k1 = nothing; k2 = nothing
     k3 = nothing; k4 = nothing
@@ -141,9 +133,6 @@ end
 function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   @oopnlcachefields
-  if typeof(f) <: SplitFunction && uf != nothing
-    uf = DiffEqDiffTools.UDerivativeWrapper(f.f1,t,p)
-  end
   uprev3 = u
   tprev2 = t
   tab = KenCarp4Tableau(uToltype,real(tTypeNoUnits))
@@ -198,11 +187,6 @@ function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
     k1 = similar(u,axes(u)); k2 = similar(u,axes(u))
     k3 = similar(u,axes(u)); k4 = similar(u,axes(u))
     k5 = similar(u,axes(u)); k6 = similar(u,axes(u))
-    if uf != nothing
-      uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t,p)
-      linsolve = alg.linsolve(Val{:init},uf,u)
-      jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
-    end
   else
     k1 = nothing; k2 = nothing
     k3 = nothing; k4 = nothing
@@ -286,9 +270,6 @@ end
 function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   @oopnlcachefields
-  if typeof(f) <: SplitFunction && uf != nothing
-    uf = DiffEqDiffTools.UDerivativeWrapper(f.f1,t,p)
-  end
   tab = KenCarp5Tableau(uToltype,real(tTypeNoUnits))
   nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,tab.c3,ηold,z₊,dz,tmp,b,k))
 
@@ -347,11 +328,6 @@ function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
     k3 = similar(u,axes(u)); k4 = similar(u,axes(u))
     k5 = similar(u,axes(u)); k6 = similar(u,axes(u))
     k7 = similar(u,axes(u)); k8 = similar(u,axes(u))
-    if uf != nothing
-      uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t,p)
-      linsolve = alg.linsolve(Val{:init},uf,u)
-      jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
-    end
   else
     k1 = nothing; k2 = nothing
     k3 = nothing; k4 = nothing
