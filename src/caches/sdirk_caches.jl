@@ -8,7 +8,20 @@ DiffEqBase.@def iipnlcachefields begin
   uToltype = real(uBottomEltypeNoUnits)
   ηold = one(uToltype)
 
-  if typeof(alg.nlsolve) <: NLNewton
+  nf = f isa SplitFunction ? f.f1 : f
+  _nf = alg isa SplitAlgorithms ? nf : f
+  islinear = f isa DiffEqBase.AbstractDiffEqLinearOperator
+  if islinear && alg.nlsolve isa NLNewton
+    J = f
+    W = WOperator(f.mass_matrix, dt, J)
+    J = nothing
+    W = nothing
+    du1 = rate_prototype
+    uf = nothing
+    jac_config = nothing
+    linsolve = nothing
+    z₊ = z
+  elseif typeof(alg.nlsolve) <: NLNewton
     if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
       W = WOperator(f, dt)
       J = nothing # is J = W.J better?
@@ -17,9 +30,8 @@ DiffEqBase.@def iipnlcachefields begin
       W = similar(J)
     end
     du1 = zero(rate_prototype)
-    nf = alg isa SplitAlgorithms && f isa SplitFunction ? f.f1 : f
-    uf = DiffEqDiffTools.UJacobianWrapper(nf,t,p)
-    jac_config = build_jac_config(alg,nf,uf,du1,uprev,u,tmp,dz)
+    uf = DiffEqDiffTools.UJacobianWrapper(_nf,t,p)
+    jac_config = build_jac_config(alg,_nf,uf,du1,uprev,u,tmp,dz)
     linsolve = alg.linsolve(Val{:init},uf,u)
     z₊ = z
   elseif typeof(alg.nlsolve) <: NLFunctional
@@ -49,16 +61,16 @@ DiffEqBase.@def oopnlcachefields begin
   @unpack κ,tol,max_iter,min_iter,new_W = nlcache
   z = uprev
   nf = f isa SplitFunction ? f.f1 : f
+  _nf = alg isa SplitAlgorithms ? nf : f
   if typeof(alg.nlsolve) <: NLNewton
     # only use `nf` if the algorithm specializes on split eqs
-    uf = alg isa SplitAlgorithms ? DiffEqDiffTools.UDerivativeWrapper(nf,t,p) :
-                                   DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+    uf = DiffEqDiffTools.UDerivativeWrapper(_nf,t,p)
   else
     uf = nothing
   end
-  islinear = nf isa DiffEqBase.AbstractDiffEqLinearOperator
+  islinear = f isa DiffEqBase.AbstractDiffEqLinearOperator
   if (islinear || DiffEqBase.has_jac(f)) && typeof(alg.nlsolve) <: NLNewton
-    J = islinear ? nf : f.jac(uprev, p, t)
+    J = islinear ? f : f.jac(uprev, p, t)
     if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
       J = DiffEqArrayOperator(J)
     end

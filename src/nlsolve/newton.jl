@@ -36,6 +36,7 @@ function (S::NLNewton{false})(integrator)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z,tmp,W,κ,tol,c,γ,max_iter,min_iter = nlcache
   mass_matrix = integrator.f.mass_matrix
+  islinear = f isa DiffEqBase.AbstractDiffEqLinearOperator
   #alg = unwrap_alg(integrator, true)
   if typeof(integrator.f) <: SplitFunction
     f = integrator.f.f1
@@ -53,10 +54,10 @@ function (S::NLNewton{false})(integrator)
   dz = W\b
   ndz = integrator.opts.internalnorm(dz)
   z = z + dz
-  # fast pass when `f` is linear
-  f isa DiffEqBase.AbstractDiffEqLinearOperator && return (z, nlcache.ηold, iter, false)
 
   η = max(nlcache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
+  # fast pass when `f` is linear
+  islinear && return (z, η, iter, false)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # NLNewton iteration
@@ -92,6 +93,7 @@ function (S::NLNewton{true})(integrator)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z,dz,tmp,b,W,κ,tol,k,new_W,c,γ,max_iter,min_iter = nlcache
   mass_matrix = integrator.f.mass_matrix
+  islinear = f isa DiffEqBase.AbstractDiffEqLinearOperator
   #alg = unwrap_alg(integrator, true)
   if typeof(integrator.f) <: SplitFunction
     f = integrator.f.f1
@@ -120,6 +122,8 @@ function (S::NLNewton{true})(integrator)
   z .+= dz
 
   η = max(nlcache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
+  # fast pass when `f` is linear
+  islinear && return (z, η, iter, false)
   do_newton = integrator.success_iter == 0 || η*ndz > κtol
 
   # NLNewton iteration

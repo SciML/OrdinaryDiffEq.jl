@@ -233,6 +233,7 @@ function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrM
 end
 
 function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_step, W_transform=false)
+  integrator.f isa DiffEqBase.AbstractDiffEqLinearOperator && return nothing
   @inbounds begin
     @unpack t,dt,uprev,u,f,p = integrator
     @unpack J,W = cache
@@ -241,7 +242,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     alg = unwrap_alg(integrator, true)
     isnewton = !(typeof(alg) <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm ||
                  typeof(alg) <: OrdinaryDiffEqRosenbrockAlgorithm)
-    isnewton && ( nlcache = cache.nlsolve.cache; @unpack ηold,nl_iters = cache.nlsolve.cache )
+    isnewton && ( nlcache = cache.nlsolve.cache; @unpack ηold,nl_iters = cache.nlsolve.cache)
 
     # calculate W
     new_W = true
@@ -303,9 +304,9 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
 end
 
 function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat_step, W_transform=false)
+  integrator.f isa DiffEqBase.AbstractDiffEqLinearOperator && return integrator.f
   @unpack t,uprev,p,f = integrator
   @unpack uf = cache
-  cache.nlsolve.cache.W isa DiffEqBase.AbstractDiffEqLinearOperator && return cache.nlsolve.cache.W
   mass_matrix = integrator.f.mass_matrix
   isarray = typeof(uprev) <: AbstractArray
   # calculate W
