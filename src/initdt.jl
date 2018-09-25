@@ -66,7 +66,7 @@
       integrator.alg.linsolve(ftmp, copy(prob.f.mass_matrix), f₀, true)
       f₀ .= ftmp
     catch
-      return _tType(1//10^(6))
+      return convert(_tType,1//10^(6))
     end
   end
 
