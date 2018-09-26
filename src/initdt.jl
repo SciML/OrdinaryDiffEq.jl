@@ -133,9 +133,9 @@ end
   d₁ = internalnorm(f₀/sk*oneunit_tType)
 
   if d₀ < 1//10^(5) || d₁ < 1//10^(5)
-    dt₀ = convert(_tType,1//10^(6))
+    dt₀ = convert(_tType,oneunit(_tType)*1//10^(6))
   else
-    dt₀ = convert(_tType,(d₀/d₁)/100)
+    dt₀ = convert(_tType,oneunit(_tType)*(d₀/d₁)/100)
   end
   dt₀ = min(dt₀,dtmax_tdir)
   dt₀_tdir = tdir*dt₀
