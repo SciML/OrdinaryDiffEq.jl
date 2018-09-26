@@ -55,7 +55,6 @@ function modify_dt_for_tstops!(integrator)
 end
 
 function savevalues!(integrator::ODEIntegrator,force_save=false,reduce_size=true)
-  saved = false
   while !isempty(integrator.opts.saveat) && integrator.tdir*top(integrator.opts.saveat) <= integrator.tdir*integrator.t # Perform saveat
     integrator.saveiter += 1
     curt = pop!(integrator.opts.saveat)
@@ -71,7 +70,7 @@ function savevalues!(integrator::ODEIntegrator,force_save=false,reduce_size=true
       end
     else # ==t, just save
       copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
-      if integrator.opts.save_idxs ==nothing
+      if integrator.opts.save_idxs == nothing
         copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
       else
         copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u[integrator.opts.save_idxs],Val{false})
@@ -90,9 +89,8 @@ function savevalues!(integrator::ODEIntegrator,force_save=false,reduce_size=true
         copyat_or_push!(integrator.sol.alg_choice,integrator.saveiter,integrator.cache.current)
       end
     end
-    saved = true
   end
-  if (force_save && !saved) || (integrator.opts.save_everystep && integrator.iter%integrator.opts.timeseries_steps==0)
+  if force_save || (integrator.opts.save_everystep && integrator.iter%integrator.opts.timeseries_steps==0)
     integrator.saveiter += 1
     if integrator.opts.save_idxs == nothing
       copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
