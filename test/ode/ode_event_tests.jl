@@ -78,7 +78,8 @@ tspan = (0.0,15.0)
 prob = ODEProblem(f,u0,tspan)
 
 sol = solve(prob,Tsit5(),callback=callback_single,adaptive=false,dt=1/4)
-t = 3.1927542840704777
+sol = solve(prob,Tsit5(),callback=callback_single,save_everystep=false)
+t = sol.t[end÷2]
 sol = solve(prob,Tsit5(),callback=callback_single,saveat=t)
 @test count(x->x==t, sol.t) == 2
 
