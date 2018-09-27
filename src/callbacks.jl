@@ -204,8 +204,12 @@ function apply_callback!(integrator,callback::ContinuousCallback,cb_time,prev_si
   end
   saved_in_cb = false
 
+  # handle saveat
+  savevalues!(integrator)
+
   @inbounds if callback.save_positions[1]
-    savevalues!(integrator,true)
+    # if already saved then skip saving
+    last(integrator.sol.t) == integrator.t || savevalues!(integrator,true)
     saved_in_cb = true
   end
 

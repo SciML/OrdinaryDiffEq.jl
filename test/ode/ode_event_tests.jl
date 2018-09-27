@@ -78,8 +78,15 @@ tspan = (0.0,15.0)
 prob = ODEProblem(f,u0,tspan)
 
 sol = solve(prob,Tsit5(),callback=callback_single,adaptive=false,dt=1/4)
-@test sol(sol.t[findfirst(x->abs(x[1])<1e-12, sol.u)],continuity=:right)[2] > 0
-@test sol(sol.t[findfirst(x->abs(x[1])<1e-12, sol.u)],continuity=:left)[2] < 0
+sol = solve(prob,Tsit5(),callback=callback_single,save_everystep=false)
+t = sol.t[end÷2] # this is the callback time point
+sol = solve(prob,Tsit5(),callback=callback_single,saveat=t)
+@test count(x->x==t, sol.t) == 2
+sol = solve(prob,Tsit5(),callback=callback_single,saveat=t-eps(t))
+@test count(x->x==t, sol.t) == 2
+# check interpolation @ discontinuity
+@test sol(t,continuity=:right)[2] > 0
+@test sol(t,continuity=:left)[2] < 0
 
 #plot(sol,denseplot=true)
 

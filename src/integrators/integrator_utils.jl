@@ -70,7 +70,7 @@ function savevalues!(integrator::ODEIntegrator,force_save=false,reduce_size=true
       end
     else # ==t, just save
       copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
-      if integrator.opts.save_idxs ==nothing
+      if integrator.opts.save_idxs == nothing
         copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
       else
         copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u[integrator.opts.save_idxs],Val{false})
