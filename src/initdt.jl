@@ -66,7 +66,7 @@
       integrator.alg.linsolve(ftmp, copy(prob.f.mass_matrix), f₀, true)
       f₀ .= ftmp
     catch
-      return convert(_tType,1//10^(6))
+      return convert(_tType,oneunit_tType*1//10^(6))
     end
   end
 
@@ -78,16 +78,16 @@
   d₁ = internalnorm(tmp)
 
   if d₀ < 1//10^(5) || d₁ < 1//10^(5)
-    dt₀ = convert(_tType,1//10^(6))
+    dt₀ = convert(_tType,oneunit_tType*1//10^(6))
   else
-    dt₀ = convert(_tType,(d₀/d₁)/100)
+    dt₀ = convert(_tType,oneunit_tType*(d₀/d₁)/100)
   end
   dt₀ = min(dt₀,dtmax_tdir)
 
   if typeof(one(_tType)) <: AbstractFloat && dt₀ < 10eps(_tType)*oneunit(_tType)
     # This catches Andreas' non-singular example
     # should act like it's singular
-    return tdir*convert(_tType,1//10^(6))
+    return tdir*convert(_tType,oneunit_tType*1//10^(6))
   end
 
   dt₀_tdir = tdir*dt₀
@@ -108,9 +108,9 @@
 
   max_d₁d₂ = max(d₁,d₂)
   if max_d₁d₂ <= 1//Int64(10)^(15)
-    dt₁ = max(convert(_tType,1//10^(6)),dt₀*1//10^(3))
+    dt₁ = max(convert(_tType,oneunit_tType*1//10^(6)),dt₀*1//10^(3))
   else
-    dt₁ = convert(_tType,10.0^(-(2+log10(max_d₁d₂))/get_current_alg_order(integrator.alg,integrator.cache)))
+    dt₁ = convert(_tType,oneunit_tType*10.0^(-(2+log10(max_d₁d₂))/get_current_alg_order(integrator.alg,integrator.cache)))
   end
   dt = tdir*min(100dt₀,dt₁,dtmax_tdir)
 end
@@ -133,9 +133,9 @@ end
   d₁ = internalnorm(f₀/sk*oneunit_tType)
 
   if d₀ < 1//10^(5) || d₁ < 1//10^(5)
-    dt₀ = convert(_tType,oneunit(_tType)*1//10^(6))
+    dt₀ = convert(_tType,oneunit_tType*1//10^(6))
   else
-    dt₀ = convert(_tType,oneunit(_tType)*(d₀/d₁)/100)
+    dt₀ = convert(_tType,oneunit_tType*(d₀/d₁)/100)
   end
   dt₀ = min(dt₀,dtmax_tdir)
   dt₀_tdir = tdir*dt₀
@@ -147,9 +147,9 @@ end
 
   max_d₁d₂ = max(d₁, d₂)
   if max_d₁d₂ <= 1//Int64(10)^(15)
-    dt₁ = max(convert(_tType,1//10^(6)),dt₀*1//10^(3))
+    dt₁ = max(convert(_tType,oneunit_tType*1//10^(6)),dt₀*1//10^(3))
   else
-    dt₁ = _tType(10.0^(-(2+log10(max_d₁d₂))/get_current_alg_order(integrator.alg,integrator.cache)))
+    dt₁ = _tType(oneunit_tType*10.0^(-(2+log10(max_d₁d₂))/get_current_alg_order(integrator.alg,integrator.cache)))
   end
   dt = tdir*min(100dt₀,dt₁,dtmax_tdir)
 end
