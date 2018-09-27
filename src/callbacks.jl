@@ -203,15 +203,13 @@ function apply_callback!(integrator,callback::ContinuousCallback,cb_time,prev_si
     change_t_via_interpolation!(integrator,integrator.tprev+cb_time)
   end
   saved_in_cb = false
-  oldopt = integrator.opts.save_everystep
+
+  # handle saveat
+  savevalues!(integrator)
 
   @inbounds if callback.save_positions[1]
-    integrator.opts.save_everystep = true
-    !isempty(integrator.opts.saveat) &&
-      integrator.t == top(integrator.opts.saveat) &&
-        (integrator.opts.save_everystep = false)
-    savevalues!(integrator)
-    integrator.opts.save_everystep = oldopt
+    # if already saved then skip saving
+    last(integrator.sol.t) == integrator.t || savevalues!(integrator,true)
     saved_in_cb = true
   end
 
