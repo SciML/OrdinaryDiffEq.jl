@@ -106,9 +106,9 @@ end
     end
     for i in 2:length(Θs)
       if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache && !(typeof(callback.idxs) <: Number)
-        ode_interpolant!(tmp,Θs[i],integrator,callback.idxs,Val{0})
+        integrator(tmp,Θs[i],Val{0},true,idxs=callback.idxs)
       else
-        tmp = ode_interpolant(Θs[i],integrator,callback.idxs,Val{0})
+        tmp = integrator(Θs[i],Val{0},true,idxs=callback.idxs)
       end
       new_sign = callback.condition(tmp,integrator.tprev+integrator.dt*Θs[i],integrator)
       if ((prev_sign<0 && !(typeof(callback.affect!)<:Nothing)) || (prev_sign>0 && !(typeof(callback.affect_neg!)<:Nothing))) && prev_sign*new_sign<0
