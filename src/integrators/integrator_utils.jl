@@ -464,18 +464,8 @@ function reset_fsal!(integrator)
   # integrator.reeval_fsal = false
 end
 
-function (integrator::ODEIntegrator)(t,deriv::Type=Val{0},relative=false;idxs=nothing)
-  relative && (t = integrator.tprev+integrator.dt*t)
+function (integrator::ODEIntegrator)(t,deriv::Type=Val{0};idxs=nothing)
   current_interpolant(t,integrator,idxs,deriv)
 end
 
-function (integrator::ODEIntegrator)(val::AbstractArray,t::Union{Number,AbstractArray},
-                            deriv::Type=Val{0},relative=false;idxs=nothing)
-  if t isa Number
-    relative && (t = integrator.tprev+integrator.dt*t)
-  else
-    # no allocation, but it mutates `t`
-    relative && (@. t = integrator.tprev+integrator.dt*t)
-  end
-  current_interpolant!(val,t,integrator,idxs,deriv)
-end
+(integrator::ODEIntegrator)(val::AbstractArray,t::Union{Number,AbstractArray},deriv::Type=Val{0};idxs=nothing) = current_interpolant!(val,t,integrator,idxs,deriv)

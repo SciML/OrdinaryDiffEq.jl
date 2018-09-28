@@ -66,13 +66,11 @@ end
       end
     end
 
+    abst = integrator.tprev+integrator.dt*100*eps(integrator.tprev)
     if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache && !(typeof(callback.idxs) <: Number)
-      ode_interpolant!(tmp,100*eps(integrator.tprev),
-                       integrator,callback.idxs,Val{0})
+      integrator(tmp,abst,Val{0},idxs=callback.idxs)
     else
-
-      tmp = ode_interpolant(100*eps(integrator.tprev),
-                            integrator,callback.idxs,Val{0})
+      tmp = integrator(abst,Val{0},idxs=callback.idxs)
     end
 
     tmp_condition = callback.condition(tmp,integrator.tprev +
@@ -105,10 +103,11 @@ end
       end
     end
     for i in 2:length(Θs)
+      abst = integrator.tprev+integrator.dt*Θs[i]
       if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache && !(typeof(callback.idxs) <: Number)
-        integrator(tmp,Θs[i],Val{0},true,idxs=callback.idxs)
+        integrator(tmp,abst,Val{0},idxs=callback.idxs)
       else
-        tmp = integrator(Θs[i],Val{0},true,idxs=callback.idxs)
+        tmp = integrator(abst,Val{0},idxs=callback.idxs)
       end
       new_sign = callback.condition(tmp,integrator.tprev+integrator.dt*Θs[i],integrator)
       if ((prev_sign<0 && !(typeof(callback.affect!)<:Nothing)) || (prev_sign>0 && !(typeof(callback.affect_neg!)<:Nothing))) && prev_sign*new_sign<0
@@ -147,10 +146,11 @@ function find_callback_time(integrator,callback,counter)
           end
         end
         zero_func = (Θ) -> begin
+          abst = integrator.tprev+integrator.dt*Θ
           if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache && !(typeof(callback.idxs) <: Number)
-            ode_interpolant!(tmp,Θ,integrator,callback.idxs,Val{0})
+            integrator(tmp,abst,Val{0},idxs=callback.idxs)
           else
-            tmp = ode_interpolant(Θ,integrator,callback.idxs,Val{0})
+            tmp = integrator(abst,Val{0},idxs=callback.idxs)
           end
           callback.condition(tmp,integrator.tprev+Θ*integrator.dt,integrator)
         end
