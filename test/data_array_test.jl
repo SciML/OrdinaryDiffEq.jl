@@ -53,8 +53,9 @@ end
 
   u0 = SimType{Float64}([10;10], 0.0)
   prob = ODEProblem(f,u0,(0.0,10.0))
-  sol = solve(prob,Tsit5(),callback = cbs, tstops=tstop)
-
+  sol = solve(prob,Tsit5(),callback = cbs,tstops=tstop)
+  sol1 = solve(prob,Tsit5(),callback = cbs,tstops=tstop,saveat=tstop)
+  @test count(x->x==tstop[1], sol1.t) == 2
   sol(1.5:0.5:2.5)
 
   @test [sol[i].f1 for i in eachindex(sol)] == [fill(0., 9);1.5*ones(5);-1.5*ones(4)]
