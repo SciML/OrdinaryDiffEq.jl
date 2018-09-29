@@ -19,7 +19,7 @@
     f(f₀,u0,p,t)
   else
     # TODO: use more caches
-    f₀ = u0/t; fill!(f₀,zero(eltype(f₀)))
+    f₀ = zero.(u0./t)
     f(f₀,u0,p,t)
   end
 
