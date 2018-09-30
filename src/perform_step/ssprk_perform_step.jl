@@ -471,7 +471,7 @@ end
 
   integrator.fsallast = f(u, p, t+dt)
   if integrator.opts.adaptive
-    integrator.EEst = integrator.opts.internalnorm(@. (utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+    integrator.EEst = integrator.opts.internalnorm(@. (utilde-u)/(integrator.opts.abstol+max(integrator.opts.internalnorm(uprev),integrator.opts.internalnorm(u))*integrator.opts.reltol))
   end
   integrator.k[1] = integrator.fsalfirst
   integrator.u = u
@@ -514,7 +514,7 @@ end
   step_limiter!(u, f, t+dt)
 
   if integrator.opts.adaptive
-    @. atmp = (utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
+    @. atmp = (utilde-u)/(integrator.opts.abstol+max(integrator.opts.internalnorm(uprev),integrator.opts.internalnorm(u))*integrator.opts.reltol)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   f( k,  u, p, t+dt)
