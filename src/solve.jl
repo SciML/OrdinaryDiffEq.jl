@@ -109,12 +109,12 @@ function DiffEqBase.__init(
   tTypeNoUnits   = typeof(one(tType))
 
   if typeof(alg) <: FunctionMap
-    abstol_internal = real.(zero(u))
+    abstol_internal = real.(zero.(u))
   elseif abstol == nothing
-    if uBottomEltypeNoUnits == uBottomEltype || !(typeof(u) <: ArrayPartition)
-      abstol_internal = real(uBottomEltype(uBottomEltype(1)*1//10^6))
+    if uBottomEltypeNoUnits == uBottomEltype
+      abstol_internal = real(convert(uBottomEltype,oneunit(uBottomEltype)*1//10^6))
     else
-      abstol_internal = real.(ones(u).*1//10^6)
+      abstol_internal = real.(oneunit.(u).*1//10^6)
     end
   else
     abstol_internal = real.(abstol)
@@ -123,7 +123,11 @@ function DiffEqBase.__init(
   if typeof(alg) <: FunctionMap
     reltol_internal = real.(zero(first(u)/t))
   elseif reltol == nothing
-    reltol_internal = real(uBottomEltypeNoUnits(1//10^3))
+    if uBottomEltypeNoUnits == uBottomEltype
+      reltol_internal = real(convert(uBottomEltype,oneunit(uBottomEltype)*1//10^3))
+    else
+      reltol_internal = real.(oneunit.(u).*1//10^3)
+    end
   else
     reltol_internal = real.(reltol)
   end
@@ -131,7 +135,7 @@ function DiffEqBase.__init(
   dtmax > zero(dtmax) && tdir < 0 && (dtmax *= tdir) # Allow positive dtmax, but auto-convert
   # dtmin is all abs => does not care about sign already.
 
-  if isinplace(prob) && typeof(u) <: AbstractArray && eltype(u) <: Number # Could this be more efficient for other arrays?
+  if isinplace(prob) && typeof(u) <: AbstractArray && eltype(u) <: Number && uBottomEltypeNoUnits == uBottomEltype # Could this be more efficient for other arrays?
     if !(typeof(u) <: ArrayPartition)
       rate_prototype = similar(u,typeof(oneunit(uBottomEltype)/oneunit(tType)))
     else
