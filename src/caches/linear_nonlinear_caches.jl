@@ -34,7 +34,7 @@ end
 function alg_cache(alg::GenericIIF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u,axes(u)); rtmp1 = zero(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
-  A = f.f1
+  A = f.f1.f
   expA = exp(A*dt)
   rhs = RHS_IIF(f,tmp,t,t,uEltypeNoUnits(1//1),dual_cache,p)
   k = similar(rate_prototype); fsalfirst = similar(rate_prototype)
@@ -76,7 +76,7 @@ end
 function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u,axes(u)); rtmp1 = zero(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
-  A = f.f1
+  A = f.f1.f
   expA = exp(A*dt)
   k = similar(rate_prototype); fsalfirst = similar(rate_prototype)
   rhs = RHS_IIF(f,tmp,t,t,uEltypeNoUnits(1//2),dual_cache,p)
@@ -186,7 +186,7 @@ for (Alg, Cache) in [(:LawsonEuler, :LawsonEulerConstantCache),
       ops = nothing # no caching
     else
       isa(f, SplitFunction) || throw(ArgumentError("Caching can only be used with SplitFunction"))
-      A = size(f.f1) == () ? convert(Number, f.f1) : convert(AbstractMatrix, f.f1)
+      A = size(f.f1.f) == () ? convert(Number, f.f1.f) : convert(AbstractMatrix, f.f1.f)
       ops = expRK_operators(alg, dt, A)
     end
     if isa(f, SplitFunction) || DiffEqBase.has_jac(f)
@@ -235,7 +235,7 @@ function alg_cache_expRK(alg::ExponentialAlgorithm,u,uEltypeNoUnits,uprev,f,t,dt
   else
     KsCache = nothing
     # Precompute the operators
-    A = size(f.f1) == () ? convert(Number, f.f1) : convert(AbstractMatrix, f.f1)
+    A = size(f.f1.f) == () ? convert(Number, f.f1.f) : convert(AbstractMatrix, f.f1.f)
     ops = expRK_operators(alg, dt, A)
   end
   return uf, jac_config, J, ops, KsCache
@@ -287,7 +287,7 @@ function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
     KsCache = (Ks, expv_cache)
   else
     KsCache = nothing
-    A = size(f.f1) == () ? convert(Number, f.f1) : convert(AbstractMatrix, f.f1)
+    A = size(f.f1.f) == () ? convert(Number, f.f1.f) : convert(AbstractMatrix, f.f1.f)
     exphA = expRK_operators(alg, dt, A)
   end
   LawsonEulerCache(u,uprev,tmp,dz,rtmp,G,du1,jac_config,uf,J,exphA,KsCache)
@@ -812,7 +812,7 @@ struct ETD2ConstantCache{expType} <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::ETD2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  A = size(f.f1) == () ? convert(Number, f.f1) : convert(AbstractMatrix, f.f1)
+  A = size(f.f1.f) == () ? convert(Number, f.f1.f) : convert(AbstractMatrix, f.f1.f)
   Phi = phi(dt*A, 2)
   ETD2ConstantCache(Phi[1], Phi[2], Phi[2] + Phi[3], -Phi[3])
 end
@@ -830,7 +830,7 @@ struct ETD2Cache{uType,rateType,expType} <: OrdinaryDiffEqMutableCache
 end
 
 function alg_cache(alg::ETD2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  A = size(f.f1) == () ? convert(Number, f.f1) : convert(AbstractMatrix, f.f1)
+  A = size(f.f1.f) == () ? convert(Number, f.f1.f) : convert(AbstractMatrix, f.f1.f)
   Phi = phi(dt*A, 2)
   ETD2Cache(u,uprev,zero(u),zero(rate_prototype),zero(rate_prototype),Phi[1],Phi[2],Phi[2]+Phi[3],-Phi[3])
 end
