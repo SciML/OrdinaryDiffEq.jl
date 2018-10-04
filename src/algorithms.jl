@@ -767,3 +767,7 @@ const MassMatrixAlgorithms = Union{OrdinaryDiffEqRosenbrockAlgorithm,
 const MultistepAlgorithms = Union{IRKN3,IRKN4,
                                   ABDF2,
                                   AB3,AB4,AB5,ABM32,ABM43,ABM54}
+
+const SplitAlgorithms = Union{CNAB2,CNLF2,SBDF,
+                              GenericIIF1,GenericIIF2,
+                              KenCarp3,KenCarp4,KenCarp5}

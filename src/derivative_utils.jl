@@ -241,10 +241,18 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     alg = unwrap_alg(integrator, true)
     isnewton = !(typeof(alg) <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm ||
                  typeof(alg) <: OrdinaryDiffEqRosenbrockAlgorithm)
-    isnewton && ( nlcache = cache.nlsolve.cache; @unpack ηold,nl_iters = cache.nlsolve.cache )
+    isnewton && ( nlcache = cache.nlsolve.cache; @unpack ηold,nl_iters = cache.nlsolve.cache)
+
+    # fast pass
+    # we only want to factorize the linear operator once
+    new_jac = true
+    new_W = true
+    if (f isa ODEFunction && islinear(f.f)) || (f isa SplitFunction && islinear(f.f1.f))
+      new_jac = false
+      @goto J2W # Jump to W calculation directly, because we already have J
+    end
 
     # calculate W
-    new_W = true
     if DiffEqBase.has_invW(f)
       # skip calculation of inv(W) if step is repeated
       !repeat_step && W_transform ? f.invW_t(W, uprev, p, dtgamma, t) :
@@ -261,6 +269,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
         new_jac = true
         DiffEqBase.update_coefficients!(W,uprev,p,t)
       end
+      @label J2W
       # skip calculation of W if step is repeated
       if !repeat_step && (!alg_can_repeat_jac(alg) ||
                           (integrator.iter < 1 || new_jac ||
@@ -310,28 +319,19 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
   # calculate W
   uf.t = t
   is_compos = typeof(integrator.alg) <: CompositeAlgorithm
-  if !W_transform
-    if DiffEqBase.has_jac(f)
-      J = f.jac(uprev, p, t)
-      if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
-        J = DiffEqArrayOperator(J)
-      end
-      W = WOperator(mass_matrix, dtgamma, J; transform=false)
-    else
-      J = calc_J(integrator, cache, is_compos)
-      W = mass_matrix - dtgamma*J
+  if (f isa ODEFunction && islinear(f.f)) || (f isa SplitFunction && islinear(f.f1.f))
+    J = f.f1.f
+    W = WOperator(mass_matrix, dtgamma, J; transform=W_transform)
+  elseif DiffEqBase.has_jac(f)
+    J = f.jac(uprev, p, t)
+    if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
+      J = DiffEqArrayOperator(J)
     end
+    W = WOperator(mass_matrix, dtgamma, J; transform=W_transform)
   else
-    if DiffEqBase.has_jac(f)
-      J = f.jac(uprev, p, t)
-      if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
-        J = DiffEqArrayOperator(J)
-      end
-      W = WOperator(mass_matrix, dtgamma, J; transform=true)
-    else
-      J = calc_J(integrator, cache, is_compos)
-      W = mass_matrix*inv(dtgamma) - J
-    end
+    J = calc_J(integrator, cache, is_compos)
+    W = W_transform ? mass_matrix*inv(dtgamma) - J :
+                      mass_matrix - dtgamma*J
   end
   is_compos && (integrator.eigen_est = isarray ? opnorm(J, Inf) : J)
   W

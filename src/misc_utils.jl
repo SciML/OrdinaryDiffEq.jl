@@ -128,3 +128,5 @@ macro swap!(x,y)
     $(esc(y)) = tmp
   end
 end
+
+islinear(f) = f isa DiffEqBase.AbstractDiffEqLinearOperator && f.update_func === DEFAULT_UPDATE_FUNC
