@@ -1,4 +1,10 @@
-function initialize!(integrator,cache::AB3ConstantCache)
+function initialize!(integrator,cache::Union{AB3ConstantCache,
+                                             AB4ConstantCache,
+                                             AB5ConstantCache,
+                                             ABM32ConstantCache,
+                                             ABM43ConstantCache,
+                                             ABM54ConstantCache})
+
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -7,6 +13,23 @@ function initialize!(integrator,cache::AB3ConstantCache)
   integrator.fsallast = zero(integrator.fsalfirst)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
+end
+
+function initialize!(integrator,cache::Union{AB3Cache,
+                                             AB4Cache,
+                                             AB5Cache,
+                                             ABM32Cache,
+                                             ABM43Cache,
+                                             ABM54Cache})
+
+  @unpack fsalfirst,k = cache
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = k
+  integrator.kshortsize = 2
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # pre-start FSAL
 end
 
 @muladd function perform_step!(integrator,cache::AB3ConstantCache,repeat_step=false)
@@ -40,17 +63,6 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::AB3Cache)
-  @unpack tmp,fsalfirst,k = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
-  integrator.kshortsize = 2
-  resize!(integrator.k, integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # pre-start FSAL
-end
-
 @muladd function perform_step!(integrator,cache::AB3Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,fsalfirst,k2,k3,ralk2,k = cache
@@ -76,17 +88,6 @@ end
     cache.k2 .= k1
   end
   f(k, u, p, t+dt)
-end
-
-function initialize!(integrator,cache::ABM32ConstantCache)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-  integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-
-  # Avoid undefined entries if k is an array of arrays
-  integrator.fsallast = zero(integrator.fsalfirst)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
 end
 
 @muladd function perform_step!(integrator,cache::ABM32ConstantCache,repeat_step=false)
@@ -118,17 +119,6 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::ABM32Cache)
-  @unpack fsalfirst,k = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
-  integrator.kshortsize = 2
-  resize!(integrator.k, integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # pre-start FSAL
-end
-
 @muladd function perform_step!(integrator,cache::ABM32Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,fsalfirst,k2,k3,ralk2,k = cache
@@ -156,17 +146,6 @@ end
     cache.k2 .= k1
   end
   f(k, u, p, t+dt)
-end
-
-function initialize!(integrator,cache::AB4ConstantCache)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-  integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-
-  # Avoid undefined entries if k is an array of arrays
-  integrator.fsallast = zero(integrator.fsalfirst)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
 end
 
 @muladd function perform_step!(integrator,cache::AB4ConstantCache,repeat_step=false)
@@ -204,17 +183,6 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::AB4Cache)
-  @unpack tmp,fsalfirst,k = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
-  integrator.kshortsize = 2
-  resize!(integrator.k, integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # pre-start FSAL
-end
-
 @muladd function perform_step!(integrator,cache::AB4Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,fsalfirst,k2,k3,k4,ralk2,k,t2,t3,t4 = cache
@@ -250,17 +218,6 @@ end
   f(k, u, p, t+dt)
 end
 
-function initialize!(integrator,cache::ABM43ConstantCache)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-  integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-
-  # Avoid undefined entries if k is an array of arrays
-  integrator.fsallast = zero(integrator.fsalfirst)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-end
-
 @muladd function perform_step!(integrator,cache::ABM43ConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k2,k3,k4 = cache
@@ -294,17 +251,6 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
-end
-
-function initialize!(integrator,cache::ABM43Cache)
-  @unpack fsalfirst,k = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
-  integrator.kshortsize = 2
-  resize!(integrator.k, integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # pre-start FSAL
 end
 
 @muladd function perform_step!(integrator,cache::ABM43Cache,repeat_step=false)
@@ -345,17 +291,6 @@ end
   f(k, u, p, t+dt)
 end
 
-function initialize!(integrator,cache::AB5ConstantCache)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-  integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-
-  # Avoid undefined entries if k is an array of arrays
-  integrator.fsallast = zero(integrator.fsalfirst)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-end
-
 @muladd function perform_step!(integrator,cache::AB5ConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k2,k3,k4,k5 = cache
@@ -392,17 +327,6 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
-end
-
-function initialize!(integrator,cache::AB5Cache)
-  @unpack tmp,fsalfirst,k = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
-  integrator.kshortsize = 2
-  resize!(integrator.k, integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # pre-start FSAL
 end
 
 @muladd function perform_step!(integrator,cache::AB5Cache,repeat_step=false)
@@ -443,17 +367,6 @@ end
   f(k, u, p, t+dt)
 end
 
-function initialize!(integrator,cache::ABM54ConstantCache)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-  integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-
-  # Avoid undefined entries if k is an array of arrays
-  integrator.fsallast = zero(integrator.fsalfirst)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-end
-
 @muladd function perform_step!(integrator,cache::ABM54ConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k2,k3,k4,k5 = cache
@@ -490,17 +403,6 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
-end
-
-function initialize!(integrator,cache::ABM54Cache)
-  @unpack fsalfirst,k = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
-  integrator.kshortsize = 2
-  resize!(integrator.k, integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # pre-start FSAL
 end
 
 @muladd function perform_step!(integrator,cache::ABM54Cache,repeat_step=false)
