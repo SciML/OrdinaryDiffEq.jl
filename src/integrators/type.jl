@@ -33,6 +33,7 @@ mutable struct DEOptions{absType,relType,QT,tType,F1,F2,F3,F4,F5,F6,tstopsType,d
   beta2::QT
   qoldinit::QT
   dense::Bool
+  save_on::Bool
   save_start::Bool
   save_end::Bool
   callback::F3

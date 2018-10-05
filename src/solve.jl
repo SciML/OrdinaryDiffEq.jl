@@ -20,6 +20,7 @@ function DiffEqBase.__init(
   save_idxs = nothing,
   save_everystep = isempty(saveat),
   save_timeseries = nothing,
+  save_on = true,
   save_start = save_everystep || isempty(saveat) || typeof(saveat) <: Number ? true : prob.tspan[1] in saveat,
   save_end = save_everystep || isempty(saveat) || typeof(saveat) <: Number ? true : prob.tspan[2] in saveat,
   callback=nothing,
@@ -252,7 +253,7 @@ function DiffEqBase.__init(
                        userdata,progress,progress_steps,
                        progress_name,progress_message,timeseries_errors,dense_errors,
                        QT(beta1),QT(beta2),QT(qoldinit),dense,
-                       save_start,save_end,callbacks_internal,isoutofdomain,
+                       save_on,save_start,save_end,callbacks_internal,isoutofdomain,
                        unstable_check,verbose,
                        calck,force_dtmin,advance_to_tstop,stop_at_next_tstop)
 

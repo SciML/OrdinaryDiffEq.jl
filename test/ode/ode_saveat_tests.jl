@@ -94,3 +94,9 @@ sol2=solve(prob2,DP5(),dt=1//2^(2),saveat=.1,save_idxs=1:2:5,save_everystep=true
 sol=solve(prob2,DP5(),dt=1//2^(2),save_start=false)
 
 @test sol.t[1] == 1//2^(2)
+
+# Test save_on switch
+sol = solve(prob, DP5(), save_on=false, save_start=false, save_end=false)
+@test isempty(sol.t) && isempty(sol.u)
+sol = solve(prob, DP5(), saveat=0.2, save_on=false, save_start=false, save_end=false)
+@test isempty(sol.t) && isempty(sol.u)
