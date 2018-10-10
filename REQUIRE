@@ -13,4 +13,4 @@ Reexport
 MuladdMacro 0.2.1
 StaticArrays
 DataStructures
-ExponentialUtilities
+ExponentialUtilities 1.2.0
