@@ -71,7 +71,7 @@ The saving priority/order is as follows:
     - `save_everystep`/`timeseries_steps`
 """
 function savevalues!(integrator::ODEIntegrator,force_save=false,reduce_size=true)
-  !integrator.opts.save_on && return false # the master switch, if save_on is false, return immediately
+  !integrator.opts.save_on && return false, false # the master switch, if save_on is false, return immediately
   saved = false
   savedexactly = false
   while !isempty(integrator.opts.saveat) && integrator.tdir*top(integrator.opts.saveat) <= integrator.tdir*integrator.t # Perform saveat
