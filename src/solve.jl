@@ -20,6 +20,7 @@ function DiffEqBase.__init(
   save_idxs = nothing,
   save_everystep = isempty(saveat),
   save_timeseries = nothing,
+  save_on = true,
   save_start = save_everystep || isempty(saveat) || typeof(saveat) <: Number ? true : prob.tspan[1] in saveat,
   save_end = save_everystep || isempty(saveat) || typeof(saveat) <: Number ? true : prob.tspan[2] in saveat,
   callback=nothing,
@@ -109,12 +110,12 @@ function DiffEqBase.__init(
   tTypeNoUnits   = typeof(one(tType))
 
   if typeof(alg) <: FunctionMap
-    abstol_internal = real.(zero(u))
+    abstol_internal = real.(zero.(u))
   elseif abstol == nothing
-    if uBottomEltypeNoUnits == uBottomEltype || !(typeof(u) <: ArrayPartition)
-      abstol_internal = real(uBottomEltype(uBottomEltype(1)*1//10^6))
+    if uBottomEltypeNoUnits == uBottomEltype
+      abstol_internal = real(convert(uBottomEltype,oneunit(uBottomEltype)*1//10^6))
     else
-      abstol_internal = real.(ones(u).*1//10^6)
+      abstol_internal = real.(oneunit.(u).*1//10^6)
     end
   else
     abstol_internal = real.(abstol)
@@ -123,7 +124,11 @@ function DiffEqBase.__init(
   if typeof(alg) <: FunctionMap
     reltol_internal = real.(zero(first(u)/t))
   elseif reltol == nothing
-    reltol_internal = real(uBottomEltypeNoUnits(1//10^3))
+    if uBottomEltypeNoUnits == uBottomEltype
+      reltol_internal = real(convert(uBottomEltype,oneunit(uBottomEltype)*1//10^3))
+    else
+      reltol_internal = real.(oneunit.(u).*1//10^3)
+    end
   else
     reltol_internal = real.(reltol)
   end
@@ -131,14 +136,18 @@ function DiffEqBase.__init(
   dtmax > zero(dtmax) && tdir < 0 && (dtmax *= tdir) # Allow positive dtmax, but auto-convert
   # dtmin is all abs => does not care about sign already.
 
-  if isinplace(prob) && typeof(u) <: AbstractArray && eltype(u) <: Number # Could this be more efficient for other arrays?
+  if isinplace(prob) && typeof(u) <: AbstractArray && eltype(u) <: Number && uBottomEltypeNoUnits == uBottomEltype # Could this be more efficient for other arrays?
     if !(typeof(u) <: ArrayPartition)
       rate_prototype = similar(u,typeof(oneunit(uBottomEltype)/oneunit(tType)))
     else
       rate_prototype = similar(u, typeof.(oneunit.(recursive_bottom_eltype.(u.x))./oneunit(tType))...)
     end
   else
-    rate_prototype = u./oneunit(tType)
+    if uBottomEltypeNoUnits == uBottomEltype
+      rate_prototype = u
+    else # has units!
+      rate_prototype = u/oneunit(tType)
+    end
   end
   rateType = typeof(rate_prototype) ## Can be different if united
 
@@ -248,7 +257,7 @@ function DiffEqBase.__init(
                        userdata,progress,progress_steps,
                        progress_name,progress_message,timeseries_errors,dense_errors,
                        QT(beta1),QT(beta2),QT(qoldinit),dense,
-                       save_start,save_end,callbacks_internal,isoutofdomain,
+                       save_on,save_start,save_end,callbacks_internal,isoutofdomain,
                        unstable_check,verbose,
                        calck,force_dtmin,advance_to_tstop,stop_at_next_tstop)
 

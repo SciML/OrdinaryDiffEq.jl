@@ -112,7 +112,6 @@ du_cache(c::SBDFCache)   = ()
 function alg_cache(alg::SBDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   @oopnlcachefields
   k2 = rate_prototype
-  uf != nothing && ( uf = DiffEqDiffTools.UDerivativeWrapper(f.f1,t,p) )
   uprev2 = u
   uprev3 = u
   uprev4 = u
@@ -138,11 +137,6 @@ function alg_cache(alg::SBDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   k₃ = order == 4 ? zero(rate_prototype) : k₁
   du₁ = zero(rate_prototype)
   du₂ = zero(rate_prototype)
-  if uf != nothing
-    uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t,p)
-    linsolve = alg.linsolve(Val{:init},uf,u)
-    jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
-  end
 
   nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//1,1,ηold,z₊,dz,tmp,b,k))
   SBDFCache(1,u,uprev,fsalfirst,k,du1,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolve,uprev2,uprev3,uprev4,k₁,k₂,k₃,du₁,du₂)

@@ -15,7 +15,7 @@ module OrdinaryDiffEq
   # Internal utils
   import DiffEqBase: ODE_DEFAULT_NORM, ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE, ODE_DEFAULT_UNSTABLE_CHECK
 
-  using DiffEqOperators: DiffEqArrayOperator
+  using DiffEqOperators: DiffEqArrayOperator, DEFAULT_UPDATE_FUNC
 
   import RecursiveArrayTools: chain, recursivecopy!
 
@@ -44,7 +44,9 @@ module OrdinaryDiffEq
    :($(esc(ex)))
   end
 
-  const CompiledFloats = Union{Float32,Float64}
+  const CompiledFloats = Union{Float32,Float64,
+    ForwardDiff.Dual{ForwardDiff.Tag{T,W},K,3} where {T,W<:Union{Float64,Float32},
+                                                        K<:Union{Float64,Float32}}}
 
   include("misc_utils.jl")
   include("algorithms.jl")

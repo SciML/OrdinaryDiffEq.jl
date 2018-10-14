@@ -244,8 +244,11 @@ end
 @inline function apply_discrete_callback!(integrator,callback::DiscreteCallback)
   saved_in_cb = false
   if callback.condition(integrator.u,integrator.t,integrator)
+    # handle saveat
+    savevalues!(integrator)
     @inbounds if callback.save_positions[1]
-      savevalues!(integrator,true)
+      # if already saved then skip saving
+      last(integrator.sol.t) == integrator.t || savevalues!(integrator,true)
       saved_in_cb = true
     end
     integrator.u_modified = true

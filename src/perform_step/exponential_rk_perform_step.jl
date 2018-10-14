@@ -41,7 +41,7 @@ end
 function perform_step!(integrator, cache::LawsonEulerConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
   is_compos = isa(integrator.alg, CompositeAlgorithm)
-  A = isa(f, SplitFunction) ? f.f1 : calc_J(integrator,cache,is_compos) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : calc_J(integrator,cache,is_compos) # get linear operator
   alg = unwrap_alg(integrator, true)
 
   nl = _compute_nl(f, uprev, p, t, A)
@@ -64,15 +64,14 @@ function perform_step!(integrator, cache::LawsonEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,rtmp,G,J,exphA,KsCache = cache
   is_compos = isa(integrator.alg, CompositeAlgorithm)
-  A = isa(f, SplitFunction) ? f.f1 : (calc_J!(integrator,cache,is_compos); J) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(integrator,cache,is_compos); J) # get linear operator
   alg = unwrap_alg(integrator, true)
 
   _compute_nl!(G, f, uprev, p, t, A, rtmp)
   @muladd @. tmp = uprev + dt*G
   if alg.krylov
     Ks, expv_cache = KsCache
-    arnoldi!(Ks, A, tmp; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm,
-      cache=u, iop=alg.iop)
+    arnoldi!(Ks, A, tmp; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
     expv!(u,dt,Ks; cache=expv_cache)
   else
     mul!(u,exphA,tmp)
@@ -86,7 +85,7 @@ end
 function perform_step!(integrator, cache::NorsettEulerConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
   is_compos = isa(integrator.alg, CompositeAlgorithm)
-  A = isa(f, SplitFunction) ? f.f1 : calc_J(integrator,cache,is_compos) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : calc_J(integrator,cache,is_compos) # get linear operator
   alg = unwrap_alg(integrator, true)
 
   if alg.krylov
@@ -109,13 +108,12 @@ function perform_step!(integrator, cache::NorsettEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack rtmp,J,KsCache = cache
   is_compos = isa(integrator.alg, CompositeAlgorithm)
-  A = isa(f, SplitFunction) ? f.f1 : (calc_J!(integrator,cache,is_compos); J) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(integrator,cache,is_compos); J) # get linear operator
   alg = unwrap_alg(integrator, true)
 
   if alg.krylov
     Ks, phiv_cache, ws = KsCache; w = ws[1]
-    arnoldi!(Ks, A, integrator.fsalfirst; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm,
-      cache=u, iop=alg.iop)
+    arnoldi!(Ks, A, integrator.fsalfirst; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
     phiv!(w, dt, Ks, 1; cache=phiv_cache)
     @muladd @. u = uprev + dt * @view(w[:, 2])
   else
@@ -131,7 +129,7 @@ end
 function perform_step!(integrator, cache::ETDRK2ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
   is_compos = isa(integrator.alg, CompositeAlgorithm)
-  A = isa(f, SplitFunction) ? f.f1 : calc_J(integrator,cache,is_compos) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : calc_J(integrator,cache,is_compos) # get linear operator
   alg = unwrap_alg(integrator, true)
 
   if alg.krylov
@@ -162,7 +160,7 @@ function perform_step!(integrator, cache::ETDRK2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,rtmp,F2,J,KsCache = cache
   is_compos = isa(integrator.alg, CompositeAlgorithm)
-  A = isa(f, SplitFunction) ? f.f1 : (calc_J!(integrator,cache,is_compos); J) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(integrator,cache,is_compos); J) # get linear operator
   alg = unwrap_alg(integrator, true)
 
   if alg.krylov
@@ -170,13 +168,13 @@ function perform_step!(integrator, cache::ETDRK2Cache, repeat_step=false)
     Ks, phiv_cache, ws = KsCache
     w1, w2 = ws
     # Krylov for F1
-    arnoldi!(Ks, A, F1; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, cache=tmp, iop=alg.iop)
+    arnoldi!(Ks, A, F1; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
     phiv!(w1, dt, Ks, 2; cache=phiv_cache)
     # Krylov for F2
     @muladd @. tmp = uprev + dt * @view(w1[:, 2])
     _compute_nl!(F2, f, tmp, p, t + dt, A, rtmp)
     F2 .+= mul!(rtmp, A, uprev)
-    arnoldi!(Ks, A, F2; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, cache=tmp, iop=alg.iop)
+    arnoldi!(Ks, A, F2; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
     phiv!(w2, dt, Ks, 2; cache=phiv_cache)
     # Update u
     u .= uprev
@@ -207,7 +205,7 @@ end
 function perform_step!(integrator, cache::ETDRK3ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
   is_compos = isa(integrator.alg, CompositeAlgorithm)
-  A = isa(f, SplitFunction) ? f.f1 : calc_J(integrator,cache,is_compos) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : calc_J(integrator,cache,is_compos) # get linear operator
   alg = unwrap_alg(integrator, true)
 
   Au = A * uprev
@@ -253,7 +251,7 @@ function perform_step!(integrator, cache::ETDRK3Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,rtmp,Au,F2,F3,J,KsCache = cache
   is_compos = isa(integrator.alg, CompositeAlgorithm)
-  A = isa(f, SplitFunction) ? f.f1 : (calc_J!(integrator,cache,is_compos); J) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(integrator,cache,is_compos); J) # get linear operator
   alg = unwrap_alg(integrator, true)
 
   F1 = integrator.fsalfirst
@@ -262,7 +260,7 @@ function perform_step!(integrator, cache::ETDRK3Cache, repeat_step=false)
   if alg.krylov
     Ks, phiv_cache, ws = KsCache
     w1_half, w1, w2, w3 = ws
-    kwargs = (m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop, cache=tmp)
+    kwargs = (m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
     # Krylov for F1 (first column)
     arnoldi!(Ks, A, F1; kwargs...)
     phiv!(w1_half, halfdt, Ks, 1; cache=phiv_cache)
@@ -307,7 +305,7 @@ end
 function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
   is_compos = isa(integrator.alg, CompositeAlgorithm)
-  A = isa(f, SplitFunction) ? f.f1 : calc_J(integrator,cache,is_compos) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : calc_J(integrator,cache,is_compos) # get linear operator
   alg = unwrap_alg(integrator, true)
 
   Au = A * uprev
@@ -366,7 +364,7 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,rtmp,Au,F2,F3,F4,J,KsCache = cache
   is_compos = isa(integrator.alg, CompositeAlgorithm)
-  A = isa(f, SplitFunction) ? f.f1 : (calc_J!(integrator,cache,is_compos); J) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(integrator,cache,is_compos); J) # get linear operator
   alg = unwrap_alg(integrator, true)
 
   F1 = integrator.fsalfirst
@@ -375,7 +373,7 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
   if alg.krylov
     Ks, phiv_cache, ws = KsCache
     w1_half, w2_half, w1, w2, w3, w4 = ws
-    kwargs = (m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop, cache=tmp)
+    kwargs = (m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
     # Krylov for F1 (first column)
     arnoldi!(Ks, A, F1; kwargs...)
     phiv!(w1_half, halfdt, Ks, 1; cache=phiv_cache)
@@ -437,7 +435,7 @@ end
 function perform_step!(integrator, cache::HochOst4ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
   is_compos = isa(integrator.alg, CompositeAlgorithm)
-  A = isa(f, SplitFunction) ? f.f1 : calc_J(integrator,cache,is_compos) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : calc_J(integrator,cache,is_compos) # get linear operator
   alg = unwrap_alg(integrator, true)
 
   Au = A * uprev
@@ -506,7 +504,7 @@ function perform_step!(integrator, cache::HochOst4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack tmp,rtmp,rtmp2,Au,F2,F3,F4,F5,J,KsCache = cache
   is_compos = isa(integrator.alg, CompositeAlgorithm)
-  A = isa(f, SplitFunction) ? f.f1 : (calc_J!(integrator,cache,is_compos); J) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(integrator,cache,is_compos); J) # get linear operator
   alg = unwrap_alg(integrator, true)
 
   F1 = integrator.fsalfirst
@@ -515,7 +513,7 @@ function perform_step!(integrator, cache::HochOst4Cache, repeat_step=false)
   if alg.krylov
     Ks, phiv_cache, ws = KsCache
     w1_half, w2_half, w3_half, w4_half, w1, w2, w3, w4, w5 = ws
-    kwargs = (m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop, cache=tmp)
+    kwargs = (m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
     # Krylov on F1 (first column)
     arnoldi!(Ks, A, F1; kwargs...)
     phiv!(w1_half, halfdt, Ks, 3; cache=phiv_cache)
@@ -1177,7 +1175,7 @@ end
 function perform_step!(integrator, cache::Exprb32ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
   is_compos = isa(integrator.alg, CompositeAlgorithm)
-  A = isa(f, SplitFunction) ? f.f1 : calc_J(integrator,cache,is_compos) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : calc_J(integrator,cache,is_compos) # get linear operator
   alg = unwrap_alg(integrator, true)
 
   F1 = integrator.fsalfirst
@@ -1220,7 +1218,7 @@ function perform_step!(integrator, cache::Exprb32Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack utilde,tmp,rtmp,F2,J,KsCache = cache
   is_compos = isa(integrator.alg, CompositeAlgorithm)
-  A = isa(f, SplitFunction) ? f.f1 : (calc_J!(integrator,cache,is_compos); J) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(integrator,cache,is_compos); J) # get linear operator
   alg = unwrap_alg(integrator, true)
 
   F1 = integrator.fsalfirst
@@ -1228,13 +1226,13 @@ function perform_step!(integrator, cache::Exprb32Cache, repeat_step=false)
     Ks, phiv_cache, ws = KsCache
     w1, w2 = ws
     # Krylov for F1
-    arnoldi!(Ks, A, F1; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, cache=tmp, iop=alg.iop)
+    arnoldi!(Ks, A, F1; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
     phiv!(w1, dt, Ks, 3; cache=phiv_cache)
     # Krylov for F2
     @muladd @. tmp = uprev + dt * @view(w1[:, 2])
     _compute_nl!(F2, f, tmp, p, t + dt, A, rtmp)
     F2 .+= mul!(rtmp, A, uprev)
-    arnoldi!(Ks, A, F2; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, cache=tmp, iop=alg.iop)
+    arnoldi!(Ks, A, F2; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
     phiv!(w2, dt, Ks, 3; cache=phiv_cache)
     # Update u
     u .= uprev
@@ -1275,7 +1273,7 @@ end
 function perform_step!(integrator, cache::Exprb43ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
   is_compos = isa(integrator.alg, CompositeAlgorithm)
-  A = isa(f, SplitFunction) ? f.f1 : calc_J(integrator,cache,is_compos) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : calc_J(integrator,cache,is_compos) # get linear operator
   alg = unwrap_alg(integrator, true)
 
   Au = A * uprev
@@ -1331,7 +1329,7 @@ function perform_step!(integrator, cache::Exprb43Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack utilde,tmp,rtmp,Au,F2,F3,J,KsCache = cache
   is_compos = isa(integrator.alg, CompositeAlgorithm)
-  A = isa(f, SplitFunction) ? f.f1 : (calc_J!(integrator,cache,is_compos); J) # get linear operator
+  A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(integrator,cache,is_compos); J) # get linear operator
   alg = unwrap_alg(integrator, true)
 
   F1 = integrator.fsalfirst
@@ -1340,7 +1338,7 @@ function perform_step!(integrator, cache::Exprb43Cache, repeat_step=false)
   if alg.krylov
     Ks, phiv_cache, ws = KsCache
     w1_half, w1, w2, w3 = ws
-    kwargs = (m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop, cache=tmp)
+    kwargs = (m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
     # Krylov for F1
     arnoldi!(Ks, A, F1; kwargs...)
     phiv!(w1_half, halfdt, Ks, 1; cache=phiv_cache)

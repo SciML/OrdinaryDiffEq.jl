@@ -961,7 +961,6 @@ du_cache(c::CNAB2Cache)   = ()
 function alg_cache(alg::CNAB2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   @oopnlcachefields
   k2 = rate_prototype
-  uf != nothing && ( uf = DiffEqDiffTools.UDerivativeWrapper(f.f1,t,p) )
   uprev3 = u
   tprev2 = t
 
@@ -975,12 +974,6 @@ function alg_cache(alg::CNAB2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   k1 = zero(rate_prototype)
   k2 = zero(rate_prototype)
   du₁ = zero(rate_prototype)
-
-  if typeof(f) <: SplitFunction && uf != nothing
-    uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t,p)
-    linsolve = alg.linsolve(Val{:init},uf,u)
-    jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
-  end
 
   uprev3 = similar(u)
   tprev2 = t
@@ -1031,7 +1024,6 @@ du_cache(c::CNLF2Cache)   = ()
 function alg_cache(alg::CNLF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   @oopnlcachefields
   k2 = rate_prototype
-  uf != nothing && ( uf = DiffEqDiffTools.UDerivativeWrapper(f.f1,t,p) )
   uprev2 = u
   uprev3 = u
   tprev2 = t
@@ -1046,12 +1038,6 @@ function alg_cache(alg::CNLF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   k1 = zero(rate_prototype)
   k2 = zero(rate_prototype)
   du₁ = zero(rate_prototype)
-
-  if typeof(f) <: SplitFunction && uf != nothing
-    uf = DiffEqDiffTools.UJacobianWrapper(f.f1,t,p)
-    linsolve = alg.linsolve(Val{:init},uf,u)
-    jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
-  end
 
   uprev2 = similar(u)
   uprev3 = similar(u)

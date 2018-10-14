@@ -1,5 +1,5 @@
-julia 0.7
-DiffEqBase 3.8.0
+julia 1.0
+DiffEqBase 4.27.0
 DiffEqOperators 3.2.0
 Parameters 0.10.0
 ForwardDiff 0.7.0
@@ -13,4 +13,4 @@ Reexport
 MuladdMacro 0.2.1
 StaticArrays
 DataStructures
-ExponentialUtilities
+ExponentialUtilities 1.2.0

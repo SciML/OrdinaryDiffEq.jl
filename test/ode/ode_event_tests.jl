@@ -205,3 +205,23 @@ ode = ODEProblem((du, u, p, t) -> (@. du .= -u), ones(5), (0.0, 100.0))
 sol = solve(ode, AutoTsit5(Rosenbrock23()), callback=TerminateSteadyState())
 sol1 = solve(ode, Tsit5(), callback=TerminateSteadyState())
 @test sol.u == sol1.u
+
+# DiscreteCallback
+f = function (du,u,p,t)
+  du[1] = -0.5*u[1] + 10
+  du[2] = -0.5*u[2]
+end
+
+u0 = [10,10.]
+tstop = [5.;8.]
+prob = ODEProblem(f, u0, (0, 10.))
+condition = (u,t,integrator) -> t in tstop
+affect! = (integrator) -> integrator.u .= 1.0
+save_positions = (true,true)
+cb = DiscreteCallback(condition, affect!, save_positions=save_positions)
+sol1 = solve(prob,Tsit5(),callback = cb,tstops=tstop,saveat=tstop)
+@test count(x->x==tstop[1], sol1.t) == 2
+@test count(x->x==tstop[2], sol1.t) == 2
+sol2 = solve(prob,Tsit5(),callback = cb,tstops=tstop,saveat=prevfloat.(tstop))
+@test count(x->x==tstop[1], sol2.t) == 2
+@test count(x->x==tstop[2], sol2.t) == 2
