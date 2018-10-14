@@ -143,7 +143,11 @@ function DiffEqBase.__init(
       rate_prototype = similar(u, typeof.(oneunit.(recursive_bottom_eltype.(u.x))./oneunit(tType))...)
     end
   else
-    rate_prototype = u./oneunit(tType)
+    if uBottomEltypeNoUnits == uBottomEltype
+      rate_prototype = u
+    else # has units!
+      rate_prototype = u/oneunit(tType)
+    end
   end
   rateType = typeof(rate_prototype) ## Can be different if united
 
