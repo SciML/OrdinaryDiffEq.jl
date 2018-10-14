@@ -6,7 +6,7 @@
 
 function ode_addsteps!(args...)
   @warn("`ode_addsteps!` is deprecated. Use `addsteps!`")
-  DiffEqBase.addsteps(args...)
+  DiffEqBase.addsteps!(args...)
 end
 
 @inline function DiffEqBase.addsteps!(integrator::ODEIntegrator,f=integrator.f,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
