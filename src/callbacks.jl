@@ -58,7 +58,7 @@ end
       DiffEqBase.addsteps!(integrator)
     end
 
-    if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache
+    if DiffEqBase.ismutablecache(integrator.cache)
       if typeof(callback.idxs) <: Nothing
         tmp = integrator.cache.tmp
       else !(typeof(callback.idxs) <: Number)
@@ -67,7 +67,7 @@ end
     end
 
     abst = integrator.tprev+integrator.dt*100*eps(integrator.tprev)
-    if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache && !(typeof(callback.idxs) <: Number)
+    if DiffEqBase.ismutablecache(integrator.cache) && !(typeof(callback.idxs) <: Number)
       integrator(tmp,abst,Val{0},idxs=callback.idxs)
     else
       tmp = integrator(abst,Val{0},idxs=callback.idxs)
@@ -95,7 +95,7 @@ end
     event_occurred = true
     interp_index = callback.interp_points
   elseif callback.interp_points!=0  && !DiffEqBase.isdiscretealg(integrator.alg) # Use the interpolants for safety checking
-    if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache
+    if DiffEqBase.ismutablecache(integrator.cache)
       if typeof(callback.idxs) <: Nothing
         tmp = integrator.cache.tmp
       else !(typeof(callback.idxs) <: Number)
@@ -104,7 +104,7 @@ end
     end
     for i in 2:length(Θs)
       abst = integrator.tprev+integrator.dt*Θs[i]
-      if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache && !(typeof(callback.idxs) <: Number)
+      if DiffEqBase.ismutablecache(integrator.cache) && !(typeof(callback.idxs) <: Number)
         integrator(tmp,abst,Val{0},idxs=callback.idxs)
       else
         tmp = integrator(abst,Val{0},idxs=callback.idxs)
@@ -137,7 +137,7 @@ function find_callback_time(integrator,callback,counter)
         bottom_θ = typeof(integrator.t)(0)
       end
       if callback.rootfind && !DiffEqBase.isdiscretealg(integrator.alg)
-        if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache
+        if DiffEqBase.ismutablecache(integrator.cache)
           _cache = first(get_tmp_cache(integrator))
           if typeof(callback.idxs) <: Nothing
             tmp = _cache
@@ -147,7 +147,7 @@ function find_callback_time(integrator,callback,counter)
         end
         zero_func = (Θ) -> begin
           abst = integrator.tprev+integrator.dt*Θ
-          if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache && !(typeof(callback.idxs) <: Number)
+          if DiffEqBase.ismutablecache(integrator.cache) && !(typeof(callback.idxs) <: Number)
             integrator(tmp,abst,Val{0},idxs=callback.idxs)
           else
             tmp = integrator(abst,Val{0},idxs=callback.idxs)
