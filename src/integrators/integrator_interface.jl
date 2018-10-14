@@ -1,4 +1,4 @@
-function change_t_via_interpolation!(integrator,t,modify_save_endpoint::Type{Val{T}}=Val{false}) where T
+function DiffEqBase.change_t_via_interpolation!(integrator::ODEIntegrator,t,modify_save_endpoint::Type{Val{T}}=Val{false}) where T
   # Can get rid of an allocation here with a function
   # get_tmp_arr(integrator.cache) which gives a pointer to some
   # cache array which can be modified.
@@ -25,9 +25,9 @@ function reeval_internals_due_to_modification!(integrator)
     alg = unwrap_alg(integrator, false)
     if typeof(alg) <: BS5 || typeof(alg) <: Vern6 || typeof(alg) <: Vern7 ||
        typeof(alg) <: Vern8 || typeof(alg) <: Vern9
-       ode_addsteps!(integrator,integrator.f,true,false,!alg.lazy)
+       DiffEqBase.addsteps!(integrator,integrator.f,true,false,!alg.lazy)
     else
-      ode_addsteps!(integrator,integrator.f,true,false)
+      DiffEqBase.addsteps!(integrator,integrator.f,true,false)
     end
   end
   integrator.u_modified = false

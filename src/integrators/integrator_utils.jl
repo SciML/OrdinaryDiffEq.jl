@@ -59,7 +59,7 @@ function savevalues!(integrator::ODEIntegrator,force_save=false,reduce_size=true
     integrator.saveiter += 1
     curt = pop!(integrator.opts.saveat)
     if curt!=integrator.t # If <t, interpolate
-      ode_addsteps!(integrator)
+      DiffEqBase.addsteps!(integrator)
       Θ = (curt - integrator.tprev)/integrator.dt
       val = ode_interpolant(Θ,integrator,integrator.opts.save_idxs,Val{0}) # out of place, but no force copy later
       copyat_or_push!(integrator.sol.t,integrator.saveiter,curt)
@@ -442,7 +442,7 @@ function handle_tstop!(integrator)
       integrator.just_hit_tstop = true
     elseif integrator.tdir*t > integrator.tdir*ts_top
       if !integrator.dtchangeable
-        change_t_via_interpolation!(integrator, pop!(tstops), Val{true})
+        DiffEqBase.change_t_via_interpolation!(integrator, pop!(tstops), Val{true})
         integrator.just_hit_tstop = true
       else
         error("Something went wrong. Integrator stepped past tstops but the algorithm was dtchangeable. Please report this error.")

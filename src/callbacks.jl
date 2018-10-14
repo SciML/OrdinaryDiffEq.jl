@@ -30,7 +30,7 @@ end
 @inline function determine_event_occurance(integrator,callback,counter)
   event_occurred = false
   if callback.interp_points!=0
-    ode_addsteps!(integrator)
+    DiffEqBase.addsteps!(integrator)
   end
   Θs = range(typeof(integrator.t)(0), stop=typeof(integrator.t)(1), length=callback.interp_points)
   interp_index = 0
@@ -55,7 +55,7 @@ end
     # Since near even we use direction instead of location to reset
 
     if callback.interp_points==0
-      ode_addsteps!(integrator)
+      DiffEqBase.addsteps!(integrator)
     end
 
     if typeof(integrator.cache) <: OrdinaryDiffEqMutableCache
@@ -200,7 +200,7 @@ end
 
 function apply_callback!(integrator,callback::ContinuousCallback,cb_time,prev_sign)
   if cb_time != zero(typeof(integrator.t))
-    change_t_via_interpolation!(integrator,integrator.tprev+cb_time)
+    DiffEqBase.change_t_via_interpolation!(integrator,integrator.tprev+cb_time)
   end
   saved_in_cb = false
 
