@@ -131,7 +131,6 @@ module OrdinaryDiffEq
   include("derivative_wrappers.jl")
   include("iterator_interface.jl")
   include("constants.jl")
-  include("callbacks.jl")
   include("composite_solution.jl")
   include("solve.jl")
   include("initdt.jl")
