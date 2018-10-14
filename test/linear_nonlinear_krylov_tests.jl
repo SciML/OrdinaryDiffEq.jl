@@ -118,3 +118,16 @@ end
     @test sol(1.0) ≈ exp_fun2.analytic(u0,nothing,1.0)
   end
 end
+
+@testset "ExpRK with default jacobian" begin
+  N = 10
+  Random.seed!(0); u0 = normalize(randn(N))
+  dd = -2 * ones(N); du = ones(N-1)
+  A = diagm(-1 => du, 0 => dd, 1 => du)
+  f = (du,u,p,t) -> mul!(du,A,u)
+  jac = (J,u,p,t) -> (J .= A; nothing)
+  exp_fun = ODEFunction(f; jac=jac, analytic=(u,p,t) -> exp(t*A)*u)
+  prob = ODEProblem(exp_fun, u0, (0.0,1.0))
+  sol = solve(prob, LawsonEuler(krylov=true, m=N); dt=0.1)
+  @test sol(1.0) ≈ exp_fun.analytic(u0,nothing,1.0)
+end
