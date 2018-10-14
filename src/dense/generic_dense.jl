@@ -4,7 +4,11 @@
 # get_tmp_arr(integrator.cache) which gives a pointer to some
 # cache array which can be modified.
 
-ode_addsteps!(args...) = DiffEqBase.addsteps(args...)
+function ode_addsteps!(args...)
+  @warn("`ode_addsteps!` is deprecated. Use `addsteps!`")
+  DiffEqBase.addsteps(args...)
+end
+
 @inline function DiffEqBase.addsteps!(integrator::ODEIntegrator,f=integrator.f,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if !(typeof(integrator.cache) <: CompositeCache)
     DiffEqBase.addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.u,
