@@ -219,7 +219,7 @@ function alg_cache_expRK(alg::ExponentialAlgorithm,u,uEltypeNoUnits,uprev,f,t,dt
   # Allocate cache for the Jacobian
   if isa(f, SplitFunction)
     J = nothing
-  elseif DiffEqBase.has_jac(f)
+  elseif DiffEqBase.has_jac(f) && f.jac_prototype != nothing
     J = deepcopy(f.jac_prototype)
   else
     J = fill(zero(uEltypeNoUnits), n, n)
@@ -274,7 +274,7 @@ function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   # Allocate cache for the Jacobian
   if isa(f, SplitFunction)
     J = nothing
-  elseif DiffEqBase.has_jac(f)
+  elseif DiffEqBase.has_jac(f) && f.jac_prototype != nothing
     J = deepcopy(f.jac_prototype)
   else
     J = fill(zero(uEltypeNoUnits), n, n)
@@ -484,10 +484,13 @@ function alg_cache(alg::Exp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   if DiffEqBase.has_jac(f)
     uf = nothing
     jac_config = nothing
-    J = deepcopy(f.jac_prototype)
   else
     uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
+  end
+  if DiffEqBase.has_jac(f) && f.jac_prototype != nothing
+    J = deepcopy(f.jac_prototype)
+  else
     J = fill(zero(uEltypeNoUnits), length(u), length(u))
   end
   # Allocate matrices
@@ -524,10 +527,13 @@ function alg_cache(alg::EPIRK4s3A,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   if DiffEqBase.has_jac(f)
     uf = nothing
     jac_config = nothing
-    J = deepcopy(f.jac_prototype)
   else
     uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
+  end
+  if DiffEqBase.has_jac(f) && f.jac_prototype != nothing
+    J = deepcopy(f.jac_prototype)
+  else
     J = fill(zero(uEltypeNoUnits), length(u), length(u))
   end
   # Allocate matrices
@@ -563,10 +569,13 @@ function alg_cache(alg::EPIRK4s3B,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   if DiffEqBase.has_jac(f)
     uf = nothing
     jac_config = nothing
-    J = deepcopy(f.jac_prototype)
   else
     uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
+  end
+  if DiffEqBase.has_jac(f) && f.jac_prototype != nothing
+    J = deepcopy(f.jac_prototype)
+  else
     J = fill(zero(uEltypeNoUnits), length(u), length(u))
   end
   # Allocate matrices
@@ -602,10 +611,13 @@ function alg_cache(alg::EPIRK5s3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   if DiffEqBase.has_jac(f)
     uf = nothing
     jac_config = nothing
-    J = deepcopy(f.jac_prototype)
   else
     uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
+  end
+  if DiffEqBase.has_jac(f) && f.jac_prototype != nothing
+    J = deepcopy(f.jac_prototype)
+  else
     J = fill(zero(uEltypeNoUnits), length(u), length(u))
   end
   # Allocate matrices
@@ -640,10 +652,13 @@ function alg_cache(alg::EXPRB53s3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   if DiffEqBase.has_jac(f)
     uf = nothing
     jac_config = nothing
-    J = deepcopy(f.jac_prototype)
   else
     uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
+  end
+  if DiffEqBase.has_jac(f) && f.jac_prototype != nothing
+    J = deepcopy(f.jac_prototype)
+  else
     J = fill(zero(uEltypeNoUnits), length(u), length(u))
   end
   # Allocate matrices
@@ -679,10 +694,13 @@ function alg_cache(alg::EPIRK5P1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   if DiffEqBase.has_jac(f)
     uf = nothing
     jac_config = nothing
-    J = deepcopy(f.jac_prototype)
   else
     uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
+  end
+  if DiffEqBase.has_jac(f) && f.jac_prototype != nothing
+    J = deepcopy(f.jac_prototype)
+  else
     J = fill(zero(uEltypeNoUnits), length(u), length(u))
   end
   # Allocate matrices
@@ -719,10 +737,13 @@ function alg_cache(alg::EPIRK5P2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   if DiffEqBase.has_jac(f)
     uf = nothing
     jac_config = nothing
-    J = deepcopy(f.jac_prototype)
   else
     uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
+  end
+  if DiffEqBase.has_jac(f) && f.jac_prototype != nothing
+    J = deepcopy(f.jac_prototype)
+  else
     J = fill(zero(uEltypeNoUnits), length(u), length(u))
   end
   # Allocate matrices
