@@ -471,7 +471,9 @@ end
 
   integrator.fsallast = f(u, p, t+dt)
   if integrator.opts.adaptive
-    integrator.EEst = integrator.opts.internalnorm(@. (utilde-u)/(integrator.opts.abstol+max(integrator.opts.internalnorm(uprev),integrator.opts.internalnorm(u))*integrator.opts.reltol))
+    utilde = utilde - u
+    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+    integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   integrator.k[1] = integrator.fsalfirst
   integrator.u = u
@@ -514,7 +516,8 @@ end
   step_limiter!(u, f, t+dt)
 
   if integrator.opts.adaptive
-    @. atmp = (utilde-u)/(integrator.opts.abstol+max(integrator.opts.internalnorm(uprev),integrator.opts.internalnorm(u))*integrator.opts.reltol)
+    @. utilde = utilde - u
+    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   f( k,  u, p, t+dt)
@@ -572,7 +575,9 @@ end
 
   integrator.fsallast = f(u, p, t+dt)
   if integrator.opts.adaptive
-    integrator.EEst = integrator.opts.internalnorm(@. (utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol))
+    utilde = utilde - u
+    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+    integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   integrator.k[1] = integrator.fsalfirst
   integrator.u = u
@@ -640,7 +645,8 @@ end
   step_limiter!(u, f, t+dt)
 
   if integrator.opts.adaptive
-    @. atmp = (utilde-u)/(integrator.opts.abstol+max(abs(uprev),abs(u))*integrator.opts.reltol)
+    @. utilde = utilde - u
+    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   f( k,  u, p, t+dt)
