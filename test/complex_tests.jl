@@ -20,12 +20,12 @@ implicit_noautodiff = [ImplicitEuler(autodiff=false),Trapezoid(autodiff=false),K
     ψ0 = [1.0+0.0im; 0.0]
     prob = ODEProblem(f,ψ0,(-T,T))
     sol = solve(prob,alg)
-    @test abs(norm(sol(T)) - 1.0) < 1e-2
+    @test norm(sol(T)) ≈ 1 atol=1e-2
   end
   ψ0 = @SArray [1.0+0.0im; 0.0]
   prob = ODEProblem(fun,ψ0,(-T,T))
   sol = solve(prob,alg)
-  @test abs(norm(sol(T)) - 1.0) < 1e-2
+  @test norm(sol(T)) ≈ 1 atol=1e-2
 end
 
 @testset "Complex Tests on Implicit Autodiff Methods" for alg in implicit_autodiff
@@ -34,12 +34,12 @@ end
       ψ0 = [1.0+0.0im; 0.0]
       prob = ODEProblem(f,ψ0,(-T,T))
       sol = solve(prob,alg)
-      @test abs(norm(sol(T)) - 1.0) < 1e-2
+      @test norm(sol(T)) ≈ 1 atol=1e-2
     end
     ψ0 = @SArray [1.0+0.0im; 0.0]
     prob = ODEProblem(fun,ψ0,(-T,T))
     sol = solve(prob,alg)
-    @test abs(norm(sol(T)) - 1.0) < 1e-2
+    @test norm(sol(T)) ≈ 1 atol=1e-2
   end
 end
 
@@ -47,7 +47,7 @@ end
     ψ0 = [1.0+0.0im; 0.0]
     prob = ODEProblem(fun_inplace,ψ0,(-T,T))
     sol = solve(prob,alg)
-    @test abs(norm(sol(T)) - 1.0) < 1e-2
+    @test norm(sol(T)) ≈ 1 atol=1e-2
 end
 
 @testset "Complex Tests on Implicit Finite Diff Out-of-place Methods" begin
@@ -55,7 +55,7 @@ end
     ψ0 = [1.0+0.0im; 0.0]
     prob = ODEProblem(fun,ψ0,(-T,T))
     sol = solve(prob,alg)
-    @test abs(norm(sol(T)) - 1.0) < 1e-2
+    @test norm(sol(T)) ≈ 1 atol=1e-2
   end
 end
 
@@ -65,7 +65,7 @@ end
       ψ0 = @SArray [1.0+0.0im; 0.0]
       prob = ODEProblem(fun,ψ0,(-T,T))
       sol = solve(prob,alg)
-      @test abs(norm(sol(T)) - 1.0) < 1e-2
+      @test norm(sol(T)) ≈ 1 atol=1e-2
     end
   end
 end

@@ -14,9 +14,9 @@ using OrdinaryDiffEq: alg_order
   for Alg in [GenericIIF1,GenericIIF2,LawsonEuler,NorsettEuler,ETDRK2,ETDRK3,ETDRK4,HochOst4,Exprb32,Exprb43,ETD2,KenCarp3]
     sim  = test_convergence(dts,prob,Alg())
     if Alg in [Exprb32, Exprb43]
-      @test_broken abs(sim.𝒪est[:l2] - alg_order(Alg())) < 0.2
+      @test_broken sim.𝒪est[:l2] ≈ alg_order(Alg()) atol=0.2
     else
-      @test abs(sim.𝒪est[:l2] - alg_order(Alg())) < 0.2
+      @test sim.𝒪est[:l2] ≈ alg_order(Alg()) atol=0.2
     end
   end
   # Dense test
@@ -38,14 +38,14 @@ end
   for Alg in [GenericIIF1,GenericIIF2,LawsonEuler,NorsettEuler,ETDRK2,ETDRK3,ETDRK4,HochOst4,Exprb32,Exprb43,ETD2,KenCarp3]
     sim  = test_convergence(dts,prob,Alg())
     if Alg in [Exprb32, Exprb43]
-      @test_broken abs(sim.𝒪est[:l2] - alg_order(Alg())) < 0.1
+      @test_broken sim.𝒪est[:l2] ≈ alg_order(Alg()) atol=0.1
     else
-      @test abs(sim.𝒪est[:l2] - alg_order(Alg())) < 0.1
+      @test sim.𝒪est[:l2] ≈ alg_order(Alg()) atol=0.1
     end
   end
   sim  = test_convergence(dts,prob,ETDRK4(),dense_errors=true)
-  @test abs(sim.𝒪est[:l2]-4) < 0.1
-  @test abs(sim.𝒪est[:L2]-4) < 0.1
+  @test sim.𝒪est[:l2] ≈  4 atol=0.1
+  @test sim.𝒪est[:L2] ≈ 4 atol=0.1
 end
 
 @testset "EPIRK Out-of-place" begin
@@ -65,9 +65,9 @@ end
   for Alg in Algs
     sim = analyticless_test_convergence(dts, prob, Alg(adaptive_krylov=false), test_setup)
     if Alg == EPIRK5s3
-      @test_broken abs(sim.𝒪est[:l2] - alg_order(Alg())) < 0.1
+      @test_broken sim.𝒪est[:l2] ≈ alg_order(Alg()) atol=0.1
     else
-      @test abs(sim.𝒪est[:l2] - alg_order(Alg())) < 0.1
+      @test sim.𝒪est[:l2] ≈ alg_order(Alg()) atol=0.1
     end
   end
 end
@@ -90,9 +90,9 @@ end
   for Alg in Algs
     sim = analyticless_test_convergence(dts, prob, Alg(adaptive_krylov=false), test_setup)
     if Alg == EPIRK5s3
-      @test_broken abs(sim.𝒪est[:l2] - alg_order(Alg())) < 0.1
+      @test_broken sim.𝒪est[:l2] ≈ alg_order(Alg()) atol=0.1
     else
-      @test abs(sim.𝒪est[:l2] - alg_order(Alg())) < 0.1
+      @test sim.𝒪est[:l2] ≈ alg_order(Alg()) atol=0.1
     end
   end
 end
@@ -113,11 +113,11 @@ end
   # Convergence simulation
   dts = 1 ./2 .^(7:-1:4)
   sim = analyticless_test_convergence(dts, prob, HochOst4(krylov=true), test_setup)
-  @test abs(sim.𝒪est[:l2] - 4) < 0.1
+  @test sim.𝒪est[:l2] ≈ 4 atol=0.1
   sim = analyticless_test_convergence(dts, prob_ip, HochOst4(krylov=true), test_setup)
-  @test abs(sim.𝒪est[:l2] - 4) < 0.1
+  @test sim.𝒪est[:l2] ≈ 4 atol=0.1
   sim = analyticless_test_convergence(dts, prob, EPIRK5P1(adaptive_krylov=false), test_setup)
-  @test abs(sim.𝒪est[:l2] - 5) < 0.1
+  @test sim.𝒪est[:l2] ≈ 5 atol=0.1
   sim = analyticless_test_convergence(dts, prob_ip, EPIRK5P1(adaptive_krylov=false), test_setup)
-  @test abs(sim.𝒪est[:l2] - 5) < 0.1
+  @test sim.𝒪est[:l2] ≈ 5 atol=0.1
 end

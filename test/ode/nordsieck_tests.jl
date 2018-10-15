@@ -9,9 +9,9 @@ dts = 1 .//(2 .^(10:-1:5))
 @testset "Nordsieck Convergence Tests" begin
   for i in eachindex(probArr)
     sim = test_convergence(dts,probArr[i],AN5())
-    @test abs(sim.𝒪est[:final]-5) < testTol
-    @test abs(sim.𝒪est[:l2]-5) < testTol
-    @test abs(sim.𝒪est[:l∞]-5) < testTol
+    @test sim.𝒪est[:final] ≈ 5 atol=testTol
+    @test sim.𝒪est[:l2] ≈ 5 atol=testTol
+    @test sim.𝒪est[:l∞] ≈ 5 atol=testTol
   end
 end
 
@@ -23,7 +23,7 @@ probArr = [prob_ode_linear,
     sol = solve(prob, AN5(), reltol=1e-6)
     @test length(sol.t) < 11
     exact = prob.f(Val{:analytic}, prob.u0, prob.p, prob.tspan[end])
-    @test Float64(norm(exact-sol[end])) < 1e-5
+    @test exact ≈ sol[end] atol=1e-5
   end
 end
 
