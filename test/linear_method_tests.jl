@@ -14,7 +14,7 @@ sol = solve(prob,LinearImplicitEuler())
 
 dts = 1./2.^(8:-1:4) #14->7 good plot
 sim  = test_convergence(dts,prob,LinearImplicitEuler())
-@test abs(sim.𝒪est[:l2]-1) < 0.2
+@test sim.𝒪est[:l2] ≈ 1 atol=0.2
 
 # using Plots; pyplot(); plot(sim)
 
@@ -76,4 +76,4 @@ x0,v0,ti = rand(3)
 prob = ODEProblem(H, [x0, v0, 1, ti], (ti, 5.))
 dts = 1./2.^(10:-1:1)
 sim  = test_convergence(dts,prob,MidpointSplitting())
-@test abs(sim.𝒪est[:l2]-2) < 0.2
+@test sim.𝒪est[:l2] ≈ 2 atol=0.2

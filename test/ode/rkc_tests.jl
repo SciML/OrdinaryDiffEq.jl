@@ -25,7 +25,7 @@ end
   dts = 1 .//2 .^(8:-1:4)
   testTol = 0.1
   for prob in probArr
-    sim2 = test_convergence(dts,prob,ROCK2())
-    @test abs(sim2.𝒪est[:l∞]-2) < testTol
+    sim = test_convergence(dts,prob,ROCK2())
+    @test sim.𝒪est[:l∞] ≈ 2 atol=testTol
   end
 end

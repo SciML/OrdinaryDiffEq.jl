@@ -18,14 +18,14 @@ sol = solve(prob,OwrenZen5())
 @test length(sol) < 20
 
 sim = test_convergence(dts,prob,OwrenZen3(),dense_errors=true)
-@test abs(sim.𝒪est[:final]-3) < testTol
-@test abs(sim.𝒪est[:L2]-3) < testTol
+@test sim.𝒪est[:final] ≈ 3 atol=testTol
+@test sim.𝒪est[:L2] ≈ 3 atol=testTol
 sim = test_convergence(dts,prob,OwrenZen4(),dense_errors=true)
-@test abs(sim.𝒪est[:final]-4) < testTol
-@test abs(sim.𝒪est[:L2]-4) < testTol
+@test sim.𝒪est[:final] ≈ 4 atol=testTol
+@test sim.𝒪est[:L2] ≈ 4 atol=testTol
 sim = test_convergence(dts,prob,OwrenZen5(),dense_errors=true)
-@test abs(sim.𝒪est[:final]-5) < testTol
-@test abs(sim.𝒪est[:L2]-5) < testTol
+@test sim.𝒪est[:final] ≈ 5 atol=testTol
+@test sim.𝒪est[:L2] ≈ 5 atol=testTol
 
 prob = prob_ode_2Dlinear
 sol = solve(prob,OwrenZen3())
@@ -36,11 +36,11 @@ sol = solve(prob,OwrenZen5())
 @test length(sol) < 20
 
 sim = test_convergence(dts,prob,OwrenZen3(),dense_errors=true)
-@test abs(sim.𝒪est[:final]-3) < testTol
-@test abs(sim.𝒪est[:L2]-3) < testTol
+@test sim.𝒪est[:final] ≈ 3 atol=testTol
+@test sim.𝒪est[:L2] ≈ 3 atol=testTol
 sim = test_convergence(dts,prob,OwrenZen4(),dense_errors=true)
-@test abs(sim.𝒪est[:final]-4) < testTol
-@test abs(sim.𝒪est[:L2]-4) < testTol
+@test sim.𝒪est[:final] ≈ 4 atol=testTol
+@test sim.𝒪est[:L2] ≈ 4 atol=testTol
 sim = test_convergence(dts,prob,OwrenZen5(),dense_errors=true)
-@test abs(sim.𝒪est[:final]-5) < testTol
-@test abs(sim.𝒪est[:L2]-5) < testTol
+@test sim.𝒪est[:final] ≈ 5 atol=testTol
+@test sim.𝒪est[:L2] ≈ 5 atol=testTol
