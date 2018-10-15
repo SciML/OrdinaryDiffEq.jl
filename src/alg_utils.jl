@@ -13,6 +13,9 @@ isfsal(alg::Vern9) = false
 get_current_isfsal(alg, cache) = isfsal(alg)
 get_current_isfsal(alg::CompositeAlgorithm, cache) = isfsal(alg.algs[cache.current])
 
+issplit(alg::OrdinaryDiffEqAlgorithm) = false
+issplit(alg::SplitAlgorithms) = true
+
 fsal_typeof(alg::OrdinaryDiffEqAlgorithm,rate_prototype) = typeof(rate_prototype)
 fsal_typeof(alg::ETD2,rate_prototype) = ETD2Fsal{typeof(rate_prototype)}
 function fsal_typeof(alg::CompositeAlgorithm,rate_prototype)
