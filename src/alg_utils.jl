@@ -196,6 +196,7 @@ alg_order(alg::GenericTrapezoid) = 2
 alg_order(alg::ImplicitEuler) = 1
 alg_order(alg::LinearImplicitEuler) = 1
 alg_order(alg::MidpointSplitting) = 2
+alg_order(alg::LinearExponential) = 0
 alg_order(alg::Trapezoid) = 2
 alg_order(alg::ImplicitMidpoint) = 2
 alg_order(alg::TRBDF2) = 2
