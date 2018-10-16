@@ -110,9 +110,8 @@ function perform_step!(integrator,cache::Union{HeunConstantCache,RalstonConstant
           @muladd utilde = (2dt/3)*(k2 - fsalfirst)
       end
 
-      tmp = utilde/(integrator.opts.abstol+max(integrator.opts.internalnorm(uprev),
-                        integrator.opts.internalnorm(u))*integrator.opts.reltol)
-      integrator.EEst = integrator.opts.internalnorm(tmp)
+      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   k = f(u, p, t+dt)
   integrator.fsallast = k
@@ -159,8 +158,7 @@ function perform_step!(integrator,cache::Union{HeunCache,RalstonCache},repeat_st
           @muladd @. utilde = (2dt/3)*(k - fsalfirst)
       end
 
-      @. utilde = utilde/(integrator.opts.abstol+max(integrator.opts.internalnorm(uprev),
-                          integrator.opts.internalnorm(u))*integrator.opts.reltol)
+      calculate_residuals!(utilde, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(utilde)
   end
   f(integrator.fsallast,u,p,t+dt) # For the interpolation, needs k at the updated point
