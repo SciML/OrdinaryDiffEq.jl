@@ -9,7 +9,7 @@ function ode_addsteps!(args...)
   DiffEqBase.addsteps!(args...)
 end
 
-@inline function DiffEqBase.addsteps!(integrator::ODEIntegrator,f=integrator.f,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
+@inline function _ode_addsteps!(integrator,f=integrator.f,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if !(typeof(integrator.cache) <: CompositeCache)
     DiffEqBase.addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.u,
                   integrator.dt,f,integrator.p,integrator.cache,
@@ -21,6 +21,7 @@ end
                   always_calc_begin,allow_calc_end,force_calc_end)
   end
 end
+@inline DiffEqBase.addsteps!(integrator::ODEIntegrator,args...) = _ode_addsteps!(integrator,args...)
 
 @inline function ode_interpolant(Θ,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   DiffEqBase.addsteps!(integrator)
