@@ -10,9 +10,6 @@ mutable struct CompositeCache{T,F} <: OrdinaryDiffEqCache
   current::Int
 end
 
-DiffEqBase.ismutablecache(::OrdinaryDiffEqCache) = false
-DiffEqBase.ismutablecache(::OrdinaryDiffEqMutableCache) = true
-
 function alg_cache(alg::CompositeAlgorithm,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{T}}) where T
   caches = map((x)->alg_cache(x,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val{T}),alg.algs)
   CompositeCache(caches,alg.choice_function,1)

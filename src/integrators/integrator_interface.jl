@@ -58,6 +58,7 @@ end
 #TODO: Bigger caches for most algorithms
 @inline DiffEqBase.get_tmp_cache(integrator::ODEIntegrator) =
           get_tmp_cache(integrator::ODEIntegrator,integrator.alg,integrator.cache)
+@inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqAlgorithm,cache::OrdinaryDiffEqConstantCache) = nothing
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqAlgorithm,cache) = (cache.tmp,)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm,cache) = (cache.tmp,cache.atmp)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,cache) = (cache.tmp,cache.linsolve_tmp)
@@ -276,3 +277,5 @@ function DiffEqBase.set_u!(integrator::ODEIntegrator, u)
   integrator.u = u
   u_modified!(integrator, true)
 end
+
+DiffEqBase.isnative(integrator::ODEIntegrator) = true
