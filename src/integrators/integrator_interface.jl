@@ -1,4 +1,4 @@
-function DiffEqBase.change_t_via_interpolation!(integrator::ODEIntegrator,t,modify_save_endpoint::Type{Val{T}}=Val{false}) where T
+function _change_t_via_interpolation!(integrator,t,modify_save_endpoint::Type{Val{T}}) where T
   # Can get rid of an allocation here with a function
   # get_tmp_arr(integrator.cache) which gives a pointer to some
   # cache array which can be modified.
@@ -12,14 +12,17 @@ function DiffEqBase.change_t_via_interpolation!(integrator::ODEIntegrator,t,modi
     end
     integrator.t = t
     integrator.dt = integrator.t - integrator.tprev
-    reeval_internals_due_to_modification!(integrator)
+    DiffEqBase.reeval_internals_due_to_modification!(integrator)
     if T
       solution_endpoint_match_cur_integrator!(integrator)
     end
   end
 end
+DiffEqBase.change_t_via_interpolation!(integrator::ODEIntegrator,
+                                        t,modify_save_endpoint::Type{Val{T}}=Val{false}) where T =
+                                          _change_t_via_interpolation!(integrator,t,modify_save_endpoint)
 
-function reeval_internals_due_to_modification!(integrator)
+function DiffEqBase.reeval_internals_due_to_modification!(integrator::ODEIntegrator)
   if integrator.opts.calck
     resize!(integrator.k,integrator.kshortsize) # Reset k for next step!
     alg = unwrap_alg(integrator, false)
