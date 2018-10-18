@@ -131,7 +131,6 @@ module OrdinaryDiffEq
   include("derivative_wrappers.jl")
   include("iterator_interface.jl")
   include("constants.jl")
-  include("callbacks.jl")
   include("composite_solution.jl")
   include("solve.jl")
   include("initdt.jl")
@@ -144,7 +143,7 @@ module OrdinaryDiffEq
   export OrdinaryDiffEqAlgorithm
 
   #Callback Necessary
-  export ode_addsteps!, ode_interpolant,
+  export ode_addsteps!, addsteps!, ode_interpolant,
         terminate!, savevalues!, copyat_or_push!, isfsal
 
   export constructDormandPrince

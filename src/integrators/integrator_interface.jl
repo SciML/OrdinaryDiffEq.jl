@@ -1,4 +1,7 @@
-function change_t_via_interpolation!(integrator,t,modify_save_endpoint::Type{Val{T}}=Val{false}) where T
+# We want to make sure that the first argument of change_t_via_interpolation!
+# is specialized, yet, it needs to take both ODEIntegrator and DDEIntegrator.
+# Hence, we need to have two separate functions.
+function _change_t_via_interpolation!(integrator,t,modify_save_endpoint::Type{Val{T}}) where T
   # Can get rid of an allocation here with a function
   # get_tmp_arr(integrator.cache) which gives a pointer to some
   # cache array which can be modified.
@@ -12,22 +15,25 @@ function change_t_via_interpolation!(integrator,t,modify_save_endpoint::Type{Val
     end
     integrator.t = t
     integrator.dt = integrator.t - integrator.tprev
-    reeval_internals_due_to_modification!(integrator)
+    DiffEqBase.reeval_internals_due_to_modification!(integrator)
     if T
       solution_endpoint_match_cur_integrator!(integrator)
     end
   end
 end
+DiffEqBase.change_t_via_interpolation!(integrator::ODEIntegrator,
+                                        t,modify_save_endpoint::Type{Val{T}}=Val{false}) where T =
+                                          _change_t_via_interpolation!(integrator,t,modify_save_endpoint)
 
-function reeval_internals_due_to_modification!(integrator)
+function DiffEqBase.reeval_internals_due_to_modification!(integrator::ODEIntegrator)
   if integrator.opts.calck
     resize!(integrator.k,integrator.kshortsize) # Reset k for next step!
     alg = unwrap_alg(integrator, false)
     if typeof(alg) <: BS5 || typeof(alg) <: Vern6 || typeof(alg) <: Vern7 ||
        typeof(alg) <: Vern8 || typeof(alg) <: Vern9
-       ode_addsteps!(integrator,integrator.f,true,false,!alg.lazy)
+       DiffEqBase.addsteps!(integrator,integrator.f,true,false,!alg.lazy)
     else
-      ode_addsteps!(integrator,integrator.f,true,false)
+      DiffEqBase.addsteps!(integrator,integrator.f,true,false)
     end
   end
   integrator.u_modified = false
@@ -58,6 +64,10 @@ end
 #TODO: Bigger caches for most algorithms
 @inline DiffEqBase.get_tmp_cache(integrator::ODEIntegrator) =
           get_tmp_cache(integrator::ODEIntegrator,integrator.alg,integrator.cache)
+# avoid method ambiguity
+for typ in (OrdinaryDiffEqAlgorithm,OrdinaryDiffEqNewtonAdaptiveAlgorithm,OrdinaryDiffEqRosenbrockAdaptiveAlgorithm)
+  @eval @inline DiffEqBase.get_tmp_cache(integrator,alg::$typ,cache::OrdinaryDiffEqConstantCache) = nothing
+end
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqAlgorithm,cache) = (cache.tmp,)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm,cache) = (cache.tmp,cache.atmp)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,cache) = (cache.tmp,cache.linsolve_tmp)
