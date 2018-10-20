@@ -297,7 +297,7 @@ function DiffEqBase.__init(
   force_stepfail = false
   last_stepfail = false
   event_last_time = 0
-  last_event_error = zero(uBottomEltype)
+  last_event_error = zero(uBottomEltypeNoUnits)
   dtchangeable = isdtchangeable(alg)
   q11 = tTypeNoUnits(1)
   success_iter = 0
