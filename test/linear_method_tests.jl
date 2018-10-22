@@ -82,9 +82,9 @@ A = DiffEqArrayOperator([2.0 -1.0; -1.0 2.0])
 
 # Linear exponential solvers
 prob = ODEProblem(A,u0,(0.0,1.0))
-sol1 = solve(prob, LinearExponential(krylov=:off); dt=1.0)(1.0)
-sol2 = solve(prob, LinearExponential(krylov=:simple); dt=1.0)(1.0)
-sol3 = solve(prob, LinearExponential(krylov=:adaptive); dt=1.0)(1.0)
+sol1 = solve(prob, LinearExponential(krylov=:off))(1.0)
+sol2 = solve(prob, LinearExponential(krylov=:simple))(1.0)
+sol3 = solve(prob, LinearExponential(krylov=:adaptive))(1.0)
 sol_analytic = exp(1.0 * Matrix(A)) * u0
 
 @test isapprox(sol1, sol_analytic, rtol=1e-10)
