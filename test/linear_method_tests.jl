@@ -3,27 +3,6 @@ using LinearAlgebra, Random
 
 Random.seed!(0); u0 = rand(2)
 A = DiffEqArrayOperator([2.0 -1.0; -1.0 2.0])
-# function (p::typeof(A))(::Type{Val{:analytic}},u0,p,t)
-#     exp(p.A*t)*u0
-# end
-
-# prob = ODEProblem(A,u0,(0.0,1.0))
-
-# x = rand(2)
-# @test A(0.0,x) == A*x
-
-# sol = solve(prob,LinearImplicitEuler())
-
-# dts = 1./2.^(8:-1:4) #14->7 good plot
-# sim  = test_convergence(dts,prob,LinearImplicitEuler())
-# @test sim.𝒪est[:l2] ≈ 1 atol=0.2
-
-# # using Plots; pyplot(); plot(sim)
-
-# B = ones(2)
-# L = AffineDiffEqOperator{Float64}((A,),(B,),rand(2))
-# prob = ODEProblem(L,u0,(0.0,1.0))
-# sol = solve(prob,LinearImplicitEuler())
 
 # B = DiffEqArrayOperator(ones(2,2))
 # L = AffineDiffEqOperator{Float64}((A,B),(),rand(2))
