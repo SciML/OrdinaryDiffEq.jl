@@ -75,7 +75,7 @@ integrator.opts.abstol = 1e-9
 ```
 For more info see the linked documentation page.
 """
-mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,pType,eigenType,QT,tdirType,ksEltype,SolType,F,CacheType,O,FSALType} <: DiffEqBase.AbstractODEIntegrator
+mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,pType,eigenType,QT,tdirType,ksEltype,SolType,F,CacheType,O,FSALType,EventErrorType} <: DiffEqBase.AbstractODEIntegrator
   sol::SolType
   u::uType
   k::ksEltype
@@ -107,6 +107,7 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,pType,
   last_stepfail::Bool
   just_hit_tstop::Bool
   event_last_time::Int
+  last_event_error::EventErrorType
   accept_step::Bool
   isout::Bool
   reeval_fsal::Bool
@@ -116,23 +117,25 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,pType,
   fsallast::FSALType
 
   function ODEIntegrator{algType,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
-                F,CacheType,O,FSALType}(
+                F,CacheType,O,FSALType,EventErrorType}(
                 sol,u,k,t,dt,f,p,uprev,uprev2,tprev,
       alg,dtcache,dtchangeable,dtpropose,tdir,
       eigen_est,EEst,qold,q11,erracc,dtacc,success_iter,
       iter,saveiter,saveiter_dense,cache,
       kshortsize,force_stepfail,last_stepfail,just_hit_tstop,
-      event_last_time,accept_step,isout,reeval_fsal,u_modified,opts) where {algType,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
-                                     F,CacheType,O,FSALType}
+      event_last_time,last_event_error,
+      accept_step,isout,reeval_fsal,u_modified,opts) where {algType,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
+                                     F,CacheType,O,FSALType,EventErrorType}
 
       new{algType,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
-                  F,CacheType,O,FSALType}(
+                  F,CacheType,O,FSALType,EventErrorType}(
                   sol,u,k,t,dt,f,p,uprev,uprev2,tprev,
       alg,dtcache,dtchangeable,dtpropose,tdir,
       eigen_est,EEst,qold,q11,erracc,dtacc,success_iter,
       iter,saveiter,saveiter_dense,cache,
       kshortsize,force_stepfail,last_stepfail,just_hit_tstop,
-      event_last_time,accept_step,isout,reeval_fsal,u_modified,opts) # Leave off fsalfirst and last
+      event_last_time,last_event_error,
+      accept_step,isout,reeval_fsal,u_modified,opts) # Leave off fsalfirst and last
   end
 end
 

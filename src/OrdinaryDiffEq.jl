@@ -20,7 +20,7 @@ module OrdinaryDiffEq
   import RecursiveArrayTools: chain, recursivecopy!
 
   using Parameters, GenericSVD, ForwardDiff, RecursiveArrayTools,
-        NLsolve, Roots, DataStructures, DiffEqDiffTools
+        NLsolve, DataStructures, DiffEqDiffTools
 
   import ForwardDiff.Dual
 
@@ -131,7 +131,6 @@ module OrdinaryDiffEq
   include("derivative_wrappers.jl")
   include("iterator_interface.jl")
   include("constants.jl")
-  include("callbacks.jl")
   include("composite_solution.jl")
   include("solve.jl")
   include("initdt.jl")
@@ -144,7 +143,7 @@ module OrdinaryDiffEq
   export OrdinaryDiffEqAlgorithm
 
   #Callback Necessary
-  export ode_addsteps!, ode_interpolant,
+  export ode_addsteps!, addsteps!, ode_interpolant,
         terminate!, savevalues!, copyat_or_push!, isfsal
 
   export constructDormandPrince
@@ -164,7 +163,7 @@ module OrdinaryDiffEq
 
   export GenericImplicitEuler, GenericTrapezoid
 
-  export LinearImplicitEuler, MidpointSplitting
+  export MidpointSplitting, LinearExponential
 
   export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
          Ros4LStab, ROS3P, Rodas3, Rodas4, Rodas42, Rodas4P, Rodas5

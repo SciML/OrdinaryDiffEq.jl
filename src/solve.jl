@@ -81,7 +81,7 @@ function DiffEqBase.__init(
 
   t = tspan[1]
 
-  if (((!(typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm) && !(typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm)) || !adaptive) && dt == tType(0) && isempty(tstops)) && !(typeof(alg) <: FunctionMap)
+  if (((!(typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm) && !(typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm)) || !adaptive) && dt == tType(0) && isempty(tstops)) && !(typeof(alg) <: Union{FunctionMap,LinearExponential})
       error("Fixed timestep methods require a choice of dt or choosing the tstops")
   end
 
@@ -143,7 +143,11 @@ function DiffEqBase.__init(
       rate_prototype = similar(u, typeof.(oneunit.(recursive_bottom_eltype.(u.x))./oneunit(tType))...)
     end
   else
-    rate_prototype = u./oneunit(tType)
+    if uBottomEltypeNoUnits == uBottomEltype
+      rate_prototype = u
+    else # has units!
+      rate_prototype = u/oneunit(tType)
+    end
   end
   rateType = typeof(rate_prototype) ## Can be different if united
 
@@ -293,6 +297,7 @@ function DiffEqBase.__init(
   force_stepfail = false
   last_stepfail = false
   event_last_time = 0
+  last_event_error = zero(uBottomEltypeNoUnits)
   dtchangeable = isdtchangeable(alg)
   q11 = tTypeNoUnits(1)
   success_iter = 0
@@ -302,14 +307,16 @@ function DiffEqBase.__init(
   integrator = ODEIntegrator{algType,uType,tType,typeof(p),typeof(eigen_est),
                              QT,typeof(tdir),typeof(k),SolType,
                              FType,cacheType,
-                             typeof(opts),fsal_typeof(alg,rate_prototype)}(
+                             typeof(opts),fsal_typeof(alg,rate_prototype),
+                             typeof(last_event_error)}(
                              sol,u,k,t,tType(dt),f,p,uprev,uprev2,tprev,
                              alg,dtcache,dtchangeable,
                              dtpropose,tdir,eigen_est,EEst,QT(qoldinit),q11,
                              erracc,dtacc,success_iter,
                              iter,saveiter,saveiter_dense,cache,
                              kshortsize,force_stepfail,last_stepfail,
-                             just_hit_tstop,event_last_time,accept_step,
+                             just_hit_tstop,event_last_time,last_event_error,
+                             accept_step,
                              isout,reeval_fsal,
                              u_modified,opts)
   if initialize_integrator

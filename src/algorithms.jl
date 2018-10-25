@@ -343,6 +343,13 @@ LinearImplicitEuler(;linsolve=DEFAULT_LINSOLVE) = LinearImplicitEuler{typeof(lin
 
 struct MidpointSplitting <: OrdinaryDiffEqAlgorithm end
 
+struct LinearExponential <: OrdinaryDiffEqExponentialAlgorithm
+  krylov::Symbol
+  m::Int
+  iop::Int
+end
+LinearExponential(;krylov=:off, m=10, iop=0) = LinearExponential(krylov, m, iop)
+
 ################################################################################
 
 # SDIRK Methods

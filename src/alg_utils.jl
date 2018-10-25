@@ -1,5 +1,7 @@
 isautodifferentiable(alg::OrdinaryDiffEqAlgorithm) = true
 
+DiffEqBase.isdiscrete(alg::FunctionMap) = true
+
 isfsal(alg::OrdinaryDiffEqAlgorithm) = true
 isfsal(tab::DiffEqBase.ExplicitRKTableau{MType,VType,fsal}) where {MType,VType,fsal} = fsal
 # isfsal(alg::CompositeAlgorithm) = isfsal(alg.algs[alg.current])
@@ -12,6 +14,9 @@ isfsal(alg::Vern8) = false
 isfsal(alg::Vern9) = false
 get_current_isfsal(alg, cache) = isfsal(alg)
 get_current_isfsal(alg::CompositeAlgorithm, cache) = isfsal(alg.algs[cache.current])
+
+issplit(alg::OrdinaryDiffEqAlgorithm) = false
+issplit(alg::SplitAlgorithms) = true
 
 fsal_typeof(alg::OrdinaryDiffEqAlgorithm,rate_prototype) = typeof(rate_prototype)
 fsal_typeof(alg::ETD2,rate_prototype) = ETD2Fsal{typeof(rate_prototype)}
@@ -67,7 +72,6 @@ alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))
 alg_extrapolates(alg::GenericImplicitEuler) = true
 alg_extrapolates(alg::GenericTrapezoid) = true
 alg_extrapolates(alg::ImplicitEuler) = true
-alg_extrapolates(alg::LinearImplicitEuler) = true
 alg_extrapolates(alg::Trapezoid) = true
 alg_extrapolates(alg::ImplicitMidpoint) = true
 alg_extrapolates(alg::TRBDF2) = true
@@ -189,8 +193,8 @@ alg_order(alg::TsitPap8) = 8
 alg_order(alg::GenericImplicitEuler) = 1
 alg_order(alg::GenericTrapezoid) = 2
 alg_order(alg::ImplicitEuler) = 1
-alg_order(alg::LinearImplicitEuler) = 1
 alg_order(alg::MidpointSplitting) = 2
+alg_order(alg::LinearExponential) = 1
 alg_order(alg::Trapezoid) = 2
 alg_order(alg::ImplicitMidpoint) = 2
 alg_order(alg::TRBDF2) = 2
