@@ -63,7 +63,7 @@ function savevalues!(integrator::ODEIntegrator,force_save=false,reduce_size=true
     saved = true
     curt = pop!(integrator.opts.saveat)
     if curt!=integrator.t # If <t, interpolate
-      ode_addsteps!(integrator)
+      DiffEqBase.addsteps!(integrator)
       Θ = (curt - integrator.tprev)/integrator.dt
       val = ode_interpolant(Θ,integrator,integrator.opts.save_idxs,Val{0}) # out of place, but no force copy later
       copyat_or_push!(integrator.sol.t,integrator.saveiter,curt)
