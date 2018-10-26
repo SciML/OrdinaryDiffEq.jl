@@ -77,19 +77,27 @@ end
 end
 
 @testset "Adaptive exponential Rosenbrock" begin
-  dt = 0.05
-  abstol=1e-4; reltol=1e-3
-  sol_ref = solve(prob, Tsit5(); abstol=abstol, reltol=reltol)
+  # Regression tests adapted from ode_dense_tests.jl
+  interp_points = 0.0:1/16:1.0
+  interp_results = [zeros(N) for _ = 1:length(interp_points)]
+  function regression_test(prob, alg, tol)
+    sol1 = solve(prob, alg, dt=1/4, dense=true, adaptive=true)
+    sol1(interp_results, interp_points)
+    sol2 = solve(prob, alg, dt=1/16, dense=true, adaptive=false)
+    for i in eachindex(sol2)
+      err = maximum(abs.(sol2[i] - interp_results[i]))
+      @test err < tol
+    end
+  end
 
-  sol = solve(prob, Exprb32(m=20); adaptive=true, abstol=abstol, reltol=reltol)
-  @test isapprox(sol(1.0), sol_ref(1.0); rtol=reltol)
-  sol = solve(prob_ip, Exprb32(m=20); adaptive=true, abstol=abstol, reltol=reltol)
-  @test isapprox(sol(1.0), sol_ref(1.0); rtol=reltol)
-
-  sol = solve(prob, Exprb43(m=20); adaptive=true, abstol=abstol, reltol=reltol)
-  @test isapprox(sol(1.0), sol_ref(1.0); rtol=reltol)
-  sol = solve(prob_ip, Exprb43(m=20); adaptive=true, abstol=abstol, reltol=reltol)
-  @test isapprox(sol(1.0), sol_ref(1.0); rtol=reltol)
+  println("Exprb32, out-of-place")
+  regression_test(prob, Exprb32(m=N), 3e-4)
+  println("Exprb32, inplace")
+  regression_test(prob_ip, Exprb32(m=N), 3e-4)
+  println("Exprb43, out-of-place")
+  regression_test(prob, Exprb43(m=N), 2e-4)
+  println("Exprb43, inplace")
+  regression_test(prob_ip, Exprb43(m=N), 2e-4)
 end
 end
 
