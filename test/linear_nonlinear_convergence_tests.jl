@@ -11,13 +11,9 @@ using OrdinaryDiffEq: alg_order
 
   Random.seed!(100)
   dts = 1 ./2 .^(7:-1:4) #14->7 good plot
-  for Alg in [GenericIIF1,GenericIIF2,LawsonEuler,NorsettEuler,ETDRK2,ETDRK3,ETDRK4,HochOst4,Exprb32,Exprb43,ETD2,KenCarp3]
+  for Alg in [GenericIIF1,GenericIIF2,LawsonEuler,NorsettEuler,ETDRK2,ETDRK3,ETDRK4,HochOst4,ETD2,KenCarp3]
     sim  = test_convergence(dts,prob,Alg())
-    if Alg in [Exprb32, Exprb43]
-      @test_broken sim.𝒪est[:l2] ≈ alg_order(Alg()) atol=0.2
-    else
-      @test sim.𝒪est[:l2] ≈ alg_order(Alg()) atol=0.2
-    end
+    @test sim.𝒪est[:l2] ≈ alg_order(Alg()) atol=0.2
   end
   # Dense test
   sim  = test_convergence(dts,prob,ETDRK4(),dense_errors=true)
@@ -35,13 +31,9 @@ end
   prob = SplitODEProblem(linnonlin_fun_iip,u0,(0.0,1.0))
 
   dts = 1 ./2 .^(8:-1:4) #14->7 good plot
-  for Alg in [GenericIIF1,GenericIIF2,LawsonEuler,NorsettEuler,ETDRK2,ETDRK3,ETDRK4,HochOst4,Exprb32,Exprb43,ETD2,KenCarp3]
+  for Alg in [GenericIIF1,GenericIIF2,LawsonEuler,NorsettEuler,ETDRK2,ETDRK3,ETDRK4,HochOst4,ETD2,KenCarp3]
     sim  = test_convergence(dts,prob,Alg())
-    if Alg in [Exprb32, Exprb43]
-      @test_broken sim.𝒪est[:l2] ≈ alg_order(Alg()) atol=0.1
-    else
-      @test sim.𝒪est[:l2] ≈ alg_order(Alg()) atol=0.1
-    end
+    @test sim.𝒪est[:l2] ≈ alg_order(Alg()) atol=0.1
   end
   sim  = test_convergence(dts,prob,ETDRK4(),dense_errors=true)
   @test sim.𝒪est[:l2] ≈  4 atol=0.1
@@ -120,4 +112,45 @@ end
   @test sim.𝒪est[:l2] ≈ 5 atol=0.1
   sim = analyticless_test_convergence(dts, prob_ip, EPIRK5P1(adaptive_krylov=false), test_setup)
   @test sim.𝒪est[:l2] ≈ 5 atol=0.1
+end
+
+@testset "Adaptive Exprb Out-of-place" begin
+  println("Adaptive Exprb Out-of-place")
+  # Setup nonlinear problem
+  A = [-2.0 1.0; 1.0 -2.0]
+  f = (u,p,t) -> A*u - u.^3
+  jac = (u,p,t) -> A - [3u[1]^2 0.0; 0.0 3u[2]^2]
+  fun = ODEFunction(f; jac=jac)
+  Random.seed!(0); u0 = rand(2); tspan = (0.0, 1.0)
+  prob = ODEProblem(fun, u0, tspan)
+  # Setup approximate solution
+  test_setup = Dict(:alg=>Vern9(), :reltol=>1e-16, :abstol=>1e-16)
+  # Convergence simulation
+  dts = 1 ./2 .^(7:-1:4)
+  Algs = [Exprb32, Exprb43]
+  for Alg in Algs
+    sim = analyticless_test_convergence(dts, prob, Alg(), test_setup)
+    @test sim.𝒪est[:l2] ≈ alg_order(Alg()) atol=0.1
+  end
+end
+
+@testset "Adaptive Exprb Inplace" begin
+  println("Adaptive Exprb Inplace")
+  # Setup nonlinear problem
+  A = [-2.0 1.0; 1.0 -2.0]
+  f = (du,u,p,t) -> (mul!(du, A, u); du .-= u.^3)
+  jac_update = (J,u,p,t) -> (copyto!(J,A); J[1,1] -= 3u[1]^2; J[2,2] -= 3u[2]^2)
+  jac_prototype = DiffEqArrayOperator(zeros(2,2); update_func=jac_update)
+  fun = ODEFunction(f; jac_prototype=jac_prototype)
+  Random.seed!(0); u0 = rand(2); tspan = (0.0, 1.0)
+  prob = ODEProblem(fun, u0, tspan)
+  # Setup approximate solution
+  test_setup = Dict(:alg=>Vern9(), :reltol=>1e-16, :abstol=>1e-16)
+  # Convergence simulation
+  dts = 1 ./2 .^(7:-1:4)
+  Algs = [Exprb32, Exprb43]
+  for Alg in Algs
+    sim = analyticless_test_convergence(dts, prob, Alg(), test_setup)
+    @test sim.𝒪est[:l2] ≈ alg_order(Alg()) atol=0.1
+  end
 end
