@@ -336,11 +336,6 @@ GenericTrapezoid(;
 
 # Linear Methods
 
-struct LinearImplicitEuler{F} <: OrdinaryDiffEqAdaptiveAlgorithm
-  linsolve::F
-end
-LinearImplicitEuler(;linsolve=DEFAULT_LINSOLVE) = LinearImplicitEuler{typeof(linsolve)}(linsolve)
-
 struct MidpointSplitting <: OrdinaryDiffEqAlgorithm end
 
 struct LinearExponential <: OrdinaryDiffEqExponentialAlgorithm
