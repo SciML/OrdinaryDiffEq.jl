@@ -336,11 +336,6 @@ GenericTrapezoid(;
 
 # Linear Methods
 
-struct LinearImplicitEuler{F} <: OrdinaryDiffEqAdaptiveAlgorithm
-  linsolve::F
-end
-LinearImplicitEuler(;linsolve=DEFAULT_LINSOLVE) = LinearImplicitEuler{typeof(linsolve)}(linsolve)
-
 struct MidpointSplitting <: OrdinaryDiffEqAlgorithm end
 
 struct LinearExponential <: OrdinaryDiffEqExponentialAlgorithm
@@ -715,13 +710,12 @@ end
 ETD1 = NorsettEuler # alias
 for Alg in [:Exprb32, :Exprb43]
   @eval struct $Alg <: OrdinaryDiffEqAdaptiveExponentialAlgorithm
-    krylov::Bool
     m::Int
     iop::Int
     autodiff::Bool
     chunksize::Int
   end
-  @eval $Alg(;krylov=false, m=30, iop=0, autodiff=true, chunksize=0) = $Alg(krylov, m, iop, autodiff, chunksize)
+  @eval $Alg(;m=30, iop=0, autodiff=true, chunksize=0) = $Alg(m, iop, autodiff, chunksize)
 end
 for Alg in [:Exp4, :EPIRK4s3A, :EPIRK4s3B, :EPIRK5s3, :EXPRB53s3, :EPIRK5P1, :EPIRK5P2]
   @eval struct $Alg <: OrdinaryDiffEqExponentialAlgorithm

@@ -144,27 +144,6 @@ function expRK_operators(::HochOst4, dt, A)
   B5 = 4P[3] - 8P[4]
   return A21, A31, A32, A41, A42, A51, A52, A54, B1, B4, B5
 end
-function expRK_operators(::Exprb32, dt, A)
-  P = phi(dt * A, 3)
-  A21 = P[2]
-  B1 = P[2] - 2P[4]
-  B1tilde = -2P[4]
-  B2 = 2P[4] # = B2hat
-  return A21, B1, B1tilde, B2
-end
-function expRK_operators(::Exprb43, dt, A)
-  P = phi(dt * A, 4)
-  Phalf = phi(dt/2 * A, 1)
-  A21 = 0.5Phalf[2]
-  A32 = P[2]
-  B1 = P[2] - 14P[4] + 36P[5]
-  B1tilde = 36P[5]
-  B2 = 16P[4] - 48P[5]
-  B2tilde = -48P[5]
-  B3 = -2P[4] + 12P[5]
-  B3tilde = 12P[5]
-  return A21, A32, B1, B1tilde, B2, B2tilde, B3, B3tilde
-end
 
 # Unified constructor for constant caches
 for (Alg, Cache) in [(:LawsonEuler, :LawsonEulerConstantCache),
@@ -172,9 +151,7 @@ for (Alg, Cache) in [(:LawsonEuler, :LawsonEulerConstantCache),
                      (:ETDRK2, :ETDRK2ConstantCache),
                      (:ETDRK3, :ETDRK3ConstantCache),
                      (:ETDRK4, :ETDRK4ConstantCache),
-                     (:HochOst4, :HochOst4ConstantCache),
-                     (:Exprb32, :Exprb32ConstantCache),
-                     (:Exprb43, :Exprb43ConstantCache)]
+                     (:HochOst4, :HochOst4ConstantCache)]
   @eval struct $Cache{opType,FType} <: ExpRKConstantCache
     ops::opType # precomputed operators
     uf::FType   # derivative wrapper
@@ -199,14 +176,14 @@ for (Alg, Cache) in [(:LawsonEuler, :LawsonEulerConstantCache),
 end
 
 """
-    alg_cache_expRK(alg,u,f,dt,plist)
+    alg_cache_expRK(alg,u,uEltypeNoUnits,uprev,f,t,dt,p,du1,tmp,dz,plist)
 
 Construct the non-standard caches (not uType or rateType) for ExpRK integrators.
 
 `plist` is a list of integers each corresponding to the order of a `phiv(!)`
 call in `perform_step!`.
 """
-function alg_cache_expRK(alg::ExponentialAlgorithm,u,uEltypeNoUnits,uprev,f,t,dt,p,du1,tmp,dz,plist)
+function alg_cache_expRK(alg::OrdinaryDiffEqExponentialAlgorithm,u,uEltypeNoUnits,uprev,f,t,dt,p,du1,tmp,dz,plist)
   n = length(u); T = eltype(u)
   # Allocate cache for ForwardDiff
   if isa(f, SplitFunction) || DiffEqBase.has_jac(f)
@@ -231,7 +208,7 @@ function alg_cache_expRK(alg::ExponentialAlgorithm,u,uEltypeNoUnits,uprev,f,t,dt
     Ks = KrylovSubspace{T}(n, m)
     phiv_cache = PhivCache{T}(m, maximum(plist))
     ws = [Matrix{T}(undef, n, plist[i] + 1) for i = 1:length(plist)]
-    KsCache = (Ks, phiv_cache, ws) # should use named tuple in v0.6
+    KsCache = (Ks, phiv_cache, ws)
   else
     KsCache = nothing
     # Precompute the operators
@@ -758,7 +735,62 @@ end
 
 ####################################
 # Adaptive exponential Rosenbrock method caches
-struct Exprb32Cache{uType,rateType,JCType,FType,JType,opType,KsType} <: ExpRKCache
+
+## Constant caches
+for (Alg, Cache) in [(:Exprb32, :Exprb32ConstantCache),
+                     (:Exprb43, :Exprb43ConstantCache)]
+  @eval struct $Cache{FType} <: ExpRKConstantCache
+    uf::FType   # derivative wrapper
+  end
+  @eval function alg_cache(alg::$Alg,u,rate_prototype,uEltypeNoUnits,
+    uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+    if DiffEqBase.has_jac(f)
+      uf = nothing
+    else
+      uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+    end
+    return $Cache(uf)
+  end
+end
+
+## Mutable caches
+"""
+    alg_cache_exprb(alg,uEltypeNoUnits,uprev,f,t,p,du1,tmp,dz,plist)
+
+Construct the non-standard caches (not uType or rateType) for Exprb integrators.
+
+`plist` is a list of integers each corresponding to the order of a `phiv(!)`
+call in `perform_step!`.
+"""
+function alg_cache_exprb(alg::OrdinaryDiffEqAdaptiveExponentialAlgorithm,u,uEltypeNoUnits,uprev,f,t,p,du1,tmp,dz,plist)
+  if f isa SplitFunction
+    error("Algorithm $alg cannnot be used for split problems. Consider reformat to a regular `ODEProblem`")
+  end
+  n = length(u); T = eltype(u)
+  # Allocate cache for ForwardDiff
+  if DiffEqBase.has_jac(f)
+    uf = nothing
+    jac_config = nothing
+  else
+    uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+    jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
+  end
+  # Allocate cache for the Jacobian
+  if DiffEqBase.has_jac(f) && f.jac_prototype != nothing
+    J = deepcopy(f.jac_prototype)
+  else
+    J = fill(zero(uEltypeNoUnits), n, n)
+  end
+  # Build up caches used by Krylov phiv
+  m = min(alg.m, n)
+  Ks = KrylovSubspace{T}(n, m)
+  phiv_cache = PhivCache{T}(m, maximum(plist))
+  ws = [Matrix{T}(undef, n, plist[i] + 1) for i = 1:length(plist)]
+  KsCache = (Ks, phiv_cache, ws)
+  return uf, jac_config, J, KsCache
+end
+
+struct Exprb32Cache{uType,rateType,JCType,FType,JType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   utilde::uType
@@ -770,18 +802,17 @@ struct Exprb32Cache{uType,rateType,JCType,FType,JType,opType,KsType} <: ExpRKCac
   jac_config::JCType
   uf::FType
   J::JType
-  ops::opType
   KsCache::KsType
 end
 function alg_cache(alg::Exprb32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   utilde, tmp, dz = (similar(u) for i = 1:3)         # uType caches
   rtmp, F2, du1 = (zero(rate_prototype) for i = 1:3) # rateType caches
   plist = (3, 3)
-  uf,jac_config,J,ops,KsCache = alg_cache_expRK(alg,u,uEltypeNoUnits,uprev,f,t,dt,p,du1,tmp,dz,plist) # other caches
-  Exprb32Cache(u,uprev,utilde,tmp,dz,rtmp,F2,du1,jac_config,uf,J,ops,KsCache)
+  uf,jac_config,J,KsCache = alg_cache_exprb(alg,u,uEltypeNoUnits,uprev,f,t,p,du1,tmp,dz,plist) # other caches
+  Exprb32Cache(u,uprev,utilde,tmp,dz,rtmp,F2,du1,jac_config,uf,J,KsCache)
 end
 
-struct Exprb43Cache{uType,rateType,JCType,FType,JType,opType,KsType} <: ExpRKCache
+struct Exprb43Cache{uType,rateType,JCType,FType,JType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   utilde::uType
@@ -795,15 +826,14 @@ struct Exprb43Cache{uType,rateType,JCType,FType,JType,opType,KsType} <: ExpRKCac
   jac_config::JCType
   uf::FType
   J::JType
-  ops::opType
   KsCache::KsType
 end
 function alg_cache(alg::Exprb43,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   utilde, tmp, dz = (similar(u) for i = 1:3)                 # uType caches
   rtmp, Au, F2, F3, du1 = (zero(rate_prototype) for i = 1:5) # rateType caches
   plist = (1,4,4,4)
-  uf,jac_config,J,ops,KsCache = alg_cache_expRK(alg,u,uEltypeNoUnits,uprev,f,t,dt,p,du1,tmp,dz,plist) # other caches
-  Exprb43Cache(u,uprev,utilde,tmp,dz,rtmp,Au,F2,F3,du1,jac_config,uf,J,ops,KsCache)
+  uf,jac_config,J,KsCache = alg_cache_exprb(alg,u,uEltypeNoUnits,uprev,f,t,p,du1,tmp,dz,plist) # other caches
+  Exprb43Cache(u,uprev,utilde,tmp,dz,rtmp,Au,F2,F3,du1,jac_config,uf,J,KsCache)
 end
 
 ####################################
