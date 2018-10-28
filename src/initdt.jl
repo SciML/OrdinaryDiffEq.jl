@@ -20,12 +20,14 @@
   else
     # TODO: use more caches
     f₀ = zero.(u0./t)
+    u0 isa MArray && (f₀ = MArray(f₀))
     f(f₀,u0,p,t)
   end
 
   # TODO: use more caches
   #tmp = cache[2]
   tmp = @. u0/sk
+  u0 isa MArray && (tmp = MArray(tmp))
 
   d₀ = internalnorm(tmp)
 
