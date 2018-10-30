@@ -19,15 +19,16 @@
     f(f₀,u0,p,t)
   else
     # TODO: use more caches
-    f₀ = zero.(u0./t)
-    u0 isa MArray && (f₀ = MArray(f₀))
+    Tf = typeof(oneunit(eltype(u0))/oneunit(t))
+    f₀ = similar(u0,Tf)
     f(f₀,u0,p,t)
   end
 
   # TODO: use more caches
   #tmp = cache[2]
-  tmp = @. u0/sk
-  u0 isa MArray && (tmp = MArray(tmp))
+  Ttmp = typeof(oneunit(eltype(u0))/oneunit(eltype(sk)))
+  tmp = similar(u0,Ttmp)
+  @. tmp = u0/sk
 
   d₀ = internalnorm(tmp)
 
