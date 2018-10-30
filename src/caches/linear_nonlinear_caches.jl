@@ -32,7 +32,7 @@ function alg_cache(alg::GenericIIF1,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
 end
 
 function alg_cache(alg::GenericIIF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tmp = similar(u,axes(u)); rtmp1 = zero(rate_prototype)
+  tmp = similar(u); rtmp1 = zero(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
   A = f.f1.f
   expA = exp(A*dt)
@@ -74,7 +74,7 @@ function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
 end
 
 function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tmp = similar(u,axes(u)); rtmp1 = zero(rate_prototype)
+  tmp = similar(u); rtmp1 = zero(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
   A = f.f1.f
   expA = exp(A*dt)
