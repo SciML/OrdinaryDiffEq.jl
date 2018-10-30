@@ -23,7 +23,7 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock23Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
+  @unpack k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,jac_config = cache
   @unpack c₃₂,d = cache.tab
 
   # Assignments
@@ -38,30 +38,28 @@ end
   calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
 
   if DiffEqBase.has_invW(f)
-    mul!(vectmp, W, linsolve_tmp_vec)
+    mul!(vec(k₁), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
+    cache.linsolve(vec(k₁), W, vec(linsolve_tmp), !repeat_step)
   end
 
-  recursivecopy!(k₁, reshape(vectmp, size(u)...))
   @. u = uprev + dto2*k₁
   f(f₁,u,p,t+dto2)
 
   if mass_matrix == I
     tmp .= k₁
   else
-    mul!(tmp,mass_matrix,k₁)
+    mul!(vec(tmp),mass_matrix,k₁)
   end
 
   @. linsolve_tmp = f₁ - tmp
   if DiffEqBase.has_invW(f)
-    mul!(vectmp2, W, linsolve_tmp_vec)
+    mul!(vec(k₂), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp2, W, linsolve_tmp_vec)
+    cache.linsolve(vec(k₂), W, vec(linsolve_tmp))
   end
 
-  tmp2 = reshape(vectmp2, sizeu...)
-  @. k₂ = tmp2 + k₁
+  @. k₂ += k₁
   @. u = uprev + dt*k₂
 
   if integrator.opts.adaptive
@@ -77,12 +75,10 @@ end
 
 
     if DiffEqBase.has_invW(f)
-      mul!(vectmp3, W, linsolve_tmp_vec)
+      mul!(vec(k₃), W, vec(linsolve_tmp))
     else
-      cache.linsolve(vectmp3, W, linsolve_tmp_vec)
+      cache.linsolve(vec(k₃), W, vec(linsolve_tmp))
     end
-
-    k₃ = reshape(vectmp3, sizeu...)
 
     @. tmp = dto6*(k₁ - 2*k₂ + k₃)
     # does not work with units - additional unitless array required!
@@ -93,7 +89,7 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock32Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
+  @unpack k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,jac_config = cache
   @unpack c₃₂,d = cache.tab
 
   # Assignments
@@ -108,12 +104,11 @@ end
   calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
 
   if DiffEqBase.has_invW(f)
-    mul!(vectmp, W, linsolve_tmp_vec)
+    mul!(vec(k₁), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
+    cache.linsolve(vec(k₁), W, vec(linsolve_tmp), !repeat_step)
   end
 
-  recursivecopy!(k₁, reshape(vectmp, sizeu...))
   @. u = uprev + dto2*k₁
   f(f₁,u,p,t+dto2)
 
@@ -126,13 +121,12 @@ end
   @. linsolve_tmp = f₁ - tmp
 
   if DiffEqBase.has_invW(f)
-    mul!(vectmp2, W, linsolve_tmp_vec)
+    mul!(vec(k₂), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp2, W, linsolve_tmp_vec)
+    cache.linsolve(vec(k₂), W, vec(linsolve_tmp))
   end
 
-  tmp2 = reshape(vectmp2, sizeu...)
-  @. k₂ = tmp2 + k₁
+  @. k₂ += k₁
   @. tmp = uprev + dt*k₂
   f( fsallast,  tmp, p, t+dt)
 
@@ -145,12 +139,11 @@ end
   end
 
   if DiffEqBase.has_invW(f)
-    mul!(vectmp3, W, linsolve_tmp_vec)
+    mul!(vec(k₃), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp3, W, linsolve_tmp_vec)
+    cache.linsolve(vec(k₃), W, vec(linsolve_tmp))
   end
 
-  k₃ = reshape(vectmp3, sizeu...)
   @. u = uprev + dto6*(k₁ + 4k₂ + k₃)
 
   if integrator.opts.adaptive
@@ -315,7 +308,7 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock33Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,fsalfirst,fsallast,dT,J,W,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
+  @unpack du,du1,du2,fsalfirst,fsallast,k1,k2,k3,dT,J,W,uf,tf,linsolve_tmp,jac_config = cache
   @unpack a21,a31,a32,C21,C31,C32,b1,b2,b3,btilde1,btilde2,btilde3,gamma,c2,c3,d1,d2,d3 = cache.tab
 
   # Assignments
@@ -337,12 +330,11 @@ end
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
   if DiffEqBase.has_invW(f)
-    mul!(vectmp, W, linsolve_tmp_vec)
+    mul!(vec(k1), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
+    cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
   end
 
-  k1 = reshape(vectmp, sizeu...)
   @. u = uprev + a21*k1
   f( du,  u, p, t+c2*dt)
 
@@ -355,12 +347,11 @@ end
   end
 
   if DiffEqBase.has_invW(f)
-    mul!(vectmp2, W, linsolve_tmp_vec)
+    mul!(vec(k2), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp2, W, linsolve_tmp_vec)
+    cache.linsolve(vec(k2), W, vec(linsolve_tmp))
   end
 
-  k2 = reshape(vectmp2, sizeu...)
   @. u = uprev + a31*k1 + a32*k2
   f( du,  u, p, t+c3*dt)
 
@@ -373,12 +364,11 @@ end
   end
 
   if DiffEqBase.has_invW(f)
-    mul!(vectmp3, W, linsolve_tmp_vec)
+    mul!(vec(k3), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp3, W, linsolve_tmp_vec)
+    cache.linsolve(vec(k3), W, vec(linsolve_tmp))
   end
 
-  k3 = reshape(vectmp3, sizeu...)
   @. u = uprev + b1*k1 + b2*k2 + b3*k3
   f( fsallast,  u, p, t + dt)
 
@@ -452,7 +442,7 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock34Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,fsalfirst,fsallast,dT,J,W,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
+  @unpack du,du1,du2,fsalfirst,fsallast,k1,k2,k3,k4,dT,J,W,uf,tf,linsolve_tmp,jac_config = cache
   @unpack a21,a31,a32,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4 = cache.tab
 
   # Assignments
@@ -479,12 +469,10 @@ end
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
   if DiffEqBase.has_invW(f)
-    mul!(vectmp, W, linsolve_tmp_vec)
+    mul!(vec(k1), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
+    cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
   end
-
-  k1 = reshape(vectmp, sizeu...)
 
   #=
   a21 == 0 and c2 == 0
@@ -503,12 +491,11 @@ end
   end
 
   if DiffEqBase.has_invW(f)
-    mul!(vectmp2, W, linsolve_tmp_vec)
+    mul!(vec(k2), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp2, W, linsolve_tmp_vec)
+    cache.linsolve(vec(k2), W, vec(linsolve_tmp))
   end
 
-  k2 = reshape(vectmp2, sizeu...)
   @. u = uprev + a31*k1 + a32*k2
   f( du,  u, p, t+c3*dt)
 
@@ -521,12 +508,10 @@ end
   end
 
   if DiffEqBase.has_invW(f)
-    mul!(vectmp3, W, linsolve_tmp_vec)
+    mul!(vec(k3), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp3, W, linsolve_tmp_vec)
+    cache.linsolve(vec(k3), W, vec(linsolve_tmp))
   end
-
-  k3 = reshape(vectmp3, sizeu...)
 
   if mass_matrix == I
     @. linsolve_tmp = du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
@@ -537,12 +522,11 @@ end
   end
 
   if DiffEqBase.has_invW(f)
-    mul!(vectmp4, W, linsolve_tmp_vec)
+    mul!(vec(k4), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp4, W, linsolve_tmp_vec)
+    cache.linsolve(vec(k4), W, vec(linsolve_tmp))
   end
 
-  k4 = reshape(vectmp4, sizeu...)
   @. u = uprev + b1*k1 + b2*k2 + b3*k3 + b4*k4
   f( fsallast,  u, p, t + dt)
 
@@ -620,7 +604,7 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,fsalfirst,fsallast,dT,J,W,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
+  @unpack du,du1,du2,fsalfirst,fsallast,k1,k2,k3,k4,dT,J,W,uf,tf,linsolve_tmp,jac_config = cache
   @unpack a21,a31,a32,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4 = cache.tab
 
   # Assignments
@@ -646,12 +630,11 @@ end
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
   if DiffEqBase.has_invW(f)
-    mul!(vectmp, W, linsolve_tmp_vec)
+    mul!(vec(k1), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
+    cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
   end
 
-  k1 = reshape(vectmp, sizeu...)
   @. u = uprev + a21*k1
   f( du,  u, p, t+c2*dt)
 
@@ -664,12 +647,11 @@ end
   end
 
   if DiffEqBase.has_invW(f)
-    mul!(vectmp2, W, linsolve_tmp_vec)
+    mul!(vec(k2), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp2, W, linsolve_tmp_vec)
+    cache.linsolve(vec(k2), W, vec(linsolve_tmp))
   end
 
-  k2 = reshape(vectmp2, sizeu...)
   @. u = uprev + a31*k1 + a32*k2
   f( du,  u, p, t+c3*dt)
 
@@ -682,12 +664,10 @@ end
   end
 
   if DiffEqBase.has_invW(f)
-    mul!(vectmp3, W, linsolve_tmp_vec)
+    mul!(vec(k3), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp3, W, linsolve_tmp_vec)
+    cache.linsolve(vec(k3), W, vec(linsolve_tmp))
   end
-
-  k3 = reshape(vectmp3, sizeu...)
 
   if mass_matrix == I
     @. linsolve_tmp = du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
@@ -698,12 +678,11 @@ end
   end
 
   if DiffEqBase.has_invW(f)
-    mul!(vectmp4, W, linsolve_tmp_vec)
+    mul!(vec(k4), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp4, W, linsolve_tmp_vec)
+    cache.linsolve(vec(k4), W, vec(linsolve_tmp))
   end
 
-  k4 = reshape(vectmp4, sizeu...)
   @. u = uprev + b1*k1 + b2*k2 + b3*k3 + b4*k4
   f( fsallast,  u, p, t + dt)
 
@@ -822,7 +801,7 @@ end
 
 @muladd function perform_step!(integrator, cache::Rodas4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,vectmp5,vectmp6,dT,J,W,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
+  @unpack du,du1,du2,dT,J,W,uf,tf,k1,k2,k3,k4,k5,k6,linsolve_tmp,jac_config = cache
   @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,gamma,c2,c3,c4,d1,d2,d3,d4 = cache.tab
 
   # Assignments
@@ -857,12 +836,11 @@ end
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
   if DiffEqBase.has_invW(f)
-    mul!(vectmp, W, linsolve_tmp_vec)
+    mul!(vec(k1), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
+    cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
   end
 
-  k1 = reshape(vectmp, sizeu...)
   @. u = uprev + a21*k1
   f( du,  u, p, t+c2*dt)
 
@@ -875,12 +853,11 @@ end
   end
 
   if DiffEqBase.has_invW(f)
-    mul!(vectmp2, W, linsolve_tmp_vec)
+    mul!(vec(k2), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp2, W, linsolve_tmp_vec)
+    cache.linsolve(vec(k2), W, vec(linsolve_tmp))
   end
 
-  k2 = reshape(vectmp2, sizeu...)
   @. u = uprev + a31*k1 + a32*k2
   f( du,  u, p, t+c3*dt)
 
@@ -893,12 +870,11 @@ end
   end
 
   if DiffEqBase.has_invW(f)
-    mul!(vectmp3, W, linsolve_tmp_vec)
+    mul!(vec(k3), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp3, W, linsolve_tmp_vec)
+    cache.linsolve(vec(k3), W, vec(linsolve_tmp))
   end
 
-  k3 = reshape(vectmp3, sizeu...)
   @. u = uprev + a41*k1 + a42*k2 + a43*k3
   f( du,  u, p, t+c4*dt)
 
@@ -911,12 +887,11 @@ end
   end
 
   if DiffEqBase.has_invW(f)
-    mul!(vectmp4, W, linsolve_tmp_vec)
+    mul!(vec(k4), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp4, W, linsolve_tmp_vec)
+    cache.linsolve(vec(k4), W, vec(linsolve_tmp))
   end
 
-  k4 = reshape(vectmp4, sizeu...)
   @. u = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
   f( du,  u, p, t+dt)
 
@@ -929,12 +904,11 @@ end
   end
 
   if DiffEqBase.has_invW(f)
-    mul!(vectmp5, W, linsolve_tmp_vec)
+    mul!(vec(k5), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp5, W, linsolve_tmp_vec)
+    cache.linsolve(vec(k5), W, vec(linsolve_tmp))
   end
 
-  k5 = reshape(vectmp5, sizeu...)
   u .+= k5
   f( du,  u, p, t + dt)
 
@@ -953,12 +927,11 @@ end
   end
 
   if DiffEqBase.has_invW(f)
-    mul!(vectmp6, W, linsolve_tmp_vec)
+    mul!(vec(k6), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp6, W, linsolve_tmp_vec)
+    cache.linsolve(vec(k6), W, vec(linsolve_tmp))
   end
 
-  k6 = reshape(vectmp6, sizeu...)
   u .+= k6
 
   if integrator.opts.adaptive
@@ -1097,7 +1070,7 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock5Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,vectmp5,vectmp6,vectmp7,vectmp8,fsalfirst,fsallast,dT,J,W,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config = cache
+  @unpack du,du1,du2,fsalfirst,fsallast,k1,k2,k3,k4,k5,k6,k7,k8,dT,J,W,uf,tf,linsolve_tmp,jac_config = cache
   @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,C71,C72,C73,C74,C75,C76,C81,C82,C83,C84,C85,C86,C87,gamma,d1,d2,d3,d4,d5,c2,c3,c4,c5 = cache.tab
 
   # Assignments
@@ -1146,16 +1119,13 @@ end
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
   if DiffEqBase.has_invW(f)
-    mul!(vectmp, W, linsolve_tmp_vec)
+    mul!(vec(k1), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp, W, linsolve_tmp_vec, !repeat_step)
+    cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
   end
 
-  k1 = reshape(vectmp, sizeu...)
   @. u = uprev + a21*k1
   f( du,  u, p, t+c2*dt)
-
-
 
   if mass_matrix == I
     @. linsolve_tmp = du + dtd2*dT + dtC21*k1
@@ -1166,12 +1136,11 @@ end
   end
 
   if DiffEqBase.has_invW(f)
-    mul!(vectmp2, W, linsolve_tmp_vec)
+    mul!(vec(k2), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp2, W, linsolve_tmp_vec)
+    cache.linsolve(vec(k2), W, vec(linsolve_tmp))
   end
 
-  k2 = reshape(vectmp2, sizeu...)
   @. u = uprev + a31*k1 + a32*k2
   f( du,  u, p, t+c3*dt)
 
@@ -1184,12 +1153,11 @@ end
   end
 
   if DiffEqBase.has_invW(f)
-    mul!(vectmp3, W, linsolve_tmp_vec)
+    mul!(vec(k3), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp3, W, linsolve_tmp_vec)
+    cache.linsolve(vec(k3), W, vec(linsolve_tmp))
   end
 
-  k3 = reshape(vectmp3, sizeu...)
   @. u = uprev + a41*k1 + a42*k2 + a43*k3
   f( du,  u, p, t+c4*dt)
 
@@ -1202,12 +1170,11 @@ end
   end
 
   if DiffEqBase.has_invW(f)
-    mul!(vectmp4, W, linsolve_tmp_vec)
+    mul!(vec(k4), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp4, W, linsolve_tmp_vec)
+    cache.linsolve(vec(k4), W, vec(linsolve_tmp))
   end
 
-  k4 = reshape(vectmp4, sizeu...)
   @. u = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
   f( du,  u, p, t+c5*dt)
 
@@ -1223,12 +1190,11 @@ end
   end
 
   if DiffEqBase.has_invW(f)
-    mul!(vectmp5, W, linsolve_tmp_vec)
+    mul!(vec(k5), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp5, W, linsolve_tmp_vec)
+    cache.linsolve(vec(k5), W, vec(linsolve_tmp))
   end
 
-  k5 = reshape(vectmp5, sizeu...)
   # @. u = uprev + a61*k1 + a62*k2 + a63*k3 + a64*k4 + a65*k5
   @tight_loop_macros for i in uidx
     @inbounds u[i] = uprev[i] + a61*k1[i] + a62*k2[i] + a63*k3[i] + a64*k4[i] + a65*k5[i]
@@ -1250,12 +1216,11 @@ end
   end
 
   if DiffEqBase.has_invW(f)
-    mul!(vectmp6, W, linsolve_tmp_vec)
+    mul!(vec(k6), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp6, W, linsolve_tmp_vec)
+    cache.linsolve(vec(k6), W, vec(linsolve_tmp))
   end
 
-  k6 = reshape(vectmp6, sizeu...)
   u .+= k6
   f( du,  u, p, t+dt)
 
@@ -1274,12 +1239,11 @@ end
   end
 
   if DiffEqBase.has_invW(f)
-    mul!(vectmp7, W, linsolve_tmp_vec)
+    mul!(vec(k7), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp7, W, linsolve_tmp_vec)
+    cache.linsolve(vec(k7), W, vec(linsolve_tmp))
   end
 
-  k7 = reshape(vectmp7, sizeu...)
   u .+= k7
   f( du,  u, p, t+dt)
 
@@ -1298,12 +1262,11 @@ end
   end
 
   if DiffEqBase.has_invW(f)
-    mul!(vectmp8, W, linsolve_tmp_vec)
+    mul!(vec(k8), W, vec(linsolve_tmp))
   else
-    cache.linsolve(vectmp8, W, linsolve_tmp_vec)
+    cache.linsolve(vec(k8), W, vec(linsolve_tmp))
   end
 
-  k8 = reshape(vectmp8, sizeu...)
   u .+= k8
   f( fsallast,  u, p, t+dt)
 

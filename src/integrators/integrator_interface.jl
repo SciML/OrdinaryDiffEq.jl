@@ -109,22 +109,22 @@ function resize_non_user_cache!(integrator::ODEIntegrator,cache,i)
 end
 
 function resize_non_user_cache!(integrator::ODEIntegrator,cache::RosenbrockMutableCache,i)
-  for c in default_non_user_cache(integrator)
+
+  for c in u_cache(integrator)
     resize!(c,i)
   end
-  for c in vecu_cache(integrator.cache)
+
+  for c in du_cache(integrator)
     resize!(c,i)
   end
-  Jvec = vec(cache.J)
-  cache.J = reshape(resize!(Jvec,i*i),i,i)
-  Wvec = vec(cache.W)
-  cache.W = reshape(resize!(Wvec,i*i),i,i)
+
+  cache.J = similar(cache.J,i,i)
+  cache.W = similar(cache.W,i,i)
   for d in cache.jac_config.duals
     resize!(d,i)
   end
   resize!(cache.grad_config.duals,i)
 end
-user_cache(cache::Union{Rosenbrock23Cache,Rosenbrock32Cache}) = (cache.u,cache.uprev,cache.jac_config.duals[2])
 
 function resize_non_user_cache!(integrator::ODEIntegrator,cache::Union{GenericImplicitEulerCache,GenericTrapezoidCache},i)
   for c in default_non_user_cache(integrator)

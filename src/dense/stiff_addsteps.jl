@@ -21,7 +21,7 @@ end
 
 function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Cache,Rosenbrock32Cache},always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<2 || always_calc_begin
-    @unpack k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,linsolve_tmp_vec = cache
+    @unpack k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp = cache
     @unpack c₃₂,d = cache.tab
     uidx = eachindex(uprev)
 
@@ -39,17 +39,16 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Cache,
 
     if DiffEqBase.has_invW(f)
       f.invW(W,u,p,γ,t) # W == inverse W
-      mul!(vectmp,W,linsolve_tmp_vec)
+      mul!(vec(k₁),W,vec(linsolve_tmp))
     else
       ### Jacobian does not need to be re-evaluated after an event
       ### Since it's unchanged
       for i in 1:length(u), j in 1:length(u)
         @inbounds W[i,j] = @muladd I[i,j]-γ*J[i,j]
       end
-      cache.linsolve(vectmp,W,linsolve_tmp_vec,true)
+      cache.linsolve(vec(k₁),W,vec(linsolve_tmp),true)
     end
 
-    recursivecopy!(k₁,reshape(vectmp,size(u)...))
     @. tmp = uprev + dto2*k₁
     f(f₁,tmp,p,t+dto2)
 
@@ -62,13 +61,12 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Cache,
 
     @. linsolve_tmp = f₁ - tmp
     if DiffEqBase.has_invW(f)
-      mul!(vectmp2, W, linsolve_tmp_vec)
+      mul!(vec(k₂), W, vec(linsolve_tmp))
     else
-      cache.linsolve(vectmp2, W, linsolve_tmp_vec)
+      cache.linsolve(vec(k₂), W, vec(linsolve_tmp))
     end
 
-    tmp2 = reshape(vectmp2, sizeu...)
-    @. k₂ = tmp2 + k₁
+    @. k₂ += k₁
 
     copyat_or_push!(k,1,k₁)
     copyat_or_push!(k,2,k₂)
@@ -160,7 +158,7 @@ end
 function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<2 || always_calc_begin
 
-    @unpack du,du1,du2,tmp,vectmp,vectmp2,vectmp3,vectmp4,vectmp5,vectmp6,dT,J,W,uf,tf,linsolve_tmp,linsolve_tmp_vec,jac_config,fsalfirst = cache
+    @unpack du,du1,du2,tmp,k1,k2,k3,k4,k5,k6,dT,J,W,uf,tf,linsolve_tmp,jac_config,fsalfirst = cache
     @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,gamma,c2,c3,c4,d1,d2,d3,d4 = cache.tab
 
     # Assignments
@@ -208,9 +206,9 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
     end
 
     if DiffEqBase.has_invW(f)
-      mul!(vectmp, W, linsolve_tmp_vec)
+      mul!(vectmp, W, vec(linsolve_tmp))
     else
-      cache.linsolve(vectmp, W, linsolve_tmp_vec, true)
+      cache.linsolve(vectmp, W, vec(linsolve_tmp), true)
     end
 
     k1 = reshape(vectmp, sizeu...)
@@ -226,12 +224,11 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
     end
 
     if DiffEqBase.has_invW(f)
-      mul!(vectmp2, W, linsolve_tmp_vec)
+      mul!(vec(k2), W, vec(linsolve_tmp))
     else
-      cache.linsolve(vectmp2, W, linsolve_tmp_vec)
+      cache.linsolve(vec(k2), W, vec(linsolve_tmp))
     end
 
-    k2 = reshape(vectmp2, sizeu...)
     @. tmp = uprev + a31*k1 + a32*k2
     f( du,  tmp, p, t+c3*dt)
 
@@ -244,12 +241,11 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
     end
 
     if DiffEqBase.has_invW(f)
-      mul!(vectmp3, W, linsolve_tmp_vec)
+      mul!(vec(k3), W, vec(linsolve_tmp))
     else
-      cache.linsolve(vectmp3, W, linsolve_tmp_vec)
+      cache.linsolve(vec(k3), W, vec(linsolve_tmp))
     end
 
-    k3 = reshape(vectmp3, sizeu...)
     @. tmp = uprev + a41*k1 + a42*k2 + a43*k3
     f( du,  tmp, p, t+c4*dt)
 
@@ -262,12 +258,11 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
     end
 
     if DiffEqBase.has_invW(f)
-      mul!(vectmp4, W, linsolve_tmp_vec)
+      mul!(vec(k4), W, vec(linsolve_tmp))
     else
-      cache.linsolve(vectmp4, W, linsolve_tmp_vec)
+      cache.linsolve(vec(k4), W, vec(linsolve_tmp))
     end
 
-    k4 = reshape(vectmp4, sizeu...)
     @. tmp = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
     f( du,  tmp, p, t+dt)
 
@@ -280,14 +275,10 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
     end
 
     if DiffEqBase.has_invW(f)
-      mul!(vectmp5, W, linsolve_tmp_vec)
+      mul!(vec(k5), W, vec(linsolve_tmp))
     else
-      cache.linsolve(vectmp5, W, linsolve_tmp_vec)
+      cache.linsolve(vec(k5), W, vec(linsolve_tmp))
     end
-
-    k5 = reshape(vectmp5, sizeu...)
-
-    k_tmp = reshape(vectmp6, sizeu...)
 
     @unpack h21,h22,h23,h24,h25,h31,h32,h33,h34,h35 = cache.tab
     @. k_tmp = h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5
