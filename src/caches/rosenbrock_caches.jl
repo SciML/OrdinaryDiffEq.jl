@@ -3,7 +3,7 @@ abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
 
 # Shampine's Low-order Rosenbrocks
 
-mutable struct Rosenbrock23Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+mutable struct Rosenbrock23Cache{uType,rateType,du2Type,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   k₁::rateType
@@ -12,20 +12,16 @@ mutable struct Rosenbrock23Cache{uType,uArrayType,rateType,du2Type,LinuType,vecu
   du1::rateType
   du2::du2Type
   f₁::rateType
-  vectmp::vecuType
-  vectmp2::vecuType
-  vectmp3::vecuType
   fsalfirst::rateType
   fsallast::rateType
-  dT::uArrayType
+  dT::rateType
   J::JType
   W::WType
-  tmp::uArrayType
+  tmp::rateType
   tab::TabType
   tf::TFType
   uf::UFType
-  linsolve_tmp::LinuType
-  linsolve_tmp_vec::vecuType
+  linsolve_tmp::rateType
   linsolve::F
   jac_config::JCType
   grad_config::GCType
@@ -34,9 +30,8 @@ end
 u_cache(c::Rosenbrock23Cache) = (c.dT,c.tmp)
 du_cache(c::Rosenbrock23Cache) = (c.k₁,c.k₂,c.k₃,c.du1,c.du2,c.f₁,c.fsalfirst,c.fsallast,c.linsolve_tmp)
 jac_cache(c::Rosenbrock23Cache) = (c.J,c.W)
-vecu_cache(c::Rosenbrock23Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
 
-mutable struct Rosenbrock32Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+mutable struct Rosenbrock32Cache{uType,rateType,du2Type,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   k₁::rateType
@@ -45,20 +40,16 @@ mutable struct Rosenbrock32Cache{uType,uArrayType,rateType,du2Type,LinuType,vecu
   du1::rateType
   du2::du2Type
   f₁::rateType
-  vectmp::vecuType
-  vectmp2::vecuType
-  vectmp3::vecuType
   fsalfirst::rateType
   fsallast::rateType
-  dT::uArrayType
+  dT::rateType
   J::JType
   W::WType
-  tmp::uArrayType
+  tmp::rateType
   tab::TabType
   tf::TFType
   uf::UFType
-  linsolve_tmp::LinuType
-  linsolve_tmp_vec::vecuType
+  linsolve_tmp::rateType
   linsolve::F
   jac_config::JCType
   grad_config::GCType
@@ -67,7 +58,7 @@ end
 u_cache(c::Rosenbrock32Cache) = (c.dT,c.tmp)
 du_cache(c::Rosenbrock32Cache) = (c.k₁,c.k₂,c.k₃,c.du1,c.du2,c.f₁,c.fsalfirst,c.fsallast,c.linsolve_tmp)
 jac_cache(c::Rosenbrock32Cache) = (c.J,c.W)
-vecu_cache(c::Rosenbrock32Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
+user_cache(cache::Union{Rosenbrock23Cache,Rosenbrock32Cache}) = (cache.u,cache.uprev,cache.jac_config.duals[2])
 
 function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   k₁ = zero(rate_prototype)
@@ -77,12 +68,9 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,uBottomElty
   du2 = zero(rate_prototype)
   # f₀ = similar(u) fsalfirst
   f₁ = zero(rate_prototype)
-  vectmp = vec(similar(u,axes(u)))
-  vectmp2 = vec(similar(u,axes(u)))
-  vectmp3 = vec(similar(u,axes(u)))
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
-  dT = similar(u,axes(u))
+  dT = zero(rate_prototype)
   if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
@@ -90,20 +78,19 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,uBottomElty
     J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
     W = similar(J)
   end
-  tmp = similar(u,axes(u))
+  tmp = zero(rate_prototype)
   tab = Rosenbrock23ConstantCache(uEltypeNoUnits,identity,identity)
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
-  linsolve_tmp = similar(u,axes(u))
-  linsolve_tmp_vec = vec(linsolve_tmp)
+  linsolve_tmp = zero(rate_prototype)
   linsolve = alg.linsolve(Val{:init},uf,u)
 
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
 
-  Rosenbrock23Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,
+  Rosenbrock23Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
-                    linsolve_tmp_vec,linsolve,jac_config,grad_config)
+                    linsolve,jac_config,grad_config)
 end
 
 function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -114,12 +101,9 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,uBottomElty
   du2 = zero(rate_prototype)
   # f₀ = similar(u) fsalfirst
   f₁ = zero(rate_prototype)
-  vectmp = vec(similar(u,axes(u)))
-  vectmp2 = vec(similar(u,axes(u)))
-  vectmp3 = vec(similar(u,axes(u)))
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
-  dT = similar(u,axes(u))
+  dT = zero(rate_prototype)
   if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
@@ -127,17 +111,16 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,uBottomElty
     J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
     W = similar(J)
   end
-  tmp = similar(u,axes(u))
+  tmp = zero(rate_prototype)
   tab = Rosenbrock32ConstantCache(uEltypeNoUnits,identity,identity)
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
-  linsolve_tmp = similar(u,axes(u))
-  linsolve_tmp_vec = vec(linsolve_tmp)
+  linsolve_tmp = zero(rate_prototype)
   linsolve = alg.linsolve(Val{:init},uf,u)
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
-  Rosenbrock32Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,vectmp,vectmp2,vectmp3,fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,linsolve_tmp_vec,linsolve,jac_config,grad_config)
+  Rosenbrock32Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,k₁,k₂,k₃,fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,linsolve,jac_config,grad_config)
 end
 
 struct Rosenbrock23ConstantCache{T,TF,UF} <: OrdinaryDiffEqConstantCache
@@ -188,16 +171,16 @@ struct Rosenbrock33ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
   tab::Tab
 end
 
-mutable struct Rosenbrock33Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+mutable struct Rosenbrock33Cache{uType,uArrayType,rateType,du2Type,LinuType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   du::rateType
   du1::rateType
   du2::du2Type
-  vectmp::vecuType
-  vectmp2::vecuType
-  vectmp3::vecuType
-  vectmp4::vecuType
+  k1::rateType
+  k2::rateType
+  k3::rateType
+  k4::rateType
   fsalfirst::rateType
   fsallast::rateType
   dT::uArrayType
@@ -208,7 +191,6 @@ mutable struct Rosenbrock33Cache{uType,uArrayType,rateType,du2Type,LinuType,vecu
   tf::TFType
   uf::UFType
   linsolve_tmp::LinuType
-  linsolve_tmp_vec::vecuType
   linsolve::F
   jac_config::JCType
   grad_config::GCType
@@ -217,19 +199,18 @@ end
 u_cache(c::Rosenbrock33Cache) = (c.dT,c.tmp)
 du_cache(c::Rosenbrock33Cache) = (c.k₁,c.k₂,c.k₃,c.du1,c.du2,c.f₁,c.fsalfirst,c.fsallast,c.linsolve_tmp)
 jac_cache(c::Rosenbrock33Cache) = (c.J,c.W)
-vecu_cache(c::Rosenbrock33Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
 
 function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   du = zero(rate_prototype)
   du1 = zero(rate_prototype)
   du2 = zero(rate_prototype)
-  vectmp = vec(similar(u,axes(u)))
-  vectmp2 = vec(similar(u,axes(u)))
-  vectmp3 = vec(similar(u,axes(u)))
-  vectmp4 = vec(similar(u,axes(u)))
+  k1 = zero(rate_prototype)
+  k2 = zero(rate_prototype)
+  k3 = zero(rate_prototype)
+  k4 = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
-  dT = similar(u,axes(u))
+  dT = zero(rate_prototype)
   if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
@@ -237,18 +218,17 @@ function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
     J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
     W = similar(J)
   end
-  tmp = similar(u,axes(u))
+  tmp = zero(rate_prototype)
   tab = ROS3PConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
-  linsolve_tmp = similar(u,axes(u))
-  linsolve_tmp_vec = vec(linsolve_tmp)
+  linsolve_tmp = zero(rate_prototype)
   linsolve = alg.linsolve(Val{:init},uf,u)
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
-  Rosenbrock33Cache(u,uprev,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
+  Rosenbrock33Cache(u,uprev,du,du1,du2,k1,k2,k3,k4,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
-                    linsolve_tmp_vec,linsolve,jac_config,grad_config)
+                    linsolve,jac_config,grad_config)
 end
 
 function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
@@ -257,16 +237,16 @@ function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   Rosenbrock33ConstantCache(tf,uf,ROS3PConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits)))
 end
 
-mutable struct Rosenbrock34Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+mutable struct Rosenbrock34Cache{uType,uArrayType,rateType,du2Type,LinuType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   du::rateType
   du1::rateType
   du2::du2Type
-  vectmp::vecuType
-  vectmp2::vecuType
-  vectmp3::vecuType
-  vectmp4::vecuType
+  k1::rateType
+  k2::rateType
+  k3::rateType
+  k4::rateType
   fsalfirst::rateType
   fsallast::rateType
   dT::uArrayType
@@ -277,7 +257,6 @@ mutable struct Rosenbrock34Cache{uType,uArrayType,rateType,du2Type,LinuType,vecu
   tf::TFType
   uf::UFType
   linsolve_tmp::LinuType
-  linsolve_tmp_vec::vecuType
   linsolve::F
   jac_config::JCType
   grad_config::GCType
@@ -286,19 +265,18 @@ end
 u_cache(c::Rosenbrock34Cache) = (c.dT,c.tmp)
 du_cache(c::Rosenbrock34Cache) = (c.k₁,c.k₂,c.k₃,c.du1,c.du2,c.f₁,c.fsalfirst,c.fsallast,c.linsolve_tmp)
 jac_cache(c::Rosenbrock34Cache) = (c.J,c.W)
-vecu_cache(c::Rosenbrock34Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
 
 function alg_cache(alg::Rodas3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   du = zero(rate_prototype)
   du1 = zero(rate_prototype)
   du2 = zero(rate_prototype)
-  vectmp = vec(similar(u,axes(u)))
-  vectmp2 = vec(similar(u,axes(u)))
-  vectmp3 = vec(similar(u,axes(u)))
-  vectmp4 = vec(similar(u,axes(u)))
+  k1 = zero(rate_prototype)
+  k2 = zero(rate_prototype)
+  k3 = zero(rate_prototype)
+  k4 = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
-  dT = similar(u,axes(u))
+  dT = zero(rate_prototype)
   if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
@@ -306,19 +284,18 @@ function alg_cache(alg::Rodas3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
     W = similar(J)
   end
-  tmp = similar(u,axes(u))
+  tmp = zero(rate_prototype)
   tab = Rodas3ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
-  linsolve_tmp = similar(u,axes(u))
-  linsolve_tmp_vec = vec(linsolve_tmp)
+  linsolve_tmp = zero(rate_prototype)
   linsolve = alg.linsolve(Val{:init},uf,u)
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
-  Rosenbrock34Cache(u,uprev,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
+  Rosenbrock34Cache(u,uprev,du,du1,du2,k1,k2,k3,k4,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
-                    linsolve_tmp_vec,linsolve,jac_config,grad_config)
+                    linsolve,jac_config,grad_config)
 end
 
 struct Rosenbrock34ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
@@ -342,16 +319,16 @@ struct Rosenbrock4ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
   tab::Tab
 end
 
-mutable struct Rosenbrock4Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+mutable struct Rosenbrock4Cache{uType,uArrayType,rateType,du2Type,LinuType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   du::rateType
   du1::rateType
   du2::du2Type
-  vectmp::vecuType
-  vectmp2::vecuType
-  vectmp3::vecuType
-  vectmp4::vecuType
+  k1::rateType
+  k2::rateType
+  k3::rateType
+  k4::rateType
   fsalfirst::rateType
   fsallast::rateType
   dT::uArrayType
@@ -362,7 +339,6 @@ mutable struct Rosenbrock4Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuT
   tf::TFType
   uf::UFType
   linsolve_tmp::LinuType
-  linsolve_tmp_vec::vecuType
   linsolve::F
   jac_config::JCType
   grad_config::GCType
@@ -371,19 +347,18 @@ end
 u_cache(c::Rosenbrock4Cache) = (c.dT,c.tmp)
 du_cache(c::Rosenbrock4Cache) = (c.k₁,c.k₂,c.k₃,c.du1,c.du2,c.f₁,c.fsalfirst,c.fsallast,c.linsolve_tmp)
 jac_cache(c::Rosenbrock4Cache) = (c.J,c.W)
-vecu_cache(c::Rosenbrock4Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
 
 function alg_cache(alg::RosShamp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   du = zero(rate_prototype)
   du1 = zero(rate_prototype)
   du2 = zero(rate_prototype)
-  vectmp = vec(similar(u,axes(u)))
-  vectmp2 = vec(similar(u,axes(u)))
-  vectmp3 = vec(similar(u,axes(u)))
-  vectmp4 = vec(similar(u,axes(u)))
+  k1 = zero(rate_prototype)
+  k2 = zero(rate_prototype)
+  k3 = zero(rate_prototype)
+  k4 = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
-  dT = similar(u,axes(u))
+  dT = zero(rate_prototype)
   if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
@@ -391,19 +366,18 @@ function alg_cache(alg::RosShamp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
     J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
     W = similar(J)
   end
-  tmp = similar(u,axes(u))
+  tmp = zero(rate_prototype)
   tab = RosShamp4ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
-  linsolve_tmp = similar(u,axes(u))
-  linsolve_tmp_vec = vec(linsolve_tmp)
+  linsolve_tmp = zero(rate_prototype)
   linsolve = alg.linsolve(Val{:init},uf,u)
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
-  Rosenbrock4Cache(u,uprev,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
+  Rosenbrock4Cache(u,uprev,du,du1,du2,k1,k2,k3,k4,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
-                    linsolve_tmp_vec,linsolve,jac_config,grad_config)
+                    linsolve,jac_config,grad_config)
 end
 
 function alg_cache(alg::RosShamp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
@@ -416,13 +390,13 @@ function alg_cache(alg::Veldd4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   du = zero(rate_prototype)
   du1 = zero(rate_prototype)
   du2 = zero(rate_prototype)
-  vectmp = vec(similar(u,axes(u)))
-  vectmp2 = vec(similar(u,axes(u)))
-  vectmp3 = vec(similar(u,axes(u)))
-  vectmp4 = vec(similar(u,axes(u)))
+  k1 = zero(rate_prototype)
+  k2 = zero(rate_prototype)
+  k3 = zero(rate_prototype)
+  k4 = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
-  dT = similar(u,axes(u))
+  dT = zero(rate_prototype)
   if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
@@ -430,19 +404,18 @@ function alg_cache(alg::Veldd4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
     W = similar(J)
   end
-  tmp = similar(u,axes(u))
+  tmp = zero(rate_prototype)
   tab = Veldd4ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
-  linsolve_tmp = similar(u,axes(u))
-  linsolve_tmp_vec = vec(linsolve_tmp)
+  linsolve_tmp = zero(rate_prototype)
   linsolve = alg.linsolve(Val{:init},uf,u)
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
-  Rosenbrock4Cache(u,uprev,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
+  Rosenbrock4Cache(u,uprev,du,du1,du2,k1,k2,k3,k4,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
-                    linsolve_tmp_vec,linsolve,jac_config,grad_config)
+                    linsolve,jac_config,grad_config)
 end
 
 function alg_cache(alg::Veldd4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
@@ -455,13 +428,13 @@ function alg_cache(alg::Velds4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   du = zero(rate_prototype)
   du1 = zero(rate_prototype)
   du2 = zero(rate_prototype)
-  vectmp = vec(similar(u,axes(u)))
-  vectmp2 = vec(similar(u,axes(u)))
-  vectmp3 = vec(similar(u,axes(u)))
-  vectmp4 = vec(similar(u,axes(u)))
+  k1 = zero(rate_prototype)
+  k2 = zero(rate_prototype)
+  k3 = zero(rate_prototype)
+  k4 = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
-  dT = similar(u,axes(u))
+  dT = zero(rate_prototype)
   if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
@@ -469,19 +442,18 @@ function alg_cache(alg::Velds4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
     W = similar(J)
   end
-  tmp = similar(u,axes(u))
+  tmp = zero(rate_prototype)
   tab = Velds4ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
-  linsolve_tmp = similar(u,axes(u))
-  linsolve_tmp_vec = vec(linsolve_tmp)
+  linsolve_tmp = zero(rate_prototype)
   linsolve = alg.linsolve(Val{:init},uf,u)
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
-  Rosenbrock4Cache(u,uprev,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
+  Rosenbrock4Cache(u,uprev,du,du1,du2,k1,k2,k3,k4,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
-                    linsolve_tmp_vec,linsolve,jac_config,grad_config)
+                    linsolve,jac_config,grad_config)
 end
 
 function alg_cache(alg::Velds4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
@@ -494,13 +466,13 @@ function alg_cache(alg::GRK4T,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   du = zero(rate_prototype)
   du1 = zero(rate_prototype)
   du2 = zero(rate_prototype)
-  vectmp = vec(similar(u,axes(u)))
-  vectmp2 = vec(similar(u,axes(u)))
-  vectmp3 = vec(similar(u,axes(u)))
-  vectmp4 = vec(similar(u,axes(u)))
+  k1 = zero(rate_prototype)
+  k2 = zero(rate_prototype)
+  k3 = zero(rate_prototype)
+  k4 = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
-  dT = similar(u,axes(u))
+  dT = zero(rate_prototype)
   if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
@@ -508,19 +480,18 @@ function alg_cache(alg::GRK4T,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
     J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
     W = similar(J)
   end
-  tmp = similar(u,axes(u))
+  tmp = zero(rate_prototype)
   tab = GRK4TConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
-  linsolve_tmp = similar(u,axes(u))
-  linsolve_tmp_vec = vec(linsolve_tmp)
+  linsolve_tmp = zero(rate_prototype)
   linsolve = alg.linsolve(Val{:init},uf,u)
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
-  Rosenbrock4Cache(u,uprev,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
+  Rosenbrock4Cache(u,uprev,du,du1,du2,k1,k2,k3,k4,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
-                    linsolve_tmp_vec,linsolve,jac_config,grad_config)
+                    linsolve,jac_config,grad_config)
 end
 
 function alg_cache(alg::GRK4T,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
@@ -533,13 +504,13 @@ function alg_cache(alg::GRK4A,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   du = zero(rate_prototype)
   du1 = zero(rate_prototype)
   du2 = zero(rate_prototype)
-  vectmp = vec(similar(u,axes(u)))
-  vectmp2 = vec(similar(u,axes(u)))
-  vectmp3 = vec(similar(u,axes(u)))
-  vectmp4 = vec(similar(u,axes(u)))
+  k1 = zero(rate_prototype)
+  k2 = zero(rate_prototype)
+  k3 = zero(rate_prototype)
+  k4 = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
-  dT = similar(u,axes(u))
+  dT = zero(rate_prototype)
   if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
@@ -547,19 +518,18 @@ function alg_cache(alg::GRK4A,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
     J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
     W = similar(J)
   end
-  tmp = similar(u,axes(u))
+  tmp = zero(rate_prototype)
   tab = GRK4AConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
-  linsolve_tmp = similar(u,axes(u))
-  linsolve_tmp_vec = vec(linsolve_tmp)
+  linsolve_tmp = zero(rate_prototype)
   linsolve = alg.linsolve(Val{:init},uf,u)
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
-  Rosenbrock4Cache(u,uprev,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
+  Rosenbrock4Cache(u,uprev,du,du1,du2,k1,k2,k3,k4,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
-                    linsolve_tmp_vec,linsolve,jac_config,grad_config)
+                    linsolve,jac_config,grad_config)
 end
 
 function alg_cache(alg::GRK4A,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
@@ -572,13 +542,13 @@ function alg_cache(alg::Ros4LStab,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   du = zero(rate_prototype)
   du1 = zero(rate_prototype)
   du2 = zero(rate_prototype)
-  vectmp = vec(similar(u,axes(u)))
-  vectmp2 = vec(similar(u,axes(u)))
-  vectmp3 = vec(similar(u,axes(u)))
-  vectmp4 = vec(similar(u,axes(u)))
+  k1 = zero(rate_prototype)
+  k2 = zero(rate_prototype)
+  k3 = zero(rate_prototype)
+  k4 = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
-  dT = similar(u,axes(u))
+  dT = zero(rate_prototype)
   if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
@@ -586,19 +556,18 @@ function alg_cache(alg::Ros4LStab,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
     J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
     W = similar(J)
   end
-  tmp = similar(u,axes(u))
+  tmp = zero(rate_prototype)
   tab = Ros4LStabConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
-  linsolve_tmp = similar(u,axes(u))
-  linsolve_tmp_vec = vec(linsolve_tmp)
+  linsolve_tmp = zero(rate_prototype)
   linsolve = alg.linsolve(Val{:init},uf,u)
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
-  Rosenbrock4Cache(u,uprev,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
+  Rosenbrock4Cache(u,uprev,du,du1,du2,k1,k2,k3,k4,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
-                    linsolve_tmp_vec,linsolve,jac_config,grad_config)
+                    linsolve,jac_config,grad_config)
 end
 
 function alg_cache(alg::Ros4LStab,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
@@ -617,7 +586,7 @@ struct Rodas4ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
   tab::Tab
 end
 
-mutable struct Rodas4Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+mutable struct Rodas4Cache{uType,uArrayType,rateType,du2Type,LinuType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   dense1::rateType
@@ -625,12 +594,12 @@ mutable struct Rodas4Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,J
   du::rateType
   du1::rateType
   du2::du2Type
-  vectmp::vecuType
-  vectmp2::vecuType
-  vectmp3::vecuType
-  vectmp4::vecuType
-  vectmp5::vecuType
-  vectmp6::vecuType
+  k1::rateType
+  k2::rateType
+  k3::rateType
+  k4::rateType
+  k5::rateType
+  k6::rateType
   fsalfirst::rateType
   fsallast::rateType
   dT::uArrayType
@@ -641,16 +610,14 @@ mutable struct Rodas4Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,J
   tf::TFType
   uf::UFType
   linsolve_tmp::LinuType
-  linsolve_tmp_vec::vecuType
   linsolve::F
   jac_config::JCType
   grad_config::GCType
 end
 
 u_cache(c::Rodas4Cache) = (c.dT,c.tmp)
-du_cache(c::Rodas4Cache) = (c.k₁,c.k₂,c.k₃,c.du1,c.du2,c.f₁,c.fsalfirst,c.fsallast,c.linsolve_tmp)
+du_cache(c::Rodas4Cache) = (c.dense1,c.dense2,c.du,c.du1,c.fsalfirst,c.fsallast,c.linsolve_tmp)
 jac_cache(c::Rodas4Cache) = (c.J,c.W)
-vecu_cache(c::Rodas4Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
 
 function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   dense1 = zero(rate_prototype)
@@ -658,15 +625,15 @@ function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   du = zero(rate_prototype)
   du1 = zero(rate_prototype)
   du2 = zero(rate_prototype)
-  vectmp = vec(similar(u,axes(u)))
-  vectmp2 = vec(similar(u,axes(u)))
-  vectmp3 = vec(similar(u,axes(u)))
-  vectmp4 = vec(similar(u,axes(u)))
-  vectmp5 = vec(similar(u,axes(u)))
-  vectmp6 = vec(similar(u,axes(u)))
+  k1 = zero(rate_prototype)
+  k2 = zero(rate_prototype)
+  k3 = zero(rate_prototype)
+  k4 = zero(rate_prototype)
+  k5 = zero(rate_prototype)
+  k6 = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
-  dT = similar(u,axes(u))
+  dT = zero(rate_prototype)
   if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
@@ -674,20 +641,19 @@ function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
     W = similar(J)
   end
-  tmp = similar(u,axes(u))
+  tmp = zero(rate_prototype)
   tab = Rodas4ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
-  linsolve_tmp = similar(u,axes(u))
-  linsolve_tmp_vec = vec(linsolve_tmp)
+  linsolve_tmp = zero(rate_prototype)
   linsolve = alg.linsolve(Val{:init},uf,u)
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
-  Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
-                    vectmp5,vectmp6,
+  Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
+                    k5,k6,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
-                    linsolve_tmp_vec,linsolve,jac_config,grad_config)
+                    linsolve,jac_config,grad_config)
 end
 
 function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
@@ -702,15 +668,15 @@ function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   du = zero(rate_prototype)
   du1 = zero(rate_prototype)
   du2 = zero(rate_prototype)
-  vectmp = vec(similar(u,axes(u)))
-  vectmp2 = vec(similar(u,axes(u)))
-  vectmp3 = vec(similar(u,axes(u)))
-  vectmp4 = vec(similar(u,axes(u)))
-  vectmp5 = vec(similar(u,axes(u)))
-  vectmp6 = vec(similar(u,axes(u)))
+  k1 = zero(rate_prototype)
+  k2 = zero(rate_prototype)
+  k3 = zero(rate_prototype)
+  k4 = zero(rate_prototype)
+  k5 = zero(rate_prototype)
+  k6 = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
-  dT = similar(u,axes(u))
+  dT = zero(rate_prototype)
   if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
@@ -718,20 +684,19 @@ function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
     J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
     W = similar(J)
   end
-  tmp = similar(u,axes(u))
+  tmp = zero(rate_prototype)
   tab = Rodas42ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
-  linsolve_tmp = similar(u,axes(u))
-  linsolve_tmp_vec = vec(linsolve_tmp)
+  linsolve_tmp = zero(rate_prototype)
   linsolve = alg.linsolve(Val{:init},uf,u)
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
-  Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
-                    vectmp5,vectmp6,
+  Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
+                    k5,k6,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
-                    linsolve_tmp_vec,linsolve,jac_config,grad_config)
+                    linsolve,jac_config,grad_config)
 end
 
 function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
@@ -746,15 +711,15 @@ function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   du = zero(rate_prototype)
   du1 = zero(rate_prototype)
   du2 = zero(rate_prototype)
-  vectmp = vec(similar(u,axes(u)))
-  vectmp2 = vec(similar(u,axes(u)))
-  vectmp3 = vec(similar(u,axes(u)))
-  vectmp4 = vec(similar(u,axes(u)))
-  vectmp5 = vec(similar(u,axes(u)))
-  vectmp6 = vec(similar(u,axes(u)))
+  k1 = zero(rate_prototype)
+  k2 = zero(rate_prototype)
+  k3 = zero(rate_prototype)
+  k4 = zero(rate_prototype)
+  k5 = zero(rate_prototype)
+  k6 = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
-  dT = similar(u,axes(u))
+  dT = zero(rate_prototype)
   if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
@@ -762,20 +727,19 @@ function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
     J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
     W = similar(J)
   end
-  tmp = similar(u,axes(u))
+  tmp = zero(rate_prototype)
   tab = Rodas4PConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
-  linsolve_tmp = similar(u,axes(u))
-  linsolve_tmp_vec = vec(linsolve_tmp)
+  linsolve_tmp = zero(rate_prototype)
   linsolve = alg.linsolve(Val{:init},uf,u)
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
-  Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
-                    vectmp5,vectmp6,
+  Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
+                    k5,k6,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
-                    linsolve_tmp_vec,linsolve,jac_config,grad_config)
+                    linsolve,jac_config,grad_config)
 end
 
 function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
@@ -794,7 +758,7 @@ struct Rosenbrock5ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
   tab::Tab
 end
 
-mutable struct Rosenbrock5Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+mutable struct Rosenbrock5Cache{uType,uArrayType,rateType,du2Type,LinuType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   dense1::rateType
@@ -802,14 +766,14 @@ mutable struct Rosenbrock5Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuT
   du::rateType
   du1::rateType
   du2::du2Type
-  vectmp::vecuType
-  vectmp2::vecuType
-  vectmp3::vecuType
-  vectmp4::vecuType
-  vectmp5::vecuType
-  vectmp6::vecuType
-  vectmp7::vecuType
-  vectmp8::vecuType
+  k1::rateType
+  k2::rateType
+  k3::rateType
+  k4::rateType
+  k5::rateType
+  k6::rateType
+  k7::rateType
+  k8::rateType
   fsalfirst::rateType
   fsallast::rateType
   dT::uArrayType
@@ -820,16 +784,14 @@ mutable struct Rosenbrock5Cache{uType,uArrayType,rateType,du2Type,LinuType,vecuT
   tf::TFType
   uf::UFType
   linsolve_tmp::LinuType
-  linsolve_tmp_vec::vecuType
   linsolve::F
   jac_config::JCType
   grad_config::GCType
 end
 
 u_cache(c::Rosenbrock5Cache) = (c.dT,c.tmp)
-du_cache(c::Rosenbrock5Cache) = (c.k₁,c.k₂,c.k₃,c.du1,c.du2,c.f₁,c.fsalfirst,c.fsallast,c.linsolve_tmp)
+du_cache(c::Rosenbrock5Cache) = (c.dense1,c.dense2,c.du,c.du1,c.fsalfirst,c.fsallast,c.linsolve_tmp)
 jac_cache(c::Rosenbrock5Cache) = (c.J,c.W)
-vecu_cache(c::Rosenbrock5Cache) = (c.vectmp,c.vectmp2,c.vectmp3)
 
 function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   dense1 = zero(rate_prototype)
@@ -837,17 +799,17 @@ function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   du = zero(rate_prototype)
   du1 = zero(rate_prototype)
   du2 = zero(rate_prototype)
-  vectmp = vec(similar(u,axes(u)))
-  vectmp2 = vec(similar(u,axes(u)))
-  vectmp3 = vec(similar(u,axes(u)))
-  vectmp4 = vec(similar(u,axes(u)))
-  vectmp5 = vec(similar(u,axes(u)))
-  vectmp6 = vec(similar(u,axes(u)))
-  vectmp7 = vec(similar(u,axes(u)))
-  vectmp8 = vec(similar(u,axes(u)))
+  k1 = zero(rate_prototype)
+  k2 = zero(rate_prototype)
+  k3 = zero(rate_prototype)
+  k4 = zero(rate_prototype)
+  k5 = zero(rate_prototype)
+  k6 = zero(rate_prototype)
+  k7 = zero(rate_prototype)
+  k8 = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
-  dT = similar(u,axes(u))
+  dT = zero(rate_prototype)
   if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
     W = WOperator(f, dt)
     J = nothing # is J = W.J better?
@@ -855,20 +817,19 @@ function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
     W = similar(J)
   end
-  tmp = similar(u,axes(u))
+  tmp = zero(rate_prototype)
   tab = Rodas5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
-  linsolve_tmp = similar(u,axes(u))
-  linsolve_tmp_vec = vec(linsolve_tmp)
+  linsolve_tmp = zero(rate_prototype)
   linsolve = alg.linsolve(Val{:init},uf,u)
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
-  Rosenbrock5Cache(u,uprev,dense1,dense2,du,du1,du2,vectmp,vectmp2,vectmp3,vectmp4,
-                    vectmp5,vectmp6,vectmp7,vectmp8,
+  Rosenbrock5Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
+                    k5,k6,k7,k8,
                     fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
-                    linsolve_tmp_vec,linsolve,jac_config,grad_config)
+                    linsolve,jac_config,grad_config)
 end
 
 function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
