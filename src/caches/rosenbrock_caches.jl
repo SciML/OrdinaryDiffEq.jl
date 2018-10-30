@@ -3,14 +3,14 @@ abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
 
 # Shampine's Low-order Rosenbrocks
 
-mutable struct Rosenbrock23Cache{uType,rateType,du2Type,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+mutable struct Rosenbrock23Cache{uType,rateType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   k₁::rateType
   k₂::rateType
   k₃::rateType
   du1::rateType
-  du2::du2Type
+  du2::rateType
   f₁::rateType
   fsalfirst::rateType
   fsallast::rateType
@@ -31,14 +31,14 @@ u_cache(c::Rosenbrock23Cache) = (c.dT,c.tmp)
 du_cache(c::Rosenbrock23Cache) = (c.k₁,c.k₂,c.k₃,c.du1,c.du2,c.f₁,c.fsalfirst,c.fsallast,c.linsolve_tmp)
 jac_cache(c::Rosenbrock23Cache) = (c.J,c.W)
 
-mutable struct Rosenbrock32Cache{uType,rateType,du2Type,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+mutable struct Rosenbrock32Cache{uType,rateType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   k₁::rateType
   k₂::rateType
   k₃::rateType
   du1::rateType
-  du2::du2Type
+  du2::rateType
   f₁::rateType
   fsalfirst::rateType
   fsallast::rateType
@@ -120,7 +120,7 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,uBottomElty
   linsolve = alg.linsolve(Val{:init},uf,u)
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
-  Rosenbrock32Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,k₁,k₂,k₃,fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,linsolve,jac_config,grad_config)
+  Rosenbrock32Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,linsolve,jac_config,grad_config)
 end
 
 struct Rosenbrock23ConstantCache{T,TF,UF} <: OrdinaryDiffEqConstantCache
@@ -171,26 +171,26 @@ struct Rosenbrock33ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
   tab::Tab
 end
 
-mutable struct Rosenbrock33Cache{uType,uArrayType,rateType,du2Type,LinuType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+mutable struct Rosenbrock33Cache{uType,rateType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   du::rateType
   du1::rateType
-  du2::du2Type
+  du2::rateType
   k1::rateType
   k2::rateType
   k3::rateType
   k4::rateType
   fsalfirst::rateType
   fsallast::rateType
-  dT::uArrayType
+  dT::rateType
   J::JType
   W::WType
-  tmp::uArrayType
+  tmp::rateType
   tab::TabType
   tf::TFType
   uf::UFType
-  linsolve_tmp::LinuType
+  linsolve_tmp::rateType
   linsolve::F
   jac_config::JCType
   grad_config::GCType
@@ -237,26 +237,26 @@ function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   Rosenbrock33ConstantCache(tf,uf,ROS3PConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits)))
 end
 
-mutable struct Rosenbrock34Cache{uType,uArrayType,rateType,du2Type,LinuType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+mutable struct Rosenbrock34Cache{uType,rateType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   du::rateType
   du1::rateType
-  du2::du2Type
+  du2::rateType
   k1::rateType
   k2::rateType
   k3::rateType
   k4::rateType
   fsalfirst::rateType
   fsallast::rateType
-  dT::uArrayType
+  dT::rateType
   J::JType
   W::WType
-  tmp::uArrayType
+  tmp::rateType
   tab::TabType
   tf::TFType
   uf::UFType
-  linsolve_tmp::LinuType
+  linsolve_tmp::rateType
   linsolve::F
   jac_config::JCType
   grad_config::GCType
@@ -319,26 +319,26 @@ struct Rosenbrock4ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
   tab::Tab
 end
 
-mutable struct Rosenbrock4Cache{uType,uArrayType,rateType,du2Type,LinuType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+mutable struct Rosenbrock4Cache{uType,rateType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   du::rateType
   du1::rateType
-  du2::du2Type
+  du2::rateType
   k1::rateType
   k2::rateType
   k3::rateType
   k4::rateType
   fsalfirst::rateType
   fsallast::rateType
-  dT::uArrayType
+  dT::rateType
   J::JType
   W::WType
-  tmp::uArrayType
+  tmp::rateType
   tab::TabType
   tf::TFType
   uf::UFType
-  linsolve_tmp::LinuType
+  linsolve_tmp::rateType
   linsolve::F
   jac_config::JCType
   grad_config::GCType
@@ -586,14 +586,14 @@ struct Rodas4ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
   tab::Tab
 end
 
-mutable struct Rodas4Cache{uType,uArrayType,rateType,du2Type,LinuType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+mutable struct Rodas4Cache{uType,rateType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   dense1::rateType
   dense2::rateType
   du::rateType
   du1::rateType
-  du2::du2Type
+  du2::rateType
   k1::rateType
   k2::rateType
   k3::rateType
@@ -602,14 +602,14 @@ mutable struct Rodas4Cache{uType,uArrayType,rateType,du2Type,LinuType,JType,WTyp
   k6::rateType
   fsalfirst::rateType
   fsallast::rateType
-  dT::uArrayType
+  dT::rateType
   J::JType
   W::WType
-  tmp::uArrayType
+  tmp::rateType
   tab::TabType
   tf::TFType
   uf::UFType
-  linsolve_tmp::LinuType
+  linsolve_tmp::rateType
   linsolve::F
   jac_config::JCType
   grad_config::GCType
@@ -758,14 +758,14 @@ struct Rosenbrock5ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
   tab::Tab
 end
 
-mutable struct Rosenbrock5Cache{uType,uArrayType,rateType,du2Type,LinuType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+mutable struct Rosenbrock5Cache{uType,rateType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   dense1::rateType
   dense2::rateType
   du::rateType
   du1::rateType
-  du2::du2Type
+  du2::rateType
   k1::rateType
   k2::rateType
   k3::rateType
@@ -776,14 +776,14 @@ mutable struct Rosenbrock5Cache{uType,uArrayType,rateType,du2Type,LinuType,JType
   k8::rateType
   fsalfirst::rateType
   fsallast::rateType
-  dT::uArrayType
+  dT::rateType
   J::JType
   W::WType
-  tmp::uArrayType
+  tmp::rateType
   tab::TabType
   tf::TFType
   uf::UFType
-  linsolve_tmp::LinuType
+  linsolve_tmp::rateType
   linsolve::F
   jac_config::JCType
   grad_config::GCType
