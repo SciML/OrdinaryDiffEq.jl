@@ -28,7 +28,7 @@ function alg_cache(alg::ROCK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   gprev = similar(u)
   gprev2 = similar(u)
   tmp = similar(u)
-  atmp = similar(u,uEltypeNoUnits,axes(u))
+  atmp = similar(u,uEltypeNoUnits)
   fsalfirst = zero(rate_prototype)
   k = zero(rate_prototype)
   k2 = zero(rate_prototype)

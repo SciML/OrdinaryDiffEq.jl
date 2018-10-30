@@ -1,8 +1,8 @@
 DiffEqBase.@def iipnlcachefields begin
   nlcache = alg.nlsolve.cache
   @unpack κ,tol,max_iter,min_iter,new_W = nlcache
-  z = similar(u,axes(u))
-  dz = similar(u,axes(u)); tmp = similar(u,axes(u)); b = similar(u,axes(u))
+  z = similar(u)
+  dz = similar(u); tmp = similar(u); b = similar(u)
   fsalfirst = zero(rate_prototype)
   k = zero(rate_prototype)
   uToltype = real(uBottomEltypeNoUnits)
@@ -121,7 +121,7 @@ du_cache(c::ImplicitEulerCache)   = (c.k,c.fsalfirst)
 function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   @iipnlcachefields
-  atmp = similar(u,uEltypeNoUnits,axes(u))
+  atmp = similar(u,uEltypeNoUnits)
   nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1,1,ηold,z₊,dz,tmp,b,k))
   ImplicitEulerCache(u,uprev,uprev2,du1,fsalfirst,k,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolve)
 end
@@ -221,7 +221,7 @@ du_cache(c::TrapezoidCache)   = (c.k,c.fsalfirst)
 function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   @iipnlcachefields
-  atmp = similar(u,uEltypeNoUnits,axes(u))
+  atmp = similar(u,uEltypeNoUnits)
   uprev3 = similar(u)
   tprev2 = t
   nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//2,1,ηold,z₊,dz,tmp,b,k))
@@ -270,8 +270,8 @@ du_cache(c::TRBDF2Cache)   = (c.k,c.fsalfirst)
 function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   @iipnlcachefields
-  atmp = similar(u,uEltypeNoUnits,axes(u)); zprev = similar(u,axes(u));
-  zᵧ = similar(u,axes(u))
+  atmp = similar(u,uEltypeNoUnits); zprev = similar(u);
+  zᵧ = similar(u)
   tab = TRBDF2Tableau(uToltype,real(tTypeNoUnits))
   nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.d,tab.γ,ηold,z₊,dz,tmp,b,k))
   TRBDF2Cache(u,uprev,du1,fsalfirst,k,zprev,zᵧ,z,dz,b,tmp,atmp,J,
@@ -317,8 +317,8 @@ du_cache(c::SDIRK2Cache)   = (c.k,c.fsalfirst)
 function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   @iipnlcachefields
-  z₁ = similar(u,axes(u)); z₂ = z;
-  atmp = similar(u,uEltypeNoUnits,axes(u))
+  z₁ = similar(u); z₂ = z;
+  atmp = similar(u,uEltypeNoUnits)
   nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1,1,ηold,z₊,dz,tmp,b,k))
 
   SDIRK2Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,dz,b,tmp,atmp,J,
@@ -363,8 +363,8 @@ du_cache(c::SSPSDIRK2Cache)   = (c.k,c.fsalfirst)
 function alg_cache(alg::SSPSDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   @iipnlcachefields
-  z₁ = similar(u,axes(u)); z₂ = z;
-  atmp = similar(u,uEltypeNoUnits,axes(u))
+  z₁ = similar(u); z₂ = z;
+  atmp = similar(u,uEltypeNoUnits)
   nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//4,1//1,ηold,z₊,dz,tmp,b,k))
 
   SSPSDIRK2Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,dz,b,tmp,J,
@@ -415,9 +415,9 @@ du_cache(c::Kvaerno3Cache)   = (c.k,c.fsalfirst)
 function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   @iipnlcachefields
-  z₁ = similar(u,axes(u)); z₂ = similar(u,axes(u));
-  z₃ = similar(u,axes(u)); z₄ = z;
-  atmp = similar(u,uEltypeNoUnits,axes(u))
+  z₁ = similar(u); z₂ = similar(u);
+  z₃ = similar(u); z₄ = z;
+  atmp = similar(u,uEltypeNoUnits)
   tab = Kvaerno3Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,2tab.γ,ηold,z₊,dz,tmp,b,k))
 
@@ -470,10 +470,10 @@ du_cache(c::Cash4Cache)   = (c.k,c.fsalfirst)
 function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   @iipnlcachefields
-  z₁ = similar(u,axes(u)); z₂ = similar(u,axes(u));
-  z₃ = similar(u,axes(u)); z₄ = similar(u,axes(u))
+  z₁ = similar(u); z₂ = similar(u);
+  z₃ = similar(u); z₄ = similar(u)
   z₅ = z
-  atmp = similar(u,uEltypeNoUnits,axes(u))
+  atmp = similar(u,uEltypeNoUnits)
   tab = Cash4Tableau(uToltype,real(tTypeNoUnits))
   nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,tab.γ,ηold,z₊,dz,tmp,b,k))
 
@@ -530,11 +530,11 @@ du_cache(c::Hairer4Cache)   = (c.k,c.fsalfirst)
 function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   @iipnlcachefields
-  z₁ = similar(u,axes(u)); z₂ = similar(u,axes(u));
-  z₃ = similar(u,axes(u)); z₄ = similar(u,axes(u))
+  z₁ = similar(u); z₂ = similar(u);
+  z₃ = similar(u); z₄ = similar(u)
   z₅ = z
-  dz = similar(u,axes(u))
-  atmp = similar(u,uEltypeNoUnits,axes(u))
+  dz = similar(u)
+  atmp = similar(u,uEltypeNoUnits)
 
   if typeof(alg) <: Hairer4
     tab = Hairer4Tableau(uToltype,real(tTypeNoUnits))

@@ -33,7 +33,7 @@ function alg_cache(alg::Feagin10,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   k6 = zero(rate_prototype); k7 = zero(rate_prototype); k8 = zero(rate_prototype); k9 = zero(rate_prototype); k10 = zero(rate_prototype)
   k11 = zero(rate_prototype); k12 = zero(rate_prototype); k13 = zero(rate_prototype); k14 = zero(rate_prototype)
   k15 = zero(rate_prototype); k16 = zero(rate_prototype); k17 = zero(rate_prototype)
-  tmp = similar(u); atmp = similar(u,uEltypeNoUnits,axes(u)); k = zero(rate_prototype)
+  tmp = similar(u); atmp = similar(u,uEltypeNoUnits); k = zero(rate_prototype)
 
   Feagin10Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,k17,tmp,atmp,k,tab)
 end
@@ -85,7 +85,7 @@ function alg_cache(alg::Feagin12,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   k15 = zero(rate_prototype); k16 = zero(rate_prototype); k17 = zero(rate_prototype); k18 = zero(rate_prototype)
   k19 = zero(rate_prototype); k20 = zero(rate_prototype); k21 = zero(rate_prototype); k22 = zero(rate_prototype)
   k23 = zero(rate_prototype); k24 = zero(rate_prototype); k25 = zero(rate_prototype)
-  tmp = similar(u); atmp = similar(u,uEltypeNoUnits,axes(u)); k = zero(rate_prototype)
+  tmp = similar(u); atmp = similar(u,uEltypeNoUnits); k = zero(rate_prototype)
 
   Feagin12Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,k17,k18,k19,k20,k21,k22,k23,k24,k25,tmp,atmp,k,tab)
 end
@@ -152,7 +152,7 @@ function alg_cache(alg::Feagin14,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   k26 = zero(rate_prototype); k27 = zero(rate_prototype); k28 = zero(rate_prototype)
   k29 = zero(rate_prototype); k30 = zero(rate_prototype); k31 = zero(rate_prototype); k32 = zero(rate_prototype)
   k33 = zero(rate_prototype); k34 = zero(rate_prototype); k35 = zero(rate_prototype)
-  tmp = similar(u); atmp = similar(u,uEltypeNoUnits,axes(u)); k = zero(rate_prototype)
+  tmp = similar(u); atmp = similar(u,uEltypeNoUnits); k = zero(rate_prototype)
 
   Feagin14Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,
                 k17,k18,k19,k20,k21,k22,k23,k24,k25,k26,k27,k28,k29,k30,

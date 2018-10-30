@@ -67,7 +67,7 @@ function alg_cache(alg::AN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   k5 = zero(rate_prototype)
   k6 = zero(rate_prototype); k7 = zero(rate_prototype)
   utilde = similar(u,axes(u))
-  atmp = similar(u,uEltypeNoUnits,axes(u)); tmp = similar(u)
+  atmp = similar(u,uEltypeNoUnits); tmp = similar(u)
   tsit5cache = Tsit5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp,tab)
   #################################################
   N = 5
@@ -195,13 +195,13 @@ function alg_cache(alg::JVODE,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   k1 = zero(rate_prototype); k2 = zero(rate_prototype); k3 = zero(rate_prototype); k4 = zero(rate_prototype)
   k5 = zero(rate_prototype); k6 = zero(rate_prototype); k7 = zero(rate_prototype)
   utilde = similar(u,axes(u))
-  atmp = similar(u,uEltypeNoUnits,axes(u)); tmp = similar(u)
+  atmp = similar(u,uEltypeNoUnits); tmp = similar(u)
   tsit5cache = Tsit5Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp,tab)
   #################################################
   fsalfirst = zero(rate_prototype)
   N = 12
   z = [zero(rate_prototype) for i in 1:N+1]
-  Δ = similar(u,uEltypeNoUnits,axes(u))
+  Δ = similar(u,uEltypeNoUnits)
   l = fill(zero(tTypeNoUnits), N+1); m = zero(l)
   c_LTE₊₁ = c_LTE = c_LTE₋₁ = c_conv = c_𝒟 = prev_𝒟 = zero(tTypeNoUnits)
   dts = fill(zero(typeof(dt)),N+1)

@@ -49,7 +49,7 @@ function alg_cache(alg::ABDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   @iipnlcachefields
   nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//1,1,ηold,z₊,dz,tmp,b,k))
-  atmp = similar(u,uEltypeNoUnits,axes(u))
+  atmp = similar(u,uEltypeNoUnits)
 
   fsalfirstprev = similar(rate_prototype)
   eulercache = ImplicitEulerCache(u,uprev,uprev2,du1,fsalfirst,k,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolve)
@@ -127,7 +127,7 @@ end
 
 function alg_cache(alg::SBDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   @iipnlcachefields
-  atmp = similar(u,uEltypeNoUnits,axes(u))
+  atmp = similar(u,uEltypeNoUnits)
   order = alg.order
   uprev2 = similar(u)
   uprev3 = order >= 3 ? similar(u) : uprev2
@@ -210,8 +210,8 @@ function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
 
   U!(1,U)
 
-  atmp = similar(u,uEltypeNoUnits,axes(u))
-  utilde = similar(u,axes(u))
+  atmp = similar(u,uEltypeNoUnits)
+  utilde = similar(u)
   uprev2 = similar(u)
   dtₙ₋₁ = one(dt)
   nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,zero(inv((1-alg.kappa))),1,ηold,z₊,dz,tmp,b,k))
@@ -294,8 +294,8 @@ function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
 
   U!(2,U)
 
-  atmp = similar(u,uEltypeNoUnits,axes(u))
-  utilde = similar(u,axes(u))
+  atmp = similar(u,uEltypeNoUnits)
+  utilde = similar(u)
   uprev2 = similar(u)
   uprev3 = similar(u)
   dtₙ₋₁ = zero(dt)
@@ -395,8 +395,8 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   end
 
   max_order = 5
-  atmp = similar(u,uEltypeNoUnits,axes(u))
-  utilde = similar(u,axes(u))
+  atmp = similar(u,uEltypeNoUnits)
+  utilde = similar(u)
   nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,zero(eltype(alg.kappa)),1,ηold,z₊,dz,tmp,b,k))
 
   QNDFCache(du1,fsalfirst,k,z,dz,b,D,D2,R,U,1,max_order,udiff,dts,tmp,atmp,utilde,J,

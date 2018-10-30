@@ -25,7 +25,7 @@ function alg_cache(alg::Vern6,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   k2 = zero(rate_prototype); k3 = zero(rate_prototype); k4 = zero(rate_prototype);
   k5 = zero(rate_prototype); k6 = zero(rate_prototype); k7 = zero(rate_prototype);
   k8 = zero(rate_prototype); k9 = zero(rate_prototype);
-  utilde = similar(u,axes(u)); tmp = similar(u); atmp = similar(u,uEltypeNoUnits,axes(u));
+  utilde = similar(u); tmp = similar(u); atmp = similar(u,uEltypeNoUnits);
   Vern6Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,utilde,tmp,atmp,tab)
 end
 
@@ -57,8 +57,8 @@ function alg_cache(alg::Vern7,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   tab = Vern7ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   k1 = zero(rate_prototype); k2 = zero(rate_prototype); k3 = zero(rate_prototype); k4 = zero(rate_prototype);
   k5 = zero(rate_prototype); k6 = zero(rate_prototype); k7 = zero(rate_prototype); k8 = zero(rate_prototype);
-  k9 = zero(rate_prototype); k10 = zero(rate_prototype); utilde = similar(u,axes(u))
-  tmp = similar(u); atmp = similar(u,uEltypeNoUnits,axes(u))
+  k9 = zero(rate_prototype); k10 = zero(rate_prototype); utilde = similar(u)
+  tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
   Vern7Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,utilde,tmp,atmp,tab)
 end
 
@@ -98,8 +98,8 @@ function alg_cache(alg::Vern8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   k8 = zero(rate_prototype); tmp = similar(u)
   k9 = zero(rate_prototype); k10 = zero(rate_prototype); k11 = zero(rate_prototype);
   k12 = zero(rate_prototype); k13 = zero(rate_prototype)
-  utilde = similar(u,axes(u))
-  atmp = similar(u,uEltypeNoUnits,axes(u))
+  utilde = similar(u)
+  atmp = similar(u,uEltypeNoUnits)
   Vern8Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,utilde,tmp,atmp,tab)
 end
 
@@ -143,7 +143,7 @@ function alg_cache(alg::Vern9,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   k12 = zero(rate_prototype);
   k13 = zero(rate_prototype); k14 = zero(rate_prototype); k15 = zero(rate_prototype);
   k16 =zero(rate_prototype);
-  utilde = similar(u,axes(u)); tmp = similar(u); atmp = similar(u,uEltypeNoUnits,axes(u));
+  utilde = similar(u); tmp = similar(u); atmp = similar(u,uEltypeNoUnits);
   Vern9Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,utilde,tmp,atmp,tab)
 end
 

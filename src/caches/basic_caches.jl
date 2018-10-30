@@ -62,7 +62,7 @@ function alg_cache(alg::ExplicitRK,u,rate_prototype,uEltypeNoUnits,uBottomEltype
   end
   utilde = zero(rate_prototype)
   tmp = similar(u)
-  atmp = similar(u,uEltypeNoUnits,axes(u))
+  atmp = similar(u,uEltypeNoUnits)
   tab = ExplicitRKConstantCache(alg.tableau,rate_prototype)
   ExplicitRKCache(u,uprev,tmp,utilde,atmp,fsalfirst,fsallast,kk,tab)
 end

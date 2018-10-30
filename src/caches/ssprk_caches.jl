@@ -365,8 +365,8 @@ function alg_cache(alg::SSPRK432,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   tmp = similar(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
-  utilde = similar(u,axes(u))
-  atmp = similar(u,uEltypeNoUnits,axes(u))
+  utilde = similar(u)
+  atmp = similar(u,uEltypeNoUnits)
   SSPRK432Cache(u,uprev,k,tmp,fsalfirst,utilde,atmp,alg.stage_limiter!,alg.step_limiter!)
 end
 
@@ -394,8 +394,8 @@ function alg_cache(alg::SSPRK932,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   tmp = similar(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
-  utilde = similar(u,axes(u))
-  atmp = similar(u,uEltypeNoUnits,axes(u))
+  utilde = similar(u)
+  atmp = similar(u,uEltypeNoUnits)
   SSPRK932Cache(u,uprev,k,tmp,fsalfirst,utilde,atmp,alg.stage_limiter!,alg.step_limiter!)
 end
 
