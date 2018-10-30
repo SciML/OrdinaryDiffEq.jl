@@ -58,7 +58,7 @@ end
 u_cache(c::Rosenbrock32Cache) = (c.dT,c.tmp)
 du_cache(c::Rosenbrock32Cache) = (c.k₁,c.k₂,c.k₃,c.du1,c.du2,c.f₁,c.fsalfirst,c.fsallast,c.linsolve_tmp)
 jac_cache(c::Rosenbrock32Cache) = (c.J,c.W)
-user_cache(cache::Union{Rosenbrock23Cache,Rosenbrock32Cache}) = (cache.u,cache.uprev,cache.jac_config.duals[2])
+user_cache(cache::Union{Rosenbrock23Cache,Rosenbrock32Cache}) = (cache.u,cache.uprev,cache.jac_config.duals...,cache.grad_config.duals)
 
 function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   k₁ = zero(rate_prototype)

@@ -73,11 +73,9 @@ end
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,cache) = (cache.tmp,cache.linsolve_tmp)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::CompositeAlgorithm, cache) = get_tmp_cache(integrator, integrator.alg.algs[1], cache.caches[1])
 
-user_cache(integrator::ODEIntegrator) = user_cache(integrator.cache)
 u_cache(integrator::ODEIntegrator) = u_cache(integrator.cache)
 du_cache(integrator::ODEIntegrator)= du_cache(integrator.cache)
-full_cache(integrator::ODEIntegrator) = chain(user_cache(integrator),u_cache(integrator),du_cache(integrator.cache))
-default_non_user_cache(integrator::ODEIntegrator) = chain(u_cache(integrator),du_cache(integrator.cache))
+full_cache(integrator::ODEIntegrator) = chain(u_cache(integrator),du_cache(integrator.cache))
 function add_tstop!(integrator::ODEIntegrator,t)
   integrator.tdir * (t - integrator.t) < 0 && error("Tried to add a tstop that is behind the current time. This is strictly forbidden")
   push!(integrator.opts.tstops,t)
@@ -102,34 +100,13 @@ resize_non_user_cache!(integrator::ODEIntegrator,i::Int) = resize_non_user_cache
 deleteat_non_user_cache!(integrator::ODEIntegrator,i) = deleteat_non_user_cache!(integrator,integrator.cache,i)
 addat_non_user_cache!(integrator::ODEIntegrator,i) = addat_non_user_cache!(integrator,integrator.cache,i)
 
-function resize_non_user_cache!(integrator::ODEIntegrator,cache,i)
-  for c in default_non_user_cache(integrator)
-    resize!(c,i)
-  end
-end
-
+resize_non_user_cache!(integrator::ODEIntegrator,cache,i) = nothing
 function resize_non_user_cache!(integrator::ODEIntegrator,cache::RosenbrockMutableCache,i)
-
-  for c in u_cache(integrator)
-    resize!(c,i)
-  end
-
-  for c in du_cache(integrator)
-    resize!(c,i)
-  end
-
   cache.J = similar(cache.J,i,i)
   cache.W = similar(cache.W,i,i)
-  for d in cache.jac_config.duals
-    resize!(d,i)
-  end
-  resize!(cache.grad_config.duals,i)
 end
 
 function resize_non_user_cache!(integrator::ODEIntegrator,cache::Union{GenericImplicitEulerCache,GenericTrapezoidCache},i)
-  for c in default_non_user_cache(integrator)
-    resize!(c,i)
-  end
   for c in dual_cache(integrator.cache)
     resize!(c.du,i)
     resize!(c.dual_du,i)
