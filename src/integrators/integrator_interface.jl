@@ -73,9 +73,10 @@ end
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,cache) = (cache.tmp,cache.linsolve_tmp)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::CompositeAlgorithm, cache) = get_tmp_cache(integrator, integrator.alg.algs[1], cache.caches[1])
 
+user_cache(integrator::ODEIntegrator) = user_cache(integrator.cache)
 u_cache(integrator::ODEIntegrator) = u_cache(integrator.cache)
 du_cache(integrator::ODEIntegrator)= du_cache(integrator.cache)
-full_cache(integrator::ODEIntegrator) = chain(u_cache(integrator),du_cache(integrator.cache))
+full_cache(integrator::ODEIntegrator) = chain(user_cache(integrator),u_cache(integrator),du_cache(integrator.cache))
 function add_tstop!(integrator::ODEIntegrator,t)
   integrator.tdir * (t - integrator.t) < 0 && error("Tried to add a tstop that is behind the current time. This is strictly forbidden")
   push!(integrator.opts.tstops,t)
