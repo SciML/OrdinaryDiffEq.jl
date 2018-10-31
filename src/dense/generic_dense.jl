@@ -129,7 +129,7 @@ function ode_interpolation(tvals,id,idxs,deriv,p,continuity::Symbol=:left)
     avoid_constant_ends && i==1 && (i+=1)
     if !avoid_constant_ends && ts[i] == t
       lasti = lastindex(ts)
-      k = continuity == :right && i+1 <= lasti && ts[i+1] == tval ? i+1 : i
+      k = continuity == :right && i+1 <= lasti && ts[i+1] == t ? i+1 : i
       if idxs == nothing
         vals[j] = timeseries[k]
       else
@@ -180,7 +180,7 @@ function ode_interpolation!(vals,tvals,id,idxs,deriv,p,continuity::Symbol=:left)
     avoid_constant_ends && i==1 && (i+=1)
     if !avoid_constant_ends && ts[i] == t
       lasti = lastindex(ts)
-      k = continuity == :right && i+1 <= lasti && ts[i+1] == tval ? i+1 : i
+      k = continuity == :right && i+1 <= lasti && ts[i+1] == t ? i+1 : i
       if idxs == nothing
         vals[j] = timeseries[k]
       else
