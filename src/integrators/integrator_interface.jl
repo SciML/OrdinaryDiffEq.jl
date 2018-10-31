@@ -91,7 +91,7 @@ user_cache(cache::OrdinaryDiffEqCache) = (cache.u,cache.uprev,cache.tmp)
 
 resize!(integrator::ODEIntegrator,i::Int) = resize!(integrator,integrator.cache,i)
 function resize!(integrator::ODEIntegrator,cache,i)
-  for c in user_cache(integrator)
+  for c in full_cache(integrator)
     resize!(c,i)
   end
   resize_non_user_cache!(integrator,cache,i)
