@@ -18,16 +18,13 @@
     f₀ = integrator.fsallast
     f(f₀,u0,p,t)
   else
-    # TODO: use more caches
-    Tf = typeof(oneunit(eltype(u0))/oneunit(t))
-    f₀ = similar(u0,Tf)
+    f₀ = OrdinaryDiffEq.get_du(integrator)
     f(f₀,u0,p,t)
   end
 
   # TODO: use more caches
   #tmp = cache[2]
-  Ttmp = typeof(oneunit(eltype(u0))/oneunit(eltype(sk)))
-  tmp = similar(u0,Ttmp)
+  tmp = similar(u0)
   @. tmp = u0/sk
 
   d₀ = internalnorm(tmp)
