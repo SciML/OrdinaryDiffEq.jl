@@ -1,4 +1,4 @@
-mutable struct AB3Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct AB3Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -10,10 +10,7 @@ mutable struct AB3Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
   step::Int
 end
 
-u_cache(c::AB3Cache) = ()
-du_cache(c::AB3Cache) = (c.fsalfirst,c.k2,c.k3,c.ralk2,c.k)
-
-mutable struct AB3ConstantCache{rateType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct AB3ConstantCache{rateType} <: OrdinaryDiffEqConstantCache
   k2::rateType
   k3::rateType
   step::Int
@@ -35,7 +32,7 @@ function alg_cache(alg::AB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   AB3ConstantCache(k2,k3,1)
 end
 
-mutable struct ABM32Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct ABM32Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -47,10 +44,7 @@ mutable struct ABM32Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
   step::Int
 end
 
-u_cache(c::ABM32Cache) = ()
-du_cache(c::ABM32Cache) = (c.fsalfirst,c.k2,c.k3,c.ralk2,c.k)
-
-mutable struct ABM32ConstantCache{rateType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct ABM32ConstantCache{rateType} <: OrdinaryDiffEqConstantCache
   k2::rateType
   k3::rateType
   step::Int
@@ -72,7 +66,7 @@ function alg_cache(alg::ABM32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   ABM32ConstantCache(k2,k3,1)
 end
 
-mutable struct AB4Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct AB4Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -88,10 +82,7 @@ mutable struct AB4Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
   step::Int
 end
 
-u_cache(c::AB4Cache) = ()
-du_cache(c::AB4Cache) = (c.fsalfirst,c.k2,c.k3,c.k4,c.ralk2,c.k)
-
-mutable struct AB4ConstantCache{rateType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct AB4ConstantCache{rateType} <: OrdinaryDiffEqConstantCache
   k2::rateType
   k3::rateType
   k4::rateType
@@ -119,7 +110,7 @@ function alg_cache(alg::AB4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   AB4ConstantCache(k2,k3,k4,1)
 end
 
-mutable struct ABM43Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct ABM43Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -138,10 +129,7 @@ mutable struct ABM43Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
   step::Int
 end
 
-u_cache(c::ABM43Cache) = ()
-du_cache(c::ABM43Cache) = (c.fsalfirst,c.k2,c.k3,c.k4,c.ralk2,c.k)
-
-mutable struct ABM43ConstantCache{rateType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct ABM43ConstantCache{rateType} <: OrdinaryDiffEqConstantCache
   k2::rateType
   k3::rateType
   k4::rateType
@@ -172,7 +160,7 @@ function alg_cache(alg::ABM43,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   ABM43ConstantCache(k2,k3,k4,1)
 end
 
-mutable struct AB5Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct AB5Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -188,10 +176,7 @@ mutable struct AB5Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
   step::Int
 end
 
-u_cache(c::AB5Cache) = ()
-du_cache(c::AB5Cache) = (c.fsalfirst,c.k2,c.k3,c.k4,c.k5,c.k)
-
-mutable struct AB5ConstantCache{rateType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct AB5ConstantCache{rateType} <: OrdinaryDiffEqConstantCache
   k2::rateType
   k3::rateType
   k4::rateType
@@ -221,7 +206,7 @@ function alg_cache(alg::AB5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   AB5ConstantCache(k2,k3,k4,k5,1)
 end
 
-mutable struct ABM54Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct ABM54Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -241,10 +226,7 @@ mutable struct ABM54Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
   step::Int
 end
 
-u_cache(c::ABM54Cache) = ()
-du_cache(c::ABM54Cache) = (c.fsalfirst,c.k2,c.k3,c.k4,c.k5,c.k)
-
-mutable struct ABM54ConstantCache{rateType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct ABM54ConstantCache{rateType} <: OrdinaryDiffEqConstantCache
   k2::rateType
   k3::rateType
   k4::rateType
@@ -278,7 +260,7 @@ function alg_cache(alg::ABM54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   ABM54ConstantCache(k2,k3,k4,k5,1)
 end
 
-mutable struct VCAB3ConstantCache{TabType,tArrayType,rArrayType,cArrayType,dtArrayType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct VCAB3ConstantCache{TabType,tArrayType,rArrayType,cArrayType,dtArrayType} <: OrdinaryDiffEqConstantCache
   dts::dtArrayType
   c::cArrayType
   g::tArrayType
@@ -291,7 +273,7 @@ mutable struct VCAB3ConstantCache{TabType,tArrayType,rArrayType,cArrayType,dtArr
   step::Int
 end
 
-mutable struct VCAB3Cache{uType,rateType,TabType,uArrayType,bs3Type,tArrayType,cArrayType,uEltypeNoUnits,coefType,dtArrayType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct VCAB3Cache{uType,rateType,TabType,bs3Type,tArrayType,cArrayType,uNoUnitsType,coefType,dtArrayType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -305,15 +287,12 @@ mutable struct VCAB3Cache{uType,rateType,TabType,uArrayType,bs3Type,tArrayType,c
   ϕstar_n::coefType
   β::tArrayType
   order::Int
-  atmp::uEltypeNoUnits
+  atmp::uNoUnitsType
   tmp::uType
-  utilde::uArrayType
+  utilde::uType
   tab::TabType
   step::Int
 end
-
-u_cache(c::VCAB3Cache) = ()
-du_cache(c::VCAB3Cache) = ()
 
 function alg_cache(alg::VCAB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   dts = fill(zero(typeof(dt)),3)
@@ -364,7 +343,7 @@ function alg_cache(alg::VCAB3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   VCAB3Cache(u,uprev,fsalfirst,bs3cache,k4,ϕstar_nm1,dts,c,g,ϕ_n,ϕstar_n,β,order,atmp,tmp,utilde,tab,1)
 end
 
-mutable struct VCAB4ConstantCache{rk4constcache,tArrayType,rArrayType,cArrayType,dtArrayType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct VCAB4ConstantCache{rk4constcache,tArrayType,rArrayType,cArrayType,dtArrayType} <: OrdinaryDiffEqConstantCache
   ϕstar_nm1::rArrayType
   dts::dtArrayType
   c::cArrayType
@@ -377,7 +356,7 @@ mutable struct VCAB4ConstantCache{rk4constcache,tArrayType,rArrayType,cArrayType
   step::Int
 end
 
-mutable struct VCAB4Cache{uType,rateType,uArrayType,rk4cacheType,tArrayType,cArrayType,uEltypeNoUnits,coefType,dtArrayType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct VCAB4Cache{uType,rateType,rk4cacheType,tArrayType,cArrayType,uNoUnitsType,coefType,dtArrayType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -391,14 +370,11 @@ mutable struct VCAB4Cache{uType,rateType,uArrayType,rk4cacheType,tArrayType,cArr
   ϕstar_n::coefType
   β::tArrayType
   order::Int
-  atmp::uEltypeNoUnits
+  atmp::uNoUnitsType
   tmp::uType
-  utilde::uArrayType
+  utilde::uType
   step::Int
 end
-
-u_cache(c::VCAB4Cache) = ()
-du_cache(c::VCAB4Cache) = ()
 
 function alg_cache(alg::VCAB4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   dts = fill(zero(typeof(dt)),4)
@@ -449,7 +425,7 @@ end
 
 # VCAB5
 
-mutable struct VCAB5ConstantCache{rk4constcache,tArrayType,rArrayType,cArrayType,dtArrayType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct VCAB5ConstantCache{rk4constcache,tArrayType,rArrayType,cArrayType,dtArrayType} <: OrdinaryDiffEqConstantCache
   ϕstar_nm1::rArrayType
   dts::dtArrayType
   c::cArrayType
@@ -462,7 +438,7 @@ mutable struct VCAB5ConstantCache{rk4constcache,tArrayType,rArrayType,cArrayType
   step::Int
 end
 
-mutable struct VCAB5Cache{uType,rateType,uArrayType,rk4cacheType,tArrayType,cArrayType,uEltypeNoUnits,coefType,dtArrayType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct VCAB5Cache{uType,rateType,rk4cacheType,tArrayType,cArrayType,uNoUnitsType,coefType,dtArrayType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -476,14 +452,11 @@ mutable struct VCAB5Cache{uType,rateType,uArrayType,rk4cacheType,tArrayType,cArr
   ϕstar_n::coefType
   β::tArrayType
   order::Int
-  atmp::uEltypeNoUnits
+  atmp::uNoUnitsType
   tmp::uType
-  utilde::uArrayType
+  utilde::uType
   step::Int
 end
-
-u_cache(c::VCAB5Cache) = ()
-du_cache(c::VCAB5Cache) = ()
 
 function alg_cache(alg::VCAB5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   dts = fill(zero(typeof(dt)),5)
@@ -534,7 +507,7 @@ end
 
 # VCABM3
 
-mutable struct VCABM3ConstantCache{TabType,tArrayType,rArrayType,cArrayType,dtArrayType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct VCABM3ConstantCache{TabType,tArrayType,rArrayType,cArrayType,dtArrayType} <: OrdinaryDiffEqConstantCache
   dts::dtArrayType
   c::cArrayType
   g::tArrayType
@@ -548,7 +521,7 @@ mutable struct VCABM3ConstantCache{TabType,tArrayType,rArrayType,cArrayType,dtAr
   step::Int
 end
 
-mutable struct VCABM3Cache{uType,rateType,TabType,uArrayType,bs3Type,tArrayType,cArrayType,uEltypeNoUnits,coefType,dtArrayType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct VCABM3Cache{uType,rateType,TabType,bs3Type,tArrayType,cArrayType,uNoUnitsType,coefType,dtArrayType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -563,15 +536,12 @@ mutable struct VCABM3Cache{uType,rateType,TabType,uArrayType,bs3Type,tArrayType,
   ϕstar_n::coefType
   β::tArrayType
   order::Int
-  atmp::uEltypeNoUnits
+  atmp::uNoUnitsType
   tmp::uType
-  utilde::uArrayType
+  utilde::uType
   tab::TabType
   step::Int
 end
-
-u_cache(c::VCABM3Cache) = ()
-du_cache(c::VCABM3Cache) = ()
 
 function alg_cache(alg::VCABM3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   dts = fill(zero(typeof(dt)),3)
@@ -629,7 +599,7 @@ end
 
 # VCABM4
 
-mutable struct VCABM4ConstantCache{rk4constcache,tArrayType,rArrayType,cArrayType,dtArrayType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct VCABM4ConstantCache{rk4constcache,tArrayType,rArrayType,cArrayType,dtArrayType} <: OrdinaryDiffEqConstantCache
   ϕstar_nm1::rArrayType
   dts::dtArrayType
   c::cArrayType
@@ -643,7 +613,7 @@ mutable struct VCABM4ConstantCache{rk4constcache,tArrayType,rArrayType,cArrayTyp
   step::Int
 end
 
-mutable struct VCABM4Cache{uType,rateType,uArrayType,rk4cacheType,tArrayType,cArrayType,uEltypeNoUnits,coefType,dtArrayType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct VCABM4Cache{uType,rateType,rk4cacheType,tArrayType,cArrayType,uNoUnitsType,coefType,dtArrayType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -658,14 +628,11 @@ mutable struct VCABM4Cache{uType,rateType,uArrayType,rk4cacheType,tArrayType,cAr
   ϕstar_n::coefType
   β::tArrayType
   order::Int
-  atmp::uEltypeNoUnits
+  atmp::uNoUnitsType
   tmp::uType
-  utilde::uArrayType
+  utilde::uType
   step::Int
 end
-
-u_cache(c::VCABM4Cache) = ()
-du_cache(c::VCABM4Cache) = ()
 
 function alg_cache(alg::VCABM4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   dts = fill(zero(typeof(dt)),4)
@@ -721,7 +688,7 @@ end
 
 # VCABM5
 
-mutable struct VCABM5ConstantCache{rk4constcache,tArrayType,rArrayType,cArrayType,dtArrayType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct VCABM5ConstantCache{rk4constcache,tArrayType,rArrayType,cArrayType,dtArrayType} <: OrdinaryDiffEqConstantCache
   ϕstar_nm1::rArrayType
   dts::dtArrayType
   c::cArrayType
@@ -735,7 +702,7 @@ mutable struct VCABM5ConstantCache{rk4constcache,tArrayType,rArrayType,cArrayTyp
   step::Int
 end
 
-mutable struct VCABM5Cache{uType,rateType,uArrayType,rk4cacheType,tArrayType,cArrayType,uEltypeNoUnits,coefType,dtArrayType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct VCABM5Cache{uType,rateType,rk4cacheType,tArrayType,cArrayType,uNoUnitsType,coefType,dtArrayType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -750,14 +717,11 @@ mutable struct VCABM5Cache{uType,rateType,uArrayType,rk4cacheType,tArrayType,cAr
   ϕstar_n::coefType
   β::tArrayType
   order::Int
-  atmp::uEltypeNoUnits
+  atmp::uNoUnitsType
   tmp::uType
-  utilde::uArrayType
+  utilde::uType
   step::Int
 end
-
-u_cache(c::VCABM5Cache) = ()
-du_cache(c::VCABM5Cache) = ()
 
 function alg_cache(alg::VCABM5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   dts = fill(zero(typeof(dt)),5)
@@ -813,7 +777,7 @@ end
 
 # VCABM
 
-mutable struct VCABMConstantCache{tArrayType,rArrayType,cArrayType,dtType,dtArrayType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct VCABMConstantCache{tArrayType,rArrayType,cArrayType,dtType,dtArrayType} <: OrdinaryDiffEqConstantCache
   ϕstar_nm1::rArrayType
   dts::dtArrayType
   c::cArrayType
@@ -829,7 +793,7 @@ mutable struct VCABMConstantCache{tArrayType,rArrayType,cArrayType,dtType,dtArra
   step::Int
 end
 
-mutable struct VCABMCache{uType,rateType,uArrayType,dtType,tArrayType,cArrayType,uEltypeNoUnits,coefType,dtArrayType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct VCABMCache{uType,rateType,dtType,tArrayType,cArrayType,uNoUnitsType,coefType,dtArrayType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -844,22 +808,19 @@ mutable struct VCABMCache{uType,rateType,uArrayType,dtType,tArrayType,cArrayType
   β::tArrayType
   order::Int
   max_order::Int
-  atmp::uEltypeNoUnits
+  atmp::uNoUnitsType
   tmp::uType
   ξ::dtType
   ξ0::dtType
-  utilde::uArrayType
-  utildem1::uArrayType
-  utildem2::uArrayType
-  utildep1::uArrayType
-  atmpm1::uEltypeNoUnits
-  atmpm2::uEltypeNoUnits
-  atmpp1::uEltypeNoUnits
+  utilde::uType
+  utildem1::uType
+  utildem2::uType
+  utildep1::uType
+  atmpm1::uNoUnitsType
+  atmpm2::uNoUnitsType
+  atmpp1::uNoUnitsType
   step::Int
 end
-
-u_cache(c::VCABMCache) = ()
-du_cache(c::VCABMCache) = ()
 
 function alg_cache(alg::VCABM,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   dts = fill(zero(typeof(dt)),13)
@@ -922,7 +883,7 @@ end
 
 # CNAB2
 
-mutable struct CNAB2ConstantCache{rateType,F,N,uType,tType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct CNAB2ConstantCache{rateType,F,N,uType,tType} <: OrdinaryDiffEqConstantCache
   k2::rateType
   uf::F
   nlsolve::N
@@ -930,7 +891,7 @@ mutable struct CNAB2ConstantCache{rateType,F,N,uType,tType} <: OrdinaryDiffEqCon
   tprev2::tType
 end
 
-mutable struct CNAB2Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,tType,F} <: OrdinaryDiffEqMutableCache
+@cache mutable struct CNAB2Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,tType,F} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -954,9 +915,6 @@ mutable struct CNAB2Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,tType,F} <: Or
   uprev3::uType
   tprev2::tType
 end
-
-u_cache(c::CNAB2Cache)    = ()
-du_cache(c::CNAB2Cache)   = ()
 
 function alg_cache(alg::CNAB2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   @oopnlcachefields
@@ -984,7 +942,7 @@ end
 
 # CNLF2
 
-mutable struct CNLF2ConstantCache{rateType,F,N,uType,tType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct CNLF2ConstantCache{rateType,F,N,uType,tType} <: OrdinaryDiffEqConstantCache
   k2::rateType
   uf::F
   nlsolve::N
@@ -993,7 +951,7 @@ mutable struct CNLF2ConstantCache{rateType,F,N,uType,tType} <: OrdinaryDiffEqCon
   tprev2::tType
 end
 
-mutable struct CNLF2Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,tType,F} <: OrdinaryDiffEqMutableCache
+@cache mutable struct CNLF2Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,tType,F} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -1017,9 +975,6 @@ mutable struct CNLF2Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,tType,F} <: Or
   uprev3::uType
   tprev2::tType
 end
-
-u_cache(c::CNLF2Cache)    = ()
-du_cache(c::CNLF2Cache)   = ()
 
 function alg_cache(alg::CNLF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   @oopnlcachefields

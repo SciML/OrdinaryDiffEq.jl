@@ -1,4 +1,4 @@
-mutable struct GenericImplicitEulerCache{uType,DiffCacheType,uNoUnitsType,rateType,rhsType,nl_rhsType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct GenericImplicitEulerCache{uType,DiffCacheType,uNoUnitsType,rateType,rhsType,nl_rhsType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -10,10 +10,6 @@ mutable struct GenericImplicitEulerCache{uType,DiffCacheType,uNoUnitsType,rateTy
   rhs::rhsType
   nl_rhs::nl_rhsType
 end
-
-u_cache(c::GenericImplicitEulerCache)    = (c.uprev2,)
-du_cache(c::GenericImplicitEulerCache)   = (c.k,c.fsalfirst)
-dual_cache(c::GenericImplicitEulerCache) = (c.dual_cache,)
 
 function alg_cache(alg::GenericImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
@@ -42,7 +38,7 @@ function alg_cache(alg::GenericImplicitEuler,u,rate_prototype,uEltypeNoUnits,tTy
   GenericImplicitEulerConstantCache{typeof(uhold),typeof(rhs),typeof(nl_rhs)}(uhold,rhs,nl_rhs)
 end
 
-mutable struct GenericTrapezoidCache{uType,DiffCacheType,uNoUnitsType,rateType,rhsType,nl_rhsType,tType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct GenericTrapezoidCache{uType,DiffCacheType,uNoUnitsType,rateType,rhsType,nl_rhsType,tType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -56,10 +52,6 @@ mutable struct GenericTrapezoidCache{uType,DiffCacheType,uNoUnitsType,rateType,r
   uprev3::uType
   tprev2::tType
 end
-
-u_cache(c::GenericTrapezoidCache)    = (c.uprev2,c.uprev3)
-du_cache(c::GenericTrapezoidCache)   = (c.k,c.fsalfirst)
-dual_cache(c::GenericTrapezoidCache) = (c.dual_cache,)
 
 function alg_cache(alg::GenericTrapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
@@ -77,7 +69,7 @@ function alg_cache(alg::GenericTrapezoid,u,rate_prototype,uEltypeNoUnits,uBottom
 end
 
 
-mutable struct GenericTrapezoidConstantCache{vecuType,rhsType,nl_rhsType,uType,tType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct GenericTrapezoidConstantCache{vecuType,rhsType,nl_rhsType,uType,tType} <: OrdinaryDiffEqConstantCache
   uhold::vecuType
   rhs::rhsType
   nl_rhs::nl_rhsType

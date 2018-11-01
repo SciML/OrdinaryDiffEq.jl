@@ -54,9 +54,6 @@ mutable struct AN5Cache{uType,dType,rateType,zType,lType,dtsType,tsit5Type} <: O
   order::Int
 end
 
-u_cache(c::AN5Cache) = ()
-du_cache(c::AN5Cache) = (c.fsalfirst,)
-
 function alg_cache(alg::AN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   #################################################
   # Tsit5
@@ -183,9 +180,6 @@ mutable struct JVODECache{uType,rateType,zType,lType,dtsType,dType,etaType,tsit5
   η₋₁::etaType
   maxη::etaType
 end
-
-u_cache(c::JVODECache) = ()
-du_cache(c::JVODECache) = (c.fsalfirst,)
 
 function alg_cache(alg::JVODE,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   #################################################

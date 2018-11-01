@@ -1,4 +1,4 @@
-mutable struct ABDF2ConstantCache{F,N,dtType,rate_prototype} <: OrdinaryDiffEqConstantCache
+@cache mutable struct ABDF2ConstantCache{F,N,dtType,rate_prototype} <: OrdinaryDiffEqConstantCache
   uf::F
   nlsolve::N
   eulercache::ImplicitEulerConstantCache
@@ -18,7 +18,7 @@ function alg_cache(alg::ABDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   ABDF2ConstantCache(uf, nlsolve, eulercache, dtₙ₋₁, fsalfirstprev)
 end
 
-mutable struct ABDF2Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,F,dtType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct ABDF2Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,F,dtType} <: OrdinaryDiffEqMutableCache
   uₙ::uType
   uₙ₋₁::uType
   uₙ₋₂::uType
@@ -42,9 +42,6 @@ mutable struct ABDF2Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,F,dtType} <: O
   dtₙ₋₁::dtType
 end
 
-u_cache(c::ABDF2Cache)    = (c.z,c.dz)
-du_cache(c::ABDF2Cache)   = (c.k,c.fsalfirst)
-
 function alg_cache(alg::ABDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   @iipnlcachefields
@@ -63,7 +60,7 @@ end
 
 # SBDF
 
-mutable struct SBDFConstantCache{rateType,F,N,uType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct SBDFConstantCache{rateType,F,N,uType} <: OrdinaryDiffEqConstantCache
   cnt::Int
   k2::rateType
   uf::F
@@ -78,7 +75,7 @@ mutable struct SBDFConstantCache{rateType,F,N,uType} <: OrdinaryDiffEqConstantCa
   du₂::rateType
 end
 
-mutable struct SBDFCache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,F} <: OrdinaryDiffEqMutableCache
+@cache mutable struct SBDFCache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,F} <: OrdinaryDiffEqMutableCache
   cnt::Int
   u::uType
   uprev::uType
@@ -105,9 +102,6 @@ mutable struct SBDFCache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,F} <: OrdinaryD
   du₁::rateType
   du₂::rateType
 end
-
-u_cache(c::SBDFCache)    = ()
-du_cache(c::SBDFCache)   = ()
 
 function alg_cache(alg::SBDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   @oopnlcachefields
@@ -144,7 +138,7 @@ end
 
 # QNDF1
 
-mutable struct QNDF1ConstantCache{F,N,coefType,coefType1,dtType,uType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct QNDF1ConstantCache{F,N,coefType,coefType1,dtType,uType} <: OrdinaryDiffEqConstantCache
   uf::F
   nlsolve::N
   D::coefType
@@ -155,7 +149,7 @@ mutable struct QNDF1ConstantCache{F,N,coefType,coefType1,dtType,uType} <: Ordina
   dtₙ₋₁::dtType
 end
 
-mutable struct QNDF1Cache{uType,rateType,coefType,coefType1,coefType2,uNoUnitsType,J,W,UF,JC,N,F,dtType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct QNDF1Cache{uType,rateType,coefType,coefType1,coefType2,uNoUnitsType,J,W,UF,JC,N,F,dtType} <: OrdinaryDiffEqMutableCache
   uprev2::uType
   du1::rateType
   fsalfirst::rateType
@@ -178,9 +172,6 @@ mutable struct QNDF1Cache{uType,rateType,coefType,coefType1,coefType2,uNoUnitsTy
   nlsolve::N
   dtₙ₋₁::dtType
 end
-
-u_cache(c::QNDF1Cache)    = ()
-du_cache(c::QNDF1Cache)   = ()
 
 function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   @oopnlcachefields
@@ -222,7 +213,7 @@ end
 
 # QNDF2
 
-mutable struct QNDF2ConstantCache{F,N,coefType,coefType1,uType,dtType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct QNDF2ConstantCache{F,N,coefType,coefType1,uType,dtType} <: OrdinaryDiffEqConstantCache
   uf::F
   nlsolve::N
   D::coefType
@@ -235,7 +226,7 @@ mutable struct QNDF2ConstantCache{F,N,coefType,coefType1,uType,dtType} <: Ordina
   dtₙ₋₂::dtType
 end
 
-mutable struct QNDF2Cache{uType,rateType,coefType,coefType1,coefType2,uNoUnitsType,J,W,UF,JC,N,F,dtType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct QNDF2Cache{uType,rateType,coefType,coefType1,coefType2,uNoUnitsType,J,W,UF,JC,N,F,dtType} <: OrdinaryDiffEqMutableCache
   uprev2::uType
   uprev3::uType
   du1::rateType
@@ -260,9 +251,6 @@ mutable struct QNDF2Cache{uType,rateType,coefType,coefType1,coefType2,uNoUnitsTy
   dtₙ₋₁::dtType
   dtₙ₋₂::dtType
 end
-
-u_cache(c::QNDF2Cache)  = ()
-du_cache(c::QNDF2Cache) = ()
 
 function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   @oopnlcachefields
@@ -306,7 +294,7 @@ function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
              W,uf,jac_config,linsolve,nlsolve,dtₙ₋₁,dtₙ₋₂)
 end
 
-mutable struct QNDFConstantCache{F,N,coefType1,coefType2,coefType3,uType,uArrayType,dtType,dtsType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct QNDFConstantCache{F,N,coefType1,coefType2,coefType3,uType,dtType,dtsType} <: OrdinaryDiffEqConstantCache
   uf::F
   nlsolve::N
   D::coefType3
@@ -315,14 +303,14 @@ mutable struct QNDFConstantCache{F,N,coefType1,coefType2,coefType3,uType,uArrayT
   U::coefType1
   order::Int64
   max_order::Int64
-  udiff::uArrayType
+  udiff::uType
   dts::dtsType
   tmp::uType
   h::dtType
   c::Int64
 end
 
-mutable struct QNDFCache{uType,rateType,coefType1,coefType,coefType2,coefType3,dtType,dtsType,uNoUnitsType,J,W,UF,JC,N,F} <: OrdinaryDiffEqMutableCache
+@cache mutable struct QNDFCache{uType,rateType,coefType1,coefType,coefType2,coefType3,dtType,dtsType,uNoUnitsType,J,W,UF,JC,N,F} <: OrdinaryDiffEqMutableCache
   du1::rateType
   fsalfirst::rateType
   k::rateType
@@ -349,9 +337,6 @@ mutable struct QNDFCache{uType,rateType,coefType1,coefType,coefType2,coefType3,d
   h::dtType
   c::Int64
 end
-
-u_cache(c::QNDFCache)  = ()
-du_cache(c::QNDFCache) = ()
 
 function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   @oopnlcachefields

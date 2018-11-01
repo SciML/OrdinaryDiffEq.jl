@@ -7,7 +7,7 @@ struct GenericIIF1ConstantCache{vecuType,rhsType,nl_rhsType} <: OrdinaryDiffEqCo
   nl_rhs::nl_rhsType
 end
 
-struct GenericIIF1Cache{uType,DiffCacheType,rhsType,nl_rhsType,rateType,expType} <: OrdinaryDiffEqMutableCache
+@cache struct GenericIIF1Cache{uType,DiffCacheType,rhsType,nl_rhsType,rateType,expType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   dual_cache::DiffCacheType
@@ -20,8 +20,6 @@ struct GenericIIF1Cache{uType,DiffCacheType,rhsType,nl_rhsType,rateType,expType}
   k::rateType
 end
 
-u_cache(c::GenericIIF1Cache)    = ()
-du_cache(c::GenericIIF1Cache)   = (c.rtmp1,c.fsalfirst,c.k)
 dual_cache(c::GenericIIF1Cache) = (c.dual_cache,)
 
 function alg_cache(alg::GenericIIF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
@@ -48,7 +46,7 @@ struct GenericIIF2ConstantCache{vecuType,rhsType,nl_rhsType} <: OrdinaryDiffEqCo
   nl_rhs::nl_rhsType
 end
 
-struct GenericIIF2Cache{uType,DiffCacheType,rhsType,nl_rhsType,rateType,expType} <: OrdinaryDiffEqMutableCache
+@cache struct GenericIIF2Cache{uType,DiffCacheType,rhsType,nl_rhsType,rateType,expType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   dual_cache::DiffCacheType
@@ -61,8 +59,6 @@ struct GenericIIF2Cache{uType,DiffCacheType,rhsType,nl_rhsType,rateType,expType}
   k::rateType
 end
 
-u_cache(c::GenericIIF2Cache)    = ()
-du_cache(c::GenericIIF2Cache)   = (c.rtmp1,c.fsalfirst,c.k)
 dual_cache(c::GenericIIF2Cache) = (c.dual_cache,)
 
 function alg_cache(alg::GenericIIF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
@@ -218,7 +214,7 @@ function alg_cache_expRK(alg::OrdinaryDiffEqExponentialAlgorithm,u,uEltypeNoUnit
   return uf, jac_config, J, ops, KsCache
 end
 
-struct LawsonEulerCache{uType,rateType,JCType,FType,JType,expType,KsType} <: ExpRKCache
+@cache struct LawsonEulerCache{uType,rateType,JCType,FType,JType,expType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
@@ -270,10 +266,7 @@ function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   LawsonEulerCache(u,uprev,tmp,dz,rtmp,G,du1,jac_config,uf,J,exphA,KsCache)
 end
 
-u_cache(c::LawsonEulerCache) = ()
-du_cache(c::LawsonEulerCache) = (c.rtmp)
-
-struct NorsettEulerCache{uType,rateType,JCType,FType,JType,expType,KsType} <: ExpRKCache
+@cache struct NorsettEulerCache{uType,rateType,JCType,FType,JType,expType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
@@ -296,10 +289,7 @@ function alg_cache(alg::NorsettEuler,u,rate_prototype,uEltypeNoUnits,uBottomElty
   NorsettEulerCache(u,uprev,tmp,dz,rtmp,G,du1,jac_config,uf,J,phihA,KsCache)
 end
 
-u_cache(c::NorsettEulerCache) = ()
-du_cache(c::NorsettEulerCache) = (c.rtmp)
-
-struct ETDRK2Cache{uType,rateType,JCType,FType,JType,opType,KsType} <: ExpRKCache
+@cache struct ETDRK2Cache{uType,rateType,JCType,FType,JType,opType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
@@ -322,7 +312,7 @@ function alg_cache(alg::ETDRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   ETDRK2Cache(u,uprev,tmp,dz,rtmp,F2,du1,jac_config,uf,J,ops,KsCache)
 end
 
-struct ETDRK3Cache{uType,rateType,JCType,FType,JType,opType,KsType} <: ExpRKCache
+@cache struct ETDRK3Cache{uType,rateType,JCType,FType,JType,opType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
@@ -347,7 +337,7 @@ function alg_cache(alg::ETDRK3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   ETDRK3Cache(u,uprev,tmp,dz,rtmp,Au,F2,F3,du1,jac_config,uf,J,ops,KsCache)
 end
 
-struct ETDRK4Cache{uType,rateType,JCType,FType,JType,opType,KsType} <: ExpRKCache
+@cache struct ETDRK4Cache{uType,rateType,JCType,FType,JType,opType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
@@ -373,10 +363,7 @@ function alg_cache(alg::ETDRK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   ETDRK4Cache(u,uprev,tmp,dz,rtmp,Au,F2,F3,F4,du1,jac_config,uf,J,ops,KsCache)
 end
 
-u_cache(c::ETDRK4Cache) = ()
-du_cache(c::ETDRK4Cache) = (c.k,c.fsalfirst,c.rtmp)
-
-struct HochOst4Cache{uType,rateType,JCType,FType,JType,opType,KsType} <: ExpRKCache
+@cache struct HochOst4Cache{uType,rateType,JCType,FType,JType,opType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
@@ -438,7 +425,7 @@ for (Alg, Cache) in [(:Exp4, :Exp4ConstantCache),
   end
 end
 
-struct Exp4Cache{uType,rateType,JCType,FType,matType,JType,KsType} <: ExpRKCache
+@cache struct Exp4Cache{uType,rateType,JCType,FType,matType,JType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
@@ -481,7 +468,7 @@ function alg_cache(alg::Exp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   Exp4Cache(u,uprev,tmp,dz,rtmp,rtmp2,du1,jac_config,uf,K,J,B,KsCache)
 end
 
-struct EPIRK4s3ACache{uType,rateType,JCType,FType,matType,JType,KsType} <: ExpRKCache
+@cache struct EPIRK4s3ACache{uType,rateType,JCType,FType,matType,JType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
@@ -523,7 +510,7 @@ function alg_cache(alg::EPIRK4s3A,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   EPIRK4s3ACache(u,uprev,tmp,dz,rtmp,rtmp2,du1,jac_config,uf,K,J,B,KsCache)
 end
 
-struct EPIRK4s3BCache{uType,rateType,JCType,FType,matType,JType,KsType} <: ExpRKCache
+@cache struct EPIRK4s3BCache{uType,rateType,JCType,FType,matType,JType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
@@ -565,7 +552,7 @@ function alg_cache(alg::EPIRK4s3B,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   EPIRK4s3BCache(u,uprev,tmp,dz,rtmp,rtmp2,du1,jac_config,uf,K,J,B,KsCache)
 end
 
-struct EPIRK5s3Cache{uType,rateType,JCType,FType,matType,JType,KsType} <: ExpRKCache
+@cache struct EPIRK5s3Cache{uType,rateType,JCType,FType,matType,JType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
@@ -606,7 +593,7 @@ function alg_cache(alg::EPIRK5s3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   EPIRK5s3Cache(u,uprev,tmp,dz,k,rtmp,rtmp2,du1,jac_config,uf,J,B,KsCache)
 end
 
-struct EXPRB53s3Cache{uType,rateType,JCType,FType,matType,JType,KsType} <: ExpRKCache
+@cache struct EXPRB53s3Cache{uType,rateType,JCType,FType,matType,JType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
@@ -648,7 +635,7 @@ function alg_cache(alg::EXPRB53s3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   EXPRB53s3Cache(u,uprev,tmp,dz,rtmp,rtmp2,du1,jac_config,uf,K,J,B,KsCache)
 end
 
-struct EPIRK5P1Cache{uType,rateType,JCType,FType,matType,JType,KsType} <: ExpRKCache
+@cache struct EPIRK5P1Cache{uType,rateType,JCType,FType,matType,JType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
@@ -690,7 +677,7 @@ function alg_cache(alg::EPIRK5P1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   EPIRK5P1Cache(u,uprev,tmp,dz,rtmp,rtmp2,du1,jac_config,uf,K,J,B,KsCache)
 end
 
-struct EPIRK5P2Cache{uType,rateType,JCType,FType,matType,JType,KsType} <: ExpRKCache
+@cache struct EPIRK5P2Cache{uType,rateType,JCType,FType,matType,JType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   tmp::uType
@@ -790,7 +777,7 @@ function alg_cache_exprb(alg::OrdinaryDiffEqAdaptiveExponentialAlgorithm,u,uElty
   return uf, jac_config, J, KsCache
 end
 
-struct Exprb32Cache{uType,rateType,JCType,FType,JType,KsType} <: ExpRKCache
+@cache struct Exprb32Cache{uType,rateType,JCType,FType,JType,KsType} <: ExpRKCache
   u::uType
   uprev::uType
   utilde::uType
@@ -868,7 +855,7 @@ function alg_cache(alg::ETD2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   ETD2ConstantCache(Phi[1], Phi[2], Phi[2] + Phi[3], -Phi[3])
 end
 
-struct ETD2Cache{uType,rateType,expType} <: OrdinaryDiffEqMutableCache
+@cache struct ETD2Cache{uType,rateType,expType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   utmp::uType
@@ -885,7 +872,3 @@ function alg_cache(alg::ETD2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   Phi = phi(dt*A, 2)
   ETD2Cache(u,uprev,zero(u),zero(rate_prototype),zero(rate_prototype),Phi[1],Phi[2],Phi[2]+Phi[3],-Phi[3])
 end
-
-# TODO: what should these be?
-u_cache(c::ETD2Cache) = ()
-du_cache(c::ETD2Cache) = (c.rtmp1,c.rtmp2)

@@ -4,7 +4,7 @@ abstract type OrdinaryDiffEqMutableCache <: OrdinaryDiffEqCache end
 struct ODEEmptyCache <: OrdinaryDiffEqConstantCache end
 struct ODEChunkCache{CS} <: OrdinaryDiffEqConstantCache end
 
-mutable struct CompositeCache{T,F} <: OrdinaryDiffEqCache
+@cache mutable struct CompositeCache{T,F} <: OrdinaryDiffEqCache
   caches::T
   choice_function::F
   current::Int
@@ -17,14 +17,11 @@ end
 
 alg_cache(alg::OrdinaryDiffEqAlgorithm,prob,callback::F) where {F} = ODEEmptyCache()
 
-struct FunctionMapCache{uType,rateType} <: OrdinaryDiffEqMutableCache
+@cache struct FunctionMapCache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   du::rateType
 end
-
-u_cache(c::FunctionMapCache) = ()
-du_cache(c::FunctionMapCache) = (c.du)
 
 function alg_cache(alg::FunctionMap,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   FunctionMapCache(u,uprev,FunctionMap_scale_by_time(alg) ? rate_prototype : similar(u))
@@ -34,20 +31,17 @@ struct FunctionMapConstantCache <: OrdinaryDiffEqConstantCache end
 
 alg_cache(alg::FunctionMap,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = FunctionMapConstantCache()
 
-struct ExplicitRKCache{uType,rateType,uEltypeNoUnits,ksEltype,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct ExplicitRKCache{uType,rateType,uNoUnitsType,ksEltype,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
   utilde::rateType
-  atmp::uEltypeNoUnits
+  atmp::uNoUnitsType
   fsalfirst::ksEltype
   fsallast::ksEltype
   kk::Vector{ksEltype}
   tab::TabType
 end
-
-u_cache(c::ExplicitRKCache) = (c.utilde,c.atmp,c.update)
-du_cache(c::ExplicitRKCache) = (c.kk...,)
 
 function alg_cache(alg::ExplicitRK,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   kk = Vector{typeof(rate_prototype)}(undef, 0)

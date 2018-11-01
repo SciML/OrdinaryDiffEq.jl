@@ -1,4 +1,4 @@
-struct SSPRK22Cache{uType,rateType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMutableCache
+@cache struct SSPRK22Cache{uType,rateType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k::rateType
@@ -7,9 +7,6 @@ struct SSPRK22Cache{uType,rateType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMu
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
 end
-
-u_cache(c::SSPRK22Cache) = ()
-du_cache(c::SSPRK22Cache) = (c.k,c.fsalfirst)
 
 struct SSPRK22ConstantCache <: OrdinaryDiffEqConstantCache end
 
@@ -22,8 +19,7 @@ end
 
 alg_cache(alg::SSPRK22,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = SSPRK22ConstantCache()
 
-
-struct SSPRK33Cache{uType,rateType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMutableCache
+@cache struct SSPRK33Cache{uType,rateType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k::rateType
@@ -32,9 +28,6 @@ struct SSPRK33Cache{uType,rateType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMu
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
 end
-
-u_cache(c::SSPRK33Cache) = ()
-du_cache(c::SSPRK33Cache) = (c.k,c.fsalfirst)
 
 struct SSPRK33ConstantCache <: OrdinaryDiffEqConstantCache end
 
@@ -47,8 +40,7 @@ end
 
 alg_cache(alg::SSPRK33,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = SSPRK33ConstantCache()
 
-
-struct SSPRK53Cache{uType,rateType,StageLimiter,StepLimiter,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct SSPRK53Cache{uType,rateType,StageLimiter,StepLimiter,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k::rateType
@@ -58,9 +50,6 @@ struct SSPRK53Cache{uType,rateType,StageLimiter,StepLimiter,TabType} <: Ordinary
   step_limiter!::StepLimiter
   tab::TabType
 end
-
-u_cache(c::SSPRK53Cache) = (c.tmp,)
-du_cache(c::SSPRK53Cache) = (c.k,c.fsalfirst)
 
 struct SSPRK53ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   α30::T
@@ -112,8 +101,7 @@ function alg_cache(alg::SSPRK53,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   SSPRK53ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
-
-struct SSPRK63Cache{uType,rateType,StageLimiter,StepLimiter,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct SSPRK63Cache{uType,rateType,StageLimiter,StepLimiter,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k::rateType
@@ -124,9 +112,6 @@ struct SSPRK63Cache{uType,rateType,StageLimiter,StepLimiter,TabType} <: Ordinary
   step_limiter!::StepLimiter
   tab::TabType
 end
-
-u_cache(c::SSPRK63Cache) = (c.tmp,c.u₂)
-du_cache(c::SSPRK63Cache) = (c.k,c.fsalfirst)
 
 struct SSPRK63ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   α40::T
@@ -181,8 +166,7 @@ function alg_cache(alg::SSPRK63,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   SSPRK63ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
-
-struct SSPRK73Cache{uType,rateType,StageLimiter,StepLimiter,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct SSPRK73Cache{uType,rateType,StageLimiter,StepLimiter,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k::rateType
@@ -193,9 +177,6 @@ struct SSPRK73Cache{uType,rateType,StageLimiter,StepLimiter,TabType} <: Ordinary
   step_limiter!::StepLimiter
   tab::TabType
 end
-
-u_cache(c::SSPRK73Cache) = (c.tmp,c.u₁)
-du_cache(c::SSPRK73Cache) = (c.k,c.fsalfirst)
 
 struct SSPRK73ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   α40::T
@@ -258,8 +239,7 @@ function alg_cache(alg::SSPRK73,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   SSPRK73ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
-
-struct SSPRK83Cache{uType,rateType,StageLimiter,StepLimiter,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct SSPRK83Cache{uType,rateType,StageLimiter,StepLimiter,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k::rateType
@@ -271,9 +251,6 @@ struct SSPRK83Cache{uType,rateType,StageLimiter,StepLimiter,TabType} <: Ordinary
   step_limiter!::StepLimiter
   tab::TabType
 end
-
-u_cache(c::SSPRK83Cache) = (c.tmp,c.u₂,c.u₃)
-du_cache(c::SSPRK83Cache) = (c.k,c.fsalfirst)
 
 struct SSPRK83ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   α50::T
@@ -343,21 +320,17 @@ function alg_cache(alg::SSPRK83,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   SSPRK83ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
-
-struct SSPRK432Cache{uType,rateType,uArrayType,uEltypeNoUnits,StageLimiter,StepLimiter} <: OrdinaryDiffEqMutableCache
+@cache struct SSPRK432Cache{uType,rateType,uNoUnitsType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k::rateType
   tmp::uType # superfluous, only needed for callbacks
   fsalfirst::rateType
-  utilde::uArrayType
-  atmp::uEltypeNoUnits
+  utilde::uType
+  atmp::uNoUnitsType
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
 end
-
-u_cache(c::SSPRK432Cache) = (c.utilde,c.atmp)
-du_cache(c::SSPRK432Cache) = (c.k,c.fsalfirst)
 
 struct SSPRK432ConstantCache <: OrdinaryDiffEqConstantCache end
 
@@ -372,21 +345,17 @@ end
 
 alg_cache(alg::SSPRK432,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = SSPRK432ConstantCache()
 
-
-struct SSPRK932Cache{uType,rateType,uArrayType,uEltypeNoUnits,StageLimiter,StepLimiter} <: OrdinaryDiffEqMutableCache
+@cache struct SSPRK932Cache{uType,rateType,uNoUnitsType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k::rateType
   tmp::uType # superfluous, only needed for callbacks
   fsalfirst::rateType
-  utilde::uArrayType
-  atmp::uEltypeNoUnits
+  utilde::uType
+  atmp::uNoUnitsType
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
 end
-
-u_cache(c::SSPRK932Cache) = (c.utilde,c.atmp)
-du_cache(c::SSPRK932Cache) = (c.k,c.fsalfirst)
 
 struct SSPRK932ConstantCache <: OrdinaryDiffEqConstantCache end
 
@@ -401,8 +370,7 @@ end
 
 alg_cache(alg::SSPRK932,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = SSPRK932ConstantCache()
 
-
-struct SSPRK54Cache{uType,rateType,StageLimiter,StepLimiter,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct SSPRK54Cache{uType,rateType,StageLimiter,StepLimiter,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k::rateType
@@ -415,9 +383,6 @@ struct SSPRK54Cache{uType,rateType,StageLimiter,StepLimiter,TabType} <: Ordinary
   step_limiter!::StepLimiter
   tab::TabType
 end
-
-u_cache(c::SSPRK54Cache) = (c.u₂,c.u₃)
-du_cache(c::SSPRK54Cache) = (c.k,c.fsalfirst,c.k₃)
 
 struct SSPRK54ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   β10::T
@@ -480,8 +445,7 @@ function alg_cache(alg::SSPRK54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   SSPRK54ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
-
-struct SSPRK104Cache{uType,rateType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMutableCache
+@cache struct SSPRK104Cache{uType,rateType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k::rateType
@@ -491,9 +455,6 @@ struct SSPRK104Cache{uType,rateType,StageLimiter,StepLimiter} <: OrdinaryDiffEqM
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
 end
-
-u_cache(c::SSPRK104Cache) = ()
-du_cache(c::SSPRK104Cache) = (c.k,c.fsalfirst,c.k₄)
 
 struct SSPRK104ConstantCache <: OrdinaryDiffEqConstantCache end
 

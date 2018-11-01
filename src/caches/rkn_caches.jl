@@ -1,4 +1,4 @@
-struct Nystrom4Cache{uType,rateType,reducedRateType} <: OrdinaryDiffEqMutableCache
+@cache struct Nystrom4Cache{uType,rateType,reducedRateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -8,9 +8,6 @@ struct Nystrom4Cache{uType,rateType,reducedRateType} <: OrdinaryDiffEqMutableCac
   k::rateType
   tmp::uType
 end
-
-u_cache(c::Nystrom4Cache) = ()
-du_cache(c::Nystrom4Cache) = (c.fsalfirst,c.k₂,c.k₃,c.k₄,c.k)
 
 # struct Nystrom4ConstantCache <: OrdinaryDiffEqConstantCache end
 
@@ -31,7 +28,7 @@ alg_cache(alg::Nystrom4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTy
 
 # alg_cache(alg::Nystrom4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = Nystrom4ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
-struct Nystrom4VelocityIndependentCache{uType,rateType,reducedRateType} <: OrdinaryDiffEqMutableCache
+@cache struct Nystrom4VelocityIndependentCache{uType,rateType,reducedRateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -40,9 +37,6 @@ struct Nystrom4VelocityIndependentCache{uType,rateType,reducedRateType} <: Ordin
   k::rateType
   tmp::uType
 end
-
-u_cache(c::Nystrom4VelocityIndependentCache) = ()
-du_cache(c::Nystrom4VelocityIndependentCache) = (c.fsalfirst,c.k₂,c.k₃,c.k)
 
 function alg_cache(alg::Nystrom4VelocityIndependent,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   reduced_rate_prototype = rate_prototype.x[2]
@@ -58,7 +52,7 @@ struct Nystrom4VelocityIndependentConstantCache <: OrdinaryDiffEqConstantCache e
 
 alg_cache(alg::Nystrom4VelocityIndependent,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = Nystrom4VelocityIndependentConstantCache()
 
-struct IRKN3Cache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct IRKN3Cache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -70,9 +64,6 @@ struct IRKN3Cache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
   onestep_cache::Nystrom4VelocityIndependentCache
   tab::TabType
 end
-
-u_cache(c::IRKN3Cache) = ()
-du_cache(c::IRKN3Cache) = (c.fsalfirst,c.k₂,c.k)
 
 function alg_cache(alg::IRKN3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   k₁ = zero(rate_prototype)
@@ -86,7 +77,7 @@ end
 
 alg_cache(alg::IRKN3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = IRKN3ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
-struct IRKN4Cache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct IRKN4Cache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -99,9 +90,6 @@ struct IRKN4Cache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
   onestep_cache::Nystrom4VelocityIndependentCache
   tab::TabType
 end
-
-u_cache(c::IRKN4Cache) = ()
-du_cache(c::IRKN4Cache) = (c.fsalfirst,c.k₂,c.k₃,c.k)
 
 function alg_cache(alg::IRKN4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   k₁ = zero(rate_prototype)
@@ -116,7 +104,7 @@ end
 
 alg_cache(alg::IRKN4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = IRKN4ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
-struct Nystrom5VelocityIndependentCache{uType,rateType,reducedRateType,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct Nystrom5VelocityIndependentCache{uType,rateType,reducedRateType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -127,9 +115,6 @@ struct Nystrom5VelocityIndependentCache{uType,rateType,reducedRateType,TabType} 
   tmp::uType
   tab::TabType
 end
-
-u_cache(c::Nystrom5VelocityIndependentCache) = ()
-du_cache(c::Nystrom5VelocityIndependentCache) = (c.fsalfirst,c.k₂,c.k₃,c.k₄,c.k)
 
 function alg_cache(alg::Nystrom5VelocityIndependent,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   reduced_rate_prototype = rate_prototype.x[2]
@@ -145,7 +130,7 @@ end
 
 alg_cache(alg::Nystrom5VelocityIndependent,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = Nystrom5VelocityIndependentConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
-struct DPRKN6Cache{uType,uArrayType,rateType,reducedRateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct DPRKN6Cache{uType,rateType,reducedRateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -155,14 +140,11 @@ struct DPRKN6Cache{uType,uArrayType,rateType,reducedRateType,uEltypeNoUnits,TabT
   k5::reducedRateType
   k6::reducedRateType
   k::rateType
-  utilde::uArrayType
+  utilde::uType
   tmp::uType
-  atmp::uEltypeNoUnits
+  atmp::uNoUnitsType
   tab::TabType
 end
-
-u_cache(c::DPRKN6Cache) = (c.atmp,c.utilde)
-du_cache(c::DPRKN6Cache) = (c.fsalfirst,c.k2,c.k3,c.k4,c.k5,c.k6)
 
 function alg_cache(alg::DPRKN6,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   reduced_rate_prototype = rate_prototype.x[2]
@@ -182,8 +164,7 @@ end
 
 alg_cache(alg::DPRKN6,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = DPRKN6ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
-
-struct DPRKN8Cache{uType,uArrayType,rateType,reducedRateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct DPRKN8Cache{uType,rateType,reducedRateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -196,14 +177,11 @@ struct DPRKN8Cache{uType,uArrayType,rateType,reducedRateType,uEltypeNoUnits,TabT
   k8::reducedRateType
   k9::reducedRateType
   k::rateType
-  utilde::uArrayType
+  utilde::uType
   tmp::uType
-  atmp::uEltypeNoUnits
+  atmp::uNoUnitsType
   tab::TabType
 end
-
-u_cache(c::DPRKN8Cache) = (c.atmp,c.utilde)
-du_cache(c::DPRKN8Cache) = (c.fsalfirst,c.k2,c.k3,c.k4,c.k5,c.k6,c.k7,c.k8,c.k9)
 
 function alg_cache(alg::DPRKN8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   reduced_rate_prototype = rate_prototype.x[2]
@@ -226,7 +204,7 @@ end
 
 alg_cache(alg::DPRKN8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = DPRKN8ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
-struct DPRKN12Cache{uType,uArrayType,rateType,reducedRateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct DPRKN12Cache{uType,rateType,reducedRateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -247,14 +225,11 @@ struct DPRKN12Cache{uType,uArrayType,rateType,reducedRateType,uEltypeNoUnits,Tab
   k16::reducedRateType
   k17::reducedRateType
   k::rateType
-  utilde::uArrayType
+  utilde::uType
   tmp::uType
-  atmp::uEltypeNoUnits
+  atmp::uNoUnitsType
   tab::TabType
 end
-
-u_cache(c::DPRKN12Cache) = (c.atmp,c.utilde)
-du_cache(c::DPRKN12Cache) = (c.fsalfirst,c.k2,c.k3,c.k4,c.k5,c.k6,c.k7,c.k8,c.k9,c.k10,c.k11,c.k12,c.k13,c.k14,c.k15,c.k16,c.k17)
 
 function alg_cache(alg::DPRKN12,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   reduced_rate_prototype = rate_prototype.x[2]
@@ -285,7 +260,7 @@ end
 
 alg_cache(alg::DPRKN12,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = DPRKN12ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
-struct ERKN4Cache{uType,uArrayType,rateType,reducedRateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct ERKN4Cache{uType,rateType,reducedRateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -293,14 +268,11 @@ struct ERKN4Cache{uType,uArrayType,rateType,reducedRateType,uEltypeNoUnits,TabTy
   k3::reducedRateType
   k4::reducedRateType
   k::rateType
-  utilde::uArrayType
+  utilde::uType
   tmp::uType
-  atmp::uEltypeNoUnits
+  atmp::uNoUnitsType
   tab::TabType
 end
-
-u_cache(c::ERKN4Cache) = (c.atmp,c.utilde)
-du_cache(c::ERKN4Cache) = (c.fsalfirst,c.k2,c.k3,c.k4,c.k)
 
 function alg_cache(alg::ERKN4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   reduced_rate_prototype = rate_prototype.x[2]
@@ -318,7 +290,7 @@ end
 
 alg_cache(alg::ERKN4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = ERKN4ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
-struct ERKN5Cache{uType,uArrayType,rateType,reducedRateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct ERKN5Cache{uType,rateType,reducedRateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -326,14 +298,11 @@ struct ERKN5Cache{uType,uArrayType,rateType,reducedRateType,uEltypeNoUnits,TabTy
   k3::reducedRateType
   k4::reducedRateType
   k::rateType
-  utilde::uArrayType
+  utilde::uType
   tmp::uType
-  atmp::uEltypeNoUnits
+  atmp::uNoUnitsType
   tab::TabType
 end
-
-u_cache(c::ERKN5Cache) = (c.atmp,c.utilde)
-du_cache(c::ERKN5Cache) = (c.fsalfirst,c.k2,c.k3,c.k4,c.k)
 
 function alg_cache(alg::ERKN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   reduced_rate_prototype = rate_prototype.x[2]

@@ -130,3 +130,25 @@ macro swap!(x,y)
 end
 
 islinear(f) = f isa DiffEqBase.AbstractDiffEqLinearOperator && f.update_func === DEFAULT_UPDATE_FUNC
+
+macro cache(expr)
+  name = expr.args[2].args[1].args[1]
+  fields = expr.args[3].args[2:2:end]
+  cache_vars = Expr[]
+  for x in fields
+    if x.args[2] == :uType || x.args[2] == :rateType
+      push!(cache_vars,:(c.$(x.args[1])))
+    elseif x.args[2] == :JCType
+      push!(cache_vars,:(c.$(x.args[1]).duals...))
+    elseif x.args[2] == :GCType
+      push!(cache_vars,:(c.$(x.args[1]).duals))
+    elseif x.args[2] == :DiffCacheType
+      push!(cache_vars,:(c.$(x.args[1]).du))
+      push!(cache_vars,:(c.$(x.args[1]).dual_du))
+    end
+  end
+  quote
+    $expr
+    _cache_iter(c::$name) = tuple($(cache_vars...))
+  end
+end

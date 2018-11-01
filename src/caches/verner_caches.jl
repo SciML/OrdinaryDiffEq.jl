@@ -1,4 +1,4 @@
-struct Vern6Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct Vern6Cache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k1::rateType
@@ -10,14 +10,11 @@ struct Vern6Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryD
   k7::rateType
   k8::rateType
   k9::rateType
-  utilde::uArrayType
+  utilde::uType
   tmp::uType
-  atmp::uEltypeNoUnits
+  atmp::uNoUnitsType
   tab::TabType
 end
-
-u_cache(c::Vern6Cache) = (c.utilde,c.atmp)
-du_cache(c::Vern6Cache) = (c.k1,c.k2,c.k3,c.k4,c.k5,c.k6,c.k7,c.k8,c.k9)
 
 function alg_cache(alg::Vern6,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tab = Vern6ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
@@ -31,7 +28,7 @@ end
 
 alg_cache(alg::Vern6,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = Vern6ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
-struct Vern7Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct Vern7Cache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k1::rateType
@@ -44,14 +41,11 @@ struct Vern7Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryD
   k8::rateType
   k9::rateType
   k10::rateType
-  utilde::uArrayType
+  utilde::uType
   tmp::uType
-  atmp::uEltypeNoUnits
+  atmp::uNoUnitsType
   tab::TabType
 end
-
-u_cache(c::Vern7Cache) = (c.utilde,c.atmp)
-du_cache(c::Vern7Cache) = (c.k1,c.k2,c.k3,c.k4,c.k5,c.k6,c.k7,c.k8,c.k9,c.k10)
 
 function alg_cache(alg::Vern7,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tab = Vern7ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
@@ -64,8 +58,7 @@ end
 
 alg_cache(alg::Vern7,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = Vern7ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
-
-struct Vern8Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct Vern8Cache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k1::rateType
@@ -81,14 +74,11 @@ struct Vern8Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryD
   k11::rateType
   k12::rateType
   k13::rateType
-  utilde::uArrayType
+  utilde::uType
   tmp::uType
-  atmp::uEltypeNoUnits
+  atmp::uNoUnitsType
   tab::TabType
 end
-
-u_cache(c::Vern8Cache) = (c.utilde,c.atmp)
-du_cache(c::Vern8Cache) = (c.k1,c.k2,c.k3,c.k4,c.k5,c.k6,c.k7,c.k8,c.k9,c.k10,c.k11,c.k12,c.k13)
 
 function alg_cache(alg::Vern8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tab = Vern8ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
@@ -105,7 +95,7 @@ end
 
 alg_cache(alg::Vern8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = Vern8ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
-struct Vern9Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct Vern9Cache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k1::rateType
@@ -124,14 +114,11 @@ struct Vern9Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryD
   k14::rateType
   k15::rateType
   k16::rateType
-  utilde::uArrayType
+  utilde::uType
   tmp::uType
-  atmp::uEltypeNoUnits
+  atmp::uNoUnitsType
   tab::TabType
 end
-
-u_cache(c::Vern9Cache) = (c.utilde,c.atmp)
-du_cache(c::Vern9Cache) = (c.k1,c.k2,c.k3,c.k4,c.k5,c.k6,c.k7,c.k8,c.k9,c.k10,c.k11,c.k12,c.k13,c.k14,c.k15,c.k16)
 
 function alg_cache(alg::Vern9,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tab = Vern9ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))

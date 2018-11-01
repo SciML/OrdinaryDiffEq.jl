@@ -1,4 +1,4 @@
-struct MidpointSplittingCache{uType,rateType,J} <: OrdinaryDiffEqMutableCache
+@cache struct MidpointSplittingCache{uType,rateType,J} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -7,9 +7,6 @@ struct MidpointSplittingCache{uType,rateType,J} <: OrdinaryDiffEqMutableCache
   W::J
   k::rateType
 end
-
-u_cache(c::MidpointSplittingCache)    = (c.uprev2,c.z,c.dz)
-du_cache(c::MidpointSplittingCache)   = (c.k,c.fsalfirst)
 
 function alg_cache(alg::MidpointSplitting,u,rate_prototype,uEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -31,7 +28,7 @@ struct LinearExponentialConstantCache <: OrdinaryDiffEqConstantCache end
 alg_cache(alg::LinearExponential,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = LinearExponentialConstantCache()
 
-struct LinearExponentialCache{uType,rateType,KsType} <: OrdinaryDiffEqMutableCache
+@cache struct LinearExponentialCache{uType,rateType,KsType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
@@ -60,6 +57,3 @@ function alg_cache(alg::LinearExponential,u,rate_prototype,uEltypeNoUnits,uBotto
   end
   LinearExponentialCache(u,uprev,tmp,rtmp,KsCache)
 end
-
-u_cache(c::LinearExponentialCache) = (c.tmp,)
-du_cache(c::LinearExponentialCache) = (c.rtmp,)

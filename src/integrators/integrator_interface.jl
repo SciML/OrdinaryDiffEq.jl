@@ -73,10 +73,8 @@ end
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,cache) = (cache.tmp,cache.linsolve_tmp)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::CompositeAlgorithm, cache) = get_tmp_cache(integrator, integrator.alg.algs[1], cache.caches[1])
 
-user_cache(integrator::ODEIntegrator) = user_cache(integrator.cache)
-u_cache(integrator::ODEIntegrator) = u_cache(integrator.cache)
-du_cache(integrator::ODEIntegrator)= du_cache(integrator.cache)
-full_cache(integrator::ODEIntegrator) = chain(user_cache(integrator),u_cache(integrator),du_cache(integrator.cache))
+cache_iter(integrator::ODEIntegrator) = _cache_iter(integrator.cache)
+
 function add_tstop!(integrator::ODEIntegrator,t)
   integrator.tdir * (t - integrator.t) < 0 && error("Tried to add a tstop that is behind the current time. This is strictly forbidden")
   push!(integrator.opts.tstops,t)
@@ -87,11 +85,9 @@ function DiffEqBase.add_saveat!(integrator::ODEIntegrator,t)
   push!(integrator.opts.saveat,t)
 end
 
-user_cache(cache::OrdinaryDiffEqCache) = (cache.u,cache.uprev,cache.tmp)
-
 resize!(integrator::ODEIntegrator,i::Int) = resize!(integrator,integrator.cache,i)
 function resize!(integrator::ODEIntegrator,cache,i)
-  for c in full_cache(integrator)
+  for c in cache_iter(integrator)
     resize!(c,i)
   end
   resize_non_user_cache!(integrator,cache,i)
@@ -108,10 +104,6 @@ function resize_non_user_cache!(integrator::ODEIntegrator,cache::RosenbrockMutab
 end
 
 function resize_non_user_cache!(integrator::ODEIntegrator,cache::Union{GenericImplicitEulerCache,GenericTrapezoidCache},i)
-  for c in dual_cache(integrator.cache)
-    resize!(c.du,i)
-    resize!(c.dual_du,i)
-  end
   cache.nl_rhs = integrator.alg.nlsolve(Val{:init},cache.rhs,cache.u)
 end
 
@@ -130,14 +122,14 @@ function addat_non_user_cache!(integrator::ODEIntegrator,cache,idxs)
 end
 
 function deleteat!(integrator::ODEIntegrator,idxs)
-  for c in user_cache(integrator)
+  for c in cache_iter(integrator)
     deleteat!(c,idxs)
   end
   deleteat_non_user_cache!(integrator,integrator.cache,idxs)
 end
 
 function addat!(integrator::ODEIntegrator,idxs)
-  for c in user_cache(integrator)
+  for c in cache_iter(integrator)
     addat!(c,idxs)
   end
   addat_non_user_cache!(integrator,integrator.cache,idxs)

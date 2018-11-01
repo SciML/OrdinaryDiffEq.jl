@@ -1,4 +1,4 @@
-struct Feagin10Cache{uType,uEltypeNoUnits,rateType,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct Feagin10Cache{uType,uNoUnitsType,rateType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -19,13 +19,10 @@ struct Feagin10Cache{uType,uEltypeNoUnits,rateType,TabType} <: OrdinaryDiffEqMut
   k16::rateType
   k17::rateType
   tmp::uType
-  atmp::uEltypeNoUnits
+  atmp::uNoUnitsType
   k::rateType
   tab::TabType
 end
-
-u_cache(c::Feagin10Cache) = (c.atmp,)
-du_cache(c::Feagin10Cache) = (c.fsalfirst,c.k2,c.k3,c.k4,c.k5,c.k6,c.k7,c.k8,c.k9,c.k10,c.k11,c.k12,c.k13,c.k14,c.k15,c.k16,c.k17,c.k)
 
 function alg_cache(alg::Feagin10,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tab = Feagin10ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
@@ -40,7 +37,7 @@ end
 
 alg_cache(alg::Feagin10,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = Feagin10ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
-struct Feagin12Cache{uType,uEltypeNoUnits,rateType,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct Feagin12Cache{uType,uNoUnitsType,rateType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -69,13 +66,10 @@ struct Feagin12Cache{uType,uEltypeNoUnits,rateType,TabType} <: OrdinaryDiffEqMut
   k24::rateType
   k25::rateType
   tmp::uType
-  atmp::uEltypeNoUnits
+  atmp::uNoUnitsType
   k::rateType
   tab::TabType
 end
-
-u_cache(c::Feagin12Cache) = (c.atmp,)
-du_cache(c::Feagin12Cache) = (c.fsalfirst,c.k2,c.k3,c.k4,c.k5,c.k6,c.k7,c.k8,c.k9,c.k10,c.k11,c.k12,c.k13,c.k14,c.k15,c.k16,c.k17,c.k18,c.k19,c.k20,c.k21,c.k22,c.k23,c.k24,c.k25,c.k)
 
 function alg_cache(alg::Feagin12,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tab = Feagin12ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
@@ -93,7 +87,7 @@ end
 alg_cache(alg::Feagin12,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = Feagin12ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
 
-struct Feagin14Cache{uType,uEltypeNoUnits,rateType,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct Feagin14Cache{uType,uNoUnitsType,rateType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -132,14 +126,10 @@ struct Feagin14Cache{uType,uEltypeNoUnits,rateType,TabType} <: OrdinaryDiffEqMut
   k34::rateType
   k35::rateType
   tmp::uType
-  atmp::uEltypeNoUnits
+  atmp::uNoUnitsType
   k::rateType
   tab::TabType
 end
-
-u_cache(c::Feagin14Cache) = (c.atmp,)
-du_cache(c::Feagin14Cache) = (c.fsalfirst,c.k2,c.k3,c.k4,c.k5,c.k6,c.k7,c.k8,c.k9,c.k10,c.k11,c.k12,c.k13,c.k14,c.k15,c.k16,c.k17,c.k18,c.k19,c.k20,c.k21,c.k22,c.k23,c.k24,c.k25,c.k26,c.k27,c.k28,c.k29,c.k30,c.k31,c.k32,c.k33,c.k34,c.k35,c.k)
-
 
 function alg_cache(alg::Feagin14,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tab = Feagin14ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))

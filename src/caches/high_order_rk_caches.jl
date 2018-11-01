@@ -1,5 +1,4 @@
-
-struct TanYam7Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct TanYam7Cache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -12,15 +11,12 @@ struct TanYam7Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: Ordinar
   k8::rateType
   k9::rateType
   k10::rateType
-  utilde::uArrayType
+  utilde::uType
   tmp::uType
-  atmp::uEltypeNoUnits
+  atmp::uNoUnitsType
   k::rateType
   tab::TabType
 end
-
-u_cache(c::TanYam7Cache) = (c.utilde,c.atmp)
-du_cache(c::TanYam7Cache) = (c.fsalfirst,c.k2,c.k3,c.k4,c.k5,c.k6,c.k7,c.k8,c.k9,c.k10,c.k)
 
 function alg_cache(alg::TanYam7,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tab = TanYam7ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
@@ -33,7 +29,7 @@ end
 
 alg_cache(alg::TanYam7,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = TanYam7ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
-struct DP8Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct DP8Cache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k1::rateType
@@ -60,14 +56,11 @@ struct DP8Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDif
   dense_tmp5::rateType
   dense_tmp6::rateType
   dense_tmp7::rateType
-  utilde::uArrayType
+  utilde::uType
   tmp::uType
-  atmp::uEltypeNoUnits
+  atmp::uNoUnitsType
   tab::TabType
 end
-
-u_cache(c::DP8Cache) = (c.utilde,c.atmp)
-du_cache(c::DP8Cache) = (c.k1,c.k2,c.k3,c.k4,c.k5,c.k6,c.k7,c.k8,c.k9,c.k10,c.k11,c.k12,c.k13,c.k14,c.k15,c.k16,c.kupdate,c.udiff,c.bspl,c.dense_tmp3,c.dense_tmp4,c.dense_tmp5,c.dense_tmp6,c.dense_tmp7)
 
 function alg_cache(alg::DP8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   k1 = zero(rate_prototype); k2  = zero(rate_prototype); k3  = zero(rate_prototype);  k4 = zero(rate_prototype)
@@ -96,7 +89,7 @@ end
 
 alg_cache(alg::DP8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = DP8ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
-struct TsitPap8Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct TsitPap8Cache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   fsalfirst::rateType
@@ -112,15 +105,12 @@ struct TsitPap8Cache{uType,uArrayType,rateType,uEltypeNoUnits,TabType} <: Ordina
   k11::rateType
   k12::rateType
   k13::rateType
-  utilde::uArrayType
+  utilde::uType
   tmp::uType
-  atmp::uEltypeNoUnits
+  atmp::uNoUnitsType
   k::rateType
   tab::TabType
 end
-
-u_cache(c::TsitPap8Cache) = (c.utilde,c.atmp)
-du_cache(c::TsitPap8Cache) = (c.fsalfirst,c.k2,c.k3,c.k4,c.k5,c.k6,c.k7,c.k8,c.k9,c.k10,c.k11,c.k12,c.k13,c.k)
 
 function alg_cache(alg::TsitPap8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tab = TsitPap8ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
