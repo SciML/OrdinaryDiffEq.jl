@@ -153,7 +153,7 @@ macro cache(expr)
   end
   quote
     $expr
-    $(esc(:cache_iter))(c::$name) = tuple($(cache_vars...))
+    $(esc(:full_cache))(c::$name) = tuple($(cache_vars...))
     $(esc(:jac_iter))($(esc(:c))::$name) = tuple($(jac_vars...))
   end
 end
