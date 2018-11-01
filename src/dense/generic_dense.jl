@@ -7,6 +7,7 @@
 function ode_addsteps!(args...)
   @warn("`ode_addsteps!` is deprecated. Use `addsteps!`")
   DiffEqBase.addsteps!(args...)
+  nothing
 end
 
 @inline function _ode_addsteps!(integrator,f=integrator.f,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
@@ -20,6 +21,7 @@ end
                   integrator.cache.caches[integrator.cache.current],
                   always_calc_begin,allow_calc_end,force_calc_end)
   end
+  nothing
 end
 @inline DiffEqBase.addsteps!(integrator::ODEIntegrator,args...) = _ode_addsteps!(integrator,args...)
 
@@ -40,6 +42,7 @@ end
   else
     ode_interpolant!(val,Θ,integrator.dt,integrator.uprev,integrator.u,integrator.k,integrator.cache.caches[integrator.cache.current],idxs,deriv)
   end
+  nothing
 end
 
 @inline function current_interpolant(t::Number,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
@@ -55,11 +58,13 @@ end
 @inline function current_interpolant!(val,t::Number,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   Θ = (t-integrator.tprev)/integrator.dt
   ode_interpolant!(val,Θ,integrator,idxs,deriv)
+  nothing
 end
 
 @inline function current_interpolant!(val,t,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
   Θ = (t.-integrator.tprev)./integrator.dt
   [ode_interpolant!(val,ϕ,integrator,idxs,deriv) for ϕ in Θ]
+  nothing
 end
 
 @inline function current_extrapolant(t::Number,integrator::DiffEqBase.DEIntegrator,idxs=nothing,deriv=Val{0})
@@ -70,6 +75,7 @@ end
 @inline function current_extrapolant!(val,t::Number,integrator::DiffEqBase.DEIntegrator,idxs=nothing,deriv=Val{0})
   Θ = (t-integrator.tprev)/(integrator.t-integrator.tprev)
   ode_extrapolant!(val,Θ,integrator,idxs,deriv)
+  nothing
 end
 
 @inline function current_extrapolant(t::AbstractArray,integrator::DiffEqBase.DEIntegrator,idxs=nothing,deriv=Val{0})
@@ -80,6 +86,7 @@ end
 @inline function current_extrapolant!(val,t,integrator::DiffEqBase.DEIntegrator,idxs=nothing,deriv=Val{0})
   Θ = (t.-integrator.tprev)./(integrator.t-integrator.tprev)
   [ode_extrapolant!(val,ϕ,integrator,idxs,deriv) for ϕ in Θ]
+  nothing
 end
 
 @inline function ode_extrapolant!(val,Θ,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
@@ -89,6 +96,7 @@ end
   else
     ode_interpolant!(val,Θ,integrator.t-integrator.tprev,integrator.uprev2,integrator.uprev,integrator.k,integrator.cache.caches[integrator.cache.current],idxs,deriv)
   end
+  nothing
 end
 
 @inline function ode_extrapolant(Θ,integrator::DiffEqBase.DEIntegrator,idxs,deriv)
@@ -317,6 +325,7 @@ function ode_interpolation!(out,tval::Number,id,idxs,deriv,p,continuity::Symbol=
       end
     end
   end
+  nothing
 end
 
 """
@@ -370,6 +379,7 @@ end
 
 function ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T::Type{Val{TI}}) where TI
   _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache,idxs,T)
+  nothing
 end
 
 ##################### Hermite Interpolants

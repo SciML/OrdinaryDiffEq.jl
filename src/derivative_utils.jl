@@ -17,6 +17,7 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
     f(fsalfirst, uprev, p, t)
     @. linsolve_tmp = fsalfirst + dtd1*dT
   end
+  nothing
 end
 
 function calc_tderivative(integrator, cache)

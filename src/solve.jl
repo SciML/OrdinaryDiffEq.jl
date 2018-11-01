@@ -454,4 +454,5 @@ function initialize_callbacks!(integrator, initialize_save = true)
 
   # reset this as it is now handled so the integrators should proceed as normal
   integrator.u_modified = false
+  nothing
 end

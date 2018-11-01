@@ -100,7 +100,9 @@ for co in (:right, :left)
   ts = range(0, stop=last(sol.t), length=3)
   interpdright = sol(last(sol.t), continuity=co)
   interpdrights = sol(ts, continuity=co)
-  @test interpdright == sol(similar(sol.u[end]), last(sol.t), continuity=co)
+  tmp = similar(sol.u[end])
+  sol(tmp, last(sol.t), continuity=co)
+  @test interpdright == tmp
   tmp = [similar(sol.u[end]) for i in 1:3]
   sol(tmp, ts, continuity=co)
   @test all(map((x,y)->x==y, interpdrights, tmp))

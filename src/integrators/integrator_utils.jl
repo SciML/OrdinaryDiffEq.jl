@@ -23,6 +23,7 @@ function loopheader!(integrator)
   fix_dt_at_bounds!(integrator)
   modify_dt_for_tstops!(integrator)
   integrator.force_stepfail = false
+  nothing
 end
 
 last_step_failed(integrator::ODEIntegrator) =
@@ -46,8 +47,10 @@ function modify_dt_for_tstops!(integrator)
       integrator.dt = integrator.tdir*min(abs(integrator.dtcache),abs(top(tstops)-integrator.t)) # step! to the end
     end
   end
+  nothing
 end
 
+using InteractiveUtils
 function savevalues!(integrator::ODEIntegrator,force_save=false,reduce_size=true)::Tuple{Bool,Bool}
   saved, savedexactly = false, false
   !integrator.opts.save_on && return saved, savedexactly
@@ -125,6 +128,7 @@ function postamble!(integrator::ODEIntegrator)
     message=integrator.opts.progress_message(integrator.dt,integrator.u,integrator.p,integrator.t),
     progress="done")
   end
+  nothing
 end
 
 function solution_endpoint_match_cur_integrator!(integrator)
@@ -150,6 +154,7 @@ function solution_endpoint_match_cur_integrator!(integrator)
       copyat_or_push!(integrator.sol.alg_choice,integrator.saveiter,integrator.cache.current)
     end
   end
+  nothing
 end
 
 ### Default is PI-controller
@@ -176,6 +181,7 @@ function step_accept_controller!(integrator,alg,q)
 end
 function step_reject_controller!(integrator,alg)
   integrator.dt = integrator.dt/min(inv(integrator.opts.qmin),integrator.q11/integrator.opts.gamma)
+  nothing
 end
 
 const StandardControllerAlgs = Union{GenericImplicitEuler,GenericTrapezoid,VCABM}
@@ -196,6 +202,7 @@ function step_accept_controller!(integrator,alg::JVODE,η)
 end
 function step_reject_controller!(integrator,alg::JVODE)
   integrator.dt *= integrator.qold
+  nothing
 end
 
 function stepsize_controller!(integrator, alg::QNDF)
@@ -221,6 +228,7 @@ function step_accept_controller!(integrator,alg::QNDF,q)
 end
 function step_reject_controller!(integrator,alg::QNDF)
   integrator.dt = integrator.qold
+  nothing
 end
 
 
@@ -243,6 +251,7 @@ end
 function step_reject_controller!(integrator,alg::Union{StandardControllerAlgs,
                               OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Standard}})
   integrator.dt = integrator.qold
+  nothing
 end
 
 function stepsize_controller!(integrator,
@@ -287,6 +296,7 @@ function step_reject_controller!(integrator,
   else
     integrator.dt = integrator.dt/integrator.qold
   end
+  nothing
 end
 
 function loopfooter!(integrator)
@@ -347,6 +357,7 @@ function loopfooter!(integrator)
     message=integrator.opts.progress_message(integrator.dt,integrator.u,integrator.p,integrator.t),
     progress=integrator.t/integrator.sol.prob.tspan[2])
   end
+  nothing
 end
 
 function handle_callbacks!(integrator)
@@ -378,10 +389,12 @@ function handle_callbacks!(integrator)
   if integrator.u_modified
     handle_callback_modifiers!(integrator)
   end
+  nothing
 end
 
 function handle_callback_modifiers!(integrator::ODEIntegrator)
   integrator.reeval_fsal = true
+  nothing
 end
 
 function apply_step!(integrator)
@@ -426,16 +439,19 @@ function apply_step!(integrator)
       end
     end
   end
+  nothing
 end
 
 function handle_discontinuities!(integrator)
     pop!(integrator.opts.d_discontinuities)
+    nothing
 end
 
 function calc_dt_propose!(integrator,dtnew)
   dtpropose = integrator.tdir*min(abs(integrator.opts.dtmax),abs(dtnew))
   dtpropose = integrator.tdir*max(abs(dtpropose),abs(integrator.opts.dtmin))
   integrator.dtpropose = dtpropose
+  nothing
 end
 
 function fix_dt_at_bounds!(integrator)
@@ -449,6 +465,7 @@ function fix_dt_at_bounds!(integrator)
   else
     integrator.dt = min(integrator.dt,integrator.opts.dtmin) #abs to fix complex sqrt issue at end
   end
+  nothing
 end
 
 function handle_tstop!(integrator)
@@ -468,6 +485,7 @@ function handle_tstop!(integrator)
       end
     end
   end
+  nothing
 end
 
 function reset_fsal!(integrator)
@@ -481,10 +499,11 @@ function reset_fsal!(integrator)
   end
   # Do not set false here so it can be checked in the algorithm
   # integrator.reeval_fsal = false
+  nothing
 end
 
 function (integrator::ODEIntegrator)(t,deriv::Type=Val{0};idxs=nothing)
   current_interpolant(t,integrator,idxs,deriv)
 end
 
-(integrator::ODEIntegrator)(val::AbstractArray,t::Union{Number,AbstractArray},deriv::Type=Val{0};idxs=nothing) = current_interpolant!(val,t,integrator,idxs,deriv)
+(integrator::ODEIntegrator)(val::AbstractArray,t::Union{Number,AbstractArray},deriv::Type=Val{0};idxs=nothing) = (current_interpolant!(val,t,integrator,idxs,deriv); nothing)

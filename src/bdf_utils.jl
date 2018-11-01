@@ -9,6 +9,7 @@ function U!(k, U)
       end
     end
   end
+  nothing
 end
 
 function R!(k, ρ, cache)
@@ -22,6 +23,7 @@ function R!(k, ρ, cache)
       end
     end
   end
+  nothing
 end
 
 # This functions takes help of D2 array to create backward differences array D
@@ -50,6 +52,7 @@ function backward_diff!(cache, D, D2, k, flag=true)
       end
     end
   end
+  nothing
 end
 
 # this function updates backward difference array D when stepsize gets change
@@ -80,9 +83,10 @@ function reinterpolate_history!(cache, D, R, k)
       tmp = zero(eltype(D))
     end
   end
+  nothing
 end
 
-global const γₖ = @SVector[sum(1//j for j in 1:k) for k in 1:6]
+const γₖ = @SVector[sum(1//j for j in 1:k) for k in 1:6]
 
 # this stepsize and order controller is taken from
 # Implementation of an Adaptive BDF2 Formula and Comparison with the MATLAB Ode15s paper

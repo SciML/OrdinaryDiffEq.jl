@@ -27,6 +27,7 @@ function ϕ_and_ϕstar!(cache, du, k)
       end
     end
   end # inbounds
+  nothing
 end
 
 function ϕ_and_ϕstar!(cache::Union{VCABMConstantCache,VCABMCache}, du, k)
@@ -57,6 +58,7 @@ function ϕ_and_ϕstar!(cache::Union{VCABMConstantCache,VCABMCache}, du, k)
     cache.ξ = ξ
     cache.ξ0 = ξ0
   end # inbounds
+  nothing
 end
 
 function expand_ϕ_and_ϕstar!(cache, i)
@@ -70,6 +72,7 @@ function expand_ϕ_and_ϕstar!(cache, i)
     ϕ_n[i] = ϕ_n[i-1] - ϕstar_nm1[i-1]
     ϕstar_n[i] = β[i] * ϕ_n[i]
   end
+  nothing
 end
 
 function ϕ_np1!(cache, du_np1, k)
@@ -91,6 +94,7 @@ function ϕ_np1!(cache, du_np1, k)
       end
     end
   end #inbounds
+  nothing
 end
 
 # Solving Ordinary Differential Equations I: Nonstiff Problems
@@ -118,7 +122,8 @@ function g_coefs!(cache, k)
       g[i] = c[i,1] * dt
     end # i
   end # inbounds
+  nothing
 end
 
 # Coefficients for the implicit Adams methods
-global const γstar = [1,-1/2,-1/12,-1/24,-19/720,-3/160,-863/60480,-275/24192,-33953/3628800,-0.00789255,-0.00678585,-0.00592406,-0.00523669,-0.0046775,-0.00421495,-0.0038269]
+const γstar = @SVector [1,-1/2,-1/12,-1/24,-19/720,-3/160,-863/60480,-275/24192,-33953/3628800,-0.00789255,-0.00678585,-0.00592406,-0.00523669,-0.0046775,-0.00421495,-0.0038269]

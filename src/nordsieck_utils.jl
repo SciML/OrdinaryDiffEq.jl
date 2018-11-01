@@ -26,6 +26,7 @@ function nordsieck_finalize!(integrator, cache::T) where T
     end
     cache.prev_𝒟 = cache.c_𝒟
   end
+  nothing
 end
 
 function nordsieck_prepare_next!(integrator, cache::T) where T
@@ -184,6 +185,7 @@ function perform_predict!(cache::T, rewind=false) where T
       end # endif const cache
     end # endif !rewind
   end # end @inbounds
+  nothing
 end
 
 # Apply corrections on the Nordsieck vector
@@ -202,6 +204,7 @@ function update_nordsieck_vector!(cache::T) where T
       end
     end # endif not const cache
   end # end @inbounds
+  nothing
 end
 
 function nlsolve_functional!(integrator, cache::T) where T
@@ -335,6 +338,7 @@ function nordsieck_adjust_order!(cache::T, dorder) where T
       end # for j
     end # else
   end # @inbound
+  nothing
 end
 
 # `η` is `dtₙ₊₁/dtₙ`

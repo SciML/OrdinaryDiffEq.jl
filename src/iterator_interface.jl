@@ -18,4 +18,5 @@
     end
   end
   @inbounds handle_tstop!(integrator)
+  nothing
 end
