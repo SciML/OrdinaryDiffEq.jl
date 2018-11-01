@@ -891,7 +891,7 @@ end
   tprev2::tType
 end
 
-@cache mutable struct CNAB2Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,tType,F} <: OrdinaryDiffEqMutableCache
+@cache mutable struct CNAB2Cache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,N,tType,F} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -906,8 +906,8 @@ end
   b::uType
   tmp::uType
   atmp::uNoUnitsType
-  J::J
-  W::W
+  J::JType
+  W::WType
   uf::UF
   jac_config::JC
   linsolve::F
@@ -951,7 +951,7 @@ end
   tprev2::tType
 end
 
-@cache mutable struct CNLF2Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,tType,F} <: OrdinaryDiffEqMutableCache
+@cache mutable struct CNLF2Cache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,N,tType,F} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -966,8 +966,8 @@ end
   b::uType
   tmp::uType
   atmp::uNoUnitsType
-  J::J
-  W::W
+  J::JType
+  W::WType
   uf::UF
   jac_config::JC
   linsolve::F

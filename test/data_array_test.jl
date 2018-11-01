@@ -26,7 +26,7 @@ end
   end
 
   affect! = function (integrator)
-    for c in user_cache(integrator)
+    for c in OrdinaryDiffEq.cache_iter(integrator)
       c.f1 = 1.5
     end
   end
@@ -40,7 +40,7 @@ end
   end
 
   affect2! = function (integrator)
-    for c in user_cache(integrator)
+    for c in OrdinaryDiffEq.cache_iter(integrator)
       c.f1 = -1.5
     end
   end
@@ -126,14 +126,14 @@ end
   end
 
   function mat_affect!(integrator)
-    for c in user_cache(integrator)
+    for c in OrdinaryDiffEq.cache_iter(integrator)
       c.f1 = +1.0
     end
   #  integrator.u[1,1] = 0.001
   end
 
   function mat_affect2!(integrator)
-    for c in user_cache(integrator)
+    for c in OrdinaryDiffEq.cache_iter(integrator)
       c.f1 = 0.0
     end
   end

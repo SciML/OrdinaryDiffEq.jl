@@ -135,8 +135,10 @@ macro cache(expr)
   name = expr.args[2].args[1].args[1]
   fields = expr.args[3].args[2:2:end]
   cache_vars = Expr[]
+  jac_vars = Pair{Symbol,Expr}[]
   for x in fields
-    if x.args[2] == :uType || x.args[2] == :rateType
+    if x.args[2] == :uType || x.args[2] == :rateType ||
+       x.args[2] == :kType || x.args[2] == :uNoUnitsType
       push!(cache_vars,:(c.$(x.args[1])))
     elseif x.args[2] == :JCType
       push!(cache_vars,:(c.$(x.args[1]).duals...))
@@ -145,10 +147,13 @@ macro cache(expr)
     elseif x.args[2] == :DiffCacheType
       push!(cache_vars,:(c.$(x.args[1]).du))
       push!(cache_vars,:(c.$(x.args[1]).dual_du))
+    elseif x.args[2] == :JType || x.args[2] == :WType
+      push!(jac_vars,x.args[1] => :(c.$(x.args[1])))
     end
   end
   quote
     $expr
-    _cache_iter(c::$name) = tuple($(cache_vars...))
+    $(esc(:cache_iter))(c::$name) = tuple($(cache_vars...))
+    $(esc(:jac_iter))($(esc(:c))::$name) = tuple($(jac_vars...))
   end
 end

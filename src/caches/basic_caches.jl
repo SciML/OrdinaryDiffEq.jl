@@ -31,15 +31,15 @@ struct FunctionMapConstantCache <: OrdinaryDiffEqConstantCache end
 
 alg_cache(alg::FunctionMap,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = FunctionMapConstantCache()
 
-@cache struct ExplicitRKCache{uType,rateType,uNoUnitsType,ksEltype,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct ExplicitRKCache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
   utilde::rateType
   atmp::uNoUnitsType
-  fsalfirst::ksEltype
-  fsallast::ksEltype
-  kk::Vector{ksEltype}
+  fsalfirst::rateType
+  fsallast::rateType
+  kk::Vector{rateType}
   tab::TabType
 end
 

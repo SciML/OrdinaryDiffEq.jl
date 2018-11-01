@@ -95,7 +95,9 @@ DiffEqBase.@def oopnlcachefields begin
   _nlsolve = oop_nlsolver(alg.nlsolve)
 end
 
-@cache mutable struct ImplicitEulerCache{uType,rateType,uNoUnitsType,J,W,UF,JC,F,N} <: OrdinaryDiffEqMutableCache
+abstract type SDIRKMutableCache <: OrdinaryDiffEqMutableCache end
+
+@cache mutable struct ImplicitEulerCache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,F,N} <: SDIRKMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -107,8 +109,8 @@ end
   b::uType
   tmp::uType
   atmp::uNoUnitsType
-  J::J
-  W::W
+  J::JType
+  W::WType
   uf::UF
   jac_config::JC
   linsolve::F
@@ -146,7 +148,7 @@ function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,uBottom
   ImplicitMidpointConstantCache(uf,nlsolve)
 end
 
-@cache mutable struct ImplicitMidpointCache{uType,rateType,J,W,UF,JC,F,N} <: OrdinaryDiffEqMutableCache
+@cache mutable struct ImplicitMidpointCache{uType,rateType,JType,WType,UF,JC,F,N} <: SDIRKMutableCache
   u::uType
   uprev::uType
   du1::rateType
@@ -156,8 +158,8 @@ end
   dz::uType
   b::uType
   tmp::uType
-  J::J
-  W::W
+  J::JType
+  W::WType
   uf::UF
   jac_config::JC
   linsolve::F
@@ -187,7 +189,7 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   TrapezoidConstantCache(uf,uprev3,tprev2,nlsolve)
 end
 
-@cache mutable struct TrapezoidCache{uType,rateType,uNoUnitsType,J,W,UF,JC,tType,F,N} <: OrdinaryDiffEqMutableCache
+@cache mutable struct TrapezoidCache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,tType,F,N} <: SDIRKMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -199,8 +201,8 @@ end
   b::uType
   tmp::uType
   atmp::uNoUnitsType
-  J::J
-  W::W
+  J::JType
+  W::WType
   uf::UF
   jac_config::JC
   linsolve::F
@@ -233,7 +235,7 @@ function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   TRBDF2ConstantCache(uf,nlsolve,tab)
 end
 
-@cache mutable struct TRBDF2Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,Tab,F,N} <: OrdinaryDiffEqMutableCache
+@cache mutable struct TRBDF2Cache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,Tab,F,N} <: SDIRKMutableCache
   u::uType
   uprev::uType
   du1::rateType
@@ -246,8 +248,8 @@ end
   b::uType
   tmp::uType
   atmp::uNoUnitsType
-  J::J
-  W::W
+  J::JType
+  W::WType
   uf::UF
   jac_config::JC
   linsolve::F
@@ -279,7 +281,7 @@ function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   SDIRK2ConstantCache(uf,nlsolve)
 end
 
-@cache mutable struct SDIRK2Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,F,N} <: OrdinaryDiffEqMutableCache
+@cache mutable struct SDIRK2Cache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,F,N} <: SDIRKMutableCache
   u::uType
   uprev::uType
   du1::rateType
@@ -291,8 +293,8 @@ end
   b::uType
   tmp::uType
   atmp::uNoUnitsType
-  J::J
-  W::W
+  J::JType
+  W::WType
   uf::UF
   jac_config::JC
   linsolve::F
@@ -323,7 +325,7 @@ function alg_cache(alg::SSPSDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   SSPSDIRK2ConstantCache(uf,nlsolve)
 end
 
-@cache mutable struct SSPSDIRK2Cache{uType,rateType,J,W,UF,JC,F,N} <: OrdinaryDiffEqMutableCache
+@cache mutable struct SSPSDIRK2Cache{uType,rateType,JType,WType,UF,JC,F,N} <: SDIRKMutableCache
   u::uType
   uprev::uType
   du1::rateType
@@ -334,8 +336,8 @@ end
   dz::uType
   b::uType
   tmp::uType
-  J::J
-  W::W
+  J::JType
+  W::WType
   uf::UF
   jac_config::JC
   linsolve::F
@@ -368,7 +370,7 @@ function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   Kvaerno3ConstantCache(uf,nlsolve,tab)
 end
 
-@cache mutable struct Kvaerno3Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,Tab,F,N} <: OrdinaryDiffEqMutableCache
+@cache mutable struct Kvaerno3Cache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,Tab,F,N} <: SDIRKMutableCache
   u::uType
   uprev::uType
   du1::rateType
@@ -382,8 +384,8 @@ end
   b::uType
   tmp::uType
   atmp::uNoUnitsType
-  J::J
-  W::W
+  J::JType
+  W::WType
   uf::UF
   jac_config::JC
   linsolve::F
@@ -419,7 +421,7 @@ function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   Cash4ConstantCache(uf,nlsolve,tab)
 end
 
-@cache mutable struct Cash4Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,Tab,F} <: OrdinaryDiffEqMutableCache
+@cache mutable struct Cash4Cache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,N,Tab,F} <: SDIRKMutableCache
   u::uType
   uprev::uType
   du1::rateType
@@ -434,8 +436,8 @@ end
   b::uType
   tmp::uType
   atmp::uNoUnitsType
-  J::J
-  W::W
+  J::JType
+  W::WType
   uf::UF
   jac_config::JC
   linsolve::F
@@ -476,7 +478,7 @@ function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,
   Hairer4ConstantCache(uf,nlsolve,tab)
 end
 
-@cache mutable struct Hairer4Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,Tab,F,N} <: OrdinaryDiffEqMutableCache
+@cache mutable struct Hairer4Cache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,Tab,F,N} <: SDIRKMutableCache
   u::uType
   uprev::uType
   du1::rateType
@@ -491,8 +493,8 @@ end
   b::uType
   tmp::uType
   atmp::uNoUnitsType
-  J::J
-  W::W
+  J::JType
+  W::WType
   uf::UF
   jac_config::JC
   linsolve::F

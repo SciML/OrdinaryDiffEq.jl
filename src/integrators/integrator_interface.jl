@@ -73,7 +73,7 @@ end
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,cache) = (cache.tmp,cache.linsolve_tmp)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::CompositeAlgorithm, cache) = get_tmp_cache(integrator, integrator.alg.algs[1], cache.caches[1])
 
-cache_iter(integrator::ODEIntegrator) = _cache_iter(integrator.cache)
+cache_iter(integrator::ODEIntegrator) = cache_iter(integrator.cache)
 
 function add_tstop!(integrator::ODEIntegrator,t)
   integrator.tdir * (t - integrator.t) < 0 && error("Tried to add a tstop that is behind the current time. This is strictly forbidden")
@@ -87,7 +87,7 @@ end
 
 resize!(integrator::ODEIntegrator,i::Int) = resize!(integrator,integrator.cache,i)
 function resize!(integrator::ODEIntegrator,cache,i)
-  for c in cache_iter(integrator)
+  for c in cache_iter(cache)
     resize!(c,i)
   end
   resize_non_user_cache!(integrator,cache,i)
@@ -98,12 +98,13 @@ deleteat_non_user_cache!(integrator::ODEIntegrator,i) = deleteat_non_user_cache!
 addat_non_user_cache!(integrator::ODEIntegrator,i) = addat_non_user_cache!(integrator,integrator.cache,i)
 
 resize_non_user_cache!(integrator::ODEIntegrator,cache,i) = nothing
-function resize_non_user_cache!(integrator::ODEIntegrator,cache::RosenbrockMutableCache,i)
+function resize_non_user_cache!(integrator::ODEIntegrator,
+                      cache::Union{RosenbrockMutableCache,SDIRKMutableCache},i)
   cache.J = similar(cache.J,i,i)
   cache.W = similar(cache.W,i,i)
 end
-
-function resize_non_user_cache!(integrator::ODEIntegrator,cache::Union{GenericImplicitEulerCache,GenericTrapezoidCache},i)
+function resize_non_user_cache!(integrator::ODEIntegrator,
+                cache::Union{GenericImplicitEulerCache,GenericTrapezoidCache},i)
   cache.nl_rhs = integrator.alg.nlsolve(Val{:init},cache.rhs,cache.u)
 end
 

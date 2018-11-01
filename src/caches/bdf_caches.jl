@@ -18,7 +18,7 @@ function alg_cache(alg::ABDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   ABDF2ConstantCache(uf, nlsolve, eulercache, dtₙ₋₁, fsalfirstprev)
 end
 
-@cache mutable struct ABDF2Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,F,dtType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct ABDF2Cache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,N,F,dtType} <: OrdinaryDiffEqMutableCache
   uₙ::uType
   uₙ₋₁::uType
   uₙ₋₂::uType
@@ -32,8 +32,8 @@ end
   b::uType
   tmp::uType
   atmp::uNoUnitsType
-  J::J
-  W::W
+  J::JType
+  W::WType
   uf::UF
   jac_config::JC
   linsolve::F
@@ -75,7 +75,7 @@ end
   du₂::rateType
 end
 
-@cache mutable struct SBDFCache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,F} <: OrdinaryDiffEqMutableCache
+@cache mutable struct SBDFCache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,N,F} <: OrdinaryDiffEqMutableCache
   cnt::Int
   u::uType
   uprev::uType
@@ -87,8 +87,8 @@ end
   b::uType
   tmp::uType
   atmp::uNoUnitsType
-  J::J
-  W::W
+  J::JType
+  W::WType
   uf::UF
   jac_config::JC
   linsolve::F
@@ -149,7 +149,7 @@ end
   dtₙ₋₁::dtType
 end
 
-@cache mutable struct QNDF1Cache{uType,rateType,coefType,coefType1,coefType2,uNoUnitsType,J,W,UF,JC,N,F,dtType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct QNDF1Cache{uType,rateType,coefType,coefType1,coefType2,uNoUnitsType,JType,WType,UF,JC,N,F,dtType} <: OrdinaryDiffEqMutableCache
   uprev2::uType
   du1::rateType
   fsalfirst::rateType
@@ -164,8 +164,8 @@ end
   tmp::uType
   atmp::uNoUnitsType
   utilde::uType
-  J::J
-  W::W
+  J::JType
+  W::WType
   uf::UF
   jac_config::JC
   linsolve::F
@@ -226,7 +226,7 @@ end
   dtₙ₋₂::dtType
 end
 
-@cache mutable struct QNDF2Cache{uType,rateType,coefType,coefType1,coefType2,uNoUnitsType,J,W,UF,JC,N,F,dtType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct QNDF2Cache{uType,rateType,coefType,coefType1,coefType2,uNoUnitsType,JType,WType,UF,JC,N,F,dtType} <: OrdinaryDiffEqMutableCache
   uprev2::uType
   uprev3::uType
   du1::rateType
@@ -242,8 +242,8 @@ end
   tmp::uType
   atmp::uNoUnitsType
   utilde::uType
-  J::J
-  W::W
+  J::JType
+  W::WType
   uf::UF
   jac_config::JC
   linsolve::F
@@ -310,7 +310,7 @@ end
   c::Int64
 end
 
-@cache mutable struct QNDFCache{uType,rateType,coefType1,coefType,coefType2,coefType3,dtType,dtsType,uNoUnitsType,J,W,UF,JC,N,F} <: OrdinaryDiffEqMutableCache
+@cache mutable struct QNDFCache{uType,rateType,coefType1,coefType,coefType2,coefType3,dtType,dtsType,uNoUnitsType,JType,WType,UF,JC,N,F} <: OrdinaryDiffEqMutableCache
   du1::rateType
   fsalfirst::rateType
   k::rateType
@@ -328,8 +328,8 @@ end
   tmp::uType
   atmp::uNoUnitsType
   utilde::uType
-  J::J
-  W::W
+  J::JType
+  W::WType
   uf::UF
   jac_config::JC
   linsolve::F

@@ -1,10 +1,10 @@
-@cache struct MidpointSplittingCache{uType,rateType,J} <: OrdinaryDiffEqMutableCache
+@cache struct MidpointSplittingCache{uType,rateType,WType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
   tmp::uType
   fsalfirst::rateType
-  W::J
+  W::WType
   k::rateType
 end
 

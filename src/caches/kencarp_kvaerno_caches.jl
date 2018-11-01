@@ -13,7 +13,7 @@ function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   KenCarp3ConstantCache(uf,nlsolve,tab)
 end
 
-@cache mutable struct KenCarp3Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,Tab,F,kType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct KenCarp3Cache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,N,Tab,F,kType} <: SDIRKMutableCache
   u::uType
   uprev::uType
   du1::rateType
@@ -31,8 +31,8 @@ end
   b::uType
   tmp::uType
   atmp::uNoUnitsType
-  J::J
-  W::W
+  J::JType
+  W::WType
   uf::UF
   jac_config::JC
   linsolve::F
@@ -80,7 +80,7 @@ function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   Kvaerno4ConstantCache(uf,nlsolve,tab)
 end
 
-@cache mutable struct Kvaerno4Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,Tab,F} <: OrdinaryDiffEqMutableCache
+@cache mutable struct Kvaerno4Cache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,N,Tab,F} <: SDIRKMutableCache
   u::uType
   uprev::uType
   du1::rateType
@@ -95,8 +95,8 @@ end
   b::uType
   tmp::uType
   atmp::uNoUnitsType
-  J::J
-  W::W
+  J::JType
+  W::WType
   uf::UF
   jac_config::JC
   linsolve::F
@@ -135,7 +135,7 @@ function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   KenCarp4ConstantCache(uf,nlsolve,tab)
 end
 
-@cache mutable struct KenCarp4Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,Tab,F,kType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct KenCarp4Cache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,N,Tab,F,kType} <: SDIRKMutableCache
   u::uType
   uprev::uType
   du1::rateType
@@ -157,8 +157,8 @@ end
   b::uType
   tmp::uType
   atmp::uNoUnitsType
-  J::J
-  W::W
+  J::JType
+  W::WType
   uf::UF
   jac_config::JC
   linsolve::F
@@ -208,7 +208,7 @@ function alg_cache(alg::Kvaerno5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   Kvaerno5ConstantCache(uf,nlsolve,tab)
 end
 
-@cache mutable struct Kvaerno5Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,Tab,F} <: OrdinaryDiffEqMutableCache
+@cache mutable struct Kvaerno5Cache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,N,Tab,F} <: SDIRKMutableCache
   u::uType
   uprev::uType
   du1::rateType
@@ -225,8 +225,8 @@ end
   b::uType
   tmp::uType
   atmp::uNoUnitsType
-  J::J
-  W::W
+  J::JType
+  W::WType
   uf::UF
   jac_config::JC
   linsolve::F
@@ -264,7 +264,7 @@ function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   KenCarp5ConstantCache(uf,nlsolve,tab)
 end
 
-@cache mutable struct KenCarp5Cache{uType,rateType,uNoUnitsType,J,W,UF,JC,N,Tab,F,kType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct KenCarp5Cache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,N,Tab,F,kType} <: SDIRKMutableCache
   u::uType
   uprev::uType
   du1::rateType
@@ -290,8 +290,8 @@ end
   b::uType
   tmp::uType
   atmp::uNoUnitsType
-  J::J
-  W::W
+  J::JType
+  W::WType
   uf::UF
   jac_config::JC
   linsolve::F
