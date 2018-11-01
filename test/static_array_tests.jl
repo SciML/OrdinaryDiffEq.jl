@@ -8,6 +8,7 @@ ode = ODEProblem(f, u0, (0.,1.))
 sol = solve(ode, Euler(), dt=1.e-2)
 sol = solve(ode, Tsit5())
 ode = ODEProblem(f, MVector{2}([1,2.]), (0.,1.))
+sol = solve(ode, Tsit5())
 
 u0 = fill(zero(SVector{2,Float64}), 2) .+ 1
 u0[1] = ones(SVector{2,Float64}) .+ 1

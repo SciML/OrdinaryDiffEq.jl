@@ -13,19 +13,22 @@
     sk = @. abstol+internalnorm(u0)*reltol
   end
 
+  # enforce array type of u0
+  UArray = typeof(u0).name.wrapper # T{Params}.name.wrapper == T
   if get_current_isfsal(integrator.alg, integrator.cache) && typeof(integrator) <: ODEIntegrator
     # Right now DelayDiffEq has issues with fsallast not being initialized
     f₀ = integrator.fsallast
     f(f₀,u0,p,t)
   else
-    f₀ = OrdinaryDiffEq.get_du(integrator)
+    f₀ = UArray(u0./t)
+    !(typeof(f₀) <: UArray) && (f₀ = UArray(tmp))
     f(f₀,u0,p,t)
   end
 
   # TODO: use more caches
   #tmp = cache[2]
-  tmp = similar(u0)
-  @. tmp = u0/sk
+  tmp = @. u0/sk
+  !(typeof(tmp) <: UArray) && (tmp = UArray(tmp))
 
   d₀ = internalnorm(tmp)
 
