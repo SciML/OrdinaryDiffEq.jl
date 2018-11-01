@@ -49,5 +49,5 @@ for alg in CACHE_TEST_ALGS
   sol = solve(prob,alg,callback=callback,dt=1/2)
 end
 
-#sol = solve(prob,Rodas4(chunk_size=1),callback=callback,dt=1/2)
-#sol = solve(prob,Rodas5(chunk_size=1),callback=callback,dt=1/2)
+sol = solve(prob,Rodas4(chunk_size=1),callback=callback,dt=1/2)
+sol = solve(prob,Rodas5(chunk_size=1),callback=callback,dt=1/2)
