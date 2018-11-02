@@ -40,6 +40,8 @@ sol3 = solve(prob2,Euler(),dt=1/10)
 
 # Now test only the first part
 
+println("only the first")
+
 f1 = (u,p,t) -> 2u
 f2 = (u,p,t) -> zero(u)
 
@@ -98,6 +100,8 @@ sim = test_convergence(dts,prob,SBDF4())
 
 # Now test only the second part
 
+println("only the second")
+
 f1 = (u,p,t) -> zero(u)
 f2 = (u,p,t) -> 2u
 
@@ -150,6 +154,8 @@ sim = test_convergence(dts,prob,SBDF4())
 @test_broken sim.𝒪est[:l∞] ≈ 4 atol=testTol
 
 # Test together
+
+println("together")
 
 f1 = (u,p,t) -> u
 f2 = (u,p,t) -> 2u
@@ -204,6 +210,8 @@ sim = test_convergence(dts,prob,SBDF4())
 
 # Now test only the first part
 
+println("only the first")
+
 f1 = (du,u,p,t) -> du .= 2u
 f2 = (du,u,p,t) -> du .= 0.0
 
@@ -257,6 +265,8 @@ sim = test_convergence(dts,prob,SBDF4())
 
 # Now test only the second part
 
+println("only the second")
+
 f1 = (du,u,p,t) -> du.= 0.0
 f2 = (du,u,p,t) -> du.= 2u
 
@@ -309,6 +319,8 @@ sim = test_convergence(dts,prob,SBDF4())
 @test_broken sim.𝒪est[:l∞] ≈ 4 atol=testTol
 
 # Test together
+
+println("together")
 
 f1 = (du,u,p,t) -> du .= u
 f2 = (du,u,p,t) -> du .= 2u
