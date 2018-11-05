@@ -19,6 +19,7 @@ if group == "All" || group == "Interface"
   @time @safetestset "Initdt Tests" begin include("ode/ode_initdt_tests.jl") end
   @time @safetestset "Mass Matrix Tests" begin include("mass_matrix_tests.jl") end
   @time @safetestset "Differentiation Trait Tests" begin include("differentiation_traits_tests.jl") end
+  @time @safetestset "Inf Tests" begin include("inf_handling.jl") end
   @time @safetestset "saveat Tests" begin include("ode/ode_saveat_tests.jl") end
   @time @safetestset "save_idxs Tests" begin include("ode/ode_saveidxs_tests.jl") end
   @time @safetestset "Static Array Tests" begin include("static_array_tests.jl") end
