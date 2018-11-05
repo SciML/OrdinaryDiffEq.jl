@@ -325,19 +325,7 @@ function DiffEqBase.__init(
     save_start && typeof(alg) <: CompositeAlgorithm && copyat_or_push!(alg_choice,1,integrator.cache.current)
   end
 
-  if integrator.dt == zero(integrator.dt) && integrator.opts.adaptive
-    auto_dt_reset!(integrator)
-    if sign(integrator.dt)!=integrator.tdir && integrator.dt!=tType(0) && !isnan(integrator.dt)
-      error("Automatic dt setting has the wrong sign. Exiting. Please report this error.")
-    end
-    if isnan(integrator.dt)
-      if verbose
-        @warn("Automatic dt set the starting dt as NaN, causing instability.")
-      end
-    end
-  elseif integrator.opts.adaptive && integrator.dt > zero(integrator.dt) && integrator.tdir < 0
-    integrator.dt *= integrator.tdir # Allow positive dt, but auto-convert
-  end
+  handle_dt!(integrator)
 
   integrator
 end
@@ -366,6 +354,22 @@ function DiffEqBase.solve!(integrator::ODEIntegrator)
 end
 
 # Helpers
+
+function handle_dt!(integrator)
+  if iszero(integrator.dt) && integrator.opts.adaptive
+    auto_dt_reset!(integrator)
+    if sign(integrator.dt)!=integrator.tdir && !iszero(integrator.dt) && !isnan(integrator.dt)
+      error("Automatic dt setting has the wrong sign. Exiting. Please report this error.")
+    end
+    if isnan(integrator.dt)
+      if verbose
+        @warn("Automatic dt set the starting dt as NaN, causing instability.")
+      end
+    end
+  elseif integrator.opts.adaptive && integrator.dt > zero(integrator.dt) && integrator.tdir < 0
+    integrator.dt *= integrator.tdir # Allow positive dt, but auto-convert
+  end
+end
 
 function tstop_saveat_disc_handling(tstops,saveat,d_discontinuities,tdir,tspan,tType)
 
