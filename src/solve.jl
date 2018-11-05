@@ -175,7 +175,7 @@ function DiffEqBase.__init(
   ks = convert(Vector{ksEltype},ks_init)
   alg_choice = Int[]
 
-  if !adaptive && save_everystep
+  if !adaptive && save_everystep && tspan[2]-tspan[1] != Inf
     dt == 0 ? steps = length(tstops) : steps = round(Int,float((tspan[2]-tspan[1])/dt),RoundUp)
     sizehint!(timeseries,steps+1)
     sizehint!(ts,steps+1)
