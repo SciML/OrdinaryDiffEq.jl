@@ -139,17 +139,25 @@ condtion= function (u,t,integrator)
   u[1]
 end
 
-affect! = function (integrator)
-  terminate!(integrator)
+affect! = function (integrator, retcode = nothing)
+  if retcode === nothing
+    terminate!(integrator)
+  else
+    terminate!(integrator, retcode)
+  end
 end
 
 terminate_callback = ContinuousCallback(condtion,affect!)
+custom_retcode_callback = ContinuousCallback(condition,x->affect!(x,:Custom))
 
 tspan2 = (0.0,Inf)
 prob2 = ODEProblem(f,u0,tspan2)
 
 sol5 = solve(prob2,Tsit5(),callback=terminate_callback)
+sol5_1 = solve(prob2,Tsit5(),callback=custom_retcode_callback)
 
+@test sol5.retcode == :Terminated
+@test sol5_1.retcode == :Custom
 @test sol5[end][1] < 3e-12
 @test sol5.t[end] ≈ sqrt(50*2/9.81)
 
