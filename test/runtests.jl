@@ -28,6 +28,7 @@ if group == "All" || group == "Interface"
   @time @safetestset "Composite Algorithm Tests" begin include("composite_algorithm_test.jl") end
   @time @safetestset "Complex Tests" begin include("complex_tests.jl") end
   @time @safetestset "Stiffness Detection Tests" begin include("stiffness_detection_test.jl") end
+  @time @safetestset "Composite Interpolation Tests" begin include("composite_interpolation.jl") end
   @time @safetestset "Export tests" begin include("export_tests.jl") end
   @time @safetestset "Derivative Utilities Tests" begin include("utility_tests.jl") end
 end
