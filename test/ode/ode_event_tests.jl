@@ -27,7 +27,7 @@ end
 
 prob = ODEProblem(f,[1.0],(0.0,10.0))
 
-condtion= function (u,t,integrator) # Event when event_f(u,t,k) == 0
+condition= function (u,t,integrator) # Event when event_f(u,t,k) == 0
   t - 2.95
 end
 
@@ -35,7 +35,7 @@ affect! = function (integrator)
   integrator.u = integrator.u .+ 2
 end
 
-callback = ContinuousCallback(condtion,affect!)
+callback = ContinuousCallback(condition,affect!)
 
 sol = solve(prob,Tsit5(),callback=callback,abstol=1e-8,reltol=1e-6)
 
@@ -44,7 +44,7 @@ f = function (du,u,p,t)
   du[2] = -9.81
 end
 
-condtion= function (u,t,integrator) # Event when event_f(u,t,k) == 0
+condition= function (u,t,integrator) # Event when event_f(u,t,k) == 0
   u[1]
 end
 
@@ -53,7 +53,7 @@ affect_neg! = function (integrator)
   integrator.u[2] = -integrator.u[2]
 end
 
-callback = ContinuousCallback(condtion,affect!,affect_neg!,interp_points=100)
+callback = ContinuousCallback(condition,affect!,affect_neg!,interp_points=100)
 
 u0 = [50.0,0.0]
 tspan = (0.0,15.0)
@@ -62,7 +62,7 @@ prob = ODEProblem(f,u0,tspan)
 
 sol = solve(prob,Tsit5(),callback=callback,adaptive=false,dt=1/4)
 
-condtion_single = function (u,t,integrator) # Event when event_f(u,t,k) == 0
+condition_single = function (u,t,integrator) # Event when event_f(u,t,k) == 0
   u
 end
 
@@ -71,7 +71,7 @@ affect_neg! = function (integrator)
   integrator.u[2] = -integrator.u[2]
 end
 
-callback_single = ContinuousCallback(condtion_single,affect!,affect_neg!,interp_points=100,idxs=1)
+callback_single = ContinuousCallback(condition_single,affect!,affect_neg!,interp_points=100,idxs=1)
 
 u0 = [50.0,0.0]
 tspan = (0.0,15.0)
@@ -112,13 +112,13 @@ sol3= solve(prob,Vern6(),saveat=[.5])
 
 ## Saving callback
 
-condtion = function (u,t,integrator)
+condition = function (u,t,integrator)
   true
 end
 affect! = function (integrator) end
 
 save_positions = (true,false)
-saving_callback = DiscreteCallback(condtion,affect!,save_positions=save_positions)
+saving_callback = DiscreteCallback(condition,affect!,save_positions=save_positions)
 
 sol4 = solve(prob,Tsit5(),callback=saving_callback)
 
@@ -127,7 +127,7 @@ sol4 = solve(prob,Tsit5(),callback=saving_callback)
 affect! = function (integrator)
   u_modified!(integrator,false)
 end
-saving_callback2 = DiscreteCallback(condtion,affect!,save_positions=save_positions)
+saving_callback2 = DiscreteCallback(condition,affect!,save_positions=save_positions)
 sol4 = solve(prob,Tsit5(),callback=saving_callback2)
 
 cbs = CallbackSet(saving_callback,saving_callback2)
@@ -135,21 +135,29 @@ sol4_extra = solve(prob,Tsit5(),callback=cbs)
 
 @test length(sol4_extra) == 2length(sol4) - 1
 
-condtion= function (u,t,integrator)
+condition= function (u,t,integrator)
   u[1]
 end
 
-affect! = function (integrator)
-  terminate!(integrator)
+affect! = function (integrator, retcode = nothing)
+  if retcode === nothing
+    terminate!(integrator)
+  else
+    terminate!(integrator, retcode)
+  end
 end
 
-terminate_callback = ContinuousCallback(condtion,affect!)
+terminate_callback = ContinuousCallback(condition,affect!)
+custom_retcode_callback = ContinuousCallback(condition,x->affect!(x,:Custom))
 
 tspan2 = (0.0,Inf)
 prob2 = ODEProblem(f,u0,tspan2)
 
 sol5 = solve(prob2,Tsit5(),callback=terminate_callback)
+sol5_1 = solve(prob2,Tsit5(),callback=custom_retcode_callback)
 
+@test sol5.retcode == :Terminated
+@test sol5_1.retcode == :Custom
 @test sol5[end][1] < 3e-12
 @test sol5.t[end] ≈ sqrt(50*2/9.81)
 
@@ -160,7 +168,7 @@ affect2! = function (integrator)
     integrator.u[2] = -integrator.u[2]
   end
 end
-terminate_callback2 = ContinuousCallback(condtion,nothing,affect2!,interp_points=100)
+terminate_callback2 = ContinuousCallback(condition,nothing,affect2!,interp_points=100)
 
 
 sol5 = solve(prob2,Vern7(),callback=terminate_callback2)
@@ -168,7 +176,7 @@ sol5 = solve(prob2,Vern7(),callback=terminate_callback2)
 @test sol5[end][1] < 1.3e-10
 @test sol5.t[end] ≈ 3*sqrt(50*2/9.81)
 
-condtion= function (u,t,integrator) # Event when event_f(u,t,k) == 0
+condition= function (u,t,integrator) # Event when event_f(u,t,k) == 0
   t-4
 end
 
@@ -176,7 +184,7 @@ affect! = function (integrator)
   terminate!(integrator)
 end
 
-terminate_callback3 = ContinuousCallback(condtion,affect!,interp_points=1000)
+terminate_callback3 = ContinuousCallback(condition,affect!,interp_points=1000)
 
 bounce_then_exit = CallbackSet(callback,terminate_callback3)
 

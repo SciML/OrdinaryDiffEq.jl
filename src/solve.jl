@@ -350,6 +350,9 @@ function DiffEqBase.solve!(integrator::ODEIntegrator)
   if DiffEqBase.has_analytic(f)
     DiffEqBase.calculate_solution_errors!(integrator.sol;timeseries_errors=integrator.opts.timeseries_errors,dense_errors=integrator.opts.dense_errors)
   end
+  if integrator.sol.retcode != :Default
+    return integrator.sol
+  end
   integrator.sol = DiffEqBase.solution_new_retcode(integrator.sol,:Success)
 end
 
