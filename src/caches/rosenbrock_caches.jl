@@ -735,7 +735,7 @@ struct Rosenbrock5ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
   tab::Tab
 end
 
-@cache mutable struct Rosenbrock5Cache{uType,rateType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+@cache mutable struct Rosenbrock5Cache{uType,rateType,kType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   dense1::rateType
@@ -743,14 +743,14 @@ end
   du::rateType
   du1::rateType
   du2::rateType
-  k1::rateType
-  k2::rateType
-  k3::rateType
-  k4::rateType
-  k5::rateType
-  k6::rateType
-  k7::rateType
-  k8::rateType
+  k1::kType
+  k2::kType
+  k3::kType
+  k4::kType
+  k5::kType
+  k6::kType
+  k7::kType
+  k8::kType
   fsalfirst::rateType
   fsallast::rateType
   dT::rateType
@@ -772,14 +772,14 @@ function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   du = zero(rate_prototype)
   du1 = zero(rate_prototype)
   du2 = zero(rate_prototype)
-  k1 = zero(rate_prototype)
-  k2 = zero(rate_prototype)
-  k3 = zero(rate_prototype)
-  k4 = zero(rate_prototype)
-  k5 = zero(rate_prototype)
-  k6 = zero(rate_prototype)
-  k7 = zero(rate_prototype)
-  k8 = zero(rate_prototype)
+  k1 = rate_prototype isa Adjoint ? zero(rate_prototype') : zero(rate_prototype)
+  k2 = zero(k1)
+  k3 = zero(k1)
+  k4 = zero(k1)
+  k5 = zero(k1)
+  k6 = zero(k1)
+  k7 = zero(k1)
+  k8 = zero(k1)
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = zero(rate_prototype)
