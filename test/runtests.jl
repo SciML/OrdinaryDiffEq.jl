@@ -31,6 +31,7 @@ if group == "All" || group == "Interface"
   @time @safetestset "Composite Interpolation Tests" begin include("composite_interpolation.jl") end
   @time @safetestset "Export tests" begin include("export_tests.jl") end
   @time @safetestset "Derivative Utilities Tests" begin include("utility_tests.jl") end
+  @time @safetestset "Discrete Callback Dual Tests" begin include("discrete_callback_dual_test.jl") end
 end
 
 if group == "All" || group == "Integrators"

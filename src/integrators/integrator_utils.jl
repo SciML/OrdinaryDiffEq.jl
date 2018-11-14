@@ -208,15 +208,18 @@ function stepsize_controller!(integrator, alg::QNDF)
   cnt = integrator.iter
   if cnt <= 3
     # std controller
-    qtmp = integrator.EEst^(1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1))/integrator.opts.gamma
-    @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
-    integrator.qold = integrator.dt/q
-    return q
+    if EEst == zero(EEst)
+      q = inv(integrator.opts.qmax)
+    else
+      qtmp = integrator.EEst^(1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1))/integrator.opts.gamma
+      @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
+      integrator.qold = integrator.dt/q
+    end
   else
     q = integrator.dt/integrator.cache.h
     integrator.qold = integrator.dt/q
-    return q
   end
+  q
 end
 
 function step_accept_controller!(integrator,alg::QNDF,q)
