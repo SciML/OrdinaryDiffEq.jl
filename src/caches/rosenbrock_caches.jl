@@ -122,8 +122,8 @@ struct Rosenbrock23ConstantCache{T,TF,UF} <: OrdinaryDiffEqConstantCache
 end
 
 function Rosenbrock23ConstantCache(T::Type,tf,uf)
-  c₃₂ = T(6 + sqrt(2))
-  d = T(1/(2+sqrt(2)))
+  c₃₂ = convert(T,6 + sqrt(2))
+  d = convert(T,1/(2+sqrt(2)))
   Rosenbrock23ConstantCache(c₃₂,d,tf,uf)
 end
 
@@ -141,8 +141,8 @@ struct Rosenbrock32ConstantCache{T,TF,UF} <: OrdinaryDiffEqConstantCache
 end
 
 function Rosenbrock32ConstantCache(T::Type,tf,uf)
-  c₃₂ = T(6 + sqrt(2))
-  d = T(1/(2+sqrt(2)))
+  c₃₂ = convert(T,6 + sqrt(2))
+  d = convert(T,1/(2+sqrt(2)))
   Rosenbrock32ConstantCache(c₃₂,d,tf,uf)
 end
 
