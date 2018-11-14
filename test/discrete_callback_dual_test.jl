@@ -21,4 +21,13 @@ function test_fun(tstop)
     sol(1.0)
 end
 
-ForwardDiff.derivative(test_fun, 0.5) ≈ exp(0.5)*u0 # Analytical solution: exp(tstop)*u0
+@test ForwardDiff.derivative(test_fun, 0.5) ≈ exp(0.5)*u0 # Analytical solution: exp(tstop)*u0
+
+function test_fun(tstop)
+    DualT = typeof(tstop)
+    prob = ODEProblem((u,p,t) -> p*u, DualT(u0), DualT.(tspan), DualT(p))
+    sol = solve(prob, Tsit5(), callback=stopping_cb(tstop), tstops=[tstop], adaptive=false, dt=0.01)
+    sol(1.0)
+end
+
+@test ForwardDiff.derivative(test_fun, 0.5) ≈ exp(0.5)*u0 # Analytical solution: exp(tstop)*u0
