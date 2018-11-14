@@ -162,12 +162,16 @@ end
 function stepsize_controller!(integrator,alg)
   # PI-controller
   EEst,beta1,q11,qold,beta2 = integrator.EEst, integrator.opts.beta1, integrator.q11,integrator.qold,integrator.opts.beta2
-  @fastmath q11 = EEst^beta1
-  @fastmath q = q11/(qold^beta2)
-  integrator.q11 = q11
-  @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),q/integrator.opts.gamma))
-  if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
-    q = one(q)
+  if EEst == zero(EEst)
+    q = inv(integrator.opts.qmax)
+  else
+    @fastmath q11 = EEst^beta1
+    @fastmath q = q11/(qold^beta2)
+    integrator.q11 = q11
+    @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),q/integrator.opts.gamma))
+    if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
+      q = one(q)
+    end
   end
   q
 end
@@ -185,8 +189,12 @@ const StandardControllerAlgs = Union{GenericImplicitEuler,GenericTrapezoid,VCABM
 
 function stepsize_controller!(integrator, alg::JVODE)
   #η = choose_η!(integrator, integrator.cache)
-  η = integrator.cache.η
-  integrator.qold = η
+  if EEst == zero(EEst)
+    η = integrator.opts.qmax
+  else
+    η = integrator.cache.η
+    integrator.qold = η
+  end
   η
 end
 function step_accept_controller!(integrator,alg::JVODE,η)
@@ -210,6 +218,7 @@ function stepsize_controller!(integrator, alg::QNDF)
     return q
   end
 end
+
 function step_accept_controller!(integrator,alg::QNDF,q)
   return integrator.dt/q  # dtnew
 end
@@ -221,9 +230,13 @@ end
 function stepsize_controller!(integrator,alg::Union{StandardControllerAlgs,
                               OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Standard}})
   # Standard stepsize controller
-  qtmp = integrator.EEst^(1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1))/integrator.opts.gamma
-  @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
-  integrator.qold = integrator.dt/q
+  if EEst == zero(EEst)
+    q = inv(integrator.opts.qmax)
+  else
+    qtmp = integrator.EEst^(1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1))/integrator.opts.gamma
+    @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
+    integrator.qold = integrator.dt/q
+  end
   q
 end
 function step_accept_controller!(integrator,alg::Union{StandardControllerAlgs,
@@ -239,16 +252,21 @@ function stepsize_controller!(integrator,
                         alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Predictive})
 
   # Gustafsson predictive stepsize controller
-  gamma = integrator.opts.gamma
-  niters = integrator.cache.newton_iters
-  fac = min(gamma,(1+2*integrator.alg.max_newton_iter)*gamma/(niters+2*integrator.alg.max_newton_iter))
-  expo = 1/(get_current_alg_order(integrator.alg,integrator.cache)+1)
-  qtmp = (integrator.EEst^expo)/fac
-  @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
-  if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
-    q = one(q)
+
+  if EEst == zero(EEst)
+    q = inv(integrator.opts.qmax)
+  else
+    gamma = integrator.opts.gamma
+    niters = integrator.cache.newton_iters
+    fac = min(gamma,(1+2*integrator.alg.max_newton_iter)*gamma/(niters+2*integrator.alg.max_newton_iter))
+    expo = 1/(get_current_alg_order(integrator.alg,integrator.cache)+1)
+    qtmp = (integrator.EEst^expo)/fac
+    @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
+    if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
+      q = one(q)
+    end
+    integrator.qold = q
   end
-  integrator.qold = q
   q
 end
 function step_accept_controller!(integrator,
