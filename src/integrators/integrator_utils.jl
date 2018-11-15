@@ -233,7 +233,7 @@ end
 function stepsize_controller!(integrator,alg::Union{StandardControllerAlgs,
                               OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Standard}})
   # Standard stepsize controller
-  if EEst == zero(EEst)
+  if integrator.EEst == zero(integrator.EEst)
     q = inv(integrator.opts.qmax)
   else
     qtmp = integrator.EEst^(1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1))/integrator.opts.gamma
