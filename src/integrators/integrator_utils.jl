@@ -162,7 +162,7 @@ end
 function stepsize_controller!(integrator,alg)
   # PI-controller
   EEst,beta1,q11,qold,beta2 = integrator.EEst, integrator.opts.beta1, integrator.q11,integrator.qold,integrator.opts.beta2
-  if EEst == zero(EEst)
+  if iszero(EEst)
     q = inv(integrator.opts.qmax)
   else
     @fastmath q11 = EEst^beta1
@@ -189,7 +189,7 @@ const StandardControllerAlgs = Union{GenericImplicitEuler,GenericTrapezoid,VCABM
 
 function stepsize_controller!(integrator, alg::JVODE)
   #η = choose_η!(integrator, integrator.cache)
-  if EEst == zero(EEst)
+  if iszero(integrator.EEst)
     η = integrator.opts.qmax
   else
     η = integrator.cache.η
@@ -208,7 +208,7 @@ function stepsize_controller!(integrator, alg::QNDF)
   cnt = integrator.iter
   if cnt <= 3
     # std controller
-    if EEst == zero(EEst)
+    if iszero(integrator.EEst)
       q = inv(integrator.opts.qmax)
     else
       qtmp = integrator.EEst^(1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1))/integrator.opts.gamma
@@ -233,7 +233,7 @@ end
 function stepsize_controller!(integrator,alg::Union{StandardControllerAlgs,
                               OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Standard}})
   # Standard stepsize controller
-  if EEst == zero(EEst)
+  if iszero(integrator.EEst)
     q = inv(integrator.opts.qmax)
   else
     qtmp = integrator.EEst^(1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1))/integrator.opts.gamma
@@ -256,7 +256,7 @@ function stepsize_controller!(integrator,
 
   # Gustafsson predictive stepsize controller
 
-  if EEst == zero(EEst)
+  if iszero(integrator.EEst)
     q = inv(integrator.opts.qmax)
   else
     gamma = integrator.opts.gamma
