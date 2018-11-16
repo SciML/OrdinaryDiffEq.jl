@@ -34,12 +34,12 @@ u0 = [0.2]
 tspan = (0.0,50.0)
 prob = ODEProblem(f,u0,tspan)
 
-# Check if stochastic errors
+println("Check for stochastic errors")
 for i in 1:50
     sol = solve(prob,Tsit5(),callback=callback)
 end
 
-
+println("Check some other integrators")
 sol = solve(prob,GenericImplicitEuler(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/2)
 sol = solve(prob,GenericTrapezoid(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/2)
 sol = solve(prob,Rosenbrock23(chunk_size=1),callback=callback,dt=1/2)
