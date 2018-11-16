@@ -182,9 +182,9 @@ function DiffEqBase.__init(
     sizehint!(ts,steps+1)
     sizehint!(ks,steps+1)
   elseif save_everystep
-    sizehint!(timeseries,1000)
-    sizehint!(ts,1000)
-    sizehint!(ks,1000)
+    sizehint!(timeseries,100)
+    sizehint!(ts,100)
+    sizehint!(ks,100)
   elseif !isempty(saveat_internal)
     sizehint!(timeseries,length(saveat_internal)+1)
     sizehint!(ts,length(saveat_internal)+1)
