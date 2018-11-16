@@ -335,7 +335,9 @@ function DiffEqBase.solve!(integrator::ODEIntegrator)
   @inbounds while !isempty(integrator.opts.tstops)
     while integrator.tdir*integrator.t < integrator.tdir*top(integrator.opts.tstops)
       loopheader!(integrator)
-      @ode_exit_conditions
+      if check_error!(integrator) != :Success
+        return integrator.sol
+      end
       perform_step!(integrator,integrator.cache)
       loopfooter!(integrator)
       if isempty(integrator.opts.tstops)

@@ -28,12 +28,6 @@ end
 last_step_failed(integrator::ODEIntegrator) =
   integrator.last_stepfail && !integrator.opts.adaptive
 
-@def ode_exit_conditions begin
-  if check_error!(integrator) != :Success
-    return integrator.sol
-  end
-end
-
 function modify_dt_for_tstops!(integrator)
   tstops = integrator.opts.tstops
   if !isempty(tstops)
