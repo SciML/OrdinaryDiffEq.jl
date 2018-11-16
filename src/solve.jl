@@ -382,7 +382,7 @@ function tstop_saveat_disc_handling(tstops,saveat,d_discontinuities,tdir,tspan,t
   if isempty(d_discontinuities) && isempty(tstops) # TODO: Specialize more
     tstops_vec = [tspan[2]]
   else
-    tstops_vec = vec(collect(tType,Iterators.filter(x->tdir*tspan[1]<tdir*x≤tdir*tspan[end],Iterators.flatten((tstops,d_discontinuities,tspan[end])))))
+    nothing
   end
 
   if tdir>0
