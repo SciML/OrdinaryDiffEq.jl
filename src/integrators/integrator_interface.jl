@@ -56,26 +56,23 @@ function set_proposed_dt!(integrator::ODEIntegrator,integrator2::ODEIntegrator)
   nothing
 end
 
-@inline function DiffEqBase.get_du(integrator::ODEIntegrator)
-  integrator.fsallast
-end
-
-@inline function DiffEqBase.get_du!(out,integrator::ODEIntegrator)
+DiffEqBase.get_du(integrator::ODEIntegrator) = integrator.fsallast
+function DiffEqBase.get_du!(out,integrator::ODEIntegrator)
   out .= integrator.fsallast
   nothing
 end
 
 #TODO: Bigger caches for most algorithms
-@inline DiffEqBase.get_tmp_cache(integrator::ODEIntegrator) =
+DiffEqBase.get_tmp_cache(integrator::ODEIntegrator) =
           get_tmp_cache(integrator::ODEIntegrator,integrator.alg,integrator.cache)
 # avoid method ambiguity
 for typ in (OrdinaryDiffEqAlgorithm,OrdinaryDiffEqNewtonAdaptiveAlgorithm,OrdinaryDiffEqRosenbrockAdaptiveAlgorithm)
-  @eval @inline DiffEqBase.get_tmp_cache(integrator,alg::$typ,cache::OrdinaryDiffEqConstantCache) = nothing
+  @eval DiffEqBase.get_tmp_cache(integrator,alg::$typ,cache::OrdinaryDiffEqConstantCache) = nothing
 end
-@inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqAlgorithm,cache) = (cache.tmp,)
-@inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm,cache) = (cache.tmp,cache.atmp)
-@inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,cache) = (cache.tmp,cache.linsolve_tmp)
-@inline DiffEqBase.get_tmp_cache(integrator,alg::CompositeAlgorithm, cache) = get_tmp_cache(integrator, integrator.alg.algs[1], cache.caches[1])
+DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqAlgorithm,cache) = (cache.tmp,)
+DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm,cache) = (cache.tmp,cache.atmp)
+DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,cache) = (cache.tmp,cache.linsolve_tmp)
+DiffEqBase.get_tmp_cache(integrator,alg::CompositeAlgorithm, cache) = get_tmp_cache(integrator, integrator.alg.algs[1], cache.caches[1])
 
 full_cache(integrator::ODEIntegrator) = full_cache(integrator.cache)
 

@@ -1,4 +1,4 @@
-@inline function step!(integrator::ODEIntegrator)
+function step!(integrator::ODEIntegrator)
   if integrator.opts.advance_to_tstop
     @inbounds while integrator.tdir*integrator.t < integrator.tdir*top(integrator.opts.tstops)
       loopheader!(integrator)

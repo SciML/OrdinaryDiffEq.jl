@@ -3243,6 +3243,6 @@ end
 
 const Vern9CCFloat64 = Vern9ConstantCache(Float64,Float64)
 
-function Vern9ConstantCache(::Type{Float64},::Type{Float64})
+Base.@pure function Vern9ConstantCache(::Type{Float64},::Type{Float64})
   Vern9CCFloat64
 end
