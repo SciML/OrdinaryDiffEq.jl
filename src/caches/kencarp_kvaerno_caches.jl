@@ -8,7 +8,8 @@ function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   @oopnlcachefields
   tab = KenCarp3Tableau(uToltype,real(tTypeNoUnits))
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,tab.c3,ηold,z₊,dz,tmp,b,k))
+  γ, c = tab.γ, tab.c3
+  @oopnlsolve
 
   KenCarp3ConstantCache(uf,nlsolve,tab)
 end
@@ -56,7 +57,8 @@ function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
     uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   end
   tab = KenCarp3Tableau(uToltype,real(tTypeNoUnits))
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,tab.c3,ηold,z₊,dz,tmp,b,k))
+  γ, c = tab.γ, tab.c3
+  @iipnlsolve
 
   KenCarp3Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,k1,k2,k3,k4,dz,b,tmp,atmp,J,
                 W,uf,jac_config,linsolve,nlsolve,tab)
@@ -75,7 +77,8 @@ function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   tprev2 = t
 
   tab = Kvaerno4Tableau(uToltype,real(tTypeNoUnits))
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,tab.c3,ηold,z₊,dz,tmp,b,k))
+  γ, c = tab.γ, tab.c3
+  @oopnlsolve
 
   Kvaerno4ConstantCache(uf,nlsolve,tab)
 end
@@ -112,7 +115,8 @@ function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   z₅ = z
   atmp = similar(u,uEltypeNoUnits)
   tab = Kvaerno4Tableau(uToltype,real(tTypeNoUnits))
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,tab.c3,ηold,z₊,dz,tmp,b,k))
+  γ, c = tab.γ, tab.c3
+  @iipnlsolve
 
   Kvaerno4Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,dz,b,tmp,atmp,J,
                 W,uf,jac_config,linsolve,nlsolve,tab)
@@ -130,7 +134,8 @@ function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   uprev3 = u
   tprev2 = t
   tab = KenCarp4Tableau(uToltype,real(tTypeNoUnits))
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,tab.c3,ηold,z₊,dz,tmp,b,k))
+  γ, c = tab.γ, tab.c3
+  @oopnlsolve
 
   KenCarp4ConstantCache(uf,nlsolve,tab)
 end
@@ -186,7 +191,8 @@ function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   end
 
   tab = KenCarp4Tableau(uToltype,real(tTypeNoUnits))
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,tab.c3,ηold,z₊,dz,tmp,b,k))
+  γ, c = tab.γ, tab.c3
+  @iipnlsolve
 
   KenCarp4Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,z₆,k1,k2,k3,k4,k5,k6,
                 dz,b,tmp,atmp,J,
@@ -203,7 +209,8 @@ function alg_cache(alg::Kvaerno5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   @oopnlcachefields
   tab = Kvaerno5Tableau(uToltype,real(tTypeNoUnits))
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,tab.c3,ηold,z₊,dz,tmp,b,k))
+  γ, c = tab.γ, tab.c3
+  @oopnlsolve
 
   Kvaerno5ConstantCache(uf,nlsolve,tab)
 end
@@ -243,7 +250,8 @@ function alg_cache(alg::Kvaerno5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   z₇ = z
   atmp = similar(u,uEltypeNoUnits)
   tab = Kvaerno5Tableau(uToltype,real(tTypeNoUnits))
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,tab.c3,ηold,z₊,dz,tmp,b,k))
+  γ, c = tab.γ, tab.c3
+  @iipnlsolve
 
   Kvaerno5Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,z₆,z₇,dz,b,tmp,atmp,J,
                 W,uf,jac_config,linsolve,nlsolve,tab)
@@ -259,7 +267,8 @@ function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   @oopnlcachefields
   tab = KenCarp5Tableau(uToltype,real(tTypeNoUnits))
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,tab.c3,ηold,z₊,dz,tmp,b,k))
+  γ, c = tab.γ, tab.c3
+  @oopnlsolve
 
   KenCarp5ConstantCache(uf,nlsolve,tab)
 end
@@ -322,7 +331,8 @@ function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   end
 
   tab = KenCarp5Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,tab.γ,tab.c3,ηold,z₊,dz,tmp,b,k))
+  γ, c = tab.γ, tab.c3
+  @iipnlsolve
 
   KenCarp5Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,
                 k1,k2,k3,k4,k5,k6,k7,k8,

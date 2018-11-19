@@ -31,7 +31,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 978-3-642-05221-7. Section IV.8.
 [doi:10.1007/978-3-642-05221-7](https://doi.org/10.1007/978-3-642-05221-7)
 """
-function (S::NLNewton{false})(integrator)
+function (S::NLNewton{false,<:NLSolverCache})(integrator)
   nlcache = S.cache
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z,tmp,W,κ,tol,c,γ,max_iter,min_iter = nlcache
@@ -84,7 +84,7 @@ function (S::NLNewton{false})(integrator)
   return (z, η, iter, false)
 end
 
-function (S::NLNewton{true})(integrator)
+function (S::NLNewton{true,<:NLSolverCache})(integrator)
   nlcache = S.cache
   cache = integrator.cache
   @unpack t,dt,uprev,u,f,p = integrator

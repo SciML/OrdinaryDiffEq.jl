@@ -922,7 +922,8 @@ function alg_cache(alg::CNAB2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   uprev3 = u
   tprev2 = t
 
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//2,1,ηold,z₊,dz,tmp,b,k))
+  γ, c = 1//2, 1
+  @oopnlsolve
   CNAB2ConstantCache(k2,uf,nlsolve,uprev3,tprev2)
 end
 
@@ -936,7 +937,8 @@ function alg_cache(alg::CNAB2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   uprev3 = similar(u)
   tprev2 = t
 
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//2,1,ηold,z₊,dz,tmp,b,k))
+  γ, c = 1//2, 1
+  @iipnlsolve
   CNAB2Cache(u,uprev,uprev2,fsalfirst,k,k1,k2,du₁,du1,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolve,uprev3,tprev2)
 end
 
@@ -983,7 +985,8 @@ function alg_cache(alg::CNLF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   uprev3 = u
   tprev2 = t
 
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//1,1,ηold,z₊,dz,tmp,b,k))
+  γ, c = 1//1, 1
+  @oopnlsolve
   CNLF2ConstantCache(k2,uf,nlsolve,uprev2,uprev3,tprev2)
 end
 
@@ -998,6 +1001,7 @@ function alg_cache(alg::CNLF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   uprev3 = similar(u)
   tprev2 = t
 
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//1,1,ηold,z₊,dz,tmp,b,k))
+  γ, c = 1//1, 1
+  @iipnlsolve
   CNLF2Cache(u,uprev,uprev2,fsalfirst,k,k1,k2,du₁,du1,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolve,uprev3,tprev2)
 end
