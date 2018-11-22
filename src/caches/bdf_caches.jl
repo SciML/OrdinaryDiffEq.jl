@@ -9,7 +9,8 @@ end
 function alg_cache(alg::ABDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   @oopnlcachefields
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//1,1,ηold,z₊,dz,tmp,b,k))
+  γ, c = 1//1, 1
+  @oopnlsolve
   eulercache = ImplicitEulerConstantCache(uf,nlsolve)
   dtₙ₋₁ = one(dt)
   fsalfirstprev = rate_prototype
@@ -45,7 +46,8 @@ end
 function alg_cache(alg::ABDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   @iipnlcachefields
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//1,1,ηold,z₊,dz,tmp,b,k))
+  γ, c = 1//1, 1
+  @iipnlsolve
   atmp = similar(u,uEltypeNoUnits)
 
   fsalfirstprev = similar(rate_prototype)
@@ -115,7 +117,8 @@ function alg_cache(alg::SBDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   du₁ = rate_prototype
   du₂ = rate_prototype
 
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//1,1,ηold,z₊,dz,tmp,b,k))
+  γ, c = 1//1, 1
+  @oopnlsolve
   SBDFConstantCache(1,k2,uf,nlsolve,uprev2,uprev3,uprev4,k₁,k₂,k₃,du₁,du₂)
 end
 
@@ -132,7 +135,8 @@ function alg_cache(alg::SBDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   du₁ = zero(rate_prototype)
   du₂ = zero(rate_prototype)
 
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,1//1,1,ηold,z₊,dz,tmp,b,k))
+  γ, c = 1//1, 1
+  @iipnlsolve
   SBDFCache(1,u,uprev,fsalfirst,k,du1,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolve,uprev2,uprev3,uprev4,k₁,k₂,k₃,du₁,du₂)
 end
 
@@ -184,7 +188,8 @@ function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   U = fill(zero(typeof(t)), 1, 1)
 
   U!(1,U)
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,zero(inv((1-alg.kappa))),1,ηold,z₊,dz,tmp,b,k))
+  γ, c = zero(inv((1-alg.kappa))), 1
+  @oopnlsolve
 
   QNDF1ConstantCache(uf,nlsolve,D,D2,R,U,uprev2,dtₙ₋₁)
 end
@@ -205,7 +210,8 @@ function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   utilde = similar(u)
   uprev2 = similar(u)
   dtₙ₋₁ = one(dt)
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,zero(inv((1-alg.kappa))),1,ηold,z₊,dz,tmp,b,k))
+  γ, c = zero(inv((1-alg.kappa))), 1
+  @iipnlsolve
 
   QNDF1Cache(uprev2,du1,fsalfirst,k,z,dz,b,D,D2,R,U,tmp,atmp,utilde,J,
               W,uf,jac_config,linsolve,nlsolve,dtₙ₋₁)
@@ -266,7 +272,8 @@ function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
 
   U!(2,U)
 
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,zero(inv((1-alg.kappa))),1,ηold,z₊,dz,tmp,b,k))
+  γ, c = zero(inv((1-alg.kappa))), 1
+  @oopnlsolve
   QNDF2ConstantCache(uf,nlsolve,D,D2,R,U,uprev2,uprev3,dtₙ₋₁,dtₙ₋₂)
 end
 
@@ -289,7 +296,8 @@ function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   dtₙ₋₁ = zero(dt)
   dtₙ₋₂ = zero(dt)
 
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,zero(inv((1-alg.kappa))),1,ηold,z₊,dz,tmp,b,k))
+  γ, c = zero(inv((1-alg.kappa))), 1
+  @iipnlsolve
   QNDF2Cache(uprev2,uprev3,du1,fsalfirst,k,z,dz,b,D,D2,R,U,tmp,atmp,utilde,J,
              W,uf,jac_config,linsolve,nlsolve,dtₙ₋₁,dtₙ₋₂)
 end
@@ -352,7 +360,8 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
 
   max_order = 5
 
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,zero(eltype(alg.kappa)),1,ηold,z₊,dz,tmp,b,k))
+  γ, c = zero(inv((alg.kappa))), 1
+  @oopnlsolve
   QNDFConstantCache(uf,nlsolve,D,D2,R,U,1,max_order,udiff,dts,tmp,h,0)
 end
 
@@ -382,7 +391,8 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   max_order = 5
   atmp = similar(u,uEltypeNoUnits)
   utilde = similar(u)
-  nlsolve = typeof(_nlsolve)(NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,zero(eltype(alg.kappa)),1,ηold,z₊,dz,tmp,b,k))
+  γ, c = zero(inv((alg.kappa))), 1
+  @iipnlsolve
 
   QNDFCache(du1,fsalfirst,k,z,dz,b,D,D2,R,U,1,max_order,udiff,dts,tmp,atmp,utilde,J,
             W,uf,jac_config,linsolve,nlsolve,h,0)

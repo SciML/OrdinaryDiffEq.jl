@@ -20,15 +20,15 @@ mutable struct NLSolverCache{rateType,uType,W,uToltype,cType,gType} <: AbstractN
   k::rateType
 end
 
-struct NLFunctional{iip} <: AbstractNLsolveSolver
-  cache::NLSolverCache
+struct NLFunctional{iip,T<:NLSolverCache} <: AbstractNLsolveSolver
+  cache::T
 end
-struct NLAnderson{iip} <: AbstractNLsolveSolver
-  cache::NLSolverCache
+struct NLAnderson{iip,T<:NLSolverCache} <: AbstractNLsolveSolver
+  cache::T
   n::Int
 end
-struct NLNewton{iip} <: AbstractNLsolveSolver
-  cache::NLSolverCache
+struct NLNewton{iip,T<:NLSolverCache} <: AbstractNLsolveSolver
+  cache::T
 end
 
 NLSolverCache(;κ=nothing, tol=nothing, min_iter=1, max_iter=10) =
@@ -36,10 +36,15 @@ NLSolverCache(κ, tol, min_iter, max_iter, 0, true,
               (nothing for i in 1:10)...)
 
 # Default `iip` to `true`, but the whole type will be reinitialized in `alg_cache`
-NLFunctional(;kwargs...) = NLFunctional{true}(NLSolverCache(;kwargs...))
-NLAnderson(n=5; kwargs...) = NLAnderson{true}(NLSolverCache(;kwargs...), n)
-NLNewton(;kwargs...) = NLNewton{true}(NLSolverCache(;kwargs...))
-
-oop_nlsolver(s::NLFunctional{true}) = NLFunctional{false}(s.cache)
-oop_nlsolver(s::NLAnderson{true}) = NLAnderson{false}(s.cache, s.n)
-oop_nlsolver(s::NLNewton{true}) = NLNewton{false}(s.cache)
+function NLFunctional(;kwargs...)
+  nlcache = NLSolverCache(;kwargs...)
+  NLFunctional{true, typeof(nlcache)}(nlcache)
+end
+function NLAnderson(n=5; kwargs...)
+  nlcache = NLSolverCache(;kwargs...)
+  NLAnderson{true, typeof(nlcache)}(nlcache, n)
+end
+function NLNewton(;kwargs...)
+  nlcache = NLSolverCache(;kwargs...)
+  NLNewton{true, typeof(nlcache)}(nlcache)
+end
