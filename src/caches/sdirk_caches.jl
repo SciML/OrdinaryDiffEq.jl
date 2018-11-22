@@ -14,7 +14,7 @@ DiffEqBase.@def iipnlcachefields begin
   if islin && alg.nlsolve isa NLNewton
     # get the operator
     J = nf.f
-    W = WOperator(f.mass_matrix, dt, J)
+    W = WOperator(f.mass_matrix, dt, J, true)
     du1 = rate_prototype
     uf = nothing
     jac_config = nothing
@@ -22,7 +22,7 @@ DiffEqBase.@def iipnlcachefields begin
     z₊ = z
   elseif alg.nlsolve isa NLNewton
     if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
-      W = WOperator(f, dt)
+      W = WOperator(f, dt, inplace)
       J = nothing # is J = W.J better?
     else
       J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
@@ -74,7 +74,7 @@ DiffEqBase.@def oopnlcachefields begin
     if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
       J = DiffEqArrayOperator(J)
     end
-    W = WOperator(f.mass_matrix, dt, J)
+    W = WOperator(f.mass_matrix, dt, J, false)
   else
     W = typeof(u) <: Number ? u : Matrix{uEltypeNoUnits}(undef, 0, 0) # uEltype?
   end

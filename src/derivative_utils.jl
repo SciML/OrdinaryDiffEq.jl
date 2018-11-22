@@ -119,12 +119,13 @@ mutable struct WOperator{T,
   gamma::GType
   J::JType
   transform::Bool       # true => W = mm/gamma - J; false => W = mm - gamma*J
+  inplace::Bool
   _func_cache           # cache used in `mul!`
   _concrete_form         # non-lazy form (matrix/number) of the operator
-  WOperator(mass_matrix, gamma, J; transform=false) = new{eltype(J),typeof(mass_matrix),
-    typeof(gamma),typeof(J)}(mass_matrix,gamma,J,transform,nothing,nothing)
+  WOperator(mass_matrix, gamma, J, inplace; transform=false) = new{eltype(J),typeof(mass_matrix),
+    typeof(gamma),typeof(J)}(mass_matrix,gamma,J,inplace,transform,nothing,nothing)
 end
-function WOperator(f::DiffEqBase.AbstractODEFunction, gamma; transform=false)
+function WOperator(f::DiffEqBase.AbstractODEFunction, gamma, inplace; transform=false)
   @assert DiffEqBase.has_jac(f) "f needs to have an associated jacobian"
   if isa(f, Union{SplitFunction, DynamicalODEFunction})
     error("WOperator does not support $(typeof(f)) yet")
@@ -139,13 +140,13 @@ function WOperator(f::DiffEqBase.AbstractODEFunction, gamma; transform=false)
   if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
     J = DiffEqArrayOperator(J; update_func=f.jac)
   end
-  return WOperator(mass_matrix, gamma, J; transform=transform)
+  return WOperator(mass_matrix, gamma, J, inplace; transform=transform)
 end
 
 set_gamma!(W::WOperator, gamma) = (W.gamma = gamma; W)
 DiffEqBase.update_coefficients!(W::WOperator,u,p,t) = (update_coefficients!(W.J,u,p,t); W)
 function Base.convert(::Type{AbstractMatrix}, W::WOperator)
-  if W._concrete_form == nothing
+  if W._concrete_form == nothing || !W.inplace
     # Allocating
     if W.transform
       W._concrete_form = W.mass_matrix / W.gamma - convert(AbstractMatrix,W.J)
@@ -201,6 +202,7 @@ function Base.:\(W::WOperator, x::Union{AbstractVecOrMat,Number})
     convert(AbstractMatrix,W) \ x
   end
 end
+
 function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrMat)
   if W._func_cache == nothing
     # Allocate cache only if needed
@@ -321,13 +323,13 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
   is_compos = typeof(integrator.alg) <: CompositeAlgorithm
   if (f isa ODEFunction && islinear(f.f)) || (f isa SplitFunction && islinear(f.f1.f))
     J = f.f1.f
-    W = WOperator(mass_matrix, dtgamma, J; transform=W_transform)
+    W = WOperator(mass_matrix, dtgamma, J, false; transform=W_transform)
   elseif DiffEqBase.has_jac(f)
     J = f.jac(uprev, p, t)
     if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
       J = DiffEqArrayOperator(J)
     end
-    W = WOperator(mass_matrix, dtgamma, J; transform=W_transform)
+    W = WOperator(mass_matrix, dtgamma, J, false; transform=W_transform)
   else
     J = calc_J(integrator, cache, is_compos)
     W = W_transform ? mass_matrix*inv(dtgamma) - J :

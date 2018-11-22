@@ -167,7 +167,6 @@ end
   dT = calc_tderivative(integrator, cache)
 
   W = calc_W!(integrator, cache, γ, repeat_step)
-
   k₁ = W\(integrator.fsalfirst + γ*dT)
   f₁ = f(uprev  + dto2*k₁, p, t+dto2)
 
@@ -184,7 +183,6 @@ end
                                integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
-
   integrator.k[1] = k₁
   integrator.k[2] = k₂
   integrator.u = u
