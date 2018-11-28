@@ -1,4 +1,5 @@
 using OrdinaryDiffEq, DiffEqBase, DiffEqCallbacks, Test
+using Random
 CACHE_TEST_ALGS = [Euler(),Midpoint(),RK4(),SSPRK22(),SSPRK33(),SSPRK53(),
   SSPRK63(),SSPRK73(),SSPRK83(),SSPRK432(),SSPRK932(),SSPRK54(),SSPRK104(),CarpenterKennedy2N54(),
   BS3(),BS5(),DP5(),DP5Threaded(),DP8(),Feagin10(),Feagin12(),Feagin14(),TanYam7(),
@@ -35,6 +36,7 @@ tspan = (0.0,50.0)
 prob = ODEProblem(f,u0,tspan)
 
 println("Check for stochastic errors")
+Random.seed!(1)
 for i in 1:50
     sol = solve(prob,Tsit5(),callback=callback)
 end

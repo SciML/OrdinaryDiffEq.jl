@@ -22,7 +22,7 @@ DiffEqBase.@def iipnlcachefields begin
     z₊ = z
   elseif alg.nlsolve isa NLNewton
     if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
-      W = WOperator(f, dt, inplace)
+      W = WOperator(f, dt, true)
       J = nothing # is J = W.J better?
     else
       J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
