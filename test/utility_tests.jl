@@ -4,7 +4,7 @@ using OrdinaryDiffEq, LinearAlgebra, SparseArrays, Random, Test, DiffEqOperators
 @testset "WOperator" begin
   Random.seed!(0); y = zeros(2); b = rand(2)
   mm = I; _J = rand(2,2)
-  W = WOperator(mm, 1.0, DiffEqArrayOperator(_J))
+  W = WOperator(mm, 1.0, DiffEqArrayOperator(_J), false)
   set_gamma!(W, 2.0)
   _W = mm - 2.0 * _J
   @test convert(AbstractMatrix,W) ≈ _W
