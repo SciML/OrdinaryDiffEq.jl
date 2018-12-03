@@ -90,7 +90,7 @@ Calculate element-wise residuals
 ```
 """
 @inline @muladd function calculate_residuals(ũ, u₀, u₁, α, ρ, internalnorm)
-    ũ ./ (α + max.(internalnorm.(u₀), internalnorm.(u₁)) * ρ)
+    @. ũ / (α + max(internalnorm(u₀), internalnorm(u₁)) * ρ)
 end
 
 @inline @muladd function calculate_residuals(ũ::Array{T}, u₀::Array{T}, u₁::Array{T}, α::T2,
@@ -110,7 +110,7 @@ Calculate element-wise residuals
 ```
 """
 @inline @muladd function calculate_residuals(u₀, u₁, α, ρ, internalnorm)
-    (u₁ - u₀) ./ (α + max.(internalnorm.(u₀), internalnorm.(u₁)) * ρ)
+    @. (u₁ - u₀) / (α + max(internalnorm(u₀), internalnorm(u₁)) * ρ)
 end
 
 @inline @muladd function calculate_residuals(u₀::Array{T}, u₁::Array{T}, α::T2,
