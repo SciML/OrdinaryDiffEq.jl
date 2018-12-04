@@ -274,10 +274,10 @@ end
     copyat_or_push!(k,9,f(uprev+dt*(a91*k[1]+a94*k[4]+a95*k[5]+a96*k[6]+a97*k[7]+a98*k[8]),p,t+dt))
   end
   if (allow_calc_end && length(k)< 12) || force_calc_end # Have not added the extra stages yet
-    @unpack c10,a1001,a1004,a1005,a1006,a1007,a1008,a1009,c11,a1101,a1102,a1103,a1104,a1105,a1106,a1107,a1108,a1109,a1110,c12,a1201,a1202,a1203,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211 = cache
+    @unpack c10,a1001,a1004,a1005,a1006,a1007,a1008,a1009,c11,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,c12,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211 = cache
     copyat_or_push!(k,10,f(uprev+dt*(a1001*k[1]+a1004*k[4]+a1005*k[5]+a1006*k[6]+a1007*k[7]+a1008*k[8]+a1009*k[9]),p,t+c10*dt))
-    copyat_or_push!(k,11,f(uprev+dt*(a1101*k[1]+a1102*k[2]+a1103*k[3]+a1104*k[4]+a1105*k[5]+a1106*k[6]+a1107*k[7]+a1108*k[8]+a1109*k[9]+a1110*k[10]),p,t+c11*dt))
-    copyat_or_push!(k,12,f(uprev+dt*(a1201*k[1]+a1202*k[2]+a1203*k[3]+a1204*k[4]+a1205*k[5]+a1206*k[6]+a1207*k[7]+a1208*k[8]+a1209*k[9]+a1210*k[10]+a1211*k[11]),p,t+c12*dt))
+    copyat_or_push!(k,11,f(uprev+dt*(a1101*k[1]+a1104*k[4]+a1105*k[5]+a1106*k[6]+a1107*k[7]+a1108*k[8]+a1109*k[9]+a1110*k[10]),p,t+c11*dt))
+    copyat_or_push!(k,12,f(uprev+dt*(a1201*k[1]+a1204*k[4]+a1205*k[5]+a1206*k[6]+a1207*k[7]+a1208*k[8]+a1209*k[9]+a1210*k[10]+a1211*k[11]),p,t+c12*dt))
   end
   nothing
 end
@@ -333,7 +333,7 @@ end
     copyat_or_push!(k,9,k9)
   end
   if (allow_calc_end && length(k)< 12) || force_calc_end # Have not added the extra stages yet
-    @unpack c10,a1001,a1004,a1005,a1006,a1007,a1008,a1009,c11,a1101,a1102,a1103,a1104,a1105,a1106,a1107,a1108,a1109,a1110,c12,a1201,a1202,a1203,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211 = cache.tab
+    @unpack c10,a1001,a1004,a1005,a1006,a1007,a1008,a1009,c11,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,c12,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211 = cache.tab
     @unpack tmp = cache
     rtmp = similar(cache.k1)
     uidx = eachindex(uprev)
@@ -342,11 +342,11 @@ end
     end
     f(rtmp,tmp,p,t+c10*dt); copyat_or_push!(k,10,rtmp)
     @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a1101*k[1][i]+a1102*k[2][i]+a1103*k[3][i]+a1104*k[4][i]+a1105*k[5][i]+a1106*k[6][i]+a1107*k[7][i]+a1108*k[8][i]+a1109*k[9][i]+a1110*k[10][i])
+      @inbounds tmp[i] = uprev[i]+dt*(a1101*k[1][i]+a1104*k[4][i]+a1105*k[5][i]+a1106*k[6][i]+a1107*k[7][i]+a1108*k[8][i]+a1109*k[9][i]+a1110*k[10][i])
     end
     f(rtmp,tmp,p,t+c11*dt); copyat_or_push!(k,11,rtmp)
     @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a1201*k[1][i]+a1202*k[2][i]+a1203*k[3][i]+a1204*k[4][i]+a1205*k[5][i]+a1206*k[6][i]+a1207*k[7][i]+a1208*k[8][i]+a1209*k[9][i]+a1210*k[10][i]+a1211*k[11][i])
+      @inbounds tmp[i] = uprev[i]+dt*(a1201*k[1][i]+a1204*k[4][i]+a1205*k[5][i]+a1206*k[6][i]+a1207*k[7][i]+a1208*k[8][i]+a1209*k[9][i]+a1210*k[10][i]+a1211*k[11][i])
     end
     f(rtmp,tmp,p,t+c12*dt); copyat_or_push!(k,12,rtmp)
   end
