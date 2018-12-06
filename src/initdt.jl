@@ -122,15 +122,15 @@ end
   oneunit_tType = oneunit(_tType)
   dtmax_tdir = tdir*dtmax
 
-  sk = abstol+internalnorm(u0)*reltol
-  d₀ = internalnorm(u0/sk)
+  sk = @. abstol + internalnorm(u0) * reltol
+  d₀ = internalnorm(u0 ./ sk)
 
   f₀ = f(u0,p,t)
   if any((isnan(x) for x in f₀))
     error("First function call produced NaNs. Exiting.")
   end
 
-  d₁ = internalnorm(f₀/sk*oneunit_tType)
+  d₁ = internalnorm(f₀ ./ sk .* oneunit_tType)
 
   if d₀ < 1//10^(5) || d₁ < 1//10^(5)
     dt₀ = convert(_tType,oneunit_tType*1//10^(6))
@@ -140,10 +140,10 @@ end
   dt₀ = min(dt₀,dtmax_tdir)
   dt₀_tdir = tdir*dt₀
 
-  u₁ = u0 + dt₀_tdir*f₀
+  u₁ = @. u0 + dt₀_tdir * f₀
   f₁ = f(u₁,p,t+dt₀_tdir)
 
-  d₂ = internalnorm((f₁-f₀)./sk*oneunit_tType)/dt₀*oneunit_tType
+  d₂ = internalnorm((f₁ .- f₀) ./ sk .* oneunit_tType) / dt₀ * oneunit_tType
 
   max_d₁d₂ = max(d₁, d₂)
   if max_d₁d₂ <= 1//Int64(10)^(15)
