@@ -39,6 +39,12 @@ end
 get_chunksize(x) = 0
 get_chunksize(x::NLSOLVEJL_SETUP{CS,AD}) where {CS,AD} = CS
 
+@inline @muladd calculate_residuals(ũ::Number, u₀::Number, u₁::Number,
+                                    α, ρ, internalnorm) = ũ / (α + max(internalnorm(u₀), internalnorm(u₁)) * ρ)
+
+@inline @muladd calculate_residuals(u₀::Number, u₁::Number,
+                                    α, ρ, internalnorm) = (u₁ - u₀) / (α + max(internalnorm(u₀), internalnorm(u₁)) * ρ)
+
 """
     calculate_residuals!(out, ũ, u₀, u₁, α, ρ)
 
@@ -48,16 +54,18 @@ Save element-wise residuals
 ```
 in `out`.
 """
-@inline @muladd function calculate_residuals!(out, ũ, u₀, u₁, α, ρ, internalnorm)
-    @. out = ũ / (α + max(internalnorm(u₀), internalnorm(u₁)) * ρ)
+@inline function calculate_residuals!(out, ũ, u₀, u₁, α, ρ, internalnorm)
+  @. out = calculate_residuals(ũ, u₀, u₁, α, ρ, internalnorm)
+  nothing
 end
 
-@inline @muladd function calculate_residuals!(out::Array{T}, ũ::Array{T}, u₀::Array{T},
+@inline function calculate_residuals!(out::Array{T}, ũ::Array{T}, u₀::Array{T},
                                               u₁::Array{T}, α::T2, ρ::Real,
                                               internalnorm) where {T<:Number,T2<:Number}
-    @tight_loop_macros for i in eachindex(out)
-        @inbounds out[i] = ũ[i] / (α + max(internalnorm(u₀[i]), internalnorm(u₁[i])) * ρ)
-    end
+  @tight_loop_macros for i in eachindex(out)
+    @inbounds out[i] = calculate_residuals(ũ[i], u₀[i], u₁[i], α, ρ, internalnorm)
+  end
+  nothing
 end
 
 """
@@ -69,16 +77,16 @@ Save element-wise residuals
 ```
 in `out`.
 """
-@inline @muladd function calculate_residuals!(out, u₀, u₁, α, ρ, internalnorm)
-    @. out = (u₁ - u₀) / (α + max(internalnorm(u₀), internalnorm(u₁)) * ρ)
+@inline function calculate_residuals!(out, u₀, u₁, α, ρ, internalnorm)
+  @. out = calculate_residuals(u₀, u₁, α, ρ, internalnorm)
 end
 
-@inline @muladd function calculate_residuals!(out::Array{T}, u₀::Array{T},
+@inline function calculate_residuals!(out::Array{T}, u₀::Array{T},
                                               u₁::Array{T}, α::T2, ρ::Real,
                                               internalnorm) where {T<:Number,T2<:Number}
-    @tight_loop_macros for i in eachindex(out)
-        @inbounds out[i] = (u₁[i] - u₀[i]) / (α + max(internalnorm(u₀[i]), internalnorm(u₁[i])) * ρ)
-    end
+  @tight_loop_macros for i in eachindex(out)
+    @inbounds out[i] = calculate_residuals(u₀[i], u₁[i], α, ρ, internalnorm)
+  end
 end
 
 """
@@ -89,11 +97,11 @@ Calculate element-wise residuals
 \\frac{ũ}{α+\\max{|u₀|,|u₁|}*ρ}
 ```
 """
-@inline @muladd function calculate_residuals(ũ, u₀, u₁, α, ρ, internalnorm)
-    @. ũ / (α + max(internalnorm(u₀), internalnorm(u₁)) * ρ)
+@inline function calculate_residuals(ũ, u₀, u₁, α, ρ, internalnorm)
+  @. calculate_residuals(ũ, u₀, u₁, α, ρ, internalnorm)
 end
 
-@inline @muladd function calculate_residuals(ũ::Array{T}, u₀::Array{T}, u₁::Array{T}, α::T2,
+@inline function calculate_residuals(ũ::Array{T}, u₀::Array{T}, u₁::Array{T}, α::T2,
                                              ρ::Real, internalnorm) where
                                              {T<:Number,T2<:Number}
     out = similar(ũ)
@@ -109,11 +117,11 @@ Calculate element-wise residuals
 \\frac{ũ}{α+\\max{|u₀|,|u₁|}*ρ}
 ```
 """
-@inline @muladd function calculate_residuals(u₀, u₁, α, ρ, internalnorm)
-    @. (u₁ - u₀) / (α + max(internalnorm(u₀), internalnorm(u₁)) * ρ)
+@inline function calculate_residuals(u₀, u₁, α, ρ, internalnorm)
+  @. calculate_residuals(u₀, u₁, α, ρ, internalnorm)
 end
 
-@inline @muladd function calculate_residuals(u₀::Array{T}, u₁::Array{T}, α::T2,
+@inline function calculate_residuals(u₀::Array{T}, u₁::Array{T}, α::T2,
                                              ρ::Real, internalnorm) where
                                              {T<:Number,T2<:Number}
     out = similar(u₀)
