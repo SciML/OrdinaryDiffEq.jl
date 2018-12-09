@@ -675,6 +675,8 @@ end
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
+  # k2, k3,k4,k5,k6,k7 are not used in the code (not even in interpolations), we dont need their pointers.
+  # So we mapped k[2] (from integrator) with k8 (from cache), k[3] with k9 and so on.
   integrator.k[1]=k1; integrator.k[2]=k8;
   integrator.k[3]=k9; integrator.k[4]=k10;
   integrator.k[5]=k11; integrator.k[6]=k12;
