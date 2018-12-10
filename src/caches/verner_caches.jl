@@ -122,10 +122,10 @@ end
 
 function alg_cache(alg::Vern9,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tab = Vern9ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
-  k1 = zero(rate_prototype); k2 = zero(rate_prototype);k3 = zero(rate_prototype);
+  k1 = zero(rate_prototype); k2 = zero(rate_prototype);k3 = k2;
   k4 = zero(rate_prototype);
-  k5 = zero(rate_prototype); k6 = zero(rate_prototype);k7 = zero(rate_prototype);
-  k8 = zero(rate_prototype);
+  k5 = k3;                   k6 = zero(rate_prototype);k7 = k4;
+  k8 = k5;
   k9 = zero(rate_prototype); k10 = zero(rate_prototype); k11 = zero(rate_prototype);
   k12 = zero(rate_prototype);
   k13 = zero(rate_prototype); k14 = zero(rate_prototype); k15 = zero(rate_prototype);

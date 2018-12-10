@@ -633,7 +633,7 @@ end
 
 function initialize!(integrator, cache::Vern9ConstantCache)
   alg = unwrap_alg(integrator, false)
-  alg.lazy ? (integrator.kshortsize = 16) : (integrator.kshortsize = 26)
+  alg.lazy ? (integrator.kshortsize = 10) : (integrator.kshortsize = 20)
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
   # Avoid undefined entries if k is an array of arrays
@@ -675,30 +675,29 @@ end
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
-  integrator.k[1]=k1; integrator.k[2]=k2;
-  integrator.k[3]=k3; integrator.k[4]=k4;
-  integrator.k[5]=k5; integrator.k[6]=k6;
-  integrator.k[7]=k7; integrator.k[8]=k8;
-  integrator.k[9]=k9; integrator.k[10]=k10;
-  integrator.k[11]=k11; integrator.k[12]=k12;
-  integrator.k[13]=k13; integrator.k[14]=k14;
-  integrator.k[15]=k15; integrator.k[16]=k16
+  # k2, k3,k4,k5,k6,k7 are not used in the code (not even in interpolations), we dont need their pointers.
+  # So we mapped k[2] (from integrator) with k8 (from cache), k[3] with k9 and so on.
+  integrator.k[1]=k1; integrator.k[2]=k8;
+  integrator.k[3]=k9; integrator.k[4]=k10;
+  integrator.k[5]=k11; integrator.k[6]=k12;
+  integrator.k[7]=k13; integrator.k[8]=k14;
+  integrator.k[9]=k15; integrator.k[10]=k16
   integrator.u = u
 
   alg = unwrap_alg(integrator, false)
   if !alg.lazy && (integrator.opts.adaptive == false || integrator.EEst <= 1.0)
     k = integrator.k
     @unpack c17,a1701,a1708,a1709,a1710,a1711,a1712,a1713,a1714,a1715,c18,a1801,a1808,a1809,a1810,a1811,a1812,a1813,a1814,a1815,a1817,c19,a1901,a1908,a1909,a1910,a1911,a1912,a1913,a1914,a1915,a1917,a1918,c20,a2001,a2008,a2009,a2010,a2011,a2012,a2013,a2014,a2015,a2017,a2018,a2019,c21,a2101,a2108,a2109,a2110,a2111,a2112,a2113,a2114,a2115,a2117,a2118,a2119,a2120,c22,a2201,a2208,a2209,a2210,a2211,a2212,a2213,a2214,a2215,a2217,a2218,a2219,a2220,a2221,c23,a2301,a2308,a2309,a2310,a2311,a2312,a2313,a2314,a2315,a2317,a2318,a2319,a2320,a2321,c24,a2401,a2408,a2409,a2410,a2411,a2412,a2413,a2414,a2415,a2417,a2418,a2419,a2420,a2421,c25,a2501,a2508,a2509,a2510,a2511,a2512,a2513,a2514,a2515,a2517,a2518,a2519,a2520,a2521,c26,a2601,a2608,a2609,a2610,a2611,a2612,a2613,a2614,a2615,a2617,a2618,a2619,a2620,a2621 = cache
-    k[17] = f(uprev+dt*(a1701*k[1]+a1708*k[8]+a1709*k[9]+a1710*k[10]+a1711*k[11]+a1712*k[12]+a1713*k[13]+a1714*k[14]+a1715*k[15]),p,t+c17*dt)
-    k[18] = f(uprev+dt*(a1801*k[1]+a1808*k[8]+a1809*k[9]+a1810*k[10]+a1811*k[11]+a1812*k[12]+a1813*k[13]+a1814*k[14]+a1815*k[15]+a1817*k[17]),p,t+c18*dt)
-    k[19] = f(uprev+dt*(a1901*k[1]+a1908*k[8]+a1909*k[9]+a1910*k[10]+a1911*k[11]+a1912*k[12]+a1913*k[13]+a1914*k[14]+a1915*k[15]+a1917*k[17]+a1918*k[18]),p,t+c19*dt)
-    k[20] = f(uprev+dt*(a2001*k[1]+a2008*k[8]+a2009*k[9]+a2010*k[10]+a2011*k[11]+a2012*k[12]+a2013*k[13]+a2014*k[14]+a2015*k[15]+a2017*k[17]+a2018*k[18]+a2019*k[19]),p,t+c20*dt)
-    k[21] = f(uprev+dt*(a2101*k[1]+a2108*k[8]+a2109*k[9]+a2110*k[10]+a2111*k[11]+a2112*k[12]+a2113*k[13]+a2114*k[14]+a2115*k[15]+a2117*k[17]+a2118*k[18]+a2119*k[19]+a2120*k[20]),p,t+c21*dt)
-    k[22] = f(uprev+dt*(a2201*k[1]+a2208*k[8]+a2209*k[9]+a2210*k[10]+a2211*k[11]+a2212*k[12]+a2213*k[13]+a2214*k[14]+a2215*k[15]+a2217*k[17]+a2218*k[18]+a2219*k[19]+a2220*k[20]+a2221*k[21]),p,t+c22*dt)
-    k[23] = f(uprev+dt*(a2301*k[1]+a2308*k[8]+a2309*k[9]+a2310*k[10]+a2311*k[11]+a2312*k[12]+a2313*k[13]+a2314*k[14]+a2315*k[15]+a2317*k[17]+a2318*k[18]+a2319*k[19]+a2320*k[20]+a2321*k[21]),p,t+c23*dt)
-    k[24] = f(uprev+dt*(a2401*k[1]+a2408*k[8]+a2409*k[9]+a2410*k[10]+a2411*k[11]+a2412*k[12]+a2413*k[13]+a2414*k[14]+a2415*k[15]+a2417*k[17]+a2418*k[18]+a2419*k[19]+a2420*k[20]+a2421*k[21]),p,t+c24*dt)
-    k[25] = f(uprev+dt*(a2501*k[1]+a2508*k[8]+a2509*k[9]+a2510*k[10]+a2511*k[11]+a2512*k[12]+a2513*k[13]+a2514*k[14]+a2515*k[15]+a2517*k[17]+a2518*k[18]+a2519*k[19]+a2520*k[20]+a2521*k[21]),p,t+c25*dt)
-    k[26] = f(uprev+dt*(a2601*k[1]+a2608*k[8]+a2609*k[9]+a2610*k[10]+a2611*k[11]+a2612*k[12]+a2613*k[13]+a2614*k[14]+a2615*k[15]+a2617*k[17]+a2618*k[18]+a2619*k[19]+a2620*k[20]+a2621*k[21]),p,t+c26*dt)
+    k[11] = f(uprev+dt*(a1701*k[1]+a1708*k[2]+a1709*k[3]+a1710*k[4]+a1711*k[5]+a1712*k[6]+a1713*k[7]+a1714*k[8]+a1715*k[9]),p,t+c17*dt)
+    k[12] = f(uprev+dt*(a1801*k[1]+a1808*k[2]+a1809*k[3]+a1810*k[4]+a1811*k[5]+a1812*k[6]+a1813*k[7]+a1814*k[8]+a1815*k[9]+a1817*k[11]),p,t+c18*dt)
+    k[13] = f(uprev+dt*(a1901*k[1]+a1908*k[2]+a1909*k[3]+a1910*k[4]+a1911*k[5]+a1912*k[6]+a1913*k[7]+a1914*k[8]+a1915*k[9]+a1917*k[11]+a1918*k[12]),p,t+c19*dt)
+    k[14] = f(uprev+dt*(a2001*k[1]+a2008*k[2]+a2009*k[3]+a2010*k[4]+a2011*k[5]+a2012*k[6]+a2013*k[7]+a2014*k[8]+a2015*k[9]+a2017*k[11]+a2018*k[12]+a2019*k[13]),p,t+c20*dt)
+    k[15] = f(uprev+dt*(a2101*k[1]+a2108*k[2]+a2109*k[3]+a2110*k[4]+a2111*k[5]+a2112*k[6]+a2113*k[7]+a2114*k[8]+a2115*k[9]+a2117*k[11]+a2118*k[12]+a2119*k[13]+a2120*k[14]),p,t+c21*dt)
+    k[16] = f(uprev+dt*(a2201*k[1]+a2208*k[2]+a2209*k[3]+a2210*k[4]+a2211*k[5]+a2212*k[6]+a2213*k[7]+a2214*k[8]+a2215*k[9]+a2217*k[11]+a2218*k[12]+a2219*k[13]+a2220*k[14]+a2221*k[15]),p,t+c22*dt)
+    k[17] = f(uprev+dt*(a2301*k[1]+a2308*k[2]+a2309*k[3]+a2310*k[4]+a2311*k[5]+a2312*k[6]+a2313*k[7]+a2314*k[8]+a2315*k[9]+a2317*k[11]+a2318*k[12]+a2319*k[13]+a2320*k[14]+a2321*k[15]),p,t+c23*dt)
+    k[18] = f(uprev+dt*(a2401*k[1]+a2408*k[2]+a2409*k[3]+a2410*k[4]+a2411*k[5]+a2412*k[6]+a2413*k[7]+a2414*k[8]+a2415*k[9]+a2417*k[11]+a2418*k[12]+a2419*k[13]+a2420*k[14]+a2421*k[15]),p,t+c24*dt)
+    k[19] = f(uprev+dt*(a2501*k[1]+a2508*k[2]+a2509*k[3]+a2510*k[4]+a2511*k[5]+a2512*k[6]+a2513*k[7]+a2514*k[8]+a2515*k[9]+a2517*k[11]+a2518*k[12]+a2519*k[13]+a2520*k[14]+a2521*k[15]),p,t+c25*dt)
+    k[20] = f(uprev+dt*(a2601*k[1]+a2608*k[2]+a2609*k[3]+a2610*k[4]+a2611*k[5]+a2612*k[6]+a2613*k[7]+a2614*k[8]+a2615*k[9]+a2617*k[11]+a2618*k[12]+a2619*k[13]+a2620*k[14]+a2621*k[15]),p,t+c26*dt)
   end
 end
 
@@ -706,12 +705,14 @@ function initialize!(integrator, cache::Vern9Cache)
   @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16 = cache
   @unpack k = integrator
   alg = unwrap_alg(integrator, false)
-  alg.lazy ? (integrator.kshortsize = 16) : (integrator.kshortsize = 26)
+  alg.lazy ? (integrator.kshortsize = 10) : (integrator.kshortsize = 20)
   resize!(k, integrator.kshortsize)
-  k[1]=k1;k[2]=k2;k[3]=k3;k[4]=k4;k[5]=k5;k[6]=k6;k[7]=k7;k[8]=k8;k[9]=k9;k[10]=k10;k[11]=k11;k[12]=k12;k[13]=k13;k[14]=k14;k[15]=k15;k[16]=k16 # Setup pointers
+  # k2, k3,k4,k5,k6,k7 are not used in the code (not even in interpolations), we dont need their pointers.
+  # So we mapped k[2] (from integrator) with k8 (from cache), k[3] with k9 and so on. 
+  k[1]=k1;k[2]=k8;k[3]=k9;k[4]=k10;k[5]=k11;k[6]=k12;k[7]=k13;k[8]=k14;k[9]=k15;k[10]=k16 # Setup pointers
 
   if !alg.lazy
-    for i in 17:26
+    for i in 11:20
       k[i] = similar(cache.k1)
     end
   end
@@ -856,44 +857,44 @@ end
     @unpack tmp = cache
     @unpack c17,a1701,a1708,a1709,a1710,a1711,a1712,a1713,a1714,a1715,c18,a1801,a1808,a1809,a1810,a1811,a1812,a1813,a1814,a1815,a1817,c19,a1901,a1908,a1909,a1910,a1911,a1912,a1913,a1914,a1915,a1917,a1918,c20,a2001,a2008,a2009,a2010,a2011,a2012,a2013,a2014,a2015,a2017,a2018,a2019,c21,a2101,a2108,a2109,a2110,a2111,a2112,a2113,a2114,a2115,a2117,a2118,a2119,a2120,c22,a2201,a2208,a2209,a2210,a2211,a2212,a2213,a2214,a2215,a2217,a2218,a2219,a2220,a2221,c23,a2301,a2308,a2309,a2310,a2311,a2312,a2313,a2314,a2315,a2317,a2318,a2319,a2320,a2321,c24,a2401,a2408,a2409,a2410,a2411,a2412,a2413,a2414,a2415,a2417,a2418,a2419,a2420,a2421,c25,a2501,a2508,a2509,a2510,a2511,a2512,a2513,a2514,a2515,a2517,a2518,a2519,a2520,a2521,c26,a2601,a2608,a2609,a2610,a2611,a2612,a2613,a2614,a2615,a2617,a2618,a2619,a2620,a2621 = cache.tab
     @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a1701*k[1][i]+a1708*k[8][i]+a1709*k[9][i]+a1710*k[10][i]+a1711*k[11][i]+a1712*k[12][i]+a1713*k[13][i]+a1714*k[14][i]+a1715*k[15][i])
+      @inbounds tmp[i] = uprev[i]+dt*(a1701*k[1][i]+a1708*k[2][i]+a1709*k[3][i]+a1710*k[4][i]+a1711*k[5][i]+a1712*k[6][i]+a1713*k[7][i]+a1714*k[8][i]+a1715*k[9][i])
     end
-    f(k[17],tmp,p,t+c17*dt)
+    f(k[11],tmp,p,t+c17*dt)
     @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a1801*k[1][i]+a1808*k[8][i]+a1809*k[9][i]+a1810*k[10][i]+a1811*k[11][i]+a1812*k[12][i]+a1813*k[13][i]+a1814*k[14][i]+a1815*k[15][i]+a1817*k[17][i])
+      @inbounds tmp[i] = uprev[i]+dt*(a1801*k[1][i]+a1808*k[2][i]+a1809*k[3][i]+a1810*k[4][i]+a1811*k[5][i]+a1812*k[6][i]+a1813*k[7][i]+a1814*k[8][i]+a1815*k[9][i]+a1817*k[11][i])
     end
-    f(k[18],tmp,p,t+c18*dt)
+    f(k[12],tmp,p,t+c18*dt)
     @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a1901*k[1][i]+a1908*k[8][i]+a1909*k[9][i]+a1910*k[10][i]+a1911*k[11][i]+a1912*k[12][i]+a1913*k[13][i]+a1914*k[14][i]+a1915*k[15][i]+a1917*k[17][i]+a1918*k[18][i])
+      @inbounds tmp[i] = uprev[i]+dt*(a1901*k[1][i]+a1908*k[2][i]+a1909*k[3][i]+a1910*k[4][i]+a1911*k[5][i]+a1912*k[6][i]+a1913*k[7][i]+a1914*k[8][i]+a1915*k[9][i]+a1917*k[11][i]+a1918*k[12][i])
     end
-    f(k[19],tmp,p,t+c19*dt)
+    f(k[13],tmp,p,t+c19*dt)
     @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a2001*k[1][i]+a2008*k[8][i]+a2009*k[9][i]+a2010*k[10][i]+a2011*k[11][i]+a2012*k[12][i]+a2013*k[13][i]+a2014*k[14][i]+a2015*k[15][i]+a2017*k[17][i]+a2018*k[18][i]+a2019*k[19][i])
+      @inbounds tmp[i] = uprev[i]+dt*(a2001*k[1][i]+a2008*k[2][i]+a2009*k[3][i]+a2010*k[4][i]+a2011*k[5][i]+a2012*k[6][i]+a2013*k[7][i]+a2014*k[8][i]+a2015*k[9][i]+a2017*k[11][i]+a2018*k[12][i]+a2019*k[13][i])
     end
-    f(k[20],tmp,p,t+c20*dt)
+    f(k[14],tmp,p,t+c20*dt)
     @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a2101*k[1][i]+a2108*k[8][i]+a2109*k[9][i]+a2110*k[10][i]+a2111*k[11][i]+a2112*k[12][i]+a2113*k[13][i]+a2114*k[14][i]+a2115*k[15][i]+a2117*k[17][i]+a2118*k[18][i]+a2119*k[19][i]+a2120*k[20][i])
+      @inbounds tmp[i] = uprev[i]+dt*(a2101*k[1][i]+a2108*k[2][i]+a2109*k[3][i]+a2110*k[4][i]+a2111*k[5][i]+a2112*k[6][i]+a2113*k[7][i]+a2114*k[8][i]+a2115*k[9][i]+a2117*k[11][i]+a2118*k[12][i]+a2119*k[13][i]+a2120*k[14][i])
     end
-    f(k[21],tmp,p,t+c21*dt)
+    f(k[15],tmp,p,t+c21*dt)
     @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a2201*k[1][i]+a2208*k[8][i]+a2209*k[9][i]+a2210*k[10][i]+a2211*k[11][i]+a2212*k[12][i]+a2213*k[13][i]+a2214*k[14][i]+a2215*k[15][i]+a2217*k[17][i]+a2218*k[18][i]+a2219*k[19][i]+a2220*k[20][i]+a2221*k[21][i])
+      @inbounds tmp[i] = uprev[i]+dt*(a2201*k[1][i]+a2208*k[2][i]+a2209*k[3][i]+a2210*k[4][i]+a2211*k[5][i]+a2212*k[6][i]+a2213*k[7][i]+a2214*k[8][i]+a2215*k[9][i]+a2217*k[11][i]+a2218*k[12][i]+a2219*k[13][i]+a2220*k[14][i]+a2221*k[15][i])
     end
-    f(k[22],tmp,p,t+c22*dt)
+    f(k[16],tmp,p,t+c22*dt)
     @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a2301*k[1][i]+a2308*k[8][i]+a2309*k[9][i]+a2310*k[10][i]+a2311*k[11][i]+a2312*k[12][i]+a2313*k[13][i]+a2314*k[14][i]+a2315*k[15][i]+a2317*k[17][i]+a2318*k[18][i]+a2319*k[19][i]+a2320*k[20][i]+a2321*k[21][i])
+      @inbounds tmp[i] = uprev[i]+dt*(a2301*k[1][i]+a2308*k[2][i]+a2309*k[3][i]+a2310*k[4][i]+a2311*k[5][i]+a2312*k[6][i]+a2313*k[7][i]+a2314*k[8][i]+a2315*k[9][i]+a2317*k[11][i]+a2318*k[12][i]+a2319*k[13][i]+a2320*k[14][i]+a2321*k[15][i])
     end
-    f(k[23],tmp,p,t+c23*dt)
+    f(k[17],tmp,p,t+c23*dt)
     @tight_loop_macros for i in uidx
-      tmp[i]  = uprev[i]+dt*(a2401*k[1][i]+a2408*k[8][i]+a2409*k[9][i]+a2410*k[10][i]+a2411*k[11][i]+a2412*k[12][i]+a2413*k[13][i]+a2414*k[14][i]+a2415*k[15][i]+a2417*k[17][i]+a2418*k[18][i]+a2419*k[19][i]+a2420*k[20][i]+a2421*k[21][i])
+      tmp[i]  = uprev[i]+dt*(a2401*k[1][i]+a2408*k[2][i]+a2409*k[3][i]+a2410*k[4][i]+a2411*k[5][i]+a2412*k[6][i]+a2413*k[7][i]+a2414*k[8][i]+a2415*k[9][i]+a2417*k[11][i]+a2418*k[12][i]+a2419*k[13][i]+a2420*k[14][i]+a2421*k[15][i])
     end
-    f(k[24],tmp,p,t+c24*dt)
+    f(k[18],tmp,p,t+c24*dt)
     @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a2501*k[1][i]+a2508*k[8][i]+a2509*k[9][i]+a2510*k[10][i]+a2511*k[11][i]+a2512*k[12][i]+a2513*k[13][i]+a2514*k[14][i]+a2515*k[15][i]+a2517*k[17][i]+a2518*k[18][i]+a2519*k[19][i]+a2520*k[20][i]+a2521*k[21][i])
+      @inbounds tmp[i] = uprev[i]+dt*(a2501*k[1][i]+a2508*k[2][i]+a2509*k[3][i]+a2510*k[4][i]+a2511*k[5][i]+a2512*k[6][i]+a2513*k[7][i]+a2514*k[8][i]+a2515*k[9][i]+a2517*k[11][i]+a2518*k[12][i]+a2519*k[13][i]+a2520*k[14][i]+a2521*k[15][i])
     end
-    f(k[25],tmp,p,t+c25*dt)
+    f(k[19],tmp,p,t+c25*dt)
     @tight_loop_macros for i in uidx
-      @inbounds tmp[i] = uprev[i]+dt*(a2601*k[1][i]+a2608*k[8][i]+a2609*k[9][i]+a2610*k[10][i]+a2611*k[11][i]+a2612*k[12][i]+a2613*k[13][i]+a2614*k[14][i]+a2615*k[15][i]+a2617*k[17][i]+a2618*k[18][i]+a2619*k[19][i]+a2620*k[20][i]+a2621*k[21][i])
+      @inbounds tmp[i] = uprev[i]+dt*(a2601*k[1][i]+a2608*k[2][i]+a2609*k[3][i]+a2610*k[4][i]+a2611*k[5][i]+a2612*k[6][i]+a2613*k[7][i]+a2614*k[8][i]+a2615*k[9][i]+a2617*k[11][i]+a2618*k[12][i]+a2619*k[13][i]+a2620*k[14][i]+a2621*k[15][i])
     end
-    f(k[26],tmp,p,t+c26*dt)
+    f(k[20],tmp,p,t+c26*dt)
   end
 end
