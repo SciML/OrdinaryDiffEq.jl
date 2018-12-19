@@ -71,6 +71,8 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,uBottomElty
   end
   tmp = zero(rate_prototype)
   tab = Rosenbrock23ConstantCache(uEltypeNoUnits,identity,identity)
+  tab = Rosenbrock23ConstantCache(uBottomEltypeNoUnits,identity,identity)
+  tab = Rosenbrock23ConstantCache(real(uBottomEltypeNoUnits),identity,identity)
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
@@ -103,7 +105,7 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,uBottomElty
     W = similar(J)
   end
   tmp = zero(rate_prototype)
-  tab = Rosenbrock32ConstantCache(uEltypeNoUnits,identity,identity)
+  tab = Rosenbrock32ConstantCache(real(uBottomEltypeNoUnits),identity,identity)
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
@@ -130,7 +132,7 @@ end
 function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  Rosenbrock23ConstantCache(uEltypeNoUnits,tf,uf)
+  Rosenbrock23ConstantCache(real(uBottomEltypeNoUnits),tf,uf)
 end
 
 struct Rosenbrock32ConstantCache{T,TF,UF} <: OrdinaryDiffEqConstantCache
@@ -149,7 +151,7 @@ end
 function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  Rosenbrock32ConstantCache(uEltypeNoUnits,tf,uf)
+  Rosenbrock32ConstantCache(real(uBottomEltypeNoUnits),tf,uf)
 end
 
 ################################################################################
