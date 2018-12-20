@@ -70,8 +70,6 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,uBottomElty
     W = similar(J)
   end
   tmp = zero(rate_prototype)
-  tab = Rosenbrock23ConstantCache(uEltypeNoUnits,identity,identity)
-  tab = Rosenbrock23ConstantCache(uBottomEltypeNoUnits,identity,identity)
   tab = Rosenbrock23ConstantCache(real(uBottomEltypeNoUnits),identity,identity)
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
