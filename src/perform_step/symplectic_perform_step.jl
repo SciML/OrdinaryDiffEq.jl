@@ -22,7 +22,7 @@ end
   u = uprev + dt*kuprev
   # Now actually compute the step
   # Do it at the end for interpolations!
-  kdu = f.f1(duprev,uprev,p,t)
+  kdu = f.f1(duprev,u,p,t)
   du = duprev + dt*kdu
   ku = f.f2(du,uprev,p,t)
 
@@ -62,7 +62,7 @@ end
   @. u = uprev + dt*kuprev
   # Now actually compute the step
   # Do it at the end for interpolations!
-  f.f1(kdu,duprev,uprev,p,t)
+  f.f1(kdu,duprev,u,p,t)
   @. du = duprev + dt*kdu
   f.f2(ku,du,uprev,p,t)
 end
