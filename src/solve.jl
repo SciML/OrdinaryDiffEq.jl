@@ -305,7 +305,7 @@ function DiffEqBase.__init(
   erracc = tTypeNoUnits(1)
   dtacc = tType(1)
 
-  integrator = ODEIntegrator{algType,uType,tType,typeof(p),typeof(eigen_est),
+  integrator = ODEIntegrator{algType,isinplace(prob),uType,tType,typeof(p),typeof(eigen_est),
                              QT,typeof(tdir),typeof(k),SolType,
                              FType,cacheType,
                              typeof(opts),fsal_typeof(alg,rate_prototype),
