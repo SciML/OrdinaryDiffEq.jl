@@ -37,7 +37,7 @@ function (S::NLAnderson{false,<:NLSolverCache})(integrator)
     z₊ = dt*f(u, p, tstep)
     gs[1] = z₊
     
-    mk = min(S.n, iter)
+    mk = min(S.n, iter-1)
     residuals[1:mk] = (gs[2:mk+1] .- zs[2:mk+1]) .- (gs[1] - zs[1])
     alphas[1:mk] .= residuals[1:mk] \ (zs[1] - gs[1])
     for i = 1:mk
@@ -54,7 +54,14 @@ function (S::NLAnderson{false,<:NLSolverCache})(integrator)
       break
     end
     η = θ/(1-θ)
-    do_functional = (η*ndz > κtol)
+    do_anderson = (η*ndz > κtol)
     z = z₊
   end
+
+  if (iter >= max_iter && do_anderson) || fail_convergence
+    integrator.force_stepfail = true
+    return (z, η, iter, true)
+  end
+
+  return (z, η, iter, false)
 end
