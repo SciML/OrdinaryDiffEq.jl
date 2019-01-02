@@ -38,40 +38,48 @@ function (S::NLFunctional{false})(integrator)
   # initial step of functional iteration
   iter = 1
   tstep = t + c*dt
-  u = tmp + γ*z
-  z₊ = dt*f(u, p, tstep)
-  dz = z₊ - z
-  ndz = integrator.opts.internalnorm(dz)
+  u = @. tmp + γ * z
+  if mass_matrix == I
+    z₊ = dt .* f(u, p, tstep)
+  else
+    z₊ = mass_matrix * (dt .* f(u, p, tstep))
+  end
+  ndz = integrator.opts.internalnorm(z₊ .- z)
   z = z₊
 
+  # check stopping criterion for initial step
   η = nlcache.ηold
   do_functional = true # TODO: this makes `min_iter` ≥ 2
 
   # functional iteration
-  fail_convergence = false
-  while (do_functional || iter < min_iter) && iter < max_iter
+  while do_functional && iter < max_iter
+    # compute next iterate
     iter += 1
-    u = tmp + γ*z
-    z₊ = dt*f(u, p, tstep)
-    dz = z₊ - z
+    u = @. tmp + γ * z
+    if mass_matrix == I
+      z₊ = dt .* f(u, p, tstep)
+    else
+      z₊ = mass_matrix * (dt .* f(u, p, tstep))
+    end
+
+    # check early stopping criterion
     ndzprev = ndz
-    ndz = integrator.opts.internalnorm(dz)
+    ndz = integrator.opts.internalnorm(z₊ .- z)
     θ = ndz/ndzprev
-    if θ > 1 || ndz*(θ^(max_iter - iter)/(1-θ)) > κtol
-      fail_convergence = true
+    if θ ≥ 1 || ndz * θ^(max_iter - iter) > κtol * (1 - θ)
       break
     end
-    η = θ/(1-θ)
-    do_functional = (η*ndz > κtol)
+
+    # update solution
     z = z₊
+
+    # check stopping criterion
+    η = θ / (1 - θ) # calculated for possible early stopping
+    do_functional = iter < min_iter || η * ndz > κtol
   end
 
-  if (iter >= max_iter && do_functional) || fail_convergence
-    integrator.force_stepfail = true
-    return (z, η, iter, true)
-  end
-
-  return (z, η, iter, false)
+  integrator.force_stepfail = do_functional
+  z, η, iter, do_functional
 end
 
 function (S::NLFunctional{true})(integrator)
@@ -87,6 +95,7 @@ function (S::NLFunctional{true})(integrator)
   end
   # precalculations
   κtol = κ*tol
+
   # initial step of functional iteration
   iter = 1
   tstep = t + c*dt
@@ -96,18 +105,19 @@ function (S::NLFunctional{true})(integrator)
     @. z₊ = dt*k
   else
     @. ztmp = dt*k
-    mul!(z₊, mass_matrix, ztmp)
+    mul!(vec(z₊), mass_matrix, vec(ztmp))
   end
   @. dz = z₊ - z
-  @. z = z₊
   ndz = integrator.opts.internalnorm(dz)
+  @. z = z₊
 
+  # check stopping criterion for initial step
   η = nlcache.ηold
   do_functional = true # TODO: this makes `min_iter` ≥ 2
 
-  # NLFunctional iteration
-  fail_convergence = false
-  while (do_functional || iter < min_iter) && iter < max_iter
+  # functional iteration
+  while do_functional && iter < max_iter
+    # compute next iterate
     iter += 1
     @. u = tmp + γ*z
     f(k, u, p, tstep)
@@ -120,20 +130,21 @@ function (S::NLFunctional{true})(integrator)
     @. dz = z₊ - z
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
+
+    # check early stopping criterion
     θ = ndz/ndzprev
-    if θ > 1 || ndz*(θ^(max_iter - iter)/(1-θ)) > κtol
-      fail_convergence = true
+    if θ ≥ 1 || ndz * θ^(max_iter - iter) > κtol * (1 - θ)
       break
     end
-    η = θ/(1-θ)
-    do_functional = (η*ndz > κtol)
+
+    # update solution
     @. z = z₊
+
+    # check stopping criterion
+    η = θ / (1 - θ) # calculated for possible early stopping
+    do_functional = iter < min_iter || η * ndz > κtol
   end
 
-  if (iter >= max_iter && do_functional) || fail_convergence
-    integrator.force_stepfail = true
-    return (z, η, iter, true)
-  end
-
-  return (z, η, iter, false)
+  integrator.force_stepfail = do_functional
+  z, η, iter, do_functional
 end

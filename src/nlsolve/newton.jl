@@ -45,43 +45,61 @@ function (S::NLNewton{false,<:NLSolverCache})(integrator)
   # precalculations
   κtol = κ*tol
 
-  # initial step of NLNewton iteration
+  # initial step of Newton iteration
   iter = 1
   tstep = t + c*dt
-  u = tmp + γ*z
-  b = dt*f(u, p, tstep) - z
-  dz = W\b
+  u = @. tmp + γ * z
+  if mass_matrix == I
+    b = dt .* f(u, p, tstep) .- z
+  else
+    b = dt .* f(u, p, tstep) .- mass_matrix * z
+  end
+  if DiffEqBase.has_invW(f)
+    dz = W * b # Here W is actually invW
+  else
+    dz = W \ b
+  end
   ndz = integrator.opts.internalnorm(dz)
-  z = z + dz
+  z = z .+ dz
 
+  # check stopping criterion
   η = max(nlcache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
-  do_newton = integrator.success_iter == 0 || η*ndz > κtol
+  do_newton = iszero(integrator.success_iter) || iter < min_iter || η * ndz > κtol
 
-  # NLNewton iteration
-  fail_convergence = false
-  while (do_newton || iter < min_iter) && iter < max_iter
+  # Newton iteration
+  while do_newton && iter < max_iter
+    # compute next iterate
     iter += 1
-    u = tmp + γ*z
-    b = dt*f(u, p, tstep) - z
-    dz = W\b
+    u = @. tmp + γ * z
+    if mass_matrix == I
+      b = dt .* f(u, p, tstep) .- z
+    else
+      b = dt .* f(u, p, tstep) .- mass_matrix * z
+    end
+    if DiffEqBase.has_invW(f)
+      dz = W * b # Here W is actually invW
+    else
+      dz = W \ b
+    end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
+
+    # check early stopping criterion
     θ = ndz/ndzprev
-    if θ > 1 || ndz*(θ^(max_iter - iter)/(1-θ)) > κtol
-      fail_convergence = true
+    if θ ≥ 1 || ndz * θ^(max_iter - iter) > κtol * (1 - θ)
       break
     end
-    η = θ/(1-θ)
-    do_newton = (η*ndz > κtol)
-    z = z + dz
+
+    # update solution
+    z = z .+ dz
+
+    # check stopping criterion
+    η = θ / (1 - θ) # calculated for possible early stopping
+    do_newton = iter < min_iter || η * ndz > κtol
   end
 
-  if (iter >= max_iter && do_newton) || fail_convergence
-    integrator.force_stepfail = true
-    return (z, η, iter, true)
-  end
-
-  return (z, η, iter, false)
+  integrator.force_stepfail = do_newton
+  z, η, iter, do_newton
 end
 
 function (S::NLNewton{true,<:NLSolverCache})(integrator)
@@ -98,7 +116,8 @@ function (S::NLNewton{true,<:NLSolverCache})(integrator)
   end
   # precalculations
   κtol = κ*tol
-  # initial step of NLNewton iteration
+
+  # initial step of Newton iteration
   iter = 1
   tstep = t + c*dt
   @. u = tmp + γ*z
@@ -109,7 +128,7 @@ function (S::NLNewton{true,<:NLSolverCache})(integrator)
     mul!(vec(b),mass_matrix,vec(z))
     @. b = dt*k - b
   end
-  if DiffEqBase.DiffEqBase.has_invW(f)
+  if DiffEqBase.has_invW(f)
     mul!(vec(dz),W,vec(b)) # Here W is actually invW
   else
     cache.linsolve(vec(dz),W,vec(b),new_W)
@@ -117,12 +136,13 @@ function (S::NLNewton{true,<:NLSolverCache})(integrator)
   ndz = integrator.opts.internalnorm(dz)
   z .+= dz
 
+  # check stopping criterion
   η = max(nlcache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
-  do_newton = integrator.success_iter == 0 || η*ndz > κtol
+  do_newton = iszero(integrator.success_iter) || iter < min_iter || η * ndz > κtol
 
-  # NLNewton iteration
-  fail_convergence = false
-  while (do_newton || iter < min_iter) && iter < max_iter
+  # Newton iteration
+  while do_newton && iter < max_iter
+    # compute next iterate
     iter += 1
     @. u = tmp + γ*z
     f(k, u, p, tstep)
@@ -132,27 +152,28 @@ function (S::NLNewton{true,<:NLSolverCache})(integrator)
       mul!(vec(b),mass_matrix,vec(z))
       @. b = dt*k - b
     end
-    if DiffEqBase.DiffEqBase.has_invW(f)
+    if DiffEqBase.has_invW(f)
       mul!(vec(dz),W,vec(b)) # Here W is actually invW
     else
       cache.linsolve(vec(dz),W,vec(b),false)
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
+
+    # check early stopping criterion
     θ = ndz/ndzprev
-    if θ > 1 || ndz*(θ^(max_iter - iter)/(1-θ)) > κtol
-      fail_convergence = true
+    if θ ≥ 1 || ndz * θ^(max_iter - iter) > κtol * (1 - θ)
       break
     end
-    η = θ/(1-θ)
-    do_newton = (η*ndz > κtol)
+
+    # update solution
     z .+= dz
+
+    # check stopping criterion
+    η = θ / (1 - θ) # calculated for possible early stopping
+    do_newton = iter < min_iter || η * ndz > κtol
   end
 
-  if (iter >= max_iter && do_newton) || fail_convergence
-    integrator.force_stepfail = true
-    return (z, η, iter, true)
-  end
-
-  return (z, η, iter, false)
+  integrator.force_stepfail = do_newton
+  z, η, iter, do_newton
 end
