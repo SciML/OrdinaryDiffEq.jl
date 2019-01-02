@@ -30,30 +30,34 @@ struct EulerConstantCache <: OrdinaryDiffEqConstantCache end
 
 alg_cache(alg::Euler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = EulerConstantCache()
 
-@cache struct HeunCache{uType,rateType} <: OrdinaryDiffEqMutableCache
+@cache struct HeunCache{uType,rateType,uNoUnitsType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
+  atmp::uNoUnitsType
   k::rateType
   utilde::rateType
   fsalfirst::rateType
 end
 
-@cache struct RalstonCache{uType,rateType} <: OrdinaryDiffEqMutableCache
+@cache struct RalstonCache{uType,rateType,uNoUnitsType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
+  atmp::uNoUnitsType
   k::rateType
   utilde::rateType
   fsalfirst::rateType
 end
 
 function alg_cache(alg::Heun,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  HeunCache(u,uprev,similar(u),zero(rate_prototype),zero(rate_prototype),zero(rate_prototype))
+  HeunCache(u,uprev,similar(u),similar(u, uEltypeNoUnits),zero(rate_prototype),
+            zero(rate_prototype),zero(rate_prototype))
 end
 
 function alg_cache(alg::Ralston,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  RalstonCache(u,uprev,similar(u),zero(rate_prototype),zero(rate_prototype),zero(rate_prototype))
+  RalstonCache(u,uprev,similar(u),similar(u, uEltypeNoUnits),zero(rate_prototype),
+               zero(rate_prototype),zero(rate_prototype))
 end
 
 struct HeunConstantCache <: OrdinaryDiffEqConstantCache end
