@@ -186,14 +186,15 @@ end
 @muladd function perform_step!(integrator,cache::MidpointConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   halfdt = dt/2
-  k = f(uprev + halfdt*integrator.fsalfirst, p, t+halfdt)
-  u = uprev + dt*k
+  tmp = @. uprev + halfdt * integrator.fsalfirst
+  k = f(tmp, p, t+halfdt)
+  u = @. uprev + dt * k
   integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
   if integrator.opts.adaptive
-      utilde = dt*(integrator.fsalfirst - k)
-      integrator.EEst = integrator.opts.internalnorm(
-          calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                              integrator.opts.reltol,integrator.opts.internalnorm))
+      utilde = @. dt * (integrator.fsalfirst - k)
+      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
+                                 integrator.opts.reltol,integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
