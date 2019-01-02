@@ -137,7 +137,7 @@ end
 
 @muladd function perform_step!(integrator,cache::Union{HeunCache,RalstonCache},repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack fsalfirst,k,utilde = cache
+  @unpack fsalfirst,k,utilde,atmp = cache
 
   # precalculations
   if typeof(cache) <: HeunCache
