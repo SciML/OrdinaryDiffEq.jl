@@ -178,7 +178,7 @@ end
 end
 
 
-function initialize!(integrator,cache::SSPRK53_2NConstantCache)
+function initialize!(integrator,cache::SSPRK53_2N1ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -188,7 +188,7 @@ function initialize!(integrator,cache::SSPRK53_2NConstantCache)
   integrator.k[1] = integrator.fsalfirst
 end
 
-@muladd function perform_step!(integrator,cache::SSPRK53_2NConstantCache,repeat_step=false)
+@muladd function perform_step!(integrator,cache::SSPRK53_2N1ConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack α40,α43,β10,β21,β32,β43,β54,c1,c2,c3,c4 = cache
   #stores in u for all intermediate stages
@@ -212,7 +212,7 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::SSPRK53_2NCache)
+function initialize!(integrator,cache::SSPRK53_2N1Cache)
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
@@ -222,7 +222,7 @@ function initialize!(integrator,cache::SSPRK53_2NCache)
   integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
 end
 
-@muladd function perform_step!(integrator,cache::SSPRK53_2NCache,repeat_step=false)
+@muladd function perform_step!(integrator,cache::SSPRK53_2N1Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k,tmp,fsalfirst,stage_limiter!,step_limiter! = cache
   @unpack α40,α43,β10,β21,β32,β43,β54,c1,c2,c3,c4 = cache.tab

@@ -102,7 +102,7 @@ function alg_cache(alg::SSPRK53,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
 end
 
 
-@cache struct SSPRK53_2NCache{uType,rateType,StageLimiter,StepLimiter,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct SSPRK53_2N1Cache{uType,rateType,StageLimiter,StepLimiter,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k::rateType
@@ -113,7 +113,7 @@ end
   tab::TabType
 end
 
-struct SSPRK53_2NConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct SSPRK53_2N1ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
 
   α40::T
   α43::T
@@ -127,7 +127,7 @@ struct SSPRK53_2NConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   c3::T2
   c4::T2
 
-  function SSPRK53_2NConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+  function SSPRK53_2N1ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
 
 
     α40 = T(0.571403511494104)
@@ -146,16 +146,16 @@ struct SSPRK53_2NConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   end
 end
 
-function alg_cache(alg::SSPRK53_2N,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::SSPRK53_2N1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
-  tab = SSPRK53_2NConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
-  SSPRK53_2NCache(u,uprev,k,tmp,fsalfirst,alg.stage_limiter!,alg.step_limiter!,tab)
+  tab = SSPRK53_2N1ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  SSPRK53_2N1Cache(u,uprev,k,tmp,fsalfirst,alg.stage_limiter!,alg.step_limiter!,tab)
 end
 
-function alg_cache(alg::SSPRK53_2N,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  SSPRK53_2NConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+function alg_cache(alg::SSPRK53_2N1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  SSPRK53_2N1ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
 

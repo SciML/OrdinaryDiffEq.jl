@@ -113,7 +113,7 @@ sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg), 
 @test all(sol.u .>= 0)
 
 
-alg = SSPRK53_2N()
+alg = SSPRK53_2N1()
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
