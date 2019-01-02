@@ -109,12 +109,12 @@ end
 
   if integrator.opts.adaptive
       if typeof(cache) <: HeunConstantCache
-          utilde = @. a₂ * (k2 - fsalfirst)
+          tmp = @. a₂ * (k2 - fsalfirst)
       else
-          utilde = @. a₃ * (k2 - fsalfirst)
+          tmp = @. a₃ * (k2 - fsalfirst)
       end
 
-      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   k = f(u, p, t+dt)
@@ -137,7 +137,7 @@ end
 
 @muladd function perform_step!(integrator,cache::Union{HeunCache,RalstonCache},repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack fsalfirst,k,utilde,atmp = cache
+  @unpack fsalfirst,k,tmp,atmp = cache
 
   # precalculations
   if typeof(cache) <: HeunCache
@@ -149,8 +149,8 @@ end
       a₃ = 2 * a₂
   end
 
-  @. utilde = uprev + a₁ * fsalfirst
-  f(k, utilde, p, t + a₁)
+  @. tmp = uprev + a₁ * fsalfirst
+  f(k, tmp, p, t + a₁)
 
   if typeof(cache) <: HeunCache
       @. u = uprev + a₂ * (fsalfirst + k)
@@ -160,12 +160,12 @@ end
 
   if integrator.opts.adaptive
       if typeof(cache) <: HeunCache
-          @. utilde = a₂ * (k - fsalfirst)
+          @. tmp = a₂ * (k - fsalfirst)
       else
-          @. utilde = a₃ * (k - fsalfirst)
+          @. tmp = a₃ * (k - fsalfirst)
       end
 
-      calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
+      calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
                            integrator.opts.reltol, integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
   end

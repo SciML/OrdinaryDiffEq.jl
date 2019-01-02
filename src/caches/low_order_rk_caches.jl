@@ -36,7 +36,6 @@ alg_cache(alg::Euler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeN
   tmp::uType
   atmp::uNoUnitsType
   k::rateType
-  utilde::rateType
   fsalfirst::rateType
 end
 
@@ -46,18 +45,17 @@ end
   tmp::uType
   atmp::uNoUnitsType
   k::rateType
-  utilde::rateType
   fsalfirst::rateType
 end
 
 function alg_cache(alg::Heun,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   HeunCache(u,uprev,similar(u),similar(u, uEltypeNoUnits),zero(rate_prototype),
-            zero(rate_prototype),zero(rate_prototype))
+            zero(rate_prototype))
 end
 
 function alg_cache(alg::Ralston,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   RalstonCache(u,uprev,similar(u),similar(u, uEltypeNoUnits),zero(rate_prototype),
-               zero(rate_prototype),zero(rate_prototype))
+               zero(rate_prototype))
 end
 
 struct HeunConstantCache <: OrdinaryDiffEqConstantCache end
