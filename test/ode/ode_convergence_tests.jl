@@ -66,6 +66,9 @@ for i = 1:2
   sim112 = test_convergence(dts,prob,ImplicitEuler(nlsolve = NLFunctional()))
   @test sim112.𝒪est[:final] ≈ 1 atol=testTol
 
+  sim113 = test_convergence(dts,prob,ImplicitEuler(nlsolve = NLAnderson()))
+  @test sim113.𝒪est[:final] ≈ 1 atol=testTol
+
   sim12 = test_convergence(dts,prob,
           GenericImplicitEuler(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(autodiff=true)))
   @test sim12.𝒪est[:final] ≈ 1 atol=testTol
@@ -79,11 +82,17 @@ for i = 1:2
   sim132 = test_convergence(dts,prob,ImplicitMidpoint(nlsolve = NLFunctional()))
   @test sim132.𝒪est[:final] ≈ 2 atol=testTol
 
+  sim134 = test_convergence(dts,prob,ImplicitMidpoint(nlsolve = NLAnderson()))
+  @test sim134.𝒪est[:final] ≈ 2 atol=testTol
+
   sim13 = test_convergence(dts,prob,Trapezoid())
   @test sim13.𝒪est[:final] ≈ 2 atol=testTol
 
   sim133 = test_convergence(dts,prob,Trapezoid(nlsolve = NLFunctional()))
   @test sim133.𝒪est[:final] ≈ 2 atol=testTol
+
+  sim135 = test_convergence(dts,prob,Trapezoid(nlsolve = NLAnderson()))
+  @test sim135.𝒪est[:final] ≈ 2 atol=testTol
 
   sim14 = test_convergence(dts,prob,
           GenericTrapezoid(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(autodiff=true)))

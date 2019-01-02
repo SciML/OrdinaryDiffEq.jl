@@ -13,6 +13,7 @@ function (S::NLAnderson{false,<:NLSolverCache})(integrator)
   zs = zeros(S.n+1)
   gs = zeros(S.n+1)
   residuals = zeros(S.n+1)
+  alphas = zeros(S.n)
   # initial step of NLAnderson iteration
   zs[1] = z
   iter = 1
@@ -22,8 +23,12 @@ function (S::NLAnderson{false,<:NLSolverCache})(integrator)
   gs[1] = z₊
   dz = z₊ - z
   ndz = integrator.opts.internalnorm(dz)
-  xs = circshift(xs, 1)
-  gs = circshift(gs, 1)
+  for t = (S.n+1):-1:2
+    zs[t] = zs[t-1]
+    gs[t] = gs[t-1]
+  end
+  # zs = circshift(zs, 1)
+  # gs = circshift(gs, 1)
   z = z₊
   zs[1] = z
   η = nlcache.ηold
@@ -39,16 +44,21 @@ function (S::NLAnderson{false,<:NLSolverCache})(integrator)
     
     mk = min(S.n, iter-1)
     residuals[1:mk] = (gs[2:mk+1] .- zs[2:mk+1]) .- (gs[1] - zs[1])
-    alphas[1:mk] .= residuals[1:mk] \ (zs[1] - gs[1])
+    alphas[1:mk] .= residuals[1:mk] \ [(zs[1] - gs[1])]
     for i = 1:mk
         z₊ += alphas[i]*(gs[i+1] - gs[1])
     end
-    xs = circshift(xs, 1)
-    gs = circshift(gs, 1)
+    for t = (S.n+1):-1:2
+      zs[t] = zs[t-1]
+      gs[t] = gs[t-1]
+    end
+    # zs = circshift(zs, 1)
+    # gs = circshift(gs, 1)
     zs[1] = z₊
     ndzprev = ndz
     dz = z₊ - z
     ndz = integrator.opts.internalnorm(dz)
+    θ = ndz/ndzprev
     if θ > 1 || ndz*(θ^(max_iter - iter)/(1-θ)) > κtol
       fail_convergence = true
       break
