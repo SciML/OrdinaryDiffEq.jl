@@ -4,11 +4,13 @@ function initialize!(integrator,cache::FunctionMapConstantCache)
 end
 
 function perform_step!(integrator,cache::FunctionMapConstantCache,repeat_step=false)
+  @unpack uprev,dt,t,f,p = integrator
   if integrator.f != DiffEqBase.DISCRETE_OUTOFPLACE_DEFAULT
     if FunctionMap_scale_by_time(integrator.alg)
-      @muladd integrator.u = integrator.uprev + integrator.dt*integrator.f(integrator.uprev,integrator.p,integrator.t+integrator.dt)
+      tmp = f(uprev, p, t + dt)
+      @muladd integrator.u = @. uprev + dt * tmp
     else
-      integrator.u = integrator.f(integrator.uprev,integrator.p,integrator.t+integrator.dt)
+      integrator.u = f(uprev, p, t + dt)
     end
   end
 end
@@ -46,8 +48,8 @@ function initialize!(integrator,cache::EulerConstantCache)
 end
 
 function perform_step!(integrator,cache::EulerConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
-  @muladd u = uprev + dt*integrator.fsalfirst
+  @unpack t,dt,uprev,f,p = integrator
+  @muladd u = @. uprev + dt*integrator.fsalfirst
   k = f(u, p, t+dt) # For the interpolation, needs k at the updated point
   integrator.fsallast = k
   integrator.k[1] = integrator.fsalfirst
