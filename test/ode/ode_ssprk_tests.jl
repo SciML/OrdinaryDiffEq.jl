@@ -141,7 +141,7 @@ for prob in test_problems_linear
 end
 for prob in test_problems_nonlinear
   sim = test_convergence(dts, prob, alg)
-  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=0.35
 end
 # test SSP coefficient
 sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg), dense=false)
