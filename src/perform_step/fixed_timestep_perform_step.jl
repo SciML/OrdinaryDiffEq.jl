@@ -4,11 +4,13 @@ function initialize!(integrator,cache::FunctionMapConstantCache)
 end
 
 function perform_step!(integrator,cache::FunctionMapConstantCache,repeat_step=false)
+  @unpack uprev,dt,t,f,p = integrator
   if integrator.f != DiffEqBase.DISCRETE_OUTOFPLACE_DEFAULT
     if FunctionMap_scale_by_time(integrator.alg)
-      @muladd integrator.u = integrator.uprev + integrator.dt*integrator.f(integrator.uprev,integrator.p,integrator.t+integrator.dt)
+      tmp = f(uprev, p, t + dt)
+      @muladd integrator.u = @. uprev + dt * tmp
     else
-      integrator.u = integrator.f(integrator.uprev,integrator.p,integrator.t+integrator.dt)
+      integrator.u = f(uprev, p, t + dt)
     end
   end
 end
@@ -46,8 +48,8 @@ function initialize!(integrator,cache::EulerConstantCache)
 end
 
 function perform_step!(integrator,cache::EulerConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
-  @muladd u = uprev + dt*integrator.fsalfirst
+  @unpack t,dt,uprev,f,p = integrator
+  @muladd u = @. uprev + dt*integrator.fsalfirst
   k = f(u, p, t+dt) # For the interpolation, needs k at the updated point
   integrator.fsallast = k
   integrator.k[1] = integrator.fsalfirst
@@ -83,34 +85,36 @@ function initialize!(integrator,cache::Union{HeunConstantCache,RalstonConstantCa
   integrator.k[2] = integrator.fsallast
 end
 
-function perform_step!(integrator,cache::Union{HeunConstantCache,RalstonConstantCache},repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
-  fsalfirst = integrator.fsalfirst
+@muladd function perform_step!(integrator,cache::Union{HeunConstantCache,RalstonConstantCache},repeat_step=false)
+  @unpack t,dt,uprev,u,f,p,fsalfirst = integrator
 
+  # precalculations
   if typeof(cache) <: HeunConstantCache
-      a = dt
+      a₁ = dt
+      a₂ = dt / 2
   else # Ralston
-      a = 3dt/4
+      a₁ = 3 * dt / 4
+      a₂ = dt / 3
+      a₃ = 2 * a₂
   end
 
-  @muladd tmp = uprev + a*fsalfirst
-
-  k2 = f(tmp,p,t+a)
+  tmp = @. uprev + a₁ * fsalfirst
+  k2 = f(tmp, p, t + a₁)
 
   if typeof(cache) <: HeunConstantCache
-      @muladd u = uprev + (dt/2)*(fsalfirst + k2)
+      u = @. uprev + a₂ * (fsalfirst + k2)
   else
-      @muladd u = uprev + (dt/3)*fsalfirst + (2dt/3)*k2
+      u = @. uprev + a₂ * fsalfirst + a₃ * k2
   end
 
   if integrator.opts.adaptive
       if typeof(cache) <: HeunConstantCache
-          @muladd utilde = (dt/2)*(k2 - fsalfirst)
+          tmp = @. a₂ * (k2 - fsalfirst)
       else
-          @muladd utilde = (2dt/3)*(k2 - fsalfirst)
+          tmp = @. a₃ * (k2 - fsalfirst)
       end
 
-      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   k = f(u, p, t+dt)
@@ -131,35 +135,39 @@ function initialize!(integrator,cache::Union{HeunCache,RalstonCache})
   integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # For the interpolation, needs k at the updated point
 end
 
-function perform_step!(integrator,cache::Union{HeunCache,RalstonCache},repeat_step=false)
+@muladd function perform_step!(integrator,cache::Union{HeunCache,RalstonCache},repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack fsalfirst,k,utilde = cache
+  @unpack fsalfirst,k,tmp,atmp = cache
 
+  # precalculations
   if typeof(cache) <: HeunCache
-      a = dt
+      a₁ = dt
+      a₂ = dt / 2
   else # Ralston
-      a = 3dt/4
+      a₁ = 3 * dt / 4
+      a₂ = dt / 3
+      a₃ = 2 * a₂
   end
 
-  @muladd @. utilde = uprev + a*fsalfirst
-
-  f(k,utilde,p,t+a)
+  @. tmp = uprev + a₁ * fsalfirst
+  f(k, tmp, p, t + a₁)
 
   if typeof(cache) <: HeunCache
-      @muladd @. u = uprev + (dt/2)*(fsalfirst + k)
+      @. u = uprev + a₂ * (fsalfirst + k)
   else
-      @muladd @. u = uprev + (dt/3)*fsalfirst + (2dt/3)*k
+      @. u = uprev + a₂ * fsalfirst + a₃ * k
   end
 
   if integrator.opts.adaptive
       if typeof(cache) <: HeunCache
-          @muladd @. utilde = (dt/2)*(k - fsalfirst)
+          @. tmp = a₂ * (k - fsalfirst)
       else
-          @muladd @. utilde = (2dt/3)*(k - fsalfirst)
+          @. tmp = a₃ * (k - fsalfirst)
       end
 
-      calculate_residuals!(utilde, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(utilde)
+      calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
+                           integrator.opts.reltol, integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   f(integrator.fsallast,u,p,t+dt) # For the interpolation, needs k at the updated point
 end
@@ -178,14 +186,15 @@ end
 @muladd function perform_step!(integrator,cache::MidpointConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   halfdt = dt/2
-  k = f(uprev + halfdt*integrator.fsalfirst, p, t+halfdt)
-  u = uprev + dt*k
+  tmp = @. uprev + halfdt * integrator.fsalfirst
+  k = f(tmp, p, t+halfdt)
+  u = @. uprev + dt * k
   integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
   if integrator.opts.adaptive
-      utilde = dt*(integrator.fsalfirst - k)
-      integrator.EEst = integrator.opts.internalnorm(
-          calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                              integrator.opts.reltol,integrator.opts.internalnorm))
+      utilde = @. dt * (integrator.fsalfirst - k)
+      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
+                                 integrator.opts.reltol,integrator.opts.internalnorm)
+      integrator.EEst = integrator.opts.internalnorm(atmp)
   end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
