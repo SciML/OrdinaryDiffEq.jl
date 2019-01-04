@@ -111,7 +111,7 @@ function DiffEqBase.__init(
 
   if typeof(alg) <: FunctionMap
     abstol_internal = real.(zero.(u))
-  elseif abstol == nothing
+  elseif abstol === nothing
     if uBottomEltypeNoUnits == uBottomEltype
       abstol_internal = real(convert(uBottomEltype,oneunit(uBottomEltype)*1//10^6))
     else
@@ -123,7 +123,7 @@ function DiffEqBase.__init(
 
   if typeof(alg) <: FunctionMap
     reltol_internal = real.(zero(first(u)/t))
-  elseif reltol == nothing
+  elseif reltol === nothing
     if uBottomEltypeNoUnits == uBottomEltype
       reltol_internal = real(convert(uBottomEltype,oneunit(uBottomEltype)*1//10^3))
     else
@@ -157,7 +157,7 @@ function DiffEqBase.__init(
   callbacks_internal = CallbackSet(callback,prob.callback)
 
   ### Algorithm-specific defaults ###
-  if save_idxs == nothing
+  if save_idxs === nothing
     ksEltype = Vector{rateType}
   else
     ks_prototype = rate_prototype[save_idxs]
@@ -165,7 +165,7 @@ function DiffEqBase.__init(
   end
 
   # Have to convert incase passed in wrong.
-  if save_idxs == nothing
+  if save_idxs === nothing
     timeseries = convert(Vector{uType},timeseries_init)
   else
     u_initial = u[save_idxs]
@@ -199,7 +199,7 @@ function DiffEqBase.__init(
     saveiter = 1 # Starts at 1 so first save is at 2
     saveiter_dense = 1
     copyat_or_push!(ts,1,t)
-    if save_idxs == nothing
+    if save_idxs === nothing
       copyat_or_push!(timeseries,1,u)
       copyat_or_push!(ks,1,[rate_prototype])
     else
@@ -234,12 +234,12 @@ function DiffEqBase.__init(
 
   if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
     id = CompositeInterpolationData(f,timeseries,ts,ks,alg_choice,dense,cache)
-    beta2 == nothing && ( beta2=beta2_default(alg.algs[cache.current]) )
-    beta1 == nothing && ( beta1=beta1_default(alg.algs[cache.current],beta2) )
+    beta2 === nothing && ( beta2=beta2_default(alg.algs[cache.current]) )
+    beta1 === nothing && ( beta1=beta1_default(alg.algs[cache.current],beta2) )
   else
     id = InterpolationData(f,timeseries,ts,ks,dense,cache)
-    beta2 == nothing && ( beta2=beta2_default(alg) )
-    beta1 == nothing && ( beta1=beta1_default(alg,beta2) )
+    beta2 === nothing && ( beta2=beta2_default(alg) )
+    beta1 === nothing && ( beta1=beta1_default(alg,beta2) )
   end
 
   opts = DEOptions{typeof(abstol_internal),typeof(reltol_internal),QT,tType,

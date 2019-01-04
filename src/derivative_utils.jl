@@ -146,7 +146,7 @@ end
 set_gamma!(W::WOperator, gamma) = (W.gamma = gamma; W)
 DiffEqBase.update_coefficients!(W::WOperator,u,p,t) = (update_coefficients!(W.J,u,p,t); W)
 function Base.convert(::Type{AbstractMatrix}, W::WOperator)
-  if W._concrete_form == nothing || !W.inplace
+  if W._concrete_form === nothing || !W.inplace
     # Allocating
     if W.transform
       W._concrete_form = W.mass_matrix / W.gamma - convert(AbstractMatrix,W.J)
@@ -204,7 +204,7 @@ function Base.:\(W::WOperator, x::Union{AbstractVecOrMat,Number})
 end
 
 function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrMat)
-  if W._func_cache == nothing
+  if W._func_cache === nothing
     # Allocate cache only if needed
     W._func_cache = Vector{eltype(W)}(undef, size(Y, 1))
   end

@@ -130,13 +130,13 @@ function ode_interpolation(tvals,id,idxs,deriv,p,continuity::Symbol=:left)
     if !avoid_constant_ends && ts[i] == t
       lasti = lastindex(ts)
       k = continuity == :right && i+1 <= lasti && ts[i+1] == t ? i+1 : i
-      if idxs == nothing
+      if idxs === nothing
         vals[j] = timeseries[k]
       else
         vals[j] = timeseries[k][idxs]
       end
     elseif !avoid_constant_ends && ts[i-1] == t # Can happen if it's the first value!
-      if idxs == nothing
+      if idxs === nothing
         vals[j] = timeseries[i-1]
       else
         vals[j] = timeseries[i-1][idxs]
@@ -181,13 +181,13 @@ function ode_interpolation!(vals,tvals,id,idxs,deriv,p,continuity::Symbol=:left)
     if !avoid_constant_ends && ts[i] == t
       lasti = lastindex(ts)
       k = continuity == :right && i+1 <= lasti && ts[i+1] == t ? i+1 : i
-      if idxs == nothing
+      if idxs === nothing
         vals[j] = timeseries[k]
       else
         vals[j] = timeseries[k][idxs]
       end
     elseif !avoid_constant_ends && ts[i-1] == t # Can happen if it's the first value!
-      if idxs == nothing
+      if idxs === nothing
         vals[j] = timeseries[i-1]
       else
         vals[j] = timeseries[i-1][idxs]
@@ -243,13 +243,13 @@ function ode_interpolation(tval::Number,id,idxs,deriv,p,continuity::Symbol=:left
   @inbounds if !avoid_constant_ends && ts[i] == tval
     lasti = lastindex(ts)
     k = continuity == :right && i+1 <= lasti && ts[i+1] == tval ? i+1 : i
-    if idxs == nothing
+    if idxs === nothing
       val = timeseries[k]
     else
       val = timeseries[k][idxs]
     end
   elseif !avoid_constant_ends && ts[i-1] == tval # Can happen if it's the first value!
-    if idxs == nothing
+    if idxs === nothing
       val = timeseries[i-1]
     else
       val = timeseries[i-1][idxs]
@@ -289,13 +289,13 @@ function ode_interpolation!(out,tval::Number,id,idxs,deriv,p,continuity::Symbol=
   if !avoid_constant_ends && ts[i] == tval
     lasti = lastindex(ts)
     k = continuity == :right && i+1 <= lasti && ts[i+1] == tval ? i+1 : i
-    if idxs == nothing
+    if idxs === nothing
       @inbounds copyto!(out,timeseries[k])
     else
       @inbounds copyto!(out,timeseries[k][idxs])
     end
   elseif !avoid_constant_ends && ts[i-1] == tval # Can happen if it's the first value!
-    if idxs == nothing
+    if idxs === nothing
       @inbounds copyto!(out,timeseries[i-1])
     else
       @inbounds copyto!(out,timeseries[i-1][idxs])

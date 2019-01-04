@@ -67,7 +67,7 @@ function savevalues!(integrator::ODEIntegrator,force_save=false,reduce_size=true
     else # ==t, just save
       savedexactly = true
       copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
-      if integrator.opts.save_idxs == nothing
+      if integrator.opts.save_idxs === nothing
         copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
       else
         copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u[integrator.opts.save_idxs],Val{false})
@@ -75,7 +75,7 @@ function savevalues!(integrator::ODEIntegrator,force_save=false,reduce_size=true
       if typeof(integrator.alg) <: FunctionMap || integrator.opts.dense
         integrator.saveiter_dense +=1
         if integrator.opts.dense
-          if integrator.opts.save_idxs == nothing
+          if integrator.opts.save_idxs === nothing
             copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
           else
             copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,[k[integrator.opts.save_idxs] for k in integrator.k],Val{false})
@@ -89,7 +89,7 @@ function savevalues!(integrator::ODEIntegrator,force_save=false,reduce_size=true
   end
   if force_save || (integrator.opts.save_everystep && integrator.iter%integrator.opts.timeseries_steps==0)
     integrator.saveiter += 1; saved, savedexactly = true, true
-    if integrator.opts.save_idxs == nothing
+    if integrator.opts.save_idxs === nothing
       copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
     else
       copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u[integrator.opts.save_idxs],Val{false})
@@ -98,7 +98,7 @@ function savevalues!(integrator::ODEIntegrator,force_save=false,reduce_size=true
     if typeof(integrator.alg) <: FunctionMap || integrator.opts.dense
       integrator.saveiter_dense +=1
       if integrator.opts.dense
-        if integrator.opts.save_idxs == nothing
+        if integrator.opts.save_idxs === nothing
           copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
         else
           copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,[k[integrator.opts.save_idxs] for k in integrator.k],Val{false})
@@ -131,7 +131,7 @@ function solution_endpoint_match_cur_integrator!(integrator)
   if integrator.opts.save_end && (integrator.saveiter == 0 || integrator.sol.t[integrator.saveiter] !=  integrator.t)
     integrator.saveiter += 1
     copyat_or_push!(integrator.sol.t,integrator.saveiter,integrator.t)
-    if integrator.opts.save_idxs == nothing
+    if integrator.opts.save_idxs === nothing
       copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)
     else
       copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u[integrator.opts.save_idxs],Val{false})
@@ -139,7 +139,7 @@ function solution_endpoint_match_cur_integrator!(integrator)
     if typeof(integrator.alg) <: FunctionMap || integrator.opts.dense
       integrator.saveiter_dense +=1
       if integrator.opts.dense
-        if integrator.opts.save_idxs == nothing
+        if integrator.opts.save_idxs === nothing
           copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,integrator.k)
         else
           copyat_or_push!(integrator.sol.k,integrator.saveiter_dense,[k[integrator.opts.save_idxs] for k in integrator.k],Val{false})
