@@ -192,7 +192,7 @@ function alg_cache_expRK(alg::OrdinaryDiffEqExponentialAlgorithm,u,uEltypeNoUnit
   # Allocate cache for the Jacobian
   if isa(f, SplitFunction)
     J = nothing
-  elseif DiffEqBase.has_jac(f) && f.jac_prototype != nothing
+  elseif DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
     J = deepcopy(f.jac_prototype)
   else
     J = fill(zero(uEltypeNoUnits), n, n)
@@ -247,7 +247,7 @@ function alg_cache(alg::LawsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   # Allocate cache for the Jacobian
   if isa(f, SplitFunction)
     J = nothing
-  elseif DiffEqBase.has_jac(f) && f.jac_prototype != nothing
+  elseif DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
     J = deepcopy(f.jac_prototype)
   else
     J = fill(zero(uEltypeNoUnits), n, n)
@@ -452,7 +452,7 @@ function alg_cache(alg::Exp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
     uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   end
-  if DiffEqBase.has_jac(f) && f.jac_prototype != nothing
+  if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
     J = deepcopy(f.jac_prototype)
   else
     J = fill(zero(uEltypeNoUnits), length(u), length(u))
@@ -495,7 +495,7 @@ function alg_cache(alg::EPIRK4s3A,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
     uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   end
-  if DiffEqBase.has_jac(f) && f.jac_prototype != nothing
+  if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
     J = deepcopy(f.jac_prototype)
   else
     J = fill(zero(uEltypeNoUnits), length(u), length(u))
@@ -537,7 +537,7 @@ function alg_cache(alg::EPIRK4s3B,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
     uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   end
-  if DiffEqBase.has_jac(f) && f.jac_prototype != nothing
+  if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
     J = deepcopy(f.jac_prototype)
   else
     J = fill(zero(uEltypeNoUnits), length(u), length(u))
@@ -579,7 +579,7 @@ function alg_cache(alg::EPIRK5s3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
     uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   end
-  if DiffEqBase.has_jac(f) && f.jac_prototype != nothing
+  if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
     J = deepcopy(f.jac_prototype)
   else
     J = fill(zero(uEltypeNoUnits), length(u), length(u))
@@ -620,7 +620,7 @@ function alg_cache(alg::EXPRB53s3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
     uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   end
-  if DiffEqBase.has_jac(f) && f.jac_prototype != nothing
+  if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
     J = deepcopy(f.jac_prototype)
   else
     J = fill(zero(uEltypeNoUnits), length(u), length(u))
@@ -662,7 +662,7 @@ function alg_cache(alg::EPIRK5P1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
     uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   end
-  if DiffEqBase.has_jac(f) && f.jac_prototype != nothing
+  if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
     J = deepcopy(f.jac_prototype)
   else
     J = fill(zero(uEltypeNoUnits), length(u), length(u))
@@ -705,7 +705,7 @@ function alg_cache(alg::EPIRK5P2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
     uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   end
-  if DiffEqBase.has_jac(f) && f.jac_prototype != nothing
+  if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
     J = deepcopy(f.jac_prototype)
   else
     J = fill(zero(uEltypeNoUnits), length(u), length(u))
@@ -763,7 +763,7 @@ function alg_cache_exprb(alg::OrdinaryDiffEqAdaptiveExponentialAlgorithm,u,uElty
     jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,dz)
   end
   # Allocate cache for the Jacobian
-  if DiffEqBase.has_jac(f) && f.jac_prototype != nothing
+  if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
     J = deepcopy(f.jac_prototype)
   else
     J = fill(zero(uEltypeNoUnits), n, n)

@@ -21,7 +21,7 @@ DiffEqBase.@def iipnlcachefields begin
     linsolve = alg.linsolve(Val{:init},nf,u)
     z₊ = z
   elseif alg.nlsolve isa NLNewton
-    if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype != nothing
+    if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype !== nothing
       W = WOperator(f, dt, true)
       J = nothing # is J = W.J better?
     else
@@ -44,12 +44,12 @@ DiffEqBase.@def iipnlcachefields begin
     z₊ = similar(z)
   end
 
-  if κ != nothing
+  if κ !== nothing
     κ = uToltype(nlcache.κ)
   else
     κ = uToltype(1//100)
   end
-  if tol != nothing
+  if tol !== nothing
     tol = uToltype(nlcache.tol)
   else
     tol = uToltype(min(0.03,first(reltol)^(0.5)))
@@ -80,12 +80,12 @@ DiffEqBase.@def oopnlcachefields begin
   uToltype = real(uBottomEltypeNoUnits)
   ηold = one(uToltype)
 
-  if κ != nothing
+  if κ !== nothing
     κ = uToltype(nlcache.κ)
   else
     κ = uToltype(1//100)
   end
-  if tol != nothing
+  if tol !== nothing
     tol = uToltype(nlcache.tol)
   else
     tol = uToltype(min(0.03,first(reltol)^(0.5)))
