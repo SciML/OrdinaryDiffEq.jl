@@ -261,7 +261,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
                                     f.invW(W, uprev, p, dtgamma, t) # W == inverse W
       is_compos && calc_J!(integrator, cache, true)
 
-    elseif DiffEqBase.has_jac(f) && f.jac_prototype != nothing
+    elseif DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
       # skip calculation of J if step is repeated
       if repeat_step || (alg_can_repeat_jac(alg) &&
                          (!integrator.last_stepfail && nl_iters == 1 &&

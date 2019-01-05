@@ -197,7 +197,7 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator,u0 = integrator.sol.prob.u
         copyat_or_push!(integrator.sol.u,1,u_initial,Val{false})
       end
     end
-    if integrator.sol.u_analytic != nothing
+    if integrator.sol.u_analytic !== nothing
       resize!(integrator.sol.u_analytic,0)
     end
     if typeof(integrator.alg) <: OrdinaryDiffEqCompositeAlgorithm

@@ -25,8 +25,8 @@ function DiffEqBase.__init(
   save_end = save_everystep || isempty(saveat) || typeof(saveat) <: Number ? true : prob.tspan[2] in saveat,
   callback=nothing,
   dense = save_everystep && !(typeof(alg) <: FunctionMap) && isempty(saveat),
-  calck = (callback != nothing && callback != CallbackSet()) || # Empty callback
-          (prob.callback != nothing && prob.callback != CallbackSet()) || # Empty prob.callback
+  calck = (callback !== nothing && callback != CallbackSet()) || # Empty callback
+          (prob.callback !== nothing && prob.callback != CallbackSet()) || # Empty prob.callback
           (!isempty(setdiff(saveat,tstops)) || dense), # and no dense output
   dt = typeof(alg) <: FunctionMap && isempty(tstops) ? eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
   adaptive = isadaptive(alg),
