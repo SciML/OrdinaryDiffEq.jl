@@ -22,7 +22,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 978-3-642-05221-7. Section IV.8.
 [doi:10.1007/978-3-642-05221-7](https://doi.org/10.1007/978-3-642-05221-7)
 """
-function (S::NLFunctional{false})(integrator)
+@muladd function (S::NLFunctional{false})(integrator)
   nlcache = S.cache
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z,tmp,κ,tol,c,γ,min_iter,max_iter = nlcache
@@ -42,7 +42,8 @@ function (S::NLFunctional{false})(integrator)
   if mass_matrix == I
     z₊ = dt .* f(u, p, tstep)
   else
-    z₊ = mass_matrix * (dt .* f(u, p, tstep))
+    mz = mass_matrix * z
+    z₊ = dt .* f(u, p, tstep) .- mz .+ z
   end
   ndz = integrator.opts.internalnorm(z₊ .- z)
   z = z₊
@@ -59,7 +60,8 @@ function (S::NLFunctional{false})(integrator)
     if mass_matrix == I
       z₊ = dt .* f(u, p, tstep)
     else
-      z₊ = mass_matrix * (dt .* f(u, p, tstep))
+      mz = mass_matrix * z
+      z₊ = dt .* f(u, p, tstep) .- mz .+ z
     end
 
     # check early stopping criterion
@@ -82,7 +84,7 @@ function (S::NLFunctional{false})(integrator)
   z, η, iter, do_functional
 end
 
-function (S::NLFunctional{true})(integrator)
+@muladd function (S::NLFunctional{true})(integrator)
   nlcache = S.cache
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z,z₊,b,dz,tmp,κ,tol,k,c,γ,min_iter,max_iter = nlcache
@@ -104,8 +106,9 @@ function (S::NLFunctional{true})(integrator)
   if mass_matrix == I
     @. z₊ = dt*k
   else
-    @. ztmp = dt*k
-    mul!(vec(z₊), mass_matrix, vec(ztmp))
+    @. z₊ = dt*k + z
+    mul!(ztmp, mass_matrix, z)
+    @. z₊ -= ztmp
   end
   @. dz = z₊ - z
   ndz = integrator.opts.internalnorm(dz)
@@ -124,8 +127,9 @@ function (S::NLFunctional{true})(integrator)
     if mass_matrix == I
       @. z₊ = dt*k
     else
-      @. ztmp = dt*k
-      mul!(z₊, mass_matrix, ztmp)
+      @. z₊ = dt*k + z
+      mul!(ztmp, mass_matrix, z)
+      @. z₊ -= ztmp
     end
     @. dz = z₊ - z
     ndzprev = ndz

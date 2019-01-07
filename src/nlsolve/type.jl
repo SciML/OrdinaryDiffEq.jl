@@ -33,7 +33,9 @@ end
 
 NLSolverCache(;κ=nothing, tol=nothing, min_iter=1, max_iter=10) =
 NLSolverCache(κ, tol, min_iter, max_iter, 0, true,
-              (nothing for i in 1:10)...)
+              ntuple(i->nothing, 4)...,
+              κ === nothing ? κ : zero(κ),
+              ntuple(i->nothing, 5)...)
 
 # Default `iip` to `true`, but the whole type will be reinitialized in `alg_cache`
 function NLFunctional(;kwargs...)
