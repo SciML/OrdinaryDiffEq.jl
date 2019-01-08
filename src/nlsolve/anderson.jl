@@ -90,24 +90,24 @@ function (S::NLAnderson{true})(integrator)
   # precalculations
   κtol = κ*tol
 
-  zs = zeros(length(z), S.n+1)
-  gs = zeros(length(z), S.n+1)
-  residuals = zeros(length(z), S.n+1)
+  zs = zeros(length(vec(z)), S.n+1)
+  gs = zeros(length(vec(z)), S.n+1)
+  residuals = zeros(length(vec(z)), S.n+1)
   alphas = zeros(S.n)
   # initial step of NLAnderson iteration
-  zs[:,1] .= z
+  zs[:,1] .= vec(z)
   iter = 1
   tstep = t + c*dt
   @. u = tmp + γ*z
   # z₊ = dt*f(u, p, tstep)
   f(k, u, p, tstep)
   # if mass_matrix == I
-  #   @. z₊ = dt*k
+    @. z₊ = dt*k
   # else
   #   @. ztmp = dt*k
   #   mul!(z₊, mass_matrix, ztmp)
   # end
-  @. gs[:,1] = z₊
+  gs[:,1] .= vec(z₊)
   @. dz = z₊ - z
   ndz = integrator.opts.internalnorm(dz)
   for t = (S.n+1):-1:2
@@ -116,8 +116,8 @@ function (S::NLAnderson{true})(integrator)
   end
   # zs = circshift(zs, 1)
   # gs = circshift(gs, 1)
-  @. z = z₊
-  @. zs[:,1] = z
+  z .= z₊
+  zs[:,1] .= vec(z)
   η = nlcache.ηold
   do_anderson = true
 
@@ -128,13 +128,14 @@ function (S::NLAnderson{true})(integrator)
     @. u = tmp + γ*z
     f(k, u, p, tstep)
     @. z₊ = dt*k
-    @. gs[:,1] = z₊
-    
+    gs[:,1] .= vec(z₊)
+
     mk = min(S.n, iter-1)
     residuals[:,1:mk] .= (gs[:,2:mk+1] .- zs[:,2:mk+1]) .- (gs[:,1] - zs[:,1])
     alphas[1:mk] .= residuals[:,1:mk] \ (zs[:,1] .- gs[:,1])
+    vecz₊ = vec(z₊)
     for i = 1:mk
-        @. z₊ += alphas[i]*(gs[:,i+1] - gs[:,1])
+        vecz₊ .+= alphas[i].*(gs[:,i+1] .- gs[:,1])
     end
     for t = (S.n+1):-1:2
       @. zs[:,t] = zs[:,t-1]
@@ -142,7 +143,7 @@ function (S::NLAnderson{true})(integrator)
     end
     # zs = circshift(zs, 1)
     # gs = circshift(gs, 1)
-    @. zs[1] = z₊
+    zs[:,1] .= vec(z₊)
     ndzprev = ndz
     @. dz = z₊ - z
     ndz = integrator.opts.internalnorm(dz)
