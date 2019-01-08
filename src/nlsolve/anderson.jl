@@ -101,12 +101,13 @@ function (S::NLAnderson{true})(integrator)
   @. u = tmp + γ*z
   # z₊ = dt*f(u, p, tstep)
   f(k, u, p, tstep)
-  # if mass_matrix == I
+  if mass_matrix == I
     @. z₊ = dt*k
-  # else
-  #   @. ztmp = dt*k
-  #   mul!(z₊, mass_matrix, ztmp)
-  # end
+  else
+    @. z₊ = dt*k + z
+    mul!(ztmp, mass_matrix, z)
+    @. z₊ -= ztmp
+  end
   gs[:,1] .= vec(z₊)
   @. dz = z₊ - z
   ndz = integrator.opts.internalnorm(dz)
@@ -127,7 +128,13 @@ function (S::NLAnderson{true})(integrator)
     iter += 1
     @. u = tmp + γ*z
     f(k, u, p, tstep)
-    @. z₊ = dt*k
+    if mass_matrix == I
+      @. z₊ = dt*k
+    else
+      @. z₊ = dt*k + z
+      mul!(ztmp, mass_matrix, z)
+      @. z₊ -= ztmp
+    end
     gs[:,1] .= vec(z₊)
 
     mk = min(S.n, iter-1)
