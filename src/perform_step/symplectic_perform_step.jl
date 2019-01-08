@@ -7,12 +7,12 @@ function initialize!(integrator,cache::SymplecticEulerConstantCache)
   # So that way FSAL interpolation
   duprev,uprev = integrator.uprev.x
   du,u = integrator.u.x
-  kduprev = integrator.f.f1(duprev,uprev,integrator.p,integrator.t)
   kdu = integrator.f.f1(duprev,uprev,integrator.p,integrator.t)
+  kuprev = integrator.f.f2(duprev,uprev,integrator.p,integrator.t)
   @muladd du = duprev + integrator.dt*kdu
   ku = integrator.f.f2(du,uprev,integrator.p,integrator.t)
-  integrator.fsalfirst = ArrayPartition((kduprev,ku))
-  integrator.fsallast = ArrayPartition((kdu,zero(ku)))
+  integrator.fsalfirst = ArrayPartition((kdu,kuprev))
+  integrator.fsallast = ArrayPartition((zero(kdu),ku))
 end
 
 @muladd function perform_step!(integrator,cache::SymplecticEulerConstantCache,repeat_step=false)
@@ -24,7 +24,7 @@ end
   # Do it at the end for interpolations!
   kdu = f.f1(duprev,u,p,t)
   du = duprev + dt*kdu
-  ku = f.f2(du,uprev,p,t)
+  ku = f.f2(du,u,p,t)
 
   integrator.u = ArrayPartition((du,u))
   integrator.fsallast = ArrayPartition((kdu,ku))
@@ -44,27 +44,26 @@ function initialize!(integrator,cache::SymplecticEulerCache)
   # So that way FSAL interpolation
   duprev,uprev = integrator.uprev.x
   du,u = integrator.u.x
-  kdu = integrator.k[1].x[1]
-  ku = integrator.k[2].x[2]
+  kuprev = integrator.fsalfirst.x[2]
+  kdu,ku = integrator.fsallast.x
   integrator.f.f1(kdu,duprev,uprev,integrator.p,integrator.t)
+  integrator.f.f2(kuprev,duprev,uprev,integrator.p,integrator.t)
   @muladd @. du = duprev + integrator.dt*kdu
   integrator.f.f2(ku,du,uprev,integrator.p,integrator.t)
-  integrator.f.f1(integrator.k[1].x[1],duprev,uprev,integrator.p,integrator.t)
 end
 
 @muladd function perform_step!(integrator,cache::SymplecticEulerCache,repeat_step=false)
   @unpack t,dt,f,p = integrator
   duprev,uprev = integrator.uprev.x
   du,u = integrator.u.x
-  kuprev = integrator.k[1].x[2]
-  kdu = integrator.k[2].x[1]
-  ku  = integrator.k[2].x[2]
+  kuprev = integrator.fsalfirst.x[2]
+  kdu,ku = integrator.fsallast.x
   @. u = uprev + dt*kuprev
   # Now actually compute the step
   # Do it at the end for interpolations!
   f.f1(kdu,duprev,u,p,t)
   @. du = duprev + dt*kdu
-  f.f2(ku,du,uprev,p,t)
+  f.f2(ku,du,u,p,t)
 end
 
 function initialize!(integrator,cache::C) where
