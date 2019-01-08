@@ -113,7 +113,7 @@ sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg), 
 @test all(sol.u .>= 0)
 
 
-alg = SSPRK53_2N()
+alg = SSPRK53_2N1()
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
@@ -130,7 +130,27 @@ end
 sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg), dense=false)
 @test all(sol.u .>= 0)
 
+# for SSPRK53_2N2 to be in asymptotic range
+dts = 1 .//2 .^(9:-1:5)
+alg = SSPRK53_2N2()
+for prob in test_problems_only_time
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+for prob in test_problems_linear
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+for prob in test_problems_nonlinear
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+# test SSP coefficient
+sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg), dense=false)
+@test all(sol.u .>= 0)
 
+#reverting back to original dts
+dts = 1 .//2 .^(8:-1:4)
 alg = SSPRK63()
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
