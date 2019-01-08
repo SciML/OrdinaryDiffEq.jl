@@ -317,7 +317,7 @@ function loopfooter!(integrator)
       # integrator.EEst has unitless type of integrator.t
       if typeof(integrator.EEst)<: AbstractFloat && !isempty(integrator.opts.tstops)
         tstop = top(integrator.opts.tstops)
-        abs(ttmp - tstop) < 10eps(integrator.t/oneunit(integrator.t))*oneunit(integrator.t) ?
+        abs(ttmp - tstop) < 10eps(max(integrator.t,tstop)/oneunit(integrator.t))*oneunit(integrator.t) ?
                                   (integrator.t = tstop) : (integrator.t = ttmp)
       else
         integrator.t = ttmp
