@@ -42,6 +42,14 @@ DiffEqBase.@def iipnlcachefields begin
     jac_config = nothing
     linsolve = nothing
     z₊ = similar(z)
+  elseif typeof(alg.nlsolve) <: NLAnderson
+    J = nothing
+    W = nothing
+    du1 = rate_prototype
+    uf = nothing
+    jac_config = nothing
+    linsolve = nothing
+    z₊ = similar(z)
   end
 
   if κ !== nothing
