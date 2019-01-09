@@ -26,8 +26,7 @@ end
 struct NLAnderson{iip,T<:NLSolverCache} <: AbstractNLsolveSolver
   cache::T
   n::Int
-  NLAnderson{iip,T}(nlcache::T) where {iip, T<:NLSolverCache} = new(nlcache, 5)
-  NLAnderson{iip,T}(nlcache::T, n) where {iip, T<:NLSolverCache} = new(nlcache, n)
+  NLAnderson{iip,T}(nlcache::T, n=5) where {iip, T<:NLSolverCache} = new(nlcache, n)
 end
 struct NLNewton{iip,T<:NLSolverCache} <: AbstractNLsolveSolver
   cache::T
