@@ -181,6 +181,7 @@ alg_order(alg::BS5) = 5
 alg_order(alg::OwrenZen3) = 3
 alg_order(alg::OwrenZen4) = 4
 alg_order(alg::OwrenZen5) = 5
+alg_order(alg::LDDRK64) = 4
 
 alg_order(alg::DP5) = 5
 alg_order(alg::DP5Threaded) = 5
