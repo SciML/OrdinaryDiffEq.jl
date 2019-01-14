@@ -203,20 +203,17 @@ alg_cache(alg::BS3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoU
 end
 
 struct LDDRK64ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
-
-  α6::T
-  α5::T
-  α4::T
-  α3::T
   α2::T
-  α1::T
+  α3::T
+  α4::T
+  α5::T
+  α6::T
   β1::T
   β2::T
   β3::T
   β4::T
   β5::T
   β6::T
-  c1::T2
   c2::T2
   c3::T2
   c4::T2
@@ -224,27 +221,23 @@ struct LDDRK64ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   c6::T2
 
   function LDDRK64ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
-
-
-    α6 = T(-1.0742640)
-    α5 = T(-3.4077973)
-    α4 = T(-1.5526678)
-    α3 = T(-0.8946264)
     α2 = T(-0.4919575)
-    α1 = T(0.0)
+    α3 = T(-0.8946264)
+    α4 = T(-1.5526678)
+    α5 = T(-3.4077973)
+    α6 = T(-1.0742640)
     β1 = T(0.1453095)
     β2 = T(0.4653797)
     β3 = T(0.4675397)
     β4 = T(0.7795279)
     β5 = T(0.3574327)
     β6 = T(0.15)
-    c1 = T2(0.0)
     c2 = T2(0.1453095)
     c3 = T2(0.3817422)
     c4 = T2(0.6367813)
     c5 = T2(0.7560744)
     c6 = T2(0.9271047)
-    new{T,T2}(α6, α5, α4, α3, α2, α1, β1, β2, β3, β4, β5, β6, c1, c2, c3, c4, c5, c6)
+    new{T,T2}(α2, α3, α4, α5, α6, β1, β2, β3, β4, β5, β6, c2, c3, c4, c5)
   end
 end
 
