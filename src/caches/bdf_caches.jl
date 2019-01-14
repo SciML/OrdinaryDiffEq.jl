@@ -74,9 +74,9 @@ end
   step::Int
 end
 
-function alg_cache(alg::ABDF3{CS,AD,F,F2,FDT,K,T,T2,Controller},u,rate_prototype,uEltypeNoUnits,
+function alg_cache(alg::ABDF3{CS,AD,F,F2,FDT,T2,Controller},u,rate_prototype,uEltypeNoUnits,
                    uBottomEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) where {CS,AD,F,F2,FDT,K,T,T2,Controller}
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) where {CS,AD,F,F2,FDT,T2,Controller}
   order = 3
   dts = fill(zero(typeof(dt)), order)
   c = fill(zero(typeof(t)), order, order)
@@ -86,7 +86,7 @@ function alg_cache(alg::ABDF3{CS,AD,F,F2,FDT,K,T,T2,Controller},u,rate_prototype
   ϕstar_nm1 = [zero(rate_prototype) for i in 1:order]
   ϕstar_n = [zero(rate_prototype) for i in 1:order]
   kvaerno3cache = alg_cache(Kvaerno3{CS,AD,F,F2,FDT,T2,Controller}(alg.linsolve, alg.nlsolve, alg.diff_type,
-                                    alg.smooth_est, alg.extrapolant, alg.new_jac_conv_bound), u,rate_prototype,uEltypeNoUnits,
+                                    true, alg.extrapolant, alg.new_jac_conv_bound), u,rate_prototype,uEltypeNoUnits,
                                     uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val{false})
   ABDF3ConstantCache(kvaerno3cache.uf, kvaerno3cache.nlsolve, kvaerno3cache, dts, c, g, ϕ_n, ϕstar_nm1, ϕstar_n, β, 1)
 end
