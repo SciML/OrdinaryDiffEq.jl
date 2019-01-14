@@ -146,6 +146,85 @@ end
   return
 end
 
+function initialize!(integrator, cache::ABDF3ConstantCache)
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
+
+@muladd function perform_step!(integrator, cache::ABDF3ConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack dts,g,ϕstar_n,ϕstar_nm1,kvaerno3cache,nlsolve = cache
+  nlsolve!, nlcache = nlsolve, nlsolve.cache
+  alg = unwrap_alg(integrator, true)
+  integrator.u_modified && (cache.step = 1)
+
+  k = cache.step
+  if k == 1
+    dts[1] = dt
+    cache.step += 1
+  elseif k == 2
+    dts[2] = dts[1]
+    dts[1] = dt
+    cache.step += 1
+  else
+    dts[3] = dts[2]
+    dts[2] = dts[1]
+    dts[1] = dt
+  end
+
+  ϕ_and_ϕstar!(cache, integrator.fsalfirst, k)
+  cache.ϕstar_nm1, cache.ϕstar_n = ϕstar_n, ϕstar_nm1
+  if k < 3
+    perform_step!(integrator, cache.kvaerno3cache, repeat_step)
+    return
+  end
+
+  # predictor
+  g_coefs!(cache, k)
+  u = uprev
+  u = @. u + g[1] * ϕstar_n[1] + g[2] * ϕstar_n[2] + g[3] * ϕstar_n[3] # unroll
+
+  # corrector
+  nlcache.γ = 6//11
+  nlcache.c = 1
+  γdt = dt*nlcache.γ
+  # calculate W
+  typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, γdt, repeat_step) )
+  # initial guess
+  if alg.extrapolant == :linear
+    z = @. dt*integrator.fsalfirst
+  else # :constant
+    z = zero(u)
+  end
+  nlcache.z = z
+  k = f(u, p, t+dt)
+  nlcache.tmp = @. u - γdt*k
+  z,η,iter,fail_convergence = nlsolve!(integrator)
+  fail_convergence && return
+  nlcache.ηold = η
+  nlcache.nl_iters = iter
+  u = @. nlcache.tmp + nlcache.γ*z
+
+  #if integrator.opts.adaptive
+  #  tmp = integrator.fsallast - (1+dtₙ/dtₙ₋₁)*integrator.fsalfirst + (dtₙ/dtₙ₋₁)*cache.fsalfirstprev
+  #  est = (dtₙ₋₁+dtₙ)/6 * tmp
+  #  atmp = calculate_residuals(est, uₙ₋₁, uₙ, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+  #  integrator.EEst = integrator.opts.internalnorm(atmp)
+  #end
+
+  integrator.fsallast = f(u, p, t+dt)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+  return
+end
+
 # SBDF
 
 function initialize!(integrator, cache::SBDFConstantCache)

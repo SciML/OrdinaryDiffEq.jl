@@ -195,7 +195,7 @@ module OrdinaryDiffEq
 
   export AN5, JVODE, JVODE_Adams, JVODE_BDF
 
-  export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF
+  export ABDF2, ABDF3, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF
 
   export SBDF2, SBDF3, SBDF4
 

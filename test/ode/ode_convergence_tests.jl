@@ -132,6 +132,11 @@ for i = 1:2
   @test sim.𝒪est[:l2] ≈ 2 atol=testTol
   @test sim.𝒪est[:l∞] ≈ 2 atol=testTol
 
+  sim = test_convergence(dts,prob,ABDF3(extrapolant = :linear))
+  @test sim.𝒪est[:final] ≈ 3 atol=testTol
+  @test sim.𝒪est[:l2] ≈ 3 atol=testTol
+  @test sim.𝒪est[:l∞] ≈ 3 atol=testTol
+
   sim = test_convergence(dts,prob,ABDF2(nlsolve = NLFunctional()))
   @test sim.𝒪est[:final] ≈ 2 atol=testTol
   @test sim.𝒪est[:l2] ≈ 2 atol=testTol

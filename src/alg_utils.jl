@@ -253,6 +253,7 @@ alg_order(alg::AN5) = 5
 alg_order(alg::JVODE) = 1  #dummy value
 
 alg_order(alg::ABDF2) = 2
+alg_order(alg::ABDF3) = 3
 alg_order(alg::QNDF1) = 1
 alg_order(alg::QNDF2) = 2
 

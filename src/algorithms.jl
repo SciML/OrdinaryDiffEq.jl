@@ -760,6 +760,24 @@ ABDF2{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),
       typeof(κ),typeof(tol),typeof(new_jac_conv_bound),controller}(
       linsolve,nlsolve,diff_type,κ,tol,smooth_est,extrapolant,new_jac_conv_bound)
 
+struct ABDF3{CS,AD,F,F2,FDT,K,T,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
+  linsolve::F
+  nlsolve::F2
+  diff_type::FDT
+  κ::K
+  tol::T
+  smooth_est::Bool
+  extrapolant::Symbol
+  new_jac_conv_bound::T2
+end
+ABDF3(;chunk_size=0,autodiff=true,diff_type=Val{:central},
+      κ=nothing,tol=nothing,linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
+      smooth_est=true,extrapolant=:linear,new_jac_conv_bound=1e-3,
+      controller=:Predictive) =
+ABDF3{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),
+      typeof(κ),typeof(tol),typeof(new_jac_conv_bound),controller}(
+      linsolve,nlsolve,diff_type,κ,tol,smooth_est,extrapolant,new_jac_conv_bound)
+
 #########################################
 
 struct CompositeAlgorithm{T,F} <: OrdinaryDiffEqCompositeAlgorithm
