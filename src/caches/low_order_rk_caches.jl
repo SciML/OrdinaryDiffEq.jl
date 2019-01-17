@@ -321,6 +321,75 @@ end
 
 alg_cache(alg::BS5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = BS5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
+
+
+
+@cache struct RKMCache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  k::rateType
+  tmp::uType
+  fsalfirst::rateType
+  tab::TabType
+end
+
+
+struct RKMConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+
+  α2::T
+  α3::T
+  α4::T
+  α5::T
+  α6::T
+  β1::T
+  β2::T
+  β3::T
+  β4::T
+  β5::T
+  β6::T
+  c2::T2
+  c3::T2
+  c4::T2
+  c5::T2
+  c6::T2
+
+  function RKMConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+
+    α2 = T(0.16791846623918)
+    α3 = T(0.48298439719700)
+    α4 = T(0.70546072965982)
+    α5 = T(0.09295870406537)
+    α6 = T(0.76210081248836)
+    β1 = T(-0.15108370762927)
+    β2 = T(0.75384683913851)
+    β3 = T(-0.36016595357907)
+    β4 = T(0.52696773139913)
+    β5 = T(0.0)
+    β6 = T(0.23043509067071)
+    c2 = T2(0.16791846623918)
+    c3 = T2(0.48298439719700)
+    c4 = T2(0.70546072965982)
+    c5 = T2(0.09295870406537)
+    c6 = T2(0.76210081248836)
+
+    new{T,T2}(α2, α3, α4, α5, α6, β1, β2, β3, β4, β5, β6, c2, c3, c4, c5, c6)
+  end
+end
+
+function alg_cache(alg::RKM,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  tab = RKMConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  RKMCache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+function alg_cache(alg::RKM,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  RKMConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+end
+
+
+
 @cache struct Tsit5Cache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
@@ -474,3 +543,39 @@ function alg_cache(alg::Anas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
 end
 
 alg_cache(alg::Anas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = Anas5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
