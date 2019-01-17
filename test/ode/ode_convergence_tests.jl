@@ -174,9 +174,9 @@ for i = 1:2
   @test sim19.𝒪est[:final] ≈ 4 atol=testTol
 
   sim21 = test_convergence(dts,prob,RKM())
-  @test sim20.𝒪est[:final] ≈ 4 atol=testTol
-  @test sim20.𝒪est[:l2] ≈ 4 atol=testTol
-  @test sim20.𝒪est[:l∞] ≈ 4 atol=testTol
+  @test sim21.𝒪est[:final] ≈ 4 atol=testTol
+  @test sim21.𝒪est[:l2] ≈ 4 atol=testTol
+  @test sim21.𝒪est[:l∞] ≈ 4 atol=testTol
 
   sim110 = test_convergence(dts,prob,Hairer42())
   @test sim110.𝒪est[:final] ≈ 4 atol=testTol
