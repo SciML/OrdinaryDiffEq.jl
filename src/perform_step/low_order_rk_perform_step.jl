@@ -803,3 +803,84 @@ end
     end
   end
 end
+
+function initialize!(integrator,cache::LDDRK25ConstantCache)
+
+	integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+	integrator.kshortsize = 1
+	integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+
+	# Avoid undefined entries if k is an array of arrays
+	integrator.fsallast = zero(integrator.fsalfirst)
+	integrator.k[1] = integrator.fsalfirst
+
+end
+
+@muladd function perform_step!(integrator,cache::LDDRK25ConstantCache,repeat_step=false)
+
+	@unpack t,dt,uprev,u,f,p = integrator
+	@unpack α2,α3,α4,α5,β1,β2,β3,β4,β5,c2,c3,c4,c5 = cache
+
+	# u1
+	ω = dt*integrator.fsalfirst
+	u   = uprev + β1*ω
+	# u2
+	ω = α2*ω + dt*f(u, p, t+c2*dt)
+	u   = u + β2*ω
+	# u3
+	ω = α3*ω + dt*f(u, p, t+c3*dt)
+	u   = u + β3*ω
+	# u4
+	ω = α4*ω + dt*f(u, p, t+c4*dt)
+	u   = u + β4*ω
+	# u
+	ω = α5*ω + dt*f(u, p, t+c5*dt)
+	u   = u + β5*ω
+
+	integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+	integrator.k[1] = integrator.fsalfirst
+	integrator.u = u
+
+end
+  
+function initialize!(integrator,cache::LDDRK25Cache)
+
+	@unpack k,fsalfirst = cache
+	integrator.fsalfirst = fsalfirst
+	integrator.fsallast = k
+	integrator.kshortsize = 1
+	resize!(integrator.k, integrator.kshortsize)
+	integrator.k[1] = integrator.fsalfirst
+	integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+
+end
+  
+@muladd function perform_step!(integrator,cache::LDDRK25Cache,repeat_step=false)
+
+	@unpack t,dt,uprev,u,f,p = integrator
+	@unpack k,fsalfirst,ω = cache
+	@unpack α2,α3,α4,α5,β1,β2,β3,β4,β5,c2,c3,c4,c5 = cache.tab
+
+	# u1
+	@. ω = dt*fsalfirst
+	@. u = uprev + β1*ω
+	# u2
+	f(k, u, p, t+c2*dt)
+	@. ω = α2*ω + dt*k
+	@. u = u + β2*ω
+	# u3
+	f(k, u, p, t+c3*dt)
+	@. ω = α3*ω + dt*k
+	@. u = u + β3*ω
+	# u4
+	f(k, u, p, t+c4*dt)
+	@. ω = α4*ω + dt*k
+	@. u = u + β4*ω
+	# u
+	f(k, u, p, t+c5*dt)
+	@. ω = α5*ω + dt*k
+	@. u = u + β5*ω
+
+	f(k, u, p, t+dt)
+
+end
