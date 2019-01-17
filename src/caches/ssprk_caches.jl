@@ -584,3 +584,57 @@ function alg_cache(alg::SSPRK104,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
 end
 
 alg_cache(alg::SSPRK104,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = SSPRK104ConstantCache()
+
+@cache struct ORK256Cache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  k::rateType
+  tmp::uType
+  fsalfirst::rateType
+  tab::TabType
+end
+
+struct ORK256ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+  α2::T
+  α3::T
+  α4::T
+  α5::T
+  β1::T
+  β2::T
+  β3::T
+  β4::T
+  β5::T
+  c2::T2
+  c3::T2
+  c4::T2
+  c5::T2
+
+  function ORK256ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+    α2 = T(-1.0)
+    α3 = T(-1.55798)
+    α4 = T(-1.0)
+    α5 = T(-0.45031)
+    β1 = T(0.2)
+    β2 = T(0.83204)
+    β3 = T(0.6)
+    β4 = T(0.35394)
+    β5 = T(0.2)
+    c2 = T2(0.2)
+    c3 = T2(0.2)
+    c4 = T2(0.8)
+    c5 = T2(0.8)
+    new{T,T2}(α2, α3, α4, α5, β1, β2, β3, β4, β5, c2, c3, c4, c5)
+  end
+end
+
+function alg_cache(alg::ORK256,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  tab = ORK256ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  ORK256Cache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+function alg_cache(alg::ORK256,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  ORK256ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+end
