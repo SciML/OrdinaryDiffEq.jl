@@ -540,7 +540,7 @@ alg_cache(alg::Anas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeN
 	u::uType
 	uprev::uType
 	k::rateType
-	tmp::uType
+	ω::uType
 	fsalfirst::rateType
 	tab::TabType
 
@@ -589,11 +589,11 @@ end
 
 function alg_cache(alg::LDDRK25,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
-	tmp = similar(u)
+	ω = similar(u)
 	k = zero(rate_prototype)
 	fsalfirst = zero(rate_prototype)
 	tab = LDDRK25ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
-	LDDRK25Cache(u,uprev,k,tmp,fsalfirst,tab)
+	LDDRK25Cache(u,uprev,k,ω,fsalfirst,tab)
 
 end
 

@@ -858,7 +858,7 @@ end
 @muladd function perform_step!(integrator,cache::LDDRK25Cache,repeat_step=false)
 
 	@unpack t,dt,uprev,u,f,p = integrator
-	@unpack k,fsalfirst,tmp = cache
+	@unpack k,fsalfirst,ω = cache
 	@unpack α2,α3,α4,α5,β1,β2,β3,β4,β5,c2,c3,c4,c5 = cache.tab
 
 	# u1
