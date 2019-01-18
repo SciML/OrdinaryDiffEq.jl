@@ -90,12 +90,16 @@ function (S::NLAnderson{true})(integrator)
   # precalculations
   κtol = κ*tol
 
-  zs = zeros(length(vec(z)), S.n+1)
-  gs = zeros(length(vec(z)), S.n+1)
+  zs = fill(Any[], S.n+1)
+  gs = fill(Any[], S.n+1)
   residuals = zeros(length(vec(z)), S.n+1)
+  for e = 1:1:(S.n+1)
+    zs[e] = zeros(length(vec(z)))
+    gs[e] = zeros(length(vec(z)))
+  end
   alphas = zeros(S.n)
   # initial step of NLAnderson iteration
-  zs[:,1] .= vec(z)
+  zs[1] .= vec(z)
   iter = 1
   tstep = t + c*dt
   @. u = tmp + γ*z
@@ -108,20 +112,19 @@ function (S::NLAnderson{true})(integrator)
     mul!(ztmp, mass_matrix, z)
     @. z₊ -= ztmp
   end
-  gs[:,1] .= vec(z₊)
+  gs[1] .= vec(z₊)
   @. dz = z₊ - z
   ndz = integrator.opts.internalnorm(dz)
   for t = (S.n+1):-1:2
-    @. zs[:,t] = zs[:,t-1]
-    @. gs[:,t] = gs[:,t-1]
+    zs[t] = zs[t-1]
+    gs[t] = gs[t-1]
   end
   # zs = circshift(zs, 1)
   # gs = circshift(gs, 1)
   z .= z₊
-  zs[:,1] .= vec(z)
+  zs[1] .= vec(z)
   η = nlcache.ηold
   do_anderson = true
-
   # anderson acceleration for fixed point iteration
   fail_convergence = false
   while (do_anderson || iter < min_iter) && iter < max_iter
@@ -135,22 +138,25 @@ function (S::NLAnderson{true})(integrator)
       mul!(ztmp, mass_matrix, z)
       @. z₊ -= ztmp
     end
-    gs[:,1] .= vec(z₊)
+    gs[1] .= vec(z₊)
 
     mk = min(S.n, iter-1)
-    residuals[:,1:mk] .= (gs[:,2:mk+1] .- zs[:,2:mk+1]) .- (gs[:,1] - zs[:,1])
-    alphas[1:mk] .= residuals[:,1:mk] \ (zs[:,1] .- gs[:,1])
+    tmp = (gs[1] - zs[1])
+    for i in 2:mk+1
+      residuals[:,i-1] .= (gs[i] .- zs[i]) .- (gs[1] - zs[1])
+    end
+    alphas[1:mk] .= residuals[:,1:mk] \ (zs[1] .- gs[1])
     vecz₊ = vec(z₊)
     for i = 1:mk
-        vecz₊ .+= alphas[i].*(gs[:,i+1] .- gs[:,1])
+        vecz₊ .+= alphas[i].*(gs[i+1] .- gs[1])
     end
     for t = (S.n+1):-1:2
-      @. zs[:,t] = zs[:,t-1]
-      @. gs[:,t] = gs[:,t-1]
+      zs[t] = zs[t-1]
+      gs[t] = gs[t-1]
     end
     # zs = circshift(zs, 1)
     # gs = circshift(gs, 1)
-    zs[:,1] .= vec(z₊)
+    zs[1] .= vec(z₊)
     ndzprev = ndz
     @. dz = z₊ - z
     ndz = integrator.opts.internalnorm(dz)
