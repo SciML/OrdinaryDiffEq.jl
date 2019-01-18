@@ -90,13 +90,9 @@ function (S::NLAnderson{true})(integrator)
   # precalculations
   κtol = κ*tol
 
-  zs = fill(Any[], S.n+1)
-  gs = fill(Any[], S.n+1)
+  zs = [zero(z) for i in 1:S.n+1]
+  gs = [zero(z) for i in 1:S.n+1]
   residuals = zeros(length(vec(z)), S.n+1)
-  for e = 1:1:(S.n+1)
-    zs[e] = zeros(length(vec(z)))
-    gs[e] = zeros(length(vec(z)))
-  end
   alphas = zeros(S.n)
   # initial step of NLAnderson iteration
   zs[1] .= vec(z)
@@ -115,10 +111,12 @@ function (S::NLAnderson{true})(integrator)
   gs[1] .= vec(z₊)
   @. dz = z₊ - z
   ndz = integrator.opts.internalnorm(dz)
+  zptr = zs[S.n+1]
   for t = (S.n+1):-1:2
     zs[t] = zs[t-1]
     gs[t] = gs[t-1]
   end
+  zs[1] = zptr
   # zs = circshift(zs, 1)
   # gs = circshift(gs, 1)
   z .= z₊
@@ -150,10 +148,12 @@ function (S::NLAnderson{true})(integrator)
     for i = 1:mk
         vecz₊ .+= alphas[i].*(gs[i+1] .- gs[1])
     end
+    zptr = zs[S.n+1]
     for t = (S.n+1):-1:2
       zs[t] = zs[t-1]
       gs[t] = gs[t-1]
     end
+    zs[1] = zptr
     # zs = circshift(zs, 1)
     # gs = circshift(gs, 1)
     zs[1] .= vec(z₊)
