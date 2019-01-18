@@ -383,9 +383,7 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   udiff[6] = zero(u)
 
   for i = 1:6, j = 1:6
-    for j = 1:6
       D2[i,j] = zero(u)
-    end
   end
 
   max_order = 5
