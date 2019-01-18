@@ -20,7 +20,7 @@ alg_cache(alg::OrdinaryDiffEqAlgorithm,prob,callback::F) where {F} = ODEEmptyCac
 @cache struct FunctionMapCache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
-  du::rateType
+  tmp::rateType
 end
 
 function alg_cache(alg::FunctionMap,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})

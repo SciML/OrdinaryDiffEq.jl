@@ -22,11 +22,11 @@ end
 
 function perform_step!(integrator,cache::FunctionMapCache,repeat_step=false)
   @unpack u,uprev,dt,t,f,p = integrator
-  @unpack du = cache
+  @unpack tmp = cache
   if integrator.f != DiffEqBase.DISCRETE_INPLACE_DEFAULT
     if FunctionMap_scale_by_time(integrator.alg)
-      f(du, uprev, p, t+dt)
-      @muladd @. u = uprev + dt*du
+      f(tmp, uprev, p, t+dt)
+      @muladd @. u = uprev + dt*tmp
     else
       f(u,uprev,p,t)
     end

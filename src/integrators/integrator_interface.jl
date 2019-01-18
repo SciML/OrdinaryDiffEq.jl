@@ -58,7 +58,11 @@ end
 end
 
 @inline function DiffEqBase.get_du!(out,integrator::ODEIntegrator)
-  out .= integrator.fsallast
+  if typeof(integrator.cache) <: FunctionMapCache
+    out .= integrator.cache.tmp
+  else
+    out .= integrator.fsallast
+  end
 end
 
 #TODO: Bigger caches for most algorithms
