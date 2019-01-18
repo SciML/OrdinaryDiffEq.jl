@@ -61,11 +61,11 @@ end
 
   ################################### Finalize
 
-  cache.dtₙ₋₁ = dtₙ
   nlcache.ηold = η
   nlcache.nl_iters = iter
   if integrator.EEst < one(integrator.EEst)
     cache.fsalfirstprev = integrator.fsalfirst
+    cache.dtₙ₋₁ = dtₙ
   end
 
   integrator.k[1] = integrator.fsalfirst
@@ -139,9 +139,9 @@ end
 
   nlcache.ηold = η
   nlcache.nl_iters = iter
-  cache.dtₙ₋₁ = dtₙ
   if integrator.EEst < one(integrator.EEst)
     @. cache.fsalfirstprev = integrator.fsalfirst
+    cache.dtₙ₋₁ = dtₙ
   end
   return
 end
