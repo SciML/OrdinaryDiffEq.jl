@@ -360,7 +360,7 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
 
   max_order = 5
 
-  γ, c = zero(inv((alg.kappa))), 1
+  γ, c = inv(oneunit(eltype(alg.kappa))), 1
   @oopnlsolve
   QNDFConstantCache(uf,nlsolve,D,D2,R,U,1,max_order,udiff,dts,tmp,h,0)
 end
@@ -382,7 +382,7 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   end
   udiff[6] = zero(u)
 
-  for i = 1:6
+  for i = 1:6, j = 1:6
     for j = 1:6
       D2[i,j] = zero(u)
     end
@@ -391,7 +391,7 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   max_order = 5
   atmp = similar(u,uEltypeNoUnits)
   utilde = similar(u)
-  γ, c = zero(inv((alg.kappa))), 1
+  γ, c = inv(oneunit(eltype(alg.kappa))), 1
   @iipnlsolve
 
   QNDFCache(du1,fsalfirst,k,z,dz,b,D,D2,R,U,1,max_order,udiff,dts,tmp,atmp,utilde,J,

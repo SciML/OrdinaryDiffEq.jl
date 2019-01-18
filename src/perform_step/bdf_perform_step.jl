@@ -784,16 +784,16 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
       backward_diff!(cache,D,D2,k)
     end
   else
-    γ = 1//1
+    γ = one(γ)
   end
   nlcache.γ = γ
   # precalculations
-  ϕ = zero(u)
+  ϕ = fill!(utilde, zero(eltype(u)))
   for i = 1:k
     @. ϕ += γₖ[i]*D[i]
   end
   @. ϕ *= γ
-  tm = zero(u)
+  tm = fill!(cache.b, zero(eltype(u)))
   for i = 1:k
     @. tm += D[i]
   end
@@ -848,11 +848,11 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
       pass = stepsize_and_order!(cache, integrator.EEst, errm1, errp1, dt, k)
       if pass == false
         for i = 1:5
-          D[i] = zero(u)
+          fill!(D[i], zero(eltype(u)))
         end
         for i = 1:6
           for j = 1:6
-            D2[i,j] = zero(u)
+            fill!(D2[i,j], zero(eltype(u)))
           end
         end
         fill!(R, zero(t)); fill!(U, zero(t))
@@ -862,19 +862,19 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
       cache.c = 0
     end # cnt == 1
   end # integrator.opts.adaptive
+  swap_tmp = udiff[6]
   for i = 6:-1:2
     dts[i] = dts[i-1]
-    udiff[i] .= udiff[i-1]
+    udiff[i] = udiff[i-1]
   end
+  udiff[1] = swap_tmp
   dts[1] = dt
   @. udiff[1] = u - uprev
   for i = 1:5
-    D[i] = zero(u)
+    fill!(D[i], zero(eltype(u)))
   end
-  for i = 1:6
-    for j = 1:6
-      D2[i,j] = zero(u)
-    end
+  for i = 1:6, j = 1:6
+    fill!(D2[i,j], zero(eltype(u)))
   end
   fill!(R, zero(t)); fill!(U, zero(t))
 
