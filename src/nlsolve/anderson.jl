@@ -90,8 +90,8 @@ function (S::NLAnderson{true})(integrator)
   # precalculations
   κtol = κ*tol
 
-  zs = [zero(z) for i in 1:S.n+1]
-  gs = [zero(z) for i in 1:S.n+1]
+  zs = [zero(vec(z)) for i in 1:S.n+1]
+  gs = [zero(vec(z)) for i in 1:S.n+1]
   residuals = zeros(length(vec(z)), S.n+1)
   alphas = zeros(S.n)
   # initial step of NLAnderson iteration
