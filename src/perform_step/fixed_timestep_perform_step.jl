@@ -323,7 +323,6 @@ end
   end
 end
 
-
 function initialize!(integrator,cache::CarpenterKennedy2N54ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
   integrator.kshortsize = 1
