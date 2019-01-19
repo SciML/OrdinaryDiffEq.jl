@@ -1137,23 +1137,23 @@ end
   @unpack α2,α3,α4,α5,α6,β1,β2,β3,β4,β5,β6,c2,c3,c4,c5,c6 = cache
 
   # u1
-  tmp = dt*integrator.fsalfirst
-  u   = uprev + β1*tmp
+  k1 =integrator.fsalfirst
+  u   = uprev + β1*dt*k1
   # u2
-  tmp = dt*f(uprev + α2*tmp, p, t+c2*dt)
-  u   = u + β2*tmp
+  k2 = f(uprev + α2*k1, p, t+c2*dt)
+  u  = u + β2*dt*k2
   # u3
-  tmp = dt*f(uprev + α3*tmp, p, t+c3*dt)
-  u   = u + β3*tmp
+  k3 = f(uprev + α3*k2, p, t+c3*dt)
+  u   = u + β3*dt*k3
   # u4
-  tmp = dt*f(uprev + α4*tmp, p, t+c4*dt)
-  u   = u + β4*tmp
+  k4 = dt*f(uprev + α4*k3, p, t+c4*dt)
+  u   = u + β4*dt*k4
   # u5
-  tmp = dt*f(uprev + α5*tmp, p, t+c5*dt)
-  u   = u + β5*tmp
+  k5 = dt*f(uprev + α5*k4, p, t+c5*dt)
+  u   = u + β5*dt*k5
   # u6
-  tmp = dt*f(uprev + α6*tmp, p, t+c6*dt)
-  u   = u + β6*tmp
+  k6 = dt*f(uprev + α6*k5, p, t+c6*dt)
+  u   = u + β6*dt*k6
 
 
   integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
@@ -1163,42 +1163,44 @@ end
 end
   
 function initialize!(integrator,cache::RKMCache)
-  @unpack k,fsalfirst = cache
+  @unpack tmp,fsalfirst,k2,k3,k4,k5,k6,k = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
-  integrator.kshortsize = 1
+  integrator.kshortsize = 2
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
   integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
 end
   
 @muladd function perform_step!(integrator,cache::RKMCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k,fsalfirst,tmp = cache
+  @unpack tmp,fsalfirst,k2,k3,k4,k5,k6,k = cache
   @unpack α2,α3,α4,α5,α6,β1,β2,β3,β4,β5,β6,c2,c3,c4,c5,c6 = cache.tab
 
   # u1
-  @. tmp = uprev + α2*dt*fsalfirst
-  @. u   = uprev + β1*dt*fsalfirst
+  k1 = fsalfirst
+  @. tmp = uprev + α2*dt*k1
+  @. u   = uprev + β1*dt*k1
   # u2
-  f( k,  tmp, p, t+c2*dt)
-  @. tmp = uprev + α3*k
-  @. u   = u + β2*k
+  f( k2,  tmp, p, t+c2*dt)
+  @. tmp = uprev + α3*dt*k2
+  @. u   = u + β2*dt*k2
   # u3
-  f( k,  tmp, p, t+c3*dt)
-  @. tmp = uprev + α4*k
-  @. u   = u + β3*k
+  f( k3,  tmp, p, t+c3*dt)
+  @. tmp = uprev + α4*dt*k3
+  @. u   = u + β3*dt*k3
   # u4
-  f( k,  tmp, p, t+c4*dt)
-  @. tmp = uprev + α5*k
-  @. u   = u + β4*k
+  f( k4,  tmp, p, t+c4*dt)
+  @. tmp = uprev + α5*dt*k4
+  @. u   = u + β4*dt*k4
   # u5
-  f( k,  tmp, p, t+c5*dt)
-  @. tmp = uprev + α6*k
-  @. u   = u + β5*k
+  f( k5,  tmp, p, t+c5*dt)
+  @. tmp = uprev + α6*dt*k5
+  @. u   = u + β5*dt*k5
   # u
-  f( k,  tmp, p, t+c5*dt)
-  @. u   = u + β6*k
+  f( k6,  tmp, p, t+c5*dt)
+  @. u   = u + β6*dt*k6
 
   f( k,  u, p, t+dt)
 end

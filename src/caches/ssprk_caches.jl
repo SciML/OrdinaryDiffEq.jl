@@ -702,6 +702,12 @@ end
   u::uType
   uprev::uType
   k::rateType
+  k1::rateType
+  k2::rateType
+  k3::rateType
+  k4::rateType
+  k5::rateType
+  k6::rateType
   tmp::uType
   fsalfirst::rateType
   tab::TabType
@@ -735,7 +741,7 @@ struct RKMConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
     β2 = T(0.75384683913851)
     β3 = T(-0.36016595357907)
     β4 = T(0.52696773139913)
-    β5 = T(0.0)
+    β5 = T(0.00000000000000)
     β6 = T(0.23043509067071)
     c2 = T2(0.16791846623918)
     c3 = T2(0.48298439719700)
@@ -749,9 +755,15 @@ end
 function alg_cache(alg::RKM,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
   k = zero(rate_prototype)
+  k1 = zero(rate_prototype)
+  k2 = zero(rate_prototype)
+  k3 = zero(rate_prototype)
+  k4 = zero(rate_prototype)
+  k5 = zero(rate_prototype)
+  k6 = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   tab = RKMConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
-  RKMCache(u,uprev,k,tmp,fsalfirst,tab)
+  RKMCache(u,uprev,k,k1,k2,k3,k4,k5,k6,tmp,fsalfirst,tab)
 end
 
 function alg_cache(alg::RKM,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
