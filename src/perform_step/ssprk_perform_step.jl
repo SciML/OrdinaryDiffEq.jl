@@ -1140,19 +1140,19 @@ end
   k1 =integrator.fsalfirst
   u   = uprev + β1*dt*k1
   # u2
-  k2 = f(uprev + α2*k1, p, t+c2*dt)
+  k2 = f(uprev + α2*k1*dt, p, t+c2*dt)
   u  = u + β2*dt*k2
   # u3
-  k3 = f(uprev + α3*k2, p, t+c3*dt)
+  k3 = f(uprev + α3*k2*dt, p, t+c3*dt)
   u   = u + β3*dt*k3
   # u4
-  k4 = dt*f(uprev + α4*k3, p, t+c4*dt)
+  k4 = dt*f(uprev + α4*k3*dt, p, t+c4*dt)
   u   = u + β4*dt*k4
   # u5
-  k5 = dt*f(uprev + α5*k4, p, t+c5*dt)
+  k5 = dt*f(uprev + α5*k4*dt, p, t+c5*dt)
   u   = u + β5*dt*k5
   # u6
-  k6 = dt*f(uprev + α6*k5, p, t+c6*dt)
+  k6 = dt*f(uprev + α6*k5*dt, p, t+c6*dt)
   u   = u + β6*dt*k6
 
   integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
