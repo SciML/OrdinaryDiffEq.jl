@@ -535,3 +535,63 @@ function alg_cache(alg::Anas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
 end
 
 alg_cache(alg::Anas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = Anas5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+
+@cache struct LDDRK46Cache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  k::rateType
+  tmp::uType
+  fsalfirst::rateType
+  tab::TabType
+end
+
+struct LDDRK46ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+  α1::T
+  α2::T
+  α3::T
+  α4::T
+  α5::T
+  β1::T
+  β2::T
+  β3::T
+  β4::T
+  β5::T
+  β6::T
+  c2::T2
+  c3::T2
+  c4::T2
+  c5::T2
+  c6::T2
+
+  function LDDRK46ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+    α1 = T(0.17985400977138)
+    α2 = T(0.14081893152111)
+    α3 = T(0.08255631629428)
+    α4 = T(0.65804425034331)
+    α5 = T(0.31862993413251)
+    β1 = T(0.10893125722541)
+    β2 = T(0.13201701492152)
+    β3 = T(0.38911623225517)
+    β4 = T(-0.59203884581148)
+    β5 = T(0.47385028714844)
+    β6 = T(0.48812405426094)
+    c2 = T2(0.28878526699679)
+    c3 = T2(0.38176720366804)
+    c4 = T2(0.71262082069639)
+    c5 = T2(0.69606990893393)
+    c6 = T2(0.83050587987157)
+    new{T,T2}(α1, α2, α3, α4, α5, β1, β2, β3, β4, β5, β6, c2, c3, c4, c5, c6)
+  end
+end
+
+function alg_cache(alg::LDDRK46,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  tab = LDDRK46ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  LDDRK46Cache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+function alg_cache(alg::LDDRK46,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  LDDRK46ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+end
