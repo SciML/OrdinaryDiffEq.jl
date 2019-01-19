@@ -79,8 +79,8 @@ end
 function (S::NLAnderson{true})(integrator)
   nlcache = S.cache
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack z,z₊,b,dz,tmp,κ,tol,k,c,γ,min_iter,max_iter = nlcache
-  ztmp = b
+  @unpack z,z₊,dz,tmp,κ,tol,k,c,γ,min_iter,max_iter = nlcache
+  ztmp = u
   mass_matrix = integrator.f.mass_matrix
   if typeof(integrator.f) <: SplitFunction
     f = integrator.f.f1
@@ -132,6 +132,7 @@ function (S::NLAnderson{true})(integrator)
     if mass_matrix == I
       @. z₊ = dt*k
     else
+      ztmp = u
       @. z₊ = dt*k + z
       mul!(ztmp, mass_matrix, z)
       @. z₊ -= ztmp
@@ -139,7 +140,9 @@ function (S::NLAnderson{true})(integrator)
     gs[1] .= vec(z₊)
 
     mk = min(S.n, iter-1)
-    ztmp = (gs[1] - zs[1])
+    ztmp = vec(u)
+    ztmp .= gs[1]
+    ztmp .-= zs[1]
     for i in 2:mk+1
       residuals[:,i-1] .= (gs[i] .- zs[i]) .- ztmp
     end
