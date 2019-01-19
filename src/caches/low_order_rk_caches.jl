@@ -536,7 +536,7 @@ end
 
 alg_cache(alg::Anas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = Anas5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 
-@cache struct LDDRK46Cache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct CFRLDDRK64Cache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k::rateType
@@ -545,7 +545,7 @@ alg_cache(alg::Anas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeN
   tab::TabType
 end
 
-struct LDDRK46ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct CFRLDDRK64ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   α1::T
   α2::T
   α3::T
@@ -563,7 +563,7 @@ struct LDDRK46ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   c5::T2
   c6::T2
 
-  function LDDRK46ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+  function CFRLDDRK64ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
     α1 = T(0.17985400977138)
     α2 = T(0.14081893152111)
     α3 = T(0.08255631629428)
@@ -584,14 +584,14 @@ struct LDDRK46ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   end
 end
 
-function alg_cache(alg::LDDRK46,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::CFRLDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
-  tab = LDDRK46ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
-  LDDRK46Cache(u,uprev,k,tmp,fsalfirst,tab)
+  tab = CFRLDDRK64ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  CFRLDDRK64Cache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
-function alg_cache(alg::LDDRK46,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  LDDRK46ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+function alg_cache(alg::CFRLDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  CFRLDDRK64ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
