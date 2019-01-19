@@ -1155,7 +1155,6 @@ end
   k6 = dt*f(uprev + α6*k5, p, t+c6*dt)
   u   = u + β6*dt*k6
 
-
   integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
