@@ -40,6 +40,7 @@ struct Anas5{T} <: OrdinaryDiffEqAlgorithm
   w::T
 end
 Anas5(; w=1) = Anas5(w)
+struct LLDRK46 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 struct OwrenZen3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct OwrenZen4 <: OrdinaryDiffEqAdaptiveAlgorithm end
