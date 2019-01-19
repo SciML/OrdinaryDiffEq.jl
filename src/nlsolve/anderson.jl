@@ -139,9 +139,9 @@ function (S::NLAnderson{true})(integrator)
     gs[1] .= vec(z₊)
 
     mk = min(S.n, iter-1)
-    tmp = (gs[1] - zs[1])
+    ztmp = (gs[1] - zs[1])
     for i in 2:mk+1
-      residuals[:,i-1] .= (gs[i] .- zs[i]) .- (gs[1] - zs[1])
+      residuals[:,i-1] .= (gs[i] .- zs[i]) .- ztmp
     end
     alphas[1:mk] .= residuals[:,1:mk] \ (zs[1] .- gs[1])
     vecz₊ = vec(z₊)
