@@ -325,8 +325,9 @@ end
 for prob in test_problems_nonlinear
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
-
-alg = LDDRK46()
+  
+ 
+alg = CFRLDDRK64()
 for prob in test_problems_only_time
 	sim = test_convergence(dts, prob, alg)
 	@test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol

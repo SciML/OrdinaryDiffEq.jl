@@ -47,7 +47,7 @@ struct OwrenZen3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct OwrenZen4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct OwrenZen5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct LDDRK64 <: OrdinaryDiffEqAlgorithm end
-struct LDDRK46 <: OrdinaryDiffEqAlgorithm end
+struct CFRLDDRK64 <: OrdinaryDiffEqAlgorithm end
 struct CarpenterKennedy2N54 <: OrdinaryDiffEqAlgorithm end
 struct ORK256 <: OrdinaryDiffEqAlgorithm end
 struct SSPRK22{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
