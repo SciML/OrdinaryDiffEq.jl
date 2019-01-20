@@ -887,3 +887,135 @@ end
 
   f( k,  u, p, t+dt)
 end
+
+function initialize!(integrator,cache::NDBLSRK134ConstantCache)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.kshortsize = 1
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+end
+
+@muladd function perform_step!(integrator,cache::NDBLSRK134ConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack α2, α3, α4, α5, α6, α7, α8, α9, α10, α11, α12, α13, β1, β2, β3, β4, β5, β6, β7, β8, β9, β10, β11, β12, β13, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13 = cache
+
+  # u0
+  u   = uprev
+  #u1
+  tmp = dt*integrator.fsalfirst
+  u   = u + β1*tmp
+  #u2
+  tmp = α2*tmp + dt*f(u, p, t+c2*dt)
+  u   = u + β2*tmp
+  #u3
+  tmp = α3*tmp + dt*f(u, p, t+c3*dt)
+  u   = u + β3*tmp
+  #u4
+  tmp = α4*tmp + dt*f(u, p, t+c4*dt)
+  u   = u + β4*tmp
+  #u5
+  tmp = α5*tmp + dt*f(u, p, t+c5*dt)
+  u   = u + β5*tmp
+  #u6
+  tmp = α6*tmp + dt*f(u, p, t+c6*dt)
+  u   = u + β6*tmp
+  #u7
+  tmp = α7*tmp + dt*f(u, p, t+c7*dt)
+  u   = u + β7*tmp
+  #u8
+  tmp = α8*tmp + dt*f(u, p, t+c8*dt)
+  u   = u + β8*tmp
+  #u9
+  tmp = α9*tmp + dt*f(u, p, t+c9*dt)
+  u   = u + β9*tmp
+  #u10
+  tmp = α10*tmp + dt*f(u, p, t+c10*dt)
+  u   = u + β10*tmp
+  #u11
+  tmp = α11*tmp + dt*f(u, p, t+c11*dt)
+  u   = u + β11*tmp
+  #u12
+  tmp = α12*tmp + dt*f(u, p, t+c12*dt)
+  u   = u + β12*tmp
+  #u13
+  tmp = α13*tmp + dt*f(u, p, t+c13*dt)
+  u   = u + β13*tmp
+  integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+  integrator.k[1] = integrator.fsalfirst
+  integrator.u = u
+end
+
+function initialize!(integrator,cache::NDBLSRK134Cache)
+  @unpack k,fsalfirst = cache
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = k
+  integrator.kshortsize = 1
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+end
+
+@muladd function perform_step!(integrator,cache::NDBLSRK134Cache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack k,fsalfirst,tmp = cache
+  @unpack α2, α3, α4, α5, α6, α7, α8, α9, α10, α11, α12, α13, β1, β2, β3, β4, β5, β6, β7, β8, β9, β10, β11, β12, β13, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13 = cache.tab
+
+  #u0
+  @. u   = uprev
+  #u1
+  @. tmp = dt*fsalfirst
+  @. u   = u + β1*tmp
+  #u2
+  f(k, u, p, t+c2*dt)
+  @. tmp = α2*tmp + dt*k
+  @. u   = u + β2*tmp
+  #u3
+  f(k, u, p, t+c3*dt)
+  @. tmp = α3*tmp + dt*k
+  @. u   = u + β3*tmp
+  #u4
+  f(k, u, p, t+c4*dt)
+  @. tmp = α4*tmp + dt*k
+  @. u   = u + β4*tmp
+  #u5
+  f(k, u, p, t+c5*dt)
+  @. tmp = α5*tmp + dt*k
+  @. u   = u + β5*tmp
+  #u6
+  f(k, u, p, t+c6*dt)
+  @. tmp = α6*tmp + dt*k
+  @. u   = u + β6*tmp
+  #u7
+  f(k, u, p, t+c7*dt)
+  @. tmp = α7*tmp + dt*k
+  @. u   = u + β7*tmp
+  #u8
+  f(k, u, p, t+c8*dt)
+  @. tmp = α8*tmp + dt*k
+  @. u   = u + β8*tmp
+  #u9
+  f(k, u, p, t+c9*dt)
+  @. tmp = α9*tmp + dt*k
+  @. u   = u + β9*tmp
+  #u10
+  f(k, u, p, t+c10*dt)
+  @. tmp = α10*tmp + dt*k
+  @. u   = u + β10*tmp
+  #u11
+  f(k, u, p, t+c11*dt)
+  @. tmp = α11*tmp + dt*k
+  @. u   = u + β11*tmp
+  #u12
+  f(k, u, p, t+c12*dt)
+  @. tmp = α12*tmp + dt*k
+  @. u   = u + β12*tmp
+  #u13
+  f(k, u, p, t+c13*dt)
+  @. tmp = α13*tmp + dt*k
+  @. u   = u + β13*tmp
+
+  f( k,  u, p, t+dt)
+end
