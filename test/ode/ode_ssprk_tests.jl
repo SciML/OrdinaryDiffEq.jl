@@ -149,8 +149,8 @@ end
 sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg), dense=false)
 @test all(sol.u .>= 0)
 
-#reverting back to original dts
-dts = 1 .//2 .^(8:-1:4)
+# for SSPRK53_2N2 to be in asymptotic range
+dts = 1 .//2 .^(9:-1:5)
 alg = SSPRK63()
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
@@ -312,6 +312,8 @@ for prob in test_problems_nonlinear
   @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 
+# for SSPRK53_2N2 to be in asymptotic range
+dts = 1 .//2 .^(7:-1:4)
 alg = CFRLDDRK64()
 for prob in test_problems_only_time
 	sim = test_convergence(dts, prob, alg)
@@ -325,6 +327,8 @@ for prob in test_problems_nonlinear
 	sim = test_convergence(dts, prob, alg)
 	@test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
+#reverting back to original dts
+dts = 1 .//2 .^(8:-1:4)
 
 alg = NDBLSRK134()
 for prob in test_problems_only_time
