@@ -11,5 +11,5 @@ end
 
 # test adaptivity
 vanstiff = ODEProblem{false}(van, [0;sqrt(3)], (0.0,1.0), 1e6)
-@test length(solve(vanstiff, RadauIIA5())) < 80
-@test length(solve(remake(vanstiff, p=1e7), RadauIIA5())) < 100
+@test length(solve(vanstiff, RadauIIA5())) < 110
+@test length(solve(remake(vanstiff, p=1e7), RadauIIA5())) < 120
