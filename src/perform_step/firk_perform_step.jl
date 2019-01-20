@@ -98,12 +98,21 @@ end
   end
   cache.ηold = η
   integrator.force_stepfail = do_newton
+  do_newton && return
 
   u = @. uprev + z3
 
   if adaptive
-    #tmp = r*integrator.opts.internalnorm.((u - uprev)/dt1 - (uprev - uprev2)/dt2)
-    atmp = calculate_residuals(tmp, uprev, u, abstol, reltol, internalnorm)
+    tmp = @. e1*z1 + e2*z2 + e3*z3
+    mass_matrix != I && (tmp = mass_matrix*tmp)
+    err = @. dt*inv(γ)*integrator.fsalfirst + tmp
+    err = LU1 \ err
+    if integrator.iter == 1 || integrator.u_modified || integrator.EEst > oneunit(integrator.EEst)
+      f0 = f(uprev .+ err, p, t)
+      err = @. dt*inv(γ)*integrator.fsalfirst + tmp
+      err = LU1 \ err
+    end
+    atmp = calculate_residuals(err, uprev, u, abstol, reltol, internalnorm)
     integrator.EEst = internalnorm(atmp)
   end
 
@@ -111,4 +120,5 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
+  return
 end
