@@ -262,7 +262,7 @@ function stepsize_controller!(integrator,
     end
     niters = nl_iters
     fac = min(gamma,(1+2*max_iter)*gamma/(niters+2*max_iter))
-    expo = 1/(get_current_alg_order(integrator.alg,integrator.cache)+1)
+    expo = 1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1)
     qtmp = (integrator.EEst^expo)/fac
     @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
     if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min

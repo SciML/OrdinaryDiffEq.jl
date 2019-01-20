@@ -281,6 +281,8 @@ alg_adaptive_order(alg::Feagin14) = 12
 alg_adaptive_order(alg::Rosenbrock23) = 3
 alg_adaptive_order(alg::Rosenbrock32) = 2
 
+alg_adaptive_order(alg::RadauIIA5) = 3
+
 alg_adaptive_order(alg::GenericImplicitEuler) = 0
 alg_adaptive_order(alg::GenericTrapezoid) = 1
 alg_adaptive_order(alg::ImplicitEuler) = 0

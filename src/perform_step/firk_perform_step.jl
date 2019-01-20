@@ -107,16 +107,16 @@ end
     e1dt, e2dt, e3dt = e1/dt, e2/dt, e3/dt
     tmp = @. e1dt*z1 + e2dt*z2 + e3dt*z3
     mass_matrix != I && (tmp = mass_matrix*tmp)
-    err = @. integrator.fsalfirst + tmp
-    alg.smooth_est && (err = LU1 \ err)
-    atmp = calculate_residuals(err, uprev, u, abstol, reltol, internalnorm)
-    @show integrator.EEst = internalnorm(atmp)^(6/4)
+    utilde = @. integrator.fsalfirst + tmp
+    alg.smooth_est && (utilde = LU1 \ utilde)
+    atmp = calculate_residuals(utilde, uprev, u, abstol, reltol, internalnorm)
+    integrator.EEst = internalnorm(atmp)
 
     if integrator.iter == 1 || integrator.u_modified || integrator.EEst > oneunit(integrator.EEst)
-      f0 = f(uprev .+ err, p, t)
-      err = @. f0 + tmp
-      alg.smooth_est && (err = LU1 \ err)
-      atmp = calculate_residuals(err, uprev, u, abstol, reltol, internalnorm)
+      f0 = f(uprev .+ utilde, p, t)
+      utilde = @. f0 + tmp
+      alg.smooth_est && (utilde = LU1 \ utilde)
+      atmp = calculate_residuals(utilde, uprev, u, abstol, reltol, internalnorm)
       integrator.EEst = internalnorm(atmp)
     end
   end
