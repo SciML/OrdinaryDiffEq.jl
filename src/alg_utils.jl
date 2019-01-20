@@ -101,7 +101,7 @@ get_current_alg_order(alg::JVODE,cache) = get_current_adaptive_order(alg,cache)
 get_current_alg_order(alg::QNDF,cache) = cache.order
 get_current_adaptive_order(alg::QNDF,cache) = cache.order
 
-alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
+#alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
 get_current_adaptive_order(alg::OrdinaryDiffEqAlgorithm,cache) = alg_adaptive_order(alg)
 get_current_adaptive_order(alg::CompositeAlgorithm,cache) = alg_adaptive_order(alg.algs[cache.current])
 

@@ -4,6 +4,7 @@ mutable struct RadauIIA5ConstantCache{F,Tab,Tol} <: OrdinaryDiffEqConstantCache
   κ::Tol
   tol::Tol
   ηold::Tol
+  nl_iters::Int
 end
 
 function alg_cache(alg::RadauIIA5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
@@ -16,5 +17,5 @@ function alg_cache(alg::RadauIIA5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   κ = alg.κ !== nothing ? uToltype(alg.κ) : uToltype(1//100)
   tol = alg.tol !== nothing ? uToltype(alg.tol) : uToltype(min(0.03,first(reltol)^(0.5)))
 
-  RadauIIA5ConstantCache(uf, tab, κ, tol, zero(tol))
+  RadauIIA5ConstantCache(uf, tab, κ, tol, zero(tol), 10000)
 end
