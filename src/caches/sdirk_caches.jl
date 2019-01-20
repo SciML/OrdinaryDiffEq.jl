@@ -56,13 +56,8 @@ DiffEqBase.@def iipnlcachefields begin
     jac_config = nothing
     linsolve = nothing
     z₊ = similar(z)
-    if typeof(z) <: AbstractArray
-      zs = [zero(vec(z)) for i in 1:alg.nlsolve.n+1]
-      gs = [zero(vec(z)) for i in 1:alg.nlsolve.n+1]
-    else
-      zs = [zero(z) for i in 1:alg.nlsolve.n+1]
-      gs = [zero(z) for i in 1:alg.nlsolve.n+1]
-    end
+    zs = [zero(vec(z)) for i in 1:alg.nlsolve.n+1]
+    gs = [zero(vec(z)) for i in 1:alg.nlsolve.n+1]
   end
 
   if κ !== nothing
