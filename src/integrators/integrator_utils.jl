@@ -225,7 +225,7 @@ end
 
 
 function stepsize_controller!(integrator,alg::Union{StandardControllerAlgs,
-                              OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Standard}})
+                              OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,:Standard}}) where {CS, AD}
   # Standard stepsize controller
   if iszero(integrator.EEst)
     q = inv(integrator.opts.qmax)
@@ -237,16 +237,16 @@ function stepsize_controller!(integrator,alg::Union{StandardControllerAlgs,
   q
 end
 function step_accept_controller!(integrator,alg::Union{StandardControllerAlgs,
-                              OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Standard}},q)
+                                 OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,:Standard}},q) where {CS, AD}
   integrator.dt/q # dtnew
 end
 function step_reject_controller!(integrator,alg::Union{StandardControllerAlgs,
-                              OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Standard}})
+                                 OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,:Standard}}) where {CS, AD}
   integrator.dt = integrator.qold
 end
 
 function stepsize_controller!(integrator,
-                        alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Predictive})
+                              alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,:Predictive}) where {CS, AD}
 
   # Gustafsson predictive stepsize controller
 
@@ -254,8 +254,14 @@ function stepsize_controller!(integrator,
     q = inv(integrator.opts.qmax)
   else
     gamma = integrator.opts.gamma
-    niters = integrator.cache.newton_iters
-    fac = min(gamma,(1+2*integrator.alg.max_newton_iter)*gamma/(niters+2*integrator.alg.max_newton_iter))
+    if alg isa RadauIIA5
+      @unpack nl_iters = integrator.cache
+      @unpack max_iter = alg
+    else
+      @unpack nl_iters, max_iter = integrator.cache.nlsolve.cache
+    end
+    niters = nl_iters
+    fac = min(gamma,(1+2*max_iter)*gamma/(niters+2*max_iter))
     expo = 1/(get_current_alg_order(integrator.alg,integrator.cache)+1)
     qtmp = (integrator.EEst^expo)/fac
     @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
@@ -267,7 +273,7 @@ function stepsize_controller!(integrator,
   q
 end
 function step_accept_controller!(integrator,
-                      alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Predictive},q)
+                                 alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,:Predictive},q) where {CS, AD}
   if integrator.success_iter > 0
     expo = 1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1)
     qgus=(integrator.dtacc/integrator.dt)*(((integrator.EEst^2)/integrator.erracc)^expo)
@@ -281,7 +287,7 @@ function step_accept_controller!(integrator,
   integrator.dt/qacc
 end
 function step_reject_controller!(integrator,
-                        alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm{:Predictive})
+                                 alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,:Predictive}) where {CS, AD}
   if integrator.success_iter == 0
     integrator.dt *= 0.1
   else
