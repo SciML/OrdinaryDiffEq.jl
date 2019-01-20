@@ -20,8 +20,8 @@ DiffEqBase.@def iipnlcachefields begin
     jac_config = nothing
     linsolve = alg.linsolve(Val{:init},nf,u)
     z₊ = z
-    zs = []
-    gs = []
+    zs = nothing
+    gs = nothing
   elseif alg.nlsolve isa NLNewton
     if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype !== nothing
       W = WOperator(f, dt, true)
@@ -36,8 +36,8 @@ DiffEqBase.@def iipnlcachefields begin
     jac_config = build_jac_config(alg,nf,uf,du1,uprev,u,tmp,dz)
     linsolve = alg.linsolve(Val{:init},uf,u)
     z₊ = z
-    zs = []
-    gs = []
+    zs = nothing
+    gs = nothing
   elseif typeof(alg.nlsolve) <: NLFunctional
     J = nothing
     W = nothing
@@ -46,8 +46,8 @@ DiffEqBase.@def iipnlcachefields begin
     jac_config = nothing
     linsolve = nothing
     z₊ = similar(z)
-    zs = []
-    gs = []
+    zs = nothing
+    gs = nothing
   elseif typeof(alg.nlsolve) <: NLAnderson
     J = nothing
     W = nothing
@@ -120,8 +120,8 @@ DiffEqBase.@def oopnlcachefields begin
       gs = [zero(z) for i in 1:alg.nlsolve.n+1]
     end
   else
-    zs = []
-    gs = []
+    zs = nothing
+    gs = nothing
   end
   z₊,dz,tmp,b,k = z,z,z,z,rate_prototype
 end
