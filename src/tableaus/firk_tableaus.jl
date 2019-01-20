@@ -28,9 +28,9 @@ struct RadauIIA5Tableau{T,T2}
   e3::T
 end
 
-# inv(T) * inv(A) * T = [γ  0  0
-#                        0  α -β
-#                        0  β  α]
+# inv(T) * inv(A) * T = [γ′  0  0
+#                        0   α′ -β′
+#                        0   β′  α′]
 function RadauIIA5Tableau(T,T2)
   T11  = convert(T, 9.1232394870892942792e-02)
   T12  = convert(T, -0.14125529502095420843e0)
@@ -56,13 +56,13 @@ function RadauIIA5Tableau(T,T2)
 
   cbrt9 = cbrt(9)
 
-  γ  = convert(T, (6.0+cbrt9*(cbrt9-1))/30  )
-  α  = convert(T, (12.0-cbrt9*(cbrt9-1))/60 )
-  β  = convert(T, cbrt9*(cbrt9+1)*sqrt(3)/60)
-  scale = α^2 + β^2
-  γ  = inv(γ)
-  α  = α/scale
-  β  = β/scale
+  γ′ = convert(T, (6.0+cbrt9*(cbrt9-1))/30  )
+  α′ = convert(T, (12.0-cbrt9*(cbrt9-1))/60 )
+  β′ = convert(T, cbrt9*(cbrt9+1)*sqrt(3)/60)
+  scale = α′^2 + β′^2
+  γ  = inv(γ′)
+  α  = α′/scale
+  β  = β′/scale
 
   e1 = convert(T, -(13+7*sqrt6)/3)
   e2 = convert(T, (-13+7*sqrt6)/3)
