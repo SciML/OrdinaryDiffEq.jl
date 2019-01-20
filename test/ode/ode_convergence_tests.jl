@@ -195,7 +195,4 @@ for i = 1:2
 
   sim115 = test_convergence(dts,prob,KenCarp5(nlsolve = NLFunctional()))
   @test_broken sim115.𝒪est[:final] ≈ 5 atol=testTol
-
-  sim21 = test_convergence(1 .//2 .^(6:-1:3),prob,RadauIIA5())
-  @test sim21.𝒪est[:final] ≈ 5 atol=testTol
 end
