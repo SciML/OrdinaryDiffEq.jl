@@ -18,11 +18,15 @@ end
   alg = unwrap_alg(integrator, true)
   is_compos = alg isa CompositeAlgorithm
   J = calc_J(integrator, cache, is_compos)
-
-  LU1 = lu(γ/dt*mass_matrix - J)
-  LU2 = lu((α/dt + β/dt*im)*mass_matrix - J)
-  LU1 = γ/dt*mass_matrix - J
-  LU2 = (α/dt + β/dt*im)*mass_matrix - J
+  # precalculations
+  γdt, αdt, βdt = γ/dt, α/dt, β/dt
+  if u isa Number
+    LU1 = γdt*mass_matrix - J
+    LU2 = (αdt + βdt*im)*mass_matrix - J
+  else
+    LU1 = lu(γdt*mass_matrix - J)
+    LU2 = lu((αdt + βdt*im)*mass_matrix - J)
+  end
 
   # TODO better initial guess
   z1 = w1 = map(zero, u)
@@ -39,30 +43,33 @@ end
     z2 = @. TI21 * ff1 + TI22 * ff2 + TI23 * ff3
     z3 = @. TI31 * ff1 + TI32 * ff2 + TI33 * ff3
 
-    Mw1 = mass_matrix*w1
-    Mw2 = mass_matrix*w2
-    Mw3 = mass_matrix*w3
-    Mw1 = w1
-    Mw2 = w2
-    Mw3 = w3
+    if mass_matrix isa UniformScaling # `UniformScaling` doesn't play nicely with broadcast
+      Mw1 = @. mass_matrix.λ * w1
+      Mw2 = @. mass_matrix.λ * w2
+      Mw3 = @. mass_matrix.λ * w3
+    else
+      Mw1 = mass_matrix*w1
+      Mw2 = mass_matrix*w2
+      Mw3 = mass_matrix*w3
+    end
 
-    z1 = LU1 \ (@. z1 - γ/dt*Mw1)
-    z2 = @. z2 - α/dt*Mw2 + β/dt*Mw3
-    z3 = @. z3 - β/dt*Mw2 - α/dt*Mw3
+    z1 = LU1 \ (@. z1 - γdt*Mw1)
+    z2 = @. z2 - αdt*Mw2 + βdt*Mw3
+    z3 = @. z3 - βdt*Mw2 - αdt*Mw3
     z23 = LU2 \ (@. z2 + z3*im)
-    z2 = @. real(z23)
-    z3 = @. imag(z23)
+    z2 = real(z23)
+    z3 = imag(z23)
 
-    w1 += z1
-    w2 += z2
-    w3 += z3
+    w1 = @. w1 + z1
+    w2 = @. w2 + z2
+    w3 = @. w3 + z3
 
     z1 = @. T11 * w1 + T12 * w2 + T13 * w3
     z2 = @. T21 * w1 + T22 * w2 + T23 * w3
     z3 = @. T31 * w1 +       w2           # T32 = 1, T33 = 0
   end
 
-  u = uprev + z3
+  u = @. uprev + z3
 
   if integrator.opts.adaptive
     #tmp = r*integrator.opts.internalnorm.((u - uprev)/dt1 - (uprev - uprev2)/dt2)
