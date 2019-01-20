@@ -40,8 +40,9 @@ end
   # Newton iteration
   local nw, η
   do_newton = true
-  iter = 1
+  iter = 0
   while do_newton && iter < max_iter
+    iter += 1
     ff1 = f(uprev+z1, p, t+c1*dt)
     ff2 = f(uprev+z2, p, t+c2*dt)
     ff3 = f(uprev+z3, p, t+   dt) # c3 = 1
@@ -94,26 +95,30 @@ end
     z1 = @. T11 * w1 + T12 * w2 + T13 * w3
     z2 = @. T21 * w1 + T22 * w2 + T23 * w3
     z3 = @. T31 * w1 +       w2           # T32 = 1, T33 = 0
-    iter += 1
   end
   cache.ηold = η
   integrator.force_stepfail = do_newton
+  cache.nl_iters = iter
   do_newton && return
 
   u = @. uprev + z3
 
   if adaptive
-    tmp = @. e1*z1 + e2*z2 + e3*z3
+    e1dt, e2dt, e3dt = e1/dt, e2/dt, e3/dt
+    tmp = @. e1dt*z1 + e2dt*z2 + e3dt*z3
     mass_matrix != I && (tmp = mass_matrix*tmp)
-    err = @. dt*inv(γ)*integrator.fsalfirst + tmp
-    err = LU1 \ err
+    err = @. integrator.fsalfirst + tmp
+    alg.smooth_est && (err = LU1 \ err)
+    atmp = calculate_residuals(err, uprev, u, abstol, reltol, internalnorm)
+    @show integrator.EEst = internalnorm(atmp)^(6/4)
+
     if integrator.iter == 1 || integrator.u_modified || integrator.EEst > oneunit(integrator.EEst)
       f0 = f(uprev .+ err, p, t)
-      err = @. dt*inv(γ)*integrator.fsalfirst + tmp
-      err = LU1 \ err
+      err = @. f0 + tmp
+      alg.smooth_est && (err = LU1 \ err)
+      atmp = calculate_residuals(err, uprev, u, abstol, reltol, internalnorm)
+      integrator.EEst = internalnorm(atmp)
     end
-    atmp = calculate_residuals(err, uprev, u, abstol, reltol, internalnorm)
-    integrator.EEst = internalnorm(atmp)
   end
 
   integrator.fsallast = f(u, p, t+dt)
