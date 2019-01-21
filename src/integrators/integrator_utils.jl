@@ -163,14 +163,14 @@ function stepsize_controller!(integrator,alg)
     @fastmath q = q11/(qold^beta2)
     integrator.q11 = q11
     @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),q/integrator.opts.gamma))
-    if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
-      q = one(q)
-    end
   end
   q
 end
 
 function step_accept_controller!(integrator,alg,q)
+  if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
+    q = one(q)
+  end
   integrator.qold = max(integrator.EEst,integrator.opts.qoldinit)
   integrator.dt/q #dtnew
 end
@@ -266,14 +266,14 @@ function stepsize_controller!(integrator,
     qtmp = (integrator.EEst^expo)/fac
     @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
     integrator.qold = q
-    if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
-      q = one(q)
-    end
   end
   q
 end
 function step_accept_controller!(integrator,
                                  alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,:Predictive},q) where {CS, AD}
+  if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
+    q = one(q)
+  end
   if integrator.success_iter > 0
     expo = 1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1)
     qgus=(integrator.dtacc/integrator.dt)*(((integrator.EEst^2)/integrator.erracc)^expo)
