@@ -265,10 +265,10 @@ function stepsize_controller!(integrator,
     expo = 1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1)
     qtmp = (integrator.EEst^expo)/fac
     @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
+    integrator.qold = q
     if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
       q = one(q)
     end
-    integrator.qold = q
   end
   q
 end
