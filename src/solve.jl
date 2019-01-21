@@ -211,17 +211,9 @@ function DiffEqBase.__init(
 
   k = rateType[]
 
-  if uType <: Array
-    uprev = copy(u)
-  else
-    uprev = deepcopy(u)
-  end
+  uprev = recursivecopy(u)
   if allow_extrapolation
-    if uType <: Array
-      uprev2 = copy(u)
-    else
-      uprev2 = deepcopy(u)
-    end
+    uprev2 = recursivecopy(u)
   else
     uprev2 = uprev
   end
