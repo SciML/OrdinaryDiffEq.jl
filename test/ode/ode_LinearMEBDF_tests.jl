@@ -5,7 +5,7 @@ testTol = 0.2
 u0 = rand(100)
 tspan = (0.0, 1.0)
 
-###constant linear Opeartor:
+### constant linear Opeartor:
 A = spdiagm(-1 => ones(99) , 0 => fill(-2, 100) , 1 => ones(99));
 f = DiffEqArrayOperator(A);
 
@@ -27,8 +27,7 @@ sim = test_convergence(dts, prob, alg)
 println("LinearMEBDF, order = ", sim.𝒪est[:l2])
 @test sim.𝒪est[:final] ≈ 2 atol=0.2
 
-####Non constant linear Operator:
-
+#### nonconstant linear Operator:
 B = spdiagm(0 => ones(100));
 update_func = (_A,u,p,t) -> _A.nzval  .= t
 L = DiffEqArrayOperator(B; update_func = update_func);
