@@ -52,6 +52,7 @@ qmin_default(alg::DP8) = 1//3
 qmax_default(alg::OrdinaryDiffEqAlgorithm) = 10
 qmax_default(alg::CompositeAlgorithm) = minimum(qmax_default.(alg.algs))
 qmax_default(alg::DP8) = 6
+qmax_default(alg::RadauIIA5) = 8
 
 get_chunksize(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have a chunk size defined.")
 get_chunksize(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) where {CS,AD} = CS
