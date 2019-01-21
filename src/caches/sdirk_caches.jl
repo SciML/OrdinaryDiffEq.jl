@@ -108,11 +108,11 @@ DiffEqBase.@def oopnlcachefields begin
   end
   if typeof(alg.nlsolve) <: NLAnderson
     if typeof(z) <: AbstractArray
-      zs = [zero(vec(z)) for i in 1:alg.nlsolve.n+1]
-      gs = [zero(vec(z)) for i in 1:alg.nlsolve.n+1]
+      zs = [vec(z) for i in 1:alg.nlsolve.n+1]
+      gs = [vec(z) for i in 1:alg.nlsolve.n+1]
     else
-      zs = [zero(z) for i in 1:alg.nlsolve.n+1]
-      gs = [zero(z) for i in 1:alg.nlsolve.n+1]
+      zs = [z for i in 1:alg.nlsolve.n+1]
+      gs = [z for i in 1:alg.nlsolve.n+1]
     end
   else
     zs = nothing
