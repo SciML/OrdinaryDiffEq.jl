@@ -363,6 +363,34 @@ LinearExponential(;krylov=:off, m=10, iop=0) = LinearExponential(krylov, m, iop)
 
 ################################################################################
 
+# FIRK Methods
+
+struct RadauIIA5{CS,AD,F,FDT,T2,Tol,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
+  linsolve::F
+  diff_type::FDT
+  smooth_est::Bool
+  extrapolant::Symbol
+  new_jac_conv_bound::T2
+  κ::Tol
+  tol::Tol
+  max_iter::Int
+  min_iter::Int
+end
+RadauIIA5(;chunk_size=0,autodiff=true,diff_type=Val{:central},
+                          linsolve=DEFAULT_LINSOLVE,
+                          extrapolant=:constant,new_jac_conv_bound=1e-3,
+                          controller=:Predictive,κ=nothing,
+                          tol=nothing,max_iter=10,min_iter=1,smooth_est=true) =
+                          RadauIIA5{chunk_size,autodiff,typeof(linsolve),
+                          typeof(diff_type),
+                          typeof(new_jac_conv_bound),typeof(tol),
+                          controller}(linsolve,
+                          diff_type,smooth_est,extrapolant,
+                          new_jac_conv_bound,κ,tol,
+                          max_iter,min_iter)
+
+################################################################################
+
 # SDIRK Methods
 
 struct ImplicitEuler{CS,AD,F,F2,FDT,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
