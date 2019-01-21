@@ -758,66 +758,30 @@ function initialize!(integrator,cache::SSPRKMSVS32ConstantCache)
 end
 
 @muladd function perform_step!(integrator,cache::SSPRKMSVS32ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,uprev2,u,f,p = integrator
-  @unpack dts,dt_fes,v_n,μ,v_fe,γ,μ = cache
-  #for ssp method in starting procedure
-  if cache.step == 1 && integrator.opts.adaptive
-    dts[1] = dt #dt_n-1
-    dts[2] = dt #dt_n-1
-    dt_fes[1] = 2*dt #dt_fe
-    μ = 2*dt #minimum
-    dt_fes[2] = 2*dt #dt_fe_n-1
-    dt_fes[3]= 2*dt #dt_fe_n-2
-  end
-  #Starting Procedure
-  accpt = true
-  if cache.step  < 3 || (!integrator.opts.adaptive && integrator.iter < 3)
-    #ssp22
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack u_1,u_2 = cache
+  # u1 -> stored as u
+  if cache.step < 3
     u = uprev + dt*integrator.fsalfirst
     k = f(u, p, t+dt)
     u = (uprev + u + dt*k) / 2
-    #CFL
-    if integrator.opts.adaptive
-      v_n = dt/dts[1]*v_fe
-      dt_fes[3] = dt_fes[2]
-      dt_fes[2] = dt_fes[1]
-      dt_fes[1] = dt/v_n*v_fe*2
-      if v_n > v_fe
-        cache.step -= 1
-        accpt = false
+      if cache.step == 1
+        u_2 = uprev
+      else
+        u_1 = uprev
       end
-      dts[2] = dts[1]
-      dts[1] = dt
-      dt = γ*dt_fes[1]
-      μ = min(dt_fes[2],dt_fes[3])
-    end
-    cache.step += 1
-
+  # u
   else
-    # Main method
-    dt_fes[3] = dt_fes[2]
-    dt_fes[2] = dt_fes[1]
-    μ = min(dt_fes[2],dt_fes[3])
-    dts[2]= dts[1]
-    dts[1]= dt
-    dt = (dts[1] + dts[2])/(dts[1] + dts[2] + μ)*μ
-
-    k = f(u,p,t+dt)
-    omega_2 = (dts[1] + dts[2])/dt
-    u = ((omega_2+1)/omega_2)*(((omega_2-1)/omega_2)*u + dt*k) + (1/(omega_2*omega_2))*uprev2
-
-    v_n = (dts[2] + dts[1] - dt)/(dts[1] + dts[2])*v_fe
+    u = 0.75*(uprev + 2*dt*integrator.fsalfirst) + 0.25*u_2
+    u_2 = u_1
+    u_1 = uprev
   end
-
-  if !integrator.opts.adaptive && integrator.iter > 2
-    k = f(u,p,t+dt)
-    u = 3/4*(u + 2*dt*k) + (1/4)*uprev2
-  end
-  if accpt == true
-    integrator.fsallast = f(u, p, t+dt)
-    integrator.k[1] = integrator.fsalfirst
-    integrator.u = u
-  end
+  integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+  integrator.k[1] = integrator.fsalfirst
+  integrator.u = u
+  cache.step += 1
+  cache.u_1 = u_1
+  cache.u_2 = u_2
 end
 
 function initialize!(integrator,cache::SSPRKMSVS32Cache)
@@ -830,69 +794,32 @@ function initialize!(integrator,cache::SSPRKMSVS32Cache)
 end
 
 @muladd function perform_step!(integrator,cache::SSPRKMSVS32Cache,repeat_step=false)
-  @unpack t,dt,uprev,uprev2,u,f,p = integrator
-  @unpack k,dts,dt_fes,v_n,μ,v_fe,γ,stage_limiter!,step_limiter! = cache
-  #for ssp method in starting procedure
-  if integrator.iter == 1 && integrator.opts.adaptive
-    dts[1] = dt #dt_n-1
-    dts[2] = dt #dt_n-1
-    dt_fes[1] = dt*2 #dt_fe
-    μ = dt_fes[1] #minimum
-    dt_fes[2] = dt_fes[1] #dt_fe_n-1
-    dt_fes[3]= dt_fes[1] #dt_fe_n-2
-    cache.step += 1
-  end
-  #Starting Procedure
-    if integrator.iter < 3 || (!integrator.opts.adaptive && integrator.iter < 3)
-    #ssp22
-    # u1
-    @. u = uprev + dt*integrator.fsalfirst
-    stage_limiter!(u, f, t+dt)
-    f(k,u, p, t+dt)
-    # u2
-    @. u = (uprev + u + dt*k) / 2
-    stage_limiter!(u, f, t+dt)
-    #CFL
-    if integrator.opts.adaptive
-      v_n = dt/dts[1]*v_fe
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack k,fsalfirst,u_1,u_2 = cache
+  # u1 -> stored as u
+  if cache.step < 3
+  @. u = uprev + dt*integrator.fsalfirst
+  k = f(u, p, t+dt)
 
-      dt_fes[3] = dt_fes[2]
-      dt_fes[2] = dt_fes[1]
+  @. u = (uprev + u + dt*k) / 2
 
-      dt_fes[1] = dt/v_n*v_fe*2
-
-      if v_n > v_fe
-        cache.step -= 1
-      end
-      dts[2]= dts[1]
-      dts[1]= dt
-      dt = γ*dt_fes[1]
-      μ = min(dt_fes[2],dt_fe[3])
-    end
-    cache.step += 1
+  if cache.step == 1
+    u_2 = uprev
   else
-    # Main method
-    dt_fes[3] = dt_fes[2]
-    dt_fes[2] = dt_fes[1]
-    μ = min(dt_fes[2],dt_fes[3])
-    dts[2]= dts[1]
-    dts[1]= dt
-    dt = (dts[1] + dts[2])/(dts[1] + dts[2] + μ)*μ
+    u_1 = uprev
+  end
+  # u
+  else
+  @. u = 0.75*(uprev + 2*dt*integrator.fsalfirst) + 0.25*u_2
 
-    f(k,u,p,t+dt)
-    omega_2 = (dts[1] + dts[2])/dt
-    @. u = ((omega_2+1)/omega_2)*(((omega_2-1)/omega_2)*u + dt*k) + (1/(omega_2*omega_2))*uprev2
-    stage_limiter!(u, f, t+dt)
-    step_limiter!(u, f, t+dt)
-      v_n = (dts[2] + dts[1] - dt)/(dts[1] + dts[2])*v_fe
+    u_2 = u_1
+    u_1 = uprev
   end
-  if !integrator.opts.adaptive && integrator.iter > 2
-    f(k,u,p,t+dt)
-    @. u = 3/4*(u + 2*dt*k) + (1/4)*uprev2
-    stage_limiter!(u, f, t+dt)
-    step_limiter!(u, f, t+dt)
-  end
-  f( k,  u, p, t+dt)
+  cache.step += 1
+  cache.u_1 = u_1
+  cache.u_2 = u_2
+
+  f(k,u, p, t+dt) # For interpolation, then FSAL'd
 end
 
 function initialize!(integrator,cache::SSPRKMSVS43ConstantCache)
@@ -906,101 +833,37 @@ function initialize!(integrator,cache::SSPRKMSVS43ConstantCache)
 end
 
 @muladd function perform_step!(integrator,cache::SSPRKMSVS43ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,uprev2,u,f,p = integrator
-  @unpack dts,dt_fes,v_n,v_fe,γ,μ,ρ,ρ_fe,uprev3 = cache
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack u_1,u_2,u_3 = cache
   #for ssp method in starting procedure
-
-  if cache.step == 1
-    dts[1] = dt #dt_n-1
-    dts[2] = dt #dt_n-1
-    dt_fes[1] = dt #dt_fe
-    mu = dt_fes[1] #minimum
-    dt_fes[2] = dt_fes[1] #dt_fe_n-1
-    dt_fes[3]= dt_fes[1] #dt_fe_n-2
-    cache.step += 1
-  end
-  #Starting Procedure
+  # u1 -> stored as u
   if cache.step < 4
-    #ssp22
-    # u1
     u = uprev + dt*integrator.fsalfirst
     k = f(u, p, t+dt)
-    # u
     u = (uprev + u + dt*k) / 2
-    uprev3 = uprev2
-    #CFL
-
-    if integrator.opts.adaptive
-      v_n = dt/dts[1]*v_fe
-      dt_fes[4] = dt_fes[3]
-      dt_fes[3] = dt_fes[2]
-      dt_fes[2] = dt_fes[1]
-
-      dt_fes[1] = dt/v_n*v_fe
-      if dt_fes[1]/dt_fes[2] > 1/ρ_fe || dt_fes[1]/dt_fes[2] < ρ_fe
-        cache.step -= 1
-        dt = dt/2
-      elseif dt > ρ*dt_fes[1]
-        step -= 1
-        dt = γ*ρ*dt_fes[1]
-      else
-        if v_n > v_fe
-          step -= 1
-        end
-
-        dts[3] = dts[2]
-        dts[2] = dts[1]
-        dts[1] = dt
-        dt = γ*dt_fes[1]
-        μ = min(dt_fes[2],dt_fes[3],dt_fes[4])
+      if cache.step == 1
+        u_3 = uprev
       end
-    end
-      step += 1
+      if cache.step == 2
+        u_2 = uprev
+      end
+      if cache.step == 3
+        u_1 = uprev
+      end
+  # u
   else
-    # Main method
-
-    if integrator.opts.adaptive
-      if step == 4
-        dts[2]= dts[1]
-        dts[1]= dt
-        dt = (dts[1] + dts[2]+ dts[3] )/(dts[1] + dts[2] + dts[3] + 2*μ)*μ
-      end
-    end
-
-    k = f(u,p,t+dt)
-    k = f(uprev3,p,t+dt)
-    omega_3 = (dts[1] + dts[2] + dts[3])/dt
-    u = (((omega_3+1)/omega_3)^2)*(((omega_3-2)/omega_3)*u + dt*k) + (omega_3+2)/(omega_3^3)*(uprev3 + omega_3*(omega_3+1)/(3*omega_3+2)*dt*k1)
-    uprev3 = uprev2
-
-
-    if integrator.opts.adaptive
-      #dt from equation 20
-      dt_fes[4] = dt_fes[3]
-      dt_fes[3] = dt_fes[2]
-      dt_fes[2] = dt_fes[1]
-      μ = min(dt_fes[2],dt_fes[3],dt_fes[4])
-      dt = (dts[1] + dts[2]+ dts[3] )/(dts[1] + dts[2] + dts[3] + 2*μ)*μ
-      v_n = (dts[2] + dts[1] - dt)/(dts[1] + dts[2])*v_fe
-      dt_fes[1] = dt/v_n*v_fe
-      if dt_fes[1]/dt_fes[2] > 1/ρ_fe || dt_fes[1]/dt_fes[2] < ρ_fe
-        dt = dt/2
-        dts[3] = dts[2]
-        dts[2] = dt[1]
-        dts[1] = dt
-      else
-        dts[3] = dts[2]
-        dts[2] = dt[1]
-        dts[1] = dt
-      end
-    end
-
-
-
+    u = 0.75*(uprev + 2*dt*integrator.fsalfirst) + 0.25*u_2
+    u_3 = u_2
+    u_2 = u_1
+    u_1 = uprev
   end
-
-  f(k,u,p,t+dt)
-
+  integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+  integrator.k[1] = integrator.fsalfirst
+  integrator.u = u
+  cache.step += 1
+  cache.u_1 = u_1
+  cache.u_2 = u_2
+  cache.u_3 = u_3
 end
 
 function initialize!(integrator,cache::SSPRKMSVS43Cache)
@@ -1015,100 +878,37 @@ end
 
 @muladd function perform_step!(integrator,cache::SSPRKMSVS43Cache,repeat_step=false)
   @unpack t,dt,uprev,uprev2,u,f,p = integrator
-  @unpack k,dts,dt_fes,v_n,μ,v_fe,γ,ρ,ρ_fe,step,stage_limiter!,step_limiter! = cache
+  @unpack k,fsalfirst,u_1,u_2,u_3 = cache
   #for ssp method in starting procedure
-  dt_22 = dt / 2
-
-  if cache.step == 1
-    dts[1] = dt #dt_n-1
-    dts[2] = dt #dt_n-1
-    dt_fes[1] = dt #dt_fe
-    mu = dt_fes[1] #minimum
-    dt_fes[2] = dt_fes[1] #dt_fe_n-1
-    dt_fes[3]= dt_fes[1] #dt_fe_n-2
-    step += 1
-  end
-  #Starting Procedure
+  # u1 -> stored as u
   if cache.step < 4
-    #ssp22
-    # u1
     @. u = uprev + dt*integrator.fsalfirst
-    stage_limiter!(u, f, t+dt)
-
     k = f(u, p, t+dt)
-    # u
     @. u = (uprev + u + dt*k) / 2
-    stage_limiter!(u, f, t+dt)
-    uprev3 = uprev2
-    #CFL
-    if integrator.opts.adaptive
-      v_n = dt/dts[1]*v_fe
-      dt_fes[4] = dt_fes[3]
-      dt_fes[3] = dt_fes[2]
-      dt_fes[2] = dt_fes[1]
-
-      dt_fes[1] = dt/v_n*v_fe
-      if dt_fes[1]/dt_fes[2] > 1/ρ_fe || dt_fes[1]/dt_fes[2] < ρ_fe
-        step -= 1
-        dt = dt/2
-      elseif dt > ρ*dt_fes[1]
-        step -= 1
-        dt = γ*ρ*dt_fes[1]
-      else
-        if v_n > v_fe
-          step -= 1
-        end
-
-        dts[3] = dts[2]
-        dts[2] = dts[1]
-        dts[1] = dt
-        dt = γ*dt_fes[1]
-        μ = min(dt_fes[2],dt_fes[3],dt_fes[4])
-      end
+    if cache.step == 1
+      u_3 = uprev
     end
-      step += 1
+    if cache.step == 2
+      u_2 = uprev
+    end
+    if cache.step == 3
+      u_1 = uprev
+    end
+  # u
   else
-    # Main method
-    if integrator.opts.adaptive
-      if step == 4
-        dts[2]= dts[1]
-        dts[1]= dt
-        dt = (dts[1] + dts[2]+ dts[3] )/(dts[1] + dts[2] + dts[3] + 2*μ)*μ
-      end
-    end
-    k = f(u,p,t+dt)
-    k1 = f(uprev3,p,t+dt)
-    omega_3 = (dts[1] + dts[2] + dts[3])/dt
-    u = (((omega_3+1)/omega_3)^2)*(((omega_3-2)/omega_3)*u + dt*k) + (omega_3+2)/(omega_3^3)*(uprev3 + omega_3*(omega_3+1)/(3*omega_3+2)*dt*k1)
-    stage_limiter!(u, f, t+dt)
-    step_limiter!(u, f, t+dt)
-    uprev3 = uprev2
-
-
-    if integrator.opts.adaptive
-      #dt from equation 20
-      dt_fes[4] = dt_fes[3]
-      dt_fes[3] = dt_fes[2]
-      dt_fes[2] = dt_fes[1]
-      μ = min(dt_fes[2],dt_fes[3],dt_fes[4])
-      dt = (dts[1] + dts[2]+ dts[3] )/(dts[1] + dts[2] + dts[3] + 2*μ)*μ
-      v_n = (dts[2] + dts[1] - dt)/(dts[1] + dts[2])*v_fe
-      dt_fes[1] = dt/v_n*v_fe
-      if dt_fes[1]/dt_fes[2] > 1/ρ_fe || dt_fes[1]/dt_fes[2] < ρ_fe
-        dt = dt/2
-        dts[3] = dts[2]
-        dts[2] = dt[1]
-        dts[1] = dt
-      else
-        dts[3] = dts[2]
-        dts[2] = dt[1]
-        dts[1] = dt
-      end
-    end
-
-
-
+    k = f(u_3,p,t+dt)
+    @. u = (16/27)*uprev + (16/9)*dt*integrator.fsalfirst + (11/27)*u_3 + (4/9)*dt*k
+    u_3 = u_2
+    u_2 = u_1
+    u_1 = uprev
   end
+  integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+  integrator.k[1] = integrator.fsalfirst
+  integrator.u = u
+  cache.step += 1
+  cache.u_1 = u_1
+  cache.u_2 = u_2
+  cache.u_3 = u_3
 
   f( k,  u, p, t+dt)
 end
@@ -1416,7 +1216,7 @@ function initialize!(integrator,cache::ORK256ConstantCache)
 	integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 	integrator.kshortsize = 1
 	integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  
+
 	# Avoid undefined entries if k is an array of arrays
 	integrator.fsallast = zero(integrator.fsalfirst)
 	integrator.k[1] = integrator.fsalfirst
@@ -1446,7 +1246,7 @@ end
   integrator.k[1] = integrator.fsalfirst
   integrator.u = u
 end
-  
+
 function initialize!(integrator,cache::ORK256Cache)
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
@@ -1456,7 +1256,7 @@ function initialize!(integrator,cache::ORK256Cache)
   integrator.k[1] = integrator.fsalfirst
   integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
 end
-  
+
 @muladd function perform_step!(integrator,cache::ORK256Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k,fsalfirst,tmp = cache
@@ -1484,4 +1284,3 @@ end
 
   f( k,  u, p, t+dt)
 end
-  

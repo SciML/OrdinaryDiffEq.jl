@@ -228,6 +228,35 @@ sol = solve(test_problem_ssp, alg, dt=8/5, adaptive=false)
 sol = solve(test_problem_ssp_inplace, alg, dt=8/5, adaptive=false)
 @test mapreduce(t->all(0 .<= sol(t) .<= 1), (u,v)->u&&v, range(0, stop=8, length=50), init=true)
 
+alg = SSPRKMSVS32()
+for prob in test_problems_only_time
+  sim = test_convergence(dts, prob, alg)
+  # higher order as pure quadrature
+  @test abs(sim.𝒪est[:final]-1-OrdinaryDiffEq.alg_order(alg)) < testTol
+end
+for prob in test_problems_linear
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+for prob in test_problems_nonlinear
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+
+alg = SSPRKMSVS43()
+for prob in test_problems_only_time
+  sim = test_convergence(dts, prob, alg)
+  # higher order as pure quadrature
+  @test abs(sim.𝒪est[:final]-1-OrdinaryDiffEq.alg_order(alg)) < testTol
+end
+for prob in test_problems_linear
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+for prob in test_problems_nonlinear
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
 
 alg = SSPRK932()
 for prob in test_problems_only_time

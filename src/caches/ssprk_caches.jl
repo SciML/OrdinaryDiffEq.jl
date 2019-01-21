@@ -521,119 +521,75 @@ end
 
 alg_cache(alg::SSPRK432,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = SSPRK432ConstantCache()
 
-mutable struct SSPRKMSVS32ConstantCache{dtType,dtArrayType} <: OrdinaryDiffEqConstantCache
-  dts::dtArrayType
-  dt_fes::dtArrayType
-  μ::dtType
-  v_n::Float64
-  step::Int
-  v_fe::Float64
-  γ::Float64
-end
-
-@cache mutable struct SSPRKMSVS32Cache{uType,rateType,StageLimiter,StepLimiter,dtArrayType,dtType,uNoUnitsType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct SSPRKMSVS32Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
-  uprev2::uType
-  k::rateType
-  tmp::uType # superfluous, only needed for callbacks
   fsalfirst::rateType
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  atmp::uNoUnitsType
-  dts::dtArrayType
-  dt_fes::dtArrayType
-  μ::dtType
-  v_n::Float64
+  u_2::uType
+  u_1::uType
+  k::rateType
+  tmp::uType
   step::Int
-  v_fe::Float64
-  γ::Float64
+end
+
+@cache mutable struct SSPRKMSVS32ConstantCache{uType} <: OrdinaryDiffEqConstantCache
+  u_2::uType
+  u_1::uType
+  step::Int
 end
 
 function alg_cache(alg::SSPRKMSVS32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  dts = fill(zero(typeof(dt)),2)
-  dt_fes = fill(zero(typeof(dt)),3)
-  μ = zero(dt)
-  v_n = 0.5
-  v_fe = 0.5
-  γ = 0.9
-  tmp = similar(u)
-  k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
-  atmp = similar(u,uEltypeNoUnits)
-  SSPRKMSVS32Cache(u,uprev,uprev2,k,tmp,fsalfirst,alg.stage_limiter!,alg.step_limiter!,atmp,dts,dt_fes,μ,v_n,1,v_fe,γ)
+  u_2 = similar(u)
+  u_1 = similar(u)
+  ralk2 = zero(rate_prototype)
+  k  = zero(rate_prototype)
+  tmp = similar(u)
+  SSPRKMSVS32Cache(u,uprev,fsalfirst,u_2,u_1,k,tmp,1)
 end
 
 function alg_cache(alg::SSPRKMSVS32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  dts = fill(zero(typeof(dt)),2)
-  dt_fes = fill(zero(typeof(dt)),3)
-  μ = zero(dt)
-  v_n = 0.5
-  v_fe = 0.5
-  γ = 0.9
- SSPRKMSVS32ConstantCache(dts,dt_fes,μ,v_n,1,v_fe,γ)
+  u_2 = u
+  u_1 = u
+  SSPRKMSVS32ConstantCache(u_2,u_1,1)
 end
 
-mutable struct SSPRKMSVS43ConstantCache{dtType,dtArrayType} <: OrdinaryDiffEqConstantCache
-  dts::dtArrayType
-  dt_fes::dtArrayType
-  μ::dtType
-  v_n::Float32
-  step::Int
-  v_fe::Float64
-  γ::Float64
-  ρ::Float64
-  ρ_fe::Float64
-end
-
-@cache mutable struct SSPRKMSVS43Cache{uType,rateType,StageLimiter,StepLimiter,dtArrayType,dtType,uNoUnitsType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct SSPRKMSVS43Cache{uType,rateType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
-  uprev2::uType
-  k::rateType
-  tmp::uType # superfluous, only needed for callbacks
   fsalfirst::rateType
-  stage_limiter!::StageLimiter
-  step_limiter!::StepLimiter
-  atmp::uNoUnitsType
-  dts::dtArrayType
-  dt_fes::dtArrayType
-  μ::dtType
-  v_n::Float64
+  u_3::uType
+  u_2::uType
+  u_1::uType
+  k::rateType
+  tmp::uType
   step::Int
-  v_fe::Float64
-  γ::Float64
-  ρ::Float64
-  ρ_fe::Float64
+end
+
+@cache mutable struct SSPRKMSVS43ConstantCache{uType} <: OrdinaryDiffEqConstantCache
+  u_3::uType
+  u_2::uType
+  u_1::uType
+  step::Int
 end
 
 function alg_cache(alg::SSPRKMSVS43,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  dts = fill(zero(typeof(dt)),3)
-  dt_fes = fill(zero(typeof(dt)),4)
-  v_n = 0.5
-  μ = zero(dt)
-  v_fe = 0.5
-  γ = 0.9
-  ρ = 0.6
-  ρ_fe = 0.9
-  tmp = similar(u)
-  k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
-  atmp = similar(u,uEltypeNoUnits)
-  SSPRKMSVS43Cache(u,uprev,uprev2,k,tmp,fsalfirst,alg.stage_limiter!,alg.step_limiter!,dts,dt_fes,μ,v_n,1,v_fe,γ,ρ,ρ_fe)
+  u_3 = similar(u)
+  u_2 = similar(u)
+  u_1 = similar(u)
+  k  = zero(rate_prototype)
+  tmp = similar(u)
+  SSPRKMSVS43Cache(u,uprev,fsalfirst,u_3,u_2,u_1,k,tmp,1)
 end
 
 function alg_cache(alg::SSPRKMSVS43,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  dts = fill(zero(typeof(dt)),2)
-  dt_fes = fill(zero(typeof(dt)),3)
-  μ = zero(dt)
-  v_n = 0.5
-  v_fe = 0.5
-  γ = 0.9
-  ρ = 0.6
-  ρ_fe = 0.9
- SSPRKMSVS43ConstantCache(dts,dt_fes,μ,v_n,1,v_fe,γ,ρ,ρ_fe)
+  u_3 = u
+  u_2 = u
+  u_1 = u
+  SSPRKMSVS43ConstantCache(u_3,u_2,u_1,1)
 end
+
 @cache struct SSPRK932Cache{uType,rateType,uNoUnitsType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
