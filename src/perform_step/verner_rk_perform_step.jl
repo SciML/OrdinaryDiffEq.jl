@@ -708,7 +708,7 @@ function initialize!(integrator, cache::Vern9Cache)
   alg.lazy ? (integrator.kshortsize = 10) : (integrator.kshortsize = 20)
   resize!(k, integrator.kshortsize)
   # k2, k3,k4,k5,k6,k7 are not used in the code (not even in interpolations), we dont need their pointers.
-  # So we mapped k[2] (from integrator) with k8 (from cache), k[3] with k9 and so on. 
+  # So we mapped k[2] (from integrator) with k8 (from cache), k[3] with k9 and so on.
   k[1]=k1;k[2]=k8;k[3]=k9;k[4]=k10;k[5]=k11;k[6]=k12;k[7]=k13;k[8]=k14;k[9]=k15;k[10]=k16 # Setup pointers
 
   if !alg.lazy
