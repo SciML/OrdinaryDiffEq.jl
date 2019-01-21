@@ -149,7 +149,8 @@ function (S::NLAnderson{true})(integrator)
     for i in 2:mk+1
       @. residuals[:,i-1] = gs[i] - zs[i] + ztmp
     end
-    alphas[1:mk] .= @view(residuals[:,1:mk]) \ ztmp
+    resqr = qr!(residuals[:,1:mk], Val(true))
+    ldiv!(@view(alphas[1:mk]), resqr, ztmp)
     vecz₊ = vec(z₊)
     for i = 1:mk
         vecz₊ .+= alphas[i].*(gs[i+1] .- gs[1])
