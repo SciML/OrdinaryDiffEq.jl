@@ -852,7 +852,8 @@ end
       end
   # u
   else
-    u = 0.75*(uprev + 2*dt*integrator.fsalfirst) + 0.25*u_2
+    k = f(u_3,p,t+dt)
+    u = (16/27)*uprev + (16/9)*dt*integrator.fsalfirst + (11/27)*u_3 + (4/9)*dt*k
     u_3 = u_2
     u_2 = u_1
     u_1 = uprev
