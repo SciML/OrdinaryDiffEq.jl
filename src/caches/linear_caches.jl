@@ -57,3 +57,45 @@ function alg_cache(alg::LinearExponential,u,rate_prototype,uEltypeNoUnits,uBotto
   end
   LinearExponentialCache(u,uprev,tmp,rtmp,KsCache)
 end
+
+@cache mutable struct LinearMEBDFCache{uType,rateType,J,F} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+
+  z₁::rateType
+  z₂::rateType
+  z₃::rateType
+  tmp::rateType
+
+  k::rateType
+  fsalfirst::rateType
+
+  W::J
+  W₂::J
+
+  step::Bool
+  linsolve::F
+  linsolve2::F
+
+end
+
+function alg_cache(alg::LinearMEBDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+  tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+
+  W  = similar(f.f*1)
+  W₂ = similar(W)
+
+  z₁ = zero(rate_prototype)
+  z₂ = similar(z₁)
+  z₃ = similar(z₁)
+  tmp = similar(z₁)
+
+  linsolve = alg.linsolve(Val{:init},W,u)
+  linsolve2 = alg.linsolve(Val{:init},W,u)
+
+
+LinearMEBDFCache(u,uprev,z₁,z₂,z₃,tmp,k,fsalfirst,W,W₂,true,linsolve,linsolve2)
+end

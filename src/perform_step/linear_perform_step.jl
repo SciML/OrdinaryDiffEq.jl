@@ -104,3 +104,94 @@ function perform_step!(integrator, cache::LinearExponentialCache, repeat_step=fa
   f(integrator.fsallast, u, p, t + dt)
   # integrator.k is automatically set due to aliasing
 end
+
+function initialize!(integrator, cache::LinearMEBDFCache)
+  integrator.kshortsize = 2
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+end
+
+@muladd function perform_step!(integrator, cache::LinearMEBDFCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack k,z₁,z₂,tmp = cache
+  alg = unwrap_alg(integrator, true)
+
+if is_constant(f.f)
+   if cache.step
+      cache.W = f.mass_matrix - dt*f.f
+      z₁ = f.mass_matrix*uprev
+      #stores the factorized matrix cache.W
+      cache.linsolve(vec(tmp), cache.W, vec(z₁), true)
+      cache.step = false
+    end
+
+    if f.mass_matrix == I
+     ##### STEP 1:
+     cache.linsolve(vec(z₁), cache.W, vec(uprev), false)
+     ##### STEP 2:
+     cache.linsolve(vec(z₂), cache.W, vec(z₁), false)
+     ### precalculations for step3:
+     @muladd @. tmp = -0.5z₂ + z₁ + 0.5uprev
+     z₁ .= tmp
+  ### With Massmatrix:
+    else
+     ##### STEP 1:
+     mul!(tmp,f.mass_matrix,uprev)
+     cache.linsolve(vec(z₁), cache.W, vec(tmp), false)
+     ##### STEP 2:
+     mul!(tmp,f.mass_matrix,z₁)
+     cache.linsolve(vec(z₂), cache.W, vec(tmp), false)
+     #precalculation for step3:
+     @muladd @. tmp = -0.5z₂ + z₁ + 0.5uprev
+     mul!(z₁,f.mass_matrix,tmp)
+   end
+ ##### STEP 3:
+ cache.linsolve(vec(u), cache.W, vec(z₁),false)
+ f(integrator.fsallast, u, p, t + dt)
+
+######## if linear Operator is NOT constant:
+else
+  L = f.f
+  if cache.step
+     update_coefficients!(L,u,p,t+dt)
+     cache.W = f.mass_matrix - dt*L
+    # cache.linsolve(vec(z₁), cache.W, vec(uprev), true)
+     cache.step = false
+  end
+
+if f.mass_matrix == I
+  ##### STEP 1:
+    cache.linsolve(vec(z₁), cache.W, vec(uprev), true)
+  ##### STEP 2:
+    update_coefficients!(L,u,p,t+2dt)
+    cache.W₂ = f.mass_matrix - dt*L
+    #ldiv!(z₂,lu(cache.W₂),z₁)
+    cache.linsolve2(vec(z₂), cache.W₂, vec(z₁), true)
+  #precalculations for step3
+    @. tmp = -0.5z₂+z₁+0.5uprev
+    z₁.= tmp
+else ### M ≠ I
+  ##### STEP 1:
+    mul!(tmp,f.mass_matrix,uprev)
+    cache.linsolve(vec(z₁), cache.W, vec(tmp), true)
+  ##### STEP 2:
+    update_coefficients!(L,u,p,t+2dt)
+    cache.W₂ = f.mass_matrix - dt*L
+    mul!(tmp,f.mass_matrix,z₁)
+    cache.linsolve2(vec(z₂), cache.W₂, vec(tmp), true)
+    #ldiv!(z₂,lu(cache.W₂),tmp)
+  #precalculations for step3
+    @muladd @. tmp = -0.5z₂ + z₁ + 0.5uprev
+    mul!(z₁,f.mass_matrix,tmp)
+end
+##### STEP 3:
+cache.linsolve(vec(u), cache.W, vec(z₁), false)
+cache.W .= cache.W₂
+#cache.linsolve .= cache.linsolve2 #something similar possible to save one factorization?
+f(integrator.fsallast, u, p, t + dt)
+end
+end

@@ -21,6 +21,13 @@ FunctionMap(;scale_by_time=false) = FunctionMap{scale_by_time}()
 
 ###############################################################################
 
+# MEBDF
+
+struct LinearMEBDF{F} <: OrdinaryDiffEqAlgorithm
+  linsolve::F
+end
+LinearMEBDF(;linsolve=DEFAULT_LINSOLVE) = LinearMEBDF{typeof(linsolve)}(linsolve)
+
 # RK methods
 
 struct ExplicitRK{TabType} <: OrdinaryDiffEqAdaptiveAlgorithm
@@ -807,7 +814,7 @@ end
 
 const MassMatrixAlgorithms = Union{OrdinaryDiffEqRosenbrockAlgorithm,
                                    OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
-                                   ImplicitEuler,ImplicitMidpoint}
+                                   ImplicitEuler,ImplicitMidpoint,LinearMEBDF}
 
 const MultistepAlgorithms = Union{IRKN3,IRKN4,
                                   ABDF2,

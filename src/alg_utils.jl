@@ -106,6 +106,7 @@ get_current_adaptive_order(alg::QNDF,cache) = cache.order
 get_current_adaptive_order(alg::OrdinaryDiffEqAlgorithm,cache) = alg_adaptive_order(alg)
 get_current_adaptive_order(alg::CompositeAlgorithm,cache) = alg_adaptive_order(alg.algs[cache.current])
 
+alg_order(alg::LinearMEBDF) = 2
 alg_order(alg::FunctionMap) = 0
 alg_order(alg::Euler) = 1
 alg_order(alg::Heun) = 2
