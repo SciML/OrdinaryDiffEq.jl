@@ -52,6 +52,7 @@ qmin_default(alg::DP8) = 1//3
 qmax_default(alg::OrdinaryDiffEqAlgorithm) = 10
 qmax_default(alg::CompositeAlgorithm) = minimum(qmax_default.(alg.algs))
 qmax_default(alg::DP8) = 6
+qmax_default(alg::RadauIIA5) = 8
 
 get_chunksize(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have a chunk size defined.")
 get_chunksize(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) where {CS,AD} = CS
@@ -101,7 +102,7 @@ get_current_alg_order(alg::JVODE,cache) = get_current_adaptive_order(alg,cache)
 get_current_alg_order(alg::QNDF,cache) = cache.order
 get_current_adaptive_order(alg::QNDF,cache) = cache.order
 
-alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
+#alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
 get_current_adaptive_order(alg::OrdinaryDiffEqAlgorithm,cache) = alg_adaptive_order(alg)
 get_current_adaptive_order(alg::CompositeAlgorithm,cache) = alg_adaptive_order(alg.algs[cache.current])
 
@@ -187,6 +188,7 @@ alg_order(alg::OwrenZen5) = 5
 alg_order(alg::LDDRK64) = 4
 alg_order(alg::CFRLDDRK64) = 4
 alg_order(alg::NDBLSRK124) = 4
+alg_order(alg::NDBLSRK144) = 4
 
 alg_order(alg::DP5) = 5
 alg_order(alg::DP5Threaded) = 5
@@ -200,6 +202,7 @@ alg_order(alg::TanYam7) = 7
 alg_order(alg::TsitPap8) = 8
 alg_order(alg::GenericImplicitEuler) = 1
 alg_order(alg::GenericTrapezoid) = 2
+alg_order(alg::RadauIIA5) = 5
 alg_order(alg::ImplicitEuler) = 1
 alg_order(alg::MidpointSplitting) = 2
 alg_order(alg::LinearExponential) = 1
@@ -280,6 +283,8 @@ alg_adaptive_order(alg::Feagin14) = 12
 
 alg_adaptive_order(alg::Rosenbrock23) = 3
 alg_adaptive_order(alg::Rosenbrock32) = 2
+
+alg_adaptive_order(alg::RadauIIA5) = 3
 
 alg_adaptive_order(alg::GenericImplicitEuler) = 0
 alg_adaptive_order(alg::GenericTrapezoid) = 1

@@ -41,7 +41,7 @@ function (S::NLAnderson{false,<:NLSolverCache})(integrator)
     u = tmp + γ*z
     z₊ = dt*f(u, p, tstep)
     gs[1] = z₊
-    
+
     mk = min(S.n, iter-1)
     residuals[1:mk] = (gs[2:mk+1] .- zs[2:mk+1]) .- (gs[1] - zs[1])
     alphas[1:mk] .= residuals[1:mk] \ [(zs[1] - gs[1])]
