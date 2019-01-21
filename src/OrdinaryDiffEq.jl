@@ -154,6 +154,8 @@ module OrdinaryDiffEq
 
   # Reexport the Alg Types
 
+  export LinearMEBDF
+
   export FunctionMap, Euler, Heun, Ralston, Midpoint, SSPRK22,
          SSPRK33, SSPRK53, SSPRK53_2N1,SSPRK53_2N2, SSPRK63, SSPRK73, SSPRK83, SSPRK432, SSPRK932,
          SSPRK54, SSPRK104, RK4, ExplicitRK, OwrenZen3, OwrenZen4, OwrenZen5,
