@@ -62,6 +62,7 @@ module OrdinaryDiffEq
   include("caches/feagin_caches.jl")
   include("caches/verner_caches.jl")
   include("caches/sdirk_caches.jl")
+  include("caches/firk_caches.jl")
   include("caches/kencarp_kvaerno_caches.jl")
   include("caches/generic_implicit_caches.jl")
   include("caches/linear_caches.jl")
@@ -85,6 +86,7 @@ module OrdinaryDiffEq
   include("tableaus/feagin_tableaus.jl")
   include("tableaus/rosenbrock_tableaus.jl")
   include("tableaus/sdirk_tableaus.jl")
+  include("tableaus/firk_tableaus.jl")
   include("tableaus/rkn_tableaus.jl")
   include("tableaus/rkc_tableaus.jl")
 
@@ -107,6 +109,7 @@ module OrdinaryDiffEq
   include("perform_step/ssprk_perform_step.jl")
   include("perform_step/sdirk_perform_step.jl")
   include("perform_step/kencarp_kvaerno_perform_step.jl")
+  include("perform_step/firk_perform_step.jl")
   include("perform_step/generic_implicit_perform_step.jl")
   include("perform_step/rosenbrock_perform_step.jl")
   include("perform_step/threaded_rk_perform_step.jl")
@@ -154,9 +157,11 @@ module OrdinaryDiffEq
   export FunctionMap, Euler, Heun, Ralston, Midpoint, SSPRK22,
          SSPRK33, SSPRK53, SSPRK53_2N1,SSPRK53_2N2, SSPRK63, SSPRK73, SSPRK83, SSPRK432, SSPRK932,
          SSPRK54, SSPRK104, RK4, ExplicitRK, OwrenZen3, OwrenZen4, OwrenZen5,
-         LDDRK64, CFRLDDRK64, NDBLSRK134, BS3, BS5, CarpenterKennedy2N54,
+         LDDRK64, CFRLDDRK64, NDBLSRK124, NDBLSRK134, NDBLSRK144, BS3, BS5, CarpenterKennedy2N54,
          ORK256, RK46NL, DP5, DP5Threaded, Tsit5, DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8,
          Vern9,Feagin10, Feagin12, Feagin14, CompositeAlgorithm, Anas5
+
+  export RadauIIA5
 
   export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, Kvaerno3,
          KenCarp3, Cash4, Hairer4, Hairer42, SSPSDIRK2, Kvaerno4, Kvaerno5,

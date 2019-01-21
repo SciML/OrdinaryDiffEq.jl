@@ -683,7 +683,7 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
       atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
       integrator.EEst = integrator.opts.internalnorm(atmp)
     end
-    
+
     if cnt == 1
       cache.order = 1
     elseif cnt <= 3
