@@ -57,7 +57,7 @@ end
   end
 
   # Newton iteration
-  local nw, η
+  local ndw, η
   do_newton = true
   iter = 0
   while do_newton && iter < max_iter
@@ -66,10 +66,9 @@ end
     ff2 = f(uprev+z2, p, t+c2*dt)
     ff3 = f(uprev+z3, p, t+   dt) # c3 = 1
 
-    # transform `u'` to `z`
-    z1 = @. TI11 * ff1 + TI12 * ff2 + TI13 * ff3
-    z2 = @. TI21 * ff1 + TI22 * ff2 + TI23 * ff3
-    z3 = @. TI31 * ff1 + TI32 * ff2 + TI33 * ff3
+    fw1 = @. TI11 * ff1 + TI12 * ff2 + TI13 * ff3
+    fw2 = @. TI21 * ff1 + TI22 * ff2 + TI23 * ff3
+    fw3 = @. TI31 * ff1 + TI32 * ff2 + TI33 * ff3
 
     if mass_matrix isa UniformScaling # `UniformScaling` doesn't play nicely with broadcast
       Mw1 = @. mass_matrix.λ * w1
@@ -81,25 +80,26 @@ end
       Mw3 = mass_matrix*w3
     end
 
-    z1 = LU1 \ (@. z1 - γdt*Mw1)
-    z2 = @. z2 - αdt*Mw2 + βdt*Mw3
-    z3 = @. z3 - βdt*Mw2 - αdt*Mw3
-    z23 = LU2 \ (@. z2 + z3*im)
-    z2 = real(z23)
-    z3 = imag(z23)
+    rhs1 = @. fw1 - γdt*Mw1
+    rhs2 = @. fw2 - αdt*Mw2 + βdt*Mw3
+    rhs3 = @. fw3 - βdt*Mw2 - αdt*Mw3
+    dw1 = LU1 \ rhs1
+    dw23 = LU2 \ (@. rhs2 + rhs3*im)
+    dw2 = real(dw23)
+    dw3 = imag(dw23)
 
-    iter != 1 && (nwprev = nw)
-    nw = internalnorm(z1) + internalnorm(z2) + internalnorm(z3)
+    iter != 1 && (ndwprev = ndw)
+    ndw = internalnorm(dw1) + internalnorm(dw2) + internalnorm(dw3)
 
     # check early stopping criterion
     if iter != 1
-      θ = nw/nwprev
-      θ ≥ 1 || nw * θ^(max_iter - iter) > κtol * (1 - θ) && break
+      θ = ndw/ndwprev
+      θ ≥ 1 || ndw * θ^(max_iter - iter) > κtol * (1 - θ) && break
     end
 
-    w1 = @. w1 + z1
-    w2 = @. w2 + z2
-    w3 = @. w3 + z3
+    w1 = @. w1 + dw1
+    w2 = @. w2 + dw2
+    w3 = @. w3 + dw3
 
     # transform `w` to `z`
     z1 = @. T11 * w1 + T12 * w2 + T13 * w3
@@ -109,10 +109,10 @@ end
     # check stopping criterion
     if iter == 1
       η = max(cache.ηold, eps(eltype(reltol)))^(0.8)
-      do_newton = iszero(integrator.success_iter) || iter < min_iter || η * nw > κtol
+      do_newton = iszero(integrator.success_iter) || iter < min_iter || η * ndw > κtol
     else
       η = θ / (1 - θ) # calculated for possible early stopping
-      do_newton = iter < min_iter || η * nw > κtol
+      do_newton = iter < min_iter || η * ndw > κtol
     end
   end
   cache.ηold = η
@@ -140,7 +140,7 @@ end
     end
   end
 
-  if integrator.EEst <= oneunit(integrator.EEst) || integrator.success_iter > 0
+  if integrator.EEst <= oneunit(integrator.EEst)
     cache.dtprev = dt
     if alg.extrapolant != :constant
       cache.cont1  = @. (z2 - z3)/c2m1
