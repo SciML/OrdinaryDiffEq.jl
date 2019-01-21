@@ -985,12 +985,10 @@ end
   # TODO: Add extrapolation choice
   nlcache.z = z₂ = zero(u)
 
-  nlcache.nl_iters = 0
   nlcache.tmp = uprev + γ*z₁
   nlcache.c = 2γ
   z₂,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
-  nlcache.nl_iters += iter
 
   ################################## Solve Step 3
 
@@ -1000,7 +998,6 @@ end
   nlcache.c = c3
   z₃,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
-  nlcache.nl_iters += iter
 
   ################################## Solve Step 4
 
@@ -1010,7 +1007,6 @@ end
   nlcache.c = c4
   z₄,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
-  nlcache.nl_iters += iter
 
   ################################## Solve Step 5
 
@@ -1020,7 +1016,6 @@ end
   nlcache.c = c5
   z₅,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
-  nlcache.nl_iters += iter
 
   ################################## Solve Step 6
 
@@ -1030,7 +1025,6 @@ end
   nlcache.c = c6
   z₆,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
-  nlcache.nl_iters += iter
 
   ################################## Solve Step 7
 
@@ -1047,7 +1041,7 @@ end
   ################################### Finalize
 
   nlcache.ηold = η
-  nlcache.nl_iters += iter
+  nlcache.nl_iters = iter
 
   if integrator.opts.adaptive
     tmp = btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇
