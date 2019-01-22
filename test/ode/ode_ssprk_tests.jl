@@ -149,8 +149,8 @@ end
 sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg), dense=false)
 @test all(sol.u .>= 0)
 
-# for SSPRK53_2N2 to be in asymptotic range
-dts = 1 .//2 .^(9:-1:5)
+#reverting back to original dts
+dts = 1 .//2 .^(8:-1:4)
 alg = SSPRK63()
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
