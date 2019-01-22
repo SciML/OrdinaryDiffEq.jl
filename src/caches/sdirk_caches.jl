@@ -20,6 +20,8 @@ DiffEqBase.@def iipnlcachefields begin
     jac_config = nothing
     linsolve = alg.linsolve(Val{:init},nf,u)
     z₊ = z
+    zs = nothing
+    gs = nothing
   elseif alg.nlsolve isa NLNewton
     if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype !== nothing
       W = WOperator(f, dt, true)
@@ -34,6 +36,8 @@ DiffEqBase.@def iipnlcachefields begin
     jac_config = build_jac_config(alg,nf,uf,du1,uprev,u,tmp,dz)
     linsolve = alg.linsolve(Val{:init},uf,u)
     z₊ = z
+    zs = nothing
+    gs = nothing
   elseif typeof(alg.nlsolve) <: NLFunctional
     J = nothing
     W = nothing
@@ -42,6 +46,8 @@ DiffEqBase.@def iipnlcachefields begin
     jac_config = nothing
     linsolve = nothing
     z₊ = similar(z)
+    zs = nothing
+    gs = nothing
   elseif typeof(alg.nlsolve) <: NLAnderson
     J = nothing
     W = nothing
@@ -50,6 +56,8 @@ DiffEqBase.@def iipnlcachefields begin
     jac_config = nothing
     linsolve = nothing
     z₊ = similar(z)
+    zs = [zero(vec(z)) for i in 1:alg.nlsolve.n+1]
+    gs = [zero(vec(z)) for i in 1:alg.nlsolve.n+1]
   end
 
   if κ !== nothing
@@ -98,17 +106,29 @@ DiffEqBase.@def oopnlcachefields begin
   else
     tol = uToltype(min(0.03,first(reltol)^(0.5)))
   end
+  if typeof(alg.nlsolve) <: NLAnderson
+    if typeof(z) <: AbstractArray
+      zs = [vec(z) for i in 1:alg.nlsolve.n+1]
+      gs = [vec(z) for i in 1:alg.nlsolve.n+1]
+    else
+      zs = [z for i in 1:alg.nlsolve.n+1]
+      gs = [z for i in 1:alg.nlsolve.n+1]
+    end
+  else
+    zs = nothing
+    gs = nothing
+  end
   z₊,dz,tmp,b,k = z,z,z,z,rate_prototype
 end
 
 DiffEqBase.@def iipnlsolve begin
   _nlsolve = typeof(alg.nlsolve).name.wrapper
-  nlcache = NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,γ,c,ηold,z₊,dz,tmp,b,k)
+  nlcache = NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,γ,c,ηold,z₊,dz,tmp,b,k,zs,gs)
   nlsolve = _nlsolve{true, typeof(nlcache)}(nlcache)
 end
 DiffEqBase.@def oopnlsolve begin
   _nlsolve = typeof(alg.nlsolve).name.wrapper
-  nlcache = NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,γ,c,ηold,z₊,dz,tmp,b,k)
+  nlcache = NLSolverCache(κ,tol,min_iter,max_iter,10000,new_W,z,W,γ,c,ηold,z₊,dz,tmp,b,k,zs,gs)
   nlsolve = _nlsolve{false, typeof(nlcache)}(nlcache)
 end
 

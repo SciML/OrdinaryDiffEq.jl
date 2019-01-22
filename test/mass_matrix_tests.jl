@@ -113,10 +113,12 @@ using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
       sol = solve(prob,ImplicitEuler(nlsolve=NLAnderson()),dt=1/10,adaptive=false)
       sol2 = solve(prob2,ImplicitEuler(nlsolve=NLAnderson()),dt=1/10,adaptive=false)
       @test norm(sol .- sol2) ≈ 0 atol=1e-7
+      @test norm(sol[end] .- sol2[end]) ≈ 0 atol=1e-7
 
-      sol = solve(prob, ImplicitMidpoint(extrapolant = :constant),dt=1/10,adaptive=false)
-      sol2 = solve(prob2,ImplicitMidpoint(extrapolant = :constant),dt=1/10)
+      sol = solve(prob, ImplicitMidpoint(extrapolant = :constant, nlsolve=NLAnderson()),dt=1/10,adaptive=false)
+      sol2 = solve(prob2,ImplicitMidpoint(extrapolant = :constant, nlsolve=NLAnderson()),dt=1/10,adaptive=false)
       @test norm(sol .- sol2) ≈ 0 atol=1e-7
+      @test norm(sol[end] .- sol2[end]) ≈ 0 atol=1e-7
     end
   end
 end
