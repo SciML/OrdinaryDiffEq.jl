@@ -24,11 +24,13 @@ function (S::NLAnderson{false,<:NLSolverCache})(integrator)
   dz = z₊ - z
   ndz = integrator.opts.internalnorm(dz)
   zptr = zs[S.n+1]
+  gptr = gs[S.n+1]
   for t = (S.n+1):-1:2
     zs[t] = zs[t-1]
     gs[t] = gs[t-1]
   end
   zs[1] = zptr
+  gs[1] = gptr
   # zs = circshift(zs, 1)
   # gs = circshift(gs, 1)
   z = z₊
@@ -51,11 +53,13 @@ function (S::NLAnderson{false,<:NLSolverCache})(integrator)
         z₊ += alphas[i]*(gs[i+1] - gs[1])
     end
     zptr = zs[S.n+1]
+    gptr = gs[S.n+1]
     for t = (S.n+1):-1:2
       zs[t] = zs[t-1]
       gs[t] = gs[t-1]
     end
     zs[1] = zptr
+    gs[1] = gptr
     # zs = circshift(zs, 1)
     # gs = circshift(gs, 1)
     zs[1] = z₊
@@ -116,11 +120,13 @@ function (S::NLAnderson{true})(integrator)
   @. dz = z₊ - z
   ndz = integrator.opts.internalnorm(dz)
   zptr = zs[S.n+1]
+  gptr = gs[S.n+1]
   for t = (S.n+1):-1:2
     zs[t] = zs[t-1]
     gs[t] = gs[t-1]
   end
   zs[1] = zptr
+  gs[1] = gptr
   # zs = circshift(zs, 1)
   # gs = circshift(gs, 1)
   z .= z₊
@@ -156,11 +162,13 @@ function (S::NLAnderson{true})(integrator)
         vecz₊ .+= alphas[i].*(gs[i+1] .- gs[1])
     end
     zptr = zs[S.n+1]
+    gptr = gs[S.n+1]
     for t = (S.n+1):-1:2
       zs[t] = zs[t-1]
       gs[t] = gs[t-1]
     end
     zs[1] = zptr
+    gs[1] = gptr
     # zs = circshift(zs, 1)
     # gs = circshift(gs, 1)
     zs[1] .= vec(z₊)

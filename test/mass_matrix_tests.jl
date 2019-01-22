@@ -112,13 +112,13 @@ using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
     if iip
       sol = solve(prob,ImplicitEuler(nlsolve=NLAnderson()),dt=1/10,adaptive=false)
       sol2 = solve(prob2,ImplicitEuler(nlsolve=NLAnderson()),dt=1/10,adaptive=false)
-      @test_broken norm(sol .- sol2) ≈ 0 atol=1e-7
+      @test norm(sol .- sol2) ≈ 0 atol=1e-7
       @test norm(sol[end] .- sol2[end]) ≈ 0 atol=1e-7
 
       sol = solve(prob, ImplicitMidpoint(extrapolant = :constant, nlsolve=NLAnderson()),dt=1/10,adaptive=false)
       sol2 = solve(prob2,ImplicitMidpoint(extrapolant = :constant, nlsolve=NLAnderson()),dt=1/10,adaptive=false)
-      @test_broken norm(sol .- sol2) ≈ 0 atol=1e-7
-      @test_broken norm(sol[end] .- sol2[end]) ≈ 0 atol=1e-7
+      @test norm(sol .- sol2) ≈ 0 atol=1e-7
+      @test norm(sol[end] .- sol2[end]) ≈ 0 atol=1e-7
     end
   end
 end
