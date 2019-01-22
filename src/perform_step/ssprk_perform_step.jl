@@ -1162,7 +1162,7 @@ end
 end
   
 function initialize!(integrator,cache::RKMCache)
-  @unpack tmp,fsalfirst,k2,k3,k4,k5,k6,k = cache
+  @unpack tmp,fsalfirst,k1,k2,k3,k4,k5,k6,k = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
   integrator.kshortsize = 2
@@ -1174,7 +1174,7 @@ end
   
 @muladd function perform_step!(integrator,cache::RKMCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack tmp,fsalfirst,k2,k3,k4,k5,k6,k = cache
+  @unpack tmp,fsalfirst,k1,k2,k3,k4,k5,k6,k = cache
   @unpack α2,α3,α4,α5,α6,β1,β2,β3,β4,β5,β6,c2,c3,c4,c5,c6 = cache.tab
 
   # u1
