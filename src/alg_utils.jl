@@ -187,6 +187,8 @@ alg_order(alg::OwrenZen4) = 4
 alg_order(alg::OwrenZen5) = 5
 alg_order(alg::LDDRK64) = 4
 alg_order(alg::CFRLDDRK64) = 4
+alg_order(alg::NDBLSRK124) = 4
+alg_order(alg::NDBLSRK134) = 4
 alg_order(alg::NDBLSRK144) = 4
 
 alg_order(alg::DP5) = 5
