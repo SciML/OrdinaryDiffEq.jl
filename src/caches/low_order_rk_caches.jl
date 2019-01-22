@@ -605,6 +605,7 @@ end
   tab::TabType
 end
 
+
 struct NDBLSRK124ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   α2::T
   α3::T
@@ -690,6 +691,108 @@ end
 
 function alg_cache(alg::NDBLSRK124,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   NDBLSRK124ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+end
+
+@cache struct NDBLSRK134Cache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
+    u::uType
+  uprev::uType
+  k::rateType
+  tmp::uType
+  fsalfirst::rateType
+  tab::TabType
+end
+
+struct NDBLSRK134ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+  α2::T
+  α3::T
+  α4::T
+  α5::T
+  α6::T
+  α7::T
+  α8::T
+  α9::T
+  α10::T
+  α11::T
+  α12::T
+  α13::T
+  β1::T
+  β2::T
+  β3::T
+  β4::T
+  β5::T
+  β6::T
+  β7::T
+  β8::T
+  β9::T
+  β10::T
+  β11::T
+  β12::T
+  β13::T
+  c2::T2
+  c3::T2
+  c4::T2
+  c5::T2
+  c6::T2
+  c7::T2
+  c8::T2
+  c9::T2
+  c10::T2
+  c11::T2
+  c12::T2
+  c13::T2
+
+  function NDBLSRK134ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+    α2  = T(-0.6160178650170565)
+    α3  = T(-0.4449487060774118)
+    α4  = T(-1.0952033345276178)
+    α5  = T(-1.2256030785959187)
+    α6  = T(-0.2740182222332805)
+    α7  = T(-0.0411952089052647)
+    α8  = T(-0.1797084899153560)
+    α9  = T(-1.1771530652064288)
+    α10 = T(-0.4078831463120878)
+    α11 = T(-0.8295636426191777)
+    α12 = T(-4.7895970584252288)
+    α13 = T(-0.6606671432964504)
+    β1  = T(0.0271990297818803)
+    β2  = T(0.1772488819905108)
+    β3  = T(0.0378528418949694)
+    β4  = T(0.6086431830142991)
+    β5  = T(0.2154313974316100)
+    β6  = T(0.2066152563885843)
+    β7  = T(0.0415864076069797)
+    β8  = T(0.0219891884310925)
+    β9  = T(0.9893081222650993)
+    β10 = T(0.0063199019859826)
+    β11 = T(0.3749640721105318)
+    β12 = T(1.6080235151003195)
+    β13 = T(0.0961209123818189)
+    c2  = T2(0.0271990297818803)
+    c3  = T2(0.0952594339119365)
+    c4  = T2(0.1266450286591127)
+    c5  = T2(0.1825883045699772)
+    c6  = T2(0.3737511439063931)
+    c7  = T2(0.5301279418422206)
+    c8  = T2(0.5704177433952291)
+    c9  = T2(0.5885784947099155)
+    c10 = T2(0.6160769826246714)
+    c11 = T2(0.6223252334314046)
+    c12 = T2(0.6897593128753419)
+    c13 = T2(0.9126827615920843)
+    new{T,T2}(α2, α3, α4, α5, α6, α7, α8, α9, α10, α11, α12, α13, β1, β2, β3, β4, β5, β6, β7, β8, β9, β10, β11, β12, β13, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13)
+  end
+end
+
+function alg_cache(alg::NDBLSRK134,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  tab = NDBLSRK134ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  NDBLSRK134Cache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+function alg_cache(alg::NDBLSRK134,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  NDBLSRK134ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
 @cache struct NDBLSRK144Cache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
