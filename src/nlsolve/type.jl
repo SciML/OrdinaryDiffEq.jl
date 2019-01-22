@@ -1,6 +1,6 @@
 abstract type AbstractNLsolveSolver end
 abstract type AbstractNLsolveCache end
-mutable struct NLSolverCache{rateType,uType,W,uToltype,cType,gType} <: AbstractNLsolveCache
+mutable struct NLSolverCache{rateType,uType,W,uToltype,cType,gType,zsType} <: AbstractNLsolveCache
   κ::uToltype
   tol::uToltype
   min_iter::Int
@@ -18,6 +18,8 @@ mutable struct NLSolverCache{rateType,uType,W,uToltype,cType,gType} <: AbstractN
   tmp::uType
   b::uType # can be aliased with `k` if no unit
   k::rateType
+  zs::zsType
+  gs::zsType
 end
 
 struct NLFunctional{iip,T<:NLSolverCache} <: AbstractNLsolveSolver
@@ -36,7 +38,7 @@ NLSolverCache(;κ=nothing, tol=nothing, min_iter=1, max_iter=10) =
 NLSolverCache(κ, tol, min_iter, max_iter, 0, true,
               ntuple(i->nothing, 4)...,
               κ === nothing ? κ : zero(κ),
-              ntuple(i->nothing, 5)...)
+              ntuple(i->nothing, 7)...)
 
 # Default `iip` to `true`, but the whole type will be reinitialized in `alg_cache`
 function NLFunctional(;kwargs...)

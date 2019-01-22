@@ -42,7 +42,7 @@ function DiffEqBase.__init(
   beta1=nothing,
   maxiters = 1000000,
   dtmax=eltype(prob.tspan)((prob.tspan[end]-prob.tspan[1])),
-  dtmin= typeof(one(eltype(prob.tspan))) <: AbstractFloat ? 10*eps(eltype(prob.tspan)) :
+  dtmin= typeof(one(eltype(prob.tspan))) <: AbstractFloat ? eps(eltype(prob.tspan)) :
          typeof(one(eltype(prob.tspan))) <: Integer ? 0 :
          eltype(prob.tspan)(1//10^(10)),
   internalnorm = ODE_DEFAULT_NORM,
@@ -90,14 +90,10 @@ function DiffEqBase.__init(
 
   # Get the control variables
 
-  if typeof(prob.u0) <: Array
-    u = recursivecopy(prob.u0)
-  elseif typeof(prob.u0) <: Number
-    u = prob.u0
-  elseif typeof(prob.u0) <: Tuple
+  if typeof(prob.u0) <: Tuple
     u = ArrayPartition(prob.u0,Val{true})
   else
-    u = deepcopy(prob.u0)
+    u = recursivecopy(prob.u0)
   end
 
   uType = typeof(u)
@@ -215,17 +211,9 @@ function DiffEqBase.__init(
 
   k = rateType[]
 
-  if uType <: Array
-    uprev = copy(u)
-  else
-    uprev = deepcopy(u)
-  end
+  uprev = recursivecopy(u)
   if allow_extrapolation
-    if uType <: Array
-      uprev2 = copy(u)
-    else
-      uprev2 = deepcopy(u)
-    end
+    uprev2 = recursivecopy(u)
   else
     uprev2 = uprev
   end

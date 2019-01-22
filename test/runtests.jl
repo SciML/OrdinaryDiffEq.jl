@@ -71,6 +71,7 @@ if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_II" )
   @time @safetestset "Split Methods Tests" begin include("split_methods_tests.jl") end
   # ~ 550 s
   @time @safetestset "Rosenbrock Tests" begin include("ode/ode_rosenbrock_tests.jl") end
+  @time @safetestset "FIRK Tests" begin include("ode/ode_firk_tests.jl") end
   # ~ 40 s
   @time @safetestset "Linear-Nonlinear Methods Tests" begin include("linear_nonlinear_convergence_tests.jl") end
   # ~ 140 s
