@@ -42,7 +42,7 @@ function DiffEqBase.__init(
   beta1=nothing,
   maxiters = 1000000,
   dtmax=eltype(prob.tspan)((prob.tspan[end]-prob.tspan[1])),
-  dtmin= typeof(one(eltype(prob.tspan))) <: AbstractFloat ? 10*eps(eltype(prob.tspan)) :
+  dtmin= typeof(one(eltype(prob.tspan))) <: AbstractFloat ? eps(eltype(prob.tspan)) :
          typeof(one(eltype(prob.tspan))) <: Integer ? 0 :
          eltype(prob.tspan)(1//10^(10)),
   internalnorm = ODE_DEFAULT_NORM,
