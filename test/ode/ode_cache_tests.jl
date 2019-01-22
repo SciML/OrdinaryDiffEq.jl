@@ -36,20 +36,26 @@ tspan = (0.0,50.0)
 prob = ODEProblem(f,u0,tspan)
 
 println("Check for stochastic errors")
-Random.seed!(1)
 for i in 1:50
-    sol = solve(prob,Tsit5(),callback=callback)
+  @test_nowarn sol = solve(prob,Tsit5(),callback=callback)
 end
 
 println("Check some other integrators")
-sol = solve(prob,GenericImplicitEuler(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/2)
-sol = solve(prob,GenericTrapezoid(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/2)
-sol = solve(prob,Rosenbrock23(chunk_size=1),callback=callback,dt=1/2)
-sol = solve(prob,Rosenbrock32(chunk_size=1),callback=callback,dt=1/2)
+Random.seed!(1)
+@test_nowarn sol = solve(prob,GenericImplicitEuler(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/2)
+Random.seed!(2)
+@test_nowarn sol = solve(prob,GenericTrapezoid(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/2)
+Random.seed!(3)
+@test_nowarn sol = solve(prob,Rosenbrock23(chunk_size=1),callback=callback,dt=1/2)
+Random.seed!(4)
+@test_nowarn sol = solve(prob,Rosenbrock32(chunk_size=1),callback=callback,dt=1/2)
 
 for alg in CACHE_TEST_ALGS
-  sol = solve(prob,alg,callback=callback,dt=1/2)
+  Random.seed!(hash(alg))
+  @test_nowarn sol = solve(prob,alg,callback=callback,dt=1/2)
 end
 
-sol = solve(prob,Rodas4(chunk_size=1),callback=callback,dt=1/2)
-sol = solve(prob,Rodas5(chunk_size=1),callback=callback,dt=1/2)
+Random.seed!(5)
+@test_nowarn sol = solve(prob,Rodas4(chunk_size=1),callback=callback,dt=1/2)
+Random.seed!(6)
+@test_nowarn sol = solve(prob,Rodas5(chunk_size=1),callback=callback,dt=1/2)
