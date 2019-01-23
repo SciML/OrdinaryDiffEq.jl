@@ -128,14 +128,18 @@ end
     mass_matrix != I && (tmp = mass_matrix*tmp)
     utilde = @. integrator.fsalfirst + tmp
     alg.smooth_est && (utilde = LU1 \ utilde)
-    atmp = calculate_residuals(utilde, uprev, u, abstol, reltol, internalnorm)
+    # RadauIIA5 needs a transformed rtol and atol see
+    # https://github.com/luchr/ODEInterface.jl/blob/0bd134a5a358c4bc13e0fb6a90e27e4ee79e0115/src/radau5.f#L399-L421
+    rtol = @. reltol^(2/3) / 10
+    atol = @. rtol * (abstol / reltol)
+    atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm)
     integrator.EEst = internalnorm(atmp)
 
-    if integrator.iter == 1 || integrator.u_modified || integrator.EEst > oneunit(integrator.EEst)
+    if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 || integrator.u_modified
       f0 = f(uprev .+ utilde, p, t)
       utilde = @. f0 + tmp
       alg.smooth_est && (utilde = LU1 \ utilde)
-      atmp = calculate_residuals(utilde, uprev, u, abstol, reltol, internalnorm)
+      atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm)
       integrator.EEst = internalnorm(atmp)
     end
   end
