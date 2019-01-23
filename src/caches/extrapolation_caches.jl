@@ -8,12 +8,12 @@
   T::Array{uType,2}
 end
 
-struct RichardsonEulerConstantCache{Int64} <: OrdinaryDiffEqConstantCache
-  m::Int64 #Generalise type of m
+struct RichardsonEulerConstantCache <: OrdinaryDiffEqConstantCache
+  m::Int #Generalise type of m
   # Can add different order of n_{i} here
   function RichardsonEulerConstantCache()
-    m = Int64(2)
-    new{Int64}(m)
+    m = 2
+    new(m)
   end
 end
 
