@@ -1,11 +1,11 @@
-@cache struct RichardsonEulerCache{uType,rateType,tabType} <: OrdinaryDiffEqMutableCache
+@cache struct RichardsonEulerCache{uType,rateType,tabType, arrayType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
   k::rateType
   fsalfirst::rateType
   tab::tabType
-  T::Array{uType,2}
+  T::arrayType
 end
 
 struct RichardsonEulerConstantCache <: OrdinaryDiffEqConstantCache
@@ -22,7 +22,7 @@ function alg_cache(alg::RichardsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomE
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   tab = RichardsonEulerConstantCache()
-  T = zeros(typeof(u), (tab.m, tab.m))
+  T = fill(zeros(eltype(u), size(u)), (tab.m, tab.m))
   RichardsonEulerCache(u,uprev,tmp,k,fsalfirst,tab,T)
 end
 
