@@ -748,19 +748,27 @@ end
 end
 
 function initialize!(integrator,cache::SSPRKMSVS32ConstantCache)
-  integrator.kshortsize = 2
+  integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
   integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
 end
 
 @muladd function perform_step!(integrator,cache::SSPRKMSVS32ConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack u_1,u_2 = cache
+  @unpack u_1,u_2,dts,dtf,μ,v_n = cache
+
+  if integrator.iter == 1
+    cache.dts[1] = dt
+    cache.dts[2] = dt
+    cache.dtf[1] = dt
+  end
+  accpt = true
+  dt = dts[1]
+
 
   if cache.step < 3 #starting Procedure
     k = f(u,p,t+dt)
@@ -772,23 +780,53 @@ end
       else
         u_1 = uprev
       end
+    if integrator.opts.adaptive
+      v_n = dt/dts[2]*0.5
+      cache.dtf[2] = dtf[1]
+      cache.dtf[1] = dt/v_n*0.5
+      if v_n > 0.5
+        cache.step -= 1
+        accpt = false
+      end
+      cache.dts[3] = dts[2]
+      cache.dts[2] = dt
+      dt = 0.9*dtf[1]
+      μ = min(dtf[1],dtf[2])
+
+    end
   else
+    if integrator.opts.adaptive
+      Ω = (dts[2] + dts[3])/dt
+    else
       Ω = 2
+    end
     u = (Ω*Ω - 1)/(Ω*Ω)*(uprev + Ω/(Ω-1)*dt*integrator.fsalfirst) + 1/(Ω*Ω)*u_2
     u_2 = u_1
     u_1 = uprev
-
+    if integrator.opts.adaptive
+      v_n = (dts[2]+dts[3]-dt)/(dts[2]+dts[3])*0.5
+      dt = (dts[2] + dts[3])/(dts[2]+dts[3]+μ)*μ
+      cache.dtf[2] = dtf[1]
+      dtf[1]  = dt/v_n*0.5
+      cache.dts[3] = dts[2]
+      cache.dts[2] = dt
+      μ = min(dtf[1],dtf[2])
+    end
   end
-
-    integrator.dt = dt
+  if accpt == true
     integrator.fsallast = f(u, p, t+dt)
     integrator.k[1] = integrator.fsalfirst
-    integrator.k[2] = integrator.fsallast
     integrator.u = u
-
+  else
+    integrator.fsallast = f(uprev, p, t+dt)
+    integrator.k[1] = integrator.fsalfirst
+    integrator.u = uprev
+  end
+  cache.dts[1] = dt
   cache.step += 1
   cache.u_1 = u_1
   cache.u_2 = u_2
+  cache.μ = μ
 
 end
 
