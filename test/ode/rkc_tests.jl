@@ -19,18 +19,7 @@ Random.seed!(123)
     eigest = integrator.eigen_est
     @test eigest ≈ eigm rtol=0.1eigm
   end
-end
 
-@testset "Runge-Kutta-Chebyshev Convergence Tests" begin
-  dts = 1 .//2 .^(8:-1:4)
-  testTol = 0.1
-  for prob in probArr
-    sim = test_convergence(dts,prob,ROCK2())
-    @test sim.𝒪est[:l∞] ≈ 2 atol=testTol
-  end
-end
-
-@testset "Power Iteration of Runge-Kutta-Chebyshev Tests" begin
   for i in 1:10, iip in [true, false]
     A = randn(20,20)
     test_f(u,p,t) = A*u
@@ -47,6 +36,11 @@ end
 @testset "Runge-Kutta-Chebyshev Convergence Tests" begin
   dts = 1 .//2 .^(8:-1:4)
   testTol = 0.1
+  for prob in probArr
+    sim = test_convergence(dts,prob,ROCK2())
+    @test sim.𝒪est[:l∞] ≈ 2 atol=testTol
+  end
+
   for prob in probArr
     sim = test_convergence(dts,prob,ROCK4())
     @test sim.𝒪est[:l∞] ≈ 4 atol=testTol
