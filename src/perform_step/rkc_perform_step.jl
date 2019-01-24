@@ -128,7 +128,6 @@ function initialize!(integrator, cache::ROCK4ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
   integrator.k[1] = integrator.fsalfirst
@@ -165,7 +164,7 @@ end
     i < ms[cache.mdeg] && (gprev2 = gprev; gprev = u)
     ci3 = ci2
     ci2 = ci1
-  end # end if
+  end
   # 4-stage finishing procedure.
   # Stage-1
   temp1 = dt * fpa[cache.mdeg][1]
@@ -200,7 +199,6 @@ end
   temp5 = dt * fpbe[cache.mdeg][5]
   gprev5 = f(u, p, t + dt)
   temp5 = temp1 * gprev + temp2 * gprev2 + temp3 * gprev3 + temp4 * gprev4 + temp5 * gprev5
-  # error estimate
   if integrator.opts.adaptive
     atmp = calculate_residuals(temp5, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
@@ -213,11 +211,11 @@ end
 function initialize!(integrator, cache::ROCK4Cache)
   integrator.kshortsize = 2
   resize!(integrator.k, integrator.kshortsize)
-  integrator.fsalfirst = cache.fsalfirst  # done by pointers, no copying
+  integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
 end
 
 @muladd function perform_step!(integrator, cache::ROCK4Cache, repeat_step=false)
@@ -254,7 +252,7 @@ end
     i < ms[ccache.mdeg] && (gprev2 .= gprev; gprev .= u)
     ci3 = ci2
     ci2 = ci1
-  end # end if
+  end
   # 4-stage finishing procedure.
   # Stage-1
   temp1 = dt * fpa[ccache.mdeg][1]
@@ -289,7 +287,6 @@ end
   temp5 = dt * fpbe[ccache.mdeg][5]
   f(k5, u, p, t + dt)
   @. tmp = temp1 * k + temp2 * k2 + temp3 * k3 + temp4 * k4 + temp5 * k5
-  # error estimate
   if integrator.opts.adaptive
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)

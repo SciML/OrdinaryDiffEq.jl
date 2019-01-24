@@ -146,7 +146,7 @@ function choosedeg!(cache::T) where T
       cache.mdeg = i
       cache.recind = recind
       break
-    end # end if
-  end # end for
+    end
+  end
   return nothing
 end
