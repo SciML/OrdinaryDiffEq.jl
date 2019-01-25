@@ -207,5 +207,7 @@ module OrdinaryDiffEq
   export AutoSwitch, AutoTsit5, AutoDP5,
          AutoVern6, AutoVern7, AutoVern8, AutoVern9
 
+  export MEBDF
+
   export NLNewton, NLAnderson, NLFunctional
 end # module

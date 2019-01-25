@@ -21,6 +21,26 @@ FunctionMap(;scale_by_time=false) = FunctionMap{scale_by_time}()
 
 ###############################################################################
 
+# MEBDF
+
+struct MEBDF{CS,AD,F,F2,FDT,T2} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
+  linsolve::F
+  nlsolve::F2
+  diff_type::FDT
+  extrapolant::Symbol
+  new_jac_conv_bound::T2
+end
+MEBDF(;chunk_size=0,autodiff=true,diff_type=Val{:central},
+                      linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
+                      extrapolant=:constant,new_jac_conv_bound=1e-3) =
+                      MEBDF{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),
+                      typeof(new_jac_conv_bound)}(
+                      linsolve,nlsolve,diff_type,extrapolant,new_jac_conv_bound)
+
+
+
+
+
 # RK methods
 
 struct ExplicitRK{TabType} <: OrdinaryDiffEqAdaptiveAlgorithm
@@ -803,11 +823,27 @@ end
 
 ################################################################################
 
+struct MEBDF{CS,AD,F,F2,FDT,T2} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
+  linsolve::F
+  nlsolve::F2
+  diff_type::FDT
+  extrapolant::Symbol
+  new_jac_conv_bound::T2
+end
+MEBDF(;chunk_size=0,autodiff=true,diff_type=Val{:central},
+                      linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
+                      extrapolant=:constant,new_jac_conv_bound=1e-3) =
+                      MEBDF{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),
+                      typeof(new_jac_conv_bound)}(
+                      linsolve,nlsolve,diff_type,extrapolant,new_jac_conv_bound)
+
+#################################################
+
 ### Algorithm Groups
 
 const MassMatrixAlgorithms = Union{OrdinaryDiffEqRosenbrockAlgorithm,
                                    OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
-                                   ImplicitEuler,ImplicitMidpoint}
+                                   ImplicitEuler,ImplicitMidpoint,MEBDF}
 
 const MultistepAlgorithms = Union{IRKN3,IRKN4,
                                   ABDF2,

@@ -91,6 +91,7 @@ alg_extrapolates(alg::IRKN4) = true
 alg_extrapolates(alg::IRKN3) = true
 alg_extrapolates(alg::ABDF2) = true
 alg_extrapolates(alg::SBDF) = true
+alg_extrapolates(alg::MEBDF) = true
 
 alg_order(alg::OrdinaryDiffEqAlgorithm) = error("Order is not defined for this algorithm")
 get_current_alg_order(alg::OrdinaryDiffEqAlgorithm,cache) = alg_order(alg)
@@ -269,6 +270,8 @@ alg_order(alg::QNDF) = 1 #dummy value
 alg_order(alg::SBDF) = alg.order
 
 alg_order(alg::ROCK2) = 2
+
+alg_order(alg::MEBDF) = 2
 
 alg_maximum_order(alg) = alg_order(alg)
 alg_maximum_order(alg::CompositeAlgorithm) = maximum(alg_order(x) for x in alg.algs)
