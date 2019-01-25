@@ -12,7 +12,7 @@ struct RichardsonEulerConstantCache <: OrdinaryDiffEqConstantCache
   m::Int #Generalise type of m
   # Can add different order of n_{i} here
   function RichardsonEulerConstantCache()
-    m = 2
+    m = 4
     new(m)
   end
 end

@@ -11,9 +11,10 @@ Random.seed!(100)
 dts = 1 .//2 .^(8:-1:4)
 testTol = 0.2
 
+
 for i = 1:2
   global dts
   prob = probArr[i]
   sim = test_convergence(dts,prob,RichardsonEuler())
-  @test sim.𝒪est[:final] ≈ 1 atol=testTol
+  @test sim.𝒪est[:final] ≈ 4 atol=testTol
 end

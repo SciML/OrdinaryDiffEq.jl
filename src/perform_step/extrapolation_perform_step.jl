@@ -14,24 +14,21 @@ function perform_step!(integrator,cache::RichardsonEulerCache,repeat_step=false)
   @unpack k,fsalfirst,T = cache
   @unpack m = cache.tab
 
-  @. u = uprev + dt*fsalfirst
-  @. T[1,1] = u
-
+  @muladd @. u = uprev + dt*fsalfirst
+  T[1,1] = copy(u)
   halfdt = dt/2
   for i in 2:m
     # Solve using Euler method
-    @. u = uprev + halfdt*fsalfirst
+    @muladd @. u = uprev + halfdt*fsalfirst
     f(k, u, p, t+halfdt)
-
     for j in 2:2^(i-1)
-      @. u = u + halfdt*k
+      @muladd @. u = u + halfdt*k
       f(k, u, p, t+j*halfdt)
     end
-    @. T[i,1] = u
-
+    T[i,1] = copy(u)
     # Richardson Extrapolation
     for j in 2:i
-      @. T[i,j] = (2^(2*i)*T[i,j-1] - T[i-1,j-1])/(2^(2*i) - 1)
+      T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
     end
     halfdt = halfdt/2
   end
@@ -74,7 +71,7 @@ function perform_step!(integrator,cache::RichardsonEulerConstantCache,repeat_ste
 
     # Richardson Extrapolation
     for j in 2:i
-      T[i,j] = (2^(2*i)*T[i,j-1] - T[i-1,j-1])/(2^(2*i) - 1)
+      T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
     end
     halfdt = halfdt/2
   end
