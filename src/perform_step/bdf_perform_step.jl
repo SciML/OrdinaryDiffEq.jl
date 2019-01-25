@@ -883,8 +883,8 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
   f(integrator.fsallast, u, p, t+dt)
 end
 
-### MEBDF
-function initialize!(integrator, cache::MEBDFConstantCache)
+### MEBDF2
+function initialize!(integrator, cache::MEBDF2ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -895,7 +895,7 @@ function initialize!(integrator, cache::MEBDFConstantCache)
   integrator.k[2] = integrator.fsallast
 end
 
-@muladd function perform_step!(integrator, cache::MEBDFConstantCache, repeat_step=false)
+@muladd function perform_step!(integrator, cache::MEBDF2ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   nlcache = cache.nlsolve.cache
   nlsolve! = cache.nlsolve
@@ -933,14 +933,13 @@ end
 ### finalize
   nlcache.ηold = η
   nlcache.nl_iters = iter
-  integrator.EEst = 1
   integrator.fsallast = f(u, p, t+dt)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
 end
 
-function initialize!(integrator, cache::MEBDFCache)
+function initialize!(integrator, cache::MEBDF2Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
@@ -950,9 +949,9 @@ function initialize!(integrator, cache::MEBDFCache)
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
 end
 
-@muladd function perform_step!(integrator, cache::MEBDFCache, repeat_step=false)
+@muladd function perform_step!(integrator, cache::MEBDF2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack z,z₁,z₂,tmp2,tmp,atmp,nlsolve = cache
+  @unpack z,z₁,z₂,tmp2,tmp,nlsolve = cache
   nlsolve!, nlcache = nlsolve, nlsolve.cache
   mass_matrix = integrator.f.mass_matrix
   alg = unwrap_alg(integrator, true)
@@ -990,6 +989,5 @@ end
 ### finalize
  nlcache.ηold = η
  nlcache.nl_iters = iter
- integrator.EEst = 1
  f(integrator.fsallast,u,p,t+dt)
 end

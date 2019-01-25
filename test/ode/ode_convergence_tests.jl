@@ -123,8 +123,6 @@ for i = 1:2
   sim17 = test_convergence(dts,prob,KenCarp3())
   @test sim17.𝒪est[:final] ≈ 3 atol=testTol
 
-
-
   #####################################
   # BDF
   #####################################
@@ -166,14 +164,14 @@ for i = 1:2
   @test sim.𝒪est[:l2] ≈ 2 atol=testTol
   @test sim.𝒪est[:l∞] ≈ 2 atol=testTol
 
-  # MEBDF
-  sim21 = test_convergence(dts,prob,MEBDF(extrapolant = :linear))
+  # MEBDF2
+  sim21 = test_convergence(dts,prob,MEBDF2(extrapolant = :linear))
   @test sim21.𝒪est[:final] ≈ 2 atol=testTol
 
-  sim22 = test_convergence(dts,prob,MEBDF(nlsolve = NLFunctional()))
+  sim22 = test_convergence(dts,prob,MEBDF2(nlsolve = NLFunctional()))
   @test sim22.𝒪est[:final] ≈ 2 atol=testTol
 
-  sim23 = test_convergence(dts,prob,MEBDF(nlsolve = NLAnderson()))
+  sim23 = test_convergence(dts,prob,MEBDF2(nlsolve = NLAnderson()))
   @test sim23.𝒪est[:final] ≈ 2 atol=testTol
 
   dts = 1 .//2 .^(7:-1:4)

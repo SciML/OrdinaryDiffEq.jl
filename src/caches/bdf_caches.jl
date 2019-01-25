@@ -397,7 +397,7 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
 end
 
 
-@cache mutable struct MEBDFCache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,F,N} <: OrdinaryDiffEqMutableCache
+@cache mutable struct MEBDF2Cache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,F,N} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -407,7 +407,6 @@ end
   z::uType
   z₁::uType
   z₂::uType
-  z₃::uType
   tmp2::uType
   dz::uType
   b::uType
@@ -421,25 +420,25 @@ end
   nlsolve::N
 end
 
-function alg_cache(alg::MEBDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+function alg_cache(alg::MEBDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   @iipnlcachefields
   z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); tmp2 = similar(u);
   atmp = similar(u,uEltypeNoUnits)
   γ, c = 1, 1
   @iipnlsolve
-  MEBDFCache(u,uprev,uprev2,du1,fsalfirst,k,z,z₁,z₂,z₃,tmp2,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolve)
+  MEBDF2Cache(u,uprev,uprev2,du1,fsalfirst,k,z,z₁,z₂,tmp2,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolve)
 end
 
-mutable struct MEBDFConstantCache{F,N} <: OrdinaryDiffEqConstantCache
+mutable struct MEBDF2ConstantCache{F,N} <: OrdinaryDiffEqConstantCache
   uf::F
   nlsolve::N
 end
 
-function alg_cache(alg::MEBDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+function alg_cache(alg::MEBDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   @oopnlcachefields
   γ, c = 1, 1
   @oopnlsolve
-  MEBDFConstantCache(uf,nlsolve)
+  MEBDF2ConstantCache(uf,nlsolve)
 end
