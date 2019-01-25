@@ -84,19 +84,16 @@ using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
 
     @test norm(sol .- sol2) ≈ 0 atol=1e-7
 
-    if iip
-      # Anderson method
-      # checking for iip = true because currently Anderson Method doesnt support broadcasting (hence mass matrices) in iip = false
-      sol = solve(prob,  ImplicitEuler(nlsolve=NLAnderson()),dt=1/10,adaptive=false)
-      sol2 = solve(prob2,ImplicitEuler(nlsolve=NLAnderson()),dt=1/10,adaptive=false)
+    # Anderson method
+    sol = solve(prob,  ImplicitEuler(nlsolve=NLAnderson()),dt=1/10,adaptive=false)
+    sol2 = solve(prob2,ImplicitEuler(nlsolve=NLAnderson()),dt=1/10,adaptive=false)
 
-      @test_broken norm(sol .- sol2) ≈ 0 atol=1e-7
+    @test_broken norm(sol .- sol2) ≈ 0 atol=1e-7
 
-      sol = solve(prob,  ImplicitMidpoint(nlsolve=NLAnderson(),extrapolant = :constant),dt=1/10)
-      sol2 = solve(prob2,ImplicitMidpoint(nlsolve=NLAnderson(),extrapolant = :constant),dt=1/10)
+    sol = solve(prob,  ImplicitMidpoint(nlsolve=NLAnderson(),extrapolant = :constant),dt=1/10)
+    sol2 = solve(prob2,ImplicitMidpoint(nlsolve=NLAnderson(),extrapolant = :constant),dt=1/10)
 
-      @test_broken norm(sol .- sol2) ≈ 0 atol=1e-7
-    end
+    @test_broken norm(sol .- sol2) ≈ 0 atol=1e-7
     # Functional iteration
     prob, prob2 = make_prob(Matrix{Float64}(1.01I, 3, 3); iip=iip)
     sol = solve(prob,ImplicitEuler(
@@ -109,17 +106,15 @@ using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
     sol2 = solve(prob2,ImplicitMidpoint(extrapolant = :constant),dt=1/10)
     @test norm(sol .- sol2) ≈ 0 atol=1e-7
 
-    if iip
-      sol = solve(prob,ImplicitEuler(nlsolve=NLAnderson()),dt=1/10,adaptive=false)
-      sol2 = solve(prob2,ImplicitEuler(nlsolve=NLAnderson()),dt=1/10,adaptive=false)
-      @test norm(sol .- sol2) ≈ 0 atol=1e-7
-      @test norm(sol[end] .- sol2[end]) ≈ 0 atol=1e-7
+    sol = solve(prob,ImplicitEuler(nlsolve=NLAnderson()),dt=1/10,adaptive=false)
+    sol2 = solve(prob2,ImplicitEuler(nlsolve=NLAnderson()),dt=1/10,adaptive=false)
+    @test norm(sol .- sol2) ≈ 0 atol=1e-7
+    @test norm(sol[end] .- sol2[end]) ≈ 0 atol=1e-7
 
-      sol = solve(prob, ImplicitMidpoint(extrapolant = :constant, nlsolve=NLAnderson()),dt=1/10,adaptive=false)
-      sol2 = solve(prob2,ImplicitMidpoint(extrapolant = :constant, nlsolve=NLAnderson()),dt=1/10,adaptive=false)
-      @test norm(sol .- sol2) ≈ 0 atol=1e-7
-      @test norm(sol[end] .- sol2[end]) ≈ 0 atol=1e-7
-    end
+    sol = solve(prob, ImplicitMidpoint(extrapolant = :constant, nlsolve=NLAnderson()),dt=1/10,adaptive=false)
+    sol2 = solve(prob2,ImplicitMidpoint(extrapolant = :constant, nlsolve=NLAnderson()),dt=1/10,adaptive=false)
+    @test norm(sol .- sol2) ≈ 0 atol=1e-7
+    @test norm(sol[end] .- sol2[end]) ≈ 0 atol=1e-7
   end
 end
 
