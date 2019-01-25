@@ -123,14 +123,7 @@ for i = 1:2
   sim17 = test_convergence(dts,prob,KenCarp3())
   @test sim17.𝒪est[:final] ≈ 3 atol=testTol
 
-  sim18 = test_convergence(dts,prob,MEBDF(extrapolant = :linear))
-  @test sim18.𝒪est[:final] ≈ 2 atol=testTol
 
-  sim19 = test_convergence(dts,prob,MEBDF(nlsolve = NLFunctional()))
-  @test sim19.𝒪est[:final] ≈ 2 atol=testTol
-
-  sim20 = test_convergence(dts,prob,MEBDF(nlsolve = NLAnderson()))
-  @test sim20.𝒪est[:final] ≈ 2 atol=testTol
 
   #####################################
   # BDF
@@ -172,6 +165,16 @@ for i = 1:2
   @test sim.𝒪est[:final] ≈ 2 atol=testTol
   @test sim.𝒪est[:l2] ≈ 2 atol=testTol
   @test sim.𝒪est[:l∞] ≈ 2 atol=testTol
+
+  # MEBDF
+  sim21 = test_convergence(dts,prob,MEBDF(extrapolant = :linear))
+  @test sim21.𝒪est[:final] ≈ 2 atol=testTol
+
+  sim22 = test_convergence(dts,prob,MEBDF(nlsolve = NLFunctional()))
+  @test sim22.𝒪est[:final] ≈ 2 atol=testTol
+
+  sim23 = test_convergence(dts,prob,MEBDF(nlsolve = NLAnderson()))
+  @test sim23.𝒪est[:final] ≈ 2 atol=testTol
 
   dts = 1 .//2 .^(7:-1:4)
   println("Higher Order")

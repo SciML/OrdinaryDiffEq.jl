@@ -882,3 +882,114 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
   nlcache.nl_iters = iter
   f(integrator.fsallast, u, p, t+dt)
 end
+
+### MEBDF
+function initialize!(integrator, cache::MEBDFConstantCache)
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
+
+@muladd function perform_step!(integrator, cache::MEBDFConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  nlcache = cache.nlsolve.cache
+  nlsolve! = cache.nlsolve
+  alg = unwrap_alg(integrator, true)
+  typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, dt, repeat_step) )
+
+  # initial guess
+  if alg.extrapolant == :linear
+    nlcache.z = dt*integrator.fsalfirst
+  else # :constant
+    nlcache.z = zero(u)
+  end
+
+### STEP 1
+  nlcache.tmp = uprev
+  z,η,iter,fail_convergence = nlsolve!(integrator)
+  fail_convergence && return
+  z₁ = nlcache.tmp + z
+### STEP 2
+  nlcache.tmp = z₁
+  nlcache.c = 2
+  nlcache.new_W = false
+  z,η,iter,fail_convergence = nlsolve!(integrator)
+  fail_convergence && return
+  z₂ = z₁ + z
+### STEP 3
+  tmp2 = 0.5uprev + z₁ - 0.5z₂
+  nlcache.tmp = tmp2
+  nlcache.c = 1
+  nlcache.new_W = false
+  z,η,iter,fail_convergence = nlsolve!(integrator)
+  fail_convergence && return
+  u = tmp2 + z
+
+### finalize
+  nlcache.ηold = η
+  nlcache.nl_iters = iter
+  integrator.EEst = 1
+  integrator.fsallast = f(u, p, t+dt)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end
+
+function initialize!(integrator, cache::MEBDFCache)
+  integrator.kshortsize = 2
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+end
+
+@muladd function perform_step!(integrator, cache::MEBDFCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack z,z₁,z₂,tmp2,tmp,atmp,nlsolve = cache
+  nlsolve!, nlcache = nlsolve, nlsolve.cache
+  mass_matrix = integrator.f.mass_matrix
+  alg = unwrap_alg(integrator, true)
+  typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, dt, repeat_step)
+
+  # initial guess
+  if alg.extrapolant == :linear
+    @. z = dt*integrator.fsalfirst
+  else # :constant
+    z .= zero(eltype(u))
+  end
+
+### STEP 1
+ nlcache.tmp = uprev
+ z,η,iter,fail_convergence = nlsolve!(integrator)
+ fail_convergence && return
+ @. z₁ = uprev + z
+### STEP 2
+ nlcache.tmp = z₁
+ nlcache.c = 2
+ nlcache.new_W = false
+ z,η,iter,fail_convergence = nlsolve!(integrator)
+ fail_convergence && return
+ @. z₂ = z₁ + z
+### STEP 3
+ # z .= zero(eltype(u))
+ @. tmp2 = 0.5uprev + z₁ - 0.5z₂
+ nlcache.tmp = tmp2
+ nlcache.c = 1
+ nlcache.new_W = false
+ z,η,iter,fail_convergence = nlsolve!(integrator)
+ fail_convergence && return
+ @. u = tmp2 + z
+
+### finalize
+ nlcache.ηold = η
+ nlcache.nl_iters = iter
+ integrator.EEst = 1
+ f(integrator.fsallast,u,p,t+dt)
+end
