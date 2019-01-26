@@ -232,7 +232,7 @@ alg = SSPRKMSVS32()
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
   # higher order as pure quadrature
-  @test abs(sim.𝒪est[:final]-1-OrdinaryDiffEq.alg_order(alg)) < testTol
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 for prob in test_problems_linear
   sim = test_convergence(dts, prob, alg)
@@ -253,7 +253,7 @@ for prob in test_problems_linear
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 for prob in test_problems_nonlinear
-  sim = test_convergence(dts, prob, alg)
+  sim = test_convergence(dts, prob, alg) #shows superconvergence to 4th order
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 
