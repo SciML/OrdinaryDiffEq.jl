@@ -4,12 +4,18 @@ import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinea
 
 testTol = 0.2
 
-for prob in [prob_ode_linear]
+for prob in [prob_ode_linear, prob_ode_2Dlinear]
   sim21 = test_convergence(1 .//2 .^(6:-1:3),prob,RadauIIA5())
   @test sim21.𝒪est[:final] ≈ 5 atol=testTol
 end
 
 # test adaptivity
-vanstiff = ODEProblem{false}(van, [0;sqrt(3)], (0.0,1.0), 1e6)
-@test length(solve(vanstiff, RadauIIA5())) < 110
-@test length(solve(remake(vanstiff, p=1e7), RadauIIA5())) < 120
+for iip in (true, false)
+  vanstiff = ODEProblem{iip}(van, [0;sqrt(3)], (0.0,1.0), 1e6)
+  @test length(solve(vanstiff, RadauIIA5())) < 110
+  @test length(solve(remake(vanstiff, p=1e7), RadauIIA5())) < 150
+  @test length(solve(remake(vanstiff, p=1e7), reltol=[1e-4, 1e-6], RadauIIA5())) < 160
+  @test length(solve(remake(vanstiff, p=1e7), RadauIIA5(), reltol=1e-9, abstol=1e-9)) < 860
+  @test length(solve(remake(vanstiff, p=1e9), RadauIIA5())) < 160
+  @test length(solve(remake(vanstiff, p=1e10), RadauIIA5())) < 190
+end
