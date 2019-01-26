@@ -1,9 +1,8 @@
 function (S::NLAnderson{false,<:NLSolverCache})(integrator)
   nlcache = S.cache
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack z,tmp,W,κ,b,tol,c,γ,max_iter,min_iter,zs,gs = nlcache
+  @unpack z,tmp,W,κ,tol,c,γ,max_iter,min_iter,zs,gs = nlcache
   mass_matrix = integrator.f.mass_matrix
-  ztmp = b
   if typeof(integrator.f) <: SplitFunction
     f = integrator.f.f1
   else
@@ -14,15 +13,15 @@ function (S::NLAnderson{false,<:NLSolverCache})(integrator)
 
   # zs = zeros(S.n+1)
   # gs = zeros(S.n+1)
-  residuals = zeros(length(z), S.n+1)
-  alphas = zeros(S.n)
+  residuals = fill(zero(eltype(z)), length(z), S.n+1)
+  alphas = fill(zero(eltype(z)), S.n)
   # initial step of NLAnderson iteration
   zs[1] = z
   iter = 1
   tstep = t + c*dt
   u = @. tmp + γ*z
   if mass_matrix == I
-    z₊ = dt*f(u, p, tstep)
+    z₊ = dt .* f(u, p, tstep)
   else
     mz = mass_matrix * z
     z₊ = dt .* f(u, p, tstep) .- mz .+ z
