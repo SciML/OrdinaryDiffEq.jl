@@ -254,7 +254,7 @@ for prob in test_problems_linear
 end
 for prob in test_problems_nonlinear
   sim = test_convergence(dts, prob, alg) #shows superconvergence to 4th order
-  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  @test abs(sim.𝒪est[:final]-1-OrdinaryDiffEq.alg_order(alg)) < testTol
 end
 
 alg = SSPRK932()
