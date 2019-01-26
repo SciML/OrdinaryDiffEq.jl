@@ -140,13 +140,13 @@ function choosedeg!(cache::T) where T
   isconst || ( cache = cache.constantcache )
   @unpack ms, fp1, fp2, recf, zprev = cache
   recind = 0
-  @inbounds for i in 1:46
+  @inbounds for i in 1:size(ms,1)
     recind += ms[i]
     if ms[i] > cache.mdeg
       cache.mdeg = i
       cache.recind = recind
       break
-    end # end if
-  end # end for
+    end
+  end
   return nothing
 end
