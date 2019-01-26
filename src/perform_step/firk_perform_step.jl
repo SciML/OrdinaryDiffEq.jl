@@ -7,6 +7,7 @@ function initialize!(integrator, cache::RadauIIA5ConstantCache)
   integrator.fsallast = zero(integrator.fsalfirst)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
+  nothing
 end
 
 function initialize!(integrator, cache::RadauIIA5Cache)
@@ -17,6 +18,17 @@ function initialize!(integrator, cache::RadauIIA5Cache)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+  if integrator.opts.adaptive
+    @unpack abstol, reltol = integrator.opts
+    if reltol isa Number
+      cache.rtol = reltol^(2/3) / 10
+      cache.atol = cache.rtol * (abstol / reltol)
+    else
+      @. cache.rtol = reltol^(2/3) / 10
+      @. cache.atol = cache.rtol * (abstol / reltol)
+    end
+  end
+  nothing
 end
 
 @muladd function perform_step!(integrator, cache::RadauIIA5ConstantCache, repeat_step=false)
@@ -180,22 +192,12 @@ end
           dw1, dw23,
           k, k2, k3,
           J, W1, W2,
-          tmp, atmp, jac_config, linsolve1, linsolve2 = cache
+          tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol = cache
   @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
   alg = unwrap_alg(integrator, true)
   @unpack min_iter, max_iter = alg
   mass_matrix = integrator.f.mass_matrix
   is_compos = integrator.alg isa CompositeAlgorithm
-  if integrator.iter == 1
-    if reltol isa Number
-      cache.rtol = reltol^(2/3) / 10
-      cache.atol = cache.rtol * (abstol / reltol)
-    else
-      @. cache.rtol = reltol^(2/3) / 10
-      @. cache.atol = cache.rtol * (abstol / reltol)
-    end
-  end
-  @unpack rtol, atol = cache
 
   fw1 = similar(u); fw2 = similar(u); fw3 = similar(u)
 
