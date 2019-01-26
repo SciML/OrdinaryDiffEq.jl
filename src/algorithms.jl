@@ -97,6 +97,16 @@ struct SSPRK432{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
   step_limiter!::StepLimiter
 end
 SSPRK432(stage_limiter! = trivial_limiter!) = SSPRK432(stage_limiter!, trivial_limiter!)
+struct SSPRKMSVS43{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+end
+SSPRKMSVS43(stage_limiter! = trivial_limiter!) = SSPRKMSVS43(stage_limiter!, trivial_limiter!)
+struct SSPRKMSVS32{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+end
+SSPRKMSVS32(stage_limiter! = trivial_limiter!) = SSPRKMSVS32(stage_limiter!, trivial_limiter!)
 struct SSPRK932{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
@@ -122,7 +132,6 @@ struct TsitPap8 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Feagin10 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Feagin12 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Feagin14 <: OrdinaryDiffEqAdaptiveAlgorithm end
-
 struct BS5 <: OrdinaryDiffEqAdaptiveAlgorithm
   lazy::Bool
   BS5(;lazy=true) = new(lazy)
