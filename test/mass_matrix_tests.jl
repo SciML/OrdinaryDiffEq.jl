@@ -79,6 +79,10 @@ using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
 
     @test norm(sol .- sol2) ≈ 0 atol=1e-7
 
+    sol = solve(prob,  RadauIIA5(),dt=1/10,adaptive=false)
+    sol2 = solve(prob2,RadauIIA5(),dt=1/10,adaptive=false)
+    @test norm(sol .- sol2) ≈ 0 atol=1e-7
+
     sol = solve(prob,  ImplicitMidpoint(extrapolant = :constant),dt=1/10)
     sol2 = solve(prob2,ImplicitMidpoint(extrapolant = :constant),dt=1/10)
 

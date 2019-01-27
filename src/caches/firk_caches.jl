@@ -42,6 +42,9 @@ mutable struct RadauIIA5Cache{uType,cuType,uNoUnitsType,rateType,JType,W1Type,W2
   k::rateType
   k2::rateType
   k3::rateType
+  fw1::rateType
+  fw2::rateType
+  fw3::rateType
   J::JType
   W1::W1Type
   W2::W2Type # complex
@@ -77,6 +80,7 @@ function alg_cache(alg::RadauIIA5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
 
   fsalfirst = similar(rate_prototype)
   k = similar(rate_prototype); k2 = similar(rate_prototype); k3 = similar(rate_prototype)
+  fw1 = similar(rate_prototype); fw2 = similar(rate_prototype); fw3 = similar(rate_prototype)
 
   J = fill(zero(uEltypeNoUnits),length(u),length(u))
   W1 = similar(J); W2 = similar(J, Complex{eltype(J)})
@@ -94,7 +98,7 @@ function alg_cache(alg::RadauIIA5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   RadauIIA5Cache(u, uprev,
                  z1, z2, z3, w1, w2, w3,
                  dw1, dw23, cont1, cont2, cont3,
-                 du1, fsalfirst, k, k2, k3,
+                 du1, fsalfirst, k, k2, k3, fw1, fw2, fw3,
                  J, W1, W2,
                  uf, tab, κ, tol, zero(tol), 10000, dt,
                  tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol)

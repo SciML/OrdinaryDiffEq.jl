@@ -190,7 +190,7 @@ end
   @unpack tol, κ, cont1, cont2, cont3 = cache
   @unpack z1, z2, z3, w1, w2, w3,
           dw1, dw23,
-          k, k2, k3,
+          k, k2, k3, fw1, fw2, fw3,
           J, W1, W2,
           tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol = cache
   @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
@@ -198,8 +198,6 @@ end
   @unpack min_iter, max_iter = alg
   mass_matrix = integrator.f.mass_matrix
   is_compos = integrator.alg isa CompositeAlgorithm
-
-  fw1 = similar(u); fw2 = similar(u); fw3 = similar(u)
 
   # precalculations
   c1m1 = c1-1
@@ -270,26 +268,34 @@ end
     @. fw2 = TI21 * fsallast + TI22 * k2 + TI23 * k3
     @. fw3 = TI31 * fsallast + TI32 * k2 + TI33 * k3
 
-    if mass_matrix isa UniformScaling
+    if mass_matrix == I
+      Mw1 = w1
+      Mw2 = w2
+      Mw3 = w3
+    elseif mass_matrix isa UniformScaling
       mul!(z1, mass_matrix.λ, w1)
       mul!(z2, mass_matrix.λ, w2)
       mul!(z3, mass_matrix.λ, w3)
+      Mw1 = z1
+      Mw2 = z2
+      Mw3 = z3
     else
       mul!(z1, mass_matrix, w1)
       mul!(z2, mass_matrix, w2)
       mul!(z3, mass_matrix, w3)
+      Mw1 = z1
+      Mw2 = z2
+      Mw3 = z3
     end
-    Mw1 = z1
-    Mw2 = z2
-    Mw3 = z3
 
     @. dw1 = fw1 - γdt*Mw1
     needfactor = iter==1 && new_W
     linsolve1(vec(dw1), W1, vec(dw1), needfactor)
     @. dw23 = complex(fw2 - αdt*Mw2 + βdt*Mw3, fw3 - βdt*Mw2 - αdt*Mw3)
     linsolve2(vec(dw23), W2, vec(dw23), needfactor)
-    dw2 = real(dw23)
-    dw3 = imag(dw23)
+    dw2 = z2; dw3 = z3
+    @. dw2 = real(dw23)
+    @. dw3 = imag(dw23)
 
     iter != 1 && (ndwprev = ndw)
     ndw = internalnorm(dw1) + internalnorm(dw2) + internalnorm(dw3)
