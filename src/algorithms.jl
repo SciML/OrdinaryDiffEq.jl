@@ -809,7 +809,7 @@ end
 
 const MassMatrixAlgorithms = Union{OrdinaryDiffEqRosenbrockAlgorithm,
                                    OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
-                                   ImplicitEuler,ImplicitMidpoint}
+                                   ImplicitEuler,ImplicitMidpoint,RadauIIA5}
 
 const MultistepAlgorithms = Union{IRKN3,IRKN4,
                                   ABDF2,

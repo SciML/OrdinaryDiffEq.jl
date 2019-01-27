@@ -335,7 +335,7 @@ end
     utilde = w2
     e1dt, e2dt, e3dt = e1/dt, e2/dt, e3/dt
     @. tmp = e1dt*z1 + e2dt*z2 + e3dt*z3
-    #mass_matrix != I && (tmp = mass_matrix*tmp)
+    mass_matrix != I && (mul!(w1, mass_matrix, tmp); copyto!(tmp, w1))
     @. utilde = integrator.fsalfirst + tmp
     alg.smooth_est && linsolve1(vec(utilde), W1, vec(utilde), false)
     # RadauIIA5 needs a transformed rtol and atol see
