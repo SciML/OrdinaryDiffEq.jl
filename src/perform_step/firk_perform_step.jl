@@ -207,11 +207,25 @@ end
   c1mc2= c1-c2
   κtol = κ*tol # used in Newton iteration
   γdt, αdt, βdt = γ/dt, α/dt, β/dt
-  calc_J!(integrator, cache, is_compos)
-  # TODO: use calc_W!
-  for II in CartesianIndices(J)
-    W1[II] = γdt * mass_matrix[Tuple(II)...] - J[II]
-    W2[II] = (αdt + βdt*im) * mass_matrix[Tuple(II)...] - J[II]
+  new_W = true
+  if repeat_step || (alg_can_repeat_jac(alg) &&
+                     (!integrator.last_stepfail && cache.nl_iters == 1 &&
+                      cache.ηold < alg.new_jac_conv_bound))
+    new_jac = false
+  else
+    new_jac = true
+    calc_J!(integrator, cache, is_compos)
+  end
+  # skip calculation of W if step is repeated
+  if !repeat_step && (!alg_can_repeat_jac(alg) ||
+                      (integrator.iter < 1 || new_jac ||
+                       abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t))))
+    @inbounds for II in CartesianIndices(J)
+      W1[II] = γdt * mass_matrix[Tuple(II)...] - J[II]
+      W2[II] = (αdt + βdt*im) * mass_matrix[Tuple(II)...] - J[II]
+    end
+  else
+    new_W = false
   end
 
   # TODO better initial guess
@@ -270,9 +284,10 @@ end
     Mw3 = z3
 
     @. dw1 = fw1 - γdt*Mw1
-    linsolve1(vec(dw1), W1, vec(dw1), iter==1)
+    needfactor = iter==1 && new_W
+    linsolve1(vec(dw1), W1, vec(dw1), needfactor)
     @. dw23 = complex(fw2 - αdt*Mw2 + βdt*Mw3, fw3 - βdt*Mw2 - αdt*Mw3)
-    linsolve2(vec(dw23), W2, vec(dw23), iter==1)
+    linsolve2(vec(dw23), W2, vec(dw23), needfactor)
     dw2 = real(dw23)
     dw3 = imag(dw23)
 
