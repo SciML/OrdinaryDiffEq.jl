@@ -157,7 +157,7 @@ module OrdinaryDiffEq
   # Reexport the Alg Types
 
   export FunctionMap, Euler, Heun, Ralston, Midpoint, SSPRK22,
-         SSPRK33, SSPRK53, SSPRK53_2N1,SSPRK53_2N2, SSPRK63, SSPRK73, SSPRK83, SSPRK432, SSPRK932,
+         SSPRK33, SSPRK53, SSPRK53_2N1,SSPRK53_2N2, SSPRK63, SSPRK73, SSPRK83, SSPRK432, SSPRKMSVS32, SSPRKMSVS43,SSPRK932,
          SSPRK54, SSPRK104, RK4, ExplicitRK, OwrenZen3, OwrenZen4, OwrenZen5,
          LDDRK64, CFRLDDRK64, NDBLSRK124, NDBLSRK134, NDBLSRK144, BS3, BS5, CarpenterKennedy2N54,
          ORK256, RK46NL, DP5, DP5Threaded, Tsit5, DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8,
@@ -190,7 +190,7 @@ module OrdinaryDiffEq
   export Nystrom4, Nystrom4VelocityIndependent, Nystrom5VelocityIndependent,
          IRKN3, IRKN4, DPRKN6, DPRKN8, DPRKN12, ERKN4, ERKN5
 
-  export ROCK2
+  export ROCK2, ROCK4
 
   export AB3, AB4, AB5, ABM32, ABM43, ABM54
 
@@ -205,6 +205,8 @@ module OrdinaryDiffEq
   export ABDF2, QNDF1, QBDF1, QNDF2, QBDF2, QNDF, QBDF
 
   export SBDF2, SBDF3, SBDF4
+
+  export MEBDF2
 
   export AutoSwitch, AutoTsit5, AutoDP5,
          AutoVern6, AutoVern7, AutoVern8, AutoVern9

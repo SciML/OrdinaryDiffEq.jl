@@ -98,6 +98,16 @@ struct SSPRK432{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
   step_limiter!::StepLimiter
 end
 SSPRK432(stage_limiter! = trivial_limiter!) = SSPRK432(stage_limiter!, trivial_limiter!)
+struct SSPRKMSVS43{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+end
+SSPRKMSVS43(stage_limiter! = trivial_limiter!) = SSPRKMSVS43(stage_limiter!, trivial_limiter!)
+struct SSPRKMSVS32{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+end
+SSPRKMSVS32(stage_limiter! = trivial_limiter!) = SSPRKMSVS32(stage_limiter!, trivial_limiter!)
 struct SSPRK932{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
@@ -123,7 +133,6 @@ struct TsitPap8 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Feagin10 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Feagin12 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Feagin14 <: OrdinaryDiffEqAdaptiveAlgorithm end
-
 struct BS5 <: OrdinaryDiffEqAdaptiveAlgorithm
   lazy::Bool
   BS5(;lazy=true) = new(lazy)
@@ -330,6 +339,7 @@ JVODE_BDF(;kwargs...) = JVODE(:BDF;kwargs...)
 
 # ROCK methods
 struct ROCK2 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct ROCK4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 ################################################################################
 
@@ -806,11 +816,27 @@ end
 
 ################################################################################
 
+struct MEBDF2{CS,AD,F,F2,FDT,T2} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
+  linsolve::F
+  nlsolve::F2
+  diff_type::FDT
+  extrapolant::Symbol
+  new_jac_conv_bound::T2
+end
+MEBDF2(;chunk_size=0,autodiff=true,diff_type=Val{:central},
+                      linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
+                      extrapolant=:constant,new_jac_conv_bound=1e-3) =
+                      MEBDF2{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),
+                      typeof(new_jac_conv_bound)}(
+                      linsolve,nlsolve,diff_type,extrapolant,new_jac_conv_bound)
+
+#################################################
+
 ### Algorithm Groups
 
 const MassMatrixAlgorithms = Union{OrdinaryDiffEqRosenbrockAlgorithm,
                                    OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
-                                   ImplicitEuler,ImplicitMidpoint}
+                                   ImplicitEuler,ImplicitMidpoint,MEBDF2}
 
 const MultistepAlgorithms = Union{IRKN3,IRKN4,
                                   ABDF2,

@@ -91,6 +91,7 @@ alg_extrapolates(alg::IRKN4) = true
 alg_extrapolates(alg::IRKN3) = true
 alg_extrapolates(alg::ABDF2) = true
 alg_extrapolates(alg::SBDF) = true
+alg_extrapolates(alg::MEBDF2) = true
 
 alg_order(alg::OrdinaryDiffEqAlgorithm) = error("Order is not defined for this algorithm")
 get_current_alg_order(alg::OrdinaryDiffEqAlgorithm,cache) = alg_order(alg)
@@ -166,6 +167,7 @@ alg_order(alg::GenericIIF1) = 1
 alg_order(alg::GenericIIF2) = 2
 alg_order(alg::CarpenterKennedy2N54) = 4
 alg_order(alg::SSPRK22) = 2
+alg_order(alg::SSPRKMSVS32) = 2
 alg_order(alg::SSPRK33) = 3
 alg_order(alg::SSPRK53) = 3
 alg_order(alg::SSPRK53_2N1) = 3
@@ -174,6 +176,7 @@ alg_order(alg::SSPRK63) = 3
 alg_order(alg::SSPRK73) = 3
 alg_order(alg::SSPRK83) = 3
 alg_order(alg::SSPRK432) = 3
+alg_order(alg::SSPRKMSVS43) = 3
 alg_order(alg::SSPRK932) = 3
 alg_order(alg::SSPRK54) = 4
 alg_order(alg::SSPRK104) = 4
@@ -272,6 +275,9 @@ alg_order(alg::QNDF) = 1 #dummy value
 alg_order(alg::SBDF) = alg.order
 
 alg_order(alg::ROCK2) = 2
+alg_order(alg::ROCK4) = 4
+
+alg_order(alg::MEBDF2) = 2
 
 alg_maximum_order(alg) = alg_order(alg)
 alg_maximum_order(alg::CompositeAlgorithm) = maximum(alg_order(x) for x in alg.algs)
@@ -354,6 +360,8 @@ ssp_coefficient(alg::SSPRK63) = 3.518
 ssp_coefficient(alg::SSPRK73) = 4.2879
 ssp_coefficient(alg::SSPRK83) = 5.107
 ssp_coefficient(alg::SSPRK432) = 2
+ssp_coefficient(alg::SSPRKMSVS32) = 0.5
+ssp_coefficient(alg::SSPRKMSVS43) = 0.33
 ssp_coefficient(alg::SSPRK932) = 6
 ssp_coefficient(alg::SSPRK54) = 1.508
 ssp_coefficient(alg::SSPRK104) = 6
