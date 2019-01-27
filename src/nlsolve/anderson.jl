@@ -62,7 +62,7 @@ function (S::NLAnderson{false,<:NLSolverCache})(integrator)
     for i in 2:mk+1
       @. residuals[:,i-1] = gs[i] - zs[i] + ztmp
     end
-    resqr = qr!(residuals[:,1:mk], Val(true))
+    resqr = qr(residuals[:,1:mk], Val(true))
     if typeof(ztmp) <: AbstractArray
       alphas[1:mk] = resqr \ ztmp
     else

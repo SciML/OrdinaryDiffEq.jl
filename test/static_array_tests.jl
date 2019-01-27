@@ -27,4 +27,5 @@ u0 = ones(SVector{2,Float64})
 f = (u,p,t) -> u
 ode = ODEProblem(f, u0, (0.,1.))
 sol = solve(ode, Euler(), dt=1.e-2)
+sol = solve(ode, ImplicitEuler(nlsolve=NLAnderson()), dt=1.e-2)
 sol = solve(ode, Tsit5(), dt=1.e-2)
