@@ -57,7 +57,7 @@ function (S::NLNewton{false,<:NLSolverCache})(integrator)
   if DiffEqBase.has_invW(f)
     dz = W * b # Here W is actually invW
   else
-    dz = W \ b
+    dz = _reshape(W \ _vec(b), axes(b))
   end
   ndz = integrator.opts.internalnorm(dz)
   z = z .+ dz
@@ -79,7 +79,7 @@ function (S::NLNewton{false,<:NLSolverCache})(integrator)
     if DiffEqBase.has_invW(f)
       dz = W * b # Here W is actually invW
     else
-      dz = W \ b
+      dz = _reshape(W \ _vec(b), axes(b))
     end
     ndzprev = ndz
     ndz = integrator.opts.internalnorm(dz)
