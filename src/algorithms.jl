@@ -391,7 +391,7 @@ struct RadauIIA5{CS,AD,F,FDT,T2,Tol,Controller} <: OrdinaryDiffEqNewtonAdaptiveA
 end
 RadauIIA5(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                           linsolve=DEFAULT_LINSOLVE,
-                          extrapolant=:constant,new_jac_conv_bound=1e-3,
+                          extrapolant=:dense,new_jac_conv_bound=1e-3,
                           controller=:Predictive,κ=nothing,
                           tol=nothing,max_iter=10,min_iter=1,smooth_est=true) =
                           RadauIIA5{chunk_size,autodiff,typeof(linsolve),
@@ -836,7 +836,8 @@ MEBDF2(;chunk_size=0,autodiff=true,diff_type=Val{:central},
 
 const MassMatrixAlgorithms = Union{OrdinaryDiffEqRosenbrockAlgorithm,
                                    OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
-                                   ImplicitEuler,ImplicitMidpoint,MEBDF2}
+                                   ImplicitEuler,ImplicitMidpoint,MEBDF2,
+                                   RadauIIA5}
 
 const MultistepAlgorithms = Union{IRKN3,IRKN4,
                                   ABDF2,
