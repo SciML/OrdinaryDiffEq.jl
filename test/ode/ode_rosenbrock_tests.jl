@@ -305,15 +305,4 @@ sim = test_convergence(dts,prob,Rodas5(),dense_errors=true)
 
 sol = solve(prob,Rodas5())
 @test length(sol) < 20
-
-# test vec & reshape
-sz=[1 0;0 -1];
-rhs_oop(u,p,t) = du=-(.3+.5im)*u+sz
-rhs_iip(du,u,p,t) = du.=-(.3+.5im)*u+sz
-ft0=zeros(ComplexF64, 2, 2)
-tspan=(0.0,30.0)
-prob=ODEProblem(rhs_oop,ft0,tspan)
-@test_nowarn solve(prob,Rosenbrock23(autodiff=false))
-prob=ODEProblem(rhs_iip,ft0,tspan)
-@test_nowarn solve(prob,Rosenbrock23(autodiff=false))
 end
