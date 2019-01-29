@@ -165,3 +165,8 @@ macro cache(expr)
     $(esc(:jac_iter))($(esc(:c))::$name) = tuple($(jac_vars...))
   end
 end
+
+_reshape(v, siz) = reshape(v, siz)
+_reshape(v::Number, siz) = v
+_vec(v) = vec(v)
+_vec(v::Number) = v
