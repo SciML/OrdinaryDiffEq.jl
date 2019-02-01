@@ -5,11 +5,15 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
   isfirst = integrator.iter == 1 || integrator.u_modified
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
   maxiter = 50
-  safe = 1.2
+  safe = (integrator.alg isa RKC) ? 1.0 : 1.2
   # Initial guess for eigenvector `z`
   if isfirst
-    fz = fsalfirst
-    z = f(fz, p, t)
+    if integrator.alg isa RKC
+      z = fsalfirst
+    else
+      fz = fsalfirst
+      z = f(fz, p, t)
+    end
   else
     z = cache.zprev
   end
@@ -45,11 +49,21 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
     eig_prev = integrator.eigen_est
     integrator.eigen_est = Δ/dz_u * safe
     # Convergence
-    if iter >= 2 && abs(eig_prev - integrator.eigen_est) < integrator.eigen_est*0.05
-      # Store the eigenvector
-      cache.zprev = z
-      return true
+    if integrator.alg isa RKC # To match the constants given in the paper
+      if iter >= 2 && abs(eig_prev - integrator.eigen_est) < max(integrator.eigen_est,1.0/integrator.opts.dtmax)*0.01
+        integrator.eigen_est *= 1.2
+        # Store the eigenvector
+        cache.zprev = z - uprev
+        return true
+      end
+    else
+      if iter >= 2 && abs(eig_prev - integrator.eigen_est) < integrator.eigen_est*0.05
+        # Store the eigenvector
+        cache.zprev = z
+        return true
+      end
     end
+
     # Next `z`
     if Δ != zero(Δ)
       quot = dz_u/Δ
@@ -68,11 +82,15 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
   fz, z, atmp = cache.k, cache.tmp, cache.atmp
   ccache = cache.constantcache
   maxiter = 50
-  safe = 1.2
+  safe = (integrator.alg isa RKC) ? 1.0 : 1.2
   # Initial guess for eigenvector `z`
   if isfirst
-    @. fz = u
-    f(z, fz, p, t)
+    if integrator.alg isa RKC
+      @. z = fsalfirst
+    else
+      @. fz = u
+      f(z, fz, p, t)
+    end
   else
     @. z = ccache.zprev
   end
@@ -108,10 +126,19 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
     eig_prev = integrator.eigen_est
     integrator.eigen_est = Δ/dz_u * safe
     # Convergence
-    if iter >= 2 && abs(eig_prev - integrator.eigen_est) < integrator.eigen_est*0.05
-      # Store the eigenvector
-      @. ccache.zprev = z
-      return true
+    if integrator.alg isa RKC # To match the constants given in the paper
+      if iter >= 2 && abs(eig_prev - integrator.eigen_est) < max(integrator.eigen_est,1.0/integrator.opts.dtmax)*0.01
+        integrator.eigen_est *= safe
+        # Store the eigenvector
+        @. ccache.zprev = z - uprev
+        return true
+      end
+    else
+      if iter >= 2 && abs(eig_prev - integrator.eigen_est) < integrator.eigen_est*0.05
+        # Store the eigenvector
+        @. ccache.zprev = z
+        return true
+      end
     end
     # Next `z`
     if Δ != zero(Δ)
@@ -126,27 +153,26 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
   end
   return false
 end
-
 """
-    choosedeg!(cache) -> nothing
+choosedeg!(cache) -> nothing
 
 Calculate `ms[mdeg]` (the degree of the Chebyshev polynomial)
 and `cache.recind` (the index of recurrence parameters for that
 degree), where `recf[recind:(recind+ms[mdeg]-2)]` are the `μ,κ` pairs
 for the `mdeg` degree method.
-"""
-function choosedeg!(cache::T) where T
-  isconst = T <: OrdinaryDiffEqConstantCache
-  isconst || ( cache = cache.constantcache )
-  @unpack ms, fp1, fp2, recf, zprev = cache
-  recind = 0
-  @inbounds for i in 1:size(ms,1)
-    recind += ms[i]
-    if ms[i] > cache.mdeg
-      cache.mdeg = i
-      cache.recind = recind
-      break
+  """
+  function choosedeg!(cache::T) where T
+    isconst = T <: OrdinaryDiffEqConstantCache
+    isconst || ( cache = cache.constantcache )
+    @unpack ms, fp1, fp2, recf, zprev = cache
+    recind = 0
+    @inbounds for i in 1:size(ms,1)
+      recind += ms[i]
+      if ms[i] > cache.mdeg
+        cache.mdeg = i
+        cache.recind = recind
+        break
+      end
     end
+    return nothing
   end
-  return nothing
-end

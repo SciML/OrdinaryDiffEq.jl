@@ -314,17 +314,18 @@ end
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
-  maxm = max(2,Int(floor(sqrt((integrator.opts.internalnorm(integrator.opts.reltol)/10.0*eps(integrator.opts.internalnorm(u)))))))
-  mdeg = Int(floor(sqrt((1.54*dt*integrator.eigen_est + 1))))
+  maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol)/(10.0*eps(integrator.opts.internalnorm(uprev)))))))
+  mdeg = 1 + Int(floor(sqrt(1.54*dt*integrator.eigen_est + 1.0)))
   if mdeg >= maxm
     mdeg = maxm
   end
-  w0 = 1.0 + 2.0/(13.0*mdeg^2)
-  temp1 = w0^2 - 1.0
+
+  w0 = 1.0 + 2.0/(13.0*(mdeg^2.0))
+  temp1 = w0^2.0 - 1.0
   temp2 = sqrt(temp1)
   arg   = mdeg*log(w0 + temp2)
   w1    = (sinh(arg)*temp1) / (cosh(arg)*mdeg*temp2 - w0*sinh(arg))
-  b1    = 1.0/(2*w0)^2
+  b1    = 1.0/((2.0*w0)^2.0)
   b2    = b1
 
   # stage-1
@@ -332,7 +333,7 @@ end
   μs     = w1*b1
   gprev  = uprev + dt*μs*fsalfirst
   th2  = 0.0
-  th1  = 0.0
+  th1  = μs
   z1   = w0
   z2   = 1.0
   dz1  = 1.0
@@ -343,13 +344,14 @@ end
   # stage 2 - mdeg
   for iter in 2:mdeg
     z   = 2.0*w0*z1 - z2
-    dz  = 2.0*w0dz1 - dz2 + 2.0*z1
+    dz  = 2.0*w0*dz1 - dz2 + 2.0*z1
     d2z = 2.0*w0*d2z1 - d2z2 + 4.0*dz1
-    b   = d2z/dz^2
+    b   = d2z/(dz^2.0)
     νs  = 1.0 - z1*b1
-    μ   = 2.0*w0*b / b1
+    μ   = (2.0*w0*b)/b1
     ν   = - b/b2
     μs  = μ*w1/w0
+    #using u as temporary storage
     u   = f(gprev, p, t + dt*th1)
     u   = μ*gprev + ν*gprev2  + (1.0 - μ - ν)*uprev + dt*μs*(u - νs*fsalfirst)
     th  = μ*th1 + ν*th2 + μs*(1.0 - νs)
@@ -370,10 +372,9 @@ end
   end
   # error estimate
   tmp = 0.8*(uprev - u) + 0.4*dt*(fsalfirst + gprev)
-  if integrator.opts.adaptive
-    atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(atmp)
-  end
+  atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+  integrator.EEst = integrator.opts.internalnorm(atmp)
+
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast = f(u, p, t+dt)
   integrator.u = u
@@ -394,17 +395,18 @@ end
   @unpack k, tmp, gprev2, gprev, atmp = cache
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
-  maxm = max(2,Int(floor(sqrt((integrator.opts.internalnorm(integrator.opts.reltol)/10.0*eps(integrator.opts.internalnorm(u)))))))
-  mdeg = Int(floor(sqrt((1.54 * dt * integrator.eigen_est + 1))))
+  maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol)/(10.0*eps(integrator.opts.internalnorm(uprev)))))))
+  mdeg = 1 + Int(floor(sqrt(1.54*dt*integrator.eigen_est + 1.0)))
   if mdeg >= maxm
     mdeg = maxm
   end
-  w0 = 1.0 + 2.0/(13.0*mdeg^2)
-  temp1 = w0^2 - 1.0
+
+  w0 = 1.0 + 2.0/(13.0*(mdeg^2.0))
+  temp1 = w0^2.0 - 1.0
   temp2 = sqrt(temp1)
   arg   = mdeg*log(w0 + temp2)
   w1    = (sinh(arg)*temp1) / (cosh(arg)*mdeg*temp2 - w0*sinh(arg))
-  b1    = 1.0/(2*w0)^2
+  b1    = 1.0/((2.0*w0)^2.0)
   b2    = b1
 
   # stage-1
@@ -412,7 +414,7 @@ end
   μs     = w1*b1
   @. gprev  = uprev + dt*μs*fsalfirst
   th2  = 0.0
-  th1  = 0.0
+  th1  = μs
   z1   = w0
   z2   = 1.0
   dz1  = 1.0
@@ -423,11 +425,11 @@ end
   # stage 2 - mdeg
   for iter in 2:mdeg
     z   = 2.0*w0*z1 - z2
-    dz  = 2.0*w0dz1 - dz2 + 2.0*z1
+    dz  = 2.0*w0*dz1 - dz2 + 2.0*z1
     d2z = 2.0*w0*d2z1 - d2z2 + 4.0*dz1
-    b   = d2z/dz^2
+    b   = d2z/(dz^2.0)
     νs  = 1.0 - z1*b1
-    μ   = 2.0*w0*b / b1
+    μ   = (2.0*w0*b)/b1
     ν   = - b/b2
     μs  = μ*w1/w0
     f(k, gprev, p, t + dt*th1)
@@ -450,10 +452,8 @@ end
   end
   @. tmp = 0.8*(uprev - u) + 0.4*dt*(fsalfirst + gprev)
   # error estimate
-  if integrator.opts.adaptive
-    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(atmp)
-  end
+  calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+  integrator.EEst = integrator.opts.internalnorm(atmp)
   integrator.k[1] = integrator.fsalfirst
   f(integrator.fsallast, u, p, t+dt)
   integrator.k[2] = integrator.fsallast
