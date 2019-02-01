@@ -372,9 +372,10 @@ end
   end
   # error estimate
   tmp = 0.8*(uprev - u) + 0.4*dt*(fsalfirst + gprev)
-  atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-  integrator.EEst = integrator.opts.internalnorm(atmp)
-
+  if integrator.opts.adaptive
+    atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+    integrator.EEst = integrator.opts.internalnorm(atmp)
+  end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast = f(u, p, t+dt)
   integrator.u = u
@@ -452,8 +453,10 @@ end
   end
   @. tmp = 0.8*(uprev - u) + 0.4*dt*(fsalfirst + gprev)
   # error estimate
-  calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-  integrator.EEst = integrator.opts.internalnorm(atmp)
+  if integrator.opts.adaptive
+    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+    integrator.EEst = integrator.opts.internalnorm(atmp)
+  end
   integrator.k[1] = integrator.fsalfirst
   f(integrator.fsallast, u, p, t+dt)
   integrator.k[2] = integrator.fsallast
