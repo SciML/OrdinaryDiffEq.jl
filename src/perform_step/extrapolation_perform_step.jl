@@ -48,17 +48,22 @@ function initialize!(integrator,cache::RichardsonEulerConstantCache)
   integrator.fsallast = zero(integrator.fsalfirst)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
+
+  cache.order = 3
 end
 
 function perform_step!(integrator,cache::RichardsonEulerConstantCache,repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
-  @unpack m = cache
+  @unpack dtpropose, T, order, order_max, last_work, work, A = cache
   @muladd u = @. uprev + dt*integrator.fsalfirst
-  T = zeros(typeof(uprev), (m,m))
+  A = 1 + 1
+
   T[1,1] = u
+  dtpropose = dt #doubt but error_1 isn't defined
+  work = A/dtpropose
 
   halfdt = dt/2
-  for i in 2:m
+  for i in 2:order_max
     # Solve using Euler method
     @muladd u = @. uprev + halfdt*integrator.fsalfirst
     k = f(u, p, t+halfdt)
@@ -73,14 +78,96 @@ function perform_step!(integrator,cache::RichardsonEulerConstantCache,repeat_ste
     for j in 2:i
       T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
     end
+
+    integrator.EEst = abs(T[i,i] - T[i,i-1])
+    dtproposeold = dtpropose
+    dtpropose = dt*0.94*(0.65/integrator.EEst)^(1/(2*i - 1))
+    A = A + dt/halfdt
+    last_work = work
+    work = A/dtpropose
+
+    if integrator.opts.adaptive && order > 2
+      if i == order - 1
+          if integrator.EEst <= one(integrator.EEst)
+              if work < 0.9*last_work
+                  cache.dtpropose = dtpropose*((A + (2*dt/halfdt))/A)
+              else
+                  cache.order = order - 1
+                  cache.dtpropose = dtpropose
+              end
+              integrator.u = T[i,i]
+              k = f(T[i,i], p, t+dt)
+
+              integrator.fsallast = k
+              integrator.k[1] = integrator.fsalfirst
+              integrator.k[2] = integrator.fsallast
+              return
+          else
+              if integrator.EEst > 4*(dt/halfdt)^4
+                  cache.order = order - 1
+                  cache.dtpropose = dtpropose
+                  return
+              end
+          end
+      elseif i == order
+          if integrator.EEst <= one(integrator.EEst)
+              if last_work < 0.9*work
+                  cache.order = order - 1
+                  cache.dtpropose = dtproposeold
+              elseif work < 0.9*last_work
+                  cache.order = min(order_max, order + 1)
+                  cache.dtpropose = dtpropose*((A + 2*dt/halfdt)/A)
+              else
+                  cache.dtpropose = dtpropose
+              end
+              integrator.u = T[i,i]
+              k = f(T[i,i], p, t+dt)
+
+              integrator.fsallast = k
+              integrator.k[1] = integrator.fsalfirst
+              integrator.k[2] = integrator.fsallast
+              return
+          else
+              if integrator.EEst > (2*dt/halfdt)^2
+                  cache.dtpropose = dtpropose
+                  return
+              else
+                  #setting variables for next condition
+                  if last_work < 0.9*work
+                      work = last_work
+                      order = order - 1
+                  end
+              end
+          end
+      else
+          if integrator.EEst <= one(integrator.EEst)
+            cache.order = order
+            if work < 0.9*last_work
+                cache.order = min(cache.order_max,cache.order + 1)
+            end
+            k = f(T[i,i], p, t+dt)
+
+            integrator.fsallast = k
+            integrator.k[1] = integrator.fsalfirst
+            integrator.k[2] = integrator.fsallast
+
+            integrator.u = T[i,i]
+            return
+          else
+              cache.dtpropose = dtpropose
+          end
+      end
+    end
+
     halfdt = halfdt/2
   end
 
-  k = f(T[m,m], p, t+dt)
+  k = f(T[order_max,order_max], p, t+dt)
 
   integrator.fsallast = k
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   # Use extrapolated value of u
-  integrator.u = T[m,m]
+  integrator.u = T[order_max,order_max]
+  cache.dtpropose = dt
 end
