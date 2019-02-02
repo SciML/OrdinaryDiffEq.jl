@@ -87,7 +87,7 @@ function savevalues!(integrator::ODEIntegrator,force_save=false,reduce_size=true
       end
     end
   end
-  if force_save || (integrator.opts.save_everystep && integrator.iter%integrator.opts.timeseries_steps==0)
+  if force_save || integrator.opts.save_everystep
     integrator.saveiter += 1; saved, savedexactly = true, true
     if integrator.opts.save_idxs === nothing
       copyat_or_push!(integrator.sol.u,integrator.saveiter,integrator.u)

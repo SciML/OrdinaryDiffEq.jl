@@ -1,6 +1,5 @@
 mutable struct DEOptions{absType,relType,QT,tType,F1,F2,F3,F4,F5,F6,tstopsType,discType,ECType,SType,MI,tcache,savecache,disccache}
   maxiters::MI
-  timeseries_steps::Int
   save_everystep::Bool
   adaptive::Bool
   abstol::absType
