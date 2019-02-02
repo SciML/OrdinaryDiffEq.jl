@@ -123,7 +123,7 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,IIP,uType,tType,pT
       iter,saveiter,saveiter_dense,cache,
       kshortsize,force_stepfail,last_stepfail,just_hit_tstop,
       event_last_time,last_event_error,
-      accept_step,isout,reeval_fsal,u_modified,opts) where {algType,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
+      accept_step,isout,reeval_fsal,u_modified,opts) where {algType,IIP,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
                                      F,CacheType,O,FSALType,EventErrorType}
 
       new{algType,IIP,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
