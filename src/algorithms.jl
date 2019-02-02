@@ -31,6 +31,7 @@ ExplicitRK(;tableau=ODE_DEFAULT_TABLEAU) = ExplicitRK(tableau)
 @inline trivial_limiter!(u, f, t) = nothing
 
 struct Euler <: OrdinaryDiffEqAlgorithm end
+struct RichardsonEuler <: OrdinaryDiffEqAlgorithm end
 struct RK46NL <: OrdinaryDiffEqAlgorithm end
 struct Heun <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Ralston <: OrdinaryDiffEqAdaptiveAlgorithm end
@@ -97,6 +98,16 @@ struct SSPRK432{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
   step_limiter!::StepLimiter
 end
 SSPRK432(stage_limiter! = trivial_limiter!) = SSPRK432(stage_limiter!, trivial_limiter!)
+struct SSPRKMSVS43{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+end
+SSPRKMSVS43(stage_limiter! = trivial_limiter!) = SSPRKMSVS43(stage_limiter!, trivial_limiter!)
+struct SSPRKMSVS32{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
+  stage_limiter!::StageLimiter
+  step_limiter!::StepLimiter
+end
+SSPRKMSVS32(stage_limiter! = trivial_limiter!) = SSPRKMSVS32(stage_limiter!, trivial_limiter!)
 struct SSPRK932{StageLimiter,StepLimiter} <: OrdinaryDiffEqAdaptiveAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter
@@ -122,7 +133,6 @@ struct TsitPap8 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Feagin10 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Feagin12 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Feagin14 <: OrdinaryDiffEqAdaptiveAlgorithm end
-
 struct BS5 <: OrdinaryDiffEqAdaptiveAlgorithm
   lazy::Bool
   BS5(;lazy=true) = new(lazy)
@@ -381,7 +391,7 @@ struct RadauIIA5{CS,AD,F,FDT,T2,Tol,Controller} <: OrdinaryDiffEqNewtonAdaptiveA
 end
 RadauIIA5(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                           linsolve=DEFAULT_LINSOLVE,
-                          extrapolant=:constant,new_jac_conv_bound=1e-3,
+                          extrapolant=:dense,new_jac_conv_bound=1e-3,
                           controller=:Predictive,κ=nothing,
                           tol=nothing,max_iter=10,min_iter=1,smooth_est=true) =
                           RadauIIA5{chunk_size,autodiff,typeof(linsolve),
@@ -826,7 +836,8 @@ MEBDF2(;chunk_size=0,autodiff=true,diff_type=Val{:central},
 
 const MassMatrixAlgorithms = Union{OrdinaryDiffEqRosenbrockAlgorithm,
                                    OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
-                                   ImplicitEuler,ImplicitMidpoint,MEBDF2}
+                                   ImplicitEuler,ImplicitMidpoint,MEBDF2,
+                                   RadauIIA5}
 
 const MultistepAlgorithms = Union{IRKN3,IRKN4,
                                   ABDF2,
