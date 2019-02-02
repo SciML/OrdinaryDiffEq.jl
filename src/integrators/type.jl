@@ -74,7 +74,7 @@ integrator.opts.abstol = 1e-9
 ```
 For more info see the linked documentation page.
 """
-mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,pType,eigenType,QT,tdirType,ksEltype,SolType,F,CacheType,O,FSALType,EventErrorType} <: DiffEqBase.AbstractODEIntegrator
+mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,IIP,uType,tType,pType,eigenType,QT,tdirType,ksEltype,SolType,F,CacheType,O,FSALType,EventErrorType} <: DiffEqBase.AbstractODEIntegrator{algType,IIP,uType,tType}
   sol::SolType
   u::uType
   k::ksEltype
@@ -115,7 +115,7 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,pType,
   fsalfirst::FSALType
   fsallast::FSALType
 
-  function ODEIntegrator{algType,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
+  function ODEIntegrator{algType,IIP,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
                 F,CacheType,O,FSALType,EventErrorType}(
                 sol,u,k,t,dt,f,p,uprev,uprev2,tprev,
       alg,dtcache,dtchangeable,dtpropose,tdir,
@@ -126,7 +126,7 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,uType,tType,pType,
       accept_step,isout,reeval_fsal,u_modified,opts) where {algType,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
                                      F,CacheType,O,FSALType,EventErrorType}
 
-      new{algType,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
+      new{algType,IIP,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
                   F,CacheType,O,FSALType,EventErrorType}(
                   sol,u,k,t,dt,f,p,uprev,uprev2,tprev,
       alg,dtcache,dtchangeable,dtpropose,tdir,
