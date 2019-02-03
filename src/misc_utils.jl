@@ -1,3 +1,40 @@
+Base.@propagate_inbounds _getindex(x, i) = x[i]
+@inline _getindex(x::Number, _) = x
+
+function add_getindex(expr, sym)
+  expr isa Expr && expr.head == :call && length(expr.args) >= 2 || return :(_getindex($expr, $sym))
+  Expr(:call, expr.args[1], map(x->add_getindex(x, sym), expr.args[2:end])...)
+end
+
+macro loop(ex)
+  @assert ex.head == :(=)
+  @assert length(ex.args) == 2
+  iter = gensym(:II)
+  lhs = ex.args[1]
+  rhs = add_getindex(ex.args[2], iter)
+  quote
+    if $lhs isa Array
+      for $iter in Base.eachindex($lhs)
+        $lhs[$iter] = @muladd $rhs
+      end
+    else
+      @. @muladd $ex
+    end
+  end |> esc
+end
+
+macro loop(arr, ex)
+  u = gensym()
+  quote
+    if $arr isa Array
+      $u = Base.similar($arr)
+      @loop $u = $ex
+    else
+      @. $ex
+    end
+  end |> esc
+end
+
 struct DiffEqNLSolveTag end
 
 struct DiffCache{T<:AbstractArray, S<:AbstractArray}
@@ -39,12 +76,6 @@ end
 get_chunksize(x) = 0
 get_chunksize(x::NLSOLVEJL_SETUP{CS,AD}) where {CS,AD} = CS
 
-@inline @muladd calculate_residuals(ũ::Number, u₀::Number, u₁::Number,
-                                    α, ρ, internalnorm) = ũ / (α + max(internalnorm(u₀), internalnorm(u₁)) * ρ)
-
-@inline @muladd calculate_residuals(u₀::Number, u₁::Number,
-                                    α, ρ, internalnorm) = (u₁ - u₀) / (α + max(internalnorm(u₀), internalnorm(u₁)) * ρ)
-
 """
     calculate_residuals!(out, ũ, u₀, u₁, α, ρ)
 
@@ -55,16 +86,7 @@ Save element-wise residuals
 in `out`.
 """
 @inline function calculate_residuals!(out, ũ, u₀, u₁, α, ρ, internalnorm)
-  @. out = calculate_residuals(ũ, u₀, u₁, α, ρ, internalnorm)
-  nothing
-end
-
-@inline function calculate_residuals!(out::Array{T}, ũ::Array{T}, u₀::Array{T},
-                                              u₁::Array{T}, α::T2, ρ::Real,
-                                              internalnorm) where {T<:Number,T2<:Number}
-  @tight_loop_macros for i in eachindex(out)
-    @inbounds out[i] = calculate_residuals(ũ[i], u₀[i], u₁[i], α, ρ, internalnorm)
-  end
+  @loop out = ũ / (α + max(internalnorm(u₀), internalnorm(u₁)) * ρ)
   nothing
 end
 
@@ -78,15 +100,8 @@ Save element-wise residuals
 in `out`.
 """
 @inline function calculate_residuals!(out, u₀, u₁, α, ρ, internalnorm)
-  @. out = calculate_residuals(u₀, u₁, α, ρ, internalnorm)
-end
-
-@inline function calculate_residuals!(out::Array{T}, u₀::Array{T},
-                                              u₁::Array{T}, α::T2, ρ::Real,
-                                              internalnorm) where {T<:Number,T2<:Number}
-  @tight_loop_macros for i in eachindex(out)
-    @inbounds out[i] = calculate_residuals(u₀[i], u₁[i], α, ρ, internalnorm)
-  end
+  @loop out = (u₁ - u₀) / (α + max(internalnorm(u₀), internalnorm(u₁)) * ρ)
+  nothing
 end
 
 """
@@ -98,15 +113,7 @@ Calculate element-wise residuals
 ```
 """
 @inline function calculate_residuals(ũ, u₀, u₁, α, ρ, internalnorm)
-  @. calculate_residuals(ũ, u₀, u₁, α, ρ, internalnorm)
-end
-
-@inline function calculate_residuals(ũ::Array{T}, u₀::Array{T}, u₁::Array{T}, α::T2,
-                                             ρ::Real, internalnorm) where
-                                             {T<:Number,T2<:Number}
-    out = similar(ũ)
-    calculate_residuals!(out, ũ, u₀, u₁, α, ρ, internalnorm)
-    out
+  @loop ũ ũ / (α + max(internalnorm(u₀), internalnorm(u₁)) * ρ)
 end
 
 """
@@ -118,15 +125,7 @@ Calculate element-wise residuals
 ```
 """
 @inline function calculate_residuals(u₀, u₁, α, ρ, internalnorm)
-  @. calculate_residuals(u₀, u₁, α, ρ, internalnorm)
-end
-
-@inline function calculate_residuals(u₀::Array{T}, u₁::Array{T}, α::T2,
-                                             ρ::Real, internalnorm) where
-                                             {T<:Number,T2<:Number}
-    out = similar(u₀)
-    calculate_residuals!(out, u₀, u₁, α, ρ, internalnorm)
-    out
+  @loop u₀ (u₁ - u₀) / (α + max(internalnorm(u₀), internalnorm(u₁)) * ρ)
 end
 
 macro swap!(x,y)

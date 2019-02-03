@@ -580,32 +580,41 @@ function initialize!(integrator, cache::Tsit5Cache)
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
 end
 
-#=
 @muladd function perform_step!(integrator, cache::Tsit5Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7 = cache.tab
   @unpack k1,k2,k3,k4,k5,k6,k7,utilde,tmp,atmp = cache
   a = dt*a21
-  @. tmp = uprev+a*k1
+  @loop tmp = uprev+a*k1
   f(k2, tmp, p, t+c1*dt)
-  @. tmp = uprev+dt*(a31*k1+a32*k2)
+  @loop tmp = uprev+dt*(a31*k1+a32*k2)
   f(k3, tmp, p, t+c2*dt)
-  @. tmp = uprev+dt*(a41*k1+a42*k2+a43*k3)
+  @loop tmp = uprev+dt*(a41*k1+a42*k2+a43*k3)
   f(k4, tmp, p, t+c3*dt)
-  @. tmp = uprev+dt*(a51*k1+a52*k2+a53*k3+a54*k4)
+  @loop tmp = uprev+dt*(a51*k1+a52*k2+a53*k3+a54*k4)
   f(k5, tmp, p, t+c4*dt)
-  @. tmp = uprev+dt*(a61*k1+a62*k2+a63*k3+a64*k4+a65*k5)
+  @loop tmp = uprev+dt*(a61*k1+a62*k2+a63*k3+a64*k4+a65*k5)
   f(k6, tmp, p, t+dt)
-  @. u = uprev+dt*(a71*k1+a72*k2+a73*k3+a74*k4+a75*k5+a76*k6)
+  @loop u = uprev+dt*(a71*k1+a72*k2+a73*k3+a74*k4+a75*k5+a76*k6)
   f(k7, u, p, t+dt)
+  if typeof(integrator.alg) <: CompositeAlgorithm
+    g7 = u
+    g6 = tmp
+    # Hairer II, page 22
+    @loop utilde = k7 - k6
+    ϱu = integrator.opts.internalnorm(utilde)
+    @loop utilde = g7 - g6
+    ϱd = integrator.opts.internalnorm(utilde)
+    integrator.eigen_est = ϱu/ϱd
+  end
   if integrator.opts.adaptive
-    @. utilde = dt*(btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7)
+    @loop utilde = dt*(btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7)
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 end
-=#
 
+#=
 @muladd function perform_step!(integrator, cache::Tsit5Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   uidx = eachindex(integrator.uprev)
@@ -654,6 +663,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
 end
+=#
 
 function initialize!(integrator, cache::DP5ConstantCache)
   integrator.kshortsize = 4
