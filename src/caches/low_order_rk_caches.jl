@@ -596,7 +596,7 @@ function alg_cache(alg::CFRLDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltype
   CFRLDDRK64ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
-@cache struct NDBLSRK124Cache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct TSLDDRK74Cache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k::rateType
@@ -605,6 +605,72 @@ end
   tab::TabType
 end
 
+struct TSLDDRK74ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+  α1::T
+  α2::T
+  α3::T
+  α4::T
+  α5::T
+  α6::T
+  β1::T
+  β2::T
+  β3::T
+  β4::T
+  β5::T
+  β6::T
+  β7::T
+  c2::T2
+  c3::T2
+  c4::T2
+  c5::T2
+  c6::T2
+  c7::T2
+
+  function TSLDDRK74ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+    α1 = T(0.241566650129646868)
+    α2 = T(0.0423866513027719953)
+    α3 = T(0.215602732678803776)
+    α4 = T(0.232328007537583987)
+    α5 = T(0.256223412574146438)
+    α6 = T(0.0978694102142697230)
+    β1 = T(0.0941840925477795334)
+    β2 = T(0.149683694803496998)
+    β3 = T(0.285204742060440058)
+    β4 = T(-0.122201846148053668)
+    β5 = T(0.0605151571191401122)
+    β6 = T(0.345986987898399296)
+    β7 = T(0.186627171718797670)
+    c2 = T2(0.335750742677426401)
+    c3 = T2(0.286254438654048527)
+    c4 = T2(0.744675262090520366)
+    c5 = T2(0.639198690801246909)
+    c6 = T2(0.723609252956949472)
+    c7 = T2(0.91124223849547205)
+    new{T,T2}(α1, α2, α3, α4, α5, α6, β1, β2, β3, β4, β5, β6, β7, c2, c3, c4, c5, c6, c7)
+  end
+end
+
+function alg_cache(alg::TSLDDRK74,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  tab = TSLDDRK74ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  TSLDDRK74Cache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+function alg_cache(alg::TSLDDRK74,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  TSLDDRK74ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+end
+
+
+@cache struct NDBLSRK124Cache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  k::rateType
+  tmp::uType
+  fsalfirst::rateType
+  tab::TabType
+end
 
 struct NDBLSRK124ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   α2::T
