@@ -48,6 +48,7 @@ struct OwrenZen4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct OwrenZen5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct LDDRK64 <: OrdinaryDiffEqAlgorithm end
 struct CFRLDDRK64 <: OrdinaryDiffEqAlgorithm end
+struct TSLDDRK74 <: OrdinaryDiffEqAlgorithm end
 struct NDBLSRK124 <: OrdinaryDiffEqAlgorithm end
 struct NDBLSRK134 <: OrdinaryDiffEqAlgorithm end
 struct NDBLSRK144 <: OrdinaryDiffEqAlgorithm end

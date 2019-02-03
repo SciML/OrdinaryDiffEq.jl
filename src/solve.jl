@@ -13,7 +13,6 @@ function DiffEqBase.__init(
   alg::algType,timeseries_init=typeof(prob.u0)[],
   ts_init=eltype(prob.tspan)[],ks_init=[],
   recompile::Type{Val{recompile_flag}}=Val{true};
-  timeseries_steps = 1,
   saveat = eltype(prob.tspan)[],
   tstops = eltype(prob.tspan)[],
   d_discontinuities= eltype(prob.tspan)[],
@@ -236,7 +235,7 @@ function DiffEqBase.__init(
                    typeof(d_discontinuities_internal),typeof(userdata),typeof(save_idxs),
                    typeof(maxiters),typeof(tstops),typeof(saveat),
                    typeof(d_discontinuities)}(
-                       maxiters,timeseries_steps,save_everystep,adaptive,abstol_internal,
+                       maxiters,save_everystep,adaptive,abstol_internal,
                        reltol_internal,QT(gamma),QT(qmax),
                        QT(qmin),QT(qsteady_max),
                        QT(qsteady_min),QT(failfactor),tType(dtmax),
@@ -293,7 +292,7 @@ function DiffEqBase.__init(
   erracc = tTypeNoUnits(1)
   dtacc = tType(1)
 
-  integrator = ODEIntegrator{algType,uType,tType,typeof(p),typeof(eigen_est),
+  integrator = ODEIntegrator{algType,isinplace(prob),uType,tType,typeof(p),typeof(eigen_est),
                              QT,typeof(tdir),typeof(k),SolType,
                              FType,cacheType,
                              typeof(opts),fsal_typeof(alg,rate_prototype),
