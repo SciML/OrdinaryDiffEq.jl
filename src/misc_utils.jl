@@ -20,6 +20,7 @@ macro loop(ex)
     else
       @. @muladd $ex
     end
+    $lhs
   end |> esc
 end
 
