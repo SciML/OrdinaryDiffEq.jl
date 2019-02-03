@@ -154,7 +154,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
   return false
 end
 """
-choosedeg!(cache) -> nothing
+    choosedeg!(cache) -> nothing
 
 Calculate `ms[mdeg]` (the degree of the Chebyshev polynomial)
 and `cache.recind` (the index of recurrence parameters for that
