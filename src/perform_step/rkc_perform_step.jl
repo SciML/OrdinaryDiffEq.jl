@@ -297,8 +297,6 @@ end
   integrator.u = u
 end
 
-
-
 function initialize!(integrator, cache::RKCConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -315,7 +313,7 @@ end
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
   maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol)/(10.0*eps(integrator.opts.internalnorm(uprev)))))))
-  mdeg = 1 + Int(floor(sqrt(1.54*dt*integrator.eigen_est + 1.0)))
+  mdeg = 1.0 + Int(floor(sqrt(1.54*dt*integrator.eigen_est + 1.0)))
   if mdeg >= maxm
     mdeg = maxm
   end
@@ -332,14 +330,14 @@ end
   gprev2 = copy(uprev)
   μs     = w1*b1
   gprev  = uprev + dt*μs*fsalfirst
-  th2  = 0.0
+  th2  = zero(eltype(u))
   th1  = μs
   z1   = w0
-  z2   = 1.0
-  dz1  = 1.0
-  dz2  = 0.0
-  d2z1 = 0.0
-  d2z2 = 0.0
+  z2   = one(eltype(u))
+  dz1  = one(eltype(u))
+  dz2  = zero(eltype(u))
+  d2z1 = zero(eltype(u))
+  d2z2 = zero(eltype(u))
 
   # stage 2 - mdeg
   for iter in 2:mdeg
@@ -371,8 +369,8 @@ end
     end
   end
   # error estimate
-  tmp = 0.8*(uprev - u) + 0.4*dt*(fsalfirst + gprev)
   if integrator.opts.adaptive
+    tmp = 0.8*(uprev - u) + 0.4*dt*(fsalfirst + gprev)
     atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
@@ -414,14 +412,14 @@ end
   @. gprev2 = uprev
   μs     = w1*b1
   @. gprev  = uprev + dt*μs*fsalfirst
-  th2  = 0.0
+  th2  = zero(eltype(u))
   th1  = μs
   z1   = w0
-  z2   = 1.0
-  dz1  = 1.0
-  dz2  = 0.0
-  d2z1 = 0.0
-  d2z2 = 0.0
+  z2   = one(eltype(u))
+  dz1  = one(eltype(u))
+  dz2  = zero(eltype(u))
+  d2z1 = zero(eltype(u))
+  d2z2 = zero(eltype(u))
 
   # stage 2 - mdeg
   for iter in 2:mdeg
@@ -451,9 +449,9 @@ end
       d2z1 = d2z
     end
   end
-  @. tmp = 0.8*(uprev - u) + 0.4*dt*(fsalfirst + gprev)
   # error estimate
   if integrator.opts.adaptive
+    @. tmp = 0.8*(uprev - u) + 0.4*dt*(fsalfirst + gprev)
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
     integrator.EEst = integrator.opts.internalnorm(atmp)
   end
