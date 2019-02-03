@@ -31,7 +31,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 978-3-642-05221-7. Section IV.8.
 [doi:10.1007/978-3-642-05221-7](https://doi.org/10.1007/978-3-642-05221-7)
 """
-function (S::NLNewton{false,<:NLSolverCache})(integrator)
+@muladd function (S::NLNewton{false})(integrator)
   nlcache = S.cache
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z,tmp,W,κ,tol,c,γ,max_iter,min_iter = nlcache
@@ -59,10 +59,14 @@ function (S::NLNewton{false,<:NLSolverCache})(integrator)
   else
     dz = _reshape(W \ _vec(b), axes(b))
   end
+
+  # compute initial values for early stopping criterion
   ndz = integrator.opts.internalnorm(dz)
+
+  # update solution
   z = z .+ dz
 
-  # check stopping criterion
+  # check stopping criterion for initial step
   η = max(nlcache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = iszero(integrator.success_iter) || iter < min_iter || η * ndz > κtol
 
@@ -81,10 +85,10 @@ function (S::NLNewton{false,<:NLSolverCache})(integrator)
     else
       dz = _reshape(W \ _vec(b), axes(b))
     end
-    ndzprev = ndz
-    ndz = integrator.opts.internalnorm(dz)
 
     # check early stopping criterion
+    ndzprev = ndz
+    ndz = integrator.opts.internalnorm(dz)
     θ = ndz/ndzprev
     if θ ≥ 1 || ndz * θ^(max_iter - iter) > κtol * (1 - θ)
       break
@@ -102,7 +106,7 @@ function (S::NLNewton{false,<:NLSolverCache})(integrator)
   z, η, iter, do_newton
 end
 
-function (S::NLNewton{true,<:NLSolverCache})(integrator)
+@muladd function (S::NLNewton{true})(integrator)
   nlcache = S.cache
   cache = integrator.cache
   @unpack t,dt,uprev,u,f,p = integrator
@@ -116,6 +120,7 @@ function (S::NLNewton{true,<:NLSolverCache})(integrator)
   end
   # precalculations
   κtol = κ*tol
+  vecb = vec(b); vecz = vec(z); vecdz = vec(dz)
 
   # initial step of Newton iteration
   iter = 1
@@ -125,18 +130,22 @@ function (S::NLNewton{true,<:NLSolverCache})(integrator)
   if mass_matrix == I
     @. b = dt*k - z
   else
-    mul!(vec(b),mass_matrix,vec(z))
+    mul!(vecb,mass_matrix,vecz)
     @. b = dt*k - b
   end
   if DiffEqBase.has_invW(f)
-    mul!(vec(dz),W,vec(b)) # Here W is actually invW
+    mul!(vecdz,W,vecb) # Here W is actually invW
   else
-    cache.linsolve(vec(dz),W,vec(b),new_W)
+    cache.linsolve(vecdz,W,vecb,new_W)
   end
+
+  # compute initial values for early stopping criterion
   ndz = integrator.opts.internalnorm(dz)
+
+  # update solution
   z .+= dz
 
-  # check stopping criterion
+  # check stopping criterion for initial step
   η = max(nlcache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
   do_newton = iszero(integrator.success_iter) || iter < min_iter || η * ndz > κtol
 
@@ -149,18 +158,18 @@ function (S::NLNewton{true,<:NLSolverCache})(integrator)
     if mass_matrix == I
       @. b = dt*k - z
     else
-      mul!(vec(b),mass_matrix,vec(z))
+      mul!(vecb,mass_matrix,vecz)
       @. b = dt*k - b
     end
     if DiffEqBase.has_invW(f)
-      mul!(vec(dz),W,vec(b)) # Here W is actually invW
+      mul!(vecdz,W,vecb) # Here W is actually invW
     else
-      cache.linsolve(vec(dz),W,vec(b),false)
+      cache.linsolve(vecdz,W,vecb,false)
     end
-    ndzprev = ndz
-    ndz = integrator.opts.internalnorm(dz)
 
     # check early stopping criterion
+    ndzprev = ndz
+    ndz = integrator.opts.internalnorm(dz)
     θ = ndz/ndzprev
     if θ ≥ 1 || ndz * θ^(max_iter - iter) > κtol * (1 - θ)
       break

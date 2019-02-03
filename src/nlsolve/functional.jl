@@ -27,11 +27,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z,tmp,κ,tol,c,γ,min_iter,max_iter = nlcache
   mass_matrix = integrator.f.mass_matrix
-  if typeof(integrator.f) <: SplitFunction
-    f = integrator.f.f1
-  else
-    f = integrator.f
-  end
+  f = integrator.f isa SplitFunction ? integrator.f.f1 : integrator.f
   # precalculations
   κtol = κ*tol
 
@@ -45,7 +41,11 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     mz = mass_matrix * z
     z₊ = dt .* f(u, p, tstep) .- mz .+ z
   end
+
+  # compute initial values for early stopping criterion
   ndz = integrator.opts.internalnorm(z₊ .- z)
+
+  # update solution
   z = z₊
 
   # check stopping criterion for initial step
@@ -88,13 +88,8 @@ end
   nlcache = S.cache
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z,z₊,b,dz,tmp,κ,tol,k,c,γ,min_iter,max_iter = nlcache
-  ztmp = b
   mass_matrix = integrator.f.mass_matrix
-  if typeof(integrator.f) <: SplitFunction
-    f = integrator.f.f1
-  else
-    f = integrator.f
-  end
+  f = integrator.f isa SplitFunction ? integrator.f.f1 : integrator.f
   # precalculations
   κtol = κ*tol
 
@@ -107,11 +102,15 @@ end
     @. z₊ = dt*k
   else
     @. z₊ = dt*k + z
-    mul!(ztmp, mass_matrix, z)
-    @. z₊ -= ztmp
+    mul!(b, mass_matrix, z)
+    @. z₊ -= b
   end
+
+  # compute initial values for early stopping criterion
   @. dz = z₊ - z
   ndz = integrator.opts.internalnorm(dz)
+
+  # update solution
   @. z = z₊
 
   # check stopping criterion for initial step
@@ -128,8 +127,8 @@ end
       @. z₊ = dt*k
     else
       @. z₊ = dt*k + z
-      mul!(ztmp, mass_matrix, z)
-      @. z₊ -= ztmp
+      mul!(b, mass_matrix, z)
+      @. z₊ -= b
     end
     @. dz = z₊ - z
     ndzprev = ndz
