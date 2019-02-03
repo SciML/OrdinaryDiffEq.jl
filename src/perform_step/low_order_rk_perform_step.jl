@@ -902,11 +902,9 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack α1,α2,α3,α4,α5,α6,β1,β2,β3,β4,β5,β6,β7,c2,c3,c4,c5,c6,c7 = cache
 
-  # u0
-  u   = uprev
   tmp = dt*integrator.fsalfirst
   #u1
-  u   = u + β1*tmp
+  u   = uprev + β1*tmp
   tmp = dt*f(u+α1*tmp, p, t+c2*dt)
   #u2
   u   = u + β2*tmp
@@ -946,11 +944,9 @@ end
   @unpack k,fsalfirst,tmp = cache
   @unpack α1,α2,α3,α4,α5,α6,β1,β2,β3,β4,β5,β6,β7,c2,c3,c4,c5,c6,c7 = cache.tab
 
-  #u0
-  @. u   = uprev
   @. tmp = dt*fsalfirst
   #u1
-  @. u   = u + β1*tmp
+  @. u   = uprev + β1*tmp
   f(k, u+α1*tmp, p, t+c2*dt)
   @. tmp = dt*k
   #u2
