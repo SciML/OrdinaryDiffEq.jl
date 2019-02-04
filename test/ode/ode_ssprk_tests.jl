@@ -419,7 +419,7 @@ for prob in test_problems_nonlinear
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 
-alg = DGLDDRG84_C()
+alg = DGLDDRK84_C()
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
