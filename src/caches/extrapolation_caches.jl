@@ -7,8 +7,7 @@
   prevdtpropose::dtType
   dtpropose::dtType
   T::arrayType
-  order::Int
-  order_max::Int
+  cur_order::Int
   prev_work::dtType
   work::dtType
   A::Int
@@ -18,8 +17,7 @@ end
   prevdtpropose::dtType
   dtpropose::dtType
   T::arrayType
-  order::Int
-  order_max::Int
+  cur_order::Int
   prev_work::dtType
   work::dtType
   A::Int
@@ -29,25 +27,23 @@ function alg_cache(alg::RichardsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomE
   tmp = similar(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
-  order = 1
-  order_max = 9
+  cur_order = one(Int)
   prevdtpropose = zero(dt)
   dtpropose = zero(dt)
-  T = fill(zeros(eltype(u), size(u)), (order_max, order_max))
+  T = fill(zeros(eltype(u), size(u)), (alg.max_order, alg.max_order))
   prev_work = zero(dt)
   work = zero(dt)
   A = one(Int)
-  RichardsonEulerCache(u,uprev,tmp,k,fsalfirst,prevdtpropose,dtpropose,T,order,order_max,prev_work,work,A)
+  RichardsonEulerCache(u,uprev,tmp,k,fsalfirst,prevdtpropose,dtpropose,T,cur_order,prev_work,work,A)
 end
 
 function alg_cache(alg::RichardsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   prevdtpropose = zero(dt)
   dtpropose = zero(dt)
-  order = 1
-  order_max = 9
-  T = fill(zero(eltype(u)), (order_max, order_max))
+  cur_order = one(Int)
+  T = fill(zero(eltype(u)), (alg.max_order, alg.max_order))
   prev_work = zero(dt)
   work = zero(dt)
   A = one(Int)  
-  RichardsonEulerConstantCache(prevdtpropose,dtpropose,T,order,order_max,prev_work,work,A)
+  RichardsonEulerConstantCache(prevdtpropose,dtpropose,T,cur_order,prev_work,work,A)
 end

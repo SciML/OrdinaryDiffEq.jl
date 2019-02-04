@@ -49,12 +49,12 @@ function initialize!(integrator,cache::RichardsonEulerConstantCache)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
 
-  cache.order = 3
+  cache.cur_order = integrator.alg.init_order
 end
 
 function perform_step!(integrator,cache::RichardsonEulerConstantCache,repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
-  @unpack dtpropose, T, order, order_max, prev_work, work, A = cache
+  @unpack dtpropose, T, cur_order, prev_work, work, A = cache
   @muladd u = @. uprev + dt*integrator.fsalfirst
   A = 1 + 1
 
@@ -63,7 +63,7 @@ function perform_step!(integrator,cache::RichardsonEulerConstantCache,repeat_ste
   work = A/dtpropose
 
   halfdt = dt/2
-  for i in 2:order_max
+  for i in 2:size(T)[1]
     # Solve using Euler method
     @muladd u = @. uprev + halfdt*integrator.fsalfirst
     k = f(u, p, t+halfdt)
@@ -86,13 +86,13 @@ function perform_step!(integrator,cache::RichardsonEulerConstantCache,repeat_ste
     prev_work = work
     work = A/dtpropose
 
-    if integrator.opts.adaptive && order > 2
-      if i == order - 1
+    if integrator.opts.adaptive && cur_order > 2
+      if i == cur_order - 1
           if integrator.EEst <= one(integrator.EEst)
               if work < 0.9*prev_work
                   cache.dtpropose = dtpropose*((A + (2*dt/halfdt))/A)
               else
-                  cache.order = order - 1
+                  cache.cur_order = cur_order - 1
                   cache.dtpropose = dtpropose
               end
               integrator.u = T[i,i]
@@ -104,18 +104,18 @@ function perform_step!(integrator,cache::RichardsonEulerConstantCache,repeat_ste
               return
           else
               if integrator.EEst > 4*(dt/halfdt)^4
-                  cache.order = order - 1
+                  cache.cur_order = cur_order - 1
                   cache.dtpropose = dtpropose
                   return
               end
           end
-      elseif i == order
+      elseif i == cur_order
           if integrator.EEst <= one(integrator.EEst)
               if prev_work < 0.9*work
-                  cache.order = order - 1
+                  cache.cur_order = cur_order - 1
                   cache.dtpropose = prevdtpropose
               elseif work < 0.9*prev_work
-                  cache.order = min(order_max, order + 1)
+                  cache.cur_order = min(integrator.alg.max_order, cur_order + 1)
                   cache.dtpropose = dtpropose*((A + 2*dt/halfdt)/A)
               else
                   cache.dtpropose = dtpropose
@@ -135,15 +135,15 @@ function perform_step!(integrator,cache::RichardsonEulerConstantCache,repeat_ste
                   #setting variables for next condition
                   if prev_work < 0.9*work
                       work = prev_work
-                      order = order - 1
+                      cur_order = cur_order - 1
                   end
               end
           end
       else
           if integrator.EEst <= one(integrator.EEst)
-            cache.order = order
+            cache.cur_order = cur_order
             if work < 0.9*prev_work
-                cache.order = min(cache.order_max,cache.order + 1)
+                cache.cur_order = min(integrator.alg.max_order,cache.cur_order + 1)
             end
             k = f(T[i,i], p, t+dt)
 
@@ -162,12 +162,12 @@ function perform_step!(integrator,cache::RichardsonEulerConstantCache,repeat_ste
     halfdt = halfdt/2
   end
 
-  k = f(T[order_max,order_max], p, t+dt)
+  k = f(T[integrator.alg.max_order,integrator.alg.max_order], p, t+dt)
 
   integrator.fsallast = k
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   # Use extrapolated value of u
-  integrator.u = T[order_max,order_max]
+  integrator.u = T[integrator.alg.max_order,integrator.alg.max_order]
   cache.dtpropose = dt
 end
