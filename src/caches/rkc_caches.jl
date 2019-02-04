@@ -92,9 +92,6 @@ end
 mutable struct RKCConstantCache{zType} <: OrdinaryDiffEqConstantCache
   #to match the types to call maxeig!
   zprev::zType
-  function RKCConstantCache(zprev)
-    new{typeof(zprev)}(zprev)
-  end
 end
 @cache struct RKCCache{uType,rateType,uNoUnitsType} <: OrdinaryDiffEqMutableCache
   u::uType
