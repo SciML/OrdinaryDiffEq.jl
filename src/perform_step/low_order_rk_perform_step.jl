@@ -1372,7 +1372,7 @@ end
   f( k,  u, p, t+dt)
 end
 
-function initialize!(integrator,cache::DGLDDRG73_CConstantCache)
+function initialize!(integrator,cache::DGLDDRK73_CConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -1382,7 +1382,7 @@ function initialize!(integrator,cache::DGLDDRG73_CConstantCache)
   integrator.k[1] = integrator.fsalfirst
 end
 
-@muladd function perform_step!(integrator,cache::DGLDDRG73_CConstantCache,repeat_step=false)
+@muladd function perform_step!(integrator,cache::DGLDDRK73_CConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack α2,α3,α4,α5,α6,α7,β1,β2,β3,β4,β5,β6,β7,c2,c3,c4,c5,c6,c7 = cache
 
@@ -1413,7 +1413,7 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::DGLDDRG73_CCache)
+function initialize!(integrator,cache::DGLDDRK73_CCache)
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
@@ -1423,7 +1423,7 @@ function initialize!(integrator,cache::DGLDDRG73_CCache)
   integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
 end
 
-@muladd function perform_step!(integrator,cache::DGLDDRG73_CCache,repeat_step=false)
+@muladd function perform_step!(integrator,cache::DGLDDRK73_CCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k,fsalfirst,tmp = cache
   @unpack α2,α3,α4,α5,α6,α7,β1,β2,β3,β4,β5,β6,β7,c2,c3,c4,c5,c6,c7 = cache.tab

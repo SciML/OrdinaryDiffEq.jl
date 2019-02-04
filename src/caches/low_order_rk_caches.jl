@@ -969,7 +969,7 @@ function alg_cache(alg::NDBLSRK144,u,rate_prototype,uEltypeNoUnits,uBottomEltype
   NDBLSRK144ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
-@cache struct DGLDDRG73_CCache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct DGLDDRK73_CCache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k::rateType
@@ -978,7 +978,7 @@ end
   tab::TabType
 end
 
-struct DGLDDRG73_CConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct DGLDDRK73_CConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   α2::T
   α3::T
   α4::T
@@ -999,7 +999,7 @@ struct DGLDDRG73_CConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   c6::T2
   c7::T2
 
-  function DGLDDRG73_CConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+  function DGLDDRK73_CConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
     α2 = T(-0.8083163874983830)
     α3 = T(-1.503407858773331)
     α4 = T(-1.053064525050744)
@@ -1023,14 +1023,14 @@ struct DGLDDRG73_CConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   end
 end
 
-function alg_cache(alg::DGLDDRG73_C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::DGLDDRK73_C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
-  tab = DGLDDRG73_CConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
-  DGLDDRG73_CCache(u,uprev,k,tmp,fsalfirst,tab)
+  tab = DGLDDRK73_CConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  DGLDDRK73_CCache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
-function alg_cache(alg::DGLDDRG73_C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  DGLDDRG73_CConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+function alg_cache(alg::DGLDDRK73_C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  DGLDDRK73_CConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
