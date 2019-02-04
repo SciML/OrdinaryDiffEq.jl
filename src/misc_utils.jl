@@ -13,8 +13,8 @@ macro loop(ex)
   lhs = ex.args[1]
   rhs = add_getindex(ex.args[2], iter)
   quote
-    if $lhs isa Array
-      for $iter in Base.eachindex($lhs)
+    if $lhs isa Union{Array, MArray}
+      @inbounds @simd for $iter in Base.eachindex($lhs)
         $lhs[$iter] = @muladd $rhs
       end
     else
