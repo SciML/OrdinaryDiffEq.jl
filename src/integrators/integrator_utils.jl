@@ -1,5 +1,5 @@
 save_idxsinitialize(integrator,cache::OrdinaryDiffEqCache,::Type{uType}) where {uType} =
-                error("This algorithm does not have an initialization function")
+               error("This algorithm does not have an initialization function")
 
 function loopheader!(integrator)
   # Apply right after iterators / callbacks
@@ -245,23 +245,26 @@ function step_reject_controller!(integrator,alg::Union{StandardControllerAlgs,
   integrator.dt = integrator.qold
 end
 
-function stepsize_controller!(integrator,
-                              alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,:Predictive}) where {CS, AD}
-
+const PredictiveControllerAlgs = Union{RKC,OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,:Predictive}} where {CS, AD}
+function stepsize_controller!(integrator,alg::PredictiveControllerAlgs)
   # Gustafsson predictive stepsize controller
 
   if iszero(integrator.EEst)
     q = inv(integrator.opts.qmax)
   else
     gamma = integrator.opts.gamma
-    if alg isa RadauIIA5
-      @unpack nl_iters = integrator.cache
-      @unpack max_iter = alg
+    if alg isa RKC
+      fac = gamma
     else
-      @unpack nl_iters, max_iter = integrator.cache.nlsolve.cache
+      if alg isa RadauIIA5
+        @unpack nl_iters = integrator.cache
+        @unpack max_iter = alg
+      else
+        @unpack nl_iters, max_iter = integrator.cache.nlsolve.cache
+      end
+      niters = nl_iters
+      fac = min(gamma,(1+2*max_iter)*gamma/(niters+2*max_iter))
     end
-    niters = nl_iters
-    fac = min(gamma,(1+2*max_iter)*gamma/(niters+2*max_iter))
     expo = 1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1)
     qtmp = (integrator.EEst^expo)/fac
     @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
@@ -269,8 +272,7 @@ function stepsize_controller!(integrator,
   end
   q
 end
-function step_accept_controller!(integrator,
-                                 alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,:Predictive},q) where {CS, AD}
+function step_accept_controller!(integrator,alg::PredictiveControllerAlgs,q)
   if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
     q = one(q)
   end
@@ -286,8 +288,7 @@ function step_accept_controller!(integrator,
   integrator.erracc = max(1e-2,integrator.EEst)
   integrator.dt/qacc
 end
-function step_reject_controller!(integrator,
-                                 alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,:Predictive}) where {CS, AD}
+function step_reject_controller!(integrator,alg::PredictiveControllerAlgs)
   if integrator.success_iter == 0
     integrator.dt *= 0.1
   else
@@ -302,7 +303,6 @@ function loopfooter!(integrator)
   # But not set to false when reset so algorithms can check if reset occurred
   integrator.reeval_fsal = false
   integrator.u_modified = false
-
   ttmp = integrator.t + integrator.dt
   if integrator.force_stepfail
       if integrator.opts.adaptive

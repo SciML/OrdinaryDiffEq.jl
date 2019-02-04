@@ -277,6 +277,7 @@ alg_order(alg::SBDF) = alg.order
 
 alg_order(alg::ROCK2) = 2
 alg_order(alg::ROCK4) = 4
+alg_order(alg::RKC) = 2
 
 alg_order(alg::MEBDF2) = 2
 
@@ -294,6 +295,7 @@ alg_adaptive_order(alg::Rosenbrock23) = 3
 alg_adaptive_order(alg::Rosenbrock32) = 2
 
 alg_adaptive_order(alg::RadauIIA5) = 3
+alg_adaptive_order(alg::RKC) = 2
 
 alg_adaptive_order(alg::GenericImplicitEuler) = 0
 alg_adaptive_order(alg::GenericTrapezoid) = 1
@@ -322,6 +324,7 @@ beta1_default(alg::DP5,beta2) = typeof(beta2)(1//alg_order(alg)) - 3beta2/4
 beta1_default(alg::DP5Threaded,beta2) = typeof(beta2)(1//alg_order(alg)) - 3beta2/4
 
 gamma_default(alg::OrdinaryDiffEqAlgorithm) = 9//10
+gamma_default(alg::RKC) = 8//10
 
 qsteady_min_default(alg::OrdinaryDiffEqAlgorithm) = 1
 qsteady_max_default(alg::OrdinaryDiffEqAlgorithm) = 1
