@@ -968,3 +968,69 @@ end
 function alg_cache(alg::NDBLSRK144,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   NDBLSRK144ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
+
+@cache struct DGLDDRG73_CCache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  k::rateType
+  tmp::uType
+  fsalfirst::rateType
+  tab::TabType
+end
+
+struct DGLDDRG73_CConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+  α2::T
+  α3::T
+  α4::T
+  α5::T
+  α6::T
+  α7::T
+  β1::T
+  β2::T
+  β3::T
+  β4::T
+  β5::T
+  β6::T
+  β7::T
+  c2::T2
+  c3::T2
+  c4::T2
+  c5::T2
+  c6::T2
+  c7::T2
+
+  function DGLDDRG73_CConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+    α2 = T(-0.8083163874983830)
+    α3 = T(-1.503407858773331)
+    α4 = T(-1.053064525050744)
+    α5 = T(-1.463149119280508)
+    α6 = T(-0.6592881281087830)
+    α7 = T(-1.667891931891068)
+    β1 = T(0.01197052673097840)
+    β2 = T(0.8886897793820711)
+    β3 = T(0.4578382089261419)
+    β4 = T(0.5790045253338471)
+    β5 = T(0.3160214638138484)
+    β6 = T(0.2483525368264122)
+    β7 = T(0.06771230959408840)
+    c2 = T2(0.01197052673097840)
+    c3 = T2(0.1823177940361990)
+    c4 = T2(0.5082168062551849)
+    c5 = T2(0.6532031220148590)
+    c6 = T2(0.8534401385678250)
+    c7 = T2(0.9980466084623790)
+    new{T,T2}(α2, α3, α4, α5, α6, α7, β1, β2, β3, β4, β5, β6, β7, c2, c3, c4, c5, c6, c7)
+  end
+end
+
+function alg_cache(alg::DGLDDRG73_C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  tab = DGLDDRG73_CConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  DGLDDRG73_CCache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+function alg_cache(alg::DGLDDRG73_C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  DGLDDRG73_CConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+end

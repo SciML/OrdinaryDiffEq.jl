@@ -52,6 +52,7 @@ struct TSLDDRK74 <: OrdinaryDiffEqAlgorithm end
 struct NDBLSRK124 <: OrdinaryDiffEqAlgorithm end
 struct NDBLSRK134 <: OrdinaryDiffEqAlgorithm end
 struct NDBLSRK144 <: OrdinaryDiffEqAlgorithm end
+struct DGLDDRG73_C <: OrdinaryDiffEqAlgorithm end
 struct CarpenterKennedy2N54 <: OrdinaryDiffEqAlgorithm end
 struct ORK256 <: OrdinaryDiffEqAlgorithm end
 struct SSPRK22{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
