@@ -6,6 +6,8 @@ function add_getindex(expr, sym)
   Expr(:call, expr.args[1], map(x->add_getindex(x, sym), expr.args[2:end])...)
 end
 
+const LOOPARRAY = Union{Array, StaticArrays.MArray}
+
 macro loop(ex)
   @assert ex.head == :(=)
   @assert length(ex.args) == 2
@@ -13,12 +15,12 @@ macro loop(ex)
   lhs = ex.args[1]
   rhs = add_getindex(ex.args[2], iter)
   quote
-    if $lhs isa Union{Array, MArray}
+    if $lhs isa LOOPARRAY
       @inbounds @simd for $iter in Base.eachindex($lhs)
-        $lhs[$iter] = @muladd $rhs
+        $lhs[$iter] = $rhs
       end
     else
-      @. @muladd $ex
+      @. $ex
     end
     $lhs
   end |> esc
@@ -27,9 +29,11 @@ end
 macro loop(arr, ex)
   u = gensym()
   quote
-    if $arr isa Array
+    if $arr isa LOOPARRAY
       $u = Base.similar($arr)
       @loop $u = $ex
+    elseif $arr isa StaticArrays.SArray
+      $ex
     else
       @. $ex
     end
@@ -87,7 +91,7 @@ Save element-wise residuals
 in `out`.
 """
 @inline function calculate_residuals!(out, ũ, u₀, u₁, α, ρ, internalnorm)
-  @loop out = ũ / (α + max(internalnorm(u₀), internalnorm(u₁)) * ρ)
+  @muladd @loop out = ũ / (α + max(internalnorm(u₀), internalnorm(u₁)) * ρ)
   nothing
 end
 
@@ -101,7 +105,7 @@ Save element-wise residuals
 in `out`.
 """
 @inline function calculate_residuals!(out, u₀, u₁, α, ρ, internalnorm)
-  @loop out = (u₁ - u₀) / (α + max(internalnorm(u₀), internalnorm(u₁)) * ρ)
+  @muladd @loop out = (u₁ - u₀) / (α + max(internalnorm(u₀), internalnorm(u₁)) * ρ)
   nothing
 end
 
@@ -114,7 +118,7 @@ Calculate element-wise residuals
 ```
 """
 @inline function calculate_residuals(ũ, u₀, u₁, α, ρ, internalnorm)
-  @loop ũ ũ / (α + max(internalnorm(u₀), internalnorm(u₁)) * ρ)
+  @muladd @loop ũ ũ / (α + max(internalnorm(u₀), internalnorm(u₁)) * ρ)
 end
 
 """
@@ -126,7 +130,7 @@ Calculate element-wise residuals
 ```
 """
 @inline function calculate_residuals(u₀, u₁, α, ρ, internalnorm)
-  @loop u₀ (u₁ - u₀) / (α + max(internalnorm(u₀), internalnorm(u₁)) * ρ)
+  @muladd @loop u₀ (u₁ - u₀) / (α + max(internalnorm(u₀), internalnorm(u₁)) * ρ)
 end
 
 macro swap!(x,y)

@@ -26,8 +26,7 @@ module OrdinaryDiffEq
 
   using ExponentialUtilities
 
-  # Required by temporary fix in not in-place methods with 12+ broadcasts
-  import StaticArrays: SArray, MArray, MVector, SVector, @SVector
+  using StaticArrays
 
   # Integrator Interface
   import DiffEqBase: resize!,deleteat!,addat!,full_cache,user_cache,u_cache,du_cache,
