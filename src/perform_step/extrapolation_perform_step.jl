@@ -54,7 +54,7 @@ end
 
 function perform_step!(integrator,cache::RichardsonEulerConstantCache,repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
-  @unpack dtpropose, T, order, order_max, last_work, work, A = cache
+  @unpack dtpropose, T, order, order_max, prev_work, work, A = cache
   @muladd u = @. uprev + dt*integrator.fsalfirst
   A = 1 + 1
 
@@ -80,16 +80,16 @@ function perform_step!(integrator,cache::RichardsonEulerConstantCache,repeat_ste
     end
 
     integrator.EEst = abs(T[i,i] - T[i,i-1])
-    dtproposeold = dtpropose
+    prevdtpropose = dtpropose
     dtpropose = dt*0.94*(0.65/integrator.EEst)^(1/(2*i - 1))
     A = A + dt/halfdt
-    last_work = work
+    prev_work = work
     work = A/dtpropose
 
     if integrator.opts.adaptive && order > 2
       if i == order - 1
           if integrator.EEst <= one(integrator.EEst)
-              if work < 0.9*last_work
+              if work < 0.9*prev_work
                   cache.dtpropose = dtpropose*((A + (2*dt/halfdt))/A)
               else
                   cache.order = order - 1
@@ -111,10 +111,10 @@ function perform_step!(integrator,cache::RichardsonEulerConstantCache,repeat_ste
           end
       elseif i == order
           if integrator.EEst <= one(integrator.EEst)
-              if last_work < 0.9*work
+              if prev_work < 0.9*work
                   cache.order = order - 1
-                  cache.dtpropose = dtproposeold
-              elseif work < 0.9*last_work
+                  cache.dtpropose = prevdtpropose
+              elseif work < 0.9*prev_work
                   cache.order = min(order_max, order + 1)
                   cache.dtpropose = dtpropose*((A + 2*dt/halfdt)/A)
               else
@@ -133,8 +133,8 @@ function perform_step!(integrator,cache::RichardsonEulerConstantCache,repeat_ste
                   return
               else
                   #setting variables for next condition
-                  if last_work < 0.9*work
-                      work = last_work
+                  if prev_work < 0.9*work
+                      work = prev_work
                       order = order - 1
                   end
               end
@@ -142,7 +142,7 @@ function perform_step!(integrator,cache::RichardsonEulerConstantCache,repeat_ste
       else
           if integrator.EEst <= one(integrator.EEst)
             cache.order = order
-            if work < 0.9*last_work
+            if work < 0.9*prev_work
                 cache.order = min(cache.order_max,cache.order + 1)
             end
             k = f(T[i,i], p, t+dt)
