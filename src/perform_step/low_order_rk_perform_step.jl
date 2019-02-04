@@ -809,12 +809,12 @@ end
     g6 = tmp
     g7 = u
     # Hairer II, page 22
-    ϱu, ϱd = zero(eltype(k7)), zero(eltype(k7))
+    ϱu, ϱd = zero(eltype(k7)), zero(eltype(g7))
     @inbounds for i in eachindex(k7)
       ϱu += (k7[i] - k6[i])^2
       ϱd += (g7[i] - g6[i])^2
     end
-    integrator.eigen_est = ustrip(sqrt(ϱu/ϱd))
+    integrator.eigen_est = sqrt(ϱu/ϱd)*oneunit(t)
   end
   if integrator.opts.adaptive
     @tight_loop_macros for i in uidx
