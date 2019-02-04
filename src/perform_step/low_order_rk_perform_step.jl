@@ -814,7 +814,7 @@ end
       ϱu += (k7[i] - k6[i])^2
       ϱd += (g7[i] - g6[i])^2
     end
-    integrator.eigen_est = sqrt(ϱu/ϱd)
+    integrator.eigen_est = ustrip(sqrt(ϱu/ϱd))
   end
   if integrator.opts.adaptive
     @tight_loop_macros for i in uidx

@@ -287,7 +287,7 @@ function DiffEqBase.__init(
     cacheType =  OrdinaryDiffEqCache
   end
 
-  eigen_est = 1/oneunit(tType) # rate/state = (state/time)/state = 1/t units
+  eigen_est = 1/one(tType) # rate/state = (state/time)/state = 1/t units, internalnorm drops units
   tprev = t
   dtcache = tType(dt)
   dtpropose = tType(dt)
