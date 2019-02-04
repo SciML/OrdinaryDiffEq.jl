@@ -968,3 +968,76 @@ end
 function alg_cache(alg::NDBLSRK144,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   NDBLSRK144ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
+
+@cache struct DGLDDRG84_CCache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  k::rateType
+  tmp::uType
+  fsalfirst::rateType
+  tab::TabType
+end
+
+struct DGLDDRG84_CConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+  α2::T
+  α3::T
+  α4::T
+  α5::T
+  α6::T
+  α7::T
+  α8::T
+  β1::T
+  β2::T
+  β3::T
+  β4::T
+  β5::T
+  β6::T
+  β7::T
+  β8::T
+  c2::T2
+  c3::T2
+  c4::T2
+  c5::T2
+  c6::T2
+  c7::T2
+  c8::T2
+
+  function DGLDDRG84_CConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+    α2  = T(-0.7212962482279240)
+    α3  = T(-0.01077336571612980)
+    α4  = T(-0.5162584698930970)
+    α5  = T(-1.730100286632201)
+    α6  = T(-5.200129304403076)
+    α7  = T(-0.7837058945416420)
+    α8  = T(-0.5445836094332190)
+    β1  = T(0.2165936736758085)
+    β2  = T(0.1773950826411583)
+    β3  = T(0.01802538611623290)
+    β4  = T(0.08473476372541490)
+    β5  = T(0.8129106974622483)
+    β6  = T(1.903416030422760)
+    β7  = T(0.1314841743399048)
+    β8  = T(0.2082583170674149)
+    c2  = T2(0.2165936736758085)
+    c3  = T2(0.2660343487538170)
+    c4  = T2(0.2840056122522720)
+    c5  = T2(0.3251266843788570)
+    c6  = T2(0.4555149599187530)
+    c7  = T2(0.7713219317101170)
+    c8  = T2(0.9199028964538660)
+
+    new{T,T2}(α2, α3, α4, α5, α6, α7, α8, β1, β2, β3, β4, β5, β6, β7, β8, c2, c3, c4, c5, c6, c7, c8)
+  end
+end
+
+function alg_cache(alg::DGLDDRG84_C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  tab = DGLDDRG84_CConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  DGLDDRG84_CCache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+function alg_cache(alg::DGLDDRG84_C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  DGLDDRG84_CConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+end
