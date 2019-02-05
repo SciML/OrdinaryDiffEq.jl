@@ -195,6 +195,8 @@ alg_order(alg::TSLDDRK74) = 4
 alg_order(alg::NDBLSRK124) = 4
 alg_order(alg::NDBLSRK134) = 4
 alg_order(alg::NDBLSRK144) = 4
+alg_order(alg::DGLDDRK73_C) = 3
+alg_order(alg::DGLDDRK84_C) = 4
 alg_order(alg::DGLDDRK84_F) = 4
 
 alg_order(alg::DP5) = 5
