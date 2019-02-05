@@ -917,28 +917,27 @@ end
 end
 
 function alg_cache(alg::CNAB2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
+  γ, c = 1//2, 1
+  @oopnlsolve
+
   k2 = rate_prototype
   uprev3 = u
   tprev2 = t
 
-  γ, c = 1//2, 1
-  @oopnlsolve
   CNAB2ConstantCache(k2,uf,nlsolve,uprev3,tprev2)
 end
 
 function alg_cache(alg::CNAB2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
-  atmp = similar(u,uEltypeNoUnits)
+  γ, c = 1//2, 1
+  @iipnlsolve
+
   k1 = zero(rate_prototype)
   k2 = zero(rate_prototype)
   du₁ = zero(rate_prototype)
-
   uprev3 = similar(u)
   tprev2 = t
+  atmp = similar(u,uEltypeNoUnits)
 
-  γ, c = 1//2, 1
-  @iipnlsolve
   CNAB2Cache(u,uprev,uprev2,fsalfirst,k,k1,k2,du₁,du1,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolve,uprev3,tprev2)
 end
 
@@ -979,29 +978,28 @@ end
 end
 
 function alg_cache(alg::CNLF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
+  γ, c = 1//1, 1
+  @oopnlsolve
+
   k2 = rate_prototype
   uprev2 = u
   uprev3 = u
   tprev2 = t
 
-  γ, c = 1//1, 1
-  @oopnlsolve
   CNLF2ConstantCache(k2,uf,nlsolve,uprev2,uprev3,tprev2)
 end
 
 function alg_cache(alg::CNLF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
-  atmp = similar(u,uEltypeNoUnits)
+  γ, c = 1//1, 1
+  @iipnlsolve
+
   k1 = zero(rate_prototype)
   k2 = zero(rate_prototype)
   du₁ = zero(rate_prototype)
-
   uprev2 = similar(u)
   uprev3 = similar(u)
   tprev2 = t
+  atmp = similar(u,uEltypeNoUnits)
 
-  γ, c = 1//1, 1
-  @iipnlsolve
   CNLF2Cache(u,uprev,uprev2,fsalfirst,k,k1,k2,du₁,du1,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolve,uprev3,tprev2)
 end

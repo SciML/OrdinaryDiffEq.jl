@@ -33,15 +33,10 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 """
 @muladd function (S::NLNewton{false})(integrator)
   nlcache = S.cache
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,p = integrator
   @unpack z,tmp,W,κ,tol,c,γ,max_iter,min_iter = nlcache
   mass_matrix = integrator.f.mass_matrix
-  alg = unwrap_alg(integrator, true)
-  if integrator.f isa SplitFunction && alg isa SplitAlgorithms
-    f = integrator.f.f1
-  else
-    f = integrator.f
-  end
+  f = nlsolve_f(integrator)
   # precalculations
   κtol = κ*tol
 
@@ -50,14 +45,14 @@ Equations II, Springer Series in Computational Mathematics. ISBN
   tstep = t + c*dt
   u = @. tmp + γ * z
   if mass_matrix == I
-    b = dt .* f(u, p, tstep) .- z
+    ztmp = dt .* f(u, p, tstep) .- z
   else
-    b = dt .* f(u, p, tstep) .- mass_matrix * z
+    ztmp = dt .* f(u, p, tstep) .- mass_matrix * z
   end
   if DiffEqBase.has_invW(f)
-    dz = W * b # Here W is actually invW
+    dz = _reshape(W * _vec(ztmp), axes(ztmp)) # Here W is actually invW
   else
-    dz = _reshape(W \ _vec(b), axes(b))
+    dz = _reshape(W \ _vec(ztmp), axes(ztmp))
   end
 
   # compute initial values for early stopping criterion
@@ -76,14 +71,14 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     iter += 1
     u = @. tmp + γ * z
     if mass_matrix == I
-      b = dt .* f(u, p, tstep) .- z
+      ztmp = dt .* f(u, p, tstep) .- z
     else
-      b = dt .* f(u, p, tstep) .- mass_matrix * z
+      ztmp = dt .* f(u, p, tstep) .- mass_matrix * z
     end
     if DiffEqBase.has_invW(f)
-      dz = W * b # Here W is actually invW
+      dz = _reshape(W * _vec(ztmp), axes(ztmp)) # Here W is actually invW
     else
-      dz = _reshape(W \ _vec(b), axes(b))
+      dz = _reshape(W \ _vec(ztmp), axes(ztmp))
     end
 
     # check early stopping criterion
@@ -109,18 +104,13 @@ end
 @muladd function (S::NLNewton{true})(integrator)
   nlcache = S.cache
   cache = integrator.cache
-  @unpack t,dt,uprev,u,f,p = integrator
-  @unpack z,dz,tmp,b,W,κ,tol,k,new_W,c,γ,max_iter,min_iter = nlcache
+  @unpack t,dt,uprev,u,p = integrator
+  @unpack z,dz,tmp,ztmp,W,κ,tol,k,new_W,c,γ,max_iter,min_iter = nlcache
   mass_matrix = integrator.f.mass_matrix
-  alg = unwrap_alg(integrator, true)
-  if integrator.f isa SplitFunction && alg isa SplitAlgorithms
-    f = integrator.f.f1
-  else
-    f = integrator.f
-  end
+  f = nlsolve_f(integrator)
   # precalculations
   κtol = κ*tol
-  vecb = vec(b); vecz = vec(z); vecdz = vec(dz)
+  vecztmp = vec(ztmp); vecz = vec(z); vecdz = vec(dz)
 
   # initial step of Newton iteration
   iter = 1
@@ -128,15 +118,15 @@ end
   @. u = tmp + γ*z
   f(k, u, p, tstep)
   if mass_matrix == I
-    @. b = dt*k - z
+    @. ztmp = dt*k - z
   else
-    mul!(vecb,mass_matrix,vecz)
-    @. b = dt*k - b
+    mul!(vecztmp,mass_matrix,vecz)
+    @. ztmp = dt*k - ztmp
   end
   if DiffEqBase.has_invW(f)
-    mul!(vecdz,W,vecb) # Here W is actually invW
+    mul!(vecdz,W,vecztmp) # Here W is actually invW
   else
-    cache.linsolve(vecdz,W,vecb,new_W)
+    cache.linsolve(vecdz,W,vecztmp,new_W)
   end
 
   # compute initial values for early stopping criterion
@@ -156,15 +146,15 @@ end
     @. u = tmp + γ*z
     f(k, u, p, tstep)
     if mass_matrix == I
-      @. b = dt*k - z
+      @. ztmp = dt*k - z
     else
-      mul!(vecb,mass_matrix,vecz)
-      @. b = dt*k - b
+      mul!(vecztmp,mass_matrix,vecz)
+      @. ztmp = dt*k - ztmp
     end
     if DiffEqBase.has_invW(f)
-      mul!(vecdz,W,vecb) # Here W is actually invW
+      mul!(vecdz,W,vecztmp) # Here W is actually invW
     else
-      cache.linsolve(vecdz,W,vecb,false)
+      cache.linsolve(vecdz,W,vecztmp,false)
     end
 
     # check early stopping criterion

@@ -54,6 +54,7 @@ module OrdinaryDiffEq
   include("nlsolve/newton.jl")
   include("nlsolve/functional.jl")
   include("nlsolve/anderson.jl")
+  include("nlsolve/utils.jl")
 
   include("caches/basic_caches.jl")
   include("caches/low_order_rk_caches.jl")

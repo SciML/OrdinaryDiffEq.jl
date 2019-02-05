@@ -37,7 +37,7 @@ end
   alg = unwrap_alg(integrator, true)
 
   # calculate W
-  typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, γ*dt, repeat_step) )
+  nlsolve! isa NLNewton && ( nlcache.W = calc_W!(integrator, cache, γ*dt, repeat_step) )
 
   # FSAL Step 1
   nlcache.z = z₁ = dt*integrator.fsalfirst
@@ -80,8 +80,8 @@ end
 
   if integrator.opts.adaptive
     tmp = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄
-    if alg.smooth_est # From Shampine
-      est = _reshape(nlcache.W\_vec(tmp), axes(tmp))
+    if nlsolve! isa NLNewton && alg.smooth_est # From Shampine
+      est = _reshape(nlcache.W \_vec(tmp), axes(tmp))
     else
       est = tmp
     end
@@ -105,7 +105,7 @@ end
   # precalculations
   γdt = γ*dt
 
-  typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, γdt, repeat_step)
+  nlsolve! isa NLNewton && calc_W!(integrator, cache, γdt, repeat_step)
 
   # FSAL Step 1
   @. z₁ = dt*integrator.fsalfirst
@@ -120,7 +120,7 @@ end
   nlcache.c = 2γ
   z₂,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
-  nlcache.new_W = false
+  nlsolve! isa NLNewton && (nlcache.new_W = false)
 
   ################################## Solve Step 3
 
@@ -191,7 +191,7 @@ end
   γdt = γ*dt
 
   # calculate W
-  typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, γ*dt, repeat_step) )
+  nlsolve! isa NLNewton && ( nlcache.W = calc_W!(integrator, cache, γ*dt, repeat_step) )
 
   if typeof(integrator.f) <: SplitFunction
     # Explicit tableau is not FSAL
@@ -274,7 +274,7 @@ end
     else
       tmp = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄
     end
-    if alg.smooth_est # From Shampine
+    if nlsolve! isa NLNewton && alg.smooth_est # From Shampine
       est = _reshape(nlcache.W\_vec(tmp), axes(tmp))
     else
       est = tmp
@@ -314,7 +314,7 @@ end
   # precalculations
   γdt = γ*dt
 
-  typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, γdt, repeat_step)
+  nlsolve! isa NLNewton && calc_W!(integrator, cache, γdt, repeat_step)
 
   if typeof(integrator.f) <: SplitFunction
     # Explicit tableau is not FSAL
@@ -345,7 +345,7 @@ end
   nlcache.c = 2γ
   z₂,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
-  nlcache.new_W = false
+  nlsolve! isa NLNewton && (nlcache.new_W = false)
 
   ################################## Solve Step 3
 
@@ -445,7 +445,7 @@ end
   γdt = γ*dt
 
   # calculate W
-  typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, γ*dt, repeat_step) )
+  nlsolve! isa NLNewton && ( nlcache.W = calc_W!(integrator, cache, γ*dt, repeat_step) )
 
   ##### Step 1
 
@@ -498,7 +498,7 @@ end
 
   if integrator.opts.adaptive
     tmp = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
-    if alg.smooth_est # From Shampine
+    if nlsolve! isa NLNewton && alg.smooth_est # From Shampine
       est = _reshape(nlcache.W\_vec(tmp), axes(tmp))
     else
       est = tmp
@@ -525,7 +525,7 @@ end
   # precalculations
   γdt = γ*dt
 
-  typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, γdt, repeat_step)
+  nlsolve! isa NLNewton && calc_W!(integrator, cache, γdt, repeat_step)
 
   ##### Step 1
 
@@ -541,7 +541,7 @@ end
   nlcache.c = 2γ
   z₂,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
-  nlcache.new_W = false
+  nlsolve! isa NLNewton && (nlcache.new_W = false)
 
   ################################## Solve Step 3
 
@@ -623,7 +623,7 @@ end
   γdt = γ*dt
 
   # calculate W
-  typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, γ*dt, repeat_step) )
+  nlsolve! isa NLNewton && ( nlcache.W = calc_W!(integrator, cache, γ*dt, repeat_step) )
 
   if typeof(integrator.f) <: SplitFunction
     # Explicit tableau is not FSAL
@@ -743,7 +743,7 @@ end
     else
       tmp = btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆
     end
-    if alg.smooth_est # From Shampine
+    if nlsolve! isa NLNewton && alg.smooth_est # From Shampine
       est = _reshape(nlcache.W\_vec(tmp), axes(tmp))
     else
       est = tmp
@@ -787,7 +787,7 @@ end
   # precalculations
   γdt = γ*dt
 
-  typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, γdt, repeat_step)
+  nlsolve! isa NLNewton && calc_W!(integrator, cache, γdt, repeat_step)
 
   ##### Step 1
 
@@ -820,7 +820,7 @@ end
   nlcache.c = 2γ
   z₂,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
-  nlcache.new_W = false
+  nlsolve! isa NLNewton && (nlcache.new_W = false)
 
   ################################## Solve Step 3
 
@@ -974,7 +974,7 @@ end
   γdt = γ*dt
 
   # calculate W
-  typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, γ*dt, repeat_step) )
+  nlsolve! isa NLNewton && ( nlcache.W = calc_W!(integrator, cache, γ*dt, repeat_step) )
 
   ##### Step 1
 
@@ -1045,7 +1045,7 @@ end
 
   if integrator.opts.adaptive
     tmp = btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇
-    if alg.smooth_est # From Shampine
+    if nlsolve! isa NLNewton && alg.smooth_est # From Shampine
       est = _reshape(nlcache.W\_vec(tmp), axes(tmp))
     else
       est = tmp
@@ -1072,7 +1072,7 @@ end
   # precalculations
   γdt = γ*dt
 
-  typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, γdt, repeat_step)
+  nlsolve! isa NLNewton && calc_W!(integrator, cache, γdt, repeat_step)
 
   ##### Step 1
 
@@ -1088,7 +1088,7 @@ end
   nlcache.c = 2γ
   z₂,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
-  nlcache.new_W = false
+  nlsolve! isa NLNewton && (nlcache.new_W = false)
 
   ################################## Solve Step 3
 
@@ -1200,7 +1200,7 @@ end
   γdt = γ*dt
 
   # calculate W
-  typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, γ*dt, repeat_step) )
+  nlsolve! isa NLNewton && ( nlcache.W = calc_W!(integrator, cache, γ*dt, repeat_step) )
 
   ##### Step 1
 
@@ -1359,7 +1359,7 @@ end
     else
       tmp = btilde1*z₁ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇ + btilde8*z₈
     end
-    if alg.smooth_est # From Shampine
+    if nlsolve! isa NLNewton && alg.smooth_est # From Shampine
       est = _reshape(nlcache.W\_vec(tmp), axes(tmp))
     else
       est = tmp
@@ -1404,7 +1404,7 @@ end
   # precalculations
   γdt = γ*dt
 
-  typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, γdt, repeat_step)
+  nlsolve! isa NLNewton && calc_W!(integrator, cache, γdt, repeat_step)
 
   ##### Step 1
 
@@ -1438,7 +1438,7 @@ end
   nlcache.c = 2γ
   z₂,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
-  nlcache.new_W = false
+  nlsolve! isa NLNewton && (nlcache.new_W = false)
 
   ################################## Solve Step 3
 
