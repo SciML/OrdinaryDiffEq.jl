@@ -137,7 +137,7 @@ macro swap!(x,y)
   end
 end
 
-islinear(f) = f isa DiffEqBase.AbstractDiffEqLinearOperator && f.update_func === DEFAULT_UPDATE_FUNC
+islinear(f) = f isa DiffEqBase.AbstractDiffEqLinearOperator && is_constant(f)
 
 macro cache(expr)
   name = expr.args[2].args[1].args[1]
