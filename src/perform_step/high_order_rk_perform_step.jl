@@ -177,7 +177,7 @@ end
     err3 = integrator.opts.internalnorm(atmp) # Order 3
     err52 = err5*err5
     if err5 ≈ 0 && err3 ≈ 0
-      integrator.EEst = zero(typeof(integrator.EEst))
+      integrator.EEst = zero(integrator.EEst)
     else
       integrator.EEst = err52/sqrt(err52 + 0.01*err3*err3)
     end

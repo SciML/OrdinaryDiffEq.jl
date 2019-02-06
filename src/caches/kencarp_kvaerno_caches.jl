@@ -55,7 +55,7 @@ function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
     uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   end
 
-  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = z
+  z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = z
   atmp = similar(u,uEltypeNoUnits)
 
   KenCarp3Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,k1,k2,k3,k4,dz,b,tmp,atmp,J,
@@ -73,10 +73,6 @@ function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   tab = Kvaerno4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
   @oopnlsolve
-
-  uprev3 = u
-  tprev2 = t
-
   Kvaerno4ConstantCache(uf,nlsolve,tab)
 end
 
@@ -110,7 +106,7 @@ function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   γ, c = tab.γ, tab.c3
   @iipnlsolve
 
-  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u); z₅ = z
+  z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u); z₅ = z
   atmp = similar(u,uEltypeNoUnits)
 
   Kvaerno4Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,dz,b,tmp,atmp,J,
@@ -128,10 +124,6 @@ function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   tab = KenCarp4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
   @oopnlsolve
-
-  uprev3 = u
-  tprev2 = t
-
   KenCarp4ConstantCache(uf,nlsolve,tab)
 end
 
@@ -183,7 +175,7 @@ function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
     uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   end
 
-  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u); z₅ = similar(u)
+  z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u); z₅ = zero(u)
   z₆ = z
   atmp = similar(u,uEltypeNoUnits)
 
@@ -239,8 +231,8 @@ function alg_cache(alg::Kvaerno5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   γ, c = tab.γ, tab.c3
   @iipnlsolve
 
-  z₁ = similar(u); z₂ = similar(u);  z₃ = similar(u); z₄ = similar(u); z₅ = similar(u)
-  z₆ = similar(u);  z₇ = z
+  z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u); z₅ = zero(u)
+  z₆ = zero(u); z₇ = z
   atmp = similar(u,uEltypeNoUnits)
 
   Kvaerno5Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,z₆,z₇,dz,b,tmp,atmp,J,
@@ -316,8 +308,8 @@ function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
     uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   end
 
-  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u)
-  z₅ = similar(u); z₆ = similar(u); z₇ = similar(u); z₈ = z
+  z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u)
+  z₅ = zero(u); z₆ = zero(u); z₇ = zero(u); z₈ = z
   atmp = similar(u,uEltypeNoUnits)
 
   KenCarp5Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,

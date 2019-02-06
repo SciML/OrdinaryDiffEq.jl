@@ -123,7 +123,7 @@ function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   γ, c = 1//2, 1
   @iipnlsolve
 
-  uprev3 = similar(u)
+  uprev3 = zero(u)
   tprev2 = t
   atmp = similar(u,uEltypeNoUnits)
 
