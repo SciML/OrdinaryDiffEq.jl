@@ -1,7 +1,5 @@
-const LowStorageRK2NCache = Union{CarpenterKennedy2N54Cache}
-const LowStorageRK2NConstantCache = Union{CarpenterKennedy2N54ConstantCache}
 
-
+# 2N low storage methods
 function initialize!(integrator,cache::LowStorageRK2NConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
   integrator.kshortsize = 1
@@ -21,7 +19,6 @@ end
   u   = uprev + B1*tmp
 
   # other stages
-  # TODO: unroll?
   for i in eachindex(A2end)
     k = f(u, p, t+c2end[i]*dt)
     tmp = A2end[i]*tmp + dt*k
@@ -53,7 +50,6 @@ end
   @. u   = uprev + B1*tmp
 
   # other stages
-  # TODO: unroll?
   for i in eachindex(A2end)
     f(k, u, p, t+c2end[i]*dt)
     @. tmp = A2end[i]*tmp + dt*k
@@ -65,10 +61,7 @@ end
 
 
 
-const LowStorageRK3SCache = Union{ParsaniKetchesonDeconinck3S184Cache, ParsaniKetchesonDeconinck3S205Cache}
-const LowStorageRK3SConstantCache = Union{ParsaniKetchesonDeconinck3S184ConstantCache, ParsaniKetchesonDeconinck3S205ConstantCache}
-
-
+# 3S low storage methods
 function initialize!(integrator,cache::LowStorageRK3SConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
   integrator.kshortsize = 1
@@ -88,7 +81,6 @@ end
   u   = tmp + β1*dt*integrator.fsalfirst
 
   # other stages
-  # TODO: unroll?
   for i in eachindex(γ12end)
     k   = f(u, p, t+c2end[i]*dt)
     tmp = tmp + δ2end[i]*u
@@ -120,7 +112,6 @@ end
   @. u   = tmp + β1*dt*integrator.fsalfirst
 
   # other stages
-  # TODO: unroll?
   for i in eachindex(γ12end)
     f(k, u, p, t+c2end[i]*dt)
     @. tmp = tmp + δ2end[i]*u
