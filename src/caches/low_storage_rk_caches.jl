@@ -75,6 +75,85 @@ struct LowStorageRK3SConstantCache{N,T,T2} <: OrdinaryDiffEqConstantCache
 end
 
 
+#=TODO: function ParsaniKetchesonDeconinck3S94ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+  γ102 = convert(T, )
+  γ103 = convert(T, )
+  γ104 = convert(T, )
+  γ105 = convert(T, )
+  γ106 = convert(T, )
+  γ107 = convert(T, )
+  γ108 = convert(T, )
+  γ109 = convert(T, )
+  γ12end = SVector(γ102, γ103, γ104, γ105, γ106, γ107, γ108, γ109)
+
+  γ202 = convert(T, )
+  γ203 = convert(T, )
+  γ204 = convert(T, )
+  γ205 = convert(T, )
+  γ206 = convert(T, )
+  γ207 = convert(T, )
+  γ208 = convert(T, )
+  γ209 = convert(T, )
+  γ22end = SVector(γ202, γ203, γ204, γ205, γ206, γ207, γ208, γ209)
+
+  γ302 = convert(T, 0.0000000000000000e+0)
+  γ303 = convert(T, 0.0000000000000000e+0)
+  γ304 = convert(T, )
+  γ305 = convert(T, )
+  γ306 = convert(T, )
+  γ307 = convert(T, )
+  γ308 = convert(T, )
+  γ309 = convert(T, )
+  γ310 = convert(T, )
+  γ32end = SVector(γ302, γ303, γ304, γ305, γ306, γ307, γ308, γ309, γ310)
+
+  δ02 = convert(T, )
+  δ03 = convert(T, )
+  δ04 = convert(T, )
+  δ05 = convert(T, )
+  δ06 = convert(T, )
+  δ07 = convert(T, )
+  δ08 = convert(T, )
+  δ09 = convert(T, )
+  δ2end = SVector(δ02, δ03, δ04, δ05, δ06, δ07, δ08, δ09)
+
+  β1 = convert(T, )
+  β02 = convert(T, )
+  β03 = convert(T, )
+  β04 = convert(T, )
+  β05 = convert(T, )
+  β06 = convert(T, )
+  β07 = convert(T, )
+  β08 = convert(T, )
+  β09 = convert(T, )
+  β2end = SVector(β02, β03, β04, β05, β06, β07, β08, β09)
+
+  c02 = convert(T2, )
+  c03 = convert(T2, )
+  c04 = convert(T2, )
+  c05 = convert(T2, )
+  c06 = convert(T2, )
+  c07 = convert(T2, )
+  c08 = convert(T2, )
+  c09 = convert(T2, )
+  c2end = SVector(c02, c03, c04, c05, c06, c07, c08, c09)
+
+  LowStorageRK3SConstantCache{8,T,T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
+end
+
+function alg_cache(alg::ParsaniKetchesonDeconinck3S94,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  tab = ParsaniKetchesonDeconinck3S94ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  LowStorageRK3SCache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+function alg_cache(alg::ParsaniKetchesonDeconinck3S94,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  ParsaniKetchesonDeconinck3S94ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+end=#
+
+
 function ParsaniKetchesonDeconinck3S184ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
   γ102 = convert(T, 1.1750819811951678e+0)
   γ103 = convert(T, 3.0909017892654811e-1)
@@ -204,6 +283,90 @@ end
 
 function alg_cache(alg::ParsaniKetchesonDeconinck3S184,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   ParsaniKetchesonDeconinck3S184ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+end
+
+
+function ParsaniKetchesonDeconinck3S105ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+  γ102 = convert(T,  4.0436600785287713e-1)
+  γ103 = convert(T, -8.5034274641295027e-1)
+  γ104 = convert(T, -6.9508941671218478e+0)
+  γ105 = convert(T,  9.2387652252320684e-1)
+  γ106 = convert(T, -2.5631780399589106e+0)
+  γ107 = convert(T,  2.5457448699988827e-1)
+  γ108 = convert(T,  3.1258317336761454e-1)
+  γ109 = convert(T, -7.0071148003175443e-1)
+  γ110 = convert(T,  4.8396209710057070e-1)
+  γ12end = SVector(γ102, γ103, γ104, γ105, γ106, γ107, γ108, γ109, γ110)
+
+  γ202 = convert(T, 6.8714670697294733e-1)
+  γ203 = convert(T, 1.0930247604585732e+0)
+  γ204 = convert(T, 3.2259753823377983e+0)
+  γ205 = convert(T, 1.0411537008416110e+0)
+  γ206 = convert(T, 1.2928214888638039e+0)
+  γ207 = convert(T, 7.3914627692888835e-1)
+  γ208 = convert(T, 1.2391292570651462e-1)
+  γ209 = convert(T, 1.8427534793568445e-1)
+  γ210 = convert(T, 5.7127889427161162e-2)
+  γ22end = SVector(γ202, γ203, γ204, γ205, γ206, γ207, γ208, γ209, γ210)
+
+  γ302 = convert(T,  0.0000000000000000e+0)
+  γ303 = convert(T,  0.0000000000000000e+0)
+  γ304 = convert(T, -2.3934051593398129e+0)
+  γ305 = convert(T, -1.9028544220991284e+0)
+  γ306 = convert(T, -2.8200422105835639e+0)
+  γ307 = convert(T, -1.8326984641282289e+0)
+  γ308 = convert(T, -2.1990945108072310e-1)
+  γ309 = convert(T, -4.0824306603783045e-1)
+  γ310 = convert(T, -1.3776697911236280e-1)
+  γ32end = SVector(γ302, γ303, γ304, γ305, γ306, γ307, γ308, γ309, γ310)
+
+  δ02 = convert(T, -1.3317784091400336e-1)
+  δ03 = convert(T,  8.2604227852898304e-1)
+  δ04 = convert(T,  1.5137004305165804e+0)
+  δ05 = convert(T, -1.3058100631721905e+0)
+  δ06 = convert(T,  3.0366787893355149e+0)
+  δ07 = convert(T, -1.4494582670831953e+0)
+  δ08 = convert(T,  3.8343138733685103e+0)
+  δ09 = convert(T,  4.1222939718018692e+0)
+  δ10 = convert(T,  0.0000000000000000e+0)
+  δ2end = SVector(δ02, δ03, δ04, δ05, δ06, δ07, δ08, δ09, δ10)
+
+  β1  = convert(T, 2.5978835757039448e-1)
+  β02 = convert(T, 1.7770088002098183e-2)
+  β03 = convert(T, 2.4816366373161344e-1)
+  β04 = convert(T, 7.9417368275785671e-1)
+  β05 = convert(T, 3.8853912968701337e-1)
+  β06 = convert(T, 1.4550516642704694e-1)
+  β07 = convert(T, 1.5875173794655811e-1)
+  β08 = convert(T, 1.6506056315937651e-1)
+  β09 = convert(T, 2.1180932999328042e-1)
+  β10 = convert(T, 1.5593923403495016e-1)
+  β2end = SVector(β02, β03, β04, β05, β06, β07, β08, β09, β10)
+
+  c02 = convert(T2, 2.5978835757039448e-1)
+  c03 = convert(T2, 9.9045731158085557e-2)
+  c04 = convert(T2, 2.1555118823045644e-1)
+  c05 = convert(T2, 5.0079500784155040e-1)
+  c06 = convert(T2, 5.5922519148547800e-1)
+  c07 = convert(T2, 5.4499869734044426e-1)
+  c08 = convert(T2, 7.6152246625852738e-1)
+  c09 = convert(T2, 8.4270620830633836e-1)
+  c10 = convert(T2, 9.1522098071770008e-1)
+  c2end = SVector(c02, c03, c04, c05, c06, c07, c08, c09, c10)
+
+  LowStorageRK3SConstantCache{9,T,T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
+end
+
+function alg_cache(alg::ParsaniKetchesonDeconinck3S105,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  tab = ParsaniKetchesonDeconinck3S105ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  LowStorageRK3SCache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+function alg_cache(alg::ParsaniKetchesonDeconinck3S105,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  ParsaniKetchesonDeconinck3S105ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 end
 
 

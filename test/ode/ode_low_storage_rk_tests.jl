@@ -60,6 +60,24 @@ for prob in test_problems_nonlinear
 end
 
 
+alg = ParsaniKetchesonDeconinck3S105()
+dts = 1 ./ 1.95 .^(5:-1:1)
+for prob in test_problems_only_time
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+dts = 1 ./ 2 .^(5:-1:2)
+for prob in test_problems_linear
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+dts = 1.5 ./ 2 .^(5:-1:2)
+for prob in test_problems_nonlinear
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+
+
 alg = ParsaniKetchesonDeconinck3S205()
 dts = 1 ./ 1.95 .^(5:-1:1)
 for prob in test_problems_only_time
