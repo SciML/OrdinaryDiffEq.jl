@@ -891,7 +891,7 @@ end
   tprev2::tType
 end
 
-@cache mutable struct CNAB2Cache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,N,tType,F} <: OrdinaryDiffEqMutableCache
+@cache mutable struct CNAB2Cache{uType,rateType,JType,WType,UF,JC,N,tType,F} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
@@ -905,7 +905,6 @@ end
   dz::uType
   b::uType
   tmp::uType
-  atmp::uNoUnitsType
   J::JType
   W::WType
   uf::UF
@@ -936,9 +935,8 @@ function alg_cache(alg::CNAB2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   du₁ = zero(rate_prototype)
   uprev3 = similar(u)
   tprev2 = t
-  atmp = similar(u,uEltypeNoUnits)
 
-  CNAB2Cache(u,uprev,uprev2,fsalfirst,k,k1,k2,du₁,du1,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolve,uprev3,tprev2)
+  CNAB2Cache(u,uprev,uprev2,fsalfirst,k,k1,k2,du₁,du1,z,dz,b,tmp,J,W,uf,jac_config,linsolve,nlsolve,uprev3,tprev2)
 end
 
 # CNLF2
@@ -966,7 +964,6 @@ end
   dz::uType
   b::uType
   tmp::uType
-  atmp::uNoUnitsType
   J::JType
   W::WType
   uf::UF
@@ -999,7 +996,6 @@ function alg_cache(alg::CNLF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   uprev2 = similar(u)
   uprev3 = similar(u)
   tprev2 = t
-  atmp = similar(u,uEltypeNoUnits)
 
-  CNLF2Cache(u,uprev,uprev2,fsalfirst,k,k1,k2,du₁,du1,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolve,uprev3,tprev2)
+  CNLF2Cache(u,uprev,uprev2,fsalfirst,k,k1,k2,du₁,du1,z,dz,b,tmp,J,W,uf,jac_config,linsolve,nlsolve,uprev3,tprev2)
 end
