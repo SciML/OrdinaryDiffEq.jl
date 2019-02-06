@@ -166,6 +166,7 @@ alg_order(alg::Midpoint) = 2
 alg_order(alg::GenericIIF1) = 1
 alg_order(alg::GenericIIF2) = 2
 alg_order(alg::CarpenterKennedy2N54) = 4
+alg_order(alg::ParsaniKetchesonDeconinck3S94) = 4
 alg_order(alg::ParsaniKetchesonDeconinck3S184) = 4
 alg_order(alg::ParsaniKetchesonDeconinck3S105) = 5
 alg_order(alg::ParsaniKetchesonDeconinck3S205) = 5
