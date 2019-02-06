@@ -61,6 +61,7 @@ if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_I" )
   @time @safetestset "Linear Methods Tests" begin include("linear_method_tests.jl") end
   # ~ 170 s
   @time @safetestset "SSPRK Tests" begin include("ode/ode_ssprk_tests.jl") end
+  @time @safetestset "Low Storage RK Tests" begin include("ode/ode_low_storage_rk_tests.jl") end
   # ~ 25 s
   @time @safetestset "OwrenZen Tests" begin include("owrenzen_tests.jl") end
   @time @safetestset "Runge-Kutta-Chebyshev Tests" begin include("ode/rkc_tests.jl") end
