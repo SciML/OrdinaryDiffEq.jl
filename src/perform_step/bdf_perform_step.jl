@@ -917,7 +917,7 @@ end
 ### STEP 2
   nlcache.tmp = z₁
   nlcache.c = 2
-  nlcache.new_W = false
+  nlsolve! isa NLNewton && (nlcache.new_W = false)
   z,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
   z₂ = z₁ + z
@@ -925,7 +925,7 @@ end
   tmp2 = 0.5uprev + z₁ - 0.5z₂
   nlcache.tmp = tmp2
   nlcache.c = 1
-  nlcache.new_W = false
+  nlsolve! isa NLNewton && (nlcache.new_W = false)
   z,η,iter,fail_convergence = nlsolve!(integrator)
   fail_convergence && return
   u = tmp2 + z
@@ -972,7 +972,7 @@ end
 ### STEP 2
  nlcache.tmp = z₁
  nlcache.c = 2
- nlcache.new_W = false
+ nlsolve! isa NLNewton && (nlcache.new_W = false)
  z,η,iter,fail_convergence = nlsolve!(integrator)
  fail_convergence && return
  @. z₂ = z₁ + z
@@ -981,7 +981,7 @@ end
  @. tmp2 = 0.5uprev + z₁ - 0.5z₂
  nlcache.tmp = tmp2
  nlcache.c = 1
- nlcache.new_W = false
+ nlsolve! isa NLNewton && (nlcache.new_W = false)
  z,η,iter,fail_convergence = nlsolve!(integrator)
  fail_convergence && return
  @. u = tmp2 + z

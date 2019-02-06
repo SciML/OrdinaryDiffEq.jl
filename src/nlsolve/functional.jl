@@ -24,10 +24,10 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 """
 @muladd function (S::NLFunctional{false})(integrator)
   nlcache = S.cache
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,p = integrator
   @unpack z,tmp,κ,tol,c,γ,min_iter,max_iter = nlcache
   mass_matrix = integrator.f.mass_matrix
-  f = integrator.f isa SplitFunction ? integrator.f.f1 : integrator.f
+  f = nlsolve_f(integrator)
   # precalculations
   κtol = κ*tol
 
@@ -38,7 +38,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
   if mass_matrix == I
     z₊ = dt .* f(u, p, tstep)
   else
-    mz = mass_matrix * z
+    mz = _reshape(mass_matrix * _vec(z), axes(z))
     z₊ = dt .* f(u, p, tstep) .- mz .+ z
   end
 
@@ -60,7 +60,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     if mass_matrix == I
       z₊ = dt .* f(u, p, tstep)
     else
-      mz = mass_matrix * z
+      mz = _reshape(mass_matrix * _vec(z), axes(z))
       z₊ = dt .* f(u, p, tstep) .- mz .+ z
     end
 
@@ -86,12 +86,13 @@ end
 
 @muladd function (S::NLFunctional{true})(integrator)
   nlcache = S.cache
-  @unpack t,dt,uprev,u,f,p = integrator
-  @unpack z,z₊,b,dz,tmp,κ,tol,k,c,γ,min_iter,max_iter = nlcache
+  @unpack t,dt,uprev,u,p = integrator
+  @unpack z,z₊,ztmp,dz,tmp,κ,tol,k,c,γ,min_iter,max_iter = nlcache
   mass_matrix = integrator.f.mass_matrix
-  f = integrator.f isa SplitFunction ? integrator.f.f1 : integrator.f
+  f = nlsolve_f(integrator)
   # precalculations
   κtol = κ*tol
+  vecztmp = vec(ztmp); vecz = vec(z)
 
   # initial step of functional iteration
   iter = 1
@@ -102,8 +103,8 @@ end
     @. z₊ = dt*k
   else
     @. z₊ = dt*k + z
-    mul!(b, mass_matrix, z)
-    @. z₊ -= b
+    mul!(vecztmp, mass_matrix, vecz)
+    @. z₊ -= ztmp
   end
 
   # compute initial values for early stopping criterion
@@ -127,8 +128,8 @@ end
       @. z₊ = dt*k
     else
       @. z₊ = dt*k + z
-      mul!(b, mass_matrix, z)
-      @. z₊ -= b
+      mul!(vecztmp, mass_matrix, vecz)
+      @. z₊ -= ztmp
     end
     @. dz = z₊ - z
     ndzprev = ndz

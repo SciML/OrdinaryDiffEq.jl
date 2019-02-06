@@ -8,14 +8,16 @@ end
 
 function alg_cache(alg::ABDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
   γ, c = 1//1, 1
   @oopnlsolve
   eulercache = ImplicitEulerConstantCache(uf,nlsolve)
-  dtₙ₋₁ = one(dt)
-  fsalfirstprev = rate_prototype
+
   nlsolve.cache.γ = 2//3
   nlsolve.cache.c = 1
+
+  dtₙ₋₁ = one(dt)
+  fsalfirstprev = rate_prototype
+
   ABDF2ConstantCache(uf, nlsolve, eulercache, dtₙ₋₁, fsalfirstprev)
 end
 
@@ -45,17 +47,20 @@ end
 
 function alg_cache(alg::ABDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
   γ, c = 1//1, 1
   @iipnlsolve
-  atmp = similar(u,uEltypeNoUnits)
 
   fsalfirstprev = similar(rate_prototype)
+  atmp = similar(u,uEltypeNoUnits)
+
   eulercache = ImplicitEulerCache(u,uprev,uprev2,du1,fsalfirst,k,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolve)
-  dtₙ₋₁ = one(dt)
-  zₙ₋₁ = similar(u)
+
   nlsolve.cache.γ = 2//3
   nlsolve.cache.c = 1
+
+  dtₙ₋₁ = one(dt)
+  zₙ₋₁ = similar(u)
+
   ABDF2Cache(u,uprev,uprev2,du1,fsalfirst,fsalfirstprev,k,z,zₙ₋₁,dz,b,tmp,atmp,J,
               W,uf,jac_config,linsolve,nlsolve,eulercache,dtₙ₋₁)
 end
@@ -106,37 +111,35 @@ end
 end
 
 function alg_cache(alg::SBDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
-  k2 = rate_prototype
-  uprev2 = u
-  uprev3 = u
-  uprev4 = u
-  k₁ = rate_prototype
-  k₂ = rate_prototype
-  k₃ = rate_prototype
-  du₁ = rate_prototype
-  du₂ = rate_prototype
-
   γ, c = 1//1, 1
   @oopnlsolve
+
+  k2 = rate_prototype
+  k₁ = rate_prototype; k₂ = rate_prototype; k₃ = rate_prototype
+  du₁ = rate_prototype; du₂ = rate_prototype
+
+  uprev2 = u; uprev3 = u; uprev4 = u
+
   SBDFConstantCache(1,k2,uf,nlsolve,uprev2,uprev3,uprev4,k₁,k₂,k₃,du₁,du₂)
 end
 
 function alg_cache(alg::SBDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
-  atmp = similar(u,uEltypeNoUnits)
+  γ, c = 1//1, 1
+  @iipnlsolve
+
   order = alg.order
-  uprev2 = similar(u)
-  uprev3 = order >= 3 ? similar(u) : uprev2
-  uprev4 = order == 4 ? similar(u) : uprev2
+
   k₁ = similar(rate_prototype)
   k₂ = order >= 3 ? zero(rate_prototype) : k₁
   k₃ = order == 4 ? zero(rate_prototype) : k₁
   du₁ = zero(rate_prototype)
   du₂ = zero(rate_prototype)
 
-  γ, c = 1//1, 1
-  @iipnlsolve
+  uprev2 = similar(u)
+  uprev3 = order >= 3 ? similar(u) : uprev2
+  uprev4 = order == 4 ? similar(u) : uprev2
+  atmp = similar(u,uEltypeNoUnits)
+
   SBDFCache(1,u,uprev,fsalfirst,k,du1,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolve,uprev2,uprev3,uprev4,k₁,k₂,k₃,du₁,du₂)
 end
 
@@ -178,7 +181,9 @@ end
 end
 
 function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
+  γ, c = zero(inv((1-alg.kappa))), 1
+  @oopnlsolve
+
   uprev2 = u
   dtₙ₋₁ = t
 
@@ -188,14 +193,14 @@ function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   U = fill(zero(typeof(t)), 1, 1)
 
   U!(1,U)
-  γ, c = zero(inv((1-alg.kappa))), 1
-  @oopnlsolve
 
   QNDF1ConstantCache(uf,nlsolve,D,D2,R,U,uprev2,dtₙ₋₁)
 end
 
 function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
+  γ, c = zero(inv((1-alg.kappa))), 1
+  @iipnlsolve
+
   D = Array{typeof(u)}(undef, 1, 1)
   D2 = Array{typeof(u)}(undef, 1, 2)
   R = fill(zero(typeof(t)), 1, 1)
@@ -210,8 +215,6 @@ function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   utilde = similar(u)
   uprev2 = similar(u)
   dtₙ₋₁ = one(dt)
-  γ, c = zero(inv((1-alg.kappa))), 1
-  @iipnlsolve
 
   QNDF1Cache(uprev2,du1,fsalfirst,k,z,dz,b,D,D2,R,U,tmp,atmp,utilde,J,
               W,uf,jac_config,linsolve,nlsolve,dtₙ₋₁)
@@ -259,7 +262,9 @@ end
 end
 
 function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
+  γ, c = zero(inv((1-alg.kappa))), 1
+  @oopnlsolve
+
   uprev2 = u
   uprev3 = u
   dtₙ₋₁ = zero(t)
@@ -272,13 +277,13 @@ function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
 
   U!(2,U)
 
-  γ, c = zero(inv((1-alg.kappa))), 1
-  @oopnlsolve
   QNDF2ConstantCache(uf,nlsolve,D,D2,R,U,uprev2,uprev3,dtₙ₋₁,dtₙ₋₂)
 end
 
 function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
+  γ, c = zero(inv((1-alg.kappa))), 1
+  @iipnlsolve
+
   D = Array{typeof(u)}(undef, 1, 2)
   D2 = Array{typeof(u)}(undef, 1, 3)
   R = fill(zero(typeof(t)), 2, 2)
@@ -296,8 +301,6 @@ function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   dtₙ₋₁ = zero(dt)
   dtₙ₋₂ = zero(dt)
 
-  γ, c = zero(inv((1-alg.kappa))), 1
-  @iipnlsolve
   QNDF2Cache(uprev2,uprev3,du1,fsalfirst,k,z,dz,b,D,D2,R,U,tmp,atmp,utilde,J,
              W,uf,jac_config,linsolve,nlsolve,dtₙ₋₁,dtₙ₋₂)
 end
@@ -347,7 +350,9 @@ end
 end
 
 function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
+  γ, c = one(inv(alg.kappa)), 1
+  @oopnlsolve
+
   udiff = fill(zero(typeof(u)), 1, 6)
   dts = fill(zero(typeof(dt)), 1, 6)
   h = zero(dt)
@@ -360,13 +365,13 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
 
   max_order = 5
 
-  γ, c = inv(oneunit(eltype(alg.kappa))), 1
-  @oopnlsolve
   QNDFConstantCache(uf,nlsolve,D,D2,R,U,1,max_order,udiff,dts,tmp,h,0)
 end
 
 function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
+  γ, c = one(alg.kappa), 1
+  @iipnlsolve
+
   udiff = Array{typeof(u)}(undef, 1, 6)
   dts = fill(zero(typeof(dt)), 1, 6)
   h = zero(dt)
@@ -389,8 +394,6 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   max_order = 5
   atmp = similar(u,uEltypeNoUnits)
   utilde = similar(u)
-  γ, c = inv(oneunit(eltype(alg.kappa))), 1
-  @iipnlsolve
 
   QNDFCache(du1,fsalfirst,k,z,dz,b,D,D2,R,U,1,max_order,udiff,dts,tmp,atmp,utilde,J,
             W,uf,jac_config,linsolve,nlsolve,h,0)
@@ -422,11 +425,12 @@ end
 
 function alg_cache(alg::MEBDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
-  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); tmp2 = similar(u);
-  atmp = similar(u,uEltypeNoUnits)
   γ, c = 1, 1
   @iipnlsolve
+
+  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); tmp2 = similar(u)
+  atmp = similar(u,uEltypeNoUnits)
+
   MEBDF2Cache(u,uprev,uprev2,du1,fsalfirst,k,z,z₁,z₂,tmp2,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolve)
 end
 
@@ -437,7 +441,6 @@ end
 
 function alg_cache(alg::MEBDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
   γ, c = 1, 1
   @oopnlsolve
   MEBDF2ConstantCache(uf,nlsolve)

@@ -6,8 +6,7 @@ end
 
 function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
-  tab = KenCarp3Tableau(uToltype,real(tTypeNoUnits))
+  tab = KenCarp3Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
   @oopnlsolve
 
@@ -43,10 +42,9 @@ end
 
 function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
-  z₁ = similar(u); z₂ = similar(u)
-  z₃ = similar(u); z₄ = z
-  atmp = similar(u,uEltypeNoUnits)
+  tab = KenCarp3Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  γ, c = tab.γ, tab.c3
+  @iipnlsolve
 
   if typeof(f) <: SplitFunction
     k1 = similar(u); k2 = similar(u)
@@ -56,9 +54,9 @@ function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
     k3 = nothing; k4 = nothing
     uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   end
-  tab = KenCarp3Tableau(uToltype,real(tTypeNoUnits))
-  γ, c = tab.γ, tab.c3
-  @iipnlsolve
+
+  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = z
+  atmp = similar(u,uEltypeNoUnits)
 
   KenCarp3Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,k1,k2,k3,k4,dz,b,tmp,atmp,J,
                 W,uf,jac_config,linsolve,nlsolve,tab)
@@ -70,15 +68,14 @@ end
   tab::Tab
 end
 
-function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
-  uprev3 = u
-  tprev2 = t
-
-  tab = Kvaerno4Tableau(uToltype,real(tTypeNoUnits))
+function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  tab = Kvaerno4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
   @oopnlsolve
+
+  uprev3 = u
+  tprev2 = t
 
   Kvaerno4ConstantCache(uf,nlsolve,tab)
 end
@@ -109,14 +106,12 @@ end
 
 function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
-  z₁ = similar(u); z₂ = similar(u);
-  z₃ = similar(u); z₄ = similar(u)
-  z₅ = z
-  atmp = similar(u,uEltypeNoUnits)
-  tab = Kvaerno4Tableau(uToltype,real(tTypeNoUnits))
+  tab = Kvaerno4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
   @iipnlsolve
+
+  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u); z₅ = z
+  atmp = similar(u,uEltypeNoUnits)
 
   Kvaerno4Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,dz,b,tmp,atmp,J,
                 W,uf,jac_config,linsolve,nlsolve,tab)
@@ -130,12 +125,12 @@ end
 
 function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
-  uprev3 = u
-  tprev2 = t
-  tab = KenCarp4Tableau(uToltype,real(tTypeNoUnits))
+  tab = KenCarp4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
   @oopnlsolve
+
+  uprev3 = u
+  tprev2 = t
 
   KenCarp4ConstantCache(uf,nlsolve,tab)
 end
@@ -173,11 +168,9 @@ end
 
 function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
-  z₁ = similar(u); z₂ = similar(u)
-  z₃ = similar(u); z₄ = similar(u)
-  z₅ = similar(u); z₆ = z
-  atmp = similar(u,uEltypeNoUnits)
+  tab = KenCarp4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  γ, c = tab.γ, tab.c3
+  @iipnlsolve
 
   if typeof(f) <: SplitFunction
     k1 = similar(u); k2 = similar(u)
@@ -190,9 +183,9 @@ function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
     uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   end
 
-  tab = KenCarp4Tableau(uToltype,real(tTypeNoUnits))
-  γ, c = tab.γ, tab.c3
-  @iipnlsolve
+  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u); z₅ = similar(u)
+  z₆ = z
+  atmp = similar(u,uEltypeNoUnits)
 
   KenCarp4Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,z₆,k1,k2,k3,k4,k5,k6,
                 dz,b,tmp,atmp,J,
@@ -207,8 +200,7 @@ end
 
 function alg_cache(alg::Kvaerno5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
-  tab = Kvaerno5Tableau(uToltype,real(tTypeNoUnits))
+  tab = Kvaerno5Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
   @oopnlsolve
 
@@ -243,15 +235,13 @@ end
 
 function alg_cache(alg::Kvaerno5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
-  z₁ = similar(u); z₂ = similar(u);
-  z₃ = similar(u); z₄ = similar(u)
-  z₅ = similar(u); z₆ = similar(u);
-  z₇ = z
-  atmp = similar(u,uEltypeNoUnits)
-  tab = Kvaerno5Tableau(uToltype,real(tTypeNoUnits))
+  tab = Kvaerno5Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
   @iipnlsolve
+
+  z₁ = similar(u); z₂ = similar(u);  z₃ = similar(u); z₄ = similar(u); z₅ = similar(u)
+  z₆ = similar(u);  z₇ = z
+  atmp = similar(u,uEltypeNoUnits)
 
   Kvaerno5Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,z₆,z₇,dz,b,tmp,atmp,J,
                 W,uf,jac_config,linsolve,nlsolve,tab)
@@ -265,8 +255,7 @@ end
 
 function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  @oopnlcachefields
-  tab = KenCarp5Tableau(uToltype,real(tTypeNoUnits))
+  tab = KenCarp5Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
   @oopnlsolve
 
@@ -310,12 +299,9 @@ end
 
 function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  @iipnlcachefields
-  z₁ = similar(u); z₂ = similar(u);
-  z₃ = similar(u); z₄ = similar(u)
-  z₅ = similar(u); z₆ = similar(u);
-  z₇ = similar(u); z₈ = z
-  atmp = similar(u,uEltypeNoUnits)
+  tab = KenCarp5Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  γ, c = tab.γ, tab.c3
+  @iipnlsolve
 
   if typeof(f) <: SplitFunction
     k1 = similar(u); k2 = similar(u)
@@ -330,9 +316,9 @@ function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
     uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   end
 
-  tab = KenCarp5Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
-  γ, c = tab.γ, tab.c3
-  @iipnlsolve
+  z₁ = similar(u); z₂ = similar(u); z₃ = similar(u); z₄ = similar(u)
+  z₅ = similar(u); z₆ = similar(u); z₇ = similar(u); z₈ = z
+  atmp = similar(u,uEltypeNoUnits)
 
   KenCarp5Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,
                 k1,k2,k3,k4,k5,k6,k7,k8,
