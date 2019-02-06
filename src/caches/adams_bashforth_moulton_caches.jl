@@ -933,7 +933,7 @@ function alg_cache(alg::CNAB2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   k1 = zero(rate_prototype)
   k2 = zero(rate_prototype)
   du₁ = zero(rate_prototype)
-  uprev3 = similar(u)
+  uprev3 = zero(u)
   tprev2 = t
 
   CNAB2Cache(u,uprev,uprev2,fsalfirst,k,k1,k2,du₁,du1,z,dz,b,tmp,J,W,uf,jac_config,linsolve,nlsolve,uprev3,tprev2)
@@ -993,8 +993,8 @@ function alg_cache(alg::CNLF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   k1 = zero(rate_prototype)
   k2 = zero(rate_prototype)
   du₁ = zero(rate_prototype)
-  uprev2 = similar(u)
-  uprev3 = similar(u)
+  uprev2 = zero(u)
+  uprev3 = zero(u)
   tprev2 = t
 
   CNLF2Cache(u,uprev,uprev2,fsalfirst,k,k1,k2,du₁,du1,z,dz,b,tmp,J,W,uf,jac_config,linsolve,nlsolve,uprev3,tprev2)
