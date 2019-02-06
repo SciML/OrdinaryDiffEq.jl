@@ -950,7 +950,7 @@ end
   tprev2::tType
 end
 
-@cache mutable struct CNLF2Cache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,N,tType,F} <: OrdinaryDiffEqMutableCache
+@cache mutable struct CNLF2Cache{uType,rateType,JType,WType,UF,JC,N,tType,F} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
