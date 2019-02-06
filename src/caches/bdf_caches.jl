@@ -185,10 +185,10 @@ function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   uprev2 = u
   dtₙ₋₁ = t
 
-  D = fill(zero(typeof(u)), 1, 1)
-  D2 = fill(zero(typeof(u)), 1, 2)
-  R = fill(zero(typeof(t)), 1, 1)
-  U = fill(zero(typeof(t)), 1, 1)
+  D = fill(zero(u), 1, 1)
+  D2 = fill(zero(u), 1, 2)
+  R = fill(zero(t), 1, 1)
+  U = fill(zero(t), 1, 1)
 
   U!(1,U)
 
@@ -201,8 +201,8 @@ function alg_cache(alg::QNDF1,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
 
   D = Array{typeof(u)}(undef, 1, 1)
   D2 = Array{typeof(u)}(undef, 1, 2)
-  R = fill(zero(typeof(t)), 1, 1)
-  U = fill(zero(typeof(t)), 1, 1)
+  R = fill(zero(t), 1, 1)
+  U = fill(zero(t), 1, 1)
 
   D[1] = similar(u)
   D2[1] = similar(u); D2[2] = similar(u)
@@ -268,10 +268,10 @@ function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   dtₙ₋₁ = zero(t)
   dtₙ₋₂ = zero(t)
 
-  D = fill(zero(typeof(u)), 1, 2)
-  D2 = fill(zero(typeof(u)), 1, 3)
-  R = fill(zero(typeof(t)), 2, 2)
-  U = fill(zero(typeof(t)), 2, 2)
+  D = fill(zero(u), 1, 2)
+  D2 = fill(zero(u), 1, 3)
+  R = fill(zero(t), 2, 2)
+  U = fill(zero(t), 2, 2)
 
   U!(2,U)
 
@@ -284,8 +284,8 @@ function alg_cache(alg::QNDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
 
   D = Array{typeof(u)}(undef, 1, 2)
   D2 = Array{typeof(u)}(undef, 1, 3)
-  R = fill(zero(typeof(t)), 2, 2)
-  U = fill(zero(typeof(t)), 2, 2)
+  R = fill(zero(t), 2, 2)
+  U = fill(zero(t), 2, 2)
 
   D[1] = similar(u); D[2] = similar(u)
   D2[1] = similar(u);  D2[2] = similar(u); D2[3] = similar(u)
@@ -351,15 +351,15 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   γ, c = one(inv(alg.kappa)), 1
   @oopnlsolve
 
-  udiff = fill(zero(typeof(u)), 1, 6)
-  dts = fill(zero(typeof(dt)), 1, 6)
+  udiff = fill(zero(u), 1, 6)
+  dts = fill(zero(dt), 1, 6)
   h = zero(dt)
   tmp = zero(u)
 
-  D = fill(zero(typeof(u)), 1, 5)
-  D2 = fill(zero(typeof(u)), 6, 6)
-  R = fill(zero(typeof(t)), 5, 5)
-  U = fill(zero(typeof(t)), 5, 5)
+  D = fill(zero(u), 1, 5)
+  D2 = fill(zero(u), 6, 6)
+  R = fill(zero(t), 5, 5)
+  U = fill(zero(t), 5, 5)
 
   max_order = 5
 
@@ -371,13 +371,13 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   @iipnlsolve
 
   udiff = Array{typeof(u)}(undef, 1, 6)
-  dts = fill(zero(typeof(dt)), 1, 6)
+  dts = fill(zero(dt), 1, 6)
   h = zero(dt)
 
   D = Array{typeof(u)}(undef, 1, 5)
   D2 = Array{typeof(u)}(undef, 6, 6)
-  R = fill(zero(typeof(t)), 5, 5)
-  U = fill(zero(typeof(t)), 5, 5)
+  R = fill(zero(t), 5, 5)
+  U = fill(zero(t), 5, 5)
 
   for i = 1:5
     D[i] = zero(u)

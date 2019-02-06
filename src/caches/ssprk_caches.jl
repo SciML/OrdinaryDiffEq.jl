@@ -550,8 +550,8 @@ end
 
 function alg_cache(alg::SSPRKMSVS32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   fsalfirst = zero(rate_prototype)
-  dts = fill(zero(typeof(dt)),3)
-  dtf = fill(zero(typeof(dt)),2)
+  dts = fill(zero(dt),3)
+  dtf = fill(zero(dt),2)
   μ = zero(dt)
   u_2 = similar(u)
   u_1 = similar(u)
@@ -561,8 +561,8 @@ function alg_cache(alg::SSPRKMSVS32,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
 end
 
 function alg_cache(alg::SSPRKMSVS32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  dts = fill(zero(typeof(dt)),3)
-  dtf = fill(zero(typeof(dt)),2)
+  dts = fill(zero(dt),3)
+  dtf = fill(zero(dt),2)
   μ = zero(dt)
   u_2 = u
   u_1 = u

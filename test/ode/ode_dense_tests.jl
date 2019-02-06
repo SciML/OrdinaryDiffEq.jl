@@ -10,7 +10,7 @@ print_results(x) = if PRINT_TESTS; @printf("%s \n", x) end
 
 # points and storage arrays used in the interpolation tests
 const interpolation_points = 0:1//2^(4):1
-const interpolation_results_1d = fill(zero(typeof(prob_ode_linear.u0)), length(interpolation_points))
+const interpolation_results_1d = fill(zero(prob_ode_linear.u0), length(interpolation_points))
 const interpolation_results_2d = Vector{typeof(prob_ode_2Dlinear.u0)}(undef, length(interpolation_points))
 for idx in eachindex(interpolation_results_2d)
   interpolation_results_2d[idx] = zero(prob_ode_2Dlinear.u0)
