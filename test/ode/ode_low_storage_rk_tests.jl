@@ -28,7 +28,7 @@ test_problems_nonlinear = [prob_ode_nonlinear, prob_ode_nonlinear_inplace]
 
 
 alg = CarpenterKennedy2N54()
-dts = 1 .//2 .^(7:-1:3)
+dts = 1 .// 2 .^(7:-1:3)
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
@@ -44,7 +44,7 @@ end
 
 
 alg = ParsaniKetchesonDeconinck3S184()
-dts = 1 .//2 .^(6:-1:2)
+dts = 1 .// 2 .^(6:-1:2)
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
@@ -53,7 +53,24 @@ for prob in test_problems_linear
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
-dts = 1 .//2 .^(7:-1:2)
+dts = 1 .// 2 .^(7:-1:2)
+for prob in test_problems_nonlinear
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+
+
+alg = ParsaniKetchesonDeconinck3S205()
+dts = 1 ./ 1.95 .^(5:-1:1)
+for prob in test_problems_only_time
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+dts = 1 ./ 2 .^(5:-1:2)
+for prob in test_problems_linear
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
 for prob in test_problems_nonlinear
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol

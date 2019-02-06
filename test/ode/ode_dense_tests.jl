@@ -184,6 +184,9 @@ regression_test(CarpenterKennedy2N54(), 3.0e-5, 5.0e-5)
 # ParsaniKetchesonDeconinck3S184
 regression_test(ParsaniKetchesonDeconinck3S184(), 1.5e-5, 3.0e-5)
 
+# ParsaniKetchesonDeconinck3S205
+regression_test(ParsaniKetchesonDeconinck3S205(), 1.5e-5, 3.0e-5)
+
 println("RKs")
 
 # RK4

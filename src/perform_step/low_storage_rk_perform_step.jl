@@ -65,8 +65,8 @@ end
 
 
 
-const LowStorageRK3SCache = Union{ParsaniKetchesonDeconinck3S184Cache}
-const LowStorageRK3SConstantCache = Union{ParsaniKetchesonDeconinck3S184ConstantCache}
+const LowStorageRK3SCache = Union{ParsaniKetchesonDeconinck3S184Cache, ParsaniKetchesonDeconinck3S205Cache}
+const LowStorageRK3SConstantCache = Union{ParsaniKetchesonDeconinck3S184ConstantCache, ParsaniKetchesonDeconinck3S205ConstantCache}
 
 
 function initialize!(integrator,cache::LowStorageRK3SConstantCache)
