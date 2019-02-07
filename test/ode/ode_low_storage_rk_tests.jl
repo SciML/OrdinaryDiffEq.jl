@@ -127,6 +127,24 @@ integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, sa
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
 
 
+alg = DGLDDRK84_F()
+dts = 1 ./ 2 .^(8:-1:4)
+for prob in test_problems_only_time
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+for prob in test_problems_linear
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+for prob in test_problems_nonlinear
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
+
+
 alg = NDBLSRK124()
 dts = 1 ./ 2 .^(7:-1:3)
 for prob in test_problems_only_time

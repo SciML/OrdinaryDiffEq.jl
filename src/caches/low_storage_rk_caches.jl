@@ -236,6 +236,55 @@ function alg_cache(alg::DGLDDRK84_C,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
 end
 
 
+function DGLDDRK84_FConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+  A2  = convert(T, -0.5534431294501569)
+  A3  = convert(T, 0.01065987570203490)
+  A4  = convert(T, -0.5515812888932000)
+  A5  = convert(T, -1.885790377558741)
+  A6  = convert(T, -5.701295742793264)
+  A7  = convert(T, 2.113903965664793)
+  A8  = convert(T, -0.5339578826675280)
+  A2end = SVector(A2, A3, A4, A5, A6, A7, A8)
+
+  B1  = convert(T, 0.08037936882736950)
+  B2  = convert(T, 0.5388497458569843)
+  B3  = convert(T, 0.01974974409031960)
+  B4  = convert(T, 0.09911841297339970)
+  B5  = convert(T, 0.7466920411064123)
+  B6  = convert(T, 1.679584245618894)
+  B7  = convert(T, 0.2433728067008188)
+  B8  = convert(T, 0.1422730459001373)
+  B2end = SVector(B2, B3, B4, B5, B6, B7, B8)
+
+  c2  = convert(T2, 0.08037936882736950)
+  c3  = convert(T2, 0.3210064250338430)
+  c4  = convert(T2, 0.3408501826604660)
+  c5  = convert(T2, 0.3850364824285470)
+  c6  = convert(T2, 0.5040052477534100)
+  c7  = convert(T2, 0.6578977561168540)
+  c8  = convert(T2, 0.9484087623348481)
+  c2end = SVector(c2, c3, c4, c5, c6, c7, c8)
+
+  LowStorageRK2NConstantCache{7,T,T2}(A2end, B1, B2end, c2end)
+end
+
+function alg_cache(alg::DGLDDRK84_F,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)
+  k = zero(rate_prototype)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
+  tab = DGLDDRK84_FConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  LowStorageRK2NCache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+function alg_cache(alg::DGLDDRK84_F,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  DGLDDRK84_FConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+end
+
+
 function NDBLSRK124ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
   A2  = convert(T, -0.0923311242368072)
   A3  = convert(T, -0.9441056581158819)
