@@ -29,6 +29,10 @@ test_problems_nonlinear = [prob_ode_nonlinear, prob_ode_nonlinear_inplace]
 # Test the memory usage, cf. #640
 # Note: Basically, the size of the integrator should be the size of the cache
 # plus the size of the initial condition, stored is integ.sol.prob.u0.
+# Note: The memory requirements of the 2N methods can be reduced if an assignment
+# of the form `tmp = A2end[i]*tmp + dt*f(u, p, t+c2end[i]*dt)` can be carried out
+# without saving `f(u, p, t+c2end[i]*dt)` as `k`.
+# Note: Additional memory can be saved for some schemes if `uprev` can be aliased with `u`.
 u0_large = rand(10^6)
 prob_ode_large = ODEProblem((du,u,p,t)-> du .= u, u0_large, (0.0,1.0))
 
