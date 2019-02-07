@@ -10,7 +10,7 @@ print_results(x) = if PRINT_TESTS; @printf("%s \n", x) end
 
 # points and storage arrays used in the interpolation tests
 const interpolation_points = 0:1//2^(4):1
-const interpolation_results_1d = fill(zero(typeof(prob_ode_linear.u0)), length(interpolation_points))
+const interpolation_results_1d = fill(zero(prob_ode_linear.u0), length(interpolation_points))
 const interpolation_results_2d = Vector{typeof(prob_ode_2Dlinear.u0)}(undef, length(interpolation_points))
 for idx in eachindex(interpolation_results_2d)
   interpolation_results_2d[idx] = zero(prob_ode_2Dlinear.u0)
@@ -178,8 +178,38 @@ regression_test(SSPRK104(), 1.5e-5, 3e-5)
 
 println("Low Storage RKs")
 
+# ORK256
+regression_test(ORK256(), 3.0e-5, 5.0e-5)
+
 # CarpenterKennedy2N54
 regression_test(CarpenterKennedy2N54(), 3.0e-5, 5.0e-5)
+
+# LDDRK64
+regression_test(LDDRK64(), 3.0e-5, 3.0e-5)
+
+# DGLDDRK73_C
+regression_test(DGLDDRK73_C(), 3.0e-4, 3.0e-4)
+
+# DGLDDRK84_C
+regression_test(DGLDDRK84_C(), 3.0e-5, 5.0e-5)
+
+# DGLDDRK84_F
+regression_test(DGLDDRK84_F(), 3.0e-5, 5.0e-5)
+
+# NDBLSRK124
+regression_test(NDBLSRK124(), 3.0e-5, 3.0e-5)
+
+# NDBLSRK134
+regression_test(NDBLSRK134(), 3.0e-5, 3.0e-5)
+
+# NDBLSRK144
+regression_test(NDBLSRK144(), 3.0e-5, 3.0e-5)
+
+# CFRLDDRK64
+regression_test(CFRLDDRK64(), 3.0e-5, 3.0e-5)
+
+# TSLDDRK74
+regression_test(TSLDDRK74(), 3.0e-5, 3.0e-5)
 
 # ParsaniKetchesonDeconinck3S94
 regression_test(ParsaniKetchesonDeconinck3S94(), 1.5e-5, 3.0e-5)

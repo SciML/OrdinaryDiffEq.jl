@@ -12,6 +12,7 @@ env:
   - GROUP=Regression
   - GROUP=AlgConvergence_I
   - GROUP=AlgConvergence_II
+  - GROUP=AlgConvergence_III
 matrix:
   allow_failures:
     - julia: nightly

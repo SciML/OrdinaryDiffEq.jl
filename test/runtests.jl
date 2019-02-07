@@ -59,7 +59,9 @@ if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_I" )
   # ~ 50 s
   @time @safetestset "Nordsieck Tests" begin include("ode/nordsieck_tests.jl") end
   @time @safetestset "Linear Methods Tests" begin include("linear_method_tests.jl") end
-  # ~ 170 s
+end
+
+if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_II" )
   @time @safetestset "SSPRK Tests" begin include("ode/ode_ssprk_tests.jl") end
   @time @safetestset "Low Storage RK Tests" begin include("ode/ode_low_storage_rk_tests.jl") end
   # ~ 25 s
@@ -67,7 +69,7 @@ if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_I" )
   @time @safetestset "Runge-Kutta-Chebyshev Tests" begin include("ode/rkc_tests.jl") end
 end
 
-if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_II" )
+if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_III" )
   # ~ 110 s
   @time @safetestset "Split Methods Tests" begin include("split_methods_tests.jl") end
   # ~ 550 s

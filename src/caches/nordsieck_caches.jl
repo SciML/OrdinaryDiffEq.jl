@@ -24,7 +24,7 @@ function alg_cache(alg::AN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   Δ = u
   l = fill(zero(tTypeNoUnits),N+1); m = zero(l)
   c_LTE = c_conv = zero(tTypeNoUnits)
-  dts = fill(zero(typeof(dt)), 6)
+  dts = fill(zero(dt), 6)
   tsit5tab = Tsit5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   AN5ConstantCache(z,l,m,c_LTE,c_conv,dts,Δ,tsit5tab,1)
 end
@@ -71,7 +71,7 @@ function alg_cache(alg::AN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   Δ = similar(atmp)
   l = fill(zero(tTypeNoUnits),N+1); m = zero(l)
   c_LTE = c_conv = zero(tTypeNoUnits)
-  dts = fill(zero(typeof(dt)), 6)
+  dts = fill(zero(dt), 6)
   fsalfirst = zero(rate_prototype)
   z = [zero(rate_prototype) for i in 1:N+1]
   for i in 1:N+1
@@ -128,7 +128,7 @@ function alg_cache(alg::JVODE,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   Δ = u
   l = fill(zero(tTypeNoUnits), N+1); m = zero(l)
   c_LTE₊₁ = c_LTE = c_LTE₋₁ = c_conv = c_𝒟 = prev_𝒟 = zero(tTypeNoUnits)
-  dts = fill(zero(typeof(dt)),N+1)
+  dts = fill(zero(dt),N+1)
   tsit5tab = Tsit5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   η = zero(dt/dt)
   JVODEConstantCache(z,l,m,
@@ -198,7 +198,7 @@ function alg_cache(alg::JVODE,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   Δ = similar(u,uEltypeNoUnits)
   l = fill(zero(tTypeNoUnits), N+1); m = zero(l)
   c_LTE₊₁ = c_LTE = c_LTE₋₁ = c_conv = c_𝒟 = prev_𝒟 = zero(tTypeNoUnits)
-  dts = fill(zero(typeof(dt)),N+1)
+  dts = fill(zero(dt),N+1)
   η = zero(dt/dt)
   #################################################
   # Nordsieck Vector

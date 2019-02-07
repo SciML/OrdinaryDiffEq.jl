@@ -60,7 +60,7 @@ function alg_cache(alg::GenericTrapezoid,u,rate_prototype,uEltypeNoUnits,uBottom
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
   rhs = ImplicitRHS(f,tmp,t,t,t,dual_cache,p)
   nl_rhs = alg.nlsolve(Val{:init},rhs,u)
-  uprev3 = similar(u)
+  uprev3 = zero(u)
   tprev2 = t
   GenericTrapezoidCache{typeof(u),typeof(dual_cache),typeof(atmp),typeof(k),
                         typeof(rhs),typeof(nl_rhs),typeof(t)}(

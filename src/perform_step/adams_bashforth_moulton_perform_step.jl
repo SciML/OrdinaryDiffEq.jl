@@ -1504,7 +1504,7 @@ end
 
 function perform_step!(integrator, cache::CNAB2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p,alg = integrator
-  @unpack uf,dz,z,k,k1,k2,du₁,b,J,W,jac_config,tmp,atmp,nlsolve = cache
+  @unpack uf,dz,z,k,k1,k2,du₁,b,J,W,jac_config,tmp,nlsolve = cache
   nlsolve!, nlcache = nlsolve, nlsolve.cache
   cnt = integrator.iter
   f1 = integrator.f.f1
@@ -1605,7 +1605,7 @@ end
 
 function perform_step!(integrator, cache::CNLF2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p,alg = integrator
-  @unpack uprev2,uf,dz,z,k,k2,du₁,b,J,W,jac_config,tmp,atmp,nlsolve = cache
+  @unpack uprev2,uf,dz,z,k,k2,du₁,b,J,W,jac_config,tmp,nlsolve = cache
   nlsolve!, nlcache = nlsolve, nlsolve.cache
   cnt = integrator.iter
   f1 = integrator.f.f1
