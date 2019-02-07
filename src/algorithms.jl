@@ -46,7 +46,6 @@ Anas5(; w=1) = Anas5(w)
 struct OwrenZen3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct OwrenZen4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct OwrenZen5 <: OrdinaryDiffEqAdaptiveAlgorithm end
-struct LDDRK64 <: OrdinaryDiffEqAlgorithm end
 struct CFRLDDRK64 <: OrdinaryDiffEqAlgorithm end
 struct TSLDDRK74 <: OrdinaryDiffEqAlgorithm end
 struct NDBLSRK124 <: OrdinaryDiffEqAlgorithm end
@@ -54,12 +53,15 @@ struct NDBLSRK134 <: OrdinaryDiffEqAlgorithm end
 struct NDBLSRK144 <: OrdinaryDiffEqAlgorithm end
 struct DGLDDRK73_C <: OrdinaryDiffEqAlgorithm end
 struct DGLDDRK84_C <: OrdinaryDiffEqAlgorithm end
+
+struct ORK256 <: OrdinaryDiffEqAlgorithm end
 struct CarpenterKennedy2N54 <: OrdinaryDiffEqAlgorithm end
+struct LDDRK64 <: OrdinaryDiffEqAlgorithm end
 struct ParsaniKetchesonDeconinck3S94 <: OrdinaryDiffEqAlgorithm end
 struct ParsaniKetchesonDeconinck3S184 <: OrdinaryDiffEqAlgorithm end
 struct ParsaniKetchesonDeconinck3S105 <: OrdinaryDiffEqAlgorithm end
 struct ParsaniKetchesonDeconinck3S205 <: OrdinaryDiffEqAlgorithm end
-struct ORK256 <: OrdinaryDiffEqAlgorithm end
+
 struct SSPRK22{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter
   step_limiter!::StepLimiter

@@ -153,20 +153,22 @@ module OrdinaryDiffEq
 
   #Callback Necessary
   export ode_addsteps!, addsteps!, ode_interpolant,
-        terminate!, savevalues!, copyat_or_push!, isfsal
+         terminate!, savevalues!, copyat_or_push!, isfsal
 
   export constructDormandPrince
 
   # Reexport the Alg Types
 
-  export FunctionMap, Euler, Heun, Ralston, Midpoint, SSPRK22,
-         SSPRK33, SSPRK53, SSPRK53_2N1,SSPRK53_2N2, SSPRK63, SSPRK73, SSPRK83, SSPRK432, SSPRKMSVS32, SSPRKMSVS43,SSPRK932,
-         SSPRK54, SSPRK104, RK4, ExplicitRK, OwrenZen3, OwrenZen4, OwrenZen5,
+  export FunctionMap, Euler, Heun, Ralston, Midpoint, RK4, ExplicitRK, OwrenZen3, OwrenZen4, OwrenZen5,
          LDDRK64, CFRLDDRK64, TSLDDRK74, NDBLSRK124, NDBLSRK134, NDBLSRK144, DGLDDRK73_C, DGLDDRK84_C, BS3, BS5,
-         CarpenterKennedy2N54,
-         ParsaniKetchesonDeconinck3S94, ParsaniKetchesonDeconinck3S184, ParsaniKetchesonDeconinck3S105, ParsaniKetchesonDeconinck3S205,
          ORK256, RK46NL, DP5, DP5Threaded, Tsit5, DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8,
-         Vern9,Feagin10, Feagin12, Feagin14, CompositeAlgorithm, Anas5
+         Vern9, Feagin10, Feagin12, Feagin14, CompositeAlgorithm, Anas5
+
+  export SSPRK22, SSPRK33, SSPRK53, SSPRK53_2N1, SSPRK53_2N2, SSPRK63, SSPRK73, SSPRK83, SSPRK432,
+         SSPRKMSVS32, SSPRKMSVS43, SSPRK932, SSPRK54, SSPRK104
+
+  export CarpenterKennedy2N54,
+         ParsaniKetchesonDeconinck3S94, ParsaniKetchesonDeconinck3S184, ParsaniKetchesonDeconinck3S105, ParsaniKetchesonDeconinck3S205
 
   export RadauIIA5
 

@@ -19,6 +19,7 @@ end
 
 alg_cache(alg::SSPRK22,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = SSPRK22ConstantCache()
 
+
 @cache struct SSPRK33Cache{uType,rateType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
@@ -39,6 +40,7 @@ function alg_cache(alg::SSPRK33,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
 end
 
 alg_cache(alg::SSPRK33,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = SSPRK33ConstantCache()
+
 
 @cache struct SSPRK53Cache{uType,rateType,StageLimiter,StepLimiter,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -101,65 +103,6 @@ function alg_cache(alg::SSPRK53,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   SSPRK53ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
-@cache struct LDDRK64Cache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
-  u::uType
-  uprev::uType
-  k::rateType
-  tmp::uType
-  fsalfirst::rateType
-  tab::TabType
-end
-
-struct LDDRK64ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
-  α2::T
-  α3::T
-  α4::T
-  α5::T
-  α6::T
-  β1::T
-  β2::T
-  β3::T
-  β4::T
-  β5::T
-  β6::T
-  c2::T2
-  c3::T2
-  c4::T2
-  c5::T2
-  c6::T2
-
-  function LDDRK64ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
-    α2 = T(-0.4919575)
-    α3 = T(-0.8946264)
-    α4 = T(-1.5526678)
-    α5 = T(-3.4077973)
-    α6 = T(-1.0742640)
-    β1 = T(0.1453095)
-    β2 = T(0.4653797)
-    β3 = T(0.4675397)
-    β4 = T(0.7795279)
-    β5 = T(0.3574327)
-    β6 = T(0.15)
-    c2 = T2(0.1453095)
-    c3 = T2(0.3817422)
-    c4 = T2(0.6367813)
-    c5 = T2(0.7560744)
-    c6 = T2(0.9271047)
-    new{T,T2}(α2, α3, α4, α5, α6, β1, β2, β3, β4, β5, β6, c2, c3, c4, c5, c6)
-  end
-end
-
-function alg_cache(alg::LDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tmp = similar(u)
-  k = zero(rate_prototype)
-  fsalfirst = zero(rate_prototype)
-  tab = LDDRK64ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
-  LDDRK64Cache(u,uprev,k,tmp,fsalfirst,tab)
-end
-
-function alg_cache(alg::LDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  LDDRK64ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
-end
 
 @cache struct SSPRK53_2N1Cache{uType,rateType,StageLimiter,StepLimiter,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -173,7 +116,6 @@ end
 end
 
 struct SSPRK53_2N1ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
-
   α40::T
   α43::T
   β10::T
@@ -187,8 +129,6 @@ struct SSPRK53_2N1ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   c4::T2
 
   function SSPRK53_2N1ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
-
-
     α40 = T(0.571403511494104)
     α43 = T(0.428596488505896)
     β10 = T(0.443568244942995)
@@ -230,7 +170,6 @@ end
 end
 
 struct SSPRK53_2N2ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
-
   α30::T
   α32::T
   α50::T
@@ -246,7 +185,6 @@ struct SSPRK53_2N2ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   c4::T2
 
   function SSPRK53_2N2ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
-
     α30 = T(0.682342861037239)
     α32 = T(0.317657138962761)
     α50 = T(0.045230974482400)
@@ -276,6 +214,7 @@ end
 function alg_cache(alg::SSPRK53_2N2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   SSPRK53_2N2ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
+
 
 @cache struct SSPRK63Cache{uType,rateType,StageLimiter,StepLimiter,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -341,6 +280,7 @@ end
 function alg_cache(alg::SSPRK63,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   SSPRK63ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
+
 
 @cache struct SSPRK73Cache{uType,rateType,StageLimiter,StepLimiter,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -414,6 +354,7 @@ end
 function alg_cache(alg::SSPRK73,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   SSPRK73ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
+
 
 @cache struct SSPRK83Cache{uType,rateType,StageLimiter,StepLimiter,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -496,6 +437,7 @@ function alg_cache(alg::SSPRK83,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   SSPRK83ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
+
 @cache struct SSPRK432Cache{uType,rateType,uNoUnitsType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
@@ -520,6 +462,7 @@ function alg_cache(alg::SSPRK432,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
 end
 
 alg_cache(alg::SSPRK432,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = SSPRK432ConstantCache()
+
 
 @cache mutable struct SSPRKMSVS32Cache{uType,rateType,dtArrayType,dtType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -568,6 +511,7 @@ function alg_cache(alg::SSPRKMSVS32,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   u_1 = u
   SSPRKMSVS32ConstantCache(u_2,u_1,dts,dtf,μ,0.5,1)
 end
+
 
 @cache mutable struct SSPRKMSVS43Cache{uType,rateType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -619,6 +563,7 @@ function alg_cache(alg::SSPRKMSVS43,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   SSPRKMSVS43ConstantCache(u_3,u_2,u_1,k1,k2,k3,1)
 end
 
+
 @cache struct SSPRK932Cache{uType,rateType,uNoUnitsType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
@@ -643,6 +588,7 @@ function alg_cache(alg::SSPRK932,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
 end
 
 alg_cache(alg::SSPRK932,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = SSPRK932ConstantCache()
+
 
 @cache struct SSPRK54Cache{uType,rateType,StageLimiter,StepLimiter,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -719,6 +665,7 @@ function alg_cache(alg::SSPRK54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   SSPRK54ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
+
 @cache struct SSPRK104Cache{uType,rateType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
@@ -741,57 +688,3 @@ function alg_cache(alg::SSPRK104,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
 end
 
 alg_cache(alg::SSPRK104,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = SSPRK104ConstantCache()
-
-@cache struct ORK256Cache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
-  u::uType
-  uprev::uType
-  k::rateType
-  tmp::uType
-  fsalfirst::rateType
-  tab::TabType
-end
-
-struct ORK256ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
-  α2::T
-  α3::T
-  α4::T
-  α5::T
-  β1::T
-  β2::T
-  β3::T
-  β4::T
-  β5::T
-  c2::T2
-  c3::T2
-  c4::T2
-  c5::T2
-
-  function ORK256ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
-    α2 = T(-1.0)
-    α3 = T(-1.55798)
-    α4 = T(-1.0)
-    α5 = T(-0.45031)
-    β1 = T(0.2)
-    β2 = T(0.83204)
-    β3 = T(0.6)
-    β4 = T(0.35394)
-    β5 = T(0.2)
-    c2 = T2(0.2)
-    c3 = T2(0.2)
-    c4 = T2(0.8)
-    c5 = T2(0.8)
-    new{T,T2}(α2, α3, α4, α5, β1, β2, β3, β4, β5, c2, c3, c4, c5)
-  end
-end
-
-function alg_cache(alg::ORK256,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tmp = similar(u)
-  k = zero(rate_prototype)
-  fsalfirst = zero(rate_prototype)
-  tab = ORK256ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
-  ORK256Cache(u,uprev,k,tmp,fsalfirst,tab)
-end
-
-function alg_cache(alg::ORK256,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  ORK256ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
-end

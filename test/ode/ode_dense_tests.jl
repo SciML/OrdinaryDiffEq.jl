@@ -178,8 +178,14 @@ regression_test(SSPRK104(), 1.5e-5, 3e-5)
 
 println("Low Storage RKs")
 
+# ORK256
+regression_test(ORK256(), 3.0e-5, 5.0e-5)
+
 # CarpenterKennedy2N54
 regression_test(CarpenterKennedy2N54(), 3.0e-5, 5.0e-5)
+
+# LDDRK64
+regression_test(LDDRK64(), 3.0e-5, 3.0e-5)
 
 # ParsaniKetchesonDeconinck3S94
 regression_test(ParsaniKetchesonDeconinck3S94(), 1.5e-5, 3.0e-5)

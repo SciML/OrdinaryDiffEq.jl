@@ -17,6 +17,42 @@ struct LowStorageRK2NConstantCache{N,T,T2} <: OrdinaryDiffEqConstantCache
 end
 
 
+function ORK256ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+  A2 = T(-1.0)
+  A3 = T(-1.55798)
+  A4 = T(-1.0)
+  A5 = T(-0.45031)
+  A2end = SVector{4,T}(A2, A3, A4, A5)
+
+  B1 = T(0.2)
+  B2 = T(0.83204)
+  B3 = T(0.6)
+  B4 = T(0.35394)
+  B5 = T(0.2)
+  B2end = SVector{4,T}(B2, B3, B4, B5)
+
+  c2 = T2(0.2)
+  c3 = T2(0.2)
+  c4 = T2(0.8)
+  c5 = T2(0.8)
+  c2end = SVector{4,T2}(c2, c3, c4, c5)
+
+  LowStorageRK2NConstantCache{4,T,T2}(A2end, B1, B2end, c2end)
+end
+
+function alg_cache(alg::ORK256,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  tab = ORK256ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  LowStorageRK2NCache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+function alg_cache(alg::ORK256,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  ORK256ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+end
+
+
 function CarpenterKennedy2N54ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
   A2 = convert(T, -567301805773//1357537059087)
   A3 = convert(T, -2404267990393//2016746695238)
@@ -50,6 +86,46 @@ end
 
 function alg_cache(alg::CarpenterKennedy2N54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   CarpenterKennedy2N54ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+end
+
+
+function LDDRK64ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+  #TODO: Solve the order conditions with more accuracy
+  A2 = T(-0.4919575)
+  A3 = T(-0.8946264)
+  A4 = T(-1.5526678)
+  A5 = T(-3.4077973)
+  A6 = T(-1.0742640)
+  A2end = SVector{5,T}(A2, A3, A4, A5, A6)
+
+  B1 = T(0.1453095)
+  B2 = T(0.4653797)
+  B3 = T(0.4675397)
+  B4 = T(0.7795279)
+  B5 = T(0.3574327)
+  B6 = T(0.15)
+  B2end = SVector{5,T}(B2, B3, B4, B5, B6)
+
+  c2 = T2(0.1453095)
+  c3 = T2(0.3817422)
+  c4 = T2(0.6367813)
+  c5 = T2(0.7560744)
+  c6 = T2(0.9271047)
+  c2end = SVector{5,T2}(c2, c3, c4, c5, c6)
+
+  LowStorageRK2NConstantCache{5,T,T2}(A2end, B1, B2end, c2end)
+end
+
+function alg_cache(alg::LDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  tab = LDDRK64ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  LowStorageRK2NCache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+function alg_cache(alg::LDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  LDDRK64ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
 

@@ -165,11 +165,15 @@ alg_order(alg::ERKN5) = 5
 alg_order(alg::Midpoint) = 2
 alg_order(alg::GenericIIF1) = 1
 alg_order(alg::GenericIIF2) = 2
+
+alg_order(alg::ORK256) = 2
 alg_order(alg::CarpenterKennedy2N54) = 4
+alg_order(alg::LDDRK64) = 4
 alg_order(alg::ParsaniKetchesonDeconinck3S94) = 4
 alg_order(alg::ParsaniKetchesonDeconinck3S184) = 4
 alg_order(alg::ParsaniKetchesonDeconinck3S105) = 5
 alg_order(alg::ParsaniKetchesonDeconinck3S205) = 5
+
 alg_order(alg::SSPRK22) = 2
 alg_order(alg::SSPRKMSVS32) = 2
 alg_order(alg::SSPRK33) = 3
@@ -184,16 +188,15 @@ alg_order(alg::SSPRKMSVS43) = 3
 alg_order(alg::SSPRK932) = 3
 alg_order(alg::SSPRK54) = 4
 alg_order(alg::SSPRK104) = 4
+
 alg_order(alg::RK4) = 4
 alg_order(alg::ExplicitRK) = alg.tableau.order
-alg_order(alg::ORK256) = 2
 
 alg_order(alg::BS3) = 3
 alg_order(alg::BS5) = 5
 alg_order(alg::OwrenZen3) = 3
 alg_order(alg::OwrenZen4) = 4
 alg_order(alg::OwrenZen5) = 5
-alg_order(alg::LDDRK64) = 4
 alg_order(alg::CFRLDDRK64) = 4
 alg_order(alg::TSLDDRK74) = 4
 alg_order(alg::NDBLSRK124) = 4
