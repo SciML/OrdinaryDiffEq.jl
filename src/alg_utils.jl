@@ -168,7 +168,7 @@ alg_order(alg::GenericIIF2) = 2
 
 alg_order(alg::ORK256) = 2
 alg_order(alg::CarpenterKennedy2N54) = 4
-alg_order(alg::LDDRK64) = 4
+alg_order(alg::HSLDDRK64) = 4
 alg_order(alg::DGLDDRK73_C) = 3
 alg_order(alg::DGLDDRK84_C) = 4
 alg_order(alg::NDBLSRK124) = 4
