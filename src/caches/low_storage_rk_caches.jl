@@ -43,7 +43,11 @@ end
 function alg_cache(alg::ORK256,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
   k = zero(rate_prototype)
-  fsalfirst = zero(rate_prototype)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
   tab = ORK256ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   LowStorageRK2NCache(u,uprev,k,tmp,fsalfirst,tab)
 end
@@ -79,7 +83,11 @@ end
 function alg_cache(alg::CarpenterKennedy2N54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
   k = zero(rate_prototype)
-  fsalfirst = zero(rate_prototype)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
   tab = CarpenterKennedy2N54ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   LowStorageRK2NCache(u,uprev,k,tmp,fsalfirst,tab)
 end
@@ -119,7 +127,11 @@ end
 function alg_cache(alg::LDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
   k = zero(rate_prototype)
-  fsalfirst = zero(rate_prototype)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
   tab = LDDRK64ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   LowStorageRK2NCache(u,uprev,k,tmp,fsalfirst,tab)
 end
@@ -161,7 +173,11 @@ end
 function alg_cache(alg::DGLDDRK73_C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
   k = zero(rate_prototype)
-  fsalfirst = zero(rate_prototype)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
   tab = DGLDDRK73_CConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   LowStorageRK2NCache(u,uprev,k,tmp,fsalfirst,tab)
 end
@@ -206,7 +222,11 @@ end
 function alg_cache(alg::DGLDDRK84_C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
   k = zero(rate_prototype)
-  fsalfirst = zero(rate_prototype)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
   tab = DGLDDRK84_CConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   LowStorageRK2NCache(u,uprev,k,tmp,fsalfirst,tab)
 end
@@ -263,7 +283,11 @@ end
 function alg_cache(alg::NDBLSRK124,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
   k = zero(rate_prototype)
-  fsalfirst = zero(rate_prototype)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
   tab = NDBLSRK124ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   LowStorageRK2NCache(u,uprev,k,tmp,fsalfirst,tab)
 end
@@ -323,7 +347,11 @@ end
 function alg_cache(alg::NDBLSRK134,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
   k = zero(rate_prototype)
-  fsalfirst = zero(rate_prototype)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
   tab = NDBLSRK134ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   LowStorageRK2NCache(u,uprev,k,tmp,fsalfirst,tab)
 end
@@ -386,7 +414,11 @@ end
 function alg_cache(alg::NDBLSRK144,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
   k = zero(rate_prototype)
-  fsalfirst = zero(rate_prototype)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
   tab = NDBLSRK144ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   LowStorageRK2NCache(u,uprev,k,tmp,fsalfirst,tab)
 end
@@ -445,7 +477,11 @@ end
 function alg_cache(alg::CFRLDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
   k = zero(rate_prototype)
-  fsalfirst = zero(rate_prototype)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
   tab = CFRLDDRK64ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   LowStorageRK2CCache(u,uprev,k,tmp,fsalfirst,tab)
 end
@@ -487,7 +523,11 @@ end
 function alg_cache(alg::TSLDDRK74,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
   k = zero(rate_prototype)
-  fsalfirst = zero(rate_prototype)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
   tab = TSLDDRK74ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   LowStorageRK2CCache(u,uprev,k,tmp,fsalfirst,tab)
 end
@@ -588,7 +628,11 @@ end
 function alg_cache(alg::ParsaniKetchesonDeconinck3S94,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
   k = zero(rate_prototype)
-  fsalfirst = zero(rate_prototype)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
   tab = ParsaniKetchesonDeconinck3S94ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   LowStorageRK3SCache(u,uprev,k,tmp,fsalfirst,tab)
 end
@@ -720,7 +764,11 @@ end
 function alg_cache(alg::ParsaniKetchesonDeconinck3S184,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
   k = zero(rate_prototype)
-  fsalfirst = zero(rate_prototype)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
   tab = ParsaniKetchesonDeconinck3S184ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   LowStorageRK3SCache(u,uprev,k,tmp,fsalfirst,tab)
 end
@@ -804,7 +852,11 @@ end
 function alg_cache(alg::ParsaniKetchesonDeconinck3S105,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
   k = zero(rate_prototype)
-  fsalfirst = zero(rate_prototype)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
   tab = ParsaniKetchesonDeconinck3S105ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   LowStorageRK3SCache(u,uprev,k,tmp,fsalfirst,tab)
 end
@@ -948,7 +1000,11 @@ end
 function alg_cache(alg::ParsaniKetchesonDeconinck3S205,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
   k = zero(rate_prototype)
-  fsalfirst = zero(rate_prototype)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
   tab = ParsaniKetchesonDeconinck3S205ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   LowStorageRK3SCache(u,uprev,k,tmp,fsalfirst,tab)
 end
