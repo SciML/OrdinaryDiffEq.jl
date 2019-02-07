@@ -193,6 +193,9 @@ regression_test(DGLDDRK73_C(), 3.0e-4, 3.0e-4)
 # DGLDDRK84_C
 regression_test(DGLDDRK84_C(), 3.0e-5, 5.0e-5)
 
+# DGLDDRK84_F
+regression_test(DGLDDRK84_F(), 3.0e-5, 5.0e-5)
+
 # NDBLSRK124
 regression_test(NDBLSRK124(), 3.0e-5, 3.0e-5)
 
