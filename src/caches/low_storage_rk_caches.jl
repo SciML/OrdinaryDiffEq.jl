@@ -129,6 +129,93 @@ function alg_cache(alg::LDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
 end
 
 
+function DGLDDRK73_CConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+  A2 = T(-0.8083163874983830)
+  A3 = T(-1.503407858773331)
+  A4 = T(-1.053064525050744)
+  A5 = T(-1.463149119280508)
+  A6 = T(-0.6592881281087830)
+  A7 = T(-1.667891931891068)
+  A2end = SVector(A2, A3, A4, A5, A6, A7)
+
+  B1 = T(0.01197052673097840)
+  B2 = T(0.8886897793820711)
+  B3 = T(0.4578382089261419)
+  B4 = T(0.5790045253338471)
+  B5 = T(0.3160214638138484)
+  B6 = T(0.2483525368264122)
+  B7 = T(0.06771230959408840)
+  B2end = SVector(B2, B3, B4, B5, B6, B7)
+
+  c2 = T2(0.01197052673097840)
+  c3 = T2(0.1823177940361990)
+  c4 = T2(0.5082168062551849)
+  c5 = T2(0.6532031220148590)
+  c6 = T2(0.8534401385678250)
+  c7 = T2(0.9980466084623790)
+  c2end = SVector(c2, c3, c4, c5, c6, c7)
+
+  LowStorageRK2NConstantCache{6,T,T2}(A2end, B1, B2end, c2end)
+end
+
+function alg_cache(alg::DGLDDRK73_C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  tab = DGLDDRK73_CConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  LowStorageRK2NCache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+function alg_cache(alg::DGLDDRK73_C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  DGLDDRK73_CConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+end
+
+
+function DGLDDRK84_CConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+  A2  = T(-0.7212962482279240)
+  A3  = T(-0.01077336571612980)
+  A4  = T(-0.5162584698930970)
+  A5  = T(-1.730100286632201)
+  A6  = T(-5.200129304403076)
+  A7  = T(0.7837058945416420)
+  A8  = T(-0.5445836094332190)
+  A2end = SVector(A2, A3, A4, A5, A6, A7, A8)
+
+  B1  = T(0.2165936736758085)
+  B2  = T(0.1773950826411583)
+  B3  = T(0.01802538611623290)
+  B4  = T(0.08473476372541490)
+  B5  = T(0.8129106974622483)
+  B6  = T(1.903416030422760)
+  B7  = T(0.1314841743399048)
+  B8  = T(0.2082583170674149)
+  B2end = SVector(B2, B3, B4, B5, B6, B7, B8)
+
+  c2  = T2(0.2165936736758085)
+  c3  = T2(0.2660343487538170)
+  c4  = T2(0.2840056122522720)
+  c5  = T2(0.3251266843788570)
+  c6  = T2(0.4555149599187530)
+  c7  = T2(0.7713219317101170)
+  c8  = T2(0.9199028964538660)
+  c2end = SVector(c2, c3, c4, c5, c6, c7, c8)
+
+  LowStorageRK2NConstantCache{7,T,T2}(A2end, B1, B2end, c2end)
+end
+
+function alg_cache(alg::DGLDDRK84_C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  tab = DGLDDRK84_CConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  LowStorageRK2NCache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+function alg_cache(alg::DGLDDRK84_C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  DGLDDRK84_CConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+end
+
+
 function NDBLSRK124ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
   A2  = T(-0.0923311242368072)
   A3  = T(-0.9441056581158819)

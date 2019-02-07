@@ -45,12 +45,12 @@ Anas5(; w=1) = Anas5(w)
 
 struct CFRLDDRK64 <: OrdinaryDiffEqAlgorithm end
 struct TSLDDRK74 <: OrdinaryDiffEqAlgorithm end
-struct DGLDDRK73_C <: OrdinaryDiffEqAlgorithm end
-struct DGLDDRK84_C <: OrdinaryDiffEqAlgorithm end
 
 struct ORK256 <: OrdinaryDiffEqAlgorithm end
 struct CarpenterKennedy2N54 <: OrdinaryDiffEqAlgorithm end
 struct LDDRK64 <: OrdinaryDiffEqAlgorithm end
+struct DGLDDRK73_C <: OrdinaryDiffEqAlgorithm end
+struct DGLDDRK84_C <: OrdinaryDiffEqAlgorithm end
 struct NDBLSRK124 <: OrdinaryDiffEqAlgorithm end
 struct NDBLSRK134 <: OrdinaryDiffEqAlgorithm end
 struct NDBLSRK144 <: OrdinaryDiffEqAlgorithm end
