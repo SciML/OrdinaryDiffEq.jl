@@ -187,12 +187,6 @@ regression_test(CarpenterKennedy2N54(), 3.0e-5, 5.0e-5)
 # LDDRK64
 regression_test(LDDRK64(), 3.0e-5, 3.0e-5)
 
-# CFRLDDRK64
-regression_test(CFRLDDRK64(), 3.0e-5, 3.0e-5)
-
-# TSLDDRK74
-regression_test(TSLDDRK74(), 3.0e-5, 3.0e-5)
-
 # DGLDDRK73_C
 regression_test(DGLDDRK73_C(), 3.0e-4, 3.0e-4)
 
@@ -207,6 +201,12 @@ regression_test(NDBLSRK134(), 3.0e-5, 3.0e-5)
 
 # NDBLSRK144
 regression_test(NDBLSRK144(), 3.0e-5, 3.0e-5)
+
+# CFRLDDRK64
+regression_test(CFRLDDRK64(), 3.0e-5, 3.0e-5)
+
+# TSLDDRK74
+regression_test(TSLDDRK74(), 3.0e-5, 3.0e-5)
 
 # ParsaniKetchesonDeconinck3S94
 regression_test(ParsaniKetchesonDeconinck3S94(), 1.5e-5, 3.0e-5)
