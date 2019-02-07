@@ -61,6 +61,68 @@ end
 
 
 
+# 2C low storage methods
+function initialize!(integrator,cache::LowStorageRK2CConstantCache)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.kshortsize = 1
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+end
+
+@muladd function perform_step!(integrator,cache::LowStorageRK2CConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack A2end,B1,B2end,c2end = cache
+
+  # u1
+  k = integrator.fsalfirst
+  u = uprev + B1*dt*k
+
+  # other stages
+  for i in eachindex(A2end)
+    tmp = u + A2end[i]*dt*k
+    k   = f(tmp, p, t+c2end[i]*dt)
+    u   = u + B2end[i]*dt*k
+  end
+
+  integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+  integrator.k[1] = integrator.fsalfirst
+  integrator.u = u
+end
+
+function initialize!(integrator,cache::LowStorageRK2CCache)
+  @unpack k,fsalfirst = cache
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = k
+  integrator.kshortsize = 1
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+end
+
+@muladd function perform_step!(integrator,cache::LowStorageRK2CCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack k,fsalfirst,tmp = cache
+  @unpack A2end,B1,B2end,c2end = cache.tab
+
+  # u1
+  @. k = integrator.fsalfirst
+  @. u = uprev + B1*dt*k
+
+  # other stages
+  for i in eachindex(A2end)
+    @. tmp = u + A2end[i]*dt*k
+    f(k, tmp, p, t+c2end[i]*dt)
+    @. u   = u + B2end[i]*dt*k
+  end
+
+  f(k, u, p, t+dt)
+end
+
+
+
 # 3S low storage methods
 function initialize!(integrator,cache::LowStorageRK3SConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal

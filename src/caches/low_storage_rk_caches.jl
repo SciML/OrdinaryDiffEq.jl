@@ -1,5 +1,5 @@
 
-# 2N low storage methods
+# 2N low storage methods introduced by Williamson
 @cache struct LowStorageRK2NCache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
@@ -22,20 +22,20 @@ function ORK256ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
   A3 = T(-1.55798)
   A4 = T(-1.0)
   A5 = T(-0.45031)
-  A2end = SVector{4,T}(A2, A3, A4, A5)
+  A2end = SVector(A2, A3, A4, A5)
 
   B1 = T(0.2)
   B2 = T(0.83204)
   B3 = T(0.6)
   B4 = T(0.35394)
   B5 = T(0.2)
-  B2end = SVector{4,T}(B2, B3, B4, B5)
+  B2end = SVector(B2, B3, B4, B5)
 
   c2 = T2(0.2)
   c3 = T2(0.2)
   c4 = T2(0.8)
   c5 = T2(0.8)
-  c2end = SVector{4,T2}(c2, c3, c4, c5)
+  c2end = SVector(c2, c3, c4, c5)
 
   LowStorageRK2NConstantCache{4,T,T2}(A2end, B1, B2end, c2end)
 end
@@ -58,20 +58,20 @@ function CarpenterKennedy2N54ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
   A3 = convert(T, -2404267990393//2016746695238)
   A4 = convert(T, -3550918686646//2091501179385)
   A5 = convert(T, -1275806237668//842570457699)
-  A2end = SVector{4,T}(A2, A3, A4, A5)
+  A2end = SVector(A2, A3, A4, A5)
 
   B1 = convert(T, 1432997174477//9575080441755)
   B2 = convert(T, 5161836677717//13612068292357)
   B3 = convert(T, 1720146321549//2090206949498)
   B4 = convert(T, 3134564353537//4481467310338)
   B5 = convert(T, 2277821191437//14882151754819)
-  B2end = SVector{4,T}(B2, B3, B4, B5)
+  B2end = SVector(B2, B3, B4, B5)
 
   c2 = convert(T2, 1432997174477//9575080441755)
   c3 = convert(T2, 2526269341429//6820363962896)
   c4 = convert(T2, 2006345519317//3224310063776)
   c5 = convert(T2, 2802321613138//2924317926251)
-  c2end = SVector{4,T2}(c2, c3, c4, c5)
+  c2end = SVector(c2, c3, c4, c5)
 
   LowStorageRK2NConstantCache{4,T,T2}(A2end, B1, B2end, c2end)
 end
@@ -96,7 +96,7 @@ function LDDRK64ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
   A4 = T(-1.5526678)
   A5 = T(-3.4077973)
   A6 = T(-1.0742640)
-  A2end = SVector{5,T}(A2, A3, A4, A5, A6)
+  A2end = SVector(A2, A3, A4, A5, A6)
 
   B1 = T(0.1453095)
   B2 = T(0.4653797)
@@ -104,14 +104,14 @@ function LDDRK64ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
   B4 = T(0.7795279)
   B5 = T(0.3574327)
   B6 = T(0.15)
-  B2end = SVector{5,T}(B2, B3, B4, B5, B6)
+  B2end = SVector(B2, B3, B4, B5, B6)
 
   c2 = T2(0.1453095)
   c3 = T2(0.3817422)
   c4 = T2(0.6367813)
   c5 = T2(0.7560744)
   c6 = T2(0.9271047)
-  c2end = SVector{5,T2}(c2, c3, c4, c5, c6)
+  c2end = SVector(c2, c3, c4, c5, c6)
 
   LowStorageRK2NConstantCache{5,T,T2}(A2end, B1, B2end, c2end)
 end
@@ -397,7 +397,108 @@ end
 
 
 
-# 3S low storage methods
+# 2C low storage methods introduced by Calvo, Franco, Rández (2004)
+@cache struct LowStorageRK2CCache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  k::rateType
+  tmp::uType
+  fsalfirst::rateType
+  tab::TabType
+end
+
+struct LowStorageRK2CConstantCache{N,T,T2} <: OrdinaryDiffEqConstantCache
+  A2end::SVector{N,T} # A1 is always zero
+  B1::T
+  B2end::SVector{N,T}
+  c2end::SVector{N,T2} # c1 is always zero
+end
+
+
+
+function CFRLDDRK64ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+  A2 = T(0.17985400977138)
+  A3 = T(0.14081893152111)
+  A4 = T(0.08255631629428)
+  A5 = T(0.65804425034331)
+  A6 = T(0.31862993413251)
+  A2end = SVector(A2, A3, A4, A5, A6)
+
+  B1 = T(0.10893125722541)
+  B2 = T(0.13201701492152)
+  B3 = T(0.38911623225517)
+  B4 = T(-0.59203884581148)
+  B5 = T(0.47385028714844)
+  B6 = T(0.48812405426094)
+  B2end = SVector(B2, B3, B4, B5, B6)
+
+  c2 = T2(0.28878526699679)
+  c3 = T2(0.38176720366804)
+  c4 = T2(0.71262082069639)
+  c5 = T2(0.69606990893393)
+  c6 = T2(0.83050587987157)
+  c2end = SVector(c2, c3, c4, c5, c6)
+
+  LowStorageRK2CConstantCache{5,T,T2}(A2end, B1, B2end, c2end)
+end
+
+function alg_cache(alg::CFRLDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  tab = CFRLDDRK64ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  LowStorageRK2CCache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+function alg_cache(alg::CFRLDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  CFRLDDRK64ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+end
+
+
+function TSLDDRK74ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+  A2 = T(0.241566650129646868)
+  A3 = T(0.0423866513027719953)
+  A4 = T(0.215602732678803776)
+  A5 = T(0.232328007537583987)
+  A6 = T(0.256223412574146438)
+  A7 = T(0.0978694102142697230)
+  A2end = SVector(A2, A3, A4, A5, A6, A7)
+
+  B1 = T(0.0941840925477795334)
+  B2 = T(0.149683694803496998)
+  B3 = T(0.285204742060440058)
+  B4 = T(-0.122201846148053668)
+  B5 = T(0.0605151571191401122)
+  B6 = T(0.345986987898399296)
+  B7 = T(0.186627171718797670)
+  B2end = SVector(B2, B3, B4, B5, B6, B7)
+
+  c2 = T2(0.335750742677426401)
+  c3 = T2(0.286254438654048527)
+  c4 = T2(0.744675262090520366)
+  c5 = T2(0.639198690801246909)
+  c6 = T2(0.723609252956949472)
+  c7 = T2(0.91124223849547205)
+  c2end = SVector(c2, c3, c4, c5, c6, c7)
+
+  LowStorageRK2CConstantCache{6,T,T2}(A2end, B1, B2end, c2end)
+end
+
+function alg_cache(alg::TSLDDRK74,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  tab = TSLDDRK74ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  LowStorageRK2CCache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+function alg_cache(alg::TSLDDRK74,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  TSLDDRK74ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+end
+
+
+
+# 3S low storage methods introduced by Ketcheson
 @cache struct LowStorageRK3SCache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
