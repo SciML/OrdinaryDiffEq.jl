@@ -213,7 +213,7 @@ function step_accept_controller!(integrator,alg::RichardsonEuler)
 end
 
 function step_reject_controller!(integrator,alg::RichardsonEuler)
-  return integrator.cache.dtpropose
+  integrator.dt = integrator.cache.dtpropose
 end
 
 function stepsize_controller!(integrator, alg::QNDF)

@@ -34,9 +34,10 @@ ExplicitRK(;tableau=ODE_DEFAULT_TABLEAU) = ExplicitRK(tableau)
 struct Euler <: OrdinaryDiffEqAlgorithm end
 struct RichardsonEuler <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
   max_order::Int
+  min_order::Int
   init_order::Int
 end
-RichardsonEuler(;max_order=9,init_order=1) = RichardsonEuler(max_order,init_order)
+RichardsonEuler(;max_order=4,min_order=1,init_order=1) = RichardsonEuler(max_order,min_order,init_order)
 
 struct RK46NL <: OrdinaryDiffEqAlgorithm end
 struct Heun <: OrdinaryDiffEqAdaptiveAlgorithm end
