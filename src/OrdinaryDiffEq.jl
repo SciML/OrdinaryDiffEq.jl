@@ -160,14 +160,14 @@ module OrdinaryDiffEq
   # Reexport the Alg Types
 
   export FunctionMap, Euler, Heun, Ralston, Midpoint, RK4, ExplicitRK, OwrenZen3, OwrenZen4, OwrenZen5,
-         LDDRK64, CFRLDDRK64, TSLDDRK74, NDBLSRK124, NDBLSRK134, NDBLSRK144, DGLDDRK73_C, DGLDDRK84_C, BS3, BS5,
-         ORK256, RK46NL, DP5, DP5Threaded, Tsit5, DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8,
+         CFRLDDRK64, TSLDDRK74, DGLDDRK73_C, DGLDDRK84_C, BS3, BS5,
+         RK46NL, DP5, DP5Threaded, Tsit5, DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8,
          Vern9, Feagin10, Feagin12, Feagin14, CompositeAlgorithm, Anas5
 
   export SSPRK22, SSPRK33, SSPRK53, SSPRK53_2N1, SSPRK53_2N2, SSPRK63, SSPRK73, SSPRK83, SSPRK432,
          SSPRKMSVS32, SSPRKMSVS43, SSPRK932, SSPRK54, SSPRK104
 
-  export CarpenterKennedy2N54,
+  export ORK256, CarpenterKennedy2N54, LDDRK64, NDBLSRK124, NDBLSRK134, NDBLSRK144,
          ParsaniKetchesonDeconinck3S94, ParsaniKetchesonDeconinck3S184, ParsaniKetchesonDeconinck3S105, ParsaniKetchesonDeconinck3S205
 
   export RadauIIA5

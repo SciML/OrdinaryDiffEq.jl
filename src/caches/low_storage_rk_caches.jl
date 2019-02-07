@@ -129,6 +129,186 @@ function alg_cache(alg::LDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
 end
 
 
+function NDBLSRK124ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+  A2  = T(-0.0923311242368072)
+  A3  = T(-0.9441056581158819)
+  A4  = T(-4.3271273247576394)
+  A5  = T(-2.1557771329026072)
+  A6  = T(-0.9770727190189062)
+  A7  = T(-0.7581835342571139)
+  A8  = T(-1.7977525470825499)
+  A9  = T(-2.6915667972700770)
+  A10 = T(-4.6466798960268143)
+  A11 = T(-0.1539613783825189)
+  A12 = T(-0.5943293901830616)
+  A2end = SVector(A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12)
+
+  B1  = T(0.0650008435125904)
+  B2  = T(0.0161459902249842)
+  B3  = T(0.5758627178358159)
+  B4  = T(0.1649758848361671)
+  B5  = T(0.3934619494248182)
+  B6  = T(0.0443509641602719)
+  B7  = T(0.2074504268408778)
+  B8  = T(0.6914247433015102)
+  B9  = T(0.3766646883450449)
+  B10 = T(0.0757190350155483)
+  B11 = T(0.2027862031054088)
+  B12 = T(0.2167029365631842)
+  B2end = SVector(B2, B3, B4, B5, B6, B7, B8, B9, B10, B11, B12)
+
+  c2  = T2(0.0650008435125904)
+  c3  = T2(0.0796560563081853)
+  c4  = T2(0.1620416710085376)
+  c5  = T2(0.2248877362907778)
+  c6  = T2(0.2952293985641261)
+  c7  = T2(0.3318332506149405)
+  c8  = T2(0.4094724050198658)
+  c9  = T2(0.6356954475753369)
+  c10 = T2(0.6806551557645497)
+  c11 = T2(0.7143773712418350)
+  c12 = T2(0.9032588871651854)
+  c2end = SVector(c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12)
+
+  LowStorageRK2NConstantCache{11,T,T2}(A2end, B1, B2end, c2end)
+end
+
+function alg_cache(alg::NDBLSRK124,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  tab = NDBLSRK124ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  LowStorageRK2NCache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+function alg_cache(alg::NDBLSRK124,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  NDBLSRK124ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+end
+
+
+function NDBLSRK134ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+  A2  = T(-0.6160178650170565)
+  A3  = T(-0.4449487060774118)
+  A4  = T(-1.0952033345276178)
+  A5  = T(-1.2256030785959187)
+  A6  = T(-0.2740182222332805)
+  A7  = T(-0.0411952089052647)
+  A8  = T(-0.1797084899153560)
+  A9  = T(-1.1771530652064288)
+  A10 = T(-0.4078831463120878)
+  A11 = T(-0.8295636426191777)
+  A12 = T(-4.7895970584252288)
+  A13 = T(-0.6606671432964504)
+  A2end = SVector(A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13)
+
+  B1  = T(0.0271990297818803)
+  B2  = T(0.1772488819905108)
+  B3  = T(0.0378528418949694)
+  B4  = T(0.6086431830142991)
+  B5  = T(0.2154313974316100)
+  B6  = T(0.2066152563885843)
+  B7  = T(0.0415864076069797)
+  B8  = T(0.0219891884310925)
+  B9  = T(0.9893081222650993)
+  B10 = T(0.0063199019859826)
+  B11 = T(0.3749640721105318)
+  B12 = T(1.6080235151003195)
+  B13 = T(0.0961209123818189)
+  B2end = SVector(B2, B3, B4, B5, B6, B7, B8, B9, B10, B11, B12, B13)
+
+  c2  = T2(0.0271990297818803)
+  c3  = T2(0.0952594339119365)
+  c4  = T2(0.1266450286591127)
+  c5  = T2(0.1825883045699772)
+  c6  = T2(0.3737511439063931)
+  c7  = T2(0.5301279418422206)
+  c8  = T2(0.5704177433952291)
+  c9  = T2(0.5885784947099155)
+  c10 = T2(0.6160769826246714)
+  c11 = T2(0.6223252334314046)
+  c12 = T2(0.6897593128753419)
+  c13 = T2(0.9126827615920843)
+  c2end = SVector(c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13)
+
+  LowStorageRK2NConstantCache{12,T,T2}(A2end, B1, B2end, c2end)
+end
+
+function alg_cache(alg::NDBLSRK134,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  tab = NDBLSRK134ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  LowStorageRK2NCache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+function alg_cache(alg::NDBLSRK134,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  NDBLSRK134ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+end
+
+
+function NDBLSRK144ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+  A2  = T(-0.7188012108672410)
+  A3  = T(-0.7785331173421570)
+  A4  = T(-0.0053282796654044)
+  A5  = T(-0.8552979934029281)
+  A6  = T(-3.9564138245774565)
+  A7  = T(-1.5780575380587385)
+  A8  = T(-2.0837094552574054)
+  A9  = T(-0.7483334182761610)
+  A10 = T(-0.7032861106563359)
+  A11 = T(0.0013917096117681)
+  A12 = T(-0.0932075369637460)
+  A13 = T(-0.9514200470875948)
+  A14 = T(-7.1151571693922548)
+  A2end = SVector(A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14)
+
+  B1  = T(0.0367762454319673)
+  B2  = T(0.3136296607553959)
+  B3  = T(0.1531848691869027)
+  B4  = T(0.0030097086818182)
+  B5  = T(0.3326293790646110)
+  B6  = T(0.2440251405350864)
+  B7  = T(0.3718879239592277)
+  B8  = T(0.6204126221582444)
+  B9  = T(0.1524043173028741)
+  B10 = T(0.0760894927419266)
+  B11 = T(0.0077604214040978)
+  B12 = T(0.0024647284755382)
+  B13 = T(0.0780348340049386)
+  B14 = T(5.5059777270269628)
+  B2end = SVector(B2, B3, B4, B5, B6, B7, B8, B9, B10, B11, B12, B13, B14)
+
+  c2  = T2(0.0367762454319673)
+  c3  = T2(0.1249685262725025)
+  c4  = T2(0.2446177702277698)
+  c5  = T2(0.2476149531070420)
+  c6  = T2(0.2969311120382472)
+  c7  = T2(0.3978149645802642)
+  c8  = T2(0.5270854589440328)
+  c9  = T2(0.6981269994175695)
+  c10 = T2(0.8190890835352128)
+  c11 = T2(0.8527059887098624)
+  c12 = T2(0.8604711817462826)
+  c13 = T2(0.8627060376969976)
+  c14 = T2(0.8734213127600976)
+  c2end = SVector(c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14)
+
+  LowStorageRK2NConstantCache{13,T,T2}(A2end, B1, B2end, c2end)
+end
+
+function alg_cache(alg::NDBLSRK144,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  tab = NDBLSRK144ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  LowStorageRK2NCache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+function alg_cache(alg::NDBLSRK144,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  NDBLSRK144ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+end
+
+
 
 # 3S low storage methods
 @cache struct LowStorageRK3SCache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
