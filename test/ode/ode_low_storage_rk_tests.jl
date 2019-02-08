@@ -28,7 +28,8 @@ test_problems_nonlinear = [prob_ode_nonlinear, prob_ode_nonlinear_inplace]
 
 # Test the memory usage, cf. #640
 # Note: Basically, the size of the integrator should be the size of the cache
-# plus the size of the initial condition, stored is integ.sol.prob.u0.
+# plus the size of the initial condition (stored is integ.sol.prob.u0) if the
+# keyword argument `alias_u0` is not set to `true` (default).
 # Note: The memory requirements of the 2N methods can be reduced if an assignment
 # of the form `tmp = A2end[i]*tmp + dt*f(u, p, t+c2end[i]*dt)` can be carried out
 # without saving `f(u, p, t+c2end[i]*dt)` as `k`.
@@ -52,6 +53,13 @@ for prob in test_problems_nonlinear
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
+# test whether aliasing u0 is bad
+new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
+sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false)
+sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
+@test sol_old[end] ≈ sol_new[end]
 
 
 alg = CarpenterKennedy2N54()
@@ -70,6 +78,13 @@ for prob in test_problems_nonlinear
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
+# test whether aliasing u0 is bad
+new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
+sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false)
+sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
+@test sol_old[end] ≈ sol_new[end]
 
 
 alg = HSLDDRK64()
@@ -88,6 +103,13 @@ for prob in test_problems_nonlinear
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
+# test whether aliasing u0 is bad
+new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
+sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false)
+sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
+@test sol_old[end] ≈ sol_new[end]
 
 
 alg = DGLDDRK73_C()
@@ -106,6 +128,13 @@ for prob in test_problems_nonlinear
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
+# test whether aliasing u0 is bad
+new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
+sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false)
+sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
+@test sol_old[end] ≈ sol_new[end]
 
 
 alg = DGLDDRK84_C()
@@ -124,6 +153,13 @@ for prob in test_problems_nonlinear
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
+# test whether aliasing u0 is bad
+new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
+sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false)
+sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
+@test sol_old[end] ≈ sol_new[end]
 
 
 alg = DGLDDRK84_F()
@@ -142,6 +178,13 @@ for prob in test_problems_nonlinear
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
+# test whether aliasing u0 is bad
+new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
+sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false)
+sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
+@test sol_old[end] ≈ sol_new[end]
 
 
 alg = NDBLSRK124()
@@ -160,6 +203,13 @@ for prob in test_problems_nonlinear
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
+# test whether aliasing u0 is bad
+new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
+sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false)
+sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
+@test sol_old[end] ≈ sol_new[end]
 
 
 alg = NDBLSRK134()
@@ -178,6 +228,13 @@ for prob in test_problems_nonlinear
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
+# test whether aliasing u0 is bad
+new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
+sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false)
+sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
+@test sol_old[end] ≈ sol_new[end]
 
 
 alg = NDBLSRK144()
@@ -196,6 +253,13 @@ for prob in test_problems_nonlinear
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
+# test whether aliasing u0 is bad
+new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
+sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false)
+sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
+@test sol_old[end] ≈ sol_new[end]
 
 
 alg = CFRLDDRK64()
@@ -214,6 +278,13 @@ for prob in test_problems_nonlinear
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
+# test whether aliasing u0 is bad
+new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
+sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false)
+sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
+@test sol_old[end] ≈ sol_new[end]
 
 
 alg = TSLDDRK74()
@@ -232,6 +303,13 @@ for prob in test_problems_nonlinear
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
+# test whether aliasing u0 is bad
+new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
+sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false)
+sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
+@test sol_old[end] ≈ sol_new[end]
 
 
 alg = ParsaniKetchesonDeconinck3S94()
@@ -250,6 +328,13 @@ for prob in test_problems_nonlinear
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
+integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+# test whether aliasing u0 is bad
+new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
+sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false)
+sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
+@test sol_old[end] ≈ sol_new[end]
 
 
 alg = ParsaniKetchesonDeconinck3S184()
@@ -269,6 +354,13 @@ for prob in test_problems_nonlinear
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
+integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+# test whether aliasing u0 is bad
+new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
+sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false)
+sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
+@test sol_old[end] ≈ sol_new[end]
 
 
 alg = ParsaniKetchesonDeconinck3S105()
@@ -289,6 +381,13 @@ for prob in test_problems_nonlinear
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
+integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+# test whether aliasing u0 is bad
+new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
+sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false)
+sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
+@test sol_old[end] ≈ sol_new[end]
 
 
 alg = ParsaniKetchesonDeconinck3S205()
@@ -309,3 +408,10 @@ for prob in test_problems_nonlinear
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
+integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+# test whether aliasing u0 is bad
+new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
+sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false)
+sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
+@test sol_old[end] ≈ sol_new[end]
