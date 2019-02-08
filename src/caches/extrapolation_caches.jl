@@ -1,8 +1,10 @@
-@cache mutable struct RichardsonEulerCache{uType,rateType,arrayType,dtType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct RichardsonEulerCache{uType,rateType,arrayType,dtType,uNoUnitsType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
   k::rateType
+  utilde::uType
+  atmp::uNoUnitsType
   fsalfirst::rateType
   prevdtpropose::dtType
   dtpropose::dtType
@@ -25,6 +27,7 @@ end
 
 function alg_cache(alg::RichardsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
+  utilde = similar(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   cur_order = one(Int)
@@ -34,7 +37,8 @@ function alg_cache(alg::RichardsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomE
   prev_work = zero(dt)
   work = zero(dt)
   A = one(Int)
-  RichardsonEulerCache(u,uprev,tmp,k,fsalfirst,prevdtpropose,dtpropose,T,cur_order,prev_work,work,A)
+  atmp = similar(u,uEltypeNoUnits)
+  RichardsonEulerCache(u,uprev,tmp,k,utilde,atmp,fsalfirst,prevdtpropose,dtpropose,T,cur_order,prev_work,work,A)
 end
 
 function alg_cache(alg::RichardsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
