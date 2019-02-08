@@ -32,7 +32,6 @@ test_problems_nonlinear = [prob_ode_nonlinear, prob_ode_nonlinear_inplace]
 # Note: The memory requirements of the 2N methods can be reduced if an assignment
 # of the form `tmp = A2end[i]*tmp + dt*f(u, p, t+c2end[i]*dt)` can be carried out
 # without saving `f(u, p, t+c2end[i]*dt)` as `k`.
-# Note: Additional memory can be saved for some schemes if `uprev` can be aliased with `u`.
 u0_large = rand(10^6)
 prob_ode_large = ODEProblem((du,u,p,t)-> du .= u, u0_large, (0.0,1.0))
 
@@ -52,7 +51,7 @@ for prob in test_problems_nonlinear
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
-@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
 
 
 alg = CarpenterKennedy2N54()
@@ -70,7 +69,7 @@ for prob in test_problems_nonlinear
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
-@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
 
 
 alg = LDDRK64()
@@ -88,7 +87,7 @@ for prob in test_problems_nonlinear
   @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
-@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
 
 
 alg = DGLDDRK73_C()
@@ -106,7 +105,7 @@ for prob in test_problems_nonlinear
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
-@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
 
 
 alg = DGLDDRK84_C()
@@ -124,7 +123,7 @@ for prob in test_problems_nonlinear
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
-@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
 
 
 alg = DGLDDRK84_F()
@@ -142,7 +141,7 @@ for prob in test_problems_nonlinear
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
-@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
 
 
 alg = NDBLSRK124()
@@ -160,7 +159,7 @@ for prob in test_problems_nonlinear
 	@test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
-@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
 
 
 alg = NDBLSRK134()
@@ -178,7 +177,7 @@ for prob in test_problems_nonlinear
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
-@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
 
 
 alg = NDBLSRK144()
@@ -196,7 +195,7 @@ for prob in test_problems_nonlinear
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
-@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
 
 
 alg = CFRLDDRK64()
@@ -214,7 +213,7 @@ for prob in test_problems_nonlinear
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
-@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
 
 
 alg = TSLDDRK74()
@@ -232,7 +231,7 @@ for prob in test_problems_nonlinear
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
-@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
 
 
 alg = ParsaniKetchesonDeconinck3S94()

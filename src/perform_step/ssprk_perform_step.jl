@@ -765,7 +765,6 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k,fsalfirst,u_1,u_2,stage_limiter!,step_limiter! = cache
 
-  println(cache.fsalfirst)
   if cache.step < 3
     @. u = uprev + dt*fsalfirst
     stage_limiter!(u, f, t+dt)
@@ -780,17 +779,15 @@ end
       cache.u_1 .= uprev
     end
   else
-      Ω = 2
+    Ω = 2
     @. u = ((Ω*Ω - 1)/(Ω*Ω))*(uprev + (Ω/(Ω-1))*dt*fsalfirst) + (1/(Ω*Ω))*cache.u_2
     cache.u_2 .= u_1
     cache.u_1 .= uprev
-    print
     stage_limiter!(u, f, t+dt)
     step_limiter!(u, f, t+dt)
   end
   cache.step += 1
   f(k,u, p, t+dt)
-
 end
 
 
@@ -856,6 +853,7 @@ end
 @muladd function perform_step!(integrator,cache::SSPRKMSVS43Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k,fsalfirst,u_1,u_2,u_3,stage_limiter!,step_limiter!,k1,k2,k3 = cache
+
   if cache.step < 4
     @. u = uprev + dt*fsalfirst
     stage_limiter!(u, f, t+dt)

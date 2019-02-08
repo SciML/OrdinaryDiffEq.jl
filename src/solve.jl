@@ -210,7 +210,13 @@ function DiffEqBase.__init(
 
   k = rateType[]
 
-  uprev = recursivecopy(u)
+  if uses_uprev(alg) || calck
+    uprev = recursivecopy(u)
+  else
+    # Some algorithms do not use `uprev` explicitly. In that case, we can save
+    # some memory by aliasing `uprev = u`, e.g. for "2N" low storage methods.
+    uprev = u
+  end
   if allow_extrapolation
     uprev2 = recursivecopy(u)
   else

@@ -406,3 +406,17 @@ function unwrap_alg(integrator, is_stiff)
     return alg.algs[integrator.cache.current]
   end
 end
+
+# Whether `uprev` is used in the algorithm directly.
+uses_uprev(alg::OrdinaryDiffEqAlgorithm) = true
+uses_uprev(alg::ORK256) = false
+uses_uprev(alg::CarpenterKennedy2N54) = false
+uses_uprev(alg::LDDRK64) = false
+uses_uprev(alg::DGLDDRK73_C) = false
+uses_uprev(alg::DGLDDRK84_C) = false
+uses_uprev(alg::DGLDDRK84_F) = false
+uses_uprev(alg::NDBLSRK124) = false
+uses_uprev(alg::NDBLSRK134) = false
+uses_uprev(alg::NDBLSRK144) = false
+uses_uprev(alg::CFRLDDRK64) = false
+uses_uprev(alg::TSLDDRK74) = false

@@ -11,12 +11,12 @@ function initialize!(integrator,cache::LowStorageRK2NConstantCache)
 end
 
 @muladd function perform_step!(integrator,cache::LowStorageRK2NConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,u,f,p = integrator
   @unpack A2end,B1,B2end,c2end = cache
 
   # u1
   tmp = dt*integrator.fsalfirst
-  u   = uprev + B1*tmp
+  u   = u + B1*tmp
 
   # other stages
   for i in eachindex(A2end)
@@ -41,13 +41,13 @@ function initialize!(integrator,cache::LowStorageRK2NCache)
 end
 
 @muladd function perform_step!(integrator,cache::LowStorageRK2NCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,u,f,p = integrator
   @unpack k,fsalfirst,tmp = cache
   @unpack A2end,B1,B2end,c2end = cache.tab
 
   # u1
   @. tmp = dt*fsalfirst
-  @. u   = uprev + B1*tmp
+  @. u   = u + B1*tmp
 
   # other stages
   for i in eachindex(A2end)
@@ -73,12 +73,12 @@ function initialize!(integrator,cache::LowStorageRK2CConstantCache)
 end
 
 @muladd function perform_step!(integrator,cache::LowStorageRK2CConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,u,f,p = integrator
   @unpack A2end,B1,B2end,c2end = cache
 
   # u1
   k = integrator.fsalfirst
-  u = uprev + B1*dt*k
+  u = u + B1*dt*k
 
   # other stages
   for i in eachindex(A2end)
@@ -103,13 +103,13 @@ function initialize!(integrator,cache::LowStorageRK2CCache)
 end
 
 @muladd function perform_step!(integrator,cache::LowStorageRK2CCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,u,f,p = integrator
   @unpack k,fsalfirst,tmp = cache
   @unpack A2end,B1,B2end,c2end = cache.tab
 
   # u1
   @. k = integrator.fsalfirst
-  @. u = uprev + B1*dt*k
+  @. u = u + B1*dt*k
 
   # other stages
   for i in eachindex(A2end)
