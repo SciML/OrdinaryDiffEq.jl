@@ -30,7 +30,7 @@
   zs[1] = z₊
 
   # compute initial values for early stopping criterion
-  ndz = integrator.opts.internalnorm(z₊ .- z)
+  ndz = integrator.opts.internalnorm(z₊ .- z,t)
 
   # update solution
   z = z₊
@@ -74,7 +74,7 @@
 
     # check early stopping criterion
     ndzprev = ndz
-    ndz = integrator.opts.internalnorm(z₊ .- z)
+    ndz = integrator.opts.internalnorm(z₊ .- z,t)
     θ = ndz/ndzprev
     if θ ≥ 1 || ndz * θ^(max_iter - iter) > κtol * (1 - θ)
       break
@@ -130,7 +130,7 @@ end
 
   # compute initial values for early stopping criterion
   @. dz = z₊ - z
-  ndz = integrator.opts.internalnorm(dz)
+  ndz = integrator.opts.internalnorm(dz,t)
 
   # update solution
   z .= z₊
@@ -179,7 +179,7 @@ end
     # check early stopping criterion
     ndzprev = ndz
     @. dz = z₊ - z
-    ndz = integrator.opts.internalnorm(dz)
+    ndz = integrator.opts.internalnorm(dz,t)
     θ = ndz/ndzprev
     if θ ≥ 1 || ndz * θ^(max_iter - iter) > κtol * (1 - θ)
       break

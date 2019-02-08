@@ -47,8 +47,8 @@ end
       utilde = utilde + (α[i]-αEEst[i])*kk[i]
     end
     utilde = dt*utilde
-    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(atmp)
+    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
   if !isfsal(integrator.alg.tableau)

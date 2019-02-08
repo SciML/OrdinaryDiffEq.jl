@@ -1187,8 +1187,8 @@ function perform_step!(integrator, cache::Exprb32ConstantCache, repeat_step=fals
   if integrator.opts.adaptive
     # error estimator for the imbedded method
     utilde = 2dt * (-w1[:,4] + w2[:,4])
-    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(atmp)
+    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
   # Update integrator state
@@ -1225,7 +1225,7 @@ function perform_step!(integrator, cache::Exprb32Cache, repeat_step=false)
   if integrator.opts.adaptive
     # error estimator for the imbedded method
     @views @. utilde = (2*dt) * (-w1[:,4] + w2[:,4])
-    calculate_residuals!(tmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+    calculate_residuals!(tmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(tmp)
   end
 
@@ -1259,8 +1259,8 @@ function perform_step!(integrator, cache::Exprb43ConstantCache, repeat_step=fals
   if integrator.opts.adaptive
     # error estimator for the imbedded method
     utilde = dt * (36w1[:,5] - 48w2[:,5] + 12w3[:,5])
-    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(atmp)
+    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
   # Update integrator state
@@ -1303,7 +1303,7 @@ function perform_step!(integrator, cache::Exprb43Cache, repeat_step=false)
   if integrator.opts.adaptive
     @views @. rtmp = 36w1[:,5] - 48w2[:,5] + 12w3[:,5]
     @. utilde = dt * rtmp
-    calculate_residuals!(tmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
+    calculate_residuals!(tmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(tmp)
   end
 

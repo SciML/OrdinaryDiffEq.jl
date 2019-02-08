@@ -55,8 +55,8 @@ end
   if integrator.opts.adaptive
     tmp = integrator.fsallast - (1+dtₙ/dtₙ₋₁)*integrator.fsalfirst + (dtₙ/dtₙ₋₁)*cache.fsalfirstprev
     est = (dtₙ₋₁+dtₙ)/6 * tmp
-    atmp = calculate_residuals(est, uₙ₋₁, uₙ, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(atmp)
+    atmp = calculate_residuals(est, uₙ₋₁, uₙ, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
   ################################### Finalize
@@ -131,8 +131,8 @@ end
     btilde1 = 1+dtₙ/dtₙ₋₁
     btilde2 = dtₙ/dtₙ₋₁
     @. tmp = btilde0*(integrator.fsallast - btilde1*integrator.fsalfirst + btilde2*cache.fsalfirstprev)
-    calculate_residuals!(atmp, tmp, uₙ₋₁, uₙ, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(atmp)
+    calculate_residuals!(atmp, tmp, uₙ₋₁, uₙ, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
   ################################### Finalize
@@ -325,8 +325,8 @@ function perform_step!(integrator,cache::QNDF1ConstantCache,repeat_step=false)
     D2[1] = u - uprev
     D2[2] = D2[1] - D[1]
     utilde = (κ*γ₁ + inv(k+1)) * D2[2]
-    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(atmp)
+    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
     if integrator.EEst > one(integrator.EEst)
       return
     end
@@ -391,8 +391,8 @@ function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
     @. D2[1] = u - uprev
     @. D2[2] = D2[1] - D[1]
     @. utilde = (κ*γ₁ + inv(k+1)) * D2[2]
-    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(atmp)
+    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
     if integrator.EEst > one(integrator.EEst)
       return
     end
@@ -474,15 +474,15 @@ function perform_step!(integrator,cache::QNDF2ConstantCache,repeat_step=false)
       integrator.EEst = one(integrator.EEst)
     elseif integrator.success_iter == 1
       utilde = (u - uprev) - ((uprev - uprev2) * dt/dtₙ₋₁)
-      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp)
+      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      integrator.EEst = integrator.opts.internalnorm(atmp,t)
     else
       D2[1] = u - uprev
       D2[2] = D2[1] - D[1]
       D2[3] = D2[2] - D[2]
       utilde = (κ*γ₂ + inv(k+1)) * D2[3]
-      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp)
+      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      integrator.EEst = integrator.opts.internalnorm(atmp,t)
     end
   end
   if integrator.EEst > one(integrator.EEst)
@@ -567,15 +567,15 @@ function perform_step!(integrator,cache::QNDF2Cache,repeat_step=false)
       integrator.EEst = one(integrator.EEst)
     elseif integrator.success_iter == 1
       @. utilde = (u - uprev) - ((uprev - uprev2) * dt/dtₙ₋₁)
-      calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp)
+      calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      integrator.EEst = integrator.opts.internalnorm(atmp,t)
     else
       @. D2[1] = u - uprev
       @. D2[2] = D2[1] - D[1]
       @. D2[3] = D2[2] - D[2]
       @. utilde = (κ*γ₂ + inv(k+1)) * D2[3]
-      calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp)
+      calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      integrator.EEst = integrator.opts.internalnorm(atmp,t)
     end
   end
   if integrator.EEst > one(integrator.EEst)
@@ -672,16 +672,16 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
       integrator.EEst = one(integrator.EEst)
     elseif cnt == 2
       utilde = (u - uprev) - (udiff[1] * dt/dts[1])
-      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp)
+      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      integrator.EEst = integrator.opts.internalnorm(atmp,t)
     else
       δ = u - uprev
       for i = 1:k
         δ -= D[i]
       end
       utilde = (κ*γₖ[k] + inv(k+1)) * δ
-      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp)
+      atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      integrator.EEst = integrator.opts.internalnorm(atmp,t)
     end
 
     if cnt == 1
@@ -692,7 +692,7 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
       errm1 = 0
       if k > 1
         utildem1 = (κ*γₖ[k-1] + inv(k)) * D[k]
-        atmpm1 = calculate_residuals(utildem1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+        atmpm1 = calculate_residuals(utildem1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         errm1 = integrator.opts.internalnorm(atmpm1)
       end
       backward_diff!(cache,D,D2,k+1,false)
@@ -701,7 +701,7 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
         δ -= D2[i,1]
       end
       utildep1 = (κ*γₖ[k+1] + inv(k+2)) * δ
-      atmpp1 = calculate_residuals(utildep1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      atmpp1 = calculate_residuals(utildep1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       errp1 = integrator.opts.internalnorm(atmpp1)
       pass = stepsize_and_order!(cache, integrator.EEst, errm1, errp1, dt, k)
       if pass == false
@@ -814,16 +814,16 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
       integrator.EEst = one(integrator.EEst)
     elseif cnt == 2
       @. utilde = (u - uprev) - (udiff[1] * dt/dts[1])
-      calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp)
+      calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      integrator.EEst = integrator.opts.internalnorm(atmp,t)
     else
       @. tmp = u - uprev
       for i = 1:k
         @. tmp -= D[i]
       end
       @. utilde = (κ*γₖ[k] + inv(k+1)) * tmp
-      calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp)
+      calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      integrator.EEst = integrator.opts.internalnorm(atmp,t)
     end
 
     if cnt == 1
@@ -834,8 +834,8 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
       errm1 = 0
       if k > 1
         @. utilde = (κ*γₖ[k-1] + inv(k)) * D[k]
-        calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-        errm1 = integrator.opts.internalnorm(atmp)
+        calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+        errm1 = integrator.opts.internalnorm(atmp,t)
       end
       backward_diff!(cache,D,D2,k+1,false)
       @. tmp = u - uprev
@@ -843,8 +843,8 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
         @. tmp -= D2[i,1]
       end
       @. utilde = (κ*γₖ[k+1] + inv(k+2)) * tmp
-      calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-      errp1 = integrator.opts.internalnorm(atmp)
+      calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      errp1 = integrator.opts.internalnorm(atmp,t)
       pass = stepsize_and_order!(cache, integrator.EEst, errm1, errp1, dt, k)
       if pass == false
         for i = 1:5

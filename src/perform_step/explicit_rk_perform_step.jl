@@ -46,8 +46,8 @@ end
     for i = 2:stages
       utilde = utilde + (α[i]-αEEst[i])*kk[i]
     end
-    atmp = calculate_residuals(dt * utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(atmp)
+    atmp = calculate_residuals(dt * utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
   if !isfsal(integrator.alg.tableau)
@@ -109,8 +109,8 @@ end
     @. tmp = dt*utilde
     calculate_residuals!(atmp, tmp, uprev, u,
                          integrator.opts.abstol, integrator.opts.reltol,
-                         integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(atmp)
+                         integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
   if !isfsal(integrator.alg.tableau)

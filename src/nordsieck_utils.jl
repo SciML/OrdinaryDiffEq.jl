@@ -239,7 +239,7 @@ function nlsolve_functional!(integrator, cache::T) where T
     # @show norm(dt*ratetmp - ( z[2] + (integrator.u - z[1])*l[2] ))
     # @show norm(cache.Δ - (integrator.u - z[1]))
     # It only makes sense to calculate convergence rate in the second iteration
-    δ = integrator.opts.internalnorm(cache.Δ)
+    δ = integrator.opts.internalnorm(cache.Δ,t)
     isconstcache ? ( cache.Δ = copy(ratetmp) ) : copyto!(cache.Δ, ratetmp)
     if k >= 1
       conv_rate = max(1//10*conv_rate, δ/δ_prev)
@@ -391,7 +391,7 @@ end
 function stepsize_η₊₁!(integrator, cache::T, order) where T
   isconstcache = T <: OrdinaryDiffEqConstantCache
   isconstcache || ( @unpack atmp, ratetmp = cache )
-  @unpack uprev, u = integrator
+  @unpack uprev, t, u = integrator
   @unpack z, c_LTE₊₁, dts, c_𝒟  = cache
   bias3 = integrator.alg.bias3
   addon = integrator.alg.addon
@@ -404,12 +404,12 @@ function stepsize_η₊₁!(integrator, cache::T, order) where T
     cquot = (c_𝒟 / cache.prev_𝒟) * (dts[1]/dts[2])^L
     if isconstcache
       atmp = muladd.(-cquot, z[end], cache.Δ)
-      atmp = calculate_residuals(atmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      atmp = calculate_residuals(atmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     else
       @. ratetmp = muladd(-cquot, z[end], cache.Δ)
-      calculate_residuals!(atmp, ratetmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      calculate_residuals!(atmp, ratetmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     end
-    dup = integrator.opts.internalnorm(atmp) * c_LTE₊₁
+    dup = integrator.opts.internalnorm(atmp,t) * c_LTE₊₁
     cache.η₊₁ = inv( (bias3*dup)^inv(L+1) + addon )
   end
   return cache.η₊₁
@@ -418,18 +418,18 @@ end
 function stepsize_η₋₁!(integrator, cache::T, order) where T
   isconstcache = T <: OrdinaryDiffEqConstantCache
   isconstcache || ( atmp = cache.atmp )
-  @unpack uprev, u = integrator
+  @unpack uprev, t, u = integrator
   @unpack z, c_LTE₋₁ = cache
   bias1 = integrator.alg.bias1
   addon = integrator.alg.addon
   cache.η₋₁ = 0
   if order > 1
     if isconstcache
-      atmp = calculate_residuals(z[order+1], uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      atmp = calculate_residuals(z[order+1], uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     else
-      calculate_residuals!(atmp, z[order+1], uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+      calculate_residuals!(atmp, z[order+1], uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     end
-    approx = integrator.opts.internalnorm(atmp) * c_LTE₋₁
+    approx = integrator.opts.internalnorm(atmp,t) * c_LTE₋₁
     cache.η₋₁ = inv( (bias1*approx)^inv(order) + addon )
   end
   return cache.η₋₁

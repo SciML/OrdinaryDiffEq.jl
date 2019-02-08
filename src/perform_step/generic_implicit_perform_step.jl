@@ -77,8 +77,8 @@ end
     r = c*dt^2 # by mean value theorem 2nd DD equals y''(s)/2 for some s
 
     tmp = r*abs((u - uprev)/dt1 - (uprev - uprev2)/dt2)
-    atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(atmp)
+    atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
   else
     integrator.EEst = 1
   end
@@ -134,8 +134,8 @@ end
     r = c*dt^2 # by mean value theorem 2nd DD equals y''(s)/2 for some s
 
     @. tmp = r*abs((u - uprev)/dt1 - (uprev - uprev2)/dt2)
-    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(atmp)
+    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
   else
     integrator.EEst = 1
   end
@@ -200,8 +200,8 @@ end
       DD31 = (u - uprev)/dt1 - (uprev - uprev2)/dt2
       DD30 = (uprev - uprev2)/dt3 - (uprev2 - uprev3)/dt4
       tmp = r*abs((DD31 - DD30)/dt5)
-      atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp)
+      atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+      integrator.EEst = integrator.opts.internalnorm(atmp,t)
       if integrator.EEst <= 1
         cache.uprev3 = uprev2
         cache.tprev2 = tprev
@@ -276,8 +276,8 @@ end
         DD30 = (uprev[i] - uprev2[i])/dt3 - (uprev2[i] - uprev3[i])/dt4
         tmp[i] = r*abs((DD31 - DD30)/dt5)
       end
-      calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp)
+      calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+      integrator.EEst = integrator.opts.internalnorm(atmp,t)
       if integrator.EEst <= 1
         copyto!(cache.uprev3,uprev2)
         cache.tprev2 = tprev

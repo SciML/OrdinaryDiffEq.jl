@@ -114,8 +114,8 @@ end
           tmp = @. a₃ * (k2 - fsalfirst)
       end
 
-      atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp)
+      atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
   k = f(u, p, t+dt)
   integrator.fsallast = k
@@ -166,8 +166,8 @@ end
       end
 
       calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                           integrator.opts.reltol, integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp)
+                           integrator.opts.reltol, integrator.opts.internalnorm, t)
+      integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
   f(integrator.fsallast,u,p,t+dt) # For the interpolation, needs k at the updated point
 end
@@ -193,8 +193,8 @@ end
   if integrator.opts.adaptive
       utilde = @. dt * (integrator.fsalfirst - k)
       atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
-                                 integrator.opts.reltol,integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp)
+                                 integrator.opts.reltol,integrator.opts.internalnorm,t)
+      integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -222,8 +222,8 @@ end
   if integrator.opts.adaptive
       @. tmp = dt*(fsalfirst - k)
       calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol,
-                           integrator.opts.reltol,integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp)
+                           integrator.opts.reltol,integrator.opts.internalnorm,t)
+      integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
   f(k, u, p, t+dt)
 end
@@ -261,9 +261,9 @@ end
       pprime2 = k₁ + σ₂*(-4*dt*k₁ - 2*dt*k₅ - 6*uprev +
                 σ₂*(3*dt*k₁ + 3*dt*k₅ + 6*uprev - 6*u) + 6*u)/dt
       e1 = integrator.opts.internalnorm(calculate_residuals(dt*(f(p1,p,t+σ₁*dt) - pprime1), uprev, u, integrator.opts.abstol,
-      integrator.opts.reltol,integrator.opts.internalnorm))
+      integrator.opts.reltol,integrator.opts.internalnorm,t),t)
       e2 = integrator.opts.internalnorm(calculate_residuals(dt*(f(p2,p,t+σ₂*dt) - pprime2), uprev, u, integrator.opts.abstol, integrator.opts.reltol,
-      integrator.opts.internalnorm))
+      integrator.opts.internalnorm,t),t)
       integrator.EEst = 2.1342*max(e1,e2)
   end
   integrator.k[1] = integrator.fsalfirst
@@ -308,8 +308,8 @@ end
       end
       f(_p,tmp,p,t+σ₁*dt)
       calculate_residuals!(atmp, dt*(_p - pprime), uprev, u, integrator.opts.abstol,
-                           integrator.opts.reltol,integrator.opts.internalnorm)
-      e1 = integrator.opts.internalnorm(atmp)
+                           integrator.opts.reltol,integrator.opts.internalnorm,t)
+      e1 = integrator.opts.internalnorm(atmp,t)
       @tight_loop_macros for i in eachindex(u)
         @inbounds tmp[i] = (1-σ₂)*uprev[i]+σ₂*u[i]+σ₂*(σ₂-1)*((1-2σ₂)*(u[i]-uprev[i])+(σ₂-1)*dt*k₁[i] + σ₂*dt*k₅[i])
         @inbounds pprime[i] = k₁[i] + σ₂*(-4*dt*k₁[i] - 2*dt*k₅[i] - 6*uprev[i] +
@@ -317,8 +317,8 @@ end
       end
       f(_p,tmp,p,t+σ₂*dt)
       calculate_residuals!(atmp, dt*(_p - pprime), uprev, u, integrator.opts.abstol,
-                           integrator.opts.reltol,integrator.opts.internalnorm)
-      e2 = integrator.opts.internalnorm(atmp)
+                           integrator.opts.reltol,integrator.opts.internalnorm,t)
+      e2 = integrator.opts.internalnorm(atmp,t)
       integrator.EEst = 2.1342*max(e1,e2)
   end
 end

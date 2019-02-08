@@ -60,8 +60,8 @@ end
     ################################### Error estimation
 
     if integrator.opts.adaptive
-      atmp = calculate_residuals(cache.Δ, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp) * cache.c_LTE
+      atmp = calculate_residuals(cache.Δ, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      integrator.EEst = integrator.opts.internalnorm(atmp,t) * cache.c_LTE
       if integrator.EEst > one(integrator.EEst)
         for i in 1:5
           dts[i] = dts[i+1]
@@ -149,8 +149,8 @@ end
     ################################### Error estimation
 
     if integrator.opts.adaptive
-      calculate_residuals!(atmp, cache.Δ, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-      integrator.EEst = integrator.opts.internalnorm(atmp) * cache.c_LTE
+      calculate_residuals!(atmp, cache.Δ, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      integrator.EEst = integrator.opts.internalnorm(atmp,t) * cache.c_LTE
       if integrator.EEst > one(integrator.EEst)
         for i in 1:5
           dts[i] = dts[i+1]
@@ -215,8 +215,8 @@ end
 
   ################################### Error estimation
   if integrator.opts.adaptive
-    atmp = calculate_residuals(cache.Δ, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(atmp) * cache.c_LTE
+    atmp = calculate_residuals(cache.Δ, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t) * cache.c_LTE
     if integrator.EEst > one(integrator.EEst)
       for i in 1:12
         dts[i] = dts[i+1]
@@ -282,8 +282,8 @@ end
   ################################### Error estimation
 
   if integrator.opts.adaptive
-    calculate_residuals!(atmp, cache.Δ, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(atmp) * cache.c_LTE
+    calculate_residuals!(atmp, cache.Δ, uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t) * cache.c_LTE
     if integrator.EEst > one(integrator.EEst)
       for i in 1:12
         dts[i] = dts[i+1]

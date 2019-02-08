@@ -111,7 +111,7 @@ end
     dw3 = imag(dw23)
 
     iter != 1 && (ndwprev = ndw)
-    ndw = internalnorm(dw1) + internalnorm(dw2) + internalnorm(dw3)
+    ndw = internalnorm(dw1,t) + internalnorm(dw2,t) + internalnorm(dw3,t)
 
     # check early stopping criterion
     if iter != 1
@@ -154,15 +154,15 @@ end
     # https://github.com/luchr/ODEInterface.jl/blob/0bd134a5a358c4bc13e0fb6a90e27e4ee79e0115/src/radau5.f#L399-L421
     rtol = @. reltol^(2/3) / 10
     atol = @. rtol * (abstol / reltol)
-    atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm)
-    integrator.EEst = internalnorm(atmp)
+    atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm,t)
+    integrator.EEst = internalnorm(atmp,t)
 
     if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 || integrator.u_modified
       f0 = f(uprev .+ utilde, p, t)
       utilde = @. f0 + tmp
       alg.smooth_est && (utilde = LU1 \ utilde)
-      atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm)
-      integrator.EEst = internalnorm(atmp)
+      atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm,t)
+      integrator.EEst = internalnorm(atmp,t)
     end
   end
 
@@ -298,7 +298,7 @@ end
     @. dw3 = imag(dw23)
 
     iter != 1 && (ndwprev = ndw)
-    ndw = internalnorm(dw1) + internalnorm(dw2) + internalnorm(dw3)
+    ndw = internalnorm(dw1,t) + internalnorm(dw2,t) + internalnorm(dw3,t)
 
     # check early stopping criterion
     if iter != 1
@@ -340,16 +340,16 @@ end
     alg.smooth_est && linsolve1(vec(utilde), W1, vec(utilde), false)
     # RadauIIA5 needs a transformed rtol and atol see
     # https://github.com/luchr/ODEInterface.jl/blob/0bd134a5a358c4bc13e0fb6a90e27e4ee79e0115/src/radau5.f#L399-L421
-    calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm)
-    integrator.EEst = internalnorm(atmp)
+    calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm,t)
+    integrator.EEst = internalnorm(atmp,t)
 
     if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 || integrator.u_modified
       @. utilde = uprev + utilde
       f(fsallast, utilde, p, t)
       @. utilde = fsallast + tmp
       alg.smooth_est && linsolve1(vec(utilde), W1, vec(utilde), false)
-      calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm)
-      integrator.EEst = internalnorm(atmp)
+      calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm,t)
+      integrator.EEst = internalnorm(atmp,t)
     end
   end
 

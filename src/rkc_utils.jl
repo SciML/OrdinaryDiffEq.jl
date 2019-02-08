@@ -18,8 +18,8 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
     z = cache.zprev
   end
   # Perturbation
-  u_norm = integrator.opts.internalnorm(uprev)
-  z_norm = integrator.opts.internalnorm(z)
+  u_norm = integrator.opts.internalnorm(uprev,t)
+  z_norm = integrator.opts.internalnorm(z,t)
   pert   = eps(u_norm)
   sqrt_pert = sqrt(pert)
   is_u_zero = u_norm == zero(u_norm)
@@ -45,7 +45,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
   for iter in 1:maxiter
     fz = f(z, p, t)
     tmp = fz - fsalfirst
-    Δ  = integrator.opts.internalnorm(tmp)
+    Δ  = integrator.opts.internalnorm(tmp,t)
     eig_prev = integrator.eigen_est
     integrator.eigen_est = Δ/dz_u * safe
     # Convergence
@@ -95,8 +95,8 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
     @. z = ccache.zprev
   end
   # Perturbation
-  u_norm = integrator.opts.internalnorm(uprev)
-  z_norm = integrator.opts.internalnorm(z)
+  u_norm = integrator.opts.internalnorm(uprev.t)
+  z_norm = integrator.opts.internalnorm(z,t)
   pert   = eps(u_norm)
   sqrt_pert = sqrt(pert)
   is_u_zero = u_norm == zero(u_norm)
@@ -122,7 +122,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
   for iter in 1:maxiter
     f(fz, z, p, t)
     @. atmp = fz - fsalfirst
-    Δ  = integrator.opts.internalnorm(atmp)
+    Δ  = integrator.opts.internalnorm(atmp,t)
     eig_prev = integrator.eigen_est
     integrator.eigen_est = Δ/dz_u * safe
     # Convergence

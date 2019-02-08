@@ -43,7 +43,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
   end
 
   # compute initial values for early stopping criterion
-  ndz = integrator.opts.internalnorm(z₊ .- z)
+  ndz = integrator.opts.internalnorm(z₊ .- z,t)
 
   # update solution
   z = z₊
@@ -66,7 +66,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 
     # check early stopping criterion
     ndzprev = ndz
-    ndz = integrator.opts.internalnorm(z₊ .- z)
+    ndz = integrator.opts.internalnorm(z₊ .- z,t)
     θ = ndz/ndzprev
     if θ ≥ 1 || ndz * θ^(max_iter - iter) > κtol * (1 - θ)
       break
@@ -109,7 +109,7 @@ end
 
   # compute initial values for early stopping criterion
   @. dz = z₊ - z
-  ndz = integrator.opts.internalnorm(dz)
+  ndz = integrator.opts.internalnorm(dz,t)
 
   # update solution
   @. z = z₊
@@ -133,7 +133,7 @@ end
     end
     @. dz = z₊ - z
     ndzprev = ndz
-    ndz = integrator.opts.internalnorm(dz)
+    ndz = integrator.opts.internalnorm(dz,t)
 
     # check early stopping criterion
     θ = ndz/ndzprev
