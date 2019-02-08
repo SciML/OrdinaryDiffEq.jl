@@ -72,7 +72,7 @@ integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, sa
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
 
 
-alg = LDDRK64()
+alg = HSLDDRK64()
 dts = 1 ./ 2 .^(8:-1:4)
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)

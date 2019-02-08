@@ -97,7 +97,7 @@ function alg_cache(alg::CarpenterKennedy2N54,u,rate_prototype,uEltypeNoUnits,uBo
 end
 
 
-function LDDRK64ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+function HSLDDRK64ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
   #TODO: Solve the order conditions with more accuracy
   A2 = convert(T, -0.4919575)
   A3 = convert(T, -0.8946264)
@@ -124,7 +124,7 @@ function LDDRK64ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
   LowStorageRK2NConstantCache{5,T,T2}(A2end, B1, B2end, c2end)
 end
 
-function alg_cache(alg::LDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::HSLDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
   k = zero(rate_prototype)
   if calck
@@ -132,12 +132,12 @@ function alg_cache(alg::LDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   else
     fsalfirst = k
   end
-  tab = LDDRK64ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  tab = HSLDDRK64ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   LowStorageRK2NCache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
-function alg_cache(alg::LDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  LDDRK64ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+function alg_cache(alg::HSLDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  HSLDDRK64ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end
 
 
