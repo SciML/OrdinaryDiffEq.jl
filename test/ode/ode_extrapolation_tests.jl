@@ -12,9 +12,13 @@ dts = 1 .//2 .^(8:-1:4)
 testTol = 0.2
 
 
+
+# Order Convergence test
 for i = 1:2
   global dts
   prob = probArr[i]
-  sim = test_convergence(dts,prob,RichardsonEuler())
-  @test sim.𝒪est[:final] ≈ 4 atol=testTol
+  for j = 1:4
+      sim = test_convergence(dts,prob,RichardsonEuler(j,j,j))
+      @test sim.𝒪est[:final] ≈ j atol=testTol
+   end
 end
