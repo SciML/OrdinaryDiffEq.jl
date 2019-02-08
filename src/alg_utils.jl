@@ -411,7 +411,7 @@ end
 uses_uprev(alg::OrdinaryDiffEqAlgorithm) = true
 uses_uprev(alg::ORK256) = false
 uses_uprev(alg::CarpenterKennedy2N54) = false
-uses_uprev(alg::LDDRK64) = false
+uses_uprev(alg::HSLDDRK64) = false
 uses_uprev(alg::DGLDDRK73_C) = false
 uses_uprev(alg::DGLDDRK84_C) = false
 uses_uprev(alg::DGLDDRK84_F) = false
