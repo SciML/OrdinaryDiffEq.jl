@@ -8,20 +8,17 @@ function initialize!(integrator,cache::RichardsonEulerCache)
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # For the interpolation, needs k at the updated point
 
+  cache.step_no = 1
   cache.cur_order = max(integrator.alg.init_order, integrator.alg.min_order)
 end
 
 function perform_step!(integrator,cache::RichardsonEulerCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k,fsalfirst,T,utilde,atmp,prevdtpropose,dtpropose,cur_order,prev_work,A = cache
+  @unpack k,fsalfirst,T,utilde,atmp,dtpropose,cur_order,A = cache
 
   @muladd @. u = uprev + dt*fsalfirst
 
-  A = 1 + 1
-
   T[1,1] = copy(u)
-  dtpropose = dt
-  work = A/dtpropose
 
   halfdt = dt/2
   for i in 2:size(T)[1]
@@ -38,83 +35,49 @@ function perform_step!(integrator,cache::RichardsonEulerCache,repeat_step=false)
       T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
     end
 
-    @. utilde = T[i,i] - T[i,i-1]
-    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(atmp)
-    prevdtpropose = dtpropose
-    dtpropose = dt*0.94*(0.65/integrator.EEst)^(1/(2*i - 1))
-    A = A + dt/halfdt
-    prev_work = work
-    work = A/dtpropose
-    if integrator.opts.adaptive
-      if i <= cur_order - 1
-          if integrator.EEst <= one(integrator.EEst)
-              if work < 0.9*prev_work
-                  cache.dtpropose = dtpropose*((A + (2*dt/halfdt))/A)
-              else
-                  cache.cur_order = max(integrator.alg.min_order,cur_order - 1)
-                  cache.dtpropose = dtpropose
-              end
-              f(k, T[i,i], p, t+dt)
-              @. u = T[i,i]
-              return nothing
-          else
-              if integrator.EEst > 4*(dt/halfdt)^4
-                  cache.cur_order = max(integrator.alg.min_order,cur_order - 1)
-                  cache.dtpropose = dtpropose
-                  return nothing
-              end
-          end
-      elseif i == cur_order
-          if integrator.EEst <= one(integrator.EEst)
-              if prev_work < 0.9*work
-                  cache.cur_order = max(integrator.alg.min_order,cur_order - 1)
-                  cache.dtpropose = prevdtpropose
-              elseif work < 0.9*prev_work
-                  cache.cur_order = min(integrator.alg.max_order, cur_order + 1)
-                  cache.dtpropose = dtpropose*((A + 2*dt/halfdt)/A)
-              else
-                  cache.dtpropose = dtpropose
-              end
-              f(k, T[i,i], p, t+dt)
-              @. u = T[i,i]
-
-              return nothing
-          else
-              if integrator.EEst > (2*dt/halfdt)^2
-                  cache.dtpropose = dtpropose
-                  return nothing
-              else
-                  #setting variables for next condition
-                  if prev_work < 0.9*work
-                      work = prev_work
-                      cur_order = max(integrator.alg.min_order,cur_order - 1)
-                  end
-              end
-          end
-      else
-          if integrator.EEst <= one(integrator.EEst)
-            cache.cur_order = cur_order
-            if work < 0.9*prev_work
-                cache.cur_order = min(integrator.alg.max_order,cache.cur_order + 1)
-            end
-            f(k, T[i,i], p, t+dt)
-
-            @. u = T[i,i]
-            return nothing
-          else
-              cache.dtpropose = dtpropose
-              return nothing
-          end
-      end
-    end
-
     halfdt = halfdt/2
   end
 
-  # using extrapolated value of u
-  @. u = T[integrator.alg.max_order, integrator.alg.max_order]
+  if integrator.opts.adaptive
+      minimum_work = Inf
+      range_start = max(2,cur_order - 1)
+      if cache.step_no == one(cache.step_no)
+          range_start = 2
+      end
 
+      for i = range_start:min(size(T)[1], cur_order + 1)
+
+          A = 2^(i-1)
+          @. utilde = T[i,i] - T[i,i-1]
+          atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+          EEst = integrator.opts.internalnorm(atmp)
+
+          beta1 = integrator.opts.beta1
+          e = integrator.EEst
+          qold = integrator.qold
+
+          integrator.opts.beta1 = 1/(i+1)
+          integrator.EEst = EEst
+          dtpropose = step_accept_controller!(integrator,integrator.alg,stepsize_controller!(integrator,integrator.alg))
+          integrator.EEst = e
+          integrator.opts.beta1 = beta1
+          integrator.qold = qold
+
+          work = A/dtpropose
+
+          if work < minimum_work
+              integrator.opts.beta1 = 1/(i+1)
+              cache.dtpropose = dtpropose
+              cache.cur_order = i
+              minimum_work = work
+              integrator.EEst = EEst
+          end
+      end
+  end
+
+  # using extrapolated value of u
+  @. u = T[cache.cur_order, cache.cur_order]
+  cache.step_no = cache.step_no + 1
   f(k, u, p, t+dt)
 end
 
@@ -127,22 +90,17 @@ function initialize!(integrator,cache::RichardsonEulerConstantCache)
   integrator.fsallast = zero(integrator.fsalfirst)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-
+  cache.step_no = 1
   cache.cur_order = max(integrator.alg.init_order, integrator.alg.min_order)
 end
 
 function perform_step!(integrator,cache::RichardsonEulerConstantCache,repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
-  @unpack prevdtpropose ,dtpropose, T, cur_order, prev_work, work, A = cache
+  @unpack dtpropose, T, cur_order, work, A = cache
   @muladd u = @. uprev + dt*integrator.fsalfirst
-  A = 1 + 1
-
   T[1,1] = u
-  dtpropose = dt #doubt but error_1 isn't defined
-  work = A/dtpropose
-
   halfdt = dt/2
-  for i in 2:size(T)[1]
+  for i in 2:min(size(T)[1], cur_order+1)
     # Solve using Euler method
     @muladd u = @. uprev + halfdt*integrator.fsalfirst
     k = f(u, p, t+halfdt)
@@ -157,96 +115,53 @@ function perform_step!(integrator,cache::RichardsonEulerConstantCache,repeat_ste
     for j in 2:i
       T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
     end
-    utilde = T[i,i] - T[i,i-1]
-    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-    integrator.EEst = integrator.opts.internalnorm(atmp)
-    prevdtpropose = dtpropose
-    dtpropose = dt*0.94*(0.65/integrator.EEst)^(1/(2*i - 1))
-    A = A + dt/halfdt
-    prev_work = work
-    work = A/dtpropose
-    if integrator.opts.adaptive
-      if i <= cur_order - 1
-          if integrator.EEst <= one(integrator.EEst)
-              if work < 0.9*prev_work
-                  cache.dtpropose = dtpropose*((A + (2*dt/halfdt))/A)
-              else
-                  cache.cur_order = max(integrator.alg.min_order,cur_order - 1)
-                  cache.dtpropose = dtpropose
-              end
-              integrator.u = T[i,i]
-              k = f(T[i,i], p, t+dt)
-
-              integrator.fsallast = k
-              integrator.k[1] = integrator.fsalfirst
-              integrator.k[2] = integrator.fsallast
-              return nothing 
-          else
-              if integrator.EEst > 4*(dt/halfdt)^4
-                  cache.cur_order = max(integrator.alg.min_order,cur_order - 1)
-                  cache.dtpropose = dtpropose  
-                  return nothing
-              end
-          end
-      elseif i == cur_order
-          if integrator.EEst <= one(integrator.EEst)
-              if prev_work < 0.9*work
-                  cache.cur_order = max(integrator.alg.min_order,cur_order - 1)
-                  cache.dtpropose = prevdtpropose
-              elseif work < 0.9*prev_work
-                  cache.cur_order = min(integrator.alg.max_order, cur_order + 1)
-                  cache.dtpropose = dtpropose*((A + 2*dt/halfdt)/A)
-              else
-                  cache.dtpropose = dtpropose
-              end
-              integrator.u = T[i,i]
-              k = f(T[i,i], p, t+dt)
-
-              integrator.fsallast = k
-              integrator.k[1] = integrator.fsalfirst
-              integrator.k[2] = integrator.fsallast
-              return nothing
-          else
-              if integrator.EEst > (2*dt/halfdt)^2
-                  cache.dtpropose = dtpropose
-                  return nothing
-              else
-                  #setting variables for next condition
-                  if prev_work < 0.9*work
-                      work = prev_work
-                      cur_order = max(integrator.alg.min_order,cur_order - 1)
-                  end
-              end
-          end
-      else
-          if integrator.EEst <= one(integrator.EEst)
-            cache.cur_order = cur_order
-            if work < 0.9*prev_work
-                cache.cur_order = min(integrator.alg.max_order,cache.cur_order + 1)
-            end
-            k = f(T[i,i], p, t+dt)
-
-            integrator.fsallast = k
-            integrator.k[1] = integrator.fsalfirst
-            integrator.k[2] = integrator.fsallast
-
-            integrator.u = T[i,i]
-            return nothing
-          else
-              cache.dtpropose = dtpropose
-              return nothing
-          end
-      end
-    end
-
     halfdt = halfdt/2
   end
 
-  k = f(T[integrator.alg.max_order,integrator.alg.max_order], p, t+dt)
+  if integrator.opts.adaptive
+      minimum_work = Inf
+      range_start = max(2,cur_order - 1)
+      if cache.step_no == one(cache.step_no)
+          range_start = 2
+      end
 
+      for i = range_start:min(size(T)[1], cur_order + 1)
+
+          A = 2^(i-1)
+          utilde = T[i,i] - T[i,i-1]
+          atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+          EEst = integrator.opts.internalnorm(atmp)
+
+          beta1 = integrator.opts.beta1
+          e = integrator.EEst
+          qold = integrator.qold
+
+          integrator.opts.beta1 = 1/(i+1)
+          integrator.EEst = EEst
+          dtpropose = step_accept_controller!(integrator,integrator.alg,stepsize_controller!(integrator,integrator.alg))
+          integrator.EEst = e
+          integrator.opts.beta1 = beta1
+          integrator.qold = qold
+
+          work = A/dtpropose
+
+          if work < minimum_work
+              integrator.opts.beta1 = 1/(i+1)
+              cache.dtpropose = dtpropose
+              cache.cur_order = i
+              minimum_work = work
+              integrator.EEst = EEst
+          end
+      end
+  end
+
+  cache.step_no = cache.step_no + 1
+  integrator.u = T[cache.cur_order,cache.cur_order]
+
+  k = f(integrator.u, p, t+dt)
   integrator.fsallast = k
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
+
   # Use extrapolated value of u
-  integrator.u = T[integrator.alg.max_order,integrator.alg.max_order]
 end

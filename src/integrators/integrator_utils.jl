@@ -181,7 +181,6 @@ end
 const StandardControllerAlgs = Union{GenericImplicitEuler,GenericTrapezoid,VCABM}
 #const NordAlgs = Union{AN5, JVODE}
 
-
 function stepsize_controller!(integrator, alg::JVODE)
   #η = choose_η!(integrator, integrator.cache)
   if iszero(integrator.EEst)
@@ -197,23 +196,6 @@ function step_accept_controller!(integrator,alg::JVODE,η)
 end
 function step_reject_controller!(integrator,alg::JVODE)
   integrator.dt *= integrator.qold
-end
-
-function stepsize_controller!(integrator,alg::RichardsonEuler)
-  q = integrator.dt/integrator.cache.dtpropose
-  @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),q))
-  q
-end
-
-function step_accept_controller!(integrator,alg::RichardsonEuler)
-  # if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
-  #   q = one(q)
-  # end
-  return integrator.dt/q
-end
-
-function step_reject_controller!(integrator,alg::RichardsonEuler)
-  integrator.dt = integrator.cache.dtpropose
 end
 
 function stepsize_controller!(integrator, alg::QNDF)

@@ -37,7 +37,7 @@ struct RichardsonEuler <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
   min_order::Int
   init_order::Int
 end
-RichardsonEuler(;max_order=4,min_order=1,init_order=1) = RichardsonEuler(max_order,min_order,init_order)
+RichardsonEuler(;max_order=9,min_order=1,init_order=9) = RichardsonEuler(max_order,min_order,init_order)
 
 struct RK46NL <: OrdinaryDiffEqAlgorithm end
 struct Heun <: OrdinaryDiffEqAdaptiveAlgorithm end
