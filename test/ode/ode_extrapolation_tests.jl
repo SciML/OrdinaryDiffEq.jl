@@ -12,13 +12,19 @@ dts = 1 .//2 .^(8:-1:4)
 testTol = 0.2
 
 
-
-# Order Convergence test
 for i = 1:2
   global dts
   prob = probArr[i]
+  # Order Convergence test
   for j = 1:4
       sim = test_convergence(dts,prob,RichardsonEuler(j,j,j))
       @test sim.𝒪est[:final] ≈ j atol=testTol
-   end
+  end
+
+   # Regression test
+  sol = solve(prob,RichardsonEuler(9,1,9),reltol=1e-3)
+  @test length(sol.u) < 15
+  sol = solve(prob,RichardsonEuler(9,1,9),reltol=1e-6)
+  @test length(sol.u) < 18
+
 end
