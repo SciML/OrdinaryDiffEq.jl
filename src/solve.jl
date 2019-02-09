@@ -56,7 +56,8 @@ function DiffEqBase.__init(
   progress_message = ODE_DEFAULT_PROG_MESSAGE,
   userdata=nothing,
   allow_extrapolation = alg_extrapolates(alg),
-  initialize_integrator=true,kwargs...) where {algType<:OrdinaryDiffEqAlgorithm,recompile_flag}
+  initialize_integrator=true,
+  alias_u0=false, kwargs...) where {algType<:OrdinaryDiffEqAlgorithm,recompile_flag}
 
   if typeof(prob.f)<:DynamicalODEFunction && typeof(prob.f.mass_matrix)<:Tuple
     if any(mm != I for mm in prob.f.mass_matrix)
@@ -92,7 +93,11 @@ function DiffEqBase.__init(
   if typeof(prob.u0) <: Tuple
     u = ArrayPartition(prob.u0,Val{true})
   else
-    u = recursivecopy(prob.u0)
+    if alias_u0
+      u = prob.u0
+    else
+      u = recursivecopy(prob.u0)
+    end
   end
 
   uType = typeof(u)
