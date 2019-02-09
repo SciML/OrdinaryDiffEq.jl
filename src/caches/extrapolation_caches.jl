@@ -28,7 +28,7 @@ function alg_cache(alg::RichardsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomE
   utilde = similar(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
-  cur_order = one(Int)
+  cur_order = max(alg.init_order, alg.min_order)
   dtpropose = zero(dt)
   T = fill(zeros(eltype(u), size(u)), (alg.max_order, alg.max_order))
   work = zero(dt)
@@ -40,7 +40,7 @@ end
 
 function alg_cache(alg::RichardsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   dtpropose = zero(dt)
-  cur_order = one(Int)
+  cur_order = max(alg.init_order, alg.min_order)
   T = fill(zero(eltype(u)), (alg.max_order, alg.max_order))
   work = zero(dt)
   A = one(Int)
