@@ -1226,7 +1226,7 @@ function perform_step!(integrator, cache::Exprb32Cache, repeat_step=false)
     # error estimator for the imbedded method
     @views @. utilde = (2*dt) * (-w1[:,4] + w2[:,4])
     calculate_residuals!(tmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
-    integrator.EEst = integrator.opts.internalnorm(tmp)
+    integrator.EEst = integrator.opts.internalnorm(tmp,t)
   end
 
   # Update integrator state
@@ -1304,7 +1304,7 @@ function perform_step!(integrator, cache::Exprb43Cache, repeat_step=false)
     @views @. rtmp = 36w1[:,5] - 48w2[:,5] + 12w3[:,5]
     @. utilde = dt * rtmp
     calculate_residuals!(tmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
-    integrator.EEst = integrator.opts.internalnorm(tmp)
+    integrator.EEst = integrator.opts.internalnorm(tmp,t)
   end
 
   # Update integrator state

@@ -312,7 +312,7 @@ end
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
-  maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol)/(10.0*eps(integrator.opts.internalnorm(uprev)))))))
+  maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/(10.0*eps(integrator.opts.internalnorm(uprev,t)))))))
   mdeg = 1.0 + Int(floor(sqrt(1.54*dt*integrator.eigen_est + 1.0)))
   if mdeg >= maxm
     mdeg = maxm
@@ -394,7 +394,7 @@ end
   @unpack k, tmp, gprev2, gprev, atmp = cache
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
-  maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol)/(10.0*eps(integrator.opts.internalnorm(uprev)))))))
+  maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/(10.0*eps(integrator.opts.internalnorm(uprev,t)))))))
   mdeg = 1 + Int(floor(sqrt(1.54*dt*integrator.eigen_est + 1.0)))
   if mdeg >= maxm
     mdeg = maxm

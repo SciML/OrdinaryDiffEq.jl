@@ -95,7 +95,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
     @. z = ccache.zprev
   end
   # Perturbation
-  u_norm = integrator.opts.internalnorm(uprev.t)
+  u_norm = integrator.opts.internalnorm(uprev,t)
   z_norm = integrator.opts.internalnorm(z,t)
   pert   = eps(u_norm)
   sqrt_pert = sqrt(pert)
