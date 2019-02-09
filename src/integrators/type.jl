@@ -43,7 +43,6 @@ mutable struct DEOptions{absType,relType,QT,tType,F1,F2,F3,F4,F5,F6,tstopsType,d
   force_dtmin::Bool
   advance_to_tstop::Bool
   stop_at_next_tstop::Bool
-  alias_u0::Bool
 end
 
 """

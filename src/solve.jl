@@ -258,8 +258,7 @@ function DiffEqBase.__init(
                        QT(beta1),QT(beta2),QT(qoldinit),dense,
                        save_on,save_start,save_end,callbacks_internal,isoutofdomain,
                        unstable_check,verbose,
-                       calck,force_dtmin,advance_to_tstop,stop_at_next_tstop,
-                       alias_u0)
+                       calck,force_dtmin,advance_to_tstop,stop_at_next_tstop)
 
   if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
     sol = DiffEqBase.build_solution(prob,alg,ts,timeseries,
