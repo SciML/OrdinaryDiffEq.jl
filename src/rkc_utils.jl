@@ -1,14 +1,14 @@
 # This function calculates the largest eigenvalue
 # (absolute value wise) by power iteration.
-
+const RKCAlgs = Union{RKC,IRKC}
 function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
   isfirst = integrator.iter == 1 || integrator.u_modified
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
   maxiter = 50
-  safe = (integrator.alg isa RKC) ? 1.0 : 1.2
+  safe = (integrator.alg isa RKCAlgs) ? 1.0 : 1.2
   # Initial guess for eigenvector `z`
   if isfirst
-    if integrator.alg isa RKC
+    if integrator.alg isa RKCAlgs
       z = fsalfirst
     else
       fz = fsalfirst
@@ -49,7 +49,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
     eig_prev = integrator.eigen_est
     integrator.eigen_est = Δ/dz_u * safe
     # Convergence
-    if integrator.alg isa RKC # To match the constants given in the paper
+    if integrator.alg isa RKCAlgs # To match the constants given in the paper
       if iter >= 2 && abs(eig_prev - integrator.eigen_est) < max(integrator.eigen_est,1.0/integrator.opts.dtmax)*0.01
         integrator.eigen_est *= 1.2
         # Store the eigenvector
@@ -85,7 +85,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
   safe = (integrator.alg isa RKC) ? 1.0 : 1.2
   # Initial guess for eigenvector `z`
   if isfirst
-    if integrator.alg isa RKC
+    if integrator.alg isa RKCAlgs
       @. z = fsalfirst
     else
       @. fz = u
@@ -126,9 +126,9 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
     eig_prev = integrator.eigen_est
     integrator.eigen_est = Δ/dz_u * safe
     # Convergence
-    if integrator.alg isa RKC # To match the constants given in the paper
+    if integrator.alg isa RKCAlgs # To match the constants given in the paper
       if iter >= 2 && abs(eig_prev - integrator.eigen_est) < max(integrator.eigen_est,1.0/integrator.opts.dtmax)*0.01
-        integrator.eigen_est *= safe
+        integrator.eigen_est *= 1.2
         # Store the eigenvector
         @. ccache.zprev = z - uprev
         return true

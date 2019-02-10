@@ -460,3 +460,250 @@ end
   integrator.k[2] = integrator.fsallast
   integrator.u = u
 end
+
+function initialize!(integrator, cache::IRKCConstantCache)
+  @unpack uprev, p, t = integrator
+  @unpack f1, f2 = integrator.f
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+  cache.du₁ = f1(uprev,p,t)
+  cache.du₂ = f2(uprev,p,t)
+  integrator.fsalfirst = cache.du₁ + cache.du₂
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
+
+function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p,alg,fsalfirst = integrator
+  @unpack du₁,du₂,nlsolve = cache
+  @unpack f1, f2 = integrator.f
+  maxeig!(integrator, cache)
+  nlsolve!, nlcache = nlsolve, nlsolve.cache
+
+  # The the number of degree for Chebyshev polynomial
+  maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/(10.0*eps(integrator.opts.internalnorm(uprev,t)))))))
+  mdeg = 1.0 + Int(floor(sqrt(1.54*dt*integrator.eigen_est + 1.0)))
+  if mdeg >= maxm
+    mdeg = maxm
+  end
+  typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, 1.0*dt, repeat_step) )
+  nlcache.γ = 1.0;
+  # initial guess for implicit part
+  if alg.extrapolant == :linear
+    nlcache.z = dt*du₁
+  else # :constant
+    nlcache.z = zero(u)
+  end
+
+
+  ω₀    = 1.0 + 2.0/(13.0*(mdeg^2.0))
+  temp₁ = ω₀^2 - 1.0
+  temp₂ = sqrt(temp₁)
+  θ     = mdeg*log(ω₀ + temp₂)
+  ω₁    = (sinh(θ)*temp₁)/(cosh(θ)*mdeg*temp₂ - ω₀*sinh(θ))
+  Bⱼ₋₂  = 1.0/(4*(ω₀^2))
+  Bⱼ₋₁  = 1.0/ω₀
+
+  #stage-1
+  f1ⱼ₋₂  = du₁
+  gprev2 = copy(uprev)
+  μs     = ω₁*Bⱼ₋₁
+  μs₁    = μ
+  nlcache.tmp = uprev + dt*μs₁*du₁
+  z,η,iter,fail_convergence = nlsolve!(integrator)
+  # fail_convergence && return
+  u = nlcache.tmp + μs₁*z
+  nlcache.ηold = η
+  nlcache.nl_iters = iter
+
+  Cⱼ₋₂   = zero(eltype(u))
+  Cⱼ₋₁   = μs
+  Tⱼ₋₁   = ω₀
+  Tⱼ₋₂   = one(eltype(u))
+  Tⱼ₋₁′  = one(eltype(u))
+  Tⱼ₋₂′  = zero(eltype(u))
+  Tⱼ₋₁″  = zero(eltype(u))
+  Tⱼ₋₂″  = zero(eltype(u))
+  gprev  = u
+
+  #stage- 2...mdeg
+  for iter in 2:mdeg
+    Tⱼ   = 2.0*ω₀*Tⱼ₋₁ - Tⱼ₋₂
+    Tⱼ′  = 2.0*ω₀*Tⱼ₋₁′ + 2.0*Tⱼ₋₁ - Tⱼ₋₂′
+    Tⱼ″  = 2.0*ω₀*Tⱼ₋₁″ + 4.0*Tⱼ₋₁′ - Tⱼ₋₂″
+    Bⱼ   = Tⱼ″/(Tⱼ′^2)
+    νs   = -(1.0 - Tⱼ₋₁*Bⱼ₋₁)*μs
+    μ    = (2.0*ω₀*Bⱼ)/Bⱼ₋₁
+    ν    = - Bⱼ/Bⱼ₋₂
+    μs   = (μ*ω₁)/ω₀
+
+    f1ⱼ₋₁  = f1(gprev, p, t+Cⱼ₋₁*dt)
+    f2ⱼ₋₁  = f2(gprev, p, t+Cⱼ₋₁*dt)
+    nlcache.tmp = (1.0-μ-ν)*uprev + μ*gprev + ν*gprev2 + dt*μs*f2ⱼ₋₁ + dt*νs*du₂ + (νs - (1-μ-ν)*μs₁)*dt*du₁ - ν*μs₁*dt*f1ⱼ₋₂
+    nlcache.z   = gprev
+    z,η,iter,fail_convergence = nlsolve!(integrator)
+    # ignoring newton method's convergence failure
+    # fail_convergence && return
+    u = nlcache.tmp + μs₁*z
+    nlcache.ηold = η
+    nlcache.nl_iters = iter
+    Cⱼ   = μ*Cⱼ₋₁ + ν*Cⱼ₋₂ + μs + νs
+    if (iter < mdeg)
+      f1ⱼ₋₂= f1ⱼ₋₁
+      gprev2 = gprev
+      gprev  = u
+      Cⱼ₋₂   = Cⱼ₋₁
+      Cⱼ₋₁   = Cⱼ
+      Bⱼ₋₂   = Bⱼ₋₁
+      Bⱼ₋₁   = Bⱼ
+      Tⱼ₋₂   = Tⱼ₋₁
+      Tⱼ₋₁   = Tⱼ
+      Tⱼ₋₂′  = Tⱼ₋₁′
+      Tⱼ₋₁′  = Tⱼ′
+      Tⱼ₋₂″  = Tⱼ₋₁″
+      Tⱼ₋₁″  = Tⱼ″
+    end
+  end
+
+  cache.du₁ = f1(u, p, t+dt)
+  cache.du₂ = f2(u, p, t+dt)
+  # error estimate
+  if integrator.opts.adaptive
+    utilde = nlcache.W*dt*(0.5*(cache.du₂ - du₂) + (0.5 - μs₁)*(cache.du₁ - du₁))
+    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+  end
+
+  integrator.fsallast = cache.du₁ + cache.du₂
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end
+
+function initialize!(integrator, cache::IRKCCache)
+  @unpack uprev, p, t = integrator
+  @unpack f1, f2 = integrator.f
+  integrator.kshortsize = 2
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  f1(cache.du₁, uprev, p, t)
+  f2(cache.du₂, uprev, p, t)
+  @. integrator.fsalfirst = cache.du₁ + cache.du₂
+end
+
+function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p,alg = integrator
+  @unpack tmp,gprev,gprev2,k,f1ⱼ₋₁,f1ⱼ₋₂,f2ⱼ₋₁,utilde,du₁,du₂,z,W,nlsolve,atmp = cache
+  @unpack f1, f2 = integrator.f
+  nlsolve!, nlcache = nlsolve, nlsolve.cache
+
+  maxeig!(integrator, cache)
+  # The the number of degree for Chebyshev polynomial
+  maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/(10.0*eps(integrator.opts.internalnorm(uprev,t)))))))
+  mdeg = 1 + Int(floor(sqrt(1.54*dt*integrator.eigen_est + 1.0)))
+  if mdeg >= maxm
+    mdeg = maxm
+  end
+
+  typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, 1.0*dt, repeat_step)
+  nlcache.γ = 1.0
+  # initial guess
+  if alg.extrapolant == :linear
+    @. z = dt*du₁
+  else # :constant
+    @. z = zero(eltype(u))
+  end
+
+
+  ω₀    = 1.0 + 2.0/(13.0*(mdeg^2.0))
+  temp₁ = ω₀^2 - 1.0
+  temp₂ = sqrt(temp₁)
+  θ     = mdeg*log(ω₀ + temp₂)
+  ω₁    = (sinh(θ)*temp₁)/(cosh(θ)*mdeg*temp₂ - ω₀*sinh(θ))
+  Bⱼ₋₂  = 1.0/(4*(ω₀^2))
+  Bⱼ₋₁  = 1.0/ω₀
+
+  #stage-1
+  f1ⱼ₋₂  = du₁
+  @. gprev2 = uprev
+  μs     = ω₁*Bⱼ₋₁
+  μs₁    = μ
+  @. tmp = uprev + dt*μs₁*du₁
+  z,η,iter,fail_convergence = nlsolve!(integrator)
+  # ignoring newton method's convergence failure
+  # fail_convergence && return
+  @. u = tmp + μs₁*z
+  nlcache.ηold = η
+  nlcache.nl_iters = iter
+
+  Cⱼ₋₂   = zero(eltype(u))
+  Cⱼ₋₁   = μs
+  Tⱼ₋₁   = ω₀
+  Tⱼ₋₂   = one(eltype(u))
+  Tⱼ₋₁′  = one(eltype(u))
+  Tⱼ₋₂′  = zero(eltype(u))
+  Tⱼ₋₁″  = zero(eltype(u))
+  Tⱼ₋₂″  = zero(eltype(u))
+  @. gprev  = u
+
+  #stage- 2...mdeg
+  for iter in 2:mdeg
+    Tⱼ   = 2.0*ω₀*Tⱼ₋₁ - Tⱼ₋₂
+    Tⱼ′  = 2.0*ω₀*Tⱼ₋₁′ + 2.0*Tⱼ₋₁ - Tⱼ₋₂′
+    Tⱼ″  = 2.0*ω₀*Tⱼ₋₁″ + 4.0*Tⱼ₋₁′ - Tⱼ₋₂″
+    Bⱼ   = Tⱼ″/(Tⱼ′^2)
+    νs   = -(1.0 - Tⱼ₋₁*Bⱼ₋₁)*μs
+    μ    = (2.0*ω₀*Bⱼ)/Bⱼ₋₁
+    ν    = - Bⱼ/Bⱼ₋₂
+    μs   = (μ*ω₁)/ω₀
+
+    f1(f1ⱼ₋₁, gprev, p, t+Cⱼ₋₁*dt)
+    f2(f2ⱼ₋₁, gprev, p, t+Cⱼ₋₁*dt)
+    @. tmp = (1.0-μ-ν)*uprev + μ*gprev + ν*gprev2 + dt*μs*f2ⱼ₋₁ + dt*νs*du₂ + (νs - (1-μ-ν)*μs₁)*dt*du₁ - ν*μs₁*dt*f1ⱼ₋₂
+    @. z   = gprev
+    z,η,iter,fail_convergence = nlsolve!(integrator)
+    # fail_convergence && return
+    @. u = tmp + μs₁*z
+    nlcache.ηold = η
+    nlcache.nl_iters = iter
+    Cⱼ   = μ*Cⱼ₋₁ + ν*Cⱼ₋₂ + μs + νs
+    if (iter < mdeg)
+      @. f1ⱼ₋₂  = f1ⱼ₋₁
+      @. gprev2 = gprev
+      @. gprev  = u
+      Cⱼ₋₂   = Cⱼ₋₁
+      Cⱼ₋₁   = Cⱼ
+      Bⱼ₋₂   = Bⱼ₋₁
+      Bⱼ₋₁   = Bⱼ
+      Tⱼ₋₂   = Tⱼ₋₁
+      Tⱼ₋₁   = Tⱼ
+      Tⱼ₋₂′  = Tⱼ₋₁′
+      Tⱼ₋₁′  = Tⱼ′
+      Tⱼ₋₂″  = Tⱼ₋₁″
+      Tⱼ₋₁″  = Tⱼ″
+    end
+  end
+
+  @. f1ⱼ₋₁ = du₁
+  @. f2ⱼ₋₁ = du₂
+  f1(du₁, u, p, t+dt)
+  f2(du₂, u, p, t+dt)
+  # error estimate
+  if integrator.opts.adaptive
+    @. utilde = W*dt*(0.5*(du₂ - f2ⱼ₋₁) + (0.5 - μs₁)*(du₁ - f1ⱼ₋₁))
+    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+  end
+
+  @. integrator.fsallast = du₁ + du₂
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+  @. k = du₁ + du₂
+end
