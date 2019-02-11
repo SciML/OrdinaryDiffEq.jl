@@ -177,6 +177,7 @@ alg_order(alg::NDBLSRK134) = 4
 alg_order(alg::NDBLSRK144) = 4
 alg_order(alg::CFRLDDRK64) = 4
 alg_order(alg::TSLDDRK74) = 4
+alg_order(alg::ParsaniKetchesonDeconinck3S82) = 2
 alg_order(alg::ParsaniKetchesonDeconinck3S53) = 3
 alg_order(alg::ParsaniKetchesonDeconinck3S173) = 3
 alg_order(alg::ParsaniKetchesonDeconinck3S94) = 4

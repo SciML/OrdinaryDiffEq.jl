@@ -53,6 +53,7 @@ struct NDBLSRK134 <: OrdinaryDiffEqAlgorithm end
 struct NDBLSRK144 <: OrdinaryDiffEqAlgorithm end
 struct CFRLDDRK64 <: OrdinaryDiffEqAlgorithm end
 struct TSLDDRK74 <: OrdinaryDiffEqAlgorithm end
+struct ParsaniKetchesonDeconinck3S82 <: OrdinaryDiffEqAlgorithm end
 struct ParsaniKetchesonDeconinck3S53 <: OrdinaryDiffEqAlgorithm end
 struct ParsaniKetchesonDeconinck3S173 <: OrdinaryDiffEqAlgorithm end
 struct ParsaniKetchesonDeconinck3S94 <: OrdinaryDiffEqAlgorithm end
