@@ -609,6 +609,52 @@ struct LowStorageRK3SConstantCache{N,T,T2} <: OrdinaryDiffEqConstantCache
 end
 
 
+function ParsaniKetchesonDeconinck3S32ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+  γ102 = convert(T, -1.2664395576322218e-1)
+  γ103 = convert(T, 1.1426980685848858e+0)
+  γ12end = SVector(γ102, γ103)
+
+  γ202 = convert(T, 6.5427782599406470e-1)
+  γ203 = convert(T, -8.2869287683723744e-2)
+  γ22end = SVector(γ202, γ203)
+
+  γ302 = convert(T, 0.0000000000000000e+0)
+  γ303 = convert(T, 0.0000000000000000e+0)
+  γ32end = SVector(γ302, γ303)
+
+  δ02 = convert(T, 7.2196567116037724e-1)
+  δ03 = convert(T, 0.0000000000000000e+0)
+  δ2end = SVector(δ02, δ03)
+
+  β1  = convert(T, 7.2366074728360086e-1)
+  β02 = convert(T, 3.4217876502651023e-1)
+  β03 = convert(T, 3.6640216242653251e-1)
+  β2end = SVector(β02, β03)
+
+  c02 = convert(T2, 7.2366074728360086e-1)
+  c03 = convert(T2, 5.9236433182015646e-1)
+  c2end = SVector(c02, c03)
+
+  LowStorageRK3SConstantCache{2,T,T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
+end
+
+function alg_cache(alg::ParsaniKetchesonDeconinck3S32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)
+  k = zero(rate_prototype)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
+  tab = ParsaniKetchesonDeconinck3S32ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  LowStorageRK3SCache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+function alg_cache(alg::ParsaniKetchesonDeconinck3S32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  ParsaniKetchesonDeconinck3S32ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+end
+
+
 function ParsaniKetchesonDeconinck3S82ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
   γ102 = convert(T, 4.2397552118208004e-1)
   γ103 = convert(T, -2.3528852074619033e-1)
