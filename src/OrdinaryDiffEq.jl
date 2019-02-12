@@ -168,6 +168,8 @@ module OrdinaryDiffEq
 
   export ORK256, CarpenterKennedy2N54, HSLDDRK64, DGLDDRK73_C, DGLDDRK84_C, DGLDDRK84_F, NDBLSRK124, NDBLSRK134, NDBLSRK144,
          CFRLDDRK64, TSLDDRK74,
+         ParsaniKetchesonDeconinck3S32, ParsaniKetchesonDeconinck3S82,
+         ParsaniKetchesonDeconinck3S53, ParsaniKetchesonDeconinck3S173,
          ParsaniKetchesonDeconinck3S94, ParsaniKetchesonDeconinck3S184,
          ParsaniKetchesonDeconinck3S105, ParsaniKetchesonDeconinck3S205
 

@@ -609,6 +609,316 @@ struct LowStorageRK3SConstantCache{N,T,T2} <: OrdinaryDiffEqConstantCache
 end
 
 
+function ParsaniKetchesonDeconinck3S32ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+  γ102 = convert(T, -1.2664395576322218e-1)
+  γ103 = convert(T, 1.1426980685848858e+0)
+  γ12end = SVector(γ102, γ103)
+
+  γ202 = convert(T, 6.5427782599406470e-1)
+  γ203 = convert(T, -8.2869287683723744e-2)
+  γ22end = SVector(γ202, γ203)
+
+  γ302 = convert(T, 0.0000000000000000e+0)
+  γ303 = convert(T, 0.0000000000000000e+0)
+  γ32end = SVector(γ302, γ303)
+
+  δ02 = convert(T, 7.2196567116037724e-1)
+  δ03 = convert(T, 0.0000000000000000e+0)
+  δ2end = SVector(δ02, δ03)
+
+  β1  = convert(T, 7.2366074728360086e-1)
+  β02 = convert(T, 3.4217876502651023e-1)
+  β03 = convert(T, 3.6640216242653251e-1)
+  β2end = SVector(β02, β03)
+
+  c02 = convert(T2, 7.2366074728360086e-1)
+  c03 = convert(T2, 5.9236433182015646e-1)
+  c2end = SVector(c02, c03)
+
+  LowStorageRK3SConstantCache{2,T,T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
+end
+
+function alg_cache(alg::ParsaniKetchesonDeconinck3S32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)
+  k = zero(rate_prototype)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
+  tab = ParsaniKetchesonDeconinck3S32ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  LowStorageRK3SCache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+function alg_cache(alg::ParsaniKetchesonDeconinck3S32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  ParsaniKetchesonDeconinck3S32ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+end
+
+
+function ParsaniKetchesonDeconinck3S82ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+  γ102 = convert(T, 4.2397552118208004e-1)
+  γ103 = convert(T, -2.3528852074619033e-1)
+  γ104 = convert(T, 7.9598685017877846e-1)
+  γ105 = convert(T, -1.3205224623823271e+0)
+  γ106 = convert(T, 2.1452956294251941e+0)
+  γ107 = convert(T, -9.5532770501880648e-1)
+  γ108 = convert(T, 2.5361391125131094e-1)
+  γ12end = SVector(γ102, γ103, γ104, γ105, γ106, γ107, γ108)
+
+  γ202 = convert(T, 4.4390665802303775e-1)
+  γ203 = convert(T, 7.5333732286056154e-1)
+  γ204 = convert(T, 6.5885460813015481e-2)
+  γ205 = convert(T, 6.3976199384289623e-1)
+  γ206 = convert(T, -7.3823030755143193e-1)
+  γ207 = convert(T, 7.0177211879534529e-1)
+  γ208 = convert(T, 4.0185379950224559e-1)
+  γ22end = SVector(γ202, γ203, γ204, γ205, γ206, γ207, γ208)
+
+  γ302 = convert(T, 0.0000000000000000e+0)
+  γ303 = convert(T, 0.0000000000000000e+0)
+  γ304 = convert(T, 5.8415358412023582e-2)
+  γ305 = convert(T, 6.4219008773865116e-1)
+  γ306 = convert(T, 6.8770305706885126e-1)
+  γ307 = convert(T, 6.3729822311671305e-2)
+  γ308 = convert(T, -3.3679429978131387e-1)
+  γ32end = SVector(γ302, γ303, γ304, γ305, γ306, γ307, γ308)
+
+  δ02 = convert(T, 2.9762522910396538e-1)
+  δ03 = convert(T, 3.4212961014330662e-1)
+  δ04 = convert(T, 5.7010739154759105e-1)
+  δ05 = convert(T, 4.1350769551529132e-1)
+  δ06 = convert(T, -1.4040672669058066e-1)
+  δ07 = convert(T, 2.1249567092409008e-1)
+  δ08 = convert(T, 0.0000000000000000e+0)
+  δ2end = SVector(δ02, δ03, δ04, δ05, δ06, δ07, δ08)
+
+  β1  = convert(T, 9.9292229393265474e-1)
+  β02 = convert(T, 5.2108385130005974e-1)
+  β03 = convert(T, 3.8505327083543915e-3)
+  β04 = convert(T, 7.9714199213087467e-1)
+  β05 = convert(T, -8.1822460276649120e-2)
+  β06 = convert(T, 8.4604310411858186e-1)
+  β07 = convert(T, -1.0191166090841246e-1)
+  β08 = convert(T, 6.3190236038107500e-2)
+  β2end = SVector(β02, β03, β04, β05, β06, β07, β08)
+
+  c02 = convert(T2, 9.9292229393265474e-1)
+  c03 = convert(T2, 1.0732413280565014e+0)
+  c04 = convert(T2, 2.5057060509809409e-1)
+  c05 = convert(T2, 1.0496674928979783e+0)
+  c06 = convert(T2, -6.7488037049720317e-1)
+  c07 = convert(T2, -1.5868411612120166e+0)
+  c08 = convert(T2, 2.1138242369563969e+0)
+  c2end = SVector(c02, c03, c04, c05, c06, c07, c08)
+
+  LowStorageRK3SConstantCache{7,T,T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
+end
+
+function alg_cache(alg::ParsaniKetchesonDeconinck3S82,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)
+  k = zero(rate_prototype)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
+  tab = ParsaniKetchesonDeconinck3S82ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  LowStorageRK3SCache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+function alg_cache(alg::ParsaniKetchesonDeconinck3S82,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  ParsaniKetchesonDeconinck3S82ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+end
+
+
+function ParsaniKetchesonDeconinck3S53ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+  γ102 = convert(T, 2.5876919610938998e-1)
+  γ103 = convert(T, -1.3243708384977859e-1)
+  γ104 = convert(T, 5.0556648948362981e-2)
+  γ105 = convert(T, 5.6705507883024708e-1)
+  γ12end = SVector(γ102, γ103, γ104, γ105)
+
+  γ202 = convert(T, 5.5284013909611196e-1)
+  γ203 = convert(T, 6.7318513326032769e-1)
+  γ204 = convert(T, 2.8031054965521607e-1)
+  γ205 = convert(T, 5.5215115815918758e-1)
+  γ22end = SVector(γ202, γ203, γ204, γ205)
+
+  γ302 = convert(T, 0.0000000000000000e+0)
+  γ303 = convert(T, 0.0000000000000000e+0)
+  γ304 = convert(T, 2.7525797946334213e-1)
+  γ305 = convert(T, -8.9505445022148511e-1)
+  γ32end = SVector(γ302, γ303, γ304, γ305)
+
+  δ02 = convert(T, 3.4076878915216791e-1)
+  δ03 = convert(T, 3.4143871647890728e-1)
+  δ04 = convert(T, 7.2292984084963252e-1)
+  δ05 = convert(T, 0.0000000000000000e+0)
+  δ2end = SVector(δ02, δ03, δ04, δ05)
+
+  β1  = convert(T, 2.3002859824852059e-1)
+  β02 = convert(T, 3.0214498165167158e-1)
+  β03 = convert(T, 8.0256010238856679e-1)
+  β04 = convert(T, 4.3621618871511753e-1)
+  β05 = convert(T, 1.1292705979513513e-1)
+  β2end = SVector(β02, β03, β04, β05)
+
+  c02 = convert(T2, 2.3002859824852059e-1)
+  c03 = convert(T2, 4.0500453764839639e-1)
+  c04 = convert(T2, 8.9478204142351003e-1)
+  c05 = convert(T2, 7.2351146275625733e-1)
+  c2end = SVector(c02, c03, c04, c05)
+
+  LowStorageRK3SConstantCache{4,T,T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
+end
+
+function alg_cache(alg::ParsaniKetchesonDeconinck3S53,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)
+  k = zero(rate_prototype)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
+  tab = ParsaniKetchesonDeconinck3S53ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  LowStorageRK3SCache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+function alg_cache(alg::ParsaniKetchesonDeconinck3S53,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  ParsaniKetchesonDeconinck3S53ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+end
+
+
+function ParsaniKetchesonDeconinck3S173ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+  γ102 = convert(T, 7.9377023961829174e-1)
+  γ103 = convert(T, -8.3475116244241754e-2)
+  γ104 = convert(T, -1.6706337980062214e-2)
+  γ105 = convert(T, 3.6410691500331427e-1)
+  γ106 = convert(T, 6.9178255181542780e-1)
+  γ107 = convert(T, 1.4887115004739182e+0)
+  γ108 = convert(T, 4.5336125560871188e-1)
+  γ109 = convert(T, -1.2705776046458739e-1)
+  γ110 = convert(T, 8.3749845457747696e-1)
+  γ111 = convert(T, 1.5709218393361746e-1)
+  γ112 = convert(T, -5.7768207086288348e-1)
+  γ113 = convert(T, -5.7340394122375393e-1)
+  γ114 = convert(T, -1.2050734846514470e+0)
+  γ115 = convert(T, -2.8100719513641002e+0)
+  γ116 = convert(T, 1.6142798657609492e-1)
+  γ117 = convert(T, -2.5801264756641613e+0)
+  γ12end = SVector(γ102, γ103, γ104, γ105, γ106, γ107, γ108, γ109, γ110, γ111, γ112, γ113, γ114, γ115, γ116, γ117)
+
+  γ202 = convert(T, 3.2857861940811250e-1)
+  γ203 = convert(T, 1.1276843361180819e+0)
+  γ204 = convert(T, 1.3149447395238016e+0)
+  γ205 = convert(T, 5.2062891534209055e-1)
+  γ206 = convert(T, 8.8127462325164985e-1)
+  γ207 = convert(T, 4.2020606445856712e-1)
+  γ208 = convert(T, 7.6532635739246124e-2)
+  γ209 = convert(T, 4.4386734924685722e-1)
+  γ210 = convert(T, 6.6503093955199682e-2)
+  γ211 = convert(T, 1.5850209163184039e+0)
+  γ212 = convert(T, 1.1521721573462576e+0)
+  γ213 = convert(T, 1.1172750819374575e+0)
+  γ214 = convert(T, 7.7630223917584007e-1)
+  γ215 = convert(T, 1.0046657060652295e+0)
+  γ216 = convert(T, -1.9795868964959054e-1)
+  γ217 = convert(T, 1.3350583594705518e+0)
+  γ22end = SVector(γ202, γ203, γ204, γ205, γ206, γ207, γ208, γ209, γ210, γ211, γ212, γ213, γ214, γ215, γ216, γ217)
+
+  γ302 = convert(T, 0.0000000000000000e+0)
+  γ303 = convert(T, 0.0000000000000000e+0)
+  γ304 = convert(T, 8.4034574578399479e-1)
+  γ305 = convert(T, 8.5047738439705145e-1)
+  γ306 = convert(T, 1.4082448501410852e-1)
+  γ307 = convert(T, -3.2678802469519369e-1)
+  γ308 = convert(T, 5.3716357620635535e-1)
+  γ309 = convert(T, 9.0228922115199051e-1)
+  γ310 = convert(T, 1.5960226946983552e-1)
+  γ311 = convert(T, 1.1038153140686748e+0)
+  γ312 = convert(T, 1.0843516423068365e-1)
+  γ313 = convert(T, 4.6212710442787724e-1)
+  γ314 = convert(T, -3.3448312125108398e-1)
+  γ315 = convert(T, 1.1153826567096696e+0)
+  γ316 = convert(T, 1.5503248734613539e+0)
+  γ317 = convert(T, -1.2200245424704212e+0)
+  γ32end = SVector(γ302, γ303, γ304, γ305, γ306, γ307, γ308, γ309, γ310, γ311, γ312, γ313, γ314, γ315, γ316, γ317)
+
+  δ02 = convert(T, -3.7235794357769936e-1)
+  δ03 = convert(T, 3.3315440189685536e-1)
+  δ04 = convert(T, -8.2667630338402520e-1)
+  δ05 = convert(T, -5.4628377681035534e-1)
+  δ06 = convert(T, 6.0210777634642887e-1)
+  δ07 = convert(T, -5.7528717894031067e-1)
+  δ08 = convert(T, 5.0914861529202782e-1)
+  δ09 = convert(T, 3.8258114767897194e-1)
+  δ10 = convert(T, -4.6279063221185290e-1)
+  δ11 = convert(T, -2.0820434288562648e-1)
+  δ12 = convert(T, 1.4398056081552713e+0)
+  δ13 = convert(T, -2.8056600927348752e-1)
+  δ14 = convert(T, 2.2767189929551406e+0)
+  δ15 = convert(T, -5.8917530100546356e-1)
+  δ16 = convert(T, 9.1328651048418164e-1)
+  δ17 = convert(T, 0.0000000000000000e+0)
+  δ2end = SVector(δ02, δ03, δ04, δ05, δ06, δ07, δ08, δ09, δ10, δ11, δ12, δ13, δ14, δ15, δ16, δ17)
+
+  β1  = convert(T, 4.9565403010221741e-2)
+  β02 = convert(T, 9.7408718698159397e-2)
+  β03 = convert(T, -1.7620737976801870e-1)
+  β04 = convert(T, 1.4852069175460250e-1)
+  β05 = convert(T, -3.3127657103714951e-2)
+  β06 = convert(T, 4.8294609330498492e-2)
+  β07 = convert(T, 4.9622612199980112e-2)
+  β08 = convert(T, 8.7340766269850378e-1)
+  β09 = convert(T, -2.8692804399085370e-1)
+  β10 = convert(T, 1.2679897532256112e+0)
+  β11 = convert(T, -1.0217436118953449e-2)
+  β12 = convert(T, 8.4665570032598350e-2)
+  β13 = convert(T, 2.8253854742588246e-2)
+  β14 = convert(T, -9.2936733010804407e-2)
+  β15 = convert(T, -8.4798124766803512e-2)
+  β16 = convert(T, -1.6923145636158564e-2)
+  β17 = convert(T, -4.7305106233879957e-2)
+  β2end = SVector(β02, β03, β04, β05, β06, β07, β08, β09, β10, β11, β12, β13, β14, β15, β16, β17)
+
+  c02 = convert(T2, 4.9565403010221741e-2)
+  c03 = convert(T2, 1.3068799001687578e-1)
+  c04 = convert(T2, -1.5883063460310493e-1)
+  c05 = convert(T2, 3.5681144740196935e-1)
+  c06 = convert(T2, 7.6727123317642698e-2)
+  c07 = convert(T2, 1.0812579255374613e-1)
+  c08 = convert(T2, 1.8767228084815801e-1)
+  c09 = convert(T2, 9.6162976936182631e-1)
+  c10 = convert(T2, -2.2760719867560897e-1)
+  c11 = convert(T2, 1.1115681606027146e+0)
+  c12 = convert(T2, 6.1266845427676520e-1)
+  c13 = convert(T2, 1.0729473245077408e+0)
+  c14 = convert(T2, 3.7824186468104548e-1)
+  c15 = convert(T2, 7.9041891347646720e-1)
+  c16 = convert(T2, -1.0406955693161675e+0)
+  c17 = convert(T2, -2.4607146824557105e-1)
+  c2end = SVector(c02, c03, c04, c05, c06, c07, c08, c09, c10, c11, c12, c13, c14, c15, c16, c17)
+
+  LowStorageRK3SConstantCache{16,T,T2}(γ12end, γ22end, γ32end, δ2end, β1, β2end, c2end)
+end
+
+function alg_cache(alg::ParsaniKetchesonDeconinck3S173,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)
+  k = zero(rate_prototype)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
+  tab = ParsaniKetchesonDeconinck3S173ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  LowStorageRK3SCache(u,uprev,k,tmp,fsalfirst,tab)
+end
+
+function alg_cache(alg::ParsaniKetchesonDeconinck3S173,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  ParsaniKetchesonDeconinck3S173ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+end
+
+
 function ParsaniKetchesonDeconinck3S94ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
   γ102 = convert(T, -4.6556413837561301e+0)
   γ103 = convert(T, -7.7202649689034453e-1)
@@ -768,7 +1078,7 @@ function ParsaniKetchesonDeconinck3S184ConstantCache(::Type{T}, ::Type{T2}) wher
   δ18 = convert(T, 0.0000000000000000e+0)
   δ2end = SVector(δ02, δ03, δ04, δ05, δ06, δ07, δ08, δ09, δ10, δ11, δ12, δ13, δ14, δ15, δ16, δ17, δ18)
 
-  β1 = convert(T, 1.2384169480626298e-1)
+  β1  = convert(T, 1.2384169480626298e-1)
   β02 = convert(T, 1.0176262534280349e+0)
   β03 = convert(T, -6.9732026387527429e-2)
   β04 = convert(T, 3.4239356067806476e-1)
@@ -1000,7 +1310,7 @@ function ParsaniKetchesonDeconinck3S205ConstantCache(::Type{T}, ::Type{T2}) wher
   δ20 = convert(T, 0.0000000000000000e+0)
   δ2end = SVector(δ02, δ03, δ04, δ05, δ06, δ07, δ08, δ09, δ10, δ11, δ12, δ13, δ14, δ15, δ16, δ17, δ18, δ19, δ20)
 
-  β1 = convert(T, 1.7342385375780556e-1)
+  β1  = convert(T, 1.7342385375780556e-1)
   β02 = convert(T, 2.8569004728564801e-1)
   β03 = convert(T, 6.8727044379779589e-1)
   β04 = convert(T, 1.2812121060977319e-1)
