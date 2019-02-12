@@ -20,16 +20,16 @@ Random.seed!(123)
     @test eigest ≈ eigm rtol=0.1eigm
   end
 end
-# 
-# @testset "Runge-Kutta-Chebyshev Convergence Tests" begin
-#   dts = 1 .//2 .^(8:-1:4)
-#   testTol = 0.1
-#   for prob in probArr
-#     sim = test_convergence(dts,prob,ROCK2())
-#     @test sim.𝒪est[:l∞] ≈ 2 atol=testTol
-#     sim = test_convergence(dts,prob,ROCK4())
-#     @test sim.𝒪est[:l∞] ≈ 4 atol=testTol
-#     sim = test_convergence(dts,prob,RKC())
-#     @test sim.𝒪est[:l∞] ≈ 2 atol=testTol
-#   end
-# end
+
+@testset "Runge-Kutta-Chebyshev Convergence Tests" begin
+  dts = 1 .//2 .^(8:-1:4)
+  testTol = 0.1
+  for prob in probArr
+    sim = test_convergence(dts,prob,ROCK2())
+    @test sim.𝒪est[:l∞] ≈ 2 atol=testTol
+    sim = test_convergence(dts,prob,ROCK4())
+    @test sim.𝒪est[:l∞] ≈ 4 atol=testTol
+    sim = test_convergence(dts,prob,RKC())
+    @test sim.𝒪est[:l∞] ≈ 2 atol=testTol
+  end
+end
