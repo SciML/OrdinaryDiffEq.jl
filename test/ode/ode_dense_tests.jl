@@ -211,6 +211,18 @@ regression_test(CFRLDDRK64(), 3.0e-5, 3.0e-5)
 # TSLDDRK74
 regression_test(TSLDDRK74(), 3.0e-5, 3.0e-5)
 
+# ParsaniKetchesonDeconinck3S32
+regression_test(ParsaniKetchesonDeconinck3S32(), 1.5e-2, 2.0e-2)
+
+# ParsaniKetchesonDeconinck3S82
+regression_test(ParsaniKetchesonDeconinck3S82(), 1.5e-3, 3.0e-3)
+
+# ParsaniKetchesonDeconinck3S53
+regression_test(ParsaniKetchesonDeconinck3S53(), 2.5e-4, 4.5e-4)
+
+# ParsaniKetchesonDeconinck3S173
+regression_test(ParsaniKetchesonDeconinck3S173(), 3.5e-5, 5.5e-5)
+
 # ParsaniKetchesonDeconinck3S94
 regression_test(ParsaniKetchesonDeconinck3S94(), 1.5e-5, 3.0e-5)
 
@@ -218,7 +230,7 @@ regression_test(ParsaniKetchesonDeconinck3S94(), 1.5e-5, 3.0e-5)
 regression_test(ParsaniKetchesonDeconinck3S184(), 1.5e-5, 3.0e-5)
 
 # ParsaniKetchesonDeconinck3S105
-regression_test(ParsaniKetchesonDeconinck3S205(), 1.5e-5, 3.0e-5)
+regression_test(ParsaniKetchesonDeconinck3S105(), 1.5e-5, 3.0e-5)
 
 # ParsaniKetchesonDeconinck3S205
 regression_test(ParsaniKetchesonDeconinck3S205(), 1.5e-5, 3.0e-5)
