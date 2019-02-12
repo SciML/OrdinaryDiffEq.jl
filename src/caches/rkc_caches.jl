@@ -120,15 +120,15 @@ function alg_cache(alg::RKC,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   RKCConstantCache(u)
 end
 
-@cache mutable struct IRKCConstantCache{zType,rateType,F,N,uType} <: OrdinaryDiffEqConstantCache
-  zprev::ztype
+@cache mutable struct IRKCConstantCache{uType,rateType,F,N} <: OrdinaryDiffEqConstantCache
+  zprev::uType
   uf::F
   nlsolve::N
   du₁::rateType
   du₂::rateType
 end
 
-@cache mutable struct IRKCCache{uType,rateType,JType,WType,UF,JC,N,F} <: OrdinaryDiffEqMutableCache
+@cache mutable struct IRKCCache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,N,F} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   gprev::uType
@@ -157,7 +157,7 @@ end
 end
 
 function alg_cache(alg::IRKC,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  γ, c = 1//1, 1
+  γ, c = 1//1, 1//1
   @oopnlsolve
   zprev = u
   du₁ = rate_prototype; du₂ = rate_prototype
@@ -165,7 +165,7 @@ function alg_cache(alg::IRKC,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
 end
 
 function alg_cache(alg::IRKC,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  γ, c = 1//1, 1
+  γ, c = 1//1, 1//1
   @iipnlsolve
 
   gprev = similar(u)

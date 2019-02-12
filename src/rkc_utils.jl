@@ -79,7 +79,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
       z = uprev + quot*tmp
     else
       # An arbitrary change on `z`
-      cache.z = shuffle(cache.z)
+      z = shuffle(z)
     end
   end
   return false

@@ -489,9 +489,7 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
   if mdeg >= maxm
     mdeg = maxm
   end
-  println("Constant ", mdeg, " ", maxm)
   typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, 1.0*dt, repeat_step) )
-  nlcache.γ = 1.0
   # initial guess for implicit part
   if alg.extrapolant == :linear
     nlcache.z = dt*du₁
@@ -514,6 +512,8 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
   μs     = ω₁*Bⱼ₋₁
   μs₁    = μs
   nlcache.tmp = uprev + dt*μs₁*du₁
+  nlcache.γ   = μs₁
+  nlcache.c   = μs
   z,η,iter,fail_convergence = nlsolve!(integrator)
   # fail_convergence && return
   u = nlcache.tmp + μs₁*z
@@ -540,18 +540,19 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
     μ    = (2.0*ω₀*Bⱼ)/Bⱼ₋₁
     ν    = - Bⱼ/Bⱼ₋₂
     μs   = (μ*ω₁)/ω₀
+    Cⱼ   = μ*Cⱼ₋₁ + ν*Cⱼ₋₂ + μs + νs
 
     f1ⱼ₋₁  = f1(gprev, p, t+Cⱼ₋₁*dt)
     f2ⱼ₋₁  = f2(gprev, p, t+Cⱼ₋₁*dt)
     nlcache.tmp = (1.0-μ-ν)*uprev + μ*gprev + ν*gprev2 + dt*μs*f2ⱼ₋₁ + dt*νs*du₂ + (νs - (1.0-μ-ν)*μs₁)*dt*du₁ - ν*μs₁*dt*f1ⱼ₋₂
-    nlcache.z   = gprev
+    nlcache.z   = dt*f1ⱼ₋₁
+    nlcache.c   = Cⱼ
     z,η,iter,fail_convergence = nlsolve!(integrator)
     # ignoring newton method's convergence failure
     # fail_convergence && return
     u = nlcache.tmp + μs₁*z
     nlcache.ηold = η
     nlcache.nl_iters = iter
-    Cⱼ   = μ*Cⱼ₋₁ + ν*Cⱼ₋₂ + μs + νs
     if (iter < mdeg)
       f1ⱼ₋₂= f1ⱼ₋₁
       gprev2 = gprev
@@ -611,10 +612,8 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   if mdeg >= maxm
     mdeg = maxm
   end
-  println("Mutable ", mdeg, " ", maxm)
 
   typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, 1.0*dt, repeat_step)
-  nlcache.γ = 1.0
   # initial guess
   if alg.extrapolant == :linear
     @. z = dt*du₁
@@ -637,6 +636,8 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   μs     = ω₁*Bⱼ₋₁
   μs₁    = μs
   @. tmp = uprev + dt*μs₁*du₁
+  nlcache.γ   = μs₁
+  nlcache.c   = μs
   z,η,iter,fail_convergence = nlsolve!(integrator)
   # ignoring newton method's convergence failure
   # fail_convergence && return
@@ -664,17 +665,18 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
     μ    = (2.0*ω₀*Bⱼ)/Bⱼ₋₁
     ν    = - Bⱼ/Bⱼ₋₂
     μs   = (μ*ω₁)/ω₀
+    Cⱼ   = μ*Cⱼ₋₁ + ν*Cⱼ₋₂ + μs + νs
 
     f1(f1ⱼ₋₁, gprev, p, t+Cⱼ₋₁*dt)
     f2(f2ⱼ₋₁, gprev, p, t+Cⱼ₋₁*dt)
     @. tmp = (1.0-μ-ν)*uprev + μ*gprev + ν*gprev2 + dt*μs*f2ⱼ₋₁ + dt*νs*du₂ + (νs - (1.0-μ-ν)*μs₁)*dt*du₁ - ν*μs₁*dt*f1ⱼ₋₂
-    @. z   = gprev
+    @. z   = dt*f1ⱼ₋₁
+    nlcache.c = Cⱼ
     z,η,iter,fail_convergence = nlsolve!(integrator)
     # fail_convergence && return
     @. u = tmp + μs₁*z
     nlcache.ηold = η
     nlcache.nl_iters = iter
-    Cⱼ   = μ*Cⱼ₋₁ + ν*Cⱼ₋₂ + μs + νs
     if (iter < mdeg)
       @. f1ⱼ₋₂  = f1ⱼ₋₁
       @. gprev2 = gprev
