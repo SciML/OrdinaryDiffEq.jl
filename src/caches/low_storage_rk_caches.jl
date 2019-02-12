@@ -683,7 +683,7 @@ function ParsaniKetchesonDeconinck3S82ConstantCache(::Type{T}, ::Type{T2}) where
   γ308 = convert(T, -3.3679429978131387e-1)
   γ32end = SVector(γ302, γ303, γ304, γ305, γ306, γ307, γ308)
 
-  δ02 = convert(T, 2.9762522910396538e+0)
+  δ02 = convert(T, 2.9762522910396538e-1)
   δ03 = convert(T, 3.4212961014330662e-1)
   δ04 = convert(T, 5.7010739154759105e-1)
   δ05 = convert(T, 4.1350769551529132e-1)
@@ -1078,7 +1078,7 @@ function ParsaniKetchesonDeconinck3S184ConstantCache(::Type{T}, ::Type{T2}) wher
   δ18 = convert(T, 0.0000000000000000e+0)
   δ2end = SVector(δ02, δ03, δ04, δ05, δ06, δ07, δ08, δ09, δ10, δ11, δ12, δ13, δ14, δ15, δ16, δ17, δ18)
 
-  β1 = convert(T, 1.2384169480626298e-1)
+  β1  = convert(T, 1.2384169480626298e-1)
   β02 = convert(T, 1.0176262534280349e+0)
   β03 = convert(T, -6.9732026387527429e-2)
   β04 = convert(T, 3.4239356067806476e-1)
@@ -1310,7 +1310,7 @@ function ParsaniKetchesonDeconinck3S205ConstantCache(::Type{T}, ::Type{T2}) wher
   δ20 = convert(T, 0.0000000000000000e+0)
   δ2end = SVector(δ02, δ03, δ04, δ05, δ06, δ07, δ08, δ09, δ10, δ11, δ12, δ13, δ14, δ15, δ16, δ17, δ18, δ19, δ20)
 
-  β1 = convert(T, 1.7342385375780556e-1)
+  β1  = convert(T, 1.7342385375780556e-1)
   β02 = convert(T, 2.8569004728564801e-1)
   β03 = convert(T, 6.8727044379779589e-1)
   β04 = convert(T, 1.2812121060977319e-1)

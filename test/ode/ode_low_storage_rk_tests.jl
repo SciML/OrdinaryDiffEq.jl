@@ -316,7 +316,8 @@ alg = ParsaniKetchesonDeconinck3S32()
 dts = 1 ./ 2 .^(7:-1:3)
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
-  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  # higher order as pure quadrature
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg)+1 atol=testTol
 end
 for prob in test_problems_linear
   sim = test_convergence(dts, prob, alg)
@@ -341,7 +342,8 @@ alg = ParsaniKetchesonDeconinck3S82()
 dts = 1 ./ 2 .^(7:-1:3)
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
-  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  # higher order as pure quadrature
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg)+1 atol=testTol
 end
 for prob in test_problems_linear
   sim = test_convergence(dts, prob, alg)
@@ -366,7 +368,8 @@ alg = ParsaniKetchesonDeconinck3S53()
 dts = 1 ./ 2 .^(7:-1:3)
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
-  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  # higher order as pure quadrature
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg)+1 atol=testTol
 end
 for prob in test_problems_linear
   sim = test_convergence(dts, prob, alg)
@@ -391,7 +394,8 @@ alg = ParsaniKetchesonDeconinck3S173()
 dts = 1 ./ 2 .^(7:-1:3)
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
-  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  # higher order as pure quadrature
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg)+1 atol=testTol
 end
 for prob in test_problems_linear
   sim = test_convergence(dts, prob, alg)
