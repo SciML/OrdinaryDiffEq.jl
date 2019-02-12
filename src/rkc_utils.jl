@@ -95,7 +95,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
   # Initial guess for eigenvector `z`
   if isfirst
     if integrator.alg isa RKCAlgs
-      if integrator.alg is IRKC
+      if integrator.alg isa IRKC
         @. z = cache.du₂
       else
         @. z = fsalfirst
