@@ -339,7 +339,7 @@ sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=fa
 
 
 alg = ParsaniKetchesonDeconinck3S82()
-dts = 1 ./ 2 .^(7:-1:3)
+dts = 1 ./ 2 .^(8:-1:5)
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
   # higher order as pure quadrature
