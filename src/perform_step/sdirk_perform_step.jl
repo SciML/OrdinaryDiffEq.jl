@@ -357,7 +357,7 @@ end
   if integrator.opts.adaptive
     tmp = btilde1*zprev + btilde2*zᵧ + btilde3*z
     if alg.smooth_est # From Shampine
-      est = reshape(nlcache.W\vec(tmp), axes(tmp))
+      est = _reshape(nlcache.W\_vec(tmp), axes(tmp))
     else
       est = tmp
     end
@@ -468,7 +468,7 @@ end
   if integrator.opts.adaptive
     tmp = z₁/2 - z₂/2
     if alg.smooth_est # From Shampine
-      est = reshape(nlcache.W\_vec(tmp), axes(tmp))
+      est = _reshape(nlcache.W\_vec(tmp), axes(tmp))
     else
       est = tmp
     end
@@ -727,7 +727,7 @@ end
 
     tmp = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
     if alg.smooth_est # From Shampine
-      est = reshape(nlcache.W\_vec(tmp), axes(tmp))
+      est = _reshape(nlcache.W\_vec(tmp), axes(tmp))
     else
       est = tmp
     end
@@ -906,7 +906,7 @@ end
   if integrator.opts.adaptive
     tmp = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
     if alg.smooth_est # From Shampine
-      est = reshape(nlcache.W\_vec(tmp), axes(tmp))
+      est = _reshape(nlcache.W\_vec(tmp), axes(tmp))
     else
       est = tmp
     end
