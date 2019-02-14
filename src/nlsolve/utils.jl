@@ -117,7 +117,7 @@ DiffEqBase.@def oopnlsolve begin
           J = jacobian_finitediff(uf, uprev, alg.diff_type)
         end
       end
-      W = J isa Number ? J : lu(J)
+      W = J isa Number ? J : lu(J; check=false)
     end
 
     nlcache = NLNewtonCache(κ,tol,min_iter,max_iter,10000,_nlcache.new_W,z,W,γ,c,ηold,dz,tmp,b,k)
