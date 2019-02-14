@@ -490,7 +490,7 @@ function reset_fsal!(integrator)
 end
 
 nlsolve_f(f, alg) = f isa SplitFunction && alg isa SplitAlgorithms ? f.f1 : f
-nlsolve_f(integrator::ODEIntegrator) =
+nlsolve_f(integrator) =
   nlsolve_f(integrator.f, unwrap_alg(integrator, true))
 
 function (integrator::ODEIntegrator)(t,deriv::Type=Val{0};idxs=nothing)

@@ -39,7 +39,7 @@ function DiffEqBase.__init(
   failfactor = 2,
   beta2=nothing,
   beta1=nothing,
-  maxiters = 1000000,
+  maxiters = adaptive ? 1000000 : typemax(Int),
   dtmax=eltype(prob.tspan)((prob.tspan[end]-prob.tspan[1])),
   dtmin= typeof(one(eltype(prob.tspan))) <: AbstractFloat ? eps(eltype(prob.tspan)) :
          typeof(one(eltype(prob.tspan))) <: Integer ? 0 :
@@ -205,6 +205,10 @@ function DiffEqBase.__init(
     else
       copyat_or_push!(timeseries,1,u_initial,Val{false})
       copyat_or_push!(ks,1,[ks_prototype])
+    end
+
+    if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
+      copyat_or_push!(alg_choice,1,1)
     end
   else
     saveiter = 0 # Starts at 0 so first save is at 1
