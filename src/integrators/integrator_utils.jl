@@ -253,7 +253,7 @@ function stepsize_controller!(integrator,alg::PredictiveControllerAlgs)
     q = inv(integrator.opts.qmax)
   else
     gamma = integrator.opts.gamma
-    if alg isa Union{RKC,IRKC}
+    if typeof(alg) <: Union{RKC,IRKC}
       fac = gamma
     else
       if alg isa RadauIIA5

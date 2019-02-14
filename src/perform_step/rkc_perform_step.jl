@@ -489,14 +489,7 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
   if mdeg >= maxm
     mdeg = maxm
   end
-  typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, 1.0*dt, repeat_step) )
-  # initial guess for implicit part
-  if alg.extrapolant == :linear
-    nlcache.z = dt*du₁
-  else # :constant
-    nlcache.z = zero(u)
-  end
-
+  mdeg = (mdeg < 50) ? 50 : mdeg
 
   ω₀    = 1.0 + 2.0/(13.0*(mdeg^2.0))
   temp₁ = ω₀^2.0 - 1.0
@@ -511,7 +504,16 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
   gprev2 = copy(uprev)
   μs     = ω₁*Bⱼ₋₁
   μs₁    = μs
-  nlcache.tmp = uprev + dt*μs₁*du₁
+
+  typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, μs₁*dt, repeat_step) )
+  # initial guess for implicit part
+  if alg.extrapolant == :linear
+    nlcache.z = dt*du₁
+  else # :constant
+    nlcache.z = zero(u)
+  end
+
+  nlcache.tmp = uprev + dt*μs₁*du₂
   nlcache.γ   = μs₁
   nlcache.c   = μs
   z,η,iter,fail_convergence = nlsolve!(integrator)
@@ -536,7 +538,7 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
     Tⱼ′  = 2.0*ω₀*Tⱼ₋₁′ + 2.0*Tⱼ₋₁ - Tⱼ₋₂′
     Tⱼ″  = 2.0*ω₀*Tⱼ₋₁″ + 4.0*Tⱼ₋₁′ - Tⱼ₋₂″
     Bⱼ   = Tⱼ″/(Tⱼ′^2)
-    νs   = -(1.0 - Tⱼ₋₁*Bⱼ₋₁)*μs
+    νs   = -(1.0 - Bⱼ₋₁)*Tⱼ₋₁*μs
     μ    = (2.0*ω₀*Bⱼ)/Bⱼ₋₁
     ν    = - Bⱼ/Bⱼ₋₂
     μs   = (μ*ω₁)/ω₀
@@ -544,6 +546,7 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
 
     f1ⱼ₋₁  = f1(gprev, p, t+Cⱼ₋₁*dt)
     f2ⱼ₋₁  = f2(gprev, p, t+Cⱼ₋₁*dt)
+    typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, Cⱼ*dt, repeat_step) )
     nlcache.tmp = (1.0-μ-ν)*uprev + μ*gprev + ν*gprev2 + dt*μs*f2ⱼ₋₁ + dt*νs*du₂ + (νs - (1.0-μ-ν)*μs₁)*dt*du₁ - ν*μs₁*dt*f1ⱼ₋₂
     nlcache.z   = dt*f1ⱼ₋₁
     nlcache.c   = Cⱼ
@@ -612,14 +615,7 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   if mdeg >= maxm
     mdeg = maxm
   end
-
-  typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, 1.0*dt, repeat_step)
-  # initial guess
-  if alg.extrapolant == :linear
-    @. z = dt*du₁
-  else # :constant
-    @. z = zero(eltype(u))
-  end
+  mdeg = (mdeg < 50) ? 50 : mdeg
 
 
   ω₀    = 1.0 + 2.0/(13.0*(mdeg^2.0))
@@ -635,7 +631,16 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   @. gprev2 = uprev
   μs     = ω₁*Bⱼ₋₁
   μs₁    = μs
-  @. tmp = uprev + dt*μs₁*du₁
+
+  typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, μs₁*dt, repeat_step)
+  # initial guess
+  if alg.extrapolant == :linear
+    @. z = dt*du₁
+  else # :constant
+    @. z = zero(eltype(u))
+  end
+
+  @. tmp = uprev + dt*μs₁*du₂
   nlcache.γ   = μs₁
   nlcache.c   = μs
   z,η,iter,fail_convergence = nlsolve!(integrator)
@@ -661,7 +666,7 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
     Tⱼ′  = 2.0*ω₀*Tⱼ₋₁′ + 2.0*Tⱼ₋₁ - Tⱼ₋₂′
     Tⱼ″  = 2.0*ω₀*Tⱼ₋₁″ + 4.0*Tⱼ₋₁′ - Tⱼ₋₂″
     Bⱼ   = Tⱼ″/(Tⱼ′^2.0)
-    νs   = -(1.0 - Tⱼ₋₁*Bⱼ₋₁)*μs
+    νs   = -(1.0 - Bⱼ₋₁)*Tⱼ₋₁*μs
     μ    = (2.0*ω₀*Bⱼ)/Bⱼ₋₁
     ν    = - Bⱼ/Bⱼ₋₂
     μs   = (μ*ω₁)/ω₀
@@ -669,6 +674,7 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
 
     f1(f1ⱼ₋₁, gprev, p, t+Cⱼ₋₁*dt)
     f2(f2ⱼ₋₁, gprev, p, t+Cⱼ₋₁*dt)
+    typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, Cⱼ*dt, repeat_step) )
     @. tmp = (1.0-μ-ν)*uprev + μ*gprev + ν*gprev2 + dt*μs*f2ⱼ₋₁ + dt*νs*du₂ + (νs - (1.0-μ-ν)*μs₁)*dt*du₁ - ν*μs₁*dt*f1ⱼ₋₂
     @. z   = dt*f1ⱼ₋₁
     nlcache.c = Cⱼ
