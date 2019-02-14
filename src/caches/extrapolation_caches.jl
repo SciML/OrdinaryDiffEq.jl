@@ -1,31 +1,49 @@
-@cache struct RichardsonEulerCache{uType,rateType,tabType, arrayType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct RichardsonEulerCache{uType,rateType,arrayType,dtType,uNoUnitsType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
   k::rateType
+  utilde::uType
+  atmp::uNoUnitsType
   fsalfirst::rateType
-  tab::tabType
+  dtpropose::dtType
   T::arrayType
+  cur_order::Int
+  work::dtType
+  A::Int
+  step_no::Int
 end
 
-struct RichardsonEulerConstantCache <: OrdinaryDiffEqConstantCache
-  m::Int #Generalise type of m
-  # Can add different order of n_{i} here
-  function RichardsonEulerConstantCache()
-    m = 4
-    new(m)
-  end
+@cache mutable struct RichardsonEulerConstantCache{dtType,arrayType} <: OrdinaryDiffEqConstantCache
+  dtpropose::dtType
+  T::arrayType
+  cur_order::Int
+  work::dtType
+  A::Int
+  step_no::Int
 end
 
 function alg_cache(alg::RichardsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
+  utilde = similar(u)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
-  tab = RichardsonEulerConstantCache()
-  T = fill(zeros(eltype(u), size(u)), (tab.m, tab.m))
-  RichardsonEulerCache(u,uprev,tmp,k,fsalfirst,tab,T)
+  cur_order = max(alg.init_order, alg.min_order)
+  dtpropose = zero(dt)
+  T = fill(zeros(eltype(u), size(u)), (alg.max_order, alg.max_order))
+  work = zero(dt)
+  A = one(Int)
+  atmp = similar(u,uEltypeNoUnits)
+  step_no = zero(Int)
+  RichardsonEulerCache(u,uprev,tmp,k,utilde,atmp,fsalfirst,dtpropose,T,cur_order,work,A,step_no)
 end
 
 function alg_cache(alg::RichardsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  RichardsonEulerConstantCache()
+  dtpropose = zero(dt)
+  cur_order = max(alg.init_order, alg.min_order)
+  T = fill(zero(eltype(u)), (alg.max_order, alg.max_order))
+  work = zero(dt)
+  A = one(Int)
+  step_no = zero(Int)
+  RichardsonEulerConstantCache(dtpropose,T,cur_order,work,A,step_no)
 end
