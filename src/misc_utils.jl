@@ -168,5 +168,8 @@ end
 
 _reshape(v, siz) = reshape(v, siz)
 _reshape(v::Number, siz) = v
+_reshape(v::AbstractVector, siz) = v
+
 _vec(v) = vec(v)
 _vec(v::Number) = v
+_vec(v::AbstractVector) = v
