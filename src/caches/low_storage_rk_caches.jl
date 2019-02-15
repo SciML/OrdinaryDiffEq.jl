@@ -1393,3 +1393,49 @@ struct LowStorageRK2RPConstantCache{N,T,T2} <: OrdinaryDiffEqConstantCache
   B̂ᵢ::SVector{N,T}
   Cᵢ::SVector{N,T2}
 end
+
+
+function CKLLDDRK43_2ConstantCache(::Type{T},::Type{T2}) where {T,T2}
+  A1 = convert(T, 0.32416573882874605)   #11847461282814//36547543011857
+  A2 = convert(T, 0.5570978645055429)    #3943225443063//7078155732230)
+  A3 = convert(T, -0.08605491431272755)  #-346793006927//4029903576067)
+  A₁ = SVector(A1, A2, A3)
+
+  B1 = convert(T, 0.10407986927510238)   #1017324711453//9774461848756)
+  B2 = convert(T, 0.6019391368822611)    #8237718856693//13685301971492)
+  B3 = convert(T, 2.9750900268840206)    #57731312506979//19404895981398)
+  Bᵢ = SVector(B1, B2, B3)
+
+  B̂1 = convert(T, 0.3406814840808433)    #15763415370699//46270243929542)
+  B̂2 = convert(T, 0.09091523008632837)   #514528521746//5659431552419)
+  B̂3 = convert(T, 2.866496742725443)     #27030193851939//9429696342944)
+  B̂ᵢ = SVector(B̂1, B̂2, B̂3)
+
+  Bₗ = convert(T, -2.681109033041384)    #-101169746363290//37734290219643)
+  B̂ₗ = convert(T, -2.298093456892615)    #-69544964788955//30262026368149)
+
+  C1 = convert(T2, 0.32416573882874605)   #1017324711453//9774461848756)
+  C2 = convert(T2, 0.5570978645055429 + 0.10407986927510238)    #8237718856693//13685301971492)
+  C3 = convert(T2, -0.08605491431272755 + 0.10407986927510238 + 0.6019391368822611)    #57731312506979//19404895981398)
+  Cᵢ = SVector(C1, C2, C3)
+
+  LowStorageRK2RPConstantCache{3,T,T2}(A₁,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ)
+end
+
+function alg_cache(alg::CKLLDDRK43_2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp  = similar(u)
+  atmp = similar(u,uEltypeNoUnits)
+  k    = zero(rate_prototype)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
+  Xᵢ   = similar(rate_prototype)
+  tab = CKLLDDRK43_2ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  LowStorageRK2RPCache(u,k,Xᵢ,fsalfirst,tmp,atmp,tab)
+end
+
+function alg_cache(alg::CKLLDDRK43_2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  CKLLDDRK43_2ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+end
