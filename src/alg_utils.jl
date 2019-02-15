@@ -103,6 +103,8 @@ get_current_adaptive_order(alg::OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm,cach
 get_current_alg_order(alg::JVODE,cache) = get_current_adaptive_order(alg,cache)
 get_current_alg_order(alg::QNDF,cache) = cache.order
 get_current_adaptive_order(alg::QNDF,cache) = cache.order
+get_current_adaptive_order(alg::OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm,cache) = cache.cur_order
+get_current_alg_order(alg::OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm,cache) = cache.cur_order
 
 #alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
 get_current_adaptive_order(alg::OrdinaryDiffEqAlgorithm,cache) = alg_adaptive_order(alg)
@@ -110,7 +112,7 @@ get_current_adaptive_order(alg::CompositeAlgorithm,cache) = alg_adaptive_order(a
 
 alg_order(alg::FunctionMap) = 0
 alg_order(alg::Euler) = 1
-alg_order(alg::RichardsonEuler) = 4
+alg_order(alg::RichardsonEuler) = alg.init_order
 alg_order(alg::Heun) = 2
 alg_order(alg::Ralston) = 2
 alg_order(alg::LawsonEuler) = 1
