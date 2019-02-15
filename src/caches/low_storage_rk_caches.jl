@@ -1378,7 +1378,6 @@ end
 @cache struct LowStorageRK2RPCache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   k::rateType
-  Xᵢ::rateType
   fsalfirst::rateType
   tmp::uType
   atmp::uNoUnitsType
@@ -1386,12 +1385,12 @@ end
 end
 
 struct LowStorageRK2RPConstantCache{N,T,T2} <: OrdinaryDiffEqConstantCache
-  A₁::SVector{N,T}
-  Bₗ::T
-  B̂ₗ::T
-  Bᵢ::SVector{N,T}
-  B̂ᵢ::SVector{N,T}
-  Cᵢ::SVector{N,T2}
+  A::SVector{N,T}
+  Bl::T
+  Bhl::T
+  B::SVector{N,T}
+  Bh::SVector{N,T}
+  C::SVector{N,T2}
 end
 
 
@@ -1399,30 +1398,31 @@ function CKLLDDRK43_2ConstantCache(::Type{T},::Type{T2}) where {T,T2}
   A1 = convert(T, 0.32416573882874605)   #11847461282814//36547543011857
   A2 = convert(T, 0.5570978645055429)    #3943225443063//7078155732230)
   A3 = convert(T, -0.08605491431272755)  #-346793006927//4029903576067)
-  A₁ = SVector(A1, A2, A3)
+  A = SVector(A1, A2, A3)
 
   B1 = convert(T, 0.10407986927510238)   #1017324711453//9774461848756)
   B2 = convert(T, 0.6019391368822611)    #8237718856693//13685301971492)
   B3 = convert(T, 2.9750900268840206)    #57731312506979//19404895981398)
-  Bᵢ = SVector(B1, B2, B3)
+  B = SVector(B1, B2, B3)
 
-  B̂1 = convert(T, 0.3406814840808433)    #15763415370699//46270243929542)
-  B̂2 = convert(T, 0.09091523008632837)   #514528521746//5659431552419)
-  B̂3 = convert(T, 2.866496742725443)     #27030193851939//9429696342944)
-  B̂ᵢ = SVector(B̂1, B̂2, B̂3)
+  Bh1 = convert(T, 0.3406814840808433)    #15763415370699//46270243929542)
+  Bh2 = convert(T, 0.09091523008632837)   #514528521746//5659431552419)
+  Bh3 = convert(T, 2.866496742725443)     #27030193851939//9429696342944)
+  Bh = SVector(Bh1, Bh2, Bh3)
 
-  Bₗ = convert(T, -2.681109033041384)    #-101169746363290//37734290219643)
-  B̂ₗ = convert(T, -2.298093456892615)    #-69544964788955//30262026368149)
+  Bl = convert(T, -2.681109033041384)    #-101169746363290//37734290219643)
+  Bhl = convert(T, -2.298093456892615)    #-69544964788955//30262026368149)
 
   C1 = convert(T2, 0.32416573882874605)   #1017324711453//9774461848756)
   C2 = convert(T2, 0.5570978645055429 + 0.10407986927510238)    #8237718856693//13685301971492)
   C3 = convert(T2, -0.08605491431272755 + 0.10407986927510238 + 0.6019391368822611)    #57731312506979//19404895981398)
-  Cᵢ = SVector(C1, C2, C3)
+  C = SVector(C1, C2, C3)
 
-  LowStorageRK2RPConstantCache{3,T,T2}(A₁,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ)
+  LowStorageRK2RPConstantCache{3,T,T2}(A,Bl,Bhl,B,Bh,C)
 end
 
 function alg_cache(alg::CKLLDDRK43_2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+
   tmp  = similar(u)
   atmp = similar(u,uEltypeNoUnits)
   k    = zero(rate_prototype)
@@ -1431,9 +1431,8 @@ function alg_cache(alg::CKLLDDRK43_2,u,rate_prototype,uEltypeNoUnits,uBottomElty
   else
     fsalfirst = k
   end
-  Xᵢ   = similar(rate_prototype)
   tab = CKLLDDRK43_2ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
-  LowStorageRK2RPCache(u,k,Xᵢ,fsalfirst,tmp,atmp,tab)
+  LowStorageRK2RPCache(u,k,fsalfirst,tmp,atmp,tab)
 end
 
 function alg_cache(alg::CKLLDDRK43_2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})

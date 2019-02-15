@@ -198,23 +198,21 @@ end
 
 @muladd function perform_step!(integrator,cache::LowStorageRK2RPConstantCache,repeat_step=false)
   @unpack t,dt,u,uprev,f,fsalfirst,p = integrator
-  @unpack A₁,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ = cache
+  @unpack A,Bl,Bhl,B,Bh,C = cache
 
-  Xᵢ  = uprev
   k   = fsalfirst
-  tmp = zero(uprev)
+  integrator.opts.adaptive && (tmp = zero(uprev))
 
   #stages 1 to s-1
-  for i in eachindex(A₁)
-    tmp = tmp + (Bᵢ[i] - B̂ᵢ[i])*dt*k
-    u   = Xᵢ + A₁[i]*dt*k
-    Xᵢ  = u + (Bᵢ[i] - A₁[i])*dt*k
-    k   = f(u, p, t + Cᵢ[i]*dt)
+  for i in eachindex(A)
+    integrator.opts.adaptive && (tmp = tmp + (B[i] - Bh[i])*dt*k)
+    u = u + B[i]*dt*k
+    k = f(u + (A[i] - B[i])*dt*k, p, t + C[i]*dt)
   end
 
   #last stage
-  tmp = tmp + (Bₗ - B̂ₗ)*dt*k
-  u   = Xᵢ  + Bₗ*dt*k
+  integrator.opts.adaptive && (tmp = tmp + (Bl - Bhl)*dt*k)
+  u   = u  + Bl*dt*k
 
   #Error estimate
   if integrator.opts.adaptive
@@ -239,24 +237,22 @@ end
 
 @muladd function perform_step!(integrator,cache::LowStorageRK2RPCache,repeat_step=false)
   @unpack t,dt,u,uprev,f,fsalfirst,p = integrator
-  @unpack k,tmp,atmp,Xᵢ = cache
-  @unpack A₁,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ = cache.tab
+  @unpack k,tmp,atmp = cache
+  @unpack A,Bl,Bhl,B,Bh,C = cache.tab
 
-  @. Xᵢ = uprev
-  @. k  = fsalfirst
-  @. tmp = zero(u)
+  @. k   = fsalfirst
+  integrator.opts.adaptive && (@. tmp = zero(uprev))
 
   #stages 1 to s-1
-  for i in eachindex(A₁)
-    @. tmp = tmp + (Bᵢ[i] - B̂ᵢ[i])*dt*k
-    @. u   = Xᵢ + A₁[i]*dt*k
-    @. Xᵢ  = u + (Bᵢ[i] - A₁[i])*dt*k
-    f(k, u, p, t + Cᵢ[i]*dt)
+  for i in eachindex(A)
+    integrator.opts.adaptive && (@. tmp = tmp + (B[i] - Bh[i])*dt*k)
+    @. u = u + B[i]*dt*k
+    f(k, u + (A[i] - B[i])*dt*k, p, t + C[i]*dt)
   end
 
   #last stage
-  @. tmp = tmp + (Bₗ - B̂ₗ)*dt*k
-  @. u   = Xᵢ  + Bₗ*dt*k
+  integrator.opts.adaptive && (@. tmp = tmp + (Bl - Bhl)*dt*k)
+  @. u   = u  + Bl*dt*k
 
   #Error estimate
   if integrator.opts.adaptive
