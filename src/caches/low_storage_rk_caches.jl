@@ -1371,3 +1371,25 @@ end
 function alg_cache(alg::ParsaniKetchesonDeconinck3S205,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   ParsaniKetchesonDeconinck3S205ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 end
+
+
+
+# 2R+ low storage methods introduced by van der Hauwen
+@cache struct LowStorageRK2RPCache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  k::rateType
+  Xᵢ::rateType
+  fsalfirst::rateType
+  tmp::uType
+  atmp::uNoUnitsType
+  tab::TabType
+end
+
+struct LowStorageRK2RPConstantCache{N,T,T2} <: OrdinaryDiffEqConstantCache
+  A₁::SVector{N,T}
+  Bₗ::T
+  B̂ₗ::T
+  Bᵢ::SVector{N,T}
+  B̂ᵢ::SVector{N,T}
+  Cᵢ::SVector{N,T2}
+end
