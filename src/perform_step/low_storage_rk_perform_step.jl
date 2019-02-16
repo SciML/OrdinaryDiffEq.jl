@@ -198,21 +198,22 @@ end
 
 @muladd function perform_step!(integrator,cache::LowStorageRK2RPConstantCache,repeat_step=false)
   @unpack t,dt,u,uprev,f,fsalfirst,p = integrator
-  @unpack A,Bl,Bhl,B,Bh,C = cache
+  @unpack A1nm1,Bend,Bhend,B1nm1,Bh1nm1,C1nm1 = cache
 
   k   = fsalfirst
   integrator.opts.adaptive && (tmp = zero(uprev))
 
   #stages 1 to s-1
-  for i in eachindex(A)
-    integrator.opts.adaptive && (tmp = tmp + (B[i] - Bh[i])*dt*k)
-    u = u + B[i]*dt*k
-    k = f(u + (A[i] - B[i])*dt*k, p, t + C[i]*dt)
+  for i in eachindex(A1nm1)
+    integrator.opts.adaptive && (tmp = tmp + (B1nm1[i] - Bh1nm1[i])*dt*k)
+    u = u + B1nm1[i]*dt*k
+    gprev = u + (A1nm1[i] - B1nm1[i])*dt*k
+    k = f(u + (A1nm1[i] - B1nm1[i])*dt*k, p, t + C1nm1[i]*dt)
   end
 
   #last stage
-  integrator.opts.adaptive && (tmp = tmp + (Bl - Bhl)*dt*k)
-  u   = u  + Bl*dt*k
+  integrator.opts.adaptive && (tmp = tmp + (Bend - Bhend)*dt*k)
+  u   = u  + Bend*dt*k
 
   #Error estimate
   if integrator.opts.adaptive
@@ -237,22 +238,23 @@ end
 
 @muladd function perform_step!(integrator,cache::LowStorageRK2RPCache,repeat_step=false)
   @unpack t,dt,u,uprev,f,fsalfirst,p = integrator
-  @unpack k,tmp,atmp = cache
-  @unpack A,Bl,Bhl,B,Bh,C = cache.tab
+  @unpack k,gprev,tmp,atmp = cache
+  @unpack A1nm1,Bend,Bhend,B1nm1,Bh1nm1,C1nm1 = cache.tab
 
   @. k   = fsalfirst
   integrator.opts.adaptive && (@. tmp = zero(uprev))
 
   #stages 1 to s-1
-  for i in eachindex(A)
-    integrator.opts.adaptive && (@. tmp = tmp + (B[i] - Bh[i])*dt*k)
-    @. u = u + B[i]*dt*k
-    f(k, u + (A[i] - B[i])*dt*k, p, t + C[i]*dt)
+  for i in eachindex(A1nm1)
+    integrator.opts.adaptive && (@. tmp = tmp + (B1nm1[i] - Bh1nm1[i])*dt*k)
+    @. u     = u + B1nm1[i]*dt*k
+    @. gprev = u + (A1nm1[i] - B1nm1[i])*dt*k
+    f(k, gprev, p, t + C1nm1[i]*dt)
   end
 
   #last stage
-  integrator.opts.adaptive && (@. tmp = tmp + (Bl - Bhl)*dt*k)
-  @. u   = u  + Bl*dt*k
+  integrator.opts.adaptive && (@. tmp = tmp + (Bend - Bhend)*dt*k)
+  @. u   = u  + Bend*dt*k
 
   #Error estimate
   if integrator.opts.adaptive

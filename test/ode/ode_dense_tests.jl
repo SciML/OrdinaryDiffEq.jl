@@ -212,7 +212,7 @@ regression_test(CFRLDDRK64(), 3.0e-5, 3.0e-5)
 regression_test(TSLDDRK74(), 3.0e-5, 3.0e-5)
 
 # CKLLDDRK43_2
-regression_test(CKLLDDRK43_2(), 7.0e-5,3.5e-5)
+regression_test(CKLLDDRK43_2(), 2.0e-5,3.1e-5)
 
 # ParsaniKetchesonDeconinck3S32
 regression_test(ParsaniKetchesonDeconinck3S32(), 1.5e-2, 2.0e-2)
