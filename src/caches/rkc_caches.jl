@@ -122,6 +122,7 @@ end
 
 @cache mutable struct IRKCConstantCache{uType,rateType,F,N} <: OrdinaryDiffEqConstantCache
   zprev::uType
+  k2::rateType
   uf::F
   nlsolve::N
   du₁::rateType
@@ -135,10 +136,10 @@ end
   gprev2::uType
   fsalfirst::rateType
   k::rateType
+  du1::rateType
   f1ⱼ₋₁::rateType
   f1ⱼ₋₂::rateType
   f2ⱼ₋₁::rateType
-  # du1::rateType
   z::uType
   dz::uType
   b::uType
@@ -160,8 +161,9 @@ function alg_cache(alg::IRKC,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   γ, c = 1//1, 1//1
   @oopnlsolve
   zprev = u
+  k2  = rate_prototype
   du₁ = rate_prototype; du₂ = rate_prototype
-  IRKCConstantCache(zprev,uf,nlsolve,du₁,du₂)
+  IRKCConstantCache(zprev,k2,uf,nlsolve,du₁,du₂)
 end
 
 function alg_cache(alg::IRKC,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -174,12 +176,14 @@ function alg_cache(alg::IRKC,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   utilde = similar(u)
   atmp = similar(u,uEltypeNoUnits)
   fsalfirst = zero(rate_prototype)
-  k = zero(rate_prototype)
+  k  = zero(rate_prototype)
+  k2 = zero(rate_prototype)
+  zprev = similar(u)
   f1ⱼ₋₁ = zero(rate_prototype)
   f1ⱼ₋₂ = zero(rate_prototype)
   f2ⱼ₋₁ = zero(rate_prototype)
   du₁ = zero(rate_prototype)
   du₂ = zero(rate_prototype)
-  constantcache = IRKCConstantCache(u,uf,nlsolve,du₁,du₂)
-  IRKCCache(u,uprev,gprev,gprev2,fsalfirst,k,f1ⱼ₋₁,f1ⱼ₋₂,f2ⱼ₋₁,z,dz,b,tmp,utilde,atmp,J,W,uf,jac_config,linsolve,nlsolve,du₁,du₂,constantcache)
+  constantcache = IRKCConstantCache(zprev,k2,uf,nlsolve,du₁,du₂)
+  IRKCCache(u,uprev,gprev,gprev2,fsalfirst,k,du1,f1ⱼ₋₁,f1ⱼ₋₂,f2ⱼ₋₁,z,dz,b,tmp,utilde,atmp,J,W,uf,jac_config,linsolve,nlsolve,du₁,du₂,constantcache)
 end

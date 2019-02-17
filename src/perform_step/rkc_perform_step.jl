@@ -505,7 +505,7 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
   μs     = ω₁*Bⱼ₋₁
   μs₁    = μs
 
-  typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, μs₁*dt, repeat_step) )
+  typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, μs₁*dt, false) )
   # initial guess for implicit part
   if alg.extrapolant == :linear
     nlcache.z = dt*du₁
@@ -537,16 +537,15 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
     Tⱼ   = 2.0*ω₀*Tⱼ₋₁ - Tⱼ₋₂
     Tⱼ′  = 2.0*ω₀*Tⱼ₋₁′ + 2.0*Tⱼ₋₁ - Tⱼ₋₂′
     Tⱼ″  = 2.0*ω₀*Tⱼ₋₁″ + 4.0*Tⱼ₋₁′ - Tⱼ₋₂″
-    Bⱼ   = Tⱼ″/(Tⱼ′^2)
-    νs   = -(1.0 - Bⱼ₋₁)*Tⱼ₋₁*μs
+    Bⱼ   = Tⱼ″/(Tⱼ′^2.0)
     μ    = (2.0*ω₀*Bⱼ)/Bⱼ₋₁
     ν    = - Bⱼ/Bⱼ₋₂
     μs   = (μ*ω₁)/ω₀
+    νs   = -(1.0 - Tⱼ₋₁*Bⱼ₋₁)*μs
     Cⱼ   = μ*Cⱼ₋₁ + ν*Cⱼ₋₂ + μs + νs
 
     f1ⱼ₋₁  = f1(gprev, p, t+Cⱼ₋₁*dt)
     f2ⱼ₋₁  = f2(gprev, p, t+Cⱼ₋₁*dt)
-    typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, Cⱼ*dt, repeat_step) )
     nlcache.tmp = (1.0-μ-ν)*uprev + μ*gprev + ν*gprev2 + dt*μs*f2ⱼ₋₁ + dt*νs*du₂ + (νs - (1.0-μ-ν)*μs₁)*dt*du₁ - ν*μs₁*dt*f1ⱼ₋₂
     nlcache.z   = dt*f1ⱼ₋₁
     nlcache.c   = Cⱼ
@@ -577,6 +576,7 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
   cache.du₂ = f2(u, p, t+dt)
   # error estimate
   if integrator.opts.adaptive
+    typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, dt, false) )
     utilde = nlcache.W*dt*(0.5*(cache.du₂ - du₂) + (0.5 - μs₁)*(cache.du₁ - du₁))
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
@@ -632,7 +632,7 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   μs     = ω₁*Bⱼ₋₁
   μs₁    = μs
 
-  typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, μs₁*dt, repeat_step)
+  typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, μs₁*dt, false)
   # initial guess
   if alg.extrapolant == :linear
     @. z = dt*du₁
@@ -641,6 +641,8 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   end
 
   @. tmp = uprev + dt*μs₁*du₂
+  @. nlcache.tmp = tmp
+  @. nlcache.z   = z
   nlcache.γ   = μs₁
   nlcache.c   = μs
   z,η,iter,fail_convergence = nlsolve!(integrator)
@@ -666,18 +668,19 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
     Tⱼ′  = 2.0*ω₀*Tⱼ₋₁′ + 2.0*Tⱼ₋₁ - Tⱼ₋₂′
     Tⱼ″  = 2.0*ω₀*Tⱼ₋₁″ + 4.0*Tⱼ₋₁′ - Tⱼ₋₂″
     Bⱼ   = Tⱼ″/(Tⱼ′^2.0)
-    νs   = -(1.0 - Bⱼ₋₁)*Tⱼ₋₁*μs
     μ    = (2.0*ω₀*Bⱼ)/Bⱼ₋₁
     ν    = - Bⱼ/Bⱼ₋₂
     μs   = (μ*ω₁)/ω₀
+    νs   = -(1.0 - Tⱼ₋₁*Bⱼ₋₁)*μs
     Cⱼ   = μ*Cⱼ₋₁ + ν*Cⱼ₋₂ + μs + νs
 
     f1(f1ⱼ₋₁, gprev, p, t+Cⱼ₋₁*dt)
     f2(f2ⱼ₋₁, gprev, p, t+Cⱼ₋₁*dt)
-    typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, Cⱼ*dt, repeat_step) )
     @. tmp = (1.0-μ-ν)*uprev + μ*gprev + ν*gprev2 + dt*μs*f2ⱼ₋₁ + dt*νs*du₂ + (νs - (1.0-μ-ν)*μs₁)*dt*du₁ - ν*μs₁*dt*f1ⱼ₋₂
     @. z   = dt*f1ⱼ₋₁
     nlcache.c = Cⱼ
+    @. nlcache.tmp = tmp
+    @. nlcache.z   = z
     z,η,iter,fail_convergence = nlsolve!(integrator)
     # fail_convergence && return
     @. u = tmp + μs₁*z
@@ -706,6 +709,7 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   f2(du₂, u, p, t+dt)
   # error estimate
   if integrator.opts.adaptive
+    typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, dt, false)
     @. utilde = W*dt*(0.5*(du₂ - f2ⱼ₋₁) + (0.5 - μs₁)*(du₁ - f1ⱼ₋₁))
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)

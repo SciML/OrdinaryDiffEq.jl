@@ -313,7 +313,7 @@ alg_adaptive_order(alg::Rosenbrock32) = 2
 
 alg_adaptive_order(alg::RadauIIA5) = 3
 alg_adaptive_order(alg::RKC) = 2
-alg_adaptive_order(alg::IRKC) = 2
+alg_adaptive_order(alg::IRKC) = 1
 
 alg_adaptive_order(alg::GenericImplicitEuler) = 0
 alg_adaptive_order(alg::GenericTrapezoid) = 1
