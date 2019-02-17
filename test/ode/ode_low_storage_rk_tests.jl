@@ -354,7 +354,7 @@ for prob in test_problems_nonlinear
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 integ = init(prob_ode_large, alg, adaptive=false,dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
-@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 7
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 6
 integ = init(prob_ode_large, alg, adaptive=true,dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 7
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)

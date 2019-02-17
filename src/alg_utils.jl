@@ -430,3 +430,4 @@ uses_uprev(alg::CFRLDDRK64, adaptive::Bool) = false
 uses_uprev(alg::TSLDDRK74, adaptive::Bool) = false
 uses_uprev(alg::OrdinaryDiffEqAdaptiveAlgorithm, adaptive::Bool) = true
 uses_uprev(alg::CKLLSRK43_2, adaptive::Bool) = adaptive
+uses_uprev(alg::CKLLSRK54_3C, adaptive::Bool) = adaptive
