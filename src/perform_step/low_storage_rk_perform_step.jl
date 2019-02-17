@@ -227,13 +227,13 @@ end
 end
 
 function initialize!(integrator,cache::LowStorageRK2RPCache)
-  integrator.kshortsize = 2
+  @unpack k,fsalfirst = cache
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = k
+  integrator.kshortsize = 1
   resize!(integrator.k, integrator.kshortsize)
-  integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.k
   integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t)
 end
 
 @muladd function perform_step!(integrator,cache::LowStorageRK2RPCache,repeat_step=false)
@@ -262,8 +262,5 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
-  integrator.k[1] = integrator.fsalfirst
-  f(integrator.fsallast,u, p, t+dt)
-  integrator.k[2] = integrator.fsallast
-  integrator.u = u
+  f(k, u, p, t+dt)
 end
