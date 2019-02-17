@@ -1377,6 +1377,7 @@ end
 # 2R+ low storage methods introduced by van der Houwen
 @cache struct LowStorageRK2RPCache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
+  uprev::uType
   k::rateType
   gprev::uType
   fsalfirst::rateType
@@ -1386,12 +1387,12 @@ end
 end
 
 struct LowStorageRK2RPConstantCache{N,T,T2} <: OrdinaryDiffEqConstantCache
-  A1nm1::SVector{N,T}
-  Bend::T
-  Bhend::T
-  B1nm1::SVector{N,T}
-  Bh1nm1::SVector{N,T}
-  C1nm1::SVector{N,T2}
+  Aᵢ::SVector{N,T}
+  Bₗ::T
+  B̂ₗ::T
+  Bᵢ::SVector{N,T}
+  B̂ᵢ::SVector{N,T}
+  Cᵢ::SVector{N,T2}
 end
 
 
@@ -1399,27 +1400,27 @@ function CKLLDDRK43_2ConstantCache(::Type{T},::Type{T2}) where {T,T2}
   A1 = convert(T,Int128(11847461282814)//Int128(36547543011857))
   A2 = convert(T,Int128(3943225443063)//Int128(7078155732230))
   A3 = convert(T,Int128(-346793006927)//Int128(4029903576067))
-  A1nm1 = SVector(A1, A2, A3)
+  Aᵢ = SVector(A1, A2, A3)
 
   B1 = convert(T,Int128(1017324711453)//Int128(9774461848756))
   B2 = convert(T,Int128(8237718856693)//Int128(13685301971492))
   B3 = convert(T,Int128(57731312506979)//Int128(19404895981398))
-  B1nm1 = SVector(B1, B2, B3)
+  Bᵢ = SVector(B1, B2, B3)
 
-  Bh1 = convert(T,Int128(15763415370699)//Int128(46270243929542))
-  Bh2 = convert(T,Int128(514528521746)//Int128(5659431552419))
-  Bh3 = convert(T,Int128(27030193851939)//Int128(9429696342944))
-  Bh1nm1 = SVector(Bh1, Bh2, Bh3)
+  B̂1 = convert(T,Int128(15763415370699)//Int128(46270243929542))
+  B̂2 = convert(T,Int128(514528521746)//Int128(5659431552419))
+  B̂3 = convert(T,Int128(27030193851939)//Int128(9429696342944))
+  B̂ᵢ = SVector(B̂1, B̂2, B̂3)
 
-  Bend = convert(T,Int128(-101169746363290)//Int128(37734290219643))
-  Bhend = convert(T,Int128(-69544964788955)//Int128(30262026368149))
+  Bₗ = convert(T,Int128(-101169746363290)//Int128(37734290219643))
+  B̂ₗ = convert(T,Int128(-69544964788955)//Int128(30262026368149))
 
   C1 = convert(T2,Int128(11847461282814)//Int128(36547543011857))                                                  # A1
   C2 = convert(T2,Int128(2079258608735161403527719)//Int128(3144780143828896577027540))                            # A2 + B1
   C3 = convert(T2,Int128(41775191021672206476512620310545281003)//Int128(67383242951014563804622635478530729598))  # A3 + B1 + B2
-  C1nm1 = SVector(C1, C2, C3)
+  Cᵢ = SVector(C1, C2, C3)
 
-  LowStorageRK2RPConstantCache{3,T,T2}(A1nm1,Bend,Bhend,B1nm1,Bh1nm1,C1nm1)
+  LowStorageRK2RPConstantCache{3,T,T2}(Aᵢ,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ)
 end
 
 function alg_cache(alg::CKLLDDRK43_2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -1434,7 +1435,7 @@ function alg_cache(alg::CKLLDDRK43_2,u,rate_prototype,uEltypeNoUnits,uBottomElty
     fsalfirst = k
   end
   tab = CKLLDDRK43_2ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
-  LowStorageRK2RPCache(u,k,gprev,fsalfirst,tmp,atmp,tab)
+  LowStorageRK2RPCache(u,uprev,k,gprev,fsalfirst,tmp,atmp,tab)
 end
 
 function alg_cache(alg::CKLLDDRK43_2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})

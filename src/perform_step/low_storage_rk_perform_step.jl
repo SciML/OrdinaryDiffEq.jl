@@ -198,22 +198,22 @@ end
 
 @muladd function perform_step!(integrator,cache::LowStorageRK2RPConstantCache,repeat_step=false)
   @unpack t,dt,u,uprev,f,fsalfirst,p = integrator
-  @unpack A1nm1,Bend,Bhend,B1nm1,Bh1nm1,C1nm1 = cache
+  @unpack Aᵢ,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ = cache
 
   k   = fsalfirst
   integrator.opts.adaptive && (tmp = zero(uprev))
 
   #stages 1 to s-1
-  for i in eachindex(A1nm1)
-    integrator.opts.adaptive && (tmp = tmp + (B1nm1[i] - Bh1nm1[i])*dt*k)
-    u = u + B1nm1[i]*dt*k
-    gprev = u + (A1nm1[i] - B1nm1[i])*dt*k
-    k = f(u + (A1nm1[i] - B1nm1[i])*dt*k, p, t + C1nm1[i]*dt)
+  for i in eachindex(Aᵢ)
+    integrator.opts.adaptive && (tmp = tmp + (Bᵢ[i] - B̂ᵢ[i])*dt*k)
+    u = u + Bᵢ[i]*dt*k
+    gprev = u + (Aᵢ[i] - Bᵢ[i])*dt*k
+    k = f(gprev, p, t + Cᵢ[i]*dt)
   end
 
   #last stage
-  integrator.opts.adaptive && (tmp = tmp + (Bend - Bhend)*dt*k)
-  u   = u  + Bend*dt*k
+  integrator.opts.adaptive && (tmp = tmp + (Bₗ - B̂ₗ)*dt*k)
+  u   = u  + Bₗ*dt*k
 
   #Error estimate
   if integrator.opts.adaptive
@@ -239,22 +239,22 @@ end
 @muladd function perform_step!(integrator,cache::LowStorageRK2RPCache,repeat_step=false)
   @unpack t,dt,u,uprev,f,fsalfirst,p = integrator
   @unpack k,gprev,tmp,atmp = cache
-  @unpack A1nm1,Bend,Bhend,B1nm1,Bh1nm1,C1nm1 = cache.tab
+  @unpack Aᵢ,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ = cache.tab
 
   @. k   = fsalfirst
   integrator.opts.adaptive && (@. tmp = zero(uprev))
 
   #stages 1 to s-1
-  for i in eachindex(A1nm1)
-    integrator.opts.adaptive && (@. tmp = tmp + (B1nm1[i] - Bh1nm1[i])*dt*k)
-    @. u     = u + B1nm1[i]*dt*k
-    @. gprev = u + (A1nm1[i] - B1nm1[i])*dt*k
-    f(k, gprev, p, t + C1nm1[i]*dt)
+  for i in eachindex(Aᵢ)
+    integrator.opts.adaptive && (@. tmp = tmp + (Bᵢ[i] - B̂ᵢ[i])*dt*k)
+    @. u     = u + Bᵢ[i]*dt*k
+    @. gprev = u + (Aᵢ[i] - Bᵢ[i])*dt*k
+    f(k, gprev, p, t + Cᵢ[i]*dt)
   end
 
   #last stage
-  integrator.opts.adaptive && (@. tmp = tmp + (Bend - Bhend)*dt*k)
-  @. u   = u  + Bend*dt*k
+  integrator.opts.adaptive && (@. tmp = tmp + (Bₗ - B̂ₗ)*dt*k)
+  @. u   = u  + Bₗ*dt*k
 
   #Error estimate
   if integrator.opts.adaptive
