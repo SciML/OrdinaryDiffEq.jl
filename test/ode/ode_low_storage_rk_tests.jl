@@ -312,7 +312,7 @@ sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=fa
 @test sol_old[end] ≈ sol_new[end]
 
 
-alg = CKLLDDRK43_2()
+alg = CKLLSRK43_2()
 dts = 1 ./ 2 .^(8:-1:4)
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)

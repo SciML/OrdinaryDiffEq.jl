@@ -1396,7 +1396,7 @@ struct LowStorageRK2RPConstantCache{N,T,T2} <: OrdinaryDiffEqConstantCache
 end
 
 
-function CKLLDDRK43_2ConstantCache(::Type{T},::Type{T2}) where {T,T2}
+function CKLLSRK43_2ConstantCache(::Type{T},::Type{T2}) where {T,T2}
   A1 = convert(T,Int128(11847461282814)//Int128(36547543011857))
   A2 = convert(T,Int128(3943225443063)//Int128(7078155732230))
   A3 = convert(T,Int128(-346793006927)//Int128(4029903576067))
@@ -1423,7 +1423,7 @@ function CKLLDDRK43_2ConstantCache(::Type{T},::Type{T2}) where {T,T2}
   LowStorageRK2RPConstantCache{3,T,T2}(Aᵢ,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ)
 end
 
-function alg_cache(alg::CKLLDDRK43_2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::CKLLSRK43_2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
   tmp  = similar(u)
   atmp = similar(u,uEltypeNoUnits)
@@ -1434,10 +1434,10 @@ function alg_cache(alg::CKLLDDRK43_2,u,rate_prototype,uEltypeNoUnits,uBottomElty
   else
     fsalfirst = k
   end
-  tab = CKLLDDRK43_2ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = CKLLSRK43_2ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   LowStorageRK2RPCache(u,uprev,k,gprev,fsalfirst,tmp,atmp,tab)
 end
 
-function alg_cache(alg::CKLLDDRK43_2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  CKLLDDRK43_2ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+function alg_cache(alg::CKLLSRK43_2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  CKLLSRK43_2ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 end
