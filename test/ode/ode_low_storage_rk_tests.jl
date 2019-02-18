@@ -370,7 +370,7 @@ alg = CKLLSRK95_4S()
 dts = 1 ./ 2 .^(6:-1:2)
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
-  @test sim.𝒪est[:final] ≈ 1 atol=testTol
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 for prob in test_problems_linear
   sim = test_convergence(dts, prob, alg)
