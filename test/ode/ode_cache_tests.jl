@@ -4,7 +4,7 @@ CACHE_TEST_ALGS = [Euler(),Midpoint(),RK4(),SSPRK22(),SSPRK33(),SSPRK53(), SSPRK
   SSPRK63(),SSPRK73(),SSPRK83(),SSPRK432(),SSPRK932(),SSPRK54(),SSPRK104(),
   ORK256(), CarpenterKennedy2N54(), HSLDDRK64(), DGLDDRK73_C(), DGLDDRK84_C(), DGLDDRK84_F(), NDBLSRK124(), NDBLSRK134(), NDBLSRK144(),
   CFRLDDRK64(), TSLDDRK74(),
-  CKLLSRK43_2(),CKLLSRK54_3C(),
+  CKLLSRK43_2(), CKLLSRK54_3C(), CKLLSRK95_4S(),
   ParsaniKetchesonDeconinck3S32(), ParsaniKetchesonDeconinck3S82(),
   ParsaniKetchesonDeconinck3S53(), ParsaniKetchesonDeconinck3S173(),
   ParsaniKetchesonDeconinck3S94(), ParsaniKetchesonDeconinck3S184(),
