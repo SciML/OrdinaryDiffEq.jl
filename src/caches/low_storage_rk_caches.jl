@@ -1559,3 +1559,71 @@ end
 function alg_cache(alg::CKLLSRK95_4S,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   CKLLSRK95_4SConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 end
+
+
+function CKLLSRK95_4CConstantCache(::Type{T},::Type{T2}) where {T,T2}
+  A1  = convert(T, BigInt(1107026461565)//BigInt(5417078080134))
+  A1  = convert(T, BigInt(2756167973529)//BigInt(16886029417639))
+  A2  = convert(T, BigInt(11436141375279)//BigInt(13592993952163))
+  A3  = convert(T, BigInt(88551658327)//BigInt(2352971381260))
+  A4  = convert(T, BigInt(1882111988787)//BigInt(5590444193957))
+  A5  = convert(T, BigInt(846820081679)//BigInt(4754706910573))
+  A6  = convert(T, BigInt(4475289710031)//BigInt(6420120086209))
+  A7  = convert(T, BigInt(118394748311)//BigInt(9144450320350))
+  A8  = convert(T, BigInt(3307377157135)//BigInt(13111544596386))
+  Aᵢ = SVector(A1, A2, A3, A4, A5, A6, A7, A8)
+
+  B1  = convert(T, BigInt(1051460336009)//BigInt(14326298067773))
+  B2  = convert(T, BigInt(930517604889)//BigInt(7067438519321))
+  B3  = convert(T, BigInt(-311910530565)//BigInt(11769786407153))
+  B4  = convert(T, BigInt(-410144036239)//BigInt(7045999268647))
+  B5  = convert(T, BigInt(16692278975653)//BigInt(83604524739127))
+  B6  = convert(T, BigInt(3777666801280)//BigInt(13181243438959))
+  B7  = convert(T, BigInt(286682614203)//BigInt(12966190094317))
+  B8  = convert(T, BigInt(3296161604512)//BigInt(22629905347183))
+  Bᵢ = SVector(B1, B2, B3, B4, B5, B6, B7, B8)
+
+  B̂1  = convert(T, BigInt(3189770262221)//BigInt(35077884776239))
+  B̂2  = convert(T, BigInt(780043871774)//BigInt(11919681558467))
+  B̂3  = convert(T, BigInt(-483824475979)//BigInt(5387739450692))
+  B̂4  = convert(T, BigInt(1306553327038)//BigInt(9528955984871))
+  B̂5  = convert(T, BigInt(6521106697498)//BigInt(22565577506855))
+  B̂6  = convert(T, BigInt(1400555694605)//BigInt(19784728594468))
+  B̂7  = convert(T, BigInt(1183541508418)//BigInt(13436305181271))
+  B̂8  = convert(T, BigInt(3036254792728)//BigInt(15493572606329))
+  B̂ᵢ = SVector(B̂1, B̂2, B̂3, B̂4, B̂5, B̂6, B̂7, B̂8)
+
+  Bₗ = convert(T, BigInt(2993490409874)//BigInt(13266828321767))
+  B̂ₗ = convert(T, BigInt(638483435745)//BigInt(4187244659458))
+
+  C1  = convert(T2, BigInt(2756167973529)//BigInt(16886029417639))                                                                                                                                                                                          # A1
+  C2  = convert(T2, BigInt(178130064075748009421121134)//BigInt(194737282992122861693942999))                                                                                                                                                               # A2 + B1
+  C3  = convert(T2, BigInt(57818276708998807530478158133449099851)//BigInt(238238895426494403638887583424360627580))                                                                                                                                        # A3 + B1 + B2
+  C4  = convert(T2, BigInt(3432454166457135667348375590572529790194124848059104)//BigInt(6662096512485931545803670383440459769502981926779993))                                                                                                             # A4 + B1 + B2 + B3
+  C5  = convert(T2, BigInt(11915126765643872062053118401193741919814944004335534493046474237)//BigInt(39923715169802034300462756237193519081954994679332637422466438119))                                                                                   # A5 + B1 + B2 + B3 + B4
+  C6  = convert(T2, BigInt(4583883621300589683158355859163890943947800555246686854224916208836514024614442)//BigInt(4506922925096139856045533451931734406235454975594364558624038359246205017801029))                                                       # A6 + B1 + B2 + B3 + B4 + B5
+  C7  = convert(T2, BigInt(52423219056629312880725209686636192777075511202228566787042655312097949192300218484424118619)//BigInt(84615702680158836756876794083943762639542619835321175569533203672153042594634924742431352650))                             # A7 + B1 + B2 + B3 + B4 + B5 + B6
+  C8  = convert(T2, BigInt(1385843715228499555828057735261132084759031703937678116167963792224108372724503731226480538087331079769069)//BigInt(1573111845759510782008384284066606688388217112071821912231287750254246452350240904652428530379336814559998)) # A8 + B1 + B2 + B3 + B4 + B5 + B6 + B7
+  Cᵢ = SVector(C1, C2, C3, C4, C5, C6, C7, C8)
+
+  LowStorageRK2RPConstantCache{8,T,T2}(Aᵢ,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ)
+end
+
+function alg_cache(alg::CKLLSRK95_4C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+
+  tmp  = similar(u)
+  atmp = similar(u,uEltypeNoUnits)
+  k    = zero(rate_prototype)
+  gprev    = similar(u)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
+  tab = CKLLSRK95_4CConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  LowStorageRK2RPCache(u,uprev,k,gprev,fsalfirst,tmp,atmp,tab)
+end
+
+function alg_cache(alg::CKLLSRK95_4C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  CKLLSRK95_4CConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+end
