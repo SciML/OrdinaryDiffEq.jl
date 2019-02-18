@@ -320,7 +320,7 @@ for prob in test_problems_only_time
 end
 for prob in test_problems_linear
   sim = test_convergence(dts, prob, alg)
-  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg)+1 atol=testTol
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg)+1 atol=testTol    # This scheme has kinear order of 4
 end
 for prob in test_problems_nonlinear
   sim = test_convergence(dts, prob, alg)
@@ -343,7 +343,7 @@ alg = CKLLSRK54_3C()
 dts = 1 ./ 2 .^(8:-1:4)
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
-  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg)-3 atol=testTol
+  @test sim.𝒪est[:final] ≈ 1 atol=testTol          # The CI plot is linear but the evaluated order is 1
 end
 for prob in test_problems_linear
   sim = test_convergence(dts, prob, alg)
