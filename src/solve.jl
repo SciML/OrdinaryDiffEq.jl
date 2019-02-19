@@ -39,7 +39,7 @@ function DiffEqBase.__init(
   failfactor = 2,
   beta2=nothing,
   beta1=nothing,
-  maxiters = 1000000,
+  maxiters = adaptive ? 1000000 : typemax(Int),
   dtmax=eltype(prob.tspan)((prob.tspan[end]-prob.tspan[1])),
   dtmin= typeof(one(eltype(prob.tspan))) <: AbstractFloat ? eps(eltype(prob.tspan)) :
          typeof(one(eltype(prob.tspan))) <: Integer ? 0 :
