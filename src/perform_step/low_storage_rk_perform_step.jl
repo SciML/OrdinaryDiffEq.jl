@@ -206,8 +206,8 @@ end
   #stages 1 to s-1
   for i in eachindex(Aᵢ)
     integrator.opts.adaptive && (tmp = tmp + (Bᵢ[i] - B̂ᵢ[i])*dt*k)
+    gprev = u + Aᵢ[i]*dt*k
     u = u + Bᵢ[i]*dt*k
-    gprev = u + (Aᵢ[i] - Bᵢ[i])*dt*k
     k = f(gprev, p, t + Cᵢ[i]*dt)
   end
 
@@ -247,8 +247,8 @@ end
   #stages 1 to s-1
   for i in eachindex(Aᵢ)
     integrator.opts.adaptive && (@. tmp = tmp + (Bᵢ[i] - B̂ᵢ[i])*dt*k)
+    @. gprev = u + Aᵢ[i]*dt*k
     @. u     = u + Bᵢ[i]*dt*k
-    @. gprev = u + (Aᵢ[i] - Bᵢ[i])*dt*k
     f(k, gprev, p, t + Cᵢ[i]*dt)
   end
 
