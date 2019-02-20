@@ -138,7 +138,7 @@ function DiffEqBase.__init(
 
   if isinplace(prob) && typeof(u) <: AbstractArray && eltype(u) <: Number && uBottomEltypeNoUnits == uBottomEltype # Could this be more efficient for other arrays?
     if !(typeof(u) <: ArrayPartition)
-      rate_prototype = similar(u,typeof(oneunit(uBottomEltype)/oneunit(tType)))
+      rate_prototype = recursivecopy(u)
     else
       rate_prototype = similar(u, typeof.(oneunit.(recursive_bottom_eltype.(u.x))./oneunit(tType))...)
     end
@@ -219,7 +219,7 @@ function DiffEqBase.__init(
 
   k = rateType[]
 
-  if uses_uprev(alg) || calck
+  if uses_uprev(alg, adaptive) || calck
     uprev = recursivecopy(u)
   else
     # Some algorithms do not use `uprev` explicitly. In that case, we can save
