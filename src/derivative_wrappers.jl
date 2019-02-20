@@ -19,26 +19,25 @@ function derivative(f, x::Union{Number,AbstractArray{<:Number}},
     d
 end
 
-function jacobian(f, x,
-                  integrator::DiffEqBase.DEIntegrator)
-    local J
+function jacobian(f, x, integrator)
     alg = unwrap_alg(integrator, true)
-    isarray = typeof(x) <: AbstractArray
-    if get_current_alg_autodiff(integrator.alg, integrator.cache)
-      if isarray
-        J = ForwardDiff.jacobian(f,x)
-      else
-        J = ForwardDiff.derivative(f,x)
-      end
+
+    if get_current_alg_autodiff(alg, integrator.cache)
+      J = jacobian_autodiff(f, x)
     else
-      if isarray
-        J = DiffEqDiffTools.finite_difference_jacobian(f, x, alg.diff_type, eltype(x), Val{false})
-      else
-        J = DiffEqDiffTools.finite_difference_derivative(f, x, alg.diff_type, eltype(x))
-      end
+      J = jacobian_finitediff(f, x, alg.diff_type)
     end
+
     J
 end
+
+jacobian_autodiff(f, x) = ForwardDiff.derivative(f,x)
+jacobian_autodiff(f, x::AbstractArray) = ForwardDiff.jacobian(f, x)
+
+jacobian_finitediff(f, x, diff_type) =
+    DiffEqDiffTools.finite_difference_derivative(f, x, diff_type, eltype(x))
+jacobian_finitediff(f, x::AbstractArray, diff_type) =
+    DiffEqDiffTools.finite_difference_jacobian(f, x, diff_type, eltype(x), Val{false})
 
 function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, fx::AbstractArray{<:Number}, integrator::DiffEqBase.DEIntegrator, jac_config)
     if get_current_alg_autodiff(integrator.alg, integrator.cache)

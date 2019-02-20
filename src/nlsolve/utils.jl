@@ -108,7 +108,16 @@ DiffEqBase.@def oopnlsolve begin
       end
       W = WOperator(f.mass_matrix, dt, J, false)
     else
-      W = typeof(u) <: Number ? u : Matrix{uEltypeNoUnits}(undef, 0, 0) # uEltype?
+      if DiffEqBase.has_jac(f)
+        J = f.jac(uprev, p, t)
+      else
+        if alg_autodiff(alg)
+          J = jacobian_autodiff(uf, uprev)
+        else
+          J = jacobian_finitediff(uf, uprev, alg.diff_type)
+        end
+      end
+      W = J isa Number ? J : lu(J; check=false)
     end
 
     nlcache = NLNewtonCache(κ,tol,min_iter,max_iter,10000,_nlcache.new_W,z,W,γ,c,ηold,dz,tmp,b,k)
