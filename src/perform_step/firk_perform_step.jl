@@ -116,7 +116,9 @@ end
     # check early stopping criterion
     if iter != 1
       θ = ndw/ndwprev
-      θ ≥ 1 || ndw * θ^(max_iter - iter) > κtol * (1 - θ) && break
+      if θ ≥ 1 || ndw * θ^(max_iter - iter) > κtol * (1 - θ)
+        break
+      end
     end
 
     w1 = @. w1 + dw1
@@ -303,7 +305,9 @@ end
     # check early stopping criterion
     if iter != 1
       θ = ndw/ndwprev
-      θ ≥ 1 || ndw * θ^(max_iter - iter) > κtol * (1 - θ) && break
+      if θ ≥ 1 || ndw * θ^(max_iter - iter) > κtol * (1 - θ)
+        break
+      end
     end
 
     @. w1 = w1 + dw1
