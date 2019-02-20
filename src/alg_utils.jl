@@ -179,6 +179,11 @@ alg_order(alg::NDBLSRK134) = 4
 alg_order(alg::NDBLSRK144) = 4
 alg_order(alg::CFRLDDRK64) = 4
 alg_order(alg::TSLDDRK74) = 4
+alg_order(alg::CKLLSRK43_2) = 3
+alg_order(alg::CKLLSRK54_3C) = 4
+alg_order(alg::CKLLSRK95_4S) = 5
+alg_order(alg::CKLLSRK95_4C) = 5
+alg_order(alg::CKLLSRK95_4M) = 5
 alg_order(alg::ParsaniKetchesonDeconinck3S32) = 2
 alg_order(alg::ParsaniKetchesonDeconinck3S82) = 2
 alg_order(alg::ParsaniKetchesonDeconinck3S53) = 3
@@ -414,15 +419,21 @@ function unwrap_alg(integrator, is_stiff)
 end
 
 # Whether `uprev` is used in the algorithm directly.
-uses_uprev(alg::OrdinaryDiffEqAlgorithm) = true
-uses_uprev(alg::ORK256) = false
-uses_uprev(alg::CarpenterKennedy2N54) = false
-uses_uprev(alg::HSLDDRK64) = false
-uses_uprev(alg::DGLDDRK73_C) = false
-uses_uprev(alg::DGLDDRK84_C) = false
-uses_uprev(alg::DGLDDRK84_F) = false
-uses_uprev(alg::NDBLSRK124) = false
-uses_uprev(alg::NDBLSRK134) = false
-uses_uprev(alg::NDBLSRK144) = false
-uses_uprev(alg::CFRLDDRK64) = false
-uses_uprev(alg::TSLDDRK74) = false
+uses_uprev(alg::OrdinaryDiffEqAlgorithm, adaptive::Bool) = true
+uses_uprev(alg::ORK256, adaptive::Bool) = false
+uses_uprev(alg::CarpenterKennedy2N54, adaptive::Bool) = false
+uses_uprev(alg::HSLDDRK64, adaptive::Bool) = false
+uses_uprev(alg::DGLDDRK73_C, adaptive::Bool) = false
+uses_uprev(alg::DGLDDRK84_C, adaptive::Bool) = false
+uses_uprev(alg::DGLDDRK84_F, adaptive::Bool) = false
+uses_uprev(alg::NDBLSRK124, adaptive::Bool) = false
+uses_uprev(alg::NDBLSRK134, adaptive::Bool) = false
+uses_uprev(alg::NDBLSRK144, adaptive::Bool) = false
+uses_uprev(alg::CFRLDDRK64, adaptive::Bool) = false
+uses_uprev(alg::TSLDDRK74, adaptive::Bool) = false
+uses_uprev(alg::OrdinaryDiffEqAdaptiveAlgorithm, adaptive::Bool) = true
+uses_uprev(alg::CKLLSRK43_2, adaptive::Bool) = adaptive
+uses_uprev(alg::CKLLSRK54_3C, adaptive::Bool) = adaptive
+uses_uprev(alg::CKLLSRK95_4S, adaptive::Bool) = adaptive
+uses_uprev(alg::CKLLSRK95_4C, adaptive::Bool) = adaptive
+uses_uprev(alg::CKLLSRK95_4M, adaptive::Bool) = adaptive

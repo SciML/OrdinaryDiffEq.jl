@@ -219,7 +219,7 @@ function DiffEqBase.__init(
 
   k = rateType[]
 
-  if uses_uprev(alg) || calck
+  if uses_uprev(alg, adaptive) || calck
     uprev = recursivecopy(u)
   else
     # Some algorithms do not use `uprev` explicitly. In that case, we can save
