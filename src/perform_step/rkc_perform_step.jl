@@ -507,18 +507,20 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
 
   typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, μs₁*dt, false) )
   # initial guess for implicit part
-  if alg.extrapolant == :linear
-    nlcache.z = dt*du₁
-  else # :constant
-    nlcache.z = zero(u)
-  end
+  # if alg.extrapolant == :linear
+  #   nlcache.z = dt*du₁
+  # else # :constant
+  #   nlcache.z = zero(u)
+  # end
+
+  nlcache.z = dt*du₁
 
   nlcache.tmp = uprev + dt*μs₁*du₂
   nlcache.γ   = μs₁
   nlcache.c   = μs
   z,η,iter,fail_convergence = nlsolve!(integrator)
   # fail_convergence && return
-  u = nlcache.tmp + μs₁*z
+  gprev = nlcache.tmp + μs₁*z
   nlcache.ηold = η
   nlcache.nl_iters = iter
 
@@ -530,7 +532,6 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
   Tⱼ₋₂′  = zero(eltype(u))
   Tⱼ₋₁″  = zero(eltype(u))
   Tⱼ₋₂″  = zero(eltype(u))
-  gprev  = u
 
   #stage- 2...mdeg
   for iter in 2:mdeg
@@ -634,11 +635,12 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
 
   typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, μs₁*dt, false)
   # initial guess
-  if alg.extrapolant == :linear
-    @. z = dt*du₁
-  else # :constant
-    @. z = zero(eltype(u))
-  end
+  # if alg.extrapolant == :linear
+  #   @. z = dt*du₁
+  # else # :constant
+  #   @. z = zero(eltype(u))
+  # end
+  @. z = dt*du₁
 
   @. tmp = uprev + dt*μs₁*du₂
   @. nlcache.tmp = tmp
@@ -648,7 +650,7 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   z,η,iter,fail_convergence = nlsolve!(integrator)
   # ignoring newton method's convergence failure
   # fail_convergence && return
-  @. u = tmp + μs₁*z
+  @. gprev = tmp + μs₁*z
   nlcache.ηold = η
   nlcache.nl_iters = iter
 
@@ -660,7 +662,6 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   Tⱼ₋₂′  = zero(eltype(u))
   Tⱼ₋₁″  = zero(eltype(u))
   Tⱼ₋₂″  = zero(eltype(u))
-  @. gprev  = u
 
   #stage- 2...mdeg
   for iter in 2:mdeg
