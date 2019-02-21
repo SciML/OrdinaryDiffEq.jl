@@ -332,8 +332,9 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
     W = WOperator(mass_matrix, dtgamma, J, false; transform=W_transform)
   else
     J = calc_J(integrator, cache, is_compos)
-    W = W_transform ? mass_matrix*inv(dtgamma) - J :
-                      mass_matrix - dtgamma*J
+    W_full = W_transform ? mass_matrix*inv(dtgamma) - J :
+                           mass_matrix - dtgamma*J
+    W = W_full isa Number ? W_full : lu(W_full)
   end
   is_compos && (integrator.eigen_est = isarray ? opnorm(J, Inf) : J)
   W
