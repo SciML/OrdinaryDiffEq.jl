@@ -112,7 +112,7 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,IIP,uType,tType,pT
   reeval_fsal::Bool
   u_modified::Bool
   opts::O
-  destat::StatType
+  destats::StatType
   fsalfirst::FSALType
   fsallast::FSALType
 
@@ -124,7 +124,7 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,IIP,uType,tType,pT
       iter,saveiter,saveiter_dense,cache,
       kshortsize,force_stepfail,last_stepfail,just_hit_tstop,
       event_last_time,last_event_error,
-      accept_step,isout,reeval_fsal,u_modified,opts,destat) where {algType,IIP,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
+      accept_step,isout,reeval_fsal,u_modified,opts,destats) where {algType,IIP,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
                                      F,CacheType,O,FSALType,EventErrorType,StatType}
 
       new{algType,IIP,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
@@ -135,7 +135,7 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,IIP,uType,tType,pT
       iter,saveiter,saveiter_dense,cache,
       kshortsize,force_stepfail,last_stepfail,just_hit_tstop,
       event_last_time,last_event_error,
-      accept_step,isout,reeval_fsal,u_modified,opts,destat) # Leave off fsalfirst and last
+      accept_step,isout,reeval_fsal,u_modified,opts,destats) # Leave off fsalfirst and last
   end
 end
 

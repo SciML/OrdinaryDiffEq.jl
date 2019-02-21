@@ -265,17 +265,17 @@ function DiffEqBase.__init(
                        calck,force_dtmin,advance_to_tstop,stop_at_next_tstop)
 
   eigen_est = 1/oneunit(tType) # rate/state = (state/time)/state = 1/t units
-  destat = DiffEqBase.DEStat(alg isa OrdinaryDiffEqCompositeAlgorithm ? zero(eigen_est) : nothing)
+  destats = DiffEqBase.DEStats(alg isa OrdinaryDiffEqCompositeAlgorithm ? zero(eigen_est) : nothing)
 
   if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
     sol = DiffEqBase.build_solution(prob,alg,ts,timeseries,
                       dense=dense,k=ks,interp=id,
                       alg_choice=alg_choice,
-                      calculate_error = false, destat=destat)
+                      calculate_error = false, destats=destats)
   else
     sol = DiffEqBase.build_solution(prob,alg,ts,timeseries,
                       dense=dense,k=ks,interp=id,
-                      calculate_error = false, destat=destat)
+                      calculate_error = false, destats=destats)
   end
 
   if recompile_flag == true
@@ -313,7 +313,7 @@ function DiffEqBase.__init(
                              QT,typeof(tdir),typeof(k),SolType,
                              FType,cacheType,
                              typeof(opts),fsal_typeof(alg,rate_prototype),
-                             typeof(last_event_error),typeof(destat)}(
+                             typeof(last_event_error),typeof(destats)}(
                              sol,u,k,t,tType(dt),f,p,uprev,uprev2,tprev,
                              alg,dtcache,dtchangeable,
                              dtpropose,tdir,eigen_est,EEst,QT(qoldinit),q11,
@@ -323,7 +323,7 @@ function DiffEqBase.__init(
                              just_hit_tstop,event_last_time,last_event_error,
                              accept_step,
                              isout,reeval_fsal,
-                             u_modified,opts,destat)
+                             u_modified,opts,destats)
   if initialize_integrator
     initialize_callbacks!(integrator, initialize_save)
     initialize!(integrator,integrator.cache)

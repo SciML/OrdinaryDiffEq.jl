@@ -59,7 +59,7 @@
     end
     resqr = qr!(view(residuals, :, 1:mk), Val(true))
     alphas = ztmp isa Number ? resqr \ fill(ztmp, 1, 1) : resqr \ _vec(ztmp)
-    integrator.destat.nsolve += 1
+    integrator.destats.nsolve += 1
     for i in 1:mk
         z₊ = @. z₊ + alphas[i] * (gs[i+1] - gs[1])
     end
@@ -162,7 +162,7 @@ end
     end
     resqr = qr!(view(residuals, :, 1:mk), Val(true))
     ldiv!(view(alphas, 1:mk), resqr, vecztmp)
-    integrator.destat.nsolve += 1
+    integrator.destats.nsolve += 1
     for i in 1:mk
         @. vecz₊ += alphas[i] * (gs[i + 1] - gs[1])
     end

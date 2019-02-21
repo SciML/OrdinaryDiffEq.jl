@@ -317,7 +317,7 @@ function loopfooter!(integrator)
     integrator.isout = integrator.opts.isoutofdomain(integrator.u,integrator.p,ttmp)
     integrator.accept_step = (!integrator.isout && integrator.EEst <= 1.0) || (integrator.opts.force_dtmin && abs(integrator.dt) <= abs(integrator.opts.dtmin))
     if integrator.accept_step # Accept
-      integrator.destat.naccept += 1
+      integrator.destats.naccept += 1
       integrator.last_stepfail = false
       dtnew = step_accept_controller!(integrator,integrator.alg,q)
       integrator.tprev = integrator.t
@@ -332,10 +332,10 @@ function loopfooter!(integrator)
       calc_dt_propose!(integrator,dtnew)
       handle_callbacks!(integrator)
     else # Reject
-      integrator.destat.nreject += 1
+      integrator.destats.nreject += 1
     end
   elseif !integrator.opts.adaptive #Not adaptive
-    integrator.destat.naccept += 1
+    integrator.destats.naccept += 1
     integrator.tprev = integrator.t
     # integrator.EEst has unitless type of integrator.t
     if typeof(integrator.EEst)<: AbstractFloat && !isempty(integrator.opts.tstops)
@@ -357,8 +357,8 @@ function loopfooter!(integrator)
     message=integrator.opts.progress_message(integrator.dt,integrator.u,integrator.p,integrator.t),
     progress=integrator.t/integrator.sol.prob.tspan[2])
   end
-  integrator.destat.nf = DiffEqBase.nfeval(integrator.f)
-  (integrator.cache isa CompositeCache && integrator.eigen_est > integrator.destat.maxeig) && (integrator.destat.maxeig = integrator.eigen_est)
+  integrator.destats.nf = DiffEqBase.nfeval(integrator.f)
+  (integrator.cache isa CompositeCache && integrator.eigen_est > integrator.destats.maxeig) && (integrator.destats.maxeig = integrator.eigen_est)
   nothing
 end
 

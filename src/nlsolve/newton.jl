@@ -54,7 +54,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
   else
     dz = _reshape(W \ _vec(ztmp), axes(ztmp))
   end
-  integrator.destat.nsolve += 1
+  integrator.destats.nsolve += 1
 
   # compute initial values for early stopping criterion
   ndz = integrator.opts.internalnorm(dz,t)
@@ -81,7 +81,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     else
       dz = _reshape(W \ _vec(ztmp), axes(ztmp))
     end
-    integrator.destat.nsolve += 1
+    integrator.destats.nsolve += 1
 
     # check early stopping criterion
     ndzprev = ndz
@@ -130,7 +130,7 @@ end
   else
     cache.linsolve(vecdz,W,vecztmp,new_W)
   end
-  integrator.destat.nsolve += 1
+  integrator.destats.nsolve += 1
 
   # compute initial values for early stopping criterion
   ndz = integrator.opts.internalnorm(dz,t)
@@ -159,7 +159,7 @@ end
     else
       cache.linsolve(vecdz,W,vecztmp,false)
     end
-    integrator.destat.nsolve += 1
+    integrator.destats.nsolve += 1
 
     # check early stopping criterion
     ndzprev = ndz
