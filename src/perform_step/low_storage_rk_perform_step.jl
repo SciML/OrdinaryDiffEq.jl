@@ -284,15 +284,18 @@ end
 
   fᵢ₋₂  = zero(fsalfirst)
   k     = fsalfirst
+  uᵢ₋₁  = uprev
+  uᵢ₋₂  = uprev
   integrator.opts.adaptive && (tmp = zero(uprev))
-  gprev = uprev
 
   #stages 1 to s-1
-  for i in eachindex(Aᵢ)
+  for i in eachindex(Aᵢ₁)
     integrator.opts.adaptive && (tmp = tmp + (Bᵢ[i] - B̂ᵢ[i])*dt*k)
-    gprev = gprev + (Aᵢ₁[i]*k+Aᵢ₂[i]*fᵢ₋₂)*dt
+    gprev = uᵢ₋₂ + (Aᵢ₁[i]*k+Aᵢ₂[i]*fᵢ₋₂)*dt
     u     = u + Bᵢ[i]*dt*k
     fᵢ₋₂  = k
+    uᵢ₋₂  = uᵢ₋₁
+    uᵢ₋₁  = u
     k     = f(gprev, p, t + Cᵢ[i]*dt)
   end
 
@@ -323,21 +326,24 @@ end
 
 @muladd function perform_step!(integrator,cache::LowStorageRK3RPCache,repeat_step=false)
   @unpack t,dt,u,uprev,f,fsalfirst,p = integrator
-  @unpack k,gprev,fᵢ₋₂,tmp,atmp = cache
+  @unpack k,uᵢ₋₁,uᵢ₋₂,gprev,fᵢ₋₂,tmp,atmp = cache
   @unpack Aᵢ₁,Aᵢ₂,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ = cache.tab
 
   @. fᵢ₋₂  = zero(fsalfirst)
   @. k     = fsalfirst
   integrator.opts.adaptive && (@. tmp = zero(uprev))
-  @. gprev = uprev
+  @. uᵢ₋₁  = uprev
+  @. uᵢ₋₂  = uprev
 
   #stages 1 to s-1
-  for i in eachindex(Aᵢ)
+  for i in eachindex(Aᵢ₁)
     integrator.opts.adaptive && (@. tmp = tmp + (Bᵢ[i] - B̂ᵢ[i])*dt*k)
-    @. gprev = gprev + (Aᵢ₁[i]*k+Aᵢ₂[i]*fᵢ₋₂)*dt
+    @. gprev = uᵢ₋₂ + (Aᵢ₁[i]*k+Aᵢ₂[i]*fᵢ₋₂)*dt
     @. u     = u + Bᵢ[i]*dt*k
     @. fᵢ₋₂  = k
-    @. k     = f(gprev, p, t + Cᵢ[i]*dt)
+    @. uᵢ₋₂  = uᵢ₋₁
+    @. uᵢ₋₁  = u
+    f(k, gprev, p, t + Cᵢ[i]*dt)
   end
 
   #last stage
