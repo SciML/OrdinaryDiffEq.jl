@@ -271,11 +271,11 @@ function DiffEqBase.__init(
     sol = DiffEqBase.build_solution(prob,alg,ts,timeseries,
                       dense=dense,k=ks,interp=id,
                       alg_choice=alg_choice,
-                      calculate_error = false, destats=destats)
+                      calculate_error = false, DEStats=destats)
   else
     sol = DiffEqBase.build_solution(prob,alg,ts,timeseries,
                       dense=dense,k=ks,interp=id,
-                      calculate_error = false, destats=destats)
+                      calculate_error = false, DEStats=destats)
   end
 
   if recompile_flag == true
