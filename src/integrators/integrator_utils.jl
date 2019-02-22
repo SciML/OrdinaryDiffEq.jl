@@ -245,7 +245,7 @@ function step_reject_controller!(integrator,alg::Union{StandardControllerAlgs,
   integrator.dt = integrator.qold
 end
 
-const PredictiveControllerAlgs = RKC # Union{RKC,OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,:Predictive}} where {CS, AD}
+const PredictiveControllerAlgs = Union{RKC,RadauIIA5} # Union{RKC,OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,:Predictive}} where {CS, AD}
 function stepsize_controller!(integrator,alg::PredictiveControllerAlgs)
   # Gustafsson predictive stepsize controller
 
