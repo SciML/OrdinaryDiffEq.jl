@@ -10,7 +10,7 @@ struct ODECompositeSolution{T,N,uType,uType2,EType,tType,rateType,P,A,IType,Stat
   alg_choice::Vector{Int}
   dense::Bool
   tslocation::Int
-  destats::StatType
+  DEStats::StatType
   retcode::Symbol
 end
 (sol::ODECompositeSolution)(t,deriv::Type=Val{0};idxs=nothing,continuity=:left) = sol.interp(t,idxs,deriv,sol.prob.p,continuity)
@@ -25,7 +25,7 @@ function DiffEqBase.build_solution(
         k=[],
         du=[],
         interp = !isempty(du) ? HermiteInterpolation(t,u,du) : LinearInterpolation(t,u),
-        alg_choice=[1], retcode = :Default, destats=DiffEqBase.DEStats(nothing), kwargs...)
+        alg_choice=[1], retcode = :Default, DEStats=DiffEqBase.DEStats(nothing), kwargs...)
 
   T = eltype(eltype(u))
   if typeof(prob.u0) <: Tuple
@@ -46,14 +46,14 @@ function DiffEqBase.build_solution(
     end
 
     sol = ODECompositeSolution{T,N,typeof(u),typeof(u_analytic),typeof(errors),typeof(t),typeof(k),
-                               typeof(prob),typeof(alg),typeof(interp),typeof(destats)}(u,u_analytic,errors,t,k,prob,alg,interp,alg_choice,dense,0,destats,retcode)
+                               typeof(prob),typeof(alg),typeof(interp),typeof(DEStats)}(u,u_analytic,errors,t,k,prob,alg,interp,alg_choice,dense,0,DEStats,retcode)
     if calculate_error
       DiffEqBase.calculate_solution_errors!(sol;timeseries_errors=timeseries_errors,dense_errors=dense_errors)
     end
     return sol
   else
     return ODECompositeSolution{T,N,typeof(u),typeof(nothing),typeof(nothing),typeof(t),typeof(k),
-                                typeof(prob),typeof(alg),typeof(interp),typeof(destats)}(u,nothing,nothing,t,k,prob,alg,interp,alg_choice,dense,0,destats,retcode)
+                                typeof(prob),typeof(alg),typeof(interp),typeof(DEStats)}(u,nothing,nothing,t,k,prob,alg,interp,alg_choice,dense,0,DEStats,retcode)
   end
 end
 
@@ -61,7 +61,7 @@ function DiffEqBase.solution_new_retcode(sol::ODECompositeSolution{T,N,uType,uTy
   ODECompositeSolution{T,N,uType,uType2,EType,tType,rateType,P,A,IType,StatType}(
                      sol.u,sol.u_analytic,sol.errors,sol.t,sol.k,sol.prob,
                      sol.alg,sol.interp,sol.alg_choice,sol.dense,sol.tslocation,
-                     sol.destats,retcode)
+                     sol.DEStats,retcode)
  end
 
  function DiffEqBase.solution_new_tslocation(sol::ODECompositeSolution{
@@ -69,5 +69,5 @@ function DiffEqBase.solution_new_retcode(sol::ODECompositeSolution{T,N,uType,uTy
    ODECompositeSolution{T,N,uType,uType2,EType,tType,rateType,P,A,IType}(
                       sol.u,sol.u_analytic,sol.errors,sol.t,sol.k,sol.prob,
                       sol.alg,sol.interp,sol.alg_choice,sol.dense,tslocation,
-                      sol.destats,sol.retcode)
+                      sol.DEStats,sol.retcode)
   end
