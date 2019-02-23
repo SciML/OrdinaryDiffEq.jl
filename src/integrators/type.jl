@@ -74,7 +74,7 @@ integrator.opts.abstol = 1e-9
 ```
 For more info see the linked documentation page.
 """
-mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,IIP,uType,tType,pType,eigenType,QT,tdirType,ksEltype,SolType,F,CacheType,O,FSALType,EventErrorType,StatType} <: DiffEqBase.AbstractODEIntegrator{algType,IIP,uType,tType}
+mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,IIP,uType,tType,pType,eigenType,QT,tdirType,ksEltype,SolType,F,CacheType,O,FSALType,EventErrorType} <: DiffEqBase.AbstractODEIntegrator{algType,IIP,uType,tType}
   sol::SolType
   u::uType
   k::ksEltype
@@ -112,12 +112,12 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,IIP,uType,tType,pT
   reeval_fsal::Bool
   u_modified::Bool
   opts::O
-  destats::StatType
+  destats::DiffEqBase.DEStats
   fsalfirst::FSALType
   fsallast::FSALType
 
   function ODEIntegrator{algType,IIP,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
-                F,CacheType,O,FSALType,EventErrorType,StatType}(
+                F,CacheType,O,FSALType,EventErrorType}(
                 sol,u,k,t,dt,f,p,uprev,uprev2,tprev,
       alg,dtcache,dtchangeable,dtpropose,tdir,
       eigen_est,EEst,qold,q11,erracc,dtacc,success_iter,
@@ -125,10 +125,10 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,IIP,uType,tType,pT
       kshortsize,force_stepfail,last_stepfail,just_hit_tstop,
       event_last_time,last_event_error,
       accept_step,isout,reeval_fsal,u_modified,opts,destats) where {algType,IIP,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
-                                     F,CacheType,O,FSALType,EventErrorType,StatType}
+                                     F,CacheType,O,FSALType,EventErrorType}
 
       new{algType,IIP,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
-                  F,CacheType,O,FSALType,EventErrorType,StatType}(
+                  F,CacheType,O,FSALType,EventErrorType}(
                   sol,u,k,t,dt,f,p,uprev,uprev2,tprev,
       alg,dtcache,dtchangeable,dtpropose,tdir,
       eigen_est,EEst,qold,q11,erracc,dtacc,success_iter,

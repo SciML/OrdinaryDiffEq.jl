@@ -264,18 +264,17 @@ function DiffEqBase.__init(
                        unstable_check,verbose,
                        calck,force_dtmin,advance_to_tstop,stop_at_next_tstop)
 
-  eigen_est = 1/oneunit(tType) # rate/state = (state/time)/state = 1/t units
-  destats = DiffEqBase.DEStats(alg isa OrdinaryDiffEqCompositeAlgorithm ? zero(eigen_est) : nothing)
+  destats = DiffEqBase.DEStats()
 
   if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
     sol = DiffEqBase.build_solution(prob,alg,ts,timeseries,
                       dense=dense,k=ks,interp=id,
                       alg_choice=alg_choice,
-                      calculate_error = false, DEStats=destats)
+                      calculate_error = false, destats=destats)
   else
     sol = DiffEqBase.build_solution(prob,alg,ts,timeseries,
                       dense=dense,k=ks,interp=id,
-                      calculate_error = false, DEStats=destats)
+                      calculate_error = false, destats=destats)
   end
 
   if recompile_flag == true
@@ -288,6 +287,7 @@ function DiffEqBase.__init(
     cacheType =  OrdinaryDiffEqCache
   end
 
+  eigen_est = 1/oneunit(tType) # rate/state = (state/time)/state = 1/t units
   tprev = t
   dtcache = tType(dt)
   dtpropose = tType(dt)
@@ -313,7 +313,7 @@ function DiffEqBase.__init(
                              QT,typeof(tdir),typeof(k),SolType,
                              FType,cacheType,
                              typeof(opts),fsal_typeof(alg,rate_prototype),
-                             typeof(last_event_error),typeof(destats)}(
+                             typeof(last_event_error)}(
                              sol,u,k,t,tType(dt),f,p,uprev,uprev2,tprev,
                              alg,dtcache,dtchangeable,
                              dtpropose,tdir,eigen_est,EEst,QT(qoldinit),q11,
