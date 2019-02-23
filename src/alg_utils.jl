@@ -408,6 +408,7 @@ ssp_coefficient(alg::SSPRKMSVS43) = 0.33
 ssp_coefficient(alg::SSPRK932) = 6
 ssp_coefficient(alg::SSPRK54) = 1.508
 ssp_coefficient(alg::SSPRK104) = 6
+ssp_coefficient(alg::KYK2014DGSSPRK_3S2) =  0.8417
 
 # We shouldn't do this probably.
 #ssp_coefficient(alg::ImplicitEuler) = Inf
