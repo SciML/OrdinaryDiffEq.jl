@@ -97,9 +97,9 @@ sim = test_convergence(dts,prob,SBDF4())
 @test_broken sim.𝒪est[:l∞] ≈ 4 atol=testTol
 
 # IRKC
-dts = 1 .//2 .^(8:-1:4)
+dts = 1 .//2 .^(12:-1:8)
 sim = test_convergence(dts,prob,IRKC())
-@test sim.𝒪est[:l∞] ≈ 2 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 1 atol=testTol
 
 # Now test only the second part
 
@@ -155,7 +155,7 @@ sim = test_convergence(dts,prob,SBDF4())
 @test_broken sim.𝒪est[:l∞] ≈ 4 atol=testTol
 
 # IRKC
-dts = 1 .//2 .^(8:-1:4)
+dts = 1 .//2 .^(12:-1:8)
 sim = test_convergence(dts,prob,IRKC())
 @test sim.𝒪est[:l∞] ≈ 2 atol=testTol
 
@@ -213,9 +213,9 @@ sim = test_convergence(dts,prob,SBDF4())
 @test_broken sim.𝒪est[:l∞] ≈ 4 atol=testTol
 
 # IRKC
-dts = 1 .//2 .^(8:-1:4)
+dts = 1 .//2 .^(12:-1:8)
 sim = test_convergence(dts,prob,IRKC())
-@test sim.𝒪est[:l∞] ≈ 2 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 1 atol=testTol
 
 # Now test only the first part
 
@@ -271,9 +271,9 @@ sim = test_convergence(dts,prob,SBDF4())
 @test_broken sim.𝒪est[:l∞] ≈ 4 atol=testTol
 
 # IRKC
-dts = 1 .//2 .^(8:-1:4)
+dts = 1 .//2 .^(12:-1:8)
 sim = test_convergence(dts,prob,IRKC())
-@test sim.𝒪est[:l∞] ≈ 2 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 1 atol=testTol
 
 # Now test only the second part
 
@@ -329,7 +329,7 @@ sim = test_convergence(dts,prob,SBDF4())
 @test_broken sim.𝒪est[:l∞] ≈ 4 atol=testTol
 
 # IRKC
-dts = 1 .//2 .^(8:-1:4)
+dts = 1 .//2 .^(12:-1:8)
 sim = test_convergence(dts,prob,IRKC())
 @test sim.𝒪est[:l∞] ≈ 2 atol=testTol
 
@@ -387,6 +387,6 @@ sim = test_convergence(dts,prob,SBDF4())
 @test_broken sim.𝒪est[:l∞] ≈ 4 atol=testTol
 
 # IRKC
-dts = 1 .//2 .^(8:-1:4)
+dts = 1 .//2 .^(12:-1:8)
 sim = test_convergence(dts,prob,IRKC())
-@test sim.𝒪est[:l∞] ≈ 2 atol=testTol
+@test sim.𝒪est[:l∞] ≈ 1 atol=testTol
