@@ -481,3 +481,66 @@ function alg_cache(alg::Anas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
 end
 
 alg_cache(alg::Anas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = Anas5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+
+@cache struct KYK2014DGSSPRK_3S2_Cache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  k::rateType
+  fsalfirst::rateType
+  tab::TabType
+  #temporary values for Shu-Osher
+  u_1::uType
+  u_2::uType
+  kk_1::rateType
+  kk_2::rateType
+end
+
+struct KYK2014DGSSPRK_3S2_ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+  #These are not α and β for RK but for Shu-Osher
+  #see top of page 317 in
+  #Optimal Strong-Stability-Preserving Runge–Kutta Time Discretizations for
+  #Discontinuous Garlekin Methods, Kubatko, Yaeger, Ketcheson 2014
+  α_10::T
+  α_20::T
+  α_21::T
+  α_30::T
+  α_32::T
+  β_10::T
+  β_21::T
+  β_30::T
+  β_32::T
+  #Shu-Osher is normally stated for autonomous systems, the times
+  #are calculated by hand for this scheme
+  c_1::T
+  c_2::T
+
+  function KYK2014DGSSPRK_3S2_ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+    α_10 = T(1.0)
+    α_20 = T(0.087353119859156)
+    α_21 = T(0.912646880140844)
+    α_30 = T(0.344956917166841)
+    α_32 = T(0.655043082833159)
+    β_10 = T(0.528005024856522)
+    β_21 = T(0.481882138633993)
+    β_30 = T(0.022826837460491)
+    β_32 = T(0.345866039233415)
+    c_1 = β_10
+    c_2 = α_21 * β_10 + β_21 # ==0.96376427726
+    new{T,T2}(α_10, α_20, α_21, α_30, α_32, β_10, β_21, β_30, β_32, c_1, c_2)
+  end
+end
+
+function alg_cache(alg::KYK2014DGSSPRK_3S2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  u_1 = similar(u)
+  u_2 = similar(u)
+  kk_1 = zero(rate_prototype)
+  kk_2 = zero(rate_prototype)
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  tab = KYK2014DGSSPRK_3S2_ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  KYK2014DGSSPRK_3S2_Cache(u,uprev,k,fsalfirst,tab, u_1, u_2, kk_1, kk_2)
+end
+
+function alg_cache(alg::KYK2014DGSSPRK_3S2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  KYK2014DGSSPRK_3S2_ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+end

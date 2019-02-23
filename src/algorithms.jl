@@ -89,6 +89,8 @@ struct ParsaniKetchesonDeconinck3S94 <: OrdinaryDiffEqAlgorithm end
 struct ParsaniKetchesonDeconinck3S184 <: OrdinaryDiffEqAlgorithm end
 struct ParsaniKetchesonDeconinck3S105 <: OrdinaryDiffEqAlgorithm end
 struct ParsaniKetchesonDeconinck3S205 <: OrdinaryDiffEqAlgorithm end
+struct KYK2014DGSSPRK_3S2 <: OrdinaryDiffEqAlgorithm end
+
 
 struct SSPRK22{StageLimiter,StepLimiter} <: OrdinaryDiffEqAlgorithm
   stage_limiter!::StageLimiter

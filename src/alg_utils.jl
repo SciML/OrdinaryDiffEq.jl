@@ -206,6 +206,7 @@ alg_order(alg::ParsaniKetchesonDeconinck3S94) = 4
 alg_order(alg::ParsaniKetchesonDeconinck3S184) = 4
 alg_order(alg::ParsaniKetchesonDeconinck3S105) = 5
 alg_order(alg::ParsaniKetchesonDeconinck3S205) = 5
+alg_order(alg::KYK2014DGSSPRK_3S2) = 2
 
 alg_order(alg::SSPRK22) = 2
 alg_order(alg::SSPRKMSVS32) = 2
