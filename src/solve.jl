@@ -264,15 +264,17 @@ function DiffEqBase.__init(
                        unstable_check,verbose,
                        calck,force_dtmin,advance_to_tstop,stop_at_next_tstop)
 
+  destats = DiffEqBase.DEStats()
+
   if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
     sol = DiffEqBase.build_solution(prob,alg,ts,timeseries,
                       dense=dense,k=ks,interp=id,
                       alg_choice=alg_choice,
-                      calculate_error = false)
+                      calculate_error = false, destats=destats)
   else
     sol = DiffEqBase.build_solution(prob,alg,ts,timeseries,
                       dense=dense,k=ks,interp=id,
-                      calculate_error = false)
+                      calculate_error = false, destats=destats)
   end
 
   if recompile_flag == true
@@ -285,6 +287,7 @@ function DiffEqBase.__init(
     cacheType =  OrdinaryDiffEqCache
   end
 
+  eigen_est = 1/oneunit(tType) # rate/state = (state/time)/state = 1/t units
   tprev = t
   dtcache = tType(dt)
   dtpropose = tType(dt)
@@ -292,7 +295,6 @@ function DiffEqBase.__init(
   kshortsize = 0
   reeval_fsal = false
   u_modified = false
-  eigen_est = 1/oneunit(tType) # rate/state = (state/time)/state = 1/t units
   EEst = tTypeNoUnits(1)
   just_hit_tstop = false
   isout = false
@@ -321,7 +323,7 @@ function DiffEqBase.__init(
                              just_hit_tstop,event_last_time,last_event_error,
                              accept_step,
                              isout,reeval_fsal,
-                             u_modified,opts)
+                             u_modified,opts,destats)
   if initialize_integrator
     initialize_callbacks!(integrator, initialize_save)
     initialize!(integrator,integrator.cache)
