@@ -139,6 +139,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
         # solve least squares problem
         γscur = view(γs, 1:history)
         ldiv!(Rcur, mul!(γscur, Qcur', vec(dz)))
+        integrator.destats.nsolve += 1
 
         # update next iterate
         for i in 1:history
@@ -271,6 +272,7 @@ end
         # solve least squares problem
         γscur = view(γs, 1:history)
         ldiv!(Rcur, mul!(γscur, Qcur', vec(dz)))
+        integrator.destats.nsolve += 1
 
         # update next iterate
         for i in 1:history

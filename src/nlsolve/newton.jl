@@ -64,6 +64,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     else
       dz = _reshape(W \ _vec(ztmp), axes(ztmp))
     end
+    integrator.destats.nsolve += 1
 
     # compute norm of residuals
     iter > 1 && (ndzprev = ndz)
@@ -127,6 +128,7 @@ end
     else
       cache.linsolve(vecdz,W,vecztmp,iter == 1 && new_W)
     end
+    integrator.destats.nsolve += 1
 
     # compute norm of residuals
     iter > 1 && (ndzprev = ndz)

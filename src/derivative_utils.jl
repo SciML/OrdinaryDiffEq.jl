@@ -310,6 +310,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     end
     isnewton && set_new_W!(cache.nlsolver, new_W)
   end
+  new_W && (integrator.destats.nw += 1)
   return nothing
 end
 
@@ -330,7 +331,9 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
       J = DiffEqArrayOperator(J)
     end
     W = WOperator(mass_matrix, dtgamma, J, false; transform=W_transform)
+    integrator.destats.nw += 1
   else
+    integrator.destats.nw += 1
     J = calc_J(integrator, cache, is_compos)
     W_full = W_transform ? mass_matrix*inv(dtgamma) - J :
                            mass_matrix - dtgamma*J
