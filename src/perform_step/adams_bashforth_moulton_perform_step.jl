@@ -1454,8 +1454,7 @@ end
 
 function perform_step!(integrator,cache::CNAB2ConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p,alg = integrator
-  @unpack k2,uf,nlsolve = cache
-  nlsolve!, nlcache = nlsolve, nlsolve.cache
+  @unpack k2,uf,nlsolver = cache
   cnt = integrator.iter
   f1 = integrator.f.f1
   f2 = integrator.f.f2
@@ -1467,25 +1466,25 @@ function perform_step!(integrator,cache::CNAB2ConstantCache,repeat_step=false)
   else
     tmp = uprev + dt * (3//2*k1 - 1//2*k2)
   end
-  nlcache.tmp = tmp
+  nlsolver.tmp = tmp
   # Implicit part
   # precalculations
   γ = 1//2
   γdt = γ*dt
-  typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, γdt, repeat_step) )
+  update_W!(integrator, cache, γdt, repeat_step)
 
   # initial guess
   zprev = dt*du₁
-  nlcache.z = z = zprev # Constant extrapolation
+  nlsolver.z = z = zprev # Constant extrapolation
 
-  nlcache.tmp += γ*zprev
-  z,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.tmp += γ*zprev
+  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
-  u = nlcache.tmp + 1//2*z
+  u = nlsolver.tmp + 1//2*z
 
   cache.k2 = k1
-  nlcache.ηold = η
-  nlcache.nl_iters = iter
+  nlsolver.ηold = η
+  nlsolver.nl_iters = iter
   integrator.fsallast = f1(u, p, t+dt) + f2(u, p, t+dt)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -1504,8 +1503,7 @@ end
 
 function perform_step!(integrator, cache::CNAB2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p,alg = integrator
-  @unpack uf,dz,z,k,k1,k2,du₁,b,J,W,jac_config,tmp,nlsolve = cache
-  nlsolve!, nlcache = nlsolve, nlsolve.cache
+  @unpack uf,dz,z,k,k1,k2,du₁,b,J,W,jac_config,tmp,nlsolver = cache
   cnt = integrator.iter
   f1 = integrator.f.f1
   f2 = integrator.f.f2
@@ -1521,18 +1519,18 @@ function perform_step!(integrator, cache::CNAB2Cache, repeat_step=false)
   # precalculations
   γ = 1//2
   γdt = γ*dt
-  typeof(nlsolve!) <: NLNewton && ( calc_W!(integrator, cache, γdt, repeat_step) )
+  update_W!(integrator, cache, γdt, repeat_step)
 
   # initial guess
   @. z = dt*du₁
   @. tmp += γ*z
-  z,η,iter,fail_convergence = nlsolve!(integrator)
+  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
   @. u = tmp + 1//2*z
 
   cache.k2 .= k1
-  nlcache.ηold = η
-  nlcache.nl_iters = iter
+  nlsolver.ηold = η
+  nlsolver.nl_iters = iter
   integrator.f(k,u,p,t+dt)
 end
 
@@ -1553,8 +1551,7 @@ end
 
 function perform_step!(integrator,cache::CNLF2ConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p,alg = integrator
-  @unpack k2,uprev2,uf,nlsolve = cache
-  nlsolve!, nlcache = nlsolve, nlsolve.cache
+  @unpack k2,uprev2,uf,nlsolver = cache
   cnt = integrator.iter
   f1 = integrator.f.f1
   f2 = integrator.f.f2
@@ -1572,21 +1569,21 @@ function perform_step!(integrator,cache::CNLF2ConstantCache,repeat_step=false)
     tmp += γ*dt*k2
   end
   γdt = γ*dt
-  nlcache.tmp = tmp
-  typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, γdt, repeat_step) )
+  nlsolver.tmp = tmp
+  update_W!(integrator, cache, γdt, repeat_step)
 
   # initial guess
   zprev = dt*du₁
-  nlcache.z = z = zprev # Constant extrapolation
+  nlsolver.z = z = zprev # Constant extrapolation
 
-  z,η,iter,fail_convergence = nlsolve!(integrator)
+  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
-  u = nlcache.tmp + γ*z
+  u = nlsolver.tmp + γ*z
 
   cache.uprev2 = uprev
   cache.k2 = du₁
-  nlcache.ηold = η
-  nlcache.nl_iters = iter
+  nlsolver.ηold = η
+  nlsolver.nl_iters = iter
   integrator.fsallast = f1(u, p, t+dt) + f2(u, p, t+dt)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -1605,8 +1602,7 @@ end
 
 function perform_step!(integrator, cache::CNLF2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p,alg = integrator
-  @unpack uprev2,uf,dz,z,k,k2,du₁,b,J,W,jac_config,tmp,nlsolve = cache
-  nlsolve!, nlcache = nlsolve, nlsolve.cache
+  @unpack uprev2,uf,dz,z,k,k2,du₁,b,J,W,jac_config,tmp,nlsolver = cache
   cnt = integrator.iter
   f1 = integrator.f.f1
   f2 = integrator.f.f2
@@ -1624,17 +1620,17 @@ function perform_step!(integrator, cache::CNLF2Cache, repeat_step=false)
     @. tmp += γ*dt*k2
   end
   γdt = γ*dt
-  typeof(nlsolve!) <: NLNewton && ( calc_W!(integrator, cache, γdt, repeat_step) )
+  update_W!(integrator, cache, γdt, repeat_step)
 
   # initial guess
   @. z = dt*du₁
-  z,η,iter,fail_convergence = nlsolve!(integrator)
+  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
   @. u = tmp + γ*z
 
   cache.uprev2 .= uprev
   cache.k2 .= du₁
-  nlcache.ηold = η
-  nlcache.nl_iters = iter
+  nlsolver.ηold = η
+  nlsolver.nl_iters = iter
   integrator.f(k,u,p,t+dt)
 end

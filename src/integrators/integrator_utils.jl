@@ -260,10 +260,9 @@ function stepsize_controller!(integrator,alg::PredictiveControllerAlgs)
         @unpack nl_iters = integrator.cache
         @unpack max_iter = alg
       else
-        @unpack nl_iters, max_iter = integrator.cache.nlsolve.cache
+        @unpack nl_iters, max_iter = integrator.cache.nlsolve
       end
-      niters = nl_iters
-      fac = min(gamma,(1+2*max_iter)*gamma/(niters+2*max_iter))
+      fac = min(gamma,(1+2*max_iter)*gamma/(nl_iters+2*max_iter))
     end
     expo = 1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1)
     qtmp = (integrator.EEst^expo)/fac
@@ -488,6 +487,8 @@ function reset_fsal!(integrator)
   # Do not set false here so it can be checked in the algorithm
   # integrator.reeval_fsal = false
 end
+
+nlsolve!(integrator, cache) = nlsolve!(cache.nlsolver, cache.nlsolver.cache, integrator)
 
 nlsolve_f(f, alg) = f isa SplitFunction && alg isa SplitAlgorithms ? f.f1 : f
 nlsolve_f(integrator) =
