@@ -42,6 +42,7 @@ end
   else
     cache.linsolve(vec(k₁), W, vec(linsolve_tmp), !repeat_step)
   end
+  integrator.destats.nsolve += 1
 
   @. u = uprev + dto2*k₁
   f(f₁,u,p,t+dto2)
@@ -58,6 +59,7 @@ end
   else
     cache.linsolve(vec(k₂), W, vec(linsolve_tmp))
   end
+  integrator.destats.nsolve += 1
 
   @. k₂ += k₁
   @. u = uprev + dt*k₂
@@ -79,6 +81,7 @@ end
     else
       cache.linsolve(vec(k₃), W, vec(linsolve_tmp))
     end
+    integrator.destats.nsolve += 1
 
     @. tmp = dto6*(k₁ - 2*k₂ + k₃)
     # does not work with units - additional unitless array required!
@@ -108,6 +111,7 @@ end
   else
     cache.linsolve(vec(k₁), W, vec(linsolve_tmp), !repeat_step)
   end
+  integrator.destats.nsolve += 1
 
   @. u = uprev + dto2*k₁
   f(f₁,u,p,t+dto2)
@@ -125,6 +129,7 @@ end
   else
     cache.linsolve(vec(k₂), W, vec(linsolve_tmp))
   end
+  integrator.destats.nsolve += 1
 
   @. k₂ += k₁
   @. tmp = uprev + dt*k₂
@@ -143,6 +148,7 @@ end
   else
     cache.linsolve(vec(k₃), W, vec(linsolve_tmp))
   end
+  integrator.destats.nsolve += 1
 
   @. u = uprev + dto6*(k₁ + 4k₂ + k₃)
 
@@ -168,15 +174,18 @@ end
 
   W = calc_W!(integrator, cache, γ, repeat_step)
   k₁ = _reshape(W\_vec((integrator.fsalfirst + γ*dT)), axes(uprev))
+  integrator.destats.nsolve += 1
   f₁ = f(uprev  + dto2*k₁, p, t+dto2)
 
   k₂ = _reshape(W\_vec(f₁-k₁), axes(uprev)) + k₁
+  integrator.destats.nsolve += 1
   u = uprev  + dt*k₂
 
   if integrator.opts.adaptive
     integrator.fsallast = f(u, p, t+dt)
 
     k₃ = _reshape(W\_vec((integrator.fsallast - c₃₂*(k₂-f₁) - 2*(k₁-integrator.fsalfirst) + dt*dT)), axes(uprev))
+    integrator.destats.nsolve += 1
 
     utilde =  dto6*(k₁ - 2*k₂ + k₃)
     atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
@@ -205,13 +214,16 @@ end
   #f₀ = f(uprev, p, t)
 
   k₁ = _reshape(W\_vec((integrator.fsalfirst + γ*dT)), axes(uprev))
+  integrator.destats.nsolve += 1
   f₁ = f(uprev  + dto2*k₁, p, t+dto2)
 
   k₂ = _reshape(W\_vec(f₁-k₁), axes(uprev)) + k₁
+  integrator.destats.nsolve += 1
   tmp = uprev  + dt*k₂
   integrator.fsallast = f(tmp, p, t+dt)
 
   k₃ = _reshape(W\_vec((integrator.fsallast - c₃₂*(k₂-f₁) - 2(k₁-integrator.fsalfirst) + dt*dT)), axes(uprev))
+  integrator.destats.nsolve += 1
   u = uprev  + dto6*(k₁ + 4k₂ + k₃)
 
   if integrator.opts.adaptive
@@ -277,18 +289,21 @@ end
   linsolve_tmp =  integrator.fsalfirst + dtd1*dT
 
   k1 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
   u = uprev  + a21*k1
   du = f(u, p, t+c2*dt)
 
   linsolve_tmp =  du + dtd2*dT + dtC21*k1
 
   k2 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
   u = uprev  + a31*k1 + a32*k2
   du = f(u, p, t+c3*dt)
 
   linsolve_tmp =  du + dtd3*dT + dtC31*k1 + dtC32*k2
 
   k3 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
   u = uprev  + b1*k1 + b2*k2 + b3*k3
   integrator.fsallast = f(u, p, t + dt)
 
@@ -332,6 +347,7 @@ end
   else
     cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
   end
+  integrator.destats.nsolve += 1
 
   @. u = uprev + a21*k1
   f( du,  u, p, t+c2*dt)
@@ -349,6 +365,7 @@ end
   else
     cache.linsolve(vec(k2), W, vec(linsolve_tmp))
   end
+  integrator.destats.nsolve += 1
 
   @. u = uprev + a31*k1 + a32*k2
   f( du,  u, p, t+c3*dt)
@@ -366,6 +383,7 @@ end
   else
     cache.linsolve(vec(k3), W, vec(linsolve_tmp))
   end
+  integrator.destats.nsolve += 1
 
   @. u = uprev + b1*k1 + b2*k2 + b3*k3
   f( fsallast,  u, p, t + dt)
@@ -408,21 +426,25 @@ end
   linsolve_tmp =  integrator.fsalfirst + dtd1*dT
 
   k1 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
   u = uprev # +a21*k1 a21 == 0
   # du = f(u, p, t+c2*dt) c2 == 0 and a21 == 0 => du = f(uprev, p, t) == fsalfirst
 
   linsolve_tmp =  integrator.fsalfirst + dtd2*dT + dtC21*k1
 
   k2 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
   u = uprev  + a31*k1 + a32*k2
   du = f(u, p, t+c3*dt)
 
   linsolve_tmp =  du + dtd3*dT + dtC31*k1 + dtC32*k2
 
   k3 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
   linsolve_tmp =  du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
 
   k4 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
   u = uprev  + b1*k1 + b2*k2 + b3*k3 + b4*k4
   integrator.fsallast = f(u, p, t + dt)
 
@@ -471,6 +493,7 @@ end
   else
     cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
   end
+  integrator.destats.nsolve += 1
 
   #=
   a21 == 0 and c2 == 0
@@ -493,6 +516,7 @@ end
   else
     cache.linsolve(vec(k2), W, vec(linsolve_tmp))
   end
+  integrator.destats.nsolve += 1
 
   @. u = uprev + a31*k1 + a32*k2
   f( du,  u, p, t+c3*dt)
@@ -510,6 +534,7 @@ end
   else
     cache.linsolve(vec(k3), W, vec(linsolve_tmp))
   end
+  integrator.destats.nsolve += 1
 
   if mass_matrix == I
     @. linsolve_tmp = du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
@@ -524,6 +549,7 @@ end
   else
     cache.linsolve(vec(k4), W, vec(linsolve_tmp))
   end
+  integrator.destats.nsolve += 1
 
   @. u = uprev + b1*k1 + b2*k2 + b3*k3 + b4*k4
   f( fsallast,  u, p, t + dt)
@@ -569,22 +595,26 @@ end
   linsolve_tmp =  integrator.fsalfirst + dtd1*dT
 
   k1 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
   u = uprev +a21*k1
   du = f(u, p, t+c2*dt)
 
   linsolve_tmp =  du + dtd2*dT + dtC21*k1
 
   k2 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
   u = uprev  + a31*k1 + a32*k2
   du = f(u, p, t+c3*dt)
 
   linsolve_tmp =  du + dtd3*dT + dtC31*k1 + dtC32*k2
 
   k3 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
 
   linsolve_tmp =  du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
 
   k4 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
   u = uprev  + b1*k1 + b2*k2 + b3*k3 + b4*k4
   integrator.fsallast = f(u, p, t + dt)
 
@@ -632,6 +662,7 @@ end
   else
     cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
   end
+  integrator.destats.nsolve += 1
 
   @. u = uprev + a21*k1
   f( du,  u, p, t+c2*dt)
@@ -649,6 +680,7 @@ end
   else
     cache.linsolve(vec(k2), W, vec(linsolve_tmp))
   end
+  integrator.destats.nsolve += 1
 
   @. u = uprev + a31*k1 + a32*k2
   f( du,  u, p, t+c3*dt)
@@ -666,6 +698,7 @@ end
   else
     cache.linsolve(vec(k3), W, vec(linsolve_tmp))
   end
+  integrator.destats.nsolve += 1
 
   if mass_matrix == I
     @. linsolve_tmp = du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
@@ -680,6 +713,7 @@ end
   else
     cache.linsolve(vec(k4), W, vec(linsolve_tmp))
   end
+  integrator.destats.nsolve += 1
 
   @. u = uprev + b1*k1 + b2*k2 + b3*k3 + b4*k4
   f( fsallast,  u, p, t + dt)
@@ -743,36 +777,42 @@ end
   linsolve_tmp =  du + dtd1*dT
 
   k1 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
   u = uprev  + a21*k1
   du = f(u, p, t+c2*dt)
 
   linsolve_tmp =  du + dtd2*dT + dtC21*k1
 
   k2 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
   u = uprev  + a31*k1 + a32*k2
   du = f(u, p, t+c3*dt)
 
   linsolve_tmp =  du + dtd3*dT + (dtC31*k1 + dtC32*k2)
 
   k3 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
   u = uprev  + a41*k1 + a42*k2 + a43*k3
   du = f(u, p, t+c4*dt)
 
   linsolve_tmp =  du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
 
   k4 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
   u = uprev  + a51*k1 + a52*k2 + a53*k3 + a54*k4
   du = f(u, p, t+dt)
 
   linsolve_tmp =  du + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
 
   k5 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
   u = u + k5
   du = f(u, p, t+dt)
 
   linsolve_tmp =  du + (dtC61*k1 + dtC62*k2 + dtC65*k5 + dtC64*k4 + dtC63*k3)
 
   k6 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
   u = u + k6
 
   if integrator.opts.adaptive
@@ -838,6 +878,7 @@ end
   else
     cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
   end
+  integrator.destats.nsolve += 1
 
   @. u = uprev + a21*k1
   f( du,  u, p, t+c2*dt)
@@ -855,6 +896,7 @@ end
   else
     cache.linsolve(vec(k2), W, vec(linsolve_tmp))
   end
+  integrator.destats.nsolve += 1
 
   @. u = uprev + a31*k1 + a32*k2
   f( du,  u, p, t+c3*dt)
@@ -872,6 +914,7 @@ end
   else
     cache.linsolve(vec(k3), W, vec(linsolve_tmp))
   end
+  integrator.destats.nsolve += 1
 
   @. u = uprev + a41*k1 + a42*k2 + a43*k3
   f( du,  u, p, t+c4*dt)
@@ -889,6 +932,7 @@ end
   else
     cache.linsolve(vec(k4), W, vec(linsolve_tmp))
   end
+  integrator.destats.nsolve += 1
 
   @. u = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
   f( du,  u, p, t+dt)
@@ -906,6 +950,7 @@ end
   else
     cache.linsolve(vec(k5), W, vec(linsolve_tmp))
   end
+  integrator.destats.nsolve += 1
 
   u .+= k5
   f( du,  u, p, t + dt)
@@ -929,6 +974,7 @@ end
   else
     cache.linsolve(vec(k6), W, vec(linsolve_tmp))
   end
+  integrator.destats.nsolve += 1
 
   u .+= k6
 
@@ -1001,48 +1047,56 @@ end
   linsolve_tmp =  du1 + dtd1*dT
 
   k1 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
   u = uprev  + a21*k1
   du = f(u, p, t+c2*dt)
 
   linsolve_tmp =  du + dtd2*dT + dtC21*k1
 
   k2 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
   u = uprev  + a31*k1 + a32*k2
   du = f(u, p, t+c3*dt)
 
   linsolve_tmp =  du + dtd3*dT + (dtC31*k1 + dtC32*k2)
 
   k3 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
   u = uprev  + a41*k1 + a42*k2 + a43*k3
   du = f(u, p, t+c4*dt)
 
   linsolve_tmp =  du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
 
   k4 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
   u = uprev  + a51*k1 + a52*k2 + a53*k3 + a54*k4
   du = f(u, p, t+c5*dt)
 
   linsolve_tmp = du + dtd5*dT + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
 
   k5 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
   u = uprev  + a61*k1 + a62*k2 + a63*k3 + a64*k4 + a65*k5
   du = f(u, p, t+dt)
 
   linsolve_tmp =  du + (dtC61*k1 + dtC62*k2 + dtC63*k3 + dtC64*k4 + dtC65*k5)
 
   k6 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
   u = u + k6
   du = f(u, p, t+dt)
 
   linsolve_tmp = du + (dtC71*k1 + dtC72*k2 + dtC73*k3 + dtC74*k4 + dtC75*k5 + dtC76*k6)
 
   k7 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
   u = u + k7
   du = f(u, p, t+dt)
 
   linsolve_tmp = du + (dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7)
 
   k8 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
   u = u + k8
   du = f(u, p, t+dt)
 
@@ -1121,6 +1175,7 @@ end
   else
     cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
   end
+  integrator.destats.nsolve += 1
 
   @. u = uprev + a21*k1
   f( du,  u, p, t+c2*dt)
@@ -1138,6 +1193,7 @@ end
   else
     cache.linsolve(vec(k2), W, vec(linsolve_tmp))
   end
+  integrator.destats.nsolve += 1
 
   @. u = uprev + a31*k1 + a32*k2
   f( du,  u, p, t+c3*dt)
@@ -1155,6 +1211,7 @@ end
   else
     cache.linsolve(vec(k3), W, vec(linsolve_tmp))
   end
+  integrator.destats.nsolve += 1
 
   @. u = uprev + a41*k1 + a42*k2 + a43*k3
   f( du,  u, p, t+c4*dt)
@@ -1172,6 +1229,7 @@ end
   else
     cache.linsolve(vec(k4), W, vec(linsolve_tmp))
   end
+  integrator.destats.nsolve += 1
 
   @. u = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
   f( du,  u, p, t+c5*dt)
@@ -1192,6 +1250,7 @@ end
   else
     cache.linsolve(vec(k5), W, vec(linsolve_tmp))
   end
+  integrator.destats.nsolve += 1
 
   # @. u = uprev + a61*k1 + a62*k2 + a63*k3 + a64*k4 + a65*k5
   @tight_loop_macros for i in uidx
@@ -1218,6 +1277,7 @@ end
   else
     cache.linsolve(vec(k6), W, vec(linsolve_tmp))
   end
+  integrator.destats.nsolve += 1
 
   u .+= k6
   f( du,  u, p, t+dt)
@@ -1241,6 +1301,7 @@ end
   else
     cache.linsolve(vec(k7), W, vec(linsolve_tmp))
   end
+  integrator.destats.nsolve += 1
 
   u .+= k7
   f( du,  u, p, t+dt)
@@ -1264,6 +1325,7 @@ end
   else
     cache.linsolve(vec(k8), W, vec(linsolve_tmp))
   end
+  integrator.destats.nsolve += 1
 
   u .+= k8
   f( fsallast,  u, p, t+dt)
