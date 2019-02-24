@@ -121,6 +121,7 @@ function alg_cache(alg::RKC,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
 end
 
 @cache mutable struct IRKCConstantCache{uType,rateType,F,N} <: OrdinaryDiffEqConstantCache
+  minm::Int64
   zprev::uType
   k2::rateType
   uf::F
@@ -163,7 +164,7 @@ function alg_cache(alg::IRKC,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   zprev = u
   k2  = rate_prototype
   du₁ = rate_prototype; du₂ = rate_prototype
-  IRKCConstantCache(zprev,k2,uf,nlsolve,du₁,du₂)
+  IRKCConstantCache(50,zprev,k2,uf,nlsolve,du₁,du₂)
 end
 
 function alg_cache(alg::IRKC,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -184,6 +185,6 @@ function alg_cache(alg::IRKC,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   f2ⱼ₋₁ = zero(rate_prototype)
   du₁ = zero(rate_prototype)
   du₂ = zero(rate_prototype)
-  constantcache = IRKCConstantCache(zprev,k2,uf,nlsolve,du₁,du₂)
+  constantcache = IRKCConstantCache(50,zprev,k2,uf,nlsolve,du₁,du₂)
   IRKCCache(u,uprev,gprev,gprev2,fsalfirst,k,du1,f1ⱼ₋₁,f1ⱼ₋₂,f2ⱼ₋₁,z,dz,b,tmp,utilde,atmp,J,W,uf,jac_config,linsolve,nlsolve,du₁,du₂,constantcache)
 end

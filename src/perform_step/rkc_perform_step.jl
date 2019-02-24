@@ -478,7 +478,7 @@ end
 
 function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p,alg,fsalfirst = integrator
-  @unpack du₁,du₂,nlsolve = cache
+  @unpack minm,du₁,du₂,nlsolve = cache
   @unpack f1, f2 = integrator.f
   maxeig!(integrator, cache)
   nlsolve!, nlcache = nlsolve, nlsolve.cache
@@ -486,10 +486,8 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
   # The the number of degree for Chebyshev polynomial
   maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/(10.0*eps(integrator.opts.internalnorm(uprev,t)))))))
   mdeg = 1 + Int(floor(sqrt(1.54*dt*integrator.eigen_est + 1.0)))
-  if mdeg >= maxm
-    mdeg = maxm
-  end
-  mdeg = (mdeg < 50) ? 50 : mdeg
+  mdeg = (mdeg < minm) ? minm : mdeg
+  mdeg = (mdeg >= maxm) ? maxm : mdeg
 
   ω₀    = 1.0 + 2.0/(13.0*(mdeg^2.0))
   temp₁ = ω₀^2.0 - 1.0
@@ -606,6 +604,7 @@ end
 function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p,alg = integrator
   @unpack tmp,gprev,gprev2,k,f1ⱼ₋₁,f1ⱼ₋₂,f2ⱼ₋₁,utilde,du₁,du₂,z,W,nlsolve,atmp = cache
+  @unpack minm = cache.constantcache
   @unpack f1, f2 = integrator.f
   nlsolve!, nlcache = nlsolve, nlsolve.cache
 
@@ -613,11 +612,8 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   # The the number of degree for Chebyshev polynomial
   maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/(10.0*eps(integrator.opts.internalnorm(uprev,t)))))))
   mdeg = 1 + Int(floor(sqrt(1.54*dt*integrator.eigen_est + 1.0)))
-  if mdeg >= maxm
-    mdeg = maxm
-  end
-  mdeg = (mdeg < 50) ? 50 : mdeg
-
+  mdeg = (mdeg < minm) ? minm : mdeg
+  mdeg = (mdeg >= maxm) ? maxm : mdeg
 
   ω₀    = 1.0 + 2.0/(13.0*(mdeg^2.0))
   temp₁ = ω₀^2.0 - 1.0
