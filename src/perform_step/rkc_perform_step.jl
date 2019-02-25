@@ -602,7 +602,7 @@ end
 
 function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p,alg = integrator
-  @unpack tmp,gprev,gprev2,k,f1ⱼ₋₁,f1ⱼ₋₂,f2ⱼ₋₁,utilde,du₁,du₂,z,W,nlsolve,atmp,nlsolver = cache
+  @unpack tmp,gprev,gprev2,k,f1ⱼ₋₁,f1ⱼ₋₂,f2ⱼ₋₁,utilde,du₁,du₂,z,W,atmp,nlsolver = cache
   @unpack minm = cache.constantcache
   @unpack f1, f2 = integrator.f
 
