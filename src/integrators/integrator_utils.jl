@@ -260,7 +260,7 @@ function stepsize_controller!(integrator,alg::PredictiveControllerAlgs)
         @unpack nl_iters = integrator.cache
         @unpack max_iter = alg
       else
-        @unpack nl_iters, max_iter = integrator.cache.nlsolve
+        @unpack nl_iters, max_iter = integrator.cache.nlsolver
       end
       fac = min(gamma,(1+2*max_iter)*gamma/(nl_iters+2*max_iter))
     end
@@ -496,7 +496,7 @@ end
 
 nlsolve!(integrator, cache) = nlsolve!(cache.nlsolver, cache.nlsolver.cache, integrator)
 
-nlsolve_f(f, alg) = f isa SplitFunction && alg isa SplitAlgorithms ? f.f1 : f
+nlsolve_f(f, alg) = f isa SplitFunction && issplit(alg) ? f.f1 : f
 nlsolve_f(integrator) =
   nlsolve_f(integrator.f, unwrap_alg(integrator, true))
 
