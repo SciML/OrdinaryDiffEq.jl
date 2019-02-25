@@ -98,17 +98,15 @@ using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
     sol2 = solve(prob2,ImplicitMidpoint(extrapolant = :constant, nlsolve=NLFunctional(tol=1e-7)),dt=1/10)
     @test norm(sol .- sol2) ≈ 0 atol=1e-7
 
-    sol = solve(prob,ImplicitEuler(nlsolve=NLAnderson(tol=1e-7)),dt=1/10,adaptive=false)
-    sol2 = solve(prob2,ImplicitEuler(nlsolve=NLAnderson(tol=1e-7)),dt=1/10,adaptive=false)
+    sol = solve(prob,ImplicitEuler(nlsolve=NLAnderson()),dt=1/10,adaptive=false)
+    sol2 = solve(prob2,ImplicitEuler(nlsolve=NLAnderson()),dt=1/10,adaptive=false)
+    @test norm(sol .- sol2) ≈ 0 atol=1e-7
+    @test norm(sol[end] .- sol2[end]) ≈ 0 atol=1e-7
 
-    @test norm(sol .- sol2) ≈ 0 atol=1e-1
-    @test norm(sol[end] .- sol2[end]) ≈ 0 atol=1e-1
-
-    sol = solve(prob, ImplicitMidpoint(extrapolant = :constant, nlsolve=NLAnderson(tol=1e-7)),dt=1/10)
-    sol2 = solve(prob2,ImplicitMidpoint(extrapolant = :constant, nlsolve=NLAnderson(tol=1e-7)),dt=1/10)
-
-    @test norm(sol .- sol2) ≈ 0 atol=1e-1
-    @test norm(sol[end] .- sol2[end]) ≈ 0 atol=1e-1
+    sol = solve(prob, ImplicitMidpoint(extrapolant = :constant, nlsolve=NLAnderson(tol=1e-6)),dt=1/10)
+    sol2 = solve(prob2,ImplicitMidpoint(extrapolant = :constant, nlsolve=NLAnderson(tol=1e-6)),dt=1/10)
+    @test norm(sol .- sol2) ≈ 0 atol=1e-7
+    @test norm(sol[end] .- sol2[end]) ≈ 0 atol=1e-7
   end
 end
 
