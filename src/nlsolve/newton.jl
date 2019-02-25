@@ -73,8 +73,8 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     # check divergence (not in initial step)
     if iter > 1
       θ = ndz / ndzprev
-      if θ ≥ 1 || ndz * θ^(max_iter - iter) > κtol * (1 - θ)
-        # fixed-point iteration diverges
+      if θ > 1 || ndz * θ^(max_iter - iter) > κtol * (1 - θ)
+        # Newton method diverges
         break
       end
     end
@@ -84,8 +84,8 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 
     # check stopping criterion
     iter > 1 && (η = θ / (1 - θ))
-    if η * ndz < κtol && (iter > 1 || !iszero(integrator.success_iter))
-      # fixed-point iteration converges
+    if η * ndz < κtol && (iter > 1 || iszero(ndz) || !iszero(integrator.success_iter))
+      # Newton method converges
       fail_convergence = false
       break
     end
@@ -137,8 +137,8 @@ end
     # check divergence (not in initial step)
     if iter > 1
       θ = ndz / ndzprev
-      if θ ≥ 1 || ndz * θ^(max_iter - iter) > κtol * (1 - θ)
-        # fixed-point iteration diverges
+      if θ > 1 || ndz * θ^(max_iter - iter) > κtol * (1 - θ)
+        # Newton method diverges
         break
       end
     end
@@ -148,8 +148,8 @@ end
 
     # check stopping criterion
     iter > 1 && (η = θ / (1 - θ))
-    # fixed-point iteration converges
-    if η * ndz < κtol && (iter > 1 || !iszero(integrator.success_iter))
+    if η * ndz < κtol && (iter > 1 || iszero(ndz) || !iszero(integrator.success_iter))
+      # Newton method converges
       fail_convergence = false
       break
     end

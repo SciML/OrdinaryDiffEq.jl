@@ -73,7 +73,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     # check divergence (not in initial step)
     if iter > 1
       θ = ndz / ndzprev
-      if θ ≥ 1 || ndz * θ^(max_iter - iter) > κtol * (1 - θ)
+      if θ > 1 || ndz * θ^(max_iter - iter) > κtol * (1 - θ)
         # fixed-point iteration diverges
         break
       end
@@ -82,14 +82,12 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     # update iterate
     z = z₊
 
-    # check stopping criterion (not in initial step)
-    if iter > 1
-      η = θ / (1 - θ)
-      if η * ndz < κtol
-        # fixed-point iteration converges
-        fail_convergence = false
-        break
-      end
+    # check stopping criterion
+    iter > 1 && (η = θ / (1 - θ))
+    if η * ndz < κtol && (iter > 1 || iszero(ndz))
+      # fixed-point iteration converges
+      fail_convergence = false
+      break
     end
 
     # perform Anderson acceleration
@@ -205,7 +203,7 @@ end
     # check divergence (not in initial step)
     if iter > 1
       θ = ndz / ndzprev
-      if θ ≥ 1 || ndz * θ^(max_iter - iter) > κtol * (1 - θ)
+      if θ > 1 || ndz * θ^(max_iter - iter) > κtol * (1 - θ)
         # fixed-point iteration diverges
         break
       end
@@ -214,14 +212,12 @@ end
     # update iterate
     @. z = z₊
 
-    # check stopping criterion (not in initial step)
-    if iter > 1
-      η = θ / (1 - θ)
-      if η * ndz < κtol
-        # fixed-point iteration converges
-        fail_convergence = false
-        break
-      end
+    # check stopping criterion
+    iter > 1 && (η = θ / (1 - θ))
+    if η * ndz < κtol && (iter > 1 || iszero(ndz))
+      # fixed-point iteration converges
+      fail_convergence = false
+      break
     end
 
     # perform Anderson acceleration
