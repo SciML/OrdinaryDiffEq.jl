@@ -365,7 +365,24 @@ JVODE_BDF(;kwargs...) = JVODE(:BDF;kwargs...)
 # ROCK methods
 struct ROCK2 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct ROCK4 <: OrdinaryDiffEqAdaptiveAlgorithm end
+# RKC mehtods
 struct RKC <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct IRKC{CS,AD,F,F2,FDT,K,T,T2,κType,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
+  linsolve::F
+  nlsolve::F2
+  diff_type::FDT
+  κ::K
+  tol::T
+  extrapolant::Symbol
+  new_jac_conv_bound::T2
+  kappa::κType
+end
+IRKC(;chunk_size=0,autodiff=true,diff_type=Val{:central},
+                 linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),κ=nothing,tol=nothing,
+                 extrapolant=:linear,new_jac_conv_bound = 1e-3,kappa = 0,controller = :Predictive) =
+                 IRKC{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),typeof(κ),typeof(tol),
+                 typeof(new_jac_conv_bound),typeof(kappa),controller}(
+                 linsolve,nlsolve,diff_type,κ,tol,extrapolant,new_jac_conv_bound,kappa)
 
 ################################################################################
 
@@ -869,6 +886,6 @@ const MultistepAlgorithms = Union{IRKN3,IRKN4,
                                   ABDF2,
                                   AB3,AB4,AB5,ABM32,ABM43,ABM54}
 
-const SplitAlgorithms = Union{CNAB2,CNLF2,SBDF,
+const SplitAlgorithms = Union{CNAB2,CNLF2,IRKC,SBDF,
                               GenericIIF1,GenericIIF2,
                               KenCarp3,KenCarp4,KenCarp5}

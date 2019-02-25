@@ -167,6 +167,7 @@ macro cache(expr)
 end
 
 _reshape(v, siz) = reshape(v, siz)
+_reshape(v::StaticArray, siz) = reshape(v, map(last, siz))
 _reshape(v::Number, siz) = v
 
 _vec(v) = vec(v)
