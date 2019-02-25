@@ -163,9 +163,8 @@ end
 
 function perform_step!(integrator,cache::SBDFConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p,alg = integrator
-  @unpack uprev2,uprev3,uprev4,du₁,du₂,k₁,k₂,k₃ = cache
+  @unpack uprev2,uprev3,uprev4,du₁,du₂,k₁,k₂,k₃,nlsolver = cache
   @unpack f1, f2 = integrator.f
-  nlsolver = cache.nlsolve
   cnt = cache.cnt = min(alg.order, integrator.iter+1)
   integrator.iter == 1 && !integrator.u_modified && ( cnt = cache.cnt = 1 )
   nlsolver.γ = γ = inv(γₖ[cnt])
