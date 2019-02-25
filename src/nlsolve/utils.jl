@@ -67,16 +67,19 @@ function qradd!(Q::AbstractMatrix, R::AbstractMatrix, v::Number, k::Int)
   Q, R
 end
 
-set_new_W!(nlsolver::NLSolver, val::Bool) = set_new_W!(nlsolver.cache, val)
-set_new_W!(nlcache::NLNewtonCache, val::Bool) = (nlcache.new_W = val; nothing)
-set_new_W!(nlcache::AbstractNLSolverCache, val::Bool) = nothing
-
 isnewton(nlsolver::NLSolver) = isnewton(nlsolver.cache)
 isnewton(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}) = true
 isnewton(nlcache::AbstractNLSolverCache) = false
 
+set_new_W!(nlsolver::NLSolver, val::Bool) = set_new_W!(nlsolver.cache, val)
+set_new_W!(nlcache::NLNewtonCache, val::Bool) = (nlcache.new_W = val; nothing)
+set_new_W!(nlcache::AbstractNLSolverCache, val::Bool) = nothing
+
 get_W(nlsolver::NLSolver) = get_W(nlsolver.cache)
 get_W(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}) = nlcache.W
+
+set_W!(nlsolver::NLSolver, W) = set_W!(nlsolver.cache, W)
+set_W!(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}, W) = (nlcache.W = W; W)
 
 function get_κtol(nlalg::Union{NLAnderson,NLFunctional,NLNewton}, uTolType, reltol)
   κ = nlalg.κ === nothing ? uTolType(1//100) : uTolType(nlalg.κ)

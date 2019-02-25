@@ -352,13 +352,17 @@ end
 # update W matrix (only used in Newton method)
 update_W!(integrator, cache, dt, repeat_step) =
   update_W!(cache.nlsolver, integrator, cache, dt, repeat_step)
-update_W!(nlsolver::NLSolver, integrator, cache, dt, repeat_step) =
-  _update_W!(nlsolver.cache, integrator, cache, dt, repeat_step)
 
-_update_W!(nlcache, integrator, cache, dt, repeat_step) = nothing
-_update_W!(nlcache::NLNewtonCache, integrator, cache::OrdinaryDiffEqMutableCache, dt, repeat_step) =
-  calc_W!(integrator, cache, dt, repeat_step)
-function _update_W!(nlcache::NLNewtonConstantCache, integrator, cache::OrdinaryDiffEqConstantCache, dt, repeat_step)
-  nlcache.W = calc_W!(integrator, cache, dt, repeat_step)
+function update_W!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqMutableCache, dt, repeat_step)
+  if isnewton(nlsolver)
+    calc_W!(integrator, cache, dt, repeat_step)
+  end
+  nothing
+end
+
+function update_W!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqConstantCache, dt, repeat_step)
+  if isnewton(nlsolver)
+    set_W!(nlsolver, calc_W!(integrator, cache, dt, repeat_step))
+  end
   nothing
 end
