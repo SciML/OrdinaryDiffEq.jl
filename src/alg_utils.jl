@@ -189,6 +189,7 @@ alg_order(alg::CKLLSRK54_3C_3R) = 4
 alg_order(alg::CKLLSRK54_3M_3R) = 4
 alg_order(alg::CKLLSRK54_3N_3R) = 4
 alg_order(alg::CKLLSRK85_4C_3R) = 5
+alg_order(alg::CKLLSRK85_4M_3R) = 5
 alg_order(alg::ParsaniKetchesonDeconinck3S32) = 2
 alg_order(alg::ParsaniKetchesonDeconinck3S82) = 2
 alg_order(alg::ParsaniKetchesonDeconinck3S53) = 3
