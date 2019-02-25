@@ -119,3 +119,72 @@ end
 function alg_cache(alg::RKC,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   RKCConstantCache(u)
 end
+
+@cache mutable struct IRKCConstantCache{uType,rateType,F,N} <: OrdinaryDiffEqConstantCache
+  minm::Int64
+  zprev::uType
+  k2::rateType
+  uf::F
+  nlsolve::N
+  du₁::rateType
+  du₂::rateType
+end
+
+@cache mutable struct IRKCCache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,N,F} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  gprev::uType
+  gprev2::uType
+  fsalfirst::rateType
+  k::rateType
+  du1::rateType
+  f1ⱼ₋₁::rateType
+  f1ⱼ₋₂::rateType
+  f2ⱼ₋₁::rateType
+  z::uType
+  dz::uType
+  b::uType
+  tmp::uType
+  utilde::uType
+  atmp::uNoUnitsType
+  J::JType
+  W::WType
+  uf::UF
+  jac_config::JC
+  linsolve::F
+  nlsolve::N
+  du₁::rateType
+  du₂::rateType
+  constantcache::IRKCConstantCache
+end
+
+function alg_cache(alg::IRKC,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  γ, c = 1//1, 1//1
+  @oopnlsolve
+  zprev = u
+  k2  = rate_prototype
+  du₁ = rate_prototype; du₂ = rate_prototype
+  IRKCConstantCache(50,zprev,k2,uf,nlsolve,du₁,du₂)
+end
+
+function alg_cache(alg::IRKC,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  γ, c = 1//1, 1//1
+  @iipnlsolve
+
+  gprev = similar(u)
+  gprev2 = similar(u)
+  tmp = similar(u)
+  utilde = similar(u)
+  atmp = similar(u,uEltypeNoUnits)
+  fsalfirst = zero(rate_prototype)
+  k  = zero(rate_prototype)
+  k2 = zero(rate_prototype)
+  zprev = similar(u)
+  f1ⱼ₋₁ = zero(rate_prototype)
+  f1ⱼ₋₂ = zero(rate_prototype)
+  f2ⱼ₋₁ = zero(rate_prototype)
+  du₁ = zero(rate_prototype)
+  du₂ = zero(rate_prototype)
+  constantcache = IRKCConstantCache(50,zprev,k2,uf,nlsolve,du₁,du₂)
+  IRKCCache(u,uprev,gprev,gprev2,fsalfirst,k,du1,f1ⱼ₋₁,f1ⱼ₋₂,f2ⱼ₋₁,z,dz,b,tmp,utilde,atmp,J,W,uf,jac_config,linsolve,nlsolve,du₁,du₂,constantcache)
+end

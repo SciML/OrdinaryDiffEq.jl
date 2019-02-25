@@ -1,15 +1,20 @@
 # This function calculates the largest eigenvalue
 # (absolute value wise) by power iteration.
-
+const RKCAlgs = Union{RKC,IRKC}
 function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
   isfirst = integrator.iter == 1 || integrator.u_modified
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
   maxiter = 50
-  safe = (integrator.alg isa RKC) ? 1.0 : 1.2
+
+  safe = (typeof(integrator.alg) <: RKCAlgs) ? 1.0 : 1.2
   # Initial guess for eigenvector `z`
   if isfirst
-    if integrator.alg isa RKC
-      z = fsalfirst
+    if typeof(integrator.alg) <: RKCAlgs
+      if integrator.alg isa IRKC
+        z = cache.du₂
+      else
+        z = fsalfirst
+      end
     else
       fz = fsalfirst
       z = f(fz, p, t)
@@ -43,13 +48,18 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
   # Start power iteration
   integrator.eigen_est = 0
   for iter in 1:maxiter
-    fz = f(z, p, t)
-    tmp = fz - fsalfirst
+    if integrator.alg isa IRKC
+      fz = f.f2(z, p, t)
+      tmp = fz - cache.du₂
+    else
+      fz = f(z, p, t)
+      tmp = fz - fsalfirst
+    end
     Δ  = integrator.opts.internalnorm(tmp,t)
     eig_prev = integrator.eigen_est
     integrator.eigen_est = Δ/dz_u * safe
     # Convergence
-    if integrator.alg isa RKC # To match the constants given in the paper
+    if typeof(integrator.alg) <: RKCAlgs # To match the constants given in the paper
       if iter >= 2 && abs(eig_prev - integrator.eigen_est) < max(integrator.eigen_est,1.0/integrator.opts.dtmax)*0.01
         integrator.eigen_est *= 1.2
         # Store the eigenvector
@@ -70,7 +80,13 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
       z = uprev + quot*tmp
     else
       # An arbitrary change on `z`
-      cache.z = shuffle(cache.z)
+      nind = length(z)
+      if (nind != 1)
+        ind = 1 + iter % nind
+        z[ind] = uprev[ind] - (z[ind] - uprev[ind])
+      else
+        z = -z
+      end
     end
   end
   return false
@@ -82,11 +98,15 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
   fz, z, atmp = cache.k, cache.tmp, cache.atmp
   ccache = cache.constantcache
   maxiter = 50
-  safe = (integrator.alg isa RKC) ? 1.0 : 1.2
+  safe = (typeof(integrator.alg) <: RKCAlgs) ? 1.0 : 1.2
   # Initial guess for eigenvector `z`
   if isfirst
-    if integrator.alg isa RKC
-      @. z = fsalfirst
+    if typeof(integrator.alg) <: RKCAlgs
+      if integrator.alg isa IRKC
+        @. z = cache.du₂
+      else
+        @. z = fsalfirst
+      end
     else
       @. fz = u
       f(z, fz, p, t)
@@ -120,15 +140,20 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
   # Start power iteration
   integrator.eigen_est = 0
   for iter in 1:maxiter
-    f(fz, z, p, t)
-    @. atmp = fz - fsalfirst
+    if integrator.alg isa IRKC
+      f.f2(fz, z, p, t)
+      @. atmp = fz - cache.du₂
+    else
+      f(fz, z, p, t)
+      @. atmp = fz - fsalfirst
+    end
     Δ  = integrator.opts.internalnorm(atmp,t)
     eig_prev = integrator.eigen_est
     integrator.eigen_est = Δ/dz_u * safe
     # Convergence
-    if integrator.alg isa RKC # To match the constants given in the paper
+    if typeof(integrator.alg) <: RKCAlgs # To match the constants given in the paper
       if iter >= 2 && abs(eig_prev - integrator.eigen_est) < max(integrator.eigen_est,1.0/integrator.opts.dtmax)*0.01
-        integrator.eigen_est *= safe
+        integrator.eigen_est *= 1.2
         # Store the eigenvector
         @. ccache.zprev = z - uprev
         return true
@@ -147,8 +172,12 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
     else
       # An arbitrary change on `z`
       nind = length(uprev)
-      ind = 1 + iter % nind
-      z[ind] = uprev[ind] - (z[ind] - uprev[ind])
+      if (nind != 1)
+        ind = 1 + iter % nind
+        z[ind] = uprev[ind] - (z[ind] - uprev[ind])
+      else
+        z = -z
+      end
     end
   end
   return false

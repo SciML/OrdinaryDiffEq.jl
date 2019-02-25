@@ -96,6 +96,11 @@ dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,SBDF4())
 @test_broken sim.𝒪est[:l∞] ≈ 4 atol=testTol
 
+# IRKC
+dts = 1 .//2 .^(12:-1:8)
+sim = test_convergence(dts,prob,IRKC())
+@test sim.𝒪est[:l∞] ≈ 1 atol=testTol
+
 # Now test only the second part
 
 f1 = (u,p,t) -> zero(u)
@@ -148,6 +153,11 @@ sim = test_convergence(dts,prob,SBDF3())
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,SBDF4())
 @test_broken sim.𝒪est[:l∞] ≈ 4 atol=testTol
+
+# IRKC
+dts = 1 .//2 .^(12:-1:8)
+sim = test_convergence(dts,prob,IRKC())
+@test sim.𝒪est[:l∞] ≈ 2 atol=testTol
 
 # Test together
 
@@ -202,6 +212,11 @@ dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,SBDF4())
 @test_broken sim.𝒪est[:l∞] ≈ 4 atol=testTol
 
+# IRKC
+dts = 1 .//2 .^(12:-1:8)
+sim = test_convergence(dts,prob,IRKC())
+@test sim.𝒪est[:l∞] ≈ 1 atol=testTol
+
 # Now test only the first part
 
 f1 = (du,u,p,t) -> du .= 2u
@@ -254,6 +269,11 @@ sim = test_convergence(dts,prob,SBDF3())
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,SBDF4())
 @test_broken sim.𝒪est[:l∞] ≈ 4 atol=testTol
+
+# IRKC
+dts = 1 .//2 .^(12:-1:8)
+sim = test_convergence(dts,prob,IRKC())
+@test sim.𝒪est[:l∞] ≈ 1 atol=testTol
 
 # Now test only the second part
 
@@ -308,6 +328,11 @@ dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,SBDF4())
 @test_broken sim.𝒪est[:l∞] ≈ 4 atol=testTol
 
+# IRKC
+dts = 1 .//2 .^(12:-1:8)
+sim = test_convergence(dts,prob,IRKC())
+@test sim.𝒪est[:l∞] ≈ 2 atol=testTol
+
 # Test together
 
 f1 = (du,u,p,t) -> du .= u
@@ -360,3 +385,8 @@ sim = test_convergence(dts,prob,SBDF3())
 dts = 1 .//2 .^(8:-1:4)
 sim = test_convergence(dts,prob,SBDF4())
 @test_broken sim.𝒪est[:l∞] ≈ 4 atol=testTol
+
+# IRKC
+dts = 1 .//2 .^(12:-1:8)
+sim = test_convergence(dts,prob,IRKC())
+@test sim.𝒪est[:l∞] ≈ 1 atol=testTol
