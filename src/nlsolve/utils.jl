@@ -56,6 +56,17 @@ function qradd!(Q::AbstractMatrix, R::AbstractMatrix, v::AbstractVector, k::Int)
   Q, R
 end
 
+function qradd!(Q::AbstractMatrix, R::AbstractMatrix, v::Number, k::Int)
+  1 == LinearAlgebra.checksquare(Q) == LinearAlgebra.checksquare(R) ||
+    throw(DimensionMismatch())
+  k == 1 || throw(ArgumentError())
+
+  R[1, 1] = abs(v)
+  Q[1, 1] = one(v)
+
+  Q, R
+end
+
 set_new_W!(nlsolver::NLSolver, val::Bool) = set_new_W!(nlsolver.cache, val)
 set_new_W!(nlcache::NLNewtonCache, val::Bool) = (nlcache.new_W = val; nothing)
 set_new_W!(nlcache::AbstractNLSolverCache, val::Bool) = nothing

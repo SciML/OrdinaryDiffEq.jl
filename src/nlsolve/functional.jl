@@ -120,7 +120,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
         Δz₊s[history] = @. z₊ - z₊old
 
         # replace/add difference of residuals as right-most column to QR decomposition
-        qradd!(Q, R, vec(dz .- dzold), history)
+        qradd!(Q, R, _vec(dz .- dzold), history)
 
         # update cached values
         dzold = dz
@@ -140,7 +140,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 
         # solve least squares problem
         γscur = view(γs, 1:history)
-        ldiv!(Rcur, mul!(γscur, Qcur', vec(dz)))
+        ldiv!(Rcur, mul!(γscur, Qcur', _vec(dz)))
         integrator.destats.nsolve += 1
 
         # update next iterate
