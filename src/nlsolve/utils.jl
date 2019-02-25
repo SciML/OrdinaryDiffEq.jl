@@ -108,19 +108,22 @@ DiffEqBase.@def oopnlsolve begin
       end
       W = WOperator(f.mass_matrix, dt, J, false)
     else
-      #if DiffEqBase.has_jac(f)
-      #  J = f.jac(uprev, p, t)
-      #else
-      #  if alg_autodiff(alg)
-      #    J = jacobian_autodiff(uf, uprev)
-      #  else
-      #    J = jacobian_finitediff(uf, uprev, alg.diff_type)
-      #  end
-      #end
-      #W = J isa Number ? J : lu(J; check=false)
-      W = u isa Number ? u : LU{LinearAlgebra.lutype(uEltypeNoUnits)}(Matrix{uEltypeNoUnits}(undef, 0, 0),
-                                                                      Vector{LinearAlgebra.BlasInt}(undef, 0),
-                                                                      zero(LinearAlgebra.BlasInt))
+      # https://github.com/JuliaDiffEq/OrdinaryDiffEq.jl/pull/672
+      if u isa StaticArray
+        # get a "fake" `J`
+        J = if u isa AbstractMatrix && size(u, 1) > 1 # `u` is already a matrix
+          u
+        elseif size(u, 1) == 1 # `u` is a row vector
+          vcat(u, u)
+        else # `u` is a column vector
+          hcat(u, u)
+        end
+        W = lu(J)
+      else
+        W = u isa Number ? u : LU{LinearAlgebra.lutype(uEltypeNoUnits)}(Matrix{uEltypeNoUnits}(undef, 0, 0),
+                                                                        Vector{LinearAlgebra.BlasInt}(undef, 0),
+                                                                        zero(LinearAlgebra.BlasInt))
+      end
     end
 
     nlcache = NLNewtonCache(κ,tol,min_iter,max_iter,10000,_nlcache.new_W,z,W,γ,c,ηold,dz,tmp,b,k)
