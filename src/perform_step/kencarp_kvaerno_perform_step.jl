@@ -96,7 +96,7 @@ end
 
 @muladd function perform_step!(integrator, cache::Kvaerno3Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack dz,z₁,z₂,z₃,z₄,k,b,J,W,jac_config,tmp,atmp,nlsolver = cache
+  @unpack dz,z₁,z₂,z₃,z₄,k,b,tmp,atmp,nlsolver = cache
   @unpack γ,a31,a32,a41,a42,a43,btilde1,btilde2,btilde3,btilde4,c3,α31,α32 = cache.tab
   alg = unwrap_alg(integrator, true)
 
@@ -155,11 +155,11 @@ end
 
   if integrator.opts.adaptive
     @. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄
-    if alg.smooth_est # From Shampine
+    if isnewton(nlsolver) && alg.smooth_est # From Shampine
       if DiffEqBase.has_invW(f)
-        mul!(vec(tmp),W,vec(dz))
+        mul!(vec(tmp),get_W(nlsolver),vec(dz))
       else
-        cache.linsolve(vec(tmp),W,vec(dz),false)
+        cache.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
       end
     else
       tmp .= dz
@@ -294,7 +294,7 @@ end
 
 @muladd function perform_step!(integrator, cache::KenCarp3Cache, repeat_step=false)
   @unpack t,dt,uprev,u,p = integrator
-  @unpack dz,z₁,z₂,z₃,z₄,k1,k2,k3,k4,k,b,J,W,jac_config,tmp,atmp,nlsolver = cache
+  @unpack dz,z₁,z₂,z₃,z₄,k1,k2,k3,k4,k,b,tmp,atmp,nlsolver = cache
   @unpack γ,a31,a32,a41,a42,a43,btilde1,btilde2,btilde3,btilde4,c3,α31,α32 = cache.tab
   @unpack ea21,ea31,ea32,ea41,ea42,ea43,eb1,eb2,eb3,eb4 = cache.tab
   @unpack ebtilde1,ebtilde2,ebtilde3,ebtilde4 = cache.tab
@@ -408,11 +408,11 @@ end
     else
       @. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄
     end
-    if alg.smooth_est # From Shampine
+    if isnewton(nlsolver) && alg.smooth_est # From Shampine
       if DiffEqBase.has_invW(f)
-        mul!(vec(tmp),W,vec(dz))
+        mul!(vec(tmp),get_W(nlsolver),vec(dz))
       else
-        cache.linsolve(vec(tmp),W,vec(dz),false)
+        cache.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
       end
     else
       tmp .= dz
@@ -510,7 +510,7 @@ end
 
 @muladd function perform_step!(integrator, cache::Kvaerno4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack dz,z₁,z₂,z₃,z₄,z₅,k,b,J,W,jac_config,tmp,atmp,nlsolver = cache
+  @unpack dz,z₁,z₂,z₃,z₄,z₅,k,b,tmp,atmp,nlsolver = cache
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,c3,c4 = cache.tab
   @unpack α21,α31,α32,α41,α42 = cache.tab
   @unpack btilde1,btilde2,btilde3,btilde4,btilde5 = cache.tab
@@ -578,11 +578,11 @@ end
 
   if integrator.opts.adaptive
     @. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
-    if alg.smooth_est # From Shampine
+    if isnewton(nlsolver) && alg.smooth_est # From Shampine
       if DiffEqBase.has_invW(f)
-        mul!(vec(tmp),W,vec(dz))
+        mul!(vec(tmp),get_W(nlsolver),vec(dz))
       else
-        cache.linsolve(vec(tmp),W,vec(dz),false)
+        cache.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
       end
     else
       tmp .= dz
@@ -759,7 +759,7 @@ end
 
 @muladd function perform_step!(integrator, cache::KenCarp4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,p = integrator
-  @unpack dz,z₁,z₂,z₃,z₄,z₅,z₆,k,b,J,W,jac_config,tmp,atmp,nlsolver = cache
+  @unpack dz,z₁,z₂,z₃,z₄,z₅,z₆,k,b,tmp,atmp,nlsolver = cache
   @unpack k1,k2,k3,k4,k5,k6 = cache
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,c3,c4,c5 = cache.tab
   @unpack α31,α32,α41,α42,α51,α52,α53,α54,α61,α62,α63,α64,α65 = cache.tab
@@ -933,11 +933,11 @@ end
       end
     end
 
-    if alg.smooth_est # From Shampine
+    if isnewton(nlsolver) && alg.smooth_est # From Shampine
       if DiffEqBase.has_invW(f)
-        mul!(vec(tmp),W,vec(dz))
+        mul!(vec(tmp),get_W(nlsolver),vec(dz))
       else
-        cache.linsolve(vec(tmp),W,vec(dz),false)
+        cache.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
       end
     else
       tmp .= dz
@@ -1053,7 +1053,7 @@ end
 
 @muladd function perform_step!(integrator, cache::Kvaerno5Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack dz,z₁,z₂,z₃,z₄,z₅,z₆,z₇,k,b,J,W,jac_config,tmp,atmp,nlsolver = cache
+  @unpack dz,z₁,z₂,z₃,z₄,z₅,z₆,z₇,k,b,tmp,atmp,nlsolver = cache
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,c3,c4,c5,c6 = cache.tab
   @unpack btilde1,btilde3,btilde4,btilde5,btilde6,btilde7 = cache.tab
   @unpack α31,α32,α41,α42,α43,α51,α52,α53,α61,α62,α63 = cache.tab
@@ -1150,11 +1150,11 @@ end
     @tight_loop_macros for i in eachindex(u)
       @inbounds dz[i] = btilde1*z₁[i] + btilde3*z₃[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i] + btilde7*z₇[i]
     end
-    if alg.smooth_est # From Shampine
+    if isnewton(nlsolver) && alg.smooth_est # From Shampine
       if DiffEqBase.has_invW(f)
-        mul!(vec(tmp),W,vec(dz))
+        mul!(vec(tmp),get_W(nlsolver),vec(dz))
       else
-        cache.linsolve(vec(tmp),W,vec(dz),false)
+        cache.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
       end
     else
       tmp .= dz
@@ -1371,7 +1371,7 @@ end
 
 @muladd function perform_step!(integrator, cache::KenCarp5Cache, repeat_step=false)
   @unpack t,dt,uprev,u,p = integrator
-  @unpack dz,z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,k,b,J,W,jac_config,tmp,atmp,nlsolver = cache
+  @unpack dz,z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,k,b,tmp,atmp,nlsolver = cache
   @unpack k1,k2,k3,k4,k5,k6,k7,k8 = cache
   @unpack γ,a31,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a84,a85,a86,a87,c3,c4,c5,c6,c7 = cache.tab
   @unpack α31,α32,α41,α42,α51,α52,α61,α62,α71,α72,α73,α74,α75,α81,α82,α83,α84,α85 = cache.tab
@@ -1595,11 +1595,11 @@ end
 
     end
 
-    if alg.smooth_est # From Shampine
+    if isnewton(nlsolver) && alg.smooth_est # From Shampine
       if DiffEqBase.has_invW(f)
-        mul!(vec(tmp),W,vec(dz))
+        mul!(vec(tmp),get_W(nlsolver),vec(dz))
       else
-        cache.linsolve(vec(tmp),W,vec(dz),false)
+        cache.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
       end
     else
       tmp .= dz
