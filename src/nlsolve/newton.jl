@@ -70,7 +70,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     iter > 1 && (ndzprev = ndz)
     ndz = integrator.opts.internalnorm(dz, tstep)
 
-    # check divergence (after first iteration)
+    # check divergence (not in initial step)
     if iter > 1
       θ = ndz / ndzprev
       if θ ≥ 1 || ndz * θ^(max_iter - iter) > κtol * (1 - θ)
@@ -134,7 +134,7 @@ end
     iter > 1 && (ndzprev = ndz)
     ndz = integrator.opts.internalnorm(dz, tstep)
 
-    # check divergence (after first iteration)
+    # check divergence (not in initial step)
     if iter > 1
       θ = ndz / ndzprev
       if θ ≥ 1 || ndz * θ^(max_iter - iter) > κtol * (1 - θ)

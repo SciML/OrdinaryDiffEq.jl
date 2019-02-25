@@ -39,7 +39,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
   mass_matrix = integrator.f.mass_matrix
   f = nlsolve_f(integrator)
   tstep = t + c*dt
-  η = max(nlsolver.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
+  η = nlsolver.ηold
   if nlcache isa NLAndersonConstantCache
     history = 0
     max_history = length(Δz₊s)
@@ -70,7 +70,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     iter > 1 && (ndzprev = ndz)
     ndz = integrator.opts.internalnorm(dz, tstep)
 
-    # check divergence (after first iteration)
+    # check divergence (not in initial step)
     if iter > 1
       θ = ndz / ndzprev
       if θ ≥ 1 || ndz * θ^(max_iter - iter) > κtol * (1 - θ)
@@ -82,12 +82,14 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     # update iterate
     z = z₊
 
-    # check stopping criterion
-    iter > 1 && (η = θ / (1 - θ))
-    if η * ndz < κtol && (iter > 1 || !iszero(integrator.success_iter))
-      # fixed-point iteration converges
-      fail_convergence = false
-      break
+    # check stopping criterion (not in initial step)
+    if iter > 1
+      η = θ / (1 - θ)
+      if η * ndz < κtol
+        # fixed-point iteration converges
+        fail_convergence = false
+        break
+      end
     end
 
     # perform Anderson acceleration
@@ -171,7 +173,7 @@ end
   mass_matrix = integrator.f.mass_matrix
   f = nlsolve_f(integrator)
   tstep = t + c*dt
-  η = max(nlsolver.ηold, eps(eltype(integrator.opts.reltol)))^(0.8)
+  η = nlsolver.ηold
   if nlcache isa NLAndersonCache
     history = 0
     max_history = length(Δz₊s)
@@ -200,7 +202,7 @@ end
     iter > 1 && (ndzprev = ndz)
     ndz = integrator.opts.internalnorm(dz, tstep)
 
-    # check divergence (after first iteration)
+    # check divergence (not in initial step)
     if iter > 1
       θ = ndz / ndzprev
       if θ ≥ 1 || ndz * θ^(max_iter - iter) > κtol * (1 - θ)
@@ -212,12 +214,14 @@ end
     # update iterate
     @. z = z₊
 
-    # check stopping criterion
-    iter > 1 && (η = θ / (1 - θ))
-    if η * ndz < κtol && (iter > 1 || !iszero(integrator.success_iter))
-      # fixed-point iteration converges
-      fail_convergence = false
-      break
+    # check stopping criterion (not in initial step)
+    if iter > 1
+      η = θ / (1 - θ)
+      if η * ndz < κtol
+        # fixed-point iteration converges
+        fail_convergence = false
+        break
+      end
     end
 
     # perform Anderson acceleration
