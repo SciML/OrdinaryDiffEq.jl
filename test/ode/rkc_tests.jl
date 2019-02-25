@@ -19,6 +19,29 @@ Random.seed!(123)
     eigest = integrator.eigen_est
     @test eigest ≈ eigm rtol=0.1eigm
   end
+
+  for i in 1:10, alg in [IRKC()]
+    A = randn(20,20)
+    B = randn(20,20)
+    test_f1 = (u,p,t) -> A*u
+    test_f2 = (u,p,t) -> B*u
+    ff_split = SplitFunction(test_f1,test_f2)
+    prob = SplitODEProblem(ff_split, randn(20,1), (0.0,1.))
+    integrator = init(prob, alg)
+    eigm = maximum(abs.(eigvals(A)))
+    maxeig!(integrator, integrator.cache)
+    eigest = integrator.eigen_est
+    @test eigest ≈ eigm rtol=0.1eigm
+    test_f1 = (du,u,p,t) -> du .= A*u
+    test_f2 = (du,u,p,t) -> du .= B*u
+    ff_split = SplitFunction(test_f1,test_f2)
+    prob = SplitODEProblem(ff_split, randn(20,1), (0.0,1.))
+    integrator = init(prob, alg)
+    eigm = maximum(abs.(eigvals(A)))
+    maxeig!(integrator, integrator.cache)
+    eigest = integrator.eigen_est
+    @test eigest ≈ eigm rtol=0.1eigm
+  end
 end
 
 @testset "Runge-Kutta-Chebyshev Convergence Tests" begin
