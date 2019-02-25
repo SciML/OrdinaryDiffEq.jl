@@ -1,5 +1,5 @@
 """
-    nlsolve!(nlsolver, nlcache::Union{NLNewtonCache,NLNewtonConstantCache}, integrator)
+    nlsolve!(nlsolver::NLSolver, nlcache::Union{NLNewtonCache,NLNewtonConstantCache}, integrator)
 
 Perform numerically stable modified Newton iteration that is specialized for implicit
 methods (see [^HS96] and [^HW96]).

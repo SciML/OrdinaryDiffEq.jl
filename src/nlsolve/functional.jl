@@ -1,5 +1,5 @@
 """
-    nlsolve!(nlsolve, nlcache::Union{NLFunctionalCache,NLAndersonCache,NLFunctionalConstantCache,NLAnNLAndersonConstantCache}, integrator)
+    nlsolve!(nlsolver::NLSolver, nlcache::Union{NLFunctionalCache,NLAndersonCache,NLFunctionalConstantCache,NLAndersonConstantCache}, integrator)
 
 Perform functional iteration that is used by implicit methods.
 
