@@ -449,3 +449,4 @@ uses_uprev(alg::CKLLSRK54_3C_3R, adaptive::Bool) = adaptive
 uses_uprev(alg::CKLLSRK54_3M_3R, adaptive::Bool) = adaptive
 uses_uprev(alg::CKLLSRK54_3N_3R, adaptive::Bool) = adaptive
 uses_uprev(alg::CKLLSRK85_4C_3R, adaptive::Bool) = adaptive
+uses_uprev(alg::CKLLSRK85_4M_3R, adaptive::Bool) = adaptive

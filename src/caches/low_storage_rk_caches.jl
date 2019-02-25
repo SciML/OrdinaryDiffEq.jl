@@ -1975,3 +1975,78 @@ end
 function alg_cache(alg::CKLLSRK85_4C_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   CKLLSRK85_4C_3RConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 end
+
+
+function CKLLSRK85_4M_3RConstantCache(::Type{T},::Type{T2}) where {T,T2}
+  A₁1  = convert(T, BigInt(967290102210)//BigInt(6283494269639))
+  A₁2  = convert(T, BigInt(852959821520)//BigInt(5603806251467))
+  A₁3  = convert(T, BigInt(8043261511347)//BigInt(8583649637008))
+  A₁4  = convert(T, BigInt(-115941139189)//BigInt(8015933834062))
+  A₁5  = convert(T, BigInt(2151445634296)//BigInt(7749920058933))
+  A₁6  = convert(T, BigInt(15619711431787)//BigInt(74684159414562))
+  A₁7  = convert(T, BigInt(12444295717883)//BigInt(11188327299274))
+  Aᵢ₁  = SVector(A₁1,A₁2,A₁3,A₁4,A₁5,A₁6,A₁7)
+
+  A₂1  = convert(T, BigInt(0)//BigInt(1))
+  A₂2  = convert(T, BigInt(475331134681)//BigInt(7396070923784))
+  A₂3  = convert(T, BigInt(-8677837986029)//BigInt(16519245648862))
+  A₂4  = convert(T, BigInt(2224500752467)//BigInt(10812521810777))
+  A₂5  = convert(T, BigInt(1245361422071)//BigInt(3717287139065))
+  A₂6  = convert(T, BigInt(1652079198131)//BigInt(3788458824028))
+  A₂7  = convert(T, BigInt(-5225103653628)//BigInt(8584162722535))
+  Aᵢ₂  = SVector(A₂1,A₂2,A₂3,A₂4,A₂5,A₂6,A₂7)
+
+  B1  = convert(T, BigInt(83759458317)//BigInt(1018970565139))
+  B2  = convert(T, BigInt(0)//BigInt(1))
+  B3  = convert(T, BigInt(0)//BigInt(1))
+  B4  = convert(T, BigInt(0)//BigInt(1))
+  B5  = convert(T, BigInt(6968891091250)//BigInt(16855527649349))
+  B6  = convert(T, BigInt(783521911849)//BigInt(8570887289572))
+  B7  = convert(T, BigInt(3686104854613)//BigInt(11232032898210))
+  Bᵢ  = SVector(B1,B2,B3,B4,B5,B6,B7)
+
+  B̂1  = convert(T, BigInt(-2632078767757)//BigInt(9365288548818))
+  B̂2  = convert(T, BigInt(0)//BigInt(1))
+  B̂3  = convert(T, BigInt(138832778584802)//BigInt(30360463697573))
+  B̂4  = convert(T, BigInt(7424139574315)//BigInt(5603229049946))
+  B̂5  = convert(T, BigInt(-32993229351515)//BigInt(6883415042289))
+  B̂6  = convert(T, BigInt(-3927384735361)//BigInt(7982454543710))
+  B̂7  = convert(T, BigInt(9224293159931)//BigInt(15708162311543))
+  B̂ᵢ  = SVector(B̂1,B̂2,B̂3,B̂4,B̂5,B̂6,B̂7)
+
+  Bₗ  = convert(T, BigInt(517396786175)//BigInt(6104475356879))
+  B̂ₗ  = convert(T, BigInt(624338737541)//BigInt(7691046757191))
+
+  C1  = convert(T2, BigInt(967290102210)//BigInt(6283494269639))
+  C2  = convert(T2, BigInt(8972214919142352493858707)//BigInt(41446148478994088895191128))
+  C3  = convert(T2, BigInt(35682660731882055122214991891899678815)//BigInt(72242678055272695781813348615158920272))
+  C4  = convert(T2, BigInt(24151963894889409757443700144610337197)//BigInt(88316684951621554188239538678367088186))
+  C5  = convert(T2, BigInt(20396803294876689925555603189127802602)//BigInt(29355195069529377650856010387665377655))
+  C6  = convert(T2, BigInt(104860372573190455963699691732496938387)//BigInt(144152676952392296448858925279884773652))
+  C7  = convert(T2, BigInt(1648260218501227913212294426176971326433416596592133)//BigInt(1649556119556299790473636959153132604082083356090490))
+  Cᵢ  = SVector(C1,C2,C3,C4,C5,C6,C7)
+
+  LowStorageRK3RPConstantCache{7,T,T2}(Aᵢ₁,Aᵢ₂,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ)
+end
+
+function alg_cache(alg::CKLLSRK85_4M_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+
+  tmp  = similar(u)
+  atmp = similar(u,uEltypeNoUnits)
+  k    = zero(rate_prototype)
+  uᵢ₋₁ = zero(u)
+  uᵢ₋₂ = zero(u)
+  fᵢ₋₂ = zero(rate_prototype)
+  gprev    = similar(u)
+  if calck
+    fsalfirst = zero(rate_prototype)
+  else
+    fsalfirst = k
+  end
+  tab = CKLLSRK85_4M_3RConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  LowStorageRK3RPCache(u,uprev,k,uᵢ₋₁,uᵢ₋₂,fᵢ₋₂,gprev,fsalfirst,tmp,atmp,tab)
+end
+
+function alg_cache(alg::CKLLSRK85_4M_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  CKLLSRK85_4M_3RConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+end

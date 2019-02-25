@@ -69,6 +69,7 @@ struct CKLLSRK54_3C_3R <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct CKLLSRK54_3M_3R <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct CKLLSRK54_3N_3R <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct CKLLSRK85_4C_3R <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct CKLLSRK85_4M_3R <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct ParsaniKetchesonDeconinck3S32 <: OrdinaryDiffEqAlgorithm end
 struct ParsaniKetchesonDeconinck3S82 <: OrdinaryDiffEqAlgorithm end
 struct ParsaniKetchesonDeconinck3S53 <: OrdinaryDiffEqAlgorithm end
