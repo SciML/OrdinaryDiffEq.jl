@@ -53,7 +53,6 @@ module OrdinaryDiffEq
   include("nlsolve/type.jl")
   include("nlsolve/newton.jl")
   include("nlsolve/functional.jl")
-  include("nlsolve/anderson.jl")
   include("nlsolve/utils.jl")
 
   include("caches/basic_caches.jl")
@@ -224,5 +223,5 @@ module OrdinaryDiffEq
 
   export RichardsonEuler
 
-  export NLNewton, NLAnderson, NLFunctional
+  export NLNewton, NLFunctional, NLAnderson
 end # module

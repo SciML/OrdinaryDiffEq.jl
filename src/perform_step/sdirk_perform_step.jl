@@ -35,25 +35,24 @@ end
 
 @muladd function perform_step!(integrator, cache::ImplicitEulerConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  nlcache = cache.nlsolve.cache
-  nlsolve! = cache.nlsolve
+  nlsolver = cache.nlsolver
   alg = unwrap_alg(integrator, true)
-  typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, dt, repeat_step) )
+  update_W!(integrator, cache, dt, repeat_step)
 
   # initial guess
   if alg.extrapolant == :linear
-    nlcache.z = dt*integrator.fsalfirst
+    nlsolver.z = dt*integrator.fsalfirst
   else # :constant
-    nlcache.z = zero(u)
+    nlsolver.z = zero(u)
   end
 
-  nlcache.tmp = uprev
-  z,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.tmp = uprev
+  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
-  u = nlcache.tmp + z
+  u = nlsolver.tmp + z
 
-  nlcache.ηold = η
-  nlcache.nl_iters = iter
+  nlsolver.ηold = η
+  nlsolver.nl_iters = iter
 
   if integrator.opts.adaptive && integrator.success_iter > 0
     # local truncation error (LTE) bound by dt^2/2*max|y''(t)|
@@ -83,11 +82,10 @@ end
 
 @muladd function perform_step!(integrator, cache::ImplicitEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack z,tmp,atmp,nlsolve = cache
-  nlsolve!, nlcache = nlsolve, nlsolve.cache
+  @unpack z,tmp,atmp,nlsolver = cache
   mass_matrix = integrator.f.mass_matrix
   alg = unwrap_alg(integrator, true)
-  typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, dt, repeat_step)
+  update_W!(integrator, cache, dt, repeat_step)
 
   # initial guess
   if alg.extrapolant == :linear
@@ -96,13 +94,13 @@ end
     z .= zero(eltype(u))
   end
 
-  nlcache.tmp = uprev
-  z,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.tmp = uprev
+  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
   @. u = uprev + z
 
-  nlcache.ηold = η
-  nlcache.nl_iters = iter
+  nlsolver.ηold = η
+  nlsolver.nl_iters = iter
 
   if integrator.opts.adaptive && integrator.success_iter > 0
     # local truncation error (LTE) bound by dt^2/2*max|y''(t)|
@@ -129,26 +127,25 @@ end
 
 @muladd function perform_step!(integrator, cache::ImplicitMidpointConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  nlcache = cache.nlsolve.cache
-  nlsolve! = cache.nlsolve
+  nlsolver = cache.nlsolver
   alg = unwrap_alg(integrator, true)
   γ = 1//2
-  typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, γ*dt, repeat_step) )
+  update_W!(integrator, cache, γ*dt, repeat_step)
 
   # initial guess
   if alg.extrapolant == :linear
-    nlcache.z = dt*integrator.fsalfirst
+    nlsolver.z = dt*integrator.fsalfirst
   else # :constant
-    nlcache.z = zero(u)
+    nlsolver.z = zero(u)
   end
 
-  nlcache.tmp = uprev
-  z,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.tmp = uprev
+  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
-  u = nlcache.tmp + z
+  u = nlsolver.tmp + z
 
-  nlcache.ηold = η
-  nlcache.nl_iters = iter
+  nlsolver.ηold = η
+  nlsolver.nl_iters = iter
 
   integrator.fsallast = f(u, p, t+dt)
   integrator.k[1] = integrator.fsalfirst
@@ -158,12 +155,11 @@ end
 
 @muladd function perform_step!(integrator, cache::ImplicitMidpointCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack z,tmp,nlsolve = cache
-  nlsolve!, nlcache = nlsolve, nlsolve.cache
+  @unpack z,tmp,nlsolver = cache
   mass_matrix = integrator.f.mass_matrix
   alg = unwrap_alg(integrator, true)
   γ = 1//2
-  typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, γ*dt, repeat_step)
+  update_W!(integrator, cache, γ*dt, repeat_step)
 
   # initial guess
   if alg.extrapolant == :linear
@@ -172,38 +168,37 @@ end
     z .= zero(eltype(u))
   end
 
-  nlcache.tmp = uprev
-  z,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.tmp = uprev
+  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
-  @. u = nlcache.tmp + z
+  @. u = nlsolver.tmp + z
 
-  nlcache.ηold = η
-  nlcache.nl_iters = iter
+  nlsolver.ηold = η
+  nlsolver.nl_iters = iter
 
   f(integrator.fsallast,u,p,t+dt)
 end
 
 @muladd function perform_step!(integrator, cache::TrapezoidConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  nlsolve = cache.nlsolve
-  nlsolve!, nlcache = nlsolve, nlsolve.cache
+  nlsolver = cache.nlsolver
   alg = unwrap_alg(integrator, true)
   # precalculations
   γ = 1//2
   γdt = γ*dt
-  typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, γdt, repeat_step) )
+  update_W!(integrator, cache, γdt, repeat_step)
 
   # initial guess
   zprev = dt*integrator.fsalfirst
-  nlcache.z = zprev # Constant extrapolation
+  nlsolver.z = zprev # Constant extrapolation
 
-  nlcache.tmp = uprev + γdt*integrator.fsalfirst
-  z,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.tmp = uprev + γdt*integrator.fsalfirst
+  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
-  u = nlcache.tmp + 1//2*z
+  u = nlsolver.tmp + 1//2*z
 
-  nlcache.ηold = η
-  nlcache.nl_iters = iter
+  nlsolver.ηold = η
+  nlsolver.nl_iters = iter
 
   if integrator.opts.adaptive
     if integrator.iter > 2
@@ -251,25 +246,24 @@ end
 
 @muladd function perform_step!(integrator, cache::TrapezoidCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack z,jac_config,tmp,atmp,nlsolve = cache
-  nlsolve!, nlcache = nlsolve, nlsolve.cache
+  @unpack z,jac_config,tmp,atmp,nlsolver = cache
   alg = unwrap_alg(integrator, true)
   mass_matrix = integrator.f.mass_matrix
 
   # precalculations
   γ = 1//2
   γdt = γ*dt
-  typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, γdt, repeat_step)
+  update_W!(integrator, cache, γdt, repeat_step)
 
   # initial guess
   @. z = dt*integrator.fsalfirst
   @. tmp = uprev + γdt*integrator.fsalfirst
-  z,η,iter,fail_convergence = nlsolve!(integrator)
+  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
   @. u = tmp + 1//2*z
 
-  nlcache.ηold = η
-  nlcache.nl_iters = iter
+  nlsolver.ηold = η
+  nlsolver.nl_iters = iter
 
   if integrator.opts.adaptive
     if integrator.iter > 2
@@ -317,10 +311,9 @@ end
 @muladd function perform_step!(integrator, cache::TRBDF2ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack γ,d,ω,btilde1,btilde2,btilde3,α1,α2 = cache.tab
-  nlsolve = cache.nlsolve
-  nlsolve!, nlcache = nlsolve, nlsolve.cache
+  nlsolver = cache.nlsolver
   alg = unwrap_alg(integrator, true)
-  typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, d*dt, repeat_step) )
+  update_W!(integrator, cache, d*dt, repeat_step)
 
   # FSAL
   zprev = dt*integrator.fsalfirst
@@ -329,35 +322,35 @@ end
 
   # TODO: Add extrapolation
   zᵧ = zprev
-  nlcache.z = zᵧ
-  nlcache.c = γ
+  nlsolver.z = zᵧ
+  nlsolver.c = γ
 
-  nlcache.tmp = uprev + d*zprev
-  zᵧ,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.tmp = uprev + d*zprev
+  zᵧ,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
   ################################## Solve BDF2 Step
 
   ### Initial Guess From Shampine
   z = α1*zprev + α2*zᵧ
-  nlcache.z = z
-  nlcache.c = 1
+  nlsolver.z = z
+  nlsolver.c = 1
 
-  nlcache.tmp = uprev + ω*zprev + ω*zᵧ
-  z,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.tmp = uprev + ω*zprev + ω*zᵧ
+  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
-  u = nlcache.tmp + d*z
+  u = nlsolver.tmp + d*z
 
   ################################### Finalize
 
-  nlcache.ηold = η
-  nlcache.nl_iters = iter
+  nlsolver.ηold = η
+  nlsolver.nl_iters = iter
 
   if integrator.opts.adaptive
     tmp = btilde1*zprev + btilde2*zᵧ + btilde3*z
-    if alg.smooth_est # From Shampine
-      est = _reshape(nlcache.W\_vec(tmp), axes(tmp))
+    if isnewton(nlsolver) && alg.smooth_est # From Shampine
+      est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
     else
       est = tmp
     end
@@ -373,44 +366,43 @@ end
 
 @muladd function perform_step!(integrator, cache::TRBDF2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack zprev,dz,zᵧ,z,k,b,W,tmp,atmp,nlsolve = cache
+  @unpack zprev,dz,zᵧ,z,k,b,W,tmp,atmp,nlsolver = cache
   @unpack γ,d,ω,btilde1,btilde2,btilde3,α1,α2 = cache.tab
-  nlsolve!, nlcache = nlsolve, nlsolve.cache
   alg = unwrap_alg(integrator, true)
 
   # FSAL
   @. zprev = dt*integrator.fsalfirst
-  typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, d*dt, repeat_step)
+  update_W!(integrator, cache, d*dt, repeat_step)
 
   ##### Solve Trapezoid Step
 
   # TODO: Add extrapolation
   @. zᵧ = zprev
-  nlcache.z = zᵧ
+  nlsolver.z = zᵧ
 
   @. tmp = uprev + d*zprev
-  nlcache.c = γ
-  zᵧ,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.c = γ
+  zᵧ,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
   ################################## Solve BDF2 Step
 
   ### Initial Guess From Shampine
   @. z = α1*zprev + α2*zᵧ
-  nlcache.z = z
+  nlsolver.z = z
 
   @. tmp = uprev + ω*zprev + ω*zᵧ
-  nlcache.c = 1
-  nlcache.new_W = false
-  z,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.c = 1
+  set_new_W!(nlsolver, false)
+  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
   @. u = tmp + d*z
 
   ################################### Finalize
 
-  nlcache.ηold = η
-  nlcache.nl_iters = iter
+  nlsolver.ηold = η
+  nlsolver.nl_iters = iter
 
   if integrator.opts.adaptive
     @. dz = btilde1*zprev + btilde2*zᵧ + btilde3*z
@@ -432,10 +424,9 @@ end
 
 @muladd function perform_step!(integrator, cache::SDIRK2ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  nlsolve = cache.nlsolve
-  nlsolve!, nlcache = nlsolve, nlsolve.cache
+  nlsolver = cache.nlsolver
   alg = unwrap_alg(integrator, true)
-  typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, dt, repeat_step) )
+  update_W!(integrator, cache, dt, repeat_step)
 
   # initial guess
   if integrator.success_iter > 0 && !integrator.reeval_fsal && alg.extrapolant == :interpolant
@@ -447,28 +438,28 @@ end
     z₁ = zero(u)
   end
 
-  nlcache.tmp = uprev
-  z₁,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.tmp = uprev
+  z₁,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
   ### Initial Guess Is α₁ = c₂/γ, c₂ = 0 => z₂ = α₁z₁ = 0
   z₂ = zero(u)
-  nlcache.z = z₂
-  nlcache.tmp = uprev - z₁
-  z₂,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.z = z₂
+  nlsolver.tmp = uprev - z₁
+  z₂,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
   u = uprev + z₁/2 + z₂/2
 
   ################################### Finalize
 
-  nlcache.ηold = η
-  nlcache.nl_iters = iter
+  nlsolver.ηold = η
+  nlsolver.nl_iters = iter
 
   if integrator.opts.adaptive
     tmp = z₁/2 - z₂/2
-    if alg.smooth_est # From Shampine
-      est = _reshape(nlcache.W\_vec(tmp), axes(tmp))
+    if isnewton(nlsolver) && alg.smooth_est # From Shampine
+      est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
     else
       est = tmp
     end
@@ -484,10 +475,9 @@ end
 
 @muladd function perform_step!(integrator, cache::SDIRK2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack dz,z₁,z₂,k,b,W,jac_config,tmp,atmp,nlsolve = cache
-  nlsolve!, nlcache = nlsolve, nlsolve.cache
+  @unpack dz,z₁,z₂,k,b,W,jac_config,tmp,atmp,nlsolver = cache
   alg = unwrap_alg(integrator, true)
-  typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, dt, repeat_step)
+  update_W!(integrator, cache, dt, repeat_step)
 
   # initial guess
   if integrator.success_iter > 0 && !integrator.reeval_fsal && alg.extrapolant == :interpolant
@@ -498,30 +488,30 @@ end
   else
     z₁ .= zero(eltype(u))
   end
-  nlcache.z = z₁
+  nlsolver.z = z₁
 
   ##### Step 1
-  nlcache.tmp = uprev
-  z₁,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.tmp = uprev
+  z₁,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
   ################################## Solve Step 2
 
   ### Initial Guess Is α₁ = c₂/γ, c₂ = 0 => z₂ = α₁z₁ = 0
   z₂ .= zero(eltype(u))
-  nlcache.z = z₂
-  nlcache.new_W = false
+  nlsolver.z = z₂
+  set_new_W!(nlsolver, false)
   @. tmp = uprev - z₁
-  nlcache.tmp = tmp
-  z₂,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.tmp = tmp
+  z₂,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
   @. u = uprev + z₁/2 + z₂/2
 
   ################################### Finalize
 
-  nlcache.ηold = η
-  nlcache.nl_iters = iter
+  nlsolver.ηold = η
+  nlsolver.nl_iters = iter
 
   if integrator.opts.adaptive
     @. dz = z₁/2 - z₂/2
@@ -543,14 +533,13 @@ end
 
 @muladd function perform_step!(integrator, cache::SSPSDIRK2ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  nlsolve = cache.nlsolve
-  nlsolve!, nlcache = nlsolve, nlsolve.cache
+  nlsolver = cache.nlsolver
   alg = unwrap_alg(integrator, true)
 
   γ = eltype(u)(1//4)
   c2 = typeof(t)(3//4)
 
-  typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, γ*dt, repeat_step) )
+  update_W!(integrator, cache, γ*dt, repeat_step)
 
   # initial guess
   if integrator.success_iter > 0 && !integrator.reeval_fsal && alg.extrapolant == :interpolant
@@ -561,35 +550,35 @@ end
   else
     z₁ = zero(u)
   end
-  nlcache.z = z₁
+  nlsolver.z = z₁
 
   ##### Step 1
 
   tstep = t + dt
   u = uprev + γ*z₁
 
-  nlcache.c = 1
-  nlcache.tmp = uprev
-  z₁,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.c = 1
+  nlsolver.tmp = uprev
+  z₁,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
   ################################## Solve Step 2
 
   ### Initial Guess Is α₁ = c₂/γ
   z₂ = c2/γ
-  nlcache.z = z₂
+  nlsolver.z = z₂
 
-  nlcache.tmp = uprev + z₁/2
-  nlcache.c = 1
-  z₂,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.tmp = uprev + z₁/2
+  nlsolver.c = 1
+  z₂,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
-  u = nlcache.tmp + z₂/2
+  u = nlsolver.tmp + z₂/2
 
   ################################### Finalize
 
-  nlcache.ηold = η
-  nlcache.nl_iters = iter
+  nlsolver.ηold = η
+  nlsolver.nl_iters = iter
 
   integrator.fsallast = f(u, p, t)
   integrator.k[1] = integrator.fsalfirst
@@ -599,13 +588,12 @@ end
 
 @muladd function perform_step!(integrator, cache::SSPSDIRK2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack dz,z₁,z₂,k,b,W,jac_config,tmp,nlsolve = cache
-  nlsolve!, nlcache = nlsolve, nlsolve.cache
+  @unpack dz,z₁,z₂,k,b,W,jac_config,tmp,nlsolver = cache
   alg = unwrap_alg(integrator, true)
 
   γ = eltype(u)(1//4)
   c2 = typeof(t)(3//4)
-  typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, γ*dt, repeat_step)
+  update_W!(integrator, cache, γ*dt, repeat_step)
 
   # initial guess
   if integrator.success_iter > 0 && !integrator.reeval_fsal && alg.extrapolant == :interpolant
@@ -616,105 +604,104 @@ end
   else
     z₁ .= zero(eltype(u))
   end
-  nlcache.z = z₁
-  nlcache.tmp = uprev
+  nlsolver.z = z₁
+  nlsolver.tmp = uprev
 
   ##### Step 1
-  z₁,η,iter,fail_convergence = nlsolve!(integrator)
+  z₁,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
   ################################## Solve Step 2
 
   ### Initial Guess Is α₁ = c₂/γ
   @. z₂ = c2/γ
-  nlcache.z = z₂
+  nlsolver.z = z₂
 
   @. tmp = uprev + z₁/2
-  nlcache.tmp = tmp
-  nlcache.new_W = false
-  z₂,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.tmp = tmp
+  set_new_W!(nlsolver, false)
+  z₂,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
   @. u = tmp + z₂/2
 
   ################################### Finalize
 
-  nlcache.ηold = η
-  nlcache.nl_iters = iter
+  nlsolver.ηold = η
+  nlsolver.nl_iters = iter
 
   f(integrator.fsallast,u,p,t)
 end
 
 @muladd function perform_step!(integrator, cache::Cash4ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  nlsolve = cache.nlsolve
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack b1hat1,b2hat1,b3hat1,b4hat1,b1hat2,b2hat2,b3hat2,b4hat2 = cache.tab
-  nlsolve!, nlcache = nlsolve, nlsolve.cache
+  nlsolver = cache.nlsolver
   alg = unwrap_alg(integrator, true)
-  typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, γ*dt, repeat_step) )
+  update_W!(integrator, cache, γ*dt, repeat_step)
 
   ##### Step 1
 
   # TODO: Add extrapolation for guess
   z₁ = zero(u)
-  nlcache.z = z₁
+  nlsolver.z = z₁
 
-  nlcache.c = γ
-  nlcache.tmp = uprev
-  z₁,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.c = γ
+  nlsolver.tmp = uprev
+  z₁,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
   ##### Step 2
 
   # TODO: Add extrapolation for guess
   z₂ = zero(u)
-  nlcache.z = z₂
+  nlsolver.z = z₂
 
-  nlcache.tmp = uprev + a21*z₁
-  nlcache.c = c2
-  z₂,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.tmp = uprev + a21*z₁
+  nlsolver.c = c2
+  z₂,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
   ################################## Solve Step 3
 
   # Guess starts from z₁
   z₃ = z₁
-  nlcache.z = z₃
+  nlsolver.z = z₃
 
-  nlcache.tmp = uprev + a31*z₁ + a32*z₂
-  nlcache.c = c3
-  z₃,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.tmp = uprev + a31*z₁ + a32*z₂
+  nlsolver.c = c3
+  z₃,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
   ################################## Solve Step 4
 
   # Use constant z prediction
   z₄ = z₃
-  nlcache.z = z₄
+  nlsolver.z = z₄
 
-  nlcache.tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
-  nlcache.c = c4
-  z₄,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
+  nlsolver.c = c4
+  z₄,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
   ################################## Solve Step 5
 
   # Use yhat2 for prediction
   z₅ = b1hat2*z₁ + b2hat2*z₂ + b3hat2*z₃ + b4hat2*z₄
-  nlcache.z = z₅
+  nlsolver.z = z₅
 
-  nlcache.tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
-  nlcache.c = 1
-  z₅,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
+  nlsolver.c = 1
+  z₅,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
-  u = nlcache.tmp + γ*z₅
+  u = nlsolver.tmp + γ*z₅
 
   ################################### Finalize
 
-  nlcache.ηold = η
-  nlcache.nl_iters = iter
+  nlsolver.ηold = η
+  nlsolver.nl_iters = iter
 
   if integrator.opts.adaptive
     if alg.embedding == 3
@@ -726,8 +713,8 @@ end
     end
 
     tmp = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
-    if alg.smooth_est # From Shampine
-      est = _reshape(nlcache.W\_vec(tmp), axes(tmp))
+    if isnewton(nlsolver) && alg.smooth_est # From Shampine
+      est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
     else
       est = tmp
     end
@@ -743,75 +730,74 @@ end
 
 @muladd function perform_step!(integrator, cache::Cash4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack dz,z₁,z₂,z₃,z₄,z₅,k,b,W,tmp,atmp,nlsolve = cache
+  @unpack dz,z₁,z₂,z₃,z₄,z₅,k,b,W,tmp,atmp,nlsolver = cache
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack b1hat1,b2hat1,b3hat1,b4hat1,b1hat2,b2hat2,b3hat2,b4hat2 = cache.tab
-  nlsolve!, nlcache = nlsolve, nlsolve.cache
   alg = unwrap_alg(integrator, true)
-  typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, γ*dt, repeat_step)
+  update_W!(integrator, cache, γ*dt, repeat_step)
 
   ##### Step 1
 
   # TODO: Add extrapolation for guess
   z₁ .= zero(eltype(z₁))
-  nlcache.z = z₁
-  nlcache.c = γ
-  nlcache.tmp = uprev
+  nlsolver.z = z₁
+  nlsolver.c = γ
+  nlsolver.tmp = uprev
 
   # initial step of NLNewton iteration
-  z₁,η,iter,fail_convergence = nlsolve!(integrator)
+  z₁,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
   ##### Step 2
 
   # TODO: Add extrapolation for guess
   z₂ .= zero(eltype(z₂))
-  nlcache.z = z₂
+  nlsolver.z = z₂
 
   @. tmp = uprev + a21*z₁
-  nlcache.tmp = tmp
-  nlcache.new_W = false
-  nlcache.c = c2
-  z₂,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.tmp = tmp
+  set_new_W!(nlsolver, false)
+  nlsolver.c = c2
+  z₂,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
   ################################## Solve Step 3
 
   # Guess starts from z₁
   @. z₃ = z₁
-  nlcache.z = z₃
+  nlsolver.z = z₃
   @. tmp = uprev + a31*z₁ + a32*z₂
-  nlcache.c = c3
-  z₃,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.c = c3
+  z₃,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
   ################################## Solve Step 4
 
   # Use constant z prediction
   @. z₄ = z₃
-  nlcache.z = z₄
+  nlsolver.z = z₄
 
   @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
-  nlcache.c = c4
-  z₄,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.c = c4
+  z₄,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
   ################################## Solve Step 5
 
   # Use constant z prediction
   @. z₅ = b1hat2*z₁ + b2hat2*z₂ + b3hat2*z₃ + b4hat2*z₄
-  nlcache.z = z₅
+  nlsolver.z = z₅
   @. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
-  nlcache.c = 1
-  z₅,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.c = 1
+  z₅,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
   @. u = tmp + γ*z₅
 
   ################################### Finalize
 
-  nlcache.ηold = η
-  nlcache.nl_iters = iter
+  nlsolver.ηold = η
+  nlsolver.nl_iters = iter
 
   if integrator.opts.adaptive
     if alg.embedding == 3
@@ -844,69 +830,68 @@ end
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack α21,α31,α32,α41,α43 = cache.tab
   @unpack bhat1,bhat2,bhat3,bhat4,btilde1,btilde2,btilde3,btilde4,btilde5 = cache.tab
-  nlsolve = cache.nlsolve
-  nlsolve!, nlcache = nlsolve, nlsolve.cache
+  nlsolver = cache.nlsolver
   alg = unwrap_alg(integrator, true)
 
   # precalculations
   γdt = γ*dt
-  typeof(nlsolve!) <: NLNewton && ( nlcache.W = calc_W!(integrator, cache, γdt, repeat_step) )
+  update_W!(integrator, cache, γdt, repeat_step)
 
   # TODO: Add extrapolation for guess
   z₁ = zero(u)
-  nlcache.z, nlcache.tmp = z₁, uprev
-  nlcache.c = γ
-  z₁,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.z, nlsolver.tmp = z₁, uprev
+  nlsolver.c = γ
+  z₁,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
   ##### Step 2
 
   z₂ = α21*z₁
-  nlcache.z = z₂
-  nlcache.tmp = uprev + a21*z₁
-  nlcache.c = c2
-  z₂,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.z = z₂
+  nlsolver.tmp = uprev + a21*z₁
+  nlsolver.c = c2
+  z₂,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
   ################################## Solve Step 3
 
   z₃ = α31*z₁ + α32*z₂
-  nlcache.z = z₃
-  nlcache.tmp = uprev + a31*z₁ + a32*z₂
-  nlcache.c = c3
-  z₃,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.z = z₃
+  nlsolver.tmp = uprev + a31*z₁ + a32*z₂
+  nlsolver.c = c3
+  z₃,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
   ################################## Solve Step 4
 
   z₄ = α41*z₁ + α43*z₃
-  nlcache.z = z₄
-  nlcache.tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
-  nlcache.c = c4
-  z₄,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.z = z₄
+  nlsolver.tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
+  nlsolver.c = c4
+  z₄,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
   ################################## Solve Step 5
 
   # Use yhat2 for prediction
   z₅ = bhat1*z₁ + bhat2*z₂ + bhat3*z₃ + bhat4*z₄
-  nlcache.z = z₅
-  nlcache.tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
-  nlcache.c = 1
-  z₅,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.z = z₅
+  nlsolver.tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
+  nlsolver.c = 1
+  z₅,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
-  u = nlcache.tmp + γ*z₅
+  u = nlsolver.tmp + γ*z₅
 
   ################################### Finalize
 
-  nlcache.ηold = η
-  nlcache.nl_iters = iter
+  nlsolver.ηold = η
+  nlsolver.nl_iters = iter
 
   if integrator.opts.adaptive
     tmp = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
-    if alg.smooth_est # From Shampine
-      est = _reshape(nlcache.W\_vec(tmp), axes(tmp))
+    if isnewton(nlsolver) && alg.smooth_est # From Shampine
+      est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
     else
       est = tmp
     end
@@ -922,13 +907,12 @@ end
 
 @muladd function perform_step!(integrator, cache::Hairer4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack dz,z₁,z₂,z₃,z₄,z₅,k,b,W,jac_config,tmp,atmp,nlsolve = cache
+  @unpack dz,z₁,z₂,z₃,z₄,z₅,k,b,W,jac_config,tmp,atmp,nlsolver = cache
   @unpack γ,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,c2,c3,c4 = cache.tab
   @unpack α21,α31,α32,α41,α43 = cache.tab
   @unpack bhat1,bhat2,bhat3,bhat4,btilde1,btilde2,btilde3,btilde4,btilde5 = cache.tab
-  nlsolve!, nlcache = nlsolve, nlsolve.cache
   alg = unwrap_alg(integrator, true)
-  typeof(nlsolve) <: NLNewton && calc_W!(integrator, cache, γ*dt, repeat_step)
+  update_W!(integrator, cache, γ*dt, repeat_step)
 
   # initial guess
   if integrator.success_iter > 0 && !integrator.reeval_fsal && alg.extrapolant == :interpolant
@@ -939,61 +923,61 @@ end
   else
     z₁ .= zero(eltype(z₁))
   end
-  nlcache.z = z₁
-  nlcache.tmp = uprev
+  nlsolver.z = z₁
+  nlsolver.tmp = uprev
 
   ##### Step 1
 
-  nlcache.c = γ
-  z₁,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.c = γ
+  z₁,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
   ##### Step 2
 
   @. z₂ = α21*z₁
-  nlcache.z = z₂
+  nlsolver.z = z₂
   @. tmp = uprev + a21*z₁
-  nlcache.tmp = tmp
-  nlcache.c = c2
-  nlcache.new_W = false
-  z₂,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.tmp = tmp
+  nlsolver.c = c2
+  set_new_W!(nlsolver, false)
+  z₂,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
   ################################## Solve Step 3
 
   @. z₃ = α31*z₁ + α32*z₂
-  nlcache.z = z₃
+  nlsolver.z = z₃
   @. tmp = uprev + a31*z₁ + a32*z₂
-  nlcache.c = c3
-  z₃,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.c = c3
+  z₃,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
   ################################## Solve Step 4
 
   # Use constant z prediction
   @. z₄ = α41*z₁ + α43*z₃
-  nlcache.z = z₄
+  nlsolver.z = z₄
   @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
-  nlcache.c = c4
-  z₄,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.c = c4
+  z₄,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
   ################################## Solve Step 5
 
   # Use yhat prediction
   @. z₅ = bhat1*z₁ + bhat2*z₂ + bhat3*z₃ + bhat4*z₄
-  nlcache.z = z₅
+  nlsolver.z = z₅
   @. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
-  nlcache.c = 1
-  z₅,η,iter,fail_convergence = nlsolve!(integrator)
+  nlsolver.c = 1
+  z₅,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
 
   @. u = tmp + γ*z₅
 
   ################################### Finalize
 
-  nlcache.ηold = η
-  nlcache.nl_iters = iter
+  nlsolver.ηold = η
+  nlsolver.nl_iters = iter
 
   if integrator.opts.adaptive
     # @. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
