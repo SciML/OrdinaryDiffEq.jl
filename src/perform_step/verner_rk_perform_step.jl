@@ -1,5 +1,6 @@
 function initialize!(integrator, cache::Vern6ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
   alg = unwrap_alg(integrator, false)
   alg.lazy ? (integrator.kshortsize = 9) : (integrator.kshortsize = 12)
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -34,6 +35,7 @@ end
   k8 = f(g8, p, t+dt)
   u = uprev+dt*(a91*k1              +a94*k4+a95*k5+a96*k6+a97*k7+a98*k8)
   integrator.fsallast = f(u, p, t+dt); k9 = integrator.fsallast
+  integrator.destats.nf += 8
   if typeof(integrator.alg) <: CompositeAlgorithm
     g9 = u
     ϱu = integrator.opts.internalnorm(k9 - k8,t)
@@ -58,6 +60,7 @@ end
     k[10] = f(uprev+dt*(a1001*k[1]+a1004*k[4]+a1005*k[5]+a1006*k[6]+a1007*k[7]+a1008*k[8]+a1009*k[9]),p,t+c10*dt)
     k[11] = f(uprev+dt*(a1101*k[1]+a1104*k[4]+a1105*k[5]+a1106*k[6]+a1107*k[7]+a1108*k[8]+a1109*k[9]+a1110*k[10]),p,t+c11*dt)
     k[12] = f(uprev+dt*(a1201*k[1]+a1204*k[4]+a1205*k[5]+a1206*k[6]+a1207*k[7]+a1208*k[8]+a1209*k[9]+a1210*k[10]+a1211*k[11]),p,t+c12*dt)
+    integrator.destats.nf += 3
   end
 
   integrator.u = u
@@ -80,6 +83,7 @@ function initialize!(integrator, cache::Vern6Cache)
   end
 
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
 end
 
 #=
@@ -150,6 +154,7 @@ end
     @inbounds u[i] = uprev[i]+dt*(a91*k1[i]+a94*k4[i]+a95*k5[i]+a96*k6[i]+a97*k7[i]+a98*k8[i])
   end
   f(k9, u, p, t+dt)
+  integrator.destats.nf += 8
   if typeof(integrator.alg) <: CompositeAlgorithm
     g9 = u
     g8 = tmp
@@ -183,6 +188,7 @@ end
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a1201*k[1][i]+a1204*k[4][i]+a1205*k[5][i]+a1206*k[6][i]+a1207*k[7][i]+a1208*k[8][i]+a1209*k[9][i]+a1210*k[10][i]+a1211*k[11][i])
     end
+    integrator.destats.nf += 3
     f(k[12],tmp,p,t+c12*dt)
   end
 end
@@ -214,6 +220,7 @@ end
   g10=   uprev+dt*(a101*k1          +a103*k3+a104*k4+a105*k5+a106*k6+a107*k7)
   k9 = f(g9, p, t+dt)
   k10= f(g10, p, t+dt)
+  integrator.destats.nf += 10
   u = uprev + dt*(b1*k1 + b4*k4 + b5*k5 + b6*k6 + b7*k7 + b8*k8 + b9*k9)
   if typeof(integrator.alg) <: CompositeAlgorithm
     ϱu = integrator.opts.internalnorm(k10 - k9,t)
@@ -242,6 +249,7 @@ end
     k[14] = f(uprev+dt*(a1401*k[1]+a1404*k[4]+a1405*k[5]+a1406*k[6]+a1407*k[7]+a1408*k[8]+a1409*k[9]+a1411*k[11]+a1412*k[12]+a1413*k[13]),p,t+c14*dt)
     k[15] = f(uprev+dt*(a1501*k[1]+a1504*k[4]+a1505*k[5]+a1506*k[6]+a1507*k[7]+a1508*k[8]+a1509*k[9]+a1511*k[11]+a1512*k[12]+a1513*k[13]),p,t+c15*dt)
     k[16] = f(uprev+dt*(a1601*k[1]+a1604*k[4]+a1605*k[5]+a1606*k[6]+a1607*k[7]+a1608*k[8]+a1609*k[9]+a1611*k[11]+a1612*k[12]+a1613*k[13]),p,t+c16*dt)
+    integrator.destats.nf += 6
   end
 
 end
@@ -341,6 +349,7 @@ end
     @inbounds u[i] = uprev[i]+dt*(a101*k1[i]+a103*k3[i]+a104*k4[i]+a105*k5[i]+a106*k6[i]+a107*k7[i])
   end
   f(k10, u, p, t+dt)
+  integrator.destats.nf += 10
   if typeof(integrator.alg) <: CompositeAlgorithm
     g10 = u
     g9 = tmp
@@ -389,6 +398,7 @@ end
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a1601*k[1][i]+a1604*k[4][i]+a1605*k[5][i]+a1606*k[6][i]+a1607*k[7][i]+a1608*k[8][i]+a1609*k[9][i]+a1611*k[11][i]+a1612*k[12][i]+a1613*k[13][i])
     end
+    integrator.destats.nf += 6
     f(k[16],tmp,p,t+c16*dt)
   end
 
@@ -424,6 +434,7 @@ end
   g13=  uprev+dt*(a1301*k1                +a1304*k4+a1305*k5+a1306*k6+a1307*k7+a1308*k8+a1309*k9+a1310*k10)
   k12= f(g12, p, t+dt)
   k13= f(g13, p, t+dt)
+  integrator.destats.nf += 13
   u = uprev + dt*(b1*k1 + b6*k6 + b7*k7 + b8*k8 + b9*k9 + b10*k10 + b11*k11 + b12*k12)
   if typeof(integrator.alg) <: CompositeAlgorithm
     ϱu = integrator.opts.internalnorm(k13 - k12,t)
@@ -456,6 +467,7 @@ end
     k[19] = f(uprev+dt*(a1901*k[1]+a1906*k[6]+a1907*k[7]+a1908*k[8]+a1909*k[9]+a1910*k[10]+a1911*k[11]+a1912*k[12]+a1914*k[14]+a1915*k[15]+a1916*k[16]+a1917*k[17]),p,t+c19*dt)
     k[20] = f(uprev+dt*(a2001*k[1]+a2006*k[6]+a2007*k[7]+a2008*k[8]+a2009*k[9]+a2010*k[10]+a2011*k[11]+a2012*k[12]+a2014*k[14]+a2015*k[15]+a2016*k[16]+a2017*k[17]),p,t+c20*dt)
     k[21] = f(uprev+dt*(a2101*k[1]+a2106*k[6]+a2107*k[7]+a2108*k[8]+a2109*k[9]+a2110*k[10]+a2111*k[11]+a2112*k[12]+a2114*k[14]+a2115*k[15]+a2116*k[16]+a2117*k[17]),p,t+c21*dt)
+    integrator.destats.nf += 8
   end
 
 end
@@ -570,6 +582,7 @@ end
     @inbounds u[i] = uprev[i]+dt*(a1301*k1[i]+a1304*k4[i]+a1305*k5[i]+a1306*k6[i]+a1307*k7[i]+a1308*k8[i]+a1309*k9[i]+a1310*k10[i])
   end
   f(k13, u, p, t+dt)
+  integrator.destats.nf += 13
   if typeof(integrator.alg) <: CompositeAlgorithm
     g13 = u
     g12 = tmp
@@ -626,6 +639,7 @@ end
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a2101*k[1][i]+a2106*k[6][i]+a2107*k[7][i]+a2108*k[8][i]+a2109*k[9][i]+a2110*k[10][i]+a2111*k[11][i]+a2112*k[12][i]+a2114*k[14][i]+a2115*k[15][i]+a2116*k[16][i]+a2117*k[17][i])
     end
+    integrator.destats.nf += 8
     f(k[21],tmp,p,t+c21*dt)
   end
 
@@ -664,6 +678,7 @@ end
   g16=   uprev+dt*(a1601*k1                                  +a1606*k6+a1607*k7+a1608*k8+a1609*k9+a1610*k10+a1611*k11+a1612*k12+a1613*k13)
   k15= f(g15, p, t+dt)
   k16= f(g16, p, t+dt)
+  integrator.destats.nf += 16
   u = uprev + dt*(b1*k1+b8*k8+b9*k9+b10*k10+b11*k11+b12*k12+b13*k13+b14*k14+b15*k15)
   if typeof(integrator.alg) <: CompositeAlgorithm
     ϱu = integrator.opts.internalnorm(k16 - k15,t)
@@ -698,6 +713,7 @@ end
     k[18] = f(uprev+dt*(a2401*k[1]+a2408*k[2]+a2409*k[3]+a2410*k[4]+a2411*k[5]+a2412*k[6]+a2413*k[7]+a2414*k[8]+a2415*k[9]+a2417*k[11]+a2418*k[12]+a2419*k[13]+a2420*k[14]+a2421*k[15]),p,t+c24*dt)
     k[19] = f(uprev+dt*(a2501*k[1]+a2508*k[2]+a2509*k[3]+a2510*k[4]+a2511*k[5]+a2512*k[6]+a2513*k[7]+a2514*k[8]+a2515*k[9]+a2517*k[11]+a2518*k[12]+a2519*k[13]+a2520*k[14]+a2521*k[15]),p,t+c25*dt)
     k[20] = f(uprev+dt*(a2601*k[1]+a2608*k[2]+a2609*k[3]+a2610*k[4]+a2611*k[5]+a2612*k[6]+a2613*k[7]+a2614*k[8]+a2615*k[9]+a2617*k[11]+a2618*k[12]+a2619*k[13]+a2620*k[14]+a2621*k[15]),p,t+c26*dt)
+    integrator.destats.nf += 10
   end
 end
 
@@ -831,6 +847,7 @@ end
     @inbounds u[i] = uprev[i]+dt*(a1601*k1[i]+a1606*k6[i]+a1607*k7[i]+a1608*k8[i]+a1609*k9[i]+a1610*k10[i]+a1611*k11[i]+a1612*k12[i]+a1613*k13[i])
   end
   f(k16, u, p, t+dt)
+  integrator.destats.nf += 16
   if typeof(integrator.alg) <: CompositeAlgorithm
     g16 = u
     g15 = tmp
@@ -895,6 +912,7 @@ end
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = uprev[i]+dt*(a2601*k[1][i]+a2608*k[2][i]+a2609*k[3][i]+a2610*k[4][i]+a2611*k[5][i]+a2612*k[6][i]+a2613*k[7][i]+a2614*k[8][i]+a2615*k[9][i]+a2617*k[11][i]+a2618*k[12][i]+a2619*k[13][i]+a2620*k[14][i]+a2621*k[15][i])
     end
+    integrator.destats.nf += 10
     f(k[20],tmp,p,t+c26*dt)
   end
 end

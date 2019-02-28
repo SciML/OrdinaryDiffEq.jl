@@ -4,6 +4,7 @@ function initialize!(integrator,cache::SplitEulerConstantCache)
   integrator.fsalfirst =
   integrator.f.f1(integrator.uprev,integrator.p,integrator.t) +
   integrator.f.f2(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+  integrator.destats.nf += 2
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -15,6 +16,7 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   u = @. uprev + dt*integrator.fsalfirst
   integrator.fsallast = f.f1(u,p,t+dt) + f.f2(u,p,t+dt)  # For the interpolation, needs k at the updated point
+  integrator.destats.nf += 2
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
@@ -30,6 +32,7 @@ function initialize!(integrator,cache::SplitEulerCache)
   integrator.k[2] = integrator.fsallast
   integrator.f.f1(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # For the interpolation, needs k at the updated point
   integrator.f.f2(cache.tmp,integrator.uprev,integrator.p,integrator.t) # For the interpolation, needs k at the updated point
+  integrator.destats.nf += 2
   integrator.fsalfirst .+= cache.tmp
 end
 
@@ -38,5 +41,6 @@ end
   @. u = uprev + dt*integrator.fsalfirst
   f.f1(integrator.fsallast,u,p,t+dt) # For the interpolation, needs k at the updated point
   f.f2(cache.tmp,u,p,t+dt) # For the interpolation, needs k at the updated point
+  integrator.destats.nf += 2
   integrator.fsallast .+= cache.tmp
 end

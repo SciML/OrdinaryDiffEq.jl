@@ -2,6 +2,7 @@ function initialize!(integrator, cache::ROCK2ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -44,9 +45,11 @@ end
   temp1 = dt * fp1[cache.mdeg]
   temp2 = dt * fp2[cache.mdeg]
   gprev2 = f(u, p, ci1)
+  integrator.destats.nf += 1
   gprev = u + temp1 * gprev2
   ci1 += temp1
   u = f(gprev, p, ci1)
+  integrator.destats.nf += 1
   temp3 = temp2 * (u - gprev2)
   u = gprev + temp1 * u + temp3
   # error estimate
@@ -56,6 +59,7 @@ end
   end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast = f(u, p, t+dt)
+  integrator.destats.nf += 1
   integrator.u = u
 end
 
@@ -67,6 +71,7 @@ function initialize!(integrator, cache::ROCK2Cache)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::ROCK2Cache, repeat_step=false)
@@ -108,9 +113,11 @@ end
   temp1 = dt * fp1[ccache.mdeg]
   temp2 = dt * fp2[ccache.mdeg]
   f(k, u, p, ci1)
+  integrator.destats.nf += 1
   @. gprev = u + temp1 * k
   ci1 += temp1
   f(k2, gprev, p, ci1)
+  integrator.destats.nf += 1
   @. tmp = temp2 * (k2 - k)
   @. u = gprev + temp1 * k2 + tmp
   # error estimate
@@ -120,6 +127,7 @@ end
   end
   integrator.k[1] = integrator.fsalfirst
   f(integrator.fsallast, u, p, t+dt)
+  integrator.destats.nf += 1
   integrator.k[2] = integrator.fsallast
   integrator.u = u
 end
@@ -128,6 +136,7 @@ function initialize!(integrator, cache::ROCK4ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
   integrator.k[1] = integrator.fsalfirst
@@ -169,12 +178,14 @@ end
   # Stage-1
   temp1 = dt * fpa[cache.mdeg][1]
   gprev = f(u, p, ci1)
+  integrator.destats.nf += 1
   gprev3 = u + temp1 * gprev
   # Stage-2
   ci2 = ci1 + temp1
   temp1 = dt * fpa[cache.mdeg][2];
   temp2 = dt * fpa[cache.mdeg][3];
   gprev2 = f(gprev3, p, ci1)
+  integrator.destats.nf += 1
   gprev4 = u + temp1 * gprev + temp2 * gprev2
   # Stage-3
   ci2 = ci1 + temp1 +temp2
@@ -182,6 +193,7 @@ end
   temp2 = dt * fpa[cache.mdeg][5]
   temp3 = dt * fpa[cache.mdeg][6]
   gprev3 = f(gprev4, p, ci2)
+  integrator.destats.nf += 1
   gprev5 = u + temp1 * gprev + temp2 * gprev2 + temp3 * gprev3
   #Stage-4
   ci2 = ci1 + temp1 + temp2 + temp3
@@ -190,6 +202,7 @@ end
   temp3 = dt * fpb[cache.mdeg][3]
   temp4 = dt * fpb[cache.mdeg][4]
   gprev4 = f(gprev5, p, ci2)
+  integrator.destats.nf += 1
   u = u + temp1 * gprev + temp2 * gprev2 + temp3 * gprev3 + temp4 * gprev4
   #Error estimate (embedded method of order 3)
   temp1 = dt * fpbe[cache.mdeg][1] - temp1
@@ -198,6 +211,7 @@ end
   temp4 = dt * fpbe[cache.mdeg][4] - temp4
   temp5 = dt * fpbe[cache.mdeg][5]
   gprev5 = f(u, p, t + dt)
+  integrator.destats.nf += 1
   temp5 = temp1 * gprev + temp2 * gprev2 + temp3 * gprev3 + temp4 * gprev4 + temp5 * gprev5
   if integrator.opts.adaptive
     atmp = calculate_residuals(temp5, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
@@ -205,6 +219,7 @@ end
   end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast = f(u, p, t+dt)
+  integrator.destats.nf += 1
   integrator.u = u
 end
 
@@ -216,6 +231,7 @@ function initialize!(integrator, cache::ROCK4Cache)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+  integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::ROCK4Cache, repeat_step=false)
@@ -286,6 +302,7 @@ end
   temp4 = dt * fpbe[ccache.mdeg][4] - temp4
   temp5 = dt * fpbe[ccache.mdeg][5]
   f(k5, u, p, t + dt)
+  integrator.destats.nf += 5
   @. tmp = temp1 * k + temp2 * k2 + temp3 * k3 + temp4 * k4 + temp5 * k5
   if integrator.opts.adaptive
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
@@ -293,6 +310,7 @@ end
   end
   integrator.k[1] = integrator.fsalfirst
   f(integrator.fsallast, u, p, t+dt)
+  integrator.destats.nf += 1
   integrator.k[2] = integrator.fsallast
   integrator.u = u
 end
@@ -301,6 +319,7 @@ function initialize!(integrator, cache::RKCConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -351,6 +370,7 @@ end
     μs  = μ*w1/w0
     #using u as temporary storage
     u   = f(gprev, p, t + dt*th1)
+    integrator.destats.nf += 1
     u   = μ*gprev + ν*gprev2  + (1 - μ - ν)*uprev + dt*μs*(u - νs*fsalfirst)
     th  = μ*th1 + ν*th2 + μs*(1 - νs)
     if (iter < mdeg)
@@ -376,6 +396,7 @@ end
   end
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast = f(u, p, t+dt)
+  integrator.destats.nf += 1
   integrator.u = u
 end
 
@@ -387,6 +408,7 @@ function initialize!(integrator, cache::RKCCache)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::RKCCache, repeat_step=false)
@@ -432,6 +454,7 @@ end
     ν   = - b/b2
     μs  = μ*w1/w0
     f(k, gprev, p, t + dt*th1)
+    integrator.destats.nf += 1
     @. u   = μ*gprev + ν*gprev2  + (1 - μ - ν)*uprev + dt*μs*(k - νs*fsalfirst)
     th  = μ*th1 + ν*th2 + μs*(1 - νs)
     if (iter < mdeg)
@@ -457,6 +480,7 @@ end
   end
   integrator.k[1] = integrator.fsalfirst
   f(integrator.fsallast, u, p, t+dt)
+  integrator.destats.nf += 1
   integrator.k[2] = integrator.fsallast
   integrator.u = u
 end
@@ -468,6 +492,7 @@ function initialize!(integrator, cache::IRKCConstantCache)
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   cache.du₁ = f1(uprev,p,t)
   cache.du₂ = f2(uprev,p,t)
+  integrator.destats.nf += 2
   integrator.fsalfirst = cache.du₁ + cache.du₂
 
   # Avoid undefined entries if k is an array of arrays
@@ -544,6 +569,7 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
 
     f1ⱼ₋₁  = f1(gprev, p, t+Cⱼ₋₁*dt)
     f2ⱼ₋₁  = f2(gprev, p, t+Cⱼ₋₁*dt)
+    integrator.destats.nf += 2
     nlsolver.tmp = (1-μ-ν)*uprev + μ*gprev + ν*gprev2 + dt*μs*f2ⱼ₋₁ + dt*νs*du₂ + (νs - (1 -μ-ν)*μs₁)*dt*du₁ - ν*μs₁*dt*f1ⱼ₋₂
     nlsolver.z   = dt*f1ⱼ₋₁
     nlsolver.c   = Cⱼ
@@ -572,6 +598,7 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
 
   cache.du₁ = f1(u, p, t+dt)
   cache.du₂ = f2(u, p, t+dt)
+  integrator.destats.nf += 2
   # error estimate
   if isnewton(nlsolver) && integrator.opts.adaptive
     update_W!(integrator, cache, dt, false)
@@ -597,6 +624,7 @@ function initialize!(integrator, cache::IRKCCache)
   integrator.k[2] = integrator.fsallast
   f1(cache.du₁, uprev, p, t)
   f2(cache.du₂, uprev, p, t)
+  integrator.destats.nf += 2
   @. integrator.fsalfirst = cache.du₁ + cache.du₂
 end
 
@@ -671,6 +699,7 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
 
     f1(f1ⱼ₋₁, gprev, p, t+Cⱼ₋₁*dt)
     f2(f2ⱼ₋₁, gprev, p, t+Cⱼ₋₁*dt)
+    integrator.destats.nf += 2
     @. tmp = (1-μ-ν)*uprev + μ*gprev + ν*gprev2 + dt*μs*f2ⱼ₋₁ + dt*νs*du₂ + (νs - (1-μ-ν)*μs₁)*dt*du₁ - ν*μs₁*dt*f1ⱼ₋₂
     @. z   = dt*f1ⱼ₋₁
     nlsolver.c = Cⱼ
@@ -702,6 +731,7 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   @. f2ⱼ₋₁ = du₂
   f1(du₁, u, p, t+dt)
   f2(du₂, u, p, t+dt)
+  integrator.destats.nf += 2
   # error estimate
   if isnewton(nlsolver) && integrator.opts.adaptive
     update_W!(integrator, cache, dt, false)

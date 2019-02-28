@@ -2,6 +2,7 @@
 # 2N low storage methods
 function initialize!(integrator,cache::LowStorageRK2NConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -21,11 +22,13 @@ end
   # other stages
   for i in eachindex(A2end)
     k = f(u, p, t+c2end[i]*dt)
+    integrator.destats.nf += 1
     tmp = A2end[i]*tmp + dt*k
     u   = u + B2end[i]*tmp
   end
 
   integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+  integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.u = u
 end
@@ -38,6 +41,7 @@ function initialize!(integrator,cache::LowStorageRK2NCache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+  integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::LowStorageRK2NCache,repeat_step=false)
@@ -52,11 +56,13 @@ end
   # other stages
   for i in eachindex(A2end)
     f(k, u, p, t+c2end[i]*dt)
+    integrator.destats.nf += 1
     @. tmp = A2end[i]*tmp + dt*k
     @. u   = u + B2end[i]*tmp
   end
 
   f(k, u, p, t+dt)
+  integrator.destats.nf += 1
 end
 
 
@@ -64,6 +70,7 @@ end
 # 2C low storage methods
 function initialize!(integrator,cache::LowStorageRK2CConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -84,10 +91,12 @@ end
   for i in eachindex(A2end)
     tmp = u + A2end[i]*dt*k
     k   = f(tmp, p, t+c2end[i]*dt)
+    integrator.destats.nf += 1
     u   = u + B2end[i]*dt*k
   end
 
   integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+  integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.u = u
 end
@@ -100,6 +109,7 @@ function initialize!(integrator,cache::LowStorageRK2CCache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+  integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::LowStorageRK2CCache,repeat_step=false)
@@ -115,10 +125,12 @@ end
   for i in eachindex(A2end)
     @. tmp = u + A2end[i]*dt*k
     f(k, tmp, p, t+c2end[i]*dt)
+    integrator.destats.nf += 1
     @. u   = u + B2end[i]*dt*k
   end
 
   f(k, u, p, t+dt)
+  integrator.destats.nf += 1
 end
 
 
@@ -126,6 +138,7 @@ end
 # 3S low storage methods
 function initialize!(integrator,cache::LowStorageRK3SConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -145,11 +158,13 @@ end
   # other stages
   for i in eachindex(γ12end)
     k   = f(u, p, t+c2end[i]*dt)
+    integrator.destats.nf += 1
     tmp = tmp + δ2end[i]*u
     u   = γ12end[i]*u + γ22end[i]*tmp + γ32end[i]*uprev + β2end[i]*dt*k
   end
 
   integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+  integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.u = u
 end
@@ -162,6 +177,7 @@ function initialize!(integrator,cache::LowStorageRK3SCache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+  integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::LowStorageRK3SCache,repeat_step=false)
@@ -176,11 +192,13 @@ end
   # other stages
   for i in eachindex(γ12end)
     f(k, u, p, t+c2end[i]*dt)
+    integrator.destats.nf += 1
     @. tmp = tmp + δ2end[i]*u
     @. u   = γ12end[i]*u + γ22end[i]*tmp + γ32end[i]*uprev + β2end[i]*dt*k
   end
 
   f(k, u, p, t+dt)
+  integrator.destats.nf += 1
 end
 
 
@@ -188,6 +206,7 @@ end
 # 2R+ low storage methods
 function initialize!(integrator,cache::LowStorageRK2RPConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -209,6 +228,7 @@ end
     gprev = u + Aᵢ[i]*dt*k
     u = u + Bᵢ[i]*dt*k
     k = f(gprev, p, t + Cᵢ[i]*dt)
+    integrator.destats.nf += 1
   end
 
   #last stage
@@ -223,6 +243,7 @@ end
 
   integrator.k[1] = integrator.fsalfirst
   integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+  integrator.destats.nf += 1
   integrator.u = u
 end
 
@@ -234,6 +255,7 @@ function initialize!(integrator,cache::LowStorageRK2RPCache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t)
+  integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::LowStorageRK2RPCache,repeat_step=false)
@@ -250,6 +272,7 @@ end
     @. gprev = u + Aᵢ[i]*dt*k
     @. u     = u + Bᵢ[i]*dt*k
     f(k, gprev, p, t + Cᵢ[i]*dt)
+    integrator.destats.nf += 1
   end
 
   #last stage
@@ -263,4 +286,5 @@ end
   end
 
   f(k, u, p, t+dt)
+  integrator.destats.nf += 1
 end

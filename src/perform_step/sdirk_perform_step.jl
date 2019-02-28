@@ -9,6 +9,7 @@ function initialize!(integrator, cache::Union{ImplicitEulerConstantCache,
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -31,6 +32,7 @@ function initialize!(integrator, cache::Union{ImplicitEulerCache,
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+  integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::ImplicitEulerConstantCache, repeat_step=false)
@@ -75,6 +77,7 @@ end
   end
 
   integrator.fsallast = f(u, p, t+dt)
+  integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
@@ -121,7 +124,7 @@ end
   else
     integrator.EEst = 1
   end
-
+  integrator.destats.nf += 1
   f(integrator.fsallast,u,p,t+dt)
 end
 
@@ -148,6 +151,7 @@ end
   nlsolver.nl_iters = iter
 
   integrator.fsallast = f(u, p, t+dt)
+  integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
@@ -176,6 +180,7 @@ end
   nlsolver.ηold = η
   nlsolver.nl_iters = iter
 
+  integrator.destats.nf += 1
   f(integrator.fsallast,u,p,t+dt)
 end
 
@@ -239,6 +244,7 @@ end
   end
 
   integrator.fsallast = f(u, p, t+dt)
+  integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
@@ -305,6 +311,7 @@ end
     end
   end
 
+  integrator.destats.nf += 1
   f(integrator.fsallast,u,p,t+dt)
 end
 
@@ -468,6 +475,7 @@ end
   end
 
   integrator.fsallast = f(u, p, t)
+  integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
@@ -528,6 +536,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
+  integrator.destats.nf += 1
   f(integrator.fsallast,u,p,t)
 end
 
@@ -581,6 +590,7 @@ end
   nlsolver.nl_iters = iter
 
   integrator.fsallast = f(u, p, t)
+  integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
@@ -630,6 +640,7 @@ end
   nlsolver.ηold = η
   nlsolver.nl_iters = iter
 
+  integrator.destats.nf += 1
   f(integrator.fsallast,u,p,t)
 end
 
