@@ -4,6 +4,11 @@ function derivative!(df::AbstractArray{<:Number}, f, x::Union{Number,AbstractArr
     else
         DiffEqDiffTools.finite_difference_gradient!(df, f, x, grad_config)
     end
+    tmp = length(x) # We calculate derivtive for all elements in gradient
+    if eltype(df)<:Complex
+      tmp *= 2 # for real and imaginary part
+    end
+    integrator.destats.nf += tmp
     nothing
 end
 
@@ -16,6 +21,11 @@ function derivative(f, x::Union{Number,AbstractArray{<:Number}},
     else
       d = DiffEqDiffTools.finite_difference_gradient(f, x, alg.diff_type, eltype(x), Val{false})
     end
+    tmp = 2*length(x) # We calculate derivtive for all elements in gradient
+    if eltype(df)<:Complex
+      tmp *= 2 # for real and imaginary part
+    end
+    integrator.destats.nf += tmp
     d
 end
 

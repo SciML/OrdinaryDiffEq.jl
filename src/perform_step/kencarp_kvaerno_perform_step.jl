@@ -196,7 +196,6 @@ end
     # Explicit tableau is not FSAL
     # Make this not compute on repeat
     z₁ = dt.*f(uprev, p, t)
-    integrator.destats.nf += 1
   else
     # FSAL Step 1
     z₁ = dt*integrator.fsalfirst
@@ -289,7 +288,6 @@ end
   if typeof(integrator.f) <: SplitFunction
     integrator.k[1] = integrator.fsalfirst
     integrator.fsallast = integrator.f(u, p, t+dt)
-    integrator.destats.nf += 1
     integrator.k[2] = integrator.fsallast
   else
     integrator.fsallast = z₄./dt
@@ -324,7 +322,6 @@ end
     # Make this not compute on repeat
     if !repeat_step && !integrator.last_stepfail
       f(z₁, integrator.uprev, p, integrator.t)
-      integrator.destats.nf += 1
       z₁ .*= dt
     end
   else
@@ -434,7 +431,6 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     integrator.f(integrator.fsallast,u,p,t+dt)
-    integrator.destats.nf += 1
   else
     @. integrator.fsallast = z₄/dt
   end
@@ -634,7 +630,6 @@ end
     # Explicit tableau is not FSAL
     # Make this not compute on repeat
     z₁ = dt.*f(uprev, p, t)
-    integrator.destats.nf += 1
   else
     # FSAL Step 1
     z₁ = dt*integrator.fsalfirst
@@ -766,7 +761,6 @@ end
   if typeof(integrator.f) <: SplitFunction
     integrator.k[1] = integrator.fsalfirst
     integrator.fsallast = integrator.f(u, p, t+dt)
-    integrator.destats.nf += 1
     integrator.k[2] = integrator.fsallast
   else
     integrator.fsallast = z₆./dt
@@ -807,7 +801,6 @@ end
     # Make this not compute on repeat
     if !repeat_step && !integrator.last_stepfail
       f(z₁, integrator.uprev, p, integrator.t)
-      integrator.destats.nf += 1
       z₁ .*= dt
     end
   else
@@ -973,7 +966,6 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     integrator.f(integrator.fsallast,u,p,t+dt)
-    integrator.destats.nf += 1
   else
     @. integrator.fsallast = z₆/dt
   end
@@ -1223,7 +1215,6 @@ end
     # Explicit tableau is not FSAL
     # Make this not compute on repeat
     z₁ = dt.*f(uprev, p, t)
-    integrator.destats.nf += 1
   else
     # FSAL Step 1
     z₁ = dt*integrator.fsalfirst
@@ -1394,7 +1385,6 @@ end
   if typeof(integrator.f) <: SplitFunction
     integrator.k[1] = integrator.fsalfirst
     integrator.fsallast = integrator.f(u, p, t+dt)
-    integrator.destats.nf += 1
     integrator.k[2] = integrator.fsallast
   else
     integrator.fsallast = z₈./dt
@@ -1436,7 +1426,6 @@ end
     # Make this not compute on repeat
     if !repeat_step && !integrator.last_stepfail
       f(z₁, integrator.uprev, p, integrator.t)
-      integrator.destats.nf += 1
       z₁ .*= dt
     end
   else
@@ -1653,7 +1642,6 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     integrator.f(integrator.fsallast,u,p,t+dt)
-    integrator.destats.nf += 1
   else
     @. integrator.fsallast = z₈/dt
   end

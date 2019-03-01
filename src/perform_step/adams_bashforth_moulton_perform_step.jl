@@ -1506,7 +1506,7 @@ function initialize!(integrator,cache::CNAB2ConstantCache)
   integrator.fsalfirst =
   integrator.f.f1(integrator.uprev,integrator.p,integrator.t) +
   integrator.f.f2(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
-  integrator.destats.nf += 2
+  integrator.destats.nf += 1
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -1549,7 +1549,7 @@ function perform_step!(integrator,cache::CNAB2ConstantCache,repeat_step=false)
   nlsolver.ηold = η
   nlsolver.nl_iters = iter
   integrator.fsallast = f1(u, p, t+dt) + f2(u, p, t+dt)
-  integrator.destats.nf += 2
+  integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
@@ -1609,7 +1609,7 @@ function initialize!(integrator,cache::CNLF2ConstantCache)
   integrator.fsalfirst =
   integrator.f.f1(integrator.uprev,integrator.p,integrator.t) +
   integrator.f.f2(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
-  integrator.destats.nf += 2
+  integrator.destats.nf += 1
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -1654,7 +1654,7 @@ function perform_step!(integrator,cache::CNLF2ConstantCache,repeat_step=false)
   nlsolver.ηold = η
   nlsolver.nl_iters = iter
   integrator.fsallast = f1(u, p, t+dt) + f2(u, p, t+dt)
-  integrator.destats.nf += 2
+  integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u

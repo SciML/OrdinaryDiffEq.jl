@@ -157,7 +157,7 @@ function initialize!(integrator, cache::SBDFConstantCache)
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   cache.du₁ = f1(uprev,p,t)
   cache.du₂ = f2(uprev,p,t)
-  integrator.destats.nf += 2
+  integrator.destats.nf += 1
   integrator.fsalfirst = cache.du₁ + cache.du₂
 
   # Avoid undefined entries if k is an array of arrays
@@ -208,7 +208,7 @@ function perform_step!(integrator,cache::SBDFConstantCache,repeat_step=false)
               ( cache.uprev2 = uprev;  cache.k₁ = du₂ )
   cache.du₁ = f1(u, p, t+dt)
   cache.du₂ = f2(u, p, t+dt)
-  integrator.destats.nf += 2
+  integrator.destats.nf += 1
   integrator.fsallast = cache.du₁ + cache.du₂
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -226,7 +226,7 @@ function initialize!(integrator, cache::SBDFCache)
   integrator.k[2] = integrator.fsallast
   f1(cache.du₁, uprev, p, t)
   f2(cache.du₂, uprev, p, t)
-  integrator.destats.nf += 2
+  integrator.destats.nf += 1
   @. integrator.fsalfirst = cache.du₁ + cache.du₂
 end
 
@@ -270,7 +270,7 @@ function perform_step!(integrator, cache::SBDFCache, repeat_step=false)
               ( cache.uprev2 .= uprev;  cache.k₁ .= du₂ )
   f1(du₁, u, p, t+dt)
   f2(du₂, u, p, t+dt)
-  integrator.destats.nf += 2
+  integrator.destats.nf += 1
   @. k = du₁ + du₂
 end
 
