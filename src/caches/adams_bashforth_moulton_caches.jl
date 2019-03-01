@@ -886,7 +886,7 @@ end
 @cache mutable struct CNAB2ConstantCache{rateType,F,N,uType,tType} <: OrdinaryDiffEqConstantCache
   k2::rateType
   uf::F
-  nlsolve::N
+  nlsolver::N
   uprev3::uType
   tprev2::tType
 end
@@ -910,7 +910,7 @@ end
   uf::UF
   jac_config::JC
   linsolve::F
-  nlsolve::N
+  nlsolver::N
   uprev3::uType
   tprev2::tType
 end
@@ -923,7 +923,7 @@ function alg_cache(alg::CNAB2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   uprev3 = u
   tprev2 = t
 
-  CNAB2ConstantCache(k2,uf,nlsolve,uprev3,tprev2)
+  CNAB2ConstantCache(k2,uf,nlsolver,uprev3,tprev2)
 end
 
 function alg_cache(alg::CNAB2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -936,7 +936,7 @@ function alg_cache(alg::CNAB2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   uprev3 = zero(u)
   tprev2 = t
 
-  CNAB2Cache(u,uprev,uprev2,fsalfirst,k,k1,k2,du₁,du1,z,dz,b,tmp,J,W,uf,jac_config,linsolve,nlsolve,uprev3,tprev2)
+  CNAB2Cache(u,uprev,uprev2,fsalfirst,k,k1,k2,du₁,du1,z,dz,b,tmp,J,W,uf,jac_config,linsolve,nlsolver,uprev3,tprev2)
 end
 
 # CNLF2
@@ -944,7 +944,7 @@ end
 @cache mutable struct CNLF2ConstantCache{rateType,F,N,uType,tType} <: OrdinaryDiffEqConstantCache
   k2::rateType
   uf::F
-  nlsolve::N
+  nlsolver::N
   uprev2::uType
   uprev3::uType
   tprev2::tType
@@ -969,7 +969,7 @@ end
   uf::UF
   jac_config::JC
   linsolve::F
-  nlsolve::N
+  nlsolver::N
   uprev3::uType
   tprev2::tType
 end
@@ -983,7 +983,7 @@ function alg_cache(alg::CNLF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   uprev3 = u
   tprev2 = t
 
-  CNLF2ConstantCache(k2,uf,nlsolve,uprev2,uprev3,tprev2)
+  CNLF2ConstantCache(k2,uf,nlsolver,uprev2,uprev3,tprev2)
 end
 
 function alg_cache(alg::CNLF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -997,5 +997,5 @@ function alg_cache(alg::CNLF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   uprev3 = zero(u)
   tprev2 = t
 
-  CNLF2Cache(u,uprev,uprev2,fsalfirst,k,k1,k2,du₁,du1,z,dz,b,tmp,J,W,uf,jac_config,linsolve,nlsolve,uprev3,tprev2)
+  CNLF2Cache(u,uprev,uprev2,fsalfirst,k,k1,k2,du₁,du1,z,dz,b,tmp,J,W,uf,jac_config,linsolve,nlsolver,uprev3,tprev2)
 end

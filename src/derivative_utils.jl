@@ -243,7 +243,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     alg = unwrap_alg(integrator, true)
     isnewton = !(typeof(alg) <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm ||
                  typeof(alg) <: OrdinaryDiffEqRosenbrockAlgorithm)
-    isnewton && ( nlcache = cache.nlsolve.cache; @unpack ηold,nl_iters = cache.nlsolve.cache)
+    isnewton && ( @unpack ηold,nl_iters = cache.nlsolver)
 
     # fast pass
     # we only want to factorize the linear operator once
@@ -308,7 +308,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
         new_W = false
       end
     end
-    isnewton && ( nlcache.new_W = new_W )
+    isnewton && set_new_W!(cache.nlsolver, new_W)
   end
   new_W && (integrator.destats.nw += 1)
   return nothing
@@ -347,4 +347,22 @@ function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repe
   calc_tderivative!(integrator, cache, dtd1, repeat_step)
   calc_W!(integrator, cache, dtgamma, repeat_step, W_transform)
   return nothing
+end
+
+# update W matrix (only used in Newton method)
+update_W!(integrator, cache, dt, repeat_step) =
+  update_W!(cache.nlsolver, integrator, cache, dt, repeat_step)
+
+function update_W!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqMutableCache, dt, repeat_step)
+  if isnewton(nlsolver)
+    calc_W!(integrator, cache, dt, repeat_step)
+  end
+  nothing
+end
+
+function update_W!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqConstantCache, dt, repeat_step)
+  if isnewton(nlsolver)
+    set_W!(nlsolver, calc_W!(integrator, cache, dt, repeat_step))
+  end
+  nothing
 end

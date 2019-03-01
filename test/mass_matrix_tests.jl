@@ -1,41 +1,50 @@
 using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
 
-# TODO: clean up
 @testset "Mass Matrix Accuracy Tests" begin
-  function make_prob(mm_A; iip)
-    mm_b = mm_A*ones(3)
-    # iip
-    function mm_f_iip(du,u,p,t)
-      mul!(du,mm_A,u)
-      tmp = t*mm_b
-      du .+= tmp
-    end
-    mm_g_iip(du,u,p,t) = @. du = u + t
-    # oop
-    function mm_f_oop(u,p,t)
-      du = u./t
-      mm_f_iip(du,u,p,t)
-      du
-    end
-    function mm_g_oop(u,p,t)
-      du = u./t
-      mm_g_iip(du,u,p,t)
-      du
-    end
-    mm_analytic(u0,p,t) = @. 2u0*exp(t) - t - 1
-    f = ((mm_f_oop, mm_g_oop), (mm_f_iip, mm_g_iip))[iip+1]
-    prob = ODEProblem(ODEFunction(f[1],analytic=mm_analytic,mass_matrix=mm_A),ones(3),
-                                     (0.0,1.0))
-    prob2 = ODEProblem(ODEFunction(f[2],analytic=mm_analytic),ones(3),(0.0,1.0))
-    return prob, prob2
-  end
-  for iip in (false, true)
-    mm_A = [-2.0 1 4
-             4 -2 1
-             2 1 3]
-    prob, prob2 = make_prob(mm_A; iip=iip)
 
-    ######################################### Test each method for exactness
+  # create mass matrix problems
+  function make_mm_probs(mm_A, ::Type{Val{iip}}) where iip
+    # iip
+    mm_b = vec(sum(mm_A; dims=2))
+    function mm_f(du,u,p,t)
+      mul!(du,mm_A,u)
+      du .+= t * mm_b
+      nothing
+    end
+    mm_g(du,u,p,t) = (@. du = u + t; nothing)
+
+    # oop
+    mm_f(u,p,t) = mm_A * (u .+ t)
+    mm_g(u,p,t) = u .+ t
+
+    mm_analytic(u0, p, t) = @. 2 * u0 * exp(t) - t - 1
+
+    u0 = ones(3)
+    tspan = (0.0, 1.0)
+
+    prob = ODEProblem(ODEFunction{iip,true}(mm_f, analytic=mm_analytic, mass_matrix=mm_A), u0, tspan)
+    prob2 = ODEProblem(ODEFunction{iip,true}(mm_g, analytic=mm_analytic), u0, tspan)
+
+    prob, prob2
+  end
+
+  # test each method for exactness
+  for iip in (false, true)
+    mm_A = Float64[-2 1 4; 4 -2 1; 2 1 3]
+    prob, prob2 = make_mm_probs(mm_A, Val{iip})
+
+    sol = solve(prob,  ImplicitEuler(),dt=1/10,adaptive=false)
+    sol2 = solve(prob2,ImplicitEuler(),dt=1/10,adaptive=false)
+
+    @test norm(sol .- sol2) ≈ 0 atol=1e-7
+
+    sol = solve(prob,  RadauIIA5(),dt=1/10,adaptive=false)
+    sol2 = solve(prob2,RadauIIA5(),dt=1/10,adaptive=false)
+
+    @test norm(sol .- sol2) ≈ 0 atol=1e-12
+
+    sol = solve(prob,  ImplicitMidpoint(extrapolant = :constant),dt=1/10)
+    sol2 = solve(prob2,ImplicitMidpoint(extrapolant = :constant),dt=1/10)
 
     if iip
       sol = solve(prob  ,Rosenbrock23())
@@ -73,41 +82,20 @@ using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
 
       @test norm(sol .- sol2) ≈ 0 atol=1e-7
     end
+  end
 
-    sol = solve(prob,  ImplicitEuler(),dt=1/10,adaptive=false)
-    sol2 = solve(prob2,ImplicitEuler(),dt=1/10,adaptive=false)
+  # test functional iteration
+  for iip in (false, true)
+    prob, prob2 = make_mm_probs(Matrix{Float64}(1.01I, 3, 3), Val{iip})
 
-    @test norm(sol .- sol2) ≈ 0 atol=1e-7
-
-    sol = solve(prob,  RadauIIA5(),dt=1/10,adaptive=false)
-    sol2 = solve(prob2,RadauIIA5(),dt=1/10,adaptive=false)
-    @test norm(sol .- sol2) ≈ 0 atol=1e-12
-
-    sol = solve(prob,  ImplicitMidpoint(extrapolant = :constant),dt=1/10)
-    sol2 = solve(prob2,ImplicitMidpoint(extrapolant = :constant),dt=1/10)
-
-    @test norm(sol .- sol2) ≈ 0 atol=1e-7
-
-    # Anderson method
-    sol = solve(prob,  ImplicitEuler(nlsolve=NLAnderson()),dt=1/10,adaptive=false)
-    sol2 = solve(prob2,ImplicitEuler(nlsolve=NLAnderson()),dt=1/10,adaptive=false)
-
-    @test_broken norm(sol .- sol2) ≈ 0 atol=1e-7
-
-    sol = solve(prob,  ImplicitMidpoint(nlsolve=NLAnderson(),extrapolant = :constant),dt=1/10)
-    sol2 = solve(prob2,ImplicitMidpoint(nlsolve=NLAnderson(),extrapolant = :constant),dt=1/10)
-
-    @test_broken norm(sol .- sol2) ≈ 0 atol=1e-7
-    # Functional iteration
-    prob, prob2 = make_prob(Matrix{Float64}(1.01I, 3, 3); iip=iip)
     sol = solve(prob,ImplicitEuler(
-                          nlsolve=NLFunctional(κ=2000.,tol=1e-7,min_iter=10,max_iter=100)),dt=1/10,adaptive=false)
-    sol2 = solve(prob2,ImplicitEuler(),dt=1/10,adaptive=false)
+                          nlsolve=NLFunctional(tol=1e-7)),dt=1/10,adaptive=false)
+    sol2 = solve(prob2,ImplicitEuler(nlsolve=NLFunctional(tol=1e-7)),dt=1/10,adaptive=false)
     @test norm(sol .- sol2) ≈ 0 atol=1e-7
 
     sol = solve(prob, ImplicitMidpoint(extrapolant = :constant,
-                          nlsolve=NLFunctional(κ=2000.,tol=1e-7,min_iter=10,max_iter=100)),dt=1/10,adaptive=false)
-    sol2 = solve(prob2,ImplicitMidpoint(extrapolant = :constant),dt=1/10)
+                          nlsolve=NLFunctional(tol=1e-7)),dt=1/10)
+    sol2 = solve(prob2,ImplicitMidpoint(extrapolant = :constant, nlsolve=NLFunctional(tol=1e-7)),dt=1/10)
     @test norm(sol .- sol2) ≈ 0 atol=1e-7
 
     sol = solve(prob,ImplicitEuler(nlsolve=NLAnderson()),dt=1/10,adaptive=false)
@@ -115,34 +103,12 @@ using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
     @test norm(sol .- sol2) ≈ 0 atol=1e-7
     @test norm(sol[end] .- sol2[end]) ≈ 0 atol=1e-7
 
-    sol = solve(prob, ImplicitMidpoint(extrapolant = :constant, nlsolve=NLAnderson()),dt=1/10,adaptive=false)
-    sol2 = solve(prob2,ImplicitMidpoint(extrapolant = :constant, nlsolve=NLAnderson()),dt=1/10,adaptive=false)
+    sol = solve(prob, ImplicitMidpoint(extrapolant = :constant, nlsolve=NLAnderson(tol=1e-6)),dt=1/10)
+    sol2 = solve(prob2,ImplicitMidpoint(extrapolant = :constant, nlsolve=NLAnderson(tol=1e-6)),dt=1/10)
     @test norm(sol .- sol2) ≈ 0 atol=1e-7
     @test norm(sol[end] .- sol2[end]) ≈ 0 atol=1e-7
   end
 end
-
-#=
-
-sol = solve(prob,  Trapezoid())
-sol2 = solve(prob2,Trapezoid())
-
-@test norm(sol .- sol2) ≈ 0 atol=1e-7
-
-sol = solve(prob,  TRBDF2())
-sol2 = solve(prob2,TRBDF2())
-
-@test norm(sol .- sol2) ≈ 0 atol=1e-9
-
-#sol = solve(prob, SDIRK2())
-#sol2 = solve(prob2, SDIRK2())
-
-#@test norm(sol .- sol2) ≈ 0 atol=1e-11
-
-sol = solve(prob,   TRBDF2(),adaptive=false,dt=1/10)
-sol2 = solve(prob2, TRBDF2(),adaptive=false,dt=1/10)
-
-=#
 
 # Singular mass matrices
 
@@ -172,7 +138,7 @@ sol2 = solve(prob2, TRBDF2(),adaptive=false,dt=1/10)
       du[2] = u[1]
       return
   end
-  u0 = fill(0., 2)
+  u0 = zeros(2)
 
   m_ode_prob = ODEProblem(ODEFunction(f2!;mass_matrix=M), u0, tspan)
   @test_nowarn sol = solve(m_ode_prob, Rosenbrock23())

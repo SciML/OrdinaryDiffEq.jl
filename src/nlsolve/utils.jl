@@ -1,17 +1,100 @@
-DiffEqBase.@def iipnlsolve begin
-  # unpack cache of non-linear solver
-  _nlcache = alg.nlsolve.cache
-  @unpack max_iter,min_iter = _nlcache
+"""
+    qrdelete!(Q, R, k)
 
+Delete the left-most column of F = Q[:, 1:k] * R[1:k, 1:k] by updating Q and R.
+Only Q[:, 1:(k-1)] and R[1:(k-1), 1:(k-1)] are valid on exit.
+"""
+function qrdelete!(Q::AbstractMatrix, R::AbstractMatrix, k::Int)
+  n, m = size(Q)
+  m == LinearAlgebra.checksquare(R) || throw(DimensionMismatch())
+  1 ≤ k ≤ m || throw(ArgumentError())
+
+  # apply Givens rotations
+  for i in 2:k
+      g = first(givens(R, i - 1, i, i))
+      lmul!(g, R)
+      rmul!(Q, g')
+  end
+
+  # move columns of R
+  @inbounds for j in 1:(k-1)
+    for i in 1:(k-1)
+      R[i, j] = R[i, j + 1]
+    end
+  end
+
+  Q, R
+end
+
+"""
+    qradd!(Q, R, v, k)
+
+Replace the right-most column of F = Q[:, 1:k] * R[1:k, 1:k] with v by updating Q and R.
+This implementation modifies vector v as well. Only Q[:, 1:k] and R[1:k, 1:k] are valid on
+exit.
+"""
+function qradd!(Q::AbstractMatrix, R::AbstractMatrix, v::AbstractVector, k::Int)
+  n, m = size(Q)
+  n == length(v) || throw(DimensionMismatch())
+  m == LinearAlgebra.checksquare(R) || throw(DimensionMismatch())
+  1 ≤ k ≤ m || throw(ArgumentError())
+
+  @inbounds for i in 1:(k-1)
+    q = view(Q, :, i)
+    r = dot(q, v)
+
+    R[i, k] = r
+    axpy!(-r, q, v)
+  end
+
+  @inbounds begin
+    d = norm(v)
+    R[k, k] = d
+    @. Q[:, k] = v / d
+  end
+
+  Q, R
+end
+
+function qradd!(Q::AbstractMatrix, R::AbstractMatrix, v::Number, k::Int)
+  1 == LinearAlgebra.checksquare(Q) == LinearAlgebra.checksquare(R) ||
+    throw(DimensionMismatch())
+  k == 1 || throw(ArgumentError())
+
+  R[1, 1] = abs(v)
+  Q[1, 1] = one(v)
+
+  Q, R
+end
+
+isnewton(nlsolver::NLSolver) = isnewton(nlsolver.cache)
+isnewton(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}) = true
+isnewton(nlcache::AbstractNLSolverCache) = false
+
+set_new_W!(nlsolver::NLSolver, val::Bool) = set_new_W!(nlsolver.cache, val)
+set_new_W!(nlcache::NLNewtonCache, val::Bool) = (nlcache.new_W = val; nothing)
+set_new_W!(nlcache::AbstractNLSolverCache, val::Bool) = nothing
+
+get_W(nlsolver::NLSolver) = get_W(nlsolver.cache)
+get_W(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}) = nlcache.W
+
+set_W!(nlsolver::NLSolver, W) = set_W!(nlsolver.cache, W)
+set_W!(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}, W) = (nlcache.W = W; W)
+
+function get_κtol(nlalg::Union{NLAnderson,NLFunctional,NLNewton}, uTolType, reltol)
+  κ = nlalg.κ === nothing ? uTolType(1//100) : uTolType(nlalg.κ)
+  tol = nlalg.tol === nothing ? uTolType(min(0.03, first(reltol)^(0.5))) : uTolType(nlalg.tol)
+  κ * tol
+end
+
+DiffEqBase.@def iipnlsolve begin
   # define additional fields of cache of non-linear solver
   z = similar(u); dz = similar(u); tmp = similar(u); b = similar(u)
   k = zero(rate_prototype)
 
-  # define tolerances
-  uToltype = real(uBottomEltypeNoUnits)
-  κ = _nlcache.κ === nothing ? uToltype(1//100) : uToltype(_nlcache.κ)
-  tol = _nlcache.tol === nothing ? uToltype(min(0.03,first(reltol)^(0.5))) : uToltype(_nlcache.tol)
-  ηold = one(uToltype)
+  # adapt options of non-linear solver to current integration problem
+  uTolType = real(uBottomEltypeNoUnits)
+  κtol = get_κtol(alg.nlsolve, uTolType, reltol)
 
   # create cache of non-linear solver
   if alg.nlsolve isa NLNewton
@@ -34,24 +117,27 @@ DiffEqBase.@def iipnlsolve begin
       end
     end
 
-    nlcache = NLNewtonCache(κ,tol,min_iter,max_iter,10000,_nlcache.new_W,z,W,γ,c,ηold,dz,tmp,b,k)
+    nlcache = NLNewtonCache(true,W)
   elseif alg.nlsolve isa NLFunctional
     z₊ = similar(z)
 
-    nlcache = NLFunctionalCache(κ,tol,min_iter,max_iter,10000,z,γ,c,ηold,z₊,dz,tmp,b,k)
+    nlcache = NLFunctionalCache(z₊)
   elseif alg.nlsolve isa NLAnderson
     z₊ = similar(z)
-    zs = [zero(vec(z)) for i in 1:alg.nlsolve.n+1]
-    gs = [zero(vec(z)) for i in 1:alg.nlsolve.n+1]
-    alphas = Array{eltype(z)}(undef, alg.nlsolve.n + 1)
-    residuals = Array{eltype(z)}(undef, length(z), alg.nlsolve.n + 1)
 
-    nlcache = NLAndersonCache(κ,tol,min_iter,max_iter,10000,z,γ,c,ηold,alphas,residuals,z₊,dz,tmp,b,k,zs,gs)
+    max_history = min(alg.nlsolve.max_history, alg.nlsolve.max_iter, length(z))
+    Δz₊s = [zero(z) for i in 1:max_history]
+    Q = Matrix{uEltypeNoUnits}(undef, length(z), max_history)
+    R = Matrix{uEltypeNoUnits}(undef, max_history, max_history)
+    γs = Vector{uEltypeNoUnits}(undef, max_history)
+    dzold = zero(z)
+    z₊old = zero(z)
+
+    nlcache = NLAndersonCache(z₊,dzold,z₊old,Δz₊s,Q,R,γs,alg.nlsolve.aa_start,alg.nlsolve.droptol)
   end
 
   # create non-linear solver
-  _nlsolve = typeof(alg.nlsolve).name.wrapper
-  nlsolve = _nlsolve{true, typeof(nlcache)}(nlcache)
+  nlsolver = NLSolver{true,typeof(z),typeof(k),uTolType,typeof(γ),typeof(c),typeof(nlcache)}(z,dz,tmp,b,k,one(uTolType),κtol,γ,c,alg.nlsolve.max_iter,10000,nlcache)
 
   # define additional fields of cache
   fsalfirst = zero(rate_prototype)
@@ -79,18 +165,12 @@ DiffEqBase.@def iipnlsolve begin
 end
 
 DiffEqBase.@def oopnlsolve begin
-  # unpack cache of non-linear solver
-  _nlcache = alg.nlsolve.cache
-  @unpack max_iter,min_iter = _nlcache
-
   # define additional fields of cache of non-linear solver (all aliased)
   z = uprev; dz = z; tmp = z; b = z; k = rate_prototype
 
   # define tolerances
-  uToltype = real(uBottomEltypeNoUnits)
-  κ = _nlcache.κ === nothing ? uToltype(1//100) : uToltype(_nlcache.κ)
-  tol = _nlcache.tol === nothing ? uToltype(min(0.03,first(reltol)^(0.5))) : uToltype(_nlcache.tol)
-  ηold = one(uToltype)
+  uTolType = real(uBottomEltypeNoUnits)
+  κtol = get_κtol(alg.nlsolve, uTolType, reltol)
 
   # create cache of non-linear solver
   if alg.nlsolve isa NLNewton
@@ -126,22 +206,23 @@ DiffEqBase.@def oopnlsolve begin
       end
     end
 
-    nlcache = NLNewtonCache(κ,tol,min_iter,max_iter,10000,_nlcache.new_W,z,W,γ,c,ηold,dz,tmp,b,k)
+    nlcache = NLNewtonConstantCache(W)
   elseif alg.nlsolve isa NLFunctional
     uf = nothing
 
-    nlcache = NLFunctionalCache(κ,tol,min_iter,max_iter,10000,z,γ,c,ηold,z,dz,tmp,b,k)
+    nlcache = NLFunctionalConstantCache()
   elseif alg.nlsolve isa NLAnderson
     uf = nothing
-    zs = fill(_vec(z), alg.nlsolve.n + 1)
-    gs = fill(_vec(z), alg.nlsolve.n + 1)
-    alphas = nothing
-    residuals = Array{eltype(z)}(undef, length(z), alg.nlsolve.n + 1)
 
-    nlcache = NLAndersonCache(κ,tol,min_iter,max_iter,10000,z,γ,c,ηold,alphas,residuals,z,dz,tmp,b,k,zs,gs)
+    max_history = min(alg.nlsolve.max_history, alg.nlsolve.max_iter, length(z))
+    Δz₊s = Vector{typeof(z)}(undef, max_history)
+    Q = Matrix{uEltypeNoUnits}(undef, length(z), max_history)
+    R = Matrix{uEltypeNoUnits}(undef, max_history, max_history)
+    γs = Vector{uEltypeNoUnits}(undef, max_history)
+
+    nlcache = NLAndersonConstantCache(Δz₊s,Q,R,γs,alg.nlsolve.aa_start,alg.nlsolve.droptol)
   end
 
   # create non-linear solver
-  _nlsolve = typeof(alg.nlsolve).name.wrapper
-  nlsolve = _nlsolve{false, typeof(nlcache)}(nlcache)
+  nlsolver = NLSolver{false,typeof(z),typeof(k),uTolType,typeof(γ),typeof(c),typeof(nlcache)}(z,dz,tmp,b,k,one(uTolType),κtol,γ,c,alg.nlsolve.max_iter,10000,nlcache)
 end
