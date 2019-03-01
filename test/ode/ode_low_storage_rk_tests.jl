@@ -311,6 +311,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
+println("Methods from Carpenter, Kennedy, Lewis (2000)")
 
 alg = CKLLSRK43_2()
 dts = 1 ./ 2 .^(8:-1:4)
@@ -610,6 +611,7 @@ sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false,
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
 
+println("Methods from Parsani, Ketcheson, Deconinck (2013)")
 
 alg = ParsaniKetchesonDeconinck3S32()
 dts = 1 ./ 2 .^(7:-1:3)
