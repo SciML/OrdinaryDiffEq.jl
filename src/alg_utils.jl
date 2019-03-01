@@ -339,16 +339,19 @@ beta2_default(alg::FunctionMap) = 0
 beta2_default(alg::DP8) = 0//1
 beta2_default(alg::DP5) = 4//100
 beta2_default(alg::DP5Threaded) = 4//100
+beta2_default(alg::ExtrapolationMidpointDeuflhard) = 0//1
 
 beta1_default(alg::OrdinaryDiffEqAlgorithm,beta2) = 7//(10alg_order(alg))
 beta1_default(alg::FunctionMap,beta2) = 0
 beta1_default(alg::DP8,beta2) = typeof(beta2)(1//alg_order(alg)) - beta2/5
 beta1_default(alg::DP5,beta2) = typeof(beta2)(1//alg_order(alg)) - 3beta2/4
 beta1_default(alg::DP5Threaded,beta2) = typeof(beta2)(1//alg_order(alg)) - 3beta2/4
+beta1_default(alg::ExtrapolationMidpointDeuflhard,beta2) =  1//(2alg.init_extrapolation_order+1)
 
 gamma_default(alg::OrdinaryDiffEqAlgorithm) = 9//10
 gamma_default(alg::RKC) = 8//10
 gamma_default(alg::IRKC) = 8//10
+gamma_default(alg::ExtrapolationMidpointDeuflhard) = 1//4^beta1_default(alg,beta2_default(alg))
 
 qsteady_min_default(alg::OrdinaryDiffEqAlgorithm) = 1
 qsteady_max_default(alg::OrdinaryDiffEqAlgorithm) = 1
