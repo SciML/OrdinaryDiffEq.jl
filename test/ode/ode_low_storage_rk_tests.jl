@@ -556,11 +556,12 @@ sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=fa
 
 
 alg = CKLLSRK85_4M_3R()
-dts = 1 ./ 2 .^(6:-1:2)
+dts = 1.6 ./ 2 .^(6:-1:2)
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
-  @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol    # Marked as broken because all sets of dts are giving excess precision
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
+dts = 1 ./ 2 .^(6:-1:2)
 for prob in test_problems_linear
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
@@ -597,7 +598,6 @@ for prob in test_problems_linear
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
-
 integ = init(prob_ode_large, alg, adaptive=false,dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 9
 integ = init(prob_ode_large, alg, adaptive=true,dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
