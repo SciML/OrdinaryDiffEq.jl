@@ -2125,3 +2125,32 @@ end
 function alg_cache(alg::CKLLSRK85_4P_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   CKLLSRK85_4P_3RConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
 end
+
+
+# 4R+ low storage methods introduced by van der Houwen
+@cache struct LowStorageRK4RPCache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  k::rateType
+  uᵢ₋₁::uType
+  uᵢ₋₂::uType
+  uᵢ₋₃::uType
+  fᵢ₋₂::rateType
+  fᵢ₋₃::rateType
+  gprev::uType
+  fsalfirst::rateType
+  tmp::uType
+  atmp::uNoUnitsType
+  tab::TabType
+end
+
+struct LowStorageRK4RPConstantCache{N,T,T2} <: OrdinaryDiffEqConstantCache
+  Aᵢ₁::SVector{N,T}
+  Aᵢ₂::SVector{N,T}
+  Aᵢ₃::SVector{N,T}
+  Bₗ::T
+  B̂ₗ::T
+  Bᵢ::SVector{N,T}
+  B̂ᵢ::SVector{N,T}
+  Cᵢ::SVector{N,T2}
+end
