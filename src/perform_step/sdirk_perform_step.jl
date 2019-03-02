@@ -5,7 +5,8 @@ function initialize!(integrator, cache::Union{ImplicitEulerConstantCache,
                                               SDIRK2ConstantCache,
                                               SSPSDIRK2ConstantCache,
                                               Cash4ConstantCache,
-                                              Hairer4ConstantCache})
+                                              Hairer4ConstantCache,
+                                              RK4ThreadedConstantCache})
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -823,6 +824,64 @@ end
   end
 
   @. integrator.fsallast = z₅/dt
+end
+
+@muladd function perform_step!(integrator, cache::RK4ThreadedConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack γ1,γ2,a21,a31,a32,a41,a42,a43,c1,c2,c3,c4 = cache.tab
+  @unpack b1,b2,b3,b4 = cache.tab
+
+  nlsolver = cache.nlsolver
+  alg = unwrap_alg(integrator, true)
+
+  update_W!(integrator, cache, γ1*dt, repeat_step)
+  if(alg.threading == false)
+    ##### Step 1
+    z₁ = zero(u)
+    nlsolver.z = z₁
+    nlsolver.tmp = uprev
+    nlsolver.c = c1
+    z₁,η,iter,fail_convergence = nlsolve!(integrator, cache)
+    fail_convergence && return
+
+    ##### Step 2
+    z₂ = zero(u)
+    nlsolver.z = z₂
+    nlsolver.tmp = uprev + a21*z₁
+    nlsolver.c = c2
+    z₂,η,iter,fail_convergence = nlsolve!(integrator, cache)
+    fail_convergence && return
+
+    ################################## Solve Step 3
+    nlsolver.γ = γ2
+    update_W!(integrator, cache, γ2*dt, repeat_step)
+
+    z₃ = zero(u)
+    nlsolver.z = z₃
+    nlsolver.tmp = uprev + a31*z₁ + a32*z₂
+    nlsolver.c = c3
+    z₃,η,iter,fail_convergence = nlsolve!(integrator, cache)
+    fail_convergence && return
+
+    ################################## Solve Step 4
+    z₄ = zero(u)
+    nlsolver.z = z₄
+    nlsolver.tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
+    nlsolver.c = c4
+    z₄,η,iter,fail_convergence = nlsolve!(integrator, cache)
+    fail_convergence && return
+
+    ################################### Finalize
+    u = uprev + b1*z₁ + b2*z₂ + b3*z₃ + b4*z₄
+  end
+
+  nlsolver.ηold = η
+  nlsolver.nl_iters = iter
+
+  integrator.fsallast = f(u, p, t+dt)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
 end
 
 @muladd function perform_step!(integrator, cache::Hairer4ConstantCache, repeat_step=false)
