@@ -169,7 +169,7 @@ module OrdinaryDiffEq
          CFRLDDRK64, TSLDDRK74,
          CKLLSRK43_2,CKLLSRK54_3C,CKLLSRK95_4S,CKLLSRK95_4C,CKLLSRK95_4M,
          CKLLSRK54_3C_3R, CKLLSRK54_3M_3R, CKLLSRK54_3N_3R, CKLLSRK85_4C_3R, CKLLSRK85_4M_3R, CKLLSRK85_4P_3R,
-         CKLLSRK54_3N_4R, CKLLSRK54_3M_4R,
+         CKLLSRK54_3N_4R, CKLLSRK54_3M_4R, CKLLSRK65_4M_4R,
          ParsaniKetchesonDeconinck3S32, ParsaniKetchesonDeconinck3S82,
          ParsaniKetchesonDeconinck3S53, ParsaniKetchesonDeconinck3S173,
          ParsaniKetchesonDeconinck3S94, ParsaniKetchesonDeconinck3S184,
