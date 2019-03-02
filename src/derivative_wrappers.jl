@@ -1,29 +1,42 @@
 function derivative!(df::AbstractArray{<:Number}, f, x::Union{Number,AbstractArray{<:Number}}, fx::AbstractArray{<:Number}, integrator, grad_config)
+    tmp = length(x) # We calculate derivtive for all elements in gradient
     if get_current_alg_autodiff(integrator.alg, integrator.cache)
         ForwardDiff.derivative!(df, f, fx, x, grad_config)
+        integrator.destats.nf += tmp
     else
         DiffEqDiffTools.finite_difference_gradient!(df, f, x, grad_config)
+        fdtype = integrator.alg.diff_type
+        if fdtype == Val{:forward}
+            if eltype(df)<:Complex
+              tmp *= 2 # for real and imaginary part
+            end
+        elseif fdtype == Val{:central}
+            tmp *= 2
+            if eltype(df)<:Complex
+              tmp *= 2
+            end
+        end
+        integrator.destats.nf += tmp
     end
-    tmp = length(x) # We calculate derivtive for all elements in gradient
-    if eltype(df)<:Complex
-      tmp *= 2 # for real and imaginary part
-    end
-    integrator.destats.nf += tmp
     nothing
 end
 
 function derivative(f, x::Union{Number,AbstractArray{<:Number}},
                     integrator)
     local d
+    tmp = length(x) # We calculate derivtive for all elements in gradient
     alg = unwrap_alg(integrator, true)
     if get_current_alg_autodiff(integrator.alg, integrator.cache)
+      integrator.destats.nf += tmp
       d = ForwardDiff.derivative(f, x)
     else
       d = DiffEqDiffTools.finite_difference_gradient(f, x, alg.diff_type, eltype(x), Val{false})
+      if alg.diff_type == Val{:central}
+          tmp *= 2
+      end
+      integrator.destats.nf += tmp
+      d
     end
-    tmp = 2*length(x) # We calculate derivtive for all elements in gradient
-    integrator.destats.nf += tmp
-    d
 end
 
 function jacobian(f, x, integrator)
@@ -34,7 +47,13 @@ function jacobian(f, x, integrator)
     else
       J = jacobian_finitediff(f, x, alg.diff_type)
     end
-
+    local tmp
+    if alg.diff_type==Val{:complex} && eltype(x)<:Real
+      tmp = length(x)
+    else
+      tmp = 2*length(x)
+    end
+    integrator.destats.nf += tmp
     J
 end
 
@@ -52,6 +71,13 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, f
     else
       DiffEqDiffTools.finite_difference_jacobian!(J, f, x, jac_config)
     end
+    local tmp
+    if integrator.alg.diff_type==Val{:complex} && eltype(x)<:Real
+      tmp = length(x)
+    else
+      tmp = 2*length(x)
+    end
+    integrator.destats.nf += tmp
     nothing
 end
 
