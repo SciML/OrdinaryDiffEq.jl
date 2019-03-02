@@ -374,6 +374,46 @@ function Cash4Tableau(T,T2)
                b1hat1,b2hat1,b3hat1,b4hat1,b1hat2,b2hat2,b3hat2,b4hat2,c2,c3,c4)
 end
 
+struct RK4ThreadedTableau{T,T2}
+  γ1::T
+  γ2::T
+  a21::T
+  a31::T
+  a32::T
+  a41::T
+  a42::T
+  a43::T
+  b1::T
+  b2::T
+  b3::T
+  b4::T
+  c1::T2
+  c2::T2
+  c3::T2
+  c4::T2
+end
+
+
+function RK4ThreadedTableau(T,T2)
+  γ1 = convert(T,1//3)
+  γ2 = convert(T,(21 + sqrt(57))/48)
+  a21 = convert(T,1//3)
+  a31 = convert(T,0.0)
+  a32 = convert(T,0.0)
+  a41 = convert(T,0.0)
+  a42 = convert(T,0.0)
+  a43 = convert(T,(3-sqrt(57))/24)
+  b1 = convert(T,(9+3*sqrt(57))/16)
+  b2 = convert(T,(9+3*sqrt(57))/16)
+  b3 = convert(T,-(1+3*sqrt(57))/16)
+  b4 = convert(T,-(1+3*sqrt(57))/16)
+  c1 = -convert(T2,1//2)
+  c2 = -convert(T2,2//3)
+  c3 = convert(T2,(21+sqrt(57))/48)
+  c4 = convert(T2,(27-sqrt(57))/48)
+  RK4ThreadedTableau(γ1,γ2,a21,a31,a32,a41,a42,a43,b1,b2,b3,b4,c1,c2,c3,c4)
+end
+
 struct Hairer4Tableau{T,T2}
   γ::T
   a21::T

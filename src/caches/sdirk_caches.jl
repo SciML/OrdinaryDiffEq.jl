@@ -424,3 +424,17 @@ function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,
   Hairer4Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,dz,b,tmp,atmp,J,
                W,uf,jac_config,linsolve,nlsolver,tab)
 end
+
+mutable struct RK4ThreadedConstantCache{F,N,Tab} <: OrdinaryDiffEqConstantCache
+  uf::F
+  nlsolver::N
+  tab::Tab
+end
+
+function alg_cache(alg::RK4Threaded,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  tab = RK4ThreadedTableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  γ, c = tab.γ1,tab.c1
+  @oopnlsolve
+  RK4ThreadedConstantCache(uf,nlsolver,tab)
+end
