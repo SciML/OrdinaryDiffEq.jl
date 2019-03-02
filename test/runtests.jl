@@ -32,6 +32,7 @@ if group == "All" || group == "Interface"
   @time @safetestset "Export tests" begin include("export_tests.jl") end
   @time @safetestset "Derivative Utilities Tests" begin include("utility_tests.jl") end
   @time @safetestset "Discrete Callback Dual Tests" begin include("discrete_callback_dual_test.jl") end
+  @time @safetestset "DEStats Tests" begin include("destats_tests.jl") end
 end
 
 if group == "All" || group == "Integrators"

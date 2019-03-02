@@ -2,6 +2,7 @@ function initialize!(integrator, cache::RadauIIA5ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -18,6 +19,7 @@ function initialize!(integrator, cache::RadauIIA5Cache)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+  integrator.destats.nf += 1
   if integrator.opts.adaptive
     @unpack abstol, reltol = integrator.opts
     if reltol isa Number
@@ -87,6 +89,7 @@ end
     ff1 = f(uprev+z1, p, t+c1*dt)
     ff2 = f(uprev+z2, p, t+c2*dt)
     ff3 = f(uprev+z3, p, t+   dt) # c3 = 1
+    integrator.destats.nf += 3
 
     fw1 = @. TI11 * ff1 + TI12 * ff2 + TI13 * ff3
     fw2 = @. TI21 * ff1 + TI22 * ff2 + TI23 * ff3
@@ -161,6 +164,7 @@ end
 
     if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 || integrator.u_modified
       f0 = f(uprev .+ utilde, p, t)
+      integrator.destats.nf += 1
       utilde = @. f0 + tmp
       alg.smooth_est && (utilde = LU1 \ utilde)
       atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm,t)
@@ -179,6 +183,7 @@ end
   end
 
   integrator.fsallast = f(u, p, t+dt)
+  integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
@@ -265,6 +270,7 @@ end
     f(k2, tmp, p, t+c2*dt)
     @. tmp = uprev + z3
     f(k3, tmp, p, t+   dt) # c3 = 1
+    integrator.destats.nf += 3
 
     @. fw1 = TI11 * fsallast + TI12 * k2 + TI13 * k3
     @. fw2 = TI21 * fsallast + TI22 * k2 + TI23 * k3
@@ -350,6 +356,7 @@ end
     if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 || integrator.u_modified
       @. utilde = uprev + utilde
       f(fsallast, utilde, p, t)
+      integrator.destats.nf += 1
       @. utilde = fsallast + tmp
       alg.smooth_est && linsolve1(vec(utilde), W1, vec(utilde), false)
       calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm,t)
@@ -368,5 +375,6 @@ end
   end
 
   f(fsallast, u, p, t+dt)
+  integrator.destats.nf += 1
   return
 end
