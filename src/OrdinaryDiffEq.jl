@@ -177,7 +177,7 @@ module OrdinaryDiffEq
 
   export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, Kvaerno3,
          KenCarp3, Cash4, Hairer4, Hairer42, SSPSDIRK2, Kvaerno4, Kvaerno5,
-         KenCarp4, KenCarp5
+         KenCarp4, KenCarp5, RK4Threaded
 
   export GenericImplicitEuler, GenericTrapezoid
 

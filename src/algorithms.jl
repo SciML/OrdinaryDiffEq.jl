@@ -592,6 +592,22 @@ Cash4(;chunk_size=0,autodiff=true,diff_type=Val{:central},
         typeof(new_jac_conv_bound),controller}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,new_jac_conv_bound,embedding)
 
+
+struct RK4Threaded{CS,AD,F,F2,FDT,T2} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD}
+  linsolve::F
+  nlsolve::F2
+  diff_type::FDT
+  extrapolant::Symbol
+  new_jac_conv_bound::T2
+  threading::Bool
+end
+RK4Threaded(;chunk_size=0,autodiff=true,diff_type=Val{:central},
+                      linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
+                      extrapolant=:constant,new_jac_conv_bound=1e-3,threading=true) =
+                      RK4Threaded{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),
+                      typeof(new_jac_conv_bound)}(
+                      linsolve,nlsolve,diff_type,extrapolant,new_jac_conv_bound,threading)
+
 struct Hairer4{CS,AD,F,F2,FDT,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
   linsolve::F
   nlsolve::F2

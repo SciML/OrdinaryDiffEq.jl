@@ -85,6 +85,7 @@ alg_extrapolates(alg::KenCarp3) = true
 alg_extrapolates(alg::KenCarp4) = true
 alg_extrapolates(alg::KenCarp5) = true
 alg_extrapolates(alg::Cash4) = true
+alg_extrapolates(alg::RK4Threaded) = true
 alg_extrapolates(alg::Hairer4) = true
 alg_extrapolates(alg::Hairer42) = true
 alg_extrapolates(alg::IRKN4) = true
@@ -134,7 +135,6 @@ alg_order(alg::Exprb32) = 3
 alg_order(alg::Exprb43) = 4
 alg_order(alg::Anas5) = 5
 alg_order(alg::RK46NL) = 4
-
 
 alg_order(alg::SymplecticEuler) = 1
 alg_order(alg::VelocityVerlet) = 2
@@ -245,6 +245,7 @@ alg_order(alg::KenCarp3) = 3
 alg_order(alg::KenCarp4) = 4
 alg_order(alg::KenCarp5) = 5
 alg_order(alg::Cash4) = 4
+alg_order(alg::RK4Threaded) = 4
 alg_order(alg::Hairer4) = 4
 alg_order(alg::Hairer42) = 4
 alg_order(alg::Feagin10) = 10
