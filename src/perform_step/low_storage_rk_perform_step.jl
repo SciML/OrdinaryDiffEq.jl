@@ -264,3 +264,97 @@ end
 
   f(k, u, p, t+dt)
 end
+
+
+
+# 3R+ low storage methods
+function initialize!(integrator,cache::LowStorageRK3RPConstantCache)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.kshortsize = 1
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+end
+
+@muladd function perform_step!(integrator,cache::LowStorageRK3RPConstantCache,repeat_step=false)
+  @unpack t,dt,u,uprev,f,fsalfirst,p = integrator
+  @unpack Aᵢ₁,Aᵢ₂,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ = cache
+
+  fᵢ₋₂  = zero(fsalfirst)
+  k     = fsalfirst
+  uᵢ₋₁  = uprev
+  uᵢ₋₂  = uprev
+  integrator.opts.adaptive && (tmp = zero(uprev))
+
+  #stages 1 to s-1
+  for i in eachindex(Aᵢ₁)
+    integrator.opts.adaptive && (tmp = tmp + (Bᵢ[i] - B̂ᵢ[i])*dt*k)
+    gprev = uᵢ₋₂ + (Aᵢ₁[i]*k+Aᵢ₂[i]*fᵢ₋₂)*dt
+    u     = u + Bᵢ[i]*dt*k
+    fᵢ₋₂  = k
+    uᵢ₋₂  = uᵢ₋₁
+    uᵢ₋₁  = u
+    k     = f(gprev, p, t + Cᵢ[i]*dt)
+  end
+
+  #last stage
+  integrator.opts.adaptive && (tmp = tmp + (Bₗ - B̂ₗ)*dt*k)
+  u   = u  + Bₗ*dt*k
+
+  #Error estimate
+  if integrator.opts.adaptive
+    atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+  end
+
+  integrator.k[1] = integrator.fsalfirst
+  integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+  integrator.u = u
+end
+
+function initialize!(integrator,cache::LowStorageRK3RPCache)
+  @unpack k,fsalfirst = cache
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = k
+  integrator.kshortsize = 1
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t)
+end
+
+@muladd function perform_step!(integrator,cache::LowStorageRK3RPCache,repeat_step=false)
+  @unpack t,dt,u,uprev,f,fsalfirst,p = integrator
+  @unpack k,uᵢ₋₁,uᵢ₋₂,gprev,fᵢ₋₂,tmp,atmp = cache
+  @unpack Aᵢ₁,Aᵢ₂,Bₗ,B̂ₗ,Bᵢ,B̂ᵢ,Cᵢ = cache.tab
+
+  @. fᵢ₋₂  = zero(fsalfirst)
+  @. k     = fsalfirst
+  integrator.opts.adaptive && (@. tmp = zero(uprev))
+  @. uᵢ₋₁  = uprev
+  @. uᵢ₋₂  = uprev
+
+  #stages 1 to s-1
+  for i in eachindex(Aᵢ₁)
+    integrator.opts.adaptive && (@. tmp = tmp + (Bᵢ[i] - B̂ᵢ[i])*dt*k)
+    @. gprev = uᵢ₋₂ + (Aᵢ₁[i]*k+Aᵢ₂[i]*fᵢ₋₂)*dt
+    @. u     = u + Bᵢ[i]*dt*k
+    @. fᵢ₋₂  = k
+    @. uᵢ₋₂  = uᵢ₋₁
+    @. uᵢ₋₁  = u
+    f(k, gprev, p, t + Cᵢ[i]*dt)
+  end
+
+  #last stage
+  integrator.opts.adaptive && (@. tmp = tmp + (Bₗ - B̂ₗ)*dt*k)
+  @. u   = u  + Bₗ*dt*k
+
+  #Error estimate
+  if integrator.opts.adaptive
+    calculate_residuals!(atmp,tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+  end
+
+  f(k, u, p, t+dt)
+end
