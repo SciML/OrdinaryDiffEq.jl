@@ -1,5 +1,6 @@
 function initialize!(integrator, cache::Feagin10ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -30,6 +31,7 @@ end
   k15 = f(uprev + dt*(a1400*k1 + a1401*k2                           + a1404*k5              + a1406*k7 +                                                                     a1412*k13 + a1413*k14), p, t + c14*dt)
   k16 = f(uprev + dt*(a1500*k1              + a1502*k3                                                                                                                                                     + a1514*k15), p, t + c15*dt)
   k17 = f(uprev + dt*(a1600*k1 + a1601*k2 + a1602*k3              + a1604*k5 + a1605*k6 + a1606*k7 + a1607*k8 + a1608*k9 + a1609*k10 + a1610*k11 + a1611*k12 + a1612*k13 + a1613*k14 + a1614*k15 + a1615*k16), p, t + c16*dt)
+  integrator.destats.nf += 16
   u = uprev + dt*(b1*k1 + b2*k2 + b3*k3 + b5*k5 + b7*k7 + b9*k9 + b10*k10 + b11*k11 + b12*k12 + b13*k13 + b14*k14 + b15*k15 + b16*k16 + b17*k17)
   if integrator.opts.adaptive
     utilde = @. dt*(k2 - k16) * adaptiveConst
@@ -37,6 +39,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
   k = f(u, p, t+dt) # For the interpolation, needs k at the updated point
+  integrator.destats.nf += 1
   integrator.fsallast = k
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -51,6 +54,7 @@ function initialize!(integrator, cache::Feagin10Cache)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
 end
 
 #=
@@ -176,6 +180,7 @@ end
   @tight_loop_macros for i in uidx
     @inbounds u[i] = uprev[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i] + b7*k7[i] + b9*k9[i] + b10*k10[i] + b11*k11[i] + b12*k12[i] + b13*k13[i] + b14*k14[i] + b15*k15[i] + b16*k16[i] + b17*k17[i])
   end
+  integrator.destats.nf += 16
   if integrator.opts.adaptive
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = dt*(k2[i] - k16[i]) * adaptiveConst
@@ -184,10 +189,12 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
   f(integrator.fsallast,u,p,t+dt) # For the interpolation, needs k at the updated point
+  integrator.destats.nf += 1
 end
 
 function initialize!(integrator, cache::Feagin12ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -226,8 +233,10 @@ end
   k23 = f(uprev + dt*((a2200*k1 + a2201*k2                           + a2204*k5)              + (a2206*k7                                                                                                                                                                                     + a2220*k21 + a2221*k22)), p, t + c22*dt)
   k24 = f(uprev + dt*(a2300*k1              + a2302*k3                                                                                                                                                                                                                                                                     + a2322*k23), p, t + c23*dt)
   k25 = f(uprev + dt*((a2400*k1 + a2401*k2 + a2402*k3)              + (a2404*k5              + a2406*k7 + a2407*k8 + a2408*k9) + (a2409*k10 + a2410*k11 + a2411*k12 + a2412*k13) + (a2413*k14 + a2414*k15 + a2415*k16 + a2416*k17) + (a2417*k18 + a2418*k19 + a2419*k20 + a2420*k21) + (a2421*k22 + a2422*k23 + a2423*k24)), p, t + c24*dt)
+  integrator.destats.nf += 24
   u = uprev + dt*((b1*k1 + b2*k2 + b3*k3 + b5*k5) + (b7*k7 + b8*k8 + b10*k10 + b11*k11) + (b13*k13 + b14*k14 + b15*k15 + b16*k16) + (b17*k17 + b18*k18 + b19*k19 + b20*k20) + (b21*k21 + b22*k22 + b23*k23) + (b24*k24 + b25*k25))
   k = f(u, p, t+dt)
+  integrator.destats.nf += 1
   integrator.fsallast = k
   if integrator.opts.adaptive
     utilde = @. dt*(k2 - k24) * adaptiveConst
@@ -247,6 +256,7 @@ function initialize!(integrator, cache::Feagin12Cache)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
 end
 
 #=
@@ -420,6 +430,7 @@ end
   @tight_loop_macros for i in uidx
     @inbounds u[i] = uprev[i] + dt*((b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i]) + (b7*k7[i] + b8*k8[i] + b10*k10[i] + b11*k11[i]) + (b13*k13[i] + b14*k14[i] + b15*k15[i] + b16*k16[i]) + (b17*k17[i] + b18*k18[i] + b19*k19[i] + b20*k20[i]) + (b21*k21[i] + b22*k22[i] + b23*k23[i]) + (b24*k24[i] + b25*k25[i]))
   end
+  integrator.destats.nf += 24
   if integrator.opts.adaptive
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] = dt*(k2[i] - k24[i]) * adaptiveConst
@@ -428,10 +439,12 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
   f(k, u, p, t+dt)
+  integrator.destats.nf += 1
 end
 
 function initialize!(integrator,cache::Feagin14ConstantCache,f=integrator.f)
   integrator.fsalfirst = f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -480,6 +493,7 @@ end
   k33 = f(uprev + dt*(a3200*k1 + a3201*k2                           + a3204*k5              + a3206*k7                                                                                                                                                                                                                                                                                                                                 + a3230*k31 + a3231*k32), p, t + c32*dt)
   k34 = f(uprev + dt*(a3300*k1              + a3302*k3                                                                                                                                                                                                                                                                                                                                                                                                                 + a3332*k33), p, t + c33*dt)
   k35 = f(uprev + dt*(a3400*k1 + a3401*k2 + a3402*k3              + a3404*k5              + a3406*k7 + a3407*k8              + a3409*k10 + a3410*k11 + a3411*k12 + a3412*k13 + a3413*k14 + a3414*k15 + a3415*k16 + a3416*k17 + a3417*k18 + a3418*k19 + a3419*k20 + a3420*k21 + a3421*k22 + a3422*k23 + a3423*k24 + a3424*k25 + a3425*k26 + a3426*k27 + a3427*k28 + a3428*k29 + a3429*k30 + a3430*k31 + a3431*k32 + a3432*k33 + a3433*k34), p, t + c34*dt)
+  integrator.destats.nf += 34
   u = uprev + dt*(b1*k1 + b2*k2 + b3*k3 + b5*k5 + b7*k7 + b8*k8 + b10*k10 + b11*k11 + b12*k12 + b14*k14 + b15*k15 + b16*k16 + b18*k18 + b19*k19 + b20*k20 + b21*k21 + b22*k22 + b23*k23 + b24*k24 + b25*k25 + b26*k26 + b27*k27 + b28*k28 + b29*k29 + b30*k30 + b31*k31 + b32*k32 + b33*k33 + b34*k34 + b35*k35)
   if integrator.opts.adaptive
     utilde = @. dt*(k2 - k34) * adaptiveConst
@@ -487,6 +501,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
   k = f(u, p, t+dt) # For the interpolation, needs k at the updated point
+  integrator.destats.nf += 1
   integrator.fsallast = k
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -501,6 +516,7 @@ function initialize!(integrator, cache::Feagin14Cache)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
 end
 
 #=
@@ -736,6 +752,7 @@ end
   @tight_loop_macros for i in uidx
     @inbounds u[i] = uprev[i] + dt*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b5*k5[i] + b7*k7[i] + b8*k8[i] + b10*k10[i] + b11*k11[i] + b12*k12[i] + b14*k14[i] + b15*k15[i] + b16*k16[i] + b18*k18[i] + b19*k19[i] + b20*k20[i] + b21*k21[i] + b22*k22[i] + b23*k23[i] + b24*k24[i] + b25*k25[i] + b26*k26[i] + b27*k27[i] + b28*k28[i] + b29*k29[i] + b30*k30[i] + b31*k31[i] + b32*k32[i] + b33*k33[i] + b34*k34[i] + b35*k35[i])
   end
+  integrator.destats.nf += 35
   if integrator.opts.adaptive
     @tight_loop_macros for i in uidx
       @inbounds tmp[i] =  dt*(k2[i] - k34[i]) * adaptiveConst
@@ -744,4 +761,5 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
   f(integrator.fsallast,u,p,t+dt) # For the interpolation, needs k at the updated point
+  integrator.destats.nf += 1
 end

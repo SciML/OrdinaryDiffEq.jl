@@ -59,6 +59,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     else
       ztmp = dt .* f(u, p, tstep) .- mass_matrix * z
     end
+    integrator.destats.nf += 1
     if DiffEqBase.has_invW(f)
       dz = _reshape(W * _vec(ztmp), axes(ztmp)) # Here W is actually invW
     else
@@ -117,6 +118,7 @@ end
     # evaluate function
     @. u = tmp + γ*z
     f(k, u, p, tstep)
+    integrator.destats.nf += 1
     if mass_matrix == I
       @. ztmp = dt*k - z
     else

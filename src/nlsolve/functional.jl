@@ -65,6 +65,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
       dz = dt .* f(u, p, tstep) .- mz
       z₊ = z .+ dz
     end
+    integrator.destats.nf += 1
 
     # compute norm of residuals
     iter > 1 && (ndzprev = ndz)
@@ -187,6 +188,7 @@ end
     # evaluate function
     @. u = tmp + γ*z
     f(k, u, p, tstep)
+    integrator.destats.nf += 1
     if mass_matrix == I
       @. z₊ = dt*k
       @. dz = z₊ - z

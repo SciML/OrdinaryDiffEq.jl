@@ -6,6 +6,7 @@ function initialize!(integrator, cache::MidpointSplittingCache)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+  integrator.destats.nf += 1
 end
 
 function perform_step!(integrator, cache::MidpointSplittingCache, repeat_step=false)
@@ -33,11 +34,13 @@ function perform_step!(integrator, cache::MidpointSplittingCache, repeat_step=fa
   end
 
   f(integrator.fsallast,u,p,t+dt)
+  integrator.destats.nf += 1
 end
 
 function initialize!(integrator, cache::LinearExponentialConstantCache)
   # Pre-start fsal
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+  integrator.destats.nf += 1
   integrator.fsallast = zero(integrator.fsalfirst)
 
   # Initialize interpolation derivatives
@@ -63,6 +66,7 @@ function perform_step!(integrator, cache::LinearExponentialConstantCache, repeat
 
   # Update integrator state
   integrator.fsallast = f(u, p, t + dt)
+  integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
@@ -72,6 +76,7 @@ function initialize!(integrator, cache::LinearExponentialCache)
   # Pre-start fsal
   integrator.fsalfirst = zero(cache.rtmp)
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+  integrator.destats.nf += 1
   integrator.fsallast = zero(integrator.fsalfirst)
 
   # Initialize interpolation derivatives
@@ -102,5 +107,6 @@ function perform_step!(integrator, cache::LinearExponentialCache, repeat_step=fa
   # Update integrator state
   u .= tmp
   f(integrator.fsallast, u, p, t + dt)
+  integrator.destats.nf += 1
   # integrator.k is automatically set due to aliasing
 end

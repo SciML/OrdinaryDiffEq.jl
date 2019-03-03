@@ -4,6 +4,7 @@ function initialize!(integrator, cache::DP5ThreadedCache)
   integrator.k .= [cache.update,cache.bspl,cache.dense_tmp3,cache.dense_tmp4]
   integrator.fsalfirst = cache.k1; integrator.fsallast = cache.k7
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::DP5ThreadedCache, repeat_step=false)
@@ -24,6 +25,7 @@ end
   f(k6, tmp, p, t+dt)
   dp5threaded_loop6(dt,u,uprev,a71,k1,a73,k3,a74,k4,a75,k5,a76,k6,update,uidx)
   f(integrator.fsallast,u,p,t+dt)
+  integrator.destats.nf += 6
   if integrator.opts.adaptive
     dp5threaded_adaptiveloop(dt,utilde,btilde1,k1,btilde3,k3,btilde4,k4,btilde5,k5,btilde6,k6,btilde7,k7,uidx)
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
