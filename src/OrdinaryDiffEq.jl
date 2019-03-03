@@ -76,7 +76,7 @@ module OrdinaryDiffEq
   include("caches/bdf_caches.jl")
   include("caches/rkc_caches.jl")
   include("caches/extrapolation_caches.jl")
-  include("caches/park_caches.jl")
+  include("caches/prk_caches.jl")
 
   include("cache_utils.jl")
 
@@ -123,7 +123,7 @@ module OrdinaryDiffEq
   include("perform_step/bdf_perform_step.jl")
   include("perform_step/rkc_perform_step.jl")
   include("perform_step/extrapolation_perform_step.jl")
-  include("perform_step/park_perform_step.jl")
+  include("perform_step/prk_perform_step.jl")
 
   include("dense/generic_dense.jl")
   include("dense/interpolants.jl")
