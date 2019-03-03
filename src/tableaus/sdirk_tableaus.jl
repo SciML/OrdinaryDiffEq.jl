@@ -374,7 +374,7 @@ function Cash4Tableau(T,T2)
                b1hat1,b2hat1,b3hat1,b4hat1,b1hat2,b2hat2,b3hat2,b4hat2,c2,c3,c4)
 end
 
-struct RK4ThreadedTableau{T,T2}
+struct IserNor4Tableau{T,T2}
   γ1::T
   γ2::T
   a21::T
@@ -394,7 +394,7 @@ struct RK4ThreadedTableau{T,T2}
 end
 
 
-function RK4ThreadedTableau(T,T2)
+function IserNor4Tableau(T,T2)
   γ1 = convert(T,1//3)
   γ2 = convert(T,(21 + sqrt(57))/48)
   a21 = convert(T,1//3)
@@ -411,7 +411,7 @@ function RK4ThreadedTableau(T,T2)
   c2 = -convert(T2,2//3)
   c3 = convert(T2,(21+sqrt(57))/48)
   c4 = convert(T2,(27-sqrt(57))/48)
-  RK4ThreadedTableau(γ1,γ2,a21,a31,a32,a41,a42,a43,b1,b2,b3,b4,c1,c2,c3,c4)
+  IserNor4Tableau(γ1,γ2,a21,a31,a32,a41,a42,a43,b1,b2,b3,b4,c1,c2,c3,c4)
 end
 
 struct Hairer4Tableau{T,T2}

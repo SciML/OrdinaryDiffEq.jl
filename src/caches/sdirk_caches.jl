@@ -425,16 +425,16 @@ function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,
                W,uf,jac_config,linsolve,nlsolver,tab)
 end
 
-mutable struct RK4ThreadedConstantCache{F,N,Tab} <: OrdinaryDiffEqConstantCache
+mutable struct IserNor4ConstantCache{F,N,Tab} <: OrdinaryDiffEqConstantCache
   uf::F
   nlsolver::N
   tab::Tab
 end
 
-function alg_cache(alg::RK4Threaded,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
+function alg_cache(alg::IserNor4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
                    uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  tab = RK4ThreadedTableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = IserNor4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ1,tab.c1
   @oopnlsolve
-  RK4ThreadedConstantCache(uf,nlsolver,tab)
+  IserNor4ConstantCache(uf,nlsolver,tab)
 end

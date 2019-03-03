@@ -6,7 +6,7 @@ function initialize!(integrator, cache::Union{ImplicitEulerConstantCache,
                                               SSPSDIRK2ConstantCache,
                                               Cash4ConstantCache,
                                               Hairer4ConstantCache,
-                                              RK4ThreadedConstantCache})
+                                              IserNor4ConstantCache})
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -826,7 +826,7 @@ end
   @. integrator.fsallast = z₅/dt
 end
 
-@muladd function perform_step!(integrator, cache::RK4ThreadedConstantCache, repeat_step=false)
+@muladd function perform_step!(integrator, cache::IserNor4ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack γ1,γ2,a21,a31,a32,a41,a42,a43,c1,c2,c3,c4 = cache.tab
   @unpack b1,b2,b3,b4 = cache.tab
