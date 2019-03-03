@@ -145,7 +145,6 @@ end
   dz::uType
   b::uType
   tmp::uType
-  # utilde::uType
   atmp::uNoUnitsType
   J::JType
   W::WType
@@ -174,7 +173,6 @@ function alg_cache(alg::IRKC,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   gprev = similar(u)
   gprev2 = similar(u)
   tmp = similar(u)
-  # utilde = similar(u)
   atmp = similar(u,uEltypeNoUnits)
   fsalfirst = zero(rate_prototype)
   k  = zero(rate_prototype)
