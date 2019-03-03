@@ -43,16 +43,18 @@ struct ExtrapolationMidpointDeuflhard <: OrdinaryDiffEqExtrapolationVarOrderVarS
   max_extrapolation_order::Int
   min_extrapolation_order::Int
   init_extrapolation_order::Int
-  subdividing_sequence::Symbol
+  sequence_symbol::Symbol
 end
-function ExtrapolationMidpointDeuflhard(;max_extrapolation_order=10, min_extrapolation_order=1,init_extrapolation_order=5,subdividing_sequence = :harmonic)
+function ExtrapolationMidpointDeuflhard(;max_extrapolation_order=10, min_extrapolation_order=1,init_extrapolation_order=5, sequence_symbol = :harmonic)
+  # enforce 1 <=  min_extrapolation_order <= init_extrapolation_order <= max_extrapolation_order:
   min_extrapolation_order = max(1,min_extrapolation_order)
-  max_extrapolation_order = max(min_extrapolation_order,max_extrapolation_order)
-  init_extrapolation_order = max(min_extrapolation_order,min(max_extrapolation_order,init_extrapolation_order))
-  if subdividing_sequence != :harmonic && subdividing_sequence != :romberg && subdividing_sequence != :bulirsch
-      error("subdividing_sequence must match :harmonic, :romberg or :bulirsch")
+  init_extrapolation_order = max(min_extrapolation_order,init_extrapolation_order)
+  max_extrapolation_order = max(init_extrapolation_order,max_extrapolation_order)
+  # enforce sequence_symbol in [:harmonic,:romberg,:bulirsch]:
+  if sequence_symbol != :harmonic && sequence_symbol != :romberg && sequence_symbol != :bulirsch
+      error("sequence_symbol must match :harmonic, :romberg or :bulirsch")
   end
-  ExtrapolationMidpointDeuflhard(max_extrapolation_order,min_extrapolation_order,init_extrapolation_order,subdividing_sequence)
+  ExtrapolationMidpointDeuflhard(max_extrapolation_order,min_extrapolation_order,init_extrapolation_order,sequence_symbol)
 end
 
 struct RK46NL <: OrdinaryDiffEqAlgorithm end
