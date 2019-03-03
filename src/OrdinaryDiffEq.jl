@@ -76,6 +76,7 @@ module OrdinaryDiffEq
   include("caches/bdf_caches.jl")
   include("caches/rkc_caches.jl")
   include("caches/extrapolation_caches.jl")
+  include("caches/park_caches.jl")
 
   include("cache_utils.jl")
 
@@ -122,6 +123,7 @@ module OrdinaryDiffEq
   include("perform_step/bdf_perform_step.jl")
   include("perform_step/rkc_perform_step.jl")
   include("perform_step/extrapolation_perform_step.jl")
+  include("perform_step/park_perform_step.jl")
 
   include("dense/generic_dense.jl")
   include("dense/interpolants.jl")
@@ -223,6 +225,8 @@ module OrdinaryDiffEq
          AutoVern6, AutoVern7, AutoVern8, AutoVern9
 
   export RichardsonEuler
+
+  export PaRK2p5
 
   export NLNewton, NLFunctional, NLAnderson
 end # module
