@@ -694,6 +694,33 @@ sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=fa
 @test sol_old[end] ≈ sol_new[end]
 
 
+alg = CKLLSRK85_4FM_4R()
+dts = (1) ./ 2 .^(10:-1:6)
+for prob in test_problems_only_time
+	sim = test_convergence(dts, prob, alg)
+	@test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) + 1 atol=testTol
+end
+for prob in test_problems_nonlinear
+	sim = test_convergence(dts, prob, alg)
+	@test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+for prob in test_problems_linear
+	sim = test_convergence(dts, prob, alg)
+	@test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+integ = init(prob_ode_large, alg, adaptive=false,dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 11
+integ = init(prob_ode_large, alg, adaptive=true,dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 12
+integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 11
+# test whether aliasing u0 is bad
+new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
+sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false)
+sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
+@test sol_old[end] ≈ sol_new[end]
+
+
 println("Methods from Parsani, Ketcheson, Deconinck (2013)")
 
 alg = ParsaniKetchesonDeconinck3S32()
