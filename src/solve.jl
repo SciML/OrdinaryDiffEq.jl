@@ -59,6 +59,10 @@ function DiffEqBase.__init(
   initialize_integrator=true,
   alias_u0=false, kwargs...) where {algType<:OrdinaryDiffEqAlgorithm,recompile_flag}
 
+  if !save_everystep && adaptive && alg isa Union{ImplicitEuler, Trapezoid}
+    @warn("Adaptive $(nameof(typeof(alg))) method is not safe to use with save_everystep=false due to its error estimator.")
+  end
+
   if typeof(prob.f)<:DynamicalODEFunction && typeof(prob.f.mass_matrix)<:Tuple
     if any(mm != I for mm in prob.f.mass_matrix)
       error("This solver is not able to use mass matrices.")
