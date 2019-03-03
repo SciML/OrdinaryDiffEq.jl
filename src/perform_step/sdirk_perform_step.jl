@@ -357,6 +357,7 @@ end
   if integrator.opts.adaptive
     tmp = btilde1*zprev + btilde2*zᵧ + btilde3*z
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
+      integrator.destats.nsolve += 1
       est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
     else
       est = tmp
@@ -414,6 +415,7 @@ end
   if integrator.opts.adaptive
     @. dz = btilde1*zprev + btilde2*zᵧ + btilde3*z
     if alg.smooth_est # From Shampine
+      integrator.destats.nsolve += 1
       if DiffEqBase.has_invW(f)
         mul!(vec(tmp),W,vec(dz))
       else
@@ -466,6 +468,7 @@ end
   if integrator.opts.adaptive
     tmp = z₁/2 - z₂/2
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
+      integrator.destats.nsolve += 1
       est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
     else
       est = tmp
@@ -524,6 +527,7 @@ end
   if integrator.opts.adaptive
     @. dz = z₁/2 - z₂/2
     if alg.smooth_est # From Shampine
+      integrator.destats.nsolve += 1
       if DiffEqBase.has_invW(f)
         mul!(vec(tmp),W,vec(dz))
       else
@@ -725,6 +729,7 @@ end
 
     tmp = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
+      integrator.destats.nsolve += 1
       est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
     else
       est = tmp
@@ -821,6 +826,7 @@ end
 
     @. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
     if alg.smooth_est # From Shampine
+      integrator.destats.nsolve += 1
       if DiffEqBase.has_invW(f)
         mul!(vec(tmp),W,vec(dz))
       else
@@ -902,6 +908,7 @@ end
   if integrator.opts.adaptive
     tmp = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
+      integrator.destats.nsolve += 1
       est = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
     else
       est = tmp
@@ -996,6 +1003,7 @@ end
       dz[i] = btilde1*z₁[i] + btilde2*z₂[i] + btilde3*z₃[i] + btilde4*z₄[i] + btilde5*z₅[i]
     end
     if alg.smooth_est # From Shampine
+      integrator.destats.nsolve += 1
       if DiffEqBase.has_invW(f)
         mul!(vec(tmp),W,vec(dz))
       else

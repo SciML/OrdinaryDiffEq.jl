@@ -58,6 +58,7 @@ end
     LU1 = lu(γdt*mass_matrix - J)
     LU2 = lu((αdt + βdt*im)*mass_matrix - J)
   end
+  integrator.destats.nw += 1
 
   # TODO better initial guess
   if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
@@ -110,6 +111,7 @@ end
     rhs3 = @. fw3 - βdt*Mw2 - αdt*Mw3
     dw1 = LU1 \ rhs1
     dw23 = LU2 \ (@. rhs2 + rhs3*im)
+    integrator.destats.nsolve += 2
     dw2 = real(dw23)
     dw3 = imag(dw23)
 
@@ -154,7 +156,7 @@ end
     tmp = @. e1dt*z1 + e2dt*z2 + e3dt*z3
     mass_matrix != I && (tmp = mass_matrix*tmp)
     utilde = @. integrator.fsalfirst + tmp
-    alg.smooth_est && (utilde = LU1 \ utilde)
+    alg.smooth_est && (utilde = LU1 \ utilde; integrator.destats.nsolve += 1)
     # RadauIIA5 needs a transformed rtol and atol see
     # https://github.com/luchr/ODEInterface.jl/blob/0bd134a5a358c4bc13e0fb6a90e27e4ee79e0115/src/radau5.f#L399-L421
     rtol = @. reltol^(2/3) / 10
@@ -166,7 +168,7 @@ end
       f0 = f(uprev .+ utilde, p, t)
       integrator.destats.nf += 1
       utilde = @. f0 + tmp
-      alg.smooth_est && (utilde = LU1 \ utilde)
+      alg.smooth_est && (utilde = LU1 \ utilde; integrator.destats.nsolve += 1)
       atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm,t)
       integrator.EEst = internalnorm(atmp,t)
     end
@@ -232,6 +234,7 @@ end
   else
     new_W = false
   end
+  new_W && (integrator.destats.nw += 1)
 
   # TODO better initial guess
   if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
@@ -301,6 +304,7 @@ end
     linsolve1(vec(dw1), W1, vec(dw1), needfactor)
     @. dw23 = complex(fw2 - αdt*Mw2 + βdt*Mw3, fw3 - βdt*Mw2 - αdt*Mw3)
     linsolve2(vec(dw23), W2, vec(dw23), needfactor)
+    integrator.destats.nsolve += 2
     dw2 = z2; dw3 = z3
     @. dw2 = real(dw23)
     @. dw3 = imag(dw23)
@@ -347,7 +351,7 @@ end
     @. tmp = e1dt*z1 + e2dt*z2 + e3dt*z3
     mass_matrix != I && (mul!(w1, mass_matrix, tmp); copyto!(tmp, w1))
     @. utilde = integrator.fsalfirst + tmp
-    alg.smooth_est && linsolve1(vec(utilde), W1, vec(utilde), false)
+    alg.smooth_est && (linsolve1(vec(utilde), W1, vec(utilde), false); integrator.destats.nsolve += 1)
     # RadauIIA5 needs a transformed rtol and atol see
     # https://github.com/luchr/ODEInterface.jl/blob/0bd134a5a358c4bc13e0fb6a90e27e4ee79e0115/src/radau5.f#L399-L421
     calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm,t)
@@ -358,7 +362,7 @@ end
       f(fsallast, utilde, p, t)
       integrator.destats.nf += 1
       @. utilde = fsallast + tmp
-      alg.smooth_est && linsolve1(vec(utilde), W1, vec(utilde), false)
+      alg.smooth_est && (linsolve1(vec(utilde), W1, vec(utilde), false); integrator.destats.nsolve += 1)
       calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm,t)
       integrator.EEst = internalnorm(atmp,t)
     end
