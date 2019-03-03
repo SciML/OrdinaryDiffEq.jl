@@ -256,6 +256,9 @@ regression_test(CKLLSRK65_4M_4R(), 8.0e-5,1.5e-4)
 # CKLLSRK85_4FM_4R
 regression_test(CKLLSRK85_4FM_4R(), 1.0,1.8)
 
+# CKLLSRK75_4M_5R
+regression_test(CKLLSRK75_4M_5R(), 8.0e-5,1.6e-4)
+
 # ParsaniKetchesonDeconinck3S32
 regression_test(ParsaniKetchesonDeconinck3S32(), 1.5e-2, 2.0e-2)
 
