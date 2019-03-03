@@ -134,7 +134,7 @@ alg_order(alg::Exprb32) = 3
 alg_order(alg::Exprb43) = 4
 alg_order(alg::Anas5) = 5
 alg_order(alg::RK46NL) = 4
-alg_order(alg::PaRK2p5) = 5
+alg_order(alg::KuttaPRK2p5) = 5
 
 
 alg_order(alg::SymplecticEuler) = 1

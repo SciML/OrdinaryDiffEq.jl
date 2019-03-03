@@ -32,10 +32,10 @@ ExplicitRK(;tableau=ODE_DEFAULT_TABLEAU) = ExplicitRK(tableau)
 @inline trivial_limiter!(u, f, t) = nothing
 
 struct Euler <: OrdinaryDiffEqAlgorithm end
-struct PaRK2p5 <: OrdinaryDiffEqAlgorithm
+struct KuttaPRK2p5 <: OrdinaryDiffEqAlgorithm
   threading::Bool
 end
-PaRK2p5(;threading=true) = PaRK2p5(threading)
+KuttaPRK2p5(;threading=true) = KuttaPRK2p5(threading)
 
 struct RichardsonEuler <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
   max_order::Int

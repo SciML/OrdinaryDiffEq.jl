@@ -226,7 +226,7 @@ module OrdinaryDiffEq
 
   export RichardsonEuler
 
-  export PaRK2p5
+  export KuttaPRK2p5
 
   export NLNewton, NLFunctional, NLAnderson
 end # module

@@ -1,4 +1,4 @@
-@cache struct PaRK2p5Cache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
+@cache struct KuttaPRK2p5Cache{uType,rateType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   k::rateType
@@ -12,7 +12,7 @@
   tab::TabType
 end
 
-struct PaRK2p5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct KuttaPRK2p5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   α21::T
   α31::T
   α32::T
@@ -29,7 +29,7 @@ struct PaRK2p5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   c4::T2
   c5_6::Array{T2,1}
 
-  function PaRK2p5ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+  function KuttaPRK2p5ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
     α21 = T(1//3)
     α31 = T(4//25)
     α32 = T(6//25)
@@ -62,7 +62,7 @@ struct PaRK2p5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   end
 end
 
-function alg_cache(alg::PaRK2p5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::KuttaPRK2p5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
   k = zero(rate_prototype)
   k1 = zero(rate_prototype)
@@ -73,10 +73,10 @@ function alg_cache(alg::PaRK2p5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   k5_6[1] = zero(rate_prototype)
   k5_6[2] = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
-  tab = PaRK2p5ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
-  PaRK2p5Cache(u,uprev,k,k1,k2,k3,k4,k5_6,tmp,fsalfirst,tab)
+  tab = KuttaPRK2p5ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  KuttaPRK2p5Cache(u,uprev,k,k1,k2,k3,k4,k5_6,tmp,fsalfirst,tab)
 end
 
-function alg_cache(alg::PaRK2p5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  PaRK2p5ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+function alg_cache(alg::KuttaPRK2p5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  KuttaPRK2p5ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 end

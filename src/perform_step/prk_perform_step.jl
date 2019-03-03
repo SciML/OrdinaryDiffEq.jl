@@ -1,4 +1,4 @@
-function initialize!(integrator,cache::PaRK2p5ConstantCache)
+function initialize!(integrator,cache::KuttaPRK2p5ConstantCache)
   integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -9,7 +9,7 @@ function initialize!(integrator,cache::PaRK2p5ConstantCache)
   integrator.k[2] = integrator.fsallast
 end
 
-@muladd function perform_step!(integrator,cache::PaRK2p5ConstantCache,repeat_step=false)
+@muladd function perform_step!(integrator,cache::KuttaPRK2p5ConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack α21,α31,α32,α41,α42,α43,α5_6 = cache
   @unpack β1,β3,β5,β6,c2,c3,c4,c5_6 = cache
@@ -39,7 +39,7 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator,cache::PaRK2p5Cache)
+function initialize!(integrator,cache::KuttaPRK2p5Cache)
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
   integrator.fsallast = k
@@ -50,7 +50,7 @@ function initialize!(integrator,cache::PaRK2p5Cache)
   integrator.k[2] = integrator.fsallast
 end
 
-@muladd function perform_step!(integrator,cache::PaRK2p5Cache,repeat_step=false)
+@muladd function perform_step!(integrator,cache::KuttaPRK2p5Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k,k1,k2,k3,k4,k5_6,fsalfirst = cache
   @unpack α21,α31,α32,α41,α42,α43,α5_6 = cache.tab
