@@ -57,19 +57,26 @@ end
   @unpack β1,β3,β5,β6,c2,c3,c4,c5_6 = cache.tab
 
   f( k1, uprev, p, t)
-  f( k2, uprev + dt*α21*k1, p, t + c2*dt)
-  f( k3, uprev + dt*(α31*k1 + α32*k2), p, t + c3*dt)
-  f( k4, uprev + dt*(α41*k1 + α42*k2 + α43*k3), p, t + c4*dt)
+
+  @. u = uprev + dt*α21*k1
+  f( k2, u, p, t + c2*dt)
+
+  @. u = uprev + dt*(α31*k1 + α32*k2)
+  f( k3, u, p, t + c3*dt)
+
+  @. u = uprev + dt*(α41*k1 + α42*k2 + α43*k3)
+  f( k4, u, p, t + c4*dt)
 
   if integrator.alg.threading == false
-    f( k5_6[1], uprev + dt*(α5_6[1,1]*k1 + α5_6[1,2]*k2 + α5_6[1,3]*k3 + α5_6[1,4]*k4),
-           p, t + c5_6[1]*dt)
-    f( k5_6[2], uprev + dt*(α5_6[2,1]*k1 + α5_6[2,2]*k2 + α5_6[2,3]*k3 + α5_6[2,4]*k4),
-           p, t + c5_6[2]*dt)
+    @. u = uprev + dt*(α5_6[1,1]*k1 + α5_6[1,2]*k2 + α5_6[1,3]*k3 + α5_6[1,4]*k4)
+    f( k5_6[1], u, p, t + c5_6[1]*dt)
+
+    @. u = uprev + dt*(α5_6[2,1]*k1 + α5_6[2,2]*k2 + α5_6[2,3]*k3 + α5_6[2,4]*k4)
+    f( k5_6[2], u, p, t + c5_6[2]*dt)
   else
     Threads.@threads for i in [1,2]
-      f( k5_6[i], uprev + dt*(α5_6[i,1]*k1 + α5_6[i,2]*k2 + α5_6[i,3]*k3 + α5_6[i,4]*k4),
-           p, t + c5_6[i]*dt)
+      @. u = uprev + dt*(α5_6[i,1]*k1 + α5_6[i,2]*k2 + α5_6[i,3]*k3 + α5_6[i,4]*k4)
+      f( k5_6[i], u, p, t + c5_6[i]*dt)
     end
   end
 
