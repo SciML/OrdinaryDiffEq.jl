@@ -2,6 +2,11 @@
   u::uType
   uprev::uType
   k::rateType
+  k1::rateType
+  k2::rateType
+  k3::rateType
+  k4::rateType
+  k5_6::Array{rateType,1}
   tmp::uType
   fsalfirst::rateType
   tab::TabType
@@ -60,9 +65,16 @@ end
 function alg_cache(alg::PaRK2p5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
   k = zero(rate_prototype)
+  k1 = zero(rate_prototype)
+  k2 = zero(rate_prototype)
+  k3 = zero(rate_prototype)
+  k4 = zero(rate_prototype)
+  k5_6 = Array{typeof(rate_prototype)}(undef, 2)
+  k5_6[1] = zero(rate_prototype)
+  k5_6[2] = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
   tab = PaRK2p5ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
-  PaRK2p5Cache(u,uprev,k,tmp,fsalfirst,tab)
+  PaRK2p5Cache(u,uprev,k,k1,k2,k3,k4,k5_6,tmp,fsalfirst,tab)
 end
 
 function alg_cache(alg::PaRK2p5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
