@@ -181,6 +181,16 @@ for i = 1:2
   sim19 = test_convergence(dts,prob,Hairer4())
   @test sim19.𝒪est[:final] ≈ 4 atol=testTol
 
+  sim20 = test_convergence(dts,prob,PaRK2p5(threading=true))
+  @test sim20.𝒪est[:final] ≈ 5 atol=testTol
+  @test sim20.𝒪est[:l2] ≈ 5 atol=testTol
+  @test sim20.𝒪est[:l∞] ≈ 5 atol=testTol
+
+  sim20 = test_convergence(dts,prob,PaRK2p5(threading=false))
+  @test sim20.𝒪est[:final] ≈ 5 atol=testTol
+  @test sim20.𝒪est[:l2] ≈ 5 atol=testTol
+  @test sim20.𝒪est[:l∞] ≈ 5 atol=testTol
+
   sim20 = test_convergence(dts,prob,RK46NL())
   @test sim20.𝒪est[:final] ≈ 4 atol=testTol
   @test sim20.𝒪est[:l2] ≈ 4 atol=testTol
