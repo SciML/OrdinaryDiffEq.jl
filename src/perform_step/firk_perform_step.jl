@@ -58,6 +58,7 @@ end
     LU1 = lu(γdt*mass_matrix - J)
     LU2 = lu((αdt + βdt*im)*mass_matrix - J)
   end
+  integrator.destats.nw += 1
 
   # TODO better initial guess
   if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
@@ -233,6 +234,7 @@ end
   else
     new_W = false
   end
+  new_W && (integrator.destats.nw += 1)
 
   # TODO better initial guess
   if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
