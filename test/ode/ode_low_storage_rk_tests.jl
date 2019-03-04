@@ -313,17 +313,34 @@ sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=fa
 
 println("Methods from Carpenter, Kennedy, Lewis (2000)")
 
+function RemakeNew(p::ODEProblem)
+  u1 = @. BigFloat(p.u0)
+  tsp1 = @. BigFloat(p.tspan)
+  remake(p; u0 = u1, tspan = tsp1)
+end
+
+test_problems_only_time_BigFloat = @. RemakeNew(test_problems_only_time)
+test_problems_linear_BigFloat = @. RemakeNew(test_problems_linear)
+f = (u,p,t)->sin(u)
+(::typeof(f))(::Type{Val{:analytic}},u0,p,t) = 2*acot(exp(-t)*cot(BigFloat(0.5)))
+prob_nonlinear_A = ODEProblem(f, BigFloat(1.),(BigFloat(0.),BigFloat(0.5)))
+
+f = (du,u,p,t)->du[1]=sin(u[1])
+(::typeof(f))(::Type{Val{:analytic}},u0,p,t) = [2*acot(exp(-t)*cot(BigFloat(0.5)))]
+prob_nonlinear_B = ODEProblem(f,[BigFloat(1.)],(BigFloat(0.),BigFloat(0.5)))
+test_problems_nonlinear_BigFloat = [prob_nonlinear_A,prob_nonlinear_B]
+
 alg = CKLLSRK43_2()
-dts = 1 ./ 2 .^(8:-1:4)
-for prob in test_problems_only_time
+dts = BigFloat(1) ./ 2 .^(8:-1:4)
+for prob in test_problems_only_time_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
-for prob in test_problems_linear
+for prob in test_problems_linear_BigFloat
   sim = test_convergence(dts, prob, alg)
-  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg)+1 atol=testTol    # This scheme has kinear order of 4
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg)+1 atol=testTol    # This scheme has linear order of 4
 end
-for prob in test_problems_nonlinear
+for prob in test_problems_nonlinear_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
@@ -341,16 +358,16 @@ sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=fa
 
 
 alg = CKLLSRK54_3C()
-dts = 1 ./ 2 .^(8:-1:4)
-for prob in test_problems_only_time
+dts = BigFloat(1) ./ 2 .^(8:-1:4)
+for prob in test_problems_only_time_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ 1 atol=testTol          # The CI plot is linear but the evaluated order is 1
 end
-for prob in test_problems_linear
+for prob in test_problems_linear_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
-for prob in test_problems_nonlinear
+for prob in test_problems_nonlinear_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
@@ -368,16 +385,16 @@ sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=fa
 
 
 alg = CKLLSRK95_4S()
-dts = 1 ./ 2 .^(6:-1:2)
-for prob in test_problems_only_time
+dts = BigFloat(1) ./ 2 .^(8:-1:4)
+for prob in test_problems_only_time_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
-for prob in test_problems_linear
+for prob in test_problems_linear_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
-for prob in test_problems_nonlinear
+for prob in test_problems_nonlinear_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
@@ -395,16 +412,16 @@ sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=fa
 
 
 alg = CKLLSRK95_4C()
-dts = 1 ./ 2 .^(8:-1:4)
-for prob in test_problems_only_time
+dts = BigFloat(1) ./ 2 .^(8:-1:4)
+for prob in test_problems_only_time_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
-for prob in test_problems_linear
+for prob in test_problems_linear_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
-for prob in test_problems_nonlinear
+for prob in test_problems_nonlinear_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
@@ -422,16 +439,16 @@ sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=fa
 
 
 alg = CKLLSRK95_4M()
-dts = 1 ./ 2 .^(6:-1:2)
-for prob in test_problems_only_time
+dts = BigFloat(1) ./ 2 .^(8:-1:4)
+for prob in test_problems_only_time_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
-for prob in test_problems_linear
+for prob in test_problems_linear_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
-for prob in test_problems_nonlinear
+for prob in test_problems_nonlinear_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
@@ -449,16 +466,16 @@ sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=fa
 
 
 alg = CKLLSRK54_3C_3R()
-dts = 1 ./ 2 .^(8:-1:4)
-for prob in test_problems_only_time
+dts = BigFloat(1) ./ 2 .^(8:-1:4)
+for prob in test_problems_only_time_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
-for prob in test_problems_linear
+for prob in test_problems_linear_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
-for prob in test_problems_nonlinear
+for prob in test_problems_nonlinear_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
@@ -476,16 +493,16 @@ sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=fa
 
 
 alg = CKLLSRK54_3M_3R()
-dts = 1 ./ 2 .^(7:-1:3)
-for prob in test_problems_only_time
+dts = BigFloat(1) ./ 2 .^(8:-1:4)
+for prob in test_problems_only_time_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
-for prob in test_problems_linear
+for prob in test_problems_linear_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg)+1 atol=testTol
 end
-for prob in test_problems_nonlinear
+for prob in test_problems_nonlinear_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg)+0.5 atol=testTol
 end
@@ -503,16 +520,16 @@ sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=fa
 
 
 alg = CKLLSRK54_3N_3R()
-dts = 1 ./ 2 .^(7:-1:3)
-for prob in test_problems_only_time
+dts = BigFloat(1) ./ 2 .^(8:-1:4)
+for prob in test_problems_only_time_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
-for prob in test_problems_linear
+for prob in test_problems_linear_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
-for prob in test_problems_nonlinear
+for prob in test_problems_nonlinear_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
@@ -530,16 +547,16 @@ sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=fa
 
 
 alg = CKLLSRK85_4C_3R()
-dts = 1 ./ 2 .^(6:-1:2)
-for prob in test_problems_only_time
+dts = BigFloat(1) ./ 2 .^(8:-1:4)
+for prob in test_problems_only_time_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
-for prob in test_problems_linear
+for prob in test_problems_linear_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
-for prob in test_problems_nonlinear
+for prob in test_problems_nonlinear_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
@@ -557,17 +574,16 @@ sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=fa
 
 
 alg = CKLLSRK85_4M_3R()
-dts = 1.6 ./ 2 .^(6:-1:2)
-for prob in test_problems_only_time
+dts = BigFloat(1) ./ 2 .^(8:-1:4)
+for prob in test_problems_only_time_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
-dts = 1 ./ 2 .^(6:-1:2)
-for prob in test_problems_linear
+for prob in test_problems_linear_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
-for prob in test_problems_nonlinear
+for prob in test_problems_nonlinear_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
@@ -585,17 +601,16 @@ sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=fa
 
 
 alg = CKLLSRK85_4P_3R()
-dts = 1 ./ 2 .^(6:-1:2)
-for prob in test_problems_only_time
+dts = BigFloat(1) ./ 2 .^(8:-1:4)
+for prob in test_problems_only_time_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
-for prob in test_problems_nonlinear
+for prob in test_problems_linear_BigFloat
   sim = test_convergence(dts, prob, alg)
-  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg)+2 atol=testTol
 end
-dts = 1.0 ./ 10.0 .^(1.3:-.22:0.3)
-for prob in test_problems_linear
+for prob in test_problems_nonlinear_BigFloat
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
@@ -610,6 +625,142 @@ new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0
 sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false)
 sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
 @test sol_old[end] ≈ sol_new[end]
+
+
+alg = CKLLSRK54_3N_4R()
+dts = BigFloat(1) ./ 2 .^(8:-1:4)
+for prob in test_problems_only_time_BigFloat
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+for prob in test_problems_linear_BigFloat
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+for prob in test_problems_nonlinear_BigFloat
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+integ = init(prob_ode_large, alg, adaptive=false,dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 11
+integ = init(prob_ode_large, alg, adaptive=true,dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 12
+integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 11
+# test whether aliasing u0 is bad
+new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
+sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false)
+sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
+@test sol_old[end] ≈ sol_new[end]
+
+
+alg = CKLLSRK54_3M_4R()
+dts = BigFloat(1) ./ 2 .^(8:-1:4)
+for prob in test_problems_only_time_BigFloat
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+for prob in test_problems_linear_BigFloat
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg)+0.5 atol=testTol                              # This scheme has linear orderof 4.5
+end
+for prob in test_problems_nonlinear_BigFloat
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+integ = init(prob_ode_large, alg, adaptive=false,dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 11
+integ = init(prob_ode_large, alg, adaptive=true,dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 12
+integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 11
+# test whether aliasing u0 is bad
+new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
+sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false)
+sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
+@test sol_old[end] ≈ sol_new[end]
+
+
+alg = CKLLSRK65_4M_4R()
+dts = BigFloat(1) ./ 2 .^(8:-1:4)
+for prob in test_problems_only_time_BigFloat
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+for prob in test_problems_linear_BigFloat
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+for prob in test_problems_nonlinear_BigFloat
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+integ = init(prob_ode_large, alg, adaptive=false,dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 11
+integ = init(prob_ode_large, alg, adaptive=true,dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 12
+integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 11
+# test whether aliasing u0 is bad
+new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
+sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false)
+sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
+@test sol_old[end] ≈ sol_new[end]
+
+
+alg = CKLLSRK85_4FM_4R()
+dts = BigFloat(1) ./ 2 .^(10:-1:6)
+for prob in test_problems_only_time_BigFloat
+	sim = test_convergence(dts, prob, alg)
+	@test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) + 1 atol=testTol
+end
+for prob in test_problems_nonlinear_BigFloat
+	sim = test_convergence(dts, prob, alg)
+	@test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+for prob in test_problems_linear_BigFloat
+	sim = test_convergence(dts, prob, alg)
+	@test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+integ = init(prob_ode_large, alg, adaptive=false,dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 11
+integ = init(prob_ode_large, alg, adaptive=true,dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 12
+integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 11
+# test whether aliasing u0 is bad
+new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
+sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false)
+sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
+@test sol_old[end] ≈ sol_new[end]
+
+
+alg = CKLLSRK75_4M_5R()
+dts = BigFloat(1) ./ 2 .^(8:-1:4)
+for prob in test_problems_only_time_BigFloat
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+for prob in test_problems_linear_BigFloat
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+for prob in test_problems_nonlinear_BigFloat
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+end
+integ = init(prob_ode_large, alg, adaptive=false,dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 13
+integ = init(prob_ode_large, alg, adaptive=true,dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 14
+integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 13
+# test whether aliasing u0 is bad
+new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
+sol_old = solve(prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false)
+sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=false, save_start=false, alias_u0=true)
+@test sol_old[end] ≈ sol_new[end]
+
 
 println("Methods from Parsani, Ketcheson, Deconinck (2013)")
 

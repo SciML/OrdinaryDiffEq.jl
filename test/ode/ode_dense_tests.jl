@@ -244,6 +244,21 @@ regression_test(CKLLSRK85_4M_3R(), 8.0e-5,1.5e-4)
 # CKLLSRK85_4P_3R
 regression_test(CKLLSRK85_4P_3R(), 5.5e-5,1.1e-4)
 
+# CKLLSRK54_3N_4R
+regression_test(CKLLSRK54_3N_4R(), 3.5e-5,6.0e-5)
+
+# CKLLSRK54_3M_4R
+regression_test(CKLLSRK54_3M_4R(), 2.0e-5,4.0e-5)
+
+# CKLLSRK65_4M_4R
+regression_test(CKLLSRK65_4M_4R(), 8.0e-5,1.5e-4)
+
+# CKLLSRK85_4FM_4R
+regression_test(CKLLSRK85_4FM_4R(), 1.0,1.8)
+
+# CKLLSRK75_4M_5R
+regression_test(CKLLSRK75_4M_5R(), 8.0e-5,1.6e-4)
+
 # ParsaniKetchesonDeconinck3S32
 regression_test(ParsaniKetchesonDeconinck3S32(), 1.5e-2, 2.0e-2)
 
