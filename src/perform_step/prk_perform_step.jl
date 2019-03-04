@@ -52,7 +52,7 @@ end
 
 @muladd function perform_step!(integrator,cache::KuttaPRK2p5Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k,k1,k2,k3,k4,k5_6,fsalfirst = cache
+  @unpack k,k1,k2,k3,k4,k5_6,fsalfirst,tmp = cache
   @unpack α21,α31,α32,α41,α42,α43,α5_6 = cache.tab
   @unpack β1,β3,β5,β6,c2,c3,c4,c5_6 = cache.tab
 
@@ -74,9 +74,10 @@ end
     @. u = uprev + dt*(α5_6[2,1]*k1 + α5_6[2,2]*k2 + α5_6[2,3]*k3 + α5_6[2,4]*k4)
     f( k5_6[2], u, p, t + c5_6[2]*dt)
   else
+    tmps = (u, tmp)
     Threads.@threads for i in [1,2]
-      @. u = uprev + dt*(α5_6[i,1]*k1 + α5_6[i,2]*k2 + α5_6[i,3]*k3 + α5_6[i,4]*k4)
-      f( k5_6[i], u, p, t + c5_6[i]*dt)
+      @. tmps[i] = uprev + dt*(α5_6[i,1]*k1 + α5_6[i,2]*k2 + α5_6[i,3]*k3 + α5_6[i,4]*k4)
+      f( k5_6[i], tmps[i], p, t + c5_6[i]*dt)
     end
   end
 
