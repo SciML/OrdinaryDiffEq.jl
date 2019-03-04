@@ -314,7 +314,6 @@ end
   max_order::Int64
   udiff::uType
   dts::dtsType
-  tmp::uType
   h::dtType
   c::Int64
 end
@@ -348,13 +347,12 @@ end
 end
 
 function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  γ, c = one(inv(alg.kappa)), 1
+  γ, c = one(eltype(alg.kappa)), 1
   @oopnlsolve
 
   udiff = fill(zero(u), 1, 6)
   dts = fill(zero(dt), 1, 6)
   h = zero(dt)
-  tmp = zero(u)
 
   D = fill(zero(u), 1, 5)
   D2 = fill(zero(u), 6, 6)
@@ -363,11 +361,11 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
 
   max_order = 5
 
-  QNDFConstantCache(uf,nlsolver,D,D2,R,U,1,max_order,udiff,dts,tmp,h,0)
+  QNDFConstantCache(uf,nlsolver,D,D2,R,U,1,max_order,udiff,dts,h,0)
 end
 
 function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  γ, c = one(alg.kappa), 1
+  γ, c = one(eltype(alg.kappa)), 1
   @iipnlsolve
 
   udiff = Array{typeof(u)}(undef, 1, 6)
@@ -391,7 +389,7 @@ function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
 
   max_order = 5
   atmp = similar(u,uEltypeNoUnits)
-  utilde = similar(u)
+  utilde = tmp
 
   QNDFCache(du1,fsalfirst,k,z,dz,b,D,D2,R,U,1,max_order,udiff,dts,tmp,atmp,utilde,J,
             W,uf,jac_config,linsolve,nlsolver,h,0)

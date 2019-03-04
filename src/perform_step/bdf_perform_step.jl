@@ -701,7 +701,7 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
       if k > 1
         utildem1 = (κ*γₖ[k-1] + inv(k)) * D[k]
         atmpm1 = calculate_residuals(utildem1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-        errm1 = integrator.opts.internalnorm(atmpm1)
+        errm1 = integrator.opts.internalnorm(atmpm1, t)
       end
       backward_diff!(cache,D,D2,k+1,false)
       δ = u - uprev
@@ -710,7 +710,7 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
       end
       utildep1 = (κ*γₖ[k+1] + inv(k+2)) * δ
       atmpp1 = calculate_residuals(utildep1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-      errp1 = integrator.opts.internalnorm(atmpp1)
+      errp1 = integrator.opts.internalnorm(atmpp1, t)
       pass = stepsize_and_order!(cache, integrator.EEst, errm1, errp1, dt, k)
       if pass == false
         cache.c = cache.c + 1
@@ -806,16 +806,16 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
   for i = 1:k
     @. tm += D[i]
   end
-  @. tmp = uprev + tm - ϕ
+  @. nlsolver.tmp = uprev + tm - ϕ
 
   γdt = γ*dt
   update_W!(integrator, cache, γdt, repeat_step)
   # initial guess
-  @. z = dt*integrator.fsalfirst
+  @. nlsolver.z = dt*integrator.fsalfirst
 
   z,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
-  @. u = tmp + γ*z
+  @. u = nlsolver.tmp + γ*z
 
 
   if integrator.opts.adaptive

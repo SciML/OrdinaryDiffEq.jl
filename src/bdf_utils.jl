@@ -58,11 +58,12 @@ end
 # Implementation of an Adaptive BDF2 Formula and Comparison with the MATLAB Ode15s paper
 # E. Alberdi Celaya, J. J. Anza Aguirrezabala, and P. Chatzipantelidis
 function reinterpolate_history!(cache, D, R, k)
-  @unpack tmp = cache
+  local tmp
   if typeof(cache) <: OrdinaryDiffEqMutableCache
+    @unpack tmp = cache
     fill!(tmp,zero(eltype(D[1])))
   else
-    tmp = zero(eltype(D))
+    tmp = zero(D[1])
   end
   for j = 1:k
     for k = 1:k
@@ -77,7 +78,6 @@ function reinterpolate_history!(cache, D, R, k)
       fill!(tmp,zero(eltype(D[1])))
     else
       D[j] = tmp
-      tmp = zero(eltype(D))
     end
   end
 end
