@@ -48,23 +48,11 @@ function alg_cache(alg::RichardsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomE
   RichardsonEulerConstantCache(dtpropose,T,cur_order,work,A,step_no)
 end
 
-@cache mutable struct ExtrapolationMidpointDeuflhardCache{uType,uNoUnitsType,rateType,dtType,QT} <: OrdinaryDiffEqMutableCache
-  u::uType
-  uprev::uType
-  utilde::uType
-  tmp::uType
-  atmp::uNoUnitsType
-  k::rateType
-  fsalfirst::rateType
-  proposed_extrapolation_order::Int
-  constant_cache::ExtrapolationMidpointDeuflhardConstantCache
-end
-
-@cache mutable struct ExtrapolationMidpointDeuflhardConstantCache{dtType,QT} <: OrdinaryDiffEqConstantCache
+@cache mutable struct ExtrapolationMidpointDeuflhardConstantCache{dtType,QType} <: OrdinaryDiffEqConstantCache
   dtpropose::dtType
-  Q::Vector{QT} # storage for scaling factors of stepsize
+  Q::Vector{QType} # storage for scaling factors of stepsize
   current_extrapolation_order::Int
-  subdividing_sequence::Array{Rational{BigInt},1}
+  subdividing_sequence::Array{BigInt,1}
   # weights and scaling factors for extrapolation operators:
   extrapolation_weights::Array{Rational{BigInt},2}
   extrapolation_scalars::Array{Rational{BigInt},1}
@@ -74,11 +62,11 @@ end
 end
 
 function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  QT = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # cf. DiffEqBase.__init in solve.jl
+  QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # cf. DiffEqBase.__init in solve.jl
   N = alg.max_extrapolation_order # for readability
 
   dtpropose = zero(dt)
-  Q = fill(zero(QT),N - alg.min_extrapolation_order + 1)
+  Q = fill(zero(QType),N - alg.min_extrapolation_order + 1)
   current_extrapolation_order = alg.init_extrapolation_order
 
   # initialize subdividing_sequence:
@@ -132,14 +120,25 @@ function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeN
   ExtrapolationMidpointDeuflhardConstantCache(dtpropose, Q, current_extrapolation_order,subdividing_sequence, extrapolation_weights, extrapolation_scalars,extrapolation_weights_2, extrapolation_scalars_2)
 end
 
+@cache mutable struct ExtrapolationMidpointDeuflhardCache{uType,uNoUnitsType,rateType,dtType,QType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  utilde::uType
+  tmp::uType
+  atmp::uNoUnitsType
+  k::rateType
+  fsalfirst::rateType
+  proposed_extrapolation_order::Int
+  constant_cache::ExtrapolationMidpointDeuflhardConstantCache
+end
+
 function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  uprev = similar(u)
   utilde = similar(u)
-  temp = similar(u)
+  tmp = similar(u)
   atmp = similar(u,uEltypeNoUnits)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
-  proposed_extrapolation_order = zero(Int)
-  constant_cache = alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  ExtrapolationMidpointDeuflhard(u,uprev,utilde,tmp,atmp,k,fsalfirst,proposed_extrapolation_order,constant_cache)
+  proposed_extrapolation_order = alg.init_extrapolation_order # order of first step is set by user
+  constant_cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val{false})
+  ExtrapolationMidpointDeuflhardCache(u,uprev,utilde,tmp,atmp,k,fsalfirst,proposed_extrapolation_order,constant_cache)
 end
