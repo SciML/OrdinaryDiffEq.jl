@@ -602,8 +602,8 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
   # error estimate
   if isnewton(nlsolver) && integrator.opts.adaptive
     update_W!(integrator, cache, dt, false)
-    utilde = get_W(nlsolver)*dt*(0.5*(cache.du₂ - du₂) + (0.5 - μs₁)*(cache.du₁ - du₁))
-    atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+    tmp = get_W(nlsolver)*dt*(0.5*(cache.du₂ - du₂) + (0.5 - μs₁)*(cache.du₁ - du₁))
+    atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
@@ -630,7 +630,7 @@ end
 
 function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p,alg = integrator
-  @unpack tmp,gprev,gprev2,k,f1ⱼ₋₁,f1ⱼ₋₂,f2ⱼ₋₁,utilde,du₁,du₂,z,W,atmp,nlsolver = cache
+  @unpack tmp,gprev,gprev2,k,f1ⱼ₋₁,f1ⱼ₋₂,f2ⱼ₋₁,du₁,du₂,z,W,atmp,nlsolver = cache
   @unpack minm = cache.constantcache
   @unpack f1, f2 = integrator.f
 
@@ -662,17 +662,15 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   # else # :constant
   #   @. z = zero(eltype(u))
   # end
-  @. z = dt*du₁
+  @. nlsolver.z = dt*du₁
 
-  @. tmp = uprev + dt*μs₁*du₂
-  @. nlsolver.tmp = tmp
-  @. nlsolver.z   = z
+  @. nlsolver.tmp = uprev + dt*μs₁*du₂
   nlsolver.γ   = μs₁
   nlsolver.c   = μs
   z,η,iter,fail_convergence = nlsolve!(integrator, cache)
   # ignoring newton method's convergence failure
   # fail_convergence && return
-  @. gprev = tmp + μs₁*z
+  @. gprev = nlsolver.tmp + μs₁*nlsolver.z
   nlsolver.ηold = η
   nlsolver.nl_iters = iter
 
@@ -700,14 +698,13 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
     f1(f1ⱼ₋₁, gprev, p, t+Cⱼ₋₁*dt)
     f2(f2ⱼ₋₁, gprev, p, t+Cⱼ₋₁*dt)
     integrator.destats.nf += 2
-    @. tmp = (1-μ-ν)*uprev + μ*gprev + ν*gprev2 + dt*μs*f2ⱼ₋₁ + dt*νs*du₂ + (νs - (1-μ-ν)*μs₁)*dt*du₁ - ν*μs₁*dt*f1ⱼ₋₂
-    @. z   = dt*f1ⱼ₋₁
+    @. nlsolver.tmp = (1-μ-ν)*uprev + μ*gprev + ν*gprev2 + dt*μs*f2ⱼ₋₁ + dt*νs*du₂ + (νs - (1-μ-ν)*μs₁)*dt*du₁ - ν*μs₁*dt*f1ⱼ₋₂
+    @. nlsolver.z   = dt*f1ⱼ₋₁
     nlsolver.c = Cⱼ
-    @. nlsolver.tmp = tmp
-    @. nlsolver.z   = z
+
     z,η,iter,fail_convergence = nlsolve!(integrator, cache)
     # fail_convergence && return
-    @. u = tmp + μs₁*z
+    @. u = nlsolver.tmp + μs₁*nlsolver.z
     nlsolver.ηold = η
     nlsolver.nl_iters = iter
     if (iter < mdeg)
@@ -735,8 +732,8 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   # error estimate
   if isnewton(nlsolver) && integrator.opts.adaptive
     update_W!(integrator, cache, dt, false)
-    @. utilde = get_W(nlsolver)*dt*(0.5*(du₂ - f2ⱼ₋₁) + (0.5 - μs₁)*(du₁ - f1ⱼ₋₁))
-    calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+    @. tmp = get_W(nlsolver)*dt*(0.5*(du₂ - f2ⱼ₋₁) + (0.5 - μs₁)*(du₁ - f1ⱼ₋₁))
+    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 

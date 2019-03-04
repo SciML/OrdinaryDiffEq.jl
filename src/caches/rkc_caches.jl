@@ -145,7 +145,6 @@ end
   dz::uType
   b::uType
   tmp::uType
-  utilde::uType
   atmp::uNoUnitsType
   J::JType
   W::WType
@@ -174,7 +173,6 @@ function alg_cache(alg::IRKC,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   gprev = similar(u)
   gprev2 = similar(u)
   tmp = similar(u)
-  utilde = similar(u)
   atmp = similar(u,uEltypeNoUnits)
   fsalfirst = zero(rate_prototype)
   k  = zero(rate_prototype)
@@ -186,5 +184,5 @@ function alg_cache(alg::IRKC,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   du₁ = zero(rate_prototype)
   du₂ = zero(rate_prototype)
   constantcache = IRKCConstantCache(50,zprev,k2,uf,nlsolver,du₁,du₂)
-  IRKCCache(u,uprev,gprev,gprev2,fsalfirst,k,du1,f1ⱼ₋₁,f1ⱼ₋₂,f2ⱼ₋₁,z,dz,b,tmp,utilde,atmp,J,W,uf,jac_config,linsolve,nlsolver,du₁,du₂,constantcache)
+  IRKCCache(u,uprev,gprev,gprev2,fsalfirst,k,du1,f1ⱼ₋₁,f1ⱼ₋₂,f2ⱼ₋₁,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolver,du₁,du₂,constantcache)
 end
