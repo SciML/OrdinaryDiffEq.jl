@@ -342,7 +342,7 @@ end
 Base.@pure QNDF(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                 linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),κ=nothing,tol=nothing,
                 extrapolant=:linear,new_jac_conv_bound = 1e-3,kappa=promote(-0.1850,-1//9,-0.0823,-0.0415,0),
-                controller = :Predictive) =
+                controller = :Standard) =
                 QNDF{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),
                 typeof(κ),typeof(tol),typeof(new_jac_conv_bound),typeof(kappa)}(
                 linsolve,nlsolve,diff_type,κ,tol,extrapolant,new_jac_conv_bound,kappa,controller)
