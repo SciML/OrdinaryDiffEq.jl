@@ -10,6 +10,7 @@ Random.seed!(100)
 ## Convergence Testing
 dts = 1 .//2 .^(8:-1:4)
 dts1 = 1 .//2 .^(9:-1:5)
+dts2 = 1 .//2 .^(7:-1:3)
 testTol = 0.2
 
 for i = 1:2
@@ -25,6 +26,13 @@ for i = 1:2
   @test sim2.𝒪est[:l∞] ≈ 2 atol=testTol
   sim3 = test_convergence(dts,prob,RK4())
   @test sim3.𝒪est[:l∞] ≈ 4 atol=testTol
+  
+  sim3 = test_convergence(dts2,prob,KuttaPRK2p5(threading=true))
+  @test sim3.𝒪est[:l∞] ≈ 5 atol=testTol
+
+  sim3 = test_convergence(dts2,prob,KuttaPRK2p5(threading=false))
+  @test sim3.𝒪est[:l∞] ≈ 5 atol=testTol
+
   sim4 = test_convergence(dts,prob,BS3())
   @test sim4.𝒪est[:l2] ≈ 3 atol=testTol
   sim5 = test_convergence(dts, prob, AB3())
