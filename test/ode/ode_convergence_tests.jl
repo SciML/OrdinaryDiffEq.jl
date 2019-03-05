@@ -161,6 +161,7 @@ for i = 1:2
   @test sim.𝒪est[:final] ≈ 2 atol=testTol
   @test sim.𝒪est[:l2] ≈ 2 atol=testTol
   @test sim.𝒪est[:l∞] ≈ 2 atol=testTol
+  @test_nowarn solve(prob, QNDF())
 
   # MEBDF2
   sim21 = test_convergence(dts,prob,MEBDF2(extrapolant = :linear))
