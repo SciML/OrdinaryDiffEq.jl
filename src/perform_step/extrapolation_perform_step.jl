@@ -1,4 +1,4 @@
-function initialize!(integrator,cache::RichardsonEulerCache)
+function initialize!(integrator,cache::AitkenNevilleCache)
   integrator.kshortsize = 2
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
@@ -13,7 +13,7 @@ function initialize!(integrator,cache::RichardsonEulerCache)
   cache.cur_order = max(integrator.alg.init_order, integrator.alg.min_order)
 end
 
-function perform_step!(integrator,cache::RichardsonEulerCache,repeat_step=false)
+function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k,fsalfirst,T,utilde,atmp,dtpropose,cur_order,A = cache
 
@@ -85,7 +85,7 @@ function perform_step!(integrator,cache::RichardsonEulerCache,repeat_step=false)
   integrator.destats.nf += 1
 end
 
-function initialize!(integrator,cache::RichardsonEulerConstantCache)
+function initialize!(integrator,cache::AitkenNevilleConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -99,7 +99,7 @@ function initialize!(integrator,cache::RichardsonEulerConstantCache)
   cache.cur_order = max(integrator.alg.init_order, integrator.alg.min_order)
 end
 
-function perform_step!(integrator,cache::RichardsonEulerConstantCache,repeat_step=false)
+function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
   @unpack dtpropose, T, cur_order, work, A = cache
   @muladd u = @. uprev + dt*integrator.fsalfirst

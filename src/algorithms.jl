@@ -37,12 +37,12 @@ struct KuttaPRK2p5 <: OrdinaryDiffEqAlgorithm
 end
 KuttaPRK2p5(;threading=true) = KuttaPRK2p5(threading)
 
-struct RichardsonEuler <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
+struct AitkenNeville <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
   max_order::Int
   min_order::Int
   init_order::Int
 end
-RichardsonEuler(;max_order=9,min_order=1,init_order=5) = RichardsonEuler(max_order,min_order,init_order)
+AitkenNeville(;max_order=9,min_order=1,init_order=5) = AitkenNeville(max_order,min_order,init_order)
 
 struct RK46NL <: OrdinaryDiffEqAlgorithm end
 struct Heun <: OrdinaryDiffEqAdaptiveAlgorithm end

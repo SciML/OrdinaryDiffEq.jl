@@ -225,7 +225,7 @@ module OrdinaryDiffEq
   export AutoSwitch, AutoTsit5, AutoDP5,
          AutoVern6, AutoVern7, AutoVern8, AutoVern9
 
-  export RichardsonEuler
+  export AitkenNeville
 
   export KuttaPRK2p5
 
