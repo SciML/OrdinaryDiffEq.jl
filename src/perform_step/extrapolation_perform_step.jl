@@ -52,8 +52,8 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
 
           A = 2^(i-1)
           @. utilde = T[i,i] - T[i,i-1]
-          atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-          EEst = integrator.opts.internalnorm(atmp)
+          atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+          EEst = integrator.opts.internalnorm(atmp,t)
 
           beta1 = integrator.opts.beta1
           e = integrator.EEst
@@ -136,8 +136,8 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
 
           A = 2^(i-1)
           utilde = T[i,i] - T[i,i-1]
-          atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
-          EEst = integrator.opts.internalnorm(atmp)
+          atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+          EEst = integrator.opts.internalnorm(atmp,t)
 
           beta1 = integrator.opts.beta1
           e = integrator.EEst
