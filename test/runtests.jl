@@ -60,6 +60,7 @@ if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_I" )
   # ~ 50 s
   @time @safetestset "Nordsieck Tests" begin include("ode/nordsieck_tests.jl") end
   @time @safetestset "Linear Methods Tests" begin include("linear_method_tests.jl") end
+  @time @safetestset "Extrapolation Tests" begin include("ode/ode_extrapolation_tests.jl") end
 end
 
 if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_II" )
