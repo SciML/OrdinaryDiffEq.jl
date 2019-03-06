@@ -214,5 +214,5 @@ for i = 1:2
   @test_broken sim115.𝒪est[:final] ≈ 5 atol=testTol
 
   sim116 = test_convergence(dts,prob,ESDIRK54I8L2SA())
-  @test_broken sim116.𝒪est[:final] ≈ 5 atol=testTol
+  @test sim116.𝒪est[:final] ≈ 5 atol=testTol
 end
