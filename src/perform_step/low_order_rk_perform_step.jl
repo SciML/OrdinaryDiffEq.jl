@@ -868,6 +868,7 @@ function initialize!(integrator,cache::KYK2014DGSSPRK_3S2_Cache)
  integrator.kshortsize = 2
  resize!(integrator.k, integrator.kshortsize)
  integrator.k[1] = integrator.fsalfirst
+ integrator.k[2] = integrator.fsallast
  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
 end
 
@@ -887,7 +888,5 @@ end
   α_30 * uprev + dt*β_30*integrator.fsalfirst +
   α_32 * u_2 + dt*β_32*kk_2
  )
- integrator.k[1] .= integrator.fsalfirst
  f(integrator.k[2], integrator.u, p, t+dt) # For interpolation, then FSAL'd
- integrator.fsallast = integrator.k[2]
 end
