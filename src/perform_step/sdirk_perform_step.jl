@@ -5,7 +5,8 @@ function initialize!(integrator, cache::Union{ImplicitEulerConstantCache,
                                               SDIRK2ConstantCache,
                                               SSPSDIRK2ConstantCache,
                                               Cash4ConstantCache,
-                                              Hairer4ConstantCache})
+                                              Hairer4ConstantCache,
+                                              ESDIRK54I8L2SAConstantCache})
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -24,7 +25,8 @@ function initialize!(integrator, cache::Union{ImplicitEulerCache,
                                               SDIRK2Cache,
                                               SSPSDIRK2Cache,
                                               Cash4Cache,
-                                              Hairer4Cache})
+                                              Hairer4Cache,
+                                              ESDIRK54I8L2SACache})
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
@@ -1017,4 +1019,218 @@ end
   end
 
   @. integrator.fsallast = z₅/dt
+end
+
+@muladd function perform_step!(integrator, cache::ESDIRK54I8L2SAConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack γ,
+          a31, a32,
+          a41, a42, a43,
+          a51, a52, a53, a54,
+          a61, a62, a63, a64, a65,
+          a71, a72, a73, a74, a75, a76,
+          a81, a82, a83, a84, a85, a86, a87,
+                    c3,  c4,  c5,  c6,  c7,
+          btilde1, btilde2, btilde3, btilde4, btilde5, btilde6, btilde7, btilde8 = cache.tab
+  nlsolver = cache.nlsolver
+  alg = unwrap_alg(integrator, true)
+
+  # precalculations
+  γdt = γ*dt
+  update_W!(integrator, cache, γdt, repeat_step)
+
+  # TODO: Add extrapolation for guess
+
+  ##### Step 1
+
+  z₁ = dt*integrator.fsalfirst
+
+  ##### Step 2
+
+  # TODO: Add extrapolation choice
+  nlsolver.z = z₂ = zero(z₁)
+
+  nlsolver.tmp = uprev + γ*z₁
+  nlsolver.c = 2γ
+  z₂,η,iter,fail_convergence = nlsolve!(integrator, cache)
+  fail_convergence && return
+
+  ################################## Solve Step 3
+
+  nlsolver.z = z₃ = zero(z₂)
+
+  nlsolver.tmp = uprev + a31*z₁ + a32*z₂
+  nlsolver.c = c3
+  z₃,η,iter,fail_convergence = nlsolve!(integrator, cache)
+  fail_convergence && return
+
+  ################################## Solve Step 4
+
+  nlsolver.z = z₄ = zero(z₃)
+
+  nlsolver.tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
+  nlsolver.c = c4
+  z₄,η,iter,fail_convergence = nlsolve!(integrator, cache)
+  fail_convergence && return
+
+  ################################## Solve Step 5
+
+  nlsolver.z = z₅ = zero(z₄)
+
+  nlsolver.tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
+  nlsolver.c = c5
+  z₅,η,iter,fail_convergence = nlsolve!(integrator, cache)
+  fail_convergence && return
+
+  ################################## Solve Step 6
+
+  nlsolver.z = z₆ = zero(z₅)
+
+  nlsolver.tmp = uprev + a61*z₁ + a62*z₂+ a63*z₃ + a64*z₄ + a65*z₅
+  nlsolver.c = c6
+  z₆,η,iter,fail_convergence = nlsolve!(integrator, cache)
+  fail_convergence && return
+
+  ################################## Solve Step 7
+
+  nlsolver.z = z₇ = zero(z₆)
+
+  nlsolver.tmp = uprev + a71*z₁ + a72*z₂ + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
+  nlsolver.c = c7
+  z₇,η,iter,fail_convergence = nlsolve!(integrator, cache)
+  fail_convergence && return
+
+  ################################## Solve Step 8
+
+  nlsolver.z = z₈ = zero(z₇)
+
+  nlsolver.tmp = uprev + a81*z₁ + a82*z₂ + a83*z₃ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇
+  nlsolver.c = 1
+  z₈,η,iter,fail_convergence = nlsolve!(integrator, cache)
+  fail_convergence && return
+
+  u = nlsolver.tmp + γ*z₈
+
+  ################################### Finalize
+
+  nlsolver.ηold = η
+  nlsolver.nl_iters = iter
+
+  if integrator.opts.adaptive
+    est = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇ + btilde8*z₈
+    atmp = calculate_residuals(est, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+  end
+
+  integrator.fsallast = z₈./dt
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+  return
+end
+
+@muladd function perform_step!(integrator, cache::ESDIRK54I8L2SACache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,k,b,tmp,atmp,nlsolver = cache
+  @unpack γ,
+          a31, a32,
+          a41, a42, a43,
+          a51, a52, a53, a54,
+          a61, a62, a63, a64, a65,
+          a71, a72, a73, a74, a75, a76,
+          a81, a82, a83, a84, a85, a86, a87,
+                    c3,  c4,  c5,  c6,  c7,
+          btilde1, btilde2, btilde3, btilde4, btilde5, btilde6, btilde7, btilde8 = cache.tab
+  alg = unwrap_alg(integrator, true)
+
+  # precalculations
+  γdt = γ*dt
+  update_W!(integrator, cache, γdt, repeat_step)
+
+  ##### Step 1
+
+  @. z₁ = dt*integrator.fsalfirst
+
+  ##### Step 2
+
+  # TODO: Add extrapolation for guess
+  z₂ .= zero(eltype(u))
+  nlsolver.z = z₂
+
+  @. tmp = uprev + γ*z₁
+  nlsolver.c = 2γ
+  z₂,η,iter,fail_convergence = nlsolve!(integrator, cache)
+  fail_convergence && return
+  set_new_W!(nlsolver, false)
+
+  ################################## Solve Step 3
+
+  nlsolver.z = fill!(z₃, zero(eltype(u)))
+
+  @. tmp = uprev + a31*z₁ + a32*z₂
+  nlsolver.c = c3
+  z₃,η,iter,fail_convergence = nlsolve!(integrator, cache)
+  fail_convergence && return
+
+  ################################## Solve Step 4
+
+  # Use constant z prediction
+  nlsolver.z = fill!(z₄, zero(eltype(u)))
+
+  @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
+  nlsolver.c = c4
+  z₄,η,iter,fail_convergence = nlsolve!(integrator, cache)
+  fail_convergence && return
+
+  ################################## Solve Step 5
+
+  nlsolver.z = fill!(z₅, zero(eltype(u)))
+
+  @. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
+  nlsolver.c = c5
+  z₅,η,iter,fail_convergence = nlsolve!(integrator, cache)
+  fail_convergence && return
+
+  ################################## Solve Step 6
+
+  nlsolver.z = fill!(z₆, zero(eltype(u)))
+
+  @. tmp = uprev + a61*z₁ + a62*z₂ + a63*z₃ + a64*z₄ + a65*z₅
+  nlsolver.c = c6
+  z₆,η,iter,fail_convergence = nlsolve!(integrator, cache)
+  fail_convergence && return
+
+  ################################## Solve Step 7
+
+  nlsolver.z = fill!(z₇, zero(eltype(u)))
+
+  @. tmp = uprev + a71*z₁ + a72*z₂ + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
+  nlsolver.c = c7
+  z₇,η,iter,fail_convergence = nlsolve!(integrator, cache)
+  fail_convergence && return
+
+  ################################## Solve Step 8
+
+  nlsolver.z = fill!(z₈, zero(eltype(u)))
+
+  @. nlsolver.tmp = uprev + a81*z₁ + a82*z₂ + a83*z₃ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇
+  nlsolver.c = oneunit(nlsolver.c)
+  z₈,η,iter,fail_convergence = nlsolve!(integrator, cache)
+  fail_convergence && return
+
+  @. u = tmp + γ*z₈
+
+  ################################### Finalize
+
+  nlsolver.ηold = η
+  nlsolver.nl_iters = iter
+
+  if integrator.opts.adaptive
+    @. tmp = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇ + btilde8*z₈
+    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+  end
+
+  @. integrator.fsallast = z₈/dt
+  return
 end
