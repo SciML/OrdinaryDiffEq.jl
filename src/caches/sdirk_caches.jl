@@ -424,3 +424,51 @@ function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,
   Hairer4Cache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,dz,b,tmp,atmp,J,
                W,uf,jac_config,linsolve,nlsolver,tab)
 end
+
+@cache mutable struct ESDIRK54I8L2SACache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,Tab,F,N} <: SDIRKMutableCache
+  u::uType
+  uprev::uType
+  du1::rateType
+  fsalfirst::rateType
+  k::rateType
+  z₁::uType; z₂::uType; z₃::uType; z₄::uType; z₅::uType; z₆::uType; z₇::uType; z₈::uType
+  dz::uType
+  b::uType
+  tmp::uType
+  atmp::uNoUnitsType
+  J::JType
+  W::WType
+  uf::UF
+  jac_config::JC
+  linsolve::F
+  nlsolver::N
+  tab::Tab
+end
+
+function alg_cache(alg::ESDIRK54I8L2SA,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tab = ESDIRK54I8L2SATableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  γ, c = tab.γ, tab.γ
+  @iipnlsolve
+
+  z₁ = zero(u); z₂ = zero(u); z₃ = zero(u); z₄ = zero(u)
+  z₅ = zero(u); z₆ = zero(u); z₇ = zero(u); z₈ = z
+  atmp = similar(u,uEltypeNoUnits)
+
+  ESDIRK54I8L2SACache(u,uprev,du1,fsalfirst,k,z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,dz,b,tmp,atmp,J,
+               W,uf,jac_config,linsolve,nlsolver,tab)
+end
+
+mutable struct ESDIRK54I8L2SAConstantCache{F,N,Tab} <: OrdinaryDiffEqConstantCache
+  uf::F
+  nlsolver::N
+  tab::Tab
+end
+
+function alg_cache(alg::ESDIRK54I8L2SA,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  tab = ESDIRK54I8L2SATableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  γ, c = tab.γ,tab.γ
+  @oopnlsolve
+  ESDIRK54I8L2SAConstantCache(uf,nlsolver,tab)
+end

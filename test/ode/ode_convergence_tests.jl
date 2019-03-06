@@ -212,4 +212,7 @@ for i = 1:2
 
   sim115 = test_convergence(dts,prob,KenCarp5(nlsolve = NLFunctional()))
   @test_broken sim115.𝒪est[:final] ≈ 5 atol=testTol
+
+  sim116 = test_convergence(dts,prob,ESDIRK54I8L2SA())
+  @test sim116.𝒪est[:final] ≈ 5 atol=testTol
 end

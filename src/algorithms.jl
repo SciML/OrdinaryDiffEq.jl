@@ -704,6 +704,22 @@ KenCarp5(;chunk_size=0,autodiff=true,diff_type=Val{:central},
         typeof(new_jac_conv_bound),controller}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,new_jac_conv_bound)
 
+# `smooth_est` is not necessary, as the embedded method is also L-stable
+struct ESDIRK54I8L2SA{CS,AD,F,F2,FDT,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
+  linsolve::F
+  nlsolve::F2
+  diff_type::FDT
+  extrapolant::Symbol
+  new_jac_conv_bound::T2
+end
+ESDIRK54I8L2SA(;chunk_size=0,autodiff=true,diff_type=Val{:central},
+                   linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
+                   extrapolant=:linear,new_jac_conv_bound = 1e-3,
+                   controller = :Predictive) =
+ ESDIRK54I8L2SA{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),
+        typeof(new_jac_conv_bound),controller}(
+        linsolve,nlsolve,diff_type,extrapolant,new_jac_conv_bound)
+
 ################################################################################
 
 # Rosenbrock Methods
