@@ -55,9 +55,9 @@ end
 
   # other stages
   for i in eachindex(A2end)
-    f(k, u, p, t+c2end[i]*dt)
+    @. tmp = A2end[i]*tmp
+    f(WilliamsonWrapper{typeof(tmp),typeof(dt)}(tmp,dt), u, p, t+c2end[i]*dt)
     integrator.destats.nf += 1
-    @. tmp = A2end[i]*tmp + dt*k
     @. u   = u + B2end[i]*tmp
   end
 
@@ -65,7 +65,12 @@ end
   integrator.destats.nf += 1
 end
 
+struct WilliamsonWrapper{kType, dtType}
+  kref::kType
+  dt::dtType
+end
 
+Base.setindex!(a::WilliamsonWrapper{kType, dtType}, b::bType, c::cType) where {kType, dtType, bType, cType} = (a.kref[c] += a.dt * b) 
 
 # 2C low storage methods
 function initialize!(integrator,cache::LowStorageRK2CConstantCache)
