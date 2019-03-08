@@ -173,3 +173,89 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
 
   # Use extrapolated value of u
 end
+
+function prediction!(integrator,cache::RichardsonEulerConstantCache,temp_dt)
+  @unpack t,dt,uprev,fsalfirst,f,p = integrator
+  @unpack T = cache
+  @muladd u = @. uprev + temp_dt*fsalfirst
+  k = f(u, p, t+temp_dt)
+  integrator.destats.nf += 1
+  n = Int(dt/temp_dt)
+  for i in 2:n
+    @muladd u = @. u + temp_dt*k
+    k = f(u, p, t+i*temp_dt)
+    integrator.destats.nf += 1
+  end
+  T[n,1] = u
+end
+
+function prediction!(integrator,cache::RichardsonEulerCache,temp_dt)
+  @unpack t,dt,u,uprev,f,p = integrator
+  @unpack k,fsalfirst,T = cache
+  @muladd @. u = uprev + temp_dt*fsalfirst
+  # println("initial k",k)
+  n = Int(dt/temp_dt)
+  f(k, u, p, t+temp_dt)
+  integrator.destats.nf += 1
+  for i in 2:n
+      @muladd @. u = u + temp_dt*k
+      f(k, u, p, t+i*temp_dt)
+      integrator.destats.nf += 1
+  end
+  T[n,1] = copy(u)
+end
+
+function initialize!(integrator,cache::RichardsonEulerConstantCache)
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
+
+function perform_step!(integrator,cache::RichardsonEulerConstantCache,repeat_step=false)
+  @unpack t,dt,f,p = integrator
+  @unpack T = cache
+
+  prediction!(integrator,cache,dt)
+  prediction!(integrator,cache,dt/2)
+
+  # Classic Richardson extrapolation
+  T[2,2] = (2*T[2,1] - T[1,1])/(2 - 1)
+  integrator.u = T[2,2]
+
+  k = f(integrator.u, p, t+dt)
+  integrator.destats.nf += 1
+  integrator.fsallast = k
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
+
+function initialize!(integrator,cache::RichardsonEulerCache)
+  integrator.kshortsize = 2
+  @unpack k,fsalfirst = cache
+  integrator.fsalfirst = fsalfirst
+  integrator.fsallast = k
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # For the interpolation, needs k at the updated point
+  integrator.destats.nf += 1
+end
+
+function perform_step!(integrator,cache::RichardsonEulerCache,repeat_step=false)
+  @unpack t,dt,u,f,p = integrator
+  @unpack k,T = cache
+  prediction!(integrator,cache,dt)
+  prediction!(integrator,cache,dt/2)
+  T[2,2] = (2*T[2,1] - T[1,1])/(2-1)
+
+  # using extrapolated value of u
+  @. u = T[2,2]
+  f(k, u, p, t+dt)
+  integrator.destats.nf += 1
+end
