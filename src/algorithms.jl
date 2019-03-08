@@ -383,6 +383,10 @@ JVODE_BDF(;kwargs...) = JVODE(:BDF;kwargs...)
 # ROCK methods
 struct ROCK2 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct ROCK4 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
+# ESERK methods
+struct ESERK5 <: OrdinaryDiffEqAdaptiveAlgorithm end
+
 # RKC mehtods
 struct RKC <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct IRKC{CS,AD,F,F2,FDT,K,T,T2,κType,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}

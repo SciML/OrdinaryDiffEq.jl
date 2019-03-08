@@ -1,10 +1,10 @@
 # This function calculates the largest eigenvalue
 # (absolute value wise) by power iteration.
-const RKCAlgs = Union{RKC,IRKC}
+const RKCAlgs = Union{RKC,IRKC,ESERK5}
 function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
   isfirst = integrator.iter == 1 || integrator.u_modified
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
-  maxiter = 50
+  maxiter = (integrator.alg isa ESERK5) ? 100 : 50
 
   safe = (typeof(integrator.alg) <: RKCAlgs) ? 1.0 : 1.2
   # Initial guess for eigenvector `z`
@@ -99,7 +99,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
   fz, z, atmp = cache.k, cache.tmp, cache.atmp
   ccache = cache.constantcache
-  maxiter = 50
+  maxiter = (integrator.alg isa ESERK5) ? 100 : 50
   safe = (typeof(integrator.alg) <: RKCAlgs) ? 1.0 : 1.2
   # Initial guess for eigenvector `z`
   if isfirst
@@ -209,3 +209,34 @@ for the `mdeg` degree method.
     end
     return nothing
   end
+
+
+function choosedeg_ESERK!(cache::T) where T
+  isconst = T <: OrdinaryDiffEqConstantCache
+  isconst || ( cache = cache.constantcache )
+  @unpack ms = cache
+  start = 1
+  @inbounds for i in 1:size(ms,1)
+    if ms[i] < cache.mdeg
+      start += ms[i]+1
+    else
+      cache.start = start
+      cache.mdeg = ms[i]
+      break
+    end
+  end
+  if cache.mdeg <= 20
+    cache.internal_deg = 2
+  elseif cache.mdeg <= 50
+    cache.internal_deg = 5
+  elseif cache.mdeg <= 100
+    cache.internal_deg = 10
+  elseif cache.mdeg <= 500
+    cache.internal_deg = 50
+  elseif cache.mdeg <= 1000
+    cache.internal_deg = 100
+  elseif cache.mdeg <= 2000
+    cache.internal_deg = 200
+  end
+  return nothing
+end

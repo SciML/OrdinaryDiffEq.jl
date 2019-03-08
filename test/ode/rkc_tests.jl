@@ -6,9 +6,9 @@ probArr = Vector{ODEProblem}(undef, 2)
 probArr[1] = prob_ode_linear
 probArr[2] = prob_ode_2Dlinear
 
-Random.seed!(123)
 @testset "Power Iteration of Runge-Kutta-Chebyshev Tests" begin
-  for i in 1:10, iip in [true, false], alg in [ROCK2(), ROCK4(), RKC()]
+  Random.seed!(123)
+  for i in 1:10, iip in [true, false], alg in [ROCK2(), ROCK4(), RKC(), ESERK5()]
     A = randn(20,20)
     test_f(u,p,t) = A*u
     test_f(du,u,p,t) = mul!(du, A, u)
@@ -20,6 +20,7 @@ Random.seed!(123)
     @test eigest ≈ eigm rtol=0.1eigm
   end
 
+  Random.seed!(123)
   for i in 1:10, alg in [IRKC()]
     A = randn(20,20)
     B = randn(20,20)
@@ -54,5 +55,10 @@ end
     @test sim.𝒪est[:l∞] ≈ 4 atol=testTol
     sim = test_convergence(dts,prob,RKC())
     @test sim.𝒪est[:l∞] ≈ 2 atol=testTol
+  end
+  dts = 1 .//2 .^(6:-1:2)
+  for prob in probArr
+    sim = test_convergence(dts,prob,ESERK5())
+    @test sim.𝒪est[:l∞] ≈ 5 atol=testTol
   end
 end

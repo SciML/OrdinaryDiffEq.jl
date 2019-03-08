@@ -743,3 +743,160 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   integrator.u = u
   @. k = du₁ + du₂
 end
+
+function initialize!(integrator, cache::ESERK5ConstantCache)
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.destats.nf += 1
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
+
+@muladd function perform_step!(integrator, cache::ESERK5ConstantCache, repeat_step=false)
+  @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+  @unpack ms, Cᵤ, Cₑ, Bᵢ= cache
+  maxeig!(integrator, cache)
+
+  mdeg = Int(floor(sqrt(abs(dt)*integrator.eigen_est/0.98))+1)
+  mdeg = (mdeg > 2000) ? 2000 : mdeg
+  cache.mdeg = mdeg
+  choosedeg_ESERK!(cache)
+  mdeg = cache.mdeg
+  start = cache.start
+  internal_deg = cache.internal_deg
+  α = 100.0/(49.0*mdeg^2)
+
+  u = zero(uprev)
+  tmp = zero(uprev)
+  for i in 1:5
+    hᵢ = dt/i
+    tᵢ = t
+    Sᵢ = zero(u)
+    uᵢ₋₁ = uprev
+    uᵢ₋₂ = zero(u)
+    for j in 1:i
+      r  = tᵢ
+      Sᵢ = (Bᵢ[start])*uᵢ₋₁
+      for st in 1:mdeg
+        k = f(uᵢ₋₁, p, r)
+        integrator.destats.nf += 1
+
+        if st%internal_deg == 1
+          uᵢ = uᵢ₋₁ + α*hᵢ*k
+        else
+          uᵢ = 2*uᵢ₋₁ - uᵢ₋₂ + 2*α*hᵢ*k
+        end
+        q = convert(Int, floor(st/internal_deg))
+        r = tᵢ + α*(st^2 + q*internal_deg^2)*hᵢ
+        Sᵢ = Sᵢ + (Bᵢ[start+st])*uᵢ
+        if st < mdeg
+          uᵢ₋₂ = uᵢ₋₁
+          uᵢ₋₁ = uᵢ
+        end
+      end
+
+      if j < i
+        tᵢ = tᵢ + hᵢ
+        uᵢ₋₁ = Sᵢ
+      end
+    end
+
+    u = u + Cᵤ[i]*Sᵢ
+    integrator.opts.adaptive && (tmp = tmp + Cₑ[i]*Sᵢ)
+  end
+
+  u = u/24
+  if integrator.opts.adaptive
+    tmp = tmp/24
+    atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+  end
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast = f(u, p, t+dt)
+  integrator.destats.nf += 1
+  integrator.u = u
+end
+
+function initialize!(integrator, cache::ESERK5Cache)
+  integrator.kshortsize = 2
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.k
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+  integrator.destats.nf += 1
+end
+
+@muladd function perform_step!(integrator, cache::ESERK5Cache, repeat_step=false)
+  @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+  @unpack uᵢ, uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, k = cache
+  @unpack ms, Cᵤ, Cₑ, Bᵢ = cache.constantcache
+  ccache = cache.constantcache
+  maxeig!(integrator, cache)
+
+  mdeg = Int(floor(sqrt(abs(dt)*integrator.eigen_est/0.98))+1)
+  mdeg = (mdeg > 2000) ? 2000 : mdeg
+  ccache.mdeg = mdeg
+  choosedeg_ESERK!(cache)
+  mdeg = ccache.mdeg
+  start = ccache.start
+  internal_deg = ccache.internal_deg
+  α = 100.0/(49.0*mdeg^2)
+
+  @. u = zero(uprev)
+  @. tmp = zero(uprev)
+  for i in 1:5
+    hᵢ = dt/i
+    tᵢ = t
+    @. Sᵢ = zero(u)
+    @. uᵢ₋₁ = uprev
+    @. uᵢ₋₂ = zero(u)
+    for j in 1:i
+      r  = tᵢ
+      @. Sᵢ = (Bᵢ[start])*uᵢ₋₁
+      for st in 1:mdeg
+        f(k, uᵢ₋₁, p, r)
+        integrator.destats.nf += 1
+
+        if st%internal_deg == 1
+          @. uᵢ = uᵢ₋₁ + α*hᵢ*k
+        else
+          @. uᵢ = 2*uᵢ₋₁ - uᵢ₋₂ + 2*α*hᵢ*k
+        end
+        q = convert(Int, floor(st/internal_deg))
+        r = tᵢ + α*(st^2 + q*internal_deg^2)*hᵢ
+        @. Sᵢ = Sᵢ + (Bᵢ[start+st])*uᵢ
+        if st < mdeg
+          @. uᵢ₋₂ = uᵢ₋₁
+          @. uᵢ₋₁ = uᵢ
+        end
+      end
+
+      if j < i
+        tᵢ = tᵢ + hᵢ
+        @. uᵢ₋₁ = Sᵢ
+      end
+    end
+
+    @. u = u + Cᵤ[i]*Sᵢ
+    integrator.opts.adaptive && (@. tmp = tmp + Cₑ[i]*Sᵢ)
+  end
+
+  @. u = u/24
+
+
+  if integrator.opts.adaptive
+    @. tmp = tmp/24
+    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+  end
+  integrator.k[1] = integrator.fsalfirst
+  f(integrator.fsallast, u, p, t+dt)
+  integrator.destats.nf += 1
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
+end

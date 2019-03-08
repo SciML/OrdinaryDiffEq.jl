@@ -205,7 +205,7 @@ module OrdinaryDiffEq
   export Nystrom4, Nystrom4VelocityIndependent, Nystrom5VelocityIndependent,
          IRKN3, IRKN4, DPRKN6, DPRKN8, DPRKN12, ERKN4, ERKN5
 
-  export ROCK2, ROCK4, RKC, IRKC
+  export ROCK2, ROCK4, RKC, IRKC, ESERK5
 
   export AB3, AB4, AB5, ABM32, ABM43, ABM54
 
