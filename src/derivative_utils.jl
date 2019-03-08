@@ -1,3 +1,5 @@
+const JACOBIAN_REUSE_THRESHOLD = Ref(3)
+
 function calc_tderivative!(integrator, cache, dtd1, repeat_step)
   @inbounds begin
     @unpack t,dt,uprev,u,f,p = integrator
@@ -265,7 +267,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     elseif DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
       # skip calculation of J if step is repeated
       if repeat_step || (alg_can_repeat_jac(alg) &&
-                         (!integrator.last_stepfail && nl_iters == 1 &&
+                         (!integrator.last_stepfail && nl_iters <= JACOBIAN_REUSE_THRESHOLD[] &&
                           ηold < alg.new_jac_conv_bound))
         new_jac = false
       else
@@ -285,7 +287,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     else # concrete W using jacobian from `calc_J!`
       # skip calculation of J if step is repeated
       if repeat_step || (alg_can_repeat_jac(alg) &&
-                         (!integrator.last_stepfail && nl_iters == 1 &&
+                         (!integrator.last_stepfail && nl_iters < JACOBIAN_REUSE_THRESHOLD[] &&
                           ηold < alg.new_jac_conv_bound))
         new_jac = false
       else
