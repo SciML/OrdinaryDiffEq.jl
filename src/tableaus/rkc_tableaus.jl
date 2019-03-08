@@ -12387,5 +12387,5 @@ function ESERK5ConstantCache(zprev)
        84.74613000143813223985, 23.68169873246636214503
       ]
 
-  ESERK5ConstantCache{eltype(Bᵢ)}(ms, Cᵤ, Cₑ, zprev, Bᵢ, 1, 0, 0)
+  ESERK5ConstantCache{eltype(Bᵢ),typeof(zprev)}(ms, Cᵤ, Cₑ, zprev, Bᵢ, 1, 0, 0)
 end

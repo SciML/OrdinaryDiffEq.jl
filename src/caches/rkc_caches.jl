@@ -187,7 +187,7 @@ function alg_cache(alg::IRKC,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   IRKCCache(u,uprev,gprev,gprev2,fsalfirst,k,du1,f1ⱼ₋₁,f1ⱼ₋₂,f2ⱼ₋₁,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolver,du₁,du₂,constantcache)
 end
 
-mutable struct ESERK5ConstantCache{T} <: OrdinaryDiffEqConstantCache
+mutable struct ESERK5ConstantCache{T, zType} <: OrdinaryDiffEqConstantCache
   ms::SVector{49, Int}
   Cᵤ::SVector{5, Int}
   Cₑ::SVector{5, Int}

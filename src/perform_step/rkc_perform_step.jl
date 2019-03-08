@@ -761,9 +761,12 @@ end
   maxeig!(integrator, cache)
 
   mdeg = Int(floor(sqrt(abs(dt)*integrator.eigen_est/0.98))+1)
-  mdeg = (mdeg > 2000) ? 2000:mdeg
-  (cache.mdeg = mdeg) && (choosedeg_ESERK!(cache))
-  (mdeg = cache.mdeg) && (start = cache.start) && (internal_deg = cache.internal_deg)
+  mdeg = (mdeg > 2000) ? 2000 : mdeg
+  cache.mdeg = mdeg
+  choosedeg_ESERK!(cache)
+  mdeg = cache.mdeg
+  start = cache.start
+  internal_deg = cache.internal_deg
   α = 100.0/(49.0*mdeg^2)
 
   u = zero(uprev)
@@ -776,7 +779,7 @@ end
     uᵢ₋₂ = zero(u)
     for j in 1:i
       r  = tᵢ
-      Sᵢ = Bᵢ[start]*uᵢ₋₁
+      Sᵢ = (Bᵢ[start])*uᵢ₋₁
       for st in 1:mdeg
         k = f(uᵢ₋₁, p, r)
         integrator.destats.nf += 1
@@ -786,9 +789,9 @@ end
         else
           uᵢ = 2*uᵢ₋₁ - uᵢ₋₂ + 2*α*hᵢ*k
         end
-        q = Int(st/internal_deg)
+        q = convert(Int, floor(st/internal_deg))
         r = tᵢ + α*(st^2 + q*internal_deg^2)*hᵢ
-        Sᵢ = Sᵢ +Bᵢ[start+st]*uᵢ
+        Sᵢ = Sᵢ + (Bᵢ[start+st])*uᵢ
         if st < mdeg
           uᵢ₋₂ = uᵢ₋₁
           uᵢ₋₁ = uᵢ
@@ -836,9 +839,12 @@ end
   maxeig!(integrator, cache)
 
   mdeg = Int(floor(sqrt(abs(dt)*integrator.eigen_est/0.98))+1)
-  mdeg = (mdeg > 2000) ? 2000:mdeg
-  (ccache.mdeg = mdeg) && (choosedeg_ESERK!(cache))
-  (mdeg = ccache.mdeg) && (start = ccache.start) && (internal_deg = ccache.internal_deg)
+  mdeg = (mdeg > 2000) ? 2000 : mdeg
+  ccache.mdeg = mdeg
+  choosedeg_ESERK!(cache)
+  mdeg = ccache.mdeg
+  start = ccache.start
+  internal_deg = ccache.internal_deg
   α = 100.0/(49.0*mdeg^2)
 
   @. u = zero(uprev)
@@ -851,7 +857,7 @@ end
     @. uᵢ₋₂ = zero(u)
     for j in 1:i
       r  = tᵢ
-      @. Sᵢ = Bᵢ[start]*uᵢ₋₁
+      @. Sᵢ = (Bᵢ[start])*uᵢ₋₁
       for st in 1:mdeg
         f(k, uᵢ₋₁, p, r)
         integrator.destats.nf += 1
@@ -861,9 +867,9 @@ end
         else
           @. uᵢ = 2*uᵢ₋₁ - uᵢ₋₂ + 2*α*hᵢ*k
         end
-        q = Int(st/internal_deg)
+        q = convert(Int, floor(st/internal_deg))
         r = tᵢ + α*(st^2 + q*internal_deg^2)*hᵢ
-        @. Sᵢ = Sᵢ +Bᵢ[start+st]*uᵢ
+        @. Sᵢ = Sᵢ + (Bᵢ[start+st])*uᵢ
         if st < mdeg
           @. uᵢ₋₂ = uᵢ₋₁
           @. uᵢ₋₁ = uᵢ

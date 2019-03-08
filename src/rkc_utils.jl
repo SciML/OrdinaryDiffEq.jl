@@ -99,7 +99,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
   fz, z, atmp = cache.k, cache.tmp, cache.atmp
   ccache = cache.constantcache
-  maxiter = 50
+  maxiter = (integrator.alg isa ESERK5) ? 100 : 50
   safe = (typeof(integrator.alg) <: RKCAlgs) ? 1.0 : 1.2
   # Initial guess for eigenvector `z`
   if isfirst
@@ -225,7 +225,18 @@ function choosedeg_ESERK!(cache::T) where T
       break
     end
   end
-  (cache.mdeg <= 20 && cache.internal_deg = 2) || (cache.mdeg <= 50 && cache.internal_deg = 5) || (cache.mdeg <= 100 && cache.internal_deg = 10) ||
-  (cache.mdeg <= 500 && cache.internal_deg = 50) || (cache.mdeg <= 1000 && cache.internal_deg = 100) || (cache.mdeg <= 2000 && cache.internal_deg = 200)
+  if cache.mdeg <= 20
+    cache.internal_deg = 2
+  elseif cache.mdeg <= 50
+    cache.internal_deg = 5
+  elseif cache.mdeg <= 100
+    cache.internal_deg = 10
+  elseif cache.mdeg <= 500
+    cache.internal_deg = 50
+  elseif cache.mdeg <= 1000
+    cache.internal_deg = 100
+  elseif cache.mdeg <= 2000
+    cache.internal_deg = 200
+  end
   return nothing
 end
