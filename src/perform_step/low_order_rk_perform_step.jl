@@ -834,3 +834,59 @@ end
     end
   end
 end
+
+function initialize!(integrator,cache::KYK2014DGSSPRK_3S2_ConstantCache)
+ integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+ integrator.kshortsize = 2
+ integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+
+ # Avoid undefined entries if k is an array of arrays
+ integrator.fsallast = zero(integrator.fsalfirst)
+end
+
+@muladd function perform_step!(integrator,cache::KYK2014DGSSPRK_3S2_ConstantCache,repeat_step=false)
+ @unpack t,dt,uprev,u,f,p = integrator
+ @unpack α_10, α_20, α_21, α_30, α_32, β_10, β_21, β_30, β_32, c_1, c_2 = cache
+ u_1 =  α_10 * uprev + dt*β_10*integrator.fsalfirst
+ u_2 = (
+  α_20 * uprev +
+  α_21 * u_1 + dt*β_21*f(u_1, p, t + c_1*dt)
+ )
+ integrator.u = (
+  α_30 * uprev + dt*β_30*integrator.fsalfirst +
+  α_32 * u_2 + dt*β_32*f(u_2, p, t + c_2*dt)
+ )
+ integrator.k[1] = integrator.fsalfirst
+ integrator.k[2] = f(integrator.u, p, t+dt) # For interpolation, then FSAL'd
+ integrator.fsallast = integrator.k[2]
+end
+
+function initialize!(integrator,cache::KYK2014DGSSPRK_3S2_Cache)
+ @unpack k,fsalfirst = cache
+ integrator.fsalfirst = fsalfirst
+ integrator.fsallast = k
+ integrator.kshortsize = 2
+ resize!(integrator.k, integrator.kshortsize)
+ integrator.k[1] = integrator.fsalfirst
+ integrator.k[2] = integrator.fsallast
+ integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+end
+
+@muladd function perform_step!(integrator,cache::KYK2014DGSSPRK_3S2_Cache,repeat_step=false)
+ @unpack t,dt,uprev,u,f,p = integrator
+ @unpack k,fsalfirst,u_1,u_2, kk_1, kk_2 = cache
+ @unpack α_10, α_20, α_21, α_30, α_32, β_10, β_21, β_30, β_32, c_1, c_2 = cache.tab
+
+ @. u_1 =  α_10 * uprev + dt*β_10*integrator.fsalfirst
+ f(kk_1, u_1, p, t + c_1*dt)
+ @. u_2 = (
+  α_20 * uprev +
+  α_21 * u_1 + dt*β_21*kk_1
+ )
+ f(kk_2, u_2, p, t + c_2*dt)
+ integrator.u .= (
+  α_30 * uprev + dt*β_30*integrator.fsalfirst +
+  α_32 * u_2 + dt*β_32*kk_2
+ )
+ f(integrator.k[2], integrator.u, p, t+dt) # For interpolation, then FSAL'd
+end

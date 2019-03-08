@@ -175,7 +175,8 @@ module OrdinaryDiffEq
          ParsaniKetchesonDeconinck3S32, ParsaniKetchesonDeconinck3S82,
          ParsaniKetchesonDeconinck3S53, ParsaniKetchesonDeconinck3S173,
          ParsaniKetchesonDeconinck3S94, ParsaniKetchesonDeconinck3S184,
-         ParsaniKetchesonDeconinck3S105, ParsaniKetchesonDeconinck3S205
+         ParsaniKetchesonDeconinck3S105, ParsaniKetchesonDeconinck3S205,
+         KYK2014DGSSPRK_3S2
 
   export RadauIIA5
 
