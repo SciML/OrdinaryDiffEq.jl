@@ -1,4 +1,4 @@
-const JACOBIAN_REUSE_THRESHOLD = Ref(3)
+const JACOBIAN_REUSE_THRESHOLD = Ref(2)
 
 function calc_tderivative!(integrator, cache, dtd1, repeat_step)
   @inbounds begin
