@@ -1401,9 +1401,9 @@ end
         atmpm2 = calculate_residuals(utildem2, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         atmpm1 = calculate_residuals(utildem1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         atmpp1 = calculate_residuals(utildep1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-        errm2 = integrator.opts.internalnorm(atmpm2)
-        errm1 = integrator.opts.internalnorm(atmpm1)
-        errp1 = integrator.opts.internalnorm(atmpp1)
+        errm2 = integrator.opts.internalnorm(atmpm2,t)
+        errm1 = integrator.opts.internalnorm(atmpm1,t)
+        errp1 = integrator.opts.internalnorm(atmpp1,t)
         if max(errm2,errm1) <= integrator.EEst
           cache.order = order - 1
         elseif errp1 < integrator.EEst
@@ -1481,9 +1481,9 @@ end
         calculate_residuals!(atmpm2, utildem2, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         calculate_residuals!(atmpm1, utildem1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         calculate_residuals!(atmpp1, utildep1, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-        errm2 = integrator.opts.internalnorm(atmpm2)
-        errm1 = integrator.opts.internalnorm(atmpm1)
-        errp1 = integrator.opts.internalnorm(atmpp1)
+        errm2 = integrator.opts.internalnorm(atmpm2,t)
+        errm1 = integrator.opts.internalnorm(atmpm1,t)
+        errp1 = integrator.opts.internalnorm(atmpp1,t)
         if max(errm2,errm1) <= integrator.EEst
           cache.order = order - 1
         elseif errp1 < integrator.EEst
