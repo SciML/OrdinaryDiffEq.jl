@@ -264,7 +264,7 @@ function DiffEqBase.__init(
                        unstable_check,verbose,
                        calck,force_dtmin,advance_to_tstop,stop_at_next_tstop)
 
-  destats = DiffEqBase.DEStats()
+  destats = DiffEqBase.DEStats(ntuple(_->0, 10)..., 0.0)
 
   if typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm
     sol = DiffEqBase.build_solution(prob,alg,ts,timeseries,
