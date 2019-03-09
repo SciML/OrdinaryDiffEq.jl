@@ -194,21 +194,20 @@ and `cache.recind` (the index of recurrence parameters for that
 degree), where `recf[recind:(recind+ms[mdeg]-2)]` are the `μ,κ` pairs
 for the `mdeg` degree method.
   """
-  function choosedeg!(cache::T) where T
-    isconst = T <: OrdinaryDiffEqConstantCache
-    isconst || ( cache = cache.constantcache )
-    @unpack ms, fp1, fp2, recf, zprev = cache
-    recind = 0
-    @inbounds for i in 1:size(ms,1)
-      recind += ms[i]
-      if ms[i] > cache.mdeg
-        cache.mdeg = i
-        cache.recind = recind
-        break
-      end
+function choosedeg!(cache::T) where T
+  isconst = T <: OrdinaryDiffEqConstantCache
+  isconst || ( cache = cache.constantcache )
+  recind = 0
+  @inbounds for i in 1:size(cache.ms,1)
+    recind += cache.ms[i]
+    if cache.ms[i] > cache.mdeg
+      cache.mdeg = i
+      cache.recind = recind
+      break
     end
-    return nothing
   end
+  return nothing
+end
 
 
 function choosedeg_ESERK!(cache::T) where T
