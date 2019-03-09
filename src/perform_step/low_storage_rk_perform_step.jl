@@ -27,30 +27,30 @@ end
     u   = u + B2end[i]*tmp
   end
 
-  integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
+  integrator.fsalfirst = f(u, p, t+dt) # For interpolation, then FSAL'd
   integrator.u = u
 end
 
 function initialize!(integrator,cache::LowStorageRK2NCache)
-  @unpack k,fsalfirst = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
+  @unpack k, tmp = cache
+  # integrator.fsalfirst = fsalfirst
+  # integrator.fsallast = k
   integrator.kshortsize = 1
   resize!(integrator.k, integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+  integrator.k[1] = k
+  integrator.f(WilliamsonWrapper(tmp,integrator.dt),integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::LowStorageRK2NCache,repeat_step=false)
   @unpack t,dt,u,f,p = integrator
-  @unpack k,fsalfirst,tmp = cache
+  @unpack k,tmp = cache
   @unpack A2end,B1,B2end,c2end = cache.tab
 
   # u1
-  @. tmp = dt*fsalfirst
+  # @. tmp = dt*fsalfirst
   @. u   = u + B1*tmp
 
   # other stages
@@ -62,6 +62,7 @@ end
   end
 
   f(k, u, p, t+dt)
+  @. tmp = dt*k
   integrator.destats.nf += 1
 end
 
@@ -71,6 +72,8 @@ struct WilliamsonWrapper{kType, dtType}
 end
 
 Base.setindex!(a::WilliamsonWrapper{kType, dtType}, b::bType, c::cType) where {kType, dtType, bType, cType} = (a.kref[c] += a.dt * b) 
+Base.size(a::WilliamsonWrapper{kType, dtType}) where {kType, dtType} = size(a.kref)
+Base.copyto!(a::WilliamsonWrapper{kType, dtType}, b::bType) where {kType, dtType, bType} = (a.kref .+= a.dt .* b)
 
 # 2C low storage methods
 function initialize!(integrator,cache::LowStorageRK2CConstantCache)

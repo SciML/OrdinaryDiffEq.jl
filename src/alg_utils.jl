@@ -12,6 +12,16 @@ isfsal(alg::Rodas4P) = false
 isfsal(alg::Vern7) = false
 isfsal(alg::Vern8) = false
 isfsal(alg::Vern9) = false
+# Pseudo Non-FSAL
+isfsal(alg::ORK256) = false
+isfsal(alg::CarpenterKennedy2N54) = false
+isfsal(alg::HSLDDRK64) = false
+isfsal(alg::DGLDDRK73_C) = false
+isfsal(alg::DGLDDRK84_C) = false
+isfsal(alg::DGLDDRK84_F) = false
+isfsal(alg::NDBLSRK124) = false
+isfsal(alg::NDBLSRK134) = false
+isfsal(alg::NDBLSRK144) = false
 get_current_isfsal(alg, cache) = isfsal(alg)
 get_current_isfsal(alg::CompositeAlgorithm, cache) = isfsal(alg.algs[cache.current])
 
