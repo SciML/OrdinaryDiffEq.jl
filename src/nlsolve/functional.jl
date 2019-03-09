@@ -54,6 +54,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
   iter = 0
   while iter < max_iter
     iter += 1
+    integrator.destats.nnonliniter += 1
 
     # evaluate function
     u = @. tmp + γ*z
@@ -152,7 +153,9 @@ Equations II, Springer Series in Computational Mathematics. ISBN
       end
     end
   end
-
+  if fail_convergence
+    integrator.destats.nnonlinconvfail += 1
+  end
   integrator.force_stepfail = fail_convergence
   z, η, iter, fail_convergence
 end
@@ -184,6 +187,7 @@ end
   iter = 0
   while iter < max_iter
     iter += 1
+    integrator.destats.nnonliniter += 1
 
     # evaluate function
     @. u = tmp + γ*z
@@ -287,7 +291,9 @@ end
       end
     end
   end
-
+  if fail_convergence
+    integrator.destats.nnonlinconvfail += 1
+  end
   integrator.force_stepfail = fail_convergence
   z, η, iter, fail_convergence
 end
