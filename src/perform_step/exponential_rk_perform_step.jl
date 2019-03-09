@@ -47,7 +47,11 @@ function perform_step!(integrator, cache::LawsonEulerConstantCache, repeat_step=
   alg = unwrap_alg(integrator, true)
 
   nl = _compute_nl(f, uprev, p, t, A)
-  integrator.destats.nf += 1
+  if isa(f, SplitFunction)
+    integrator.destats.nf2 += 1
+  else
+    integrator.destats.nf += 1
+  end
   @muladd v = uprev + dt * nl
   if alg.krylov
     u = expv(dt, A, v; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
@@ -72,7 +76,11 @@ function perform_step!(integrator, cache::LawsonEulerCache, repeat_step=false)
   alg = unwrap_alg(integrator, true)
 
   _compute_nl!(G, f, uprev, p, t, A, rtmp)
-  integrator.destats.nf += 1
+  if isa(f, SplitFunction)
+    integrator.destats.nf2 += 1
+  else
+    integrator.destats.nf += 1
+  end
   @muladd @. tmp = uprev + dt*G
   if alg.krylov
     Ks, expv_cache = KsCache
@@ -145,18 +153,22 @@ function perform_step!(integrator, cache::ETDRK2ConstantCache, repeat_step=false
     w1 = phiv(dt, A, F1, 2; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
     U2 = uprev + dt * w1[:, 2]
     F2 = _compute_nl(f, U2, p, t + dt, A) + A * uprev
-    integrator.destats.nf += 1
+    if isa(f, SplitFunction)
+      integrator.destats.nf2 += 1
+    else
+      integrator.destats.nf += 1
+    end
     w2 = phiv(dt, A, F2, 2; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
     u = uprev + dt * (w1[:, 2] - w1[:, 3] + w2[:, 3])
   else
     phi1, phi2 = cache.ops
     # The caching version uses a special formula to save computation
     G1 = f.f2(uprev, p, t)
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     F1 = integrator.fsalfirst
     U2 = uprev + dt * (phi1 * F1)
     G2 = f.f2(U2, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     u = U2 + dt * (phi2 * (G2 - G1))
   end
 
@@ -185,7 +197,11 @@ function perform_step!(integrator, cache::ETDRK2Cache, repeat_step=false)
     # Krylov for F2
     @muladd @. tmp = uprev + dt * @view(w1[:, 2])
     _compute_nl!(F2, f, tmp, p, t + dt, A, rtmp)
-    integrator.destats.nf += 1
+    if isa(f, SplitFunction)
+      integrator.destats.nf2 += 1
+    else
+      integrator.destats.nf += 1
+    end
     F2 .+= mul!(rtmp, A, uprev)
     arnoldi!(Ks, A, F2; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
     phiv!(w2, dt, Ks, 2; cache=phiv_cache)
@@ -203,9 +219,9 @@ function perform_step!(integrator, cache::ETDRK2Cache, repeat_step=false)
     @muladd @. tmp = uprev + dt * rtmp # tmp is U2
     # Compute G2 - G1, storing result in the cache F2
     f.f2(rtmp, uprev, p, t)
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     f.f2(F2, tmp, p, t + dt)
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     F2 .-= rtmp # "F2" is G2 - G1
     # Update u
     u .= tmp
@@ -234,12 +250,15 @@ function perform_step!(integrator, cache::ETDRK3ConstantCache, repeat_step=false
     w1 = phiv(dt, Ks, 3)
     U2 = uprev + dt/2 * w1_half[:, 2]
     F2 = _compute_nl(f, U2, p, t + dt/2, A) + Au
-    integrator.destats.nf += 1
     # Krylov on F2 (second column)
     w2 = phiv(dt, A, F2, 3; kwargs...)
     U3 = uprev + dt * (2w2[:, 2] - w1[:, 2])
     F3 = _compute_nl(f, U3, p, t + dt, A) + Au
-    integrator.destats.nf += 1
+    if isa(f, SplitFunction)
+      integrator.destats.nf2 += 2
+    else
+      integrator.destats.nf += 2
+    end
     # Krylov on F3 (third column)
     w3 = phiv(dt, A, F3, 3; kwargs...)
     u = uprev + dt * (4w1[:,4] - 3w1[:,3] + w1[:,2]
@@ -251,11 +270,11 @@ function perform_step!(integrator, cache::ETDRK3ConstantCache, repeat_step=false
     # stage 2
     U2 = uprev + dt * (A21 * F1)
     F2 = f.f2(U2, p, t + dt/2) + Au
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     # stage 3
     U3 = uprev + dt * (A3 * (2F2 - F1))
     F3 = f.f2(U3, p, t + dt) + Au
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     # update u
     u = uprev + dt * (B1 * F1 + B2 * F2 + B3 * F3)
   end
@@ -288,13 +307,16 @@ function perform_step!(integrator, cache::ETDRK3Cache, repeat_step=false)
     phiv!(w1, dt, Ks, 3; cache=phiv_cache)
     @muladd @. @views tmp = uprev + halfdt * w1_half[:, 2] # tmp is U2
     _compute_nl!(F2, f, tmp, p, t + halfdt, A, rtmp); F2 .+= Au
-    integrator.destats.nf += 1
     # Krylov for F2 (second column)
     arnoldi!(Ks, A, F2; kwargs...)
     phiv!(w2, dt, Ks, 3; cache=phiv_cache)
     @muladd @. @views tmp = uprev + dt * (2*w2[:, 2] - w1[:, 2]) # tmp is U3
     _compute_nl!(F3, f, tmp, p, t + dt, A, rtmp); F3 .+= Au
-    integrator.destats.nf += 1
+    if isa(f, SplitFunction)
+      integrator.destats.nf2 += 2
+    else
+      integrator.destats.nf += 2
+    end
     # Krylov for F3 (third column)
     arnoldi!(Ks, A, F3; kwargs...)
     phiv!(w3, dt, Ks, 3; cache=phiv_cache)
@@ -308,13 +330,13 @@ function perform_step!(integrator, cache::ETDRK3Cache, repeat_step=false)
     mul!(rtmp, A21, F1)
     @muladd @. tmp = uprev + dt * rtmp # tmp is U2
     f.f2(F2, tmp, p, t + halfdt); F2 .+= Au
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     # stage 3
     @muladd @. F3 = 2 * F2 - F1 # use F3 temporarily as cache
     mul!(rtmp, A3, F3)
     @muladd @. tmp = uprev + dt * rtmp # tmp is U3
     f.f2(F3, tmp, p, t + dt); F3 .+= Au
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     # update u
     u .= uprev
     axpy!(dt, mul!(rtmp, B1, F1), u)
@@ -345,14 +367,12 @@ function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step=false
     w1 = phiv(dt, Ks, 3)
     U2 = uprev + halfdt * w1_half[:, 2]
     F2 = _compute_nl(f, U2, p, t + halfdt, A) + Au
-    integrator.destats.nf += 1
     # Krylov on F2 (second column)
     Ks = arnoldi(A, F2; kwargs...)
     w2_half = phiv(halfdt, Ks, 1)
     w2 = phiv(dt, Ks, 3)
     U3 = uprev + halfdt * w2_half[:, 2]
     F3 = _compute_nl(f, U3, p, t + halfdt, A) + Au
-    integrator.destats.nf += 1
     # Krylov on F3 (third column)
     w3 = phiv(dt, A, F3, 3; kwargs...)
     # Extra Krylov for computing F4
@@ -360,7 +380,11 @@ function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step=false
     wtmp = phiv(halfdt, A, rtmp, 1; kwargs...)
     U4 = U2 + halfdt * wtmp[:, 2]
     F4 = _compute_nl(f, U4, p, t + dt, A) + Au
-    integrator.destats.nf += 1
+    if isa(f, SplitFunction)
+      integrator.destats.nf2 += 3
+    else
+      integrator.destats.nf += 3
+    end
     # Krylov on F4 (fourth column)
     w4 = phiv(dt, A, F4, 3; kwargs...)
     # update u
@@ -378,7 +402,7 @@ function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step=false
     # stage 4
     U4 = uprev + dt * (A41 * F1 + A43 * F3)
     F4 = f.f2(U4, p, t + dt) + Au
-    integrator.destats.nf += 3
+    integrator.destats.nf2 += 3
     # update u
     u = uprev + dt * (B1 * F1 + B2 * (F2 + F3) + B4 * F4) # B3 = B2
   end
@@ -412,14 +436,12 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
     U2 = u # temporarily use u to store U2 (used in the extra Krylov step)
     @muladd @. @views U2 = uprev + halfdt * w1_half[:, 2]
     _compute_nl!(F2, f, U2, p, t + halfdt, A, rtmp); F2 .+= Au
-    integrator.destats.nf += 1
     # Krylov for F2 (second column)
     arnoldi!(Ks, A, F2; kwargs...)
     phiv!(w2_half, halfdt, Ks, 1; cache=phiv_cache)
     phiv!(w2, dt, Ks, 3; cache=phiv_cache)
     @muladd @. @views tmp = uprev + halfdt * w2_half[:, 2] # tmp is U3
     _compute_nl!(F3, f, tmp, p, t + halfdt, A, rtmp); F3 .+= Au
-    integrator.destats.nf += 1
     # Krylov for F3 (third column)
     arnoldi!(Ks, A, F3; kwargs...)
     phiv!(w3, dt, Ks, 3; cache=phiv_cache)
@@ -430,7 +452,11 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
     phiv!(w1_half, halfdt, Ks, 1; cache=phiv_cache) # original w1_half is no longer needed
     @muladd @. @views tmp = U2 + halfdt * w1_half[:, 2] # tmp is U4
     _compute_nl!(F4, f, tmp, p, t + dt, A, rtmp); F4 .+= Au
-    integrator.destats.nf += 1
+    if isa(f, SplitFunction)
+      integrator.destats.nf2 += 3
+    else
+      integrator.destats.nf += 3
+    end
     # Krylov for F4 (fourth column)
     arnoldi!(Ks, A, F4; kwargs...)
     phiv!(w4, dt, Ks, 3; cache=phiv_cache)
@@ -454,7 +480,7 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
     axpy!(dt, mul!(rtmp, A41, F1), tmp)
     axpy!(dt, mul!(rtmp, A43, F3), tmp) # tmp is U4
     f.f2(F4, tmp, p, t + dt); F4 .+= Au
-    integrator.destats.nf += 3
+    integrator.destats.nf2 += 3
     # update u
     u .= uprev
     axpy!(dt, mul!(rtmp, B1, F1), u)
@@ -485,21 +511,18 @@ function perform_step!(integrator, cache::HochOst4ConstantCache, repeat_step=fal
     w1 =      phiv(dt,     Ks, 3)
     U2 = uprev + halfdt * w1_half[:, 2]
     F2 = _compute_nl(f, U2, p, t + halfdt, A) + Au
-    integrator.destats.nf += 1
     # Krylov on F2 (second column)
     Ks = arnoldi(A, F2; kwargs...)
     w2_half = phiv(halfdt, Ks, 3)
     w2 =      phiv(dt,     Ks, 3)
     U3 = uprev + dt * (0.5w1_half[:,2] - w1_half[:,3] + w2_half[:,3])
     F3 = _compute_nl(f, U3, p, t + halfdt, A) + Au
-    integrator.destats.nf += 1
     # Krylov on F3 (third column)
     Ks = arnoldi(A, F3; kwargs...)
     w3_half = phiv(halfdt, Ks, 3)
     w3 =      phiv(dt,     Ks, 3)
     U4 = uprev + dt * (w1[:,2] - 2w1[:,3] + w2[:,3] + w3[:,3])
     F4 = _compute_nl(f, U4, p, t + dt, A) + Au
-    integrator.destats.nf += 1
     # Krylov on F4 (fourth column)
     Ks = arnoldi(A, F4; kwargs...)
     w4_half = phiv(halfdt, Ks, 3)
@@ -509,7 +532,11 @@ function perform_step!(integrator, cache::HochOst4ConstantCache, repeat_step=fal
                        0.5w3_half[:,3] - w2[:,4] + 0.25w3[:,3] - 0.5w3_half[:,4] +
                        w4[:,4] - 0.25w4[:,3] - 0.25w4_half[:,3] + 0.5w4_half[:,4])
     F5 = _compute_nl(f, U5, p, t + halfdt, A) + Au
-    integrator.destats.nf += 1
+    if isa(f, SplitFunction)
+      integrator.destats.nf2 += 4
+    else
+      integrator.destats.nf += 4
+    end
     # Krylov on F5 (fifth column)
     w5 = phiv(dt, A, F5, 3; kwargs...)
     # update u
@@ -529,7 +556,7 @@ function perform_step!(integrator, cache::HochOst4ConstantCache, repeat_step=fal
     # stage 5
     U5 = uprev + dt * (A51 * F1 + A52 * (F2 + F3) + A54 * F4)
     F5 = f.f2(U5, p, t + halfdt) + Au
-    integrator.destats.nf += 4
+    integrator.destats.nf2 += 4
     # update u
     u = uprev + dt * (B1 * F1 + B4 * F4 + B5 * F5)
   end
@@ -562,21 +589,18 @@ function perform_step!(integrator, cache::HochOst4Cache, repeat_step=false)
     phiv!(w1,          dt, Ks, 3; cache=phiv_cache)
     @muladd @. @views tmp = uprev + halfdt * w1_half[:, 2] # tmp is U2
     _compute_nl!(F2, f, tmp, p, t + halfdt, A, rtmp); F2 .+= Au
-    integrator.destats.nf += 1
     # Krylov on F2 (second column)
     arnoldi!(Ks, A, F2; kwargs...)
     phiv!(w2_half, halfdt, Ks, 3; cache=phiv_cache)
     phiv!(w2,          dt, Ks, 3; cache=phiv_cache)
     @muladd @. @views tmp = uprev + dt * (0.5w1_half[:,2] - w1_half[:,3] + w2_half[:,3]) # tmp is U3
     _compute_nl!(F3, f, tmp, p, t + halfdt, A, rtmp); F3 .+= Au
-    integrator.destats.nf += 1
     # Krylov on F3 (third column)
     arnoldi!(Ks, A, F3; kwargs...)
     phiv!(w3_half, halfdt, Ks, 3; cache=phiv_cache)
     phiv!(w3,          dt, Ks, 3; cache=phiv_cache)
     @muladd @. @views tmp = uprev + dt * (w1[:,2] - 2w1[:,3] + w2[:,3] + w3[:,3]) # tmp is U4
     _compute_nl!(F4, f, tmp, p, t + dt, A, rtmp); F4 .+= Au
-    integrator.destats.nf += 1
     # Krylov on F4 (fourth column)
     arnoldi!(Ks, A, F4; kwargs...)
     phiv!(w4_half, halfdt, Ks, 3; cache=phiv_cache)
@@ -587,7 +611,11 @@ function perform_step!(integrator, cache::HochOst4Cache, repeat_step=false)
       0.5w3_half[:,3] - w2[:,4] + 0.25w3[:,3] - 0.5w3_half[:,4] +
       w4[:,4] - 0.25w4[:,3] - 0.25w4_half[:,3] + 0.5w4_half[:,4]) # tmp is U5
     _compute_nl!(F5, f, tmp, p, t + dt, A, rtmp); F5 .+= Au
-    integrator.destats.nf += 1
+    if isa(f, SplitFunction)
+      integrator.destats.nf2 += 4
+    else
+      integrator.destats.nf += 4
+    end
     # Krylov on F5 (fifth column)
     arnoldi!(Ks, A, F5; kwargs...)
     phiv!(w5, dt, Ks, 3; cache=phiv_cache)
@@ -616,7 +644,7 @@ function perform_step!(integrator, cache::HochOst4Cache, repeat_step=false)
     mul!(rtmp2, A54, F4); rtmp .+= rtmp2
     @muladd @. tmp = uprev + dt * rtmp # tmp is U5
     f.f2(F5, tmp, p, t + halfdt); F5 .+= Au
-    integrator.destats.nf += 4
+    integrator.destats.nf2 += 4
     # update u
     mul!(rtmp, B1, F1)
     mul!(rtmp2, B4, F4); rtmp .+= rtmp2
@@ -1417,7 +1445,8 @@ function initialize!(integrator,cache::ETD2ConstantCache)
   # Pre-start fsal
   lin = integrator.f.f1(integrator.uprev,integrator.p,integrator.t)
   nl = integrator.f.f2(integrator.uprev,integrator.p,integrator.t)
-  integrator.destats.nf += 2
+  integrator.destats.nf += 1
+  integrator.destats.nf2 += 1
   nlprev = zero(nl) # to be computed in the first iteration via ETD1
   integrator.fsalfirst = ETD2Fsal(lin, nl, nlprev)
 
@@ -1445,7 +1474,8 @@ function perform_step!(integrator,cache::ETD2ConstantCache,repeat_step=false)
   nlprev = nl
   lin = f.f1(u,p,t+dt)
   nl = f.f2(u,p,t+dt)
-  integrator.destats.nf += 2
+  integrator.destats.nf += 1
+  integrator.destats.nf2 += 1
   integrator.k[2] = lin + nl
   @pack! integrator.fsallast = lin, nl, nlprev
 end
@@ -1460,7 +1490,8 @@ function initialize!(integrator, cache::ETD2Cache)
   @unpack lin,nl = integrator.fsalfirst
   integrator.f.f1(lin,integrator.uprev,integrator.p,integrator.t)
   integrator.f.f2(nl,integrator.uprev,integrator.p,integrator.t)
-  integrator.destats.nf += 2
+  integrator.destats.nf += 1
+  integrator.destats.nf2 += 1
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = ETD2Fsal(rate_prototype)
@@ -1490,6 +1521,7 @@ function perform_step!(integrator, cache::ETD2Cache, repeat_step=false)
   fsallast.nlprev .= nl
   f.f1(fsallast.lin,u,p,t+dt)
   f.f2(fsallast.nl,u,p,t+dt)
-  integrator.destats.nf += 2
+  integrator.destats.nf += 1
+  integrator.destats.nf2 += 1
   @. integrator.k[2] = fsallast.lin + fsallast.nl
 end

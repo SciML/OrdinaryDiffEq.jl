@@ -17,7 +17,8 @@ function initialize!(integrator,cache::Union{GenericIIF1ConstantCache,GenericIIF
   A = integrator.f.f1.f
   cache.uhold[1] = integrator.f.f2(integrator.uprev,integrator.p,integrator.t)
   integrator.fsalfirst = integrator.f.f1(integrator.uprev,integrator.p,integrator.t) .+ cache.uhold[1]
-  integrator.destats.nf += 2
+  integrator.destats.nf += 1
+  integrator.destats.nf2 += 1
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -46,7 +47,7 @@ function perform_step!(integrator,cache::Union{GenericIIF1ConstantCache,GenericI
   rhs.dt = dt
   nlres = alg.nlsolve(nl_rhs,uhold)
   uhold[1] = integrator.f.f2(nlres[1],integrator.p,t+dt)
-  integrator.destats.nf += 1
+  integrator.destats.nf2 += 1
   u = nlres[1]
   integrator.fsallast = A*u + uhold[1]
   integrator.k[1] = integrator.fsalfirst
@@ -77,7 +78,7 @@ function initialize!(integrator,cache::Union{GenericIIF1Cache,GenericIIF2Cache})
   resize!(integrator.k, integrator.kshortsize)
   A = integrator.f.f1.f
   integrator.f.f2(cache.rtmp1,integrator.uprev,integrator.p,integrator.t)
-  integrator.destats.nf += 1
+  integrator.destats.nf2 += 1
   mul!(cache.k,A,integrator.uprev)
   @. integrator.fsalfirst = cache.k + cache.rtmp1
   integrator.k[1] = integrator.fsalfirst
@@ -107,7 +108,7 @@ function perform_step!(integrator,cache::Union{GenericIIF1Cache,GenericIIF2Cache
 
   copyto!(u,nlres)
   integrator.f.f2(rtmp1,nlres,integrator.p,t+dt)
-  integrator.destats.nf += 1
+  integrator.destats.nf2 += 1
   A = f.f1.f
   integrator.fsallast .= A*u .+ rtmp1
 end

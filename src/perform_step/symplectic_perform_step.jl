@@ -11,7 +11,8 @@ function initialize!(integrator,cache::SymplecticEulerConstantCache)
   kuprev = integrator.f.f2(duprev,uprev,integrator.p,integrator.t)
   @muladd du = duprev + integrator.dt*kdu
   ku = integrator.f.f2(du,uprev,integrator.p,integrator.t)
-  integrator.destats.nf += 3
+  integrator.destats.nf2 += 1
+  integrator.destats.nf += 2
   integrator.fsalfirst = ArrayPartition((kdu,kuprev))
   integrator.fsallast = ArrayPartition((zero(kdu),ku))
 end
@@ -26,7 +27,8 @@ end
   kdu = f.f1(duprev,u,p,t)
   du = duprev + dt*kdu
   ku = f.f2(du,u,p,t)
-  integrator.destats.nf += 2
+  integrator.destats.nf2 += 1
+  integrator.destats.nf += 1
 
   integrator.u = ArrayPartition((du,u))
   integrator.fsallast = ArrayPartition((kdu,ku))
@@ -52,7 +54,8 @@ function initialize!(integrator,cache::SymplecticEulerCache)
   integrator.f.f2(kuprev,duprev,uprev,integrator.p,integrator.t)
   @muladd @. du = duprev + integrator.dt*kdu
   integrator.f.f2(ku,du,uprev,integrator.p,integrator.t)
-  integrator.destats.nf += 3
+  integrator.destats.nf += 1
+  integrator.destats.nf2 += 2
 end
 
 @muladd function perform_step!(integrator,cache::SymplecticEulerCache,repeat_step=false)
@@ -64,7 +67,8 @@ end
   @. u = uprev + dt*kuprev
   # Now actually compute the step
   # Do it at the end for interpolations!
-  integrator.destats.nf += 2
+  integrator.destats.nf2 += 1
+  integrator.destats.nf += 1
   f.f1(kdu,duprev,u,p,t)
   @. du = duprev + dt*kdu
   f.f2(ku,du,u,p,t)
@@ -85,7 +89,8 @@ function initialize!(integrator,cache::C) where
   duprev,uprev = integrator.uprev.x
   integrator.f.f1(integrator.k[2].x[1],duprev,uprev,integrator.p,integrator.t)
   integrator.f.f2(integrator.k[2].x[2],duprev,uprev,integrator.p,integrator.t)
-  integrator.destats.nf += 2
+  integrator.destats.nf += 1
+  integrator.destats.nf2 += 1
 end
 
 function initialize!(integrator,cache::C) where
@@ -100,7 +105,8 @@ function initialize!(integrator,cache::C) where
   duprev,uprev = integrator.uprev.x
   kdu  = integrator.f.f1(duprev,uprev,integrator.p,integrator.t)
   ku = integrator.f.f2(duprev,uprev,integrator.p,integrator.t)
-  integrator.destats.nf += 2
+  integrator.destats.nf += 1
+  integrator.destats.nf2 += 1
   integrator.fsalfirst = ArrayPartition((kdu,ku))
 end
 
@@ -159,7 +165,8 @@ end
 
   kdu = f.f1(du,u,p,tnew)
   du = du + dt*a2*kdu
-  integrator.destats.nf += 3
+  integrator.destats.nf += 2
+  integrator.destats.nf2 += 1
 
   integrator.u = ArrayPartition((du,u))
   integrator.fsallast = ArrayPartition((kdu,du))
@@ -185,7 +192,8 @@ end
 
   f.f1(kdu,du,u,p,tnew)
   @. du = du + dt*a2*kdu
-  integrator.destats.nf += 3
+  integrator.destats.nf += 2
+  integrator.destats.nf2 += 1
   copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
   copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
   copyto!(integrator.k[2].x[2],du)
@@ -215,7 +223,8 @@ end
   u = u + dt*b3*ku
 
   kdu = f.f1(du,u,p,tnew)
-  integrator.destats.nf += 5
+  integrator.destats.nf += 3
+  integrator.destats.nf2 += 2
   du = du + dt*a3*kdu
   integrator.u = ArrayPartition((du,u))
   integrator.fsallast = ArrayPartition((kdu,du))
@@ -249,7 +258,8 @@ end
 
   f.f1(kdu,du,u,p,tnew)
   @. du = du + dt*a3*kdu
-  integrator.destats.nf += 5
+  integrator.destats.nf += 3
+  integrator.destats.nf2 += 2
   copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
   copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
   copyto!(integrator.k[2].x[2],du)
@@ -288,7 +298,8 @@ end
 
   kdu = f.f1(du,u,p,tnew)
   du = du + dt*a4*kdu
-  integrator.destats.nf += 7
+  integrator.destats.nf += 4
+  integrator.destats.nf2 += 3 
   integrator.u = ArrayPartition((du,u))
   integrator.fsallast = ArrayPartition((kdu,du))
   integrator.k[1] = integrator.fsalfirst
@@ -329,7 +340,8 @@ end
 
   f.f1(kdu,du,u,p,tnew)
   @. du = du + dt*a4*kdu
-  integrator.destats.nf += 7
+  integrator.destats.nf += 4
+  integrator.destats.nf2 += 3
   copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
   copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
   copyto!(integrator.k[2].x[2],du)
@@ -375,7 +387,8 @@ end
   u = u + dt*b5*ku
 
   kdu = f.f1(du,u,p,tnew)
-  integrator.destats.nf += 9
+  integrator.destats.nf += 5
+  integrator.destats.nf2 += 4
   if typeof(integrator.alg) <: McAte42
     du = du + dt*a5*kdu
   end
@@ -426,7 +439,8 @@ end
   @. u = u + dt*b5*ku
 
   f.f1(kdu,du,u,p,tnew)
-  integrator.destats.nf += 9
+  integrator.destats.nf += 5
+  integrator.destats.nf2 += 4
   if typeof(integrator.alg) <: McAte42
     @. du = du + dt*a5*kdu
   end
@@ -483,7 +497,8 @@ end
 
   kdu = f.f1(du,u,p,tnew)
   du = du + dt*a6*kdu
-  integrator.destats.nf += 11
+  integrator.destats.nf += 6
+  integrator.destats.nf2 += 5
   integrator.u = ArrayPartition((du,u))
   integrator.fsallast = ArrayPartition((kdu,du))
   integrator.k[1] = integrator.fsalfirst
@@ -539,7 +554,8 @@ end
 
   f.f1(kdu,du,u,p,tnew)
   @. du = du + dt*a6*kdu
-  integrator.destats.nf += 11
+  integrator.destats.nf += 6
+  integrator.destats.nf2 += 5
   copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
   copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
   copyto!(integrator.k[2].x[2],du)
@@ -607,7 +623,8 @@ end
 
   kdu = f.f1(du,u,p,tnew)
   # @. du = du + dt*a8*kdu
-  integrator.destats.nf += 15
+  integrator.destats.nf += 8
+  integrator.destats.nf2 += 7
   integrator.u = ArrayPartition((du,u))
   integrator.fsallast = ArrayPartition((kdu,du))
   integrator.k[1] = integrator.fsalfirst
@@ -677,7 +694,8 @@ end
 
   f.f1(kdu,du,u,p,tnew)
   # @. du = du + dt*a8*kdu
-  integrator.destats.nf += 15
+  integrator.destats.nf += 8
+  integrator.destats.nf2 += 7
   copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
   copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
   copyto!(integrator.k[2].x[2],du)
@@ -759,7 +777,8 @@ end
 
   kdu = f.f1(du,u,p,tnew)
   # @. du = du + dt*a10*kdu
-  integrator.destats.nf += 19
+  integrator.destats.nf += 10
+  integrator.destats.nf2 += 9
   integrator.u = ArrayPartition((du,u))
   integrator.fsallast = ArrayPartition((kdu,du))
   integrator.k[1] = integrator.fsalfirst
@@ -843,7 +862,8 @@ end
 
   f.f1(kdu,du,u,p,tnew)
   # @. du = du + dt*a10*kdu
-  integrator.destats.nf += 19
+  integrator.destats.nf += 10
+  integrator.destats.nf2 += 9
   copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
   copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
   copyto!(integrator.k[2].x[2],du)
@@ -968,7 +988,8 @@ end
 
   kdu = f.f1(du,u,p,tnew)
   # @. du = du + dt*a16*kdu
-  integrator.destats.nf += 31
+  integrator.destats.nf += 16
+  integrator.destats.nf2 += 15
   integrator.u = ArrayPartition((du,u))
   integrator.fsallast = ArrayPartition((kdu,du))
   integrator.k[1] = integrator.fsalfirst
@@ -1095,7 +1116,8 @@ end
 
   f.f1(kdu,du,u,p,tnew)
   # @. du = du + dt*a16*kdu
-  integrator.destats.nf += 31
+  integrator.destats.nf += 16
+  integrator.destats.nf2 += 15
   copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
   copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
   copyto!(integrator.k[2].x[2],du)
@@ -1234,7 +1256,8 @@ end
 
   kdu = f.f1(du,u,p,tnew)
   # @. du = du + dt*a18*kdu
-  integrator.destats.nf += 35
+  integrator.destats.nf += 18
+  integrator.destats.nf2 += 17
   integrator.u = ArrayPartition((du,u))
   integrator.fsallast = ArrayPartition((kdu,du))
   integrator.k[1] = integrator.fsalfirst
@@ -1375,7 +1398,8 @@ end
 
   f.f1(kdu,du,u,p,tnew)
   # @. du = du + dt*a18*kdu
-  integrator.destats.nf += 35
+  integrator.destats.nf += 18
+  integrator.destats.nf2 += 17
   copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
   copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
   copyto!(integrator.k[2].x[2],du)
@@ -1644,7 +1668,8 @@ end
 
   kdu = f.f1(du,u,p,tnew)
   # @. du = du + dt*a30*kdu
-  integrator.destats.nf += 71
+  integrator.destats.nf += 36
+  integrator.destats.nf2 += 35
   integrator.u = ArrayPartition((du,u))
   integrator.fsallast = ArrayPartition((kdu,du))
   integrator.k[1] = integrator.fsalfirst
@@ -1915,7 +1940,8 @@ end
 
   f.f1(kdu,du,u,p,tnew)
   # @. du = du + dt*a30*kdu
-  integrator.destats.nf += 71
+  integrator.destats.nf += 36
+  integrator.destats.nf2 += 35
   copyto!(integrator.k[1].x[1],integrator.k[2].x[1])
   copyto!(integrator.k[1].x[2],integrator.k[2].x[2])
   copyto!(integrator.k[2].x[2],du)
