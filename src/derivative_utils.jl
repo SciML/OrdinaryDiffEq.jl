@@ -53,6 +53,7 @@ function calc_J(integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
   else
     J = jacobian(cache.uf,uprev,integrator)
   end
+  integrator.destats.njac += 1
   is_compos && (integrator.eigen_est = opnorm(J, Inf))
   return J
 end
@@ -79,6 +80,7 @@ function calc_J!(integrator, cache::OrdinaryDiffEqMutableCache, is_compos)
     uf.p = p
     jacobian!(J, uf, uprev, du1, integrator, jac_config)
   end
+  integrator.destats.njac += 1
   is_compos && (integrator.eigen_est = opnorm(J, Inf))
 end
 
