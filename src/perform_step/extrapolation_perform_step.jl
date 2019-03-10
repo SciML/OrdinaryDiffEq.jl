@@ -165,3 +165,61 @@ function perform_step!(integrator,cache::RichardsonEulerConstantCache,repeat_ste
 
   # Use extrapolated value of u
 end
+
+function initialize!(integrator,cache::ExtrapolationMidpointDeuflhardCache)
+  println("you are in initialize! of extrapolation acc. to Deuflhard and a mutable cache")
+end
+
+function initialize!(integrator,cache::ExtrapolationMidpointDeuflhardConstantCache)
+  # begin copied from above:
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast # end copied from above
+end
+
+function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,f,p = integrator
+  @unpack dtpropose, Q, current_extrapolation_order = cache
+
+  T = fill(zeros(eltype(uprev), size(uprev)), integrator.alg.max_extrapolation_order + 1) # storage for the internal discretisations obtained by the explicit midpoint rule
+  utemp1 = utemp2 = similar(uprev) # auxiliary variable for computing the internal discretisations
+
+  converged = false
+  u = similar(uprev) # storage for the latest solution
+  EEst = zero(eltype(Q)) # storage for the latest error estimate
+
+  # set up order window
+  n_win = max(integrator.alg.min_extrapolation_order, current_extrapolation_order - 1)
+  N_win =  min(integrator.alg.max_extrapolation_order, current_extrapolation_order + 1)
+
+  current_extrapolation_order = n_win # start with smalles order in the order window
+
+  # compute internal discretisations
+  for i = 0:current_extrapolation_order
+    j_int = 2Int64(cache.subdividing_sequence[i+1])
+    dt_int = dt/j_int # stepsize of the ith internal discretisation
+    T[i+1] = uprev + dt_int*integrator.fsalfirst # Euler starting step
+    utemp1 = uprev
+    for j = 0:(j_int-2)
+      utemp2 = T[i+1]
+      T[i+1] = utemp1 + 2dt_int*f(T[i+1],p,(j+1)dt_int) # explicit midpoint rule
+      utemp1 = utemp2
+    end
+  end
+
+  # first verion for testing
+  if !integrator.opts.adaptive
+    integrator.u =  T[current_extrapolation_order]
+
+    k = f(integrator.u, p, t+dt)
+    integrator.fsallast = k
+    integrator.k[1] = integrator.fsalfirst
+    integrator.k[2] = integrator.fsallast
+  end
+
+end

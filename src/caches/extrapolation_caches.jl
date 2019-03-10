@@ -53,6 +53,7 @@ end
   Q::Vector{QType} # storage for scaling factors of stepsize
   current_extrapolation_order::Int
   subdividing_sequence::Array{BigInt,1}
+  stage_number::Array{Int,1} # kth entry is the number of stages for extrapolation order (k + alg.min_extrapolation_order - 1)
   # weights and scaling factors for extrapolation operators:
   extrapolation_weights::Array{Rational{BigInt},2}
   extrapolation_scalars::Array{Rational{BigInt},1}
@@ -77,6 +78,9 @@ function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeN
   else # sequence_symbol == :bulirsch
       subdividing_sequence = [n==0 ? BigInt(1) : (isodd(n) ? BigInt(2)^Int64(n/2+0.5) : 3*BigInt(2^Int64(n/2-1))) for n = 0:N]
   end
+
+  # copute the stage numbers
+  stage_number = [2*sum(Int64.(subdividing_sequence[1:n+1])) - n for n in alg.min_extrapolation_order:N]
 
   # compute nodes corresponding to the subdividing sequence subdividing_sequence
   nodes = BigInt(1).// subdividing_sequence.^2
@@ -117,7 +121,7 @@ function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeN
   extrapolation_scalars = -nodes[1]*[BigInt(1); extrapolation_scalars_2]
 
   # initialize the constant cache
-  ExtrapolationMidpointDeuflhardConstantCache(dtpropose, Q, current_extrapolation_order,subdividing_sequence, extrapolation_weights, extrapolation_scalars,extrapolation_weights_2, extrapolation_scalars_2)
+  ExtrapolationMidpointDeuflhardConstantCache(dtpropose, Q, current_extrapolation_order,subdividing_sequence,stage_number, extrapolation_weights, extrapolation_scalars,extrapolation_weights_2, extrapolation_scalars_2)
 end
 
 @cache mutable struct ExtrapolationMidpointDeuflhardCache{uType,uNoUnitsType,rateType,dtType,QType} <: OrdinaryDiffEqMutableCache
