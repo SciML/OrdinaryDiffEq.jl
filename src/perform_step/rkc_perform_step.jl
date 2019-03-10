@@ -16,9 +16,7 @@ end
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
   mdeg = Int(floor(sqrt((1.5 + dt * integrator.eigen_est)/0.811) + 1))
-  if mdeg >= 200
-    mdeg = 200
-  end
+  mdeg = min(mdeg, 200)
   cache.mdeg = max(mdeg, 3) - 2
   cache.mdeg != cache.mdegprev && choosedeg!(cache)
   # recurrence
@@ -82,9 +80,7 @@ end
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
   mdeg = Int(floor(sqrt((1.5 + dt * integrator.eigen_est)/0.811) + 1))
-  if mdeg >= 200
-    mdeg = 200
-  end
+  mdeg = min(mdeg, 200)
   ccache.mdeg = max(mdeg, 3) - 2
   ccache.mdeg != ccache.mdegprev && choosedeg!(cache)
   # recurrence
@@ -98,7 +94,7 @@ end
   ms[ccache.mdeg] < 2 && ( @. u = gprev )
   # for the second to the ms[ccache.mdeg] th stages
   for i in 2:ms[ccache.mdeg]
-    μ, κ = recf[cache.recind + (i - 2)]
+    μ, κ = recf[ccache.recind + (i - 2)]
     ν = κ - 1
     temp1 = dt * μ
     temp2 = 1 + κ
@@ -258,7 +254,7 @@ end
   ms[ccache.mdeg] < 2 && ( @. u = gprev )
   # for the second to the ms[ccache.mdeg] th stages
   for i in 2:ms[ccache.mdeg]
-    μ, κ = recf[cache.recind + (i - 2)]
+    μ, κ = recf[ccache.recind + (i - 2)]
     ν = κ - 1
     temp1 = dt * μ
     temp2 = 1 + κ
@@ -605,7 +601,8 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
   # error estimate
   if isnewton(nlsolver) && integrator.opts.adaptive
     update_W!(integrator, cache, dt, false)
-    tmp = get_W(nlsolver)*dt*(0.5*(cache.du₂ - du₂) + (0.5 - μs₁)*(cache.du₁ - du₁))
+    LU_W = get_W(nlsolver)
+    tmp = LU_W.L * LU_W.U * (@. dt*(0.5*(cache.du₂ - du₂) + (0.5 - μs₁)*(cache.du₁ - du₁)))
     atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
@@ -738,7 +735,7 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   # error estimate
   if isnewton(nlsolver) && integrator.opts.adaptive
     update_W!(integrator, cache, dt, false)
-    @. tmp = get_W(nlsolver)*dt*(0.5*(du₂ - f2ⱼ₋₁) + (0.5 - μs₁)*(du₁ - f1ⱼ₋₁))
+    mul!(tmp, get_W(nlsolver), @. dt*(0.5*(du₂ - f2ⱼ₋₁) + (0.5 - μs₁)*(du₁ - f1ⱼ₋₁)))
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
