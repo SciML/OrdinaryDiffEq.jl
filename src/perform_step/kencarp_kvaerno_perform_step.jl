@@ -226,7 +226,7 @@ end
     z₃ = z₂
     u = nlsolver.tmp + γ*z₂
     k2 = dt*f2(u,p,t + 2γdt)
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
   else
     # Guess is from Hermite derivative on z₁ and z₂
@@ -246,7 +246,7 @@ end
     z₄ = z₂
     u = nlsolver.tmp + γ*z₃
     k3 = dt*f2( u,p,t+c3*dt)
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃ + ea41*k1 + ea42*k2 + ea43*k3
   else
     @unpack α41,α42 = cache.tab
@@ -263,7 +263,7 @@ end
   u = nlsolver.tmp + γ*z₄
   if typeof(integrator.f) <: SplitFunction
     k4 = dt*f2(u,p,t+dt)
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     u = uprev + a41*z₁ + a42*z₂ + a43*z₃ + γ*z₄ + eb1*k1 + eb2*k2 + eb3*k3 + eb4*k4
   end
 
@@ -357,7 +357,7 @@ end
     z₃ .= z₂
     @. u = tmp + γ*z₂
     f2(k2, u, p, t + 2γdt); k2 .*= dt
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     #@. tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
     for i in eachindex(tmp)
       @inbounds tmp[i] = uprev[i] + a31*z₁[i] + a32*z₂[i] + ea31*k1[i] + ea32*k2[i]
@@ -379,7 +379,7 @@ end
     z₄ .= z₂
     @. u = tmp + γ*z₃
     f2( k3, u,p,t+c3*dt); k3 .*= dt
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     #@. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃ + ea41*k1 + ea42*k2 + ea43*k3
     for i in eachindex(tmp)
       @inbounds tmp[i] = uprev[i] + a41*z₁[i] + a42*z₂[i] + a43*z₃[i] + ea41*k1[i] + ea42*k2[i] + ea43*k3[i]
@@ -398,7 +398,7 @@ end
   @. u = tmp + γ*z₄
   if typeof(integrator.f) <: SplitFunction
     f2( k4, u,p,t+dt); k4 .*= dt
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     #@. u = uprev + a41*z₁ + a42*z₂ + a43*z₃ + γ*z₄ + eb1*k1 + eb2*k2 + eb3*k3 + eb4*k4
     for i in eachindex(u)
       u[i] = uprev[i] + a41*z₁[i] + a42*z₂[i] + a43*z₃[i] + γ*z₄[i] + eb1*k1[i] + eb2*k2[i] + eb3*k3[i] + eb4*k4[i]
@@ -665,7 +665,7 @@ end
     z₃ = z₂
     u = nlsolver.tmp + γ*z₂
     k2 = dt*f2(u,p,t+2γdt)
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
   else
     # Guess is from Hermite derivative on z₁ and z₂
@@ -685,7 +685,7 @@ end
     z₄ = z₂
     u = nlsolver.tmp + γ*z₃
     k3 = dt*f2( u,p,t+c3*dt)
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃ + ea41*k1 + ea42*k2 + ea43*k3
   else
     z₄ = α41*z₁ + α42*z₂
@@ -704,7 +704,7 @@ end
     z₅ = z₄
     u = nlsolver.tmp + γ*z₄
     k4 = dt*f2( u,p,t+c4*dt)
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + ea51*k1 + ea52*k2 + ea53*k3 + ea54*k4
   else
     z₅ = α51*z₁ + α52*z₂ + α53*z₃ + α54*z₄
@@ -724,7 +724,7 @@ end
     z₆ = z₅
     u = nlsolver.tmp + γ*z₅
     k5 = dt*f2( u,p,t+c5*dt)
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + ea61*k1 + ea62*k2 + ea63*k3 + ea64*k4 + ea65*k5
   else
     z₆ = α61*z₁ + α62*z₂ + α63*z₃ + α64*z₄ + α65*z₅
@@ -740,7 +740,7 @@ end
   u = nlsolver.tmp + γ*z₆
   if typeof(integrator.f) <: SplitFunction
     k6 = dt*f2(u,p,t+dt)
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     u = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + γ*z₆ + eb1*k1 + eb3*k3 + eb4*k4 + eb5*k5 + eb6*k6
   end
 
@@ -842,7 +842,7 @@ end
     z₃ .= z₂
     @. u = tmp + γ*z₂
     f2(k2, u, p, t + 2γdt); k2 .*= dt
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     # @. tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
     for i in eachindex(tmp)
       @inbounds tmp[i] = uprev[i] + a31*z₁[i] + a32*z₂[i] + ea31*k1[i] + ea32*k2[i]
@@ -864,7 +864,7 @@ end
     z₄ .= z₂
     @. u = tmp + γ*z₃
     f2( k3, u,p,t+c3*dt); k3 .*= dt
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     #@. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃ + ea41*k1 + ea42*k2 + ea43*k3
     for i in eachindex(tmp)
       @inbounds tmp[i] = uprev[i] + a41*z₁[i] + a42*z₂[i] + a43*z₃[i] + ea41*k1[i] + ea42*k2[i] + ea43*k3[i]
@@ -887,7 +887,7 @@ end
     z₅ .= z₄
     @. u = tmp + γ*z₄
     f2( k4, u,p,t+c4*dt); k4 .*= dt
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     #@. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + ea51*k1 + ea52*k2 + ea53*k3 + ea54*k4
     for i in eachindex(tmp)
       @inbounds tmp[i] = uprev[i] + a51*z₁[i] + a52*z₂[i] + a53*z₃[i] + a54*z₄[i] + ea51*k1[i] + ea52*k2[i] + ea53*k3[i] + ea54*k4[i]
@@ -911,7 +911,7 @@ end
     z₆ .= z₅
     @. u = tmp + γ*z₅
     f2( k5, u,p,t+c5*dt); k5 .*= dt
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     #@. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + ea61*k1 + ea62*k2 + ea63*k3 + ea64*k4 + ea65*k5
     for i in eachindex(tmp)
       @inbounds tmp[i] = uprev[i] + a61*z₁[i] + a63*z₃[i] + a64*z₄[i] + a65*z₅[i] + ea61*k1[i] + ea62*k2[i] + ea63*k3[i] + ea64*k4[i] + ea65*k5[i]
@@ -933,7 +933,7 @@ end
   @. u = tmp + γ*z₆
   if typeof(integrator.f) <: SplitFunction
     f2( k6, u,p,t+dt); k6 .*= dt
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     @. u = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + γ*z₆ + eb1*k1 + eb3*k3 + eb4*k4 + eb5*k5 + eb6*k6
     for i in eachindex(u)
       u[i] = uprev[i] + a61*z₁[i] + a63*z₃[i] + a64*z₄[i] + a65*z₅[i] + γ*z₆[i] + eb1*k1[i] + eb3*k3[i] + eb4*k4[i] + eb5*k5[i] + eb6*k6[i]
@@ -1256,7 +1256,7 @@ end
     z₃ = z₂
     u = nlsolver.tmp + γ*z₂
     k2 = dt*f2(u,p,t+2γdt)
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
   else
     # Guess is from Hermite derivative on z₁ and z₂
@@ -1276,7 +1276,7 @@ end
     z₄ = z₂
     u = nlsolver.tmp + γ*z₃
     k3 = dt*f2( u,p,t+c3*dt)
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     tmp = uprev + a41*z₁ + a43*z₃ + ea41*k1 + ea43*k3
   else
     z₄ = α41*z₁ + α42*z₂
@@ -1295,7 +1295,7 @@ end
     z₅ = z₂
     u = nlsolver.tmp + γ*z₄
     k4 = dt*f2( u,p,t+c4*dt)
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     tmp = uprev + a51*z₁ + a53*z₃ + a54*z₄ + ea51*k1 + ea53*k3 + ea54*k4
   else
     z₅ = α51*z₁ + α52*z₂
@@ -1314,7 +1314,7 @@ end
     z₆ = z₃
     u = nlsolver.tmp + γ*z₅
     k5 = dt*f2( u,p,t+c5*dt)
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + ea61*k1 + ea63*k3 + ea64*k4 + ea65*k5
   else
     z₆ = α61*z₁ + α62*z₂
@@ -1333,7 +1333,7 @@ end
     z₇ = z₂
     u = nlsolver.tmp + γ*z₆
     k6 = dt*f2( u,p,t+c6*dt)
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     tmp = uprev + a71*z₁ +  a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆ + ea71*k1 + ea73*k3 + ea74*k4 + ea75*k5 + ea76*k6
   else
     z₇ = α71*z₁ + α72*z₂ + α73*z₃ + α74*z₄ + α75*z₅
@@ -1352,7 +1352,7 @@ end
     z₈ = z₅
     u = nlsolver.tmp + γ*z₇
     k7 = dt*f2( u,p,t+c7*dt)
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     tmp = uprev + a81*z₁ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇ + ea81*k1 + ea83*k3 + ea84*k4 + ea85*k5 + ea86*k6 + ea87*k7
   else
     z₈ = α81*z₁ + α82*z₂ + α83*z₃ + α84*z₄ + α85*z₅
@@ -1368,7 +1368,7 @@ end
   u = nlsolver.tmp + γ*z₈
   if typeof(integrator.f) <: SplitFunction
     k8 = dt*f2( u,p,t+dt)
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     u = uprev + a81*z₁ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇ + γ*z₈ + eb1*k1 + eb4*k4 + eb5*k5 + eb6*k6 + eb7*k7 + eb8*k8
   end
 
@@ -1472,7 +1472,7 @@ end
     z₃ .= z₂
     @. u = tmp + γ*z₂
     f2(k2, u, p, t+2γdt); k2 .*= dt
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     #@. tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
     for i in eachindex(u)
       @inbounds tmp[i] = uprev[i] + a31*z₁[i] + a32*z₂[i] + ea31*k1[i] + ea32*k2[i]
@@ -1494,7 +1494,7 @@ end
     z₄ .= z₃
     @. u = tmp + γ*z₃
     f2( k3, u,p,t+c3*dt); k3 .*= dt
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     #@. tmp = uprev + a41*z₁ + a43*z₃ + ea41*k1 + ea43*k3
     for i in eachindex(u)
       @inbounds tmp[i] = uprev[i] + a41*z₁[i] + a43*z₃[i] + ea41*k1[i] + ea43*k3[i]
@@ -1515,7 +1515,7 @@ end
     z₅ .= z₂
     @. u = tmp + γ*z₄
     f2( k4, u,p,t+c4*dt); k4 .*= dt
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     #@. tmp = uprev + a51*z₁ + a53*z₃ + a54*z₄ + ea51*k1 + ea53*k3 + ea54*k4
     for i in eachindex(u)
       @inbounds tmp[i] = uprev[i] + a51*z₁[i] + a53*z₃[i] + a54*z₄[i] + ea51*k1[i] + ea53*k3[i] + ea54*k4[i]
@@ -1536,7 +1536,7 @@ end
     z₆ .= z₃
     @. u = tmp + γ*z₅
     f2( k5, u,p,t+c5*dt); k5 .*= dt
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     #@. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + ea61*k1 + ea63*k3 + ea64*k4 + ea65*k5
     for i in eachindex(u)
       @inbounds tmp[i] = uprev[i] + a61*z₁[i] + a63*z₃[i] + a64*z₄[i] + a65*z₅[i] + ea61*k1[i] + ea63*k3[i] + ea64*k4[i] + ea65*k5[i]
@@ -1560,7 +1560,7 @@ end
     z₇ .= z₂
     @. u = tmp + γ*z₆
     f2( k6, u,p,t+c6*dt); k6 .*= dt
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     #@. tmp = uprev + a71*z₁ +  a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆ + ea71*k1 + ea73*k3 + ea74*k4 + ea75*k5 + ea76*k6
     for i in eachindex(u)
       @inbounds tmp[i] = uprev[i] + a71*z₁[i] +  a73*z₃[i] + a74*z₄[i] + a75*z₅[i] + a76*z₆[i] + ea71*k1[i] + ea73*k3[i] + ea74*k4[i] + ea75*k5[i] + ea76*k6[i]
@@ -1587,7 +1587,7 @@ end
     z₈ .= z₅
     @. u = tmp + γ*z₇
     f2( k7, u,p,t+c7*dt); k7 .*= dt
-    integrator.destats.nf += 1
+    integrator.destats.nf2 += 1
     #@. tmp = uprev + a81*z₁ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇ + ea81*k1 + ea83*k3 + ea84*k4 + ea85*k5 + ea86*k6 + ea87*k7
     for i in eachindex(u)
       @inbounds tmp[i] = uprev[i] + a81*z₁[i] + a84*z₄[i] + a85*z₅[i] + a86*z₆[i] + a87*z₇[i] + ea81*k1[i] + ea83*k3[i] + ea84*k4[i] + ea85*k5[i] + ea86*k6[i] + ea87*k7[i]
