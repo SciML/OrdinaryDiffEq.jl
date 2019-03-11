@@ -742,8 +742,7 @@ ESDIRK54I8L2SA(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                    extrapolant=:linear,new_jac_conv_bound = 1e-3,
                    controller = :PI) =
  ESDIRK54I8L2SA{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),
-        typeof(new_jac_conv_bound),controller}(
-        linsolve,nlsolve,diff_type,extrapolant,new_jac_conv_bound)
+                typeof(new_jac_conv_bound)}(linsolve,nlsolve,diff_type,extrapolant,new_jac_conv_bound)
 
 ################################################################################
 
