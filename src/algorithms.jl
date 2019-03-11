@@ -301,7 +301,7 @@ end
 QNDF1(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                  linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                                   extrapolant=:linear,new_jac_conv_bound = 1e-3,kappa = -0.1850,
-                 controller = :Predictive) =
+                 controller = :PI) =
                  QNDF1{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),
                  typeof(new_jac_conv_bound),typeof(kappa)}(
                  linsolve,nlsolve,diff_type,extrapolant,new_jac_conv_bound,kappa,controller)
@@ -320,7 +320,7 @@ end
 QNDF2(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                  linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                                   extrapolant=:linear,new_jac_conv_bound = 1e-3,kappa = -1//9,
-                 controller = :Predictive) =
+                 controller = :PI) =
                  QNDF2{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),
                  typeof(new_jac_conv_bound),typeof(kappa)}(
                  linsolve,nlsolve,diff_type,extrapolant,new_jac_conv_bound,kappa,controller)
@@ -406,7 +406,7 @@ struct IRKC{CS,AD,F,F2,FDT,K,T,T2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,A
 end
 IRKC(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                  linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),κ=nothing,tol=nothing,
-                 extrapolant=:linear,new_jac_conv_bound = 1e-3,controller = :Predictive) =
+                 extrapolant=:linear,new_jac_conv_bound = 1e-3,controller = :PI) =
                  IRKC{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),typeof(κ),typeof(tol),
                  typeof(new_jac_conv_bound)}(
                  linsolve,nlsolve,diff_type,κ,tol,extrapolant,new_jac_conv_bound,controller)
@@ -487,7 +487,7 @@ end
 ImplicitEuler(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                           linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                           extrapolant=:constant,new_jac_conv_bound=1e-3,
-                          controller=:Predictive) =
+                          controller=:PI) =
                           ImplicitEuler{chunk_size,autodiff,typeof(linsolve),
                           typeof(nlsolve),typeof(diff_type),
                           typeof(new_jac_conv_bound)}(linsolve,
@@ -535,7 +535,7 @@ end
 TRBDF2(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                  linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                  smooth_est=true,extrapolant=:linear,new_jac_conv_bound = 1e-3,
-                 controller = :Predictive) =
+                 controller = :PI) =
 TRBDF2{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),
       typeof(new_jac_conv_bound)}(
       linsolve,nlsolve,diff_type,smooth_est,extrapolant,new_jac_conv_bound,controller)
@@ -552,7 +552,7 @@ end
 SDIRK2(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,new_jac_conv_bound = 1e-3,
-                   controller = :Predictive) =
+                   controller = :PI) =
  SDIRK2{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),
         typeof(new_jac_conv_bound)}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,new_jac_conv_bound,controller)
@@ -569,7 +569,7 @@ end
 SSPSDIRK2(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:constant,new_jac_conv_bound = 1e-3,
-                   controller = :Predictive) =
+                   controller = :PI) =
  SSPSDIRK2{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),
         typeof(new_jac_conv_bound)}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,new_jac_conv_bound,controller)
@@ -586,7 +586,7 @@ end
 Kvaerno3(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,new_jac_conv_bound = 1e-3,
-                   controller = :Predictive) =
+                   controller = :PI) =
  Kvaerno3{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),
         typeof(new_jac_conv_bound)}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,new_jac_conv_bound,controller)
@@ -603,7 +603,7 @@ end
 KenCarp3(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,new_jac_conv_bound = 1e-3,
-                   controller = :Predictive) =
+                   controller = :PI) =
  KenCarp3{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),
         typeof(new_jac_conv_bound)}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,new_jac_conv_bound,controller)
@@ -622,7 +622,7 @@ end
 Cash4(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,new_jac_conv_bound = 1e-3,
-                   controller = :Predictive,embedding=3) =
+                   controller = :PI,embedding=3) =
  Cash4{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),
         typeof(new_jac_conv_bound)}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,new_jac_conv_bound,embedding,controller)
@@ -639,7 +639,7 @@ end
 Hairer4(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,new_jac_conv_bound = 1e-3,
-                   controller = :Predictive) =
+                   controller = :PI) =
  Hairer4{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),
         typeof(new_jac_conv_bound)}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,new_jac_conv_bound,controller)
@@ -656,7 +656,7 @@ end
 Hairer42(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,new_jac_conv_bound = 1e-3,
-                   controller = :Predictive) =
+                   controller = :PI) =
  Hairer42{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),
         typeof(new_jac_conv_bound)}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,new_jac_conv_bound,controller)
@@ -673,7 +673,7 @@ end
 Kvaerno4(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,new_jac_conv_bound = 1e-3,
-                   controller = :Predictive) =
+                   controller = :PI) =
  Kvaerno4{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),
         typeof(new_jac_conv_bound)}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,new_jac_conv_bound,controller)
@@ -690,7 +690,7 @@ end
 Kvaerno5(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,new_jac_conv_bound = 1e-3,
-                   controller = :Predictive) =
+                   controller = :PI) =
  Kvaerno5{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),
         typeof(new_jac_conv_bound)}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,new_jac_conv_bound,controller)
@@ -707,7 +707,7 @@ end
 KenCarp4(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,new_jac_conv_bound = 1e-3,
-                   controller = :Predictive) =
+                   controller = :PI) =
  KenCarp4{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),
         typeof(new_jac_conv_bound)}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,new_jac_conv_bound,controller)
@@ -724,13 +724,13 @@ end
 KenCarp5(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    smooth_est=true,extrapolant=:linear,new_jac_conv_bound = 1e-3,
-                   controller = :Predictive) =
+                   controller = :PI) =
  KenCarp5{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),
         typeof(new_jac_conv_bound)}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,new_jac_conv_bound,controller)
 
 # `smooth_est` is not necessary, as the embedded method is also L-stable
-struct ESDIRK54I8L2SA{CS,AD,F,F2,FDT,T2,Controller} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD,Controller}
+struct ESDIRK54I8L2SA{CS,AD,F,F2,FDT,T2} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F
   nlsolve::F2
   diff_type::FDT
@@ -740,7 +740,7 @@ end
 ESDIRK54I8L2SA(;chunk_size=0,autodiff=true,diff_type=Val{:central},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    extrapolant=:linear,new_jac_conv_bound = 1e-3,
-                   controller = :Predictive) =
+                   controller = :PI) =
  ESDIRK54I8L2SA{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),
         typeof(new_jac_conv_bound),controller}(
         linsolve,nlsolve,diff_type,extrapolant,new_jac_conv_bound)
@@ -903,7 +903,7 @@ end
 ABDF2(;chunk_size=0,autodiff=true,diff_type=Val{:central},
       κ=nothing,tol=nothing,linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
       smooth_est=true,extrapolant=:linear,new_jac_conv_bound=1e-3,
-      controller=:Predictive) =
+      controller=:PI) =
 ABDF2{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),
       typeof(κ),typeof(tol),typeof(new_jac_conv_bound)}(
       linsolve,nlsolve,diff_type,κ,tol,smooth_est,extrapolant,new_jac_conv_bound,controller)

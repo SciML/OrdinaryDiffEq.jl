@@ -475,7 +475,7 @@ uses_uprev(alg::CKLLSRK85_4FM_4R, adaptive::Bool) = adaptive
 uses_uprev(alg::CKLLSRK75_4M_5R, adaptive::Bool) = adaptive
 
 ispredictive(alg::OrdinaryDiffEqAlgorithm) = false
-ispredictive(alg::Union{RKC,RadauIIA5}) = true
+ispredictive(alg::Union{RKC}) = true
 ispredictive(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Predictive
 isstandard(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Standard
 isstandard(alg::Union{GenericImplicitEuler,GenericTrapezoid,VCABM}) = true
