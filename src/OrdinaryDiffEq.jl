@@ -94,6 +94,7 @@ module OrdinaryDiffEq
   include("tableaus/rkc_tableaus.jl")
 
   include("integrators/type.jl")
+  include("integrators/controllers.jl")
   include("integrators/integrator_utils.jl")
   include("integrators/integrator_interface.jl")
 
