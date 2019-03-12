@@ -751,89 +751,15 @@ ESDIRK54I8L2SA(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 
 # Rosenbrock Methods
 
-struct Rosenbrock23{CS,AD,F,FDT} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
-  linsolve::F
-  diff_type::FDT
+for Alg in [:Rosenbrock23, :Rosenbrock32, :ROS3P, :Rodas3, :RosShamp4, :Veldd4, :Velds4, :GRK4T, :GRK4A, :Ros4LStab, :Rodas4, :Rodas42, :Rodas4P, :Rodas5]
+  @eval begin
+    struct $Alg{CS,AD,F,FDT} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
+      linsolve::F
+      diff_type::FDT
+    end
+    $Alg(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = $Alg{chunk_size,autodiff,typeof(linsolve),typeof(diff_type)}(linsolve,diff_type)
+  end
 end
-Rosenbrock23(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = Rosenbrock23{chunk_size,autodiff,typeof(linsolve),typeof(diff_type)}(linsolve,diff_type)
-
-struct Rosenbrock32{CS,AD,F,FDT} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
-  linsolve::F
-  diff_type::FDT
-end
-Rosenbrock32(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = Rosenbrock32{chunk_size,autodiff,typeof(linsolve),typeof(diff_type)}(linsolve,diff_type)
-
-struct ROS3P{CS,AD,F,FDT} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
-  linsolve::F
-  diff_type::FDT
-end
-ROS3P(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = ROS3P{chunk_size,autodiff,typeof(linsolve),typeof(diff_type)}(linsolve,diff_type)
-
-struct Rodas3{CS,AD,F,FDT} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
-  linsolve::F
-  diff_type::FDT
-end
-Rodas3(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = Rodas3{chunk_size,autodiff,typeof(linsolve),typeof(diff_type)}(linsolve,diff_type)
-
-struct RosShamp4{CS,AD,F,FDT} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
-  linsolve::F
-  diff_type::FDT
-end
-RosShamp4(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = RosShamp4{chunk_size,autodiff,typeof(linsolve),typeof(diff_type)}(linsolve,diff_type)
-
-struct Veldd4{CS,AD,F,FDT} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
-  linsolve::F
-  diff_type::FDT
-end
-Veldd4(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = Veldd4{chunk_size,autodiff,typeof(linsolve),typeof(diff_type)}(linsolve,diff_type)
-
-struct Velds4{CS,AD,F,FDT} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
-  linsolve::F
-  diff_type::FDT
-end
-Velds4(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = Velds4{chunk_size,autodiff,typeof(linsolve),typeof(diff_type)}(linsolve,diff_type)
-
-struct GRK4T{CS,AD,F,FDT} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
-  linsolve::F
-  diff_type::FDT
-end
-GRK4T(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = GRK4T{chunk_size,autodiff,typeof(linsolve),typeof(diff_type)}(linsolve,diff_type)
-
-struct GRK4A{CS,AD,F,FDT} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
-  linsolve::F
-  diff_type::FDT
-end
-GRK4A(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = GRK4A{chunk_size,autodiff,typeof(linsolve),typeof(diff_type)}(linsolve,diff_type)
-
-struct Ros4LStab{CS,AD,F,FDT} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
-  linsolve::F
-  diff_type::FDT
-end
-Ros4LStab(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = Ros4LStab{chunk_size,autodiff,typeof(linsolve),typeof(diff_type)}(linsolve,diff_type)
-
-struct Rodas4{CS,AD,F,FDT} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
-  linsolve::F
-  diff_type::FDT
-end
-Rodas4(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = Rodas4{chunk_size,autodiff,typeof(linsolve),typeof(diff_type)}(linsolve,diff_type)
-
-struct Rodas42{CS,AD,F,FDT} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
-  linsolve::F
-  diff_type::FDT
-end
-Rodas42(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = Rodas42{chunk_size,autodiff,typeof(linsolve),typeof(diff_type)}(linsolve,diff_type)
-
-struct Rodas4P{CS,AD,F,FDT} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
-  linsolve::F
-  diff_type::FDT
-end
-Rodas4P(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = Rodas4P{chunk_size,autodiff,typeof(linsolve),typeof(diff_type)}(linsolve,diff_type)
-
-struct Rodas5{CS,AD,F,FDT} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
-  linsolve::F
-  diff_type::FDT
-end
-Rodas5(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = Rodas5{chunk_size,autodiff,typeof(linsolve),typeof(diff_type)}(linsolve,diff_type)
 
 struct GeneralRosenbrock{CS,AD,F,TabType} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
   tableau::TabType
