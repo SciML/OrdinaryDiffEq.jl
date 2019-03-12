@@ -67,8 +67,9 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, f
       ForwardDiff.jacobian!(J, f, fx, x, jac_config)
       tmp = 1
     else
-      DiffEqDiffTools.finite_difference_jacobian!(J, f, x, jac_config)
-      if integrator.alg.diff_type==Val{:complex} && eltype(x)<:Real
+      iscentral = integrator.alg.diff_type === Val{:central}
+      iscentral ? DiffEqDiffTools.finite_difference_jacobian!(J, f, x, jac_config, integrator.uprev) : DiffEqDiffTools.finite_difference_jacobian!(J, f, x, jac_config)
+      if (integrator.alg.diff_type==Val{:complex} && eltype(x)<:Real) || iscentral
         tmp = length(x)
       else
         tmp = 2*length(x)
