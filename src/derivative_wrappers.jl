@@ -68,7 +68,7 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, f
       tmp = 1
     else
       isforward = integrator.alg.diff_type === Val{:forward}
-      isforward ? DiffEqDiffTools.finite_difference_jacobian!(J, f, x, jac_config, integrator.uprev) : DiffEqDiffTools.finite_difference_jacobian!(J, f, x, jac_config)
+      isforward ? (f(jac_config[2], x); DiffEqDiffTools.finite_difference_jacobian!(J, f, x, jac_config...)) : DiffEqDiffTools.finite_difference_jacobian!(J, f, x, jac_config)
       if (integrator.alg.diff_type==Val{:complex} && eltype(x)<:Real) || isforward
         tmp = length(x)
       else
@@ -88,6 +88,9 @@ function build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
         jac_config = DiffEqDiffTools.JacobianCache(tmp,du1,du2,alg.diff_type)
       else
         jac_config = DiffEqDiffTools.JacobianCache(Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing,alg.diff_type,eltype(u))
+      end
+      if alg.diff_type === Val{:forward}
+        jac_config = jac_config, similar(du2)
       end
     end
   else
