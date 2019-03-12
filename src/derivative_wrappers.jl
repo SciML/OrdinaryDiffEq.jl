@@ -62,20 +62,20 @@ jacobian_finitediff(f, x::AbstractArray, diff_type) =
     DiffEqDiffTools.finite_difference_jacobian(f, x, diff_type, eltype(x), Val{false})
 
 function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, fx::AbstractArray{<:Number}, integrator::DiffEqBase.DEIntegrator, jac_config)
-    local tmp
+    local count
     if get_current_alg_autodiff(integrator.alg, integrator.cache)
       ForwardDiff.jacobian!(J, f, fx, x, jac_config)
-      tmp = 1
+      count = 1
     else
       isforward = integrator.alg.diff_type === Val{:forward}
-      isforward ? (f(jac_config[2], x); DiffEqDiffTools.finite_difference_jacobian!(J, f, x, jac_config...)) : DiffEqDiffTools.finite_difference_jacobian!(J, f, x, jac_config)
+      isforward ? (du = get_du(integrator); f(du, x); DiffEqDiffTools.finite_difference_jacobian!(J, f, x, jac_config, du)) : DiffEqDiffTools.finite_difference_jacobian!(J, f, x, jac_config)
       if (integrator.alg.diff_type==Val{:complex} && eltype(x)<:Real) || isforward
-        tmp = length(x)
+        count = length(x) + isforward
       else
-        tmp = 2*length(x)
+        count = 2*length(x)
       end
     end
-    integrator.destats.nf += tmp
+    integrator.destats.nf += count
     nothing
 end
 
@@ -88,9 +88,6 @@ function build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
         jac_config = DiffEqDiffTools.JacobianCache(tmp,du1,du2,alg.diff_type)
       else
         jac_config = DiffEqDiffTools.JacobianCache(Complex{eltype(tmp)}.(tmp),Complex{eltype(du1)}.(du1),nothing,alg.diff_type,eltype(u))
-      end
-      if alg.diff_type === Val{:forward}
-        jac_config = jac_config, similar(du2)
       end
     end
   else
