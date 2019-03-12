@@ -241,8 +241,8 @@ function donewJ(integrator, alg, repeat_step)
   repeat_step && return false
   !alg_can_repeat_jac(alg) && return true
   isnewton = alg isa NewtonAlgorithm
-  isnewton && ( @unpack ηold,nl_iters = integrator.cache.nlsolver)
-  integrator.last_stepfail && return true
+  isnewton && ( @unpack ηold,nl_iters = integrator.cache.nlsolver )
+  integrator.force_stepfail && return true
   # reuse J when there is fast convergence
   fastconvergence = nl_iters == 1 && ηold >= alg.new_jac_conv_bound
   return !fastconvergence
