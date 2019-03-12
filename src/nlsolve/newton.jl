@@ -55,7 +55,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 
     # evaluate function
     u = @. tmp + γ * z
-    if mass_matrix == I
+    if mass_matrix === I
       ztmp = dt .* f(u, p, tstep) .- z
     else
       ztmp = dt .* f(u, p, tstep) .- mass_matrix * z
@@ -124,7 +124,7 @@ end
     @. u = tmp + γ*z
     f(k, u, p, tstep)
     integrator.destats.nf += 1
-    if mass_matrix == I
+    if mass_matrix === I
       @. ztmp = dt*k - z
     else
       mul!(vecztmp,mass_matrix,vecz)
