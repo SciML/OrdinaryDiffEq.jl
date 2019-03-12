@@ -237,7 +237,7 @@ function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrM
   end
 end
 
-function donewJ(integrator, alg, repeat_step)
+function donewJ(integrator, alg, repeat_step)::Bool
   repeat_step && return false
   !alg_can_repeat_jac(alg) && return true
   isnewton = alg isa NewtonAlgorithm
@@ -248,7 +248,7 @@ function donewJ(integrator, alg, repeat_step)
   return !fastconvergence
 end
 
-function donewW(integrator, new_jac)
+function donewW(integrator, new_jac)::Bool
   new_jac && return true
   integrator.iter < 1 && return true
   # reuse W when the change in stepsize is small enough
@@ -261,17 +261,24 @@ end
 @noinline _throwWJerror(W, J) = throw(DimensionMismatch("W: $(axes(W)), J: $(axes(J))"))
 @noinline _throwWMerror(W, mass_matrix) = throw(DimensionMismatch("W: $(axes(W)), mass matrix: $(axes(mass_matrix))"))
 
-function jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
+@inline function jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)::Nothing
   # check size and dimension
-  @boundscheck (iijj = axes(W)) === axes(J) && (length(iijj) === 2) || _throwWJerror(W, J)
+  iijj = axes(W)
+  @boundscheck (iijj === axes(J) && length(iijj) === 2) || _throwWJerror(W, J)
   mass_matrix isa UniformScaling || @boundscheck axes(mass_matrix) === axes(W) || _throwWMerror(W, mass_matrix)
   @inbounds if W_transform
-    for i in iijj[1], j in iijj[2]
-      W[i, j] = muladd(mass_matrix[i, j], inv(dtgamma), -J[i, j])
+    invdtgamma′ = -inv(dtgamma)
+    for i in iijj[1]
+      @inbounds for j in iijj[2]
+        W[i, j] = muladd(mass_matrix[i, j], invdtgamma′, -J[i, j])
+      end
     end
   else
-    for i in iijj[1], j in iijj[2]
-      W[i, j] = muladd(-dtgamma, J[i, j], mass_matrix[i, j])
+    dtgamma′ = -dtgamma
+    for i in iijj[1]
+      @simd for j in iijj[2]
+        W[i, j] = muladd(dtgamma′, J[i, j], mass_matrix[i, j])
+      end
     end
   end
   return nothing
