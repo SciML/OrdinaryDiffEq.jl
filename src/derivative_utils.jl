@@ -268,7 +268,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
       # skip calculation of J if step is repeated
       if repeat_step || (alg_can_repeat_jac(alg) &&
                          (!integrator.last_stepfail && nl_iters == 1 &&
-                          ηold < alg.new_jac_conv_bound))
+                          ηold > alg.new_jac_conv_bound))
         new_jac = false
       else
         new_jac = true
@@ -288,7 +288,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
       # skip calculation of J if step is repeated
       if repeat_step || (alg_can_repeat_jac(alg) &&
                          (!integrator.last_stepfail && nl_iters == 1 &&
-                          ηold < alg.new_jac_conv_bound))
+                          ηold > alg.new_jac_conv_bound))
         new_jac = false
       else
         new_jac = true
