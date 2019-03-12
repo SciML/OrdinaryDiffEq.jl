@@ -35,8 +35,6 @@ end
 
 function initialize!(integrator,cache::LowStorageRK2NCache)
   @unpack k, tmp = cache
-  # integrator.fsalfirst = fsalfirst
-  # integrator.fsallast = k
   integrator.kshortsize = 1
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = k
@@ -50,13 +48,12 @@ end
   @unpack A2end,B1,B2end,c2end = cache.tab
 
   # u1
-  # @. tmp = dt*fsalfirst
   @. u   = u + B1*tmp
 
   # other stages
   for i in eachindex(A2end)
     @. tmp = A2end[i]*tmp
-    f(WilliamsonWrapper{typeof(tmp),typeof(dt)}(tmp,dt), u, p, t+c2end[i]*dt)
+    f(WilliamsonWrapper(tmp,dt), u, p, t+c2end[i]*dt)
     integrator.destats.nf += 1
     @. u   = u + B2end[i]*tmp
   end
@@ -71,9 +68,11 @@ struct WilliamsonWrapper{kType, dtType}
   dt::dtType
 end
 
-Base.setindex!(a::WilliamsonWrapper{kType, dtType}, b::bType, c::cType) where {kType, dtType, bType, cType} = (a.kref[c] += a.dt * b) 
-Base.size(a::WilliamsonWrapper{kType, dtType}) where {kType, dtType} = size(a.kref)
-Base.copyto!(a::WilliamsonWrapper{kType, dtType}, b::bType) where {kType, dtType, bType} = (a.kref .+= a.dt .* b)
+@inline Base.setindex!(a::WilliamsonWrapper{kType, dtType}, b::bType, c::cType) where {kType, dtType, bType, cType} = (a.kref[c] += a.dt * b)
+@inline Base.getindex(a::WilliamsonWrapper{kType, dtType}, b::bType) where {kType, dtType, bType} = a.kref[b]
+@inline Base.size(a::WilliamsonWrapper{kType, dtType}) where {kType, dtType} = size(a.kref)
+@inline Base.copyto!(a::WilliamsonWrapper{kType, dtType}, b::bType) where {kType, dtType, bType} = @. a.kref += a.dt * b
+#Base.broadcast!(::typeof(=), a::WilliamsonWrapper{kType, dtType}, b::bType) where {kType, dtType, bType} = (a.kref .+= a.dt .* b)
 
 # 2C low storage methods
 function initialize!(integrator,cache::LowStorageRK2CConstantCache)

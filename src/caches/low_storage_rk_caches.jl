@@ -4,7 +4,7 @@
   u::uType
   uprev::uType
   k::rateType
-  tmp::uType
+  tmp::uType # tmp acts as second register and fsal both
   tab::TabType
 end
 
@@ -40,7 +40,7 @@ function ORK256ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
 end
 
 function alg_cache(alg::ORK256,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tmp = similar(u)
+  tmp = zero(u)
   if calck
     k = zero(rate_prototype)
   else
@@ -79,7 +79,7 @@ function CarpenterKennedy2N54ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
 end
 
 function alg_cache(alg::CarpenterKennedy2N54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tmp = similar(u)
+  tmp = zero(u)
   if calck
     k = zero(rate_prototype)
   else
@@ -122,7 +122,7 @@ function HSLDDRK64ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
 end
 
 function alg_cache(alg::HSLDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tmp = similar(u)
+  tmp = zero(u)
   if calck
     k = zero(rate_prototype)
   else
@@ -167,7 +167,7 @@ function DGLDDRK73_CConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
 end
 
 function alg_cache(alg::DGLDDRK73_C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tmp = similar(u)
+  tmp = zero(u)
   if calck
     k = zero(rate_prototype)
   else
@@ -215,7 +215,7 @@ function DGLDDRK84_CConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
 end
 
 function alg_cache(alg::DGLDDRK84_C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tmp = similar(u)
+  tmp = zero(u)
   if calck
     k = zero(rate_prototype)
   else
@@ -263,7 +263,7 @@ function DGLDDRK84_FConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
 end
 
 function alg_cache(alg::DGLDDRK84_F,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tmp = similar(u)
+  tmp = zero(u)
   if calck
     k = zero(rate_prototype)
   else
@@ -323,7 +323,7 @@ function NDBLSRK124ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
 end
 
 function alg_cache(alg::NDBLSRK124,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tmp = similar(u)
+  tmp = zero(u)
   if calck
     k = zero(rate_prototype)
   else
@@ -386,7 +386,7 @@ function NDBLSRK134ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
 end
 
 function alg_cache(alg::NDBLSRK134,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tmp = similar(u)
+  tmp = zero(u)
   if calck
     k = zero(rate_prototype)
   else
@@ -452,7 +452,7 @@ function NDBLSRK144ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
 end
 
 function alg_cache(alg::NDBLSRK144,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tmp = similar(u)
+  tmp = zero(u)
   if calck
     k = zero(rate_prototype)
   else
