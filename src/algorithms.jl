@@ -738,13 +738,14 @@ struct ESDIRK54I8L2SA{CS,AD,F,F2,FDT,T2} <: OrdinaryDiffEqNewtonAdaptiveAlgorith
   diff_type::FDT
   extrapolant::Symbol
   new_jac_conv_bound::T2
+  controller::Symbol
 end
 ESDIRK54I8L2SA(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                    linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
                    extrapolant=:linear,new_jac_conv_bound = 1e-3,
                    controller = :PI) =
  ESDIRK54I8L2SA{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type),
-                typeof(new_jac_conv_bound)}(linsolve,nlsolve,diff_type,extrapolant,new_jac_conv_bound)
+                typeof(new_jac_conv_bound)}(linsolve,nlsolve,diff_type,extrapolant,new_jac_conv_bound,controller)
 
 ################################################################################
 
