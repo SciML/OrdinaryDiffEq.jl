@@ -44,7 +44,11 @@ function alg_cache(alg::ORK256,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   if calck
     k = zero(rate_prototype)
   else
-    k = tmp
+    if alg.williamson_condition
+      k = tmp
+    else
+      k = zero(rate_prototype)
+    end
   end
   tab = ORK256ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   LowStorageRK2NCache(u,uprev,k,tmp,tab)
@@ -83,7 +87,11 @@ function alg_cache(alg::CarpenterKennedy2N54,u,rate_prototype,uEltypeNoUnits,uBo
   if calck
     k = zero(rate_prototype)
   else
-    k = tmp
+    if alg.williamson_condition
+      k = tmp
+    else
+      k = zero(rate_prototype)
+    end
   end
   tab = CarpenterKennedy2N54ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   LowStorageRK2NCache(u,uprev,k,tmp,tab)
@@ -126,7 +134,11 @@ function alg_cache(alg::HSLDDRK64,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   if calck
     k = zero(rate_prototype)
   else
-    k = tmp
+    if alg.williamson_condition
+      k = tmp
+    else
+      k = zero(rate_prototype)
+    end
   end
   tab = HSLDDRK64ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   LowStorageRK2NCache(u,uprev,k,tmp,tab)
@@ -171,7 +183,11 @@ function alg_cache(alg::DGLDDRK73_C,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   if calck
     k = zero(rate_prototype)
   else
-    k = tmp
+    if alg.williamson_condition
+      k = tmp
+    else
+      k = zero(rate_prototype)
+    end
   end
   tab = DGLDDRK73_CConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   LowStorageRK2NCache(u,uprev,k,tmp,tab)
@@ -219,7 +235,11 @@ function alg_cache(alg::DGLDDRK84_C,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   if calck
     k = zero(rate_prototype)
   else
-    k = tmp
+    if alg.williamson_condition
+      k = tmp
+    else
+      k = zero(rate_prototype)
+    end
   end
   tab = DGLDDRK84_CConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   LowStorageRK2NCache(u,uprev,k,tmp,tab)
@@ -267,7 +287,11 @@ function alg_cache(alg::DGLDDRK84_F,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   if calck
     k = zero(rate_prototype)
   else
-    k = tmp
+    if alg.williamson_condition
+      k = tmp
+    else
+      k = zero(rate_prototype)
+    end
   end
   tab = DGLDDRK84_FConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   LowStorageRK2NCache(u,uprev,k,tmp,tab)
@@ -327,7 +351,11 @@ function alg_cache(alg::NDBLSRK124,u,rate_prototype,uEltypeNoUnits,uBottomEltype
   if calck
     k = zero(rate_prototype)
   else
-    k = tmp
+    if alg.williamson_condition
+      k = tmp
+    else
+      k = zero(rate_prototype)
+    end
   end
   tab = NDBLSRK124ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   LowStorageRK2NCache(u,uprev,k,tmp,tab)
@@ -390,7 +418,11 @@ function alg_cache(alg::NDBLSRK134,u,rate_prototype,uEltypeNoUnits,uBottomEltype
   if calck
     k = zero(rate_prototype)
   else
-    k = tmp
+    if alg.williamson_condition
+      k = tmp
+    else
+      k = zero(rate_prototype)
+    end
   end
   tab = NDBLSRK134ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   LowStorageRK2NCache(u,uprev,k,tmp,tab)
@@ -456,7 +488,11 @@ function alg_cache(alg::NDBLSRK144,u,rate_prototype,uEltypeNoUnits,uBottomEltype
   if calck
     k = zero(rate_prototype)
   else
-    k = tmp
+    if alg.williamson_condition
+      k = tmp
+    else
+      k = zero(rate_prototype)
+    end
   end
   tab = NDBLSRK144ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   LowStorageRK2NCache(u,uprev,k,tmp,tab)

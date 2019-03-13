@@ -38,7 +38,12 @@ function initialize!(integrator,cache::LowStorageRK2NCache)
   integrator.kshortsize = 1
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = k
-  integrator.f(WilliamsonWrapper(tmp,integrator.dt),integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+  if integrator.alg.williamson_condition
+    integrator.f(WilliamsonWrapper(tmp,integrator.dt),integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+  else
+    integrator.f(k ,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+    @. tmp += integrator.dt * k
+  end
   integrator.destats.nf += 1
 end
 
@@ -53,7 +58,12 @@ end
   # other stages
   for i in eachindex(A2end)
     @. tmp = A2end[i]*tmp
-    f(WilliamsonWrapper(tmp,dt), u, p, t+c2end[i]*dt)
+    if integrator.alg.williamson_condition
+      f(WilliamsonWrapper(tmp,dt), u, p, t+c2end[i]*dt)
+    else
+      f(k, u, p, t+c2end[i]*dt)
+      @. tmp += dt * k
+    end
     integrator.destats.nf += 1
     @. u   = u + B2end[i]*tmp
   end
@@ -72,7 +82,6 @@ end
 @inline Base.getindex(a::WilliamsonWrapper{kType, dtType}, b::bType) where {kType, dtType, bType} = a.kref[b]
 @inline Base.size(a::WilliamsonWrapper{kType, dtType}) where {kType, dtType} = size(a.kref)
 @inline Base.copyto!(a::WilliamsonWrapper{kType, dtType}, b::bType) where {kType, dtType, bType} = @. a.kref += a.dt * b
-#Base.broadcast!(::typeof(=), a::WilliamsonWrapper{kType, dtType}, b::bType) where {kType, dtType, bType} = (a.kref .+= a.dt .* b)
 
 # 2C low storage methods
 function initialize!(integrator,cache::LowStorageRK2CConstantCache)

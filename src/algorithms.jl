@@ -49,15 +49,42 @@ struct Anas5{T} <: OrdinaryDiffEqAlgorithm
 end
 Anas5(; w=1) = Anas5(w)
 
-struct ORK256 <: OrdinaryDiffEqAlgorithm end
-struct CarpenterKennedy2N54 <: OrdinaryDiffEqAlgorithm end
-struct HSLDDRK64 <: OrdinaryDiffEqAlgorithm end
-struct DGLDDRK73_C <: OrdinaryDiffEqAlgorithm end
-struct DGLDDRK84_C <: OrdinaryDiffEqAlgorithm end
-struct DGLDDRK84_F <: OrdinaryDiffEqAlgorithm end
-struct NDBLSRK124 <: OrdinaryDiffEqAlgorithm end
-struct NDBLSRK134 <: OrdinaryDiffEqAlgorithm end
-struct NDBLSRK144 <: OrdinaryDiffEqAlgorithm end
+struct ORK256 <: OrdinaryDiffEqAlgorithm
+  williamson_condition::Bool
+  QRK256(;williamson_condition=true) = new(williamson_condition)
+end
+struct CarpenterKennedy2N54 <: OrdinaryDiffEqAlgorithm
+  williamson_condition::Bool
+  CarpenterKennedy2N54(;williamson_condition=true) = new(williamson_condition)
+end
+struct HSLDDRK64 <: OrdinaryDiffEqAlgorithm
+  williamson_condition::Bool
+  HSLDDRK64(;williamson_condition=true) = new(williamson_condition)
+end
+struct DGLDDRK73_C <: OrdinaryDiffEqAlgorithm
+  williamson_condition::Bool
+  DGLDDRK73_C(;williamson_condition=true) = new(williamson_condition)
+end
+struct DGLDDRK84_C <: OrdinaryDiffEqAlgorithm
+  williamson_condition::Bool
+  DGLDDRK84_C(;williamson_condition=true) = new(williamson_condition)
+end
+struct DGLDDRK84_F <: OrdinaryDiffEqAlgorithm
+  williamson_condition::Bool
+  DGLDDRK84_F(;williamson_condition=true) = new(williamson_condition)
+end
+struct NDBLSRK124 <: OrdinaryDiffEqAlgorithm
+  williamson_condition::Bool
+  NDBLSRK124(;williamson_condition=true) = new(williamson_condition)
+end
+struct NDBLSRK134 <: OrdinaryDiffEqAlgorithm
+  williamson_condition::Bool
+  NDBLSRK134(;williamson_condition=true) = new(williamson_condition)
+end
+struct NDBLSRK144 <: OrdinaryDiffEqAlgorithm
+  williamson_condition::Bool
+  NDBLSRK144(;williamson_condition=true) = new(williamson_condition)
+end
 struct CFRLDDRK64 <: OrdinaryDiffEqAlgorithm end
 struct TSLDDRK74 <: OrdinaryDiffEqAlgorithm end
 struct CKLLSRK43_2 <: OrdinaryDiffEqAdaptiveAlgorithm end
