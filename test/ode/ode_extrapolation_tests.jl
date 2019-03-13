@@ -21,7 +21,9 @@ for i = 1:2
       @test sim.𝒪est[:final] ≈ j atol=testTol
   end
 
-  sim = test_convergence(dts,prob,RichardsonEuler())
+  sim = test_convergence(dts,prob,RichardsonEuler(threading=true))
+  @test sim.𝒪est[:final] ≈ 2 atol=testTol
+  sim = test_convergence(dts,prob,RichardsonEuler(threading=false))
   @test sim.𝒪est[:final] ≈ 2 atol=testTol
 
    # Regression test
