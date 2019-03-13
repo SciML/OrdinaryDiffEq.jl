@@ -190,16 +190,16 @@ function prediction!(integrator,cache::RichardsonEulerConstantCache,temp_dt)
 end
 
 function prediction!(integrator,cache::RichardsonEulerCache,temp_dt)
-  @unpack t,dt,u,uprev,f,p = integrator
+  @unpack t,dt,uprev,f,p = integrator
   @unpack k,fsalfirst,T = cache
-  @muladd @. u = uprev + temp_dt*fsalfirst
-  # println("initial k",k)
+  @muladd u = @. uprev + temp_dt*fsalfirst
   n = Int(dt/temp_dt)
-  f(k, u, p, t+temp_dt)
+  ktilde = zero(k)
+  f(ktilde, u, p, t+temp_dt)
   integrator.destats.nf += 1
   for i in 2:n
-      @muladd @. u = u + temp_dt*k
-      f(k, u, p, t+i*temp_dt)
+      @muladd @. u = u + temp_dt*ktilde
+      f(ktilde, u, p, t+i*temp_dt)
       integrator.destats.nf += 1
   end
   T[n,1] = copy(u)
@@ -221,8 +221,14 @@ function perform_step!(integrator,cache::RichardsonEulerConstantCache,repeat_ste
   @unpack t,dt,f,p = integrator
   @unpack T = cache
 
-  prediction!(integrator,cache,dt)
-  prediction!(integrator,cache,dt/2)
+  if integrator.alg.threading
+    Threads.@threads for i in [1,2]
+      prediction!(integrator,cache,dt/i)
+    end
+  else
+    prediction!(integrator,cache,dt)
+    prediction!(integrator,cache,dt/2)
+  end
 
   # Classic Richardson extrapolation
   T[2,2] = (2*T[2,1] - T[1,1])/(2 - 1)
@@ -250,8 +256,14 @@ end
 function perform_step!(integrator,cache::RichardsonEulerCache,repeat_step=false)
   @unpack t,dt,u,f,p = integrator
   @unpack k,T = cache
-  prediction!(integrator,cache,dt)
-  prediction!(integrator,cache,dt/2)
+  if integrator.alg.threading
+    Threads.@threads for i in [1,2]
+      prediction!(integrator,cache,dt/i)
+    end
+  else
+    prediction!(integrator,cache,dt)
+    prediction!(integrator,cache,dt/2)
+  end
   T[2,2] = (2*T[2,1] - T[1,1])/(2-1)
 
   # using extrapolated value of u

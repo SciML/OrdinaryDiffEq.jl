@@ -44,7 +44,10 @@ struct AitkenNeville <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
 end
 AitkenNeville(;max_order=9,min_order=1,init_order=5) = AitkenNeville(max_order,min_order,init_order)
 
-struct RichardsonEuler <: OrdinaryDiffEqAlgorithm end
+struct RichardsonEuler <: OrdinaryDiffEqAlgorithm
+  threading::Bool
+end
+RichardsonEuler(;threading=true) = RichardsonEuler(threading)
 
 struct RK46NL <: OrdinaryDiffEqAlgorithm end
 struct Heun <: OrdinaryDiffEqAdaptiveAlgorithm end
