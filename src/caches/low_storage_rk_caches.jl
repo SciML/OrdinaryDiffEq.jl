@@ -269,7 +269,7 @@ function alg_cache(alg::DGLDDRK84_C,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
     end
   end
   tab = DGLDDRK84_CConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
-  LowStorageRK2NCache(u,uprev,k,tmp,tab,williamson_condition)
+  LowStorageRK2NCache(u,uprev,k,tmp,tab,wrapper,williamson_condition)
 end
 
 function alg_cache(alg::DGLDDRK84_C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
