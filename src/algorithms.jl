@@ -51,7 +51,7 @@ Anas5(; w=1) = Anas5(w)
 
 struct ORK256 <: OrdinaryDiffEqAlgorithm
   williamson_condition::Bool
-  QRK256(;williamson_condition=true) = new(williamson_condition)
+  ORK256(;williamson_condition=true) = new(williamson_condition)
 end
 struct CarpenterKennedy2N54 <: OrdinaryDiffEqAlgorithm
   williamson_condition::Bool
