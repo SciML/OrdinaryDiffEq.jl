@@ -82,7 +82,6 @@ mutable struct WilliamsonWrapper{kType, dtType}
 end
 
 @inline Base.setindex!(a::WilliamsonWrapper{kType, dtType}, b::bType, c::cType) where {kType, dtType, bType, cType} = (a.kref[c] += a.dt * b)
-@inline Base.getindex(a::WilliamsonWrapper{kType, dtType}, b::bType) where {kType, dtType, bType} = a.kref[b]
 @inline Base.size(a::WilliamsonWrapper{kType, dtType}) where {kType, dtType} = size(a.kref)
 @inline Base.copyto!(a::WilliamsonWrapper{kType, dtType}, b::bType) where {kType, dtType, bType} = @. a.kref += a.dt * b
 
