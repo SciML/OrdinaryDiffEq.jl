@@ -21,9 +21,6 @@ for i = 1:2
       @test sim.𝒪est[:final] ≈ j atol=testTol
   end
 
-  sim = test_convergence(dts,prob,RichardsonEuler())
-  @test sim.𝒪est[:final] ≈ 2 atol=testTol
-
    # Regression test
   sol = solve(prob,AitkenNeville(9,1,9),reltol=1e-3)
   @test length(sol.u) < 15

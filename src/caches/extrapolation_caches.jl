@@ -47,27 +47,3 @@ function alg_cache(alg::AitkenNeville,u,rate_prototype,uEltypeNoUnits,uBottomElt
   step_no = zero(Int)
   AitkenNevilleConstantCache(dtpropose,T,cur_order,work,A,step_no)
 end
-
-@cache struct RichardsonEulerConstantCache{arrayType} <: OrdinaryDiffEqConstantCache
-  T::arrayType
-end
-
-@cache mutable struct RichardsonEulerCache{uType,rateType,arrayType} <: OrdinaryDiffEqMutableCache
-  u::uType
-  uprev::uType
-  k::rateType
-  fsalfirst::rateType
-  T::arrayType
-end
-
-function alg_cache(alg::RichardsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  T = fill(zero(eltype(u)), (2,2))
-  RichardsonEulerConstantCache(T)
-end
-
-function alg_cache(alg::RichardsonEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  k = zero(rate_prototype)
-  fsalfirst = zero(rate_prototype)
-  T = fill(zeros(eltype(u), size(u)), (2,2))
-  RichardsonEulerCache(u,uprev,k,fsalfirst,T)
-end
