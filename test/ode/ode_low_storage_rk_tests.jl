@@ -38,22 +38,33 @@ prob_ode_large = ODEProblem((du,u,p,t)-> du .= u, u0_large, (0.0,1.0))
 
 
 alg = ORK256()
+alg2 = ORK256(;williamson_condition=false)
 dts = 1 ./ 2 .^(8:-1:4)
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts, prob, alg2)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 for prob in test_problems_linear
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts, prob, alg2)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 for prob in test_problems_nonlinear
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts, prob, alg2)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
-@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 2
+integ = init(prob_ode_large, alg2, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+integ = init(prob_ode_large, alg2, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
 # test whether aliasing u0 is bad
 new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
@@ -63,22 +74,33 @@ sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=fa
 
 
 alg = CarpenterKennedy2N54()
+alg2 = CarpenterKennedy2N54(;williamson_condition=false)
 dts = 1 ./ 2 .^(7:-1:3)
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts, prob, alg2)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 for prob in test_problems_linear
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts, prob, alg2)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 for prob in test_problems_nonlinear
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts, prob, alg2)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
-@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 2
+integ = init(prob_ode_large, alg2, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+integ = init(prob_ode_large, alg2, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
 # test whether aliasing u0 is bad
 new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
@@ -88,22 +110,33 @@ sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=fa
 
 
 alg = HSLDDRK64()
+alg2 = HSLDDRK64(;williamson_condition=true)
 dts = 1 ./ 2 .^(8:-1:4)
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
+  @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts, prob, alg2)
   @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 for prob in test_problems_linear
   sim = test_convergence(dts, prob, alg)
   @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts, prob, alg2)
+  @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 for prob in test_problems_nonlinear
   sim = test_convergence(dts, prob, alg)
   @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts, prob, alg2)
+  @test_broken sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
-@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 2
+integ = init(prob_ode_large, alg2, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+integ = init(prob_ode_large, alg2, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
 # test whether aliasing u0 is bad
 new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
@@ -113,22 +146,33 @@ sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=fa
 
 
 alg = DGLDDRK73_C()
+alg2 = DGLDDRK73_C(;williamson_condition=false)
 dts = 1 ./ 2 .^(8:-1:4)
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts, prob, alg2)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 for prob in test_problems_linear
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts, prob, alg2)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 for prob in test_problems_nonlinear
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts, prob, alg2)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
-@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 2
+integ = init(prob_ode_large, alg2, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+integ = init(prob_ode_large, alg2, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
 # test whether aliasing u0 is bad
 new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
@@ -138,22 +182,33 @@ sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=fa
 
 
 alg = DGLDDRK84_C()
+alg2 = DGLDDRK84_C(;williamson_condition=false)
 dts = 1 ./ 2 .^(8:-1:4)
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts, prob, alg2)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 for prob in test_problems_linear
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts, prob, alg2)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 for prob in test_problems_nonlinear
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts, prob, alg2)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
-@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 2
+integ = init(prob_ode_large, alg2, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+integ = init(prob_ode_large, alg2, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
 # test whether aliasing u0 is bad
 new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
@@ -163,22 +218,33 @@ sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=fa
 
 
 alg = DGLDDRK84_F()
+alg2 = DGLDDRK84_F(;williamson_condition=false)
 dts = 1 ./ 2 .^(8:-1:4)
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts, prob, alg2)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 for prob in test_problems_linear
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts, prob, alg2)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 for prob in test_problems_nonlinear
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts, prob, alg2)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
-@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 2
+integ = init(prob_ode_large, alg2, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+integ = init(prob_ode_large, alg2, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
 # test whether aliasing u0 is bad
 new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
@@ -188,22 +254,33 @@ sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=fa
 
 
 alg = NDBLSRK124()
+alg2 = NDBLSRK124(;williamson_condition=false)
 dts = 1 ./ 2 .^(7:-1:3)
 for prob in test_problems_only_time
-	sim = test_convergence(dts, prob, alg)
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts, prob, alg2)
 	@test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 for prob in test_problems_linear
-	sim = test_convergence(dts, prob, alg)
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts, prob, alg2)
 	@test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 for prob in test_problems_nonlinear
-	sim = test_convergence(dts, prob, alg)
+  sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts, prob, alg2)
 	@test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
-@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 2
+integ = init(prob_ode_large, alg2, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+integ = init(prob_ode_large, alg2, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
 # test whether aliasing u0 is bad
 new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
@@ -213,22 +290,33 @@ sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=fa
 
 
 alg = NDBLSRK134()
+alg2 = NDBLSRK134(;williamson_condition=false)
 dts = 1 ./ 2 .^(8:-1:4)
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts, prob, alg2)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 for prob in test_problems_linear
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts, prob, alg2)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 for prob in test_problems_nonlinear
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts, prob, alg2)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
-@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 2
+integ = init(prob_ode_large, alg2, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+integ = init(prob_ode_large, alg2, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
 # test whether aliasing u0 is bad
 new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))
@@ -238,22 +326,33 @@ sol_new = solve(new_prob_ode_nonlinear_inplace, alg, dt=1.e-4, save_everystep=fa
 
 
 alg = NDBLSRK144()
+alg2 = NDBLSRK144(;williamson_condition=false)
 dts = 1 ./ 2 .^(8:-1:4)
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts, prob, alg2)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 for prob in test_problems_linear
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts, prob, alg2)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 for prob in test_problems_nonlinear
   sim = test_convergence(dts, prob, alg)
   @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
+  sim = test_convergence(dts, prob, alg2)
+  @test sim.𝒪est[:final] ≈ OrdinaryDiffEq.alg_order(alg) atol=testTol
 end
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
-@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 2
+integ = init(prob_ode_large, alg2, dt=1.e-2, save_start=false, save_end=false, save_everystep=false)
+@test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
+integ = init(prob_ode_large, alg2, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 3
 # test whether aliasing u0 is bad
 new_prob_ode_nonlinear_inplace = ODEProblem(prob_ode_nonlinear_inplace.f,[1.],(0.,0.5))

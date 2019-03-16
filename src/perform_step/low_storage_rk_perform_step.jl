@@ -27,45 +27,63 @@ end
     u   = u + B2end[i]*tmp
   end
 
-  integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
+  integrator.fsalfirst = f(u, p, t+dt) # For interpolation, then FSAL'd
   integrator.u = u
 end
 
 function initialize!(integrator,cache::LowStorageRK2NCache)
-  @unpack k,fsalfirst = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
+  @unpack k, tmp, wrapper, williamson_condition = cache
   integrator.kshortsize = 1
   resize!(integrator.k, integrator.kshortsize)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+  integrator.k[1] = k
+  if williamson_condition
+    wrapper.dt = integrator.dt
+    integrator.f(wrapper,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+  else
+    integrator.f(k ,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+    @. tmp += integrator.dt * k
+  end
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::LowStorageRK2NCache,repeat_step=false)
   @unpack t,dt,u,f,p = integrator
-  @unpack k,fsalfirst,tmp = cache
+  @unpack k,tmp,wrapper,williamson_condition = cache
   @unpack A2end,B1,B2end,c2end = cache.tab
 
   # u1
-  @. tmp = dt*fsalfirst
   @. u   = u + B1*tmp
-
+  if williamson_condition
+    wrapper.dt = dt
+  end
   # other stages
   for i in eachindex(A2end)
-    f(k, u, p, t+c2end[i]*dt)
+    @. tmp = A2end[i]*tmp
+    if williamson_condition
+      f(wrapper, u, p, t+c2end[i]*dt)
+    else
+      f(k, u, p, t+c2end[i]*dt)
+      @. tmp += dt * k
+    end
     integrator.destats.nf += 1
-    @. tmp = A2end[i]*tmp + dt*k
     @. u   = u + B2end[i]*tmp
   end
 
   f(k, u, p, t+dt)
+  @. tmp = dt*k
   integrator.destats.nf += 1
 end
 
+mutable struct WilliamsonWrapper{kType, dtType}
+  kref::kType
+  dt::dtType
+end
 
+@inline Base.setindex!(a::WilliamsonWrapper{kType, dtType}, b::bType, c::cType) where {kType, dtType, bType, cType} = (a.kref[c] += a.dt * b)
+@inline Base.size(a::WilliamsonWrapper{kType, dtType}) where {kType, dtType} = size(a.kref)
+@inline Base.copyto!(a::WilliamsonWrapper{kType, dtType}, b::bType) where {kType, dtType, bType} = @. a.kref += a.dt * b
 
 # 2C low storage methods
 function initialize!(integrator,cache::LowStorageRK2CConstantCache)
