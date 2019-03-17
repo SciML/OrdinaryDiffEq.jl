@@ -200,6 +200,15 @@ sim = test_convergence(dts,prob,Ros4LStab())
 sol = solve(prob,Ros4LStab())
 @test length(sol) < 20
 
+###RosenbrockW6S4OS
+prob = prob_ode_linear
+
+sim = test_convergence(dts,prob,RosenbrockW6S4OS())
+@test sim.𝒪est[:final] ≈ 4 atol=testTol
+
+sol = solve(prob,RosenbrockW6S4OS(),tstops=dts)
+@test length(sol) < 20
+
 ### Rodas4 Algorithms
 
 println("RODAS")

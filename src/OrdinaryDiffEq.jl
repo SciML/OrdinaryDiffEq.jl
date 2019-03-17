@@ -190,7 +190,7 @@ module OrdinaryDiffEq
   export MidpointSplitting, LinearExponential
 
   export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
-         Ros4LStab, ROS3P, Rodas3, Rodas4, Rodas42, Rodas4P, Rodas5
+         Ros4LStab, ROS3P, Rodas3, Rodas4, Rodas42, Rodas4P, Rodas5, RosenbrockW6S4OS
 
   export GenericIIF1, GenericIIF2
 
