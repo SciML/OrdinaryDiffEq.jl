@@ -9,7 +9,6 @@ isfsal(alg::FunctionMap) = false
 isfsal(alg::Rodas4) = false
 isfsal(alg::Rodas42) = false
 isfsal(alg::Rodas4P) = false
-isfsal(alg::RosenbrockW6S4OS)=false
 isfsal(alg::Vern7) = false
 isfsal(alg::Vern8) = false
 isfsal(alg::Vern9) = false

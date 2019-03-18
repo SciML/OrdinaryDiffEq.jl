@@ -1404,9 +1404,13 @@ end
 function initialize!(integrator, cache::RosenbrockWConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+  integrator.destats.nf += 1
+
   # Avoid undefined entries if k is an array of arrays
-  integrator.k[1] = zero(integrator.u)
-  integrator.k[2] = zero(integrator.u)
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
 end
 
 @muladd function perform_step!(integrator, cache::RosenbrockWConstantCache, repeat_step=false)
@@ -1445,10 +1449,7 @@ end
 
   W = calc_W!(integrator, cache, dtgamma, repeat_step, true)
 
-  du = f(uprev, p, t)
-  integrator.destats.nf += 1
-
-  linsolve_tmp =  du + dtd1*dT
+  linsolve_tmp = integrator.fsalfirst + dtd1*dT
 
   k1 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
@@ -1494,5 +1495,10 @@ end
   integrator.destats.nsolve += 1
   u = uprev+b1*k1+b2*k2+b3*k3+b4*k4+b5*k5+b6*k6
 
+  integrator.fsallast = f(u, p, t + dt)
+  integrator.destats.nf += 1
+
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
   integrator.u = u
 end
