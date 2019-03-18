@@ -237,7 +237,7 @@ function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrM
   end
 end
 
-function donewJ(integrator, alg, repeat_step)::Bool
+function do_nowJ(integrator, alg, repeat_step)::Bool
   repeat_step && return false
   !alg_can_repeat_jac(alg) && return true
   isnewton = alg isa NewtonAlgorithm
@@ -248,9 +248,9 @@ function donewJ(integrator, alg, repeat_step)::Bool
   return !fastconvergence
 end
 
-function donewW(integrator, new_jac)::Bool
+function do_nowW(integrator, new_jac)::Bool
+  integrator.iter <= 1 && return true
   new_jac && return true
-  integrator.iter < 1 && return true
   # reuse W when the change in stepsize is small enough
   @unpack t, dt, tprev = integrator
   dtprev = t - tprev
@@ -309,15 +309,15 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
 
   elseif DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
     # skip calculation of J if step is repeated
-    ( new_jac = donewJ(integrator, alg, repeat_step) ) && DiffEqBase.update_coefficients!(W,uprev,p,t)
-    @label J2W
+    ( new_jac = do_nowJ(integrator, alg, repeat_step) ) && DiffEqBase.update_coefficients!(W,uprev,p,t)
     # skip calculation of W if step is repeated
-    ( new_W = donewW(integrator, new_jac) ) && (W.transform = W_transform; set_gamma!(W, dtgamma))
+    @label J2W
+    ( new_W = do_nowW(integrator, new_jac) ) && (W.transform = W_transform; set_gamma!(W, dtgamma))
   else # concrete W using jacobian from `calc_J!`
     # skip calculation of J if step is repeated
-    ( new_jac = donewJ(integrator, alg, repeat_step) ) && calc_J!(integrator, cache, is_compos)
+    ( new_jac = do_nowJ(integrator, alg, repeat_step) ) && calc_J!(integrator, cache, is_compos)
     # skip calculation of W if step is repeated
-    ( new_W = donewW(integrator, new_jac) ) && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
+    ( new_W = do_nowW(integrator, new_jac) ) && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
   end
   isnewton && set_new_W!(cache.nlsolver, new_W)
   new_W && (integrator.destats.nw += 1)

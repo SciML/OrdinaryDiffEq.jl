@@ -757,7 +757,7 @@ for Alg in [:Rosenbrock23, :Rosenbrock32, :ROS3P, :Rodas3, :RosShamp4, :Veldd4, 
       linsolve::F
       diff_type::FDT
     end
-    $Alg(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = $Alg{chunk_size,autodiff,typeof(linsolve),typeof(diff_type)}(linsolve,diff_type)
+    $Alg(;chunk_size=0,autodiff=true,diff_type=Val{:forward},linsolve=DEFAULT_LINSOLVE) = $Alg{chunk_size,autodiff,typeof(linsolve),typeof(diff_type)}(linsolve,diff_type)
   end
 end
 
