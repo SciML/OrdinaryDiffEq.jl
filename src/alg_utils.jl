@@ -290,6 +290,7 @@ alg_order(alg::Rodas4) = 4
 alg_order(alg::Rodas42) = 4
 alg_order(alg::Rodas4P) = 4
 alg_order(alg::Rodas5) = 5
+alg_order(alg::RosenbrockW6S4OS)=4
 
 alg_order(alg::AB3) = 3
 alg_order(alg::AB4) = 4

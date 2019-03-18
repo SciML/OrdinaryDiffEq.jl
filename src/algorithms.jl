@@ -866,6 +866,11 @@ GeneralRosenbrock(;chunk_size=0,autodiff=true,
                     factorization=lu!,tableau=ROSENBROCK_DEFAULT_TABLEAU) =
                     GeneralRosenbrock{chunk_size,autodiff,typeof(factorization),typeof(tableau)}(tableau,factorization)
 
+struct RosenbrockW6S4OS{CS,AD,F,FDT} <: OrdinaryDiffEqRosenbrockAlgorithm{CS,AD}
+  linsolve::F
+  diff_type::FDT
+end
+RosenbrockW6S4OS(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = RosenbrockW6S4OS{chunk_size,autodiff,typeof(linsolve),typeof(diff_type)}(linsolve,diff_type)
 ######################################
 
 struct GenericIIF1{F} <: OrdinaryDiffEqExponentialAlgorithm
