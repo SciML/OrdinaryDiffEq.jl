@@ -267,7 +267,7 @@ end
   @boundscheck (iijj === axes(J) && length(iijj) === 2) || _throwWJerror(W, J)
   mass_matrix isa UniformScaling || @boundscheck axes(mass_matrix) === axes(W) || _throwWMerror(W, mass_matrix)
   @inbounds if W_transform
-    invdtgamma′ = -inv(dtgamma)
+    invdtgamma′ = inv(dtgamma)
     for i in iijj[1]
       @inbounds for j in iijj[2]
         W[i, j] = muladd(mass_matrix[i, j], invdtgamma′, -J[i, j])
