@@ -62,19 +62,21 @@ jacobian_finitediff(f, x::AbstractArray, diff_type) =
     DiffEqDiffTools.finite_difference_jacobian(f, x, diff_type, eltype(x), Val{false})
 
 function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, fx::AbstractArray{<:Number}, integrator::DiffEqBase.DEIntegrator, jac_config)
-    local tmp
     if get_current_alg_autodiff(integrator.alg, integrator.cache)
       ForwardDiff.jacobian!(J, f, fx, x, jac_config)
-      tmp = 1
+      integrator.destats.nf += 1
     else
-      DiffEqDiffTools.finite_difference_jacobian!(J, f, x, jac_config)
-      if integrator.alg.diff_type==Val{:complex} && eltype(x)<:Real
-        tmp = length(x)
-      else
-        tmp = 2*length(x)
+      isforward = integrator.alg.diff_type === Val{:forward}
+      if isforward
+        forwardcache = get_tmp_cache(integrator)[2]
+        f(forwardcache, x)
+        integrator.destats.nf += 1
+        DiffEqDiffTools.finite_difference_jacobian!(J, f, x, jac_config, forwardcache)
+      else # not forward difference
+        DiffEqDiffTools.finite_difference_jacobian!(J, f, x, jac_config)
       end
+      integrator.destats.nf += (integrator.alg.diff_type==Val{:complex} && eltype(x)<:Real || isforward) ? length(x) : 2length(x)
     end
-    integrator.destats.nf += tmp
     nothing
 end
 

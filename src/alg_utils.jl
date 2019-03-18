@@ -439,6 +439,7 @@ alg_stability_size(alg::Vern9) = 4.4762
 
 alg_can_repeat_jac(alg::OrdinaryDiffEqAlgorithm) = false
 alg_can_repeat_jac(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = true
+alg_can_repeat_jac(alg::IRKC) = false
 
 function unwrap_alg(integrator, is_stiff)
   alg = integrator.alg

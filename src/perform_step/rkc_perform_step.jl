@@ -602,7 +602,7 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
   if isnewton(nlsolver) && integrator.opts.adaptive
     update_W!(integrator, cache, dt, false)
     LU_W = get_W(nlsolver)
-    tmp = LU_W.L * LU_W.U * (@. dt*(0.5*(cache.du₂ - du₂) + (0.5 - μs₁)*(cache.du₁ - du₁)))
+    tmp = LU_W.L * (LU_W.U * (@. dt*(0.5*(cache.du₂ - du₂) + (0.5 - μs₁)*(cache.du₁ - du₁))))
     atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
