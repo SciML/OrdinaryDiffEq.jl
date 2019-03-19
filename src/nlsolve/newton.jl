@@ -62,7 +62,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     end
     integrator.destats.nf += 1
     if DiffEqBase.has_invW(f)
-      dz = _reshape(W * _vec(ztmp), axes(ztmp)) # Here W is actually invW
+      dz = _reshape(W * -_vec(ztmp), axes(ztmp)) # Here W is actually invW
     else
       dz = _reshape(W \ _vec(ztmp), axes(ztmp))
     end
@@ -132,6 +132,7 @@ end
     end
     if DiffEqBase.has_invW(f)
       mul!(vecdz,W,vecztmp) # Here W is actually invW
+      @. vecdz = -vecdz
     else
       cache.linsolve(vecdz,W,vecztmp,iter == 1 && new_W)
     end
