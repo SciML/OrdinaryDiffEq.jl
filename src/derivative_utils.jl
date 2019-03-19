@@ -152,50 +152,50 @@ function Base.convert(::Type{AbstractMatrix}, W::WOperator)
   if W._concrete_form === nothing || !W.inplace
     # Allocating
     if W.transform
-      W._concrete_form = W.mass_matrix / W.gamma - convert(AbstractMatrix,W.J)
+      W._concrete_form = -W.mass_matrix / W.gamma + convert(AbstractMatrix,W.J)
     else
-      W._concrete_form = W.mass_matrix - W.gamma * convert(AbstractMatrix,W.J)
+      W._concrete_form = -W.mass_matrix + W.gamma * convert(AbstractMatrix,W.J)
     end
   else
     # Non-allocating
     if W.transform
-      rmul!(copyto!(W._concrete_form, W.mass_matrix), 1/W.gamma)
-      axpy!(-1, convert(AbstractMatrix,W.J), W._concrete_form)
+      rmul!(copyto!(W._concrete_form, W.mass_matrix), -1/W.gamma)
+      axpy!(one(W.gamma), convert(AbstractMatrix,W.J), W._concrete_form)
     else
-      copyto!(W._concrete_form, W.mass_matrix)
-      axpy!(-W.gamma, convert(AbstractMatrix,W.J), W._concrete_form)
+      @. W._concrete_form = -W.mass_matrix
+      axpy!(W.gamma, convert(AbstractMatrix,W.J), W._concrete_form)
     end
   end
   W._concrete_form
 end
 function Base.convert(::Type{Number}, W::WOperator)
   if W.transform
-    W._concrete_form = W.mass_matrix / W.gamma - convert(Number,W.J)
+    W._concrete_form = -W.mass_matrix / W.gamma + convert(Number,W.J)
   else
-    W._concrete_form = W.mass_matrix - W.gamma * convert(Number,W.J)
+    W._concrete_form = -W.mass_matrix + W.gamma * convert(Number,W.J)
   end
   W._concrete_form
 end
 Base.size(W::WOperator, args...) = size(W.J, args...)
 function Base.getindex(W::WOperator, i::Int)
   if W.transform
-    W.mass_matrix[i] / W.gamma - W.J[i]
+    -W.mass_matrix[i] / W.gamma + W.J[i]
   else
-    W.mass_matrix[i] - W.gamma * W.J[i]
+    -W.mass_matrix[i] + W.gamma * W.J[i]
   end
 end
 function Base.getindex(W::WOperator, I::Vararg{Int,N}) where {N}
   if W.transform
-    W.mass_matrix[I...] / W.gamma - W.J[I...]
+    -W.mass_matrix[I...] / W.gamma + W.J[I...]
   else
-    W.mass_matrix[I...] - W.gamma * W.J[I...]
+    -W.mass_matrix[I...] + W.gamma * W.J[I...]
   end
 end
 function Base.:*(W::WOperator, x::Union{AbstractVecOrMat,Number})
   if W.transform
-    (W.mass_matrix*x) / W.gamma - W.J*x
+    (W.mass_matrix*x) / -W.gamma + W.J*x
   else
-    W.mass_matrix*x - W.gamma * (W.J*x)
+    -W.mass_matrix*x + W.gamma * (W.J*x)
   end
 end
 function Base.:\(W::WOperator, x::Union{AbstractVecOrMat,Number})
@@ -214,15 +214,15 @@ function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrM
   if W.transform
     # Compute mass_matrix * B
     if isa(W.mass_matrix, UniformScaling)
-      a = W.mass_matrix.λ / W.gamma
+      a = -W.mass_matrix.λ / W.gamma
       @. Y = a * B
     else
       mul!(Y, W.mass_matrix, B)
-      lmul!(1/W.gamma, Y)
+      lmul!(-1/W.gamma, Y)
     end
-    # Compute J * B and subtract
+    # Compute J * B and add
     mul!(W._func_cache, W.J, B)
-    Y .-= W._func_cache
+    Y .+= W._func_cache
   else
     # Compute mass_matrix * B
     if isa(W.mass_matrix, UniformScaling)
@@ -232,8 +232,8 @@ function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrM
     end
     # Compute J * B
     mul!(W._func_cache, W.J, B)
-    # Subtract result
-    axpy!(-W.gamma, W._func_cache, Y)
+    # Add result
+    axpby!(W.gamma, W._func_cache, -one(W.gamma), Y)
   end
 end
 
@@ -267,23 +267,23 @@ end
   @boundscheck (iijj === axes(J) && length(iijj) === 2) || _throwWJerror(W, J)
   mass_matrix isa UniformScaling || @boundscheck axes(mass_matrix) === axes(W) || _throwWMerror(W, mass_matrix)
   @inbounds if W_transform
-    invdtgamma′ = inv(dtgamma)
+    invdtgamma = inv(dtgamma)
     if MT <: UniformScaling
+      copyto!(W, J)
       @simd for i in diagind(W)
-          W[i] = muladd(mass_matrix.λ, invdtgamma′, -J[i])
+          W[i] = muladd(-mass_matrix.λ, invdtgamma, J[i])
       end
     else
       for j in iijj[2]
         @simd for i in iijj[1]
-          W[i, j] = muladd(mass_matrix[i, j], invdtgamma′, -J[i, j])
+          W[i, j] = muladd(-mass_matrix[i, j], invdtgamma, J[i, j])
         end
       end
     end
   else
-    dtgamma′ = -dtgamma
     for j in iijj[2]
       @simd for i in iijj[1]
-        W[i, j] = muladd(dtgamma′, J[i, j], mass_matrix[i, j])
+        W[i, j] = muladd(dtgamma, J[i, j], -mass_matrix[i, j])
       end
     end
   end
@@ -351,8 +351,8 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
   else
     integrator.destats.nw += 1
     J = calc_J(integrator, cache, is_compos)
-    W_full = W_transform ? mass_matrix*inv(dtgamma) - J :
-                           mass_matrix - dtgamma*J
+    W_full = W_transform ? -mass_matrix*inv(dtgamma) + J :
+                           -mass_matrix + dtgamma*J
     W = W_full isa Number ? W_full : lu(W_full)
   end
   is_compos && (integrator.eigen_est = isarray ? opnorm(J, Inf) : J)
