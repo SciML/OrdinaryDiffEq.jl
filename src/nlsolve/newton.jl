@@ -82,7 +82,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     end
 
     # update solution
-    z = z .+ dz
+    z = z .- dz
 
     # check stopping criterion
     iter > 1 && (η = θ / (1 - θ))
@@ -151,7 +151,7 @@ end
     end
 
     # update solution
-    z .+= dz
+    @. z = z - dz
 
     # check stopping criterion
     iter > 1 && (η = θ / (1 - θ))

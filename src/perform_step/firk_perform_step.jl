@@ -52,11 +52,11 @@ end
   γdt, αdt, βdt = γ/dt, α/dt, β/dt
   J = calc_J(integrator, cache, is_compos)
   if u isa Number
-    LU1 = γdt*mass_matrix - J
-    LU2 = (αdt + βdt*im)*mass_matrix - J
+    LU1 = -γdt*mass_matrix + J
+    LU2 = -(αdt + βdt*im)*mass_matrix + J
   else
-    LU1 = lu(γdt*mass_matrix - J)
-    LU2 = lu((αdt + βdt*im)*mass_matrix - J)
+    LU1 = lu(-γdt*mass_matrix + J)
+    LU2 = lu(-(αdt + βdt*im)*mass_matrix + J)
   end
   integrator.destats.nw += 1
 
@@ -126,9 +126,9 @@ end
       end
     end
 
-    w1 = @. w1 + dw1
-    w2 = @. w2 + dw2
-    w3 = @. w3 + dw3
+    w1 = @. w1 - dw1
+    w2 = @. w2 - dw2
+    w3 = @. w3 - dw3
 
     # transform `w` to `z`
     z1 = @. T11 * w1 + T12 * w2 + T13 * w3
@@ -228,8 +228,8 @@ end
                       (integrator.iter < 1 || new_jac ||
                        abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t))))
     @inbounds for II in CartesianIndices(J)
-      W1[II] = γdt * mass_matrix[Tuple(II)...] - J[II]
-      W2[II] = (αdt + βdt*im) * mass_matrix[Tuple(II)...] - J[II]
+      W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
+      W2[II] = -(αdt + βdt*im) * mass_matrix[Tuple(II)...] + J[II]
     end
   else
     new_W = false
@@ -320,9 +320,9 @@ end
       end
     end
 
-    @. w1 = w1 + dw1
-    @. w2 = w2 + dw2
-    @. w3 = w3 + dw3
+    @. w1 = w1 - dw1
+    @. w2 = w2 - dw2
+    @. w3 = w3 - dw3
 
     # transform `w` to `z`
     @. z1 = T11 * w1 + T12 * w2 + T13 * w3
