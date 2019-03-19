@@ -244,7 +244,7 @@ function do_newJ(integrator, alg::T, repeat_step)::Bool where T
   isnewton && (T <: RadauIIA5 ? ( @unpack ηold,nl_iters = integrator.cache ) : ( @unpack ηold,nl_iters = integrator.cache.nlsolver ))
   integrator.force_stepfail && return true
   # reuse J when there is fast convergence
-  fastconvergence = nl_iters == 1 && ηold >= alg.new_jac_conv_bound
+  fastconvergence = nl_iters == 1 && ηold <= alg.new_jac_conv_bound
   return !fastconvergence
 end
 
