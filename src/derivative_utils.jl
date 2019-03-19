@@ -237,18 +237,18 @@ function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrM
   end
 end
 
-function do_nowJ(integrator, alg, repeat_step)::Bool
+function do_newJ(integrator, alg::T, repeat_step)::Bool where T
   repeat_step && return false
   !alg_can_repeat_jac(alg) && return true
-  isnewton = alg isa NewtonAlgorithm
-  isnewton && ( @unpack ηold,nl_iters = integrator.cache.nlsolver )
+  isnewton = T <: NewtonAlgorithm
+  isnewton && (T <: RadauIIA5 ? ( @unpack ηold,nl_iters = integrator.cache ) : ( @unpack ηold,nl_iters = integrator.cache.nlsolver ))
   integrator.force_stepfail && return true
   # reuse J when there is fast convergence
   fastconvergence = nl_iters == 1 && ηold >= alg.new_jac_conv_bound
   return !fastconvergence
 end
 
-function do_nowW(integrator, new_jac)::Bool
+function do_newW(integrator, new_jac)::Bool
   integrator.iter <= 1 && return true
   new_jac && return true
   # reuse W when the change in stepsize is small enough
@@ -312,18 +312,17 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     # skip calculation of inv(W) if step is repeated
     (!repeat_step && W_transform) ? f.invW_t(W, uprev, p, dtgamma, t) : f.invW(W, uprev, p, dtgamma, t) # W == inverse W
     is_compos && calc_J!(integrator, cache, true)
-
   elseif DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
     # skip calculation of J if step is repeated
-    ( new_jac = do_nowJ(integrator, alg, repeat_step) ) && DiffEqBase.update_coefficients!(W,uprev,p,t)
+    ( new_jac = do_newJ(integrator, alg, repeat_step) ) && DiffEqBase.update_coefficients!(W,uprev,p,t)
     # skip calculation of W if step is repeated
     @label J2W
-    ( new_W = do_nowW(integrator, new_jac) ) && (W.transform = W_transform; set_gamma!(W, dtgamma))
+    ( new_W = do_newW(integrator, new_jac) ) && (W.transform = W_transform; set_gamma!(W, dtgamma))
   else # concrete W using jacobian from `calc_J!`
     # skip calculation of J if step is repeated
-    ( new_jac = do_nowJ(integrator, alg, repeat_step) ) && calc_J!(integrator, cache, is_compos)
+    ( new_jac = do_newJ(integrator, alg, repeat_step) ) && calc_J!(integrator, cache, is_compos)
     # skip calculation of W if step is repeated
-    ( new_W = do_nowW(integrator, new_jac) ) && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
+    ( new_W = do_newW(integrator, new_jac) ) && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
   end
   isnewton && set_new_W!(cache.nlsolver, new_W)
   new_W && (integrator.destats.nw += 1)

@@ -214,27 +214,14 @@ end
   c1mc2= c1-c2
   κtol = κ*tol # used in Newton iteration
   γdt, αdt, βdt = γ/dt, α/dt, β/dt
-  new_W = true
-  if repeat_step || (alg_can_repeat_jac(alg) &&
-                     (!integrator.last_stepfail && cache.nl_iters == 1 &&
-                      cache.ηold < alg.new_jac_conv_bound))
-    new_jac = false
-  else
-    new_jac = true
-    calc_J!(integrator, cache, is_compos)
-  end
-  # skip calculation of W if step is repeated
-  if !repeat_step && (!alg_can_repeat_jac(alg) ||
-                      (integrator.iter < 1 || new_jac ||
-                       abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t))))
+  (new_jac = do_newJ(integrator, alg, repeat_step)) && calc_J!(integrator, cache, is_compos)
+  if (new_W = do_newW(integrator, new_jac))
     @inbounds for II in CartesianIndices(J)
       W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
       W2[II] = -(αdt + βdt*im) * mass_matrix[Tuple(II)...] + J[II]
     end
-  else
-    new_W = false
+    integrator.destats.nw += 1
   end
-  new_W && (integrator.destats.nw += 1)
 
   # TODO better initial guess
   if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
