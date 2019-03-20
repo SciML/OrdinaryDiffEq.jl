@@ -126,7 +126,7 @@ mutable struct WOperator{T,
   _func_cache           # cache used in `mul!`
   _concrete_form         # non-lazy form (matrix/number) of the operator
   WOperator(mass_matrix, gamma, J, inplace; transform=false) = new{eltype(J),typeof(mass_matrix),
-    typeof(gamma),typeof(J)}(mass_matrix,gamma,J,inplace,transform,nothing,nothing)
+    typeof(gamma),typeof(J)}(mass_matrix,gamma,J,transform,inplace,nothing,nothing)
 end
 function WOperator(f::DiffEqBase.AbstractODEFunction, gamma, inplace; transform=false)
   @assert DiffEqBase.has_jac(f) "f needs to have an associated jacobian"

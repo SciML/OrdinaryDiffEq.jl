@@ -2,15 +2,16 @@ using OrdinaryDiffEq: WOperator, set_gamma!, calc_W!
 using OrdinaryDiffEq, LinearAlgebra, SparseArrays, Random, Test, DiffEqOperators
 
 @testset "WOperator" begin
-  Random.seed!(0); y = zeros(2); b = rand(2)
+  Random.seed!(123)
+  y = zeros(2); b = rand(2)
   mm = I; _J = rand(2,2)
   _Ws = [-mm + 2.0 * _J, -mm/2.0 + _J]
-  for (_W, W_transform) in zip(_Ws, [false, true])
-    W = WOperator(mm, 1.0, DiffEqArrayOperator(_J), W_transform)
+  for inplace in (true, false), (_W, W_transform) in zip(_Ws, [false, true])
+    W = WOperator(mm, 1.0, DiffEqArrayOperator(_J), inplace, transform=W_transform)
     set_gamma!(W, 2.0)
-    @test convert(AbstractMatrix,W) == _W
-    @test W * b == _W * b
-    mul!(y, W, b); @test y == _W * b
+    @test convert(AbstractMatrix,W) ≈ _W
+    @test W * b ≈ _W * b
+    mul!(y, W, b); @test y ≈ _W * b
   end
 end
 
@@ -51,7 +52,7 @@ end
   fun2_ip = ODEFunction(_f_ip; mass_matrix=mm,
   jac_prototype=DiffEqArrayOperator(similar(A); update_func=(J,u,p,t) -> (J .= t .* A; J)))
 
-  for Alg in [ImplicitEuler, Rosenbrock23, Rodas3]
+  for Alg in [ImplicitEuler, Rosenbrock23, Rodas5]
     println(Alg)
     sol1 = solve(ODEProblem(fun1,u0,tspan), Alg(); adaptive=false, dt=0.01)
     sol2 = solve(ODEProblem(fun2,u0,tspan), Alg(); adaptive=false, dt=0.01)
