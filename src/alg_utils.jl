@@ -44,7 +44,6 @@ ismultistep(alg::ETD2) = true
 isadaptive(alg::OrdinaryDiffEqAlgorithm) = false
 isadaptive(alg::OrdinaryDiffEqAdaptiveAlgorithm) = true
 isadaptive(alg::OrdinaryDiffEqCompositeAlgorithm) = all(isadaptive.(alg.algs))
-isadaptive(alg::ExtrapolationMidpointDeuflhard) = false
 
 qmin_default(alg::OrdinaryDiffEqAlgorithm) = 1//5
 qmin_default(alg::CompositeAlgorithm) = maximum(qmin_default.(alg.algs))

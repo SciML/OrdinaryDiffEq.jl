@@ -296,6 +296,96 @@ function step_reject_controller!(integrator,alg::PredictiveControllerAlgs)
   end
 end
 
+# @inline function stepsize_controller!(integrator,alg::ExtrapolationMidpointDeuflhard)
+#   # dummy function
+#   # ExtrapolationMidpointDeuflhard's stepsize scaling is safed in cache and computed by
+#   # stepsize_controller_internal! (in perfom_step!) resp. stepsize_predictor! (in
+#   # step_accept_controller! and step_reject_controller!)
+#   zero(typeof(integrator.opts.qmax))
+# end
+
+function stepsize_controller_internal!(integrator,alg::ExtrapolationMidpointDeuflhard)
+  # Standard stepsize controller
+  if iszero(integrator.EEst)
+    q = inv(integrator.opts.qmax)
+  else
+    qtmp = integrator.EEst^(1/get_current_adaptive_order(integrator.alg,integrator.cache))/integrator.opts.gamma
+    @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
+    #integrator.qold = integrator.dt/q # can this be deleted?!
+  end
+  q
+end
+
+function stepsize_predictor(integrator,alg::ExtrapolationMidpointDeuflhard,new_extrapolation_order::Int64)
+  # compute the stepsize scaling for new_extrapolation_order based on the latest error estimate
+  # which is of current_extrapolation_order.
+  # standard stepsize controller
+  # so far onyl for constant cache
+  if iszero(integrator.EEst)
+    q = inv(integrator.opts.qmax)
+  else
+    @unpack t,EEst = integrator
+    tol = integrator.opts.internalnorm(integrator.opts.reltol,t) # Deuflhard's approach relies on EEstD ≈ ||relTol||
+    current_stage_number = integrator.cache.stage_number[integrator.cache.current_extrapolation_order - alg.min_extrapolation_order + 1]
+    new_stage_number = integrator.cache.stage_number[new_extrapolation_order - alg.min_extrapolation_order + 1]
+    @fastmath qtmp = (EEst*tol^(1.0 - current_stage_number/new_stage_number))^(1/(get_current_adaptive_order(integrator.alg,integrator.cache)))
+    @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp/integrator.opts.gamma))
+  end
+  q
+end
+
+function step_accept_controller!(integrator,alg::ExtrapolationMidpointDeuflhard,q)
+  # compute new order and stepsize, return new stepsize
+  # so far only constant cache
+  n_min = alg.min_extrapolation_order
+  n_curr = integrator.cache.current_extrapolation_order
+  N_win_old = integrator.cache.N_win_old
+  Q = integrator.cache.Q
+  s = integrator.cache.stage_number
+
+  # compute new order based on available quantities
+  tmp = (n_min:n_curr) .- n_min .+ 1 # index range of computed quantities that contains new order
+  dtNew = Vector{eltype(Q)}(undef,length(tmp)+1)
+  dtNew[1:end-1] = integrator.dt ./ Q[tmp] # new stepsize
+  dtNew[1:end-1] = max.(abs(integrator.opts.dtmin), min.(abs(integrator.opts.dtmax), abs.(dtNew[1:end-1]))) # safety scaling
+
+  work = s[tmp] ./ dtNew[1:end-1]
+
+  n_new = argmin(work) + n_min - 1
+
+  # check if may increase n_new
+  if n_new == n_curr < N_win_old
+    # predict scaling for order (n_new + 1):
+    Q[tmp[end]+1] = stepsize_predictor(integrator,alg,n_new+1)
+    # compute and scale the corresponding stepsize:
+    dtNew[end] = integrator.dt ./ Q[tmp[end]+1]
+    dtNew[end] = max(abs(integrator.opts.dtmin), min(abs(integrator.opts.dtmax), abs.(dtNew[end])))
+    # check if work decreases from n_new to (n_new  + 1):
+    if work[end] > s[tmp[end]+1]/dtNew[end]
+      n_new = n_new + 1
+    end
+  end
+  integrator.cache.current_extrapolation_order = n_new
+  dtNew[n_new - n_min + 1]
+end
+
+
+# function stepsize_controller!(integrator,alg::ExtrapolationMidpointDeuflhard)
+#   println("you are in the step size controller of ExtrapolationMidpointDeuflhard")
+#   # PI-controller
+#   EEst,beta1,q11,qold,beta2 = integrator.EEst, integrator.opts.beta1, integrator.q11,integrator.qold,integrator.opts.beta2
+#   if iszero(EEst)
+#     q = inv(integrator.opts.qmax)
+#   else
+#     @fastmath q11 = EEst^beta1
+#     @fastmath q = q11/(qold^beta2)
+#     integrator.q11 = q11
+#     @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),q/integrator.opts.gamma))
+#   end
+#   q
+# end
+
+
 function loopfooter!(integrator)
 
   # Carry-over from callback
