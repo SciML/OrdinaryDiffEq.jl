@@ -13,12 +13,14 @@ end
 for iip in (true, false)
   vanstiff = ODEProblem{iip}(van, [0;sqrt(3)], (0.0,1.0), 1e6)
   sol = solve(vanstiff, RadauIIA5())
-  @test sol.naccept + sol.nreject > sol.njacs # J reuse
-  @test sol.destats.njacs < sol.destats.nw # W reuse
-  @test length(sol) < 120
+  if iip
+    @test sol.destats.naccept + sol.destats.nreject > sol.destats.njacs # J reuse
+    @test sol.destats.njacs < sol.destats.nw # W reuse
+  end
+  @test length(sol) < 150
   @test length(solve(remake(vanstiff, p=1e7), RadauIIA5())) < 150
-  @test length(solve(remake(vanstiff, p=1e7), reltol=[1e-4, 1e-6], RadauIIA5())) < 160
+  @test length(solve(remake(vanstiff, p=1e7), reltol=[1e-4, 1e-6], RadauIIA5())) < 170
   @test length(solve(remake(vanstiff, p=1e7), RadauIIA5(), reltol=1e-9, abstol=1e-9)) < 870
-  @test length(solve(remake(vanstiff, p=1e9), RadauIIA5())) < 160
+  @test length(solve(remake(vanstiff, p=1e9), RadauIIA5())) < 170
   @test length(solve(remake(vanstiff, p=1e10), RadauIIA5())) < 190
 end
