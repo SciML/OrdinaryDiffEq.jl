@@ -159,13 +159,11 @@ function Base.convert(::Type{AbstractMatrix}, W::WOperator)
   else
     # Non-allocating
     if W.transform
-      rmul!(copyto!(W._concrete_form, W.mass_matrix), -1/W.gamma)
-      axpy!(one(W.gamma), convert(AbstractMatrix,W.J), W._concrete_form)
+      copyto!(W._concrete_form, W.mass_matrix)
+      axpby!(one(W.gamma), convert(AbstractMatrix,W.J), -inv(W.gamma), W._concrete_form)
     else
-      @inbounds for j in axes(W._concrete_form, 2), i in axes(W._concrete_form, 1)
-        W._concrete_form[i, j] = -W.mass_matrix[i, j]
-      end
-      axpy!(W.gamma, convert(AbstractMatrix,W.J), W._concrete_form)
+      copyto!(W._concrete_form, W.mass_matrix)
+      axpby!(W.gamma, convert(AbstractMatrix,W.J), -one(W.gamma), W._concrete_form)
     end
   end
   W._concrete_form
