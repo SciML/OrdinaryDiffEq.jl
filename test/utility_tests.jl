@@ -2,22 +2,24 @@ using OrdinaryDiffEq: WOperator, set_gamma!, calc_W!
 using OrdinaryDiffEq, LinearAlgebra, SparseArrays, Random, Test, DiffEqOperators
 
 @testset "WOperator" begin
-  Random.seed!(0); y = zeros(2); b = rand(2)
+  Random.seed!(123)
+  y = zeros(2); b = rand(2)
   mm = I; _J = rand(2,2)
-  W = WOperator(mm, 1.0, DiffEqArrayOperator(_J), false)
-  set_gamma!(W, 2.0)
-  _W = mm - 2.0 * _J
-  @test convert(AbstractMatrix,W) ≈ _W
-  @test W * b ≈ _W * b
-  mul!(y, W, b); @test y ≈ _W * b
+  _Ws = [-mm + 2.0 * _J, -mm/2.0 + _J]
+  for inplace in (true, false), (_W, W_transform) in zip(_Ws, [false, true])
+    W = WOperator(mm, 1.0, DiffEqArrayOperator(_J), inplace, transform=W_transform)
+    set_gamma!(W, 2.0)
+    @test convert(AbstractMatrix,W) ≈ _W
+    @test W * b ≈ _W * b
+    mul!(y, W, b); @test y ≈ _W * b
+  end
 end
 
 @testset "calc_W!" begin
   A = [-1.0 0.0; 0.0 -0.5]; mm = [2.0 0.0; 0.0 1.0]
   u0 = [1.0, 1.0]; tmp = zeros(2)
   tspan = (0.0,1.0); dt = 0.01; dtgamma = 0.5dt
-  concrete_W = mm - dtgamma * A
-  concrete_Wt = mm/dtgamma - A
+  concrete_W = -mm + dtgamma * A
 
   # Out-of-place
   fun = ODEFunction((u,p,t) -> A*u;
@@ -25,7 +27,7 @@ end
                     jac=(u,p,t) -> A)
   integrator = init(ODEProblem(fun,u0,tspan), ImplicitEuler(); adaptive=false, dt=dt)
   W = calc_W!(integrator, integrator.cache, dtgamma, false)
-  @test convert(AbstractMatrix, W) ≈ concrete_W
+  @test convert(AbstractMatrix, W) == concrete_W
   @test W \ u0 ≈ concrete_W \ u0
 
   # In-place
@@ -34,8 +36,8 @@ end
                     jac_prototype=DiffEqArrayOperator(A))
   integrator = init(ODEProblem(fun,u0,tspan), ImplicitEuler(); adaptive=false, dt=dt)
   calc_W!(integrator, integrator.cache, dtgamma, false)
-  @test convert(AbstractMatrix, integrator.cache.W) ≈ concrete_W
-  ldiv!(tmp, lu!(integrator.cache.W), u0); @test tmp ≈ concrete_W \ u0
+  @test convert(AbstractMatrix, integrator.cache.W) == concrete_W
+  ldiv!(tmp, lu!(integrator.cache.W), u0); @test tmp == concrete_W \ u0
 end
 
 @testset "Implicit solver with lazy W" begin
@@ -50,7 +52,7 @@ end
   fun2_ip = ODEFunction(_f_ip; mass_matrix=mm,
   jac_prototype=DiffEqArrayOperator(similar(A); update_func=(J,u,p,t) -> (J .= t .* A; J)))
 
-  for Alg in [ImplicitEuler, Rosenbrock23]
+  for Alg in [ImplicitEuler, Rosenbrock23, Rodas5]
     println(Alg)
     sol1 = solve(ODEProblem(fun1,u0,tspan), Alg(); adaptive=false, dt=0.01)
     sol2 = solve(ODEProblem(fun2,u0,tspan), Alg(); adaptive=false, dt=0.01)

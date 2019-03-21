@@ -126,7 +126,7 @@ mutable struct WOperator{T,
   _func_cache           # cache used in `mul!`
   _concrete_form         # non-lazy form (matrix/number) of the operator
   WOperator(mass_matrix, gamma, J, inplace; transform=false) = new{eltype(J),typeof(mass_matrix),
-    typeof(gamma),typeof(J)}(mass_matrix,gamma,J,inplace,transform,nothing,nothing)
+    typeof(gamma),typeof(J)}(mass_matrix,gamma,J,transform,inplace,nothing,nothing)
 end
 function WOperator(f::DiffEqBase.AbstractODEFunction, gamma, inplace; transform=false)
   @assert DiffEqBase.has_jac(f) "f needs to have an associated jacobian"
@@ -152,50 +152,50 @@ function Base.convert(::Type{AbstractMatrix}, W::WOperator)
   if W._concrete_form === nothing || !W.inplace
     # Allocating
     if W.transform
-      W._concrete_form = W.mass_matrix / W.gamma - convert(AbstractMatrix,W.J)
+      W._concrete_form = -W.mass_matrix / W.gamma + convert(AbstractMatrix,W.J)
     else
-      W._concrete_form = W.mass_matrix - W.gamma * convert(AbstractMatrix,W.J)
+      W._concrete_form = -W.mass_matrix + W.gamma * convert(AbstractMatrix,W.J)
     end
   else
     # Non-allocating
     if W.transform
-      rmul!(copyto!(W._concrete_form, W.mass_matrix), 1/W.gamma)
-      axpy!(-1, convert(AbstractMatrix,W.J), W._concrete_form)
+      copyto!(W._concrete_form, W.mass_matrix)
+      axpby!(one(W.gamma), convert(AbstractMatrix,W.J), -inv(W.gamma), W._concrete_form)
     else
       copyto!(W._concrete_form, W.mass_matrix)
-      axpy!(-W.gamma, convert(AbstractMatrix,W.J), W._concrete_form)
+      axpby!(W.gamma, convert(AbstractMatrix,W.J), -one(W.gamma), W._concrete_form)
     end
   end
   W._concrete_form
 end
 function Base.convert(::Type{Number}, W::WOperator)
   if W.transform
-    W._concrete_form = W.mass_matrix / W.gamma - convert(Number,W.J)
+    W._concrete_form = -W.mass_matrix / W.gamma + convert(Number,W.J)
   else
-    W._concrete_form = W.mass_matrix - W.gamma * convert(Number,W.J)
+    W._concrete_form = -W.mass_matrix + W.gamma * convert(Number,W.J)
   end
   W._concrete_form
 end
 Base.size(W::WOperator, args...) = size(W.J, args...)
 function Base.getindex(W::WOperator, i::Int)
   if W.transform
-    W.mass_matrix[i] / W.gamma - W.J[i]
+    -W.mass_matrix[i] / W.gamma + W.J[i]
   else
-    W.mass_matrix[i] - W.gamma * W.J[i]
+    -W.mass_matrix[i] + W.gamma * W.J[i]
   end
 end
 function Base.getindex(W::WOperator, I::Vararg{Int,N}) where {N}
   if W.transform
-    W.mass_matrix[I...] / W.gamma - W.J[I...]
+    -W.mass_matrix[I...] / W.gamma + W.J[I...]
   else
-    W.mass_matrix[I...] - W.gamma * W.J[I...]
+    -W.mass_matrix[I...] + W.gamma * W.J[I...]
   end
 end
 function Base.:*(W::WOperator, x::Union{AbstractVecOrMat,Number})
   if W.transform
-    (W.mass_matrix*x) / W.gamma - W.J*x
+    (W.mass_matrix*x) / -W.gamma + W.J*x
   else
-    W.mass_matrix*x - W.gamma * (W.J*x)
+    -W.mass_matrix*x + W.gamma * (W.J*x)
   end
 end
 function Base.:\(W::WOperator, x::Union{AbstractVecOrMat,Number})
@@ -214,15 +214,15 @@ function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrM
   if W.transform
     # Compute mass_matrix * B
     if isa(W.mass_matrix, UniformScaling)
-      a = W.mass_matrix.λ / W.gamma
+      a = -W.mass_matrix.λ / W.gamma
       @. Y = a * B
     else
       mul!(Y, W.mass_matrix, B)
-      lmul!(1/W.gamma, Y)
+      lmul!(-1/W.gamma, Y)
     end
-    # Compute J * B and subtract
+    # Compute J * B and add
     mul!(W._func_cache, W.J, B)
-    Y .-= W._func_cache
+    Y .+= W._func_cache
   else
     # Compute mass_matrix * B
     if isa(W.mass_matrix, UniformScaling)
@@ -232,23 +232,23 @@ function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrM
     end
     # Compute J * B
     mul!(W._func_cache, W.J, B)
-    # Subtract result
-    axpy!(-W.gamma, W._func_cache, Y)
+    # Add result
+    axpby!(W.gamma, W._func_cache, -one(W.gamma), Y)
   end
 end
 
-function do_nowJ(integrator, alg, repeat_step)::Bool
+function do_newJ(integrator, alg::T, cache, repeat_step)::Bool where T
   repeat_step && return false
   !alg_can_repeat_jac(alg) && return true
-  isnewton = alg isa NewtonAlgorithm
-  isnewton && ( @unpack ηold,nl_iters = integrator.cache.nlsolver )
+  isnewton = T <: NewtonAlgorithm
+  isnewton && (T <: RadauIIA5 ? ( @unpack ηold,nl_iters = cache ) : ( @unpack ηold,nl_iters = cache.nlsolver ))
   integrator.force_stepfail && return true
   # reuse J when there is fast convergence
-  fastconvergence = nl_iters == 1 && ηold >= alg.new_jac_conv_bound
+  fastconvergence = nl_iters == 1 && ηold <= alg.new_jac_conv_bound
   return !fastconvergence
 end
 
-function do_nowW(integrator, new_jac)::Bool
+function do_newW(integrator, new_jac)::Bool
   integrator.iter <= 1 && return true
   new_jac && return true
   # reuse W when the change in stepsize is small enough
@@ -261,23 +261,29 @@ end
 @noinline _throwWJerror(W, J) = throw(DimensionMismatch("W: $(axes(W)), J: $(axes(J))"))
 @noinline _throwWMerror(W, mass_matrix) = throw(DimensionMismatch("W: $(axes(W)), mass matrix: $(axes(mass_matrix))"))
 
-@inline function jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)::Nothing
+@inline function jacobian2W!(W::AbstractMatrix, mass_matrix::MT, dtgamma::Number, J::AbstractMatrix, W_transform::Bool)::Nothing where MT
   # check size and dimension
   iijj = axes(W)
   @boundscheck (iijj === axes(J) && length(iijj) === 2) || _throwWJerror(W, J)
   mass_matrix isa UniformScaling || @boundscheck axes(mass_matrix) === axes(W) || _throwWMerror(W, mass_matrix)
   @inbounds if W_transform
-    invdtgamma′ = inv(dtgamma)
-    for i in iijj[1]
-      @inbounds for j in iijj[2]
-        W[i, j] = muladd(mass_matrix[i, j], invdtgamma′, -J[i, j])
+    invdtgamma = inv(dtgamma)
+    if MT <: UniformScaling
+      copyto!(W, J)
+      @simd for i in diagind(W)
+          W[i] = muladd(-mass_matrix.λ, invdtgamma, J[i])
+      end
+    else
+      for j in iijj[2]
+        @simd for i in iijj[1]
+          W[i, j] = muladd(-mass_matrix[i, j], invdtgamma, J[i, j])
+        end
       end
     end
   else
-    dtgamma′ = -dtgamma
-    for i in iijj[1]
-      @simd for j in iijj[2]
-        W[i, j] = muladd(dtgamma′, J[i, j], mass_matrix[i, j])
+    for j in iijj[2]
+      @simd for i in iijj[1]
+        W[i, j] = muladd(dtgamma, J[i, j], -mass_matrix[i, j])
       end
     end
   end
@@ -306,18 +312,17 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     # skip calculation of inv(W) if step is repeated
     (!repeat_step && W_transform) ? f.invW_t(W, uprev, p, dtgamma, t) : f.invW(W, uprev, p, dtgamma, t) # W == inverse W
     is_compos && calc_J!(integrator, cache, true)
-
   elseif DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
     # skip calculation of J if step is repeated
-    ( new_jac = do_nowJ(integrator, alg, repeat_step) ) && DiffEqBase.update_coefficients!(W,uprev,p,t)
+    ( new_jac = do_newJ(integrator, alg, cache, repeat_step) ) && DiffEqBase.update_coefficients!(W,uprev,p,t)
     # skip calculation of W if step is repeated
     @label J2W
-    ( new_W = do_nowW(integrator, new_jac) ) && (W.transform = W_transform; set_gamma!(W, dtgamma))
+    ( new_W = do_newW(integrator, new_jac) ) && (W.transform = W_transform; set_gamma!(W, dtgamma))
   else # concrete W using jacobian from `calc_J!`
     # skip calculation of J if step is repeated
-    ( new_jac = do_nowJ(integrator, alg, repeat_step) ) && calc_J!(integrator, cache, is_compos)
+    ( new_jac = do_newJ(integrator, alg, cache, repeat_step) ) && calc_J!(integrator, cache, is_compos)
     # skip calculation of W if step is repeated
-    ( new_W = do_nowW(integrator, new_jac) ) && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
+    ( new_W = do_newW(integrator, new_jac) ) && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
   end
   isnewton && set_new_W!(cache.nlsolver, new_W)
   new_W && (integrator.destats.nw += 1)
@@ -345,8 +350,8 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
   else
     integrator.destats.nw += 1
     J = calc_J(integrator, cache, is_compos)
-    W_full = W_transform ? mass_matrix*inv(dtgamma) - J :
-                           mass_matrix - dtgamma*J
+    W_full = W_transform ? -mass_matrix*inv(dtgamma) + J :
+                           -mass_matrix + dtgamma*J
     W = W_full isa Number ? W_full : lu(W_full)
   end
   is_compos && (integrator.eigen_est = isarray ? opnorm(J, Inf) : J)

@@ -62,7 +62,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     end
     integrator.destats.nf += 1
     if DiffEqBase.has_invW(f)
-      dz = _reshape(W * _vec(ztmp), axes(ztmp)) # Here W is actually invW
+      dz = _reshape(W * -_vec(ztmp), axes(ztmp)) # Here W is actually invW
     else
       dz = _reshape(W \ _vec(ztmp), axes(ztmp))
     end
@@ -82,7 +82,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     end
 
     # update solution
-    z = z .+ dz
+    z = z .- dz
 
     # check stopping criterion
     iter > 1 && (η = θ / (1 - θ))
@@ -104,6 +104,7 @@ end
   @unpack t,dt,uprev,u,p,cache = integrator
   @unpack z,dz,tmp,ztmp,k,κtol,c,γ,max_iter = nlsolver
   @unpack W, new_W = nlcache
+  cache = unwrap_cache(integrator, true)
 
   # precalculations
   mass_matrix = integrator.f.mass_matrix
@@ -132,6 +133,7 @@ end
     end
     if DiffEqBase.has_invW(f)
       mul!(vecdz,W,vecztmp) # Here W is actually invW
+      @. vecdz = -vecdz
     else
       cache.linsolve(vecdz,W,vecztmp,iter == 1 && new_W)
     end
@@ -151,7 +153,7 @@ end
     end
 
     # update solution
-    z .+= dz
+    @. z = z - dz
 
     # check stopping criterion
     iter > 1 && (η = θ / (1 - θ))

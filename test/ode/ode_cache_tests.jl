@@ -1,5 +1,6 @@
 using OrdinaryDiffEq, DiffEqBase, DiffEqCallbacks, Test
 using Random
+Random.seed!(213)
 CACHE_TEST_ALGS = [Euler(),Midpoint(),RK4(),SSPRK22(),SSPRK33(),SSPRK53(), SSPRK53_2N1(), SSPRK53_2N2(),
   SSPRK63(),SSPRK73(),SSPRK83(),SSPRK432(),SSPRK932(),SSPRK54(),SSPRK104(),
   ORK256(), CarpenterKennedy2N54(), HSLDDRK64(), DGLDDRK73_C(), DGLDDRK84_C(), DGLDDRK84_F(), NDBLSRK124(), NDBLSRK134(), NDBLSRK144(),
@@ -32,7 +33,7 @@ affect! = function (integrator)
   u = integrator.u
   resize!(integrator,length(u)+1)
   maxidx = findmax(u)[2]
-  Θ = rand()
+  Θ = rand()/5 + 0.25
   u[maxidx] = Θ
   u[end] = 1-Θ
   nothing
@@ -50,21 +51,14 @@ for i in 1:50
 end
 
 println("Check some other integrators")
-Random.seed!(1)
 @test_nowarn sol = solve(prob,GenericImplicitEuler(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/2)
-Random.seed!(2)
 @test_nowarn sol = solve(prob,GenericTrapezoid(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/2)
-Random.seed!(3)
 @test_nowarn sol = solve(prob,Rosenbrock23(chunk_size=1),callback=callback,dt=1/2)
-Random.seed!(4)
 @test_nowarn sol = solve(prob,Rosenbrock32(chunk_size=1),callback=callback,dt=1/2)
 
 for alg in CACHE_TEST_ALGS
-  Random.seed!(hash(alg))
   @test_nowarn sol = solve(prob,alg,callback=callback,dt=1/2)
 end
 
-Random.seed!(5)
 @test_nowarn sol = solve(prob,Rodas4(chunk_size=1),callback=callback,dt=1/2)
-Random.seed!(6)
 @test_nowarn sol = solve(prob,Rodas5(chunk_size=1),callback=callback,dt=1/2)

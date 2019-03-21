@@ -52,11 +52,11 @@ end
   γdt, αdt, βdt = γ/dt, α/dt, β/dt
   J = calc_J(integrator, cache, is_compos)
   if u isa Number
-    LU1 = γdt*mass_matrix - J
-    LU2 = (αdt + βdt*im)*mass_matrix - J
+    LU1 = -γdt*mass_matrix + J
+    LU2 = -(αdt + βdt*im)*mass_matrix + J
   else
-    LU1 = lu(γdt*mass_matrix - J)
-    LU2 = lu((αdt + βdt*im)*mass_matrix - J)
+    LU1 = lu(-γdt*mass_matrix + J)
+    LU2 = lu(-(αdt + βdt*im)*mass_matrix + J)
   end
   integrator.destats.nw += 1
 
@@ -126,9 +126,9 @@ end
       end
     end
 
-    w1 = @. w1 + dw1
-    w2 = @. w2 + dw2
-    w3 = @. w3 + dw3
+    w1 = @. w1 - dw1
+    w2 = @. w2 - dw2
+    w3 = @. w3 - dw3
 
     # transform `w` to `z`
     z1 = @. T11 * w1 + T12 * w2 + T13 * w3
@@ -214,27 +214,14 @@ end
   c1mc2= c1-c2
   κtol = κ*tol # used in Newton iteration
   γdt, αdt, βdt = γ/dt, α/dt, β/dt
-  new_W = true
-  if repeat_step || (alg_can_repeat_jac(alg) &&
-                     (!integrator.last_stepfail && cache.nl_iters == 1 &&
-                      cache.ηold < alg.new_jac_conv_bound))
-    new_jac = false
-  else
-    new_jac = true
-    calc_J!(integrator, cache, is_compos)
-  end
-  # skip calculation of W if step is repeated
-  if !repeat_step && (!alg_can_repeat_jac(alg) ||
-                      (integrator.iter < 1 || new_jac ||
-                       abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t))))
+  (new_jac = do_newJ(integrator, alg, cache, repeat_step)) && calc_J!(integrator, cache, is_compos)
+  if (new_W = do_newW(integrator, new_jac))
     @inbounds for II in CartesianIndices(J)
-      W1[II] = γdt * mass_matrix[Tuple(II)...] - J[II]
-      W2[II] = (αdt + βdt*im) * mass_matrix[Tuple(II)...] - J[II]
+      W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
+      W2[II] = -(αdt + βdt*im) * mass_matrix[Tuple(II)...] + J[II]
     end
-  else
-    new_W = false
+    integrator.destats.nw += 1
   end
-  new_W && (integrator.destats.nw += 1)
 
   # TODO better initial guess
   if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
@@ -320,9 +307,9 @@ end
       end
     end
 
-    @. w1 = w1 + dw1
-    @. w2 = w2 + dw2
-    @. w3 = w3 + dw3
+    @. w1 = w1 - dw1
+    @. w2 = w2 - dw2
+    @. w3 = w3 - dw3
 
     # transform `w` to `z`
     @. z1 = T11 * w1 + T12 * w2 + T13 * w3
