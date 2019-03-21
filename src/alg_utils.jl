@@ -454,6 +454,20 @@ function unwrap_alg(integrator, is_stiff)
   end
 end
 
+function unwrap_cache(integrator, is_stiff)
+  alg   = integrator.alg
+  cache = integrator.cache
+  iscomp = alg isa CompositeAlgorithm
+  if !iscomp
+    return cache
+  elseif alg.choice_function isa AutoSwitch
+    num = is_stiff ? 2 : 1
+    return cache.caches[num]
+  else
+    return cache.caches[integrator.cache.current]
+  end
+end
+
 # Whether `uprev` is used in the algorithm directly.
 uses_uprev(alg::OrdinaryDiffEqAlgorithm, adaptive::Bool) = true
 uses_uprev(alg::ORK256, adaptive::Bool) = false

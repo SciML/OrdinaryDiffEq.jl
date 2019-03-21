@@ -104,6 +104,7 @@ end
   @unpack t,dt,uprev,u,p,cache = integrator
   @unpack z,dz,tmp,ztmp,k,κtol,c,γ,max_iter = nlsolver
   @unpack W, new_W = nlcache
+  cache = unwrap_cache(integrator, true)
 
   # precalculations
   mass_matrix = integrator.f.mass_matrix

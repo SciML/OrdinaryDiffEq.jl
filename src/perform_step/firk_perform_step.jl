@@ -214,7 +214,7 @@ end
   c1mc2= c1-c2
   κtol = κ*tol # used in Newton iteration
   γdt, αdt, βdt = γ/dt, α/dt, β/dt
-  (new_jac = do_newJ(integrator, alg, repeat_step)) && calc_J!(integrator, cache, is_compos)
+  (new_jac = do_newJ(integrator, alg, cache, repeat_step)) && calc_J!(integrator, cache, is_compos)
   if (new_W = do_newW(integrator, new_jac))
     @inbounds for II in CartesianIndices(J)
       W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
