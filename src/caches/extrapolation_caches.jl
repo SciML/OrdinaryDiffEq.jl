@@ -50,7 +50,8 @@ end
 
 @cache mutable struct ExtrapolationMidpointDeuflhardConstantCache{QType} <: OrdinaryDiffEqConstantCache
   Q::Vector{QType} # storage for scaling factors of stepsize
-  current_extrapolation_order::Int
+  current_extrapolation_order::Int64
+  old_extrapolation_order::Int64
   N_win_old::Int64 # information needed for step_accept_controller
   subdividing_sequence::Array{BigInt,1}
   stage_number::Array{Int,1} # kth entry is the number of stages for extrapolation order (k + alg.min_extrapolation_order - 1)
@@ -60,7 +61,6 @@ end
   # weights and scaling factors for internal extrapolation operators (used for error estimate):
   extrapolation_weights_2::Array{Rational{BigInt},2}
   extrapolation_scalars_2::Array{Rational{BigInt},1}
-
 end
 
 function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
@@ -69,6 +69,7 @@ function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeN
 
   Q = fill(zero(QType),N - alg.min_extrapolation_order + 1)
   current_extrapolation_order = alg.init_extrapolation_order
+  old_extrapolation_order = alg.init_extrapolation_order
   N_win_old = 0
 
   # initialize subdividing_sequence:
@@ -122,7 +123,7 @@ function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeN
   extrapolation_scalars = -nodes[1]*[BigInt(1); extrapolation_scalars_2]
 
   # initialize the constant cache
-  ExtrapolationMidpointDeuflhardConstantCache(Q, current_extrapolation_order,N_win_old,subdividing_sequence,stage_number, extrapolation_weights, extrapolation_scalars,extrapolation_weights_2, extrapolation_scalars_2)
+  ExtrapolationMidpointDeuflhardConstantCache(Q, current_extrapolation_order,old_extrapolation_order,N_win_old,subdividing_sequence,stage_number, extrapolation_weights, extrapolation_scalars,extrapolation_weights_2, extrapolation_scalars_2)
 end
 
 @cache mutable struct ExtrapolationMidpointDeuflhardCache{uType,uNoUnitsType,rateType,dtType,QType} <: OrdinaryDiffEqMutableCache

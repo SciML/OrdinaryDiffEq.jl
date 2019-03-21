@@ -296,26 +296,28 @@ function step_reject_controller!(integrator,alg::PredictiveControllerAlgs)
   end
 end
 
-# @inline function stepsize_controller!(integrator,alg::ExtrapolationMidpointDeuflhard)
-#   # dummy function
-#   # ExtrapolationMidpointDeuflhard's stepsize scaling is safed in cache and computed by
-#   # stepsize_controller_internal! (in perfom_step!) resp. stepsize_predictor! (in
-#   # step_accept_controller! and step_reject_controller!)
-#   zero(typeof(integrator.opts.qmax))
-# end
+
+@inline function stepsize_controller!(integrator,alg::ExtrapolationMidpointDeuflhard)
+  # dummy function
+  # ExtrapolationMidpointDeuflhard's stepsize scaling is safed in cache and computed by
+  # stepsize_controller_internal! (in perfom_step!) resp. stepsize_predictor! (in
+  # step_accept_controller! and step_reject_controller!)
+  zero(typeof(integrator.opts.qmax))
+end
 
 function stepsize_controller_internal!(integrator,alg::ExtrapolationMidpointDeuflhard)
   # Standard stepsize controller
   if iszero(integrator.EEst)
     q = inv(integrator.opts.qmax)
   else
-    qtmp = integrator.EEst^(1/get_current_adaptive_order(integrator.alg,integrator.cache))/integrator.opts.gamma
+    gamma = 1/4^(1//get_current_adaptive_order(integrator.alg,integrator.cache))
+    qtmp = integrator.EEst^(1/get_current_adaptive_order(integrator.alg,integrator.cache))/gamma
     @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
-    #integrator.qold = integrator.dt/q # can this be deleted?!
+    integrator.qold = integrator.dt/q # can this be deleted?!
   end
   q
 end
-
+#
 function stepsize_predictor(integrator,alg::ExtrapolationMidpointDeuflhard,new_extrapolation_order::Int64)
   # compute the stepsize scaling for new_extrapolation_order based on the latest error estimate
   # which is of current_extrapolation_order.
@@ -328,13 +330,15 @@ function stepsize_predictor(integrator,alg::ExtrapolationMidpointDeuflhard,new_e
     tol = integrator.opts.internalnorm(integrator.opts.reltol,t) # Deuflhard's approach relies on EEstD ≈ ||relTol||
     current_stage_number = integrator.cache.stage_number[integrator.cache.current_extrapolation_order - alg.min_extrapolation_order + 1]
     new_stage_number = integrator.cache.stage_number[new_extrapolation_order - alg.min_extrapolation_order + 1]
-    @fastmath qtmp = (EEst*tol^(1.0 - current_stage_number/new_stage_number))^(1/(get_current_adaptive_order(integrator.alg,integrator.cache)))
-    @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp/integrator.opts.gamma))
+    gamma = 1/4^(1//get_current_adaptive_order(integrator.alg,integrator.cache))
+    @fastmath qtmp = (EEst*tol^(1.0 - current_stage_number/new_stage_number))^(1/(get_current_adaptive_order(integrator.alg,integrator.cache)))/gamma
+    @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
   end
-  q
+  integrator.cache.Q[new_extrapolation_order - alg.min_extrapolation_order + 1] = q
 end
 
 function step_accept_controller!(integrator,alg::ExtrapolationMidpointDeuflhard,q)
+  # println("step_accept_controller:")
   # compute new order and stepsize, return new stepsize
   # so far only constant cache
   n_min = alg.min_extrapolation_order
@@ -352,6 +356,8 @@ function step_accept_controller!(integrator,alg::ExtrapolationMidpointDeuflhard,
   work = s[tmp] ./ dtNew[1:end-1]
 
   n_new = argmin(work) + n_min - 1
+   println("new order: $n_new in ($n_min, $n_curr)")
+
 
   # check if may increase n_new
   if n_new == n_curr < N_win_old
@@ -363,10 +369,26 @@ function step_accept_controller!(integrator,alg::ExtrapolationMidpointDeuflhard,
     # check if work decreases from n_new to (n_new  + 1):
     if work[end] > s[tmp[end]+1]/dtNew[end]
       n_new = n_new + 1
+      println("Additional increment. new order: $n_new")
     end
   end
+  # println(" ")
   integrator.cache.current_extrapolation_order = n_new
   dtNew[n_new - n_min + 1]
+end
+
+function step_reject_controller!(integrator, alg::ExtrapolationMidpointDeuflhard)
+  # compute reduced stepsize dt for old_extrapolation_order. Use latest error estimate if estimate of old_extrapolation_order is not available
+  if integrator.cache.current_extrapolation_order < integrator.cache.old_extrapolation_order
+      stepsize_predictor(integrator,alg,integrator.cache.old_extrapolation_order)
+  end
+  println("step reject controller:")
+  println("   $(integrator.cache.current_extrapolation_order) -> $(integrator.cache.old_extrapolation_order)")
+  integrator.cache.current_extrapolation_order = integrator.cache.old_extrapolation_order
+  dtNew = integrator.dt / integrator.cache.Q[integrator.cache.old_extrapolation_order - integrator.alg.min_extrapolation_order + 1]
+  dtNew = integrator.tdir*max(abs(integrator.opts.dtmin), min(abs(integrator.opts.dtmax), abs(dtNew)))
+  println("   $(integrator.dt) -> $(dtNew)")
+  integrator.dt = dtNew
 end
 
 
