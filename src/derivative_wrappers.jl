@@ -70,7 +70,7 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, f
     else
       isforward = alg.diff_type === Val{:forward}
       if isforward
-        forwardcache = get_tmp_cache(integrator)[2]
+        forwardcache = get_tmp_cache(integrator, alg, unwrap_cache(integrator, true))[2]
         f(forwardcache, x)
         integrator.destats.nf += 1
         DiffEqDiffTools.finite_difference_jacobian!(J, f, x, jac_config, forwardcache)
