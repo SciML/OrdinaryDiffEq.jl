@@ -105,8 +105,8 @@ get_current_alg_order(alg::QNDF,cache) = cache.order
 get_current_adaptive_order(alg::QNDF,cache) = cache.order
 get_current_adaptive_order(alg::OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm,cache) = cache.cur_order
 get_current_alg_order(alg::OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm,cache) = cache.cur_order
-get_current_alg_order(alg::ExtrapolationMidpointDeuflhard,cache) = 2(cache.current_extrapolation_order + 1)
-get_current_adaptive_order(alg::ExtrapolationMidpointDeuflhard,cache) = 2cache.current_extrapolation_order + 1
+get_current_alg_order(alg::ExtrapolationMidpointDeuflhard,cache) = 2(cache.n_curr + 1)
+get_current_adaptive_order(alg::ExtrapolationMidpointDeuflhard,cache) = 2cache.n_curr + 1
 
 
 #alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
@@ -308,7 +308,7 @@ alg_order(alg::MEBDF2) = 2
 
 alg_maximum_order(alg) = alg_order(alg)
 alg_maximum_order(alg::CompositeAlgorithm) = maximum(alg_order(x) for x in alg.algs)
-alg_maximum_order(alg::ExtrapolationMidpointDeuflhard) = 2(alg.max_extrapolation_order+1)
+alg_maximum_order(alg::ExtrapolationMidpointDeuflhard) = 2(alg.n_max+1)
 
 alg_adaptive_order(alg::ExplicitRK) = alg.tableau.adaptiveorder
 alg_adaptive_order(alg::OrdinaryDiffEqAlgorithm) = alg_order(alg)-1
@@ -350,7 +350,7 @@ beta1_default(alg::FunctionMap,beta2) = 0
 beta1_default(alg::DP8,beta2) = typeof(beta2)(1//alg_order(alg)) - beta2/5
 beta1_default(alg::DP5,beta2) = typeof(beta2)(1//alg_order(alg)) - 3beta2/4
 beta1_default(alg::DP5Threaded,beta2) = typeof(beta2)(1//alg_order(alg)) - 3beta2/4
-beta1_default(alg::ExtrapolationMidpointDeuflhard,beta2) =  1//(2alg.init_extrapolation_order+1)
+beta1_default(alg::ExtrapolationMidpointDeuflhard,beta2) =  1//(2alg.n_init+1)
 
 gamma_default(alg::OrdinaryDiffEqAlgorithm) = 9//10
 gamma_default(alg::RKC) = 8//10

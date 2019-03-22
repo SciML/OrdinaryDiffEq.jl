@@ -40,21 +40,22 @@ end
 RichardsonEuler(;max_order=9,min_order=1,init_order=5) = RichardsonEuler(max_order,min_order,init_order)
 
 struct ExtrapolationMidpointDeuflhard <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
-  max_extrapolation_order::Int
-  min_extrapolation_order::Int
-  init_extrapolation_order::Int
-  sequence_symbol::Symbol
+  n_min::Int # Minimal extrapolation order
+  n_init::Int # Initial extrapolation order
+  n_max::Int # Maximal extrapolation order
+  sequence_symbol::Symbol # Name of the subdividing sequence
 end
-function ExtrapolationMidpointDeuflhard(;max_extrapolation_order=10, min_extrapolation_order=1,init_extrapolation_order=5, sequence_symbol = :harmonic)
-  # enforce 1 <=  min_extrapolation_order <= init_extrapolation_order <= max_extrapolation_order:
-  min_extrapolation_order = max(1,min_extrapolation_order)
-  init_extrapolation_order = max(min_extrapolation_order,init_extrapolation_order)
-  max_extrapolation_order = max(init_extrapolation_order,max_extrapolation_order)
-  # enforce sequence_symbol in [:harmonic,:romberg,:bulirsch]:
+function ExtrapolationMidpointDeuflhard(;min_extrapolation_order=1,init_extrapolation_order=5, max_extrapolation_order=10, sequence_symbol = :harmonic)
+  # Enforce 1 <=  min_extrapolation_order <= init_extrapolation_order <= max_extrapolation_order:
+  n_min = max(1,min_extrapolation_order)
+  n_init = max(n_min,init_extrapolation_order)
+  n_max = max(n_init,max_extrapolation_order)
+  # Enforce sequence_symbol in [:harmonic,:romberg,:bulirsch]:
   if sequence_symbol != :harmonic && sequence_symbol != :romberg && sequence_symbol != :bulirsch
       error("sequence_symbol must match :harmonic, :romberg or :bulirsch")
   end
-  ExtrapolationMidpointDeuflhard(max_extrapolation_order,min_extrapolation_order,init_extrapolation_order,sequence_symbol)
+  # Initialize algorithm
+  ExtrapolationMidpointDeuflhard(n_min,n_init,n_max,sequence_symbol)
 end
 
 struct RK46NL <: OrdinaryDiffEqAlgorithm end

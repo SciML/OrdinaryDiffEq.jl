@@ -14,7 +14,7 @@ end
 
 function perform_step!(integrator,cache::RichardsonEulerCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k,fsalfirst,T,utilde,atmp,dtpropose,cur_order,A = cache
+  @unpack k,fsalfirst,T,u_tilde,atmp,dtpropose,cur_order,A = cache
 
   @muladd @. u = uprev + dt*fsalfirst
 
@@ -48,8 +48,8 @@ function perform_step!(integrator,cache::RichardsonEulerCache,repeat_step=false)
       for i = range_start:min(size(T)[1], cur_order + 1)
 
           A = 2^(i-1)
-          @. utilde = T[i,i] - T[i,i-1]
-          atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+          @. u_tilde = T[i,i] - T[i,i-1]
+          atmp = calculate_residuals(u_tilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
           EEst = integrator.opts.internalnorm(atmp)
 
           beta1 = integrator.opts.beta1
@@ -128,8 +128,8 @@ function perform_step!(integrator,cache::RichardsonEulerConstantCache,repeat_ste
       for i = range_start:min(size(T)[1], cur_order + 1)
 
           A = 2^(i-1)
-          utilde = T[i,i] - T[i,i-1]
-          atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+          u_tilde = T[i,i] - T[i,i-1]
+          atmp = calculate_residuals(u_tilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
           EEst = integrator.opts.internalnorm(atmp)
 
           beta1 = integrator.opts.beta1
@@ -179,87 +179,87 @@ function initialize!(integrator,cache::ExtrapolationMidpointDeuflhardConstantCac
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
   integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast # end copied from above
+  integrator.k[2] = integrator.fsallast
+  # end copied from above
 end
 
 function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantCache, repeat_step=false)
-  @unpack t,uprev,dt,f,p = integrator
-  @unpack current_extrapolation_order = cache
-  # fill!(cache.Q, zero(eltype(cache.Q)))
+  # Set up variables
+  @unpack t, uprev, dt, f, p = integrator
+  @unpack n_curr = cache
+  T = fill(zero(uprev), integrator.alg.n_max + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
+  u_temp1, u_temp2 = copy(uprev), copy(uprev) # Auxiliary variables for computing the internal discretisations
+  u, u_tilde = copy(uprev), copy(uprev) # Storage for the latest approximation and its internal counterpart
+  tol = integrator.opts.internalnorm(integrator.opts.reltol, t) # Deuflhard's approach relies on EEstD ≈ ||relTol||
 
-  T = fill(zero(uprev), integrator.alg.max_extrapolation_order + 1) # storage for the internal discretisations obtained by the explicit midpoint rule
-  utemp1, utemp2 = copy(uprev), copy(uprev) # auxiliary variable for computing the internal discretisations
+  # Set up the order window
+  win_min = max(integrator.alg.n_min, n_curr - 1)
+  win_max = min(integrator.alg.n_max, n_curr + 1)
 
-  u, utilde = copy(uprev), copy(uprev) # storage for the latest solution and its internal counterpart
-  n_win = max(integrator.alg.min_extrapolation_order, current_extrapolation_order - 1)
-  N_win = min(integrator.alg.max_extrapolation_order, current_extrapolation_order + 1)
+  # Set up the current extrapolation order
+  cache.n_old = n_curr # Save the suggested order for step_accept_controller! and step_reject_controller!
+  n_curr = win_min # Start with smallest order in the order window
 
-  cache.old_extrapolation_order = current_extrapolation_order
-  current_extrapolation_order = n_win # start with smalles order in the order window
-
-  tol = integrator.opts.internalnorm(integrator.opts.reltol,t) # Deuflhard's approach relies on EEstD ≈ ||relTol||
-
-  # compute internal discretisations
-  for i = 0:current_extrapolation_order
+  # Compute the internal discretisations
+  for i = 0 : n_curr
     j_int = 2Int64(cache.subdividing_sequence[i+1])
-    dt_int = dt/(2j_int) # stepsize of the ith internal discretisation
-    utemp2 = uprev
-    utemp1 = utemp2 + dt_int*integrator.fsalfirst # Euler starting step
-    for j = 2:2j_int
-      T[i+1] = utemp2 + 2dt_int*f(utemp1,p,t+(j-1)dt_int)
-      utemp2 = utemp1
-      utemp1 = T[i+1]
+    dt_int = dt / (2j_int) # stepsize of the ith internal discretisation
+    u_temp2 = uprev
+    u_temp1 = u_temp2 + dt_int*integrator.fsalfirst # Euler starting step
+    for j = 2 : 2j_int
+      T[i+1] = u_temp2 + 2dt_int*f(u_temp1, p, t + (j-1)dt_int) # Explicit Midpoint rule
+      u_temp2 = u_temp1
+      u_temp1 = T[i+1]
     end
   end
 
-  # compute all information relating to an extrapolation order ≦ n_win
-  for i = integrator.alg.min_extrapolation_order:current_extrapolation_order
-    u = eltype(uprev).(cache.extrapolation_scalars[i+1])*sum( broadcast(*,T[1:(i+1)], eltype(uprev).(cache.extrapolation_weights[1:(i+1), (i+1)])) ) # solution of extrapolation order i
-    utilde = eltype(uprev).(cache.extrapolation_scalars_2[i])*sum( broadcast(*,T[2:(i+1)], eltype(uprev).(cache.extrapolation_weights_2[1:i, i])) ) # and its internal counterpart
-    res =  calculate_residuals(u,utilde,integrator.opts.abstol,integrator.opts.reltol,integrator.opts.internalnorm,t)
-    integrator.EEst = integrator.opts.internalnorm(res,t)
-    cache.current_extrapolation_order  = i
-    cache.Q[i-integrator.alg.min_extrapolation_order+1] = stepsize_controller_internal!(integrator, integrator.alg)
+  # Compute all information relating to an extrapolation order ≦ win_min
+  for i = integrator.alg.n_min:n_curr
+    u = eltype(uprev).(cache.extrapolation_scalars[i+1]) * sum( broadcast(*, T[1:(i+1)], eltype(uprev).(cache.extrapolation_weights[1:(i+1), (i+1)])) ) # Approximation of extrapolation order i
+    u_tilde = eltype(uprev).(cache.extrapolation_scalars_2[i]) * sum( broadcast(*, T[2:(i+1)], eltype(uprev).(cache.extrapolation_weights_2[1:i, i])) ) # and its internal counterpart
+    res = calculate_residuals(u, u_tilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+    integrator.EEst = integrator.opts.internalnorm(res, t)
+    cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
+    stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
   end
 
-  # check if a soltution with an extrapolation order in the order window can be accepted
-  while current_extrapolation_order <= N_win
+  # Check if an approximation of some order in the order window can be accepted
+  while n_curr <= win_max
     if integrator.EEst <= 1.0
-      # accept current extrapolation order
+      # Accept current approximation u of order n_curr
       break
-    elseif integrator.EEst <= tol^(cache.stage_number[current_extrapolation_order - integrator.alg.min_extrapolation_order + 1]/cache.stage_number[N_win - integrator.alg.min_extrapolation_order + 1] - 1.0)
-      # reject current extrapolation order but pass convergence monitor
-      current_extrapolation_order = current_extrapolation_order + 1
-      cache.current_extrapolation_order = current_extrapolation_order
+    elseif integrator.EEst <= tol^(cache.stage_number[n_curr - integrator.alg.n_min + 1] / cache.stage_number[win_max - integrator.alg.n_min + 1] - 1)
+      # Reject current approximation order but pass convergence monitor
+      # Compute approximation of order (n_curr + 1)
+      n_curr = n_curr + 1
+      cache.n_curr = n_curr
 
-      j_int = 2Int64(cache.subdividing_sequence[current_extrapolation_order+1])
-      dt_int = dt/(2j_int) # stepsize of the ith internal discretisation
-      utemp2 = uprev
-      utemp1 = utemp2 + dt_int*integrator.fsalfirst # Euler starting step
-      for j = 2:2j_int
-        T[current_extrapolation_order+1] = utemp2 + 2dt_int*f(utemp1,p,t+(j-1)dt_int)
-        utemp2 = utemp1
-        utemp1 = T[current_extrapolation_order+1]
+      # Update T
+      j_int = 2Int64(cache.subdividing_sequence[n_curr + 1])
+      dt_int = dt / (2j_int) # stepsize of the new internal discretisation
+      u_temp2 = uprev
+      u_temp1 = u_temp2 + dt_int * integrator.fsalfirst # Euler starting step
+      for j = 2 : 2j_int
+        T[n_curr+1] = u_temp2 + 2dt_int*f(u_temp1, p, t + (j-1)dt_int)
+        u_temp2 = u_temp1
+        u_temp1 = T[n_curr+1]
       end
 
-      u = eltype(uprev).(cache.extrapolation_scalars[current_extrapolation_order+1])*sum( broadcast(*,T[1:(current_extrapolation_order+1)], eltype(uprev).(cache.extrapolation_weights[1:(current_extrapolation_order+1), (current_extrapolation_order+1)])) ) # solution of extrapolation order i
-      utilde = eltype(uprev).(cache.extrapolation_scalars_2[current_extrapolation_order])*sum( broadcast(*,T[2:(current_extrapolation_order+1)], eltype(uprev).(cache.extrapolation_weights_2[1:current_extrapolation_order, current_extrapolation_order])) ) # and its internal counterpart
-      res =  calculate_residuals(u,utilde,integrator.opts.abstol,integrator.opts.reltol,integrator.opts.internalnorm,t)
-      integrator.EEst = integrator.opts.internalnorm(res,t)
-      cache.Q[current_extrapolation_order-integrator.alg.min_extrapolation_order+1] = stepsize_controller_internal!(integrator, integrator.alg)
+      # Update u, integrator.EEst and cache.Q
+      u = eltype(uprev).(cache.extrapolation_scalars[n_curr+1]) * sum( broadcast(*, T[1:(n_curr+1)], eltype(uprev).(cache.extrapolation_weights[1:(n_curr+1), (n_curr+1)])) ) # Approximation of extrapolation order n_curr
+      u_tilde = eltype(uprev).(cache.extrapolation_scalars_2[n_curr]) * sum( broadcast(*, T[2:(n_curr+1)], eltype(uprev).(cache.extrapolation_weights_2[1:n_curr, n_curr])) ) # and its internal counterpart
+      res = calculate_residuals(u, u_tilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      integrator.EEst = integrator.opts.internalnorm(res, t)
+      stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
     else
-        # reject current extrapolation and not pass convergence monitor
+        # Reject the current approximation and not pass convergence monitor
         break
     end
   end
 
-  # use the latest approximation save and the
-  # upper limit of the order window
-  cache.N_win_old = N_win
+  # Save the latest approximation and update fsal-values
   integrator.u = u
-  # #update fsal-values
-  integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+  integrator.fsallast = f(u, p, t + dt) # For interpolation, then FSAL'd
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-
 end
