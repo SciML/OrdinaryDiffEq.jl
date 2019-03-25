@@ -9,6 +9,10 @@ OrdinaryDiffEq.jl
 
 Join the chat at https://gitter.im/JuliaDiffEq/Lobby Build Status. Build status Coverage Status codecov
 
+OrdinaryDiffEq.jl
+
+Join the chat at https://gitter.im/JuliaDiffEq/Lobby Build Status. Build status Coverage Status codecov
+
 OrdinaryDiffEq.jl is a component package in the DifferentialEquations ecosystem. It holds the ordinary differential equation solvers and utilities. While completely independent and usable on its own, users interested in using this functionality should check out DifferentialEquations.jl.
 API
 
@@ -53,37 +57,4 @@ prob = SecondOrderODEProblem(HH_acceleration,initial_velocities,initial_position
 sol2 = solve(prob, KahanLi8(), dt=1/10);
 
 Other refined forms are IMEX and semi-linear ODEs (for exponential integrators).
-```julia
-using OrdinaryDiffEq
-function lorenz(du,u,p,t)
- du[1] = 10.0(u[2]-u[1])
- du[2] = u[1]*(28.0-u[3]) - u[2]
- du[3] = u[1]*u[2] - (8/3)*u[3]
-end
-u0 = [1.0;0.0;0.0]
-tspan = (0.0,100.0)
-prob = ODEProblem(lorenz,u0,tspan)
-sol = solve(prob,Tsit5())
-using Plots; plot(sol,vars=(1,2,3))
-```
-
-For "refined ODEs" like dynamical equations and `SecondOrderODEProblem`s, refer to the [DiffEqDocs](http://docs.juliadiffeq.org/latest/types/ode_types.html). For example, in [DiffEqTutorials.jl](https://github.com/JuliaDiffEq/DiffEqTutorials.jl) we show how to solve equations of motion using symplectic methods:
-
-```julia
-function HH_acceleration(dv,v,u,p,t)
-    x,y  = u
-    dx,dy = dv
-    dv[1] = -x - 2x*y
-    dv[2] = y^2 - y -x^2
-end
-initial_positions = [0.0,0.1]
-initial_velocities = [0.5,0.0]
-prob = SecondOrderODEProblem(HH_acceleration,initial_velocities,initial_positions,tspan)
-sol2 = solve(prob, KahanLi8(), dt=1/10);
-```
-
-Other refined forms are IMEX and semi-linear ODEs (for exponential integrators).
-
-## Available Solvers
-
-For the list of available solvers, please refer to the [DifferentialEquations.jl ODE Solvers](http://docs.juliadiffeq.org/latest/solvers/ode_solve.html#OrdinaryDiffEq.jl-1), [Dynamical ODE Solvers](http://docs.juliadiffeq.org/latest/solvers/dynamical_solve.html), and the [Split ODE Solvers](http://docs.juliadiffeq.org/latest/solvers/split_ode_solve.html) pages.
+007
