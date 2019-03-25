@@ -5,17 +5,15 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/dpa182s6i8c67awu/branch/master?svg=true)](https://ci.appveyor.com/project/YingboMa/ordinarydiffeq-jl/branch/master)
 [![Coverage Status](https://coveralls.io/repos/github/JuliaDiffEq/OrdinaryDiffEq.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaDiffEq/OrdinaryDiffEq.jl?branch=master)
 [![codecov](https://codecov.io/gh/JuliaDiffEq/OrdinaryDiffEq.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaDiffEq/OrdinaryDiffEq.jl)
+OrdinaryDiffEq.jl
 
-OrdinaryDiffEq.jl is a component package in the DifferentialEquations ecosystem. It holds the
-ordinary differential equation solvers and utilities. While completely independent
-and usable on its own, users interested in using this
-functionality should check out [DifferentialEquations.jl](https://github.com/JuliaDiffEq/DifferentialEquations.jl).
+Join the chat at https://gitter.im/JuliaDiffEq/Lobby Build Status. Build status Coverage Status codecov
 
-## API
+OrdinaryDiffEq.jl is a component package in the DifferentialEquations ecosystem. It holds the ordinary differential equation solvers and utilities. While completely independent and usable on its own, users interested in using this functionality should check out DifferentialEquations.jl.
+API
 
-OrdinaryDiffEq.jl is part of the JuliaDiffEq common interface, but can be used independently of DifferentialEquations.jl. The only requirement is that the user passes an OrdinaryDiffEq.jl algorithm to `solve`. For example, we can solve the [ODE tutorial from the docs](http://docs.juliadiffeq.org/latest/tutorials/ode_example.html) using the `Tsit5()` algorithm:
+OrdinaryDiffEq.jl is part of the JuliaDiffEq common interface, but can be used independently of DifferentialEquations.jl. The only requirement is that the user passes an OrdinaryDiffEq.jl algorithm to solve. For example, we can solve the ODE tutorial from the docs using the Tsit5() algorithm:
 
-```julia
 using OrdinaryDiffEq
 f(u,p,t) = 1.01*u
 u0=1/2
@@ -26,10 +24,35 @@ using Plots
 plot(sol,linewidth=5,title="Solution to the linear ODE with a thick line",
      xaxis="Time (t)",yaxis="u(t) (in μm)",label="My Thick Line!") # legend=false
 plot!(sol.t, t->0.5*exp(1.01t),lw=3,ls=:dash,label="True Solution!")
-```
 
-That example uses the out-of-place syntax `f(u,p,t)`, while the inplace syntax (more efficient for systems of equations) is shown in the Lorenz example:
+That example uses the out-of-place syntax f(u,p,t), while the inplace syntax (more efficient for systems of equations) is shown in the Lorenz example:
 
+using OrdinaryDiffEq
+function lorenz(du,u,p,t)
+ du[1] = 10.0(u[2]-u[1])
+ du[2] = u[1]*(28.0-u[3]) - u[2]
+ du[3] = u[1]*u[2] - (8/3)*u[3]
+end
+u0 = [1.0;0.0;0.0]
+tspan = (0.0,100.0)
+prob = ODEProblem(lorenz,u0,tspan)
+sol = solve(prob,Tsit5())
+using Plots; plot(sol,vars=(1,2,3))
+
+For "refined ODEs" like dynamical equations and SecondOrderODEProblems, refer to the DiffEqDocs. For example, in DiffEqTutorials.jl we show how to solve equations of motion using symplectic methods:
+
+function HH_acceleration(dv,v,u,p,t)
+    x,y  = u
+    dx,dy = dv
+    dv[1] = -x - 2x*y
+    dv[2] = y^2 - y -x^2
+end
+initial_positions = [0.0,0.1]
+initial_velocities = [0.5,0.0]
+prob = SecondOrderODEProblem(HH_acceleration,initial_velocities,initial_positions,tspan)
+sol2 = solve(prob, KahanLi8(), dt=1/10);
+
+Other refined forms are IMEX and semi-linear ODEs (for exponential integrators).
 ```julia
 using OrdinaryDiffEq
 function lorenz(du,u,p,t)
