@@ -355,7 +355,7 @@ function step_accept_controller!(integrator,alg::ExtrapolationMidpointDeuflhard,
   dt_new[1:end-1] = integrator.dt ./ Q[tmp] # Storg for the possible new stepsizes
   dt_new[1:end-1] = max.(abs(integrator.opts.dtmin), min.(abs(integrator.opts.dtmax), abs.(dt_new[1:end-1]))) # Safety scaling
 
-  # n_new ist the most efficient order of the last step
+  # n_new is the most efficient order of the last step
   work = s[tmp] ./ dt_new[1:end-1]
   n_new = argmin(work) + n_min - 1
 

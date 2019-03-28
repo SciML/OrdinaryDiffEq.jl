@@ -129,25 +129,46 @@ function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeN
   ExtrapolationMidpointDeuflhardConstantCache(Q, n_curr, n_old, subdividing_sequence, stage_number, extrapolation_weights, extrapolation_scalars, extrapolation_weights_2, extrapolation_scalars_2)
 end
 
-@cache mutable struct ExtrapolationMidpointDeuflhardCache{uType,uNoUnitsType,rateType,dtType,QType} <: OrdinaryDiffEqMutableCache
-  u::uType
-  uprev::uType
-  utilde::uType
-  tmp::uType
-  atmp::uNoUnitsType
-  k::rateType
+@cache mutable struct ExtrapolationMidpointDeuflhardCache{uType,uNoUnitsType,rateType,QType} <: OrdinaryDiffEqMutableCache
+  # Values that are mutated
+  u_tilde::uType
+  u_temp1::uType
+  u_temp2::uType
+  tmp::uType # for get_tmp_cache()
+  T::Array{uType,1}  # Storage for the internal discretisations obtained by the explicit midpoint rule
+  res::uNoUnitsType # Storage for the scaled residual of u and u_tilde
+
   fsalfirst::rateType
-  proposed_extrapolation_order::Int
-  constant_cache::ExtrapolationMidpointDeuflhardConstantCache
+  k::rateType
+
+  # Begin of constant cache
+  Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n + alg.n_min - 1)
+  n_curr::Int64 # Storage for the current extrapolation order
+  n_old::Int64 # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+
+  # Constant values
+  subdividing_sequence::Array{BigInt,1}
+  stage_number::Array{Int,1} # Stage_number[n] contains information for extrapolation order (n + alg.n_min - 1)
+  # Weights and Scaling factors for extrapolation operators
+  extrapolation_weights::Array{Rational{BigInt},2}
+  extrapolation_scalars::Array{Rational{BigInt},1}
+  # Weights and scaling factors for internal extrapolation operators (used for error estimate)
+  extrapolation_weights_2::Array{Rational{BigInt},2}
+  extrapolation_scalars_2::Array{Rational{BigInt},1}
 end
 
 function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  utilde = similar(u)
-  tmp = similar(u)
-  atmp = similar(u,uEltypeNoUnits)
-  k = zero(rate_prototype)
+  u_tilde = zero(u)
+  u_temp1 = zero(u)
+  u_temp2 = zero(u)
+  tmp = zero(u)
+  T = fill(zero(u), alg.n_max + 1)
+  res = uEltypeNoUnits.(zero(u))
   fsalfirst = zero(rate_prototype)
-  proposed_extrapolation_order = alg.n_init # order of first step is set by user
-  constant_cache = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val{false})
-  ExtrapolationMidpointDeuflhardCache(u,uprev,utilde,tmp,atmp,k,fsalfirst,proposed_extrapolation_order,constant_cache)
+  k = zero(rate_prototype)
+
+  cc = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val{false})
+
+  ExtrapolationMidpointDeuflhardCache(u_tilde, u_temp1, u_temp2, tmp, T, res, fsalfirst, k,
+      cc.Q, cc.n_curr, cc.n_old, cc.subdividing_sequence, cc.stage_number, cc.extrapolation_weights, cc.extrapolation_scalars, cc.extrapolation_weights_2, cc.extrapolation_scalars_2)
 end
