@@ -180,7 +180,7 @@ end
 
 function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, repeat_step = false)
   @unpack t, uprev, dt, f, p = integrator
-  @unpack n_curr  = cache
+  @unpack n_curr, u_temp1, u_temp2, u_tilde, res, T, fsalfirst,k  = cache
   tol = integrator.opts.internalnorm(integrator.opts.reltol, t) # Deuflhard's approach relies on EEstD ≈ ||relTol||
   fill!(cache.T,zero(uprev))
 
@@ -199,13 +199,13 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
   for i = 0 : n_curr
     j_int = 2Int64(cache.subdividing_sequence[i+1])
     dt_int = dt / (2j_int) # stepsize of the ith internal discretisation
-     cache.u_temp2 = uprev
-     cache.u_temp1 = cache.u_temp2 + dt_int*cache.fsalfirst # Euler starting step
+    @. u_temp2 = uprev
+    @. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
     for j = 2 : 2j_int
-    f(cache.k, cache.u_temp1, p, t + (j-1)dt_int)
-      cache.T[i+1] = cache.u_temp2 + 2dt_int*cache.k # Explicit Midpoint rule
-       cache.u_temp2 = cache.u_temp1
-       cache.u_temp1 = cache.T[i+1]
+      f(k, cache.u_temp1, p, t + (j-1)dt_int)
+      T[i+1] = u_temp2 + 2dt_int*k # Explicit Midpoint rule
+      @. u_temp2 = u_temp1
+      @. u_temp1 = T[i+1]
     end
   end
 
@@ -234,13 +234,13 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
         # Update cache.T
         j_int = 2Int64(cache.subdividing_sequence[n_curr + 1])
         dt_int = dt / (2j_int) # stepsize of the new internal discretisation
-         cache.u_temp2 = uprev
-         cache.u_temp1 = cache.u_temp2 + dt_int * cache.fsalfirst # Euler starting step
+        @. u_temp2 = uprev
+        @. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
         for j = 2 : 2j_int
-          f(cache.k, cache.u_temp1, p, t + (j-1)dt_int)
-          cache.T[n_curr+1] = cache.u_temp2 + 2dt_int*cache.k
-           cache.u_temp2 = cache.u_temp1
-           cache.u_temp1 = cache.T[n_curr+1]
+          f(k, cache.u_temp1, p, t + (j-1)dt_int)
+          T[n_curr+1] = u_temp2 + 2dt_int * k
+          @. u_temp2 = u_temp1
+          @. u_temp1 = T[n_curr+1]
         end
 
         # Update u, integrator.EEst and cache.Q
