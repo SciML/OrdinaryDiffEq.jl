@@ -102,6 +102,11 @@
     f₁ .= ftmp
   end
 
+  # Constant zone before callback
+  # Just return first guess
+  # Avoids AD issues
+  f₀ == f₁ && return 100dt₀
+
   @. tmp = (f₁-f₀)/sk*oneunit_tType
   d₂ = internalnorm(tmp,t)/dt₀*oneunit_tType
   # Hairer has d₂ = sqrt(sum(abs2,tmp))/dt₀, note the lack of norm correction
@@ -142,6 +147,11 @@ end
 
   u₁ = @. u0 + dt₀_tdir * f₀
   f₁ = f(u₁,p,t+dt₀_tdir)
+
+  # Constant zone before callback
+  # Just return first guess
+  # Avoids AD issues
+  f₀ == f₁ && return 100dt₀
 
   d₂ = internalnorm((f₁ .- f₀) ./ sk .* oneunit_tType,t) / dt₀ * oneunit_tType
 
