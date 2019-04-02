@@ -5,3 +5,4 @@ StaticArrays
 DiffEqCallbacks
 DiffEqOperators
 SafeTestsets
+Calculus
