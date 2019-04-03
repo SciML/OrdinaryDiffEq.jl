@@ -587,6 +587,20 @@ function DPRKN6ConstantCache(T::Type,T2::Type)
                       rp64,rp63,rp62,rp61)
 end
 
+### TODO
+struct DPRKN7ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+  #TODO
+end
+
+function DPRKN7ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats, T2<:CompiledFloats}
+  #TODO in the morning!
+end
+
+function DPRKN7ConstantCache(T::Type,T2::Type)
+  #TODO
+end
+### TODO
+
 struct DPRKN8ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   c1::T2
   c2::T2

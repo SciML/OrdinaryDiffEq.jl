@@ -172,6 +172,7 @@ alg_order(alg::Nystrom4VelocityIndependent) = 4
 alg_order(alg::IRKN4) = 4
 alg_order(alg::Nystrom5VelocityIndependent) = 5
 alg_order(alg::DPRKN6) = 6
+alg_order(alg::DPRKN7) = 7
 alg_order(alg::DPRKN8) = 8
 alg_order(alg::DPRKN12) = 12
 alg_order(alg::ERKN4) = 4

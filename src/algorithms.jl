@@ -256,6 +256,7 @@ struct Nystrom4VelocityIndependent <: OrdinaryDiffEqAlgorithm end
 struct IRKN4 <: OrdinaryDiffEqAlgorithm end
 struct Nystrom5VelocityIndependent <: OrdinaryDiffEqAlgorithm end
 struct DPRKN6 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct DPRKN7 <: OrdinaryDiffEqAlgorithm
 struct DPRKN8 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct DPRKN12 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct ERKN4 <: OrdinaryDiffEqAdaptiveAlgorithm end

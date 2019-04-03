@@ -8,6 +8,7 @@ const NystromCCDefaultInitialization = Union{Nystrom4ConstantCache,
                                            Nystrom4VelocityIndependentConstantCache,
                                            Nystrom5VelocityIndependentConstantCache,
                                            IRKN3ConstantCache,  IRKN4ConstantCache,
+                                           DPRKN7ConstantCache,
                                            DPRKN8ConstantCache, DPRKN12ConstantCache,
                                            ERKN4ConstantCache,  ERKN5ConstantCache}
 
@@ -28,6 +29,7 @@ const NystromDefaultInitialization = Union{Nystrom4Cache,
                                            Nystrom4VelocityIndependentCache,
                                            Nystrom5VelocityIndependentCache,
                                            IRKN3Cache,  IRKN4Cache,
+                                           DPRKN7Cache,
                                            DPRKN8Cache, DPRKN12Cache,
                                            ERKN4Cache,  ERKN5Cache}
 
@@ -515,6 +517,14 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 end
+
+### TODO
+@muladd function perform_step!(integrator, cache::DPRKN7ConstantCache, repeat_step=false)
+end
+
+@muladd function perform_step!(integrator, cache::DPRKN7Cache, repeat_step=false)
+end
+### TODO
 
 @muladd function perform_step!(integrator,cache::DPRKN8ConstantCache,repeat_step=false)
   @unpack t,dt,f,p = integrator
