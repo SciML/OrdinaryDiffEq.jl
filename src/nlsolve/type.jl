@@ -50,9 +50,10 @@ NLNewton(; κ=nothing, tol=nothing, max_iter=10) = NLNewton(κ, tol, max_iter)
 
 # caches
 
-mutable struct NLNewtonCache{W} <: AbstractNLSolverCache
+mutable struct NLNewtonCache{W,T} <: AbstractNLSolverCache
   new_W::Bool
   W::W
+  freshdt::T
 end
 
 mutable struct NLNewtonConstantCache{W} <: AbstractNLSolverCache

@@ -2,7 +2,7 @@
     nlsolve!(nlsolver::NLSolver, nlcache::Union{NLNewtonCache,NLNewtonConstantCache}, integrator)
 
 Perform numerically stable modified Newton iteration that is specialized for implicit
-methods (see [^HS96] and [^HW96]).
+methods (see [^HS96], [^HW96], and [^BBH88]).
 
 It solves
 
@@ -14,15 +14,17 @@ by iterating
 
 ```math
 W Δᵏ = dt⋅f(tmp + γ⋅zᵏ, p, t + c⋅h) - zᵏ
-zᵏ⁺¹ = zᵏ + Δᵏ
+zᵏ⁺¹ = zᵏ + Δᵏ*r
 ```
 
 where `W = M - dt⋅γJ`, `M` is the mass matrix, `dt` is the step size, `γ` is a
-constant, and `J` is the Jacobian matrix.
+constant, `J` is the Jacobian matrix, and `r` is the relaxation factor (see
+[^BBH88]).
 
-It returns the tuple `(z, η, iter, fail_convergence)`, where `z` is the solution, `η` is
-used to measure the iteration error (see [^HW96]), `iter` is the number of iterations, and
-`fail_convergence` reports whether the algorithm succeeded.
+It returns the tuple `(z, η, iter, fail_convergence)`, where `z` is the
+solution, `η` is used to measure the iteration error (see [^HW96]), `iter` is
+the number of iterations, and `fail_convergence` reports whether the algorithm
+succeeded.
 
 [^HS96]: M.E.Hoseaa and L.F.Shampine, "Analysis and implementation of TR-BDF2",
 Applied Numerical Mathematics, Volume 20, Issues 1–2, February 1996, Pages
@@ -33,6 +35,9 @@ Applied Numerical Mathematics, Volume 20, Issues 1–2, February 1996, Pages
 Equations II, Springer Series in Computational Mathematics. ISBN
 978-3-642-05221-7. Section IV.8.
 [doi:10.1007/978-3-642-05221-7](https://doi.org/10.1007/978-3-642-05221-7)
+
+[^BBH88]: Peter N. Brown, George D. Byrne, and Alan C. Hindmarsh, "VODE, A
+VARIABLE-COEFFICIENT ODE SOLVER". Section 3.4.
 """
 @muladd function nlsolve!(nlsolver::NLSolver, nlcache::NLNewtonConstantCache, integrator)
   @unpack t,dt,uprev,u,p = integrator
@@ -103,7 +108,7 @@ end
 @muladd function nlsolve!(nlsolver::NLSolver, nlcache::NLNewtonCache, integrator)
   @unpack t,dt,uprev,u,p,cache = integrator
   @unpack z,dz,tmp,ztmp,k,κtol,c,γ,max_iter = nlsolver
-  @unpack W, new_W = nlcache
+  @unpack W, new_W, freshdt = nlcache
   cache = unwrap_cache(integrator, true)
 
   # precalculations
@@ -153,7 +158,12 @@ end
     end
 
     # update solution
-    @. z = z - dz
+    if freshdt == dt
+      @. z = z - dz
+    else
+      relax = (freshdt+dt)/2freshdt
+      @. z = z - relax*dz
+    end
 
     # check stopping criterion
     iter > 1 && (η = θ / (1 - θ))

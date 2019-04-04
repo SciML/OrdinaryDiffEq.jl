@@ -237,7 +237,7 @@ function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrM
   end
 end
 
-function do_newJ(integrator, alg::T, cache, repeat_step)::Bool where T
+function do_newJ(integrator, alg::T, cache, repeat_step)::Bool where T # any changes here need to be reflected in FIRK
   repeat_step && return false
   !alg_can_repeat_jac(alg) && return true
   isnewton = T <: NewtonAlgorithm
@@ -248,13 +248,13 @@ function do_newJ(integrator, alg::T, cache, repeat_step)::Bool where T
   return !fastconvergence
 end
 
-function do_newW(integrator, new_jac)::Bool
+function do_newW(integrator, new_jac, freshdt)::Bool # any changes here need to be reflected in FIRK
   integrator.iter <= 1 && return true
   new_jac && return true
   # reuse W when the change in stepsize is small enough
   @unpack t, dt, tprev = integrator
   dtprev = t - tprev
-  smallstepchange = abs(dt - dtprev) > 100sqrt(eps(integrator.t))
+  smallstepchange = (dt/freshdt-one(dt)) <= 1//5
   return !smallstepchange
 end
 
@@ -322,9 +322,12 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     # skip calculation of J if step is repeated
     ( new_jac = do_newJ(integrator, alg, cache, repeat_step) ) && calc_J!(integrator, cache, is_compos)
     # skip calculation of W if step is repeated
-    ( new_W = do_newW(integrator, new_jac) ) && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
+    freshdt = isnewton ? cache.nlsolver.cache.freshdt : dt # TODO: RosW
+    ( new_W = do_newW(integrator, new_jac, freshdt) ) && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
   end
-  isnewton && set_new_W!(cache.nlsolver, new_W)
+  if isnewton
+    set_new_W!(cache.nlsolver, new_W) && set_freshdt!(cache.nlsolver, dt)
+  end
   new_W && (integrator.destats.nw += 1)
   return nothing
 end
