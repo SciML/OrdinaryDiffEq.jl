@@ -562,7 +562,7 @@ end
   if integrator.opts.adaptive
     dtsq = dt^2
     uhat  = dtsq*(btilde1*k1 + btilde5*k5 + btilde6*k6 + btilde7*k7) # no btilde2 -- btilde4, no btilde8 --- btilde9
-    duhat = dt*(bptilde1*k1 + bptilde5*k5 + bptilde6*k6 + bptilde7*k7 + bptilde8*k8 + bptilde9*k9))
+    duhat = dt*(bptilde1*k1 + bptilde5*k5 + bptilde6*k6 + bptilde7*k7 + bptilde8*k8 + bptilde9*k9)
     utilde = ArrayPartition((duhat,uhat))
     atmp = calculate_residuals(utilde, integrator.uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
