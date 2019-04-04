@@ -833,6 +833,8 @@ end
   z₂,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
   set_new_W!(nlsolver, false)
+  nlsolver.ηold = η
+  nlsolver.nl_iters = iter
 
   ################################## Solve Step 3
 
@@ -857,6 +859,8 @@ end
   nlsolver.c = c3
   z₃,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
+  nlsolver.ηold = max(nlsolver.ηold, η)
+  nlsolver.nl_iters = max(iter, nlsolver.nl_iters)
 
   ################################## Solve Step 4
 
@@ -878,6 +882,8 @@ end
   nlsolver.c = c4
   z₄,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
+  nlsolver.ηold = max(nlsolver.ηold, η)
+  nlsolver.nl_iters = max(iter, nlsolver.nl_iters)
 
   ################################## Solve Step 5
 
@@ -904,6 +910,8 @@ end
   nlsolver.c = c5
   z₅,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
+  nlsolver.ηold = max(nlsolver.ηold, η)
+  nlsolver.nl_iters = max(iter, nlsolver.nl_iters)
 
   ################################## Solve Step 6
 
@@ -929,6 +937,8 @@ end
   nlsolver.c = 1
   z₆,η,iter,fail_convergence = nlsolve!(integrator, cache)
   fail_convergence && return
+  nlsolver.ηold = max(nlsolver.ηold, η)
+  nlsolver.nl_iters = max(iter, nlsolver.nl_iters)
 
   @. u = tmp + γ*z₆
   if typeof(integrator.f) <: SplitFunction
@@ -942,8 +952,8 @@ end
 
   ################################### Finalize
 
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
+  nlsolver.ηold = max(nlsolver.ηold, η)
+  nlsolver.nl_iters = max(iter, nlsolver.nl_iters)
 
   if integrator.opts.adaptive
     if typeof(integrator.f) <: SplitFunction

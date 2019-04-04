@@ -146,6 +146,7 @@ end
 
     # compute norm of residuals
     iter > 1 && (ndzprev = ndz)
+    #freshdt != dt && (rmul!(dz, 2/(1 + dt / freshdt)))
     ndz = integrator.opts.internalnorm(dz, tstep)
 
     # check divergence (not in initial step)
@@ -158,12 +159,7 @@ end
     end
 
     # update solution
-    if freshdt == dt
-      @. z = z - dz
-    else
-      relax = (freshdt+dt)/2freshdt
-      @. z = z - relax*dz
-    end
+    @. z = z - dz
 
     # check stopping criterion
     iter > 1 && (η = θ / (1 - θ))

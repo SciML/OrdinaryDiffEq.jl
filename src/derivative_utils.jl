@@ -237,25 +237,17 @@ function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrM
   end
 end
 
-function do_newJ(integrator, alg::T, cache, repeat_step)::Bool where T # any changes here need to be reflected in FIRK
-  repeat_step && return false
-  !alg_can_repeat_jac(alg) && return true
-  isnewton = T <: NewtonAlgorithm
-  isnewton && (T <: RadauIIA5 ? ( @unpack ηold,nl_iters = cache ) : ( @unpack ηold,nl_iters = cache.nlsolver ))
-  integrator.force_stepfail && return true
-  # reuse J when there is fast convergence
-  fastconvergence = nl_iters == 1 && ηold <= alg.new_jac_conv_bound
-  return !fastconvergence
-end
+function do_newJW(integrator, alg::T, cache, repeat_step, freshdt)::Tuple{Bool,Bool} where T # any changes here need to be reflected in FIRK<Paste>
+  alg isa NewtonAlgorithm && (T <: RadauIIA5 ? ( @unpack ηold = cache ) : ( @unpack ηold = cache.nlsolver ))
 
-function do_newW(integrator, new_jac, freshdt)::Bool # any changes here need to be reflected in FIRK
-  integrator.iter <= 1 && return true
-  new_jac && return true
-  # reuse W when the change in stepsize is small enough
-  @unpack t, dt, tprev = integrator
-  dtprev = t - tprev
-  smallstepchange = (dt/freshdt-one(dt)) <= 1//5
-  return !smallstepchange
+  # Jacobian
+  dt = integrator.dt
+  last_stepfail = integrator.EEst > 1
+  bigdtchange = (dt/freshdt-one(dt)) > 3//10
+  new_J = (integrator.iter <= 1) || repeat_step || !alg_can_repeat_jac(alg) || integrator.force_stepfail || last_stepfail || bigdtchange
+  new_J && return (true, true)
+
+  return (false, (dt/freshdt-one(dt)) > 2//10)
 end
 
 @noinline _throwWJerror(W, J) = throw(DimensionMismatch("W: $(axes(W)), J: $(axes(J))"))
@@ -312,18 +304,15 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     # skip calculation of inv(W) if step is repeated
     (!repeat_step && W_transform) ? f.invW_t(W, uprev, p, dtgamma, t) : f.invW(W, uprev, p, dtgamma, t) # W == inverse W
     is_compos && calc_J!(integrator, cache, true)
-  elseif DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
-    # skip calculation of J if step is repeated
-    ( new_jac = do_newJ(integrator, alg, cache, repeat_step) ) && DiffEqBase.update_coefficients!(W,uprev,p,t)
-    # skip calculation of W if step is repeated
+  elseif (freshdt = isnewton ? cache.nlsolver.cache.freshdt : dt; # TODO: RosW
+          (new_jac, new_W) = do_newJW(integrator, alg, cache, repeat_step, freshdt);
+    DiffEqBase.has_jac(f) && f.jac_prototype !== nothing)
+    new_jac && DiffEqBase.update_coefficients!(W,uprev,p,t)
     @label J2W
-    ( new_W = do_newW(integrator, new_jac) ) && (W.transform = W_transform; set_gamma!(W, dtgamma))
+    new_W && (W.transform = W_transform; set_gamma!(W, dtgamma))
   else # concrete W using jacobian from `calc_J!`
-    # skip calculation of J if step is repeated
-    ( new_jac = do_newJ(integrator, alg, cache, repeat_step) ) && calc_J!(integrator, cache, is_compos)
-    # skip calculation of W if step is repeated
-    freshdt = isnewton ? cache.nlsolver.cache.freshdt : dt # TODO: RosW
-    ( new_W = do_newW(integrator, new_jac, freshdt) ) && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
+    new_jac && calc_J!(integrator, cache, is_compos)
+    new_W && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
   end
   if isnewton
     set_new_W!(cache.nlsolver, new_W) && set_freshdt!(cache.nlsolver, dt)

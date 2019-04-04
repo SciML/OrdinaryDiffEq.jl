@@ -382,7 +382,7 @@ gamma_default(alg::IRKC) = 8//10
 
 qsteady_min_default(alg::OrdinaryDiffEqAlgorithm) = 1
 qsteady_max_default(alg::OrdinaryDiffEqAlgorithm) = 1
-qsteady_max_default(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = 6//5
+qsteady_max_default(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = 3//2
 # But don't re-use Jacobian if not adaptive: too risky and cannot pull back
 qsteady_max_default(alg::OrdinaryDiffEqImplicitAlgorithm) = 1//1
 qsteady_max_default(alg::AN5) = 3//2
