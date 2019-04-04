@@ -54,7 +54,6 @@ mutable struct RadauIIA5Cache{uType,cuType,uNoUnitsType,rateType,JType,W1Type,W2
   tol::Tol
   ηold::Tol
   nl_iters::Int
-  dtprev::Dt
   tmp::uType
   atmp::uNoUnitsType
   jac_config::JC
@@ -62,6 +61,8 @@ mutable struct RadauIIA5Cache{uType,cuType,uNoUnitsType,rateType,JType,W1Type,W2
   linsolve2::F2
   rtol::rTol
   atol::aTol
+  dtprev::Dt
+  freshdt::Dt
 end
 
 function alg_cache(alg::RadauIIA5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
@@ -100,6 +101,6 @@ function alg_cache(alg::RadauIIA5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
                  dw1, dw23, cont1, cont2, cont3,
                  du1, fsalfirst, k, k2, k3, fw1, fw2, fw3,
                  J, W1, W2,
-                 uf, tab, κ, tol, zero(tol), 10000, dt,
-                 tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol)
+                 uf, tab, κ, tol, zero(tol), 10000,
+                 tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, dt, dt)
 end

@@ -18,11 +18,12 @@ zᵏ⁺¹ = zᵏ + Δᵏ
 ```
 
 where `W = M - dt⋅γJ`, `M` is the mass matrix, `dt` is the step size, `γ` is a
-constant, and `J` is the Jacobian matrix.
+constant, `J` is the Jacobian matrix.
 
-It returns the tuple `(z, η, iter, fail_convergence)`, where `z` is the solution, `η` is
-used to measure the iteration error (see [^HW96]), `iter` is the number of iterations, and
-`fail_convergence` reports whether the algorithm succeeded.
+It returns the tuple `(z, η, iter, fail_convergence)`, where `z` is the
+solution, `η` is used to measure the iteration error (see [^HW96]), `iter` is
+the number of iterations, and `fail_convergence` reports whether the algorithm
+succeeded.
 
 [^HS96]: M.E.Hoseaa and L.F.Shampine, "Analysis and implementation of TR-BDF2",
 Applied Numerical Mathematics, Volume 20, Issues 1–2, February 1996, Pages
@@ -103,7 +104,7 @@ end
 @muladd function nlsolve!(nlsolver::NLSolver, nlcache::NLNewtonCache, integrator)
   @unpack t,dt,uprev,u,p,cache = integrator
   @unpack z,dz,tmp,ztmp,k,κtol,c,γ,max_iter = nlsolver
-  @unpack W, new_W = nlcache
+  @unpack W, new_W, freshdt = nlcache
   cache = unwrap_cache(integrator, true)
 
   # precalculations
@@ -141,6 +142,7 @@ end
 
     # compute norm of residuals
     iter > 1 && (ndzprev = ndz)
+    #freshdt != dt && (rmul!(dz, 2/(1 + dt / freshdt))) # relaxation
     ndz = integrator.opts.internalnorm(dz, tstep)
 
     # check divergence (not in initial step)

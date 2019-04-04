@@ -71,15 +71,19 @@ isnewton(nlsolver::NLSolver) = isnewton(nlsolver.cache)
 isnewton(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}) = true
 isnewton(nlcache::AbstractNLSolverCache) = false
 
-set_new_W!(nlsolver::NLSolver, val::Bool) = set_new_W!(nlsolver.cache, val)
-set_new_W!(nlcache::NLNewtonCache, val::Bool) = (nlcache.new_W = val; nothing)
-set_new_W!(nlcache::AbstractNLSolverCache, val::Bool) = nothing
+set_new_W!(nlsolver::NLSolver, val::Bool)::Bool = set_new_W!(nlsolver.cache, val)
+set_new_W!(nlcache::NLNewtonCache, val::Bool)::Bool = nlcache.new_W = val
+set_new_W!(nlcache::AbstractNLSolverCache, val::Bool)::Bool = val
 
 get_W(nlsolver::NLSolver) = get_W(nlsolver.cache)
 get_W(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}) = nlcache.W
 
 set_W!(nlsolver::NLSolver, W) = set_W!(nlsolver.cache, W)
 set_W!(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}, W) = (nlcache.W = W; W)
+
+set_freshdt!(nlsolver::NLSolver, freshdt) = set_freshdt!(nlsolver.cache, freshdt)
+set_freshdt!(nlcache::NLNewtonCache, freshdt) = (nlcache.freshdt = freshdt; freshdt)
+set_freshdt!(nlcache::NLNewtonConstantCache, freshdt) = freshdt
 
 function get_κtol(nlalg::Union{NLAnderson,NLFunctional,NLNewton}, uTolType, reltol)
   κ = nlalg.κ === nothing ? uTolType(1//100) : uTolType(nlalg.κ)
@@ -117,7 +121,7 @@ DiffEqBase.@def iipnlsolve begin
       end
     end
 
-    nlcache = NLNewtonCache(true,W)
+    nlcache = NLNewtonCache(true,W,dt)
   elseif alg.nlsolve isa NLFunctional
     z₊ = similar(z)
 
