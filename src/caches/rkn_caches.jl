@@ -174,6 +174,8 @@ alg_cache(alg::DPRKN6,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tType
   k5::reducedRateType
   k6::reducedRateType
   k7::reducedRateType
+  k8::reducedRateType
+  k9::reducedRateType
   k::rateType
   utilde::uType
   tmp::uType
@@ -191,11 +193,13 @@ function alg_cache(alg::DPRKN76,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   k5 = zero(reduced_rate_prototype)
   k6 = zero(reduced_rate_prototype)
   k7 = zero(reduced_rate_prototype)
+  k8 = zero(reduced_rate_prototype)
+  k9 = zero(reduced_rate_prototype)
   k  = zero(rate_prototype)
   utilde = similar(u)
   atmp = similar(u,uEltypeNoUnits)
   tmp = similar(u)
-  DPRKN76Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k,utilde,tmp,atmp,tab)
+  DPRKN76Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k,utilde,tmp,atmp,tab)
 end
 
 alg_cache(alg::DPRKN76,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = DPRKN76ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
