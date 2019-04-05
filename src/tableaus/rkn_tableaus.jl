@@ -592,15 +592,8 @@ struct DPRKN43TConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   c2::T2
   c3::T2
   c4::T2
-  # c5::T2
-  # c6::T2
-  # c7::T2
-  # c8::T2
   a21::T
-  # a31::T
   a32::T
-  # a41::T
-  # a42::T
   a43::T
   a51::T
   a52::T
@@ -626,17 +619,17 @@ function DPRKN43TConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats, T
   a32      = convert(T,0.5)
   a43      = convert(T,1.0)
   a51      = convert(T,0.16666666666666666)
-  a52      = convert(T,0.33333333333333333)
-  a53      = convert(T,0.33333333333333333)
-  a54      = convert(T,0.166666666666666666)
+  a52      = convert(T,0.3333333333333333)
+  a53      = convert(T,0.3333333333333333)
+  a54      = convert(T,0.16666666666666666)
   b1       = convert(T,0.16666666666666666)
-  b2       = convert(T,0.333333333333333334)
-  b3       = convert(T,0.333333333333333334)
-  b4       = convert(T,0.06666666666666667)
-  b5       = convert(T,0.1)
-  btilde1  = convert(T,0.16666666666666666)
-  btilde2  = convert(T,0.3333333333333333)
-  btilde3  = convert(T,0.3333333333333333)
+  b2       = convert(T,0.3333333333333333)
+  b3       = convert(T,0.3333333333333333)
+  b4       = convert(T,0.06666666666666667) # b4 == 1//6 - λ, λ = 1//10
+  b5       = convert(T,0.1)                 # b5 == λ,        λ = 1//10
+  btilde1  = b1
+  btilde2  = b2
+  btilde3  = b3
   btilde4  = convert(T,0.16666666666666666)
 
   DPRKN43TConstantCache(c1, c2, c3, c4,
@@ -688,7 +681,6 @@ struct DPRKN54TConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   c5::T2
   c6::T2
   a21::T
-  # a31::T
   a32::T
   a41::T
   a42::T
@@ -707,6 +699,7 @@ struct DPRKN54TConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   a73::T
   a74::T
   a75::T
+  a76::T
   b1::T
   # b2::T
   b3::T
@@ -759,14 +752,14 @@ function DPRKN54TConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats, T
   btilde5  = b5
   btilde6  = convert(T, 0.05)
   DPRKN54TConstantCache(c1, c2, c3, c4, c5, c6,
-                      a21,
-                           a32,
-                      a41, a42, a43,
-                      a51, a52, a53, a54,
-                      a61,      a63, a64, a65,
-                      a71,      a73, a74, a75, a76,
-                      b1, b3, b4, b5, b6, b7,
-                      btilde1, btilde3, btilde4, btilde5, btilde6)
+                        a21,
+                             a32,
+                        a41, a42, a43,
+                        a51, a52, a53, a54,
+                        a61,      a63, a64, a65,
+                        a71,      a73, a74, a75, a76,
+                        b1, b3, b4, b5, b6, b7,
+                        btilde1, btilde3, btilde4, btilde5, btilde6)
 end
 
 function DPRKN54TConstantCache(T::Type,T2::Type)
