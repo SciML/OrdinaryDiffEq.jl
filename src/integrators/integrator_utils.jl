@@ -311,10 +311,10 @@ function stepsize_controller_internal!(integrator,alg::ExtrapolationMidpointDeuf
   if iszero(integrator.EEst)
     q = inv(integrator.opts.qmax)
   else
-    # update gamma and beta1
+    # Update gamma and beta1
     integrator.opts.beta1 = typeof(integrator.opts.beta1)(1 // (2integrator.cache.n_curr + 1))
     integrator.opts.gamma = typeof(integrator.opts.gamma)(1 // 4)^integrator.opts.beta1
-    # compute new stepsize scaling
+    # Compute new stepsize scaling
     qtmp = integrator.EEst^integrator.opts.beta1 / integrator.opts.gamma
     @fastmath q = max(inv(integrator.opts.qmax), min(inv(integrator.opts.qmin), qtmp))
   end
@@ -323,19 +323,18 @@ end
 
 function stepsize_predictor!(integrator,alg::ExtrapolationMidpointDeuflhard,n_new::Int64)
   # Compute and save the stepsize scaling for order n_new based on the latest error estimate of the current order.
-  # so far onyl for constant cache
   if iszero(integrator.EEst)
     q = inv(integrator.opts.qmax)
   else
-    # initialize
+    # Initialize
     @unpack t,EEst = integrator
     tol = integrator.opts.internalnorm(integrator.opts.reltol,t) # Deuflhard's approach relies on EEstD ≈ ||relTol||
     s_curr = integrator.cache.stage_number[integrator.cache.n_curr - alg.n_min + 1]
     s_new = integrator.cache.stage_number[n_new - alg.n_min + 1]
-    # update gamma and beta1
+    # Update gamma and beta1
     integrator.opts.beta1 = typeof(integrator.opts.beta1)(1 // (2integrator.cache.n_curr + 1))
     integrator.opts.gamma = typeof(integrator.opts.gamma)(1 // 4)^integrator.opts.beta1
-    # compute new stepsize scaling
+    # Compute new stepsize scaling
     qtmp = (EEst * tol^(1.0 - s_curr / s_new))^integrator.opts.beta1 / integrator.opts.gamma
     @fastmath q = max(inv(integrator.opts.qmax),min(inv(integrator.opts.qmin),qtmp))
   end
@@ -344,7 +343,6 @@ end
 
 function step_accept_controller!(integrator,alg::ExtrapolationMidpointDeuflhard,q)
   # Compute new order and stepsize, return new stepsize
-  # so far only constant cache
   @unpack n_min, n_max = alg
   @unpack n_curr, n_old, Q = integrator.cache
   s = integrator.cache.stage_number
@@ -352,7 +350,7 @@ function step_accept_controller!(integrator,alg::ExtrapolationMidpointDeuflhard,
   # Compute new order based on available quantities
   tmp = (n_min:n_curr) .- n_min .+ 1 # Index range of quantities computed so far
   dt_new = Vector{eltype(Q)}(undef,length(tmp)+1)
-  dt_new[1:end-1] = integrator.dt ./ Q[tmp] # Storg for the possible new stepsizes
+  dt_new[1:end-1] = integrator.dt ./ Q[tmp] # Store for the possible new stepsizes
   dt_new[1:end-1] = max.(abs(integrator.opts.dtmin), min.(abs(integrator.opts.dtmax), abs.(dt_new[1:end-1]))) # Safety scaling
 
   # n_new is the most efficient order of the last step
@@ -368,7 +366,7 @@ function step_accept_controller!(integrator,alg::ExtrapolationMidpointDeuflhard,
     dt_new[end] = integrator.dt ./ Q[tmp[end]+1]
     dt_new[end] = max(abs(integrator.opts.dtmin), min(abs(integrator.opts.dtmax), abs.(dt_new[end])))
 
-    # Check (n_new  + 1) is would have been more efficient than n_new
+    # Check if (n_new  + 1) would have been more efficient than n_new
     if work[end] > s[tmp[end]+1] / dt_new[end]
       n_new = n_new + 1
     end
@@ -390,8 +388,94 @@ function step_reject_controller!(integrator, alg::ExtrapolationMidpointDeuflhard
   integrator.dt = dt_red
 end
 
+@inline function stepsize_controller!(integrator,alg::ExtrapolationMidpointHairerWanner)
+  # Dummy function
+  # ExtrapolationMidpointHairerWanner's stepsize scaling is stored in the cache;
+  # it is computed by  stepsize_controller_internal! (in perfom_step!), step_accept_controller! or step_reject_controller!
+  zero(typeof(integrator.opts.qmax))
+end
 
+function stepsize_controller_internal!(integrator,alg::ExtrapolationMidpointHairerWanner)
+  # Standard stepsize controller
+  # Compute and save the stepsize scaling based on the latest error estimate of the current order
+  if iszero(integrator.EEst)
+    q = inv(integrator.opts.qmax)
+  else
+    # Update gamma and beta1
+    integrator.opts.beta1 = typeof(integrator.opts.beta1)(1 // (2integrator.cache.n_curr + 1))
+    integrator.opts.gamma = typeof(integrator.opts.gamma)(65 // 100)^integrator.opts.beta1
+    # Compute new stepsize scaling
+    qtmp = integrator.EEst^integrator.opts.beta1 / integrator.opts.gamma
+    @fastmath q = max(inv(integrator.opts.qmax), min(inv(integrator.opts.qmin), qtmp))
+  end
+  integrator.cache.Q[integrator.cache.n_curr + 1] = q
+end
 
+function step_accept_controller!(integrator,alg::ExtrapolationMidpointHairerWanner,q)
+  # Compute new order and stepsize, return new stepsize
+  @unpack n_min, n_max = alg
+  @unpack n_curr, n_old, Q, sigma = integrator.cache
+  s = integrator.cache.stage_number
+
+  # Compute new order based on available quantities
+  win_min_old = n_old - 1 # cf. win_min in perfom_step! of the last step
+  tmp = (win_min_old:n_curr+1) # Index range for the new order
+  dt_new = Vector{eltype(Q)}(undef,n_max+1) # dt_new[n] is the optimal stepsize for order (n-1)
+  dt_new[tmp] = integrator.dt ./ Q[tmp] # Store for the possible new stepsizes
+  dt_new[tmp] = max.(abs(integrator.opts.dtmin), min.(abs(integrator.opts.dtmax), abs.(dt_new[tmp]))) # Safety scaling
+
+  work= Vector{eltype(Q)}(undef,n_max+1) # work[n] is the work for order (n-1)
+  work[tmp] = s[tmp] ./ dt_new[tmp]
+
+  # Order selection
+  n_new = n_old
+  if n_curr == n_min # Enforce n_min + 1 ≦ n_new
+    n_new = n_min + 1
+  else
+    if n_curr <= n_old
+      if work[n_curr-1] < sigma * work[n_curr]
+        n_new = max(n_curr-1,n_min+1) # Enforce n_min + 1 ≦ n_new
+      elseif work[n_curr] < sigma * work[n_curr-1]
+        n_new = min(n_curr+1,n_max-1) # Enforce n_new ≦ n_max - 1
+      else
+        n_new = n_curr # n_min + 1 ≦ n_curr
+      end
+    else
+      if work[n_old] < sigma *  work[n_old+1]
+        n_new = max(n_old-1,n_min+1)  # Enforce n_min + 1 ≦ n_new
+      end
+      if work[n_curr+1] <  sigma * work[n_new+1]
+        n_new = min(n_new+1,n_max-1) # Enforce n_new ≦ n_max - 1
+      end
+    end
+  end
+  integrator.cache.n_curr = n_new
+
+  # Stepsize selection
+  if n_new == n_curr + 1
+    # Compute the new stepsize of order n_new based on the optimal stepsize of order n_curr
+    dt_new[n_new+1] = s[n_curr+2]/s[n_curr+1] * dt_new[n_curr+1]
+    dt_new[n_new+1] = max(abs(integrator.opts.dtmin), min(abs(integrator.opts.dtmax), abs(dt_new[n_new+1])))
+  end
+  dt_new[n_new + 1]
+end
+
+function step_reject_controller!(integrator, alg::ExtrapolationMidpointHairerWanner)
+  # Compute and save order and stepsize for redoing the current step
+  @unpack n_old, n_curr, Q = integrator.cache
+
+  # Order selection
+  n_red = n_old
+  if n_curr == n_old - 1
+    n_red = max(alg.n_min+1,n_old-1) # Enforce n_min + 1 ≦ n_red
+  end
+  integrator.cache.n_curr = n_red
+
+  # Stepsize selection
+  dt_red = integrator.dt / Q[n_red + 1]
+  dt_red = integrator.tdir*max(abs(integrator.opts.dtmin), min(abs(integrator.opts.dtmax), abs(dt_red))) # Safety scaling
+  integrator.dt = dt_red
+end
 
 function loopfooter!(integrator)
 
