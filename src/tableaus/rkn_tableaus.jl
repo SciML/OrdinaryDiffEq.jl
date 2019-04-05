@@ -587,7 +587,7 @@ function DPRKN6ConstantCache(T::Type,T2::Type)
                       rp64,rp63,rp62,rp61)
 end
 
-struct DPRKN76ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct DPRKN76TConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   c1::T2
   c2::T2
   c3::T2
@@ -631,7 +631,7 @@ struct DPRKN76ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   a95::T
   a96::T
   a97::T
-  a98::T
+  # a98::T
   b1::T
   # b2::T
   # b3::T
@@ -661,7 +661,7 @@ struct DPRKN76ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   # bptilde9::T
 end
 
-function DPRKN76ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats, T2<:CompiledFloats}
+function DPRKN76TConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats, T2<:CompiledFloats}
   c1       = convert(T2,0.1)
   c2       = convert(T2,0.2)
   c3       = convert(T2,0.375)
@@ -717,7 +717,7 @@ function DPRKN76ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats, T2
   bptilde6 = convert(T,0.2722222222222222)
   bptilde7 = convert(T,0.2722222222222222)
   bptilde8 = convert(T,0.05)
-  DPRKN76ConstantCache(c1, c2, c3, c4, c5, c6, c7, c8,
+  DPRKN76TConstantCache(c1, c2, c3, c4, c5, c6, c7, c8,
                       a21,
                       a31, a32,
                       a41, a42, a43,
@@ -731,7 +731,7 @@ function DPRKN76ConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats, T2
                       bptilde1, bptilde5, bptilde6, bptilde7, bptilde8)
 end
 
-function DPRKN76ConstantCache(T::Type,T2::Type)
+function DPRKN76TConstantCache(T::Type,T2::Type)
   R        = sqrt(big(21))
   c1       = convert(T2,1//10)
   c2       = convert(T2,1//5)
@@ -788,7 +788,7 @@ function DPRKN76ConstantCache(T::Type,T2::Type)
   bptilde6 = convert(T,49//180)
   bptilde7 = convert(T,49//180)
   bptilde8 = convert(T,1//20)
-  DPRKN76ConstantCache(c1, c2, c3, c4, c5, c6, c7, c8,
+  DPRKN76TConstantCache(c1, c2, c3, c4, c5, c6, c7, c8,
                       a21,
                       a31, a32,
                       a41, a42, a43,

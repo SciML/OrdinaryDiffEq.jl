@@ -8,7 +8,7 @@ const NystromCCDefaultInitialization = Union{Nystrom4ConstantCache,
                                            Nystrom4VelocityIndependentConstantCache,
                                            Nystrom5VelocityIndependentConstantCache,
                                            IRKN3ConstantCache,  IRKN4ConstantCache,
-                                           DPRKN76ConstantCache,
+                                           DPRKN76TConstantCache,
                                            DPRKN8ConstantCache, DPRKN12ConstantCache,
                                            ERKN4ConstantCache,  ERKN5ConstantCache}
 
@@ -29,7 +29,7 @@ const NystromDefaultInitialization = Union{Nystrom4Cache,
                                            Nystrom4VelocityIndependentCache,
                                            Nystrom5VelocityIndependentCache,
                                            IRKN3Cache,  IRKN4Cache,
-                                           DPRKN76Cache,
+                                           DPRKN76TCache,
                                            DPRKN8Cache, DPRKN12Cache,
                                            ERKN4Cache,  ERKN5Cache}
 
@@ -519,7 +519,7 @@ end
 end
 
 
-@muladd function perform_step!(integrator, cache::DPRKN76ConstantCache, repeat_step=false)
+@muladd function perform_step!(integrator, cache::DPRKN76TConstantCache, repeat_step=false)
   @unpack t,dt,f,p = integrator
   duprev,uprev = integrator.uprev.x
   @unpack c1, c2, c3, c4, c5, c6, c7, c8, a21, a31, a32, a41, a42, a43, a51, a52, a53, a54, a61, a62, a63, a64, a65, a71, a72, a73, a74, a75, a76, a81, a82, a83, a84, a85, a86, a87, a91, a95, a96, a97, b1, b5, b6, b7, b8, b9, btilde1, btilde5, btilde6, btilde7, bptilde1, bptilde5, bptilde6, bptilde7, bptilde8 = cache
@@ -546,7 +546,7 @@ end
   ku = uprev + dt*(c7*duprev + dt*(a81*k1 + a82*k2 + a83*k3 + a84*k4 + a85*k5 + a86*k6 + a87*k7))
 
   k8 = f.f1(duprev, ku,p,t+dt*c7)
-  ku = uprev + dr*(c8*duprev + dt*(a91*k1 + a95*k5 + a96*k6 + a97*k7)) # no a92 --- a94, no a98
+  ku = uprev + dt*(c8*duprev + dt*(a91*k1 + a95*k5 + a96*k6 + a97*k7)) # no a92 --- a94, no a98
 
   k9 = f.f1(duprev, ku,p,t+dt*c8)
   u = uprev + dt*(duprev + dt*(b1*k1 + b5*k5 + b6*k6 + b7*k7 + b8*k8 + b9*k9))  # no b2 --- b4
@@ -569,7 +569,7 @@ end
   end
 end
 
-@muladd function perform_step!(integrator, cache::DPRKN76Cache, repeat_step=false)
+@muladd function perform_step!(integrator, cache::DPRKN76TCache, repeat_step=false)
   @unpack t,dt,f,p = integrator
   du,u = integrator.u.x
   duprev,uprev = integrator.uprev.x
