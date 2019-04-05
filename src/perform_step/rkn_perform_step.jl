@@ -518,6 +518,84 @@ end
   end
 end
 
+###
+@muladd function perform_step!(integrator,cache::DPRKN43TConstantCache,repeat_step=false)
+  @unpack t,dt,f,p = integrator
+  duprev,uprev = integrator.uprev.x
+  @unpack c1, c2, c3, c4, a21, a32, a43, a51, a52, a53, a54, b1, b2, b3, b4, b5, btilde1, btilde2, btilde3, btilde4 = cache
+
+  k1 = integrator.fsalfirst.x[1]
+  ku = uprev + dt*(c1*duprev + dt*a21*k1)
+
+  k2 = f.f1(duprev,ku,p,t+dt*c1)
+  ku = uprev + dt*(c2*duprev + dt*(a32*k2))
+
+  k3 = f.f1(duprev,ku,p,t+dt*c2)
+  ku = uprev + dt*(c3*duprev + dt*(a43*k3))
+
+  k4 = f.f1(duprev,ku,p,t+dt*c3)
+  ku = uprev + dt*(c4*duprev + dt*(a51*k1 + a52*k2 + a53*k3 + a54*k4))
+
+  k5 = f.f1(duprev,ku,p,t+dt*c4)
+  u  = uprev + dt*(duprev + dt*(b1*k1 + b2*k2 + b3*k3 + b4*k4 + b5*k5))
+  du = duprev+ dt*(btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4 + btilde5*k5)
+
+  integrator.u = ArrayPartition((du,u))
+  integrator.fsallast = ArrayPartition((f.f1(du,u,p,t+dt),f.f2(du,u,p,t+dt)))
+  integrator.destats.nf += 5
+  integrator.destats.nf2 += 1
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+
+  if integrator.opts.adaptive
+    dtsq = dt^2
+    uhat  = dtsq*(b1*k1 + b2*k2 + b3*k3 + b4*k4 + b5*k5)
+    duhat = dt*(bptilde1*k1 + bptilde3*k3 + bptilde4*k4)
+    utilde = ArrayPartition((duhat,uhat))
+    atmp = calculate_residuals(utilde, integrator.uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+  end
+end
+
+@muladd function perform_step!(integrator,cache::DPRKN43TCache,repeat_step=false)
+  @unpack t,dt,f,p = integrator
+  du,u = integrator.u.x
+  duprev,uprev = integrator.uprev.x
+  @unpack tmp,atmp,fsalfirst,k2,k3,k4,k,utilde = cache
+  @unpack c1, c2, c3, c4, a21, a32, a43, a51, a52, a53, a54, b1, b2, b3, b4, b5, btilde1, btilde2, btilde3, btilde4 = cache.tab
+  kdu,ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
+  uidx = eachindex(integrator.uprev.x[2])
+
+  k1 = integrator.fsalfirst.x[1]
+  @. ku = uprev + dt*(c1*duprev + dt*a21*k1)
+
+  f.f1(k2,duprev,ku,p,t+dt*c1)
+  @. ku = uprev + dt*(c2*duprev + dt*(a32*k2))
+
+  f.f1(k3,duprev,ku,p,t+dt*c2)
+  @. ku = uprev + dt*(c3*duprev + dt*(a43*k3))
+
+  f.f1(k4,duprev,ku,p,t+dt*c3)
+  @tight_loop_macros for i in uidx
+    @inbounds ku[i] = uprev[i] + dt*(c4*duprev[i] + dt*(a51*k1[i] + a52*k2[i] + a53*k3[i] + a54*k4[i]))
+  end
+
+  f.f1(k.x[1],du,u,p,t+dt)
+  f.f2(k.x[2],du,u,p,t+dt)
+  integrator.destats.nf += 4
+  integrator.destats.nf2 += 1
+  if integrator.opts.adaptive
+    duhat, uhat = utilde.x
+    dtsq = dt^2
+    @tight_loop_macros for i in uidx
+      @inbounds uhat[i]  = dtsq*(b1*k1[i] + b2*k2[i] + b3*k3[i] + b4*k4[i] + b5*k5[i])
+      @inbounds duhat[i] = dt*(btilde1*k1[i] + btilde2*k2[i] + btilde3*k3[i] + btilde4*k4[i])
+    end
+    calculate_residuals!(atmp, utilde, integrator.uprev, integrator.u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
+  end
+end
+###
 
 @muladd function perform_step!(integrator, cache::DPRKN76TConstantCache, repeat_step=false)
   @unpack t,dt,f,p = integrator

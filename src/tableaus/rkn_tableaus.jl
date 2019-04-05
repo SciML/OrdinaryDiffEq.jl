@@ -587,6 +587,236 @@ function DPRKN6ConstantCache(T::Type,T2::Type)
                       rp64,rp63,rp62,rp61)
 end
 
+struct DPRKN43TConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+  c1::T2
+  c2::T2
+  c3::T2
+  c4::T2
+  # c5::T2
+  # c6::T2
+  # c7::T2
+  # c8::T2
+  a21::T
+  # a31::T
+  a32::T
+  # a41::T
+  # a42::T
+  a43::T
+  a51::T
+  a52::T
+  a53::T
+  a54::T
+  b1::T
+  b2::T
+  b3::T
+  b4::T
+  b5::T
+  btilde1::T
+  btilde2::T
+  btilde3::T
+  btilde4::T
+end
+
+function DPRKN43TConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats, T2<:CompiledFloats}
+  c1       = convert(T2,0.5)
+  c2       = convert(T2,0.5)
+  c3       = convert(T2,1.0)
+  c4       = convert(T2,1.0)
+  a21      = convert(T,0.5)
+  a32      = convert(T,0.5)
+  a43      = convert(T,1.0)
+  a51      = convert(T,0.16666666666666666)
+  a52      = convert(T,0.33333333333333333)
+  a53      = convert(T,0.33333333333333333)
+  a54      = convert(T,0.166666666666666666)
+  b1       = convert(T,0.16666666666666666)
+  b2       = convert(T,0.333333333333333334)
+  b3       = convert(T,0.333333333333333334)
+  b4       = convert(T,0.06666666666666667)
+  b5       = convert(T,0.1)
+  btilde1  = convert(T,0.16666666666666666)
+  btilde2  = convert(T,0.3333333333333333)
+  btilde3  = convert(T,0.3333333333333333)
+  btilde4  = convert(T,0.16666666666666666)
+
+  DPRKN43TConstantCache(c1, c2, c3, c4,
+                        a21,
+                             a32,
+                                  a43,
+                        a51, a52, a53, a54,
+                        b1, b2, b3, b4, b5,
+                        btilde1, btilde2, btilde3, btilde4)
+end
+
+function DPRKN43TConstantCache(T::Type,T2::Type)
+  c1       = convert(T2,1//2)
+  c2       = convert(T2,1//2)
+  c3       = convert(T2,1//1)
+  c4       = convert(T2,1//1)
+  a21      = convert(T,1//2)
+  a32      = convert(T,1//2)
+  a43      = convert(T,1//1)
+  a51      = convert(T,1//6)
+  a52      = convert(T,1//3)
+  a53      = convert(T,1//3)
+  a54      = convert(T,1//6)
+  b1       = convert(T,1//6)
+  b2       = convert(T,1//3)
+  b3       = convert(T,1//3)
+  b4       = convert(T,1//15) # b4 == 1//6 - λ, λ = 1//10
+  b5       = convert(T,1//10) # b5 == λ,        λ = 1//10
+  btilde1  = b1
+  btilde2  = b2
+  btilde3  = b3
+  btilde4  = convert(T,1//6)
+
+  DPRKN43TConstantCache(c1, c2, c3, c4,
+                        a21,
+                             a32,
+                                  a43,
+                        a51, a52, a53, a54,
+                        b1, b2, b3, b4, b5,
+                        btilde1, btilde2, btilde3, btilde4)
+end
+
+### dprkn54t
+struct DPRKN54TConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+  c1::T2
+  c2::T2
+  c3::T2
+  c4::T2
+  c5::T2
+  c6::T2
+  a21::T
+  # a31::T
+  a32::T
+  a41::T
+  a42::T
+  a43::T
+  a51::T
+  a52::T
+  a53::T
+  a54::T
+  a61::T
+  # a62::T
+  a63::T
+  a64::T
+  a65::T
+  a71::T
+  # a72::T
+  a73::T
+  a74::T
+  a75::T
+  b1::T
+  # b2::T
+  b3::T
+  b4::T
+  b5::T
+  b6::T
+  b7::T
+  btilde1::T
+  # btilde2::T
+  btilde3::T
+  btilde4::T
+  btilde5::T
+  btilde6::T
+end
+
+function DPRKN54TConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats, T2<:CompiledFloats}
+  c1       = convert(T2, 0.125)
+  c2       = convert(T2, 0.25)
+  c3       = convert(T2, 0.4444444444444444)
+  c4       = convert(T2, 0.8)
+  c5       = convert(T2, 1.0)
+  c6       = convert(T2, 1.0)
+  a21      = convert(T, 0.125)
+  a32      = convert(T, 0.25)
+  a41      = convert(T, 0.26886145404663925)
+  a42      = convert(T,-0.438957475994513)
+  a43      = convert(T, 0.6145404663923183)
+  a51      = convert(T, 0.2907826086956522)
+  a52      = convert(T, 0.11130434782608696)
+  a53      = convert(T, -0.6646459627329192)
+  a54      = convert(T, 1.06255900621118)
+  a61      = convert(T, -1.5208333333333333)
+  a63      = convert(T, 5.67965367965368)
+  a64      = convert(T, -4.520089285714286)
+  a65      = convert(T, 1.3612689393939394)
+  a71      = convert(T, .08854166666666667)
+  a73      = convert(T, 0.27705627705627706)
+  a74      = convert(T, 0.24408482142857144)
+  a75      = convert(T, 0.34031723484848486)
+  a76      = convert(T, .05)
+  b1       = convert(T, 0.08854166666666667)
+  b3       = convert(T, 0.27705627705627706)
+  b4       = convert(T, 0.24408482142857144)
+  b5       = convert(T, 0.34031723484848486)
+  b6       = convert(T, 0.03333333333333333) # b6 == 1//20 - λ, λ == 1//60
+  b7       = convert(T, 0.016666666666666666) # b7 == λ, λ == 1//60
+  btilde1  = b1
+  btilde3  = b3
+  btilde4  = b4
+  btilde5  = b5
+  btilde6  = convert(T, 0.05)
+  DPRKN54TConstantCache(c1, c2, c3, c4, c5, c6,
+                      a21,
+                           a32,
+                      a41, a42, a43,
+                      a51, a52, a53, a54,
+                      a61,      a63, a64, a65,
+                      a71,      a73, a74, a75, a76,
+                      b1, b3, b4, b5, b6, b7,
+                      btilde1, btilde3, btilde4, btilde5, btilde6)
+end
+
+function DPRKN54TConstantCache(T::Type,T2::Type)
+  c1       = convert(T2,1//8)
+  c2       = convert(T2,1//4)
+  c3       = convert(T2,4//9)
+  c4       = convert(T2,4//5)
+  c5       = convert(T2,1//1)
+  c6       = convert(T2,1//1)
+  a21      = convert(T,1//8)
+  a32      = convert(T,1//4)
+  a41      = convert(T,196//729)
+  a42      = convert(T,-320//729)
+  a43      = convert(T,448//729)
+  a51      = convert(T,836//2875)
+  a52      = convert(T,64//575)
+  a53      = convert(T,-13376//20125)
+  a54      = convert(T,21384//20125)
+  a61      = convert(T,-73//48)
+  a63      = convert(T,1312//231)
+  a64      = convert(T,-2025//448)
+  a65      = convert(T,2875//2112)
+  a71      = convert(T, 17//192)
+  a73      = convert(T, 64//231)
+  a74      = convert(T, 2187//8960)
+  a75      = convert(T, 2875//8448)
+  a76      = convert(T, 1//20)
+  b1       = convert(T, 17//192)
+  b3       = convert(T, 64//231)
+  b4       = convert(T, 2187//8960)
+  b5       = convert(T, 2875//8448)
+  b6       = convert(T, 1//30) # b6 == 1//20 - λ, λ == 1//60
+  b7       = convert(T, 1//60) # b7 == λ, λ == 1//60
+  btilde1  = b1
+  btilde3  = b3
+  btilde4  = b4
+  btilde5  = b5
+  btilde6  = convert(T,1//20)
+  DPRKN54TConstantCache(c1, c2, c3, c4, c5, c6,
+                        a21,
+                             a32,
+                        a41, a42, a43,
+                        a51, a52, a53, a54,
+                        a61,      a63, a64, a65,
+                        a71,      a73, a74, a75, a76,
+                        b1, b3, b4, b5, b6, b7,
+                        btilde1, btilde3, btilde4, btilde5, btilde6)
+end
+### dprkn54t
+
 struct DPRKN76TConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   c1::T2
   c2::T2
