@@ -50,10 +50,21 @@ function ExtrapolationMidpointDeuflhard(;min_extrapolation_order=1,init_extrapol
   n_min = max(1,min_extrapolation_order)
   n_init = max(n_min,init_extrapolation_order)
   n_max = max(n_init,max_extrapolation_order)
+
+  # Warn user if orders have been changed
+  if (min_extrapolation_order, init_extrapolation_order, max_extrapolation_order) != (n_min,n_init,n_max)
+    @warn "The range of extrapolation orders and/or the initial order given to the
+      `ExtrapolationMidpointDeuflhard` algorithm are not valid and have been changed:
+      Minimal order: " * lpad(min_extrapolation_order,2," ") * " --> "  * lpad(n_min,2," ") * "
+      Maximal order: " * lpad(max_extrapolation_order,2," ") * " --> "  * lpad(n_max,2," ") * "
+      Initial order: " * lpad(init_extrapolation_order,2," ") * " --> "  * lpad(n_init,2," ")
+  end
+
   # Enforce sequence_symbol in [:harmonic,:romberg,:bulirsch]:
   if sequence_symbol != :harmonic && sequence_symbol != :romberg && sequence_symbol != :bulirsch
-      error("sequence_symbol must match :harmonic, :romberg or :bulirsch")
+      error("`sequence_symbol` must match `:harmonic`, `:romberg` or `:bulirsch`")
   end
+
   # Initialize algorithm
   ExtrapolationMidpointDeuflhard(n_min,n_init,n_max,sequence_symbol)
 end
@@ -70,18 +81,21 @@ function ExtrapolationMidpointHairerWanner(;min_extrapolation_order=2,init_extra
   n_min = max(2,min_extrapolation_order)
   n_init = max(n_min + 1,init_extrapolation_order)
   n_max = max(n_init + 1,max_extrapolation_order)
+
   # Warn user if orders have been changed
   if (min_extrapolation_order, init_extrapolation_order, max_extrapolation_order) != (n_min,n_init,n_max)
     @warn "The range of extrapolation orders and/or the initial order given to the
-      ExtrapolationMidpointHairerWanner algorithm are not valid and have been changed:
+      `ExtrapolationMidpointHairerWanner` algorithm are not valid and have been changed:
       Minimal order: " * lpad(min_extrapolation_order,2," ") * " --> "  * lpad(n_min,2," ") * "
       Maximal order: " * lpad(max_extrapolation_order,2," ") * " --> "  * lpad(n_max,2," ") * "
       Initial order: " * lpad(init_extrapolation_order,2," ") * " --> "  * lpad(n_init,2," ")
   end
+
   # Enforce sequence_symbol in [:harmonic,:romberg,:bulirsch]:
   if sequence_symbol != :harmonic && sequence_symbol != :romberg && sequence_symbol != :bulirsch
-      error("sequence_symbol must match :harmonic, :romberg or :bulirsch")
+    error("`sequence_symbol` must match `:harmonic`, `:romberg` or `:bulirsch`")
   end
+
   # Initialize algorithm
   ExtrapolationMidpointHairerWanner(n_min,n_init,n_max,sequence_symbol)
 end
