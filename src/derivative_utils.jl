@@ -158,12 +158,26 @@ function Base.convert(::Type{AbstractMatrix}, W::WOperator)
     end
   else
     # Non-allocating
+    _W = W._concrete_form
+    J = convert(AbstractMatrix,W.J)
     if W.transform
-      copyto!(W._concrete_form, W.mass_matrix)
-      axpby!(one(W.gamma), convert(AbstractMatrix,W.J), -inv(W.gamma), W._concrete_form)
+      if _W isa Diagonal # axpby doesn't specialize on Diagonal matrix
+        @inbounds for i in axes(W._concrete_form, 1)
+          _W[i, i] = J[i, i] - inv(W.gamma) * W.mass_matrix[i, i]
+        end
+      else
+        copyto!(_W, W.mass_matrix)
+        axpby!(one(W.gamma), J, -inv(W.gamma), _W)
+      end
     else
-      copyto!(W._concrete_form, W.mass_matrix)
-      axpby!(W.gamma, convert(AbstractMatrix,W.J), -one(W.gamma), W._concrete_form)
+      if _W isa Diagonal # axpby doesn't specialize on Diagonal matrix
+        @inbounds for i in axes(W._concrete_form, 1)
+          _W[i, i] = W.gamma*J[i, i] - W.mass_matrix[i, i]
+        end
+      else
+        copyto!(_W, W.mass_matrix)
+        axpby!(W.gamma, J, -one(W.gamma), W._concrete_form)
+      end
     end
   end
   W._concrete_form
