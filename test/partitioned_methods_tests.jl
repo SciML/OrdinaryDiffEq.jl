@@ -129,11 +129,11 @@ sim = test_convergence(dts,prob,Nystrom5VelocityIndependent(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 5 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
 sim = test_convergence(dts,prob,DPRKN43T(),dense_errors=true) ### TODO
-@test sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
-@test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
+@test sim.𝒪est[:l2] ≈ 1 rtol = 1e-1
+@test sim.𝒪est[:L2] ≈ 1 rtol = 1e-1
 sim = test_convergence(dts,prob,DPRKN54T(),dense_errors=true) ### TODO
-@test sim.𝒪est[:l2] ≈ 5 rtol = 1e-1
-@test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
+@test sim.𝒪est[:l2] ≈ 1 rtol = 1e-1
+@test sim.𝒪est[:L2] ≈ 1 rtol = 1e-1
 sim = test_convergence(dts,prob,DPRKN76T(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 6 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
@@ -299,7 +299,7 @@ sim = test_convergence(dts,prob,DPRKN43T(),dense_errors=true) ### TODO
 sim = test_convergence(dts,prob,DPRKN54T(),dense_errors=true) ### TODO
 @test sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
-sim = test_convergence(dts,prob,DPRKN76T(),dense_errors=true) ### TODO
+sim = test_convergence(dts,prob,DPRKN76T(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 6 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
 

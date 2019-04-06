@@ -642,22 +642,22 @@ function DPRKN43TConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats, T
 end
 
 function DPRKN43TConstantCache(T::Type,T2::Type)
-  c1       = convert(T2,1//2)
-  c2       = convert(T2,1//2)
-  c3       = convert(T2,1//1)
-  c4       = convert(T2,1//1)
-  a21      = convert(T,1//2)
-  a32      = convert(T,1//2)
-  a43      = convert(T,1//1)
-  a51      = convert(T,1//6)
-  a52      = convert(T,1//3)
-  a53      = convert(T,1//3)
-  a54      = convert(T,1//6)
-  b1       = convert(T,1//6)
-  b2       = convert(T,1//3)
-  b3       = convert(T,1//3)
-  b4       = convert(T,1//15) # b4 == 1//6 - λ, λ = 1//10
-  b5       = convert(T,1//10) # b5 == λ,        λ = 1//10
+  c1       = convert(T2, 1//2)
+  c2       = convert(T2, 1//2)
+  c3       = convert(T2, 1//1)
+  c4       = convert(T2, 1//1)
+  a21      = convert(T, 1//2)
+  a32      = convert(T, 1//2)
+  a43      = convert(T, 1//1)
+  a51      = convert(T, 1//6)
+  a52      = convert(T, 1//3)
+  a53      = convert(T, 1//3)
+  a54      = convert(T, 1//6)
+  b1       = convert(T, 1//6)
+  b2       = convert(T, 1//3)
+  b3       = convert(T, 1//3)
+  b4       = convert(T, 1//15) # b4 == 1//6 - λ, λ = 1//10
+  b5       = convert(T, 1//10) # b5 == λ,        λ = 1//10
   btilde1  = b1
   btilde2  = b2
   btilde3  = b3
@@ -763,25 +763,25 @@ function DPRKN54TConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats, T
 end
 
 function DPRKN54TConstantCache(T::Type,T2::Type)
-  c1       = convert(T2,1//8)
-  c2       = convert(T2,1//4)
-  c3       = convert(T2,4//9)
-  c4       = convert(T2,4//5)
-  c5       = convert(T2,1//1)
-  c6       = convert(T2,1//1)
-  a21      = convert(T,1//8)
-  a32      = convert(T,1//4)
-  a41      = convert(T,196//729)
-  a42      = convert(T,-320//729)
-  a43      = convert(T,448//729)
-  a51      = convert(T,836//2875)
-  a52      = convert(T,64//575)
-  a53      = convert(T,-13376//20125)
-  a54      = convert(T,21384//20125)
-  a61      = convert(T,-73//48)
-  a63      = convert(T,1312//231)
-  a64      = convert(T,-2025//448)
-  a65      = convert(T,2875//2112)
+  c1       = convert(T2, 1//8)
+  c2       = convert(T2, 1//4)
+  c3       = convert(T2, 4//9)
+  c4       = convert(T2, 4//5)
+  c5       = convert(T2, 1//1)
+  c6       = convert(T2, 1//1)
+  a21      = convert(T, 1//8)
+  a32      = convert(T, 1//4)
+  a41      = convert(T, 196//729)
+  a42      = convert(T, -320//729)
+  a43      = convert(T, 448//729)
+  a51      = convert(T, 836//2875)
+  a52      = convert(T, 64//575)
+  a53      = convert(T, -13_376//20_125)
+  a54      = convert(T, 21_384//20_125)
+  a61      = convert(T, -73//48)
+  a63      = convert(T, 1312//231)
+  a64      = convert(T, -2025//448)
+  a65      = convert(T, 2875//2112)
   a71      = convert(T, 17//192)
   a73      = convert(T, 64//231)
   a74      = convert(T, 2187//8960)
@@ -941,17 +941,17 @@ function DPRKN76TConstantCache(::Type{T},::Type{T2}) where {T<:CompiledFloats, T
   bptilde7 = convert(T,0.2722222222222222)
   bptilde8 = convert(T,0.05)
   DPRKN76TConstantCache(c1, c2, c3, c4, c5, c6, c7, c8,
-                      a21,
-                      a31, a32,
-                      a41, a42, a43,
-                      a51, a52, a53, a54,
-                      a61, a62, a63, a64, a65,
-                      a71, a72, a73, a74, a75, a76,
-                      a81, a82, a83, a84, a85, a86, a87,
-                      a91, a95, a96, a97,
-                      b1, b5, b6, b7, b8, b9,
-                      btilde1, btilde5, btilde6, btilde7,
-                      bptilde1, bptilde5, bptilde6, bptilde7, bptilde8)
+                        a21,
+                        a31, a32,
+                        a41, a42, a43,
+                        a51, a52, a53, a54,
+                        a61, a62, a63, a64, a65,
+                        a71, a72, a73, a74, a75, a76,
+                        a81, a82, a83, a84, a85, a86, a87,
+                        a91,                a95, a96, a97,
+                        b1, b5, b6, b7, b8, b9,
+                        btilde1, btilde5, btilde6, btilde7,
+                        bptilde1, bptilde5, bptilde6, bptilde7, bptilde8)
 end
 
 function DPRKN76TConstantCache(T::Type,T2::Type)
