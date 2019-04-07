@@ -11,14 +11,14 @@ end
 
 # solver
 
-mutable struct NLSolver{iip,uType,rateType,uTolType,gType,cType,C<:AbstractNLSolverCache}
+mutable struct NLSolver{iip,uType,rateType,uTolType,kType,gType,cType,C<:AbstractNLSolverCache}
   z::uType
   dz::uType
   tmp::uType
   ztmp::uType
   k::rateType
   ηold::uTolType
-  κtol::uTolType
+  κ::kType
   γ::gType
   c::cType
   max_iter::Int
@@ -29,40 +29,37 @@ end
 
 # algorithms
 
-struct NLFunctional{K,T} <: AbstractNLSolverAlgorithm
+struct NLFunctional{K} <: AbstractNLSolverAlgorithm
   κ::K
-  tol::T
   max_iter::Int
 end
 
-NLFunctional(; κ=nothing, tol=nothing, max_iter=10) = NLFunctional(κ, tol, max_iter)
+NLFunctional(; κ=nothing, max_iter=10) = NLFunctional(κ, max_iter)
 
-struct NLAnderson{K,T,D} <: AbstractNLSolverAlgorithm
+struct NLAnderson{K,D} <: AbstractNLSolverAlgorithm
   κ::K
-  tol::T
   max_iter::Int
   max_history::Int
   aa_start::Int
   droptol::D
 end
 
-NLAnderson(; κ=nothing, tol=nothing, max_iter=10, max_history::Int=5, aa_start::Int=1, droptol=nothing) =
-  NLAnderson(κ, tol, max_iter, max_history, aa_start, droptol)
+NLAnderson(; κ=nothing, max_iter=10, max_history::Int=5, aa_start::Int=1, droptol=nothing) =
+  NLAnderson(κ, max_iter, max_history, aa_start, droptol)
 
-struct NLNewton{K,T} <: AbstractNLSolverAlgorithm
+struct NLNewton{K} <: AbstractNLSolverAlgorithm
   κ::K
-  tol::T
   max_iter::Int
 end
 
-NLNewton(; κ=nothing, tol=nothing, max_iter=10) = NLNewton(κ, tol, max_iter)
+NLNewton(; κ=nothing, max_iter=10) = NLNewton(κ, max_iter)
 
 # caches
 
 mutable struct NLNewtonCache{W,T} <: AbstractNLSolverCache
   new_W::Bool
   W::W
-  freshdt::T
+  Wdt::T
 end
 
 mutable struct NLNewtonConstantCache{W} <: AbstractNLSolverCache

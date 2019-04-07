@@ -27,7 +27,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 """
 @muladd function nlsolve!(nlsolver::NLSolver, nlcache::Union{NLFunctionalConstantCache,NLAndersonConstantCache}, integrator)
   @unpack t,dt,uprev,u,p = integrator
-  @unpack z,tmp,κtol,c,γ,max_iter = nlsolver
+  @unpack z,tmp,κ,c,γ,max_iter = nlsolver
 
   if nlcache isa NLAndersonConstantCache
     @unpack Δz₊s,Q,R,γs,aa_start,droptol = nlcache
@@ -68,13 +68,14 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 
     # compute norm of residuals
     iter > 1 && (ndzprev = ndz)
-    ndz = integrator.opts.internalnorm(dz, tstep)
+    atmp = calculate_residuals(dz, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+    ndz = integrator.opts.internalnorm(atmp, t)
 
     # check divergence (not in initial step)
     if iter > 1
       θ = ndz / ndzprev
       ( diverge = θ > 1 ) && ( nlsolver.status = Divergence )
-      ( veryslowconvergence = ndz * θ^(max_iter - iter) > κtol * (1 - θ) ) && ( nlsolver.status = VerySlowConvergence )
+      ( veryslowconvergence = ndz * θ^(max_iter - iter) > κ * (1 - θ) ) && ( nlsolver.status = VerySlowConvergence )
       if diverge || veryslowconvergence
         break
       end
@@ -85,7 +86,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 
     # check stopping criterion
     iter > 1 && (η = θ / (1 - θ))
-    if η * ndz < κtol && (iter > 1 || iszero(ndz))
+    if η * ndz < κ && (iter > 1 || iszero(ndz))
       # fixed-point iteration converges
       nlsolver.status = (iter == 1 || η < 0.02) ? FastConvergence : Convergence
       fail_convergence = false
@@ -164,7 +165,7 @@ end
 
 @muladd function nlsolve!(nlsolver::NLSolver, nlcache::Union{NLFunctionalCache,NLAndersonCache}, integrator)
   @unpack t,dt,uprev,u,p = integrator
-  @unpack z,dz,tmp,ztmp,k,κtol,c,γ,max_iter = nlsolver
+  @unpack z,dz,tmp,ztmp,k,κ,c,γ,max_iter = nlsolver
 
   if nlcache isa NLFunctionalCache
     @unpack z₊ = nlcache
@@ -206,13 +207,14 @@ end
 
     # compute norm of residuals
     iter > 1 && (ndzprev = ndz)
-    ndz = integrator.opts.internalnorm(dz, tstep)
+    calculate_residuals!(ztmp, dz, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+    ndz = integrator.opts.internalnorm(ztmp, t)
 
     # check divergence (not in initial step)
     if iter > 1
       θ = ndz / ndzprev
       ( diverge = θ > 1 ) && ( nlsolver.status = Divergence )
-      ( veryslowconvergence = ndz * θ^(max_iter - iter) > κtol * (1 - θ) ) && ( nlsolver.status = VerySlowConvergence )
+      ( veryslowconvergence = ndz * θ^(max_iter - iter) > κ * (1 - θ) ) && ( nlsolver.status = VerySlowConvergence )
       if diverge || veryslowconvergence
         break
       end
@@ -223,7 +225,7 @@ end
 
     # check stopping criterion
     iter > 1 && (η = θ / (1 - θ))
-    if η * ndz < κtol && (iter > 1 || iszero(ndz))
+    if η * ndz < κ && (iter > 1 || iszero(ndz))
       # fixed-point iteration converges
       nlsolver.status = (iter == 1 || η < 0.02) ? FastConvergence : Convergence
       fail_convergence = false

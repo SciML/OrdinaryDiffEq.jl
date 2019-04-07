@@ -26,7 +26,7 @@ for i = 1:2
   @test sim2.𝒪est[:l∞] ≈ 2 atol=testTol
   sim3 = test_convergence(dts,prob,RK4())
   @test sim3.𝒪est[:l∞] ≈ 4 atol=testTol
-  
+
   sim3 = test_convergence(dts2,prob,KuttaPRK2p5(threading=true))
   @test sim3.𝒪est[:l∞] ≈ 5 atol=testTol
 
@@ -69,10 +69,10 @@ for i = 1:2
   sim11 = test_convergence(dts,prob,ImplicitEuler(extrapolant = :linear))
   @test sim11.𝒪est[:final] ≈ 1 atol=testTol
 
-  sim112 = test_convergence(dts,prob,ImplicitEuler(nlsolve = NLFunctional()))
+  sim112 = test_convergence(dts,prob,ImplicitEuler(nlsolve = NLFunctional()),reltol=1e-2)
   @test sim112.𝒪est[:final] ≈ 1 atol=testTol
 
-  sim113 = test_convergence(dts,prob,ImplicitEuler(nlsolve = NLAnderson()))
+  sim113 = test_convergence(dts,prob,ImplicitEuler(nlsolve = NLAnderson()),reltol=1e-2)
   @test sim113.𝒪est[:final] ≈ 1 atol=testTol
 
   sim12 = test_convergence(dts,prob,
@@ -175,10 +175,10 @@ for i = 1:2
   sim21 = test_convergence(dts,prob,MEBDF2(extrapolant = :linear))
   @test sim21.𝒪est[:final] ≈ 2 atol=testTol
 
-  sim22 = test_convergence(dts,prob,MEBDF2(nlsolve = NLFunctional()))
+  sim22 = test_convergence(dts,prob,MEBDF2(nlsolve = NLFunctional()),reltol=1e-2)
   @test sim22.𝒪est[:final] ≈ 2 atol=testTol
 
-  sim23 = test_convergence(dts,prob,MEBDF2(nlsolve = NLAnderson()))
+  sim23 = test_convergence(dts,prob,MEBDF2(nlsolve = NLAnderson()),reltol=1e-2)
   @test sim23.𝒪est[:final] ≈ 2 atol=testTol
 
   dts = 1 .//2 .^(7:-1:4)

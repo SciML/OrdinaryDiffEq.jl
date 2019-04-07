@@ -29,18 +29,18 @@ for prob in probArr
   @test is_switching_fb(sol)
 
   sol = solve(prob,AutoVern6(Kvaerno3(); maxstiffstep=4, maxnonstiffstep=4))
-  @test length(sol.t) < 690
+  @test length(sol.t) < 700
   @test is_switching_fb(sol)
   sol = solve(prob,AutoVern7(Hairer42(); maxstiffstep=4, maxnonstiffstep=4))
-  @test length(sol.t) < 540
+  @test length(sol.t) < 610
   @test is_switching_fb(sol)
   sol = solve(prob,AutoVern8(Rosenbrock23(); maxstiffstep=4, maxnonstiffstep=4))
   @test length(sol.t) < 910
   @test is_switching_fb(sol)
   sol = solve(prob,AutoVern9(KenCarp3(); maxstiffstep=4, maxnonstiffstep=4))
-  @test length(sol.t) < 470
+  @test length(sol.t) < 570
   @test is_switching_fb(sol)
   sol = solve(prob,AutoVern9(KenCarp3(autodiff=false); maxstiffstep=4, maxnonstiffstep=4))
-  @test length(sol.t) < 470
+  @test length(sol.t) < 570
   @test is_switching_fb(sol)
 end

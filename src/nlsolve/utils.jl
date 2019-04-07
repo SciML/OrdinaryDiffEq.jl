@@ -85,19 +85,11 @@ get_W(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}) = nlcache.W
 set_W!(nlsolver::NLSolver, W) = set_W!(nlsolver.cache, W)
 set_W!(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}, W) = (nlcache.W = W; W)
 
-set_freshdt!(nlsolver::NLSolver, freshdt) = set_freshdt!(nlsolver.cache, freshdt)
-set_freshdt!(nlcache::NLNewtonCache, freshdt) = (nlcache.freshdt = freshdt; freshdt)
-set_freshdt!(nlcache::NLNewtonConstantCache, freshdt) = freshdt
+set_Wdt!(nlsolver::NLSolver, Wdt) = set_Wdt!(nlsolver.cache, Wdt)
+set_Wdt!(nlcache::NLNewtonCache, Wdt) = (nlcache.Wdt = Wdt; Wdt)
+set_Wdt!(nlcache::NLNewtonConstantCache, Wdt) = Wdt
 
-function get_κtol(nlalg::Union{NLAnderson,NLFunctional}, uTolType, reltol)
-  κ = nlalg.κ === nothing ? uTolType(1//100) : uTolType(nlalg.κ)
-  tol = nlalg.tol === nothing ? uTolType(min(0.03, first(reltol))) : uTolType(nlalg.tol)
-  κ * tol
-end
-function get_κtol(nlalg::NLNewton, uTolType, reltol)
-  κ = nlalg.κ === nothing ? uTolType(1//10) : uTolType(nlalg.κ)
-  κ
-end
+get_κ(nlalg::Union{NLAnderson,NLFunctional,NLNewton}) = nlalg.κ === nothing ? 1//100 : nlalg.κ
 
 DiffEqBase.@def iipnlsolve begin
   # define additional fields of cache of non-linear solver
@@ -106,7 +98,7 @@ DiffEqBase.@def iipnlsolve begin
 
   # adapt options of non-linear solver to current integration problem
   uTolType = real(uBottomEltypeNoUnits)
-  κtol = get_κtol(alg.nlsolve, uTolType, reltol)
+  κ = get_κ(alg.nlsolve)
 
   # create cache of non-linear solver
   if alg.nlsolve isa NLNewton
@@ -149,7 +141,7 @@ DiffEqBase.@def iipnlsolve begin
   end
 
   # create non-linear solver
-  nlsolver = NLSolver{true,typeof(z),typeof(k),uTolType,typeof(γ),typeof(c),typeof(nlcache)}(z,dz,tmp,b,k,one(uTolType),κtol,γ,c,alg.nlsolve.max_iter,10000,Convergence,nlcache)
+  nlsolver = NLSolver{true,typeof(z),typeof(k),uTolType,typeof(κ),typeof(γ),typeof(c),typeof(nlcache)}(z,dz,tmp,b,k,one(uTolType),κ,γ,c,alg.nlsolve.max_iter,10000,Convergence,nlcache)
 
   # define additional fields of cache
   fsalfirst = zero(rate_prototype)
@@ -182,7 +174,7 @@ DiffEqBase.@def oopnlsolve begin
 
   # define tolerances
   uTolType = real(uBottomEltypeNoUnits)
-  κtol = get_κtol(alg.nlsolve, uTolType, reltol)
+  κ = get_κ(alg.nlsolve)
 
   # create cache of non-linear solver
   if alg.nlsolve isa NLNewton
@@ -236,5 +228,5 @@ DiffEqBase.@def oopnlsolve begin
   end
 
   # create non-linear solver
-  nlsolver = NLSolver{false,typeof(z),typeof(k),uTolType,typeof(γ),typeof(c),typeof(nlcache)}(z,dz,tmp,b,k,one(uTolType),κtol,γ,c,alg.nlsolve.max_iter,10000,Convergence,nlcache)
+  nlsolver = NLSolver{false,typeof(z),typeof(k),uTolType,typeof(κ),typeof(γ),typeof(c),typeof(nlcache)}(z,dz,tmp,b,k,one(uTolType),κ,γ,c,alg.nlsolve.max_iter,10000,Convergence,nlcache)
 end

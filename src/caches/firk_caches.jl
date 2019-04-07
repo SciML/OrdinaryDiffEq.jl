@@ -63,7 +63,7 @@ mutable struct RadauIIA5Cache{uType,cuType,uNoUnitsType,rateType,JType,W1Type,W2
   rtol::rTol
   atol::aTol
   dtprev::Dt
-  freshdt::Dt
+  Wdt::Dt
   status::NLStatus
 end
 
