@@ -520,7 +520,6 @@ end
   end
 end
 
-###
 @muladd function perform_step!(integrator,cache::DPRKN43TConstantCache,repeat_step=false)
   @unpack t,dt,f,p = integrator
   duprev,uprev = integrator.uprev.x
@@ -530,10 +529,10 @@ end
   ku = uprev + dt*(c1*duprev + dt*(a21*k1))
 
   k2 = f.f1(duprev,ku,p,t+dt*c1)
-  ku = uprev + dt*(c2*duprev + dt*(a32*k2))
+  ku = uprev + dt*(c2*duprev + dt*(         a32*k2))
 
   k3 = f.f1(duprev,ku,p,t+dt*c2)
-  ku = uprev + dt*(c3*duprev + dt*(a43*k3))
+  ku = uprev + dt*(c3*duprev + dt*(                  a43*k3))
 
   k4 = f.f1(duprev,ku,p,t+dt*c3)
   ku = uprev + dt*(c4*duprev + dt*(a51*k1 + a52*k2 + a53*k3 + a54*k4))
@@ -569,13 +568,13 @@ end
   uidx = eachindex(integrator.uprev.x[2])
 
   k1 = integrator.fsalfirst.x[1]
-  @. ku = uprev + dt*(c1*duprev + dt*(a21*k1))
+  @. ku = uprev + dt*(c1*duprev + dt*(                a21*k1))
 
   f.f1(k2,duprev,ku,p,t+dt*c1)
-  @. ku = uprev + dt*(c2*duprev + dt*(a32*k2))
+  @. ku = uprev + dt*(c2*duprev + dt*(                              a32*k2))
 
   f.f1(k3,duprev,ku,p,t+dt*c2)
-  @. ku = uprev + dt*(c3*duprev + dt*(a43*k3))
+  @. ku = uprev + dt*(c3*duprev + dt*(                                          a43*k3))
 
   f.f1(k4,duprev,ku,p,t+dt*c3)
   @tight_loop_macros for i in uidx
@@ -584,11 +583,9 @@ end
 
   f.f1(k5,du,ku,p,t+dt*c4)
   @tight_loop_macros for i in uidx
-    @inbounds u[i]  = uprev[i] + dt*(duprev[i] + dt*(b1 *k1[i] + b2 *k2[i] + b3 *k3[i] + b4 *k4[i] + b5 *k5[i]))
-    @inbounds du[i] = duprev[i]                + dt*(btilde1*k1[i] + btilde2*k2[i] + btilde3*k3[i] + btilde4*k4[i]) # no btilde5
+    @inbounds u[i]  = uprev[i] + dt*(duprev[i] + dt*(b1 *k1[i] + b2 *k2[i] + b3 *k3[i] + b4 *k4[i] + b5 *k5[i])) #
+    @inbounds du[i] = duprev[i]                + dt*(btilde1*k1[i] + btilde2*k2[i] + btilde3*k3[i] + btilde4*k4[i]) # no btilde5   
   end
-
-
 
   f.f1(k.x[1],du,u,p,t+dt)
   f.f2(k.x[2],du,u,p,t+dt)
@@ -663,7 +660,7 @@ end
   @. ku = uprev + dt*(c1*duprev + dt*(a21*k1))
 
   f.f1(k2,duprev,ku,p,t+dt*c1)
-  @. ku = uprev + dt*(c2*duprev + dt*(a32*k2))
+  @. ku = uprev + dt*(c2*duprev + dt*(         a32*k2))
 
   f.f1(k3,duprev,ku,p,t+dt*c2)
   @tight_loop_macros for i in uidx
@@ -677,12 +674,12 @@ end
 
   f.f1(k5,duprev,ku,p,t+dt*c4)
   @tight_loop_macros for i in uidx
-    @inbounds ku[i] = uprev[i] + dt*(c5*duprev[i] + dt*(a61*k1[i] + a63*k3[i] + a64*k4[i] + a65*k[i]))
+    @inbounds ku[i] = uprev[i] + dt*(c5*duprev[i] + dt*(a61*k1[i] +             a63*k3[i] + a64*k4[i] + a65*k[i]))
   end
 
   f.f1(k6,duprev,ku,p,t+dt*c5)
   @tight_loop_macros for i in uidx
-    @inbounds ku[i] = uprev[i] + dt*(c6*duprev[i] + dt*(a71*k1[i] + a73*k3[i] + a74*k4[i] + a75*k5[i] + a76*k6[i]))
+    @inbounds ku[i] = uprev[i] + dt*(c6*duprev[i] + dt*(a71*k1[i] +             a73*k3[i] + a74*k4[i] + a75*k5[i] + a76*k6[i]))
   end
 
   f.f1(k7,du,ku,p,t+dt*c6)
@@ -706,7 +703,6 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 end
-
 
 @muladd function perform_step!(integrator, cache::DPRKN76TConstantCache, repeat_step=false)
   @unpack t,dt,f,p = integrator
