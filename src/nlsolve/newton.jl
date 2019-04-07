@@ -68,7 +68,8 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 
     # compute norm of residuals
     iter > 1 && (ndzprev = ndz)
-    ndz = integrator.opts.internalnorm(dz, tstep)
+    atmp = calculate_residuals(dz, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm, t)
+    ndz = integrator.opts.internalnorm(atmp, t)
 
     # check divergence (not in initial step)
     if iter > 1
@@ -145,7 +146,8 @@ end
     # compute norm of residuals
     iter > 1 && (ndzprev = ndz)
     #freshdt != dt && (rmul!(dz, 2/(1 + dt / freshdt))) # relaxation
-    ndz = integrator.opts.internalnorm(dz, tstep)
+    calculate_residuals!(ztmp, dz, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm, t)
+    ndz = integrator.opts.internalnorm(ztmp, t)
 
     # check divergence (not in initial step)
     if iter > 1
@@ -162,7 +164,7 @@ end
 
     # check stopping criterion
     iter > 1 && (η = θ / (1 - θ))
-    if η * ndz < κtol && (iter > 1 || iszero(ndz) || !iszero(integrator.success_iter))
+    if η * ndz < 1//10 && (iter > 1 || iszero(ndz) || !iszero(integrator.success_iter))
       # Newton method converges
       nlsolver.status = η < 0.2 ? FastConvergence : Convergence
       fail_convergence = false

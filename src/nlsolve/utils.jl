@@ -89,10 +89,14 @@ set_freshdt!(nlsolver::NLSolver, freshdt) = set_freshdt!(nlsolver.cache, freshdt
 set_freshdt!(nlcache::NLNewtonCache, freshdt) = (nlcache.freshdt = freshdt; freshdt)
 set_freshdt!(nlcache::NLNewtonConstantCache, freshdt) = freshdt
 
-function get_κtol(nlalg::Union{NLAnderson,NLFunctional,NLNewton}, uTolType, reltol)
+function get_κtol(nlalg::Union{NLAnderson,NLFunctional}, uTolType, reltol)
   κ = nlalg.κ === nothing ? uTolType(1//100) : uTolType(nlalg.κ)
   tol = nlalg.tol === nothing ? uTolType(min(0.03, first(reltol))) : uTolType(nlalg.tol)
   κ * tol
+end
+function get_κtol(nlalg::NLNewton, uTolType, reltol)
+  κ = nlalg.κ === nothing ? uTolType(1//10) : uTolType(nlalg.κ)
+  κ
 end
 
 DiffEqBase.@def iipnlsolve begin
