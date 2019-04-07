@@ -82,11 +82,15 @@ end
   end
 
   # Newton iteration
-  local ndw, η
-  do_newton = true
+  local ndw
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
+  fail_convergence = true
   iter = 0
-  while do_newton && iter < max_iter
+  while iter < max_iter
     iter += 1
+    integrator.destats.nnonliniter += 1
+
+    # evaluate function
     ff1 = f(uprev+z1, p, t+c1*dt)
     ff2 = f(uprev+z2, p, t+c2*dt)
     ff3 = f(uprev+z3, p, t+   dt) # c3 = 1
@@ -115,13 +119,16 @@ end
     dw2 = real(dw23)
     dw3 = imag(dw23)
 
-    iter != 1 && (ndwprev = ndw)
+    # compute norm of residuals
+    iter > 1 && (ndwprev = ndw)
     ndw = internalnorm(dw1,t) + internalnorm(dw2,t) + internalnorm(dw3,t)
 
-    # check early stopping criterion
-    if iter != 1
-      θ = ndw/ndwprev
-      if θ ≥ 1 || ndw * θ^(max_iter - iter) > κtol * (1 - θ)
+    # check divergence (not in initial step)
+    if iter > 1
+      θ = ndw / ndwprev
+      ( diverge = θ > 1 ) && ( cache.status = Divergence )
+      ( veryslowconvergence = ndw * θ^(max_iter - iter) > κtol * (1 - θ) ) && ( cache.status = VerySlowConvergence )
+      if diverge || veryslowconvergence
         break
       end
     end
@@ -136,18 +143,21 @@ end
     z3 = @. T31 * w1 +       w2           # T32 = 1, T33 = 0
 
     # check stopping criterion
-    if iter == 1
-      η = max(cache.ηold, eps(eltype(reltol)))^(0.8)
-      do_newton = iszero(integrator.success_iter) || iter < min_iter || η * ndw > κtol
-    else
-      η = θ / (1 - θ) # calculated for possible early stopping
-      do_newton = iter < min_iter || η * ndw > κtol
+    iter > 1 && (η = θ / (1 - θ))
+    if η * ndw < κtol && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+      # Newton method converges
+      cache.status = (iter == 1 || η < 0.02) ? FastConvergence : Convergence
+      fail_convergence = false
+      break
     end
   end
+  if fail_convergence
+    integrator.force_stepfail = true
+    integrator.destats.nnonlinconvfail += 1
+    return
+  end
   cache.ηold = η
-  integrator.force_stepfail = do_newton
   cache.nl_iters = iter
-  do_newton && return
 
   u = @. uprev + z3
 
@@ -249,11 +259,15 @@ end
   end
 
   # Newton iteration
-  local ndw, η
-  do_newton = true
+  local ndw
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
+  fail_convergence = true
   iter = 0
-  while do_newton && iter < max_iter
+  while iter < max_iter
     iter += 1
+    integrator.destats.nnonliniter += 1
+
+    # evaluate function
     @. tmp = uprev + z1
     f(fsallast, tmp, p, t+c1*dt)
     @. tmp = uprev + z2
@@ -296,13 +310,16 @@ end
     @. dw2 = real(dw23)
     @. dw3 = imag(dw23)
 
-    iter != 1 && (ndwprev = ndw)
+    # compute norm of residuals
+    iter > 1 && (ndwprev = ndw)
     ndw = internalnorm(dw1,t) + internalnorm(dw2,t) + internalnorm(dw3,t)
 
-    # check early stopping criterion
-    if iter != 1
-      θ = ndw/ndwprev
-      if θ ≥ 1 || ndw * θ^(max_iter - iter) > κtol * (1 - θ)
+    # check divergence (not in initial step)
+    if iter > 1
+      θ = ndw / ndwprev
+      ( diverge = θ > 1 ) && ( cache.status = Divergence )
+      ( veryslowconvergence = ndw * θ^(max_iter - iter) > κtol * (1 - θ) ) && ( cache.status = VerySlowConvergence )
+      if diverge || veryslowconvergence
         break
       end
     end
@@ -317,18 +334,21 @@ end
     @. z3 = T31 * w1 +       w2           # T32 = 1, T33 = 0
 
     # check stopping criterion
-    if iter == 1
-      η = max(cache.ηold, eps(eltype(reltol)))^(0.8)
-      do_newton = iszero(integrator.success_iter) || iter < min_iter || η * ndw > κtol
-    else
-      η = θ / (1 - θ) # calculated for possible early stopping
-      do_newton = iter < min_iter || η * ndw > κtol
+    iter > 1 && (η = θ / (1 - θ))
+    if η * ndw < κtol && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+      # Newton method converges
+      cache.status = (iter == 1 || η < 0.02) ? FastConvergence : Convergence
+      fail_convergence = false
+      break
     end
   end
+  if fail_convergence
+    integrator.force_stepfail = true
+    integrator.destats.nnonlinconvfail += 1
+    return
+  end
   cache.ηold = η
-  integrator.force_stepfail = do_newton
   cache.nl_iters = iter
-  do_newton && return
 
   @. u = uprev + z3
 
