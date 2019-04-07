@@ -328,9 +328,10 @@ function stepsize_predictor!(integrator,alg::ExtrapolationMidpointDeuflhard,n_ne
   else
     # Initialize
     @unpack t,EEst = integrator
+    @unpack stage_number = integrator.cache.coefficients
     tol = integrator.opts.internalnorm(integrator.opts.reltol,t) # Deuflhard's approach relies on EEstD ≈ ||relTol||
-    s_curr = integrator.cache.stage_number[integrator.cache.n_curr - alg.n_min + 1]
-    s_new = integrator.cache.stage_number[n_new - alg.n_min + 1]
+    s_curr = stage_number[integrator.cache.n_curr - alg.n_min + 1]
+    s_new = stage_number[n_new - alg.n_min + 1]
     # Update gamma and beta1
     integrator.opts.beta1 = typeof(integrator.opts.beta1)(1 // (2integrator.cache.n_curr + 1))
     integrator.opts.gamma = typeof(integrator.opts.gamma)(1 // 4)^integrator.opts.beta1
@@ -345,7 +346,7 @@ function step_accept_controller!(integrator,alg::ExtrapolationMidpointDeuflhard,
   # Compute new order and stepsize, return new stepsize
   @unpack n_min, n_max = alg
   @unpack n_curr, n_old, Q = integrator.cache
-  s = integrator.cache.stage_number
+  s = integrator.cache.coefficients.stage_number
 
   # Compute new order based on available quantities
   tmp = (n_min:n_curr) .- n_min .+ 1 # Index range of quantities computed so far
