@@ -67,6 +67,9 @@ function qradd!(Q::AbstractMatrix, R::AbstractMatrix, v::Number, k::Int)
   Q, R
 end
 
+get_status(nlsolver::NLSolver) = nlsolver.status
+nlsolvefail(nlsolver::NLSolver) = Int8(get_status(nlsolver)) < 0
+
 isnewton(nlsolver::NLSolver) = isnewton(nlsolver.cache)
 isnewton(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}) = true
 isnewton(nlcache::AbstractNLSolverCache) = false
@@ -141,7 +144,7 @@ DiffEqBase.@def iipnlsolve begin
   end
 
   # create non-linear solver
-  nlsolver = NLSolver{true,typeof(z),typeof(k),uTolType,typeof(γ),typeof(c),typeof(nlcache)}(z,dz,tmp,b,k,one(uTolType),κtol,γ,c,alg.nlsolve.max_iter,10000,nlcache)
+  nlsolver = NLSolver{true,typeof(z),typeof(k),uTolType,typeof(γ),typeof(c),typeof(nlcache)}(z,dz,tmp,b,k,one(uTolType),κtol,γ,c,alg.nlsolve.max_iter,10000,Convergence,nlcache)
 
   # define additional fields of cache
   fsalfirst = zero(rate_prototype)

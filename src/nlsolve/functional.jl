@@ -18,9 +18,7 @@ zᵏ⁺¹ = G(zᵏ),
 
 where `dt` is the step size and `γ` is a constant.
 
-It returns the tuple `(z, η, iter, fail_convergence)`, where `z` is the solution, `η` is
-used to measure the iteration error (see [^HW96]), `iter` is the number of iterations, and
-`fail_convergence` reports whether the algorithm succeeded.
+It returns the tuple `z`, where `z` is the solution.
 
 [^HW96]: Ernst Hairer and Gerhard Wanner, "Solving Ordinary Differential
 Equations II, Springer Series in Computational Mathematics. ISBN
@@ -75,8 +73,9 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     # check divergence (not in initial step)
     if iter > 1
       θ = ndz / ndzprev
-      if θ > 1 || ndz * θ^(max_iter - iter) > κtol * (1 - θ)
-        # fixed-point iteration diverges
+      ( diverge = θ > 1 ) && ( nlsolver.status = Divergence )
+      ( veryslowconvergence = ndz * θ^(max_iter - iter) > κtol * (1 - θ) ) && ( nlsolver.status = VerySlowConvergence )
+      if diverge || veryslowconvergence
         break
       end
     end
@@ -88,6 +87,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     iter > 1 && (η = θ / (1 - θ))
     if η * ndz < κtol && (iter > 1 || iszero(ndz))
       # fixed-point iteration converges
+      nlsolver.status = (iter == 1 || η < 0.02) ? FastConvergence : Convergence
       fail_convergence = false
       break
     end
@@ -157,7 +157,9 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     integrator.destats.nnonlinconvfail += 1
   end
   integrator.force_stepfail = fail_convergence
-  z, η, iter, fail_convergence
+  nlsolver.ηold = η
+  nlsolver.nl_iters = iter
+  return z
 end
 
 @muladd function nlsolve!(nlsolver::NLSolver, nlcache::Union{NLFunctionalCache,NLAndersonCache}, integrator)
@@ -209,8 +211,9 @@ end
     # check divergence (not in initial step)
     if iter > 1
       θ = ndz / ndzprev
-      if θ > 1 || ndz * θ^(max_iter - iter) > κtol * (1 - θ)
-        # fixed-point iteration diverges
+      ( diverge = θ > 1 ) && ( nlsolver.status = Divergence )
+      ( veryslowconvergence = ndz * θ^(max_iter - iter) > κtol * (1 - θ) ) && ( nlsolver.status = VerySlowConvergence )
+      if diverge || veryslowconvergence
         break
       end
     end
@@ -222,6 +225,7 @@ end
     iter > 1 && (η = θ / (1 - θ))
     if η * ndz < κtol && (iter > 1 || iszero(ndz))
       # fixed-point iteration converges
+      nlsolver.status = (iter == 1 || η < 0.02) ? FastConvergence : Convergence
       fail_convergence = false
       break
     end
@@ -295,5 +299,7 @@ end
     integrator.destats.nnonlinconvfail += 1
   end
   integrator.force_stepfail = fail_convergence
-  z, η, iter, fail_convergence
+  nlsolver.ηold = η
+  nlsolver.nl_iters = iter
+  return z
 end

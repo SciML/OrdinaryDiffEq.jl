@@ -1,6 +1,14 @@
 abstract type AbstractNLSolverAlgorithm end
 abstract type AbstractNLSolverCache end
 
+@enum NLStatus::Int8 begin
+  FastConvergence     = 2
+  Convergence         = 1
+  SlowConvergence     = 0
+  VerySlowConvergence = -1
+  Divergence          = -2
+end
+
 # solver
 
 mutable struct NLSolver{iip,uType,rateType,uTolType,gType,cType,C<:AbstractNLSolverCache}
@@ -15,6 +23,7 @@ mutable struct NLSolver{iip,uType,rateType,uTolType,gType,cType,C<:AbstractNLSol
   c::cType
   max_iter::Int
   nl_iters::Int
+  status::NLStatus
   cache::C
 end
 

@@ -537,11 +537,9 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
   nlsolver.tmp = uprev + dt*μs₁*du₂
   nlsolver.γ   = μs₁
   nlsolver.c   = μs
-  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  # fail_convergence && return
+  z = nlsolve!(integrator, cache)
+  # nlsolvefail(nlsolver) && return
   gprev = nlsolver.tmp + μs₁*z
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
 
   Cⱼ₋₂   = zero(eltype(u))
   Cⱼ₋₁   = μs
@@ -571,12 +569,10 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
     nlsolver.tmp = (1-μ-ν)*uprev + μ*gprev + ν*gprev2 + dt*μs*f2ⱼ₋₁ + dt*νs*du₂ + (νs - (1 -μ-ν)*μs₁)*dt*du₁ - ν*μs₁*dt*f1ⱼ₋₂
     nlsolver.z   = dt*f1ⱼ₋₁
     nlsolver.c   = Cⱼ
-    z,η,iter,fail_convergence = nlsolve!(integrator, cache)
+    z = nlsolve!(integrator, cache)
     # ignoring newton method's convergence failure
-    # fail_convergence && return
+    # nlsolvefail(nlsolver) && return
     u = nlsolver.tmp + μs₁*z
-    nlsolver.ηold = η
-    nlsolver.nl_iters = iter
     if (iter < mdeg)
       f1ⱼ₋₂= f1ⱼ₋₁
       gprev2 = gprev
@@ -668,12 +664,10 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   @. nlsolver.tmp = uprev + dt*μs₁*du₂
   nlsolver.γ   = μs₁
   nlsolver.c   = μs
-  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
+  z = nlsolve!(integrator, cache)
   # ignoring newton method's convergence failure
-  # fail_convergence && return
+  # nlsolvefail(nlsolver) && return
   @. gprev = nlsolver.tmp + μs₁*nlsolver.z
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
 
   Cⱼ₋₂   = zero(eltype(u))
   Cⱼ₋₁   = μs
@@ -704,11 +698,9 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
     @. nlsolver.z   = dt*f1ⱼ₋₁
     nlsolver.c = Cⱼ
 
-    z,η,iter,fail_convergence = nlsolve!(integrator, cache)
-    # fail_convergence && return
+    z = nlsolve!(integrator, cache)
+    # nlsolvefail(nlsolver) && return
     @. u = nlsolver.tmp + μs₁*nlsolver.z
-    nlsolver.ηold = η
-    nlsolver.nl_iters = iter
     if (iter < mdeg)
       @. f1ⱼ₋₂  = f1ⱼ₋₁
       @. gprev2 = gprev

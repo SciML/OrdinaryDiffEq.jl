@@ -51,12 +51,9 @@ end
   end
 
   nlsolver.tmp = uprev
-  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
   u = nlsolver.tmp + z
-
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
 
   if integrator.opts.adaptive && integrator.success_iter > 0
     # local truncation error (LTE) bound by dt^2/2*max|y''(t)|
@@ -100,12 +97,9 @@ end
   end
 
   nlsolver.tmp = uprev
-  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
   @. u = uprev + z
-
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
 
   if integrator.opts.adaptive && integrator.success_iter > 0
     # local truncation error (LTE) bound by dt^2/2*max|y''(t)|
@@ -145,12 +139,9 @@ end
   end
 
   nlsolver.tmp = uprev
-  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
   u = nlsolver.tmp + z
-
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
 
   integrator.fsallast = f(u, p, t+dt)
   integrator.destats.nf += 1
@@ -175,12 +166,9 @@ end
   end
 
   nlsolver.tmp = uprev
-  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
   @. u = nlsolver.tmp + z
-
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
 
   integrator.destats.nf += 1
   f(integrator.fsallast,u,p,t+dt)
@@ -200,12 +188,9 @@ end
   nlsolver.z = zprev # Constant extrapolation
 
   nlsolver.tmp = uprev + γdt*integrator.fsalfirst
-  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
   u = nlsolver.tmp + 1//2*z
-
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
 
   if integrator.opts.adaptive
     if integrator.iter > 2
@@ -266,12 +251,9 @@ end
   # initial guess
   @. z = dt*integrator.fsalfirst
   @. tmp = uprev + γdt*integrator.fsalfirst
-  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
   @. u = tmp + 1//2*z
-
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
 
   if integrator.opts.adaptive
     if integrator.iter > 2
@@ -335,8 +317,8 @@ end
   nlsolver.c = γ
 
   nlsolver.tmp = uprev + d*zprev
-  zᵧ,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  zᵧ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ################################## Solve BDF2 Step
 
@@ -346,15 +328,12 @@ end
   nlsolver.c = 1
 
   nlsolver.tmp = uprev + ω*zprev + ω*zᵧ
-  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   u = nlsolver.tmp + d*z
 
   ################################### Finalize
-
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
 
   if integrator.opts.adaptive
     tmp = btilde1*zprev + btilde2*zᵧ + btilde3*z
@@ -392,8 +371,8 @@ end
 
   @. tmp = uprev + d*zprev
   nlsolver.c = γ
-  zᵧ,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  zᵧ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ################################## Solve BDF2 Step
 
@@ -404,15 +383,12 @@ end
   @. tmp = uprev + ω*zprev + ω*zᵧ
   nlsolver.c = 1
   set_new_W!(nlsolver, false)
-  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   @. u = tmp + d*z
 
   ################################### Finalize
-
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
 
   if integrator.opts.adaptive
     @. dz = btilde1*zprev + btilde2*zᵧ + btilde3*z
@@ -450,22 +426,19 @@ end
   end
 
   nlsolver.tmp = uprev
-  z₁,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₁ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ### Initial Guess Is α₁ = c₂/γ, c₂ = 0 => z₂ = α₁z₁ = 0
   z₂ = zero(u)
   nlsolver.z = z₂
   nlsolver.tmp = uprev - z₁
-  z₂,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₂ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   u = uprev + z₁/2 + z₂/2
 
   ################################### Finalize
-
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
 
   if integrator.opts.adaptive
     tmp = z₁/2 - z₂/2
@@ -505,8 +478,8 @@ end
 
   ##### Step 1
   nlsolver.tmp = uprev
-  z₁,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₁ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 2
 
@@ -516,15 +489,12 @@ end
   set_new_W!(nlsolver, false)
   @. tmp = uprev - z₁
   nlsolver.tmp = tmp
-  z₂,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₂ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   @. u = uprev + z₁/2 + z₂/2
 
   ################################### Finalize
-
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
 
   if integrator.opts.adaptive
     @. dz = z₁/2 - z₂/2
@@ -574,8 +544,8 @@ end
 
   nlsolver.c = 1
   nlsolver.tmp = uprev
-  z₁,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₁ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 2
 
@@ -585,15 +555,12 @@ end
 
   nlsolver.tmp = uprev + z₁/2
   nlsolver.c = 1
-  z₂,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₂ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   u = nlsolver.tmp + z₂/2
 
   ################################### Finalize
-
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
 
   integrator.fsallast = f(u, p, t)
   integrator.destats.nf += 1
@@ -624,8 +591,8 @@ end
   nlsolver.tmp = uprev
 
   ##### Step 1
-  z₁,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₁ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 2
 
@@ -636,15 +603,12 @@ end
   @. tmp = uprev + z₁/2
   nlsolver.tmp = tmp
   set_new_W!(nlsolver, false)
-  z₂,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₂ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   @. u = tmp + z₂/2
 
   ################################### Finalize
-
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
 
   integrator.destats.nf += 1
   f(integrator.fsallast,u,p,t)
@@ -666,8 +630,8 @@ end
 
   nlsolver.c = γ
   nlsolver.tmp = uprev
-  z₁,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₁ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ##### Step 2
 
@@ -677,8 +641,8 @@ end
 
   nlsolver.tmp = uprev + a21*z₁
   nlsolver.c = c2
-  z₂,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₂ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 3
 
@@ -688,8 +652,8 @@ end
 
   nlsolver.tmp = uprev + a31*z₁ + a32*z₂
   nlsolver.c = c3
-  z₃,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₃ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
 
@@ -699,8 +663,8 @@ end
 
   nlsolver.tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlsolver.c = c4
-  z₄,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₄ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 5
 
@@ -710,15 +674,12 @@ end
 
   nlsolver.tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   nlsolver.c = 1
-  z₅,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₅ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   u = nlsolver.tmp + γ*z₅
 
   ################################### Finalize
-
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
 
   if integrator.opts.adaptive
     if alg.embedding == 3
@@ -763,8 +724,8 @@ end
   nlsolver.tmp = uprev
 
   # initial step of NLNewton iteration
-  z₁,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₁ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ##### Step 2
 
@@ -776,8 +737,8 @@ end
   nlsolver.tmp = tmp
   set_new_W!(nlsolver, false)
   nlsolver.c = c2
-  z₂,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₂ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 3
 
@@ -786,8 +747,8 @@ end
   nlsolver.z = z₃
   @. tmp = uprev + a31*z₁ + a32*z₂
   nlsolver.c = c3
-  z₃,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₃ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
 
@@ -797,8 +758,8 @@ end
 
   @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlsolver.c = c4
-  z₄,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₄ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 5
 
@@ -807,15 +768,12 @@ end
   nlsolver.z = z₅
   @. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   nlsolver.c = 1
-  z₅,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₅ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   @. u = tmp + γ*z₅
 
   ################################### Finalize
-
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
 
   if integrator.opts.adaptive
     if alg.embedding == 3
@@ -860,8 +818,8 @@ end
   z₁ = zero(u)
   nlsolver.z, nlsolver.tmp = z₁, uprev
   nlsolver.c = γ
-  z₁,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₁ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ##### Step 2
 
@@ -869,8 +827,8 @@ end
   nlsolver.z = z₂
   nlsolver.tmp = uprev + a21*z₁
   nlsolver.c = c2
-  z₂,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₂ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 3
 
@@ -878,8 +836,8 @@ end
   nlsolver.z = z₃
   nlsolver.tmp = uprev + a31*z₁ + a32*z₂
   nlsolver.c = c3
-  z₃,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₃ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
 
@@ -887,8 +845,8 @@ end
   nlsolver.z = z₄
   nlsolver.tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlsolver.c = c4
-  z₄,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₄ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 5
 
@@ -897,15 +855,12 @@ end
   nlsolver.z = z₅
   nlsolver.tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   nlsolver.c = 1
-  z₅,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₅ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   u = nlsolver.tmp + γ*z₅
 
   ################################### Finalize
-
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
 
   if integrator.opts.adaptive
     tmp = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
@@ -949,8 +904,8 @@ end
   ##### Step 1
 
   nlsolver.c = γ
-  z₁,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₁ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ##### Step 2
 
@@ -960,8 +915,8 @@ end
   nlsolver.tmp = tmp
   nlsolver.c = c2
   set_new_W!(nlsolver, false)
-  z₂,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₂ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 3
 
@@ -969,8 +924,8 @@ end
   nlsolver.z = z₃
   @. tmp = uprev + a31*z₁ + a32*z₂
   nlsolver.c = c3
-  z₃,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₃ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
 
@@ -979,8 +934,8 @@ end
   nlsolver.z = z₄
   @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlsolver.c = c4
-  z₄,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₄ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 5
 
@@ -989,15 +944,12 @@ end
   nlsolver.z = z₅
   @. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   nlsolver.c = 1
-  z₅,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₅ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   @. u = tmp + γ*z₅
 
   ################################### Finalize
-
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
 
   if integrator.opts.adaptive
     # @. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
@@ -1052,8 +1004,8 @@ end
 
   nlsolver.tmp = uprev + γ*z₁
   nlsolver.c = 2γ
-  z₂,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₂ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 3
 
@@ -1061,8 +1013,8 @@ end
 
   nlsolver.tmp = uprev + a31*z₁ + a32*z₂
   nlsolver.c = c3
-  z₃,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₃ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
 
@@ -1070,8 +1022,8 @@ end
 
   nlsolver.tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlsolver.c = c4
-  z₄,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₄ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 5
 
@@ -1079,8 +1031,8 @@ end
 
   nlsolver.tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   nlsolver.c = c5
-  z₅,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₅ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 6
 
@@ -1088,8 +1040,8 @@ end
 
   nlsolver.tmp = uprev + a61*z₁ + a62*z₂+ a63*z₃ + a64*z₄ + a65*z₅
   nlsolver.c = c6
-  z₆,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₆ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 7
 
@@ -1097,8 +1049,8 @@ end
 
   nlsolver.tmp = uprev + a71*z₁ + a72*z₂ + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
   nlsolver.c = c7
-  z₇,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₇ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 8
 
@@ -1106,15 +1058,12 @@ end
 
   nlsolver.tmp = uprev + a81*z₁ + a82*z₂ + a83*z₃ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇
   nlsolver.c = 1
-  z₈,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₈ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   u = nlsolver.tmp + γ*z₈
 
   ################################### Finalize
-
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
 
   if integrator.opts.adaptive
     est = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇ + btilde8*z₈
@@ -1159,8 +1108,8 @@ end
 
   @. tmp = uprev + γ*z₁
   nlsolver.c = 2γ
-  z₂,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₂ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
   set_new_W!(nlsolver, false)
 
   ################################## Solve Step 3
@@ -1169,8 +1118,8 @@ end
 
   @. tmp = uprev + a31*z₁ + a32*z₂
   nlsolver.c = c3
-  z₃,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₃ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
 
@@ -1179,8 +1128,8 @@ end
 
   @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlsolver.c = c4
-  z₄,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₄ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 5
 
@@ -1188,8 +1137,8 @@ end
 
   @. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   nlsolver.c = c5
-  z₅,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₅ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 6
 
@@ -1197,8 +1146,8 @@ end
 
   @. tmp = uprev + a61*z₁ + a62*z₂ + a63*z₃ + a64*z₄ + a65*z₅
   nlsolver.c = c6
-  z₆,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₆ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 7
 
@@ -1206,8 +1155,8 @@ end
 
   @. tmp = uprev + a71*z₁ + a72*z₂ + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
   nlsolver.c = c7
-  z₇,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₇ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 8
 
@@ -1215,15 +1164,12 @@ end
 
   @. nlsolver.tmp = uprev + a81*z₁ + a82*z₂ + a83*z₃ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇
   nlsolver.c = oneunit(nlsolver.c)
-  z₈,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z₈ = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   @. u = tmp + γ*z₈
 
   ################################### Finalize
-
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
 
   if integrator.opts.adaptive
     @. tmp = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇ + btilde8*z₈
