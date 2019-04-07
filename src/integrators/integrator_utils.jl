@@ -361,7 +361,7 @@ function step_accept_controller!(integrator,alg::ExtrapolationMidpointDeuflhard,
   # Check if n_new may be increased
   if n_new == n_curr < min(n_max, n_old + 1) # cf. win_max in perfom_step! of the last step
     # Predict stepsize scaling for order (n_new + 1)
-    Q[tmp[end]+1] = stepsize_predictor!(integrator, alg, n_new+1)
+    stepsize_predictor!(integrator, alg, n_new+1) # Update cache.Q 
 
     # Compute and scale the corresponding stepsize
     dt_new[end] = integrator.dt ./ Q[tmp[end]+1]

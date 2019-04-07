@@ -225,7 +225,7 @@ end
 #   ExtrapolationMidpointDeuflhardConstantCache(Q, n_curr, n_old, subdividing_sequence, stage_number, extrapolation_weights, extrapolation_scalars, extrapolation_weights_2, extrapolation_scalars_2)
 # end
 
-@cache mutable struct ExtrapolationMidpointDeuflhardCache{uType,uNoUnitsType,rateType,QType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct ExtrapolationMidpointDeuflhardCache{uType,uNoUnitsType,rateType,QType,extrapolation_coefficients} <: OrdinaryDiffEqMutableCache
   # Values that are mutated
   u_tilde::uType
   u_temp1::uType
@@ -241,32 +241,36 @@ end
   Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n + alg.n_min - 1)
   n_curr::Int64 # Storage for the current extrapolation order
   n_old::Int64 # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+  coefficients::extrapolation_coefficients
 
-  # Constant values
-  subdividing_sequence::Array{BigInt,1}  # subdividing_sequence[n] is used for the (n -1)th internal discretisation
-  stage_number::Array{Int,1} # Stage_number[n] contains information for extrapolation order (n + alg.n_min - 1)
-  # Weights and Scaling factors for extrapolation operators
-  extrapolation_weights::Array{Rational{BigInt},2}
-  extrapolation_scalars::Array{Rational{BigInt},1}
-  # Weights and scaling factors for internal extrapolation operators (used for error estimate)
-  extrapolation_weights_2::Array{Rational{BigInt},2}
-  extrapolation_scalars_2::Array{Rational{BigInt},1}
+  #
+  # # Constant values
+  # subdividing_sequence::Array{BigInt,1}  # subdividing_sequence[n] is used for the (n -1)th internal discretisation
+  # stage_number::Array{Int,1} # Stage_number[n] contains information for extrapolation order (n + alg.n_min - 1)
+  # # Weights and Scaling factors for extrapolation operators
+  # extrapolation_weights::Array{Rational{BigInt},2}
+  # extrapolation_scalars::Array{Rational{BigInt},1}
+  # # Weights and scaling factors for internal extrapolation operators (used for error estimate)
+  # extrapolation_weights_2::Array{Rational{BigInt},2}
+  # extrapolation_scalars_2::Array{Rational{BigInt},1}
 end
 
 function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  # Initialize cache's members
   u_tilde = zero(u)
   u_temp1 = zero(u)
   u_temp2 = zero(u)
   tmp = zero(u)
   T = fill(zero(u), alg.n_max + 1)
   res = uEltypeNoUnits.(zero(u))
+
   fsalfirst = zero(rate_prototype)
   k = zero(rate_prototype)
 
-  cc = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val{false})
+  cc = function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
 
-  ExtrapolationMidpointDeuflhardCache(u_tilde, u_temp1, u_temp2, tmp, T, res, fsalfirst, k,
-      cc.Q, cc.n_curr, cc.n_old, cc.subdividing_sequence, cc.stage_number, cc.extrapolation_weights, cc.extrapolation_scalars, cc.extrapolation_weights_2, cc.extrapolation_scalars_2)
+  # Initialize cache
+  ExtrapolationMidpointDeuflhardCache(u_tilde, u_temp1, u_temp2, tmp, T, res, fsalfirst, k,cc.Q, cc.n_curr, cc.n_old, cc.coefficients)
 end
 
 @cache mutable struct ExtrapolationMidpointHairerWannerConstantCache{QType} <: OrdinaryDiffEqConstantCache
