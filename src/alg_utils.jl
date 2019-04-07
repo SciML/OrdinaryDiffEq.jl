@@ -106,9 +106,9 @@ get_current_adaptive_order(alg::QNDF,cache) = cache.order
 get_current_adaptive_order(alg::OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm,cache) = cache.cur_order
 get_current_alg_order(alg::OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm,cache) = cache.cur_order
 get_current_alg_order(alg::ExtrapolationMidpointDeuflhard,cache) = 2(cache.n_curr + 1)
-get_current_adaptive_order(alg::ExtrapolationMidpointDeuflhard,cache) = 2cache.n_curr + 1
+get_current_adaptive_order(alg::ExtrapolationMidpointDeuflhard,cache) = 2cache.n_curr
 get_current_alg_order(alg::ExtrapolationMidpointHairerWanner,cache) = 2(cache.n_curr + 1)
-get_current_adaptive_order(alg::ExtrapolationMidpointHairerWanner,cache) = 2cache.n_curr + 1
+get_current_adaptive_order(alg::ExtrapolationMidpointHairerWanner,cache) = 2cache.n_curr
 
 
 #alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
