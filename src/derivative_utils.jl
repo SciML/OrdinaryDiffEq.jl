@@ -255,10 +255,10 @@ function do_newJ(integrator, alg::T, cache, repeat_step)::Bool where T # any cha
   repeat_step && return false
   !alg_can_repeat_jac(alg) && return true
   isnewton = T <: NewtonAlgorithm
-  isnewton && (T <: RadauIIA5 ? ( @unpack ηold,nl_iters = cache ) : ( @unpack ηold,nl_iters = cache.nlsolver ))
-  integrator.force_stepfail && return true
+  isnewton && (T <: RadauIIA5 ? ( nlstatus = cache.status ) : ( nlstatus = get_status(cache.nlsolver) ))
+  nlsolvefail(nlstatus) && return true
   # reuse J when there is fast convergence
-  fastconvergence = nl_iters == 1 && ηold <= alg.new_jac_conv_bound
+  fastconvergence = nlstatus === FastConvergence
   return !fastconvergence
 end
 
@@ -266,8 +266,7 @@ function do_newW(integrator, new_jac, freshdt)::Bool # any changes here need to 
   integrator.iter <= 1 && return true
   new_jac && return true
   # reuse W when the change in stepsize is small enough
-  @unpack t, dt, tprev = integrator
-  dtprev = t - tprev
+  dt = integrator.dt
   smallstepchange = (dt/freshdt-one(dt)) <= 1//5
   return !smallstepchange
 end

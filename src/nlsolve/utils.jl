@@ -68,7 +68,8 @@ function qradd!(Q::AbstractMatrix, R::AbstractMatrix, v::Number, k::Int)
 end
 
 get_status(nlsolver::NLSolver) = nlsolver.status
-nlsolvefail(nlsolver::NLSolver) = Int8(get_status(nlsolver)) < 0
+nlsolvefail(nlsolver::NLSolver) = nlsolvefail(get_status(nlsolver))
+nlsolvefail(status::NLStatus) = Int8(status) < 0
 
 isnewton(nlsolver::NLSolver) = isnewton(nlsolver.cache)
 isnewton(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}) = true
@@ -90,7 +91,7 @@ set_freshdt!(nlcache::NLNewtonConstantCache, freshdt) = freshdt
 
 function get_κtol(nlalg::Union{NLAnderson,NLFunctional,NLNewton}, uTolType, reltol)
   κ = nlalg.κ === nothing ? uTolType(1//100) : uTolType(nlalg.κ)
-  tol = nlalg.tol === nothing ? uTolType(min(0.03, first(reltol)^(0.5))) : uTolType(nlalg.tol)
+  tol = nlalg.tol === nothing ? uTolType(min(0.03, first(reltol))) : uTolType(nlalg.tol)
   κ * tol
 end
 

@@ -88,7 +88,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     iter > 1 && (η = θ / (1 - θ))
     if η * ndz < κtol && (iter > 1 || iszero(ndz) || !iszero(integrator.success_iter))
       # Newton method converges
-      nlsolver.status = (iter == 1 || η < 0.02) ? FastConvergence : Convergence
+      nlsolver.status = η < 0.2 ? FastConvergence : Convergence
       fail_convergence = false
       break
     end
@@ -164,7 +164,7 @@ end
     iter > 1 && (η = θ / (1 - θ))
     if η * ndz < κtol && (iter > 1 || iszero(ndz) || !iszero(integrator.success_iter))
       # Newton method converges
-      nlsolver.status = (iter == 1 || η < 0.02) ? FastConvergence : Convergence
+      nlsolver.status = η < 0.2 ? FastConvergence : Convergence
       fail_convergence = false
       break
     end
