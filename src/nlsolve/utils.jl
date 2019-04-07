@@ -231,5 +231,5 @@ DiffEqBase.@def oopnlsolve begin
   end
 
   # create non-linear solver
-  nlsolver = NLSolver{false,typeof(z),typeof(k),uTolType,typeof(γ),typeof(c),typeof(nlcache)}(z,dz,tmp,b,k,one(uTolType),κtol,γ,c,alg.nlsolve.max_iter,10000,nlcache)
+  nlsolver = NLSolver{false,typeof(z),typeof(k),uTolType,typeof(γ),typeof(c),typeof(nlcache)}(z,dz,tmp,b,k,one(uTolType),κtol,γ,c,alg.nlsolve.max_iter,10000,Convergence,nlcache)
 end
