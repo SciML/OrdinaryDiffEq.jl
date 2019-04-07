@@ -158,7 +158,7 @@ end
 end
 
 function alg_cache(alg::IRKC,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  γ, c = 1//1, 1//1
+  γ, c = 1.0, 1.0
   @oopnlsolve
   zprev = u
   k2  = rate_prototype
@@ -167,7 +167,7 @@ function alg_cache(alg::IRKC,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
 end
 
 function alg_cache(alg::IRKC,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  γ, c = 1//1, 1//1
+  γ, c = 1.0, 1.0
   @iipnlsolve
 
   gprev = similar(u)
