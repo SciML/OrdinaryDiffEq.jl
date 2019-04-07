@@ -89,13 +89,13 @@ using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
     prob, prob2 = make_mm_probs(Matrix{Float64}(1.01I, 3, 3), Val{iip})
 
     sol = solve(prob,ImplicitEuler(
-                          nlsolve=NLFunctional(tol=1e-7)),dt=1/10,adaptive=false)
-    sol2 = solve(prob2,ImplicitEuler(nlsolve=NLFunctional(tol=1e-7)),dt=1/10,adaptive=false)
+                          nlsolve=NLFunctional()),dt=1/10,adaptive=false,reltol=1e-7,abstol=1e-10)
+    sol2 = solve(prob2,ImplicitEuler(nlsolve=NLFunctional()),dt=1/10,adaptive=false,reltol=1e-7,abstol=1e-10)
     @test norm(sol .- sol2) ≈ 0 atol=1e-7
 
     sol = solve(prob, ImplicitMidpoint(extrapolant = :constant,
-                          nlsolve=NLFunctional(tol=1e-7)),dt=1/10)
-    sol2 = solve(prob2,ImplicitMidpoint(extrapolant = :constant, nlsolve=NLFunctional(tol=1e-7)),dt=1/10)
+                          nlsolve=NLFunctional()),dt=1/10,reltol=1e-7,abstol=1e-10)
+    sol2 = solve(prob2,ImplicitMidpoint(extrapolant = :constant, nlsolve=NLFunctional()),dt=1/10,reltol=1e-7,abstol=1e-10)
     @test norm(sol .- sol2) ≈ 0 atol=1e-7
 
     sol = solve(prob,ImplicitEuler(nlsolve=NLAnderson()),dt=1/10,adaptive=false)
@@ -103,8 +103,8 @@ using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
     @test norm(sol .- sol2) ≈ 0 atol=1e-7
     @test norm(sol[end] .- sol2[end]) ≈ 0 atol=1e-7
 
-    sol = solve(prob, ImplicitMidpoint(extrapolant = :constant, nlsolve=NLAnderson(tol=1e-6)),dt=1/10)
-    sol2 = solve(prob2,ImplicitMidpoint(extrapolant = :constant, nlsolve=NLAnderson(tol=1e-6)),dt=1/10)
+    sol = solve(prob, ImplicitMidpoint(extrapolant = :constant, nlsolve=NLAnderson()),dt=1/10,reltol=1e-7,abstol=1e-10)
+    sol2 = solve(prob2,ImplicitMidpoint(extrapolant = :constant, nlsolve=NLAnderson()),dt=1/10,reltol=1e-7,abstol=1e-10)
     @test norm(sol .- sol2) ≈ 0 atol=1e-7
     @test norm(sol[end] .- sol2[end]) ≈ 0 atol=1e-7
   end
