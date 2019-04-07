@@ -147,18 +147,18 @@ sim = test_convergence(dts,prob,SofSpa10(),dense_errors=true)
 dts = big"1.0"./big"2.0".^(5:-1:1)
 prob_big = DynamicalODEProblem(ff_harmonic,[big"1.0",big"1.0"],
                                [big"0.0", big"0.0"],(big"0.",big"70."))
-sim = test_convergence(dts,prob_big,DPRKN43T(),dense_errors=true); ### TODO
-@test_broken sim.𝒪est[:l2] ≈ 3 rtol = 1e-1
-@test_broken sim.𝒪est[:L2] ≈ 3 rtol = 1e-1
-sim = test_convergence(dts,prob_big,DPRKN54T(),dense_errors=true); ### TODO
-@test_broken sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
-@test_broken sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
+ sim = test_convergence(dts,prob_big,DPRKN43T(),dense_errors=true); ### TODO
+ @test sim.𝒪est[:l2] ≈ 3 rtol = 1e-1
+ @test sim.𝒪est[:L2] ≈ 3 rtol = 1e-1
+ sim = test_convergence(dts,prob_big,DPRKN54T(),dense_errors=true); ### TODO
+ @test sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
+ @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
+ sim = test_convergence(dts,prob_big,DPRKN76T(),dense_errors=true);
+ @test sim.𝒪est[:l2] ≈ 6 rtol = 1e-1
+ @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
 sim = test_convergence(dts,prob_big,DPRKN6(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 6 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 6 rtol = 1e-1
-sim = test_convergence(dts,prob_big,DPRKN76T(),dense_errors=true)
-@test sim.𝒪est[:l2] ≈ 6 rtol = 1e-1
-@test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
 sim = test_convergence(dts,prob_big,DPRKN8(),dense_errors=true)
 @test sim.𝒪est[:l2] ≈ 8 rtol = 1e-1
 @test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
@@ -179,11 +179,11 @@ sol = solve(prob, DPRKN8())
 @test length(sol.u) < 13
 sol = solve(prob, DPRKN12())
 @test length(sol.u) < 10
-sol = solve(prob, DPRKN43T())
+sol = solve(prob, DPRKN43T());
 @test length(sol.u) < 20
-sol = solve(prob, DPRKN54T())
+sol = solve(prob, DPRKN54T());
 @test length(sol.u) < 13
-sol = solve(prob, DPRKN76T())
+sol = solve(prob, DPRKN76T());
 @test length(sol.u) < 10
 sol = solve(prob, ERKN4(),reltol=1e-8)
 @test length(sol.u) < 38
@@ -299,12 +299,15 @@ sim = test_convergence(dts,prob,Nystrom4VelocityIndependent(),dense_errors=true)
 @test_broken sim = test_convergence(dts,prob,IRKN4(),dense_errors=true)
 #@test_broken sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
 #@test_broken sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
-sim = test_convergence(dts,prob,DPRKN43T(),dense_errors=true) ### TODO
-@test_broken sim.𝒪est[:l2] ≈ 3 rtol = 1e-1
-@test_broken sim.𝒪est[:L2] ≈ 3 rtol = 1e-1
-sim = test_convergence(dts,prob,DPRKN54T(),dense_errors=true) ### TODO
-@test_broken sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
-@test_broken sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
+sim = test_convergence(dts,prob,DPRKN43T(),dense_errors=true); ### TODO
+@test sim.𝒪est[:l2] ≈ 3 rtol = 1e-1
+@test sim.𝒪est[:L2] ≈ 3 rtol = 1e-1
+sim = test_convergence(dts,prob,DPRKN54T(),dense_errors=true); ### TODO
+@test sim.𝒪est[:l2] ≈ 4 rtol = 1e-1
+@test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
+sim = test_convergence(dts,prob,DPRKN76T(),dense_errors=true); ### TODO
+@test sim.𝒪est[:l2] ≈ 6 rtol = 1e-1
+@test sim.𝒪est[:L2] ≈ 4 rtol = 1e-1
 
 
 dts = 1.0 ./2.0 .^(5:-1:0)
