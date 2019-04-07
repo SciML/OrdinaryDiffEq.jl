@@ -568,7 +568,7 @@ end
   uidx = eachindex(integrator.uprev.x[2])
 
   k1 = integrator.fsalfirst.x[1]
-  @. ku = uprev + dt*(c1*duprev + dt*(                a21*k1))
+  @. ku = uprev + dt*(c1*duprev + dt*(                 a21*k1))
 
   f.f1(k2,duprev,ku,p,t+dt*c1)
   @. ku = uprev + dt*(c2*duprev + dt*(                              a32*k2))
@@ -581,10 +581,10 @@ end
     @inbounds ku[i] = uprev[i] + dt*(c4*duprev[i] + dt*(a51*k1[i] + a52*k2[i] + a53*k3[i] + a54*k4[i]))
   end
 
-  f.f1(k5,du,ku,p,t+dt*c4)
+  f.f1(k5,duprev,ku,p,t+dt*c4)
   @tight_loop_macros for i in uidx
     @inbounds u[i]  = uprev[i] + dt*(duprev[i] + dt*(b1 *k1[i] + b2 *k2[i] + b3 *k3[i] + b4 *k4[i] + b5 *k5[i])) #
-    @inbounds du[i] = duprev[i]                + dt*(btilde1*k1[i] + btilde2*k2[i] + btilde3*k3[i] + btilde4*k4[i]) # no btilde5   
+    @inbounds du[i] = duprev[i]                + dt*(btilde1*k1[i] + btilde2*k2[i] + btilde3*k3[i] + btilde4*k4[i]) # no btilde5
   end
 
   f.f1(k.x[1],du,u,p,t+dt)
