@@ -121,7 +121,7 @@ DiffEqBase.@def iipnlsolve begin
       end
     end
 
-    nlcache = NLNewtonCache(true,W,dt)
+    nlcache = NLNewtonCache(true,W,dt,alg.nlsolve.fast_convergence_cutoff,alg.nlsolve.new_W_dt_cutoff)
   elseif alg.nlsolve isa NLFunctional
     z₊ = similar(z)
 
@@ -210,7 +210,7 @@ DiffEqBase.@def oopnlsolve begin
       end
     end
 
-    nlcache = NLNewtonConstantCache(W)
+    nlcache = NLNewtonConstantCache(W,alg.nlsolve.fast_convergence_cutoff,alg.nlsolve.new_W_dt_cutoff)
   elseif alg.nlsolve isa NLFunctional
     uf = nothing
 

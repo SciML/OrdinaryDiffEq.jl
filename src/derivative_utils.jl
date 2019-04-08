@@ -262,12 +262,13 @@ function do_newJ(integrator, alg::T, cache, repeat_step)::Bool where T # any cha
   return !fastconvergence
 end
 
-function do_newW(integrator, new_jac, Wdt)::Bool # any changes here need to be reflected in FIRK
+function do_newW(integrator, alg::T, new_jac, Wdt)::Bool where T # any changes here need to be reflected in FIRK
   integrator.iter <= 1 && return true
   new_jac && return true
   # reuse W when the change in stepsize is small enough
   dt = integrator.dt
-  smallstepchange = (dt/Wdt-one(dt)) <= 1//5
+  new_W_dt_cutoff = T <: RadauIIA5 ? integrator.cache.nlsolver.cache.new_W_dt_cutoff : integrator.cache.new_W_dt_cutoff
+  smallstepchange = (dt/Wdt-one(dt)) <= new_W_dt_cutoff
   return !smallstepchange
 end
 
@@ -328,7 +329,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
   elseif DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
     Wdt = isnewton ? cache.nlsolver.cache.Wdt : dt; # TODO: RosW
     new_jac = do_newJ(integrator, alg, cache, repeat_step);
-    new_W = do_newW(integrator, new_jac, Wdt);
+    new_W = do_newW(integrator, alg, new_jac, Wdt);
 
     # skip calculation of J if step is repeated
     new_jac && DiffEqBase.update_coefficients!(W,uprev,p,t)
@@ -338,7 +339,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
   else # concrete W using jacobian from `calc_J!`
     Wdt = isnewton ? cache.nlsolver.cache.Wdt : dt; # TODO: RosW
     new_jac = do_newJ(integrator, alg, cache, repeat_step);
-    new_W = do_newW(integrator, new_jac, Wdt);
+    new_W = do_newW(integrator, alg, new_jac, Wdt);
 
     # skip calculation of J if step is repeated
     new_jac && calc_J!(integrator, cache, is_compos)

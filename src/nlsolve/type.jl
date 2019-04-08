@@ -47,23 +47,29 @@ end
 NLAnderson(; κ=nothing, max_iter=10, max_history::Int=5, aa_start::Int=1, droptol=nothing) =
   NLAnderson(κ, max_iter, max_history, aa_start, droptol)
 
-struct NLNewton{K} <: AbstractNLSolverAlgorithm
+struct NLNewton{K,C1,C2} <: AbstractNLSolverAlgorithm
   κ::K
   max_iter::Int
+  fast_convergence_cutoff::C1
+  new_W_dt_cutoff::C2
 end
 
-NLNewton(; κ=nothing, max_iter=10) = NLNewton(κ, max_iter)
+NLNewton(; κ=nothing, max_iter=10, fast_convergence_cutoff=1//5, new_W_dt_cutoff=1//5) = NLNewton(κ, max_iter, fast_convergence_cutoff, new_W_dt_cutoff)
 
 # caches
 
-mutable struct NLNewtonCache{W,T} <: AbstractNLSolverCache
+mutable struct NLNewtonCache{W,T,C1,C2} <: AbstractNLSolverCache
   new_W::Bool
   W::W
   Wdt::T
+  fast_convergence_cutoff::C1
+  new_W_dt_cutoff::C2
 end
 
-mutable struct NLNewtonConstantCache{W} <: AbstractNLSolverCache
+mutable struct NLNewtonConstantCache{W,C1,C2} <: AbstractNLSolverCache
   W::W
+  fast_convergence_cutoff::C1
+  new_W_dt_cutoff::C2
 end
 
 struct NLFunctionalCache{uType} <: AbstractNLSolverCache
