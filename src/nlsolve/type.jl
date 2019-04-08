@@ -11,7 +11,7 @@ end
 
 # solver
 
-mutable struct NLSolver{iip,uType,rateType,uTolType,kType,gType,cType,C<:AbstractNLSolverCache}
+mutable struct NLSolver{iip,uType,rateType,uTolType,kType,gType,cType,C1,C<:AbstractNLSolverCache}
   z::uType
   dz::uType
   tmp::uType
@@ -24,28 +24,31 @@ mutable struct NLSolver{iip,uType,rateType,uTolType,kType,gType,cType,C<:Abstrac
   max_iter::Int
   nl_iters::Int
   status::NLStatus
+  fast_convergence_cutoff::C1
   cache::C
 end
 
 # algorithms
 
-struct NLFunctional{K} <: AbstractNLSolverAlgorithm
+struct NLFunctional{K,C} <: AbstractNLSolverAlgorithm
   κ::K
+  fast_convergence_cutoff::C
   max_iter::Int
 end
 
-NLFunctional(; κ=nothing, max_iter=10) = NLFunctional(κ, max_iter)
+NLFunctional(; κ=nothing, max_iter=10, fast_convergence_cutoff=1//5) = NLFunctional(κ, fast_convergence_cutoff, max_iter)
 
-struct NLAnderson{K,D} <: AbstractNLSolverAlgorithm
+struct NLAnderson{K,D,C} <: AbstractNLSolverAlgorithm
   κ::K
+  fast_convergence_cutoff::C
   max_iter::Int
   max_history::Int
   aa_start::Int
   droptol::D
 end
 
-NLAnderson(; κ=nothing, max_iter=10, max_history::Int=5, aa_start::Int=1, droptol=nothing) =
-  NLAnderson(κ, max_iter, max_history, aa_start, droptol)
+NLAnderson(; κ=nothing, max_iter=10, max_history::Int=5, aa_start::Int=1, droptol=nothing, fast_convergence_cutoff=1//5) =
+  NLAnderson(κ, fast_convergence_cutoff, max_iter, max_history, aa_start, droptol)
 
 struct NLNewton{K,C1,C2} <: AbstractNLSolverAlgorithm
   κ::K
@@ -58,18 +61,16 @@ NLNewton(; κ=nothing, max_iter=10, fast_convergence_cutoff=1//5, new_W_dt_cutof
 
 # caches
 
-mutable struct NLNewtonCache{W,T,C1,C2} <: AbstractNLSolverCache
+mutable struct NLNewtonCache{W,T,C} <: AbstractNLSolverCache
   new_W::Bool
   W::W
   W_dt::T
-  fast_convergence_cutoff::C1
-  new_W_dt_cutoff::C2
+  new_W_dt_cutoff::C
 end
 
-mutable struct NLNewtonConstantCache{W,C1,C2} <: AbstractNLSolverCache
+mutable struct NLNewtonConstantCache{W,C} <: AbstractNLSolverCache
   W::W
-  fast_convergence_cutoff::C1
-  new_W_dt_cutoff::C2
+  new_W_dt_cutoff::C
 end
 
 struct NLFunctionalCache{uType} <: AbstractNLSolverCache

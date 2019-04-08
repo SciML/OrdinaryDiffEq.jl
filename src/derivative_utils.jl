@@ -320,6 +320,8 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     new_jac = false
     @goto J2W # Jump to W calculation directly, because we already have J
   end
+
+  # check if we need to update J or W
   if !DiffEqBase.has_invW(f)
     W_dt = isnewton ? cache.nlsolver.cache.W_dt : dt # TODO: RosW
     new_jac = isnewton ? do_newJ(integrator, alg, cache, repeat_step) : true

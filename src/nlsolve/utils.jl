@@ -99,6 +99,7 @@ DiffEqBase.@def iipnlsolve begin
   # adapt options of non-linear solver to current integration problem
   uTolType = real(uBottomEltypeNoUnits)
   κ = get_κ(alg.nlsolve)
+  fast_convergence_cutoff = alg.nlsolve.fast_convergence_cutoff
 
   # create cache of non-linear solver
   if alg.nlsolve isa NLNewton
@@ -121,7 +122,7 @@ DiffEqBase.@def iipnlsolve begin
       end
     end
 
-    nlcache = NLNewtonCache(true,W,dt,alg.nlsolve.fast_convergence_cutoff,alg.nlsolve.new_W_dt_cutoff)
+    nlcache = NLNewtonCache(true,W,dt,alg.nlsolve.new_W_dt_cutoff)
   elseif alg.nlsolve isa NLFunctional
     z₊ = similar(z)
 
@@ -141,7 +142,7 @@ DiffEqBase.@def iipnlsolve begin
   end
 
   # create non-linear solver
-  nlsolver = NLSolver{true,typeof(z),typeof(k),uTolType,typeof(κ),typeof(γ),typeof(c),typeof(nlcache)}(z,dz,tmp,b,k,one(uTolType),κ,γ,c,alg.nlsolve.max_iter,10000,Convergence,nlcache)
+  nlsolver = NLSolver{true,typeof(z),typeof(k),uTolType,typeof(κ),typeof(γ),typeof(c),typeof(fast_convergence_cutoff),typeof(nlcache)}(z,dz,tmp,b,k,one(uTolType),κ,γ,c,alg.nlsolve.max_iter,10000,Convergence,fast_convergence_cutoff,nlcache)
 
   # define additional fields of cache
   fsalfirst = zero(rate_prototype)
@@ -175,6 +176,7 @@ DiffEqBase.@def oopnlsolve begin
   # define tolerances
   uTolType = real(uBottomEltypeNoUnits)
   κ = get_κ(alg.nlsolve)
+  fast_convergence_cutoff = alg.nlsolve.fast_convergence_cutoff
 
   # create cache of non-linear solver
   if alg.nlsolve isa NLNewton
@@ -210,7 +212,7 @@ DiffEqBase.@def oopnlsolve begin
       end
     end
 
-    nlcache = NLNewtonConstantCache(W,alg.nlsolve.fast_convergence_cutoff,alg.nlsolve.new_W_dt_cutoff)
+    nlcache = NLNewtonConstantCache(W,alg.nlsolve.new_W_dt_cutoff)
   elseif alg.nlsolve isa NLFunctional
     uf = nothing
 
@@ -228,5 +230,5 @@ DiffEqBase.@def oopnlsolve begin
   end
 
   # create non-linear solver
-  nlsolver = NLSolver{false,typeof(z),typeof(k),uTolType,typeof(κ),typeof(γ),typeof(c),typeof(nlcache)}(z,dz,tmp,b,k,one(uTolType),κ,γ,c,alg.nlsolve.max_iter,10000,Convergence,nlcache)
+  nlsolver = NLSolver{false,typeof(z),typeof(k),uTolType,typeof(κ),typeof(γ),typeof(c),typeof(fast_convergence_cutoff),typeof(nlcache)}(z,dz,tmp,b,k,one(uTolType),κ,γ,c,alg.nlsolve.max_iter,10000,Convergence,fast_convergence_cutoff,nlcache)
 end

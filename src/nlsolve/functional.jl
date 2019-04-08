@@ -88,7 +88,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     iter > 1 && (η = θ / (1 - θ))
     if η * ndz < κ && (iter > 1 || iszero(ndz))
       # fixed-point iteration converges
-      nlsolver.status = (iter == 1 || η < 0.02) ? FastConvergence : Convergence
+      nlsolver.status = η < nlsolver.fast_convergence_cutoff ? FastConvergence : Convergence
       fail_convergence = false
       break
     end
@@ -227,7 +227,7 @@ end
     iter > 1 && (η = θ / (1 - θ))
     if η * ndz < κ && (iter > 1 || iszero(ndz))
       # fixed-point iteration converges
-      nlsolver.status = (iter == 1 || η < 0.02) ? FastConvergence : Convergence
+      nlsolver.status = η < nlsolver.fast_convergence_cutoff ? FastConvergence : Convergence
       fail_convergence = false
       break
     end
