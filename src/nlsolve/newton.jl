@@ -107,7 +107,7 @@ end
 @muladd function nlsolve!(nlsolver::NLSolver, nlcache::NLNewtonCache, integrator)
   @unpack t,dt,uprev,u,p,cache = integrator
   @unpack z,dz,tmp,ztmp,k,κ,c,γ,max_iter = nlsolver
-  @unpack W, new_W, Wdt = nlcache
+  @unpack W, new_W, W_dt = nlcache
   cache = unwrap_cache(integrator, true)
 
   # precalculations
@@ -145,7 +145,7 @@ end
 
     # compute norm of residuals
     iter > 1 && (ndzprev = ndz)
-    #Wdt != dt && (rmul!(dz, 2/(1 + dt / Wdt))) # relaxation
+    #W_dt != dt && (rmul!(dz, 2/(1 + dt / W_dt))) # relaxation
     calculate_residuals!(ztmp, dz, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     ndz = integrator.opts.internalnorm(ztmp, t)
 

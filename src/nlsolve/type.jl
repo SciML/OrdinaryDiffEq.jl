@@ -61,7 +61,7 @@ NLNewton(; κ=nothing, max_iter=10, fast_convergence_cutoff=1//5, new_W_dt_cutof
 mutable struct NLNewtonCache{W,T,C1,C2} <: AbstractNLSolverCache
   new_W::Bool
   W::W
-  Wdt::T
+  W_dt::T
   fast_convergence_cutoff::C1
   new_W_dt_cutoff::C2
 end

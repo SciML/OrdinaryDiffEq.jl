@@ -262,13 +262,13 @@ function do_newJ(integrator, alg::T, cache, repeat_step)::Bool where T # any cha
   return !fastconvergence
 end
 
-function do_newW(integrator, alg::T, new_jac, Wdt)::Bool where T # any changes here need to be reflected in FIRK
+function do_newW(integrator, nlsolver::T, new_jac, W_dt)::Bool where T # any changes here need to be reflected in FIRK
   integrator.iter <= 1 && return true
   new_jac && return true
   # reuse W when the change in stepsize is small enough
   dt = integrator.dt
-  new_W_dt_cutoff = T <: RadauIIA5 ? alg.new_W_dt_cutoff : integrator.cache.nlsolver.cache.new_W_dt_cutoff
-  smallstepchange = (dt/Wdt-one(dt)) <= new_W_dt_cutoff
+  new_W_dt_cutoff = T <: NLSolver ? nlsolver.cache.new_W_dt_cutoff : #= FIRK =# nlsolver.new_W_dt_cutoff
+  smallstepchange = (dt/W_dt-one(dt)) <= new_W_dt_cutoff
   return !smallstepchange
 end
 
@@ -320,6 +320,11 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     new_jac = false
     @goto J2W # Jump to W calculation directly, because we already have J
   end
+  if !DiffEqBase.has_invW(f)
+    W_dt = isnewton ? cache.nlsolver.cache.W_dt : dt # TODO: RosW
+    new_jac = isnewton ? do_newJ(integrator, alg, cache, repeat_step) : true
+    new_W = isnewton ? do_newW(integrator, cache.nlsolver, new_jac, W_dt) : true
+  end
 
   # calculate W
   if DiffEqBase.has_invW(f)
@@ -327,27 +332,19 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     (!repeat_step && W_transform) ? f.invW_t(W, uprev, p, dtgamma, t) : f.invW(W, uprev, p, dtgamma, t) # W == inverse W
     is_compos && calc_J!(integrator, cache, true)
   elseif DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
-    Wdt = isnewton ? cache.nlsolver.cache.Wdt : dt; # TODO: RosW
-    new_jac = do_newJ(integrator, alg, cache, repeat_step);
-    new_W = do_newW(integrator, alg, new_jac, Wdt);
-
     # skip calculation of J if step is repeated
     new_jac && DiffEqBase.update_coefficients!(W,uprev,p,t)
     # skip calculation of W if step is repeated
     @label J2W
     new_W && (W.transform = W_transform; set_gamma!(W, dtgamma))
   else # concrete W using jacobian from `calc_J!`
-    Wdt = isnewton ? cache.nlsolver.cache.Wdt : dt; # TODO: RosW
-    new_jac = do_newJ(integrator, alg, cache, repeat_step);
-    new_W = do_newW(integrator, alg, new_jac, Wdt);
-
     # skip calculation of J if step is repeated
     new_jac && calc_J!(integrator, cache, is_compos)
     # skip calculation of W if step is repeated
     new_W && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
   end
   if isnewton
-    set_new_W!(cache.nlsolver, new_W) && set_Wdt!(cache.nlsolver, dt)
+    set_new_W!(cache.nlsolver, new_W) && set_W_dt!(cache.nlsolver, dt)
   end
   new_W && (integrator.destats.nw += 1)
   return nothing

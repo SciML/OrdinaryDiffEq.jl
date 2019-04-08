@@ -85,9 +85,9 @@ get_W(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}) = nlcache.W
 set_W!(nlsolver::NLSolver, W) = set_W!(nlsolver.cache, W)
 set_W!(nlcache::Union{NLNewtonCache,NLNewtonConstantCache}, W) = (nlcache.W = W; W)
 
-set_Wdt!(nlsolver::NLSolver, Wdt) = set_Wdt!(nlsolver.cache, Wdt)
-set_Wdt!(nlcache::NLNewtonCache, Wdt) = (nlcache.Wdt = Wdt; Wdt)
-set_Wdt!(nlcache::NLNewtonConstantCache, Wdt) = Wdt
+set_W_dt!(nlsolver::NLSolver, W_dt) = set_W_dt!(nlsolver.cache, W_dt)
+set_W_dt!(nlcache::NLNewtonCache, W_dt) = (nlcache.W_dt = W_dt; W_dt)
+set_W_dt!(nlcache::NLNewtonConstantCache, W_dt) = W_dt
 
 get_κ(nlalg::Union{NLAnderson,NLFunctional,NLNewton}) = nlalg.κ === nothing ? 1//100 : nlalg.κ
 
