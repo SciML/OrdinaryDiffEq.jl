@@ -1542,13 +1542,11 @@ function perform_step!(integrator,cache::CNAB2ConstantCache,repeat_step=false)
   nlsolver.z = z = zprev # Constant extrapolation
 
   nlsolver.tmp += γ*zprev
-  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
   u = nlsolver.tmp + 1//2*z
 
   cache.k2 = k1
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
   integrator.fsallast = f1(u, p, t+dt) + f2(u, p, t+dt)
   integrator.destats.nf += 1
   integrator.destats.nf2 += 1
@@ -1592,13 +1590,11 @@ function perform_step!(integrator, cache::CNAB2Cache, repeat_step=false)
   # initial guess
   @. z = dt*du₁
   @. tmp += γ*z
-  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
   @. u = tmp + 1//2*z
 
   cache.k2 .= k1
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
   integrator.f(k,u,p,t+dt)
   integrator.destats.nf += 1
 end
@@ -1648,14 +1644,12 @@ function perform_step!(integrator,cache::CNLF2ConstantCache,repeat_step=false)
   zprev = dt*du₁
   nlsolver.z = z = zprev # Constant extrapolation
 
-  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
   u = nlsolver.tmp + γ*z
 
   cache.uprev2 = uprev
   cache.k2 = du₁
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
   integrator.fsallast = f1(u, p, t+dt) + f2(u, p, t+dt)
   integrator.destats.nf += 1
   integrator.destats.nf2 += 1
@@ -1700,14 +1694,12 @@ function perform_step!(integrator, cache::CNLF2Cache, repeat_step=false)
 
   # initial guess
   @. z = dt*du₁
-  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
   @. u = tmp + γ*z
 
   cache.uprev2 .= uprev
   cache.k2 .= du₁
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
   integrator.f(k,u,p,t+dt)
   integrator.destats.nf += 1
 end

@@ -37,18 +37,19 @@ end
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack T11, T12, T13, T21, T22, T23, T31, TI11, TI12, TI13, TI21, TI22, TI23, TI31, TI32, TI33 = cache.tab
   @unpack c1, c2, γ, α, β, e1, e2, e3 = cache.tab
-  @unpack tol, κ, cont1, cont2, cont3 = cache
+  @unpack κ, cont1, cont2, cont3 = cache
   @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
   alg = unwrap_alg(integrator, true)
-  @unpack min_iter, max_iter = alg
+  @unpack max_iter = alg
   mass_matrix = integrator.f.mass_matrix
   is_compos = integrator.alg isa CompositeAlgorithm
 
   # precalculations
+  rtol = @. reltol^(2/3) / 10
+  atol = @. rtol * (abstol / reltol)
   c1m1 = c1-1
   c2m1 = c2-1
   c1mc2= c1-c2
-  κtol = κ*tol # used in Newton iteration
   γdt, αdt, βdt = γ/dt, α/dt, β/dt
   J = calc_J(integrator, cache, is_compos)
   if u isa Number
@@ -82,11 +83,15 @@ end
   end
 
   # Newton iteration
-  local ndw, η
-  do_newton = true
+  local ndw
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
+  fail_convergence = true
   iter = 0
-  while do_newton && iter < max_iter
+  while iter < max_iter
     iter += 1
+    integrator.destats.nnonliniter += 1
+
+    # evaluate function
     ff1 = f(uprev+z1, p, t+c1*dt)
     ff2 = f(uprev+z2, p, t+c2*dt)
     ff3 = f(uprev+z3, p, t+   dt) # c3 = 1
@@ -115,13 +120,19 @@ end
     dw2 = real(dw23)
     dw3 = imag(dw23)
 
-    iter != 1 && (ndwprev = ndw)
-    ndw = internalnorm(dw1,t) + internalnorm(dw2,t) + internalnorm(dw3,t)
+    # compute norm of residuals
+    iter > 1 && (ndwprev = ndw)
+    atmp1 = calculate_residuals(dw1, uprev, u, atol, rtol, internalnorm, t)
+    atmp2 = calculate_residuals(dw2, uprev, u, atol, rtol, internalnorm, t)
+    atmp3 = calculate_residuals(dw3, uprev, u, atol, rtol, internalnorm, t)
+    ndw = internalnorm(atmp1, t) + internalnorm(atmp2, t) + internalnorm(atmp3, t)
 
-    # check early stopping criterion
-    if iter != 1
-      θ = ndw/ndwprev
-      if θ ≥ 1 || ndw * θ^(max_iter - iter) > κtol * (1 - θ)
+    # check divergence (not in initial step)
+    if iter > 1
+      θ = ndw / ndwprev
+      ( diverge = θ > 1 ) && ( cache.status = Divergence )
+      ( veryslowconvergence = ndw * θ^(max_iter - iter) > κ * (1 - θ) ) && ( cache.status = VerySlowConvergence )
+      if diverge || veryslowconvergence
         break
       end
     end
@@ -136,18 +147,21 @@ end
     z3 = @. T31 * w1 +       w2           # T32 = 1, T33 = 0
 
     # check stopping criterion
-    if iter == 1
-      η = max(cache.ηold, eps(eltype(reltol)))^(0.8)
-      do_newton = iszero(integrator.success_iter) || iter < min_iter || η * ndw > κtol
-    else
-      η = θ / (1 - θ) # calculated for possible early stopping
-      do_newton = iter < min_iter || η * ndw > κtol
+    iter > 1 && (η = θ / (1 - θ))
+    if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+      # Newton method converges
+      cache.status = η < alg.fast_convergence_cutoff ? FastConvergence : Convergence
+      fail_convergence = false
+      break
     end
   end
+  if fail_convergence
+    integrator.force_stepfail = true
+    integrator.destats.nnonlinconvfail += 1
+    return
+  end
   cache.ηold = η
-  integrator.force_stepfail = do_newton
   cache.nl_iters = iter
-  do_newton && return
 
   u = @. uprev + z3
 
@@ -159,18 +173,16 @@ end
     alg.smooth_est && (utilde = LU1 \ utilde; integrator.destats.nsolve += 1)
     # RadauIIA5 needs a transformed rtol and atol see
     # https://github.com/luchr/ODEInterface.jl/blob/0bd134a5a358c4bc13e0fb6a90e27e4ee79e0115/src/radau5.f#L399-L421
-    rtol = @. reltol^(2/3) / 10
-    atol = @. rtol * (abstol / reltol)
-    atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm,t)
-    integrator.EEst = internalnorm(atmp,t)
+    atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
+    integrator.EEst = internalnorm(atmp, t)
 
     if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 || integrator.u_modified
       f0 = f(uprev .+ utilde, p, t)
       integrator.destats.nf += 1
       utilde = @. f0 + tmp
       alg.smooth_est && (utilde = LU1 \ utilde; integrator.destats.nsolve += 1)
-      atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm,t)
-      integrator.EEst = internalnorm(atmp,t)
+      atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
+      integrator.EEst = internalnorm(atmp, t)
     end
   end
 
@@ -196,7 +208,7 @@ end
   @unpack t,dt,uprev,u,f,p,fsallast,fsalfirst = integrator
   @unpack T11, T12, T13, T21, T22, T23, T31, TI11, TI12, TI13, TI21, TI22, TI23, TI31, TI32, TI33 = cache.tab
   @unpack c1, c2, γ, α, β, e1, e2, e3 = cache.tab
-  @unpack tol, κ, cont1, cont2, cont3 = cache
+  @unpack κ, cont1, cont2, cont3 = cache
   @unpack z1, z2, z3, w1, w2, w3,
           dw1, dw23,
           k, k2, k3, fw1, fw2, fw3,
@@ -204,7 +216,7 @@ end
           tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol = cache
   @unpack internalnorm, abstol, reltol, adaptive = integrator.opts
   alg = unwrap_alg(integrator, true)
-  @unpack min_iter, max_iter = alg
+  @unpack max_iter = alg
   mass_matrix = integrator.f.mass_matrix
   is_compos = integrator.alg isa CompositeAlgorithm
 
@@ -212,10 +224,9 @@ end
   c1m1 = c1-1
   c2m1 = c2-1
   c1mc2= c1-c2
-  κtol = κ*tol # used in Newton iteration
   γdt, αdt, βdt = γ/dt, α/dt, β/dt
-  (new_jac = do_newJ(integrator, alg, cache, repeat_step)) && calc_J!(integrator, cache, is_compos)
-  if (new_W = do_newW(integrator, new_jac))
+  (new_jac = do_newJ(integrator, alg, cache, repeat_step)) && (calc_J!(integrator, cache, is_compos); cache.W_dt = dt)
+  if (new_W = do_newW(integrator, alg, new_jac, cache.W_dt))
     @inbounds for II in CartesianIndices(J)
       W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]
       W2[II] = -(αdt + βdt*im) * mass_matrix[Tuple(II)...] + J[II]
@@ -249,11 +260,15 @@ end
   end
 
   # Newton iteration
-  local ndw, η
-  do_newton = true
+  local ndw
+  η = max(cache.ηold,eps(eltype(integrator.opts.reltol)))^(0.8)
+  fail_convergence = true
   iter = 0
-  while do_newton && iter < max_iter
+  while iter < max_iter
     iter += 1
+    integrator.destats.nnonliniter += 1
+
+    # evaluate function
     @. tmp = uprev + z1
     f(fsallast, tmp, p, t+c1*dt)
     @. tmp = uprev + z2
@@ -296,13 +311,22 @@ end
     @. dw2 = real(dw23)
     @. dw3 = imag(dw23)
 
-    iter != 1 && (ndwprev = ndw)
-    ndw = internalnorm(dw1,t) + internalnorm(dw2,t) + internalnorm(dw3,t)
+    # compute norm of residuals
+    iter > 1 && (ndwprev = ndw)
+    calculate_residuals!(atmp, dw1, uprev, u, atol, rtol, internalnorm, t)
+    ndw1 = internalnorm(atmp, t)
+    calculate_residuals!(atmp, dw2, uprev, u, atol, rtol, internalnorm, t)
+    ndw2 = internalnorm(atmp, t)
+    calculate_residuals!(atmp, dw3, uprev, u, atol, rtol, internalnorm, t)
+    ndw3 = internalnorm(atmp, t)
+    ndw = ndw1 + ndw2 + ndw3
 
-    # check early stopping criterion
-    if iter != 1
-      θ = ndw/ndwprev
-      if θ ≥ 1 || ndw * θ^(max_iter - iter) > κtol * (1 - θ)
+    # check divergence (not in initial step)
+    if iter > 1
+      θ = ndw / ndwprev
+      ( diverge = θ > 1 ) && ( cache.status = Divergence )
+      ( veryslowconvergence = ndw * θ^(max_iter - iter) > κ * (1 - θ) ) && ( cache.status = VerySlowConvergence )
+      if diverge || veryslowconvergence
         break
       end
     end
@@ -317,18 +341,21 @@ end
     @. z3 = T31 * w1 +       w2           # T32 = 1, T33 = 0
 
     # check stopping criterion
-    if iter == 1
-      η = max(cache.ηold, eps(eltype(reltol)))^(0.8)
-      do_newton = iszero(integrator.success_iter) || iter < min_iter || η * ndw > κtol
-    else
-      η = θ / (1 - θ) # calculated for possible early stopping
-      do_newton = iter < min_iter || η * ndw > κtol
+    iter > 1 && (η = θ / (1 - θ))
+    if η * ndw < κ && (iter > 1 || iszero(ndw) || !iszero(integrator.success_iter))
+      # Newton method converges
+      cache.status = η < alg.fast_convergence_cutoff ? FastConvergence : Convergence
+      fail_convergence = false
+      break
     end
   end
+  if fail_convergence
+    integrator.force_stepfail = true
+    integrator.destats.nnonlinconvfail += 1
+    return
+  end
   cache.ηold = η
-  integrator.force_stepfail = do_newton
   cache.nl_iters = iter
-  do_newton && return
 
   @. u = uprev + z3
 
@@ -341,8 +368,8 @@ end
     alg.smooth_est && (linsolve1(vec(utilde), W1, vec(utilde), false); integrator.destats.nsolve += 1)
     # RadauIIA5 needs a transformed rtol and atol see
     # https://github.com/luchr/ODEInterface.jl/blob/0bd134a5a358c4bc13e0fb6a90e27e4ee79e0115/src/radau5.f#L399-L421
-    calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm,t)
-    integrator.EEst = internalnorm(atmp,t)
+    calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
+    integrator.EEst = internalnorm(atmp, t)
 
     if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 || integrator.u_modified
       @. utilde = uprev + utilde
@@ -350,8 +377,8 @@ end
       integrator.destats.nf += 1
       @. utilde = fsallast + tmp
       alg.smooth_est && (linsolve1(vec(utilde), W1, vec(utilde), false); integrator.destats.nsolve += 1)
-      calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm,t)
-      integrator.EEst = internalnorm(atmp,t)
+      calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
+      integrator.EEst = internalnorm(atmp, t)
     end
   end
 

@@ -46,8 +46,8 @@ end
   nlsolver.z = z
 
   nlsolver.tmp = d1*uₙ₋₁ + d2*uₙ₋₂ + d3*zₙ₋₁
-  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   uₙ = nlsolver.tmp + d*z
   integrator.fsallast = f(uₙ,p,t+dtₙ)
@@ -62,8 +62,6 @@ end
 
   ################################### Finalize
 
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
   if integrator.EEst < one(integrator.EEst)
     cache.fsalfirstprev = integrator.fsalfirst
     cache.dtₙ₋₁ = dtₙ
@@ -121,8 +119,8 @@ end
   end
 
   @. tmp = d1*uₙ₋₁ + d2*uₙ₋₂ + d3*zₙ₋₁
-  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
 
   @. uₙ = tmp + d*z
 
@@ -139,8 +137,6 @@ end
 
   ################################### Finalize
 
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
   if integrator.EEst < one(integrator.EEst)
     @. cache.fsalfirstprev = integrator.fsalfirst
     cache.dtₙ₋₁ = dtₙ
@@ -198,11 +194,9 @@ function perform_step!(integrator,cache::SBDFConstantCache,repeat_step=false)
   end
   nlsolver.z = z
 
-  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
   u = nlsolver.tmp + γ*z
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
 
   cnt == 4 && ( cache.uprev4 = uprev3; cache.k₃ = k₂ )
   cnt >= 3 && ( cache.uprev3 = uprev2; cache.k₂ = k₁ )
@@ -262,11 +256,9 @@ function perform_step!(integrator, cache::SBDFCache, repeat_step=false)
     @. z = zero(eltype(u))
   end
 
-  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
   @. u = tmp + γ*z
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
 
   cnt == 4 && ( cache.uprev4 .= uprev3; cache.k₃ .= k₂ )
   cnt >= 3 && ( cache.uprev3 .= uprev2; cache.k₂ .= k₁ )
@@ -325,8 +317,8 @@ function perform_step!(integrator,cache::QNDF1ConstantCache,repeat_step=false)
   nlsolver.z = dt*integrator.fsalfirst
   nlsolver.γ = γ
 
-  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
   u = nlsolver.tmp + γ*z
 
   if integrator.opts.adaptive && integrator.success_iter > 0
@@ -343,8 +335,6 @@ function perform_step!(integrator,cache::QNDF1ConstantCache,repeat_step=false)
   end
   cache.dtₙ₋₁ = dt
   cache.uprev2 = uprev
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
   integrator.fsallast = f(u, p, t+dt)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
@@ -392,8 +382,8 @@ function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
   # initial guess
   @. z = dt*integrator.fsalfirst
 
-  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
   @. u = tmp + γ*z
 
   if integrator.opts.adaptive && integrator.success_iter > 0
@@ -410,8 +400,6 @@ function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
   end
   cache.dtₙ₋₁ = dt
   cache.uprev2 .= uprev
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
   f(integrator.fsallast, u, p, t+dt)
   integrator.destats.nf += 1
 end
@@ -475,8 +463,8 @@ function perform_step!(integrator,cache::QNDF2ConstantCache,repeat_step=false)
   # initial guess
   nlsolver.z = dt*integrator.fsalfirst
 
-  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
   u = nlsolver.tmp + γ*z
 
   if integrator.opts.adaptive
@@ -503,8 +491,6 @@ function perform_step!(integrator,cache::QNDF2ConstantCache,repeat_step=false)
   cache.uprev2 = uprev
   cache.dtₙ₋₂ = dtₙ₋₁
   cache.dtₙ₋₁ = dt
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
   integrator.fsallast = f(u, p, t+dt)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
@@ -569,8 +555,8 @@ function perform_step!(integrator,cache::QNDF2Cache,repeat_step=false)
   # initial guess
   @. nlsolver.z = dt*integrator.fsalfirst
 
-  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
   @. u = tmp + γ*z
 
   if integrator.opts.adaptive
@@ -597,8 +583,6 @@ function perform_step!(integrator,cache::QNDF2Cache,repeat_step=false)
   cache.uprev2 .= uprev
   cache.dtₙ₋₂ = dtₙ₋₁
   cache.dtₙ₋₁ = dt
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
   f(integrator.fsallast, u, p, t+dt)
   integrator.destats.nf += 1
   return
@@ -675,8 +659,8 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
   # initial guess
   nlsolver.z = dt*integrator.fsalfirst
 
-  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
   u = nlsolver.tmp + γ*z
 
   if integrator.opts.adaptive
@@ -734,8 +718,6 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
   fill!(D, zero(u)); fill!(D2, zero(u))
   fill!(R, zero(t)); fill!(U, zero(t))
 
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
   integrator.fsallast = f(u, p, t+dt)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
@@ -817,8 +799,8 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
   # initial guess
   @. nlsolver.z = dt*integrator.fsalfirst
 
-  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
   @. u = nlsolver.tmp + γ*z
 
 
@@ -891,8 +873,6 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
   end
   fill!(R, zero(t)); fill!(U, zero(t))
 
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
   f(integrator.fsallast, u, p, t+dt)
   integrator.destats.nf += 1
 end
@@ -925,28 +905,26 @@ end
 
 ### STEP 1
   nlsolver.tmp = uprev
-  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
   z₁ = nlsolver.tmp + z
 ### STEP 2
   nlsolver.tmp = z₁
   nlsolver.c = 2
   set_new_W!(nlsolver, false)
-  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
   z₂ = z₁ + z
 ### STEP 3
   tmp2 = 0.5uprev + z₁ - 0.5z₂
   nlsolver.tmp = tmp2
   nlsolver.c = 1
   set_new_W!(nlsolver, false)
-  z,η,iter,fail_convergence = nlsolve!(integrator, cache)
-  fail_convergence && return
+  z = nlsolve!(integrator, cache)
+  nlsolvefail(nlsolver) && return
   u = tmp2 + z
 
 ### finalize
-  nlsolver.ηold = η
-  nlsolver.nl_iters = iter
   integrator.fsallast = f(u, p, t+dt)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
@@ -981,15 +959,15 @@ end
 
 ### STEP 1
  nlsolver.tmp = uprev
- z,η,iter,fail_convergence = nlsolve!(integrator, cache)
- fail_convergence && return
+ z = nlsolve!(integrator, cache)
+ nlsolvefail(nlsolver) && return
  @. z₁ = uprev + z
 ### STEP 2
  nlsolver.tmp = z₁
  nlsolver.c = 2
  set_new_W!(nlsolver, false)
- z,η,iter,fail_convergence = nlsolve!(integrator, cache)
- fail_convergence && return
+ z = nlsolve!(integrator, cache)
+ nlsolvefail(nlsolver) && return
  @. z₂ = z₁ + z
 ### STEP 3
  # z .= zero(eltype(u))
@@ -997,13 +975,11 @@ end
  nlsolver.tmp = tmp2
  nlsolver.c = 1
  set_new_W!(nlsolver, false)
- z,η,iter,fail_convergence = nlsolve!(integrator, cache)
- fail_convergence && return
+ z = nlsolve!(integrator, cache)
+ nlsolvefail(nlsolver) && return
  @. u = tmp2 + z
 
 ### finalize
- nlsolver.ηold = η
- nlsolver.nl_iters = iter
  f(integrator.fsallast,u,p,t+dt)
  integrator.destats.nf += 1
 end

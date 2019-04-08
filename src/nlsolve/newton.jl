@@ -18,11 +18,9 @@ zᵏ⁺¹ = zᵏ + Δᵏ
 ```
 
 where `W = M - dt⋅γJ`, `M` is the mass matrix, `dt` is the step size, `γ` is a
-constant, and `J` is the Jacobian matrix.
+constant, `J` is the Jacobian matrix.
 
-It returns the tuple `(z, η, iter, fail_convergence)`, where `z` is the solution, `η` is
-used to measure the iteration error (see [^HW96]), `iter` is the number of iterations, and
-`fail_convergence` reports whether the algorithm succeeded.
+It returns the tuple `z`, where `z` is the solution.
 
 [^HS96]: M.E.Hoseaa and L.F.Shampine, "Analysis and implementation of TR-BDF2",
 Applied Numerical Mathematics, Volume 20, Issues 1–2, February 1996, Pages
@@ -36,7 +34,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 """
 @muladd function nlsolve!(nlsolver::NLSolver, nlcache::NLNewtonConstantCache, integrator)
   @unpack t,dt,uprev,u,p = integrator
-  @unpack z,tmp,κtol,c,γ,max_iter = nlsolver
+  @unpack z,tmp,κ,c,γ,max_iter = nlsolver
   W = nlcache.W
 
   # precalculations
@@ -70,12 +68,15 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 
     # compute norm of residuals
     iter > 1 && (ndzprev = ndz)
-    ndz = integrator.opts.internalnorm(dz, tstep)
+    atmp = calculate_residuals(dz, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+    ndz = integrator.opts.internalnorm(atmp, t)
 
     # check divergence (not in initial step)
     if iter > 1
       θ = ndz / ndzprev
-      if θ > 1 || ndz * θ^(max_iter - iter) > κtol * (1 - θ)
+      ( diverge = θ > 1 ) && ( nlsolver.status = Divergence )
+      ( veryslowconvergence = ndz * θ^(max_iter - iter) > κ * (1 - θ) ) && ( nlsolver.status = VerySlowConvergence )
+      if diverge || veryslowconvergence
         # Newton method diverges
         break
       end
@@ -86,8 +87,9 @@ Equations II, Springer Series in Computational Mathematics. ISBN
 
     # check stopping criterion
     iter > 1 && (η = θ / (1 - θ))
-    if η * ndz < κtol && (iter > 1 || iszero(ndz) || !iszero(integrator.success_iter))
+    if η * ndz < κ && (iter > 1 || iszero(ndz) || !iszero(integrator.success_iter))
       # Newton method converges
+      nlsolver.status = η < nlsolver.fast_convergence_cutoff ? FastConvergence : Convergence
       fail_convergence = false
       break
     end
@@ -97,13 +99,15 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     integrator.destats.nnonlinconvfail += 1
   end
   integrator.force_stepfail = fail_convergence
-  z, η, iter, fail_convergence
+  nlsolver.ηold = η
+  nlsolver.nl_iters = iter
+  return z
 end
 
 @muladd function nlsolve!(nlsolver::NLSolver, nlcache::NLNewtonCache, integrator)
   @unpack t,dt,uprev,u,p,cache = integrator
-  @unpack z,dz,tmp,ztmp,k,κtol,c,γ,max_iter = nlsolver
-  @unpack W, new_W = nlcache
+  @unpack z,dz,tmp,ztmp,k,κ,c,γ,max_iter = nlsolver
+  @unpack W, new_W, W_dt = nlcache
   cache = unwrap_cache(integrator, true)
 
   # precalculations
@@ -141,13 +145,16 @@ end
 
     # compute norm of residuals
     iter > 1 && (ndzprev = ndz)
-    ndz = integrator.opts.internalnorm(dz, tstep)
+    #W_dt != dt && (rmul!(dz, 2/(1 + dt / W_dt))) # relaxation
+    calculate_residuals!(ztmp, dz, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+    ndz = integrator.opts.internalnorm(ztmp, t)
 
     # check divergence (not in initial step)
     if iter > 1
       θ = ndz / ndzprev
-      if θ > 1 || ndz * θ^(max_iter - iter) > κtol * (1 - θ)
-        # Newton method diverges
+      ( diverge = θ > 1 ) && ( nlsolver.status = Divergence )
+      ( veryslowconvergence = ndz * θ^(max_iter - iter) > κ * (1 - θ) ) && ( nlsolver.status = VerySlowConvergence )
+      if diverge || veryslowconvergence
         break
       end
     end
@@ -157,8 +164,9 @@ end
 
     # check stopping criterion
     iter > 1 && (η = θ / (1 - θ))
-    if η * ndz < κtol && (iter > 1 || iszero(ndz) || !iszero(integrator.success_iter))
+    if η * ndz < κ && (iter > 1 || iszero(ndz) || !iszero(integrator.success_iter))
       # Newton method converges
+      nlsolver.status = η < nlsolver.fast_convergence_cutoff ? FastConvergence : Convergence
       fail_convergence = false
       break
     end
@@ -168,5 +176,7 @@ end
     integrator.destats.nnonlinconvfail += 1
   end
   integrator.force_stepfail = fail_convergence
-  z, η, iter, fail_convergence
+  nlsolver.ηold = η
+  nlsolver.nl_iters = iter
+  return z
 end

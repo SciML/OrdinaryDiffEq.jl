@@ -60,9 +60,6 @@ function stepsize_controller!(integrator,alg)
 end
 
 @inline function predictive_step_accept_controller!(integrator, alg, q)
-  if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
-    q = one(q)
-  end
   if integrator.success_iter > 0
     expo = 1/(get_current_adaptive_order(integrator.alg,integrator.cache)+1)
     qgus=(integrator.dtacc/integrator.dt)*(((integrator.EEst^2)/integrator.erracc)^expo)
@@ -70,6 +67,9 @@ end
     qacc=max(q,qgus)
   else
     qacc = q
+  end
+  if integrator.opts.qsteady_min <= qacc <= integrator.opts.qsteady_max
+    qacc = one(qacc)
   end
   integrator.dtacc = integrator.dt
   integrator.erracc = max(1e-2,integrator.EEst)
