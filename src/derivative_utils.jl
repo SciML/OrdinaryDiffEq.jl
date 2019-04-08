@@ -267,7 +267,7 @@ function do_newW(integrator, alg::T, new_jac, Wdt)::Bool where T # any changes h
   new_jac && return true
   # reuse W when the change in stepsize is small enough
   dt = integrator.dt
-  new_W_dt_cutoff = T <: RadauIIA5 ? integrator.cache.nlsolver.cache.new_W_dt_cutoff : integrator.cache.new_W_dt_cutoff
+  new_W_dt_cutoff = T <: RadauIIA5 ? alg.new_W_dt_cutoff : integrator.cache.nlsolver.cache.new_W_dt_cutoff
   smallstepchange = (dt/Wdt-one(dt)) <= new_W_dt_cutoff
   return !smallstepchange
 end

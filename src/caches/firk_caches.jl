@@ -2,13 +2,13 @@ mutable struct RadauIIA5ConstantCache{F,Tab,Tol,Dt,U} <: OrdinaryDiffEqConstantC
   uf::F
   tab::Tab
   κ::Tol
-  tol::Tol
   ηold::Tol
   nl_iters::Int
-  dtprev::Dt
   cont1::U
   cont2::U
   cont3::U
+  dtprev::Dt
+  Wdt::Dt
   status::NLStatus
 end
 
@@ -18,10 +18,9 @@ function alg_cache(alg::RadauIIA5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   uToltype = real(uBottomEltypeNoUnits)
   tab = RadauIIA5Tableau(uToltype, real(tTypeNoUnits))
 
-  κ = alg.κ !== nothing ? uToltype(alg.κ) : uToltype(1//100)
-  tol = alg.tol !== nothing ? uToltype(alg.tol) : uToltype(min(0.03,first(reltol)^(0.5)))
+  κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1//100)
 
-  RadauIIA5ConstantCache(uf, tab, κ, tol, one(tol), 10000, dt, u, u, u, Convergence)
+  RadauIIA5ConstantCache(uf, tab, κ, one(uToltype), 10000, u, u, u, dt, dt, Convergence)
 end
 
 mutable struct RadauIIA5Cache{uType,cuType,uNoUnitsType,rateType,JType,W1Type,W2Type,UF,JC,F1,F2,Tab,Tol,Dt,rTol,aTol} <: OrdinaryDiffEqMutableCache
@@ -52,7 +51,6 @@ mutable struct RadauIIA5Cache{uType,cuType,uNoUnitsType,rateType,JType,W1Type,W2
   uf::UF
   tab::Tab
   κ::Tol
-  tol::Tol
   ηold::Tol
   nl_iters::Int
   tmp::uType
@@ -73,8 +71,7 @@ function alg_cache(alg::RadauIIA5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   uToltype = real(uBottomEltypeNoUnits)
   tab = RadauIIA5Tableau(uToltype, real(tTypeNoUnits))
 
-  κ = alg.κ !== nothing ? uToltype(alg.κ) : uToltype(1//100)
-  tol = alg.tol !== nothing ? uToltype(alg.tol) : uToltype(min(0.03,first(reltol)^(0.5)))
+  κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1//100)
 
   z1 = similar(u); z2 = similar(u); z3 = similar(u)
   w1 = similar(u); w2 = similar(u); w3 = similar(u)
@@ -103,6 +100,6 @@ function alg_cache(alg::RadauIIA5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
                  dw1, dw23, cont1, cont2, cont3,
                  du1, fsalfirst, k, k2, k3, fw1, fw2, fw3,
                  J, W1, W2,
-                 uf, tab, κ, tol, one(tol), 10000,
+                 uf, tab, κ, one(uToltype), 10000,
                  tmp, atmp, jac_config, linsolve1, linsolve2, rtol, atol, dt, dt, Convergence)
 end
