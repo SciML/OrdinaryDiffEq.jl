@@ -1,18 +1,12 @@
 using OrdinaryDiffEq, DiffEqBase, DiffEqCallbacks, Test
 using Random
 Random.seed!(213)
-CACHE_TEST_ALGS = [Euler(),Midpoint(),RK4(),SSPRK22(),SSPRK33(),SSPRK53(), SSPRK53_2N1(), SSPRK53_2N2(),
-  SSPRK63(),SSPRK73(),SSPRK83(),SSPRK432(),SSPRK932(),SSPRK54(),SSPRK104(),
-  ORK256(), CarpenterKennedy2N54(), HSLDDRK64(), DGLDDRK73_C(), DGLDDRK84_C(), DGLDDRK84_F(), NDBLSRK124(), NDBLSRK134(), NDBLSRK144(),
+CACHE_TEST_ALGS = [Euler(),Midpoint(),RK4(),SSPRK22(),SSPRK33(),
+  ORK256(), CarpenterKennedy2N54(), HSLDDRK64(), DGLDDRK73_C(),
   CFRLDDRK64(), TSLDDRK74(),
-  CKLLSRK43_2(), CKLLSRK54_3C(), CKLLSRK95_4S(), CKLLSRK95_4C(), CKLLSRK95_4M(),
-  CKLLSRK54_3C_3R(), CKLLSRK54_3M_3R(), CKLLSRK54_3N_3R(), CKLLSRK85_4C_3R(), CKLLSRK85_4M_3R(), CKLLSRK85_4P_3R(),
-  CKLLSRK54_3N_4R(), CKLLSRK54_3M_4R(), CKLLSRK65_4M_4R(), CKLLSRK85_4FM_4R(), CKLLSRK75_4M_5R(),
-  ParsaniKetchesonDeconinck3S32(), ParsaniKetchesonDeconinck3S82(),
-  ParsaniKetchesonDeconinck3S53(), ParsaniKetchesonDeconinck3S173(),
-  ParsaniKetchesonDeconinck3S94(), ParsaniKetchesonDeconinck3S184(),
-  ParsaniKetchesonDeconinck3S105(), ParsaniKetchesonDeconinck3S205(),
-  BS3(),BS5(),DP5(),DP5Threaded(),DP8(),Feagin10(),Feagin12(),Feagin14(),TanYam7(),
+  CKLLSRK43_2(),
+  ParsaniKetchesonDeconinck3S32(),
+  BS3(),BS5(),DP5(),DP8(),Feagin10(),Feagin12(),Feagin14(),TanYam7(),
   Tsit5(),TsitPap8(),Vern6(),Vern7(),Vern8(),Vern9(),OwrenZen3(),OwrenZen4(),OwrenZen5()]
 
 using InteractiveUtils
@@ -42,11 +36,11 @@ end
 callback = ContinuousCallback(condition,affect!)
 
 u0 = [0.2]
-tspan = (0.0,50.0)
+tspan = (0.0,10.0)
 prob = ODEProblem(f,u0,tspan)
 
 println("Check for stochastic errors")
-for i in 1:50
+for i in 1:10
   @test_nowarn sol = solve(prob,Tsit5(),callback=callback)
 end
 
