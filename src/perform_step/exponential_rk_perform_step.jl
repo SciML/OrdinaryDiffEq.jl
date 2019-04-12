@@ -1156,7 +1156,7 @@ function perform_step!(integrator, cache::EPIRK5P1Cache, repeat_step=false)
   @.. tmp = uprev + @view(K[:, 2]) # partially update U2 (stored tmp)
   @.. u = uprev + @view(K[:, 3]) # partially update u
   B[:, 2] .= rtmp
-  @.. B[:, 4] = (-2) * rtmp
+  @.. @view(B[:, 4]) = (-2) * rtmp
 
   # Compute the second column (R1)
   k = @view(K[:, 1])
@@ -1272,9 +1272,9 @@ function perform_step!(integrator, cache::EPIRK5P2Cache, repeat_step=false)
   axpy!(b2, k, u) # partially update u
 
   # Compute the third column (dR = R2 - 2R1)
-  @.. B[:, 2] = b31 * dR
-  @.. B[:, 3] = b32 * dR
-  @.. B[:, 4] = b33 * dR
+  @.. @view(B[:, 2]) = b31 * dR
+  @.. @view(B[:, 3]) = b32 * dR
+  @.. @view(B[:, 4]) = b33 * dR
   phiv_timestep!(k, g33, J, B; kwargs...)
   u .+= k
 
