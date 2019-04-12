@@ -22,11 +22,11 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{SSPRK22Cache,SSPRK
   nothing
 end
 
-#=
 @muladd function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::OwrenZen4Cache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<4 || always_calc_begin
     @unpack k1,k2,k3,k4,k5,k6,tmp = cache
     @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,c1,c2,c3,c4 = cache.tab
+    # NOTE: k1 does not need to be evaluated since it is aliased with integrator.fsalfirst.
     a = dt*a21
     @.. tmp = uprev+a*k1
     f(k2,tmp,p,t+c1*dt)
@@ -52,6 +52,7 @@ end
   if length(k)<4 || always_calc_begin
     @unpack k1,k2,k3,k4,k5,k6,k7,k8,tmp = cache
     @unpack a21,a31,a32,a41,a42,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,c1,c2,c3,c4,c5,c6 = cache.tab
+    # NOTE: k1 does not need to be evaluated since it is aliased with integrator.fsalfirst.
     a = dt*a21
     @.. tmp = uprev+a*k1
     f(k2,tmp,p,t+c1*dt)
@@ -114,37 +115,23 @@ end
     @unpack k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,tmp = cache
     uidx = eachindex(uprev)
     f(k1,uprev,p,t)
-    @tight_loop_macros for i in uidx
-      tmp = uprev+dt*(a21*k1)
-    end
+    @.. tmp = uprev+dt*(a21*k1)
     f(k2,tmp,p,t+c1*dt)
-    @tight_loop_macros for i in uidx
-      tmp = uprev+dt*(a31*k1+a32*k2)
-    end
+    @.. tmp = uprev+dt*(a31*k1+a32*k2)
     f(k3,tmp,p,t+c2*dt)
-    @tight_loop_macros for i in uidx
-      tmp = uprev+dt*(a41*k1+a42*k2+a43*k3)
-    end
+    @.. tmp = uprev+dt*(a41*k1+a42*k2+a43*k3)
     f(k4,tmp,p,t+c3*dt)
-    @tight_loop_macros for i in uidx
-      tmp =uprev+dt*(a51*k1+a52*k2+a53*k3+a54*k4)
-    end
+    @.. tmp =uprev+dt*(a51*k1+a52*k2+a53*k3+a54*k4)
     f(k5,tmp,p,t+c4*dt)
-    @tight_loop_macros for i in uidx
-      tmp = uprev+dt*(a61*k1+a62*k2+a63*k3+a64*k4+a65*k5)
-    end
+    @.. tmp = uprev+dt*(a61*k1+a62*k2+a63*k3+a64*k4+a65*k5)
     f(k6,tmp,p,t+dt)
-    @tight_loop_macros for i in uidx
-      update = a71*k1+a73*k3+a74*k4+a75*k5+a76*k6
-      tmp = uprev+dt*update
-    end
+    @.. update = a71*k1+a73*k3+a74*k4+a75*k5+a76*k6
+    @.. tmp = uprev+dt*update
     f(k7,tmp,p,t+dt)
     copyat_or_push!(k,1,update)
-    @tight_loop_macros for i in uidx
-      bspl = k1 - update
-      dense_tmp3 = update - k7 - bspl
-      dense_tmp4 = (d1*k1+d3*k3+d4*k4+d5*k5+d6*k6+d7*k7)
-    end
+    @. bspl = k1 - update
+    @. dense_tmp3 = update - k7 - bspl
+    @. dense_tmp4 = (d1*k1+d3*k3+d4*k4+d5*k5+d6*k6+d7*k7)
     copyat_or_push!(k,2,bspl)
     copyat_or_push!(k,3,dense_tmp3)
     copyat_or_push!(k,4,dense_tmp4)
@@ -225,7 +212,6 @@ Called to add the extra k9, k10, k11 steps for the Order 5 interpolation when ne
   end
   nothing
 end
-=#
 
 @muladd function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::OwrenZen3ConstantCache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<4 || always_calc_begin
@@ -287,6 +273,7 @@ end
   nothing
 end
 
+#=
 @muladd function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::OwrenZen4Cache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<6 || always_calc_begin
     uidx = eachindex(uprev)
@@ -324,6 +311,7 @@ end
   end
   nothing
 end
+=#
 
 @muladd function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::OwrenZen5ConstantCache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<8 || always_calc_begin
@@ -350,6 +338,7 @@ end
   nothing
 end
 
+#=
 @muladd function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::OwrenZen5Cache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<8 || always_calc_begin
     uidx = eachindex(uprev)
@@ -397,6 +386,7 @@ end
   end
   nothing
 end
+=#
 
 @muladd function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::DP5ConstantCache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<4 || always_calc_begin
@@ -419,6 +409,7 @@ end
   nothing
 end
 
+#=
 @muladd function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::DP5Cache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<4 || always_calc_begin
     @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,btilde1,btilde3,btilde4,btilde5,btilde6,btilde7,c1,c2,c3,c4,c5,c6 = cache.tab
@@ -469,7 +460,9 @@ end
   end
   nothing
 end
+=#
 
+#=
 @muladd function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::DP5ThreadedCache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<4 || always_calc_begin
     @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,btilde1,btilde3,btilde4,btilde5,btilde6,btilde7,c1,c2,c3,c4,c5,c6 = cache.tab
@@ -520,6 +513,7 @@ end
   end
   nothing
 end
+=#
 
 @muladd function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Tsit5ConstantCache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<7 || always_calc_begin
@@ -536,6 +530,7 @@ end
   nothing
 end
 
+#=
 @muladd function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Tsit5Cache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<7 || always_calc_begin
     @unpack c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76 = cache.tab
@@ -575,6 +570,7 @@ end
   end
   nothing
 end
+=#
 
 """
 An Efficient Runge-Kutta (4,5) Pair by P.Bogacki and L.F.Shampine
@@ -603,6 +599,7 @@ Called to add the extra k9, k10, k11 steps for the Order 5 interpolation when ne
   nothing
 end
 
+#=
 """
 An Efficient Runge-Kutta (4,5) Pair by P.Bogacki and L.F.Shampine
  Computers and Mathematics with Applications, Vol. 32, No. 6, 1996, pages 15 to 28
@@ -671,3 +668,4 @@ Called to add the extra k9, k10, k11 steps for the Order 5 interpolation when ne
   end
   nothing
 end
+=#

@@ -33,7 +33,6 @@
   end
 end
 
-#=
 @muladd function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::DP8Cache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<7 || always_calc_begin
     @unpack c7,c8,c9,c10,c11,c6,c5,c4,c3,c2,b1,b6,b7,b8,b9,b10,b11,b12,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211 = cache.tab
@@ -66,7 +65,7 @@ end
     @.. tmp = uprev+dt*(a1201*k1+a1204*k4+a1205*k5+a1206*k6+a1207*k7+a1208*k8+a1209*k9+a1210*k10+a1211*k11)
     f(k12,tmp,p,t+dt)
     @.. kupdate = b1*k1+b6*k6+b7*k7+b8*k8+b9*k9+b10*k10+b11*k11+b12*k12
-    @.. utmp = uprev + dt*update
+    @.. utmp = uprev + dt*kupdate
     f(k13,utmp,p,t+dt)
     @.. tmp = uprev+dt*(a1401*k1+a1407*k7+a1408*k8+a1409*k9+a1410*k10+a1411*k11+a1412*k12+a1413*k13)
     f(k14,tmp,p,t+c14*dt)
@@ -74,7 +73,7 @@ end
     f(k15,tmp,p,t+c15*dt)
     @.. tmp = uprev+dt*(a1601*k1+a1606*k6+a1607*k7+a1608*k8+a1609*k9+a1613*k13+a1614*k14+a1615*k15)
     f(k16,tmp,p,t+c16*dt)
-    @.. udiff= kupdate
+    copyto!(udiff, kupdate)
     @.. bspl = k1 - udiff
     @.. k[3] = udiff - k13 - bspl
     @.. k[4] = (d401*k1+d406*k6+d407*k7+d408*k8+d409*k9+d410*k10+d411*k11+d412*k12+d413*k13+d414*k14+d415*k15+d416*k16)
@@ -83,8 +82,8 @@ end
     @.. k[7] = (d701*k1+d706*k6+d707*k7+d708*k8+d709*k9+d710*k10+d711*k11+d712*k12+d713*k13+d714*k14+d715*k15+d716*k16)
   end
 end
-=#
 
+#=
 @muladd function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::DP8Cache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<7 || always_calc_begin
     @unpack c7,c8,c9,c10,c11,c6,c5,c4,c3,c2,b1,b6,b7,b8,b9,b10,b11,b12,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211 = cache.tab
@@ -167,3 +166,4 @@ end
     end
   end
 end
+=#
