@@ -156,12 +156,12 @@ end
 
 @cache mutable struct ExtrapolationMidpointDeuflhardCache{uType,uNoUnitsType,rateType,QType,extrapolation_coefficients} <: OrdinaryDiffEqMutableCache
   # Values that are mutated
-  u_tilde::uType
+  utilde::uType
   u_temp1::uType
   u_temp2::uType
   tmp::uType # for get_tmp_cache()
   T::Array{uType,1}  # Storage for the internal discretisations obtained by the explicit midpoint rule
-  res::uNoUnitsType # Storage for the scaled residual of u and u_tilde
+  res::uNoUnitsType # Storage for the scaled residual of u and utilde
 
   fsalfirst::rateType
   k::rateType
@@ -175,7 +175,7 @@ end
 
 function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   # Initialize cache's members
-  u_tilde = zero(u)
+  utilde = zero(u)
   u_temp1 = zero(u)
   u_temp2 = zero(u)
   tmp = zero(u)
@@ -188,7 +188,7 @@ function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeN
   cc =  alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val{false})
 
   # Initialize cache
-  ExtrapolationMidpointDeuflhardCache(u_tilde, u_temp1, u_temp2, tmp, T, res, fsalfirst, k,cc.Q, cc.n_curr, cc.n_old, cc.coefficients)
+  ExtrapolationMidpointDeuflhardCache(utilde, u_temp1, u_temp2, tmp, T, res, fsalfirst, k,cc.Q, cc.n_curr, cc.n_old, cc.coefficients)
 end
 
 @cache mutable struct ExtrapolationMidpointHairerWannerConstantCache{QType,extrapolation_coefficients} <: OrdinaryDiffEqConstantCache
@@ -220,12 +220,12 @@ end
 
 @cache mutable struct ExtrapolationMidpointHairerWannerCache{uType,uNoUnitsType,rateType,QType,extrapolation_coefficients} <: OrdinaryDiffEqMutableCache
   # Values that are mutated
-  u_tilde::uType
+  utilde::uType
   u_temp1::uType
   u_temp2::uType
   tmp::uType # for get_tmp_cache()
   T::Array{uType,1}  # Storage for the internal discretisations obtained by the explicit midpoint rule
-  res::uNoUnitsType # Storage for the scaled residual of u and u_tilde
+  res::uNoUnitsType # Storage for the scaled residual of u and utilde
 
   fsalfirst::rateType
   k::rateType
@@ -241,7 +241,7 @@ end
 
 function alg_cache(alg::ExtrapolationMidpointHairerWanner,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   # Initialize cache's members
-  u_tilde = zero(u)
+  utilde = zero(u)
   u_temp1 = zero(u)
   u_temp2 = zero(u)
   tmp = zero(u)
@@ -253,6 +253,6 @@ function alg_cache(alg::ExtrapolationMidpointHairerWanner,u,rate_prototype,uElty
   cc = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val{false})
 
   # Initialize the cache
-  ExtrapolationMidpointHairerWannerCache(u_tilde, u_temp1, u_temp2, tmp, T, res, fsalfirst, k,
+  ExtrapolationMidpointHairerWannerCache(utilde, u_temp1, u_temp2, tmp, T, res, fsalfirst, k,
       cc.Q, cc.n_curr, cc.n_old, cc.coefficients, cc.sigma)
 end

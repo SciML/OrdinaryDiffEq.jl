@@ -14,7 +14,7 @@ end
 
 function perform_step!(integrator,cache::RichardsonEulerCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k,fsalfirst,T,u_tilde,atmp,dtpropose,cur_order,A = cache
+  @unpack k,fsalfirst,T,utilde,atmp,dtpropose,cur_order,A = cache
 
   @muladd @. u = uprev + dt*fsalfirst
 
@@ -48,8 +48,8 @@ function perform_step!(integrator,cache::RichardsonEulerCache,repeat_step=false)
       for i = range_start:min(size(T)[1], cur_order + 1)
 
           A = 2^(i-1)
-          @. u_tilde = T[i,i] - T[i,i-1]
-          atmp = calculate_residuals(u_tilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+          @. utilde = T[i,i] - T[i,i-1]
+          atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
           EEst = integrator.opts.internalnorm(atmp)
 
           beta1 = integrator.opts.beta1
@@ -128,8 +128,8 @@ function perform_step!(integrator,cache::RichardsonEulerConstantCache,repeat_ste
       for i = range_start:min(size(T)[1], cur_order + 1)
 
           A = 2^(i-1)
-          u_tilde = T[i,i] - T[i,i-1]
-          atmp = calculate_residuals(u_tilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
+          utilde = T[i,i] - T[i,i-1]
+          atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm)
           EEst = integrator.opts.internalnorm(atmp)
 
           beta1 = integrator.opts.beta1
@@ -181,11 +181,11 @@ end
 function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, repeat_step = false)
   # Unpack all information needed
   @unpack t, uprev, dt, f, p = integrator
-  @unpack n_curr, u_temp1, u_temp2, u_tilde, res, T, fsalfirst,k  = cache
+  @unpack n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst,k  = cache
 
   # Coefficients for obtaining u
   @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
-  # Coefficients for obtaining u_tilde
+  # Coefficients for obtaining utilde
   @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
   # Additional constant information
   @unpack subdividing_sequence, stage_number = cache.coefficients
@@ -223,8 +223,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
     # Compute all information relating to an extrapolation order ≦ win_min
     for i = integrator.alg.n_min:n_curr
       integrator.u = eltype(uprev).(extrapolation_scalars[i+1]) * sum( broadcast(*, cache.T[1:(i+1)], eltype(uprev).(extrapolation_weights[1:(i+1), (i+1)])) ) # Approximation of extrapolation order i
-      cache.u_tilde = eltype(uprev).(extrapolation_scalars_2[i]) * sum( broadcast(*, cache.T[2:(i+1)], eltype(uprev).(extrapolation_weights_2[1:i, i])) ) # and its internal counterpart
-      calculate_residuals!(cache.res, integrator.u, cache.u_tilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      cache.utilde = eltype(uprev).(extrapolation_scalars_2[i]) * sum( broadcast(*, cache.T[2:(i+1)], eltype(uprev).(extrapolation_weights_2[1:i, i])) ) # and its internal counterpart
+      calculate_residuals!(cache.res, integrator.u, cache.utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       integrator.EEst = integrator.opts.internalnorm(cache.res, t)
       cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
       stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
@@ -255,8 +255,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
 
         # Update u, integrator.EEst and cache.Q
         integrator.u = eltype(uprev).(extrapolation_scalars[n_curr+1]) * sum( broadcast(*, cache.T[1:(n_curr+1)], eltype(uprev).(extrapolation_weights[1:(n_curr+1), (n_curr+1)])) ) # Approximation of extrapolation order n_curr
-        cache.u_tilde = eltype(uprev).(extrapolation_scalars_2[n_curr]) * sum( broadcast(*, cache.T[2:(n_curr+1)], eltype(uprev).(extrapolation_weights_2[1:n_curr, n_curr])) ) # and its internal counterpart
-        calculate_residuals!(cache.res, integrator.u, cache.u_tilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+        cache.utilde = eltype(uprev).(extrapolation_scalars_2[n_curr]) * sum( broadcast(*, cache.T[2:(n_curr+1)], eltype(uprev).(extrapolation_weights_2[1:n_curr, n_curr])) ) # and its internal counterpart
+        calculate_residuals!(cache.res, integrator.u, cache.utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(cache.res, t)
         stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
       else
@@ -289,14 +289,14 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
   @unpack n_curr = cache
   # Coefficients for obtaining u
   @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
-  # Coefficients for obtaining u_tilde
+  # Coefficients for obtaining utilde
   @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
   # Additional constant information
   @unpack subdividing_sequence, stage_number = cache.coefficients
 
   # Create auxiliary variables
   u_temp1, u_temp2 = copy(uprev), copy(uprev) # Auxiliary variables for computing the internal discretisations
-  u, u_tilde = copy(uprev), copy(uprev) # Storage for the latest approximation and its internal counterpart
+  u, utilde = copy(uprev), copy(uprev) # Storage for the latest approximation and its internal counterpart
   tol = integrator.opts.internalnorm(integrator.opts.reltol, t) # Used by the convergence monitor
   T = fill(zero(uprev), integrator.alg.n_max + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
   fill!(cache.Q, zero(eltype(cache.Q)))
@@ -329,8 +329,8 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
     # Compute all information relating to an extrapolation order ≦ win_min
     for i = integrator.alg.n_min:n_curr
       u = eltype(uprev).(extrapolation_scalars[i+1]) * sum( broadcast(*, T[1:(i+1)], eltype(uprev).(extrapolation_weights[1:(i+1), (i+1)])) ) # Approximation of extrapolation order i
-      u_tilde = eltype(uprev).(extrapolation_scalars_2[i]) * sum( broadcast(*, T[2:(i+1)], eltype(uprev).(extrapolation_weights_2[1:i, i])) ) # and its internal counterpart
-      res = calculate_residuals(u, u_tilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      utilde = eltype(uprev).(extrapolation_scalars_2[i]) * sum( broadcast(*, T[2:(i+1)], eltype(uprev).(extrapolation_weights_2[1:i, i])) ) # and its internal counterpart
+      res = calculate_residuals(u, utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       integrator.EEst = integrator.opts.internalnorm(res, t)
       cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
       stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
@@ -360,8 +360,8 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
 
         # Update u, integrator.EEst and cache.Q
         u = eltype(uprev).(extrapolation_scalars[n_curr+1]) * sum( broadcast(*, T[1:(n_curr+1)], eltype(uprev).(extrapolation_weights[1:(n_curr+1), (n_curr+1)])) ) # Approximation of extrapolation order n_curr
-        u_tilde = eltype(uprev).(extrapolation_scalars_2[n_curr]) * sum( broadcast(*, T[2:(n_curr+1)], eltype(uprev).(extrapolation_weights_2[1:n_curr, n_curr])) ) # and its internal counterpart
-        res = calculate_residuals(u, u_tilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+        utilde = eltype(uprev).(extrapolation_scalars_2[n_curr]) * sum( broadcast(*, T[2:(n_curr+1)], eltype(uprev).(extrapolation_weights_2[1:n_curr, n_curr])) ) # and its internal counterpart
+        res = calculate_residuals(u, utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(res, t)
         stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
       else
@@ -395,11 +395,11 @@ end
 function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache, repeat_step = false)
   # Unpack all information needed
   @unpack t, uprev, dt, f, p = integrator
-  @unpack n_curr, u_temp1, u_temp2, u_tilde, res, T, fsalfirst,k  = cache
+  @unpack n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst,k  = cache
 
   # Coefficients for obtaining u
   @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
-  # Coefficients for obtaining u_tilde
+  # Coefficients for obtaining utilde
   @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
   # Additional constant information
   @unpack subdividing_sequence, stage_number = cache.coefficients
@@ -439,8 +439,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
     # Compute all information relating to an extrapolation order ≦ win_min
     for i = win_min - 1 : win_min
       integrator.u = eltype(uprev).(extrapolation_scalars[i+1]) * sum( broadcast(*, cache.T[1:(i+1)], eltype(uprev).(extrapolation_weights[1:(i+1), (i+1)])) ) # Approximation of extrapolation order i
-      cache.u_tilde = eltype(uprev).(extrapolation_scalars_2[i]) * sum( broadcast(*, cache.T[2:(i+1)], eltype(uprev).(extrapolation_weights_2[1:i, i])) ) # and its internal counterpart
-      calculate_residuals!(cache.res, integrator.u, cache.u_tilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      cache.utilde = eltype(uprev).(extrapolation_scalars_2[i]) * sum( broadcast(*, cache.T[2:(i+1)], eltype(uprev).(extrapolation_weights_2[1:i, i])) ) # and its internal counterpart
+      calculate_residuals!(cache.res, integrator.u, cache.utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       integrator.EEst = integrator.opts.internalnorm(cache.res, t)
       cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
       stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
@@ -472,8 +472,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
 
         # Update u, integrator.EEst and cache.Q
         integrator.u = eltype(uprev).(extrapolation_scalars[n_curr+1]) * sum( broadcast(*, cache.T[1:(n_curr+1)], eltype(uprev).(extrapolation_weights[1:(n_curr+1), (n_curr+1)])) ) # Approximation of extrapolation order n_curr
-        cache.u_tilde = eltype(uprev).(extrapolation_scalars_2[n_curr]) * sum( broadcast(*, cache.T[2:(n_curr+1)], eltype(uprev).(extrapolation_weights_2[1:n_curr, n_curr])) ) # and its internal counterpart
-        calculate_residuals!(cache.res, integrator.u, cache.u_tilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+        cache.utilde = eltype(uprev).(extrapolation_scalars_2[n_curr]) * sum( broadcast(*, cache.T[2:(n_curr+1)], eltype(uprev).(extrapolation_weights_2[1:n_curr, n_curr])) ) # and its internal counterpart
+        calculate_residuals!(cache.res, integrator.u, cache.utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(cache.res, t)
         stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
       else
@@ -506,14 +506,14 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
   @unpack n_curr = cache
   # Coefficients for obtaining u
   @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
-  # Coefficients for obtaining u_tilde
+  # Coefficients for obtaining utilde
   @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
   # Additional constant information
   @unpack subdividing_sequence, stage_number = cache.coefficients
 
   # Create auxiliary variables
   u_temp1, u_temp2 = copy(uprev), copy(uprev) # Auxiliary variables for computing the internal discretisations
-  u, u_tilde = copy(uprev), copy(uprev) # Storage for the latest approximation and its internal counterpart
+  u, utilde = copy(uprev), copy(uprev) # Storage for the latest approximation and its internal counterpart
   T = fill(zero(uprev), integrator.alg.n_max + 1) # Storage for the internal discretisations obtained by the explicit midpoint rule
   fill!(cache.Q, zero(eltype(cache.Q)))
 
@@ -548,8 +548,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
     # Compute all information relating to an extrapolation order ≦ win_min
     for i = win_min - 1 : win_min
       u = eltype(uprev).(extrapolation_scalars[i+1]) * sum( broadcast(*, T[1:(i+1)], eltype(uprev).(extrapolation_weights[1:(i+1), (i+1)])) ) # Approximation of extrapolation order i
-      u_tilde = eltype(uprev).(extrapolation_scalars_2[i]) * sum( broadcast(*, T[2:(i+1)], eltype(uprev).(extrapolation_weights_2[1:i, i])) ) # and its internal counterpart
-      res = calculate_residuals(u, u_tilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+      utilde = eltype(uprev).(extrapolation_scalars_2[i]) * sum( broadcast(*, T[2:(i+1)], eltype(uprev).(extrapolation_weights_2[1:i, i])) ) # and its internal counterpart
+      res = calculate_residuals(u, utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       integrator.EEst = integrator.opts.internalnorm(res, t)
       cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
       stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
@@ -580,8 +580,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
 
         # Update u, integrator.EEst and cache.Q
         u = eltype(uprev).(extrapolation_scalars[n_curr+1]) * sum( broadcast(*, T[1:(n_curr+1)], eltype(uprev).(extrapolation_weights[1:(n_curr+1), (n_curr+1)])) ) # Approximation of extrapolation order n_curr
-        u_tilde = eltype(uprev).(extrapolation_scalars_2[n_curr]) * sum( broadcast(*, T[2:(n_curr+1)], eltype(uprev).(extrapolation_weights_2[1:n_curr, n_curr])) ) # and its internal counterpart
-        res = calculate_residuals(u, u_tilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+        utilde = eltype(uprev).(extrapolation_scalars_2[n_curr]) * sum( broadcast(*, T[2:(n_curr+1)], eltype(uprev).(extrapolation_weights_2[1:n_curr, n_curr])) ) # and its internal counterpart
+        res = calculate_residuals(u, utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(res, t)
         stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
       else
