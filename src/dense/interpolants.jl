@@ -1933,26 +1933,30 @@ end
 end
 
 @muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DP8Cache,idxs::Nothing,T::Type{Val{1}})
-  @.. b1diff = k[1] + k[2]
-  @.. b2diff = -2*k[2] + 2*k[3] + 2*k[4]
-  @.. b3diff = -3*k[3] - 6*k[4] + 3*k[5] + 3*k[6]
-  @.. b4diff = 4*k[4] - 8*k[5] - 12*k[6] + 4*k[7]
-  @.. b5diff = 5*k[5] + 15*k[6] - 15*k[7]
-  @.. b6diff = -6*k[6] + 18*k[7]
-  @.. out = b1diff + Θ*(b2diff + Θ*(b3diff + Θ*(b4diff +
-                                                 Θ*(b5diff + Θ*(b6diff - 7*k[7]*Θ)))))
+  # b1diff = k[1] + k[2]
+  # b2diff = -2*k[2] + 2*k[3] + 2*k[4]
+  # b3diff = -3*k[3] - 6*k[4] + 3*k[5] + 3*k[6]
+  # b4diff = 4*k[4] - 8*k[5] - 12*k[6] + 4*k[7]
+  # b5diff = 5*k[5] + 15*k[6] - 15*k[7]
+  # b6diff = -6*k[6] + 18*k[7]
+  # @.. out = b1diff + Θ*(b2diff + Θ*(b3diff + Θ*(b4diff +
+  #                                                Θ*(b5diff + Θ*(b6diff - 7*k[7]*Θ)))))
+  @views @.. out = k[1] + k[2] + Θ*(-2*k[2] + 2*k[3] + 2*k[4] + Θ*(-3*k[3] - 6*k[4] + 3*k[5] + 3*k[6] + Θ*(4*k[4] - 8*k[5] - 12*k[6] + 4*k[7] +
+                                                 Θ*(5*k[5] + 15*k[6] - 15*k[7] + Θ*(-6*k[6] + 18*k[7] - 7*k[7]*Θ)))))
   out
 end
 
 @muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DP8Cache,idxs,T::Type{Val{1}})
-  @views @.. b1diff = k[1][idxs] + k[2][idxs]
-  @views @.. b2diff = -2*k[2][idxs] + 2*k[3][idxs] + 2*k[4][idxs]
-  @views @.. b3diff = -3*k[3][idxs] - 6*k[4][idxs] + 3*k[5][idxs] + 3*k[6][idxs]
-  @views @.. b4diff = 4*k[4][idxs] - 8*k[5][idxs] - 12*k[6][idxs] + 4*k[7][idxs]
-  @views @.. b5diff = 5*k[5][idxs] + 15*k[6][idxs] - 15*k[7][idxs]
-  @views @.. b6diff = -6*k[6][idxs] + 18*k[7][idxs]
-  @views @.. out = b1diff + Θ*(b2diff + Θ*(b3diff + Θ*(b4diff +
-                                                 Θ*(b5diff + Θ*(b6diff - 7*k[7][idxs]*Θ)))))
+  # b1diff = k[1][idxs] + k[2][idxs]
+  # b2diff = -2*k[2][idxs] + 2*k[3][idxs] + 2*k[4][idxs]
+  # b3diff = -3*k[3][idxs] - 6*k[4][idxs] + 3*k[5][idxs] + 3*k[6][idxs]
+  # b4diff = 4*k[4][idxs] - 8*k[5][idxs] - 12*k[6][idxs] + 4*k[7][idxs]
+  # b5diff = 5*k[5][idxs] + 15*k[6][idxs] - 15*k[7][idxs]
+  # b6diff = -6*k[6][idxs] + 18*k[7][idxs]
+  #@views @.. out = b1diff + Θ*(b2diff + Θ*(b3diff + Θ*(b4diff +
+  #                                               Θ*(b5diff + Θ*(b6diff - 7*k[7][idxs]*Θ)))))
+  @views @.. out = k[1][idxs] + k[2][idxs] + Θ*(-2*k[2][idxs] + 2*k[3][idxs] + 2*k[4][idxs] + Θ*(-3*k[3][idxs] - 6*k[4][idxs] + 3*k[5][idxs] + 3*k[6][idxs] + Θ*(4*k[4][idxs] - 8*k[5][idxs] - 12*k[6][idxs] + 4*k[7][idxs] +
+                                                 Θ*(5*k[5][idxs] + 15*k[6][idxs] - 15*k[7][idxs] + Θ*(-6*k[6][idxs] + 18*k[7][idxs] - 7*k[7][idxs]*Θ)))))
   out
 end
 
