@@ -10,7 +10,6 @@ function ode_addsteps!(args...)
 end
 
 @inline function _ode_addsteps!(integrator,f=integrator.f,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
-  @show integrator.alg
   if !(typeof(integrator.cache) <: CompositeCache)
     DiffEqBase.addsteps!(integrator.k,integrator.tprev,integrator.uprev,integrator.u,
                   integrator.dt,f,integrator.p,integrator.cache,

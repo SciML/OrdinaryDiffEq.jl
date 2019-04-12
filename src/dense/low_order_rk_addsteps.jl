@@ -23,7 +23,8 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{SSPRK22Cache,SSPRK
 end
 
 @muladd function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::OwrenZen4Cache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
-  if length(k)<4 || always_calc_begin
+  if length(k)<6 || always_calc_begin
+    uidx = eachindex(uprev)
     @unpack k1,k2,k3,k4,k5,k6,tmp = cache
     @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,c1,c2,c3,c4 = cache.tab
     # NOTE: k1 does not need to be evaluated since it is aliased with integrator.fsalfirst.
@@ -36,8 +37,9 @@ end
     f(k4,tmp,p,t+c3*dt)
     @.. tmp = uprev+dt*(a51*k1+a52*k2+a53*k3+a54*k4)
     f(k5,tmp,p,t+c4*dt)
-    @.. u = uprev+dt*(a61*k1+a63*k3+a64*k4+a65*k5)
-    f(k6,u,p,t+dt)
+    # NOTE: We should not change u here.
+    @.. tmp = uprev+dt*(a61*k1+a63*k3+a64*k4+a65*k5)
+    f(k6,tmp,p,t+dt)
     copyat_or_push!(k,1,k1)
     copyat_or_push!(k,2,k2)
     copyat_or_push!(k,3,k3)
@@ -49,7 +51,8 @@ end
 end
 
 @muladd function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::OwrenZen5Cache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
-  if length(k)<4 || always_calc_begin
+  if length(k)<8 || always_calc_begin
+    uidx = eachindex(uprev)
     @unpack k1,k2,k3,k4,k5,k6,k7,k8,tmp = cache
     @unpack a21,a31,a32,a41,a42,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87,c1,c2,c3,c4,c5,c6 = cache.tab
     # NOTE: k1 does not need to be evaluated since it is aliased with integrator.fsalfirst.
@@ -63,26 +66,30 @@ end
     @.. tmp = uprev+dt*(a51*k1+a52*k2+a53*k3+a54*k4)
     f(k5,tmp,p,t+c4*dt)
     @.. tmp = uprev+dt*(a61*k1+a62*k2+a63*k3+a64*k4+a65*k5)
-    f(k6,tmp,p,t+dt)
+    f(k6,tmp,p,t+c5*dt)
     @.. tmp = uprev+dt*(a71*k1+a72*k2+a73*k3+a74*k4+a75*k5+a76*k6)
     f(k7,tmp,p,t+c6*dt)
-    @.. u = uprev+dt*(a81*k1+a83*k3+a84*k4+a85*k5+a86*k6+a87*k7)
-    f(k8,u,p,t+dt)
+    # NOTE: We should not change u here.
+    @.. tmp = uprev+dt*(a81*k1+a83*k3+a84*k4+a85*k5+a86*k6+a87*k7)
+    f(k8,tmp,p,t+dt)
     copyat_or_push!(k,1,k1)
     copyat_or_push!(k,2,k2)
     copyat_or_push!(k,3,k3)
     copyat_or_push!(k,4,k4)
     copyat_or_push!(k,5,k5)
     copyat_or_push!(k,6,k6)
+    copyat_or_push!(k,7,k7)
+    copyat_or_push!(k,8,k8)
   end
   nothing
 end
 
 @muladd function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::DP5Cache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<4 || always_calc_begin
-    @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,c1,c2,c3,c4,c5,c6 = cache.tab
+    @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,btilde1,btilde3,btilde4,btilde5,btilde6,btilde7,c1,c2,c3,c4,c5,c6 = cache.tab
+    @unpack k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,utilde,tmp,atmp = cache
     @unpack d1,d3,d4,d5,d6,d7 = cache.tab
-    @unpack k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,tmp = cache
+    uidx = eachindex(uprev)
     f(k1,uprev,p,t)
     @.. tmp = uprev+dt*(a21*k1)
     f(k2,tmp,p,t+c1*dt)
@@ -90,7 +97,7 @@ end
     f(k3,tmp,p,t+c2*dt)
     @.. tmp = uprev+dt*(a41*k1+a42*k2+a43*k3)
     f(k4,tmp,p,t+c3*dt)
-    @.. tmp = uprev+dt*(a51*k1+a52*k2+a53*k3+a54*k4)
+    tmp =uprev+dt*(a51*k1+a52*k2+a53*k3+a54*k4)
     f(k5,tmp,p,t+c4*dt)
     @.. tmp = uprev+dt*(a61*k1+a62*k2+a63*k3+a64*k4+a65*k5)
     f(k6,tmp,p,t+dt)
@@ -98,12 +105,16 @@ end
     @.. tmp = uprev+dt*update
     f(k7,tmp,p,t+dt)
     copyat_or_push!(k,1,update)
+    @.. utilde = dt*(btilde1*k1 + btilde3*k3 + btilde4*k4 + btilde5*k5 + btilde6*k6 + btilde7*k7)
+    #integrator.k[4] == k5
+    @.. k5 = d1*k1+d3*k3+d4*k4+d5*k5+d6*k6+d7*k7
+    #bspl == k3
     @.. bspl = k1 - update
-    @.. dense_tmp3 = update - k7 - bspl
-    @.. dense_tmp4 = d1*k1+d3*k3+d4*k4+d5*k5+d6*k6+d7*k7
+    # k6 === integrator.k[3] === k2
+    @.. k6 = update - k7 - bspl
     copyat_or_push!(k,2,bspl)
-    copyat_or_push!(k,3,dense_tmp3)
-    copyat_or_push!(k,4,dense_tmp4)
+    copyat_or_push!(k,3,k6)
+    copyat_or_push!(k,4,k5)
   end
   nothing
 end
@@ -174,6 +185,7 @@ Called to add the extra k9, k10, k11 steps for the Order 5 interpolation when ne
 """
 @muladd function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::BS5Cache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k) < 8 || always_calc_begin
+    uidx = eachindex(uprev)
     @unpack k1,k2,k3,k4,k5,k6,k7,k8,tmp = cache
     @unpack c1,c2,c3,c4,c5,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,a81,a83,a84,a85,a86,a87 = cache.tab
     @.. tmp = uprev+dt*a21*k1
@@ -188,8 +200,8 @@ Called to add the extra k9, k10, k11 steps for the Order 5 interpolation when ne
     f(k6,tmp,p,t+c5*dt)
     @.. tmp = uprev+dt*(a71*k1+a72*k2+a73*k3+a74*k4+a75*k5+a76*k6)
     f(k7,tmp,p,t+dt)
-    @.. u = uprev+dt*(a81*k1+a83*k3+a84*k4+a85*k5+a86*k6+a87*k7)
-    f(k8,u,p,t+dt)
+    @.. tmp = uprev+dt*(a81*k1+a83*k3+a84*k4+a85*k5+a86*k6+a87*k7)
+    f(k8,tmp,p,t+dt)
     copyat_or_push!(k,1,k1)
     copyat_or_push!(k,2,k2)
     copyat_or_push!(k,3,k3)
@@ -200,6 +212,7 @@ Called to add the extra k9, k10, k11 steps for the Order 5 interpolation when ne
     copyat_or_push!(k,8,k8)
   end
   if (allow_calc_end && length(k)< 11) || force_calc_end # Have not added the extra stages yet
+    uidx = eachindex(uprev)
     rtmp = similar(cache.k1)
     @unpack tmp = cache
     @unpack c6,c7,c8,a91,a92,a93,a94,a95,a96,a97,a98,a101,a102,a103,a104,a105,a106,a107,a108,a109,a111,a112,a113,a114,a115,a116,a117,a118,a119,a1110 = cache.tab
