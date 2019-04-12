@@ -319,36 +319,6 @@ end
   @unpack t,dt,f,p = integrator
   du,u = integrator.u.x
   duprev,uprev = integrator.uprev.x
-  @unpack tmp,fsalfirst,k₂,k₃,k₄,k = cache
-  kdu,ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
-  k₁ = fsalfirst
-  dtsq = dt^2
-
-  f.f2(t+1//5*dt,duprev,uprev,k₁.x[2])
-  @.. ku = uprev + (1//5*dt)*duprev + (1//50*dtsq)*k₁.x[2]
-
-  f.f2(t+1//5*dt,du,ku,k₂.x[2])
-  @.. ku = uprev + (2//3*dt)*duprev + (-1//27*dtsq)*k₁.x[2] + (7//27*dtsq)*k₂.x[2]
-
-  f.f2(t+2//3*dt,du,ku,k₃.x[2])
-  @.. ku = uprev + dt*duprev + (3//10*dtsq)*k₁.x[2] + (-2//35*dtsq)*k₂.x[2] + (9//35*dtsq)*k₃.x[2]
-
-  f.f1(k₄.x[2],duprev,ku,p,t+dt)
-  @.. u  = uprev + dt*duprev + (14//336*dtsq)*k₁.x[2] + (100//336*dtsq)*k₂.x[2] + (54//336*dtsq)*k₃.x[2]
-  @.. du = duprev + (14//336*dt)*k₁.x[2] + (125//336*dt)*k₂.x[2] + (162//336*dt)*k₃.x[2] + (35//336*dt)*k₄.x[2]
-
-  f.f1(k.x[1],du,u,p,t+dt)
-  f.f2(k.x[2],du,u,p,t+dt)
-  integrator.destats.nf += 4
-  integrator.destats.nf2 += 1
-  return nothing
-end
-
-#=
-@muladd function perform_step!(integrator,cache::Nystrom5VelocityIndependentCache,repeat_step=false)
-  @unpack t,dt,f,p = integrator
-  du,u = integrator.u.x
-  duprev,uprev = integrator.uprev.x
   uidx = eachindex(integrator.uprev.x[1])
   @unpack tmp,fsalfirst,k₂,k₃,k₄,k = cache
   @unpack c1, c2, a21, a31, a32, a41, a42, a43, bbar1, bbar2, bbar3, b1, b2, b3, b4 = cache.tab
@@ -361,21 +331,24 @@ end
   @.. ku = uprev + dt*(c2*duprev + dt*(a31*k₁ + a32*k₂))
 
   f.f1(k₃,du,ku,p,t+c2*dt)
-  @tight_loop_macros for i in uidx
-    @inbounds ku[i] = uprev[i] + dt*(duprev[i] + dt*(a41*k₁[i] + a42*k₂[i] + a43*k₃[i]))
-  end
+  #@tight_loop_macros for i in uidx
+  #  @inbounds ku[i] = uprev[i] + dt*(duprev[i] + dt*(a41*k₁[i] + a42*k₂[i] + a43*k₃[i]))
+  #end
+  @.. ku = uprev + dt*(duprev + dt*(a41*k₁ + a42*k₂ + a43*k₃))
 
   f.f1(k₄,duprev,ku,p,t+dt)
-  @tight_loop_macros for i in uidx
-    @inbounds u[i]  = uprev[i] + dt*(duprev[i] + dt*(bbar1*k₁[i] + bbar2*k₂[i] + bbar3*k₃[i]))
-    @inbounds du[i] = duprev[i] + dt*(b1*k₁[i] + b2*k₂[i] + b3*k₃[i] + b4*k₄[i])
-  end
+  #@tight_loop_macros for i in uidx
+  #  @inbounds u[i]  = uprev[i] + dt*(duprev[i] + dt*(bbar1*k₁[i] + bbar2*k₂[i] + bbar3*k₃[i]))
+  #  @inbounds du[i] = duprev[i] + dt*(b1*k₁[i] + b2*k₂[i] + b3*k₃[i] + b4*k₄[i])
+  #end
+  @.. u  = uprev + dt*(duprev + dt*(bbar1*k₁ + bbar2*k₂ + bbar3*k₃))
+  @.. du = duprev + dt*(b1*k₁ + b2*k₂ + b3*k₃ + b4*k₄)
   f.f1(k.x[1],du,u,p,t+dt)
   f.f2(k.x[2],du,u,p,t+dt)
   integrator.destats.nf += 4
   integrator.destats.nf2 += 1
+  return nothing
 end
-=#
 
 function initialize!(integrator, cache::DPRKN6ConstantCache)
   duprev,uprev = integrator.uprev.x
