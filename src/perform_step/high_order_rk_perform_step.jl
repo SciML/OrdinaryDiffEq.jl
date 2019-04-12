@@ -228,6 +228,7 @@ end
 
 @muladd function perform_step!(integrator, cache::DP8Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
+  uidx = eachindex(integrator.uprev)
   @unpack c7,c8,c9,c10,c11,c6,c5,c4,c3,c2,b1,b6,b7,b8,b9,b10,b11,b12,btilde1,btilde6,btilde7,btilde8,btilde9,btilde10,btilde11,btilde12,er1,er6,er7,er8,er9,er10,er11,er12,a0201,a0301,a0302,a0401,a0403,a0501,a0503,a0504,a0601,a0604,a0605,a0701,a0704,a0705,a0706,a0801,a0804,a0805,a0806,a0807,a0901,a0904,a0905,a0906,a0907,a0908,a1001,a1004,a1005,a1006,a1007,a1008,a1009,a1101,a1104,a1105,a1106,a1107,a1108,a1109,a1110,a1201,a1204,a1205,a1206,a1207,a1208,a1209,a1210,a1211 = cache.tab
   @unpack k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,udiff,bspl,dense_tmp3,dense_tmp4,dense_tmp5,dense_tmp6,dense_tmp7,kupdate,utilde,tmp,atmp = cache
   f(k1, uprev, p, t)
@@ -259,9 +260,9 @@ end
   integrator.destats.nf += 12
   if integrator.opts.adaptive
     @.. utilde = dt*(k1*er1 + k6*er6 + k7*er7 + k8*er8 + k9*er9 + k10*er10 + k11*er11 + k12*er12)
-    err5 = integrator.opts.internalnorm(atmp,t) # Order 5
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
-    @.. utilde = dt*(btilde1*k1 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9 + btilde10*k10 + btilde11*k11 + btilde12*k12)
+    err5 = integrator.opts.internalnorm(atmp,t) # Order 5
+    @.. utilde= dt*(btilde1*k1 + btilde6*k6 + btilde7*k7 + btilde8*k8 + btilde9*k9 + btilde10*k10 + btilde11*k11 + btilde12*k12)
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     err3 = integrator.opts.internalnorm(atmp,t) # Order 3
     err52 = err5*err5
@@ -282,7 +283,8 @@ end
     f(k15, tmp, p, t + c15*dt)
     @.. tmp = uprev+dt*(a1601*k1+a1606*k6+a1607*k7+a1608*k8+a1609*k9+a1613*k13+a1614*k14+a1615*k15)
     f(k16, tmp, p, t + c16*dt)
-    @.. udiff = kupdate
+    integrator.destats.nf += 3
+    @.. udiff= kupdate
     @.. bspl = k1 - udiff
     @.. integrator.k[3] = udiff - k13 - bspl
     @.. integrator.k[4] = d401*k1+d406*k6+d407*k7+d408*k8+d409*k9+d410*k10+d411*k11+d412*k12+d413*k13+d414*k14+d415*k15+d416*k16
@@ -290,7 +292,6 @@ end
     @.. integrator.k[6] = d601*k1+d606*k6+d607*k7+d608*k8+d609*k9+d610*k10+d611*k11+d612*k12+d613*k13+d614*k14+d615*k15+d616*k16
     @.. integrator.k[7] = d701*k1+d706*k6+d707*k7+d708*k8+d709*k9+d710*k10+d711*k11+d712*k12+d713*k13+d714*k14+d715*k15+d716*k16
   end
-  return nothing
 end
 
 #=

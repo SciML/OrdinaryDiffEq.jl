@@ -807,9 +807,14 @@ end
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
-  @.. bspl = k1 - update
-  @.. integrator.k[4] = d1*k1+d3*k3+d4*k4+d5*k5+d6*k6+d7*k7
-  @.. integrator.k[3] = update - k7 - bspl
+  if integrator.opts.calck
+    #integrator.k[4] == k5
+    @.. integrator.k[4] = d1*k1+d3*k3+d4*k4+d5*k5+d6*k6+d7*k7
+    #bspl == k3
+    @.. bspl = k1 - update
+    # k6 === integrator.k[3] === k2
+    @.. integrator.k[3] = update - k7 - bspl
+  end
   return nothing
 end
 
