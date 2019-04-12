@@ -8,7 +8,24 @@
   step_limiter!::StepLimiter
 end
 
-struct SSPRK22ConstantCache <: OrdinaryDiffEqConstantCache end
+struct SSPRK22ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+  α::Array{T}
+  β::Array{T}
+  γ::Array{T}
+  stages::Int
+  c::Array{T2}
+  function SSPRK22ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+    stages = 1
+    α = zeros(T,1)
+    α[1] = T(0.5)
+    β = zeros(T,1)
+    β[1] = T(0.5)
+    γ = zeros(T,1)
+    γ[1] = T(0.5)
+    c = zeros(T2,0)
+    new{T,T2}(α,β,γ,stages,c)
+  end
+end
 
 function alg_cache(alg::SSPRK22,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
@@ -21,7 +38,7 @@ function alg_cache(alg::SSPRK22,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   SSPRK22Cache(u,uprev,k,tmp,fsalfirst,alg.stage_limiter!,alg.step_limiter!)
 end
 
-alg_cache(alg::SSPRK22,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = SSPRK22ConstantCache()
+alg_cache(alg::SSPRK22,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = SSPRK22ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 
 
 @cache struct SSPRK33Cache{uType,rateType,StageLimiter,StepLimiter} <: OrdinaryDiffEqMutableCache
@@ -34,7 +51,28 @@ alg_cache(alg::SSPRK22,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTyp
   step_limiter!::StepLimiter
 end
 
-struct SSPRK33ConstantCache <: OrdinaryDiffEqConstantCache end
+struct SSPRK33ConstantCache{T, T2} <: OrdinaryDiffEqConstantCache
+  α::Array{T}
+  β::Array{T}
+  γ::Array{T}
+  stages::Int
+  c::Array{T2}
+  function SSPRK33ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+    stages = 2
+    α = zeros(T,2)
+    α[1] = T(0.75)
+    α[2] = T(0.33333333333333333)
+    β = zeros(T,2)
+    β[1] = T(0.25)
+    β[2] = T(0.66666666666666667)
+    γ = zeros(T,2)
+    γ[1] = T(0.25)
+    γ[2] = T(0.66666666666666667)
+    c = zeros(T2,1)
+    c[1] = T2(0.5)
+    new{T,T2}(α,β,γ,stages,c)
+  end
+end
 
 function alg_cache(alg::SSPRK33,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   tmp = similar(u)
@@ -47,7 +85,7 @@ function alg_cache(alg::SSPRK33,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   SSPRK33Cache(u,uprev,k,tmp,fsalfirst,alg.stage_limiter!,alg.step_limiter!)
 end
 
-alg_cache(alg::SSPRK33,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = SSPRK33ConstantCache()
+alg_cache(alg::SSPRK33,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = SSPRK33ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
 
 
 @cache struct SSPRK53Cache{uType,rateType,StageLimiter,StepLimiter,TabType} <: OrdinaryDiffEqMutableCache
