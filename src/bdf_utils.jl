@@ -26,7 +26,7 @@ function backward_diff!(cache::OrdinaryDiffEqMutableCache, D, D2, k, flag=true)
   flag && copyto!(D[1], D2[1,1])
   for i = 2:k
     for j = 1:(k-i+1)
-      @. D2[i,j] = D2[i-1,j] - D2[i-1,j+1]
+      @.. D2[i,j] = D2[i-1,j] - D2[i-1,j+1]
     end
     flag && copyto!(D[i], D2[i,1])
   end
@@ -52,7 +52,7 @@ function reinterpolate_history!(cache::OrdinaryDiffEqMutableCache, D, R, k)
   fill!(tmp,zero(eltype(D[1])))
   for j = 1:k
     for k = 1:k
-      @. tmp += D[k] * R[k,j]
+      @.. tmp += D[k] * R[k,j]
     end
     D[j] .= tmp
     fill!(tmp, zero(eltype(tmp)))

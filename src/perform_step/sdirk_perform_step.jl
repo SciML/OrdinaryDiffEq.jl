@@ -91,7 +91,7 @@ end
 
   # initial guess
   if alg.extrapolant == :linear
-    @. z = dt*integrator.fsalfirst
+    @.. z = dt*integrator.fsalfirst
   else # :constant
     z .= zero(eltype(u))
   end
@@ -99,7 +99,7 @@ end
   nlsolver.tmp = uprev
   z = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
-  @. u = uprev + z
+  @.. u = uprev + z
 
   if integrator.opts.adaptive && integrator.success_iter > 0
     # local truncation error (LTE) bound by dt^2/2*max|y''(t)|
@@ -114,7 +114,7 @@ end
     c = 7/12 # default correction factor in SPICE (LTE overestimated by DD)
     r = c*dt^2 # by mean value theorem 2nd DD equals y''(s)/2 for some s
 
-    @. tmp = r*integrator.opts.internalnorm((u - uprev)/dt1 - (uprev - uprev2)/dt2,t)
+    @.. tmp = r*integrator.opts.internalnorm((u - uprev)/dt1 - (uprev - uprev2)/dt2,t)
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   else
@@ -160,7 +160,7 @@ end
 
   # initial guess
   if alg.extrapolant == :linear
-    @. z = dt*integrator.fsalfirst
+    @.. z = dt*integrator.fsalfirst
   else # :constant
     z .= zero(eltype(u))
   end
@@ -168,7 +168,7 @@ end
   nlsolver.tmp = uprev
   z = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
-  @. u = nlsolver.tmp + z
+  @.. u = nlsolver.tmp + z
 
   integrator.destats.nf += 1
   f(integrator.fsallast,u,p,t+dt)
@@ -249,11 +249,11 @@ end
   update_W!(integrator, cache, γdt, repeat_step)
 
   # initial guess
-  @. z = dt*integrator.fsalfirst
-  @. tmp = uprev + γdt*integrator.fsalfirst
+  @.. z = dt*integrator.fsalfirst
+  @.. tmp = uprev + γdt*integrator.fsalfirst
   z = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
-  @. u = tmp + 1//2*z
+  @.. u = tmp + 1//2*z
 
   if integrator.opts.adaptive
     if integrator.iter > 2
@@ -274,7 +274,7 @@ end
       c = 7/12 # default correction factor in SPICE (LTE overestimated by DD)
       r = c*dt^3/2 # by mean value theorem 3rd DD equals y'''(s)/6 for some s
 
-      # @. tmp = r*abs(((u - uprev)/dt1 - (uprev - uprev2)/dt2) - ((uprev - uprev2)/dt3 - (uprev2 - uprev3)/dt4)/dt5)
+      # @.. tmp = r*abs(((u - uprev)/dt1 - (uprev - uprev2)/dt2) - ((uprev - uprev2)/dt3 - (uprev2 - uprev3)/dt4)/dt5)
       @inbounds for i in eachindex(u)
         DD31 = (u[i] - uprev[i])/dt1 - (uprev[i] - uprev2[i])/dt2
         DD30 = (uprev[i] - uprev2[i])/dt3 - (uprev2[i] - uprev3[i])/dt4
@@ -360,16 +360,16 @@ end
   alg = unwrap_alg(integrator, true)
 
   # FSAL
-  @. zprev = dt*integrator.fsalfirst
+  @.. zprev = dt*integrator.fsalfirst
   update_W!(integrator, cache, d*dt, repeat_step)
 
   ##### Solve Trapezoid Step
 
   # TODO: Add extrapolation
-  @. zᵧ = zprev
+  @.. zᵧ = zprev
   nlsolver.z = zᵧ
 
-  @. tmp = uprev + d*zprev
+  @.. tmp = uprev + d*zprev
   nlsolver.c = γ
   zᵧ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
@@ -377,21 +377,21 @@ end
   ################################## Solve BDF2 Step
 
   ### Initial Guess From Shampine
-  @. z = α1*zprev + α2*zᵧ
+  @.. z = α1*zprev + α2*zᵧ
   nlsolver.z = z
 
-  @. tmp = uprev + ω*zprev + ω*zᵧ
+  @.. tmp = uprev + ω*zprev + ω*zᵧ
   nlsolver.c = 1
   set_new_W!(nlsolver, false)
   z = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
 
-  @. u = tmp + d*z
+  @.. u = tmp + d*z
 
   ################################### Finalize
 
   if integrator.opts.adaptive
-    @. dz = btilde1*zprev + btilde2*zᵧ + btilde3*z
+    @.. dz = btilde1*zprev + btilde2*zᵧ + btilde3*z
     if alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
       if DiffEqBase.has_invW(f)
@@ -406,7 +406,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
-  @. integrator.fsallast = z/dt
+  @.. integrator.fsallast = z/dt
 end
 
 @muladd function perform_step!(integrator, cache::SDIRK2ConstantCache, repeat_step=false)
@@ -468,9 +468,9 @@ end
   # initial guess
   if integrator.success_iter > 0 && !integrator.reeval_fsal && alg.extrapolant == :interpolant
     current_extrapolant!(u,t+dt,integrator)
-    @. z₁ = u - uprev
+    @.. z₁ = u - uprev
   elseif alg.extrapolant == :linear
-    @. z₁ = dt*integrator.fsalfirst
+    @.. z₁ = dt*integrator.fsalfirst
   else
     z₁ .= zero(eltype(u))
   end
@@ -487,17 +487,17 @@ end
   z₂ .= zero(eltype(u))
   nlsolver.z = z₂
   set_new_W!(nlsolver, false)
-  @. tmp = uprev - z₁
+  @.. tmp = uprev - z₁
   nlsolver.tmp = tmp
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
 
-  @. u = uprev + z₁/2 + z₂/2
+  @.. u = uprev + z₁/2 + z₂/2
 
   ################################### Finalize
 
   if integrator.opts.adaptive
-    @. dz = z₁/2 - z₂/2
+    @.. dz = z₁/2 - z₂/2
     if alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
       if DiffEqBase.has_invW(f)
@@ -581,9 +581,9 @@ end
   # initial guess
   if integrator.success_iter > 0 && !integrator.reeval_fsal && alg.extrapolant == :interpolant
     current_extrapolant!(u,t+dt,integrator)
-    @. z₁ = u - uprev
+    @.. z₁ = u - uprev
   elseif alg.extrapolant == :linear
-    @. z₁ = dt*integrator.fsalfirst
+    @.. z₁ = dt*integrator.fsalfirst
   else
     z₁ .= zero(eltype(u))
   end
@@ -597,16 +597,16 @@ end
   ################################## Solve Step 2
 
   ### Initial Guess Is α₁ = c₂/γ
-  @. z₂ = c2/γ
+  @.. z₂ = c2/γ
   nlsolver.z = z₂
 
-  @. tmp = uprev + z₁/2
+  @.. tmp = uprev + z₁/2
   nlsolver.tmp = tmp
   set_new_W!(nlsolver, false)
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
 
-  @. u = tmp + z₂/2
+  @.. u = tmp + z₂/2
 
   ################################### Finalize
 
@@ -733,7 +733,7 @@ end
   z₂ .= zero(eltype(z₂))
   nlsolver.z = z₂
 
-  @. tmp = uprev + a21*z₁
+  @.. tmp = uprev + a21*z₁
   nlsolver.tmp = tmp
   set_new_W!(nlsolver, false)
   nlsolver.c = c2
@@ -743,9 +743,9 @@ end
   ################################## Solve Step 3
 
   # Guess starts from z₁
-  @. z₃ = z₁
+  @.. z₃ = z₁
   nlsolver.z = z₃
-  @. tmp = uprev + a31*z₁ + a32*z₂
+  @.. tmp = uprev + a31*z₁ + a32*z₂
   nlsolver.c = c3
   z₃ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
@@ -753,10 +753,10 @@ end
   ################################## Solve Step 4
 
   # Use constant z prediction
-  @. z₄ = z₃
+  @.. z₄ = z₃
   nlsolver.z = z₄
 
-  @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
+  @.. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlsolver.c = c4
   z₄ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
@@ -764,14 +764,14 @@ end
   ################################## Solve Step 5
 
   # Use constant z prediction
-  @. z₅ = b1hat2*z₁ + b2hat2*z₂ + b3hat2*z₃ + b4hat2*z₄
+  @.. z₅ = b1hat2*z₁ + b2hat2*z₂ + b3hat2*z₃ + b4hat2*z₄
   nlsolver.z = z₅
-  @. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
+  @.. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   nlsolver.c = 1
   z₅ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
 
-  @. u = tmp + γ*z₅
+  @.. u = tmp + γ*z₅
 
   ################################### Finalize
 
@@ -784,7 +784,7 @@ end
       btilde3 = b3hat1-a53; btilde4 = b4hat1-a54; btilde5 = -γ
     end
 
-    @. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
+    @.. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
     if alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
       if DiffEqBase.has_invW(f)
@@ -799,7 +799,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
-  @. integrator.fsallast = z₅/dt
+  @.. integrator.fsallast = z₅/dt
 end
 
 @muladd function perform_step!(integrator, cache::Hairer4ConstantCache, repeat_step=false)
@@ -892,9 +892,9 @@ end
   # initial guess
   if integrator.success_iter > 0 && !integrator.reeval_fsal && alg.extrapolant == :interpolant
     current_extrapolant!(u,t+dt,integrator)
-    @. z₁ = u - uprev
+    @.. z₁ = u - uprev
   elseif alg.extrapolant == :linear
-    @. z₁ = dt*integrator.fsalfirst
+    @.. z₁ = dt*integrator.fsalfirst
   else
     z₁ .= zero(eltype(z₁))
   end
@@ -909,9 +909,9 @@ end
 
   ##### Step 2
 
-  @. z₂ = α21*z₁
+  @.. z₂ = α21*z₁
   nlsolver.z = z₂
-  @. tmp = uprev + a21*z₁
+  @.. tmp = uprev + a21*z₁
   nlsolver.tmp = tmp
   nlsolver.c = c2
   set_new_W!(nlsolver, false)
@@ -920,9 +920,9 @@ end
 
   ################################## Solve Step 3
 
-  @. z₃ = α31*z₁ + α32*z₂
+  @.. z₃ = α31*z₁ + α32*z₂
   nlsolver.z = z₃
-  @. tmp = uprev + a31*z₁ + a32*z₂
+  @.. tmp = uprev + a31*z₁ + a32*z₂
   nlsolver.c = c3
   z₃ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
@@ -930,9 +930,9 @@ end
   ################################## Solve Step 4
 
   # Use constant z prediction
-  @. z₄ = α41*z₁ + α43*z₃
+  @.. z₄ = α41*z₁ + α43*z₃
   nlsolver.z = z₄
-  @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
+  @.. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlsolver.c = c4
   z₄ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
@@ -940,19 +940,19 @@ end
   ################################## Solve Step 5
 
   # Use yhat prediction
-  @. z₅ = bhat1*z₁ + bhat2*z₂ + bhat3*z₃ + bhat4*z₄
+  @.. z₅ = bhat1*z₁ + bhat2*z₂ + bhat3*z₃ + bhat4*z₄
   nlsolver.z = z₅
-  @. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
+  @.. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   nlsolver.c = 1
   z₅ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
 
-  @. u = tmp + γ*z₅
+  @.. u = tmp + γ*z₅
 
   ################################### Finalize
 
   if integrator.opts.adaptive
-    # @. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
+    # @.. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
     @tight_loop_macros for i in eachindex(u)
       dz[i] = btilde1*z₁[i] + btilde2*z₂[i] + btilde3*z₃[i] + btilde4*z₄[i] + btilde5*z₅[i]
     end
@@ -970,7 +970,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
-  @. integrator.fsallast = z₅/dt
+  @.. integrator.fsallast = z₅/dt
 end
 
 @muladd function perform_step!(integrator, cache::ESDIRK54I8L2SAConstantCache, repeat_step=false)
@@ -1098,7 +1098,7 @@ end
 
   ##### Step 1
 
-  @. z₁ = dt*integrator.fsalfirst
+  @.. z₁ = dt*integrator.fsalfirst
 
   ##### Step 2
 
@@ -1106,7 +1106,7 @@ end
   z₂ .= zero(eltype(u))
   nlsolver.z = z₂
 
-  @. tmp = uprev + γ*z₁
+  @.. tmp = uprev + γ*z₁
   nlsolver.c = 2γ
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
@@ -1116,7 +1116,7 @@ end
 
   nlsolver.z = fill!(z₃, zero(eltype(u)))
 
-  @. tmp = uprev + a31*z₁ + a32*z₂
+  @.. tmp = uprev + a31*z₁ + a32*z₂
   nlsolver.c = c3
   z₃ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
@@ -1126,7 +1126,7 @@ end
   # Use constant z prediction
   nlsolver.z = fill!(z₄, zero(eltype(u)))
 
-  @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
+  @.. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlsolver.c = c4
   z₄ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
@@ -1135,7 +1135,7 @@ end
 
   nlsolver.z = fill!(z₅, zero(eltype(u)))
 
-  @. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
+  @.. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   nlsolver.c = c5
   z₅ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
@@ -1144,7 +1144,7 @@ end
 
   nlsolver.z = fill!(z₆, zero(eltype(u)))
 
-  @. tmp = uprev + a61*z₁ + a62*z₂ + a63*z₃ + a64*z₄ + a65*z₅
+  @.. tmp = uprev + a61*z₁ + a62*z₂ + a63*z₃ + a64*z₄ + a65*z₅
   nlsolver.c = c6
   z₆ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
@@ -1153,7 +1153,7 @@ end
 
   nlsolver.z = fill!(z₇, zero(eltype(u)))
 
-  @. tmp = uprev + a71*z₁ + a72*z₂ + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
+  @.. tmp = uprev + a71*z₁ + a72*z₂ + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
   nlsolver.c = c7
   z₇ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
@@ -1162,21 +1162,21 @@ end
 
   nlsolver.z = fill!(z₈, zero(eltype(u)))
 
-  @. nlsolver.tmp = uprev + a81*z₁ + a82*z₂ + a83*z₃ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇
+  @.. nlsolver.tmp = uprev + a81*z₁ + a82*z₂ + a83*z₃ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇
   nlsolver.c = oneunit(nlsolver.c)
   z₈ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
 
-  @. u = tmp + γ*z₈
+  @.. u = tmp + γ*z₈
 
   ################################### Finalize
 
   if integrator.opts.adaptive
-    @. tmp = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇ + btilde8*z₈
+    @.. tmp = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇ + btilde8*z₈
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
-  @. integrator.fsallast = z₈/dt
+  @.. integrator.fsallast = z₈/dt
   return
 end
