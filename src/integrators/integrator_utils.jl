@@ -361,7 +361,7 @@ function step_accept_controller!(integrator,alg::ExtrapolationMidpointDeuflhard,
   # Check if n_new may be increased
   if n_new == n_curr < min(n_max, n_old + 1) # cf. win_max in perfom_step! of the last step
     # Predict stepsize scaling for order (n_new + 1)
-    stepsize_predictor!(integrator, alg, n_new+1) # Update cache.Q 
+    stepsize_predictor!(integrator, alg, n_new+1) # Update cache.Q
 
     # Compute and scale the corresponding stepsize
     dt_new[end] = integrator.dt ./ Q[tmp[end]+1]
@@ -416,7 +416,7 @@ function step_accept_controller!(integrator,alg::ExtrapolationMidpointHairerWann
   # Compute new order and stepsize, return new stepsize
   @unpack n_min, n_max = alg
   @unpack n_curr, n_old, Q, sigma = integrator.cache
-  s = integrator.cache.stage_number
+  s = integrator.cache.coefficients.stage_number
 
   # Compute new order based on available quantities
   win_min_old = n_old - 1 # cf. win_min in perfom_step! of the last step
