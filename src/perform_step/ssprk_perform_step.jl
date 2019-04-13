@@ -11,11 +11,11 @@ end
 
 @muladd function perform_step!(integrator, cache::Union{SSPRK22ConstantCache, SSPRK33ConstantCache}, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack α, β, γ, c, stages = cache
+  @unpack α, β, γ, c, stages, γ0, c0 = cache
 
   # u1 -> stored as u
-  u = uprev + dt*integrator.fsalfirst
-  k = f(u, p, t+dt)
+  u = uprev + γ0*dt*integrator.fsalfirst
+  k = f(u, p, t+c0*dt)
 
   for i in 1:stages
     u = α[i] * uprev + β[i] * u + γ[i] * dt * k
