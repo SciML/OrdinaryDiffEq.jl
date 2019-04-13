@@ -165,7 +165,7 @@ end
     @.. tmp = uprev+dt*(a61*k1+a62*k2+a63*k3+a64*k4+a65*k5)
     f(k6,tmp,p,t+dt)
     @.. tmp = uprev+dt*(a71*k1+a72*k2+a73*k3+a74*k4+a75*k5+a76*k6)
-    f(k7,u,p,t+dt)
+    f(k7,tmp,p,t+dt)
     copyat_or_push!(k,1,k1)
     copyat_or_push!(k,2,k2)
     copyat_or_push!(k,3,k3)
