@@ -366,7 +366,7 @@ end
 
 @muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Tsit5Cache,idxs::Nothing,T::Type{Val{2}})
   @tsit5pre2
-  @.. out = k[1]*b1Θdiff2 + k[2]*b2Θdiff2 + k[3]*b3Θdiff2 + k[4]*b4Θdiff2 + k[5]*b5Θdiff2 + k[6]*b6Θdiff2 + k[7]*b7Θdiff2
+  @.. out = (k[1]*b1Θdiff2 + k[2]*b2Θdiff2 + k[3]*b3Θdiff2 + k[4]*b4Θdiff2 + k[5]*b5Θdiff2 + k[6]*b6Θdiff2 + k[7]*b7Θdiff2)*invdt
   #@inbounds for i in eachindex(out)
   #  out[i] = (k[1][i]*b1Θdiff2 + k[2][i]*b2Θdiff2 + k[3][i]*b3Θdiff2 + k[4][i]*b4Θdiff2 + k[5][i]*b5Θdiff2 + k[6][i]*b6Θdiff2 + k[7][i]*b7Θdiff2)*invdt
   #end
@@ -375,7 +375,7 @@ end
 
 @muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Tsit5Cache,idxs,T::Type{Val{2}})
   @tsit5pre2
-  @views @.. out = k[1][idxs]*b1Θdiff2 + k[2][idxs]*b2Θdiff2 + k[3][idxs]*b3Θdiff2 + k[4][idxs]*b4Θdiff2 + k[5][idxs]*b5Θdiff2 + k[6][idxs]*b6Θdiff2 + k[7][idxs]*b7Θdiff2
+  @views @.. out = (k[1][idxs]*b1Θdiff2 + k[2][idxs]*b2Θdiff2 + k[3][idxs]*b3Θdiff2 + k[4][idxs]*b4Θdiff2 + k[5][idxs]*b5Θdiff2 + k[6][idxs]*b6Θdiff2 + k[7][idxs]*b7Θdiff2)*invdt
   #@inbounds for (j,i) in enumerate(idxs)
   #  out[j] = (k[1][i]*b1Θdiff2 + k[2][i]*b2Θdiff2 + k[3][i]*b3Θdiff2 + k[4][i]*b4Θdiff2 + k[5][i]*b5Θdiff2 + k[6][i]*b6Θdiff2 + k[7][i]*b7Θdiff2)*invdt
   #end
@@ -411,7 +411,7 @@ end
 
 @muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Tsit5Cache,idxs::Nothing,T::Type{Val{3}})
   @tsit5pre3
-  @.. out = k[1]*b1Θdiff3 + k[2]*b2Θdiff3 + k[3]*b3Θdiff3 + k[4]*b4Θdiff3 + k[5]*b5Θdiff3 + k[6]*b6Θdiff3 + k[7]*b7Θdiff3
+  @.. out = (k[1]*b1Θdiff3 + k[2]*b2Θdiff3 + k[3]*b3Θdiff3 + k[4]*b4Θdiff3 + k[5]*b5Θdiff3 + k[6]*b6Θdiff3 + k[7]*b7Θdiff3)*invdt2
   #@inbounds for i in eachindex(out)
   #  out[i] = (k[1][i]*b1Θdiff3 + k[2][i]*b2Θdiff3 + k[3][i]*b3Θdiff3 + k[4][i]*b4Θdiff3 + k[5][i]*b5Θdiff3 + k[6][i]*b6Θdiff3 + k[7][i]*b7Θdiff3)*invdt2
   #end
@@ -420,7 +420,7 @@ end
 
 @muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Tsit5Cache,idxs,T::Type{Val{3}})
   @tsit5pre3
-  @views @.. out = k[1][idxs]*b1Θdiff3 + k[2][idxs]*b2Θdiff3 + k[3][idxs]*b3Θdiff3 + k[4][idxs]*b4Θdiff3 + k[5][idxs]*b5Θdiff3 + k[6][idxs]*b6Θdiff3 + k[7][idxs]*b7Θdiff3
+  @views @.. out = (k[1][idxs]*b1Θdiff3 + k[2][idxs]*b2Θdiff3 + k[3][idxs]*b3Θdiff3 + k[4][idxs]*b4Θdiff3 + k[5][idxs]*b5Θdiff3 + k[6][idxs]*b6Θdiff3 + k[7][idxs]*b7Θdiff3)*invdt2
   #@inbounds for (j,i) in enumerate(idxs)
   #  out[j] = (k[1][i]*b1Θdiff3 + k[2][i]*b2Θdiff3 + k[3][i]*b3Θdiff3 + k[4][i]*b4Θdiff3 + k[5][i]*b5Θdiff3 + k[6][i]*b6Θdiff3 + k[7][i]*b7Θdiff3)*invdt2
   #end
@@ -456,7 +456,7 @@ end
 
 @muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Tsit5Cache,idxs::Nothing,T::Type{Val{4}})
   @tsit5pre4
-  @.. out = k[1]*b1Θdiff4 + k[2]*b2Θdiff4 + k[3]*b3Θdiff4 + k[4]*b4Θdiff4 + k[5]*b5Θdiff4 + k[6]*b6Θdiff4 + k[7]*b7Θdiff4
+  @.. out = (k[1]*b1Θdiff4 + k[2]*b2Θdiff4 + k[3]*b3Θdiff4 + k[4]*b4Θdiff4 + k[5]*b5Θdiff4 + k[6]*b6Θdiff4 + k[7]*b7Θdiff4)*invdt3
   #@inbounds for i in eachindex(out)
   #  out[i] = (k[1][i]*b1Θdiff4 + k[2][i]*b2Θdiff4 + k[3][i]*b3Θdiff4 + k[4][i]*b4Θdiff4 + k[5][i]*b5Θdiff4 + k[6][i]*b6Θdiff4 + k[7][i]*b7Θdiff4)*invdt3
   #end
@@ -465,7 +465,7 @@ end
 
 @muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Tsit5Cache,idxs,T::Type{Val{4}})
   @tsit5pre4
-  @views @.. out = k[1][idxs]*b1Θdiff4 + k[2][idxs]*b2Θdiff4 + k[3][idxs]*b3Θdiff4 + k[4][idxs]*b4Θdiff4 + k[5][idxs]*b5Θdiff4 + k[6][idxs]*b6Θdiff4 + k[7][idxs]*b7Θdiff4
+  @views @.. out = (k[1][idxs]*b1Θdiff4 + k[2][idxs]*b2Θdiff4 + k[3][idxs]*b3Θdiff4 + k[4][idxs]*b4Θdiff4 + k[5][idxs]*b5Θdiff4 + k[6][idxs]*b6Θdiff4 + k[7][idxs]*b7Θdiff4)*invdt3
   #@inbounds for (j,i) in enumerate(idxs)
   #  out[j] = (k[1][i]*b1Θdiff4 + k[2][i]*b2Θdiff4 + k[3][i]*b3Θdiff4 + k[4][i]*b4Θdiff4 + k[5][i]*b5Θdiff4 + k[6][i]*b6Θdiff4 + k[7][i]*b7Θdiff4)*invdt3
   #end
@@ -1729,7 +1729,7 @@ end
 
 @muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Vern9Cache,idxs::Nothing,T::Type{Val{2}})
   @vern9pre2
-  @.. out = k[1]*b1Θdiff + k[2]*b8Θdiff + k[3]*b9Θdiff + k[4]*b10Θdiff + k[5]*b11Θdiff + k[6]*b12Θdiff + k[7]*b13Θdiff + k[8]*b14Θdiff + k[9]*b15Θdiff + k[11]*b17Θdiff + k[12]*b18Θdiff + k[13]*b19Θdiff + k[14]*b20Θdiff + k[15]*b21Θdiff + k[16]*b22Θdiff + k[17]*b23Θdiff + k[18]*b24Θdiff + k[19]*b25Θdiff + k[20]*b26Θdiff
+  @.. out = (k[1]*b1Θdiff + k[2]*b8Θdiff + k[3]*b9Θdiff + k[4]*b10Θdiff + k[5]*b11Θdiff + k[6]*b12Θdiff + k[7]*b13Θdiff + k[8]*b14Θdiff + k[9]*b15Θdiff + k[11]*b17Θdiff + k[12]*b18Θdiff + k[13]*b19Θdiff + k[14]*b20Θdiff + k[15]*b21Θdiff + k[16]*b22Θdiff + k[17]*b23Θdiff + k[18]*b24Θdiff + k[19]*b25Θdiff + k[20]*b26Θdiff)*invdt
   #@inbounds for i in eachindex(out)
   #  out[i] = (k[1][i]*b1Θdiff + k[2][i]*b8Θdiff + k[3][i]*b9Θdiff + k[4][i]*b10Θdiff + k[5][i]*b11Θdiff + k[6][i]*b12Θdiff + k[7][i]*b13Θdiff + k[8][i]*b14Θdiff + k[9][i]*b15Θdiff + k[11][i]*b17Θdiff + k[12][i]*b18Θdiff + k[13][i]*b19Θdiff + k[14][i]*b20Θdiff + k[15][i]*b21Θdiff + k[16][i]*b22Θdiff + k[17][i]*b23Θdiff + k[18][i]*b24Θdiff + k[19][i]*b25Θdiff + k[20][i]*b26Θdiff)*invdt
   #end
@@ -1738,7 +1738,7 @@ end
 
 @muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Vern9Cache,idxs,T::Type{Val{2}})
   @vern9pre2
-  @views @.. out = k[1][idxs]*b1Θdiff + k[2][idxs]*b8Θdiff + k[3][idxs]*b9Θdiff + k[4][idxs]*b10Θdiff + k[5][idxs]*b11Θdiff + k[6][idxs]*b12Θdiff + k[7][idxs]*b13Θdiff + k[8][idxs]*b14Θdiff + k[9][idxs]*b15Θdiff + k[11][idxs]*b17Θdiff + k[12][idxs]*b18Θdiff + k[13][idxs]*b19Θdiff + k[14][idxs]*b20Θdiff + k[15][idxs]*b21Θdiff + k[16][idxs]*b22Θdiff + k[17][idxs]*b23Θdiff + k[18][idxs]*b24Θdiff + k[19][idxs]*b25Θdiff + k[20][idxs]*b26Θdiff
+  @views @.. out = (k[1][idxs]*b1Θdiff + k[2][idxs]*b8Θdiff + k[3][idxs]*b9Θdiff + k[4][idxs]*b10Θdiff + k[5][idxs]*b11Θdiff + k[6][idxs]*b12Θdiff + k[7][idxs]*b13Θdiff + k[8][idxs]*b14Θdiff + k[9][idxs]*b15Θdiff + k[11][idxs]*b17Θdiff + k[12][idxs]*b18Θdiff + k[13][idxs]*b19Θdiff + k[14][idxs]*b20Θdiff + k[15][idxs]*b21Θdiff + k[16][idxs]*b22Θdiff + k[17][idxs]*b23Θdiff + k[18][idxs]*b24Θdiff + k[19][idxs]*b25Θdiff + k[20][idxs]*b26Θdiff)*invdt
   #@inbounds for (j,i) in enumerate(idxs)
   #  out[j] = (k[1][i]*b1Θdiff + k[2][i]*b8Θdiff + k[3][i]*b9Θdiff + k[4][i]*b10Θdiff + k[5][i]*b11Θdiff + k[6][i]*b12Θdiff + k[7][i]*b13Θdiff + k[8][i]*b14Θdiff + k[9][i]*b15Θdiff + k[11][i]*b17Θdiff + k[12][i]*b18Θdiff + k[13][i]*b19Θdiff + k[14][i]*b20Θdiff + k[15][i]*b21Θdiff + k[16][i]*b22Θdiff + k[17][i]*b23Θdiff + k[18][i]*b24Θdiff + k[19][i]*b25Θdiff + k[20][i]*b26Θdiff)*invdt
   #end
@@ -1794,7 +1794,7 @@ end
 
 @muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Vern9Cache,idxs::Nothing,T::Type{Val{3}})
   @vern9pre3
-  @.. out = k[1]*b1Θdiff + k[2]*b8Θdiff + k[3]*b9Θdiff + k[4]*b10Θdiff + k[5]*b11Θdiff + k[6]*b12Θdiff + k[7]*b13Θdiff + k[8]*b14Θdiff + k[9]*b15Θdiff + k[11]*b17Θdiff + k[12]*b18Θdiff + k[13]*b19Θdiff + k[14]*b20Θdiff + k[15]*b21Θdiff + k[16]*b22Θdiff + k[17]*b23Θdiff + k[18]*b24Θdiff + k[19]*b25Θdiff + k[20]*b26Θdiff
+  @.. out = (k[1]*b1Θdiff + k[2]*b8Θdiff + k[3]*b9Θdiff + k[4]*b10Θdiff + k[5]*b11Θdiff + k[6]*b12Θdiff + k[7]*b13Θdiff + k[8]*b14Θdiff + k[9]*b15Θdiff + k[11]*b17Θdiff + k[12]*b18Θdiff + k[13]*b19Θdiff + k[14]*b20Θdiff + k[15]*b21Θdiff + k[16]*b22Θdiff + k[17]*b23Θdiff + k[18]*b24Θdiff + k[19]*b25Θdiff + k[20]*b26Θdiff)*invdt2
   #@inbounds for i in eachindex(out)
   #  out[i] = (k[1][i]*b1Θdiff + k[2][i]*b8Θdiff + k[3][i]*b9Θdiff + k[4][i]*b10Θdiff + k[5][i]*b11Θdiff + k[6][i]*b12Θdiff + k[7][i]*b13Θdiff + k[8][i]*b14Θdiff + k[9][i]*b15Θdiff + k[11][i]*b17Θdiff + k[12][i]*b18Θdiff + k[13][i]*b19Θdiff + k[14][i]*b20Θdiff + k[15][i]*b21Θdiff + k[16][i]*b22Θdiff + k[17][i]*b23Θdiff + k[18][i]*b24Θdiff + k[19][i]*b25Θdiff + k[20][i]*b26Θdiff)*invdt2
   #end
@@ -1803,7 +1803,7 @@ end
 
 @muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Vern9Cache,idxs,T::Type{Val{3}})
   @vern9pre3
-  @views @.. out = k[1][idxs]*b1Θdiff + k[2][idxs]*b8Θdiff + k[3][idxs]*b9Θdiff + k[4][idxs]*b10Θdiff + k[5][idxs]*b11Θdiff + k[6][idxs]*b12Θdiff + k[7][idxs]*b13Θdiff + k[8][idxs]*b14Θdiff + k[9][idxs]*b15Θdiff + k[11][idxs]*b17Θdiff + k[12][idxs]*b18Θdiff + k[13][idxs]*b19Θdiff + k[14][idxs]*b20Θdiff + k[15][idxs]*b21Θdiff + k[16][idxs]*b22Θdiff + k[17][idxs]*b23Θdiff + k[18][idxs]*b24Θdiff + k[19][idxs]*b25Θdiff + k[20][idxs]*b26Θdiff
+  @views @.. out = (k[1][idxs]*b1Θdiff + k[2][idxs]*b8Θdiff + k[3][idxs]*b9Θdiff + k[4][idxs]*b10Θdiff + k[5][idxs]*b11Θdiff + k[6][idxs]*b12Θdiff + k[7][idxs]*b13Θdiff + k[8][idxs]*b14Θdiff + k[9][idxs]*b15Θdiff + k[11][idxs]*b17Θdiff + k[12][idxs]*b18Θdiff + k[13][idxs]*b19Θdiff + k[14][idxs]*b20Θdiff + k[15][idxs]*b21Θdiff + k[16][idxs]*b22Θdiff + k[17][idxs]*b23Θdiff + k[18][idxs]*b24Θdiff + k[19][idxs]*b25Θdiff + k[20][idxs]*b26Θdiff)*invdt2
   #@inbounds for (j,i) in enumerate(idxs)
   #  out[j] = (k[1][i]*b1Θdiff + k[2][i]*b8Θdiff + k[3][i]*b9Θdiff + k[4][i]*b10Θdiff + k[5][i]*b11Θdiff + k[6][i]*b12Θdiff + k[7][i]*b13Θdiff + k[8][i]*b14Θdiff + k[9][i]*b15Θdiff + k[11][i]*b17Θdiff + k[12][i]*b18Θdiff + k[13][i]*b19Θdiff + k[14][i]*b20Θdiff + k[15][i]*b21Θdiff + k[16][i]*b22Θdiff + k[17][i]*b23Θdiff + k[18][i]*b24Θdiff + k[19][i]*b25Θdiff + k[20][i]*b26Θdiff)*invdt2
   #end
@@ -1859,7 +1859,7 @@ end
 
 @muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Vern9Cache,idxs::Nothing,T::Type{Val{4}})
   @vern9pre4
-  @.. out = k[1]*b1Θdiff + k[2]*b8Θdiff + k[3]*b9Θdiff + k[4]*b10Θdiff + k[5]*b11Θdiff + k[6]*b12Θdiff + k[7]*b13Θdiff + k[8]*b14Θdiff + k[9]*b15Θdiff + k[11]*b17Θdiff + k[12]*b18Θdiff + k[13]*b19Θdiff + k[14]*b20Θdiff + k[15]*b21Θdiff + k[16]*b22Θdiff + k[17]*b23Θdiff + k[18]*b24Θdiff + k[19]*b25Θdiff + k[20]*b26Θdiff
+  @.. out = (k[1]*b1Θdiff + k[2]*b8Θdiff + k[3]*b9Θdiff + k[4]*b10Θdiff + k[5]*b11Θdiff + k[6]*b12Θdiff + k[7]*b13Θdiff + k[8]*b14Θdiff + k[9]*b15Θdiff + k[11]*b17Θdiff + k[12]*b18Θdiff + k[13]*b19Θdiff + k[14]*b20Θdiff + k[15]*b21Θdiff + k[16]*b22Θdiff + k[17]*b23Θdiff + k[18]*b24Θdiff + k[19]*b25Θdiff + k[20]*b26Θdiff)*invdt3
   #@inbounds for i in eachindex(out)
   #  out[i] = (k[1][i]*b1Θdiff + k[2][i]*b8Θdiff + k[3][i]*b9Θdiff + k[4][i]*b10Θdiff + k[5][i]*b11Θdiff + k[6][i]*b12Θdiff + k[7][i]*b13Θdiff + k[8][i]*b14Θdiff + k[9][i]*b15Θdiff + k[11][i]*b17Θdiff + k[12][i]*b18Θdiff + k[13][i]*b19Θdiff + k[14][i]*b20Θdiff + k[15][i]*b21Θdiff + k[16][i]*b22Θdiff + k[17][i]*b23Θdiff + k[18][i]*b24Θdiff + k[19][i]*b25Θdiff + k[20][i]*b26Θdiff)*invdt3
   #end
@@ -1868,7 +1868,7 @@ end
 
 @muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Vern9Cache,idxs,T::Type{Val{4}})
   @vern9pre4
-  @views @.. out = k[1][idxs]*b1Θdiff + k[2][idxs]*b8Θdiff + k[3][idxs]*b9Θdiff + k[4][idxs]*b10Θdiff + k[5][idxs]*b11Θdiff + k[6][idxs]*b12Θdiff + k[7][idxs]*b13Θdiff + k[8][idxs]*b14Θdiff + k[9][idxs]*b15Θdiff + k[11][idxs]*b17Θdiff + k[12][idxs]*b18Θdiff + k[13][idxs]*b19Θdiff + k[14][idxs]*b20Θdiff + k[15][idxs]*b21Θdiff + k[16][idxs]*b22Θdiff + k[17][idxs]*b23Θdiff + k[18][idxs]*b24Θdiff + k[19][idxs]*b25Θdiff + k[20][idxs]*b26Θdiff
+  @views @.. out = (k[1][idxs]*b1Θdiff + k[2][idxs]*b8Θdiff + k[3][idxs]*b9Θdiff + k[4][idxs]*b10Θdiff + k[5][idxs]*b11Θdiff + k[6][idxs]*b12Θdiff + k[7][idxs]*b13Θdiff + k[8][idxs]*b14Θdiff + k[9][idxs]*b15Θdiff + k[11][idxs]*b17Θdiff + k[12][idxs]*b18Θdiff + k[13][idxs]*b19Θdiff + k[14][idxs]*b20Θdiff + k[15][idxs]*b21Θdiff + k[16][idxs]*b22Θdiff + k[17][idxs]*b23Θdiff + k[18][idxs]*b24Θdiff + k[19][idxs]*b25Θdiff + k[20][idxs]*b26Θdiff)*invdt3
   #@inbounds for (j,i) in enumerate(idxs)
   #  out[j] = (k[1][i]*b1Θdiff + k[2][i]*b8Θdiff + k[3][i]*b9Θdiff + k[4][i]*b10Θdiff + k[5][i]*b11Θdiff + k[6][i]*b12Θdiff + k[7][i]*b13Θdiff + k[8][i]*b14Θdiff + k[9][i]*b15Θdiff + k[11][i]*b17Θdiff + k[12][i]*b18Θdiff + k[13][i]*b19Θdiff + k[14][i]*b20Θdiff + k[15][i]*b21Θdiff + k[16][i]*b22Θdiff + k[17][i]*b23Θdiff + k[18][i]*b24Θdiff + k[19][i]*b25Θdiff + k[20][i]*b26Θdiff)*invdt3
   #end
