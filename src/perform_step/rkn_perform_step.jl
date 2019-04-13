@@ -96,21 +96,21 @@ end
   ttmp = t+halfdt
 
   ## y₁ = y₀ + hy'₀ + h²∑b̄ᵢk'ᵢ
-  @. ku = uprev + halfdt*duprev + eighth_dtsq*k₁
+  @.. ku = uprev + halfdt*duprev + eighth_dtsq*k₁
   ## y'₁ = y'₀ + h∑bᵢk'ᵢ
-  @. kdu = duprev + halfdt*k₁
+  @.. kdu = duprev + halfdt*k₁
 
   f.f1(k₂,kdu,ku,p,ttmp)
-  @. ku = uprev + halfdt*duprev + eighth_dtsq*k₁
-  @. kdu = duprev + halfdt*k₂
+  @.. ku = uprev + halfdt*duprev + eighth_dtsq*k₁
+  @.. kdu = duprev + halfdt*k₂
 
   f.f1(k₃,kdu,ku,p,ttmp)
-  @. ku = uprev + dt*duprev + half_dtsq*k₃
-  @. kdu = duprev + dt*k₃
+  @.. ku = uprev + dt*duprev + half_dtsq*k₃
+  @.. kdu = duprev + dt*k₃
 
   f.f1(k₄,kdu,ku,p,t+dt)
-  @. u = uprev + (dtsq/6)*(k₁ + k₂ + k₃) + dt*duprev
-  @. du = duprev + (dt/6)*(k₁ + k₄ + 2*(k₂ + k₃))
+  @.. u = uprev + (dtsq/6)*(k₁ + k₂ + k₃) + dt*duprev
+  @.. du = duprev + (dt/6)*(k₁ + k₄ + 2*(k₂ + k₃))
 
   f.f1(k.x[1],du,u,p,t+dt)
   f.f2(k.x[2],du,u,p,t+dt)
@@ -160,14 +160,14 @@ end
   ttmp = t+halfdt
 
   ## y₁ = y₀ + hy'₀ + h²∑b̄ᵢk'ᵢ
-  @. ku = uprev + halfdt*duprev + eighth_dtsq*k₁
+  @.. ku = uprev + halfdt*duprev + eighth_dtsq*k₁
 
   f.f1(k₂,duprev,ku,p,ttmp)
-  @. ku = uprev + dt*duprev + half_dtsq*k₂
+  @.. ku = uprev + dt*duprev + half_dtsq*k₂
 
   f.f1(k₃,duprev,ku,p,t+dt)
-  @. u = uprev + (dtsq/6)*(k₁ + 2*k₂) + dt*duprev
-  @. du = duprev + (dt/6)*(k₁ + k₃ + 4*k₂)
+  @.. u = uprev + (dtsq/6)*(k₁ + 2*k₂) + dt*duprev
+  @.. du = duprev + (dt/6)*(k₁ + k₃ + 4*k₂)
 
   f.f1(k.x[1],du,u,p,t+dt)
   f.f2(k.x[2],du,u,p,t+dt)
@@ -222,12 +222,12 @@ end
     perform_step!(integrator,integrator.cache.onestep_cache)
     copyto!(k1cache.x[1], k.x[1])
     f.f1(k1cache.x[2],duprev,uprev,p,t+c1*dt)
-    @. kdu= uprev + dt*(c1*duprev + dt*a21*k1cache.x[2])
+    @.. kdu= uprev + dt*(c1*duprev + dt*a21*k1cache.x[2])
     f.f1(k₂.x[1],duprev,kdu,p,t+c1*dt)
     integrator.destats.nf += 2
   else
-    @. kdu = uprev2 + dt*(c1*duprev2 + dt*a21*k1cache.x[1])
-    @. ku  = uprev  + dt*(c1*duprev  + dt*a21*k1cache.x[2])
+    @.. kdu = uprev2 + dt*(c1*duprev2 + dt*a21*k1cache.x[1])
+    @.. ku  = uprev  + dt*(c1*duprev  + dt*a21*k1cache.x[2])
 
     f.f1(k₂.x[2], duprev, ku, p, t+c1*dt)
     @tight_loop_macros for i in uidx
@@ -260,18 +260,18 @@ end
     perform_step!(integrator,integrator.cache.onestep_cache)
     copyto!(k1cache.x[1], k.x[1])
     f.f1(k1cache.x[2],duprev,uprev,p,t+c1*dt)
-    @. kdu= uprev + dt*(c1*duprev + dt*a21*k1cache.x[1])
+    @.. kdu= uprev + dt*(c1*duprev + dt*a21*k1cache.x[1])
     f.f1(k₂.x[1],duprev,kdu,p,t+c1*dt)
-    @. kdu= uprev + dt*(c2*duprev + dt*a32*k1cache.x[2])
+    @.. kdu= uprev + dt*(c2*duprev + dt*a32*k1cache.x[2])
     f.f1(k₃.x[1],duprev,kdu,p,t+c1*dt)
     integrator.destats.nf += 3
   else
-    @. ku  = uprev  + dt*(c1*duprev  + dt*a21*k1cache.x[1])
-    @. kdu = uprev2+ dt*(c1*duprev2 + dt*a21*k1cache.x[2])
+    @.. ku  = uprev  + dt*(c1*duprev  + dt*a21*k1cache.x[1])
+    @.. kdu = uprev2+ dt*(c1*duprev2 + dt*a21*k1cache.x[2])
 
     f.f1(k₂.x[2], duprev, ku, p, t+c1*dt)
-    @. ku  = uprev  + dt*(c2*duprev  + dt*a32*k₂.x[2])
-    @. kdu = uprev2 + dt*(c2*duprev2 + dt*a32*k₂.x[1])
+    @.. ku  = uprev  + dt*(c2*duprev  + dt*a32*k₂.x[2])
+    @.. kdu = uprev2 + dt*(c2*duprev2 + dt*a32*k₂.x[1])
 
     f.f1(k₃.x[2], duprev, ku, p, t+c2*dt)
     @tight_loop_macros for i in uidx
@@ -315,34 +315,6 @@ end
   integrator.k[2] = integrator.fsallast
 end
 
-#=
-@muladd function perform_step!(integrator,cache::Nystrom5VelocityIndependentCache,repeat_step=false)
-  @unpack t,dt,f,p = integrator
-  du,u = integrator.u.x
-  duprev,uprev = integrator.uprev.x
-  @unpack tmp,fsalfirst,k₂,k₃,k₄,k = cache
-  kdu,ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
-  k₁ = fsalfirst
-  dtsq = dt^2
-
-  f.f2(t+1//5*dt,duprev,uprev,k₁.x[2])
-  @. ku = uprev + (1//5*dt)*duprev + (1//50*dtsq)*k₁.x[2]
-
-  f.f2(t+1//5*dt,du,ku,k₂.x[2])
-  @. ku = uprev + (2//3*dt)*duprev + (-1//27*dtsq)*k₁.x[2] + (7//27*dtsq)*k₂.x[2]
-
-  f.f2(t+2//3*dt,du,ku,k₃.x[2])
-  @. ku = uprev + dt*duprev + (3//10*dtsq)*k₁.x[2] + (-2//35*dtsq)*k₂.x[2] + (9//35*dtsq)*k₃.x[2]
-
-  f.f1(k₄.x[2],duprev,ku,p,t+dt)
-  @. u  = uprev + dt*duprev + (14//336*dtsq)*k₁.x[2] + (100//336*dtsq)*k₂.x[2] + (54//336*dtsq)*k₃.x[2]
-  @. du = duprev[i] + (14//336*dt)*k₁.x[2][i] + (125//336*dt)*k₂.x[2][i] + (162//336*dt)*k₃.x[2][i] + (35//336*dt)*k₄.x[2][i]
-
-  f.f1(k.x[1],du,u,p,t+dt)
-  f.f2(k.x[2],du,u,p,t+dt)
-end
-=#
-
 @muladd function perform_step!(integrator,cache::Nystrom5VelocityIndependentCache,repeat_step=false)
   @unpack t,dt,f,p = integrator
   du,u = integrator.u.x
@@ -353,25 +325,29 @@ end
   kdu,ku = integrator.cache.tmp.x[1], integrator.cache.tmp.x[2]
   k₁ = integrator.fsalfirst.x[1]
 
-  @. ku = uprev + dt*(c1*duprev + dt*a21*k₁)
+  @.. ku = uprev + dt*(c1*duprev + dt*a21*k₁)
 
   f.f1(k₂,du,ku,p,t+c1*dt)
-  @. ku = uprev + dt*(c2*duprev + dt*(a31*k₁ + a32*k₂))
+  @.. ku = uprev + dt*(c2*duprev + dt*(a31*k₁ + a32*k₂))
 
   f.f1(k₃,du,ku,p,t+c2*dt)
-  @tight_loop_macros for i in uidx
-    @inbounds ku[i] = uprev[i] + dt*(duprev[i] + dt*(a41*k₁[i] + a42*k₂[i] + a43*k₃[i]))
-  end
+  #@tight_loop_macros for i in uidx
+  #  @inbounds ku[i] = uprev[i] + dt*(duprev[i] + dt*(a41*k₁[i] + a42*k₂[i] + a43*k₃[i]))
+  #end
+  @.. ku = uprev + dt*(duprev + dt*(a41*k₁ + a42*k₂ + a43*k₃))
 
   f.f1(k₄,duprev,ku,p,t+dt)
-  @tight_loop_macros for i in uidx
-    @inbounds u[i]  = uprev[i] + dt*(duprev[i] + dt*(bbar1*k₁[i] + bbar2*k₂[i] + bbar3*k₃[i]))
-    @inbounds du[i] = duprev[i] + dt*(b1*k₁[i] + b2*k₂[i] + b3*k₃[i] + b4*k₄[i])
-  end
+  #@tight_loop_macros for i in uidx
+  #  @inbounds u[i]  = uprev[i] + dt*(duprev[i] + dt*(bbar1*k₁[i] + bbar2*k₂[i] + bbar3*k₃[i]))
+  #  @inbounds du[i] = duprev[i] + dt*(b1*k₁[i] + b2*k₂[i] + b3*k₃[i] + b4*k₄[i])
+  #end
+  @.. u  = uprev + dt*(duprev + dt*(bbar1*k₁ + bbar2*k₂ + bbar3*k₃))
+  @.. du = duprev + dt*(b1*k₁ + b2*k₂ + b3*k₃ + b4*k₄)
   f.f1(k.x[1],du,u,p,t+dt)
   f.f2(k.x[2],du,u,p,t+dt)
   integrator.destats.nf += 4
   integrator.destats.nf2 += 1
+  return nothing
 end
 
 function initialize!(integrator, cache::DPRKN6ConstantCache)
@@ -470,13 +446,13 @@ end
   uidx = eachindex(integrator.uprev.x[2])
   k1 = integrator.fsalfirst.x[1]
 
-  @. ku = uprev + dt*(c1*duprev + dt*a21*k1)
+  @.. ku = uprev + dt*(c1*duprev + dt*a21*k1)
 
   f.f1(k2,du,ku,p,t+dt*c1)
-  @. ku = uprev + dt*(c2*duprev + dt*(a31*k1 + a32*k2))
+  @.. ku = uprev + dt*(c2*duprev + dt*(a31*k1 + a32*k2))
 
   f.f1(k3,du,ku,p,t+dt*c2)
-  @. ku = uprev + dt*(c3*duprev + dt*(a41*k1 + a42*k2 + a43*k3))
+  @.. ku = uprev + dt*(c3*duprev + dt*(a41*k1 + a42*k2 + a43*k3))
 
   f.f1(k4,du,ku,p,t+dt*c3)
   @tight_loop_macros for i in uidx
@@ -576,13 +552,13 @@ end
   uidx = eachindex(integrator.uprev.x[2])
   k1 = integrator.fsalfirst.x[1]
 
-  @. ku = uprev + dt*(c1*duprev + dt*a21*k1)
+  @.. ku = uprev + dt*(c1*duprev + dt*a21*k1)
 
   f.f1(k2,duprev,ku,p,t+dt*c1)
-  @. ku = uprev + dt*(c2*duprev + dt*(a31*k1 + a32*k2))
+  @.. ku = uprev + dt*(c2*duprev + dt*(a31*k1 + a32*k2))
 
   f.f1(k3,duprev,ku,p,t+dt*c2)
-  @. ku = uprev + dt*(c3*duprev + dt*(a41*k1 + a42*k2 + a43*k3))
+  @.. ku = uprev + dt*(c3*duprev + dt*(a41*k1 + a42*k2 + a43*k3))
 
   f.f1(k4,duprev,ku,p,t+dt*c3)
   @tight_loop_macros for i in uidx
@@ -714,13 +690,13 @@ end
   uidx = eachindex(integrator.uprev.x[2])
   k1 = integrator.fsalfirst.x[1]
 
-  @. ku = uprev + dt*(c1*duprev + dt*a21*k1)
+  @.. ku = uprev + dt*(c1*duprev + dt*a21*k1)
 
   f.f1(k2,duprev,ku,p,t+dt*c1)
-  @. ku = uprev + dt*(c2*duprev + dt*(a31*k1 + a32*k2))
+  @.. ku = uprev + dt*(c2*duprev + dt*(a31*k1 + a32*k2))
 
   f.f1(k3,duprev,ku,p,t+dt*c2)
-  @. ku = uprev + dt*(c3*duprev + dt*(a41*k1 + a42*k2 + a43*k3))
+  @.. ku = uprev + dt*(c3*duprev + dt*(a41*k1 + a42*k2 + a43*k3))
 
   f.f1(k4,duprev,ku,p,t+dt*c3)
   @tight_loop_macros for i in uidx
@@ -854,13 +830,13 @@ end
   uidx = eachindex(integrator.uprev.x[2])
   k1 = integrator.fsalfirst.x[1]
 
-  @. ku = uprev + dt*(c1*duprev + dt*a21*k1)
+  @.. ku = uprev + dt*(c1*duprev + dt*a21*k1)
 
   f.f1(k2,duprev,ku,p,t+dt*c1)
-  @. ku = uprev + dt*(c2*duprev + dt*(a31*k1 + a32*k2))
+  @.. ku = uprev + dt*(c2*duprev + dt*(a31*k1 + a32*k2))
 
   f.f1(k3,duprev,ku,p,t+dt*c2)
-  @. ku = uprev + dt*(c3*duprev + dt*(a41*k1 + a42*k2 + a43*k3))
+  @.. ku = uprev + dt*(c3*duprev + dt*(a41*k1 + a42*k2 + a43*k3))
 
   f.f1(k4,duprev,ku,p,t+dt*c3)
   @tight_loop_macros for i in uidx
@@ -926,13 +902,13 @@ end
   uidx = eachindex(integrator.uprev.x[2])
   k1 = integrator.fsalfirst.x[1]
 
-  @. ku = uprev + dt*(c1*duprev + dt*a21*k1)
+  @.. ku = uprev + dt*(c1*duprev + dt*a21*k1)
 
   f.f1(k2,duprev,ku,p,t+dt*c1)
-  @. ku = uprev + dt*(c2*duprev + dt*(a31*k1 + a32*k2))
+  @.. ku = uprev + dt*(c2*duprev + dt*(a31*k1 + a32*k2))
 
   f.f1(k3,duprev,ku,p,t+dt*c2)
-  @. ku = uprev + dt*(c3*duprev + dt*(a41*k1 + a42*k2 + a43*k3))
+  @.. ku = uprev + dt*(c3*duprev + dt*(a41*k1 + a42*k2 + a43*k3))
 
   f.f1(k4,duprev,ku,p,t+dt*c3)
   @tight_loop_macros for i in uidx

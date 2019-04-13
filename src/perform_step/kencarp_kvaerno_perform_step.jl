@@ -106,15 +106,15 @@ end
   update_W!(integrator, cache, γdt, repeat_step)
 
   # FSAL Step 1
-  @. z₁ = dt*integrator.fsalfirst
+  @.. z₁ = dt*integrator.fsalfirst
 
   ##### Step 2
 
   # TODO: Add extrapolation for guess
-  @. z₂ = z₁
+  @.. z₂ = z₁
   nlsolver.z = z₂
 
-  @. tmp = uprev + γ*z₁
+  @.. tmp = uprev + γ*z₁
   nlsolver.c = 2γ
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
@@ -123,10 +123,10 @@ end
   ################################## Solve Step 3
 
   # Guess is from Hermite derivative on z₁ and z₂
-  @. z₃ = α31*z₁ + α32*z₂
+  @.. z₃ = α31*z₁ + α32*z₂
   nlsolver.z = z₃
 
-  @. tmp = uprev + a31*z₁ + a32*z₂
+  @.. tmp = uprev + a31*z₁ + a32*z₂
   nlsolver.c = c3
   z₃ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
@@ -134,24 +134,24 @@ end
   ################################## Solve Step 4
 
   if typeof(cache) <: Kvaerno3Cache
-    @. z₄ = a31*z₁ + a32*z₂ + γ*z₃ # use yhat as prediction
+    @.. z₄ = a31*z₁ + a32*z₂ + γ*z₃ # use yhat as prediction
   elseif typeof(cache) <: KenCarp3Cache
     @unpack α41,α42 = cache.tab
-    @. z₄ = α41*z₁ + α42*z₂
+    @.. z₄ = α41*z₁ + α42*z₂
   end
   nlsolver.z = z₄
 
-  @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
+  @.. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlsolver.c = 1
   z₄ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
 
-  @. u = tmp + γ*z₄
+  @.. u = tmp + γ*z₄
 
   ################################### Finalize
 
   if integrator.opts.adaptive
-    @. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄
+    @.. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
       if DiffEqBase.has_invW(f)
@@ -166,7 +166,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
-  @. integrator.fsallast = z₄/dt
+  @.. integrator.fsallast = z₄/dt
 end
 
 @muladd function perform_step!(integrator, cache::KenCarp3ConstantCache, repeat_step=false)
@@ -320,21 +320,21 @@ end
     end
   else
     # FSAL Step 1
-    @. z₁ = dt*integrator.fsalfirst
+    @.. z₁ = dt*integrator.fsalfirst
   end
 
   ##### Step 2
 
   # TODO: Add extrapolation for guess
-  @. z₂ = z₁
+  @.. z₂ = z₁
   nlsolver.z = z₂
 
-  @. tmp = uprev + γ*z₁
+  @.. tmp = uprev + γ*z₁
 
   if typeof(integrator.f) <: SplitFunction
     # This assumes the implicit part is cheaper than the explicit part
-    @. k1 = dt*integrator.fsalfirst - z₁
-    @. tmp += ea21*k1
+    @.. k1 = dt*integrator.fsalfirst - z₁
+    @.. tmp += ea21*k1
   end
 
   nlsolver.c = 2γ
@@ -346,17 +346,17 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     z₃ .= z₂
-    @. u = tmp + γ*z₂
+    @.. u = tmp + γ*z₂
     f2(k2, u, p, t + 2γdt); k2 .*= dt
     integrator.destats.nf2 += 1
-    #@. tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
+    #@.. tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
     for i in eachindex(tmp)
       @inbounds tmp[i] = uprev[i] + a31*z₁[i] + a32*z₂[i] + ea31*k1[i] + ea32*k2[i]
     end
   else
     # Guess is from Hermite derivative on z₁ and z₂
-    @. z₃ = α31*z₁ + α32*z₂
-    @. tmp = uprev + a31*z₁ + a32*z₂
+    @.. z₃ = α31*z₁ + α32*z₂
+    @.. tmp = uprev + a31*z₁ + a32*z₂
   end
   nlsolver.z = z₃
 
@@ -368,17 +368,17 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     z₄ .= z₂
-    @. u = tmp + γ*z₃
+    @.. u = tmp + γ*z₃
     f2( k3, u,p,t+c3*dt); k3 .*= dt
     integrator.destats.nf2 += 1
-    #@. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃ + ea41*k1 + ea42*k2 + ea43*k3
+    #@.. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃ + ea41*k1 + ea42*k2 + ea43*k3
     for i in eachindex(tmp)
       @inbounds tmp[i] = uprev[i] + a41*z₁[i] + a42*z₂[i] + a43*z₃[i] + ea41*k1[i] + ea42*k2[i] + ea43*k3[i]
     end
   else
     @unpack α41,α42 = cache.tab
-    @. z₄ = α41*z₁ + α42*z₂
-    @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
+    @.. z₄ = α41*z₁ + α42*z₂
+    @.. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   end
   nlsolver.z = z₄
 
@@ -386,11 +386,11 @@ end
   z₄ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
 
-  @. u = tmp + γ*z₄
+  @.. u = tmp + γ*z₄
   if typeof(integrator.f) <: SplitFunction
     f2( k4, u,p,t+dt); k4 .*= dt
     integrator.destats.nf2 += 1
-    #@. u = uprev + a41*z₁ + a42*z₂ + a43*z₃ + γ*z₄ + eb1*k1 + eb2*k2 + eb3*k3 + eb4*k4
+    #@.. u = uprev + a41*z₁ + a42*z₂ + a43*z₃ + γ*z₄ + eb1*k1 + eb2*k2 + eb3*k3 + eb4*k4
     for i in eachindex(u)
       u[i] = uprev[i] + a41*z₁[i] + a42*z₂[i] + a43*z₃[i] + γ*z₄[i] + eb1*k1[i] + eb2*k2[i] + eb3*k3[i] + eb4*k4[i]
     end
@@ -400,12 +400,12 @@ end
 
   if integrator.opts.adaptive
     if typeof(integrator.f) <: SplitFunction
-      #@. dz = btilde1*z₁  + btilde2*z₂  + btilde3*z₃ + btilde4*z₄ + ebtilde1*k1 + ebtilde2*k2 + ebtilde3*k3 + ebtilde4*k4
+      #@.. dz = btilde1*z₁  + btilde2*z₂  + btilde3*z₃ + btilde4*z₄ + ebtilde1*k1 + ebtilde2*k2 + ebtilde3*k3 + ebtilde4*k4
       for i in eachindex(dz)
         @inbounds dz[i] = btilde1*z₁[i]  + btilde2*z₂[i]  + btilde3*z₃[i] + btilde4*z₄[i] + ebtilde1*k1[i] + ebtilde2*k2[i] + ebtilde3*k3[i] + ebtilde4*k4[i]
       end
     else
-      @. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄
+      @.. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄
     end
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
@@ -424,7 +424,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     integrator.f(integrator.fsallast,u,p,t+dt)
   else
-    @. integrator.fsallast = z₄/dt
+    @.. integrator.fsallast = z₄/dt
   end
 end
 
@@ -521,7 +521,7 @@ end
 
   ##### Step 1
 
-  @. z₁ = dt*integrator.fsalfirst
+  @.. z₁ = dt*integrator.fsalfirst
 
   ##### Step 2
 
@@ -529,7 +529,7 @@ end
   z₂ .= zero(eltype(u))
   nlsolver.z = z₂
 
-  @. tmp = uprev + γ*z₁
+  @.. tmp = uprev + γ*z₁
   nlsolver.c = 2γ
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
@@ -537,10 +537,10 @@ end
 
   ################################## Solve Step 3
 
-  @. z₃ = α31*z₁ + α32*z₂
+  @.. z₃ = α31*z₁ + α32*z₂
   nlsolver.z = z₃
 
-  @. tmp = uprev + a31*z₁ + a32*z₂
+  @.. tmp = uprev + a31*z₁ + a32*z₂
   nlsolver.c = c3
   z₃ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
@@ -548,10 +548,10 @@ end
   ################################## Solve Step 4
 
   # Use constant z prediction
-  @. z₄ = α41*z₁ + α42*z₂
+  @.. z₄ = α41*z₁ + α42*z₂
   nlsolver.z = z₄
 
-  @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
+  @.. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlsolver.c = c4
   z₄ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
@@ -559,20 +559,20 @@ end
   ################################## Solve Step 5
 
   # Use yhat prediction
-  @. z₅ = a41*z₁ + a42*z₂ + a43*z₃ + γ*z₄
+  @.. z₅ = a41*z₁ + a42*z₂ + a43*z₃ + γ*z₄
   nlsolver.z = z₅
 
-  @. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
+  @.. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   nlsolver.c = 1
   z₅ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
 
-  @. u = tmp + γ*z₅
+  @.. u = tmp + γ*z₅
 
   ################################### Finalize
 
   if integrator.opts.adaptive
-    @. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
+    @.. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
       if DiffEqBase.has_invW(f)
@@ -587,7 +587,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
-  @. integrator.fsallast = z₅/dt
+  @.. integrator.fsallast = z₅/dt
 end
 
 @muladd function perform_step!(integrator, cache::KenCarp4ConstantCache, repeat_step=false)
@@ -791,7 +791,7 @@ end
     end
   else
     # FSAL Step 1
-    @. z₁ = dt*integrator.fsalfirst
+    @.. z₁ = dt*integrator.fsalfirst
   end
 
   ##### Step 2
@@ -800,12 +800,12 @@ end
   z₂ .= zero(eltype(u))
   nlsolver.z = z₂
 
-  @. tmp = uprev + γ*z₁
+  @.. tmp = uprev + γ*z₁
 
   if typeof(integrator.f) <: SplitFunction
     # This assumes the implicit part is cheaper than the explicit part
-    @. k1 = dt*integrator.fsalfirst - z₁
-    @. tmp += ea21*k1
+    @.. k1 = dt*integrator.fsalfirst - z₁
+    @.. tmp += ea21*k1
   end
 
   nlsolver.c = 2γ
@@ -819,17 +819,17 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     z₃ .= z₂
-    @. u = tmp + γ*z₂
+    @.. u = tmp + γ*z₂
     f2(k2, u, p, t + 2γdt); k2 .*= dt
     integrator.destats.nf2 += 1
-    # @. tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
+    # @.. tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
     for i in eachindex(tmp)
       @inbounds tmp[i] = uprev[i] + a31*z₁[i] + a32*z₂[i] + ea31*k1[i] + ea32*k2[i]
     end
   else
     # Guess is from Hermite derivative on z₁ and z₂
-    @. z₃ = α31*z₁ + α32*z₂
-    @. tmp = uprev + a31*z₁ + a32*z₂
+    @.. z₃ = α31*z₁ + α32*z₂
+    @.. tmp = uprev + a31*z₁ + a32*z₂
   end
   nlsolver.z = z₃
 
@@ -841,16 +841,16 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     z₄ .= z₂
-    @. u = tmp + γ*z₃
+    @.. u = tmp + γ*z₃
     f2( k3, u,p,t+c3*dt); k3 .*= dt
     integrator.destats.nf2 += 1
-    #@. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃ + ea41*k1 + ea42*k2 + ea43*k3
+    #@.. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃ + ea41*k1 + ea42*k2 + ea43*k3
     for i in eachindex(tmp)
       @inbounds tmp[i] = uprev[i] + a41*z₁[i] + a42*z₂[i] + a43*z₃[i] + ea41*k1[i] + ea42*k2[i] + ea43*k3[i]
     end
   else
-    @. z₄ = α41*z₁ + α42*z₂
-    @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
+    @.. z₄ = α41*z₁ + α42*z₂
+    @.. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   end
   nlsolver.z = z₄
 
@@ -864,16 +864,16 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     z₅ .= z₄
-    @. u = tmp + γ*z₄
+    @.. u = tmp + γ*z₄
     f2( k4, u,p,t+c4*dt); k4 .*= dt
     integrator.destats.nf2 += 1
-    #@. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + ea51*k1 + ea52*k2 + ea53*k3 + ea54*k4
+    #@.. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + ea51*k1 + ea52*k2 + ea53*k3 + ea54*k4
     for i in eachindex(tmp)
       @inbounds tmp[i] = uprev[i] + a51*z₁[i] + a52*z₂[i] + a53*z₃[i] + a54*z₄[i] + ea51*k1[i] + ea52*k2[i] + ea53*k3[i] + ea54*k4[i]
     end
   else
-    @. z₅ = α51*z₁ + α52*z₂ + α53*z₃ + α54*z₄
-    #@. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
+    @.. z₅ = α51*z₁ + α52*z₂ + α53*z₃ + α54*z₄
+    #@.. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
     for i in eachindex(tmp)
       @inbounds tmp[i] = uprev[i] + a51*z₁[i] + a52*z₂[i] + a53*z₃[i] + a54*z₄[i]
     end
@@ -888,16 +888,16 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     z₆ .= z₅
-    @. u = tmp + γ*z₅
+    @.. u = tmp + γ*z₅
     f2( k5, u,p,t+c5*dt); k5 .*= dt
     integrator.destats.nf2 += 1
-    #@. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + ea61*k1 + ea62*k2 + ea63*k3 + ea64*k4 + ea65*k5
+    #@.. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + ea61*k1 + ea62*k2 + ea63*k3 + ea64*k4 + ea65*k5
     for i in eachindex(tmp)
       @inbounds tmp[i] = uprev[i] + a61*z₁[i] + a63*z₃[i] + a64*z₄[i] + a65*z₅[i] + ea61*k1[i] + ea62*k2[i] + ea63*k3[i] + ea64*k4[i] + ea65*k5[i]
     end
   else
-    #@. z₆ = α61*z₁ + α62*z₂ + α63*z₃ + α64*z₄ + α65*z₅
-    #@. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅
+    #@.. z₆ = α61*z₁ + α62*z₂ + α63*z₃ + α64*z₄ + α65*z₅
+    #@.. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅
     @tight_loop_macros for i in eachindex(u)
       @inbounds z₆[i] = α61*z₁[i] + α62*z₂[i] + α63*z₃[i] + α64*z₄[i] + α65*z₅[i]
       @inbounds tmp[i] = uprev[i] + a61*z₁[i] + a63*z₃[i] + a64*z₄[i] + a65*z₅[i]
@@ -909,11 +909,11 @@ end
   z₆ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
 
-  @. u = tmp + γ*z₆
+  @.. u = tmp + γ*z₆
   if typeof(integrator.f) <: SplitFunction
     f2( k6, u,p,t+dt); k6 .*= dt
     integrator.destats.nf2 += 1
-    @. u = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + γ*z₆ + eb1*k1 + eb3*k3 + eb4*k4 + eb5*k5 + eb6*k6
+    @.. u = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + γ*z₆ + eb1*k1 + eb3*k3 + eb4*k4 + eb5*k5 + eb6*k6
     for i in eachindex(u)
       u[i] = uprev[i] + a61*z₁[i] + a63*z₃[i] + a64*z₄[i] + a65*z₅[i] + γ*z₆[i] + eb1*k1[i] + eb3*k3[i] + eb4*k4[i] + eb5*k5[i] + eb6*k6[i]
     end
@@ -923,12 +923,12 @@ end
 
   if integrator.opts.adaptive
     if typeof(integrator.f) <: SplitFunction
-      #@. dz = btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + ebtilde1*k1 + ebtilde3*k3 + ebtilde4*k4 + ebtilde5*k5 + ebtilde6*k6
+      #@.. dz = btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + ebtilde1*k1 + ebtilde3*k3 + ebtilde4*k4 + ebtilde5*k5 + ebtilde6*k6
       for i in eachindex(u)
         @inbounds dz[i] = btilde1*z₁[i] + btilde3*z₃[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i] + ebtilde1*k1[i] + ebtilde3*k3[i] + ebtilde4*k4[i] + ebtilde5*k5[i] + ebtilde6*k6[i]
       end
     else
-      # @. dz = btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆
+      # @.. dz = btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆
       @tight_loop_macros for i in eachindex(u)
         @inbounds dz[i] = btilde1*z₁[i] + btilde3*z₃[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i]
       end
@@ -951,7 +951,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     integrator.f(integrator.fsallast,u,p,t+dt)
   else
-    @. integrator.fsallast = z₆/dt
+    @.. integrator.fsallast = z₆/dt
   end
 end
 
@@ -1066,7 +1066,7 @@ end
 
   ##### Step 1
 
-  @. z₁ = dt*integrator.fsalfirst
+  @.. z₁ = dt*integrator.fsalfirst
 
   ##### Step 2
 
@@ -1074,7 +1074,7 @@ end
   z₂ .= zero(eltype(u))
   nlsolver.z = z₂
 
-  @. tmp = uprev + γ*z₁
+  @.. tmp = uprev + γ*z₁
   nlsolver.c = 2γ
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
@@ -1082,10 +1082,10 @@ end
 
   ################################## Solve Step 3
 
-  @. z₃ = α31*z₁ + α32*z₂
+  @.. z₃ = α31*z₁ + α32*z₂
   nlsolver.z = z₃
 
-  @. tmp = uprev + a31*z₁ + a32*z₂
+  @.. tmp = uprev + a31*z₁ + a32*z₂
   nlsolver.c = c3
   z₃ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
@@ -1093,30 +1093,30 @@ end
   ################################## Solve Step 4
 
   # Use constant z prediction
-  @. z₄ = α41*z₁ + α42*z₂ + α43*z₃
+  @.. z₄ = α41*z₁ + α42*z₂ + α43*z₃
   nlsolver.z = z₄
 
-  @. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
+  @.. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlsolver.c = c4
   z₄ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 5
 
-  @. z₅ = α51*z₁ + α52*z₂ + α53*z₃
+  @.. z₅ = α51*z₁ + α52*z₂ + α53*z₃
   nlsolver.z = z₅
 
-  @. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
+  @.. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   nlsolver.c = c5
   z₅ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 6
 
-  @. z₆ = α61*z₁ + α62*z₂ + α63*z₃
+  @.. z₆ = α61*z₁ + α62*z₂ + α63*z₃
   nlsolver.z = z₆
 
-  @. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅
+  @.. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅
   nlsolver.c = c6
   z₆ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
@@ -1124,13 +1124,13 @@ end
   ################################## Solve Step 7
 
   # Prediction is embedded method
-  # @. z₇ = a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + γ*z₆
+  # @.. z₇ = a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + γ*z₆
   @tight_loop_macros for i in eachindex(u)
     @inbounds z₇[i] = a61*z₁[i] + a63*z₃[i] + a64*z₄[i] + a65*z₅[i] + γ*z₆[i]
   end
   nlsolver.z = z₇
 
-  # @. tmp = uprev + a71*z₁ + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
+  # @.. tmp = uprev + a71*z₁ + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
   @tight_loop_macros for i in eachindex(u)
     @inbounds tmp[i] = uprev[i] + a71*z₁[i] + a73*z₃[i] + a74*z₄[i] + a75*z₅[i] + a76*z₆[i]
   end
@@ -1138,12 +1138,12 @@ end
   z₇ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
 
-  @. u = tmp + γ*z₇
+  @.. u = tmp + γ*z₇
 
   ################################### Finalize
 
   if integrator.opts.adaptive
-    # @. dz = btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇
+    # @.. dz = btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇
     @tight_loop_macros for i in eachindex(u)
       @inbounds dz[i] = btilde1*z₁[i] + btilde3*z₃[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i] + btilde7*z₇[i]
     end
@@ -1161,7 +1161,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
-  @. integrator.fsallast = z₇/dt
+  @.. integrator.fsallast = z₇/dt
 end
 
 @muladd function perform_step!(integrator, cache::KenCarp5ConstantCache, repeat_step=false)
@@ -1408,7 +1408,7 @@ end
     end
   else
     # FSAL Step 1
-    @. z₁ = dt*integrator.fsalfirst
+    @.. z₁ = dt*integrator.fsalfirst
   end
 
   ##### Step 2
@@ -1418,12 +1418,12 @@ end
   nlsolver.z = z₂
 
   tstep = t + 2*γdt
-  @. tmp = uprev + γ*z₁
+  @.. tmp = uprev + γ*z₁
 
   if typeof(integrator.f) <: SplitFunction
     # This assumes the implicit part is cheaper than the explicit part
-    @. k1 = dt*integrator.fsalfirst - z₁
-    @. tmp += ea21*k1
+    @.. k1 = dt*integrator.fsalfirst - z₁
+    @.. tmp += ea21*k1
   end
 
   nlsolver.c = 2γ
@@ -1437,17 +1437,17 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     z₃ .= z₂
-    @. u = tmp + γ*z₂
+    @.. u = tmp + γ*z₂
     f2(k2, u, p, t+2γdt); k2 .*= dt
     integrator.destats.nf2 += 1
-    #@. tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
+    #@.. tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
     for i in eachindex(u)
       @inbounds tmp[i] = uprev[i] + a31*z₁[i] + a32*z₂[i] + ea31*k1[i] + ea32*k2[i]
     end
   else
     # Guess is from Hermite derivative on z₁ and z₂
-    @. z₃ = a31*z₁ + α32*z₂
-    @. tmp = uprev + a31*z₁ + a32*z₂
+    @.. z₃ = a31*z₁ + α32*z₂
+    @.. tmp = uprev + a31*z₁ + a32*z₂
   end
   nlsolver.z = z₃
 
@@ -1459,16 +1459,16 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     z₄ .= z₃
-    @. u = tmp + γ*z₃
+    @.. u = tmp + γ*z₃
     f2( k3, u,p,t+c3*dt); k3 .*= dt
     integrator.destats.nf2 += 1
-    #@. tmp = uprev + a41*z₁ + a43*z₃ + ea41*k1 + ea43*k3
+    #@.. tmp = uprev + a41*z₁ + a43*z₃ + ea41*k1 + ea43*k3
     for i in eachindex(u)
       @inbounds tmp[i] = uprev[i] + a41*z₁[i] + a43*z₃[i] + ea41*k1[i] + ea43*k3[i]
     end
   else
-    @. z₄ = α41*z₁ + α42*z₂
-    @. tmp = uprev + a41*z₁ + a43*z₃
+    @.. z₄ = α41*z₁ + α42*z₂
+    @.. tmp = uprev + a41*z₁ + a43*z₃
   end
   nlsolver.z = z₄
 
@@ -1480,16 +1480,16 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     z₅ .= z₂
-    @. u = tmp + γ*z₄
+    @.. u = tmp + γ*z₄
     f2( k4, u,p,t+c4*dt); k4 .*= dt
     integrator.destats.nf2 += 1
-    #@. tmp = uprev + a51*z₁ + a53*z₃ + a54*z₄ + ea51*k1 + ea53*k3 + ea54*k4
+    #@.. tmp = uprev + a51*z₁ + a53*z₃ + a54*z₄ + ea51*k1 + ea53*k3 + ea54*k4
     for i in eachindex(u)
       @inbounds tmp[i] = uprev[i] + a51*z₁[i] + a53*z₃[i] + a54*z₄[i] + ea51*k1[i] + ea53*k3[i] + ea54*k4[i]
     end
   else
-    @. z₅ = α51*z₁ + α52*z₂
-    @. tmp = uprev + a51*z₁ + a53*z₃ + a54*z₄
+    @.. z₅ = α51*z₁ + α52*z₂
+    @.. tmp = uprev + a51*z₁ + a53*z₃ + a54*z₄
   end
   nlsolver.z = z₅
 
@@ -1501,16 +1501,16 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     z₆ .= z₃
-    @. u = tmp + γ*z₅
+    @.. u = tmp + γ*z₅
     f2( k5, u,p,t+c5*dt); k5 .*= dt
     integrator.destats.nf2 += 1
-    #@. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + ea61*k1 + ea63*k3 + ea64*k4 + ea65*k5
+    #@.. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + ea61*k1 + ea63*k3 + ea64*k4 + ea65*k5
     for i in eachindex(u)
       @inbounds tmp[i] = uprev[i] + a61*z₁[i] + a63*z₃[i] + a64*z₄[i] + a65*z₅[i] + ea61*k1[i] + ea63*k3[i] + ea64*k4[i] + ea65*k5[i]
     end
   else
-    @. z₆ = α61*z₁ + α62*z₂
-    #@. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅
+    @.. z₆ = α61*z₁ + α62*z₂
+    #@.. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅
     for i in eachindex(u)
       @inbounds tmp[i] = uprev[i] + a61*z₁[i] + a63*z₃[i] + a64*z₄[i] + a65*z₅[i]
     end
@@ -1525,19 +1525,19 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     z₇ .= z₂
-    @. u = tmp + γ*z₆
+    @.. u = tmp + γ*z₆
     f2( k6, u,p,t+c6*dt); k6 .*= dt
     integrator.destats.nf2 += 1
-    #@. tmp = uprev + a71*z₁ +  a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆ + ea71*k1 + ea73*k3 + ea74*k4 + ea75*k5 + ea76*k6
+    #@.. tmp = uprev + a71*z₁ +  a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆ + ea71*k1 + ea73*k3 + ea74*k4 + ea75*k5 + ea76*k6
     for i in eachindex(u)
       @inbounds tmp[i] = uprev[i] + a71*z₁[i] +  a73*z₃[i] + a74*z₄[i] + a75*z₅[i] + a76*z₆[i] + ea71*k1[i] + ea73*k3[i] + ea74*k4[i] + ea75*k5[i] + ea76*k6[i]
     end
   else
-    #@. z₇ = α71*z₁ + α72*z₂ + α73*z₃ + α74*z₄ + α75*z₅
+    #@.. z₇ = α71*z₁ + α72*z₂ + α73*z₃ + α74*z₄ + α75*z₅
     @tight_loop_macros for i in eachindex(u)
       @inbounds z₇[i] = α71*z₁[i] + α72*z₂[i] + α73*z₃[i] + α74*z₄[i] + α75*z₅[i]
     end
-    #@. tmp = uprev + a71*z₁ + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
+    #@.. tmp = uprev + a71*z₁ + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
     @tight_loop_macros for i in eachindex(u)
       @inbounds tmp[i] = uprev[i] + a71*z₁[i] + a73*z₃[i] + a74*z₄[i] + a75*z₅[i] + a76*z₆[i]
     end
@@ -1552,19 +1552,19 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     z₈ .= z₅
-    @. u = tmp + γ*z₇
+    @.. u = tmp + γ*z₇
     f2( k7, u,p,t+c7*dt); k7 .*= dt
     integrator.destats.nf2 += 1
-    #@. tmp = uprev + a81*z₁ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇ + ea81*k1 + ea83*k3 + ea84*k4 + ea85*k5 + ea86*k6 + ea87*k7
+    #@.. tmp = uprev + a81*z₁ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇ + ea81*k1 + ea83*k3 + ea84*k4 + ea85*k5 + ea86*k6 + ea87*k7
     for i in eachindex(u)
       @inbounds tmp[i] = uprev[i] + a81*z₁[i] + a84*z₄[i] + a85*z₅[i] + a86*z₆[i] + a87*z₇[i] + ea81*k1[i] + ea83*k3[i] + ea84*k4[i] + ea85*k5[i] + ea86*k6[i] + ea87*k7[i]
     end
   else
-    #@. z₈ = α81*z₁ + α82*z₂ + α83*z₃ + α84*z₄ + α85*z₅
+    #@.. z₈ = α81*z₁ + α82*z₂ + α83*z₃ + α84*z₄ + α85*z₅
     @tight_loop_macros for i in eachindex(u)
       @inbounds z₈[i] = α81*z₁[i] + α82*z₂[i] + α83*z₃[i] + α84*z₄[i] + α85*z₅[i]
     end
-    #@. tmp = uprev + a81*z₁ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇
+    #@.. tmp = uprev + a81*z₁ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇
     @tight_loop_macros for i in eachindex(u)
       @inbounds tmp[i] = uprev[i] + a81*z₁[i] + a84*z₄[i] + a85*z₅[i] + a86*z₆[i] + a87*z₇[i]
     end
@@ -1575,11 +1575,11 @@ end
   z₈ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
 
-  @. u = tmp + γ*z₈
+  @.. u = tmp + γ*z₈
   if typeof(integrator.f) <: SplitFunction
     f2( k8, u,p,t+dt); k8 .*= dt
     integrator.destats.nf += 1
-    # @. u = uprev + a81*z₁ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇ + γ*z₈ + eb1*k1 + eb4*k4 + eb5*k5 + eb6*k6 + eb7*k7 + eb8*k8
+    # @.. u = uprev + a81*z₁ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇ + γ*z₈ + eb1*k1 + eb4*k4 + eb5*k5 + eb6*k6 + eb7*k7 + eb8*k8
     for i in eachindex(u)
       @inbounds u[i] = uprev[i] + a81*z₁[i] + a84*z₄[i] + a85*z₅[i] + a86*z₆[i] + a87*z₇[i] + γ*z₈[i] + eb1*k1[i] + eb4*k4[i] + eb5*k5[i] + eb6*k6[i] + eb7*k7[i] + eb8*k8[i]
     end
@@ -1590,12 +1590,12 @@ end
   if integrator.opts.adaptive
 
     if typeof(integrator.f) <: SplitFunction
-      #@. dz =  btilde1*z₁ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇ + btilde8*z₈ + ebtilde1*k1 + ebtilde4*k4 + ebtilde5*k5 + ebtilde6*k6 + ebtilde7*k7 + ebtilde8*k8
+      #@.. dz =  btilde1*z₁ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇ + btilde8*z₈ + ebtilde1*k1 + ebtilde4*k4 + ebtilde5*k5 + ebtilde6*k6 + ebtilde7*k7 + ebtilde8*k8
       for i in eachindex(u)
         dz[i] =  btilde1*z₁[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i] + btilde7*z₇[i] + btilde8*z₈[i] + ebtilde1*k1[i] + ebtilde4*k4[i] + ebtilde5*k5[i] + ebtilde6*k6[i] + ebtilde7*k7[i] + ebtilde8*k8[i]
       end
     else
-      # @. dz = btilde1*z₁ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇ + btilde8*z₈
+      # @.. dz = btilde1*z₁ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇ + btilde8*z₈
       @tight_loop_macros for i in eachindex(u)
         @inbounds dz[i] = btilde1*z₁[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i] + btilde7*z₇[i] + btilde8*z₈[i]
       end
@@ -1619,6 +1619,6 @@ end
   if typeof(integrator.f) <: SplitFunction
     integrator.f(integrator.fsallast,u,p,t+dt)
   else
-    @. integrator.fsallast = z₈/dt
+    @.. integrator.fsallast = z₈/dt
   end
 end

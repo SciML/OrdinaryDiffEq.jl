@@ -52,7 +52,7 @@ Equations II, Springer Series in Computational Mathematics. ISBN
     integrator.destats.nnonliniter += 1
 
     # evaluate function
-    u = @. tmp + γ * z
+    u = @.. tmp + γ * z
     if mass_matrix === I
       ztmp = dt .* f(u, p, tstep) .- z
     else
@@ -126,18 +126,18 @@ end
     integrator.destats.nnonliniter += 1
 
     # evaluate function
-    @. u = tmp + γ*z
+    @.. u = tmp + γ*z
     f(k, u, p, tstep)
     integrator.destats.nf += 1
     if mass_matrix === I
-      @. ztmp = dt*k - z
+      @.. ztmp = dt*k - z
     else
       mul!(vecztmp,mass_matrix,vecz)
-      @. ztmp = dt*k - ztmp
+      @.. ztmp = dt*k - ztmp
     end
     if DiffEqBase.has_invW(f)
       mul!(vecdz,W,vecztmp) # Here W is actually invW
-      @. vecdz = -vecdz
+      @.. vecdz = -vecdz
     else
       cache.linsolve(vecdz,W,vecztmp,iter == 1 && new_W)
     end
@@ -160,7 +160,7 @@ end
     end
 
     # update solution
-    @. z = z - dz
+    @.. z = z - dz
 
     # check stopping criterion
     iter > 1 && (η = θ / (1 - θ))

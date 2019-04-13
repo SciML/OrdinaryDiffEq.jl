@@ -17,18 +17,18 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k,fsalfirst,T,utilde,atmp,dtpropose,cur_order,A = cache
 
-  @muladd @. u = uprev + dt*fsalfirst
+  @muladd @.. u = uprev + dt*fsalfirst
 
   T[1,1] = copy(u)
 
   halfdt = dt/2
   for i in 2:size(T)[1]
     # Solve using Euler method
-    @muladd @. u = uprev + halfdt*fsalfirst
+    @muladd @.. u = uprev + halfdt*fsalfirst
     f(k, u, p, t+halfdt)
     integrator.destats.nf += 1
     for j in 2:2^(i-1)
-      @muladd @. u = u + halfdt*k
+      @muladd @.. u = u + halfdt*k
       f(k, u, p, t+j*halfdt)
       integrator.destats.nf += 1
     end
@@ -51,7 +51,7 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
       for i = range_start:min(size(T)[1], cur_order + 1)
 
           A = 2^(i-1)
-          @. utilde = T[i,i] - T[i,i-1]
+          @.. utilde = T[i,i] - T[i,i-1]
           atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
           EEst = integrator.opts.internalnorm(atmp,t)
 
@@ -79,7 +79,7 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
   end
 
   # using extrapolated value of u
-  @. u = T[cache.cur_order, cache.cur_order]
+  @.. u = T[cache.cur_order, cache.cur_order]
   cache.step_no = cache.step_no + 1
   f(k, u, p, t+dt)
   integrator.destats.nf += 1
@@ -102,17 +102,17 @@ end
 function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
   @unpack dtpropose, T, cur_order, work, A = cache
-  @muladd u = @. uprev + dt*integrator.fsalfirst
+  @muladd u = @.. uprev + dt*integrator.fsalfirst
   T[1,1] = u
   halfdt = dt/2
   for i in 2:min(size(T)[1], cur_order+1)
     # Solve using Euler method
-    @muladd u = @. uprev + halfdt*integrator.fsalfirst
+    @muladd u = @.. uprev + halfdt*integrator.fsalfirst
     k = f(u, p, t+halfdt)
     integrator.destats.nf += 1
 
     for j in 2:2^(i-1)
-      @muladd u = @. u + halfdt*k
+      @muladd u = @.. u + halfdt*k
       k = f(u, p, t+j*halfdt)
       integrator.destats.nf += 1
     end

@@ -16,7 +16,7 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
 
     f(fsalfirst, uprev, p, t)
     integrator.destats.nf += 1
-    @. linsolve_tmp = fsalfirst + dtd1*dT
+    @.. linsolve_tmp = fsalfirst + dtd1*dT
   end
 end
 
@@ -229,7 +229,7 @@ function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrM
     # Compute mass_matrix * B
     if isa(W.mass_matrix, UniformScaling)
       a = -W.mass_matrix.λ / W.gamma
-      @. Y = a * B
+      @.. Y = a * B
     else
       mul!(Y, W.mass_matrix, B)
       lmul!(-1/W.gamma, Y)
@@ -240,7 +240,7 @@ function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrM
   else
     # Compute mass_matrix * B
     if isa(W.mass_matrix, UniformScaling)
-      @. Y = W.mass_matrix.λ * B
+      @.. Y = W.mass_matrix.λ * B
     else
       mul!(Y, W.mass_matrix, B)
     end
