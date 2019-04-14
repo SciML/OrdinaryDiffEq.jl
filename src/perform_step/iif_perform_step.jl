@@ -68,7 +68,7 @@ function (f::RHS_IIF)(resid,u)
   _du = get_du(f.dual_cache, eltype(u))
   du = reinterpret(eltype(u),_du)
   f.f.f2(du,u,f.p,f.t+f.dt)
-  @. resid = u - f.tmp - (f.a*f.dt)*du
+  @.. resid = u - f.tmp - (f.a*f.dt)*du
 end
 
 function initialize!(integrator,cache::Union{GenericIIF1Cache,GenericIIF2Cache})
@@ -80,7 +80,7 @@ function initialize!(integrator,cache::Union{GenericIIF1Cache,GenericIIF2Cache})
   integrator.f.f2(cache.rtmp1,integrator.uprev,integrator.p,integrator.t)
   integrator.destats.nf2 += 1
   mul!(cache.k,A,integrator.uprev)
-  @. integrator.fsalfirst = cache.k + cache.rtmp1
+  @.. integrator.fsalfirst = cache.k + cache.rtmp1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
 end
@@ -91,9 +91,9 @@ function perform_step!(integrator,cache::Union{GenericIIF1Cache,GenericIIF2Cache
   @unpack t,dt,uprev,u,f,p = integrator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
-  @. k = uprev
+  @.. k = uprev
   if typeof(cache) <: GenericIIF2Cache
-    @muladd @. k = k + 0.5dt*rtmp1
+    @muladd @.. k = k + 0.5dt*rtmp1
   end
 
   mul!(tmp,cache.expA,k)

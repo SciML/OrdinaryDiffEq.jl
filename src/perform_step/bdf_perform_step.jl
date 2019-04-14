@@ -110,19 +110,19 @@ end
 
   update_W!(integrator, cache, ddt, repeat_step)
 
-  @. zₙ₋₁ = dtₙ*fₙ₋₁
+  @.. zₙ₋₁ = dtₙ*fₙ₋₁
   # initial guess
   if alg.extrapolant == :linear
-    @. z = dtₙ*fₙ₋₁
+    @.. z = dtₙ*fₙ₋₁
   else # :constant
     z .= zero(eltype(z))
   end
 
-  @. tmp = d1*uₙ₋₁ + d2*uₙ₋₂ + d3*zₙ₋₁
+  @.. tmp = d1*uₙ₋₁ + d2*uₙ₋₂ + d3*zₙ₋₁
   z = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
 
-  @. uₙ = tmp + d*z
+  @.. uₙ = tmp + d*z
 
   f(integrator.fsallast, uₙ, p, t+dtₙ)
   integrator.destats.nf += 1
@@ -130,7 +130,7 @@ end
     btilde0 = (dtₙ₋₁+dtₙ)*1//6
     btilde1 = 1+dtₙ/dtₙ₋₁
     btilde2 = dtₙ/dtₙ₋₁
-    @. tmp = btilde0*(integrator.fsallast - btilde1*integrator.fsalfirst + btilde2*cache.fsalfirstprev)
+    @.. tmp = btilde0*(integrator.fsallast - btilde1*integrator.fsalfirst + btilde2*cache.fsalfirstprev)
     calculate_residuals!(atmp, tmp, uₙ₋₁, uₙ, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
@@ -138,7 +138,7 @@ end
   ################################### Finalize
 
   if integrator.EEst < one(integrator.EEst)
-    @. cache.fsalfirstprev = integrator.fsalfirst
+    @.. cache.fsalfirstprev = integrator.fsalfirst
     cache.dtₙ₋₁ = dtₙ
   end
   return
@@ -224,7 +224,7 @@ function initialize!(integrator, cache::SBDFCache)
   f2(cache.du₂, uprev, p, t)
   integrator.destats.nf += 1
   integrator.destats.nf2 += 1
-  @. integrator.fsalfirst = cache.du₁ + cache.du₂
+  @.. integrator.fsalfirst = cache.du₁ + cache.du₂
 end
 
 function perform_step!(integrator, cache::SBDFCache, repeat_step=false)
@@ -236,13 +236,13 @@ function perform_step!(integrator, cache::SBDFCache, repeat_step=false)
   nlsolver.γ = γ = inv(γₖ[cnt])
   # Explicit part
   if cnt == 1
-    @. tmp = uprev + dt*du₂
+    @.. tmp = uprev + dt*du₂
   elseif cnt == 2
-    @. tmp = γ * (2*uprev - 1//2*uprev2 + dt*(2*du₂ - k₁))
+    @.. tmp = γ * (2*uprev - 1//2*uprev2 + dt*(2*du₂ - k₁))
   elseif cnt == 3
-    @. tmp = γ * (3*uprev - 3//2*uprev2 + 1//3*uprev3 + dt*(3*(du₂ - k₁) + k₂))
+    @.. tmp = γ * (3*uprev - 3//2*uprev2 + 1//3*uprev3 + dt*(3*(du₂ - k₁) + k₂))
   else
-    @. tmp = γ * (4*uprev - 3*uprev2 + 4//3*uprev3 - 1//4*uprev4 + dt*(4*du₂ - 6*k₁ + 4*k₂ - k₃))
+    @.. tmp = γ * (4*uprev - 3*uprev2 + 4//3*uprev3 - 1//4*uprev4 + dt*(4*du₂ - 6*k₁ + 4*k₂ - k₃))
   end
   # Implicit part
   # precalculations
@@ -251,14 +251,14 @@ function perform_step!(integrator, cache::SBDFCache, repeat_step=false)
 
   # initial guess
   if alg.extrapolant == :linear
-    @. z = dt*du₁
+    @.. z = dt*du₁
   else # :constant
-    @. z = zero(eltype(u))
+    @.. z = zero(eltype(u))
   end
 
   z = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
-  @. u = tmp + γ*z
+  @.. u = tmp + γ*z
 
   cnt == 4 && ( cache.uprev4 .= uprev3; cache.k₃ .= k₂ )
   cnt >= 3 && ( cache.uprev3 .= uprev2; cache.k₂ .= k₁ )
@@ -267,7 +267,7 @@ function perform_step!(integrator, cache::SBDFCache, repeat_step=false)
   f2(du₂, u, p, t+dt)
   integrator.destats.nf += 1
   integrator.destats.nf2 += 1
-  @. k = du₁ + du₂
+  @.. k = du₁ + du₂
 end
 
 # QNDF1
@@ -364,32 +364,32 @@ function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
   else
     κ = alg.kappa
     ρ = dt/dtₙ₋₁
-    @. D[1] = uprev - uprev2 # backward diff
+    @.. D[1] = uprev - uprev2 # backward diff
     if ρ != 1
       R!(k,ρ,cache)
-      @. D[1] = D[1] * (R[1] * U[1])
+      @.. D[1] = D[1] * (R[1] * U[1])
     end
   end
 
   # precalculations
   γ₁ = 1//1
   nlsolver.γ = γ = inv((1-κ)*γ₁)
-  @. tmp = uprev + D[1] - γ * (γ₁*D[1])
+  @.. tmp = uprev + D[1] - γ * (γ₁*D[1])
 
   γdt = γ*dt
   update_W!(integrator, cache, γdt, repeat_step)
 
   # initial guess
-  @. z = dt*integrator.fsalfirst
+  @.. z = dt*integrator.fsalfirst
 
   z = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
-  @. u = tmp + γ*z
+  @.. u = tmp + γ*z
 
   if integrator.opts.adaptive && integrator.success_iter > 0
-    @. D2[1] = u - uprev
-    @. D2[2] = D2[1] - D[1]
-    @. utilde = (κ*γ₁ + inv(k+1)) * D2[2]
+    @.. D2[1] = u - uprev
+    @.. D2[2] = D2[1] - D[1]
+    @.. utilde = (κ*γ₁ + inv(k+1)) * D2[2]
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
     if integrator.EEst > one(integrator.EEst)
@@ -526,51 +526,51 @@ function perform_step!(integrator,cache::QNDF2Cache,repeat_step=false)
     γ₂ = 1//1 + 1//2
     ρ₁ = dt/dtₙ₋₁
     ρ₂ = dt/dtₙ₋₂
-    @. D[1] = uprev - uprev2
-    @. D[1] = D[1] * ρ₁
-    @. D[2] = D[1] - ((uprev2 - uprev3) * ρ₂)
+    @.. D[1] = uprev - uprev2
+    @.. D[1] = D[1] * ρ₁
+    @.. D[2] = D[1] - ((uprev2 - uprev3) * ρ₂)
   else
     κ = alg.kappa
     γ₁ = 1//1
     γ₂ = 1//1 + 1//2
     ρ = dt/dtₙ₋₁
     # backward diff
-    @. D[1] = uprev - uprev2
-    @. D[2] = D[1] - (uprev2 - uprev3)
+    @.. D[1] = uprev - uprev2
+    @.. D[2] = D[1] - (uprev2 - uprev3)
     if ρ != 1
       R!(k,ρ,cache)
       R .= R * U
-      @. D[1] = D[1] * R[1,1] + D[2] * R[2,1]
-      @. D[2] = D[1] * R[1,2] + D[2] * R[2,2]
+      @.. D[1] = D[1] * R[1,1] + D[2] * R[2,1]
+      @.. D[2] = D[1] * R[1,2] + D[2] * R[2,2]
     end
   end
 
   # precalculations
   nlsolver.γ = γ = inv((1-κ)*γ₂)
-  @. tmp = uprev + D[1] + D[2] - γ * (γ₁*D[1] + γ₂*D[2])
+  @.. tmp = uprev + D[1] + D[2] - γ * (γ₁*D[1] + γ₂*D[2])
 
   γdt = γ*dt
   update_W!(integrator, cache, γdt, repeat_step)
 
   # initial guess
-  @. nlsolver.z = dt*integrator.fsalfirst
+  @.. nlsolver.z = dt*integrator.fsalfirst
 
   z = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
-  @. u = tmp + γ*z
+  @.. u = tmp + γ*z
 
   if integrator.opts.adaptive
     if integrator.success_iter == 0
       integrator.EEst = one(integrator.EEst)
     elseif integrator.success_iter == 1
-      @. utilde = (u - uprev) - ((uprev - uprev2) * dt/dtₙ₋₁)
+      @.. utilde = (u - uprev) - ((uprev - uprev2) * dt/dtₙ₋₁)
       calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       integrator.EEst = integrator.opts.internalnorm(atmp,t)
     else
-      @. D2[1] = u - uprev
-      @. D2[2] = D2[1] - D[1]
-      @. D2[3] = D2[2] - D[2]
-      @. utilde = (κ*γ₂ + inv(k+1)) * D2[3]
+      @.. D2[1] = u - uprev
+      @.. D2[2] = D2[1] - D[1]
+      @.. D2[3] = D2[2] - D[2]
+      @.. utilde = (κ*γ₂ + inv(k+1)) * D2[3]
       calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       integrator.EEst = integrator.opts.internalnorm(atmp,t)
     end
@@ -774,7 +774,7 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
         n = k
       end
       for i = 1:n
-        @. D2[1,i] = udiff[i] * dt/dts[i]
+        @.. D2[1,i] = udiff[i] * dt/dts[i]
       end
       backward_diff!(cache,D,D2,k)
     end
@@ -785,38 +785,38 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
   # precalculations
   ϕ = fill!(utilde, zero(eltype(u)))
   for i = 1:k
-    @. ϕ += γₖ[i]*D[i]
+    @.. ϕ += γₖ[i]*D[i]
   end
-  @. ϕ *= γ
+  @.. ϕ *= γ
   tm = fill!(cache.b, zero(eltype(u)))
   for i = 1:k
-    @. tm += D[i]
+    @.. tm += D[i]
   end
-  @. nlsolver.tmp = uprev + tm - ϕ
+  @.. nlsolver.tmp = uprev + tm - ϕ
 
   γdt = γ*dt
   update_W!(integrator, cache, γdt, repeat_step)
   # initial guess
-  @. nlsolver.z = dt*integrator.fsalfirst
+  @.. nlsolver.z = dt*integrator.fsalfirst
 
   z = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
-  @. u = nlsolver.tmp + γ*z
+  @.. u = nlsolver.tmp + γ*z
 
 
   if integrator.opts.adaptive
     if cnt == 1
       integrator.EEst = one(integrator.EEst)
     elseif cnt == 2
-      @. utilde = (u - uprev) - (udiff[1] * dt/dts[1])
+      @.. utilde = (u - uprev) - (udiff[1] * dt/dts[1])
       calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       integrator.EEst = integrator.opts.internalnorm(atmp,t)
     else
-      @. tmp = u - uprev
+      @.. tmp = u - uprev
       for i = 1:k
-        @. tmp -= D[i]
+        @.. tmp -= D[i]
       end
-      @. utilde = (κ*γₖ[k] + inv(k+1)) * tmp
+      @.. utilde = (κ*γₖ[k] + inv(k+1)) * tmp
       calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       integrator.EEst = integrator.opts.internalnorm(atmp,t)
     end
@@ -828,16 +828,16 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
     else
       errm1 = 0
       if k > 1
-        @. utilde = (κ*γₖ[k-1] + inv(k)) * D[k]
+        @.. utilde = (κ*γₖ[k-1] + inv(k)) * D[k]
         calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         errm1 = integrator.opts.internalnorm(atmp,t)
       end
       backward_diff!(cache,D,D2,k+1,false)
-      @. tmp = u - uprev
+      @.. tmp = u - uprev
       for i = 1:(k+1)
-        @. tmp -= D2[i,1]
+        @.. tmp -= D2[i,1]
       end
-      @. utilde = (κ*γₖ[k+1] + inv(k+2)) * tmp
+      @.. utilde = (κ*γₖ[k+1] + inv(k+2)) * tmp
       calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       errp1 = integrator.opts.internalnorm(atmp,t)
       pass = stepsize_and_order!(cache, integrator.EEst, errm1, errp1, dt, k)
@@ -864,7 +864,7 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
   end
   udiff[1] = swap_tmp
   dts[1] = dt
-  @. udiff[1] = u - uprev
+  @.. udiff[1] = u - uprev
   for i = 1:5
     fill!(D[i], zero(eltype(u)))
   end
@@ -952,7 +952,7 @@ end
 
   # initial guess
   if alg.extrapolant == :linear
-    @. z = dt*integrator.fsalfirst
+    @.. z = dt*integrator.fsalfirst
   else # :constant
     z .= zero(eltype(u))
   end
@@ -961,23 +961,23 @@ end
  nlsolver.tmp = uprev
  z = nlsolve!(integrator, cache)
  nlsolvefail(nlsolver) && return
- @. z₁ = uprev + z
+ @.. z₁ = uprev + z
 ### STEP 2
  nlsolver.tmp = z₁
  nlsolver.c = 2
  set_new_W!(nlsolver, false)
  z = nlsolve!(integrator, cache)
  nlsolvefail(nlsolver) && return
- @. z₂ = z₁ + z
+ @.. z₂ = z₁ + z
 ### STEP 3
  # z .= zero(eltype(u))
- @. tmp2 = 0.5uprev + z₁ - 0.5z₂
+ @.. tmp2 = 0.5uprev + z₁ - 0.5z₂
  nlsolver.tmp = tmp2
  nlsolver.c = 1
  set_new_W!(nlsolver, false)
  z = nlsolve!(integrator, cache)
  nlsolvefail(nlsolver) && return
- @. u = tmp2 + z
+ @.. u = tmp2 + z
 
 ### finalize
  f(integrator.fsallast,u,p,t+dt)

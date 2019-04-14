@@ -81,39 +81,39 @@ end
 
   # Middle
   for i = 2:stages-1
-    @. utilde = zero(kk[1][1])
+    @.. utilde = zero(kk[1][1])
     for j = 1:i-1
-      @. utilde = utilde + A[j,i]*kk[j]
+      @.. utilde = utilde + A[j,i]*kk[j]
     end
-    @. tmp = uprev+dt*utilde
+    @.. tmp = uprev+dt*utilde
     f(kk[i],tmp,p,t+c[i]*dt)
     integrator.destats.nf += 1
   end
 
   #Last
-  @. utilde = zero(kk[1][1])
+  @.. utilde = zero(kk[1][1])
   for j = 1:stages-1
-    @. utilde = utilde + A[j,end]*kk[j]
+    @.. utilde = utilde + A[j,end]*kk[j]
   end
-  @. u = uprev + dt*utilde
+  @.. u = uprev + dt*utilde
   f(kk[end],u,p,t+c[end]*dt) #fsallast is tmp even if not fsal
   integrator.destats.nf += 1
 
   #Accumulate
   if !isfsal(integrator.alg.tableau)
-    @. utilde = α[1]*kk[1]
+    @.. utilde = α[1]*kk[1]
     for i = 2:stages
-      @. utilde = utilde + α[i]*kk[i]
+      @.. utilde = utilde + α[i]*kk[i]
     end
-    @. u = uprev + dt*utilde
+    @.. u = uprev + dt*utilde
   end
 
   if integrator.opts.adaptive
-    @. utilde = (α[1]-αEEst[1])*kk[1]
+    @.. utilde = (α[1]-αEEst[1])*kk[1]
     for i = 2:stages
-      @. utilde = utilde + (α[i]-αEEst[i])*kk[i]
+      @.. utilde = utilde + (α[i]-αEEst[i])*kk[i]
     end
-    @. tmp = dt*utilde
+    @.. tmp = dt*utilde
     calculate_residuals!(atmp, tmp, uprev, u,
                          integrator.opts.abstol, integrator.opts.reltol,
                          integrator.opts.internalnorm,t)

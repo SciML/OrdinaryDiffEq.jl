@@ -89,9 +89,9 @@ end
   ci1 = t + temp1
   ci2 = t + temp1
   ci3 = t
-  @. gprev2 = uprev
-  @. gprev = uprev + temp1 * fsalfirst
-  ms[ccache.mdeg] < 2 && ( @. u = gprev )
+  @.. gprev2 = uprev
+  @.. gprev = uprev + temp1 * fsalfirst
+  ms[ccache.mdeg] < 2 && ( @.. u = gprev )
   # for the second to the ms[ccache.mdeg] th stages
   for i in 2:ms[ccache.mdeg]
     μ, κ = recf[ccache.recind + (i - 2)]
@@ -100,7 +100,7 @@ end
     temp2 = 1 + κ
     temp3 = -κ
     ci1 = temp1 + temp2 * ci2 + temp3 * ci3
-    @. u = temp1 * u + temp2 * gprev + temp3 * gprev2
+    @.. u = temp1 * u + temp2 * gprev + temp3 * gprev2
     i < ms[ccache.mdeg] && (gprev2 .= gprev; gprev .= u)
     ci3 = ci2
     ci2 = ci1
@@ -110,12 +110,12 @@ end
   temp2 = dt * fp2[ccache.mdeg]
   f(k, u, p, ci1)
   integrator.destats.nf += 1
-  @. gprev = u + temp1 * k
+  @.. gprev = u + temp1 * k
   ci1 += temp1
   f(k2, gprev, p, ci1)
   integrator.destats.nf += 1
-  @. tmp = temp2 * (k2 - k)
-  @. u = gprev + temp1 * k2 + tmp
+  @.. tmp = temp2 * (k2 - k)
+  @.. u = gprev + temp1 * k2 + tmp
   # error estimate
   if integrator.opts.adaptive
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
@@ -249,9 +249,9 @@ end
   ci1 = t + temp1
   ci2 = t + temp1
   ci3 = t
-  @. gprev2 = uprev
-  @. gprev = uprev + temp1 * fsalfirst
-  ms[ccache.mdeg] < 2 && ( @. u = gprev )
+  @.. gprev2 = uprev
+  @.. gprev = uprev + temp1 * fsalfirst
+  ms[ccache.mdeg] < 2 && ( @.. u = gprev )
   # for the second to the ms[ccache.mdeg] th stages
   for i in 2:ms[ccache.mdeg]
     μ, κ = recf[ccache.recind + (i - 2)]
@@ -260,7 +260,7 @@ end
     temp2 = 1 + κ
     temp3 = -κ
     ci1 = temp1 + temp2 * ci2 + temp3 * ci3
-    @. u = temp1 * u + temp2 * gprev + temp3 * gprev2
+    @.. u = temp1 * u + temp2 * gprev + temp3 * gprev2
     i < ms[ccache.mdeg] && (gprev2 .= gprev; gprev .= u)
     ci3 = ci2
     ci2 = ci1
@@ -269,20 +269,20 @@ end
   # Stage-1
   temp1 = dt * fpa[ccache.mdeg][1]
   f(k, u, p, ci1)
-  @. gprev3 = u + temp1 * k
+  @.. gprev3 = u + temp1 * k
   # Stage-2
   ci2 = ci1 + temp1
   temp1 = dt * fpa[ccache.mdeg][2];
   temp2 = dt * fpa[ccache.mdeg][3];
   f(k2, gprev3, p, ci1)
-  @. gprev4 = u + temp1 * k + temp2 * k2
+  @.. gprev4 = u + temp1 * k + temp2 * k2
   # Stage-3
   ci2 = ci1 + temp1 +temp2
   temp1 = dt * fpa[ccache.mdeg][4]
   temp2 = dt * fpa[ccache.mdeg][5]
   temp3 = dt * fpa[ccache.mdeg][6]
   f(k3, gprev4, p, ci2)
-  @. gprev5 = u + temp1 * k + temp2 * k2 + temp3 * k3
+  @.. gprev5 = u + temp1 * k + temp2 * k2 + temp3 * k3
   #Stage-4
   ci2 = ci1 + temp1 + temp2 + temp3
   temp1 = dt * fpb[ccache.mdeg][1]
@@ -290,7 +290,7 @@ end
   temp3 = dt * fpb[ccache.mdeg][3]
   temp4 = dt * fpb[ccache.mdeg][4]
   f(k4, gprev5, p, ci2)
-  @. u = u + temp1 * k + temp2 * k2 + temp3 * k3 + temp4 * k4
+  @.. u = u + temp1 * k + temp2 * k2 + temp3 * k3 + temp4 * k4
   #Error estimate (embedded method of order 3)
   temp1 = dt * fpbe[ccache.mdeg][1] - temp1
   temp2 = dt * fpbe[ccache.mdeg][2] - temp2
@@ -299,7 +299,7 @@ end
   temp5 = dt * fpbe[ccache.mdeg][5]
   f(k5, u, p, t + dt)
   integrator.destats.nf += 5
-  @. tmp = temp1 * k + temp2 * k2 + temp3 * k3 + temp4 * k4 + temp5 * k5
+  @.. tmp = temp1 * k + temp2 * k2 + temp3 * k3 + temp4 * k4 + temp5 * k5
   if integrator.opts.adaptive
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
@@ -427,9 +427,9 @@ end
   b2    = b1
 
   # stage-1
-  @. gprev2 = uprev
+  @.. gprev2 = uprev
   μs     = w1*b1
-  @. gprev  = uprev + dt*μs*fsalfirst
+  @.. gprev  = uprev + dt*μs*fsalfirst
   th2  = zero(eltype(u))
   th1  = μs
   z1   = w0
@@ -451,7 +451,7 @@ end
     μs  = μ*w1/w0
     f(k, gprev, p, t + dt*th1)
     integrator.destats.nf += 1
-    @. u   = μ*gprev + ν*gprev2  + (1 - μ - ν)*uprev + dt*μs*(k - νs*fsalfirst)
+    @.. u   = μ*gprev + ν*gprev2  + (1 - μ - ν)*uprev + dt*μs*(k - νs*fsalfirst)
     th  = μ*th1 + ν*th2 + μs*(1 - νs)
     if (iter < mdeg)
       gprev2 = gprev
@@ -470,7 +470,7 @@ end
   end
   # error estimate
   if integrator.opts.adaptive
-    @. tmp = 0.8*(uprev - u) + 0.4*dt*(fsalfirst + gprev)
+    @.. tmp = 0.8*(uprev - u) + 0.4*dt*(fsalfirst + gprev)
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
@@ -598,7 +598,7 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
   if isnewton(nlsolver) && integrator.opts.adaptive
     update_W!(integrator, cache, dt, false)
     LU_W = get_W(nlsolver)
-    tmp = LU_W.L * (LU_W.U * (@. dt*(0.5*(cache.du₂ - du₂) + (0.5 - μs₁)*(cache.du₁ - du₁))))
+    tmp = LU_W.L * (LU_W.U * (@.. dt*(0.5*(cache.du₂ - du₂) + (0.5 - μs₁)*(cache.du₁ - du₁))))
     atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
@@ -622,7 +622,7 @@ function initialize!(integrator, cache::IRKCCache)
   f2(cache.du₂, uprev, p, t)
   integrator.destats.nf += 1
   integrator.destats.nf2 += 1
-  @. integrator.fsalfirst = cache.du₁ + cache.du₂
+  @.. integrator.fsalfirst = cache.du₁ + cache.du₂
 end
 
 function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
@@ -648,26 +648,26 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
 
   #stage-1
   f1ⱼ₋₂  = du₁
-  @. gprev2 = uprev
+  @.. gprev2 = uprev
   μs     = ω₁*Bⱼ₋₁
   μs₁    = μs
 
   update_W!(integrator, cache, μs₁*dt, false)
   # initial guess
   # if alg.extrapolant == :linear
-  #   @. z = dt*du₁
+  #   @.. z = dt*du₁
   # else # :constant
-  #   @. z = zero(eltype(u))
+  #   @.. z = zero(eltype(u))
   # end
-  @. nlsolver.z = dt*du₁
+  @.. nlsolver.z = dt*du₁
 
-  @. nlsolver.tmp = uprev + dt*μs₁*du₂
+  @.. nlsolver.tmp = uprev + dt*μs₁*du₂
   nlsolver.γ   = μs₁
   nlsolver.c   = μs
   z = nlsolve!(integrator, cache)
   # ignoring newton method's convergence failure
   # nlsolvefail(nlsolver) && return
-  @. gprev = nlsolver.tmp + μs₁*nlsolver.z
+  @.. gprev = nlsolver.tmp + μs₁*nlsolver.z
 
   Cⱼ₋₂   = zero(eltype(u))
   Cⱼ₋₁   = μs
@@ -694,17 +694,17 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
     f2(f2ⱼ₋₁, gprev, p, t+Cⱼ₋₁*dt)
     integrator.destats.nf += 1
     integrator.destats.nf2 += 1
-    @. nlsolver.tmp = (1-μ-ν)*uprev + μ*gprev + ν*gprev2 + dt*μs*f2ⱼ₋₁ + dt*νs*du₂ + (νs - (1-μ-ν)*μs₁)*dt*du₁ - ν*μs₁*dt*f1ⱼ₋₂
-    @. nlsolver.z   = dt*f1ⱼ₋₁
+    @.. nlsolver.tmp = (1-μ-ν)*uprev + μ*gprev + ν*gprev2 + dt*μs*f2ⱼ₋₁ + dt*νs*du₂ + (νs - (1-μ-ν)*μs₁)*dt*du₁ - ν*μs₁*dt*f1ⱼ₋₂
+    @.. nlsolver.z   = dt*f1ⱼ₋₁
     nlsolver.c = Cⱼ
 
     z = nlsolve!(integrator, cache)
     # nlsolvefail(nlsolver) && return
-    @. u = nlsolver.tmp + μs₁*nlsolver.z
+    @.. u = nlsolver.tmp + μs₁*nlsolver.z
     if (iter < mdeg)
-      @. f1ⱼ₋₂  = f1ⱼ₋₁
-      @. gprev2 = gprev
-      @. gprev  = u
+      @.. f1ⱼ₋₂  = f1ⱼ₋₁
+      @.. gprev2 = gprev
+      @.. gprev  = u
       Cⱼ₋₂   = Cⱼ₋₁
       Cⱼ₋₁   = Cⱼ
       Bⱼ₋₂   = Bⱼ₋₁
@@ -718,8 +718,8 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
     end
   end
 
-  @. f1ⱼ₋₁ = du₁
-  @. f2ⱼ₋₁ = du₂
+  @.. f1ⱼ₋₁ = du₁
+  @.. f2ⱼ₋₁ = du₂
   f1(du₁, u, p, t+dt)
   f2(du₂, u, p, t+dt)
   integrator.destats.nf += 1
@@ -727,16 +727,16 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   # error estimate
   if isnewton(nlsolver) && integrator.opts.adaptive
     update_W!(integrator, cache, dt, false)
-    mul!(tmp, get_W(nlsolver), @. dt*(0.5*(du₂ - f2ⱼ₋₁) + (0.5 - μs₁)*(du₁ - f1ⱼ₋₁)))
+    mul!(tmp, get_W(nlsolver), @.. dt*(0.5*(du₂ - f2ⱼ₋₁) + (0.5 - μs₁)*(du₁ - f1ⱼ₋₁)))
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 
-  @. integrator.fsallast = du₁ + du₂
+  @.. integrator.fsallast = du₁ + du₂
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
-  @. k = du₁ + du₂
+  @.. k = du₁ + du₂
 end
 
 function initialize!(integrator, cache::ESERK5ConstantCache)
@@ -842,50 +842,50 @@ end
   internal_deg = ccache.internal_deg
   α = 100.0/(49.0*mdeg^2)
 
-  @. u = zero(uprev)
-  @. tmp = zero(uprev)
+  @.. u = zero(uprev)
+  @.. tmp = zero(uprev)
   for i in 1:5
     hᵢ = dt/i
     tᵢ = t
-    @. Sᵢ = zero(u)
-    @. uᵢ₋₁ = uprev
-    @. uᵢ₋₂ = zero(u)
+    @.. Sᵢ = zero(u)
+    @.. uᵢ₋₁ = uprev
+    @.. uᵢ₋₂ = zero(u)
     for j in 1:i
       r  = tᵢ
-      @. Sᵢ = (Bᵢ[start])*uᵢ₋₁
+      @.. Sᵢ = (Bᵢ[start])*uᵢ₋₁
       for st in 1:mdeg
         f(k, uᵢ₋₁, p, r)
         integrator.destats.nf += 1
 
         if st%internal_deg == 1
-          @. uᵢ = uᵢ₋₁ + α*hᵢ*k
+          @.. uᵢ = uᵢ₋₁ + α*hᵢ*k
         else
-          @. uᵢ = 2*uᵢ₋₁ - uᵢ₋₂ + 2*α*hᵢ*k
+          @.. uᵢ = 2*uᵢ₋₁ - uᵢ₋₂ + 2*α*hᵢ*k
         end
         q = convert(Int, floor(st/internal_deg))
         r = tᵢ + α*(st^2 + q*internal_deg^2)*hᵢ
-        @. Sᵢ = Sᵢ + (Bᵢ[start+st])*uᵢ
+        @.. Sᵢ = Sᵢ + (Bᵢ[start+st])*uᵢ
         if st < mdeg
-          @. uᵢ₋₂ = uᵢ₋₁
-          @. uᵢ₋₁ = uᵢ
+          @.. uᵢ₋₂ = uᵢ₋₁
+          @.. uᵢ₋₁ = uᵢ
         end
       end
 
       if j < i
         tᵢ = tᵢ + hᵢ
-        @. uᵢ₋₁ = Sᵢ
+        @.. uᵢ₋₁ = Sᵢ
       end
     end
 
-    @. u = u + Cᵤ[i]*Sᵢ
-    integrator.opts.adaptive && (@. tmp = tmp + Cₑ[i]*Sᵢ)
+    @.. u = u + Cᵤ[i]*Sᵢ
+    integrator.opts.adaptive && (@.. tmp = tmp + Cₑ[i]*Sᵢ)
   end
 
-  @. u = u/24
+  @.. u = u/24
 
 
   if integrator.opts.adaptive
-    @. tmp = tmp/24
+    @.. tmp = tmp/24
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
