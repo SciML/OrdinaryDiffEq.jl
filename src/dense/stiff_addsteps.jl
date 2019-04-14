@@ -32,7 +32,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Cache,
     dto2 = dt/2
     dto6 = dt/6
 
-    #@. linsolve_tmp = @muladd fsalfirst + γ*dT
+    #@.. linsolve_tmp = @muladd fsalfirst + γ*dT
     @tight_loop_macros for i in uidx
       @inbounds linsolve_tmp[i] = @muladd fsalfirst[i] + γ*dT[i]
     end
@@ -49,7 +49,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Cache,
       cache.linsolve(vec(k₁),W,vec(linsolve_tmp),true)
     end
 
-    @. tmp = uprev + dto2*k₁
+    @.. tmp = uprev + dto2*k₁
     f(f₁,tmp,p,t+dto2)
 
 
@@ -59,14 +59,14 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Cache,
     #  mul!(tmp,mass_matrix,k₁)
     #end
 
-    @. linsolve_tmp = f₁ - tmp
+    @.. linsolve_tmp = f₁ - tmp
     if DiffEqBase.has_invW(f)
       mul!(vec(k₂), W, vec(linsolve_tmp))
     else
       cache.linsolve(vec(k₂), W, vec(linsolve_tmp))
     end
 
-    @. k₂ += k₁
+    @.. k₂ += k₁
 
     copyat_or_push!(k,1,k₁)
     copyat_or_push!(k,2,k₂)
@@ -211,15 +211,15 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
       cache.linsolve(vec(k1), W, vec(linsolve_tmp), true)
     end
 
-    @. tmp = uprev + a21*k1
+    @.. tmp = uprev + a21*k1
     f( du,  tmp, p, t+c2*dt)
 
     if mass_matrix == I
-      @. linsolve_tmp = du + dtd2*dT + dtC21*k1
+      @.. linsolve_tmp = du + dtd2*dT + dtC21*k1
     else
-      @. du1 = dtC21*k1
+      @.. du1 = dtC21*k1
       mul!(du2,mass_matrix,du1)
-      @. linsolve_tmp = du + dtd2*dT + du2
+      @.. linsolve_tmp = du + dtd2*dT + du2
     end
 
     if DiffEqBase.has_invW(f)
@@ -228,15 +228,15 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
       cache.linsolve(vec(k2), W, vec(linsolve_tmp))
     end
 
-    @. tmp = uprev + a31*k1 + a32*k2
+    @.. tmp = uprev + a31*k1 + a32*k2
     f( du,  tmp, p, t+c3*dt)
 
     if mass_matrix == I
-      @. linsolve_tmp = du + dtd3*dT + (dtC31*k1 + dtC32*k2)
+      @.. linsolve_tmp = du + dtd3*dT + (dtC31*k1 + dtC32*k2)
     else
-      @. du1 = dtC31*k1 + dtC32*k2
+      @.. du1 = dtC31*k1 + dtC32*k2
       mul!(du2,mass_matrix,du1)
-      @. linsolve_tmp = du + dtd3*dT + du2
+      @.. linsolve_tmp = du + dtd3*dT + du2
     end
 
     if DiffEqBase.has_invW(f)
@@ -245,15 +245,15 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
       cache.linsolve(vec(k3), W, vec(linsolve_tmp))
     end
 
-    @. tmp = uprev + a41*k1 + a42*k2 + a43*k3
+    @.. tmp = uprev + a41*k1 + a42*k2 + a43*k3
     f( du,  tmp, p, t+c4*dt)
 
     if mass_matrix == I
-      @. linsolve_tmp = du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
+      @.. linsolve_tmp = du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
     else
-      @. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
+      @.. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
       mul!(du2,mass_matrix,du1)
-      @. linsolve_tmp = du + dtd4*dT + du2
+      @.. linsolve_tmp = du + dtd4*dT + du2
     end
 
     if DiffEqBase.has_invW(f)
@@ -262,15 +262,15 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
       cache.linsolve(vec(k4), W, vec(linsolve_tmp))
     end
 
-    @. tmp = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
+    @.. tmp = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
     f( du,  tmp, p, t+dt)
 
     if mass_matrix == I
-      @. linsolve_tmp = du + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
+      @.. linsolve_tmp = du + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
     else
-      @. du1 = dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3
+      @.. du1 = dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3
       mul!(du2,mass_matrix,du1)
-      @. linsolve_tmp = du + du2
+      @.. linsolve_tmp = du + du2
     end
 
     if DiffEqBase.has_invW(f)
@@ -280,10 +280,10 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
     end
 
     @unpack h21,h22,h23,h24,h25,h31,h32,h33,h34,h35 = cache.tab
-    @. k6 = h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5
+    @.. k6 = h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5
     copyat_or_push!(k,1,copy(k6))
 
-    @. k6 = h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5
+    @.. k6 = h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5
     copyat_or_push!(k,2,copy(k6))
 
   end

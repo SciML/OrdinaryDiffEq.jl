@@ -38,7 +38,7 @@ module OrdinaryDiffEq
                      set_abstol!, postamble!, last_step_failed,
                      isautodifferentiable
 
-  using DiffEqBase: check_error!, @def
+  using DiffEqBase: check_error!, @def, @..
 
   macro tight_loop_macros(ex)
    :($(esc(ex)))

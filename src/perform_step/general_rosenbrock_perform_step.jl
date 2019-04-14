@@ -24,7 +24,7 @@ end
     for j = 1:i-1
       utilde = utilde + A[j,i]*kk[j]
     end
-    kk[i] = f(t+c[i]*dt, @. uprev+dt*utilde)
+    kk[i] = f(t+c[i]*dt, @.. uprev+dt*utilde)
     integrator.destats.nf += 1
   end
 
@@ -33,7 +33,7 @@ end
   for j = 1:stages-1
     utilde = utilde + A[j,end]*kk[j]
   end
-  kk[end] = f(t+c[end]*dt, @. uprev+dt*utilde)
+  kk[end] = f(t+c[end]*dt, @.. uprev+dt*utilde)
   integrator.destats.nf += 1
   integrator.fsallast = kk[end] # Uses fsallast as temp even if not fsal
 

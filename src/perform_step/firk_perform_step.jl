@@ -26,8 +26,8 @@ function initialize!(integrator, cache::RadauIIA5Cache)
       cache.rtol = reltol^(2/3) / 10
       cache.atol = cache.rtol * (abstol / reltol)
     else
-      @. cache.rtol = reltol^(2/3) / 10
-      @. cache.atol = cache.rtol * (abstol / reltol)
+      @.. cache.rtol = reltol^(2/3) / 10
+      @.. cache.atol = cache.rtol * (abstol / reltol)
     end
   end
   nothing
@@ -45,8 +45,8 @@ end
   is_compos = integrator.alg isa CompositeAlgorithm
 
   # precalculations
-  rtol = @. reltol^(2/3) / 10
-  atol = @. rtol * (abstol / reltol)
+  rtol = @.. reltol^(2/3) / 10
+  atol = @.. rtol * (abstol / reltol)
   c1m1 = c1-1
   c2m1 = c2-1
   c1mc2= c1-c2
@@ -74,12 +74,12 @@ end
     c3′ = dt/cache.dtprev
     c1′ = c1*c3′
     c2′ = c2*c3′
-    z1  = @. c1′ * (cont1 + (c1′-c2m1) * (cont2 + (c1′-c1m1) * cont3))
-    z2  = @. c2′ * (cont1 + (c2′-c2m1) * (cont2 + (c2′-c1m1) * cont3))
-    z3  = @. c3′ * (cont1 + (c3′-c2m1) * (cont2 + (c3′-c1m1) * cont3))
-    w1  = @. TI11 * z1 + TI12 * z2 + TI13 * z3
-    w2  = @. TI21 * z1 + TI22 * z2 + TI23 * z3
-    w3  = @. TI31 * z1 + TI32 * z2 + TI33 * z3
+    z1  = @.. c1′ * (cont1 + (c1′-c2m1) * (cont2 + (c1′-c1m1) * cont3))
+    z2  = @.. c2′ * (cont1 + (c2′-c2m1) * (cont2 + (c2′-c1m1) * cont3))
+    z3  = @.. c3′ * (cont1 + (c3′-c2m1) * (cont2 + (c3′-c1m1) * cont3))
+    w1  = @.. TI11 * z1 + TI12 * z2 + TI13 * z3
+    w2  = @.. TI21 * z1 + TI22 * z2 + TI23 * z3
+    w3  = @.. TI31 * z1 + TI32 * z2 + TI33 * z3
   end
 
   # Newton iteration
@@ -97,25 +97,25 @@ end
     ff3 = f(uprev+z3, p, t+   dt) # c3 = 1
     integrator.destats.nf += 3
 
-    fw1 = @. TI11 * ff1 + TI12 * ff2 + TI13 * ff3
-    fw2 = @. TI21 * ff1 + TI22 * ff2 + TI23 * ff3
-    fw3 = @. TI31 * ff1 + TI32 * ff2 + TI33 * ff3
+    fw1 = @.. TI11 * ff1 + TI12 * ff2 + TI13 * ff3
+    fw2 = @.. TI21 * ff1 + TI22 * ff2 + TI23 * ff3
+    fw3 = @.. TI31 * ff1 + TI32 * ff2 + TI33 * ff3
 
     if mass_matrix isa UniformScaling # `UniformScaling` doesn't play nicely with broadcast
-      Mw1 = @. mass_matrix.λ * w1
-      Mw2 = @. mass_matrix.λ * w2
-      Mw3 = @. mass_matrix.λ * w3
+      Mw1 = @.. mass_matrix.λ * w1
+      Mw2 = @.. mass_matrix.λ * w2
+      Mw3 = @.. mass_matrix.λ * w3
     else
       Mw1 = mass_matrix*w1
       Mw2 = mass_matrix*w2
       Mw3 = mass_matrix*w3
     end
 
-    rhs1 = @. fw1 - γdt*Mw1
-    rhs2 = @. fw2 - αdt*Mw2 + βdt*Mw3
-    rhs3 = @. fw3 - βdt*Mw2 - αdt*Mw3
+    rhs1 = @.. fw1 - γdt*Mw1
+    rhs2 = @.. fw2 - αdt*Mw2 + βdt*Mw3
+    rhs3 = @.. fw3 - βdt*Mw2 - αdt*Mw3
     dw1 = LU1 \ rhs1
-    dw23 = LU2 \ (@. rhs2 + rhs3*im)
+    dw23 = LU2 \ (@.. rhs2 + rhs3*im)
     integrator.destats.nsolve += 2
     dw2 = real(dw23)
     dw3 = imag(dw23)
@@ -137,14 +137,14 @@ end
       end
     end
 
-    w1 = @. w1 - dw1
-    w2 = @. w2 - dw2
-    w3 = @. w3 - dw3
+    w1 = @.. w1 - dw1
+    w2 = @.. w2 - dw2
+    w3 = @.. w3 - dw3
 
     # transform `w` to `z`
-    z1 = @. T11 * w1 + T12 * w2 + T13 * w3
-    z2 = @. T21 * w1 + T22 * w2 + T23 * w3
-    z3 = @. T31 * w1 +       w2           # T32 = 1, T33 = 0
+    z1 = @.. T11 * w1 + T12 * w2 + T13 * w3
+    z2 = @.. T21 * w1 + T22 * w2 + T23 * w3
+    z3 = @.. T31 * w1 +       w2           # T32 = 1, T33 = 0
 
     # check stopping criterion
     iter > 1 && (η = θ / (1 - θ))
@@ -163,13 +163,13 @@ end
   cache.ηold = η
   cache.nl_iters = iter
 
-  u = @. uprev + z3
+  u = @.. uprev + z3
 
   if adaptive
     e1dt, e2dt, e3dt = e1/dt, e2/dt, e3/dt
-    tmp = @. e1dt*z1 + e2dt*z2 + e3dt*z3
+    tmp = @.. e1dt*z1 + e2dt*z2 + e3dt*z3
     mass_matrix != I && (tmp = mass_matrix*tmp)
-    utilde = @. integrator.fsalfirst + tmp
+    utilde = @.. integrator.fsalfirst + tmp
     alg.smooth_est && (utilde = LU1 \ utilde; integrator.destats.nsolve += 1)
     # RadauIIA5 needs a transformed rtol and atol see
     # https://github.com/luchr/ODEInterface.jl/blob/0bd134a5a358c4bc13e0fb6a90e27e4ee79e0115/src/radau5.f#L399-L421
@@ -179,7 +179,7 @@ end
     if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 || integrator.u_modified
       f0 = f(uprev .+ utilde, p, t)
       integrator.destats.nf += 1
-      utilde = @. f0 + tmp
+      utilde = @.. f0 + tmp
       alg.smooth_est && (utilde = LU1 \ utilde; integrator.destats.nsolve += 1)
       atmp = calculate_residuals(utilde, uprev, u, atol, rtol, internalnorm, t)
       integrator.EEst = internalnorm(atmp, t)
@@ -189,10 +189,10 @@ end
   if integrator.EEst <= oneunit(integrator.EEst)
     cache.dtprev = dt
     if alg.extrapolant != :constant
-      cache.cont1  = @. (z2 - z3)/c2m1
-      tmp          = @. (z1 - z2)/c1mc2
-      cache.cont2  = @. (tmp - cache.cont1) / c1m1
-      cache.cont3  = @. cache.cont2 - (tmp - z1/c1)/c2
+      cache.cont1  = @.. (z2 - z3)/c2m1
+      tmp          = @.. (z1 - z2)/c1mc2
+      cache.cont2  = @.. (tmp - cache.cont1) / c1m1
+      cache.cont3  = @.. cache.cont2 - (tmp - z1/c1)/c2
     end
   end
 
@@ -238,25 +238,25 @@ end
   if integrator.iter == 1 || integrator.u_modified || alg.extrapolant == :constant
     cache.dtprev = one(cache.dtprev)
     uzero = zero(eltype(u))
-    @. z1 = uzero
-    @. z2 = uzero
-    @. z3 = uzero
-    @. w1 = uzero
-    @. w2 = uzero
-    @. w3 = uzero
-    @. cache.cont1 = uzero
-    @. cache.cont2 = uzero
-    @. cache.cont3 = uzero
+    @.. z1 = uzero
+    @.. z2 = uzero
+    @.. z3 = uzero
+    @.. w1 = uzero
+    @.. w2 = uzero
+    @.. w3 = uzero
+    @.. cache.cont1 = uzero
+    @.. cache.cont2 = uzero
+    @.. cache.cont3 = uzero
   else
     c3′ = dt/cache.dtprev
     c1′ = c1*c3′
     c2′ = c2*c3′
-    @. z1  = c1′ * (cont1 + (c1′-c2m1) * (cont2 + (c1′-c1m1) * cont3))
-    @. z2  = c2′ * (cont1 + (c2′-c2m1) * (cont2 + (c2′-c1m1) * cont3))
-    @. z3  = c3′ * (cont1 + (c3′-c2m1) * (cont2 + (c3′-c1m1) * cont3))
-    @. w1  = TI11 * z1 + TI12 * z2 + TI13 * z3
-    @. w2  = TI21 * z1 + TI22 * z2 + TI23 * z3
-    @. w3  = TI31 * z1 + TI32 * z2 + TI33 * z3
+    @.. z1  = c1′ * (cont1 + (c1′-c2m1) * (cont2 + (c1′-c1m1) * cont3))
+    @.. z2  = c2′ * (cont1 + (c2′-c2m1) * (cont2 + (c2′-c1m1) * cont3))
+    @.. z3  = c3′ * (cont1 + (c3′-c2m1) * (cont2 + (c3′-c1m1) * cont3))
+    @.. w1  = TI11 * z1 + TI12 * z2 + TI13 * z3
+    @.. w2  = TI21 * z1 + TI22 * z2 + TI23 * z3
+    @.. w3  = TI31 * z1 + TI32 * z2 + TI33 * z3
   end
 
   # Newton iteration
@@ -269,17 +269,17 @@ end
     integrator.destats.nnonliniter += 1
 
     # evaluate function
-    @. tmp = uprev + z1
+    @.. tmp = uprev + z1
     f(fsallast, tmp, p, t+c1*dt)
-    @. tmp = uprev + z2
+    @.. tmp = uprev + z2
     f(k2, tmp, p, t+c2*dt)
-    @. tmp = uprev + z3
+    @.. tmp = uprev + z3
     f(k3, tmp, p, t+   dt) # c3 = 1
     integrator.destats.nf += 3
 
-    @. fw1 = TI11 * fsallast + TI12 * k2 + TI13 * k3
-    @. fw2 = TI21 * fsallast + TI22 * k2 + TI23 * k3
-    @. fw3 = TI31 * fsallast + TI32 * k2 + TI33 * k3
+    @.. fw1 = TI11 * fsallast + TI12 * k2 + TI13 * k3
+    @.. fw2 = TI21 * fsallast + TI22 * k2 + TI23 * k3
+    @.. fw3 = TI31 * fsallast + TI32 * k2 + TI33 * k3
 
     if mass_matrix == I
       Mw1 = w1
@@ -301,15 +301,15 @@ end
       Mw3 = z3
     end
 
-    @. dw1 = fw1 - γdt*Mw1
+    @.. dw1 = fw1 - γdt*Mw1
     needfactor = iter==1 && new_W
     linsolve1(vec(dw1), W1, vec(dw1), needfactor)
-    @. dw23 = complex(fw2 - αdt*Mw2 + βdt*Mw3, fw3 - βdt*Mw2 - αdt*Mw3)
+    @.. dw23 = complex(fw2 - αdt*Mw2 + βdt*Mw3, fw3 - βdt*Mw2 - αdt*Mw3)
     linsolve2(vec(dw23), W2, vec(dw23), needfactor)
     integrator.destats.nsolve += 2
     dw2 = z2; dw3 = z3
-    @. dw2 = real(dw23)
-    @. dw3 = imag(dw23)
+    @.. dw2 = real(dw23)
+    @.. dw3 = imag(dw23)
 
     # compute norm of residuals
     iter > 1 && (ndwprev = ndw)
@@ -331,14 +331,14 @@ end
       end
     end
 
-    @. w1 = w1 - dw1
-    @. w2 = w2 - dw2
-    @. w3 = w3 - dw3
+    @.. w1 = w1 - dw1
+    @.. w2 = w2 - dw2
+    @.. w3 = w3 - dw3
 
     # transform `w` to `z`
-    @. z1 = T11 * w1 + T12 * w2 + T13 * w3
-    @. z2 = T21 * w1 + T22 * w2 + T23 * w3
-    @. z3 = T31 * w1 +       w2           # T32 = 1, T33 = 0
+    @.. z1 = T11 * w1 + T12 * w2 + T13 * w3
+    @.. z2 = T21 * w1 + T22 * w2 + T23 * w3
+    @.. z3 = T31 * w1 +       w2           # T32 = 1, T33 = 0
 
     # check stopping criterion
     iter > 1 && (η = θ / (1 - θ))
@@ -357,14 +357,14 @@ end
   cache.ηold = η
   cache.nl_iters = iter
 
-  @. u = uprev + z3
+  @.. u = uprev + z3
 
   if adaptive
     utilde = w2
     e1dt, e2dt, e3dt = e1/dt, e2/dt, e3/dt
-    @. tmp = e1dt*z1 + e2dt*z2 + e3dt*z3
+    @.. tmp = e1dt*z1 + e2dt*z2 + e3dt*z3
     mass_matrix != I && (mul!(w1, mass_matrix, tmp); copyto!(tmp, w1))
-    @. utilde = integrator.fsalfirst + tmp
+    @.. utilde = integrator.fsalfirst + tmp
     alg.smooth_est && (linsolve1(vec(utilde), W1, vec(utilde), false); integrator.destats.nsolve += 1)
     # RadauIIA5 needs a transformed rtol and atol see
     # https://github.com/luchr/ODEInterface.jl/blob/0bd134a5a358c4bc13e0fb6a90e27e4ee79e0115/src/radau5.f#L399-L421
@@ -372,10 +372,10 @@ end
     integrator.EEst = internalnorm(atmp, t)
 
     if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 || integrator.u_modified
-      @. utilde = uprev + utilde
+      @.. utilde = uprev + utilde
       f(fsallast, utilde, p, t)
       integrator.destats.nf += 1
-      @. utilde = fsallast + tmp
+      @.. utilde = fsallast + tmp
       alg.smooth_est && (linsolve1(vec(utilde), W1, vec(utilde), false); integrator.destats.nsolve += 1)
       calculate_residuals!(atmp, utilde, uprev, u, atol, rtol, internalnorm, t)
       integrator.EEst = internalnorm(atmp, t)
@@ -385,10 +385,10 @@ end
   if integrator.EEst <= oneunit(integrator.EEst)
     cache.dtprev = dt
     if alg.extrapolant != :constant
-      @. cache.cont1  = (z2 - z3)/c2m1
-      @. tmp          = (z1 - z2)/c1mc2
-      @. cache.cont2  = (tmp - cache.cont1) / c1m1
-      @. cache.cont3  = cache.cont2 - (tmp - z1/c1)/c2
+      @.. cache.cont1  = (z2 - z3)/c2m1
+      @.. tmp          = (z1 - z2)/c1mc2
+      @.. cache.cont2  = (tmp - cache.cont1) / c1m1
+      @.. cache.cont3  = cache.cont2 - (tmp - z1/c1)/c2
     end
   end
 

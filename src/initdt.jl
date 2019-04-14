@@ -8,9 +8,9 @@
   if eltype(u0) <: Number && !(typeof(integrator.alg) <: CompositeAlgorithm)
     cache = get_tmp_cache(integrator)
     sk = first(cache)
-    @. sk = abstol+internalnorm(u0,t)*reltol
+    @.. sk = abstol+internalnorm(u0,t)*reltol
   else
-    sk = @. abstol+internalnorm(u0,t)*reltol
+    sk = @.. abstol+internalnorm(u0,t)*reltol
   end
 
   if get_current_isfsal(integrator.alg, integrator.cache) && typeof(integrator) <: ODEIntegrator
@@ -25,7 +25,7 @@
 
   # TODO: use more caches
   #tmp = cache[2]
-  tmp = @. u0/sk
+  tmp = @.. u0/sk
 
   d₀ = internalnorm(tmp,t)
 
@@ -74,7 +74,7 @@
     @warn("First function call produced NaNs. Exiting.")
   end
 
-  @. tmp = f₀/sk*oneunit_tType
+  @.. tmp = f₀/sk*oneunit_tType
   d₁ = internalnorm(tmp,t)
 
   if d₀ < 1//10^(5) || d₁ < 1//10^(5)
@@ -93,7 +93,7 @@
   dt₀_tdir = tdir*dt₀
 
   u₁ = similar(u0) # required by DEDataArray
-  @. u₁ = u0 + dt₀_tdir*f₀
+  @.. u₁ = u0 + dt₀_tdir*f₀
   f₁ = similar(f₀)
   f(f₁,u₁,p,t+dt₀_tdir)
 
@@ -107,7 +107,7 @@
   # Avoids AD issues
   f₀ == f₁ && return 100dt₀
 
-  @. tmp = (f₁-f₀)/sk*oneunit_tType
+  @.. tmp = (f₁-f₀)/sk*oneunit_tType
   d₂ = internalnorm(tmp,t)/dt₀*oneunit_tType
   # Hairer has d₂ = sqrt(sum(abs2,tmp))/dt₀, note the lack of norm correction
 
@@ -127,7 +127,7 @@ end
   oneunit_tType = oneunit(_tType)
   dtmax_tdir = tdir*dtmax
 
-  sk = @. abstol + internalnorm(u0,t) * reltol
+  sk = @.. abstol + internalnorm(u0,t) * reltol
   d₀ = internalnorm(u0 ./ sk,t)
 
   f₀ = f(u0,p,t)
@@ -145,7 +145,7 @@ end
   dt₀ = min(dt₀,dtmax_tdir)
   dt₀_tdir = tdir*dt₀
 
-  u₁ = @. u0 + dt₀_tdir * f₀
+  u₁ = @.. u0 + dt₀_tdir * f₀
   f₁ = f(u₁,p,t+dt₀_tdir)
 
   # Constant zone before callback
