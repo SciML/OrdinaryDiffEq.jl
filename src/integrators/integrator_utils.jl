@@ -426,6 +426,7 @@ function step_accept_controller!(integrator,alg::ExtrapolationMidpointHairerWann
   dt_new[tmp] = max.(abs(integrator.opts.dtmin), min.(abs(integrator.opts.dtmax), abs.(dt_new[tmp]))) # Safety scaling
   work= Vector{eltype(Q)}(undef,n_max+1) # work[n] is the work for order (n-1)
   work[tmp] = s[tmp] ./ dt_new[tmp]
+
   # Order selection
   n_new = n_old
   if n_curr == n_min # Enforce n_min + 1 ≦ n_new

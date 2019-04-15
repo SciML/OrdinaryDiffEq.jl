@@ -235,7 +235,7 @@ end
   n_curr::Int64 # Storage for the current extrapolation order
   n_old::Int64 # Storage for the extrapolation order n_curr before perfom_step! changes the latter
   coefficients::extrapolation_coefficients
-  stage_number::Vector{Int64} # Stage_number[n] contains information for extrapolation order (n - 1)
+  stage_number::Vector{Int64} # stage_number[n] contains information for extrapolation order (n - 1)
   sigma::Rational{Int64} # Parameter for order selection
 end
 
