@@ -188,7 +188,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
   # Coefficients for obtaining utilde
   @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
   # Additional constant information
-  @unpack subdividing_sequence, stage_number = cache.coefficients
+  @unpack subdividing_sequence = cache.coefficients
+  @unpack stage_number = cache
 
   fill!(cache.T,zero(uprev))
   fill!(cache.Q, zero(eltype(cache.Q)))
@@ -292,7 +293,8 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
   # Coefficients for obtaining utilde
   @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
   # Additional constant information
-  @unpack subdividing_sequence, stage_number = cache.coefficients
+  @unpack subdividing_sequence = cache.coefficients
+  @unpack stage_number = cache
 
   # Create auxiliary variables
   u_temp1, u_temp2 = copy(uprev), copy(uprev) # Auxiliary variables for computing the internal discretisations
@@ -402,7 +404,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
   # Coefficients for obtaining utilde
   @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
   # Additional constant information
-  @unpack subdividing_sequence, stage_number = cache.coefficients
+  @unpack subdividing_sequence = cache.coefficients
 
   fill!(cache.T,zero(uprev))
   fill!(cache.Q, zero(eltype(cache.Q)))
@@ -411,7 +413,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
     # Set up the order window
     # integrator.alg.n_min + 1 ≦ n_curr ≦ integrator.alg.n_max - 1 is enforced by step_*_controller!
     if !(integrator.alg.n_min+1 <= n_curr <= integrator.alg.n_max-1)
-       error("Something went wrong while setting up the order window. Please report this error")
+       error("Something went wrong while setting up the order window: $n_curr ∉ [$(integrator.alg.n_min+1),$(integrator.alg.n_max-1)].
+       Please report this error  ")
     end
     win_min =  n_curr - 1
     win_max =  n_curr + 1
@@ -509,7 +512,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
   # Coefficients for obtaining utilde
   @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
   # Additional constant information
-  @unpack subdividing_sequence, stage_number = cache.coefficients
+  @unpack subdividing_sequence = cache.coefficients
 
   # Create auxiliary variables
   u_temp1, u_temp2 = copy(uprev), copy(uprev) # Auxiliary variables for computing the internal discretisations

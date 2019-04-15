@@ -328,7 +328,7 @@ function stepsize_predictor!(integrator,alg::ExtrapolationMidpointDeuflhard,n_ne
   else
     # Initialize
     @unpack t,EEst = integrator
-    @unpack stage_number = integrator.cache.coefficients
+    @unpack stage_number = integrator.cache
     tol = integrator.opts.internalnorm(integrator.opts.reltol,t) # Deuflhard's approach relies on EEstD ≈ ||relTol||
     s_curr = stage_number[integrator.cache.n_curr - alg.n_min + 1]
     s_new = stage_number[n_new - alg.n_min + 1]
@@ -346,7 +346,7 @@ function step_accept_controller!(integrator,alg::ExtrapolationMidpointDeuflhard,
   # Compute new order and stepsize, return new stepsize
   @unpack n_min, n_max = alg
   @unpack n_curr, n_old, Q = integrator.cache
-  s = integrator.cache.coefficients.stage_number
+  s = integrator.cache.stage_number
 
   # Compute new order based on available quantities
   tmp = (n_min:n_curr) .- n_min .+ 1 # Index range of quantities computed so far
@@ -416,18 +416,16 @@ function step_accept_controller!(integrator,alg::ExtrapolationMidpointHairerWann
   # Compute new order and stepsize, return new stepsize
   @unpack n_min, n_max = alg
   @unpack n_curr, n_old, Q, sigma = integrator.cache
-  s = integrator.cache.coefficients.stage_number
+  s = integrator.cache.stage_number
 
   # Compute new order based on available quantities
   win_min_old = n_old - 1 # cf. win_min in perfom_step! of the last step
-  tmp = (win_min_old:n_curr+1) # Index range for the new order
-  dt_new = Vector{eltype(Q)}(undef,n_max+1) # dt_new[n] is the optimal stepsize for order (n-1)
+  tmp = win_min_old:(n_curr + 1) # Index range for the new order
+  dt_new = fill(zero(eltype(Q)),n_max+1)
   dt_new[tmp] = integrator.dt ./ Q[tmp] # Store for the possible new stepsizes
   dt_new[tmp] = max.(abs(integrator.opts.dtmin), min.(abs(integrator.opts.dtmax), abs.(dt_new[tmp]))) # Safety scaling
-
   work= Vector{eltype(Q)}(undef,n_max+1) # work[n] is the work for order (n-1)
   work[tmp] = s[tmp] ./ dt_new[tmp]
-
   # Order selection
   n_new = n_old
   if n_curr == n_min # Enforce n_min + 1 ≦ n_new
@@ -435,7 +433,7 @@ function step_accept_controller!(integrator,alg::ExtrapolationMidpointHairerWann
   else
     if n_curr <= n_old
       if work[n_curr-1] < sigma * work[n_curr]
-        n_new = max(n_curr-1,n_min+1) # Enforce n_min + 1 ≦ n_new
+        n_new = max(n_curr-1,n_old-1,n_min+1) # Enforce n_min + 1 ≦ n_new
       elseif work[n_curr] < sigma * work[n_curr-1]
         n_new = min(n_curr+1,n_max-1) # Enforce n_new ≦ n_max - 1
       else
@@ -455,7 +453,7 @@ function step_accept_controller!(integrator,alg::ExtrapolationMidpointHairerWann
   # Stepsize selection
   if n_new == n_curr + 1
     # Compute the new stepsize of order n_new based on the optimal stepsize of order n_curr
-    dt_new[n_new+1] = s[n_curr+2]/s[n_curr+1] * dt_new[n_curr+1]
+    dt_new[n_new+1] = s[n_curr + 2]/s[n_curr + 1 ] * dt_new[n_curr+1]
     dt_new[n_new+1] = max(abs(integrator.opts.dtmin), min(abs(integrator.opts.dtmax), abs(dt_new[n_new+1])))
   end
   dt_new[n_new + 1]
