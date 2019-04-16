@@ -105,7 +105,7 @@
   # Constant zone before callback
   # Just return first guess
   # Avoids AD issues
-  f₀ == f₁ && return 100dt₀
+  f₀ == f₁ && return tdir*100dt₀
 
   @.. tmp = (f₁-f₀)/sk*oneunit_tType
   d₂ = internalnorm(tmp,t)/dt₀*oneunit_tType
@@ -151,7 +151,7 @@ end
   # Constant zone before callback
   # Just return first guess
   # Avoids AD issues
-  f₀ == f₁ && return 100dt₀
+  f₀ == f₁ && return tdir*100dt₀
 
   d₂ = internalnorm((f₁ .- f₀) ./ sk .* oneunit_tType,t) / dt₀ * oneunit_tType
 
