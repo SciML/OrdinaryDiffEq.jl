@@ -66,7 +66,7 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,uBottomElty
     W = WOperator(f, dt, true)
     J = nothing # is J = W.J better?
   else
-    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    J = zero(rate_prototype .* rate_prototype') # uEltype?
     W = similar(J)
   end
   tmp = zero(rate_prototype)
