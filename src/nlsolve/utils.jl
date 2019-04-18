@@ -117,7 +117,7 @@ DiffEqBase.@def iipnlsolve begin
         W = WOperator(f, dt, true)
         J = nothing # is J = W.J better?
       else
-        J = zero(u .* u')
+        J = false .* u .* u'
         W = similar(J)
       end
     end
