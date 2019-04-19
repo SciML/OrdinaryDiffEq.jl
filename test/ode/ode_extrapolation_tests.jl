@@ -1,15 +1,22 @@
 # This definitely needs cleaning
 
+# While developing use Revise
+# TODO: Delete this later
+using Revise
+
 # Import packages
-using Revise, OrdinaryDiffEq, DiffEqDevTools, Test, Random
+using  OrdinaryDiffEq, DiffEqDevTools, Test, Random
 
 # Import test problems
 using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
-import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear, prob_ode_bigfloat2Dlinear, prob_ode_2Dlinear_notinplace
+import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear,
+  prob_ode_bigfloat2Dlinear, prob_ode_2Dlinear_notinplace
 
 # Prepare tests
 Random.seed!(100)
-problem_array = [prob_ode_linear, prob_ode_2Dlinear, prob_ode_bigfloat2Dlinear, prob_ode_2Dlinear_notinplace]
+problem_array = [prob_ode_linear, prob_ode_2Dlinear,
+  prob_ode_bigfloat2Dlinear,
+  prob_ode_2Dlinear_notinplace]
 dts = 1 .//2 .^(8:-1:4)
 
 testTol = 0.2
@@ -49,12 +56,14 @@ sequence_array =[:harmonic, :romberg, :bulirsch]
 
     # Convergence test
     for j = 1:4
-      alg = ExtrapolationMidpointDeuflhard(min_extrapolation_order = j, init_extrapolation_order = j, max_extrapolation_order=j, sequence_symbol = seq)
+      alg = ExtrapolationMidpointDeuflhard(min_extrapolation_order = j,
+        init_extrapolation_order = j, max_extrapolation_order=j,
+        sequence_symbol = seq)
       sim = test_convergence(dts,prob,alg)
       @test sim.𝒪est[:final] ≈ 2*(j+1) atol=testTol
     end
 
-    # Regression test
+    # TODO: Regression test
     #...
 
   end
@@ -67,53 +76,17 @@ end # ExtrapolationMidpointDeuflhard
 
     # Convergence test
     for j = 1:4
-      alg = ExtrapolationMidpointHairerWanner(min_extrapolation_order = j, init_extrapolation_order = j, max_extrapolation_order=j, sequence_symbol = seq)
+      alg = ExtrapolationMidpointHairerWanner(min_extrapolation_order = j,
+        init_extrapolation_order = j,
+        max_extrapolation_order=j, sequence_symbol = seq)
       sim = test_convergence(dts,prob,alg)
       @test sim.𝒪est[:final] ≈ 2(j+1) atol=testTol
     end
 
-    # Regression test
+    # TODO:  Regression test
     #...
 
   end
 end # ExtrapolationMidpointHairerWanner
 
 end # Extrapolation methods
-
-
-# using Test, Random, OrdinaryDiffEq, DiffEqDevTools
-# using  DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
-#
-# import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear,
-#   prob_ode_bigfloat2Dlinear, prob_ode_2Dlinear_notinplace
-#
-#
-# # Define problems
-# problems_label = ["Linear ODE", "Linear 2D ODE", "Linear 2D Bigfloat ODE", "Linear 2D not in place ODE"]
-#
-# # Labels for the algorithms
-# algorithm_label = ["Explicit extrapolation due to Deuflhard", "Explicit extrapolation due to Hairer & Wanner"]
-#
-#
-# sequences_label = ["Harmonic",  "Romberg", "Bulirsch"]
-#
-# # Define the extrapolation order
-# order = 1:1:10 |> collect
-#
-# # Define stepsizes
-# stepsizes = 1 .//2 .^(4:-1:1)
-#
-# # Convergence test ExtrapolationMidpointDeuflhard
-#
-# @testset "Testing ExtrapolationMidpointDeuflhard" begin
-#
-# for (n1, prob) in enumerate(problems),
-#     (n3, seq) in enumerate(sequences),
-#     n4 in order
-#
-#     global stepsizes
-#     sim = test_convergence(stepsizes,prob,alg)
-#     @test sim.đŞest[:final] â 2(n4+1) atol=testTol
-# end
-#
-# end
