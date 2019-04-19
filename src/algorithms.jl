@@ -60,9 +60,13 @@ function ExtrapolationMidpointDeuflhard(;min_extrapolation_order=1,init_extrapol
       Initial order: " * lpad(init_extrapolation_order,2," ") * " --> "  * lpad(n_init,2," ")
   end
 
-  # Enforce sequence_symbol in [:harmonic,:romberg,:bulirsch]:
+  # Warn user if sequence has been changed:
   if sequence_symbol != :harmonic && sequence_symbol != :romberg && sequence_symbol != :bulirsch
-      error("`sequence_symbol` must match `:harmonic`, `:romberg` or `:bulirsch`")
+    @warn "The `sequence_symbol` given to the `ExtrapolationMidpointDeuflhard` algorithm
+       is not valid: it must match `:harmonic`, `:romberg` or `:bulirsch`.
+       Thus it has been changed
+      :$(sequence_symbol) --> :harmonic"
+    sequence_symbol = :harmonic
   end
 
   # Initialize algorithm
@@ -91,9 +95,13 @@ function ExtrapolationMidpointHairerWanner(;min_extrapolation_order=2,init_extra
       Initial order: " * lpad(init_extrapolation_order,2," ") * " --> "  * lpad(n_init,2," ")
   end
 
-  # Enforce sequence_symbol in [:harmonic,:romberg,:bulirsch]:
+  # Warn user if sequence has been changed:
   if sequence_symbol != :harmonic && sequence_symbol != :romberg && sequence_symbol != :bulirsch
-    error("`sequence_symbol` must match `:harmonic`, `:romberg` or `:bulirsch`")
+    @warn "The `sequence_symbol` given to the `ExtrapolationMidpointHairerWanner` algorithm
+       is not valid: it must match `:harmonic`, `:romberg` or `:bulirsch`.
+       Thus it has been changed
+      :$(sequence_symbol) --> :harmonic"
+    sequence_symbol = :harmonic
   end
 
   # Initialize algorithm
