@@ -82,7 +82,7 @@ function alg_cache(alg::RadauIIA5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   k = similar(rate_prototype); k2 = similar(rate_prototype); k3 = similar(rate_prototype)
   fw1 = similar(rate_prototype); fw2 = similar(rate_prototype); fw3 = similar(rate_prototype)
 
-  J = fill(zero(uEltypeNoUnits),length(u),length(u))
+  J = false .* rate_prototype .* rate_prototype'
   W1 = similar(J); W2 = similar(J, Complex{eltype(J)})
 
   du1 = similar(rate_prototype)
