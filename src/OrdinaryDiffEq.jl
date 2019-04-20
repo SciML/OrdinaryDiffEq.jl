@@ -38,7 +38,15 @@ module OrdinaryDiffEq
                      set_abstol!, postamble!, last_step_failed,
                      isautodifferentiable
 
-  using DiffEqBase: check_error!, @def, @..
+  using DiffEqBase: check_error!, @def, @.. , _vec, _reshape
+
+  using DiffEqBase: nlsolvefail, isnewton, get_W, @iipnlsolve, @oopnlsolve
+
+  using DiffEqBase: NLSolver
+
+  using DiffEqBase: FastConvergence, Convergence, SlowConvergence, VerySlowConvergence, Divergence
+
+  import DiffEqBase: calculate_residuals, calculate_residuals!, nlsolve_f
 
   macro tight_loop_macros(ex)
    :($(esc(ex)))
