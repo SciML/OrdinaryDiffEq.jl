@@ -10,7 +10,7 @@ end
 
 function alg_cache(alg::MidpointSplitting,u,rate_prototype,uEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  W = false .* rate_prototype .* rate_prototype' # uEltype?
+  W = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
   k = zero(rate_prototype); fsalfirst = zero(rate_prototype)
   MidpointSplittingCache(u,uprev,uprev2,similar(u),fsalfirst,W,k)
 end
