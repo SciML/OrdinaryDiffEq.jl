@@ -223,7 +223,7 @@ f1 = (du,u,p,t) -> du .= 2u
 f2 = (du,u,p,t) -> du .= 0.0
 
 ff_split4 = SplitFunction(f1, f2; analytic=(u0,p,t)->exp(2t)*u0)
-prob = SplitODEProblem(ff_split4,rand(8),(0.0,1.0))
+prob = SplitODEProblem(ff_split4,rand(4,2),(0.0,1.0))
 
 sol = solve(prob,KenCarp3())
 dts = 1 .//2 .^(8:-1:4)
@@ -281,7 +281,7 @@ f1 = (du,u,p,t) -> du.= 0.0
 f2 = (du,u,p,t) -> du.= 2u
 
 ff_split5 = SplitFunction(f1, f2; analytic=(u0,p,t)->exp(2t)*u0)
-prob = SplitODEProblem(ff_split5,rand(8),(0.0,1.0))
+prob = SplitODEProblem(ff_split5,rand(4,2),(0.0,1.0))
 
 sol = solve(prob,KenCarp3())
 dts = 1 .//2 .^(8:-1:4)
@@ -339,7 +339,7 @@ f1 = (du,u,p,t) -> du .= u
 f2 = (du,u,p,t) -> du .= 2u
 
 ff_split6 = SplitFunction(f1, f2; analytic=(u0,p,t)->exp(3t)*u0)
-prob = SplitODEProblem(ff_split6,rand(8),(0.0,1.0))
+prob = SplitODEProblem(ff_split6,rand(4,2),(0.0,1.0))
 
 sol = solve(prob,KenCarp3())
 dts = 1 .//2 .^(12:-1:8)
