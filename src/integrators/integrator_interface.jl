@@ -265,3 +265,5 @@ function DiffEqBase.set_u!(integrator::ODEIntegrator, u)
   integrator.u = u
   u_modified!(integrator, true)
 end
+
+DiffEqBase.has_destats(i::ODEIntegrator) = true
