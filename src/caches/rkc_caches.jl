@@ -123,7 +123,6 @@ end
 @cache mutable struct IRKCConstantCache{uType,rateType,F,N} <: OrdinaryDiffEqConstantCache
   minm::Int64
   zprev::uType
-  # k2::rateType
   uf::F
   nlsolver::N
   du₁::rateType
@@ -143,7 +142,6 @@ end
   f2ⱼ₋₁::rateType
   z::uType
   dz::uType
-  # b::uType
   tmp::uType
   atmp::uNoUnitsType
   J::JType
@@ -161,9 +159,7 @@ function alg_cache(alg::IRKC,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   γ, c = 1.0, 1.0
   @oopnlsolve
   zprev = u
-  # k2  = rate_prototype
   du₁ = rate_prototype; du₂ = rate_prototype
-  # IRKCConstantCache(50,zprev,k2,uf,nlsolver,du₁,du₂)
   IRKCConstantCache(50,zprev,uf,nlsolver,du₁,du₂)
 end
 
@@ -177,16 +173,13 @@ function alg_cache(alg::IRKC,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   atmp = similar(u,uEltypeNoUnits)
   fsalfirst = zero(rate_prototype)
   k  = zero(rate_prototype)
-  # k2 = zero(rate_prototype)
   zprev = similar(u)
   f1ⱼ₋₁ = zero(rate_prototype)
   f1ⱼ₋₂ = zero(rate_prototype)
   f2ⱼ₋₁ = zero(rate_prototype)
   du₁ = zero(rate_prototype)
   du₂ = zero(rate_prototype)
-  # constantcache = IRKCConstantCache(50,zprev,k2,uf,nlsolver,du₁,du₂)
   constantcache = IRKCConstantCache(50,zprev,uf,nlsolver,du₁,du₂)
-  # IRKCCache(u,uprev,gprev,gprev2,fsalfirst,k,du1,f1ⱼ₋₁,f1ⱼ₋₂,f2ⱼ₋₁,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolver,du₁,du₂,constantcache)
   IRKCCache(u,uprev,gprev,gprev2,fsalfirst,k,du1,f1ⱼ₋₁,f1ⱼ₋₂,f2ⱼ₋₁,z,dz,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolver,du₁,du₂,constantcache)
 end
 
