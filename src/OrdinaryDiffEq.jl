@@ -40,13 +40,13 @@ module OrdinaryDiffEq
 
   using DiffEqBase: check_error!, @def, @.. , _vec, _reshape
 
-  using DiffEqBase: nlsolvefail, isnewton, get_W, @iipnlsolve, @oopnlsolve
+  using DiffEqBase: nlsolvefail, isnewton, set_new_W!, get_W, @iipnlsolve, @oopnlsolve
 
   using DiffEqBase: NLSolver
 
   using DiffEqBase: FastConvergence, Convergence, SlowConvergence, VerySlowConvergence, Divergence
 
-  import DiffEqBase: calculate_residuals, calculate_residuals!, nlsolve_f
+  import DiffEqBase: calculate_residuals, calculate_residuals!, nlsolve_f, unwrap_cache
 
   macro tight_loop_macros(ex)
    :($(esc(ex)))
@@ -82,7 +82,6 @@ module OrdinaryDiffEq
   include("caches/extrapolation_caches.jl")
   include("caches/prk_caches.jl")
 
-  include("cache_utils.jl")
 
   include("alg_utils.jl")
 
@@ -100,6 +99,7 @@ module OrdinaryDiffEq
   include("integrators/type.jl")
   include("integrators/controllers.jl")
   include("integrators/integrator_utils.jl")
+  include("cache_utils.jl")
   include("integrators/integrator_interface.jl")
 
   include("perform_step/fixed_timestep_perform_step.jl")
