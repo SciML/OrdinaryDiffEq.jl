@@ -82,9 +82,9 @@ end
 function ExtrapolationMidpointHairerWanner(;min_extrapolation_order=2,init_extrapolation_order=5, max_extrapolation_order=10, sequence_symbol = :harmonic)
   # Enforce 2 <=  min_extrapolation_order
   # and min_extrapolation_order + 1 <= init_extrapolation_order <= max_extrapolation_order - 1:
-  n_min = max(2,min_extrapolation_order)
-  n_init = max(n_min + 1,init_extrapolation_order)
-  n_max = max(n_init + 1,max_extrapolation_order)
+  n_min = max(2, min_extrapolation_order)
+  n_init = max(n_min, init_extrapolation_order)
+  n_max = max(n_init + 1, max_extrapolation_order)
 
   # Warn user if orders have been changed
   if (min_extrapolation_order, init_extrapolation_order, max_extrapolation_order) != (n_min,n_init,n_max)

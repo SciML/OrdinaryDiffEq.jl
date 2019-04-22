@@ -412,8 +412,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
   if integrator.opts.adaptive
     # Set up the order window
     # integrator.alg.n_min + 1 ≦ n_curr ≦ integrator.alg.n_max - 1 is enforced by step_*_controller!
-    if !(integrator.alg.n_min+1 <= n_curr <= integrator.alg.n_max-1)
-       error("Something went wrong while setting up the order window: $n_curr ∉ [$(integrator.alg.n_min+1),$(integrator.alg.n_max-1)].
+    if !(integrator.alg.n_min <= n_curr <= integrator.alg.n_max-1)
+       error("Something went wrong while setting up the order window: $n_curr ∉ [$(integrator.alg.n_min),$(integrator.alg.n_max-1)].
        Please report this error  ")
     end
     win_min =  n_curr - 1
@@ -523,8 +523,9 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
   if integrator.opts.adaptive
     # Set up the order window
     # integrator.alg.n_min + 1 ≦ n_curr ≦ integrator.alg.n_max - 1 is enforced by step_*_controller!
-    if !(integrator.alg.n_min+1 <= n_curr <= integrator.alg.n_max-1)
-       error("Something went wrong while setting up the order window. Please report this error")
+    if !(integrator.alg.n_min <= n_curr <= integrator.alg.n_max-1)
+       error("Something went wrong while setting up the order window: $n_curr ∉ [$(integrator.alg.n_min),$(integrator.alg.n_max-1)].
+       Please report this error  ")
     end
     win_min =  n_curr - 1
     win_max =  n_curr + 1

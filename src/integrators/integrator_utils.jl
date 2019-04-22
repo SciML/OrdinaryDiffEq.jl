@@ -429,20 +429,20 @@ function step_accept_controller!(integrator,alg::ExtrapolationMidpointHairerWann
 
   # Order selection
   n_new = n_old
-  if n_curr == n_min # Enforce n_min + 1 ≦ n_new
-    n_new = n_min + 1
+  if n_curr == n_min # Enforce n_min ≦ n_new
+    n_new = n_min
   else
     if n_curr <= n_old
       if work[n_curr-1] < sigma * work[n_curr]
-        n_new = max(n_curr-1,n_old-1,n_min+1) # Enforce n_min + 1 ≦ n_new
+        n_new = max(n_curr-1,n_old-1,n_min) # Enforce n_min ≦ n_new
       elseif work[n_curr] < sigma * work[n_curr-1]
         n_new = min(n_curr+1,n_max-1) # Enforce n_new ≦ n_max - 1
       else
-        n_new = n_curr # n_min + 1 ≦ n_curr
+        n_new = n_curr # n_min ≦ n_curr
       end
     else
       if work[n_old] < sigma *  work[n_old+1]
-        n_new = max(n_old-1,n_min+1)  # Enforce n_min + 1 ≦ n_new
+        n_new = max(n_old-1,n_min)  # Enforce n_min ≦ n_new
       end
       if work[n_curr+1] <  sigma * work[n_new+1]
         n_new = min(n_new+1,n_max-1) # Enforce n_new ≦ n_max - 1
@@ -467,7 +467,7 @@ function step_reject_controller!(integrator, alg::ExtrapolationMidpointHairerWan
   # Order selection
   n_red = n_old
   if n_curr == n_old - 1
-    n_red = max(alg.n_min+1,n_old-1) # Enforce n_min + 1 ≦ n_red
+    n_red = max(alg.n_min,n_old-1) # Enforce n_min ≦ n_red
   end
   integrator.cache.n_curr = n_red
 
