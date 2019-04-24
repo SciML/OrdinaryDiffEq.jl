@@ -17,7 +17,7 @@ end
   atmp::uNoUnitsType
   fsalfirst::rateType
   k::rateType
-  k2::rateType
+  # k2::rateType
   constantcache::ROCK2ConstantCache
 end
 
@@ -29,8 +29,9 @@ function alg_cache(alg::ROCK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   atmp = similar(u,uEltypeNoUnits)
   fsalfirst = zero(rate_prototype)
   k = zero(rate_prototype)
-  k2 = zero(rate_prototype)
-  ROCK2Cache(u, uprev, gprev, gprev2, tmp, atmp, fsalfirst, k, k2, constantcache)
+  # k2 = zero(rate_prototype)
+  # ROCK2Cache(u, uprev, gprev, gprev2, tmp, atmp, fsalfirst, k, k2, constantcache)
+  ROCK2Cache(u, uprev, gprev, gprev2, tmp, atmp, fsalfirst, k, constantcache)
 end
 
 function alg_cache(alg::ROCK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
