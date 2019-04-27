@@ -267,7 +267,7 @@ function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeN
   fsalfirst = zero(rate_prototype)
   k = zero(rate_prototype)
 
-  cc = function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  cc =  alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val{false})
 
   # Initialize cache
   ExtrapolationMidpointDeuflhardCache(u_tilde, u_temp1, u_temp2, tmp, T, res, fsalfirst, k,cc.Q, cc.n_curr, cc.n_old, cc.coefficients)

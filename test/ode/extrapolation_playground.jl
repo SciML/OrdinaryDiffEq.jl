@@ -18,4 +18,5 @@ appr = solve(prob,ExtrapolationMidpointDeuflhard())
 appr! = solve(prob!,ExtrapolationMidpointDeuflhard())
 
 plt = plot(appr.t,appr.u)
+#plot!(plt, appr!.t, appr!.u)
 plot!(plt, t->uAnalytic(t))

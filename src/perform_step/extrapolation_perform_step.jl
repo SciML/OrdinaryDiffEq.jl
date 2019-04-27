@@ -1,4 +1,4 @@
-cachefunction initialize!(integrator,cache::RichardsonEulerCache)
+function initialize!(integrator,cache::RichardsonEulerCache)
   integrator.kshortsize = 2
   @unpack k,fsalfirst = cache
   integrator.fsalfirst = fsalfirst
@@ -191,11 +191,10 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
   @unpack subdividing_sequence, stage_number = cache.coefficients
 
   fill!(cache.T,zero(uprev))
-  fill!(cache.Q, zero(eltype(constantCache.Q)))
+  fill!(cache.Q, zero(eltype(cache.Q)))
 
   # @unpack t, uprev, dt, f, p = integrator
   # @unpack n_curr, u_temp1, u_temp2, u_tilde, res, T, fsalfirst,k  = cache
-  # tol = integrator.opts.internalnorm(integrator.opts.reltol, t) # Used by the convergence monitor
   # fill!(cache.T,zero(uprev))
   # fill!(cache.Q, zero(eltype(cache.Q)))
 
@@ -233,6 +232,8 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
       cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
       stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
     end
+    
+    tol = integrator.opts.internalnorm(integrator.opts.reltol, t) # Used by the convergence monitor
 
     # Check if an approximation of some order in the order window can be accepted
     while n_curr <= win_max
