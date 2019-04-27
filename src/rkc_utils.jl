@@ -1,10 +1,10 @@
 # This function calculates the largest eigenvalue
 # (absolute value wise) by power iteration.
-const RKCAlgs = Union{RKC,IRKC}
+const RKCAlgs = Union{RKC,IRKC,ESERK5}
 function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
   isfirst = integrator.iter == 1 || integrator.u_modified
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
-  maxiter = 50
+  maxiter = (integrator.alg isa ESERK5) ? 100 : 50
 
   safe = (typeof(integrator.alg) <: RKCAlgs) ? 1.0 : 1.2
   # Initial guess for eigenvector `z`
@@ -18,6 +18,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
     else
       fz = fsalfirst
       z = f(fz, p, t)
+      integrator.destats.nf += 1
     end
   else
     z = cache.zprev
@@ -53,6 +54,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
       tmp = fz - cache.du₂
     else
       fz = f(z, p, t)
+      integrator.destats.nf += 1
       tmp = fz - fsalfirst
     end
     Δ  = integrator.opts.internalnorm(tmp,t)
@@ -97,22 +99,23 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
   fz, z, atmp = cache.k, cache.tmp, cache.atmp
   ccache = cache.constantcache
-  maxiter = 50
+  maxiter = (integrator.alg isa ESERK5) ? 100 : 50
   safe = (typeof(integrator.alg) <: RKCAlgs) ? 1.0 : 1.2
   # Initial guess for eigenvector `z`
   if isfirst
     if typeof(integrator.alg) <: RKCAlgs
       if integrator.alg isa IRKC
-        @. z = cache.du₂
+        @.. z = cache.du₂
       else
-        @. z = fsalfirst
+        @.. z = fsalfirst
       end
     else
-      @. fz = u
+      @.. fz = u
       f(z, fz, p, t)
+      integrator.destats.nf += 1
     end
   else
-    @. z = ccache.zprev
+    @.. z = ccache.zprev
   end
   # Perturbation
   u_norm = integrator.opts.internalnorm(uprev,t)
@@ -125,27 +128,28 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
   if ( !is_u_zero && !is_z_zero )
     dz_u = u_norm * sqrt_pert
     quot = dz_u/z_norm
-    @. z = uprev + quot*z
+    @.. z = uprev + quot*z
   elseif !is_u_zero
     dz_u = u_norm * sqrt_pert
-    @. z = uprev + uprev*dz_u
+    @.. z = uprev + uprev*dz_u
   elseif !is_z_zero
     dz_u = pert
     quot = dz_u/z_norm
-    @. z *= quot
+    @.. z *= quot
   else
     dz_u = pert
-    @. z = dz_u
+    @.. z = dz_u
   end # endif
   # Start power iteration
   integrator.eigen_est = 0
   for iter in 1:maxiter
     if integrator.alg isa IRKC
       f.f2(fz, z, p, t)
-      @. atmp = fz - cache.du₂
+      @.. atmp = fz - cache.du₂
     else
       f(fz, z, p, t)
-      @. atmp = fz - fsalfirst
+      integrator.destats.nf += 1
+      @.. atmp = fz - fsalfirst
     end
     Δ  = integrator.opts.internalnorm(atmp,t)
     eig_prev = integrator.eigen_est
@@ -155,20 +159,20 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
       if iter >= 2 && abs(eig_prev - integrator.eigen_est) < max(integrator.eigen_est,1.0/integrator.opts.dtmax)*0.01
         integrator.eigen_est *= 1.2
         # Store the eigenvector
-        @. ccache.zprev = z - uprev
+        @.. ccache.zprev = z - uprev
         return true
       end
     else
       if iter >= 2 && abs(eig_prev - integrator.eigen_est) < integrator.eigen_est*0.05
         # Store the eigenvector
-        @. ccache.zprev = z
+        @.. ccache.zprev = z
         return true
       end
     end
     # Next `z`
     if Δ != zero(Δ)
       quot = dz_u/Δ
-      @. z = uprev + quot*atmp
+      @.. z = uprev + quot*atmp
     else
       # An arbitrary change on `z`
       nind = length(uprev)
@@ -190,18 +194,48 @@ and `cache.recind` (the index of recurrence parameters for that
 degree), where `recf[recind:(recind+ms[mdeg]-2)]` are the `μ,κ` pairs
 for the `mdeg` degree method.
   """
-  function choosedeg!(cache::T) where T
-    isconst = T <: OrdinaryDiffEqConstantCache
-    isconst || ( cache = cache.constantcache )
-    @unpack ms, fp1, fp2, recf, zprev = cache
-    recind = 0
-    @inbounds for i in 1:size(ms,1)
-      recind += ms[i]
-      if ms[i] > cache.mdeg
-        cache.mdeg = i
-        cache.recind = recind
-        break
-      end
+function choosedeg!(cache::T) where T
+  isconst = T <: OrdinaryDiffEqConstantCache
+  isconst || ( cache = cache.constantcache )
+  recind = 0
+  @inbounds for i in 1:size(cache.ms,1)
+    recind += cache.ms[i]
+    if cache.ms[i] > cache.mdeg
+      cache.mdeg = i
+      cache.recind = recind
+      break
     end
-    return nothing
   end
+  return nothing
+end
+
+
+function choosedeg_ESERK!(cache::T) where T
+  isconst = T <: OrdinaryDiffEqConstantCache
+  isconst || ( cache = cache.constantcache )
+  @unpack ms = cache
+  start = 1
+  @inbounds for i in 1:size(ms,1)
+    if ms[i] < cache.mdeg
+      start += ms[i]+1
+    else
+      cache.start = start
+      cache.mdeg = ms[i]
+      break
+    end
+  end
+  if cache.mdeg <= 20
+    cache.internal_deg = 2
+  elseif cache.mdeg <= 50
+    cache.internal_deg = 5
+  elseif cache.mdeg <= 100
+    cache.internal_deg = 10
+  elseif cache.mdeg <= 500
+    cache.internal_deg = 50
+  elseif cache.mdeg <= 1000
+    cache.internal_deg = 100
+  elseif cache.mdeg <= 2000
+    cache.internal_deg = 200
+  end
+  return nothing
+end

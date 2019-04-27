@@ -1,10 +1,3 @@
-# This definitely needs cleaning
-
-# While developing use Revise
-
-# TODO: Delete this later
-using Revise
-
 # Import packages
 using  OrdinaryDiffEq, DiffEqDevTools, Test, Random
 
@@ -40,19 +33,17 @@ testTol = 0.2
 
     #  Convergence test
     for j = 1:4
-      sim = test_convergence(dts,prob,RichardsonEuler(j,j,j))
+      sim = test_convergence(dts,prob,AitkenNeville(j,j,j))
       @test sim.𝒪est[:final] ≈ j atol=testTol
     end
 
      # Regression test
-    sol = solve(prob,RichardsonEuler(9,1,9),reltol=1e-3)
+    sol = solve(prob,AitkenNeville(9,1,9),reltol=1e-3)
     @test length(sol.u) < 15
-    sol = solve(prob,RichardsonEuler(9,1,9),reltol=1e-6)
+    sol = solve(prob,AitkenNeville(9,1,9),reltol=1e-6)
     @test length(sol.u) < 18
   end
-end # RichardsonEuler
-
-# Test of ExtrapolationMidpoint*() algorithms
+end # AitkenNeville
 
 # Define the subdividing sequences
 sequence_array =[:harmonic, :romberg, :bulirsch]

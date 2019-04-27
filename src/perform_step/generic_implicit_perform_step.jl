@@ -25,7 +25,7 @@ function (p::ImplicitRHS)(resid,u)
   _du1 = get_du(p.dual_cache, eltype(u))
   du1 = reinterpret(eltype(u),_du1)
   p.f(du1,u,p.p,p.t+p.dt)
-  @. resid = u - p.tmp - p.a*du1
+  @.. resid = u - p.tmp - p.a*du1
 end
 
 function initialize!(integrator,
@@ -34,6 +34,7 @@ function initialize!(integrator,
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+  integrator.destats.nf += 1
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -61,6 +62,7 @@ end
   nlres = alg.nlsolve(nl_rhs,uhold)
   uhold[1] = nlres[1]
   integrator.fsallast = f(uhold[1],p,t+dt)
+  integrator.destats.nf += 1
   u = uhold[1]
 
   if integrator.opts.adaptive && integrator.success_iter > 0
@@ -93,6 +95,7 @@ function initialize!(integrator,
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+  integrator.destats.nf += 1
 
   integrator.kshortsize = 2
   resize!(integrator.k, integrator.kshortsize)
@@ -109,7 +112,7 @@ end
   if integrator.success_iter > 0 && !integrator.reeval_fsal && alg.extrapolant == :interpolant
     current_extrapolant!(u,t+dt,integrator)
   elseif alg.extrapolant == :linear
-    @. u = uprev + dt*integrator.fsalfirst
+    @.. u = uprev + dt*integrator.fsalfirst
   else
     copyto!(u,uprev)
   end
@@ -133,7 +136,7 @@ end
     c = 7/12 # default correction factor in SPICE (LTE overestimated by DD)
     r = c*dt^2 # by mean value theorem 2nd DD equals y''(s)/2 for some s
 
-    @. tmp = r*abs((u - uprev)/dt1 - (uprev - uprev2)/dt2)
+    @.. tmp = r*abs((u - uprev)/dt1 - (uprev - uprev2)/dt2)
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   else
@@ -141,11 +144,13 @@ end
   end
 
   f(k, u, p, t+dt)
+  integrator.destats.nf += 1
 end
 
 function initialize!(integrator, cache::GenericTrapezoidConstantCache)
   cache.uhold[1] = integrator.uprev
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+  integrator.destats.nf += 1
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -175,6 +180,7 @@ end
   nlres = alg.nlsolve(nl_rhs,uhold)
   uhold[1] = nlres[1]
   integrator.fsallast = f(uhold[1],p,t+dt)
+  integrator.destats.nf += 1
   u = uhold[1]
 
   if integrator.opts.adaptive
@@ -224,6 +230,7 @@ function initialize!(integrator, cache::GenericTrapezoidCache)
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+  integrator.destats.nf += 1
   integrator.kshortsize = 2
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
@@ -239,7 +246,7 @@ end
   if integrator.success_iter > 0 && !integrator.reeval_fsal && alg.extrapolant == :interpolant
     current_extrapolant!(u,t+dt,integrator)
   elseif alg.extrapolant == :linear
-    @. u = uprev + dt*integrator.fsalfirst
+    @.. u = uprev + dt*integrator.fsalfirst
   else
     copyto!(u,uprev)
   end
@@ -270,7 +277,7 @@ end
       c = 7/12 # default correction factor in SPICE (LTE overestimated by DD)
       r = c*dt^3/2 # by mean value theorem 3rd DD equals y'''(s)/6 for some s
 
-      # @. tmp = r*abs(((u - uprev)/dt1 - (uprev - uprev2)/dt2) - ((uprev - uprev2)/dt3 - (uprev2 - uprev3)/dt4)/dt5)
+      # @.. tmp = r*abs(((u - uprev)/dt1 - (uprev - uprev2)/dt2) - ((uprev - uprev2)/dt3 - (uprev2 - uprev3)/dt4)/dt5)
       @inbounds for i in eachindex(u)
         DD31 = (u[i] - uprev[i])/dt1 - (uprev[i] - uprev2[i])/dt2
         DD30 = (uprev[i] - uprev2[i])/dt3 - (uprev2[i] - uprev3[i])/dt4
@@ -292,4 +299,5 @@ end
   end
 
   f(k, u, p, t+dt)
+  integrator.destats.nf += 1
 end

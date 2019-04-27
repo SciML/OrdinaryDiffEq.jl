@@ -66,7 +66,7 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,uBottomElty
     W = WOperator(f, dt, true)
     J = nothing # is J = W.J better?
   else
-    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
     W = similar(J)
   end
   tmp = zero(rate_prototype)
@@ -99,7 +99,7 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,uBottomElty
     W = WOperator(f, dt, true)
     J = nothing # is J = W.J better?
   else
-    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
     W = similar(J)
   end
   tmp = zero(rate_prototype)
@@ -202,7 +202,7 @@ function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
     W = WOperator(f, dt, true)
     J = nothing # is J = W.J better?
   else
-    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
     W = similar(J)
   end
   tmp = zero(rate_prototype)
@@ -264,7 +264,7 @@ function alg_cache(alg::Rodas3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     W = WOperator(f, dt, true)
     J = nothing # is J = W.J better?
   else
-    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
     W = similar(J)
   end
   tmp = zero(rate_prototype)
@@ -344,7 +344,7 @@ function alg_cache(alg::RosShamp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
     W = WOperator(f, dt, true)
     J = nothing # is J = W.J better?
   else
-    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
     W = similar(J)
   end
   tmp = zero(rate_prototype)
@@ -382,7 +382,7 @@ function alg_cache(alg::Veldd4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     W = WOperator(f, dt, true)
     J = nothing # is J = W.J better?
   else
-    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
     W = similar(J)
   end
   tmp = zero(rate_prototype)
@@ -420,7 +420,7 @@ function alg_cache(alg::Velds4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     W = WOperator(f, dt, true)
     J = nothing # is J = W.J better?
   else
-    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
     W = similar(J)
   end
   tmp = zero(rate_prototype)
@@ -458,7 +458,7 @@ function alg_cache(alg::GRK4T,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
     W = WOperator(f, dt, true)
     J = nothing # is J = W.J better?
   else
-    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
     W = similar(J)
   end
   tmp = zero(rate_prototype)
@@ -496,7 +496,7 @@ function alg_cache(alg::GRK4A,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
     W = WOperator(f, dt, true)
     J = nothing # is J = W.J better?
   else
-    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
     W = similar(J)
   end
   tmp = zero(rate_prototype)
@@ -534,7 +534,7 @@ function alg_cache(alg::Ros4LStab,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
     W = WOperator(f, dt, true)
     J = nothing # is J = W.J better?
   else
-    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
     W = similar(J)
   end
   tmp = zero(rate_prototype)
@@ -615,7 +615,7 @@ function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     W = WOperator(f, dt, true)
     J = nothing # is J = W.J better?
   else
-    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
     W = similar(J)
   end
   tmp = zero(rate_prototype)
@@ -658,7 +658,7 @@ function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
     W = WOperator(f, dt, true)
     J = nothing # is J = W.J better?
   else
-    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
     W = similar(J)
   end
   tmp = zero(rate_prototype)
@@ -701,7 +701,7 @@ function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
     W = WOperator(f, dt, true)
     J = nothing # is J = W.J better?
   else
-    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
     W = similar(J)
   end
   tmp = zero(rate_prototype)
@@ -787,7 +787,7 @@ function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     W = WOperator(f, dt, true)
     J = nothing # is J = W.J better?
   else
-    J = fill(zero(uEltypeNoUnits),length(u),length(u)) # uEltype?
+    J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
     W = similar(J)
   end
   tmp = zero(rate_prototype)
@@ -809,4 +809,16 @@ function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   Rosenbrock5ConstantCache(tf,uf,Rodas5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits)))
+end
+
+struct RosenbrockWConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
+  tf::TF
+  uf::UF
+  tab::Tab
+end
+
+function alg_cache(alg::RosenbrockW6S4OS,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+  RosenbrockWConstantCache(tf,uf,RosenbrockW6S4OSConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits)))
 end

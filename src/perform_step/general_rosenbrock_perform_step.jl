@@ -2,6 +2,7 @@ function initialize!(integrator, cache::GenRosen4ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+  integrator.destats.nf += 1
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -23,7 +24,8 @@ end
     for j = 1:i-1
       utilde = utilde + A[j,i]*kk[j]
     end
-    kk[i] = f(t+c[i]*dt, @. uprev+dt*utilde)
+    kk[i] = f(t+c[i]*dt, @.. uprev+dt*utilde)
+    integrator.destats.nf += 1
   end
 
   # Calc Last
@@ -31,7 +33,8 @@ end
   for j = 1:stages-1
     utilde = utilde + A[j,end]*kk[j]
   end
-  kk[end] = f(t+c[end]*dt, @. uprev+dt*utilde)
+  kk[end] = f(t+c[end]*dt, @.. uprev+dt*utilde)
+  integrator.destats.nf += 1
   integrator.fsallast = kk[end] # Uses fsallast as temp even if not fsal
 
   # Accumulate Result
@@ -53,6 +56,7 @@ end
 
   if !isfsal(integrator.alg.tableau)
     integrator.fsallast = f(u, p, t+dt)
+    integrator.destats.nf += 1
   end
 
   integrator.k[1] = integrator.fsalfirst

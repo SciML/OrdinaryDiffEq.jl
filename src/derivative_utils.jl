@@ -15,7 +15,8 @@ function calc_tderivative!(integrator, cache, dtd1, repeat_step)
     end
 
     f(fsalfirst, uprev, p, t)
-    @. linsolve_tmp = fsalfirst + dtd1*dT
+    integrator.destats.nf += 1
+    @.. linsolve_tmp = fsalfirst + dtd1*dT
   end
 end
 
@@ -52,6 +53,7 @@ function calc_J(integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
   else
     J = jacobian(cache.uf,uprev,integrator)
   end
+  integrator.destats.njacs += 1
   is_compos && (integrator.eigen_est = opnorm(J, Inf))
   return J
 end
@@ -78,6 +80,7 @@ function calc_J!(integrator, cache::OrdinaryDiffEqMutableCache, is_compos)
     uf.p = p
     jacobian!(J, uf, uprev, du1, integrator, jac_config)
   end
+  integrator.destats.njacs += 1
   is_compos && (integrator.eigen_est = opnorm(J, Inf))
 end
 
@@ -123,7 +126,7 @@ mutable struct WOperator{T,
   _func_cache           # cache used in `mul!`
   _concrete_form         # non-lazy form (matrix/number) of the operator
   WOperator(mass_matrix, gamma, J, inplace; transform=false) = new{eltype(J),typeof(mass_matrix),
-    typeof(gamma),typeof(J)}(mass_matrix,gamma,J,inplace,transform,nothing,nothing)
+    typeof(gamma),typeof(J)}(mass_matrix,gamma,J,transform,inplace,nothing,nothing)
 end
 function WOperator(f::DiffEqBase.AbstractODEFunction, gamma, inplace; transform=false)
   @assert DiffEqBase.has_jac(f) "f needs to have an associated jacobian"
@@ -149,50 +152,64 @@ function Base.convert(::Type{AbstractMatrix}, W::WOperator)
   if W._concrete_form === nothing || !W.inplace
     # Allocating
     if W.transform
-      W._concrete_form = W.mass_matrix / W.gamma - convert(AbstractMatrix,W.J)
+      W._concrete_form = -W.mass_matrix / W.gamma + convert(AbstractMatrix,W.J)
     else
-      W._concrete_form = W.mass_matrix - W.gamma * convert(AbstractMatrix,W.J)
+      W._concrete_form = -W.mass_matrix + W.gamma * convert(AbstractMatrix,W.J)
     end
   else
     # Non-allocating
+    _W = W._concrete_form
+    J = convert(AbstractMatrix,W.J)
     if W.transform
-      rmul!(copyto!(W._concrete_form, W.mass_matrix), 1/W.gamma)
-      axpy!(-1, convert(AbstractMatrix,W.J), W._concrete_form)
+      if _W isa Diagonal # axpby doesn't specialize on Diagonal matrix
+        @inbounds for i in axes(W._concrete_form, 1)
+          _W[i, i] = J[i, i] - inv(W.gamma) * W.mass_matrix[i, i]
+        end
+      else
+        copyto!(_W, W.mass_matrix)
+        axpby!(one(W.gamma), J, -inv(W.gamma), _W)
+      end
     else
-      copyto!(W._concrete_form, W.mass_matrix)
-      axpy!(-W.gamma, convert(AbstractMatrix,W.J), W._concrete_form)
+      if _W isa Diagonal # axpby doesn't specialize on Diagonal matrix
+        @inbounds for i in axes(W._concrete_form, 1)
+          _W[i, i] = W.gamma*J[i, i] - W.mass_matrix[i, i]
+        end
+      else
+        copyto!(_W, W.mass_matrix)
+        axpby!(W.gamma, J, -one(W.gamma), W._concrete_form)
+      end
     end
   end
   W._concrete_form
 end
 function Base.convert(::Type{Number}, W::WOperator)
   if W.transform
-    W._concrete_form = W.mass_matrix / W.gamma - convert(Number,W.J)
+    W._concrete_form = -W.mass_matrix / W.gamma + convert(Number,W.J)
   else
-    W._concrete_form = W.mass_matrix - W.gamma * convert(Number,W.J)
+    W._concrete_form = -W.mass_matrix + W.gamma * convert(Number,W.J)
   end
   W._concrete_form
 end
 Base.size(W::WOperator, args...) = size(W.J, args...)
 function Base.getindex(W::WOperator, i::Int)
   if W.transform
-    W.mass_matrix[i] / W.gamma - W.J[i]
+    -W.mass_matrix[i] / W.gamma + W.J[i]
   else
-    W.mass_matrix[i] - W.gamma * W.J[i]
+    -W.mass_matrix[i] + W.gamma * W.J[i]
   end
 end
 function Base.getindex(W::WOperator, I::Vararg{Int,N}) where {N}
   if W.transform
-    W.mass_matrix[I...] / W.gamma - W.J[I...]
+    -W.mass_matrix[I...] / W.gamma + W.J[I...]
   else
-    W.mass_matrix[I...] - W.gamma * W.J[I...]
+    -W.mass_matrix[I...] + W.gamma * W.J[I...]
   end
 end
 function Base.:*(W::WOperator, x::Union{AbstractVecOrMat,Number})
   if W.transform
-    (W.mass_matrix*x) / W.gamma - W.J*x
+    (W.mass_matrix*x) / -W.gamma + W.J*x
   else
-    W.mass_matrix*x - W.gamma * (W.J*x)
+    -W.mass_matrix*x + W.gamma * (W.J*x)
   end
 end
 function Base.:\(W::WOperator, x::Union{AbstractVecOrMat,Number})
@@ -211,104 +228,125 @@ function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrM
   if W.transform
     # Compute mass_matrix * B
     if isa(W.mass_matrix, UniformScaling)
-      a = W.mass_matrix.λ / W.gamma
-      @. Y = a * B
+      a = -W.mass_matrix.λ / W.gamma
+      @.. Y = a * B
     else
       mul!(Y, W.mass_matrix, B)
-      lmul!(1/W.gamma, Y)
+      lmul!(-1/W.gamma, Y)
     end
-    # Compute J * B and subtract
+    # Compute J * B and add
     mul!(W._func_cache, W.J, B)
-    Y .-= W._func_cache
+    Y .+= W._func_cache
   else
     # Compute mass_matrix * B
     if isa(W.mass_matrix, UniformScaling)
-      @. Y = W.mass_matrix.λ * B
+      @.. Y = W.mass_matrix.λ * B
     else
       mul!(Y, W.mass_matrix, B)
     end
     # Compute J * B
     mul!(W._func_cache, W.J, B)
-    # Subtract result
-    axpy!(-W.gamma, W._func_cache, Y)
+    # Add result
+    axpby!(W.gamma, W._func_cache, -one(W.gamma), Y)
   end
 end
 
-function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_step, W_transform=false)
-  @inbounds begin
-    @unpack t,dt,uprev,u,f,p = integrator
-    @unpack J,W = cache
-    mass_matrix = integrator.f.mass_matrix
-    is_compos = typeof(integrator.alg) <: CompositeAlgorithm
-    alg = unwrap_alg(integrator, true)
-    isnewton = !(typeof(alg) <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm ||
-                 typeof(alg) <: OrdinaryDiffEqRosenbrockAlgorithm)
-    isnewton && ( nlcache = cache.nlsolve.cache; @unpack ηold,nl_iters = cache.nlsolve.cache)
+function do_newJ(integrator, alg::T, cache, repeat_step)::Bool where T # any changes here need to be reflected in FIRK
+  repeat_step && return false
+  !alg_can_repeat_jac(alg) && return true
+  isnewton = T <: NewtonAlgorithm
+  isnewton && (T <: RadauIIA5 ? ( nlstatus = cache.status ) : ( nlstatus = get_status(cache.nlsolver) ))
+  nlsolvefail(nlstatus) && return true
+  # reuse J when there is fast convergence
+  fastconvergence = nlstatus === FastConvergence
+  return !fastconvergence
+end
 
-    # fast pass
-    # we only want to factorize the linear operator once
-    new_jac = true
-    new_W = true
-    if (f isa ODEFunction && islinear(f.f)) || (f isa SplitFunction && islinear(f.f1.f))
-      new_jac = false
-      @goto J2W # Jump to W calculation directly, because we already have J
-    end
+function do_newW(integrator, nlsolver::T, new_jac, W_dt)::Bool where T # any changes here need to be reflected in FIRK
+  integrator.iter <= 1 && return true
+  new_jac && return true
+  # reuse W when the change in stepsize is small enough
+  dt = integrator.dt
+  new_W_dt_cutoff = T <: NLSolver ? nlsolver.cache.new_W_dt_cutoff : #= FIRK =# nlsolver.new_W_dt_cutoff
+  smallstepchange = (dt/W_dt-one(dt)) <= new_W_dt_cutoff
+  return !smallstepchange
+end
 
-    # calculate W
-    if DiffEqBase.has_invW(f)
-      # skip calculation of inv(W) if step is repeated
-      !repeat_step && W_transform ? f.invW_t(W, uprev, p, dtgamma, t) :
-                                    f.invW(W, uprev, p, dtgamma, t) # W == inverse W
-      is_compos && calc_J!(integrator, cache, true)
+@noinline _throwWJerror(W, J) = throw(DimensionMismatch("W: $(axes(W)), J: $(axes(J))"))
+@noinline _throwWMerror(W, mass_matrix) = throw(DimensionMismatch("W: $(axes(W)), mass matrix: $(axes(mass_matrix))"))
 
-    elseif DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
-      # skip calculation of J if step is repeated
-      if repeat_step || (alg_can_repeat_jac(alg) &&
-                         (!integrator.last_stepfail && nl_iters == 1 &&
-                          ηold < alg.new_jac_conv_bound))
-        new_jac = false
-      else
-        new_jac = true
-        DiffEqBase.update_coefficients!(W,uprev,p,t)
+@inline function jacobian2W!(W::AbstractMatrix, mass_matrix::MT, dtgamma::Number, J::AbstractMatrix, W_transform::Bool)::Nothing where MT
+  # check size and dimension
+  iijj = axes(W)
+  @boundscheck (iijj === axes(J) && length(iijj) === 2) || _throwWJerror(W, J)
+  mass_matrix isa UniformScaling || @boundscheck axes(mass_matrix) === axes(W) || _throwWMerror(W, mass_matrix)
+  @inbounds if W_transform
+    invdtgamma = inv(dtgamma)
+    if MT <: UniformScaling
+      copyto!(W, J)
+      @simd for i in diagind(W)
+          W[i] = muladd(-mass_matrix.λ, invdtgamma, J[i])
       end
-      @label J2W
-      # skip calculation of W if step is repeated
-      if !repeat_step && (!alg_can_repeat_jac(alg) ||
-                          (integrator.iter < 1 || new_jac ||
-                           abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t))))
-        W.transform = W_transform
-        set_gamma!(W, dtgamma)
-      else
-        new_W = false
-      end
-    else # concrete W using jacobian from `calc_J!`
-      # skip calculation of J if step is repeated
-      if repeat_step || (alg_can_repeat_jac(alg) &&
-                         (!integrator.last_stepfail && nl_iters == 1 &&
-                          ηold < alg.new_jac_conv_bound))
-        new_jac = false
-      else
-        new_jac = true
-        calc_J!(integrator, cache, is_compos)
-      end
-      # skip calculation of W if step is repeated
-      if !repeat_step && (!alg_can_repeat_jac(alg) ||
-                          (integrator.iter < 1 || new_jac ||
-                           abs(dt - (t-integrator.tprev)) > 100eps(typeof(integrator.t))))
-        if W_transform
-          for j in 1:length(u), i in 1:length(u)
-              W[i,j] = mass_matrix[i,j]/dtgamma - J[i,j]
-          end
-        else
-          for j in 1:length(u), i in 1:length(u)
-              W[i,j] = mass_matrix[i,j] - dtgamma*J[i,j]
-          end
+    else
+      for j in iijj[2]
+        @simd for i in iijj[1]
+          W[i, j] = muladd(-mass_matrix[i, j], invdtgamma, J[i, j])
         end
-      else
-        new_W = false
       end
     end
-    isnewton && ( nlcache.new_W = new_W )
+  else
+    for j in iijj[2]
+      @simd for i in iijj[1]
+        W[i, j] = muladd(dtgamma, J[i, j], -mass_matrix[i, j])
+      end
+    end
+  end
+  return nothing
+end
+
+function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_step, W_transform=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack J,W = cache
+  alg = unwrap_alg(integrator, true)
+  mass_matrix = integrator.f.mass_matrix
+  is_compos = integrator.alg isa CompositeAlgorithm
+  isnewton = alg isa NewtonAlgorithm
+
+  # fast pass
+  # we only want to factorize the linear operator once
+  new_jac = true
+  new_W = true
+  if (f isa ODEFunction && islinear(f.f)) || (f isa SplitFunction && islinear(f.f1.f))
+    new_jac = false
+    @goto J2W # Jump to W calculation directly, because we already have J
+  end
+
+  # check if we need to update J or W
+  if !DiffEqBase.has_invW(f)
+    W_dt = isnewton ? cache.nlsolver.cache.W_dt : dt # TODO: RosW
+    new_jac = isnewton ? do_newJ(integrator, alg, cache, repeat_step) : true
+    new_W = isnewton ? do_newW(integrator, cache.nlsolver, new_jac, W_dt) : true
+  end
+
+  # calculate W
+  if DiffEqBase.has_invW(f)
+    # skip calculation of inv(W) if step is repeated
+    (!repeat_step && W_transform) ? f.invW_t(W, uprev, p, dtgamma, t) : f.invW(W, uprev, p, dtgamma, t) # W == inverse W
+    is_compos && calc_J!(integrator, cache, true)
+  elseif DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
+    # skip calculation of J if step is repeated
+    new_jac && DiffEqBase.update_coefficients!(W,uprev,p,t)
+    # skip calculation of W if step is repeated
+    @label J2W
+    new_W && (W.transform = W_transform; set_gamma!(W, dtgamma))
+  else # concrete W using jacobian from `calc_J!`
+    # skip calculation of J if step is repeated
+    new_jac && calc_J!(integrator, cache, is_compos)
+    # skip calculation of W if step is repeated
+    new_W && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
+  end
+  if isnewton
+    set_new_W!(cache.nlsolver, new_W) && set_W_dt!(cache.nlsolver, dt)
   end
   new_W && (integrator.destats.nw += 1)
   return nothing
@@ -335,8 +373,8 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
   else
     integrator.destats.nw += 1
     J = calc_J(integrator, cache, is_compos)
-    W_full = W_transform ? mass_matrix*inv(dtgamma) - J :
-                           mass_matrix - dtgamma*J
+    W_full = W_transform ? -mass_matrix*inv(dtgamma) + J :
+                           -mass_matrix + dtgamma*J
     W = W_full isa Number ? W_full : lu(W_full)
   end
   is_compos && (integrator.eigen_est = isarray ? opnorm(J, Inf) : J)
@@ -347,4 +385,22 @@ function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repe
   calc_tderivative!(integrator, cache, dtd1, repeat_step)
   calc_W!(integrator, cache, dtgamma, repeat_step, W_transform)
   return nothing
+end
+
+# update W matrix (only used in Newton method)
+update_W!(integrator, cache, dt, repeat_step) =
+  update_W!(cache.nlsolver, integrator, cache, dt, repeat_step)
+
+function update_W!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqMutableCache, dt, repeat_step)
+  if isnewton(nlsolver)
+    calc_W!(integrator, cache, dt, repeat_step)
+  end
+  nothing
+end
+
+function update_W!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqConstantCache, dt, repeat_step)
+  if isnewton(nlsolver)
+    set_W!(nlsolver, calc_W!(integrator, cache, dt, repeat_step))
+  end
+  nothing
 end

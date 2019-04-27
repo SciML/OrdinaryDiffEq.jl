@@ -7,6 +7,7 @@ function initialize!(integrator, cache::Union{Rosenbrock23Cache,
   resize!(integrator.k, integrator.kshortsize)
   integrator.k .= [k₁,k₂]
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+  integrator.destats.nf += 1
 end
 
 function initialize!(integrator, cache::Union{Rosenbrock23ConstantCache,
@@ -14,6 +15,7 @@ function initialize!(integrator, cache::Union{Rosenbrock23ConstantCache,
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+  integrator.destats.nf += 1
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -41,11 +43,13 @@ end
     mul!(vec(k₁), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k₁), W, vec(linsolve_tmp), !repeat_step)
+    @.. k₁ = -k₁
   end
   integrator.destats.nsolve += 1
 
-  @. u = uprev + dto2*k₁
+  @.. u = uprev + dto2*k₁
   f(f₁,u,p,t+dto2)
+  integrator.destats.nf += 1
 
   if mass_matrix == I
     tmp .= k₁
@@ -53,26 +57,28 @@ end
     mul!(vec(tmp),mass_matrix,k₁)
   end
 
-  @. linsolve_tmp = f₁ - tmp
+  @.. linsolve_tmp = f₁ - tmp
   if DiffEqBase.has_invW(f)
     mul!(vec(k₂), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k₂), W, vec(linsolve_tmp))
+    @.. k₂ = -k₂
   end
   integrator.destats.nsolve += 1
 
-  @. k₂ += k₁
-  @. u = uprev + dt*k₂
+  @.. k₂ += k₁
+  @.. u = uprev + dt*k₂
 
   if integrator.opts.adaptive
     f( fsallast,  u, p, t+dt)
+    integrator.destats.nf += 1
 
     if mass_matrix == I
-      @. linsolve_tmp = fsallast - c₃₂*(k₂-f₁) - 2(k₁-fsalfirst) + dt*dT
+      @.. linsolve_tmp = fsallast - c₃₂*(k₂-f₁) - 2(k₁-fsalfirst) + dt*dT
     else
-      @. du2 = c₃₂*k₂ + 2k₁
+      @.. du2 = c₃₂*k₂ + 2k₁
       mul!(du1,mass_matrix,du2)
-      @. linsolve_tmp = fsallast - du1 + c₃₂*f₁ + 2fsalfirst + dt*dT
+      @.. linsolve_tmp = fsallast - du1 + c₃₂*f₁ + 2fsalfirst + dt*dT
     end
 
 
@@ -80,10 +86,11 @@ end
       mul!(vec(k₃), W, vec(linsolve_tmp))
     else
       cache.linsolve(vec(k₃), W, vec(linsolve_tmp))
+      @.. k₃ = -k₃
     end
     integrator.destats.nsolve += 1
 
-    @. tmp = dto6*(k₁ - 2*k₂ + k₃)
+    @.. tmp = dto6*(k₁ - 2*k₂ + k₃)
     # does not work with units - additional unitless array required!
     calculate_residuals!(tmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(tmp,t)
@@ -110,11 +117,13 @@ end
     mul!(vec(k₁), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k₁), W, vec(linsolve_tmp), !repeat_step)
+    @.. k₁ = -k₁
   end
   integrator.destats.nsolve += 1
 
-  @. u = uprev + dto2*k₁
+  @.. u = uprev + dto2*k₁
   f(f₁,u,p,t+dto2)
+  integrator.destats.nf += 1
 
   if mass_matrix == I
     tmp .= k₁
@@ -122,38 +131,41 @@ end
     mul!(tmp,mass_matrix,k₁)
   end
 
-  @. linsolve_tmp = f₁ - tmp
+  @.. linsolve_tmp = f₁ - tmp
 
   if DiffEqBase.has_invW(f)
     mul!(vec(k₂), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k₂), W, vec(linsolve_tmp))
+    @.. k₂ = -k₂
   end
   integrator.destats.nsolve += 1
 
-  @. k₂ += k₁
-  @. tmp = uprev + dt*k₂
+  @.. k₂ += k₁
+  @.. tmp = uprev + dt*k₂
   f( fsallast,  tmp, p, t+dt)
+  integrator.destats.nf += 1
 
   if mass_matrix == I
-    @. linsolve_tmp = fsallast - c₃₂*(k₂-f₁) - 2(k₁-fsalfirst) + dt*dT
+    @.. linsolve_tmp = fsallast - c₃₂*(k₂-f₁) - 2(k₁-fsalfirst) + dt*dT
   else
-    @. du2 = c₃₂*k₂ + 2k₁
+    @.. du2 = c₃₂*k₂ + 2k₁
     mul!(du1,mass_matrix,du2)
-    @. linsolve_tmp = fsallast - du1 + c₃₂*f₁ + 2fsalfirst + dt*dT
+    @.. linsolve_tmp = fsallast - du1 + c₃₂*f₁ + 2fsalfirst + dt*dT
   end
 
   if DiffEqBase.has_invW(f)
     mul!(vec(k₃), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k₃), W, vec(linsolve_tmp))
+    @.. k₃ = -k₃
   end
   integrator.destats.nsolve += 1
 
-  @. u = uprev + dto6*(k₁ + 4k₂ + k₃)
+  @.. u = uprev + dto6*(k₁ + 4k₂ + k₃)
 
   if integrator.opts.adaptive
-    @. tmp = dto6*(k₁ - 2*k₂ + k₃)
+    @.. tmp = dto6*(k₁ - 2*k₂ + k₃)
     # does not work with units - additional unitless array required!
     calculate_residuals!(tmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(tmp,t)
@@ -173,18 +185,20 @@ end
   dT = calc_tderivative(integrator, cache)
 
   W = calc_W!(integrator, cache, γ, repeat_step)
-  k₁ = _reshape(W\_vec((integrator.fsalfirst + γ*dT)), axes(uprev))
+  k₁ = _reshape(W\-_vec((integrator.fsalfirst + γ*dT)), axes(uprev))
   integrator.destats.nsolve += 1
   f₁ = f(uprev  + dto2*k₁, p, t+dto2)
+  integrator.destats.nf += 1
 
-  k₂ = _reshape(W\_vec(f₁-k₁), axes(uprev)) + k₁
+  k₂ = _reshape(W\-_vec(f₁-k₁), axes(uprev)) + k₁
   integrator.destats.nsolve += 1
   u = uprev  + dt*k₂
 
   if integrator.opts.adaptive
     integrator.fsallast = f(u, p, t+dt)
+    integrator.destats.nf += 1
 
-    k₃ = _reshape(W\_vec((integrator.fsallast - c₃₂*(k₂-f₁) - 2*(k₁-integrator.fsalfirst) + dt*dT)), axes(uprev))
+    k₃ = _reshape(W\-_vec((integrator.fsallast - c₃₂*(k₂-f₁) - 2*(k₁-integrator.fsalfirst) + dt*dT)), axes(uprev))
     integrator.destats.nsolve += 1
 
     utilde =  dto6*(k₁ - 2*k₂ + k₃)
@@ -213,16 +227,18 @@ end
 
   #f₀ = f(uprev, p, t)
 
-  k₁ = _reshape(W\_vec((integrator.fsalfirst + γ*dT)), axes(uprev))
+  k₁ = _reshape(W\-_vec((integrator.fsalfirst + γ*dT)), axes(uprev))
   integrator.destats.nsolve += 1
   f₁ = f(uprev  + dto2*k₁, p, t+dto2)
+  integrator.destats.nf += 1
 
-  k₂ = _reshape(W\_vec(f₁-k₁), axes(uprev)) + k₁
+  k₂ = _reshape(W\-_vec(f₁-k₁), axes(uprev)) + k₁
   integrator.destats.nsolve += 1
   tmp = uprev  + dt*k₂
   integrator.fsallast = f(tmp, p, t+dt)
+  integrator.destats.nf += 1
 
-  k₃ = _reshape(W\_vec((integrator.fsallast - c₃₂*(k₂-f₁) - 2(k₁-integrator.fsalfirst) + dt*dT)), axes(uprev))
+  k₃ = _reshape(W\-_vec((integrator.fsallast - c₃₂*(k₂-f₁) - 2(k₁-integrator.fsalfirst) + dt*dT)), axes(uprev))
   integrator.destats.nsolve += 1
   u = uprev  + dto6*(k₁ + 4k₂ + k₃)
 
@@ -245,6 +261,7 @@ function initialize!(integrator, cache::Union{Rosenbrock33ConstantCache,
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+  integrator.destats.nf += 1
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -263,6 +280,7 @@ function initialize!(integrator, cache::Union{Rosenbrock33Cache,
   resize!(integrator.k, integrator.kshortsize)
   integrator.k .= [fsalfirst,fsallast]
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+  integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock33ConstantCache,
@@ -288,24 +306,27 @@ end
 
   linsolve_tmp =  integrator.fsalfirst + dtd1*dT
 
-  k1 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  k1 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = uprev  + a21*k1
   du = f(u, p, t+c2*dt)
+  integrator.destats.nf += 1
 
   linsolve_tmp =  du + dtd2*dT + dtC21*k1
 
-  k2 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  k2 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = uprev  + a31*k1 + a32*k2
   du = f(u, p, t+c3*dt)
+  integrator.destats.nf += 1
 
   linsolve_tmp =  du + dtd3*dT + dtC31*k1 + dtC32*k2
 
-  k3 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  k3 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = uprev  + b1*k1 + b2*k2 + b3*k3
   integrator.fsallast = f(u, p, t + dt)
+  integrator.destats.nf += 1
 
   if integrator.opts.adaptive
     utilde =  btilde1*k1 + btilde2*k2 + btilde3*k3
@@ -346,50 +367,56 @@ end
     mul!(vec(k1), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
+    @.. k1 = -k1
   end
   integrator.destats.nsolve += 1
 
-  @. u = uprev + a21*k1
+  @.. u = uprev + a21*k1
   f( du,  u, p, t+c2*dt)
+  integrator.destats.nf += 1
 
   if mass_matrix == I
-    @. linsolve_tmp = du + dtd2*dT + dtC21*k1
+    @.. linsolve_tmp = du + dtd2*dT + dtC21*k1
   else
-    @. du1 = dtC21*k1
+    @.. du1 = dtC21*k1
     mul!(du2,mass_matrix,du1)
-    @. linsolve_tmp = du + dtd2*dT + du2
+    @.. linsolve_tmp = du + dtd2*dT + du2
   end
 
   if DiffEqBase.has_invW(f)
     mul!(vec(k2), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k2), W, vec(linsolve_tmp))
+    @.. k2 = -k2
   end
   integrator.destats.nsolve += 1
 
-  @. u = uprev + a31*k1 + a32*k2
+  @.. u = uprev + a31*k1 + a32*k2
   f( du,  u, p, t+c3*dt)
+  integrator.destats.nf += 1
 
   if mass_matrix == I
-    @. linsolve_tmp = du + dtd3*dT + dtC31*k1 + dtC32*k2
+    @.. linsolve_tmp = du + dtd3*dT + dtC31*k1 + dtC32*k2
   else
-    @. du1 = dtC31*k1 + dtC32*k2
+    @.. du1 = dtC31*k1 + dtC32*k2
     mul!(du2,mass_matrix,du1)
-    @. linsolve_tmp = du + dtd3*dT + du2
+    @.. linsolve_tmp = du + dtd3*dT + du2
   end
 
   if DiffEqBase.has_invW(f)
     mul!(vec(k3), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k3), W, vec(linsolve_tmp))
+    @.. k3 = -k3
   end
   integrator.destats.nsolve += 1
 
-  @. u = uprev + b1*k1 + b2*k2 + b3*k3
+  @.. u = uprev + b1*k1 + b2*k2 + b3*k3
   f( fsallast,  u, p, t + dt)
+  integrator.destats.nf += 1
 
   if integrator.opts.adaptive
-    @. utilde = btilde1*k1 + btilde2*k2 + btilde3*k3
+    @.. utilde = btilde1*k1 + btilde2*k2 + btilde3*k3
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
                          integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
@@ -425,28 +452,30 @@ end
 
   linsolve_tmp =  integrator.fsalfirst + dtd1*dT
 
-  k1 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  k1 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = uprev # +a21*k1 a21 == 0
   # du = f(u, p, t+c2*dt) c2 == 0 and a21 == 0 => du = f(uprev, p, t) == fsalfirst
 
   linsolve_tmp =  integrator.fsalfirst + dtd2*dT + dtC21*k1
 
-  k2 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  k2 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = uprev  + a31*k1 + a32*k2
   du = f(u, p, t+c3*dt)
+  integrator.destats.nf += 1
 
   linsolve_tmp =  du + dtd3*dT + dtC31*k1 + dtC32*k2
 
-  k3 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  k3 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   linsolve_tmp =  du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
 
-  k4 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  k4 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = uprev  + b1*k1 + b2*k2 + b3*k3 + b4*k4
   integrator.fsallast = f(u, p, t + dt)
+  integrator.destats.nf += 1
 
   if integrator.opts.adaptive
     utilde =  btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4
@@ -492,70 +521,76 @@ end
     mul!(vec(k1), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
+    @.. k1 = -k1
   end
   integrator.destats.nsolve += 1
 
   #=
   a21 == 0 and c2 == 0
   so du = fsalfirst!
-  @. u = uprev + a21*k1
+  @.. u = uprev + a21*k1
 
   f(du, u, p, t+c2*dt)
   =#
 
   if mass_matrix == I
-    @. linsolve_tmp = fsalfirst + dtd2*dT + dtC21*k1
+    @.. linsolve_tmp = fsalfirst + dtd2*dT + dtC21*k1
   else
-    @. du1 = dtC21*k1
+    @.. du1 = dtC21*k1
     mul!(du2,mass_matrix,du1)
-    @. linsolve_tmp = fsalfirst + dtd2*dT + du2
+    @.. linsolve_tmp = fsalfirst + dtd2*dT + du2
   end
 
   if DiffEqBase.has_invW(f)
     mul!(vec(k2), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k2), W, vec(linsolve_tmp))
+    @.. k2 = -k2
   end
   integrator.destats.nsolve += 1
 
-  @. u = uprev + a31*k1 + a32*k2
+  @.. u = uprev + a31*k1 + a32*k2
   f( du,  u, p, t+c3*dt)
+  integrator.destats.nf += 1
 
   if mass_matrix == I
-    @. linsolve_tmp = du + dtd3*dT + dtC31*k1 + dtC32*k2
+    @.. linsolve_tmp = du + dtd3*dT + dtC31*k1 + dtC32*k2
   else
-    @. du1 = dtC31*k1 + dtC32*k2
+    @.. du1 = dtC31*k1 + dtC32*k2
     mul!(du2,mass_matrix,du1)
-    @. linsolve_tmp = du + dtd3*dT + du2
+    @.. linsolve_tmp = du + dtd3*dT + du2
   end
 
   if DiffEqBase.has_invW(f)
     mul!(vec(k3), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k3), W, vec(linsolve_tmp))
+    @.. k3 = -k3
   end
   integrator.destats.nsolve += 1
 
   if mass_matrix == I
-    @. linsolve_tmp = du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
+    @.. linsolve_tmp = du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
   else
-    @. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
+    @.. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
     mul!(du2,mass_matrix,du1)
-    @. linsolve_tmp = du + dtd4*dT + du2
+    @.. linsolve_tmp = du + dtd4*dT + du2
   end
 
   if DiffEqBase.has_invW(f)
     mul!(vec(k4), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k4), W, vec(linsolve_tmp))
+    @.. k4 = -k4
   end
   integrator.destats.nsolve += 1
 
-  @. u = uprev + b1*k1 + b2*k2 + b3*k3 + b4*k4
+  @.. u = uprev + b1*k1 + b2*k2 + b3*k3 + b4*k4
   f( fsallast,  u, p, t + dt)
+  integrator.destats.nf += 1
 
   if integrator.opts.adaptive
-    @. utilde = btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4
+    @.. utilde = btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
                          integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
@@ -594,29 +629,32 @@ end
 
   linsolve_tmp =  integrator.fsalfirst + dtd1*dT
 
-  k1 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  k1 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = uprev +a21*k1
   du = f(u, p, t+c2*dt)
+  integrator.destats.nf += 1
 
   linsolve_tmp =  du + dtd2*dT + dtC21*k1
 
-  k2 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  k2 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = uprev  + a31*k1 + a32*k2
   du = f(u, p, t+c3*dt)
+  integrator.destats.nf += 1
 
   linsolve_tmp =  du + dtd3*dT + dtC31*k1 + dtC32*k2
 
-  k3 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  k3 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
 
   linsolve_tmp =  du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
 
-  k4 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  k4 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = uprev  + b1*k1 + b2*k2 + b3*k3 + b4*k4
   integrator.fsallast = f(u, p, t + dt)
+  integrator.destats.nf += 1
 
   if integrator.opts.adaptive
     utilde =  btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4
@@ -661,65 +699,72 @@ end
     mul!(vec(k1), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
+    @.. k1 = -k1
   end
   integrator.destats.nsolve += 1
 
-  @. u = uprev + a21*k1
+  @.. u = uprev + a21*k1
   f( du,  u, p, t+c2*dt)
+  integrator.destats.nf += 1
 
   if mass_matrix == I
-    @. linsolve_tmp = du + dtd2*dT + dtC21*k1
+    @.. linsolve_tmp = du + dtd2*dT + dtC21*k1
   else
-    @. du1 = dtC21*k1
+    @.. du1 = dtC21*k1
     mul!(du2,mass_matrix,du1)
-    @. linsolve_tmp = du + dtd2*dT + du2
+    @.. linsolve_tmp = du + dtd2*dT + du2
   end
 
   if DiffEqBase.has_invW(f)
     mul!(vec(k2), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k2), W, vec(linsolve_tmp))
+    @.. k2 = -k2
   end
   integrator.destats.nsolve += 1
 
-  @. u = uprev + a31*k1 + a32*k2
+  @.. u = uprev + a31*k1 + a32*k2
   f( du,  u, p, t+c3*dt)
+  integrator.destats.nf += 1
 
   if mass_matrix == I
-    @. linsolve_tmp = du + dtd3*dT + dtC31*k1 + dtC32*k2
+    @.. linsolve_tmp = du + dtd3*dT + dtC31*k1 + dtC32*k2
   else
-    @. du1 = dtC31*k1 + dtC32*k2
+    @.. du1 = dtC31*k1 + dtC32*k2
     mul!(du2,mass_matrix,du1)
-    @. linsolve_tmp = du + dtd3*dT + du2
+    @.. linsolve_tmp = du + dtd3*dT + du2
   end
 
   if DiffEqBase.has_invW(f)
     mul!(vec(k3), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k3), W, vec(linsolve_tmp))
+    @.. k3 = -k3
   end
   integrator.destats.nsolve += 1
 
   if mass_matrix == I
-    @. linsolve_tmp = du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
+    @.. linsolve_tmp = du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
   else
-    @. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
+    @.. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
     mul!(du2,mass_matrix,du1)
-    @. linsolve_tmp = du + dtd4*dT + du2
+    @.. linsolve_tmp = du + dtd4*dT + du2
   end
 
   if DiffEqBase.has_invW(f)
     mul!(vec(k4), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k4), W, vec(linsolve_tmp))
+    @.. k4 = -k4
   end
   integrator.destats.nsolve += 1
 
-  @. u = uprev + b1*k1 + b2*k2 + b3*k3 + b4*k4
+  @.. u = uprev + b1*k1 + b2*k2 + b3*k3 + b4*k4
   f( fsallast,  u, p, t + dt)
+  integrator.destats.nf += 1
 
   if integrator.opts.adaptive
-    @. utilde = btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4
+    @.. utilde = btilde1*k1 + btilde2*k2 + btilde3*k3 + btilde4*k4
     calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
                          integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
@@ -773,45 +818,51 @@ end
   W = calc_W!(integrator, cache, dtgamma, repeat_step, true)
 
   du = f(uprev, p, t)
+  integrator.destats.nf += 1
 
   linsolve_tmp =  du + dtd1*dT
 
-  k1 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  k1 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = uprev  + a21*k1
   du = f(u, p, t+c2*dt)
+  integrator.destats.nf += 1
 
   linsolve_tmp =  du + dtd2*dT + dtC21*k1
 
-  k2 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  k2 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = uprev  + a31*k1 + a32*k2
   du = f(u, p, t+c3*dt)
+  integrator.destats.nf += 1
 
   linsolve_tmp =  du + dtd3*dT + (dtC31*k1 + dtC32*k2)
 
-  k3 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  k3 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = uprev  + a41*k1 + a42*k2 + a43*k3
   du = f(u, p, t+c4*dt)
+  integrator.destats.nf += 1
 
   linsolve_tmp =  du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
 
-  k4 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  k4 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = uprev  + a51*k1 + a52*k2 + a53*k3 + a54*k4
   du = f(u, p, t+dt)
+  integrator.destats.nf += 1
 
   linsolve_tmp =  du + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
 
-  k5 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  k5 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = u + k5
   du = f(u, p, t+dt)
+  integrator.destats.nf += 1
 
   linsolve_tmp =  du + (dtC61*k1 + dtC62*k2 + dtC65*k5 + dtC64*k4 + dtC63*k3)
 
-  k6 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  k6 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = u + k6
 
@@ -877,102 +928,113 @@ end
     mul!(vec(k1), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
+    @.. k1 = -k1
   end
   integrator.destats.nsolve += 1
 
-  @. u = uprev + a21*k1
+  @.. u = uprev + a21*k1
   f( du,  u, p, t+c2*dt)
+  integrator.destats.nf += 1
 
   if mass_matrix == I
-    @. linsolve_tmp = du + dtd2*dT + dtC21*k1
+    @.. linsolve_tmp = du + dtd2*dT + dtC21*k1
   else
-    @. du1 = dtC21*k1
+    @.. du1 = dtC21*k1
     mul!(du2,mass_matrix,du1)
-    @. linsolve_tmp = du + dtd2*dT + du2
+    @.. linsolve_tmp = du + dtd2*dT + du2
   end
 
   if DiffEqBase.has_invW(f)
     mul!(vec(k2), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k2), W, vec(linsolve_tmp))
+    @.. k2 = -k2
   end
   integrator.destats.nsolve += 1
 
-  @. u = uprev + a31*k1 + a32*k2
+  @.. u = uprev + a31*k1 + a32*k2
   f( du,  u, p, t+c3*dt)
+  integrator.destats.nf += 1
 
   if mass_matrix == I
-    @. linsolve_tmp = du + dtd3*dT + (dtC31*k1 + dtC32*k2)
+    @.. linsolve_tmp = du + dtd3*dT + (dtC31*k1 + dtC32*k2)
   else
-    @. du1 = dtC31*k1 + dtC32*k2
+    @.. du1 = dtC31*k1 + dtC32*k2
     mul!(du2,mass_matrix,du1)
-    @. linsolve_tmp = du + dtd3*dT + du2
+    @.. linsolve_tmp = du + dtd3*dT + du2
   end
 
   if DiffEqBase.has_invW(f)
     mul!(vec(k3), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k3), W, vec(linsolve_tmp))
+    @.. k3 = -k3
   end
   integrator.destats.nsolve += 1
 
-  @. u = uprev + a41*k1 + a42*k2 + a43*k3
+  @.. u = uprev + a41*k1 + a42*k2 + a43*k3
   f( du,  u, p, t+c4*dt)
+  integrator.destats.nf += 1
 
   if mass_matrix == I
-    @. linsolve_tmp = du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
+    @.. linsolve_tmp = du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
   else
-    @. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
+    @.. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
     mul!(du2,mass_matrix,du1)
-    @. linsolve_tmp = du + dtd4*dT + du2
+    @.. linsolve_tmp = du + dtd4*dT + du2
   end
 
   if DiffEqBase.has_invW(f)
     mul!(vec(k4), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k4), W, vec(linsolve_tmp))
+    @.. k4 = -k4
   end
   integrator.destats.nsolve += 1
 
-  @. u = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
+  @.. u = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
   f( du,  u, p, t+dt)
+  integrator.destats.nf += 1
 
   if mass_matrix == I
-    @. linsolve_tmp = du + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
+    @.. linsolve_tmp = du + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
   else
-    @. du1 = dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3
+    @.. du1 = dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3
     mul!(du2,mass_matrix,du1)
-    @. linsolve_tmp = du + du2
+    @.. linsolve_tmp = du + du2
   end
 
   if DiffEqBase.has_invW(f)
     mul!(vec(k5), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k5), W, vec(linsolve_tmp))
+    @.. k5 = -k5
   end
   integrator.destats.nsolve += 1
 
   u .+= k5
   f( du,  u, p, t + dt)
+  integrator.destats.nf += 1
 
   if mass_matrix == I
-    # @. linsolve_tmp = du + (dtC61*k1 + dtC62*k2 + dtC65*k5 + dtC64*k4 + dtC63*k3)
+    # @.. linsolve_tmp = du + (dtC61*k1 + dtC62*k2 + dtC65*k5 + dtC64*k4 + dtC63*k3)
     @tight_loop_macros for i in uidx
       @inbounds linsolve_tmp[i] = du[i] + (dtC61*k1[i] + dtC62*k2[i] + dtC65*k5[i] + dtC64*k4[i] + dtC63*k3[i])
     end
   else
-    # @. linsolve_tmp = dtC61*k1 + dtC62*k2 + dtC65*k5 + dtC64*k4 + dtC63*k3
+    # @.. linsolve_tmp = dtC61*k1 + dtC62*k2 + dtC65*k5 + dtC64*k4 + dtC63*k3
     @tight_loop_macros for i in uidx
       @inbounds du1[i] = dtC61*k1[i] + dtC62*k2[i] + dtC65*k5[i] + dtC64*k4[i] + dtC63*k3[i]
     end
     mul!(du2,mass_matrix,du1)
-    @. linsolve_tmp = du + du2
+    @.. linsolve_tmp = du + du2
   end
 
   if DiffEqBase.has_invW(f)
     mul!(vec(k6), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k6), W, vec(linsolve_tmp))
+    @.. k6 = -k6
   end
   integrator.destats.nsolve += 1
 
@@ -986,8 +1048,8 @@ end
 
   if integrator.opts.calck
     @unpack h21,h22,h23,h24,h25,h31,h32,h33,h34,h35 = cache.tab
-    @. integrator.k[1] = h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5
-    @. integrator.k[2] = h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5
+    @.. integrator.k[1] = h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5
+    @.. integrator.k[2] = h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5
   end
 end
 
@@ -1043,62 +1105,71 @@ end
   W = calc_W!(integrator, cache, dtgamma, repeat_step, true)
 
   du1 = f(uprev, p, t)
+  integrator.destats.nf += 1
 
   linsolve_tmp =  du1 + dtd1*dT
 
-  k1 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  k1 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = uprev  + a21*k1
   du = f(u, p, t+c2*dt)
+  integrator.destats.nf += 1
 
   linsolve_tmp =  du + dtd2*dT + dtC21*k1
 
-  k2 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  k2 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = uprev  + a31*k1 + a32*k2
   du = f(u, p, t+c3*dt)
+  integrator.destats.nf += 1
 
   linsolve_tmp =  du + dtd3*dT + (dtC31*k1 + dtC32*k2)
 
-  k3 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  k3 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = uprev  + a41*k1 + a42*k2 + a43*k3
   du = f(u, p, t+c4*dt)
+  integrator.destats.nf += 1
 
   linsolve_tmp =  du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
 
-  k4 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  k4 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = uprev  + a51*k1 + a52*k2 + a53*k3 + a54*k4
   du = f(u, p, t+c5*dt)
+  integrator.destats.nf += 1
 
   linsolve_tmp = du + dtd5*dT + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
 
-  k5 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  k5 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = uprev  + a61*k1 + a62*k2 + a63*k3 + a64*k4 + a65*k5
   du = f(u, p, t+dt)
+  integrator.destats.nf += 1
 
   linsolve_tmp =  du + (dtC61*k1 + dtC62*k2 + dtC63*k3 + dtC64*k4 + dtC65*k5)
 
-  k6 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  k6 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = u + k6
   du = f(u, p, t+dt)
+  integrator.destats.nf += 1
 
   linsolve_tmp = du + (dtC71*k1 + dtC72*k2 + dtC73*k3 + dtC74*k4 + dtC75*k5 + dtC76*k6)
 
-  k7 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  k7 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = u + k7
   du = f(u, p, t+dt)
+  integrator.destats.nf += 1
 
   linsolve_tmp = du + (dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7)
 
-  k8 = _reshape(W\_vec(linsolve_tmp), axes(uprev))
+  k8 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
   integrator.destats.nsolve += 1
   u = u + k8
   du = f(u, p, t+dt)
+  integrator.destats.nf += 1
 
   if integrator.opts.adaptive
     atmp = calculate_residuals(k8, uprev, u, integrator.opts.abstol,
@@ -1174,161 +1245,177 @@ end
     mul!(vec(k1), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
+    @.. k1 = -k1
   end
   integrator.destats.nsolve += 1
 
-  @. u = uprev + a21*k1
+  @.. u = uprev + a21*k1
   f( du,  u, p, t+c2*dt)
+  integrator.destats.nf += 1
 
   if mass_matrix == I
-    @. linsolve_tmp = du + dtd2*dT + dtC21*k1
+    @.. linsolve_tmp = du + dtd2*dT + dtC21*k1
   else
-    @. du1 = dtC21*k1
+    @.. du1 = dtC21*k1
     mul!(du2,mass_matrix,du1)
-    @. linsolve_tmp = du + dtd2*dT + du2
+    @.. linsolve_tmp = du + dtd2*dT + du2
   end
 
   if DiffEqBase.has_invW(f)
     mul!(vec(k2), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k2), W, vec(linsolve_tmp))
+    @.. k2 = -k2
   end
   integrator.destats.nsolve += 1
 
-  @. u = uprev + a31*k1 + a32*k2
+  @.. u = uprev + a31*k1 + a32*k2
   f( du,  u, p, t+c3*dt)
+  integrator.destats.nf += 1
 
   if mass_matrix == I
-    @. linsolve_tmp = du + dtd3*dT + (dtC31*k1 + dtC32*k2)
+    @.. linsolve_tmp = du + dtd3*dT + (dtC31*k1 + dtC32*k2)
   else
-    @. du1 = dtC31*k1 + dtC32*k2
+    @.. du1 = dtC31*k1 + dtC32*k2
     mul!(du2,mass_matrix,du1)
-    @. linsolve_tmp = du + dtd3*dT + du2
+    @.. linsolve_tmp = du + dtd3*dT + du2
   end
 
   if DiffEqBase.has_invW(f)
     mul!(vec(k3), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k3), W, vec(linsolve_tmp))
+    @.. k3 = -k3
   end
   integrator.destats.nsolve += 1
 
-  @. u = uprev + a41*k1 + a42*k2 + a43*k3
+  @.. u = uprev + a41*k1 + a42*k2 + a43*k3
   f( du,  u, p, t+c4*dt)
+  integrator.destats.nf += 1
 
   if mass_matrix == I
-    @. linsolve_tmp = du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
+    @.. linsolve_tmp = du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
   else
-    @. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
+    @.. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
     mul!(du2,mass_matrix,du1)
-    @. linsolve_tmp = du + dtd4*dT + du2
+    @.. linsolve_tmp = du + dtd4*dT + du2
   end
 
   if DiffEqBase.has_invW(f)
     mul!(vec(k4), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k4), W, vec(linsolve_tmp))
+    @.. k4 = -k4
   end
   integrator.destats.nsolve += 1
 
-  @. u = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
+  @.. u = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
   f( du,  u, p, t+c5*dt)
+  integrator.destats.nf += 1
 
   if mass_matrix == I
-    #  @. linsolve_tmp = du + dtd5*dT + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
+    #  @.. linsolve_tmp = du + dtd5*dT + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
       @tight_loop_macros for i in uidx
         @inbounds linsolve_tmp[i] = du[i] + dtd5*dT[i] + (dtC52*k2[i] + dtC54*k4[i] + dtC51*k1[i] + dtC53*k3[i])
       end
   else
-    @. du1 = dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3
+    @.. du1 = dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3
     mul!(du2,mass_matrix,du1)
-    @. linsolve_tmp = du + dtd5*dT + du2
+    @.. linsolve_tmp = du + dtd5*dT + du2
   end
 
   if DiffEqBase.has_invW(f)
     mul!(vec(k5), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k5), W, vec(linsolve_tmp))
+    @.. k5 = -k5
   end
   integrator.destats.nsolve += 1
 
-  # @. u = uprev + a61*k1 + a62*k2 + a63*k3 + a64*k4 + a65*k5
+  # @.. u = uprev + a61*k1 + a62*k2 + a63*k3 + a64*k4 + a65*k5
   @tight_loop_macros for i in uidx
     @inbounds u[i] = uprev[i] + a61*k1[i] + a62*k2[i] + a63*k3[i] + a64*k4[i] + a65*k5[i]
   end
   f( du,  u, p, t+dt)
+  integrator.destats.nf += 1
 
   if mass_matrix == I
-    # @. linsolve_tmp = du + (dtC61*k1 + dtC62*k2 + dtC63*k3 + dtC64*k4 + dtC65*k5)
+    # @.. linsolve_tmp = du + (dtC61*k1 + dtC62*k2 + dtC63*k3 + dtC64*k4 + dtC65*k5)
     @tight_loop_macros for i in uidx
       @inbounds linsolve_tmp[i] = du[i] + (dtC61*k1[i] + dtC62*k2[i] + dtC63*k3[i] + dtC64*k4[i] + dtC65*k5[i])
     end
   else
-    # @. du1 = dtC61*k1 + dtC62*k2 + dtC63*k3 + dtC64*k4 + dtC65*k5
+    # @.. du1 = dtC61*k1 + dtC62*k2 + dtC63*k3 + dtC64*k4 + dtC65*k5
     @tight_loop_macros for i in uidx
       @inbounds du1[i] = dtC61*k1[i] + dtC62*k2[i] + dtC63*k3[i] + dtC64*k4[i] + dtC65*k5[i]
     end
     mul!(du2,mass_matrix,du1)
-    @. linsolve_tmp = du + du2
+    @.. linsolve_tmp = du + du2
   end
 
   if DiffEqBase.has_invW(f)
     mul!(vec(k6), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k6), W, vec(linsolve_tmp))
+    @.. k6 = -k6
   end
   integrator.destats.nsolve += 1
 
   u .+= k6
   f( du,  u, p, t+dt)
+  integrator.destats.nf += 1
 
   if mass_matrix == I
-    # @. linsolve_tmp = du + (dtC71*k1 + dtC72*k2 + dtC73*k3 + dtC74*k4 + dtC75*k5 + dtC76*k6)
+    # @.. linsolve_tmp = du + (dtC71*k1 + dtC72*k2 + dtC73*k3 + dtC74*k4 + dtC75*k5 + dtC76*k6)
     @tight_loop_macros for i in uidx
       @inbounds linsolve_tmp[i] = du[i] + (dtC71*k1[i] + dtC72*k2[i] + dtC73*k3[i] + dtC74*k4[i] + dtC75*k5[i] + dtC76*k6[i])
     end
   else
-    # @. du1 =dtC72*k2 + dtC73*k3 + dtC74*k4 + dtC75*k5 + dtC76*k6
+    # @.. du1 =dtC72*k2 + dtC73*k3 + dtC74*k4 + dtC75*k5 + dtC76*k6
     @tight_loop_macros for i in uidx
       @inbounds du1[i] = dtC71*k1[i] + dtC72*k2[i] + dtC73*k3[i] + dtC74*k4[i] + dtC75*k5[i] + dtC76*k6[i]
     end
     mul!(du2,mass_matrix,du1)
-    @. linsolve_tmp = du + du2
+    @.. linsolve_tmp = du + du2
   end
 
   if DiffEqBase.has_invW(f)
     mul!(vec(k7), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k7), W, vec(linsolve_tmp))
+    @.. k7 = -k7
   end
   integrator.destats.nsolve += 1
 
   u .+= k7
   f( du,  u, p, t+dt)
+  integrator.destats.nf += 1
 
   if mass_matrix == I
-    # @. linsolve_tmp = du + (dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7)
+    # @.. linsolve_tmp = du + (dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7)
     @tight_loop_macros for i in uidx
       @inbounds linsolve_tmp[i] = du[i] + (dtC81*k1[i] + dtC82*k2[i] + dtC83*k3[i] + dtC84*k4[i] + dtC85*k5[i] + dtC86*k6[i] + dtC87*k7[i])
     end
   else
-    # @. du1 = dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7
+    # @.. du1 = dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7
     @tight_loop_macros for i in uidx
       @inbounds du1[i] = dtC81*k1[i] + dtC82*k2[i] + dtC83*k3[i] + dtC84*k4[i] + dtC85*k5[i] + dtC86*k6[i] + dtC87*k7[i]
     end
     mul!(du2,mass_matrix,du1)
-    @. linsolve_tmp = du + du2
+    @.. linsolve_tmp = du + du2
   end
 
   if DiffEqBase.has_invW(f)
     mul!(vec(k8), W, vec(linsolve_tmp))
   else
     cache.linsolve(vec(k8), W, vec(linsolve_tmp))
+    @.. k8 = -k8
   end
   integrator.destats.nsolve += 1
 
   u .+= k8
   f( fsallast,  u, p, t+dt)
+  integrator.destats.nf += 1
 
   if integrator.opts.adaptive
     calculate_residuals!(atmp, k8, uprev, u, integrator.opts.abstol,
@@ -1339,8 +1426,110 @@ end
   if integrator.opts.calck
     #=
     @unpack h21,h22,h23,h24,h25,h31,h32,h33,h34,h35 = cache.tab
-    @. integrator.k[1] = h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5
-    @. integrator.k[2] = h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5
+    @.. integrator.k[1] = h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5
+    @.. integrator.k[2] = h31*k1 + h32*k2 + h33*k3 + h34*k4 + h35*k5
     =#
   end
+end
+
+function initialize!(integrator, cache::RosenbrockWConstantCache)
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+  integrator.destats.nf += 1
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
+
+@muladd function perform_step!(integrator, cache::RosenbrockWConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack tf,uf = cache
+  @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,b1,b2,b3,b4,b5,b6,gamma,d1,d2,d3,d4,d5,d6,c2,c3,c4,c5,c6 = cache.tab
+
+  # Precalculations
+  dtC21 = C21/dt
+  dtC31 = C31/dt
+  dtC32 = C32/dt
+  dtC41 = C41/dt
+  dtC42 = C42/dt
+  dtC43 = C43/dt
+  dtC51 = C51/dt
+  dtC52 = C52/dt
+  dtC53 = C53/dt
+  dtC54 = C54/dt
+  dtC61 = C61/dt
+  dtC62 = C62/dt
+  dtC63 = C63/dt
+  dtC64 = C64/dt
+  dtC65 = C65/dt
+
+  dtd1 = dt*d1
+  dtd2 = dt*d2
+  dtd3 = dt*d3
+  dtd4 = dt*d4
+  dtd5 = dt*d5
+  dtd6 = dt*d6
+  dtgamma = dt*gamma
+
+  # Time derivative
+  tf.u = uprev
+  dT = ForwardDiff.derivative(tf, t)
+
+  W = calc_W!(integrator, cache, dtgamma, repeat_step, true)
+
+  linsolve_tmp = integrator.fsalfirst + dtd1*dT
+
+  k1 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
+  u = uprev  + a21*k1
+  du = f(u, p, t+c2*dt)
+  integrator.destats.nf += 1
+
+  linsolve_tmp =  du + dtd2*dT + dtC21*k1
+
+  k2 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
+  u = uprev  + a31*k1 + a32*k2
+  du = f(u, p, t+c3*dt)
+  integrator.destats.nf += 1
+
+  linsolve_tmp =  du + dtd3*dT + (dtC31*k1 + dtC32*k2)
+
+  k3 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
+  u = uprev  + a41*k1 + a42*k2 + a43*k3
+  du = f(u, p, t+c4*dt)
+  integrator.destats.nf += 1
+
+  linsolve_tmp =  du + dtd4*dT + (dtC41*k1 + dtC42*k2 + dtC43*k3)
+
+  k4 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
+  u = uprev  + a51*k1 + a52*k2 + a53*k3 + a54*k4
+  du = f(u, p, t+c5*dt)
+  integrator.destats.nf += 1
+
+  linsolve_tmp =  du + dtd5*dT + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
+
+  k5 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
+  u = uprev  + a61*k1 + a62*k2 + a63*k3 + a64*k4 + a65*k5
+  du = f(u, p, t+c6*dt)
+  integrator.destats.nf += 1
+
+  linsolve_tmp =  du + dtd6*dT + (dtC61*k1 + dtC62*k2 + dtC63*k3 + dtC64*k4 + dtC65*k5)
+
+  k6 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
+  integrator.destats.nsolve += 1
+  u = uprev+b1*k1+b2*k2+b3*k3+b4*k4+b5*k5+b6*k6
+
+  integrator.fsallast = f(u, p, t + dt)
+  integrator.destats.nf += 1
+
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.u = u
 end

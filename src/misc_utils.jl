@@ -55,7 +55,7 @@ Save element-wise residuals
 in `out`.
 """
 @inline function calculate_residuals!(out, ũ, u₀, u₁, α, ρ, internalnorm,t)
-  @. out = calculate_residuals(ũ, u₀, u₁, α, ρ, internalnorm,t)
+  @.. out = calculate_residuals(ũ, u₀, u₁, α, ρ, internalnorm,t)
   nothing
 end
 
@@ -78,7 +78,7 @@ Save element-wise residuals
 in `out`.
 """
 @inline function calculate_residuals!(out, u₀, u₁, α, ρ, internalnorm,t)
-  @. out = calculate_residuals(u₀, u₁, α, ρ, internalnorm,t)
+  @.. out = calculate_residuals(u₀, u₁, α, ρ, internalnorm,t)
 end
 
 @inline function calculate_residuals!(out::Array{T}, u₀::Array{T},
@@ -98,7 +98,7 @@ Calculate element-wise residuals
 ```
 """
 @inline function calculate_residuals(ũ, u₀, u₁, α, ρ, internalnorm,t)
-  @. calculate_residuals(ũ, u₀, u₁, α, ρ, internalnorm,t)
+  @.. calculate_residuals(ũ, u₀, u₁, α, ρ, internalnorm,t)
 end
 
 @inline function calculate_residuals(ũ::Array{T}, u₀::Array{T}, u₁::Array{T}, α::T2,
@@ -118,7 +118,7 @@ Calculate element-wise residuals
 ```
 """
 @inline function calculate_residuals(u₀, u₁, α, ρ, internalnorm,t)
-  @. calculate_residuals(u₀, u₁, α, ρ, internalnorm,t)
+  @.. calculate_residuals(u₀, u₁, α, ρ, internalnorm,t)
 end
 
 @inline function calculate_residuals(u₀::Array{T}, u₁::Array{T}, α::T2,
@@ -167,7 +167,6 @@ macro cache(expr)
 end
 
 _reshape(v, siz) = reshape(v, siz)
-_reshape(v::StaticArray, siz) = reshape(v, map(last, siz))
 _reshape(v::Number, siz) = v
 
 _vec(v) = vec(v)

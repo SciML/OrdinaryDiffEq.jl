@@ -12,6 +12,16 @@ isfsal(alg::Rodas4P) = false
 isfsal(alg::Vern7) = false
 isfsal(alg::Vern8) = false
 isfsal(alg::Vern9) = false
+# Pseudo Non-FSAL
+isfsal(alg::ORK256) = false
+isfsal(alg::CarpenterKennedy2N54) = false
+isfsal(alg::HSLDDRK64) = false
+isfsal(alg::DGLDDRK73_C) = false
+isfsal(alg::DGLDDRK84_C) = false
+isfsal(alg::DGLDDRK84_F) = false
+isfsal(alg::NDBLSRK124) = false
+isfsal(alg::NDBLSRK134) = false
+isfsal(alg::NDBLSRK144) = false
 get_current_isfsal(alg, cache) = isfsal(alg)
 get_current_isfsal(alg::CompositeAlgorithm, cache) = isfsal(alg.algs[cache.current])
 
@@ -81,6 +91,7 @@ alg_extrapolates(alg::SDIRK2) = true
 alg_extrapolates(alg::Kvaerno3) = true
 alg_extrapolates(alg::Kvaerno4) = true
 alg_extrapolates(alg::Kvaerno5) = true
+alg_extrapolates(alg::ESDIRK54I8L2SA) = true
 alg_extrapolates(alg::KenCarp3) = true
 alg_extrapolates(alg::KenCarp4) = true
 alg_extrapolates(alg::KenCarp5) = true
@@ -117,7 +128,7 @@ get_current_adaptive_order(alg::CompositeAlgorithm,cache) = alg_adaptive_order(a
 
 alg_order(alg::FunctionMap) = 0
 alg_order(alg::Euler) = 1
-alg_order(alg::RichardsonEuler) = alg.init_order
+alg_order(alg::AitkenNeville) = alg.init_order
 alg_order(alg::Heun) = 2
 alg_order(alg::Ralston) = 2
 alg_order(alg::LawsonEuler) = 1
@@ -139,6 +150,7 @@ alg_order(alg::Exprb32) = 3
 alg_order(alg::Exprb43) = 4
 alg_order(alg::Anas5) = 5
 alg_order(alg::RK46NL) = 4
+alg_order(alg::KuttaPRK2p5) = 5
 
 
 alg_order(alg::SymplecticEuler) = 1
@@ -190,6 +202,17 @@ alg_order(alg::CKLLSRK54_3C) = 4
 alg_order(alg::CKLLSRK95_4S) = 5
 alg_order(alg::CKLLSRK95_4C) = 5
 alg_order(alg::CKLLSRK95_4M) = 5
+alg_order(alg::CKLLSRK54_3C_3R) = 4
+alg_order(alg::CKLLSRK54_3M_3R) = 4
+alg_order(alg::CKLLSRK54_3N_3R) = 4
+alg_order(alg::CKLLSRK85_4C_3R) = 5
+alg_order(alg::CKLLSRK85_4M_3R) = 5
+alg_order(alg::CKLLSRK85_4P_3R) = 5
+alg_order(alg::CKLLSRK54_3N_4R) = 4
+alg_order(alg::CKLLSRK54_3M_4R) = 4
+alg_order(alg::CKLLSRK65_4M_4R) = 5
+alg_order(alg::CKLLSRK85_4FM_4R) = 5
+alg_order(alg::CKLLSRK75_4M_5R) = 5
 alg_order(alg::ParsaniKetchesonDeconinck3S32) = 2
 alg_order(alg::ParsaniKetchesonDeconinck3S82) = 2
 alg_order(alg::ParsaniKetchesonDeconinck3S53) = 3
@@ -198,6 +221,7 @@ alg_order(alg::ParsaniKetchesonDeconinck3S94) = 4
 alg_order(alg::ParsaniKetchesonDeconinck3S184) = 4
 alg_order(alg::ParsaniKetchesonDeconinck3S105) = 5
 alg_order(alg::ParsaniKetchesonDeconinck3S205) = 5
+alg_order(alg::KYK2014DGSSPRK_3S2) = 2
 
 alg_order(alg::SSPRK22) = 2
 alg_order(alg::SSPRKMSVS32) = 2
@@ -246,6 +270,7 @@ alg_order(alg::SDIRK2) = 2
 alg_order(alg::Kvaerno3) = 3
 alg_order(alg::Kvaerno4) = 4
 alg_order(alg::Kvaerno5) = 5
+alg_order(alg::ESDIRK54I8L2SA) = 5
 alg_order(alg::KenCarp3) = 3
 alg_order(alg::KenCarp4) = 4
 alg_order(alg::KenCarp5) = 5
@@ -270,6 +295,7 @@ alg_order(alg::Rodas4) = 4
 alg_order(alg::Rodas42) = 4
 alg_order(alg::Rodas4P) = 4
 alg_order(alg::Rodas5) = 5
+alg_order(alg::RosenbrockW6S4OS)=4
 
 alg_order(alg::AB3) = 3
 alg_order(alg::AB4) = 4
@@ -303,6 +329,9 @@ alg_order(alg::SBDF) = alg.order
 
 alg_order(alg::ROCK2) = 2
 alg_order(alg::ROCK4) = 4
+
+alg_order(alg::ESERK5) = 5
+
 alg_order(alg::RKC) = 2
 alg_order(alg::IRKC) = 2
 
@@ -358,6 +387,7 @@ beta1_default(alg::ExtrapolationMidpointDeuflhard,beta2) =  1//(2alg.n_init+1)
 beta1_default(alg::ExtrapolationMidpointHairerWanner,beta2) =  1//(2alg.n_init+1)
 
 gamma_default(alg::OrdinaryDiffEqAlgorithm) = 9//10
+gamma_default(alg::ESERK5) = 8//10
 gamma_default(alg::RKC) = 8//10
 gamma_default(alg::IRKC) = 8//10
 gamma_default(alg::ExtrapolationMidpointDeuflhard) = (1//4)^beta1_default(alg,beta2_default(alg))
@@ -406,6 +436,7 @@ ssp_coefficient(alg::SSPRKMSVS43) = 0.33
 ssp_coefficient(alg::SSPRK932) = 6
 ssp_coefficient(alg::SSPRK54) = 1.508
 ssp_coefficient(alg::SSPRK104) = 6
+ssp_coefficient(alg::KYK2014DGSSPRK_3S2) =  0.8417
 
 # We shouldn't do this probably.
 #ssp_coefficient(alg::ImplicitEuler) = Inf
@@ -421,6 +452,7 @@ alg_stability_size(alg::Vern9) = 4.4762
 
 alg_can_repeat_jac(alg::OrdinaryDiffEqAlgorithm) = false
 alg_can_repeat_jac(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = true
+alg_can_repeat_jac(alg::IRKC) = false
 
 function unwrap_alg(integrator, is_stiff)
   alg = integrator.alg
@@ -432,6 +464,20 @@ function unwrap_alg(integrator, is_stiff)
     return alg.algs[num]
   else
     return alg.algs[integrator.cache.current]
+  end
+end
+
+function unwrap_cache(integrator, is_stiff)
+  alg   = integrator.alg
+  cache = integrator.cache
+  iscomp = alg isa CompositeAlgorithm
+  if !iscomp
+    return cache
+  elseif alg.choice_function isa AutoSwitch
+    num = is_stiff ? 2 : 1
+    return cache.caches[num]
+  else
+    return cache.caches[integrator.cache.current]
   end
 end
 
@@ -454,3 +500,22 @@ uses_uprev(alg::CKLLSRK54_3C, adaptive::Bool) = adaptive
 uses_uprev(alg::CKLLSRK95_4S, adaptive::Bool) = adaptive
 uses_uprev(alg::CKLLSRK95_4C, adaptive::Bool) = adaptive
 uses_uprev(alg::CKLLSRK95_4M, adaptive::Bool) = adaptive
+uses_uprev(alg::CKLLSRK54_3C_3R, adaptive::Bool) = adaptive
+uses_uprev(alg::CKLLSRK54_3M_3R, adaptive::Bool) = adaptive
+uses_uprev(alg::CKLLSRK54_3N_3R, adaptive::Bool) = adaptive
+uses_uprev(alg::CKLLSRK85_4C_3R, adaptive::Bool) = adaptive
+uses_uprev(alg::CKLLSRK85_4M_3R, adaptive::Bool) = adaptive
+uses_uprev(alg::CKLLSRK85_4P_3R, adaptive::Bool) = adaptive
+uses_uprev(alg::CKLLSRK54_3N_4R, adaptive::Bool) = adaptive
+uses_uprev(alg::CKLLSRK54_3M_4R, adaptive::Bool) = adaptive
+uses_uprev(alg::CKLLSRK65_4M_4R, adaptive::Bool) = adaptive
+uses_uprev(alg::CKLLSRK85_4FM_4R, adaptive::Bool) = adaptive
+uses_uprev(alg::CKLLSRK75_4M_5R, adaptive::Bool) = adaptive
+
+ispredictive(alg::OrdinaryDiffEqAlgorithm) = false
+ispredictive(alg::Union{RKC}) = true
+ispredictive(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Predictive
+isstandard(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Standard
+isstandard(alg::Union{GenericImplicitEuler,GenericTrapezoid,VCABM}) = true
+isstandard(alg::OrdinaryDiffEqAlgorithm) = false
+ispi(alg::OrdinaryDiffEqAlgorithm) = !(ispredictive(alg) || isstandard(alg))

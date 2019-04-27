@@ -38,7 +38,7 @@ module OrdinaryDiffEq
                      set_abstol!, postamble!, last_step_failed,
                      isautodifferentiable
 
-  using DiffEqBase: check_error!, @def
+  using DiffEqBase: check_error!, @def, @..
 
   macro tight_loop_macros(ex)
    :($(esc(ex)))
@@ -53,7 +53,6 @@ module OrdinaryDiffEq
   include("nlsolve/type.jl")
   include("nlsolve/newton.jl")
   include("nlsolve/functional.jl")
-  include("nlsolve/anderson.jl")
   include("nlsolve/utils.jl")
 
   include("caches/basic_caches.jl")
@@ -77,6 +76,7 @@ module OrdinaryDiffEq
   include("caches/bdf_caches.jl")
   include("caches/rkc_caches.jl")
   include("caches/extrapolation_caches.jl")
+  include("caches/prk_caches.jl")
 
   include("cache_utils.jl")
 
@@ -94,6 +94,7 @@ module OrdinaryDiffEq
   include("tableaus/rkc_tableaus.jl")
 
   include("integrators/type.jl")
+  include("integrators/controllers.jl")
   include("integrators/integrator_utils.jl")
   include("integrators/integrator_interface.jl")
 
@@ -123,6 +124,7 @@ module OrdinaryDiffEq
   include("perform_step/bdf_perform_step.jl")
   include("perform_step/rkc_perform_step.jl")
   include("perform_step/extrapolation_perform_step.jl")
+  include("perform_step/prk_perform_step.jl")
 
   include("dense/generic_dense.jl")
   include("dense/interpolants.jl")
@@ -169,23 +171,26 @@ module OrdinaryDiffEq
   export ORK256, CarpenterKennedy2N54, HSLDDRK64, DGLDDRK73_C, DGLDDRK84_C, DGLDDRK84_F, NDBLSRK124, NDBLSRK134, NDBLSRK144,
          CFRLDDRK64, TSLDDRK74,
          CKLLSRK43_2,CKLLSRK54_3C,CKLLSRK95_4S,CKLLSRK95_4C,CKLLSRK95_4M,
+         CKLLSRK54_3C_3R, CKLLSRK54_3M_3R, CKLLSRK54_3N_3R, CKLLSRK85_4C_3R, CKLLSRK85_4M_3R, CKLLSRK85_4P_3R,
+         CKLLSRK54_3N_4R, CKLLSRK54_3M_4R, CKLLSRK65_4M_4R, CKLLSRK85_4FM_4R, CKLLSRK75_4M_5R,
          ParsaniKetchesonDeconinck3S32, ParsaniKetchesonDeconinck3S82,
          ParsaniKetchesonDeconinck3S53, ParsaniKetchesonDeconinck3S173,
          ParsaniKetchesonDeconinck3S94, ParsaniKetchesonDeconinck3S184,
-         ParsaniKetchesonDeconinck3S105, ParsaniKetchesonDeconinck3S205
+         ParsaniKetchesonDeconinck3S105, ParsaniKetchesonDeconinck3S205,
+         KYK2014DGSSPRK_3S2
 
   export RadauIIA5
 
   export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, Kvaerno3,
          KenCarp3, Cash4, Hairer4, Hairer42, SSPSDIRK2, Kvaerno4, Kvaerno5,
-         KenCarp4, KenCarp5
+         KenCarp4, KenCarp5, ESDIRK54I8L2SA
 
   export GenericImplicitEuler, GenericTrapezoid
 
   export MidpointSplitting, LinearExponential
 
   export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
-         Ros4LStab, ROS3P, Rodas3, Rodas4, Rodas42, Rodas4P, Rodas5
+         Ros4LStab, ROS3P, Rodas3, Rodas4, Rodas42, Rodas4P, Rodas5, RosenbrockW6S4OS
 
   export GenericIIF1, GenericIIF2
 
@@ -201,7 +206,7 @@ module OrdinaryDiffEq
   export Nystrom4, Nystrom4VelocityIndependent, Nystrom5VelocityIndependent,
          IRKN3, IRKN4, DPRKN6, DPRKN8, DPRKN12, ERKN4, ERKN5
 
-  export ROCK2, ROCK4, RKC, IRKC
+  export ROCK2, ROCK4, RKC, IRKC, ESERK5
 
   export AB3, AB4, AB5, ABM32, ABM43, ABM54
 
@@ -222,7 +227,9 @@ module OrdinaryDiffEq
   export AutoSwitch, AutoTsit5, AutoDP5,
          AutoVern6, AutoVern7, AutoVern8, AutoVern9
 
-  export RichardsonEuler, ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner
+  export AitkenNeville, ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner
 
-  export NLNewton, NLAnderson, NLFunctional
+  export KuttaPRK2p5
+
+  export NLNewton, NLFunctional, NLAnderson
 end # module

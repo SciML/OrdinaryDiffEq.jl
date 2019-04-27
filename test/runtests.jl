@@ -32,6 +32,9 @@ if group == "All" || group == "Interface"
   @time @safetestset "Export tests" begin include("export_tests.jl") end
   @time @safetestset "Derivative Utilities Tests" begin include("utility_tests.jl") end
   @time @safetestset "Discrete Callback Dual Tests" begin include("discrete_callback_dual_test.jl") end
+  @time @safetestset "DEStats Tests" begin include("destats_tests.jl") end
+  @time @safetestset "AD Tests" begin include("ad_tests.jl") end
+  @time @safetestset "No Index Tests" begin include("noindex_tests.jl") end
 end
 
 if group == "All" || group == "Integrators"
@@ -59,6 +62,7 @@ if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_I" )
   # ~ 50 s
   @time @safetestset "Nordsieck Tests" begin include("ode/nordsieck_tests.jl") end
   @time @safetestset "Linear Methods Tests" begin include("linear_method_tests.jl") end
+  @time @safetestset "Extrapolation Tests" begin include("ode/ode_extrapolation_tests.jl") end
 end
 
 if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_II" )
