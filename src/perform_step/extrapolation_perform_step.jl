@@ -218,13 +218,13 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
   for i = 0 : n_curr
     j_int = 2Int64(subdividing_sequence[i+1])
     dt_int = dt / (2j_int) # Stepsize of the ith internal discretisation
-    @. u_temp2 = uprev
-    @. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
+    @.. u_temp2 = uprev
+    @.. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
     for j = 2 : 2j_int
       f(k, cache.u_temp1, p, t + (j-1)dt_int)
       T[i+1] = u_temp2 + 2dt_int*k # Explicit Midpoint rule
-      @. u_temp2 = u_temp1
-      @. u_temp1 = T[i+1]
+      @.. u_temp2 = u_temp1
+      @.. u_temp1 = T[i+1]
     end
   end
 
@@ -253,13 +253,13 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
         # Update cache.T
         j_int = 2Int64(subdividing_sequence[n_curr + 1])
         dt_int = dt / (2j_int) # Stepsize of the new internal discretisation
-        @. u_temp2 = uprev
-        @. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
+        @.. u_temp2 = uprev
+        @.. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
         for j = 2 : 2j_int
           f(k, cache.u_temp1, p, t + (j-1)dt_int)
           T[n_curr+1] = u_temp2 + 2dt_int * k
-          @. u_temp2 = u_temp1
-          @. u_temp1 = T[n_curr+1]
+          @.. u_temp2 = u_temp1
+          @.. u_temp1 = T[n_curr+1]
         end
 
         # Update u, integrator.EEst and cache.Q
@@ -436,13 +436,13 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
   for i = 0 : n_curr
     j_int = 2Int64(subdividing_sequence[i+1])
     dt_int = dt / (2j_int) # Stepsize of the ith internal discretisation
-    @. u_temp2 = uprev
-    @. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
+    @.. u_temp2 = uprev
+    @.. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
     for j = 2 : 2j_int
       f(k, cache.u_temp1, p, t + (j-1)dt_int)
       T[i+1] = u_temp2 + 2dt_int*k # Explicit Midpoint rule
-      @. u_temp2 = u_temp1
-      @. u_temp1 = T[i+1]
+      @.. u_temp2 = u_temp1
+      @.. u_temp1 = T[i+1]
     end
   end
 
@@ -472,13 +472,13 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
         # Update cache.T
         j_int = 2Int64(subdividing_sequence[n_curr + 1])
         dt_int = dt / (2j_int) # Stepsize of the new internal discretisation
-        @. u_temp2 = uprev
-        @. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
+        @.. u_temp2 = uprev
+        @.. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
         for j = 2 : 2j_int
           f(k, cache.u_temp1, p, t + (j-1)dt_int)
           T[n_curr+1] = u_temp2 + 2dt_int * k
-          @. u_temp2 = u_temp1
-          @. u_temp1 = T[n_curr+1]
+          @.. u_temp2 = u_temp1
+          @.. u_temp1 = T[n_curr+1]
         end
 
         # Update u, integrator.EEst and cache.Q
