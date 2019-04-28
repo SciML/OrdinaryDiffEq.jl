@@ -57,7 +57,7 @@ sequence_array =[:harmonic, :romberg, :bulirsch]
     for j = 1:6
       alg = ExtrapolationMidpointDeuflhard(min_order = j,
         init_order = j, max_order=j,
-        sequence_symbol = seq)
+        sequence = seq)
       sim = test_convergence(dts,prob,alg)
       @test sim.𝒪est[:final] ≈ 2*(alg.n_init+1) atol=testTol
     end
@@ -77,7 +77,7 @@ end # ExtrapolationMidpointDeuflhard
     for j = 1:6
       alg = ExtrapolationMidpointHairerWanner(min_order = j,
         init_order = j,
-        max_order=j, sequence_symbol = seq)
+        max_order=j, sequence = seq)
       sim = test_convergence(dts,prob,alg)
       @test sim.𝒪est[:final] ≈ 2(alg.n_init+1) atol=testTol
     end
