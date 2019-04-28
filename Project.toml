@@ -1,5 +1,5 @@
 name = "OrdinaryDiffEq"
-uuid = "9c2ba320-684e-11e9-1325-35842128880e"
+uuid = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
 version = "v5.6.0"
 
