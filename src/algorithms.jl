@@ -90,7 +90,7 @@ function ExtrapolationMidpointHairerWanner(;min_order=2,init_order=5, max_order=
   # Enforce 2 <=  min_order
   # and min_order + 1 <= init_order <= max_order - 1:
   n_min = max(2, min_order)
-  n_init = max(n_min, init_order)
+  n_init = max(n_min + 1, init_order)
   n_max = max(n_init + 1, max_order)
 
   # Warn user if orders have been changed
