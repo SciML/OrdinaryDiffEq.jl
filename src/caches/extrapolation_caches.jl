@@ -69,14 +69,14 @@ end
 function create_extrapolation_coefficients(alg::algType) where {algType <: Union{ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner}}
   # Compute and return extrapolation_coefficients
 
-  @unpack n_min, n_init, n_max, sequence_symbol = alg
+  @unpack n_min, n_init, n_max, sequence = alg
 
   # Initialize subdividing_sequence:
-  if sequence_symbol == :harmonic
+  if sequence == :harmonic
       subdividing_sequence = [BigInt(n+1) for n = 0:n_max]
-  elseif sequence_symbol == :romberg
+  elseif sequence == :romberg
       subdividing_sequence = [BigInt(2)^n for n = 0:n_max]
-  else # sequence_symbol == :bulirsch
+  else # sequence == :bulirsch
       subdividing_sequence = [n==0 ? BigInt(1) : (isodd(n) ? BigInt(2)^Int64(n/2 + 0.5) : 3BigInt(2^Int64(n/2 - 1))) for n = 0:n_max]
   end
 
