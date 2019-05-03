@@ -46,11 +46,7 @@ module OrdinaryDiffEq
 
   using DiffEqBase: FastConvergence, Convergence, SlowConvergence, VerySlowConvergence, Divergence
 
-  import DiffEqBase: calculate_residuals, calculate_residuals!, nlsolve_f, unwrap_cache
-
-  macro tight_loop_macros(ex)
-   :($(esc(ex)))
-  end
+  import DiffEqBase: calculate_residuals, calculate_residuals!, nlsolve_f, unwrap_cache, @tight_loop_macros, islinear
 
   const CompiledFloats = Union{Float32,Float64,
     ForwardDiff.Dual{ForwardDiff.Tag{T,W},K,3} where {T,W<:Union{Float64,Float32},
