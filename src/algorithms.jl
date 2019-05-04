@@ -44,7 +44,76 @@ struct AitkenNeville <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
   min_order::Int
   init_order::Int
 end
-AitkenNeville(;max_order=9,min_order=1,init_order=5) = AitkenNeville(max_order,min_order,init_order)
+AitkenNeville(;max_order=10,min_order=1,init_order=5) = AitkenNeville(max_order,min_order,init_order)
+
+struct ExtrapolationMidpointDeuflhard <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
+  n_min::Int # Minimal extrapolation order
+  n_init::Int # Initial extrapolation order
+  n_max::Int # Maximal extrapolation order
+  sequence::Symbol # Name of the subdividing sequence
+end
+function ExtrapolationMidpointDeuflhard(;min_order=1,init_order=5, max_order=10, sequence = :harmonic)
+  # Enforce 1 <=  min_order <= init_order <= max_order:
+  n_min = max(1,min_order)
+  n_init = max(n_min,init_order)
+  n_max = max(n_init,max_order)
+
+  # Warn user if orders have been changed
+  if (min_order, init_order, max_order) != (n_min,n_init,n_max)
+    @warn "The range of extrapolation orders and/or the initial order given to the
+      `ExtrapolationMidpointDeuflhard` algorithm are not valid and have been changed:
+      Minimal order: " * lpad(min_order,2," ") * " --> "  * lpad(n_min,2," ") * "
+      Maximal order: " * lpad(max_order,2," ") * " --> "  * lpad(n_max,2," ") * "
+      Initial order: " * lpad(init_order,2," ") * " --> "  * lpad(n_init,2," ")
+  end
+
+  # Warn user if sequence has been changed:
+  if sequence != :harmonic && sequence != :romberg && sequence != :bulirsch
+    @warn "The `sequence` given to the `ExtrapolationMidpointDeuflhard` algorithm
+       is not valid: it must match `:harmonic`, `:romberg` or `:bulirsch`.
+       Thus it has been changed
+      :$(sequence) --> :harmonic"
+    sequence = :harmonic
+  end
+
+  # Initialize algorithm
+  ExtrapolationMidpointDeuflhard(n_min,n_init,n_max,sequence)
+end
+
+struct ExtrapolationMidpointHairerWanner <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
+  n_min::Int # Minimal extrapolation order
+  n_init::Int # Initial extrapolation order
+  n_max::Int # Maximal extrapolation order
+  sequence::Symbol # Name of the subdividing sequence
+end
+function ExtrapolationMidpointHairerWanner(;min_order=2,init_order=5, max_order=10, sequence = :harmonic)
+  # Enforce 2 <=  min_order
+  # and min_order + 1 <= init_order <= max_order - 1:
+  n_min = max(2, min_order)
+  n_init = max(n_min + 1, init_order)
+  n_max = max(n_init + 1, max_order)
+
+  # Warn user if orders have been changed
+  if (min_order, init_order, max_order) != (n_min,n_init,n_max)
+    @warn "The range of extrapolation orders and/or the initial order given to the
+      `ExtrapolationMidpointHairerWanner` algorithm are not valid and have been changed:
+      Minimal order: " * lpad(min_order,2," ") * " --> "  * lpad(n_min,2," ") * "
+      Maximal order: " * lpad(max_order,2," ") * " --> "  * lpad(n_max,2," ") * "
+      Initial order: " * lpad(init_order,2," ") * " --> "  * lpad(n_init,2," ")
+  end
+
+  # Warn user if sequence has been changed:
+  if sequence != :harmonic && sequence != :romberg && sequence != :bulirsch
+    @warn "The `sequence` given to the `ExtrapolationMidpointHairerWanner` algorithm
+       is not valid: it must match `:harmonic`, `:romberg` or `:bulirsch`.
+       Thus it has been changed
+      :$(sequence) --> :harmonic"
+    sequence = :harmonic
+  end
+
+  # Initialize algorithm
+  ExtrapolationMidpointHairerWanner(n_min,n_init,n_max,sequence)
+end
 
 struct RK46NL <: OrdinaryDiffEqAlgorithm end
 struct Heun <: OrdinaryDiffEqAdaptiveAlgorithm end

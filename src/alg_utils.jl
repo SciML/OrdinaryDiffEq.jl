@@ -116,6 +116,11 @@ get_current_alg_order(alg::QNDF,cache) = cache.order
 get_current_adaptive_order(alg::QNDF,cache) = cache.order
 get_current_adaptive_order(alg::OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm,cache) = cache.cur_order
 get_current_alg_order(alg::OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm,cache) = cache.cur_order
+get_current_alg_order(alg::ExtrapolationMidpointDeuflhard,cache) = 2(cache.n_curr + 1)
+get_current_adaptive_order(alg::ExtrapolationMidpointDeuflhard,cache) = 2cache.n_curr
+get_current_alg_order(alg::ExtrapolationMidpointHairerWanner,cache) = 2(cache.n_curr + 1)
+get_current_adaptive_order(alg::ExtrapolationMidpointHairerWanner,cache) = 2cache.n_curr
+
 
 #alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
 get_current_adaptive_order(alg::OrdinaryDiffEqAlgorithm,cache) = alg_adaptive_order(alg)
@@ -334,6 +339,8 @@ alg_order(alg::MEBDF2) = 2
 
 alg_maximum_order(alg) = alg_order(alg)
 alg_maximum_order(alg::CompositeAlgorithm) = maximum(alg_order(x) for x in alg.algs)
+alg_maximum_order(alg::ExtrapolationMidpointDeuflhard) = 2(alg.n_max+1)
+alg_maximum_order(alg::ExtrapolationMidpointHairerWanner) = 2(alg.n_max+1)
 
 alg_adaptive_order(alg::ExplicitRK) = alg.tableau.adaptiveorder
 alg_adaptive_order(alg::OrdinaryDiffEqAlgorithm) = alg_order(alg)-1
@@ -368,17 +375,23 @@ beta2_default(alg::FunctionMap) = 0
 beta2_default(alg::DP8) = 0//1
 beta2_default(alg::DP5) = 4//100
 beta2_default(alg::DP5Threaded) = 4//100
+beta2_default(alg::ExtrapolationMidpointDeuflhard) = 0//1
+beta2_default(alg::ExtrapolationMidpointHairerWanner) = 0//1
 
 beta1_default(alg::OrdinaryDiffEqAlgorithm,beta2) = 7//(10alg_order(alg))
 beta1_default(alg::FunctionMap,beta2) = 0
 beta1_default(alg::DP8,beta2) = typeof(beta2)(1//alg_order(alg)) - beta2/5
 beta1_default(alg::DP5,beta2) = typeof(beta2)(1//alg_order(alg)) - 3beta2/4
 beta1_default(alg::DP5Threaded,beta2) = typeof(beta2)(1//alg_order(alg)) - 3beta2/4
+beta1_default(alg::ExtrapolationMidpointDeuflhard,beta2) =  1//(2alg.n_init+1)
+beta1_default(alg::ExtrapolationMidpointHairerWanner,beta2) =  1//(2alg.n_init+1)
 
 gamma_default(alg::OrdinaryDiffEqAlgorithm) = 9//10
 gamma_default(alg::ESERK5) = 8//10
 gamma_default(alg::RKC) = 8//10
 gamma_default(alg::IRKC) = 8//10
+gamma_default(alg::ExtrapolationMidpointDeuflhard) = (1//4)^beta1_default(alg,beta2_default(alg))
+gamma_default(alg::ExtrapolationMidpointHairerWanner) = (65//100)^beta1_default(alg,beta2_default(alg))
 
 qsteady_min_default(alg::OrdinaryDiffEqAlgorithm) = 1
 qsteady_max_default(alg::OrdinaryDiffEqAlgorithm) = 1
