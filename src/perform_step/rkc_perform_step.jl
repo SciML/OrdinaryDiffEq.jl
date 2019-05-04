@@ -74,7 +74,6 @@ end
 
 @muladd function perform_step!(integrator, cache::ROCK2Cache, repeat_step=false)
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
-  # @unpack k, k2, tmp, gprev2, gprev, atmp = cache
   @unpack k, tmp, gprev2, gprev, atmp = cache
   @unpack ms, fp1, fp2, recf = cache.constantcache
   ccache = cache.constantcache
