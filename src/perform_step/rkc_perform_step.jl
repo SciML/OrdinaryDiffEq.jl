@@ -600,7 +600,6 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
     update_W!(integrator, cache, dt, false)
     tmp = dt*(0.5*(cache.du₂ - du₂) + (0.5 - μs₁)*(cache.du₁ - du₁))
     tmp = _reshape(get_W(nlsolver) \ _vec(tmp), axes(tmp))
-#    tmp = LU_W.L * (LU_W.U * (@.. dt*(0.5*(cache.du₂ - du₂) + (0.5 - μs₁)*(cache.du₁ - du₁))))
     atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
@@ -729,8 +728,6 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   # error estimate
   if isnewton(nlsolver) && integrator.opts.adaptive
     update_W!(integrator, cache, dt, false)
-    #mul!(vec(tmp), get_W(nlsolver), @.. dt*(0.5*(du₂ - f2ⱼ₋₁) + (0.5 - μs₁)*(du₁ - f1ⱼ₋₁)))
-
     if DiffEqBase.has_invW(f)
         mul!(vec(tmp),get_W(nlsolver),vec(@.. dt*(0.5*(du₂ - f2ⱼ₋₁) + (0.5 - μs₁)*(du₁ - f1ⱼ₋₁))))
       else
