@@ -21,24 +21,43 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
 
   T[1,1] = copy(u)
 
-  halfdt = dt/2
-  for i in 2:size(T)[1]
-    # Solve using Euler method
-    @muladd @.. u = uprev + halfdt*fsalfirst
-    f(k, u, p, t+halfdt)
-    integrator.destats.nf += 1
-    for j in 2:2^(i-1)
-      @muladd @.. u = u + halfdt*k
-      f(k, u, p, t+j*halfdt)
+  if integrator.alg.threading == false
+    for i in 2:size(T)[1]
+      dt_temp = dt/(2^(i-1))
+      # Solve using Euler method
+      @muladd @.. u = uprev + dt_temp*fsalfirst
+      f(k, u, p, t+dt_temp)
       integrator.destats.nf += 1
+      for j in 2:2^(i-1)
+        @muladd @.. u = u + dt_temp*k
+        f(k, u, p, t+j*dt_temp)
+        integrator.destats.nf += 1
+      end
+      T[i,1] = copy(u)
+      # Richardson Extrapolation
+      for j in 2:i
+        T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
+      end
     end
-    T[i,1] = copy(u)
-    # Richardson Extrapolation
-    for j in 2:i
-      T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
+  else
+    tmps = fill(u, size(T)[1])
+    Threads.@threads for i in 2:size(T)[1]
+      dt_temp = dt/(2^(i-1))
+      # Solve using Euler method
+      @muladd @.. tmps[i] = uprev + dt_temp*fsalfirst
+      f(k, tmps[i], p, t+dt_temp)
+      integrator.destats.nf += 1
+      for j in 2:2^(i-1)
+        @muladd @.. tmps[i] = u + dt_temp*k
+        f(k, tmps[i], p, t+j*dt_temp)
+        integrator.destats.nf += 1
+      end
+      T[i,1] = copy(tmps[i])
+      # Richardson Extrapolation
+      for j in 2:i
+        T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
+      end
     end
-
-    halfdt = halfdt/2
   end
 
   if integrator.opts.adaptive
@@ -104,25 +123,46 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
   @unpack dtpropose, T, cur_order, work, A = cache
   @muladd u = @.. uprev + dt*integrator.fsalfirst
   T[1,1] = u
-  halfdt = dt/2
-  for i in 2:min(size(T)[1], cur_order+1)
-    # Solve using Euler method
-    @muladd u = @.. uprev + halfdt*integrator.fsalfirst
-    k = f(u, p, t+halfdt)
-    integrator.destats.nf += 1
-
-    for j in 2:2^(i-1)
-      @muladd u = @.. u + halfdt*k
-      k = f(u, p, t+j*halfdt)
+  if integrator.alg.threading == false
+    for i in 2:min(size(T)[1], cur_order+1)
+      dt_temp = dt/(2^(i-1))
+      # Solve using Euler method
+      @muladd u = @.. uprev + dt_temp*integrator.fsalfirst
+      k = f(u, p, t+dt_temp)
       integrator.destats.nf += 1
-    end
-    T[i,1] = u
 
-    # Richardson Extrapolation
-    for j in 2:i
-      T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
+      for j in 2:2^(i-1)
+        @muladd u = @.. u + dt_temp*k
+        k = f(u, p, t+j*dt_temp)
+        integrator.destats.nf += 1
+      end
+      T[i,1] = u
+
+      # Richardson Extrapolation
+      for j in 2:i
+        T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
+      end
     end
-    halfdt = halfdt/2
+  else
+    Threads.@threads for i in 2:min(size(T)[1], cur_order+1)
+      dt_temp = dt/(2^(i-1))
+      # Solve using Euler method
+      @muladd u = @.. uprev + dt_temp*integrator.fsalfirst
+      k = f(u, p, t+dt_temp)
+      integrator.destats.nf += 1
+
+      for j in 2:2^(i-1)
+        @muladd u = @.. u + dt_temp*k
+        k = f(u, p, t+j*dt_temp)
+        integrator.destats.nf += 1
+      end
+      T[i,1] = u
+
+      # Richardson Extrapolation
+      for j in 2:i
+        T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
+      end
+    end
   end
 
   if integrator.opts.adaptive
