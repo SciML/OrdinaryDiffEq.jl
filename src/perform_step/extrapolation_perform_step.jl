@@ -15,7 +15,7 @@ end
 
 function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k,fsalfirst,T,utilde,atmp,dtpropose,cur_order,A = cache
+  @unpack k,fsalfirst,T,utilde,atmp,dtpropose,cur_order,A,tmps = cache
 
   @muladd @.. u = uprev + dt*fsalfirst
 
@@ -40,7 +40,6 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
       end
     end
   else
-    tmps = fill(u, size(T)[1])
     Threads.@threads for i in 2:size(T)[1]
       dt_temp = dt/(2^(i-1))
       # Solve using Euler method
