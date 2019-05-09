@@ -14,7 +14,6 @@ function initialize!(integrator,cache::AitkenNevilleCache)
 end
 
 function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
-  println(".")
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k,fsalfirst,T,utilde,atmp,dtpropose,cur_order,A = cache
   @unpack u_tmps, k_tmps = cache
