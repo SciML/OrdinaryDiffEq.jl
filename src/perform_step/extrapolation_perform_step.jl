@@ -14,8 +14,10 @@ function initialize!(integrator,cache::AitkenNevilleCache)
 end
 
 function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
+  println(".")
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k,fsalfirst,T,utilde,atmp,dtpropose,cur_order,A,tmps = cache
+  @unpack k,fsalfirst,T,utilde,atmp,dtpropose,cur_order,A = cache
+  @unpack u_tmps, k_tmps = cache
 
   @muladd @.. u = uprev + dt*fsalfirst
 
@@ -43,16 +45,18 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
     Threads.@threads for i in 2:size(T)[1]
       dt_temp = dt/(2^(i-1))
       # Solve using Euler method
-      @muladd @.. tmps[i] = uprev + dt_temp*fsalfirst
-      f(k, tmps[i], p, t+dt_temp)
+      @muladd @.. u_tmps[Threads.threadid()] = uprev + dt_temp*fsalfirst
+      f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+dt_temp)
       integrator.destats.nf += 1
       for j in 2:2^(i-1)
-        @muladd @.. tmps[i] = u + dt_temp*k
-        f(k, tmps[i], p, t+j*dt_temp)
+        @muladd @.. u_tmps[Threads.threadid()] = u + dt_temp*k_tmps[Threads.threadid()]
+        f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+j*dt_temp)
         integrator.destats.nf += 1
       end
-      T[i,1] = copy(tmps[i])
-      # Richardson Extrapolation
+      T[i,1] = copy(u_tmps[Threads.threadid()])
+    end
+    # Richardson Extrapolation
+    for i in 2:size(T)[1]
       for j in 2:i
         T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
       end
@@ -136,7 +140,6 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
         integrator.destats.nf += 1
       end
       T[i,1] = u
-
       # Richardson Extrapolation
       for j in 2:i
         T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
@@ -156,8 +159,9 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
         integrator.destats.nf += 1
       end
       T[i,1] = u
-
-      # Richardson Extrapolation
+    end
+    # Richardson Extrapolation
+    for i in 2:min(size(T)[1], cur_order+1)
       for j in 2:i
         T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
       end

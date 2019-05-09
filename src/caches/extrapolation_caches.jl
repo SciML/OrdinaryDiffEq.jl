@@ -1,4 +1,4 @@
-@cache mutable struct AitkenNevilleCache{uType,rateType,arrayType,dtType,uNoUnitsType,tmpType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct AitkenNevilleCache{uType,rateType,arrayType,dtType,uNoUnitsType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
@@ -12,7 +12,8 @@
   work::dtType
   A::Int
   step_no::Int
-  tmps::tmpType
+  u_tmps::Array{uType,1}
+  k_tmps::Array{rateType,1}
 end
 
 @cache mutable struct AitkenNevilleConstantCache{dtType,arrayType} <: OrdinaryDiffEqConstantCache
@@ -36,8 +37,9 @@ function alg_cache(alg::AitkenNeville,u,rate_prototype,uEltypeNoUnits,uBottomElt
   A = one(Int)
   atmp = similar(u,uEltypeNoUnits)
   step_no = zero(Int)
-  tmps = fill(u, size(T)[1])
-  AitkenNevilleCache(u,uprev,tmp,k,utilde,atmp,fsalfirst,dtpropose,T,cur_order,work,A,step_no,tmps)
+  u_tmps = fill(u, Threads.nthreads())
+  k_tmps = fill(k, Threads.nthreads())
+  AitkenNevilleCache(u,uprev,tmp,k,utilde,atmp,fsalfirst,dtpropose,T,cur_order,work,A,step_no,u_tmps,k_tmps)
 end
 
 function alg_cache(alg::AitkenNeville,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
