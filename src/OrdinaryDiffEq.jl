@@ -38,11 +38,15 @@ module OrdinaryDiffEq
                      set_abstol!, postamble!, last_step_failed,
                      isautodifferentiable
 
-  using DiffEqBase: check_error!, @def, @..
+  using DiffEqBase: check_error!, @def, @.. , _vec, _reshape
 
-  macro tight_loop_macros(ex)
-   :($(esc(ex)))
-  end
+  using DiffEqBase: nlsolvefail, isnewton, set_new_W!, get_W, @iipnlsolve, @oopnlsolve
+
+  using DiffEqBase: NLSolver
+
+  using DiffEqBase: FastConvergence, Convergence, SlowConvergence, VerySlowConvergence, Divergence
+
+  import DiffEqBase: calculate_residuals, calculate_residuals!, nlsolve_f, unwrap_cache, @tight_loop_macros, islinear
 
   const CompiledFloats = Union{Float32,Float64,
     ForwardDiff.Dual{ForwardDiff.Tag{T,W},K,3} where {T,W<:Union{Float64,Float32},
@@ -50,10 +54,6 @@ module OrdinaryDiffEq
 
   include("misc_utils.jl")
   include("algorithms.jl")
-  include("nlsolve/type.jl")
-  include("nlsolve/newton.jl")
-  include("nlsolve/functional.jl")
-  include("nlsolve/utils.jl")
 
   include("caches/basic_caches.jl")
   include("caches/low_order_rk_caches.jl")
@@ -78,7 +78,6 @@ module OrdinaryDiffEq
   include("caches/extrapolation_caches.jl")
   include("caches/prk_caches.jl")
 
-  include("cache_utils.jl")
 
   include("alg_utils.jl")
 
@@ -96,6 +95,7 @@ module OrdinaryDiffEq
   include("integrators/type.jl")
   include("integrators/controllers.jl")
   include("integrators/integrator_utils.jl")
+  include("cache_utils.jl")
   include("integrators/integrator_interface.jl")
 
   include("perform_step/fixed_timestep_perform_step.jl")
