@@ -922,22 +922,25 @@ end
   internal_deg = cache.internal_deg
   α = 1.0/(0.4*mdeg^2)
 
+  uᵢ₋₁ = uprev
   uᵢ₋₂ = uprev
   Sᵢ   = Bᵢ[start]*uprev
   for i in 1:10
-    k = f(uᵢ₋₂, p, t+(1+(i-1)*internal_deg^2)*α*dt)
+    k = f(uᵢ₋₁, p, t+(1+(i-1)*internal_deg^2)*α*dt)
     integrator.destats.nf += 1
-    uᵢ₋₁ = uᵢ₋₂ + α*dt*k
-    Sᵢ   = Sᵢ + Bᵢ[start + (i-1)*internal_deg + 1]*uᵢ₋₁
-    for j in 2:m
-      k = f(uᵢ₋₂,p,t+(j^2+(i-1)*internal_deg^2)*α*dt)
+    u    = uᵢ₋₁ + α*dt*k
+    Sᵢ   = Sᵢ + Bᵢ[start + (i-1)*internal_deg + 1]*u
+    uᵢ₋₂ = uᵢ₋₁
+    uᵢ₋₁ = u
+    for j in 2:internal_deg
+      k = f(uᵢ₋₁, p, t+(j^2+(i-1)*internal_deg^2)*α*dt)
       integrator.destats.nf += 1
       u = 2*uᵢ₋₁ - uᵢ₋₂ + 2*α*dt*k
-      Sᵢ= Sᵢ + Bᵢ[start+j+(i-1)*m]*u
-      if j < s
+      Sᵢ= Sᵢ + Bᵢ[start+j+(i-1)*internal_deg]*u
+      if j*i < mdeg
         uᵢ₋₂ = uᵢ₋₁
         uᵢ₋₁ = u
-      end if
+      end
     end
   end
   u = Sᵢ
@@ -967,8 +970,8 @@ end
 
 @muladd function perform_step!(integrator, cache::SERK2v2Cache, repeat_step=false)
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
-  @unpack uᵢ, uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, k = cache
-  @unpack ms, Cᵤ, Cₑ, Bᵢ = cache.constantcache
+  @unpack uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, k = cache
+  @unpack ms, Bᵢ = cache.constantcache
   ccache = cache.constantcache
   maxeig!(integrator, cache)
 
@@ -981,22 +984,25 @@ end
   internal_deg = ccache.internal_deg
   α = 1.0/(0.4*mdeg^2)
 
+  @.. uᵢ₋₁ = uprev
   @.. uᵢ₋₂ = uprev
   @.. Sᵢ   = Bᵢ[start]*uprev
   for i in 1:10
-    f(k, uᵢ₋₂, p, t+(1+(i-1)*internal_deg^2)*α*dt)
+    f(k, uᵢ₋₁, p, t+(1+(i-1)*internal_deg^2)*α*dt)
     integrator.destats.nf += 1
-    @.. uᵢ₋₁ = uᵢ₋₂ + α*dt*k
-    @.. Sᵢ   = Sᵢ + Bᵢ[start + (i-1)*internal_deg + 1]*uᵢ₋₁
-    for j in 2:m
+    @.. u    = uᵢ₋₁ + α*dt*k
+    @.. Sᵢ   = Sᵢ + Bᵢ[start + (i-1)*internal_deg + 1]*u
+    @.. uᵢ₋₂ = uᵢ₋₁
+    @.. uᵢ₋₁ = u
+    for j in 2:internal_deg
       f(k, uᵢ₋₂, p, t+(j^2+(i-1)*internal_deg^2)*α*dt)
       integrator.destats.nf += 1
       @.. u = 2*uᵢ₋₁ - uᵢ₋₂ + 2*α*dt*k
-      @.. Sᵢ= Sᵢ + Bᵢ[start+j+(i-1)*m]*u
-      if j < s
+      @.. Sᵢ= Sᵢ + Bᵢ[start+j+(i-1)*internal_deg]*u
+      if j < mdeg
         @.. uᵢ₋₂ = uᵢ₋₁
         @.. uᵢ₋₁ = u
-      end if
+      end
     end
   end
   @.. u = Sᵢ

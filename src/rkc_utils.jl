@@ -1,10 +1,10 @@
 # This function calculates the largest eigenvalue
 # (absolute value wise) by power iteration.
-const RKCAlgs = Union{RKC,IRKC,ESERK5}
+const RKCAlgs = Union{RKC,IRKC,ESERK5,SERK2v2}
 function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
   isfirst = integrator.iter == 1 || integrator.u_modified
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
-  maxiter = (integrator.alg isa ESERK5) ? 100 : 50
+  maxiter = (typeof(integrator.alg) <: Union{ESERK5,SERK2v2}) ? 100 : 50
 
   safe = (typeof(integrator.alg) <: RKCAlgs) ? 1.0 : 1.2
   # Initial guess for eigenvector `z`
@@ -99,7 +99,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
   fz, z, atmp = cache.k, cache.tmp, cache.atmp
   ccache = cache.constantcache
-  maxiter = (integrator.alg isa ESERK5) ? 100 : 50
+  maxiter = (typeof(integrator.alg) <: Union{ESERK5,SERK2v2}) ? 100 : 50
   safe = (typeof(integrator.alg) <: RKCAlgs) ? 1.0 : 1.2
   # Initial guess for eigenvector `z`
   if isfirst
@@ -238,10 +238,10 @@ function choosedeg_SERK!(integrator,cache::T) where T
     elseif cache.mdeg <= 2000
       cache.internal_deg = 200
     end
-  end if
+  end
 
   if integrator.alg isa SERK2v2
-    cache.internal_deg = cache.deg/10
-  end if
+    cache.internal_deg = cache.mdeg/10
+  end
   return nothing
 end
