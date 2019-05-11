@@ -9,7 +9,7 @@ mutable struct RadauIIA5ConstantCache{F,Tab,Tol,Dt,U} <: OrdinaryDiffEqConstantC
   cont3::U
   dtprev::Dt
   W_dt::Dt
-  status::NLStatus
+  status::DiffEqBase.NLStatus
 end
 
 function alg_cache(alg::RadauIIA5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
@@ -62,7 +62,7 @@ mutable struct RadauIIA5Cache{uType,cuType,uNoUnitsType,rateType,JType,W1Type,W2
   atol::aTol
   dtprev::Dt
   W_dt::Dt
-  status::NLStatus
+  status::DiffEqBase.NLStatus
 end
 
 function alg_cache(alg::RadauIIA5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
