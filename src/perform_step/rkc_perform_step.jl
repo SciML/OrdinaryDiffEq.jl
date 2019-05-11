@@ -728,10 +728,11 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   # error estimate
   if isnewton(nlsolver) && integrator.opts.adaptive
     update_W!(integrator, cache, dt, false)
+    @.. gprev = dt*0.5*(du₂ - f2ⱼ₋₁) + dt*(0.5 - μs₁)*(du₁ - f1ⱼ₋₁)
     if DiffEqBase.has_invW(f)
-        mul!(vec(tmp),get_W(nlsolver),vec(@.. dt*(0.5*(du₂ - f2ⱼ₋₁) + (0.5 - μs₁)*(du₁ - f1ⱼ₋₁))))
+        mul!(vec(tmp),get_W(nlsolver),vec(gprev))
       else
-        cache.linsolve(vec(tmp),get_W(nlsolver),vec(@.. dt*(0.5*(du₂ - f2ⱼ₋₁) + (0.5 - μs₁)*(du₁ - f1ⱼ₋₁))),false)
+        cache.linsolve(vec(tmp),get_W(nlsolver),vec(gprev),false)
     end
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
@@ -741,7 +742,6 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.u = u
-  @.. k = du₁ + du₂
 end
 
 function initialize!(integrator, cache::ESERK5ConstantCache)
