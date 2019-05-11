@@ -48,7 +48,7 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
       f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+dt_temp)
       integrator.destats.nf += 1
       for j in 2:2^(i-1)
-        @muladd @.. u_tmps[Threads.threadid()] = u + dt_temp*k_tmps[Threads.threadid()]
+        @muladd @.. u_tmps[Threads.threadid()] = u_tmps[Threads.threadid()] + dt_temp*k_tmps[Threads.threadid()]
         f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+j*dt_temp)
         integrator.destats.nf += 1
       end
@@ -148,16 +148,16 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
     Threads.@threads for i in 2:min(size(T)[1], cur_order+1)
       dt_temp = dt/(2^(i-1))
       # Solve using Euler method
-      @muladd u = @.. uprev + dt_temp*integrator.fsalfirst
-      k = f(u, p, t+dt_temp)
+      @muladd u_temp = @.. uprev + dt_temp*integrator.fsalfirst
+      k_temp = f(u_temp, p, t+dt_temp)
       integrator.destats.nf += 1
 
       for j in 2:2^(i-1)
-        @muladd u = @.. u + dt_temp*k
-        k = f(u, p, t+j*dt_temp)
+        @muladd u_temp = @.. u_temp + dt_temp*k_temp
+        k_temp = f(u_temp, p, t+j*dt_temp)
         integrator.destats.nf += 1
       end
-      T[i,1] = u
+      T[i,1] = u_temp
     end
     # Richardson Extrapolation
     for i in 2:min(size(T)[1], cur_order+1)
