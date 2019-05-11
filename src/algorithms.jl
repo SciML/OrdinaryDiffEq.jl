@@ -477,8 +477,9 @@ JVODE_BDF(;kwargs...) = JVODE(:BDF;kwargs...)
 struct ROCK2 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct ROCK4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
-# ESERK methods
+# SERK methods
 struct ESERK5 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct SERK2v2 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 # RKC mehtods
 struct RKC <: OrdinaryDiffEqAdaptiveAlgorithm end

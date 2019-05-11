@@ -4,7 +4,7 @@
     q = inv(integrator.opts.qmax)
   else
     gamma = integrator.opts.gamma
-    if typeof(alg) <: Union{RKC,IRKC}
+    if typeof(alg) <: Union{RKC,IRKC,SERK2v2}
       fac = gamma
     else
       if alg isa RadauIIA5
