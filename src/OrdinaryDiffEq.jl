@@ -230,6 +230,4 @@ module OrdinaryDiffEq
   export AitkenNeville, ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner
 
   export KuttaPRK2p5
-
-  export NLNewton, NLFunctional, NLAnderson
 end # module
