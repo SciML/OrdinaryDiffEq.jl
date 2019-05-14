@@ -32,20 +32,35 @@ function alg_cache(alg::AitkenNeville,u,rate_prototype,uEltypeNoUnits,uBottomElt
   fsalfirst = zero(rate_prototype)
   cur_order = max(alg.init_order, alg.min_order)
   dtpropose = zero(dt)
-  T = fill(zeros(eltype(u), size(u)), (alg.max_order, alg.max_order))
+  T = Array{typeof(u),2}(undef, alg.max_order, alg.max_order)
+  # Array of arrays of length equal to number of threads to store intermediate
+  # values of u and k. [Thread Safety]
+  u_tmps = Array{typeof(u),1}(undef, Threads.nthreads())
+  k_tmps = Array{typeof(k),1}(undef, Threads.nthreads())
+  # Initialize each element of u_tmps and k_tmps to different instance of
+  # zeros array similar to u and k respectively
+  for i=1:Threads.nthreads()
+      u_tmps[i] = zeros(size(u))
+      k_tmps[i] = zeros(size(k))
+  end
+  # Initialize each element of T to different instance of zeros array similar to u
+  for i=1:alg.max_order
+      for j=1:alg.max_order
+          T[i,j] = zeros(size(u))
+      end
+  end
   work = zero(dt)
   A = one(Int)
   atmp = similar(u,uEltypeNoUnits)
   step_no = zero(Int)
-  u_tmps = fill(u, Threads.nthreads())
-  k_tmps = fill(k, Threads.nthreads())
   AitkenNevilleCache(u,uprev,tmp,k,utilde,atmp,fsalfirst,dtpropose,T,cur_order,work,A,step_no,u_tmps,k_tmps)
 end
 
 function alg_cache(alg::AitkenNeville,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   dtpropose = zero(dt)
   cur_order = max(alg.init_order, alg.min_order)
-  T = fill(zero(eltype(u)), (alg.max_order, alg.max_order))
+  T = Array{typeof(u),2}(undef, alg.max_order, alg.max_order)
+  @. T = u
   work = zero(dt)
   A = one(Int)
   step_no = zero(Int)

@@ -19,7 +19,6 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
   @unpack u_tmps, k_tmps = cache
 
   @muladd @.. u = uprev + dt*fsalfirst
-
   T[1,1] = copy(u)
 
   if integrator.alg.threading == false
@@ -41,21 +40,21 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
       end
     end
   else
-    Threads.@threads for i in 2:size(T)[1]
+    Threads.@threads for i in 2:min(size(T)[1],cur_order+1)
       dt_temp = dt/(2^(i-1))
       # Solve using Euler method
       @muladd @.. u_tmps[Threads.threadid()] = uprev + dt_temp*fsalfirst
       f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+dt_temp)
-      integrator.destats.nf += 1
+      # integrator.destats.nf += 1
       for j in 2:2^(i-1)
         @muladd @.. u_tmps[Threads.threadid()] = u_tmps[Threads.threadid()] + dt_temp*k_tmps[Threads.threadid()]
         f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+j*dt_temp)
-        integrator.destats.nf += 1
+        # integrator.destats.nf += 1
       end
       T[i,1] = copy(u_tmps[Threads.threadid()])
     end
     # Richardson Extrapolation
-    for i in 2:size(T)[1]
+    for i in 2:min(size(T)[1],cur_order+1)
       for j in 2:i
         T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
       end
