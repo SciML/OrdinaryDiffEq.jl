@@ -245,8 +245,12 @@ function choosedeg_SERK!(integrator,cache::T) where T
       cache.internal_deg = 2
     elseif cache.mdeg <= 100
       cache.internal_deg = 10
-    elseif cache.mdeg <= 4000
+    elseif cache.mdeg <= 500
       cache.internal_deg = 25
+    elseif cache.mdeg <= 1000
+      cache.internal_deg = 100
+    elseif cache.mdeg <= 4000
+      cache.internal_deg = 200
     end
   end
 
