@@ -330,6 +330,7 @@ alg_order(alg::SBDF) = alg.order
 alg_order(alg::ROCK2) = 2
 alg_order(alg::ROCK4) = 4
 
+alg_order(alg::ESERK4) = 4
 alg_order(alg::ESERK5) = 5
 alg_order(alg::SERK2v2) = 2
 
@@ -388,6 +389,7 @@ beta1_default(alg::ExtrapolationMidpointDeuflhard,beta2) =  1//(2alg.n_init+1)
 beta1_default(alg::ExtrapolationMidpointHairerWanner,beta2) =  1//(2alg.n_init+1)
 
 gamma_default(alg::OrdinaryDiffEqAlgorithm) = 9//10
+gamma_default(alg::ESERK4) = 8//10
 gamma_default(alg::ESERK5) = 8//10
 gamma_default(alg::RKC) = 8//10
 gamma_default(alg::IRKC) = 8//10

@@ -478,6 +478,7 @@ struct ROCK2 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct ROCK4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 # SERK methods
+struct ESERK4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct ESERK5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct SERK2v2 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
