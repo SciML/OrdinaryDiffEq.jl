@@ -181,163 +181,47 @@ function alg_cache(alg::IRKC,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   IRKCCache(u,uprev,gprev,gprev2,fsalfirst,k,du1,f1ⱼ₋₁,f1ⱼ₋₂,f2ⱼ₋₁,z,dz,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolver,du₁,du₂,constantcache)
 end
 
-function initialize!(integrator, cache::ESERK4ConstantCache)
-  integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
-  integrator.destats.nf += 1
-  # Avoid undefined entries if k is an array of arrays
-  integrator.fsallast = zero(integrator.fsalfirst)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
+mutable struct ESERK4ConstantCache{T, zType} <: OrdinaryDiffEqConstantCache
+  ms::SVector{46, Int}
+  Cᵤ::SVector{4, Int}
+  Cₑ::SVector{4, Int}
+  zprev::zType
+  Bᵢ::Vector{T}
+  mdeg::Int
+  start::Int
+  internal_deg::Int
 end
 
-@muladd function perform_step!(integrator, cache::ESERK4ConstantCache, repeat_step=false)
-  @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
-  @unpack ms, Cᵤ, Cₑ, Bᵢ= cache
-  maxeig!(integrator, cache)
-
-  mdeg = Int(floor(sqrt(abs(dt)*integrator.eigen_est))+1)
-  mdeg = (mdeg > 4000) ? 4000 : mdeg
-  cache.mdeg = mdeg
-  choosedeg_SERK!(integrator,cache)
-  mdeg = cache.mdeg
-  start = cache.start
-  internal_deg = cache.internal_deg
-  α = 2.0/(mdeg^2)
-
-  u = zero(uprev)
-  tmp = zero(uprev)
-  for i in 1:4
-    hᵢ = dt/i
-    tᵢ = t
-    Sᵢ = zero(u)
-    uᵢ₋₁ = uprev
-    uᵢ₋₂ = zero(u)
-    for j in 1:i
-      r  = tᵢ
-      Sᵢ = (Bᵢ[start])*uᵢ₋₁
-      for st in 1:mdeg
-        k = f(uᵢ₋₁, p, r)
-        integrator.destats.nf += 1
-
-        if st%internal_deg == 1
-          uᵢ = uᵢ₋₁ + α*hᵢ*k
-        else
-          uᵢ = 2*uᵢ₋₁ - uᵢ₋₂ + 2*α*hᵢ*k
-        end
-        q = convert(Int, floor(st/internal_deg))
-        r = tᵢ + α*(st^2 + q*internal_deg^2)*hᵢ
-        Sᵢ = Sᵢ + (Bᵢ[start+st])*uᵢ
-        if st < mdeg
-          uᵢ₋₂ = uᵢ₋₁
-          uᵢ₋₁ = uᵢ
-        end
-      end
-
-      if j < i
-        tᵢ = tᵢ + hᵢ
-        uᵢ₋₁ = Sᵢ
-      end
-    end
-
-    u = u + Cᵤ[i]*Sᵢ
-    integrator.opts.adaptive && (tmp = tmp + Cₑ[i]*Sᵢ)
-  end
-
-  u = u/6
-  if integrator.opts.adaptive
-    tmp = tmp/6
-    atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
-    integrator.EEst = integrator.opts.internalnorm(atmp,t)
-  end
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast = f(u, p, t+dt)
-  integrator.destats.nf += 1
-  integrator.u = u
+@cache struct ESERK4Cache{uType,rateType,uNoUnitsType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  uᵢ::uType
+  uᵢ₋₁::uType
+  uᵢ₋₂::uType
+  Sᵢ::uType
+  tmp::uType
+  atmp::uNoUnitsType
+  fsalfirst::rateType
+  k::rateType
+  constantcache::ESERK4ConstantCache
 end
 
-function initialize!(integrator, cache::ESERK4Cache)
-  integrator.kshortsize = 2
-  resize!(integrator.k, integrator.kshortsize)
-  integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.k
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-  integrator.destats.nf += 1
+function alg_cache(alg::ESERK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  constantcache = ESERK4ConstantCache(u)
+  uᵢ = similar(u)
+  uᵢ₋₁ = similar(u)
+  uᵢ₋₂ = similar(u)
+  Sᵢ   = similar(u)
+  tmp = similar(u)
+  atmp = similar(u,uEltypeNoUnits)
+  fsalfirst = zero(rate_prototype)
+  k = zero(rate_prototype)
+  ESERK4Cache(u, uprev, uᵢ, uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, fsalfirst, k, constantcache)
 end
 
-@muladd function perform_step!(integrator, cache::ESERK4Cache, repeat_step=false)
-  @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
-  @unpack uᵢ, uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, k = cache
-  @unpack ms, Cᵤ, Cₑ, Bᵢ = cache.constantcache
-  ccache = cache.constantcache
-  maxeig!(integrator, cache)
-
-  mdeg = Int(floor(sqrt(abs(dt)*integrator.eigen_est))+1)
-  mdeg = (mdeg > 4000) ? 4000 : mdeg
-  ccache.mdeg = mdeg
-  choosedeg_SERK!(integrator,cache)
-  mdeg = ccache.mdeg
-  start = ccache.start
-  internal_deg = ccache.internal_deg
-  α = 2.0/(mdeg^2)
-
-  @.. u = zero(uprev)
-  @.. tmp = zero(uprev)
-  for i in 1:4
-    hᵢ = dt/i
-    tᵢ = t
-    @.. Sᵢ = zero(u)
-    @.. uᵢ₋₁ = uprev
-    @.. uᵢ₋₂ = zero(u)
-    for j in 1:i
-      r  = tᵢ
-      @.. Sᵢ = (Bᵢ[start])*uᵢ₋₁
-      for st in 1:mdeg
-        f(k, uᵢ₋₁, p, r)
-        integrator.destats.nf += 1
-
-        if st%internal_deg == 1
-          @.. uᵢ = uᵢ₋₁ + α*hᵢ*k
-        else
-          @.. uᵢ = 2*uᵢ₋₁ - uᵢ₋₂ + 2*α*hᵢ*k
-        end
-        q = convert(Int, floor(st/internal_deg))
-        r = tᵢ + α*(st^2 + q*internal_deg^2)*hᵢ
-        @.. Sᵢ = Sᵢ + (Bᵢ[start+st])*uᵢ
-        if st < mdeg
-          @.. uᵢ₋₂ = uᵢ₋₁
-          @.. uᵢ₋₁ = uᵢ
-        end
-      end
-
-      if j < i
-        tᵢ = tᵢ + hᵢ
-        @.. uᵢ₋₁ = Sᵢ
-      end
-    end
-
-    @.. u = u + Cᵤ[i]*Sᵢ
-    integrator.opts.adaptive && (@.. tmp = tmp + Cₑ[i]*Sᵢ)
-  end
-
-  @.. u = u/6
-
-
-  if integrator.opts.adaptive
-    @.. tmp = tmp/6
-    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
-    integrator.EEst = integrator.opts.internalnorm(atmp,t)
-  end
-  integrator.k[1] = integrator.fsalfirst
-  f(integrator.fsallast, u, p, t+dt)
-  integrator.destats.nf += 1
-  integrator.k[2] = integrator.fsallast
-  integrator.u = u
+function alg_cache(alg::ESERK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  ESERK4ConstantCache(u)
 end
-
 
 mutable struct ESERK5ConstantCache{T, zType} <: OrdinaryDiffEqConstantCache
   ms::SVector{49, Int}
