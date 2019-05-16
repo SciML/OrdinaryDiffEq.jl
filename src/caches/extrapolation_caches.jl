@@ -40,14 +40,12 @@ function alg_cache(alg::AitkenNeville,u,rate_prototype,uEltypeNoUnits,uBottomElt
   # Initialize each element of u_tmps and k_tmps to different instance of
   # zeros array similar to u and k respectively
   for i=1:Threads.nthreads()
-      u_tmps[i] = zeros(size(u))
-      k_tmps[i] = zeros(size(k))
+      u_tmps[i] = zero(u)
+      k_tmps[i] = zero(rate_prototype)
   end
-  # Initialize each element of T to different instance of zeros array similar to u
+  # Initialize first column of T to different instance of zeros array similar to u
   for i=1:alg.max_order
-      for j=1:alg.max_order
-          T[i,j] = zeros(size(u))
-      end
+    T[i,1] = zero(u)
   end
   work = zero(dt)
   A = one(Int)

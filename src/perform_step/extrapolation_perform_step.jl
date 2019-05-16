@@ -19,7 +19,7 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
   @unpack u_tmps, k_tmps = cache
 
   @muladd @.. u = uprev + dt*fsalfirst
-  T[1,1] = copy(u)
+  @.. T[1,1] = u
 
   if integrator.alg.threading == false
     for i in 2:min(size(T)[1],cur_order+1)
@@ -33,7 +33,7 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
         f(k, u, p, t+j*dt_temp)
         integrator.destats.nf += 1
       end
-      T[i,1] = copy(u)
+      @.. T[i,1] = u
       # Richardson Extrapolation
       for j in 2:i
         T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
@@ -49,7 +49,7 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
         @muladd @.. u_tmps[Threads.threadid()] = u_tmps[Threads.threadid()] + dt_temp*k_tmps[Threads.threadid()]
         f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+j*dt_temp)
       end
-      T[i,1] = copy(u_tmps[Threads.threadid()])
+      @.. T[i,1] = u_tmps[Threads.threadid()]
     end
     integrator.destats.nf += 2*(2^(min(size(T)[1],cur_order+1)-1) - 1)
     # Richardson Extrapolation
