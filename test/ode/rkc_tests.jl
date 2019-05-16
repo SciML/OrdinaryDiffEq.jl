@@ -64,8 +64,6 @@ end
   end
   dts = 1 .//2 .^(6:-1:2)
   for prob in probArr
-    sim = test_convergence(dts,prob,ESERK4())
-    @test sim.𝒪est[:l∞] ≈ 4 atol=testTol
     sim = test_convergence(dts,prob,ESERK5())
     @test sim.𝒪est[:l∞] ≈ 5 atol=testTol
   end
