@@ -36,7 +36,7 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
       @.. T[i,1] = u
       # Richardson Extrapolation
       for j in 2:i
-        T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
+        @.. T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
       end
     end
   else
@@ -55,7 +55,7 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
     # Richardson Extrapolation
     for i in 2:min(size(T)[1],cur_order+1)
       for j in 2:i
-        T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
+        @.. T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
       end
     end
   end
@@ -68,7 +68,6 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
       end
 
       for i = range_start:min(size(T)[1], cur_order + 1)
-
           A = 2^(i-1)
           @.. utilde = T[i,i] - T[i,i-1]
           atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)

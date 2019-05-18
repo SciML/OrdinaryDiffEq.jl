@@ -43,9 +43,11 @@ function alg_cache(alg::AitkenNeville,u,rate_prototype,uEltypeNoUnits,uBottomElt
       u_tmps[i] = zero(u)
       k_tmps[i] = zero(rate_prototype)
   end
-  # Initialize first column of T to different instance of zeros array similar to u
+  # Initialize lower triangle of T to different instance of zeros array similar to u
   for i=1:alg.max_order
-    T[i,1] = zero(u)
+    for j=1:i
+      T[i,j] = zero(u)
+    end
   end
   work = zero(dt)
   A = one(Int)
