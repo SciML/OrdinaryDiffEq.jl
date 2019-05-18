@@ -21,7 +21,8 @@ end
   cache.mdeg != cache.mdegprev && choosedeg!(cache)
   # recurrence
   # for the first stage
-  temp1 = dt * recf[cache.recind][1]
+  # temp1 = dt * recf[cache.recind][1]
+  temp1 = dt * recf[cache.recind]
   ci1 = t + temp1
   ci2 = t + temp1
   ci3 = t
@@ -30,7 +31,8 @@ end
   ms[cache.mdeg] < 2 && ( u = gprev )
   # for the second to the ms[cache.mdeg] th stages
   for i in 2:ms[cache.mdeg]
-    μ, κ = recf[cache.recind + (i - 2)]
+    # μ, κ = recf[cache.recind + (i - 2)]
+    μ, κ = recf[cache.recind + (i - 2)*2 + 1], recf[cache.recind + (i - 2)*2 + 2]
     ν = -1 - κ
     dtμ = dt*μ
     ci1 = dtμ - ν * ci2 - κ * ci3
@@ -85,7 +87,8 @@ end
   ccache.mdeg != ccache.mdegprev && choosedeg!(cache)
   # recurrence
   # for the first stage
-  temp1 = dt * recf[ccache.recind][1]
+  # temp1 = dt * recf[ccache.recind][1]
+  temp1 = dt * recf[ccache.recind]
   ci1 = t + temp1
   ci2 = t + temp1
   ci3 = t
@@ -94,7 +97,8 @@ end
   ms[ccache.mdeg] < 2 && ( @.. u = gprev )
   # for the second to the ms[ccache.mdeg] th stages
   for i in 2:ms[ccache.mdeg]
-    μ, κ = recf[ccache.recind + (i - 2)]
+    # μ, κ = recf[ccache.recind + (i - 2)]
+    μ, κ = recf[ccache.recind + (i - 2)*2 + 1], recf[ccache.recind + (i - 2)*2 + 2]
     ν = κ - 1
     temp1 = dt * μ
     temp2 = 1 + κ
