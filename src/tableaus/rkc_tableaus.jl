@@ -2276,7 +2276,7 @@ function ROCK2ConstantCache(::Type{T}, ::Type{T2}, zprev) where {T, T2}
              ]
 
   # _recf = map(x->SVector{2,T2}(x), recf)
-  ROCK2ConstantCache{T,eltype(recf),typeof(zprev)}(ms, fp1, fp2, recf, zprev, 1, 1, 1)
+  ROCK2ConstantCache{T,T2,typeof(zprev)}(ms, fp1, fp2, recf, zprev, 1, 1, 1)
 end
 
 function ROCK4ConstantCache(::Type{T}, ::Type{T2}, zprev) where {T, T2}
@@ -4637,7 +4637,7 @@ function ROCK4ConstantCache(::Type{T}, ::Type{T2}, zprev) where {T, T2}
   _fpb = map(x->SVector{4,T}(x), fpb)
   _fpbe = map(x->SVector{5,T}(x), fpbe)
   # _recf = map(x->SVector{2,T2}(x), recf)
-  ROCK4ConstantCache{eltype(_fpa),eltype(_fpb),eltype(_fpbe),eltype(recf), typeof(zprev)}(ms, _fpa, _fpb, _fpbe, recf, zprev, 1, 1, 1)
+  ROCK4ConstantCache{eltype(_fpa),eltype(_fpb),eltype(_fpbe),T2, typeof(zprev)}(ms, _fpa, _fpb, _fpbe, recf, zprev, 1, 1, 1)
 end
 
 function ESERK5ConstantCache(zprev)
