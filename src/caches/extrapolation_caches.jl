@@ -60,7 +60,7 @@ function alg_cache(alg::AitkenNeville,u,rate_prototype,uEltypeNoUnits,uBottomElt
   dtpropose = zero(dt)
   cur_order = max(alg.init_order, alg.min_order)
   T = Array{typeof(u),2}(undef, alg.max_order, alg.max_order)
-  @. T = u
+  @.. T = u
   work = zero(dt)
   A = one(Int)
   step_no = zero(Int)
