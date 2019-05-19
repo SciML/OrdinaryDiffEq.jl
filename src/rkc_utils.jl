@@ -197,9 +197,9 @@ for the `mdeg` degree method.
 function choosedeg!(cache::T) where T
   isconst = T <: OrdinaryDiffEqConstantCache
   isconst || ( cache = cache.constantcache )
-  recind = 0
+  recind = 1
   @inbounds for i in 1:size(cache.ms,1)
-    if cache.ms[i] > cache.mdeg
+    if cache.ms[i] >= cache.mdeg
       cache.mdeg = i
       cache.recind = recind
       break

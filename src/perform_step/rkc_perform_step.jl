@@ -3,7 +3,8 @@ function initialize!(integrator, cache::ROCK2ConstantCache)
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
   integrator.destats.nf += 1
-
+  cache.max_stage = (integrator.alg.max_stages < 1 || integrator.alg.max_stages > 200) ? 200 : integrator.alg.max_stages
+  cache.min_stage = (integrator.alg.min_stages > cache.max_stage) ? cache.max_stage : integrator.alg.min_stages
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
   integrator.k[1] = integrator.fsalfirst
@@ -16,7 +17,7 @@ end
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
   mdeg = Int(floor(sqrt((1.5 + dt * integrator.eigen_est)/0.811) + 1))
-  mdeg = min(mdeg, 200)
+  mdeg = min(max(mdeg,cache.min_stage), cache.max_stage)
   cache.mdeg = max(mdeg, 3) - 2
   cache.mdeg != cache.mdegprev && choosedeg!(cache)
   # recurrence
@@ -66,6 +67,9 @@ function initialize!(integrator, cache::ROCK2Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.fsalfirst = cache.fsalfirst  # done by pointers, no copying
   integrator.fsallast = cache.k
+  cache.constantcache.max_stage = (integrator.alg.max_stages < 1 || integrator.alg.max_stages > 200) ? 200 : integrator.alg.max_stages
+  cache.constantcache.min_stage = (integrator.alg.min_stages > cache.constantcache.max_stage) ? cache.constantcache.max_stage : integrator.alg.min_stages
+
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -80,7 +84,7 @@ end
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
   mdeg = Int(floor(sqrt((1.5 + dt * integrator.eigen_est)/0.811) + 1))
-  mdeg = min(mdeg, 200)
+  mdeg = min(max(mdeg,ccache.min_stage), ccache.max_stage)
   ccache.mdeg = max(mdeg, 3) - 2
   ccache.mdeg != ccache.mdegprev && choosedeg!(cache)
   # recurrence
@@ -134,6 +138,8 @@ function initialize!(integrator, cache::ROCK4ConstantCache)
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
   integrator.destats.nf += 1
+  cache.max_stage = (integrator.alg.max_stages < 1 || integrator.alg.max_stages > 152) ? 152 : integrator.alg.max_stages
+  cache.min_stage = (integrator.alg.min_stages > cache.max_stage) ? cache.max_stage : integrator.alg.min_stages
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
   integrator.k[1] = integrator.fsalfirst
@@ -146,11 +152,9 @@ end
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
   mdeg = Int(floor(sqrt((3 + dt * integrator.eigen_est)/0.353) + 1))
-  if mdeg >= 152
-    mdeg = 152
-  end
+  mdeg = min(max(mdeg,cache.min_stage), cache.max_stage)
   cache.mdeg = max(mdeg, 5) - 4
-  cache.mdeg != cache.mdegprev && choosedeg!(cache)
+  choosedeg!(cache)
   # recurrence
   # for the first stage
   temp1 = dt * recf[cache.recind]
@@ -225,6 +229,9 @@ function initialize!(integrator, cache::ROCK4Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
+  cache.constantcache.max_stage = (integrator.alg.max_stages < 1 || integrator.alg.max_stages > 152) ? 152 : integrator.alg.max_stages
+  cache.constantcache.min_stage = (integrator.alg.min_stages > cache.constantcache.max_stage) ? cache.constantcache.max_stage : integrator.alg.min_stages
+
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
   integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
@@ -239,9 +246,7 @@ end
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
   mdeg = Int(floor(sqrt((3 + dt * integrator.eigen_est)/0.353) + 1))
-  if mdeg >= 152
-    mdeg = 152
-  end
+  mdeg = min(max(mdeg,ccache.min_stage), ccache.max_stage)
   ccache.mdeg = max(mdeg, 5) - 4
   ccache.mdeg != ccache.mdegprev && choosedeg!(cache)
   # recurrence

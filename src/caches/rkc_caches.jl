@@ -7,6 +7,8 @@ mutable struct ROCK2ConstantCache{T,T2,zType} <: OrdinaryDiffEqConstantCache
   mdegprev::Int
   mdeg::Int
   recind::Int
+  min_stage::Int
+  max_stage::Int
 end
 @cache struct ROCK2Cache{uType,rateType,uNoUnitsType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -45,7 +47,10 @@ mutable struct ROCK4ConstantCache{T,T2,T3,T4,zType} <: OrdinaryDiffEqConstantCac
   mdegprev::Int
   mdeg::Int
   recind::Int
+  min_stage::Int
+  max_stage::Int
 end
+
 @cache struct ROCK4Cache{uType,rateType,uNoUnitsType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
