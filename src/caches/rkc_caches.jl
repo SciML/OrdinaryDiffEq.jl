@@ -4,17 +4,19 @@ mutable struct ROCK2ConstantCache{T,T2,zType} <: OrdinaryDiffEqConstantCache
   fp2::SVector{46, T}
   recf::Vector{T2}
   zprev::zType
-  mdegprev::Int
+  # mdegprev::Int
   mdeg::Int
-  recind::Int
+  deg_index::Int
+  start::Int
+  # recind::Int
   min_stage::Int
   max_stage::Int
 end
 @cache struct ROCK2Cache{uType,rateType,uNoUnitsType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
-  gprev::uType
-  gprev2::uType
+  uᵢ₋₁::uType
+  uᵢ₋₂::uType
   tmp::uType
   atmp::uNoUnitsType
   fsalfirst::rateType
@@ -23,18 +25,18 @@ end
 end
 
 function alg_cache(alg::ROCK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  constantcache = ROCK2ConstantCache(uEltypeNoUnits, uEltypeNoUnits, u) # WIP: not sure about what type to use in here
-  gprev = similar(u)
-  gprev2 = similar(u)
+  constantcache = ROCK2ConstantCache(uEltypeNoUnits, uEltypeNoUnits, u)
+  uᵢ₋₁ = similar(u)
+  uᵢ₋₂ = similar(u)
   tmp = similar(u)
   atmp = similar(u,uEltypeNoUnits)
   fsalfirst = zero(rate_prototype)
   k = zero(rate_prototype)
-  ROCK2Cache(u, uprev, gprev, gprev2, tmp, atmp, fsalfirst, k, constantcache)
+  ROCK2Cache(u, uprev, uᵢ₋₁, uᵢ₋₂, tmp, atmp, fsalfirst, k, constantcache)
 end
 
 function alg_cache(alg::ROCK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  ROCK2ConstantCache(uEltypeNoUnits, uEltypeNoUnits, u) # WIP: not sure about what type to use in here
+  ROCK2ConstantCache(uEltypeNoUnits, uEltypeNoUnits, u)
 end
 
 mutable struct ROCK4ConstantCache{T,T2,T3,T4,zType} <: OrdinaryDiffEqConstantCache

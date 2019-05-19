@@ -189,22 +189,24 @@ end
 """
     choosedeg!(cache) -> nothing
 
-Calculate `ms[mdeg]` (the degree of the Chebyshev polynomial)
-and `cache.recind` (the index of recurrence parameters for that
-degree), where `recf[recind:(recind+ms[mdeg]-2)]` are the `μ,κ` pairs
-for the `mdeg` degree method.
+Calculate `mdeg = ms[deg_index]` (the degree of the Chebyshev polynomial)
+and `cache.start` (the start index of recurrence parameters for that
+degree), where `recf` are the `μ,κ` pairs
+for the `mdeg` degree method. The `κ` for `stage-1` for every degree
+is 0 therefore it's not included in `recf`
   """
 function choosedeg!(cache::T) where T
   isconst = T <: OrdinaryDiffEqConstantCache
   isconst || ( cache = cache.constantcache )
-  recind = 1
+  start = 1
   @inbounds for i in 1:size(cache.ms,1)
     if cache.ms[i] >= cache.mdeg
-      cache.mdeg = i
-      cache.recind = recind
+      cache.deg_index = i
+      cache.mdeg = cache.ms[i]
+      cache.start = start
       break
     end
-    recind += cache.ms[i]*2 - 1
+    start += cache.ms[i]*2 - 1
   end
   return nothing
 end
