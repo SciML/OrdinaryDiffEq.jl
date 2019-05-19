@@ -44,9 +44,9 @@ mutable struct ROCK4ConstantCache{T,T2,T3,T4,zType} <: OrdinaryDiffEqConstantCac
   fpbe::Vector{T3}
   recf::Vector{T4}
   zprev::zType
-  mdegprev::Int
   mdeg::Int
-  recind::Int
+  deg_index::Int
+  start::Int
   min_stage::Int
   max_stage::Int
 end
