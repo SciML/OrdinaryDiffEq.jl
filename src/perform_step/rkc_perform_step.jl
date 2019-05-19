@@ -162,72 +162,71 @@ end
   @unpack ms, fpa, fpb, fpbe, recf = cache
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
-  mdeg = Int(floor(sqrt((3 + dt * integrator.eigen_est)/0.353) + 1))
+  mdeg = Int(floor(sqrt((3 + dt*integrator.eigen_est)/0.353) + 1))
   mdeg = min(max(mdeg,cache.min_stage), cache.max_stage)
   cache.mdeg = max(mdeg, 5) - 4
   choosedeg!(cache)
   # recurrence
   # for the first stage
-  temp1 = dt * recf[cache.start]
-  ci1 = t + temp1
-  ci2 = t + temp1
-  ci3 = t
-  gprev2 = copy(uprev)
-  gprev = uprev + temp1 * fsalfirst
-  cache.mdeg < 2 && ( u = gprev )
+  tᵢ₋₁ = t + dt*recf[cache.start]
+  tᵢ₋₂ = t + dt*recf[cache.start]
+  tᵢ₋₃ = t
+  uᵢ₋₂ = copy(uprev)
+  uᵢ₋₁ = uprev + (dt*recf[cache.start])*fsalfirst
+  cache.mdeg < 2 && ( u = uᵢ₋₁ )
   # for the second to the cache.mdeg th stages
   for i in 2:cache.mdeg
     μ, κ = recf[cache.start + (i - 2)*2 + 1], recf[cache.start + (i - 2)*2 + 2]
-    ν = -1 - κ
+    ν = - 1 - κ
     dtμ = dt*μ
-    u = f(gprev, p,ci1)
-    ci1 = dtμ - ν * ci2 - κ * ci3
-    u = dtμ * u - ν * gprev - κ * gprev2
-    i < cache.mdeg && (gprev2 = gprev; gprev = u)
-    ci3 = ci2
-    ci2 = ci1
+    u = f(uᵢ₋₁, p,tᵢ₋₁)
+    tᵢ₋₁ = dt*μ - ν*tᵢ₋₂ - κ*tᵢ₋₃
+    u = (dt*μ)*u - ν*uᵢ₋₁ - κ*uᵢ₋₂
+    i < cache.mdeg && (uᵢ₋₂ = uᵢ₋₁; uᵢ₋₁ = u)
+    tᵢ₋₃ = tᵢ₋₂
+    tᵢ₋₂ = tᵢ₋₁
   end
   # 4-stage finishing procedure.
   # Stage-1
-  temp1 = dt * fpa[cache.deg_index][1]
-  gprev = f(u, p, ci1)
+  δt1 = dt*fpa[cache.deg_index][1]
+  uᵢ₋₁ = f(u, p, tᵢ₋₁)
   integrator.destats.nf += 1
-  gprev3 = u + temp1 * gprev
+  uᵢ₋₃ = u + δt1*uᵢ₋₁
   # Stage-2
-  ci2 = ci1 + temp1
-  temp1 = dt * fpa[cache.deg_index][2];
-  temp2 = dt * fpa[cache.deg_index][3];
-  gprev2 = f(gprev3, p, ci1)
+  tᵢ₋₂ = tᵢ₋₁ + δt1
+  δt1 = dt*fpa[cache.deg_index][2];
+  δt2 = dt*fpa[cache.deg_index][3];
+  uᵢ₋₂ = f(uᵢ₋₃, p, tᵢ₋₁)
   integrator.destats.nf += 1
-  gprev4 = u + temp1 * gprev + temp2 * gprev2
+  uᵢ₋₄ = u + δt1*uᵢ₋₁ + δt2*uᵢ₋₂
   # Stage-3
-  ci2 = ci1 + temp1 +temp2
-  temp1 = dt * fpa[cache.deg_index][4]
-  temp2 = dt * fpa[cache.deg_index][5]
-  temp3 = dt * fpa[cache.deg_index][6]
-  gprev3 = f(gprev4, p, ci2)
+  tᵢ₋₂ = tᵢ₋₁ + δt1 + δt2
+  δt1 = dt*fpa[cache.deg_index][4]
+  δt2 = dt*fpa[cache.deg_index][5]
+  δt3 = dt*fpa[cache.deg_index][6]
+  uᵢ₋₃ = f(uᵢ₋₄, p, tᵢ₋₂)
   integrator.destats.nf += 1
-  gprev5 = u + temp1 * gprev + temp2 * gprev2 + temp3 * gprev3
+  uᵢ₋₅ = u + δt1*uᵢ₋₁ + δt2*uᵢ₋₂ + δt3*uᵢ₋₃
   #Stage-4
-  ci2 = ci1 + temp1 + temp2 + temp3
-  temp1 = dt * fpb[cache.deg_index][1]
-  temp2 = dt * fpb[cache.deg_index][2]
-  temp3 = dt * fpb[cache.deg_index][3]
-  temp4 = dt * fpb[cache.deg_index][4]
-  gprev4 = f(gprev5, p, ci2)
+  tᵢ₋₂ = tᵢ₋₁ + δt1 + δt2 + δt3
+  δt1 = dt*fpb[cache.deg_index][1]
+  δt2 = dt*fpb[cache.deg_index][2]
+  δt3 = dt*fpb[cache.deg_index][3]
+  δt4 = dt*fpb[cache.deg_index][4]
+  uᵢ₋₄ = f(uᵢ₋₅, p, tᵢ₋₂)
   integrator.destats.nf += 1
-  u = u + temp1 * gprev + temp2 * gprev2 + temp3 * gprev3 + temp4 * gprev4
+  u = u + δt1*uᵢ₋₁ + δt2*uᵢ₋₂ + δt3*uᵢ₋₃ + δt4*uᵢ₋₄
   #Error estimate (embedded method of order 3)
-  temp1 = dt * fpbe[cache.deg_index][1] - temp1
-  temp2 = dt * fpbe[cache.deg_index][2] - temp2
-  temp3 = dt * fpbe[cache.deg_index][3] - temp3
-  temp4 = dt * fpbe[cache.deg_index][4] - temp4
-  temp5 = dt * fpbe[cache.deg_index][5]
-  gprev5 = f(u, p, t + dt)
+  δt1 = dt*fpbe[cache.deg_index][1] - δt1
+  δt2 = dt*fpbe[cache.deg_index][2] - δt2
+  δt3 = dt*fpbe[cache.deg_index][3] - δt3
+  δt4 = dt*fpbe[cache.deg_index][4] - δt4
+  δt5 = dt*fpbe[cache.deg_index][5]
+  uᵢ₋₅ = f(u, p, t + dt)
   integrator.destats.nf += 1
-  temp5 = temp1 * gprev + temp2 * gprev2 + temp3 * gprev3 + temp4 * gprev4 + temp5 * gprev5
+  tmp = δt1*uᵢ₋₁ + δt2*uᵢ₋₂ + δt3*uᵢ₋₃ + δt4*uᵢ₋₄ + δt5*uᵢ₋₅
   if integrator.opts.adaptive
-    atmp = calculate_residuals(temp5, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
   integrator.k[1] = integrator.fsalfirst
@@ -252,73 +251,69 @@ end
 
 @muladd function perform_step!(integrator, cache::ROCK4Cache, repeat_step=false)
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
-  @unpack gprev, gprev2, gprev3, gprev4, gprev5, tmp, atmp, k, k2, k3, k4, k5 = cache
+  @unpack uᵢ₋₁, uᵢ₋₂, uᵢ₋₃, uᵢ₋₄, uᵢ₋₅, tmp, atmp, k, k2, k3, k4, k5 = cache
   @unpack ms, fpa, fpb, fpbe, recf = cache.constantcache
   ccache = cache.constantcache
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
-  mdeg = Int(floor(sqrt((3 + dt * integrator.eigen_est)/0.353) + 1))
+  mdeg = Int(floor(sqrt((3 + dt*integrator.eigen_est)/0.353) + 1))
   mdeg = min(max(mdeg,ccache.min_stage), ccache.max_stage)
   ccache.mdeg = max(mdeg, 5) - 4
   choosedeg!(cache)
   # recurrence
   # for the first stage
-  temp1 = dt * recf[ccache.start]
-  ci1 = t + temp1
-  ci2 = t + temp1
-  ci3 = t
-  @.. gprev2 = uprev
-  @.. gprev = uprev + temp1 * fsalfirst
-  ccache.mdeg < 2 && ( @.. u = gprev )
+  tᵢ₋₁ = t + dt*recf[ccache.start]
+  tᵢ₋₂ = t + dt*recf[ccache.start]
+  tᵢ₋₃ = t
+  @.. uᵢ₋₂ = uprev
+  @.. uᵢ₋₁ = uprev + (dt*recf[ccache.start])*fsalfirst
+  ccache.mdeg < 2 && ( @.. u = uᵢ₋₁ )
   # for the second to the ccache.mdeg th stages
   for i in 2:ccache.mdeg
     μ, κ = recf[ccache.start + (i - 2)*2 + 1], recf[ccache.start + (i - 2)*2 + 2]
-    ν = κ - 1
-    temp1 = dt * μ
-    temp2 = 1 + κ
-    temp3 = -κ
-    f(k, gprev, p, ci1)
-    ci1 = temp1 + temp2 * ci2 + temp3 * ci3
-    @.. u = temp1 * k + temp2 * gprev + temp3 * gprev2
-    i < ccache.mdeg && (gprev2 .= gprev; gprev .= u)
-    ci3 = ci2
-    ci2 = ci1
+    ν = -1 - κ
+    f(k, uᵢ₋₁, p, tᵢ₋₁)
+    tᵢ₋₁ = (dt*μ) - ν*tᵢ₋₂ - κ*tᵢ₋₃
+    u = (dt*μ)*k - ν*uᵢ₋₁ - κ*uᵢ₋₂
+    i < ccache.mdeg && (uᵢ₋₂ .= uᵢ₋₁; uᵢ₋₁ .= u)
+    tᵢ₋₃ = tᵢ₋₂
+    tᵢ₋₂ = tᵢ₋₁
   end
   # 4-stage finishing procedure.
   # Stage-1
-  temp1 = dt * fpa[ccache.deg_index][1]
-  f(k, u, p, ci1)
-  @.. gprev3 = u + temp1 * k
+  δt1 = dt*fpa[ccache.deg_index][1]
+  f(k, u, p, tᵢ₋₁)
+  @.. uᵢ₋₃ = u + δt1*k
   # Stage-2
-  ci2 = ci1 + temp1
-  temp1 = dt * fpa[ccache.deg_index][2];
-  temp2 = dt * fpa[ccache.deg_index][3];
-  f(k2, gprev3, p, ci1)
-  @.. gprev4 = u + temp1 * k + temp2 * k2
+  tᵢ₋₂ = tᵢ₋₁ + δt1
+  δt1 = dt*fpa[ccache.deg_index][2];
+  δt2 = dt*fpa[ccache.deg_index][3];
+  f(k2, uᵢ₋₃, p, tᵢ₋₁)
+  @.. uᵢ₋₄ = u + δt1*k + δt2*k2
   # Stage-3
-  ci2 = ci1 + temp1 +temp2
-  temp1 = dt * fpa[ccache.deg_index][4]
-  temp2 = dt * fpa[ccache.deg_index][5]
-  temp3 = dt * fpa[ccache.deg_index][6]
-  f(k3, gprev4, p, ci2)
-  @.. gprev5 = u + temp1 * k + temp2 * k2 + temp3 * k3
+  tᵢ₋₂ = tᵢ₋₁ + δt1 +δt2
+  δt1 = dt*fpa[ccache.deg_index][4]
+  δt2 = dt*fpa[ccache.deg_index][5]
+  δt3 = dt*fpa[ccache.deg_index][6]
+  f(k3, uᵢ₋₄, p, tᵢ₋₂)
+  @.. uᵢ₋₅ = u + δt1*k + δt2*k2 + δt3*k3
   #Stage-4
-  ci2 = ci1 + temp1 + temp2 + temp3
-  temp1 = dt * fpb[ccache.deg_index][1]
-  temp2 = dt * fpb[ccache.deg_index][2]
-  temp3 = dt * fpb[ccache.deg_index][3]
-  temp4 = dt * fpb[ccache.deg_index][4]
-  f(k4, gprev5, p, ci2)
-  @.. u = u + temp1 * k + temp2 * k2 + temp3 * k3 + temp4 * k4
+  tᵢ₋₂ = tᵢ₋₁ + δt1 + δt2 + δt3
+  δt1 = dt*fpb[ccache.deg_index][1]
+  δt2 = dt*fpb[ccache.deg_index][2]
+  δt3 = dt*fpb[ccache.deg_index][3]
+  δt4 = dt*fpb[ccache.deg_index][4]
+  f(k4, uᵢ₋₅, p, tᵢ₋₂)
+  @.. u = u + δt1*k + δt2*k2 + δt3*k3 + δt4*k4
   #Error estimate (embedded method of order 3)
-  temp1 = dt * fpbe[ccache.deg_index][1] - temp1
-  temp2 = dt * fpbe[ccache.deg_index][2] - temp2
-  temp3 = dt * fpbe[ccache.deg_index][3] - temp3
-  temp4 = dt * fpbe[ccache.deg_index][4] - temp4
-  temp5 = dt * fpbe[ccache.deg_index][5]
+  δt1 = dt*fpbe[ccache.deg_index][1] - δt1
+  δt2 = dt*fpbe[ccache.deg_index][2] - δt2
+  δt3 = dt*fpbe[ccache.deg_index][3] - δt3
+  δt4 = dt*fpbe[ccache.deg_index][4] - δt4
+  δt5 = dt*fpbe[ccache.deg_index][5]
   f(k5, u, p, t + dt)
   integrator.destats.nf += 5
-  @.. tmp = temp1 * k + temp2 * k2 + temp3 * k3 + temp4 * k4 + temp5 * k5
+  @.. tmp = δt1*k + δt2*k2 + δt3*k3 + δt4*k4 + δt5*k5
   if integrator.opts.adaptive
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)

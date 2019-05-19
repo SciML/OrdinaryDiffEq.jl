@@ -54,11 +54,11 @@ end
 @cache struct ROCK4Cache{uType,rateType,uNoUnitsType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
-  gprev::uType
-  gprev2::uType
-  gprev3::uType
-  gprev4::uType
-  gprev5::uType
+  uᵢ₋₁::uType
+  uᵢ₋₂::uType
+  uᵢ₋₃::uType
+  uᵢ₋₄::uType
+  uᵢ₋₅::uType
   tmp::uType
   atmp::uNoUnitsType
   fsalfirst::rateType
@@ -72,11 +72,11 @@ end
 
 function alg_cache(alg::ROCK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   constantcache = ROCK4ConstantCache(real(uEltypeNoUnits), real(uEltypeNoUnits), u)
-  gprev = similar(u)
-  gprev2 = similar(u)
-  gprev3 = similar(u)
-  gprev4 = similar(u)
-  gprev5 = similar(u)
+  uᵢ₋₁ = similar(u)
+  uᵢ₋₂ = similar(u)
+  uᵢ₋₃ = similar(u)
+  uᵢ₋₄ = similar(u)
+  uᵢ₋₅ = similar(u)
   tmp = similar(u)
   atmp = similar(u,uEltypeNoUnits)
   fsalfirst = zero(rate_prototype)
@@ -85,7 +85,7 @@ function alg_cache(alg::ROCK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   k3 = zero(rate_prototype)
   k4 = zero(rate_prototype)
   k5 = zero(rate_prototype)
-  ROCK4Cache(u, uprev, gprev, gprev2, gprev3, gprev4, gprev5, tmp, atmp, fsalfirst, k, k2, k3, k4, k5, constantcache)
+  ROCK4Cache(u, uprev, uᵢ₋₁, uᵢ₋₂, uᵢ₋₃, uᵢ₋₄, uᵢ₋₅, tmp, atmp, fsalfirst, k, k2, k3, k4, k5, constantcache)
 end
 
 function alg_cache(alg::ROCK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
