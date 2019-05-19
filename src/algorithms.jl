@@ -475,8 +475,17 @@ JVODE_Adams(;kwargs...) = JVODE(:Adams;kwargs...)
 JVODE_BDF(;kwargs...) = JVODE(:BDF;kwargs...)
 
 # ROCK methods
-struct ROCK2 <: OrdinaryDiffEqAdaptiveAlgorithm end
-struct ROCK4 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct ROCK2 <: OrdinaryDiffEqAdaptiveAlgorithm
+  min_stages::Int
+  max_stages::Int
+end
+ROCK2(;min_stages=0,max_stages=200) = ROCK2(min_stages,max_stages)
+
+struct ROCK4 <: OrdinaryDiffEqAdaptiveAlgorithm
+  min_stages::Int
+  max_stages::Int
+end
+ROCK4(;min_stages=0,max_stages=152) = ROCK4(min_stages,max_stages)
 
 # SERK methods
 struct ESERK5 <: OrdinaryDiffEqAdaptiveAlgorithm end
