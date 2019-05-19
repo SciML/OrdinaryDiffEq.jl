@@ -34,6 +34,7 @@ end
     μ, κ = recf[cache.recind + (i - 2)*2 + 1], recf[cache.recind + (i - 2)*2 + 2]
     ν = -1 - κ
     dtμ = dt*μ
+    u = f(gprev, p, ci1)
     ci1 = dtμ - ν * ci2 - κ * ci3
     u = dtμ * u - ν * gprev - κ * gprev2
     i < ms[cache.mdeg] && (gprev2 = gprev; gprev = u)
@@ -103,8 +104,9 @@ end
     temp1 = dt * μ
     temp2 = 1 + κ
     temp3 = -κ
+    f(k, gprev, p, ci1)
     ci1 = temp1 + temp2 * ci2 + temp3 * ci3
-    @.. u = temp1 * u + temp2 * gprev + temp3 * gprev2
+    @.. u = temp1 * k + temp2 * gprev + temp3 * gprev2
     i < ms[ccache.mdeg] && (gprev2 .= gprev; gprev .= u)
     ci3 = ci2
     ci2 = ci1
@@ -169,6 +171,7 @@ end
     μ, κ = recf[cache.recind + (i - 2)*2 + 1], recf[cache.recind + (i - 2)*2 + 2]
     ν = -1 - κ
     dtμ = dt*μ
+    u = f(gprev, p,ci1)
     ci1 = dtμ - ν * ci2 - κ * ci3
     u = dtμ * u - ν * gprev - κ * gprev2
     i < ms[cache.mdeg] && (gprev2 = gprev; gprev = u)
@@ -265,8 +268,9 @@ end
     temp1 = dt * μ
     temp2 = 1 + κ
     temp3 = -κ
+    f(k, gprev, p, ci1)
     ci1 = temp1 + temp2 * ci2 + temp3 * ci3
-    @.. u = temp1 * u + temp2 * gprev + temp3 * gprev2
+    @.. u = temp1 * k + temp2 * gprev + temp3 * gprev2
     i < ms[ccache.mdeg] && (gprev2 .= gprev; gprev .= u)
     ci3 = ci2
     ci2 = ci1

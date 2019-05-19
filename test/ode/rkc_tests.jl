@@ -51,22 +51,27 @@ end
   dts = 1 .//2 .^(8:-1:4)
   testTol = 0.1
   for prob in probArr
+    #default ROCK2
     sim = test_convergence(dts,prob,ROCK2())
     @test sim.𝒪est[:l∞] ≈ 2 atol=testTol
+    #testing ROCK2 for different minimum stages to insure that the constatns are right
     sim = test_convergence(dts,prob,ROCK2(min_stages=5))
     @test sim.𝒪est[:l∞] ≈ 2 atol=testTol
     sim = test_convergence(dts,prob,ROCK2(min_stages=10))
     @test sim.𝒪est[:l∞] ≈ 2 atol=testTol
-    sim = test_convergence(dts,prob,ROCK2(min_stages=13))
+    sim = test_convergence(dts,prob,ROCK2(min_stages=21))
     @test sim.𝒪est[:l∞] ≈ 2 atol=testTol
+    #default ROCK4
     sim = test_convergence(dts,prob,ROCK4())
     @test sim.𝒪est[:l∞] ≈ 4 atol=testTol
-    sim = test_convergence(dts,prob,ROCK4(min_stages=5))
+    #testing ROCK4 for different minimum stages to insure that the constatns are right
+    sim = test_convergence(dts,prob,ROCK4(min_stages=6))
     @test sim.𝒪est[:l∞] ≈ 4 atol=testTol
     sim = test_convergence(dts,prob,ROCK4(min_stages=10))
     @test sim.𝒪est[:l∞] ≈ 4 atol=testTol
-    sim = test_convergence(dts,prob,ROCK4(min_stages=13))
+    sim = test_convergence(dts,prob,ROCK4(min_stages=21))
     @test sim.𝒪est[:l∞] ≈ 4 atol=testTol
+    
     sim = test_convergence(dts,prob,RKC())
     @test sim.𝒪est[:l∞] ≈ 2 atol=testTol
     sim = test_convergence(dts,prob,SERK2v2())
