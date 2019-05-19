@@ -4,11 +4,9 @@ mutable struct ROCK2ConstantCache{T,T2,zType} <: OrdinaryDiffEqConstantCache
   fp2::SVector{46, T}
   recf::Vector{T2}
   zprev::zType
-  # mdegprev::Int
   mdeg::Int
   deg_index::Int
   start::Int
-  # recind::Int
   min_stage::Int
   max_stage::Int
 end
