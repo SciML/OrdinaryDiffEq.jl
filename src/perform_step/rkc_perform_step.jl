@@ -186,7 +186,7 @@ end
     tᵢ₋₂ = tᵢ₋₁
   end
 
-  # These constants correspond to the buther tableau coefficients of explicit RK methods
+  # These constants correspond to the Buther Tableau coefficients of explicit RK methods
   a₂₁ = dt*fpa[cache.deg_index][1]
   a₃₁ = dt*fpa[cache.deg_index][2]; a₃₂ = dt*fpa[cache.deg_index][3]
   a₄₁ = dt*fpa[cache.deg_index][4]; a₄₂ = dt*fpa[cache.deg_index][5]; a₄₃ = dt*fpa[cache.deg_index][6]
@@ -291,13 +291,17 @@ end
     tᵢ₋₂ = tᵢ₋₁
   end
 
-  # These constants correspond to the buther tableau coefficients of explicit RK methods
+  # These constants correspond to the Buther Tableau coefficients of explicit RK methods
   a₂₁ = dt*fpa[ccache.deg_index][1]
   a₃₁ = dt*fpa[ccache.deg_index][2]; a₃₂ = dt*fpa[ccache.deg_index][3]
   a₄₁ = dt*fpa[ccache.deg_index][4]; a₄₂ = dt*fpa[ccache.deg_index][5]; a₄₃ = dt*fpa[ccache.deg_index][6]
   B₁  = dt*fpb[ccache.deg_index][1]; B₂  = dt*fpb[ccache.deg_index][2]; B₃  = dt*fpb[ccache.deg_index][3]; B₄  = dt*fpb[ccache.deg_index][4]
   # coefficients of embedded method for error estimation
-  B̂₁  = dt*(fpbe[ccache.deg_index][1] - fpb[ccache.deg_index][1]); B̂₂  = dt*(fpbe[ccache.deg_index][2] - fpb[ccache.deg_index][2]); B̂₃  = dt*(fpbe[ccache.deg_index][3] - fpb[ccache.deg_index][3]); B̂₄  = dt*(fpbe[ccache.deg_index][4] - fpb[ccache.deg_index][4]); B̂₅  = dt*fpbe[ccache.deg_index][5]
+  B̂₁  = dt*(fpbe[ccache.deg_index][1] - fpb[ccache.deg_index][1])
+  B̂₂  = dt*(fpbe[ccache.deg_index][2] - fpb[ccache.deg_index][2])
+  B̂₃  = dt*(fpbe[ccache.deg_index][3] - fpb[ccache.deg_index][3])
+  B̂₄  = dt*(fpbe[ccache.deg_index][4] - fpb[ccache.deg_index][4])
+  B̂₅  = dt*fpbe[ccache.deg_index][5]
 
   # 4-stage finishing procedure.
   # Stage-1
