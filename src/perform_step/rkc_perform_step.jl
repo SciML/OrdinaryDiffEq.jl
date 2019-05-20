@@ -178,7 +178,6 @@ end
   for i in 2:cache.mdeg
     μ, κ = recf[cache.start + (i - 2)*2 + 1], recf[cache.start + (i - 2)*2 + 2]
     ν = - 1 - κ
-    dtμ = dt*μ
     u = f(uᵢ₋₁, p,tᵢ₋₁)
     tᵢ₋₁ = dt*μ - ν*tᵢ₋₂ - κ*tᵢ₋₃
     u = (dt*μ)*u - ν*uᵢ₋₁ - κ*uᵢ₋₂
@@ -186,52 +185,64 @@ end
     tᵢ₋₃ = tᵢ₋₂
     tᵢ₋₂ = tᵢ₋₁
   end
+
+  # These constants correspond to the buther tableau coefficients of explicit RK methods
+  a₂₁ = dt*fpa[cache.deg_index][1]
+  a₃₁ = dt*fpa[cache.deg_index][2]; a₃₂ = dt*fpa[cache.deg_index][3]
+  a₄₁ = dt*fpa[cache.deg_index][4]; a₄₂ = dt*fpa[cache.deg_index][5]; a₄₃ = dt*fpa[cache.deg_index][6]
+  B₁  = dt*fpb[cache.deg_index][1]; B₂  = dt*fpb[cache.deg_index][2]; B₃  = dt*fpb[cache.deg_index][3]; B₄  = dt*fpb[cache.deg_index][4]
+  # coefficients of embedded method for error estimation
+  B̂₁  = dt*(fpbe[cache.deg_index][1] - fpb[cache.deg_index][1])
+  B̂₂  = dt*(fpbe[cache.deg_index][2] - fpb[cache.deg_index][2])
+  B̂₃  = dt*(fpbe[cache.deg_index][3] - fpb[cache.deg_index][3])
+  B̂₄  = dt*(fpbe[cache.deg_index][4] - fpb[cache.deg_index][4])
+  B̂₅  = dt*fpbe[cache.deg_index][5]
+
   # 4-stage finishing procedure.
   # Stage-1
-  δt1 = dt*fpa[cache.deg_index][1]
   uᵢ₋₁ = f(u, p, tᵢ₋₁)
   integrator.destats.nf += 1
-  uᵢ₋₃ = u + δt1*uᵢ₋₁
+  uᵢ₋₂ = u + a₃₁*uᵢ₋₁
+  uᵢ₋₃ = u + a₄₁*uᵢ₋₁
+  u    += B₁*uᵢ₋₁
+  integrator.opts.adaptive && (tmp = B̂₁*uᵢ₋₁)
+  uᵢ₋₁ = u + (a₂₁ - B₁)*uᵢ₋₁
+
   # Stage-2
-  tᵢ₋₂ = tᵢ₋₁ + δt1
-  δt1 = dt*fpa[cache.deg_index][2];
-  δt2 = dt*fpa[cache.deg_index][3];
-  uᵢ₋₂ = f(uᵢ₋₃, p, tᵢ₋₁)
+  tᵢ₋₂ = tᵢ₋₁ + a₂₁
+  uᵢ₋₁ = f(uᵢ₋₁, p, tᵢ₋₂)
   integrator.destats.nf += 1
-  uᵢ₋₄ = u + δt1*uᵢ₋₁ + δt2*uᵢ₋₂
+  uᵢ₋₂ += a₃₂*uᵢ₋₁
+  uᵢ₋₃ += a₄₂*uᵢ₋₁
+  u    += B₂*uᵢ₋₁
+  integrator.opts.adaptive && (tmp += B̂₂*uᵢ₋₁)
+
   # Stage-3
-  tᵢ₋₂ = tᵢ₋₁ + δt1 + δt2
-  δt1 = dt*fpa[cache.deg_index][4]
-  δt2 = dt*fpa[cache.deg_index][5]
-  δt3 = dt*fpa[cache.deg_index][6]
-  uᵢ₋₃ = f(uᵢ₋₄, p, tᵢ₋₂)
+  tᵢ₋₂ = tᵢ₋₁ + a₃₁ + a₃₂
+  uᵢ₋₂ = f(uᵢ₋₂, p, tᵢ₋₂)
   integrator.destats.nf += 1
-  uᵢ₋₅ = u + δt1*uᵢ₋₁ + δt2*uᵢ₋₂ + δt3*uᵢ₋₃
+  uᵢ₋₃ += a₄₃*uᵢ₋₂
+  u    += B₃*uᵢ₋₂
+  integrator.opts.adaptive && (tmp += B̂₃*uᵢ₋₂)
+
   #Stage-4
-  tᵢ₋₂ = tᵢ₋₁ + δt1 + δt2 + δt3
-  δt1 = dt*fpb[cache.deg_index][1]
-  δt2 = dt*fpb[cache.deg_index][2]
-  δt3 = dt*fpb[cache.deg_index][3]
-  δt4 = dt*fpb[cache.deg_index][4]
-  uᵢ₋₄ = f(uᵢ₋₅, p, tᵢ₋₂)
+  tᵢ₋₂ = tᵢ₋₁ + a₄₁ + a₄₂ + a₄₃
+  uᵢ₋₃ = f(uᵢ₋₃, p, tᵢ₋₂)
   integrator.destats.nf += 1
-  u = u + δt1*uᵢ₋₁ + δt2*uᵢ₋₂ + δt3*uᵢ₋₃ + δt4*uᵢ₋₄
+  u    += B₄*uᵢ₋₃
+  integrator.opts.adaptive && (tmp += B̂₄*uᵢ₋₃)
+
+  uᵢ₋₁ = f(u, p, t + dt)
+  integrator.destats.nf += 1
+
   #Error estimate (embedded method of order 3)
-  δt1 = dt*fpbe[cache.deg_index][1] - δt1
-  δt2 = dt*fpbe[cache.deg_index][2] - δt2
-  δt3 = dt*fpbe[cache.deg_index][3] - δt3
-  δt4 = dt*fpbe[cache.deg_index][4] - δt4
-  δt5 = dt*fpbe[cache.deg_index][5]
-  uᵢ₋₅ = f(u, p, t + dt)
-  integrator.destats.nf += 1
-  tmp = δt1*uᵢ₋₁ + δt2*uᵢ₋₂ + δt3*uᵢ₋₃ + δt4*uᵢ₋₄ + δt5*uᵢ₋₅
   if integrator.opts.adaptive
+    tmp  += B̂₅*uᵢ₋₁
     atmp = calculate_residuals(tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
   integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast = f(u, p, t+dt)
-  integrator.destats.nf += 1
+  integrator.k[2] = integrator.fsallast = uᵢ₋₁
   integrator.u = u
 end
 
@@ -279,47 +290,61 @@ end
     tᵢ₋₃ = tᵢ₋₂
     tᵢ₋₂ = tᵢ₋₁
   end
+
+  # These constants correspond to the buther tableau coefficients of explicit RK methods
+  a₂₁ = dt*fpa[ccache.deg_index][1]
+  a₃₁ = dt*fpa[ccache.deg_index][2]; a₃₂ = dt*fpa[ccache.deg_index][3]
+  a₄₁ = dt*fpa[ccache.deg_index][4]; a₄₂ = dt*fpa[ccache.deg_index][5]; a₄₃ = dt*fpa[ccache.deg_index][6]
+  B₁  = dt*fpb[ccache.deg_index][1]; B₂  = dt*fpb[ccache.deg_index][2]; B₃  = dt*fpb[ccache.deg_index][3]; B₄  = dt*fpb[ccache.deg_index][4]
+  # coefficients of embedded method for error estimation
+  B̂₁  = dt*(fpbe[ccache.deg_index][1] - fpb[ccache.deg_index][1]); B̂₂  = dt*(fpbe[ccache.deg_index][2] - fpb[ccache.deg_index][2]); B̂₃  = dt*(fpbe[ccache.deg_index][3] - fpb[ccache.deg_index][3]); B̂₄  = dt*(fpbe[ccache.deg_index][4] - fpb[ccache.deg_index][4]); B̂₅  = dt*fpbe[ccache.deg_index][5]
+
   # 4-stage finishing procedure.
   # Stage-1
-  δt1 = dt*fpa[ccache.deg_index][1]
+
   f(k, u, p, tᵢ₋₁)
-  @.. uᵢ₋₃ = u + δt1*k
+  integrator.destats.nf += 1
+  @.. uᵢ₋₂ = u + a₃₁*k
+  @.. uᵢ₋₃ = u + a₄₁*k
+  @.. uᵢ₋₁ = u + a₂₁*k
+  @.. u    += B₁*k
+  integrator.opts.adaptive && (@.. tmp = B̂₁*k)
+
   # Stage-2
-  tᵢ₋₂ = tᵢ₋₁ + δt1
-  δt1 = dt*fpa[ccache.deg_index][2];
-  δt2 = dt*fpa[ccache.deg_index][3];
-  f(k2, uᵢ₋₃, p, tᵢ₋₁)
-  @.. uᵢ₋₄ = u + δt1*k + δt2*k2
+  tᵢ₋₂ = tᵢ₋₁ + a₂₁
+  f(k, uᵢ₋₁, p, tᵢ₋₂)
+  integrator.destats.nf += 1
+  @.. uᵢ₋₂ += a₃₂*k
+  @.. uᵢ₋₃ += a₄₂*k
+  @.. u    += B₂*k
+  integrator.opts.adaptive && (@.. tmp += B̂₂*k)
+
   # Stage-3
-  tᵢ₋₂ = tᵢ₋₁ + δt1 +δt2
-  δt1 = dt*fpa[ccache.deg_index][4]
-  δt2 = dt*fpa[ccache.deg_index][5]
-  δt3 = dt*fpa[ccache.deg_index][6]
-  f(k3, uᵢ₋₄, p, tᵢ₋₂)
-  @.. uᵢ₋₅ = u + δt1*k + δt2*k2 + δt3*k3
+  tᵢ₋₂ = tᵢ₋₁ + a₃₁ + a₃₂
+  f(k, uᵢ₋₂, p, tᵢ₋₂)
+  integrator.destats.nf += 1
+  @.. uᵢ₋₃ += a₄₃*k
+  @.. u    += B₃*k
+  integrator.opts.adaptive && (@.. tmp += B̂₃*k)
+
   #Stage-4
-  tᵢ₋₂ = tᵢ₋₁ + δt1 + δt2 + δt3
-  δt1 = dt*fpb[ccache.deg_index][1]
-  δt2 = dt*fpb[ccache.deg_index][2]
-  δt3 = dt*fpb[ccache.deg_index][3]
-  δt4 = dt*fpb[ccache.deg_index][4]
-  f(k4, uᵢ₋₅, p, tᵢ₋₂)
-  @.. u = u + δt1*k + δt2*k2 + δt3*k3 + δt4*k4
+  tᵢ₋₂ = tᵢ₋₁ + a₄₁ + a₄₂ + a₄₃
+  f(k, uᵢ₋₃, p, tᵢ₋₂)
+  integrator.destats.nf += 1
+  @.. u    += B₄*k
+  integrator.opts.adaptive && (tmp += B̂₄*k)
+
+  f(k, u, p, t + dt)
+  integrator.destats.nf += 1
+
   #Error estimate (embedded method of order 3)
-  δt1 = dt*fpbe[ccache.deg_index][1] - δt1
-  δt2 = dt*fpbe[ccache.deg_index][2] - δt2
-  δt3 = dt*fpbe[ccache.deg_index][3] - δt3
-  δt4 = dt*fpbe[ccache.deg_index][4] - δt4
-  δt5 = dt*fpbe[ccache.deg_index][5]
-  f(k5, u, p, t + dt)
-  integrator.destats.nf += 5
-  @.. tmp = δt1*k + δt2*k2 + δt3*k3 + δt4*k4 + δt5*k5
   if integrator.opts.adaptive
+    tmp  += B̂₅*uᵢ₋₁
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
+  @.. integrator.fsallast = k
   integrator.k[1] = integrator.fsalfirst
-  f(integrator.fsallast, u, p, t+dt)
   integrator.destats.nf += 1
   integrator.k[2] = integrator.fsallast
   integrator.u = u
