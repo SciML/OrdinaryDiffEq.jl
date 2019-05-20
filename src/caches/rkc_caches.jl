@@ -57,16 +57,10 @@ end
   uᵢ₋₁::uType
   uᵢ₋₂::uType
   uᵢ₋₃::uType
-  uᵢ₋₄::uType
-  uᵢ₋₅::uType
   tmp::uType
   atmp::uNoUnitsType
   fsalfirst::rateType
   k::rateType
-  k2::rateType
-  k3::rateType
-  k4::rateType
-  k5::rateType
   constantcache::ROCK4ConstantCache
 end
 
@@ -75,17 +69,11 @@ function alg_cache(alg::ROCK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   uᵢ₋₁ = similar(u)
   uᵢ₋₂ = similar(u)
   uᵢ₋₃ = similar(u)
-  uᵢ₋₄ = similar(u)
-  uᵢ₋₅ = similar(u)
   tmp = similar(u)
   atmp = similar(u,uEltypeNoUnits)
   fsalfirst = zero(rate_prototype)
   k = zero(rate_prototype)
-  k2 = zero(rate_prototype)
-  k3 = zero(rate_prototype)
-  k4 = zero(rate_prototype)
-  k5 = zero(rate_prototype)
-  ROCK4Cache(u, uprev, uᵢ₋₁, uᵢ₋₂, uᵢ₋₃, uᵢ₋₄, uᵢ₋₅, tmp, atmp, fsalfirst, k, k2, k3, k4, k5, constantcache)
+  ROCK4Cache(u, uprev, uᵢ₋₁, uᵢ₋₂, uᵢ₋₃, tmp, atmp, fsalfirst, k, constantcache)
 end
 
 function alg_cache(alg::ROCK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})

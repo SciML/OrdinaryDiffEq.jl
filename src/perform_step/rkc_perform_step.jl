@@ -262,7 +262,7 @@ end
 
 @muladd function perform_step!(integrator, cache::ROCK4Cache, repeat_step=false)
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
-  @unpack uᵢ₋₁, uᵢ₋₂, uᵢ₋₃, uᵢ₋₄, uᵢ₋₅, tmp, atmp, k, k2, k3, k4, k5 = cache
+  @unpack uᵢ₋₁, uᵢ₋₂, uᵢ₋₃, tmp, atmp, k= cache
   @unpack ms, fpa, fpb, fpbe, recf = cache.constantcache
   ccache = cache.constantcache
   maxeig!(integrator, cache)
