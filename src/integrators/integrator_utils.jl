@@ -303,8 +303,8 @@ end
 
 function calc_dt_propose!(integrator,dtnew)
   if (typeof(integrator.alg) <: Union{ROCK2,ROCK4}) && integrator.opts.adaptive && (integrator.iter >= 1)
-    (integrator.alg isa ROCK2) && (dtnew = min(dtnew,typeof(dtnew)((((min(integrator.alg.max_stages,200) - 5 - 1)^2.0 - 1.5)*0.811/integrator.eigen_est))))
-    (integrator.alg isa ROCK4) && (dtnew = min(dtnew,typeof(dtnew)((((min(integrator.alg.max_stages,152) - 5 - 1)^2.0 - 3)*0.353/integrator.eigen_est))))
+    (integrator.alg isa ROCK2) && (dtnew = min(dtnew,typeof(dtnew)((((min(integrator.alg.max_stages,200)^2.0)*.811 - 1.5)/integrator.eigen_est))))
+    (integrator.alg isa ROCK4) && (dtnew = min(dtnew,typeof(dtnew)((((min(integrator.alg.max_stages,152)^2.0)*.353 - 3)/integrator.eigen_est))))
   end
   dtpropose = integrator.tdir*min(abs(integrator.opts.dtmax),abs(dtnew))
   dtpropose = integrator.tdir*max(abs(dtpropose),abs(integrator.opts.dtmin))
