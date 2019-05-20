@@ -285,8 +285,8 @@ end
     ν = -1 - κ
     f(k, uᵢ₋₁, p, tᵢ₋₁)
     tᵢ₋₁ = (dt*μ) - ν*tᵢ₋₂ - κ*tᵢ₋₃
-    u = (dt*μ)*k - ν*uᵢ₋₁ - κ*uᵢ₋₂
-    i < ccache.mdeg && (uᵢ₋₂ .= uᵢ₋₁; uᵢ₋₁ .= u)
+    @.. u = (dt*μ)*k - ν*uᵢ₋₁ - κ*uᵢ₋₂
+    i < ccache.mdeg && (@.. uᵢ₋₂ .= uᵢ₋₁; uᵢ₋₁ .= u)
     tᵢ₋₃ = tᵢ₋₂
     tᵢ₋₂ = tᵢ₋₁
   end
@@ -343,7 +343,7 @@ end
 
   #Error estimate (embedded method of order 3)
   if integrator.opts.adaptive
-    tmp  += B̂₅*uᵢ₋₁
+    tmp  += B̂₅*k
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
