@@ -147,16 +147,14 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
       # Solve using Euler method
       @muladd u_temp = @.. uprev + dt_temp*integrator.fsalfirst
       k_temp = f(u_temp, p, t+dt_temp)
-      integrator.destats.nf += 1
 
       for j in 2:2^(i-1)
         @muladd u_temp = @.. u_temp + dt_temp*k_temp
         k_temp = f(u_temp, p, t+j*dt_temp)
-        integrator.destats.nf += 1
       end
       T[i,1] = u_temp
     end
-
+    integrator.destats.nf += 2*(2^(min(size(T)[1],cur_order+1)-1) - 1)
     # Richardson Extrapolation
     for i in 2:min(size(T)[1], cur_order+1)
       for j in 2:i
