@@ -17,7 +17,6 @@ end
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
   mdeg = Int(floor(sqrt((1.5 + dt*integrator.eigen_est)/0.811) + 1))
-  # (integrator.iter%10000 < 2 || integrator.iter%10000 > (10000-2)) && (println(integrator.iter,"   ",t, "   ", dt, "   ",mdeg, "   ",integrator.eigen_est))
   mdeg = min(max(mdeg,cache.min_stage), cache.max_stage)
   cache.mdeg = max(mdeg, 3) - 2
   choosedeg!(cache)
@@ -89,7 +88,6 @@ end
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
   mdeg = Int(floor(sqrt((1.5 + dt*integrator.eigen_est)/0.811) + 1))
-  # (integrator.iter%10000 < 2 || integrator.iter%10000 > (10000-2)) && (println(integrator.iter,"   ",t, "   ", dt, "   ",mdeg, "   ",integrator.eigen_est))
   mdeg = min(max(mdeg,ccache.min_stage), ccache.max_stage)
   ccache.mdeg = max(mdeg, 3) - 2
   choosedeg!(cache)
@@ -165,7 +163,6 @@ end
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
   mdeg = Int(floor(sqrt((3 + dt*integrator.eigen_est)/0.353) + 1))
-  # (integrator.iter%10000 < 2 || integrator.iter%10000 > (10000-2)) && (println(integrator.iter,"   ",t, "   ", dt, "   ",mdeg, "   ",integrator.eigen_est))
   mdeg = min(max(mdeg,cache.min_stage), cache.max_stage)
   cache.mdeg = max(mdeg, 5) - 4
   choosedeg!(cache)
@@ -271,7 +268,6 @@ end
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
   mdeg = Int(floor(sqrt((3 + dt*integrator.eigen_est)/0.353) + 1))
-  # (integrator.iter%10000 < 2 || integrator.iter%10000 > (10000-2)) && (println(integrator.iter,"   ",t, "   ", dt, "   ",mdeg, "   ",integrator.eigen_est))
   mdeg = min(max(mdeg,ccache.min_stage), ccache.max_stage)
   ccache.mdeg = max(mdeg, 5) - 4
   choosedeg!(cache)
