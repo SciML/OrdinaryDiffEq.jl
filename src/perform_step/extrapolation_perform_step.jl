@@ -18,11 +18,10 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
   @unpack k,fsalfirst,T,utilde,atmp,dtpropose,cur_order,A = cache
   @unpack u_tmps, k_tmps = cache
 
-  @muladd @.. u = uprev + dt*fsalfirst
-  @.. T[1,1] = u
+  max_order = min(size(T)[1],cur_order+1)
 
   if integrator.alg.threading == false
-    for i in 2:min(size(T)[1],cur_order+1)
+    for i in 1:max_order
       dt_temp = dt/(2^(i-1))
       # Solve using Euler method
       @muladd @.. u = uprev + dt_temp*fsalfirst
@@ -40,7 +39,7 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
       end
     end
   else
-    Threads.@threads for i in 2:min(size(T)[1],cur_order+1)
+    Threads.@threads for i in 1:ceil(Int, max_order/2)
       dt_temp = dt/(2^(i-1))
       # Solve using Euler method
       @muladd @.. u_tmps[Threads.threadid()] = uprev + dt_temp*fsalfirst
@@ -50,8 +49,21 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
         f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+j*dt_temp)
       end
       @.. T[i,1] = u_tmps[Threads.threadid()]
+
+      if max_order + 1 - i > i
+        dt_temp = dt/(2^((max_order + 1 - i)-1))
+        # Solve using Euler method
+        @muladd @.. u_tmps[Threads.threadid()] = uprev + dt_temp*fsalfirst
+        f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+dt_temp)
+        for j in 2:2^((max_order+1-i)-1)
+          @muladd @.. u_tmps[Threads.threadid()] = u_tmps[Threads.threadid()] + dt_temp*k_tmps[Threads.threadid()]
+          f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+j*dt_temp)
+        end
+        @.. T[max_order+1-i,1] = u_tmps[Threads.threadid()]
+      end
+
     end
-    integrator.destats.nf += 2*(2^(min(size(T)[1],cur_order+1)-1) - 1)
+    integrator.destats.nf += 2^max_order - 1
     # Richardson Extrapolation
     for i in 2:min(size(T)[1],cur_order+1)
       for j in 2:i
@@ -70,7 +82,7 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
       for i = range_start:min(size(T)[1], cur_order + 1)
           A = 2^(i-1)
           @.. utilde = T[i,i] - T[i,i-1]
-          atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+          atmp = calculate_residuals(utilde, uprev, T[i,i], integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
           EEst = integrator.opts.internalnorm(atmp,t)
 
           beta1 = integrator.opts.beta1
@@ -147,26 +159,31 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
     # Balance workload of threads by computing T[1,1] with T[max_order,1] on
     # same thread, T[2,1] with T[max_order-1,1] on same thread. Similarly fill
     # first column of T matrix
-    Threads.@threads for i in 1:ceil(max_order/2)
-      # indices array hold row index of T matrix to be computed in this
-      # execution of thread
-      indices = [Int(i)]
-      if max_order + 1 - i > i
-        push!(indices, max_order + 1 - i)
+    Threads.@threads for i in 1:ceil(Int, max_order/2)
+      # Caclulate T[i,1]
+      dt_temp = dt/2^(i-1)
+      @muladd u = @.. uprev + dt_temp*integrator.fsalfirst
+      k_temp = f(u, p, t+dt_temp)
+      for j in 2:2^(i-1)
+        @muladd u = @.. u + dt_temp*k_temp
+        k_temp = f(u, p, t+j*dt_temp)
       end
+      T[i,1] = u
 
-      for index in indices
-        dt_temp = dt/2^(index-1) # Romberg sequence
+      # If complement index of i in first column of T matrix exists,
+      # calculate T[max_order + 1 - i, 1], where "max_order + 1 - i"
+      # is complementary index to i_th index
+      if max_order + 1 - i > i
+        dt_temp = dt/2^((max_order + 1 - i) -1) # Romberg sequence
 
-        # Solve using Euler method with dt_temp = dt/n_{index}
         @muladd u = @.. uprev + dt_temp*integrator.fsalfirst
         k_temp = f(u, p, t+dt_temp)
-        for j in 2:2^(index-1)
+        for j in 2:2^((max_order + 1 - i)-1)
           @muladd u = @.. u + dt_temp*k_temp
           k_temp = f(u, p, t+j*dt_temp)
         end
 
-        T[index,1] = u
+        T[max_order + 1 - i,1] = u
       end
     end
     integrator.destats.nf += 2^(max_order) - 1
