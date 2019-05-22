@@ -18,4 +18,28 @@ setups = [Dict(:alg=>DP5())
 ]
 wp = WorkPrecisionSet(prob,abstols,reltols,setups;appxsol=test_sol,save_everystep=false,numruns=1000,maxiters=10000)
 using Plots; gr()
-DIAGRAMS["LotkaVolterra"] = plot(wp);
+DIAGRAMS["Lotka Volterra Low Order"] = plot(wp);
+
+setups = [Dict(:alg=>DP5())
+          Dict(:alg=>Tsit5())
+          Dict(:alg=>Vern6())
+]
+wp = WorkPrecisionSet(prob,abstols,reltols,setups;appxsol=test_sol,numruns=1000,maxiters=10000,error_estimate=:L2,dense_errors=true)
+DIAGRAMS["Lotka Volterra Low Order Interpolation"] = plot(wp);
+
+setups = [Dict(:alg=>DP8())
+          Dict(:alg=>Vern7())
+          Dict(:alg=>Vern8())
+          Dict(:alg=>Vern6())
+]
+wp = WorkPrecisionSet(prob,abstols,reltols,setups;appxsol=test_sol,save_everystep=false,numruns=1000,maxiters=1000)
+DIAGRAMS["Lotka Volterra High Order"] = plot(wp)
+
+
+setups = [Dict(:alg=>DP8())
+          Dict(:alg=>Vern7())
+          Dict(:alg=>Vern8())
+          Dict(:alg=>Vern6())
+]
+wp = WorkPrecisionSet(prob,abstols,reltols,setups;appxsol=test_sol,dense=true,numruns=1000,maxiters=1000,error_estimate=:L2)
+DIAGRAMS["Lotka Volterra High Order Interpolation"] = plot(wp)
