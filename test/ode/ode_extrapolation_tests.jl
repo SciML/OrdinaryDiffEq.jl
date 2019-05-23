@@ -26,22 +26,47 @@ testTol = 0.2
 
 @testset "Testing extrapolation methods" begin
 
-# Test RichardsonEuler
-@testset "Testing RichardsonEuler" begin
-  for prob in problem_array
-    global dts
+# Test AitkenNeville
+@testset "Testing AitkenNeville" begin
+  @testset "Testing sequential AitkenNeville" begin
+    for prob in problem_array
+      global dts
 
-    #  Convergence test
-    for j = 1:4
-      sim = test_convergence(dts,prob,AitkenNeville(j,j,j))
-      @test sim.𝒪est[:final] ≈ j atol=testTol
+      #  Convergence test
+      for j = 1:4
+        sim = test_convergence(dts,prob,AitkenNeville(max_order = j,
+          min_order = j, init_order = j, threading = false))
+        @test sim.𝒪est[:final] ≈ j atol=testTol
+      end
+
+       # Regression test
+      sol = solve(prob,AitkenNeville(max_order = 9, min_order = 1,
+          init_order = 9, threading = false),reltol=1e-3)
+      @test length(sol.u) < 15
+      sol = solve(prob,AitkenNeville(max_order = 9, min_order = 1,
+          init_order = 9, threading = false),reltol=1e-6)
+      @test length(sol.u) < 18
     end
+  end
+  @testset "Testing threaded AitkenNeville" begin
+    for prob in problem_array
+      global dts
 
-     # Regression test
-    sol = solve(prob,AitkenNeville(9,1,9),reltol=1e-3)
-    @test length(sol.u) < 15
-    sol = solve(prob,AitkenNeville(9,1,9),reltol=1e-6)
-    @test length(sol.u) < 18
+      #  Convergence test
+      for j = 1:4
+        sim = test_convergence(dts,prob,AitkenNeville(max_order = j,
+          min_order = j, init_order = j, threading = true))
+        @test sim.𝒪est[:final] ≈ j atol=testTol
+      end
+
+       # Regression test
+      sol = solve(prob,AitkenNeville(max_order = 9, min_order = 1,
+          init_order = 9, threading = true),reltol=1e-3)
+      @test length(sol.u) < 15
+      sol = solve(prob,AitkenNeville(max_order = 9, min_order = 1,
+          init_order = 9, threading = true),reltol=1e-6)
+      @test length(sol.u) < 18
+    end
   end
 end # AitkenNeville
 

@@ -20,7 +20,7 @@ AutoSwitch(nonstiffalg::nAlg, stiffalg::sAlg;
 
 function is_stiff(integrator, alg, ntol, stol, is_stiffalg)
   eigen_est, dt = integrator.eigen_est, integrator.dt
-  stiffness = eigen_est*dt/alg_stability_size(alg)
+  stiffness = abs(eigen_est*dt/alg_stability_size(alg)) # `abs` here is just for safety
   tol = is_stiffalg ? stol : ntol
   os = oneunit(stiffness)
   stiffness > os * tol
@@ -28,7 +28,7 @@ end
 
 function (AS::AutoSwitch)(integrator)
   integrator.iter == 0 && return Int(AS.stiffalgfirst) + 1
-  eigen_est, dt = integrator.eigen_est, integrator.dt
+  dt = integrator.dt
   # Successive stiffness test positives are counted by a positive integer,
   # and successive stiffness test negatives are counted by a negative integer
   AS.count = is_stiff(integrator, AS.nonstiffalg, AS.nonstifftol, AS.stifftol, AS.is_stiffalg) ?

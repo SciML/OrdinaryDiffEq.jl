@@ -43,8 +43,9 @@ struct AitkenNeville <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
   max_order::Int
   min_order::Int
   init_order::Int
+  threading::Bool
 end
-AitkenNeville(;max_order=10,min_order=1,init_order=5) = AitkenNeville(max_order,min_order,init_order)
+AitkenNeville(;max_order=10,min_order=1,init_order=5,threading=true) = AitkenNeville(max_order,min_order,init_order,threading)
 
 struct ExtrapolationMidpointDeuflhard <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
   n_min::Int # Minimal extrapolation order
@@ -474,8 +475,17 @@ JVODE_Adams(;kwargs...) = JVODE(:Adams;kwargs...)
 JVODE_BDF(;kwargs...) = JVODE(:BDF;kwargs...)
 
 # ROCK methods
-struct ROCK2 <: OrdinaryDiffEqAdaptiveAlgorithm end
-struct ROCK4 <: OrdinaryDiffEqAdaptiveAlgorithm end
+struct ROCK2 <: OrdinaryDiffEqAdaptiveAlgorithm
+  min_stages::Int
+  max_stages::Int
+end
+ROCK2(;min_stages=0,max_stages=200) = ROCK2(min_stages,max_stages)
+
+struct ROCK4 <: OrdinaryDiffEqAdaptiveAlgorithm
+  min_stages::Int
+  max_stages::Int
+end
+ROCK4(;min_stages=0,max_stages=152) = ROCK4(min_stages,max_stages)
 
 # SERK methods
 struct ESERK4 <: OrdinaryDiffEqAdaptiveAlgorithm end
