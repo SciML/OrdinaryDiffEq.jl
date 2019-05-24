@@ -18,11 +18,10 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
   @unpack k,fsalfirst,T,utilde,atmp,dtpropose,cur_order,A = cache
   @unpack u_tmps, k_tmps = cache
 
-  @muladd @.. u = uprev + dt*fsalfirst
-  @.. T[1,1] = u
+  max_order = min(size(T)[1],cur_order+1)
 
   if integrator.alg.threading == false
-    for i in 2:min(size(T)[1],cur_order+1)
+    for i in 1:max_order
       dt_temp = dt/(2^(i-1))
       # Solve using Euler method
       @muladd @.. u = uprev + dt_temp*fsalfirst
@@ -40,18 +39,32 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
       end
     end
   else
-    Threads.@threads for i in 2:min(size(T)[1],cur_order+1)
-      dt_temp = dt/(2^(i-1))
-      # Solve using Euler method
-      @muladd @.. u_tmps[Threads.threadid()] = uprev + dt_temp*fsalfirst
-      f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+dt_temp)
-      for j in 2:2^(i-1)
-        @muladd @.. u_tmps[Threads.threadid()] = u_tmps[Threads.threadid()] + dt_temp*k_tmps[Threads.threadid()]
-        f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+j*dt_temp)
+    # Balance workload of threads by computing T[1,1] with T[max_order,1] on
+    # same thread, T[2,1] with T[max_order-1,1] on same thread. Similarly fill
+    # first column of T matrix
+    Threads.@threads for i in 1:ceil(Int, max_order/2)
+      indices = (i, max_order + 1 - i)
+
+      for index in indices
+        dt_temp = dt/(2^(index-1))
+        # Solve using Euler method
+        @muladd @.. u_tmps[Threads.threadid()] = uprev + dt_temp*fsalfirst
+        f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+dt_temp)
+        for j in 2:2^(index-1)
+          @muladd @.. u_tmps[Threads.threadid()] = u_tmps[Threads.threadid()] + dt_temp*k_tmps[Threads.threadid()]
+          f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+j*dt_temp)
+        end
+        @.. T[index,1] = u_tmps[Threads.threadid()]
+        # If complement index of i in first column of T matrix exists,
+        # calculate T[max_order + 1 - i, 1], where "max_order + 1 - i"
+        # is complementary index to i_th index
+        if indices[2] <= indices[1]
+            break
+        end
       end
-      @.. T[i,1] = u_tmps[Threads.threadid()]
+
     end
-    integrator.destats.nf += 2*(2^(min(size(T)[1],cur_order+1)-1) - 1)
+    integrator.destats.nf += 2^max_order - 1
     # Richardson Extrapolation
     for i in 2:min(size(T)[1],cur_order+1)
       for j in 2:i
@@ -70,7 +83,7 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
       for i = range_start:min(size(T)[1], cur_order + 1)
           A = 2^(i-1)
           @.. utilde = T[i,i] - T[i,i-1]
-          atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+          atmp = calculate_residuals(utilde, uprev, T[i,i], integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
           EEst = integrator.opts.internalnorm(atmp,t)
 
           beta1 = integrator.opts.beta1
@@ -120,12 +133,13 @@ end
 function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=false)
   @unpack t,dt,uprev,f,p = integrator
   @unpack dtpropose, T, cur_order, work, A = cache
-  @muladd u = @.. uprev + dt*integrator.fsalfirst
-  T[1,1] = u
+
+  max_order = min(size(T)[1], cur_order+1)
   if integrator.alg.threading == false
-    for i in 2:min(size(T)[1], cur_order+1)
-      dt_temp = dt/(2^(i-1))
-      # Solve using Euler method
+    for i in 1:max_order
+      dt_temp = dt/(2^(i-1)) # Romberg sequence
+      
+      # Solve using Euler method with dt_temp = dt/n_{i}
       @muladd u = @.. uprev + dt_temp*integrator.fsalfirst
       k = f(u, p, t+dt_temp)
       integrator.destats.nf += 1
@@ -142,19 +156,33 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
       end
     end
   else
-    Threads.@threads for i in 2:min(size(T)[1], cur_order+1)
-      dt_temp = dt/(2^(i-1))
-      # Solve using Euler method
-      @muladd u_temp = @.. uprev + dt_temp*integrator.fsalfirst
-      k_temp = f(u_temp, p, t+dt_temp)
 
-      for j in 2:2^(i-1)
-        @muladd u_temp = @.. u_temp + dt_temp*k_temp
-        k_temp = f(u_temp, p, t+j*dt_temp)
+    # Balance workload of threads by computing T[1,1] with T[max_order,1] on
+    # same thread, T[2,1] with T[max_order-1,1] on same thread. Similarly fill
+    # first column of T matrix
+    Threads.@threads for i in 1:ceil(Int, max_order/2)
+
+      indices = (i, max_order + 1 - i)
+
+      for index in indices
+        dt_temp = dt/2^(index - 1)
+        @muladd u = @.. uprev + dt_temp*integrator.fsalfirst
+        k_temp = f(u, p, t+dt_temp)
+        for j in 2:2^(index-1)
+          @muladd u = @.. u + dt_temp*k_temp
+          k_temp = f(u, p, t+j*dt_temp)
+        end
+        T[index,1] = u
+        # If complement index of i in first column of T matrix exists,
+        # calculate T[max_order + 1 - i, 1], where "max_order + 1 - i"
+        # is complementary index to i_th index
+        if indices[2] <= indices[1]
+            break
+        end
       end
-      T[i,1] = u_temp
     end
-    integrator.destats.nf += 2*(2^(min(size(T)[1],cur_order+1)-1) - 1)
+    integrator.destats.nf += 2^(max_order) - 1
+
     # Richardson Extrapolation
     for i in 2:min(size(T)[1], cur_order+1)
       for j in 2:i
@@ -171,10 +199,9 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
       end
 
       for i = range_start:min(size(T)[1], cur_order + 1)
-
           A = 2^(i-1)
           utilde = T[i,i] - T[i,i-1]
-          atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+          atmp = calculate_residuals(utilde, uprev, T[i,i], integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
           EEst = integrator.opts.internalnorm(atmp,t)
 
           beta1 = integrator.opts.beta1
@@ -201,6 +228,8 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
   end
 
   cache.step_no = cache.step_no + 1
+
+  # Use extrapolated value of u
   integrator.u = T[cache.cur_order,cache.cur_order]
 
   k = f(integrator.u, p, t+dt)
@@ -208,8 +237,6 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
   integrator.fsallast = k
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-
-  # Use extrapolated value of u
 end
 
 function initialize!(integrator,cache::ExtrapolationMidpointDeuflhardCache)
