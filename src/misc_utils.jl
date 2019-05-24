@@ -73,3 +73,6 @@ macro cache(expr)
     $(esc(:jac_iter))($(esc(:c))::$name) = tuple($(jac_vars...))
   end
 end
+
+constvalue(x) = constvalue(DiffEqBase.value(x))
+constvalue(x::Complex) = constvalue(real(x))
