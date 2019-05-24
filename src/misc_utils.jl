@@ -74,5 +74,9 @@ macro cache(expr)
   end
 end
 
-constvalue(x) = constvalue(DiffEqBase.value(x))
-constvalue(x::Complex) = constvalue(real(x))
+# Nest one layer of value in order to get rid of possible Dual{Complex} or Complex{Dual} issues
+# value should recurse for anything else.
+function constvalue(x)
+  _x = DiffEqBase.value(x)
+  _x isa Complex ? DiffEqBase.value(real(_x)) : DiffEqBase.value(_x)
+end
