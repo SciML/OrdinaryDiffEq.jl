@@ -39,27 +39,28 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
       end
     end
   else
+    # Balance workload of threads by computing T[1,1] with T[max_order,1] on
+    # same thread, T[2,1] with T[max_order-1,1] on same thread. Similarly fill
+    # first column of T matrix
     Threads.@threads for i in 1:ceil(Int, max_order/2)
-      dt_temp = dt/(2^(i-1))
-      # Solve using Euler method
-      @muladd @.. u_tmps[Threads.threadid()] = uprev + dt_temp*fsalfirst
-      f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+dt_temp)
-      for j in 2:2^(i-1)
-        @muladd @.. u_tmps[Threads.threadid()] = u_tmps[Threads.threadid()] + dt_temp*k_tmps[Threads.threadid()]
-        f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+j*dt_temp)
-      end
-      @.. T[i,1] = u_tmps[Threads.threadid()]
+      indices = (i, max_order + 1 - i)
 
-      if max_order + 1 - i > i
-        dt_temp = dt/(2^((max_order + 1 - i)-1))
+      for index in indices
+        dt_temp = dt/(2^(index-1))
         # Solve using Euler method
         @muladd @.. u_tmps[Threads.threadid()] = uprev + dt_temp*fsalfirst
         f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+dt_temp)
-        for j in 2:2^((max_order+1-i)-1)
+        for j in 2:2^(index-1)
           @muladd @.. u_tmps[Threads.threadid()] = u_tmps[Threads.threadid()] + dt_temp*k_tmps[Threads.threadid()]
           f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+j*dt_temp)
         end
-        @.. T[max_order+1-i,1] = u_tmps[Threads.threadid()]
+        @.. T[index,1] = u_tmps[Threads.threadid()]
+        # If complement index of i in first column of T matrix exists,
+        # calculate T[max_order + 1 - i, 1], where "max_order + 1 - i"
+        # is complementary index to i_th index
+        if indices[2] <= indices[1]
+            break
+        end
       end
 
     end
@@ -160,30 +161,24 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
     # same thread, T[2,1] with T[max_order-1,1] on same thread. Similarly fill
     # first column of T matrix
     Threads.@threads for i in 1:ceil(Int, max_order/2)
-      # Caclulate T[i,1]
-      dt_temp = dt/2^(i-1)
-      @muladd u = @.. uprev + dt_temp*integrator.fsalfirst
-      k_temp = f(u, p, t+dt_temp)
-      for j in 2:2^(i-1)
-        @muladd u = @.. u + dt_temp*k_temp
-        k_temp = f(u, p, t+j*dt_temp)
-      end
-      T[i,1] = u
 
-      # If complement index of i in first column of T matrix exists,
-      # calculate T[max_order + 1 - i, 1], where "max_order + 1 - i"
-      # is complementary index to i_th index
-      if max_order + 1 - i > i
-        dt_temp = dt/2^((max_order + 1 - i) -1) # Romberg sequence
+      indices = (i, max_order + 1 - i)
 
+      for index in indices
+        dt_temp = dt/2^(index - 1)
         @muladd u = @.. uprev + dt_temp*integrator.fsalfirst
         k_temp = f(u, p, t+dt_temp)
-        for j in 2:2^((max_order + 1 - i)-1)
+        for j in 2:2^(index-1)
           @muladd u = @.. u + dt_temp*k_temp
           k_temp = f(u, p, t+j*dt_temp)
         end
-
-        T[max_order + 1 - i,1] = u
+        T[index,1] = u
+        # If complement index of i in first column of T matrix exists,
+        # calculate T[max_order + 1 - i, 1], where "max_order + 1 - i"
+        # is complementary index to i_th index
+        if indices[2] <= indices[1]
+            break
+        end
       end
     end
     integrator.destats.nf += 2^(max_order) - 1
