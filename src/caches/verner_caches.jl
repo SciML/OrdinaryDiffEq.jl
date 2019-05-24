@@ -17,7 +17,7 @@
 end
 
 function alg_cache(alg::Vern6,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tab = Vern6ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = Vern6ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   k1 = zero(rate_prototype)
   k2 = zero(rate_prototype); k3 = k2;                   k4 = zero(rate_prototype);
   k5 = zero(rate_prototype); k6 = zero(rate_prototype); k7 = zero(rate_prototype);
@@ -26,7 +26,7 @@ function alg_cache(alg::Vern6,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   Vern6Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,utilde,tmp,atmp,tab)
 end
 
-alg_cache(alg::Vern6,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = Vern6ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+alg_cache(alg::Vern6,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = Vern6ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
 @cache struct Vern7Cache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -48,7 +48,7 @@ alg_cache(alg::Vern6,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeN
 end
 
 function alg_cache(alg::Vern7,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tab = Vern7ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = Vern7ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   k1 = zero(rate_prototype); k2 = zero(rate_prototype); k3 = k2                  ; k4 = zero(rate_prototype);
   k5 = zero(rate_prototype); k6 = zero(rate_prototype); k7 = zero(rate_prototype); k8 = zero(rate_prototype);
   k9 = zero(rate_prototype); k10 = k2                 ; utilde = similar(u)
@@ -56,7 +56,7 @@ function alg_cache(alg::Vern7,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   Vern7Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,utilde,tmp,atmp,tab)
 end
 
-alg_cache(alg::Vern7,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = Vern7ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+alg_cache(alg::Vern7,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = Vern7ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
 @cache struct Vern8Cache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -81,7 +81,7 @@ alg_cache(alg::Vern7,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeN
 end
 
 function alg_cache(alg::Vern8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tab = Vern8ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = Vern8ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   k1 = zero(rate_prototype); k2 = zero(rate_prototype); k3 = k2;
   k4 = zero(rate_prototype);
   k5 = k2                  ; k6 = zero(rate_prototype); k7 = zero(rate_prototype);
@@ -93,7 +93,7 @@ function alg_cache(alg::Vern8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   Vern8Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,utilde,tmp,atmp,tab)
 end
 
-alg_cache(alg::Vern8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = Vern8ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+alg_cache(alg::Vern8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = Vern8ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
 @cache struct Vern9Cache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
@@ -121,7 +121,7 @@ alg_cache(alg::Vern8,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeN
 end
 
 function alg_cache(alg::Vern9,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tab = Vern9ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = Vern9ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   k1 = zero(rate_prototype); k2 = zero(rate_prototype);k3 = k2;
   k4 = zero(rate_prototype);
   k5 = k3;                   k6 = zero(rate_prototype);k7 = k4;
@@ -134,4 +134,4 @@ function alg_cache(alg::Vern9,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   Vern9Cache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16,utilde,tmp,atmp,tab)
 end
 
-alg_cache(alg::Vern9,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = Vern9ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+alg_cache(alg::Vern9,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = Vern9ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))

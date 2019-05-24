@@ -25,7 +25,7 @@ function alg_cache(alg::AN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
   l = fill(zero(tTypeNoUnits),N+1); m = zero(l)
   c_LTE = c_conv = zero(tTypeNoUnits)
   dts = fill(zero(dt), 6)
-  tsit5tab = Tsit5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tsit5tab = Tsit5ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   AN5ConstantCache(z,l,m,c_LTE,c_conv,dts,Δ,tsit5tab,1)
 end
 
@@ -57,7 +57,7 @@ end
 function alg_cache(alg::AN5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   #################################################
   # Tsit5
-  tab = Tsit5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = Tsit5ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   # Cannot alias pointers, since we have to use `k`s to start the Nordsieck vector
   k1 = zero(rate_prototype); k2 = zero(rate_prototype)
   k3 = zero(rate_prototype); k4 = zero(rate_prototype)
@@ -129,7 +129,7 @@ function alg_cache(alg::JVODE,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   l = fill(zero(tTypeNoUnits), N+1); m = zero(l)
   c_LTE₊₁ = c_LTE = c_LTE₋₁ = c_conv = c_𝒟 = prev_𝒟 = zero(tTypeNoUnits)
   dts = fill(zero(dt),N+1)
-  tsit5tab = Tsit5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tsit5tab = Tsit5ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   η = zero(dt/dt)
   JVODEConstantCache(z,l,m,
                      c_LTE₊₁,c_LTE,c_LTE₋₁,c_conv,c_𝒟 ,prev_𝒟,
@@ -185,7 +185,7 @@ function alg_cache(alg::JVODE,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   #################################################
   # Tsit5
   # Cannot alias pointers, since we have to use `k`s to start the Nordsieck vector
-  tab = Tsit5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = Tsit5ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   k1 = zero(rate_prototype); k2 = zero(rate_prototype); k3 = zero(rate_prototype); k4 = zero(rate_prototype)
   k5 = zero(rate_prototype); k6 = zero(rate_prototype); k7 = zero(rate_prototype)
   utilde = similar(u)

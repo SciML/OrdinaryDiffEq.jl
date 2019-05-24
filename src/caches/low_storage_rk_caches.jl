@@ -105,12 +105,12 @@ function alg_cache(alg::CarpenterKennedy2N54,u,rate_prototype,uEltypeNoUnits,uBo
       wrapper = nothing
     end
   end
-  tab = CarpenterKennedy2N54ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = CarpenterKennedy2N54ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK2NCache(u,uprev,k,tmp,tab,wrapper,williamson_condition)
 end
 
 function alg_cache(alg::CarpenterKennedy2N54,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  CarpenterKennedy2N54ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  CarpenterKennedy2N54ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
@@ -719,12 +719,12 @@ function alg_cache(alg::ParsaniKetchesonDeconinck3S32,u,rate_prototype,uEltypeNo
   else
     fsalfirst = k
   end
-  tab = ParsaniKetchesonDeconinck3S32ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = ParsaniKetchesonDeconinck3S32ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK3SCache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
 function alg_cache(alg::ParsaniKetchesonDeconinck3S32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  ParsaniKetchesonDeconinck3S32ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  ParsaniKetchesonDeconinck3S32ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
@@ -795,12 +795,12 @@ function alg_cache(alg::ParsaniKetchesonDeconinck3S82,u,rate_prototype,uEltypeNo
   else
     fsalfirst = k
   end
-  tab = ParsaniKetchesonDeconinck3S82ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = ParsaniKetchesonDeconinck3S82ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK3SCache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
 function alg_cache(alg::ParsaniKetchesonDeconinck3S82,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  ParsaniKetchesonDeconinck3S82ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  ParsaniKetchesonDeconinck3S82ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
@@ -853,12 +853,12 @@ function alg_cache(alg::ParsaniKetchesonDeconinck3S53,u,rate_prototype,uEltypeNo
   else
     fsalfirst = k
   end
-  tab = ParsaniKetchesonDeconinck3S53ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = ParsaniKetchesonDeconinck3S53ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK3SCache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
 function alg_cache(alg::ParsaniKetchesonDeconinck3S53,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  ParsaniKetchesonDeconinck3S53ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  ParsaniKetchesonDeconinck3S53ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
@@ -983,12 +983,12 @@ function alg_cache(alg::ParsaniKetchesonDeconinck3S173,u,rate_prototype,uEltypeN
   else
     fsalfirst = k
   end
-  tab = ParsaniKetchesonDeconinck3S173ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = ParsaniKetchesonDeconinck3S173ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK3SCache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
 function alg_cache(alg::ParsaniKetchesonDeconinck3S173,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  ParsaniKetchesonDeconinck3S173ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  ParsaniKetchesonDeconinck3S173ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
@@ -1065,12 +1065,12 @@ function alg_cache(alg::ParsaniKetchesonDeconinck3S94,u,rate_prototype,uEltypeNo
   else
     fsalfirst = k
   end
-  tab = ParsaniKetchesonDeconinck3S94ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = ParsaniKetchesonDeconinck3S94ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK3SCache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
 function alg_cache(alg::ParsaniKetchesonDeconinck3S94,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  ParsaniKetchesonDeconinck3S94ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  ParsaniKetchesonDeconinck3S94ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
@@ -1201,12 +1201,12 @@ function alg_cache(alg::ParsaniKetchesonDeconinck3S184,u,rate_prototype,uEltypeN
   else
     fsalfirst = k
   end
-  tab = ParsaniKetchesonDeconinck3S184ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = ParsaniKetchesonDeconinck3S184ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK3SCache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
 function alg_cache(alg::ParsaniKetchesonDeconinck3S184,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  ParsaniKetchesonDeconinck3S184ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  ParsaniKetchesonDeconinck3S184ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
@@ -1289,12 +1289,12 @@ function alg_cache(alg::ParsaniKetchesonDeconinck3S105,u,rate_prototype,uEltypeN
   else
     fsalfirst = k
   end
-  tab = ParsaniKetchesonDeconinck3S105ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = ParsaniKetchesonDeconinck3S105ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK3SCache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
 function alg_cache(alg::ParsaniKetchesonDeconinck3S105,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  ParsaniKetchesonDeconinck3S105ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  ParsaniKetchesonDeconinck3S105ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
@@ -1437,12 +1437,12 @@ function alg_cache(alg::ParsaniKetchesonDeconinck3S205,u,rate_prototype,uEltypeN
   else
     fsalfirst = k
   end
-  tab = ParsaniKetchesonDeconinck3S205ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = ParsaniKetchesonDeconinck3S205ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK3SCache(u,uprev,k,tmp,fsalfirst,tab)
 end
 
 function alg_cache(alg::ParsaniKetchesonDeconinck3S205,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  ParsaniKetchesonDeconinck3S205ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  ParsaniKetchesonDeconinck3S205ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
@@ -1507,12 +1507,12 @@ function alg_cache(alg::CKLLSRK43_2,u,rate_prototype,uEltypeNoUnits,uBottomEltyp
   else
     fsalfirst = k
   end
-  tab = CKLLSRK43_2ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = CKLLSRK43_2ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK2RPCache(u,uprev,k,gprev,fsalfirst,tmp,atmp,tab)
 end
 
 function alg_cache(alg::CKLLSRK43_2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  CKLLSRK43_2ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  CKLLSRK43_2ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
@@ -1558,12 +1558,12 @@ function alg_cache(alg::CKLLSRK54_3C,u,rate_prototype,uEltypeNoUnits,uBottomElty
   else
     fsalfirst = k
   end
-  tab = CKLLSRK54_3CConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = CKLLSRK54_3CConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK2RPCache(u,uprev,k,gprev,fsalfirst,tmp,atmp,tab)
 end
 
 function alg_cache(alg::CKLLSRK54_3C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  CKLLSRK54_3CConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  CKLLSRK54_3CConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
@@ -1625,12 +1625,12 @@ function alg_cache(alg::CKLLSRK95_4S,u,rate_prototype,uEltypeNoUnits,uBottomElty
   else
     fsalfirst = k
   end
-  tab = CKLLSRK95_4SConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = CKLLSRK95_4SConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK2RPCache(u,uprev,k,gprev,fsalfirst,tmp,atmp,tab)
 end
 
 function alg_cache(alg::CKLLSRK95_4S,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  CKLLSRK95_4SConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  CKLLSRK95_4SConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
@@ -1692,12 +1692,12 @@ function alg_cache(alg::CKLLSRK95_4C,u,rate_prototype,uEltypeNoUnits,uBottomElty
   else
     fsalfirst = k
   end
-  tab = CKLLSRK95_4CConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = CKLLSRK95_4CConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK2RPCache(u,uprev,k,gprev,fsalfirst,tmp,atmp,tab)
 end
 
 function alg_cache(alg::CKLLSRK95_4C,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  CKLLSRK95_4CConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  CKLLSRK95_4CConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
@@ -1759,12 +1759,12 @@ function alg_cache(alg::CKLLSRK95_4M,u,rate_prototype,uEltypeNoUnits,uBottomElty
   else
     fsalfirst = k
   end
-  tab = CKLLSRK95_4MConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = CKLLSRK95_4MConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK2RPCache(u,uprev,k,gprev,fsalfirst,tmp,atmp,tab)
 end
 
 function alg_cache(alg::CKLLSRK95_4M,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  CKLLSRK95_4MConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  CKLLSRK95_4MConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
@@ -1846,12 +1846,12 @@ function alg_cache(alg::CKLLSRK54_3C_3R,u,rate_prototype,uEltypeNoUnits,uBottomE
   else
     fsalfirst = k
   end
-  tab = CKLLSRK54_3C_3RConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = CKLLSRK54_3C_3RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK3RPCache(u,uprev,k,uᵢ₋₁,uᵢ₋₂,fᵢ₋₂,gprev,fsalfirst,tmp,atmp,tab)
 end
 
 function alg_cache(alg::CKLLSRK54_3C_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  CKLLSRK54_3C_3RConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  CKLLSRK54_3C_3RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
@@ -1906,12 +1906,12 @@ function alg_cache(alg::CKLLSRK54_3M_3R,u,rate_prototype,uEltypeNoUnits,uBottomE
   else
     fsalfirst = k
   end
-  tab = CKLLSRK54_3M_3RConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = CKLLSRK54_3M_3RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK3RPCache(u,uprev,k,uᵢ₋₁,uᵢ₋₂,fᵢ₋₂,gprev,fsalfirst,tmp,atmp,tab)
 end
 
 function alg_cache(alg::CKLLSRK54_3M_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  CKLLSRK54_3M_3RConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  CKLLSRK54_3M_3RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
@@ -1966,12 +1966,12 @@ function alg_cache(alg::CKLLSRK54_3N_3R,u,rate_prototype,uEltypeNoUnits,uBottomE
   else
     fsalfirst = k
   end
-  tab = CKLLSRK54_3N_3RConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = CKLLSRK54_3N_3RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK3RPCache(u,uprev,k,uᵢ₋₁,uᵢ₋₂,fᵢ₋₂,gprev,fsalfirst,tmp,atmp,tab)
 end
 
 function alg_cache(alg::CKLLSRK54_3N_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  CKLLSRK54_3N_3RConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  CKLLSRK54_3N_3RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
@@ -2041,12 +2041,12 @@ function alg_cache(alg::CKLLSRK85_4C_3R,u,rate_prototype,uEltypeNoUnits,uBottomE
   else
     fsalfirst = k
   end
-  tab = CKLLSRK85_4C_3RConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = CKLLSRK85_4C_3RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK3RPCache(u,uprev,k,uᵢ₋₁,uᵢ₋₂,fᵢ₋₂,gprev,fsalfirst,tmp,atmp,tab)
 end
 
 function alg_cache(alg::CKLLSRK85_4C_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  CKLLSRK85_4C_3RConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  CKLLSRK85_4C_3RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
@@ -2116,12 +2116,12 @@ function alg_cache(alg::CKLLSRK85_4M_3R,u,rate_prototype,uEltypeNoUnits,uBottomE
   else
     fsalfirst = k
   end
-  tab = CKLLSRK85_4M_3RConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = CKLLSRK85_4M_3RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK3RPCache(u,uprev,k,uᵢ₋₁,uᵢ₋₂,fᵢ₋₂,gprev,fsalfirst,tmp,atmp,tab)
 end
 
 function alg_cache(alg::CKLLSRK85_4M_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  CKLLSRK85_4M_3RConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  CKLLSRK85_4M_3RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
@@ -2191,12 +2191,12 @@ function alg_cache(alg::CKLLSRK85_4P_3R,u,rate_prototype,uEltypeNoUnits,uBottomE
   else
     fsalfirst = k
   end
-  tab = CKLLSRK85_4P_3RConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = CKLLSRK85_4P_3RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK3RPCache(u,uprev,k,uᵢ₋₁,uᵢ₋₂,fᵢ₋₂,gprev,fsalfirst,tmp,atmp,tab)
 end
 
 function alg_cache(alg::CKLLSRK85_4P_3R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  CKLLSRK85_4P_3RConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  CKLLSRK85_4P_3RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
@@ -2288,12 +2288,12 @@ function alg_cache(alg::CKLLSRK54_3N_4R,u,rate_prototype,uEltypeNoUnits,uBottomE
   else
     fsalfirst = k
   end
-  tab = CKLLSRK54_3N_4RConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = CKLLSRK54_3N_4RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK4RPCache(u,uprev,k,uᵢ₋₁,uᵢ₋₂,uᵢ₋₃,fᵢ₋₂,fᵢ₋₃,gprev,fsalfirst,tmp,atmp,tab)
 end
 
 function alg_cache(alg::CKLLSRK54_3N_4R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  CKLLSRK54_3N_4RConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  CKLLSRK54_3N_4RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
@@ -2356,12 +2356,12 @@ function alg_cache(alg::CKLLSRK54_3M_4R,u,rate_prototype,uEltypeNoUnits,uBottomE
   else
     fsalfirst = k
   end
-  tab = CKLLSRK54_3M_4RConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = CKLLSRK54_3M_4RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK4RPCache(u,uprev,k,uᵢ₋₁,uᵢ₋₂,uᵢ₋₃,fᵢ₋₂,fᵢ₋₃,gprev,fsalfirst,tmp,atmp,tab)
 end
 
 function alg_cache(alg::CKLLSRK54_3M_4R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  CKLLSRK54_3M_4RConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  CKLLSRK54_3M_4RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
@@ -2430,12 +2430,12 @@ function alg_cache(alg::CKLLSRK65_4M_4R,u,rate_prototype,uEltypeNoUnits,uBottomE
   else
     fsalfirst = k
   end
-  tab = CKLLSRK65_4M_4RConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = CKLLSRK65_4M_4RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK4RPCache(u,uprev,k,uᵢ₋₁,uᵢ₋₂,uᵢ₋₃,fᵢ₋₂,fᵢ₋₃,gprev,fsalfirst,tmp,atmp,tab)
 end
 
 function alg_cache(alg::CKLLSRK65_4M_4R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  CKLLSRK65_4M_4RConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  CKLLSRK65_4M_4RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
@@ -2516,12 +2516,12 @@ function alg_cache(alg::CKLLSRK85_4FM_4R,u,rate_prototype,uEltypeNoUnits,uBottom
   else
     fsalfirst = k
   end
-  tab = CKLLSRK85_4FM_4RConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = CKLLSRK85_4FM_4RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK4RPCache(u,uprev,k,uᵢ₋₁,uᵢ₋₂,uᵢ₋₃,fᵢ₋₂,fᵢ₋₃,gprev,fsalfirst,tmp,atmp,tab)
 end
 
 function alg_cache(alg::CKLLSRK85_4FM_4R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  CKLLSRK85_4FM_4RConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  CKLLSRK85_4FM_4RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
 
 
@@ -2638,10 +2638,10 @@ function alg_cache(alg::CKLLSRK75_4M_5R,u,rate_prototype,uEltypeNoUnits,uBottomE
   else
     fsalfirst = k
   end
-  tab = CKLLSRK75_4M_5RConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = CKLLSRK75_4M_5RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   LowStorageRK5RPCache(u,uprev,k,uᵢ₋₁,uᵢ₋₂,uᵢ₋₃,uᵢ₋₄,fᵢ₋₂,fᵢ₋₃,fᵢ₋₄,gprev,fsalfirst,tmp,atmp,tab)
 end
 
 function alg_cache(alg::CKLLSRK75_4M_5R,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  CKLLSRK75_4M_5RConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  CKLLSRK75_4M_5RConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 end
