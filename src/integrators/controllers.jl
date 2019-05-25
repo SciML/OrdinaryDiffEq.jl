@@ -76,7 +76,12 @@ end
   return integrator.dt/qacc
 end
 
-standard_step_accept_controller!(integrator, alg, q) = integrator.dt/q
+@inline function standard_step_accept_controller!(integrator, alg, q)
+  if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
+    q = one(q)
+  end
+  integrator.dt/q
+end
 
 @inline function PI_step_accept_controller!(integrator, alg, q)
   if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
@@ -118,7 +123,11 @@ function stepsize_controller!(integrator, alg::JVODE)
 end
 
 function step_accept_controller!(integrator,alg::JVODE,η)
-  return η * integrator.dt  # dtnew
+  q = inv(η)
+  if q <= integrator.opts.qsteady_max && q >= integrator.opts.qsteady_min
+    q = one(q)
+  end
+  return integrator.dt/q  # dtnew
 end
 
 function step_reject_controller!(integrator,alg::JVODE)
