@@ -73,3 +73,10 @@ macro cache(expr)
     $(esc(:jac_iter))($(esc(:c))::$name) = tuple($(jac_vars...))
   end
 end
+
+# Nest one layer of value in order to get rid of possible Dual{Complex} or Complex{Dual} issues
+# value should recurse for anything else.
+function constvalue(x)
+  _x = DiffEqBase.value(x)
+  _x isa Complex ? DiffEqBase.value(real(_x)) : DiffEqBase.value(_x)
+end

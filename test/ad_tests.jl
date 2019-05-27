@@ -33,3 +33,17 @@ p = [2.0, 1.0]
 findiff = Calculus.finite_difference_jacobian(test_f2,p)
 fordiff = ForwardDiff.jacobian(test_f2,p)
 @test findiff ≈ fordiff
+
+# Gradients and Hessians
+
+function myobj(θ)
+  f(u,p,t) = -θ[1]*u
+  u0, _ = promote(10.0, θ[1])
+  prob = ODEProblem(f, u0, (0.0, 1.0))
+  sol = solve(prob, Tsit5(), dt = 0.1)
+  diff = sol.u - 10*exp.(-sol.t)
+  return diff'diff
+end
+
+ForwardDiff.gradient(myobj, [1.0])
+ForwardDiff.hessian(myobj, [1.0])

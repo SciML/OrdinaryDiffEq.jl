@@ -51,6 +51,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
   for iter in 1:maxiter
     if integrator.alg isa IRKC
       fz = f.f2(z, p, t)
+      integrator.destats.nf2 += 1
       tmp = fz - cache.du₂
     else
       fz = f(z, p, t)
@@ -145,6 +146,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
   for iter in 1:maxiter
     if integrator.alg isa IRKC
       f.f2(fz, z, p, t)
+      integrator.destats.nf2 += 1
       @.. atmp = fz - cache.du₂
     else
       f(fz, z, p, t)

@@ -206,7 +206,7 @@ function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
     W = similar(J)
   end
   tmp = zero(rate_prototype)
-  tab = ROS3PConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = ROS3PConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
@@ -221,7 +221,7 @@ end
 function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  Rosenbrock33ConstantCache(tf,uf,ROS3PConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits)))
+  Rosenbrock33ConstantCache(tf,uf,ROS3PConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)))
 end
 
 @cache mutable struct Rosenbrock34Cache{uType,rateType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
@@ -268,7 +268,7 @@ function alg_cache(alg::Rodas3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     W = similar(J)
   end
   tmp = zero(rate_prototype)
-  tab = Rodas3ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = Rodas3ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
@@ -290,7 +290,7 @@ end
 function alg_cache(alg::Rodas3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  Rosenbrock34ConstantCache(tf,uf,Rodas3ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits)))
+  Rosenbrock34ConstantCache(tf,uf,Rodas3ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)))
 end
 
 
@@ -348,7 +348,7 @@ function alg_cache(alg::RosShamp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
     W = similar(J)
   end
   tmp = zero(rate_prototype)
-  tab = RosShamp4ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = RosShamp4ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
@@ -364,7 +364,7 @@ end
 function alg_cache(alg::RosShamp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  Rosenbrock4ConstantCache(tf,uf,RosShamp4ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits)))
+  Rosenbrock4ConstantCache(tf,uf,RosShamp4ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)))
 end
 
 function alg_cache(alg::Veldd4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -386,7 +386,7 @@ function alg_cache(alg::Veldd4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     W = similar(J)
   end
   tmp = zero(rate_prototype)
-  tab = Veldd4ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = Veldd4ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
@@ -402,7 +402,7 @@ end
 function alg_cache(alg::Veldd4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  Rosenbrock4ConstantCache(tf,uf,Veldd4ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits)))
+  Rosenbrock4ConstantCache(tf,uf,Veldd4ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)))
 end
 
 function alg_cache(alg::Velds4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -424,7 +424,7 @@ function alg_cache(alg::Velds4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     W = similar(J)
   end
   tmp = zero(rate_prototype)
-  tab = Velds4ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = Velds4ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
@@ -440,7 +440,7 @@ end
 function alg_cache(alg::Velds4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  Rosenbrock4ConstantCache(tf,uf,Velds4ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits)))
+  Rosenbrock4ConstantCache(tf,uf,Velds4ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)))
 end
 
 function alg_cache(alg::GRK4T,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -462,7 +462,7 @@ function alg_cache(alg::GRK4T,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
     W = similar(J)
   end
   tmp = zero(rate_prototype)
-  tab = GRK4TConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = GRK4TConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
@@ -478,7 +478,7 @@ end
 function alg_cache(alg::GRK4T,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  Rosenbrock4ConstantCache(tf,uf,GRK4TConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits)))
+  Rosenbrock4ConstantCache(tf,uf,GRK4TConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)))
 end
 
 function alg_cache(alg::GRK4A,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -500,7 +500,7 @@ function alg_cache(alg::GRK4A,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
     W = similar(J)
   end
   tmp = zero(rate_prototype)
-  tab = GRK4AConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = GRK4AConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
@@ -516,7 +516,7 @@ end
 function alg_cache(alg::GRK4A,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  Rosenbrock4ConstantCache(tf,uf,GRK4AConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits)))
+  Rosenbrock4ConstantCache(tf,uf,GRK4AConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)))
 end
 
 function alg_cache(alg::Ros4LStab,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -538,7 +538,7 @@ function alg_cache(alg::Ros4LStab,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
     W = similar(J)
   end
   tmp = zero(rate_prototype)
-  tab = Ros4LStabConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = Ros4LStabConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
@@ -554,7 +554,7 @@ end
 function alg_cache(alg::Ros4LStab,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  Rosenbrock4ConstantCache(tf,uf,Ros4LStabConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits)))
+  Rosenbrock4ConstantCache(tf,uf,Ros4LStabConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)))
 end
 
 ###############################################################################
@@ -619,7 +619,7 @@ function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     W = similar(J)
   end
   tmp = zero(rate_prototype)
-  tab = Rodas4ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = Rodas4ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
@@ -636,7 +636,7 @@ end
 function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  Rodas4ConstantCache(tf,uf,Rodas4ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits)))
+  Rodas4ConstantCache(tf,uf,Rodas4ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)))
 end
 
 function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -662,7 +662,7 @@ function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
     W = similar(J)
   end
   tmp = zero(rate_prototype)
-  tab = Rodas42ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = Rodas42ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
@@ -679,7 +679,7 @@ end
 function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  Rodas4ConstantCache(tf,uf,Rodas42ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits)))
+  Rodas4ConstantCache(tf,uf,Rodas42ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)))
 end
 
 function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -705,7 +705,7 @@ function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
     W = similar(J)
   end
   tmp = zero(rate_prototype)
-  tab = Rodas4PConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = Rodas4PConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
@@ -722,7 +722,7 @@ end
 function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  Rodas4ConstantCache(tf,uf,Rodas4PConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits)))
+  Rodas4ConstantCache(tf,uf,Rodas4PConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)))
 end
 
 ################################################################################
@@ -791,7 +791,7 @@ function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     W = similar(J)
   end
   tmp = zero(rate_prototype)
-  tab = Rodas5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  tab = Rodas5ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
@@ -808,7 +808,7 @@ end
 function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  Rosenbrock5ConstantCache(tf,uf,Rodas5ConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits)))
+  Rosenbrock5ConstantCache(tf,uf,Rodas5ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)))
 end
 
 struct RosenbrockWConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
@@ -820,5 +820,5 @@ end
 function alg_cache(alg::RosenbrockW6S4OS,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  RosenbrockWConstantCache(tf,uf,RosenbrockW6S4OSConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits)))
+  RosenbrockWConstantCache(tf,uf,RosenbrockW6S4OSConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)))
 end
