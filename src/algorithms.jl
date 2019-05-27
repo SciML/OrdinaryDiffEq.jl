@@ -488,10 +488,7 @@ end
 ROCK4(;min_stages=0,max_stages=152) = ROCK4(min_stages,max_stages)
 
 # SERK methods
-struct ESERK5 <: OrdinaryDiffEqAdaptiveAlgorithm
-  controller::Symbol
-end
-ESERK5(;controller=:PI) = ESERK5(controller)
+struct ESERK5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 struct SERK2v2 <: OrdinaryDiffEqAdaptiveAlgorithm
   controller::Symbol
@@ -499,10 +496,7 @@ end
 SERK2v2(;controller=:PI) = SERK2v2(controller)
 
 # RKC mehtods
-struct RKC <: OrdinaryDiffEqAdaptiveAlgorithm
-  controller::Symbol
-end
-RKC(;controller=:PI) = RKC(controller)
+struct RKC <: OrdinaryDiffEqAdaptiveAlgorithm end
 
 struct IRKC{CS,AD,F,F2,FDT,K,T} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
   linsolve::F

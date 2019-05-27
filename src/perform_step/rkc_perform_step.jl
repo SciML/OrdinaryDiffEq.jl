@@ -372,9 +372,8 @@ end
   # The the number of degree for Chebyshev polynomial
   maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/(10*eps(integrator.opts.internalnorm(uprev,t)))))))
   mdeg = 1 + Int(floor(sqrt(1.54*dt*integrator.eigen_est + 1)))
-  if mdeg >= maxm
-    mdeg = maxm
-  end
+  mdeg = (mdeg > maxm) ? maxm : mdeg
+
 
   w0 = 1 + 2/(13*(mdeg^2))
   temp1 = w0^2 - 1
@@ -457,9 +456,7 @@ end
   # The the number of degree for Chebyshev polynomial
   maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/(10*eps(integrator.opts.internalnorm(uprev,t)))))))
   mdeg = 1 + Int(floor(sqrt(1.54*dt*integrator.eigen_est + 1)))
-  if mdeg >= maxm
-    mdeg = maxm
-  end
+  mdeg = (mdeg > maxm) ? maxm : mdeg
 
   w0 = 1 + 2/(13*(mdeg^2))
   temp1 = w0^2 - 1
@@ -803,7 +800,6 @@ end
   maxeig!(integrator, cache)
 
   mdeg = Int(floor(sqrt(abs(dt)*integrator.eigen_est/0.98))+1)
-  # println(integrator.iter,"  ",mdeg,"  ",integrator.eigen_est,"  ",dt)
   mdeg = (mdeg > 2000) ? 2000 : mdeg
   cache.mdeg = mdeg
   choosedeg_SERK!(integrator,cache)
@@ -882,7 +878,6 @@ end
   maxeig!(integrator, cache)
 
   mdeg = Int(floor(sqrt(abs(dt)*integrator.eigen_est/0.98))+1)
-  # println(integrator.iter,"  ",mdeg,"  ",integrator.eigen_est,"  ",dt)
   mdeg = (mdeg > 2000) ? 2000 : mdeg
   ccache.mdeg = mdeg
   choosedeg_SERK!(integrator,cache)
@@ -962,7 +957,6 @@ end
   maxeig!(integrator, cache)
 
   mdeg = Int(floor(sqrt(abs(dt)*integrator.eigen_est/0.8))+1)
-  # println(integrator.iter,"  ",mdeg,"  ",integrator.eigen_est,"  ",dt)
   mdeg = (mdeg > 250) ? 250 : mdeg
   cache.mdeg = mdeg
   choosedeg_SERK!(integrator,cache)
@@ -1025,7 +1019,6 @@ end
   maxeig!(integrator, cache)
 
   mdeg = Int(floor(sqrt(abs(dt)*integrator.eigen_est/0.8))+1)
-  # println(integrator.iter,"  ",mdeg,"  ",integrator.eigen_est,"  ",dt)
   mdeg = (mdeg > 250) ? 250 : mdeg
   ccache.mdeg = mdeg
   choosedeg_SERK!(integrator,cache)
