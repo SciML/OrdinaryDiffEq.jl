@@ -374,7 +374,6 @@ end
   mdeg = 1 + Int(floor(sqrt(1.54*dt*integrator.eigen_est + 1)))
   mdeg = (mdeg > maxm) ? maxm : mdeg
 
-
   w0 = 1 + 2/(13*(mdeg^2))
   temp1 = w0^2 - 1
   temp2 = sqrt(temp1)
