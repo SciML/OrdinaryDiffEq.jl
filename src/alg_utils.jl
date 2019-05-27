@@ -388,7 +388,6 @@ beta1_default(alg::ExtrapolationMidpointDeuflhard,beta2) =  1//(2alg.n_init+1)
 beta1_default(alg::ExtrapolationMidpointHairerWanner,beta2) =  1//(2alg.n_init+1)
 
 gamma_default(alg::OrdinaryDiffEqAlgorithm) = 9//10
-gamma_default(alg::ESERK5) = 8//10
 gamma_default(alg::RKC) = 8//10
 gamma_default(alg::IRKC) = 8//10
 gamma_default(alg::ExtrapolationMidpointDeuflhard) = (1//4)^beta1_default(alg,beta2_default(alg))
@@ -500,7 +499,8 @@ uses_uprev(alg::CKLLSRK85_4FM_4R, adaptive::Bool) = adaptive
 uses_uprev(alg::CKLLSRK75_4M_5R, adaptive::Bool) = adaptive
 
 ispredictive(alg::OrdinaryDiffEqAlgorithm) = false
-ispredictive(alg::Union{RKC,SERK2v2}) = true
+ispredictive(alg::Union{RKC}) = true
+ispredictive(alg::Union{SERK2v2}) = alg.controller === :Predictive
 ispredictive(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Predictive
 isstandard(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Standard
 isstandard(alg::Union{GenericImplicitEuler,GenericTrapezoid,VCABM}) = true
