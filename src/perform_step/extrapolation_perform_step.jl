@@ -255,6 +255,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
   # Unpack all information needed
   @unpack t, uprev, dt, f, p = integrator
   @unpack n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst,k  = cache
+  @unpack u_temp3, u_temp4, k_tmps = cache
 
   # Coefficients for obtaining u
   @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
@@ -280,18 +281,41 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
   end
 
   #Compute the internal discretisations
-  for i = 0 : n_curr
-    j_int = 2Int64(subdividing_sequence[i+1])
-    dt_int = dt / (2j_int) # Stepsize of the ith internal discretisation
-    @.. u_temp2 = uprev
-    @.. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
-    for j = 2 : 2j_int
-      f(k, cache.u_temp1, p, t + (j-1)dt_int)
-      T[i+1] = u_temp2 + 2dt_int*k # Explicit Midpoint rule
-      @.. u_temp2 = u_temp1
-      @.. u_temp1 = T[i+1]
+  if integrator.alg.threading == false
+    for i = 0 : n_curr
+      j_int = 2Int64(subdividing_sequence[i+1])
+      dt_int = dt / (2j_int) # Stepsize of the ith internal discretisation
+      @.. u_temp2 = uprev
+      @.. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
+      for j = 2 : 2j_int
+        f(k, cache.u_temp1, p, t + (j-1)dt_int)
+        T[i+1] = u_temp2 + 2dt_int*k # Explicit Midpoint rule
+        @.. u_temp2 = u_temp1
+        @.. u_temp1 = T[i+1]
+      end
+    end
+  else
+    Threads.@threads for i = 0 : floor(Int,n_curr/2)
+      indices = (i, n_curr-i)
+      for index in indices
+        j_int_temp = 2Int64(subdividing_sequence[index+1])
+        dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
+        @.. u_temp4[Threads.threadid()] = uprev
+        @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + dt_int_temp * fsalfirst # Euler starting step
+        for j = 2 : 2j_int_temp
+          f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1)dt_int_temp)
+          T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
+          @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
+          @.. u_temp3[Threads.threadid()] = T[index+1]
+        end
+        if indices[2] <= indices[1]
+            break
+        end
+      end
     end
   end
+
+  
 
   if integrator.opts.adaptive
     # Compute all information relating to an extrapolation order ≦ win_min
@@ -388,17 +412,38 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
   end
 
   # Compute the internal discretisations
-  for i = 0 : n_curr
-    j_int = 2Int64(subdividing_sequence[i+1])
-    dt_int = dt / (2j_int) # Stepsize of the ith internal discretisation
-    u_temp2 = uprev
-    u_temp1 = u_temp2 + dt_int*integrator.fsalfirst # Euler starting step
-    for j = 2 : 2j_int
-      T[i+1] = u_temp2 + 2dt_int*f(u_temp1, p, t + (j-1)dt_int) # Explicit Midpoint rule
-      u_temp2 = u_temp1
-      u_temp1 = T[i+1]
+  if integrator.alg.threading == false
+    for i = 0 : n_curr
+      j_int = 2Int64(subdividing_sequence[i+1])
+      dt_int = dt / (2j_int) # Stepsize of the ith internal discretisation
+      u_temp2 = uprev
+      u_temp1 = u_temp2 + dt_int*integrator.fsalfirst # Euler starting step
+      for j = 2 : 2j_int
+        T[i+1] = u_temp2 + 2dt_int*f(u_temp1, p, t + (j-1)dt_int) # Explicit Midpoint rule
+        u_temp2 = u_temp1
+        u_temp1 = T[i+1]
+      end
     end
+  else
+    Threads.@threads for i = 0 : floor(Int, n_curr/2)
+      indices = (i, n_curr-i)
+      for index in indices
+        j_int_temp = 2Int64(subdividing_sequence[index+1])
+        dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
+        u_temp4 = uprev
+        u_temp3 = u_temp4 + dt_int_temp*integrator.fsalfirst # Euler starting step
+        for j = 2 : 2j_int_temp
+          T[index+1] = u_temp4 + 2dt_int_temp*f(u_temp3, p, t + (j-1)dt_int_temp) # Explicit Midpoint rule
+          u_temp4 = u_temp3
+          u_temp3 = T[index+1]
+        end
+        if indices[2] <= indices[1]
+            break
+        end
+      end
+    end   
   end
+  
 
   if integrator.opts.adaptive
     # Compute all information relating to an extrapolation order ≦ win_min

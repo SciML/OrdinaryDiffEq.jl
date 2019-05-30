@@ -75,21 +75,41 @@ sequence_array =[:harmonic, :romberg, :bulirsch]
 
 # Test ExtrapolationMidpointDeuflhard
 @testset "Testing ExtrapolationMidpointDeuflhard" begin
-  for prob in problem_array, seq in sequence_array
-    global dts
+  @testset "Testing sequential ExtrapolationMidpointDeuflhard" begin
+    for prob in problem_array, seq in sequence_array
+      global dts
 
-    # Convergence test
-    for j = 1:6
-      alg = ExtrapolationMidpointDeuflhard(min_order = j,
-        init_order = j, max_order=j,
-        sequence = seq)
-      sim = test_convergence(dts,prob,alg)
-      @test sim.𝒪est[:final] ≈ 2*(alg.n_init+1) atol=testTol
-    end
+      # Convergence test
+      for j = 1:6
+        alg = ExtrapolationMidpointDeuflhard(min_order = j,
+          init_order = j, max_order=j,
+          sequence = seq, threading=false)
+        sim = test_convergence(dts,prob,alg)
+        @test sim.𝒪est[:final] ≈ 2*(alg.n_init+1) atol=testTol
+      end
 
-    # TODO: Regression test
-    #...
+      # TODO: Regression test
+      #...
 
+    end  
+  end
+  @testset "Testing threaded ExtrapolationMidpointDeuflhard" begin
+    for prob in problem_array, seq in sequence_array
+      global dts
+
+      # Convergence test
+      for j = 1:6
+        alg = ExtrapolationMidpointDeuflhard(min_order = j,
+          init_order = j, max_order=j,
+          sequence = seq, threading=true)
+        sim = test_convergence(dts,prob,alg)
+        @test sim.𝒪est[:final] ≈ 2*(alg.n_init+1) atol=testTol
+      end
+
+      # TODO: Regression test
+      #...
+
+    end  
   end
 end # ExtrapolationMidpointDeuflhard
 

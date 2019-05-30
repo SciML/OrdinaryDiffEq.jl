@@ -52,8 +52,9 @@ struct ExtrapolationMidpointDeuflhard <: OrdinaryDiffEqExtrapolationVarOrderVarS
   n_init::Int # Initial extrapolation order
   n_max::Int # Maximal extrapolation order
   sequence::Symbol # Name of the subdividing sequence
+  threading::Bool
 end
-function ExtrapolationMidpointDeuflhard(;min_order=1,init_order=5, max_order=10, sequence = :harmonic)
+function ExtrapolationMidpointDeuflhard(;min_order=1,init_order=5, max_order=10, sequence = :harmonic, threading = true)
   # Enforce 1 <=  min_order <= init_order <= max_order:
   n_min = max(1,min_order)
   n_init = max(n_min,init_order)
@@ -78,7 +79,7 @@ function ExtrapolationMidpointDeuflhard(;min_order=1,init_order=5, max_order=10,
   end
 
   # Initialize algorithm
-  ExtrapolationMidpointDeuflhard(n_min,n_init,n_max,sequence)
+  ExtrapolationMidpointDeuflhard(n_min,n_init,n_max,sequence,threading)
 end
 
 struct ExtrapolationMidpointHairerWanner <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
