@@ -158,8 +158,8 @@ function DiffEqBase.__init(
 
   max_len = DiffEqBase.max_vector_callback_length(callbacks_internal)
   if max_len !== -1
-    callback_cache = zeros(Float64, max_len)
-    previous_condition = zeros(Float64, max_len)
+    callback_cache = zeros(uType, max_len)
+    previous_condition = zeros(uType, max_len)
   else
     callback_cache = nothing
     previous_condition = nothing
