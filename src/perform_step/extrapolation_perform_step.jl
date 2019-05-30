@@ -401,15 +401,21 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
       end
     end
   else
-    Threads.@threads for i = 0 : n_curr
-      j_int_temp = 2Int64(subdividing_sequence[i+1])
-      dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
-      u_temp4 = uprev
-      u_temp3 = u_temp4 + dt_int_temp*integrator.fsalfirst # Euler starting step
-      for j = 2 : 2j_int_temp
-        T[i+1] = u_temp4 + 2dt_int_temp*f(u_temp3, p, t + (j-1)dt_int_temp) # Explicit Midpoint rule
-        u_temp4 = u_temp3
-        u_temp3 = T[i+1]
+    Threads.@threads for i = 0 : ceil(Int, n_curr/2)
+      indices = (i, n_curr-i)
+      for index in indices
+        j_int_temp = 2Int64(subdividing_sequence[index+1])
+        dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
+        u_temp4 = uprev
+        u_temp3 = u_temp4 + dt_int_temp*integrator.fsalfirst # Euler starting step
+        for j = 2 : 2j_int_temp
+          T[index+1] = u_temp4 + 2dt_int_temp*f(u_temp3, p, t + (j-1)dt_int_temp) # Explicit Midpoint rule
+          u_temp4 = u_temp3
+          u_temp3 = T[index+1]
+        end
+      end
+      if indices[2] <= indices[1]
+          break
       end
     end   
   end
