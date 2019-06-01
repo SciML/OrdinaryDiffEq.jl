@@ -44,7 +44,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
     z *= quot
   else
     dz_u = pert
-    z = dz_u
+    z = dz_u.*z./z
   end # endif
   # Start power iteration
   integrator.eigen_est = 0
