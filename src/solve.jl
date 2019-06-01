@@ -311,6 +311,7 @@ function DiffEqBase.__init(
   force_stepfail = false
   last_stepfail = false
   event_last_time = 0
+  vector_event_last_time = 1
   last_event_error = zero(uBottomEltypeNoUnits)
   dtchangeable = isdtchangeable(alg)
   q11 = tTypeNoUnits(1)
@@ -329,7 +330,7 @@ function DiffEqBase.__init(
                              erracc,dtacc,success_iter,
                              iter,saveiter,saveiter_dense,cache,callback_cache,previous_condition,
                              kshortsize,force_stepfail,last_stepfail,
-                             just_hit_tstop,event_last_time,last_event_error,
+                             just_hit_tstop,event_last_time,vector_event_last_time,last_event_error,
                              accept_step,
                              isout,reeval_fsal,
                              u_modified,opts,destats)

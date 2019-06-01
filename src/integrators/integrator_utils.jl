@@ -231,9 +231,11 @@ function handle_callbacks!(integrator)
               DiffEqBase.find_first_continuous_callback(integrator,continuous_callbacks...)
     if event_occurred
       integrator.event_last_time = idx
+      integrator.vector_event_last_time = event_idx
       continuous_modified,saved_in_cb = DiffEqBase.apply_callback!(integrator,continuous_callbacks[idx],time,upcrossing,event_idx)
     else
       integrator.event_last_time = 0
+      integrator.vector_event_last_time = 1
     end
   end
   if !integrator.force_stepfail && !(typeof(discrete_callbacks)<:Tuple{})
