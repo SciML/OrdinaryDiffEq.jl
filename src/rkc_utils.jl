@@ -72,7 +72,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqConstantCache)
     else
       if iter >= 2 && abs(eig_prev - integrator.eigen_est) < integrator.eigen_est*0.05
         # Store the eigenvector
-        cache.zprev = z
+        cache.zprev = z - uprev
         return true
       end
     end
@@ -111,7 +111,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
         @.. z = fsalfirst
       end
     else
-      @.. fz = u
+      @.. fz = fsalfirst
       f(z, fz, p, t)
       integrator.destats.nf += 1
     end
@@ -167,7 +167,7 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
     else
       if iter >= 2 && abs(eig_prev - integrator.eigen_est) < integrator.eigen_est*0.05
         # Store the eigenvector
-        @.. ccache.zprev = z
+        @.. ccache.zprev = z - uprev
         return true
       end
     end
