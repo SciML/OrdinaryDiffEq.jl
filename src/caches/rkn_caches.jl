@@ -164,6 +164,114 @@ end
 
 alg_cache(alg::DPRKN6,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = DPRKN6ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
+@cache struct DPRKN43TCache{uType,rateType,reducedRateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  fsalfirst::rateType
+  k2::reducedRateType
+  k3::reducedRateType
+  k4::reducedRateType
+  k5::reducedRateType
+  k::rateType
+  utilde::uType
+  tmp::uType
+  atmp::uNoUnitsType
+  tab::TabType
+end
+
+function alg_cache(alg::DPRKN43T,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  reduced_rate_prototype = rate_prototype.x[2]
+  tab = DPRKN43TConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  k1 = zero(rate_prototype)
+  k2 = zero(reduced_rate_prototype)
+  k3 = zero(reduced_rate_prototype)
+  k4 = zero(reduced_rate_prototype)
+  k5 = zero(reduced_rate_prototype)
+  k  = zero(rate_prototype)
+  utilde = similar(u)
+  atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u)
+  DPRKN43TCache(u,uprev,k1,k2,k3,k4,k5,k,utilde,tmp,atmp,tab)
+end
+
+alg_cache(alg::DPRKN43T,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = DPRKN43TConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+
+@cache struct DPRKN54TCache{uType,rateType,reducedRateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  fsalfirst::rateType
+  k2::reducedRateType
+  k3::reducedRateType
+  k4::reducedRateType
+  k5::reducedRateType
+  k6::reducedRateType
+  k7::reducedRateType
+  k::rateType
+  utilde::uType
+  tmp::uType
+  atmp::uNoUnitsType
+  tab::TabType
+end
+
+function alg_cache(alg::DPRKN54T,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  reduced_rate_prototype = rate_prototype.x[2]
+  tab = DPRKN54TConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  k1 = zero(rate_prototype)
+  k2 = zero(reduced_rate_prototype)
+  k3 = zero(reduced_rate_prototype)
+  k4 = zero(reduced_rate_prototype)
+  k5 = zero(reduced_rate_prototype)
+  k6 = zero(reduced_rate_prototype)
+  k7 = zero(reduced_rate_prototype)
+  k  = zero(rate_prototype)
+  utilde = similar(u)
+  atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u)
+  DPRKN54TCache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k,utilde,tmp,atmp,tab)
+end
+
+alg_cache(alg::DPRKN54T,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = DPRKN54TConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+
+@cache struct DPRKN76TCache{uType,rateType,reducedRateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  fsalfirst::rateType
+  k2::reducedRateType
+  k3::reducedRateType
+  k4::reducedRateType
+  k5::reducedRateType
+  k6::reducedRateType
+  k7::reducedRateType
+  k8::reducedRateType
+  k9::reducedRateType
+  k::rateType
+  utilde::uType
+  tmp::uType
+  atmp::uNoUnitsType
+  tab::TabType
+end
+
+function alg_cache(alg::DPRKN76T,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  reduced_rate_prototype = rate_prototype.x[2]
+  tab = DPRKN76TConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+  k1 = zero(rate_prototype)
+  k2 = zero(reduced_rate_prototype)
+  k3 = zero(reduced_rate_prototype)
+  k4 = zero(reduced_rate_prototype)
+  k5 = zero(reduced_rate_prototype)
+  k6 = zero(reduced_rate_prototype)
+  k7 = zero(reduced_rate_prototype)
+  k8 = zero(reduced_rate_prototype)
+  k9 = zero(reduced_rate_prototype)
+  k  = zero(rate_prototype)
+  utilde = similar(u)
+  atmp = similar(u,uEltypeNoUnits)
+  tmp = similar(u)
+  DPRKN76TCache(u,uprev,k1,k2,k3,k4,k5,k6,k7,k8,k9,k,utilde,tmp,atmp,tab)
+end
+
+alg_cache(alg::DPRKN76T,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = DPRKN76TConstantCache(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
+
 @cache struct DPRKN8Cache{uType,rateType,reducedRateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
