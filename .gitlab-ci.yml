@@ -18,6 +18,7 @@ build:
     - julia --project -e "using Pkg;
                           Pkg.update();
                           Pkg.instantiate();
+                          Pkg.add("OrdinaryDiffEq");
                           using OrdinaryDiffEq;"
   only:
   - master
