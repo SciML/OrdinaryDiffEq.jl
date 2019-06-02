@@ -1,62 +1,117 @@
-variables:
-  CI_IMAGE_TAG: 'ordinarydiffeq'
-  JULIA_NUM_THREADS: '4'
-
-stages:
-  - build
-  - test
-  - post
-  - deploy
+image: "julia:1"
 
 variables:
   JULIA_DEPOT_PATH: "$CI_PROJECT_DIR/.julia/"
+  JULIA_NUM_THREADS: '4'
+  
+cache:
+  paths:
+    - .julia/
 
-# Root job that other jobs extend
-.root:
-  image: "juliadiffeq/julia:${CI_VERSION_TAG}-${CI_IMAGE_TAG}"
-  only:
-    variables:
-      - $CI_IMAGE_TAG
-      - $CI_VERSION_TAG
-
-.test:
-  extends: .root
-  stage: test
+build:
+  stage: build
   script:
     - julia -e 'using InteractiveUtils;
                 versioninfo()'
-    - mkdir $JULIA_DEPOT_PATH # Pkg.jl#325
-    - julia -e 'using Pkg;
-                Pkg.develop([PackageSpec(path=pwd());
-                             [PackageSpec(name=pkg)
-                              for pkg in split(get(ENV,"CI_DEV_PKGS",""))]])'
-    - julia -e "using Pkg;
-                pkg\"build ${CI_PROJECT_NAME}\";
-                pkg\"test --coverage ${CI_PROJECT_NAME}\""
-  artifacts:
-    when: always
-    paths:
-      - Manifest.toml
-      - .julia/
-      - deps/ext.jl
-      - deps/build.log
-      # gitlab-runner#2620
-      - src/*.cov
-      - src/*/*.cov
-      - src/*/*/*.cov
-
-.coverage:
-  stage: post
+    - julia --project -e 'using Pkg;
+                          Pkg.update();
+                          Pkg.instantiate();
+                          using OrdinaryDiffEq;'
+  only:
+  - master
+  - tags
+  - external
+  - pushes
+  
+test-Interface:
+  stage: test
+  variables:
+    GROUP: "Interface"
   script:
-    - julia -e 'using Pkg;
-                Pkg.add("Coverage")'
-    - julia -e 'using Coverage;
-                cl, tl = get_summary(process_folder());
-                println("(", cl/tl*100, "%) covered");
-                Codecov.submit_local(process_folder(), ".")'
-  coverage: '/\(\d+.\d+\%\) covered/'
-    
-coverage:
-  allow_failure: true
+    - julia -e 'using InteractiveUtils;
+                versioninfo()'
+    - julia --project -e 'using Pkg;
+                          Pkg.test("OrdinaryDiffEq"; coverage=true);'
+  only:
+  - master
+  - tags
+  - external
+  - pushes
+
+test-Regression:
+  stage: test
+  variables:
+    GROUP: "Regression"
+  script:
+    - julia -e 'using InteractiveUtils;
+                versioninfo()'
+    - julia --project -e 'using Pkg;
+                          Pkg.test("OrdinaryDiffEq"; coverage=true);'
+  only:
+  - master
+  - tags
+  - external
+  - pushes
+
+
+test-Integrators:
+  stage: test
+  variables:
+    GROUP: "Integrators"
+  script:
+    - julia -e 'using InteractiveUtils;
+                versioninfo()'
+    - julia --project -e 'using Pkg;
+                          Pkg.test("OrdinaryDiffEq"; coverage=true);'
   only:
     - master
+    - tags
+    - external
+    - pushes
+
+test-AlgConvergence_I:
+  stage: test
+  variables:
+    GROUP: "AlgConvergence_I"
+  script:
+    - julia -e 'using InteractiveUtils;
+                versioninfo()'
+    - julia --project -e 'using Pkg;
+                          Pkg.test("OrdinaryDiffEq"; coverage=true);'
+  only:
+    - master
+    - tags
+    - external
+    - pushes
+
+test-AlgConvergence_II:
+  stage: test
+  variables:
+    GROUP: "AlgConvergence_II"
+    BAYES_N: 100
+  script:
+    - julia -e 'using InteractiveUtils;
+                versioninfo()'
+    - julia --project -e 'using Pkg;
+                          Pkg.test("OrdinaryDiffEq"; coverage=true);'
+  only:
+    - master
+    - tags
+    - external
+    - pushes
+
+
+test-AlgConvergence_III:
+  stage: test
+  variables:
+    GROUP: "AlgConvergence_III"
+  script:
+    - julia -e 'using InteractiveUtils;
+                versioninfo()'
+    - julia --project -e 'using Pkg;
+                          Pkg.test("OrdinaryDiffEq"; coverage=true);'
+  only:
+  - master
+  - tags
+  - external
+  - pushes
