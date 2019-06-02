@@ -133,7 +133,7 @@ test-AlgConvergence_III:
 coverage:
   stage: deploy
   tags: 
-    "diffeqbasic"
+    - 'diffeqbasic'
   dependencies:
     - test-Interface
     - test-Regression
