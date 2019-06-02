@@ -36,7 +36,7 @@ test-Interface:
                 versioninfo()"
     - julia --project -e "using Pkg;
                           Pkg.instantiate();
-                          Pkg.test("OrdinaryDiffEq"; coverage=true);"
+                          Pkg.test(\"OrdinaryDiffEq\"; coverage=true);"
   only:
   - master
   - tags
@@ -54,7 +54,7 @@ test-Regression:
                 versioninfo()"
     - julia --project -e "using Pkg;
                           Pkg.instantiate();
-                          Pkg.test("OrdinaryDiffEq"; coverage=true);"
+                          Pkg.test(\"OrdinaryDiffEq\"; coverage=true);"
   only:
   - master
   - tags
@@ -72,7 +72,7 @@ test-Integrators:
                 versioninfo()"
     - julia --project -e "using Pkg;
                           Pkg.instantiate();
-                          Pkg.test("OrdinaryDiffEq"; coverage=true);"
+                          Pkg.test(\"OrdinaryDiffEq\"; coverage=true);"
   only:
     - master
     - tags
@@ -90,7 +90,7 @@ test-AlgConvergence_I:
                 versioninfo()"
     - julia --project -e "using Pkg;
                           Pkg.instantiate();
-                          Pkg.test("OrdinaryDiffEq"; coverage=true);"
+                          Pkg.test(\"OrdinaryDiffEq\"; coverage=true);"
   only:
     - master
     - tags
@@ -108,7 +108,7 @@ test-AlgConvergence_II:
                 versioninfo()"
     - julia --project -e "using Pkg;
                           Pkg.instantiate();
-                          Pkg.test("OrdinaryDiffEq"; coverage=true);"
+                          Pkg.test(\"OrdinaryDiffEq\"; coverage=true);"
   only:
     - master
     - tags
@@ -127,7 +127,7 @@ test-AlgConvergence_III:
                 versioninfo()"
     - julia --project -e "using Pkg;
                           Pkg.instantiate();
-                          Pkg.test("OrdinaryDiffEq"; coverage=true);"
+                          Pkg.test(\"OrdinaryDiffEq\"; coverage=true);"
   only:
   - master
   - tags
@@ -147,9 +147,9 @@ coverage:
     - test-AlgConvergence_III
   script:
     - julia --project -e "using Pkg;
-                          Pkg.add("Coverage")"
+                          Pkg.add(\"Coverage\")"
     - julia --project -e "using Coverage;
                           cl, tl = get_summary(process_folder());
-                          println("(", cl/tl*100, "%) covered");
+                          println(\"(\", cl/tl*100, \"%) covered\");
                           Codecov.submit_local(process_folder(), ".")"
   coverage: '/\(\d+.\d+\%\) covered/'
