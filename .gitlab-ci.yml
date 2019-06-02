@@ -80,7 +80,7 @@ test-Integrators:
 test-AlgConvergence_I:
   stage: test
   tags: 
-    "diffeqbasic"
+    - 'diffeqbasic'
   variables:
     GROUP: "AlgConvergence_I"
   script:
