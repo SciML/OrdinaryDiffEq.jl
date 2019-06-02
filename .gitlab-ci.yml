@@ -1,0 +1,62 @@
+variables:
+  CI_IMAGE_TAG: 'ordinarydiffeq'
+  JULIA_NUM_THREADS: '4'
+
+stages:
+  - build
+  - test
+  - post
+  - deploy
+
+variables:
+  JULIA_DEPOT_PATH: "$CI_PROJECT_DIR/.julia/"
+
+# Root job that other jobs extend
+.root:
+  image: "juliadiffeq/julia:${CI_VERSION_TAG}-${CI_IMAGE_TAG}"
+  only:
+    variables:
+      - $CI_IMAGE_TAG
+      - $CI_VERSION_TAG
+
+.test:
+  extends: .root
+  stage: test
+  script:
+    - julia -e 'using InteractiveUtils;
+                versioninfo()'
+    - mkdir $JULIA_DEPOT_PATH # Pkg.jl#325
+    - julia -e 'using Pkg;
+                Pkg.develop([PackageSpec(path=pwd());
+                             [PackageSpec(name=pkg)
+                              for pkg in split(get(ENV,"CI_DEV_PKGS",""))]])'
+    - julia -e "using Pkg;
+                pkg\"build ${CI_PROJECT_NAME}\";
+                pkg\"test --coverage ${CI_PROJECT_NAME}\""
+  artifacts:
+    when: always
+    paths:
+      - Manifest.toml
+      - .julia/
+      - deps/ext.jl
+      - deps/build.log
+      # gitlab-runner#2620
+      - src/*.cov
+      - src/*/*.cov
+      - src/*/*/*.cov
+
+.coverage:
+  stage: post
+  script:
+    - julia -e 'using Pkg;
+                Pkg.add("Coverage")'
+    - julia -e 'using Coverage;
+                cl, tl = get_summary(process_folder());
+                println("(", cl/tl*100, "%) covered");
+                Codecov.submit_local(process_folder(), ".")'
+  coverage: '/\(\d+.\d+\%\) covered/'
+    
+coverage:
+  allow_failure: true
+  only:
+    - master
