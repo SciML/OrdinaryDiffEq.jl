@@ -28,7 +28,7 @@ build:
 test-Interface:
   stage: test
   tags: 
-    "diffeqbasic"
+    - 'diffeqbasic'
   variables:
     GROUP: "Interface"
   script:
@@ -45,7 +45,7 @@ test-Interface:
 test-Regression:
   stage: test
   tags: 
-    "diffeqfast"
+    - 'diffeqfast'
   variables:
     GROUP: "Regression"
   script:
@@ -63,7 +63,7 @@ test-Regression:
 test-Integrators:
   stage: test
   tags: 
-    "diffeqbasic"
+    - 'diffeqbasic'
   variables:
     GROUP: "Integrators"
   script:
@@ -97,7 +97,7 @@ test-AlgConvergence_I:
 test-AlgConvergence_II:
   stage: test
   tags: 
-    "diffeqbasic"
+    - 'diffeqbasic'
   variables:
     GROUP: "AlgConvergence_II"
     BAYES_N: 100
@@ -116,7 +116,7 @@ test-AlgConvergence_II:
 test-AlgConvergence_III:
   stage: test
   tags: 
-    "diffeqbasic"
+    - 'diffeqbasic'
   variables:
     GROUP: "AlgConvergence_III"
   script:
