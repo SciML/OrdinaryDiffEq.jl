@@ -35,6 +35,7 @@ test-Interface:
     - julia -e "using InteractiveUtils;
                 versioninfo()"
     - julia --project -e "using Pkg;
+                          Pkg.instantiate();
                           Pkg.test("OrdinaryDiffEq"; coverage=true);"
   only:
   - master
@@ -52,6 +53,7 @@ test-Regression:
     - julia -e "using InteractiveUtils;
                 versioninfo()"
     - julia --project -e "using Pkg;
+                          Pkg.instantiate();
                           Pkg.test("OrdinaryDiffEq"; coverage=true);"
   only:
   - master
@@ -69,6 +71,7 @@ test-Integrators:
     - julia -e "using InteractiveUtils;
                 versioninfo()"
     - julia --project -e "using Pkg;
+                          Pkg.instantiate();
                           Pkg.test("OrdinaryDiffEq"; coverage=true);"
   only:
     - master
@@ -86,6 +89,7 @@ test-AlgConvergence_I:
     - julia -e "using InteractiveUtils;
                 versioninfo()"
     - julia --project -e "using Pkg;
+                          Pkg.instantiate();
                           Pkg.test("OrdinaryDiffEq"; coverage=true);"
   only:
     - master
@@ -99,11 +103,11 @@ test-AlgConvergence_II:
     - 'diffeqbasic'
   variables:
     GROUP: "AlgConvergence_II"
-    BAYES_N: 100
   script:
     - julia -e "using InteractiveUtils;
                 versioninfo()"
     - julia --project -e "using Pkg;
+                          Pkg.instantiate();
                           Pkg.test("OrdinaryDiffEq"; coverage=true);"
   only:
     - master
@@ -122,6 +126,7 @@ test-AlgConvergence_III:
     - julia -e "using InteractiveUtils;
                 versioninfo()"
     - julia --project -e "using Pkg;
+                          Pkg.instantiate();
                           Pkg.test("OrdinaryDiffEq"; coverage=true);"
   only:
   - master
