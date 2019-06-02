@@ -13,12 +13,12 @@ build:
   tags: 
     - 'diffeqbasic'
   script:
-    - julia -e 'using InteractiveUtils;
-                versioninfo()'
-    - julia --project -e 'using Pkg;
+    - julia -e "using InteractiveUtils;
+                versioninfo()"
+    - julia --project -e "using Pkg;
                           Pkg.update();
                           Pkg.instantiate();
-                          using OrdinaryDiffEq;'
+                          using OrdinaryDiffEq;"
   only:
   - master
   - tags
@@ -32,10 +32,10 @@ test-Interface:
   variables:
     GROUP: "Interface"
   script:
-    - julia -e 'using InteractiveUtils;
-                versioninfo()'
-    - julia --project -e 'using Pkg;
-                          Pkg.test("OrdinaryDiffEq"; coverage=true);'
+    - julia -e "using InteractiveUtils;
+                versioninfo()"
+    - julia --project -e "using Pkg;
+                          Pkg.test("OrdinaryDiffEq"; coverage=true);"
   only:
   - master
   - tags
@@ -49,10 +49,10 @@ test-Regression:
   variables:
     GROUP: "Regression"
   script:
-    - julia -e 'using InteractiveUtils;
-                versioninfo()'
-    - julia --project -e 'using Pkg;
-                          Pkg.test("OrdinaryDiffEq"; coverage=true);'
+    - julia -e "using InteractiveUtils;
+                versioninfo()"
+    - julia --project -e "using Pkg;
+                          Pkg.test("OrdinaryDiffEq"; coverage=true);"
   only:
   - master
   - tags
@@ -67,10 +67,10 @@ test-Integrators:
   variables:
     GROUP: "Integrators"
   script:
-    - julia -e 'using InteractiveUtils;
-                versioninfo()'
-    - julia --project -e 'using Pkg;
-                          Pkg.test("OrdinaryDiffEq"; coverage=true);'
+    - julia -e "using InteractiveUtils;
+                versioninfo()"
+    - julia --project -e "using Pkg;
+                          Pkg.test("OrdinaryDiffEq"; coverage=true);"
   only:
     - master
     - tags
@@ -84,10 +84,10 @@ test-AlgConvergence_I:
   variables:
     GROUP: "AlgConvergence_I"
   script:
-    - julia -e 'using InteractiveUtils;
-                versioninfo()'
-    - julia --project -e 'using Pkg;
-                          Pkg.test("OrdinaryDiffEq"; coverage=true);'
+    - julia -e "using InteractiveUtils;
+                versioninfo()"
+    - julia --project -e "using Pkg;
+                          Pkg.test("OrdinaryDiffEq"; coverage=true);"
   only:
     - master
     - tags
@@ -102,10 +102,10 @@ test-AlgConvergence_II:
     GROUP: "AlgConvergence_II"
     BAYES_N: 100
   script:
-    - julia -e 'using InteractiveUtils;
-                versioninfo()'
-    - julia --project -e 'using Pkg;
-                          Pkg.test("OrdinaryDiffEq"; coverage=true);'
+    - julia -e "using InteractiveUtils;
+                versioninfo()"
+    - julia --project -e "using Pkg;
+                          Pkg.test("OrdinaryDiffEq"; coverage=true);"
   only:
     - master
     - tags
@@ -120,10 +120,10 @@ test-AlgConvergence_III:
   variables:
     GROUP: "AlgConvergence_III"
   script:
-    - julia -e 'using InteractiveUtils;
-                versioninfo()'
-    - julia --project -e 'using Pkg;
-                          Pkg.test("OrdinaryDiffEq"; coverage=true);'
+    - julia -e "using InteractiveUtils;
+                versioninfo()"
+    - julia --project -e "using Pkg;
+                          Pkg.test("OrdinaryDiffEq"; coverage=true);"
   only:
   - master
   - tags
@@ -142,10 +142,10 @@ coverage:
     - test-AlgConvergence_II
     - test-AlgConvergence_III
   script:
-    - julia --project -e 'using Pkg;
-                          Pkg.add("Coverage")'
-    - julia --project -e 'using Coverage;
+    - julia --project -e "using Pkg;
+                          Pkg.add("Coverage")"
+    - julia --project -e "using Coverage;
                           cl, tl = get_summary(process_folder());
                           println("(", cl/tl*100, "%) covered");
-                          Codecov.submit_local(process_folder(), ".")'
+                          Codecov.submit_local(process_folder(), ".")"
   coverage: '/\(\d+.\d+\%\) covered/'
