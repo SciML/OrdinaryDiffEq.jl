@@ -11,7 +11,7 @@ cache:
 build:
   stage: build
   tags: 
-    "diffeqbasic"
+    - 'diffeqbasic'
   script:
     - julia -e 'using InteractiveUtils;
                 versioninfo()'
