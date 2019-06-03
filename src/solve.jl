@@ -165,6 +165,8 @@ function DiffEqBase.__init(
   else
     callback_cache = nothing
     previous_condition = nothing
+    callback_next_sign = nothing
+    callback_prev_sign = nothing
   end
 
   ### Algorithm-specific defaults ###
