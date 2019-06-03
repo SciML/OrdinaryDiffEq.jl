@@ -18,6 +18,8 @@ build:
     - julia --project -e "using Pkg;
                           Pkg.update();
                           Pkg.instantiate();
+                          Pkg.build(\"OrdinaryDiffEq\");
+                          pkg\"precompile\";
                           using OrdinaryDiffEq;"
   only:
   - master
@@ -35,7 +37,6 @@ test-Interface:
     - julia -e "using InteractiveUtils;
                 versioninfo()"
     - julia --project -e "using Pkg;
-                          Pkg.instantiate();
                           Pkg.test(\"OrdinaryDiffEq\"; coverage=true);"
   only:
   - master
@@ -53,7 +54,6 @@ test-Regression:
     - julia -e "using InteractiveUtils;
                 versioninfo()"
     - julia --project -e "using Pkg;
-                          Pkg.instantiate();
                           Pkg.test(\"OrdinaryDiffEq\"; coverage=true);"
   only:
   - master
@@ -71,7 +71,6 @@ test-Integrators:
     - julia -e "using InteractiveUtils;
                 versioninfo()"
     - julia --project -e "using Pkg;
-                          Pkg.instantiate();
                           Pkg.test(\"OrdinaryDiffEq\"; coverage=true);"
   only:
     - master
@@ -89,7 +88,6 @@ test-AlgConvergence_I:
     - julia -e "using InteractiveUtils;
                 versioninfo()"
     - julia --project -e "using Pkg;
-                          Pkg.instantiate();
                           Pkg.test(\"OrdinaryDiffEq\"; coverage=true);"
   only:
     - master
@@ -107,7 +105,6 @@ test-AlgConvergence_II:
     - julia -e "using InteractiveUtils;
                 versioninfo()"
     - julia --project -e "using Pkg;
-                          Pkg.instantiate();
                           Pkg.test(\"OrdinaryDiffEq\"; coverage=true);"
   only:
     - master
@@ -126,7 +123,6 @@ test-AlgConvergence_III:
     - julia -e "using InteractiveUtils;
                 versioninfo()"
     - julia --project -e "using Pkg;
-                          Pkg.instantiate();
                           Pkg.test(\"OrdinaryDiffEq\"; coverage=true);"
   only:
   - master
