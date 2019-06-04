@@ -8,6 +8,7 @@ else
 end
 
 is_APPVEYOR = ( Sys.iswindows() && haskey(ENV,"APPVEYOR") )
+is_TRAVIS = ( Sys.iswindows() && haskey(ENV,"TRAVISCI") )
 
 #Start Test Script
 
@@ -61,7 +62,7 @@ if !is_APPVEYOR && ( group == "All" || group == "Regression" )
   @time @safetestset "Adaptive Tests" begin include("regression/ode_adaptive_tests.jl") end
   @time @safetestset "PSOS Energy Conservation Tests" begin include("regression/psos_and_energy_conservation.jl") end
   @time @safetestset "Time derivative Tests" begin include("regression/time_derivative_test.jl") end
-  @time @testset "Unrolled Tests" begin include("regression/ode_unrolled_comparison_tests.jl") end
+  @time @safetestset "Unrolled Tests" begin include("regression/ode_unrolled_comparison_tests.jl") end
 end
 
 if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_I" )
@@ -90,8 +91,8 @@ if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_III" )
 end
 
 if !is_APPVEYOR && ( group == "ODEInterfaceRegression" )
-  @time @testset "Init dt vs dorpri tests" begin include("odeinterface/init_dt_vs_dopri_tests.jl") end
-  @time @testset "ODEInterface Regression Tests" begin include("odeinterface/ode_unrolled_comparison_tests.jl") end
+  @time @safetestset "Init dt vs dorpri tests" begin include("odeinterface/init_dt_vs_dopri_tests.jl") end
+  @time @safetestset "ODEInterface Regression Tests" begin include("odeinterface/ode_unrolled_comparison_tests.jl") end
 end
 
 end # @time

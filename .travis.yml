@@ -13,7 +13,7 @@ env:
   - GROUP=AlgConvergence_I
   - GROUP=AlgConvergence_II
   - GROUP=AlgConvergence_III
-  - GROUP=ODEInterface
+  - GROUP=ODEInterfaceRegression
 #matrix:
 #  allow_failures:
 #    - julia: nightly
