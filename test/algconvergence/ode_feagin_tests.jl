@@ -12,6 +12,7 @@ println("Convergence Test on Linear")
 testTol = 1
 prob = prob_ode_2Dlinear
 println("Feagin RKs")
+dts = (1//2) .^ (4:-1:2)
 sol = solve(prob,Feagin10(),dt=dts[1])
 prob = remake(prob_ode_bigfloat2Dlinear,tspan=(0//1,1//1))
 

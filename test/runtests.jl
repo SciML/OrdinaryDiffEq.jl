@@ -30,7 +30,7 @@ if group == "All" || group == "Interface"
   @time @safetestset "u_modifed Tests" begin include("interface/umodified_test.jl") end
   @time @safetestset "Composite Algorithm Tests" begin include("interface/composite_algorithm_test.jl") end
   @time @safetestset "Complex Tests" begin include("interface/complex_tests.jl") end
-  @time @safetestset "Ndim Complex Tests" begin include("interface/ndim_complex_tests.jl") end
+  @time @safetestset "Ndim Complex Tests" begin include("interface/ode_ndim_complex_tests.jl") end
   @time @safetestset "Number Type Tests" begin include("interface/ode_numbertype_tests.jl") end
   @time @safetestset "Stiffness Detection Tests" begin include("interface/stiffness_detection_test.jl") end
   @time @safetestset "Composite Interpolation Tests" begin include("interface/composite_interpolation.jl") end
