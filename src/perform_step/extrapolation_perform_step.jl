@@ -557,7 +557,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
       end
     end
   else
-    for i = 0 : floor(Int,n_curr/2)
+    Threads.@threads for i = 0 : floor(Int,n_curr/2)
       indices = (i, n_curr - i)
       for index in indices
         j_int_temp = 2Int64(subdividing_sequence[index+1])
