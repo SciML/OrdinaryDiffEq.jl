@@ -102,9 +102,6 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,IIP,uType,tType,pT
   saveiter_dense::Int
   cache::CacheType
   callback_cache::CallbackCacheType
-  previous_condition::CallbackCacheType
-  callback_next_sign::CallbackCacheType
-  callback_prev_sign::CallbackCacheType
   kshortsize::Int
   force_stepfail::Bool
   last_stepfail::Bool
@@ -126,8 +123,7 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,IIP,uType,tType,pT
                 sol,u,k,t,dt,f,p,uprev,uprev2,tprev,
       alg,dtcache,dtchangeable,dtpropose,tdir,
       eigen_est,EEst,qold,q11,erracc,dtacc,success_iter,
-      iter,saveiter,saveiter_dense,cache,callback_cache,previous_condition,
-      callback_next_sign,callback_prev_sign,
+      iter,saveiter,saveiter_dense,cache,callback_cache,
       kshortsize,force_stepfail,last_stepfail,just_hit_tstop,
       event_last_time,vector_event_last_time,last_event_error,
       accept_step,isout,reeval_fsal,u_modified,opts,destats) where {algType,IIP,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
@@ -138,8 +134,7 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,IIP,uType,tType,pT
                   sol,u,k,t,dt,f,p,uprev,uprev2,tprev,
       alg,dtcache,dtchangeable,dtpropose,tdir,
       eigen_est,EEst,qold,q11,erracc,dtacc,success_iter,
-      iter,saveiter,saveiter_dense,cache,callback_cache,previous_condition,
-      callback_next_sign,callback_prev_sign,
+      iter,saveiter,saveiter_dense,cache,callback_cache,
       kshortsize,force_stepfail,last_stepfail,just_hit_tstop,
       event_last_time,vector_event_last_time,last_event_error,
       accept_step,isout,reeval_fsal,u_modified,opts,destats) # Leave off fsalfirst and last

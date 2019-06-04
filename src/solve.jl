@@ -158,15 +158,9 @@ function DiffEqBase.__init(
 
   max_len = DiffEqBase.max_vector_callback_length(callbacks_internal)
   if max_len !== -1
-    callback_cache = zeros(uBottomEltype, max_len)
-    previous_condition = zeros(uBottomEltype, max_len)
-    callback_next_sign = zeros(uBottomEltype, max_len)
-    callback_prev_sign = zeros(uBottomEltype, max_len)
+    callback_cache = DiffEqBase.CallbackCache(max_len,uBottomEltype,uBottomEltype)
   else
     callback_cache = nothing
-    previous_condition = nothing
-    callback_next_sign = nothing
-    callback_prev_sign = nothing
   end
 
   ### Algorithm-specific defaults ###
@@ -332,8 +326,7 @@ function DiffEqBase.__init(
                              alg,dtcache,dtchangeable,
                              dtpropose,tdir,eigen_est,EEst,QT(qoldinit),q11,
                              erracc,dtacc,success_iter,
-                             iter,saveiter,saveiter_dense,cache,callback_cache,previous_condition,
-                             callback_next_sign,callback_prev_sign,
+                             iter,saveiter,saveiter_dense,cache,callback_cache,
                              kshortsize,force_stepfail,last_stepfail,
                              just_hit_tstop,event_last_time,vector_event_last_time,last_event_error,
                              accept_step,
