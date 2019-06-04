@@ -38,7 +38,6 @@ if group == "All" || group == "Interface"
   @time @safetestset "Derivative Utilities Tests" begin include("interface/utility_tests.jl") end
   @time @safetestset "DEStats Tests" begin include("interface/destats_tests.jl") end
   @time @safetestset "AD Tests" begin include("interface/ad_tests.jl") end
-  @time @safetestset "Autodiff Events Tests" begin include("interface/autodiff_events.jl") end
   @time @safetestset "No Index Tests" begin include("interface/noindex_tests.jl") end
   @time @safetestset "Units Tests" begin include("interface/units_tests.jl") end
 end
@@ -46,14 +45,15 @@ end
 if group == "All" || group == "Integrators"
   @time @safetestset "Reinit Tests" begin include("integrators/reinit_test.jl") end
   @time @safetestset "Events Tests" begin include("integrators/ode_event_tests.jl") end
-  @time @safetestset "Event Detection Tests" begin include("integrators/event_detection_tests.jl") end
   @time @safetestset "Alg Events Tests" begin include("integrators/alg_events_tests.jl") end
+  @time @safetestset "Autodiff Events Tests" begin include("integrators/autodiff_events.jl") end
   @time @safetestset "Cache Tests" begin include("Integrators/ode_cache_tests.jl") end
   @time @safetestset "Discrete Callback Dual Tests" begin include("integrators/discrete_callback_dual_test.jl") end
   @time @safetestset "Iterator Tests" begin include("integrators/iterator_tests.jl") end
   @time @safetestset "Integrator Interface Tests" begin include("integrators/integrator_interface_tests.jl") end
   @time @safetestset "Add Steps Tests" begin include("integrators/ode_add_steps_tests.jl") end
   @time @safetestset "Error Check Tests" begin include("integrators/check_error.jl") end
+  @time @safetestset "Event Detection Tests" begin include("integrators/event_detection_tests.jl") end
 end
 
 if !is_APPVEYOR && ( group == "All" || group == "Regression" )
@@ -61,8 +61,8 @@ if !is_APPVEYOR && ( group == "All" || group == "Regression" )
   @time @safetestset "Inplace Tests" begin include("regression/ode_inplace_tests.jl") end
   @time @safetestset "Adaptive Tests" begin include("regression/ode_adaptive_tests.jl") end
   @time @safetestset "PSOS Energy Conservation Tests" begin include("regression/psos_and_energy_conservation.jl") end
-  @time @safetestset "Time derivative Tests" begin include("regression/time_derivative_test.jl") end
   @time @safetestset "Unrolled Tests" begin include("regression/ode_unrolled_comparison_tests.jl") end
+  @time @safetestset "Time derivative Tests" begin include("regression/time_derivative_test.jl") end
 end
 
 if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_I" )
@@ -91,6 +91,7 @@ if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_III" )
 end
 
 if !is_APPVEYOR && ( group == "ODEInterfaceRegression" )
+  @show is_TRAVIS
   if is_TRAVIS
     using Pkg
     Pkg.add("ODEInterface")

@@ -15,16 +15,22 @@ prob = ODEProblem(ff_time_derivative,u0,tspan)
 
 sol = solve(prob,Rosenbrock32(),reltol=1e-9,abstol=1e-9)
 @test sol.errors[:final] < 1e-5
+@show Rosenbrock23()
 sol = solve(prob,Rosenbrock23(),reltol=1e-9,abstol=1e-9)
 @test sol.errors[:final] < 1e-10
+@show Rodas4
 sol = solve(prob,Rodas4(),reltol=1e-9,abstol=1e-9)
 @test sol.errors[:final] < 1e-10
+@show Rodas5
 sol = solve(prob,Rodas5(),reltol=1e-9,abstol=1e-9)
 @test sol.errors[:final] < 1e-10
+@show Veldd4
 sol = solve(prob,Veldd4(),reltol=1e-9,abstol=1e-9)
 @test sol.errors[:final] < 1e-10
+@show KenCarp4
 sol = solve(prob,KenCarp4(),reltol=1e-9,abstol=1e-9)
 @test sol.errors[:final] < 1e-10
+@show TRBDF2
 sol = solve(prob,TRBDF2(),reltol=1e-9,abstol=1e-9)
 @test sol.errors[:final] < 1e-10
 
