@@ -8,7 +8,7 @@ else
 end
 
 is_APPVEYOR = ( Sys.iswindows() && haskey(ENV,"APPVEYOR") )
-is_TRAVIS = ( Sys.iswindows() && haskey(ENV,"TRAVISCI") )
+is_TRAVIS = ( Sys.iswindows() && haskey(ENV,"TRAVIS") )
 
 #Start Test Script
 
@@ -91,6 +91,11 @@ if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_III" )
 end
 
 if !is_APPVEYOR && ( group == "ODEInterfaceRegression" )
+  if is_TRAVIS
+    using Pkg
+    Pkg.add("ODEInterface")
+    Pkg.add("ODEInterfaceDiffEq")
+  end
   @time @safetestset "Init dt vs dorpri tests" begin include("odeinterface/init_dt_vs_dopri_tests.jl") end
   @time @safetestset "ODEInterface Regression Tests" begin include("odeinterface/ode_unrolled_comparison_tests.jl") end
 end
