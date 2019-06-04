@@ -11,7 +11,7 @@ cache:
 build:
   stage: build
   tags: 
-    - 'diffeqbasic'
+    - 'gitlab-org'
   script:
     - julia -e "using InteractiveUtils;
                 versioninfo()"
@@ -31,7 +31,6 @@ test-Interface:
   stage: test
   tags: 
     - 'diffeqbasic'
-    - 'gitlab-org'
   variables:
     GROUP: "Interface"
   script:
