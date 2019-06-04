@@ -257,12 +257,15 @@ end
   utilde::uType
   u_temp1::uType
   u_temp2::uType
+  u_temp3::Array{uType,1}
+  u_temp4::Array{uType,1}
   tmp::uType # for get_tmp_cache()
   T::Array{uType,1}  # Storage for the internal discretisations obtained by the explicit midpoint rule
   res::uNoUnitsType # Storage for the scaled residual of u and utilde
 
   fsalfirst::rateType
   k::rateType
+  k_tmps::Array{rateType,1}
 
   # Constant values
   Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n - 1)
@@ -279,15 +282,26 @@ function alg_cache(alg::ExtrapolationMidpointHairerWanner,u,rate_prototype,uElty
   utilde = zero(u)
   u_temp1 = zero(u)
   u_temp2 = zero(u)
+  u_temp3 = Array{typeof(u),1}(undef, Threads.nthreads())
+  u_temp4 = Array{typeof(u),1}(undef, Threads.nthreads())
+  
+  for i=1:Threads.nthreads()
+    u_temp3[i] = zero(u)
+    u_temp4[i] = zero(u)
+  end
   tmp = zero(u)
   T = fill(zero(u), alg.n_max + 1)
   res = uEltypeNoUnits.(zero(u))
   fsalfirst = zero(rate_prototype)
   k = zero(rate_prototype)
+  k_tmps = Array{typeof(k),1}(undef, Threads.nthreads())
+  for i=1:Threads.nthreads()
+      k_tmps[i] = zero(rate_prototype)
+  end
 
   cc = alg_cache(alg,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val{false})
 
   # Initialize the cache
-  ExtrapolationMidpointHairerWannerCache(utilde, u_temp1, u_temp2, tmp, T, res, fsalfirst, k,
+  ExtrapolationMidpointHairerWannerCache(utilde, u_temp1, u_temp2, u_temp3, u_temp4, tmp, T, res, fsalfirst, k, k_tmps,
       cc.Q, cc.n_curr, cc.n_old, cc.coefficients, cc.stage_number, cc.sigma)
 end

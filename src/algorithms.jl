@@ -87,8 +87,9 @@ struct ExtrapolationMidpointHairerWanner <: OrdinaryDiffEqExtrapolationVarOrderV
   n_init::Int # Initial extrapolation order
   n_max::Int # Maximal extrapolation order
   sequence::Symbol # Name of the subdividing sequence
+  threading::Bool
 end
-function ExtrapolationMidpointHairerWanner(;min_order=2,init_order=5, max_order=10, sequence = :harmonic)
+function ExtrapolationMidpointHairerWanner(;min_order=2,init_order=5, max_order=10, sequence = :harmonic, threading = true)
   # Enforce 2 <=  min_order
   # and min_order + 1 <= init_order <= max_order - 1:
   n_min = max(2, min_order)
@@ -114,7 +115,7 @@ function ExtrapolationMidpointHairerWanner(;min_order=2,init_order=5, max_order=
   end
 
   # Initialize algorithm
-  ExtrapolationMidpointHairerWanner(n_min,n_init,n_max,sequence)
+  ExtrapolationMidpointHairerWanner(n_min,n_init,n_max,sequence,threading)
 end
 
 struct RK46NL <: OrdinaryDiffEqAlgorithm end
