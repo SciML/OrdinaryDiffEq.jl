@@ -8,7 +8,7 @@ else
 end
 
 is_APPVEYOR = ( Sys.iswindows() && haskey(ENV,"APPVEYOR") )
-is_TRAVIS = haskey(ENV,"TRAVIS") && ENV["TRAVIS"] == true
+is_TRAVIS = haskey(ENV,"TRAVIS")
 
 #Start Test Script
 
@@ -47,7 +47,7 @@ if group == "All" || group == "Integrators"
   @time @safetestset "Events Tests" begin include("integrators/ode_event_tests.jl") end
   @time @safetestset "Alg Events Tests" begin include("integrators/alg_events_tests.jl") end
   @time @safetestset "Autodiff Events Tests" begin include("integrators/autodiff_events.jl") end
-  @time @safetestset "Cache Tests" begin include("Integrators/ode_cache_tests.jl") end
+  @time @safetestset "Cache Tests" begin include("integrators/ode_cache_tests.jl") end
   @time @safetestset "Discrete Callback Dual Tests" begin include("integrators/discrete_callback_dual_test.jl") end
   @time @safetestset "Iterator Tests" begin include("integrators/iterator_tests.jl") end
   @time @safetestset "Integrator Interface Tests" begin include("integrators/integrator_interface_tests.jl") end
