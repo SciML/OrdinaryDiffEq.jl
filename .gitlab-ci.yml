@@ -31,6 +31,7 @@ test-Interface:
   stage: test
   tags: 
     - 'diffeqbasic'
+    - 'gitlab-org'
   variables:
     GROUP: "Interface"
   script:
