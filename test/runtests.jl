@@ -44,16 +44,16 @@ if group == "All" || group == "Interface"
 end
 
 if group == "All" || group == "Integrators"
-  @time @safetestset "Reinit Tests" begin include("integrator/reinit_test.jl") end
-  @time @safetestset "Events Tests" begin include("integrator/ode_event_tests.jl") end
-  @time @safetestset "Event Detection Tests" begin include("integrator/event_detection_tests.jl") end
-  @time @safetestset "Alg Events Tests" begin include("integrator/alg_events_tests.jl") end
-  @time @safetestset "Cache Tests" begin include("integrator/ode_cache_tests.jl") end
-  @time @safetestset "Discrete Callback Dual Tests" begin include("integrator/discrete_callback_dual_test.jl") end
-  @time @safetestset "Iterator Tests" begin include("integrator/iterator_tests.jl") end
-  @time @safetestset "Integrator Interface Tests" begin include("integrator/integrator_interface_tests.jl") end
-  @time @safetestset "Add Steps Tests" begin include("integrator/ode_add_steps_tests.jl") end
-  @time @safetestset "Error Check Tests" begin include("integrator/check_error.jl") end
+  @time @safetestset "Reinit Tests" begin include("integrators/reinit_test.jl") end
+  @time @safetestset "Events Tests" begin include("integrators/ode_event_tests.jl") end
+  @time @safetestset "Event Detection Tests" begin include("integrators/event_detection_tests.jl") end
+  @time @safetestset "Alg Events Tests" begin include("integrators/alg_events_tests.jl") end
+  @time @safetestset "Cache Tests" begin include("Integrators/ode_cache_tests.jl") end
+  @time @safetestset "Discrete Callback Dual Tests" begin include("integrators/discrete_callback_dual_test.jl") end
+  @time @safetestset "Iterator Tests" begin include("integrators/iterator_tests.jl") end
+  @time @safetestset "Integrator Interface Tests" begin include("integrators/integrator_interface_tests.jl") end
+  @time @safetestset "Add Steps Tests" begin include("integrators/ode_add_steps_tests.jl") end
+  @time @safetestset "Error Check Tests" begin include("integrators/check_error.jl") end
 end
 
 if !is_APPVEYOR && ( group == "All" || group == "Regression" )
