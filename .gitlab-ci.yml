@@ -10,8 +10,6 @@ cache:
 
 build:
   stage: build
-  tags: 
-    - 'gitlab-org'
   script:
     - julia -e "using InteractiveUtils;
                 versioninfo()"
