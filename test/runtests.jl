@@ -8,7 +8,7 @@ else
 end
 
 is_APPVEYOR = ( Sys.iswindows() && haskey(ENV,"APPVEYOR") )
-is_TRAVIS = ( Sys.iswindows() && haskey(ENV,"TRAVIS") )
+is_TRAVIS = haskey(ENV,"TRAVIS") && ENV["TRAVIS"] == true
 
 #Start Test Script
 
