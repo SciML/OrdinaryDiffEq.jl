@@ -32,6 +32,6 @@ sol = solve(prob,TRBDF2(),abstol=1e-10,reltol=1e-10)
 sol = solve(prob,Trapezoid(),abstol=1e-10,reltol=1e-10)
 @test sol.errors[:l2] < 1e-7
 sol = solve(prob,KenCarp3(),abstol=1e-10,reltol=1e-10)
-@test sol.errors[:l2] < 1e-7
+@test sol.errors[:l2] < 3e-5
 sol = solve(prob,KenCarp4(),abstol=1e-10,reltol=1e-10)
 @test sol.errors[:l2] < 1e-7
