@@ -8,6 +8,7 @@ rn = (du, u, p, t) -> begin
 end
 u0 = rand(3)
 prob = ODEProblem(ODEFunction(rn, jac_prototype=JacVecOperator{Float64}(rn, u0; autodiff=false)), u0, (0, 10.))
+@test_nowarn sol = solve(prob, TRBDF2(autodiff=false));
 @test_nowarn sol = solve(prob, TRBDF2(autodiff=false, linsolve=LinSolveGMRES()));
 @test_nowarn sol = solve(prob, TRBDF2(autodiff=false, linsolve=LinSolveGMRES(), smooth_est=false));
 @test_nowarn sol = solve(prob, TRBDF2(autodiff=false, linsolve=LinSolveGMRES(Pl=lu(A)), smooth_est=false));
