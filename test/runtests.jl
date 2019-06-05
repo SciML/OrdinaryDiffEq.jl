@@ -98,7 +98,7 @@ if !is_APPVEYOR && ( group == "ODEInterfaceRegression" )
     Pkg.add("ODEInterfaceDiffEq")
   end
   @time @safetestset "Init dt vs dorpri tests" begin include("odeinterface/init_dt_vs_dopri_tests.jl") end
-  @time @safetestset "ODEInterface Regression Tests" begin include("odeinterface/ode_unrolled_comparison_tests.jl") end
+  @time @safetestset "ODEInterface Regression Tests" begin include("odeinterface/odeinterface_regression.jl") end
 end
 
 end # @time

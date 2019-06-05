@@ -49,7 +49,7 @@ end
   nlsolver.z = z₂ = z₁
 
   nlsolver.tmp = uprev + γ*z₁
-  nlsolver.c = 2γ
+  nlsolver.c = γ
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
 
@@ -115,7 +115,7 @@ end
   nlsolver.z = z₂
 
   @.. tmp = uprev + γ*z₁
-  nlsolver.c = 2γ
+  nlsolver.c = γ
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
   set_new_W!(nlsolver, false)
@@ -210,7 +210,7 @@ end
     nlsolver.tmp += ea21*k1
   end
 
-  nlsolver.c = 2γ
+  nlsolver.c = γ
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
 
@@ -337,7 +337,7 @@ end
     @.. tmp += ea21*k1
   end
 
-  nlsolver.c = 2γ
+  nlsolver.c = γ
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
   set_new_W!(nlsolver, false)
@@ -452,7 +452,7 @@ end
   nlsolver.z = z₂ = zero(u)
 
   nlsolver.tmp = uprev + γ*z₁
-  nlsolver.c = 2γ
+  nlsolver.c = γ
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
 
@@ -530,7 +530,7 @@ end
   nlsolver.z = z₂
 
   @.. tmp = uprev + γ*z₁
-  nlsolver.c = 2γ
+  nlsolver.c = γ
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
   set_new_W!(nlsolver, false)
@@ -636,7 +636,7 @@ end
     tmp += ea21*k1
   end
   nlsolver.tmp = tmp
-  nlsolver.c = 2γ
+  nlsolver.c = γ
 
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
@@ -808,7 +808,7 @@ end
     @.. tmp += ea21*k1
   end
 
-  nlsolver.c = 2γ
+  nlsolver.c = γ
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
   set_new_W!(nlsolver, false)
@@ -979,7 +979,7 @@ end
   nlsolver.z = z₂ = zero(u)
 
   nlsolver.tmp = uprev + γ*z₁
-  nlsolver.c = 2γ
+  nlsolver.c = γ
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
 
@@ -1075,7 +1075,7 @@ end
   nlsolver.z = z₂
 
   @.. tmp = uprev + γ*z₁
-  nlsolver.c = 2γ
+  nlsolver.c = γ
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
   set_new_W!(nlsolver, false)
@@ -1213,7 +1213,7 @@ end
     tmp += ea21*k1
   end
   nlsolver.tmp = tmp
-  nlsolver.c = 2γ
+  nlsolver.c = γ
 
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
@@ -1426,7 +1426,7 @@ end
     @.. tmp += ea21*k1
   end
 
-  nlsolver.c = 2γ
+  nlsolver.c = γ
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
   set_new_W!(nlsolver, false)

@@ -28,7 +28,7 @@ sol = solve(prob,Rodas5(),reltol=1e-9,abstol=1e-9)
 sol = solve(prob,Veldd4(),reltol=1e-9,abstol=1e-9)
 @test sol.errors[:final] < 1e-10
 @show KenCarp4
-sol = solve(prob,KenCarp4(),reltol=1e-9,abstol=1e-9)
+sol = solve(prob,KenCarp4(),reltol=1e-12,abstol=1e-12)
 @test sol.errors[:final] < 1e-10
 @show TRBDF2
 sol = solve(prob,TRBDF2(),reltol=1e-9,abstol=1e-9)

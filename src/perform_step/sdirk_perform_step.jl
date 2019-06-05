@@ -1003,7 +1003,7 @@ end
   nlsolver.z = z₂ = zero(z₁)
 
   nlsolver.tmp = uprev + γ*z₁
-  nlsolver.c = 2γ
+  nlsolver.c = γ
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
 
@@ -1107,7 +1107,7 @@ end
   nlsolver.z = z₂
 
   @.. tmp = uprev + γ*z₁
-  nlsolver.c = 2γ
+  nlsolver.c = γ
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
   set_new_W!(nlsolver, false)
