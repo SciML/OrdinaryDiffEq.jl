@@ -156,9 +156,9 @@ function DiffEqBase.__init(
 
   callbacks_internal = CallbackSet(callback,prob.callback)
 
-  max_len = DiffEqBase.max_vector_callback_length(callbacks_internal)
-  if max_len !== -1
-    callback_cache = DiffEqBase.CallbackCache(max_len,uBottomEltype,uBottomEltype)
+  max_len_cb = DiffEqBase.max_vector_callback_length(callbacks_internal)
+  if max_len_cb isa VectorContinuousCallback
+    callback_cache = DiffEqBase.CallbackCache(max_len_cb.len,uBottomEltype,uBottomEltype)
   else
     callback_cache = nothing
   end
