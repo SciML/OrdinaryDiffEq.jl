@@ -40,6 +40,7 @@ if group == "All" || group == "Interface"
   @time @safetestset "AD Tests" begin include("interface/ad_tests.jl") end
   @time @safetestset "No Index Tests" begin include("interface/noindex_tests.jl") end
   @time @safetestset "Units Tests" begin include("interface/units_tests.jl") end
+  @time @safetestset "Linear Nonlinear Solver Tests" begin include("interface/linear_nonlinear_tests.jl") end
 end
 
 if group == "All" || group == "Integrators"
