@@ -6,3 +6,5 @@ DiffEqCallbacks
 DiffEqOperators
 SafeTestsets
 Calculus
+Unitful
+DiffEqSensitivity
