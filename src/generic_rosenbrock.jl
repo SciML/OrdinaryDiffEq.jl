@@ -7,53 +7,104 @@ struct RosenbrockTableau{T,T2}
     c::Array{T2,1}
 end
 
-function _gen_constant_cache!(cachevalexpr,inds,name,T,arr)
+function _gen_constant_cache!(assignexprs,inds,name,T,arr)
     for ind in inds
         if length(size(arr))==2
             indstr="$(ind[1])$(ind[2])"
         elseif length(size(arr))==1
             indstr="$(ind[1])"
         end
-        push!(cachevalexpr.args,:($(Symbol(name,indstr))=convert($T,$(arr[ind]))))
+        push!(assignexprs,:($(Symbol(name,indstr))=convert($T,$(arr[ind]))))
     end
 end
 
 function gen_constant_cache(tab::RosenbrockTableau,cachename::Symbol)
     ainds=findall(!iszero,tab.a)
     Cinds=findall(!iszero,tab.C)
-    cachevalexpr=quote end
-    _gen_constant_cache!(cachevalexpr,ainds,:a,:T,tab.a)
-    _gen_constant_cache!(cachevalexpr,Cinds,:C,:T,tab.C)
-    _gen_constant_cache!(cachevalexpr,eachindex(tab.b),:b,:T,tab.b)
-    push!(cachevalexpr.args,:(gamma=convert(T2,$(tab.gamma))))
-    _gen_constant_cache!(cachevalexpr,eachindex(tab.d),:d,:T,tab.d)
-    _gen_constant_cache!(cachevalexpr,findall(!iszero,tab.c),:c,:T2,tab.c)
-    
-    cachestructexpr=quote end
-    cacheinitexpr=:($cachename())
-    for lineexpr in cachevalexpr.args
-        if typeof(lineexpr)==LineNumberNode
-            continue
-        end
-        #e.g :(c6=convert(T2,0.92))
-        varsym=lineexpr.args[1]#head(=)->args1
-        typesym=lineexpr.args[2].args[2]#head(=)->args2 head(call)->args2
-        push!(cachestructexpr.args,:($varsym::$typesym))
-        push!(cacheinitexpr.args,varsym)
-    end
-    push!(cachevalexpr.args,cacheinitexpr)
+    assignexprs=Array{Expr,1}()
+    _gen_constant_cache!(assignexprs,ainds,:a,:T,tab.a)
+    _gen_constant_cache!(assignexprs,Cinds,:C,:T,tab.C)
+    _gen_constant_cache!(assignexprs,eachindex(tab.b),:b,:T,tab.b)
+    push!(assignexprs,:(gamma=convert(T2,$(tab.gamma))))
+    _gen_constant_cache!(assignexprs,eachindex(tab.d),:d,:T,tab.d)
+    _gen_constant_cache!(assignexprs,findall(!iszero,tab.c),:c,:T2,tab.c)
+    structexprs=[:($(assignexpr.args[1])::$(assignexpr.args[2].args[2])) for assignexpr in assignexprs]
+    valsymbols=[assignexpr.args[1] for assignexpr in assignexprs]
+    cacheinitexpr=:($cachename($(valsymbols...)))
     cacheexpr=quote
         struct $cachename{T,T2} <: OrdinaryDiffEqConstantCache
-            $cachestructexpr
+            $(structexprs...)
         end
         function $cachename(T::Type,T2::Type)
-            $cachevalexpr
+            $(assignexprs...)
+            $cacheinitexpr
         end
     end
     cacheinitexpr,cacheexpr
 end
 
-function gen_constant_perform_step(tab,cachename,cacheinitexpr)
+function gen_cache(tab::RosenbrockTableau,algname::Symbol,cachename::Symbol,constcachename::Symbol)
+    kstype=[:($(Symbol(:k,i))::rateType) for i in 1:length(tab.b)]
+    ks=[Symbol(:k,i) for i in 1:length(tab.b)]
+    quote    
+        @cache mutable struct $cachename{uType,rateType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+            u::uType
+            uprev::uType
+            du::rateType
+            du1::rateType
+            du2::rateType
+            $(kstype...)
+            fsalfirst::rateType
+            fsallast::rateType
+            dT::rateType
+            J::JType
+            W::WType
+            tmp::rateType
+            tab::TabType
+            tf::TFType
+            uf::UFType
+            linsolve_tmp::rateType
+            linsolve::F
+            jac_config::JCType
+            grad_config::GCType
+        end
+        function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+            du = zero(rate_prototype)
+            du1 = zero(rate_prototype)
+            du2 = zero(rate_prototype)
+            k1 = zero(rate_prototype)
+            k2 = zero(rate_prototype)
+            k3 = zero(rate_prototype)
+            k4 = zero(rate_prototype)
+            k5 = zero(rate_prototype)
+            k6 = zero(rate_prototype)
+            fsalfirst = zero(rate_prototype)
+            fsallast = zero(rate_prototype)
+            dT = zero(rate_prototype)
+            if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype !== nothing
+              W = WOperator(f, dt, true)
+              J = nothing # is J = W.J better?
+            else
+              J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+              W = similar(J)
+            end
+            tmp = zero(rate_prototype)
+            tab = $constcachename(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+          
+            tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
+            uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+            linsolve_tmp = zero(rate_prototype)
+            linsolve = alg.linsolve(Val{:init},uf,u)
+            grad_config = build_grad_config(alg,f,tf,du1,t)
+            jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
+            $cachename(u,uprev,du,du1,du2,$(ks...),
+                              fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
+                              linsolve,jac_config,grad_config)
+        end
+    end
+end
+
+function gen_constant_perform_step(tab::RosenbrockTableau,cachename::Symbol,cacheinitexpr::Expr)
     unpacktabexpr=:(@unpack ()=cache.tab)
     unpacktabexpr.args[3].args[1].args=copy(cacheinitexpr.args[2:end])
     dtCijexpr=quote end
