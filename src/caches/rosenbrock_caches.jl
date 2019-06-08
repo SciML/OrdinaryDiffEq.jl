@@ -822,3 +822,64 @@ function alg_cache(alg::RosenbrockW6S4OS,u,rate_prototype,uEltypeNoUnits,uBottom
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   RosenbrockWConstantCache(tf,uf,RosenbrockW6S4OSConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)))
 end
+
+@cache mutable struct RosenbrockWCache{uType,rateType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+  u::uType
+  uprev::uType
+  du::rateType
+  du1::rateType
+  du2::rateType
+  k1::rateType
+  k2::rateType
+  k3::rateType
+  k4::rateType
+  k5::rateType
+  k6::rateType
+  fsalfirst::rateType
+  fsallast::rateType
+  dT::rateType
+  J::JType
+  W::WType
+  tmp::rateType
+  tab::TabType
+  tf::TFType
+  uf::UFType
+  linsolve_tmp::rateType
+  linsolve::F
+  jac_config::JCType
+  grad_config::GCType
+end
+
+function alg_cache(alg::RosenbrockW6S4OS,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  du = zero(rate_prototype)
+  du1 = zero(rate_prototype)
+  du2 = zero(rate_prototype)
+  k1 = zero(rate_prototype)
+  k2 = zero(rate_prototype)
+  k3 = zero(rate_prototype)
+  k4 = zero(rate_prototype)
+  k5 = zero(rate_prototype)
+  k6 = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  fsallast = zero(rate_prototype)
+  dT = zero(rate_prototype)
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype !== nothing
+    W = WOperator(f, dt, true)
+    J = nothing # is J = W.J better?
+  else
+    J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+    W = similar(J)
+  end
+  tmp = zero(rate_prototype)
+  tab = RosenbrockW6S4OSConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+
+  tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+  linsolve_tmp = zero(rate_prototype)
+  linsolve = alg.linsolve(Val{:init},uf,u)
+  grad_config = build_grad_config(alg,f,tf,du1,t)
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
+  RosenbrockWCache(u,uprev,du,du1,du2,k1,k2,k3,k4,k5,k6,
+                    fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
+                    linsolve,jac_config,grad_config)
+end

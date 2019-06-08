@@ -54,6 +54,8 @@ module OrdinaryDiffEq
 
   include("misc_utils.jl")
   include("algorithms.jl")
+  
+  include("generic_rosenbrock.jl")
 
   include("caches/basic_caches.jl")
   include("caches/low_order_rk_caches.jl")
