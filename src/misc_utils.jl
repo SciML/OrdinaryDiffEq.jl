@@ -49,7 +49,7 @@ end
 
 macro cache(expr)
   name = expr.args[2].args[1].args[1]
-  fields = expr.args[3].args[2:2:end]
+  fields = [x for x in expr.args[3].args if typeof(x)!=LineNumberNode]
   cache_vars = Expr[]
   jac_vars = Pair{Symbol,Expr}[]
   for x in fields

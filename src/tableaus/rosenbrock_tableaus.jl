@@ -660,7 +660,7 @@ function Rodas5ConstantCache(T::Type,T2::Type)
                       gamma,d1,d2,d3,d4,d5,c2,c3,c4,c5)
 end
 
-@RosenbrockW6S4OSConstant(:cache)
+@RosenbrockW6S4OS(:constcache)
 
 #=
 # alpha_ij

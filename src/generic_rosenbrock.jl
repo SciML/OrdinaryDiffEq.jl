@@ -45,6 +45,7 @@ end
 
 function gen_cache(tab::RosenbrockTableau,algname::Symbol,cachename::Symbol,constcachename::Symbol)
     kstype=[:($(Symbol(:k,i))::rateType) for i in 1:length(tab.b)]
+    ksinit=[:($(Symbol(:k,i))=zero(rate_prototype)) for i in 1:length(tab.b)]
     ks=[Symbol(:k,i) for i in 1:length(tab.b)]
     quote    
         @cache mutable struct $cachename{uType,rateType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
@@ -72,12 +73,7 @@ function gen_cache(tab::RosenbrockTableau,algname::Symbol,cachename::Symbol,cons
             du = zero(rate_prototype)
             du1 = zero(rate_prototype)
             du2 = zero(rate_prototype)
-            k1 = zero(rate_prototype)
-            k2 = zero(rate_prototype)
-            k3 = zero(rate_prototype)
-            k4 = zero(rate_prototype)
-            k5 = zero(rate_prototype)
-            k6 = zero(rate_prototype)
+            $(ksinit...)
             fsalfirst = zero(rate_prototype)
             fsallast = zero(rate_prototype)
             dT = zero(rate_prototype)
@@ -174,26 +170,95 @@ function gen_constant_perform_step(tab::RosenbrockTableau,cachename::Symbol,cach
     end
 
 end
-#=
-    for aind in ainds
-        push!(cachevalexpr.args,:($(Symbol("a$(aind[1])$(aind[2])"))=convert(T,$(tab.a[aind]))))
-    end
-    for Cind in cinds
-        push!(cachevalexpr.args,:($(Symbol("C$(cind[1])$(cind[2])"))=convert(T,$(tab.C[Cind]))))
-    end
-=#
-#---------------Constant Cache--------------
 
-macro RosenbrockW6S4OSConstant(part)
+function gen_perform_step(tab::RosenbrockTableau,cachename::Symbol,cacheinitexpr::Expr)
+    n=length(tab.b)
+    unpacktabexpr=:(@unpack ()=cache.tab)
+    unpacktabexpr.args[3].args[1].args=copy(cacheinitexpr.args[2:end])
+    ks=[Symbol(:k,i) for i in 1:n]
+    dtCij=[:($(Symbol(:dtC,"$(Cind[1])$(Cind[2])"))=$(Symbol(:C,"$(Cind[1])$(Cind[2])"))/dt) for Cind in findall(!iszero,tab.C)]
+    dtdi=[:($(Symbol(:dtd,dind[1]))=dt*$(Symbol(:d,dind[1]))) for dind in eachindex(tab.d)]
+    iterexprs=[]
+    for i in 1:(n-1)
+        ki=Symbol(:k,i)
+        dtdj=Symbol(:dtd,i+1)
+        aijkj=[:($(Symbol(:a,i+1,j))*$(Symbol(:k,j))) for j in findall(!iszero,tab.a[i+1,:])]
+        dtCijkj=[:($(Symbol(:dtC,i+1,j))*$(Symbol(:k,j))) for j in findall(!iszero,tab.C[i+1,:])]
+        repeatstepexpr=[]
+        if i==1
+            repeatstepexpr=[:(!repeat_step)]
+        end
+        push!(iterexprs,quote
+            if DiffEqBase.has_invW(f)
+                mul!(vec($ki), W, vec(linsolve_tmp))
+            else
+                cache.linsolve(vec($ki), W, vec(linsolve_tmp), $(repeatstepexpr...))
+                @.. $ki = -$ki
+            end
+            integrator.destats.nsolve += 1
+            @.. u = +(uprev,$(aijkj...))
+            f( du,  u, p, t+$(Symbol(:c,i+1))*dt)
+            integrator.destats.nf += 1
+            if mass_matrix == I
+                @.. linsolve_tmp = +(du,$dtdj*dT,$(dtCijkj...))
+            else
+                @.. du1 = +($(dtCijkj...))
+                mul!(du2,mass_matrix,du1)
+                @.. linsolve_tmp = du + $dtdj*dT + du2
+            end
+        end)
+    end
+    klast=Symbol(:k,n)
+    biki=[:($(Symbol(:b,i))*$(Symbol(:k,i))) for i in 1:n]
+    push!(iterexprs,quote
+        if DiffEqBase.has_invW(f)
+            mul!(vec($klast), W, vec(linsolve_tmp))
+        else
+            cache.linsolve(vec($klast), W, vec(linsolve_tmp))
+            @.. $klast = -$klast
+        end
+        integrator.destats.nsolve += 1
+        @.. u = +(uprev,$(biki...))
+        f( fsallast,  u, p, t + dt)
+        integrator.destats.nf += 1
+    end)
+    quote
+        @muladd function perform_step!(integrator, cache::$cachename, repeat_step=false)
+            @unpack t,dt,uprev,u,f,p = integrator
+            @unpack du,du1,du2,fsallast,dT,J,W,uf,tf,$(ks...),linsolve_tmp,jac_config = cache
+            $unpacktabexpr
+
+            # Assignments
+            sizeu  = size(u)
+            uidx = eachindex(integrator.uprev)
+            mass_matrix = integrator.f.mass_matrix
+            atmp = du # does not work with units - additional unitless array required!
+          
+            # Precalculations
+            $(dtCij...)
+            $(dtdi...)
+            dtgamma = dt*gamma
+            calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
+
+            $(iterexprs...)
+        end
+    end
+end
+
+macro RosenbrockW6S4OS(part)
     tab=RosenbrockW6S4OSTableau()
-    cacheinitexpr,cacheexpr=gen_constant_cache(tab,:RosenbrockW6S4OSConstantCache)
-    if part.value==:cache
+    cacheinitexpr,constcacheexpr=gen_constant_cache(tab,:RosenbrockW6S4OSConstantCache)
+    if part.value==:constcache
+        println("Generating const cache")
+        return esc(constcacheexpr)
+    elseif part.value==:cache
         println("Generating cache")
-        return esc(cacheexpr)
+        return esc(gen_cache(tab,:RosenbrockW6S4OS,:RosenbrockWCache,:RosenbrockW6S4OSConstantCache))
     elseif part.value==:performstep
         println("Generating perform_step")
-        performstepexpr=gen_constant_perform_step(tab,:RosenbrockWConstantCache,cacheinitexpr)
-        return esc(performstepexpr)
+        constperformstepexpr=gen_constant_perform_step(tab,:RosenbrockWConstantCache,cacheinitexpr)
+        performstepexpr=gen_perform_step(tab,:RosenbrockWCache,cacheinitexpr)
+        return esc(quote $([constperformstepexpr,performstepexpr]...) end)
     else
         println("Unknown parameter!")
     end
