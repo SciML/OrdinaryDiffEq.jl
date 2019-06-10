@@ -1432,27 +1432,5 @@ end
   end
 end
 
-function initialize!(integrator, cache::RosenbrockWConstantCache)
-  integrator.kshortsize = 2
-  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
-  integrator.destats.nf += 1
-
-  # Avoid undefined entries if k is an array of arrays
-  integrator.fsallast = zero(integrator.fsalfirst)
-  integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast
-end
-
-function initialize!(integrator, cache::RosenbrockWCache)
-  integrator.kshortsize = 2
-  @unpack fsalfirst,fsallast = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = fsallast
-  resize!(integrator.k, integrator.kshortsize)
-  integrator.k .= [fsalfirst,fsallast]
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
-  integrator.destats.nf += 1
-end
-
+@RosenbrockW6S4OS(:init)
 @RosenbrockW6S4OS(:performstep)

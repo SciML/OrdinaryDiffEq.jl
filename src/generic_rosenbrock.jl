@@ -1,4 +1,5 @@
-struct RosenbrockTableau{T,T2}
+abstract type RosenbrockTableau end
+struct RosenbrockFixedTableau{T,T2}<:RosenbrockTableau
     a::Array{T,2}
     C::Array{T,2}
     b::Array{T,1}
@@ -7,7 +8,39 @@ struct RosenbrockTableau{T,T2}
     c::Array{T2,1}
 end
 
-function _gen_constant_cache!(assignexprs,inds,name,T,arr)
+struct RosenbrockAdaptiveTableau{T,T2}<:RosenbrockTableau
+    a::Array{T,2}
+    C::Array{T,2}
+    b::Array{T,1}
+    btilde::Array{T,1}
+    gamma::T2
+    d::Array{T,1}
+    c::Array{T2,1}
+end
+
+function _common_nonzero_vals(tab::RosenbrockTableau)
+    nzvals=[]
+    push!(nzvals,[Symbol(:a,ind[1],ind[2]) for ind in findall(!iszero,tab.a)])
+    push!(nzvals,[Symbol(:C,ind[1],ind[2]) for ind in findall(!iszero,tab.C)])
+    push!(nzvals,[Symbol(:b,ind) for ind in findall(!iszero,tab.b)])
+    push!(nzvals,:gamma)
+    push!(nzvals,[Symbol(:d,ind) for ind in findall(!iszero,tab.d)])
+    push!(nzvals,[Symbol(:c,ind) for ind in findall(!iszero,tab.c)])
+    nzvals
+end
+
+function _nonzero_vals(tab::RosenbrockFixedTableau)
+    nzvals=_common_nonzero_vals(tab)
+    vcat(nzvals...)
+end
+
+function _nonzero_vals(tab::RosenbrockAdaptiveTableau)
+    nzvals=_common_nonzero_vals(tab)
+    push!(nzvals,[Symbol(:btilde,ind) for ind in findall(!iszero,tab.btilde)])
+    vcat(nzvals...)
+end
+
+function _push_assigns!(assignexprs,inds,name,T,arr)
     for ind in inds
         if length(size(arr))==2
             indstr="$(ind[1])$(ind[2])"
@@ -18,36 +51,54 @@ function _gen_constant_cache!(assignexprs,inds,name,T,arr)
     end
 end
 
-function gen_constant_cache(tab::RosenbrockTableau,cachename::Symbol)
+function gen_tableau(tab::RosenbrockTableau,tabname::Symbol,tabstructname::Symbol,skipstructdef::Bool=false)
     ainds=findall(!iszero,tab.a)
     Cinds=findall(!iszero,tab.C)
     assignexprs=Array{Expr,1}()
-    _gen_constant_cache!(assignexprs,ainds,:a,:T,tab.a)
-    _gen_constant_cache!(assignexprs,Cinds,:C,:T,tab.C)
-    _gen_constant_cache!(assignexprs,eachindex(tab.b),:b,:T,tab.b)
+    _push_assigns!(assignexprs,ainds,:a,:T,tab.a)
+    _push_assigns!(assignexprs,Cinds,:C,:T,tab.C)
+    _push_assigns!(assignexprs,eachindex(tab.b),:b,:T,tab.b)
     push!(assignexprs,:(gamma=convert(T2,$(tab.gamma))))
-    _gen_constant_cache!(assignexprs,eachindex(tab.d),:d,:T,tab.d)
-    _gen_constant_cache!(assignexprs,findall(!iszero,tab.c),:c,:T2,tab.c)
+    _push_assigns!(assignexprs,eachindex(tab.d),:d,:T,tab.d)
+    _push_assigns!(assignexprs,findall(!iszero,tab.c),:c,:T2,tab.c)
     structexprs=[:($(assignexpr.args[1])::$(assignexpr.args[2].args[2])) for assignexpr in assignexprs]
     valsymbols=[assignexpr.args[1] for assignexpr in assignexprs]
-    cacheinitexpr=:($cachename($(valsymbols...)))
-    cacheexpr=quote
-        struct $cachename{T,T2} <: OrdinaryDiffEqConstantCache
+    tabinitexpr=:($tabstructname($(valsymbols...)))
+    tabstructexpr=quote
+        struct $tabstructname{T,T2} <: OrdinaryDiffEqConstantCache
             $(structexprs...)
         end
-        function $cachename(T::Type,T2::Type)
+    end
+    if skipstructdef
+        tabstructexpr=:nothing
+    end
+    tabexpr=quote
+        function $tabname(T::Type,T2::Type)
             $(assignexprs...)
-            $cacheinitexpr
+            $tabinitexpr
         end
     end
-    cacheinitexpr,cacheexpr
+    quote
+        $tabstructexpr
+        $tabexpr
+    end
 end
 
-function gen_cache(tab::RosenbrockTableau,algname::Symbol,cachename::Symbol,constcachename::Symbol)
+function gen_cache(tab::RosenbrockTableau,algname::Symbol,cachename::Symbol,constcachename::Symbol,tabname::Symbol)
     kstype=[:($(Symbol(:k,i))::rateType) for i in 1:length(tab.b)]
     ksinit=[:($(Symbol(:k,i))=zero(rate_prototype)) for i in 1:length(tab.b)]
     ks=[Symbol(:k,i) for i in 1:length(tab.b)]
     quote    
+        struct $constcachename{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
+            tf::TF
+            uf::UF
+            tab::Tab
+        end  
+        function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+            tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
+            uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+            $constcachename(tf,uf,$tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)))
+        end
         @cache mutable struct $cachename{uType,rateType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
             u::uType
             uprev::uType
@@ -85,7 +136,7 @@ function gen_cache(tab::RosenbrockTableau,algname::Symbol,cachename::Symbol,cons
               W = similar(J)
             end
             tmp = zero(rate_prototype)
-            tab = $constcachename(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
+            tab = $tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
           
             tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
             uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
@@ -100,9 +151,36 @@ function gen_cache(tab::RosenbrockTableau,algname::Symbol,cachename::Symbol,cons
     end
 end
 
-function gen_constant_perform_step(tab::RosenbrockTableau,cachename::Symbol,cacheinitexpr::Expr)
+function gen_initialize(cachename::Symbol,constcachename::Symbol)
+    quote
+        function initialize!(integrator, cache::$constcachename)
+            integrator.kshortsize = 2
+            integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+            integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+            integrator.destats.nf += 1
+          
+            # Avoid undefined entries if k is an array of arrays
+            integrator.fsallast = zero(integrator.fsalfirst)
+            integrator.k[1] = integrator.fsalfirst
+            integrator.k[2] = integrator.fsallast
+          end
+          
+          function initialize!(integrator, cache::$cachename)
+            integrator.kshortsize = 2
+            @unpack fsalfirst,fsallast = cache
+            integrator.fsalfirst = fsalfirst
+            integrator.fsallast = fsallast
+            resize!(integrator.k, integrator.kshortsize)
+            integrator.k .= [fsalfirst,fsallast]
+            integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+            integrator.destats.nf += 1
+          end
+    end
+end
+
+function gen_constant_perform_step(tab::RosenbrockTableau,cachename::Symbol)
     unpacktabexpr=:(@unpack ()=cache.tab)
-    unpacktabexpr.args[3].args[1].args=copy(cacheinitexpr.args[2:end])
+    unpacktabexpr.args[3].args[1].args=_nonzero_vals(tab)
     dtCijexpr=quote end
     for Cind in findall(!iszero,tab.C)
         push!(dtCijexpr.args,:($(Symbol(:dtC,"$(Cind[1])$(Cind[2])"))=$(Symbol(:C,"$(Cind[1])$(Cind[2])"))/dt))
@@ -171,10 +249,10 @@ function gen_constant_perform_step(tab::RosenbrockTableau,cachename::Symbol,cach
 
 end
 
-function gen_perform_step(tab::RosenbrockTableau,cachename::Symbol,cacheinitexpr::Expr)
+function gen_perform_step(tab::RosenbrockTableau,cachename::Symbol)
     n=length(tab.b)
     unpacktabexpr=:(@unpack ()=cache.tab)
-    unpacktabexpr.args[3].args[1].args=copy(cacheinitexpr.args[2:end])
+    unpacktabexpr.args[3].args[1].args=_nonzero_vals(tab)
     ks=[Symbol(:k,i) for i in 1:n]
     dtCij=[:($(Symbol(:dtC,"$(Cind[1])$(Cind[2])"))=$(Symbol(:C,"$(Cind[1])$(Cind[2])"))/dt) for Cind in findall(!iszero,tab.C)]
     dtdi=[:($(Symbol(:dtd,dind[1]))=dt*$(Symbol(:d,dind[1]))) for dind in eachindex(tab.d)]
@@ -245,25 +323,6 @@ function gen_perform_step(tab::RosenbrockTableau,cachename::Symbol,cacheinitexpr
     end
 end
 
-macro RosenbrockW6S4OS(part)
-    tab=RosenbrockW6S4OSTableau()
-    cacheinitexpr,constcacheexpr=gen_constant_cache(tab,:RosenbrockW6S4OSConstantCache)
-    if part.value==:constcache
-        println("Generating const cache")
-        return esc(constcacheexpr)
-    elseif part.value==:cache
-        println("Generating cache")
-        return esc(gen_cache(tab,:RosenbrockW6S4OS,:RosenbrockWCache,:RosenbrockW6S4OSConstantCache))
-    elseif part.value==:performstep
-        println("Generating perform_step")
-        constperformstepexpr=gen_constant_perform_step(tab,:RosenbrockWConstantCache,cacheinitexpr)
-        performstepexpr=gen_perform_step(tab,:RosenbrockWCache,cacheinitexpr)
-        return esc(quote $([constperformstepexpr,performstepexpr]...) end)
-    else
-        println("Unknown parameter!")
-    end
-end
-
 function RosenbrockW6S4OSTableau()
     a=[0                  0                  0                  0                  0;
        0.5812383407115008 0                  0                  0                  0;
@@ -281,5 +340,32 @@ function RosenbrockW6S4OSTableau()
     gamma=0.2500000000000000
     d=[0.2500000000000000,0.0836691184292894,0.0544718623516351,-0.3402289722355864,0.0337651588339529,-0.0903074267618540]
     c=[0                 ,0.1453095851778752,0.3817422770256738,0.6367813704374599,0.7560744496323561,0.9271047239875670]
-    RosenbrockTableau(a,C,b,gamma,d,c)
+    RosenbrockFixedTableau(a,C,b,gamma,d,c)
 end
+
+macro RosenbrockW6S4OS(part)
+    tab=RosenbrockW6S4OSTableau()
+    algname=:RosenbrockW6S4OS
+    tabname=:RosenbrockW6S4OSConstantCache
+    tabstructname=:RosenbrockW6S4OSConstantCache
+    cachename=:RosenbrockW6SCache
+    constcachename=:RosenbrockW6SConstantCache
+    if part.value==:constcache
+        println("Generating const cache")
+        return esc(gen_tableau(tab,tabname,tabstructname))
+    elseif part.value==:cache
+        println("Generating cache")
+        return esc(gen_cache(tab,algname,cachename,constcachename,tabname))
+    elseif part.value==:init
+        println("Generating initialize")
+        return esc(gen_initialize(cachename,constcachename))
+    elseif part.value==:performstep
+        println("Generating perform_step")
+        constperformstepexpr=gen_constant_perform_step(tab,constcachename)
+        performstepexpr=gen_perform_step(tab,cachename)
+        return esc(quote $([constperformstepexpr,performstepexpr]...) end)
+    else
+        println("Unknown parameter!")
+    end
+end
+

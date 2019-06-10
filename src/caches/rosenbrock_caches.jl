@@ -811,16 +811,4 @@ function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   Rosenbrock5ConstantCache(tf,uf,Rodas5ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)))
 end
 
-struct RosenbrockWConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
-  tf::TF
-  uf::UF
-  tab::Tab
-end
-
-function alg_cache(alg::RosenbrockW6S4OS,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-  tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
-  uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  RosenbrockWConstantCache(tf,uf,RosenbrockW6S4OSConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)))
-end
-
 @RosenbrockW6S4OS(:cache)
