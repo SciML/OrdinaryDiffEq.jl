@@ -43,7 +43,7 @@ if group == "All" || group == "Interface"
   @time @safetestset "Linear Nonlinear Solver Tests" begin include("interface/linear_nonlinear_tests.jl") end
 end
 
-if group == "All" || group == "Integrators"
+if !is_APPVEYOR && (group == "All" || group == "Integrators")
   @time @safetestset "Reinit Tests" begin include("integrators/reinit_test.jl") end
   @time @safetestset "Events Tests" begin include("integrators/ode_event_tests.jl") end
   @time @safetestset "Alg Events Tests" begin include("integrators/alg_events_tests.jl") end
