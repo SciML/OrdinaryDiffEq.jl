@@ -178,56 +178,55 @@ function gen_initialize(cachename::Symbol,constcachename::Symbol)
     end
 end
 
-function gen_constant_perform_step(tab::RosenbrockTableau,cachename::Symbol)
+function gen_constant_perform_step(tab::RosenbrockTableau,cachename::Symbol,n_normalstep::Int,specialstepexpr=:nothing)
     unpacktabexpr=:(@unpack ()=cache.tab)
     unpacktabexpr.args[3].args[1].args=_nonzero_vals(tab)
-    dtCijexpr=quote end
-    for Cind in findall(!iszero,tab.C)
-        push!(dtCijexpr.args,:($(Symbol(:dtC,"$(Cind[1])$(Cind[2])"))=$(Symbol(:C,"$(Cind[1])$(Cind[2])"))/dt))
-    end
-    dtdiexpr=quote end
-    for dind in eachindex(tab.d)
-        push!(dtdiexpr.args,:($(Symbol(:dtd,dind[1]))=dt*$(Symbol(:d,dind[1]))))
-    end
-    iterexpr=quote linsolve_tmp = integrator.fsalfirst + dtd1*dT end
-    n=length(tab.d)
-    for i in 2:n
-        uexpr=:(u=(+ uprev))
-        for aind in findall(!iszero,tab.a[i,:])
-            push!(uexpr.args[2].args,:($(Symbol(:a,i,aind))*$(Symbol(:k,aind))))
-        end
-        linsolveexpr=:(linsolve_tmp=du+$(Symbol(:dtd,i))*dT)
-        for Cind in findall(!iszero,tab.C[i,:])
-            push!(linsolveexpr.args[2].args,:($(Symbol(:dtC,i,Cind))*$(Symbol(:k,Cind))))
-        end
-        push!(iterexpr.args,
+    dtCijexprs=[:($(Symbol(:dtC,Cind[1],Cind[2]))=$(Symbol(:C,Cind[1],Cind[2]))/dt) for Cind in findall(!iszero,tab.C)]
+    dtdiexprs=[:($(Symbol(:dtd,dind))=dt*$(Symbol(:d,dind))) for dind in eachindex(tab.d)]
+    iterexprs=[]
+    for i in 1:n_normalstep
+        aijkj=[:($(Symbol(:a,i+1,j))*$(Symbol(:k,j))) for j in findall(!iszero,tab.a[i+1,:])]
+        Cijkj=[:($(Symbol(:dtC,i+1,j))*$(Symbol(:k,j))) for j in findall(!iszero,tab.C[i+1,:])]
+        push!(iterexprs,
         quote
-            $(Symbol(:k,i-1)) = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
+            $(Symbol(:k,i)) = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
             integrator.destats.nsolve += 1
-            $uexpr
-            du = f(u, p, t+$(Symbol(:c,i))*dt)
+            u=+(uprev,$(aijkj...))
+            du = f(u, p, t+$(Symbol(:c,i+1))*dt)
             integrator.destats.nf += 1
-            $linsolveexpr
+            linsolve_tmp=+(du,$(Symbol(:dtd,i+1))*dT,$(Cijkj...))
         end)
     end
-    uexpr=:(u=(+ uprev))
-    for i in 1:n
-        push!(uexpr.args[2].args,:($(Symbol(:b,i))*$(Symbol(:k,i))))
-    end
-    push!(iterexpr.args,
+    push!(iterexprs,specialstepexpr)
+    n=length(tab.b)
+    biki=[:($(Symbol(:b,i))*$(Symbol(:k,i))) for i in 1:n]
+    push!(iterexprs,
     quote
         $(Symbol(:k,n))=_reshape(W\-_vec(linsolve_tmp), axes(uprev))
         integrator.destats.nsolve += 1
-        $uexpr
+        u=+(uprev,$(biki...))
     end)
+
+    adaptiveexpr=[]
+    if typeof(tab)<:RosenbrockAdaptiveTableau
+        btildeiki=[:($(Symbol(:btilde,i))*$(Symbol(:k,i))) for i in eachindex(tab.btilde)]
+        push!(adaptiveexpr,quote
+            if integrator.opts.adaptive
+                utilde =  +($(btildeiki...))
+                atmp = calculate_residuals(utilde, uprev, u, integrator.opts.abstol,
+                                        integrator.opts.reltol,integrator.opts.internalnorm,t)
+                integrator.EEst = integrator.opts.internalnorm(atmp,t)
+            end
+        end)
+    end
     quote
         @muladd function perform_step!(integrator, cache::$cachename, repeat_step=false)
             @unpack t,dt,uprev,u,f,p = integrator
             @unpack tf,uf = cache
             $unpacktabexpr
 
-            $dtCijexpr
-            $dtdiexpr
+            $(dtCijexprs...)
+            $(dtdiexprs...)
             dtgamma = dt*gamma
 
             # Time derivative
@@ -235,8 +234,9 @@ function gen_constant_perform_step(tab::RosenbrockTableau,cachename::Symbol)
             dT = ForwardDiff.derivative(tf, t)
 
             W = calc_W!(integrator, cache, dtgamma, repeat_step, true)
+            linsolve_tmp = integrator.fsalfirst + dtd1*dT #calc_rosenbrock_differentiation!
 
-            $iterexpr
+            $(iterexprs...)
 
             integrator.fsallast = f(u, p, t + dt)
             integrator.destats.nf += 1
@@ -244,20 +244,20 @@ function gen_constant_perform_step(tab::RosenbrockTableau,cachename::Symbol)
             integrator.k[1] = integrator.fsalfirst
             integrator.k[2] = integrator.fsallast
             integrator.u = u
+
+            $(adaptiveexpr...)
         end
     end
 
 end
 
-function gen_perform_step(tab::RosenbrockTableau,cachename::Symbol)
-    n=length(tab.b)
+function gen_perform_step(tab::RosenbrockTableau,cachename::Symbol,n_normalstep::Int,specialstepexpr=:nothing)
     unpacktabexpr=:(@unpack ()=cache.tab)
     unpacktabexpr.args[3].args[1].args=_nonzero_vals(tab)
-    ks=[Symbol(:k,i) for i in 1:n]
     dtCij=[:($(Symbol(:dtC,"$(Cind[1])$(Cind[2])"))=$(Symbol(:C,"$(Cind[1])$(Cind[2])"))/dt) for Cind in findall(!iszero,tab.C)]
     dtdi=[:($(Symbol(:dtd,dind[1]))=dt*$(Symbol(:d,dind[1]))) for dind in eachindex(tab.d)]
     iterexprs=[]
-    for i in 1:(n-1)
+    for i in 1:n_normalstep
         ki=Symbol(:k,i)
         dtdj=Symbol(:dtd,i+1)
         aijkj=[:($(Symbol(:a,i+1,j))*$(Symbol(:k,j))) for j in findall(!iszero,tab.a[i+1,:])]
@@ -286,6 +286,9 @@ function gen_perform_step(tab::RosenbrockTableau,cachename::Symbol)
             end
         end)
     end
+    push!(iterexprs,specialstepexpr)
+    n=length(tab.b)
+    ks=[Symbol(:k,i) for i in 1:n]
     klast=Symbol(:k,n)
     biki=[:($(Symbol(:b,i))*$(Symbol(:k,i))) for i in 1:n]
     push!(iterexprs,quote
@@ -297,9 +300,21 @@ function gen_perform_step(tab::RosenbrockTableau,cachename::Symbol)
         end
         integrator.destats.nsolve += 1
         @.. u = +(uprev,$(biki...))
-        f( fsallast,  u, p, t + dt)
-        integrator.destats.nf += 1
     end)
+
+    adaptiveexpr=[]
+    if typeof(tab)<:RosenbrockAdaptiveTableau
+        btildeiki=[:($(Symbol(:btilde,i))*$(Symbol(:k,i))) for i in eachindex(tab.btilde)]
+        push!(adaptiveexpr,quote
+            utilde=du
+            if integrator.opts.adaptive
+                @.. utilde = +($(btildeiki...))
+                calculate_residuals!(atmp, utilde, uprev, u, integrator.opts.abstol,
+                                    integrator.opts.reltol,integrator.opts.internalnorm,t)
+                integrator.EEst = integrator.opts.internalnorm(atmp,t)
+            end
+        end)
+    end
     quote
         @muladd function perform_step!(integrator, cache::$cachename, repeat_step=false)
             @unpack t,dt,uprev,u,f,p = integrator
@@ -319,6 +334,11 @@ function gen_perform_step(tab::RosenbrockTableau,cachename::Symbol)
             calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
             $(iterexprs...)
+
+            f( fsallast,  u, p, t + dt)
+            integrator.destats.nf += 1
+
+            $(adaptiveexpr...)
         end
     end
 end
@@ -350,22 +370,76 @@ macro RosenbrockW6S4OS(part)
     tabstructname=:RosenbrockW6S4OSConstantCache
     cachename=:RosenbrockW6SCache
     constcachename=:RosenbrockW6SConstantCache
+    n_normalstep=length(tab.b)-1
     if part.value==:constcache
-        println("Generating const cache")
+        #println("Generating const cache")
         return esc(gen_tableau(tab,tabname,tabstructname))
     elseif part.value==:cache
-        println("Generating cache")
+        #println("Generating cache")
         return esc(gen_cache(tab,algname,cachename,constcachename,tabname))
     elseif part.value==:init
-        println("Generating initialize")
+        #println("Generating initialize")
         return esc(gen_initialize(cachename,constcachename))
     elseif part.value==:performstep
-        println("Generating perform_step")
-        constperformstepexpr=gen_constant_perform_step(tab,constcachename)
-        performstepexpr=gen_perform_step(tab,cachename)
+        #println("Generating perform_step")
+        constperformstepexpr=gen_constant_perform_step(tab,constcachename,n_normalstep)
+        performstepexpr=gen_perform_step(tab,cachename,n_normalstep)
         return esc(quote $([constperformstepexpr,performstepexpr]...) end)
     else
         println("Unknown parameter!")
     end
 end
 
+function Ros4LSTableau()
+    a=[0                 0                  0;
+       2                 0                  0;
+       1.867943637803922 0.2344449711399156 0]
+    C=[ 0                  0                   0                  0;
+       -7.137615036412310  0                   0                  0;
+        2.580708087951457  0.6515950076447975  0                  0;
+       -2.137148994382534 -0.3214669691237626 -0.6949742501781779 0]
+    b=[2.255570073418735,0.2870493262186792,0.4353179431840180,1.093502252409163]
+    btilde=[-0.2815431932141155,-0.07276199124938920,-0.1082196201495311,-1.093502252409163]
+    gamma=0.5728200000000000
+    c=[0,1.145640000000000,0.6552168638155900]
+    d=[0.5728200000000000,-1.769193891319233,0.7592633437920482,-0.1049021087100450]
+    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+end
+
+macro Rosenbrock4(part)
+    tab=Ros4LSTableau()
+    cachename=:Rosenbrock4Cache
+    constcachename=:Rosenbrock4ConstantCache
+    n_normalstep=2 #for the third step a4j=a3j which reduced one function call
+    if part.value==:performstep
+        println("Generating perform_step for Rosenbrock4")
+        specialstepconst=quote
+            k3 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
+            integrator.destats.nsolve += 1
+            #u = uprev  + a31*k1 + a32*k2 #a4j=a3j
+            #du = f(u, p, t+c3*dt) #reduced function call
+            linsolve_tmp =  du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3          
+        end
+        specialstep=quote
+            if DiffEqBase.has_invW(f)
+                mul!(vec(k3), W, vec(linsolve_tmp))
+            else
+                cache.linsolve(vec(k3), W, vec(linsolve_tmp))
+                @.. k3 = -k3
+            end
+            integrator.destats.nsolve += 1
+            #@.. u = uprev + a31*k1 + a32*k2 #a4j=a3j
+            #f( du,  u, p, t+c3*dt) #reduced function call
+            if mass_matrix == I
+                @.. linsolve_tmp = du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
+            else
+                @.. du1 = dtC41*k1 + dtC42*k2 + dtC43*k3
+                mul!(du2,mass_matrix,du1)
+                @.. linsolve_tmp = du + dtd4*dT + du2
+            end
+        end
+        constperformstepexpr=gen_constant_perform_step(tab,constcachename,n_normalstep,specialstepconst)
+        performstepexpr=gen_perform_step(tab,cachename,n_normalstep,specialstep)
+        return esc(quote $([constperformstepexpr,performstepexpr]...) end)
+    end
+end
