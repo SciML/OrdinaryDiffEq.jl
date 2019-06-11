@@ -1,5 +1,5 @@
-abstract type RosenbrockTableau end
-struct RosenbrockFixedTableau{T,T2}<:RosenbrockTableau
+abstract type RosenbrockTableau{T,T2} end
+struct RosenbrockFixedTableau{T,T2}<:RosenbrockTableau{T,T2}
     a::Array{T,2}
     C::Array{T,2}
     b::Array{T,1}
@@ -8,7 +8,7 @@ struct RosenbrockFixedTableau{T,T2}<:RosenbrockTableau
     c::Array{T2,1}
 end
 
-struct RosenbrockAdaptiveTableau{T,T2}<:RosenbrockTableau
+struct RosenbrockAdaptiveTableau{T,T2}<:RosenbrockTableau{T,T2}
     a::Array{T,2}
     C::Array{T,2}
     b::Array{T,1}
@@ -17,6 +17,14 @@ struct RosenbrockAdaptiveTableau{T,T2}<:RosenbrockTableau
     d::Array{T,1}
     c::Array{T2,1}
 end
+
+macro _bitarray2boolarray(expr)
+    args=[:([i for i in $arg]) for arg in expr.args[2:end]]
+    args[end-2]=:(tab.gamma!=0)
+    esc(:($(expr.args[1])($(args...))))
+end
+_masktab(tab::RosenbrockFixedTableau)=@_bitarray2boolarray RosenbrockFixedTableau(tab.a.!=0,tab.C.!=0,tab.b.!=0,tab.gamma!=0,tab.d.!=0,tab.c.!=0)
+_masktab(tab::RosenbrockAdaptiveTableau)=@_bitarray2boolarray RosenbrockAdaptiveTableau(tab.a.!=0,tab.C.!=0,tab.b.!=0,tab.btilde.!=0,tab.gamma!=0,tab.d.!=0,tab.c.!=0)
 
 function _common_nonzero_vals(tab::RosenbrockTableau)
     nzvals=[]
@@ -178,15 +186,15 @@ function gen_initialize(cachename::Symbol,constcachename::Symbol)
     end
 end
 
-function gen_constant_perform_step(tab::RosenbrockTableau,cachename::Symbol,n_normalstep::Int,specialstepexpr=:nothing)
+function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbol,n_normalstep::Int,specialstepexpr=:nothing)
     unpacktabexpr=:(@unpack ()=cache.tab)
-    unpacktabexpr.args[3].args[1].args=_nonzero_vals(tab)
-    dtCijexprs=[:($(Symbol(:dtC,Cind[1],Cind[2]))=$(Symbol(:C,Cind[1],Cind[2]))/dt) for Cind in findall(!iszero,tab.C)]
-    dtdiexprs=[:($(Symbol(:dtd,dind))=dt*$(Symbol(:d,dind))) for dind in eachindex(tab.d)]
+    unpacktabexpr.args[3].args[1].args=_nonzero_vals(tabmask)
+    dtCijexprs=[:($(Symbol(:dtC,Cind[1],Cind[2]))=$(Symbol(:C,Cind[1],Cind[2]))/dt) for Cind in findall(!iszero,tabmask.C)]
+    dtdiexprs=[:($(Symbol(:dtd,dind))=dt*$(Symbol(:d,dind))) for dind in eachindex(tabmask.d)]
     iterexprs=[]
     for i in 1:n_normalstep
-        aijkj=[:($(Symbol(:a,i+1,j))*$(Symbol(:k,j))) for j in findall(!iszero,tab.a[i+1,:])]
-        Cijkj=[:($(Symbol(:dtC,i+1,j))*$(Symbol(:k,j))) for j in findall(!iszero,tab.C[i+1,:])]
+        aijkj=[:($(Symbol(:a,i+1,j))*$(Symbol(:k,j))) for j in findall(!iszero,tabmask.a[i+1,:])]
+        Cijkj=[:($(Symbol(:dtC,i+1,j))*$(Symbol(:k,j))) for j in findall(!iszero,tabmask.C[i+1,:])]
         push!(iterexprs,
         quote
             $(Symbol(:k,i)) = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
@@ -198,7 +206,7 @@ function gen_constant_perform_step(tab::RosenbrockTableau,cachename::Symbol,n_no
         end)
     end
     push!(iterexprs,specialstepexpr)
-    n=length(tab.b)
+    n=length(tabmask.b)
     biki=[:($(Symbol(:b,i))*$(Symbol(:k,i))) for i in 1:n]
     push!(iterexprs,
     quote
@@ -208,8 +216,8 @@ function gen_constant_perform_step(tab::RosenbrockTableau,cachename::Symbol,n_no
     end)
 
     adaptiveexpr=[]
-    if typeof(tab)<:RosenbrockAdaptiveTableau
-        btildeiki=[:($(Symbol(:btilde,i))*$(Symbol(:k,i))) for i in eachindex(tab.btilde)]
+    if typeof(tabmask)<:RosenbrockAdaptiveTableau
+        btildeiki=[:($(Symbol(:btilde,i))*$(Symbol(:k,i))) for i in eachindex(tabmask.btilde)]
         push!(adaptiveexpr,quote
             if integrator.opts.adaptive
                 utilde =  +($(btildeiki...))
@@ -251,17 +259,17 @@ function gen_constant_perform_step(tab::RosenbrockTableau,cachename::Symbol,n_no
 
 end
 
-function gen_perform_step(tab::RosenbrockTableau,cachename::Symbol,n_normalstep::Int,specialstepexpr=:nothing)
+function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbol,n_normalstep::Int,specialstepexpr=:nothing)
     unpacktabexpr=:(@unpack ()=cache.tab)
-    unpacktabexpr.args[3].args[1].args=_nonzero_vals(tab)
-    dtCij=[:($(Symbol(:dtC,"$(Cind[1])$(Cind[2])"))=$(Symbol(:C,"$(Cind[1])$(Cind[2])"))/dt) for Cind in findall(!iszero,tab.C)]
-    dtdi=[:($(Symbol(:dtd,dind[1]))=dt*$(Symbol(:d,dind[1]))) for dind in eachindex(tab.d)]
+    unpacktabexpr.args[3].args[1].args=_nonzero_vals(tabmask)
+    dtCij=[:($(Symbol(:dtC,"$(Cind[1])$(Cind[2])"))=$(Symbol(:C,"$(Cind[1])$(Cind[2])"))/dt) for Cind in findall(!iszero,tabmask.C)]
+    dtdi=[:($(Symbol(:dtd,dind[1]))=dt*$(Symbol(:d,dind[1]))) for dind in eachindex(tabmask.d)]
     iterexprs=[]
     for i in 1:n_normalstep
         ki=Symbol(:k,i)
         dtdj=Symbol(:dtd,i+1)
-        aijkj=[:($(Symbol(:a,i+1,j))*$(Symbol(:k,j))) for j in findall(!iszero,tab.a[i+1,:])]
-        dtCijkj=[:($(Symbol(:dtC,i+1,j))*$(Symbol(:k,j))) for j in findall(!iszero,tab.C[i+1,:])]
+        aijkj=[:($(Symbol(:a,i+1,j))*$(Symbol(:k,j))) for j in findall(!iszero,tabmask.a[i+1,:])]
+        dtCijkj=[:($(Symbol(:dtC,i+1,j))*$(Symbol(:k,j))) for j in findall(!iszero,tabmask.C[i+1,:])]
         repeatstepexpr=[]
         if i==1
             repeatstepexpr=[:(!repeat_step)]
@@ -287,7 +295,7 @@ function gen_perform_step(tab::RosenbrockTableau,cachename::Symbol,n_normalstep:
         end)
     end
     push!(iterexprs,specialstepexpr)
-    n=length(tab.b)
+    n=length(tabmask.b)
     ks=[Symbol(:k,i) for i in 1:n]
     klast=Symbol(:k,n)
     biki=[:($(Symbol(:b,i))*$(Symbol(:k,i))) for i in 1:n]
@@ -303,8 +311,8 @@ function gen_perform_step(tab::RosenbrockTableau,cachename::Symbol,n_normalstep:
     end)
 
     adaptiveexpr=[]
-    if typeof(tab)<:RosenbrockAdaptiveTableau
-        btildeiki=[:($(Symbol(:btilde,i))*$(Symbol(:k,i))) for i in eachindex(tab.btilde)]
+    if typeof(tabmask)<:RosenbrockAdaptiveTableau
+        btildeiki=[:($(Symbol(:btilde,i))*$(Symbol(:k,i))) for i in eachindex(tabmask.btilde)]
         push!(adaptiveexpr,quote
             utilde=du
             if integrator.opts.adaptive
@@ -365,6 +373,7 @@ end
 
 macro RosenbrockW6S4OS(part)
     tab=RosenbrockW6S4OSTableau()
+    tabmask=_masktab(tab)
     algname=:RosenbrockW6S4OS
     tabname=:RosenbrockW6S4OSConstantCache
     tabstructname=:RosenbrockW6S4OSConstantCache
@@ -382,8 +391,8 @@ macro RosenbrockW6S4OS(part)
         return esc(gen_initialize(cachename,constcachename))
     elseif part.value==:performstep
         #println("Generating perform_step")
-        constperformstepexpr=gen_constant_perform_step(tab,constcachename,n_normalstep)
-        performstepexpr=gen_perform_step(tab,cachename,n_normalstep)
+        constperformstepexpr=gen_constant_perform_step(tabmask,constcachename,n_normalstep)
+        performstepexpr=gen_perform_step(tabmask,cachename,n_normalstep)
         return esc(quote $([constperformstepexpr,performstepexpr]...) end)
     else
         println("Unknown parameter!")
@@ -408,6 +417,7 @@ end
 
 macro Rosenbrock4(part)
     tab=Ros4LSTableau()
+    tabmask=_masktab(tab)
     cachename=:Rosenbrock4Cache
     constcachename=:Rosenbrock4ConstantCache
     n_normalstep=2 #for the third step a4j=a3j which reduced one function call
@@ -438,8 +448,8 @@ macro Rosenbrock4(part)
                 @.. linsolve_tmp = du + dtd4*dT + du2
             end
         end
-        constperformstepexpr=gen_constant_perform_step(tab,constcachename,n_normalstep,specialstepconst)
-        performstepexpr=gen_perform_step(tab,cachename,n_normalstep,specialstep)
+        constperformstepexpr=gen_constant_perform_step(tabmask,constcachename,n_normalstep,specialstepconst)
+        performstepexpr=gen_perform_step(tabmask,cachename,n_normalstep,specialstep)
         return esc(quote $([constperformstepexpr,performstepexpr]...) end)
     end
 end
