@@ -94,21 +94,15 @@ function gen_tableau(tab::RosenbrockTableau,tabstructexpr::Expr,tabname::Symbol)
     end
 end
 
-function gen_cache(tab::RosenbrockTableau,algname::Symbol,cachename::Symbol,constcachename::Symbol,tabname::Symbol)
+function gen_cache_struct(tab::RosenbrockTableau,cachename::Symbol,constcachename::Symbol)
     kstype=[:($(Symbol(:k,i))::rateType) for i in 1:length(tab.b)]
-    ksinit=[:($(Symbol(:k,i))=zero(rate_prototype)) for i in 1:length(tab.b)]
-    ks=[Symbol(:k,i) for i in 1:length(tab.b)]
-    quote    
-        struct $constcachename{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
+    constcacheexpr=quote struct $constcachename{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
             tf::TF
             uf::UF
             tab::Tab
-        end  
-        function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
-            tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
-            uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-            $constcachename(tf,uf,$tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)))
         end
+    end
+    cacheexpr=quote
         @cache mutable struct $cachename{uType,rateType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
             u::uType
             uprev::uType
@@ -129,6 +123,20 @@ function gen_cache(tab::RosenbrockTableau,algname::Symbol,cachename::Symbol,cons
             linsolve::F
             jac_config::JCType
             grad_config::GCType
+        end
+    end
+    constcacheexpr,cacheexpr
+end
+
+function gen_algcache(cacheexpr::Expr,cachename::Symbol,constcachename::Symbol,algname::Symbol,tabname::Symbol)
+    #cachename=cacheexpr.args[2].args[3].args[2].args[1].args[1]
+    valsyms=[valexpr.args[1] for valexpr in cacheexpr.args[2].args[3].args[3].args if typeof(valexpr)!=LineNumberNode]
+    ksinit=[:($valsym=zero(rate_prototype)) for valsym in valsyms if match(r":k[1-9]",repr(valsym))!=nothing]
+    quote
+        function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+            tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
+            uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+            $constcachename(tf,uf,$tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)))
         end
         function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
             du = zero(rate_prototype)
@@ -154,9 +162,7 @@ function gen_cache(tab::RosenbrockTableau,algname::Symbol,cachename::Symbol,cons
             linsolve = alg.linsolve(Val{:init},uf,u)
             grad_config = build_grad_config(alg,f,tf,du1,t)
             jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
-            $cachename(u,uprev,du,du1,du2,$(ks...),
-                              fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
-                              linsolve,jac_config,grad_config)
+            $cachename($(valsyms...))
         end
     end
 end
@@ -389,7 +395,9 @@ macro RosenbrockW6S4OS(part)
         return esc(quote $([tabstructexpr,tabexpr]...) end)
     elseif part.value==:cache
         #println("Generating cache")
-        return esc(gen_cache(tab,algname,cachename,constcachename,tabname))
+        constcacheexpr,cacheexpr=gen_cache_struct(tabmask,cachename,constcachename)
+        algcacheexpr=gen_algcache(cacheexpr,cachename,constcachename,algname,tabname)
+        return esc(quote $([constcacheexpr,cacheexpr,algcacheexpr]...) end)
     elseif part.value==:init
         #println("Generating initialize")
         return esc(gen_initialize(cachename,constcachename))
@@ -527,6 +535,7 @@ macro Rosenbrock4(part)
     Ros4LStabname=:Ros4LStabConstantCache
     n_normalstep=2 #for the third step a4j=a3j which reduced one function call
     if part.value==:tableau
+        println("Generating tableau for Rosenbrock4")
         tabstructexpr=gen_tableau_struct(tabmask,:Ros4ConstantCache)
         tabexprs=Array{Expr,1}()
         push!(tabexprs,tabstructexpr)
@@ -537,6 +546,17 @@ macro Rosenbrock4(part)
         push!(tabexprs,gen_tableau(GRK4ATableau(),tabstructexpr,GRK4Atabname))
         push!(tabexprs,gen_tableau(Ros4LSTableau(),tabstructexpr,Ros4LStabname))
         return esc(quote $(tabexprs...) end)
+    elseif part.value==:cache
+        println("Generating cache for Rosenbrock4")
+        constcacheexpr,cacheexpr=gen_cache_struct(tabmask,cachename,constcachename)
+        cacheexprs=Array{Expr,1}([constcacheexpr,cacheexpr])
+        push!(cacheexprs,gen_algcache(cacheexpr,cachename,constcachename,:RosShamp4,RosShamp4tabname))
+        push!(cacheexprs,gen_algcache(cacheexpr,cachename,constcachename,:Veldd4,Veldd4tabname))
+        push!(cacheexprs,gen_algcache(cacheexpr,cachename,constcachename,:Velds4,Velds4tabname))
+        push!(cacheexprs,gen_algcache(cacheexpr,cachename,constcachename,:GRK4T,GRK4Ttabname))
+        push!(cacheexprs,gen_algcache(cacheexpr,cachename,constcachename,:GRK4A,GRK4Atabname))
+        push!(cacheexprs,gen_algcache(cacheexpr,cachename,constcachename,:Ros4LStab,Ros4LStabname))
+        return esc(quote $(cacheexprs...) end)
     elseif part.value==:performstep
         println("Generating perform_step for Rosenbrock4")
         specialstepconst=quote
