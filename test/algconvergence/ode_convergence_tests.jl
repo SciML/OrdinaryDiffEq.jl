@@ -11,6 +11,7 @@ Random.seed!(100)
 dts = 1 .//2 .^(8:-1:4)
 dts1 = 1 .//2 .^(9:-1:5)
 dts2 = 1 .//2 .^(7:-1:3)
+dts3 = 1 .//2 .^(12:-1:7)
 testTol = 0.2
 
 for i = 1:2
@@ -133,7 +134,7 @@ for i = 1:2
   # BDF
   #####################################
 
-  sim = test_convergence(dts,prob,ABDF2(extrapolant = :linear))
+  sim = test_convergence(dts3,prob,ABDF2())
   @test sim.𝒪est[:final] ≈ 2 atol=testTol
   @test sim.𝒪est[:l2] ≈ 2 atol=testTol
   @test sim.𝒪est[:l∞] ≈ 2 atol=testTol
@@ -160,7 +161,7 @@ for i = 1:2
   @test sim.𝒪est[:l2] ≈ 1 atol=testTol
   @test sim.𝒪est[:l∞] ≈ 1 atol=testTol
 
-  sim = test_convergence(dts,prob,QNDF2())
+  sim = test_convergence(dts3,prob,QNDF2())
   @test sim.𝒪est[:final] ≈ 2 atol=testTol
   @test sim.𝒪est[:l2] ≈ 2 atol=testTol
   @test sim.𝒪est[:l∞] ≈ 2 atol=testTol

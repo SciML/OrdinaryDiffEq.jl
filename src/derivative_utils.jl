@@ -389,14 +389,14 @@ update_W!(integrator, cache, dt, repeat_step) =
 
 function update_W!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqMutableCache, dt, repeat_step)
   if isnewton(nlsolver)
-    calc_W!(integrator, cache, dt, repeat_step)
+    calc_W!(integrator, cache, dt, repeat_step, true)
   end
   nothing
 end
 
 function update_W!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqConstantCache, dt, repeat_step)
   if isnewton(nlsolver)
-    DiffEqBase.set_W!(nlsolver, calc_W!(integrator, cache, dt, repeat_step))
+    DiffEqBase.set_W!(nlsolver, calc_W!(integrator, cache, dt, repeat_step, true))
   end
   nothing
 end
