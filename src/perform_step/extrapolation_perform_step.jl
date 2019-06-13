@@ -42,10 +42,10 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
     # Balance workload of threads by computing T[1,1] with T[max_order,1] on
     # same thread, T[2,1] with T[max_order-1,1] on same thread. Similarly fill
     # first column of T matrix
-    Threads.@threads for i in 1:ceil(Int, max_order/2)
-      indices = (i, max_order + 1 - i)
-
-      for index in indices
+    Threads.@threads for i in 1:2
+      startIndex = (i == 1) ? 1 : max_order
+      endIndex = (i == 1) ? max_order - 1 : max_order
+      for index in startIndex:endIndex
         dt_temp = dt/(2^(index-1))
         # Solve using Euler method
         @muladd @.. u_tmps[Threads.threadid()] = uprev + dt_temp*fsalfirst
@@ -54,15 +54,8 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
           @muladd @.. u_tmps[Threads.threadid()] = u_tmps[Threads.threadid()] + dt_temp*k_tmps[Threads.threadid()]
           f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+j*dt_temp)
         end
-        @.. T[index,1] = u_tmps[Threads.threadid()]
-        # If complement index of i in first column of T matrix exists,
-        # calculate T[max_order + 1 - i, 1], where "max_order + 1 - i"
-        # is complementary index to i_th index
-        if indices[2] <= indices[1]
-            break
-        end
+        @.. T[index,1] = u_tmps[Threads.threadid()] 
       end
-
     end
     integrator.destats.nf += 2^max_order - 1
     # Richardson Extrapolation
@@ -160,11 +153,11 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
     # Balance workload of threads by computing T[1,1] with T[max_order,1] on
     # same thread, T[2,1] with T[max_order-1,1] on same thread. Similarly fill
     # first column of T matrix
-    Threads.@threads for i in 1:ceil(Int, max_order/2)
+    Threads.@threads for i in 1:2
+      startIndex = (i == 1) ? 1 : max_order
+      endIndex = (i == 1) ? max_order - 1 : max_order
 
-      indices = (i, max_order + 1 - i)
-
-      for index in indices
+      for index in startIndex:endIndex
         dt_temp = dt/2^(index - 1)
         @muladd u = @.. uprev + dt_temp*integrator.fsalfirst
         k_temp = f(u, p, t+dt_temp)
@@ -172,13 +165,7 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
           @muladd u = @.. u + dt_temp*k_temp
           k_temp = f(u, p, t+j*dt_temp)
         end
-        T[index,1] = u
-        # If complement index of i in first column of T matrix exists,
-        # calculate T[max_order + 1 - i, 1], where "max_order + 1 - i"
-        # is complementary index to i_th index
-        if indices[2] <= indices[1]
-            break
-        end
+        T[index,1] = u 
       end
     end
     integrator.destats.nf += 2^(max_order) - 1
