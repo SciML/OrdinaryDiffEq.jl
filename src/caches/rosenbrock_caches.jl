@@ -293,6 +293,11 @@ function alg_cache(alg::Rodas3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   Rosenbrock34ConstantCache(tf,uf,Rodas3ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)))
 end
 
+################################################################################
+
+### ROS34PW methods
+
+@ROS34PW(:cache)
 
 ################################################################################
 

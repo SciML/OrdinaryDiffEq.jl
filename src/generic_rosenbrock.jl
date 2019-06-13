@@ -535,7 +535,7 @@ macro Rosenbrock4(part)
     Ros4LStabname=:Ros4LStabConstantCache
     n_normalstep=2 #for the third step a4j=a3j which reduced one function call
     if part.value==:tableau
-        println("Generating tableau for Rosenbrock4")
+        #println("Generating tableau for Rosenbrock4")
         tabstructexpr=gen_tableau_struct(tabmask,:Ros4ConstantCache)
         tabexprs=Array{Expr,1}()
         push!(tabexprs,tabstructexpr)
@@ -547,7 +547,7 @@ macro Rosenbrock4(part)
         push!(tabexprs,gen_tableau(Ros4LSTableau(),tabstructexpr,Ros4LStabname))
         return esc(quote $(tabexprs...) end)
     elseif part.value==:cache
-        println("Generating cache for Rosenbrock4")
+        #println("Generating cache for Rosenbrock4")
         constcacheexpr,cacheexpr=gen_cache_struct(tabmask,cachename,constcachename)
         cacheexprs=Array{Expr,1}([constcacheexpr,cacheexpr])
         push!(cacheexprs,gen_algcache(cacheexpr,cachename,constcachename,:RosShamp4,RosShamp4tabname))
@@ -558,7 +558,7 @@ macro Rosenbrock4(part)
         push!(cacheexprs,gen_algcache(cacheexpr,cachename,constcachename,:Ros4LStab,Ros4LStabname))
         return esc(quote $(cacheexprs...) end)
     elseif part.value==:performstep
-        println("Generating perform_step for Rosenbrock4")
+        #println("Generating perform_step for Rosenbrock4")
         specialstepconst=quote
             k3 = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
             integrator.destats.nsolve += 1
@@ -586,6 +586,78 @@ macro Rosenbrock4(part)
         end
         constperformstepexpr=gen_constant_perform_step(tabmask,constcachename,n_normalstep,specialstepconst)
         performstepexpr=gen_perform_step(tabmask,cachename,n_normalstep,specialstep)
+        return esc(quote $([constperformstepexpr,performstepexpr]...) end)
+    end
+end
+
+#ROS34PW methods (Rang and Angermann, 2005)
+function Ros34dummyTableau()
+    a=[false false false false;
+       true  false false false;
+       true  true  false false;
+       true  true  true  false]
+    C=[false false false false;
+       true  false false false;
+       true  true  false false;
+       true  true  true  false]
+    b=[true,true,true,true]
+    btilde=[true,true,true,true]
+    gamma=true
+    c=[false,true,true,true]
+    d=[true,true,true,true]
+    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+end
+
+function _transformtab(Alpha,Gamma,B,Bhat)
+    invGamma=inv(Gamma)
+    a=Alpha*invGamma
+    C=diagm(0=>diag(invGamma))-invGamma
+    b=[(transpose(B)*invGamma)...]# [2Darray...]=>1Darray
+    btilde=[(transpose(Bhat)*invGamma)...]
+    gamma=Gamma[1,1]#Gamma11==Gamma22==...==Gammass
+    d=[sum(Gamma,dims=2)...]#di=sum_j Gamma_ij
+    c=[sum(Alpha,dims=2)...]#ci=sum_j Alpha_ij
+    (a,C,b,btilde,d,c)
+end
+
+function ROS34PW1aTableau()
+    gamma=4.358665215084590e-1
+    Alpha=[0                 0                    0   0;
+           2.218787467653286 0                    0   0;
+           0                 0                    0   0; # can reduce one function call with specialized perform_step
+           1.208587690772214 7.511610241919324e-2 0.5 0]
+    Gamma=[ gamma                 0                    0     0;
+           -2.218787467653286     gamma                0     0;
+           -9.461966143940745e-2 -7.913526735718213e-3 gamma 0;
+           -1.870323744195384    -9.624340112825115e-2 2.726301276675511e-1 gamma]
+    B=[3.285609536316354e-1,-5.785609536316354e-1,0.25,1]
+    Bhat=[-0.25,0,0.25,1]
+    a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
+    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+end
+
+macro ROS34PW(part)
+    tabmask=Ros34dummyTableau()
+    cachename=:ROS34PWCache
+    constcachename=:ROS34PWConstantCache
+    ROS34PW1atabname=:ROS34PW1aConstantCache
+    n_normalstep=length(tabmask.b)-1
+    if part.value==:tableau
+        tabstructexpr=gen_tableau_struct(tabmask,:Ros34ConstantCache)
+        tabexprs=Array{Expr,1}()
+        push!(tabexprs,tabstructexpr)
+        push!(tabexprs,gen_tableau(ROS34PW1aTableau(),tabstructexpr,ROS34PW1atabname))
+        return esc(quote $(tabexprs...) end)
+    elseif part.value==:cache
+        constcacheexpr,cacheexpr=gen_cache_struct(tabmask,cachename,constcachename)
+        cacheexprs=Array{Expr,1}([constcacheexpr,cacheexpr])
+        push!(cacheexprs,gen_algcache(cacheexpr,cachename,constcachename,:ROS34PW1a,ROS34PW1atabname))
+        return esc(quote $(cacheexprs...) end)
+    elseif part.value==:init
+        return esc(gen_initialize(cachename,constcachename))
+    elseif part.value==:performstep
+        constperformstepexpr=gen_constant_perform_step(tabmask,constcachename,n_normalstep)
+        performstepexpr=gen_perform_step(tabmask,cachename,n_normalstep)
         return esc(quote $([constperformstepexpr,performstepexpr]...) end)
     end
 end

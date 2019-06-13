@@ -109,6 +109,8 @@ function Rodas3ConstantCache(T::Type,T2::Type)
   Rodas3ConstantCache(a21,a31,a32,a41,a42,a43,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4)
 end
 
+@ROS34PW(:tableau)
+
 @Rosenbrock4(:tableau)
 
 struct RodasConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
