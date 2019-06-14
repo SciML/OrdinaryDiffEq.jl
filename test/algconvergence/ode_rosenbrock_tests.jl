@@ -200,7 +200,28 @@ sim = test_convergence(dts,prob,Ros4LStab())
 sol = solve(prob,Ros4LStab())
 @test length(sol) < 20
 
-###RosenbrockW6S4OS
+### Rosenbrock-W Algorithms
+
+println("Rosenbrock-W")
+
+### ROS34PW1a
+prob = prob_ode_linear
+
+sim = test_convergence(dts,prob,ROS34PW1a())
+@test sim.𝒪est[:final] ≈ 3 atol=testTol
+
+sol = solve(prob,ROS34PW1a())
+@test length(sol) < 20
+
+prob = prob_ode_2Dlinear
+
+sim = test_convergence(dts,prob,ROS34PW1a())
+@test sim.𝒪est[:final] ≈ 3 atol=testTol
+
+sol = solve(prob,ROS34PW1a())
+@test length(sol) < 20
+
+### RosenbrockW6S4OS
 sim = test_convergence(dts,prob,RosenbrockW6S4OS())#test inplace
 @test sim.𝒪est[:final] ≈ 4 atol=testTol
 
