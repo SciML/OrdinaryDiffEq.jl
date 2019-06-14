@@ -221,6 +221,57 @@ sim = test_convergence(dts,prob,ROS34PW1a())
 sol = solve(prob,ROS34PW1a())
 @test length(sol) < 20
 
+### ROS34PW1b
+prob = prob_ode_linear
+
+sim = test_convergence(dts,prob,ROS34PW1b())
+@test sim.𝒪est[:final] ≈ 3 atol=testTol
+
+sol = solve(prob,ROS34PW1b())
+@test length(sol) < 20
+
+prob = prob_ode_2Dlinear
+
+sim = test_convergence(dts,prob,ROS34PW1b())
+@test sim.𝒪est[:final] ≈ 3 atol=testTol
+
+sol = solve(prob,ROS34PW1b())
+@test length(sol) < 20
+
+### ROS34PW2
+prob = prob_ode_linear
+
+sim = test_convergence(dts,prob,ROS34PW2())
+@test sim.𝒪est[:final] ≈ 3 atol=testTol
+
+sol = solve(prob,ROS34PW2())
+@test length(sol) < 20
+
+prob = prob_ode_2Dlinear
+
+sim = test_convergence(dts,prob,ROS34PW2())
+@test sim.𝒪est[:final] ≈ 3 atol=testTol
+
+sol = solve(prob,ROS34PW2())
+@test length(sol) < 20
+
+### ROS34PW3
+prob = prob_ode_linear
+
+sim = test_convergence(dts,prob,ROS34PW3())
+@test sim.𝒪est[:final] ≈ 4 atol=testTol
+
+sol = solve(prob,ROS34PW3())
+@test length(sol) < 20
+
+prob = prob_ode_2Dlinear
+
+sim = test_convergence(dts,prob,ROS34PW3())
+@test sim.𝒪est[:final] ≈ 4 atol=testTol
+
+sol = solve(prob,ROS34PW3())
+@test length(sol) < 20
+
 ### RosenbrockW6S4OS
 sim = test_convergence(dts,prob,RosenbrockW6S4OS())#test inplace
 @test sim.𝒪est[:final] ≈ 4 atol=testTol

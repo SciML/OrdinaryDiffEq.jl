@@ -613,7 +613,7 @@ function _transformtab(Alpha,Gamma,B,Bhat)
     a=Alpha*invGamma
     C=diagm(0=>diag(invGamma))-invGamma
     b=[(transpose(B)*invGamma)...]# [2Darray...]=>1Darray
-    btilde=[(transpose(Bhat)*invGamma)...]
+    btilde=[(transpose(B-Bhat)*invGamma)...]
     gamma=Gamma[1,1]#Gamma11==Gamma22==...==Gammass
     d=[sum(Gamma,dims=2)...]#di=sum_j Gamma_ij
     c=[sum(Alpha,dims=2)...]#ci=sum_j Alpha_ij
@@ -631,7 +631,55 @@ function ROS34PW1aTableau()
            -9.461966143940745e-2 -7.913526735718213e-3 gamma 0;
            -1.870323744195384    -9.624340112825115e-2 2.726301276675511e-1 gamma]
     B=[3.285609536316354e-1,-5.785609536316354e-1,0.25,1]
-    Bhat=[-0.25,0,0.25,1]
+    Bhat=[-0.25,0,0.25,1]#B-Bhat[3:4]==[0,0]
+    a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
+    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+end
+
+function ROS34PW1bTableau()
+    gamma=4.358665215084590e-1
+    Alpha=[0                 0 0   0;
+           2.218787467653286 0 0   0;
+           2.218787467653286 0 0   0; # can reduce one function call with specialized perform_step
+           1.453923375357884 0 0.1 0]
+    Gamma=[ gamma              0                    0     0;
+           -2.218787467653286  gamma                0     0;
+           -2.848610224639349 -5.267530183845237e-2 gamma 0;
+           -1.128167857898393 -1.677546870499461e-1 5.452602553351021e-2 gamma]
+    B=[5.495647928937977e-1,-5.507258170857301e-1,0.25,7.511610241919324e-1]
+    Bhat=[-1.161024191932427e-3,0,0.25,7.511610241919324e-1]#B-Bhat[3:4]==[0,0]
+    a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
+    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+end
+
+function ROS34PW2Tableau()
+    gamma=4.3586652150845900e-1
+    Alpha=[0                      0                     0 0;
+           8.7173304301691801e-1  0                     0 0;
+           8.4457060015369423e-1 -1.1299064236484185e-1 0 0; 
+           0                      0                     1 0]
+    Gamma=[ gamma                  0                     0     0;
+           -8.7173304301691801e-1  gamma                 0     0;
+           -9.0338057013044082e-1  5.4180672388095326e-2 gamma 0;
+            2.4212380706095346e-1 -1.2232505839045147    5.4526025533510214e-1 gamma]
+    B=[2.4212380706095346e-1,-1.2232505839045147,1.5452602553351020,4.3586652150845900e-1]
+    Bhat=[3.7810903145819369e-1,-9.6042292212423178e-2,0.5,2.1793326075422950e-1]
+    a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
+    RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
+end
+
+function ROS34PW3Tableau()#4th order
+    gamma=1.0685790213016289
+    Alpha=[0                      0                     0 0;
+           2.5155456020628817     0                     0 0;
+           5.0777280103144085e-1  0.75                  0 0; 
+           1.3959081404277204e-1 -3.3111001065419338e-1 8.2040559712714178e-1 0]
+    Gamma=[ gamma                  0                      0     0;
+           -2.5155456020628817     gamma                  0     0;
+           -8.7991339217106512e-1 -9.6014187766190695e-1  gamma 0;
+           -4.1731389379448741e-1  4.1091047035857703e-1 -1.3558873204765276 gamma]
+    B=[2.2047681286931747e-1,2.7828278331185935e-3,7.1844787635140066e-3,7.6955588053404989e-1]
+    Bhat=[3.1300297285209688e-1,-2.8946895245112692e-1,9.7646597959903003e-1,0]
     a,C,b,btilde,d,c=_transformtab(Alpha,Gamma,B,Bhat)
     RosenbrockAdaptiveTableau(a,C,b,btilde,gamma,d,c)
 end
@@ -641,23 +689,32 @@ macro ROS34PW(part)
     cachename=:ROS34PWCache
     constcachename=:ROS34PWConstantCache
     ROS34PW1atabname=:ROS34PW1aConstantCache
+    ROS34PW1btabname=:ROS34PW1bConstantCache
+    ROS34PW2tabname=:ROS34PW2ConstantCache
+    ROS34PW3tabname=:ROS34PW3ConstantCache
     n_normalstep=length(tabmask.b)-1
     if part.value==:tableau
         tabstructexpr=gen_tableau_struct(tabmask,:Ros34ConstantCache)
-        tabexprs=Array{Expr,1}()
-        push!(tabexprs,tabstructexpr)
+        tabexprs=Array{Expr,1}([tabstructexpr])
         push!(tabexprs,gen_tableau(ROS34PW1aTableau(),tabstructexpr,ROS34PW1atabname))
+        push!(tabexprs,gen_tableau(ROS34PW1bTableau(),tabstructexpr,ROS34PW1btabname))
+        push!(tabexprs,gen_tableau(ROS34PW2Tableau(),tabstructexpr,ROS34PW2tabname))
+        push!(tabexprs,gen_tableau(ROS34PW3Tableau(),tabstructexpr,ROS34PW3tabname))
         return esc(quote $(tabexprs...) end)
     elseif part.value==:cache
         constcacheexpr,cacheexpr=gen_cache_struct(tabmask,cachename,constcachename)
         cacheexprs=Array{Expr,1}([constcacheexpr,cacheexpr])
         push!(cacheexprs,gen_algcache(cacheexpr,cachename,constcachename,:ROS34PW1a,ROS34PW1atabname))
+        push!(cacheexprs,gen_algcache(cacheexpr,cachename,constcachename,:ROS34PW1b,ROS34PW1btabname))
+        push!(cacheexprs,gen_algcache(cacheexpr,cachename,constcachename,:ROS34PW2,ROS34PW2tabname))
+        push!(cacheexprs,gen_algcache(cacheexpr,cachename,constcachename,:ROS34PW3,ROS34PW3tabname))
         return esc(quote $(cacheexprs...) end)
     elseif part.value==:init
         return esc(gen_initialize(cachename,constcachename))
     elseif part.value==:performstep
-        constperformstepexpr=gen_constant_perform_step(tabmask,constcachename,n_normalstep)
-        performstepexpr=gen_perform_step(tabmask,cachename,n_normalstep)
-        return esc(quote $([constperformstepexpr,performstepexpr]...) end)
+        performstepexprs=Array{Expr,1}()
+        push!(performstepexprs,gen_constant_perform_step(tabmask,constcachename,n_normalstep))
+        push!(performstepexprs,gen_perform_step(tabmask,cachename,n_normalstep))
+        return esc(quote $(performstepexprs...) end)
     end
 end
