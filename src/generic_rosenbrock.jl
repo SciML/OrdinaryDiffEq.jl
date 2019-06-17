@@ -514,7 +514,8 @@ macro RosenbrockW6S4OS(part)
         performstepexpr=gen_perform_step(tabmask,cachename,n_normalstep)
         return esc(quote $([constperformstepexpr,performstepexpr]...) end)
     else
-        println("Unknown parameter!")
+        throw(ArgumentError("Unknown parameter!"))
+        nothing
     end
 end
 
@@ -752,6 +753,9 @@ macro Rosenbrock4(part)
         constperformstepexpr=gen_constant_perform_step(tabmask,constcachename,n_normalstep,specialstepconst)
         performstepexpr=gen_perform_step(tabmask,cachename,n_normalstep,specialstep)
         return esc(quote $([constperformstepexpr,performstepexpr]...) end)
+    else
+        throw(ArgumentError("Unknown parameter!"))
+        nothing
     end
 end
 
@@ -937,5 +941,48 @@ macro ROS34PW(part)
         push!(performstepexprs,gen_constant_perform_step(tabmask,constcachename,n_normalstep))
         push!(performstepexprs,gen_perform_step(tabmask,cachename,n_normalstep))
         return esc(quote $(performstepexprs...) end)
+    else
+        throw(ArgumentError("Unknown parameter!"))
+        nothing
     end
 end
+
+#=========================================================================================
+# How to add a new method
+1. `OrdinaryDiffEq.jl`: export <Algorithm_name>
+2. `alg_utils.jl`: alg_order(alg::<Algorithm_name>)=<Algorithm_order>
+3. `algorithms.jl`: add algorithm struct
+4. `generic_rosenbrock.jl`:
+    a. write dummy tableau function (or generate from actual tableau using _masktab) for generating 
+       table sturct, cache struct and perform_step
+    b. write tableau function. When only `Alpha, Gamma, B, Bhat` are given, use _transformtab
+    c. write macro with :tableau, :cache, :init and :performstep
+    d. put the macros in the right places.
+
+# How to refactor methods into generic ones
+RUN CONVERGENCE TESTS BETWEEN ANY OF THE TWO STEPS!
+1. write tableau function and macro definition in this file
+2. replace the tableau function (usually named with `XXXConstCache()`) using `gen_tableau()`
+   and the original tableau struct expression in `tableaus/rosenbrock_tableaus.jl`
+3. replace the `perform_step!` methods in `perform_step/rosenbrock_perform_step.jl` using 
+   `gen_perform_step()` and `gen_constant_perform_step()`
+4. replace cache struct and `alg_cache` in `caches/rosenbrock_caches.jl` using `gen_cache_struct()`
+   and `gen_algcache()`
+5. If the method only have 3rd-order Hermite interpolation, you can replace `initialize!()`
+   in `perform_step/rosenbrock_perform_step.jl` with `gen_initialize()`
+DONE
+
+# How to debug
+Use macroexpand like `macroexpand(OrdinaryDiffEq,:(@ROS34PW(:performstep)))` and check the
+generated codes.
+
+`Revise.jl` is not compatible with macros. One may want to manually re-eval files that use
+the macro like `@eval OrdinaryDiffEq include(...)`
+
+# If you want to refactor Rosenbrock methods ...
+You need to change respective places in this file. 
+1. `perform_step/rosenbrock_perform_step.jl` -> `gen_perform_step()`, `gen_constant_perform_step()`,
+    `gen_initialize()` and special step expressions in macro definitions
+2. `caches/rosenbrock_caches.jl` ->  `gen_algcache()`, `gen_cache_struct()`
+3. `tableaus/rosenbrock_tableaus.jl` -> `gen_tableau_struct()` and `gen_tableau()`
+=========================================================================================#
