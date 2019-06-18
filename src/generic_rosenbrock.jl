@@ -951,6 +951,7 @@ end
 # How to add a new method
 1. `OrdinaryDiffEq.jl`: export <Algorithm_name>
 2. `alg_utils.jl`: alg_order(alg::<Algorithm_name>)=<Algorithm_order>
+    if the method is a W-method, add isWmethod(alg::<Algorithm_name>) = true as well
 3. `algorithms.jl`: add algorithm struct
 4. `generic_rosenbrock.jl`:
     a. write dummy tableau function (or generate from actual tableau using _masktab) for generating 
