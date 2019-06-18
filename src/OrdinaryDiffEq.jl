@@ -54,6 +54,8 @@ module OrdinaryDiffEq
 
   include("misc_utils.jl")
   include("algorithms.jl")
+  
+  include("generic_rosenbrock.jl")
 
   include("caches/basic_caches.jl")
   include("caches/low_order_rk_caches.jl")
@@ -190,7 +192,8 @@ module OrdinaryDiffEq
   export MidpointSplitting, LinearExponential
 
   export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
-         Ros4LStab, ROS3P, Rodas3, Rodas4, Rodas42, Rodas4P, Rodas5, RosenbrockW6S4OS
+         Ros4LStab, ROS3P, Rodas3, Rodas4, Rodas42, Rodas4P, Rodas5, 
+         RosenbrockW6S4OS, ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3
 
   export GenericIIF1, GenericIIF2
 
