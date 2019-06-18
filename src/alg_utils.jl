@@ -510,3 +510,12 @@ isstandard(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Sta
 isstandard(alg::Union{GenericImplicitEuler,GenericTrapezoid,VCABM}) = true
 isstandard(alg::OrdinaryDiffEqAlgorithm) = false
 ispi(alg::OrdinaryDiffEqAlgorithm) = !(ispredictive(alg) || isstandard(alg))
+
+isWmethod(alg::OrdinaryDiffEqAlgorithm) = false
+isWmethod(alg::Rosenbrock23) = true
+isWmethod(alg::Rosenbrock32) = true
+isWmethod(alg::ROS34PW1a) = true
+isWmethod(alg::ROS34PW1b) = true
+isWmethod(alg::ROS34PW2) = true
+isWmethod(alg::ROS34PW3) = true
+isWmethod(alg::RosenbrockW6S4OS) = true
