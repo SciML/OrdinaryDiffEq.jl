@@ -1,6 +1,6 @@
 using BenchmarkTools, OrdinaryDiffEq
 BenchmarkTools.DEFAULT_PARAMETERS.gcsample = true
-BenchmarkTools.DEFAULT_PARAMETERS.seconds = 60
+BenchmarkTools.DEFAULT_PARAMETERS.seconds = 300
 f(u,p,t) = u
 prob = ODEProblem(f,1.0,(0.0,1.0))
 
