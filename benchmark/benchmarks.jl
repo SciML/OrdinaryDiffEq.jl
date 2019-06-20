@@ -1,4 +1,5 @@
 using BenchmarkTools, OrdinaryDiffEq
+BenchmarkTools.DEFAULT_PARAMETERS.gcsample = true
 f(u,p,t) = u
 prob = ODEProblem(f,1.0,(0.0,1.0))
 
