@@ -285,17 +285,21 @@ alg_order(alg::Rosenbrock23) = 2
 alg_order(alg::Rosenbrock32) = 3
 alg_order(alg::ROS3P) = 3
 alg_order(alg::Rodas3) = 3
+alg_order(alg::ROS34PW1a) = 3
+alg_order(alg::ROS34PW1b) = 3
+alg_order(alg::ROS34PW2) = 3
+alg_order(alg::ROS34PW3) = 4
 alg_order(alg::RosShamp4) = 4
 alg_order(alg::Veldd4) = 4
 alg_order(alg::Velds4) = 4
 alg_order(alg::GRK4T) = 4
 alg_order(alg::GRK4A) = 4
 alg_order(alg::Ros4LStab) = 4
+alg_order(alg::RosenbrockW6S4OS) = 4
 alg_order(alg::Rodas4) = 4
 alg_order(alg::Rodas42) = 4
 alg_order(alg::Rodas4P) = 4
 alg_order(alg::Rodas5) = 5
-alg_order(alg::RosenbrockW6S4OS)=4
 
 alg_order(alg::AB3) = 3
 alg_order(alg::AB4) = 4
@@ -506,3 +510,12 @@ isstandard(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Sta
 isstandard(alg::Union{GenericImplicitEuler,GenericTrapezoid,VCABM}) = true
 isstandard(alg::OrdinaryDiffEqAlgorithm) = false
 ispi(alg::OrdinaryDiffEqAlgorithm) = !(ispredictive(alg) || isstandard(alg))
+
+isWmethod(alg::OrdinaryDiffEqAlgorithm) = false
+isWmethod(alg::Rosenbrock23) = true
+isWmethod(alg::Rosenbrock32) = true
+isWmethod(alg::ROS34PW1a) = true
+isWmethod(alg::ROS34PW1b) = true
+isWmethod(alg::ROS34PW2) = true
+isWmethod(alg::ROS34PW3) = true
+isWmethod(alg::RosenbrockW6S4OS) = true

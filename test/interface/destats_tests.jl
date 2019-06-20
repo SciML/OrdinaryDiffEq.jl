@@ -2,8 +2,8 @@
 using OrdinaryDiffEq, Test
 x = Ref(0)
 function f(u,p,t)
-	x[] += 1
-	return 5*u
+  x[] += 1
+  return 5*u
 end
 u0 = [1.0, 1.0]
 tspan = (0.0,1.0)

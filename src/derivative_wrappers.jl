@@ -44,10 +44,13 @@ function jacobian(f, x, integrator)
       tmp = 1
     else
       J = jacobian_finitediff(f, x, alg.diff_type)
+      N = length(x)
       if alg.diff_type==Val{:complex} && eltype(x)<:Real
-        tmp = length(x)
+        tmp = N
+      elseif alg.diff_type==Val{:forward}
+        tmp = N + 1
       else
-        tmp = 2*length(x)
+        tmp = 2N
       end
     end
     integrator.destats.nf += tmp
