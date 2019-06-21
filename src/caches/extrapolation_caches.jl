@@ -68,21 +68,21 @@ function alg_cache(alg::AitkenNeville,u,rate_prototype,uEltypeNoUnits,uBottomElt
 end
 
 
-struct extrapolation_coefficients
+struct extrapolation_coefficients{T1,T2,T3}
   # This structure is used by the caches of the algorithms
   # ExtrapolationMidpointDeuflhard() and  ExtrapolationMidpointHairerWanner().
   # It contains the constant coefficients used to extrapolate the internal discretisations
   # in their perfom_step! function and some additional constant data.
 
-  subdividing_sequence::Array{BigInt,1}  # subdividing_sequence[n] is used for the (n -1)th internal discretisation
+  subdividing_sequence::T1  # subdividing_sequence[n] is used for the (n -1)th internal discretisation
 
   # Weights and Scaling factors for extrapolation operators
-  extrapolation_weights::Array{Rational{BigInt},2}
-  extrapolation_scalars::Array{Rational{BigInt},1}
+  extrapolation_weights::T2
+  extrapolation_scalars::T3
 
   # Weights and scaling factors for internal extrapolation operators (used for error estimate)
-  extrapolation_weights_2::Array{Rational{BigInt},2}
-  extrapolation_scalars_2::Array{Rational{BigInt},1}
+  extrapolation_weights_2::T2
+  extrapolation_scalars_2::T3
 end
 
 function create_extrapolation_coefficients(::Type{T},alg::algType) where {T,algType <: Union{ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner}}
@@ -144,7 +144,7 @@ function create_extrapolation_coefficients(::Type{T},alg::algType) where {T,algT
       T.(extrapolation_weights_2), T.(extrapolation_scalars_2))
 end
 
-function create_extrapolation_coefficients(::Type{T},alg::algType) where {T<:Union{Float64,Float32},algType <: Union{ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner}}
+function create_extrapolation_coefficients(::Type{T},alg::algType) where {T<:CompiledFloats,algType <: Union{ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner}}
   # Compute and return extrapolation_coefficients
 
   @unpack n_min, n_init, n_max, sequence = alg
