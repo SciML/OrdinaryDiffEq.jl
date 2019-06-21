@@ -91,7 +91,7 @@ sequence_array =[:harmonic, :romberg, :bulirsch]
       # TODO: Regression test
       #...
 
-    end  
+    end
   end
   @testset "Testing threaded ExtrapolationMidpointDeuflhard" begin
     for prob in problem_array, seq in sequence_array
@@ -109,7 +109,7 @@ sequence_array =[:harmonic, :romberg, :bulirsch]
       # TODO: Regression test
       #...
 
-    end  
+    end
   end
 end # ExtrapolationMidpointDeuflhard
 
@@ -131,7 +131,7 @@ end # ExtrapolationMidpointDeuflhard
       # TODO: Regression test
       #...
 
-    end  
+    end
   end
   @testset "Testing threaded ExtrapolationMidpointHairerWanner" begin
     for prob in problem_array, seq in sequence_array
@@ -149,8 +149,24 @@ end # ExtrapolationMidpointDeuflhard
       # TODO: Regression test
       #...
 
-    end  
+    end
   end
 end # ExtrapolationMidpointHairerWanner
+
+@testset "Regression Test Float32 and Float64 Fallbacks" begin
+  prob_ode_2Dlinear = ODEProblem(
+                      ODEFunction(f_2dlinear,analytic=f_2dlinear_analytic),
+                      Float64.(prob_ode_bigfloat2Dlinear.u0),(0.0,1.0),1.01)
+  s1 = solve(prob_ode_bigfloat2Dlinear,ExtrapolationMidpointDeuflhard())
+  s2 = solve(prob_ode_2Dlinear,ExtrapolationMidpointDeuflhard())
+  @test all(all(s1[i] - s2[i] .< 5e-15) for i in 1:length(s1))
+
+  prob_ode_2Dlinear = ODEProblem(
+                      ODEFunction(f_2dlinear,analytic=f_2dlinear_analytic),
+                      Float32.(prob_ode_bigfloat2Dlinear.u0),(0.0f0,1.0f0),1.01f0)
+  s1 = solve(prob_ode_bigfloat2Dlinear,ExtrapolationMidpointDeuflhard())
+  s2 = solve(prob_ode_2Dlinear,ExtrapolationMidpointDeuflhard())
+  @test all(all(s1[i] - s2[i] .< 5e-6) for i in 1:length(s1))
+end
 
 end # Extrapolation methods
