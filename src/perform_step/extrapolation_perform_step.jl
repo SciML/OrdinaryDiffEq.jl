@@ -54,7 +54,7 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
           @muladd @.. u_tmps[Threads.threadid()] = u_tmps[Threads.threadid()] + dt_temp*k_tmps[Threads.threadid()]
           f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+j*dt_temp)
         end
-        @.. T[index,1] = u_tmps[Threads.threadid()] 
+        @.. T[index,1] = u_tmps[Threads.threadid()]
       end
     end
     integrator.destats.nf += 2^max_order - 1
@@ -131,7 +131,7 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
   if integrator.alg.threading == false
     for i in 1:max_order
       dt_temp = dt/(2^(i-1)) # Romberg sequence
-      
+
       # Solve using Euler method with dt_temp = dt/n_{i}
       @muladd u = @.. uprev + dt_temp*integrator.fsalfirst
       k = f(u, p, t+dt_temp)
@@ -165,7 +165,7 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
           @muladd u = @.. u + dt_temp*k_temp
           k_temp = f(u, p, t+j*dt_temp)
         end
-        T[index,1] = u 
+        T[index,1] = u
       end
     end
     integrator.destats.nf += 2^(max_order) - 1
@@ -252,7 +252,6 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
   @unpack subdividing_sequence = cache.coefficients
   @unpack stage_number = cache
 
-  fill!(cache.T,zero(uprev))
   fill!(cache.Q, zero(eltype(cache.Q)))
   tol = integrator.opts.internalnorm(integrator.opts.reltol, t) # Used by the convergence monitor
 
@@ -276,7 +275,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
       @.. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
       for j = 2 : 2j_int
         f(k, cache.u_temp1, p, t + (j-1)dt_int)
-        T[i+1] = u_temp2 + 2dt_int*k # Explicit Midpoint rule
+        @.. T[i+1] = u_temp2 + 2dt_int*k # Explicit Midpoint rule
         @.. u_temp2 = u_temp1
         @.. u_temp1 = T[i+1]
       end
@@ -298,7 +297,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
           @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + dt_int_temp * fsalfirst # Euler starting step
           for j = 2 : 2j_int_temp
             f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1)dt_int_temp)
-            T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
+            @.. T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
             @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
             @.. u_temp3[Threads.threadid()] = T[index+1]
           end
@@ -314,7 +313,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
           @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + dt_int_temp * fsalfirst # Euler starting step
           for j = 2 : 2j_int_temp
             f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1)dt_int_temp)
-            T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
+            @.. T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
             @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
             @.. u_temp3[Threads.threadid()] = T[index+1]
           end
@@ -326,13 +325,13 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
     end
   end
 
-  
+
 
   if integrator.opts.adaptive
     # Compute all information relating to an extrapolation order ≦ win_min
     for i = integrator.alg.n_min:n_curr
-      integrator.u = eltype(uprev).(extrapolation_scalars[i+1]) * sum( broadcast(*, cache.T[1:(i+1)], eltype(uprev).(extrapolation_weights[1:(i+1), (i+1)])) ) # Approximation of extrapolation order i
-      cache.utilde = eltype(uprev).(extrapolation_scalars_2[i]) * sum( broadcast(*, cache.T[2:(i+1)], eltype(uprev).(extrapolation_weights_2[1:i, i])) ) # and its internal counterpart
+      integrator.u .= extrapolation_scalars[i+1] * sum( broadcast(*, cache.T[1:(i+1)], extrapolation_weights[1:(i+1), (i+1)]) ) # Approximation of extrapolation order i
+      cache.utilde .= extrapolation_scalars_2[i] * sum( broadcast(*, cache.T[2:(i+1)], extrapolation_weights_2[1:i, i]) ) # and its internal counterpart
       calculate_residuals!(cache.res, integrator.u, cache.utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       integrator.EEst = integrator.opts.internalnorm(cache.res, t)
       cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
@@ -357,14 +356,14 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
         @.. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
         for j = 2 : 2j_int
           f(k, cache.u_temp1, p, t + (j-1)dt_int)
-          T[n_curr+1] = u_temp2 + 2dt_int * k
+          @.. T[n_curr+1] = u_temp2 + 2dt_int * k
           @.. u_temp2 = u_temp1
           @.. u_temp1 = T[n_curr+1]
         end
 
         # Update u, integrator.EEst and cache.Q
-        integrator.u = eltype(uprev).(extrapolation_scalars[n_curr+1]) * sum( broadcast(*, cache.T[1:(n_curr+1)], eltype(uprev).(extrapolation_weights[1:(n_curr+1), (n_curr+1)])) ) # Approximation of extrapolation order n_curr
-        cache.utilde = eltype(uprev).(extrapolation_scalars_2[n_curr]) * sum( broadcast(*, cache.T[2:(n_curr+1)], eltype(uprev).(extrapolation_weights_2[1:n_curr, n_curr])) ) # and its internal counterpart
+        integrator.u .= extrapolation_scalars[n_curr+1] * sum( broadcast(*, cache.T[1:(n_curr+1)], extrapolation_weights[1:(n_curr+1), (n_curr+1)]) ) # Approximation of extrapolation order n_curr
+        cache.utilde .= extrapolation_scalars_2[n_curr] * sum( broadcast(*, cache.T[2:(n_curr+1)], extrapolation_weights_2[1:n_curr, n_curr]) ) # and its internal counterpart
         calculate_residuals!(cache.res, integrator.u, cache.utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(cache.res, t)
         stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
@@ -374,7 +373,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
       end
     end
   else
-    integrator.u = eltype(uprev).(extrapolation_scalars[n_curr+1]) * sum( broadcast(*, cache.T[1:(n_curr+1)], eltype(uprev).(extrapolation_weights[1:(n_curr+1), (n_curr+1)])) ) # Approximation of extrapolation order n_curr
+    integrator.u .= extrapolation_scalars[n_curr+1] * sum( broadcast(*, cache.T[1:(n_curr+1)], extrapolation_weights[1:(n_curr+1), (n_curr+1)]) ) # Approximation of extrapolation order n_curr
   end
 
   f(cache.k, integrator.u, p, t+dt) # Update FSAL
@@ -477,7 +476,7 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
       end
     end
   end
-  
+
 
   if integrator.opts.adaptive
     # Compute all information relating to an extrapolation order ≦ win_min
@@ -558,7 +557,6 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
   # Additional constant information
   @unpack subdividing_sequence = cache.coefficients
 
-  fill!(cache.T,zero(uprev))
   fill!(cache.Q, zero(eltype(cache.Q)))
 
   if integrator.opts.adaptive
@@ -585,7 +583,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
       @.. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
       for j = 2 : 2j_int
         f(k, cache.u_temp1, p, t + (j-1)dt_int)
-        T[i+1] = u_temp2 + 2dt_int*k # Explicit Midpoint rule
+        @.. T[i+1] = u_temp2 + 2dt_int*k # Explicit Midpoint rule
         @.. u_temp2 = u_temp1
         @.. u_temp1 = T[i+1]
       end
@@ -607,7 +605,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
           @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + dt_int_temp * fsalfirst # Euler starting step
           for j = 2 : 2j_int_temp
             f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1)dt_int_temp)
-            T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
+            @.. T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
             @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
             @.. u_temp3[Threads.threadid()] = T[index+1]
           end
@@ -623,20 +621,20 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
           @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + dt_int_temp * fsalfirst # Euler starting step
           for j = 2 : 2j_int_temp
             f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1)dt_int_temp)
-            T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
+            @.. T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
             @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
             @.. u_temp3[Threads.threadid()] = T[index+1]
           end
         end
-      end  
+      end
     end
   end
 
   if integrator.opts.adaptive
     # Compute all information relating to an extrapolation order ≦ win_min
     for i = win_min - 1 : win_min
-      integrator.u = eltype(uprev).(extrapolation_scalars[i+1]) * sum( broadcast(*, cache.T[1:(i+1)], eltype(uprev).(extrapolation_weights[1:(i+1), (i+1)])) ) # Approximation of extrapolation order i
-      cache.utilde = eltype(uprev).(extrapolation_scalars_2[i]) * sum( broadcast(*, cache.T[2:(i+1)], eltype(uprev).(extrapolation_weights_2[1:i, i])) ) # and its internal counterpart
+      integrator.u .= extrapolation_scalars[i+1] * sum( broadcast(*, cache.T[1:(i+1)], extrapolation_weights[1:(i+1), (i+1)]) ) # Approximation of extrapolation order i
+      cache.utilde .= extrapolation_scalars_2[i] * sum( broadcast(*, cache.T[2:(i+1)], extrapolation_weights_2[1:i, i]) ) # and its internal counterpart
       calculate_residuals!(cache.res, integrator.u, cache.utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       integrator.EEst = integrator.opts.internalnorm(cache.res, t)
       cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
@@ -662,14 +660,14 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
         @.. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
         for j = 2 : 2j_int
           f(k, cache.u_temp1, p, t + (j-1)dt_int)
-          T[n_curr+1] = u_temp2 + 2dt_int * k
+          @.. T[n_curr+1] = u_temp2 + 2dt_int * k
           @.. u_temp2 = u_temp1
           @.. u_temp1 = T[n_curr+1]
         end
 
         # Update u, integrator.EEst and cache.Q
-        integrator.u = eltype(uprev).(extrapolation_scalars[n_curr+1]) * sum( broadcast(*, cache.T[1:(n_curr+1)], eltype(uprev).(extrapolation_weights[1:(n_curr+1), (n_curr+1)])) ) # Approximation of extrapolation order n_curr
-        cache.utilde = eltype(uprev).(extrapolation_scalars_2[n_curr]) * sum( broadcast(*, cache.T[2:(n_curr+1)], eltype(uprev).(extrapolation_weights_2[1:n_curr, n_curr])) ) # and its internal counterpart
+        integrator.u .= extrapolation_scalars[n_curr+1] * sum( broadcast(*, cache.T[1:(n_curr+1)], extrapolation_weights[1:(n_curr+1), (n_curr+1)]) ) # Approximation of extrapolation order n_curr
+        cache.utilde .= extrapolation_scalars_2[n_curr] * sum( broadcast(*, cache.T[2:(n_curr+1)], extrapolation_weights_2[1:n_curr, n_curr]) ) # and its internal counterpart
         calculate_residuals!(cache.res, integrator.u, cache.utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(cache.res, t)
         stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
@@ -679,7 +677,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
       end
     end
   else
-    integrator.u = eltype(uprev).(extrapolation_scalars[n_curr+1]) * sum( broadcast(*, cache.T[1:(n_curr+1)], eltype(uprev).(extrapolation_weights[1:(n_curr+1), (n_curr+1)])) ) # Approximation of extrapolation order n_curr
+    integrator.u .= extrapolation_scalars[n_curr+1] * sum( broadcast(*, cache.T[1:(n_curr+1)], extrapolation_weights[1:(n_curr+1), (n_curr+1)]) ) # Approximation of extrapolation order n_curr
   end
 
   f(cache.k, integrator.u, p, t+dt) # Update FSAL
@@ -778,7 +776,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
             u_temp3 = T[index+1]
           end
         end
-      end 
+      end
     end
   end
   if integrator.opts.adaptive

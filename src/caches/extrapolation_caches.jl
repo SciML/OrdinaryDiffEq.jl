@@ -241,7 +241,10 @@ function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeN
   end
 
   tmp = zero(u)
-  T = fill(zero(u), alg.n_max + 1)
+  T = Vector{typeof(u)}(undef,alg.n_max + 1)
+  for i in 1:alg.n_max+1
+    T[i] = zero(u)
+  end
   res = uEltypeNoUnits.(zero(u))
 
   fsalfirst = zero(rate_prototype)
@@ -322,7 +325,10 @@ function alg_cache(alg::ExtrapolationMidpointHairerWanner,u,rate_prototype,uElty
     u_temp4[i] = zero(u)
   end
   tmp = zero(u)
-  T = fill(zero(u), alg.n_max + 1)
+  T = Vector{typeof(u)}(undef,alg.n_max + 1)
+  for i in 1:alg.n_max+1
+    T[i] = zero(u)
+  end
   res = uEltypeNoUnits.(zero(u))
   fsalfirst = zero(rate_prototype)
   k = zero(rate_prototype)
