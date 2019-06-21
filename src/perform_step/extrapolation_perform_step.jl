@@ -287,38 +287,44 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
       # fill last element of T matrix.
       # Romberg sequence --> 1, 2, 4, 8, ..., 2^(i)
       # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
-      Threads.@threads for i = 1 : 2
-        startIndex = (i == 1) ? 0 : n_curr
-        endIndex = (i == 1) ? n_curr - 1 : n_curr
-        for index = startIndex : endIndex
-          j_int_temp = 2Int64(subdividing_sequence[index+1])
-          dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
-          @.. u_temp4[Threads.threadid()] = uprev
-          @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + dt_int_temp * fsalfirst # Euler starting step
-          for j = 2 : 2j_int_temp
-            f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1)dt_int_temp)
-            @.. T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
-            @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
-            @.. u_temp3[Threads.threadid()] = T[index+1]
+      let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
+          u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
+        Threads.@threads for i = 1 : 2
+          startIndex = (i == 1) ? 0 : n_curr
+          endIndex = (i == 1) ? n_curr - 1 : n_curr
+          for index = startIndex : endIndex
+            j_int_temp = 2Int64(subdividing_sequence[index+1])
+            dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
+            @.. u_temp4[Threads.threadid()] = uprev
+            @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + dt_int_temp * fsalfirst # Euler starting step
+            for j = 2 : 2j_int_temp
+              f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1)dt_int_temp)
+              @.. T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
+              @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
+              @.. u_temp3[Threads.threadid()] = T[index+1]
+            end
           end
         end
       end
     else
-      Threads.@threads for i = 0 : floor(Int,n_curr/2)
-        indices = (i, n_curr-i)
-        for index in indices
-          j_int_temp = 2Int64(subdividing_sequence[index+1])
-          dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
-          @.. u_temp4[Threads.threadid()] = uprev
-          @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + dt_int_temp * fsalfirst # Euler starting step
-          for j = 2 : 2j_int_temp
-            f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1)dt_int_temp)
-            @.. T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
-            @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
-            @.. u_temp3[Threads.threadid()] = T[index+1]
-          end
-          if indices[2] <= indices[1]
-              break
+      let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
+          u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
+        Threads.@threads for i = 0 : floor(Int,n_curr/2)
+          indices = (i, n_curr-i)
+          for index in indices
+            j_int_temp = 2Int64(subdividing_sequence[index+1])
+            dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
+            @.. u_temp4[Threads.threadid()] = uprev
+            @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + dt_int_temp * fsalfirst # Euler starting step
+            for j = 2 : 2j_int_temp
+              f(k_tmps[Threads.threadid()], u_temp3[Threads.threadid()], p, t + (j-1)dt_int_temp)
+              @.. T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
+              @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
+              @.. u_temp3[Threads.threadid()] = T[index+1]
+            end
+            if indices[2] <= indices[1]
+                break
+            end
           end
         end
       end
@@ -627,35 +633,41 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
       # fill last element of T matrix.
       # Romberg sequence --> 1, 2, 4, 8, ..., 2^(i)
       # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
-      Threads.@threads for i = 1 : 2
-        startIndex = (i == 1) ? 0 : n_curr
-        endIndex = (i == 1) ? n_curr - 1 : n_curr
-        for index = startIndex : endIndex
-          j_int_temp = 2Int64(subdividing_sequence[index+1])
-          dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
-          @.. u_temp4[Threads.threadid()] = uprev
-          @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + dt_int_temp * fsalfirst # Euler starting step
-          for j = 2 : 2j_int_temp
-            f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1)dt_int_temp)
-            @.. T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
-            @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
-            @.. u_temp3[Threads.threadid()] = T[index+1]
+      let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
+          u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
+        Threads.@threads for i = 1 : 2
+          startIndex = (i == 1) ? 0 : n_curr
+          endIndex = (i == 1) ? n_curr - 1 : n_curr
+          for index = startIndex : endIndex
+            j_int_temp = 2Int64(subdividing_sequence[index+1])
+            dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
+            @.. u_temp4[Threads.threadid()] = uprev
+            @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + dt_int_temp * fsalfirst # Euler starting step
+            for j = 2 : 2j_int_temp
+              f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1)dt_int_temp)
+              @.. T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
+              @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
+              @.. u_temp3[Threads.threadid()] = T[index+1]
+            end
           end
         end
       end
     else
-      Threads.@threads for i = 0 : floor(Int,n_curr/2)
-        indices = (i, n_curr - i)
-        for index in indices
-          j_int_temp = 2Int64(subdividing_sequence[index+1])
-          dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
-          @.. u_temp4[Threads.threadid()] = uprev
-          @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + dt_int_temp * fsalfirst # Euler starting step
-          for j = 2 : 2j_int_temp
-            f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1)dt_int_temp)
-            @.. T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
-            @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
-            @.. u_temp3[Threads.threadid()] = T[index+1]
+      let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
+          u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
+        Threads.@threads for i = 0 : floor(Int,n_curr/2)
+          indices = (i, n_curr - i)
+          for index in indices
+            j_int_temp = 2Int64(subdividing_sequence[index+1])
+            dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
+            @.. u_temp4[Threads.threadid()] = uprev
+            @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + dt_int_temp * fsalfirst # Euler starting step
+            for j = 2 : 2j_int_temp
+              f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1)dt_int_temp)
+              @.. T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
+              @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
+              @.. u_temp3[Threads.threadid()] = T[index+1]
+            end
           end
         end
       end
