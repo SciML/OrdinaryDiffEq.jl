@@ -39,22 +39,25 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
       end
     end
   else
-    # Balance workload of threads by computing T[1,1] with T[max_order,1] on
-    # same thread, T[2,1] with T[max_order-1,1] on same thread. Similarly fill
-    # first column of T matrix
-    Threads.@threads for i in 1:2
-      startIndex = (i == 1) ? 1 : max_order
-      endIndex = (i == 1) ? max_order - 1 : max_order
-      for index in startIndex:endIndex
-        dt_temp = dt/(2^(index-1))
-        # Solve using Euler method
-        @muladd @.. u_tmps[Threads.threadid()] = uprev + dt_temp*fsalfirst
-        f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+dt_temp)
-        for j in 2:2^(index-1)
-          @muladd @.. u_tmps[Threads.threadid()] = u_tmps[Threads.threadid()] + dt_temp*k_tmps[Threads.threadid()]
-          f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+j*dt_temp)
+    let max_order=max_order, uprev=uprev, dt=dt, fsalfirst=fsalfirst, p=p, t=t,
+        u_tmps=u_tmps, k_tmps=k_tmps , T=T
+      # Balance workload of threads by computing T[1,1] with T[max_order,1] on
+      # same thread, T[2,1] with T[max_order-1,1] on same thread. Similarly fill
+      # first column of T matrix
+      Threads.@threads for i in 1:2
+        startIndex = (i == 1) ? 1 : max_order
+        endIndex = (i == 1) ? max_order - 1 : max_order
+        for index in startIndex:endIndex
+          dt_temp = dt/(2^(index-1))
+          # Solve using Euler method
+          @muladd @.. u_tmps[Threads.threadid()] = uprev + dt_temp*fsalfirst
+          f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+dt_temp)
+          for j in 2:2^(index-1)
+            @muladd @.. u_tmps[Threads.threadid()] = u_tmps[Threads.threadid()] + dt_temp*k_tmps[Threads.threadid()]
+            f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+j*dt_temp)
+          end
+          @.. T[index,1] = u_tmps[Threads.threadid()]
         end
-        @.. T[index,1] = u_tmps[Threads.threadid()]
       end
     end
     integrator.destats.nf += 2^max_order - 1
@@ -149,24 +152,26 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
       end
     end
   else
+    T = let max_order=max_order, dt=dt, uprev=uprev, integrator=integrator, p=p, t=t, T=T
+      # Balance workload of threads by computing T[1,1] with T[max_order,1] on
+      # same thread, T[2,1] with T[max_order-1,1] on same thread. Similarly fill
+      # first column of T matrix
+      Threads.@threads for i in 1:2
+        startIndex = (i == 1) ? 1 : max_order
+        endIndex = (i == 1) ? max_order - 1 : max_order
 
-    # Balance workload of threads by computing T[1,1] with T[max_order,1] on
-    # same thread, T[2,1] with T[max_order-1,1] on same thread. Similarly fill
-    # first column of T matrix
-    Threads.@threads for i in 1:2
-      startIndex = (i == 1) ? 1 : max_order
-      endIndex = (i == 1) ? max_order - 1 : max_order
-
-      for index in startIndex:endIndex
-        dt_temp = dt/2^(index - 1)
-        @muladd u = @.. uprev + dt_temp*integrator.fsalfirst
-        k_temp = f(u, p, t+dt_temp)
-        for j in 2:2^(index-1)
-          @muladd u = @.. u + dt_temp*k_temp
-          k_temp = f(u, p, t+j*dt_temp)
+        for index in startIndex:endIndex
+          dt_temp = dt/2^(index - 1)
+          @muladd u = @.. uprev + dt_temp*integrator.fsalfirst
+          k_temp = f(u, p, t+dt_temp)
+          for j in 2:2^(index-1)
+            @muladd u = @.. u + dt_temp*k_temp
+            k_temp = f(u, p, t+j*dt_temp)
+          end
+          T[index,1] = u
         end
-        T[index,1] = u
       end
+      T
     end
     integrator.destats.nf += 2^(max_order) - 1
 
