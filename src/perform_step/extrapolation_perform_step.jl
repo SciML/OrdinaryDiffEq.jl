@@ -836,35 +836,43 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
       # fill last element of T matrix.
       # Romberg sequence --> 1, 2, 4, 8, ..., 2^(i)
       # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
-      Threads.@threads for i = 1 : 2
-        startIndex = (i == 1) ? 0 : n_curr
-        endIndex = (i == 1) ? n_curr - 1 : n_curr
-        for index = startIndex : endIndex
-          j_int_temp = 2Int64(subdividing_sequence[index+1])
-          dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
-          u_temp4 = uprev
-          u_temp3 = u_temp4 + dt_int_temp * integrator.fsalfirst # Euler starting step
-          for j = 2 : 2j_int_temp
-            T[index+1] = u_temp4 + 2dt_int_temp * f(u_temp3, p, t + (j-1)dt_int_temp) # Explicit Midpoint rule
-            u_temp4 = u_temp3
-            u_temp3 = T[index+1]
+      T = let n_curr=n_curr, subdividing_sequence=subdividing_sequence, dt=dt, uprev=uprev, 
+          integrator=integrator, T=T, p=p, t=t
+        Threads.@threads for i = 1 : 2
+          startIndex = (i == 1) ? 0 : n_curr
+          endIndex = (i == 1) ? n_curr - 1 : n_curr
+          for index = startIndex : endIndex
+            j_int_temp = 2Int64(subdividing_sequence[index+1])
+            dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
+            u_temp4 = uprev
+            u_temp3 = u_temp4 + dt_int_temp * integrator.fsalfirst # Euler starting step
+            for j = 2 : 2j_int_temp
+              T[index+1] = u_temp4 + 2dt_int_temp * f(u_temp3, p, t + (j-1)dt_int_temp) # Explicit Midpoint rule
+              u_temp4 = u_temp3
+              u_temp3 = T[index+1]
+            end
           end
         end
+        T
       end
     else
-      Threads.@threads for i = 0 : floor(Int, n_curr/2)
-        indices = (i, n_curr - i)
-        for index in indices
-          j_int_temp = 2Int64(subdividing_sequence[index+1])
-          dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
-          u_temp4 = uprev
-          u_temp3 = u_temp4 + dt_int_temp * integrator.fsalfirst # Euler starting step
-          for j = 2 : 2j_int_temp
-            T[index+1] = u_temp4 + 2dt_int_temp * f(u_temp3, p, t + (j-1)dt_int_temp) # Explicit Midpoint rule
-            u_temp4 = u_temp3
-            u_temp3 = T[index+1]
+      T = let n_curr=n_curr, subdividing_sequence=subdividing_sequence, dt=dt, uprev=uprev, 
+          integrator=integrator, T=T, p=p, t=t
+        Threads.@threads for i = 0 : floor(Int, n_curr/2)
+          indices = (i, n_curr - i)
+          for index in indices
+            j_int_temp = 2Int64(subdividing_sequence[index+1])
+            dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
+            u_temp4 = uprev
+            u_temp3 = u_temp4 + dt_int_temp * integrator.fsalfirst # Euler starting step
+            for j = 2 : 2j_int_temp
+              T[index+1] = u_temp4 + 2dt_int_temp * f(u_temp3, p, t + (j-1)dt_int_temp) # Explicit Midpoint rule
+              u_temp4 = u_temp3
+              u_temp3 = T[index+1]
+            end
           end
         end
+        T
       end
     end
   end
