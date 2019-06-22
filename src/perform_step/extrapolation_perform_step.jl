@@ -152,7 +152,7 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
       end
     end
   else
-    T = let max_order=max_order, dt=dt, uprev=uprev, integrator=integrator, p=p, t=t, T=T
+    let max_order=max_order, dt=dt, uprev=uprev, integrator=integrator, p=p, t=t, T=T
       # Balance workload of threads by computing T[1,1] with T[max_order,1] on
       # same thread, T[2,1] with T[max_order-1,1] on same thread. Similarly fill
       # first column of T matrix
@@ -171,7 +171,6 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
           T[index,1] = u
         end
       end
-      T
     end
     integrator.destats.nf += 2^(max_order) - 1
 
@@ -484,7 +483,7 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
       # fill last element of T matrix.
       # Romberg sequence --> 1, 2, 4, 8, ..., 2^(i)
       # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
-      T = let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,
+      let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,
           integrator=integrator,p=p,t=t,T=T
         Threads.@threads for i = 1 : 2
           startIndex = (i == 1) ? 0 : n_curr
@@ -501,10 +500,9 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
             end
           end
         end
-        T
       end
     else
-      T = let n_curr=n_curr, subdividing_sequence=subdividing_sequence, dt=dt, uprev=uprev,
+      let n_curr=n_curr, subdividing_sequence=subdividing_sequence, dt=dt, uprev=uprev,
               p=p, t=t, T=T
         Threads.@threads for i = 0 : floor(Int, n_curr/2)
           indices = (i, n_curr-i)
@@ -523,7 +521,6 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
             end
           end
         end
-        T
       end
     end
   end
@@ -836,7 +833,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
       # fill last element of T matrix.
       # Romberg sequence --> 1, 2, 4, 8, ..., 2^(i)
       # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
-      T = let n_curr=n_curr, subdividing_sequence=subdividing_sequence, dt=dt, uprev=uprev, 
+      let n_curr=n_curr, subdividing_sequence=subdividing_sequence, dt=dt, uprev=uprev,
           integrator=integrator, T=T, p=p, t=t
         Threads.@threads for i = 1 : 2
           startIndex = (i == 1) ? 0 : n_curr
@@ -853,10 +850,9 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
             end
           end
         end
-        T
       end
     else
-      T = let n_curr=n_curr, subdividing_sequence=subdividing_sequence, dt=dt, uprev=uprev, 
+      let n_curr=n_curr, subdividing_sequence=subdividing_sequence, dt=dt, uprev=uprev,
           integrator=integrator, T=T, p=p, t=t
         Threads.@threads for i = 0 : floor(Int, n_curr/2)
           indices = (i, n_curr - i)
@@ -872,7 +868,6 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
             end
           end
         end
-        T
       end
     end
   end
