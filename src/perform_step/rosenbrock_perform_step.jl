@@ -254,6 +254,49 @@ end
   integrator.u = u
 end
 
+function initialize!(integrator, cache::NPROS4ConstantCache)
+  integrator.kshortsize = 4
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+  integrator.destats.nf += 1
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = zero(integrator.fsalfirst)
+  integrator.k[2] = zero(integrator.fsalfirst)
+  integrator.k[3] = zero(integrator.fsalfirst)
+  integrator.k[4] = zero(integrator.fsalfirst)
+end
+
+@muladd function perform_step!(integrator, cache::NPROS4ConstantCache, repeat_step=false)
+  @unpack t,dt,uprev,u,f,p,k = integrator
+  @unpack α21,α31,α32,α41,α42,α43,b1,b2,b3,b4,γ11,γ21,γ22,γ31,γ32,γ33,γ41,γ42,γ43,γ44 = cache
+
+  W = calc_W!(integrator, cache, dt*γ11, repeat_step)
+  k1 = _reshape(W\-_vec(dt*integrator.fsalfirst), axes(uprev))
+
+  W = calc_W!(integrator, cache, dt*γ22, repeat_step)
+  is_compos = integrator.alg isa CompositeAlgorithm
+  J = calc_J(integrator, cache, is_compos)
+  k2 = _reshape(W\-_vec(dt*f(uprev + α21*k[1],p,t) - dt*J*γ21*k[1]), axes(uprev))
+
+  W = calc_W!(integrator, cache, dt*γ33, repeat_step)
+  k3 = _reshape(W\-_vec(dt*f(uprev + α31*k[1] + α32*k[2],p,t) + dt*J*(γ31*k[1] + γ32*k[2])), axes(uprev))
+
+  W = calc_W!(integrator, cache, dt*γ44, repeat_step)
+  k4 = _reshape(W\-_vec(dt*f(uprev + α41*k[1] + α42*k[2] + α43*k[3],p,t) + dt*J*(γ41*k[1] + γ42*k[2] + γ43*k[3])), axes(uprev))
+  
+  u = uprev + b1*k1 + b2*k2 + b3*k3 + b4*k4
+
+  integrator.fsallast = f(u,p,t+dt)
+  integrator.k[1] = k1
+  integrator.k[2] = k2
+  integrator.k[3] = k3
+  integrator.k[4] = k4
+
+  integrator.u = u
+end
+
 function initialize!(integrator, cache::Union{Rosenbrock33ConstantCache,
                                               Rosenbrock34ConstantCache,
                                               Rosenbrock4ConstantCache,

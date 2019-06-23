@@ -283,6 +283,7 @@ alg_order(alg::Feagin14) = 14
 
 alg_order(alg::Rosenbrock23) = 2
 alg_order(alg::Rosenbrock32) = 3
+alg_order(alg::NPROS4) = 4
 alg_order(alg::ROS3P) = 3
 alg_order(alg::Rodas3) = 3
 alg_order(alg::ROS34PW1a) = 3
