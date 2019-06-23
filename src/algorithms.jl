@@ -269,7 +269,6 @@ struct OwrenZen4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct OwrenZen5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct BS3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct DP5 <: OrdinaryDiffEqAdaptiveAlgorithm end
-struct DP5Threaded <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Tsit5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct DP8 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct TanYam7 <: OrdinaryDiffEqAdaptiveAlgorithm end
