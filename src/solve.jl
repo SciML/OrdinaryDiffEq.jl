@@ -57,7 +57,7 @@ function DiffEqBase.__init(
   userdata=nothing,
   allow_extrapolation = alg_extrapolates(alg),
   initialize_integrator=true,
-  alias_u0=false, kwargs...) where {algType<:OrdinaryDiffEqAlgorithm,recompile_flag}
+  alias_u0=false, allow_extra_args=false,kwargs...) where {algType<:OrdinaryDiffEqAlgorithm,recompile_flag}
 
   if typeof(prob.f)<:DynamicalODEFunction && typeof(prob.f.mass_matrix)<:Tuple
     if any(mm != I for mm in prob.f.mass_matrix)
@@ -67,6 +67,10 @@ function DiffEqBase.__init(
          !(typeof(alg) <:MassMatrixAlgorithms) &&
          prob.f.mass_matrix != I
     error("This solver is not able to use mass matrices.")
+  end
+
+  if !isempty(kwargs) && !allow_extra_args
+    @warn("Unsupported keyword arguments have been passed to the `solve` routine. Check if you have made a typo in argument name or if this is intentional, set `allow_extra_args` kwarg to true to supress this warning.")
   end
 
   if !isempty(saveat) && dense
