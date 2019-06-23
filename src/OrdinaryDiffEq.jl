@@ -119,7 +119,6 @@ module OrdinaryDiffEq
   include("perform_step/firk_perform_step.jl")
   include("perform_step/generic_implicit_perform_step.jl")
   include("perform_step/rosenbrock_perform_step.jl")
-  include("perform_step/threaded_rk_perform_step.jl")
   include("perform_step/composite_perform_step.jl")
   include("perform_step/adams_bashforth_moulton_perform_step.jl")
   include("perform_step/nordsieck_perform_step.jl")
@@ -164,7 +163,7 @@ module OrdinaryDiffEq
   # Reexport the Alg Types
 
   export FunctionMap, Euler, Heun, Ralston, Midpoint, RK4, ExplicitRK, OwrenZen3, OwrenZen4, OwrenZen5,
-         BS3, BS5, RK46NL, DP5, DP5Threaded, Tsit5, DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8,
+         BS3, BS5, RK46NL, DP5, Tsit5, DP8, Vern6, Vern7, Vern8, TanYam7, TsitPap8,
          Vern9, Feagin10, Feagin12, Feagin14, CompositeAlgorithm, Anas5
 
   export SSPRK22, SSPRK33, SSPRK53, SSPRK53_2N1, SSPRK53_2N2, SSPRK63, SSPRK73, SSPRK83, SSPRK432,

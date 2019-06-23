@@ -247,7 +247,6 @@ alg_order(alg::OwrenZen3) = 3
 alg_order(alg::OwrenZen4) = 4
 alg_order(alg::OwrenZen5) = 5
 alg_order(alg::DP5) = 5
-alg_order(alg::DP5Threaded) = 5
 alg_order(alg::Tsit5) = 5
 alg_order(alg::DP8) = 8
 alg_order(alg::Vern6) = 6
@@ -379,7 +378,6 @@ beta2_default(alg::OrdinaryDiffEqAlgorithm) = 2//(5alg_order(alg))
 beta2_default(alg::FunctionMap) = 0
 beta2_default(alg::DP8) = 0//1
 beta2_default(alg::DP5) = 4//100
-beta2_default(alg::DP5Threaded) = 4//100
 beta2_default(alg::ExtrapolationMidpointDeuflhard) = 0//1
 beta2_default(alg::ExtrapolationMidpointHairerWanner) = 0//1
 
@@ -387,7 +385,6 @@ beta1_default(alg::OrdinaryDiffEqAlgorithm,beta2) = 7//(10alg_order(alg))
 beta1_default(alg::FunctionMap,beta2) = 0
 beta1_default(alg::DP8,beta2) = typeof(beta2)(1//alg_order(alg)) - beta2/5
 beta1_default(alg::DP5,beta2) = typeof(beta2)(1//alg_order(alg)) - 3beta2/4
-beta1_default(alg::DP5Threaded,beta2) = typeof(beta2)(1//alg_order(alg)) - 3beta2/4
 beta1_default(alg::ExtrapolationMidpointDeuflhard,beta2) =  1//(2alg.n_init+1)
 beta1_default(alg::ExtrapolationMidpointHairerWanner,beta2) =  1//(2alg.n_init+1)
 
