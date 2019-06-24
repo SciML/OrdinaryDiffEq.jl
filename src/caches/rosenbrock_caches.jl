@@ -565,3 +565,60 @@ end
 ### RosenbrockW6S4O
 
 @RosenbrockW6S4OS(:cache)
+
+### 4th order rosenbrock method
+
+struct NPROS4ConstantCache{T,TF,UF} <: OrdinaryDiffEqConstantCache
+  α21::T
+  α31::T
+  α32::T
+  α41::T
+  α42::T
+  α43::T
+  b1::T
+  b2::T
+  b3::T
+  b4::T
+  γ11::T
+  γ21::T
+  γ22::T
+  γ31::T
+  γ32::T
+  γ33::T
+  γ41::T
+  γ42::T
+  γ43::T
+  γ44::T
+  tf::TF
+  uf::UF
+end
+
+function NPROS4ConstantCache(T::Type,tf,uf)
+  α21 = T(1//2)
+  α31 = T(1//2)
+  α32 = T(1//2)
+  α41 = T(-0.178278)
+  α42 = T(0.219945)
+  α43 = T(1//3)
+  b1 = T(43//768)
+  b2 = T(83//192)
+  b3 = T(137//768)
+  b4 = T(1//3)
+  γ11 = T(1//6)
+  γ21 = T(0.12642556)
+  γ22 = T(2//6)
+  γ31 = T(-0.5)
+  γ32 = T(-1.22102225482)
+  γ33 = T(2//6)
+  γ41 = T(0.178278)
+  γ42 = T(0.088797)
+  γ43 = T(-0.37395)
+  γ44 = T(1//6)
+  NPROS4ConstantCache(α21,α31,α32,α41,α42,α43,b1,b2,b3,b4,γ11,γ21,γ22,γ31,γ32,γ33,γ41,γ42,γ43,γ44,tf,uf)
+end
+
+function alg_cache(alg::NPROS4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+  NPROS4ConstantCache(real(uBottomEltypeNoUnits),tf,uf)
+end
