@@ -367,6 +367,52 @@ DiffEqBase.nlsolve_f(f, alg::OrdinaryDiffEqAlgorithm) = f isa SplitFunction && i
 DiffEqBase.nlsolve_f(integrator::ODEIntegrator) =
   nlsolve_f(integrator.f, unwrap_alg(integrator, true))
 
+function DiffEqBase.iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
+  nf = nlsolve_f(f, alg)
+  islin = f isa Union{ODEFunction,SplitFunction} && islinear(nf.f)
+  if islin
+    W = WOperator(f.mass_matrix, dt, nf.f, true)
+  else
+    if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype !== nothing
+      W = WOperator(f, dt, true)
+    else
+      W = false .* vec(u) .* vec(u)'
+    end
+  end
+  W
+end
+
+function DiffEqBase.oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
+  nf = nlsolve_f(f, alg)
+  islin = f isa Union{ODEFunction,SplitFunction} && islinear(nf.f)
+  if islin || DiffEqBase.has_jac(f)
+    # get the operator
+    J = islin ? nf.f : f.jac(uprev, p, t)
+    if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
+      J = DiffEqArrayOperator(J)
+    end
+    W = WOperator(f.mass_matrix, dt, J, false)
+  else
+    # https://github.com/JuliaDiffEq/OrdinaryDiffEq.jl/pull/672
+    if u isa StaticArray
+      # get a "fake" `J`
+      J = if u isa AbstractMatrix && size(u, 1) > 1 # `u` is already a matrix
+        u
+      elseif size(u, 1) == 1 # `u` is a row vector
+        vcat(u, u)
+      else # `u` is a column vector
+        hcat(u, u)
+      end
+      W = lu(J)
+    else
+      W = u isa Number ? u : LU{LinearAlgebra.lutype(uEltypeNoUnits)}(Matrix{uEltypeNoUnits}(undef, 0, 0),
+                                                                      Vector{LinearAlgebra.BlasInt}(undef, 0),
+                                                                      zero(LinearAlgebra.BlasInt))
+    end
+  end
+  W
+end
+
 function (integrator::ODEIntegrator)(t,deriv::Type=Val{0};idxs=nothing)
   current_interpolant(t,integrator,idxs,deriv)
 end
