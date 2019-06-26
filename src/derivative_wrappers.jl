@@ -65,7 +65,7 @@ end
 #jacobian_autodiff(f, x::AbstractArray, colorvec) = (ForwardDiff.jacobian(f, x, color = colorvec),1)
 
 function _nfcount(N,diff_type)
-  if diff_type==Val{:complex} && eltype(x)<:Real
+  if diff_type==Val{:complex}
     tmp = N
   elseif diff_type==Val{:forward}
     tmp = N + 1
@@ -103,13 +103,13 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, f
         f(forwardcache, x)
         integrator.destats.nf += 1
         if DiffEqBase.has_colorvec(integrator.f)
-          jacobian_finitediff_forward!(J, f, x, jac_config, forwardcache; colorvec = integrator.f.colorvec)
+          jacobian_finitediff_forward!(J, f, x, jac_config, forwardcache, integrator.f.colorvec)
         else
           jacobian_finitediff_forward!(J, f, x, jac_config, forwardcache)
         end
       else # not forward difference
         if DiffEqBase.has_colorvec(integrator.f)
-          jacobian_finitediff!(J, f, x, jac_config;colorvec=integrator.f.colorvec)
+          jacobian_finitediff!(J, f, x, jac_config, integrator.f.colorvec)
         else
           jacobian_finitediff!(J, f, x, jac_config)
         end
