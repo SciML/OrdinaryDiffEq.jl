@@ -927,10 +927,8 @@ MEBDF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 
 ### Algorithm Groups
 
-const MassMatrixAlgorithms = Union{OrdinaryDiffEqRosenbrockAlgorithm,
-                                   OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,
-                                   ImplicitEuler,ImplicitMidpoint,MEBDF2,
-                                   RadauIIA5}
+const MassMatrixAlgorithms = Union{NewtonAlgorithm,
+                                   RosenbrockAlgorithm}
 
 const MultistepAlgorithms = Union{IRKN3,IRKN4,
                                   ABDF2,

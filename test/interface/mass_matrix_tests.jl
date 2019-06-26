@@ -141,5 +141,9 @@ end
   u0 = zeros(2)
 
   m_ode_prob = ODEProblem(ODEFunction(f2!;mass_matrix=M), u0, tspan)
-  @test_nowarn sol = solve(m_ode_prob, Rosenbrock23())
+  sol1 = @test_nowarn solve(m_ode_prob, Rosenbrock23(), reltol=1e-10, abstol=1e-10)
+  sol2 = @test_nowarn solve(m_ode_prob, RadauIIA5(), reltol=1e-10, abstol=1e-10)
+  sol3 = @test_nowarn solve(m_ode_prob, TRBDF2(), reltol=1e-10, abstol=1e-10)
+  @test sol1[end] ≈ sol2[end] atol=1e-9
+  @test sol1[end] ≈ sol3[end] atol=1e-9
 end
