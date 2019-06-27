@@ -1,5 +1,7 @@
 using Test
 using OrdinaryDiffEq
+using SparseArrays
+using LinearAlgebra
 
 #https://github.com/JuliaDiffEq/SparseDiffTools.jl/blob/master/test/test_integration.jl
 function f(dx,x,p,t)
@@ -19,22 +21,49 @@ function second_derivative_stencil(N)
   end
   A
 end
-  
 
+function generate_sparsity_pattern(N::Integer)
+  dl = repeat([1.0],N-1)
+  du = repeat([1.0],N-1)
+  d = repeat([-2.0],N)
+  return Tridiagonal(dl,d,du)
+end
+
+jac_sp = sparse(generate_sparsity_pattern(30))
 colors = repeat(1:3,10)
+u0=[1.,2.,3,4,5,4,3,2,1]
+tspan=(0.,10.)
 odefun_sp = ODEFunction(f,colorvec=colors)
-prob_sp = ODEProblem(odefun_sp,[1.,2.,3,4,5,4,3,2,1],(0.,10.))
-prob_std = ODEProblem(f,[1.,2.,3,4,5,4,3,2,1],(0.,10.))
+odefun_sp2= ODEFunction(f,colorvec=colors,jac_prototype=jac_sp)
+prob_sp = ODEProblem(odefun_sp,u0,tspan)
+prob_sp2 = ODEProblem(odefun_sp2,u0,tspan)
+prob_std = ODEProblem(f,u0,tspan)
+
 sol_sp=solve(prob_sp,Rodas5(autodiff=false),abstol=1e-10,reltol=1e-10)
+sol_sp2=solve(prob_sp2,Rodas5(autodiff=false),abstol=1e-10,reltol=1e-10)
 @test sol_sp.retcode==:Success#test sparse finitediff
+@test sol_sp2.retcode==:Success
 sol=solve(prob_std,Rodas5(autodiff=false),abstol=1e-10,reltol=1e-10)
 @test sol_sp.u[end]≈sol.u[end] atol=1e-10
+@test sol_sp2.u[end]≈sol.u[end] atol=1e-10
 @test length(sol_sp.t)==length(sol.t)
+@test length(sol_sp2.t)==length(sol.t)
+
 sol_sp=solve(prob_sp,Rodas5(autodiff=false))
+sol_sp2=solve(prob_sp2,Rodas5(autodiff=false))
 sol=solve(prob_std,Rodas5(autodiff=false))
+@test sol_sp.u[end]≈sol_sp2.u[end] atol=1e-10
+@test length(sol_sp.t)==length(sol_sp2.t)
+
 @test sol_sp.u[end]≈sol.u[end] atol=1e-3
+@test sol_sp2.u[end]≈sol.u[end] atol=1e-3
 @test length(sol_sp.t)==length(sol.t)
+
 sol_sp=solve(prob_sp,Rodas5())
+sol_sp2=solve(prob_sp2,Rodas5())
 sol=solve(prob_std,Rodas5())
+@test sol_sp.u[end]≈sol_sp2.u[end] atol=1e-10
+@test length(sol_sp.t)==length(sol_sp2.t)
+
 @test sol_sp.u[end]≈sol.u[end] atol=1e-3
 @test length(sol_sp.t)==length(sol.t)
