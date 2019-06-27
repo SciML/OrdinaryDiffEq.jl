@@ -927,9 +927,6 @@ MEBDF2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 
 ### Algorithm Groups
 
-const MassMatrixAlgorithms = Union{NewtonAlgorithm,
-                                   RosenbrockAlgorithm}
-
 const MultistepAlgorithms = Union{IRKN3,IRKN4,
                                   ABDF2,
                                   AB3,AB4,AB5,ABM32,ABM43,ABM54}

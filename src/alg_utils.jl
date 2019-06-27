@@ -516,3 +516,12 @@ isWmethod(alg::ROS34PW1b) = true
 isWmethod(alg::ROS34PW2) = true
 isWmethod(alg::ROS34PW3) = true
 isWmethod(alg::RosenbrockW6S4OS) = true
+
+isesdirk(alg::TRBDF2) = true
+isesdirk(alg::Union{KenCarp3, KenCarp4, KenCarp5,
+                    Kvaerno3, Kvaerno4, Kvaerno5,
+                    ESDIRK54I8L2SA}) = true
+
+is_mass_matrix_alg(alg::OrdinaryDiffEqAlgorithm) = false
+is_mass_matrix_alg(alg::RosenbrockAlgorithm) = true
+is_mass_matrix_alg(alg::NewtonAlgorithm) = !isesdirk(alg)
