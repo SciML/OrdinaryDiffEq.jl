@@ -29,9 +29,10 @@ function generate_sparsity_pattern(N::Integer)
   return Tridiagonal(dl,d,du)
 end
 
-jac_sp = sparse(generate_sparsity_pattern(30))
-colors = repeat(1:3,10)
-u0=[1.,2.,3,4,5,4,3,2,1]
+jac_sp = sparse(generate_sparsity_pattern(10))
+#jac = second_derivative_stencil(10)
+colors = repeat(1:3,10)[1:10]
+u0=[1.,2.,3,4,5,5,4,3,2,1]
 tspan=(0.,10.)
 odefun_sp = ODEFunction(f,colorvec=colors)
 odefun_sp2= ODEFunction(f,colorvec=colors,jac_prototype=jac_sp)

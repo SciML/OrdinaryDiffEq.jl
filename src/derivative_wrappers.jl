@@ -86,14 +86,16 @@ jacobian_finitediff_forward!(J,f,x,jac_config,forwardcache)=(DiffEqDiffTools.fin
 jacobian_finitediff_forward!(J,f,x,jac_config,forwardcache,colorvec)=(DiffEqDiffTools.finite_difference_jacobian!(J,f,x,jac_config,forwardcache,color=colorvec);maximum(colorvec))
 jacobian_finitediff!(J,f,x,jac_config)=(DiffEqDiffTools.finite_difference_jacobian!(J,f,x,jac_config);2*length(x))
 jacobian_finitediff!(J,f,x,jac_config,colorvec)=(DiffEqDiffTools.finite_difference_jacobian!(J,f,x,jac_config,color=colorvec);2*maximum(colorvec))
+jacobian_autodiff!(J,f,x,jac_config)=forwarddiff_color_jacobian!(J,f,x,jac_config)#J::SparseMatrixCSC
+jacobian_autodiff!(J,f,fx,x,jac_config)=ForwardDiff.jacobian!(J,f,fx,x,jac_config)
 
 function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, fx::AbstractArray{<:Number}, integrator::DiffEqBase.DEIntegrator, jac_config)
     alg = unwrap_alg(integrator, true)
     if alg_autodiff(alg)
       if DiffEqBase.has_colorvec(integrator.f)
-        forwarddiff_color_jacobian!(J, f, x, jac_config)
+        jacobian_autodiff!(J,f,x,jac_config)
       else
-        ForwardDiff.jacobian!(J, f, fx, x, jac_config)
+        jacobian_autodiff!(J,f,fx,x,jac_config)
       end
       integrator.destats.nf += 1
     else
@@ -103,18 +105,18 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, f
         f(forwardcache, x)
         integrator.destats.nf += 1
         if DiffEqBase.has_colorvec(integrator.f)
-          jacobian_finitediff_forward!(J, f, x, jac_config, forwardcache, integrator.f.colorvec)
+          tmp=jacobian_finitediff_forward!(J, f, x, jac_config, forwardcache, integrator.f.colorvec)
         else
-          jacobian_finitediff_forward!(J, f, x, jac_config, forwardcache)
+          tmp=jacobian_finitediff_forward!(J, f, x, jac_config, forwardcache)
         end
       else # not forward difference
         if DiffEqBase.has_colorvec(integrator.f)
-          jacobian_finitediff!(J, f, x, jac_config, integrator.f.colorvec)
+          tmp=jacobian_finitediff!(J, f, x, jac_config, integrator.f.colorvec)
         else
-          jacobian_finitediff!(J, f, x, jac_config)
+          tmp=jacobian_finitediff!(J, f, x, jac_config)
         end
       end
-      integrator.destats.nf += (alg.diff_type==Val{:complex} && eltype(x)<:Real || isforward) ? length(x) : 2length(x)
+      integrator.destats.nf += tmp
     end
     nothing
 end
