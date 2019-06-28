@@ -367,22 +367,30 @@ DiffEqBase.nlsolve_f(f, alg::OrdinaryDiffEqAlgorithm) = f isa SplitFunction && i
 DiffEqBase.nlsolve_f(integrator::ODEIntegrator) =
   nlsolve_f(integrator.f, unwrap_alg(integrator, true))
 
-function DiffEqBase.iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
-  nf = nlsolve_f(f, alg)
-  islin = f isa Union{ODEFunction,SplitFunction} && islinear(nf.f)
-  if islin
-    W = WOperator(f.mass_matrix, dt, nf.f, true)
-  else
-    if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype !== nothing
-      W = WOperator(f, dt, true)
+function iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
+  if alg.nlsolve isa NLNewton
+    nf = nlsolve_f(f, alg)
+    islin = f isa Union{ODEFunction,SplitFunction} && islinear(nf.f)
+    if islin
+      J = nf.f
+      W = WOperator(f.mass_matrix, dt, J, true)
     else
-      W = false .* vec(u) .* vec(u)'
+      if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype !== nothing
+        J = nothing
+        W = WOperator(f, dt, true)
+      else
+        J = false .* vec(u) .* vec(u)'
+        W = similar(J)
+      end
     end
+  else
+    J = nothing
+    W = nothing
   end
-  W
+  J, W
 end
 
-function DiffEqBase.oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
+function oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
   nf = nlsolve_f(f, alg)
   islin = f isa Union{ODEFunction,SplitFunction} && islinear(nf.f)
   if islin || DiffEqBase.has_jac(f)
