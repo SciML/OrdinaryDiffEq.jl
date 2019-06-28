@@ -48,6 +48,8 @@ module OrdinaryDiffEq
 
   import DiffEqBase: calculate_residuals, calculate_residuals!, nlsolve_f, unwrap_cache, @tight_loop_macros, islinear
 
+  import DiffEqBase: iip_get_uf, oop_get_uf, build_jac_config
+
   const CompiledFloats = Union{Float32,Float64,
     ForwardDiff.Dual{ForwardDiff.Tag{T,W},K,3} where {T,W<:Union{Float64,Float32},
                                                         K<:Union{Float64,Float32}}}
