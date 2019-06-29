@@ -67,6 +67,29 @@ function alg_cache(alg::AitkenNeville,u,rate_prototype,uEltypeNoUnits,uBottomElt
   AitkenNevilleConstantCache(dtpropose,T,cur_order,work,A,step_no)
 end
 
+@cache mutable struct ImplicitEulerExtrapolationConstantCache{F,N,dtType,arrayType} <: OrdinaryDiffEqConstantCache
+  uf::F
+  nlsolver::N
+  dtpropose::dtType
+  T::arrayType
+  cur_order::Int
+  work::dtType
+  A::Int
+  step_no::Int
+end
+
+function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  dtpropose = zero(dt)
+  cur_order = max(alg.init_order, alg.min_order)
+  T = Array{typeof(u),2}(undef, alg.max_order, alg.max_order)
+  @.. T = u
+  work = zero(dt)
+  A = one(Int)
+  step_no = zero(Int)
+  γ, c = 1, 1
+  @oopnlsolve
+  ImplicitEulerExtrapolationConstantCache(uf,nlsolver,dtpropose,T,cur_order,work,A,step_no)
+end
 
 struct extrapolation_coefficients{T1,T2,T3}
   # This structure is used by the caches of the algorithms

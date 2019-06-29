@@ -129,6 +129,7 @@ get_current_adaptive_order(alg::CompositeAlgorithm,cache) = alg_adaptive_order(a
 alg_order(alg::FunctionMap) = 0
 alg_order(alg::Euler) = 1
 alg_order(alg::AitkenNeville) = alg.init_order
+alg_order(alg::ImplicitEulerExtrapolation) = alg.init_order
 alg_order(alg::Heun) = 2
 alg_order(alg::Ralston) = 2
 alg_order(alg::LawsonEuler) = 1
