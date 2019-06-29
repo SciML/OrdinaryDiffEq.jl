@@ -11,7 +11,11 @@ end
 
 # test adaptivity
 for iip in (true, false)
-  vanstiff = ODEProblem{iip}(van, [0;sqrt(3)], (0.0,1.0), 1e6)
+  if iip
+    vanstiff = ODEProblem{iip}(van, [0;sqrt(3)], (0.0,1.0), 1e6)
+  else
+    vanstiff = ODEProblem{false}((u,p,t)->van(u,p,t), [0;sqrt(3)], (0.0,1.0), 1e6)
+  end
   sol = solve(vanstiff, RadauIIA5())
   if iip
     @test sol.destats.naccept + sol.destats.nreject > sol.destats.njacs # J reuse
