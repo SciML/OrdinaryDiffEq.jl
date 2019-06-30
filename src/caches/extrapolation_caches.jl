@@ -67,6 +67,37 @@ function alg_cache(alg::AitkenNeville,u,rate_prototype,uEltypeNoUnits,uBottomElt
   AitkenNevilleConstantCache(dtpropose,T,cur_order,work,A,step_no)
 end
 
+@cache mutable struct ImplicitEulerExtrapolationCache{uType,rateType,arrayType,dtType,uNoUnitsType,JType,WType,UF,JC,F,N} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  tmp::uType
+  k::rateType
+  utilde::uType
+  atmp::uNoUnitsType
+  fsalfirst::rateType
+  dtpropose::dtType
+  T::arrayType
+  cur_order::Int
+  work::dtType
+  A::Int
+  step_no::Int
+  u_tmps::Array{uType,1}
+  k_tmps::Array{rateType,1}
+
+  uprev2::uType
+  du1::rateType
+  z::uType
+  dz::uType
+  b::uType
+
+  J::JType
+  W::WType
+  uf::UF
+  jac_config::JC
+  linsolve::F
+  nlsolver::N
+end
+
 @cache mutable struct ImplicitEulerExtrapolationConstantCache{F,N,dtType,arrayType} <: OrdinaryDiffEqConstantCache
   uf::F
   nlsolver::N
@@ -90,6 +121,43 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   @oopnlsolve
   ImplicitEulerExtrapolationConstantCache(uf,nlsolver,dtpropose,T,cur_order,work,A,step_no)
 end
+
+function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tmp = similar(u)
+  utilde = similar(u)
+  k = zero(rate_prototype)
+  fsalfirst = zero(rate_prototype)
+  cur_order = max(alg.init_order, alg.min_order)
+  dtpropose = zero(dt)
+  T = Array{typeof(u),2}(undef, alg.max_order, alg.max_order)
+  # Array of arrays of length equal to number of threads to store intermediate
+  # values of u and k. [Thread Safety]
+  u_tmps = Array{typeof(u),1}(undef, Threads.nthreads())
+  k_tmps = Array{typeof(k),1}(undef, Threads.nthreads())
+  # Initialize each element of u_tmps and k_tmps to different instance of
+  # zeros array similar to u and k respectively
+  for i=1:Threads.nthreads()
+      u_tmps[i] = zero(u)
+      k_tmps[i] = zero(rate_prototype)
+  end
+  # Initialize lower triangle of T to different instance of zeros array similar to u
+  for i=1:alg.max_order
+    for j=1:i
+      T[i,j] = zero(u)
+    end
+  end
+  work = zero(dt)
+  A = one(Int)
+  atmp = similar(u,uEltypeNoUnits)
+  step_no = zero(Int)
+  γ, c = 1, 1
+  @iipnlsolve
+
+  ImplicitEulerExtrapolationCache(u,uprev,tmp,k,utilde,atmp,fsalfirst,dtpropose,T,cur_order,work,A,step_no,u_tmps,k_tmps,
+    uprev2,du1,z,dz,b,J,W,uf,jac_config,linsolve,nlsolver)
+end
+
+
 
 struct extrapolation_coefficients{T1,T2,T3}
   # This structure is used by the caches of the algorithms
