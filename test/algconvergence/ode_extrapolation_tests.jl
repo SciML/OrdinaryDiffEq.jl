@@ -159,7 +159,7 @@ end # ExtrapolationMidpointHairerWanner
                       Float64.(prob_ode_bigfloat2Dlinear.u0),(0.0,1.0),1.01)
   s1 = solve(prob_ode_bigfloat2Dlinear,ExtrapolationMidpointDeuflhard())
   s2 = solve(prob_ode_2Dlinear,ExtrapolationMidpointDeuflhard())
-  @test all(all(s1[i] - s2[i] .< 5e-15) for i in 1:length(s1))
+  @test all(all(s1[i] - s2[i] .< 5e-14) for i in 1:length(s1))
 
   prob_ode_2Dlinear = ODEProblem(
                       ODEFunction(f_2dlinear,analytic=f_2dlinear_analytic),
