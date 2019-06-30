@@ -489,6 +489,7 @@ end
 ROCK4(;min_stages=0,max_stages=152) = ROCK4(min_stages,max_stages)
 
 # SERK methods
+struct ESERK4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct ESERK5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct SERK2v2 <: OrdinaryDiffEqAdaptiveAlgorithm
   controller::Symbol

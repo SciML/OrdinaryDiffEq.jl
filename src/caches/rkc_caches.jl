@@ -174,6 +174,48 @@ function alg_cache(alg::IRKC,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnit
   IRKCCache(u,uprev,gprev,gprev2,fsalfirst,k,du1,f1ⱼ₋₁,f1ⱼ₋₂,f2ⱼ₋₁,z,dz,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolver,du₁,du₂,constantcache)
 end
 
+mutable struct ESERK4ConstantCache{T, zType} <: OrdinaryDiffEqConstantCache
+  ms::SVector{46, Int}
+  Cᵤ::SVector{4, Int}
+  Cₑ::SVector{4, Int}
+  zprev::zType
+  Bᵢ::Vector{T}
+  mdeg::Int
+  start::Int
+  internal_deg::Int
+end
+
+@cache struct ESERK4Cache{uType,rateType,uNoUnitsType} <: OrdinaryDiffEqMutableCache
+  u::uType
+  uprev::uType
+  uᵢ::uType
+  uᵢ₋₁::uType
+  uᵢ₋₂::uType
+  Sᵢ::uType
+  tmp::uType
+  atmp::uNoUnitsType
+  fsalfirst::rateType
+  k::rateType
+  constantcache::ESERK4ConstantCache
+end
+
+function alg_cache(alg::ESERK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  constantcache = ESERK4ConstantCache(u)
+  uᵢ = similar(u)
+  uᵢ₋₁ = similar(u)
+  uᵢ₋₂ = similar(u)
+  Sᵢ   = similar(u)
+  tmp = similar(u)
+  atmp = similar(u,uEltypeNoUnits)
+  fsalfirst = zero(rate_prototype)
+  k = zero(rate_prototype)
+  ESERK4Cache(u, uprev, uᵢ, uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, fsalfirst, k, constantcache)
+end
+
+function alg_cache(alg::ESERK4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  ESERK4ConstantCache(u)
+end
+
 mutable struct ESERK5ConstantCache{T, zType} <: OrdinaryDiffEqConstantCache
   ms::SVector{49, Int}
   Cᵤ::SVector{5, Int}

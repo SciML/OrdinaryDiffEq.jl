@@ -333,6 +333,7 @@ alg_order(alg::SBDF) = alg.order
 alg_order(alg::ROCK2) = 2
 alg_order(alg::ROCK4) = 4
 
+alg_order(alg::ESERK4) = 4
 alg_order(alg::ESERK5) = 5
 alg_order(alg::SERK2v2) = 2
 
