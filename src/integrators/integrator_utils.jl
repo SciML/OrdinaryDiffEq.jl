@@ -311,7 +311,7 @@ function calc_dt_propose!(integrator,dtnew)
     (integrator.alg isa ESERK5) && (dtnew = min(dtnew,typeof(dtnew)((0.98*2000*2000/integrator.eigen_est))))
   end
   dtpropose = integrator.tdir*min(abs(integrator.opts.dtmax),abs(dtnew))
-  dtpropose = integrator.tdir*max(abs(dtpropose),abs(integrator.opts.dtmin))
+  dtpropose = integrator.tdir*integrator.opts.internalnorm(max(abs(dtpropose),abs(integrator.opts.dtmin)),integrator.t)
   integrator.dtpropose = dtpropose
 end
 
