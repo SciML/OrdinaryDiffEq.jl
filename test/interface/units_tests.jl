@@ -1,5 +1,5 @@
 using OrdinaryDiffEq, RecursiveArrayTools, Unitful
-using LinearAlgebra
+using LinearAlgebra, Test
 
 @testset "Algorithms" begin
 algs = [Euler(),Midpoint(),Heun(),Ralston(),RK4(),SSPRK104(),SSPRK22(),SSPRK33(),
