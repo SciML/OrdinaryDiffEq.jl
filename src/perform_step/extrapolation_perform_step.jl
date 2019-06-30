@@ -346,10 +346,9 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
     dt_temp = dt/(2^(i-1)) # Romberg sequence
     u = uprev
     fsal_first = integrator.fsalfirst
+    integrator.dt = dt_temp
+    update_W!(integrator, cache, dt_temp, repeat_step)
     for j in 1:2^(i-1)
-        integrator.dt = dt_temp
-        update_W!(integrator, cache, dt_temp, repeat_step)
-
         # initial guess
         if alg.extrapolant == :linear
           nlsolver.z = dt_temp*fsal_first
