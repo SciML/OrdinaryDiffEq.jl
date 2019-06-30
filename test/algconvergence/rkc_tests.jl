@@ -71,7 +71,7 @@ end
     @test sim.𝒪est[:l∞] ≈ 4 atol=testTol
     sim = test_convergence(dts,prob,ROCK4(min_stages=21))
     @test sim.𝒪est[:l∞] ≈ 4 atol=testTol
-    
+
     sim = test_convergence(dts,prob,RKC())
     @test sim.𝒪est[:l∞] ≈ 2 atol=testTol
     sim = test_convergence(dts,prob,SERK2v2())

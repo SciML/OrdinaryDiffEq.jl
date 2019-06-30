@@ -795,7 +795,7 @@ end
 
 @muladd function perform_step!(integrator, cache::ESERK4ConstantCache, repeat_step=false)
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
-  @unpack ms, Cᵤ, Cₑ, Bᵢ= cache
+  @unpack ms, Cᵤ, Cₑ= cache
   maxeig!(integrator, cache)
 
   mdeg = Int(floor(sqrt(abs(dt)*integrator.eigen_est))+1)
@@ -818,7 +818,7 @@ end
     uᵢ₋₂ = zero(u)
     for j in 1:i
       r  = tᵢ
-      Sᵢ = (Bᵢ[start])*uᵢ₋₁
+      Sᵢ = (cache.Bᵢ[start])*uᵢ₋₁
       for st in 1:mdeg
         k = f(uᵢ₋₁, p, r)
         integrator.destats.nf += 1
@@ -830,7 +830,7 @@ end
         end
         q = convert(Int, floor(st/internal_deg))
         r = tᵢ + α*(st^2 + q*internal_deg^2)*hᵢ
-        Sᵢ = Sᵢ + (Bᵢ[start+st])*uᵢ
+        Sᵢ = Sᵢ + (cache.Bᵢ[start+st])*uᵢ
         if st < mdeg
           uᵢ₋₂ = uᵢ₋₁
           uᵢ₋₁ = uᵢ
@@ -873,7 +873,7 @@ end
 @muladd function perform_step!(integrator, cache::ESERK4Cache, repeat_step=false)
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
   @unpack uᵢ, uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, k = cache
-  @unpack ms, Cᵤ, Cₑ, Bᵢ = cache.constantcache
+  @unpack ms, Cᵤ, Cₑ = cache.constantcache
   ccache = cache.constantcache
   maxeig!(integrator, cache)
 
@@ -896,7 +896,7 @@ end
     @.. uᵢ₋₂ = zero(u)
     for j in 1:i
       r  = tᵢ
-      @.. Sᵢ = (Bᵢ[start])*uᵢ₋₁
+      @.. Sᵢ = (cache.constantcache.Bᵢ[start])*uᵢ₋₁
       for st in 1:mdeg
         f(k, uᵢ₋₁, p, r)
         integrator.destats.nf += 1
@@ -908,7 +908,7 @@ end
         end
         q = convert(Int, floor(st/internal_deg))
         r = tᵢ + α*(st^2 + q*internal_deg^2)*hᵢ
-        @.. Sᵢ = Sᵢ + (Bᵢ[start+st])*uᵢ
+        @.. Sᵢ = Sᵢ + (cache.constantcache.Bᵢ[start+st])*uᵢ
         if st < mdeg
           @.. uᵢ₋₂ = uᵢ₋₁
           @.. uᵢ₋₁ = uᵢ
