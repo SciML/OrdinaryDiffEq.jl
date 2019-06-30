@@ -64,7 +64,7 @@ function DiffEqBase.__init(
       error("This solver is not able to use mass matrices.")
     end
   elseif !(typeof(prob)<:DiscreteProblem) &&
-         !(typeof(alg) <:MassMatrixAlgorithms) &&
+         !is_mass_matrix_alg(alg) &&
          prob.f.mass_matrix != I
     error("This solver is not able to use mass matrices.")
   end
