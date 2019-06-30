@@ -39,30 +39,26 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
       end
     end
   else
-    # Balance workload of threads by computing T[1,1] with T[max_order,1] on
-    # same thread, T[2,1] with T[max_order-1,1] on same thread. Similarly fill
-    # first column of T matrix
-    Threads.@threads for i in 1:ceil(Int, max_order/2)
-      indices = (i, max_order + 1 - i)
-
-      for index in indices
-        dt_temp = dt/(2^(index-1))
-        # Solve using Euler method
-        @muladd @.. u_tmps[Threads.threadid()] = uprev + dt_temp*fsalfirst
-        f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+dt_temp)
-        for j in 2:2^(index-1)
-          @muladd @.. u_tmps[Threads.threadid()] = u_tmps[Threads.threadid()] + dt_temp*k_tmps[Threads.threadid()]
-          f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+j*dt_temp)
-        end
-        @.. T[index,1] = u_tmps[Threads.threadid()]
-        # If complement index of i in first column of T matrix exists,
-        # calculate T[max_order + 1 - i, 1], where "max_order + 1 - i"
-        # is complementary index to i_th index
-        if indices[2] <= indices[1]
-            break
+    let max_order=max_order, uprev=uprev, dt=dt, fsalfirst=fsalfirst, p=p, t=t,
+        u_tmps=u_tmps, k_tmps=k_tmps , T=T
+      # Balance workload of threads by computing T[1,1] with T[max_order,1] on
+      # same thread, T[2,1] with T[max_order-1,1] on same thread. Similarly fill
+      # first column of T matrix
+      Threads.@threads for i in 1:2
+        startIndex = (i == 1) ? 1 : max_order
+        endIndex = (i == 1) ? max_order - 1 : max_order
+        for index in startIndex:endIndex
+          dt_temp = dt/(2^(index-1))
+          # Solve using Euler method
+          @muladd @.. u_tmps[Threads.threadid()] = uprev + dt_temp*fsalfirst
+          f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+dt_temp)
+          for j in 2:2^(index-1)
+            @muladd @.. u_tmps[Threads.threadid()] = u_tmps[Threads.threadid()] + dt_temp*k_tmps[Threads.threadid()]
+            f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+j*dt_temp)
+          end
+          @.. T[index,1] = u_tmps[Threads.threadid()]
         end
       end
-
     end
     integrator.destats.nf += 2^max_order - 1
     # Richardson Extrapolation
@@ -138,7 +134,7 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
   if integrator.alg.threading == false
     for i in 1:max_order
       dt_temp = dt/(2^(i-1)) # Romberg sequence
-      
+
       # Solve using Euler method with dt_temp = dt/n_{i}
       @muladd u = @.. uprev + dt_temp*integrator.fsalfirst
       k = f(u, p, t+dt_temp)
@@ -156,28 +152,23 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
       end
     end
   else
+    let max_order=max_order, dt=dt, uprev=uprev, integrator=integrator, p=p, t=t, T=T
+      # Balance workload of threads by computing T[1,1] with T[max_order,1] on
+      # same thread, T[2,1] with T[max_order-1,1] on same thread. Similarly fill
+      # first column of T matrix
+      Threads.@threads for i in 1:2
+        startIndex = (i == 1) ? 1 : max_order
+        endIndex = (i == 1) ? max_order - 1 : max_order
 
-    # Balance workload of threads by computing T[1,1] with T[max_order,1] on
-    # same thread, T[2,1] with T[max_order-1,1] on same thread. Similarly fill
-    # first column of T matrix
-    Threads.@threads for i in 1:ceil(Int, max_order/2)
-
-      indices = (i, max_order + 1 - i)
-
-      for index in indices
-        dt_temp = dt/2^(index - 1)
-        @muladd u = @.. uprev + dt_temp*integrator.fsalfirst
-        k_temp = f(u, p, t+dt_temp)
-        for j in 2:2^(index-1)
-          @muladd u = @.. u + dt_temp*k_temp
-          k_temp = f(u, p, t+j*dt_temp)
-        end
-        T[index,1] = u
-        # If complement index of i in first column of T matrix exists,
-        # calculate T[max_order + 1 - i, 1], where "max_order + 1 - i"
-        # is complementary index to i_th index
-        if indices[2] <= indices[1]
-            break
+        for index in startIndex:endIndex
+          dt_temp = dt/2^(index - 1)
+          @muladd u = @.. uprev + dt_temp*integrator.fsalfirst
+          k_temp = f(u, p, t+dt_temp)
+          for j in 2:2^(index-1)
+            @muladd u = @.. u + dt_temp*k_temp
+            k_temp = f(u, p, t+j*dt_temp)
+          end
+          T[index,1] = u
         end
       end
     end
@@ -265,7 +256,6 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
   @unpack subdividing_sequence = cache.coefficients
   @unpack stage_number = cache
 
-  fill!(cache.T,zero(uprev))
   fill!(cache.Q, zero(eltype(cache.Q)))
   tol = integrator.opts.internalnorm(integrator.opts.reltol, t) # Used by the convergence monitor
 
@@ -289,39 +279,82 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
       @.. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
       for j = 2 : 2j_int
         f(k, cache.u_temp1, p, t + (j-1)dt_int)
-        T[i+1] = u_temp2 + 2dt_int*k # Explicit Midpoint rule
+        @.. T[i+1] = u_temp2 + 2dt_int*k # Explicit Midpoint rule
         @.. u_temp2 = u_temp1
         @.. u_temp1 = T[i+1]
       end
     end
   else
-    Threads.@threads for i = 0 : floor(Int,n_curr/2)
-      indices = (i, n_curr-i)
-      for index in indices
-        j_int_temp = 2Int64(subdividing_sequence[index+1])
-        dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
-        @.. u_temp4[Threads.threadid()] = uprev
-        @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + dt_int_temp * fsalfirst # Euler starting step
-        for j = 2 : 2j_int_temp
-          f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1)dt_int_temp)
-          T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
-          @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
-          @.. u_temp3[Threads.threadid()] = T[index+1]
+    if integrator.alg.sequence == :romberg
+      # Compute solution by using maximum two threads for romberg sequence
+      # One thread will fill T matrix till second last element and another thread will
+      # fill last element of T matrix.
+      # Romberg sequence --> 1, 2, 4, 8, ..., 2^(i)
+      # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
+      let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
+          u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
+        Threads.@threads for i = 1 : 2
+          startIndex = (i == 1) ? 0 : n_curr
+          endIndex = (i == 1) ? n_curr - 1 : n_curr
+          for index = startIndex : endIndex
+            j_int_temp = 2Int64(subdividing_sequence[index+1])
+            dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
+            @.. u_temp4[Threads.threadid()] = uprev
+            @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + dt_int_temp * fsalfirst # Euler starting step
+            for j = 2 : 2j_int_temp
+              f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1)dt_int_temp)
+              @.. T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
+              @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
+              @.. u_temp3[Threads.threadid()] = T[index+1]
+            end
+          end
         end
-        if indices[2] <= indices[1]
-            break
+      end
+    else
+      let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
+          u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
+        Threads.@threads for i = 0 : floor(Int,n_curr/2)
+          indices = (i, n_curr-i)
+          for index in indices
+            j_int_temp = 2Int64(subdividing_sequence[index+1])
+            dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
+            @.. u_temp4[Threads.threadid()] = uprev
+            @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + dt_int_temp * fsalfirst # Euler starting step
+            for j = 2 : 2j_int_temp
+              f(k_tmps[Threads.threadid()], u_temp3[Threads.threadid()], p, t + (j-1)dt_int_temp)
+              @.. T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
+              @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
+              @.. u_temp3[Threads.threadid()] = T[index+1]
+            end
+            if indices[2] <= indices[1]
+                break
+            end
+          end
         end
       end
     end
   end
 
-  
+
 
   if integrator.opts.adaptive
     # Compute all information relating to an extrapolation order ≦ win_min
     for i = integrator.alg.n_min:n_curr
-      integrator.u = eltype(uprev).(extrapolation_scalars[i+1]) * sum( broadcast(*, cache.T[1:(i+1)], eltype(uprev).(extrapolation_weights[1:(i+1), (i+1)])) ) # Approximation of extrapolation order i
-      cache.utilde = eltype(uprev).(extrapolation_scalars_2[i]) * sum( broadcast(*, cache.T[2:(i+1)], eltype(uprev).(extrapolation_weights_2[1:i, i])) ) # and its internal counterpart
+
+      #integrator.u .= extrapolation_scalars[i+1] * sum( broadcast(*, cache.T[1:(i+1)], extrapolation_weights[1:(i+1), (i+1)]) ) # Approximation of extrapolation order i
+      #cache.utilde .= extrapolation_scalars_2[i] * sum( broadcast(*, cache.T[2:(i+1)], extrapolation_weights_2[1:i, i]) ) # and its internal counterpart
+
+      u_temp1 .= false
+      u_temp2 .= false
+      for j in 1:(i+1)
+        @.. u_temp1 += cache.T[j] * extrapolation_weights[j, (i+1)]
+      end
+      for j in 2:i+1
+        @.. u_temp2 += cache.T[j] * extrapolation_weights_2[j-1, i]
+      end
+      @.. integrator.u = extrapolation_scalars[i+1] * u_temp1
+      @.. cache.utilde = extrapolation_scalars_2[i] * u_temp2
+
       calculate_residuals!(cache.res, integrator.u, cache.utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       integrator.EEst = integrator.opts.internalnorm(cache.res, t)
       cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
@@ -346,14 +379,26 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
         @.. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
         for j = 2 : 2j_int
           f(k, cache.u_temp1, p, t + (j-1)dt_int)
-          T[n_curr+1] = u_temp2 + 2dt_int * k
+          @.. T[n_curr+1] = u_temp2 + 2dt_int * k
           @.. u_temp2 = u_temp1
           @.. u_temp1 = T[n_curr+1]
         end
 
         # Update u, integrator.EEst and cache.Q
-        integrator.u = eltype(uprev).(extrapolation_scalars[n_curr+1]) * sum( broadcast(*, cache.T[1:(n_curr+1)], eltype(uprev).(extrapolation_weights[1:(n_curr+1), (n_curr+1)])) ) # Approximation of extrapolation order n_curr
-        cache.utilde = eltype(uprev).(extrapolation_scalars_2[n_curr]) * sum( broadcast(*, cache.T[2:(n_curr+1)], eltype(uprev).(extrapolation_weights_2[1:n_curr, n_curr])) ) # and its internal counterpart
+        #integrator.u .= extrapolation_scalars[n_curr+1] * sum( broadcast(*, cache.T[1:(n_curr+1)], extrapolation_weights[1:(n_curr+1), (n_curr+1)]) ) # Approximation of extrapolation order n_curr
+        #cache.utilde .= extrapolation_scalars_2[n_curr] * sum( broadcast(*, cache.T[2:(n_curr+1)], extrapolation_weights_2[1:n_curr, n_curr]) ) # and its internal counterpart
+
+        u_temp1 .= false
+        u_temp2 .= false
+        for j in 1:n_curr+1
+          @.. u_temp1 += cache.T[j] * extrapolation_weights[j, (n_curr+1)]
+        end
+        for j in 2:n_curr+1
+          @.. u_temp2 += cache.T[j] * extrapolation_weights_2[j-1, n_curr]
+        end
+        @.. integrator.u = extrapolation_scalars[n_curr+1] * u_temp1
+        @.. cache.utilde  = extrapolation_scalars_2[n_curr]* u_temp2
+
         calculate_residuals!(cache.res, integrator.u, cache.utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(cache.res, t)
         stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
@@ -363,7 +408,14 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
       end
     end
   else
-    integrator.u = eltype(uprev).(extrapolation_scalars[n_curr+1]) * sum( broadcast(*, cache.T[1:(n_curr+1)], eltype(uprev).(extrapolation_weights[1:(n_curr+1), (n_curr+1)])) ) # Approximation of extrapolation order n_curr
+
+    #integrator.u .= extrapolation_scalars[n_curr+1] * sum( broadcast(*, cache.T[1:(n_curr+1)], extrapolation_weights[1:(n_curr+1), (n_curr+1)]) ) # Approximation of extrapolation order n_curr
+    u_temp1 .= false
+    for j in 1:n_curr+1
+      @.. u_temp1 += cache.T[j] * extrapolation_weights[j, (n_curr+1)]
+    end
+    @.. integrator.u = extrapolation_scalars[n_curr+1] * u_temp1
+
   end
 
   f(cache.k, integrator.u, p, t+dt) # Update FSAL
@@ -425,25 +477,54 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
       end
     end
   else
-    Threads.@threads for i = 0 : floor(Int, n_curr/2)
-      indices = (i, n_curr-i)
-      for index in indices
-        j_int_temp = 2Int64(subdividing_sequence[index+1])
-        dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
-        u_temp4 = uprev
-        u_temp3 = u_temp4 + dt_int_temp*integrator.fsalfirst # Euler starting step
-        for j = 2 : 2j_int_temp
-          T[index+1] = u_temp4 + 2dt_int_temp*f(u_temp3, p, t + (j-1)dt_int_temp) # Explicit Midpoint rule
-          u_temp4 = u_temp3
-          u_temp3 = T[index+1]
-        end
-        if indices[2] <= indices[1]
-            break
+    if integrator.alg.sequence == :romberg
+      # Compute solution by using maximum two threads for romberg sequence
+      # One thread will fill T matrix till second last element and another thread will
+      # fill last element of T matrix.
+      # Romberg sequence --> 1, 2, 4, 8, ..., 2^(i)
+      # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
+      let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,
+          integrator=integrator,p=p,t=t,T=T
+        Threads.@threads for i = 1 : 2
+          startIndex = (i == 1) ? 0 : n_curr
+          endIndex = (i == 1) ? n_curr - 1 : n_curr
+          for index = startIndex : endIndex
+            j_int_temp = 2Int64(subdividing_sequence[index+1])
+            dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
+            u_temp4 = uprev
+            u_temp3 = u_temp4 + dt_int_temp*integrator.fsalfirst # Euler starting step
+            for j = 2 : 2j_int_temp
+              T[index+1] = u_temp4 + 2dt_int_temp*f(u_temp3, p, t + (j-1)dt_int_temp) # Explicit Midpoint rule
+              u_temp4 = u_temp3
+              u_temp3 = T[index+1]
+            end
+          end
         end
       end
-    end   
+    else
+      let n_curr=n_curr, subdividing_sequence=subdividing_sequence, dt=dt, uprev=uprev,
+              p=p, t=t, T=T
+        Threads.@threads for i = 0 : floor(Int, n_curr/2)
+          indices = (i, n_curr-i)
+          for index in indices
+            j_int_temp = 2Int64(subdividing_sequence[index+1])
+            dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
+            u_temp4 = uprev
+            u_temp3 = u_temp4 + dt_int_temp*integrator.fsalfirst # Euler starting step
+            for j = 2 : 2j_int_temp
+              T[index+1] = u_temp4 + 2dt_int_temp*f(u_temp3, p, t + (j-1)dt_int_temp) # Explicit Midpoint rule
+              u_temp4 = u_temp3
+              u_temp3 = T[index+1]
+            end
+            if indices[2] <= indices[1]
+                break
+            end
+          end
+        end
+      end
+    end
   end
-  
+
 
   if integrator.opts.adaptive
     # Compute all information relating to an extrapolation order ≦ win_min
@@ -516,7 +597,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
   # Unpack all information needed
   @unpack t, uprev, dt, f, p = integrator
   @unpack n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst,k  = cache
-
+  @unpack u_temp3, u_temp4, k_tmps = cache
   # Coefficients for obtaining u
   @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
   # Coefficients for obtaining utilde
@@ -524,7 +605,6 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
   # Additional constant information
   @unpack subdividing_sequence = cache.coefficients
 
-  fill!(cache.T,zero(uprev))
   fill!(cache.Q, zero(eltype(cache.Q)))
 
   if integrator.opts.adaptive
@@ -543,24 +623,85 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
   end
 
   #Compute the internal discretisations
-  for i = 0 : n_curr
-    j_int = 2Int64(subdividing_sequence[i+1])
-    dt_int = dt / (2j_int) # Stepsize of the ith internal discretisation
-    @.. u_temp2 = uprev
-    @.. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
-    for j = 2 : 2j_int
-      f(k, cache.u_temp1, p, t + (j-1)dt_int)
-      T[i+1] = u_temp2 + 2dt_int*k # Explicit Midpoint rule
-      @.. u_temp2 = u_temp1
-      @.. u_temp1 = T[i+1]
+  if integrator.alg.threading == false
+    for i = 0 : n_curr
+      j_int = 2Int64(subdividing_sequence[i+1])
+      dt_int = dt / (2j_int) # Stepsize of the ith internal discretisation
+      @.. u_temp2 = uprev
+      @.. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
+      for j = 2 : 2j_int
+        f(k, cache.u_temp1, p, t + (j-1)dt_int)
+        @.. T[i+1] = u_temp2 + 2dt_int*k # Explicit Midpoint rule
+        @.. u_temp2 = u_temp1
+        @.. u_temp1 = T[i+1]
+      end
+    end
+  else
+    if integrator.alg.sequence == :romberg
+      # Compute solution by using maximum two threads for romberg sequence
+      # One thread will fill T matrix till second last element and another thread will
+      # fill last element of T matrix.
+      # Romberg sequence --> 1, 2, 4, 8, ..., 2^(i)
+      # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
+      let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
+          u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
+        Threads.@threads for i = 1 : 2
+          startIndex = (i == 1) ? 0 : n_curr
+          endIndex = (i == 1) ? n_curr - 1 : n_curr
+          for index = startIndex : endIndex
+            j_int_temp = 2Int64(subdividing_sequence[index+1])
+            dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
+            @.. u_temp4[Threads.threadid()] = uprev
+            @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + dt_int_temp * fsalfirst # Euler starting step
+            for j = 2 : 2j_int_temp
+              f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1)dt_int_temp)
+              @.. T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
+              @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
+              @.. u_temp3[Threads.threadid()] = T[index+1]
+            end
+          end
+        end
+      end
+    else
+      let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
+          u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
+        Threads.@threads for i = 0 : floor(Int,n_curr/2)
+          indices = (i, n_curr - i)
+          for index in indices
+            j_int_temp = 2Int64(subdividing_sequence[index+1])
+            dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
+            @.. u_temp4[Threads.threadid()] = uprev
+            @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + dt_int_temp * fsalfirst # Euler starting step
+            for j = 2 : 2j_int_temp
+              f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1)dt_int_temp)
+              @.. T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
+              @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
+              @.. u_temp3[Threads.threadid()] = T[index+1]
+            end
+          end
+        end
+      end
     end
   end
 
   if integrator.opts.adaptive
     # Compute all information relating to an extrapolation order ≦ win_min
     for i = win_min - 1 : win_min
-      integrator.u = eltype(uprev).(extrapolation_scalars[i+1]) * sum( broadcast(*, cache.T[1:(i+1)], eltype(uprev).(extrapolation_weights[1:(i+1), (i+1)])) ) # Approximation of extrapolation order i
-      cache.utilde = eltype(uprev).(extrapolation_scalars_2[i]) * sum( broadcast(*, cache.T[2:(i+1)], eltype(uprev).(extrapolation_weights_2[1:i, i])) ) # and its internal counterpart
+
+      #integrator.u .= extrapolation_scalars[i+1] * sum( broadcast(*, cache.T[1:(i+1)], extrapolation_weights[1:(i+1), (i+1)]) ) # Approximation of extrapolation order i
+      #cache.utilde .= extrapolation_scalars_2[i] * sum( broadcast(*, cache.T[2:(i+1)], extrapolation_weights_2[1:i, i]) ) # and its internal counterpart
+
+      u_temp1 .= false
+      u_temp2 .= false
+      for j in 1:(i+1)
+        @.. u_temp1 += cache.T[j] * extrapolation_weights[j, (i+1)]
+      end
+      for j in 2:i+1
+        @.. u_temp2 += cache.T[j] * extrapolation_weights_2[j-1, i]
+      end
+      @.. integrator.u = extrapolation_scalars[i+1] * u_temp1
+      @.. cache.utilde  = extrapolation_scalars_2[i] * u_temp2
+
       calculate_residuals!(cache.res, integrator.u, cache.utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
       integrator.EEst = integrator.opts.internalnorm(cache.res, t)
       cache.n_curr = i # Update chache's n_curr for stepsize_controller_internal!
@@ -586,14 +727,26 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
         @.. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
         for j = 2 : 2j_int
           f(k, cache.u_temp1, p, t + (j-1)dt_int)
-          T[n_curr+1] = u_temp2 + 2dt_int * k
+          @.. T[n_curr+1] = u_temp2 + 2dt_int * k
           @.. u_temp2 = u_temp1
           @.. u_temp1 = T[n_curr+1]
         end
 
         # Update u, integrator.EEst and cache.Q
-        integrator.u = eltype(uprev).(extrapolation_scalars[n_curr+1]) * sum( broadcast(*, cache.T[1:(n_curr+1)], eltype(uprev).(extrapolation_weights[1:(n_curr+1), (n_curr+1)])) ) # Approximation of extrapolation order n_curr
-        cache.utilde = eltype(uprev).(extrapolation_scalars_2[n_curr]) * sum( broadcast(*, cache.T[2:(n_curr+1)], eltype(uprev).(extrapolation_weights_2[1:n_curr, n_curr])) ) # and its internal counterpart
+        #integrator.u .= extrapolation_scalars[n_curr+1] * sum( broadcast(*, cache.T[1:(n_curr+1)], extrapolation_weights[1:(n_curr+1), (n_curr+1)]) ) # Approximation of extrapolation order n_curr
+        #cache.utilde .= extrapolation_scalars_2[n_curr] * sum( broadcast(*, cache.T[2:(n_curr+1)], extrapolation_weights_2[1:n_curr, n_curr]) ) # and its internal counterpart
+
+        u_temp1 .= false
+        u_temp2 .= false
+        for j in 1:n_curr+1
+          @.. u_temp1 += cache.T[j] * extrapolation_weights[j, (n_curr+1)]
+        end
+        for j in 2:n_curr+1
+          @.. u_temp2 += cache.T[j] * extrapolation_weights_2[j-1, n_curr]
+        end
+        @.. integrator.u = extrapolation_scalars[n_curr+1] * u_temp1
+        @.. cache.utilde  = extrapolation_scalars_2[n_curr]* u_temp2
+
         calculate_residuals!(cache.res, integrator.u, cache.utilde, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
         integrator.EEst = integrator.opts.internalnorm(cache.res, t)
         stepsize_controller_internal!(integrator, integrator.alg) # Update cache.Q
@@ -603,7 +756,14 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
       end
     end
   else
-    integrator.u = eltype(uprev).(extrapolation_scalars[n_curr+1]) * sum( broadcast(*, cache.T[1:(n_curr+1)], eltype(uprev).(extrapolation_weights[1:(n_curr+1), (n_curr+1)])) ) # Approximation of extrapolation order n_curr
+
+    #integrator.u .= extrapolation_scalars[n_curr+1] * sum( broadcast(*, cache.T[1:(n_curr+1)], extrapolation_weights[1:(n_curr+1), (n_curr+1)]) ) # Approximation of extrapolation order n_curr
+    u_temp1 .= false
+    for j in 1:n_curr+1
+      @.. u_temp1 += cache.T[j] * extrapolation_weights[j, (n_curr+1)]
+    end
+    @.. integrator.u = extrapolation_scalars[n_curr+1] * u_temp1
+
   end
 
   f(cache.k, integrator.u, p, t+dt) # Update FSAL
@@ -654,18 +814,63 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
   end
 
   #Compute the internal discretisations
-  for i = 0 : n_curr
-    j_int = 2Int64(subdividing_sequence[i+1])
-    dt_int = dt / (2j_int) # Stepsize of the ith internal discretisation
-    u_temp2 = uprev
-    u_temp1 = u_temp2 + dt_int * integrator.fsalfirst # Euler starting step
-    for j = 2 : 2j_int
-      T[i+1] = u_temp2 + 2dt_int * f(u_temp1, p, t + (j-1)dt_int) # Explicit Midpoint rule
-      u_temp2 = u_temp1
-      u_temp1 = T[i+1]
+  if integrator.alg.threading == false
+    for i = 0 : n_curr
+     j_int = 2Int64(subdividing_sequence[i+1])
+     dt_int = dt / (2j_int) # Stepsize of the ith internal discretisation
+     u_temp2 = uprev
+     u_temp1 = u_temp2 + dt_int * integrator.fsalfirst # Euler starting step
+     for j = 2 : 2j_int
+       T[i+1] = u_temp2 + 2dt_int * f(u_temp1, p, t + (j-1)dt_int) # Explicit Midpoint rule
+       u_temp2 = u_temp1
+       u_temp1 = T[i+1]
+     end
+    end
+  else
+    if integrator.alg.sequence == :romberg
+      # Compute solution by using maximum two threads for romberg sequence
+      # One thread will fill T matrix till second last element and another thread will
+      # fill last element of T matrix.
+      # Romberg sequence --> 1, 2, 4, 8, ..., 2^(i)
+      # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
+      let n_curr=n_curr, subdividing_sequence=subdividing_sequence, dt=dt, uprev=uprev,
+          integrator=integrator, T=T, p=p, t=t
+        Threads.@threads for i = 1 : 2
+          startIndex = (i == 1) ? 0 : n_curr
+          endIndex = (i == 1) ? n_curr - 1 : n_curr
+          for index = startIndex : endIndex
+            j_int_temp = 2Int64(subdividing_sequence[index+1])
+            dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
+            u_temp4 = uprev
+            u_temp3 = u_temp4 + dt_int_temp * integrator.fsalfirst # Euler starting step
+            for j = 2 : 2j_int_temp
+              T[index+1] = u_temp4 + 2dt_int_temp * f(u_temp3, p, t + (j-1)dt_int_temp) # Explicit Midpoint rule
+              u_temp4 = u_temp3
+              u_temp3 = T[index+1]
+            end
+          end
+        end
+      end
+    else
+      let n_curr=n_curr, subdividing_sequence=subdividing_sequence, dt=dt, uprev=uprev,
+          integrator=integrator, T=T, p=p, t=t
+        Threads.@threads for i = 0 : floor(Int, n_curr/2)
+          indices = (i, n_curr - i)
+          for index in indices
+            j_int_temp = 2Int64(subdividing_sequence[index+1])
+            dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
+            u_temp4 = uprev
+            u_temp3 = u_temp4 + dt_int_temp * integrator.fsalfirst # Euler starting step
+            for j = 2 : 2j_int_temp
+              T[index+1] = u_temp4 + 2dt_int_temp * f(u_temp3, p, t + (j-1)dt_int_temp) # Explicit Midpoint rule
+              u_temp4 = u_temp3
+              u_temp3 = T[index+1]
+            end
+          end
+        end
+      end
     end
   end
-
   if integrator.opts.adaptive
     # Compute all information relating to an extrapolation order ≦ win_min
     for i = win_min - 1 : win_min

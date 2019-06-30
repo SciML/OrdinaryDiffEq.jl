@@ -16,23 +16,23 @@ Hairer Norsett Wanner Solving Ordinary Differential Euations I - Nonstiff Proble
   b40 = @evalpoly(Θ, 0, 0, 1, -2, 1)
 end
 
-@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{DP5ConstantCache,DP5Cache,DP5ThreadedCache},idxs::Nothing,T::Type{Val{0}})
+@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{DP5ConstantCache,DP5Cache},idxs::Nothing,T::Type{Val{0}})
   @dp5pre0
   @.. y₀ + dt*(k[1]*b10 + k[2]*b20 + k[3]*b30 + k[4]*b40)
 end
 
-@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{DP5ConstantCache,DP5Cache,DP5ThreadedCache},idxs,T::Type{Val{0}})
+@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{DP5ConstantCache,DP5Cache},idxs,T::Type{Val{0}})
   @dp5pre0
   @views @.. y₀[idxs] + dt*(k[1][idxs]*b10 + k[2][idxs]*b20 + k[3][idxs]*b30 + k[4][idxs]*b40)
 end
 
-@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{DP5Cache,DP5ThreadedCache},idxs::Nothing,T::Type{Val{0}})
+@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DP5Cache,idxs::Nothing,T::Type{Val{0}})
   @dp5pre0
   @.. out = y₀ + dt*(k[1]*b10 + k[2]*b20 + k[3]*b30 + k[4]*b40)
   out
 end
 
-@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{DP5Cache,DP5ThreadedCache},idxs,T::Type{Val{0}})
+@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DP5Cache,idxs,T::Type{Val{0}})
   @dp5pre0
   @views @.. out = y₀[idxs] + dt*(k[1][idxs]*b10 + k[2][idxs]*b20 + k[3][idxs]*b30 + k[4][idxs]*b40)
   out
@@ -44,23 +44,23 @@ end
   b40diff = @evalpoly(Θ, 0, 2, -6, 4)
 end
 
-@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{DP5ConstantCache,DP5Cache,DP5ThreadedCache},idxs::Nothing,T::Type{Val{1}})
+@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{DP5ConstantCache,DP5Cache},idxs::Nothing,T::Type{Val{1}})
   @dp5pre1
   @.. k[1] + k[2]*b20diff + k[3]*b30diff + k[4]*b40diff
 end
 
-@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{DP5ConstantCache,DP5Cache,DP5ThreadedCache},idxs,T::Type{Val{1}})
+@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{DP5ConstantCache,DP5Cache},idxs,T::Type{Val{1}})
   @dp5pre1
   @views @.. k[1][idxs] + k[2][idxs]*b20diff + k[3][idxs]*b30diff + k[4][idxs]*b40diff
 end
 
-@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{DP5Cache,DP5ThreadedCache},idxs::Nothing,T::Type{Val{1}})
+@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DP5Cache,idxs::Nothing,T::Type{Val{1}})
   @dp5pre1
   @.. out = k[1] + k[2]*b20diff + k[3]*b30diff + k[4]*b40diff
   out
 end
 
-@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{DP5Cache,DP5ThreadedCache},idxs,T::Type{Val{1}})
+@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DP5Cache,idxs,T::Type{Val{1}})
   @dp5pre1
   @views @.. out = k[1][idxs] + k[2][idxs]*b20diff + k[3][idxs]*b30diff + k[4][idxs]*b40diff
   out
@@ -73,23 +73,23 @@ end
   invdt = inv(dt)
 end
 
-@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{DP5ConstantCache,DP5Cache,DP5ThreadedCache},idxs::Nothing,T::Type{Val{2}})
+@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{DP5ConstantCache,DP5Cache},idxs::Nothing,T::Type{Val{2}})
   @dp5pre2
   @.. (k[2]*b20diff2 + k[3]*b30diff2 + k[4]*b40diff2)*invdt
 end
 
-@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{DP5ConstantCache,DP5Cache,DP5ThreadedCache},idxs,T::Type{Val{2}})
+@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{DP5ConstantCache,DP5Cache},idxs,T::Type{Val{2}})
   @dp5pre2
   @views @.. (k[2][idxs]*b20diff2 + k[3][idxs]*b30diff2 + k[4][idxs]*b40diff2)*invdt
 end
 
-@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{DP5Cache,DP5ThreadedCache},idxs::Nothing,T::Type{Val{2}})
+@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DP5Cache,idxs::Nothing,T::Type{Val{2}})
   @dp5pre2
   @.. out = (k[2]*b20diff2 + k[3]*b30diff2 + k[4]*b40diff2)*invdt
   out
 end
 
-@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{DP5Cache,DP5ThreadedCache},idxs,T::Type{Val{2}})
+@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DP5Cache,idxs,T::Type{Val{2}})
   @dp5pre2
   @views @.. out = (k[2][idxs]*b20diff2 + k[3][idxs]*b30diff2 + k[4][idxs]*b40diff2)*invdt
   out
@@ -101,23 +101,23 @@ end
   invdt2 = inv(dt)^2
 end
 
-@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{DP5ConstantCache,DP5Cache,DP5ThreadedCache},idxs::Nothing,T::Type{Val{3}})
+@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{DP5ConstantCache,DP5Cache},idxs::Nothing,T::Type{Val{3}})
   @dp5pre3
   @.. (k[3]*b30diff3 + k[4]*b40diff3)*invdt2
 end
 
-@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{DP5ConstantCache,DP5Cache,DP5ThreadedCache},idxs,T::Type{Val{3}})
+@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{DP5ConstantCache,DP5Cache},idxs,T::Type{Val{3}})
   @dp5pre3
   @views @.. (k[3][idxs]*b30diff3 + k[4][idxs]*b40diff3)*invdt2
 end
 
-@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{DP5Cache,DP5ThreadedCache},idxs::Nothing,T::Type{Val{3}})
+@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DP5Cache,idxs::Nothing,T::Type{Val{3}})
   @dp5pre3
   @.. out = (k[3]*b30diff3 + k[4]*b40diff3)*invdt2
   out
 end
 
-@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{DP5Cache,DP5ThreadedCache},idxs,T::Type{Val{3}})
+@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DP5Cache,idxs,T::Type{Val{3}})
   @dp5pre3
   @views @.. out = (k[3][idxs]*b30diff3 + k[4][idxs]*b40diff3)*invdt2
   out
@@ -127,23 +127,23 @@ end
   b40diff4invdt3 = 24 * inv(dt)^3
 end
 
-@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{DP5ConstantCache,DP5Cache,DP5ThreadedCache},idxs::Nothing,T::Type{Val{4}})
+@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{DP5ConstantCache,DP5Cache},idxs::Nothing,T::Type{Val{4}})
   @dp5pre4
   @.. k[4]*b40diff4invdt3
 end
 
-@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{DP5ConstantCache,DP5Cache,DP5ThreadedCache},idxs,T::Type{Val{4}})
+@muladd function _ode_interpolant(Θ,dt,y₀,y₁,k,cache::Union{DP5ConstantCache,DP5Cache},idxs,T::Type{Val{4}})
   @dp5pre4
   @views @.. k[4][idxs]*b40diff4invdt3
 end
 
-@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{DP5Cache,DP5ThreadedCache},idxs::Nothing,T::Type{Val{4}})
+@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DP5Cache,idxs::Nothing,T::Type{Val{4}})
   @dp5pre4
   @.. out = k[4]*b40diff4invdt3
   out
 end
 
-@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::Union{DP5Cache,DP5ThreadedCache},idxs,T::Type{Val{4}})
+@muladd function _ode_interpolant!(out,Θ,dt,y₀,y₁,k,cache::DP5Cache,idxs,T::Type{Val{4}})
   @dp5pre4
   @views @.. out = k[4][idxs]*b40diff4invdt3
   out

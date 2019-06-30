@@ -87,8 +87,9 @@ struct ExtrapolationMidpointHairerWanner <: OrdinaryDiffEqExtrapolationVarOrderV
   n_init::Int # Initial extrapolation order
   n_max::Int # Maximal extrapolation order
   sequence::Symbol # Name of the subdividing sequence
+  threading::Bool
 end
-function ExtrapolationMidpointHairerWanner(;min_order=2,init_order=5, max_order=10, sequence = :harmonic)
+function ExtrapolationMidpointHairerWanner(;min_order=2,init_order=5, max_order=10, sequence = :harmonic, threading = true)
   # Enforce 2 <=  min_order
   # and min_order + 1 <= init_order <= max_order - 1:
   n_min = max(2, min_order)
@@ -114,7 +115,7 @@ function ExtrapolationMidpointHairerWanner(;min_order=2,init_order=5, max_order=
   end
 
   # Initialize algorithm
-  ExtrapolationMidpointHairerWanner(n_min,n_init,n_max,sequence)
+  ExtrapolationMidpointHairerWanner(n_min,n_init,n_max,sequence,threading)
 end
 
 struct RK46NL <: OrdinaryDiffEqAlgorithm end
@@ -268,7 +269,6 @@ struct OwrenZen4 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct OwrenZen5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct BS3 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct DP5 <: OrdinaryDiffEqAdaptiveAlgorithm end
-struct DP5Threaded <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct Tsit5 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct DP8 <: OrdinaryDiffEqAdaptiveAlgorithm end
 struct TanYam7 <: OrdinaryDiffEqAdaptiveAlgorithm end
@@ -814,7 +814,7 @@ ESDIRK54I8L2SA(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 
 # Rosenbrock Methods
 
-for Alg in [:Rosenbrock23, :Rosenbrock32, :ROS3P, :Rodas3, :RosShamp4, :Veldd4, :Velds4, :GRK4T, :GRK4A, :Ros4LStab, :Rodas4, :Rodas42, :Rodas4P, :Rodas5]
+for Alg in [:Rosenbrock23, :Rosenbrock32, :ROS3P, :Rodas3, :ROS34PW1a, :ROS34PW1b, :ROS34PW2, :ROS34PW3, :RosShamp4, :Veldd4, :Velds4, :GRK4T, :GRK4A, :Ros4LStab, :Rodas4, :Rodas42, :Rodas4P, :Rodas5]
   @eval begin
     struct $Alg{CS,AD,F,FDT} <: OrdinaryDiffEqRosenbrockAdaptiveAlgorithm{CS,AD}
       linsolve::F

@@ -62,6 +62,6 @@ end
 
     sol1_ip = solve(ODEProblem(fun1_ip,u0,tspan), Alg(); adaptive=false, dt=0.01)
     sol2_ip = solve(ODEProblem(fun2_ip,u0,tspan), Alg(linsolve=LinSolveFactorize(lu)); adaptive=false, dt=0.01)
-    @test sol1_ip(1.0) ≈ sol2_ip(1.0)
+    @test sol1_ip(1.0) ≈ sol2_ip(1.0) atol=1e-5
   end
 end

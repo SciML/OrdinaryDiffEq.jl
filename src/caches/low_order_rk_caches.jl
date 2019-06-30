@@ -411,44 +411,6 @@ end
 
 alg_cache(alg::DP5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}}) = DP5ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
-@cache struct DP5ThreadedCache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
-  u::uType
-  uprev::uType
-  k1::rateType
-  k2::rateType
-  k3::rateType
-  k4::rateType
-  k5::rateType
-  k6::rateType
-  k7::rateType
-  dense_tmp3::rateType
-  dense_tmp4::rateType
-  update::rateType
-  bspl::rateType
-  utilde::uType
-  tmp::uType
-  atmp::uNoUnitsType
-  tab::TabType
-end
-
-function alg_cache(alg::DP5Threaded,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  k1 = zero(rate_prototype)
-  k2 = zero(rate_prototype)
-  k3 = zero(rate_prototype)
-  k4 = zero(rate_prototype)
-  k5 = zero(rate_prototype)
-  k6 = zero(rate_prototype)
-  k7 = zero(rate_prototype)
-  dense_tmp3 = zero(rate_prototype)
-  dense_tmp4 = zero(rate_prototype)
-  update = zero(rate_prototype)
-  bspl = zero(rate_prototype)
-  utilde = similar(u)
-  tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
-  tab = DP5ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
-  DP5ThreadedCache(u,uprev,k1,k2,k3,k4,k5,k6,k7,dense_tmp3,dense_tmp4,update,bspl,utilde,tmp,atmp,tab)
-end
-
 @cache struct Anas5Cache{uType,rateType,uNoUnitsType,TabType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType

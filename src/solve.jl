@@ -156,6 +156,13 @@ function DiffEqBase.__init(
 
   callbacks_internal = CallbackSet(callback,prob.callback)
 
+  max_len_cb = DiffEqBase.max_vector_callback_length(callbacks_internal)
+  if max_len_cb isa VectorContinuousCallback
+    callback_cache = DiffEqBase.CallbackCache(max_len_cb.len,uBottomEltype,uBottomEltype)
+  else
+    callback_cache = nothing
+  end
+
   ### Algorithm-specific defaults ###
   if save_idxs === nothing
     ksEltype = Vector{rateType}
@@ -302,6 +309,7 @@ function DiffEqBase.__init(
   force_stepfail = false
   last_stepfail = false
   event_last_time = 0
+  vector_event_last_time = 1
   last_event_error = zero(uBottomEltypeNoUnits)
   dtchangeable = isdtchangeable(alg)
   q11 = tTypeNoUnits(1)
@@ -313,14 +321,14 @@ function DiffEqBase.__init(
                              QT,typeof(tdir),typeof(k),SolType,
                              FType,cacheType,
                              typeof(opts),fsal_typeof(alg,rate_prototype),
-                             typeof(last_event_error)}(
+                             typeof(last_event_error),typeof(callback_cache)}(
                              sol,u,k,t,tType(dt),f,p,uprev,uprev2,tprev,
                              alg,dtcache,dtchangeable,
                              dtpropose,tdir,eigen_est,EEst,QT(qoldinit),q11,
                              erracc,dtacc,success_iter,
-                             iter,saveiter,saveiter_dense,cache,
+                             iter,saveiter,saveiter_dense,cache,callback_cache,
                              kshortsize,force_stepfail,last_stepfail,
-                             just_hit_tstop,event_last_time,last_event_error,
+                             just_hit_tstop,event_last_time,vector_event_last_time,last_event_error,
                              accept_step,
                              isout,reeval_fsal,
                              u_modified,opts,destats)

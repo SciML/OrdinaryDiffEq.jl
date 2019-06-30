@@ -334,15 +334,11 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     (!repeat_step && W_transform) ? f.invW_t(W, uprev, p, dtgamma, t) : f.invW(W, uprev, p, dtgamma, t) # W == inverse W
     is_compos && calc_J!(integrator, cache, true)
   elseif DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
-    # skip calculation of J if step is repeated
-    new_jac && DiffEqBase.update_coefficients!(W,uprev,p,t)
-    # skip calculation of W if step is repeated
+    isnewton || DiffEqBase.update_coefficients!(W,uprev,p,t) # we will call `update_coefficients!` in NLNewton
     @label J2W
-    new_W && (W.transform = W_transform; set_gamma!(W, dtgamma))
+    W.transform = W_transform; set_gamma!(W, dtgamma)
   else # concrete W using jacobian from `calc_J!`
-    # skip calculation of J if step is repeated
     new_jac && calc_J!(integrator, cache, is_compos)
-    # skip calculation of W if step is repeated
     new_W && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
   end
   if isnewton

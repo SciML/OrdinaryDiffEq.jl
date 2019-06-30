@@ -74,7 +74,7 @@ integrator.opts.abstol = 1e-9
 ```
 For more info see the linked documentation page.
 """
-mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,IIP,uType,tType,pType,eigenType,QT,tdirType,ksEltype,SolType,F,CacheType,O,FSALType,EventErrorType} <: DiffEqBase.AbstractODEIntegrator{algType,IIP,uType,tType}
+mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,IIP,uType,tType,pType,eigenType,QT,tdirType,ksEltype,SolType,F,CacheType,O,FSALType,EventErrorType,CallbackCacheType} <: DiffEqBase.AbstractODEIntegrator{algType,IIP,uType,tType}
   sol::SolType
   u::uType
   k::ksEltype
@@ -101,11 +101,13 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,IIP,uType,tType,pT
   saveiter::Int
   saveiter_dense::Int
   cache::CacheType
+  callback_cache::CallbackCacheType
   kshortsize::Int
   force_stepfail::Bool
   last_stepfail::Bool
   just_hit_tstop::Bool
   event_last_time::Int
+  vector_event_last_time::Int
   last_event_error::EventErrorType
   accept_step::Bool
   isout::Bool
@@ -117,24 +119,24 @@ mutable struct ODEIntegrator{algType<:OrdinaryDiffEqAlgorithm,IIP,uType,tType,pT
   fsallast::FSALType
 
   function ODEIntegrator{algType,IIP,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
-                F,CacheType,O,FSALType,EventErrorType}(
+                F,CacheType,O,FSALType,EventErrorType,CallbackCacheType}(
                 sol,u,k,t,dt,f,p,uprev,uprev2,tprev,
       alg,dtcache,dtchangeable,dtpropose,tdir,
       eigen_est,EEst,qold,q11,erracc,dtacc,success_iter,
-      iter,saveiter,saveiter_dense,cache,
+      iter,saveiter,saveiter_dense,cache,callback_cache,
       kshortsize,force_stepfail,last_stepfail,just_hit_tstop,
-      event_last_time,last_event_error,
+      event_last_time,vector_event_last_time,last_event_error,
       accept_step,isout,reeval_fsal,u_modified,opts,destats) where {algType,IIP,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
-                                     F,CacheType,O,FSALType,EventErrorType}
+                                     F,CacheType,O,FSALType,EventErrorType,CallbackCacheType}
 
       new{algType,IIP,uType,tType,pType,eigenType,tTypeNoUnits,tdirType,ksEltype,SolType,
-                  F,CacheType,O,FSALType,EventErrorType}(
+                  F,CacheType,O,FSALType,EventErrorType,CallbackCacheType}(
                   sol,u,k,t,dt,f,p,uprev,uprev2,tprev,
       alg,dtcache,dtchangeable,dtpropose,tdir,
       eigen_est,EEst,qold,q11,erracc,dtacc,success_iter,
-      iter,saveiter,saveiter_dense,cache,
+      iter,saveiter,saveiter_dense,cache,callback_cache,
       kshortsize,force_stepfail,last_stepfail,just_hit_tstop,
-      event_last_time,last_event_error,
+      event_last_time,vector_event_last_time,last_event_error,
       accept_step,isout,reeval_fsal,u_modified,opts,destats) # Leave off fsalfirst and last
   end
 end
