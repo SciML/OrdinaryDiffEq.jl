@@ -3,7 +3,7 @@ using LinearAlgebra
 
 @testset "Algorithms" begin
 algs = [Euler(),Midpoint(),Heun(),Ralston(),RK4(),SSPRK104(),SSPRK22(),SSPRK33(),
-        SSPRK432(),BS3(),BS5(),DP5(),DP5Threaded(),DP8(),Feagin10(),Feagin12(),
+        SSPRK432(),BS3(),BS5(),DP5(),DP8(),Feagin10(),Feagin12(),
         Feagin14(),TanYam7(),Tsit5(),TsitPap8(),Vern6(),Vern7(),Vern8(),Vern9()]
 
 @testset "Scalar units" begin
@@ -12,10 +12,8 @@ algs = [Euler(),Midpoint(),Heun(),Ralston(),RK4(),SSPRK104(),SSPRK22(),SSPRK33()
     prob = ODEProblem(f,u0,(0.0u"s",1.0u"s"))
 
     for alg in algs
-        if !(alg isa DP5Threaded)
-            @show alg
-            sol = solve(prob,alg,dt=1u"s"/10)
-        end
+        @show alg
+        sol = solve(prob,alg,dt=1u"s"/10)
     end
 
     sol = solve(prob,ExplicitRK())

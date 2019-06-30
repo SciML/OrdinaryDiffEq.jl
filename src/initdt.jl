@@ -70,7 +70,7 @@
     end
   end
 
-  if any(isnan,f₀)
+  if integrator.opts.verbose && any(x->any(isnan, x), f₀)
     @warn("First function call produced NaNs. Exiting.")
   end
 
@@ -131,7 +131,7 @@ end
   d₀ = internalnorm(u0 ./ sk,t)
 
   f₀ = f(u0,p,t)
-  if any((isnan(x) for x in f₀))
+  if integrator.opts.verbose && any(x->any(isnan, x), f₀)
     error("First function call produced NaNs. Exiting.")
   end
 

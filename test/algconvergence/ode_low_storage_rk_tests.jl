@@ -7,20 +7,16 @@ Random.seed!(100)
 testTol = 0.25
 
 f = (u,p,t)->cos(t)
-(::typeof(f))(::Type{Val{:analytic}},u0,p,t) = sin(t)
-prob_ode_sin = ODEProblem(f, 0.,(0.0,1.0))
+prob_ode_sin = ODEProblem(ODEFunction(f; analytic=(u0,p,t)->sin(t)), 0.,(0.0,1.0))
 
 f = (du,u,p,t)->du[1]=cos(t)
-(::typeof(f))(::Type{Val{:analytic}},u0,p,t) = [sin(t)]
-prob_ode_sin_inplace = ODEProblem(f, [0.], (0.0,1.0))
+prob_ode_sin_inplace = ODEProblem(ODEFunction(f;analytic=(u0,p,t)->[sin(t)]), [0.], (0.0,1.0))
 
 f = (u,p,t)->sin(u)
-(::typeof(f))(::Type{Val{:analytic}},u0,p,t) = 2*acot(exp(-t)*cot(0.5))
-prob_ode_nonlinear = ODEProblem(f, 1.,(0.,0.5))
+prob_ode_nonlinear = ODEProblem(ODEFunction(f;analytic=(u0,p,t)->2*acot(exp(-t)*cot(0.5))), 1.,(0.,0.5))
 
 f = (du,u,p,t)->du[1]=sin(u[1])
-(::typeof(f))(::Type{Val{:analytic}},u0,p,t) = [2*acot(exp(-t)*cot(0.5))]
-prob_ode_nonlinear_inplace = ODEProblem(f,[1.],(0.,0.5))
+prob_ode_nonlinear_inplace = ODEProblem(ODEFunction(f;analytic=(u0,p,t)->[2*acot(exp(-t)*cot(0.5))]),[1.],(0.,0.5))
 
 test_problems_only_time = [prob_ode_sin, prob_ode_sin_inplace]
 test_problems_linear = [prob_ode_linear, prob_ode_2Dlinear, prob_ode_bigfloat2Dlinear]
@@ -421,12 +417,10 @@ end
 test_problems_only_time_BigFloat = @. RemakeNew(test_problems_only_time)
 test_problems_linear_BigFloat = @. RemakeNew(test_problems_linear)
 f = (u,p,t)->sin(u)
-(::typeof(f))(::Type{Val{:analytic}},u0,p,t) = 2*acot(exp(-t)*cot(BigFloat(0.5)))
-prob_nonlinear_A = ODEProblem(f, BigFloat(1.),(BigFloat(0.),BigFloat(0.5)))
+prob_nonlinear_A = ODEProblem(ODEFunction(f;analytic=(u0,p,t)->2*acot(exp(-t)*cot(BigFloat(0.5)))), BigFloat(1.),(BigFloat(0.),BigFloat(0.5)))
 
 f = (du,u,p,t)->du[1]=sin(u[1])
-(::typeof(f))(::Type{Val{:analytic}},u0,p,t) = [2*acot(exp(-t)*cot(BigFloat(0.5)))]
-prob_nonlinear_B = ODEProblem(f,[BigFloat(1.)],(BigFloat(0.),BigFloat(0.5)))
+prob_nonlinear_B = ODEProblem(ODEFunction(f;analytic=(u0,p,t)->[2*acot(exp(-t)*cot(BigFloat(0.5)))]),[BigFloat(1.)],(BigFloat(0.),BigFloat(0.5)))
 test_problems_nonlinear_BigFloat = [prob_nonlinear_A,prob_nonlinear_B]
 
 alg = CKLLSRK43_2()

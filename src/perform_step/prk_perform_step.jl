@@ -25,8 +25,10 @@ end
     k5_6[1] = f(uprev + dt*(α5_6[1,1]*k1 + α5_6[1,2]*k2 + α5_6[1,3]*k3 + α5_6[1,4]*k4), p, t + c5_6[1]*dt)
     k5_6[2] = f(uprev + dt*(α5_6[2,1]*k1 + α5_6[2,2]*k2 + α5_6[2,3]*k3 + α5_6[2,4]*k4), p, t + c5_6[2]*dt)  
   else
-    Threads.@threads for i in [1,2]
-      k5_6[i] = f(uprev + dt*(α5_6[i,1]*k1 + α5_6[i,2]*k2 + α5_6[i,3]*k3 + α5_6[i,4]*k4), p, t + c5_6[i]*dt)
+    let
+      Threads.@threads for i in [1,2]
+        k5_6[i] = f(uprev + dt*(α5_6[i,1]*k1 + α5_6[i,2]*k2 + α5_6[i,3]*k3 + α5_6[i,4]*k4), p, t + c5_6[i]*dt)
+      end
     end
   end
 
@@ -75,9 +77,11 @@ end
     f( k5_6[2], u, p, t + c5_6[2]*dt)
   else
     tmps = (u, tmp)
-    Threads.@threads for i in [1,2]
-      @.. tmps[i] = uprev + dt*(α5_6[i,1]*k1 + α5_6[i,2]*k2 + α5_6[i,3]*k3 + α5_6[i,4]*k4)
-      f( k5_6[i], tmps[i], p, t + c5_6[i]*dt)
+    let
+      Threads.@threads for i in [1,2]
+        @.. tmps[i] = uprev + dt*(α5_6[i,1]*k1 + α5_6[i,2]*k2 + α5_6[i,3]*k3 + α5_6[i,4]*k4)
+        f( k5_6[i], tmps[i], p, t + c5_6[i]*dt)
+      end
     end
   end
 

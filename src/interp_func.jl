@@ -21,7 +21,7 @@ end
 
 DiffEqBase.interp_summary(interp::OrdinaryDiffEqInterpolation{cacheType}) where {cacheType<:FunctionMapConstantCache} = "left-endpoint piecewise constant"
 DiffEqBase.interp_summary(interp::OrdinaryDiffEqInterpolation{cacheType}) where {cacheType<:FunctionMapCache} = "left-endpoint piecewise constant"
-function DiffEqBase.interp_summary(interp::OrdinaryDiffEqInterpolation{cacheType}) where cacheType<:Union{DP5ConstantCache,DP5Cache,DP5ThreadedCache}
+function DiffEqBase.interp_summary(interp::OrdinaryDiffEqInterpolation{cacheType}) where cacheType<:Union{DP5ConstantCache,DP5Cache}
   interp.dense ? "specialized 4th order \"free\" interpolation" : "1st order linear"
 end
 function DiffEqBase.interp_summary(interp::OrdinaryDiffEqInterpolation{cacheType}) where cacheType<:Union{Rosenbrock23ConstantCache,Rosenbrock32ConstantCache,Rosenbrock23Cache,Rosenbrock32Cache}
