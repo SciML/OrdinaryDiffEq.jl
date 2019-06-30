@@ -521,6 +521,7 @@ isesdirk(alg::TRBDF2) = true
 isesdirk(alg::Union{KenCarp3, KenCarp4, KenCarp5,
                     Kvaerno3, Kvaerno4, Kvaerno5,
                     ESDIRK54I8L2SA}) = true
+isesdirk(alg::OrdinaryDiffEqAlgorithm) = false
 
 is_mass_matrix_alg(alg::OrdinaryDiffEqAlgorithm) = false
 is_mass_matrix_alg(alg::RosenbrockAlgorithm) = true
