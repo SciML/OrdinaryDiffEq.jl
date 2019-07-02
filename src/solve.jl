@@ -8,7 +8,7 @@ end
 
 function DiffEqBase.__init(
   prob::DiffEqBase.AbstractODEProblem,
-  alg::algType,timeseries_init=typeof(prob.u0)[],
+  alg::OrdinaryDiffEqAlgorithm,timeseries_init=typeof(prob.u0)[],
   ts_init=eltype(prob.tspan)[],ks_init=[],
   recompile::Type{Val{recompile_flag}}=Val{true};
   saveat = eltype(prob.tspan)[],
@@ -54,7 +54,7 @@ function DiffEqBase.__init(
   userdata=nothing,
   allow_extrapolation = alg_extrapolates(alg),
   initialize_integrator=true,
-  alias_u0=false, kwargs...) where {algType<:OrdinaryDiffEqAlgorithm,recompile_flag}
+  alias_u0=false, kwargs...) where recompile_flag
 
   if typeof(prob.f)<:DynamicalODEFunction && typeof(prob.f.mass_matrix)<:Tuple
     if any(mm != I for mm in prob.f.mass_matrix)
@@ -315,7 +315,7 @@ function DiffEqBase.__init(
   erracc = tTypeNoUnits(1)
   dtacc = tType(1)
 
-  integrator = ODEIntegrator{algType,isinplace(prob),uType,tType,typeof(p),typeof(eigen_est),
+  integrator = ODEIntegrator{typeof(alg),isinplace(prob),uType,tType,typeof(p),typeof(eigen_est),
                              QT,typeof(tdir),typeof(k),SolType,
                              FType,cacheType,
                              typeof(opts),fsal_typeof(alg,rate_prototype),
