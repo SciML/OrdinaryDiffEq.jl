@@ -1,64 +1,68 @@
-function DiffEqBase.__solve(
-  prob::DiffEqBase.AbstractODEProblem,
-  alg::algType,timeseries=[],ts=[],ks=[],recompile::Type{Val{recompile_flag}}=Val{true};
-  kwargs...) where {algType<:OrdinaryDiffEqAlgorithm,recompile_flag}
-
-  integrator = DiffEqBase.__init(prob,alg,timeseries,ts,ks,recompile;kwargs...)
+function DiffEqBase.__solve(prob::DiffEqBase.AbstractODEProblem,
+                            alg::OrdinaryDiffEqAlgorithm, args...;
+                            kwargs...)
+  integrator = DiffEqBase.__init(prob, alg, args...; kwargs...)
   solve!(integrator)
   integrator.sol
 end
 
-function DiffEqBase.__init(
-  prob::DiffEqBase.AbstractODEProblem,
-  alg::algType,timeseries_init=typeof(prob.u0)[],
-  ts_init=eltype(prob.tspan)[],ks_init=[],
-  recompile::Type{Val{recompile_flag}}=Val{true};
-  saveat = eltype(prob.tspan)[],
-  tstops = eltype(prob.tspan)[],
-  d_discontinuities= eltype(prob.tspan)[],
-  save_idxs = nothing,
-  save_everystep = isempty(saveat),
-  save_timeseries = nothing,
-  save_on = true,
-  save_start = save_everystep || isempty(saveat) || typeof(saveat) <: Number ? true : prob.tspan[1] in saveat,
-  save_end = save_everystep || isempty(saveat) || typeof(saveat) <: Number ? true : prob.tspan[2] in saveat,
-  callback=nothing,
-  dense = save_everystep && !(typeof(alg) <: FunctionMap) && isempty(saveat),
-  calck = (callback !== nothing && callback != CallbackSet()) || # Empty callback
-          (prob.callback !== nothing && prob.callback != CallbackSet()) || # Empty prob.callback
-          (!isempty(setdiff(saveat,tstops)) || dense), # and no dense output
-  dt = typeof(alg) <: FunctionMap && isempty(tstops) ? eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
-  adaptive = isadaptive(alg),
-  gamma=gamma_default(alg),
-  abstol=nothing,
-  reltol=nothing,
-  qmax=qmax_default(alg),qmin=qmin_default(alg),
-  qsteady_min = qsteady_min_default(alg),
-  qsteady_max = qsteady_max_default(alg),
-  qoldinit=1//10^4, fullnormalize=true,
-  failfactor = 2,
-  beta2=nothing,
-  beta1=nothing,
-  maxiters = adaptive ? 1000000 : typemax(Int),
-  dtmax=eltype(prob.tspan)((prob.tspan[end]-prob.tspan[1])),
-  dtmin= typeof(one(eltype(prob.tspan))) <: AbstractFloat ? eps(eltype(prob.tspan)) :
-         typeof(one(eltype(prob.tspan))) <: Integer ? 0 :
-         eltype(prob.tspan)(1//10^(10)),
-  internalnorm = ODE_DEFAULT_NORM,
-  internalopnorm = LinearAlgebra.opnorm,
-  isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
-  unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
-  verbose = true, force_dtmin = false,
-  timeseries_errors = true, dense_errors=false,
-  advance_to_tstop = false,stop_at_next_tstop=false,
-  initialize_save = true,
-  progress=false,progress_steps=1000,progress_name="ODE",
-  progress_message = ODE_DEFAULT_PROG_MESSAGE,
-  userdata=nothing,
-  allow_extrapolation = alg_extrapolates(alg),
-  initialize_integrator=true,
-  alias_u0=false, kwargs...) where {algType<:OrdinaryDiffEqAlgorithm,recompile_flag}
-
+function DiffEqBase.__init(prob::DiffEqBase.AbstractODEProblem,
+                           alg::OrdinaryDiffEqAlgorithm,
+                           timeseries_init = typeof(prob.u0)[],
+                           ts_init = eltype(prob.tspan)[],
+                           ks_init = [],
+                           recompile::Type{Val{recompile_flag}} = Val{true};
+                           saveat = eltype(prob.tspan)[],
+                           tstops = eltype(prob.tspan)[],
+                           d_discontinuities= eltype(prob.tspan)[],
+                           save_idxs = nothing,
+                           save_everystep = isempty(saveat),
+                           save_on = true,
+                           save_start = save_everystep || isempty(saveat) || saveat isa Number || prob.tspan[1] in saveat,
+                           save_end = save_everystep || isempty(saveat) || saveat isa Number || prob.tspan[2] in saveat,
+                           callback = nothing,
+                           dense = save_everystep && !(typeof(alg) <: FunctionMap) && isempty(saveat),
+                           calck = (callback !== nothing && callback != CallbackSet()) || # Empty callback
+                                   (prob.callback !== nothing && prob.callback != CallbackSet()) || # Empty prob.callback
+                                   (!isempty(setdiff(saveat,tstops)) || dense), # and no dense output
+                           dt = typeof(alg) <: FunctionMap && isempty(tstops) ? eltype(prob.tspan)(1) : eltype(prob.tspan)(0),
+                           dtmin = typeof(one(eltype(prob.tspan))) <: AbstractFloat ? eps(eltype(prob.tspan)) :
+                                   typeof(one(eltype(prob.tspan))) <: Integer ? 0 : eltype(prob.tspan)(1//10^(10)),
+                           dtmax = eltype(prob.tspan)((prob.tspan[end]-prob.tspan[1])),
+                           force_dtmin = false,
+                           adaptive = isadaptive(alg),
+                           gamma = gamma_default(alg),
+                           abstol = nothing,
+                           reltol = nothing,
+                           qmin = qmin_default(alg),
+                           qmax = qmax_default(alg),
+                           qsteady_min = qsteady_min_default(alg),
+                           qsteady_max = qsteady_max_default(alg),
+                           qoldinit = 1//10^4,
+                           fullnormalize = true,
+                           failfactor = 2,
+                           beta1 = nothing,
+                           beta2 = nothing,
+                           maxiters = adaptive ? 1000000 : typemax(Int),
+                           internalnorm = ODE_DEFAULT_NORM,
+                           internalopnorm = LinearAlgebra.opnorm,
+                           isoutofdomain = ODE_DEFAULT_ISOUTOFDOMAIN,
+                           unstable_check = ODE_DEFAULT_UNSTABLE_CHECK,
+                           verbose = true,
+                           timeseries_errors = true,
+                           dense_errors = false,
+                           advance_to_tstop = false,
+                           stop_at_next_tstop = false,
+                           initialize_save = true,
+                           progress = false,
+                           progress_steps = 1000,
+                           progress_name = "ODE",
+                           progress_message = ODE_DEFAULT_PROG_MESSAGE,
+                           userdata = nothing,
+                           allow_extrapolation = alg_extrapolates(alg),
+                           initialize_integrator = true,
+                           alias_u0 = false,
+                           kwargs...) where recompile_flag
   if typeof(prob.f)<:DynamicalODEFunction && typeof(prob.f.mass_matrix)<:Tuple
     if any(mm != I for mm in prob.f.mass_matrix)
       error("This solver is not able to use mass matrices.")
@@ -318,7 +322,7 @@ function DiffEqBase.__init(
   erracc = tTypeNoUnits(1)
   dtacc = tType(1)
 
-  integrator = ODEIntegrator{algType,isinplace(prob),uType,tType,typeof(p),typeof(eigen_est),
+  integrator = ODEIntegrator{typeof(alg),isinplace(prob),uType,tType,typeof(p),typeof(eigen_est),
                              QT,typeof(tdir),typeof(k),SolType,
                              FType,cacheType,
                              typeof(opts),fsal_typeof(alg,rate_prototype),
