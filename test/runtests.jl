@@ -1,19 +1,15 @@
 using SafeTestsets
 const LONGER_TESTS = false
 
-if haskey(ENV,"GROUP")
-    group = ENV["GROUP"]
-else
-    group = "All"
-end
+const GROUP = get(ENV, "GROUP", "All")
 
-is_APPVEYOR = ( Sys.iswindows() && haskey(ENV,"APPVEYOR") )
-is_TRAVIS = haskey(ENV,"TRAVIS")
+const is_APPVEYOR = Sys.iswindows() && haskey(ENV,"APPVEYOR")
+const is_TRAVIS = haskey(ENV,"TRAVIS")
 
 #Start Test Script
 
 @time begin
-if group == "All" || group == "Interface"
+if GROUP == "All" || GROUP == "Interface"
   @time @safetestset "Discrete Algorithm Tests" begin include("interface/discrete_algorithm_test.jl") end
   @time @safetestset "Tstops Tests" begin include("interface/ode_tstops_tests.jl") end
   @time @safetestset "Backwards Tests" begin include("interface/ode_backwards_test.jl") end
@@ -43,7 +39,7 @@ if group == "All" || group == "Interface"
   @time @safetestset "Linear Nonlinear Solver Tests" begin include("interface/linear_nonlinear_tests.jl") end
 end
 
-if !is_APPVEYOR && (group == "All" || group == "Integrators")
+if !is_APPVEYOR && (GROUP == "All" || GROUP == "Integrators")
   @time @safetestset "Reinit Tests" begin include("integrators/reinit_test.jl") end
   @time @safetestset "Events Tests" begin include("integrators/ode_event_tests.jl") end
   @time @safetestset "Alg Events Tests" begin include("integrators/alg_events_tests.jl") end
@@ -57,7 +53,7 @@ if !is_APPVEYOR && (group == "All" || group == "Integrators")
   @time @safetestset "Event Detection Tests" begin include("integrators/event_detection_tests.jl") end
 end
 
-if !is_APPVEYOR && ( group == "All" || group == "Regression" )
+if !is_APPVEYOR && (GROUP == "All" || GROUP == "Regression")
   @time @safetestset "Dense Tests" begin include("regression/ode_dense_tests.jl") end
   @time @safetestset "Inplace Tests" begin include("regression/ode_inplace_tests.jl") end
   @time @safetestset "Adaptive Tests" begin include("regression/ode_adaptive_tests.jl") end
@@ -66,7 +62,7 @@ if !is_APPVEYOR && ( group == "All" || group == "Regression" )
   @time @safetestset "Time derivative Tests" begin include("regression/time_derivative_test.jl") end
 end
 
-if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_I" )
+if !is_APPVEYOR && (GROUP == "All" || GROUP == "AlgConvergence_I")
   @time @safetestset "Partitioned Methods Tests" begin include("algconvergence/partitioned_methods_tests.jl") end
   @time @safetestset "Convergence Tests" begin include("algconvergence/ode_convergence_tests.jl") end
   @time @safetestset "Adams Variable Coefficients Tests" begin include("algconvergence/adams_tests.jl") end
@@ -75,14 +71,14 @@ if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_I" )
   @time @safetestset "Extrapolation Tests" begin include("algconvergence/ode_extrapolation_tests.jl") end
 end
 
-if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_II" )
+if !is_APPVEYOR && (GROUP == "All" || GROUP == "AlgConvergence_II")
   @time @safetestset "SSPRK Tests" begin include("algconvergence/ode_ssprk_tests.jl") end
   @time @safetestset "Low Storage RK Tests" begin include("algconvergence/ode_low_storage_rk_tests.jl") end
   @time @safetestset "OwrenZen Tests" begin include("algconvergence/owrenzen_tests.jl") end
   @time @safetestset "Runge-Kutta-Chebyshev Tests" begin include("algconvergence/rkc_tests.jl") end
 end
 
-if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_III" )
+if !is_APPVEYOR && (GROUP == "All" || GROUP == "AlgConvergence_III")
   @time @safetestset "Split Methods Tests" begin include("algconvergence/split_methods_tests.jl") end
   @time @safetestset "Rosenbrock Tests" begin include("algconvergence/ode_rosenbrock_tests.jl") end
   @time @safetestset "FIRK Tests" begin include("algconvergence/ode_firk_tests.jl") end
@@ -91,7 +87,7 @@ if !is_APPVEYOR && ( group == "All" || group == "AlgConvergence_III" )
   @time @safetestset "Feagin Tests" begin include("algconvergence/ode_feagin_tests.jl") end
 end
 
-if !is_APPVEYOR && ( group == "ODEInterfaceRegression" )
+if !is_APPVEYOR && GROUP == "ODEInterfaceRegression"
   @show is_TRAVIS
   if is_TRAVIS
     using Pkg
