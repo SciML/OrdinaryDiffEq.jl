@@ -1,9 +1,7 @@
-function DiffEqBase.__solve(
-  prob::DiffEqBase.AbstractODEProblem,
-  alg::algType,timeseries=[],ts=[],ks=[],recompile::Type{Val{recompile_flag}}=Val{true};
-  kwargs...) where {algType<:OrdinaryDiffEqAlgorithm,recompile_flag}
-
-  integrator = DiffEqBase.__init(prob,alg,timeseries,ts,ks,recompile;kwargs...)
+function DiffEqBase.__solve(prob::DiffEqBase.AbstractODEProblem,
+                            alg::OrdinaryDiffEqAlgorithm, args...;
+                            kwargs...)
+  integrator = DiffEqBase.__init(prob, alg, args...; kwargs...)
   solve!(integrator)
   integrator.sol
 end
