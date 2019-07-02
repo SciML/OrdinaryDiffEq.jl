@@ -5,7 +5,7 @@ function derivative!(df::AbstractArray{<:Number}, f, x::Union{Number,AbstractArr
         ForwardDiff.derivative!(df, f, fx, x, grad_config)
         integrator.destats.nf += 1
     else
-      DiffEqDiffTools.finite_difference_gradient!(df, f, x, grad_config, dir = diffdir(integrator))
+        DiffEqDiffTools.finite_difference_gradient!(df, f, x, grad_config, dir = diffdir(integrator))
         fdtype = alg.diff_type
         if fdtype == Val{:forward} || fdtype == Val{:central}
             tmp *= 2
