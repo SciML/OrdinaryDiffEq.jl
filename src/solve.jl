@@ -18,7 +18,6 @@ function DiffEqBase.__init(
   d_discontinuities= eltype(prob.tspan)[],
   save_idxs = nothing,
   save_everystep = isempty(saveat),
-  save_timeseries = nothing,
   save_on = true,
   save_start = save_everystep || isempty(saveat) || typeof(saveat) <: Number ? true : prob.tspan[1] in saveat,
   save_end = save_everystep || isempty(saveat) || typeof(saveat) <: Number ? true : prob.tspan[2] in saveat,
