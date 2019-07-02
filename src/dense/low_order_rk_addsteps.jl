@@ -97,7 +97,7 @@ end
     f(k3,tmp,p,t+c2*dt)
     @.. tmp = uprev+dt*(a41*k1+a42*k2+a43*k3)
     f(k4,tmp,p,t+c3*dt)
-    tmp =uprev+dt*(a51*k1+a52*k2+a53*k3+a54*k4)
+    @.. tmp =uprev+dt*(a51*k1+a52*k2+a53*k3+a54*k4)
     f(k5,tmp,p,t+c4*dt)
     @.. tmp = uprev+dt*(a61*k1+a62*k2+a63*k3+a64*k4+a65*k5)
     f(k6,tmp,p,t+dt)
