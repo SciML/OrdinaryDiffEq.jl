@@ -17,8 +17,8 @@ function DiffEqBase.__init(
   save_idxs = nothing,
   save_everystep = isempty(saveat),
   save_on = true,
-  save_start = save_everystep || isempty(saveat) || typeof(saveat) <: Number ? true : prob.tspan[1] in saveat,
-  save_end = save_everystep || isempty(saveat) || typeof(saveat) <: Number ? true : prob.tspan[2] in saveat,
+  save_start = save_everystep || isempty(saveat) || saveat isa Number || prob.tspan[1] in saveat,
+  save_end = save_everystep || isempty(saveat) || saveat isa Number || prob.tspan[2] in saveat,
   callback=nothing,
   dense = save_everystep && !(typeof(alg) <: FunctionMap) && isempty(saveat),
   calck = (callback !== nothing && callback != CallbackSet()) || # Empty callback
