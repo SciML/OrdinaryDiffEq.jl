@@ -71,6 +71,7 @@ end
   uprev::uType
   u_tmp::uType
   utilde::uType
+  tmp::uType
   atmp::uNoUnitsType
   k_tmp::rateType
   dtpropose::dtType
@@ -121,6 +122,7 @@ end
 function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   u_tmp = similar(u)
   utilde = similar(u)
+  tmp = similar(u)
   k = zero(rate_prototype)
   k_tmp = zero(rate_prototype)
   cur_order = max(alg.init_order, alg.min_order)
@@ -152,11 +154,10 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   linsolve_tmp = zero(rate_prototype)
   linsolve = alg.linsolve(Val{:init},uf,u)
   grad_config = build_grad_config(alg,f,tf,du1,t)
-  tmp = zero(rate_prototype)
-  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,du1,du2)
 
 
-  ImplicitEulerExtrapolationCache(uprev,u_tmp,utilde,atmp,k_tmp,dtpropose,T,cur_order,work,A,step_no,
+  ImplicitEulerExtrapolationCache(uprev,u_tmp,utilde,tmp,atmp,k_tmp,dtpropose,T,cur_order,work,A,step_no,
     du1,du2,J,W,tf,uf,linsolve_tmp,linsolve,jac_config,grad_config)
 end
 
