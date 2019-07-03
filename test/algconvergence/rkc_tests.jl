@@ -8,7 +8,7 @@ probArr[2] = prob_ode_2Dlinear
 
 @testset "Power Iteration of Runge-Kutta-Chebyshev Tests" begin
   Random.seed!(123)
-  for iip in [true, false], alg in [ROCK2(), ROCK4(), RKC(), ESERK4(), ESERK5(), SERK2()]
+  for iip in [true, false], alg in [ROCK2(), ROCK4(), RKC(), SERK2(), ESERK4(), ESERK5()]
     A = randn(20,20)
     test_f(u,p,t) = A*u
     test_f(du,u,p,t) = mul!(du, A, u)
