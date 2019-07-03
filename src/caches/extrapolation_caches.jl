@@ -68,21 +68,17 @@ function alg_cache(alg::AitkenNeville,u,rate_prototype,uEltypeNoUnits,uBottomElt
 end
 
 @cache mutable struct ImplicitEulerExtrapolationCache{uType,rateType,arrayType,dtType,JType,WType,F,JCType,GCType,uNoUnitsType,TFType,UFType} <: OrdinaryDiffEqMutableCache
-  u::uType
   uprev::uType
-  tmp::uType
-  k::rateType
+  u_tmp::uType
   utilde::uType
   atmp::uNoUnitsType
-  fsalfirst::rateType
+  k_tmp::rateType
   dtpropose::dtType
   T::arrayType
   cur_order::Int
   work::dtType
   A::Int
   step_no::Int
-  u_tmps::Array{uType,1}
-  k_tmps::Array{rateType,1}
 
 
   du1::rateType
@@ -107,7 +103,6 @@ end
 
   tf::TF
   uf::UF
-
 end
 
 function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
@@ -124,23 +119,13 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
 end
 
 function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
-  tmp = similar(u)
+  u_tmp = similar(u)
   utilde = similar(u)
   k = zero(rate_prototype)
-  fsalfirst = zero(rate_prototype)
+  k_tmp = zero(rate_prototype)
   cur_order = max(alg.init_order, alg.min_order)
   dtpropose = zero(dt)
   T = Array{typeof(u),2}(undef, alg.max_order, alg.max_order)
-  # Array of arrays of length equal to number of threads to store intermediate
-  # values of u and k. [Thread Safety]
-  u_tmps = Array{typeof(u),1}(undef, Threads.nthreads())
-  k_tmps = Array{typeof(k),1}(undef, Threads.nthreads())
-  # Initialize each element of u_tmps and k_tmps to different instance of
-  # zeros array similar to u and k respectively
-  for i=1:Threads.nthreads()
-      u_tmps[i] = zero(u)
-      k_tmps[i] = zero(rate_prototype)
-  end
   # Initialize lower triangle of T to different instance of zeros array similar to u
   for i=1:alg.max_order
     for j=1:i
@@ -167,10 +152,11 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   linsolve_tmp = zero(rate_prototype)
   linsolve = alg.linsolve(Val{:init},uf,u)
   grad_config = build_grad_config(alg,f,tf,du1,t)
+  tmp = zero(rate_prototype)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
 
 
-  ImplicitEulerExtrapolationCache(u,uprev,tmp,k,utilde,atmp,fsalfirst,dtpropose,T,cur_order,work,A,step_no,u_tmps,k_tmps,
+  ImplicitEulerExtrapolationCache(uprev,u_tmp,utilde,atmp,k_tmp,dtpropose,T,cur_order,work,A,step_no,
     du1,du2,J,W,tf,uf,linsolve_tmp,linsolve,jac_config,grad_config)
 end
 

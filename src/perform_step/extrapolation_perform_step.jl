@@ -232,13 +232,13 @@ end
 
 function initialize!(integrator,cache::ImplicitEulerExtrapolationCache)
   integrator.kshortsize = 2
-  @unpack k,fsalfirst = cache
-  integrator.fsalfirst = fsalfirst
-  integrator.fsallast = k
+
+  integrator.fsalfirst = zero(cache.k_tmp)
+  integrator.f(integrator.fsalfirst, integrator.u, integrator.p, integrator.t)
+  integrator.fsallast = zero(integrator.fsalfirst)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # For the interpolation, needs k at the updated point
   integrator.destats.nf += 1
 
   cache.step_no = 1
@@ -247,26 +247,26 @@ end
 
 function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k,T,utilde,atmp,dtpropose,cur_order,A = cache
-  @unpack u_tmps, k_tmps, J,W,tmp,uf,tf,linsolve_tmp,jac_config = cache
+  @unpack u_tmp,k_tmp,T,utilde,atmp,dtpropose,cur_order,A = cache
+  @unpack J,W,uf,tf,linsolve_tmp,jac_config = cache
 
   max_order = min(size(T)[1],cur_order+1)
 
   for i in 1:max_order
     dt_temp = dt/(2^(i-1)) # Romberg sequence
     calc_W!(integrator, cache, dt_temp, repeat_step)
-    k_copy = copy(integrator.fsalfirst)
+    k_tmp = copy(integrator.fsalfirst)
     u_tmp = copy(uprev)
     for j in 1:2^(i-1)
-        linsolve_tmp = dt_temp*k_copy
+        linsolve_tmp = dt_temp*k_tmp
         if DiffEqBase.has_invW(f)
-          mul!(vec(k), W, vec(linsolve_tmp))
+          mul!(vec(k_tmp), W, vec(linsolve_tmp))
         else
-          cache.linsolve(vec(k), W, vec(linsolve_tmp), !repeat_step)
-          @.. k = -k
+          cache.linsolve(vec(k_tmp), W, vec(linsolve_tmp), !repeat_step)
+          @.. k_tmp = -k_tmp
         end
-        @.. u_tmp = u_tmp + k
-        f(k_copy, u_tmp,p,t+j*dt_temp)
+        @.. u_tmp = u_tmp + k_tmp
+        f(k_tmp, u_tmp,p,t+j*dt_temp)
     end
 
     @.. T[i,1] = u_tmp
@@ -276,40 +276,40 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
   end
   integrator.dt = dt
 
-    if integrator.opts.adaptive
-      minimum_work = Inf
-      range_start = max(2,cur_order - 1)
-      if cache.step_no == one(cache.step_no)
-          range_start = 2
-      end
+  if integrator.opts.adaptive
+    minimum_work = Inf
+    range_start = max(2,cur_order - 1)
+    if cache.step_no == one(cache.step_no)
+        range_start = 2
+    end
 
-      for i = range_start:min(size(T)[1], cur_order + 1)
-          A = 2^(i-1)
-          @.. utilde = T[i,i] - T[i,i-1]
-          atmp = calculate_residuals(utilde, uprev, T[i,i], integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
-          EEst = integrator.opts.internalnorm(atmp,t)
+    for i = range_start:min(size(T)[1], cur_order + 1)
+        A = 2^(i-1)
+        @.. utilde = T[i,i] - T[i,i-1]
+        atmp = calculate_residuals(utilde, uprev, T[i,i], integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+        EEst = integrator.opts.internalnorm(atmp,t)
 
-          beta1 = integrator.opts.beta1
-          e = integrator.EEst
-          qold = integrator.qold
+        beta1 = integrator.opts.beta1
+        e = integrator.EEst
+        qold = integrator.qold
 
-          integrator.opts.beta1 = 1/(i+1)
-          integrator.EEst = EEst
-          dtpropose = step_accept_controller!(integrator,integrator.alg,stepsize_controller!(integrator,integrator.alg))
-          integrator.EEst = e
-          integrator.opts.beta1 = beta1
-          integrator.qold = qold
+        integrator.opts.beta1 = 1/(i+1)
+        integrator.EEst = EEst
+        dtpropose = step_accept_controller!(integrator,integrator.alg,stepsize_controller!(integrator,integrator.alg))
+        integrator.EEst = e
+        integrator.opts.beta1 = beta1
+        integrator.qold = qold
 
-          work = A/dtpropose
+        work = A/dtpropose
 
-          if work < minimum_work
-              integrator.opts.beta1 = 1/(i+1)
-              cache.dtpropose = dtpropose
-              cache.cur_order = i
-              minimum_work = work
-              integrator.EEst = EEst
-          end
-      end
+        if work < minimum_work
+            integrator.opts.beta1 = 1/(i+1)
+            cache.dtpropose = dtpropose
+            cache.cur_order = i
+            minimum_work = work
+            integrator.EEst = EEst
+        end
+    end
   end
 
   @.. integrator.u = T[cache.cur_order,cache.cur_order]
