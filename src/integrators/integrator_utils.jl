@@ -304,10 +304,11 @@ function handle_discontinuities!(integrator)
 end
 
 function calc_dt_propose!(integrator,dtnew)
-  if (typeof(integrator.alg) <: Union{ROCK2,ROCK4,SERK2v2,ESERK5}) && integrator.opts.adaptive && (integrator.iter >= 1)
+  if (typeof(integrator.alg) <: Union{ROCK2,ROCK4,SERK2,ESERK4,ESERK5}) && integrator.opts.adaptive && (integrator.iter >= 1)
     (integrator.alg isa ROCK2) && (dtnew = min(dtnew,typeof(dtnew)((((min(integrator.alg.max_stages,200)^2.0)*.811 - 1.5)/integrator.eigen_est))))
     (integrator.alg isa ROCK4) && (dtnew = min(dtnew,typeof(dtnew)((((min(integrator.alg.max_stages,152)^2.0)*.353 - 3)/integrator.eigen_est))))
-    (integrator.alg isa SERK2v2) && (dtnew = min(dtnew,typeof(dtnew)((0.8*250*250/(integrator.eigen_est+1.0)))))
+    (integrator.alg isa SERK2) && (dtnew = min(dtnew,typeof(dtnew)((0.8*250*250/(integrator.eigen_est+1.0)))))
+    (integrator.alg isa ESERK4) && (dtnew = min(dtnew,typeof(dtnew)((0.98*4000*4000/integrator.eigen_est))))
     (integrator.alg isa ESERK5) && (dtnew = min(dtnew,typeof(dtnew)((0.98*2000*2000/integrator.eigen_est))))
   end
   dtpropose = integrator.tdir*min(abs(integrator.opts.dtmax),abs(dtnew))

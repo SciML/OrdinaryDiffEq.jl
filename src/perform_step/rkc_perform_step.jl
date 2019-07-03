@@ -1097,7 +1097,7 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator, cache::SERK2v2ConstantCache)
+function initialize!(integrator, cache::SERK2ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
@@ -1108,7 +1108,7 @@ function initialize!(integrator, cache::SERK2v2ConstantCache)
   integrator.k[2] = integrator.fsallast
 end
 
-@muladd function perform_step!(integrator, cache::SERK2v2ConstantCache, repeat_step=false)
+@muladd function perform_step!(integrator, cache::SERK2ConstantCache, repeat_step=false)
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
   @unpack ms, Bᵢ= cache
   maxeig!(integrator, cache)
@@ -1157,7 +1157,7 @@ end
   integrator.u = u
 end
 
-function initialize!(integrator, cache::SERK2v2Cache)
+function initialize!(integrator, cache::SERK2Cache)
   integrator.kshortsize = 2
   resize!(integrator.k, integrator.kshortsize)
   integrator.fsalfirst = cache.fsalfirst
@@ -1168,7 +1168,7 @@ function initialize!(integrator, cache::SERK2v2Cache)
   integrator.destats.nf += 1
 end
 
-@muladd function perform_step!(integrator, cache::SERK2v2Cache, repeat_step=false)
+@muladd function perform_step!(integrator, cache::SERK2Cache, repeat_step=false)
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
   @unpack uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, k = cache
   @unpack ms, Bᵢ = cache.constantcache

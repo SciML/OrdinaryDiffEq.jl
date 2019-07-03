@@ -35538,7 +35538,7 @@ function ESERK4ConstantCache(zprev)
    ESERK4ConstantCache{eltype(Bᵢ),typeof(zprev)}(ms, Cᵤ, Cₑ, zprev, Bᵢ, 1, 0, 0)
 end
 
-function SERK2v2ConstantCache(zprev)
+function SERK2ConstantCache(zprev)
   ms = [10,20,30,40,50,60,80,100,150,200,250]
   Bᵢ = [ -0.96362760400868230359,
          -1.44600406818307636314,
@@ -36543,5 +36543,5 @@ function SERK2v2ConstantCache(zprev)
          5.11169642004104218813
        ]
 
-  SERK2v2ConstantCache{eltype(Bᵢ),typeof(zprev)}(ms, zprev, Bᵢ, 1, 0, 0)
+  SERK2ConstantCache{eltype(Bᵢ),typeof(zprev)}(ms, zprev, Bᵢ, 1, 0, 0)
 end
