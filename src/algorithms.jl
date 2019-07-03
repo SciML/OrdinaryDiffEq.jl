@@ -48,25 +48,19 @@ struct AitkenNeville <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
 end
 AitkenNeville(;max_order=10,min_order=1,init_order=5,threading=true) = AitkenNeville(max_order,min_order,init_order,threading)
 
-struct ImplicitEulerExtrapolation{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveExtrapolationAlgorithm{CS,AD}
+struct ImplicitEulerExtrapolation{CS,AD,F,F2} <: OrdinaryDiffEqNewtonAdaptiveExtrapolationAlgorithm{CS,AD}
   linsolve::F
-  nlsolve::F2
-  diff_type::FDT
-  extrapolant::Symbol
-  controller::Symbol
   max_order::Int
   min_order::Int
   init_order::Int
 end
 
+
 ImplicitEulerExtrapolation(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
-                          linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
-                          extrapolant=:constant,
-                          controller=:Standard,
+                          linsolve=DEFAULT_LINSOLVE,
                           max_order=10,min_order=1,init_order=5) =
-                          ImplicitEulerExtrapolation{chunk_size,autodiff,typeof(linsolve),
-                          typeof(nlsolve),typeof(diff_type)}(linsolve,
-                          nlsolve,diff_type,extrapolant,controller,max_order,min_order,init_order)
+                          ImplicitEulerExtrapolation{chunk_size,autodiff,
+                          typeof(linsolve),typeof(diff_type)}(linsolve,max_order,min_order,init_order)
 
 struct ExtrapolationMidpointDeuflhard <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
   n_min::Int # Minimal extrapolation order
