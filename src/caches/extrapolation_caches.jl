@@ -67,7 +67,7 @@ function alg_cache(alg::AitkenNeville,u,rate_prototype,uEltypeNoUnits,uBottomElt
   AitkenNevilleConstantCache(dtpropose,T,cur_order,work,A,step_no)
 end
 
-@cache mutable struct ImplicitEulerExtrapolationCache{uType,rateType,arrayType,dtType,uNoUnitsType,JType,WType,UF,JC,F,N} <: OrdinaryDiffEqMutableCache
+@cache mutable struct ImplicitEulerExtrapolationCache{uType,rateType,arrayType,dtType,JType,WType,F,JCType,GCType,uNoUnitsType,TFType,UFType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   tmp::uType
@@ -84,29 +84,30 @@ end
   u_tmps::Array{uType,1}
   k_tmps::Array{rateType,1}
 
-  uprev2::uType
-  du1::rateType
-  z::uType
-  dz::uType
-  b::uType
 
+  du1::rateType
+  du2::rateType
   J::JType
   W::WType
-  uf::UF
-  jac_config::JC
+  tf::TFType
+  uf::UFType
+  linsolve_tmp::rateType
   linsolve::F
-  nlsolver::N
+  jac_config::JCType
+  grad_config::GCType
 end
 
-@cache mutable struct ImplicitEulerExtrapolationConstantCache{F,N,dtType,arrayType} <: OrdinaryDiffEqConstantCache
-  uf::F
-  nlsolver::N
+@cache mutable struct ImplicitEulerExtrapolationConstantCache{dtType,arrayType,TF,UF} <: OrdinaryDiffEqConstantCache
   dtpropose::dtType
   T::arrayType
   cur_order::Int
   work::dtType
   A::Int
   step_no::Int
+
+  tf::TF
+  uf::UF
+
 end
 
 function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
@@ -117,9 +118,9 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   work = zero(dt)
   A = one(Int)
   step_no = zero(Int)
-  γ, c = 1, 1
-  @oopnlsolve
-  ImplicitEulerExtrapolationConstantCache(uf,nlsolver,dtpropose,T,cur_order,work,A,step_no)
+  tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+  ImplicitEulerExtrapolationConstantCache(dtpropose,T,cur_order,work,A,step_no,tf,uf)
 end
 
 function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -150,11 +151,27 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   A = one(Int)
   atmp = similar(u,uEltypeNoUnits)
   step_no = zero(Int)
-  γ, c = 1, 1
-  @iipnlsolve
+
+  du1 = zero(rate_prototype)
+  du2 = zero(rate_prototype)
+
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype !== nothing
+    W = WOperator(f, dt, true)
+    J = nothing # is J = W.J better?
+  else
+    J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+    W = similar(J)
+  end
+  tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+  linsolve_tmp = zero(rate_prototype)
+  linsolve = alg.linsolve(Val{:init},uf,u)
+  grad_config = build_grad_config(alg,f,tf,du1,t)
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
+
 
   ImplicitEulerExtrapolationCache(u,uprev,tmp,k,utilde,atmp,fsalfirst,dtpropose,T,cur_order,work,A,step_no,u_tmps,k_tmps,
-    uprev2,du1,z,dz,b,J,W,uf,jac_config,linsolve,nlsolver)
+    du1,du2,J,W,tf,uf,linsolve_tmp,linsolve,jac_config,grad_config)
 end
 
 

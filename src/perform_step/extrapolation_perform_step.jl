@@ -248,40 +248,35 @@ end
 function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack k,T,utilde,atmp,dtpropose,cur_order,A = cache
-  @unpack u_tmps, k_tmps, nlsolver, z = cache
-
-  alg = unwrap_alg(integrator, true)
+  @unpack u_tmps, k_tmps, J,W,tmp,uf,tf,linsolve_tmp,jac_config = cache
 
   max_order = min(size(T)[1],cur_order+1)
 
   for i in 1:max_order
     dt_temp = dt/(2^(i-1)) # Romberg sequence
+    calc_W!(integrator, cache, dt_temp, repeat_step)
+    k_copy = copy(integrator.fsalfirst)
     u_tmp = copy(uprev)
-    fsal_first = copy(integrator.fsalfirst)
-    integrator.dt = dt_temp
-    update_W!(integrator, cache, dt_temp, repeat_step)
     for j in 1:2^(i-1)
-        # initial guess
-        if alg.extrapolant == :linear
-          nlsolver.z = dt_temp*fsal_first
-        else # :constant
-          nlsolver.z = zero(u_tmp)
+        linsolve_tmp = dt_temp*k_copy
+        if DiffEqBase.has_invW(f)
+          mul!(vec(k), W, vec(linsolve_tmp))
+        else
+          cache.linsolve(vec(k), W, vec(linsolve_tmp), !repeat_step)
+          @.. k = -k
         end
-        nlsolver.tmp = u_tmp
-        z = nlsolve!(integrator, cache)
-        nlsolvefail(nlsolver) && return
-        @.. u_tmp = nlsolver.tmp + z
-        f(fsal_first, u_tmp, p, t+j*dt_temp)
+        @.. u_tmp = u_tmp + k
+        f(k_copy, u_tmp,p,t+j*dt_temp)
     end
+
     @.. T[i,1] = u_tmp
-    # Richardson Extrapolation
     for j in 2:i
       @.. T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
     end
   end
   integrator.dt = dt
 
-  if integrator.opts.adaptive
+    if integrator.opts.adaptive
       minimum_work = Inf
       range_start = max(2,cur_order - 1)
       if cache.step_no == one(cache.step_no)
@@ -317,9 +312,9 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
       end
   end
 
-  integrator.u = T[cache.cur_order,cache.cur_order]
+  @.. integrator.u = T[cache.cur_order,cache.cur_order]
   cache.step_no = cache.step_no + 1
-  f(integrator.fsallast, u, p, t+dt)
+  f(integrator.fsallast, integrator.u, p, t+dt)
   integrator.destats.nf += 1
 end
 
@@ -337,32 +332,22 @@ end
 
 function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack dtpropose, T, cur_order, work, A, nlsolver = cache
+  @unpack dtpropose, T, cur_order, work, A, tf, uf = cache
 
-  alg = unwrap_alg(integrator, true)
   max_order = min(size(T)[1], cur_order+1)
 
   for i in 1:max_order
     dt_temp = dt/(2^(i-1)) # Romberg sequence
-    u = uprev
-    fsal_first = integrator.fsalfirst
-    integrator.dt = dt_temp
-    update_W!(integrator, cache, dt_temp, repeat_step)
+    W = calc_W!(integrator, cache, dt_temp, repeat_step)
+    k_copy = integrator.fsalfirst
+    u_tmp = uprev
     for j in 1:2^(i-1)
-        # initial guess
-        if alg.extrapolant == :linear
-          nlsolver.z = dt_temp*fsal_first
-        else # :constant
-          nlsolver.z = zero(u)
-        end
-
-        nlsolver.tmp = u
-        z = nlsolve!(integrator, cache)
-        nlsolvefail(nlsolver) && return
-        u = nlsolver.tmp + z
-        fsal_first = f(u, p, t+j*dt_temp)
+        k = _reshape(W\-_vec(dt_temp*k_copy), axes(uprev)) 
+        integrator.destats.nsolve += 1
+        u_tmp = u_tmp + k
+        k_copy = f(u_tmp, p, t+j*dt_temp)
     end
-    T[i,1] = u
+    T[i,1] = u_tmp
     # Richardson Extrapolation
     for j in 2:i
       T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
