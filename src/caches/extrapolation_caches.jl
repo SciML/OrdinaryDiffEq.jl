@@ -67,6 +67,101 @@ function alg_cache(alg::AitkenNeville,u,rate_prototype,uEltypeNoUnits,uBottomElt
   AitkenNevilleConstantCache(dtpropose,T,cur_order,work,A,step_no)
 end
 
+@cache mutable struct ImplicitEulerExtrapolationCache{uType,rateType,arrayType,dtType,JType,WType,F,JCType,GCType,uNoUnitsType,TFType,UFType} <: OrdinaryDiffEqMutableCache
+  uprev::uType
+  u_tmp::uType
+  utilde::uType
+  tmp::uType
+  atmp::uNoUnitsType
+  k_tmp::rateType
+  dtpropose::dtType
+  T::arrayType
+  cur_order::Int
+  work::dtType
+  A::Int
+  step_no::Int
+
+
+  du1::rateType
+  du2::rateType
+  J::JType
+  W::WType
+  tf::TFType
+  uf::UFType
+  linsolve_tmp::rateType
+  linsolve::F
+  jac_config::JCType
+  grad_config::GCType
+end
+
+@cache mutable struct ImplicitEulerExtrapolationConstantCache{dtType,arrayType,TF,UF} <: OrdinaryDiffEqConstantCache
+  dtpropose::dtType
+  T::arrayType
+  cur_order::Int
+  work::dtType
+  A::Int
+  step_no::Int
+
+  tf::TF
+  uf::UF
+end
+
+function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  dtpropose = zero(dt)
+  cur_order = max(alg.init_order, alg.min_order)
+  T = Array{typeof(u),2}(undef, alg.max_order, alg.max_order)
+  @.. T = u
+  work = zero(dt)
+  A = one(Int)
+  step_no = zero(Int)
+  tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+  ImplicitEulerExtrapolationConstantCache(dtpropose,T,cur_order,work,A,step_no,tf,uf)
+end
+
+function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  u_tmp = similar(u)
+  utilde = similar(u)
+  tmp = similar(u)
+  k = zero(rate_prototype)
+  k_tmp = zero(rate_prototype)
+  cur_order = max(alg.init_order, alg.min_order)
+  dtpropose = zero(dt)
+  T = Array{typeof(u),2}(undef, alg.max_order, alg.max_order)
+  # Initialize lower triangle of T to different instance of zeros array similar to u
+  for i=1:alg.max_order
+    for j=1:i
+      T[i,j] = zero(u)
+    end
+  end
+  work = zero(dt)
+  A = one(Int)
+  atmp = similar(u,uEltypeNoUnits)
+  step_no = zero(Int)
+
+  du1 = zero(rate_prototype)
+  du2 = zero(rate_prototype)
+
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype !== nothing
+    W = WOperator(f, dt, true)
+    J = nothing # is J = W.J better?
+  else
+    J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+    W = similar(J)
+  end
+  tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+  linsolve_tmp = zero(rate_prototype)
+  linsolve = alg.linsolve(Val{:init},uf,u)
+  grad_config = build_grad_config(alg,f,tf,du1,t)
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,du1,du2)
+
+
+  ImplicitEulerExtrapolationCache(uprev,u_tmp,utilde,tmp,atmp,k_tmp,dtpropose,T,cur_order,work,A,step_no,
+    du1,du2,J,W,tf,uf,linsolve_tmp,linsolve,jac_config,grad_config)
+end
+
+
 
 struct extrapolation_coefficients{T1,T2,T3}
   # This structure is used by the caches of the algorithms

@@ -18,6 +18,7 @@ const ExponentialAlgorithm = Union{OrdinaryDiffEqExponentialAlgorithm,OrdinaryDi
 
 abstract type OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
 abstract type OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
+abstract type OrdinaryDiffEqNewtonAdaptiveExtrapolationAlgorithm{CS,AD} <: OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD} end
 
 struct FunctionMap{scale_by_time} <: OrdinaryDiffEqAlgorithm end
 FunctionMap(;scale_by_time=false) = FunctionMap{scale_by_time}()
@@ -46,6 +47,20 @@ struct AitkenNeville <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
   threading::Bool
 end
 AitkenNeville(;max_order=10,min_order=1,init_order=5,threading=true) = AitkenNeville(max_order,min_order,init_order,threading)
+
+struct ImplicitEulerExtrapolation{CS,AD,F,F2} <: OrdinaryDiffEqNewtonAdaptiveExtrapolationAlgorithm{CS,AD}
+  linsolve::F
+  max_order::Int
+  min_order::Int
+  init_order::Int
+end
+
+
+ImplicitEulerExtrapolation(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+                          linsolve=DEFAULT_LINSOLVE,
+                          max_order=10,min_order=1,init_order=5) =
+                          ImplicitEulerExtrapolation{chunk_size,autodiff,
+                          typeof(linsolve),typeof(diff_type)}(linsolve,max_order,min_order,init_order)
 
 struct ExtrapolationMidpointDeuflhard <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
   n_min::Int # Minimal extrapolation order
@@ -117,6 +132,8 @@ function ExtrapolationMidpointHairerWanner(;min_order=2,init_order=5, max_order=
   # Initialize algorithm
   ExtrapolationMidpointHairerWanner(n_min,n_init,n_max,sequence,threading)
 end
+
+
 
 struct RK46NL <: OrdinaryDiffEqAlgorithm end
 struct Heun <: OrdinaryDiffEqAdaptiveAlgorithm end

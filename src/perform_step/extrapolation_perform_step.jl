@@ -230,6 +230,178 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
   integrator.k[2] = integrator.fsallast
 end
 
+function initialize!(integrator,cache::ImplicitEulerExtrapolationCache)
+  integrator.kshortsize = 2
+
+  integrator.fsalfirst = zero(cache.k_tmp)
+  integrator.f(integrator.fsalfirst, integrator.u, integrator.p, integrator.t)
+  integrator.fsallast = zero(integrator.fsalfirst)
+  resize!(integrator.k, integrator.kshortsize)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+  integrator.destats.nf += 1
+
+  cache.step_no = 1
+  cache.cur_order = max(integrator.alg.init_order, integrator.alg.min_order)
+end
+
+function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack u_tmp,k_tmp,T,utilde,atmp,dtpropose,cur_order,A = cache
+  @unpack J,W,uf,tf,linsolve_tmp,jac_config = cache
+
+  max_order = min(size(T)[1],cur_order+1)
+
+  for i in 1:max_order
+    dt_temp = dt/(2^(i-1)) # Romberg sequence
+    calc_W!(integrator, cache, dt_temp, repeat_step)
+    k_tmp = copy(integrator.fsalfirst)
+    u_tmp = copy(uprev)
+    for j in 1:2^(i-1)
+        linsolve_tmp = dt_temp*k_tmp
+        if DiffEqBase.has_invW(f)
+          mul!(vec(k_tmp), W, vec(linsolve_tmp))
+        else
+          cache.linsolve(vec(k_tmp), W, vec(linsolve_tmp), !repeat_step)
+          @.. k_tmp = -k_tmp
+        end
+        @.. u_tmp = u_tmp + k_tmp
+        f(k_tmp, u_tmp,p,t+j*dt_temp)
+    end
+
+    @.. T[i,1] = u_tmp
+    for j in 2:i
+      @.. T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
+    end
+  end
+  integrator.dt = dt
+
+  if integrator.opts.adaptive
+    minimum_work = Inf
+    range_start = max(2,cur_order - 1)
+    if cache.step_no == one(cache.step_no)
+        range_start = 2
+    end
+
+    for i = range_start:min(size(T)[1], cur_order + 1)
+        A = 2^(i-1)
+        @.. utilde = T[i,i] - T[i,i-1]
+        atmp = calculate_residuals(utilde, uprev, T[i,i], integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+        EEst = integrator.opts.internalnorm(atmp,t)
+
+        beta1 = integrator.opts.beta1
+        e = integrator.EEst
+        qold = integrator.qold
+
+        integrator.opts.beta1 = 1/(i+1)
+        integrator.EEst = EEst
+        dtpropose = step_accept_controller!(integrator,integrator.alg,stepsize_controller!(integrator,integrator.alg))
+        integrator.EEst = e
+        integrator.opts.beta1 = beta1
+        integrator.qold = qold
+
+        work = A/dtpropose
+
+        if work < minimum_work
+            integrator.opts.beta1 = 1/(i+1)
+            cache.dtpropose = dtpropose
+            cache.cur_order = i
+            minimum_work = work
+            integrator.EEst = EEst
+        end
+    end
+  end
+
+  @.. integrator.u = T[cache.cur_order,cache.cur_order]
+  cache.step_no = cache.step_no + 1
+  f(integrator.fsallast, integrator.u, p, t+dt)
+  integrator.destats.nf += 1
+end
+
+
+function initialize!(integrator,cache::ImplicitEulerExtrapolationConstantCache)
+  integrator.kshortsize = 2
+  integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+
+  # Avoid undefined entries if k is an array of arrays
+  integrator.fsallast = zero(integrator.fsalfirst)
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
+
+function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache,repeat_step=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack dtpropose, T, cur_order, work, A, tf, uf = cache
+
+  max_order = min(size(T)[1], cur_order+1)
+
+  for i in 1:max_order
+    dt_temp = dt/(2^(i-1)) # Romberg sequence
+    W = calc_W!(integrator, cache, dt_temp, repeat_step)
+    k_copy = integrator.fsalfirst
+    u_tmp = uprev
+    for j in 1:2^(i-1)
+        k = _reshape(W\-_vec(dt_temp*k_copy), axes(uprev)) 
+        integrator.destats.nsolve += 1
+        u_tmp = u_tmp + k
+        k_copy = f(u_tmp, p, t+j*dt_temp)
+    end
+    T[i,1] = u_tmp
+    # Richardson Extrapolation
+    for j in 2:i
+      T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
+    end
+  end
+  integrator.destats.nf += 2^(max_order) - 1
+  integrator.dt = dt
+
+  if integrator.opts.adaptive
+      minimum_work = Inf
+      range_start = max(2,cur_order - 1)
+      if cache.step_no == one(cache.step_no)
+          range_start = 2
+      end
+
+      for i = range_start:min(size(T)[1], cur_order + 1)
+          A = 2^(i-1)
+          utilde = T[i,i] - T[i,i-1]
+          atmp = calculate_residuals(utilde, uprev, T[i,i], integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
+          EEst = integrator.opts.internalnorm(atmp,t)
+
+          beta1 = integrator.opts.beta1
+          e = integrator.EEst
+          qold = integrator.qold
+
+          integrator.opts.beta1 = 1/(i+1)
+          integrator.EEst = EEst
+          dtpropose = step_accept_controller!(integrator,integrator.alg,stepsize_controller!(integrator,integrator.alg))
+          integrator.EEst = e
+          integrator.opts.beta1 = beta1
+          integrator.qold = qold
+
+          work = A/dtpropose
+
+          if work < minimum_work
+              integrator.opts.beta1 = 1/(i+1)
+              cache.dtpropose = dtpropose
+              cache.cur_order = i
+              minimum_work = work
+              integrator.EEst = EEst
+          end
+      end
+  end
+
+
+  # Use extrapolated value of u
+  integrator.u = T[cache.cur_order, cache.cur_order]
+  k = f(integrator.u, p, t+dt)
+  integrator.destats.nf += 1
+  integrator.fsallast = k
+  integrator.k[1] = integrator.fsalfirst
+  integrator.k[2] = integrator.fsallast
+end
+
 function initialize!(integrator,cache::ExtrapolationMidpointDeuflhardCache)
   # cf. initialize! of MidpointCache
   @unpack k,fsalfirst = cache

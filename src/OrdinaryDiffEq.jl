@@ -231,7 +231,7 @@ module OrdinaryDiffEq
   export AutoSwitch, AutoTsit5, AutoDP5,
          AutoVern6, AutoVern7, AutoVern8, AutoVern9
 
-  export AitkenNeville, ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner
+  export AitkenNeville, ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner, ImplicitEulerExtrapolation
 
   export KuttaPRK2p5
 end # module

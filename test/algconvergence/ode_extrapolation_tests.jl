@@ -70,6 +70,21 @@ testTol = 0.2
   end
 end # AitkenNeville
 
+@testset "Testing ImplicitEulerExtrapolation" begin
+  for prob in problem_array
+    global dts
+
+    newTol = 0.35
+    #  Convergence test
+    for j = 1:4
+      sim = test_convergence(dts,prob,ImplicitEulerExtrapolation(max_order = j,
+        min_order = j, init_order = j))
+      @test sim.𝒪est[:final] ≈ j atol=newTol
+    end
+
+  end
+end
+
 # Define the subdividing sequences
 sequence_array =[:harmonic, :romberg, :bulirsch]
 
