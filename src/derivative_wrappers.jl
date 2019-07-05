@@ -102,6 +102,18 @@ function DiffEqBase.build_jac_config(alg::OrdinaryDiffEqAlgorithm,f,uf,du1,uprev
   jac_config
 end
 
+get_chunksize(jac_config::ForwardDiff.JacobianConfig{T,V,N,D}) where {T,V,N,D} = N
+
+function DiffEqBase.resize_jac_config!(jac_config::ForwardDiff.JacobianConfig, uf, du1, z, alg, i)
+  prev_chunksize = get_chunksize(jac_config)
+  ForwardDiff.JacobianConfig(uf,du1,z,ForwardDiff.Chunk{prev_chunksize}())
+end
+
+function DiffEqBase.resize_jac_config!(jac_config::DiffEqDiffTools.JacobianCache, uf, du1, z, alg, i)
+  resize!(jac_config, i)
+  jac_config
+end
+
 function build_grad_config(alg,f,tf,du1,t)
   if !DiffEqBase.has_tgrad(f)
     if alg_autodiff(alg)
