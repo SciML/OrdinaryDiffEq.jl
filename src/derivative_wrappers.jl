@@ -43,7 +43,7 @@ function jacobian(f, x, integrator)
       J = jacobian_autodiff(f, x)
       tmp = 1
     else
-      J = jacobian_finitediff(f, x, alg.diff_type)
+      J = jacobian_finitediff(f, x, alg.diff_type, integrator)
       N = length(x)
       if alg.diff_type==Val{:complex} && eltype(x)<:Real
         tmp = N
@@ -60,9 +60,9 @@ end
 jacobian_autodiff(f, x) = ForwardDiff.derivative(f,x)
 jacobian_autodiff(f, x::AbstractArray) = ForwardDiff.jacobian(f, x)
 
-jacobian_finitediff(f, x, diff_type) =
+jacobian_finitediff(f, x, diff_type, integrator) =
     DiffEqDiffTools.finite_difference_derivative(f, x, diff_type, eltype(x), dir = diffdir(integrator))
-jacobian_finitediff(f, x::AbstractArray, diff_type) =
+jacobian_finitediff(f, x::AbstractArray, diff_type, integrator) =
     DiffEqDiffTools.finite_difference_jacobian(f, x, diff_type, eltype(x), Val{false}, dir = diffdir(integrator))
 
 function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, fx::AbstractArray{<:Number}, integrator::DiffEqBase.DEIntegrator, jac_config)
