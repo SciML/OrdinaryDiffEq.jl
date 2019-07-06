@@ -14,7 +14,7 @@ prob3 = ODEProblem(_van,[0,2.],(0.0,6),inv(0.003))
 probArr = [prob1, prob2, prob3]
 # Test if switching back and forth
 is_switching_fb(sol) = maximum(diff(findall(x->x==2, sol.alg_choice))) > 5
-for prob in probArr
+for (i, prob) in enumerate(probArr)
   sol = @test_nowarn solve(prob, AutoTsit5(Rosenbrock23(autodiff=false)))
   @test is_switching_fb(sol)
   alg = AutoTsit5(Rodas5(); maxstiffstep=5, maxnonstiffstep=5, stiffalgfirst=true)
@@ -28,19 +28,19 @@ for prob in probArr
   @test length(sol.t) < 625
   @test is_switching_fb(sol)
 
-  sol = solve(prob,AutoVern6(Kvaerno3(); maxstiffstep=4, maxnonstiffstep=4))
+  sol = solve(prob,AutoVern6(Kvaerno3(); maxstiffstep=4, maxnonstiffstep=2))
   @test length(sol.t) < 700
   @test is_switching_fb(sol)
-  sol = solve(prob,AutoVern7(Hairer42(); maxstiffstep=4, maxnonstiffstep=4))
+  sol = solve(prob,AutoVern7(Hairer42(); maxstiffstep=4, maxnonstiffstep=1))
   @test length(sol.t) < 610
   @test is_switching_fb(sol)
   sol = solve(prob,AutoVern8(Rosenbrock23(); maxstiffstep=4, maxnonstiffstep=4))
   @test length(sol.t) < 910
   @test is_switching_fb(sol)
-  sol = solve(prob,AutoVern9(KenCarp3(); maxstiffstep=4, maxnonstiffstep=4))
+  sol = solve(prob,AutoVern9(KenCarp3(); maxstiffstep=4, maxnonstiffstep=1))
   @test length(sol.t) < 570
-  @test is_switching_fb(sol)
-  sol = solve(prob,AutoVern9(KenCarp3(autodiff=false); maxstiffstep=4, maxnonstiffstep=4))
+  i in (1, 3) ? @test(is_switching_fb(sol)) : @test_broken(is_switching_fb(sol))
+  sol = solve(prob,AutoVern9(KenCarp3(autodiff=false); maxstiffstep=4, maxnonstiffstep=1))
   @test length(sol.t) < 570
-  @test is_switching_fb(sol)
+  i in (1, 3) ? @test(is_switching_fb(sol)) : @test_broken(is_switching_fb(sol))
 end
