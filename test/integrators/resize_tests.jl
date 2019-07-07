@@ -1,5 +1,5 @@
 using OrdinaryDiffEq, Test
-f(du, u, p, t) = du .= 0
+f(du, u, p, t) = du .= u
 prob = ODEProblem(f, [1.0], (0.0, 1.0))
 
 i = init(prob, Tsit5())
@@ -111,21 +111,33 @@ resize!(i, 5)
 # @test length(i.cache.jac_config.fx) == 5
 # @test length(i.cache.jac_config.fx1) == 5
 
-function jac(J,u,p,t)
-	l = length(u)
-	for i in 1:l
-		for j in 1:l
-			if i == j
-				J[i][j] = 1.0
-			else
-				J[i][j] = 0.0
-			end
-		end
-	end
+function f(du,u,p,t)
+  du[1] = 2.0 * u[1] - 1.2 * u[1]*u[2]
+  du[2] = -3 * u[2] + u[1]*u[2]
+  for i in 3:length(u)
+  	du[i] = 0.0
+  end
 end
+function f_jac(J,u,p,t)
+  J[1,1] = 2.0 - 1.2 * u[2]
+  J[1,2] = -1.2 * u[1]
+  J[2,1] = 1 * u[2]
+  J[2,2] = -3 + u[1]
+  for i in 3:length(u)
+  	for j in 3:length(u)
+  		if i == j
+  			J[i, j] = 1.0
+  		else
+	  	    J[i, j] = 0.0
+	  	end
+  	end
+  end
+  nothing
+end
+ff = ODEFunction(f;jac=f_jac,jac_prototype=[1.0 1.0; 1.0 1.0])
 
-# prob = ODEProblem(ODEFunction(f;jac=(J,u,p,t)->J=jac,jac_prototype =[1.0 1.0; 1.0 1.0]), [1.0, 1.0], (0.0, 10.0))
-# i = init(prob, ImplicitEuler())
-# resize!(i, 5)
-# @show i.cache.nlsolver.cache.W.J
-# solve!(i)
+cb = DiscreteCallback((u,t,integ) -> true, integ -> @views(integ.u[3:5]) .= 0)
+prob = ODEProblem(ff, [1.0, 1.0], (0.0, 1.0))
+i = init(prob, ImplicitEuler(), callback=cb)
+resize!(i, 5)
+sol = solve!(i)

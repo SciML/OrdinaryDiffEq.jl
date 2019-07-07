@@ -97,11 +97,12 @@ function resize!(integrator::ODEIntegrator,cache,i)
     resize!(c,i)
   end
   DiffEqBase.nlsolve_resize!(integrator, i)
-  resize_J_and_W!(cache, integrator.alg, i)
+  resize_J_and_W!(integrator, i)
   resize_non_user_cache!(integrator,cache,i)
 end
 
-function resize_J_and_W!(cache, alg, i)
+function resize_J_and_W!(integrator, i)
+  @unpack cache, alg, f, dt = integrator
   has_newton_nlsolve = isdefined(cache, :nlsolver) && alg.nlsolve isa NLNewton
   if isdefined(cache, :J) && cache.J != nothing
     if ndims(cache.J) == 1
@@ -113,10 +114,26 @@ function resize_J_and_W!(cache, alg, i)
     end
   end
   if isdefined(cache, :W) && cache.W != nothing
+    nf = nlsolve_f(f, alg)
+    islin = f isa Union{ODEFunction,SplitFunction} && islinear(nf.f)
     if cache.W isa Array{WOperator, 1}
-      # WOperator need no change
+      if !islin
+        for j in 1:length(cache.W) 
+          J = similar(f.jac_prototype, i, i)
+          if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
+            J = DiffEqArrayOperator(J; update_func=f.jac)
+          end
+          cache.W[j] = WOperator(f.mass_matrix, dt, J, true)
+        end
+      end
     elseif cache.W isa WOperator
-      # WOperator need no change
+      if !islin
+        J = similar(f.jac_prototype, i, i)
+        if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
+          J = DiffEqArrayOperator(J; update_func=f.jac)
+        end
+        cache.W = WOperator(f.mass_matrix, dt, J, true)
+      end
     elseif ndims(cache.W) == 1
       for j in 1:length(cache.W)
         cache.W[j] = similar(cache.W[j], i, i)
