@@ -84,6 +84,21 @@ function calc_J!(integrator, cache::OrdinaryDiffEqMutableCache, is_compos)
   is_compos && (integrator.eigen_est = opnorm(J, Inf))
 end
 
+function indexed_calc_J!(integrator, cache::OrdinaryDiffEqMutableCache, is_compos, idx)
+  @unpack t,dt,uprev,u,f,p = integrator
+  J = cache.J[idx]
+  if DiffEqBase.has_jac(f)
+    f.jac(J, uprev, p, t)
+  else
+    nlsolver = cache.nlsolver[idx]
+    @unpack du1,uf,jac_config = nlsolver
+    uf.t = t
+    uf.p = p
+    jacobian!(J, uf, uprev, du1, integrator, jac_config)
+  end
+  integrator.destats.njacs += 1
+  is_compos && (integrator.eigen_est = opnorm(J, Inf))
+end
 """
     WOperator(mass_matrix,gamma,J[;transform=false])
 
@@ -394,6 +409,74 @@ function update_W!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqConstant
     DiffEqBase.set_W!(nlsolver, calc_W!(integrator, cache, dt, repeat_step, true))
   end
   nothing
+end
+
+indexed_update_W!(integrator, cache, dt, idx, repeat_step) = 
+  indexed_update_W!(cache.nlsolver[idx], integrator, cache, dt, idx, repeat_step)
+
+function indexed_update_W!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqMutableCache, dt, idx, repeat_step)
+  if isnewton(nlsolver)
+    indexed_calc_W!(nlsolver, integrator, cache, dt, idx, repeat_step, true)
+  end
+  nothing
+end
+
+function indexed_calc_W!(nlsolver, integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, idx, repeat_step, W_transform=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack J,W = cache
+  _J = J[idx]
+  _W = W[idx]
+  alg = unwrap_alg(integrator, true)
+  mass_matrix = integrator.f.mass_matrix
+  is_compos = integrator.alg isa CompositeAlgorithm
+  isnewton = alg isa NewtonAlgorithm
+
+  # fast pass
+  # we only want to factorize the linear operator once
+  new_jac = true
+  new_W = true
+  if (f isa ODEFunction && islinear(f.f)) || (integrator.alg isa SplitAlgorithms && f isa SplitFunction && islinear(f.f1.f))
+    new_jac = false
+    @goto J2W # Jump to W calculation directly, because we already have J
+  end
+
+  # check if we need to update J or W
+  if !DiffEqBase.has_invW(f)
+    W_dt = isnewton ? nlsolver.cache.W_dt : dt # TODO: RosW
+    new_jac = isnewton ? indexed_do_newJ(integrator, alg, cache, idx, repeat_step) : true
+    new_W = isnewton ? do_newW(integrator, nlsolver, new_jac, W_dt) : true
+  end
+
+  # calculate W
+  if DiffEqBase.has_invW(f)
+    # skip calculation of inv(W) if step is repeated
+    (!repeat_step && W_transform) ? f.invW_t(_W, uprev, p, dtgamma, t) : f.invW(_W, uprev, p, dtgamma, t) # W == inverse W
+    is_compos && indexed_calc_J!(integrator, cache, true, idx)
+  elseif DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
+    isnewton || DiffEqBase.update_coefficients!(_W,uprev,p,t) # we will call `update_coefficients!` in NLNewton
+    @label J2W
+    _W.transform = W_transform; set_gamma!(_W, dtgamma)
+  else # concrete W using jacobian from `calc_J!`
+    new_jac && indexed_calc_J!(integrator, cache, is_compos, idx)
+    new_W && jacobian2W!(_W, mass_matrix, dtgamma, _J, W_transform)
+  end
+  if isnewton
+    set_new_W!(nlsolver, new_W) && DiffEqBase.set_W_dt!(nlsolver, dt)
+  end
+  new_W && (integrator.destats.nw += 1)
+  return nothing
+end
+
+function indexed_do_newJ(integrator, alg::T, cache, idx, repeat_step)::Bool where T # any changes here need to be reflected in FIRK
+  repeat_step && return false
+  !integrator.opts.adaptive && return true
+  !alg_can_repeat_jac(alg) && return true
+  isnewton = T <: NewtonAlgorithm
+  isnewton && ( nlstatus = DiffEqBase.get_status(cache.nlsolver[idx]) )
+  nlsolvefail(nlstatus) && return true
+  # reuse J when there is fast convergence
+  fastconvergence = nlstatus === FastConvergence
+  return !fastconvergence
 end
 
 iip_get_uf(alg::OrdinaryDiffEqAlgorithm,nf,t,p) = DiffEqDiffTools.UJacobianWrapper(nf,t,p)

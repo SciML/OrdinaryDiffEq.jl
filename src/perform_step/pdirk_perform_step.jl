@@ -2,11 +2,16 @@
 
 end
 
+function initialize!(integrator, cache::PDIRK44Cache)
+  integrator.fsalfirst = cache.fsalfirst
+  integrator.fsallast = cache.fsallast  
+end
 @muladd function perform_step!(integrator, cache::PDIRK44Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p,alg = integrator
   @unpack nlsolver,k1,k2 = cache
   if alg.threading == true
     Threads.@threads for i in 1:2
+      indexed_update_W!(integrator, cache, dt, Threads.threadid(), repeat_step)
       _nlsolver = nlsolver[Threads.threadid()]
       _nlsolver.tmp .= uprev
       if Threads.threadid() == 1
@@ -36,12 +41,15 @@ end
     nlsolvefail(nlsolver[1]) && return
     nlsolvefail(nlsolver[2]) && return
   else
-    # TODO: update_W!
     _nlsolver = nlsolver[1]
+    _nlsolver.z .= zero(eltype(u))
+    indexed_update_W!(integrator, cache, dt, 1, repeat_step)
     _nlsolver.tmp .= uprev
     _nlsolver.γ = dt/2
     _nlsolver.c = 1//2
+    println("here")
     k1[1] = DiffEqBase.nlsolve!(_nlsolver, _nlsolver.cache, integrator)
+    println("here2")
     _nlsolver.tmp .= uprev
     _nlsolver.γ = 2dt/3
     _nlsolver.c = 2//3
