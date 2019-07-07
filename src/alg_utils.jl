@@ -342,6 +342,7 @@ alg_order(alg::RKC) = 2
 alg_order(alg::IRKC) = 2
 
 alg_order(alg::MEBDF2) = 2
+alg_order(alg::PDIRK44) = 4
 
 alg_maximum_order(alg) = alg_order(alg)
 alg_maximum_order(alg::CompositeAlgorithm) = maximum(alg_order(x) for x in alg.algs)

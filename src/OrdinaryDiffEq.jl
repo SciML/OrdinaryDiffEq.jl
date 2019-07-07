@@ -81,6 +81,7 @@ module OrdinaryDiffEq
   include("caches/rkc_caches.jl")
   include("caches/extrapolation_caches.jl")
   include("caches/prk_caches.jl")
+  include("caches/pdirk_caches.jl")
 
 
   include("alg_utils.jl")
@@ -128,6 +129,7 @@ module OrdinaryDiffEq
   include("perform_step/rkc_perform_step.jl")
   include("perform_step/extrapolation_perform_step.jl")
   include("perform_step/prk_perform_step.jl")
+  include("perform_step/pdirk_perform_step.jl")
 
   include("dense/generic_dense.jl")
   include("dense/interpolants.jl")
