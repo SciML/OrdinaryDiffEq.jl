@@ -37,17 +37,12 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Cache,
       @inbounds linsolve_tmp[i] = @muladd fsalfirst[i] + γ*dT[i]
     end
 
-    if DiffEqBase.has_invW(f)
-      f.invW(W,u,p,γ,t) # W == inverse W
-      mul!(vec(k₁),W,vec(linsolve_tmp))
-    else
-      ### Jacobian does not need to be re-evaluated after an event
-      ### Since it's unchanged
-      for i in 1:length(u), j in 1:length(u)
-        @inbounds W[i,j] = @muladd I[i,j]-γ*J[i,j]
-      end
-      cache.linsolve(vec(k₁),W,vec(linsolve_tmp),true)
+    ### Jacobian does not need to be re-evaluated after an event
+    ### Since it's unchanged
+    for i in 1:length(u), j in 1:length(u)
+      @inbounds W[i,j] = @muladd I[i,j]-γ*J[i,j]
     end
+    cache.linsolve(vec(k₁),W,vec(linsolve_tmp),true)
 
     @.. tmp = uprev + dto2*k₁
     f(f₁,tmp,p,t+dto2)
@@ -59,13 +54,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Cache,
     #  mul!(tmp,mass_matrix,k₁)
     #end
 
-    @.. linsolve_tmp = f₁ - tmp
-    if DiffEqBase.has_invW(f)
-      mul!(vec(k₂), W, vec(linsolve_tmp))
-    else
-      cache.linsolve(vec(k₂), W, vec(linsolve_tmp))
-    end
-
+    cache.linsolve(vec(k₂), W, vec(linsolve_tmp))
     @.. k₂ += k₁
 
     copyat_or_push!(k,1,k₁)
@@ -195,21 +184,12 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
       @inbounds linsolve_tmp[i] = @muladd fsalfirst[i] + dtgamma*dT[i]
     end
 
-    if DiffEqBase.has_invW(f)
-      f.invW_t(W,u,p,dtgamma,t) # W == inverse W
-    else
-      ### Jacobian does not need to be re-evaluated after an event
-      ### Since it's unchanged
-      for i in 1:length(u), j in 1:length(u)
-        @inbounds W[i,j] = @muladd I[i,j]/dtgamma-J[i,j]
-      end
+    ### Jacobian does not need to be re-evaluated after an event
+    ### Since it's unchanged
+    for i in 1:length(u), j in 1:length(u)
+      @inbounds W[i,j] = @muladd I[i,j]/dtgamma-J[i,j]
     end
-
-    if DiffEqBase.has_invW(f)
-      mul!(vec(k1), W, vec(linsolve_tmp))
-    else
-      cache.linsolve(vec(k1), W, vec(linsolve_tmp), true)
-    end
+    cache.linsolve(vec(k1), W, vec(linsolve_tmp), true)
 
     @.. tmp = uprev + a21*k1
     f( du,  tmp, p, t+c2*dt)
@@ -222,11 +202,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
       @.. linsolve_tmp = du + dtd2*dT + du2
     end
 
-    if DiffEqBase.has_invW(f)
-      mul!(vec(k2), W, vec(linsolve_tmp))
-    else
-      cache.linsolve(vec(k2), W, vec(linsolve_tmp))
-    end
+    cache.linsolve(vec(k2), W, vec(linsolve_tmp))
 
     @.. tmp = uprev + a31*k1 + a32*k2
     f( du,  tmp, p, t+c3*dt)
@@ -239,11 +215,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
       @.. linsolve_tmp = du + dtd3*dT + du2
     end
 
-    if DiffEqBase.has_invW(f)
-      mul!(vec(k3), W, vec(linsolve_tmp))
-    else
-      cache.linsolve(vec(k3), W, vec(linsolve_tmp))
-    end
+    cache.linsolve(vec(k3), W, vec(linsolve_tmp))
 
     @.. tmp = uprev + a41*k1 + a42*k2 + a43*k3
     f( du,  tmp, p, t+c4*dt)
@@ -256,11 +228,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
       @.. linsolve_tmp = du + dtd4*dT + du2
     end
 
-    if DiffEqBase.has_invW(f)
-      mul!(vec(k4), W, vec(linsolve_tmp))
-    else
-      cache.linsolve(vec(k4), W, vec(linsolve_tmp))
-    end
+    cache.linsolve(vec(k4), W, vec(linsolve_tmp))
 
     @.. tmp = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
     f( du,  tmp, p, t+dt)
@@ -273,11 +241,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
       @.. linsolve_tmp = du + du2
     end
 
-    if DiffEqBase.has_invW(f)
-      mul!(vec(k5), W, vec(linsolve_tmp))
-    else
-      cache.linsolve(vec(k5), W, vec(linsolve_tmp))
-    end
+    cache.linsolve(vec(k5), W, vec(linsolve_tmp))
 
     @unpack h21,h22,h23,h24,h25,h31,h32,h33,h34,h35 = cache.tab
     @.. k6 = h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5

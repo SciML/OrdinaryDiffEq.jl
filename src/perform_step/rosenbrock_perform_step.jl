@@ -39,12 +39,8 @@ end
 
   calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
 
-  if DiffEqBase.has_invW(f)
-    mul!(vec(k₁), W, vec(linsolve_tmp))
-  else
-    cache.linsolve(vec(k₁), W, vec(linsolve_tmp), !repeat_step)
-    @.. k₁ = -k₁
-  end
+  cache.linsolve(vec(k₁), W, vec(linsolve_tmp), !repeat_step)
+  @.. k₁ = -k₁
   integrator.destats.nsolve += 1
 
   @.. u = uprev + dto2*k₁
@@ -58,12 +54,8 @@ end
   end
 
   @.. linsolve_tmp = f₁ - tmp
-  if DiffEqBase.has_invW(f)
-    mul!(vec(k₂), W, vec(linsolve_tmp))
-  else
-    cache.linsolve(vec(k₂), W, vec(linsolve_tmp))
-    @.. k₂ = -k₂
-  end
+  cache.linsolve(vec(k₂), W, vec(linsolve_tmp))
+  @.. k₂ = -k₂
   integrator.destats.nsolve += 1
 
   @.. k₂ += k₁
@@ -82,12 +74,8 @@ end
     end
 
 
-    if DiffEqBase.has_invW(f)
-      mul!(vec(k₃), W, vec(linsolve_tmp))
-    else
-      cache.linsolve(vec(k₃), W, vec(linsolve_tmp))
-      @.. k₃ = -k₃
-    end
+    cache.linsolve(vec(k₃), W, vec(linsolve_tmp))
+    @.. k₃ = -k₃
     integrator.destats.nsolve += 1
 
     @.. tmp = dto6*(k₁ - 2*k₂ + k₃)
@@ -113,12 +101,8 @@ end
 
   calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
 
-  if DiffEqBase.has_invW(f)
-    mul!(vec(k₁), W, vec(linsolve_tmp))
-  else
-    cache.linsolve(vec(k₁), W, vec(linsolve_tmp), !repeat_step)
-    @.. k₁ = -k₁
-  end
+  cache.linsolve(vec(k₁), W, vec(linsolve_tmp), !repeat_step)
+  @.. k₁ = -k₁
   integrator.destats.nsolve += 1
 
   @.. u = uprev + dto2*k₁
@@ -133,12 +117,8 @@ end
 
   @.. linsolve_tmp = f₁ - tmp
 
-  if DiffEqBase.has_invW(f)
-    mul!(vec(k₂), W, vec(linsolve_tmp))
-  else
-    cache.linsolve(vec(k₂), W, vec(linsolve_tmp))
-    @.. k₂ = -k₂
-  end
+  cache.linsolve(vec(k₂), W, vec(linsolve_tmp))
+  @.. k₂ = -k₂
   integrator.destats.nsolve += 1
 
   @.. k₂ += k₁
@@ -154,12 +134,8 @@ end
     @.. linsolve_tmp = fsallast - du1 + c₃₂*f₁ + 2fsalfirst + dt*dT
   end
 
-  if DiffEqBase.has_invW(f)
-    mul!(vec(k₃), W, vec(linsolve_tmp))
-  else
-    cache.linsolve(vec(k₃), W, vec(linsolve_tmp))
-    @.. k₃ = -k₃
-  end
+  cache.linsolve(vec(k₃), W, vec(linsolve_tmp))
+  @.. k₃ = -k₃
   integrator.destats.nsolve += 1
 
   @.. u = uprev + dto6*(k₁ + 4k₂ + k₃)
@@ -363,12 +339,8 @@ end
 
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
-  if DiffEqBase.has_invW(f)
-    mul!(vec(k1), W, vec(linsolve_tmp))
-  else
-    cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
-    @.. k1 = -k1
-  end
+  cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
+  @.. k1 = -k1
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a21*k1
@@ -383,12 +355,8 @@ end
     @.. linsolve_tmp = du + dtd2*dT + du2
   end
 
-  if DiffEqBase.has_invW(f)
-    mul!(vec(k2), W, vec(linsolve_tmp))
-  else
-    cache.linsolve(vec(k2), W, vec(linsolve_tmp))
-    @.. k2 = -k2
-  end
+  cache.linsolve(vec(k2), W, vec(linsolve_tmp))
+  @.. k2 = -k2
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a31*k1 + a32*k2
@@ -403,12 +371,8 @@ end
     @.. linsolve_tmp = du + dtd3*dT + du2
   end
 
-  if DiffEqBase.has_invW(f)
-    mul!(vec(k3), W, vec(linsolve_tmp))
-  else
-    cache.linsolve(vec(k3), W, vec(linsolve_tmp))
-    @.. k3 = -k3
-  end
+  cache.linsolve(vec(k3), W, vec(linsolve_tmp))
+  @.. k3 = -k3
   integrator.destats.nsolve += 1
 
   @.. u = uprev + b1*k1 + b2*k2 + b3*k3
@@ -517,12 +481,8 @@ end
 
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
-  if DiffEqBase.has_invW(f)
-    mul!(vec(k1), W, vec(linsolve_tmp))
-  else
-    cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
-    @.. k1 = -k1
-  end
+  cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
+  @.. k1 = -k1
   integrator.destats.nsolve += 1
 
   #=
@@ -541,12 +501,8 @@ end
     @.. linsolve_tmp = fsalfirst + dtd2*dT + du2
   end
 
-  if DiffEqBase.has_invW(f)
-    mul!(vec(k2), W, vec(linsolve_tmp))
-  else
-    cache.linsolve(vec(k2), W, vec(linsolve_tmp))
-    @.. k2 = -k2
-  end
+  cache.linsolve(vec(k2), W, vec(linsolve_tmp))
+  @.. k2 = -k2
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a31*k1 + a32*k2
@@ -561,12 +517,8 @@ end
     @.. linsolve_tmp = du + dtd3*dT + du2
   end
 
-  if DiffEqBase.has_invW(f)
-    mul!(vec(k3), W, vec(linsolve_tmp))
-  else
-    cache.linsolve(vec(k3), W, vec(linsolve_tmp))
-    @.. k3 = -k3
-  end
+  cache.linsolve(vec(k3), W, vec(linsolve_tmp))
+  @.. k3 = -k3
   integrator.destats.nsolve += 1
 
   if mass_matrix == I
@@ -577,12 +529,8 @@ end
     @.. linsolve_tmp = du + dtd4*dT + du2
   end
 
-  if DiffEqBase.has_invW(f)
-    mul!(vec(k4), W, vec(linsolve_tmp))
-  else
-    cache.linsolve(vec(k4), W, vec(linsolve_tmp))
-    @.. k4 = -k4
-  end
+  cache.linsolve(vec(k4), W, vec(linsolve_tmp))
+  @.. k4 = -k4
   integrator.destats.nsolve += 1
 
   @.. u = uprev + b1*k1 + b2*k2 + b3*k3 + b4*k4
@@ -763,12 +711,8 @@ end
 
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
-  if DiffEqBase.has_invW(f)
-    mul!(vec(k1), W, vec(linsolve_tmp))
-  else
-    cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
-    @.. k1 = -k1
-  end
+  cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
+  @.. k1 = -k1
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a21*k1
@@ -783,12 +727,8 @@ end
     @.. linsolve_tmp = du + dtd2*dT + du2
   end
 
-  if DiffEqBase.has_invW(f)
-    mul!(vec(k2), W, vec(linsolve_tmp))
-  else
-    cache.linsolve(vec(k2), W, vec(linsolve_tmp))
-    @.. k2 = -k2
-  end
+  cache.linsolve(vec(k2), W, vec(linsolve_tmp))
+  @.. k2 = -k2
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a31*k1 + a32*k2
@@ -803,12 +743,8 @@ end
     @.. linsolve_tmp = du + dtd3*dT + du2
   end
 
-  if DiffEqBase.has_invW(f)
-    mul!(vec(k3), W, vec(linsolve_tmp))
-  else
-    cache.linsolve(vec(k3), W, vec(linsolve_tmp))
-    @.. k3 = -k3
-  end
+  cache.linsolve(vec(k3), W, vec(linsolve_tmp))
+  @.. k3 = -k3
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a41*k1 + a42*k2 + a43*k3
@@ -823,12 +759,8 @@ end
     @.. linsolve_tmp = du + dtd4*dT + du2
   end
 
-  if DiffEqBase.has_invW(f)
-    mul!(vec(k4), W, vec(linsolve_tmp))
-  else
-    cache.linsolve(vec(k4), W, vec(linsolve_tmp))
-    @.. k4 = -k4
-  end
+  cache.linsolve(vec(k4), W, vec(linsolve_tmp))
+  @.. k4 = -k4
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
@@ -843,12 +775,8 @@ end
     @.. linsolve_tmp = du + du2
   end
 
-  if DiffEqBase.has_invW(f)
-    mul!(vec(k5), W, vec(linsolve_tmp))
-  else
-    cache.linsolve(vec(k5), W, vec(linsolve_tmp))
-    @.. k5 = -k5
-  end
+  cache.linsolve(vec(k5), W, vec(linsolve_tmp))
+  @.. k5 = -k5
   integrator.destats.nsolve += 1
 
   u .+= k5
@@ -869,12 +797,8 @@ end
     @.. linsolve_tmp = du + du2
   end
 
-  if DiffEqBase.has_invW(f)
-    mul!(vec(k6), W, vec(linsolve_tmp))
-  else
-    cache.linsolve(vec(k6), W, vec(linsolve_tmp))
-    @.. k6 = -k6
-  end
+  cache.linsolve(vec(k6), W, vec(linsolve_tmp))
+  @.. k6 = -k6
   integrator.destats.nsolve += 1
 
   u .+= k6
@@ -1080,12 +1004,8 @@ end
 
   calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
 
-  if DiffEqBase.has_invW(f)
-    mul!(vec(k1), W, vec(linsolve_tmp))
-  else
-    cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
-    @.. k1 = -k1
-  end
+  cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
+  @.. k1 = -k1
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a21*k1
@@ -1100,12 +1020,8 @@ end
     @.. linsolve_tmp = du + dtd2*dT + du2
   end
 
-  if DiffEqBase.has_invW(f)
-    mul!(vec(k2), W, vec(linsolve_tmp))
-  else
-    cache.linsolve(vec(k2), W, vec(linsolve_tmp))
-    @.. k2 = -k2
-  end
+  cache.linsolve(vec(k2), W, vec(linsolve_tmp))
+  @.. k2 = -k2
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a31*k1 + a32*k2
@@ -1120,12 +1036,8 @@ end
     @.. linsolve_tmp = du + dtd3*dT + du2
   end
 
-  if DiffEqBase.has_invW(f)
-    mul!(vec(k3), W, vec(linsolve_tmp))
-  else
-    cache.linsolve(vec(k3), W, vec(linsolve_tmp))
-    @.. k3 = -k3
-  end
+  cache.linsolve(vec(k3), W, vec(linsolve_tmp))
+  @.. k3 = -k3
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a41*k1 + a42*k2 + a43*k3
@@ -1140,12 +1052,8 @@ end
     @.. linsolve_tmp = du + dtd4*dT + du2
   end
 
-  if DiffEqBase.has_invW(f)
-    mul!(vec(k4), W, vec(linsolve_tmp))
-  else
-    cache.linsolve(vec(k4), W, vec(linsolve_tmp))
-    @.. k4 = -k4
-  end
+  cache.linsolve(vec(k4), W, vec(linsolve_tmp))
+  @.. k4 = -k4
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
@@ -1163,12 +1071,8 @@ end
     @.. linsolve_tmp = du + dtd5*dT + du2
   end
 
-  if DiffEqBase.has_invW(f)
-    mul!(vec(k5), W, vec(linsolve_tmp))
-  else
-    cache.linsolve(vec(k5), W, vec(linsolve_tmp))
-    @.. k5 = -k5
-  end
+  cache.linsolve(vec(k5), W, vec(linsolve_tmp))
+  @.. k5 = -k5
   integrator.destats.nsolve += 1
 
   # @.. u = uprev + a61*k1 + a62*k2 + a63*k3 + a64*k4 + a65*k5
@@ -1192,12 +1096,8 @@ end
     @.. linsolve_tmp = du + du2
   end
 
-  if DiffEqBase.has_invW(f)
-    mul!(vec(k6), W, vec(linsolve_tmp))
-  else
-    cache.linsolve(vec(k6), W, vec(linsolve_tmp))
-    @.. k6 = -k6
-  end
+  cache.linsolve(vec(k6), W, vec(linsolve_tmp))
+  @.. k6 = -k6
   integrator.destats.nsolve += 1
 
   u .+= k6
@@ -1218,12 +1118,8 @@ end
     @.. linsolve_tmp = du + du2
   end
 
-  if DiffEqBase.has_invW(f)
-    mul!(vec(k7), W, vec(linsolve_tmp))
-  else
-    cache.linsolve(vec(k7), W, vec(linsolve_tmp))
-    @.. k7 = -k7
-  end
+  cache.linsolve(vec(k7), W, vec(linsolve_tmp))
+  @.. k7 = -k7
   integrator.destats.nsolve += 1
 
   u .+= k7
@@ -1244,12 +1140,8 @@ end
     @.. linsolve_tmp = du + du2
   end
 
-  if DiffEqBase.has_invW(f)
-    mul!(vec(k8), W, vec(linsolve_tmp))
-  else
-    cache.linsolve(vec(k8), W, vec(linsolve_tmp))
-    @.. k8 = -k8
-  end
+  cache.linsolve(vec(k8), W, vec(linsolve_tmp))
+  @.. k8 = -k8
   integrator.destats.nsolve += 1
 
   u .+= k8

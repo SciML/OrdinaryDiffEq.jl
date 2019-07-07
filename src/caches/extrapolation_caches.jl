@@ -142,7 +142,7 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   du1 = zero(rate_prototype)
   du2 = zero(rate_prototype)
 
-  if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype !== nothing
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
     W = WOperator(f, dt, true)
     J = nothing # is J = W.J better?
   else

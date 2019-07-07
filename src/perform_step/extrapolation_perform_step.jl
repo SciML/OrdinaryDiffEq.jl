@@ -259,12 +259,8 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
     u_tmp = copy(uprev)
     for j in 1:2^(i-1)
         linsolve_tmp = dt_temp*k_tmp
-        if DiffEqBase.has_invW(f)
-          mul!(vec(k_tmp), W, vec(linsolve_tmp))
-        else
-          cache.linsolve(vec(k_tmp), W, vec(linsolve_tmp), !repeat_step)
-          @.. k_tmp = -k_tmp
-        end
+        cache.linsolve(vec(k_tmp), W, vec(linsolve_tmp), !repeat_step)
+        @.. k_tmp = -k_tmp
         @.. u_tmp = u_tmp + k_tmp
         f(k_tmp, u_tmp,p,t+j*dt_temp)
     end
@@ -342,7 +338,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
     k_copy = integrator.fsalfirst
     u_tmp = uprev
     for j in 1:2^(i-1)
-        k = _reshape(W\-_vec(dt_temp*k_copy), axes(uprev)) 
+        k = _reshape(W\-_vec(dt_temp*k_copy), axes(uprev))
         integrator.destats.nsolve += 1
         u_tmp = u_tmp + k
         k_copy = f(u_tmp, p, t+j*dt_temp)

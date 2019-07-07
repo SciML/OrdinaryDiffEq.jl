@@ -376,7 +376,7 @@ function iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
       J = nf.f
       W = WOperator(f.mass_matrix, dt, J, true)
     else
-      if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype !== nothing
+      if DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
         J = nothing
         W = WOperator(f, dt, true)
       else

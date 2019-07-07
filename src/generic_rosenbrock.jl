@@ -21,7 +21,7 @@ end
 """
     @_bitarray2boolarray RosenbrockTableau(tab.a.!=0,...)
 
-Transform BitArray (in the form of `xs.!=0` ) into 1D-Array of Bools by 
+Transform BitArray (in the form of `xs.!=0` ) into 1D-Array of Bools by
 `[i for i in xs.!=0]` to satisfy the type constraint of RosenbrockTableau
 """
 macro _bitarray2boolarray(expr)
@@ -43,7 +43,7 @@ _masktab(tab::RosenbrockAdaptiveTableau)=@_bitarray2boolarray RosenbrockAdaptive
 """
     _common_nonzero_vals(tab::RosenbrockTableau)
 
-Return the common nonzero symbols in the tableau. Typical return value: 
+Return the common nonzero symbols in the tableau. Typical return value:
 `[[:a21,:a31,:a32],[:C21,:C31,:C32],[:b1,:b2,:b3],:gamma,[:d1,:d2,:d3],[:c1,:c2,:c3]]`
 """
 function _common_nonzero_vals(tab::RosenbrockTableau)
@@ -60,7 +60,7 @@ end
 """
     _nonzero_vals(tab::RosenbrockFixedTableau)
 
-Return all the nonzero symbols in the tableau. Typical return value: 
+Return all the nonzero symbols in the tableau. Typical return value:
 `[:a21,:a31,:a32,:C21,:C31,:C32,:b1,:b2,:b3,:gamma,:d1,:d2,:d3,:c1,:c2,:c3]`
 """
 function _nonzero_vals(tab::RosenbrockFixedTableau)
@@ -71,7 +71,7 @@ end
 """
     _nonzero_vals(tab::RosenbrockAdaptiveTableau)
 
-Typical return value: 
+Typical return value:
 `[:a21,:a31,:a32,:C21,:C31,:C32,:b1,:b2,:b3,:btilde1,:btilde2,:btilde3,:gamma,:d1,:d2,:d3,:c1,:c2,:c3]`
 """
 function _nonzero_vals(tab::RosenbrockAdaptiveTableau)
@@ -217,7 +217,7 @@ function gen_algcache(cacheexpr::Expr,cachename::Symbol,constcachename::Symbol,a
             fsalfirst = zero(rate_prototype)
             fsallast = zero(rate_prototype)
             dT = zero(rate_prototype)
-            if DiffEqBase.has_jac(f) && !DiffEqBase.has_invW(f) && f.jac_prototype !== nothing
+            if DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
               W = WOperator(f, dt, true)
               J = nothing # is J = W.J better?
             else
@@ -226,7 +226,7 @@ function gen_algcache(cacheexpr::Expr,cachename::Symbol,constcachename::Symbol,a
             end
             tmp = zero(rate_prototype)
             tab = $tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
-          
+
             tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
             uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
             linsolve_tmp = zero(rate_prototype)
@@ -242,7 +242,7 @@ end
     gen_initialize(cachename::Symbol,constcachename::Symbol)
 
 Generate expressions for `initialize!(...)` in `perform_step/rosenbrock_perform_step.jl`.
-It only generates a default version of `initialize!` which support 3rd-order Hermite interpolation. 
+It only generates a default version of `initialize!` which support 3rd-order Hermite interpolation.
 """
 function gen_initialize(cachename::Symbol,constcachename::Symbol)
     quote
@@ -251,13 +251,13 @@ function gen_initialize(cachename::Symbol,constcachename::Symbol)
             integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
             integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
             integrator.destats.nf += 1
-          
+
             # Avoid undefined entries if k is an array of arrays
             integrator.fsallast = zero(integrator.fsalfirst)
             integrator.k[1] = integrator.fsalfirst
             integrator.k[2] = integrator.fsallast
           end
-          
+
           function initialize!(integrator, cache::$cachename)
             integrator.kshortsize = 2
             @unpack fsalfirst,fsallast = cache
@@ -276,7 +276,7 @@ end
 
 Generate non-inplace version of `perform_step!` expression emulating those in `perform_step/rosenbrock_perform_step.jl`.
 The `perform_step!` function calculates `k1,k2,k3,...` defined by `(-W)ki=f(u+aij*kj,t+ci*dt)+di*dt*dT+Cij*kj*dt, i=1,2,...,n_normalstep`
-and then gives the result by `y_{n+1}=y_n+ki*bi`. Terms with 0s (according to tabmask) are skipped in the expressions. 
+and then gives the result by `y_{n+1}=y_n+ki*bi`. Terms with 0s (according to tabmask) are skipped in the expressions.
 Special steps can be added before calculating `y_{n+1}`. The non-inplace `perform_step!` assumes the mass_matrix==I.
 """
 function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbol,n_normalstep::Int,specialstepexpr=:nothing)
@@ -341,7 +341,7 @@ function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachena
 
             integrator.fsallast = f(u, p, t + dt)
             integrator.destats.nf += 1
-          
+
             integrator.k[1] = integrator.fsalfirst
             integrator.k[2] = integrator.fsallast
             integrator.u = u
@@ -374,12 +374,8 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
             repeatstepexpr=[:(!repeat_step)]
         end
         push!(iterexprs,quote
-            if DiffEqBase.has_invW(f)
-                mul!(vec($ki), W, vec(linsolve_tmp))
-            else
-                cache.linsolve(vec($ki), W, vec(linsolve_tmp), $(repeatstepexpr...))
-                @.. $ki = -$ki
-            end
+            cache.linsolve(vec($ki), W, vec(linsolve_tmp), $(repeatstepexpr...))
+            @.. $ki = -$ki
             integrator.destats.nsolve += 1
             @.. u = +(uprev,$(aijkj...))
             f( du,  u, p, t+$(Symbol(:c,i+1))*dt)
@@ -399,12 +395,8 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
     klast=Symbol(:k,n)
     biki=[:($(Symbol(:b,i))*$(Symbol(:k,i))) for i in 1:n]
     push!(iterexprs,quote
-        if DiffEqBase.has_invW(f)
-            mul!(vec($klast), W, vec(linsolve_tmp))
-        else
-            cache.linsolve(vec($klast), W, vec(linsolve_tmp))
-            @.. $klast = -$klast
-        end
+        cache.linsolve(vec($klast), W, vec(linsolve_tmp))
+        @.. $klast = -$klast
         integrator.destats.nsolve += 1
         @.. u = +(uprev,$(biki...))
     end)
@@ -433,7 +425,7 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
             uidx = eachindex(integrator.uprev)
             mass_matrix = integrator.f.mass_matrix
             atmp = du # does not work with units - additional unitless array required!
-          
+
             # Precalculations
             $(dtCij...)
             $(dtdi...)
@@ -453,7 +445,7 @@ end
 """
     RosenbrockW6S4OSTableau()
 
-Rahunanthan, A., & Stanescu, D. (2010). High-order W-methods. 
+Rahunanthan, A., & Stanescu, D. (2010). High-order W-methods.
 Journal of computational and applied mathematics, 233(8), 1798-1811.
 """
 function RosenbrockW6S4OSTableau()
@@ -522,7 +514,7 @@ end
 """
     Ros4dummyTableau()
 
-Generate a dummy tableau for ROS4 methods. It can be considered as performing elementwise OR to the masks 
+Generate a dummy tableau for ROS4 methods. It can be considered as performing elementwise OR to the masks
 of those sepecific tableaus: `Ros4dummyTableau()==_masktab(RosShamp4Tableau()) OR _masktab(Veldd4Tableau()) OR ...`
 ROS4 methods have the property of a4j==a3j so a is a 3*3 matrix instead of a 4*4 matrix and c is a 1*3 vector instead of a 1*4 vector.
 """
@@ -545,8 +537,8 @@ end
 """
     RosShamp4Tableau()
 
-L. F. Shampine, Implementation of Rosenbrock Methods, 
-ACM Transactions on Mathematical Software (TOMS), 8: 2, 93-113. 
+L. F. Shampine, Implementation of Rosenbrock Methods,
+ACM Transactions on Mathematical Software (TOMS), 8: 2, 93-113.
 doi:10.1145/355993.355994
 """
 function RosShamp4Tableau()
@@ -568,7 +560,7 @@ end
 """
     Veldd4Tableau()
 
-van Veldhuizen, D-stability and Kaps-Rentrop-methods, 
+van Veldhuizen, D-stability and Kaps-Rentrop-methods,
 M. Computing (1984) 32: 229. doi:10.1007/BF02243574
 """
 function Veldd4Tableau()
@@ -590,7 +582,7 @@ end
 """
     Velds4Tableau()
 
-van Veldhuizen, D-stability and Kaps-Rentrop-methods, 
+van Veldhuizen, D-stability and Kaps-Rentrop-methods,
 M. Computing (1984) 32: 229. doi:10.1007/BF02243574
 """
 function Velds4Tableau()
@@ -612,8 +604,8 @@ end
 """
     GRK4TTableau()
 
-Kaps, P. & Rentrop, Generalized Runge-Kutta methods of order four 
-with stepsize control for stiff ordinary differential equations. 
+Kaps, P. & Rentrop, Generalized Runge-Kutta methods of order four
+with stepsize control for stiff ordinary differential equations.
 P. Numer. Math. (1979) 33: 55. doi:10.1007/BF01396495
 """
 function GRK4TTableau()
@@ -635,8 +627,8 @@ end
 """
     GRK4ATableau()
 
-Kaps, P. & Rentrop, Generalized Runge-Kutta methods of order four 
-with stepsize control for stiff ordinary differential equations. 
+Kaps, P. & Rentrop, Generalized Runge-Kutta methods of order four
+with stepsize control for stiff ordinary differential equations.
 P. Numer. Math. (1979) 33: 55. doi:10.1007/BF01396495
 """
 function GRK4ATableau()
@@ -658,7 +650,7 @@ end
 """
     Ros4LSTableau()
 
-E. Hairer, G. Wanner, Solving ordinary differential equations II, 
+E. Hairer, G. Wanner, Solving ordinary differential equations II,
 stiff and differential-algebraic problems. Computational mathematics (2nd revised ed.), Springer (1996)
 """
 function Ros4LSTableau()
@@ -685,7 +677,7 @@ Generate code for the Rosenbrock4 methods: RosShamp4, Veldd4, Velds4, GRK4A, GRK
 `@Rosenbrock4(:tableau)` should be placed in `tableaus/rosenbrock_tableaus.jl`.
 `@Rosenbrock4(:cache)` should be placed in `caches/rosenbrock_caches.jl`.
 `@Rosenbrock4(:performstep)` should be placed in `perform_step/rosenbrock_perform_step.jl`.
-The `initialize!` function for Rosenbrock4 methods is already included in `rosenbrock_perform_step.jl`. 
+The `initialize!` function for Rosenbrock4 methods is already included in `rosenbrock_perform_step.jl`.
 The special property of ROS4 methods that a4j==a3j requires a special step in `perform_step!` that
 calculates `linsolve_tmp` from the previous `du` which reduces a function call.
 """
@@ -730,15 +722,11 @@ macro Rosenbrock4(part)
             integrator.destats.nsolve += 1
             #u = uprev  + a31*k1 + a32*k2 #a4j=a3j
             #du = f(u, p, t+c3*dt) #reduced function call
-            linsolve_tmp =  du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3          
+            linsolve_tmp =  du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
         end
         specialstep=quote
-            if DiffEqBase.has_invW(f)
-                mul!(vec(k3), W, vec(linsolve_tmp))
-            else
-                cache.linsolve(vec(k3), W, vec(linsolve_tmp))
-                @.. k3 = -k3
-            end
+            cache.linsolve(vec(k3), W, vec(linsolve_tmp))
+            @.. k3 = -k3
             integrator.destats.nsolve += 1
             #@.. u = uprev + a31*k1 + a32*k2 #a4j=a3j
             #f( du,  u, p, t+c3*dt) #reduced function call
@@ -787,7 +775,7 @@ end
 
 Transform the tableau from values in the paper into values used in OrdinaryDiffEq according to p112 in Hairer and Wanner.
 
-E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and 
+E. Hairer, G. Wanner, Solving ordinary differential equations II, stiff and
 differential-algebraic problems. Computational mathematics (2nd revised ed.), Springer (1996)
 """
 function _transformtab(Alpha,Gamma,B,Bhat)
@@ -853,7 +841,7 @@ end
 """
     ROS34PW2Tableau()
 
-A stiffy accurate Rosenbrock-W method with order 3 and 4 inner steps whose 
+A stiffy accurate Rosenbrock-W method with order 3 and 4 inner steps whose
 embedded method is strongly A-stable with Rinf~=0.48
 
 Rang, J., & Angermann, L. (2005). New Rosenbrock W-methods of order 3 for partial
@@ -863,7 +851,7 @@ function ROS34PW2Tableau()
     gamma=4.3586652150845900e-1
     Alpha=[0                      0                     0 0;
            8.7173304301691801e-1  0                     0 0;
-           8.4457060015369423e-1 -1.1299064236484185e-1 0 0; 
+           8.4457060015369423e-1 -1.1299064236484185e-1 0 0;
            0                      0                     1 0]
     Gamma=[ gamma                  0                     0     0;
            -8.7173304301691801e-1  gamma                 0     0;
@@ -887,7 +875,7 @@ function ROS34PW3Tableau()#4th order
     gamma=1.0685790213016289
     Alpha=[0                      0                     0 0;
            2.5155456020628817     0                     0 0;
-           5.0777280103144085e-1  0.75                  0 0; 
+           5.0777280103144085e-1  0.75                  0 0;
            1.3959081404277204e-1 -3.3111001065419338e-1 8.2040559712714178e-1 0]
     Gamma=[ gamma                  0                      0     0;
            -2.5155456020628817     gamma                  0     0;
@@ -954,7 +942,7 @@ end
     if the method is a W-method, add isWmethod(alg::<Algorithm_name>) = true as well
 3. `algorithms.jl`: add algorithm struct
 4. `generic_rosenbrock.jl`:
-    a. write dummy tableau function (or generate from actual tableau using _masktab) for generating 
+    a. write dummy tableau function (or generate from actual tableau using _masktab) for generating
        table sturct, cache struct and perform_step
     b. write tableau function. When only `Alpha, Gamma, B, Bhat` are given, use _transformtab
     c. write macro with :tableau, :cache, :init and :performstep
@@ -965,7 +953,7 @@ RUN CONVERGENCE TESTS BETWEEN ANY OF THE TWO STEPS!
 1. write tableau function and macro definition in this file
 2. replace the tableau function (usually named with `XXXConstCache()`) using `gen_tableau()`
    and the original tableau struct expression in `tableaus/rosenbrock_tableaus.jl`
-3. replace the `perform_step!` methods in `perform_step/rosenbrock_perform_step.jl` using 
+3. replace the `perform_step!` methods in `perform_step/rosenbrock_perform_step.jl` using
    `gen_perform_step()` and `gen_constant_perform_step()`
 4. replace cache struct and `alg_cache` in `caches/rosenbrock_caches.jl` using `gen_cache_struct()`
    and `gen_algcache()`
@@ -981,7 +969,7 @@ generated codes.
 the macro like `@eval OrdinaryDiffEq include(...)`
 
 # If you want to refactor Rosenbrock methods ...
-You need to change respective places in this file. 
+You need to change respective places in this file.
 1. `perform_step/rosenbrock_perform_step.jl` -> `gen_perform_step()`, `gen_constant_perform_step()`,
     `gen_initialize()` and special step expressions in macro definitions
 2. `caches/rosenbrock_caches.jl` ->  `gen_algcache()`, `gen_cache_struct()`

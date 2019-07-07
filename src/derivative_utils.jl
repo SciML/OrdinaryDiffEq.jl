@@ -323,18 +323,12 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
   end
 
   # check if we need to update J or W
-  if !DiffEqBase.has_invW(f)
-    W_dt = isnewton ? cache.nlsolver.cache.W_dt : dt # TODO: RosW
-    new_jac = isnewton ? do_newJ(integrator, alg, cache, repeat_step) : true
-    new_W = isnewton ? do_newW(integrator, cache.nlsolver, new_jac, W_dt) : true
-  end
-
+  W_dt = isnewton ? cache.nlsolver.cache.W_dt : dt # TODO: RosW
+  new_jac = isnewton ? do_newJ(integrator, alg, cache, repeat_step) : true
+  new_W = isnewton ? do_newW(integrator, cache.nlsolver, new_jac, W_dt) : true
+  
   # calculate W
-  if DiffEqBase.has_invW(f)
-    # skip calculation of inv(W) if step is repeated
-    (!repeat_step && W_transform) ? f.invW_t(W, uprev, p, dtgamma, t) : f.invW(W, uprev, p, dtgamma, t) # W == inverse W
-    is_compos && calc_J!(integrator, cache, true)
-  elseif DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
+  if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
     isnewton || DiffEqBase.update_coefficients!(W,uprev,p,t) # we will call `update_coefficients!` in NLNewton
     @label J2W
     W.transform = W_transform; set_gamma!(W, dtgamma)

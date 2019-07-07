@@ -394,11 +394,7 @@ end
     @.. dz = btilde1*zprev + btilde2*zᵧ + btilde3*z
     if alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
-      if DiffEqBase.has_invW(f)
-        mul!(vec(tmp),W,vec(dz))
-      else
-        cache.linsolve(vec(tmp),W,vec(dz),false)
-      end
+      cache.linsolve(vec(tmp),W,vec(dz),false)
     else
       tmp .= dz
     end
@@ -500,11 +496,7 @@ end
     @.. dz = z₁/2 - z₂/2
     if alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
-      if DiffEqBase.has_invW(f)
-        mul!(vec(tmp),W,vec(dz))
-      else
-        cache.linsolve(vec(tmp),W,vec(dz),false)
-      end
+      cache.linsolve(vec(tmp),W,vec(dz),false)
     else
       tmp .= dz
     end
@@ -787,11 +779,7 @@ end
     @.. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
     if alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
-      if DiffEqBase.has_invW(f)
-        mul!(vec(tmp),W,vec(dz))
-      else
-        cache.linsolve(vec(tmp),W,vec(dz),false)
-      end
+      cache.linsolve(vec(tmp),W,vec(dz),false)
     else
       tmp .= dz
     end
@@ -958,11 +946,7 @@ end
     end
     if alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
-      if DiffEqBase.has_invW(f)
-        mul!(vec(tmp),W,vec(dz))
-      else
-        cache.linsolve(vec(tmp),W,vec(dz),false)
-      end
+      cache.linsolve(vec(tmp),W,vec(dz),false)
     else
       tmp .= dz
     end
