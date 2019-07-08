@@ -3,8 +3,8 @@
 end
 
 function initialize!(integrator, cache::PDIRK44Cache)
-  integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.fsallast  
+  integrator.fsalfirst = similar(cache.k1[1])
+  integrator.fsallast = similar(cache.k1[1])  
 end
 @muladd function perform_step!(integrator, cache::PDIRK44Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p,alg = integrator
@@ -45,23 +45,28 @@ end
     _nlsolver.z .= zero(eltype(u))
     indexed_update_W!(integrator, cache, dt, 1, repeat_step)
     _nlsolver.tmp .= uprev
-    _nlsolver.γ = dt/2
+    _nlsolver.γ = 1//2
     _nlsolver.c = 1//2
-    println("here")
     k1[1] = DiffEqBase.nlsolve!(_nlsolver, _nlsolver.cache, integrator)
-    println("here2")
+    nlsolvefail(_nlsolver) && return
+    _nlsolver.z .= zero(eltype(u))
     _nlsolver.tmp .= uprev
-    _nlsolver.γ = 2dt/3
+    _nlsolver.γ = 2//3
     _nlsolver.c = 2//3
     k1[2] = DiffEqBase.nlsolve!(_nlsolver, _nlsolver.cache, integrator)
-    @.. _nlsolver.tmp .= uprev + dt*(-2.5k1[1]+2.5k1[2])
-    _nlsolver.γ = dt/2
+    nlsolvefail(_nlsolver) && return
+    _nlsolver.z .= zero(eltype(u))
+    @.. _nlsolver.tmp .= uprev + (-2.5k1[1]+2.5k1[2])
+    _nlsolver.γ = 1//2
     _nlsolver.c = 1//2
     k2[1] .= DiffEqBase.nlsolve!(_nlsolver, _nlsolver.cache, integrator)
-    @.. _nlsolver.tmp = uprev + dt*((-5//3)k1[1]+(4//3)k1[2])
-    _nlsolver.γ = 2dt/3
+    nlsolvefail(_nlsolver) && return
+    _nlsolver.z .= zero(eltype(u))
+    @.. _nlsolver.tmp = uprev + ((-5//3)k1[1]+(4//3)k1[2])
+    _nlsolver.γ = 2//3
     _nlsolver.c = 1//3
     k2[2] .= DiffEqBase.nlsolve!(_nlsolver, _nlsolver.cache, integrator)
+    nlsolvefail(_nlsolver) && return
   end
-  @.. u = uprev + dt*(-k1[1] - k2[1] + 1.5k1[2] + 1.5k2[2])
+  @.. u = uprev + (-k1[1] - k2[1] + 1.5k1[2] + 1.5k2[2])
 end
