@@ -1,7 +1,7 @@
 function initialize!(integrator, cache::ROCK2ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
   cache.max_stage = (integrator.alg.max_stages < 1 || integrator.alg.max_stages > 200) ? 200 : integrator.alg.max_stages
   cache.min_stage = (integrator.alg.min_stages > cache.max_stage) ? cache.max_stage : integrator.alg.min_stages
@@ -12,7 +12,7 @@ function initialize!(integrator, cache::ROCK2ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::ROCK2ConstantCache, repeat_step=false)
-  @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+  @unpack t, dt, uprev, u, f, fsalfirst = integrator
   @unpack ms, fp1, fp2, recf = cache
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
@@ -32,7 +32,7 @@ end
   for i in 2:cache.mdeg
     μ, κ = recf[cache.start + (i - 2)*2 + 1], recf[cache.start + (i - 2)*2 + 2]
     ν = -1 - κ
-    u = f(uᵢ₋₁, p, tᵢ₋₁)
+    u = f(uᵢ₋₁, tᵢ₋₁, integrator)
     tᵢ₋₁ = dt*μ - ν*tᵢ₋₂ - κ*tᵢ₋₃
     u = (dt*μ)*u - ν*uᵢ₋₁ - κ*uᵢ₋₂
     i < cache.mdeg && (uᵢ₋₂ = uᵢ₋₁; uᵢ₋₁ = u)
@@ -42,11 +42,11 @@ end
   # two-stage finishing procedure.
   δt₁ = dt*fp1[cache.deg_index]
   δt₂ = dt*fp2[cache.deg_index]
-  uᵢ₋₂  = f(u, p, tᵢ₋₁)
+  uᵢ₋₂  = f(u, tᵢ₋₁, integrator)
   integrator.destats.nf += 1
   uᵢ₋₁ = u + δt₁*uᵢ₋₂
   tᵢ₋₁ += δt₁
-  u = f(uᵢ₋₁, p, tᵢ₋₁)
+  u = f(uᵢ₋₁, tᵢ₋₁, integrator)
   integrator.destats.nf += 1
 
   if integrator.opts.adaptive
@@ -61,7 +61,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
   integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast = f(u, p, t+dt)
+  integrator.k[2] = integrator.fsallast = f(u, t+dt, integrator)
   integrator.destats.nf += 1
   integrator.u = u
 end
@@ -76,12 +76,12 @@ function initialize!(integrator, cache::ROCK2Cache)
 
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::ROCK2Cache, repeat_step=false)
-  @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+  @unpack t, dt, uprev, u, f, fsalfirst = integrator
   @unpack k, tmp, uᵢ₋₂, uᵢ₋₁, atmp = cache
   @unpack ms, fp1, fp2, recf = cache.constantcache
   ccache = cache.constantcache
@@ -103,7 +103,7 @@ end
   for i in 2:ccache.mdeg
     μ, κ = recf[ccache.start + (i - 2)*2 + 1], recf[ccache.start + (i - 2)*2 + 2]
     ν = -1 - κ
-    f(k, uᵢ₋₁, p, tᵢ₋₁)
+    f(k, uᵢ₋₁, tᵢ₋₁, integrator)
     tᵢ₋₁ = dt*μ - ν*tᵢ₋₂ - κ*tᵢ₋₃
     @.. u = (dt*μ)*k - ν*uᵢ₋₁ - κ*uᵢ₋₂
     i < ccache.mdeg && (uᵢ₋₂ .= uᵢ₋₁; uᵢ₋₁ .= u)
@@ -113,7 +113,7 @@ end
   # two-stage finishing procedure.
   δt₁ = dt*fp1[ccache.deg_index]
   δt₂ = dt*fp2[ccache.deg_index]
-  f(k, u, p, tᵢ₋₁)
+  f(k, u, tᵢ₋₁, integrator)
   integrator.destats.nf += 1
   @.. uᵢ₋₁ = u + δt₁*k
   if integrator.opts.adaptive
@@ -122,7 +122,7 @@ end
     @.. u = -δt₂*k
   end
   tᵢ₋₁ += δt₁
-  f(k, uᵢ₋₁, p, tᵢ₋₁)
+  f(k, uᵢ₋₁, tᵢ₋₁, integrator)
   integrator.destats.nf += 1
 
   if integrator.opts.adaptive
@@ -138,7 +138,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
   integrator.k[1] = integrator.fsalfirst
-  f(integrator.fsallast, u, p, t+dt)
+  f(integrator.fsallast, u, t+dt, integrator)
   integrator.destats.nf += 1
   integrator.k[2] = integrator.fsallast
   integrator.u = u
@@ -147,7 +147,7 @@ end
 function initialize!(integrator, cache::ROCK4ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
   cache.max_stage = (integrator.alg.max_stages < 1 || integrator.alg.max_stages > 152) ? 152 : integrator.alg.max_stages
   cache.min_stage = (integrator.alg.min_stages > cache.max_stage) ? cache.max_stage : integrator.alg.min_stages
@@ -158,7 +158,7 @@ function initialize!(integrator, cache::ROCK4ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::ROCK4ConstantCache, repeat_step=false)
-  @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+  @unpack t, dt, uprev, u, f, fsalfirst = integrator
   @unpack ms, fpa, fpb, fpbe, recf = cache
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
@@ -178,7 +178,7 @@ end
   for i in 2:cache.mdeg
     μ, κ = recf[cache.start + (i - 2)*2 + 1], recf[cache.start + (i - 2)*2 + 2]
     ν = - 1 - κ
-    u = f(uᵢ₋₁, p,tᵢ₋₁)
+    u = f(uᵢ₋₁, tᵢ₋₁, integrator)
     tᵢ₋₁ = dt*μ - ν*tᵢ₋₂ - κ*tᵢ₋₃
     u = (dt*μ)*u - ν*uᵢ₋₁ - κ*uᵢ₋₂
     i < cache.mdeg && (uᵢ₋₂ = uᵢ₋₁; uᵢ₋₁ = u)
@@ -200,7 +200,7 @@ end
 
   # 4-stage finishing procedure.
   # Stage-1
-  uᵢ₋₁ = f(u, p, tᵢ₋₁)
+  uᵢ₋₁ = f(u, tᵢ₋₁, integrator)
   integrator.destats.nf += 1
   uᵢ₋₂ = u + a₃₁*uᵢ₋₁
   uᵢ₋₃ = u + a₄₁*uᵢ₋₁
@@ -210,7 +210,7 @@ end
 
   # Stage-2
   tᵢ₋₂ = tᵢ₋₁ + a₂₁
-  uᵢ₋₁ = f(uᵢ₋₁, p, tᵢ₋₂)
+  uᵢ₋₁ = f(uᵢ₋₁, tᵢ₋₂, integrator)
   integrator.destats.nf += 1
   uᵢ₋₂ += a₃₂*uᵢ₋₁
   uᵢ₋₃ += a₄₂*uᵢ₋₁
@@ -219,7 +219,7 @@ end
 
   # Stage-3
   tᵢ₋₂ = tᵢ₋₁ + a₃₁ + a₃₂
-  uᵢ₋₂ = f(uᵢ₋₂, p, tᵢ₋₂)
+  uᵢ₋₂ = f(uᵢ₋₂, tᵢ₋₂, integrator)
   integrator.destats.nf += 1
   uᵢ₋₃ += a₄₃*uᵢ₋₂
   u    += B₃*uᵢ₋₂
@@ -227,12 +227,12 @@ end
 
   #Stage-4
   tᵢ₋₂ = tᵢ₋₁ + a₄₁ + a₄₂ + a₄₃
-  uᵢ₋₃ = f(uᵢ₋₃, p, tᵢ₋₂)
+  uᵢ₋₃ = f(uᵢ₋₃, tᵢ₋₂, integrator)
   integrator.destats.nf += 1
   u    += B₄*uᵢ₋₃
   integrator.opts.adaptive && (tmp += B̂₄*uᵢ₋₃)
 
-  uᵢ₋₁ = f(u, p, t + dt)
+  uᵢ₋₁ = f(u, t + dt, integrator)
   integrator.destats.nf += 1
 
   #Error estimate (embedded method of order 3)
@@ -256,12 +256,12 @@ function initialize!(integrator, cache::ROCK4Cache)
 
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator)
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::ROCK4Cache, repeat_step=false)
-  @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+  @unpack t, dt, uprev, u, f, fsalfirst = integrator
   @unpack uᵢ₋₁, uᵢ₋₂, uᵢ₋₃, tmp, atmp, k= cache
   @unpack ms, fpa, fpb, fpbe, recf = cache.constantcache
   ccache = cache.constantcache
@@ -283,7 +283,7 @@ end
   for i in 2:ccache.mdeg
     μ, κ = recf[ccache.start + (i - 2)*2 + 1], recf[ccache.start + (i - 2)*2 + 2]
     ν = -1 - κ
-    f(k, uᵢ₋₁, p, tᵢ₋₁)
+    f(k, uᵢ₋₁, tᵢ₋₁, integrator)
     tᵢ₋₁ = (dt*μ) - ν*tᵢ₋₂ - κ*tᵢ₋₃
     @.. u = (dt*μ)*k - ν*uᵢ₋₁ - κ*uᵢ₋₂
     i < ccache.mdeg && (@.. uᵢ₋₂ .= uᵢ₋₁; uᵢ₋₁ .= u)
@@ -306,7 +306,7 @@ end
   # 4-stage finishing procedure.
   # Stage-1
 
-  f(k, u, p, tᵢ₋₁)
+  f(k, u, tᵢ₋₁, integrator)
   integrator.destats.nf += 1
   @.. uᵢ₋₂ = u + a₃₁*k
   @.. uᵢ₋₃ = u + a₄₁*k
@@ -316,7 +316,7 @@ end
 
   # Stage-2
   tᵢ₋₂ = tᵢ₋₁ + a₂₁
-  f(k, uᵢ₋₁, p, tᵢ₋₂)
+  f(k, uᵢ₋₁, tᵢ₋₂, integrator)
   integrator.destats.nf += 1
   @.. uᵢ₋₂ += a₃₂*k
   @.. uᵢ₋₃ += a₄₂*k
@@ -325,7 +325,7 @@ end
 
   # Stage-3
   tᵢ₋₂ = tᵢ₋₁ + a₃₁ + a₃₂
-  f(k, uᵢ₋₂, p, tᵢ₋₂)
+  f(k, uᵢ₋₂, tᵢ₋₂, integrator)
   integrator.destats.nf += 1
   @.. uᵢ₋₃ += a₄₃*k
   @.. u    += B₃*k
@@ -333,12 +333,12 @@ end
 
   #Stage-4
   tᵢ₋₂ = tᵢ₋₁ + a₄₁ + a₄₂ + a₄₃
-  f(k, uᵢ₋₃, p, tᵢ₋₂)
+  f(k, uᵢ₋₃, tᵢ₋₂, integrator)
   integrator.destats.nf += 1
   @.. u    += B₄*k
   integrator.opts.adaptive && (tmp += B̂₄*k)
 
-  f(k, u, p, t + dt)
+  f(k, u, t + dt, integrator)
   integrator.destats.nf += 1
 
   #Error estimate (embedded method of order 3)
@@ -357,7 +357,7 @@ end
 function initialize!(integrator, cache::RKCConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
 
   # Avoid undefined entries if k is an array of arrays
@@ -367,7 +367,7 @@ function initialize!(integrator, cache::RKCConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::RKCConstantCache, repeat_step=false)
-  @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+  @unpack t, dt, uprev, u, f, fsalfirst = integrator
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
   maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/(10*eps(integrator.opts.internalnorm(uprev,t)))))))
@@ -406,7 +406,7 @@ end
     ν   = - b/b2
     μs  = μ*w1/w0
     #using u as temporary storage
-    u   = f(gprev, p, t + dt*th1)
+    u   = f(gprev, t + dt*th1, integrator)
     integrator.destats.nf += 1
     u   = μ*gprev + ν*gprev2  + (1 - μ - ν)*uprev + dt*μs*(u - νs*fsalfirst)
     th  = μ*th1 + ν*th2 + μs*(1 - νs)
@@ -432,7 +432,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
   integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast = f(u, p, t+dt)
+  integrator.k[2] = integrator.fsallast = f(u, t+dt, integrator)
   integrator.destats.nf += 1
   integrator.u = u
 end
@@ -444,12 +444,12 @@ function initialize!(integrator, cache::RKCCache)
   integrator.fsallast = cache.k
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::RKCCache, repeat_step=false)
-  @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+  @unpack t, dt, uprev, u, f, fsalfirst = integrator
   @unpack k, tmp, gprev2, gprev, atmp = cache
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
@@ -488,7 +488,7 @@ end
     μ   = (2*w0*b)/b1
     ν   = - b/b2
     μs  = μ*w1/w0
-    f(k, gprev, p, t + dt*th1)
+    f(k, gprev, t + dt*th1, integrator)
     integrator.destats.nf += 1
     @.. u   = μ*gprev + ν*gprev2  + (1 - μ - ν)*uprev + dt*μs*(k - νs*fsalfirst)
     th  = μ*th1 + ν*th2 + μs*(1 - νs)
@@ -514,19 +514,19 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
   integrator.k[1] = integrator.fsalfirst
-  f(integrator.fsallast, u, p, t+dt)
+  f(integrator.fsallast, u, t+dt, integrator)
   integrator.destats.nf += 1
   integrator.k[2] = integrator.fsallast
   integrator.u = u
 end
 
 function initialize!(integrator, cache::IRKCConstantCache)
-  @unpack uprev, p, t = integrator
+  @unpack uprev, t = integrator
   @unpack f1, f2 = integrator.f
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  cache.du₁ = f1(uprev,p,t)
-  cache.du₂ = f2(uprev,p,t)
+  cache.du₁ = f1(uprev, t, integrator)
+  cache.du₂ = f2(uprev, t, integrator)
   integrator.destats.nf += 1
   integrator.destats.nf2 += 1
   integrator.fsalfirst = cache.du₁ + cache.du₂
@@ -538,7 +538,7 @@ function initialize!(integrator, cache::IRKCConstantCache)
 end
 
 function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p,alg,fsalfirst = integrator
+  @unpack t,dt,uprev,u,f,alg,fsalfirst = integrator
   @unpack minm,du₁,du₂,nlsolver = cache
   @unpack f1, f2 = integrator.f
   maxeig!(integrator, cache)
@@ -601,8 +601,8 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
     νs   = -(1 - Tⱼ₋₁*Bⱼ₋₁)*μs
     Cⱼ   = μ*Cⱼ₋₁ + ν*Cⱼ₋₂ + μs + νs
 
-    f1ⱼ₋₁  = f1(gprev, p, t+Cⱼ₋₁*dt)
-    f2ⱼ₋₁  = f2(gprev, p, t+Cⱼ₋₁*dt)
+    f1ⱼ₋₁  = f1(gprev, t+Cⱼ₋₁*dt, integrator)
+    f2ⱼ₋₁  = f2(gprev, t+Cⱼ₋₁*dt, integrator)
     integrator.destats.nf += 1
     integrator.destats.nf2 += 1
     nlsolver.tmp = (1-μ-ν)*uprev + μ*gprev + ν*gprev2 + dt*μs*f2ⱼ₋₁ + dt*νs*du₂ + (νs - (1 -μ-ν)*μs₁)*dt*du₁ - ν*μs₁*dt*f1ⱼ₋₂
@@ -629,8 +629,8 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
     end
   end
 
-  cache.du₁ = f1(u, p, t+dt)
-  cache.du₂ = f2(u, p, t+dt)
+  cache.du₁ = f1(u, t+dt, integrator)
+  cache.du₂ = f2(u, t+dt, integrator)
   integrator.destats.nf += 1
   integrator.destats.nf2 += 1
   # error estimate
@@ -649,7 +649,7 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
 end
 
 function initialize!(integrator, cache::IRKCCache)
-  @unpack uprev, p, t = integrator
+  @unpack uprev, t = integrator
   @unpack f1, f2 = integrator.f
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
@@ -657,15 +657,15 @@ function initialize!(integrator, cache::IRKCCache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  f1(cache.du₁, uprev, p, t)
-  f2(cache.du₂, uprev, p, t)
+  f1(cache.du₁, uprev, t, integrator)
+  f2(cache.du₂, uprev, t, integrator)
   integrator.destats.nf += 1
   integrator.destats.nf2 += 1
   @.. integrator.fsalfirst = cache.du₁ + cache.du₂
 end
 
 function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p,alg = integrator
+  @unpack t,dt,uprev,u,f,alg = integrator
   @unpack tmp,gprev,gprev2,k,f1ⱼ₋₁,f1ⱼ₋₂,f2ⱼ₋₁,du₁,du₂,z,W,atmp,nlsolver = cache
   @unpack minm = cache.constantcache
   @unpack f1, f2 = integrator.f
@@ -729,8 +729,8 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
     νs   = -(1 - Tⱼ₋₁*Bⱼ₋₁)*μs
     Cⱼ   = μ*Cⱼ₋₁ + ν*Cⱼ₋₂ + μs + νs
 
-    f1(f1ⱼ₋₁, gprev, p, t+Cⱼ₋₁*dt)
-    f2(f2ⱼ₋₁, gprev, p, t+Cⱼ₋₁*dt)
+    f1(f1ⱼ₋₁, gprev, t+Cⱼ₋₁*dt, integrator)
+    f2(f2ⱼ₋₁, gprev, t+Cⱼ₋₁*dt, integrator)
     integrator.destats.nf += 1
     integrator.destats.nf2 += 1
     @.. nlsolver.tmp = (1-μ-ν)*uprev + μ*gprev + ν*gprev2 + dt*μs*f2ⱼ₋₁ + dt*νs*du₂ + (νs - (1-μ-ν)*μs₁)*dt*du₁ - ν*μs₁*dt*f1ⱼ₋₂
@@ -759,8 +759,8 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
 
   @.. f1ⱼ₋₁ = du₁
   @.. f2ⱼ₋₁ = du₂
-  f1(du₁, u, p, t+dt)
-  f2(du₂, u, p, t+dt)
+  f1(du₁, u, t+dt, integrator)
+  f2(du₂, u, t+dt, integrator)
   integrator.destats.nf += 1
   integrator.destats.nf2 += 1
   # error estimate
@@ -781,7 +781,7 @@ end
 function initialize!(integrator, cache::ESERK4ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -790,7 +790,7 @@ function initialize!(integrator, cache::ESERK4ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::ESERK4ConstantCache, repeat_step=false)
-  @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+  @unpack t, dt, uprev, u, f, fsalfirst = integrator
   @unpack ms, Cᵤ, Cₑ= cache
   maxeig!(integrator, cache)
 
@@ -816,7 +816,7 @@ end
       r  = tᵢ
       Sᵢ = (cache.Bᵢ[start])*uᵢ₋₁
       for st in 1:mdeg
-        k = f(uᵢ₋₁, p, r)
+        k = f(uᵢ₋₁, r, integrator)
         integrator.destats.nf += 1
 
         if st%internal_deg == 1
@@ -850,7 +850,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
   integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast = f(u, p, t+dt)
+  integrator.k[2] = integrator.fsallast = f(u, t+dt, integrator)
   integrator.destats.nf += 1
   integrator.u = u
 end
@@ -862,12 +862,12 @@ function initialize!(integrator, cache::ESERK4Cache)
   integrator.fsallast = cache.k
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator)
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::ESERK4Cache, repeat_step=false)
-  @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+  @unpack t, dt, uprev, u, f, fsalfirst = integrator
   @unpack uᵢ, uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, k = cache
   @unpack ms, Cᵤ, Cₑ = cache.constantcache
   ccache = cache.constantcache
@@ -894,7 +894,7 @@ end
       r  = tᵢ
       @.. Sᵢ = (cache.constantcache.Bᵢ[start])*uᵢ₋₁
       for st in 1:mdeg
-        f(k, uᵢ₋₁, p, r)
+        f(k, uᵢ₋₁, r, integrator)
         integrator.destats.nf += 1
 
         if st%internal_deg == 1
@@ -930,7 +930,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
   integrator.k[1] = integrator.fsalfirst
-  f(integrator.fsallast, u, p, t+dt)
+  f(integrator.fsallast, u, t+dt, integrator)
   integrator.destats.nf += 1
   integrator.k[2] = integrator.fsallast
   integrator.u = u
@@ -939,7 +939,7 @@ end
 function initialize!(integrator, cache::ESERK5ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -948,7 +948,7 @@ function initialize!(integrator, cache::ESERK5ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::ESERK5ConstantCache, repeat_step=false)
-  @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+  @unpack t, dt, uprev, u, f, fsalfirst = integrator
   @unpack ms, Cᵤ, Cₑ, Bᵢ= cache
   maxeig!(integrator, cache)
 
@@ -973,7 +973,7 @@ end
       r  = tᵢ
       Sᵢ = (Bᵢ[start])*uᵢ₋₁
       for st in 1:mdeg
-        k = f(uᵢ₋₁, p, r)
+        k = f(uᵢ₋₁, r, integrator)
         integrator.destats.nf += 1
 
         if st%internal_deg == 1
@@ -1007,7 +1007,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
   integrator.k[1] = integrator.fsalfirst
-  integrator.k[2] = integrator.fsallast = f(u, p, t+dt)
+  integrator.k[2] = integrator.fsallast = f(u, t+dt, integrator)
   integrator.destats.nf += 1
   integrator.u = u
 end
@@ -1019,12 +1019,12 @@ function initialize!(integrator, cache::ESERK5Cache)
   integrator.fsallast = cache.k
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator)
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::ESERK5Cache, repeat_step=false)
-  @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+  @unpack t, dt, uprev, u, f, fsalfirst = integrator
   @unpack uᵢ, uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, k = cache
   @unpack ms, Cᵤ, Cₑ, Bᵢ = cache.constantcache
   ccache = cache.constantcache
@@ -1051,7 +1051,7 @@ end
       r  = tᵢ
       @.. Sᵢ = (Bᵢ[start])*uᵢ₋₁
       for st in 1:mdeg
-        f(k, uᵢ₋₁, p, r)
+        f(k, uᵢ₋₁, r, integrator)
         integrator.destats.nf += 1
 
         if st%internal_deg == 1
@@ -1087,7 +1087,7 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
   integrator.k[1] = integrator.fsalfirst
-  f(integrator.fsallast, u, p, t+dt)
+  f(integrator.fsallast, u, t+dt, integrator)
   integrator.destats.nf += 1
   integrator.k[2] = integrator.fsallast
   integrator.u = u
@@ -1096,7 +1096,7 @@ end
 function initialize!(integrator, cache::SERK2ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -1105,7 +1105,7 @@ function initialize!(integrator, cache::SERK2ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::SERK2ConstantCache, repeat_step=false)
-  @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+  @unpack t, dt, uprev, u, f, fsalfirst = integrator
   @unpack ms, Bᵢ= cache
   maxeig!(integrator, cache)
 
@@ -1122,14 +1122,14 @@ end
   uᵢ₋₂ = uprev
   Sᵢ   = Bᵢ[start]*uprev
   for i in 1:10
-    k = f(uᵢ₋₁, p, t+(1+(i-1)*internal_deg^2)*α*dt)
+    k = f(uᵢ₋₁, t+(1+(i-1)*internal_deg^2)*α*dt, integrator)
     integrator.destats.nf += 1
     u    = uᵢ₋₁ + α*dt*k
     Sᵢ   = Sᵢ + Bᵢ[start + (i-1)*internal_deg + 1]*u
     uᵢ₋₂ = uᵢ₋₁
     uᵢ₋₁ = u
     for j in 2:internal_deg
-      k = f(uᵢ₋₁, p, t+(j^2+(i-1)*internal_deg^2)*α*dt)
+      k = f(uᵢ₋₁, t+(j^2+(i-1)*internal_deg^2)*α*dt, integrator)
       integrator.destats.nf += 1
       u = 2*uᵢ₋₁ - uᵢ₋₂ + 2*α*dt*k
       Sᵢ= Sᵢ + Bᵢ[start+j+(i-1)*internal_deg]*u
@@ -1140,7 +1140,7 @@ end
     end
   end
   u = Sᵢ
-  k = f(u,p,t+dt)
+  k = f(u, t+dt, integrator)
   integrator.destats.nf += 1
 
   if integrator.opts.adaptive
@@ -1160,12 +1160,12 @@ function initialize!(integrator, cache::SERK2Cache)
   integrator.fsallast = cache.k
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator)
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::SERK2Cache, repeat_step=false)
-  @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
+  @unpack t, dt, uprev, u, f, fsalfirst = integrator
   @unpack uᵢ₋₁, uᵢ₋₂, Sᵢ, tmp, atmp, k = cache
   @unpack ms, Bᵢ = cache.constantcache
   ccache = cache.constantcache
@@ -1184,14 +1184,14 @@ end
   @.. uᵢ₋₂ = uprev
   @.. Sᵢ   = Bᵢ[start]*uprev
   for i in 1:10
-    f(k, uᵢ₋₁, p, t+(1+(i-1)*internal_deg^2)*α*dt)
+    f(k, uᵢ₋₁, t+(1+(i-1)*internal_deg^2)*α*dt, integrator)
     integrator.destats.nf += 1
     @.. u    = uᵢ₋₁ + α*dt*k
     @.. Sᵢ   = Sᵢ + Bᵢ[start + (i-1)*internal_deg + 1]*u
     @.. uᵢ₋₂ = uᵢ₋₁
     @.. uᵢ₋₁ = u
     for j in 2:internal_deg
-      f(k, uᵢ₋₂, p, t+(j^2+(i-1)*internal_deg^2)*α*dt)
+      f(k, uᵢ₋₂, t+(j^2+(i-1)*internal_deg^2)*α*dt, integrator)
       integrator.destats.nf += 1
       @.. u = 2*uᵢ₋₁ - uᵢ₋₂ + 2*α*dt*k
       @.. Sᵢ= Sᵢ + Bᵢ[start+j+(i-1)*internal_deg]*u
@@ -1202,7 +1202,7 @@ end
     end
   end
   @.. u = Sᵢ
-  f(k, u, p, t+dt)
+  f(k, u, t+dt, integrator)
   integrator.destats.nf += 1
 
 

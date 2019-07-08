@@ -5,7 +5,7 @@ function initialize!(integrator, cache::MidpointSplittingCache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # For the interpolation, needs k at the updated point
   integrator.destats.nf += 1
 end
 
@@ -15,7 +15,7 @@ function perform_step!(integrator, cache::MidpointSplittingCache, repeat_step=fa
   mass_matrix = integrator.f.mass_matrix
 
   L = integrator.f
-  update_coefficients!(L,u,p,t+dt/2)
+  update_coefficients!(L, u, t+dt/2, integrator)
 
   A = L.As[1]
   Bs = L.As[2:end]
@@ -33,13 +33,13 @@ function perform_step!(integrator, cache::MidpointSplittingCache, repeat_step=fa
     @swap!(u,tmp)
   end
 
-  f(integrator.fsallast,u,p,t+dt)
+  f(integrator.fsallast, u, t+dt, integrator)
   integrator.destats.nf += 1
 end
 
 function initialize!(integrator, cache::LinearExponentialConstantCache)
   # Pre-start fsal
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator)
   integrator.destats.nf += 1
   integrator.fsallast = zero(integrator.fsalfirst)
 
@@ -51,7 +51,7 @@ function initialize!(integrator, cache::LinearExponentialConstantCache)
 end
 
 function perform_step!(integrator, cache::LinearExponentialConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,f,p = integrator
+  @unpack t,dt,uprev,f = integrator
   alg = unwrap_alg(integrator, true)
   A = f.f # assume f to be an ODEFunction wrapped around a linear operator
 
@@ -65,7 +65,7 @@ function perform_step!(integrator, cache::LinearExponentialConstantCache, repeat
   end
 
   # Update integrator state
-  integrator.fsallast = f(u, p, t + dt)
+  integrator.fsallast = f(u, t + dt, integrator)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -75,7 +75,7 @@ end
 function initialize!(integrator, cache::LinearExponentialCache)
   # Pre-start fsal
   integrator.fsalfirst = zero(cache.rtmp)
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator)
   integrator.destats.nf += 1
   integrator.fsallast = zero(integrator.fsalfirst)
 
@@ -87,7 +87,7 @@ function initialize!(integrator, cache::LinearExponentialCache)
 end
 
 function perform_step!(integrator, cache::LinearExponentialCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack tmp, KsCache = cache
   alg = unwrap_alg(integrator, true)
   A = f.f # assume f to be an ODEFunction wrapped around a linear operator
@@ -106,7 +106,7 @@ function perform_step!(integrator, cache::LinearExponentialCache, repeat_step=fa
 
   # Update integrator state
   u .= tmp
-  f(integrator.fsallast, u, p, t + dt)
+  f(integrator.fsallast, u, t + dt, integrator)
   integrator.destats.nf += 1
   # integrator.k is automatically set due to aliasing
 end

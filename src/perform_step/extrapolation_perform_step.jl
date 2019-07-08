@@ -6,7 +6,7 @@ function initialize!(integrator,cache::AitkenNevilleCache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # For the interpolation, needs k at the updated point
   integrator.destats.nf += 1
 
   cache.step_no = 1
@@ -14,7 +14,7 @@ function initialize!(integrator,cache::AitkenNevilleCache)
 end
 
 function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack k,fsalfirst,T,utilde,atmp,dtpropose,cur_order,A = cache
   @unpack u_tmps, k_tmps = cache
 
@@ -25,11 +25,11 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
       dt_temp = dt/(2^(i-1))
       # Solve using Euler method
       @muladd @.. u = uprev + dt_temp*fsalfirst
-      f(k, u, p, t+dt_temp)
+      f(k, u, t+dt_temp, integrator)
       integrator.destats.nf += 1
       for j in 2:2^(i-1)
         @muladd @.. u = u + dt_temp*k
-        f(k, u, p, t+j*dt_temp)
+        f(k, u, t+j*dt_temp, integrator)
         integrator.destats.nf += 1
       end
       @.. T[i,1] = u
@@ -39,7 +39,7 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
       end
     end
   else
-    let max_order=max_order, uprev=uprev, dt=dt, fsalfirst=fsalfirst, p=p, t=t,
+    let max_order=max_order, uprev=uprev, dt=dt, fsalfirst=fsalfirst, integrator=integrator, t=t,
         u_tmps=u_tmps, k_tmps=k_tmps , T=T
       # Balance workload of threads by computing T[1,1] with T[max_order,1] on
       # same thread, T[2,1] with T[max_order-1,1] on same thread. Similarly fill
@@ -51,10 +51,10 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
           dt_temp = dt/(2^(index-1))
           # Solve using Euler method
           @muladd @.. u_tmps[Threads.threadid()] = uprev + dt_temp*fsalfirst
-          f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+dt_temp)
+          f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], t+dt_temp, integrator)
           for j in 2:2^(index-1)
             @muladd @.. u_tmps[Threads.threadid()] = u_tmps[Threads.threadid()] + dt_temp*k_tmps[Threads.threadid()]
-            f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], p, t+j*dt_temp)
+            f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()], t+j*dt_temp, integrator)
           end
           @.. T[index,1] = u_tmps[Threads.threadid()]
         end
@@ -108,14 +108,14 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
   # using extrapolated value of u
   @.. u = T[cache.cur_order, cache.cur_order]
   cache.step_no = cache.step_no + 1
-  f(k, u, p, t+dt)
+  f(k, u, t+dt, integrator)
   integrator.destats.nf += 1
 end
 
 function initialize!(integrator,cache::AitkenNevilleConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
 
   # Avoid undefined entries if k is an array of arrays
@@ -127,7 +127,7 @@ function initialize!(integrator,cache::AitkenNevilleConstantCache)
 end
 
 function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,f,p = integrator
+  @unpack t,dt,uprev,f = integrator
   @unpack dtpropose, T, cur_order, work, A = cache
 
   max_order = min(size(T)[1], cur_order+1)
@@ -137,12 +137,12 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
 
       # Solve using Euler method with dt_temp = dt/n_{i}
       @muladd u = @.. uprev + dt_temp*integrator.fsalfirst
-      k = f(u, p, t+dt_temp)
+      k = f(u, t+dt_temp, integrator)
       integrator.destats.nf += 1
 
       for j in 2:2^(i-1)
         @muladd u = @.. u + dt_temp*k
-        k = f(u, p, t+j*dt_temp)
+        k = f(u, t+j*dt_temp, integrator)
         integrator.destats.nf += 1
       end
       T[i,1] = u
@@ -163,10 +163,10 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
         for index in startIndex:endIndex
           dt_temp = dt/2^(index - 1)
           @muladd u = @.. uprev + dt_temp*integrator.fsalfirst
-          k_temp = f(u, p, t+dt_temp)
+          k_temp = f(u, t+dt_temp, integrator)
           for j in 2:2^(index-1)
             @muladd u = @.. u + dt_temp*k_temp
-            k_temp = f(u, p, t+j*dt_temp)
+            k_temp = f(u, t+j*dt_temp, integrator)
           end
           T[index,1] = u
         end
@@ -223,7 +223,7 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
   # Use extrapolated value of u
   integrator.u = T[cache.cur_order,cache.cur_order]
 
-  k = f(integrator.u, p, t+dt)
+  k = f(integrator.u, t+dt, integrator)
   integrator.destats.nf += 1
   integrator.fsallast = k
   integrator.k[1] = integrator.fsalfirst
@@ -234,7 +234,7 @@ function initialize!(integrator,cache::ImplicitEulerExtrapolationCache)
   integrator.kshortsize = 2
 
   integrator.fsalfirst = zero(cache.k_tmp)
-  integrator.f(integrator.fsalfirst, integrator.u, integrator.p, integrator.t)
+  integrator.f(integrator.fsalfirst, integrator.u, integrator.t, integrator)
   integrator.fsallast = zero(integrator.fsalfirst)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
@@ -246,7 +246,7 @@ function initialize!(integrator,cache::ImplicitEulerExtrapolationCache)
 end
 
 function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack u_tmp,k_tmp,T,utilde,atmp,dtpropose,cur_order,A = cache
   @unpack J,W,uf,tf,linsolve_tmp,jac_config = cache
 
@@ -262,7 +262,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
         cache.linsolve(vec(k_tmp), W, vec(linsolve_tmp), !repeat_step)
         @.. k_tmp = -k_tmp
         @.. u_tmp = u_tmp + k_tmp
-        f(k_tmp, u_tmp,p,t+j*dt_temp)
+        f(k_tmp, u_tmp, t+j*dt_temp, integrator)
     end
 
     @.. T[i,1] = u_tmp
@@ -310,7 +310,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
 
   @.. integrator.u = T[cache.cur_order,cache.cur_order]
   cache.step_no = cache.step_no + 1
-  f(integrator.fsallast, integrator.u, p, t+dt)
+  f(integrator.fsallast, integrator.u, t+dt, integrator)
   integrator.destats.nf += 1
 end
 
@@ -318,7 +318,7 @@ end
 function initialize!(integrator,cache::ImplicitEulerExtrapolationConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
 
   # Avoid undefined entries if k is an array of arrays
   integrator.fsallast = zero(integrator.fsalfirst)
@@ -327,7 +327,7 @@ function initialize!(integrator,cache::ImplicitEulerExtrapolationConstantCache)
 end
 
 function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack dtpropose, T, cur_order, work, A, tf, uf = cache
 
   max_order = min(size(T)[1], cur_order+1)
@@ -341,7 +341,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
         k = _reshape(W\-_vec(dt_temp*k_copy), axes(uprev))
         integrator.destats.nsolve += 1
         u_tmp = u_tmp + k
-        k_copy = f(u_tmp, p, t+j*dt_temp)
+        k_copy = f(u_tmp, t+j*dt_temp, integrator)
     end
     T[i,1] = u_tmp
     # Richardson Extrapolation
@@ -391,7 +391,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
 
   # Use extrapolated value of u
   integrator.u = T[cache.cur_order, cache.cur_order]
-  k = f(integrator.u, p, t+dt)
+  k = f(integrator.u, t+dt, integrator)
   integrator.destats.nf += 1
   integrator.fsallast = k
   integrator.k[1] = integrator.fsalfirst
@@ -407,12 +407,12 @@ function initialize!(integrator,cache::ExtrapolationMidpointDeuflhardCache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # FSAL for interpolation
 end
 
 function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, repeat_step = false)
   # Unpack all information needed
-  @unpack t, uprev, dt, f, p = integrator
+  @unpack t, uprev, dt, f = integrator
   @unpack n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst,k  = cache
   @unpack u_temp3, u_temp4, k_tmps = cache
 
@@ -446,7 +446,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
       @.. u_temp2 = uprev
       @.. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
       for j = 2 : 2j_int
-        f(k, cache.u_temp1, p, t + (j-1)dt_int)
+        f(k, cache.u_temp1, t + (j-1)dt_int, integrator)
         @.. T[i+1] = u_temp2 + 2dt_int*k # Explicit Midpoint rule
         @.. u_temp2 = u_temp1
         @.. u_temp1 = T[i+1]
@@ -460,7 +460,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
       # Romberg sequence --> 1, 2, 4, 8, ..., 2^(i)
       # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
-          u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
+          u_temp4=u_temp4,k_tmps=k_tmps,integrator=integrator,t=t,T=T
         Threads.@threads for i = 1 : 2
           startIndex = (i == 1) ? 0 : n_curr
           endIndex = (i == 1) ? n_curr - 1 : n_curr
@@ -470,7 +470,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
             @.. u_temp4[Threads.threadid()] = uprev
             @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + dt_int_temp * fsalfirst # Euler starting step
             for j = 2 : 2j_int_temp
-              f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1)dt_int_temp)
+              f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], t + (j-1)dt_int_temp, integrator)
               @.. T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
               @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
               @.. u_temp3[Threads.threadid()] = T[index+1]
@@ -480,7 +480,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
       end
     else
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
-          u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
+          u_temp4=u_temp4,k_tmps=k_tmps,integrator=integrator,t=t,T=T
         Threads.@threads for i = 0 : floor(Int,n_curr/2)
           indices = (i, n_curr-i)
           for index in indices
@@ -489,7 +489,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
             @.. u_temp4[Threads.threadid()] = uprev
             @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + dt_int_temp * fsalfirst # Euler starting step
             for j = 2 : 2j_int_temp
-              f(k_tmps[Threads.threadid()], u_temp3[Threads.threadid()], p, t + (j-1)dt_int_temp)
+              f(k_tmps[Threads.threadid()], u_temp3[Threads.threadid()], t + (j-1)dt_int_temp, integrator)
               @.. T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
               @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
               @.. u_temp3[Threads.threadid()] = T[index+1]
@@ -546,7 +546,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
         @.. u_temp2 = uprev
         @.. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
         for j = 2 : 2j_int
-          f(k, cache.u_temp1, p, t + (j-1)dt_int)
+          f(k, cache.u_temp1, t + (j-1)dt_int, integrator)
           @.. T[n_curr+1] = u_temp2 + 2dt_int * k
           @.. u_temp2 = u_temp1
           @.. u_temp1 = T[n_curr+1]
@@ -586,12 +586,12 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
 
   end
 
-  f(cache.k, integrator.u, p, t+dt) # Update FSAL
+  f(cache.k, integrator.u, t+dt, integrator) # Update FSAL
 end
 
 function initialize!(integrator,cache::ExtrapolationMidpointDeuflhardConstantCache)
   # cf. initialize! of MidpointConstantCache
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -603,7 +603,7 @@ end
 
 function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantCache, repeat_step=false)
   # Unpack all information needed
-  @unpack t, uprev, dt, f, p = integrator
+  @unpack t, uprev, dt, f = integrator
   @unpack n_curr = cache
   # Coefficients for obtaining u
   @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
@@ -639,7 +639,7 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
       u_temp2 = uprev
       u_temp1 = u_temp2 + dt_int*integrator.fsalfirst # Euler starting step
       for j = 2 : 2j_int
-        T[i+1] = u_temp2 + 2dt_int*f(u_temp1, p, t + (j-1)dt_int) # Explicit Midpoint rule
+        T[i+1] = u_temp2 + 2dt_int*f(u_temp1, t + (j-1)dt_int, integrator) # Explicit Midpoint rule
         u_temp2 = u_temp1
         u_temp1 = T[i+1]
       end
@@ -662,7 +662,7 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
             u_temp4 = uprev
             u_temp3 = u_temp4 + dt_int_temp*integrator.fsalfirst # Euler starting step
             for j = 2 : 2j_int_temp
-              T[index+1] = u_temp4 + 2dt_int_temp*f(u_temp3, p, t + (j-1)dt_int_temp) # Explicit Midpoint rule
+              T[index+1] = u_temp4 + 2dt_int_temp*f(u_temp3, t + (j-1)dt_int, integrator) # Explicit Midpoint rule
               u_temp4 = u_temp3
               u_temp3 = T[index+1]
             end
@@ -680,7 +680,7 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
             u_temp4 = uprev
             u_temp3 = u_temp4 + dt_int_temp*integrator.fsalfirst # Euler starting step
             for j = 2 : 2j_int_temp
-              T[index+1] = u_temp4 + 2dt_int_temp*f(u_temp3, p, t + (j-1)dt_int_temp) # Explicit Midpoint rule
+              T[index+1] = u_temp4 + 2dt_int_temp*f(u_temp3, t + (j-1)dt_int_temp, integrator) # Explicit Midpoint rule
               u_temp4 = u_temp3
               u_temp3 = T[index+1]
             end
@@ -722,7 +722,7 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
         u_temp2 = uprev
         u_temp1 = u_temp2 + dt_int * integrator.fsalfirst # Euler starting step
         for j = 2 : 2j_int
-          T[n_curr+1] = u_temp2 + 2dt_int*f(u_temp1, p, t + (j-1)dt_int)
+          T[n_curr+1] = u_temp2 + 2dt_int*f(u_temp1, t + (j-1)dt_int, integrator)
           u_temp2 = u_temp1
           u_temp1 = T[n_curr+1]
         end
@@ -744,7 +744,7 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
 
   # Save the latest approximation and update FSAL
   integrator.u = u
-  integrator.fsallast = f(u, p, t + dt)
+  integrator.fsallast = f(u, t + dt, integrator)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
 end
@@ -758,12 +758,12 @@ function initialize!(integrator,cache::ExtrapolationMidpointHairerWannerCache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # FSAL for interpolation
 end
 
 function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache, repeat_step = false)
   # Unpack all information needed
-  @unpack t, uprev, dt, f, p = integrator
+  @unpack t, uprev, dt, f = integrator
   @unpack n_curr, u_temp1, u_temp2, utilde, res, T, fsalfirst,k  = cache
   @unpack u_temp3, u_temp4, k_tmps = cache
   # Coefficients for obtaining u
@@ -798,7 +798,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
       @.. u_temp2 = uprev
       @.. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
       for j = 2 : 2j_int
-        f(k, cache.u_temp1, p, t + (j-1)dt_int)
+        f(k, cache.u_temp1, t + (j-1)dt_int, integrator)
         @.. T[i+1] = u_temp2 + 2dt_int*k # Explicit Midpoint rule
         @.. u_temp2 = u_temp1
         @.. u_temp1 = T[i+1]
@@ -812,7 +812,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
       # Romberg sequence --> 1, 2, 4, 8, ..., 2^(i)
       # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
-          u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
+          u_temp4=u_temp4,k_tmps=k_tmps,integrator=integrator,t=t,T=T
         Threads.@threads for i = 1 : 2
           startIndex = (i == 1) ? 0 : n_curr
           endIndex = (i == 1) ? n_curr - 1 : n_curr
@@ -822,7 +822,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
             @.. u_temp4[Threads.threadid()] = uprev
             @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + dt_int_temp * fsalfirst # Euler starting step
             for j = 2 : 2j_int_temp
-              f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1)dt_int_temp)
+              f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], t + (j-1)dt_int_temp, integrator)
               @.. T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
               @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
               @.. u_temp3[Threads.threadid()] = T[index+1]
@@ -832,7 +832,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
       end
     else
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
-          u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
+          u_temp4=u_temp4,k_tmps=k_tmps,integrator=integrator,t=t,T=T
         Threads.@threads for i = 0 : floor(Int,n_curr/2)
           indices = (i, n_curr - i)
           for index in indices
@@ -841,7 +841,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
             @.. u_temp4[Threads.threadid()] = uprev
             @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + dt_int_temp * fsalfirst # Euler starting step
             for j = 2 : 2j_int_temp
-              f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1)dt_int_temp)
+              f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], t + (j-1)dt_int_temp, integrator)
               @.. T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
               @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
               @.. u_temp3[Threads.threadid()] = T[index+1]
@@ -894,7 +894,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
         @.. u_temp2 = uprev
         @.. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
         for j = 2 : 2j_int
-          f(k, cache.u_temp1, p, t + (j-1)dt_int)
+          f(k, cache.u_temp1, t + (j-1)dt_int, integrator)
           @.. T[n_curr+1] = u_temp2 + 2dt_int * k
           @.. u_temp2 = u_temp1
           @.. u_temp1 = T[n_curr+1]
@@ -934,12 +934,12 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
 
   end
 
-  f(cache.k, integrator.u, p, t+dt) # Update FSAL
+  f(cache.k, integrator.u, t+dt, integrator) # Update FSAL
 end
 
 function initialize!(integrator,cache::ExtrapolationMidpointHairerWannerConstantCache)
   # cf. initialize! of MidpointConstantCache
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -951,7 +951,7 @@ end
 
 function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConstantCache, repeat_step = false)
   # Unpack all information needed
-  @unpack t, uprev, dt, f, p = integrator
+  @unpack t, uprev, dt, f = integrator
   @unpack n_curr = cache
   # Coefficients for obtaining u
   @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
@@ -989,7 +989,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
      u_temp2 = uprev
      u_temp1 = u_temp2 + dt_int * integrator.fsalfirst # Euler starting step
      for j = 2 : 2j_int
-       T[i+1] = u_temp2 + 2dt_int * f(u_temp1, p, t + (j-1)dt_int) # Explicit Midpoint rule
+       T[i+1] = u_temp2 + 2dt_int * f(u_temp1, t + (j-1)dt_int, integrator) # Explicit Midpoint rule
        u_temp2 = u_temp1
        u_temp1 = T[i+1]
      end
@@ -1002,7 +1002,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
       # Romberg sequence --> 1, 2, 4, 8, ..., 2^(i)
       # 1 + 2 + 4 + ... + 2^(i-1) = 2^(i) - 1
       let n_curr=n_curr, subdividing_sequence=subdividing_sequence, dt=dt, uprev=uprev,
-          integrator=integrator, T=T, p=p, t=t
+          integrator=integrator, T=T, t=t
         Threads.@threads for i = 1 : 2
           startIndex = (i == 1) ? 0 : n_curr
           endIndex = (i == 1) ? n_curr - 1 : n_curr
@@ -1012,7 +1012,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
             u_temp4 = uprev
             u_temp3 = u_temp4 + dt_int_temp * integrator.fsalfirst # Euler starting step
             for j = 2 : 2j_int_temp
-              T[index+1] = u_temp4 + 2dt_int_temp * f(u_temp3, p, t + (j-1)dt_int_temp) # Explicit Midpoint rule
+              T[index+1] = u_temp4 + 2dt_int_temp * f(u_temp3, t + (j-1)dt_int_temp, integrator) # Explicit Midpoint rule
               u_temp4 = u_temp3
               u_temp3 = T[index+1]
             end
@@ -1030,7 +1030,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
             u_temp4 = uprev
             u_temp3 = u_temp4 + dt_int_temp * integrator.fsalfirst # Euler starting step
             for j = 2 : 2j_int_temp
-              T[index+1] = u_temp4 + 2dt_int_temp * f(u_temp3, p, t + (j-1)dt_int_temp) # Explicit Midpoint rule
+              T[index+1] = u_temp4 + 2dt_int_temp * f(u_temp3, t + (j-1)dt_int_temp, integrator) # Explicit Midpoint rule
               u_temp4 = u_temp3
               u_temp3 = T[index+1]
             end
@@ -1068,7 +1068,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
         u_temp2 = uprev
         u_temp1 = u_temp2 + dt_int * integrator.fsalfirst # Euler starting step
         for j = 2 : 2j_int
-          T[n_curr+1] = u_temp2 + 2dt_int * f(u_temp1, p, t + (j-1)dt_int)
+          T[n_curr+1] = u_temp2 + 2dt_int * f(u_temp1, t + (j-1)dt_int, integrator)
           u_temp2 = u_temp1
           u_temp1 = T[n_curr+1]
         end
@@ -1090,7 +1090,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
 
   # Save the latest approximation and update FSAL
   integrator.u = u
-  integrator.fsallast = f(u, p, t + dt)
+  integrator.fsallast = f(u, t + dt, integrator)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
 end

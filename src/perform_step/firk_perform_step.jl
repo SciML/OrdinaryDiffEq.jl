@@ -1,7 +1,7 @@
 function initialize!(integrator, cache::RadauIIA5ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
 
   # Avoid undefined entries if k is an array of arrays
@@ -18,7 +18,7 @@ function initialize!(integrator, cache::RadauIIA5Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator)
   integrator.destats.nf += 1
   if integrator.opts.adaptive
     @unpack abstol, reltol = integrator.opts
@@ -34,7 +34,7 @@ function initialize!(integrator, cache::RadauIIA5Cache)
 end
 
 @muladd function perform_step!(integrator, cache::RadauIIA5ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack T11, T12, T13, T21, T22, T23, T31, TI11, TI12, TI13, TI21, TI22, TI23, TI31, TI32, TI33 = cache.tab
   @unpack c1, c2, γ, α, β, e1, e2, e3 = cache.tab
   @unpack κ, cont1, cont2, cont3 = cache
@@ -92,9 +92,9 @@ end
     integrator.destats.nnonliniter += 1
 
     # evaluate function
-    ff1 = f(uprev+z1, p, t+c1*dt)
-    ff2 = f(uprev+z2, p, t+c2*dt)
-    ff3 = f(uprev+z3, p, t+   dt) # c3 = 1
+    ff1 = f(uprev+z1, t+c1*dt, integrator)
+    ff2 = f(uprev+z2, t+c2*dt, integrator)
+    ff3 = f(uprev+z3, t+   dt, integrator) # c3 = 1
     integrator.destats.nf += 3
 
     fw1 = @.. TI11 * ff1 + TI12 * ff2 + TI13 * ff3
@@ -177,7 +177,7 @@ end
     integrator.EEst = internalnorm(atmp, t)
 
     if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 || integrator.u_modified
-      f0 = f(uprev .+ utilde, p, t)
+      f0 = f(uprev .+ utilde, t, integrator)
       integrator.destats.nf += 1
       utilde = @.. f0 + tmp
       alg.smooth_est && (utilde = LU1 \ utilde; integrator.destats.nsolve += 1)
@@ -196,7 +196,7 @@ end
     end
   end
 
-  integrator.fsallast = f(u, p, t+dt)
+  integrator.fsallast = f(u, t+dt, integrator)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -205,7 +205,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::RadauIIA5Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p,fsallast,fsalfirst = integrator
+  @unpack t,dt,uprev,u,f,fsallast,fsalfirst = integrator
   @unpack T11, T12, T13, T21, T22, T23, T31, TI11, TI12, TI13, TI21, TI22, TI23, TI31, TI32, TI33 = cache.tab
   @unpack c1, c2, γ, α, β, e1, e2, e3 = cache.tab
   @unpack κ, cont1, cont2, cont3 = cache
@@ -270,11 +270,11 @@ end
 
     # evaluate function
     @.. tmp = uprev + z1
-    f(fsallast, tmp, p, t+c1*dt)
+    f(fsallast, tmp, t+c1*dt, integrator)
     @.. tmp = uprev + z2
-    f(k2, tmp, p, t+c2*dt)
+    f(k2, tmp, t+c2*dt, integrator)
     @.. tmp = uprev + z3
-    f(k3, tmp, p, t+   dt) # c3 = 1
+    f(k3, tmp, t+   dt, integrator) # c3 = 1
     integrator.destats.nf += 3
 
     @.. fw1 = TI11 * fsallast + TI12 * k2 + TI13 * k3
@@ -373,7 +373,7 @@ end
 
     if !(integrator.EEst < oneunit(integrator.EEst)) && integrator.iter == 1 || integrator.u_modified
       @.. utilde = uprev + utilde
-      f(fsallast, utilde, p, t)
+      f(fsallast, utilde, t, integrator)
       integrator.destats.nf += 1
       @.. utilde = fsallast + tmp
       alg.smooth_est && (linsolve1(vec(utilde), W1, vec(utilde), false); integrator.destats.nsolve += 1)
@@ -392,7 +392,7 @@ end
     end
   end
 
-  f(fsallast, u, p, t+dt)
+  f(fsallast, u, t+dt, integrator)
   integrator.destats.nf += 1
   return
 end

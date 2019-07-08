@@ -1,7 +1,7 @@
 function initialize!(integrator, cache::ExplicitRKConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator)
   integrator.destats.nf += 1
 
   # Avoid undefined entries if k is an array of arrays
@@ -11,7 +11,7 @@ function initialize!(integrator, cache::ExplicitRKConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::ExplicitRKConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack A,c,α,αEEst,stages = cache
   @unpack kk = cache
 
@@ -24,7 +24,7 @@ end
     for j = 1:i-1
       utilde = utilde + A[j,i]*kk[j]
     end
-    kk[i] = f(uprev + dt*utilde,p,t+c[i]*dt);
+    kk[i] = f(uprev + dt*utilde, t+c[i]*dt, integrator);
     integrator.destats.nf += 1
   end
 
@@ -33,7 +33,7 @@ end
   for j = 1:stages-1
     utilde = utilde + A[j,end]*kk[j]
   end
-  kk[end] = f(uprev + dt*utilde,p,t+c[end]*dt)
+  kk[end] = f(uprev + dt*utilde, t+c[end]*dt, integrator)
   integrator.destats.nf += 1
   integrator.fsallast = kk[end] # Uses fsallast as temp even if not fsal
 
@@ -54,7 +54,7 @@ end
   end
 
   if !isfsal(integrator.alg.tableau)
-    integrator.fsallast = f(u, p, t+dt)
+    integrator.fsallast = f(u, t+dt, integrator)
     integrator.destats.nf += 1
   end
 
@@ -70,12 +70,12 @@ function initialize!(integrator, cache::ExplicitRKCache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::ExplicitRKCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack A,c,α,αEEst,stages = cache.tab
   @unpack kk,utilde,tmp,atmp = cache
 
@@ -86,7 +86,7 @@ end
       @.. utilde = utilde + A[j,i]*kk[j]
     end
     @.. tmp = uprev+dt*utilde
-    f(kk[i],tmp,p,t+c[i]*dt)
+    f(kk[i], tmp, t+c[i]*dt, integrator)
     integrator.destats.nf += 1
   end
 
@@ -96,7 +96,7 @@ end
     @.. utilde = utilde + A[j,end]*kk[j]
   end
   @.. u = uprev + dt*utilde
-  f(kk[end],u,p,t+c[end]*dt) #fsallast is tmp even if not fsal
+  f(kk[end], u, t+c[end]*dt, integrator) #fsallast is tmp even if not fsal
   integrator.destats.nf += 1
 
   #Accumulate
@@ -121,7 +121,7 @@ end
   end
 
   if !isfsal(integrator.alg.tableau)
-    f(integrator.fsallast,u,p,t+dt)
+    f(integrator.fsallast, u, t+dt, integrator)
     integrator.destats.nf += 1
   end
 end

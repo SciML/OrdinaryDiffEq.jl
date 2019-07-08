@@ -1,11 +1,11 @@
 using LinearAlgebra: axpy!
 
 # Helper function to compute the G_nj factors for the classical ExpRK methods
-@inline _compute_nl(f::SplitFunction, u, p, t, A) = f.f2(u, p, t)
-@inline _compute_nl(f, u, p, t, A) = f(u, p, t) - A * u
-@inline _compute_nl!(G, f::SplitFunction, u, p, t, A, Au_cache) = f.f2(G, u, p, t)
-@inline function _compute_nl!(G, f, u, p, t, A, Au_cache)
-  f(G, u, p, t)
+@inline _compute_nl(f::SplitFunction, u, integrator, t, A) = f.f2(u, t, integrator)
+@inline _compute_nl(f, u, integrator, t, A) = f(u, t, integrator) - A * u
+@inline _compute_nl!(G, f::SplitFunction, u, integrator, t, A, Au_cache) = f.f2(G, u, t, integrator)
+@inline function _compute_nl!(G, f, u, integrator, t, A, Au_cache)
+  f(G, u, t, integrator)
   mul!(Au_cache, A, u)
   G .-= Au_cache
 end
@@ -14,7 +14,7 @@ end
 # Common initializers for ExpRK integrators
 function initialize!(integrator, cache::ExpRKConstantCache)
   # Pre-start fsal
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator)
   integrator.destats.nf += 1
   integrator.fsallast = zero(integrator.fsalfirst)
 
@@ -27,7 +27,7 @@ end
 function initialize!(integrator, cache::ExpRKCache)
   # Pre-start fsal
   integrator.fsalfirst = zero(cache.rtmp)
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator)
   integrator.destats.nf += 1
   integrator.fsallast = zero(integrator.fsalfirst)
 
@@ -41,12 +41,12 @@ end
 ###########################################
 # Classical ExpRK integrators
 function perform_step!(integrator, cache::LawsonEulerConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,f,p = integrator
+  @unpack t,dt,uprev,f = integrator
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   A = isa(f, SplitFunction) ? f.f1.f : calc_J(integrator,cache,is_compos) # get linear operator
   alg = unwrap_alg(integrator, true)
 
-  nl = _compute_nl(f, uprev, p, t, A)
+  nl = _compute_nl(f, uprev, integrator, t, A)
   if isa(f, SplitFunction)
     integrator.destats.nf2 += 1
   else
@@ -61,7 +61,7 @@ function perform_step!(integrator, cache::LawsonEulerConstantCache, repeat_step=
   end
 
   # Update integrator state
-  integrator.fsallast = f(u, p, t + dt)
+  integrator.fsallast = f(u, t + dt, integrator)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -69,13 +69,13 @@ function perform_step!(integrator, cache::LawsonEulerConstantCache, repeat_step=
 end
 
 function perform_step!(integrator, cache::LawsonEulerCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack tmp,rtmp,G,J,exphA,KsCache = cache
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(integrator,cache,is_compos); J) # get linear operator
   alg = unwrap_alg(integrator, true)
 
-  _compute_nl!(G, f, uprev, p, t, A, rtmp)
+  _compute_nl!(G, f, uprev, integrator, t, A, rtmp)
   if isa(f, SplitFunction)
     integrator.destats.nf2 += 1
   else
@@ -91,13 +91,13 @@ function perform_step!(integrator, cache::LawsonEulerCache, repeat_step=false)
   end
 
   # Update integrator state
-  f(integrator.fsallast, u, p, t + dt)
+  f(integrator.fsallast, u, t + dt, integrator)
   integrator.destats.nf += 1
   # integrator.k is automatically set due to aliasing
 end
 
 function perform_step!(integrator, cache::NorsettEulerConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,f,p = integrator
+  @unpack t,dt,uprev,f = integrator
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   A = isa(f, SplitFunction) ? f.f1.f : calc_J(integrator,cache,is_compos) # get linear operator
   alg = unwrap_alg(integrator, true)
@@ -112,7 +112,7 @@ function perform_step!(integrator, cache::NorsettEulerConstantCache, repeat_step
   end
 
   # Update integrator state
-  integrator.fsallast = f(u, p, t + dt)
+  integrator.fsallast = f(u, t + dt, integrator)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -120,7 +120,7 @@ function perform_step!(integrator, cache::NorsettEulerConstantCache, repeat_step
 end
 
 function perform_step!(integrator, cache::NorsettEulerCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack rtmp,J,KsCache = cache
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(integrator,cache,is_compos); J) # get linear operator
@@ -137,13 +137,13 @@ function perform_step!(integrator, cache::NorsettEulerCache, repeat_step=false)
   end
 
   # Update integrator state
-  f(integrator.fsallast, u, p, t + dt)
+  f(integrator.fsallast, u, t + dt, integrator)
   integrator.destats.nf += 1
   # integrator.k is automatically set due to aliasing
 end
 
 function perform_step!(integrator, cache::ETDRK2ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,f,p = integrator
+  @unpack t,dt,uprev,f = integrator
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   A = isa(f, SplitFunction) ? f.f1.f : calc_J(integrator,cache,is_compos) # get linear operator
   alg = unwrap_alg(integrator, true)
@@ -152,7 +152,7 @@ function perform_step!(integrator, cache::ETDRK2ConstantCache, repeat_step=false
     F1 = integrator.fsalfirst
     w1 = phiv(dt, A, F1, 2; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
     U2 = uprev + dt * w1[:, 2]
-    F2 = _compute_nl(f, U2, p, t + dt, A) + A * uprev
+    F2 = _compute_nl(f, U2, integrator, t + dt, A) + A * uprev
     if isa(f, SplitFunction)
       integrator.destats.nf2 += 1
     else
@@ -163,17 +163,17 @@ function perform_step!(integrator, cache::ETDRK2ConstantCache, repeat_step=false
   else
     phi1, phi2 = cache.ops
     # The caching version uses a special formula to save computation
-    G1 = f.f2(uprev, p, t)
+    G1 = f.f2(uprev, t, integrator)
     integrator.destats.nf2 += 1
     F1 = integrator.fsalfirst
     U2 = uprev + dt * (phi1 * F1)
-    G2 = f.f2(U2, p, t + dt)
+    G2 = f.f2(U2, t + dt, integrator)
     integrator.destats.nf2 += 1
     u = U2 + dt * (phi2 * (G2 - G1))
   end
 
   # Update integrator state
-  integrator.fsallast = f(u, p, t + dt)
+  integrator.fsallast = f(u, t + dt, integrator)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -181,7 +181,7 @@ function perform_step!(integrator, cache::ETDRK2ConstantCache, repeat_step=false
 end
 
 function perform_step!(integrator, cache::ETDRK2Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack tmp,rtmp,F2,J,KsCache = cache
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(integrator,cache,is_compos); J) # get linear operator
@@ -196,7 +196,7 @@ function perform_step!(integrator, cache::ETDRK2Cache, repeat_step=false)
     phiv!(w1, dt, Ks, 2; cache=phiv_cache)
     # Krylov for F2
     @muladd @.. tmp = uprev + dt * @view(w1[:, 2])
-    _compute_nl!(F2, f, tmp, p, t + dt, A, rtmp)
+    _compute_nl!(F2, f, tmp, integrator, t + dt, A, rtmp)
     if isa(f, SplitFunction)
       integrator.destats.nf2 += 1
     else
@@ -218,9 +218,9 @@ function perform_step!(integrator, cache::ETDRK2Cache, repeat_step=false)
     mul!(rtmp, phi1, F1)
     @muladd @.. tmp = uprev + dt * rtmp # tmp is U2
     # Compute G2 - G1, storing result in the cache F2
-    f.f2(rtmp, uprev, p, t)
+    f.f2(rtmp, uprev, t, integrator)
     integrator.destats.nf2 += 1
-    f.f2(F2, tmp, p, t + dt)
+    f.f2(F2, tmp, t + dt, integrator)
     integrator.destats.nf2 += 1
     F2 .-= rtmp # "F2" is G2 - G1
     # Update u
@@ -229,13 +229,13 @@ function perform_step!(integrator, cache::ETDRK2Cache, repeat_step=false)
   end
 
   # Update integrator state
-  f(integrator.fsallast, u, p, t + dt)
+  f(integrator.fsallast, u, t + dt, integrator)
   integrator.destats.nf += 1
   # integrator.k is automatically set due to aliasing
 end
 
 function perform_step!(integrator, cache::ETDRK3ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,f,p = integrator
+  @unpack t,dt,uprev,f = integrator
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   A = isa(f, SplitFunction) ? f.f1.f : calc_J(integrator,cache,is_compos) # get linear operator
   alg = unwrap_alg(integrator, true)
@@ -249,11 +249,11 @@ function perform_step!(integrator, cache::ETDRK3ConstantCache, repeat_step=false
     w1_half = phiv(dt/2, Ks, 1)
     w1 = phiv(dt, Ks, 3)
     U2 = uprev + dt/2 * w1_half[:, 2]
-    F2 = _compute_nl(f, U2, p, t + dt/2, A) + Au
+    F2 = _compute_nl(f, U2, integrator, t + dt/2, A) + Au
     # Krylov on F2 (second column)
     w2 = phiv(dt, A, F2, 3; kwargs...)
     U3 = uprev + dt * (2w2[:, 2] - w1[:, 2])
-    F3 = _compute_nl(f, U3, p, t + dt, A) + Au
+    F3 = _compute_nl(f, U3, integrator, t + dt, A) + Au
     if isa(f, SplitFunction)
       integrator.destats.nf2 += 2
     else
@@ -269,18 +269,18 @@ function perform_step!(integrator, cache::ETDRK3ConstantCache, repeat_step=false
     # stage 1 (fsaled)
     # stage 2
     U2 = uprev + dt * (A21 * F1)
-    F2 = f.f2(U2, p, t + dt/2) + Au
+    F2 = f.f2(U2, t + dt/2, integrator) + Au
     integrator.destats.nf2 += 1
     # stage 3
     U3 = uprev + dt * (A3 * (2F2 - F1))
-    F3 = f.f2(U3, p, t + dt) + Au
+    F3 = f.f2(U3, t + dt, integrator) + Au
     integrator.destats.nf2 += 1
     # update u
     u = uprev + dt * (B1 * F1 + B2 * F2 + B3 * F3)
   end
 
   # Update integrator state
-  integrator.fsallast = f(u, p, t + dt)
+  integrator.fsallast = f(u, t + dt, integrator)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -288,7 +288,7 @@ function perform_step!(integrator, cache::ETDRK3ConstantCache, repeat_step=false
 end
 
 function perform_step!(integrator, cache::ETDRK3Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack tmp,rtmp,Au,F2,F3,J,KsCache = cache
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(integrator,cache,is_compos); J) # get linear operator
@@ -306,12 +306,12 @@ function perform_step!(integrator, cache::ETDRK3Cache, repeat_step=false)
     phiv!(w1_half, halfdt, Ks, 1; cache=phiv_cache)
     phiv!(w1, dt, Ks, 3; cache=phiv_cache)
     @muladd @.. @views tmp = uprev + halfdt * w1_half[:, 2] # tmp is U2
-    _compute_nl!(F2, f, tmp, p, t + halfdt, A, rtmp); F2 .+= Au
+    _compute_nl!(F2, f, tmp, integrator, t + halfdt, A, rtmp); F2 .+= Au
     # Krylov for F2 (second column)
     arnoldi!(Ks, A, F2; kwargs...)
     phiv!(w2, dt, Ks, 3; cache=phiv_cache)
     @muladd @.. @views tmp = uprev + dt * (2*w2[:, 2] - w1[:, 2]) # tmp is U3
-    _compute_nl!(F3, f, tmp, p, t + dt, A, rtmp); F3 .+= Au
+    _compute_nl!(F3, f, tmp, integrator, t + dt, A, rtmp); F3 .+= Au
     if isa(f, SplitFunction)
       integrator.destats.nf2 += 2
     else
@@ -329,13 +329,13 @@ function perform_step!(integrator, cache::ETDRK3Cache, repeat_step=false)
     # stage 2
     mul!(rtmp, A21, F1)
     @muladd @.. tmp = uprev + dt * rtmp # tmp is U2
-    f.f2(F2, tmp, p, t + halfdt); F2 .+= Au
+    f.f2(F2, tmp, t + halfdt, integrator); F2 .+= Au
     integrator.destats.nf2 += 1
     # stage 3
     @muladd @.. F3 = 2 * F2 - F1 # use F3 temporarily as cache
     mul!(rtmp, A3, F3)
     @muladd @.. tmp = uprev + dt * rtmp # tmp is U3
-    f.f2(F3, tmp, p, t + dt); F3 .+= Au
+    f.f2(F3, tmp, t + dt, integrator); F3 .+= Au
     integrator.destats.nf2 += 1
     # update u
     u .= uprev
@@ -345,13 +345,13 @@ function perform_step!(integrator, cache::ETDRK3Cache, repeat_step=false)
   end
 
   # Update integrator state
-  f(integrator.fsallast, u, p, t + dt)
+  f(integrator.fsallast, u, t + dt, integrator)
   integrator.destats.nf += 1
   # integrator.k is automatically set due to aliasing
 end
 
 function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,f,p = integrator
+  @unpack t,dt,uprev,f = integrator
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   A = isa(f, SplitFunction) ? f.f1.f : calc_J(integrator,cache,is_compos) # get linear operator
   alg = unwrap_alg(integrator, true)
@@ -366,20 +366,20 @@ function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step=false
     w1_half = phiv(halfdt, Ks, 1)
     w1 = phiv(dt, Ks, 3)
     U2 = uprev + halfdt * w1_half[:, 2]
-    F2 = _compute_nl(f, U2, p, t + halfdt, A) + Au
+    F2 = _compute_nl(f, U2, integrator, t + halfdt, A) + Au
     # Krylov on F2 (second column)
     Ks = arnoldi(A, F2; kwargs...)
     w2_half = phiv(halfdt, Ks, 1)
     w2 = phiv(dt, Ks, 3)
     U3 = uprev + halfdt * w2_half[:, 2]
-    F3 = _compute_nl(f, U3, p, t + halfdt, A) + Au
+    F3 = _compute_nl(f, U3, integrator, t + halfdt, A) + Au
     # Krylov on F3 (third column)
     w3 = phiv(dt, A, F3, 3; kwargs...)
     # Extra Krylov for computing F4
     rtmp = 2F3 - F1 - Au + A*U2
     wtmp = phiv(halfdt, A, rtmp, 1; kwargs...)
     U4 = U2 + halfdt * wtmp[:, 2]
-    F4 = _compute_nl(f, U4, p, t + dt, A) + Au
+    F4 = _compute_nl(f, U4, integrator, t + dt, A) + Au
     if isa(f, SplitFunction)
       integrator.destats.nf2 += 3
     else
@@ -395,20 +395,20 @@ function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step=false
     # stage 1 (fsaled)
     # stage 2
     U2 = uprev + dt * (A21 * F1)
-    F2 = f.f2(U2, p, t + halfdt) + Au
+    F2 = f.f2(U2, t + halfdt, integrator) + Au
     # stage 3
     U3 = uprev + dt * (A21 * F2) # A32 = A21
-    F3 = f.f2(U3, p, t + halfdt) + Au
+    F3 = f.f2(U3, t + halfdt, integrator) + Au
     # stage 4
     U4 = uprev + dt * (A41 * F1 + A43 * F3)
-    F4 = f.f2(U4, p, t + dt) + Au
+    F4 = f.f2(U4, t + dt, integrator) + Au
     integrator.destats.nf2 += 3
     # update u
     u = uprev + dt * (B1 * F1 + B2 * (F2 + F3) + B4 * F4) # B3 = B2
   end
 
   # Update integrator state
-  integrator.fsallast = f(u, p, t + dt)
+  integrator.fsallast = f(u, t + dt, integrator)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -416,7 +416,7 @@ function perform_step!(integrator, cache::ETDRK4ConstantCache, repeat_step=false
 end
 
 function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack tmp,rtmp,Au,F2,F3,F4,J,KsCache = cache
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(integrator,cache,is_compos); J) # get linear operator
@@ -435,13 +435,13 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
     phiv!(w1, dt, Ks, 3; cache=phiv_cache)
     U2 = u # temporarily use u to store U2 (used in the extra Krylov step)
     @muladd @.. @views U2 = uprev + halfdt * w1_half[:, 2]
-    _compute_nl!(F2, f, U2, p, t + halfdt, A, rtmp); F2 .+= Au
+    _compute_nl!(F2, f, U2, integrator, t + halfdt, A, rtmp); F2 .+= Au
     # Krylov for F2 (second column)
     arnoldi!(Ks, A, F2; kwargs...)
     phiv!(w2_half, halfdt, Ks, 1; cache=phiv_cache)
     phiv!(w2, dt, Ks, 3; cache=phiv_cache)
     @muladd @.. @views tmp = uprev + halfdt * w2_half[:, 2] # tmp is U3
-    _compute_nl!(F3, f, tmp, p, t + halfdt, A, rtmp); F3 .+= Au
+    _compute_nl!(F3, f, tmp, integrator, t + halfdt, A, rtmp); F3 .+= Au
     # Krylov for F3 (third column)
     arnoldi!(Ks, A, F3; kwargs...)
     phiv!(w3, dt, Ks, 3; cache=phiv_cache)
@@ -451,7 +451,7 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
     arnoldi!(Ks, A, rtmp; kwargs...)
     phiv!(w1_half, halfdt, Ks, 1; cache=phiv_cache) # original w1_half is no longer needed
     @muladd @.. @views tmp = U2 + halfdt * w1_half[:, 2] # tmp is U4
-    _compute_nl!(F4, f, tmp, p, t + dt, A, rtmp); F4 .+= Au
+    _compute_nl!(F4, f, tmp, integrator, t + dt, A, rtmp); F4 .+= Au
     if isa(f, SplitFunction)
       integrator.destats.nf2 += 3
     else
@@ -470,16 +470,16 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
     # stage 2
     mul!(rtmp, A21, F1)
     @muladd @.. tmp = uprev + dt * rtmp # tmp is U2
-    f.f2(F2, tmp, p, t + halfdt); F2 .+= Au
+    f.f2(F2, tmp, t + halfdt, integrator); F2 .+= Au
     # stage 3
     mul!(rtmp, A21, F2) # A32 = A21
     @muladd @.. tmp = uprev + dt * rtmp # tmp is U3
-    f.f2(F3, tmp, p, t + halfdt); F3 .+= Au
+    f.f2(F3, tmp, t + halfdt, integrator); F3 .+= Au
     # stage 4
     @.. tmp = uprev
     axpy!(dt, mul!(rtmp, A41, F1), tmp)
     axpy!(dt, mul!(rtmp, A43, F3), tmp) # tmp is U4
-    f.f2(F4, tmp, p, t + dt); F4 .+= Au
+    f.f2(F4, tmp, t + dt, integrator); F4 .+= Au
     integrator.destats.nf2 += 3
     # update u
     u .= uprev
@@ -489,13 +489,13 @@ function perform_step!(integrator, cache::ETDRK4Cache, repeat_step=false)
   end
 
   # Update integrator state
-  f(integrator.fsallast, u, p, t + dt)
+  f(integrator.fsallast, u, t + dt, integrator)
   integrator.destats.nf += 1
   # integrator.k is automatically set due to aliasing
 end
 
 function perform_step!(integrator, cache::HochOst4ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,f,p = integrator
+  @unpack t,dt,uprev,f = integrator
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   A = isa(f, SplitFunction) ? f.f1.f : calc_J(integrator,cache,is_compos) # get linear operator
   alg = unwrap_alg(integrator, true)
@@ -510,19 +510,19 @@ function perform_step!(integrator, cache::HochOst4ConstantCache, repeat_step=fal
     w1_half = phiv(halfdt, Ks, 3)
     w1 =      phiv(dt,     Ks, 3)
     U2 = uprev + halfdt * w1_half[:, 2]
-    F2 = _compute_nl(f, U2, p, t + halfdt, A) + Au
+    F2 = _compute_nl(f, U2, integrator, t + halfdt, A) + Au
     # Krylov on F2 (second column)
     Ks = arnoldi(A, F2; kwargs...)
     w2_half = phiv(halfdt, Ks, 3)
     w2 =      phiv(dt,     Ks, 3)
     U3 = uprev + dt * (0.5w1_half[:,2] - w1_half[:,3] + w2_half[:,3])
-    F3 = _compute_nl(f, U3, p, t + halfdt, A) + Au
+    F3 = _compute_nl(f, U3, integrator, t + halfdt, A) + Au
     # Krylov on F3 (third column)
     Ks = arnoldi(A, F3; kwargs...)
     w3_half = phiv(halfdt, Ks, 3)
     w3 =      phiv(dt,     Ks, 3)
     U4 = uprev + dt * (w1[:,2] - 2w1[:,3] + w2[:,3] + w3[:,3])
-    F4 = _compute_nl(f, U4, p, t + dt, A) + Au
+    F4 = _compute_nl(f, U4, integrator, t + dt, A) + Au
     # Krylov on F4 (fourth column)
     Ks = arnoldi(A, F4; kwargs...)
     w4_half = phiv(halfdt, Ks, 3)
@@ -531,7 +531,7 @@ function perform_step!(integrator, cache::HochOst4ConstantCache, repeat_step=fal
                        0.5w2_half[:,3] - w2[:,4] + 0.25w2[:,3] - 0.5w2_half[:,4] +
                        0.5w3_half[:,3] - w2[:,4] + 0.25w3[:,3] - 0.5w3_half[:,4] +
                        w4[:,4] - 0.25w4[:,3] - 0.25w4_half[:,3] + 0.5w4_half[:,4])
-    F5 = _compute_nl(f, U5, p, t + halfdt, A) + Au
+    F5 = _compute_nl(f, U5, integrator, t + halfdt, A) + Au
     if isa(f, SplitFunction)
       integrator.destats.nf2 += 4
     else
@@ -546,23 +546,23 @@ function perform_step!(integrator, cache::HochOst4ConstantCache, repeat_step=fal
     # stage 1 (fsaled)
     # stage 2
     U2 = uprev + dt * (A21 * F1)
-    F2 = f.f2(U2, p, t + halfdt) + Au
+    F2 = f.f2(U2, t + halfdt, integrator) + Au
     # stage 3
     U3 = uprev + dt * (A31 * F1 + A32 * F2)
-    F3 = f.f2(U3, p, t + halfdt) + Au
+    F3 = f.f2(U3, t + halfdt, integrator) + Au
     # stage 4
     U4 = uprev + dt * (A41 * F1 + A42 * (F2 + F3))
-    F4 = f.f2(U4, p, t + dt) + Au
+    F4 = f.f2(U4, t + dt, integrator) + Au
     # stage 5
     U5 = uprev + dt * (A51 * F1 + A52 * (F2 + F3) + A54 * F4)
-    F5 = f.f2(U5, p, t + halfdt) + Au
+    F5 = f.f2(U5, t + halfdt, integrator) + Au
     integrator.destats.nf2 += 4
     # update u
     u = uprev + dt * (B1 * F1 + B4 * F4 + B5 * F5)
   end
 
   # Update integrator state
-  integrator.fsallast = f(u, p, t + dt)
+  integrator.fsallast = f(u, t + dt, integrator)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -570,7 +570,7 @@ function perform_step!(integrator, cache::HochOst4ConstantCache, repeat_step=fal
 end
 
 function perform_step!(integrator, cache::HochOst4Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack tmp,rtmp,rtmp2,Au,F2,F3,F4,F5,J,KsCache = cache
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   A = isa(f, SplitFunction) ? f.f1.f : (calc_J!(integrator,cache,is_compos); J) # get linear operator
@@ -588,19 +588,19 @@ function perform_step!(integrator, cache::HochOst4Cache, repeat_step=false)
     phiv!(w1_half, halfdt, Ks, 3; cache=phiv_cache)
     phiv!(w1,          dt, Ks, 3; cache=phiv_cache)
     @muladd @.. @views tmp = uprev + halfdt * w1_half[:, 2] # tmp is U2
-    _compute_nl!(F2, f, tmp, p, t + halfdt, A, rtmp); F2 .+= Au
+    _compute_nl!(F2, f, tmp, integrator, t + halfdt, A, rtmp); F2 .+= Au
     # Krylov on F2 (second column)
     arnoldi!(Ks, A, F2; kwargs...)
     phiv!(w2_half, halfdt, Ks, 3; cache=phiv_cache)
     phiv!(w2,          dt, Ks, 3; cache=phiv_cache)
     @muladd @.. @views tmp = uprev + dt * (0.5w1_half[:,2] - w1_half[:,3] + w2_half[:,3]) # tmp is U3
-    _compute_nl!(F3, f, tmp, p, t + halfdt, A, rtmp); F3 .+= Au
+    _compute_nl!(F3, f, tmp, integrator, t + halfdt, A, rtmp); F3 .+= Au
     # Krylov on F3 (third column)
     arnoldi!(Ks, A, F3; kwargs...)
     phiv!(w3_half, halfdt, Ks, 3; cache=phiv_cache)
     phiv!(w3,          dt, Ks, 3; cache=phiv_cache)
     @muladd @.. @views tmp = uprev + dt * (w1[:,2] - 2w1[:,3] + w2[:,3] + w3[:,3]) # tmp is U4
-    _compute_nl!(F4, f, tmp, p, t + dt, A, rtmp); F4 .+= Au
+    _compute_nl!(F4, f, tmp, integrator, t + dt, A, rtmp); F4 .+= Au
     # Krylov on F4 (fourth column)
     arnoldi!(Ks, A, F4; kwargs...)
     phiv!(w4_half, halfdt, Ks, 3; cache=phiv_cache)
@@ -610,7 +610,7 @@ function perform_step!(integrator, cache::HochOst4Cache, repeat_step=false)
       0.5w2_half[:,3] - w2[:,4] + 0.25w2[:,3] - 0.5w2_half[:,4] +
       0.5w3_half[:,3] - w2[:,4] + 0.25w3[:,3] - 0.5w3_half[:,4] +
       w4[:,4] - 0.25w4[:,3] - 0.25w4_half[:,3] + 0.5w4_half[:,4]) # tmp is U5
-    _compute_nl!(F5, f, tmp, p, t + dt, A, rtmp); F5 .+= Au
+    _compute_nl!(F5, f, tmp, integrator, t + dt, A, rtmp); F5 .+= Au
     if isa(f, SplitFunction)
       integrator.destats.nf2 += 4
     else
@@ -628,22 +628,22 @@ function perform_step!(integrator, cache::HochOst4Cache, repeat_step=false)
     # stage 2
     mul!(rtmp, A21, F1)
     @muladd @.. tmp = uprev + dt * rtmp # tmp is U2
-    f.f2(F2, tmp, p, t + halfdt); F2 .+= Au
+    f.f2(F2, tmp, t + halfdt, integrator); F2 .+= Au
     # stage 3
     mul!(rtmp, A31, F1); mul!(rtmp2, A32, F2); rtmp .+= rtmp2
     @muladd @.. tmp = uprev + dt * rtmp # tmp is U3
-    f.f2(F3, tmp, p, t + halfdt); F3 .+= Au
+    f.f2(F3, tmp, t + halfdt, integrator); F3 .+= Au
     # stage 4
     F2 .+= F3 # F2 now stores F2 + F3
     mul!(rtmp, A41, F1); mul!(rtmp2, A42, F2); rtmp .+= rtmp2
     @muladd @.. tmp = uprev + dt * rtmp # tmp is U4
-    f.f2(F4, tmp, p, t + dt); F4 .+= Au
+    f.f2(F4, tmp, t + dt, integrator); F4 .+= Au
     # stage 5
     mul!(rtmp, A51, F1)
     mul!(rtmp2, A52, F2); rtmp .+= rtmp2
     mul!(rtmp2, A54, F4); rtmp .+= rtmp2
     @muladd @.. tmp = uprev + dt * rtmp # tmp is U5
-    f.f2(F5, tmp, p, t + halfdt); F5 .+= Au
+    f.f2(F5, tmp, t + halfdt, integrator); F5 .+= Au
     integrator.destats.nf2 += 4
     # update u
     mul!(rtmp, B1, F1)
@@ -653,7 +653,7 @@ function perform_step!(integrator, cache::HochOst4Cache, repeat_step=false)
   end
 
   # Update integrator state
-  f(integrator.fsallast, u, p, t + dt)
+  f(integrator.fsallast, u, t + dt, integrator)
   integrator.destats.nf += 1
   # integrator.k is automatically set due to aliasing
 end
@@ -661,7 +661,7 @@ end
 #############################################
 # EPIRK integrators
 function perform_step!(integrator, cache::Exp4ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,f,p = integrator
+  @unpack t,dt,uprev,f = integrator
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   J = calc_J(integrator,cache,is_compos)
   alg = unwrap_alg(integrator, true)
@@ -678,7 +678,7 @@ function perform_step!(integrator, cache::Exp4ConstantCache, repeat_step=false)
   end
   w4 = K1 * [-7/300, 97/150, -37/300]
   u4 = uprev + dt * w4
-  d4 = f(u4, p, t+dt) - f0 - dt * (J*w4) # TODO: what should be the time?
+  d4 = f(u4, t+dt, integrator) - f0 - dt * (J*w4) # TODO: what should be the time?
   integrator.destats.nf += 1
   # Krylov for the first remainder d4
   B2 = [zero(d4) d4]
@@ -688,7 +688,7 @@ function perform_step!(integrator, cache::Exp4ConstantCache, repeat_step=false)
   end
   w7 = K1 * [59/300, -7/75, 269/300] + K2 * [2/3, 2/3, 2/3]
   u7 = uprev + dt * w7
-  d7 = f(u7, p, t+dt) - f0 - dt * (J*w7)
+  d7 = f(u7, t+dt, integrator) - f0 - dt * (J*w7)
   integrator.destats.nf += 1
   # Krylov for the second remainder d7
   B3 = [zero(d7) d7]
@@ -698,7 +698,7 @@ function perform_step!(integrator, cache::Exp4ConstantCache, repeat_step=false)
   u = uprev + dt * (K1[:,3] + K2[:,1] - 4/3*K2[:,2] + K2[:,3] + k7/6)
 
   # Update integrator state
-  integrator.fsallast = f(u, p, t + dt)
+  integrator.fsallast = f(u, t + dt, integrator)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -706,7 +706,7 @@ function perform_step!(integrator, cache::Exp4ConstantCache, repeat_step=false)
 end
 
 function perform_step!(integrator, cache::Exp4Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack tmp,rtmp,rtmp2,K,J,B,KsCache = cache
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   calc_J!(integrator,cache,is_compos)
@@ -725,7 +725,7 @@ function perform_step!(integrator, cache::Exp4Cache, repeat_step=false)
   mul!(rtmp, K, [-7/300, 97/150, -37/300]) # rtmp is now w4
   @muladd @.. tmp = uprev + dt * rtmp # tmp is now u4
   mul!(rtmp2, J, rtmp)
-  f(rtmp, tmp, p, t+dt) # TODO: what should be the time?
+  f(rtmp, tmp, t+dt, integrator) # TODO: what should be the time?
   integrator.destats.nf += 1
   @muladd @.. @view(B[:,2]) = rtmp - f0 - dt * rtmp2 # B[:,2] is now d4
   # Partially update entities that use k1, k2, k3
@@ -739,7 +739,7 @@ function perform_step!(integrator, cache::Exp4Cache, repeat_step=false)
   mul!(rtmp2, K, [2/3, 2/3, 2/3]); rtmp .+= rtmp2 # w7 fully updated
   @muladd @.. tmp = uprev + dt * rtmp # tmp is now u7
   mul!(rtmp2, J, rtmp)
-  f(rtmp, tmp, p, t+dt) # TODO: what should be the time?
+  f(rtmp, tmp, t+dt, integrator) # TODO: what should be the time?
   integrator.destats.nf += 1
   @muladd @.. @view(B[:,2]) = rtmp - f0 - dt * rtmp2 # B[:,2] is now d7
   # Partially update entities that use k4, k5, k6
@@ -752,13 +752,13 @@ function perform_step!(integrator, cache::Exp4Cache, repeat_step=false)
   axpy!(dt/6, k7, u)
 
   # Update integrator state
-  f(integrator.fsallast, u, p, t + dt)
+  f(integrator.fsallast, u, t + dt, integrator)
   integrator.destats.nf += 1
   # integrator.k is automatically set due to aliasing
 end
 
 function perform_step!(integrator, cache::EPIRK4s3AConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,f,p = integrator
+  @unpack t,dt,uprev,f = integrator
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   J = calc_J(integrator,cache,is_compos)
   alg = unwrap_alg(integrator, true)
@@ -770,8 +770,8 @@ function perform_step!(integrator, cache::EPIRK4s3AConstantCache, repeat_step=fa
   K = phiv_timestep([dt/2, 2dt/3], J, [zero(f0) f0]; kwargs...)
   U2 = uprev + K[:, 1]
   U3 = uprev + K[:, 2]
-  R2 = f(U2, p, t + dt/2)  - f0 - J*K[:, 1] # remainder of U2
-  R3 = f(U3, p, t + 2dt/3) - f0 - J*K[:, 2] # remainder of U3
+  R2 = f(U2, t + dt/2, integrator)  - f0 - J*K[:, 1] # remainder of U2
+  R3 = f(U3, t + 2dt/3, integrator) - f0 - J*K[:, 2] # remainder of U3
   integrator.destats.nf += 2
 
   # Update u (horizontally)
@@ -782,7 +782,7 @@ function perform_step!(integrator, cache::EPIRK4s3AConstantCache, repeat_step=fa
   u = uprev + phiv_timestep(dt, J, B; kwargs...)
 
   # Update integrator state
-  integrator.fsallast = f(u, p, t + dt)
+  integrator.fsallast = f(u, t + dt, integrator)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -790,7 +790,7 @@ function perform_step!(integrator, cache::EPIRK4s3AConstantCache, repeat_step=fa
 end
 
 function perform_step!(integrator, cache::EPIRK4s3ACache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack tmp,rtmp,rtmp2,K,J,B,KsCache = cache
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   calc_J!(integrator,cache,is_compos)
@@ -804,13 +804,13 @@ function perform_step!(integrator, cache::EPIRK4s3ACache, repeat_step=false)
   phiv_timestep!(K, [dt/2, 2dt/3], J, @view(B[:, 1:2]); kwargs...)
   ## U2 and R2
   @.. tmp = uprev + @view(K[:, 1]) # tmp is now U2
-  f(rtmp, tmp, p, t + dt/2); mul!(rtmp2, J, @view(K[:, 1]))
+  f(rtmp, tmp, t + dt/2, integrator); mul!(rtmp2, J, @view(K[:, 1]))
   @.. rtmp = rtmp - f0 - rtmp2 # rtmp is now R2
   B[:, 4] .= (32/dt^2) * rtmp
   B[:, 5] .= (-144/dt^3) * rtmp
   ## U3 and R3
   @.. tmp = uprev + @view(K[:, 2]) # tmp is now U3
-  f(rtmp, tmp, p, t + 2dt/3); mul!(rtmp2, J, @view(K[:, 2]))
+  f(rtmp, tmp, t + 2dt/3, integrator); mul!(rtmp2, J, @view(K[:, 2]))
   @.. rtmp = rtmp - f0 - rtmp2 # rtmp is now R3
   B[:, 4] .-= (13.5/dt^2) * rtmp
   B[:, 5] .+= (81/dt^3) * rtmp
@@ -822,13 +822,13 @@ function perform_step!(integrator, cache::EPIRK4s3ACache, repeat_step=false)
   @.. u = uprev + du
 
   # Update integrator state
-  f(integrator.fsallast, u, p, t + dt)
+  f(integrator.fsallast, u, t + dt, integrator)
   integrator.destats.nf += 1
   # integrator.k is automatically set due to aliasing
 end
 
 function perform_step!(integrator, cache::EPIRK4s3BConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,f,p = integrator
+  @unpack t,dt,uprev,f = integrator
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   J = calc_J(integrator,cache,is_compos)
   alg = unwrap_alg(integrator, true)
@@ -842,8 +842,8 @@ function perform_step!(integrator, cache::EPIRK4s3BConstantCache, repeat_step=fa
   K[:, 2] .*= 16 / (9*dt)
   U2 = uprev + K[:, 1]
   U3 = uprev + K[:, 2]
-  R2 = f(U2, p, t + dt/2)  - f0 - J*K[:, 1] # remainder of U2
-  R3 = f(U3, p, t + 3dt/4) - f0 - J*K[:, 2] # remainder of U3
+  R2 = f(U2, t + dt/2, integrator)  - f0 - J*K[:, 1] # remainder of U2
+  R3 = f(U3, t + 3dt/4, integrator) - f0 - J*K[:, 2] # remainder of U3
   integrator.destats.nf += 2
 
   # Update u (horizontally)
@@ -854,7 +854,7 @@ function perform_step!(integrator, cache::EPIRK4s3BConstantCache, repeat_step=fa
   u = uprev + phiv_timestep(dt, J, B; kwargs...)
 
   # Update integrator state
-  integrator.fsallast = f(u, p, t + dt)
+  integrator.fsallast = f(u, t + dt, integrator)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -862,7 +862,7 @@ function perform_step!(integrator, cache::EPIRK4s3BConstantCache, repeat_step=fa
 end
 
 function perform_step!(integrator, cache::EPIRK4s3BCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack tmp,rtmp,rtmp2,K,J,B,KsCache = cache
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   calc_J!(integrator,cache,is_compos)
@@ -879,13 +879,13 @@ function perform_step!(integrator, cache::EPIRK4s3BCache, repeat_step=false)
   K[:, 2] .*= 16 / (9*dt)
   ## U2 and R2
   @.. tmp = uprev + @view(K[:, 1]) # tmp is now U2
-  f(rtmp, tmp, p, t + dt/2); mul!(rtmp2, J, @view(K[:, 1]))
+  f(rtmp, tmp, t + dt/2, integrator); mul!(rtmp2, J, @view(K[:, 1]))
   @.. rtmp = rtmp - f0 - rtmp2 # rtmp is now R2
   B[:, 4] .= (54/dt^2) * rtmp
   B[:, 5] .= (-324/dt^3) * rtmp
   ## U3 and R3
   @.. tmp = uprev + @view(K[:, 2]) # tmp is now U3
-  f(rtmp, tmp, p, t + 3dt/4); mul!(rtmp2, J, @view(K[:, 2]))
+  f(rtmp, tmp, t + 3dt/4, integrator); mul!(rtmp2, J, @view(K[:, 2]))
   @.. rtmp = rtmp - f0 - rtmp2 # rtmp is now R3
   B[:, 4] .-= (16/dt^2) * rtmp
   B[:, 5] .+= (144/dt^3) * rtmp
@@ -899,13 +899,13 @@ function perform_step!(integrator, cache::EPIRK4s3BCache, repeat_step=false)
   @.. u = uprev + du
 
   # Update integrator state
-  f(integrator.fsallast, u, p, t + dt)
+  f(integrator.fsallast, u, t + dt, integrator)
   integrator.destats.nf += 1
   # integrator.k is automatically set due to aliasing
 end
 
 function perform_step!(integrator, cache::EPIRK5s3ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,f,p = integrator
+  @unpack t,dt,uprev,f = integrator
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   J = calc_J(integrator,cache,is_compos)
   alg = unwrap_alg(integrator, true)
@@ -919,7 +919,7 @@ function perform_step!(integrator, cache::EPIRK5s3ConstantCache, repeat_step=fal
   B[:, 4] = (-3025 / (192 * dt^2)) * f0
   k = phiv_timestep(48dt/55, J, B; kwargs...)
   U2 = uprev + k
-  R2 = f(U2, p, t + 48dt/55)  - f0 - J*k # remainder of U2
+  R2 = f(U2, t + 48dt/55, integrator)  - f0 - J*k # remainder of U2
   integrator.destats.nf += 1
 
   # Compute U3 horizontally
@@ -928,7 +928,7 @@ function perform_step!(integrator, cache::EPIRK5s3ConstantCache, repeat_step=fal
   B[:, 4] = (2916 / (5 * dt^2)) * f0 + (32065 / (1152 * dt^2)) * R2
   k = phiv_timestep(4dt/9, J, B; kwargs...)
   U3 = uprev + k
-  R3 = f(U3, p, t + 4dt/9)  - f0 - J*k # remainder of U3
+  R3 = f(U3, t + 4dt/9, integrator)  - f0 - J*k # remainder of U3
   integrator.destats.nf += 1
 
   # Update u (horizontally)
@@ -939,7 +939,7 @@ function perform_step!(integrator, cache::EPIRK5s3ConstantCache, repeat_step=fal
   u = uprev + phiv_timestep(dt, J, B; kwargs...)
 
   # Update integrator state
-  integrator.fsallast = f(u, p, t + dt)
+  integrator.fsallast = f(u, t + dt, integrator)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -947,7 +947,7 @@ function perform_step!(integrator, cache::EPIRK5s3ConstantCache, repeat_step=fal
 end
 
 function perform_step!(integrator, cache::EPIRK5s3Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack tmp,k,rtmp,rtmp2,J,B,KsCache = cache
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   calc_J!(integrator,cache,is_compos)
@@ -963,7 +963,7 @@ function perform_step!(integrator, cache::EPIRK5s3Cache, repeat_step=false)
   phiv_timestep!(k, 48dt/55, J, @view(B[:, 1:4]); kwargs...)
   ## Compute R2
   @.. tmp = uprev + k # tmp is now U2
-  f(rtmp, tmp, p, t + 48dt/55); mul!(rtmp2, J, k)
+  f(rtmp, tmp, t + 48dt/55, integrator); mul!(rtmp2, J, k)
   integrator.destats.nf += 1
   @.. rtmp = rtmp - f0 - rtmp2 # rtmp is now R2
 
@@ -979,7 +979,7 @@ function perform_step!(integrator, cache::EPIRK5s3Cache, repeat_step=false)
   B[:, 5] .= (499125 / (27136 * dt^3)) .* rtmp
   ## Compute R3 and update B
   @.. tmp = uprev + k # tmp is now U3
-  f(rtmp, tmp, p, t + 4dt/9); mul!(rtmp2, J, k)
+  f(rtmp, tmp, t + 4dt/9, integrator); mul!(rtmp2, J, k)
   integrator.destats.nf += 1
   @.. rtmp = rtmp - f0 - rtmp2 # rtmp is now R3
   B[:, 4] .+= (2187 / (106 * dt^2)) .* rtmp
@@ -990,13 +990,13 @@ function perform_step!(integrator, cache::EPIRK5s3Cache, repeat_step=false)
   @.. u = uprev + k
 
   # Update integrator state
-  f(integrator.fsallast, u, p, t + dt)
+  f(integrator.fsallast, u, t + dt, integrator)
   integrator.destats.nf += 1
   # integrator.k is automatically set due to aliasing
 end
 
 function perform_step!(integrator, cache::EXPRB53s3ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,f,p = integrator
+  @unpack t,dt,uprev,f = integrator
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   J = calc_J(integrator,cache,is_compos)
   alg = unwrap_alg(integrator, true)
@@ -1008,7 +1008,7 @@ function perform_step!(integrator, cache::EXPRB53s3ConstantCache, repeat_step=fa
   B = [zero(f0) f0]
   K = phiv_timestep([dt/2, 9dt/10], J, B; kwargs...)
   U2 = uprev + K[:, 1]
-  R2 = f(U2, p, t + dt/2)  - f0 - J*K[:, 1] # remainder of U2
+  R2 = f(U2, t + dt/2, integrator)  - f0 - J*K[:, 1] # remainder of U2
   integrator.destats.nf += 1
   U3 = uprev + K[:, 2] # partially
 
@@ -1016,7 +1016,7 @@ function perform_step!(integrator, cache::EXPRB53s3ConstantCache, repeat_step=fa
   B = [zero(R2) zero(R2) zero(R2) R2]
   K = phiv_timestep([dt/2, 9dt/10], J, B; kwargs...)
   U3 .+= 216/(25*dt^2) .* K[:, 1] + 8/dt^2 .* K[:, 2]
-  R3 = f(U3, p, t + 9dt/10)  - f0 - J*(U3 - uprev) # remainder of U3
+  R3 = f(U3, t + 9dt/10, integrator)  - f0 - J*(U3 - uprev) # remainder of U3
   integrator.destats.nf += 1
 
   # Compute the third group for u
@@ -1027,7 +1027,7 @@ function perform_step!(integrator, cache::EXPRB53s3ConstantCache, repeat_step=fa
   u = uprev + phiv_timestep(dt, J, B; kwargs...)
 
   # Update integrator state
-  integrator.fsallast = f(u, p, t + dt)
+  integrator.fsallast = f(u, t + dt, integrator)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -1035,7 +1035,7 @@ function perform_step!(integrator, cache::EXPRB53s3ConstantCache, repeat_step=fa
 end
 
 function perform_step!(integrator, cache::EXPRB53s3Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack tmp,rtmp,rtmp2,K,J,B,KsCache = cache
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   calc_J!(integrator,cache,is_compos)
@@ -1049,7 +1049,7 @@ function perform_step!(integrator, cache::EXPRB53s3Cache, repeat_step=false)
   phiv_timestep!(K, [dt/2, 9dt/10], J, @view(B[:, 1:2]); kwargs...)
   ## U2 and R2
   @.. tmp = uprev + @view(K[:, 1]) # tmp is now U2
-  f(rtmp, tmp, p, t + dt/2); mul!(rtmp2, J, @view(K[:, 1]))
+  f(rtmp, tmp, t + dt/2, integrator); mul!(rtmp2, J, @view(K[:, 1]))
   integrator.destats.nf += 1
   @.. rtmp = rtmp - f0 - rtmp2 # rtmp is now R2
   @.. tmp = uprev + @view(K[:, 2]) # tmp is now U3 (partially)
@@ -1064,7 +1064,7 @@ function perform_step!(integrator, cache::EXPRB53s3Cache, repeat_step=false)
   B[:, 5] .= (-60 / dt^3) .* rtmp
   ## U3 and R3
   @views tmp .+= 216/(25*dt^2) .* K[:, 1] + 8/dt^2 .* K[:, 2] # tmp is now U3
-  f(rtmp, tmp, p, t + 9dt/10)
+  f(rtmp, tmp, t + 9dt/10, integrator)
   integrator.destats.nf += 1
   tmp .-= uprev; mul!(rtmp2, J, tmp)
   @.. rtmp = rtmp - f0 - rtmp2 # rtmp is now R3
@@ -1078,13 +1078,13 @@ function perform_step!(integrator, cache::EXPRB53s3Cache, repeat_step=false)
   @.. u = uprev + du
 
   # Update integrator state
-  f(integrator.fsallast, u, p, t + dt)
+  f(integrator.fsallast, u, t + dt, integrator)
   integrator.destats.nf += 1
   # integrator.k is automatically set due to aliasing
 end
 
 function perform_step!(integrator, cache::EPIRK5P1ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,f,p = integrator
+  @unpack t,dt,uprev,f = integrator
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   J = calc_J(integrator,cache,is_compos)
   alg = unwrap_alg(integrator, true)
@@ -1103,7 +1103,7 @@ function perform_step!(integrator, cache::EPIRK5P1ConstantCache, repeat_step=fal
   K1 = phiv_timestep([g11, g21, g31], J, B; kwargs...)
   ## U1 and R1
   U1 = uprev + K1[:, 1]
-  R1 = f(U1, p, t + g11) - f0 - J*K1[:, 1] # remainder of U1
+  R1 = f(U1, t + g11, integrator) - f0 - J*K1[:, 1] # remainder of U1
   integrator.destats.nf += 1
 
   # Compute the second column (R1)
@@ -1111,7 +1111,7 @@ function perform_step!(integrator, cache::EPIRK5P1ConstantCache, repeat_step=fal
   k2 = phiv_timestep(g32, J, B; kwargs...)
   ## U2 and R2
   U2 = uprev + K1[:, 2] + a22 * k2
-  R2 = f(U2, p, t + g21) - f0 - J*(U2 - uprev) # remainder of U2
+  R2 = f(U2, t + g21, integrator) - f0 - J*(U2 - uprev) # remainder of U2
   integrator.destats.nf += 1
 
   # Compute the third column (dR = R2 - 2R1)
@@ -1122,7 +1122,7 @@ function perform_step!(integrator, cache::EPIRK5P1ConstantCache, repeat_step=fal
   u = uprev + K1[:, 3] + b2 * k2 + b3 * k3
 
   # Update integrator state
-  integrator.fsallast = f(u, p, t + dt)
+  integrator.fsallast = f(u, t + dt, integrator)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -1130,7 +1130,7 @@ function perform_step!(integrator, cache::EPIRK5P1ConstantCache, repeat_step=fal
 end
 
 function perform_step!(integrator, cache::EPIRK5P1Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack tmp,rtmp,rtmp2,K,J,B,KsCache = cache
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   calc_J!(integrator,cache,is_compos)
@@ -1150,7 +1150,7 @@ function perform_step!(integrator, cache::EPIRK5P1Cache, repeat_step=false)
   phiv_timestep!(K, [g11, g21, g31], J, @view(B[:, 1:2]); kwargs...)
   ## U1 and R1
   @.. tmp = uprev + @view(K[:, 1]) # tmp is now U1
-  f(rtmp, tmp, p, t + g11); mul!(rtmp2, J, @view(K[:, 1]))
+  f(rtmp, tmp, t + g11, integrator); mul!(rtmp2, J, @view(K[:, 1]))
   integrator.destats.nf += 1
   @.. rtmp = rtmp - f0 - rtmp2 # rtmp is now R1
   @.. tmp = uprev + @view(K[:, 2]) # partially update U2 (stored tmp)
@@ -1163,7 +1163,7 @@ function perform_step!(integrator, cache::EPIRK5P1Cache, repeat_step=false)
   phiv_timestep!(k, g32, J, @view(B[:, 1:2]); kwargs...)
   ## U2 and R2
   axpy!(a22, k, tmp) # tmp is now U2
-  f(rtmp, tmp, p, t + g21)
+  f(rtmp, tmp, t + g21, integrator)
   integrator.destats.nf += 1
   tmp .-= uprev; mul!(rtmp2, J, tmp)
   @.. rtmp = rtmp - f0 - rtmp2 # rtmp is now R2
@@ -1176,13 +1176,13 @@ function perform_step!(integrator, cache::EPIRK5P1Cache, repeat_step=false)
   axpy!(b3, k, u)
 
   # Update integrator state
-  f(integrator.fsallast, u, p, t + dt)
+  f(integrator.fsallast, u, t + dt, integrator)
   integrator.destats.nf += 1
   # integrator.k is automatically set due to aliasing
 end
 
 function perform_step!(integrator, cache::EPIRK5P2ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,f,p = integrator
+  @unpack t,dt,uprev,f = integrator
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   J = calc_J(integrator,cache,is_compos)
   alg = unwrap_alg(integrator, true)
@@ -1202,7 +1202,7 @@ function perform_step!(integrator, cache::EPIRK5P2ConstantCache, repeat_step=fal
   K1 = phiv_timestep([g11, g21, g31], J, B; kwargs...)
   ## U1 and R1
   U1 = uprev + K1[:, 1]
-  R1 = f(U1, p, t + g11) - f0 - J*K1[:, 1] # remainder of U1
+  R1 = f(U1, t + g11, integrator) - f0 - J*K1[:, 1] # remainder of U1
   integrator.destats.nf += 1
 
   # Compute the second column (R1)
@@ -1210,7 +1210,7 @@ function perform_step!(integrator, cache::EPIRK5P2ConstantCache, repeat_step=fal
   k2 = phiv_timestep(g32, J, B; kwargs...)
   ## U2 and R2
   U2 = uprev + K1[:, 2] + a22 * k2
-  R2 = f(U2, p, t + g21) - f0 - J*(U2 - uprev) # remainder of U2
+  R2 = f(U2, t + g21, integrator) - f0 - J*(U2 - uprev) # remainder of U2
   integrator.destats.nf += 1
 
   # Compute the third column (dR = R2 - 2R1)
@@ -1221,7 +1221,7 @@ function perform_step!(integrator, cache::EPIRK5P2ConstantCache, repeat_step=fal
   u = uprev + K1[:, 3] + b2 * k2 + k3
 
   # Update integrator state
-  integrator.fsallast = f(u, p, t + dt)
+  integrator.fsallast = f(u, t + dt, integrator)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -1229,7 +1229,7 @@ function perform_step!(integrator, cache::EPIRK5P2ConstantCache, repeat_step=fal
 end
 
 function perform_step!(integrator, cache::EPIRK5P2Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack tmp,rtmp,rtmp2,dR,K,J,B,KsCache = cache
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   calc_J!(integrator,cache,is_compos)
@@ -1250,7 +1250,7 @@ function perform_step!(integrator, cache::EPIRK5P2Cache, repeat_step=false)
   phiv_timestep!(K, [g11, g21, g31], J, @view(B[:, 1:2]); kwargs...)
   ## U1 and R1
   @.. tmp = uprev + @view(K[:, 1]) # tmp is now U1
-  f(rtmp, tmp, p, t + g11); mul!(rtmp2, J, @view(K[:, 1]))
+  f(rtmp, tmp, t + g11, integrator); mul!(rtmp2, J, @view(K[:, 1]))
   integrator.destats.nf += 1
   @.. rtmp = rtmp - f0 - rtmp2 # rtmp is now R1
   @.. tmp = uprev + @view(K[:, 2]) # partially update U2 (stored in tmp)
@@ -1264,7 +1264,7 @@ function perform_step!(integrator, cache::EPIRK5P2Cache, repeat_step=false)
   phiv_timestep!(k, g32, J, @view(B[:, 1:3]); kwargs...)
   ## U2 and R2
   axpy!(a22, k, tmp) # tmp is now U2
-  f(rtmp, tmp, p, t + g21)
+  f(rtmp, tmp, t + g21, integrator)
   integrator.destats.nf += 1
   tmp .-= uprev; mul!(rtmp2, J, tmp)
   @.. rtmp = rtmp - f0 - rtmp2 # rtmp is now R2
@@ -1279,7 +1279,7 @@ function perform_step!(integrator, cache::EPIRK5P2Cache, repeat_step=false)
   u .+= k
 
   # Update integrator state
-  f(integrator.fsallast, u, p, t + dt)
+  f(integrator.fsallast, u, t + dt, integrator)
   integrator.destats.nf += 1
   # integrator.k is automatically set due to aliasing
 end
@@ -1287,7 +1287,7 @@ end
 ######################################################
 # Adaptive exponential Rosenbrock integrators
 function perform_step!(integrator, cache::Exprb32ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,f,p = integrator
+  @unpack t,dt,uprev,f = integrator
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   A = calc_J(integrator,cache,is_compos) # get linear operator
   alg = unwrap_alg(integrator, true)
@@ -1295,7 +1295,7 @@ function perform_step!(integrator, cache::Exprb32ConstantCache, repeat_step=fals
   F1 = integrator.fsalfirst
   w1 = phiv(dt, A, F1, 3; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
   U2 = uprev + dt * w1[:, 2]
-  F2 = _compute_nl(f, U2, p, t + dt, A) + A * uprev
+  F2 = _compute_nl(f, U2, integrator, t + dt, A) + A * uprev
   integrator.destats.nf += 1
   w2 = phiv(dt, A, F2, 3; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
   u = uprev + dt * (w1[:,2] - 2w1[:,4] + 2w2[:,4])
@@ -1307,7 +1307,7 @@ function perform_step!(integrator, cache::Exprb32ConstantCache, repeat_step=fals
   end
 
   # Update integrator state
-  integrator.fsallast = f(u, p, t + dt)
+  integrator.fsallast = f(u, t + dt, integrator)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -1315,7 +1315,7 @@ function perform_step!(integrator, cache::Exprb32ConstantCache, repeat_step=fals
 end
 
 function perform_step!(integrator, cache::Exprb32Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack utilde,tmp,rtmp,F2,J,KsCache = cache
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   A = (calc_J!(integrator,cache,is_compos); J) # get linear operator
@@ -1329,7 +1329,7 @@ function perform_step!(integrator, cache::Exprb32Cache, repeat_step=false)
   phiv!(w1, dt, Ks, 3; cache=phiv_cache)
   # Krylov for F2
   @muladd @.. tmp = uprev + dt * @view(w1[:, 2])
-  _compute_nl!(F2, f, tmp, p, t + dt, A, rtmp)
+  _compute_nl!(F2, f, tmp, integrator, t + dt, A, rtmp)
   integrator.destats.nf += 1
   F2 .+= mul!(rtmp, A, uprev)
   arnoldi!(Ks, A, F2; m=min(alg.m, size(A,1)), opnorm=integrator.opts.internalopnorm, iop=alg.iop)
@@ -1347,13 +1347,13 @@ function perform_step!(integrator, cache::Exprb32Cache, repeat_step=false)
   end
 
   # Update integrator state
-  f(integrator.fsallast, u, p, t + dt)
+  f(integrator.fsallast, u, t + dt, integrator)
   integrator.destats.nf += 1
   # integrator.k is automatically set due to aliasing
 end
 
 function perform_step!(integrator, cache::Exprb43ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,f,p = integrator
+  @unpack t,dt,uprev,f = integrator
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   A = calc_J(integrator,cache,is_compos) # get linear operator
   alg = unwrap_alg(integrator, true)
@@ -1366,12 +1366,12 @@ function perform_step!(integrator, cache::Exprb43ConstantCache, repeat_step=fals
   w1_half = phiv(dt/2, Ks, 1)
   w1 = phiv(dt, Ks, 4)
   U2 = uprev + dt/2 * w1_half[:, 2]
-  F2 = _compute_nl(f, U2, p, t + dt/2, A) + Au
+  F2 = _compute_nl(f, U2, integrator, t + dt/2, A) + Au
   integrator.destats.nf += 1
   # Krylov on F2 (second column)
   w2 = phiv(dt, A, F2, 4; kwargs...)
   U3 = uprev + dt * w2[:, 2]
-  F3 = _compute_nl(f, U3, p, t + dt, A) + Au
+  F3 = _compute_nl(f, U3, integrator, t + dt, A) + Au
   integrator.destats.nf += 1
   # Krylov on F3 (third column)
   w3 = phiv(dt, A, F3, 4; kwargs...)
@@ -1384,7 +1384,7 @@ function perform_step!(integrator, cache::Exprb43ConstantCache, repeat_step=fals
   end
 
   # Update integrator state
-  integrator.fsallast = f(u, p, t + dt)
+  integrator.fsallast = f(u, t + dt, integrator)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -1392,7 +1392,7 @@ function perform_step!(integrator, cache::Exprb43ConstantCache, repeat_step=fals
 end
 
 function perform_step!(integrator, cache::Exprb43Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack utilde,tmp,rtmp,Au,F2,F3,J,KsCache = cache
   is_compos = isa(integrator.alg, CompositeAlgorithm)
   A = (calc_J!(integrator,cache,is_compos); J) # get linear operator
@@ -1409,13 +1409,13 @@ function perform_step!(integrator, cache::Exprb43Cache, repeat_step=false)
   phiv!(w1_half, halfdt, Ks, 1; cache=phiv_cache)
   phiv!(w1, dt, Ks, 4; cache=phiv_cache)
   @muladd @.. @views tmp = uprev + halfdt * w1_half[:, 2] # tmp is U2
-  _compute_nl!(F2, f, tmp, p, t + halfdt, A, rtmp); F2 .+= Au
+  _compute_nl!(F2, f, tmp, integrator, t + halfdt, A, rtmp); F2 .+= Au
   integrator.destats.nf += 1
   # Krylov for F2
   arnoldi!(Ks, A, F2; kwargs...)
   phiv!(w2, dt, Ks, 4; cache=phiv_cache)
   @muladd @.. @views tmp = uprev + dt * w2[:, 2] # tmp is U3
-  _compute_nl!(F3, f, tmp, p, t + dt, A, rtmp); F3 .+= Au
+  _compute_nl!(F3, f, tmp, integrator, t + dt, A, rtmp); F3 .+= Au
   integrator.destats.nf += 1
   # Krylov for F3 (third column)
   arnoldi!(Ks, A, F3; kwargs...)
@@ -1431,7 +1431,7 @@ function perform_step!(integrator, cache::Exprb43Cache, repeat_step=false)
   end
 
   # Update integrator state
-  f(integrator.fsallast, u, p, t + dt)
+  f(integrator.fsallast, u, t + dt, integrator)
   integrator.destats.nf += 1
   # integrator.k is automatically set due to aliasing
 end
@@ -1443,8 +1443,8 @@ function initialize!(integrator,cache::ETD2ConstantCache)
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
   # Pre-start fsal
-  lin = integrator.f.f1(integrator.uprev,integrator.p,integrator.t)
-  nl = integrator.f.f2(integrator.uprev,integrator.p,integrator.t)
+  lin = integrator.f.f1(integrator.uprev, integrator.t, integrator)
+  nl = integrator.f.f2(integrator.uprev, integrator.t, integrator)
   integrator.destats.nf += 1
   integrator.destats.nf2 += 1
   nlprev = zero(nl) # to be computed in the first iteration via ETD1
@@ -1458,7 +1458,7 @@ function initialize!(integrator,cache::ETD2ConstantCache)
 end
 
 function perform_step!(integrator,cache::ETD2ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,f,p = integrator
+  @unpack t,dt,uprev,f = integrator
   @unpack lin,nl,nlprev = integrator.fsalfirst
   @unpack exphA,phihA,B1,B0 = cache
   integrator.k[1] = lin + nl
@@ -1472,8 +1472,8 @@ function perform_step!(integrator,cache::ETD2ConstantCache,repeat_step=false)
 
   # Push the fsal at t+dt
   nlprev = nl
-  lin = f.f1(u,p,t+dt)
-  nl = f.f2(u,p,t+dt)
+  lin = f.f1(u, t+dt, integrator)
+  nl = f.f2(u, t+dt, integrator)
   integrator.destats.nf += 1
   integrator.destats.nf2 += 1
   integrator.k[2] = lin + nl
@@ -1488,8 +1488,8 @@ function initialize!(integrator, cache::ETD2Cache)
   # Pre-start fsal
   integrator.fsalfirst = ETD2Fsal(rate_prototype)
   @unpack lin,nl = integrator.fsalfirst
-  integrator.f.f1(lin,integrator.uprev,integrator.p,integrator.t)
-  integrator.f.f2(nl,integrator.uprev,integrator.p,integrator.t)
+  integrator.f.f1(lin, integrator.uprev, integrator.t, integrator)
+  integrator.f.f2(nl, integrator.uprev, integrator.t, integrator)
   integrator.destats.nf += 1
   integrator.destats.nf2 += 1
 
@@ -1500,7 +1500,7 @@ function initialize!(integrator, cache::ETD2Cache)
 end
 
 function perform_step!(integrator, cache::ETD2Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack lin,nl,nlprev = integrator.fsalfirst
   @unpack utmp,rtmp1,rtmp2,exphA,phihA,B1,B0 = cache
   @.. integrator.k[1] = lin + nl
@@ -1519,8 +1519,8 @@ function perform_step!(integrator, cache::ETD2Cache, repeat_step=false)
   # Push the fsal at t+dt
   fsallast = integrator.fsallast
   fsallast.nlprev .= nl
-  f.f1(fsallast.lin,u,p,t+dt)
-  f.f2(fsallast.nl,u,p,t+dt)
+  f.f1(fsallast.lin, u, t+dt, integrator)
+  f.f2(fsallast.nl, u, t+dt, integrator)
   integrator.destats.nf += 1
   integrator.destats.nf2 += 1
   @.. integrator.k[2] = fsallast.lin + fsallast.nl

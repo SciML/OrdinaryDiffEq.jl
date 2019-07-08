@@ -1,5 +1,5 @@
 function initialize!(integrator,cache::SSPRK22ConstantCache)
-  integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -10,15 +10,15 @@ function initialize!(integrator,cache::SSPRK22ConstantCache)
 end
 
 @muladd function perform_step!(integrator,cache::SSPRK22ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
 
   # u1 -> stored as u
   u = uprev + dt*integrator.fsalfirst
-  k = f(u, p, t+dt)
+  k = f(u, t+dt, integrator)
   # u
   u = (uprev + u + dt*k) / 2
 
-  integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+  integrator.fsallast = f(u, t+dt, integrator) # For interpolation, then FSAL'd
   integrator.destats.nf += 2
   integrator.k[1] = integrator.fsalfirst
   integrator.u = u
@@ -31,29 +31,29 @@ function initialize!(integrator,cache::SSPRK22Cache)
   integrator.kshortsize = 1
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # FSAL for interpolation
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::SSPRK22Cache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack k,fsalfirst,stage_limiter!,step_limiter! = cache
 
   # u1 -> stored as u
   @.. u = uprev + dt*fsalfirst
   stage_limiter!(u, f, t+dt)
-  f( k,  u, p, t+dt)
+  f( k, u, t+dt, integrator)
   # u
   @.. u = (uprev + u + dt*k) / 2
   stage_limiter!(u, f, t+dt)
   step_limiter!(u, f, t+dt)
   integrator.destats.nf += 2
-  f( k,  u, p, t+dt)
+  f( k, u, t+dt, integrator)
 end
 
 
 function initialize!(integrator,cache::SSPRK33ConstantCache)
-  integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -64,18 +64,18 @@ function initialize!(integrator,cache::SSPRK33ConstantCache)
 end
 
 @muladd function perform_step!(integrator,cache::SSPRK33ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
 
   # u1
   u = uprev + dt*integrator.fsalfirst
-  k = f(u, p, t+dt)
+  k = f(u, t+dt, integrator)
   # u2
   u = (3*uprev + u + dt*k) / 4
-  k = f(u,p,t+dt/2)
+  k = f(u, t+dt/2, integrator)
   # u
   u = (uprev + 2*u + 2*dt*k) / 3
 
-  integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+  integrator.fsallast = f(u, t+dt, integrator) # For interpolation, then FSAL'd
   integrator.destats.nf += 3
   integrator.k[1] = integrator.fsalfirst
   integrator.u = u
@@ -88,33 +88,33 @@ function initialize!(integrator,cache::SSPRK33Cache)
   integrator.kshortsize = 1
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # FSAL for interpolation
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::SSPRK33Cache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack k,fsalfirst,stage_limiter!,step_limiter! = cache
 
   # u1
   @.. u = uprev + dt*fsalfirst
   stage_limiter!(u, f, t+dt)
-  f( k,  u, p, t+dt)
+  f( k, u, t+dt, integrator)
   # u2
   @.. u = (3*uprev + u + dt*k) / 4
   stage_limiter!(u, f, t+dt/2)
-  f(k,u,p,t+dt/2)
+  f(k, u, t+dt/2, integrator)
   # u
   @.. u = (uprev + 2*u + 2*dt*k) / 3
   stage_limiter!(u, f, t+dt)
   step_limiter!(u, f, t+dt)
   integrator.destats.nf += 3
-  f( k,  u, p, t+dt)
+  f( k, u, t+dt, integrator)
 end
 
 
 function initialize!(integrator,cache::SSPRK53ConstantCache)
-  integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -125,25 +125,25 @@ function initialize!(integrator,cache::SSPRK53ConstantCache)
 end
 
 @muladd function perform_step!(integrator,cache::SSPRK53ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack α30,α32,α40,α43,α52,α54,β10,β21,β32,β43,β54,c1,c2,c3,c4 = cache
 
   # u1
   tmp = uprev + β10 * dt * integrator.fsalfirst
-  k = f(tmp, p, t+c1*dt)
+  k = f(tmp, t+c1*dt, integrator)
   # u2 -> stored as u
   u = tmp + β21 * dt * k
-  k = f(u, p, t+c2*dt)
+  k = f(u, t+c2*dt, integrator)
   # u3
   tmp = α30 * uprev + α32 * u + β32 * dt * k
-  k = f(tmp, p, t+c3*dt)
+  k = f(tmp, t+c3*dt, integrator)
   # u4
   tmp = α40 * uprev + α43 * tmp + β43 * dt * k
-  k = f(tmp, p, t+c4*dt)
+  k = f(tmp, t+c4*dt, integrator)
   # u
   u = α52 * u + α54 * tmp + β54 * dt * k
 
-  integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+  integrator.fsallast = f(u, t+dt, integrator) # For interpolation, then FSAL'd
   integrator.destats.nf += 5
   integrator.k[1] = integrator.fsalfirst
   integrator.u = u
@@ -156,42 +156,42 @@ function initialize!(integrator,cache::SSPRK53Cache)
   integrator.kshortsize = 1
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # FSAL for interpolation
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::SSPRK53Cache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack k,tmp,fsalfirst,stage_limiter!,step_limiter! = cache
   @unpack α30,α32,α40,α43,α52,α54,β10,β21,β32,β43,β54,c1,c2,c3,c4 = cache.tab
 
   # u1
   @.. tmp = uprev + β10 * dt * fsalfirst
   stage_limiter!(tmp, f, t+c1*dt)
-  f( k,  tmp, p, t+c1*dt)
+  f( k, tmp, t+c1*dt, integrator)
   # u2 -> stored as u
   @.. u = tmp + β21 * dt * k
   stage_limiter!(u, f, t+c2*dt)
-  f( k,  u, p, t+c2*dt)
+  f( k, u, t+c2*dt, integrator)
   # u3
   @.. tmp = α30 * uprev + α32 * u + β32 * dt * k
   stage_limiter!(tmp, f, t+c3*dt)
-  f( k,  tmp, p, t+c3*dt)
+  f( k, tmp, t+c3*dt, integrator)
   # u4
   @.. tmp = α40 * uprev + α43 * tmp + β43 * dt * k
   stage_limiter!(tmp, f, t+c4*dt)
-  f( k,  tmp, p, t+c4*dt)
+  f( k, tmp, t+c4*dt, integrator)
   # u
   @.. u = α52 * u + α54 * tmp + β54 * dt * k
   stage_limiter!(u, f, t+dt)
   step_limiter!(u, f, t+dt)
   integrator.destats.nf += 5
-  f( k,  u, p, t+dt)
+  f( k, u, t+dt, integrator)
 end
 
 
 function initialize!(integrator,cache::SSPRK53_2N1ConstantCache)
-  integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -202,25 +202,25 @@ function initialize!(integrator,cache::SSPRK53_2N1ConstantCache)
 end
 
 @muladd function perform_step!(integrator,cache::SSPRK53_2N1ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack α40,α43,β10,β21,β32,β43,β54,c1,c2,c3,c4 = cache
   #stores in u for all intermediate stages
   # u1
   u = uprev + β10 * dt * integrator.fsalfirst
-  k = f(u, p, t+c1*dt)
+  k = f(u, t+c1*dt, integrator)
   # u2
   u = u + β21 * dt * k
-  k = f(u, p, t+c2*dt)
+  k = f(u, t+c2*dt, integrator)
   # u3
   u = u + β32 * dt * k
-  k = f(u, p, t+c3*dt)
+  k = f(u, t+c3*dt, integrator)
   # u4
   u= α40 * uprev + α43 * u + β43 * dt * k
-  k = f(u, p, t+c4*dt)
+  k = f(u, t+c4*dt, integrator)
   # u
   u =  u + β54 * dt * k
 
-  integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+  integrator.fsallast = f(u, t+dt, integrator) # For interpolation, then FSAL'd
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.u = u
@@ -233,42 +233,42 @@ function initialize!(integrator,cache::SSPRK53_2N1Cache)
   integrator.kshortsize = 1
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # FSAL for interpolation
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::SSPRK53_2N1Cache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack k,tmp,fsalfirst,stage_limiter!,step_limiter! = cache
   @unpack α40,α43,β10,β21,β32,β43,β54,c1,c2,c3,c4 = cache.tab
   #stores in u for all intermediate stages
   # u1
   @.. u = uprev + β10 * dt * fsalfirst
   stage_limiter!(u, f, t+c1*dt)
-  f( k,  u, p, t+c1*dt)
+  f( k, u, t+c1*dt, integrator)
   # u2
   @.. u = u + β21 * dt * k
   stage_limiter!(u, f, t+c2*dt)
-  f( k,  u, p, t+c2*dt)
+  f( k, u, t+c2*dt, integrator)
   # u3
   @.. u = u + β32 * dt * k
   stage_limiter!(u, f, t+c3*dt)
-  f( k,  u, p, t+c3*dt)
+  f( k, u, t+c3*dt, integrator)
   # u4
   @.. u = α40 * uprev + α43 * u + β43 * dt * k
   stage_limiter!(u, f, t+c4*dt)
-  f( k,  u, p, t+c4*dt)
+  f( k, u, t+c4*dt, integrator)
   # u
   @.. u = u + β54 * dt * k
   stage_limiter!(u, f, t+dt)
   step_limiter!(u, f, t+dt)
   integrator.destats.nf += 5
-  f( k,  u, p, t+dt)
+  f( k, u, t+dt, integrator)
 end
 
 
 function initialize!(integrator,cache::SSPRK53_2N2ConstantCache)
-  integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -279,25 +279,25 @@ function initialize!(integrator,cache::SSPRK53_2N2ConstantCache)
 end
 
 @muladd function perform_step!(integrator,cache::SSPRK53_2N2ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack α30,α32,α50,α54,β10,β21,β32,β43,β54,c1,c2,c3,c4 = cache
   #stores in u for all intermediate stages
   # u1
   u = uprev + β10 * dt * integrator.fsalfirst
-  k = f(u, p, t+c1*dt)
+  k = f(u, t+c1*dt, integrator)
   # u2 -> stored as u
   u = u + β21 * dt * k
-  k = f(u, p, t+c2*dt)
+  k = f(u, t+c2*dt, integrator)
   # u3
   u = α30 * uprev + α32 * u + β32 * dt * k
-  k = f(u, p, t+c3*dt)
+  k = f(u, t+c3*dt, integrator)
   # u4
   u = u + β43 * dt * k
-  k = f(u, p, t+c4*dt)
+  k = f(u, t+c4*dt, integrator)
   # u
   u = α50 * uprev + α54 * u + β54 * dt * k
 
-  integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+  integrator.fsallast = f(u, t+dt, integrator) # For interpolation, then FSAL'd
   integrator.destats.nf += 5
   integrator.k[1] = integrator.fsalfirst
   integrator.u = u
@@ -310,42 +310,42 @@ function initialize!(integrator,cache::SSPRK53_2N2Cache)
   integrator.kshortsize = 1
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # FSAL for interpolation
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::SSPRK53_2N2Cache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack k,tmp,fsalfirst,stage_limiter!,step_limiter! = cache
   @unpack α30,α32,α50,α54,β10,β21,β32,β43,β54,c1,c2,c3,c4 = cache.tab
 
   # u1
   @.. u = uprev + β10 * dt * integrator.fsalfirst
   stage_limiter!(u, f, t+c1*dt)
-  f( k,  u, p, t+c1*dt)
+  f( k, u, t+c1*dt, integrator)
   # u2 -> stored as u
   @.. u = u + β21 * dt * k
   stage_limiter!(u, f, t+c2*dt)
-  f( k,  u, p, t+c2*dt)
+  f( k, u, t+c2*dt, integrator)
   # u3
   @.. u = α30 * uprev + α32 * u + β32 * dt * k
   stage_limiter!(u, f, t+c3*dt)
-  f( k,  u, p, t+c3*dt)
+  f( k, u, t+c3*dt, integrator)
   # u4
   @.. u = u + β43 * dt * k
   stage_limiter!(u, f, t+c4*dt)
-  f( k,  u, p, t+c4*dt)
+  f( k, u, t+c4*dt, integrator)
   # u
   @.. u = α50* uprev + α54 * u+ β54 * dt * k
   stage_limiter!(u, f, t+dt)
   step_limiter!(u, f, t+dt)
   integrator.destats.nf += 5
-  f( k,  u, p, t+dt)
+  f( k, u, t+dt, integrator)
 end
 
 
 function initialize!(integrator,cache::SSPRK63ConstantCache)
-  integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -356,28 +356,28 @@ function initialize!(integrator,cache::SSPRK63ConstantCache)
 end
 
 @muladd function perform_step!(integrator,cache::SSPRK63ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack α40,α41,α43,α62,α65,β10,β21,β32,β43,β54,β65,c1,c2,c3,c4,c5 = cache
 
   # u1 -> stored as u
   u = uprev + β10 * dt * integrator.fsalfirst
-  k = f(u, p, t+c1*dt)
+  k = f(u, t+c1*dt, integrator)
   # u2
   u₂ = u + β21 * dt * k
-  k = f(u₂,p,t+c2*dt)
+  k = f(u₂, t+c2*dt, integrator)
   # u3
   tmp = u₂ + β32 * dt * k
-  k = f(tmp, p, t+c3*dt)
+  k = f(tmp, t+c3*dt, integrator)
   # u4
   tmp = α40 * uprev + α41 * u + α43 * tmp + β43 * dt * k
-  k = f(tmp, p, t+c4*dt)
+  k = f(tmp, t+c4*dt, integrator)
   # u5
   tmp = tmp + β54 * dt * k
-  k = f(tmp, p, t+c5*dt)
+  k = f(tmp, t+c5*dt, integrator)
   # u
   u = α62 * u₂ + α65 * tmp + β65 * dt * k
 
-  integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+  integrator.fsallast = f(u, t+dt, integrator) # For interpolation, then FSAL'd
   integrator.destats.nf += 6
   integrator.k[1] = integrator.fsalfirst
   integrator.u = u
@@ -390,46 +390,46 @@ function initialize!(integrator,cache::SSPRK63Cache)
   integrator.kshortsize = 1
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # FSAL for interpolation
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::SSPRK63Cache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack k,tmp,u₂,fsalfirst,stage_limiter!,step_limiter! = cache
   @unpack α40,α41,α43,α62,α65,β10,β21,β32,β43,β54,β65,c1,c2,c3,c4,c5 = cache.tab
 
   # u1 -> stored as u
   @.. u = uprev + β10 * dt * integrator.fsalfirst
   stage_limiter!(u, f, t+c1*dt)
-  f( k,  u, p, t+c1*dt)
+  f( k, u, t+c1*dt, integrator)
   # u2
   @.. u₂ = u + β21 * dt * k
   stage_limiter!(u₂, f, t+c2*dt)
-  f(k,u₂,p,t+c2*dt)
+  f(k, u₂, t+c2*dt, integrator)
   # u3
   @.. tmp = u₂ + β32 * dt * k
   stage_limiter!(tmp, f, t+c3*dt)
-  f( k,  tmp, p, t+c3*dt)
+  f( k, tmp, t+c3*dt, integrator)
   # u4
   @.. tmp = α40 * uprev + α41 * u + α43 * tmp + β43 * dt * k
   stage_limiter!(tmp, f, t+c4*dt)
-  f( k,  tmp, p, t+c4*dt)
+  f( k, tmp, t+c4*dt, integrator)
   # u5
   @.. tmp = tmp + β54 * dt * k
   stage_limiter!(tmp, f, t+c5*dt)
-  f( k,  tmp, p, t+c5*dt)
+  f( k, tmp, t+c5*dt, integrator)
   # u
   @.. u = α62 * u₂ + α65 * tmp + β65 * dt * k
   stage_limiter!(u, f, t+dt)
   step_limiter!(u, f, t+dt)
   integrator.destats.nf += 6
-  f( k,  u, p, t+dt)
+  f( k, u, t+dt, integrator)
 end
 
 
 function initialize!(integrator,cache::SSPRK73ConstantCache)
-  integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -440,31 +440,31 @@ function initialize!(integrator,cache::SSPRK73ConstantCache)
 end
 
 @muladd function perform_step!(integrator,cache::SSPRK73ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack α40,α43,α50,α51,α54,α73,α76,β10,β21,β32,β43,β54,β65,β76,c1,c2,c3,c4,c5,c6 = cache
 
   # u1
   u₁ = uprev + β10 * dt * integrator.fsalfirst
-  k = f(u₁,p,t+c1*dt)
+  k = f(u₁, t+c1*dt, integrator)
   # u2
   tmp = u₁ + β21 * dt * k
-  k = f(tmp, p, t+c2*dt)
+  k = f(tmp, t+c2*dt, integrator)
   # u3 -> stored as u
   u = tmp + β32 * dt * k
-  k = f(u, p, t+c3*dt)
+  k = f(u, t+c3*dt, integrator)
   # u4
   tmp = α40 * uprev + α43 * u + β43 * dt * k
-  k = f(tmp, p, t+c4*dt)
+  k = f(tmp, t+c4*dt, integrator)
   # u5
   tmp = α50 * uprev + α51 * u₁ + α54 * tmp + β54 * dt * k
-  k = f(tmp, p, t+c5*dt)
+  k = f(tmp, t+c5*dt, integrator)
   # u6
   tmp = tmp + β65 * dt * k
-  k = f(tmp, p, t+c6*dt)
+  k = f(tmp, t+c6*dt, integrator)
   # u
   u = α73 * u + α76 * tmp + β76 * dt * k
 
-  integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+  integrator.fsallast = f(u, t+dt, integrator) # For interpolation, then FSAL'd
   integrator.destats.nf += 7
   integrator.k[1] = integrator.fsalfirst
   integrator.u = u
@@ -477,50 +477,50 @@ function initialize!(integrator,cache::SSPRK73Cache)
   integrator.kshortsize = 1
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # FSAL for interpolation
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::SSPRK73Cache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack k,tmp,u₁,fsalfirst,stage_limiter!,step_limiter! = cache
   @unpack α40,α43,α50,α51,α54,α73,α76,β10,β21,β32,β43,β54,β65,β76,c1,c2,c3,c4,c5,c6 = cache.tab
 
   # u1
   @.. u₁ = uprev + β10 * dt * integrator.fsalfirst
   stage_limiter!(u₁, f, t+c1*dt)
-  f(k,u₁,p,t+c1*dt)
+  f(k, u₁, t+c1*dt, integrator)
   # u2
   @.. tmp = u₁ + β21 * dt * k
   stage_limiter!(tmp, f, t+c2*dt)
-  f( k,  tmp, p, t+c2*dt)
+  f( k, tmp, t+c2*dt, integrator)
   # u3 -> stored as u
   @.. u = tmp + β32 * dt * k
   stage_limiter!(u, f, t+c3*dt)
-  f( k,  u, p, t+c3*dt)
+  f( k, u, t+c3*dt, integrator)
   # u4
   @.. tmp = α40 * uprev + α43 * u + β43 * dt * k
   stage_limiter!(tmp, f, t+c4*dt)
-  f( k,  tmp, p, t+c4*dt)
+  f( k, tmp, t+c4*dt, integrator)
   # u5
   @.. tmp = α50 * uprev + α51 * u₁ + α54 * tmp + β54 * dt * k
   stage_limiter!(tmp, f, t+c5*dt)
-  f( k,  tmp, p, t+c5*dt)
+  f( k, tmp, t+c5*dt, integrator)
   # u6
   @.. tmp = tmp + β65 * dt * k
   stage_limiter!(tmp, f, t+c6*dt)
-  f( k,  tmp, p, t+c6*dt)
+  f( k, tmp, t+c6*dt, integrator)
   # u
   @.. u = α73 * u + α76 * tmp + β76 * dt * k
   stage_limiter!(u, f, t+dt)
   step_limiter!(u, f, t+dt)
   integrator.destats.nf += 7
-  f( k,  u, p, t+dt)
+  f( k, u, t+dt, integrator)
 end
 
 
 function initialize!(integrator,cache::SSPRK83ConstantCache)
-  integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -531,34 +531,34 @@ function initialize!(integrator,cache::SSPRK83ConstantCache)
 end
 
 @muladd function perform_step!(integrator,cache::SSPRK83ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack α50,α51,α54,α61,α65,α72,α73,α76,β10,β21,β32,β43,β54,β65,β76,β87,c1,c2,c3,c4,c5,c6,c7 = cache
 
   # u1 -> save as u
   u = uprev + β10 * dt * integrator.fsalfirst
-  k = f(u, p, t+c1*dt)
+  k = f(u, t+c1*dt, integrator)
   # u2
   u₂ = u + β21 * dt * k
-  k = f(u₂,p,t+c2*dt)
+  k = f(u₂, t+c2*dt, integrator)
   # u3
   u₃ = u₂ + β32 * dt * k
-  k = f(u₃,p,t+c3*dt)
+  k = f(u₃, t+c3*dt, integrator)
   # u4
   tmp = u₃ + β43 * dt * k
-  k = f(tmp, p, t+c4*dt)
+  k = f(tmp, t+c4*dt, integrator)
   # u5
   tmp = α50 * uprev + α51 * u + α54 * tmp + β54 * dt * k
-  k = f(tmp, p, t+c5*dt)
+  k = f(tmp, t+c5*dt, integrator)
   # u6
   tmp = α61 * u + α65 * tmp + β65 * dt * k
-  k = f(tmp, p, t+c6*dt)
+  k = f(tmp, t+c6*dt, integrator)
   # u7
   tmp = α72 * u₂ + α73 * u₃ + α76 * tmp + β76 * dt * k
-  k = f(tmp, p, t+c7*dt)
+  k = f(tmp, t+c7*dt, integrator)
   # u
   u = tmp + β87 * dt * k
 
-  integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+  integrator.fsallast = f(u, t+dt, integrator) # For interpolation, then FSAL'd
   integrator.destats.nf += 8
   integrator.k[1] = integrator.fsalfirst
   integrator.u = u
@@ -571,56 +571,56 @@ function initialize!(integrator,cache::SSPRK83Cache)
   integrator.kshortsize = 1
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # FSAL for interpolation
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::SSPRK83Cache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack k,tmp,u₂,u₃,fsalfirst,stage_limiter!,step_limiter! = cache
   @unpack α50,α51,α54,α61,α65,α72,α73,α76,β10,β21,β32,β43,β54,β65,β76,β87,c1,c2,c3,c4,c5,c6,c7 = cache.tab
 
   # u1 -> save as u
   @.. u = uprev + β10 * dt * integrator.fsalfirst
   stage_limiter!(u, f, t+c1*dt)
-  f( k,  u, p, t+c1*dt)
+  f( k, u, t+c1*dt, integrator)
   # u2
   @.. u₂ = u + β21 * dt * k
   stage_limiter!(u₂, f, t+c2*dt)
-  f(k,u₂,p,t+c2*dt)
+  f(k, u₂, t+c2*dt, integrator)
   # u3
   @.. u₃ = u₂ + β32 * dt * k
   stage_limiter!(u₃, f, t+c3*dt)
-  f(k,u₃,p,t+c3*dt)
+  f(k, u₃, t+c3*dt, integrator)
   # u4
   @.. tmp = u₃ + β43 * dt * k
   stage_limiter!(tmp, f, t+c4*dt)
-  f( k,  tmp, p, t+c4*dt)
+  f( k, tmp, t+c4*dt, integrator)
   # u5
   @.. tmp = α50 * uprev + α51 * u + α54 * tmp + β54 * dt * k
   stage_limiter!(tmp, f, t+c5*dt)
-  f( k,  tmp, p, t+c5*dt)
+  f( k, tmp, t+c5*dt, integrator)
   # u6
   @.. tmp = α61 * u + α65 * tmp + β65 * dt * k
   stage_limiter!(tmp, f, t+c6*dt)
-  f( k,  tmp, p, t+c6*dt)
+  f( k, tmp, t+c6*dt, integrator)
   # u7
   @.. tmp = α72 * u₂ + α73 * u₃ + α76 * tmp + β76 * dt * k
   stage_limiter!(tmp, f, t+c7*dt)
-  f( k,  tmp, p, t+c7*dt)
+  f( k, tmp, t+c7*dt, integrator)
   # u
   @.. u = tmp + β87 * dt * k
   stage_limiter!(u, f, t+dt)
   step_limiter!(u, f, t+dt)
   integrator.destats.nf += 8
-  f( k,  u, p, t+dt)
+  f( k, u, t+dt, integrator)
 end
 
 
 function initialize!(integrator,cache::SSPRK432ConstantCache)
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
 
   # Avoid undefined entries if k is an array of arrays
@@ -629,26 +629,26 @@ function initialize!(integrator,cache::SSPRK432ConstantCache)
 end
 
 @muladd function perform_step!(integrator,cache::SSPRK432ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   dt_2 = dt / 2
 
   # u1
   u = uprev + dt_2*integrator.fsalfirst
-  k = f(u, p, t+dt_2)
+  k = f(u, t+dt_2, integrator)
   # u2
   u = u + dt_2*k
-  k = f(u, p, t+dt)
+  k = f(u, t+dt, integrator)
   u = u + dt_2*k
   if integrator.opts.adaptive
     utilde = (uprev + 2*u) / 3
   end
   # u3
   u = (2*uprev + u) / 3
-  k = f(u, p, t+dt_2)
+  k = f(u, t+dt_2, integrator)
   # u
   u = u + dt_2*k
 
-  integrator.fsallast = f(u, p, t+dt)
+  integrator.fsallast = f(u, t+dt, integrator)
   integrator.destats.nf += 4
   if integrator.opts.adaptive
     utilde = utilde - u
@@ -665,23 +665,23 @@ function initialize!(integrator,cache::SSPRK432Cache)
   integrator.fsalfirst = cache.fsalfirst  # done by pointers, no copying
   integrator.fsallast = cache.k
   integrator.k[1] = integrator.fsalfirst
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::SSPRK432Cache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack k,fsalfirst,utilde,atmp,stage_limiter!,step_limiter! = cache
   dt_2 = dt / 2
 
   # u1
   @.. u = uprev + dt_2*fsalfirst
   stage_limiter!(u, f, t+dt_2)
-  f( k,  u, p, t+dt_2)
+  f( k, u, t+dt_2, integrator)
   # u2
   @.. u = u + dt_2*k
   stage_limiter!(u, f, t+dt)
-  f( k,  u, p, t+dt)
+  f( k, u, t+dt, integrator)
   #
   @.. u = u + dt_2*k
   stage_limiter!(u, f, t+dt+dt_2)
@@ -690,7 +690,7 @@ end
   end
   # u3
   @.. u = (2*uprev + u) / 3
-  f( k,  u, p, t+dt_2)
+  f( k, u, t+dt_2, integrator)
   #
   @.. u = u + dt_2*k
   stage_limiter!(u, f, t+dt)
@@ -702,14 +702,14 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
   integrator.destats.nf += 4
-  f( k,  u, p, t+dt)
+  f( k, u, t+dt, integrator)
 end
 
 
 function initialize!(integrator,cache::SSPRKMSVS32ConstantCache)
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
 
   # Avoid undefined entries if k is an array of arrays
@@ -718,7 +718,7 @@ function initialize!(integrator,cache::SSPRKMSVS32ConstantCache)
 end
 
 @muladd function perform_step!(integrator,cache::SSPRKMSVS32ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack u_1,u_2,dts,dtf,μ,v_n = cache
 
   if integrator.iter == 1
@@ -731,9 +731,9 @@ end
 
 
   if cache.step < 3 #starting Procedure
-    k = f(u,p,t+dt)
+    k = f(u, t+dt, integrator)
     u = uprev + dt*k
-    k = f(u, p, t+dt)
+    k = f(u, t+dt, integrator)
     integrator.destats.nf += 2
     u = (uprev + u + dt*k) / 2
       if cache.step == 1
@@ -775,12 +775,12 @@ end
     end
   end
   if accpt == true
-    integrator.fsallast = f(u, p, t+dt)
+    integrator.fsallast = f(u, t+dt, integrator)
     integrator.destats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.u = u
   else
-    integrator.fsallast = f(uprev, p, t+dt)
+    integrator.fsallast = f(uprev, t+dt, integrator)
     integrator.destats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.u = uprev
@@ -798,18 +798,18 @@ function initialize!(integrator,cache::SSPRKMSVS32Cache)
   integrator.fsalfirst = cache.fsalfirst  # done by pointers, no copying
   integrator.fsallast = cache.k
   integrator.k[1] = integrator.fsalfirst
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator)
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::SSPRKMSVS32Cache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack k,fsalfirst,u_1,u_2,stage_limiter!,step_limiter! = cache
 
   if cache.step < 3
     @.. u = uprev + dt*fsalfirst
     stage_limiter!(u, f, t+dt)
-    f(k,u, p, t+dt)
+    f(k, u, t+dt, integrator)
     integrator.destats.nf += 1
     @.. u = (uprev + u + dt*k) / 2
     stage_limiter!(u, f, t+dt)
@@ -830,14 +830,14 @@ end
   end
   cache.step += 1
   integrator.destats.nf += 1
-  f(k,u, p, t+dt)
+  f(k, u, t+dt, integrator)
 end
 
 
 function initialize!(integrator,cache::SSPRKMSVS43ConstantCache)
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
 
   # Avoid undefined entries if k is an array of arrays
@@ -846,26 +846,26 @@ function initialize!(integrator,cache::SSPRKMSVS43ConstantCache)
 end
 
 @muladd function perform_step!(integrator,cache::SSPRKMSVS43ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack u_1,u_2,u_3,k1,k2,k3 = cache
 
   if cache.step < 4
     u = uprev + dt*integrator.fsalfirst
-    k = f(u, p, t+dt)
+    k = f(u, t+dt, integrator)
     u = (uprev + u + dt*k) / 2
       if cache.step == 1
         u_3 = uprev
-        cache.k3 = f(u_3,p,t+dt)
+        cache.k3 = f(u_3, t+dt, integrator)
         integrator.destats.nf += 1
       end
       if cache.step == 2
         u_2 = uprev
-        cache.k2 = f(u_2,p,t+dt)
+        cache.k2 = f(u_2, t+dt, integrator)
         integrator.destats.nf += 1
       end
       if cache.step == 3
         u_1 = uprev
-        cache.k1 = f(u_1,p,t+dt)
+        cache.k1 = f(u_1, t+dt, integrator)
         integrator.destats.nf += 1
       end
   # u
@@ -878,7 +878,7 @@ end
     u_2 = u_1
     u_1 = uprev
   end
-  integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+  integrator.fsallast = f(u, t+dt, integrator) # For interpolation, then FSAL'd
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.u = u
@@ -894,36 +894,36 @@ function initialize!(integrator,cache::SSPRKMSVS43Cache)
   integrator.fsalfirst = cache.fsalfirst  # done by pointers, no copying
   integrator.fsallast = cache.k
   integrator.k[1] = integrator.fsalfirst
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
 end
 
 
 @muladd function perform_step!(integrator,cache::SSPRKMSVS43Cache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack k,fsalfirst,u_1,u_2,u_3,stage_limiter!,step_limiter!,k1,k2,k3 = cache
 
   if cache.step < 4
     @.. u = uprev + dt*fsalfirst
     stage_limiter!(u, f, t+dt)
-    f(k,u, p, t+dt)
+    f(k, u, t+dt, integrator)
     integrator.destats.nf += 1
     @.. u = (uprev + u + dt*k) / 2
     stage_limiter!(u, f, t+dt)
     step_limiter!(u, f, t+dt)
     if cache.step == 1
       cache.u_3 .= uprev
-      f(k3,u_3,p,t+dt)
+      f(k3, u_3, t+dt, integrator)
       integrator.destats.nf += 1
     end
     if cache.step == 2
       cache.u_2 .= uprev
-      f(k2,u_2,p,t+dt)
+      f(k2, u_2, t+dt, integrator)
       integrator.destats.nf += 1
     end
     if cache.step == 3
       cache.u_1 .= uprev
-      f(k1,u_1,p,t+dt)
+      f(k1, u_1, t+dt, integrator)
       integrator.destats.nf += 1
     end
   # u
@@ -940,14 +940,14 @@ end
   end
   cache.step += 1
   integrator.destats.nf += 1
-  f( k, u, p, t+dt)
+  f( k, u, t+dt, integrator)
 end
 
 
 function initialize!(integrator,cache::SSPRK932ConstantCache)
   integrator.kshortsize = 1
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
 
   # Avoid undefined entries if k is an array of arrays
@@ -956,47 +956,47 @@ function initialize!(integrator,cache::SSPRK932ConstantCache)
 end
 
 @muladd function perform_step!(integrator,cache::SSPRK932ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   dt_6 = dt / 6
   dt_3 = dt / 3
   dt_2 = dt / 2
 
   # u1
   u = uprev + dt_6*integrator.fsalfirst
-  k = f(u, p, t+dt_6)
+  k = f(u, t+dt_6, integrator)
   # u2
   u = u + dt_6*k
-  k = f(u, p, t+dt_3)
+  k = f(u, t+dt_3, integrator)
   # u3
   u = u + dt_6*k
-  k = f(u, p, t+dt_2)
+  k = f(u, t+dt_2, integrator)
   # u4
   u = u + dt_6*k
-  k = f(u, p, t+2*dt_3)
+  k = f(u, t+2*dt_3, integrator)
   # u5
   u = u + dt_6*k
-  k = f(u, p, t+5*dt_6)
+  k = f(u, t+5*dt_6, integrator)
   integrator.destats.nf += 5
   # u6
   u = u + dt_6*k
   if integrator.opts.adaptive
-    k = f(u, p, t+dt)
+    k = f(u, t+dt, integrator)
     integrator.destats.nf += 1
     utilde = (uprev + 6*u + 6*dt*k) / 7
   end
   # u6*
   u = (3*uprev + dt_2*integrator.fsalfirst + 2*u) / 5
-  k = f(u, p, t+dt_2)
+  k = f(u, t+dt_2, integrator)
   # u7*
   u = u + dt_6*k
-  k = f(u, p, t+2*dt_3)
+  k = f(u, t+2*dt_3, integrator)
   # u8*
   u = u + dt_6*k
-  k = f(u, p, t+5*dt_6)
+  k = f(u, t+5*dt_6, integrator)
   # u
   u = u + dt_6*k
 
-  integrator.fsallast = f(u, p, t+dt)
+  integrator.fsallast = f(u, t+dt, integrator)
   integrator.destats.nf += 4
   if integrator.opts.adaptive
     utilde = utilde - u
@@ -1013,12 +1013,12 @@ function initialize!(integrator,cache::SSPRK932Cache)
   integrator.fsalfirst = cache.fsalfirst  # done by pointers, no copying
   integrator.fsallast = cache.k
   integrator.k[1] = integrator.fsalfirst
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::SSPRK932Cache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack k,fsalfirst,utilde,atmp,stage_limiter!,step_limiter! = cache
   dt_6 = dt / 6
   dt_3 = dt / 3
@@ -1027,29 +1027,29 @@ end
   # u1
   @.. u = uprev + dt_6*fsalfirst
   stage_limiter!(u, f, t+dt_6)
-  f( k,  u, p, t+dt_6)
+  f( k, u, t+dt_6, integrator)
   # u2
   @.. u = u + dt_6*k
   stage_limiter!(u, f, t+dt_3)
-  f( k,  u, p, t+dt_3)
+  f( k, u, t+dt_3, integrator)
   # u3
   @.. u = u + dt_6*k
   stage_limiter!(u, f, t+dt_2)
-  f( k,  u, p, t+dt_2)
+  f( k, u, t+dt_2, integrator)
   # u4
   @.. u = u + dt_6*k
   stage_limiter!(u, f, t+2*dt_3)
-  f( k,  u, p, t+2*dt_3)
+  f( k, u, t+2*dt_3, integrator)
   # u5
   @.. u = u + dt_6*k
   stage_limiter!(u, f, t+5*dt_6)
-  f( k,  u, p, t+5*dt_6)
+  f( k, u, t+5*dt_6, integrator)
   integrator.destats.nf += 5
   # u6
   @.. u = u + dt_6*k
   if integrator.opts.adaptive
     stage_limiter!(u, f, t+dt)
-    f( k,  u, p, t+dt)
+    f( k, u, t+dt, integrator)
     integrator.destats.nf += 1
     @.. utilde = (uprev + 6*u + 6*dt*k) / 7
     stage_limiter!(utilde, f, t+dt)
@@ -1057,15 +1057,15 @@ end
   # u6*
   @.. u = (3*uprev + dt_2*fsalfirst + 2*u) / 5
   stage_limiter!(u, f, t+dt_6)
-  f( k,  u, p, t+dt_2)
+  f( k, u, t+dt_2, integrator)
   # u7*
   @.. u = u + dt_6*k
   stage_limiter!(u, f, t+2*dt_3)
-  f( k,  u, p, t+2*dt_3)
+  f( k, u, t+2*dt_3, integrator)
   # u8*
   @.. u = u + dt_6*k
   stage_limiter!(u, f, t+5*dt_6)
-  f( k,  u, p, t+5*dt_6)
+  f( k, u, t+5*dt_6, integrator)
   # u9*
   @.. u = u + dt_6*k
   stage_limiter!(u, f, t+dt)
@@ -1077,12 +1077,12 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
   integrator.destats.nf += 4
-  f( k,  u, p, t+dt)
+  f( k, u, t+dt, integrator)
 end
 
 
 function initialize!(integrator,cache::SSPRK54ConstantCache)
-  integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -1094,25 +1094,25 @@ function initialize!(integrator,cache::SSPRK54ConstantCache)
 end
 
 @muladd function perform_step!(integrator,cache::SSPRK54ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack β10,α20,α21,β21,α30,α32,β32,α40,α43,β43,α52,α53,β53,α54,β54,c1,c2,c3,c4 = cache
 
   # u₁
   u₂ = uprev + β10 * dt * integrator.fsalfirst
-  k = f(u₂,p,t+c1*dt)
+  k = f(u₂, t+c1*dt, integrator)
   # u₂
   u₂ = α20 * uprev + α21 * u₂ + β21 * dt * k
-  k = f(u₂,p,t+c2*dt)
+  k = f(u₂, t+c2*dt, integrator)
   # u₃
   u₃ = α30 * uprev + α32 * u₂ + β32 * dt * k
-  k₃ = f(u₃,p,t+c3*dt)
+  k₃ = f(u₃, t+c3*dt, integrator)
   # u₄ -> stored as tmp
   tmp = α40 * uprev + α43 * u₃ + β43 * dt * k₃
-  k = f(tmp, p, t+c4*dt)
+  k = f(tmp, t+c4*dt, integrator)
   # u
   u = α52 * u₂ + α53 * u₃ + β53 * dt * k₃ + α54 * tmp + β54 * dt * k
 
-  integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+  integrator.fsallast = f(u, t+dt, integrator) # For interpolation, then FSAL'd
   integrator.destats.nf += 5
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -1127,42 +1127,42 @@ function initialize!(integrator,cache::SSPRK54Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # FSAL for interpolation
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::SSPRK54Cache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack k,k₃,u₂,u₃,tmp,fsalfirst,stage_limiter!,step_limiter! = cache
   @unpack β10,α20,α21,β21,α30,α32,β32,α40,α43,β43,α52,α53,β53,α54,β54,c1,c2,c3,c4 = cache.tab
 
   # u₁
   @.. u₂ = uprev + β10 * dt * integrator.fsalfirst
   stage_limiter!(u₂, f, t+c1*dt)
-  f(k,u₂,p,t+c1*dt)
+  f(k, u₂, t+c1*dt, integrator)
   # u₂
   @.. u₂ = α20 * uprev + α21 * u₂ + β21 * dt * k
   stage_limiter!(u₂, f, t+c2*dt)
-  f(k,u₂,p,t+c2*dt)
+  f(k, u₂, t+c2*dt, integrator)
   # u₃
   @.. u₃ = α30 * uprev + α32 * u₂ + β32 * dt * k
   stage_limiter!(u₃, f, t+c3*dt)
-  f(k₃,u₃,p,t+c3*dt)
+  f(k₃, u₃, t+c3*dt, integrator)
   # u₄ -> stored as tmp
   @.. tmp = α40 * uprev + α43 * u₃ + β43 * dt * k₃
   stage_limiter!(tmp, f, t+c4*dt)
-  f( k,  tmp, p, t+c4*dt)
+  f( k, tmp, t+c4*dt, integrator)
   # u
   @.. u = α52 * u₂ + α53 * u₃ + β53 * dt * k₃ + α54 * tmp + β54 * dt * k
   stage_limiter!(u, f, t+dt)
   step_limiter!(u, f, t+dt)
   integrator.destats.nf += 5
-  f( k,  u, p, t+dt)
+  f( k, u, t+dt, integrator)
 end
 
 
 function initialize!(integrator,cache::SSPRK104ConstantCache)
-  integrator.fsalfirst = integrator.f(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -1174,32 +1174,32 @@ function initialize!(integrator,cache::SSPRK104ConstantCache)
 end
 
 @muladd function perform_step!(integrator,cache::SSPRK104ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   dt_6 = dt/6
   dt_3 = dt/3
   dt_2 = dt/2
 
   tmp = uprev + dt_6 * integrator.fsalfirst # u₁
-  k = f(tmp, p, t+dt_6)
+  k = f(tmp, t+dt_6, integrator)
   tmp = tmp + dt_6 * k # u₂
-  k = f(tmp, p, t+dt_3)
+  k = f(tmp, t+dt_3, integrator)
   tmp = tmp + dt_6 * k # u₃
-  k = f(tmp, p, t+dt_2)
+  k = f(tmp, t+dt_2, integrator)
   u = tmp + dt_6 * k # u₄
-  k₄ = f(u, p, t+2*dt_3)
+  k₄ = f(u, t+2*dt_3, integrator)
   tmp = (3*uprev + 2*u + dt_3 * k₄) / 5 # u₅
-  k = f(tmp, p, t+dt_3)
+  k = f(tmp, t+dt_3, integrator)
   tmp = tmp + dt_6 * k # u₆
-  k = f(tmp, p, t+dt_2)
+  k = f(tmp, t+dt_2, integrator)
   tmp = tmp + dt_6 * k # u₇
-  k = f(tmp, p, t+2*dt_3)
+  k = f(tmp, t+2*dt_3, integrator)
   tmp = tmp + dt_6 * k # u₈
-  k = f(tmp, p, t+5*dt_6)
+  k = f(tmp, t+5*dt_6, integrator)
   tmp = tmp + dt_6 * k # u₉
-  k = f(tmp, p, t+dt)
+  k = f(tmp, t+dt, integrator)
   u = (uprev + 9*(u + dt_6*k₄) + 15*(tmp + dt_6*k)) / 25
 
-  integrator.fsallast = f(u, p, t+dt) # For interpolation, then FSAL'd
+  integrator.fsallast = f(u, t+dt, integrator) # For interpolation, then FSAL'd
   integrator.destats.nf += 10
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -1214,12 +1214,12 @@ function initialize!(integrator,cache::SSPRK104Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # FSAL for interpolation
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # FSAL for interpolation
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::SSPRK104Cache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack k,k₄,tmp,fsalfirst,stage_limiter!,step_limiter! = cache
   dt_6 = dt/6
   dt_3 = dt/3
@@ -1227,34 +1227,34 @@ end
 
   @.. tmp = uprev + dt_6 * integrator.fsalfirst
   stage_limiter!(tmp, f, t+dt_6)
-  f( k,  tmp, p, t+dt_6)
+  f( k, tmp, t+dt_6, integrator)
   @.. tmp = tmp + dt_6 * k
   stage_limiter!(tmp, f, t+dt_3)
-  f( k,  tmp, p, t+dt_3)
+  f( k, tmp, t+dt_3, integrator)
   @.. tmp = tmp + dt_6 * k
   stage_limiter!(tmp, f, t+dt_2)
-  f( k,  tmp, p, t+dt_2)
+  f( k, tmp, t+dt_2, integrator)
   @.. u = tmp + dt_6 * k
   stage_limiter!(u, f, t+2*dt_3)
-  f(k₄,u,p,t+2*dt_3)
+  f(k₄, u, t+2*dt_3, integrator)
   @.. tmp = (3*uprev + 2*u + 2*dt_6 * k₄) / 5
   stage_limiter!(tmp, f, t+dt_3)
-  f( k,  tmp, p, t+dt_3)
+  f( k, tmp, t+dt_3, integrator)
   @.. tmp = tmp + dt_6 * k
   stage_limiter!(tmp, f, t+dt_2)
-  f( k,  tmp, p, t+dt_2)
+  f( k, tmp, t+dt_2, integrator)
   @.. tmp = tmp + dt_6 * k
   stage_limiter!(tmp, f, t+2*dt_3)
-  f( k,  tmp, p, t+2*dt_3)
+  f( k, tmp, t+2*dt_3, integrator)
   @.. tmp = tmp + dt_6 * k
   stage_limiter!(tmp, f, t+5*dt_6)
-  f( k,  tmp, p, t+5*dt_6)
+  f( k, tmp, t+5*dt_6, integrator)
   @.. tmp = tmp + dt_6 * k
   stage_limiter!(tmp, f, t+dt)
-  f( k,  tmp, p, t+dt)
+  f( k, tmp, t+dt, integrator)
   @.. u = (uprev + 9*(u + dt_6*k₄) + 15*(tmp + dt_6*k)) / 25
   stage_limiter!(u, f, t+dt)
   step_limiter!(u, f, t+dt)
   integrator.destats.nf += 10
-  f(k, u, p, t+dt)
+  f(k, u, t+dt, integrator)
 end

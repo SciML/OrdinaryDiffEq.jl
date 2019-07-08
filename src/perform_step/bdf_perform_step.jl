@@ -1,7 +1,7 @@
 function initialize!(integrator, cache::ABDF2ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
 
   # Avoid undefined entries if k is an array of arrays
@@ -11,7 +11,7 @@ function initialize!(integrator, cache::ABDF2ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::ABDF2ConstantCache, repeat_step=false)
-  @unpack t,f,p = integrator
+  @unpack t,f = integrator
   @unpack dtₙ₋₁,nlsolver = cache
   alg = unwrap_alg(integrator, true)
   dtₙ, uₙ, uₙ₋₁, uₙ₋₂ = integrator.dt, integrator.u, integrator.uprev, integrator.uprev2
@@ -50,7 +50,7 @@ end
   nlsolvefail(nlsolver) && return
 
   uₙ = nlsolver.tmp + d*z
-  integrator.fsallast = f(uₙ,p,t+dtₙ)
+  integrator.fsallast = f(uₙ, t+dtₙ, integrator)
   integrator.destats.nf += 1
 
   if integrator.opts.adaptive
@@ -80,12 +80,12 @@ function initialize!(integrator, cache::ABDF2Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # For the interpolation, needs k at the updated point
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::ABDF2Cache, repeat_step=false)
-  @unpack t,dt,f,p = integrator
+  @unpack t,dt,f = integrator
   @unpack z,k,b,J,W,tmp,atmp,dtₙ₋₁,zₙ₋₁,nlsolver = cache
   alg = unwrap_alg(integrator, true)
   uₙ,uₙ₋₁,uₙ₋₂,dtₙ = integrator.u,integrator.uprev,integrator.uprev2,integrator.dt
@@ -124,7 +124,7 @@ end
 
   @.. uₙ = tmp + d*z
 
-  f(integrator.fsallast, uₙ, p, t+dtₙ)
+  f(integrator.fsallast, uₙ, t+dtₙ, integrator)
   integrator.destats.nf += 1
   if integrator.opts.adaptive
     btilde0 = (dtₙ₋₁+dtₙ)*1//6
@@ -147,12 +147,12 @@ end
 # SBDF
 
 function initialize!(integrator, cache::SBDFConstantCache)
-  @unpack uprev, p, t = integrator
+  @unpack uprev, t = integrator
   @unpack f1, f2 = integrator.f
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  cache.du₁ = f1(uprev,p,t)
-  cache.du₂ = f2(uprev,p,t)
+  cache.du₁ = f1(uprev, t, integrator)
+  cache.du₂ = f2(uprev, t, integrator)
   integrator.destats.nf += 1
   integrator.destats.nf2 += 1
   integrator.fsalfirst = cache.du₁ + cache.du₂
@@ -164,7 +164,7 @@ function initialize!(integrator, cache::SBDFConstantCache)
 end
 
 function perform_step!(integrator,cache::SBDFConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p,alg = integrator
+  @unpack t,dt,uprev,u,f,alg = integrator
   @unpack uprev2,uprev3,uprev4,du₁,du₂,k₁,k₂,k₃,nlsolver = cache
   @unpack f1, f2 = integrator.f
   cnt = cache.cnt = min(alg.order, integrator.iter+1)
@@ -201,8 +201,8 @@ function perform_step!(integrator,cache::SBDFConstantCache,repeat_step=false)
   cnt == 4 && ( cache.uprev4 = uprev3; cache.k₃ = k₂ )
   cnt >= 3 && ( cache.uprev3 = uprev2; cache.k₂ = k₁ )
               ( cache.uprev2 = uprev;  cache.k₁ = du₂ )
-  cache.du₁ = f1(u, p, t+dt)
-  cache.du₂ = f2(u, p, t+dt)
+  cache.du₁ = f1(u, t+dt, integrator)
+  cache.du₂ = f2(u, t+dt, integrator)
   integrator.destats.nf += 1
   integrator.destats.nf2 += 1
   integrator.fsallast = cache.du₁ + cache.du₂
@@ -212,7 +212,7 @@ function perform_step!(integrator,cache::SBDFConstantCache,repeat_step=false)
 end
 
 function initialize!(integrator, cache::SBDFCache)
-  @unpack uprev, p, t = integrator
+  @unpack uprev, t = integrator
   @unpack f1, f2 = integrator.f
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
@@ -220,15 +220,15 @@ function initialize!(integrator, cache::SBDFCache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  f1(cache.du₁, uprev, p, t)
-  f2(cache.du₂, uprev, p, t)
+  f1(cache.du₁, uprev, t, integrator)
+  f2(cache.du₂, uprev, t, integrator)
   integrator.destats.nf += 1
   integrator.destats.nf2 += 1
   @.. integrator.fsalfirst = cache.du₁ + cache.du₂
 end
 
 function perform_step!(integrator, cache::SBDFCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p,alg = integrator
+  @unpack t,dt,uprev,u,f,alg = integrator
   @unpack tmp,uprev2,uprev3,uprev4,k,k₁,k₂,k₃,du₁,du₂,z,nlsolver = cache
   @unpack f1, f2 = integrator.f
   cnt = cache.cnt = min(alg.order, integrator.iter+1)
@@ -263,8 +263,8 @@ function perform_step!(integrator, cache::SBDFCache, repeat_step=false)
   cnt == 4 && ( cache.uprev4 .= uprev3; cache.k₃ .= k₂ )
   cnt >= 3 && ( cache.uprev3 .= uprev2; cache.k₂ .= k₁ )
               ( cache.uprev2 .= uprev;  cache.k₁ .= du₂ )
-  f1(du₁, u, p, t+dt)
-  f2(du₂, u, p, t+dt)
+  f1(du₁, u, t+dt, integrator)
+  f2(du₂, u, t+dt, integrator)
   integrator.destats.nf += 1
   integrator.destats.nf2 += 1
   @.. k = du₁ + du₂
@@ -275,7 +275,7 @@ end
 function initialize!(integrator, cache::QNDF1ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
 
   # Avoid undefined entries if k is an array of arrays
@@ -285,7 +285,7 @@ function initialize!(integrator, cache::QNDF1ConstantCache)
 end
 
 function perform_step!(integrator,cache::QNDF1ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uprev2,D,D2,R,U,dtₙ₋₁,nlsolver = cache
   alg = unwrap_alg(integrator, true)
   cnt = integrator.iter
@@ -335,7 +335,7 @@ function perform_step!(integrator,cache::QNDF1ConstantCache,repeat_step=false)
   end
   cache.dtₙ₋₁ = dt
   cache.uprev2 = uprev
-  integrator.fsallast = f(u, p, t+dt)
+  integrator.fsallast = f(u, t+dt, integrator)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -349,12 +349,12 @@ function initialize!(integrator, cache::QNDF1Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # For the interpolation, needs k at the updated point
   integrator.destats.nf += 1
 end
 
 function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uprev2,D,D2,R,U,dtₙ₋₁,tmp,z,W,utilde,atmp,nlsolver = cache
   alg = unwrap_alg(integrator, true)
   cnt = integrator.iter
@@ -400,14 +400,14 @@ function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
   end
   cache.dtₙ₋₁ = dt
   cache.uprev2 .= uprev
-  f(integrator.fsallast, u, p, t+dt)
+  f(integrator.fsallast, u, t+dt, integrator)
   integrator.destats.nf += 1
 end
 
 function initialize!(integrator, cache::QNDF2ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
 
   # Avoid undefined entries if k is an array of arrays
@@ -417,7 +417,7 @@ function initialize!(integrator, cache::QNDF2ConstantCache)
 end
 
 function perform_step!(integrator,cache::QNDF2ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uprev2,uprev3,dtₙ₋₁,dtₙ₋₂,D,D2,R,U,nlsolver = cache
   alg = unwrap_alg(integrator, true)
   cnt = integrator.iter
@@ -491,7 +491,7 @@ function perform_step!(integrator,cache::QNDF2ConstantCache,repeat_step=false)
   cache.uprev2 = uprev
   cache.dtₙ₋₂ = dtₙ₋₁
   cache.dtₙ₋₁ = dt
-  integrator.fsallast = f(u, p, t+dt)
+  integrator.fsallast = f(u, t+dt, integrator)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -506,12 +506,12 @@ function initialize!(integrator, cache::QNDF2Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # For the interpolation, needs k at the updated point
   integrator.destats.nf += 1
 end
 
 function perform_step!(integrator,cache::QNDF2Cache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uprev2,uprev3,dtₙ₋₁,dtₙ₋₂,D,D2,R,U,tmp,utilde,atmp,W,nlsolver = cache
   alg = unwrap_alg(integrator, true)
   cnt = integrator.iter
@@ -583,7 +583,7 @@ function perform_step!(integrator,cache::QNDF2Cache,repeat_step=false)
   cache.uprev2 .= uprev
   cache.dtₙ₋₂ = dtₙ₋₁
   cache.dtₙ₋₁ = dt
-  f(integrator.fsallast, u, p, t+dt)
+  f(integrator.fsallast, u, t+dt, integrator)
   integrator.destats.nf += 1
   return
 end
@@ -591,7 +591,7 @@ end
 function initialize!(integrator, cache::QNDFConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
 
   # Avoid undefined entries if k is an array of arrays
@@ -601,7 +601,7 @@ function initialize!(integrator, cache::QNDFConstantCache)
 end
 
 function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack udiff,dts,order,max_order,D,D2,R,U,nlsolver = cache
   k = order
   cnt = integrator.iter
@@ -718,7 +718,7 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
   fill!(D, zero(u)); fill!(D2, zero(u))
   fill!(R, zero(t)); fill!(U, zero(t))
 
-  integrator.fsallast = f(u, p, t+dt)
+  integrator.fsallast = f(u, t+dt, integrator)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -732,12 +732,12 @@ function initialize!(integrator, cache::QNDFCache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # For the interpolation, needs k at the updated point
   integrator.destats.nf += 1
 end
 
 function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack udiff,dts,order,max_order,D,D2,R,U,tmp,utilde,atmp,W,nlsolver = cache
   cnt = integrator.iter
   k = order
@@ -873,7 +873,7 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
   end
   fill!(R, zero(t)); fill!(U, zero(t))
 
-  f(integrator.fsallast, u, p, t+dt)
+  f(integrator.fsallast, u, t+dt, integrator)
   integrator.destats.nf += 1
 end
 
@@ -881,7 +881,7 @@ end
 function initialize!(integrator, cache::MEBDF2ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
 
   # Avoid undefined entries if k is an array of arrays
@@ -891,7 +891,7 @@ function initialize!(integrator, cache::MEBDF2ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::MEBDF2ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   nlsolver = cache.nlsolver
   alg = unwrap_alg(integrator, true)
   update_W!(integrator, cache, dt, repeat_step)
@@ -925,7 +925,7 @@ end
   u = tmp2 + z
 
 ### finalize
-  integrator.fsallast = f(u, p, t+dt)
+  integrator.fsallast = f(u, t+dt, integrator)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -939,12 +939,12 @@ function initialize!(integrator, cache::MEBDF2Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # For the interpolation, needs k at the updated point
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::MEBDF2Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack z,z₁,z₂,tmp2,tmp,nlsolver = cache
   mass_matrix = integrator.f.mass_matrix
   alg = unwrap_alg(integrator, true)
@@ -980,6 +980,6 @@ end
  @.. u = tmp2 + z
 
 ### finalize
- f(integrator.fsallast,u,p,t+dt)
+ f(integrator.fsallast, u, t+dt, integrator)
  integrator.destats.nf += 1
 end
