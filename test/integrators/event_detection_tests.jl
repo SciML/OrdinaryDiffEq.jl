@@ -38,11 +38,10 @@ sol=solve(prob, Vern9(), abstol=1e-14, reltol=1e-14, save_everystep=false, save_
 
 @test length(sol) > 1500
 
-using ParameterizedFunctions
-f = @ode_def BallBounce begin
-  dy =  v
-  dv = -g
-end g
+f = function (du,u,p,t)
+  du[1] = u[2]
+  du[2] = -p[1]
+end
 function condition(u,t,integrator) # Event when event_f(u,t) == 0
   u[1]
 end
