@@ -33,7 +33,7 @@ function initialize!(integrator,
   cache.uhold[1] = integrator.uprev
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator)
   integrator.destats.nf += 1
 
   # Avoid undefined entries if k is an array of arrays
@@ -43,7 +43,7 @@ function initialize!(integrator,
 end
 
 @muladd function perform_step!(integrator, cache::GenericImplicitEulerConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uhold,rhs,nl_rhs = cache
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
   rhs.tmp = uprev
@@ -61,7 +61,7 @@ end
   rhs.a = dt
   nlres = alg.nlsolve(nl_rhs,uhold)
   uhold[1] = nlres[1]
-  integrator.fsallast = f(uhold[1],p,t+dt)
+  integrator.fsallast = f(uhold[1], t+dt, integrator)
   integrator.destats.nf += 1
   u = uhold[1]
 
@@ -94,7 +94,7 @@ function initialize!(integrator,
                      cache::Union{GenericImplicitEulerCache,GenericTrapezoidCache})
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator)
   integrator.destats.nf += 1
 
   integrator.kshortsize = 2
@@ -104,7 +104,7 @@ function initialize!(integrator,
 end
 
 @muladd function perform_step!(integrator, cache::GenericImplicitEulerCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack dual_cache,k,nl_rhs,rhs,tmp,atmp = cache
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
   copyto!(tmp,uprev)
@@ -143,13 +143,13 @@ end
     integrator.EEst = 1
   end
 
-  f(k, u, p, t+dt)
+  f(k, u, t+dt, integrator)
   integrator.destats.nf += 1
 end
 
 function initialize!(integrator, cache::GenericTrapezoidConstantCache)
   cache.uhold[1] = integrator.uprev
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t)
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator)
   integrator.destats.nf += 1
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -161,7 +161,7 @@ function initialize!(integrator, cache::GenericTrapezoidConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::GenericTrapezoidConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uhold,rhs,nl_rhs = cache
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
   rhs.tmp = first(uprev) + (dt/2)*first(integrator.fsalfirst)
@@ -179,7 +179,7 @@ end
   rhs.a = dt/2
   nlres = alg.nlsolve(nl_rhs,uhold)
   uhold[1] = nlres[1]
-  integrator.fsallast = f(uhold[1],p,t+dt)
+  integrator.fsallast = f(uhold[1], t+dt, integrator)
   integrator.destats.nf += 1
   u = uhold[1]
 
@@ -229,7 +229,7 @@ end
 function initialize!(integrator, cache::GenericTrapezoidCache)
   integrator.fsalfirst = cache.fsalfirst
   integrator.fsallast = cache.k
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator)
   integrator.destats.nf += 1
   integrator.kshortsize = 2
   resize!(integrator.k, integrator.kshortsize)
@@ -238,7 +238,7 @@ function initialize!(integrator, cache::GenericTrapezoidCache)
 end
 
 @muladd function perform_step!(integrator, cache::GenericTrapezoidCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack dual_cache,k,rhs,nl_rhs,tmp,atmp = cache
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
   tmp .= uprev .+ (dt/2).*integrator.fsalfirst
@@ -298,6 +298,6 @@ end
     end
   end
 
-  f(k, u, p, t+dt)
+  f(k, u, t+dt, integrator)
   integrator.destats.nf += 1
 end

@@ -15,8 +15,8 @@ function initialize!(integrator,cache::Union{GenericIIF1ConstantCache,GenericIIF
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   A = integrator.f.f1.f
-  cache.uhold[1] = integrator.f.f2(integrator.uprev,integrator.p,integrator.t)
-  integrator.fsalfirst = integrator.f.f1(integrator.uprev,integrator.p,integrator.t) .+ cache.uhold[1]
+  cache.uhold[1] = integrator.f.f2(integrator.uprev, integrator.t, integrator)
+  integrator.fsalfirst = integrator.f.f1(integrator.uprev, integrator.t, integrator) .+ cache.uhold[1]
   integrator.destats.nf += 1
   integrator.destats.nf2 += 1
 
@@ -27,7 +27,7 @@ function initialize!(integrator,cache::Union{GenericIIF1ConstantCache,GenericIIF
 end
 
 function perform_step!(integrator,cache::Union{GenericIIF1ConstantCache,GenericIIF2ConstantCache},repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack uhold,rhs,nl_rhs = cache
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
@@ -46,7 +46,7 @@ function perform_step!(integrator,cache::Union{GenericIIF1ConstantCache,GenericI
   rhs.t = t
   rhs.dt = dt
   nlres = alg.nlsolve(nl_rhs,uhold)
-  uhold[1] = integrator.f.f2(nlres[1],integrator.p,t+dt)
+  uhold[1] = integrator.f.f2(nlres[1], t+dt, integrator)
   integrator.destats.nf2 += 1
   u = nlres[1]
   integrator.fsallast = A*u + uhold[1]
@@ -77,7 +77,7 @@ function initialize!(integrator,cache::Union{GenericIIF1Cache,GenericIIF2Cache})
   integrator.kshortsize = 2
   resize!(integrator.k, integrator.kshortsize)
   A = integrator.f.f1.f
-  integrator.f.f2(cache.rtmp1,integrator.uprev,integrator.p,integrator.t)
+  integrator.f.f2(cache.rtmp1, integrator.uprev, integrator.t, integrator)
   integrator.destats.nf2 += 1
   mul!(cache.k,A,integrator.uprev)
   @.. integrator.fsalfirst = cache.k + cache.rtmp1
@@ -88,7 +88,7 @@ end
 function perform_step!(integrator,cache::Union{GenericIIF1Cache,GenericIIF2Cache},repeat_step=false)
   @unpack rtmp1,tmp,k = cache
   @unpack rhs,nl_rhs = cache
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   alg = typeof(integrator.alg) <: CompositeAlgorithm ? integrator.alg.algs[integrator.cache.current] : integrator.alg
 
   @.. k = uprev
@@ -107,7 +107,7 @@ function perform_step!(integrator,cache::Union{GenericIIF1Cache,GenericIIF2Cache
   nlres = alg.nlsolve(nl_rhs,u)
 
   copyto!(u,nlres)
-  integrator.f.f2(rtmp1,nlres,integrator.p,t+dt)
+  integrator.f.f2(rtmp1, nlres, t+dt, integrator)
   integrator.destats.nf2 += 1
   A = f.f1.f
   integrator.fsallast .= A*u .+ rtmp1

@@ -288,7 +288,7 @@ function DiffEqBase.__init(prob::DiffEqBase.AbstractODEProblem,
                       calculate_error = false, destats=destats)
   end
 
-  if recompile_flag == true
+  if recompile_flag
     FType = typeof(f)
     SolType = typeof(sol)
     cacheType = typeof(cache)

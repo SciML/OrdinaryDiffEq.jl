@@ -1,7 +1,7 @@
 function initialize!(integrator,cache::AN5ConstantCache)
   integrator.kshortsize = 7
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
 
   # Avoid undefined entries if k is an array of arrays
@@ -14,7 +14,7 @@ function initialize!(integrator,cache::AN5ConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::AN5ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack z,l,m,c_LTE,dts,tsit5tab = cache
   # handle callbacks, rewind back to order one.
   if integrator.u_modified
@@ -94,12 +94,12 @@ function initialize!(integrator, cache::AN5Cache)
   integrator.k[5] = cache.tsit5cache.k5
   integrator.k[6] = cache.tsit5cache.k6
   integrator.k[7] = cache.tsit5cache.k7
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::AN5Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p,uprev2 = integrator
+  @unpack t,dt,uprev,u,f,uprev2 = integrator
   @unpack z,l,m,c_LTE,dts,tmp,ratetmp,atmp,tsit5cache = cache
   # handle callbacks, rewind back to order one.
   if integrator.u_modified
@@ -175,7 +175,7 @@ end
 function initialize!(integrator,cache::JVODEConstantCache)
   integrator.kshortsize = 7
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
 
   # Avoid undefined entries if k is an array of arrays
@@ -188,13 +188,13 @@ function initialize!(integrator,cache::JVODEConstantCache)
 end
 
 @muladd function perform_step!(integrator, cache::JVODEConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack z,l,m,c_LTE,dts,tsit5tab = cache
   # handle callbacks, rewind back to order one.
   if integrator.u_modified || integrator.iter == 1
     cache.order = 1
     z[1] = integrator.uprev
-    z[2] = f(uprev, p, t)*dt
+    z[2] = f(uprev, t, integrator)*dt
     integrator.destats.nf += 1
     dts[1] = dt
   end
@@ -248,18 +248,18 @@ function initialize!(integrator, cache::JVODECache)
   integrator.k[5] = cache.tsit5cache.k5
   integrator.k[6] = cache.tsit5cache.k6
   integrator.k[7] = cache.tsit5cache.k7
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::JVODECache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p,uprev2 = integrator
+  @unpack t,dt,uprev,u,f,uprev2 = integrator
   @unpack z,l,m,c_LTE,dts,tmp,ratetmp,atmp,tsit5cache = cache
   # handle callbacks, rewind back to order one.
   if integrator.u_modified || integrator.iter == 1
     cache.order = 1
     @.. z[1] = integrator.uprev
-    f(z[2], uprev, p, t)
+    f(z[2], uprev, t, integrator)
     integrator.destats.nf += 1
     @.. z[2] = z[2]*dt
     dts[1] = dt

@@ -6,7 +6,7 @@ function initialize!(integrator, cache::Union{Kvaerno3ConstantCache,
                                               KenCarp5ConstantCache})
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
 
   # Avoid undefined entries if k is an array of arrays
@@ -27,12 +27,12 @@ function initialize!(integrator, cache::Union{Kvaerno3Cache,
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t) # For the interpolation, needs k at the updated point
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # For the interpolation, needs k at the updated point
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator, cache::Kvaerno3ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   nlsolver = cache.nlsolver
   @unpack γ,a31,a32,a41,a42,a43,btilde1,btilde2,btilde3,btilde4,c3,α31,α32 = cache.tab
   alg = unwrap_alg(integrator, true)
@@ -95,7 +95,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Kvaerno3Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack dz,z₁,z₂,z₃,z₄,k,b,tmp,atmp,nlsolver = cache
   @unpack γ,a31,a32,a41,a42,a43,btilde1,btilde2,btilde3,btilde4,c3,α31,α32 = cache.tab
   alg = unwrap_alg(integrator, true)
@@ -166,7 +166,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::KenCarp3ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,p = integrator
+  @unpack t,dt,uprev,u = integrator
   nlsolver = cache.nlsolver
   @unpack γ,a31,a32,a41,a42,a43,btilde1,btilde2,btilde3,btilde4,c3,α31,α32,ea21,ea31,ea32,ea41,ea42,ea43,eb1,eb2,eb3,eb4,ebtilde1,ebtilde2,ebtilde3,ebtilde4 = cache.tab
   alg = unwrap_alg(integrator, true)
@@ -187,7 +187,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     # Explicit tableau is not FSAL
     # Make this not compute on repeat
-    z₁ = dt.*f(uprev, p, t)
+    z₁ = dt.*f(uprev, t, integrator)
   else
     # FSAL Step 1
     z₁ = dt*integrator.fsalfirst
@@ -215,7 +215,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     z₃ = z₂
     u = nlsolver.tmp + γ*z₂
-    k2 = dt*f2(u,p,t + 2γdt)
+    k2 = dt*f2(u, t + 2γdt, integrator)
     integrator.destats.nf2 += 1
     tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
   else
@@ -235,7 +235,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     z₄ = z₂
     u = nlsolver.tmp + γ*z₃
-    k3 = dt*f2( u,p,t+c3*dt)
+    k3 = dt*f2( u, t+c3*dt, integrator)
     integrator.destats.nf2 += 1
     tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃ + ea41*k1 + ea42*k2 + ea43*k3
   else
@@ -252,7 +252,7 @@ end
 
   u = nlsolver.tmp + γ*z₄
   if typeof(integrator.f) <: SplitFunction
-    k4 = dt*f2(u,p,t+dt)
+    k4 = dt*f2(u, t+dt, integrator)
     integrator.destats.nf2 += 1
     u = uprev + a41*z₁ + a42*z₂ + a43*z₃ + γ*z₄ + eb1*k1 + eb2*k2 + eb3*k3 + eb4*k4
   end
@@ -277,7 +277,7 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     integrator.k[1] = integrator.fsalfirst
-    integrator.fsallast = integrator.f(u, p, t+dt)
+    integrator.fsallast = integrator.f(u, t+dt, integrator)
     integrator.k[2] = integrator.fsallast
   else
     integrator.fsallast = z₄./dt
@@ -288,7 +288,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::KenCarp3Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,p = integrator
+  @unpack t,dt,uprev,u = integrator
   @unpack dz,z₁,z₂,z₃,z₄,k1,k2,k3,k4,k,b,tmp,atmp,nlsolver = cache
   @unpack γ,a31,a32,a41,a42,a43,btilde1,btilde2,btilde3,btilde4,c3,α31,α32 = cache.tab
   @unpack ea21,ea31,ea32,ea41,ea42,ea43,eb1,eb2,eb3,eb4 = cache.tab
@@ -311,7 +311,7 @@ end
     # Explicit tableau is not FSAL
     # Make this not compute on repeat
     if !repeat_step && !integrator.last_stepfail
-      f(z₁, integrator.uprev, p, integrator.t)
+      f(z₁, integrator.uprev, integrator.t, integrator)
       z₁ .*= dt
     end
   else
@@ -343,7 +343,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     z₃ .= z₂
     @.. u = tmp + γ*z₂
-    f2(k2, u, p, t + 2γdt); k2 .*= dt
+    f2(k2, u, t + 2γdt, integrator); k2 .*= dt
     integrator.destats.nf2 += 1
     #@.. tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
     for i in eachindex(tmp)
@@ -365,7 +365,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     z₄ .= z₂
     @.. u = tmp + γ*z₃
-    f2( k3, u,p,t+c3*dt); k3 .*= dt
+    f2( k3, u, t+c3*dt, integrator); k3 .*= dt
     integrator.destats.nf2 += 1
     #@.. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃ + ea41*k1 + ea42*k2 + ea43*k3
     for i in eachindex(tmp)
@@ -384,7 +384,7 @@ end
 
   @.. u = tmp + γ*z₄
   if typeof(integrator.f) <: SplitFunction
-    f2( k4, u,p,t+dt); k4 .*= dt
+    f2( k4, u, t+dt, integrator); k4 .*= dt
     integrator.destats.nf2 += 1
     #@.. u = uprev + a41*z₁ + a42*z₂ + a43*z₃ + γ*z₄ + eb1*k1 + eb2*k2 + eb3*k3 + eb4*k4
     for i in eachindex(u)
@@ -414,14 +414,14 @@ end
   end
 
   if typeof(integrator.f) <: SplitFunction
-    integrator.f(integrator.fsallast,u,p,t+dt)
+    integrator.f(integrator.fsallast, u, t+dt, integrator)
   else
     @.. integrator.fsallast = z₄/dt
   end
 end
 
 @muladd function perform_step!(integrator, cache::Kvaerno4ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   nlsolver = cache.nlsolver
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,c3,c4 = cache.tab
   @unpack α21,α31,α32,α41,α42 = cache.tab
@@ -499,7 +499,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Kvaerno4Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack dz,z₁,z₂,z₃,z₄,z₅,k,b,tmp,atmp,nlsolver = cache
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,c3,c4 = cache.tab
   @unpack α21,α31,α32,α41,α42 = cache.tab
@@ -579,7 +579,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::KenCarp4ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,p = integrator
+  @unpack t,dt,uprev,u = integrator
   nlsolver = cache.nlsolver
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,c3,c4,c5 = cache.tab
   @unpack α31,α32,α41,α42,α51,α52,α53,α54,α61,α62,α63,α64,α65 = cache.tab
@@ -605,7 +605,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     # Explicit tableau is not FSAL
     # Make this not compute on repeat
-    z₁ = dt.*f(uprev, p, t)
+    z₁ = dt.*f(uprev, t, integrator)
   else
     # FSAL Step 1
     z₁ = dt*integrator.fsalfirst
@@ -634,7 +634,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     z₃ = z₂
     u = nlsolver.tmp + γ*z₂
-    k2 = dt*f2(u,p,t+2γdt)
+    k2 = dt*f2(u, t+2γdt, integrator)
     integrator.destats.nf2 += 1
     tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
   else
@@ -654,7 +654,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     z₄ = z₂
     u = nlsolver.tmp + γ*z₃
-    k3 = dt*f2( u,p,t+c3*dt)
+    k3 = dt*f2( u, t+c3*dt, integrator)
     integrator.destats.nf2 += 1
     tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃ + ea41*k1 + ea42*k2 + ea43*k3
   else
@@ -673,7 +673,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     z₅ = z₄
     u = nlsolver.tmp + γ*z₄
-    k4 = dt*f2( u,p,t+c4*dt)
+    k4 = dt*f2( u, t+c4*dt, integrator)
     integrator.destats.nf2 += 1
     tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + ea51*k1 + ea52*k2 + ea53*k3 + ea54*k4
   else
@@ -693,7 +693,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     z₆ = z₅
     u = nlsolver.tmp + γ*z₅
-    k5 = dt*f2( u,p,t+c5*dt)
+    k5 = dt*f2( u, t+c5*dt, integrator)
     integrator.destats.nf2 += 1
     tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + ea61*k1 + ea62*k2 + ea63*k3 + ea64*k4 + ea65*k5
   else
@@ -709,7 +709,7 @@ end
 
   u = nlsolver.tmp + γ*z₆
   if typeof(integrator.f) <: SplitFunction
-    k6 = dt*f2(u,p,t+dt)
+    k6 = dt*f2(u, t+dt, integrator)
     integrator.destats.nf2 += 1
     u = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + γ*z₆ + eb1*k1 + eb3*k3 + eb4*k4 + eb5*k5 + eb6*k6
   end
@@ -734,7 +734,7 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     integrator.k[1] = integrator.fsalfirst
-    integrator.fsallast = integrator.f(u, p, t+dt)
+    integrator.fsallast = integrator.f(u, t+dt, integrator)
     integrator.k[2] = integrator.fsallast
   else
     integrator.fsallast = z₆./dt
@@ -745,7 +745,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::KenCarp4Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,p = integrator
+  @unpack t,dt,uprev,u = integrator
   @unpack dz,z₁,z₂,z₃,z₄,z₅,z₆,k,b,tmp,atmp,nlsolver = cache
   @unpack k1,k2,k3,k4,k5,k6 = cache
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,c3,c4,c5 = cache.tab
@@ -774,7 +774,7 @@ end
     # Explicit tableau is not FSAL
     # Make this not compute on repeat
     if !repeat_step && !integrator.last_stepfail
-      f(z₁, integrator.uprev, p, integrator.t)
+      f(z₁, integrator.uprev, integrator.t, integrator)
       z₁ .*= dt
     end
   else
@@ -808,7 +808,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     z₃ .= z₂
     @.. u = tmp + γ*z₂
-    f2(k2, u, p, t + 2γdt); k2 .*= dt
+    f2(k2, u, t + 2γdt, integrator); k2 .*= dt
     integrator.destats.nf2 += 1
     # @.. tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
     for i in eachindex(tmp)
@@ -830,7 +830,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     z₄ .= z₂
     @.. u = tmp + γ*z₃
-    f2( k3, u,p,t+c3*dt); k3 .*= dt
+    f2( k3, u, t+c3*dt, integrator); k3 .*= dt
     integrator.destats.nf2 += 1
     #@.. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃ + ea41*k1 + ea42*k2 + ea43*k3
     for i in eachindex(tmp)
@@ -853,7 +853,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     z₅ .= z₄
     @.. u = tmp + γ*z₄
-    f2( k4, u,p,t+c4*dt); k4 .*= dt
+    f2( k4, u, t+c4*dt, integrator); k4 .*= dt
     integrator.destats.nf2 += 1
     #@.. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + ea51*k1 + ea52*k2 + ea53*k3 + ea54*k4
     for i in eachindex(tmp)
@@ -877,7 +877,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     z₆ .= z₅
     @.. u = tmp + γ*z₅
-    f2( k5, u,p,t+c5*dt); k5 .*= dt
+    f2( k5, u, t+c5*dt, integrator); k5 .*= dt
     integrator.destats.nf2 += 1
     #@.. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + ea61*k1 + ea62*k2 + ea63*k3 + ea64*k4 + ea65*k5
     for i in eachindex(tmp)
@@ -899,7 +899,7 @@ end
 
   @.. u = tmp + γ*z₆
   if typeof(integrator.f) <: SplitFunction
-    f2( k6, u,p,t+dt); k6 .*= dt
+    f2( k6, u, t+dt, integrator); k6 .*= dt
     integrator.destats.nf2 += 1
     @.. u = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + γ*z₆ + eb1*k1 + eb3*k3 + eb4*k4 + eb5*k5 + eb6*k6
     for i in eachindex(u)
@@ -933,14 +933,14 @@ end
   end
 
   if typeof(integrator.f) <: SplitFunction
-    integrator.f(integrator.fsallast,u,p,t+dt)
+    integrator.f(integrator.fsallast, u, t+dt, integrator)
   else
     @.. integrator.fsallast = z₆/dt
   end
 end
 
 @muladd function perform_step!(integrator, cache::Kvaerno5ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   nlsolver = cache.nlsolver
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,c3,c4,c5,c6 = cache.tab
   @unpack btilde1,btilde3,btilde4,btilde5,btilde6,btilde7 = cache.tab
@@ -1036,7 +1036,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::Kvaerno5Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack dz,z₁,z₂,z₃,z₄,z₅,z₆,z₇,k,b,tmp,atmp,nlsolver = cache
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,c3,c4,c5,c6 = cache.tab
   @unpack btilde1,btilde3,btilde4,btilde5,btilde6,btilde7 = cache.tab
@@ -1145,7 +1145,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::KenCarp5ConstantCache, repeat_step=false)
-  @unpack t,dt,uprev,u,p = integrator
+  @unpack t,dt,uprev,u = integrator
   nlsolver = cache.nlsolver
   @unpack γ,a31,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a84,a85,a86,a87,c3,c4,c5,c6,c7 = cache.tab
   @unpack α31,α32,α41,α42,α51,α52,α61,α62,α71,α72,α73,α74,α75,α81,α82,α83,α84,α85 = cache.tab
@@ -1174,7 +1174,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     # Explicit tableau is not FSAL
     # Make this not compute on repeat
-    z₁ = dt.*f(uprev, p, t)
+    z₁ = dt.*f(uprev, t, integrator)
   else
     # FSAL Step 1
     z₁ = dt*integrator.fsalfirst
@@ -1205,7 +1205,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     z₃ = z₂
     u = nlsolver.tmp + γ*z₂
-    k2 = dt*f2(u,p,t+2γdt)
+    k2 = dt*f2(u, t+2γdt, integrator)
     integrator.destats.nf2 += 1
     tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
   else
@@ -1225,7 +1225,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     z₄ = z₂
     u = nlsolver.tmp + γ*z₃
-    k3 = dt*f2( u,p,t+c3*dt)
+    k3 = dt*f2( u, t+c3*dt, integrator)
     integrator.destats.nf2 += 1
     tmp = uprev + a41*z₁ + a43*z₃ + ea41*k1 + ea43*k3
   else
@@ -1244,7 +1244,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     z₅ = z₂
     u = nlsolver.tmp + γ*z₄
-    k4 = dt*f2( u,p,t+c4*dt)
+    k4 = dt*f2( u, t+c4*dt, integrator)
     integrator.destats.nf2 += 1
     tmp = uprev + a51*z₁ + a53*z₃ + a54*z₄ + ea51*k1 + ea53*k3 + ea54*k4
   else
@@ -1263,7 +1263,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     z₆ = z₃
     u = nlsolver.tmp + γ*z₅
-    k5 = dt*f2( u,p,t+c5*dt)
+    k5 = dt*f2( u, t+c5*dt, integrator)
     integrator.destats.nf2 += 1
     tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + ea61*k1 + ea63*k3 + ea64*k4 + ea65*k5
   else
@@ -1282,7 +1282,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     z₇ = z₂
     u = nlsolver.tmp + γ*z₆
-    k6 = dt*f2( u,p,t+c6*dt)
+    k6 = dt*f2( u, t+c6*dt, integrator)
     integrator.destats.nf2 += 1
     tmp = uprev + a71*z₁ +  a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆ + ea71*k1 + ea73*k3 + ea74*k4 + ea75*k5 + ea76*k6
   else
@@ -1301,7 +1301,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     z₈ = z₅
     u = nlsolver.tmp + γ*z₇
-    k7 = dt*f2( u,p,t+c7*dt)
+    k7 = dt*f2( u, t+c7*dt, integrator)
     integrator.destats.nf2 += 1
     tmp = uprev + a81*z₁ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇ + ea81*k1 + ea83*k3 + ea84*k4 + ea85*k5 + ea86*k6 + ea87*k7
   else
@@ -1317,7 +1317,7 @@ end
 
   u = nlsolver.tmp + γ*z₈
   if typeof(integrator.f) <: SplitFunction
-    k8 = dt*f2( u,p,t+dt)
+    k8 = dt*f2( u, t+dt, integrator)
     integrator.destats.nf2 += 1
     u = uprev + a81*z₁ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇ + γ*z₈ + eb1*k1 + eb4*k4 + eb5*k5 + eb6*k6 + eb7*k7 + eb8*k8
   end
@@ -1342,7 +1342,7 @@ end
 
   if typeof(integrator.f) <: SplitFunction
     integrator.k[1] = integrator.fsalfirst
-    integrator.fsallast = integrator.f(u, p, t+dt)
+    integrator.fsallast = integrator.f(u, t+dt, integrator)
     integrator.k[2] = integrator.fsallast
   else
     integrator.fsallast = z₈./dt
@@ -1353,7 +1353,7 @@ end
 end
 
 @muladd function perform_step!(integrator, cache::KenCarp5Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,p = integrator
+  @unpack t,dt,uprev,u = integrator
   @unpack dz,z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,k,b,tmp,atmp,nlsolver = cache
   @unpack k1,k2,k3,k4,k5,k6,k7,k8 = cache
   @unpack γ,a31,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a84,a85,a86,a87,c3,c4,c5,c6,c7 = cache.tab
@@ -1383,7 +1383,7 @@ end
     # Explicit tableau is not FSAL
     # Make this not compute on repeat
     if !repeat_step && !integrator.last_stepfail
-      f(z₁, integrator.uprev, p, integrator.t)
+      f(z₁, integrator.uprev, integrator.t, integrator)
       z₁ .*= dt
     end
   else
@@ -1418,7 +1418,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     z₃ .= z₂
     @.. u = tmp + γ*z₂
-    f2(k2, u, p, t+2γdt); k2 .*= dt
+    f2(k2, u, t+2γdt, integrator); k2 .*= dt
     integrator.destats.nf2 += 1
     #@.. tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
     for i in eachindex(u)
@@ -1440,7 +1440,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     z₄ .= z₃
     @.. u = tmp + γ*z₃
-    f2( k3, u,p,t+c3*dt); k3 .*= dt
+    f2( k3, u, t+c3*dt, integrator); k3 .*= dt
     integrator.destats.nf2 += 1
     #@.. tmp = uprev + a41*z₁ + a43*z₃ + ea41*k1 + ea43*k3
     for i in eachindex(u)
@@ -1461,7 +1461,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     z₅ .= z₂
     @.. u = tmp + γ*z₄
-    f2( k4, u,p,t+c4*dt); k4 .*= dt
+    f2( k4, u, t+c4*dt, integrator); k4 .*= dt
     integrator.destats.nf2 += 1
     #@.. tmp = uprev + a51*z₁ + a53*z₃ + a54*z₄ + ea51*k1 + ea53*k3 + ea54*k4
     for i in eachindex(u)
@@ -1482,7 +1482,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     z₆ .= z₃
     @.. u = tmp + γ*z₅
-    f2( k5, u,p,t+c5*dt); k5 .*= dt
+    f2( k5, u, t+c5*dt, integrator); k5 .*= dt
     integrator.destats.nf2 += 1
     #@.. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + ea61*k1 + ea63*k3 + ea64*k4 + ea65*k5
     for i in eachindex(u)
@@ -1506,7 +1506,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     z₇ .= z₂
     @.. u = tmp + γ*z₆
-    f2( k6, u,p,t+c6*dt); k6 .*= dt
+    f2( k6, u, t+c6*dt, integrator); k6 .*= dt
     integrator.destats.nf2 += 1
     #@.. tmp = uprev + a71*z₁ +  a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆ + ea71*k1 + ea73*k3 + ea74*k4 + ea75*k5 + ea76*k6
     for i in eachindex(u)
@@ -1533,7 +1533,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     z₈ .= z₅
     @.. u = tmp + γ*z₇
-    f2( k7, u,p,t+c7*dt); k7 .*= dt
+    f2( k7, u, t+c7*dt, integrator); k7 .*= dt
     integrator.destats.nf2 += 1
     #@.. tmp = uprev + a81*z₁ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇ + ea81*k1 + ea83*k3 + ea84*k4 + ea85*k5 + ea86*k6 + ea87*k7
     for i in eachindex(u)
@@ -1557,7 +1557,7 @@ end
 
   @.. u = tmp + γ*z₈
   if typeof(integrator.f) <: SplitFunction
-    f2( k8, u,p,t+dt); k8 .*= dt
+    f2( k8, u, t+dt, integrator); k8 .*= dt
     integrator.destats.nf += 1
     # @.. u = uprev + a81*z₁ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇ + γ*z₈ + eb1*k1 + eb4*k4 + eb5*k5 + eb6*k6 + eb7*k7 + eb8*k8
     for i in eachindex(u)
@@ -1593,7 +1593,7 @@ end
   end
 
   if typeof(integrator.f) <: SplitFunction
-    integrator.f(integrator.fsallast,u,p,t+dt)
+    integrator.f(integrator.fsallast, u, t+dt, integrator)
   else
     @.. integrator.fsallast = z₈/dt
   end

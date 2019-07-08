@@ -5,7 +5,7 @@ function initialize!(integrator,cache::Union{AB3ConstantCache,
                                              ABM43ConstantCache,
                                              ABM54ConstantCache})
 
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -30,12 +30,12 @@ function initialize!(integrator,cache::Union{AB3Cache,
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # pre-start FSAL
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # pre-start FSAL
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::AB3ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack k2, k3 = cache
   k1 = integrator.fsalfirst
   if integrator.u_modified
@@ -45,7 +45,7 @@ end
   if cache.step <= 2
     cache.step += 1
     ttmp = t + (2/3)*dt
-    ralk2 = f(uprev + (2/3)*dt*k1, p, ttmp)       #Ralston Method
+    ralk2 = f(uprev + (2/3)*dt*k1, ttmp, integrator)       #Ralston Method
     integrator.destats.nf += 1
     u = uprev + (dt/4)*(k1 + 3*ralk2)
     if cnt == 1
@@ -60,7 +60,7 @@ end
   end
   cache.k2 = k2
   cache.k3 = k3
-  integrator.fsallast = f(u, p, t+dt)
+  integrator.fsallast = f(u, t+dt, integrator)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -68,7 +68,7 @@ end
 end
 
 @muladd function perform_step!(integrator,cache::AB3Cache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack tmp,fsalfirst,k2,k3,ralk2,k = cache
   k1 = integrator.fsalfirst
   if integrator.u_modified
@@ -79,7 +79,7 @@ end
     cache.step += 1
     ttmp = t + (2/3)*dt
     @.. tmp = uprev + (2/3)*dt*k1
-    f(ralk2, tmp, p, ttmp)
+    f(ralk2, tmp, ttmp, integrator)
     integrator.destats.nf += 1
     @.. u = uprev + (dt/4)*(k1 + 3*ralk2)        #Ralston Method
     if cnt == 1
@@ -92,12 +92,12 @@ end
     cache.k2,cache.k3 = k3,k2
     cache.k2 .= k1
   end
-  f(k, u, p, t+dt)
+  f(k, u, t+dt, integrator)
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::ABM32ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack k2,k3 = cache
   k1 = integrator.fsalfirst
   if integrator.u_modified
@@ -107,7 +107,7 @@ end
   if cache.step == 1
     cache.step += 1
     ttmp = t + (2/3)*dt
-    ralk2 = f(uprev + (2/3)*dt*k1, p, ttmp)     #Ralston Method
+    ralk2 = f(uprev + (2/3)*dt*k1, ttmp, integrator)     #Ralston Method
     integrator.destats.nf += 1
     u = uprev + (dt/4)*(k1 + 3*ralk2)
     k2 = k1
@@ -120,7 +120,7 @@ end
   end
   cache.k2 = k2
   cache.k3 = k3
-  integrator.fsallast = f(u, p, t+dt)
+  integrator.fsallast = f(u, t+dt, integrator)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -128,7 +128,7 @@ end
 end
 
 @muladd function perform_step!(integrator,cache::ABM32Cache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack tmp,fsalfirst,k2,k3,ralk2,k = cache
   k1 = integrator.fsalfirst
   if integrator.u_modified
@@ -139,7 +139,7 @@ end
     cache.step += 1
     ttmp = t + (2/3)*dt
     @.. tmp = uprev + (2/3)*dt*k1
-    f(ralk2, tmp, p, ttmp)
+    f(ralk2, tmp, ttmp, integrator)
     integrator.destats.nf += 1
     @.. u = uprev + (dt/4)*(k1 + 3*ralk2)       #Ralston Method
     cache.k2 .= k1
@@ -154,12 +154,12 @@ end
     cache.k2,cache.k3 = k3,k2
     cache.k2 .= k1
   end
-  f(k, u, p, t+dt)
+  f(k, u, t+dt, integrator)
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::AB4ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack k2,k3,k4 = cache
   k1 = integrator.fsalfirst
   if integrator.u_modified
@@ -170,9 +170,9 @@ end
     cache.step += 1
     halfdt = dt/2
     ttmp = t+halfdt
-    k2 = f(uprev + halfdt*k1, p, ttmp)
-    k3 = f(uprev + halfdt*k2, p, ttmp)
-    k4 = f(uprev + dt*k3, p, t+dt)
+    k2 = f(uprev + halfdt*k1, ttmp, integrator)
+    k3 = f(uprev + halfdt*k2, ttmp, integrator)
+    k4 = f(uprev + dt*k3, t+dt, integrator)
     integrator.destats.nf += 3
     u = uprev + (dt/6)*(2*(k2 + k3) + (k1+k4))   #RK4
     if cnt == 1
@@ -188,7 +188,7 @@ end
     cache.k3 = k2
     cache.k2 = k1
   end
-  integrator.fsallast = f(u, p, t+dt)
+  integrator.fsallast = f(u, t+dt, integrator)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -196,7 +196,7 @@ end
 end
 
 @muladd function perform_step!(integrator,cache::AB4Cache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack tmp,fsalfirst,k2,k3,k4,ralk2,k,t2,t3,t4 = cache
   k1 = integrator.fsalfirst
   if integrator.u_modified
@@ -208,11 +208,11 @@ end
     halfdt = dt/2
     ttmp = t+halfdt
     @.. tmp = uprev + halfdt*k1
-    f(t2,tmp,p,ttmp)
+    f(t2, tmp, ttmp, integrator)
     @.. tmp = uprev + halfdt*t2
-    f(t3,tmp,p,ttmp)
+    f(t3, tmp, ttmp, integrator)
     @.. tmp = uprev + dt*t3
-    f(t4,tmp,p,t+dt)
+    f(t4, tmp, t+dt, integrator)
     integrator.destats.nf += 3
     @.. u = uprev + (dt/6)*(2*(t2 + t3) + (k1 + t4))   #RK4
     if cnt == 1
@@ -228,12 +228,12 @@ end
     cache.k3 .= k2
     cache.k2 .= k1
   end
-  f(k, u, p, t+dt)
+  f(k, u, t+dt, integrator)
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::ABM43ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack k2,k3,k4 = cache
   k1 = integrator.fsalfirst
   if integrator.u_modified
@@ -244,9 +244,9 @@ end
     cache.step += 1
     halfdt = dt/2
     ttmp = t+halfdt
-    k2 = f(uprev + halfdt*k1, p, ttmp)
-    k3 = f(uprev + halfdt*k2, p, ttmp)
-    k4 = f(uprev + dt*k3, p, t+dt)
+    k2 = f(uprev + halfdt*k1, ttmp, integrator)
+    k3 = f(uprev + halfdt*k2, ttmp, integrator)
+    k4 = f(uprev + dt*k3, t+dt, integrator)
     integrator.destats.nf += 3
     u = uprev + (dt/6)*(2*(k2 + k3) + (k1+k4))   #RK4
     if cnt == 1
@@ -262,7 +262,7 @@ end
     cache.k3 = k2
     cache.k2 = k1
   end
-  integrator.fsallast = f(u, p, t+dt)
+  integrator.fsallast = f(u, t+dt, integrator)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -270,7 +270,7 @@ end
 end
 
 @muladd function perform_step!(integrator,cache::ABM43Cache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack tmp,fsalfirst,k2,k3,k4,ralk2,k,t2,t3,t4,t5,t6,t7 = cache
   k1 = integrator.fsalfirst
   if integrator.u_modified
@@ -282,11 +282,11 @@ end
     halfdt = dt/2
     ttmp = t+halfdt
     @.. tmp = uprev + halfdt*k1
-    f(t2,tmp,p,ttmp)
+    f(t2, tmp, ttmp, integrator)
     @.. tmp = uprev + halfdt*t2
-    f(t3,tmp,p,ttmp)
+    f(t3, tmp, ttmp, integrator)
     @.. tmp = uprev + dt*t3
-    f(t4,tmp,p,t+dt)
+    f(t4, tmp, t+dt, integrator)
     integrator.destats.nf += 3
     @.. u = uprev + (dt/6)*(2*(t2 + t3) + (k1 + t4))   #RK4
     if cnt == 1
@@ -305,12 +305,12 @@ end
     cache.k3 .= k2
     cache.k2 .= k1
   end
-  f(k, u, p, t+dt)
+  f(k, u, t+dt, integrator)
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::AB5ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack k2,k3,k4,k5 = cache
   k1 = integrator.fsalfirst
   if integrator.u_modified
@@ -321,9 +321,9 @@ end
     cache.step += 1
     halfdt = dt/2
     ttmp = t+halfdt
-    k2 = f(uprev + halfdt*k1, p, ttmp)
-    k3 = f(uprev + halfdt*k2, p, ttmp)
-    k4 = f(uprev + dt*k3, p, t+dt)
+    k2 = f(uprev + halfdt*k1, ttmp, integrator)
+    k3 = f(uprev + halfdt*k2, ttmp, integrator)
+    k4 = f(uprev + dt*k3, t+dt, integrator)
     integrator.destats.nf += 3
     u = uprev + (dt/6)*(2*(k2 + k3) + (k1+k4))  #RK4
     if cnt == 1
@@ -342,7 +342,7 @@ end
     cache.k3 = k2
     cache.k2 = k1
   end
-  integrator.fsallast = f(u, p, t+dt)
+  integrator.fsallast = f(u, t+dt, integrator)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -350,7 +350,7 @@ end
 end
 
 @muladd function perform_step!(integrator,cache::AB5Cache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack tmp,fsalfirst,k2,k3,k4,k5,k,t2,t3,t4 = cache
   k1 = integrator.fsalfirst
   if integrator.u_modified
@@ -362,11 +362,11 @@ end
     halfdt = dt/2
     ttmp = t+halfdt
     @.. tmp = uprev + halfdt*k1
-    f(t2,tmp,p,ttmp)
+    f(t2, tmp, ttmp, integrator)
     @.. tmp = uprev + halfdt*t2
-    f(t3,tmp,p,ttmp)
+    f(t3, tmp, ttmp, integrator)
     @.. tmp = uprev + dt*t3
-    f(t4,tmp,p,t+dt)
+    f(t4, tmp, t+dt, integrator)
     integrator.destats.nf += 1
     @.. u = uprev + (dt/6)*(2*(t2 + t3) + (k1 + t4))   #RK4
     if cnt == 1
@@ -385,12 +385,12 @@ end
     cache.k3 .= k2
     cache.k2 .= k1
   end
-  f(k, u, p, t+dt)
+  f(k, u, t+dt, integrator)
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::ABM54ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack k2,k3,k4,k5 = cache
   k1 = integrator.fsalfirst
   if integrator.u_modified
@@ -401,9 +401,9 @@ end
     cache.step += 1
     halfdt = dt/2
     ttmp = t+halfdt
-    k2 = f(uprev + halfdt*k1, p, ttmp)
-    k3 = f(uprev + halfdt*k2, p, ttmp)
-    k4 = f(uprev + dt*k3, p, t+dt)
+    k2 = f(uprev + halfdt*k1, ttmp, integrator)
+    k3 = f(uprev + halfdt*k2, ttmp, integrator)
+    k4 = f(uprev + dt*k3, t+dt, integrator)
     integrator.destats.nf += 3
     u = uprev + (dt/6)*(2*(k2 + k3) + (k1+k4))   #RK4
     if cnt == 1
@@ -422,7 +422,7 @@ end
     cache.k3 = k2
     cache.k2 = k1
   end
-  integrator.fsallast = f(u, p, t+dt)
+  integrator.fsallast = f(u, t+dt, integrator)
   integrator.destats.nf += 1
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -430,7 +430,7 @@ end
 end
 
 @muladd function perform_step!(integrator,cache::ABM54Cache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack tmp,fsalfirst,k2,k3,k4,k5,k,t2,t3,t4,t5,t6,t7,t8 = cache
   k1 = integrator.fsalfirst
   if integrator.u_modified
@@ -442,11 +442,11 @@ end
     halfdt = dt/2
     ttmp = t+halfdt
     @.. tmp = uprev + halfdt*k1
-    f(t2,tmp,p,ttmp)
+    f(t2, tmp, ttmp, integrator)
     @.. tmp = uprev + halfdt*t2
-    f(t3,tmp,p,ttmp)
+    f(t3, tmp, ttmp, integrator)
     @.. tmp = uprev + dt*t3
-    f(t4,tmp,p,t+dt)
+    f(t4, tmp, t+dt, integrator)
     @.. u = uprev + (dt/6)*(2*(t2 + t3) + (k1 + t4))   #RK4
     integrator.destats.nf += 3
     if cnt == 1
@@ -469,14 +469,14 @@ end
     cache.k3 .= k2
     cache.k2 .= k1
   end
-  f(k, u, p, t+dt)
+  f(k, u, t+dt, integrator)
   integrator.destats.nf += 1
 end
 
 # Variable Step Size Multistep Methods
 
 function initialize!(integrator,cache::VCAB3ConstantCache)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
 
@@ -487,7 +487,7 @@ function initialize!(integrator,cache::VCAB3ConstantCache)
 end
 
 @muladd function perform_step!(integrator,cache::VCAB3ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack dts,g,ϕ_n,ϕstar_n,ϕstar_nm1,order,tab = cache
   k1 = integrator.fsalfirst
   if integrator.u_modified
@@ -528,7 +528,7 @@ end
         return nothing
       end
     end
-    integrator.fsallast = f(u, p, t+dt)
+    integrator.fsallast = f(u, t+dt, integrator)
     integrator.destats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -545,12 +545,12 @@ function initialize!(integrator,cache::VCAB3Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # pre-start FSAL
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # pre-start FSAL
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::VCAB3Cache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack k4,dts,g,ϕstar_n,ϕstar_nm1,order,atmp,utilde,bs3cache = cache
   k1 = integrator.fsalfirst
   if integrator.u_modified
@@ -593,14 +593,14 @@ end
         return nothing
       end
     end
-    f(k4,u,p,t+dt)
+    f(k4, u, t+dt, integrator)
     integrator.destats.nf += 1
   end
   cache.ϕstar_nm1, cache.ϕstar_n = ϕstar_n, ϕstar_nm1
 end
 
 function initialize!(integrator,cache::VCAB4ConstantCache)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -612,7 +612,7 @@ function initialize!(integrator,cache::VCAB4ConstantCache)
 end
 
 @muladd function perform_step!(integrator,cache::VCAB4ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack dts,g,ϕ_n,ϕstar_n,ϕstar_nm1,order,rk4constcache = cache
   k1 = integrator.fsalfirst
   if integrator.u_modified
@@ -659,7 +659,7 @@ end
         return nothing
       end
     end
-    integrator.fsallast = f(u, p, t+dt)
+    integrator.fsallast = f(u, t+dt, integrator)
     integrator.destats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -676,12 +676,12 @@ function initialize!(integrator,cache::VCAB4Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # pre-start FSAL
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # pre-start FSAL
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::VCAB4Cache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack k4,dts,g,ϕ_n,ϕstar_n,ϕstar_nm1,order,atmp,utilde,rk4cache = cache
   k1 = integrator.fsalfirst
   if integrator.u_modified
@@ -730,7 +730,7 @@ end
         return nothing
       end
     end
-    f(k4,u,p,t+dt)
+    f(k4, u, t+dt, integrator)
     integrator.destats.nf += 1
   end
   cache.ϕstar_nm1, cache.ϕstar_n = ϕstar_n, ϕstar_nm1
@@ -739,7 +739,7 @@ end
 # VCAB5
 
 function initialize!(integrator,cache::VCAB5ConstantCache)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -751,7 +751,7 @@ function initialize!(integrator,cache::VCAB5ConstantCache)
 end
 
 @muladd function perform_step!(integrator,cache::VCAB5ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack dts,g,ϕ_n,ϕstar_n,ϕstar_nm1,order,rk4constcache = cache
   k1 = integrator.fsalfirst
   if integrator.u_modified
@@ -805,7 +805,7 @@ end
         return nothing
       end
     end
-    integrator.fsallast = f(u, p, t+dt)
+    integrator.fsallast = f(u, t+dt, integrator)
     integrator.destats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -822,12 +822,12 @@ function initialize!(integrator,cache::VCAB5Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # pre-start FSAL
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # pre-start FSAL
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::VCAB5Cache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack k4,dts,g,ϕ_n,ϕstar_n,ϕstar_nm1,order,atmp,utilde,rk4cache = cache
   k1 = integrator.fsalfirst
   if integrator.u_modified
@@ -883,7 +883,7 @@ end
         return nothing
       end
     end
-    f(k4,u,p,t+dt)
+    f(k4, u, t+dt, integrator)
     integrator.destats.nf += 1
   end
   cache.ϕstar_nm1, cache.ϕstar_n = ϕstar_n, ϕstar_nm1
@@ -892,7 +892,7 @@ end
 # VCABM3
 
 function initialize!(integrator,cache::VCABM3ConstantCache)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -904,7 +904,7 @@ function initialize!(integrator,cache::VCABM3ConstantCache)
 end
 
 @muladd function perform_step!(integrator,cache::VCABM3ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack dts,g,ϕ_n,ϕ_np1,ϕstar_n,ϕstar_nm1,order,tab = cache
   k1 = integrator.fsalfirst
   if integrator.u_modified
@@ -933,7 +933,7 @@ end
     for i = 1:(k-1)
         u += g[i] * ϕstar_n[i]
     end
-    du_np1 = f(u,p,t+dt)
+    du_np1 = f(u, t+dt, integrator)
     integrator.destats.nf += 1
     ϕ_np1!(cache, du_np1, k+1)
     u += g[end-1] * ϕ_np1[end-1]
@@ -949,7 +949,7 @@ end
         return nothing
       end
     end
-    integrator.fsallast = f(u, p, t+dt)
+    integrator.fsallast = f(u, t+dt, integrator)
     integrator.destats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -966,12 +966,12 @@ function initialize!(integrator,cache::VCABM3Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # pre-start FSAL
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # pre-start FSAL
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::VCABM3Cache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack k4,dts,g,ϕstar_n,ϕ_np1,ϕstar_nm1,order,atmp,utilde,bs3cache = cache
   k1 = integrator.fsalfirst
   if integrator.u_modified
@@ -1002,7 +1002,7 @@ end
     for i = 1:(k-1)
       @.. u += g[i] * ϕstar_n[i]
     end
-    f(k4,u,p,t+dt)
+    f(k4, u, t+dt, integrator)
     integrator.destats.nf += 1
     ϕ_np1!(cache, k4, k+1)
     @.. u += g[end-1] * ϕ_np1[end-1]
@@ -1018,7 +1018,7 @@ end
         return nothing
       end
     end
-    f(k4,u,p,t+dt)
+    f(k4, u, t+dt, integrator)
     integrator.destats.nf += 1
   end
   cache.ϕstar_nm1, cache.ϕstar_n = ϕstar_n, ϕstar_nm1
@@ -1027,7 +1027,7 @@ end
 # VCABM4
 
 function initialize!(integrator,cache::VCABM4ConstantCache)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -1039,7 +1039,7 @@ function initialize!(integrator,cache::VCABM4ConstantCache)
 end
 
 @muladd function perform_step!(integrator,cache::VCABM4ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack dts,g,ϕ_n,ϕ_np1,ϕstar_n,ϕstar_nm1,order,rk4constcache = cache
   k1 = integrator.fsalfirst
   if integrator.u_modified
@@ -1074,7 +1074,7 @@ end
     for i = 1:(k-1)
         u += g[i] * ϕstar_n[i]
     end
-    du_np1 = f(u,p,t+dt)
+    du_np1 = f(u, t+dt, integrator)
     integrator.destats.nf += 1
     ϕ_np1!(cache, du_np1, k+1)
     u += g[end-1] * ϕ_np1[end-1]
@@ -1090,7 +1090,7 @@ end
         return nothing
       end
     end
-    integrator.fsallast = f(u, p, t+dt)
+    integrator.fsallast = f(u, t+dt, integrator)
     integrator.destats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -1107,12 +1107,12 @@ function initialize!(integrator,cache::VCABM4Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # pre-start FSAL
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # pre-start FSAL
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::VCABM4Cache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack k4,dts,g,ϕstar_n,ϕ_np1,ϕstar_nm1,order,atmp,utilde,rk4cache = cache
   k1 = integrator.fsalfirst
   if integrator.u_modified
@@ -1149,7 +1149,7 @@ end
     for i = 1:(k-1)
       @.. u += g[i] * ϕstar_n[i]
     end
-    f(k4,u,p,t+dt)
+    f(k4, u, t+dt, integrator)
     integrator.destats.nf += 1
     ϕ_np1!(cache, k4, k+1)
     @.. u += g[end-1] * ϕ_np1[end-1]
@@ -1165,7 +1165,7 @@ end
         return nothing
       end
     end
-    f(k4,u,p,t+dt)
+    f(k4, u, t+dt, integrator)
     integrator.destats.nf += 1
   end
   cache.ϕstar_nm1, cache.ϕstar_n = ϕstar_n, ϕstar_nm1
@@ -1174,7 +1174,7 @@ end
 # VCABM5
 
 function initialize!(integrator,cache::VCABM5ConstantCache)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -1186,7 +1186,7 @@ function initialize!(integrator,cache::VCABM5ConstantCache)
 end
 
 @muladd function perform_step!(integrator,cache::VCABM5ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,dt,uprev,u,f = integrator
   @unpack dts,g,ϕ_n,ϕ_np1,ϕstar_n,ϕstar_nm1,order,rk4constcache = cache
   k1 = integrator.fsalfirst
   if integrator.u_modified
@@ -1228,7 +1228,7 @@ end
     for i = 1:(k-1)
         u += g[i] * ϕstar_n[i]
     end
-    du_np1 = f(u,p,t+dt)
+    du_np1 = f(u, t+dt, integrator)
     integrator.destats.nf += 1
     ϕ_np1!(cache, du_np1, k+1)
     u += g[end-1] * ϕ_np1[end-1]
@@ -1244,7 +1244,7 @@ end
         return nothing
       end
     end
-    integrator.fsallast = f(u, p, t+dt)
+    integrator.fsallast = f(u, t+dt, integrator)
     integrator.destats.nf += 1
     integrator.k[1] = integrator.fsalfirst
     integrator.k[2] = integrator.fsallast
@@ -1261,13 +1261,13 @@ function initialize!(integrator,cache::VCABM5Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # pre-start FSAL
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # pre-start FSAL
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::VCABM5Cache,repeat_step=false)
   @inbounds begin
-    @unpack t,dt,uprev,u,f,p = integrator
+    @unpack t,dt,uprev,u,f = integrator
     @unpack k4,dts,g,ϕ_n,ϕ_np1,ϕstar_n,ϕstar_nm1,order,atmp,utilde,rk4cache = cache
     k1 = integrator.fsalfirst
     if integrator.u_modified
@@ -1311,7 +1311,7 @@ end
       @.. u = muladd(g[2], ϕstar_n[2], u)
       @.. u = muladd(g[3], ϕstar_n[3], u)
       @.. u = muladd(g[4], ϕstar_n[4], u)
-      f(k4,u,p,t+dt)
+      f(k4, u, t+dt, integrator)
       integrator.destats.nf += 1
       ϕ_np1!(cache, k4, 6)
       @.. u = muladd(g[6-1], ϕ_np1[6-1], u)
@@ -1331,7 +1331,7 @@ end
       cache.ϕstar_nm1[2] .= ϕstar_n[2]
       cache.ϕstar_nm1[3] .= ϕstar_n[3]
       cache.ϕstar_nm1[4] .= ϕstar_n[4]
-      f(k4,u,p,t+dt)
+      f(k4, u, t+dt, integrator)
       integrator.destats.nf += 1
     end
     cache.ϕstar_nm1, cache.ϕstar_n = ϕstar_n, ϕstar_nm1
@@ -1342,7 +1342,7 @@ end
 # VCABM
 
 function initialize!(integrator,cache::VCABMConstantCache)
-  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
+  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
@@ -1355,7 +1355,7 @@ end
 
 @muladd function perform_step!(integrator,cache::VCABMConstantCache,repeat_step=false)
   @inbounds begin
-    @unpack t,dt,uprev,u,f,p = integrator
+    @unpack t,dt,uprev,u,f = integrator
     @unpack dts,g,ϕ_n,ϕ_np1,ϕstar_n,ϕstar_nm1,order,max_order = cache
     k1 = integrator.fsalfirst
     step = integrator.iter
@@ -1371,7 +1371,7 @@ end
     for i = 2:k-1
       u = muladd(g[i], ϕstar_n[i], u)
     end
-    du_np1 = f(u,p,t+dt)
+    du_np1 = f(u, t+dt, integrator)
     integrator.destats.nf += 1
     ϕ_np1!(cache, du_np1, k+1)
     u = muladd(g[k], ϕ_np1[k], u)
@@ -1386,7 +1386,7 @@ end
         dts[13] = tmp
         return nothing
       end
-      integrator.fsallast = f(u, p, t+dt)
+      integrator.fsallast = f(u, t+dt, integrator)
       integrator.destats.nf += 1
       if step <= 4 || order < 3
         cache.order = min(order+1,3)
@@ -1428,13 +1428,13 @@ function initialize!(integrator,cache::VCABMCache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst,integrator.uprev,integrator.p,integrator.t) # pre-start FSAL
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator) # pre-start FSAL
   integrator.destats.nf += 1
 end
 
 @muladd function perform_step!(integrator,cache::VCABMCache,repeat_step=false)
   @inbounds begin
-    @unpack t,dt,uprev,u,f,p = integrator
+    @unpack t,dt,uprev,u,f = integrator
     @unpack k4,dts,g,ϕ_n,ϕ_np1,ϕstar_n,ϕstar_nm1,order,max_order,utilde,utildem2,utildem1,utildep1,atmp,atmpm1,atmpm2,atmpp1 = cache
     k1 = integrator.fsalfirst
     step = integrator.iter
@@ -1451,7 +1451,7 @@ end
     for i = 2:k-1
       @.. u = muladd(g[i], ϕstar_n[i], u)
     end
-    f(k4,u,p,t+dt)
+    f(k4, u, t+dt, integrator)
     integrator.destats.nf += 1
     ϕ_np1!(cache, k4, k+1)
     @.. u = muladd(g[k], ϕ_np1[k], u)
@@ -1466,7 +1466,7 @@ end
         dts[13] = tmp
         return nothing
       end
-      f(k4,u,p,t+dt)
+      f(k4, u, t+dt, integrator)
       integrator.destats.nf += 1
       if step <= 4 || order < 3
         cache.order = min(order+1,3)
@@ -1504,8 +1504,8 @@ function initialize!(integrator,cache::CNAB2ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst =
-  integrator.f.f1(integrator.uprev,integrator.p,integrator.t) +
-  integrator.f.f2(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+  integrator.f.f1(integrator.uprev, integrator.t, integrator) +
+  integrator.f.f2(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
   integrator.destats.nf2 += 1
 
@@ -1516,12 +1516,12 @@ function initialize!(integrator,cache::CNAB2ConstantCache)
 end
 
 function perform_step!(integrator,cache::CNAB2ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p,alg = integrator
+  @unpack t,dt,uprev,u,f,alg = integrator
   @unpack k2,uf,nlsolver = cache
   cnt = integrator.iter
   f1 = integrator.f.f1
   f2 = integrator.f.f2
-  du₁ = f1(uprev, p, t)
+  du₁ = f1(uprev, t, integrator)
   integrator.destats.nf += 1
   k1 = integrator.fsalfirst - du₁
   # Explicit part
@@ -1547,7 +1547,7 @@ function perform_step!(integrator,cache::CNAB2ConstantCache,repeat_step=false)
   u = nlsolver.tmp + 1//2*z
 
   cache.k2 = k1
-  integrator.fsallast = f1(u, p, t+dt) + f2(u, p, t+dt)
+  integrator.fsallast = f1(u, t+dt, integrator) + f2(u, t+dt, integrator)
   integrator.destats.nf += 1
   integrator.destats.nf2 += 1
   integrator.k[1] = integrator.fsalfirst
@@ -1562,17 +1562,17 @@ function initialize!(integrator, cache::CNAB2Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator)
   integrator.destats.nf += 1
 end
 
 function perform_step!(integrator, cache::CNAB2Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p,alg = integrator
+  @unpack t,dt,uprev,u,f,alg = integrator
   @unpack uf,dz,z,k,k1,k2,du₁,b,J,W,jac_config,tmp,nlsolver = cache
   cnt = integrator.iter
   f1 = integrator.f.f1
   f2 = integrator.f.f2
-  f1(du₁, uprev, p, t)
+  f1(du₁, uprev, t, integrator)
   integrator.destats.nf += 1
   @.. k1 = integrator.fsalfirst - du₁
   # Explicit part
@@ -1595,7 +1595,7 @@ function perform_step!(integrator, cache::CNAB2Cache, repeat_step=false)
   @.. u = tmp + 1//2*z
 
   cache.k2 .= k1
-  integrator.f(k,u,p,t+dt)
+  integrator.f(k, u, t+dt, integrator)
   integrator.destats.nf += 1
 end
 
@@ -1605,8 +1605,8 @@ function initialize!(integrator,cache::CNLF2ConstantCache)
   integrator.kshortsize = 2
   integrator.k = typeof(integrator.k)(undef, integrator.kshortsize)
   integrator.fsalfirst =
-  integrator.f.f1(integrator.uprev,integrator.p,integrator.t) +
-  integrator.f.f2(integrator.uprev,integrator.p,integrator.t) # Pre-start fsal
+  integrator.f.f1(integrator.uprev, integrator.t, integrator) +
+  integrator.f.f2(integrator.uprev, integrator.t, integrator) # Pre-start fsal
   integrator.destats.nf += 1
   integrator.destats.nf2 += 1
 
@@ -1617,12 +1617,12 @@ function initialize!(integrator,cache::CNLF2ConstantCache)
 end
 
 function perform_step!(integrator,cache::CNLF2ConstantCache,repeat_step=false)
-  @unpack t,dt,uprev,u,f,p,alg = integrator
+  @unpack t,dt,uprev,u,f,alg = integrator
   @unpack k2,uprev2,uf,nlsolver = cache
   cnt = integrator.iter
   f1 = integrator.f.f1
   f2 = integrator.f.f2
-  du₁ = f1(uprev, p, t)
+  du₁ = f1(uprev, t, integrator)
   integrator.destats.nf += 1
   # Explicit part
   if cnt == 1
@@ -1650,7 +1650,7 @@ function perform_step!(integrator,cache::CNLF2ConstantCache,repeat_step=false)
 
   cache.uprev2 = uprev
   cache.k2 = du₁
-  integrator.fsallast = f1(u, p, t+dt) + f2(u, p, t+dt)
+  integrator.fsallast = f1(u, t+dt, integrator) + f2(u, t+dt, integrator)
   integrator.destats.nf += 1
   integrator.destats.nf2 += 1
   integrator.k[1] = integrator.fsalfirst
@@ -1665,17 +1665,17 @@ function initialize!(integrator, cache::CNLF2Cache)
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
-  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.p, integrator.t)
+  integrator.f(integrator.fsalfirst, integrator.uprev, integrator.t, integrator)
   integrator.destats.nf += 1
 end
 
 function perform_step!(integrator, cache::CNLF2Cache, repeat_step=false)
-  @unpack t,dt,uprev,u,f,p,alg = integrator
+  @unpack t,dt,uprev,u,f,alg = integrator
   @unpack uprev2,uf,dz,z,k,k2,du₁,b,J,W,jac_config,tmp,nlsolver = cache
   cnt = integrator.iter
   f1 = integrator.f.f1
   f2 = integrator.f.f2
-  f1(du₁, uprev, p, t)
+  f1(du₁, uprev, t, integrator)
   integrator.destats.nf += 1
   # Explicit part
   if cnt == 1
@@ -1700,6 +1700,6 @@ function perform_step!(integrator, cache::CNLF2Cache, repeat_step=false)
 
   cache.uprev2 .= uprev
   cache.k2 .= du₁
-  integrator.f(k,u,p,t+dt)
+  integrator.f(k, u, t+dt, integrator)
   integrator.destats.nf += 1
 end
