@@ -5,7 +5,7 @@ function derivative!(df::AbstractArray{<:Number}, f, x::Union{Number,AbstractArr
         ForwardDiff.derivative!(df, f, fx, x, grad_config)
         integrator.destats.nf += 1
     else
-        DiffEqDiffTools.finite_difference_gradient!(df, f, x, grad_config)
+        DiffEqDiffTools.finite_difference_gradient!(df, f, x, grad_config, dir = diffdir(integrator))
         fdtype = alg.diff_type
         if fdtype == Val{:forward} || fdtype == Val{:central}
             tmp *= 2
@@ -27,7 +27,7 @@ function derivative(f, x::Union{Number,AbstractArray{<:Number}},
       integrator.destats.nf += 1
       d = ForwardDiff.derivative(f, x)
     else
-      d = DiffEqDiffTools.finite_difference_gradient(f, x, alg.diff_type, eltype(x), Val{false})
+      d = DiffEqDiffTools.finite_difference_gradient(f, x, alg.diff_type, eltype(x), Val{false}, dir = diffdir(integrator))
       if alg.diff_type == Val{:central} || alg.diff_type == Val{:forward}
           tmp *= 2
       end
@@ -43,7 +43,7 @@ function jacobian(f, x, integrator)
       J = jacobian_autodiff(f, x)
       tmp = 1
     else
-      J = jacobian_finitediff(f, x, alg.diff_type)
+      J = jacobian_finitediff(f, x, alg.diff_type, integrator)
       N = length(x)
       if alg.diff_type==Val{:complex} && eltype(x)<:Real
         tmp = N
@@ -60,10 +60,10 @@ end
 jacobian_autodiff(f, x) = ForwardDiff.derivative(f,x)
 jacobian_autodiff(f, x::AbstractArray) = ForwardDiff.jacobian(f, x)
 
-jacobian_finitediff(f, x, diff_type) =
-    DiffEqDiffTools.finite_difference_derivative(f, x, diff_type, eltype(x))
-jacobian_finitediff(f, x::AbstractArray, diff_type) =
-    DiffEqDiffTools.finite_difference_jacobian(f, x, diff_type, eltype(x), Val{false})
+jacobian_finitediff(f, x, diff_type, integrator) =
+    DiffEqDiffTools.finite_difference_derivative(f, x, diff_type, eltype(x), dir = diffdir(integrator))
+jacobian_finitediff(f, x::AbstractArray, diff_type, integrator) =
+    DiffEqDiffTools.finite_difference_jacobian(f, x, diff_type, eltype(x), Val{false}, dir = diffdir(integrator))
 
 function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, fx::AbstractArray{<:Number}, integrator::DiffEqBase.DEIntegrator, jac_config)
     alg = unwrap_alg(integrator, true)
@@ -76,7 +76,7 @@ function jacobian!(J::AbstractMatrix{<:Number}, f, x::AbstractArray{<:Number}, f
         forwardcache = get_tmp_cache(integrator, alg, unwrap_cache(integrator, true))[2]
         f(forwardcache, x)
         integrator.destats.nf += 1
-        DiffEqDiffTools.finite_difference_jacobian!(J, f, x, jac_config, forwardcache)
+        DiffEqDiffTools.finite_difference_jacobian!(J, f, x, jac_config, forwardcache, dir = diffdir(integrator))
       else # not forward difference
         DiffEqDiffTools.finite_difference_jacobian!(J, f, x, jac_config)
       end

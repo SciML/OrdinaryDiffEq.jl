@@ -80,3 +80,10 @@ function constvalue(x)
   _x = DiffEqBase.value(x)
   _x isa Complex ? DiffEqBase.value(real(_x)) : DiffEqBase.value(_x)
 end
+
+function diffdir(integrator::DiffEqBase.DEIntegrator)
+  difference = maximum(abs, integrator.uprev)*sqrt(eps(typeof(integrator.t)))
+  dir = integrator.tdir > zero(integrator.tdir) ?
+          integrator.t > integrator.sol.prob.tspan[2] - difference ? -true :  true :
+          integrator.t < integrator.sol.prob.tspan[2] + difference ?  true : -true
+end
