@@ -94,14 +94,10 @@ function DiffEqBase.__init(prob::DiffEqBase.AbstractODEProblem,
 
   # Get the control variables
 
-  if typeof(prob.u0) <: Tuple
-    u = ArrayPartition(prob.u0,Val{true})
+  if alias_u0
+    u = prob.u0
   else
-    if alias_u0
-      u = prob.u0
-    else
-      u = recursivecopy(prob.u0)
-    end
+    u = recursivecopy(prob.u0)
   end
 
   uType = typeof(u)
@@ -299,7 +295,7 @@ function DiffEqBase.__init(prob::DiffEqBase.AbstractODEProblem,
   end
 
   # rate/state = (state/time)/state = 1/t units, internalnorm drops units
-  eigen_est = one(uBottomEltypeNoUnits)/one(tType) 
+  eigen_est = one(uBottomEltypeNoUnits)/one(tType)
   tprev = t
   dtcache = tType(dt)
   dtpropose = tType(dt)

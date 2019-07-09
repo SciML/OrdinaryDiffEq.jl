@@ -9,7 +9,7 @@ function f2_harmonic(du,v,u,p,t)
   du .= v
 end
 function harmonic_analytic(y0, p, x)
-  v0, u0 = y0
+  v0, u0 = y0.x
   ArrayPartition(-u0*sin(x) + v0*cos(x),u0*cos(x) + v0*sin(x))
 end
 ff_harmonic = DynamicalODEFunction(f1_harmonic,f2_harmonic;analytic=harmonic_analytic)
