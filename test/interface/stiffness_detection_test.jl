@@ -13,7 +13,7 @@ end
 prob3 = ODEProblem(_van,[0,2.],(0.0,6),inv(0.003))
 probArr = [prob1, prob2, prob3]
 # Test if switching back and forth
-is_switching_fb(sol) = maximum(diff(findall(x->x==2, sol.alg_choice))) > 5
+is_switching_fb(sol) = all(i->count(isequal(i), sol.alg_choice[2:end]) > 5, (1, 2))
 for (i, prob) in enumerate(probArr)
   sol = @test_nowarn solve(prob, AutoTsit5(Rosenbrock23(autodiff=false)))
   @test is_switching_fb(sol)
@@ -39,8 +39,8 @@ for (i, prob) in enumerate(probArr)
   @test is_switching_fb(sol)
   sol = solve(prob,AutoVern9(KenCarp3(); maxstiffstep=4, maxnonstiffstep=1))
   @test length(sol.t) < 570
-  i in (1, 3) ? @test(is_switching_fb(sol)) : @test_broken(is_switching_fb(sol))
+  @test is_switching_fb(sol)
   sol = solve(prob,AutoVern9(KenCarp3(autodiff=false); maxstiffstep=4, maxnonstiffstep=1))
   @test length(sol.t) < 570
-  i in (1, 3) ? @test(is_switching_fb(sol)) : @test_broken(is_switching_fb(sol))
+  @test is_switching_fb(sol)
 end
