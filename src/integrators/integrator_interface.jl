@@ -65,6 +65,8 @@ end
   end
 end
 
+DiffEqBase.get_params(integrator::ODEIntegrator) = integrator.p
+
 #TODO: Bigger caches for most algorithms
 @inline DiffEqBase.get_tmp_cache(integrator::ODEIntegrator) =
           get_tmp_cache(integrator::ODEIntegrator,integrator.alg,integrator.cache)
