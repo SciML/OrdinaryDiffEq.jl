@@ -3,9 +3,10 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Consta
     @unpack tf,uf,d = cache
     γ = dt*d
     dT = ForwardDiff.derivative(tf, t)
+    mass_matrix = f.mass_matrix
     if typeof(uprev) <: AbstractArray
       J = ForwardDiff.jacobian(uf, uprev)
-      W = I - γ*J
+      W = mass_matrix - γ*J
     else
       J = ForwardDiff.derivative(uf, uprev)
       W = 1 - γ*J
@@ -27,33 +28,28 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Cache,
 
     # Assignments
     sizeu  = size(u)
-    #mass_matrix = integrator.f.mass_matrix
+    mass_matrix = f.mass_matrix
     γ = dt*d
     dto2 = dt/2
     dto6 = dt/6
 
-    #@.. linsolve_tmp = @muladd fsalfirst + γ*dT
-    @tight_loop_macros for i in uidx
-      @inbounds linsolve_tmp[i] = @muladd fsalfirst[i] + γ*dT[i]
-    end
+    @.. linsolve_tmp = @muladd fsalfirst + γ*dT
 
     ### Jacobian does not need to be re-evaluated after an event
     ### Since it's unchanged
-    for i in 1:length(u), j in 1:length(u)
-      @inbounds W[i,j] = @muladd I[i,j]-γ*J[i,j]
-    end
+    jacobian2W!(W, mass_matrix, γ, J, false)
     cache.linsolve(vec(k₁),W,vec(linsolve_tmp),true)
-
+    @.. k₁ = -k₁
     @.. tmp = uprev + dto2*k₁
     f(f₁,tmp,p,t+dto2)
 
-
-    #if mass_matrix == I
+    if mass_matrix == I
       tmp .= k₁
-    #else
-    #  mul!(tmp,mass_matrix,k₁)
-    #end
+    else
+      mul!(tmp,mass_matrix,k₁)
+    end
 
+    @.. linsolve_tmp = f₁ - tmp
     cache.linsolve(vec(k₂), W, vec(linsolve_tmp))
     @.. k₂ += k₁
 
@@ -90,6 +86,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4ConstantCache,alwa
     dtd3 = dt*d3
     dtd4 = dt*d4
     dtgamma = dt*gamma
+    mass_matrix = f.mass_matrix
 
     # Time derivative
     tf.u = uprev
@@ -99,7 +96,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4ConstantCache,alwa
     uf.t = t
     if typeof(uprev) <: AbstractArray
       J = ForwardDiff.jacobian(uf, uprev)
-      W = I/dtgamma - J
+      W = mass_matrix/dtgamma - J
     else
       J = ForwardDiff.derivative(uf, uprev)
       W = 1/dtgamma - J
@@ -153,8 +150,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
     # Assignments
     sizeu  = size(u)
     uidx = eachindex(uprev)
-    #mass_matrix = integrator.f.mass_matrix
-    mass_matrix = I
+    mass_matrix = f.mass_matrix
     atmp = du # does not work with units - additional unitless array required!
 
     # Precalculations
@@ -180,17 +176,13 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
     dtd4 = dt*d4
     dtgamma = dt*gamma
 
-    @tight_loop_macros for i in uidx
-      @inbounds linsolve_tmp[i] = @muladd fsalfirst[i] + dtgamma*dT[i]
-    end
+    @.. linsolve_tmp = @muladd fsalfirst + dtgamma*dT
 
     ### Jacobian does not need to be re-evaluated after an event
     ### Since it's unchanged
-    for i in 1:length(u), j in 1:length(u)
-      @inbounds W[i,j] = @muladd I[i,j]/dtgamma-J[i,j]
-    end
+    jacobian2W!(W, mass_matrix, dtgamma, J, true)
     cache.linsolve(vec(k1), W, vec(linsolve_tmp), true)
-
+    @.. k1 = -k1
     @.. tmp = uprev + a21*k1
     f( du,  tmp, p, t+c2*dt)
 
@@ -203,7 +195,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
     end
 
     cache.linsolve(vec(k2), W, vec(linsolve_tmp))
-
+    @.. k2 = -k2
     @.. tmp = uprev + a31*k1 + a32*k2
     f( du,  tmp, p, t+c3*dt)
 
@@ -216,7 +208,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
     end
 
     cache.linsolve(vec(k3), W, vec(linsolve_tmp))
-
+    @.. k3 = -k3
     @.. tmp = uprev + a41*k1 + a42*k2 + a43*k3
     f( du,  tmp, p, t+c4*dt)
 
@@ -229,7 +221,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
     end
 
     cache.linsolve(vec(k4), W, vec(linsolve_tmp))
-
+    @.. k4 = -k4
     @.. tmp = uprev + a51*k1 + a52*k2 + a53*k3 + a54*k4
     f( du,  tmp, p, t+dt)
 
@@ -242,7 +234,7 @@ function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_
     end
 
     cache.linsolve(vec(k5), W, vec(linsolve_tmp))
-
+    @.. k5 = -k5
     @unpack h21,h22,h23,h24,h25,h31,h32,h33,h34,h35 = cache.tab
     @.. k6 = h21*k1 + h22*k2 + h23*k3 + h24*k4 + h25*k5
     copyat_or_push!(k,1,copy(k6))
