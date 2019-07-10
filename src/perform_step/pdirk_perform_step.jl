@@ -12,6 +12,7 @@ end
   if alg.threading == true
     Threads.@threads for i in 1:2
       _nlsolver = nlsolver[i]
+      _nlsolver.z .= zero(eltype(u))
       _nlsolver.tmp .= uprev
       if i == 1
         indexed_update_W!(integrator, cache, dt/2, 1, repeat_step)
@@ -32,12 +33,14 @@ end
         indexed_update_W!(integrator, cache, dt/2, 1, repeat_step)
         _nlsolver.γ = 1//2
         _nlsolver.c = 1//2
-        @.. _nlsolver.tmp = uprev - 2.5*k1[1]+ 2.5*k1[2]
+        _nlsolver.z .= zero(eltype(u))
+        @.. _nlsolver.tmp = uprev - 2.5 * k1[1] + 2.5 * k1[2]
       else
         indexed_update_W!(integrator, cache, 2dt/3, 2, repeat_step)
         _nlsolver.γ = 2//3
         _nlsolver.c = 1//3
-        @.. _nlsolver.tmp = uprev + (-5//3)*k1[1]+(4//3)*k1[2]
+        _nlsolver.z .= zero(eltype(u))
+        @.. _nlsolver.tmp = uprev + (-5//3) * k1[1] + (4//3) * k1[2]
       end
       k2[i] .= DiffEqBase.nlsolve!(_nlsolver, _nlsolver.cache, integrator)
     end
@@ -50,29 +53,29 @@ end
     _nlsolver.tmp .= uprev
     _nlsolver.γ = 1//2
     _nlsolver.c = 1//2
-    k1[1] = DiffEqBase.nlsolve!(_nlsolver, _nlsolver.cache, integrator)
+    k1[1] .= DiffEqBase.nlsolve!(_nlsolver, _nlsolver.cache, integrator)
     nlsolvefail(_nlsolver) && return
     _nlsolver.z .= zero(eltype(u))
     indexed_update_W!(integrator, cache, 2dt/3, 1, repeat_step)
     _nlsolver.tmp .= uprev
     _nlsolver.γ = 2//3
     _nlsolver.c = 2//3
-    k1[2] = DiffEqBase.nlsolve!(_nlsolver, _nlsolver.cache, integrator)
+    k1[2] .= DiffEqBase.nlsolve!(_nlsolver, _nlsolver.cache, integrator)
     nlsolvefail(_nlsolver) && return
     _nlsolver.z .= zero(eltype(u))
     indexed_update_W!(integrator, cache, dt/2, 1, repeat_step)
-    @.. _nlsolver.tmp .= uprev + (-2.5k1[1]+2.5k1[2])
+    @.. _nlsolver.tmp .= uprev - 2.5 * k1[1] + 2.5 * k1[2]
     _nlsolver.γ = 1//2
     _nlsolver.c = 1//2
     k2[1] .= DiffEqBase.nlsolve!(_nlsolver, _nlsolver.cache, integrator)
     nlsolvefail(_nlsolver) && return
     _nlsolver.z .= zero(eltype(u))
     indexed_update_W!(integrator, cache, 2dt/3, 1, repeat_step)
-    @.. _nlsolver.tmp = uprev + ((-5//3)k1[1]+(4//3)k1[2])
+    @.. _nlsolver.tmp = uprev + (-5//3) * k1[1] + (4//3) * k1[2]
     _nlsolver.γ = 2//3
     _nlsolver.c = 1//3
     k2[2] .= DiffEqBase.nlsolve!(_nlsolver, _nlsolver.cache, integrator)
     nlsolvefail(_nlsolver) && return
   end
-  @.. u = uprev + (-k1[1] - k2[1] + 1.5k1[2] + 1.5k2[2])
+  @.. u = uprev - k1[1] - k2[1] + 1.5k1[2] + 1.5k2[2]
 end
