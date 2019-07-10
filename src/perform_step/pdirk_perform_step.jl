@@ -10,37 +10,42 @@ end
   @unpack t,dt,uprev,u,f,p,alg = integrator
   @unpack nlsolver,k1,k2 = cache
   if alg.threading == true
-    Threads.@threads for i in 1:2
-      nlsolver[i].z .= zero(eltype(u))
-      nlsolver[i].tmp .= uprev
-      if i == 1
-        indexed_update_W!(integrator, cache, dt/2, 1, repeat_step)
-        nlsolver[i].γ = 1//2
-        nlsolver[i].c = 1//2
-      else
-        indexed_update_W!(integrator, cache, 2dt/3, 2, repeat_step)
-        nlsolver[i].γ = 2//3
-        nlsolver[i].c = 2//3
+    let nlsolver=nlsolver, u=u, uprev=uprev, integrator=integrator, cache=cache, dt=dt, repeat_step=repeat_step,
+      k1=k1
+      Threads.@threads for i in 1:2
+        nlsolver[i].z .= zero(eltype(u))
+        nlsolver[i].tmp .= uprev
+        if i == 1
+          indexed_update_W!(integrator, cache, dt/2, 1, repeat_step)
+          nlsolver[i].γ = 1//2
+          nlsolver[i].c = 1//2
+        else
+          indexed_update_W!(integrator, cache, 2dt/3, 2, repeat_step)
+          nlsolver[i].γ = 2//3
+          nlsolver[i].c = 2//3
+        end
+        k1[i] .= DiffEqBase.nlsolve!(nlsolver[i], nlsolver[i].cache, integrator)
       end
-      k1[i] .= DiffEqBase.nlsolve!(nlsolver[i], nlsolver[i].cache, integrator)
     end
     nlsolvefail(nlsolver[1]) && return
     nlsolvefail(nlsolver[2]) && return
-    Threads.@threads for i in 1:2
-      if i == 1
-        indexed_update_W!(integrator, cache, dt/2, 1, repeat_step)
-        nlsolver[i].γ = 1//2
-        nlsolver[i].c = 1//2
-        nlsolver[i].z .= zero(eltype(u))
-        @.. nlsolver[i].tmp = uprev - 2.5 * k1[1] + 2.5 * k1[2]
-      else
-        indexed_update_W!(integrator, cache, 2dt/3, 2, repeat_step)
-        nlsolver[i].γ = 2//3
-        nlsolver[i].c = 1//3
-        nlsolver[i].z .= zero(eltype(u))
-        @.. nlsolver[i].tmp = uprev + (-5//3) * k1[1] + (4//3) * k1[2]
+    let nlsolver=nlsolver, u=u, uprev=uprev, integrator=integrator, cache=cache, dt=dt, repeat_step=repeat_step,
+      k1=k1, k2=k2
+      Threads.@threads for i in 1:2
+        if i == 1
+          nlsolver[i].γ = 1//2
+          nlsolver[i].c = 1//2
+          nlsolver[i].z .= zero(eltype(u))
+          @.. nlsolver[i].tmp = uprev - 2.5 * k1[1] + 2.5 * k1[2]
+        else
+          indexed_update_W!(integrator, cache, 2dt/3, 2, repeat_step)
+          nlsolver[i].γ = 2//3
+          nlsolver[i].c = 1//3
+          nlsolver[i].z .= zero(eltype(u))
+          @.. nlsolver[i].tmp = uprev + (-5//3) * k1[1] + (4//3) * k1[2]
+        end
+        k2[i] .= DiffEqBase.nlsolve!(nlsolver[i], nlsolver[i].cache, integrator)
       end
-      k2[i] .= DiffEqBase.nlsolve!(nlsolver[i], nlsolver[i].cache, integrator)
     end
     nlsolvefail(nlsolver[1]) && return
     nlsolvefail(nlsolver[2]) && return
