@@ -152,7 +152,10 @@ function solution_endpoint_match_cur_integrator!(integrator)
   end
 end
 
-function loopfooter!(integrator)
+# Want to extend loopfooter! for DDEIntegrator
+loopfooter!(integrator::ODEIntegrator) = _loopfooter!(integrator)
+
+function _loopfooter!(integrator)
 
   # Carry-over from callback
   # This is set to true if u_modified requires callback FSAL reset
