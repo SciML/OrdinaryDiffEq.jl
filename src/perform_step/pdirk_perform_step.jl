@@ -11,38 +11,36 @@ end
   @unpack nlsolver,k1,k2 = cache
   if alg.threading == true
     Threads.@threads for i in 1:2
-      _nlsolver = nlsolver[i]
-      _nlsolver.z .= zero(eltype(u))
-      _nlsolver.tmp .= uprev
+      nlsolver[i].z .= zero(eltype(u))
+      nlsolver[i].tmp .= uprev
       if i == 1
         indexed_update_W!(integrator, cache, dt/2, 1, repeat_step)
-        _nlsolver.γ = 1//2
-        _nlsolver.c = 1//2
+        nlsolver[i].γ = 1//2
+        nlsolver[i].c = 1//2
       else
         indexed_update_W!(integrator, cache, 2dt/3, 2, repeat_step)
-        _nlsolver.γ = 2//3
-        _nlsolver.c = 2//3
+        nlsolver[i].γ = 2//3
+        nlsolver[i].c = 2//3
       end
-      k1[i] .= DiffEqBase.nlsolve!(_nlsolver, _nlsolver.cache, integrator)
+      k1[i] .= DiffEqBase.nlsolve!(nlsolver[i], nlsolver[i].cache, integrator)
     end
     nlsolvefail(nlsolver[1]) && return
     nlsolvefail(nlsolver[2]) && return
     Threads.@threads for i in 1:2
-      _nlsolver = nlsolver[i]
       if i == 1
         indexed_update_W!(integrator, cache, dt/2, 1, repeat_step)
-        _nlsolver.γ = 1//2
-        _nlsolver.c = 1//2
-        _nlsolver.z .= zero(eltype(u))
-        @.. _nlsolver.tmp = uprev - 2.5 * k1[1] + 2.5 * k1[2]
+        nlsolver[i].γ = 1//2
+        nlsolver[i].c = 1//2
+        nlsolver[i].z .= zero(eltype(u))
+        @.. nlsolver[i].tmp = uprev - 2.5 * k1[1] + 2.5 * k1[2]
       else
         indexed_update_W!(integrator, cache, 2dt/3, 2, repeat_step)
-        _nlsolver.γ = 2//3
-        _nlsolver.c = 1//3
-        _nlsolver.z .= zero(eltype(u))
-        @.. _nlsolver.tmp = uprev + (-5//3) * k1[1] + (4//3) * k1[2]
+        nlsolver[i].γ = 2//3
+        nlsolver[i].c = 1//3
+        nlsolver[i].z .= zero(eltype(u))
+        @.. nlsolver[i].tmp = uprev + (-5//3) * k1[1] + (4//3) * k1[2]
       end
-      k2[i] .= DiffEqBase.nlsolve!(_nlsolver, _nlsolver.cache, integrator)
+      k2[i] .= DiffEqBase.nlsolve!(nlsolver[i], nlsolver[i].cache, integrator)
     end
     nlsolvefail(nlsolver[1]) && return
     nlsolvefail(nlsolver[2]) && return
