@@ -68,6 +68,7 @@ if !is_APPVEYOR && (GROUP == "All" || GROUP == "Regression")
   @time @safetestset "PSOS Energy Conservation Tests" begin include("regression/psos_and_energy_conservation.jl") end
   @time @safetestset "Unrolled Tests" begin include("regression/ode_unrolled_comparison_tests.jl") end
   @time @safetestset "Time derivative Tests" begin include("regression/time_derivative_test.jl") end
+  @time @safetestset "IIP vs OOP Tests" begin include("regression/iipvsoop_tests.jl") end
   @time @safetestset "Inference Tests" begin include("regression/inference.jl") end
 end
 
