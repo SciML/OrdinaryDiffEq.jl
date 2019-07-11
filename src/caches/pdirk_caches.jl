@@ -44,14 +44,22 @@ end
 
 function alg_cache(alg::PDIRK44,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   γ, c = 1.0, 1.0
-  J1, W1 = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
-  nlsolver1 = iipnlsolve(alg,u,uprev,p,t,dt,f,W1,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
-  J2, W2 = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
-  nlsolver2 = iipnlsolve(alg,u,uprev,p,t,dt,f,W2,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
-  nlsolver = [nlsolver1, nlsolver2]
+  if alg.threading
+    J1, W1 = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
+    nlsolver1 = iipnlsolve(alg,u,uprev,p,t,dt,f,W1,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
+    J2, W2 = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
+    nlsolver2 = iipnlsolve(alg,u,uprev,p,t,dt,f,W2,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
+    nlsolver = [nlsolver1, nlsolver2]
+    W = [W1, W2]
+    J = [J1, J2]
+  else
+    _J, _W = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
+    J = [_J]
+    W = [_W]
+    _nlsolver = iipnlsolve(alg,u,uprev,p,t,dt,f,_W,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)    
+    nlsolver = [_nlsolver]
+  end
   tab = PDIRK44ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
-  W = [W1, W2]
-  J = [J1, J2]
   k1 = [zero(rate_prototype) for i in 1:2 ]
   k2 = [zero(rate_prototype) for i in 1:2 ]
   PDIRK44Cache(u,uprev,k1,k2,nlsolver,J,W,tab)
