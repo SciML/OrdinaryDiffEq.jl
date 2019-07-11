@@ -22,6 +22,7 @@ isfsal(alg::DGLDDRK84_F) = false
 isfsal(alg::NDBLSRK124) = false
 isfsal(alg::NDBLSRK134) = false
 isfsal(alg::NDBLSRK144) = false
+isfsal(alg::PDIRK44) = false
 get_current_isfsal(alg, cache) = isfsal(alg)
 get_current_isfsal(alg::CompositeAlgorithm, cache) = isfsal(alg.algs[cache.current])
 
