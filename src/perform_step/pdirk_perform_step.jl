@@ -38,7 +38,6 @@ end
           nlsolver[i].z .= zero(eltype(u))
           @.. nlsolver[i].tmp = uprev - 2.5 * k1[1] + 2.5 * k1[2]
         else
-          indexed_update_W!(integrator, cache, 2dt/3, 2, repeat_step)
           nlsolver[i].γ = 2//3
           nlsolver[i].c = 1//3
           nlsolver[i].z .= zero(eltype(u))
