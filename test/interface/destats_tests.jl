@@ -51,21 +51,15 @@ sol = solve(prob, Rosenbrock23(;autodiff=true))
 
 x[] = 0
 sol = solve(prob, Rosenbrock23(;autodiff=false, diff_type=Val{:forward}))
-@test_broken x[] == sol.destats.nf
-# x[] = 255
-# nf = 227
+@test x[] == sol.destats.nf
 
 x[] = 0
 sol = solve(prob, Rosenbrock23(;autodiff=false, diff_type=Val{:central}))
-@test_broken x[] == sol.destats.nf
-# x[] = 255
-# nf = 227
+@test x[] == sol.destats.nf
 
 x[] = 0
 sol = solve(prob, Rosenbrock23(;autodiff=false, diff_type=Val{:complex}))
-@test_broken x[] == sol.destats.nf
-# x[] = 177
-# nf = 143
+@test x[] == sol.destats.nf
 
 x[] = 0
 sol = solve(prob, Rodas5(;autodiff=true))
@@ -73,12 +67,12 @@ sol = solve(prob, Rodas5(;autodiff=true))
 
 x[] = 0
 sol = solve(prob, Rodas5(;autodiff=false, diff_type=Val{:forward}))
-@test_broken x[] == sol.destats.nf
+@test x[] == sol.destats.nf
 
 x[] = 0
 sol = solve(prob, Rodas5(;autodiff=false, diff_type=Val{:central}))
-@test_broken x[] == sol.destats.nf
+@test x[] == sol.destats.nf
 
 x[] = 0
 sol = solve(prob, Rodas5(;autodiff=false, diff_type=Val{:complex}))
-@test_broken x[] == sol.destats.nf
+@test x[] == sol.destats.nf
