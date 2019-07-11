@@ -27,7 +27,7 @@ function derivative(f, x::Union{Number,AbstractArray{<:Number}},
       integrator.destats.nf += 1
       d = ForwardDiff.derivative(f, x)
     else
-      d = DiffEqDiffTools.finite_difference_gradient(f, x, alg.diff_type, eltype(x), Val{false}, dir = diffdir(integrator))
+      d = DiffEqDiffTools.finite_difference_derivative(f, x, alg.diff_type, dir = diffdir(integrator))
       if alg.diff_type == Val{:central} || alg.diff_type == Val{:forward}
           tmp *= 2
       end
