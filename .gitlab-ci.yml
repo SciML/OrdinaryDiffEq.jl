@@ -1,0 +1,54 @@
+image: "julia:1"
+
+variables:
+  JULIA_DEPOT_PATH: "$CI_PROJECT_DIR/.julia/"
+  JULIA_NUM_THREADS: '8'
+
+cache:
+  paths:
+    - .julia/
+
+build:
+  stage: build
+  script:
+    - julia -e "using InteractiveUtils;
+                versioninfo()"
+    - julia --project -e "using Pkg;
+                          Pkg.update();
+                          Pkg.instantiate();
+                          Pkg.build(\"OrdinaryDiffEq\");
+                          pkg\"precompile\";
+                          using OrdinaryDiffEq;"
+  only:
+  - master
+  - tags
+  - external
+  - pushes
+
+test-GPU:
+  stage: test
+  variables:
+    GROUP: "GPU"
+  script:
+    - julia -e "using InteractiveUtils;
+                versioninfo()"
+    - julia --project -e "using Pkg; Pkg.add(\"CuArrays\");
+                          Pkg.test(\"OrdinaryDiffEq\"; coverage=true);"
+  only:
+  - master
+  - tags
+  - external
+  - pushes
+
+coverage:
+  stage: deploy
+  dependencies:
+    - test-GPU
+  script:
+    - julia --project -e "using Pkg;
+                          Pkg.add(\"Coverage\")"
+    - julia --project -e "using Coverage;
+                          cl, tl = get_summary(process_folder());
+                          println(\"(\", cl/tl*100, \"%) covered\");
+                          Codecov.submit_local(process_folder(), ".")"
+  coverage: '/\(\d+.\d+\%\) covered/'
