@@ -10,6 +10,8 @@ cache:
 
 build:
   stage: build
+  tags:
+    - 'p6000'
   script:
     - julia -e "using InteractiveUtils;
                 versioninfo()"
@@ -28,7 +30,7 @@ build:
 test-GPU:
   stage: test
   tags:
-    - 'diffeqgpu'
+    - 'p6000'
   variables:
     GROUP: "GPU"
   script:
@@ -44,6 +46,8 @@ test-GPU:
 
 coverage:
   stage: deploy
+  tags:
+    - 'p6000'
   dependencies:
     - test-GPU
   script:
