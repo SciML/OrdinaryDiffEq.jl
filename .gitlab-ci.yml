@@ -13,11 +13,9 @@ build:
   tags:
     - 'p6000'
   script:
-    - whoami
-    - echo $PATH
-    - julia -e "using InteractiveUtils;
+    - /usr/local/bin/julia -e "using InteractiveUtils;
                 versioninfo()"
-    - julia --project -e "using Pkg;
+    - /usr/local/bin/julia --project -e "using Pkg;
                           Pkg.update();
                           Pkg.instantiate();
                           Pkg.build(\"OrdinaryDiffEq\");
