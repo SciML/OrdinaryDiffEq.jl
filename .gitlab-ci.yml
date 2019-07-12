@@ -27,6 +27,8 @@ build:
 
 test-GPU:
   stage: test
+  tags:
+    - 'diffeqgpu'
   variables:
     GROUP: "GPU"
   script:

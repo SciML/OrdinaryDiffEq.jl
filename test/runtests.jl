@@ -2,7 +2,6 @@ using SafeTestsets
 const LONGER_TESTS = false
 
 const GROUP = get(ENV, "GROUP", "All")
-
 const is_APPVEYOR = Sys.iswindows() && haskey(ENV,"APPVEYOR")
 const is_TRAVIS = haskey(ENV,"TRAVIS")
 
@@ -89,7 +88,6 @@ if !is_APPVEYOR && (GROUP == "All" || GROUP == "AlgConvergence_III")
 end
 
 if !is_APPVEYOR && GROUP == "ODEInterfaceRegression"
-  @show is_TRAVIS
   if is_TRAVIS
     using Pkg
     Pkg.add("ODEInterface")
@@ -97,6 +95,10 @@ if !is_APPVEYOR && GROUP == "ODEInterfaceRegression"
   end
   @time @safetestset "Init dt vs dorpri tests" begin include("odeinterface/init_dt_vs_dopri_tests.jl") end
   @time @safetestset "ODEInterface Regression Tests" begin include("odeinterface/odeinterface_regression.jl") end
+end
+
+if !is_APPVEYOR && GROUP == "GPU"
+  @time @safetestset "Simple GPU" begin include("gpu/simple_gpu.jl") end
 end
 
 end # @time
