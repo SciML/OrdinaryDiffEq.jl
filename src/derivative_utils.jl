@@ -293,8 +293,10 @@ end
     end
   else
     if MT <: UniformScaling
+      idxs = diagind(W)
+      @.. W = dtgamma*J
       λ = -mass_matrix.λ
-      @.. W = muladd(dtgamma, J, λ)
+      @.. @view(W[idxs]) = @view(W[idxs]) + λ
     else
       @.. W = muladd(dtgamma, J, -mass_matrix)
     end
