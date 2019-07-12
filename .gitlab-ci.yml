@@ -13,9 +13,9 @@ build:
   tags:
     - 'p6000'
   script:
-    - /usr/local/bin/julia -e "using InteractiveUtils;
+    - /usr/bin/julia -e "using InteractiveUtils;
                 versioninfo()"
-    - /usr/local/bin/julia --project -e "using Pkg;
+    - /usr/bin/julia --project -e "using Pkg;
                           Pkg.update();
                           Pkg.instantiate();
                           Pkg.build(\"OrdinaryDiffEq\");
