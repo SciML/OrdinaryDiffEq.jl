@@ -29,7 +29,7 @@ function initialize!(integrator, cache::Union{ImplicitEulerCache,
                                               ESDIRK54I8L2SACache})
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.k
+  integrator.fsallast = cache.nlsolver.k
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -84,7 +84,8 @@ end
 
 @muladd function perform_step!(integrator, cache::ImplicitEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack z,tmp,atmp,nlsolver = cache
+  @unpack atmp,nlsolver = cache
+  @unpack z,tmp = nlsolver
   mass_matrix = integrator.f.mass_matrix
   alg = unwrap_alg(integrator, true)
   update_W!(integrator, cache, dt, repeat_step)

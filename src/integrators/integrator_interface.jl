@@ -75,7 +75,7 @@ end
 
 # the ordering of the cache arrays is important!!!
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqAlgorithm,cache) = (cache.tmp,)
-@inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm,cache) = (cache.tmp,cache.atmp)
+@inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm,cache) = (cache.nlsolver.tmp,cache.atmp)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::OrdinaryDiffEqRosenbrockAdaptiveAlgorithm,cache) = (cache.tmp,cache.linsolve_tmp)
 @inline DiffEqBase.get_tmp_cache(integrator,alg::CompositeAlgorithm, cache) = get_tmp_cache(integrator, integrator.alg.algs[1], cache.caches[1])
 

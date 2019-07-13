@@ -1,22 +1,11 @@
 abstract type SDIRKMutableCache <: OrdinaryDiffEqMutableCache end
 
-@cache mutable struct ImplicitEulerCache{uType,rateType,uNoUnitsType,JType,WType,UF,JC,F,N} <: SDIRKMutableCache
+@cache mutable struct ImplicitEulerCache{uType,rateType,uNoUnitsType,N} <: SDIRKMutableCache
   u::uType
   uprev::uType
   uprev2::uType
-  du1::rateType
   fsalfirst::rateType
-  k::rateType
-  z::uType
-  dz::uType
-  b::uType
-  tmp::uType
   atmp::uNoUnitsType
-  J::JType
-  W::WType
-  uf::UF
-  jac_config::JC
-  linsolve::F
   nlsolver::N
 end
 
@@ -25,15 +14,14 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomElt
   γ, c = 1, 1
   J, W = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
   nlsolver = iipnlsolve(alg,u,uprev,p,t,dt,f,W,J,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
-  @getiipnlsolvefields
+  fsalfirst = zero(rate_prototype)
 
   atmp = similar(u,uEltypeNoUnits)
 
-  ImplicitEulerCache(u,uprev,uprev2,du1,fsalfirst,k,z,dz,b,tmp,atmp,J,W,uf,jac_config,linsolve,nlsolver)
+  ImplicitEulerCache(u,uprev,uprev2,fsalfirst,atmp,nlsolver)
 end
 
-mutable struct ImplicitEulerConstantCache{F,N} <: OrdinaryDiffEqConstantCache
-  uf::F
+mutable struct ImplicitEulerConstantCache{N} <: OrdinaryDiffEqConstantCache
   nlsolver::N
 end
 
@@ -42,8 +30,7 @@ function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomElt
   γ, c = 1, 1
   J, W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
   nlsolver = oopnlsolve(alg,u,uprev,p,t,dt,f,W,J,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
-  @getoopnlsolvefields
-  ImplicitEulerConstantCache(uf,nlsolver)
+  ImplicitEulerConstantCache(nlsolver)
 end
 
 mutable struct ImplicitMidpointConstantCache{F,N} <: OrdinaryDiffEqConstantCache
