@@ -29,7 +29,8 @@ build:
   - tags
   - external
   - pushes
-  cache:
+  artifacts:
+    untracked: true
     paths:
       - .julia/**/*
       - julia-1.1.1/**/*
@@ -52,7 +53,8 @@ test-GPU:
   - tags
   - external
   - pushes
-  cache:
+  artifacts:
+    untracked: true
     paths:
       - .julia/**/*
       - julia-1.1.1/**/*
