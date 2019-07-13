@@ -30,11 +30,11 @@ build:
   - external
   - pushes
   cache:
-    key: default
     untraced: true
     paths:
       - .julia/**/*
       - julia-1.1.1/**/*
+    group: sharedcache
 
 test-GPU:
   stage: test
@@ -53,11 +53,11 @@ test-GPU:
   - external
   - pushes
   cache:
-    key: default
     untraced: true
     paths:
       - .julia/**/*
       - julia-1.1.1/**/*
+    group: sharedcache
 
 coverage:
   stage: deploy
