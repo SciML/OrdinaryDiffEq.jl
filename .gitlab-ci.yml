@@ -13,9 +13,12 @@ build:
   tags:
     - 'p6000'
   script:
-    - /usr/bin/julia -e "using InteractiveUtils;
+    - curl https://julialang-s3.julialang.org/bin/linux/x64/1.1/julia-1.1.1-linux-x86_64.tar.gz -o julia.tar.gz
+    - unp julia.tar.gz
+    - export PATH="$(pwd)/julia-1.1.1/:$PATH"
+    - julia -e "using InteractiveUtils;
                 versioninfo()"
-    - /usr/bin/julia --project -e "using Pkg;
+    - julia --project -e "using Pkg;
                           Pkg.update();
                           Pkg.instantiate();
                           Pkg.build(\"OrdinaryDiffEq\");
