@@ -24,6 +24,27 @@ build:
                           Pkg.build(\"OrdinaryDiffEq\");
                           pkg\"precompile\";
                           using OrdinaryDiffEq;"
+  only:
+  - master
+  - tags
+  - external
+  - pushes
+  cache:
+    paths:
+      - .julia/**/*
+      - julia-1.1.1/**/*
+
+test-GPU:
+  stage: test
+  tags:
+    - 'p6000'
+  dependencies:
+    - build
+  variables:
+    GROUP: "GPU"
+  script:
+    - julia -e "using InteractiveUtils;
+                versioninfo()"
     - julia --project -e "using Pkg; Pkg.add(\"CuArrays\");
                           Pkg.test(\"OrdinaryDiffEq\"; coverage=true);"
   only:
@@ -36,32 +57,12 @@ build:
       - .julia/**/*
       - julia-1.1.1/**/*
 
-        #test-GPU:
-        #  stage: test
-        #  tags:
-        #    - 'p6000'
-        #  variables:
-        #    GROUP: "GPU"
-        #  script:
-        #    - julia -e "using InteractiveUtils;
-        #                versioninfo()"
-        #    - julia --project -e "using Pkg; Pkg.add(\"CuArrays\");
-        #                          Pkg.test(\"OrdinaryDiffEq\"; coverage=true);"
-        #  only:
-        #  - master
-        #  - tags
-        #  - external
-        #  - pushes
-        #  cache:
-        #    paths:
-        #      - .julia/**/*
-        #      - julia-1.1.1/**/*
-
 coverage:
   stage: deploy
   tags:
     - 'p6000'
   dependencies:
+    - build
     - test-GPU
   script:
     - julia --project -e "using Pkg;
