@@ -13,7 +13,7 @@ prob = ODEProblem(ff,u0,tspan)
 
 CuArrays.allowscalar(false)
 sol = solve(prob,Tsit5())
-sol = solve(prob,Rosenbrock23())
+@test_broken sol = solve(prob,Rosenbrock23())
 
 prob_nojac = ODEProblem(f,u0,tspan)
 @test_broken sol = solve(prob_nojac,Rosenbrock23())
