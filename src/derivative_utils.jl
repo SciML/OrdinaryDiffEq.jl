@@ -58,6 +58,18 @@ function calc_J(integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
   return J
 end
 
+function calc_J(nlsolver, integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
+  @unpack t,dt,uprev,u,f,p = integrator
+  if DiffEqBase.has_jac(f)
+    J = f.jac(uprev, p, t)
+  else
+    J = jacobian(nlsolver.uf,uprev,integrator)
+  end
+  integrator.destats.njacs += 1
+  is_compos && (integrator.eigen_est = opnorm(J, Inf))
+  return J
+end
+
 """
     calc_J!(integrator,cache,is_compos)
 
@@ -454,7 +466,7 @@ function calc_W!(nlsolver, integrator, cache::OrdinaryDiffEqConstantCache, dtgam
     integrator.destats.nw += 1
   else
     integrator.destats.nw += 1
-    J = calc_J(integrator, cache, is_compos)
+    J = calc_J(nlsolver, integrator, cache, is_compos)
     W_full = W_transform ? -mass_matrix*inv(dtgamma) + J :
                            -mass_matrix + dtgamma*J
     W = W_full isa Number ? W_full : lu(W_full)
