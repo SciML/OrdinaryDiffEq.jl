@@ -32,7 +32,6 @@ build:
   - external
   - pushes
   cache:
-    untraced: true
     paths:
       - .julia/**/*
       - julia-1.1.1/**/*
@@ -54,7 +53,6 @@ build:
         #  - external
         #  - pushes
         #  cache:
-        #    untraced: true
         #    paths:
         #      - .julia/**/*
         #      - julia-1.1.1/**/*
