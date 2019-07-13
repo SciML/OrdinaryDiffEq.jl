@@ -19,7 +19,7 @@ prob_nojac = ODEProblem(f,u0,tspan)
 @test_broken sol = solve(prob_nojac,Rosenbrock23())
 
 # Test auto-offload
-A = -rand(3,3))
+A = -rand(3,3)
 u0 = [1.0;0.0;0.0]
 tspan = (0.0,100.0)
 prob_nojac2 = ODEProblem(f,u0,tspan)
