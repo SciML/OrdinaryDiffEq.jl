@@ -29,7 +29,10 @@ build:
   - tags
   - external
   - pushes
-  - julia-1.1.1/**/*
+  cache:
+    paths:
+      - .julia/**/*
+      - julia-1.1.1/**/*
 
 test-GPU:
   stage: test
@@ -47,7 +50,10 @@ test-GPU:
   - tags
   - external
   - pushes
-  - julia-1.1.1/**/*
+  cache:
+    paths:
+      - .julia/**/*
+      - julia-1.1.1/**/*
 
 coverage:
   stage: deploy
