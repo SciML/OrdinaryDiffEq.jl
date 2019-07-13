@@ -74,5 +74,5 @@ coverage:
     - julia --project -e "using Coverage;
                           cl, tl = get_summary(process_folder());
                           println(\"(\", cl/tl*100, \"%) covered\");
-                          Codecov.submit_local(process_folder(), ".")"
+                          Codecov.submit_local(process_folder(), \".\")"
   coverage: '/\(\d+.\d+\%\) covered/'
