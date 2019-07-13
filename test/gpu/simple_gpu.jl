@@ -26,7 +26,7 @@ function f2(du,u,p,t)
     mul!(du,_A,u)
 end
 function jac2(J,u,p,t)
-    J .= A
+    J .= _A
 end
 ff2 = ODEFunction(f2,jac=jac2)
 u0 = [1.0;0.0;0.0]
