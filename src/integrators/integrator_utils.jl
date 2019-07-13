@@ -420,9 +420,10 @@ function oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
       W = u isa Number ? u : LU{LinearAlgebra.lutype(uEltypeNoUnits)}(Matrix{uEltypeNoUnits}(undef, 0, 0),
                                                                       Vector{LinearAlgebra.BlasInt}(undef, 0),
                                                                       zero(LinearAlgebra.BlasInt))
+      J = u isa Number ? u : (false .* vec(u) .* vec(u)')
     end
   end
-  W
+  J, W
 end
 
 function (integrator::ODEIntegrator)(t,deriv::Type=Val{0};idxs=nothing)
