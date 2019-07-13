@@ -44,6 +44,7 @@ test-GPU:
   variables:
     GROUP: "GPU"
   script:
+    - export PATH="$(pwd)/julia-1.1.1/bin:$PATH"
     - julia -e "using InteractiveUtils;
                 versioninfo()"
     - julia --project -e "using Pkg; Pkg.add(\"CuArrays\");
@@ -67,6 +68,7 @@ coverage:
     - build
     - test-GPU
   script:
+    - export PATH="$(pwd)/julia-1.1.1/bin:$PATH"
     - julia --project -e "using Pkg;
                           Pkg.add(\"Coverage\")"
     - julia --project -e "using Coverage;
