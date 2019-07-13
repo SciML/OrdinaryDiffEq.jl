@@ -15,7 +15,7 @@ build:
   script:
     - curl https://julialang-s3.julialang.org/bin/linux/x64/1.1/julia-1.1.1-linux-x86_64.tar.gz -o julia.tar.gz
     - unp julia.tar.gz
-    - export PATH="$(pwd)/julia-1.1.1/:$PATH"
+    - export PATH="$(pwd)/julia-1.1.1/bin:$PATH"
     - julia -e "using InteractiveUtils;
                 versioninfo()"
     - julia --project -e "using Pkg;
