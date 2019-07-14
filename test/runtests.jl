@@ -36,6 +36,7 @@ if GROUP == "All" || GROUP == "Interface"
   @time @safetestset "No Index Tests" begin include("interface/noindex_tests.jl") end
   @time @safetestset "Units Tests" begin include("interface/units_tests.jl") end
   @time @safetestset "Linear Nonlinear Solver Tests" begin include("interface/linear_nonlinear_tests.jl") end
+  @time @safetestset "Sparse Diff Tests" begin include("interface/sparsediff_tests.jl") end
 end
 
 if !is_APPVEYOR && (GROUP == "All" || GROUP == "Integrators")
