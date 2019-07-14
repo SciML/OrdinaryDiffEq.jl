@@ -95,8 +95,7 @@ end
     cache.dtₙ₋₁ = dtₙ
     perform_step!(integrator, cache.eulercache, repeat_step)
     cache.fsalfirstprev .= integrator.fsalfirst
-    # why?
-    # nlsolver.tmp = tmp
+    nlsolver.tmp = tmp
     return
   end
 
