@@ -28,7 +28,7 @@ end
                     mass_matrix=mm,
                     jac=(u,p,t) -> A)
   integrator = init(ODEProblem(fun,u0,tspan), ImplicitEuler(); adaptive=false, dt=dt)
-  W = calc_W!(integrator, integrator.cache, dtgamma, false)
+  W = calc_W!(integrator.cache.nlsolver, integrator, integrator.cache, dtgamma, false)
   @test convert(AbstractMatrix, W) == concrete_W
   @test W \ u0 ≈ concrete_W \ u0
 
@@ -37,9 +37,9 @@ end
                     mass_matrix=mm,
                     jac_prototype=DiffEqArrayOperator(A))
   integrator = init(ODEProblem(fun,u0,tspan), ImplicitEuler(); adaptive=false, dt=dt)
-  calc_W!(integrator, integrator.cache, dtgamma, false)
-  @test convert(AbstractMatrix, integrator.cache.W) == concrete_W
-  ldiv!(tmp, lu!(integrator.cache.W), u0); @test tmp == concrete_W \ u0
+  calc_W!(integrator.cache.nlsolver, integrator, integrator.cache, dtgamma, false)
+  @test convert(AbstractMatrix, integrator.cache.nlsolver.cache.W) == concrete_W
+  ldiv!(tmp, lu!(integrator.cache.nlsolver.cache.W), u0); @test tmp == concrete_W \ u0
 end
 
 @testset "Implicit solver with lazy W" begin
