@@ -66,7 +66,7 @@ end
   du₂::rateType
 end
 
-@cache mutable struct SBDFCache{uType,rateType,N,F} <: OrdinaryDiffEqMutableCache
+@cache mutable struct SBDFCache{uType,rateType,N} <: OrdinaryDiffEqMutableCache
   cnt::Int
   u::uType
   uprev::uType
