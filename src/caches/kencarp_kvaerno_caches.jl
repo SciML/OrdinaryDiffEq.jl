@@ -64,7 +64,7 @@ function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNo
   γ, c = tab.γ, tab.c3
   J, W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
   nlsolver = oopnlsolve(alg,u,uprev,p,t,dt,f,W,J,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
-  Kvaerno4ConstantCache(uf,nlsolver,tab)
+  Kvaerno4ConstantCache(nlsolver,tab)
 end
 
 @cache mutable struct Kvaerno4Cache{uType,rateType,uNoUnitsType,N,Tab} <: SDIRKMutableCache

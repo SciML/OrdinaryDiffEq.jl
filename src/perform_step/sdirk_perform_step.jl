@@ -373,23 +373,20 @@ end
 
   # TODO: Add extrapolation
   @.. zᵧ = zprev
-  nlsolver.z = zᵧ
-
+  z .= zᵧ
   @.. tmp = uprev + d*zprev
   nlsolver.c = γ
-  zᵧ = nlsolve!(integrator, cache)
+  zᵧ .= nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve BDF2 Step
 
   ### Initial Guess From Shampine
   @.. z = α1*zprev + α2*zᵧ
-  nlsolver.z = z
-
   @.. tmp = uprev + ω*zprev + ω*zᵧ
   nlsolver.c = 1
   set_new_W!(nlsolver, false)
-  z = nlsolve!(integrator, cache)
+  nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
 
   @.. u = tmp + d*z
