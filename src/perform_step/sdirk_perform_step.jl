@@ -97,7 +97,7 @@ end
     z .= zero(eltype(u))
   end
 
-  nlsolver.tmp = uprev
+  nlsolver.tmp .= uprev
   z = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
   @.. u = uprev + z
