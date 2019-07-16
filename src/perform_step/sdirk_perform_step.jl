@@ -1075,7 +1075,7 @@ end
 @muladd function perform_step!(integrator, cache::ESDIRK54I8L2SACache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,atmp,nlsolver = cache
-  @unpack k,tmp = cache
+  @unpack k,tmp = nlsolver
   @unpack γ,
           a31, a32,
           a41, a42, a43,
