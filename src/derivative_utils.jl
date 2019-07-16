@@ -260,7 +260,7 @@ end
 function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrMat)
   if W._func_cache === nothing
     # Allocate cache only if needed
-    W._func_cache = Vector{eltype(W)}(undef, size(Y, 1))
+    W._func_cache = Vector{eltype(B)}(undef, size(Y, 1))
   end
   if W.transform
     # Compute mass_matrix * B
