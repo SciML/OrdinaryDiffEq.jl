@@ -175,7 +175,6 @@ end
   u::uType
   uprev::uType
   fsalfirst::rateType
-  k::rateType
   z₁::uType
   z₂::uType
   z₃::uType
