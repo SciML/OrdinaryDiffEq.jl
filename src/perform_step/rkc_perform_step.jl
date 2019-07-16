@@ -653,7 +653,7 @@ function initialize!(integrator, cache::IRKCCache)
   @unpack f1, f2 = integrator.f
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.k
+  integrator.fsallast = cache.nlsolver.k
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -666,7 +666,8 @@ end
 
 function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p,alg = integrator
-  @unpack tmp,gprev,gprev2,k,f1ⱼ₋₁,f1ⱼ₋₂,f2ⱼ₋₁,du₁,du₂,z,W,atmp,nlsolver = cache
+  @unpack gprev,gprev2,f1ⱼ₋₁,f1ⱼ₋₂,f2ⱼ₋₁,du₁,du₂,atmp,nlsolver = cache
+  @unpack tmp,k,z = nlsolver
   @unpack minm = cache.constantcache
   @unpack f1, f2 = integrator.f
 
@@ -767,7 +768,7 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   if isnewton(nlsolver) && integrator.opts.adaptive
     update_W!(integrator, cache, dt, false)
     @.. gprev = dt*0.5*(du₂ - f2ⱼ₋₁) + dt*(0.5 - μs₁)*(du₁ - f1ⱼ₋₁)
-    cache.linsolve(vec(tmp),get_W(nlsolver),vec(gprev),false)
+    nlsolver.linsolve(vec(tmp),get_W(nlsolver),vec(gprev),false)
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
