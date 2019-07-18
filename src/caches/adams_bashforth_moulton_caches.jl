@@ -883,33 +883,21 @@ end
 
 # CNAB2
 
-@cache mutable struct CNAB2ConstantCache{rateType,F,N,uType,tType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct CNAB2ConstantCache{rateType,N,uType,tType} <: OrdinaryDiffEqConstantCache
   k2::rateType
-  uf::F
   nlsolver::N
   uprev3::uType
   tprev2::tType
 end
 
-@cache mutable struct CNAB2Cache{uType,rateType,JType,WType,UF,JC,N,tType,F} <: OrdinaryDiffEqMutableCache
+@cache mutable struct CNAB2Cache{uType,rateType,N,tType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
   fsalfirst::rateType
-  k::rateType
   k1::rateType
   k2::rateType
   du₁::rateType
-  du1::rateType
-  z::uType
-  dz::uType
-  b::uType
-  tmp::uType
-  J::JType
-  W::WType
-  uf::UF
-  jac_config::JC
-  linsolve::F
   nlsolver::N
   uprev3::uType
   tprev2::tType
@@ -917,22 +905,21 @@ end
 
 function alg_cache(alg::CNAB2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   γ, c = 1//2, 1
-  W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
-  nlsolver = oopnlsolve(alg,u,uprev,p,t,dt,f,W,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
-  @getoopnlsolvefields
+  J, W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
+  nlsolver = oopnlsolve(alg,u,uprev,p,t,dt,f,W,J,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
 
   k2 = rate_prototype
   uprev3 = u
   tprev2 = t
 
-  CNAB2ConstantCache(k2,uf,nlsolver,uprev3,tprev2)
+  CNAB2ConstantCache(k2,nlsolver,uprev3,tprev2)
 end
 
 function alg_cache(alg::CNAB2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   γ, c = 1//2, 1
   J, W = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
-  nlsolver = iipnlsolve(alg,u,uprev,p,t,dt,f,W,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
-  @getiipnlsolvefields
+  nlsolver = iipnlsolve(alg,u,uprev,p,t,dt,f,W,J,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
+  fsalfirst = zero(rate_prototype)
 
   k1 = zero(rate_prototype)
   k2 = zero(rate_prototype)
@@ -940,39 +927,27 @@ function alg_cache(alg::CNAB2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   uprev3 = zero(u)
   tprev2 = t
 
-  CNAB2Cache(u,uprev,uprev2,fsalfirst,k,k1,k2,du₁,du1,z,dz,b,tmp,J,W,uf,jac_config,linsolve,nlsolver,uprev3,tprev2)
+  CNAB2Cache(u,uprev,uprev2,fsalfirst,k1,k2,du₁,nlsolver,uprev3,tprev2)
 end
 
 # CNLF2
 
-@cache mutable struct CNLF2ConstantCache{rateType,F,N,uType,tType} <: OrdinaryDiffEqConstantCache
+@cache mutable struct CNLF2ConstantCache{rateType,N,uType,tType} <: OrdinaryDiffEqConstantCache
   k2::rateType
-  uf::F
   nlsolver::N
   uprev2::uType
   uprev3::uType
   tprev2::tType
 end
 
-@cache mutable struct CNLF2Cache{uType,rateType,JType,WType,UF,JC,N,tType,F} <: OrdinaryDiffEqMutableCache
+@cache mutable struct CNLF2Cache{uType,rateType,N,tType} <: OrdinaryDiffEqMutableCache
   u::uType
   uprev::uType
   uprev2::uType
   fsalfirst::rateType
-  k::rateType
   k1::rateType
   k2::rateType
   du₁::rateType
-  du1::rateType
-  z::uType
-  dz::uType
-  b::uType
-  tmp::uType
-  J::JType
-  W::WType
-  uf::UF
-  jac_config::JC
-  linsolve::F
   nlsolver::N
   uprev3::uType
   tprev2::tType
@@ -980,23 +955,22 @@ end
 
 function alg_cache(alg::CNLF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   γ, c = 1//1, 1
-  W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
-  nlsolver = oopnlsolve(alg,u,uprev,p,t,dt,f,W,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
-  @getoopnlsolvefields
+  J, W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
+  nlsolver = oopnlsolve(alg,u,uprev,p,t,dt,f,W,J,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
 
   k2 = rate_prototype
   uprev2 = u
   uprev3 = u
   tprev2 = t
 
-  CNLF2ConstantCache(k2,uf,nlsolver,uprev2,uprev3,tprev2)
+  CNLF2ConstantCache(k2,nlsolver,uprev2,uprev3,tprev2)
 end
 
 function alg_cache(alg::CNLF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   γ, c = 1//1, 1
   J, W = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
-  nlsolver = iipnlsolve(alg,u,uprev,p,t,dt,f,W,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
-  @getiipnlsolvefields
+  nlsolver = iipnlsolve(alg,u,uprev,p,t,dt,f,W,J,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
+  fsalfirst = zero(rate_prototype)
 
   k1 = zero(rate_prototype)
   k2 = zero(rate_prototype)
@@ -1005,5 +979,5 @@ function alg_cache(alg::CNLF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   uprev3 = zero(u)
   tprev2 = t
 
-  CNLF2Cache(u,uprev,uprev2,fsalfirst,k,k1,k2,du₁,du1,z,dz,b,tmp,J,W,uf,jac_config,linsolve,nlsolver,uprev3,tprev2)
+  CNLF2Cache(u,uprev,uprev2,fsalfirst,k1,k2,du₁,nlsolver,uprev3,tprev2)
 end
