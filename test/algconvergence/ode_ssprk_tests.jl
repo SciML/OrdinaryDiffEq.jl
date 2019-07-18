@@ -49,6 +49,7 @@ sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg)+1
 @test any(sol.u .< 0)
 
 
+println("SSPRK22")
 alg = SSPRK22()
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
@@ -77,6 +78,7 @@ integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, sa
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
 
 
+println("SSPRK33")
 alg = SSPRK33()
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
@@ -107,6 +109,7 @@ integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, sa
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
 
 
+println("SSPRK53")
 alg = SSPRK53()
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
@@ -130,6 +133,7 @@ integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, sa
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 4
 
 
+println("SSPRK53_2N1")
 alg = SSPRK53_2N1()
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
@@ -155,6 +159,7 @@ integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, sa
 
 # for SSPRK53_2N2 to be in asymptotic range
 dts = 1 .//2 .^(9:-1:5)
+println("SSPRK53_2N2")
 alg = SSPRK53_2N2()
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
@@ -179,6 +184,7 @@ integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, sa
 
 
 #reverting back to original dts
+println("SSPRK63")
 dts = 1 .//2 .^(8:-1:4)
 alg = SSPRK63()
 for prob in test_problems_only_time
@@ -198,6 +204,7 @@ sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg), 
 @test all(sol.u .>= 0)
 
 
+println("SSPRK73")
 alg = SSPRK73()
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
@@ -215,7 +222,7 @@ end
 sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg), dense=false)
 @test all(sol.u .>= 0)
 
-
+println("SSPRK83")
 alg = SSPRK83()
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
@@ -234,6 +241,7 @@ sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg), 
 @test all(sol.u .>= 0)
 
 
+println("SSPRK432")
 alg = SSPRK432()
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
@@ -273,6 +281,7 @@ for prob in test_problems_nonlinear
 end
 
 
+println("SSPRKMSVS43")
 alg = SSPRKMSVS43()
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
@@ -288,6 +297,7 @@ for prob in test_problems_nonlinear
 end
 
 
+println("SSPRK932")
 alg = SSPRK932()
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
@@ -306,6 +316,7 @@ sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg), 
 @test all(sol.u .>= 0)
 
 
+println("SSPRK54")
 alg = SSPRK54()
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
@@ -326,6 +337,7 @@ sol = solve(test_problem_ssp_long, alg, dt=OrdinaryDiffEq.ssp_coefficient(alg), 
 @test all(sol.u .>= 0)
 
 
+println("SSPRK104")
 alg = SSPRK104()
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
@@ -349,6 +361,7 @@ integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, sa
 integ = init(prob_ode_large, alg, dt=1.e-2, save_start=false, save_end=false, save_everystep=false, alias_u0=true)
 @test Base.summarysize(integ) ÷ Base.summarysize(u0_large) <= 5
 
+println("KYK2014DGSSPRK_3S2")
 alg = KYK2014DGSSPRK_3S2()
 for prob in test_problems_only_time
   sim = test_convergence(dts, prob, alg)
