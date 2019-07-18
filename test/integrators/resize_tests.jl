@@ -17,13 +17,7 @@ solve!(i)
 
 i = init(prob, ImplicitEuler())
 resize!(i, 5)
-@test length(i.cache.z) == 5
-@test length(i.cache.dz) == 5
-@test length(i.cache.b) == 5
 @test length(i.cache.atmp) == 5
-@test length(i.cache.tmp) == 5
-@test length(i.cache.k) == 5
-@test length(i.cache.du1) == 5
 @test length(i.cache.uprev) == 5
 # nlsolver fields
 @test length(i.cache.nlsolver.z) == 5
@@ -36,22 +30,13 @@ resize!(i, 5)
 # ForwardDiff
 @test length(i.cache.nlsolver.jac_config.duals[1]) == 5
 @test length(i.cache.nlsolver.jac_config.duals[2]) == 5
-@test length(i.cache.jac_config.duals[1]) == 5
-@test length(i.cache.jac_config.duals[2]) == 5
-@test size(i.cache.J) == (5,5)
-@test size(i.cache.W) == (5,5)
 @test size(i.cache.nlsolver.cache.W) == (5,5)
+@test size(i.cache.nlsolver.cache.J) == (5,5)
 solve!(i)
 
 i = init(prob, ImplicitEuler(;autodiff=false))
 resize!(i, 5)
-@test length(i.cache.z) == 5
-@test length(i.cache.dz) == 5
-@test length(i.cache.b) == 5
 @test length(i.cache.atmp) == 5
-@test length(i.cache.tmp) == 5
-@test length(i.cache.k) == 5
-@test length(i.cache.du1) == 5
 @test length(i.cache.uprev) == 5
 # nlsolver fields
 @test length(i.cache.nlsolver.z) == 5
@@ -65,9 +50,8 @@ resize!(i, 5)
 @test length(i.cache.nlsolver.jac_config.x1) == 5
 @test length(i.cache.nlsolver.jac_config.fx) == 5
 @test length(i.cache.nlsolver.jac_config.fx1) == 5
-@test size(i.cache.J) == (5,5)
-@test size(i.cache.W) == (5,5)
 @test size(i.cache.nlsolver.cache.W) == (5,5)
+@test size(i.cache.nlsolver.cache.J) == (5,5)
 solve!(i)
 
 i = init(prob, Rosenbrock23())
@@ -89,27 +73,29 @@ resize!(i, 5)
 @test length(i.cache.linsolve_tmp) == 5
 @test length(i.cache.jac_config.duals[1]) == 5
 @test length(i.cache.jac_config.duals[2]) == 5
+solve!(i)
 
-# i = init(prob, Rosenbrock23(;autodiff=false))
-# resize!(i, 5)
-# @test length(i.cache.u) == 5
-# @test length(i.cache.uprev) == 5
-# @test length(i.cache.k₁) == 5
-# @test length(i.cache.k₂) == 5
-# @test length(i.cache.k₃) == 5
-# @test length(i.cache.du1) == 5
-# @test length(i.cache.du2) == 5
-# @test length(i.cache.f₁) == 5
-# @test length(i.cache.fsalfirst) == 5
-# @test length(i.cache.fsallast) == 5
-# @test length(i.cache.dT) == 5
-# @test length(i.cache.tmp) == 5
-# @test size(i.cache.J) == (5, 5)
-# @test size(i.cache.W) == (5, 5)
-# @test length(i.cache.linsolve_tmp) == 5
-# @test length(i.cache.jac_config.x1) == 5
-# @test length(i.cache.jac_config.fx) == 5
-# @test length(i.cache.jac_config.fx1) == 5
+i = init(prob, Rosenbrock23(;autodiff=false))
+resize!(i, 5)
+@test length(i.cache.u) == 5
+@test length(i.cache.uprev) == 5
+@test length(i.cache.k₁) == 5
+@test length(i.cache.k₂) == 5
+@test length(i.cache.k₃) == 5
+@test length(i.cache.du1) == 5
+@test length(i.cache.du2) == 5
+@test length(i.cache.f₁) == 5
+@test length(i.cache.fsalfirst) == 5
+@test length(i.cache.fsallast) == 5
+@test length(i.cache.dT) == 5
+@test length(i.cache.tmp) == 5
+@test size(i.cache.J) == (5, 5)
+@test size(i.cache.W) == (5, 5)
+@test length(i.cache.linsolve_tmp) == 5
+@test length(i.cache.jac_config.x1) == 5
+@test length(i.cache.jac_config.fx) == 5
+@test length(i.cache.jac_config.fx1) == 5
+solve!(i)
 
 function f(du,u,p,t)
   du[1] = 2.0 * u[1] - 1.2 * u[1]*u[2]

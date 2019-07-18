@@ -153,14 +153,29 @@ end
 
 get_chunksize(jac_config::ForwardDiff.JacobianConfig{T,V,N,D}) where {T,V,N,D} = N
 
-function DiffEqBase.resize_jac_config!(jac_config::ForwardDiff.JacobianConfig, uf, du1, z, alg, i)
-  prev_chunksize = get_chunksize(jac_config)
-  ForwardDiff.JacobianConfig(uf,du1,z,ForwardDiff.Chunk{prev_chunksize}())
+function DiffEqBase.resize_jac_config!(jac_config::ForwardDiff.JacobianConfig, i)
+  for j in eachindex(jac_config.duals)
+    resize!(jac_config.duals[j], i)
+  end
+  jac_config
 end
 
-function DiffEqBase.resize_jac_config!(jac_config::DiffEqDiffTools.JacobianCache, uf, du1, z, alg, i)
+function DiffEqBase.resize_jac_config!(jac_config::DiffEqDiffTools.JacobianCache, i)
   resize!(jac_config, i)
   jac_config
+end
+
+function resize_grad_config!(grad_config::ForwardDiff.DerivativeConfig, i)
+  resize!(grad_config.duals, i)
+  grad_config
+end
+
+function resize_grad_config!(grad_config::DiffEqDiffTools.GradientCache, i)
+  @unpack fx, c1, c2 = grad_config
+  fx !== nothing && resize!(fx, i)
+  c1 !== nothing && resize!(c1, i)
+  c2 !== nothing && resize!(c2, i)
+  grad_config
 end
 
 function build_grad_config(alg,f,tf,du1,t)
