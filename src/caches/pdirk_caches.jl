@@ -7,7 +7,12 @@
   tab::TabType
 end
 
-struct PDIRK44ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct PDIRK44ConstantCache{N,TabType} <: OrdinaryDiffEqConstantCache
+  nlsolver::N
+  tab::TabType
+end
+
+struct PDIRK44Tableau{T,T2}
   γs::SVector{2,T2}
   cs::SVector{4,T2}
   α1::SVector{2,T}
@@ -18,7 +23,7 @@ struct PDIRK44ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   b4::T
 end
 
-function PDIRK44ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
+function PDIRK44Tableau(::Type{T}, ::Type{T2}) where {T,T2}
   γ1 = convert(T2,  1//2)
   γ2 = convert(T2,  2//3)
   γs = SVector(γ1, γ2)
@@ -37,7 +42,7 @@ function PDIRK44ConstantCache(::Type{T}, ::Type{T2}) where {T,T2}
   b2 = convert(T, -1//1)
   b3 = convert(T,  3//2)
   b4 = convert(T,  3//2)
-  PDIRK44ConstantCache{T,T2}(γs,cs,α1,α2,b1,b2,b3,b4)
+  PDIRK44Tableau{T,T2}(γs,cs,α1,α2,b1,b2,b3,b4)
 end
 
 function alg_cache(alg::PDIRK44,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -53,11 +58,25 @@ function alg_cache(alg::PDIRK44,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
     _nlsolver = iipnlsolve(alg,u,uprev,p,t,dt,f,_W,_J,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)    
     nlsolver = [_nlsolver]
   end
-  tab = PDIRK44ConstantCache(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  tab = PDIRK44Tableau(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
   k1 = [zero(rate_prototype) for i in 1:2 ]
   k2 = [zero(rate_prototype) for i in 1:2 ]
   PDIRK44Cache(u,uprev,k1,k2,nlsolver,tab)
 end
 
 function alg_cache(alg::PDIRK44,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  γ, c = 1.0, 1.0
+  if alg.threading
+    J1, W1 = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
+    nlsolver1 = oopnlsolve(alg,u,uprev,p,t,dt,f,W1,J1,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
+    J2, W2 = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
+    nlsolver2 = oopnlsolve(alg,u,uprev,p,t,dt,f,W2,J2,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
+    nlsolver = [nlsolver1, nlsolver2]
+  else
+    _J, _W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
+    _nlsolver = oopnlsolve(alg,u,uprev,p,t,dt,f,_W,_J,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
+    nlsolver = [_nlsolver]
+  end
+  tab = PDIRK44Tableau(real(uBottomEltypeNoUnits), real(tTypeNoUnits))
+  PDIRK44ConstantCache(nlsolver,tab)
 end
