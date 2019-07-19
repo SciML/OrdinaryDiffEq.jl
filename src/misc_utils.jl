@@ -56,21 +56,14 @@ macro cache(expr)
     if x.args[2] == :uType || x.args[2] == :rateType ||
        x.args[2] == :kType || x.args[2] == :uNoUnitsType
       push!(cache_vars,:(c.$(x.args[1])))
-    elseif x.args[2] == :JCType
-      push!(cache_vars,:(c.$(x.args[1]).duals...))
-    elseif x.args[2] == :GCType
-      push!(cache_vars,:(c.$(x.args[1]).duals))
     elseif x.args[2] == :DiffCacheType
       push!(cache_vars,:(c.$(x.args[1]).du))
       push!(cache_vars,:(c.$(x.args[1]).dual_du))
-    elseif x.args[2] == :JType || x.args[2] == :WType
-      push!(jac_vars,x.args[1] => :(c.$(x.args[1])))
     end
   end
   quote
     $expr
     $(esc(:full_cache))(c::$name) = tuple($(cache_vars...))
-    $(esc(:jac_iter))($(esc(:c))::$name) = tuple($(jac_vars...))
   end
 end
 
@@ -79,4 +72,11 @@ end
 function constvalue(x)
   _x = DiffEqBase.value(x)
   _x isa Complex ? DiffEqBase.value(real(_x)) : DiffEqBase.value(_x)
+end
+
+function diffdir(integrator::DiffEqBase.DEIntegrator)
+  difference = maximum(abs, integrator.uprev)*sqrt(eps(typeof(integrator.t)))
+  dir = integrator.tdir > zero(integrator.tdir) ?
+          integrator.t > integrator.sol.prob.tspan[2] - difference ? -true :  true :
+          integrator.t < integrator.sol.prob.tspan[2] + difference ?  true : -true
 end

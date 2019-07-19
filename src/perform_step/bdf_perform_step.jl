@@ -76,7 +76,7 @@ end
 function initialize!(integrator, cache::ABDF2Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.k
+  integrator.fsallast = cache.nlsolver.k
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -86,7 +86,8 @@ end
 
 @muladd function perform_step!(integrator, cache::ABDF2Cache, repeat_step=false)
   @unpack t,dt,f,p = integrator
-  @unpack z,k,b,J,W,tmp,atmp,dtₙ₋₁,zₙ₋₁,nlsolver = cache
+  @unpack atmp,dtₙ₋₁,zₙ₋₁,nlsolver = cache
+  @unpack z,tmp = nlsolver
   alg = unwrap_alg(integrator, true)
   uₙ,uₙ₋₁,uₙ₋₂,dtₙ = integrator.u,integrator.uprev,integrator.uprev2,integrator.dt
 
@@ -216,7 +217,7 @@ function initialize!(integrator, cache::SBDFCache)
   @unpack f1, f2 = integrator.f
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.k
+  integrator.fsallast = cache.nlsolver.k
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -229,7 +230,8 @@ end
 
 function perform_step!(integrator, cache::SBDFCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p,alg = integrator
-  @unpack tmp,uprev2,uprev3,uprev4,k,k₁,k₂,k₃,du₁,du₂,z,nlsolver = cache
+  @unpack uprev2,uprev3,uprev4,k₁,k₂,k₃,du₁,du₂,nlsolver = cache
+  @unpack tmp,z,k = nlsolver
   @unpack f1, f2 = integrator.f
   cnt = cache.cnt = min(alg.order, integrator.iter+1)
   integrator.iter == 1 && !integrator.u_modified && ( cnt = cache.cnt = 1 )
@@ -345,7 +347,7 @@ end
 function initialize!(integrator, cache::QNDF1Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.k
+  integrator.fsallast = cache.nlsolver.k
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -355,7 +357,8 @@ end
 
 function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack uprev2,D,D2,R,U,dtₙ₋₁,tmp,z,W,utilde,atmp,nlsolver = cache
+  @unpack uprev2,D,D2,R,U,dtₙ₋₁,utilde,atmp,nlsolver = cache
+  @unpack tmp,z = nlsolver
   alg = unwrap_alg(integrator, true)
   cnt = integrator.iter
   k = 1
@@ -502,7 +505,7 @@ end
 function initialize!(integrator, cache::QNDF2Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.k
+  integrator.fsallast = cache.nlsolver.k
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -512,7 +515,8 @@ end
 
 function perform_step!(integrator,cache::QNDF2Cache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack uprev2,uprev3,dtₙ₋₁,dtₙ₋₂,D,D2,R,U,tmp,utilde,atmp,W,nlsolver = cache
+  @unpack uprev2,uprev3,dtₙ₋₁,dtₙ₋₂,D,D2,R,U,utilde,atmp,nlsolver = cache
+  tmp = nlsolver.tmp
   alg = unwrap_alg(integrator, true)
   cnt = integrator.iter
   k = 2
@@ -728,7 +732,7 @@ end
 function initialize!(integrator, cache::QNDFCache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.k
+  integrator.fsallast = cache.nlsolver.k
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -738,7 +742,8 @@ end
 
 function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack udiff,dts,order,max_order,D,D2,R,U,tmp,utilde,atmp,W,nlsolver = cache
+  @unpack udiff,dts,order,max_order,D,D2,R,U,utilde,atmp,nlsolver = cache
+  tmp = nlsolver.tmp
   cnt = integrator.iter
   k = order
   κ = integrator.alg.kappa[k]
@@ -788,7 +793,7 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
     @.. ϕ += γₖ[i]*D[i]
   end
   @.. ϕ *= γ
-  tm = fill!(cache.b, zero(eltype(u)))
+  tm = fill!(nlsolver.ztmp, zero(eltype(u)))
   for i = 1:k
     @.. tm += D[i]
   end
@@ -935,7 +940,7 @@ end
 function initialize!(integrator, cache::MEBDF2Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.k
+  integrator.fsallast = cache.nlsolver.k
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -945,7 +950,8 @@ end
 
 @muladd function perform_step!(integrator, cache::MEBDF2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack z,z₁,z₂,tmp2,tmp,nlsolver = cache
+  @unpack z₁,z₂,tmp2,nlsolver = cache
+  z = nlsolver.z
   mass_matrix = integrator.f.mass_matrix
   alg = unwrap_alg(integrator, true)
   update_W!(integrator, cache, dt, repeat_step)

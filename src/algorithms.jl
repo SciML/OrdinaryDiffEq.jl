@@ -18,7 +18,7 @@ const ExponentialAlgorithm = Union{OrdinaryDiffEqExponentialAlgorithm,OrdinaryDi
 
 abstract type OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
 abstract type OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm <: OrdinaryDiffEqAdaptiveAlgorithm end
-abstract type OrdinaryDiffEqNewtonAdaptiveExtrapolationAlgorithm{CS,AD} <: OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD} end
+abstract type OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD} <: OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD} end
 
 struct FunctionMap{scale_by_time} <: OrdinaryDiffEqAlgorithm end
 FunctionMap(;scale_by_time=false) = FunctionMap{scale_by_time}()
@@ -48,7 +48,7 @@ struct AitkenNeville <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
 end
 AitkenNeville(;max_order=10,min_order=1,init_order=5,threading=true) = AitkenNeville(max_order,min_order,init_order,threading)
 
-struct ImplicitEulerExtrapolation{CS,AD,F,F2} <: OrdinaryDiffEqNewtonAdaptiveExtrapolationAlgorithm{CS,AD}
+struct ImplicitEulerExtrapolation{CS,AD,F,F2} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD}
   linsolve::F
   max_order::Int
   min_order::Int

@@ -58,6 +58,18 @@ function calc_J(integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
   return J
 end
 
+function calc_J(nlsolver, integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
+  @unpack t,dt,uprev,u,f,p = integrator
+  if DiffEqBase.has_jac(f)
+    J = f.jac(uprev, p, t)
+  else
+    J = jacobian(nlsolver.uf,uprev,integrator)
+  end
+  integrator.destats.njacs += 1
+  is_compos && (integrator.eigen_est = opnorm(J, Inf))
+  return J
+end
+
 """
     calc_J!(integrator,cache,is_compos)
 
@@ -70,6 +82,31 @@ either ForwardDiff or finite difference will be used depending on the
 `jac_config` of the cache.
 """
 function calc_J!(integrator, cache::OrdinaryDiffEqMutableCache, is_compos)
+  if isdefined(cache, :nlsolver)
+    calc_J!(cache.nlsolver, integrator, cache, is_compos)
+  elseif isdefined(cache, :J)
+    calc_J_in_cache!(integrator, cache, is_compos)
+  else
+    error("No J found in the cache")
+  end
+end
+
+function calc_J!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqMutableCache, is_compos)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack du1,uf,jac_config = nlsolver
+  J = nlsolver.cache.J
+  if DiffEqBase.has_jac(f)
+    f.jac(J, uprev, p, t)
+  else
+    uf.t = t
+    uf.p = p
+    jacobian!(J, uf, uprev, du1, integrator, jac_config)
+  end
+  integrator.destats.njacs += 1
+  is_compos && (integrator.eigen_est = opnorm(J, Inf))
+end
+
+function calc_J_in_cache!(integrator, cache::OrdinaryDiffEqMutableCache, is_compos)
   @unpack t,dt,uprev,u,f,p = integrator
   J = cache.J
   if DiffEqBase.has_jac(f)
@@ -238,7 +275,7 @@ end
 function LinearAlgebra.mul!(Y::AbstractVecOrMat, W::WOperator, B::AbstractVecOrMat)
   if W._func_cache === nothing
     # Allocate cache only if needed
-    W._func_cache = Vector{eltype(W)}(undef, size(Y, 1))
+    W._func_cache = Vector{eltype(B)}(undef, size(Y, 1))
   end
   if W.transform
     # Compute mass_matrix * B
@@ -300,21 +337,20 @@ end
     invdtgamma = inv(dtgamma)
     if MT <: UniformScaling
       copyto!(W, J)
-      @simd for i in diagind(W)
-          W[i] = muladd(-mass_matrix.λ, invdtgamma, J[i])
-      end
+      idxs = diagind(W)
+      λ = -mass_matrix.λ
+      @.. @view(W[idxs]) = muladd(λ, invdtgamma, @view(J[idxs]))
     else
-      for j in iijj[2]
-        @simd for i in iijj[1]
-          W[i, j] = muladd(-mass_matrix[i, j], invdtgamma, J[i, j])
-        end
-      end
+      @.. W = muladd(-mass_matrix, invdtgamma, J)
     end
   else
-    for j in iijj[2]
-      @simd for i in iijj[1]
-        W[i, j] = muladd(dtgamma, J[i, j], -mass_matrix[i, j])
-      end
+    if MT <: UniformScaling
+      idxs = diagind(W)
+      @.. W = dtgamma*J
+      λ = -mass_matrix.λ
+      @.. @view(W[idxs]) = @view(W[idxs]) + λ
+    else
+      @.. W = muladd(dtgamma, J, -mass_matrix)
     end
   end
   return nothing
@@ -358,6 +394,44 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
   return nothing
 end
 
+function calc_W!(nlsolver, integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_step, W_transform=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack J,W = nlsolver.cache
+  alg = unwrap_alg(integrator, true)
+  mass_matrix = integrator.f.mass_matrix
+  is_compos = integrator.alg isa CompositeAlgorithm
+  isnewton = alg isa NewtonAlgorithm
+
+  # fast pass
+  # we only want to factorize the linear operator once
+  new_jac = true
+  new_W = true
+  if (f isa ODEFunction && islinear(f.f)) || (integrator.alg isa SplitAlgorithms && f isa SplitFunction && islinear(f.f1.f))
+    new_jac = false
+    @goto J2W # Jump to W calculation directly, because we already have J
+  end
+
+  # check if we need to update J or W
+  W_dt = isnewton ? nlsolver.cache.W_dt : dt # TODO: RosW
+  new_jac = isnewton ? do_newJ(integrator, alg, cache, repeat_step) : true
+  new_W = isnewton ? do_newW(integrator, nlsolver, new_jac, W_dt) : true
+  
+  # calculate W
+  if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
+    isnewton || DiffEqBase.update_coefficients!(W,uprev,p,t) # we will call `update_coefficients!` in NLNewton
+    @label J2W
+    W.transform = W_transform; set_gamma!(W, dtgamma)
+  else # concrete W using jacobian from `calc_J!`
+    new_jac && calc_J!(nlsolver, integrator, cache, is_compos)
+    new_W && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
+  end
+  if isnewton
+    set_new_W!(nlsolver, new_W) && DiffEqBase.set_W_dt!(nlsolver, dt)
+  end
+  new_W && (integrator.destats.nw += 1)
+  return nothing
+end
+
 function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat_step, W_transform=false)
   @unpack t,uprev,p,f = integrator
   @unpack uf = cache
@@ -387,6 +461,35 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
   W
 end
 
+function calc_W!(nlsolver, integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat_step, W_transform=false)
+  @unpack t,uprev,p,f = integrator
+  @unpack uf = nlsolver
+  mass_matrix = integrator.f.mass_matrix
+  isarray = typeof(uprev) <: AbstractArray
+  # calculate W
+  uf.t = t
+  is_compos = typeof(integrator.alg) <: CompositeAlgorithm
+  if (f isa ODEFunction && islinear(f.f)) || (f isa SplitFunction && islinear(f.f1.f))
+    J = f.f1.f
+    W = WOperator(mass_matrix, dtgamma, J, false; transform=W_transform)
+  elseif DiffEqBase.has_jac(f)
+    J = f.jac(uprev, p, t)
+    if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
+      J = DiffEqArrayOperator(J)
+    end
+    W = WOperator(mass_matrix, dtgamma, J, false; transform=W_transform)
+    integrator.destats.nw += 1
+  else
+    integrator.destats.nw += 1
+    J = calc_J(nlsolver, integrator, cache, is_compos)
+    W_full = W_transform ? -mass_matrix*inv(dtgamma) + J :
+                           -mass_matrix + dtgamma*J
+    W = W_full isa Number ? W_full : lu(W_full)
+  end
+  is_compos && (integrator.eigen_est = isarray ? opnorm(J, Inf) : abs(J))
+  W
+end
+
 function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, W_transform)
   calc_tderivative!(integrator, cache, dtd1, repeat_step)
   calc_W!(integrator, cache, dtgamma, repeat_step, W_transform)
@@ -399,14 +502,14 @@ update_W!(integrator, cache, dt, repeat_step) =
 
 function update_W!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqMutableCache, dt, repeat_step)
   if isnewton(nlsolver)
-    calc_W!(integrator, cache, dt, repeat_step, true)
+    calc_W!(nlsolver, integrator, cache, dt, repeat_step, true)
   end
   nothing
 end
 
 function update_W!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqConstantCache, dt, repeat_step)
   if isnewton(nlsolver)
-    DiffEqBase.set_W!(nlsolver, calc_W!(integrator, cache, dt, repeat_step, true))
+    DiffEqBase.set_W!(nlsolver, calc_W!(nlsolver, integrator, cache, dt, repeat_step, true))
   end
   nothing
 end

@@ -1517,7 +1517,7 @@ end
 
 function perform_step!(integrator,cache::CNAB2ConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p,alg = integrator
-  @unpack k2,uf,nlsolver = cache
+  @unpack k2,nlsolver = cache
   cnt = integrator.iter
   f1 = integrator.f.f1
   f2 = integrator.f.f2
@@ -1558,7 +1558,7 @@ end
 function initialize!(integrator, cache::CNAB2Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.k
+  integrator.fsallast = cache.nlsolver.k
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -1568,7 +1568,8 @@ end
 
 function perform_step!(integrator, cache::CNAB2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p,alg = integrator
-  @unpack uf,dz,z,k,k1,k2,du₁,b,J,W,jac_config,tmp,nlsolver = cache
+  @unpack k1,k2,du₁,nlsolver = cache
+  @unpack z,tmp,k = nlsolver
   cnt = integrator.iter
   f1 = integrator.f.f1
   f2 = integrator.f.f2
@@ -1618,7 +1619,7 @@ end
 
 function perform_step!(integrator,cache::CNLF2ConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p,alg = integrator
-  @unpack k2,uprev2,uf,nlsolver = cache
+  @unpack k2,uprev2,nlsolver = cache
   cnt = integrator.iter
   f1 = integrator.f.f1
   f2 = integrator.f.f2
@@ -1661,7 +1662,7 @@ end
 function initialize!(integrator, cache::CNLF2Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.k
+  integrator.fsallast = cache.nlsolver.k
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -1671,7 +1672,8 @@ end
 
 function perform_step!(integrator, cache::CNLF2Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p,alg = integrator
-  @unpack uprev2,uf,dz,z,k,k2,du₁,b,J,W,jac_config,tmp,nlsolver = cache
+  @unpack uprev2,k2,du₁,nlsolver = cache
+  @unpack z,k,tmp = nlsolver
   cnt = integrator.iter
   f1 = integrator.f.f1
   f2 = integrator.f.f2

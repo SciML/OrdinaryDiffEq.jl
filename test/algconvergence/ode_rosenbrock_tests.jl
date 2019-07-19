@@ -386,4 +386,7 @@ sim = test_convergence(dts,prob,Rodas5(),dense_errors=true)
 
 sol = solve(prob,Rodas5())
 @test length(sol) < 20
+
+prob = ODEProblem((u,p,t)->0.9u, 0.1, (0., 1.0))
+@test_nowarn solve(prob, Rosenbrock23(autodiff=false))
 end

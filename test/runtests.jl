@@ -2,7 +2,6 @@ using SafeTestsets
 const LONGER_TESTS = false
 
 const GROUP = get(ENV, "GROUP", "All")
-
 const is_APPVEYOR = Sys.iswindows() && haskey(ENV,"APPVEYOR")
 const is_TRAVIS = haskey(ENV,"TRAVIS")
 
@@ -28,7 +27,7 @@ if GROUP == "All" || GROUP == "Interface"
   @time @safetestset "Complex Tests" begin include("interface/complex_tests.jl") end
   @time @safetestset "Ndim Complex Tests" begin include("interface/ode_ndim_complex_tests.jl") end
   @time @safetestset "Number Type Tests" begin include("interface/ode_numbertype_tests.jl") end
-  #@time @safetestset "Stiffness Detection Tests" begin include("interface/stiffness_detection_test.jl") end
+  @time @safetestset "Stiffness Detection Tests" begin include("interface/stiffness_detection_test.jl") end
   @time @safetestset "Composite Interpolation Tests" begin include("interface/composite_interpolation.jl") end
   @time @safetestset "Export tests" begin include("interface/export_tests.jl") end
   @time @safetestset "Derivative Utilities Tests" begin include("interface/utility_tests.jl") end
@@ -37,6 +36,7 @@ if GROUP == "All" || GROUP == "Interface"
   @time @safetestset "No Index Tests" begin include("interface/noindex_tests.jl") end
   @time @safetestset "Units Tests" begin include("interface/units_tests.jl") end
   @time @safetestset "Linear Nonlinear Solver Tests" begin include("interface/linear_nonlinear_tests.jl") end
+  @time @safetestset "Sparse Diff Tests" begin include("interface/sparsediff_tests.jl") end
 end
 
 if !is_APPVEYOR && (GROUP == "All" || GROUP == "Integrators")
@@ -51,6 +51,7 @@ if !is_APPVEYOR && (GROUP == "All" || GROUP == "Integrators")
   @time @safetestset "Add Steps Tests" begin include("integrators/ode_add_steps_tests.jl") end
   @time @safetestset "Error Check Tests" begin include("integrators/check_error.jl") end
   @time @safetestset "Event Detection Tests" begin include("integrators/event_detection_tests.jl") end
+  @time @safetestset "Differentiation Direction Tests" begin include("integrators/diffdir_tests.jl") end
 end
 
 if !is_APPVEYOR && (GROUP == "All" || GROUP == "Regression")
@@ -88,7 +89,6 @@ if !is_APPVEYOR && (GROUP == "All" || GROUP == "AlgConvergence_III")
 end
 
 if !is_APPVEYOR && GROUP == "ODEInterfaceRegression"
-  @show is_TRAVIS
   if is_TRAVIS
     using Pkg
     Pkg.add("ODEInterface")
@@ -96,6 +96,10 @@ if !is_APPVEYOR && GROUP == "ODEInterfaceRegression"
   end
   @time @safetestset "Init dt vs dorpri tests" begin include("odeinterface/init_dt_vs_dopri_tests.jl") end
   @time @safetestset "ODEInterface Regression Tests" begin include("odeinterface/odeinterface_regression.jl") end
+end
+
+if !is_APPVEYOR && GROUP == "GPU"
+  @time @safetestset "Simple GPU" begin include("gpu/simple_gpu.jl") end
 end
 
 end # @time
