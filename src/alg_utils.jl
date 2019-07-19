@@ -22,6 +22,7 @@ isfsal(alg::DGLDDRK84_F) = false
 isfsal(alg::NDBLSRK124) = false
 isfsal(alg::NDBLSRK134) = false
 isfsal(alg::NDBLSRK144) = false
+isfsal(alg::PDIRK44) = false
 get_current_isfsal(alg, cache) = isfsal(alg)
 get_current_isfsal(alg::CompositeAlgorithm, cache) = isfsal(alg.algs[cache.current])
 
@@ -342,6 +343,7 @@ alg_order(alg::RKC) = 2
 alg_order(alg::IRKC) = 2
 
 alg_order(alg::MEBDF2) = 2
+alg_order(alg::PDIRK44) = 4
 
 alg_maximum_order(alg) = alg_order(alg)
 alg_maximum_order(alg::CompositeAlgorithm) = maximum(alg_order(x) for x in alg.algs)
