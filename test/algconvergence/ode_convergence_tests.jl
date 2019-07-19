@@ -130,6 +130,12 @@ for i = 1:2
   sim17 = test_convergence(dts,prob,KenCarp3())
   @test sim17.𝒪est[:final] ≈ 3 atol=testTol
 
+  sim18 = test_convergence(dts,prob,PDIRK44())
+  @test sim18.𝒪est[:final] ≈ 4 atol=testTol
+
+  sim182 = test_convergence(dts,prob,PDIRK44(;threading=false))
+  @test sim182.𝒪est[:final] ≈ 4 atol=testTol
+
   #####################################
   # BDF
   #####################################
