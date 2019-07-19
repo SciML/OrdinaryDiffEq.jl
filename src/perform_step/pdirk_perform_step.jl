@@ -16,7 +16,7 @@ function initialize!(integrator, cache::PDIRK44Cache) end
       Threads.@threads for i in 1:2
         nlsolver[i].z .= zero(eltype(u))
         nlsolver[i].tmp .= uprev
-        indexed_update_W!(integrator, cache, γs[i]*dt, i, repeat_step)
+        update_W!(nlsolver[i], integrator, cache, γs[i]*dt, repeat_step)
         nlsolver[i].γ = γs[i]
         nlsolver[i].c = cs[i]
         k1[i] .= DiffEqBase.nlsolve!(nlsolver[i], nlsolver[i].cache, integrator)
@@ -38,28 +38,28 @@ function initialize!(integrator, cache::PDIRK44Cache) end
   else
     _nlsolver = nlsolver[1]
     _nlsolver.z .= zero(eltype(u))
-    indexed_update_W!(integrator, cache, γs[1]*dt, 1, repeat_step)
+    update_W!(_nlsolver, integrator, cache, γs[1]*dt, repeat_step)
     _nlsolver.tmp .= uprev
     _nlsolver.γ = γs[1]
     _nlsolver.c = cs[1]
     k1[1] .= DiffEqBase.nlsolve!(_nlsolver, _nlsolver.cache, integrator)
     nlsolvefail(_nlsolver) && return
     _nlsolver.z .= zero(eltype(u))
-    indexed_update_W!(integrator, cache, γs[2]*dt, 1, repeat_step)
+    update_W!(_nlsolver, integrator, cache, γs[2]*dt, repeat_step)
     _nlsolver.tmp .= uprev
     _nlsolver.γ = γs[2]
     _nlsolver.c = cs[2]
     k1[2] .= DiffEqBase.nlsolve!(_nlsolver, _nlsolver.cache, integrator)
     nlsolvefail(_nlsolver) && return
     _nlsolver.z .= zero(eltype(u))
-    indexed_update_W!(integrator, cache, γs[1]*dt, 1, repeat_step)
+    update_W!(_nlsolver, integrator, cache, γs[1]*dt, repeat_step)
     @.. _nlsolver.tmp .= uprev + α1[1] * k1[1] + α2[1] * k1[2]
     _nlsolver.γ = γs[1]
     _nlsolver.c = cs[3]
     k2[1] .= DiffEqBase.nlsolve!(_nlsolver, _nlsolver.cache, integrator)
     nlsolvefail(_nlsolver) && return
     _nlsolver.z .= zero(eltype(u))
-    indexed_update_W!(integrator, cache, γs[2]*dt, 1, repeat_step)
+    update_W!(_nlsolver, integrator, cache, γs[2]*dt, repeat_step)
     @.. _nlsolver.tmp = uprev + α1[2] * k1[1] + α2[2] * k1[2]
     _nlsolver.γ = γs[2]
     _nlsolver.c = cs[4]
