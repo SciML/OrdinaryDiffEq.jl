@@ -786,7 +786,7 @@ end
   if mass_matrix == I
     @.. linsolve_tmp = du + (dtC61*k1 + dtC62*k2 + dtC65*k5 + dtC64*k4 + dtC63*k3)
   else
-    @.. linsolve_tmp = dtC61*k1 + dtC62*k2 + dtC65*k5 + dtC64*k4 + dtC63*k3
+    @.. du1 = dtC61*k1 + dtC62*k2 + dtC65*k5 + dtC64*k4 + dtC63*k3
     mul!(du2,mass_matrix,du1)
     @.. linsolve_tmp = du + du2
   end
