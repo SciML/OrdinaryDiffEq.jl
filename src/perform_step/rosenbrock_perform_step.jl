@@ -785,14 +785,8 @@ end
 
   if mass_matrix == I
     @.. linsolve_tmp = du + (dtC61*k1 + dtC62*k2 + dtC65*k5 + dtC64*k4 + dtC63*k3)
-    #@tight_loop_macros for i in uidx
-    #  @inbounds linsolve_tmp[i] = du[i] + (dtC61*k1[i] + dtC62*k2[i] + dtC65*k5[i] + dtC64*k4[i] + dtC63*k3[i])
-    #end
   else
     @.. linsolve_tmp = dtC61*k1 + dtC62*k2 + dtC65*k5 + dtC64*k4 + dtC63*k3
-    #@tight_loop_macros for i in uidx
-    #  @inbounds du1[i] = dtC61*k1[i] + dtC62*k2[i] + dtC65*k5[i] + dtC64*k4[i] + dtC63*k3[i]
-    #end
     mul!(du2,mass_matrix,du1)
     @.. linsolve_tmp = du + du2
   end
@@ -1062,9 +1056,6 @@ end
 
   if mass_matrix == I
       @.. linsolve_tmp = du + dtd5*dT + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
-      #@tight_loop_macros for i in uidx
-      #  @inbounds linsolve_tmp[i] = du[i] + dtd5*dT[i] + (dtC52*k2[i] + dtC54*k4[i] + dtC51*k1[i] + dtC53*k3[i])
-      #end
   else
     @.. du1 = dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3
     mul!(du2,mass_matrix,du1)
@@ -1076,22 +1067,13 @@ end
   integrator.destats.nsolve += 1
 
   @.. u = uprev + a61*k1 + a62*k2 + a63*k3 + a64*k4 + a65*k5
-  #@tight_loop_macros for i in uidx
-  #  @inbounds u[i] = uprev[i] + a61*k1[i] + a62*k2[i] + a63*k3[i] + a64*k4[i] + a65*k5[i]
-  #end
   f( du,  u, p, t+dt)
   integrator.destats.nf += 1
 
   if mass_matrix == I
     @.. linsolve_tmp = du + (dtC61*k1 + dtC62*k2 + dtC63*k3 + dtC64*k4 + dtC65*k5)
-    #@tight_loop_macros for i in uidx
-    #  @inbounds linsolve_tmp[i] = du[i] + (dtC61*k1[i] + dtC62*k2[i] + dtC63*k3[i] + dtC64*k4[i] + dtC65*k5[i])
-    #end
   else
     @.. du1 = dtC61*k1 + dtC62*k2 + dtC63*k3 + dtC64*k4 + dtC65*k5
-    #@tight_loop_macros for i in uidx
-    #  @inbounds du1[i] = dtC61*k1[i] + dtC62*k2[i] + dtC63*k3[i] + dtC64*k4[i] + dtC65*k5[i]
-    #end
     mul!(du2,mass_matrix,du1)
     @.. linsolve_tmp = du + du2
   end
@@ -1106,14 +1088,8 @@ end
 
   if mass_matrix == I
     @.. linsolve_tmp = du + (dtC71*k1 + dtC72*k2 + dtC73*k3 + dtC74*k4 + dtC75*k5 + dtC76*k6)
-    #@tight_loop_macros for i in uidx
-    #  @inbounds linsolve_tmp[i] = du[i] + (dtC71*k1[i] + dtC72*k2[i] + dtC73*k3[i] + dtC74*k4[i] + dtC75*k5[i] + dtC76*k6[i])
-    #end
   else
     @.. du1 =dtC72*k2 + dtC73*k3 + dtC74*k4 + dtC75*k5 + dtC76*k6
-    #@tight_loop_macros for i in uidx
-    #  @inbounds du1[i] = dtC71*k1[i] + dtC72*k2[i] + dtC73*k3[i] + dtC74*k4[i] + dtC75*k5[i] + dtC76*k6[i]
-    #end
     mul!(du2,mass_matrix,du1)
     @.. linsolve_tmp = du + du2
   end
@@ -1128,14 +1104,8 @@ end
 
   if mass_matrix == I
     @.. linsolve_tmp = du + (dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7)
-    #@tight_loop_macros for i in uidx
-    #  @inbounds linsolve_tmp[i] = du[i] + (dtC81*k1[i] + dtC82*k2[i] + dtC83*k3[i] + dtC84*k4[i] + dtC85*k5[i] + dtC86*k6[i] + dtC87*k7[i])
-    #end
   else
     @.. du1 = dtC81*k1 + dtC82*k2 + dtC83*k3 + dtC84*k4 + dtC85*k5 + dtC86*k6 + dtC87*k7
-    #@tight_loop_macros for i in uidx
-    #  @inbounds du1[i] = dtC81*k1[i] + dtC82*k2[i] + dtC83*k3[i] + dtC84*k4[i] + dtC85*k5[i] + dtC86*k6[i] + dtC87*k7[i]
-    #end
     mul!(du2,mass_matrix,du1)
     @.. linsolve_tmp = du + du2
   end
