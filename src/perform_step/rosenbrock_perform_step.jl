@@ -1055,7 +1055,7 @@ end
   integrator.destats.nf += 1
 
   if mass_matrix == I
-      @.. linsolve_tmp = du + dtd5*dT + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
+    @.. linsolve_tmp = du + dtd5*dT + (dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3)
   else
     @.. du1 = dtC52*k2 + dtC54*k4 + dtC51*k1 + dtC53*k3
     mul!(du2,mass_matrix,du1)
@@ -1089,7 +1089,7 @@ end
   if mass_matrix == I
     @.. linsolve_tmp = du + (dtC71*k1 + dtC72*k2 + dtC73*k3 + dtC74*k4 + dtC75*k5 + dtC76*k6)
   else
-    @.. du1 =dtC72*k2 + dtC73*k3 + dtC74*k4 + dtC75*k5 + dtC76*k6
+    @.. du1 = dtC71*k1 + dtC72*k2 + dtC73*k3 + dtC74*k4 + dtC75*k5 + dtC76*k6
     mul!(du2,mass_matrix,du1)
     @.. linsolve_tmp = du + du2
   end
