@@ -146,7 +146,7 @@ function stepsize_controller!(integrator, alg::QNDF)
 end
 
 
-@inline function stepsize_controller!(integrator,alg::ExtrapolationMidpointDeuflhard)
+@inline function stepsize_controller!(integrator,alg::Union{ExtrapolationMidpointDeuflhard,ImplicitDeuflhardExtrapolation})
   # Dummy function
   # ExtrapolationMidpointDeuflhard's stepsize scaling is stored in the cache;
   # it is computed by  stepsize_controller_internal! (in perfom_step!) resp. stepsize_predictor!
@@ -154,7 +154,7 @@ end
   zero(typeof(integrator.opts.qmax))
 end
 
-function stepsize_controller_internal!(integrator,alg::ExtrapolationMidpointDeuflhard)
+function stepsize_controller_internal!(integrator,alg::Union{ExtrapolationMidpointDeuflhard,ImplicitDeuflhardExtrapolation})
   # Standard stepsize controller
   # Compute and save the stepsize scaling based on the latest error estimate of the current order
   if iszero(integrator.EEst)
@@ -170,7 +170,7 @@ function stepsize_controller_internal!(integrator,alg::ExtrapolationMidpointDeuf
   integrator.cache.Q[integrator.cache.n_curr - alg.n_min + 1] = q
 end
 
-function stepsize_predictor!(integrator,alg::ExtrapolationMidpointDeuflhard,n_new::Int64)
+function stepsize_predictor!(integrator,alg::Union{ExtrapolationMidpointDeuflhard,ImplicitDeuflhardExtrapolation},n_new::Int64)
   # Compute and save the stepsize scaling for order n_new based on the latest error estimate of the current order.
   if iszero(integrator.EEst)
     q = inv(integrator.opts.qmax)
@@ -191,7 +191,7 @@ function stepsize_predictor!(integrator,alg::ExtrapolationMidpointDeuflhard,n_ne
   integrator.cache.Q[n_new - alg.n_min + 1] = q
 end
 
-function step_accept_controller!(integrator,alg::ExtrapolationMidpointDeuflhard,q)
+function step_accept_controller!(integrator,alg::Union{ExtrapolationMidpointDeuflhard,ImplicitDeuflhardExtrapolation},q)
   # Compute new order and stepsize, return new stepsize
   @unpack n_min, n_max = alg
   @unpack n_curr, n_old, Q = integrator.cache
@@ -226,7 +226,7 @@ function step_accept_controller!(integrator,alg::ExtrapolationMidpointDeuflhard,
   dt_new[n_new - n_min + 1]
 end
 
-function step_reject_controller!(integrator, alg::ExtrapolationMidpointDeuflhard)
+function step_reject_controller!(integrator, alg::Union{ExtrapolationMidpointDeuflhard,ImplicitDeuflhardExtrapolation})
   # Compute and save reduced stepsize dt_red of order n_old
   # Use the latest error estimate to predict dt_red if an estimate of order n_old is not available
   if integrator.cache.n_curr < integrator.cache.n_old
