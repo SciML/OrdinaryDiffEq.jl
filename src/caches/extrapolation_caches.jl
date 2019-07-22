@@ -180,7 +180,7 @@ struct extrapolation_coefficients{T1,T2,T3}
   extrapolation_scalars_2::T3
 end
 
-function create_extrapolation_coefficients(::Type{T},alg::algType) where {T,algType <: Union{ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner}}
+function create_extrapolation_coefficients(::Type{T},alg::algType) where {T,algType <: Union{ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner, ImplicitDeuflhardExtrapolation}}
   # Compute and return extrapolation_coefficients
 
   @unpack n_min, n_init, n_max, sequence = alg
@@ -239,7 +239,7 @@ function create_extrapolation_coefficients(::Type{T},alg::algType) where {T,algT
       T.(extrapolation_weights_2), T.(extrapolation_scalars_2))
 end
 
-function create_extrapolation_coefficients(::Type{T},alg::algType) where {T<:CompiledFloats,algType <: Union{ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner}}
+function create_extrapolation_coefficients(::Type{T},alg::algType) where {T<:CompiledFloats,algType <: Union{ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner, ImplicitDeuflhardExtrapolation}}
   # Compute and return extrapolation_coefficients
 
   @unpack n_min, n_init, n_max, sequence = alg
@@ -352,6 +352,36 @@ function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeN
   cc =  alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val{false})
   # Initialize cache
   ExtrapolationMidpointDeuflhardCache(utilde, u_temp1, u_temp2, u_temp3, u_temp4, tmp, T, res, fsalfirst, k, k_tmps, cc.Q, cc.n_curr, cc.n_old, cc.coefficients,cc.stage_number)
+end
+
+@cache mutable struct ImplicitDeuflhardExtrapolationConstantCache{QType,extrapolation_coefficients,TF,UF} <: OrdinaryDiffEqConstantCache
+  # Values that are mutated
+  Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n + alg.n_min - 1)
+  n_curr::Int64 # Storage for the current extrapolation order
+  n_old::Int64 # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+
+  # Constant values
+  coefficients::extrapolation_coefficients
+  stage_number::Vector{Int64} # stage_number[n] contains information for extrapolation order (n + alg.n_min - 1)
+
+  tf::TF
+  uf::UF
+end
+
+function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  # Initialize cache's members
+  QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
+
+  Q = fill(zero(QType),alg.n_max - alg.n_min + 1)
+  n_curr = alg.n_init
+  n_old = alg.n_init
+
+  coefficients = create_extrapolation_coefficients(constvalue(uBottomEltypeNoUnits),alg)
+  stage_number = [2sum(Int64.(coefficients.subdividing_sequence[1:n+1])) - n for n = alg.n_min:alg.n_max]
+
+  tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
+  uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
+  ImplicitDeuflhardExtrapolationConstantCache(Q,n_curr,n_old,coefficients,stage_number,tf,uf)
 end
 
 @cache mutable struct ExtrapolationMidpointHairerWannerConstantCache{QType,extrapolation_coefficients} <: OrdinaryDiffEqConstantCache
