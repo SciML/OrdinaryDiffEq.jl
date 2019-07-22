@@ -88,6 +88,25 @@ end
 # Define the subdividing sequences
 sequence_array =[:harmonic, :romberg, :bulirsch]
 
+@testset "Testing ImplicitDeuflhardExtrapolation" begin
+  for prob in problem_array, seq in sequence_array
+    global dts
+
+    # Convergence test
+    for j = 1:6
+      alg = ImplicitDeuflhardExtrapolation(min_order = j,
+        init_order = j, max_order=j,
+        sequence = seq)
+      sim = test_convergence(dts,prob,alg)
+      @test sim.𝒪est[:final] ≈ 2*(alg.n_init+1) atol=testTol
+    end
+
+    # TODO: Regression test
+    #...
+
+  end
+end
+
 # Test ExtrapolationMidpointDeuflhard
 @testset "Testing ExtrapolationMidpointDeuflhard" begin
   @testset "Testing sequential ExtrapolationMidpointDeuflhard" begin
