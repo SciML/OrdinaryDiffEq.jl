@@ -368,6 +368,41 @@ end
   uf::UF
 end
 
+@cache mutable struct ImplicitDeuflhardExtrapolationCache{uType,QType,extrapolation_coefficients,rateType,JType,WType,F,JCType,GCType,uNoUnitsType,TFType,UFType} <: OrdinaryDiffEqMutableCache
+  # Values that are mutated
+  utilde::uType
+  u_temp1::uType
+  u_temp2::uType
+  u_temp3::Array{uType,1}
+  u_temp4::Array{uType,1}
+  tmp::uType # for get_tmp_cache()
+  T::Array{uType,1}  # Storage for the internal discretisations obtained by the explicit midpoint rule
+  res::uNoUnitsType # Storage for the scaled residual of u and utilde
+
+  fsalfirst::rateType
+  k::rateType
+  k_tmps::Array{rateType,1}
+
+  # Constant values
+  Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n + alg.n_min - 1)
+  n_curr::Int64 # Storage for the current extrapolation order
+  n_old::Int64 # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+  coefficients::extrapolation_coefficients
+  stage_number::Vector{Int64} # Stage_number[n] contains information for extrapolation order (n + alg.n_min - 1)
+
+
+  du1::rateType
+  du2::rateType
+  J::JType
+  W::WType
+  tf::TFType
+  uf::UFType
+  linsolve_tmp::rateType
+  linsolve::F
+  jac_config::JCType
+  grad_config::GCType
+end
+
 function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   # Initialize cache's members
   QType = tTypeNoUnits <: Integer ? typeof(qmin_default(alg)) : tTypeNoUnits # Cf. DiffEqBase.__init in solve.jl
@@ -382,6 +417,56 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeN
   tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   ImplicitDeuflhardExtrapolationConstantCache(Q,n_curr,n_old,coefficients,stage_number,tf,uf)
+end
+
+function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  utilde = zero(u)
+  u_temp1 = zero(u)
+  u_temp2 = zero(u)
+  u_temp3 = Array{typeof(u),1}(undef, Threads.nthreads())
+  u_temp4 = Array{typeof(u),1}(undef, Threads.nthreads())
+
+  for i=1:Threads.nthreads()
+      u_temp3[i] = zero(u)
+      u_temp4[i] = zero(u)
+  end
+
+  tmp = zero(u)
+  T = Vector{typeof(u)}(undef,alg.n_max + 1)
+  for i in 1:alg.n_max+1
+    T[i] = zero(u)
+  end
+  res = uEltypeNoUnits.(zero(u))
+
+  fsalfirst = zero(rate_prototype)
+  k = zero(rate_prototype)
+  k_tmps = Array{typeof(k),1}(undef, Threads.nthreads())
+  for i=1:Threads.nthreads()
+      k_tmps[i] = zero(rate_prototype)
+  end
+
+  cc =  alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,Val{false})
+
+  du1 = zero(rate_prototype)
+  du2 = zero(rate_prototype)
+
+  if DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
+    W = WOperator(f, dt, true)
+    J = nothing # is J = W.J better?
+  else
+    J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+    W = similar(J)
+  end
+  tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
+  uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
+  linsolve_tmp = zero(rate_prototype)
+  linsolve = alg.linsolve(Val{:init},uf,u)
+  grad_config = build_grad_config(alg,f,tf,du1,t)
+  jac_config = build_jac_config(alg,f,uf,du1,uprev,u,du1,du2)
+
+
+  ImplicitDeuflhardExtrapolationCache(utilde,u_temp1,u_temp2,u_temp3,u_temp4,tmp,T,res,fsalfirst,k,k_tmps,cc.Q,cc.n_curr,cc.n_old,cc.coefficients,cc.stage_number,
+    du1,du2,J,W,tf,uf,linsolve_tmp,linsolve,jac_config,grad_config)
 end
 
 @cache mutable struct ExtrapolationMidpointHairerWannerConstantCache{QType,extrapolation_coefficients} <: OrdinaryDiffEqConstantCache
