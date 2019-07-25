@@ -84,12 +84,12 @@ full_cache(integrator::ODEIntegrator) = full_cache(integrator.cache)
 
 function add_tstop!(integrator::ODEIntegrator,t)
   integrator.tdir * (t - integrator.t) < 0 && error("Tried to add a tstop that is behind the current time. This is strictly forbidden")
-  push!(integrator.opts.tstops,t)
+  push!(integrator.opts.tstops, integrator.tdir * t)
 end
 
 function DiffEqBase.add_saveat!(integrator::ODEIntegrator,t)
   integrator.tdir * (t - integrator.t) < 0 && error("Tried to add a saveat that is behind the current time. This is strictly forbidden")
-  push!(integrator.opts.saveat,t)
+  push!(integrator.opts.saveat, integrator.tdir * t)
 end
 
 resize!(integrator::ODEIntegrator,i::Int) = resize!(integrator,integrator.cache,i)
@@ -223,9 +223,9 @@ function DiffEqBase.reinit!(integrator::ODEIntegrator,u0 = integrator.sol.prob.u
   integrator.t = t0
   integrator.tprev = t0
 
+  tType = typeof(integrator.t)
   tstops_internal, saveat_internal, d_discontinuities_internal =
-    tstop_saveat_disc_handling(tstops,saveat,d_discontinuities,
-    integrator.tdir,(t0,tf),typeof(integrator.t))
+    tstop_saveat_disc_handling(tstops, saveat, d_discontinuities, (tType(t0), tType(tf)))
 
   integrator.opts.tstops = tstops_internal
   integrator.opts.saveat = saveat_internal
