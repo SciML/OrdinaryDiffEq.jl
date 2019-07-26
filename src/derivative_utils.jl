@@ -306,7 +306,7 @@ function do_newW(integrator, nlsolver::T, new_jac, W_dt)::Bool where T # any cha
   # reuse W when the change in stepsize is small enough
   dt = integrator.dt
   new_W_dt_cutoff = T <: NLSolver ? nlsolver.cache.new_W_dt_cutoff : #= FIRK =# nlsolver.new_W_dt_cutoff
-  smallstepchange = (dt/W_dt-one(dt)) <= new_W_dt_cutoff
+  smallstepchange = abs((dt-W_dt)/W_dt) <= new_W_dt_cutoff
   return !smallstepchange
 end
 
