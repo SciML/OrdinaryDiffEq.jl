@@ -59,7 +59,7 @@ testTol = 0.2
         @test sim.𝒪est[:final] ≈ j atol=testTol
       end
 
-       # Regression test
+      # Regression test
       sol = solve(prob,AitkenNeville(max_order = 9, min_order = 1,
           init_order = 9, threading = true),reltol=1e-3)
       @test length(sol.u) < 15
@@ -81,7 +81,10 @@ end # AitkenNeville
         min_order = j, init_order = j))
       @test sim.𝒪est[:final] ≈ j atol=newTol
     end
-
+    # Regression test
+    sol = solve(prob,ImplicitEulerExtrapolation(max_order = 9, min_order = 1,
+        init_order = 9),reltol=1e-3)
+    @test length(sol.u) < 15
   end
 end
 
@@ -101,9 +104,11 @@ sequence_array =[:harmonic, :romberg, :bulirsch]
       @test sim.𝒪est[:final] ≈ 2*(alg.n_init+1) atol=testTol
     end
 
-    # TODO: Regression test
-    #...
-
+    # Regression test
+    alg = ImplicitDeuflhardExtrapolation(max_order=9, min_order=1,
+      init_order=9, sequence=seq)
+    sol = solve(prob, alg, reltol=1e-3)
+    @test length(sol.u) < 10
   end
 end
 
@@ -122,9 +127,11 @@ end
         @test sim.𝒪est[:final] ≈ 2*(alg.n_init+1) atol=testTol
       end
 
-      # TODO: Regression test
-      #...
-
+      # Regression test
+      alg = ExtrapolationMidpointDeuflhard(max_order=9, min_order=1,
+        init_order=9, sequence=seq, threading=false)
+      sol = solve(prob, alg, reltol=1e-3)
+      @test length(sol.u) < 10
     end
   end
   @testset "Testing threaded ExtrapolationMidpointDeuflhard" begin
@@ -140,9 +147,11 @@ end
         @test sim.𝒪est[:final] ≈ 2*(alg.n_init+1) atol=testTol
       end
 
-      # TODO: Regression test
-      #...
-
+      # Regression test
+      alg = ExtrapolationMidpointDeuflhard(max_order=9, min_order=1,
+        init_order=9, sequence=seq, threading=true)
+      sol = solve(prob, alg, reltol=1e-3)
+      @test length(sol.u) < 10
     end
   end
 end # ExtrapolationMidpointDeuflhard
@@ -163,7 +172,6 @@ end # ExtrapolationMidpointDeuflhard
       end
 
       # TODO: Regression test
-      #...
 
     end
   end
@@ -181,8 +189,6 @@ end # ExtrapolationMidpointDeuflhard
       end
 
       # TODO: Regression test
-      #...
-
     end
   end
 end # ExtrapolationMidpointHairerWanner
