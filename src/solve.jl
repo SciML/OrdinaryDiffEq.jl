@@ -152,7 +152,7 @@ function DiffEqBase.__init(prob::DiffEqBase.AbstractODEProblem,
   rateType = typeof(rate_prototype) ## Can be different if united
 
   tstops_internal, saveat_internal, d_discontinuities_internal =
-    tstop_saveat_disc_handling(tstops,saveat,d_discontinuities,tdir,tspan,tType)
+    tstop_saveat_disc_handling(tstops, saveat, d_discontinuities, tspan)
 
   callbacks_internal = CallbackSet(callback,prob.callback)
 
@@ -346,7 +346,7 @@ end
 
 function DiffEqBase.solve!(integrator::ODEIntegrator)
   @inbounds while !isempty(integrator.opts.tstops)
-    while integrator.tdir*integrator.t < integrator.tdir*top(integrator.opts.tstops)
+    while integrator.tdir * integrator.t < top(integrator.opts.tstops)
       loopheader!(integrator)
       if check_error!(integrator) != :Success
         return integrator.sol
@@ -390,46 +390,59 @@ function handle_dt!(integrator)
   end
 end
 
-function tstop_saveat_disc_handling(tstops,saveat,d_discontinuities,tdir,tspan,tType)
+function tstop_saveat_disc_handling(tstops, saveat, d_discontinuities, tspan)
+  t0, tf = tspan
+  tType = eltype(tspan)
+  tdir = sign(tf - t0)
 
+  tdir_t0 = tdir * t0
+  tdir_tf = tdir * tf
+
+  # time stops
+  tstops_internal = BinaryMinHeap{tType}()
   if isempty(d_discontinuities) && isempty(tstops) # TODO: Specialize more
-    tstops_vec = [tspan[2]]
+    push!(tstops_internal, tdir_tf)
   else
-    tstops_vec = vec(collect(tType,Iterators.filter(x->tdir*tspan[1]<tdir*x≤tdir*tspan[end],Iterators.flatten((tstops,d_discontinuities,tspan[end])))))
-  end
-
-  if tdir>0
-    tstops_internal = BinaryMinHeap(tstops_vec)
-  else
-    tstops_internal = BinaryMaxHeap(tstops_vec)
-  end
-
-  if typeof(saveat) <: Number
-    if (tspan[1]:saveat:tspan[end])[end] == tspan[end]
-      saveat_vec = convert(Vector{tType},collect(tType,tspan[1]+saveat:saveat:tspan[end]))
-    else
-      saveat_vec = convert(Vector{tType},collect(tType,tspan[1]+saveat:saveat:(tspan[end]-saveat)))
+    for t in tstops
+      tdir_t = tdir * t
+      tdir_t0 < tdir_t ≤ tdir_tf && push!(tstops_internal, tdir_t)
     end
-  elseif isempty(saveat)
-    saveat_vec = saveat
-  else
-    saveat_vec = vec(collect(tType,Iterators.filter(x->tdir*tspan[1]<tdir*x<tdir*tspan[end],saveat)))
+
+    for t in d_discontinuities
+      tdir_t = tdir * t
+      tdir_t0 < tdir_t ≤ tdir_tf && push!(tstops_internal, tdir_t)
+    end
+
+    push!(tstops_internal, tdir_tf)
   end
 
-  if tdir>0
-    saveat_internal = BinaryMinHeap(saveat_vec)
-  else
-    saveat_internal = BinaryMaxHeap(saveat_vec)
+  # saving time points
+  saveat_internal = BinaryMinHeap{tType}()
+  if typeof(saveat) <: Number
+    if (t0:saveat:tf)[end] == tf
+      for t in (t0 + saveat):saveat:tf
+        push!(saveat_internal, tdir * t)
+      end
+    else
+      for t in (t0 + saveat):saveat:(tf - saveat)
+        push!(saveat_internal, tdir * t)
+      end
+    end
+  elseif !isempty(saveat)
+    for t in saveat
+      tdir_t = tdir * t
+      tdir_t0 < tdir_t < tdir_tf && push!(saveat_internal, tdir_t)
+    end
   end
 
-  d_discontinuities_vec = vec(collect(d_discontinuities))
-
-  if tdir>0
-    d_discontinuities_internal = BinaryMinHeap(d_discontinuities_vec)
-  else
-    d_discontinuities_internal = BinaryMaxHeap(d_discontinuities_vec)
+  # discontinuities
+  d_discontinuities_internal = BinaryMinHeap{tType}()
+  sizehint!(d_discontinuities_internal.valtree, length(d_discontinuities))
+  for t in d_discontinuities
+    push!(d_discontinuities_internal, tdir * t)
   end
-  tstops_internal,saveat_internal,d_discontinuities_internal
+
+  tstops_internal, saveat_internal, d_discontinuities_internal
 end
 
 function initialize_callbacks!(integrator, initialize_save = true)
