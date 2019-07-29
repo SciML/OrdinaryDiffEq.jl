@@ -20,7 +20,7 @@ module OrdinaryDiffEq
   import RecursiveArrayTools: chain, recursivecopy!
 
   using Parameters, GenericSVD, ForwardDiff, RecursiveArrayTools,
-        NLsolve, DataStructures, DiffEqDiffTools
+        NLsolve, DataStructures, DiffEqDiffTools, ArrayInterface
 
   import ForwardDiff.Dual
 
