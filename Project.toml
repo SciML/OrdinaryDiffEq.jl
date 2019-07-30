@@ -23,7 +23,7 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
 DataStructures = ">= 0.15.0"
-DiffEqBase = ">= 5.10.0"
+DiffEqBase = ">= 5.17.0"
 DiffEqDiffTools = ">= 0.14.0"
 DiffEqOperators = ">= 3.2.0"
 ExponentialUtilities = ">= 1.2.0"
