@@ -349,6 +349,19 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
   is_compos = integrator.alg isa CompositeAlgorithm
   isnewton = alg isa NewtonAlgorithm
 
+  if W_transform && DiffEqBase.has_Wfact_t(f)
+    f.Wfact_t(W, u, p, dtgamma, t)
+    is_compos && (integrator.eigen_est = opnorm(LowerTriangular(W), Inf) + inv(dtgamma)) # TODO: better estimate
+    return nothing
+  elseif !W_transform && DiffEqBase.has_Wfact(f)
+    f.Wfact(W, u, p, dtgamma, t)
+    if is_compos
+      opn = opnorm(LowerTriangular(W), Inf)
+      integrator.eigen_est = (opn + one(opn)) / dtgamma # TODO: better estimate
+    end
+    return nothing
+  end
+
   # fast pass
   # we only want to factorize the linear operator once
   new_jac = true
@@ -362,7 +375,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
   W_dt = isnewton ? cache.nlsolver.cache.W_dt : dt # TODO: RosW
   new_jac = isnewton ? do_newJ(integrator, alg, cache, repeat_step) : true
   new_W = isnewton ? do_newW(integrator, cache.nlsolver, new_jac, W_dt) : true
-  
+
   # calculate W
   if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
     isnewton || DiffEqBase.update_coefficients!(W,uprev,p,t) # we will call `update_coefficients!` in NLNewton
@@ -387,6 +400,19 @@ function calc_W!(nlsolver, integrator, cache::OrdinaryDiffEqMutableCache, dtgamm
   is_compos = integrator.alg isa CompositeAlgorithm
   isnewton = alg isa NewtonAlgorithm
 
+  if W_transform && DiffEqBase.has_Wfact_t(f)
+    f.Wfact_t(W, u, p, dtgamma, t)
+    is_compos && (integrator.eigen_est = opnorm(LowerTriangular(W), Inf) + inv(dtgamma)) # TODO: better estimate
+    return nothing
+  elseif !W_transform && DiffEqBase.has_Wfact(f)
+    f.Wfact(W, u, p, dtgamma, t)
+    if is_compos
+      opn = opnorm(LowerTriangular(W), Inf)
+      integrator.eigen_est = (opn + one(opn)) / dtgamma # TODO: better estimate
+    end
+    return nothing
+  end
+
   # fast pass
   # we only want to factorize the linear operator once
   new_jac = true
@@ -400,7 +426,7 @@ function calc_W!(nlsolver, integrator, cache::OrdinaryDiffEqMutableCache, dtgamm
   W_dt = isnewton ? nlsolver.cache.W_dt : dt # TODO: RosW
   new_jac = isnewton ? do_newJ(integrator, alg, cache, repeat_step) : true
   new_W = isnewton ? do_newW(integrator, nlsolver, new_jac, W_dt) : true
-  
+
   # calculate W
   if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
     isnewton || DiffEqBase.update_coefficients!(W,uprev,p,t) # we will call `update_coefficients!` in NLNewton
