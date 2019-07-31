@@ -33,17 +33,17 @@ function modify_dt_for_tstops!(integrator)
   if !isempty(tstops)
     if integrator.opts.adaptive
       if integrator.tdir > 0
-        integrator.dt = min(abs(integrator.dt),abs(top(tstops)-integrator.t)) # step! to the end
+        integrator.dt = min(abs(integrator.dt), abs(top(tstops) - integrator.t)) # step! to the end
       else
-        integrator.dt = -min(abs(integrator.dt),abs(top(tstops)-integrator.t))
+        integrator.dt = - min(abs(integrator.dt), abs(top(tstops) + integrator.t))
       end
-    elseif integrator.dtcache == zero(integrator.t) && integrator.dtchangeable
+    elseif iszero(integrator.dtcache) && integrator.dtchangeable
       # Use integrator.opts.tstops
-      integrator.dt = integrator.tdir*abs(top(tstops)-integrator.t)
+      integrator.dt = integrator.tdir * abs(top(tstops) - integrator.tdir * integrator.t)
   elseif integrator.dtchangeable && !integrator.force_stepfail
       # always try to step! with dtcache, but lower if a tstops
       # however, if force_stepfail then don't set to dtcache, and no tstop worry
-      integrator.dt = integrator.tdir*min(abs(integrator.dtcache),abs(top(tstops)-integrator.t)) # step! to the end
+      integrator.dt = integrator.tdir * min(abs(integrator.dtcache), abs(top(tstops) - integrator.tdir * integrator.t)) # step! to the end
     end
   end
 end
@@ -55,9 +55,10 @@ savevalues!(integrator::ODEIntegrator, force_save = false, reduce_size = true) =
 function _savevalues!(integrator, force_save, reduce_size)::Tuple{Bool,Bool}
   saved, savedexactly = false, false
   !integrator.opts.save_on && return saved, savedexactly
-  while !isempty(integrator.opts.saveat) && integrator.tdir*top(integrator.opts.saveat) <= integrator.tdir*integrator.t # Perform saveat
+  tdir_t = integrator.tdir * integrator.t
+  while !isempty(integrator.opts.saveat) && top(integrator.opts.saveat) <= tdir_t # Perform saveat
     integrator.saveiter += 1; saved = true
-    curt = pop!(integrator.opts.saveat)
+    curt = integrator.tdir * pop!(integrator.opts.saveat)
     if curt!=integrator.t # If <t, interpolate
       DiffEqBase.addsteps!(integrator)
       Θ = (curt - integrator.tprev)/integrator.dt
@@ -189,7 +190,7 @@ function _loopfooter!(integrator)
       integrator.tprev = integrator.t
       # integrator.EEst has unitless type of integrator.t
       if typeof(integrator.EEst)<: AbstractFloat && !isempty(integrator.opts.tstops)
-        tstop = top(integrator.opts.tstops)
+        tstop = integrator.tdir * top(integrator.opts.tstops)
         abs(ttmp - tstop) < 10eps(max(integrator.t,tstop)/oneunit(integrator.t))*oneunit(integrator.t) ?
                                   (integrator.t = tstop) : (integrator.t = ttmp)
       else
@@ -205,7 +206,7 @@ function _loopfooter!(integrator)
     integrator.tprev = integrator.t
     # integrator.EEst has unitless type of integrator.t
     if typeof(integrator.EEst)<: AbstractFloat && !isempty(integrator.opts.tstops)
-      tstop = top(integrator.opts.tstops)
+      tstop = integrator.tdir * top(integrator.opts.tstops)
       abs(ttmp - tstop) < 10eps(integrator.t/oneunit(integrator.t))*oneunit(integrator.t) ?
                                   (integrator.t = tstop) : (integrator.t = ttmp)
     else
@@ -342,14 +343,14 @@ end
 function handle_tstop!(integrator)
   tstops = integrator.opts.tstops
   if !isempty(tstops)
-    t = integrator.t
-    ts_top = top(tstops)
-    if t == ts_top
+    tdir_t = integrator.tdir * integrator.t
+    tdir_ts_top = top(tstops)
+    if tdir_t == tdir_ts_top
       pop!(tstops)
       integrator.just_hit_tstop = true
-    elseif integrator.tdir*t > integrator.tdir*ts_top
+    elseif tdir_t > tdir_ts_top
       if !integrator.dtchangeable
-        DiffEqBase.change_t_via_interpolation!(integrator, pop!(tstops), Val{true})
+        DiffEqBase.change_t_via_interpolation!(integrator, integrator.tdir * pop!(tstops), Val{true})
         integrator.just_hit_tstop = true
       else
         error("Something went wrong. Integrator stepped past tstops but the algorithm was dtchangeable. Please report this error.")

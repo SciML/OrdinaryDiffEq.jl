@@ -16,7 +16,7 @@ end
   @unpack ms, fp1, fp2, recf = cache
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
-  mdeg = Int(floor(sqrt((1.5 + dt*integrator.eigen_est)/0.811) + 1))
+  mdeg = Int(floor(sqrt((1.5 + abs(dt)*integrator.eigen_est)/0.811) + 1))
   mdeg = min(max(mdeg,cache.min_stage), cache.max_stage)
   cache.mdeg = max(mdeg, 3) - 2
   choosedeg!(cache)
@@ -87,7 +87,7 @@ end
   ccache = cache.constantcache
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
-  mdeg = Int(floor(sqrt((1.5 + dt*integrator.eigen_est)/0.811) + 1))
+  mdeg = Int(floor(sqrt((1.5 + abs(dt)*integrator.eigen_est)/0.811) + 1))
   mdeg = min(max(mdeg,ccache.min_stage), ccache.max_stage)
   ccache.mdeg = max(mdeg, 3) - 2
   choosedeg!(cache)
@@ -162,7 +162,7 @@ end
   @unpack ms, fpa, fpb, fpbe, recf = cache
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
-  mdeg = Int(floor(sqrt((3 + dt*integrator.eigen_est)/0.353) + 1))
+  mdeg = Int(floor(sqrt((3 + abs(dt)*integrator.eigen_est)/0.353) + 1))
   mdeg = min(max(mdeg,cache.min_stage), cache.max_stage)
   cache.mdeg = max(mdeg, 5) - 4
   choosedeg!(cache)
@@ -267,7 +267,7 @@ end
   ccache = cache.constantcache
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
-  mdeg = Int(floor(sqrt((3 + dt*integrator.eigen_est)/0.353) + 1))
+  mdeg = Int(floor(sqrt((3 + abs(dt)*integrator.eigen_est)/0.353) + 1))
   mdeg = min(max(mdeg,ccache.min_stage), ccache.max_stage)
   ccache.mdeg = max(mdeg, 5) - 4
   choosedeg!(cache)
@@ -371,7 +371,7 @@ end
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
   maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/(10*eps(integrator.opts.internalnorm(uprev,t)))))))
-  mdeg = 1 + Int(floor(sqrt(1.54*dt*integrator.eigen_est + 1)))
+  mdeg = 1 + Int(floor(sqrt(1.54*abs(dt)*integrator.eigen_est + 1)))
   mdeg = (mdeg > maxm) ? maxm : mdeg
 
   w0 = 1 + 2/(13*(mdeg^2))
@@ -454,7 +454,7 @@ end
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
   maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/(10*eps(integrator.opts.internalnorm(uprev,t)))))))
-  mdeg = 1 + Int(floor(sqrt(1.54*dt*integrator.eigen_est + 1)))
+  mdeg = 1 + Int(floor(sqrt(1.54*abs(dt)*integrator.eigen_est + 1)))
   mdeg = (mdeg > maxm) ? maxm : mdeg
 
   w0 = 1 + 2/(13*(mdeg^2))
@@ -545,7 +545,7 @@ function perform_step!(integrator,cache::IRKCConstantCache,repeat_step=false)
 
   # The the number of degree for Chebyshev polynomial
   maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/(10 *eps(integrator.opts.internalnorm(uprev,t)))))))
-  mdeg = 1 + Int(floor(sqrt(1.54*dt*integrator.eigen_est + 1)))
+  mdeg = 1 + Int(floor(sqrt(1.54*abs(dt)*integrator.eigen_est + 1)))
   mdeg = (mdeg < minm) ? minm : mdeg
   mdeg = (mdeg >= maxm) ? maxm : mdeg
 
@@ -674,7 +674,7 @@ function perform_step!(integrator, cache::IRKCCache, repeat_step=false)
   maxeig!(integrator, cache)
   # The the number of degree for Chebyshev polynomial
   maxm = max(2,Int(floor(sqrt(integrator.opts.internalnorm(integrator.opts.reltol,t)/(10 *eps(integrator.opts.internalnorm(uprev,t)))))))
-  mdeg = 1 + Int(floor(sqrt(1.54*dt*integrator.eigen_est + 1)))
+  mdeg = 1 + Int(floor(sqrt(1.54*abs(dt)*integrator.eigen_est + 1)))
   mdeg = (mdeg < minm) ? minm : mdeg
   mdeg = (mdeg >= maxm) ? maxm : mdeg
 
