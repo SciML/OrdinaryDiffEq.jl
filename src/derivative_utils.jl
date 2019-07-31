@@ -351,9 +351,14 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
 
   if W_transform && DiffEqBase.has_Wfact_t(f)
     f.Wfact_t(W, u, p, dtgamma, t)
+    is_compos && (integrator.eigen_est = opnorm(LowerTriangular(W), Inf) + inv(dtgamma)) # TODO: better estimate
     return nothing
   elseif !W_transform && DiffEqBase.has_Wfact(f)
     f.Wfact(W, u, p, dtgamma, t)
+    if is_compos
+      opn = opnorm(LowerTriangular(W), Inf)
+      integrator.eigen_est = (opn + one(opn)) / dtgamma # TODO: better estimate
+    end
     return nothing
   end
 
@@ -397,9 +402,14 @@ function calc_W!(nlsolver, integrator, cache::OrdinaryDiffEqMutableCache, dtgamm
 
   if W_transform && DiffEqBase.has_Wfact_t(f)
     f.Wfact_t(W, u, p, dtgamma, t)
+    is_compos && (integrator.eigen_est = opnorm(LowerTriangular(W), Inf) + inv(dtgamma)) # TODO: better estimate
     return nothing
   elseif !W_transform && DiffEqBase.has_Wfact(f)
     f.Wfact(W, u, p, dtgamma, t)
+    if is_compos
+      opn = opnorm(LowerTriangular(W), Inf)
+      integrator.eigen_est = (opn + one(opn)) / dtgamma # TODO: better estimate
+    end
     return nothing
   end
 
