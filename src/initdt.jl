@@ -8,9 +8,9 @@
   if eltype(u0) <: Number && !(typeof(integrator.alg) <: CompositeAlgorithm)
     cache = get_tmp_cache(integrator)
     sk = first(cache)
-    @.. sk = abstol+internalnorm(u0,t)*reltol
+    @. sk = abstol+internalnorm(u0,t)*reltol
   else
-    sk = @.. abstol+internalnorm(u0,t)*reltol
+    sk = @. abstol+internalnorm(u0,t)*reltol
   end
 
   if get_current_isfsal(integrator.alg, integrator.cache) && typeof(integrator) <: ODEIntegrator
