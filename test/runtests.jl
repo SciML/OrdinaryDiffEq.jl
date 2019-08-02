@@ -88,6 +88,10 @@ if !is_APPVEYOR && (GROUP == "All" || GROUP == "AlgConvergence_III")
   @time @safetestset "Feagin Tests" begin include("algconvergence/ode_feagin_tests.jl") end
 end
 
+if !is_APPVEYOR && (GROUP == "All" || GROUP == "Downstream")
+  @time @safetestset "DelayDiffEq Tests" begin include("downstream/delaydiffeq.jl") end
+end
+
 if !is_APPVEYOR && GROUP == "ODEInterfaceRegression"
   if is_TRAVIS
     using Pkg

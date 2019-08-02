@@ -39,11 +39,13 @@ julia = "1"
 
 [extras]
 Calculus = "49dc2e85-a5d0-5ad3-a950-438e2897f1b9"
+DelayDiffEq = "bcd4f6db-9728-5f36-b5f7-82caef46ccdb"
 DiffEqCallbacks = "459566f4-90b8-5000-8ac3-15dfb0a30def"
 DiffEqDevTools = "f3b72e0c-5b89-59e1-b016-84e28bfd966d"
 DiffEqProblemLibrary = "a077e3f3-b75c-5d7f-a0c6-6bc4c8ec64a9"
 DiffEqSensitivity = "41bf760c-e81c-5289-8e54-58b1f1f8abe2"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
+ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
 ParameterizedFunctions = "65888b18-ceab-5e60-b2b9-181511a3b968"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
@@ -51,7 +53,6 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
-ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
 
 [targets]
-test = ["Calculus", "DiffEqCallbacks", "DiffEqDevTools", "DiffEqProblemLibrary", "DiffEqSensitivity", "InteractiveUtils", "ParameterizedFunctions", "Random", "SafeTestsets", "SparseArrays", "Statistics", "Test", "Unitful", "ModelingToolkit"]
+test = ["Calculus", "DelayDiffEq", "DiffEqCallbacks", "DiffEqDevTools", "DiffEqProblemLibrary", "DiffEqSensitivity", "InteractiveUtils", "ParameterizedFunctions", "Random", "SafeTestsets", "SparseArrays", "Statistics", "Test", "Unitful", "ModelingToolkit"]
