@@ -171,8 +171,11 @@ end # ExtrapolationMidpointDeuflhard
         @test sim.𝒪est[:final] ≈ 2*(alg.n_init+1) atol=testTol
       end
 
-      # TODO: Regression test
-
+      # Regression test
+      alg = ExtrapolationMidpointHairerWanner(max_order=9, min_order=2,
+        init_order=9, sequence=seq, threading=false)
+      sol = solve(prob, alg, reltol=1e-3)
+      @test length(sol.u) < 10
     end
   end
   @testset "Testing threaded ExtrapolationMidpointHairerWanner" begin
@@ -188,7 +191,11 @@ end # ExtrapolationMidpointDeuflhard
         @test sim.𝒪est[:final] ≈ 2*(alg.n_init+1) atol=testTol
       end
 
-      # TODO: Regression test
+      # Regression test
+      alg = ExtrapolationMidpointHairerWanner(max_order=9, min_order=2,
+        init_order=9, sequence=seq, threading=true)
+      sol = solve(prob, alg, reltol=1e-3)
+      @test length(sol.u) < 10
     end
   end
 end # ExtrapolationMidpointHairerWanner
