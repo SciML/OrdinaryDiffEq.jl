@@ -104,8 +104,10 @@ if !is_APPVEYOR && GROUP == "ODEInterfaceRegression"
 end
 
 if !is_APPVEYOR && GROUP == "GPU"
-  import OrdinaryDiffEq
-  @time @safetestset "Simple GPU" begin include(joinpath(dirname(pathof(OrdinaryDiffEq.DiffEqBase)), "..", "test/gpu/simple_gpu.jl")) end
+  @time @safetestset "Simple GPU" begin 
+    import OrdinaryDiffEq
+    include(joinpath(dirname(pathof(OrdinaryDiffEq.DiffEqBase)), "..", "test/gpu/simple_gpu.jl")) 
+  end
 end
 
 end # @time
