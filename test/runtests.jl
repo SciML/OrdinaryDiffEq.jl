@@ -99,7 +99,8 @@ if !is_APPVEYOR && GROUP == "ODEInterfaceRegression"
 end
 
 if !is_APPVEYOR && GROUP == "GPU"
-  @time @safetestset "Simple GPU" begin include("gpu/simple_gpu.jl") end
+  import DiffEqBase
+  @time @safetestset "Simple GPU" begin include(joinpath(dirname(pathof(DiffEqBase)), "..", "test/gpu/simple_gpu.jl")) end
 end
 
 end # @time
