@@ -238,14 +238,14 @@ function step_reject_controller!(integrator, alg::Union{ExtrapolationMidpointDeu
   integrator.dt = dt_red
 end
 
-@inline function stepsize_controller!(integrator,alg::ExtrapolationMidpointHairerWanner)
+@inline function stepsize_controller!(integrator,alg::Union{ExtrapolationMidpointHairerWanner, ImplicitHairerWannerExtrapolation})
   # Dummy function
   # ExtrapolationMidpointHairerWanner's stepsize scaling is stored in the cache;
   # it is computed by  stepsize_controller_internal! (in perfom_step!), step_accept_controller! or step_reject_controller!
   zero(typeof(integrator.opts.qmax))
 end
 
-function stepsize_controller_internal!(integrator,alg::ExtrapolationMidpointHairerWanner)
+function stepsize_controller_internal!(integrator,alg::Union{ExtrapolationMidpointHairerWanner, ImplicitHairerWannerExtrapolation})
   # Standard stepsize controller
   # Compute and save the stepsize scaling based on the latest error estimate of the current order
   if iszero(integrator.EEst)
@@ -261,7 +261,7 @@ function stepsize_controller_internal!(integrator,alg::ExtrapolationMidpointHair
   integrator.cache.Q[integrator.cache.n_curr + 1] = q
 end
 
-function step_accept_controller!(integrator,alg::ExtrapolationMidpointHairerWanner,q)
+function step_accept_controller!(integrator,alg::Union{ExtrapolationMidpointHairerWanner, ImplicitHairerWannerExtrapolation},q)
   # Compute new order and stepsize, return new stepsize
   @unpack n_min, n_max = alg
   @unpack n_curr, n_old, Q, sigma = integrator.cache
@@ -309,7 +309,7 @@ function step_accept_controller!(integrator,alg::ExtrapolationMidpointHairerWann
   dt_new[n_new + 1]
 end
 
-function step_reject_controller!(integrator, alg::ExtrapolationMidpointHairerWanner)
+function step_reject_controller!(integrator, alg::Union{ExtrapolationMidpointHairerWanner, ImplicitHairerWannerExtrapolation})
   # Compute and save order and stepsize for redoing the current step
   @unpack n_old, n_curr, Q = integrator.cache
 
