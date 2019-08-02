@@ -112,6 +112,24 @@ sequence_array =[:harmonic, :romberg, :bulirsch]
   end
 end
 
+@testset "Testing ImplicitHairerWannerExtrapolation" begin
+  for prob in problem_array, seq in sequence_array
+    global dts
+
+    # Convergence test
+    for j = 1:6
+      alg = ImplicitHairerWannerExtrapolation(min_order = j,
+        init_order = j, max_order=j,
+        sequence = seq)
+      sim = test_convergence(dts,prob,alg)
+      @test sim.𝒪est[:final] ≈ 2*(alg.n_init+1) atol=testTol
+    end
+
+    # TODO: Regression test
+  
+  end
+end
+
 # Test ExtrapolationMidpointDeuflhard
 @testset "Testing ExtrapolationMidpointDeuflhard" begin
   @testset "Testing sequential ExtrapolationMidpointDeuflhard" begin
