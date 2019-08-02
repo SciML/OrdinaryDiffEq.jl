@@ -268,8 +268,8 @@ function step_accept_controller!(integrator,alg::ExtrapolationMidpointHairerWann
   s = integrator.cache.stage_number
 
   # Compute new order based on available quantities
-  win_min_old = n_old - 1 # cf. win_min in perfom_step! of the last step
-  tmp = win_min_old:(n_curr + 1) # Index range for the new order
+  win_min_old = min(n_old, n_curr) - 1 # cf. win_min in perfom_step! of the last step
+  tmp = win_min_old:(max(n_curr, n_old) + 1) # Index range for the new order
   dt_new = fill(zero(eltype(Q)),n_max+1)
   dt_new[tmp] = integrator.dt ./ Q[tmp] # Store for the possible new stepsizes
   dt_new[tmp] = max.(abs(integrator.opts.dtmin), min.(abs(integrator.opts.dtmax), abs.(dt_new[tmp]))) # Safety scaling
