@@ -347,10 +347,7 @@ end
     @.. u = tmp + γ*z₂
     f2(k2, u, p, t + 2γdt); k2 .*= dt
     integrator.destats.nf2 += 1
-    #@.. tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
-    for i in eachindex(tmp)
-      @inbounds tmp[i] = uprev[i] + a31*z₁[i] + a32*z₂[i] + ea31*k1[i] + ea32*k2[i]
-    end
+    @.. tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
   else
     # Guess is from Hermite derivative on z₁ and z₂
     @.. z₃ = α31*z₁ + α32*z₂
@@ -369,10 +366,7 @@ end
     @.. u = tmp + γ*z₃
     f2( k3, u,p,t+c3*dt); k3 .*= dt
     integrator.destats.nf2 += 1
-    #@.. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃ + ea41*k1 + ea42*k2 + ea43*k3
-    for i in eachindex(tmp)
-      @inbounds tmp[i] = uprev[i] + a41*z₁[i] + a42*z₂[i] + a43*z₃[i] + ea41*k1[i] + ea42*k2[i] + ea43*k3[i]
-    end
+    @.. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃ + ea41*k1 + ea42*k2 + ea43*k3
   else
     @unpack α41,α42 = cache.tab
     @.. z₄ = α41*z₁ + α42*z₂
@@ -388,20 +382,14 @@ end
   if typeof(integrator.f) <: SplitFunction
     f2( k4, u,p,t+dt); k4 .*= dt
     integrator.destats.nf2 += 1
-    #@.. u = uprev + a41*z₁ + a42*z₂ + a43*z₃ + γ*z₄ + eb1*k1 + eb2*k2 + eb3*k3 + eb4*k4
-    for i in eachindex(u)
-      u[i] = uprev[i] + a41*z₁[i] + a42*z₂[i] + a43*z₃[i] + γ*z₄[i] + eb1*k1[i] + eb2*k2[i] + eb3*k3[i] + eb4*k4[i]
-    end
+    @.. u = uprev + a41*z₁ + a42*z₂ + a43*z₃ + γ*z₄ + eb1*k1 + eb2*k2 + eb3*k3 + eb4*k4
   end
 
   ################################### Finalize
 
   if integrator.opts.adaptive
     if typeof(integrator.f) <: SplitFunction
-      #@.. dz = btilde1*z₁  + btilde2*z₂  + btilde3*z₃ + btilde4*z₄ + ebtilde1*k1 + ebtilde2*k2 + ebtilde3*k3 + ebtilde4*k4
-      for i in eachindex(dz)
-        @inbounds dz[i] = btilde1*z₁[i]  + btilde2*z₂[i]  + btilde3*z₃[i] + btilde4*z₄[i] + ebtilde1*k1[i] + ebtilde2*k2[i] + ebtilde3*k3[i] + ebtilde4*k4[i]
-      end
+      @.. dz = btilde1*z₁  + btilde2*z₂  + btilde3*z₃ + btilde4*z₄ + ebtilde1*k1 + ebtilde2*k2 + ebtilde3*k3 + ebtilde4*k4
     else
       @.. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄
     end
@@ -814,10 +802,7 @@ end
     @.. u = tmp + γ*z₂
     f2(k2, u, p, t + 2γdt); k2 .*= dt
     integrator.destats.nf2 += 1
-    # @.. tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
-    for i in eachindex(tmp)
-      @inbounds tmp[i] = uprev[i] + a31*z₁[i] + a32*z₂[i] + ea31*k1[i] + ea32*k2[i]
-    end
+    @.. tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
   else
     # Guess is from Hermite derivative on z₁ and z₂
     @.. z₃ = α31*z₁ + α32*z₂
@@ -836,10 +821,7 @@ end
     @.. u = tmp + γ*z₃
     f2( k3, u,p,t+c3*dt); k3 .*= dt
     integrator.destats.nf2 += 1
-    #@.. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃ + ea41*k1 + ea42*k2 + ea43*k3
-    for i in eachindex(tmp)
-      @inbounds tmp[i] = uprev[i] + a41*z₁[i] + a42*z₂[i] + a43*z₃[i] + ea41*k1[i] + ea42*k2[i] + ea43*k3[i]
-    end
+    @.. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃ + ea41*k1 + ea42*k2 + ea43*k3
   else
     @.. z₄ = α41*z₁ + α42*z₂
     @.. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
@@ -859,16 +841,10 @@ end
     @.. u = tmp + γ*z₄
     f2( k4, u,p,t+c4*dt); k4 .*= dt
     integrator.destats.nf2 += 1
-    #@.. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + ea51*k1 + ea52*k2 + ea53*k3 + ea54*k4
-    for i in eachindex(tmp)
-      @inbounds tmp[i] = uprev[i] + a51*z₁[i] + a52*z₂[i] + a53*z₃[i] + a54*z₄[i] + ea51*k1[i] + ea52*k2[i] + ea53*k3[i] + ea54*k4[i]
-    end
+    @.. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄ + ea51*k1 + ea52*k2 + ea53*k3 + ea54*k4
   else
     @.. z₅ = α51*z₁ + α52*z₂ + α53*z₃ + α54*z₄
-    #@.. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
-    for i in eachindex(tmp)
-      @inbounds tmp[i] = uprev[i] + a51*z₁[i] + a52*z₂[i] + a53*z₃[i] + a54*z₄[i]
-    end
+    @.. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   end
   nlsolver.z = z₅
 
@@ -883,17 +859,10 @@ end
     @.. u = tmp + γ*z₅
     f2( k5, u,p,t+c5*dt); k5 .*= dt
     integrator.destats.nf2 += 1
-    #@.. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + ea61*k1 + ea62*k2 + ea63*k3 + ea64*k4 + ea65*k5
-    for i in eachindex(tmp)
-      @inbounds tmp[i] = uprev[i] + a61*z₁[i] + a63*z₃[i] + a64*z₄[i] + a65*z₅[i] + ea61*k1[i] + ea62*k2[i] + ea63*k3[i] + ea64*k4[i] + ea65*k5[i]
-    end
+    @.. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + ea61*k1 + ea62*k2 + ea63*k3 + ea64*k4 + ea65*k5
   else
-    #@.. z₆ = α61*z₁ + α62*z₂ + α63*z₃ + α64*z₄ + α65*z₅
-    #@.. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅
-    @tight_loop_macros for i in eachindex(u)
-      @inbounds z₆[i] = α61*z₁[i] + α62*z₂[i] + α63*z₃[i] + α64*z₄[i] + α65*z₅[i]
-      @inbounds tmp[i] = uprev[i] + a61*z₁[i] + a63*z₃[i] + a64*z₄[i] + a65*z₅[i]
-    end
+    @.. z₆ = α61*z₁ + α62*z₂ + α63*z₃ + α64*z₄ + α65*z₅
+    @.. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅
   end
   nlsolver.z = z₆
 
@@ -906,24 +875,15 @@ end
     f2( k6, u,p,t+dt); k6 .*= dt
     integrator.destats.nf2 += 1
     @.. u = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + γ*z₆ + eb1*k1 + eb3*k3 + eb4*k4 + eb5*k5 + eb6*k6
-    for i in eachindex(u)
-      u[i] = uprev[i] + a61*z₁[i] + a63*z₃[i] + a64*z₄[i] + a65*z₅[i] + γ*z₆[i] + eb1*k1[i] + eb3*k3[i] + eb4*k4[i] + eb5*k5[i] + eb6*k6[i]
-    end
   end
 
   ################################### Finalize
 
   if integrator.opts.adaptive
     if typeof(integrator.f) <: SplitFunction
-      #@.. dz = btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + ebtilde1*k1 + ebtilde3*k3 + ebtilde4*k4 + ebtilde5*k5 + ebtilde6*k6
-      for i in eachindex(u)
-        @inbounds dz[i] = btilde1*z₁[i] + btilde3*z₃[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i] + ebtilde1*k1[i] + ebtilde3*k3[i] + ebtilde4*k4[i] + ebtilde5*k5[i] + ebtilde6*k6[i]
-      end
+      @.. dz = btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + ebtilde1*k1 + ebtilde3*k3 + ebtilde4*k4 + ebtilde5*k5 + ebtilde6*k6
     else
-      # @.. dz = btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆
-      @tight_loop_macros for i in eachindex(u)
-        @inbounds dz[i] = btilde1*z₁[i] + btilde3*z₃[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i]
-      end
+      @.. dz = btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆
     end
 
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
@@ -1113,16 +1073,10 @@ end
   ################################## Solve Step 7
 
   # Prediction is embedded method
-  # @.. z₇ = a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + γ*z₆
-  @tight_loop_macros for i in eachindex(u)
-    @inbounds z₇[i] = a61*z₁[i] + a63*z₃[i] + a64*z₄[i] + a65*z₅[i] + γ*z₆[i]
-  end
+  @.. z₇ = a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + γ*z₆
   nlsolver.z = z₇
 
-  # @.. tmp = uprev + a71*z₁ + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
-  @tight_loop_macros for i in eachindex(u)
-    @inbounds tmp[i] = uprev[i] + a71*z₁[i] + a73*z₃[i] + a74*z₄[i] + a75*z₅[i] + a76*z₆[i]
-  end
+  @.. tmp = uprev + a71*z₁ + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
   nlsolver.c = 1
   z₇ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
@@ -1132,10 +1086,7 @@ end
   ################################### Finalize
 
   if integrator.opts.adaptive
-    # @.. dz = btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇
-    @tight_loop_macros for i in eachindex(u)
-      @inbounds dz[i] = btilde1*z₁[i] + btilde3*z₃[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i] + btilde7*z₇[i]
-    end
+    @.. dz = btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
       nlsolver.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
@@ -1426,10 +1377,7 @@ end
     @.. u = tmp + γ*z₂
     f2(k2, u, p, t+2γdt); k2 .*= dt
     integrator.destats.nf2 += 1
-    #@.. tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
-    for i in eachindex(u)
-      @inbounds tmp[i] = uprev[i] + a31*z₁[i] + a32*z₂[i] + ea31*k1[i] + ea32*k2[i]
-    end
+    @.. tmp = uprev + a31*z₁ + a32*z₂ + ea31*k1 + ea32*k2
   else
     # Guess is from Hermite derivative on z₁ and z₂
     @.. z₃ = a31*z₁ + α32*z₂
@@ -1448,10 +1396,7 @@ end
     @.. u = tmp + γ*z₃
     f2( k3, u,p,t+c3*dt); k3 .*= dt
     integrator.destats.nf2 += 1
-    #@.. tmp = uprev + a41*z₁ + a43*z₃ + ea41*k1 + ea43*k3
-    for i in eachindex(u)
-      @inbounds tmp[i] = uprev[i] + a41*z₁[i] + a43*z₃[i] + ea41*k1[i] + ea43*k3[i]
-    end
+    @.. tmp = uprev + a41*z₁ + a43*z₃ + ea41*k1 + ea43*k3
   else
     @.. z₄ = α41*z₁ + α42*z₂
     @.. tmp = uprev + a41*z₁ + a43*z₃
@@ -1469,10 +1414,7 @@ end
     @.. u = tmp + γ*z₄
     f2( k4, u,p,t+c4*dt); k4 .*= dt
     integrator.destats.nf2 += 1
-    #@.. tmp = uprev + a51*z₁ + a53*z₃ + a54*z₄ + ea51*k1 + ea53*k3 + ea54*k4
-    for i in eachindex(u)
-      @inbounds tmp[i] = uprev[i] + a51*z₁[i] + a53*z₃[i] + a54*z₄[i] + ea51*k1[i] + ea53*k3[i] + ea54*k4[i]
-    end
+    @.. tmp = uprev + a51*z₁ + a53*z₃ + a54*z₄ + ea51*k1 + ea53*k3 + ea54*k4
   else
     @.. z₅ = α51*z₁ + α52*z₂
     @.. tmp = uprev + a51*z₁ + a53*z₃ + a54*z₄
@@ -1490,16 +1432,10 @@ end
     @.. u = tmp + γ*z₅
     f2( k5, u,p,t+c5*dt); k5 .*= dt
     integrator.destats.nf2 += 1
-    #@.. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + ea61*k1 + ea63*k3 + ea64*k4 + ea65*k5
-    for i in eachindex(u)
-      @inbounds tmp[i] = uprev[i] + a61*z₁[i] + a63*z₃[i] + a64*z₄[i] + a65*z₅[i] + ea61*k1[i] + ea63*k3[i] + ea64*k4[i] + ea65*k5[i]
-    end
+    @.. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅ + ea61*k1 + ea63*k3 + ea64*k4 + ea65*k5
   else
     @.. z₆ = α61*z₁ + α62*z₂
-    #@.. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅
-    for i in eachindex(u)
-      @inbounds tmp[i] = uprev[i] + a61*z₁[i] + a63*z₃[i] + a64*z₄[i] + a65*z₅[i]
-    end
+    @.. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅
   end
   nlsolver.z = z₆
 
@@ -1514,19 +1450,10 @@ end
     @.. u = tmp + γ*z₆
     f2( k6, u,p,t+c6*dt); k6 .*= dt
     integrator.destats.nf2 += 1
-    #@.. tmp = uprev + a71*z₁ +  a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆ + ea71*k1 + ea73*k3 + ea74*k4 + ea75*k5 + ea76*k6
-    for i in eachindex(u)
-      @inbounds tmp[i] = uprev[i] + a71*z₁[i] +  a73*z₃[i] + a74*z₄[i] + a75*z₅[i] + a76*z₆[i] + ea71*k1[i] + ea73*k3[i] + ea74*k4[i] + ea75*k5[i] + ea76*k6[i]
-    end
+    @.. tmp = uprev + a71*z₁ +  a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆ + ea71*k1 + ea73*k3 + ea74*k4 + ea75*k5 + ea76*k6
   else
-    #@.. z₇ = α71*z₁ + α72*z₂ + α73*z₃ + α74*z₄ + α75*z₅
-    @tight_loop_macros for i in eachindex(u)
-      @inbounds z₇[i] = α71*z₁[i] + α72*z₂[i] + α73*z₃[i] + α74*z₄[i] + α75*z₅[i]
-    end
-    #@.. tmp = uprev + a71*z₁ + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
-    @tight_loop_macros for i in eachindex(u)
-      @inbounds tmp[i] = uprev[i] + a71*z₁[i] + a73*z₃[i] + a74*z₄[i] + a75*z₅[i] + a76*z₆[i]
-    end
+    @.. z₇ = α71*z₁ + α72*z₂ + α73*z₃ + α74*z₄ + α75*z₅
+    @.. tmp = uprev + a71*z₁ + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
   end
   nlsolver.z = z₇
 
@@ -1541,19 +1468,10 @@ end
     @.. u = tmp + γ*z₇
     f2( k7, u,p,t+c7*dt); k7 .*= dt
     integrator.destats.nf2 += 1
-    #@.. tmp = uprev + a81*z₁ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇ + ea81*k1 + ea83*k3 + ea84*k4 + ea85*k5 + ea86*k6 + ea87*k7
-    for i in eachindex(u)
-      @inbounds tmp[i] = uprev[i] + a81*z₁[i] + a84*z₄[i] + a85*z₅[i] + a86*z₆[i] + a87*z₇[i] + ea81*k1[i] + ea83*k3[i] + ea84*k4[i] + ea85*k5[i] + ea86*k6[i] + ea87*k7[i]
-    end
+    @.. tmp = uprev + a81*z₁ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇ + ea81*k1 + ea83*k3 + ea84*k4 + ea85*k5 + ea86*k6 + ea87*k7
   else
-    #@.. z₈ = α81*z₁ + α82*z₂ + α83*z₃ + α84*z₄ + α85*z₅
-    @tight_loop_macros for i in eachindex(u)
-      @inbounds z₈[i] = α81*z₁[i] + α82*z₂[i] + α83*z₃[i] + α84*z₄[i] + α85*z₅[i]
-    end
-    #@.. tmp = uprev + a81*z₁ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇
-    @tight_loop_macros for i in eachindex(u)
-      @inbounds tmp[i] = uprev[i] + a81*z₁[i] + a84*z₄[i] + a85*z₅[i] + a86*z₆[i] + a87*z₇[i]
-    end
+    @.. z₈ = α81*z₁ + α82*z₂ + α83*z₃ + α84*z₄ + α85*z₅
+    @.. tmp = uprev + a81*z₁ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇
   end
   nlsolver.z = z₈
 
@@ -1565,10 +1483,7 @@ end
   if typeof(integrator.f) <: SplitFunction
     f2( k8, u,p,t+dt); k8 .*= dt
     integrator.destats.nf += 1
-    # @.. u = uprev + a81*z₁ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇ + γ*z₈ + eb1*k1 + eb4*k4 + eb5*k5 + eb6*k6 + eb7*k7 + eb8*k8
-    for i in eachindex(u)
-      @inbounds u[i] = uprev[i] + a81*z₁[i] + a84*z₄[i] + a85*z₅[i] + a86*z₆[i] + a87*z₇[i] + γ*z₈[i] + eb1*k1[i] + eb4*k4[i] + eb5*k5[i] + eb6*k6[i] + eb7*k7[i] + eb8*k8[i]
-    end
+    @.. u = uprev + a81*z₁ + a84*z₄ + a85*z₅ + a86*z₆ + a87*z₇ + γ*z₈ + eb1*k1 + eb4*k4 + eb5*k5 + eb6*k6 + eb7*k7 + eb8*k8
   end
 
   ################################### Finalize
@@ -1576,16 +1491,9 @@ end
   if integrator.opts.adaptive
 
     if typeof(integrator.f) <: SplitFunction
-      #@.. dz =  btilde1*z₁ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇ + btilde8*z₈ + ebtilde1*k1 + ebtilde4*k4 + ebtilde5*k5 + ebtilde6*k6 + ebtilde7*k7 + ebtilde8*k8
-      for i in eachindex(u)
-        dz[i] =  btilde1*z₁[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i] + btilde7*z₇[i] + btilde8*z₈[i] + ebtilde1*k1[i] + ebtilde4*k4[i] + ebtilde5*k5[i] + ebtilde6*k6[i] + ebtilde7*k7[i] + ebtilde8*k8[i]
-      end
+      @.. dz =  btilde1*z₁ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇ + btilde8*z₈ + ebtilde1*k1 + ebtilde4*k4 + ebtilde5*k5 + ebtilde6*k6 + ebtilde7*k7 + ebtilde8*k8
     else
-      # @.. dz = btilde1*z₁ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇ + btilde8*z₈
-      @tight_loop_macros for i in eachindex(u)
-        @inbounds dz[i] = btilde1*z₁[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i] + btilde7*z₇[i] + btilde8*z₈[i]
-      end
-
+      @.. dz = btilde1*z₁ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇ + btilde8*z₈
     end
 
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
