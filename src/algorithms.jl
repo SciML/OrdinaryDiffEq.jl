@@ -1000,3 +1000,9 @@ const MultistepAlgorithms = Union{IRKN3,IRKN4,
 const SplitAlgorithms = Union{CNAB2,CNLF2,IRKC,SBDF,
                               GenericIIF1,GenericIIF2,
                               KenCarp3,KenCarp4,KenCarp5}
+
+
+# DAE Specific Algorithms
+abstract type DAEAlgorithm <: DiffEqBase.AbstractDAEAlgorithm end
+
+struct TempAlg <: DAEAlgorithm end

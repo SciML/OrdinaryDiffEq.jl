@@ -6,8 +6,8 @@ function DiffEqBase.__solve(prob::DiffEqBase.AbstractODEProblem,
   integrator.sol
 end
 
-function DiffEqBase.__init(prob::DiffEqBase.AbstractODEProblem,
-                           alg::OrdinaryDiffEqAlgorithm,
+function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.AbstractDAEProblem},
+                           alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm},
                            timeseries_init = typeof(prob.u0)[],
                            ts_init = eltype(prob.tspan)[],
                            ks_init = [],
@@ -63,11 +63,21 @@ function DiffEqBase.__init(prob::DiffEqBase.AbstractODEProblem,
                            initialize_integrator = true,
                            alias_u0 = false,
                            kwargs...) where recompile_flag
+
+  if prob isa DiffEqBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
+    error("You cannot use an ODE Algorithm with a DAEProblem")
+  end
+
+  if prob isa DiffEqBase.AbstractODEProblem && alg isa DAEAlgorithm
+    error("You cannot use an DAE Algorithm with a ODEProblem")
+  end
+
   if typeof(prob.f)<:DynamicalODEFunction && typeof(prob.f.mass_matrix)<:Tuple
     if any(mm != I for mm in prob.f.mass_matrix)
       error("This solver is not able to use mass matrices.")
     end
   elseif !(typeof(prob)<:DiscreteProblem) &&
+         !(typeof(prob)<:DiffEqBase.AbstractDAEProblem) &&
          !is_mass_matrix_alg(alg) &&
          prob.f.mass_matrix != I
     error("This solver is not able to use mass matrices.")
@@ -290,8 +300,13 @@ function DiffEqBase.__init(prob::DiffEqBase.AbstractODEProblem,
     cacheType = typeof(cache)
   else
     FType = Function
-    SolType = DiffEqBase.AbstractODESolution
-    cacheType =  OrdinaryDiffEqCache
+    if alg isa OrdinaryDiffEqAlgorithm
+      SolType = DiffEqBase.AbstractODESolution
+      cacheType =  OrdinaryDiffEqCache
+    else
+      SolType = DiffEqBase.AbstractDAESolution
+      cacheType =  DAECache
+    end 
   end
 
   # rate/state = (state/time)/state = 1/t units, internalnorm drops units

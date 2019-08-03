@@ -1,8 +1,8 @@
-isautodifferentiable(alg::OrdinaryDiffEqAlgorithm) = true
+isautodifferentiable(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = true
 
 DiffEqBase.isdiscrete(alg::FunctionMap) = true
 
-isfsal(alg::OrdinaryDiffEqAlgorithm) = true
+isfsal(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = true
 isfsal(tab::DiffEqBase.ExplicitRKTableau{MType,VType,fsal}) where {MType,VType,fsal} = fsal
 # isfsal(alg::CompositeAlgorithm) = isfsal(alg.algs[alg.current])
 isfsal(alg::FunctionMap) = false
@@ -26,10 +26,10 @@ isfsal(alg::PDIRK44) = false
 get_current_isfsal(alg, cache) = isfsal(alg)
 get_current_isfsal(alg::CompositeAlgorithm, cache) = isfsal(alg.algs[cache.current])
 
-issplit(alg::OrdinaryDiffEqAlgorithm) = false
+issplit(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 issplit(alg::SplitAlgorithms) = true
 
-fsal_typeof(alg::OrdinaryDiffEqAlgorithm,rate_prototype) = typeof(rate_prototype)
+fsal_typeof(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm},rate_prototype) = typeof(rate_prototype)
 fsal_typeof(alg::ETD2,rate_prototype) = ETD2Fsal{typeof(rate_prototype)}
 function fsal_typeof(alg::CompositeAlgorithm,rate_prototype)
   fsal = unique(map(x->fsal_typeof(x,rate_prototype), alg.algs))
@@ -37,41 +37,41 @@ function fsal_typeof(alg::CompositeAlgorithm,rate_prototype)
   return fsal[1]
 end
 
-isimplicit(alg::OrdinaryDiffEqAlgorithm) = false
+isimplicit(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 isimplicit(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = true
 isimplicit(alg::OrdinaryDiffEqImplicitAlgorithm) = true
 isimplicit(alg::CompositeAlgorithm) = any(isimplicit.(alg.algs))
 
-isdtchangeable(alg::OrdinaryDiffEqAlgorithm) = true
+isdtchangeable(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = true
 isdtchangeable(alg::CompositeAlgorithm) = all(isdtchangeable.(alg.algs))
 isdtchangeable(alg::GenericIIF1) = false
 isdtchangeable(alg::GenericIIF2) = false
 isdtchangeable(alg::Union{LawsonEuler,NorsettEuler,ETDRK2,ETDRK3,ETDRK4,HochOst4,ETD2}) = false # due to caching
 
-ismultistep(alg::OrdinaryDiffEqAlgorithm) = false
+ismultistep(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 ismultistep(alg::CompositeAlgorithm) = any(ismultistep.(alg.algs))
 ismultistep(alg::ETD2) = true
 
-isadaptive(alg::OrdinaryDiffEqAlgorithm) = false
+isadaptive(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 isadaptive(alg::OrdinaryDiffEqAdaptiveAlgorithm) = true
 isadaptive(alg::OrdinaryDiffEqCompositeAlgorithm) = all(isadaptive.(alg.algs))
 
-qmin_default(alg::OrdinaryDiffEqAlgorithm) = 1//5
+qmin_default(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = 1//5
 qmin_default(alg::CompositeAlgorithm) = maximum(qmin_default.(alg.algs))
 qmin_default(alg::DP8) = 1//3
 
-qmax_default(alg::OrdinaryDiffEqAlgorithm) = 10
+qmax_default(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = 10
 qmax_default(alg::CompositeAlgorithm) = minimum(qmax_default.(alg.algs))
 qmax_default(alg::DP8) = 6
 qmax_default(alg::RadauIIA5) = 8
 
-get_chunksize(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have a chunk size defined.")
+get_chunksize(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = error("This algorithm does not have a chunk size defined.")
 get_chunksize(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) where {CS,AD} = CS
 get_chunksize(alg::OrdinaryDiffEqImplicitAlgorithm{CS,AD}) where {CS,AD} = CS
 get_chunksize(alg::ExponentialAlgorithm) = alg.chunksize
 # get_chunksize(alg::CompositeAlgorithm) = get_chunksize(alg.algs[alg.current_alg])
 
-alg_autodiff(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have an autodifferentiation option defined.")
+alg_autodiff(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = error("This algorithm does not have an autodifferentiation option defined.")
 alg_autodiff(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) where {CS,AD} = AD
 alg_autodiff(alg::OrdinaryDiffEqImplicitAlgorithm{CS,AD}) where {CS,AD} = AD
 alg_autodiff(alg::ExponentialAlgorithm) = alg.autodiff
@@ -79,7 +79,7 @@ alg_autodiff(alg::ExponentialAlgorithm) = alg.autodiff
 get_current_alg_autodiff(alg, cache) = alg_autodiff(alg)
 get_current_alg_autodiff(alg::CompositeAlgorithm, cache) = alg_autodiff(alg.algs[cache.current])
 
-alg_extrapolates(alg::OrdinaryDiffEqAlgorithm) = false
+alg_extrapolates(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 alg_extrapolates(alg::CompositeAlgorithm) = any(alg_extrapolates.(alg.algs))
 alg_extrapolates(alg::GenericImplicitEuler) = true
 alg_extrapolates(alg::GenericTrapezoid) = true
@@ -106,8 +106,8 @@ alg_extrapolates(alg::SBDF) = true
 alg_extrapolates(alg::MEBDF2) = true
 alg_extrapolates(alg::IRKC) = true
 
-alg_order(alg::OrdinaryDiffEqAlgorithm) = error("Order is not defined for this algorithm")
-get_current_alg_order(alg::OrdinaryDiffEqAlgorithm,cache) = alg_order(alg)
+alg_order(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = error("Order is not defined for this algorithm")
+get_current_alg_order(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm},cache) = alg_order(alg)
 get_current_alg_order(alg::CompositeAlgorithm,cache) = alg_order(alg.algs[cache.current])
 
 get_current_alg_order(alg::OrdinaryDiffEqAdamsVarOrderVarStepAlgorithm,cache) = cache.order
@@ -126,7 +126,7 @@ get_current_adaptive_order(alg::ExtrapolationMidpointHairerWanner,cache) = 2cach
 
 
 #alg_adaptive_order(alg::OrdinaryDiffEqAdaptiveAlgorithm) = error("Algorithm is adaptive with no order")
-get_current_adaptive_order(alg::OrdinaryDiffEqAlgorithm,cache) = alg_adaptive_order(alg)
+get_current_adaptive_order(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm},cache) = alg_adaptive_order(alg)
 get_current_adaptive_order(alg::CompositeAlgorithm,cache) = alg_adaptive_order(alg.algs[cache.current])
 
 alg_order(alg::FunctionMap) = 0
@@ -354,7 +354,7 @@ alg_maximum_order(alg::ImplicitDeuflhardExtrapolation) = 2(alg.n_max+1)
 alg_maximum_order(alg::ExtrapolationMidpointHairerWanner) = 2(alg.n_max+1)
 
 alg_adaptive_order(alg::ExplicitRK) = alg.tableau.adaptiveorder
-alg_adaptive_order(alg::OrdinaryDiffEqAlgorithm) = alg_order(alg)-1
+alg_adaptive_order(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = alg_order(alg)-1
 alg_adaptive_order(alg::DP8) = 6
 alg_adaptive_order(alg::Feagin10) = 8
 alg_adaptive_order(alg::Feagin12) = 10
@@ -381,7 +381,7 @@ alg_adaptive_order(alg::Exprb32) = 2
 alg_adaptive_order(alg::Exprb43) = 4
 alg_adaptive_order(alg::AN5) = 5
 
-beta2_default(alg::OrdinaryDiffEqAlgorithm) = 2//(5alg_order(alg))
+beta2_default(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = 2//(5alg_order(alg))
 beta2_default(alg::FunctionMap) = 0
 beta2_default(alg::DP8) = 0//1
 beta2_default(alg::DP5) = 4//100
@@ -389,7 +389,7 @@ beta2_default(alg::ExtrapolationMidpointDeuflhard) = 0//1
 beta2_default(alg::ImplicitDeuflhardExtrapolation) = 0//1
 beta2_default(alg::ExtrapolationMidpointHairerWanner) = 0//1
 
-beta1_default(alg::OrdinaryDiffEqAlgorithm,beta2) = 7//(10alg_order(alg))
+beta1_default(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm},beta2) = 7//(10alg_order(alg))
 beta1_default(alg::FunctionMap,beta2) = 0
 beta1_default(alg::DP8,beta2) = typeof(beta2)(1//alg_order(alg)) - beta2/5
 beta1_default(alg::DP5,beta2) = typeof(beta2)(1//alg_order(alg)) - 3beta2/4
@@ -397,15 +397,15 @@ beta1_default(alg::ExtrapolationMidpointDeuflhard,beta2) =  1//(2alg.n_init+1)
 beta1_default(alg::ImplicitDeuflhardExtrapolation,beta2) =  1//(2alg.n_init+1)
 beta1_default(alg::ExtrapolationMidpointHairerWanner,beta2) =  1//(2alg.n_init+1)
 
-gamma_default(alg::OrdinaryDiffEqAlgorithm) = 9//10
+gamma_default(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = 9//10
 gamma_default(alg::RKC) = 8//10
 gamma_default(alg::IRKC) = 8//10
 gamma_default(alg::ExtrapolationMidpointDeuflhard) = (1//4)^beta1_default(alg,beta2_default(alg))
 gamma_default(alg::ImplicitDeuflhardExtrapolation) = (1//4)^beta1_default(alg,beta2_default(alg))
 gamma_default(alg::ExtrapolationMidpointHairerWanner) = (65//100)^beta1_default(alg,beta2_default(alg))
 
-qsteady_min_default(alg::OrdinaryDiffEqAlgorithm) = 1
-qsteady_max_default(alg::OrdinaryDiffEqAlgorithm) = 1
+qsteady_min_default(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = 1
+qsteady_max_default(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = 1
 qsteady_max_default(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm) = 6//5
 # But don't re-use Jacobian if not adaptive: too risky and cannot pull back
 qsteady_max_default(alg::OrdinaryDiffEqImplicitAlgorithm) = 1//1
@@ -461,7 +461,7 @@ alg_stability_size(alg::Vern7) = 4.6400
 alg_stability_size(alg::Vern8) = 5.8641
 alg_stability_size(alg::Vern9) = 4.4762
 
-alg_can_repeat_jac(alg::OrdinaryDiffEqAlgorithm) = false
+alg_can_repeat_jac(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 alg_can_repeat_jac(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = true
 alg_can_repeat_jac(alg::IRKC) = false
 
@@ -479,7 +479,7 @@ function unwrap_alg(integrator, is_stiff)
 end
 
 # Whether `uprev` is used in the algorithm directly.
-uses_uprev(alg::OrdinaryDiffEqAlgorithm, adaptive::Bool) = true
+uses_uprev(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}, adaptive::Bool) = true
 uses_uprev(alg::ORK256, adaptive::Bool) = false
 uses_uprev(alg::CarpenterKennedy2N54, adaptive::Bool) = false
 uses_uprev(alg::HSLDDRK64, adaptive::Bool) = false
@@ -509,16 +509,16 @@ uses_uprev(alg::CKLLSRK65_4M_4R, adaptive::Bool) = adaptive
 uses_uprev(alg::CKLLSRK85_4FM_4R, adaptive::Bool) = adaptive
 uses_uprev(alg::CKLLSRK75_4M_5R, adaptive::Bool) = adaptive
 
-ispredictive(alg::OrdinaryDiffEqAlgorithm) = false
+ispredictive(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 ispredictive(alg::Union{RKC}) = true
 ispredictive(alg::Union{SERK2}) = alg.controller === :Predictive
 ispredictive(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Predictive
 isstandard(alg::OrdinaryDiffEqNewtonAdaptiveAlgorithm) = alg.controller === :Standard
 isstandard(alg::Union{GenericImplicitEuler,GenericTrapezoid,VCABM}) = true
-isstandard(alg::OrdinaryDiffEqAlgorithm) = false
-ispi(alg::OrdinaryDiffEqAlgorithm) = !(ispredictive(alg) || isstandard(alg))
+isstandard(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
+ispi(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = !(ispredictive(alg) || isstandard(alg))
 
-isWmethod(alg::OrdinaryDiffEqAlgorithm) = false
+isWmethod(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 isWmethod(alg::Rosenbrock23) = true
 isWmethod(alg::Rosenbrock32) = true
 isWmethod(alg::ROS34PW1a) = true
@@ -531,8 +531,8 @@ isesdirk(alg::TRBDF2) = true
 isesdirk(alg::Union{KenCarp3, KenCarp4, KenCarp5,
                     Kvaerno3, Kvaerno4, Kvaerno5,
                     ESDIRK54I8L2SA}) = true
-isesdirk(alg::OrdinaryDiffEqAlgorithm) = false
+isesdirk(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 
-is_mass_matrix_alg(alg::OrdinaryDiffEqAlgorithm) = false
+is_mass_matrix_alg(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 is_mass_matrix_alg(alg::RosenbrockAlgorithm) = true
 is_mass_matrix_alg(alg::NewtonAlgorithm) = !isesdirk(alg)
