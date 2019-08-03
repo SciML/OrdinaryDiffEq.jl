@@ -282,7 +282,10 @@ end
       # @.. tmp = r*abs(((u - uprev)/dt1 - (uprev - uprev2)/dt2) - ((uprev - uprev2)/dt3 - (uprev2 - uprev3)/dt4)/dt5)
       @.. DD31 = (u - uprev)/dt1 - (uprev- uprev2)/dt2
       @.. DD30 = (uprev - uprev2)/dt3 - (uprev2 - uprev3)/dt4
-      @.. tmp = r*integrator.opts.internalnorm((DD31 - DD30)/dt5,t)
+      @.. tmp = r*integrator.opts.internalnorm((
+          ((u - uprev)/dt1 - (uprev- uprev2)/dt2) #DD31 
+          - ((uprev - uprev2)/dt3 - (uprev2 - uprev3)/dt4) #DD30
+      )/dt5,t)
       calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
       integrator.EEst = integrator.opts.internalnorm(atmp,t)
       if integrator.EEst <= 1
