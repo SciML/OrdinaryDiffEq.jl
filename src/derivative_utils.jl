@@ -377,7 +377,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
   new_W = isnewton ? do_newW(integrator, cache.nlsolver, new_jac, W_dt) : true
 
   # calculate W
-  if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing
+  if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing && !ArrayInterface.isstructured(f.jac_prototype)
     isnewton || DiffEqBase.update_coefficients!(W,uprev,p,t) # we will call `update_coefficients!` in NLNewton
     @label J2W
     W.transform = W_transform; set_gamma!(W, dtgamma)
