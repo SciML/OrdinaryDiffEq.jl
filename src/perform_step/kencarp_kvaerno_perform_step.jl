@@ -207,7 +207,7 @@ end
     nlsolver.tmp += ea21*k1
   end
 
-  nlsolver.c = γ
+  nlsolver.c = 2γ
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
 
@@ -335,7 +335,7 @@ end
     @.. tmp += ea21*k1
   end
 
-  nlsolver.c = γ
+  nlsolver.c = 2γ
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
   set_new_W!(nlsolver, false)
@@ -615,7 +615,7 @@ end
     tmp += ea21*k1
   end
   nlsolver.tmp = tmp
-  nlsolver.c = γ
+  nlsolver.c = 2γ
 
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
@@ -788,14 +788,12 @@ end
     @.. tmp += ea21*k1
   end
 
-  nlsolver.c = γ
+  nlsolver.c = 2γ
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
   set_new_W!(nlsolver, false)
 
   ################################## Solve Step 3
-
-  tstep = t + c3*dt
 
   if typeof(integrator.f) <: SplitFunction
     z₃ .= z₂
@@ -833,8 +831,6 @@ end
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 5
-
-  tstep = t + c5*dt
 
   if typeof(integrator.f) <: SplitFunction
     z₅ .= z₄
@@ -1149,14 +1145,12 @@ end
     tmp += ea21*k1
   end
   nlsolver.tmp = tmp
-  nlsolver.c = γ
+  nlsolver.c = 2γ
 
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 3
-
-  tstep = t + c3*dt
 
   if typeof(integrator.f) <: SplitFunction
     z₃ = z₂
@@ -1354,7 +1348,6 @@ end
   z₂ .= zero(eltype(u))
   nlsolver.z = z₂
 
-  tstep = t + 2*γdt
   @.. tmp = uprev + γ*z₁
 
   if typeof(integrator.f) <: SplitFunction
@@ -1363,14 +1356,12 @@ end
     @.. tmp += ea21*k1
   end
 
-  nlsolver.c = γ
+  nlsolver.c = 2γ
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
   set_new_W!(nlsolver, false)
 
   ################################## Solve Step 3
-
-  tstep = t + c3*dt
 
   if typeof(integrator.f) <: SplitFunction
     z₃ .= z₂
