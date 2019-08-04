@@ -280,10 +280,8 @@ end
       r = c*dt^3/2 # by mean value theorem 3rd DD equals y'''(s)/6 for some s
 
       # @.. tmp = r*abs(((u - uprev)/dt1 - (uprev - uprev2)/dt2) - ((uprev - uprev2)/dt3 - (uprev2 - uprev3)/dt4)/dt5)
-      @.. DD31 = (u - uprev)/dt1 - (uprev- uprev2)/dt2
-      @.. DD30 = (uprev - uprev2)/dt3 - (uprev2 - uprev3)/dt4
       @.. tmp = r*integrator.opts.internalnorm((
-          ((u - uprev)/dt1 - (uprev- uprev2)/dt2) #DD31 
+          ((u - uprev)/dt1 - (uprev- uprev2)/dt2) #DD31
           - ((uprev - uprev2)/dt3 - (uprev2 - uprev3)/dt4) #DD30
       )/dt5,t)
       calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
@@ -1142,7 +1140,7 @@ end
   nlsolver.z = z₂ = zero(z₁)
 
   nlsolver.tmp = uprev + γ*z₁
-  nlsolver.c = γ
+  nlsolver.c = 2γ
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
 
@@ -1247,7 +1245,7 @@ end
   nlsolver.z = z₂
 
   @.. tmp = uprev + γ*z₁
-  nlsolver.c = γ
+  nlsolver.c = 2γ
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
   set_new_W!(nlsolver, false)
