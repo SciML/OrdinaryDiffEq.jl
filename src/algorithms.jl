@@ -1003,6 +1003,31 @@ const SplitAlgorithms = Union{CNAB2,CNLF2,IRKC,SBDF,
 
 
 # DAE Specific Algorithms
-abstract type DAEAlgorithm <: DiffEqBase.AbstractDAEAlgorithm end
+abstract type DAEAlgorithm{CS,AD} <: DiffEqBase.AbstractDAEAlgorithm end
 
-struct TempAlg <: DAEAlgorithm end
+struct DBDF{CS,AD,F,F2,FDT} <: DAEAlgorithm{CS,AD}
+  linsolve::F
+  nlsolve::F2
+  diff_type::FDT
+  extrapolant::Symbol
+end
+
+DBDF(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+     linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),extrapolant=:linear) =
+     DBDF{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
+     linsolve,nlsolve,diff_type,extrapolant)
+
+struct DImplicitEuler{CS,AD,F,F2,FDT} <: DAEAlgorithm{CS,AD}
+  linsolve::F
+  nlsolve::F2
+  diff_type::FDT
+  extrapolant::Symbol
+  controller::Symbol
+end
+DImplicitEuler(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+                          linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
+                          extrapolant=:constant,
+                          controller=:Standard) =
+                          DImplicitEuler{chunk_size,autodiff,typeof(linsolve),
+                          typeof(nlsolve),typeof(diff_type)}(linsolve,
+                          nlsolve,diff_type,extrapolant,controller)

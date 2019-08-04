@@ -84,6 +84,7 @@ module OrdinaryDiffEq
   include("caches/extrapolation_caches.jl")
   include("caches/prk_caches.jl")
   include("caches/pdirk_caches.jl")
+  include("caches/dae_caches.jl")
 
 
   include("alg_utils.jl")

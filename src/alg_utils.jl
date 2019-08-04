@@ -65,14 +65,16 @@ qmax_default(alg::CompositeAlgorithm) = minimum(qmax_default.(alg.algs))
 qmax_default(alg::DP8) = 6
 qmax_default(alg::RadauIIA5) = 8
 
-get_chunksize(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = error("This algorithm does not have a chunk size defined.")
+get_chunksize(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have a chunk size defined.")
 get_chunksize(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) where {CS,AD} = CS
 get_chunksize(alg::OrdinaryDiffEqImplicitAlgorithm{CS,AD}) where {CS,AD} = CS
+get_chunksize(alg::DAEAlgorithm{CS,AD}) where {CS,AD} = CS
 get_chunksize(alg::ExponentialAlgorithm) = alg.chunksize
 # get_chunksize(alg::CompositeAlgorithm) = get_chunksize(alg.algs[alg.current_alg])
 
-alg_autodiff(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = error("This algorithm does not have an autodifferentiation option defined.")
+alg_autodiff(alg::OrdinaryDiffEqAlgorithm) = error("This algorithm does not have an autodifferentiation option defined.")
 alg_autodiff(alg::OrdinaryDiffEqAdaptiveImplicitAlgorithm{CS,AD}) where {CS,AD} = AD
+alg_autodiff(alg::DAEAlgorithm{CS,AD}) where {CS,AD} = AD
 alg_autodiff(alg::OrdinaryDiffEqImplicitAlgorithm{CS,AD}) where {CS,AD} = AD
 alg_autodiff(alg::ExponentialAlgorithm) = alg.autodiff
 # alg_autodiff(alg::CompositeAlgorithm) = alg_autodiff(alg.algs[alg.current_alg])
@@ -346,6 +348,8 @@ alg_order(alg::IRKC) = 2
 
 alg_order(alg::MEBDF2) = 2
 alg_order(alg::PDIRK44) = 4
+
+alg_order(alg::DImplicitEuler) = 1
 
 alg_maximum_order(alg) = alg_order(alg)
 alg_maximum_order(alg::CompositeAlgorithm) = maximum(alg_order(x) for x in alg.algs)

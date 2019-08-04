@@ -526,5 +526,5 @@ function update_W!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqConstant
 end
 
 
-iip_get_uf(alg::OrdinaryDiffEqAlgorithm,nf,t,p) = DiffEqDiffTools.UJacobianWrapper(nf,t,p)
-oop_get_uf(alg::OrdinaryDiffEqAlgorithm,nf,t,p) = DiffEqDiffTools.UDerivativeWrapper(nf,t,p)
+iip_get_uf(alg::Union{DAEAlgorithm,OrdinaryDiffEqAlgorithm},nf,t,p) = DiffEqDiffTools.UJacobianWrapper(nf,t,p)
+oop_get_uf(alg::Union{DAEAlgorithm,OrdinaryDiffEqAlgorithm},nf,t,p) = DiffEqDiffTools.UDerivativeWrapper(nf,t,p)
