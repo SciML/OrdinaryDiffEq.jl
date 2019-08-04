@@ -734,6 +734,14 @@ SDIRK2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
  SDIRK2{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,controller)
 
+struct SDIRK22{F} <: OrdinaryDiffEqAdaptiveAlgorithm
+  nlsolve::F
+  extrapolant::Symbol
+end
+SDIRK22(;
+        nlsolve=NLSOLVEJL_SETUP(),extrapolant=:linear) =
+        SDIRK22{typeof(nlsolve)}(nlsolve,extrapolant)
+
 struct SSPSDIRK2{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD} # Not adaptive
   linsolve::F
   nlsolve::F2
