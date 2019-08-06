@@ -295,7 +295,11 @@ function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachena
             u=+(uprev,$(aijkj...))
             du = f(u, p, t+$(Symbol(:c,i+1))*dt)
             integrator.destats.nf += 1
-            linsolve_tmp=+(du,$(Symbol(:dtd,i+1))*dT,$(Cijkj...))
+            if mass_matrix == I
+                linsolve_tmp=+(du,$(Symbol(:dtd,i+1))*dT,$(Cijkj...))
+            else
+                linsolve_tmp=du+$(Symbol(:dtd,i+1))*dT+mass_matrix*(+(Cijkj...))
+            end
         end)
     end
     push!(iterexprs,specialstepexpr)
@@ -329,6 +333,8 @@ function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachena
             $(dtCijexprs...)
             $(dtdiexprs...)
             dtgamma = dt*gamma
+
+            mass_matrix = integrator.f.mass_matrix
 
             # Time derivative
             tf.u = uprev
@@ -722,7 +728,11 @@ macro Rosenbrock4(part)
             integrator.destats.nsolve += 1
             #u = uprev  + a31*k1 + a32*k2 #a4j=a3j
             #du = f(u, p, t+c3*dt) #reduced function call
-            linsolve_tmp =  du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
+            if mass_matrix == I
+                linsolve_tmp =  du + dtd4*dT + dtC41*k1 + dtC42*k2 + dtC43*k3
+            else
+                linsolve_tmp = du + dtd4*dT + mass_matrix * (dtC41*k1 + dtC42*k2 + dtC43*k3)
+            end
         end
         specialstep=quote
             cache.linsolve(vec(k3), W, vec(linsolve_tmp))
