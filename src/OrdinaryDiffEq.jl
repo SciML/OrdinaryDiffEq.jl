@@ -133,6 +133,7 @@ module OrdinaryDiffEq
   include("perform_step/extrapolation_perform_step.jl")
   include("perform_step/prk_perform_step.jl")
   include("perform_step/pdirk_perform_step.jl")
+  include("perform_step/dae_perform_step.jl")
 
   include("dense/generic_dense.jl")
   include("dense/interpolants.jl")

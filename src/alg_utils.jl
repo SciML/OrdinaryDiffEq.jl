@@ -23,6 +23,7 @@ isfsal(alg::NDBLSRK124) = false
 isfsal(alg::NDBLSRK134) = false
 isfsal(alg::NDBLSRK144) = false
 isfsal(alg::PDIRK44) = false
+isfsal(alg::DImplicitEuler) = false
 get_current_isfsal(alg, cache) = isfsal(alg)
 get_current_isfsal(alg::CompositeAlgorithm, cache) = isfsal(alg.algs[cache.current])
 
@@ -55,6 +56,7 @@ ismultistep(alg::ETD2) = true
 isadaptive(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = false
 isadaptive(alg::OrdinaryDiffEqAdaptiveAlgorithm) = true
 isadaptive(alg::OrdinaryDiffEqCompositeAlgorithm) = all(isadaptive.(alg.algs))
+isadaptive(alg::DImplicitEuler) = true
 
 qmin_default(alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}) = 1//5
 qmin_default(alg::CompositeAlgorithm) = maximum(qmin_default.(alg.algs))

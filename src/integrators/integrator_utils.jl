@@ -125,7 +125,9 @@ function _postamble!(integrator)
   solution_endpoint_match_cur_integrator!(integrator)
   resize!(integrator.sol.t,integrator.saveiter)
   resize!(integrator.sol.u,integrator.saveiter)
-  resize!(integrator.sol.k,integrator.saveiter_dense)
+  if !(integrator.sol isa DAESolution)
+    resize!(integrator.sol.k,integrator.saveiter_dense)
+  end
   if integrator.opts.progress
     @logmsg(-1,
     integrator.opts.progress_name,

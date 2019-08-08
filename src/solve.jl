@@ -1,5 +1,5 @@
-function DiffEqBase.__solve(prob::DiffEqBase.AbstractODEProblem,
-                            alg::OrdinaryDiffEqAlgorithm, args...;
+function DiffEqBase.__solve(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.AbstractDAEProblem},
+                            alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}, args...;
                             kwargs...)
   integrator = DiffEqBase.__init(prob, alg, args...; kwargs...)
   solve!(integrator)
@@ -21,7 +21,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
                            save_start = save_everystep || isempty(saveat) || saveat isa Number || prob.tspan[1] in saveat,
                            save_end = save_everystep || isempty(saveat) || saveat isa Number || prob.tspan[2] in saveat,
                            callback = nothing,
-                           dense = save_everystep && !(typeof(alg) <: FunctionMap) && isempty(saveat),
+                           dense = save_everystep && !(typeof(alg) <: Union{DAEAlgorithm,FunctionMap}) && isempty(saveat),
                            calck = (callback !== nothing && callback != CallbackSet()) || # Empty callback
                                    (prob.callback !== nothing && prob.callback != CallbackSet()) || # Empty prob.callback
                                    (!isempty(setdiff(saveat,tstops)) || dense), # and no dense output
@@ -95,7 +95,7 @@ function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.
 
   t = tspan[1]
 
-  if (((!(typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm) && !(typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm)) || !adaptive) && dt == tType(0) && isempty(tstops)) && !(typeof(alg) <: Union{FunctionMap,LinearExponential})
+  if (((!(typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm) && !(typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm) && !(typeof(alg) <: DAEAlgorithm)) || !adaptive) && dt == tType(0) && isempty(tstops)) && !(typeof(alg) <: Union{FunctionMap,LinearExponential})
       error("Fixed timestep methods require a choice of dt or choosing the tstops")
   end
 
