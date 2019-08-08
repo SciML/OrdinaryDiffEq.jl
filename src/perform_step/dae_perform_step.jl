@@ -2,12 +2,11 @@ function initialize!(integrator, cache::DImplicitEulerCache) end
 
 @muladd function perform_step!(integrator, cache::DImplicitEulerCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack atmp,nlsolver = cache
-  @unpack z,tmp = nlsolver
+  @unpack atmp,tmp = cache
   alg = unwrap_alg(integrator, true)
 
   # initial guess
-  guess = z
+  guess = tmp
   guess .= zero(eltype(u))
 
   zero_func! = (out, x) -> begin

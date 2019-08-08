@@ -240,5 +240,5 @@ module OrdinaryDiffEq
   export AitkenNeville, ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner, ImplicitEulerExtrapolation,
          ImplicitDeuflhardExtrapolation, ImplicitHairerWannerExtrapolation
 
-  export KuttaPRK2p5, PDIRK44
+  export KuttaPRK2p5, PDIRK44, DImplicitEuler
 end # module
