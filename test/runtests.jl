@@ -61,6 +61,7 @@ if !is_APPVEYOR && (GROUP == "All" || GROUP == "Regression")
   @time @safetestset "PSOS Energy Conservation Tests" begin include("regression/psos_and_energy_conservation.jl") end
   @time @safetestset "Unrolled Tests" begin include("regression/ode_unrolled_comparison_tests.jl") end
   @time @safetestset "Time derivative Tests" begin include("regression/time_derivative_test.jl") end
+  @time @safetestset "Inference Tests" begin include("regression/inference.jl") end
 end
 
 if !is_APPVEYOR && (GROUP == "All" || GROUP == "AlgConvergence_I")
@@ -88,6 +89,10 @@ if !is_APPVEYOR && (GROUP == "All" || GROUP == "AlgConvergence_III")
   @time @safetestset "Feagin Tests" begin include("algconvergence/ode_feagin_tests.jl") end
 end
 
+if !is_APPVEYOR && (GROUP == "All" || GROUP == "Downstream")
+  @time @safetestset "DelayDiffEq Tests" begin include("downstream/delaydiffeq.jl") end
+end
+
 if !is_APPVEYOR && GROUP == "ODEInterfaceRegression"
   if is_TRAVIS
     using Pkg
@@ -99,7 +104,10 @@ if !is_APPVEYOR && GROUP == "ODEInterfaceRegression"
 end
 
 if !is_APPVEYOR && GROUP == "GPU"
-  @time @safetestset "Simple GPU" begin include("gpu/simple_gpu.jl") end
+  @time @safetestset "Simple GPU" begin 
+    import OrdinaryDiffEq
+    include(joinpath(dirname(pathof(OrdinaryDiffEq.DiffEqBase)), "..", "test/gpu/simple_gpu.jl")) 
+  end
 end
 
 end # @time

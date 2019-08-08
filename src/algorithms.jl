@@ -114,7 +114,7 @@ function ImplicitDeuflhardExtrapolation(;chunk_size=0,autodiff=true,linsolve=DEF
   # Warn user if orders have been changed
   if (min_order, init_order, max_order) != (n_min,n_init,n_max)
     @warn "The range of extrapolation orders and/or the initial order given to the
-      `ExtrapolationMidpointDeuflhard` algorithm are not valid and have been changed:
+      `ImplicitDeuflhardExtrapolation` algorithm are not valid and have been changed:
       Minimal order: " * lpad(min_order,2," ") * " --> "  * lpad(n_min,2," ") * "
       Maximal order: " * lpad(max_order,2," ") * " --> "  * lpad(n_max,2," ") * "
       Initial order: " * lpad(init_order,2," ") * " --> "  * lpad(n_init,2," ")
@@ -122,7 +122,7 @@ function ImplicitDeuflhardExtrapolation(;chunk_size=0,autodiff=true,linsolve=DEF
 
   # Warn user if sequence has been changed:
   if sequence != :harmonic && sequence != :romberg && sequence != :bulirsch
-    @warn "The `sequence` given to the `ExtrapolationMidpointDeuflhard` algorithm
+    @warn "The `sequence` given to the `ImplicitDeuflhardExtrapolation` algorithm
        is not valid: it must match `:harmonic`, `:romberg` or `:bulirsch`.
        Thus it has been changed
       :$(sequence) --> :harmonic"
@@ -169,7 +169,42 @@ function ExtrapolationMidpointHairerWanner(;min_order=2,init_order=5, max_order=
   ExtrapolationMidpointHairerWanner(n_min,n_init,n_max,sequence,threading)
 end
 
+struct ImplicitHairerWannerExtrapolation{CS,AD,F} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD}
+  linsolve::F  
+  n_min::Int # Minimal extrapolation order
+  n_init::Int # Initial extrapolation order
+  n_max::Int # Maximal extrapolation order
+  sequence::Symbol # Name of the subdividing sequence
+end
+function ImplicitHairerWannerExtrapolation(;chunk_size=0,autodiff=true,linsolve=DEFAULT_LINSOLVE,
+  min_order=2,init_order=5,max_order=10,sequence = :harmonic)
+  # Enforce 2 <=  min_order
+  # and min_order + 1 <= init_order <= max_order - 1:
+  n_min = max(2, min_order)
+  n_init = max(n_min + 1, init_order)
+  n_max = max(n_init + 1, max_order)
 
+  # Warn user if orders have been changed
+  if (min_order, init_order, max_order) != (n_min,n_init,n_max)
+    @warn "The range of extrapolation orders and/or the initial order given to the
+      `ImplicitHairerWannerExtrapolation` algorithm are not valid and have been changed:
+      Minimal order: " * lpad(min_order,2," ") * " --> "  * lpad(n_min,2," ") * "
+      Maximal order: " * lpad(max_order,2," ") * " --> "  * lpad(n_max,2," ") * "
+      Initial order: " * lpad(init_order,2," ") * " --> "  * lpad(n_init,2," ")
+  end
+
+  # Warn user if sequence has been changed:
+  if sequence != :harmonic && sequence != :romberg && sequence != :bulirsch
+    @warn "The `sequence` given to the `ImplicitHairerWannerExtrapolation` algorithm
+       is not valid: it must match `:harmonic`, `:romberg` or `:bulirsch`.
+       Thus it has been changed
+      :$(sequence) --> :harmonic"
+    sequence = :harmonic
+  end
+
+  # Initialize algorithm
+  ImplicitHairerWannerExtrapolation{chunk_size, autodiff, typeof(linsolve)}(linsolve,n_min,n_init,n_max,sequence)
+end
 
 struct RK46NL <: OrdinaryDiffEqAlgorithm end
 struct Heun <: OrdinaryDiffEqAdaptiveAlgorithm end

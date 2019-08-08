@@ -23,7 +23,7 @@ for (i, prob) in enumerate(probArr)
   @test typeof(alg.algs[sol.alg_choice[1]]) <: Rodas5
   i == 1 || @test is_switching_fb(sol) # fails due to eigenvalue estimate of J
   sol = solve(prob, AutoDP5(Rodas5(); maxstiffstep=2, maxnonstiffstep=2,
-                            stifftol=11//10, nonstifftol=9//10),
+                            stifftol=11//10, nonstifftol=9/10),
                             reltol=1e-5, abstol=1e-5)
   @test length(sol.t) < 625
   @test is_switching_fb(sol)

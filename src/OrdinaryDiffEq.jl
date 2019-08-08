@@ -5,7 +5,7 @@ module OrdinaryDiffEq
 
   using Logging
 
-  using MuladdMacro
+  using MuladdMacro, SparseArrays
 
   using LinearAlgebra
 
@@ -15,12 +15,12 @@ module OrdinaryDiffEq
   # Internal utils
   import DiffEqBase: ODE_DEFAULT_NORM, ODE_DEFAULT_ISOUTOFDOMAIN, ODE_DEFAULT_PROG_MESSAGE, ODE_DEFAULT_UNSTABLE_CHECK
 
-  using DiffEqOperators: DiffEqArrayOperator, DEFAULT_UPDATE_FUNC
+  using DiffEqBase: DiffEqArrayOperator, DEFAULT_UPDATE_FUNC
 
   import RecursiveArrayTools: chain, recursivecopy!
 
   using Parameters, GenericSVD, ForwardDiff, RecursiveArrayTools,
-        NLsolve, DataStructures, DiffEqDiffTools
+        NLsolve, DataStructures, DiffEqDiffTools, ArrayInterface
 
   import ForwardDiff.Dual
 
@@ -238,7 +238,7 @@ module OrdinaryDiffEq
          AutoVern6, AutoVern7, AutoVern8, AutoVern9
 
   export AitkenNeville, ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner, ImplicitEulerExtrapolation,
-         ImplicitDeuflhardExtrapolation
+         ImplicitDeuflhardExtrapolation, ImplicitHairerWannerExtrapolation
 
   export KuttaPRK2p5, PDIRK44
 end # module

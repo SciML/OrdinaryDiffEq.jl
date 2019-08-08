@@ -7,6 +7,10 @@ variables:
 cache:
   paths:
     - .julia/
+    
+stages:
+  - build
+  - test
 
 build:
   stage: build
@@ -18,12 +22,7 @@ build:
     - export PATH="$(pwd)/julia-1.1.1/bin:$PATH"
     - julia -e "using InteractiveUtils;
                 versioninfo()"
-    - julia --project -e "using Pkg;
-                          Pkg.update();
-                          Pkg.instantiate();
-                          Pkg.build(\"OrdinaryDiffEq\");
-                          pkg\"precompile\";
-                          using OrdinaryDiffEq;"
+    - julia --project -e "using Pkg; Pkg.build(); using OrdinaryDiffEq"
   only:
   - master
   - tags
@@ -48,7 +47,7 @@ test-GPU:
     - julia -e "using InteractiveUtils;
                 versioninfo()"
     - julia --project -e "using Pkg; Pkg.add(\"CuArrays\");
-                          Pkg.test(\"OrdinaryDiffEq\"; coverage=true);"
+                          Pkg.test(;coverage = true);"
   only:
   - master
   - tags

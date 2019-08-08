@@ -391,7 +391,10 @@ function iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
       J = nf.f
       W = WOperator(f.mass_matrix, dt, J, true)
     else
-      if DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
+      if ArrayInterface.isstructured(f.jac_prototype) || f.jac_prototype isa SparseMatrixCSC
+        J = similar(f.jac_prototype)
+        W = similar(J)
+      elseif DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
         J = nothing
         W = WOperator(f, dt, true)
       else
