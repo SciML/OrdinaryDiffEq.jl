@@ -42,17 +42,8 @@ using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
     @test _norm_dsol(ImplicitEuler(),prob,prob2) ≈ 0 atol=1e-7
     @test _norm_dsol(RadauIIA5(),prob,prob2) ≈ 0 atol=1e-12
     @test _norm_dsol(ImplicitMidpoint(extrapolant = :constant),prob,prob2) ≈ 0 atol=1e-10
-
-    #sol = solve(prob  ,Rosenbrock23())
-    #sol2 = solve(prob2,Rosenbrock23())
-
-    #@test norm(sol .- sol2) ≈ 0 atol=1e-11
-
-    #sol = solve(prob, Rosenbrock32())
-    #sol2 = solve(prob2,Rosenbrock32())
-
-    #@test norm(sol .- sol2) ≈ 0 atol=1e-11
-
+    @test _norm_dsol(Rosenbrock23(),prob,prob2) ≈ 0 atol=1e-11
+    @test _norm_dsol(Rosenbrock32(),prob,prob2) ≈ 0 atol=1e-11
     @test _norm_dsol(ROS3P(),prob,prob2) ≈ 0 atol=1e-11
     @test _norm_dsol(Rodas3(),prob,prob2) ≈ 0 atol=1e-11
     @test _norm_dsol(RosShamp4(),prob,prob2) ≈ 0 atol=1e-10

@@ -157,6 +157,8 @@ end
   dto2 = dt/2
   dto6 = dt/6
 
+  mass_matrix = integrator.f.mass_matrix
+
   # Time derivative
   dT = calc_tderivative(integrator, cache)
 
@@ -166,7 +168,11 @@ end
   f₁ = f(uprev  + dto2*k₁, p, t+dto2)
   integrator.destats.nf += 1
 
-  k₂ = _reshape(W\-_vec(f₁-k₁), axes(uprev)) + k₁
+  if mass_matrix == I
+    k₂ = _reshape(W\-_vec(f₁-k₁), axes(uprev)) + k₁
+  else
+    k₂ = _reshape(W\-_vec(f₁-mass_matrix*k₁), axes(uprev)) + k₁
+  end
   integrator.destats.nsolve += 1
   u = uprev  + dt*k₂
 
@@ -174,7 +180,12 @@ end
     integrator.fsallast = f(u, p, t+dt)
     integrator.destats.nf += 1
 
-    k₃ = _reshape(W\-_vec((integrator.fsallast - c₃₂*(k₂-f₁) - 2*(k₁-integrator.fsalfirst) + dt*dT)), axes(uprev))
+    if mass_matrix == I
+      k₃ = _reshape(W\-_vec((integrator.fsallast - c₃₂*(k₂-f₁) - 2*(k₁-integrator.fsalfirst) + dt*dT)), axes(uprev))
+    else
+      linsolve_tmp = integrator.fsallast - mass_matrix*(c₃₂*k₂ + 2*k₁) +c₃₂*f₁ + 2*integrator.fsalfirst + dt*dT
+      k₃ = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
+    end
     integrator.destats.nsolve += 1
 
     utilde =  dto6*(k₁ - 2*k₂ + k₃)
@@ -196,6 +207,8 @@ end
   dto2 = dt/2
   dto6 = dt/6
 
+  mass_matrix = integrator.f.mass_matrix
+
   # Time derivative
   dT = calc_tderivative(integrator, cache)
 
@@ -208,13 +221,24 @@ end
   f₁ = f(uprev  + dto2*k₁, p, t+dto2)
   integrator.destats.nf += 1
 
-  k₂ = _reshape(W\-_vec(f₁-k₁), axes(uprev)) + k₁
+  if mass_matrix == I
+    k₂ = _reshape(W\-_vec(f₁-k₁), axes(uprev)) + k₁
+  else
+    linsolve_tmp = f₁ - mass_matrix * k₁
+    k₂ = _reshape(W\-_vec(linsolve_tmp), axes(uprev)) + k₁
+  end
+
   integrator.destats.nsolve += 1
   tmp = uprev  + dt*k₂
   integrator.fsallast = f(tmp, p, t+dt)
   integrator.destats.nf += 1
 
-  k₃ = _reshape(W\-_vec((integrator.fsallast - c₃₂*(k₂-f₁) - 2(k₁-integrator.fsalfirst) + dt*dT)), axes(uprev))
+  if mass_matrix == I
+    k₃ = _reshape(W\-_vec((integrator.fsallast - c₃₂*(k₂-f₁) - 2(k₁-integrator.fsalfirst) + dt*dT)), axes(uprev))
+  else
+    linsolve_tmp = integrator.fsallast - mass_matrix*(c₃₂*k₂ + 2k₁) + c₃₂*f₁ + 2*integrator.fsalfirst + dt*dT
+    k₃ = _reshape(W\-_vec(linsolve_tmp), axes(uprev))
+  end
   integrator.destats.nsolve += 1
   u = uprev  + dto6*(k₁ + 4k₂ + k₃)
 
