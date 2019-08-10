@@ -298,7 +298,7 @@ function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachena
             if mass_matrix == I
                 linsolve_tmp=+(du,$(Symbol(:dtd,i+1))*dT,$(Cijkj...))
             else
-                linsolve_tmp=du+$(Symbol(:dtd,i+1))*dT+mass_matrix*(+(Cijkj...))
+                linsolve_tmp=du+$(Symbol(:dtd,i+1))*dT+mass_matrix*(+($(Cijkj...)))
             end
         end)
     end
