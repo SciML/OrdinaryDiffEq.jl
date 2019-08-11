@@ -6,6 +6,13 @@
   atmp::uNoUnitsType
 end
 
+mutable struct DImplicitEulerConstantCache <: OrdinaryDiffEqConstantCache end
+
+function alg_cache(alg::DImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  DImplicitEulerConstantCache()
+end
+
 function alg_cache(alg::DImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
                    tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   atmp = similar(u,uEltypeNoUnits)
