@@ -125,7 +125,9 @@ function _postamble!(integrator)
   solution_endpoint_match_cur_integrator!(integrator)
   resize!(integrator.sol.t,integrator.saveiter)
   resize!(integrator.sol.u,integrator.saveiter)
-  resize!(integrator.sol.k,integrator.saveiter_dense)
+  if !(integrator.sol isa DAESolution)
+    resize!(integrator.sol.k,integrator.saveiter_dense)
+  end
   if integrator.opts.progress
     @logmsg(-1,
     integrator.opts.progress_name,
@@ -377,6 +379,7 @@ nlsolve!(integrator, cache) = DiffEqBase.nlsolve!(cache.nlsolver, cache.nlsolver
 nlsolve!(nlsolver::NLSolver, integrator) = DiffEqBase.nlsolve!(nlsolver, nlsolver.cache, integrator)
 
 DiffEqBase.nlsolve_f(f, alg::OrdinaryDiffEqAlgorithm) = f isa SplitFunction && issplit(alg) ? f.f1 : f
+DiffEqBase.nlsolve_f(f, alg::DAEAlgorithm) = f
 DiffEqBase.nlsolve_f(integrator::ODEIntegrator) =
   nlsolve_f(integrator.f, unwrap_alg(integrator, true))
 

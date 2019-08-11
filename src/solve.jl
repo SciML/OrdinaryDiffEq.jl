@@ -1,13 +1,13 @@
-function DiffEqBase.__solve(prob::DiffEqBase.AbstractODEProblem,
-                            alg::OrdinaryDiffEqAlgorithm, args...;
+function DiffEqBase.__solve(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.AbstractDAEProblem},
+                            alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm}, args...;
                             kwargs...)
   integrator = DiffEqBase.__init(prob, alg, args...; kwargs...)
   solve!(integrator)
   integrator.sol
 end
 
-function DiffEqBase.__init(prob::DiffEqBase.AbstractODEProblem,
-                           alg::OrdinaryDiffEqAlgorithm,
+function DiffEqBase.__init(prob::Union{DiffEqBase.AbstractODEProblem,DiffEqBase.AbstractDAEProblem},
+                           alg::Union{OrdinaryDiffEqAlgorithm,DAEAlgorithm},
                            timeseries_init = typeof(prob.u0)[],
                            ts_init = eltype(prob.tspan)[],
                            ks_init = [],
@@ -21,7 +21,7 @@ function DiffEqBase.__init(prob::DiffEqBase.AbstractODEProblem,
                            save_start = save_everystep || isempty(saveat) || saveat isa Number || prob.tspan[1] in saveat,
                            save_end = save_everystep || isempty(saveat) || saveat isa Number || prob.tspan[2] in saveat,
                            callback = nothing,
-                           dense = save_everystep && !(typeof(alg) <: FunctionMap) && isempty(saveat),
+                           dense = save_everystep && !(typeof(alg) <: Union{DAEAlgorithm,FunctionMap}) && isempty(saveat),
                            calck = (callback !== nothing && callback != CallbackSet()) || # Empty callback
                                    (prob.callback !== nothing && prob.callback != CallbackSet()) || # Empty prob.callback
                                    (!isempty(setdiff(saveat,tstops)) || dense), # and no dense output
@@ -63,11 +63,21 @@ function DiffEqBase.__init(prob::DiffEqBase.AbstractODEProblem,
                            initialize_integrator = true,
                            alias_u0 = false,
                            kwargs...) where recompile_flag
+
+  if prob isa DiffEqBase.AbstractDAEProblem && alg isa OrdinaryDiffEqAlgorithm
+    error("You cannot use an ODE Algorithm with a DAEProblem")
+  end
+
+  if prob isa DiffEqBase.AbstractODEProblem && alg isa DAEAlgorithm
+    error("You cannot use an DAE Algorithm with a ODEProblem")
+  end
+
   if typeof(prob.f)<:DynamicalODEFunction && typeof(prob.f.mass_matrix)<:Tuple
     if any(mm != I for mm in prob.f.mass_matrix)
       error("This solver is not able to use mass matrices.")
     end
   elseif !(typeof(prob)<:DiscreteProblem) &&
+         !(typeof(prob)<:DiffEqBase.AbstractDAEProblem) &&
          !is_mass_matrix_alg(alg) &&
          prob.f.mass_matrix != I
     error("This solver is not able to use mass matrices.")
@@ -85,7 +95,7 @@ function DiffEqBase.__init(prob::DiffEqBase.AbstractODEProblem,
 
   t = tspan[1]
 
-  if (((!(typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm) && !(typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm)) || !adaptive) && dt == tType(0) && isempty(tstops)) && !(typeof(alg) <: Union{FunctionMap,LinearExponential})
+  if (((!(typeof(alg) <: OrdinaryDiffEqAdaptiveAlgorithm) && !(typeof(alg) <: OrdinaryDiffEqCompositeAlgorithm) && !(typeof(alg) <: DAEAlgorithm)) || !adaptive) && dt == tType(0) && isempty(tstops)) && !(typeof(alg) <: Union{FunctionMap,LinearExponential})
       error("Fixed timestep methods require a choice of dt or choosing the tstops")
   end
 
@@ -290,8 +300,13 @@ function DiffEqBase.__init(prob::DiffEqBase.AbstractODEProblem,
     cacheType = typeof(cache)
   else
     FType = Function
-    SolType = DiffEqBase.AbstractODESolution
-    cacheType =  OrdinaryDiffEqCache
+    if alg isa OrdinaryDiffEqAlgorithm
+      SolType = DiffEqBase.AbstractODESolution
+      cacheType =  OrdinaryDiffEqCache
+    else
+      SolType = DiffEqBase.AbstractDAESolution
+      cacheType =  DAECache
+    end 
   end
 
   # rate/state = (state/time)/state = 1/t units, internalnorm drops units

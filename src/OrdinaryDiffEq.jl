@@ -84,6 +84,7 @@ module OrdinaryDiffEq
   include("caches/extrapolation_caches.jl")
   include("caches/prk_caches.jl")
   include("caches/pdirk_caches.jl")
+  include("caches/dae_caches.jl")
 
 
   include("alg_utils.jl")
@@ -132,6 +133,7 @@ module OrdinaryDiffEq
   include("perform_step/extrapolation_perform_step.jl")
   include("perform_step/prk_perform_step.jl")
   include("perform_step/pdirk_perform_step.jl")
+  include("perform_step/dae_perform_step.jl")
 
   include("dense/generic_dense.jl")
   include("dense/interpolants.jl")
@@ -238,5 +240,5 @@ module OrdinaryDiffEq
   export AitkenNeville, ExtrapolationMidpointDeuflhard, ExtrapolationMidpointHairerWanner, ImplicitEulerExtrapolation,
          ImplicitDeuflhardExtrapolation, ImplicitHairerWannerExtrapolation
 
-  export KuttaPRK2p5, PDIRK44
+  export KuttaPRK2p5, PDIRK44, DImplicitEuler
 end # module
