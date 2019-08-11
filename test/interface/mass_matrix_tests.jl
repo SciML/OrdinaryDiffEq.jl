@@ -28,60 +28,39 @@ using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
     prob, prob2
   end
 
+  function _norm_dsol(alg,prob,prob2)
+    sol = solve(prob,  alg,dt=1/10,adaptive=false)
+    sol2 = solve(prob2,alg,dt=1/10,adaptive=false)
+    norm(sol .- sol2)
+  end
+
   # test each method for exactness
   for iip in (false, true)
     mm_A = Float64[-2 1 4; 4 -2 1; 2 1 3]
     prob, prob2 = make_mm_probs(mm_A, Val{iip})
 
-    sol = solve(prob,  ImplicitEuler(),dt=1/10,adaptive=false)
-    sol2 = solve(prob2,ImplicitEuler(),dt=1/10,adaptive=false)
-
-    @test norm(sol .- sol2) ≈ 0 atol=1e-7
-
-    sol = solve(prob,  RadauIIA5(),dt=1/10,adaptive=false)
-    sol2 = solve(prob2,RadauIIA5(),dt=1/10,adaptive=false)
-
-    @test norm(sol .- sol2) ≈ 0 atol=1e-12
-
-    sol = solve(prob,  ImplicitMidpoint(extrapolant = :constant),dt=1/10)
-    sol2 = solve(prob2,ImplicitMidpoint(extrapolant = :constant),dt=1/10)
-
-    if iip
-      sol = solve(prob  ,Rosenbrock23())
-      sol2 = solve(prob2,Rosenbrock23())
-
-      @test norm(sol .- sol2) ≈ 0 atol=1e-11
-
-      sol = solve(prob, Rosenbrock32())
-      sol2 = solve(prob2,Rosenbrock32())
-
-      @test norm(sol .- sol2) ≈ 0 atol=1e-11
-
-      sol = solve(prob,  ROS3P())
-      sol2 = solve(prob2,ROS3P())
-
-      @test norm(sol .- sol2) ≈ 0 atol=1e-11
-
-      sol = solve(prob,  Rodas3())
-      sol2 = solve(prob2,Rodas3())
-
-      @test norm(sol .- sol2) ≈ 0 atol=1e-11
-
-      sol = solve(prob,  RosShamp4())
-      sol2 = solve(prob2,RosShamp4())
-
-      @test norm(sol .- sol2) ≈ 0 atol=1e-10
-
-      sol = solve(prob,  Rodas4())
-      sol2 = solve(prob2,Rodas4())
-
-      @test norm(sol .- sol2) ≈ 0 atol=1e-9
-
-      sol = solve(prob,  Rodas5())
-      sol2 = solve(prob2,Rodas5())
-
-      @test norm(sol .- sol2) ≈ 0 atol=1e-7
-    end
+    @test _norm_dsol(ImplicitEuler(),prob,prob2) ≈ 0 atol=1e-7
+    @test _norm_dsol(RadauIIA5(),prob,prob2) ≈ 0 atol=1e-12
+    @test _norm_dsol(ImplicitMidpoint(extrapolant = :constant),prob,prob2) ≈ 0 atol=1e-10
+    @test _norm_dsol(Rosenbrock23(),prob,prob2) ≈ 0 atol=1e-11
+    @test _norm_dsol(Rosenbrock32(),prob,prob2) ≈ 0 atol=1e-11
+    @test _norm_dsol(ROS3P(),prob,prob2) ≈ 0 atol=1e-11
+    @test _norm_dsol(Rodas3(),prob,prob2) ≈ 0 atol=1e-11
+    @test _norm_dsol(RosShamp4(),prob,prob2) ≈ 0 atol=1e-10
+    @test _norm_dsol(Veldd4(),prob,prob2) ≈ 0 atol=1e-10
+    @test _norm_dsol(Velds4(),prob,prob2) ≈ 0 atol=1e-10
+    @test _norm_dsol(GRK4T(),prob,prob2) ≈ 0 atol=1e-10
+    @test _norm_dsol(GRK4A(),prob,prob2) ≈ 0 atol=1e-10
+    @test _norm_dsol(Ros4LStab(),prob,prob2) ≈ 0 atol=1e-10
+    @test _norm_dsol(RosenbrockW6S4OS(),prob,prob2) ≈ 0 atol=1e-10
+    @test _norm_dsol(ROS34PW1a(),prob,prob2) ≈ 0 atol=1e-10
+    @test _norm_dsol(ROS34PW1b(),prob,prob2) ≈ 0 atol=1e-10
+    @test _norm_dsol(ROS34PW2(),prob,prob2) ≈ 0 atol=1e-10
+    @test _norm_dsol(ROS34PW3(),prob,prob2) ≈ 0 atol=1e-10
+    @test _norm_dsol(Rodas4(),prob,prob2) ≈ 0 atol=1e-9
+    @test _norm_dsol(Rodas42(),prob,prob2) ≈ 0 atol=1e-9
+    @test _norm_dsol(Rodas4P(),prob,prob2) ≈ 0 atol=1e-9
+    @test _norm_dsol(Rodas5(),prob,prob2) ≈ 0 atol=1e-7
   end
 
   # test functional iteration
