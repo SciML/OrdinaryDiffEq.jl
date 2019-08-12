@@ -47,11 +47,15 @@ either ForwardDiff or finite difference will be used depending on the
 `jac_config` of the cache.
 """
 function calc_J(integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,uprev,f,p = integrator
+
   if DiffEqBase.has_jac(f)
     J = f.jac(uprev, p, t)
   else
-    J = jacobian(cache.uf,uprev,integrator)
+    @unpack uf = cache
+    uf.t = t
+    uf.p = p
+    J = jacobian(uf,uprev,integrator)
   end
   integrator.destats.njacs += 1
   is_compos && (integrator.eigen_est = opnorm(J, Inf))
@@ -59,11 +63,15 @@ function calc_J(integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
 end
 
 function calc_J(nlsolver, integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,uprev,f,p = integrator
+
   if DiffEqBase.has_jac(f)
     J = f.jac(uprev, p, t)
   else
-    J = jacobian(nlsolver.uf,uprev,integrator)
+    @unpack uf = nlsolver.cache
+    uf.t = t
+    uf.p = p
+    J = jacobian(uf,uprev,integrator)
   end
   integrator.destats.njacs += 1
   is_compos && (integrator.eigen_est = opnorm(J, Inf))
@@ -92,12 +100,13 @@ function calc_J!(integrator, cache::OrdinaryDiffEqMutableCache, is_compos)
 end
 
 function calc_J!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqMutableCache, is_compos)
-  @unpack t,dt,uprev,u,f,p = integrator
-  @unpack du1,uf,jac_config = nlsolver
+  @unpack t,uprev,f,p = integrator
+
   J = nlsolver.cache.J
   if DiffEqBase.has_jac(f)
     f.jac(J, uprev, p, t)
   else
+    @unpack du1,uf,jac_config = nlsolver.cache
     uf.t = t
     uf.p = p
     jacobian!(J, uf, uprev, du1, integrator, jac_config)
@@ -107,7 +116,8 @@ function calc_J!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqMutableCac
 end
 
 function calc_J_in_cache!(integrator, cache::OrdinaryDiffEqMutableCache, is_compos)
-  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack t,uprev,f,p = integrator
+
   J = cache.J
   if DiffEqBase.has_jac(f)
     f.jac(J, uprev, p, t)
@@ -305,7 +315,7 @@ function do_newW(integrator, nlsolver::T, new_jac, W_dt)::Bool where T # any cha
   new_jac && return true
   # reuse W when the change in stepsize is small enough
   dt = integrator.dt
-  new_W_dt_cutoff = T <: NLSolver ? nlsolver.cache.new_W_dt_cutoff : #= FIRK =# nlsolver.new_W_dt_cutoff
+  new_W_dt_cutoff = T <: NLSolver ? nlsolver.alg.new_W_dt_cutoff : #= FIRK =# nlsolver.new_W_dt_cutoff
   smallstepchange = (dt/W_dt-one(dt)) <= new_W_dt_cutoff
   return !smallstepchange
 end
@@ -372,7 +382,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
   end
 
   # check if we need to update J or W
-  W_dt = isnewton ? cache.nlsolver.cache.W_dt : dt # TODO: RosW
+  W_dt = isnewton ? DiffEqBase.get_W_dt(cache.nlsolver) : dt # TODO: RosW
   new_jac = isnewton ? do_newJ(integrator, alg, cache, repeat_step) : true
   new_W = isnewton ? do_newW(integrator, cache.nlsolver, new_jac, W_dt) : true
 
@@ -423,7 +433,7 @@ function calc_W!(nlsolver, integrator, cache::OrdinaryDiffEqMutableCache, dtgamm
   end
 
   # check if we need to update J or W
-  W_dt = isnewton ? nlsolver.cache.W_dt : dt # TODO: RosW
+  W_dt = isnewton ? DiffEqBase.get_W_dt(nlsolver) : dt # TODO: RosW
   new_jac = isnewton ? do_newJ(integrator, alg, cache, repeat_step) : true
   new_W = isnewton ? do_newW(integrator, nlsolver, new_jac, W_dt) : true
 
@@ -445,11 +455,10 @@ end
 
 function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat_step, W_transform=false)
   @unpack t,uprev,p,f = integrator
-  @unpack uf = cache
   mass_matrix = integrator.f.mass_matrix
   isarray = typeof(uprev) <: AbstractArray
+
   # calculate W
-  uf.t = t
   is_compos = typeof(integrator.alg) <: CompositeAlgorithm
   if (f isa ODEFunction && islinear(f.f)) || (f isa SplitFunction && islinear(f.f1.f))
     J = f.f1.f
@@ -474,11 +483,10 @@ end
 
 function calc_W!(nlsolver, integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat_step, W_transform=false)
   @unpack t,uprev,p,f = integrator
-  @unpack uf = nlsolver
   mass_matrix = integrator.f.mass_matrix
   isarray = typeof(uprev) <: AbstractArray
+
   # calculate W
-  uf.t = t
   is_compos = typeof(integrator.alg) <: CompositeAlgorithm
   if (f isa ODEFunction && islinear(f.f)) || (f isa SplitFunction && islinear(f.f1.f))
     J = f.f1.f

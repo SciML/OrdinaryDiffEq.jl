@@ -119,7 +119,7 @@ end
   nlsolver.c = γ
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
-  set_new_W!(nlsolver, false)
+  isnewton(nlsolver) && set_new_W!(nlsolver, false)
 
   ################################## Solve Step 3
 
@@ -155,7 +155,8 @@ end
     @.. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
-      nlsolver.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
+      linsolve = get_linsolve(nlsolver)
+      linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
     else
       tmp .= dz
     end
@@ -338,7 +339,7 @@ end
   nlsolver.c = γ
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
-  set_new_W!(nlsolver, false)
+  isnewton(nlsolver) && set_new_W!(nlsolver, false)
 
   ################################## Solve Step 3
 
@@ -407,7 +408,8 @@ end
     end
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
-      nlsolver.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
+      linsolve = get_linsolve(nlsolver)
+      linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
     else
       tmp .= dz
     end
@@ -528,7 +530,7 @@ end
   nlsolver.c = γ
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
-  set_new_W!(nlsolver, false)
+  isnewton(nlsolver) && set_new_W!(nlsolver, false)
 
   ################################## Solve Step 3
 
@@ -570,7 +572,8 @@ end
     @.. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
-      nlsolver.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
+      linsolve = get_linsolve(nlsolver)
+      linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
     else
       tmp .= dz
     end
@@ -803,7 +806,7 @@ end
   nlsolver.c = γ
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
-  set_new_W!(nlsolver, false)
+  isnewton(nlsolver) && set_new_W!(nlsolver, false)
 
   ################################## Solve Step 3
 
@@ -928,7 +931,8 @@ end
 
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
-      nlsolver.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
+      linsolve = get_linsolve(nlsolver)
+      linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
     else
       tmp .= dz
     end
@@ -1067,7 +1071,7 @@ end
   nlsolver.c = γ
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
-  set_new_W!(nlsolver, false)
+  isnewton(nlsolver) && set_new_W!(nlsolver, false)
 
   ################################## Solve Step 3
 
@@ -1138,7 +1142,8 @@ end
     end
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
-      nlsolver.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
+      linsolve = get_linsolve(nlsolver)
+      linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
     else
       tmp .= dz
     end
@@ -1415,7 +1420,7 @@ end
   nlsolver.c = γ
   z₂ = nlsolve!(integrator, cache)
   nlsolvefail(nlsolver) && return
-  set_new_W!(nlsolver, false)
+  isnewton(nlsolver) && set_new_W!(nlsolver, false)
 
   ################################## Solve Step 3
 
@@ -1590,7 +1595,8 @@ end
 
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
-      nlsolver.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
+      linsolve = get_linsolve(nlsolver)
+      linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
     else
       tmp .= dz
     end

@@ -40,7 +40,7 @@ module OrdinaryDiffEq
 
   using DiffEqBase: check_error!, @def, @.. , _vec, _reshape
 
-  using DiffEqBase: nlsolvefail, isnewton, set_new_W!, get_W, iipnlsolve, oopnlsolve, @getiipnlsolvefields, @getoopnlsolvefields
+  using DiffEqBase: nlsolvefail, isnewton, set_new_W!, get_W, get_linsolve, iipnlsolve, oopnlsolve
 
   using DiffEqBase: NLSolver
 
