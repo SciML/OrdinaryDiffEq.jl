@@ -3,7 +3,7 @@ abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
 
 # Shampine's Low-order Rosenbrocks
 
-@cache mutable struct Rosenbrock23Cache{uType,rateType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+@cache mutable struct Rosenbrock23Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   k₁::rateType
@@ -18,6 +18,7 @@ abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
   J::JType
   W::WType
   tmp::rateType
+  atmp::uNoUnitsType
   tab::TabType
   tf::TFType
   uf::UFType
@@ -27,7 +28,7 @@ abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
   grad_config::GCType
 end
 
-@cache mutable struct Rosenbrock32Cache{uType,rateType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+@cache mutable struct Rosenbrock32Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   k₁::rateType
@@ -42,6 +43,7 @@ end
   J::JType
   W::WType
   tmp::rateType
+  atmp::uNoUnitsType
   tab::TabType
   tf::TFType
   uf::UFType
@@ -73,6 +75,7 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,uBottomElty
     W = similar(J)
   end
   tmp = zero(rate_prototype)
+  atmp = similar(u, uEltypeNoUnits)
   tab = Rosenbrock23ConstantCache(real(uBottomEltypeNoUnits),identity,identity)
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
@@ -83,7 +86,7 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,uBottomElty
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
 
   Rosenbrock23Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,
-                    fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
+                    fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
                     linsolve,jac_config,grad_config)
 end
 
@@ -109,6 +112,7 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,uBottomElty
     W = similar(J)
   end
   tmp = zero(rate_prototype)
+  atmp = similar(u, uEltypeNoUnits)
   tab = Rosenbrock32ConstantCache(real(uBottomEltypeNoUnits),identity,identity)
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
@@ -117,7 +121,7 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,uBottomElty
   linsolve = alg.linsolve(Val{:init},uf,u)
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
-  Rosenbrock32Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,linsolve,jac_config,grad_config)
+  Rosenbrock32Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,linsolve,jac_config,grad_config)
 end
 
 struct Rosenbrock23ConstantCache{T,TF,UF} <: OrdinaryDiffEqConstantCache
@@ -168,7 +172,7 @@ struct Rosenbrock33ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
   tab::Tab
 end
 
-@cache mutable struct Rosenbrock33Cache{uType,rateType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+@cache mutable struct Rosenbrock33Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   du::rateType
@@ -184,6 +188,7 @@ end
   J::JType
   W::WType
   tmp::rateType
+  atmp::uNoUnitsType
   tab::TabType
   tf::TFType
   uf::UFType
@@ -215,6 +220,7 @@ function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
     W = similar(J)
   end
   tmp = zero(rate_prototype)
+  atmp = similar(u, uEltypeNoUnits)
   tab = ROS3PConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
@@ -223,7 +229,7 @@ function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock33Cache(u,uprev,du,du1,du2,k1,k2,k3,k4,
-                    fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
+                    fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
                     linsolve,jac_config,grad_config)
 end
 
@@ -233,7 +239,7 @@ function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   Rosenbrock33ConstantCache(tf,uf,ROS3PConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)))
 end
 
-@cache mutable struct Rosenbrock34Cache{uType,rateType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+@cache mutable struct Rosenbrock34Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   du::rateType
@@ -249,6 +255,7 @@ end
   J::JType
   W::WType
   tmp::rateType
+  atmp::uNoUnitsType
   tab::TabType
   tf::TFType
   uf::UFType
@@ -280,6 +287,7 @@ function alg_cache(alg::Rodas3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     W = similar(J)
   end
   tmp = zero(rate_prototype)
+  atmp = similar(u, uEltypeNoUnits)
   tab = Rodas3ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
@@ -289,7 +297,7 @@ function alg_cache(alg::Rodas3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock34Cache(u,uprev,du,du1,du2,k1,k2,k3,k4,
-                    fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
+                    fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
                     linsolve,jac_config,grad_config)
 end
 
@@ -328,7 +336,7 @@ struct Rodas4ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
   tab::Tab
 end
 
-@cache mutable struct Rodas4Cache{uType,rateType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+@cache mutable struct Rodas4Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   dense1::rateType
@@ -348,6 +356,7 @@ end
   J::JType
   W::WType
   tmp::rateType
+  atmp::uNoUnitsType
   tab::TabType
   tf::TFType
   uf::UFType
@@ -383,6 +392,7 @@ function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     W = similar(J)
   end
   tmp = zero(rate_prototype)
+  atmp = similar(u, uEltypeNoUnits)
   tab = Rodas4ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
@@ -393,7 +403,7 @@ function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
                     k5,k6,
-                    fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
+                    fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
                     linsolve,jac_config,grad_config)
 end
 
@@ -429,6 +439,7 @@ function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
     W = similar(J)
   end
   tmp = zero(rate_prototype)
+  atmp = similar(u, uEltypeNoUnits)
   tab = Rodas42ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
@@ -439,7 +450,7 @@ function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
                     k5,k6,
-                    fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
+                    fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
                     linsolve,jac_config,grad_config)
 end
 
@@ -475,6 +486,7 @@ function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
     W = similar(J)
   end
   tmp = zero(rate_prototype)
+  atmp = similar(u, uEltypeNoUnits)
   tab = Rodas4PConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
@@ -485,7 +497,7 @@ function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
                     k5,k6,
-                    fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
+                    fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
                     linsolve,jac_config,grad_config)
 end
 
@@ -505,7 +517,7 @@ struct Rosenbrock5ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
   tab::Tab
 end
 
-@cache mutable struct Rosenbrock5Cache{uType,rateType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+@cache mutable struct Rosenbrock5Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   dense1::rateType
@@ -527,6 +539,7 @@ end
   J::JType
   W::WType
   tmp::rateType
+  atmp::uNoUnitsType
   tab::TabType
   tf::TFType
   uf::UFType
@@ -564,6 +577,7 @@ function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
     W = similar(J)
   end
   tmp = zero(rate_prototype)
+  atmp = similar(u, uEltypeNoUnits)
   tab = Rodas5ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
@@ -574,7 +588,7 @@ function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
   Rosenbrock5Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
                     k5,k6,k7,k8,
-                    fsalfirst,fsallast,dT,J,W,tmp,tab,tf,uf,linsolve_tmp,
+                    fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
                     linsolve,jac_config,grad_config)
 end
 

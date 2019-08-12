@@ -25,7 +25,7 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock23Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,jac_config = cache
+  @unpack k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,jac_config,atmp = cache
   @unpack c₃₂,d = cache.tab
 
   # Assignments
@@ -79,15 +79,14 @@ end
     integrator.destats.nsolve += 1
 
     @.. tmp = dto6*(k₁ - 2*k₂ + k₃)
-    # does not work with units - additional unitless array required!
-    calculate_residuals!(tmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
-    integrator.EEst = integrator.opts.internalnorm(tmp,t)
+    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock32Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,jac_config = cache
+  @unpack k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,jac_config,atmp = cache
   @unpack c₃₂,d = cache.tab
 
   # Assignments
@@ -142,9 +141,8 @@ end
 
   if integrator.opts.adaptive
     @.. tmp = dto6*(k₁ - 2*k₂ + k₃)
-    # does not work with units - additional unitless array required!
-    calculate_residuals!(tmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
-    integrator.EEst = integrator.opts.internalnorm(tmp,t)
+    calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
+    integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 end
 
@@ -352,14 +350,13 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock33Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack du,du1,du2,fsalfirst,fsallast,k1,k2,k3,dT,J,W,uf,tf,linsolve_tmp,jac_config = cache
+  @unpack du,du1,du2,fsalfirst,fsallast,k1,k2,k3,dT,J,W,uf,tf,linsolve_tmp,jac_config,atmp = cache
   @unpack a21,a31,a32,C21,C31,C32,b1,b2,b3,btilde1,btilde2,btilde3,gamma,c2,c3,d1,d2,d3 = cache.tab
 
   # Assignments
   mass_matrix = integrator.f.mass_matrix
   sizeu  = size(u)
   utilde = du
-  atmp = du # does not work with units - additional unitless array required!
 
   # Precalculations
   dtC21 = C21/dt
@@ -503,7 +500,7 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock34Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack du,du1,du2,fsalfirst,fsallast,k1,k2,k3,k4,dT,J,W,uf,tf,linsolve_tmp,jac_config = cache
+  @unpack du,du1,du2,fsalfirst,fsallast,k1,k2,k3,k4,dT,J,W,uf,tf,linsolve_tmp,jac_config,atmp = cache
   @unpack a21,a31,a32,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4 = cache.tab
 
   # Assignments
@@ -511,7 +508,6 @@ end
   sizeu  = size(u)
   mass_matrix = integrator.f.mass_matrix
   utilde = du
-  atmp = du # does not work with units - additional unitless array required!
 
   # Precalculations
   dtC21 = C21/dt
@@ -747,14 +743,13 @@ end
 
 @muladd function perform_step!(integrator, cache::Rodas4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack du,du1,du2,dT,J,W,uf,tf,k1,k2,k3,k4,k5,k6,linsolve_tmp,jac_config = cache
+  @unpack du,du1,du2,dT,J,W,uf,tf,k1,k2,k3,k4,k5,k6,linsolve_tmp,jac_config,atmp = cache
   @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,gamma,c2,c3,c4,d1,d2,d3,d4 = cache.tab
 
   # Assignments
   sizeu  = size(u)
   uidx = eachindex(integrator.uprev)
   mass_matrix = integrator.f.mass_matrix
-  atmp = du # does not work with units - additional unitless array required!
 
   # Precalculations
   dtC21 = C21/dt
@@ -1050,14 +1045,13 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock5Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack du,du1,du2,fsalfirst,fsallast,k1,k2,k3,k4,k5,k6,k7,k8,dT,J,W,uf,tf,linsolve_tmp,jac_config = cache
+  @unpack du,du1,du2,fsalfirst,fsallast,k1,k2,k3,k4,k5,k6,k7,k8,dT,J,W,uf,tf,linsolve_tmp,jac_config,atmp = cache
   @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,C71,C72,C73,C74,C75,C76,C81,C82,C83,C84,C85,C86,C87,gamma,d1,d2,d3,d4,d5,c2,c3,c4,c5 = cache.tab
 
   # Assignments
   sizeu  = size(u)
   uidx = eachindex(integrator.uprev)
   mass_matrix = integrator.f.mass_matrix
-  atmp = du # does not work with units - additional unitless array required!
 
   # Precalculations
   dtC21 = C21/dt
