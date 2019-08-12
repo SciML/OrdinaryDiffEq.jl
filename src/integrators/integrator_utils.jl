@@ -375,8 +375,6 @@ function reset_fsal!(integrator)
   # integrator.reeval_fsal = false
 end
 
-nlsolve!(integrator, cache) = DiffEqBase.nlsolve!(cache.nlsolver, integrator)
-
 DiffEqBase.nlsolve_f(f, alg::OrdinaryDiffEqAlgorithm) = f isa SplitFunction && issplit(alg) ? f.f1 : f
 DiffEqBase.nlsolve_f(f, alg::DAEAlgorithm) = f
 DiffEqBase.nlsolve_f(integrator::ODEIntegrator) =
