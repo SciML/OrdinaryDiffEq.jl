@@ -169,7 +169,7 @@ function gen_cache_struct(tab::RosenbrockTableau,cachename::Symbol,constcachenam
         end
     end
     cacheexpr=quote
-        @cache mutable struct $cachename{uType,rateType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+        @cache mutable struct $cachename{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
             u::uType
             uprev::uType
             du::rateType
@@ -182,6 +182,7 @@ function gen_cache_struct(tab::RosenbrockTableau,cachename::Symbol,constcachenam
             J::JType
             W::WType
             tmp::rateType
+            atmp::uNoUnitsType
             tab::TabType
             tf::TFType
             uf::UFType
@@ -225,6 +226,7 @@ function gen_algcache(cacheexpr::Expr,cachename::Symbol,constcachename::Symbol,a
               W = similar(J)
             end
             tmp = zero(rate_prototype)
+            atmp = similar(u, uEltypeNoUnits)
             tab = $tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
             tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
@@ -423,14 +425,13 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
     quote
         @muladd function perform_step!(integrator, cache::$cachename, repeat_step=false)
             @unpack t,dt,uprev,u,f,p = integrator
-            @unpack du,du1,du2,fsallast,dT,J,W,uf,tf,$(ks...),linsolve_tmp,jac_config = cache
+            @unpack du,du1,du2,fsallast,dT,J,W,uf,tf,$(ks...),linsolve_tmp,jac_config,atmp = cache
             $unpacktabexpr
 
             # Assignments
             sizeu  = size(u)
             uidx = eachindex(integrator.uprev)
             mass_matrix = integrator.f.mass_matrix
-            atmp = du # does not work with units - additional unitless array required!
 
             # Precalculations
             $(dtCij...)
