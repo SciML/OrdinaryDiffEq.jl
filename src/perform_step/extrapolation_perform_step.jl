@@ -332,23 +332,54 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
 
   max_order = min(size(T)[1], cur_order+1)
 
-  for i in 1:max_order
-    dt_temp = dt/(2^(i-1)) # Romberg sequence
-    W = calc_W!(integrator, cache, dt_temp, repeat_step)
-    k_copy = integrator.fsalfirst
-    u_tmp = uprev
-    for j in 1:2^(i-1)
-        k = _reshape(W\-_vec(dt_temp*k_copy), axes(uprev))
-        integrator.destats.nsolve += 1
-        u_tmp = u_tmp + k
-        k_copy = f(u_tmp, p, t+j*dt_temp)
+  if integrator.alg.threading == false
+    for i in 1:max_order
+      dt_temp = dt/(2^(i-1)) # Romberg sequence
+      W = calc_W!(integrator, cache, dt_temp, repeat_step)
+      k_copy = integrator.fsalfirst
+      u_tmp = uprev
+      for j in 1:2^(i-1)
+          k = _reshape(W\-_vec(dt_temp*k_copy), axes(uprev))
+          integrator.destats.nsolve += 1
+          u_tmp = u_tmp + k
+          k_copy = f(u_tmp, p, t+j*dt_temp)
+      end
+      T[i,1] = u_tmp
+      # Richardson Extrapolation
+      for j in 2:i
+        T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
+      end
     end
-    T[i,1] = u_tmp
-    # Richardson Extrapolation
-    for j in 2:i
-      T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
+  else
+    let max_order=max_order, dt=dt, integrator=integrator, cache=cache, repeat_step=repeat_step,
+      uprev=uprev, T=T
+      Threads.@threads for i in 1:2
+        println(Threads.threadid())
+        startIndex = (i==1) ? 1 : max_order
+        endIndex = (i==1) ? max_order-1 : max_order
+        for index in startIndex:endIndex
+          dt_temp = dt/(2^(index-1)) # Romberg sequence
+          W = calc_W!(integrator, cache, dt_temp, repeat_step)
+          k_copy = integrator.fsalfirst
+          u_tmp = uprev
+          for j in 1:2^(index-1)
+              k = _reshape(W\-_vec(dt_temp*k_copy), axes(uprev))
+              integrator.destats.nsolve += 1
+              u_tmp = u_tmp + k
+              k_copy = f(u_tmp, p, t+j*dt_temp)
+          end
+          T[index,1] = u_tmp
+        end
+      end
+
+      for i=2:max_order
+        for j=2:i
+          T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
+        end
+      end
     end
   end
+
   integrator.destats.nf += 2^(max_order) - 1
   integrator.dt = dt
 
@@ -391,9 +422,9 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
 
   # Use extrapolated value of u
   integrator.u = T[cache.cur_order, cache.cur_order]
-  k = f(integrator.u, p, t+dt)
+  k_temp = f(integrator.u, p, t+dt)
   integrator.destats.nf += 1
-  integrator.fsallast = k
+  integrator.fsallast = k_temp
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
 end

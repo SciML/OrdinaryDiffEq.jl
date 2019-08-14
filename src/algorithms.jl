@@ -53,14 +53,15 @@ struct ImplicitEulerExtrapolation{CS,AD,F,F2} <: OrdinaryDiffEqImplicitExtrapola
   max_order::Int
   min_order::Int
   init_order::Int
+  threading::Bool
 end
 
 
 ImplicitEulerExtrapolation(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
                           linsolve=DEFAULT_LINSOLVE,
-                          max_order=10,min_order=1,init_order=5) =
+                          max_order=10,min_order=1,init_order=5,threading=true) =
                           ImplicitEulerExtrapolation{chunk_size,autodiff,
-                          typeof(linsolve),typeof(diff_type)}(linsolve,max_order,min_order,init_order)
+                          typeof(linsolve),typeof(diff_type)}(linsolve,max_order,min_order,init_order,threading)
 
 struct ExtrapolationMidpointDeuflhard <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
   n_min::Int # Minimal extrapolation order
