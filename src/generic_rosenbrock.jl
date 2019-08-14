@@ -209,7 +209,7 @@ function gen_algcache(cacheexpr::Expr,cachename::Symbol,constcachename::Symbol,a
         function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
             tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
             uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-            J,W = _make_J_W(f,dt,rate_prototype)
+            J,W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
             $constcachename(tf,uf,$tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W)
         end
         function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -220,13 +220,7 @@ function gen_algcache(cacheexpr::Expr,cachename::Symbol,constcachename::Symbol,a
             fsalfirst = zero(rate_prototype)
             fsallast = zero(rate_prototype)
             dT = zero(rate_prototype)
-            if DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
-              W = WOperator(f, dt, true)
-              J = nothing # is J = W.J better?
-            else
-              J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
-              W = similar(J)
-            end
+            J,W = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
             tmp = zero(rate_prototype)
             tab = $tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
 
