@@ -429,22 +429,18 @@ function oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
     W = WOperator(f, dt, true)
     J = W.J
   # https://github.com/JuliaDiffEq/OrdinaryDiffEq.jl/pull/672
-  elseif u isa StaticArray
-    # get a "fake" `J`
-    J = if ndims(u) == 2 # `u` is already a matrix
-      u
-    else # `u` is a vector
-      hcat(u, u)
-    end
-    W = lu(J)
-  elseif u isa Number
-    J = u
-    W = u
   else
-    W = LU{LinearAlgebra.lutype(uEltypeNoUnits)}(Matrix{uEltypeNoUnits}(undef, 0, 0),
-                                                 Vector{LinearAlgebra.BlasInt}(undef, 0),
-                                                 zero(LinearAlgebra.BlasInt))
+    # get a "fake" `J`
     J = false .* _vec(u) .* _vec(u)'
+    W = if u isa StaticArray
+      lu(J)
+      elseif u isa Number
+        u
+      else
+        LU{LinearAlgebra.lutype(uEltypeNoUnits)}(Matrix{uEltypeNoUnits}(undef, 0, 0),
+                                                     Vector{LinearAlgebra.BlasInt}(undef, 0),
+                                                     zero(LinearAlgebra.BlasInt))
+      end
   end
   J, W
 end
