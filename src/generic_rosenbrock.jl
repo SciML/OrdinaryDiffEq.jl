@@ -162,10 +162,12 @@ because in the end of Rosenbrock's method, we have: `y_{n+1}=y_n+ki*bi`.
 """
 function gen_cache_struct(tab::RosenbrockTableau,cachename::Symbol,constcachename::Symbol)
     kstype=[:($(Symbol(:k,i))::rateType) for i in 1:length(tab.b)]
-    constcacheexpr=quote struct $constcachename{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
+    constcacheexpr=quote struct $constcachename{TF,UF,Tab,JType,WType} <: OrdinaryDiffEqConstantCache
             tf::TF
             uf::UF
             tab::Tab
+            J::JType
+            W::WType
         end
     end
     cacheexpr=quote
@@ -207,7 +209,8 @@ function gen_algcache(cacheexpr::Expr,cachename::Symbol,constcachename::Symbol,a
         function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
             tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
             uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-            $constcachename(tf,uf,$tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)))
+            J,W = _make_J_W(f,dt,rate_prototype)
+            $constcachename(tf,uf,$tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W)
         end
         function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
             du = zero(rate_prototype)

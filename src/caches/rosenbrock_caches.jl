@@ -1,3 +1,20 @@
+function _make_J_W(f,dt,rate_prototype)
+  if ArrayInterface.isstructured(f.jac_prototype) || f.jac_prototype isa SparseMatrixCSC
+    J = similar(f.jac_prototype)
+    W = similar(J)
+  elseif DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
+    W = WOperator(f, dt, true)
+    J = nothing # is J = W.J better?
+  elseif rate_prototype isa Number
+    J = 0
+    W = 0
+  else
+    J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
+    W = similar(J)
+  end
+  J,W
+end
+
 abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
 ################################################################################
 
@@ -64,19 +81,10 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,uBottomElty
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = zero(rate_prototype)
-  if ArrayInterface.isstructured(f.jac_prototype) || f.jac_prototype isa SparseMatrixCSC
-    J = similar(f.jac_prototype)
-    W = similar(J)
-  elseif DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
-    W = WOperator(f, dt, true)
-    J = nothing # is J = W.J better?
-  else
-    J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
-    W = similar(J)
-  end
+  J,W = _make_J_W(f,dt,rate_prototype)
   tmp = zero(rate_prototype)
   atmp = similar(u, uEltypeNoUnits)
-  tab = Rosenbrock23ConstantCache(real(uBottomEltypeNoUnits),identity,identity)
+  tab = Rosenbrock23ConstantCache(real(uBottomEltypeNoUnits),identity,identity,false,false)
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
@@ -101,19 +109,10 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,uBottomElty
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = zero(rate_prototype)
-  if ArrayInterface.isstructured(f.jac_prototype) || f.jac_prototype isa SparseMatrixCSC
-    J = similar(f.jac_prototype)
-    W = similar(J)
-  elseif DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
-    W = WOperator(f, dt, true)
-    J = nothing # is J = W.J better?
-  else
-    J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
-    W = similar(J)
-  end
+  J,W = _make_J_W(f,dt,rate_prototype)
   tmp = zero(rate_prototype)
   atmp = similar(u, uEltypeNoUnits)
-  tab = Rosenbrock32ConstantCache(real(uBottomEltypeNoUnits),identity,identity)
+  tab = Rosenbrock32ConstantCache(real(uBottomEltypeNoUnits),identity,identity,false,false)
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
@@ -124,52 +123,60 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,uBottomElty
   Rosenbrock32Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,linsolve,jac_config,grad_config)
 end
 
-struct Rosenbrock23ConstantCache{T,TF,UF} <: OrdinaryDiffEqConstantCache
+struct Rosenbrock23ConstantCache{T,TF,UF,JType,WType} <: OrdinaryDiffEqConstantCache
   c₃₂::T
   d::T
   tf::TF
   uf::UF
+  J::JType
+  W::WType
 end
 
-function Rosenbrock23ConstantCache(T::Type,tf,uf)
+function Rosenbrock23ConstantCache(T::Type,tf,uf,J,W)
   c₃₂ = convert(T,6 + sqrt(2))
   d = convert(T,1/(2+sqrt(2)))
-  Rosenbrock23ConstantCache(c₃₂,d,tf,uf)
+  Rosenbrock23ConstantCache(c₃₂,d,tf,uf,J,W)
 end
 
 function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  Rosenbrock23ConstantCache(real(uBottomEltypeNoUnits),tf,uf)
+  J,W = _make_J_W(f,dt,rate_prototype)
+  Rosenbrock23ConstantCache(real(uBottomEltypeNoUnits),tf,uf,J,W)
 end
 
-struct Rosenbrock32ConstantCache{T,TF,UF} <: OrdinaryDiffEqConstantCache
+struct Rosenbrock32ConstantCache{T,TF,UF,JType,WType} <: OrdinaryDiffEqConstantCache
   c₃₂::T
   d::T
   tf::TF
   uf::UF
+  J::JType
+  W::WType
 end
 
-function Rosenbrock32ConstantCache(T::Type,tf,uf)
+function Rosenbrock32ConstantCache(T::Type,tf,uf,J,W)
   c₃₂ = convert(T,6 + sqrt(2))
   d = convert(T,1/(2+sqrt(2)))
-  Rosenbrock32ConstantCache(c₃₂,d,tf,uf)
+  Rosenbrock32ConstantCache(c₃₂,d,tf,uf,J,W)
 end
 
 function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  Rosenbrock32ConstantCache(real(uBottomEltypeNoUnits),tf,uf)
+  J,W = _make_J_W(f,dt,rate_prototype)
+  Rosenbrock32ConstantCache(real(uBottomEltypeNoUnits),tf,uf,J,W)
 end
 
 ################################################################################
 
 ### 3rd order specialized Rosenbrocks
 
-struct Rosenbrock33ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
+struct Rosenbrock33ConstantCache{TF,UF,Tab,JType,WType} <: OrdinaryDiffEqConstantCache
   tf::TF
   uf::UF
   tab::Tab
+  J::JType
+  W::WType
 end
 
 @cache mutable struct Rosenbrock33Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
@@ -209,16 +216,7 @@ function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = zero(rate_prototype)
-  if ArrayInterface.isstructured(f.jac_prototype) || f.jac_prototype isa SparseMatrixCSC
-    J = similar(f.jac_prototype)
-    W = similar(J)
-  elseif DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
-    W = WOperator(f, dt, true)
-    J = nothing # is J = W.J better?
-  else
-    J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
-    W = similar(J)
-  end
+  J,W = _make_J_W(f,dt,rate_prototype)
   tmp = zero(rate_prototype)
   atmp = similar(u, uEltypeNoUnits)
   tab = ROS3PConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
@@ -236,7 +234,8 @@ end
 function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  Rosenbrock33ConstantCache(tf,uf,ROS3PConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)))
+  J,W = _make_J_W(f,dt,rate_prototype)
+  Rosenbrock33ConstantCache(tf,uf,ROS3PConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W)
 end
 
 @cache mutable struct Rosenbrock34Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
@@ -276,16 +275,7 @@ function alg_cache(alg::Rodas3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = zero(rate_prototype)
-  if ArrayInterface.isstructured(f.jac_prototype) || f.jac_prototype isa SparseMatrixCSC
-    J = similar(f.jac_prototype)
-    W = similar(J)
-  elseif DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
-    W = WOperator(f, dt, true)
-    J = nothing # is J = W.J better?
-  else
-    J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
-    W = similar(J)
-  end
+  J,W = _make_J_W(f,dt,rate_prototype)
   tmp = zero(rate_prototype)
   atmp = similar(u, uEltypeNoUnits)
   tab = Rodas3ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
@@ -301,16 +291,19 @@ function alg_cache(alg::Rodas3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
                     linsolve,jac_config,grad_config)
 end
 
-struct Rosenbrock34ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
+struct Rosenbrock34ConstantCache{TF,UF,Tab,JType,WType} <: OrdinaryDiffEqConstantCache
   tf::TF
   uf::UF
   tab::Tab
+  J::JType
+  W::WType
 end
 
 function alg_cache(alg::Rodas3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  Rosenbrock34ConstantCache(tf,uf,Rodas3ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)))
+  J,W = _make_J_W(f,dt,rate_prototype)
+  Rosenbrock34ConstantCache(tf,uf,Rodas3ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W)
 end
 
 ################################################################################
@@ -330,10 +323,12 @@ jac_cache(c::Rosenbrock4Cache) = (c.J,c.W)
 
 ### Rodas methods
 
-struct Rodas4ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
+struct Rodas4ConstantCache{TF,UF,Tab,JType,WType} <: OrdinaryDiffEqConstantCache
   tf::TF
   uf::UF
   tab::Tab
+  J::JType
+  W::WType
 end
 
 @cache mutable struct Rodas4Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
@@ -381,16 +376,7 @@ function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = zero(rate_prototype)
-  if ArrayInterface.isstructured(f.jac_prototype) || f.jac_prototype isa SparseMatrixCSC
-    J = similar(f.jac_prototype)
-    W = similar(J)
-  elseif DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
-    W = WOperator(f, dt, true)
-    J = nothing # is J = W.J better?
-  else
-    J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
-    W = similar(J)
-  end
+  J,W = _make_J_W(f,dt,rate_prototype)
   tmp = zero(rate_prototype)
   atmp = similar(u, uEltypeNoUnits)
   tab = Rodas4ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
@@ -410,7 +396,8 @@ end
 function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  Rodas4ConstantCache(tf,uf,Rodas4ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)))
+  J,W = _make_J_W(f,dt,rate_prototype)
+  Rodas4ConstantCache(tf,uf,Rodas4ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W)
 end
 
 function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -428,16 +415,7 @@ function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = zero(rate_prototype)
-  if ArrayInterface.isstructured(f.jac_prototype) || f.jac_prototype isa SparseMatrixCSC
-    J = similar(f.jac_prototype)
-    W = similar(J)
-  elseif DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
-    W = WOperator(f, dt, true)
-    J = nothing # is J = W.J better?
-  else
-    J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
-    W = similar(J)
-  end
+  J,W = _make_J_W(f,dt,rate_prototype)
   tmp = zero(rate_prototype)
   atmp = similar(u, uEltypeNoUnits)
   tab = Rodas42ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
@@ -457,7 +435,8 @@ end
 function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  Rodas4ConstantCache(tf,uf,Rodas42ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)))
+  J,W = _make_J_W(f,dt,rate_prototype)
+  Rodas4ConstantCache(tf,uf,Rodas42ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W)
 end
 
 function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -475,16 +454,7 @@ function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = zero(rate_prototype)
-  if ArrayInterface.isstructured(f.jac_prototype) || f.jac_prototype isa SparseMatrixCSC
-    J = similar(f.jac_prototype)
-    W = similar(J)
-  elseif DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
-    W = WOperator(f, dt, true)
-    J = nothing # is J = W.J better?
-  else
-    J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
-    W = similar(J)
-  end
+  J,W = _make_J_W(f,dt,rate_prototype)
   tmp = zero(rate_prototype)
   atmp = similar(u, uEltypeNoUnits)
   tab = Rodas4PConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
@@ -504,17 +474,20 @@ end
 function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  Rodas4ConstantCache(tf,uf,Rodas4PConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)))
+  J,W = _make_J_W(f,dt,rate_prototype)
+  Rodas4ConstantCache(tf,uf,Rodas4PConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W)
 end
 
 ################################################################################
 
 ### Rosenbrock5
 
-struct Rosenbrock5ConstantCache{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
+struct Rosenbrock5ConstantCache{TF,UF,Tab,JType,WType} <: OrdinaryDiffEqConstantCache
   tf::TF
   uf::UF
   tab::Tab
+  J::JType
+  W::WType
 end
 
 @cache mutable struct Rosenbrock5Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
@@ -566,16 +539,7 @@ function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   fsalfirst = zero(rate_prototype)
   fsallast = zero(rate_prototype)
   dT = zero(rate_prototype)
-  if ArrayInterface.isstructured(f.jac_prototype) || f.jac_prototype isa SparseMatrixCSC
-    J = similar(f.jac_prototype)
-    W = similar(J)
-  elseif DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
-    W = WOperator(f, dt, true)
-    J = nothing # is J = W.J better?
-  else
-    J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
-    W = similar(J)
-  end
+  J,W = _make_J_W(f,dt,rate_prototype)
   tmp = zero(rate_prototype)
   atmp = similar(u, uEltypeNoUnits)
   tab = Rodas5ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))
@@ -595,7 +559,8 @@ end
 function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
   tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-  Rosenbrock5ConstantCache(tf,uf,Rodas5ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)))
+  J,W = _make_J_W(f,dt,rate_prototype)
+  Rosenbrock5ConstantCache(tf,uf,Rodas5ConstantCache(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W)
 end
 
 ################################################################################
