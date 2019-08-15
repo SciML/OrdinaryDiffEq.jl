@@ -384,7 +384,7 @@ DiffEqBase.nlsolve_f(integrator::ODEIntegrator) =
   nlsolve_f(integrator.f, unwrap_alg(integrator, true))
 
 function iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
-  if isdefined(alg,:nlsolve)
+  if alg isa NewtonAlgorithm
     if alg.nlsolve isa NLNewton
       nf = nlsolve_f(f, alg)
       islin = f isa Union{ODEFunction,SplitFunction} && islinear(nf.f)
