@@ -1,23 +1,23 @@
-struct Ros23ConstantCache{T} <: OrdinaryDiffEqConstantCache
+struct Rosenbrock23Tableau{T} <: OrdinaryDiffEqConstantCache
   c₃₂::T
   d::T
 end
 
-function Ros23ConstantCache(T::Type)
+function Rosenbrock23Tableau(T::Type)
   c₃₂ = convert(T,6 + sqrt(2))
   d = convert(T,1/(2+sqrt(2)))
-  Ros23ConstantCache(c₃₂,d)
+  Rosenbrock23Tableau(c₃₂,d)
 end
 
-struct Ros32ConstantCache{T} <: OrdinaryDiffEqConstantCache
+struct Rosenbrock32Tableau{T} <: OrdinaryDiffEqConstantCache
   c₃₂::T
   d::T
 end
 
-function Ros32ConstantCache(T::Type)
+function Rosenbrock32Tableau(T::Type)
   c₃₂ = convert(T,6 + sqrt(2))
   d = convert(T,1/(2+sqrt(2)))
-  Ros23ConstantCache(c₃₂,d)
+  Rosenbrock32Tableau(c₃₂,d)
 end
 
 struct ROS3PConstantCache{T,T2} <: OrdinaryDiffEqConstantCache

@@ -67,7 +67,7 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,uBottomElty
   J,W = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
   tmp = zero(rate_prototype)
   atmp = similar(u, uEltypeNoUnits)
-  tab = Ros23ConstantCache(real(uBottomEltypeNoUnits))
+  tab = Rosenbrock23Tableau(real(uBottomEltypeNoUnits))
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
@@ -95,7 +95,7 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,uBottomElty
   J,W = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
   tmp = zero(rate_prototype)
   atmp = similar(u, uEltypeNoUnits)
-  tab = Ros32ConstantCache(real(uBottomEltypeNoUnits))
+  tab = Rosenbrock32Tableau(real(uBottomEltypeNoUnits))
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
@@ -117,7 +117,7 @@ struct Rosenbrock23ConstantCache{T,TF,UF,JType,WType,F} <: OrdinaryDiffEqConstan
 end
 
 function Rosenbrock23ConstantCache(T::Type,tf,uf,J,W,linsolve)
-  tab = Ros23ConstantCache(T)
+  tab = Rosenbrock23Tableau(T)
   Rosenbrock23ConstantCache(tab.c₃₂,tab.d,tf,uf,J,W,linsolve)
 end
 
@@ -140,7 +140,7 @@ struct Rosenbrock32ConstantCache{T,TF,UF,JType,WType,F} <: OrdinaryDiffEqConstan
 end
 
 function Rosenbrock32ConstantCache(T::Type,tf,uf,J,W,linsolve)
-  tab = Ros32ConstantCache(T)
+  tab = Rosenbrock32Tableau(T)
   Rosenbrock32ConstantCache(tab.c₃₂,tab.d,tf,uf,J,W,linsolve)
 end
 
