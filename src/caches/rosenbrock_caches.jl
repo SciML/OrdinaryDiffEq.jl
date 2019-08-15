@@ -67,7 +67,7 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,uBottomElty
   J,W = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
   tmp = zero(rate_prototype)
   atmp = similar(u, uEltypeNoUnits)
-  tab = Rosenbrock23ConstantCache(real(uBottomEltypeNoUnits),identity,identity,nothing,nothing,nothing)
+  tab = Ros23ConstantCache(real(uBottomEltypeNoUnits))
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
@@ -95,7 +95,7 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,uBottomElty
   J,W = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
   tmp = zero(rate_prototype)
   atmp = similar(u, uEltypeNoUnits)
-  tab = Rosenbrock32ConstantCache(real(uBottomEltypeNoUnits),identity,identity,nothing,nothing,nothing)
+  tab = Ros32ConstantCache(real(uBottomEltypeNoUnits))
 
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
@@ -117,9 +117,8 @@ struct Rosenbrock23ConstantCache{T,TF,UF,JType,WType,F} <: OrdinaryDiffEqConstan
 end
 
 function Rosenbrock23ConstantCache(T::Type,tf,uf,J,W,linsolve)
-  c₃₂ = convert(T,6 + sqrt(2))
-  d = convert(T,1/(2+sqrt(2)))
-  Rosenbrock23ConstantCache(c₃₂,d,tf,uf,J,W,linsolve)
+  tab = Ros23ConstantCache(T)
+  Rosenbrock23ConstantCache(tab.c₃₂,tab.d,tf,uf,J,W,linsolve)
 end
 
 function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
@@ -141,9 +140,8 @@ struct Rosenbrock32ConstantCache{T,TF,UF,JType,WType,F} <: OrdinaryDiffEqConstan
 end
 
 function Rosenbrock32ConstantCache(T::Type,tf,uf,J,W,linsolve)
-  c₃₂ = convert(T,6 + sqrt(2))
-  d = convert(T,1/(2+sqrt(2)))
-  Rosenbrock32ConstantCache(c₃₂,d,tf,uf,J,W,linsolve)
+  tab = Ros32ConstantCache(T)
+  Rosenbrock32ConstantCache(tab.c₃₂,tab.d,tf,uf,J,W,linsolve)
 end
 
 function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})

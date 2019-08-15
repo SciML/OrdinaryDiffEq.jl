@@ -415,7 +415,7 @@ end
 
 function oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
   islin = false
-  if isdefined(alg,:nlsolve) && alg.nlsolve isa NLNewton
+  if alg isa NewtonAlgorithm && alg.nlsolve isa NLNewton
     nf = nlsolve_f(f, alg)
     islin = f isa Union{ODEFunction,SplitFunction} && islinear(nf.f)
   end
