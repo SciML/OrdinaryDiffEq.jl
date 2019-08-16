@@ -67,7 +67,7 @@ function alg_cache(alg::AitkenNeville,u,rate_prototype,uEltypeNoUnits,uBottomElt
   AitkenNevilleConstantCache(dtpropose,T,cur_order,work,A,step_no)
 end
 
-@cache mutable struct ImplicitEulerExtrapolationCache{uType,rateType,arrayType,dtType,JType,WType,F,JCType,GCType,uNoUnitsType,TFType,UFType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct ImplicitEulerExtrapolationCache{uType,rateType,arrayType,dtType,F,JCType,GCType,uNoUnitsType,TFType,UFType,N} <: OrdinaryDiffEqMutableCache
   uprev::uType
   u_tmp::uType
   u_tmps::Array{uType,1}
@@ -86,8 +86,7 @@ end
 
   du1::rateType
   du2::rateType
-  J::JType
-  W::WType
+  nlsolver::N
   tf::TFType
   uf::UFType
   linsolve_tmp::rateType
@@ -163,10 +162,6 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
     J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
     W_el = similar(J)
   end
-  W = Array{typeof(W_el),1}(undef, Threads.nthreads())
-  for i=1:Threads.nthreads()
-    W[i] = zero(W_el)
-  end
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
@@ -184,9 +179,13 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,du1,du2)
 
+  nlsolver = Array{PseudoNLSolver{typeof(W_el),typeof(J),typeof(du1),typeof(uf),typeof(jac_config)}}(undef, Threads.nthreads())
+  for i=1:Threads.nthreads()
+    nlsolver[i] = PseudoNLSolver(zero(W_el),J,du1,uf,jac_config)
+  end
 
   ImplicitEulerExtrapolationCache(uprev,u_tmp,u_tmps,utilde,tmp,atmp,k_tmp,k_tmps,dtpropose,T,cur_order,work,A,step_no,
-    du1,du2,J,W,tf,uf,linsolve_tmp,linsolve_tmps,linsolve,jac_config,grad_config)
+    du1,du2,nlsolver,tf,uf,linsolve_tmp,linsolve_tmps,linsolve,jac_config,grad_config)
 end
 
 
