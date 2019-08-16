@@ -51,6 +51,8 @@ function calc_J(integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
   if DiffEqBase.has_jac(f)
     J = f.jac(uprev, p, t)
   else
+    cache.uf.t = t
+    cache.uf.p = p
     J = jacobian(cache.uf,uprev,integrator)
   end
   integrator.destats.njacs += 1
@@ -63,6 +65,8 @@ function calc_J(nlsolver, integrator, cache::OrdinaryDiffEqConstantCache, is_com
   if DiffEqBase.has_jac(f)
     J = f.jac(uprev, p, t)
   else
+    nlsolver.uf.t = t
+    nlsolver.uf.p = p
     J = jacobian(nlsolver.uf,uprev,integrator)
   end
   integrator.destats.njacs += 1
@@ -107,14 +111,7 @@ function calc_J!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqMutableCac
 end
 
 function calc_J!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
-  @unpack t,dt,uprev,u,f,p = integrator
-  if DiffEqBase.has_jac(f)
-    nlsolver.cache.J = f.jac(uprev, p, t)
-  else
-    nlsolver.cache.J = jacobian(nlsolver.uf,uprev,integrator)
-  end
-  integrator.destats.njacs += 1
-  is_compos && (integrator.eigen_est = opnorm(nlsolver.cache.J, Inf))
+  nlsolver.cache.J = calc_J(nlsolver,integrator,cache,is_compos)
 end
 
 function calc_J_in_cache!(integrator, cache::OrdinaryDiffEqMutableCache, is_compos)
@@ -133,14 +130,7 @@ function calc_J_in_cache!(integrator, cache::OrdinaryDiffEqMutableCache, is_comp
 end
 
 function calc_J_in_cache!(integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
-  @unpack t,dt,uprev,u,f,p = integrator
-  if DiffEqBase.has_jac(f)
-    cache.J = f.jac(uprev, p, t)
-  else
-    cache.J = jacobian(cache.uf,uprev,integrator)
-  end
-  integrator.destats.njacs += 1
-  is_compos && (integrator.eigen_est = opnorm(cache.J, Inf))
+  cache.J = calc_J(integrator,cache,is_compos)
 end
 
 """
@@ -334,6 +324,7 @@ end
 
 @noinline _throwWJerror(W, J) = throw(DimensionMismatch("W: $(axes(W)), J: $(axes(J))"))
 @noinline _throwWMerror(W, mass_matrix) = throw(DimensionMismatch("W: $(axes(W)), mass matrix: $(axes(mass_matrix))"))
+@noinline _throwJMerror(J, mass_matrix) = throw(DimensionMismatch("J: $(axes(J)), mass matrix: $(axes(mass_matrix))"))
 
 @inline function jacobian2W!(W::AbstractMatrix, mass_matrix::MT, dtgamma::Number, J::AbstractMatrix, W_transform::Bool)::Nothing where MT
   # check size and dimension
@@ -361,6 +352,28 @@ end
     end
   end
   return nothing
+end
+
+@inline function jacobian2W(mass_matrix::MT, dtgamma::Number, J::AbstractMatrix, W_transform::Bool)::Nothing where MT
+  # check size and dimension
+  mass_matrix isa UniformScaling || @boundscheck axes(mass_matrix) === axes(J) || _throwJMerror(J, mass_matrix)
+  @inbounds if W_transform
+    invdtgamma = inv(dtgamma)
+    if MT <: UniformScaling
+      λ = -mass_matrix.λ
+      W = J + (λ * invdtgamma)*I
+    else
+      W = muladd(-mass_matrix, invdtgamma, J)
+    end
+  else
+    if MT <: UniformScaling
+      λ = -mass_matrix.λ
+      W = dtgamma*J + λ*I
+    else
+      W = muladd(dtgamma, J, -mass_matrix)
+    end
+  end
+  return W
 end
 
 function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_step, W_transform=false)
