@@ -126,7 +126,8 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   u_tmp = similar(u)
   u_tmps = Array{typeof(u_tmp),1}(undef, Threads.nthreads())
 
-  for i=1:Threads.nthreads()
+  u_tmps[1] = u_tmp
+  for i=2:Threads.nthreads()
     u_tmps[i] = zero(u_tmp)
   end
 
@@ -135,7 +136,8 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   k_tmp = zero(rate_prototype)
   k_tmps = Array{typeof(k_tmp),1}(undef, Threads.nthreads())
 
-  for i=1:Threads.nthreads()
+  k_tmps[1] = k_tmp
+  for i=2:Threads.nthreads()
     k_tmps[i] = zero(rate_prototype)
   end
 
@@ -163,10 +165,17 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
     J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
     W_el = similar(J)
   end
+
   W = Array{typeof(W_el),1}(undef, Threads.nthreads())
-  for i=1:Threads.nthreads()
-    W[i] = zero(W_el)
+  W[1] = W_el
+  for i=2:Threads.nthreads()
+    if W_el isa WOperator
+      W_el = WOperator(f, dt, true)
+    else
+      W[i] = zero(W_el)
+    end
   end
+
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
@@ -178,7 +187,8 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
 
   linsolve_el = alg.linsolve(Val{:init},uf,u)
   linsolve = Array{typeof(linsolve_el),1}(undef, Threads.nthreads())
-  for i=1:Threads.nthreads()
+  linsolve[1] = linsolve_el
+  for i=2:Threads.nthreads()
     linsolve[i] = alg.linsolve(Val{:init},uf,u)
   end
   grad_config = build_grad_config(alg,f,tf,du1,t)
