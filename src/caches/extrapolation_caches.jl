@@ -69,12 +69,10 @@ end
 
 @cache mutable struct ImplicitEulerExtrapolationCache{uType,rateType,arrayType,dtType,JType,WType,F,JCType,GCType,uNoUnitsType,TFType,UFType} <: OrdinaryDiffEqMutableCache
   uprev::uType
-  u_tmp::uType
   u_tmps::Array{uType,1}
   utilde::uType
   tmp::uType
   atmp::uNoUnitsType
-  k_tmp::rateType
   k_tmps::Array{rateType,1}
   dtpropose::dtType
   T::arrayType
@@ -82,15 +80,12 @@ end
   work::dtType
   A::Int
   step_no::Int
-
-
   du1::rateType
   du2::rateType
   J::JType
   W::WType
   tf::TFType
   uf::UFType
-  linsolve_tmp::rateType
   linsolve_tmps::Array{rateType,1}
   linsolve::Array{F,1}
   jac_config::JCType
@@ -195,8 +190,8 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,du1,du2)
 
 
-  ImplicitEulerExtrapolationCache(uprev,u_tmp,u_tmps,utilde,tmp,atmp,k_tmp,k_tmps,dtpropose,T,cur_order,work,A,step_no,
-    du1,du2,J,W,tf,uf,linsolve_tmp,linsolve_tmps,linsolve,jac_config,grad_config)
+  ImplicitEulerExtrapolationCache(uprev,u_tmps,utilde,tmp,atmp,k_tmps,dtpropose,T,cur_order,work,A,step_no,
+    du1,du2,J,W,tf,uf,linsolve_tmps,linsolve,jac_config,grad_config)
 end
 
 

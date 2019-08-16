@@ -247,8 +247,8 @@ end
 
 function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack u_tmp,k_tmp,T,utilde,atmp,dtpropose,cur_order,A = cache
-  @unpack J,W,uf,tf,linsolve_tmp,jac_config = cache
+  @unpack T,utilde,atmp,dtpropose,cur_order,A = cache
+  @unpack J,W,uf,tf,jac_config = cache
   @unpack u_tmps, k_tmps, linsolve_tmps = cache
 
   max_order = min(size(T)[1],cur_order+1)
