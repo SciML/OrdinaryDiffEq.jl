@@ -162,10 +162,13 @@ because in the end of Rosenbrock's method, we have: `y_{n+1}=y_n+ki*bi`.
 """
 function gen_cache_struct(tab::RosenbrockTableau,cachename::Symbol,constcachename::Symbol)
     kstype=[:($(Symbol(:k,i))::rateType) for i in 1:length(tab.b)]
-    constcacheexpr=quote struct $constcachename{TF,UF,Tab} <: OrdinaryDiffEqConstantCache
+    constcacheexpr=quote struct $constcachename{TF,UF,Tab,JType,WType,F} <: OrdinaryDiffEqConstantCache
             tf::TF
             uf::UF
             tab::Tab
+            J::JType
+            W::WType
+            linsolve::F
         end
     end
     cacheexpr=quote
@@ -208,7 +211,9 @@ function gen_algcache(cacheexpr::Expr,cachename::Symbol,constcachename::Symbol,a
         function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
             tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
             uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
-            $constcachename(tf,uf,$tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)))
+            J,W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
+            linsolve = alg.linsolve(Val{:init},uf,u)
+            $constcachename(tf,uf,$tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve)
         end
         function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
             du = zero(rate_prototype)
@@ -218,13 +223,7 @@ function gen_algcache(cacheexpr::Expr,cachename::Symbol,constcachename::Symbol,a
             fsalfirst = zero(rate_prototype)
             fsallast = zero(rate_prototype)
             dT = zero(rate_prototype)
-            if DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
-              W = WOperator(f, dt, true)
-              J = nothing # is J = W.J better?
-            else
-              J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
-              W = similar(J)
-            end
+            J,W = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
             tmp = zero(rate_prototype)
             atmp = similar(u, uEltypeNoUnits)
             tab = $tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits))

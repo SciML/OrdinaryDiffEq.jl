@@ -384,59 +384,63 @@ DiffEqBase.nlsolve_f(integrator::ODEIntegrator) =
   nlsolve_f(integrator.f, unwrap_alg(integrator, true))
 
 function iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
-  if alg.nlsolve isa NLNewton
-    nf = nlsolve_f(f, alg)
-    islin = f isa Union{ODEFunction,SplitFunction} && islinear(nf.f)
-    if islin
-      J = nf.f
-      W = WOperator(f.mass_matrix, dt, J, true)
-    else
-      if ArrayInterface.isstructured(f.jac_prototype) || f.jac_prototype isa SparseMatrixCSC
-        J = similar(f.jac_prototype)
-        W = similar(J)
-      elseif DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
-        J = nothing
-        W = WOperator(f, dt, true)
-      else
-        J = false .* vec(u) .* vec(u)'
-        W = similar(J)
+  if alg isa NewtonAlgorithm
+    if alg.nlsolve isa NLNewton
+      nf = nlsolve_f(f, alg)
+      islin = f isa Union{ODEFunction,SplitFunction} && islinear(nf.f)
+      if islin
+        J = nf.f
+        if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
+          J = DiffEqArrayOperator(J)
+        end
+        W = WOperator(f.mass_matrix, dt, J, true)
+        return J, W
       end
+    else
+      return nothing, nothing
     end
+  end
+  if ArrayInterface.isstructured(f.jac_prototype) || f.jac_prototype isa SparseMatrixCSC
+    J = similar(f.jac_prototype)
+    W = similar(J)
+  elseif DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
+    W = WOperator(f, dt, true)
+    J = W.J
   else
-    J = nothing
-    W = nothing
+    J = false .* vec(u) .* vec(u)'
+    W = similar(J)
   end
   J, W
 end
 
 function oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
-  nf = nlsolve_f(f, alg)
-  islin = f isa Union{ODEFunction,SplitFunction} && islinear(nf.f)
-  if islin || DiffEqBase.has_jac(f)
-    # get the operator
+  islin = false
+  if alg isa NewtonAlgorithm && alg.nlsolve isa NLNewton
+    nf = nlsolve_f(f, alg)
+    islin = f isa Union{ODEFunction,SplitFunction} && islinear(nf.f)
+  end
+  if islin || (DiffEqBase.has_jac(f) && f.jac_prototype isa Nothing)
     J = islin ? nf.f : f.jac(uprev, p, t)
     if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
       J = DiffEqArrayOperator(J)
     end
     W = WOperator(f.mass_matrix, dt, J, false)
+  elseif DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
+    W = WOperator(f, dt, true)
+    J = W.J
+  # https://github.com/JuliaDiffEq/OrdinaryDiffEq.jl/pull/672
   else
-    # https://github.com/JuliaDiffEq/OrdinaryDiffEq.jl/pull/672
-    if u isa StaticArray
-      # get a "fake" `J`
-      J = if u isa AbstractMatrix && size(u, 1) > 1 # `u` is already a matrix
+    # get a "fake" `J`
+    J = false .* _vec(u) .* _vec(u)'
+    W = if u isa StaticArray
+      lu(J)
+      elseif u isa Number
         u
-      elseif size(u, 1) == 1 # `u` is a row vector
-        vcat(u, u)
-      else # `u` is a column vector
-        hcat(u, u)
+      else
+        LU{LinearAlgebra.lutype(uEltypeNoUnits)}(Matrix{uEltypeNoUnits}(undef, 0, 0),
+                                                     Vector{LinearAlgebra.BlasInt}(undef, 0),
+                                                     zero(LinearAlgebra.BlasInt))
       end
-      W = lu(J)
-    else
-      W = u isa Number ? u : LU{LinearAlgebra.lutype(uEltypeNoUnits)}(Matrix{uEltypeNoUnits}(undef, 0, 0),
-                                                                      Vector{LinearAlgebra.BlasInt}(undef, 0),
-                                                                      zero(LinearAlgebra.BlasInt))
-      J = u isa Number ? u : (false .* vec(u) .* vec(u)')
-    end
   end
   J, W
 end
