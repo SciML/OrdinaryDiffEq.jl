@@ -81,7 +81,7 @@ jacobian update function, then it will be called for the update. Otherwise,
 either ForwardDiff or finite difference will be used depending on the
 `jac_config` of the cache.
 """
-function calc_J!(integrator, cache::OrdinaryDiffEqMutableCache, is_compos)
+function calc_J!(integrator, cache::OrdinaryDiffEqCache, is_compos)
   if isdefined(cache, :nlsolver)
     calc_J!(cache.nlsolver, integrator, cache, is_compos)
   elseif isdefined(cache, :J)
@@ -106,6 +106,17 @@ function calc_J!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqMutableCac
   is_compos && (integrator.eigen_est = opnorm(J, Inf))
 end
 
+function calc_J!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
+  @unpack t,dt,uprev,u,f,p = integrator
+  if DiffEqBase.has_jac(f)
+    nlsolver.cache.J = f.jac(uprev, p, t)
+  else
+    nlsolver.cache.J = jacobian(nlsolver.uf,uprev,integrator)
+  end
+  integrator.destats.njacs += 1
+  is_compos && (integrator.eigen_est = opnorm(nlsolver.cache.J, Inf))
+end
+
 function calc_J_in_cache!(integrator, cache::OrdinaryDiffEqMutableCache, is_compos)
   @unpack t,dt,uprev,u,f,p = integrator
   J = cache.J
@@ -119,6 +130,17 @@ function calc_J_in_cache!(integrator, cache::OrdinaryDiffEqMutableCache, is_comp
   end
   integrator.destats.njacs += 1
   is_compos && (integrator.eigen_est = opnorm(J, Inf))
+end
+
+function calc_J_in_cache!(integrator, cache::OrdinaryDiffEqConstantCache, is_compos)
+  @unpack t,dt,uprev,u,f,p = integrator
+  if DiffEqBase.has_jac(f)
+    cache.J = f.jac(uprev, p, t)
+  else
+    cache.J = jacobian(cache.uf,uprev,integrator)
+  end
+  integrator.destats.njacs += 1
+  is_compos && (integrator.eigen_est = opnorm(cache.J, Inf))
 end
 
 """
