@@ -70,10 +70,12 @@ end
 @cache mutable struct ImplicitEulerExtrapolationCache{uType,rateType,arrayType,dtType,JType,WType,F,JCType,GCType,uNoUnitsType,TFType,UFType} <: OrdinaryDiffEqMutableCache
   uprev::uType
   u_tmp::uType
+  u_tmps::Array{uType,1}
   utilde::uType
   tmp::uType
   atmp::uNoUnitsType
   k_tmp::rateType
+  k_tmps::Array{rateType,1}
   dtpropose::dtType
   T::arrayType
   cur_order::Int
@@ -89,7 +91,8 @@ end
   tf::TFType
   uf::UFType
   linsolve_tmp::rateType
-  linsolve::F
+  linsolve_tmps::Array{rateType,1}
+  linsolve::Array{F,1}
   jac_config::JCType
   grad_config::GCType
 end
@@ -121,10 +124,21 @@ end
 
 function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
   u_tmp = similar(u)
+  u_tmps = Array{typeof(u_tmp),1}(undef, Threads.nthreads())
+
+  for i=1:Threads.nthreads()
+    u_tmps[i] = zero(u_tmp)
+  end
+
   utilde = similar(u)
   tmp = similar(u)
-  k = zero(rate_prototype)
   k_tmp = zero(rate_prototype)
+  k_tmps = Array{typeof(k_tmp),1}(undef, Threads.nthreads())
+
+  for i=1:Threads.nthreads()
+    k_tmps[i] = zero(rate_prototype)
+  end
+
   cur_order = max(alg.init_order, alg.min_order)
   dtpropose = zero(dt)
   T = Array{typeof(u),2}(undef, alg.max_order, alg.max_order)
@@ -143,22 +157,36 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   du2 = zero(rate_prototype)
 
   if DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
-    W = WOperator(f, dt, true)
+    W_el = WOperator(f, dt, true)
     J = nothing # is J = W.J better?
   else
     J = false .* vec(rate_prototype) .* vec(rate_prototype)' # uEltype?
-    W = similar(J)
+    W_el = similar(J)
+  end
+  W = Array{typeof(W_el),1}(undef, Threads.nthreads())
+  for i=1:Threads.nthreads()
+    W[i] = zero(W_el)
   end
   tf = DiffEqDiffTools.TimeGradientWrapper(f,uprev,p)
   uf = DiffEqDiffTools.UJacobianWrapper(f,t,p)
   linsolve_tmp = zero(rate_prototype)
-  linsolve = alg.linsolve(Val{:init},uf,u)
+  linsolve_tmps = Array{typeof(linsolve_tmp),1}(undef, Threads.nthreads())
+
+  for i=1:Threads.nthreads()
+    linsolve_tmps[i] = zero(rate_prototype)
+  end
+
+  linsolve_el = alg.linsolve(Val{:init},uf,u)
+  linsolve = Array{typeof(linsolve_el),1}(undef, Threads.nthreads())
+  for i=1:Threads.nthreads()
+    linsolve[i] = alg.linsolve(Val{:init},uf,u)
+  end
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,du1,du2)
 
 
-  ImplicitEulerExtrapolationCache(uprev,u_tmp,utilde,tmp,atmp,k_tmp,dtpropose,T,cur_order,work,A,step_no,
-    du1,du2,J,W,tf,uf,linsolve_tmp,linsolve,jac_config,grad_config)
+  ImplicitEulerExtrapolationCache(uprev,u_tmp,u_tmps,utilde,tmp,atmp,k_tmp,k_tmps,dtpropose,T,cur_order,work,A,step_no,
+    du1,du2,J,W,tf,uf,linsolve_tmp,linsolve_tmps,linsolve,jac_config,grad_config)
 end
 
 

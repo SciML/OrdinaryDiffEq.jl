@@ -392,6 +392,57 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
   return nothing
 end
 
+function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_step, W_index::Int, W_transform=false)
+  @unpack t,dt,uprev,u,f,p = integrator
+  @unpack J,W = cache
+  alg = unwrap_alg(integrator, true)
+  mass_matrix = integrator.f.mass_matrix
+  is_compos = integrator.alg isa CompositeAlgorithm
+  isnewton = alg isa NewtonAlgorithm
+
+  if W_transform && DiffEqBase.has_Wfact_t(f)
+    f.Wfact_t(W[W_index], u, p, dtgamma, t)
+    is_compos && (integrator.eigen_est = opnorm(LowerTriangular(W[W_index]), Inf) + inv(dtgamma)) # TODO: better estimate
+    return nothing
+  elseif !W_transform && DiffEqBase.has_Wfact(f)
+    f.Wfact(W[W_index], u, p, dtgamma, t)
+    if is_compos
+      opn = opnorm(LowerTriangular(W[W_index]), Inf)
+      integrator.eigen_est = (opn + one(opn)) / dtgamma # TODO: better estimate
+    end
+    return nothing
+  end
+
+  # fast pass
+  # we only want to factorize the linear operator once
+  new_jac = true
+  new_W = true
+  if (f isa ODEFunction && islinear(f.f)) || (integrator.alg isa SplitAlgorithms && f isa SplitFunction && islinear(f.f1.f))
+    new_jac = false
+    @goto J2W # Jump to W calculation directly, because we already have J
+  end
+
+  # check if we need to update J or W
+  W_dt = isnewton ? cache.nlsolver.cache.W_dt : dt # TODO: RosW
+  new_jac = isnewton ? do_newJ(integrator, alg, cache, repeat_step) : true
+  new_W = isnewton ? do_newW(integrator, cache.nlsolver, new_jac, W_dt) : true
+
+  # calculate W
+  if DiffEqBase.has_jac(f) && f.jac_prototype !== nothing && !ArrayInterface.isstructured(f.jac_prototype)
+    isnewton || DiffEqBase.update_coefficients!(W[W_index],uprev,p,t) # we will call `update_coefficients!` in NLNewton
+    @label J2W
+    W[W_index].transform = W_transform; set_gamma!(W[W_index], dtgamma)
+  else # concrete W using jacobian from `calc_J!`
+    new_jac && calc_J!(integrator, cache, is_compos)
+    new_W && jacobian2W!(W[W_index], mass_matrix, dtgamma, J, W_transform)
+  end
+  if isnewton
+    set_new_W!(cache.nlsolver, new_W) && DiffEqBase.set_W_dt!(cache.nlsolver, dt)
+  end
+  new_W && (integrator.destats.nw += 1)
+  return nothing
+end
+
 function calc_W!(nlsolver, integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_step, W_transform=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack J,W = nlsolver.cache
