@@ -488,8 +488,8 @@ macro RosenbrockW6S4OS(part)
     tab=RosenbrockW6S4OSTableau()
     tabmask=_masktab(tab)
     algname=:RosenbrockW6S4OS
-    tabname=:RosenbrockW6S4OSConstantCache
-    tabstructname=:RosenbrockW6S4OSConstantCache
+    tabname=:RosenbrockW6S4OSTableau
+    tabstructname=:RosenbrockW6STableau
     cachename=:RosenbrockW6SCache
     constcachename=:RosenbrockW6SConstantCache
     n_normalstep=length(tab.b)-1
@@ -691,16 +691,16 @@ macro Rosenbrock4(part)
     tabmask=Ros4dummyTableau()#_masktab(tab)
     cachename=:Rosenbrock4Cache
     constcachename=:Rosenbrock4ConstantCache
-    RosShamp4tabname=:RosShamp4ConstantCache
-    Veldd4tabname=:Veldd4ConstantCache
-    Velds4tabname=:Velds4ConstantCache
-    GRK4Ttabname=:GRK4TConstantCache
-    GRK4Atabname=:GRK4AConstantCache
-    Ros4LStabname=:Ros4LStabConstantCache
+    RosShamp4tabname=:RosShamp4Tableau
+    Veldd4tabname=:Veldd4Tableau
+    Velds4tabname=:Velds4Tableau
+    GRK4Ttabname=:GRK4TTableau
+    GRK4Atabname=:GRK4ATableau
+    Ros4LStabname=:Ros4LStabTableau
     n_normalstep=2 #for the third step a4j=a3j which reduced one function call
     if part.value==:tableau
         #println("Generating tableau for Rosenbrock4")
-        tabstructexpr=gen_tableau_struct(tabmask,:Ros4ConstantCache)
+        tabstructexpr=gen_tableau_struct(tabmask,:Ros4Tableau)
         tabexprs=Array{Expr,1}()
         push!(tabexprs,tabstructexpr)
         push!(tabexprs,gen_tableau(RosShamp4Tableau(),tabstructexpr,RosShamp4tabname))
@@ -911,13 +911,13 @@ macro ROS34PW(part)
     tabmask=Ros34dummyTableau()
     cachename=:ROS34PWCache
     constcachename=:ROS34PWConstantCache
-    ROS34PW1atabname=:ROS34PW1aConstantCache
-    ROS34PW1btabname=:ROS34PW1bConstantCache
-    ROS34PW2tabname=:ROS34PW2ConstantCache
-    ROS34PW3tabname=:ROS34PW3ConstantCache
+    ROS34PW1atabname=:ROS34PW1aTableau
+    ROS34PW1btabname=:ROS34PW1bTableau
+    ROS34PW2tabname=:ROS34PW2Tableau
+    ROS34PW3tabname=:ROS34PW3Tableau
     n_normalstep=length(tabmask.b)-1
     if part.value==:tableau
-        tabstructexpr=gen_tableau_struct(tabmask,:Ros34ConstantCache)
+        tabstructexpr=gen_tableau_struct(tabmask,:Ros34Tableau)
         tabexprs=Array{Expr,1}([tabstructexpr])
         push!(tabexprs,gen_tableau(ROS34PW1aTableau(),tabstructexpr,ROS34PW1atabname))
         push!(tabexprs,gen_tableau(ROS34PW1bTableau(),tabstructexpr,ROS34PW1btabname))

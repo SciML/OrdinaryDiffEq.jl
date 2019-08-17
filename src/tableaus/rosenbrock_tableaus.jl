@@ -20,7 +20,7 @@ function Rosenbrock32Tableau(T::Type)
   Rosenbrock32Tableau(c₃₂,d)
 end
 
-struct ROS3PConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct ROS3PTableau{T,T2} <: OrdinaryDiffEqConstantCache
   a21::T
   a31::T
   a32::T
@@ -41,7 +41,7 @@ struct ROS3PConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   d3::T
 end
 
-function ROS3PConstantCache(T::Type,T2::Type)
+function ROS3PTableau(T::Type,T2::Type)
   gamma = convert(T,1/2 + sqrt(3)/6)
   igamma = inv(gamma)
   a21 = convert(T,igamma)
@@ -66,10 +66,10 @@ function ROS3PConstantCache(T::Type,T2::Type)
   d1 = convert(T,0.7886751345948129)
   d2 = convert(T,-0.2113248654051871)
   d3 = convert(T,-1.077350269189626)
-  ROS3PConstantCache(a21,a31,a32,C21,C31,C32,b1,b2,b3,btilde1,btilde2,btilde3,gamma,c2,c3,d1,d2,d3)
+  ROS3PTableau(a21,a31,a32,C21,C31,C32,b1,b2,b3,btilde1,btilde2,btilde3,gamma,c2,c3,d1,d2,d3)
 end
 
-struct Rodas3ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct Rodas3Tableau{T,T2} <: OrdinaryDiffEqConstantCache
   a21::T
   a31::T
   a32::T
@@ -99,7 +99,7 @@ struct Rodas3ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   d4::T
 end
 
-function Rodas3ConstantCache(T::Type,T2::Type)
+function Rodas3Tableau(T::Type,T2::Type)
   gamma = convert(T,1//2)
   a21 = convert(T,0)
   a31 = convert(T,2)
@@ -128,14 +128,14 @@ function Rodas3ConstantCache(T::Type,T2::Type)
   d2 = convert(T,3//2)
   d3 = convert(T,0)
   d4 = convert(T,0)
-  Rodas3ConstantCache(a21,a31,a32,a41,a42,a43,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4)
+  Rodas3Tableau(a21,a31,a32,a41,a42,a43,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4)
 end
 
 @ROS34PW(:tableau)
 
 @Rosenbrock4(:tableau)
 
-struct RodasConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct RodasTableau{T,T2} <: OrdinaryDiffEqConstantCache
   a21::T
   a31::T
   a32::T
@@ -181,7 +181,7 @@ struct RodasConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   h35::T
 end
 
-function Rodas4ConstantCache(T::Type,T2::Type)
+function Rodas4Tableau(T::Type,T2::Type)
   gamma=convert(T,1//4)
   #BET2P=0.0317D0
   #BET3P=0.0635D0
@@ -232,13 +232,13 @@ function Rodas4ConstantCache(T::Type,T2::Type)
   h34= convert(T,24.76722511418386)
   h35=-convert(T,6.594389125716872)
 
-  RodasConstantCache(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,
+  RodasTableau(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,
                     C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,
                     gamma,c2,c3,c4,d1,d2,d3,d4,
                     h21,h22,h23,h24,h25,h31,h32,h33,h34,h35)
 end
 
-function Rodas42ConstantCache(T::Type,T2::Type)
+function Rodas42Tableau(T::Type,T2::Type)
   gamma= convert(T,1//4)
   #BET2P=0.0317D0
   #BET3P=0.0047369D0
@@ -287,13 +287,13 @@ function Rodas42ConstantCache(T::Type,T2::Type)
   h34= convert(T,16.61359034616402)
   h35=-convert(T,0.6758691794084156)
 
-  RodasConstantCache(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,
+  RodasTableau(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,
                     C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,
                     gamma,c2,c3,c4,d1,d2,d3,d4,
                     h21,h22,h23,h24,h25,h31,h32,h33,h34,h35)
 end
 
-function Rodas4PConstantCache(T::Type,T2::Type)
+function Rodas4PTableau(T::Type,T2::Type)
   gamma = convert(T,1//4)
   #BET2P=0.D0
   #BET3P=c3*c3*(c3/6.d0-GAMMA/2.d0)/(GAMMA*GAMMA)
@@ -342,13 +342,13 @@ function Rodas4PConstantCache(T::Type,T2::Type)
   h34= convert(T,15.99253148779520)
   h35=-convert(T,1.882352941176471)
 
-  RodasConstantCache(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,
+  RodasTableau(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,
                     C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,
                     gamma,c2,c3,c4,d1,d2,d3,d4,
                     h21,h22,h23,h24,h25,h31,h32,h33,h34,h35)
 end
 
-struct Rodas5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
+struct Rodas5Tableau{T,T2} <: OrdinaryDiffEqConstantCache
   a21::T
   a31::T
   a32::T
@@ -404,7 +404,7 @@ struct Rodas5ConstantCache{T,T2} <: OrdinaryDiffEqConstantCache
   c5::T2
 end
 
-function Rodas5ConstantCache(T::Type,T2::Type)
+function Rodas5Tableau(T::Type,T2::Type)
   gamma = convert(T2,.19)
   a21 = convert(T,2.0)
   a31 = convert(T,3.040894194418781 )
@@ -483,7 +483,7 @@ function Rodas5ConstantCache(T::Type,T2::Type)
   b8 = convert(T,1)
   =#
 
-  Rodas5ConstantCache(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,
+  Rodas5Tableau(a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,
                       a61,a62,a63,a64,a65,
                       C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,
                       C61,C62,C63,C64,C65,C71,C72,C73,C74,C75,C76,
