@@ -3,7 +3,7 @@ abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
 
 # Shampine's Low-order Rosenbrocks
 
-@cache mutable struct Rosenbrock23Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+@cache mutable struct Rosenbrock23Cache{uType,rateType,uNoUnitsType,N,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   k₁::rateType
@@ -15,8 +15,7 @@ abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
   fsalfirst::rateType
   fsallast::rateType
   dT::rateType
-  J::JType
-  W::WType
+  nlsolver::N
   tmp::rateType
   atmp::uNoUnitsType
   tab::TabType
@@ -28,7 +27,7 @@ abstract type RosenbrockMutableCache <: OrdinaryDiffEqMutableCache end
   grad_config::GCType
 end
 
-@cache mutable struct Rosenbrock32Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+@cache mutable struct Rosenbrock32Cache{uType,rateType,uNoUnitsType,N,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   k₁::rateType
@@ -40,8 +39,7 @@ end
   fsalfirst::rateType
   fsallast::rateType
   dT::rateType
-  J::JType
-  W::WType
+  nlsolver::N
   tmp::rateType
   atmp::uNoUnitsType
   tab::TabType
@@ -75,9 +73,10 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,uBottomElty
 
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
+  nlsolver = SemiImplicitNLSolver(W,J,du1,uf,jac_config)
 
   Rosenbrock23Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,
-                    fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
+                    fsalfirst,fsallast,dT,nlsolver,tmp,atmp,tab,tf,uf,linsolve_tmp,
                     linsolve,jac_config,grad_config)
 end
 
@@ -103,7 +102,8 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,uBottomElty
   linsolve = alg.linsolve(Val{:init},uf,u)
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
-  Rosenbrock32Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,linsolve,jac_config,grad_config)
+  nlsolver = SemiImplicitNLSolver(W,J,du1,uf,jac_config)
+  Rosenbrock32Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,nlsolver,tmp,atmp,tab,tf,uf,linsolve_tmp,linsolve,jac_config,grad_config)
 end
 
 struct Rosenbrock23ConstantCache{T,TF,UF,JType,WType,F} <: OrdinaryDiffEqConstantCache
@@ -165,7 +165,7 @@ struct Rosenbrock33ConstantCache{TF,UF,Tab,JType,WType,F} <: OrdinaryDiffEqConst
   linsolve::F
 end
 
-@cache mutable struct Rosenbrock33Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+@cache mutable struct Rosenbrock33Cache{uType,rateType,uNoUnitsType,N,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   du::rateType
@@ -178,8 +178,7 @@ end
   fsalfirst::rateType
   fsallast::rateType
   dT::rateType
-  J::JType
-  W::WType
+  nlsolver::N
   tmp::rateType
   atmp::uNoUnitsType
   tab::TabType
@@ -212,8 +211,9 @@ function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   linsolve = alg.linsolve(Val{:init},uf,u)
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
+  nlsolver = SemiImplicitNLSolver(W,J,du1,uf,jac_config)
   Rosenbrock33Cache(u,uprev,du,du1,du2,k1,k2,k3,k4,
-                    fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
+                    fsalfirst,fsallast,dT,nlsolver,tmp,atmp,tab,tf,uf,linsolve_tmp,
                     linsolve,jac_config,grad_config)
 end
 
@@ -225,7 +225,7 @@ function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   Rosenbrock33ConstantCache(tf,uf,ROS3PTableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve)
 end
 
-@cache mutable struct Rosenbrock34Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+@cache mutable struct Rosenbrock34Cache{uType,rateType,uNoUnitsType,N,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   du::rateType
@@ -238,8 +238,7 @@ end
   fsalfirst::rateType
   fsallast::rateType
   dT::rateType
-  J::JType
-  W::WType
+  nlsolver::N
   tmp::rateType
   atmp::uNoUnitsType
   tab::TabType
@@ -273,8 +272,9 @@ function alg_cache(alg::Rodas3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   linsolve = alg.linsolve(Val{:init},uf,u)
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
+  nlsolver = SemiImplicitNLSolver(W,J,du1,uf,jac_config)
   Rosenbrock34Cache(u,uprev,du,du1,du2,k1,k2,k3,k4,
-                    fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
+                    fsalfirst,fsallast,dT,nlsolver,tmp,atmp,tab,tf,uf,linsolve_tmp,
                     linsolve,jac_config,grad_config)
 end
 
@@ -321,7 +321,7 @@ struct Rodas4ConstantCache{TF,UF,Tab,JType,WType,F} <: OrdinaryDiffEqConstantCac
   linsolve::F
 end
 
-@cache mutable struct Rodas4Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+@cache mutable struct Rodas4Cache{uType,rateType,uNoUnitsType,N,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   dense1::rateType
@@ -338,8 +338,7 @@ end
   fsalfirst::rateType
   fsallast::rateType
   dT::rateType
-  J::JType
-  W::WType
+  nlsolver::N
   tmp::rateType
   atmp::uNoUnitsType
   tab::TabType
@@ -377,9 +376,10 @@ function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   linsolve = alg.linsolve(Val{:init},uf,u)
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
+  nlsolver = SemiImplicitNLSolver(W,J,du1,uf,jac_config)
   Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
                     k5,k6,
-                    fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
+                    fsalfirst,fsallast,dT,nlsolver,tmp,atmp,tab,tf,uf,linsolve_tmp,
                     linsolve,jac_config,grad_config)
 end
 
@@ -417,9 +417,10 @@ function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   linsolve = alg.linsolve(Val{:init},uf,u)
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
+  nlsolver = SemiImplicitNLSolver(W,J,du1,uf,jac_config)
   Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
                     k5,k6,
-                    fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
+                    fsalfirst,fsallast,dT,nlsolver,tmp,atmp,tab,tf,uf,linsolve_tmp,
                     linsolve,jac_config,grad_config)
 end
 
@@ -457,9 +458,10 @@ function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   linsolve = alg.linsolve(Val{:init},uf,u)
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
+  nlsolver = SemiImplicitNLSolver(W,J,du1,uf,jac_config)
   Rodas4Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
                     k5,k6,
-                    fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
+                    fsalfirst,fsallast,dT,nlsolver,tmp,atmp,tab,tf,uf,linsolve_tmp,
                     linsolve,jac_config,grad_config)
 end
 
@@ -484,7 +486,7 @@ struct Rosenbrock5ConstantCache{TF,UF,Tab,JType,WType,F} <: OrdinaryDiffEqConsta
   linsolve::F
 end
 
-@cache mutable struct Rosenbrock5Cache{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+@cache mutable struct Rosenbrock5Cache{uType,rateType,uNoUnitsType,N,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
   u::uType
   uprev::uType
   dense1::rateType
@@ -503,8 +505,7 @@ end
   fsalfirst::rateType
   fsallast::rateType
   dT::rateType
-  J::JType
-  W::WType
+  nlsolver::N
   tmp::rateType
   atmp::uNoUnitsType
   tab::TabType
@@ -544,9 +545,10 @@ function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   linsolve = alg.linsolve(Val{:init},uf,u)
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
+  nlsolver = SemiImplicitNLSolver(W,J,du1,uf,jac_config)
   Rosenbrock5Cache(u,uprev,dense1,dense2,du,du1,du2,k1,k2,k3,k4,
                     k5,k6,k7,k8,
-                    fsalfirst,fsallast,dT,J,W,tmp,atmp,tab,tf,uf,linsolve_tmp,
+                    fsalfirst,fsallast,dT,nlsolver,tmp,atmp,tab,tf,uf,linsolve_tmp,
                     linsolve,jac_config,grad_config)
 end
 

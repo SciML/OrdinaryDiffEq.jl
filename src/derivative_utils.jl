@@ -1,4 +1,4 @@
-mutable struct PseudoNLSolver{WType,JType,du1Type,ufType,jcType}
+mutable struct SemiImplicitNLSolver{WType,JType,du1Type,ufType,jcType}
   W::WType
   J::JType
   du1::du1Type
@@ -6,7 +6,7 @@ mutable struct PseudoNLSolver{WType,JType,du1Type,ufType,jcType}
   jac_config::jcType
 end
 
-function Base.getproperty(nls::PseudoNLSolver,s::Symbol)
+function Base.getproperty(nls::SemiImplicitNLSolver,s::Symbol)
   if s === :cache
     return nls
   else
@@ -107,7 +107,7 @@ function calc_J!(integrator, cache::OrdinaryDiffEqMutableCache, is_compos)
   end
 end
 
-function calc_J!(nlsolver::Union{NLSolver,PseudoNLSolver}, integrator, cache::OrdinaryDiffEqMutableCache, is_compos)
+function calc_J!(nlsolver::Union{NLSolver,SemiImplicitNLSolver}, integrator, cache::OrdinaryDiffEqMutableCache, is_compos)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack du1,uf,jac_config = nlsolver
   J = nlsolver.cache.J
@@ -517,9 +517,9 @@ function calc_W!(nlsolver, integrator, cache::OrdinaryDiffEqConstantCache, dtgam
   W
 end
 
-function calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, W_transform)
+function calc_rosenbrock_differentiation!(nlsolver, integrator, cache, dtd1, dtgamma, repeat_step, W_transform)
   calc_tderivative!(integrator, cache, dtd1, repeat_step)
-  calc_W!(integrator, cache, dtgamma, repeat_step, W_transform)
+  calc_W!(nlsolver, integrator, cache, dtgamma, repeat_step, W_transform)
   return nothing
 end
 

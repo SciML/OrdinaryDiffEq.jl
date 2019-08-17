@@ -25,9 +25,9 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock23Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,jac_config,atmp = cache
+  @unpack k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,nlsolver,tmp,uf,tf,linsolve_tmp,jac_config,atmp = cache
   @unpack c₃₂,d = cache.tab
-
+  @unpack J,W = nlsolver
   # Assignments
   sizeu  = size(u)
   mass_matrix = integrator.f.mass_matrix
@@ -37,7 +37,7 @@ end
   dto2 = dt/2
   dto6 = dt/6
 
-  calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
+  calc_rosenbrock_differentiation!(nlsolver, integrator, cache, γ, γ, repeat_step, false)
 
   cache.linsolve(vec(k₁), W, vec(linsolve_tmp), !repeat_step)
   @.. k₁ = -k₁
@@ -86,8 +86,9 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock32Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,J,W,tmp,uf,tf,linsolve_tmp,jac_config,atmp = cache
+  @unpack k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,nlsolver,tmp,uf,tf,linsolve_tmp,jac_config,atmp = cache
   @unpack c₃₂,d = cache.tab
+  @unpack J,W = nlsolver
 
   # Assignments
   sizeu  = size(u)
@@ -98,7 +99,7 @@ end
   dto2 = dt/2
   dto6 = dt/6
 
-  calc_rosenbrock_differentiation!(integrator, cache, γ, γ, repeat_step, false)
+  calc_rosenbrock_differentiation!(nlsolver, integrator, cache, γ, γ, repeat_step, false)
 
   cache.linsolve(vec(k₁), W, vec(linsolve_tmp), !repeat_step)
   @.. k₁ = -k₁
@@ -350,8 +351,9 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock33Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack du,du1,du2,fsalfirst,fsallast,k1,k2,k3,dT,J,W,uf,tf,linsolve_tmp,jac_config,atmp = cache
+  @unpack du,du1,du2,fsalfirst,fsallast,k1,k2,k3,dT,nlsolver,uf,tf,linsolve_tmp,jac_config,atmp = cache
   @unpack a21,a31,a32,C21,C31,C32,b1,b2,b3,btilde1,btilde2,btilde3,gamma,c2,c3,d1,d2,d3 = cache.tab
+  @unpack J,W = nlsolver
 
   # Assignments
   mass_matrix = integrator.f.mass_matrix
@@ -368,7 +370,7 @@ end
   dtd3 = dt*d3
   dtgamma = dt*gamma
 
-  calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
+  calc_rosenbrock_differentiation!(nlsolver, integrator, cache, dtd1, dtgamma, repeat_step, true)
 
   cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
   @.. k1 = -k1
@@ -500,8 +502,9 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock34Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack du,du1,du2,fsalfirst,fsallast,k1,k2,k3,k4,dT,J,W,uf,tf,linsolve_tmp,jac_config,atmp = cache
+  @unpack du,du1,du2,fsalfirst,fsallast,k1,k2,k3,k4,dT,nlsolver,uf,tf,linsolve_tmp,jac_config,atmp = cache
   @unpack a21,a31,a32,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4 = cache.tab
+  @unpack J,W = nlsolver
 
   # Assignments
   uidx = eachindex(integrator.uprev)
@@ -523,7 +526,7 @@ end
   dtd4 = dt*d4
   dtgamma = dt*gamma
 
-  calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
+  calc_rosenbrock_differentiation!(nlsolver, integrator, cache, dtd1, dtgamma, repeat_step, true)
 
   cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
   @.. k1 = -k1
@@ -743,8 +746,9 @@ end
 
 @muladd function perform_step!(integrator, cache::Rodas4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack du,du1,du2,dT,J,W,uf,tf,k1,k2,k3,k4,k5,k6,linsolve_tmp,jac_config,atmp = cache
+  @unpack du,du1,du2,dT,nlsolver,uf,tf,k1,k2,k3,k4,k5,k6,linsolve_tmp,jac_config,atmp = cache
   @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,gamma,c2,c3,c4,d1,d2,d3,d4 = cache.tab
+  @unpack J,W = nlsolver
 
   # Assignments
   sizeu  = size(u)
@@ -774,7 +778,7 @@ end
   dtd4 = dt*d4
   dtgamma = dt*gamma
 
-  calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
+  calc_rosenbrock_differentiation!(nlsolver, integrator, cache, dtd1, dtgamma, repeat_step, true)
 
   cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
   @.. k1 = -k1
@@ -1045,8 +1049,9 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock5Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack du,du1,du2,fsalfirst,fsallast,k1,k2,k3,k4,k5,k6,k7,k8,dT,J,W,uf,tf,linsolve_tmp,jac_config,atmp = cache
+  @unpack du,du1,du2,fsalfirst,fsallast,k1,k2,k3,k4,k5,k6,k7,k8,dT,nlsolver,uf,tf,linsolve_tmp,jac_config,atmp = cache
   @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,C71,C72,C73,C74,C75,C76,C81,C82,C83,C84,C85,C86,C87,gamma,d1,d2,d3,d4,d5,c2,c3,c4,c5 = cache.tab
+  @unpack J,W = nlsolver
 
   # Assignments
   sizeu  = size(u)
@@ -1090,7 +1095,7 @@ end
   dtd5 = dt*d5
   dtgamma = dt*gamma
 
-  calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
+  calc_rosenbrock_differentiation!(nlsolver, integrator, cache, dtd1, dtgamma, repeat_step, true)
 
   cache.linsolve(vec(k1), W, vec(linsolve_tmp), !repeat_step)
   @.. k1 = -k1

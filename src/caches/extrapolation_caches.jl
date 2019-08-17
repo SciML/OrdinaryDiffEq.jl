@@ -178,10 +178,10 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,du1,du2)
 
-  nlsolver = Array{PseudoNLSolver{typeof(W_el),typeof(J),typeof(du1),typeof(uf),typeof(jac_config)}}(undef, Threads.nthreads())
-  nlsolver[1] = PseudoNLSolver(W_el,J,du1,uf,jac_config)
+  nlsolver = Array{SemiImplicitNLSolver{typeof(W_el),typeof(J),typeof(du1),typeof(uf),typeof(jac_config)}}(undef, Threads.nthreads())
+  nlsolver[1] = SemiImplicitNLSolver(W_el,J,du1,uf,jac_config)
   for i=2:Threads.nthreads()
-    nlsolver[i] = PseudoNLSolver(zero(W_el),J,du1,uf,jac_config)
+    nlsolver[i] = SemiImplicitNLSolver(zero(W_el),J,du1,uf,jac_config)
   end
 
   ImplicitEulerExtrapolationCache(uprev,u_tmps,utilde,tmp,atmp,k_tmps,dtpropose,T,cur_order,work,A,step_no,

@@ -174,7 +174,7 @@ function gen_cache_struct(tab::RosenbrockTableau,cachename::Symbol,constcachenam
         end
     end
     cacheexpr=quote
-        @cache mutable struct $cachename{uType,rateType,uNoUnitsType,JType,WType,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+        @cache mutable struct $cachename{uType,rateType,uNoUnitsType,N,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
             u::uType
             uprev::uType
             du::rateType
@@ -184,8 +184,7 @@ function gen_cache_struct(tab::RosenbrockTableau,cachename::Symbol,constcachenam
             fsalfirst::rateType
             fsallast::rateType
             dT::rateType
-            J::JType
-            W::WType
+            nlsolver::N
             tmp::rateType
             atmp::uNoUnitsType
             tab::TabType
@@ -247,6 +246,7 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             linsolve = alg.linsolve(Val{:init},uf,u)
             grad_config = build_grad_config(alg,f,tf,du1,t)
             jac_config = build_jac_config(alg,f,uf,du1,uprev,u,tmp,du2)
+            nlsolver = SemiImplicitNLSolver(W,J,du1,uf,jac_config)
             $cachename($(valsyms...))
         end
     end
@@ -437,7 +437,8 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
     quote
         @muladd function perform_step!(integrator, cache::$cachename, repeat_step=false)
             @unpack t,dt,uprev,u,f,p = integrator
-            @unpack du,du1,du2,fsallast,dT,J,W,uf,tf,$(ks...),linsolve_tmp,jac_config,atmp = cache
+            @unpack du,du1,du2,fsallast,dT,nlsolver,uf,tf,$(ks...),linsolve_tmp,jac_config,atmp = cache
+            @unpack J,W = nlsolver
             $unpacktabexpr
 
             # Assignments
@@ -449,7 +450,7 @@ function gen_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachename::Symbo
             $(dtCij...)
             $(dtdi...)
             dtgamma = dt*gamma
-            calc_rosenbrock_differentiation!(integrator, cache, dtd1, dtgamma, repeat_step, true)
+            calc_rosenbrock_differentiation!(nlsolver, integrator, cache, dtd1, dtgamma, repeat_step, true)
 
             $(iterexprs...)
 
