@@ -117,7 +117,7 @@ function gen_tableau_struct(tab::RosenbrockTableau,tabstructname::Symbol)
     push!(valexprs,:(gamma::T2))
     _push_assigns!(valexprs,eachindex(tab.d),:d,:T)
     _push_assigns!(valexprs,findall(!iszero,tab.c),:c,:T2)
-    quote struct $tabstructname{T,T2} <: OrdinaryDiffEqConstantCache
+    quote struct $tabstructname{T,T2}
         $(valexprs...)
         end
     end
@@ -146,7 +146,7 @@ function gen_tableau(tab::RosenbrockTableau,tabstructexpr::Expr,tabname::Symbol)
         val=valsym2tabdict[m[1]][CartesianIndex([parse(Int,i) for i in m[2]]...)]
         push!(assignexprs,:($valsym=convert($valtype,$val)))
     end
-    quote function $tabname(T::Type,T2::Type)
+    quote function $tabname(T, T2)
             $(assignexprs...)
             $tabstructname($([valexpr.args[1] for valexpr in valexprs]...))
         end
