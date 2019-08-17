@@ -233,7 +233,7 @@ end
 function initialize!(integrator,cache::ImplicitEulerExtrapolationCache)
   integrator.kshortsize = 2
 
-  integrator.fsalfirst = zero(cache.k_tmp)
+  integrator.fsalfirst = zero(first(cache.k_tmps))
   integrator.f(integrator.fsalfirst, integrator.u, integrator.p, integrator.t)
   integrator.fsallast = zero(integrator.fsalfirst)
   resize!(integrator.k, integrator.kshortsize)
