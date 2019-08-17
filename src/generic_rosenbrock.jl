@@ -211,11 +211,15 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
     ksinit = Expr[]
     valsyms = Symbol[]
     for field in fields
-        if @capture(field, "valsym_Symbol::_") && match(r"^k[1-9]+$", String(valsym)) !== nothing
+        if @capture(field, valsym_Symbol::valtype_)
             push!(valsyms, valsym)
-            push!(ksinit, :($valsym = zero(rate_prototype)))
+            
+            if match(r"^k[1-9]+$", String(valsym)) !== nothing
+                push!(ksinit, :($valsym = zero(rate_prototype)))
+            end
         end
     end
+
     quote
         function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
             tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
