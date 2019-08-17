@@ -165,7 +165,7 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   W[1] = W_el
   for i=2:Threads.nthreads()
     if W_el isa WOperator
-      W_el = WOperator(f, dt, true)
+      W[i] = WOperator(f, dt, true)
     else
       W[i] = zero(W_el)
     end
