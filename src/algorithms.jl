@@ -734,6 +734,21 @@ SDIRK2(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
  SDIRK2{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
         linsolve,nlsolve,diff_type,smooth_est,extrapolant,controller)
 
+struct SDIRK22{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAdaptiveAlgorithm{CS,AD}
+  linsolve::F
+  nlsolve::F2
+  diff_type::FDT
+  extrapolant::Symbol
+  controller::Symbol
+end
+SDIRK22(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
+                      linsolve=DEFAULT_LINSOLVE,nlsolve=NLNewton(),
+                                            extrapolant=:linear,
+                      controller = :Standard) =
+                      Trapezoid{chunk_size,autodiff,typeof(linsolve),typeof(nlsolve),typeof(diff_type)}(
+                      linsolve,nlsolve,diff_type,extrapolant,controller)
+
+
 struct SSPSDIRK2{CS,AD,F,F2,FDT} <: OrdinaryDiffEqNewtonAlgorithm{CS,AD} # Not adaptive
   linsolve::F
   nlsolve::F2

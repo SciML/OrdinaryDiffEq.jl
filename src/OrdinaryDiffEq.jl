@@ -190,9 +190,9 @@ module OrdinaryDiffEq
 
   export RadauIIA5
 
-  export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, Kvaerno3,
-         KenCarp3, Cash4, Hairer4, Hairer42, SSPSDIRK2, Kvaerno4, Kvaerno5,
-         KenCarp4, KenCarp5, ESDIRK54I8L2SA
+  export ImplicitEuler, ImplicitMidpoint, Trapezoid, TRBDF2, SDIRK2, SDIRK22,
+         Kvaerno3, KenCarp3, Cash4, Hairer4, Hairer42, SSPSDIRK2, Kvaerno4,
+         Kvaerno5, KenCarp4, KenCarp5, ESDIRK54I8L2SA
 
   export GenericImplicitEuler, GenericTrapezoid
 

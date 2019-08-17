@@ -118,6 +118,8 @@ for i = 1:2
   sim15 = test_convergence(dts,prob,SDIRK2())
   @test sim15.𝒪est[:final] ≈ 2 atol=testTol
 
+  sim15 = test_convergence(dts,prob,SDIRK22())
+  @test sim15.𝒪est[:final] ≈ 2 atol=testTol
   sim152 = test_convergence(dts,prob,SSPSDIRK2())
   @test sim152.𝒪est[:final] ≈ 2 atol=testTol
 

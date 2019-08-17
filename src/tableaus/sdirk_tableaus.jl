@@ -1453,3 +1453,17 @@ function ESDIRK54I8L2SATableau(T, T2)
                                   c3,  c4,  c5,  c6,  c7,
                         btilde1, btilde2, btilde3, btilde4, btilde5, btilde6, btilde7, btilde8)
 end
+
+struct SDIRK22Tableau{T}
+  a::T
+  α::T
+  β::T
+end
+
+function SDIRK22Tableau(T)
+  a = convert(T, 1-1/sqrt(2))
+  α = convert(T, -sqrt(2))
+  β = convert(T, 1+sqrt(2))
+  SDIRK22Tableau(a, α, β)
+end
+

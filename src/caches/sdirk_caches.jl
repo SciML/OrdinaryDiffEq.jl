@@ -176,6 +176,52 @@ function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   SDIRK2Cache(u,uprev,fsalfirst,z₁,z₂,atmp,nlsolver)
 end
 
+struct SDIRK22ConstantCache{uType,tType,N,Tab} <: OrdinaryDiffEqConstantCache
+  uprev3::uType
+  tprev2::tType
+  nlsolver::N
+  tab::Tab
+end
+
+function alg_cache(alg::SDIRK22,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+  tab = SDIRK22Tableau(real(uBottomEltypeNoUnits))
+  uprev3 = u
+  tprev2 = t
+  γ, c = 1, 1
+
+  J, W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
+  nlsolver = oopnlsolve(alg,u,uprev,p,t,dt,f,W,J,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
+
+  SDIRK22ConstantCache(uprev3,tprev2,nlsolver)
+end
+
+@cache mutable struct SDIRK22Cache{uType,rateType,uNoUnitsType,tType,N,Tab} <: SDIRKMutableCache
+  u::uType
+  uprev::uType
+  uprev2::uType
+  fsalfirst::rateType
+  atmp::uNoUnitsType
+  uprev3::uType
+  tprev2::tType
+  nlsolver::N
+  tab::Tab
+end
+
+function alg_cache(alg::SDIRK22,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+  tab = SDIRK22Tableau(real(uBottomEltypeNoUnits))
+  γ, c = 1, 1
+  J, W = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
+  nlsolver = iipnlsolve(alg,u,uprev,p,t,dt,f,W,J,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
+  fsalfirst = zero(rate_prototype)
+
+  uprev3 = zero(u)
+  tprev2 = t
+  atmp = similar(u,uEltypeNoUnits)
+
+  SDIRK22(u,uprev,uprev2,fsalfirst,atmp,uprev3,tprev2,nlsolver,tab)
+end
+
 mutable struct SSPSDIRK2ConstantCache{N} <: OrdinaryDiffEqConstantCache
   nlsolver::N
 end
