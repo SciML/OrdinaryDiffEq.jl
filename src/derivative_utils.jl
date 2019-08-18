@@ -14,6 +14,13 @@ function Base.getproperty(nls::SemiImplicitNLSolver,s::Symbol)
   end
 end
 
+function Base.resize!(nlsolver::SemiImplicitNLSolver, i::Int)
+  @unpack du1,jac_config = nlsolver
+  if jac_config !== nothing
+    nlsolver.jac_config = resize_jac_config!(jac_config, i)
+  end
+end
+
 function calc_tderivative!(integrator, cache, dtd1, repeat_step)
   @inbounds begin
     @unpack t,dt,uprev,u,f,p = integrator

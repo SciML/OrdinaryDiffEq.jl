@@ -104,7 +104,7 @@ end
 
 function resize_J_and_W!(integrator, i)
   @unpack cache, alg, f, dt = integrator
-  has_newton_nlsolve = isdefined(cache, :nlsolver) && alg.nlsolve isa NLNewton
+  has_newton_nlsolve = isdefined(cache, :nlsolver) && !(cache.nlsolver isa SemiImplicitNLSolver) && alg.nlsolve isa NLNewton
   if has_newton_nlsolve
     nf = nlsolve_f(f, alg)
     islin = f isa Union{ODEFunction,SplitFunction} && islinear(nf.f)
@@ -150,8 +150,8 @@ addat_non_user_cache!(integrator::ODEIntegrator,i) = addat_non_user_cache!(integ
 resize_non_user_cache!(integrator::ODEIntegrator,cache,i) = nothing
 function resize_non_user_cache!(integrator::ODEIntegrator,
                       cache::RosenbrockMutableCache,i)
-  cache.J = similar(cache.J,i,i)
-  cache.W = similar(cache.W,i,i)
+  cache.nlsolver.J = similar(cache.nlsolver.J,i,i)
+  cache.nlsolver.W = similar(cache.nlsolver.W,i,i)
   cache.jac_config = DiffEqBase.resize_jac_config!(cache.jac_config, i)
   cache.grad_config = resize_grad_config!(cache.grad_config, i)
 end
