@@ -395,7 +395,7 @@ end
   uf::UF
 end
 
-@cache mutable struct ImplicitDeuflhardExtrapolationCache{uType,QType,extrapolation_coefficients,rateType,JType,WType,F,JCType,GCType,uNoUnitsType,TFType,UFType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct ImplicitDeuflhardExtrapolationCache{uType,QType,extrapolation_coefficients,rateType,N,F,JCType,GCType,uNoUnitsType,TFType,UFType} <: OrdinaryDiffEqMutableCache
   # Values that are mutated
   utilde::uType
   u_temp1::uType
@@ -420,8 +420,7 @@ end
 
   du1::rateType
   du2::rateType
-  J::JType
-  W::WType
+  nlsolver::N
   tf::TFType
   uf::UFType
   linsolve_tmp::rateType
@@ -490,10 +489,10 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeN
   linsolve = alg.linsolve(Val{:init},uf,u)
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,du1,du2)
-
+  nlsolver = SemiImplicitNLSolver(W,J,du1,uf,jac_config)
 
   ImplicitDeuflhardExtrapolationCache(utilde,u_temp1,u_temp2,u_temp3,u_temp4,tmp,T,res,fsalfirst,k,k_tmps,cc.Q,cc.n_curr,cc.n_old,cc.coefficients,cc.stage_number,
-    du1,du2,J,W,tf,uf,linsolve_tmp,linsolve,jac_config,grad_config)
+    du1,du2,nlsolver,tf,uf,linsolve_tmp,linsolve,jac_config,grad_config)
 end
 
 @cache mutable struct ExtrapolationMidpointHairerWannerConstantCache{QType,extrapolation_coefficients} <: OrdinaryDiffEqConstantCache
@@ -614,7 +613,7 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,uElty
   ImplicitHairerWannerExtrapolationConstantCache(Q, n_curr, n_old, coefficients, stage_number, sigma, tf, uf)
 end
 
-@cache mutable struct ImplicitHairerWannerExtrapolationCache{uType,uNoUnitsType,rateType,QType,extrapolation_coefficients,JType,WType,F,JCType,GCType,TFType,UFType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct ImplicitHairerWannerExtrapolationCache{uType,uNoUnitsType,rateType,QType,extrapolation_coefficients,N,F,JCType,GCType,TFType,UFType} <: OrdinaryDiffEqMutableCache
   # Values that are mutated
   utilde::uType
   u_temp1::uType
@@ -639,8 +638,7 @@ end
 
   du1::rateType
   du2::rateType
-  J::JType
-  W::WType
+  nlsolver::N
   tf::TFType
   uf::UFType
   linsolve_tmp::rateType
@@ -693,9 +691,10 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,uElty
   linsolve = alg.linsolve(Val{:init},uf,u)
   grad_config = build_grad_config(alg,f,tf,du1,t)
   jac_config = build_jac_config(alg,f,uf,du1,uprev,u,du1,du2)
+  nlsolver = SemiImplicitNLSolver(W,J,du1,uf,jac_config)
 
   # Initialize the cache
   ImplicitHairerWannerExtrapolationCache(utilde, u_temp1, u_temp2, u_temp3, u_temp4, tmp, T, res, fsalfirst, k, k_tmps,
-      cc.Q, cc.n_curr, cc.n_old, cc.coefficients, cc.stage_number, cc.sigma, du1, du2, J, W, tf, uf, linsolve_tmp,
+      cc.Q, cc.n_curr, cc.n_old, cc.coefficients, cc.stage_number, cc.sigma, du1, du2, nlsolver, tf, uf, linsolve_tmp,
       linsolve, jac_config, grad_config)
 end

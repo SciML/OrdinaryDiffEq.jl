@@ -797,7 +797,8 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
   @unpack subdividing_sequence = cache.coefficients
   @unpack stage_number = cache
 
-  @unpack J,W,uf,tf,linsolve_tmp,jac_config = cache
+  @unpack nlsolver,uf,tf,linsolve_tmp,jac_config = cache
+  @unpack J,W = nlsolver
 
   fill!(cache.Q, zero(eltype(cache.Q)))
   tol = integrator.opts.internalnorm(integrator.opts.reltol, t) # Used by the convergence monitor
@@ -817,7 +818,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
   for i = 0 : n_curr
     j_int = 2Int64(subdividing_sequence[i+1])
     dt_int = dt / (2j_int) # Stepsize of the ith internal discretisation
-    calc_W!(integrator, cache, dt_int, repeat_step)
+    calc_W!(nlsolver, integrator, cache, dt_int, repeat_step)
     @.. u_temp2 = uprev
     @.. linsolve_tmp = dt_int*fsalfirst
     cache.linsolve(vec(k), W, vec(linsolve_tmp), !repeat_step)
@@ -1514,7 +1515,8 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
   # Additional constant information
   @unpack subdividing_sequence = cache.coefficients
 
-  @unpack J,W,uf,tf,linsolve_tmp,jac_config = cache
+  @unpack nlsolver,uf,tf,linsolve_tmp,jac_config = cache
+  @unpack J,W = nlsolver
 
   fill!(cache.Q, zero(eltype(cache.Q)))
 
@@ -1537,7 +1539,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
   for i = 0 : n_curr
     j_int = 2Int64(subdividing_sequence[i+1])
     dt_int = dt / (2j_int) # Stepsize of the ith internal discretisation
-    calc_W!(integrator, cache, dt_int, repeat_step)
+    calc_W!(nlsolver, integrator, cache, dt_int, repeat_step)
     @.. u_temp2 = uprev
     @.. linsolve_tmp = dt_int*fsalfirst
     cache.linsolve(vec(k), W, vec(linsolve_tmp), !repeat_step)
