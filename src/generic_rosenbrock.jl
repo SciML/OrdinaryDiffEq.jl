@@ -164,12 +164,11 @@ because in the end of Rosenbrock's method, we have: `y_{n+1}=y_n+ki*bi`.
 """
 function gen_cache_struct(tab::RosenbrockTableau,cachename::Symbol,constcachename::Symbol)
     kstype=[:($(Symbol(:k,i))::rateType) for i in 1:length(tab.b)]
-    constcacheexpr=quote struct $constcachename{TF,UF,Tab,JType,WType,F} <: OrdinaryDiffEqConstantCache
+    constcacheexpr=quote struct $constcachename{TF,UF,Tab,N,F} <: OrdinaryDiffEqConstantCache
             tf::TF
             uf::UF
             tab::Tab
-            J::JType
-            W::WType
+            nlsolver::N
             linsolve::F
         end
     end
@@ -225,7 +224,8 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
             J,W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
             linsolve = alg.linsolve(Val{:init},uf,u)
-            $constcachename(tf,uf,$tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve)
+            nlsolver = SemiImplicitNLSolver(W,J,nothing,uf,nothing)
+            $constcachename(tf,uf,$tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),nlsolver,linsolve)
         end
         function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
             du = zero(rate_prototype)
@@ -341,7 +341,7 @@ function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachena
     quote
         @muladd function perform_step!(integrator, cache::$cachename, repeat_step=false)
             @unpack t,dt,uprev,u,f,p = integrator
-            @unpack tf,uf = cache
+            @unpack tf,uf,nlsolver = cache
             $unpacktabexpr
 
             $(dtCijexprs...)
@@ -354,7 +354,7 @@ function gen_constant_perform_step(tabmask::RosenbrockTableau{Bool,Bool},cachena
             tf.u = uprev
             dT = ForwardDiff.derivative(tf, t)
 
-            W = calc_W!(integrator, cache, dtgamma, repeat_step, true)
+            W = calc_W!(nlsolver, integrator, cache, dtgamma, repeat_step, true)
             linsolve_tmp = integrator.fsalfirst + dtd1*dT #calc_rosenbrock_differentiation!
 
             $(iterexprs...)

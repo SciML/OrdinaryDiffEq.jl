@@ -106,19 +106,18 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,uBottomElty
   Rosenbrock32Cache(u,uprev,k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,nlsolver,tmp,atmp,tab,tf,uf,linsolve_tmp,linsolve,jac_config,grad_config)
 end
 
-struct Rosenbrock23ConstantCache{T,TF,UF,JType,WType,F} <: OrdinaryDiffEqConstantCache
+struct Rosenbrock23ConstantCache{T,TF,UF,N,F} <: OrdinaryDiffEqConstantCache
   c₃₂::T
   d::T
   tf::TF
   uf::UF
-  J::JType
-  W::WType
+  nlsolver::N
   linsolve::F
 end
 
-function Rosenbrock23ConstantCache(T::Type,tf,uf,J,W,linsolve)
+function Rosenbrock23ConstantCache(T::Type,tf,uf,nlsolver,linsolve)
   tab = Rosenbrock23Tableau(T)
-  Rosenbrock23ConstantCache(tab.c₃₂,tab.d,tf,uf,J,W,linsolve)
+  Rosenbrock23ConstantCache(tab.c₃₂,tab.d,tf,uf,nlsolver,linsolve)
 end
 
 function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
@@ -126,22 +125,22 @@ function alg_cache(alg::Rosenbrock23,u,rate_prototype,uEltypeNoUnits,uBottomElty
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   J,W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
   linsolve = alg.linsolve(Val{:init},uf,u)
-  Rosenbrock23ConstantCache(real(uBottomEltypeNoUnits),tf,uf,J,W,linsolve)
+  nlsolver = SemiImplicitNLSolver(W,J,nothing,uf,nothing)
+  Rosenbrock23ConstantCache(real(uBottomEltypeNoUnits),tf,uf,nlsolver,linsolve)
 end
 
-struct Rosenbrock32ConstantCache{T,TF,UF,JType,WType,F} <: OrdinaryDiffEqConstantCache
+struct Rosenbrock32ConstantCache{T,TF,UF,N,F} <: OrdinaryDiffEqConstantCache
   c₃₂::T
   d::T
   tf::TF
   uf::UF
-  J::JType
-  W::WType
+  nlsolver::N
   linsolve::F
 end
 
-function Rosenbrock32ConstantCache(T::Type,tf,uf,J,W,linsolve)
+function Rosenbrock32ConstantCache(T::Type,tf,uf,nlsolver,linsolve)
   tab = Rosenbrock32Tableau(T)
-  Rosenbrock32ConstantCache(tab.c₃₂,tab.d,tf,uf,J,W,linsolve)
+  Rosenbrock32ConstantCache(tab.c₃₂,tab.d,tf,uf,nlsolver,linsolve)
 end
 
 function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
@@ -149,19 +148,19 @@ function alg_cache(alg::Rosenbrock32,u,rate_prototype,uEltypeNoUnits,uBottomElty
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   J,W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
   linsolve = alg.linsolve(Val{:init},uf,u)
-  Rosenbrock32ConstantCache(real(uBottomEltypeNoUnits),tf,uf,J,W,linsolve)
+  nlsolver = SemiImplicitNLSolver(W,J,nothing,uf,nothing)
+  Rosenbrock32ConstantCache(real(uBottomEltypeNoUnits),tf,uf,nlsolver,linsolve)
 end
 
 ################################################################################
 
 ### 3rd order specialized Rosenbrocks
 
-struct Rosenbrock33ConstantCache{TF,UF,Tab,JType,WType,F} <: OrdinaryDiffEqConstantCache
+struct Rosenbrock33ConstantCache{TF,UF,Tab,N,F} <: OrdinaryDiffEqConstantCache
   tf::TF
   uf::UF
   tab::Tab
-  J::JType
-  W::WType
+  nlsolver::N
   linsolve::F
 end
 
@@ -222,7 +221,8 @@ function alg_cache(alg::ROS3P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUni
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   J,W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
   linsolve = alg.linsolve(Val{:init},uf,u)
-  Rosenbrock33ConstantCache(tf,uf,ROS3PTableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve)
+  nlsolver = SemiImplicitNLSolver(W,J,nothing,uf,nothing)
+  Rosenbrock33ConstantCache(tf,uf,ROS3PTableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),nlsolver,linsolve)
 end
 
 @cache mutable struct Rosenbrock34Cache{uType,rateType,uNoUnitsType,N,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
@@ -278,12 +278,11 @@ function alg_cache(alg::Rodas3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
                     linsolve,jac_config,grad_config)
 end
 
-struct Rosenbrock34ConstantCache{TF,UF,Tab,JType,WType,F} <: OrdinaryDiffEqConstantCache
+struct Rosenbrock34ConstantCache{TF,UF,Tab,N,F} <: OrdinaryDiffEqConstantCache
   tf::TF
   uf::UF
   tab::Tab
-  J::JType
-  W::WType
+  nlsolver::N
   linsolve::F
 end
 
@@ -292,7 +291,8 @@ function alg_cache(alg::Rodas3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   J,W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
   linsolve = alg.linsolve(Val{:init},uf,u)
-  Rosenbrock34ConstantCache(tf,uf,Rodas3Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve)
+  nlsolver = SemiImplicitNLSolver(W,J,nothing,uf,nothing)
+  Rosenbrock34ConstantCache(tf,uf,Rodas3Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),nlsolver,linsolve)
 end
 
 ################################################################################
@@ -312,12 +312,11 @@ jac_cache(c::Rosenbrock4Cache) = (c.J,c.W)
 
 ### Rodas methods
 
-struct Rodas4ConstantCache{TF,UF,Tab,JType,WType,F} <: OrdinaryDiffEqConstantCache
+struct Rodas4ConstantCache{TF,UF,Tab,N,F} <: OrdinaryDiffEqConstantCache
   tf::TF
   uf::UF
   tab::Tab
-  J::JType
-  W::WType
+  nlsolver::N
   linsolve::F
 end
 
@@ -388,7 +387,8 @@ function alg_cache(alg::Rodas4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   J,W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
   linsolve = alg.linsolve(Val{:init},uf,u)
-  Rodas4ConstantCache(tf,uf,Rodas4Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve)
+  nlsolver = SemiImplicitNLSolver(W,J,nothing,uf,nothing)
+  Rodas4ConstantCache(tf,uf,Rodas4Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),nlsolver,linsolve)
 end
 
 function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -429,7 +429,8 @@ function alg_cache(alg::Rodas42,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   J,W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
   linsolve = alg.linsolve(Val{:init},uf,u)
-  Rodas4ConstantCache(tf,uf,Rodas42Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve)
+  nlsolver = SemiImplicitNLSolver(W,J,nothing,uf,nothing)
+  Rodas4ConstantCache(tf,uf,Rodas42Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),nlsolver,linsolve)
 end
 
 function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -470,19 +471,19 @@ function alg_cache(alg::Rodas4P,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   J,W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
   linsolve = alg.linsolve(Val{:init},uf,u)
-  Rodas4ConstantCache(tf,uf,Rodas4PTableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve)
+  nlsolver = SemiImplicitNLSolver(W,J,nothing,uf,nothing)
+  Rodas4ConstantCache(tf,uf,Rodas4PTableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),nlsolver,linsolve)
 end
 
 ################################################################################
 
 ### Rosenbrock5
 
-struct Rosenbrock5ConstantCache{TF,UF,Tab,JType,WType,F} <: OrdinaryDiffEqConstantCache
+struct Rosenbrock5ConstantCache{TF,UF,Tab,N,F} <: OrdinaryDiffEqConstantCache
   tf::TF
   uf::UF
   tab::Tab
-  J::JType
-  W::WType
+  nlsolver::N
   linsolve::F
 end
 
@@ -557,7 +558,8 @@ function alg_cache(alg::Rodas5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUn
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   J,W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
   linsolve = alg.linsolve(Val{:init},uf,u)
-  Rosenbrock5ConstantCache(tf,uf,Rodas5Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve)
+  nlsolver = SemiImplicitNLSolver(W,J,nothing,uf,nothing)
+  Rosenbrock5ConstantCache(tf,uf,Rodas5Tableau(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),nlsolver,linsolve)
 end
 
 ################################################################################

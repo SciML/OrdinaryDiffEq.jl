@@ -149,7 +149,7 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock23ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack c₃₂,d,tf,uf = cache
+  @unpack c₃₂,d,tf,uf,nlsolver = cache
 
   # Precalculations
   γ = dt*d
@@ -161,7 +161,7 @@ end
   # Time derivative
   dT = calc_tderivative(integrator, cache)
 
-  W = calc_W!(integrator, cache, γ, repeat_step)
+  W = calc_W!(nlsolver, integrator, cache, γ, repeat_step)
   k₁ = _reshape(W\-_vec((integrator.fsalfirst + γ*dT)), axes(uprev))
   integrator.destats.nsolve += 1
   f₁ = f(uprev  + dto2*k₁, p, t+dto2)
@@ -199,7 +199,7 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock32ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack c₃₂,d,tf,uf = cache
+  @unpack c₃₂,d,tf,uf,nlsolver = cache
 
   # Precalculations
   γ = dt*d
@@ -211,7 +211,7 @@ end
   # Time derivative
   dT = calc_tderivative(integrator, cache)
 
-  W = calc_W!(integrator, cache, γ, repeat_step)
+  W = calc_W!(nlsolver,integrator, cache, γ, repeat_step)
 
   #f₀ = f(uprev, p, t)
 
@@ -285,7 +285,7 @@ end
 @muladd function perform_step!(integrator, cache::Rosenbrock33ConstantCache,
                                repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack tf,uf = cache
+  @unpack tf,uf,nlsolver = cache
   @unpack a21,a31,a32,C21,C31,C32,b1,b2,b3,btilde1,btilde2,btilde3,gamma,c2,c3,d1,d2,d3 = cache.tab
 
   # Precalculations
@@ -303,7 +303,7 @@ end
   # Time derivative
   dT = calc_tderivative(integrator, cache)
 
-  W = calc_W!(integrator, cache, dtgamma, repeat_step, true)
+  W = calc_W!(nlsolver, integrator, cache, dtgamma, repeat_step, true)
 
   linsolve_tmp =  integrator.fsalfirst + dtd1*dT
 
@@ -424,7 +424,7 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock34ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack tf,uf = cache
+  @unpack tf,uf,nlsolver = cache
   @unpack a21,a31,a32,C21,C31,C32,C41,C42,C43,b1,b2,b3,b4,btilde1,btilde2,btilde3,btilde4,gamma,c2,c3,d1,d2,d3,d4 = cache.tab
 
   # Precalculations
@@ -446,7 +446,7 @@ end
   tf.u = uprev
   dT = ForwardDiff.derivative(tf, t)
 
-  W = calc_W!(integrator, cache, dtgamma, repeat_step, true)
+  W = calc_W!(nlsolver, integrator, cache, dtgamma, repeat_step, true)
 
   linsolve_tmp =  integrator.fsalfirst + dtd1*dT
 
@@ -619,7 +619,7 @@ end
 
 @muladd function perform_step!(integrator, cache::Rodas4ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack tf,uf = cache
+  @unpack tf,uf,nlsolver = cache
   @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,gamma,c2,c3,c4,d1,d2,d3,d4 = cache.tab
 
   # Precalculations
@@ -651,7 +651,7 @@ end
   tf.u = uprev
   dT = ForwardDiff.derivative(tf, t)
 
-  W = calc_W!(integrator, cache, dtgamma, repeat_step, true)
+  W = calc_W!(nlsolver, integrator, cache, dtgamma, repeat_step, true)
 
   du = f(uprev, p, t)
   integrator.destats.nf += 1
@@ -885,7 +885,7 @@ end
 
 @muladd function perform_step!(integrator, cache::Rosenbrock5ConstantCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack tf,uf = cache
+  @unpack tf,uf,nlsolver = cache
   @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,C71,C72,C73,C74,C75,C76,C81,C82,C83,C84,C85,C86,C87,gamma,d1,d2,d3,d4,d5,c2,c3,c4,c5 = cache.tab
 
   # Precalculations
@@ -930,7 +930,7 @@ end
   # Time derivative
   dT = calc_tderivative(integrator, cache)
 
-  W = calc_W!(integrator, cache, dtgamma, repeat_step, true)
+  W = calc_W!(nlsolver, integrator, cache, dtgamma, repeat_step, true)
 
   du1 = f(uprev, p, t)
   integrator.destats.nf += 1

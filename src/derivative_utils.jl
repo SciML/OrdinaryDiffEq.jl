@@ -414,7 +414,7 @@ function calc_W!(nlsolver, integrator, cache::OrdinaryDiffEqMutableCache, dtgamm
   new_W && (integrator.destats.nw += 1)
   return nothing
 end
-
+#=
 function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat_step, W_transform=false)
   @unpack t,uprev,p,f = integrator
   @unpack uf = cache
@@ -443,7 +443,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat
   is_compos && (integrator.eigen_est = isarray ? opnorm(J, Inf) : abs(J))
   W
 end
-
+=#
 function calc_W!(nlsolver, integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat_step, W_transform=false)
   @unpack t,uprev,p,f = integrator
   @unpack uf = nlsolver
