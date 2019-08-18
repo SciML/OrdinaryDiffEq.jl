@@ -340,7 +340,7 @@ end
 
 function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack dtpropose, T, cur_order, work, A, tf, uf = cache
+  @unpack dtpropose, T, cur_order, work, A, tf, uf, nlsolver = cache
 
   max_order = min(size(T)[1], cur_order+1)
 
@@ -351,7 +351,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
       endIndex = (i==1) ? max_order-1 : max_order
       for index in startIndex:endIndex
         dt_temp = dt/(2^(index-1)) # Romberg sequence
-        W = calc_W!(integrator, cache, dt_temp, repeat_step)
+        W = calc_W!(nlsolver, integrator, cache, dt_temp, repeat_step)
         k_copy = integrator.fsalfirst
         u_tmp = uprev
         for j in 1:2^(index-1)
@@ -941,7 +941,7 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
   @unpack extrapolation_weights_2, extrapolation_scalars_2 = cache.coefficients
   # Additional constant information
   @unpack subdividing_sequence = cache.coefficients
-  @unpack stage_number = cache
+  @unpack stage_number, nlsolver = cache
 
   # Create auxiliary variables
   u_temp1, u_temp2 = copy(uprev), copy(uprev) # Auxiliary variables for computing the internal discretisations
@@ -965,7 +965,7 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
   for i = 0 : n_curr
     j_int = 2Int64(subdividing_sequence[i+1])
     dt_int = dt / (2j_int) # Stepsize of the ith internal discretisation
-    W = calc_W!(integrator, cache, dt_int, repeat_step)
+    W = calc_W!(nlsolver, integrator, cache, dt_int, repeat_step)
     u_temp2 = uprev
     u_temp1 = u_temp2 + _reshape(W\-_vec(dt_int*integrator.fsalfirst), axes(uprev)) # Euler starting step
     for j = 2 : 2j_int
@@ -1392,7 +1392,7 @@ end
 function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConstantCache, repeat_step = false)
   # Unpack all information needed
   @unpack t, uprev, dt, f, p = integrator
-  @unpack n_curr = cache
+  @unpack n_curr, nlsolver = cache
   # Coefficients for obtaining u
   @unpack extrapolation_weights, extrapolation_scalars = cache.coefficients
   # Coefficients for obtaining utilde
@@ -1425,7 +1425,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
   for i = 0 : n_curr
     j_int = 2Int64(subdividing_sequence[i+1])
     dt_int = dt / (2j_int) # Stepsize of the ith internal discretisation
-    W = calc_W!(integrator, cache, dt_int, repeat_step)
+    W = calc_W!(nlsolver, integrator, cache, dt_int, repeat_step)
     u_temp2 = uprev
     u_temp1 = u_temp2 + _reshape(W\-_vec(dt_int*integrator.fsalfirst), axes(uprev)) # Euler starting step
     for j = 2 : 2j_int
