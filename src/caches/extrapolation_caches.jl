@@ -67,7 +67,7 @@ function alg_cache(alg::AitkenNeville,u,rate_prototype,uEltypeNoUnits,uBottomElt
   AitkenNevilleConstantCache(dtpropose,T,cur_order,work,A,step_no)
 end
 
-@cache mutable struct ImplicitEulerExtrapolationCache{uType,rateType,arrayType,dtType,F,JCType,GCType,uNoUnitsType,TFType,UFType,N} <: OrdinaryDiffEqMutableCache
+@cache mutable struct ImplicitEulerExtrapolationCache{uType,rateType,arrayType,dtType,F,JCType,GCType,uNoUnitsType,TFType,N} <: OrdinaryDiffEqMutableCache
   uprev::uType
   u_tmps::Array{uType,1}
   utilde::uType
@@ -84,14 +84,13 @@ end
   du2::rateType
   nlsolver::N
   tf::TFType
-  uf::UFType
   linsolve_tmps::Array{rateType,1}
   linsolve::Array{F,1}
   jac_config::JCType
   grad_config::GCType
 end
 
-@cache mutable struct ImplicitEulerExtrapolationConstantCache{dtType,arrayType,TF,UF,N} <: OrdinaryDiffEqConstantCache
+@cache mutable struct ImplicitEulerExtrapolationConstantCache{dtType,arrayType,TF,N} <: OrdinaryDiffEqConstantCache
   dtpropose::dtType
   T::arrayType
   cur_order::Int
@@ -100,7 +99,6 @@ end
   step_no::Int
 
   tf::TF
-  uf::UF
   nlsolver::N
 end
 
@@ -115,7 +113,7 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   nlsolver = SemiImplicitNLSolver(nothing,nothing,nothing,uf,nothing)
-  ImplicitEulerExtrapolationConstantCache(dtpropose,T,cur_order,work,A,step_no,tf,uf,nlsolver)
+  ImplicitEulerExtrapolationConstantCache(dtpropose,T,cur_order,work,A,step_no,tf,nlsolver)
 end
 
 function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -187,7 +185,7 @@ function alg_cache(alg::ImplicitEulerExtrapolation,u,rate_prototype,uEltypeNoUni
   end
 
   ImplicitEulerExtrapolationCache(uprev,u_tmps,utilde,tmp,atmp,k_tmps,dtpropose,T,cur_order,work,A,step_no,
-    du1,du2,nlsolver,tf,uf,linsolve_tmps,linsolve,jac_config,grad_config)
+    du1,du2,nlsolver,tf,linsolve_tmps,linsolve,jac_config,grad_config)
 end
 
 
@@ -383,7 +381,7 @@ function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeN
   ExtrapolationMidpointDeuflhardCache(utilde, u_temp1, u_temp2, u_temp3, u_temp4, tmp, T, res, fsalfirst, k, k_tmps, cc.Q, cc.n_curr, cc.n_old, cc.coefficients,cc.stage_number)
 end
 
-@cache mutable struct ImplicitDeuflhardExtrapolationConstantCache{QType,extrapolation_coefficients,TF,UF,N} <: OrdinaryDiffEqConstantCache
+@cache mutable struct ImplicitDeuflhardExtrapolationConstantCache{QType,extrapolation_coefficients,TF,N} <: OrdinaryDiffEqConstantCache
   # Values that are mutated
   Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n + alg.n_min - 1)
   n_curr::Int64 # Storage for the current extrapolation order
@@ -394,11 +392,10 @@ end
   stage_number::Vector{Int64} # stage_number[n] contains information for extrapolation order (n + alg.n_min - 1)
 
   tf::TF
-  uf::UF
   nlsolver::N
 end
 
-@cache mutable struct ImplicitDeuflhardExtrapolationCache{uType,QType,extrapolation_coefficients,rateType,N,F,JCType,GCType,uNoUnitsType,TFType,UFType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct ImplicitDeuflhardExtrapolationCache{uType,QType,extrapolation_coefficients,rateType,N,F,JCType,GCType,uNoUnitsType,TFType} <: OrdinaryDiffEqMutableCache
   # Values that are mutated
   utilde::uType
   u_temp1::uType
@@ -425,7 +422,6 @@ end
   du2::rateType
   nlsolver::N
   tf::TFType
-  uf::UFType
   linsolve_tmp::rateType
   linsolve::F
   jac_config::JCType
@@ -446,7 +442,7 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeN
   tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   nlsolver = SemiImplicitNLSolver(nothing,nothing,nothing,uf,nothing)
-  ImplicitDeuflhardExtrapolationConstantCache(Q,n_curr,n_old,coefficients,stage_number,tf,uf,nlsolver)
+  ImplicitDeuflhardExtrapolationConstantCache(Q,n_curr,n_old,coefficients,stage_number,tf,nlsolver)
 end
 
 function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -496,7 +492,7 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeN
   nlsolver = SemiImplicitNLSolver(W,J,du1,uf,jac_config)
 
   ImplicitDeuflhardExtrapolationCache(utilde,u_temp1,u_temp2,u_temp3,u_temp4,tmp,T,res,fsalfirst,k,k_tmps,cc.Q,cc.n_curr,cc.n_old,cc.coefficients,cc.stage_number,
-    du1,du2,nlsolver,tf,uf,linsolve_tmp,linsolve,jac_config,grad_config)
+    du1,du2,nlsolver,tf,linsolve_tmp,linsolve,jac_config,grad_config)
 end
 
 @cache mutable struct ExtrapolationMidpointHairerWannerConstantCache{QType,extrapolation_coefficients} <: OrdinaryDiffEqConstantCache
@@ -584,7 +580,7 @@ function alg_cache(alg::ExtrapolationMidpointHairerWanner,u,rate_prototype,uElty
       cc.Q, cc.n_curr, cc.n_old, cc.coefficients, cc.stage_number, cc.sigma)
 end
 
-@cache mutable struct ImplicitHairerWannerExtrapolationConstantCache{QType,extrapolation_coefficients,TF,UF,N} <: OrdinaryDiffEqConstantCache
+@cache mutable struct ImplicitHairerWannerExtrapolationConstantCache{QType,extrapolation_coefficients,TF,N} <: OrdinaryDiffEqConstantCache
   # Values that are mutated
   Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n - 1)
   n_curr::Int64 # Storage for the current extrapolation order
@@ -596,7 +592,6 @@ end
   sigma::Rational{Int64} # Parameter for order selection
 
   tf::TF
-  uf::UF
   nlsolver::N
 end
 
@@ -616,10 +611,10 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,uElty
   tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
   nlsolver = SemiImplicitNLSolver(nothing,nothing,nothing,uf,nothing)
-  ImplicitHairerWannerExtrapolationConstantCache(Q, n_curr, n_old, coefficients, stage_number, sigma, tf, uf, nlsolver)
+  ImplicitHairerWannerExtrapolationConstantCache(Q, n_curr, n_old, coefficients, stage_number, sigma, tf, nlsolver)
 end
 
-@cache mutable struct ImplicitHairerWannerExtrapolationCache{uType,uNoUnitsType,rateType,QType,extrapolation_coefficients,N,F,JCType,GCType,TFType,UFType} <: OrdinaryDiffEqMutableCache
+@cache mutable struct ImplicitHairerWannerExtrapolationCache{uType,uNoUnitsType,rateType,QType,extrapolation_coefficients,N,F,JCType,GCType,TFType} <: OrdinaryDiffEqMutableCache
   # Values that are mutated
   utilde::uType
   u_temp1::uType
@@ -646,7 +641,6 @@ end
   du2::rateType
   nlsolver::N
   tf::TFType
-  uf::UFType
   linsolve_tmp::rateType
   linsolve::F
   jac_config::JCType
@@ -701,6 +695,6 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,uElty
 
   # Initialize the cache
   ImplicitHairerWannerExtrapolationCache(utilde, u_temp1, u_temp2, u_temp3, u_temp4, tmp, T, res, fsalfirst, k, k_tmps,
-      cc.Q, cc.n_curr, cc.n_old, cc.coefficients, cc.stage_number, cc.sigma, du1, du2, nlsolver, tf, uf, linsolve_tmp,
+      cc.Q, cc.n_curr, cc.n_old, cc.coefficients, cc.stage_number, cc.sigma, du1, du2, nlsolver, tf, linsolve_tmp,
       linsolve, jac_config, grad_config)
 end

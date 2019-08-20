@@ -164,16 +164,15 @@ because in the end of Rosenbrock's method, we have: `y_{n+1}=y_n+ki*bi`.
 """
 function gen_cache_struct(tab::RosenbrockTableau,cachename::Symbol,constcachename::Symbol)
     kstype=[:($(Symbol(:k,i))::rateType) for i in 1:length(tab.b)]
-    constcacheexpr=quote struct $constcachename{TF,UF,Tab,N,F} <: OrdinaryDiffEqConstantCache
+    constcacheexpr=quote struct $constcachename{TF,Tab,N,F} <: OrdinaryDiffEqConstantCache
             tf::TF
-            uf::UF
             tab::Tab
             nlsolver::N
             linsolve::F
         end
     end
     cacheexpr=quote
-        @cache mutable struct $cachename{uType,rateType,uNoUnitsType,N,TabType,TFType,UFType,F,JCType,GCType} <: RosenbrockMutableCache
+        @cache mutable struct $cachename{uType,rateType,uNoUnitsType,N,TabType,TFType,F,JCType,GCType} <: RosenbrockMutableCache
             u::uType
             uprev::uType
             du::rateType
@@ -188,7 +187,6 @@ function gen_cache_struct(tab::RosenbrockTableau,cachename::Symbol,constcachenam
             atmp::uNoUnitsType
             tab::TabType
             tf::TFType
-            uf::UFType
             linsolve_tmp::rateType
             linsolve::F
             jac_config::JCType
@@ -225,7 +223,7 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
             J,W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
             linsolve = alg.linsolve(Val{:init},uf,u)
             nlsolver = SemiImplicitNLSolver(W,J,nothing,uf,nothing)
-            $constcachename(tf,uf,$tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),nlsolver,linsolve)
+            $constcachename(tf,$tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),nlsolver,linsolve)
         end
         function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
             du = zero(rate_prototype)

@@ -248,7 +248,7 @@ end
 function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack T,utilde,atmp,dtpropose,cur_order,A = cache
-  @unpack nlsolver,uf,tf,jac_config = cache
+  @unpack nlsolver,tf,jac_config = cache
   @unpack u_tmps, k_tmps, linsolve_tmps = cache
 
   max_order = min(size(T)[1],cur_order+1)
@@ -340,7 +340,7 @@ end
 
 function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache,repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack dtpropose, T, cur_order, work, A, tf, uf, nlsolver = cache
+  @unpack dtpropose, T, cur_order, work, A, tf, nlsolver = cache
 
   max_order = min(size(T)[1], cur_order+1)
 
@@ -797,7 +797,7 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
   @unpack subdividing_sequence = cache.coefficients
   @unpack stage_number = cache
 
-  @unpack nlsolver,uf,tf,linsolve_tmp,jac_config = cache
+  @unpack nlsolver,tf,linsolve_tmp,jac_config = cache
   @unpack J,W = nlsolver
 
   fill!(cache.Q, zero(eltype(cache.Q)))
@@ -1515,7 +1515,7 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
   # Additional constant information
   @unpack subdividing_sequence = cache.coefficients
 
-  @unpack nlsolver,uf,tf,linsolve_tmp,jac_config = cache
+  @unpack nlsolver,tf,linsolve_tmp,jac_config = cache
   @unpack J,W = nlsolver
 
   fill!(cache.Q, zero(eltype(cache.Q)))
