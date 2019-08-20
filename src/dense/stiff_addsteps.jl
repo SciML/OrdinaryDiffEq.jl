@@ -1,6 +1,7 @@
 function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23ConstantCache,Rosenbrock32ConstantCache},always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<2 || always_calc_begin
-    @unpack tf,uf,d = cache
+    @unpack tf,d = cache
+    @unpack uf = cache.nlsolver
     γ = dt*d
     dT = ForwardDiff.derivative(tf, t)
     mass_matrix = f.mass_matrix
@@ -22,8 +23,8 @@ end
 
 function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Union{Rosenbrock23Cache,Rosenbrock32Cache},always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<2 || always_calc_begin
-    @unpack k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,nlsolver,tmp,uf,tf,linsolve_tmp = cache
-    @unpack J,W = nlsolver
+    @unpack k₁,k₂,k₃,du1,du2,f₁,fsalfirst,fsallast,dT,nlsolver,tmp,tf,linsolve_tmp = cache
+    @unpack J,W,uf = nlsolver
     @unpack c₃₂,d = cache.tab
     uidx = eachindex(uprev)
 
@@ -62,7 +63,8 @@ end
 
 function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4ConstantCache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<2 || always_calc_begin
-    @unpack tf,uf = cache
+    @unpack tf = cache
+    @unpack uf = cache.nlsolver
     @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,gamma,c2,c3,c4,d1,d2,d3,d4 = cache.tab
 
     # Precalculations
@@ -145,8 +147,8 @@ end
 function DiffEqBase.addsteps!(k,t,uprev,u,dt,f,p,cache::Rodas4Cache,always_calc_begin = false,allow_calc_end = true,force_calc_end = false)
   if length(k)<2 || always_calc_begin
 
-    @unpack du,du1,du2,tmp,k1,k2,k3,k4,k5,k6,dT,nlsolver,uf,tf,linsolve_tmp,jac_config,fsalfirst = cache
-    @unpack J,W = nlsolver
+    @unpack du,du1,du2,tmp,k1,k2,k3,k4,k5,k6,dT,nlsolver,tf,linsolve_tmp,jac_config,fsalfirst = cache
+    @unpack J,W,uf = nlsolver
     @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,C21,C31,C32,C41,C42,C43,C51,C52,C53,C54,C61,C62,C63,C64,C65,gamma,c2,c3,c4,d1,d2,d3,d4 = cache.tab
 
     # Assignments
