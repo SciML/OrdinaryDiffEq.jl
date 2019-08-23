@@ -270,7 +270,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
             f(k_tmps[1], u_tmps[1],p,t+j*dt_temp)
         end
 
-        @.. T[index,1] = first(u_tmps)
+        @.. T[index,1] = u_tmps[1]
       end
     end
     for i in 2:max_order
