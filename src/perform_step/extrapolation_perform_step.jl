@@ -71,9 +71,10 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
 
   if integrator.opts.adaptive
       minimum_work = Inf
-      range_start = max(2,cur_order - 1)
-      if cache.step_no == one(cache.step_no)
-          range_start = 2
+      if isone(cache.step_no)
+        range_start = 2
+      else
+        range_start = max(2, cur_order - 1)
       end
 
       for i = range_start:min(size(T)[1], cur_order + 1)
@@ -184,9 +185,10 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
 
   if integrator.opts.adaptive
       minimum_work = Inf
-      range_start = max(2,cur_order - 1)
-      if cache.step_no == one(cache.step_no)
-          range_start = 2
+      if isone(cache.step_no)
+        range_start = 2
+      else
+        range_start = max(2, cur_order - 1)
       end
 
       for i = range_start:min(size(T)[1], cur_order + 1)
@@ -286,9 +288,10 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
 
   if integrator.opts.adaptive
     minimum_work = Inf
-    range_start = max(2,cur_order - 1)
-    if cache.step_no == one(cache.step_no)
-        range_start = 2
+    if isone(cache.step_no)
+      range_start = 2
+    else
+      range_start = max(2, cur_order - 1)
     end
 
     for i = range_start:min(size(T)[1], cur_order + 1)
@@ -376,9 +379,10 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
 
   if integrator.opts.adaptive
       minimum_work = Inf
-      range_start = max(2,cur_order - 1)
-      if cache.step_no == one(cache.step_no)
-          range_start = 2
+      if isone(cache.step_no)
+        range_start = 2
+      else
+        range_start = max(2, cur_order - 1)
       end
 
       for i = range_start:min(size(T)[1], cur_order + 1)
