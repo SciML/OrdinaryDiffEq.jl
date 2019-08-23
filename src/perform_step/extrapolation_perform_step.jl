@@ -18,7 +18,7 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
   @unpack k,fsalfirst,T,utilde,atmp,dtpropose,cur_order,A = cache
   @unpack u_tmps, k_tmps = cache
 
-  max_order = min(size(T)[1],cur_order+1)
+  max_order = min(size(T, 1), cur_order + 1)
 
   if !integrator.alg.threading
     for i in 1:max_order
@@ -61,8 +61,9 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
       end
     end
     integrator.destats.nf += 2^max_order - 1
+
     # Richardson Extrapolation
-    for i in 2:min(size(T)[1],cur_order+1)
+    for i in 2:max_order
       for j in 2:i
         @.. T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
       end
@@ -77,7 +78,7 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
         range_start = max(2, cur_order - 1)
       end
 
-      for i = range_start:min(size(T)[1], cur_order + 1)
+      for i in range_start:max_order
           A = 2^(i-1)
           @.. utilde = T[i,i] - T[i,i-1]
           atmp = calculate_residuals(utilde, uprev, T[i,i], integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -131,7 +132,7 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
   @unpack t,dt,uprev,f,p = integrator
   @unpack dtpropose, T, cur_order, work, A = cache
 
-  max_order = min(size(T)[1], cur_order+1)
+  max_order = min(size(T, 1), cur_order + 1)
 
   if !integrator.alg.threading
     for i in 1:max_order
@@ -177,7 +178,7 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
     integrator.destats.nf += 2^(max_order) - 1
 
     # Richardson Extrapolation
-    for i in 2:min(size(T)[1], cur_order+1)
+    for i in 2:max_order
       for j in 2:i
         T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
       end
@@ -192,7 +193,7 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
         range_start = max(2, cur_order - 1)
       end
 
-      for i = range_start:min(size(T)[1], cur_order + 1)
+      for i in range_start:max_order
           A = 2^(i-1)
           utilde = T[i,i] - T[i,i-1]
           atmp = calculate_residuals(utilde, uprev, T[i,i], integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -254,7 +255,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
   @unpack J,W,uf,tf,jac_config = cache
   @unpack u_tmps, k_tmps, linsolve_tmps = cache
 
-  max_order = min(size(T)[1],cur_order+1)
+  max_order = min(size(T, 1),cur_order + 1)
 
   let max_order=max_order, uprev=uprev, dt=dt, p=p, t=t, T=T, W=W,
       integrator=integrator, cache=cache, repeat_step = repeat_step,
@@ -295,7 +296,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
       range_start = max(2, cur_order - 1)
     end
 
-    for i = range_start:min(size(T)[1], cur_order + 1)
+    for i in range_start:max_order
         A = 2^(i-1)
         @.. utilde = T[i,i] - T[i,i-1]
         atmp = calculate_residuals(utilde, uprev, T[i,i], integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -346,7 +347,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack dtpropose, T, cur_order, work, A, tf, uf = cache
 
-  max_order = min(size(T)[1], cur_order+1)
+  max_order = min(size(T, 1), cur_order+1)
 
   let max_order=max_order, dt=dt, integrator=integrator, cache=cache, repeat_step=repeat_step,
     uprev=uprev, T=T
@@ -386,7 +387,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
         range_start = max(2, cur_order - 1)
       end
 
-      for i = range_start:min(size(T)[1], cur_order + 1)
+      for i in range_start:max_order
           A = 2^(i-1)
           utilde = T[i,i] - T[i,i-1]
           atmp = calculate_residuals(utilde, uprev, T[i,i], integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
