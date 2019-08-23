@@ -253,31 +253,58 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
 
   max_order = min(size(T)[1],cur_order+1)
 
-  let max_order=max_order, uprev=uprev, dt=dt, p=p, t=t, T=T, W=W,
-      integrator=integrator, cache=cache, repeat_step = repeat_step,
-      k_tmps=k_tmps, u_tmps=u_tmps
-    Threads.@threads for i in 1:2
+  if integrator.alg.threading == false
+    for i in 1:2
       startIndex = (i == 1) ? 1 : max_order
       endIndex = (i == 1) ? max_order - 1 : max_order
       for index in startIndex:endIndex
         dt_temp = dt/(2^(index-1)) # Romberg sequence
-        calc_W!(integrator, cache, dt_temp, repeat_step, Threads.threadid())
-        k_tmps[Threads.threadid()] = copy(integrator.fsalfirst)
-        u_tmps[Threads.threadid()] = copy(uprev)
+        calc_W!(integrator, cache, dt_temp, repeat_step, 1)
+        k_tmps[1] = copy(integrator.fsalfirst)
+        u_tmps[1] = copy(uprev)
         for j in 1:2^(index-1)
-            @.. linsolve_tmps[Threads.threadid()] = dt_temp*k_tmps[Threads.threadid()]
-            cache.linsolve[Threads.threadid()](vec(k_tmps[Threads.threadid()]), W[Threads.threadid()], vec(linsolve_tmps[Threads.threadid()]), !repeat_step)
-            @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
-            @.. u_tmps[Threads.threadid()] = u_tmps[Threads.threadid()] + k_tmps[Threads.threadid()]
-            f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()],p,t+j*dt_temp)
+            @.. linsolve_tmps[1] = dt_temp*k_tmps[1]
+            cache.linsolve[1](vec(k_tmps[1]), W[1], vec(linsolve_tmps[1]), !repeat_step)
+            @.. k_tmps[1] = -k_tmps[1]
+            @.. u_tmps[1] = u_tmps[1] + k_tmps[1]
+            f(k_tmps[1], u_tmps[1],p,t+j*dt_temp)
         end
 
-        @.. T[index,1] = u_tmps[Threads.threadid()]
+        @.. T[index,1] = first(u_tmps)
       end
     end
     for i in 2:max_order
       for j in 2:i
         @.. T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
+      end
+    end
+  else
+    let max_order=max_order, uprev=uprev, dt=dt, p=p, t=t, T=T, W=W,
+        integrator=integrator, cache=cache, repeat_step = repeat_step,
+        k_tmps=k_tmps, u_tmps=u_tmps
+      Threads.@threads for i in 1:2
+        startIndex = (i == 1) ? 1 : max_order
+        endIndex = (i == 1) ? max_order - 1 : max_order
+        for index in startIndex:endIndex
+          dt_temp = dt/(2^(index-1)) # Romberg sequence
+          calc_W!(integrator, cache, dt_temp, repeat_step, Threads.threadid())
+          k_tmps[Threads.threadid()] = copy(integrator.fsalfirst)
+          u_tmps[Threads.threadid()] = copy(uprev)
+          for j in 1:2^(index-1)
+              @.. linsolve_tmps[Threads.threadid()] = dt_temp*k_tmps[Threads.threadid()]
+              cache.linsolve[Threads.threadid()](vec(k_tmps[Threads.threadid()]), W[Threads.threadid()], vec(linsolve_tmps[Threads.threadid()]), !repeat_step)
+              @.. k_tmps[Threads.threadid()] = -k_tmps[Threads.threadid()]
+              @.. u_tmps[Threads.threadid()] = u_tmps[Threads.threadid()] + k_tmps[Threads.threadid()]
+              f(k_tmps[Threads.threadid()], u_tmps[Threads.threadid()],p,t+j*dt_temp)
+          end
+
+          @.. T[index,1] = u_tmps[Threads.threadid()]
+        end
+      end
+      for i in 2:max_order
+        for j in 2:i
+          @.. T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
+        end
       end
     end
   end
@@ -344,9 +371,8 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
 
   max_order = min(size(T)[1], cur_order+1)
 
-  let max_order=max_order, dt=dt, integrator=integrator, cache=cache, repeat_step=repeat_step,
-    uprev=uprev, T=T
-    Threads.@threads for i in 1:2
+  if integrator.alg.threading==false
+    for i in 1:2
       startIndex = (i==1) ? 1 : max_order
       endIndex = (i==1) ? max_order-1 : max_order
       for index in startIndex:endIndex
@@ -367,6 +393,33 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
     for i=2:max_order
       for j=2:i
         T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
+      end
+    end
+  else
+    let max_order=max_order, dt=dt, integrator=integrator, cache=cache, repeat_step=repeat_step,
+      uprev=uprev, T=T
+      Threads.@threads for i in 1:2
+        startIndex = (i==1) ? 1 : max_order
+        endIndex = (i==1) ? max_order-1 : max_order
+        for index in startIndex:endIndex
+          dt_temp = dt/(2^(index-1)) # Romberg sequence
+          W = calc_W!(integrator, cache, dt_temp, repeat_step)
+          k_copy = integrator.fsalfirst
+          u_tmp = uprev
+          for j in 1:2^(index-1)
+              k = _reshape(W\-_vec(dt_temp*k_copy), axes(uprev))
+              integrator.destats.nsolve += 1
+              u_tmp = u_tmp + k
+              k_copy = f(u_tmp, p, t+j*dt_temp)
+          end
+          T[index,1] = u_tmp
+        end
+      end
+
+      for i=2:max_order
+        for j=2:i
+          T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
+        end
       end
     end
   end

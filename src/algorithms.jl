@@ -56,12 +56,17 @@ struct ImplicitEulerExtrapolation{CS,AD,F,F2} <: OrdinaryDiffEqImplicitExtrapola
   threading::Bool
 end
 
-
-ImplicitEulerExtrapolation(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
-                          linsolve=DEFAULT_LINSOLVE,
-                          max_order=10,min_order=1,init_order=5,threading=true) =
-                          ImplicitEulerExtrapolation{chunk_size,autodiff,
-                          typeof(linsolve),typeof(diff_type)}(linsolve,max_order,min_order,init_order,threading)
+function ImplicitEulerExtrapolation(;chunk_size=0,autodiff=true,diff_type=Val{:forward},linsolve=DEFAULT_LINSOLVE,
+    max_order=10,min_order=1,init_order=5,threading=true)
+    if threading == true
+      @warn "Threading in `ImplicitEulerExtrapolation` is currently disabled.
+        Thus it has been changed to:
+        Threading: " * lpad(threading, 7, " ") * " --> " * lpad(false, 7, " ")
+      threading = false
+    end
+    ImplicitEulerExtrapolation{chunk_size,autodiff,typeof(linsolve),typeof(diff_type)}(
+      linsolve,max_order,min_order,init_order,threading)
+end
 
 struct ExtrapolationMidpointDeuflhard <: OrdinaryDiffEqExtrapolationVarOrderVarStepAlgorithm
   n_min::Int # Minimal extrapolation order
