@@ -7,7 +7,7 @@ variables:
 cache:
   paths:
     - .julia/
-    
+
 stages:
   - build
   - test
@@ -34,12 +34,12 @@ build:
       - .julia/**/*
       - julia-1.1.1/**/*
 
-test-extrapolation:
+test-multithreading:
   stage: test
   dependencies:
     - build
   variables:
-    GROUP: "AlgConvergence_I"
+    GROUP: "Multithreading"
   script:
     - export PATH="$(pwd)/julia-1.1.1/bin:$PATH"
     - julia -e "using InteractiveUtils;
