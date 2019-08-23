@@ -371,7 +371,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
 
   max_order = min(size(T)[1], cur_order+1)
 
-  if integrator.alg.threading==false
+  if !integrator.alg.threading
     for i in 1:2
       startIndex = (i==1) ? 1 : max_order
       endIndex = (i==1) ? max_order-1 : max_order
