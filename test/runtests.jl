@@ -103,7 +103,7 @@ if !is_APPVEYOR && GROUP == "ODEInterfaceRegression"
 end
 
 if !is_APPVEYOR && GROUP == "Multithreading"
-  @time @safetestset "Extrapolation Tests" begin include("algconvergence/ode_extrapolation_tests.jl") end
+  @time @safetestset "Extrapolation Tests" begin include("multithreading/ode_extrapolation_tests.jl") end
 end
 
 if !is_APPVEYOR && GROUP == "GPU"
