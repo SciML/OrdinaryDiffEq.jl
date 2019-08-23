@@ -7,7 +7,7 @@ variables:
 cache:
   paths:
     - .julia/
-    
+
 stages:
   - build
   - test
@@ -23,6 +23,29 @@ build:
     - julia -e "using InteractiveUtils;
                 versioninfo()"
     - julia --project -e "using Pkg; Pkg.build(); using OrdinaryDiffEq"
+  only:
+  - master
+  - tags
+  - external
+  - pushes
+  artifacts:
+    untracked: true
+    paths:
+      - .julia/**/*
+      - julia-1.1.1/**/*
+
+test-multithreading:
+  stage: test
+  dependencies:
+    - build
+  variables:
+    GROUP: "Multithreading"
+  script:
+    - export PATH="$(pwd)/julia-1.1.1/bin:$PATH"
+    - julia -e "using InteractiveUtils;
+                versioninfo()"
+    - julia --project -e 'import Pkg; cd(Pkg.dir("OrdinaryDiffEq")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder());'
+    - julia --project -e 'import Pkg; cd(Pkg.dir("OrdinaryDiffEq")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
   only:
   - master
   - tags

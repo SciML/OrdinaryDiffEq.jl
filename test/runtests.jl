@@ -70,7 +70,6 @@ if !is_APPVEYOR && (GROUP == "All" || GROUP == "AlgConvergence_I")
   @time @safetestset "Adams Variable Coefficients Tests" begin include("algconvergence/adams_tests.jl") end
   @time @safetestset "Nordsieck Tests" begin include("algconvergence/nordsieck_tests.jl") end
   @time @safetestset "Linear Methods Tests" begin include("algconvergence/linear_method_tests.jl") end
-  @time @safetestset "Extrapolation Tests" begin include("algconvergence/ode_extrapolation_tests.jl") end
 end
 
 if !is_APPVEYOR && (GROUP == "All" || GROUP == "AlgConvergence_II")
@@ -103,10 +102,14 @@ if !is_APPVEYOR && GROUP == "ODEInterfaceRegression"
   @time @safetestset "ODEInterface Regression Tests" begin include("odeinterface/odeinterface_regression.jl") end
 end
 
+if !is_APPVEYOR && GROUP == "Multithreading"
+  @time @safetestset "Extrapolation Tests" begin include("multithreading/ode_extrapolation_tests.jl") end
+end
+
 if !is_APPVEYOR && GROUP == "GPU"
-  @time @safetestset "Simple GPU" begin 
+  @time @safetestset "Simple GPU" begin
     import OrdinaryDiffEq
-    include(joinpath(dirname(pathof(OrdinaryDiffEq.DiffEqBase)), "..", "test/gpu/simple_gpu.jl")) 
+    include(joinpath(dirname(pathof(OrdinaryDiffEq.DiffEqBase)), "..", "test/gpu/simple_gpu.jl"))
   end
 end
 
