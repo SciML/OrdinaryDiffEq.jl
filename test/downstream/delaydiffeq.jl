@@ -24,13 +24,7 @@ DDEProblemLibrary.importddeproblems()
         @test sol.errors[:l∞] < error
 
         sol_scalar = solve(prob_scalar, ddealg)
-
-        if alg isa OrdinaryDiffEq.OrdinaryDiffEqNewtonAdaptiveAlgorithm
-            @test_broken sol.t ≈ sol_scalar.t
-            @test_broken sol[1, :] ≈ sol_scalar.u
-        else
-            @test sol.t ≈ sol_scalar.t
-            @test sol[1, :] ≈ sol_scalar.u
-        end
+        @test sol.t ≈ sol_scalar.t
+        @test sol[1, :] ≈ sol_scalar.u
     end
 end
