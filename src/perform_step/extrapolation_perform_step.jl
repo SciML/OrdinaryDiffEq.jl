@@ -20,7 +20,7 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
 
   max_order = min(size(T)[1],cur_order+1)
 
-  if integrator.alg.threading == false
+  if !integrator.alg.threading
     for i in 1:max_order
       dt_temp = dt/(2^(i-1))
       # Solve using Euler method
@@ -132,7 +132,8 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
   @unpack dtpropose, T, cur_order, work, A = cache
 
   max_order = min(size(T)[1], cur_order+1)
-  if integrator.alg.threading == false
+
+  if !integrator.alg.threading
     for i in 1:max_order
       dt_temp = dt/(2^(i-1)) # Romberg sequence
 
@@ -465,7 +466,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
   end
 
   #Compute the internal discretisations
-  if integrator.alg.threading == false
+  if !integrator.alg.threading
     for i in 0:n_curr
       j_int = 4 * subdividing_sequence[i+1]
       dt_int = dt / j_int # Stepsize of the ith internal discretisation
@@ -658,7 +659,7 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
   end
 
   # Compute the internal discretisations
-  if integrator.alg.threading == false
+  if !integrator.alg.threading
     for i = 0:n_curr
       j_int = 4 * subdividing_sequence[i+1]
       dt_int = dt / j_int # Stepsize of the ith internal discretisation
@@ -1076,7 +1077,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
   end
 
   #Compute the internal discretisations
-  if integrator.alg.threading == false
+  if !integrator.alg.threading
     for i in 0:n_curr
       j_int = 4 * subdividing_sequence[i+1]
       dt_int = dt / j_int # Stepsize of the ith internal discretisation
@@ -1268,7 +1269,7 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
   end
 
   #Compute the internal discretisations
-  if integrator.alg.threading == false
+  if !integrator.alg.threading
     for i in 0:n_curr
      j_int = 4 * subdividing_sequence[i+1]
      dt_int = dt / j_int # Stepsize of the ith internal discretisation
