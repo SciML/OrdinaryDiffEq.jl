@@ -18,9 +18,9 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
   @unpack k,fsalfirst,T,utilde,atmp,dtpropose,cur_order,A = cache
   @unpack u_tmps, k_tmps = cache
 
-  max_order = min(size(T)[1],cur_order+1)
+  max_order = min(size(T, 1), cur_order + 1)
 
-  if integrator.alg.threading == false
+  if !integrator.alg.threading
     for i in 1:max_order
       dt_temp = dt/(2^(i-1))
       # Solve using Euler method
@@ -33,10 +33,6 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
         integrator.destats.nf += 1
       end
       @.. T[i,1] = u
-      # Richardson Extrapolation
-      for j in 2:i
-        @.. T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
-      end
     end
   else
     let max_order=max_order, uprev=uprev, dt=dt, fsalfirst=fsalfirst, p=p, t=t,
@@ -61,22 +57,26 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
       end
     end
     integrator.destats.nf += 2^max_order - 1
-    # Richardson Extrapolation
-    for i in 2:min(size(T)[1],cur_order+1)
-      for j in 2:i
-        @.. T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
-      end
+  end
+
+  # Richardson extrapolation
+  tmp = 1
+  for j in 2:max_order
+    tmp *= 2
+    for i in j:max_order
+      @.. T[i, j] = (tmp * T[i, j - 1] - T[i - 1, j - 1]) / (tmp - 1)
     end
   end
 
   if integrator.opts.adaptive
       minimum_work = Inf
-      range_start = max(2,cur_order - 1)
-      if cache.step_no == one(cache.step_no)
-          range_start = 2
+      if isone(cache.step_no)
+        range_start = 2
+      else
+        range_start = max(2, cur_order - 1)
       end
 
-      for i = range_start:min(size(T)[1], cur_order + 1)
+      for i in range_start:max_order
           A = 2^(i-1)
           @.. utilde = T[i,i] - T[i,i-1]
           atmp = calculate_residuals(utilde, uprev, T[i,i], integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -130,8 +130,9 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
   @unpack t,dt,uprev,f,p = integrator
   @unpack dtpropose, T, cur_order, work, A = cache
 
-  max_order = min(size(T)[1], cur_order+1)
-  if integrator.alg.threading == false
+  max_order = min(size(T, 1), cur_order + 1)
+
+  if !integrator.alg.threading
     for i in 1:max_order
       dt_temp = dt/(2^(i-1)) # Romberg sequence
 
@@ -146,10 +147,6 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
         integrator.destats.nf += 1
       end
       T[i,1] = u
-      # Richardson Extrapolation
-      for j in 2:i
-        T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
-      end
     end
   else
     let max_order=max_order, dt=dt, uprev=uprev, integrator=integrator, p=p, t=t, T=T
@@ -172,24 +169,28 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
         end
       end
     end
-    integrator.destats.nf += 2^(max_order) - 1
 
-    # Richardson Extrapolation
-    for i in 2:min(size(T)[1], cur_order+1)
-      for j in 2:i
-        T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
-      end
+    integrator.destats.nf += 2^max_order - 1
+  end
+
+  # Richardson extrapolation
+  tmp = 1
+  for j in 2:max_order
+    tmp *= 2
+    for i in j:max_order
+      T[i, j] = (tmp * T[i, j - 1] - T[i - 1, j - 1]) / (tmp - 1)
     end
   end
 
   if integrator.opts.adaptive
       minimum_work = Inf
-      range_start = max(2,cur_order - 1)
-      if cache.step_no == one(cache.step_no)
-          range_start = 2
+      if isone(cache.step_no)
+        range_start = 2
+      else
+        range_start = max(2, cur_order - 1)
       end
 
-      for i = range_start:min(size(T)[1], cur_order + 1)
+      for i in range_start:max_order
           A = 2^(i-1)
           utilde = T[i,i] - T[i,i-1]
           atmp = calculate_residuals(utilde, uprev, T[i,i], integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -251,32 +252,26 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
   @unpack J,W,uf,tf,jac_config = cache
   @unpack u_tmps, k_tmps, linsolve_tmps = cache
 
-  max_order = min(size(T)[1],cur_order+1)
+  max_order = min(size(T, 1), cur_order + 1)
 
-  if integrator.alg.threading == false
-    for i in 1:2
-      startIndex = (i == 1) ? 1 : max_order
-      endIndex = (i == 1) ? max_order - 1 : max_order
-      for index in startIndex:endIndex
-        dt_temp = dt/(2^(index-1)) # Romberg sequence
-        calc_W!(integrator, cache, dt_temp, repeat_step, 1)
-        k_tmps[1] = copy(integrator.fsalfirst)
-        u_tmps[1] = copy(uprev)
-        for j in 1:2^(index-1)
-            @.. linsolve_tmps[1] = dt_temp*k_tmps[1]
-            cache.linsolve[1](vec(k_tmps[1]), W[1], vec(linsolve_tmps[1]), !repeat_step)
-            @.. k_tmps[1] = -k_tmps[1]
-            @.. u_tmps[1] = u_tmps[1] + k_tmps[1]
-            f(k_tmps[1], u_tmps[1],p,t+j*dt_temp)
-        end
+  if !integrator.alg.threading
+    for index in 1:max_order
+      dt_temp = dt/(2^(index-1)) # Romberg sequence
+      calc_W!(integrator, cache, dt_temp, repeat_step, 1)
+      @.. k_tmps[1] = integrator.fsalfirst
+      @.. u_tmps[1] = uprev
 
-        @.. T[index,1] = u_tmps[1]
+      for j in 1:2^(index-1)
+        @.. linsolve_tmps[1] = dt_temp*k_tmps[1]
+        cache.linsolve[1](vec(k_tmps[1]), W[1], vec(linsolve_tmps[1]), !repeat_step)
+        integrator.destats.nsolve += 1
+        @.. k_tmps[1] = -k_tmps[1]
+        @.. u_tmps[1] = u_tmps[1] + k_tmps[1]
+        f(k_tmps[1], u_tmps[1],p,t+j*dt_temp)
+        integrator.destats.nf += 1
       end
-    end
-    for i in 2:max_order
-      for j in 2:i
-        @.. T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
-      end
+
+      @.. T[index,1] = u_tmps[1]
     end
   else
     let max_order=max_order, uprev=uprev, dt=dt, p=p, t=t, T=T, W=W,
@@ -288,8 +283,8 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
         for index in startIndex:endIndex
           dt_temp = dt/(2^(index-1)) # Romberg sequence
           calc_W!(integrator, cache, dt_temp, repeat_step, Threads.threadid())
-          k_tmps[Threads.threadid()] = copy(integrator.fsalfirst)
-          u_tmps[Threads.threadid()] = copy(uprev)
+          @.. k_tmps[Threads.threadid()] = integrator.fsalfirst
+          @.. u_tmps[Threads.threadid()] = uprev
           for j in 1:2^(index-1)
               @.. linsolve_tmps[Threads.threadid()] = dt_temp*k_tmps[Threads.threadid()]
               cache.linsolve[Threads.threadid()](vec(k_tmps[Threads.threadid()]), W[Threads.threadid()], vec(linsolve_tmps[Threads.threadid()]), !repeat_step)
@@ -301,11 +296,19 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
           @.. T[index,1] = u_tmps[Threads.threadid()]
         end
       end
-      for i in 2:max_order
-        for j in 2:i
-          @.. T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
-        end
-      end
+    end
+
+    nevals = 2^max_order - 1
+    integrator.destats.nf += nevals
+    integrator.destats.nsolve += nevals
+  end
+
+  # Richardson extrapolation
+  tmp = 1
+  for j in 2:max_order
+    tmp *= 2
+    for i in j:max_order
+      @.. T[i, j] = (tmp * T[i, j - 1] - T[i - 1, j - 1]) / (tmp - 1)
     end
   end
 
@@ -313,12 +316,13 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
 
   if integrator.opts.adaptive
     minimum_work = Inf
-    range_start = max(2,cur_order - 1)
-    if cache.step_no == one(cache.step_no)
-        range_start = 2
+    if isone(cache.step_no)
+      range_start = 2
+    else
+      range_start = max(2, cur_order - 1)
     end
 
-    for i = range_start:min(size(T)[1], cur_order + 1)
+    for i in range_start:max_order
         A = 2^(i-1)
         @.. utilde = T[i,i] - T[i,i-1]
         atmp = calculate_residuals(utilde, uprev, T[i,i], integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -369,31 +373,24 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack dtpropose, T, cur_order, work, A, tf, uf = cache
 
-  max_order = min(size(T)[1], cur_order+1)
+  max_order = min(size(T, 1), cur_order+1)
 
   if !integrator.alg.threading
-    for i in 1:2
-      startIndex = (i==1) ? 1 : max_order
-      endIndex = (i==1) ? max_order-1 : max_order
-      for index in startIndex:endIndex
-        dt_temp = dt/(2^(index-1)) # Romberg sequence
-        W = calc_W!(integrator, cache, dt_temp, repeat_step)
-        k_copy = integrator.fsalfirst
-        u_tmp = uprev
-        for j in 1:2^(index-1)
-            k = _reshape(W\-_vec(dt_temp*k_copy), axes(uprev))
-            integrator.destats.nsolve += 1
-            u_tmp = u_tmp + k
-            k_copy = f(u_tmp, p, t+j*dt_temp)
-        end
-        T[index,1] = u_tmp
-      end
-    end
+    for index in 1:max_order
+      dt_temp = dt/(2^(index-1)) # Romberg sequence
+      W = calc_W!(integrator, cache, dt_temp, repeat_step)
+      k_copy = integrator.fsalfirst
+      u_tmp = uprev
 
-    for i=2:max_order
-      for j=2:i
-        T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
+      for j in 1:2^(index-1)
+        k = _reshape(W\-_vec(dt_temp*k_copy), axes(uprev))
+        integrator.destats.nsolve += 1
+        u_tmp = u_tmp + k
+        k_copy = f(u_tmp, p, t+j*dt_temp)
+        integrator.destats.nf += 1
       end
+
+      T[index,1] = u_tmp
     end
   else
     let max_order=max_order, dt=dt, integrator=integrator, cache=cache, repeat_step=repeat_step,
@@ -408,33 +405,39 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
           u_tmp = uprev
           for j in 1:2^(index-1)
               k = _reshape(W\-_vec(dt_temp*k_copy), axes(uprev))
-              integrator.destats.nsolve += 1
               u_tmp = u_tmp + k
               k_copy = f(u_tmp, p, t+j*dt_temp)
           end
           T[index,1] = u_tmp
         end
       end
+    end
 
-      for i=2:max_order
-        for j=2:i
-          T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
-        end
-      end
+    nevals = 2^max_order - 1
+    integrator.destats.nf += nevals
+    integrator.destats.nsolve += nevals
+  end
+
+  # Richardson extrapolation
+  tmp = 1
+  for j in 2:max_order
+    tmp *= 2
+    for i in j:max_order
+      T[i, j] = (tmp * T[i, j - 1] - T[i - 1, j - 1]) / (tmp - 1)
     end
   end
 
-  integrator.destats.nf += 2^(max_order) - 1
   integrator.dt = dt
 
   if integrator.opts.adaptive
       minimum_work = Inf
-      range_start = max(2,cur_order - 1)
-      if cache.step_no == one(cache.step_no)
-          range_start = 2
+      if isone(cache.step_no)
+        range_start = 2
+      else
+        range_start = max(2, cur_order - 1)
       end
 
-      for i = range_start:min(size(T)[1], cur_order + 1)
+      for i in range_start:max_order
           A = 2^(i-1)
           utilde = T[i,i] - T[i,i-1]
           atmp = calculate_residuals(utilde, uprev, T[i,i], integrator.opts.abstol, integrator.opts.reltol, integrator.opts.internalnorm, t)
@@ -514,15 +517,15 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
   end
 
   #Compute the internal discretisations
-  if integrator.alg.threading == false
-    for i = 0 : n_curr
-      j_int = 2Int64(subdividing_sequence[i+1])
-      dt_int = dt / (2j_int) # Stepsize of the ith internal discretisation
+  if !integrator.alg.threading
+    for i in 0:n_curr
+      j_int = 4 * subdividing_sequence[i+1]
+      dt_int = dt / j_int # Stepsize of the ith internal discretisation
       @.. u_temp2 = uprev
       @.. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
-      for j = 2 : 2j_int
-        f(k, cache.u_temp1, p, t + (j-1)dt_int)
-        @.. T[i+1] = u_temp2 + 2dt_int*k # Explicit Midpoint rule
+      for j in 2:j_int
+        f(k, cache.u_temp1, p, t + (j-1) * dt_int)
+        @.. T[i+1] = u_temp2 + 2 * dt_int * k # Explicit Midpoint rule
         @.. u_temp2 = u_temp1
         @.. u_temp1 = T[i+1]
       end
@@ -540,13 +543,13 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
           startIndex = (i == 1) ? 0 : n_curr
           endIndex = (i == 1) ? n_curr - 1 : n_curr
           for index = startIndex : endIndex
-            j_int_temp = 2Int64(subdividing_sequence[index+1])
-            dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
+            j_int_temp = 4 * subdividing_sequence[index+1]
+            dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
             @.. u_temp4[Threads.threadid()] = uprev
             @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + dt_int_temp * fsalfirst # Euler starting step
-            for j = 2 : 2j_int_temp
-              f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1)dt_int_temp)
-              @.. T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
+            for j in 2:j_int_temp
+              f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1) * dt_int_temp)
+              @.. T[index+1] = u_temp4[Threads.threadid()] + 2 * dt_int_temp * k_tmps[Threads.threadid()] # Explicit Midpoint rule
               @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
               @.. u_temp3[Threads.threadid()] = T[index+1]
             end
@@ -556,16 +559,16 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
     else
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
           u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
-        Threads.@threads for i = 0 : floor(Int,n_curr/2)
+        Threads.@threads for i in 0:(n_curr ÷ 2)
           indices = (i, n_curr-i)
           for index in indices
-            j_int_temp = 2Int64(subdividing_sequence[index+1])
-            dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
+            j_int_temp = 4 * subdividing_sequence[index+1]
+            dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
             @.. u_temp4[Threads.threadid()] = uprev
             @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + dt_int_temp * fsalfirst # Euler starting step
-            for j = 2 : 2j_int_temp
-              f(k_tmps[Threads.threadid()], u_temp3[Threads.threadid()], p, t + (j-1)dt_int_temp)
-              @.. T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
+            for j in 2:j_int_temp
+              f(k_tmps[Threads.threadid()], u_temp3[Threads.threadid()], p, t + (j-1) * dt_int_temp)
+              @.. T[index+1] = u_temp4[Threads.threadid()] + 2 * dt_int_temp * k_tmps[Threads.threadid()] # Explicit Midpoint rule
               @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
               @.. u_temp3[Threads.threadid()] = T[index+1]
             end
@@ -616,13 +619,13 @@ function perform_step!(integrator, cache::ExtrapolationMidpointDeuflhardCache, r
         cache.n_curr = n_curr
 
         # Update cache.T
-        j_int = 2Int64(subdividing_sequence[n_curr + 1])
-        dt_int = dt / (2j_int) # Stepsize of the new internal discretisation
+        j_int = 4 * subdividing_sequence[n_curr + 1]
+        dt_int = dt / j_int # Stepsize of the new internal discretisation
         @.. u_temp2 = uprev
         @.. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
-        for j = 2 : 2j_int
-          f(k, cache.u_temp1, p, t + (j-1)dt_int)
-          @.. T[n_curr+1] = u_temp2 + 2dt_int * k
+        for j in 2:j_int
+          f(k, cache.u_temp1, p, t + (j-1) * dt_int)
+          @.. T[n_curr+1] = u_temp2 + 2 * dt_int * k
           @.. u_temp2 = u_temp1
           @.. u_temp1 = T[n_curr+1]
         end
@@ -707,14 +710,14 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
   end
 
   # Compute the internal discretisations
-  if integrator.alg.threading == false
-    for i = 0 : n_curr
-      j_int = 2Int64(subdividing_sequence[i+1])
-      dt_int = dt / (2j_int) # Stepsize of the ith internal discretisation
+  if !integrator.alg.threading
+    for i = 0:n_curr
+      j_int = 4 * subdividing_sequence[i+1]
+      dt_int = dt / j_int # Stepsize of the ith internal discretisation
       u_temp2 = uprev
       u_temp1 = u_temp2 + dt_int*integrator.fsalfirst # Euler starting step
-      for j = 2 : 2j_int
-        T[i+1] = u_temp2 + 2dt_int*f(u_temp1, p, t + (j-1)dt_int) # Explicit Midpoint rule
+      for j in 2:j_int
+        T[i+1] = u_temp2 + 2 * dt_int * f(u_temp1, p, t + (j-1) * dt_int) # Explicit Midpoint rule
         u_temp2 = u_temp1
         u_temp1 = T[i+1]
       end
@@ -732,12 +735,12 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
           startIndex = (i == 1) ? 0 : n_curr
           endIndex = (i == 1) ? n_curr - 1 : n_curr
           for index = startIndex : endIndex
-            j_int_temp = 2Int64(subdividing_sequence[index+1])
-            dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
+            j_int_temp = 4 * subdividing_sequence[index+1]
+            dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
             u_temp4 = uprev
             u_temp3 = u_temp4 + dt_int_temp*integrator.fsalfirst # Euler starting step
-            for j = 2 : 2j_int_temp
-              T[index+1] = u_temp4 + 2dt_int_temp*f(u_temp3, p, t + (j-1)dt_int_temp) # Explicit Midpoint rule
+            for j in 2:j_int_temp
+              T[index+1] = u_temp4 + 2 * dt_int_temp * f(u_temp3, p, t + (j-1) * dt_int_temp) # Explicit Midpoint rule
               u_temp4 = u_temp3
               u_temp3 = T[index+1]
             end
@@ -747,15 +750,15 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
     else
       let n_curr=n_curr, subdividing_sequence=subdividing_sequence, dt=dt, uprev=uprev,
               p=p, t=t, T=T
-        Threads.@threads for i = 0 : floor(Int, n_curr/2)
+        Threads.@threads for i in 0:(n_curr ÷ 2)
           indices = (i, n_curr-i)
           for index in indices
-            j_int_temp = 2Int64(subdividing_sequence[index+1])
-            dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
+            j_int_temp = 4 * subdividing_sequence[index+1]
+            dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
             u_temp4 = uprev
-            u_temp3 = u_temp4 + dt_int_temp*integrator.fsalfirst # Euler starting step
-            for j = 2 : 2j_int_temp
-              T[index+1] = u_temp4 + 2dt_int_temp*f(u_temp3, p, t + (j-1)dt_int_temp) # Explicit Midpoint rule
+            u_temp3 = u_temp4 + dt_int_temp * integrator.fsalfirst # Euler starting step
+            for j in 2:j_int_temp
+              T[index+1] = u_temp4 + 2 * dt_int_temp * f(u_temp3, p, t + (j-1) * dt_int_temp) # Explicit Midpoint rule
               u_temp4 = u_temp3
               u_temp3 = T[index+1]
             end
@@ -792,12 +795,12 @@ function perform_step!(integrator,cache::ExtrapolationMidpointDeuflhardConstantC
         cache.n_curr = n_curr
 
         # Update T
-        j_int = 2Int64(subdividing_sequence[n_curr + 1])
-        dt_int = dt / (2j_int) # Stepsize of the new internal discretisation
+        j_int = 4 * subdividing_sequence[n_curr + 1]
+        dt_int = dt / j_int # Stepsize of the new internal discretisation
         u_temp2 = uprev
         u_temp1 = u_temp2 + dt_int * integrator.fsalfirst # Euler starting step
-        for j = 2 : 2j_int
-          T[n_curr+1] = u_temp2 + 2dt_int*f(u_temp1, p, t + (j-1)dt_int)
+        for j in 2:j_int
+          T[n_curr+1] = u_temp2 + 2 * dt_int * f(u_temp1, p, t + (j-1) * dt_int)
           u_temp2 = u_temp1
           u_temp1 = T[n_curr+1]
         end
@@ -867,21 +870,21 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
   end
 
   #Compute the internal discretisations
-  for i = 0 : n_curr
-    j_int = 2Int64(subdividing_sequence[i+1])
-    dt_int = dt / (2j_int) # Stepsize of the ith internal discretisation
+  for i in 0:n_curr
+    j_int = 4 * subdividing_sequence[i+1]
+    dt_int = dt / j_int # Stepsize of the ith internal discretisation
     calc_W!(integrator, cache, dt_int, repeat_step)
     @.. u_temp2 = uprev
     @.. linsolve_tmp = dt_int*fsalfirst
     cache.linsolve(vec(k), W, vec(linsolve_tmp), !repeat_step)
     @.. k = -k
     @.. u_temp1 = u_temp2 + k # Euler starting step
-    for j = 2 : 2j_int
-      f(k, cache.u_temp1, p, t + (j-1)dt_int)
-      @.. linsolve_tmp = dt_int*k - (u_temp1 - u_temp2)
+    for j in 2:j_int
+      f(k, cache.u_temp1, p, t + (j-1) * dt_int)
+      @.. linsolve_tmp = dt_int * k - (u_temp1 - u_temp2)
       cache.linsolve(vec(k), W, vec(linsolve_tmp), !repeat_step)
       @.. k = -k
-      @.. T[i+1] = 2*u_temp1 - u_temp2 + 2*k # Explicit Midpoint rule
+      @.. T[i+1] = 2 * u_temp1 - u_temp2 + 2 * k # Explicit Midpoint rule
       @.. u_temp2 = u_temp1
       @.. u_temp1 = T[i+1]
     end
@@ -923,13 +926,13 @@ function perform_step!(integrator, cache::ImplicitDeuflhardExtrapolationCache, r
         cache.n_curr = n_curr
 
         # Update cache.T
-        j_int = 2Int64(subdividing_sequence[n_curr + 1])
-        dt_int = dt / (2j_int) # Stepsize of the new internal discretisation
+        j_int = 4 * subdividing_sequence[n_curr + 1]
+        dt_int = dt / j_int # Stepsize of the new internal discretisation
         @.. u_temp2 = uprev
         @.. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
-        for j = 2 : 2j_int
-          f(k, cache.u_temp1, p, t + (j-1)dt_int)
-          @.. T[n_curr+1] = u_temp2 + 2dt_int * k
+        for j in 2:j_int
+          f(k, cache.u_temp1, p, t + (j-1) * dt_int)
+          @.. T[n_curr+1] = u_temp2 + 2 * dt_int * k
           @.. u_temp2 = u_temp1
           @.. u_temp1 = T[n_curr+1]
         end
@@ -1014,14 +1017,14 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
   end
 
   # Compute the internal discretisations
-  for i = 0 : n_curr
-    j_int = 2Int64(subdividing_sequence[i+1])
-    dt_int = dt / (2j_int) # Stepsize of the ith internal discretisation
+  for i in 0:n_curr
+    j_int = 4 * subdividing_sequence[i+1]
+    dt_int = dt / j_int # Stepsize of the ith internal discretisation
     W = calc_W!(integrator, cache, dt_int, repeat_step)
     u_temp2 = uprev
     u_temp1 = u_temp2 + _reshape(W\-_vec(dt_int*integrator.fsalfirst), axes(uprev)) # Euler starting step
-    for j = 2 : 2j_int
-      T[i+1] = 2*u_temp1 - u_temp2 + 2*_reshape(W\-_vec(dt_int*f(u_temp1, p, t + (j-1)dt_int) - (u_temp1 - u_temp2)),axes(uprev))
+    for j in 2:j_int
+      T[i+1] = 2*u_temp1 - u_temp2 + 2 * _reshape(W\-_vec(dt_int*f(u_temp1, p, t + (j-1) * dt_int) - (u_temp1 - u_temp2)),axes(uprev))
       u_temp2 = u_temp1
       u_temp1 = T[i+1]
     end
@@ -1051,12 +1054,12 @@ function perform_step!(integrator,cache::ImplicitDeuflhardExtrapolationConstantC
         cache.n_curr = n_curr
 
         # Update T
-        j_int = 2Int64(subdividing_sequence[n_curr + 1])
-        dt_int = dt / (2j_int) # Stepsize of the new internal discretisation
+        j_int = 4 * subdividing_sequence[n_curr + 1]
+        dt_int = dt / j_int # Stepsize of the new internal discretisation
         u_temp2 = uprev
         u_temp1 = u_temp2 + dt_int * integrator.fsalfirst # Euler starting step
-        for j = 2 : 2j_int
-          T[n_curr+1] = u_temp2 + 2dt_int*f(u_temp1, p, t + (j-1)dt_int)
+        for j in 2:j_int
+          T[n_curr+1] = u_temp2 + 2 * dt_int * f(u_temp1, p, t + (j-1) * dt_int)
           u_temp2 = u_temp1
           u_temp1 = T[n_curr+1]
         end
@@ -1125,15 +1128,15 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
   end
 
   #Compute the internal discretisations
-  if integrator.alg.threading == false
-    for i = 0 : n_curr
-      j_int = 2Int64(subdividing_sequence[i+1])
-      dt_int = dt / (2j_int) # Stepsize of the ith internal discretisation
+  if !integrator.alg.threading
+    for i in 0:n_curr
+      j_int = 4 * subdividing_sequence[i+1]
+      dt_int = dt / j_int # Stepsize of the ith internal discretisation
       @.. u_temp2 = uprev
       @.. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
-      for j = 2 : 2j_int
-        f(k, cache.u_temp1, p, t + (j-1)dt_int)
-        @.. T[i+1] = u_temp2 + 2dt_int*k # Explicit Midpoint rule
+      for j in 2:j_int
+        f(k, cache.u_temp1, p, t + (j-1) * dt_int)
+        @.. T[i+1] = u_temp2 + 2 * dt_int * k # Explicit Midpoint rule
         @.. u_temp2 = u_temp1
         @.. u_temp1 = T[i+1]
       end
@@ -1150,14 +1153,15 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
         Threads.@threads for i = 1 : 2
           startIndex = (i == 1) ? 0 : n_curr
           endIndex = (i == 1) ? n_curr - 1 : n_curr
-          for index = startIndex : endIndex
-            j_int_temp = 2Int64(subdividing_sequence[index+1])
-            dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
+
+          for index in startIndex:endIndex
+            j_int_temp = 4 * subdividing_sequence[index+1]
+            dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
             @.. u_temp4[Threads.threadid()] = uprev
             @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + dt_int_temp * fsalfirst # Euler starting step
-            for j = 2 : 2j_int_temp
-              f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1)dt_int_temp)
-              @.. T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
+            for j in 2:j_int_temp
+              f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1) * dt_int_temp)
+              @.. T[index+1] = u_temp4[Threads.threadid()] + 2 * dt_int_temp * k_tmps[Threads.threadid()] # Explicit Midpoint rule
               @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
               @.. u_temp3[Threads.threadid()] = T[index+1]
             end
@@ -1167,16 +1171,16 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
     else
       let n_curr=n_curr,subdividing_sequence=subdividing_sequence,uprev=uprev,dt=dt,u_temp3=u_temp3,
           u_temp4=u_temp4,k_tmps=k_tmps,p=p,t=t,T=T
-        Threads.@threads for i = 0 : floor(Int,n_curr/2)
+        Threads.@threads for i in 0:(n_curr ÷ 2)
           indices = (i, n_curr - i)
           for index in indices
-            j_int_temp = 2Int64(subdividing_sequence[index+1])
-            dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
+            j_int_temp = 4 * subdividing_sequence[index+1]
+            dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
             @.. u_temp4[Threads.threadid()] = uprev
             @.. u_temp3[Threads.threadid()] = u_temp4[Threads.threadid()] + dt_int_temp * fsalfirst # Euler starting step
-            for j = 2 : 2j_int_temp
-              f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1)dt_int_temp)
-              @.. T[index+1] = u_temp4[Threads.threadid()] + 2dt_int_temp*k_tmps[Threads.threadid()] # Explicit Midpoint rule
+            for j in 2:j_int_temp
+              f(k_tmps[Threads.threadid()], cache.u_temp3[Threads.threadid()], p, t + (j-1) * dt_int_temp)
+              @.. T[index+1] = u_temp4[Threads.threadid()] + 2 * dt_int_temp * k_tmps[Threads.threadid()] # Explicit Midpoint rule
               @.. u_temp4[Threads.threadid()] = u_temp3[Threads.threadid()]
               @.. u_temp3[Threads.threadid()] = T[index+1]
             end
@@ -1223,13 +1227,13 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerCache
         cache.n_curr = n_curr
 
         # Update cache.T
-        j_int = 2Int64(subdividing_sequence[n_curr + 1])
-        dt_int = dt / (2j_int) # Stepsize of the new internal discretisation
+        j_int = 4 * subdividing_sequence[n_curr + 1]
+        dt_int = dt / j_int # Stepsize of the new internal discretisation
         @.. u_temp2 = uprev
         @.. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
-        for j = 2 : 2j_int
-          f(k, cache.u_temp1, p, t + (j-1)dt_int)
-          @.. T[n_curr+1] = u_temp2 + 2dt_int * k
+        for j in 2:j_int
+          f(k, cache.u_temp1, p, t + (j-1) * dt_int)
+          @.. T[n_curr+1] = u_temp2 + 2 * dt_int * k
           @.. u_temp2 = u_temp1
           @.. u_temp1 = T[n_curr+1]
         end
@@ -1316,14 +1320,14 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
   end
 
   #Compute the internal discretisations
-  if integrator.alg.threading == false
-    for i = 0 : n_curr
-     j_int = 2Int64(subdividing_sequence[i+1])
-     dt_int = dt / (2j_int) # Stepsize of the ith internal discretisation
+  if !integrator.alg.threading
+    for i in 0:n_curr
+     j_int = 4 * subdividing_sequence[i+1]
+     dt_int = dt / j_int # Stepsize of the ith internal discretisation
      u_temp2 = uprev
      u_temp1 = u_temp2 + dt_int * integrator.fsalfirst # Euler starting step
-     for j = 2 : 2j_int
-       T[i+1] = u_temp2 + 2dt_int * f(u_temp1, p, t + (j-1)dt_int) # Explicit Midpoint rule
+     for j in 2:j_int
+       T[i+1] = u_temp2 + 2 * dt_int * f(u_temp1, p, t + (j-1) * dt_int) # Explicit Midpoint rule
        u_temp2 = u_temp1
        u_temp1 = T[i+1]
      end
@@ -1340,13 +1344,13 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
         Threads.@threads for i = 1 : 2
           startIndex = (i == 1) ? 0 : n_curr
           endIndex = (i == 1) ? n_curr - 1 : n_curr
-          for index = startIndex : endIndex
-            j_int_temp = 2Int64(subdividing_sequence[index+1])
-            dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
+          for index in startIndex:endIndex
+            j_int_temp = 4 * subdividing_sequence[index+1]
+            dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
             u_temp4 = uprev
             u_temp3 = u_temp4 + dt_int_temp * integrator.fsalfirst # Euler starting step
-            for j = 2 : 2j_int_temp
-              T[index+1] = u_temp4 + 2dt_int_temp * f(u_temp3, p, t + (j-1)dt_int_temp) # Explicit Midpoint rule
+            for j in 2:j_int_temp
+              T[index+1] = u_temp4 + 2 * dt_int_temp * f(u_temp3, p, t + (j - 1) * dt_int_temp) # Explicit Midpoint rule
               u_temp4 = u_temp3
               u_temp3 = T[index+1]
             end
@@ -1356,15 +1360,15 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
     else
       let n_curr=n_curr, subdividing_sequence=subdividing_sequence, dt=dt, uprev=uprev,
           integrator=integrator, T=T, p=p, t=t
-        Threads.@threads for i = 0 : floor(Int, n_curr/2)
+        Threads.@threads for i in 0:(n_curr ÷ 2)
           indices = (i, n_curr - i)
           for index in indices
-            j_int_temp = 2Int64(subdividing_sequence[index+1])
-            dt_int_temp = dt / (2j_int_temp) # Stepsize of the ith internal discretisation
+            j_int_temp = 4 * subdividing_sequence[index+1]
+            dt_int_temp = dt / j_int_temp # Stepsize of the ith internal discretisation
             u_temp4 = uprev
             u_temp3 = u_temp4 + dt_int_temp * integrator.fsalfirst # Euler starting step
-            for j = 2 : 2j_int_temp
-              T[index+1] = u_temp4 + 2dt_int_temp * f(u_temp3, p, t + (j-1)dt_int_temp) # Explicit Midpoint rule
+            for j in 2:j_int_temp
+              T[index+1] = u_temp4 + 2 * dt_int_temp * f(u_temp3, p, t + (j - 1) * dt_int_temp) # Explicit Midpoint rule
               u_temp4 = u_temp3
               u_temp3 = T[index+1]
             end
@@ -1397,12 +1401,12 @@ function perform_step!(integrator, cache::ExtrapolationMidpointHairerWannerConst
         cache.n_curr = n_curr
 
         # Update T
-        j_int = 2Int64(subdividing_sequence[n_curr + 1])
-        dt_int = dt / (2j_int) # Stepsize of the new internal discretisation
+        j_int = 4 * subdividing_sequence[n_curr + 1]
+        dt_int = dt / j_int # Stepsize of the new internal discretisation
         u_temp2 = uprev
         u_temp1 = u_temp2 + dt_int * integrator.fsalfirst # Euler starting step
-        for j = 2 : 2j_int
-          T[n_curr+1] = u_temp2 + 2dt_int * f(u_temp1, p, t + (j-1)dt_int)
+        for j in 2:j_int
+          T[n_curr+1] = u_temp2 + 2 * dt_int * f(u_temp1, p, t + (j - 1) * dt_int)
           u_temp2 = u_temp1
           u_temp1 = T[n_curr+1]
         end
@@ -1474,14 +1478,14 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
   end
 
   #Compute the internal discretisations
-  for i = 0 : n_curr
-    j_int = 2Int64(subdividing_sequence[i+1])
-    dt_int = dt / (2j_int) # Stepsize of the ith internal discretisation
+  for i in 0:n_curr
+    j_int = 4 * subdividing_sequence[i+1]
+    dt_int = dt / j_int # Stepsize of the ith internal discretisation
     W = calc_W!(integrator, cache, dt_int, repeat_step)
     u_temp2 = uprev
     u_temp1 = u_temp2 + _reshape(W\-_vec(dt_int*integrator.fsalfirst), axes(uprev)) # Euler starting step
-    for j = 2 : 2j_int
-      T[i+1] = 2*u_temp1 - u_temp2 + 2*_reshape(W\-_vec(dt_int*f(u_temp1, p, t + (j-1)dt_int) - (u_temp1 - u_temp2)),axes(uprev))
+    for j in 2:j_int
+      T[i+1] = 2*u_temp1 - u_temp2 + 2*_reshape(W\-_vec(dt_int * f(u_temp1, p, t + (j-1) * dt_int) - (u_temp1 - u_temp2)),axes(uprev))
       u_temp2 = u_temp1
       u_temp1 = T[i+1]
     end
@@ -1511,12 +1515,12 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationConst
         cache.n_curr = n_curr
 
         # Update T
-        j_int = 2Int64(subdividing_sequence[n_curr + 1])
-        dt_int = dt / (2j_int) # Stepsize of the new internal discretisation
+        j_int = 4 * subdividing_sequence[n_curr + 1]
+        dt_int = dt / j_int # Stepsize of the new internal discretisation
         u_temp2 = uprev
         u_temp1 = u_temp2 + dt_int * integrator.fsalfirst # Euler starting step
-        for j = 2 : 2j_int
-          T[n_curr+1] = u_temp2 + 2dt_int * f(u_temp1, p, t + (j-1)dt_int)
+        for j in 2:j_int
+          T[n_curr+1] = u_temp2 + 2 * dt_int * f(u_temp1, p, t + (j-1) * dt_int)
           u_temp2 = u_temp1
           u_temp1 = T[n_curr+1]
         end
@@ -1587,17 +1591,17 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
   end
 
   #Compute the internal discretisations
-  for i = 0 : n_curr
-    j_int = 2Int64(subdividing_sequence[i+1])
-    dt_int = dt / (2j_int) # Stepsize of the ith internal discretisation
+  for i in 0:n_curr
+    j_int = 4 * subdividing_sequence[i+1]
+    dt_int = dt / j_int # Stepsize of the ith internal discretisation
     calc_W!(integrator, cache, dt_int, repeat_step)
     @.. u_temp2 = uprev
-    @.. linsolve_tmp = dt_int*fsalfirst
+    @.. linsolve_tmp = dt_int * fsalfirst
     cache.linsolve(vec(k), W, vec(linsolve_tmp), !repeat_step)
     @.. k = -k
     @.. u_temp1 = u_temp2 + k # Euler starting step
-    for j = 2 : 2j_int
-      f(k, cache.u_temp1, p, t + (j-1)dt_int)
+    for j in 2:j_int
+      f(k, cache.u_temp1, p, t + (j - 1) * dt_int)
       @.. linsolve_tmp = dt_int*k - (u_temp1 - u_temp2)
       cache.linsolve(vec(k), W, vec(linsolve_tmp), !repeat_step)
       @.. k = -k
@@ -1644,13 +1648,13 @@ function perform_step!(integrator, cache::ImplicitHairerWannerExtrapolationCache
         cache.n_curr = n_curr
 
         # Update cache.T
-        j_int = 2Int64(subdividing_sequence[n_curr + 1])
-        dt_int = dt / (2j_int) # Stepsize of the new internal discretisation
+        j_int = 4 * subdividing_sequence[n_curr + 1]
+        dt_int = dt / j_int # Stepsize of the new internal discretisation
         @.. u_temp2 = uprev
         @.. u_temp1 = u_temp2 + dt_int * fsalfirst # Euler starting step
-        for j = 2 : 2j_int
-          f(k, cache.u_temp1, p, t + (j-1)dt_int)
-          @.. T[n_curr+1] = u_temp2 + 2dt_int * k
+        for j in 2:j_int
+          f(k, cache.u_temp1, p, t + (j-1) * dt_int)
+          @.. T[n_curr+1] = u_temp2 + 2 * dt_int * k
           @.. u_temp2 = u_temp1
           @.. u_temp1 = T[n_curr+1]
         end

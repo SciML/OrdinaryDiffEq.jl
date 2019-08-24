@@ -170,7 +170,7 @@ function stepsize_controller_internal!(integrator,alg::Union{ExtrapolationMidpoi
   integrator.cache.Q[integrator.cache.n_curr - alg.n_min + 1] = q
 end
 
-function stepsize_predictor!(integrator,alg::Union{ExtrapolationMidpointDeuflhard,ImplicitDeuflhardExtrapolation},n_new::Int64)
+function stepsize_predictor!(integrator,alg::Union{ExtrapolationMidpointDeuflhard,ImplicitDeuflhardExtrapolation},n_new::Int)
   # Compute and save the stepsize scaling for order n_new based on the latest error estimate of the current order.
   if iszero(integrator.EEst)
     q = inv(integrator.opts.qmax)

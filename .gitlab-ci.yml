@@ -1,83 +1,59 @@
-image: "julia:1"
-
-variables:
-  JULIA_DEPOT_PATH: "$CI_PROJECT_DIR/.julia/"
-  JULIA_NUM_THREADS: '8'
-
-cache:
-  paths:
-    - .julia/
-
 stages:
   - build
   - test
 
-build:
-  stage: build
+variables:
+  JULIA_DEPOT_PATH: "$CI_PROJECT_DIR/.julia/"
+  JULIA_NUM_THREADS: '8'
+  JULIA_VERSION: 1.2.0
+
+.root:
   tags:
     - 'p6000'
+  only:
+    - master
+    - tags
+    - external
+    - pushes
+
+build:
+  extends: .root
+  stage: build
   script:
-    - curl https://julialang-s3.julialang.org/bin/linux/x64/1.1/julia-1.1.1-linux-x86_64.tar.gz -o julia.tar.gz
+    - curl https://julialang-s3.julialang.org/bin/linux/x64/$(echo $JULIA_VERSION | cut -d '.' -f 1,2)/julia-${JULIA_VERSION}-linux-x86_64.tar.gz -o julia.tar.gz
     - unp julia.tar.gz
-    - export PATH="$(pwd)/julia-1.1.1/bin:$PATH"
+    - export PATH="$(pwd)/julia-${JULIA_VERSION}/bin:$PATH"
+    - mkdir $JULIA_DEPOT_PATH # Pkg.jl#325
     - julia -e "using InteractiveUtils;
                 versioninfo()"
-    - julia --project -e "using Pkg; Pkg.build(); using OrdinaryDiffEq"
-  only:
-  - master
-  - tags
-  - external
-  - pushes
+    - julia --project -e "using Pkg; Pkg.build(); using OrdinaryDiffEq;"
   artifacts:
-    untracked: true
+    when: always
     paths:
-      - .julia/**/*
-      - julia-1.1.1/**/*
+      - Manifest.toml
+      - .julia/
+      - julia-${JULIA_VERSION}/
 
-test-multithreading:
+.test:
+  extends: .root
   stage: test
   dependencies:
     - build
+  before_script:
+    - export PATH="$(pwd)/julia-${JULIA_VERSION}/bin:$PATH"
+    - julia -e "using InteractiveUtils;
+                versioninfo()"
+
+test-multithreading:
+  extends: .test
   variables:
     GROUP: "Multithreading"
   script:
-    - export PATH="$(pwd)/julia-1.1.1/bin:$PATH"
-    - julia -e "using InteractiveUtils;
-                versioninfo()"
-    - julia --project -e 'import Pkg; cd(Pkg.dir("OrdinaryDiffEq")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder());'
-    - julia --project -e 'import Pkg; cd(Pkg.dir("OrdinaryDiffEq")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
-  only:
-  - master
-  - tags
-  - external
-  - pushes
-  artifacts:
-    untracked: true
-    paths:
-      - .julia/**/*
-      - julia-1.1.1/**/*
+    - julia --project -e "using Pkg; Pkg.test();"
 
 test-GPU:
-  stage: test
-  tags:
-    - 'p6000'
-  dependencies:
-    - build
+  extends: .test
   variables:
     GROUP: "GPU"
   script:
-    - export PATH="$(pwd)/julia-1.1.1/bin:$PATH"
-    - julia -e "using InteractiveUtils;
-                versioninfo()"
-    - julia --project -e "using Pkg; Pkg.add(\"CuArrays\");
-                          Pkg.test(;coverage = true);"
-  only:
-  - master
-  - tags
-  - external
-  - pushes
-  artifacts:
-    untracked: true
-    paths:
-      - .julia/**/*
-      - julia-1.1.1/**/*
+    - julia --project -e "using Pkg; Pkg.add(\"CuArrays\"); Pkg.test();"

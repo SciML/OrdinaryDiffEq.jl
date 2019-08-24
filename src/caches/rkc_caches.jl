@@ -112,7 +112,7 @@ function alg_cache(alg::RKC,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits
 end
 
 @cache mutable struct IRKCConstantCache{uType,rateType,N} <: OrdinaryDiffEqConstantCache
-  minm::Int64
+  minm::Int
   zprev::uType
   nlsolver::N
   du₁::rateType

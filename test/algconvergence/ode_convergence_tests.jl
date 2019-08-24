@@ -1,12 +1,11 @@
 # This definitely needs cleaning
-using OrdinaryDiffEq, DiffEqDevTools, Test, Random
-using DiffEqProblemLibrary.ODEProblemLibrary: importodeproblems; importodeproblems()
-import DiffEqProblemLibrary.ODEProblemLibrary: prob_ode_linear, prob_ode_2Dlinear
-probArr = Vector{ODEProblem}(undef, 2)
-probArr[1] = prob_ode_linear
-
-probArr[2] = prob_ode_2Dlinear
+using OrdinaryDiffEq, DiffEqProblemLibrary.ODEProblemLibrary, DiffEqDevTools
+using Test, Random
 Random.seed!(100)
+
+# load problems
+ODEProblemLibrary.importodeproblems()
+
 ## Convergence Testing
 dts = 1 .//2 .^(8:-1:4)
 dts1 = 1 .//2 .^(9:-1:5)
@@ -14,9 +13,9 @@ dts2 = 1 .//2 .^(7:-1:3)
 dts3 = 1 .//2 .^(12:-1:7)
 testTol = 0.2
 
-for i = 1:2
+for prob in (ODEProblemLibrary.prob_ode_linear,
+             ODEProblemLibrary.prob_ode_2Dlinear)
   global dts
-  prob = probArr[i]
   sim = test_convergence(dts,prob,Euler())
   @test sim.𝒪est[:final] ≈ 1 atol=testTol
   sim2 = test_convergence(dts,prob,Heun())
