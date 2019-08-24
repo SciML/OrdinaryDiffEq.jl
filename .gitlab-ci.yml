@@ -1,5 +1,3 @@
-image: "juliagpu/julia:v1.2-cuda"
-
 variables:
   JULIA_DEPOT_PATH: "$CI_PROJECT_DIR/.julia/"
   JULIA_NUM_THREADS: '8'
@@ -10,6 +8,7 @@ stages:
   - post
 
 .root:
+  image: "juliagpu/julia:v1.2-cuda"
   only:
     - master
     - tags
