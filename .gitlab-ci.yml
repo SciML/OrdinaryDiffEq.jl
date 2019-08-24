@@ -61,7 +61,9 @@ test-GPU:
   variables:
     GROUP: "GPU"
   script:
-    - julia --project -e "using Pkg; Pkg.add(\"CuArrays\");
+    - julia --project -e "using Pkg;
+                          Pkg.add(\"CuArrays\");
+                          Pkg.build(\"CuArrays\");
                           Pkg.test(; coverage = true);"
 
 coverage:
