@@ -10,8 +10,6 @@ stages:
   - post
 
 .root:
-  tags:
-    - 'p6000'
   only:
     - master
     - tags
