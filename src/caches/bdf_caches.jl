@@ -265,12 +265,12 @@ end
   D2::coefType2
   R::coefType1
   U::coefType1
-  order::Int64
-  max_order::Int64
+  order::Int
+  max_order::Int
   udiff::uType
   dts::dtsType
   h::dtType
-  c::Int64
+  c::Int
 end
 
 @cache mutable struct QNDFCache{uType,rateType,coefType1,coefType,coefType2,coefType3,dtType,dtsType,uNoUnitsType,N} <: OrdinaryDiffEqMutableCache
@@ -279,15 +279,15 @@ end
   D2::coefType2
   R::coefType1
   U::coefType1
-  order::Int64
-  max_order::Int64
+  order::Int
+  max_order::Int
   udiff::coefType
   dts::dtsType
   atmp::uNoUnitsType
   utilde::uType
   nlsolver::N
   h::dtType
-  c::Int64
+  c::Int
 end
 
 function alg_cache(alg::QNDF,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})

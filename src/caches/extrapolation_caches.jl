@@ -220,11 +220,11 @@ function create_extrapolation_coefficients(::Type{T},alg::algType) where {T,algT
 
   # Initialize subdividing_sequence:
   if sequence == :harmonic
-      subdividing_sequence = [BigInt(n+1) for n = 0:n_max]
+      subdividing_sequence = BigInt.(1:(n_max + 1))
   elseif sequence == :romberg
-      subdividing_sequence = [BigInt(2)^n for n = 0:n_max]
+      subdividing_sequence = BigInt(2).^(0:n_max)
   else # sequence == :bulirsch
-      subdividing_sequence = [n==0 ? BigInt(1) : (isodd(n) ? BigInt(2)^Int64(n/2 + 0.5) : 3BigInt(2^Int64(n/2 - 1))) for n = 0:n_max]
+      subdividing_sequence = [n==0 ? BigInt(1) : (isodd(n) ? BigInt(2)^((n + 1) ÷ 2) : 3 * BigInt(2)^(n ÷ 2 - 1)) for n = 0:n_max]
   end
 
 
@@ -267,7 +267,7 @@ function create_extrapolation_coefficients(::Type{T},alg::algType) where {T,algT
   extrapolation_scalars = -nodes[1] * [BigInt(1); extrapolation_scalars_2]
 
   # Initialize and return extrapolation_coefficients
-  extrapolation_coefficients(Int64.(subdividing_sequence),
+  extrapolation_coefficients(Int.(subdividing_sequence),
       T.(extrapolation_weights), T.(extrapolation_scalars),
       T.(extrapolation_weights_2), T.(extrapolation_scalars_2))
 end
@@ -307,12 +307,12 @@ end
 @cache mutable struct ExtrapolationMidpointDeuflhardConstantCache{QType, extrapolation_coefficients} <: OrdinaryDiffEqConstantCache
   # Values that are mutated
   Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n + alg.n_min - 1)
-  n_curr::Int64 # Storage for the current extrapolation order
-  n_old::Int64 # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+  n_curr::Int # Storage for the current extrapolation order
+  n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
 
   # Constant values
   coefficients::extrapolation_coefficients
-  stage_number::Vector{Int64} # stage_number[n] contains information for extrapolation order (n + alg.n_min - 1)
+  stage_number::Vector{Int} # stage_number[n] contains information for extrapolation order (n + alg.n_min - 1)
 end
 
 function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
@@ -324,7 +324,14 @@ function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeN
     n_old = alg.n_init
 
     coefficients = create_extrapolation_coefficients(constvalue(uBottomEltypeNoUnits),alg)
-    stage_number = [2sum(Int64.(coefficients.subdividing_sequence[1:n+1])) - n for n = alg.n_min:alg.n_max]
+    stage_number = Vector{Int}(undef, alg.n_max - alg.n_min + 1)
+    for n in 1:length(stage_number)
+      s = zero(eltype(coefficients.subdividing_sequence))
+      for i in alg.n_min:(alg.n_min + n)
+        s += coefficients.subdividing_sequence[i]
+      end
+      stage_number[n] = 2 * Int(s) - alg.n_min - n + 1
+    end
 
     # Initialize cache
     ExtrapolationMidpointDeuflhardConstantCache(Q, n_curr, n_old, coefficients, stage_number)
@@ -349,10 +356,10 @@ end
 
   # Constant values
   Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n + alg.n_min - 1)
-  n_curr::Int64 # Storage for the current extrapolation order
-  n_old::Int64 # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+  n_curr::Int # Storage for the current extrapolation order
+  n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
   coefficients::extrapolation_coefficients
-  stage_number::Vector{Int64} # Stage_number[n] contains information for extrapolation order (n + alg.n_min - 1)
+  stage_number::Vector{Int} # Stage_number[n] contains information for extrapolation order (n + alg.n_min - 1)
 end
 
 function alg_cache(alg::ExtrapolationMidpointDeuflhard,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
@@ -390,12 +397,12 @@ end
 @cache mutable struct ImplicitDeuflhardExtrapolationConstantCache{QType,extrapolation_coefficients,TF,UF} <: OrdinaryDiffEqConstantCache
   # Values that are mutated
   Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n + alg.n_min - 1)
-  n_curr::Int64 # Storage for the current extrapolation order
-  n_old::Int64 # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+  n_curr::Int # Storage for the current extrapolation order
+  n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
 
   # Constant values
   coefficients::extrapolation_coefficients
-  stage_number::Vector{Int64} # stage_number[n] contains information for extrapolation order (n + alg.n_min - 1)
+  stage_number::Vector{Int} # stage_number[n] contains information for extrapolation order (n + alg.n_min - 1)
 
   tf::TF
   uf::UF
@@ -418,10 +425,10 @@ end
 
   # Constant values
   Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n + alg.n_min - 1)
-  n_curr::Int64 # Storage for the current extrapolation order
-  n_old::Int64 # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+  n_curr::Int # Storage for the current extrapolation order
+  n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
   coefficients::extrapolation_coefficients
-  stage_number::Vector{Int64} # Stage_number[n] contains information for extrapolation order (n + alg.n_min - 1)
+  stage_number::Vector{Int} # Stage_number[n] contains information for extrapolation order (n + alg.n_min - 1)
 
 
   du1::rateType
@@ -445,7 +452,14 @@ function alg_cache(alg::ImplicitDeuflhardExtrapolation,u,rate_prototype,uEltypeN
   n_old = alg.n_init
 
   coefficients = create_extrapolation_coefficients(constvalue(uBottomEltypeNoUnits),alg)
-  stage_number = [2sum(Int64.(coefficients.subdividing_sequence[1:n+1])) - n for n = alg.n_min:alg.n_max]
+  stage_number = Vector{Int}(undef, alg.n_max - alg.n_min + 1)
+  for n in 1:length(stage_number)
+    s = zero(eltype(coefficients.subdividing_sequence))
+    for i in alg.n_min:(alg.n_min + n)
+      s += coefficients.subdividing_sequence[i]
+    end
+    stage_number[n] = 2 * Int(s) - alg.n_min - n + 1
+  end
 
   tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
   uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
@@ -505,13 +519,13 @@ end
 @cache mutable struct ExtrapolationMidpointHairerWannerConstantCache{QType,extrapolation_coefficients} <: OrdinaryDiffEqConstantCache
   # Values that are mutated
   Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n - 1)
-  n_curr::Int64 # Storage for the current extrapolation order
-  n_old::Int64 # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+  n_curr::Int # Storage for the current extrapolation order
+  n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
 
   # Constant values
   coefficients::extrapolation_coefficients
-  stage_number::Vector{Int64} # stage_number[n] contains information for extrapolation order (n - 1)
-  sigma::Rational{Int64} # Parameter for order selection
+  stage_number::Vector{Int} # stage_number[n] contains information for extrapolation order (n - 1)
+  sigma::Rational{Int} # Parameter for order selection
 end
 
 function alg_cache(alg::ExtrapolationMidpointHairerWanner,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
@@ -523,7 +537,14 @@ function alg_cache(alg::ExtrapolationMidpointHairerWanner,u,rate_prototype,uElty
   n_old = alg.n_init
 
   coefficients = create_extrapolation_coefficients(constvalue(uBottomEltypeNoUnits),alg)
-  stage_number = [2sum(Int64.(coefficients.subdividing_sequence[1:n+1])) - n for n = 0:alg.n_max]
+  stage_number = Vector{Int}(undef, alg.n_max + 1)
+  for n in 1:length(stage_number)
+    s = zero(eltype(coefficients.subdividing_sequence))
+    for i in 1:n
+      s += coefficients.subdividing_sequence[i]
+    end
+    stage_number[n] = 2 * Int(s) - n + 1
+  end
   sigma = 9//10
 
   # Initialize the constant cache
@@ -547,11 +568,11 @@ end
 
   # Constant values
   Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n - 1)
-  n_curr::Int64 # Storage for the current extrapolation order
-  n_old::Int64 # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+  n_curr::Int # Storage for the current extrapolation order
+  n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
   coefficients::extrapolation_coefficients
-  stage_number::Vector{Int64} # stage_number[n] contains information for extrapolation order (n - 1)
-  sigma::Rational{Int64} # Parameter for order selection
+  stage_number::Vector{Int} # stage_number[n] contains information for extrapolation order (n - 1)
+  sigma::Rational{Int} # Parameter for order selection
 end
 
 
@@ -590,13 +611,13 @@ end
 @cache mutable struct ImplicitHairerWannerExtrapolationConstantCache{QType,extrapolation_coefficients,TF,UF} <: OrdinaryDiffEqConstantCache
   # Values that are mutated
   Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n - 1)
-  n_curr::Int64 # Storage for the current extrapolation order
-  n_old::Int64 # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+  n_curr::Int # Storage for the current extrapolation order
+  n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
 
   # Constant values
   coefficients::extrapolation_coefficients
-  stage_number::Vector{Int64} # stage_number[n] contains information for extrapolation order (n - 1)
-  sigma::Rational{Int64} # Parameter for order selection
+  stage_number::Vector{Int} # stage_number[n] contains information for extrapolation order (n - 1)
+  sigma::Rational{Int} # Parameter for order selection
 
   tf::TF
   uf::UF
@@ -611,7 +632,14 @@ function alg_cache(alg::ImplicitHairerWannerExtrapolation,u,rate_prototype,uElty
   n_old = alg.n_init
 
   coefficients = create_extrapolation_coefficients(constvalue(uBottomEltypeNoUnits),alg)
-  stage_number = [2sum(Int64.(coefficients.subdividing_sequence[1:n+1])) - n for n = 0:alg.n_max]
+  stage_number = Vector{Int}(undef, alg.n_max + 1)
+  for n in 1:length(stage_number)
+    s = zero(eltype(coefficients.subdividing_sequence))
+    for i in 1:n
+      s += coefficients.subdividing_sequence[i]
+    end
+    stage_number[n] = 2 * Int(s) - n + 1
+  end
   sigma = 9//10
 
   # Initialize the constant cache
@@ -637,11 +665,11 @@ end
 
   # Constant values
   Q::Vector{QType} # Storage for stepsize scaling factors. Q[n] contains information for extrapolation order (n - 1)
-  n_curr::Int64 # Storage for the current extrapolation order
-  n_old::Int64 # Storage for the extrapolation order n_curr before perfom_step! changes the latter
+  n_curr::Int # Storage for the current extrapolation order
+  n_old::Int # Storage for the extrapolation order n_curr before perfom_step! changes the latter
   coefficients::extrapolation_coefficients
-  stage_number::Vector{Int64} # stage_number[n] contains information for extrapolation order (n - 1)
-  sigma::Rational{Int64} # Parameter for order selection
+  stage_number::Vector{Int} # stage_number[n] contains information for extrapolation order (n - 1)
+  sigma::Rational{Int} # Parameter for order selection
 
   du1::rateType
   du2::rateType
