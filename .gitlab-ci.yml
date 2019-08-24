@@ -1,4 +1,4 @@
-image: "julia:1"
+image: "juliagpu/julia:v1.2-cuda"
 
 variables:
   JULIA_DEPOT_PATH: "$CI_PROJECT_DIR/.julia/"
