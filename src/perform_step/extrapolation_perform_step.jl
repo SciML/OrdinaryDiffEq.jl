@@ -33,10 +33,6 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
         integrator.destats.nf += 1
       end
       @.. T[i,1] = u
-      # Richardson Extrapolation
-      for j in 2:i
-        @.. T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
-      end
     end
   else
     let max_order=max_order, uprev=uprev, dt=dt, fsalfirst=fsalfirst, p=p, t=t,
@@ -61,12 +57,14 @@ function perform_step!(integrator,cache::AitkenNevilleCache,repeat_step=false)
       end
     end
     integrator.destats.nf += 2^max_order - 1
+  end
 
-    # Richardson Extrapolation
-    for i in 2:max_order
-      for j in 2:i
-        @.. T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
-      end
+  # Richardson extrapolation
+  tmp = 1
+  for j in 2:max_order
+    tmp *= 2
+    for i in j:max_order
+      @.. T[i, j] = (tmp * T[i, j - 1] - T[i - 1, j - 1]) / (tmp - 1)
     end
   end
 
@@ -149,10 +147,6 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
         integrator.destats.nf += 1
       end
       T[i,1] = u
-      # Richardson Extrapolation
-      for j in 2:i
-        T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
-      end
     end
   else
     let max_order=max_order, dt=dt, uprev=uprev, integrator=integrator, p=p, t=t, T=T
@@ -175,13 +169,16 @@ function perform_step!(integrator,cache::AitkenNevilleConstantCache,repeat_step=
         end
       end
     end
-    integrator.destats.nf += 2^(max_order) - 1
 
-    # Richardson Extrapolation
-    for i in 2:max_order
-      for j in 2:i
-        T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
-      end
+    integrator.destats.nf += 2^max_order - 1
+  end
+
+  # Richardson extrapolation
+  tmp = 1
+  for j in 2:max_order
+    tmp *= 2
+    for i in j:max_order
+      T[i, j] = (tmp * T[i, j - 1] - T[i - 1, j - 1]) / (tmp - 1)
     end
   end
 
@@ -255,7 +252,7 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
   @unpack J,W,uf,tf,jac_config = cache
   @unpack u_tmps, k_tmps, linsolve_tmps = cache
 
-  max_order = min(size(T, 1),cur_order + 1)
+  max_order = min(size(T, 1), cur_order + 1)
 
   let max_order=max_order, uprev=uprev, dt=dt, p=p, t=t, T=T, W=W,
       integrator=integrator, cache=cache, repeat_step = repeat_step,
@@ -279,10 +276,18 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationCache,repeat_
         @.. T[index,1] = u_tmps[Threads.threadid()]
       end
     end
-    for i in 2:max_order
-      for j in 2:i
-        @.. T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
-      end
+  end
+
+  nevals = 2^max_order - 1
+  integrator.destats.nf += nevals
+  integrator.destats.nsolve += nevals
+
+  # Richardson extrapolation
+  tmp = 1
+  for j in 2:max_order
+    tmp *= 2
+    for i in j:max_order
+      @.. T[i, j] = (tmp * T[i, j - 1] - T[i - 1, j - 1]) / (tmp - 1)
     end
   end
 
@@ -361,22 +366,27 @@ function perform_step!(integrator,cache::ImplicitEulerExtrapolationConstantCache
         u_tmp = uprev
         for j in 1:2^(index-1)
             k = _reshape(W\-_vec(dt_temp*k_copy), axes(uprev))
-            integrator.destats.nsolve += 1
             u_tmp = u_tmp + k
             k_copy = f(u_tmp, p, t+j*dt_temp)
         end
         T[index,1] = u_tmp
       end
     end
+  end
 
-    for i=2:max_order
-      for j=2:i
-        T[i,j] = ((2^(j-1))*T[i,j-1] - T[i-1,j-1])/((2^(j-1)) - 1)
-      end
+  nevals = 2^max_order - 1
+  integrator.destats.nf += nevals
+  integrator.destats.nsolve += nevals
+
+  # Richardson extrapolation
+  tmp = 1
+  for j in 2:max_order
+    tmp *= 2
+    for i in j:max_order
+      T[i, j] = (tmp * T[i, j - 1] - T[i - 1, j - 1]) / (tmp - 1)
     end
   end
 
-  integrator.destats.nf += 2^(max_order) - 1
   integrator.dt = dt
 
   if integrator.opts.adaptive
