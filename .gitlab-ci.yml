@@ -1,19 +1,42 @@
-variables:
-  JULIA_DEPOT_PATH: "$CI_PROJECT_DIR/.julia/"
-  JULIA_NUM_THREADS: '8'
-
 stages:
   - build
   - test
   - post
 
+variables:
+  JULIA_DEPOT_PATH: "$CI_PROJECT_DIR/.julia/"
+  JULIA_NUM_THREADS: '8'
+
 .root:
   image: "juliagpu/julia:v1.2-cuda"
+  before_script:
+    - julia -e "using InteractiveUtils;
+                versioninfo()"
   only:
     - master
     - tags
     - external
     - pushes
+
+build:
+  extends: .root
+  stage: build
+  script:
+    - mkdir $JULIA_DEPOT_PATH # Pkg.jl#325
+    - julia --project -e "using Pkg; Pkg.build(); using OrdinaryDiffEq;"
+  artifacts:
+    when: always
+    paths:
+      - Manifest.toml
+      - .julia/
+      - deps/ext.jl
+      - deps/build.log
+
+.test:
+  extends: .root
+  stage: test
+  dependencies:
+    - build
   artifacts:
     when: always
     paths:
@@ -25,27 +48,11 @@ stages:
       - src/*/*.cov
       - src/*/*/*.cov
 
-build:
-  extends: .root
-  stage: build
-  script:
-    - julia -e "using InteractiveUtils;
-                versioninfo()"
-    - julia --project -e "using Pkg; Pkg.build(); using OrdinaryDiffEq;"
-
-.test:
-  extends: .root
-  stage: test
-  dependencies:
-    - build
-
 test-multithreading:
   extends: .test
   variables:
     GROUP: "Multithreading"
   script:
-    - julia -e "using InteractiveUtils;
-                versioninfo()"
     - julia --project -e "using Pkg;
                           Pkg.test(; coverage = true);"
 
@@ -54,8 +61,6 @@ test-GPU:
   variables:
     GROUP: "GPU"
   script:
-    - julia -e "using InteractiveUtils;
-                versioninfo()"
     - julia --project -e "using Pkg; Pkg.add(\"CuArrays\");
                           Pkg.test(; coverage = true);"
 
@@ -66,8 +71,6 @@ coverage:
     - test-multithreading
     - test-GPU
   script:
-    - julia -e "using InteractiveUtils;
-                versioninfo()"
     - julia -e 'using Pkg;
                 Pkg.add("Coverage")'
     - julia -e 'using Coverage;
