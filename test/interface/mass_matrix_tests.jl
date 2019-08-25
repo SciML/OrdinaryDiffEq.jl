@@ -3,7 +3,7 @@ using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
 @testset "Mass Matrix Accuracy Tests" begin
 
   # create mass matrix problems
-  function make_mm_probs(mm_A, ::Type{Val{iip}}) where iip
+  function make_mm_probs(mm_A, ::Val{iip}) where iip
     # iip
     mm_b = vec(sum(mm_A; dims=2))
     function mm_f(du,u,p,t)
@@ -37,7 +37,7 @@ using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
   # test each method for exactness
   for iip in (false, true)
     mm_A = Float64[-2 1 4; 4 -2 1; 2 1 3]
-    prob, prob2 = make_mm_probs(mm_A, Val{iip})
+    prob, prob2 = make_mm_probs(mm_A, Val(iip))
 
     @test _norm_dsol(ImplicitEuler(),prob,prob2) ≈ 0 atol=1e-7
     @test _norm_dsol(RadauIIA5(),prob,prob2) ≈ 0 atol=1e-12
@@ -65,7 +65,7 @@ using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
 
   # test functional iteration
   for iip in (false, true)
-    prob, prob2 = make_mm_probs(Matrix{Float64}(1.01I, 3, 3), Val{iip})
+    prob, prob2 = make_mm_probs(Matrix{Float64}(1.01I, 3, 3), Val(iip))
 
     sol = solve(prob,ImplicitEuler(
                           nlsolve=NLFunctional()),dt=1/10,adaptive=false,reltol=1e-7,abstol=1e-10)

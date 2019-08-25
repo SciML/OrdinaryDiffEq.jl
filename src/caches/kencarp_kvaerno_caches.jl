@@ -4,7 +4,7 @@
 end
 
 function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   tab = KenCarp3Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
   J, W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
@@ -31,7 +31,7 @@ end
 end
 
 function alg_cache(alg::KenCarp3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tab = KenCarp3Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
   J, W = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
@@ -59,7 +59,7 @@ end
 end
 
 function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   tab = Kvaerno4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
   J, W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
@@ -82,7 +82,7 @@ end
 end
 
 function alg_cache(alg::Kvaerno4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tab = Kvaerno4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
   J, W = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
@@ -101,7 +101,7 @@ end
 end
 
 function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   tab = KenCarp4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
   J, W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
@@ -131,7 +131,7 @@ end
 end
 
 function alg_cache(alg::KenCarp4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tab = KenCarp4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
   J, W = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
@@ -162,7 +162,7 @@ end
 end
 
 function alg_cache(alg::Kvaerno5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   tab = Kvaerno5Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
   J, W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
@@ -188,7 +188,7 @@ end
 end
 
 function alg_cache(alg::Kvaerno5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tab = Kvaerno5Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
   J, W = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
@@ -208,7 +208,7 @@ end
 end
 
 function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   tab = KenCarp5Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
   J, W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
@@ -243,7 +243,7 @@ end
 end
 
 function alg_cache(alg::KenCarp5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tab = KenCarp5Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.c3
   J, W = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)

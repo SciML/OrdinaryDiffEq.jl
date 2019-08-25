@@ -221,14 +221,14 @@ function gen_algcache(cacheexpr::Expr,constcachename::Symbol,algname::Symbol,tab
     end
 
     quote
-        function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+        function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
             tf = DiffEqDiffTools.TimeDerivativeWrapper(f,u,p)
             uf = DiffEqDiffTools.UDerivativeWrapper(f,t,p)
             J,W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
             linsolve = alg.linsolve(Val{:init},uf,u)
             $constcachename(tf,uf,$tabname(constvalue(uBottomEltypeNoUnits),constvalue(tTypeNoUnits)),J,W,linsolve)
         end
-        function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+        function alg_cache(alg::$algname,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
             du = zero(rate_prototype)
             du1 = zero(rate_prototype)
             du2 = zero(rate_prototype)
