@@ -11,7 +11,7 @@
   nl_rhs::nl_rhsType
 end
 
-function alg_cache(alg::GenericImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::GenericImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
   k = zero(rate_prototype)
   dual_cache = DiffCache(u,Val{determine_chunksize(u,get_chunksize(alg.nlsolve))})
@@ -31,7 +31,7 @@ struct GenericImplicitEulerConstantCache{vecuType,rhsType,nl_rhsType} <: Ordinar
 end
 
 function alg_cache(alg::GenericImplicitEuler,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   uhold = Vector{typeof(u)}(undef, 1)
   rhs = ImplicitRHS_Scalar(f,zero(u),t,t,t,p)
   nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)
@@ -53,7 +53,7 @@ end
   tprev2::tType
 end
 
-function alg_cache(alg::GenericTrapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::GenericTrapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tmp = similar(u); atmp = similar(u,uEltypeNoUnits)
   k = zero(rate_prototype)
   fsalfirst = zero(rate_prototype)
@@ -77,7 +77,7 @@ end
   tprev2::tType
 end
 
-function alg_cache(alg::GenericTrapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::GenericTrapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   uhold = Vector{typeof(u)}(undef, 1)
   rhs = ImplicitRHS_Scalar(f,zero(u),t,t,t,p)
   nl_rhs = alg.nlsolve(Val{:init},rhs,uhold)

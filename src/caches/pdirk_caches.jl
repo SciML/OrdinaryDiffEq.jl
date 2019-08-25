@@ -23,7 +23,7 @@ struct PDIRK44Tableau{T,T2}
   b4::T
 end
 
-function PDIRK44Tableau(::Type{T}, ::Type{T2}) where {T,T2}
+function PDIRK44Tableau(T, T2)
   γ1 = convert(T2,  1//2)
   γ2 = convert(T2,  2//3)
   γs = SVector(γ1, γ2)
@@ -45,7 +45,7 @@ function PDIRK44Tableau(::Type{T}, ::Type{T2}) where {T,T2}
   PDIRK44Tableau{T,T2}(γs,cs,α1,α2,b1,b2,b3,b4)
 end
 
-function alg_cache(alg::PDIRK44,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::PDIRK44,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   γ, c = 1.0, 1.0
   if alg.threading
     J1, W1 = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
@@ -64,7 +64,7 @@ function alg_cache(alg::PDIRK44,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoU
   PDIRK44Cache(u,uprev,k1,k2,nlsolver,tab)
 end
 
-function alg_cache(alg::PDIRK44,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::PDIRK44,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   γ, c = 1.0, 1.0
   if alg.threading
     J1, W1 = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)

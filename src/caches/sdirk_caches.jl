@@ -10,7 +10,7 @@ abstract type SDIRKMutableCache <: OrdinaryDiffEqMutableCache end
 end
 
 function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   γ, c = 1, 1
   J, W = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
   nlsolver = iipnlsolve(alg,u,uprev,p,t,dt,f,W,J,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
@@ -26,7 +26,7 @@ mutable struct ImplicitEulerConstantCache{N} <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::ImplicitEuler,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   γ, c = 1, 1
   J, W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
   nlsolver = oopnlsolve(alg,u,uprev,p,t,dt,f,W,J,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
@@ -37,7 +37,7 @@ mutable struct ImplicitMidpointConstantCache{N} <: OrdinaryDiffEqConstantCache
   nlsolver::N
 end
 
-function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   γ, c = 1//2, 1//2
   J, W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
   nlsolver = oopnlsolve(alg,u,uprev,p,t,dt,f,W,J,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
@@ -52,7 +52,7 @@ end
 end
 
 function alg_cache(alg::ImplicitMidpoint,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   γ, c = 1//2, 1//2
   J, W = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
   nlsolver = iipnlsolve(alg,u,uprev,p,t,dt,f,W,J,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
@@ -67,7 +67,7 @@ mutable struct TrapezoidConstantCache{uType,tType,N} <: OrdinaryDiffEqConstantCa
 end
 
 function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   γ, c = 1//2, 1
   J, W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
   nlsolver = oopnlsolve(alg,u,uprev,p,t,dt,f,W,J,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
@@ -90,7 +90,7 @@ end
 end
 
 function alg_cache(alg::Trapezoid,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   γ, c = 1//2, 1
   J, W = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
   nlsolver = iipnlsolve(alg,u,uprev,p,t,dt,f,W,J,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
@@ -109,7 +109,7 @@ mutable struct TRBDF2ConstantCache{Tab,N} <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   tab = TRBDF2Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.d, tab.γ
   J, W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
@@ -129,7 +129,7 @@ end
 end
 
 function alg_cache(alg::TRBDF2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tab = TRBDF2Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.d, tab.γ
   J, W = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
@@ -146,7 +146,7 @@ mutable struct SDIRK2ConstantCache{N} <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   γ, c = 1, 1
   J, W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
   nlsolver = oopnlsolve(alg,u,uprev,p,t,dt,f,W,J,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
@@ -164,7 +164,7 @@ end
 end
 
 function alg_cache(alg::SDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   γ, c = 1, 1
   J, W = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
   nlsolver = iipnlsolve(alg,u,uprev,p,t,dt,f,W,J,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
@@ -184,7 +184,7 @@ struct SDIRK22ConstantCache{uType,tType,N,Tab} <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::SDIRK22,u,rate_prototype,uEltypeNoUnits,tTypeNoUnits,uBottomEltypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   tab = SDIRK22Tableau(real(uBottomEltypeNoUnits))
   uprev3 = u
   tprev2 = t
@@ -208,7 +208,7 @@ end
   tab::Tab
 end
 
-function alg_cache(alg::SDIRK22,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+function alg_cache(alg::SDIRK22,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tab = SDIRK22Tableau(real(uBottomEltypeNoUnits))
   γ, c = 1, 1
   J, W = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
@@ -227,7 +227,7 @@ mutable struct SSPSDIRK2ConstantCache{N} <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::SSPSDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   γ, c = 1//4, 1//1
   J, W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
   nlsolver = oopnlsolve(alg,u,uprev,p,t,dt,f,W,J,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
@@ -244,7 +244,7 @@ end
 end
 
 function alg_cache(alg::SSPSDIRK2,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   γ, c = 1//4, 1//1
   J, W = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
   nlsolver = iipnlsolve(alg,u,uprev,p,t,dt,f,W,J,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,γ,c)
@@ -262,7 +262,7 @@ mutable struct Kvaerno3ConstantCache{Tab,N} <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   tab = Kvaerno3Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, 2tab.γ
   J, W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
@@ -284,7 +284,7 @@ end
 end
 
 function alg_cache(alg::Kvaerno3,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tab = Kvaerno3Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, 2tab.γ
   J, W = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
@@ -303,7 +303,7 @@ mutable struct Cash4ConstantCache{N,Tab} <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   tab = Cash4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ,tab.γ
   J, W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
@@ -326,7 +326,7 @@ end
 end
 
 function alg_cache(alg::Cash4,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tab = Cash4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ,tab.γ
   J, W = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
@@ -345,7 +345,7 @@ mutable struct Hairer4ConstantCache{N,Tab} <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   if alg isa Hairer4
     tab = Hairer4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   else
@@ -372,7 +372,7 @@ end
 end
 
 function alg_cache(alg::Union{Hairer4,Hairer42},u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   if alg isa Hairer4
     tab = Hairer4Tableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   else # Hairer42
@@ -400,7 +400,7 @@ end
 end
 
 function alg_cache(alg::ESDIRK54I8L2SA,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,
-                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{true}})
+                   tTypeNoUnits,uprev,uprev2,f,t,dt,reltol,p,calck,::Val{true})
   tab = ESDIRK54I8L2SATableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ, tab.γ
   J, W = iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
@@ -420,7 +420,7 @@ mutable struct ESDIRK54I8L2SAConstantCache{N,Tab} <: OrdinaryDiffEqConstantCache
 end
 
 function alg_cache(alg::ESDIRK54I8L2SA,u,rate_prototype,uEltypeNoUnits,uBottomEltypeNoUnits,tTypeNoUnits,
-                   uprev,uprev2,f,t,dt,reltol,p,calck,::Type{Val{false}})
+                   uprev,uprev2,f,t,dt,reltol,p,calck,::Val{false})
   tab = ESDIRK54I8L2SATableau(real(uBottomEltypeNoUnits),real(tTypeNoUnits))
   γ, c = tab.γ,tab.γ
   J, W = oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
