@@ -5,6 +5,19 @@ const GROUP = get(ENV, "GROUP", "All")
 const is_APPVEYOR = Sys.iswindows() && haskey(ENV,"APPVEYOR")
 const is_TRAVIS = haskey(ENV,"TRAVIS")
 
+using LibGit2
+r = LibGit2.GitRepo("..")
+commit = LibGit2.peel(LibGit2.GitCommit, LibGit2.head(r))
+msg = LibGit2.message(commit)
+
+if msg[1:5] == "base:"
+  using Pkg
+  lastidx = findfirst(isequal(' '),msg) - 1
+  branch = msg[6:lastidx]
+  Pkg.add(PackageSpec(name="DiffEqBase", rev=branch))
+elseif msg[1:7] == "notest:"
+  exit(0)
+end
 #Start Test Script
 
 @time begin
