@@ -10,31 +10,28 @@ r = LibGit2.GitRepo("..")
 commit = LibGit2.peel(LibGit2.GitCommit, LibGit2.head(r))
 msg = LibGit2.message(commit)
 
-@show msg
-@show msg[48:51]
-
 if length(msg) >= 5 && msg[1:5] == "base:"
   using Pkg
   lastidx = findfirst(isequal(' '),msg) - 1
   branch = msg[6:lastidx]
   Pkg.add(PackageSpec(name="DiffEqBase", rev=branch))
-elseif length(msg) >= 6 && msg[1:6] == "Merge " && 
-       !(length(msg) >= 18  && msg[7:18] == "pull request") &&
-       !(length(msg) >= 12  && msg[7:12] == "branch") &&
-       length(msg) >= 18 && msg[48:51] == "into"
+  println("Running tests on DiffEqBase checked out at $branch")
+elseif length(msg) == 93 && msg[1:6] == "Merge " && 
+       !(msg[7:18] == "pull request") &&
+       !(msg[7:12] == "branch") &&
+       msg[48:51] == "into"
 
-       parcommit = LibGit2.GitCommit(r, msg[7:46])
-       parmsg = LibGit2.message(parcommit)
-      if length(parmsg) >= 5 && parmsg[1:5] == "base:"
-        using Pkg
-        lastidx = findfirst(isequal(' '),parmsg) - 1
-        branch = parmsg[6:lastidx]
-        Pkg.add(PackageSpec(name="DiffEqBase", rev=branch))
-        @show "here"
-      end
+  parcommit = LibGit2.GitCommit(r, msg[7:46])
+  parmsg = LibGit2.message(parcommit)
+  if length(parmsg) >= 5 && parmsg[1:5] == "base:"
+    using Pkg
+    lastidx = findfirst(isequal(' '),parmsg) - 1
+    branch = parmsg[6:lastidx]
+    Pkg.add(PackageSpec(name="DiffEqBase", rev=branch))
+    println("Running tests on DiffEqBase checked out at $branch")
+  end
 end
 
-exit()
 #Start Test Script
 
 @time begin
