@@ -660,8 +660,7 @@ end
   return nothing
 end
 
-#=
-@muladd function perform_step!(integrator, cache::Tsit5Cache, repeat_step=false)
+@muladd function perform_step!(integrator::DiffEqBase.AbstractODEIntegrator{algType,IIP,<:Array,tType}, cache::Tsit5Cache, repeat_step=false) where {algType,IIP,tType}
   @unpack t,dt,uprev,u,f,p = integrator
   uidx = eachindex(integrator.uprev)
   @unpack c1,c2,c3,c4,c5,c6,a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a72,a73,a74,a75,a76,btilde1,btilde2,btilde3,btilde4,btilde5,btilde6,btilde7 = cache.tab
@@ -710,7 +709,6 @@ end
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
   end
 end
-=#
 
 function initialize!(integrator, cache::DP5ConstantCache)
   integrator.kshortsize = 4
@@ -818,8 +816,7 @@ end
   return nothing
 end
 
-#=
-@muladd function perform_step!(integrator, cache::DP5Cache, repeat_step=false)
+@muladd function perform_step!(integrator::DiffEqBase.AbstractODEIntegrator{algType,IIP,<:Array,tType}, cache::DP5Cache, repeat_step=false) where {algType,IIP,tType}
   @unpack t,dt,uprev,u,f,p = integrator
   uidx = eachindex(integrator.uprev)
   @unpack a21,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a62,a63,a64,a65,a71,a73,a74,a75,a76,btilde1,btilde3,btilde4,btilde5,btilde6,btilde7,c1,c2,c3,c4,c5,c6 = cache.tab
@@ -881,7 +878,6 @@ end
     end
   end
 end
-=#
 
 function initialize!(integrator,cache::KYK2014DGSSPRK_3S2_ConstantCache)
  integrator.fsalfirst = integrator.f(integrator.uprev, integrator.p, integrator.t) # Pre-start fsal
