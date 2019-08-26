@@ -226,8 +226,12 @@ function _loopfooter!(integrator)
     message=integrator.opts.progress_message(integrator.dt,integrator.u,integrator.p,integrator.t),
     progress=integrator.t/integrator.sol.prob.tspan[2])
   end
+  
   # Take value because if t is dual then maxeig can be dual
-  (integrator.cache isa CompositeCache && integrator.eigen_est > integrator.destats.maxeig) && (integrator.destats.maxeig = DiffEqBase.value(integrator.eigen_est))
+  if integrator.cache isa CompositeCache
+    cur_eigen_est = integrator.opts.internalnorm(DiffEqBase.value(integrator.eigen_est),integrator.t)
+    cur_eigen_est > integrator.destats.maxeig && (integrator.destats.maxeig = cur_eigen_est)
+  end
   nothing
 end
 
