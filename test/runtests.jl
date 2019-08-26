@@ -10,14 +10,33 @@ r = LibGit2.GitRepo("..")
 commit = LibGit2.peel(LibGit2.GitCommit, LibGit2.head(r))
 msg = LibGit2.message(commit)
 
-if msg[1:5] == "base:"
+@show msg[1:6]
+@show msg[7:18]
+@show msg[7:12]
+@show msg[15:18]
+
+if length(msg) >= 5 && msg[1:5] == "base:"
   using Pkg
   lastidx = findfirst(isequal(' '),msg) - 1
   branch = msg[6:lastidx]
   Pkg.add(PackageSpec(name="DiffEqBase", rev=branch))
-elseif msg[1:7] == "notest:"
-  exit(0)
+elseif length(msg) >= 6 && msg[1:6] == "Merge " && 
+       !(length(msg) >= 18  && msg[7:18] == "pull request") &&
+       !(length(msg) >= 12  && msg[7:12] == "branch") &&
+       length(msg) >= 18 && msg[15:18] == "into"
+
+       parcommit = LibGit2.GitCommit(r, msg[7:13])
+       parmsg = LibGit2.message(parcommit)
+      if length(parmsg) >= 5 && parmsg[1:5] == "base:"
+        using Pkg
+        lastidx = findfirst(isequal(' '),parmsg) - 1
+        branch = parmsg[6:lastidx]
+        Pkg.add(PackageSpec(name="DiffEqBase", rev=branch))
+        @show "here"
+      end
 end
+
+exit()
 #Start Test Script
 
 @time begin
