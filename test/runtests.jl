@@ -10,10 +10,8 @@ r = LibGit2.GitRepo("..")
 commit = LibGit2.peel(LibGit2.GitCommit, LibGit2.head(r))
 msg = LibGit2.message(commit)
 
-@show msg[1:6]
-@show msg[7:18]
-@show msg[7:12]
-@show msg[15:18]
+@show msg
+@show msg[48:51]
 
 if length(msg) >= 5 && msg[1:5] == "base:"
   using Pkg
@@ -23,9 +21,9 @@ if length(msg) >= 5 && msg[1:5] == "base:"
 elseif length(msg) >= 6 && msg[1:6] == "Merge " && 
        !(length(msg) >= 18  && msg[7:18] == "pull request") &&
        !(length(msg) >= 12  && msg[7:12] == "branch") &&
-       length(msg) >= 18 && msg[15:18] == "into"
+       length(msg) >= 18 && msg[48:51] == "into"
 
-       parcommit = LibGit2.GitCommit(r, msg[7:13])
+       parcommit = LibGit2.GitCommit(r, msg[7:46])
        parmsg = LibGit2.message(parcommit)
       if length(parmsg) >= 5 && parmsg[1:5] == "base:"
         using Pkg
