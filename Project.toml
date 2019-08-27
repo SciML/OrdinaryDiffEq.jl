@@ -59,6 +59,7 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 LibGit2 = "76f85450-5226-5b5a-8eaa-529ad045b433"
+Pkg = "fe1c5a76-5840-53d2-82f9-288dd83ce2ce"
 
 [targets]
-test = ["Calculus", "DelayDiffEq", "DiffEqCallbacks", "DiffEqDevTools", "DiffEqOperators", "DiffEqProblemLibrary", "DiffEqSensitivity", "InteractiveUtils", "ParameterizedFunctions", "Random", "SafeTestsets", "SparseArrays", "Statistics", "Test", "Unitful", "ModelingToolkit", "LibGit2"]
+test = ["Calculus", "DelayDiffEq", "DiffEqCallbacks", "DiffEqDevTools", "DiffEqOperators", "DiffEqProblemLibrary", "DiffEqSensitivity", "InteractiveUtils", "ParameterizedFunctions", "Random", "SafeTestsets", "SparseArrays", "Statistics", "Test", "Unitful", "ModelingToolkit", "LibGit2", "Pkg"]
