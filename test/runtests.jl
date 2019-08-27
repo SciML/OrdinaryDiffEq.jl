@@ -10,22 +10,18 @@ r = LibGit2.GitRepo("..")
 commit = LibGit2.peel(LibGit2.GitCommit, LibGit2.head(r))
 msg = LibGit2.message(commit)
 
-if length(msg) >= 5 && msg[1:5] == "base:"
+if startswith(msg, "base:")
   using Pkg
-  lastidx = findfirst(isequal(' '),msg) - 1
+  lastidx = prevind(msg, findfirst(isequal(' '),msg))
   branch = msg[6:lastidx]
   Pkg.add(PackageSpec(name="DiffEqBase", rev=branch))
   println("Running tests on DiffEqBase checked out at $branch")
-elseif length(msg) == 93 && msg[1:6] == "Merge " && 
-       !(msg[7:18] == "pull request") &&
-       !(msg[7:12] == "branch") &&
-       msg[48:51] == "into"
-
+elseif occursin(r"^Merge [a-fA-F0-9]{40} into [a-fA-F0-9]{40}\n$", msg)
   parcommit = LibGit2.GitCommit(r, msg[7:46])
   parmsg = LibGit2.message(parcommit)
-  if length(parmsg) >= 5 && parmsg[1:5] == "base:"
+  if startswith(parmsg, "base:")
     using Pkg
-    lastidx = findfirst(isequal(' '),parmsg) - 1
+    lastidx = prevind(parmsg, findfirst(isequal(' '),parmsg))
     branch = parmsg[6:lastidx]
     Pkg.add(PackageSpec(name="DiffEqBase", rev=branch))
     println("Running tests on DiffEqBase checked out at $branch")
