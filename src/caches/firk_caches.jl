@@ -20,11 +20,7 @@ function alg_cache(alg::RadauIIA5,u,rate_prototype,uEltypeNoUnits,uBottomEltypeN
   tab = RadauIIA5Tableau(uToltype, real(tTypeNoUnits))
 
   κ = alg.κ !== nothing ? convert(uToltype, alg.κ) : convert(uToltype, 1//100)
-  if rate_prototype isa Number
-    J = 0
-  else
-    J = false .* vec(rate_prototype) .* vec(rate_prototype)'
-  end
+  J = false .* _vec(rate_prototype) .* _vec(rate_prototype)'
 
   RadauIIA5ConstantCache(uf, tab, κ, one(uToltype), 10000, u, u, u, dt, dt, Convergence, J)
 end
