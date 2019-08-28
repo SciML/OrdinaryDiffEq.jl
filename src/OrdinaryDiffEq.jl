@@ -73,7 +73,6 @@ module OrdinaryDiffEq
   include("caches/sdirk_caches.jl")
   include("caches/firk_caches.jl")
   include("caches/kencarp_kvaerno_caches.jl")
-  include("caches/generic_implicit_caches.jl")
   include("caches/linear_caches.jl")
   include("caches/linear_nonlinear_caches.jl")
   include("caches/symplectic_caches.jl")
@@ -113,7 +112,6 @@ module OrdinaryDiffEq
   include("perform_step/rkn_perform_step.jl")
   include("perform_step/split_perform_step.jl")
   include("perform_step/linear_perform_step.jl")
-  include("perform_step/iif_perform_step.jl")
   include("perform_step/exponential_rk_perform_step.jl")
   include("perform_step/explicit_rk_perform_step.jl")
   include("perform_step/low_order_rk_perform_step.jl")
@@ -125,7 +123,6 @@ module OrdinaryDiffEq
   include("perform_step/sdirk_perform_step.jl")
   include("perform_step/kencarp_kvaerno_perform_step.jl")
   include("perform_step/firk_perform_step.jl")
-  include("perform_step/generic_implicit_perform_step.jl")
   include("perform_step/rosenbrock_perform_step.jl")
   include("perform_step/composite_perform_step.jl")
   include("perform_step/adams_bashforth_moulton_perform_step.jl")
@@ -196,15 +193,11 @@ module OrdinaryDiffEq
          Kvaerno3, KenCarp3, Cash4, Hairer4, Hairer42, SSPSDIRK2, Kvaerno4,
          Kvaerno5, KenCarp4, KenCarp5, ESDIRK54I8L2SA
 
-  export GenericImplicitEuler, GenericTrapezoid
-
   export MidpointSplitting, LinearExponential
 
   export Rosenbrock23, Rosenbrock32, RosShamp4, Veldd4, Velds4, GRK4T, GRK4A,
          Ros4LStab, ROS3P, Rodas3, Rodas4, Rodas42, Rodas4P, Rodas5,
          RosenbrockW6S4OS, ROS34PW1a, ROS34PW1b, ROS34PW2, ROS34PW3
-
-  export GenericIIF1, GenericIIF2
 
   export LawsonEuler, NorsettEuler, ETD1, ETDRK2, ETDRK3, ETDRK4, HochOst4, Exp4, EPIRK4s3A, EPIRK4s3B,
          EPIRK5s3, EXPRB53s3, EPIRK5P1, EPIRK5P2, ETD2, Exprb32, Exprb43
