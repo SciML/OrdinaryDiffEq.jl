@@ -155,10 +155,6 @@ function resize_non_user_cache!(integrator::ODEIntegrator,
   cache.jac_config = DiffEqBase.resize_jac_config!(cache.jac_config, i)
   cache.grad_config = resize_grad_config!(cache.grad_config, i)
 end
-function resize_non_user_cache!(integrator::ODEIntegrator,
-                cache::Union{GenericImplicitEulerCache,GenericTrapezoidCache},i)
-  cache.nl_rhs = integrator.alg.nlsolve(Val{:init},cache.rhs,cache.u)
-end
 
 function deleteat_non_user_cache!(integrator::ODEIntegrator,cache,idxs)
   # ordering doesn't matter in deterministic cache, so just resize

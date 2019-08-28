@@ -174,7 +174,7 @@ function ExtrapolationMidpointHairerWanner(;min_order=2,init_order=5, max_order=
 end
 
 struct ImplicitHairerWannerExtrapolation{CS,AD,F} <: OrdinaryDiffEqImplicitExtrapolationAlgorithm{CS,AD}
-  linsolve::F  
+  linsolve::F
   n_min::Int # Minimal extrapolation order
   n_init::Int # Initial extrapolation order
   n_max::Int # Maximal extrapolation order
@@ -607,26 +607,6 @@ IRKC(;chunk_size=0,autodiff=true,diff_type=Val{:forward},
 
 ################################################################################
 
-# Generic implicit methods
-
-struct GenericImplicitEuler{F} <: OrdinaryDiffEqAdaptiveAlgorithm
-  nlsolve::F
-  extrapolant::Symbol
-end
-GenericImplicitEuler(;
-            nlsolve=NLSOLVEJL_SETUP(),extrapolant=:linear) =
-            GenericImplicitEuler{typeof(nlsolve)}(nlsolve,extrapolant)
-
-struct GenericTrapezoid{F} <: OrdinaryDiffEqAdaptiveAlgorithm
-  nlsolve::F
-  extrapolant::Symbol
-end
-GenericTrapezoid(;
-            nlsolve=NLSOLVEJL_SETUP(),extrapolant=:linear) =
-            GenericTrapezoid{typeof(nlsolve)}(nlsolve,extrapolant)
-
-################################################################################
-
 # Linear Methods
 
 struct MidpointSplitting <: OrdinaryDiffEqAlgorithm end
@@ -947,16 +927,6 @@ end
 RosenbrockW6S4OS(;chunk_size=0,autodiff=true,diff_type=Val{:central},linsolve=DEFAULT_LINSOLVE) = RosenbrockW6S4OS{chunk_size,autodiff,typeof(linsolve),typeof(diff_type)}(linsolve,diff_type)
 ######################################
 
-struct GenericIIF1{F} <: OrdinaryDiffEqExponentialAlgorithm
-  nlsolve::F
-end
-GenericIIF1(;nlsolve=NLSOLVEJL_SETUP()) = GenericIIF1{typeof(nlsolve)}(nlsolve)
-
-struct GenericIIF2{F} <: OrdinaryDiffEqExponentialAlgorithm
-  nlsolve::F
-end
-GenericIIF2(;nlsolve=NLSOLVEJL_SETUP()) = GenericIIF2{typeof(nlsolve)}(nlsolve)
-
 for Alg in [:LawsonEuler, :NorsettEuler, :ETDRK2, :ETDRK3, :ETDRK4, :HochOst4]
   @eval struct $Alg <: OrdinaryDiffEqExponentialAlgorithm
     krylov::Bool
@@ -1052,7 +1022,6 @@ const MultistepAlgorithms = Union{IRKN3,IRKN4,
                                   AB3,AB4,AB5,ABM32,ABM43,ABM54}
 
 const SplitAlgorithms = Union{CNAB2,CNLF2,IRKC,SBDF,
-                              GenericIIF1,GenericIIF2,
                               KenCarp3,KenCarp4,KenCarp5}
 
 
