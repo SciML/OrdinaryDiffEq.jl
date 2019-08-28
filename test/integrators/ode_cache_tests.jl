@@ -45,8 +45,6 @@ for i in 1:10
 end
 
 println("Check some other integrators")
-@test_nowarn sol = solve(prob,GenericImplicitEuler(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/2)
-@test_nowarn sol = solve(prob,GenericTrapezoid(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(chunk_size=1)),callback=callback,dt=1/2)
 @test_nowarn sol = solve(prob,Rosenbrock23(chunk_size=1),callback=callback,dt=1/2)
 @test_nowarn sol = solve(prob,Rosenbrock32(chunk_size=1),callback=callback,dt=1/2)
 

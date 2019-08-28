@@ -75,13 +75,6 @@ for prob in (ODEProblemLibrary.prob_ode_linear,
   sim113 = test_convergence(dts,prob,ImplicitEuler(nlsolve = NLAnderson()),reltol=1e-2)
   @test sim113.𝒪est[:final] ≈ 1 atol=testTol
 
-  sim12 = test_convergence(dts,prob,
-          GenericImplicitEuler(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(autodiff=true)))
-  @test sim12.𝒪est[:final] ≈ 1 atol=testTol
-
-  sim122 = test_convergence(dts,prob,
-           GenericImplicitEuler(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(autodiff=false)))
-
   sim13 = test_convergence(dts,prob,ImplicitMidpoint())
   @test sim13.𝒪est[:final] ≈ 2 atol=testTol
 
@@ -99,15 +92,7 @@ for prob in (ODEProblemLibrary.prob_ode_linear,
 
   sim135 = test_convergence(dts,prob,Trapezoid(nlsolve = NLAnderson()))
   @test sim135.𝒪est[:final] ≈ 2 atol=testTol
-
-  sim14 = test_convergence(dts,prob,
-          GenericTrapezoid(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(autodiff=true)))
-  @test sim14.𝒪est[:final] ≈ 2 atol=testTol
-
-  sim142 = test_convergence(dts,prob,
-           GenericTrapezoid(nlsolve=OrdinaryDiffEq.NLSOLVEJL_SETUP(autodiff=false)))
-  @test sim142.𝒪est[:final] ≈ 2 atol=testTol
-
+  
   sim14 = test_convergence(dts,prob,TRBDF2())
   @test sim14.𝒪est[:final] ≈ 2 atol=testTol
 
