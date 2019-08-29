@@ -379,15 +379,12 @@ function reset_fsal!(integrator)
   # integrator.reeval_fsal = false
 end
 
-nlsolve!(integrator, cache) = DiffEqBase.nlsolve!(cache.nlsolver, cache.nlsolver.cache, integrator)
-nlsolve!(nlsolver::NLSolver, integrator) = DiffEqBase.nlsolve!(nlsolver, nlsolver.cache, integrator)
-
 DiffEqBase.nlsolve_f(f, alg::OrdinaryDiffEqAlgorithm) = f isa SplitFunction && issplit(alg) ? f.f1 : f
 DiffEqBase.nlsolve_f(f, alg::DAEAlgorithm) = f
 DiffEqBase.nlsolve_f(integrator::ODEIntegrator) =
   nlsolve_f(integrator.f, unwrap_alg(integrator, true))
 
-function iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
+function DiffEqBase.build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{true})
   if alg isa NewtonAlgorithm
     if alg.nlsolve isa NLNewton
       nf = nlsolve_f(f, alg)
@@ -417,7 +414,7 @@ function iip_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
   J, W
 end
 
-function oop_generate_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits)
+function DiffEqBase.build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{false})
   islin = false
   if alg isa NewtonAlgorithm && alg.nlsolve isa NLNewton
     nf = nlsolve_f(f, alg)

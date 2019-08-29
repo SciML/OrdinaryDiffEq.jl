@@ -46,7 +46,7 @@ end
   nlsolver.z = z
 
   nlsolver.tmp = d1*uₙ₋₁ + d2*uₙ₋₂ + d3*zₙ₋₁
-  z = nlsolve!(integrator, cache)
+  z = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   uₙ = nlsolver.tmp + d*z
@@ -76,7 +76,12 @@ end
 function initialize!(integrator, cache::ABDF2Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.nlsolver.k
+  _du_cache = du_cache(cache.nlsolver) 
+  if _du_cache === nothing
+    integrator.fsallast = zero(integrator.fsalfirst)
+  else
+    integrator.fsallast = first(_du_cache)
+  end
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -120,7 +125,7 @@ end
   end
 
   @.. tmp = d1*uₙ₋₁ + d2*uₙ₋₂ + d3*zₙ₋₁
-  z = nlsolve!(integrator, cache)
+  z = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   @.. uₙ = tmp + d*z
@@ -195,7 +200,7 @@ function perform_step!(integrator,cache::SBDFConstantCache,repeat_step=false)
   end
   nlsolver.z = z
 
-  z = nlsolve!(integrator, cache)
+  z = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
   u = nlsolver.tmp + γ*z
 
@@ -217,7 +222,12 @@ function initialize!(integrator, cache::SBDFCache)
   @unpack f1, f2 = integrator.f
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.nlsolver.k
+  _du_cache = du_cache(cache.nlsolver) 
+  if _du_cache === nothing
+    integrator.fsallast = zero(integrator.fsalfirst)
+  else
+    integrator.fsallast = first(_du_cache)
+  end
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -231,8 +241,9 @@ end
 function perform_step!(integrator, cache::SBDFCache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p,alg = integrator
   @unpack uprev2,uprev3,uprev4,k₁,k₂,k₃,du₁,du₂,nlsolver = cache
-  @unpack tmp,z,k = nlsolver
+  @unpack tmp,z = nlsolver
   @unpack f1, f2 = integrator.f
+
   cnt = cache.cnt = min(alg.order, integrator.iter+1)
   integrator.iter == 1 && !integrator.u_modified && ( cnt = cache.cnt = 1 )
   nlsolver.γ = γ = inv(γₖ[cnt])
@@ -258,7 +269,7 @@ function perform_step!(integrator, cache::SBDFCache, repeat_step=false)
     @.. z = zero(eltype(u))
   end
 
-  z = nlsolve!(integrator, cache)
+  z = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
   @.. u = tmp + γ*z
 
@@ -269,7 +280,7 @@ function perform_step!(integrator, cache::SBDFCache, repeat_step=false)
   f2(du₂, u, p, t+dt)
   integrator.destats.nf += 1
   integrator.destats.nf2 += 1
-  @.. k = du₁ + du₂
+  @.. integrator.fsallast = du₁ + du₂
 end
 
 # QNDF1
@@ -319,7 +330,7 @@ function perform_step!(integrator,cache::QNDF1ConstantCache,repeat_step=false)
   nlsolver.z = dt*integrator.fsalfirst
   nlsolver.γ = γ
 
-  z = nlsolve!(integrator, cache)
+  z = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
   u = nlsolver.tmp + γ*z
 
@@ -347,7 +358,12 @@ end
 function initialize!(integrator, cache::QNDF1Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.nlsolver.k
+  _du_cache = du_cache(cache.nlsolver) 
+  if _du_cache === nothing
+    integrator.fsallast = zero(integrator.fsalfirst)
+  else
+    integrator.fsallast = first(_du_cache)
+  end
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -385,7 +401,7 @@ function perform_step!(integrator,cache::QNDF1Cache,repeat_step=false)
   # initial guess
   @.. z = dt*integrator.fsalfirst
 
-  z = nlsolve!(integrator, cache)
+  z = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
   @.. u = tmp + γ*z
 
@@ -466,7 +482,7 @@ function perform_step!(integrator,cache::QNDF2ConstantCache,repeat_step=false)
   # initial guess
   nlsolver.z = dt*integrator.fsalfirst
 
-  z = nlsolve!(integrator, cache)
+  z = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
   u = nlsolver.tmp + γ*z
 
@@ -505,7 +521,12 @@ end
 function initialize!(integrator, cache::QNDF2Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.nlsolver.k
+  _du_cache = du_cache(cache.nlsolver) 
+  if _du_cache === nothing
+    integrator.fsallast = zero(integrator.fsalfirst)
+  else
+    integrator.fsallast = first(_du_cache)
+  end
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -559,7 +580,7 @@ function perform_step!(integrator,cache::QNDF2Cache,repeat_step=false)
   # initial guess
   @.. nlsolver.z = dt*integrator.fsalfirst
 
-  z = nlsolve!(integrator, cache)
+  z = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
   @.. u = tmp + γ*z
 
@@ -663,7 +684,7 @@ function perform_step!(integrator,cache::QNDFConstantCache,repeat_step=false)
   # initial guess
   nlsolver.z = dt*integrator.fsalfirst
 
-  z = nlsolve!(integrator, cache)
+  z = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
   u = nlsolver.tmp + γ*z
 
@@ -732,7 +753,12 @@ end
 function initialize!(integrator, cache::QNDFCache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.nlsolver.k
+  _du_cache = du_cache(cache.nlsolver) 
+  if _du_cache === nothing
+    integrator.fsallast = zero(integrator.fsalfirst)
+  else
+    integrator.fsallast = first(_du_cache)
+  end
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -804,7 +830,7 @@ function perform_step!(integrator,cache::QNDFCache,repeat_step=false)
   # initial guess
   @.. nlsolver.z = dt*integrator.fsalfirst
 
-  z = nlsolve!(integrator, cache)
+  z = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
   @.. u = nlsolver.tmp + γ*z
 
@@ -910,14 +936,14 @@ end
 
 ### STEP 1
   nlsolver.tmp = uprev
-  z = nlsolve!(integrator, cache)
+  z = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
   z₁ = nlsolver.tmp + z
 ### STEP 2
   nlsolver.tmp = z₁
   nlsolver.c = 2
   set_new_W!(nlsolver, false)
-  z = nlsolve!(integrator, cache)
+  z = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
   z₂ = z₁ + z
 ### STEP 3
@@ -925,7 +951,7 @@ end
   nlsolver.tmp = tmp2
   nlsolver.c = 1
   set_new_W!(nlsolver, false)
-  z = nlsolve!(integrator, cache)
+  z = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
   u = tmp2 + z
 
@@ -940,7 +966,12 @@ end
 function initialize!(integrator, cache::MEBDF2Cache)
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.nlsolver.k
+  _du_cache = du_cache(cache.nlsolver) 
+  if _du_cache === nothing
+    integrator.fsallast = zero(integrator.fsalfirst)
+  else
+    integrator.fsallast = first(_du_cache)
+  end
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -965,14 +996,14 @@ end
 
 ### STEP 1
  nlsolver.tmp = uprev
- z = nlsolve!(integrator, cache)
+ z = nlsolve!(nlsolver, integrator)
  nlsolvefail(nlsolver) && return
  @.. z₁ = uprev + z
 ### STEP 2
  nlsolver.tmp = z₁
  nlsolver.c = 2
  set_new_W!(nlsolver, false)
- z = nlsolve!(integrator, cache)
+ z = nlsolve!(nlsolver, integrator)
  nlsolvefail(nlsolver) && return
  @.. z₂ = z₁ + z
 ### STEP 3
@@ -981,7 +1012,7 @@ end
  nlsolver.tmp = tmp2
  nlsolver.c = 1
  set_new_W!(nlsolver, false)
- z = nlsolve!(integrator, cache)
+ z = nlsolve!(nlsolver, integrator)
  nlsolvefail(nlsolver) && return
  @.. u = tmp2 + z
 

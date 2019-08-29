@@ -42,7 +42,6 @@ end
   alg = unwrap_alg(integrator, true)
   @unpack max_iter = alg
   mass_matrix = integrator.f.mass_matrix
-  is_compos = integrator.alg isa CompositeAlgorithm
 
   # precalculations
   rtol = @.. reltol^(2/3) / 10
@@ -51,7 +50,7 @@ end
   c2m1 = c2-1
   c1mc2= c1-c2
   γdt, αdt, βdt = γ/dt, α/dt, β/dt
-  J = calc_J(integrator, cache, is_compos)
+  J = calc_J(integrator, cache)
   if u isa Number
     LU1 = -γdt*mass_matrix + J
     LU2 = -(αdt + βdt*im)*mass_matrix + J
@@ -218,14 +217,13 @@ end
   alg = unwrap_alg(integrator, true)
   @unpack max_iter = alg
   mass_matrix = integrator.f.mass_matrix
-  is_compos = integrator.alg isa CompositeAlgorithm
 
   # precalculations
   c1m1 = c1-1
   c2m1 = c2-1
   c1mc2= c1-c2
   γdt, αdt, βdt = γ/dt, α/dt, β/dt
-  (new_jac = do_newJ(integrator, alg, cache, repeat_step)) && (calc_J!(integrator, cache, is_compos); cache.W_dt = dt)
+  (new_jac = do_newJ(integrator, alg, cache, repeat_step)) && (calc_J!(integrator, cache); cache.W_dt = dt)
   if (new_W = do_newW(integrator, alg, new_jac, cache.W_dt))
     @inbounds for II in CartesianIndices(J)
       W1[II] = -γdt * mass_matrix[Tuple(II)...] + J[II]

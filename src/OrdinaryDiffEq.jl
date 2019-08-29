@@ -40,15 +40,15 @@ module OrdinaryDiffEq
 
   using DiffEqBase: check_error!, @def, @.. , _vec, _reshape
 
-  using DiffEqBase: nlsolvefail, isnewton, set_new_W!, get_W, iipnlsolve, oopnlsolve
+  using DiffEqBase: nlsolvefail, isnewton, set_new_W!, get_W, get_linsolve, build_nlsolver, nlsolve!
 
   using DiffEqBase: NLSolver
 
-  using DiffEqBase: FastConvergence, Convergence, SlowConvergence, VerySlowConvergence, Divergence
+  using DiffEqBase: FastConvergence, Convergence, SlowConvergence, VerySlowConvergence, Divergence, MaxItersReached
 
   import DiffEqBase: calculate_residuals, calculate_residuals!, nlsolve_f, unwrap_cache, @tight_loop_macros, islinear
 
-  import DiffEqBase: iip_get_uf, oop_get_uf, build_jac_config
+  import DiffEqBase: build_jac_config
 
   import SparseDiffTools: forwarddiff_color_jacobian!, ForwardColorJacCache
 

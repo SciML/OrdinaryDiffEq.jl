@@ -75,7 +75,7 @@ using OrdinaryDiffEq, Test, LinearAlgebra, Statistics
     sol = solve(prob, ImplicitMidpoint(extrapolant = :constant,
                           nlsolve=NLFunctional()),dt=1/10,reltol=1e-7,abstol=1e-10)
     sol2 = solve(prob2,ImplicitMidpoint(extrapolant = :constant, nlsolve=NLFunctional()),dt=1/10,reltol=1e-7,abstol=1e-10)
-    @test norm(sol .- sol2) ≈ 0 atol=1e-7
+    @test norm(sol .- sol2) ≈ 0 atol=1.1e-7
 
     sol = solve(prob,ImplicitEuler(nlsolve=NLAnderson()),dt=1/10,adaptive=false)
     sol2 = solve(prob2,ImplicitEuler(nlsolve=NLAnderson()),dt=1/10,adaptive=false)

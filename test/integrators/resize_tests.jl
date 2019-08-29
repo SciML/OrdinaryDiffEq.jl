@@ -21,15 +21,16 @@ resize!(i, 5)
 @test length(i.cache.uprev) == 5
 # nlsolver fields
 @test length(i.cache.nlsolver.z) == 5
-@test length(i.cache.nlsolver.dz) == 5
-@test length(i.cache.nlsolver.weight) == 5
-@test length(i.cache.nlsolver.ztmp) == 5
+@test length(i.cache.nlsolver.gz) == 5
 @test length(i.cache.nlsolver.tmp) == 5
-@test length(i.cache.nlsolver.k) == 5
-@test length(i.cache.nlsolver.du1) == 5
+@test length(i.cache.nlsolver.cache.dz) == 5
+@test length(i.cache.nlsolver.cache.atmp) == 5
+@test length(i.cache.nlsolver.cache.k) == 5
+@test length(i.cache.nlsolver.cache.weight) == 5
+@test length(i.cache.nlsolver.cache.du1) == 5
 # ForwardDiff
-@test length(i.cache.nlsolver.jac_config.duals[1]) == 5
-@test length(i.cache.nlsolver.jac_config.duals[2]) == 5
+@test length(i.cache.nlsolver.cache.jac_config.duals[1]) == 5
+@test length(i.cache.nlsolver.cache.jac_config.duals[2]) == 5
 @test size(i.cache.nlsolver.cache.W) == (5,5)
 @test size(i.cache.nlsolver.cache.J) == (5,5)
 solve!(i)
@@ -40,16 +41,17 @@ resize!(i, 5)
 @test length(i.cache.uprev) == 5
 # nlsolver fields
 @test length(i.cache.nlsolver.z) == 5
-@test length(i.cache.nlsolver.dz) == 5
-@test length(i.cache.nlsolver.weight) == 5
-@test length(i.cache.nlsolver.ztmp) == 5
+@test length(i.cache.nlsolver.gz) == 5
 @test length(i.cache.nlsolver.tmp) == 5
-@test length(i.cache.nlsolver.k) == 5
-@test length(i.cache.nlsolver.du1) == 5
+@test length(i.cache.nlsolver.cache.dz) == 5
+@test length(i.cache.nlsolver.cache.atmp) == 5
+@test length(i.cache.nlsolver.cache.k) == 5
+@test length(i.cache.nlsolver.cache.weight) == 5
+@test length(i.cache.nlsolver.cache.du1) == 5
 # DiffEqDiffTools
-@test length(i.cache.nlsolver.jac_config.x1) == 5
-@test length(i.cache.nlsolver.jac_config.fx) == 5
-@test length(i.cache.nlsolver.jac_config.fx1) == 5
+@test length(i.cache.nlsolver.cache.jac_config.x1) == 5
+@test length(i.cache.nlsolver.cache.jac_config.fx) == 5
+@test length(i.cache.nlsolver.cache.jac_config.fx1) == 5
 @test size(i.cache.nlsolver.cache.W) == (5,5)
 @test size(i.cache.nlsolver.cache.J) == (5,5)
 solve!(i)
