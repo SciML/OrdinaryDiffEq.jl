@@ -23,7 +23,12 @@ function initialize!(integrator, cache::Union{Kvaerno3Cache,
                                               KenCarp5Cache})
   integrator.kshortsize = 2
   integrator.fsalfirst = cache.fsalfirst
-  integrator.fsallast = cache.nlsolver.k
+  _du_cache = du_cache(cache.nlsolver) 
+  if _du_cache === nothing
+    integrator.fsallast = zero(integrator.fsalfirst)
+  else
+    integrator.fsallast = first(_du_cache)
+  end
   resize!(integrator.k, integrator.kshortsize)
   integrator.k[1] = integrator.fsalfirst
   integrator.k[2] = integrator.fsallast
@@ -50,7 +55,7 @@ end
 
   nlsolver.tmp = uprev + γ*z₁
   nlsolver.c = γ
-  z₂ = nlsolve!(integrator, cache)
+  z₂ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 3
@@ -60,7 +65,7 @@ end
 
   nlsolver.tmp = uprev + a31*z₁ + a32*z₂
   nlsolver.c = c3
-  z₃ = nlsolve!(integrator, cache)
+  z₃ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
@@ -69,7 +74,7 @@ end
 
   nlsolver.tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlsolver.c = 1
-  z₄ = nlsolve!(integrator, cache)
+  z₄ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   u = nlsolver.tmp + γ*z₄
@@ -97,7 +102,7 @@ end
 @muladd function perform_step!(integrator, cache::Kvaerno3Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z₁,z₂,z₃,z₄,atmp,nlsolver = cache
-  @unpack dz,k,tmp = nlsolver
+  @unpack gz,tmp = nlsolver
   @unpack γ,a31,a32,a41,a42,a43,btilde1,btilde2,btilde3,btilde4,c3,α31,α32 = cache.tab
   alg = unwrap_alg(integrator, true)
 
@@ -117,9 +122,9 @@ end
 
   @.. tmp = uprev + γ*z₁
   nlsolver.c = γ
-  z₂ = nlsolve!(integrator, cache)
+  z₂ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
-  set_new_W!(nlsolver, false)
+  isnewton(nlsolver) && set_new_W!(nlsolver, false)
 
   ################################## Solve Step 3
 
@@ -129,7 +134,7 @@ end
 
   @.. tmp = uprev + a31*z₁ + a32*z₂
   nlsolver.c = c3
-  z₃ = nlsolve!(integrator, cache)
+  z₃ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
@@ -144,7 +149,7 @@ end
 
   @.. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlsolver.c = 1
-  z₄ = nlsolve!(integrator, cache)
+  z₄ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   @.. u = tmp + γ*z₄
@@ -152,12 +157,12 @@ end
   ################################### Finalize
 
   if integrator.opts.adaptive
-    @.. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄
+    @.. gz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
-      nlsolver.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
+      get_linsolve(nlsolver)(vec(tmp),get_W(nlsolver),vec(gz),false)
     else
-      tmp .= dz
+      tmp .= gz
     end
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
@@ -208,7 +213,7 @@ end
   end
 
   nlsolver.c = γ
-  z₂ = nlsolve!(integrator, cache)
+  z₂ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 3
@@ -228,7 +233,7 @@ end
   nlsolver.tmp = tmp
   nlsolver.c = c3
 
-  z₃ = nlsolve!(integrator, cache)
+  z₃ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
@@ -248,7 +253,7 @@ end
   nlsolver.c = 1
   nlsolver.tmp = tmp
 
-  z₄ = nlsolve!(integrator, cache)
+  z₄ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   u = nlsolver.tmp + γ*z₄
@@ -291,7 +296,7 @@ end
 @muladd function perform_step!(integrator, cache::KenCarp3Cache, repeat_step=false)
   @unpack t,dt,uprev,u,p = integrator
   @unpack z₁,z₂,z₃,z₄,k1,k2,k3,k4,atmp,nlsolver = cache
-  @unpack dz,k,tmp = nlsolver
+  @unpack gz,tmp = nlsolver
   @unpack γ,a31,a32,a41,a42,a43,btilde1,btilde2,btilde3,btilde4,c3,α31,α32 = cache.tab
   @unpack ea21,ea31,ea32,ea41,ea42,ea43,eb1,eb2,eb3,eb4 = cache.tab
   @unpack ebtilde1,ebtilde2,ebtilde3,ebtilde4 = cache.tab
@@ -336,9 +341,9 @@ end
   end
 
   nlsolver.c = γ
-  z₂ = nlsolve!(integrator, cache)
+  z₂ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
-  set_new_W!(nlsolver, false)
+  isnewton(nlsolver) && set_new_W!(nlsolver, false)
 
   ################################## Solve Step 3
 
@@ -359,7 +364,7 @@ end
   nlsolver.z = z₃
 
   nlsolver.c = c3
-  z₃ = nlsolve!(integrator, cache)
+  z₃ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
@@ -381,7 +386,7 @@ end
   nlsolver.z = z₄
 
   nlsolver.c = 1
-  z₄ = nlsolve!(integrator, cache)
+  z₄ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   @.. u = tmp + γ*z₄
@@ -398,18 +403,18 @@ end
 
   if integrator.opts.adaptive
     if typeof(integrator.f) <: SplitFunction
-      #@.. dz = btilde1*z₁  + btilde2*z₂  + btilde3*z₃ + btilde4*z₄ + ebtilde1*k1 + ebtilde2*k2 + ebtilde3*k3 + ebtilde4*k4
-      for i in eachindex(dz)
-        @inbounds dz[i] = btilde1*z₁[i]  + btilde2*z₂[i]  + btilde3*z₃[i] + btilde4*z₄[i] + ebtilde1*k1[i] + ebtilde2*k2[i] + ebtilde3*k3[i] + ebtilde4*k4[i]
+      #@.. gz = btilde1*z₁  + btilde2*z₂  + btilde3*z₃ + btilde4*z₄ + ebtilde1*k1 + ebtilde2*k2 + ebtilde3*k3 + ebtilde4*k4
+      for i in eachindex(gz)
+        @inbounds gz[i] = btilde1*z₁[i]  + btilde2*z₂[i]  + btilde3*z₃[i] + btilde4*z₄[i] + ebtilde1*k1[i] + ebtilde2*k2[i] + ebtilde3*k3[i] + ebtilde4*k4[i]
       end
     else
-      @.. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄
+      @.. gz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄
     end
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
-      nlsolver.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
+      get_linsolve(nlsolver)(vec(tmp),get_W(nlsolver),vec(gz),false)
     else
-      tmp .= dz
+      tmp .= gz
     end
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
@@ -447,7 +452,7 @@ end
 
   nlsolver.tmp = uprev + γ*z₁
   nlsolver.c = γ
-  z₂ = nlsolve!(integrator, cache)
+  z₂ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 3
@@ -456,7 +461,7 @@ end
 
   nlsolver.tmp = uprev + a31*z₁ + a32*z₂
   nlsolver.c = c3
-  z₃ = nlsolve!(integrator, cache)
+  z₃ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
@@ -465,7 +470,7 @@ end
 
   nlsolver.tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlsolver.c = c4
-  z₄ = nlsolve!(integrator, cache)
+  z₄ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 5
@@ -475,7 +480,7 @@ end
 
   nlsolver.tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   nlsolver.c = 1
-  z₅ = nlsolve!(integrator, cache)
+  z₅ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   u = nlsolver.tmp + γ*z₅
@@ -503,7 +508,7 @@ end
 @muladd function perform_step!(integrator, cache::Kvaerno4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z₁,z₂,z₃,z₄,z₅,atmp,nlsolver = cache
-  @unpack dz,k,tmp = nlsolver
+  @unpack gz,tmp = nlsolver
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,c3,c4 = cache.tab
   @unpack α21,α31,α32,α41,α42 = cache.tab
   @unpack btilde1,btilde2,btilde3,btilde4,btilde5 = cache.tab
@@ -526,9 +531,9 @@ end
 
   @.. tmp = uprev + γ*z₁
   nlsolver.c = γ
-  z₂ = nlsolve!(integrator, cache)
+  z₂ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
-  set_new_W!(nlsolver, false)
+  isnewton(nlsolver) && set_new_W!(nlsolver, false)
 
   ################################## Solve Step 3
 
@@ -537,7 +542,7 @@ end
 
   @.. tmp = uprev + a31*z₁ + a32*z₂
   nlsolver.c = c3
-  z₃ = nlsolve!(integrator, cache)
+  z₃ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
@@ -548,7 +553,7 @@ end
 
   @.. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlsolver.c = c4
-  z₄ = nlsolve!(integrator, cache)
+  z₄ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 5
@@ -559,7 +564,7 @@ end
 
   @.. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   nlsolver.c = 1
-  z₅ = nlsolve!(integrator, cache)
+  z₅ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   @.. u = tmp + γ*z₅
@@ -567,12 +572,12 @@ end
   ################################### Finalize
 
   if integrator.opts.adaptive
-    @.. dz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
+    @.. gz = btilde1*z₁ + btilde2*z₂ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
-      nlsolver.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
+      get_linsolve(nlsolver)(vec(tmp),get_W(nlsolver),vec(gz),false)
     else
-      tmp .= dz
+      tmp .= gz
     end
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
@@ -629,7 +634,7 @@ end
   nlsolver.tmp = tmp
   nlsolver.c = γ
 
-  z₂ = nlsolve!(integrator, cache)
+  z₂ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 3
@@ -649,7 +654,7 @@ end
   nlsolver.tmp = tmp
   nlsolver.c = c3
 
-  z₃ = nlsolve!(integrator, cache)
+  z₃ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
@@ -668,7 +673,7 @@ end
   nlsolver.tmp = tmp
   nlsolver.c = c4
 
-  z₄ = nlsolve!(integrator, cache)
+  z₄ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 5
@@ -688,7 +693,7 @@ end
   nlsolver.c = c5
 
   u = nlsolver.tmp + γ*z₅
-  z₅ = nlsolve!(integrator, cache)
+  z₅ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 6
@@ -707,7 +712,7 @@ end
   nlsolver.tmp = tmp
   nlsolver.c = 1
 
-  z₆ = nlsolve!(integrator, cache)
+  z₆ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   u = nlsolver.tmp + γ*z₆
@@ -750,7 +755,7 @@ end
 @muladd function perform_step!(integrator, cache::KenCarp4Cache, repeat_step=false)
   @unpack t,dt,uprev,u,p = integrator
   @unpack z₁,z₂,z₃,z₄,z₅,z₆,atmp,nlsolver = cache
-  @unpack dz,k,tmp = nlsolver
+  @unpack gz,tmp = nlsolver
   @unpack k1,k2,k3,k4,k5,k6 = cache
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,c3,c4,c5 = cache.tab
   @unpack α31,α32,α41,α42,α51,α52,α53,α54,α61,α62,α63,α64,α65 = cache.tab
@@ -801,9 +806,9 @@ end
   end
 
   nlsolver.c = γ
-  z₂ = nlsolve!(integrator, cache)
+  z₂ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
-  set_new_W!(nlsolver, false)
+  isnewton(nlsolver) && set_new_W!(nlsolver, false)
 
   ################################## Solve Step 3
 
@@ -826,7 +831,7 @@ end
   nlsolver.z = z₃
 
   nlsolver.c = c3
-  z₃ = nlsolve!(integrator, cache)
+  z₃ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
@@ -847,7 +852,7 @@ end
   nlsolver.z = z₄
 
   nlsolver.c = c4
-  z₄ = nlsolve!(integrator, cache)
+  z₄ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 5
@@ -873,7 +878,7 @@ end
   nlsolver.z = z₅
 
   nlsolver.c = c5
-  z₅ = nlsolve!(integrator, cache)
+  z₅ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 6
@@ -898,7 +903,7 @@ end
   nlsolver.z = z₆
 
   nlsolver.c = 1
-  z₆ = nlsolve!(integrator, cache)
+  z₆ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   @.. u = tmp + γ*z₆
@@ -915,22 +920,22 @@ end
 
   if integrator.opts.adaptive
     if typeof(integrator.f) <: SplitFunction
-      #@.. dz = btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + ebtilde1*k1 + ebtilde3*k3 + ebtilde4*k4 + ebtilde5*k5 + ebtilde6*k6
+      #@.. gz = btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + ebtilde1*k1 + ebtilde3*k3 + ebtilde4*k4 + ebtilde5*k5 + ebtilde6*k6
       for i in eachindex(u)
-        @inbounds dz[i] = btilde1*z₁[i] + btilde3*z₃[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i] + ebtilde1*k1[i] + ebtilde3*k3[i] + ebtilde4*k4[i] + ebtilde5*k5[i] + ebtilde6*k6[i]
+        @inbounds gz[i] = btilde1*z₁[i] + btilde3*z₃[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i] + ebtilde1*k1[i] + ebtilde3*k3[i] + ebtilde4*k4[i] + ebtilde5*k5[i] + ebtilde6*k6[i]
       end
     else
-      # @.. dz = btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆
+      # @.. gz = btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆
       @tight_loop_macros for i in eachindex(u)
-        @inbounds dz[i] = btilde1*z₁[i] + btilde3*z₃[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i]
+        @inbounds gz[i] = btilde1*z₁[i] + btilde3*z₃[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i]
       end
     end
 
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
-      nlsolver.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
+      get_linsolve(nlsolver)(vec(tmp),get_W(nlsolver),vec(gz),false)
     else
-      tmp .= dz
+      tmp .= gz
     end
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
@@ -968,7 +973,7 @@ end
 
   nlsolver.tmp = uprev + γ*z₁
   nlsolver.c = γ
-  z₂ = nlsolve!(integrator, cache)
+  z₂ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 3
@@ -977,7 +982,7 @@ end
 
   nlsolver.tmp = uprev + a31*z₁ + a32*z₂
   nlsolver.c = c3
-  z₃ = nlsolve!(integrator, cache)
+  z₃ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
@@ -986,7 +991,7 @@ end
 
   nlsolver.tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlsolver.c = c4
-  z₄ = nlsolve!(integrator, cache)
+  z₄ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 5
@@ -995,7 +1000,7 @@ end
 
   nlsolver.tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   nlsolver.c = c5
-  z₅ = nlsolve!(integrator, cache)
+  z₅ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 6
@@ -1004,7 +1009,7 @@ end
 
   nlsolver.tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅
   nlsolver.c = c6
-  z₆ = nlsolve!(integrator, cache)
+  z₆ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 7
@@ -1014,7 +1019,7 @@ end
 
   nlsolver.tmp = uprev + a71*z₁ + a73*z₃ + a74*z₄ + a75*z₅ + a76*z₆
   nlsolver.c = 1
-  z₇ = nlsolve!(integrator, cache)
+  z₇ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   u = nlsolver.tmp + γ*z₇
@@ -1042,7 +1047,7 @@ end
 @muladd function perform_step!(integrator, cache::Kvaerno5Cache, repeat_step=false)
   @unpack t,dt,uprev,u,f,p = integrator
   @unpack z₁,z₂,z₃,z₄,z₅,z₆,z₇,atmp,nlsolver = cache
-  @unpack dz,k,tmp = nlsolver
+  @unpack gz,tmp = nlsolver
   @unpack γ,a31,a32,a41,a42,a43,a51,a52,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,c3,c4,c5,c6 = cache.tab
   @unpack btilde1,btilde3,btilde4,btilde5,btilde6,btilde7 = cache.tab
   @unpack α31,α32,α41,α42,α43,α51,α52,α53,α61,α62,α63 = cache.tab
@@ -1065,9 +1070,9 @@ end
 
   @.. tmp = uprev + γ*z₁
   nlsolver.c = γ
-  z₂ = nlsolve!(integrator, cache)
+  z₂ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
-  set_new_W!(nlsolver, false)
+  isnewton(nlsolver) && set_new_W!(nlsolver, false)
 
   ################################## Solve Step 3
 
@@ -1076,7 +1081,7 @@ end
 
   @.. tmp = uprev + a31*z₁ + a32*z₂
   nlsolver.c = c3
-  z₃ = nlsolve!(integrator, cache)
+  z₃ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
@@ -1087,7 +1092,7 @@ end
 
   @.. tmp = uprev + a41*z₁ + a42*z₂ + a43*z₃
   nlsolver.c = c4
-  z₄ = nlsolve!(integrator, cache)
+  z₄ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 5
@@ -1097,7 +1102,7 @@ end
 
   @.. tmp = uprev + a51*z₁ + a52*z₂ + a53*z₃ + a54*z₄
   nlsolver.c = c5
-  z₅ = nlsolve!(integrator, cache)
+  z₅ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 6
@@ -1107,7 +1112,7 @@ end
 
   @.. tmp = uprev + a61*z₁ + a63*z₃ + a64*z₄ + a65*z₅
   nlsolver.c = c6
-  z₆ = nlsolve!(integrator, cache)
+  z₆ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 7
@@ -1124,7 +1129,7 @@ end
     @inbounds tmp[i] = uprev[i] + a71*z₁[i] + a73*z₃[i] + a74*z₄[i] + a75*z₅[i] + a76*z₆[i]
   end
   nlsolver.c = 1
-  z₇ = nlsolve!(integrator, cache)
+  z₇ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   @.. u = tmp + γ*z₇
@@ -1132,15 +1137,15 @@ end
   ################################### Finalize
 
   if integrator.opts.adaptive
-    # @.. dz = btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇
+    # @.. gz = btilde1*z₁ + btilde3*z₃ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇
     @tight_loop_macros for i in eachindex(u)
-      @inbounds dz[i] = btilde1*z₁[i] + btilde3*z₃[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i] + btilde7*z₇[i]
+      @inbounds gz[i] = btilde1*z₁[i] + btilde3*z₃[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i] + btilde7*z₇[i]
     end
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
-      nlsolver.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
+      get_linsolve(nlsolver)(vec(tmp),get_W(nlsolver),vec(gz),false)
     else
-      tmp .= dz
+      tmp .= gz
     end
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)
@@ -1200,7 +1205,7 @@ end
   nlsolver.tmp = tmp
   nlsolver.c = γ
 
-  z₂ = nlsolve!(integrator, cache)
+  z₂ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 3
@@ -1222,7 +1227,7 @@ end
   nlsolver.c = c3
   nlsolver.tmp = tmp
 
-  z₃ = nlsolve!(integrator, cache)
+  z₃ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
@@ -1241,7 +1246,7 @@ end
   nlsolver.c = c4
   nlsolver.tmp = tmp
 
-  z₄ = nlsolve!(integrator, cache)
+  z₄ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 5
@@ -1260,7 +1265,7 @@ end
   nlsolver.c = c5
   nlsolver.tmp = tmp
 
-  z₅ = nlsolve!(integrator, cache)
+  z₅ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 6
@@ -1279,7 +1284,7 @@ end
   nlsolver.c = c6
   nlsolver.tmp = tmp
 
-  z₆ = nlsolve!(integrator, cache)
+  z₆ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 7
@@ -1298,7 +1303,7 @@ end
   nlsolver.c = c7
   nlsolver.tmp = tmp
 
-  z₇ = nlsolve!(integrator, cache)
+  z₇ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 8
@@ -1317,7 +1322,7 @@ end
   nlsolver.c = 1
   nlsolver.tmp = tmp
 
-  z₈ = nlsolve!(integrator, cache)
+  z₈ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   u = nlsolver.tmp + γ*z₈
@@ -1361,7 +1366,7 @@ end
   @unpack t,dt,uprev,u,p = integrator
   @unpack z₁,z₂,z₃,z₄,z₅,z₆,z₇,z₈,atmp,nlsolver = cache
   @unpack k1,k2,k3,k4,k5,k6,k7,k8 = cache
-  @unpack dz,k,tmp = nlsolver
+  @unpack gz,tmp = nlsolver
   @unpack γ,a31,a32,a41,a43,a51,a53,a54,a61,a63,a64,a65,a71,a73,a74,a75,a76,a81,a84,a85,a86,a87,c3,c4,c5,c6,c7 = cache.tab
   @unpack α31,α32,α41,α42,α51,α52,α61,α62,α71,α72,α73,α74,α75,α81,α82,α83,α84,α85 = cache.tab
   @unpack btilde1,btilde4,btilde5,btilde6,btilde7,btilde8 = cache.tab
@@ -1413,9 +1418,9 @@ end
   end
 
   nlsolver.c = γ
-  z₂ = nlsolve!(integrator, cache)
+  z₂ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
-  set_new_W!(nlsolver, false)
+  isnewton(nlsolver) && set_new_W!(nlsolver, false)
 
   ################################## Solve Step 3
 
@@ -1438,7 +1443,7 @@ end
   nlsolver.z = z₃
 
   nlsolver.c = c3
-  z₃ = nlsolve!(integrator, cache)
+  z₃ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 4
@@ -1459,7 +1464,7 @@ end
   nlsolver.z = z₄
 
   nlsolver.c = c4
-  z₄ = nlsolve!(integrator, cache)
+  z₄ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 5
@@ -1480,7 +1485,7 @@ end
   nlsolver.z = z₅
 
   nlsolver.c = c5
-  z₅ = nlsolve!(integrator, cache)
+  z₅ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 6
@@ -1504,7 +1509,7 @@ end
   nlsolver.z = z₆
 
   nlsolver.c = c6
-  z₆ = nlsolve!(integrator, cache)
+  z₆ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 7
@@ -1531,7 +1536,7 @@ end
   nlsolver.z = z₇
 
   nlsolver.c = c7
-  z₇ = nlsolve!(integrator, cache)
+  z₇ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   ################################## Solve Step 8
@@ -1558,7 +1563,7 @@ end
   nlsolver.z = z₈
 
   nlsolver.c = 1
-  z₈ = nlsolve!(integrator, cache)
+  z₈ = nlsolve!(nlsolver, integrator)
   nlsolvefail(nlsolver) && return
 
   @.. u = tmp + γ*z₈
@@ -1576,23 +1581,23 @@ end
   if integrator.opts.adaptive
 
     if typeof(integrator.f) <: SplitFunction
-      #@.. dz =  btilde1*z₁ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇ + btilde8*z₈ + ebtilde1*k1 + ebtilde4*k4 + ebtilde5*k5 + ebtilde6*k6 + ebtilde7*k7 + ebtilde8*k8
+      #@.. gz =  btilde1*z₁ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇ + btilde8*z₈ + ebtilde1*k1 + ebtilde4*k4 + ebtilde5*k5 + ebtilde6*k6 + ebtilde7*k7 + ebtilde8*k8
       for i in eachindex(u)
-        dz[i] =  btilde1*z₁[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i] + btilde7*z₇[i] + btilde8*z₈[i] + ebtilde1*k1[i] + ebtilde4*k4[i] + ebtilde5*k5[i] + ebtilde6*k6[i] + ebtilde7*k7[i] + ebtilde8*k8[i]
+        gz[i] =  btilde1*z₁[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i] + btilde7*z₇[i] + btilde8*z₈[i] + ebtilde1*k1[i] + ebtilde4*k4[i] + ebtilde5*k5[i] + ebtilde6*k6[i] + ebtilde7*k7[i] + ebtilde8*k8[i]
       end
     else
-      # @.. dz = btilde1*z₁ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇ + btilde8*z₈
+      # @.. gz = btilde1*z₁ + btilde4*z₄ + btilde5*z₅ + btilde6*z₆ + btilde7*z₇ + btilde8*z₈
       @tight_loop_macros for i in eachindex(u)
-        @inbounds dz[i] = btilde1*z₁[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i] + btilde7*z₇[i] + btilde8*z₈[i]
+        @inbounds gz[i] = btilde1*z₁[i] + btilde4*z₄[i] + btilde5*z₅[i] + btilde6*z₆[i] + btilde7*z₇[i] + btilde8*z₈[i]
       end
 
     end
 
     if isnewton(nlsolver) && alg.smooth_est # From Shampine
       integrator.destats.nsolve += 1
-      nlsolver.linsolve(vec(tmp),get_W(nlsolver),vec(dz),false)
+      get_linsolve(nlsolver)(vec(tmp),get_W(nlsolver),vec(gz),false)
     else
-      tmp .= dz
+      tmp .= gz
     end
     calculate_residuals!(atmp, tmp, uprev, u, integrator.opts.abstol, integrator.opts.reltol,integrator.opts.internalnorm,t)
     integrator.EEst = integrator.opts.internalnorm(atmp,t)

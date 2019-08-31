@@ -65,9 +65,9 @@ function calc_J(nlsolver, integrator, cache::OrdinaryDiffEqConstantCache, is_com
   if DiffEqBase.has_jac(f)
     J = f.jac(uprev, p, t)
   else
-    nlsolver.uf.t = t
-    nlsolver.uf.p = p
-    J = jacobian(nlsolver.uf,uprev,integrator)
+    nlsolver.cache.uf.t = t
+    nlsolver.cache.uf.p = p
+    J = jacobian(nlsolver.cache.uf,uprev,integrator)
   end
   integrator.destats.njacs += 1
   is_compos && (integrator.eigen_est = opnorm(J, Inf))
@@ -97,11 +97,11 @@ end
 
 function calc_J!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqMutableCache, is_compos)
   @unpack t,dt,uprev,u,f,p = integrator
-  @unpack du1,uf,jac_config = nlsolver
   J = nlsolver.cache.J
   if DiffEqBase.has_jac(f)
     f.jac(J, uprev, p, t)
   else
+    @unpack du1,uf,jac_config = nlsolver.cache
     uf.t = t
     uf.p = p
     jacobian!(J, uf, uprev, du1, integrator, jac_config)
@@ -305,7 +305,7 @@ function do_newJ(integrator, alg::T, cache, repeat_step)::Bool where T # any cha
   !integrator.opts.adaptive && return true
   !alg_can_repeat_jac(alg) && return true
   isnewton = T <: NewtonAlgorithm
-  isnewton && (T <: RadauIIA5 ? ( nlstatus = cache.status ) : ( nlstatus = DiffEqBase.get_status(cache.nlsolver) ))
+  isnewton && (T <: RadauIIA5 ? ( nlstatus = cache.status ) : ( nlstatus = cache.nlsolver.status ))
   nlsolvefail(nlstatus) && return true
   # reuse J when there is fast convergence
   fastconvergence = nlstatus === FastConvergence
@@ -421,7 +421,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     new_W && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
   end
   if isnewton
-    set_new_W!(cache.nlsolver, new_W) && DiffEqBase.set_W_dt!(cache.nlsolver, dt)
+    set_new_W!(cache.nlsolver, new_W) && set_W_dt!(cache.nlsolver, dt)
   end
   new_W && (integrator.destats.nw += 1)
   return nothing
@@ -472,7 +472,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     new_W && jacobian2W!(W[W_index], mass_matrix, dtgamma, J, W_transform)
   end
   if isnewton
-    set_new_W!(cache.nlsolver, new_W) && DiffEqBase.set_W_dt!(cache.nlsolver, dt)
+    set_new_W!(cache.nlsolver, new_W) && set_W_dt!(cache.nlsolver, dt)
   end
   new_W && (integrator.destats.nw += 1)
   return nothing
@@ -523,7 +523,7 @@ function calc_W!(nlsolver, integrator, cache::OrdinaryDiffEqMutableCache, dtgamm
     new_W && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
   end
   if isnewton
-    set_new_W!(nlsolver, new_W) && DiffEqBase.set_W_dt!(nlsolver, dt)
+    set_new_W!(nlsolver, new_W) && set_W_dt!(nlsolver, dt)
   end
   new_W && (integrator.destats.nw += 1)
   return nothing
@@ -560,7 +560,7 @@ end
 
 function calc_W!(nlsolver, integrator, cache::OrdinaryDiffEqConstantCache, dtgamma, repeat_step, W_transform=false)
   @unpack t,uprev,p,f = integrator
-  @unpack uf = nlsolver
+  @unpack uf = nlsolver.cache
   mass_matrix = integrator.f.mass_matrix
   isarray = typeof(uprev) <: AbstractArray
   # calculate W
@@ -606,11 +606,78 @@ end
 
 function update_W!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqConstantCache, dt, repeat_step)
   if isnewton(nlsolver)
-    DiffEqBase.set_W!(nlsolver, calc_W!(nlsolver, integrator, cache, dt, repeat_step, true))
+    set_W!(nlsolver, calc_W!(nlsolver, integrator, cache, dt, repeat_step, true))
   end
   nothing
 end
 
+build_uf(alg::Union{DAEAlgorithm,OrdinaryDiffEqAlgorithm},nf,t,p,::Val{true}) = 
+  DiffEqDiffTools.UJacobianWrapper(nf,t,p)
+build_uf(alg::Union{DAEAlgorithm,OrdinaryDiffEqAlgorithm},nf,t,p,::Val{false}) =
+  DiffEqDiffTools.UDerivativeWrapper(nf,t,p)
 
-iip_get_uf(alg::Union{DAEAlgorithm,OrdinaryDiffEqAlgorithm},nf,t,p) = DiffEqDiffTools.UJacobianWrapper(nf,t,p)
-oop_get_uf(alg::Union{DAEAlgorithm,OrdinaryDiffEqAlgorithm},nf,t,p) = DiffEqDiffTools.UDerivativeWrapper(nf,t,p)
+DiffEqBase.nlsolve_f(f, alg::OrdinaryDiffEqAlgorithm) = f isa SplitFunction && issplit(alg) ? f.f1 : f
+DiffEqBase.nlsolve_f(f, alg::DAEAlgorithm) = f
+DiffEqBase.nlsolve_f(integrator::ODEIntegrator) = nlsolve_f(integrator.f, unwrap_alg(integrator, true))
+
+function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{true})
+  if alg isa NewtonAlgorithm
+    if alg.nlsolve isa NLNewton
+      nf = nlsolve_f(f, alg)
+      islin = f isa Union{ODEFunction,SplitFunction} && islinear(nf.f)
+      if islin
+        J = nf.f
+        if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
+          J = DiffEqArrayOperator(J)
+        end
+        W = WOperator(f.mass_matrix, dt, J, true)
+        return J, W
+      end
+    else
+      return nothing, nothing
+    end
+  end
+  if ArrayInterface.isstructured(f.jac_prototype) || f.jac_prototype isa SparseMatrixCSC
+    J = similar(f.jac_prototype)
+    W = similar(J)
+  elseif DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
+    W = WOperator(f, dt, true)
+    J = W.J
+  else
+    J = false .* vec(u) .* vec(u)'
+    W = similar(J)
+  end
+  J, W
+end
+
+function build_J_W(alg,u,uprev,p,t,dt,f,uEltypeNoUnits,::Val{false})
+  islin = false
+  if alg isa NewtonAlgorithm && alg.nlsolve isa NLNewton
+    nf = nlsolve_f(f, alg)
+    islin = f isa Union{ODEFunction,SplitFunction} && islinear(nf.f)
+  end
+  if islin || (DiffEqBase.has_jac(f) && f.jac_prototype isa Nothing)
+    J = islin ? nf.f : f.jac(uprev, p, t)
+    if !isa(J, DiffEqBase.AbstractDiffEqLinearOperator)
+      J = DiffEqArrayOperator(J)
+    end
+    W = WOperator(f.mass_matrix, dt, J, false)
+  elseif DiffEqBase.has_jac(f) && !DiffEqBase.has_Wfact(f) && f.jac_prototype !== nothing
+    W = WOperator(f, dt, true)
+    J = W.J
+  # https://github.com/JuliaDiffEq/OrdinaryDiffEq.jl/pull/672
+  else
+    # get a "fake" `J`
+    J = false .* _vec(u) .* _vec(u)'
+    W = if u isa StaticArray
+      lu(J)
+      elseif u isa Number
+        u
+      else
+        LU{LinearAlgebra.lutype(uEltypeNoUnits)}(Matrix{uEltypeNoUnits}(undef, 0, 0),
+                                                     Vector{LinearAlgebra.BlasInt}(undef, 0),
+                                                     zero(LinearAlgebra.BlasInt))
+      end
+  end
+  J, W
+end

@@ -97,7 +97,7 @@ function resize!(integrator::ODEIntegrator,cache,i)
   for c in full_cache(cache)
     resize!(c,i)
   end
-  DiffEqBase.nlsolve_resize!(integrator, i)
+  resize_nlsolver!(integrator, i)
   resize_J_and_W!(integrator, i)
   resize_non_user_cache!(integrator,cache,i)
 end

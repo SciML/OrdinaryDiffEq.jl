@@ -100,10 +100,11 @@ function maxeig!(integrator, cache::OrdinaryDiffEqMutableCache)
   isfirst = integrator.iter == 1 || integrator.u_modified
   @unpack t, dt, uprev, u, f, p, fsalfirst = integrator
   if cache isa IRKCCache
-    fz, z, atmp = cache.nlsolver.k, cache.nlsolver.tmp, cache.atmp
+    z, atmp = cache.nlsolver.tmp, cache.atmp
   else
-    fz, z, atmp = cache.k, cache.tmp, cache.atmp
+    z, atmp = cache.tmp, cache.atmp
   end
+  fz = integrator.fsallast
   ccache = cache.constantcache
   maxiter = (typeof(integrator.alg) <: Union{ESERK4,ESERK5,SERK2}) ? 100 : 50
   safe = (typeof(integrator.alg) <: RKCAlgs) ? 1.0 : 1.2
