@@ -305,7 +305,7 @@ function do_newJ(integrator, alg::T, cache, repeat_step)::Bool where T # any cha
   !integrator.opts.adaptive && return true
   !alg_can_repeat_jac(alg) && return true
   isnewton = T <: NewtonAlgorithm
-  isnewton && (T <: RadauIIA5 ? ( nlstatus = cache.status ) : ( nlstatus = DiffEqBase.get_status(cache.nlsolver) ))
+  isnewton && (T <: RadauIIA5 ? ( nlstatus = cache.status ) : ( nlstatus = get_status(cache.nlsolver) ))
   nlsolvefail(nlstatus) && return true
   # reuse J when there is fast convergence
   fastconvergence = nlstatus === FastConvergence
@@ -421,7 +421,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     new_W && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
   end
   if isnewton
-    set_new_W!(cache.nlsolver, new_W) && DiffEqBase.set_W_dt!(cache.nlsolver, dt)
+    set_new_W!(cache.nlsolver, new_W) && set_W_dt!(cache.nlsolver, dt)
   end
   new_W && (integrator.destats.nw += 1)
   return nothing
@@ -472,7 +472,7 @@ function calc_W!(integrator, cache::OrdinaryDiffEqMutableCache, dtgamma, repeat_
     new_W && jacobian2W!(W[W_index], mass_matrix, dtgamma, J, W_transform)
   end
   if isnewton
-    set_new_W!(cache.nlsolver, new_W) && DiffEqBase.set_W_dt!(cache.nlsolver, dt)
+    set_new_W!(cache.nlsolver, new_W) && set_W_dt!(cache.nlsolver, dt)
   end
   new_W && (integrator.destats.nw += 1)
   return nothing
@@ -523,7 +523,7 @@ function calc_W!(nlsolver, integrator, cache::OrdinaryDiffEqMutableCache, dtgamm
     new_W && jacobian2W!(W, mass_matrix, dtgamma, J, W_transform)
   end
   if isnewton
-    set_new_W!(nlsolver, new_W) && DiffEqBase.set_W_dt!(nlsolver, dt)
+    set_new_W!(nlsolver, new_W) && set_W_dt!(nlsolver, dt)
   end
   new_W && (integrator.destats.nw += 1)
   return nothing
@@ -606,11 +606,11 @@ end
 
 function update_W!(nlsolver::NLSolver, integrator, cache::OrdinaryDiffEqConstantCache, dt, repeat_step)
   if isnewton(nlsolver)
-    DiffEqBase.set_W!(nlsolver, calc_W!(nlsolver, integrator, cache, dt, repeat_step, true))
+    set_W!(nlsolver, calc_W!(nlsolver, integrator, cache, dt, repeat_step, true))
   end
   nothing
 end
 
 
-iip_get_uf(alg::Union{DAEAlgorithm,OrdinaryDiffEqAlgorithm},nf,t,p) = DiffEqDiffTools.UJacobianWrapper(nf,t,p)
-oop_get_uf(alg::Union{DAEAlgorithm,OrdinaryDiffEqAlgorithm},nf,t,p) = DiffEqDiffTools.UDerivativeWrapper(nf,t,p)
+DiffEqBase.iip_get_uf(alg::Union{DAEAlgorithm,OrdinaryDiffEqAlgorithm},nf,t,p) = DiffEqDiffTools.UJacobianWrapper(nf,t,p)
+DiffEqBase.oop_get_uf(alg::Union{DAEAlgorithm,OrdinaryDiffEqAlgorithm},nf,t,p) = DiffEqDiffTools.UDerivativeWrapper(nf,t,p)

@@ -40,15 +40,11 @@ module OrdinaryDiffEq
 
   using DiffEqBase: check_error!, @def, @.. , _vec, _reshape
 
-  using DiffEqBase: nlsolvefail, isnewton, set_new_W!, get_W, iipnlsolve, oopnlsolve
-
-  using DiffEqBase: NLSolver
-
+  using DiffEqBase: AbstractNLSolverAlgorithm, AbstractNLSolverCache, NLStatus
+  using DiffEqBase: nlsolve_f, qrdelete!, qradd!, build_jac_config, resize_jac_config!, iip_get_uf, oop_get_uf
   using DiffEqBase: FastConvergence, Convergence, SlowConvergence, VerySlowConvergence, Divergence
 
-  import DiffEqBase: calculate_residuals, calculate_residuals!, nlsolve_f, unwrap_cache, @tight_loop_macros, islinear
-
-  import DiffEqBase: iip_get_uf, oop_get_uf, build_jac_config
+  import DiffEqBase: calculate_residuals, calculate_residuals!, unwrap_cache, @tight_loop_macros, islinear
 
   import SparseDiffTools: forwarddiff_color_jacobian!, ForwardColorJacCache
 
@@ -57,6 +53,11 @@ module OrdinaryDiffEq
   const CompiledFloats = Union{Float32,Float64,
     ForwardDiff.Dual{ForwardDiff.Tag{T,W},K,3} where {T,W<:Union{Float64,Float32},
                                                         K<:Union{Float64,Float32}}}
+
+  include("nlsolve/type.jl")
+  include("nlsolve/utils.jl")
+  include("nlsolve/functional.jl")
+  include("nlsolve/newton.jl")
 
   include("misc_utils.jl")
   include("algorithms.jl")
