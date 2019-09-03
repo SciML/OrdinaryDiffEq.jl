@@ -47,8 +47,6 @@ function nlsolve!(nlsolver::NLSolver, nlcache::AbstractNLSolverCache, integrator
       fail_convergence = false
       break
     end
-
-    loopfooter!(nlsolver, nlcache, integrator)
   end
 
   if fail_convergence && DiffEqBase.has_destats(integrator)
@@ -75,5 +73,3 @@ function apply_step!(nlsolver::NLSolver{iip}, ::AbstractNLSolverCache, integrato
 
   nothing
 end
-
-loopfooter!(::NLSolver, ::AbstractNLSolverCache, integrator) = nothing

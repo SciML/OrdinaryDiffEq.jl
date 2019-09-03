@@ -28,18 +28,46 @@ end
 
 ## compute_step!
 
-function loopfooter!(nlsolver::NLSolver{false}, nlcache::NLAndersonConstantCache, integrator)
-  @unpack iter = nlsolver
+"""
+    compute_step!(nlsolver::NLSolver,
+                  nlcache::Union{NLFunctionalCache,NLAndersonCache,
+                                 NLFunctionalConstantCache,NLAndersonConstantCache},
+                  integrator)
+
+Compute the next step of the fixed-point iteration
+```math
+g(z) = dt⋅f(tmp + γ⋅z, p, t + c⋅dt),
+```
+and return the norm of ``g(z) - z``.
+
+# References
+
+
+Ernst Hairer and Gerhard Wanner, "Solving Ordinary Differential
+Equations II, Springer Series in Computational Mathematics. ISBN
+978-3-642-05221-7. Section IV.8.
+[doi:10.1007/978-3-642-05221-7](https://doi.org/10.1007/978-3-642-05221-7).
+"""
+function compute_step!(nlsolver::NLSolver,
+                       nlcache::Union{NLFunctionalCache,NLFunctionalConstantCache},
+                       integrator)
+  compute_step_fixedpoint!(nlsolver, nlcache, integrator)
+end
+
+@muladd function compute_step!(nlsolver::NLSolver{false}, nlcache::NLAndersonConstantCache, integrator)
   @unpack aa_start = nlcache
 
   # perform Anderson acceleration
-  if iter == aa_start
+  previter = nlsolver.iter - 1
+  if previter == aa_start
     # update cached values for next step of Anderson acceleration
     nlcache.dzold = nlsolver.dz
     nlcache.z₊old = nlsolver.z
-  elseif aa_start < iter < nlsolver.maxiters
+  elseif previter > aa_start
+    # actually perform Anderson acceleration
     @unpack z,dz = nlsolver
     @unpack Δz₊s,z₊old,dzold,R,Q,γs,history,droptol = nlcache
+
     # increase size of history
     history += 1
 
@@ -97,19 +125,21 @@ function loopfooter!(nlsolver::NLSolver{false}, nlcache::NLAndersonConstantCache
     nlcache.history = history
   end
 
-  nothing
+  # compute next step
+  compute_step_fixedpoint!(nlsolver, nlcache, integrator)
 end
 
-function loopfooter!(nlsolver::NLSolver{true}, nlcache::NLAndersonCache, integrator)
-  @unpack iter = nlsolver
+@muladd function compute_step!(nlsolver::NLSolver{true}, nlcache::NLAndersonCache, integrator)
   @unpack aa_start = nlcache
 
   # perform Anderson acceleration
-  if iter == aa_start
+  previter = nlsolver.iter - 1
+  if previter == aa_start
     # update cached values for next step of Anderson acceleration
     @.. nlcache.dzold = nlsolver.dz
     @.. nlcache.z₊old = nlsolver.z
-  elseif aa_start < iter < nlsolver.maxiters
+  elseif previter > aa_start
+    # actually perform Anderson acceleration
     @unpack z,dz = nlsolver
     @unpack z₊old,dzold,Δz₊s,γs,R,Q,history,droptol = nlcache
 
@@ -172,33 +202,14 @@ function loopfooter!(nlsolver::NLSolver{true}, nlcache::NLAndersonCache, integra
     nlcache.history = history
   end
 
-  nothing
+  # compute next step
+  compute_step_fixedpoint!(nlsolver, nlcache, integrator)
 end
 
-"""
-    compute_step!(nlsolver::NLSolver,
-                  nlcache::Union{NLFunctionalCache,NLAndersonCache,
-                                 NLFunctionalConstantCache,NLAndersonConstantCache},
-                  integrator)
-
-Compute the next step of the fixed-point iteration
-```math
-g(z) = dt⋅f(tmp + γ⋅z, p, t + c⋅dt),
-```
-and return the norm of ``g(z) - z``.
-
-# References
-
-
-Ernst Hairer and Gerhard Wanner, "Solving Ordinary Differential
-Equations II, Springer Series in Computational Mathematics. ISBN
-978-3-642-05221-7. Section IV.8.
-[doi:10.1007/978-3-642-05221-7](https://doi.org/10.1007/978-3-642-05221-7).
-"""
-@muladd function compute_step!(nlsolver::NLSolver{false},
-                               nlcache::Union{NLAndersonConstantCache,
-                                              NLFunctionalConstantCache},
-                               integrator)
+@muladd function compute_step_fixedpoint!(nlsolver::NLSolver{false},
+                                          nlcache::Union{NLAndersonConstantCache,
+                                                         NLFunctionalConstantCache},
+                                          integrator)
   @unpack uprev,t,p,dt,opts = integrator
   @unpack z,γ,cache = nlsolver
   @unpack tstep = nlcache
@@ -230,9 +241,9 @@ Equations II, Springer Series in Computational Mathematics. ISBN
   ndz
 end
 
-@muladd function compute_step!(nlsolver::NLSolver{true},
-                               nlcache::Union{NLFunctionalCache,NLAndersonCache},
-                               integrator)
+@muladd function compute_step_fixedpoint!(nlsolver::NLSolver{true},
+                                          nlcache::Union{NLFunctionalCache,NLAndersonCache},
+                                          integrator)
   @unpack uprev,t,p,dt,opts = integrator
   @unpack z,dz,tmp,ztmp,k,γ = nlsolver
   @unpack ustep,tstep,atmp = nlcache
